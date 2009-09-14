@@ -381,6 +381,11 @@
           The device's existing connection was assumed.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="SUPPLICANT_AVAILABLE" value="42">
+        <tp:docstring>
+          The 802.1x supplicant is now available.
+        </tp:docstring>
+      </tp:enumvalue>
 	</tp:enum>
 
   </interface>

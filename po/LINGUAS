@@ -1,8 +1,10 @@
 # please keep this list sorted alphabetically
 #
 ar
+as
 be@latin
 bg
+bn_IN
 bs
 ca
 cs
@@ -26,11 +28,13 @@ id
 it
 ja
 ka
+kn
 ko
 ku
 lt
 lv
 mk
+mr
 nb
 ne
 nl
@@ -46,8 +50,9 @@ sk
 sl
 sq
 sr
-sr@Latn
+sr@latin
 sv
+te
 th
 uk
 vi

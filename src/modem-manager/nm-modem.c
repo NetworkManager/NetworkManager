@@ -38,8 +38,6 @@ typedef struct {
 	guint32 ip_method;
 	char *device;
 
-	guint state_to_disconnected_id;
-
 	/* PPP stats */
 	guint32 in_bytes;
 	guint32 out_bytes;
@@ -105,17 +103,11 @@ ppp_state_changed (NMPPPManager *ppp_manager, NMPPPStatus status, gpointer user_
 	NMDevice *device = NM_DEVICE (user_data);
 
 	switch (status) {
-	case NM_PPP_STATUS_NETWORK:
-		nm_device_state_changed (device, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
-		break;
 	case NM_PPP_STATUS_DISCONNECT:
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_PPP_DISCONNECT);
 		break;
 	case NM_PPP_STATUS_DEAD:
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_PPP_FAILED);
-		break;
-	case NM_PPP_STATUS_AUTHENTICATE:
-		nm_device_state_changed (device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
 		break;
 	default:
 		break;
@@ -134,6 +126,10 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 	guint32 good_dns1 = htonl (0x04020201);  /* GTE nameserver */
 	guint32 bad_dns2 = htonl (0x0A0B0C0E);
 	guint32 good_dns2 = htonl (0x04020202);  /* GTE nameserver */
+
+	/* Ignore PPP IP4 events that come in after initial configuration */
+	if (nm_device_get_state (device) != NM_DEVICE_STATE_IP_CONFIG)
+		return;
 
 	/* Work around a PPP bug (#1732) which causes many mobile broadband
 	 * providers to return 10.11.12.13 and 10.11.12.14 for the DNS servers.
@@ -417,15 +413,6 @@ real_get_generic_capabilities (NMDevice *dev)
 	return NM_DEVICE_CAP_NM_SUPPORTED;
 }
 
-static gboolean
-unavailable_to_disconnected (gpointer user_data)
-{
-	nm_device_state_changed (NM_DEVICE (user_data),
-							 NM_DEVICE_STATE_DISCONNECTED,
-							 NM_DEVICE_STATE_REASON_NONE);
-	return FALSE;
-}
-
 static void
 device_state_changed (NMDeviceInterface *device,
 					  NMDeviceState new_state,
@@ -435,19 +422,6 @@ device_state_changed (NMDeviceInterface *device,
 {
 	NMModem *self = NM_MODEM (user_data);
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
-
-	/* Remove any previous delayed transition to disconnected */
-	if (priv->state_to_disconnected_id) {
-		g_source_remove (priv->state_to_disconnected_id);
-		priv->state_to_disconnected_id = 0;
-	}
-
-	/* If transitioning to UNAVAILBLE and we have a carrier, transition to
-	 * DISCONNECTED because the device is ready to use.	 Otherwise the carrier-on
-	 * handler will handle the transition to DISCONNECTED when the carrier is detected.
-	 */
-	if (new_state == NM_DEVICE_STATE_UNAVAILABLE)
-		priv->state_to_disconnected_id = g_idle_add (unavailable_to_disconnected, user_data);
 
 	/* Make sure we don't leave the serial device open */
 	switch (new_state) {
@@ -460,7 +434,9 @@ device_state_changed (NMDeviceInterface *device,
 	case NM_DEVICE_STATE_FAILED:
 	case NM_DEVICE_STATE_DISCONNECTED:
 		dbus_g_proxy_call_no_reply (nm_modem_get_proxy (self, NULL),
-									"Disconnect", G_TYPE_INVALID);
+		                            "Enable",
+		                            G_TYPE_BOOLEAN, FALSE,
+		                            G_TYPE_INVALID);
 		break;
 	default:
 		break;
@@ -600,11 +576,6 @@ static void
 finalize (GObject *object)
 {
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (object);
-
-	if (priv->state_to_disconnected_id) {
-		g_source_remove (priv->state_to_disconnected_id);
-		priv->state_to_disconnected_id = 0;
-	}
 
 	if (priv->proxy)
 		g_object_unref (priv->proxy);

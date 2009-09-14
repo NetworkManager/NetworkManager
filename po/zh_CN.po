@@ -1,914 +1,990 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
+# Simplified Chinese translation to NetworkManager
+# Copyright (C) 2009 Free Software Foundation, Inc.
+# This file is distributed under the same license as the NetworkManager package.
 # Funda Wang <fundawang@linux.net.cn>, 2004.
+# Aron Xu <happyaron.xu@gmail.com>, 2009.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-05-27 12:26+0200\n"
-"PO-Revision-Date: 2006-05-27 23:35+0800\n"
-"Last-Translator: Funda Wang <fundawang@linux.net.cn>\n"
-"Language-Team: zh_CN <i18n-translation@lists.linux.net.cn>\n"
+"POT-Creation-Date: 2009-09-06 21:44+0800\n"
+"PO-Revision-Date: 2009-09-06 22:25+0800\n"
+"Last-Translator: Aron Xu <happyaron.xu@gmail.com>\n"
+"Language-Team: Simplified Chinese <i18n-zh@googlegroups.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: ../gnome/applet/applet-compat.c:171 ../gnome/applet/applet-dbus-info.c:919
+#: ../libnm-util/crypto.c:120
 #, c-format
-msgid "Passphrase for wireless network %s"
-msgstr "无线网络 %s 的密码句"
+msgid "PEM key file had no end tag '%s'."
+msgstr "PEM 密钥文件没有结束标记“%s”。"
 
-#: ../gnome/applet/applet-dbus.c:383
+#: ../libnm-util/crypto.c:130
 #, c-format
-msgid "Connection to the wireless network '%s' failed."
-msgstr "到无线网络“%s”的连接失败。"
+msgid "Doesn't look like a PEM private key file."
+msgstr "不像是一个 PEM 私钥文件。"
 
-#: ../gnome/applet/applet-dbus.c:388
-msgid "Connection to the wired network failed."
-msgstr "连接到有线网络失败。"
-
-#: ../gnome/applet/applet.c:184
-msgid "Error displaying connection information:"
-msgstr "显示连接信息出错："
-
-#: ../gnome/applet/applet.c:202
-msgid "Could not find some required resources (the glade file)!"
-msgstr "序找不到所需的资源(glade 文件未找到)！"
-
-#: ../gnome/applet/applet.c:213
-msgid "No active connections!"
-msgstr "没有活动的连接！"
-
-#: ../gnome/applet/applet.c:234
+#: ../libnm-util/crypto.c:138
 #, c-format
-msgid "Wired Ethernet (%s)"
-msgstr "有线以太网(%s)"
+msgid "Not enough memory to store PEM file data."
+msgstr "没有足够的空间储存 PEM 文件数据"
 
-#: ../gnome/applet/applet.c:236
+#: ../libnm-util/crypto.c:154
 #, c-format
-msgid "Wireless Ethernet (%s)"
-msgstr "无线以太网(%s)"
+msgid "Malformed PEM file: Proc-Type was not first tag."
+msgstr "错误的 PEM 文件格式：Proc-Type 不是第一个标记。"
 
-#: ../gnome/applet/applet.c:337 ../gnome/applet/applet.c:362
-msgid "NetworkManager Applet"
-msgstr "网络管理器小程序"
-
-#: ../gnome/applet/applet.c:339 ../gnome/applet/applet.c:364
-msgid "Copyright © 2004-2005 Red Hat, Inc."
-msgstr "版权 (C) 2004-2005 Red Hat, Inc."
-
-#: ../gnome/applet/applet.c:340 ../gnome/applet/applet.c:365
-msgid ""
-"Notification area applet for managing your network devices and connections."
-msgstr "管理您网络设备和连接的通知区域小程序"
-
-#: ../gnome/applet/applet.c:343 ../gnome/applet/applet.c:370
-msgid "translator-credits"
-msgstr "Funda Wang <fundawang@linux.net.cn>"
-
-#: ../gnome/applet/applet.c:426
-msgid "VPN Login Failure"
-msgstr "VPN 登录失败"
-
-#: ../gnome/applet/applet.c:427
+#: ../libnm-util/crypto.c:162
 #, c-format
-msgid "Could not start the VPN connection '%s' due to a login failure."
-msgstr "无法启动 VPN 连接“%s”，原因是登录失败。"
+msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
+msgstr "错误的 PEM 文件格式：未知的 Proc-Type 标记“%s”。"
 
-#: ../gnome/applet/applet.c:431
-msgid "VPN Start Failure"
-msgstr "VPN 启动失败"
-
-#: ../gnome/applet/applet.c:432
+#: ../libnm-util/crypto.c:172
 #, c-format
-msgid ""
-"Could not start the VPN connection '%s' due to a failure launching the VPN "
-"program."
-msgstr "无法启动 VPN 连接“%s”，原因是调用 VPN 程序失败。"
+msgid "Malformed PEM file: DEK-Info was not the second tag."
+msgstr "错误的 PEM 文件格式：DEK-Info 不是第二个标记。"
 
-#: ../gnome/applet/applet.c:436 ../gnome/applet/applet.c:446
-msgid "VPN Connect Failure"
-msgstr "VPN 连接失败"
-
-#: ../gnome/applet/applet.c:437
+#: ../libnm-util/crypto.c:183
 #, c-format
-msgid "Could not start the VPN connection '%s' due to a connection error."
-msgstr "无法启动 VPN 连接“%s”，原因是连接出错。"
+msgid "Malformed PEM file: no IV found in DEK-Info tag."
+msgstr "错误的 PEM 文件格式：没有在 DEK-Info 标签找到初始向量。"
 
-#: ../gnome/applet/applet.c:441
-msgid "VPN Configuration Error"
-msgstr "VPN 配置错误"
-
-#: ../gnome/applet/applet.c:442
+#: ../libnm-util/crypto.c:190
 #, c-format
-msgid "The VPN connection '%s' was not correctly configured."
-msgstr "VPN 连接“%s”未正确配置。"
+msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
+msgstr "错误的 PEM 文件格式：DEK-Info 标签中的初始向量格式无效。"
 
-#: ../gnome/applet/applet.c:447
+#: ../libnm-util/crypto.c:203
 #, c-format
-msgid ""
-"Could not start the VPN connection '%s' because the VPN server did not "
-"return an adequate network configuration."
-msgstr "无法启动 VPN 连接“%s”，原因是 VPN 服务器未返回足够的网络配置。"
-
-#: ../gnome/applet/applet.c:517
-msgid "VPN Login Message"
-msgstr "VPN 登录消息"
-
-#: ../gnome/applet/applet.c:741 ../gnome/applet/applet.c:2508
-#: ../gnome/applet/other-network-dialog.c:453
-#: ../gnome/applet/passphrase-dialog.c:228
-msgid ""
-"The NetworkManager Applet could not find some required resources (the glade "
-"file was not found)."
-msgstr "网络管理器小程序找不到所需的资源(glade 文件未找到)。"
-
-#: ../gnome/applet/applet.c:753
-#, c-format
-msgid "The network device \"%s (%s)\" does not support wireless scanning."
-msgstr "网络设备“%s(%s)”不支持无线扫描。"
-
-#: ../gnome/applet/applet.c:761
-#, c-format
-msgid "The network device \"%s (%s)\" does not support link detection."
-msgstr "网络设备“%s(%s)”不支持链接检测。"
-
-#: ../gnome/applet/applet.c:908
-#, c-format
-msgid "Preparing device %s for the wired network..."
-msgstr "正在为有线网络准备设备 %s..."
-
-#: ../gnome/applet/applet.c:910
-#, c-format
-msgid "Preparing device %s for the wireless network '%s'..."
-msgstr "正在为无线网络“%2$s”准备设备 %1$s..."
-
-#: ../gnome/applet/applet.c:918
-#, c-format
-msgid "Configuring device %s for the wired network..."
-msgstr "正在为有线网络配置设备 %s..."
-
-#: ../gnome/applet/applet.c:920
-#, c-format
-msgid "Attempting to join the wireless network '%s'..."
-msgstr "正在试图加入无线网络“%s”..."
-
-#: ../gnome/applet/applet.c:928
-#, c-format
-msgid "Waiting for Network Key for the wireless network '%s'..."
-msgstr "正在等待无线网络“%s”的网络密钥..."
-
-#: ../gnome/applet/applet.c:936 ../gnome/applet/applet.c:946
-msgid "Requesting a network address from the wired network..."
-msgstr "正在从有线网络请求网络地址..."
-
-#: ../gnome/applet/applet.c:938 ../gnome/applet/applet.c:948
-#, c-format
-msgid "Requesting a network address from the wireless network '%s'..."
-msgstr "正在从无线网络“%s”请求网络地址..."
-
-#: ../gnome/applet/applet.c:956
-msgid "Finishing connection to the wired network..."
-msgstr "正在完成到有线网络的连接..."
-
-#: ../gnome/applet/applet.c:958
-#, c-format
-msgid "Finishing connection to the wireless network '%s'..."
-msgstr "正在完成到无线网络“%s”的连接..."
-
-#: ../gnome/applet/applet.c:1075
-msgid "NetworkManager is not running"
-msgstr "网络管理器未运行"
-
-#: ../gnome/applet/applet.c:1083 ../gnome/applet/applet.c:1828
-msgid "Networking disabled"
-msgstr "网络已禁用"
-
-#: ../gnome/applet/applet.c:1088
-msgid "No network connection"
-msgstr "没有网络连接"
-
-#: ../gnome/applet/applet.c:1093
-msgid "Wired network connection"
-msgstr "有线网络连接"
-
-#: ../gnome/applet/applet.c:1097
-msgid "Connected to an Ad-Hoc wireless network"
-msgstr "已连接到 Ad-Hoc 无线网络"
-
-#: ../gnome/applet/applet.c:1099
-#, c-format
-msgid "Wireless network connection to '%s' (%d%%)"
-msgstr "到“%s”的无线网络连接(%d%%)"
-
-#: ../gnome/applet/applet.c:1120
-#, c-format
-msgid "VPN connection to '%s'"
-msgstr "到“%s”的 VPN 连接"
-
-#: ../gnome/applet/applet.c:1128
-#, c-format
-msgid "VPN connecting to '%s'"
-msgstr "连接到“%s”的 VPN"
-
-#: ../gnome/applet/applet.c:1541
-msgid "_Connect to Other Wireless Network..."
-msgstr "连接到其它无线网络(_C)..."
-
-#: ../gnome/applet/applet.c:1562
-msgid "Create _New Wireless Network..."
-msgstr "创建新的无线网络(_N)..."
-
-#: ../gnome/applet/applet.c:1685
-msgid "_VPN Connections"
-msgstr "_VPN 连接"
-
-#: ../gnome/applet/applet.c:1730
-msgid "_Configure VPN..."
-msgstr "配置 VPN(_C)..."
-
-#: ../gnome/applet/applet.c:1734
-msgid "_Disconnect VPN..."
-msgstr "断开 VPN(_D)..."
-
-#: ../gnome/applet/applet.c:1756
-msgid "_Dial Up Connections"
-msgstr "拨号连接(_D)"
-
-#. FIXME: We should save and then check the state of the devices and show Connect _or_ Disconnect for each item
-#: ../gnome/applet/applet.c:1767
-#, c-format
-msgid "Connect to %s..."
-msgstr "正在连接到 %s..."
-
-#: ../gnome/applet/applet.c:1773
-#, c-format
-msgid "Disconnect from %s..."
-msgstr "正在从 %s 断开..."
-
-#: ../gnome/applet/applet.c:1822
-msgid "No network devices have been found"
-msgstr "没有发现网络设备"
-
-#: ../gnome/applet/applet.c:2014
-msgid "NetworkManager is not running..."
-msgstr "网络管理器未运行..."
-
-#. 'Enable Networking' item
-#: ../gnome/applet/applet.c:2170
-msgid "Enable _Networking"
-msgstr "启用联网(_N)"
-
-#. 'Enable Wireless' item
-#: ../gnome/applet/applet.c:2176
-msgid "Enable _Wireless"
-msgstr "启用无线(_W)"
-
-#. 'Connection Information' item
-#: ../gnome/applet/applet.c:2182
-msgid "Connection _Information"
-msgstr "连接信息(_I)"
-
-#. Help item
-#: ../gnome/applet/applet.c:2193
-msgid "_Help"
-msgstr "帮助(_H)"
-
-#. About item
-#: ../gnome/applet/applet.c:2202
-msgid "_About"
-msgstr "关于(_A)"
-
-#: ../gnome/applet/applet.c:2667
-msgid ""
-"The NetworkManager applet could not find some required resources.  It cannot "
-"continue.\n"
-msgstr "网络管理器小程序找不到所需的资源。无法继续。\n"
-
-#: ../gnome/applet/wireless-security-option.c:157
-msgid "Open System"
-msgstr "开放式系统"
-
-#: ../gnome/applet/wireless-security-option.c:160
-msgid "Shared Key"
-msgstr "共享密钥"
-
-#: ../gnome/applet/wireless-security-option.c:208
-msgid "Automatic (Default)"
-msgstr "自动(默认)"
-
-#: ../gnome/applet/wireless-security-option.c:215
-msgid "AES-CCMP"
-msgstr "AES-CCMP"
-
-#: ../gnome/applet/wireless-security-option.c:223
-msgid "TKIP"
-msgstr "TKIP"
-
-#: ../gnome/applet/wireless-security-option.c:231
-msgid "Dynamic WEP"
-msgstr "动态 WEP"
-
-#: ../gnome/applet/wso-none.c:53
-msgid "None"
-msgstr "无"
-
-#: ../gnome/applet/wso-wep-ascii.c:138
-msgid "WEP 64/128-bit ASCII"
-msgstr "WEP 64/128 位 ASCII"
-
-#: ../gnome/applet/wso-wep-hex.c:135
-msgid "WEP 64/128-bit Hex"
-msgstr "WEP 64/128 位十六进制"
-
-#: ../gnome/applet/wso-wep-passphrase.c:135
-msgid "WEP 128-bit Passphrase"
-msgstr "WEP 128 位密码句"
-
-#: ../gnome/applet/wso-wpa-eap.c:237
-msgid "PEAP"
-msgstr "PEAP"
-
-#: ../gnome/applet/wso-wpa-eap.c:238
-msgid "TLS"
-msgstr "TLS"
-
-#: ../gnome/applet/wso-wpa-eap.c:239
-msgid "TTLS"
-msgstr "TTLS"
-
-#: ../gnome/applet/wso-wpa-eap.c:247 ../src/nm-ap-security-wpa-eap.c:92
-#: ../src/nm-ap-security-wpa-eap.c:116
-msgid "WPA2 Enterprise"
-msgstr "WPA2 企业"
-
-#: ../gnome/applet/wso-wpa-eap.c:249 ../src/nm-ap-security-wpa-eap.c:94
-#: ../src/nm-ap-security-wpa-eap.c:121
-msgid "WPA Enterprise"
-msgstr "WPA 企业"
-
-#: ../gnome/applet/wso-wpa-psk.c:178
-msgid "WPA2 Personal"
-msgstr "WPA2 个人"
-
-#: ../gnome/applet/wso-wpa-psk.c:180
-msgid "WPA Personal"
-msgstr "WPA 个人"
-
-#: ../gnome/applet/eggtrayicon.c:134
-msgid "Orientation"
-msgstr "方向"
-
-#: ../gnome/applet/eggtrayicon.c:135
-msgid "The orientation of the tray."
-msgstr "托盘方向。"
-
-#: ../gnome/applet/menu-items.c:88
-#, c-format
-msgid "Wired Network (%s)"
-msgstr "有线网络(%s)"
-
-#: ../gnome/applet/menu-items.c:91
-msgid "_Wired Network"
-msgstr "有线网络(_W)"
-
-#: ../gnome/applet/menu-items.c:162
-#, c-format
-msgid "Wireless Network (%s)"
-msgid_plural "Wireless Networks (%s)"
-msgstr[0] "无线网络(%s)"
-
-#: ../gnome/applet/menu-items.c:164
-msgid "Wireless Network"
-msgid_plural "Wireless Networks"
-msgstr[0] "无线网络"
-
-#: ../gnome/applet/menu-items.c:343
-msgid " (invalid Unicode)"
-msgstr " (无效的 Unicode)"
-
-#: ../gnome/applet/other-network-dialog.c:352
-#, c-format
-msgid ""
-"By default, the wireless network's name is set to your computer's name, %s, "
-"with no encryption enabled"
-msgstr "默认情况下，无线网络的名称会设定为您的计算机名称，%s，如果没有加密的话"
-
-#: ../gnome/applet/other-network-dialog.c:358
-msgid "Create new wireless network"
-msgstr "创建新的无线网络"
-
-#: ../gnome/applet/other-network-dialog.c:359
-msgid ""
-"Enter the name and security settings of the wireless network you wish to "
-"create."
-msgstr "输入您想要创建的无线网络的名称和安全设置。"
-
-#: ../gnome/applet/other-network-dialog.c:363
-msgid "Create New Wireless Network"
-msgstr "创建新的无线网络"
-
-#: ../gnome/applet/other-network-dialog.c:368
-msgid "Existing wireless network"
-msgstr "现有无线网络"
-
-#: ../gnome/applet/other-network-dialog.c:369
-msgid "Enter the name of the wireless network to which you wish to connect."
-msgstr "输入您想要连接的无线网络的名称。"
-
-#: ../gnome/applet/other-network-dialog.c:371
-msgid "Connect to Other Wireless Network"
-msgstr "连接到其它无线网络"
-
-#: ../gnome/applet/passphrase-dialog.c:215
-msgid "Error connecting to wireless network"
-msgstr "连接到无线网络出错"
-
-#: ../gnome/applet/passphrase-dialog.c:216
-msgid ""
-"The requested wireless network requires security capabilities unsupported by "
-"your hardware."
-msgstr "您的硬件不支持请求的无线网络所需的安全特性。"
-
-#: ../gnome/applet/vpn-password-dialog.c:151
-#: ../gnome/applet/vpn-password-dialog.c:188
-#, c-format
-msgid "Cannot start VPN connection '%s'"
-msgstr "无法启动 VPN 连接“%s”"
-
-#: ../gnome/applet/vpn-password-dialog.c:154
-#, c-format
-msgid ""
-"Could not find the authentication dialog for VPN connection type '%s'. "
-"Contact your system administrator."
-msgstr "找不到 VPN 连接类型“%s”的身份验证对话。请联系您的系统管理员。"
-
-#: ../gnome/applet/vpn-password-dialog.c:191
-#, c-format
-msgid ""
-"There was a problem launching the authentication dialog for VPN connection "
-"type '%s'. Contact your system administrator."
-msgstr "调用 VPN 连接类型“%s”的身份验证对话有问题。请联系您的系统管理员。"
-
-#: ../gnome/applet/applet.glade.h:1
-msgid " "
-msgstr " "
-
-#: ../gnome/applet/applet.glade.h:2
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
-msgstr "<span weight=\"bold\" size=\"larger\">活动连接信息</span>"
-
-#: ../gnome/applet/applet.glade.h:4
-#, no-c-format
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
-"Network</span>\n"
-"\n"
-"A passphrase or encryption key is required to access the wireless network '%"
-"s'."
+msgid "Malformed PEM file: unknown private key cipher '%s'."
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">无线网络需要密码句</span>\n"
-"\n"
-"要访问无线网络“%s”，需要提供密码句或加密密钥。"
 
-#: ../gnome/applet/applet.glade.h:8
-#, no-c-format
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
-"\n"
-"%s  It will not be completely functional."
+#: ../libnm-util/crypto.c:222
+#, c-format
+msgid "Could not decode private key."
+msgstr "无法解码私钥。"
+
+#: ../libnm-util/crypto.c:267
+#, c-format
+msgid "PEM certificate '%s' had no end tag '%s'."
+msgstr "PEM 证书“%s”没有结束标记“%s”。"
+
+#: ../libnm-util/crypto.c:277
+#, c-format
+msgid "Failed to decode certificate."
+msgstr "无法解码证书。"
+
+#: ../libnm-util/crypto.c:286
+#, c-format
+msgid "Not enough memory to store certificate data."
+msgstr "没有足够的空间存储证书数据。"
+
+#: ../libnm-util/crypto.c:294
+#, c-format
+msgid "Not enough memory to store file data."
+msgstr "没有足够的空间储存文件数据。"
+
+#: ../libnm-util/crypto.c:324
+#, c-format
+msgid "IV must be an even number of bytes in length."
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">削减的网络功能</span>\n"
-"\n"
-"%s  该网络无法完整工作。"
 
-#: ../gnome/applet/applet.glade.h:12
-#, no-c-format
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
-"span>\n"
-"\n"
-"You have chosen to log in to the wireless network '%s'.  If you are sure "
-"that this wireless network is secure, click the checkbox below and "
-"NetworkManager will not require confirmation on subsequent log ins."
+#: ../libnm-util/crypto.c:333
+#, c-format
+msgid "Not enough memory to store the IV."
+msgstr "没有足够的空间储存初始向量。"
+
+#: ../libnm-util/crypto.c:344
+#, c-format
+msgid "IV contains non-hexadecimal digits."
+msgstr "初始向量中包含非十六进制数字。"
+
+#: ../libnm-util/crypto.c:382 ../libnm-util/crypto_gnutls.c:143
+#: ../libnm-util/crypto_nss.c:169
+#, c-format
+msgid "Private key cipher '%s' was unknown."
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">无线网络登录确认</span>\n"
-"\n"
-"您选择登录到无线网络“%s”。如果您确定此无线网络是安全的，请选中下面的复选框，"
-"网络管理器在以后登录时将不会请求确认。"
 
-#: ../gnome/applet/applet.glade.h:15
-msgid "Anonymous Identity:"
-msgstr "匿名身份："
+#: ../libnm-util/crypto.c:391
+#, c-format
+msgid "Not enough memory to decrypt private key."
+msgstr "没有足够的空间解密私钥。"
 
-#: ../gnome/applet/applet.glade.h:16
-msgid "Authentication:"
-msgstr "认证："
+#: ../libnm-util/crypto.c:511
+#, c-format
+msgid "Unable to determine private key type."
+msgstr "无法确定私钥类型。"
 
-#: ../gnome/applet/applet.glade.h:17
-msgid "Broadcast Address:"
-msgstr "广播地址："
+#: ../libnm-util/crypto.c:530
+#, c-format
+msgid "Not enough memory to store decrypted private key."
+msgstr "没有足够的空间储存解密后的私钥。"
 
-#: ../gnome/applet/applet.glade.h:18
-msgid "CA Certificate File:"
-msgstr "CA 证书文件："
+#: ../libnm-util/crypto_gnutls.c:46
+msgid "Failed to initialize the crypto engine."
+msgstr "初始化加密引擎失败。"
 
-#: ../gnome/applet/applet.glade.h:19
-msgid "C_onnect"
-msgstr "连接(_O)"
+#: ../libnm-util/crypto_gnutls.c:90
+#, c-format
+msgid "Failed to initialize the MD5 engine: %s / %s."
+msgstr "初始化 MD5 引擎失败：%s / %s。"
 
-#: ../gnome/applet/applet.glade.h:20
-msgid "Client Certificate File:"
-msgstr "客户端证书文件："
+#: ../libnm-util/crypto_gnutls.c:152 ../libnm-util/crypto_nss.c:178
+#, c-format
+msgid "Not enough memory for decrypted key buffer."
+msgstr "没有足够的空间作为已解密密钥缓冲。"
 
-#: ../gnome/applet/applet.glade.h:21
-msgid "Connection Information"
-msgstr "连接信息"
-
-#: ../gnome/applet/applet.glade.h:22
-msgid "Default Route:"
-msgstr "默认路由："
-
-#: ../gnome/applet/applet.glade.h:23
-msgid "Destination Address:"
-msgstr "目的地址："
-
-#: ../gnome/applet/applet.glade.h:24
-msgid "Driver:"
-msgstr "驱动程序："
-
-#: ../gnome/applet/applet.glade.h:25
-msgid "EAP Method:"
-msgstr "EAP 方法："
-
-#: ../gnome/applet/applet.glade.h:26
-msgid "Hardware Address:"
-msgstr "硬件地址："
-
-#: ../gnome/applet/applet.glade.h:27
-msgid "IP Address:"
-msgstr "IP 地址："
-
-#: ../gnome/applet/applet.glade.h:28
-msgid "Identity:"
-msgstr "身份："
-
-#: ../gnome/applet/applet.glade.h:29
-msgid "Interface:"
-msgstr "接口："
-
-#: ../gnome/applet/applet.glade.h:30
-msgid "Key Type:"
-msgstr "密钥类型："
-
-#: ../gnome/applet/applet.glade.h:31
-msgid "Key:"
-msgstr "密钥："
-
-#: ../gnome/applet/applet.glade.h:32
-msgid ""
-"None\n"
-"WEP 128-bit Passphrase\n"
-"WEP 64/128-bit Hex\n"
-"WEP 64/128-bit ASCII\n"
+#: ../libnm-util/crypto_gnutls.c:160
+#, c-format
+msgid "Failed to initialize the decryption cipher context: %s / %s."
 msgstr ""
-"无\n"
-"WEP 128 位密码句\n"
-"WEP 64/128 位十六进制\n"
-"WEP 64/128 位 ASCII\n"
 
-#: ../gnome/applet/applet.glade.h:37
-msgid ""
-"Open System\n"
-"Shared Key"
-msgstr "开放式系统\n共享密钥"
-
-#: ../gnome/applet/applet.glade.h:39
-msgid "Other Wireless Network..."
-msgstr "其它无线网络..."
-
-#: ../gnome/applet/applet.glade.h:40
-msgid "Passphrase:"
-msgstr "密码句："
-
-#: ../gnome/applet/applet.glade.h:41
-msgid "Password:"
-msgstr "密码："
-
-#: ../gnome/applet/applet.glade.h:42
-msgid "Primary DNS:"
-msgstr "主 DNS："
-
-#: ../gnome/applet/applet.glade.h:43
-msgid "Private Key File:"
-msgstr "私钥文件："
-
-#: ../gnome/applet/applet.glade.h:44
-msgid "Private Key Password:"
-msgstr "私用密钥密码："
-
-#: ../gnome/applet/applet.glade.h:45
-msgid "Secondary DNS:"
-msgstr "辅 DNS："
-
-#: ../gnome/applet/applet.glade.h:46
-msgid "Select the CA Certificate File"
-msgstr "选择 CA 证书文件"
-
-#: ../gnome/applet/applet.glade.h:47
-msgid "Select the Client Certificate File"
-msgstr "选择客户端证书文件"
-
-#: ../gnome/applet/applet.glade.h:48
-msgid "Select the Private Key File"
-msgstr "选择私钥文件"
-
-#: ../gnome/applet/applet.glade.h:49
-msgid "Show key"
-msgstr "显示密钥"
-
-#: ../gnome/applet/applet.glade.h:50
-msgid "Show passphrase"
-msgstr "显示密码句"
-
-#: ../gnome/applet/applet.glade.h:51
-msgid "Show password"
-msgstr "显示密码"
-
-#: ../gnome/applet/applet.glade.h:52
-msgid "Show passwords"
-msgstr "显示密码"
-
-#: ../gnome/applet/applet.glade.h:53
-msgid "Speed:"
-msgstr "速度："
-
-#: ../gnome/applet/applet.glade.h:54
-msgid "Subnet Mask:"
-msgstr "子网掩码："
-
-#: ../gnome/applet/applet.glade.h:55
-msgid "Type:"
-msgstr "类型："
-
-#: ../gnome/applet/applet.glade.h:56
-msgid "User Name:"
-msgstr "用户名："
-
-#: ../gnome/applet/applet.glade.h:57
-msgid "Wireless Network Key Required"
-msgstr "需要无线网络密钥"
-
-#: ../gnome/applet/applet.glade.h:58
-msgid "Wireless _adapter:"
-msgstr "无线适配器(_A)："
-
-#: ../gnome/applet/applet.glade.h:59
-msgid "_Always Trust this Wireless Network"
-msgstr "总是信任此无线网络(_A)"
-
-#: ../gnome/applet/applet.glade.h:60
-msgid "_Don't remind me again"
-msgstr "以后不再提醒(_D)"
-
-#: ../gnome/applet/applet.glade.h:61
-msgid "_Login to Network"
-msgstr "登录到网络(_L)"
-
-#: ../gnome/applet/applet.glade.h:62
-msgid "_Network Name:"
-msgstr "网络名称(_N)："
-
-#: ../gnome/applet/applet.glade.h:63
-msgid "_Wireless Security:"
-msgstr "无线安全性(_W)："
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:378
-msgid "Cannot add VPN connection"
-msgstr "无法添加 VPN 连接"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:380
-msgid ""
-"No suitable VPN software was found on your system. Contact your system "
-"administrator."
-msgstr "您的系统上未找到合适的 VPN 软件。请联系您的系统管理员。"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:432
-msgid "Cannot import VPN connection"
-msgstr "无法导入 VPN 连接"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:434
+#: ../libnm-util/crypto_gnutls.c:169
 #, c-format
-msgid ""
-"Cannot find suitable software for VPN connection type '%s' to import the "
-"file '%s'. Contact your system administrator."
+msgid "Failed to set symmetric key for decryption: %s / %s."
 msgstr ""
-"找不到合适的软件来导入 VPN 连接类型“%s”的文件“%s”。请联系您的系统管理员。"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:574
+#: ../libnm-util/crypto_gnutls.c:178
 #, c-format
-msgid "Error retrieving VPN connection '%s'"
-msgstr "获取 VPN 连接“%s”出错"
+msgid "Failed to set IV for decryption: %s / %s."
+msgstr "为解密设置初始向量失败：%s / %s。"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:577
+#: ../libnm-util/crypto_gnutls.c:187
 #, c-format
-msgid ""
-"Could not find the UI files for VPN connection type '%s'. Contact your "
-"system administrator."
-msgstr "找不到 VPN 连接类型“%s”的用户界面文件。请联系您的系统管理员。"
+msgid "Failed to decrypt the private key: %s / %s."
+msgstr "解密私钥失败：%s / %s"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:734
+#: ../libnm-util/crypto_gnutls.c:200
 #, c-format
-msgid "Delete VPN connection \"%s\"?"
-msgstr "删除 VPN 连接“%s”吗？"
+msgid "Failed to decrypt the private key."
+msgstr "解密私钥失败。"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:737
+#: ../libnm-util/crypto_gnutls.c:235
 #, c-format
-msgid ""
-"All information about the VPN connection \"%s\" will be lost and you may "
-"need your system administrator to provide information to create a new "
-"connection."
+msgid "Error initializing certificate data: %s"
+msgstr "初始化证书数据出错：%s"
+
+#: ../libnm-util/crypto_gnutls.c:257
+#, c-format
+msgid "Couldn't decode certificate: %s"
+msgstr "无法解码证书：%s"
+
+#: ../libnm-util/crypto_gnutls.c:281
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %s"
+msgstr "无法初始化 PKCS#12 解码器：%s"
+
+#: ../libnm-util/crypto_gnutls.c:294
+#, c-format
+msgid "Couldn't decode PKCS#12 file: %s"
+msgstr "无法解码 PKCS#12 文件：%s"
+
+#: ../libnm-util/crypto_gnutls.c:306
+#, c-format
+msgid "Couldn't verify PKCS#12 file: %s"
+msgstr "无法校验 PKCS#12 文件：%s"
+
+#: ../libnm-util/crypto_nss.c:57
+#: ../system-settings/plugins/ifcfg-rh/crypto.c:52
+#, c-format
+msgid "Failed to initialize the crypto engine: %d."
+msgstr "初始化加密引擎失败：%d。"
+
+#: ../libnm-util/crypto_nss.c:111
+#, c-format
+msgid "Failed to initialize the MD5 context: %d."
+msgstr "初始化 MD5 环境失败：%d。"
+
+#: ../libnm-util/crypto_nss.c:186
+#, c-format
+msgid "Failed to initialize the decryption cipher slot."
 msgstr ""
-"关于 VPN 连接“%s”的全部信息都将丢失。要创建新连接的话，您就必须请求您的系统管"
-"理员提供相应信息。"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:947
-msgid "Unable to load"
-msgstr "无法装入"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:949
-msgid "Cannot find some needed resources (the glade file)!"
-msgstr "找不到所需的资源(glade 文件)！"
-
-#. Edit dialog
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1058
-msgid "Edit VPN Connection"
-msgstr "编辑 VPN 连接"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:1
-msgid "Add a new VPN connection"
-msgstr "添加新的 VPN 连接"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
-msgid "Choose which type of VPN connection you wish to create."
-msgstr "选择您想要创建的 VPN 连接类型。"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
-msgid "Connect to:"
-msgstr "连接到："
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
-msgid "Create VPN Connection"
-msgstr "创建 VPN 连接"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
-msgid "Create VPN Connection - 1 of 2"
-msgstr "创建 VPN 连接 - 第一步，共两步"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
-msgid "Create VPN Connection - 2 of 2"
-msgstr "创建 VPN 连接 - 第二步，共两步"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
-msgid "Delete the selected VPN connection"
-msgstr "删除选中的 VPN 连接"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
-msgid "E_xport"
-msgstr "导出(_X)"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:9
-msgid "Edit the selected VPN connection"
-msgstr "编辑选中的 VPN 连接"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:10
-msgid "Export the VPN settings to a file"
-msgstr "将 VPN 设置导出到文件"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:11
-msgid "Export the selected VPN connection to a file"
-msgstr "将选中的 VPN 连接导出到文件"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:12
-msgid "Finish Creating VPN Connection"
-msgstr "创建 VPN 连接完成"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:13
-msgid "Manage Virtual Private Network Connections"
-msgstr "管理虚拟私网连接"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:14
-msgid ""
-"This assistant will guide you through the creation of a connection to a "
-"Virtual Private Network (VPN).\n"
-"\n"
-"It will require some information, such as IP addresses and secrets.  Please "
-"see your system administrator to obtain this information."
+#: ../libnm-util/crypto_nss.c:196
+#, c-format
+msgid "Failed to set symmetric key for decryption."
 msgstr ""
-"此助手将指引您创建到虚拟私网(VPN)的连接。\n"
-"\n"
-"此向导需要您提供的某些信息，比如 IP 地址和机密问题，您可能需要求助系统管理员"
-"才能知晓。"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:17
-msgid "VPN Connections"
-msgstr "VPN 连接"
-
-#: ../src/nm-ap-security-wep.c:52
-msgid "40-bit WEP"
-msgstr "40 位 WEP"
-
-#: ../src/nm-ap-security-wep.c:54
-msgid "104-bit WEP"
-msgstr "104 位 WEP"
-
-#: ../src/nm-ap-security-wpa-psk.c:50
-msgid "WPA TKIP"
-msgstr "WPA TKIP"
-
-#: ../src/nm-ap-security-wpa-psk.c:52
-msgid "WPA CCMP"
-msgstr "WPA CCMP"
-
-#: ../src/nm-ap-security-wpa-psk.c:54
-msgid "WPA Automatic"
-msgstr "WPA 自动"
-
-#: ../src/nm-ap-security-wpa-psk.c:59
-msgid "WPA2 TKIP"
-msgstr "WPA2 TKIP"
-
-#: ../src/nm-ap-security-wpa-psk.c:61
-msgid "WPA2 CCMP"
-msgstr "WPA2 CCMP"
-
-#: ../src/nm-ap-security-wpa-psk.c:63
-msgid "WPA2 Automatic"
-msgstr "WPA2 自动"
-
-#: ../src/nm-ap-security.c:320
-msgid "none"
-msgstr "无"
-
-#: ../src/nm-netlink-monitor.c:170
+#: ../libnm-util/crypto_nss.c:206
 #, c-format
-msgid ""
-"unable to create netlink socket for monitoring wired ethernet devices - %s"
-msgstr "无法创建监视有线以太网设备的网络连接套接字 - %s"
+msgid "Failed to set IV for decryption."
+msgstr "为解密设置初始向量失败。"
 
-#: ../src/nm-netlink-monitor.c:188
+#: ../libnm-util/crypto_nss.c:214
 #, c-format
-msgid ""
-"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
-msgstr "无法绑定到监视有线以太网设备的网络连接套接字 - %s"
+msgid "Failed to initialize the decryption context."
+msgstr "初始化解密环境失败。"
 
-#: ../src/nm-netlink-monitor.c:425
-msgid "operation took too long"
-msgstr "操作时间太长"
+#: ../libnm-util/crypto_nss.c:227
+#, c-format
+msgid "Failed to decrypt the private key: %d."
+msgstr "解密私钥失败：%d。"
 
-#: ../src/nm-netlink-monitor.c:522
-msgid "received data from wrong type of sender"
-msgstr "从错误的发送者类型收到数据"
+#: ../libnm-util/crypto_nss.c:239
+#, c-format
+msgid "Failed to finalize decryption of the private key: %d."
+msgstr "结束解密私钥失败：%d。"
 
-#: ../src/nm-netlink-monitor.c:535
-msgid "received data from unexpected sender"
-msgstr "从未知的发送者收到数据"
+#: ../libnm-util/crypto_nss.c:284
+#, c-format
+msgid "Couldn't decode certificate: %d"
+msgstr "无法解码证书：%d"
 
-#: ../src/nm-netlink-monitor.c:664
-msgid "too much data was sent over socket and some of it was lost"
-msgstr "向套接字发送的数据太多，其中有些已经丢失"
+#: ../libnm-util/crypto_nss.c:319
+#, c-format
+msgid "Couldn't convert password to UCS2: %d"
+msgstr "无法将密码转换为 USC2 方式：%d"
 
-#: ../src/nm-netlink-monitor.c:774
+#: ../libnm-util/crypto_nss.c:347
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %d"
+msgstr "无法初始化 PKCS#12 解码器：%d"
+
+#: ../libnm-util/crypto_nss.c:356
+#, c-format
+msgid "Couldn't decode PKCS#12 file: %d"
+msgstr "无法解码 PKCS#12 文件：%d"
+
+#: ../libnm-util/crypto_nss.c:365
+#, c-format
+msgid "Couldn't verify PKCS#12 file: %d"
+msgstr "无法校验 PKCS#12 文件：%d"
+
+#: ../src/nm-netlink-monitor.c:194 ../src/nm-netlink-monitor.c:464
+#, c-format
+msgid "error processing netlink message: %s"
+msgstr "处理网路信息出错：%s"
+
+#: ../src/nm-netlink-monitor.c:260
+#, c-format
+msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgstr "无法为监视连接状态分配网路句柄：%s"
+
+#: ../src/nm-netlink-monitor.c:270
+#, c-format
+msgid "unable to connect to netlink for monitoring link status: %s"
+msgstr "无法为监视连接状态连接到网路：%s"
+
+#: ../src/nm-netlink-monitor.c:278
+#, c-format
+msgid "unable to join netlink group for monitoring link status: %s"
+msgstr "无法为监视连接状态加入网路组：%s"
+
+#: ../src/nm-netlink-monitor.c:286
+#, c-format
+msgid "unable to allocate netlink link cache for monitoring link status: %s"
+msgstr "无法为监视连接状态分配网路连接：%s"
+
+#: ../src/nm-netlink-monitor.c:494
 msgid "error occurred while waiting for data on socket"
 msgstr "等候套接字上的数据时发生了错误"
 
-#: ../gnome/applet/applet-dbus-devices.c:922
+#: ../src/NetworkManager.c:330
 #, c-format
-msgid "You are now connected to the Ad-Hoc wireless network '%s'."
-msgstr "您现在已连接到 Ad-Hoc 无线网络“%s”。"
+msgid "Invalid option.  Please use --help to see a list of valid options.\n"
+msgstr "无效选项。请使用 --help 查看有效选项列表。\n"
 
-#: ../gnome/applet/applet-dbus-devices.c:927
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:304
+msgid "# Created by NetworkManager\n"
+msgstr "# 由 NetworkManger 创建\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:310
 #, c-format
-msgid "You are now connected to the wireless network '%s'."
-msgstr "您现在已连接到无线网络“%s”。"
+msgid ""
+"# Merged from %s\n"
+"\n"
+msgstr ""
+"# 合并自 %s\n"
+"\n"
 
-#: ../gnome/applet/applet-dbus-devices.c:934
-msgid "You are now connected to the wired network."
-msgstr "您现在已连接到有线网络。"
+#: ../src/named-manager/nm-named-manager.c:315
+msgid "NOTE: the libc resolver may not support more than 3 nameservers."
+msgstr "注意：libc 解析器可能不支持超过三个名字服务器。"
 
-#: ../gnome/applet/applet-dbus-devices.c:940
-msgid "Connection Established"
-msgstr "连接已建立"
+#: ../src/named-manager/nm-named-manager.c:317
+msgid "The nameservers listed below may not be recognized."
+msgstr "以下列出的名字服务器可能无法被识别。"
 
-#: ../gnome/applet/applet-dbus-devices.c:983
-msgid "Disconnected"
-msgstr "已断开连接"
+#: ../src/system-settings/nm-default-wired-connection.c:194
+#, c-format
+msgid "Auto %s"
+msgstr "自动 %s"
 
-#: ../gnome/applet/applet-dbus-devices.c:984
-msgid "The network connection has been disconnected."
-msgstr "网络连接现已断开。"
+#: ../system-settings/plugins/ifcfg-rh/reader.c:2446
+msgid "System"
+msgstr "系统"
 
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:1
+msgid "Connection sharing via a protected WiFi network"
+msgstr "通过受保护的 WiFi 网络共享连接"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:2
+msgid "Connection sharing via an open WiFi network"
+msgstr "通过公开 WiFi 网络共享连接"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:3
+msgid "Modify persistent system hostname"
+msgstr "更改系统固有主机名"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:4
+msgid "Modify system connections"
+msgstr "更改系统连接"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:5
+msgid "System policy prevents modification of system settings"
+msgstr "系统策略阻止更改系统设置"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:6
+msgid "System policy prevents modification of the persistent system hostname"
+msgstr "系统策略阻止更改系统固有主机名"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:7
+msgid "System policy prevents sharing connections via a protected WiFi network"
+msgstr "系统策略阻止使用受保护的 WiFi 网络共享连接"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:8
+msgid "System policy prevents sharing connections via an open WiFi network"
+msgstr "系统策略组织使用公开 WiFi 网络共享连接"
+
+#~ msgid "Passphrase for wireless network %s"
+#~ msgstr "无线网络 %s 的密码句"
+
+#~ msgid "Connection to the wireless network '%s' failed."
+#~ msgstr "到无线网络“%s”的连接失败。"
+
+#~ msgid "Connection to the wired network failed."
+#~ msgstr "连接到有线网络失败。"
+
+#~ msgid "Error displaying connection information:"
+#~ msgstr "显示连接信息出错："
+
+#~ msgid "Could not find some required resources (the glade file)!"
+#~ msgstr "序找不到所需的资源(glade 文件未找到)！"
+
+#~ msgid "Wired Ethernet (%s)"
+#~ msgstr "有线以太网(%s)"
+
+#~ msgid "Wireless Ethernet (%s)"
+#~ msgstr "无线以太网(%s)"
+
+#~ msgid "NetworkManager Applet"
+#~ msgstr "网络管理器小程序"
+
+#~ msgid "Copyright © 2004-2005 Red Hat, Inc."
+#~ msgstr "版权 (C) 2004-2005 Red Hat, Inc."
+
+#~ msgid ""
+#~ "Notification area applet for managing your network devices and "
+#~ "connections."
+#~ msgstr "管理您网络设备和连接的通知区域小程序"
+
+#~ msgid "translator-credits"
+#~ msgstr "Funda Wang <fundawang@linux.net.cn>"
+
+#~ msgid "VPN Login Failure"
+#~ msgstr "VPN 登录失败"
+
+#~ msgid "Could not start the VPN connection '%s' due to a login failure."
+#~ msgstr "无法启动 VPN 连接“%s”，原因是登录失败。"
+
+#~ msgid "VPN Start Failure"
+#~ msgstr "VPN 启动失败"
+
+#~ msgid ""
+#~ "Could not start the VPN connection '%s' due to a failure launching the "
+#~ "VPN program."
+#~ msgstr "无法启动 VPN 连接“%s”，原因是调用 VPN 程序失败。"
+
+#~ msgid "VPN Connect Failure"
+#~ msgstr "VPN 连接失败"
+
+#~ msgid "Could not start the VPN connection '%s' due to a connection error."
+#~ msgstr "无法启动 VPN 连接“%s”，原因是连接出错。"
+
+#~ msgid "VPN Configuration Error"
+#~ msgstr "VPN 配置错误"
+
+#~ msgid "The VPN connection '%s' was not correctly configured."
+#~ msgstr "VPN 连接“%s”未正确配置。"
+
+#~ msgid ""
+#~ "Could not start the VPN connection '%s' because the VPN server did not "
+#~ "return an adequate network configuration."
+#~ msgstr "无法启动 VPN 连接“%s”，原因是 VPN 服务器未返回足够的网络配置。"
+
+#~ msgid "VPN Login Message"
+#~ msgstr "VPN 登录消息"
+
+#~ msgid ""
+#~ "The NetworkManager Applet could not find some required resources (the "
+#~ "glade file was not found)."
+#~ msgstr "网络管理器小程序找不到所需的资源(glade 文件未找到)。"
+
+#~ msgid "The network device \"%s (%s)\" does not support wireless scanning."
+#~ msgstr "网络设备“%s(%s)”不支持无线扫描。"
+
+#~ msgid "The network device \"%s (%s)\" does not support link detection."
+#~ msgstr "网络设备“%s(%s)”不支持链接检测。"
+
+#~ msgid "Preparing device %s for the wired network..."
+#~ msgstr "正在为有线网络准备设备 %s..."
+
+#~ msgid "Preparing device %s for the wireless network '%s'..."
+#~ msgstr "正在为无线网络“%2$s”准备设备 %1$s..."
+
+#~ msgid "Configuring device %s for the wired network..."
+#~ msgstr "正在为有线网络配置设备 %s..."
+
+#~ msgid "Attempting to join the wireless network '%s'..."
+#~ msgstr "正在试图加入无线网络“%s”..."
+
+#~ msgid "Waiting for Network Key for the wireless network '%s'..."
+#~ msgstr "正在等待无线网络“%s”的网络密钥..."
+
+#~ msgid "Requesting a network address from the wired network..."
+#~ msgstr "正在从有线网络请求网络地址..."
+
+#~ msgid "Requesting a network address from the wireless network '%s'..."
+#~ msgstr "正在从无线网络“%s”请求网络地址..."
+
+#~ msgid "Finishing connection to the wired network..."
+#~ msgstr "正在完成到有线网络的连接..."
+
+#~ msgid "Finishing connection to the wireless network '%s'..."
+#~ msgstr "正在完成到无线网络“%s”的连接..."
+
+#~ msgid "NetworkManager is not running"
+#~ msgstr "网络管理器未运行"
+
+#~ msgid "Networking disabled"
+#~ msgstr "网络已禁用"
+
+#~ msgid "No network connection"
+#~ msgstr "没有网络连接"
+
+#~ msgid "Wired network connection"
+#~ msgstr "有线网络连接"
+
+#~ msgid "Connected to an Ad-Hoc wireless network"
+#~ msgstr "已连接到 Ad-Hoc 无线网络"
+
+#~ msgid "Wireless network connection to '%s' (%d%%)"
+#~ msgstr "到“%s”的无线网络连接(%d%%)"
+
+#~ msgid "VPN connection to '%s'"
+#~ msgstr "到“%s”的 VPN 连接"
+
+#~ msgid "VPN connecting to '%s'"
+#~ msgstr "连接到“%s”的 VPN"
+
+#~ msgid "_Connect to Other Wireless Network..."
+#~ msgstr "连接到其它无线网络(_C)..."
+
+#~ msgid "Create _New Wireless Network..."
+#~ msgstr "创建新的无线网络(_N)..."
+
+#~ msgid "_VPN Connections"
+#~ msgstr "_VPN 连接"
+
+#~ msgid "_Configure VPN..."
+#~ msgstr "配置 VPN(_C)..."
+
+#~ msgid "_Disconnect VPN..."
+#~ msgstr "断开 VPN(_D)..."
+
+#~ msgid "_Dial Up Connections"
+#~ msgstr "拨号连接(_D)"
+
+#~ msgid "Connect to %s..."
+#~ msgstr "正在连接到 %s..."
+
+#~ msgid "Disconnect from %s..."
+#~ msgstr "正在从 %s 断开..."
+
+#~ msgid "No network devices have been found"
+#~ msgstr "没有发现网络设备"
+
+#~ msgid "NetworkManager is not running..."
+#~ msgstr "网络管理器未运行..."
+
+#~ msgid "Enable _Networking"
+#~ msgstr "启用联网(_N)"
+
+#~ msgid "Enable _Wireless"
+#~ msgstr "启用无线(_W)"
+
+#~ msgid "Connection _Information"
+#~ msgstr "连接信息(_I)"
+
+#~ msgid "_Help"
+#~ msgstr "帮助(_H)"
+
+#~ msgid "_About"
+#~ msgstr "关于(_A)"
+
+#~ msgid ""
+#~ "The NetworkManager applet could not find some required resources.  It "
+#~ "cannot continue.\n"
+#~ msgstr "网络管理器小程序找不到所需的资源。无法继续。\n"
+
+#~ msgid "Shared Key"
+#~ msgstr "共享密钥"
+
+#~ msgid "Automatic (Default)"
+#~ msgstr "自动(默认)"
+
+#~ msgid "AES-CCMP"
+#~ msgstr "AES-CCMP"
+
+#~ msgid "TKIP"
+#~ msgstr "TKIP"
+
+#~ msgid "Dynamic WEP"
+#~ msgstr "动态 WEP"
+
+#~ msgid "None"
+#~ msgstr "无"
+
+#~ msgid "WEP 64/128-bit ASCII"
+#~ msgstr "WEP 64/128 位 ASCII"
+
+#~ msgid "WEP 64/128-bit Hex"
+#~ msgstr "WEP 64/128 位十六进制"
+
+#~ msgid "WEP 128-bit Passphrase"
+#~ msgstr "WEP 128 位密码句"
+
+#~ msgid "PEAP"
+#~ msgstr "PEAP"
+
+#~ msgid "TLS"
+#~ msgstr "TLS"
+
+#~ msgid "TTLS"
+#~ msgstr "TTLS"
+
+#~ msgid "WPA2 Enterprise"
+#~ msgstr "WPA2 企业"
+
+#~ msgid "WPA Enterprise"
+#~ msgstr "WPA 企业"
+
+#~ msgid "WPA2 Personal"
+#~ msgstr "WPA2 个人"
+
+#~ msgid "WPA Personal"
+#~ msgstr "WPA 个人"
+
+#~ msgid "Orientation"
+#~ msgstr "方向"
+
+#~ msgid "The orientation of the tray."
+#~ msgstr "托盘方向。"
+
+#~ msgid "Wired Network (%s)"
+#~ msgstr "有线网络(%s)"
+
+#~ msgid "_Wired Network"
+#~ msgstr "有线网络(_W)"
+
+#~ msgid "Wireless Network (%s)"
+#~ msgid_plural "Wireless Networks (%s)"
+#~ msgstr[0] "无线网络(%s)"
+
+#~ msgid "Wireless Network"
+#~ msgid_plural "Wireless Networks"
+#~ msgstr[0] "无线网络"
+
+#~ msgid " (invalid Unicode)"
+#~ msgstr " (无效的 Unicode)"
+
+#~ msgid ""
+#~ "By default, the wireless network's name is set to your computer's name, %"
+#~ "s, with no encryption enabled"
+#~ msgstr ""
+#~ "默认情况下，无线网络的名称会设定为您的计算机名称，%s，如果没有加密的话"
+
+#~ msgid "Create new wireless network"
+#~ msgstr "创建新的无线网络"
+
+#~ msgid ""
+#~ "Enter the name and security settings of the wireless network you wish to "
+#~ "create."
+#~ msgstr "输入您想要创建的无线网络的名称和安全设置。"
+
+#~ msgid "Create New Wireless Network"
+#~ msgstr "创建新的无线网络"
+
+#~ msgid "Existing wireless network"
+#~ msgstr "现有无线网络"
+
+#~ msgid "Enter the name of the wireless network to which you wish to connect."
+#~ msgstr "输入您想要连接的无线网络的名称。"
+
+#~ msgid "Connect to Other Wireless Network"
+#~ msgstr "连接到其它无线网络"
+
+#~ msgid "Error connecting to wireless network"
+#~ msgstr "连接到无线网络出错"
+
+#~ msgid ""
+#~ "The requested wireless network requires security capabilities unsupported "
+#~ "by your hardware."
+#~ msgstr "您的硬件不支持请求的无线网络所需的安全特性。"
+
+#~ msgid "Cannot start VPN connection '%s'"
+#~ msgstr "无法启动 VPN 连接“%s”"
+
+#~ msgid ""
+#~ "Could not find the authentication dialog for VPN connection type '%s'. "
+#~ "Contact your system administrator."
+#~ msgstr "找不到 VPN 连接类型“%s”的身份验证对话。请联系您的系统管理员。"
+
+#~ msgid ""
+#~ "There was a problem launching the authentication dialog for VPN "
+#~ "connection type '%s'. Contact your system administrator."
+#~ msgstr "调用 VPN 连接类型“%s”的身份验证对话有问题。请联系您的系统管理员。"
+
+#~ msgid " "
+#~ msgstr " "
+
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
+#~ msgstr "<span weight=\"bold\" size=\"larger\">活动连接信息</span>"
+
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
+#~ "Network</span>\n"
+#~ "\n"
+#~ "A passphrase or encryption key is required to access the wireless network "
+#~ "'%s'."
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">无线网络需要密码句</span>\n"
+#~ "\n"
+#~ "要访问无线网络“%s”，需要提供密码句或加密密钥。"
+
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</"
+#~ "span>\n"
+#~ "\n"
+#~ "%s  It will not be completely functional."
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">削减的网络功能</span>\n"
+#~ "\n"
+#~ "%s  该网络无法完整工作。"
+
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Wireless Network Login "
+#~ "Confirmation</span>\n"
+#~ "\n"
+#~ "You have chosen to log in to the wireless network '%s'.  If you are sure "
+#~ "that this wireless network is secure, click the checkbox below and "
+#~ "NetworkManager will not require confirmation on subsequent log ins."
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">无线网络登录确认</span>\n"
+#~ "\n"
+#~ "您选择登录到无线网络“%s”。如果您确定此无线网络是安全的，请选中下面的复选"
+#~ "框，网络管理器在以后登录时将不会请求确认。"
+
+#~ msgid "Anonymous Identity:"
+#~ msgstr "匿名身份："
+
+#~ msgid "Authentication:"
+#~ msgstr "认证："
+
+#~ msgid "Broadcast Address:"
+#~ msgstr "广播地址："
+
+#~ msgid "CA Certificate File:"
+#~ msgstr "CA 证书文件："
+
+#~ msgid "C_onnect"
+#~ msgstr "连接(_O)"
+
+#~ msgid "Client Certificate File:"
+#~ msgstr "客户端证书文件："
+
+#~ msgid "Connection Information"
+#~ msgstr "连接信息"
+
+#~ msgid "Default Route:"
+#~ msgstr "默认路由："
+
+#~ msgid "Destination Address:"
+#~ msgstr "目的地址："
+
+#~ msgid "Driver:"
+#~ msgstr "驱动程序："
+
+#~ msgid "EAP Method:"
+#~ msgstr "EAP 方法："
+
+#~ msgid "Hardware Address:"
+#~ msgstr "硬件地址："
+
+#~ msgid "IP Address:"
+#~ msgstr "IP 地址："
+
+#~ msgid "Identity:"
+#~ msgstr "身份："
+
+#~ msgid "Interface:"
+#~ msgstr "接口："
+
+#~ msgid "Key Type:"
+#~ msgstr "密钥类型："
+
+#~ msgid "Key:"
+#~ msgstr "密钥："
+
+#~ msgid ""
+#~ "None\n"
+#~ "WEP 128-bit Passphrase\n"
+#~ "WEP 64/128-bit Hex\n"
+#~ "WEP 64/128-bit ASCII\n"
+#~ msgstr ""
+#~ "无\n"
+#~ "WEP 128 位密码句\n"
+#~ "WEP 64/128 位十六进制\n"
+#~ "WEP 64/128 位 ASCII\n"
+
+#~ msgid ""
+#~ "Open System\n"
+#~ "Shared Key"
+#~ msgstr ""
+#~ "开放式系统\n"
+#~ "共享密钥"
+
+#~ msgid "Other Wireless Network..."
+#~ msgstr "其它无线网络..."
+
+#~ msgid "Passphrase:"
+#~ msgstr "密码句："
+
+#~ msgid "Password:"
+#~ msgstr "密码："
+
+#~ msgid "Primary DNS:"
+#~ msgstr "主 DNS："
+
+#~ msgid "Private Key File:"
+#~ msgstr "私钥文件："
+
+#~ msgid "Private Key Password:"
+#~ msgstr "私用密钥密码："
+
+#~ msgid "Secondary DNS:"
+#~ msgstr "辅 DNS："
+
+#~ msgid "Select the CA Certificate File"
+#~ msgstr "选择 CA 证书文件"
+
+#~ msgid "Select the Client Certificate File"
+#~ msgstr "选择客户端证书文件"
+
+#~ msgid "Select the Private Key File"
+#~ msgstr "选择私钥文件"
+
+#~ msgid "Show key"
+#~ msgstr "显示密钥"
+
+#~ msgid "Show passphrase"
+#~ msgstr "显示密码句"
+
+#~ msgid "Show password"
+#~ msgstr "显示密码"
+
+#~ msgid "Show passwords"
+#~ msgstr "显示密码"
+
+#~ msgid "Speed:"
+#~ msgstr "速度："
+
+#~ msgid "Subnet Mask:"
+#~ msgstr "子网掩码："
+
+#~ msgid "Type:"
+#~ msgstr "类型："
+
+#~ msgid "User Name:"
+#~ msgstr "用户名："
+
+#~ msgid "Wireless Network Key Required"
+#~ msgstr "需要无线网络密钥"
+
+#~ msgid "Wireless _adapter:"
+#~ msgstr "无线适配器(_A)："
+
+#~ msgid "_Always Trust this Wireless Network"
+#~ msgstr "总是信任此无线网络(_A)"
+
+#~ msgid "_Don't remind me again"
+#~ msgstr "以后不再提醒(_D)"
+
+#~ msgid "_Login to Network"
+#~ msgstr "登录到网络(_L)"
+
+#~ msgid "_Network Name:"
+#~ msgstr "网络名称(_N)："
+
+#~ msgid "_Wireless Security:"
+#~ msgstr "无线安全性(_W)："
+
+#~ msgid "Cannot add VPN connection"
+#~ msgstr "无法添加 VPN 连接"
+
+#~ msgid ""
+#~ "No suitable VPN software was found on your system. Contact your system "
+#~ "administrator."
+#~ msgstr "您的系统上未找到合适的 VPN 软件。请联系您的系统管理员。"
+
+#~ msgid "Cannot import VPN connection"
+#~ msgstr "无法导入 VPN 连接"
+
+#~ msgid ""
+#~ "Cannot find suitable software for VPN connection type '%s' to import the "
+#~ "file '%s'. Contact your system administrator."
+#~ msgstr ""
+#~ "找不到合适的软件来导入 VPN 连接类型“%s”的文件“%s”。请联系您的系统管理员。"
+
+#~ msgid "Error retrieving VPN connection '%s'"
+#~ msgstr "获取 VPN 连接“%s”出错"
+
+#~ msgid ""
+#~ "Could not find the UI files for VPN connection type '%s'. Contact your "
+#~ "system administrator."
+#~ msgstr "找不到 VPN 连接类型“%s”的用户界面文件。请联系您的系统管理员。"
+
+#~ msgid "Delete VPN connection \"%s\"?"
+#~ msgstr "删除 VPN 连接“%s”吗？"
+
+#~ msgid ""
+#~ "All information about the VPN connection \"%s\" will be lost and you may "
+#~ "need your system administrator to provide information to create a new "
+#~ "connection."
+#~ msgstr ""
+#~ "关于 VPN 连接“%s”的全部信息都将丢失。要创建新连接的话，您就必须请求您的系"
+#~ "统管理员提供相应信息。"
+
+#~ msgid "Unable to load"
+#~ msgstr "无法装入"
+
+#~ msgid "Cannot find some needed resources (the glade file)!"
+#~ msgstr "找不到所需的资源(glade 文件)！"
+
+#~ msgid "Edit VPN Connection"
+#~ msgstr "编辑 VPN 连接"
+
+#~ msgid "Add a new VPN connection"
+#~ msgstr "添加新的 VPN 连接"
+
+#~ msgid "Choose which type of VPN connection you wish to create."
+#~ msgstr "选择您想要创建的 VPN 连接类型。"
+
+#~ msgid "Connect to:"
+#~ msgstr "连接到："
+
+#~ msgid "Create VPN Connection"
+#~ msgstr "创建 VPN 连接"
+
+#~ msgid "Create VPN Connection - 1 of 2"
+#~ msgstr "创建 VPN 连接 - 第一步，共两步"
+
+#~ msgid "Create VPN Connection - 2 of 2"
+#~ msgstr "创建 VPN 连接 - 第二步，共两步"
+
+#~ msgid "Delete the selected VPN connection"
+#~ msgstr "删除选中的 VPN 连接"
+
+#~ msgid "E_xport"
+#~ msgstr "导出(_X)"
+
+#~ msgid "Edit the selected VPN connection"
+#~ msgstr "编辑选中的 VPN 连接"
+
+#~ msgid "Export the VPN settings to a file"
+#~ msgstr "将 VPN 设置导出到文件"
+
+#~ msgid "Export the selected VPN connection to a file"
+#~ msgstr "将选中的 VPN 连接导出到文件"
+
+#~ msgid "Finish Creating VPN Connection"
+#~ msgstr "创建 VPN 连接完成"
+
+#~ msgid "Manage Virtual Private Network Connections"
+#~ msgstr "管理虚拟私网连接"
+
+#~ msgid ""
+#~ "This assistant will guide you through the creation of a connection to a "
+#~ "Virtual Private Network (VPN).\n"
+#~ "\n"
+#~ "It will require some information, such as IP addresses and secrets.  "
+#~ "Please see your system administrator to obtain this information."
+#~ msgstr ""
+#~ "此助手将指引您创建到虚拟私网(VPN)的连接。\n"
+#~ "\n"
+#~ "此向导需要您提供的某些信息，比如 IP 地址和机密问题，您可能需要求助系统管理"
+#~ "员才能知晓。"
+
+#~ msgid "VPN Connections"
+#~ msgstr "VPN 连接"
+
+#~ msgid "40-bit WEP"
+#~ msgstr "40 位 WEP"
+
+#~ msgid "104-bit WEP"
+#~ msgstr "104 位 WEP"
+
+#~ msgid "WPA TKIP"
+#~ msgstr "WPA TKIP"
+
+#~ msgid "WPA CCMP"
+#~ msgstr "WPA CCMP"
+
+#~ msgid "WPA Automatic"
+#~ msgstr "WPA 自动"
+
+#~ msgid "WPA2 TKIP"
+#~ msgstr "WPA2 TKIP"
+
+#~ msgid "WPA2 CCMP"
+#~ msgstr "WPA2 CCMP"
+
+#~ msgid "WPA2 Automatic"
+#~ msgstr "WPA2 自动"
+
+#~ msgid "none"
+#~ msgstr "无"
+
+#~ msgid "operation took too long"
+#~ msgstr "操作时间太长"
+
+#~ msgid "received data from wrong type of sender"
+#~ msgstr "从错误的发送者类型收到数据"
+
+#~ msgid "received data from unexpected sender"
+#~ msgstr "从未知的发送者收到数据"
+
+#~ msgid "too much data was sent over socket and some of it was lost"
+#~ msgstr "向套接字发送的数据太多，其中有些已经丢失"
+
+#~ msgid "You are now connected to the Ad-Hoc wireless network '%s'."
+#~ msgstr "您现在已连接到 Ad-Hoc 无线网络“%s”。"
+
+#~ msgid "You are now connected to the wireless network '%s'."
+#~ msgstr "您现在已连接到无线网络“%s”。"
+
+#~ msgid "You are now connected to the wired network."
+#~ msgstr "您现在已连接到有线网络。"
+
+#~ msgid "Connection Established"
+#~ msgstr "连接已建立"
+
+#~ msgid "Disconnected"
+#~ msgstr "已断开连接"
+
+#~ msgid "The network connection has been disconnected."
+#~ msgstr "网络连接现已断开。"

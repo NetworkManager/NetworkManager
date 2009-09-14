@@ -74,7 +74,7 @@ typedef struct {
 	guint32		(* get_type_capabilities)	(NMDevice *self);
 	guint32		(* get_generic_capabilities)	(NMDevice *self);
 
-	gboolean	(* can_activate) (NMDevice *self);
+	gboolean	(* is_available) (NMDevice *self);
 
 	NMConnection * (* get_best_auto_connection) (NMDevice *self,
 	                                             GSList *connections,
@@ -152,7 +152,7 @@ void *		nm_device_get_system_config_data	(NMDevice *dev);
 
 NMActRequest *	nm_device_get_act_request	(NMDevice *dev);
 
-gboolean		nm_device_can_activate	(NMDevice *dev);
+gboolean		nm_device_is_available (NMDevice *dev);
 
 NMConnection * nm_device_get_best_auto_connection (NMDevice *dev,
                                                    GSList *connections,

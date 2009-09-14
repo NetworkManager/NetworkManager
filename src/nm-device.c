@@ -77,6 +77,7 @@ typedef struct {
 
 	NMDeviceState state;
 	guint         failed_to_disconnected_id;
+	guint         unavailable_to_disconnected_id;
 
 	char *        udi;
 	char *        path;
@@ -389,10 +390,10 @@ nm_device_get_act_request (NMDevice *self)
 
 
 gboolean
-nm_device_can_activate (NMDevice *self)
+nm_device_is_available (NMDevice *self)
 {
-	if (NM_DEVICE_GET_CLASS (self)->can_activate)
-		return NM_DEVICE_GET_CLASS (self)->can_activate (self);
+	if (NM_DEVICE_GET_CLASS (self)->is_available)
+		return NM_DEVICE_GET_CLASS (self)->is_available (self);
 	return TRUE;
 }
 
@@ -1960,6 +1961,21 @@ clear_act_request (NMDevice *self)
 	priv->act_request = NULL;
 }
 
+static void
+delayed_transitions_clear (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->failed_to_disconnected_id) {
+		g_source_remove (priv->failed_to_disconnected_id);
+		priv->failed_to_disconnected_id = 0;
+	}
+	if (priv->unavailable_to_disconnected_id) {
+		g_source_remove (priv->unavailable_to_disconnected_id);
+		priv->unavailable_to_disconnected_id = 0;
+	}
+}
+
 /*
  * nm_device_deactivate_quickly
  *
@@ -1981,10 +1997,8 @@ nm_device_deactivate_quickly (NMDevice *self)
 	activation_source_clear (self, TRUE, AF_INET);
 	activation_source_clear (self, TRUE, AF_INET6);
 
-	if (priv->failed_to_disconnected_id) {
-		g_source_remove (priv->failed_to_disconnected_id);
-		priv->failed_to_disconnected_id = 0;
-	}
+	/* Clear any delayed transitions */
+	delayed_transitions_clear (self);
 
 	/* Stop any ongoing DHCP transaction on this device */
 	if (nm_device_get_act_request (self)) {
@@ -2723,10 +2737,8 @@ dispose (GObject *object)
 		}
 	}
 
-	if (priv->failed_to_disconnected_id) {
-		g_source_remove (priv->failed_to_disconnected_id);
-		priv->failed_to_disconnected_id = 0;
-	}
+	/* Clear any delayed transitions */
+	delayed_transitions_clear (self);
 
 	if (priv->managed && take_down) {
 		NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
@@ -2985,6 +2997,17 @@ failed_to_disconnected (gpointer user_data)
 	return FALSE;
 }
 
+static gboolean
+unavailable_to_disconnected (gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	priv->unavailable_to_disconnected_id = 0;
+	nm_device_state_changed (self, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
+	return FALSE;
+}
+
 void
 nm_device_state_changed (NMDevice *device,
                          NMDeviceState state,
@@ -3006,10 +3029,8 @@ nm_device_state_changed (NMDevice *device,
 	nm_info ("(%s): device state change: %d -> %d (reason %d)",
 	         nm_device_get_iface (device), old_state, state, reason);
 
-	if (priv->failed_to_disconnected_id) {
-		g_source_remove (priv->failed_to_disconnected_id);
-		priv->failed_to_disconnected_id = 0;
-	}
+	/* Clear any delayed transitions */
+	delayed_transitions_clear (device);
 
 	/* Cache the activation request for the dispatcher */
 	req = priv->act_request ? g_object_ref (priv->act_request) : NULL;
@@ -3049,12 +3070,26 @@ nm_device_state_changed (NMDevice *device,
 	/* Post-process the event after internal notification */
 
 	switch (state) {
+	case NM_DEVICE_STATE_UNAVAILABLE:
+		/* If the device can activate now (ie, it's got a carrier, the supplicant
+		 * is active, or whatever) schedule a delayed transition to DISCONNECTED
+		 * to get things rolling.  The device can't transition immediately becuase
+		 * we can't change states again from the state handler for a variety of
+		 * reasons.
+		 */
+		if (nm_device_is_available (device))
+			priv->unavailable_to_disconnected_id = g_idle_add (unavailable_to_disconnected, device);
+		break;
 	case NM_DEVICE_STATE_ACTIVATED:
 		nm_info ("Activation (%s) successful, device activated.", nm_device_get_iface (device));
 		nm_utils_call_dispatcher ("up", nm_act_request_get_connection (req), device, NULL);
 		break;
 	case NM_DEVICE_STATE_FAILED:
 		nm_info ("Activation (%s) failed.", nm_device_get_iface (device));
+		/* Schedule the transition to DISCONNECTED.  The device can't transition
+		 * immediately becuase we can't change states again from the state
+		 * handler for a variety of reasons.
+		 */
 		priv->failed_to_disconnected_id = g_idle_add (failed_to_disconnected, device);
 		break;
 	default:

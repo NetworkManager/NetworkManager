@@ -64,8 +64,6 @@ NMDevice *nm_device_ethernet_new (const char *udi,
 void nm_device_ethernet_get_address (NMDeviceEthernet *dev,
                                      struct ether_addr *addr);
 
-gboolean nm_device_ethernet_get_carrier (NMDeviceEthernet *dev);
-
 guint32 nm_device_ethernet_get_ifindex (NMDeviceEthernet *dev);
 
 G_END_DECLS

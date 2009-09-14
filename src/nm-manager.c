@@ -30,6 +30,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-vpn-manager.h"
 #include "nm-modem-manager.h"
+#include "nm-modem.h"
 #include "nm-device-bt.h"
 #include "nm-device-interface.h"
 #include "nm-device-private.h"
@@ -123,6 +124,16 @@ static const char *internal_activate_device (NMManager *manager,
                                              gboolean user_requested,
                                              gboolean assumed,
                                              GError **error);
+
+static NMDevice *
+find_device_by_iface (NMManager *self, const gchar *iface);
+
+static GSList *
+remove_one_device (NMManager *manager,
+                   GSList *list,
+                   NMDevice *device,
+                   gboolean quitting,
+                   gboolean force_unmanage);
 
 #define SSD_POKE_INTERVAL 120
 #define ORIGDEV_TAG "originating-device"
@@ -281,8 +292,13 @@ modem_added (NMModemManager *modem_manager,
 			 NMDevice *modem,
 			 gpointer user_data)
 {
+	NMManagerPrivate *priv;
 	NMDeviceType type;
+	NMDevice *replace_device;
 	const char *type_name;
+	const char *ip_iface;
+
+	priv = NM_MANAGER_GET_PRIVATE (user_data);
 
 	type = nm_device_get_device_type (NM_DEVICE (modem));
 	if (type == NM_DEVICE_TYPE_GSM)
@@ -291,6 +307,17 @@ modem_added (NMModemManager *modem_manager,
 		type_name = "CDMA modem";
 	else
 		type_name = "Unknown modem";
+
+	ip_iface = nm_device_get_ip_iface (modem);
+
+	replace_device = find_device_by_iface (NM_MANAGER (user_data), ip_iface);
+	if (replace_device) {
+		priv->devices = remove_one_device (NM_MANAGER (user_data),
+		                                   priv->devices,
+		                                   replace_device,
+		                                   FALSE,
+		                                   TRUE);
+	}
 
 	add_device (NM_MANAGER (user_data), NM_DEVICE (g_object_ref (modem)));
 }
@@ -362,7 +389,8 @@ static GSList *
 remove_one_device (NMManager *manager,
                    GSList *list,
                    NMDevice *device,
-                   gboolean quitting)
+                   gboolean quitting,
+                   gboolean force_unmanage)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
@@ -374,7 +402,7 @@ remove_one_device (NMManager *manager,
 		    && nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED)
 			unmanage = FALSE;
 
-		if (unmanage)
+		if (unmanage || force_unmanage)
 			nm_device_set_managed (device, FALSE, NM_DEVICE_STATE_REASON_REMOVED);
 	}
 
@@ -395,7 +423,7 @@ modem_removed (NMModemManager *modem_manager,
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
-	priv->devices = remove_one_device (self, priv->devices, modem, FALSE);
+	priv->devices = remove_one_device (self, priv->devices, modem, FALSE, TRUE);
 }
 
 static void
@@ -1176,6 +1204,14 @@ add_device (NMManager *self, NMDevice *device)
 
 	priv->devices = g_slist_append (priv->devices, device);
 
+	iface = nm_device_get_ip_iface (device);
+	g_assert (iface);
+
+	if (!NM_IS_MODEM(device) && nm_modem_manager_has_modem_for_iface (priv->modem_manager, iface)) {
+		g_object_unref (device);
+		return;
+	}
+
 	g_signal_connect (device, "state-changed",
 					  G_CALLBACK (manager_device_state_changed),
 					  self);
@@ -1194,8 +1230,6 @@ add_device (NMManager *self, NMDevice *device)
 
 	type_desc = nm_device_get_type_desc (device);
 	g_assert (type_desc);
-	iface = nm_device_get_iface (device);
-	g_assert (iface);
 	driver = nm_device_get_driver (device);
 	if (!driver)
 		driver = "unknown";
@@ -1359,7 +1393,7 @@ bluez_manager_resync_devices (NMManager *self)
 		priv->devices = keep;
 
 		while (g_slist_length (gone))
-			gone = remove_one_device (self, gone, NM_DEVICE (gone->data), FALSE);
+			gone = remove_one_device (self, gone, NM_DEVICE (gone->data), FALSE, TRUE);
 	} else {
 		g_slist_free (keep);
 		g_slist_free (gone);
@@ -1429,10 +1463,24 @@ bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
 		NMDevice *device = NM_DEVICE (iter->data);
 
 		if (!strcmp (nm_device_get_udi (device), object_path)) {
-			priv->devices = remove_one_device (self, priv->devices, device, FALSE);
+			priv->devices = remove_one_device (self, priv->devices, device, FALSE, TRUE);
 			break;
 		}
 	}
+}
+
+static NMDevice *
+find_device_by_iface (NMManager *self, const gchar *iface)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *device = NM_DEVICE (iter->data);
+		const gchar *d_iface = nm_device_get_ip_iface (device);
+		if (!strcmp (d_iface, iface))
+			return device;
+	}
+	return NULL;
 }
 
 static NMDevice *
@@ -1492,7 +1540,7 @@ udev_device_removed_cb (NMUdevManager *manager,
 	ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
 	device = find_device_by_ifindex (self, ifindex);
 	if (device)
-		priv->devices = remove_one_device (self, priv->devices, device, FALSE);
+		priv->devices = remove_one_device (self, priv->devices, device, FALSE, TRUE);
 }
 
 static void
@@ -1654,12 +1702,15 @@ user_get_secrets_cb (DBusGProxy *proxy,
 	NMManagerPrivate *priv;
 	GHashTable *settings = NULL;
 	GError *error = NULL;
+	GObject *provider;
 
 	g_return_if_fail (info != NULL);
 	g_return_if_fail (info->provider);
 	g_return_if_fail (info->setting_name);
 
 	priv = NM_MANAGER_GET_PRIVATE (info->manager);
+
+	provider = g_object_ref (info->provider);
 
 	if (dbus_g_proxy_end_call (proxy, call, &error,
 	                           DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, &settings,
@@ -1681,6 +1732,8 @@ user_get_secrets_cb (DBusGProxy *proxy,
 
 	info->call = NULL;
 	free_get_secrets_info (info);
+
+	g_object_ref (provider);
 }
 
 static GetSecretsInfo *
@@ -1744,6 +1797,9 @@ system_get_secrets_reply_cb (NMSettingsConnectionInterface *connection,
                              gpointer user_data)
 {
 	GetSecretsInfo *info = user_data;
+	GObject *provider;
+
+	provider = g_object_ref (info->provider);
 
 	nm_secrets_provider_interface_get_secrets_result (info->provider,
 	                                                  info->setting_name,
@@ -1751,6 +1807,7 @@ system_get_secrets_reply_cb (NMSettingsConnectionInterface *connection,
 	                                                  error ? NULL : secrets,
 	                                                  error);
 	free_get_secrets_info (info);
+	g_object_unref (provider);
 }
 
 static gboolean
@@ -2590,16 +2647,15 @@ dispose (GObject *object)
 	pending_connection_info_destroy (priv->pending_connection_info);
 	priv->pending_connection_info = NULL;
 
-	while (g_slist_length (priv->secrets_calls)) {
-		GetSecretsInfo *info = priv->secrets_calls->data;
-
-		free_get_secrets_info (info);
-	}
+	while (g_slist_length (priv->secrets_calls))
+		free_get_secrets_info ((GetSecretsInfo *) priv->secrets_calls->data);
 
 	while (g_slist_length (priv->devices)) {
-		NMDevice *device = NM_DEVICE (priv->devices->data);
-
-		priv->devices = remove_one_device (manager, priv->devices, device, TRUE);
+		priv->devices = remove_one_device (manager,
+		                                   priv->devices,
+		                                   NM_DEVICE (priv->devices->data),
+		                                   TRUE,
+		                                   FALSE);
 	}
 
 	user_destroy_connections (manager);

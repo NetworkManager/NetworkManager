@@ -106,10 +106,10 @@ typedef struct {
 	struct ether_addr	hw_addr;
 	gboolean			carrier;
 	guint32				ifindex;
-	guint				state_to_disconnected_id;
 
-	gulong			link_connected_id;
-	gulong			link_disconnected_id;
+	NMNetlinkMonitor *  monitor;
+	gulong              link_connected_id;
+	gulong              link_disconnected_id;
 
 	Supplicant          supplicant;
 	guint               link_timeout_id;
@@ -200,73 +200,44 @@ nm_info ("(%s): carrier now %s (device state %d)", nm_device_get_iface (NM_DEVIC
 }
 
 static void
-nm_device_ethernet_carrier_on (NMNetlinkMonitor *monitor,
-                                     int idx,
-                                     gpointer user_data)
+carrier_on (NMNetlinkMonitor *monitor,
+            int idx,
+            gpointer user_data)
 {
-	NMDevice *dev = NM_DEVICE (user_data);
-	guint32 caps;
-
-	/* Make sure signal is for us */
-	if (nm_netlink_iface_to_index (nm_device_get_iface (dev)) == idx) {
-		/* Ignore spurious netlink messages */
-		caps = nm_device_get_capabilities (dev);
-		if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
-			return;
-
-		set_carrier (NM_DEVICE_ETHERNET (dev), TRUE);
-	}
-}
-
-static void
-nm_device_ethernet_carrier_off (NMNetlinkMonitor *monitor,
-                                      int idx,
-                                      gpointer user_data)
-{
-	NMDevice *dev = NM_DEVICE (user_data);
-	guint32 caps;
-
-	/* Make sure signal is for us */
-	if (nm_netlink_iface_to_index (nm_device_get_iface (dev)) == idx) {
-		/* Ignore spurious netlink messages */
-		caps = nm_device_get_capabilities (dev);
-		if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
-			return;
-
-		set_carrier (NM_DEVICE_ETHERNET (dev), FALSE);
-	}
-}
-
-static gboolean
-unavailable_to_disconnected (gpointer user_data)
-{
-	nm_device_state_changed (NM_DEVICE (user_data), NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
-	return FALSE;
-}
-
-static void
-device_state_changed (NMDeviceInterface *device,
-                      NMDeviceState new_state,
-                      NMDeviceState old_state,
-                      NMDeviceStateReason reason,
-                      gpointer user_data)
-{
-	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (user_data);
+	NMDevice *device = NM_DEVICE (user_data);
+	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+	guint32 caps;
 
-	/* Remove any previous delayed transition to disconnected */
-	if (priv->state_to_disconnected_id) {
-		g_source_remove (priv->state_to_disconnected_id);
-		priv->state_to_disconnected_id = 0;
+	/* Make sure signal is for us */
+	if (idx == priv->ifindex) {
+		/* Ignore spurious netlink messages */
+		caps = nm_device_get_capabilities (device);
+		if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
+			return;
+
+		set_carrier (NM_DEVICE_ETHERNET (device), TRUE);
 	}
+}
 
-	/* If transitioning to UNAVAILBLE and we have a carrier, transition to
-	 * DISCONNECTED because the device is ready to use.  Otherwise the carrier-on
-	 * handler will handle the transition to DISCONNECTED when the carrier is detected.
-	 */
-	if ((new_state == NM_DEVICE_STATE_UNAVAILABLE) && priv->carrier) {
-		priv->state_to_disconnected_id = g_idle_add (unavailable_to_disconnected, self);
-		return;
+static void
+carrier_off (NMNetlinkMonitor *monitor,
+             int idx,
+             gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (user_data);
+	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+	guint32 caps;
+
+	/* Make sure signal is for us */
+	if (idx == priv->ifindex) {
+		/* Ignore spurious netlink messages */
+		caps = nm_device_get_capabilities (device);
+		if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
+			return;
+
+		set_carrier (NM_DEVICE_ETHERNET (device), FALSE);
 	}
 }
 
@@ -276,8 +247,8 @@ constructor (GType type,
 			 GObjectConstructParam *construct_params)
 {
 	GObject *object;
-	NMDeviceEthernetPrivate * priv;
-	NMDevice * dev;
+	NMDeviceEthernetPrivate *priv;
+	NMDevice *self;
 	guint32 caps;
 
 	object = G_OBJECT_CLASS (nm_device_ethernet_parent_class)->constructor (type,
@@ -286,40 +257,33 @@ constructor (GType type,
 	if (!object)
 		return NULL;
 
-	dev = NM_DEVICE (object);
-	priv = NM_DEVICE_ETHERNET_GET_PRIVATE (dev);
+	self = NM_DEVICE (object);
+	priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
-	caps = nm_device_get_capabilities (dev);
+	caps = nm_device_get_capabilities (self);
 	if (caps & NM_DEVICE_CAP_CARRIER_DETECT) {
 		GError *error = NULL;
 
 		/* Only listen to netlink for cards that support carrier detect */
-		NMNetlinkMonitor * monitor = nm_netlink_monitor_get ();
+		priv->monitor = nm_netlink_monitor_get ();
 
-		priv->link_connected_id = g_signal_connect (monitor, "carrier-on",
-										    G_CALLBACK (nm_device_ethernet_carrier_on),
-										    dev);
-		priv->link_disconnected_id = g_signal_connect (monitor, "carrier-off",
-											  G_CALLBACK (nm_device_ethernet_carrier_off),
-											  dev);
+		priv->link_connected_id = g_signal_connect (priv->monitor, "carrier-on",
+		                                            G_CALLBACK (carrier_on),
+		                                            self);
+		priv->link_disconnected_id = g_signal_connect (priv->monitor, "carrier-off",
+		                                               G_CALLBACK (carrier_off),
+		                                               self);
 
-		if (!nm_netlink_monitor_request_status (monitor, &error)) {
+		if (!nm_netlink_monitor_request_status (priv->monitor, &error)) {
 			nm_warning ("couldn't request carrier state: %s", error ? error->message : "unknown");
 			g_error_free (error);
 		}
-
-		g_object_unref (monitor);
 	} else {
 		nm_info ("(%s): driver '%s' does not support carrier detection.",
-				nm_device_get_iface (NM_DEVICE (object)),
-				nm_device_get_driver (NM_DEVICE (object)));
-
-		priv->link_connected_id = 0;
-		priv->link_disconnected_id = 0;
+		         nm_device_get_iface (self),
+		         nm_device_get_driver (self));
 		priv->carrier = TRUE;
 	}
-
-	g_signal_connect (dev, "state-changed", G_CALLBACK (device_state_changed), dev);
 
 	return object;
 }
@@ -411,17 +375,6 @@ nm_device_ethernet_get_address (NMDeviceEthernet *self, struct ether_addr *addr)
 	g_return_if_fail (addr != NULL);
 
 	memcpy (addr, &(NM_DEVICE_ETHERNET_GET_PRIVATE (self)->hw_addr), sizeof (struct ether_addr));
-}
-
-/*
- * Get/set functions for carrier
- */
-gboolean
-nm_device_ethernet_get_carrier (NMDeviceEthernet *self)
-{
-	g_return_val_if_fail (self != NULL, FALSE);
-
-	return NM_DEVICE_ETHERNET_GET_PRIVATE (self)->carrier;
 }
 
 guint32
@@ -531,19 +484,19 @@ real_can_interrupt_activation (NMDevice *dev)
 	 * if the link becomes inactive.
 	 */
 	if (nm_device_get_capabilities (dev) & NM_DEVICE_CAP_CARRIER_DETECT) {
-		if (nm_device_ethernet_get_carrier (self) == FALSE)
+		if (NM_DEVICE_ETHERNET_GET_PRIVATE (self)->carrier == FALSE)
 			interrupt = TRUE;
 	}
 	return interrupt;
 }
 
 static gboolean
-real_can_activate (NMDevice *dev)
+real_is_available (NMDevice *dev)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (dev);
 
 	/* Can't do anything if there isn't a carrier */
-	if (!nm_device_ethernet_get_carrier (self))
+	if (!NM_DEVICE_ETHERNET_GET_PRIVATE (self)->carrier)
 		return FALSE;
 
 	return TRUE;
@@ -1229,17 +1182,11 @@ ppp_state_changed (NMPPPManager *ppp_manager, NMPPPStatus status, gpointer user_
 	NMDevice *device = NM_DEVICE (user_data);
 
 	switch (status) {
-	case NM_PPP_STATUS_NETWORK:
-		nm_device_state_changed (device, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
-		break;
 	case NM_PPP_STATUS_DISCONNECT:
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_PPP_DISCONNECT);
 		break;
 	case NM_PPP_STATUS_DEAD:
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_PPP_FAILED);
-		break;
-	case NM_PPP_STATUS_AUTHENTICATE:
-		nm_device_state_changed (device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
 		break;
 	default:
 		break;
@@ -1253,6 +1200,10 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 			 gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
+
+	/* Ignore PPP IP4 events that come in after initial configuration */
+	if (nm_device_get_state (device) != NM_DEVICE_STATE_IP_CONFIG)
+		return;
 
 	nm_device_set_ip_iface (device, iface);
 	NM_DEVICE_ETHERNET_GET_PRIVATE (device)->pending_ip4_config = g_object_ref (config);
@@ -1683,7 +1634,6 @@ dispose (GObject *object)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (object);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-	NMNetlinkMonitor *monitor;
 
 	if (priv->disposed) {
 		G_OBJECT_CLASS (nm_device_ethernet_parent_class)->dispose (object);
@@ -1698,20 +1648,18 @@ dispose (GObject *object)
 	while (priv->supplicant.mgr_tasks)
 		finish_supplicant_task ((SupplicantStateTask *) priv->supplicant.mgr_tasks->data, TRUE);
 
-	monitor = nm_netlink_monitor_get ();
 	if (priv->link_connected_id) {
-		g_signal_handler_disconnect (monitor, priv->link_connected_id);
+		g_signal_handler_disconnect (priv->monitor, priv->link_connected_id);
 		priv->link_connected_id = 0;
 	}
 	if (priv->link_disconnected_id) {
-		g_signal_handler_disconnect (monitor, priv->link_disconnected_id);
+		g_signal_handler_disconnect (priv->monitor, priv->link_disconnected_id);
 		priv->link_disconnected_id = 0;
 	}
-	g_object_unref (monitor);
 
-	if (priv->state_to_disconnected_id) {
-		g_source_remove (priv->state_to_disconnected_id);
-		priv->state_to_disconnected_id = 0;
+	if (priv->monitor) {
+		g_object_unref (priv->monitor);
+		priv->monitor = NULL;
 	}
 
 	G_OBJECT_CLASS (nm_device_ethernet_parent_class)->dispose (object);
@@ -1719,24 +1667,25 @@ dispose (GObject *object)
 
 static void
 get_property (GObject *object, guint prop_id,
-		    GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
-	NMDeviceEthernet *device = NM_DEVICE_ETHERNET (object);
+	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (object);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	struct ether_addr hw_addr;
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
-		nm_device_ethernet_get_address (device, &hw_addr);
+		nm_device_ethernet_get_address (self, &hw_addr);
 		g_value_take_string (value, nm_ether_ntop (&hw_addr));
 		break;
 	case PROP_SPEED:
-		g_value_set_uint (value, nm_device_ethernet_get_speed (device));
+		g_value_set_uint (value, nm_device_ethernet_get_speed (self));
 		break;
 	case PROP_CARRIER:
-		g_value_set_boolean (value, nm_device_ethernet_get_carrier (device));
+		g_value_set_boolean (value, priv->carrier);
 		break;
 	case PROP_IFINDEX:
-		g_value_set_uint (value, nm_device_ethernet_get_ifindex (device));
+		g_value_set_uint (value, priv->ifindex);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1785,7 +1734,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->can_interrupt_activation = real_can_interrupt_activation;
 	parent_class->update_hw_address = real_update_hw_address;
 	parent_class->get_best_auto_connection = real_get_best_auto_connection;
-	parent_class->can_activate = real_can_activate;
+	parent_class->is_available = real_is_available;
 	parent_class->connection_secrets_updated = real_connection_secrets_updated;
 	parent_class->check_connection_compatible = real_check_connection_compatible;
 

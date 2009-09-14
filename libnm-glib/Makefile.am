@@ -118,7 +118,7 @@ libnm_glib_vpn_la_SOURCES = nm-vpn-plugin.c nm-vpn-plugin-ui-interface.c
 libnm_glib_vpn_la_CFLAGS = $(GLIB_CFLAGS) $(DBUS_CFLAGS)
 libnm_glib_vpn_la_LIBADD = $(top_builddir)/libnm-util/libnm-util.la $(GLIB_LIBS) $(DBUS_LIBS)
 libnm_glib_vpn_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm-glib-vpn.ver \
-	-version-info "0:0:0"
+	-version-info "1:0:0"
 
 
 nm-client-bindings.h: $(top_srcdir)/introspection/nm-manager-client.xml

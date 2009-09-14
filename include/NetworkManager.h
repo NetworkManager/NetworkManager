@@ -174,7 +174,7 @@ typedef enum
 	 * Allowed next states:
 	 *   UNAVAILABLE:  the device is now managed by NetworkManager
 	 */
-	NM_DEVICE_STATE_UNMANAGED,
+	NM_DEVICE_STATE_UNMANAGED = 1,
 
 	/* Indicates the device is not yet ready for use, but is managed by
 	 * NetworkManager.  For Ethernet devices, the device may not have an
@@ -185,7 +185,7 @@ typedef enum
 	 *   UNMANAGED:  the device is no longer managed by NetworkManager
 	 *   DISCONNECTED:  the device is now ready for use
 	 */
-	NM_DEVICE_STATE_UNAVAILABLE,
+	NM_DEVICE_STATE_UNAVAILABLE = 2,
 
 	/* Indicates the device does not have an activate connection to anything.
 	 *
@@ -194,7 +194,7 @@ typedef enum
 	 *   UNAVAILABLE:  the device is no longer ready for use (rfkill, no carrier, etc)
 	 *   PREPARE:  the device has started activation
 	 */
-	NM_DEVICE_STATE_DISCONNECTED,
+	NM_DEVICE_STATE_DISCONNECTED = 3,
 
 	/* Indicate states in device activation.
 	 *
@@ -206,10 +206,10 @@ typedef enum
 	 *   ACTIVATED:  (IP_CONFIG only) activation was successful
 	 *   DISCONNECTED:  the device's connection is no longer valid, or NetworkManager went to sleep
 	 */
-	NM_DEVICE_STATE_PREPARE,
-	NM_DEVICE_STATE_CONFIG,
-	NM_DEVICE_STATE_NEED_AUTH,
-	NM_DEVICE_STATE_IP_CONFIG,
+	NM_DEVICE_STATE_PREPARE = 4,
+	NM_DEVICE_STATE_CONFIG = 5,
+	NM_DEVICE_STATE_NEED_AUTH = 6,
+	NM_DEVICE_STATE_IP_CONFIG = 7,
 
 	/* Indicates the device is part of an active network connection.
 	 *
@@ -219,7 +219,7 @@ typedef enum
 	 *   FAILED:  a DHCP lease was not renewed, or another error
 	 *   DISCONNECTED:  the device's connection is no longer valid, or NetworkManager went to sleep
 	 */
-	NM_DEVICE_STATE_ACTIVATED,
+	NM_DEVICE_STATE_ACTIVATED = 8,
 
 	/* Indicates the device's activation failed.
 	 *
@@ -228,7 +228,7 @@ typedef enum
 	 *   UNAVAILABLE:  the device is no longer ready for use (rfkill, no carrier, etc)
 	 *   DISCONNECTED:  the device's connection is ready for activation, or NetworkManager went to sleep
 	 */
-	NM_DEVICE_STATE_FAILED
+	NM_DEVICE_STATE_FAILED = 9
 } NMDeviceState;
 
 
@@ -361,6 +361,9 @@ typedef enum {
 
 	/* The device's existing connection was assumed */
 	NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED,
+
+	/* The supplicant is now available */
+	NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
 
 	/* Unused */
 	NM_DEVICE_STATE_REASON_LAST = 0xFFFF

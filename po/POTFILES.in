@@ -7,6 +7,7 @@ libnm-util/crypto_nss.c
 src/nm-netlink-monitor.c
 src/NetworkManager.c
 src/dhcp-manager/nm-dhcp-dhclient.c
+src/ip6-manager/nm-netlink-listener.c
 src/named-manager/nm-named-manager.c
 src/system-settings/nm-default-wired-connection.c
 system-settings/plugins/ifcfg-rh/crypto.c
