@@ -413,17 +413,6 @@ nm_device_ethernet_get_address (NMDeviceEthernet *self, struct ether_addr *addr)
 	memcpy (addr, &(NM_DEVICE_ETHERNET_GET_PRIVATE (self)->hw_addr), sizeof (struct ether_addr));
 }
 
-/*
- * Get/set functions for carrier
- */
-gboolean
-nm_device_ethernet_get_carrier (NMDeviceEthernet *self)
-{
-	g_return_val_if_fail (self != NULL, FALSE);
-
-	return NM_DEVICE_ETHERNET_GET_PRIVATE (self)->carrier;
-}
-
 guint32
 nm_device_ethernet_get_ifindex (NMDeviceEthernet *self)
 {
@@ -531,7 +520,7 @@ real_can_interrupt_activation (NMDevice *dev)
 	 * if the link becomes inactive.
 	 */
 	if (nm_device_get_capabilities (dev) & NM_DEVICE_CAP_CARRIER_DETECT) {
-		if (nm_device_ethernet_get_carrier (self) == FALSE)
+		if (NM_DEVICE_ETHERNET_GET_PRIVATE (self)->carrier == FALSE)
 			interrupt = TRUE;
 	}
 	return interrupt;
@@ -543,7 +532,7 @@ real_can_activate (NMDevice *dev)
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (dev);
 
 	/* Can't do anything if there isn't a carrier */
-	if (!nm_device_ethernet_get_carrier (self))
+	if (!NM_DEVICE_ETHERNET_GET_PRIVATE (self)->carrier)
 		return FALSE;
 
 	return TRUE;
@@ -1719,24 +1708,25 @@ dispose (GObject *object)
 
 static void
 get_property (GObject *object, guint prop_id,
-		    GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
-	NMDeviceEthernet *device = NM_DEVICE_ETHERNET (object);
+	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (object);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	struct ether_addr hw_addr;
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
-		nm_device_ethernet_get_address (device, &hw_addr);
+		nm_device_ethernet_get_address (self, &hw_addr);
 		g_value_take_string (value, nm_ether_ntop (&hw_addr));
 		break;
 	case PROP_SPEED:
-		g_value_set_uint (value, nm_device_ethernet_get_speed (device));
+		g_value_set_uint (value, nm_device_ethernet_get_speed (self));
 		break;
 	case PROP_CARRIER:
-		g_value_set_boolean (value, nm_device_ethernet_get_carrier (device));
+		g_value_set_boolean (value, priv->carrier);
 		break;
 	case PROP_IFINDEX:
-		g_value_set_uint (value, nm_device_ethernet_get_ifindex (device));
+		g_value_set_uint (value, priv->ifindex);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
