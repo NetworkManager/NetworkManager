@@ -108,8 +108,9 @@ typedef struct {
 	guint32				ifindex;
 	guint				state_to_disconnected_id;
 
-	gulong			link_connected_id;
-	gulong			link_disconnected_id;
+	NMNetlinkMonitor *  monitor;
+	gulong              link_connected_id;
+	gulong              link_disconnected_id;
 
 	Supplicant          supplicant;
 	guint               link_timeout_id;
@@ -200,40 +201,44 @@ nm_info ("(%s): carrier now %s (device state %d)", nm_device_get_iface (NM_DEVIC
 }
 
 static void
-nm_device_ethernet_carrier_on (NMNetlinkMonitor *monitor,
-                                     int idx,
-                                     gpointer user_data)
+carrier_on (NMNetlinkMonitor *monitor,
+            int idx,
+            gpointer user_data)
 {
-	NMDevice *dev = NM_DEVICE (user_data);
+	NMDevice *device = NM_DEVICE (user_data);
+	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	guint32 caps;
 
 	/* Make sure signal is for us */
-	if (nm_netlink_iface_to_index (nm_device_get_iface (dev)) == idx) {
+	if (idx == priv->ifindex) {
 		/* Ignore spurious netlink messages */
-		caps = nm_device_get_capabilities (dev);
+		caps = nm_device_get_capabilities (device);
 		if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
 			return;
 
-		set_carrier (NM_DEVICE_ETHERNET (dev), TRUE);
+		set_carrier (NM_DEVICE_ETHERNET (device), TRUE);
 	}
 }
 
 static void
-nm_device_ethernet_carrier_off (NMNetlinkMonitor *monitor,
-                                      int idx,
-                                      gpointer user_data)
+carrier_off (NMNetlinkMonitor *monitor,
+             int idx,
+             gpointer user_data)
 {
-	NMDevice *dev = NM_DEVICE (user_data);
+	NMDevice *device = NM_DEVICE (user_data);
+	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	guint32 caps;
 
 	/* Make sure signal is for us */
-	if (nm_netlink_iface_to_index (nm_device_get_iface (dev)) == idx) {
+	if (idx == priv->ifindex) {
 		/* Ignore spurious netlink messages */
-		caps = nm_device_get_capabilities (dev);
+		caps = nm_device_get_capabilities (device);
 		if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
 			return;
 
-		set_carrier (NM_DEVICE_ETHERNET (dev), FALSE);
+		set_carrier (NM_DEVICE_ETHERNET (device), FALSE);
 	}
 }
 
@@ -276,8 +281,8 @@ constructor (GType type,
 			 GObjectConstructParam *construct_params)
 {
 	GObject *object;
-	NMDeviceEthernetPrivate * priv;
-	NMDevice * dev;
+	NMDeviceEthernetPrivate *priv;
+	NMDevice *self;
 	guint32 caps;
 
 	object = G_OBJECT_CLASS (nm_device_ethernet_parent_class)->constructor (type,
@@ -286,40 +291,35 @@ constructor (GType type,
 	if (!object)
 		return NULL;
 
-	dev = NM_DEVICE (object);
-	priv = NM_DEVICE_ETHERNET_GET_PRIVATE (dev);
+	self = NM_DEVICE (object);
+	priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
-	caps = nm_device_get_capabilities (dev);
+	caps = nm_device_get_capabilities (self);
 	if (caps & NM_DEVICE_CAP_CARRIER_DETECT) {
 		GError *error = NULL;
 
 		/* Only listen to netlink for cards that support carrier detect */
-		NMNetlinkMonitor * monitor = nm_netlink_monitor_get ();
+		priv->monitor = nm_netlink_monitor_get ();
 
-		priv->link_connected_id = g_signal_connect (monitor, "carrier-on",
-										    G_CALLBACK (nm_device_ethernet_carrier_on),
-										    dev);
-		priv->link_disconnected_id = g_signal_connect (monitor, "carrier-off",
-											  G_CALLBACK (nm_device_ethernet_carrier_off),
-											  dev);
+		priv->link_connected_id = g_signal_connect (priv->monitor, "carrier-on",
+		                                            G_CALLBACK (carrier_on),
+		                                            self);
+		priv->link_disconnected_id = g_signal_connect (priv->monitor, "carrier-off",
+		                                               G_CALLBACK (carrier_off),
+		                                               self);
 
-		if (!nm_netlink_monitor_request_status (monitor, &error)) {
+		if (!nm_netlink_monitor_request_status (priv->monitor, &error)) {
 			nm_warning ("couldn't request carrier state: %s", error ? error->message : "unknown");
 			g_error_free (error);
 		}
-
-		g_object_unref (monitor);
 	} else {
 		nm_info ("(%s): driver '%s' does not support carrier detection.",
-				nm_device_get_iface (NM_DEVICE (object)),
-				nm_device_get_driver (NM_DEVICE (object)));
-
-		priv->link_connected_id = 0;
-		priv->link_disconnected_id = 0;
+		         nm_device_get_iface (self),
+		         nm_device_get_driver (self));
 		priv->carrier = TRUE;
 	}
 
-	g_signal_connect (dev, "state-changed", G_CALLBACK (device_state_changed), dev);
+	g_signal_connect (self, "state-changed", G_CALLBACK (device_state_changed), self);
 
 	return object;
 }
@@ -1681,7 +1681,6 @@ dispose (GObject *object)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (object);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-	NMNetlinkMonitor *monitor;
 
 	if (priv->disposed) {
 		G_OBJECT_CLASS (nm_device_ethernet_parent_class)->dispose (object);
@@ -1696,16 +1695,19 @@ dispose (GObject *object)
 	while (priv->supplicant.mgr_tasks)
 		finish_supplicant_task ((SupplicantStateTask *) priv->supplicant.mgr_tasks->data, TRUE);
 
-	monitor = nm_netlink_monitor_get ();
 	if (priv->link_connected_id) {
-		g_signal_handler_disconnect (monitor, priv->link_connected_id);
+		g_signal_handler_disconnect (priv->monitor, priv->link_connected_id);
 		priv->link_connected_id = 0;
 	}
 	if (priv->link_disconnected_id) {
-		g_signal_handler_disconnect (monitor, priv->link_disconnected_id);
+		g_signal_handler_disconnect (priv->monitor, priv->link_disconnected_id);
 		priv->link_disconnected_id = 0;
 	}
-	g_object_unref (monitor);
+
+	if (priv->monitor) {
+		g_object_unref (priv->monitor);
+		priv->monitor = NULL;
+	}
 
 	if (priv->state_to_disconnected_id) {
 		g_source_remove (priv->state_to_disconnected_id);
