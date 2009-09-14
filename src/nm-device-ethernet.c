@@ -106,7 +106,6 @@ typedef struct {
 	struct ether_addr	hw_addr;
 	gboolean			carrier;
 	guint32				ifindex;
-	guint				state_to_disconnected_id;
 
 	NMNetlinkMonitor *  monitor;
 	gulong              link_connected_id;
@@ -242,39 +241,6 @@ carrier_off (NMNetlinkMonitor *monitor,
 	}
 }
 
-static gboolean
-unavailable_to_disconnected (gpointer user_data)
-{
-	nm_device_state_changed (NM_DEVICE (user_data), NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
-	return FALSE;
-}
-
-static void
-device_state_changed (NMDeviceInterface *device,
-                      NMDeviceState new_state,
-                      NMDeviceState old_state,
-                      NMDeviceStateReason reason,
-                      gpointer user_data)
-{
-	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (user_data);
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-
-	/* Remove any previous delayed transition to disconnected */
-	if (priv->state_to_disconnected_id) {
-		g_source_remove (priv->state_to_disconnected_id);
-		priv->state_to_disconnected_id = 0;
-	}
-
-	/* If transitioning to UNAVAILBLE and we have a carrier, transition to
-	 * DISCONNECTED because the device is ready to use.  Otherwise the carrier-on
-	 * handler will handle the transition to DISCONNECTED when the carrier is detected.
-	 */
-	if ((new_state == NM_DEVICE_STATE_UNAVAILABLE) && priv->carrier) {
-		priv->state_to_disconnected_id = g_idle_add (unavailable_to_disconnected, self);
-		return;
-	}
-}
-
 static GObject*
 constructor (GType type,
 			 guint n_construct_params,
@@ -318,8 +284,6 @@ constructor (GType type,
 		         nm_device_get_driver (self));
 		priv->carrier = TRUE;
 	}
-
-	g_signal_connect (self, "state-changed", G_CALLBACK (device_state_changed), self);
 
 	return object;
 }
@@ -1696,11 +1660,6 @@ dispose (GObject *object)
 	if (priv->monitor) {
 		g_object_unref (priv->monitor);
 		priv->monitor = NULL;
-	}
-
-	if (priv->state_to_disconnected_id) {
-		g_source_remove (priv->state_to_disconnected_id);
-		priv->state_to_disconnected_id = 0;
 	}
 
 	G_OBJECT_CLASS (nm_device_ethernet_parent_class)->dispose (object);

@@ -156,7 +156,6 @@ struct _NMDeviceWifiPrivate {
 	NMAccessPoint *   current_ap;
 	guint32           rate;
 	gboolean          enabled; /* rfkilled or not */
-	guint             state_to_disconnected_id;
 	
 	glong             scheduled_scan_time;
 	guint8            scan_interval; /* seconds */
@@ -2249,6 +2248,15 @@ supplicant_iface_state_cb_handler (gpointer user_data)
 		/* Request a scan to get latest results */
 		cancel_pending_scan (self);
 		request_wireless_scan (self);
+
+		/* If the interface can now be activated because the supplicant is now
+		 * available, transition to DISCONNECTED.
+		 */
+		if (   (nm_device_get_state (NM_DEVICE (self)) == NM_DEVICE_STATE_UNAVAILABLE)
+		    && nm_device_can_activate (NM_DEVICE (self))) {
+			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED,
+			                         NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE);
+		}
 	} else if (task->new_state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
 		cleanup_association_attempt (self, FALSE);
 		supplicant_interface_release (self);
@@ -3224,15 +3232,6 @@ spec_match_list (NMDevice *device, const GSList *specs)
 	return matched;
 }
 
-static gboolean
-unavailable_to_disconnected (gpointer user_data)
-{
-	nm_device_state_changed (NM_DEVICE (user_data),
-	                         NM_DEVICE_STATE_DISCONNECTED,
-	                         NM_DEVICE_STATE_REASON_NONE);
-	return FALSE;
-}
-
 static void
 device_state_changed (NMDevice *device,
                       NMDeviceState new_state,
@@ -3243,12 +3242,6 @@ device_state_changed (NMDevice *device,
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	gboolean clear_aps = FALSE;
-
-	/* Remove any previous delayed transition to disconnected */
-	if (priv->state_to_disconnected_id) {
-		g_source_remove (priv->state_to_disconnected_id);
-		priv->state_to_disconnected_id = 0;
-	}
 
 	if (new_state <= NM_DEVICE_STATE_UNAVAILABLE) {
 		/* Clean up the supplicant interface because in these states the
@@ -3276,9 +3269,6 @@ device_state_changed (NMDevice *device,
 
 			if (!priv->supplicant.iface)
 				supplicant_interface_acquire (self);
-
-			if (priv->supplicant.iface)
-				priv->state_to_disconnected_id = g_idle_add (unavailable_to_disconnected, self);
 		}
 		clear_aps = TRUE;
 		break;
@@ -3458,11 +3448,6 @@ dispose (GObject *object)
 
 	set_current_ap (self, NULL);
 	remove_all_aps (self);
-
-	if (priv->state_to_disconnected_id) {
-		g_source_remove (priv->state_to_disconnected_id);
-		priv->state_to_disconnected_id = 0;
-	}
 
 	G_OBJECT_CLASS (nm_device_wifi_parent_class)->dispose (object);
 }

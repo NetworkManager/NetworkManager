@@ -362,6 +362,9 @@ typedef enum {
 	/* The device's existing connection was assumed */
 	NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED,
 
+	/* The supplicant is now available */
+	NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
+
 	/* Unused */
 	NM_DEVICE_STATE_REASON_LAST = 0xFFFF
 } NMDeviceStateReason;

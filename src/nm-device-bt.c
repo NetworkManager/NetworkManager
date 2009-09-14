@@ -51,7 +51,6 @@ typedef struct {
 	char *name;
 	guint32 capabilities;
 
-	guint state_to_disconnected_id;
 	DBusGProxy *type_proxy;
 
 	NMPPPManager *ppp_manager;
@@ -715,55 +714,6 @@ nm_device_bt_init (NMDeviceBt *self)
 {
 }
 
-static gboolean
-unavailable_to_disconnected (gpointer user_data)
-{
-	nm_device_state_changed (NM_DEVICE (user_data),
-	                         NM_DEVICE_STATE_DISCONNECTED,
-	                         NM_DEVICE_STATE_REASON_NONE);
-	return FALSE;
-}
-
-static void
-device_state_changed (NMDeviceInterface *device,
-                      NMDeviceState new_state,
-                      NMDeviceState old_state,
-                      NMDeviceStateReason reason,
-                      gpointer user_data)
-{
-	NMDeviceBt *self = NM_DEVICE_BT (user_data);
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
-
-	/* Remove any previous delayed transition to disconnected */
-	if (priv->state_to_disconnected_id) {
-		g_source_remove (priv->state_to_disconnected_id);
-		priv->state_to_disconnected_id = 0;
-	}
-
-	/* Transition to DISCONNECTED from an idle handler */
-	if (new_state == NM_DEVICE_STATE_UNAVAILABLE)
-		priv->state_to_disconnected_id = g_idle_add (unavailable_to_disconnected, self);
-}
-
-static GObject*
-constructor (GType type,
-             guint n_construct_params,
-             GObjectConstructParam *construct_params)
-{
-	GObject *object;
-
-	object = G_OBJECT_CLASS (nm_device_bt_parent_class)->constructor (type,
-	                                                                  n_construct_params,
-	                                                                  construct_params);
-	if (!object)
-		return NULL;
-
-	g_signal_connect (NM_DEVICE (object), "state-changed",
-	                  G_CALLBACK (device_state_changed), NM_DEVICE_BT (object));
-
-	return object;
-}
-
 static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
@@ -822,11 +772,6 @@ finalize (GObject *object)
 	g_free (priv->bdaddr);
 	g_free (priv->name);
 
-	if (priv->state_to_disconnected_id) {
-		g_source_remove (priv->state_to_disconnected_id);
-		priv->state_to_disconnected_id = 0;
-	}
-
 	G_OBJECT_CLASS (nm_device_bt_parent_class)->finalize (object);
 }
 
@@ -838,7 +783,6 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceBtPrivate));
 
-	object_class->constructor = constructor;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 	object_class->finalize = finalize;

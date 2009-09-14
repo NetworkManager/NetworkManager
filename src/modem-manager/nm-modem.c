@@ -38,8 +38,6 @@ typedef struct {
 	guint32 ip_method;
 	char *device;
 
-	guint state_to_disconnected_id;
-
 	/* PPP stats */
 	guint32 in_bytes;
 	guint32 out_bytes;
@@ -415,15 +413,6 @@ real_get_generic_capabilities (NMDevice *dev)
 	return NM_DEVICE_CAP_NM_SUPPORTED;
 }
 
-static gboolean
-unavailable_to_disconnected (gpointer user_data)
-{
-	nm_device_state_changed (NM_DEVICE (user_data),
-							 NM_DEVICE_STATE_DISCONNECTED,
-							 NM_DEVICE_STATE_REASON_NONE);
-	return FALSE;
-}
-
 static void
 device_state_changed (NMDeviceInterface *device,
 					  NMDeviceState new_state,
@@ -433,19 +422,6 @@ device_state_changed (NMDeviceInterface *device,
 {
 	NMModem *self = NM_MODEM (user_data);
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
-
-	/* Remove any previous delayed transition to disconnected */
-	if (priv->state_to_disconnected_id) {
-		g_source_remove (priv->state_to_disconnected_id);
-		priv->state_to_disconnected_id = 0;
-	}
-
-	/* If transitioning to UNAVAILBLE and we have a carrier, transition to
-	 * DISCONNECTED because the device is ready to use.	 Otherwise the carrier-on
-	 * handler will handle the transition to DISCONNECTED when the carrier is detected.
-	 */
-	if (new_state == NM_DEVICE_STATE_UNAVAILABLE)
-		priv->state_to_disconnected_id = g_idle_add (unavailable_to_disconnected, user_data);
 
 	/* Make sure we don't leave the serial device open */
 	switch (new_state) {
@@ -600,11 +576,6 @@ static void
 finalize (GObject *object)
 {
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (object);
-
-	if (priv->state_to_disconnected_id) {
-		g_source_remove (priv->state_to_disconnected_id);
-		priv->state_to_disconnected_id = 0;
-	}
 
 	if (priv->proxy)
 		g_object_unref (priv->proxy);
