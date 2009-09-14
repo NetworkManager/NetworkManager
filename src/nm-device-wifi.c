@@ -1130,7 +1130,7 @@ real_check_connection_compatible (NMDevice *device,
 }
 
 static gboolean
-real_can_activate (NMDevice *dev)
+real_is_available (NMDevice *dev)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -2253,7 +2253,7 @@ supplicant_iface_state_cb_handler (gpointer user_data)
 		 * available, transition to DISCONNECTED.
 		 */
 		if (   (nm_device_get_state (NM_DEVICE (self)) == NM_DEVICE_STATE_UNAVAILABLE)
-		    && nm_device_can_activate (NM_DEVICE (self))) {
+		    && nm_device_is_available (NM_DEVICE (self))) {
 			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED,
 			                         NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE);
 		}
@@ -3533,7 +3533,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->take_down = real_take_down;
 	parent_class->update_hw_address = real_update_hw_address;
 	parent_class->get_best_auto_connection = real_get_best_auto_connection;
-	parent_class->can_activate = real_can_activate;
+	parent_class->is_available = real_is_available;
 	parent_class->connection_secrets_updated = real_connection_secrets_updated;
 	parent_class->check_connection_compatible = real_check_connection_compatible;
 

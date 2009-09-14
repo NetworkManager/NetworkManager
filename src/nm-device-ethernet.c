@@ -491,7 +491,7 @@ real_can_interrupt_activation (NMDevice *dev)
 }
 
 static gboolean
-real_can_activate (NMDevice *dev)
+real_is_available (NMDevice *dev)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (dev);
 
@@ -1734,7 +1734,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->can_interrupt_activation = real_can_interrupt_activation;
 	parent_class->update_hw_address = real_update_hw_address;
 	parent_class->get_best_auto_connection = real_get_best_auto_connection;
-	parent_class->can_activate = real_can_activate;
+	parent_class->is_available = real_is_available;
 	parent_class->connection_secrets_updated = real_connection_secrets_updated;
 	parent_class->check_connection_compatible = real_check_connection_compatible;
 

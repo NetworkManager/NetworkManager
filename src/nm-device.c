@@ -390,10 +390,10 @@ nm_device_get_act_request (NMDevice *self)
 
 
 gboolean
-nm_device_can_activate (NMDevice *self)
+nm_device_is_available (NMDevice *self)
 {
-	if (NM_DEVICE_GET_CLASS (self)->can_activate)
-		return NM_DEVICE_GET_CLASS (self)->can_activate (self);
+	if (NM_DEVICE_GET_CLASS (self)->is_available)
+		return NM_DEVICE_GET_CLASS (self)->is_available (self);
 	return TRUE;
 }
 
@@ -3077,7 +3077,7 @@ nm_device_state_changed (NMDevice *device,
 		 * we can't change states again from the state handler for a variety of
 		 * reasons.
 		 */
-		if (nm_device_can_activate (device))
+		if (nm_device_is_available (device))
 			priv->unavailable_to_disconnected_id = g_idle_add (unavailable_to_disconnected, device);
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
