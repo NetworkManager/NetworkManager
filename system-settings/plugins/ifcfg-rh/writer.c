@@ -262,7 +262,7 @@ write_object (NMSetting8021x *s_8021x,
 		}
 	}
 
-	/* If certificate/private key was sent, the connection may no longer be
+	/* If certificate/private key wasn't sent, the connection may no longer be
 	 * 802.1x and thus we clear out the paths and certs.
 	 */
 	if (!path && !blob) {
