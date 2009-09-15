@@ -44,6 +44,8 @@ enum {
 	NM_CRYPTO_ERR_CIPHER_SET_IV_FAILED,
 	NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
 	NM_CRYPTO_ERR_INVALID_PASSWORD,
+	NM_CRYPTO_ERR_CIPHER_ENCRYPT_FAILED,
+	NM_CRYPTO_ERR_RANDOMIZE_FAILED
 };
 
 typedef enum {
@@ -107,6 +109,17 @@ char * crypto_decrypt (const char *cipher,
                        const gsize key_len,
                        gsize *out_len,
                        GError **error);
+
+char * crypto_encrypt (const char *cipher,
+                       const GByteArray *data,
+                       const char *iv,
+                       gsize iv_len,
+                       const char *key,
+                       gsize key_len,
+                       gsize *out_len,
+                       GError **error);
+
+gboolean crypto_randomize (void *buffer, gsize buffer_len, GError **error);
 
 NMCryptoFileFormat crypto_verify_cert (const unsigned char *data,
                                        gsize len,

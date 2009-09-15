@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /* NetworkManager Wireless Applet -- Display wireless access points and allow user control
  *
  * Dan Williams <dcbw@redhat.com>
@@ -17,7 +18,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2009 Red Hat, Inc.
  */
 
 #include <glib.h>
@@ -29,6 +30,8 @@
 #include <gnutls/pkcs12.h>
 
 #include "crypto.h"
+
+#define SALT_LEN 8
 
 static gboolean initialized = FALSE;
 
@@ -76,7 +79,7 @@ crypto_md5_hash (const char *salt,
 	char *p = buffer;
 
 	if (salt)
-		g_return_val_if_fail (salt_len >= 8, FALSE);
+		g_return_val_if_fail (salt_len >= SALT_LEN, FALSE);
 
 	g_return_val_if_fail (password != NULL, FALSE);
 	g_return_val_if_fail (password_len > 0, FALSE);
@@ -99,7 +102,7 @@ crypto_md5_hash (const char *salt,
 			gcry_md_write (ctx, digest, digest_len);
 		gcry_md_write (ctx, password, password_len);
 		if (salt)
-			gcry_md_write (ctx, salt, 8); /* Only use 8 bytes of salt */
+			gcry_md_write (ctx, salt, SALT_LEN); /* Only use 8 bytes of salt */
 		gcry_md_final (ctx);
 		memcpy (digest, gcry_md_read (ctx, 0), digest_len);
 		gcry_md_reset (ctx);
@@ -131,13 +134,15 @@ crypto_decrypt (const char *cipher,
 	int cipher_mech, i;
 	char *output = NULL;
 	gboolean success = FALSE;
-	gsize pad_len;
+	gsize pad_len, real_iv_len;
 
-	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC))
+	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC)) {
 		cipher_mech = GCRY_CIPHER_3DES;
-	else if (!strcmp (cipher, CIPHER_DES_CBC))
+		real_iv_len = SALT_LEN;
+	} else if (!strcmp (cipher, CIPHER_DES_CBC)) {
 		cipher_mech = GCRY_CIPHER_DES;
-	else {
+		real_iv_len = SALT_LEN;
+	} else {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_UNKNOWN_CIPHER,
 		             _("Private key cipher '%s' was unknown."),
@@ -145,7 +150,15 @@ crypto_decrypt (const char *cipher,
 		return NULL;
 	}
 
-	output = g_malloc0 (data->len + 1);
+	if (iv_len < real_iv_len) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_RAW_IV_INVALID,
+		             _("Invalid IV length (must be at least %zd)."),
+		             real_iv_len);
+		return NULL;
+	}
+
+	output = g_malloc0 (data->len);
 	if (!output) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_OUT_OF_MEMORY,
@@ -190,6 +203,14 @@ crypto_decrypt (const char *cipher,
 	}
 	pad_len = output[data->len - 1];
 
+	/* Check if the padding at the end of the decrypted data is valid */
+	if (pad_len == 0 || pad_len > real_iv_len) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
+		             _("Failed to decrypt the private key: unexpected padding length."));
+		goto out;
+	}
+
 	/* Validate tail padding; last byte is the padding size, and all pad bytes
 	 * should contain the padding size.
 	 */
@@ -203,7 +224,6 @@ crypto_decrypt (const char *cipher,
 	}
 
 	*out_len = data->len - pad_len;
-	output[*out_len] = '\0';
 	success = TRUE;
 
 out:
@@ -211,6 +231,113 @@ out:
 		if (output) {
 			/* Don't expose key material */
 			memset (output, 0, data->len);
+			g_free (output);
+			output = NULL;
+		}
+	}
+	gcry_cipher_close (ctx);
+	return output;
+}
+
+char *
+crypto_encrypt (const char *cipher,
+                const GByteArray *data,
+                const char *iv,
+                const gsize iv_len,
+                const char *key,
+                gsize key_len,
+                gsize *out_len,
+                GError **error)
+{
+	gcry_cipher_hd_t ctx;
+	gcry_error_t err;
+	int cipher_mech;
+	char *output = NULL;
+	gboolean success = FALSE;
+	gsize padded_buf_len, pad_len, output_len;
+	char *padded_buf = NULL;
+	guint32 i;
+
+	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC))
+		cipher_mech = GCRY_CIPHER_3DES;
+	else {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_UNKNOWN_CIPHER,
+		             _("Private key cipher '%s' was unknown."),
+		             cipher);
+		return NULL;
+	}
+
+	/* If data->len % ivlen == 0, then we add another complete block
+	 * onto the end so that the decrypter knows there's padding.
+	 */
+	pad_len = iv_len - (data->len % iv_len);
+	output_len = padded_buf_len = data->len + pad_len;
+	padded_buf = g_malloc0 (padded_buf_len);
+
+	memcpy (padded_buf, data->data, data->len);
+	for (i = 0; i < pad_len; i++)
+		padded_buf[data->len + i] = (guint8) (pad_len & 0xFF);
+
+	output = g_malloc0 (output_len);
+	if (!output) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_OUT_OF_MEMORY,
+		             _("Could not allocate memory for encrypting."));
+		return NULL;
+	}
+
+	err = gcry_cipher_open (&ctx, cipher_mech, GCRY_CIPHER_MODE_CBC, 0);
+	if (err) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_CIPHER_INIT_FAILED,
+		             _("Failed to initialize the encryption cipher context: %s / %s."),
+		             gcry_strsource (err), gcry_strerror (err));
+		goto out;
+	}
+
+	err = gcry_cipher_setkey (ctx, key, key_len);
+	if (err) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_CIPHER_SET_KEY_FAILED,
+		             _("Failed to set symmetric key for encryption: %s / %s."),
+		             gcry_strsource (err), gcry_strerror (err));
+		goto out;
+	}
+
+	/* gcrypt only wants 8 bytes of the IV (same as the DES block length) */
+	err = gcry_cipher_setiv (ctx, iv, SALT_LEN);
+	if (err) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_CIPHER_SET_IV_FAILED,
+		             _("Failed to set IV for encryption: %s / %s."),
+		             gcry_strsource (err), gcry_strerror (err));
+		goto out;
+	}
+
+	err = gcry_cipher_encrypt (ctx, output, output_len, padded_buf, padded_buf_len);
+	if (err) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
+		             _("Failed to encrypt the data: %s / %s."),
+		             gcry_strsource (err), gcry_strerror (err));
+		goto out;
+	}
+
+	*out_len = output_len;
+	success = TRUE;
+
+out:
+	if (padded_buf) {
+		memset (padded_buf, 0, padded_buf_len);
+		g_free (padded_buf);
+		padded_buf = NULL;
+	}
+
+	if (!success) {
+		if (output) {
+			/* Don't expose key material */
+			memset (output, 0, output_len);
 			g_free (output);
 			output = NULL;
 		}
@@ -310,5 +437,12 @@ crypto_verify_pkcs12 (const GByteArray *data,
 out:
 	gnutls_pkcs12_deinit (p12);
 	return success;
+}
+
+gboolean
+crypto_randomize (void *buffer, gsize buffer_len, GError **error)
+{
+	gcry_randomize (buffer, buffer_len, GCRY_STRONG_RANDOM);
+	return TRUE;
 }
 

@@ -21,7 +21,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2005 - 2008 Red Hat, Inc.
+ * (C) Copyright 2005 - 2009 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -34,6 +34,7 @@
 
 #include <glib.h>
 #include <glib-object.h>
+#include <glib/gi18n.h>
 #include <dbus/dbus-glib.h>
 #include <uuid/uuid.h>
 
@@ -1496,5 +1497,207 @@ nm_utils_uuid_generate_from_string (const char *s)
 out:
 	g_free (uuid);
 	return buf;
+}
+
+static char *
+make_key (const char *salt,
+          const gsize salt_len,
+          const char *password,
+          gsize *out_len,
+          GError **error)
+{
+	char *key;
+	guint32 digest_len = 24; /* DES-EDE3-CBC */
+
+	g_return_val_if_fail (salt != NULL, NULL);
+	g_return_val_if_fail (salt_len >= 8, NULL);
+	g_return_val_if_fail (password != NULL, NULL);
+	g_return_val_if_fail (out_len != NULL, NULL);
+
+	key = g_malloc0 (digest_len + 1);
+	if (!key) {
+		g_set_error (error,
+		             NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_OUT_OF_MEMORY,
+		             _("Not enough memory to make encryption key."));
+		return NULL;
+	}
+
+	if (!crypto_md5_hash (salt, salt_len, password, strlen (password), key, digest_len, error)) {
+		*out_len = 0;
+		memset (key, 0, digest_len);
+		g_free (key);
+		key = NULL;
+	} else
+		*out_len = digest_len;
+
+	return key;
+}
+
+/*
+ * utils_bin2hexstr
+ *
+ * Convert a byte-array into a hexadecimal string.
+ *
+ * Code originally by Alex Larsson <alexl@redhat.com> and
+ *  copyright Red Hat, Inc. under terms of the LGPL.
+ *
+ */
+static char *
+utils_bin2hexstr (const char *bytes, int len, int final_len)
+{
+	static char hex_digits[] = "0123456789abcdef";
+	char *result;
+	int i;
+	gsize buflen = (len * 2) + 1;
+
+	g_return_val_if_fail (bytes != NULL, NULL);
+	g_return_val_if_fail (len > 0, NULL);
+	g_return_val_if_fail (len < 4096, NULL);   /* Arbitrary limit */
+	if (final_len > -1)
+		g_return_val_if_fail (final_len < buflen, NULL);
+
+	result = g_malloc0 (buflen);
+	for (i = 0; i < len; i++)
+	{
+		result[2*i] = hex_digits[(bytes[i] >> 4) & 0xf];
+		result[2*i+1] = hex_digits[bytes[i] & 0xf];
+	}
+	/* Cut converted key off at the correct length for this cipher type */
+	if (final_len > -1)
+		result[final_len] = '\0';
+	else
+		result[buflen - 1] = '\0';
+
+	return result;
+}
+
+/**
+ * nm_utils_rsa_key_encrypt:
+ * @data: RSA private key data to be encrypted
+ * @in_password: existing password to use, if any
+ * @out_password: if @in_password was NULL, a random password will be generated
+ *  and returned in this argument
+ * @error: detailed error information on return, if an error occurred
+ *
+ * Encrypts the given RSA private key data with the given password (or generates
+ * a password if no password was given) and converts the data to PEM format
+ * suitable for writing to a file.
+ *
+ * Returns: on success, PEM-formatted data suitable for writing to a PEM-formatted
+ * certificate/private key file.
+ **/
+GByteArray *
+nm_utils_rsa_key_encrypt (const GByteArray *data,
+                          const char *in_password,
+                          char **out_password,
+                          GError **error)
+{
+	char salt[8];
+	char *key = NULL, *enc = NULL, *pw_buf[32];
+	gsize key_len = 0, enc_len = 0;
+	GString *pem = NULL;
+	char *tmp, *tmp_password = NULL;
+	gboolean success = FALSE;
+	int left;
+	const char *p;
+	GByteArray *ret = NULL;
+
+	g_return_val_if_fail (data != NULL, NULL);
+	g_return_val_if_fail (data->len > 0, NULL);
+	if (out_password)
+		g_return_val_if_fail (*out_password == NULL, NULL);
+
+	/* Make the password if needed */
+	if (!in_password) {
+		if (!crypto_randomize (pw_buf, sizeof (pw_buf), error))
+			return NULL;
+		in_password = tmp_password = utils_bin2hexstr ((const char *) pw_buf, sizeof (pw_buf), -1);
+	}
+
+	if (!crypto_randomize (salt, sizeof (salt), error))
+		goto out;
+
+	key = make_key (&salt[0], sizeof (salt), in_password, &key_len, error);
+	if (!key)
+		goto out;
+
+	enc = crypto_encrypt (CIPHER_DES_EDE3_CBC, data, salt, sizeof (salt), key, key_len, &enc_len, error);
+	if (!enc)
+		goto out;
+
+	pem = g_string_sized_new (enc_len * 2 + 100);
+	if (!pem) {
+		g_set_error_literal (error, NM_CRYPTO_ERROR,
+		                     NM_CRYPTO_ERR_OUT_OF_MEMORY,
+		                     _("Could not allocate memory for PEM file creation."));
+		goto out;
+	}
+
+	g_string_append (pem, "-----BEGIN RSA PRIVATE KEY-----\n");
+	g_string_append (pem, "Proc-Type: 4,ENCRYPTED\n");
+
+	/* Convert the salt to a hex string */
+	tmp = utils_bin2hexstr ((const char *) salt, sizeof (salt), 16);
+	if (!tmp) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_OUT_OF_MEMORY,
+		             _("Could not allocate memory for writing IV to PEM file."));
+		goto out;
+	}
+
+	g_string_append_printf (pem, "DEK-Info: DES-EDE3-CBC,%s\n\n", tmp);
+	g_free (tmp);
+
+	/* Convert the encrypted key to a base64 string */
+	p = tmp = g_base64_encode ((const guchar *) enc, enc_len);
+	if (!tmp) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_OUT_OF_MEMORY,
+		             _("Could not allocate memory for writing encrypted key to PEM file."));
+		goto out;
+	}
+
+	left = strlen (tmp);
+	while (left > 0) {
+		g_string_append_len (pem, p, (left < 64) ? left : 64);
+		g_string_append_c (pem, '\n');
+		left -= 64;
+		p += 64;
+	}
+	g_free (tmp);
+
+	g_string_append (pem, "-----END RSA PRIVATE KEY-----\n");
+
+	ret = g_byte_array_sized_new (pem->len);
+	if (!ret) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_OUT_OF_MEMORY,
+		             _("Could not allocate memory for PEM file data."));
+		goto out;
+	}
+	g_byte_array_append (ret, (const unsigned char *) pem->str, pem->len);
+	if (tmp_password && out_password)
+		*out_password = g_strdup (tmp_password);
+	success = TRUE;
+
+out:
+	if (key) {
+		memset (key, 0, key_len);
+		g_free (key);
+	}
+	if (!enc) {
+		memset (enc, 0, enc_len);
+		g_free (enc);
+	}
+	if (pem)
+		g_string_free (pem, TRUE);
+
+	if (tmp_password) {
+		memset (tmp_password, 0, strlen (tmp_password));
+		g_free (tmp_password);
+	}
+
+	return ret;
 }
 

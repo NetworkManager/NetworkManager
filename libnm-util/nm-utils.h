@@ -205,4 +205,9 @@ void nm_utils_ip6_dns_to_gvalue (GSList *list, GValue *value);
 char *nm_utils_uuid_generate (void);
 char *nm_utils_uuid_generate_from_string (const char *s);
 
+GByteArray *nm_utils_rsa_key_encrypt (const GByteArray *data,
+                                      const char *in_password,
+                                      char **out_password,
+                                      GError **error);
+
 #endif /* NM_UTILS_H */

@@ -16,9 +16,7 @@ libifcfg_rh_io_la_SOURCES = \
 	errors.c \
 	common.h \
 	utils.c \
-	utils.h \
-	crypto.c \
-	crypto.h
+	utils.h
 
 INCLUDES = \
 	-I$(top_srcdir)/src/system-settings \
@@ -35,7 +33,10 @@ libifcfg_rh_io_la_CPPFLAGS = \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DSBINDIR=\"$(sbindir)\"
 
-libifcfg_rh_io_la_LIBADD = $(GLIB_LIBS) $(NSS_LIBS)
+libifcfg_rh_io_la_LIBADD = \
+	$(top_builddir)/libnm-util/libnm-util.la \
+	$(GLIB_LIBS) \
+	$(NSS_LIBS)
 
 libnm_settings_plugin_ifcfg_rh_la_SOURCES = \
 	plugin.c \

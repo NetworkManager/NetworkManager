@@ -18,7 +18,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2009 Red Hat, Inc.
  */
 
 #include <glib.h>
@@ -30,6 +30,7 @@
 
 #include "nm-test-helpers.h"
 #include "crypto.h"
+#include "nm-utils.h"
 
 #if 0
 static const char *pem_rsa_key_begin = "-----BEGIN RSA PRIVATE KEY-----";
@@ -216,6 +217,67 @@ test_is_pkcs12 (const char *path, gboolean expect_fail, const char *desc)
 	ASSERT (is_pkcs12 == TRUE, desc, "couldn't read PKCS#12 file '%s'", path);
 }
 
+static void
+test_encrypt_private_key (const char *path,
+                          const char *password,
+                          const char *desc)
+{
+	NMCryptoKeyType key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
+	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	GByteArray *array, *encrypted, *re_decrypted;
+	GError *error = NULL;
+
+	array = crypto_get_private_key (path, password, &key_type, &format, &error);
+
+	ASSERT (array != NULL, desc,
+	        "couldn't read private key file '%s': %d %s",
+	        path, error->code, error->message);
+
+	ASSERT (format == NM_CRYPTO_FILE_FORMAT_RAW_KEY, desc,
+	        "%s: unexpected private key file format (expected %d, got %d)",
+	        path, NM_CRYPTO_FILE_FORMAT_RAW_KEY, format);
+
+	ASSERT (key_type == NM_CRYPTO_KEY_TYPE_RSA, desc,
+	        "%s: unexpected private key type (expected %d, got %d)",
+	        path, NM_CRYPTO_KEY_TYPE_RSA, format);
+
+	/* Now re-encrypt the private key */
+	encrypted = nm_utils_rsa_key_encrypt (array, password, NULL, &error);
+	ASSERT (encrypted != NULL, desc,
+	        "couldn't re-encrypt private key file '%s': %d %s",
+	        path, error->code, error->message);
+
+	/* Then re-decrypt the private key */
+	key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
+	format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	re_decrypted = crypto_get_private_key_data (encrypted, password, &key_type, &format, &error);
+
+	ASSERT (re_decrypted != NULL, desc,
+	        "couldn't read private key file '%s': %d %s",
+	        path, error->code, error->message);
+
+	ASSERT (format == NM_CRYPTO_FILE_FORMAT_RAW_KEY, desc,
+	        "%s: unexpected private key file format (expected %d, got %d)",
+	        path, NM_CRYPTO_FILE_FORMAT_RAW_KEY, format);
+
+	ASSERT (key_type == NM_CRYPTO_KEY_TYPE_RSA, desc,
+	        "%s: unexpected private key type (expected %d, got %d)",
+	        path, NM_CRYPTO_KEY_TYPE_RSA, format);
+
+	/* Compare the original decrypted key with the re-decrypted key */
+	ASSERT (array->len == re_decrypted->len, desc,
+	        "%s: unexpected re-decrypted private key length (expected %d, got %d)",
+	        path, array->len, re_decrypted->len);
+
+	ASSERT (!memcmp (array->data, re_decrypted->data, array->len), desc,
+	        "%s: unexpected private key data",
+	        path);
+
+	g_byte_array_free (re_decrypted, TRUE);
+	g_byte_array_free (encrypted, TRUE);
+	g_byte_array_free (array, TRUE);
+}
+
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
@@ -249,6 +311,8 @@ int main (int argc, char **argv)
 	test_load_pkcs12 (pk12, "blahblahblah", TRUE, "pkcs12-private-key-bad-password");
 	test_is_pkcs12 (pk12, FALSE, "is-pkcs12");
 	test_is_pkcs12 (priv_key, TRUE, "is-pkcs12-not-pkcs12");
+
+	test_encrypt_private_key (priv_key, priv_key_password, "private-key");
 
 	crypto_deinit ();
 

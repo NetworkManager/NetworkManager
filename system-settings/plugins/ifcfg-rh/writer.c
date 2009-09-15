@@ -35,6 +35,7 @@
 #include <nm-setting-8021x.h>
 #include <nm-setting-ip4-config.h>
 #include <nm-setting-pppoe.h>
+#include <nm-utils.h>
 
 #include "common.h"
 #include "shvar.h"
@@ -381,30 +382,17 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 	 * private key file, it'll be encrypted, so we don't need to re-encrypt.
 	 */
 	if (blob && !is_pkcs12) {
-		GByteArray *array;
-
-		/* If the private key is an unencrypted blob, re-encrypt it with a
-		 * random password since we don't store unencrypted private keys on disk.
-		 */
-		if (!password) {
-			/* Create a random private key */
-			array = crypto_random (32, error);
-			if (!array)
-				goto out;
-
-			password = generated_pw = utils_bin2hexstr ((const char *) array->data, array->len, -1);
-			memset (array->data, 0, array->len);
-			g_byte_array_free (array, TRUE);
-		}
-
 		/* Encrypt the unencrypted private key with the fake password */
-		enc_key = crypto_key_to_pem (blob, password, error);
+		enc_key = nm_utils_rsa_key_encrypt (blob, password, &generated_pw, error);
 		if (!enc_key)
 			goto out;
+
+		if (generated_pw)
+			password = generated_pw;
 	}
 
 	/* Save the private key */
-	if (!write_object (s_8021x, ifcfg, enc_key, otype, error))
+	if (!write_object (s_8021x, ifcfg, enc_key ? enc_key : blob, otype, error))
 		goto out;
 
 	/* Private key password */

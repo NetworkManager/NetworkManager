@@ -18,7 +18,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2009 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -147,8 +147,7 @@ crypto_decrypt (const char *cipher,
                 GError **error)
 {
 	char *output = NULL;
-	int tmp1_len = 0;
-	unsigned int tmp2_len = 0;
+	int decrypted_len = 0;
 	CK_MECHANISM_TYPE cipher_mech;
 	PK11SlotInfo *slot = NULL;
 	SECItem key_item;
@@ -157,13 +156,16 @@ crypto_decrypt (const char *cipher,
 	PK11Context *ctx = NULL;
 	SECStatus s;
 	gboolean success = FALSE;
-	gsize len;
+	unsigned int pad_len = 0;
+	guint32 i, real_iv_len = 0;
 
-	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC))
+	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC)) {
 		cipher_mech = CKM_DES3_CBC_PAD;
-	else if (!strcmp (cipher, CIPHER_DES_CBC))
+		real_iv_len = 8;
+	} else if (!strcmp (cipher, CIPHER_DES_CBC)) {
 		cipher_mech = CKM_DES_CBC_PAD;
-	else {
+		real_iv_len = 8;
+	} else {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_UNKNOWN_CIPHER,
 		             _("Private key cipher '%s' was unknown."),
@@ -171,7 +173,15 @@ crypto_decrypt (const char *cipher,
 		return NULL;
 	}
 
-	output = g_malloc0 (data->len + 1);
+	if (iv_len < real_iv_len) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_RAW_IV_INVALID,
+		             _("Invalid IV length (must be at least %d)."),
+		             real_iv_len);
+		return NULL;
+	}
+
+	output = g_malloc0 (data->len);
 	if (!output) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_OUT_OF_MEMORY,
@@ -198,7 +208,7 @@ crypto_decrypt (const char *cipher,
 	}
 
 	key_item.data = (unsigned char *) iv;
-	key_item.len = iv_len;
+	key_item.len = real_iv_len;
 	sec_param = PK11_ParamFromIV (cipher_mech, &key_item);
 	if (!sec_param) {
 		g_set_error (error, NM_CRYPTO_ERROR,
@@ -217,7 +227,7 @@ crypto_decrypt (const char *cipher,
 
 	s = PK11_CipherOp (ctx,
 	                   (unsigned char *) output,
-	                   &tmp1_len,
+	                   &decrypted_len,
 	                   data->len,
 	                   data->data,
 	                   data->len);
@@ -229,10 +239,17 @@ crypto_decrypt (const char *cipher,
 		goto out;
 	}
 
+	if (decrypted_len > data->len) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
+		             _("Failed to decrypt the private key: decrypted data too large."));
+		goto out;
+	}
+
 	s = PK11_DigestFinal (ctx,
-	                      (unsigned char *) (output + tmp1_len),
-	                      &tmp2_len,
-	                      data->len - tmp1_len);
+	                      (unsigned char *) (output + decrypted_len),
+	                      &pad_len,
+	                      data->len - decrypted_len);
 	if (s != SECSuccess) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
@@ -240,12 +257,29 @@ crypto_decrypt (const char *cipher,
 		             PORT_GetError ());
 		goto out;
 	}
-	len = tmp1_len + tmp2_len;
-	if (len > data->len)
-		goto out;
+	pad_len = data->len - decrypted_len;
 
-	*out_len = len;
-	output[*out_len] = '\0';
+	/* Check if the padding at the end of the decrypted data is valid */
+	if (pad_len == 0 || pad_len > real_iv_len) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
+		             _("Failed to decrypt the private key: unexpected padding length."));
+		goto out;
+	}
+
+	/* Validate tail padding; last byte is the padding size, and all pad bytes
+	 * should contain the padding size.
+	 */
+	for (i = 1; i <= pad_len; ++i) {
+		if (output[data->len - i] != pad_len) {
+			g_set_error (error, NM_CRYPTO_ERROR,
+			             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
+			             _("Failed to decrypt the private key."));
+			goto out;
+		}
+	}
+
+	*out_len = decrypted_len;
 	success = TRUE;
 
 out:
@@ -267,6 +301,134 @@ out:
 		}
 	}
 	return output;
+}
+
+char *
+crypto_encrypt (const char *cipher,
+                const GByteArray *data,
+                const char *iv,
+                gsize iv_len,
+                const char *key,
+                gsize key_len,
+                gsize *out_len,
+                GError **error)
+{
+	SECStatus ret;
+	CK_MECHANISM_TYPE cipher_mech = CKM_DES3_CBC_PAD;
+	PK11SlotInfo *slot = NULL;
+	SECItem key_item = { .data = (unsigned char *) key, .len = key_len };
+	SECItem iv_item = { .data = (unsigned char *) iv, .len = iv_len };
+	PK11SymKey *sym_key = NULL;
+	SECItem *sec_param = NULL;
+	PK11Context *ctx = NULL;
+	unsigned char *output, *padded_buf;
+	gsize output_len;
+	int encrypted_len = 0, i;
+	gboolean success = FALSE;
+	gsize padded_buf_len, pad_len;
+
+	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC))
+		cipher_mech = CKM_DES3_CBC_PAD;
+	else {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_UNKNOWN_CIPHER,
+		             _("Private key cipher '%s' was unknown."),
+		             cipher);
+		return NULL;
+	}
+
+	/* If data->len % ivlen == 0, then we add another complete block
+	 * onto the end so that the decrypter knows there's padding.
+	 */
+	pad_len = iv_len - (data->len % iv_len);
+	output_len = padded_buf_len = data->len + pad_len;
+	padded_buf = g_malloc0 (padded_buf_len);
+
+	memcpy (padded_buf, data->data, data->len);
+	for (i = 0; i < pad_len; i++)
+		padded_buf[data->len + i] = (guint8) (pad_len & 0xFF);
+
+	output = g_malloc0 (output_len);
+	if (!output) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_OUT_OF_MEMORY,
+		             _("Could not allocate memory for encrypting."));
+		return NULL;
+	}
+
+	slot = PK11_GetBestSlot (cipher_mech, NULL);
+	if (!slot) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_CIPHER_INIT_FAILED,
+		             _("Failed to initialize the encryption cipher slot."));
+		goto out;
+	}
+
+	sym_key = PK11_ImportSymKey (slot, cipher_mech, PK11_OriginUnwrap, CKA_ENCRYPT, &key_item, NULL);
+	if (!sym_key) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_CIPHER_SET_KEY_FAILED,
+		             _("Failed to set symmetric key for encryption."));
+		goto out;
+	}
+
+	sec_param = PK11_ParamFromIV (cipher_mech, &iv_item);
+	if (!sec_param) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_CIPHER_SET_IV_FAILED,
+		             _("Failed to set IV for encryption."));
+		goto out;
+	}
+
+	ctx = PK11_CreateContextBySymKey (cipher_mech, CKA_ENCRYPT, sym_key, sec_param);
+	if (!ctx) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_CIPHER_INIT_FAILED,
+		             _("Failed to initialize the encryption context."));
+		goto out;
+	}
+
+	ret = PK11_CipherOp (ctx, output, &encrypted_len, output_len, padded_buf, padded_buf_len);
+	if (ret != SECSuccess) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_CIPHER_ENCRYPT_FAILED,
+		             _("Failed to encrypt: %d."),
+		             PORT_GetError ());
+		goto out;
+	}
+
+	if (encrypted_len != output_len) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_CIPHER_ENCRYPT_FAILED,
+		             _("Unexpected amount of data after encrypting."));
+		goto out;
+	}
+
+	*out_len = encrypted_len;
+	success = TRUE;
+
+out:
+	if (ctx)
+		PK11_DestroyContext (ctx, PR_TRUE);
+	if (sym_key)
+		PK11_FreeSymKey (sym_key);
+	if (sec_param)
+		SECITEM_FreeItem (sec_param, PR_TRUE);
+	if (slot)
+		PK11_FreeSlot (slot);
+
+	if (padded_buf) {
+		memset (padded_buf, 0, padded_buf_len);
+		g_free (padded_buf);
+		padded_buf = NULL;
+	}
+
+	if (!success) {
+		memset (output, 0, output_len);
+		g_free (output);
+		output = NULL;
+	}
+	return (char *) output;
 }
 
 NMCryptoFileFormat
@@ -380,5 +542,20 @@ error:
 
 	SECITEM_ZfreeItem (&pw, PR_FALSE);
 	return FALSE;
+}
+
+gboolean
+crypto_randomize (void *buffer, gsize buffer_len, GError **error)
+{
+	SECStatus s;
+
+	s = PK11_GenerateRandom (buffer, buffer_len);
+	if (s != SECSuccess) {
+		g_set_error_literal (error, NM_CRYPTO_ERROR,
+		                     NM_CRYPTO_ERR_RANDOMIZE_FAILED,
+		                     _("Could not generate random data."));
+		return FALSE;
+	}
+	return TRUE;
 }
 

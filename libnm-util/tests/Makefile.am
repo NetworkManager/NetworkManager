@@ -26,6 +26,7 @@ test_crypto_CPPFLAGS = \
 
 test_crypto_LDADD = \
 	$(top_builddir)/libnm-util/libtest-crypto.la \
+	$(top_builddir)/libnm-util/libnm-util.la \
 	$(GLIB_LIBS)
 
 

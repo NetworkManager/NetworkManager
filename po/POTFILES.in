@@ -4,6 +4,7 @@
 libnm-util/crypto.c
 libnm-util/crypto_gnutls.c
 libnm-util/crypto_nss.c
+libnm-util/nm-utils.c
 src/nm-netlink-monitor.c
 src/NetworkManager.c
 src/dhcp-manager/nm-dhcp-dhclient.c

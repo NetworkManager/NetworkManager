@@ -322,6 +322,7 @@ global:
 	nm_setting_olpc_mesh_get_channel;
 	nm_setting_olpc_mesh_get_dhcp_anycast_address;
 	nm_utils_deinit;
+	nm_utils_rsa_key_encrypt;
 	nm_utils_escape_ssid;
 	nm_utils_gvalue_hash_dup;
 	nm_utils_init;
