@@ -186,7 +186,7 @@ get_secrets (NMSettingsConnectionInterface *connection,
 	call->user_data = user_data;
 	call->proxy = priv->secrets_proxy;
 
-	call->call = org_freedesktop_NetworkManagerSettings_Connection_Secrets_get_secrets_async (priv->proxy,
+	call->call = org_freedesktop_NetworkManagerSettings_Connection_Secrets_get_secrets_async (priv->secrets_proxy,
 	                                                                                          setting_name,
 	                                                                                          hints,
 	                                                                                          request_new,
