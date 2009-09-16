@@ -1262,6 +1262,7 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *self,
 {
 	NMSetting8021xPrivate *priv;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	NMCryptoKeyType key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
 	GByteArray *data;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
@@ -1292,6 +1293,26 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *self,
 	if (!value)
 		return TRUE;
 
+	/* First verify private key password */
+	data = crypto_get_private_key (value,
+	                               password,
+	                               &key_type,
+	                               &format,
+	                               error);
+	if (!data) {
+		/* As a special case for private keys, even if the decrypt fails,
+		 * return the key's file type.
+		 */
+		if (out_format && crypto_is_pkcs12_file (value, NULL))
+			*out_format = NM_SETTING_802_1X_CK_FORMAT_PKCS12;
+
+		return FALSE;
+	}
+	memset (data->data, 0, data->len);
+	g_byte_array_free (data, TRUE);
+
+	/* Regular file verification */
+	format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	data = crypto_load_and_verify_certificate (value, &format, error);
 	if (data) {
 		/* wpa_supplicant can only use raw x509 CA certs */
@@ -1319,7 +1340,7 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *self,
 		}
 
 		if (data) {
-			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
+			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
 				priv->private_key = data;
 
 				/* Always update the private key for blob + pkcs12 since the
@@ -1327,7 +1348,7 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *self,
 				 */
 				if (format == NM_CRYPTO_FILE_FORMAT_PKCS12)
 					priv->private_key_password = g_strdup (password);
-			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
+			} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
 				/* Add the path scheme tag to the front, then the fielname */
 				priv->private_key = g_byte_array_sized_new (strlen (value) + strlen (SCHEME_PATH) + 1);
 				g_byte_array_append (priv->private_key, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
@@ -1538,6 +1559,7 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
 {
 	NMSetting8021xPrivate *priv;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	NMCryptoKeyType key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
 	GByteArray *data;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
@@ -1568,6 +1590,25 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
 	if (!value)
 		return TRUE;
 
+	/* First verify private key password */
+	data = crypto_get_private_key (value,
+	                               password,
+	                               &key_type,
+	                               &format,
+	                               error);
+	if (!data) {
+		/* As a special case for private keys, even if the decrypt fails,
+		 * return the key's file type.
+		 */
+		if (out_format && crypto_is_pkcs12_file (value, NULL))
+			*out_format = NM_SETTING_802_1X_CK_FORMAT_PKCS12;
+
+		return FALSE;
+	}
+	memset (data->data, 0, data->len);
+	g_byte_array_free (data, TRUE);
+
+	format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	data = crypto_load_and_verify_certificate (value, &format, error);
 	if (data) {
 		/* wpa_supplicant can only use raw x509 CA certs */
@@ -1595,7 +1636,7 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
 		}
 
 		if (data) {
-			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
+			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
 				priv->phase2_private_key = data;
 
 				/* Always update the private key for blob + pkcs12 since the
@@ -1603,7 +1644,7 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
 				 */
 				if (format == NM_CRYPTO_FILE_FORMAT_PKCS12)
 					priv->phase2_private_key_password = g_strdup (password);
-			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
+			} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
 				/* Add the path scheme tag to the front, then the fielname */
 				priv->phase2_private_key = g_byte_array_sized_new (strlen (value) + strlen (SCHEME_PATH) + 1);
 				g_byte_array_append (priv->phase2_private_key, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
