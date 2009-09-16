@@ -25,6 +25,9 @@
 #include "nm-utils.h"
 #include "nm-properties-changed-signal.h"
 
+static gboolean impl_device_disconnect (NMDeviceInterface *device,
+                                        GError **error);
+
 #include "nm-device-interface-glue.h"
 
 GQuark
@@ -268,6 +271,23 @@ nm_device_interface_activate (NMDeviceInterface *device,
 		g_assert (*error);
 
 	return success;
+}
+
+gboolean
+nm_device_interface_disconnect (NMDeviceInterface *device,
+                                GError **error)
+{
+	g_return_val_if_fail (device, FALSE);
+
+	return NM_DEVICE_INTERFACE_GET_INTERFACE (device)->disconnect (device, error);
+}
+
+
+static gboolean
+impl_device_disconnect (NMDeviceInterface *device,
+                        GError **error)
+{
+	return nm_device_interface_disconnect (device, error);
 }
 
 void

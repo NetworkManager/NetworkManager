@@ -179,6 +179,8 @@ void nm_device_set_managed (NMDevice *device,
 void nm_device_set_dhcp_timeout (NMDevice *device, guint32 timeout);
 void nm_device_set_dhcp_anycast_address (NMDevice *device, guint8 *addr);
 
+void nm_device_clear_autoconnect_inhibit (NMDevice *device);
+
 G_END_DECLS
 
 #endif	/* NM_DEVICE_H */

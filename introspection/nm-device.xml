@@ -58,6 +58,12 @@
       </tp:docstring>
     </property>
 
+    <method name="Disconnect">
+      <tp:docstring>
+        Manually disconnect a device
+      </tp:docstring>
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_disconnect"/>
+    </method>
 
     <signal name="StateChanged">
       <arg name="new_state" type="u" tp:type="NM_DEVICE_STATE">

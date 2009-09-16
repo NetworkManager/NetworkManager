@@ -127,6 +127,9 @@ typedef struct {
 	gulong         ip6_addrconf_sigid;
 	gulong         ip6_config_changed_sigid;
 	gboolean       ip6_waiting_for_config;
+
+	/* inhibit autoconnect feature */
+	gboolean	autoconnect_inhibit;
 } NMDevicePrivate;
 
 static gboolean check_connection_compatible (NMDeviceInterface *device,
@@ -136,6 +139,7 @@ static gboolean nm_device_activate (NMDeviceInterface *device,
                                     NMActRequest *req,
                                     GError **error);
 static void nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason);
+static gboolean device_disconnect (NMDeviceInterface *device, GError **error);
 static gboolean spec_match_list (NMDeviceInterface *device, const GSList *specs);
 static NMConnection *connection_match_config (NMDeviceInterface *device, const GSList *connections);
 
@@ -162,6 +166,7 @@ device_interface_init (NMDeviceInterface *device_interface_class)
 	device_interface_class->check_connection_compatible = check_connection_compatible;
 	device_interface_class->activate = nm_device_activate;
 	device_interface_class->deactivate = nm_device_deactivate;
+	device_interface_class->disconnect = device_disconnect;
 	device_interface_class->spec_match_list = spec_match_list;
 	device_interface_class->connection_match_config = connection_match_config;
 }
@@ -410,6 +415,7 @@ autoconnect_allowed_accumulator (GSignalInvocationHint *ihint,
 gboolean
 nm_device_autoconnect_allowed (NMDevice *self)
 {
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	GValue instance = { 0, };
 	GValue retval = { 0, };
 
@@ -417,7 +423,10 @@ nm_device_autoconnect_allowed (NMDevice *self)
 	g_value_take_object (&instance, self);
 
 	g_value_init (&retval, G_TYPE_BOOLEAN);
-	g_value_set_boolean (&retval, TRUE);
+	if (priv->autoconnect_inhibit)
+		g_value_set_boolean (&retval, FALSE);
+	else
+		g_value_set_boolean (&retval, TRUE);
 
 	/* Use g_signal_emitv() rather than g_signal_emit() to avoid the return
 	 * value being changed if no handlers are connected */
@@ -2067,6 +2076,17 @@ nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason)
 }
 
 static gboolean
+device_disconnect (NMDeviceInterface *device,
+                   GError **error)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (NM_DEVICE (device));
+	priv->autoconnect_inhibit = TRUE;	
+	nm_device_deactivate (device, NM_DEVICE_STATE_REASON_USER_REQUESTED);
+	nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_USER_REQUESTED);
+	return TRUE;
+}
+
+static gboolean
 check_connection_compatible (NMDeviceInterface *dev_iface,
                              NMConnection *connection,
                              GError **error)
@@ -3061,6 +3081,7 @@ nm_device_state_changed (NMDevice *device,
 			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device), reason);
 		break;
 	default:
+		priv->autoconnect_inhibit = FALSE;
 		break;
 	}
 
@@ -3197,4 +3218,12 @@ nm_device_set_dhcp_anycast_address (NMDevice *device, guint8 *addr)
 	}
 }
 
+
+void
+nm_device_clear_autoconnect_inhibit (NMDevice *device)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	g_return_if_fail (priv);
+	priv->autoconnect_inhibit = FALSE;
+}
 
