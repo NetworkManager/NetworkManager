@@ -452,9 +452,11 @@ nm_setting_802_1x_get_ca_cert_path (NMSetting8021x *setting)
 /**
  * nm_setting_802_1x_set_ca_cert:
  * @setting: the #NMSetting8021x
- * @filename: path of the CA certificate file (PEM or DER format).  Filename
- *   must be UTF-8 encoded; use g_filename_to_utf8() to convert if needed.  Pass
- *   NULL to clear the CA certificate.
+ * @value: when @scheme is set to either %NM_SETTING_802_1X_CK_SCHEME_PATH or
+ *   %NM_SETTING_802_1X_CK_SCHEME_BLOB, pass the path of the CA certificate file
+ *   (PEM or DER format).  The path must be UTF-8 encoded; use
+ *   g_filename_to_utf8() to convert if needed.  Passing NULL with any @scheme
+ *   clears the CA certificate.
  * @scheme: desired storage scheme for the certificate
  * @out_format: on successful return, the type of the certificate added
  * @error: on unsuccessful return, an error
@@ -468,7 +470,7 @@ nm_setting_802_1x_get_ca_cert_path (NMSetting8021x *setting)
  **/
 gboolean
 nm_setting_802_1x_set_ca_cert (NMSetting8021x *self,
-                               const char *filename,
+                               const char *value,
                                NMSetting8021xCKScheme scheme,
                                NMSetting8021xCKFormat *out_format,
                                GError **error)
@@ -479,8 +481,8 @@ nm_setting_802_1x_set_ca_cert (NMSetting8021x *self,
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
 
-	if (filename) {
-		g_return_val_if_fail (g_utf8_validate (filename, -1, NULL), FALSE);
+	if (value) {
+		g_return_val_if_fail (g_utf8_validate (value, -1, NULL), FALSE);
 		g_return_val_if_fail (   scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB
 		                      || scheme == NM_SETTING_802_1X_CK_SCHEME_PATH,
 		                      FALSE);
@@ -497,10 +499,10 @@ nm_setting_802_1x_set_ca_cert (NMSetting8021x *self,
 		priv->ca_cert = NULL;
 	}
 
-	if (!filename)
+	if (!value)
 		return TRUE;
 
-	data = crypto_load_and_verify_certificate (filename, &format, error);
+	data = crypto_load_and_verify_certificate (value, &format, error);
 	if (data) {
 		/* wpa_supplicant can only use raw x509 CA certs */
 		switch (format) {
@@ -523,9 +525,9 @@ nm_setting_802_1x_set_ca_cert (NMSetting8021x *self,
 				priv->ca_cert = data;
 			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
 				/* Add the path scheme tag to the front, then the fielname */
-				priv->ca_cert = g_byte_array_sized_new (strlen (filename) + strlen (SCHEME_PATH) + 1);
+				priv->ca_cert = g_byte_array_sized_new (strlen (value) + strlen (SCHEME_PATH) + 1);
 				g_byte_array_append (priv->ca_cert, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
-				g_byte_array_append (priv->ca_cert, (const guint8 *) filename, strlen (filename));
+				g_byte_array_append (priv->ca_cert, (const guint8 *) value, strlen (value));
 				g_byte_array_append (priv->ca_cert, (const guint8 *) "\0", 1);
 			} else
 				g_assert_not_reached ();
@@ -602,9 +604,11 @@ nm_setting_802_1x_get_client_cert_path (NMSetting8021x *setting)
 /**
  * nm_setting_802_1x_set_client_cert:
  * @setting: the #NMSetting8021x
- * @filename: path of the client certificate file (PEM, DER, or PKCS#12 format).  
- *   Filename must be UTF-8 encoded; use g_filename_to_utf8() to convert if
- *   needed.  Pass NULL to clear the client certificate.
+ * @value: when @scheme is set to either %NM_SETTING_802_1X_CK_SCHEME_PATH or
+ *   %NM_SETTING_802_1X_CK_SCHEME_BLOB, pass the path of the client certificate
+ *   file (PEM, DER, or PKCS#12 format).  The path must be UTF-8 encoded; use
+ *   g_filename_to_utf8() to convert if needed.  Passing NULL with any @scheme
+ *   clears the client certificate.
  * @scheme: desired storage scheme for the certificate
  * @out_format: on successful return, the type of the certificate added
  * @error: on unsuccessful return, an error
@@ -622,7 +626,7 @@ nm_setting_802_1x_get_client_cert_path (NMSetting8021x *setting)
  **/
 gboolean
 nm_setting_802_1x_set_client_cert (NMSetting8021x *self,
-                                   const char *filename,
+                                   const char *value,
                                    NMSetting8021xCKScheme scheme,
                                    NMSetting8021xCKFormat *out_format,
                                    GError **error)
@@ -633,8 +637,8 @@ nm_setting_802_1x_set_client_cert (NMSetting8021x *self,
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
 
-	if (filename) {
-		g_return_val_if_fail (g_utf8_validate (filename, -1, NULL), FALSE);
+	if (value) {
+		g_return_val_if_fail (g_utf8_validate (value, -1, NULL), FALSE);
 		g_return_val_if_fail (   scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB
 		                      || scheme == NM_SETTING_802_1X_CK_SCHEME_PATH,
 		                      FALSE);
@@ -651,10 +655,10 @@ nm_setting_802_1x_set_client_cert (NMSetting8021x *self,
 		priv->client_cert = NULL;
 	}
 
-	if (!filename)
+	if (!value)
 		return TRUE;
 
-	data = crypto_load_and_verify_certificate (filename, &format, error);
+	data = crypto_load_and_verify_certificate (value, &format, error);
 	if (data) {
 		/* wpa_supplicant can only use raw x509 CA certs */
 		switch (format) {
@@ -681,9 +685,9 @@ nm_setting_802_1x_set_client_cert (NMSetting8021x *self,
 				priv->client_cert = data;
 			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
 				/* Add the path scheme tag to the front, then the fielname */
-				priv->client_cert = g_byte_array_sized_new (strlen (filename) + strlen (SCHEME_PATH) + 1);
+				priv->client_cert = g_byte_array_sized_new (strlen (value) + strlen (SCHEME_PATH) + 1);
 				g_byte_array_append (priv->client_cert, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
-				g_byte_array_append (priv->client_cert, (const guint8 *) filename, strlen (filename));
+				g_byte_array_append (priv->client_cert, (const guint8 *) value, strlen (value));
 				g_byte_array_append (priv->client_cert, (const guint8 *) "\0", 1);
 			} else
 				g_assert_not_reached ();
@@ -867,9 +871,11 @@ nm_setting_802_1x_get_phase2_ca_cert_path (NMSetting8021x *setting)
 /**
  * nm_setting_802_1x_set_phase2_ca_cert:
  * @setting: the #NMSetting8021x
- * @filename: path of the "phase 2" CA certificate file (PEM or DER format).
- *   Filename must be UTF-8 encoded; use g_filename_to_utf8() to convert if
- *   needed.  Pass NULL to clear the "phase 2" CA certificate.
+ * @value: when @scheme is set to either %NM_SETTING_802_1X_CK_SCHEME_PATH or
+ *   %NM_SETTING_802_1X_CK_SCHEME_BLOB, pass the path of the "phase2" CA
+ *   certificate file (PEM or DER format).  The path must be UTF-8 encoded; use
+ *   g_filename_to_utf8() to convert if needed.  Passing NULL with any @scheme
+ *   clears the "phase2" CA certificate.
  * @scheme: desired storage scheme for the certificate
  * @out_format: on successful return, the type of the certificate added
  * @error: on unsuccessful return, an error
@@ -883,7 +889,7 @@ nm_setting_802_1x_get_phase2_ca_cert_path (NMSetting8021x *setting)
  **/
 gboolean
 nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *self,
-                                      const char *filename,
+                                      const char *value,
                                       NMSetting8021xCKScheme scheme,
                                       NMSetting8021xCKFormat *out_format,
                                       GError **error)
@@ -894,8 +900,8 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *self,
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
 
-	if (filename) {
-		g_return_val_if_fail (g_utf8_validate (filename, -1, NULL), FALSE);
+	if (value) {
+		g_return_val_if_fail (g_utf8_validate (value, -1, NULL), FALSE);
 		g_return_val_if_fail (   scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB
 		                      || scheme == NM_SETTING_802_1X_CK_SCHEME_PATH,
 		                      FALSE);
@@ -912,10 +918,10 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *self,
 		priv->phase2_ca_cert = NULL;
 	}
 
-	if (!filename)
+	if (!value)
 		return TRUE;
 
-	data = crypto_load_and_verify_certificate (filename, &format, error);
+	data = crypto_load_and_verify_certificate (value, &format, error);
 	if (data) {
 		/* wpa_supplicant can only use raw x509 CA certs */
 		switch (format) {
@@ -938,9 +944,9 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *self,
 				priv->phase2_ca_cert = data;
 			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
 				/* Add the path scheme tag to the front, then the fielname */
-				priv->phase2_ca_cert = g_byte_array_sized_new (strlen (filename) + strlen (SCHEME_PATH) + 1);
+				priv->phase2_ca_cert = g_byte_array_sized_new (strlen (value) + strlen (SCHEME_PATH) + 1);
 				g_byte_array_append (priv->phase2_ca_cert, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
-				g_byte_array_append (priv->phase2_ca_cert, (const guint8 *) filename, strlen (filename));
+				g_byte_array_append (priv->phase2_ca_cert, (const guint8 *) value, strlen (value));
 				g_byte_array_append (priv->phase2_ca_cert, (const guint8 *) "\0", 1);
 			} else
 				g_assert_not_reached ();
@@ -1019,9 +1025,11 @@ nm_setting_802_1x_get_phase2_client_cert_path (NMSetting8021x *setting)
 /**
  * nm_setting_802_1x_set_phase2_client_cert:
  * @setting: the #NMSetting8021x
- * @filename: path of the client certificate file (PEM, DER, or PKCS#12 format).  
- *   Filename must be UTF-8 encoded; use g_filename_to_utf8() to convert if
- *   needed.  Pass NULL to clear the client certificate.
+ * @value: when @scheme is set to either %NM_SETTING_802_1X_CK_SCHEME_PATH or
+ *   %NM_SETTING_802_1X_CK_SCHEME_BLOB, pass the path of the "phase2" client
+ *   certificate file (PEM, DER, or PKCS#12 format).  The path must be UTF-8
+ *   encoded; use g_filename_to_utf8() to convert if needed.  Passing NULL with
+ *   any @scheme clears the "phase2" client certificate.
  * @scheme: desired storage scheme for the certificate
  * @out_format: on successful return, the type of the certificate added
  * @error: on unsuccessful return, an error
@@ -1039,7 +1047,7 @@ nm_setting_802_1x_get_phase2_client_cert_path (NMSetting8021x *setting)
  **/
 gboolean
 nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *self,
-                                          const char *filename,
+                                          const char *value,
                                           NMSetting8021xCKScheme scheme,
                                           NMSetting8021xCKFormat *out_format,
                                           GError **error)
@@ -1050,8 +1058,8 @@ nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *self,
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
 
-	if (filename) {
-		g_return_val_if_fail (g_utf8_validate (filename, -1, NULL), FALSE);
+	if (value) {
+		g_return_val_if_fail (g_utf8_validate (value, -1, NULL), FALSE);
 		g_return_val_if_fail (   scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB
 		                      || scheme == NM_SETTING_802_1X_CK_SCHEME_PATH,
 		                      FALSE);
@@ -1068,10 +1076,10 @@ nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *self,
 		priv->phase2_client_cert = NULL;
 	}
 
-	if (!filename)
+	if (!value)
 		return TRUE;
 
-	data = crypto_load_and_verify_certificate (filename, &format, error);
+	data = crypto_load_and_verify_certificate (value, &format, error);
 	if (data) {
 		/* wpa_supplicant can only use raw x509 CA certs */
 		switch (format) {
@@ -1098,9 +1106,9 @@ nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *self,
 				priv->phase2_client_cert = data;
 			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
 				/* Add the path scheme tag to the front, then the fielname */
-				priv->phase2_client_cert = g_byte_array_sized_new (strlen (filename) + strlen (SCHEME_PATH) + 1);
+				priv->phase2_client_cert = g_byte_array_sized_new (strlen (value) + strlen (SCHEME_PATH) + 1);
 				g_byte_array_append (priv->phase2_client_cert, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
-				g_byte_array_append (priv->phase2_client_cert, (const guint8 *) filename, strlen (filename));
+				g_byte_array_append (priv->phase2_client_cert, (const guint8 *) value, strlen (value));
 				g_byte_array_append (priv->phase2_client_cert, (const guint8 *) "\0", 1);
 			} else
 				g_assert_not_reached ();
@@ -1224,9 +1232,11 @@ nm_setting_802_1x_get_private_key_path (NMSetting8021x *setting)
 /**
  * nm_setting_802_1x_set_private_key:
  * @setting: the #NMSetting8021x
- * @filename: path of the private key file (PEM, DER, or PKCS#12 format).  
- *   Filename must be UTF-8 encoded; use g_filename_to_utf8() to convert if
- *   needed.  Pass NULL to clear the private key.
+ * @value: when @scheme is set to either %NM_SETTING_802_1X_CK_SCHEME_PATH or
+ *   %NM_SETTING_802_1X_CK_SCHEME_BLOB, pass the path of the private key file
+ *   (PEM, DER, or PKCS#12 format).  The path must be UTF-8 encoded; use
+ *   g_filename_to_utf8() to convert if needed.  Passing NULL with any @scheme
+ *   clears the private key.
  * @scheme: desired storage scheme for the private key
  * @out_format: on successful return, the type of the private key added
  * @error: on unsuccessful return, an error
@@ -1244,7 +1254,7 @@ nm_setting_802_1x_get_private_key_path (NMSetting8021x *setting)
  **/
 gboolean
 nm_setting_802_1x_set_private_key (NMSetting8021x *self,
-                                   const char *filename,
+                                   const char *value,
                                    const char *password,
                                    NMSetting8021xCKScheme scheme,
                                    NMSetting8021xCKFormat *out_format,
@@ -1256,8 +1266,8 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *self,
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
 
-	if (filename) {
-		g_return_val_if_fail (g_utf8_validate (filename, -1, NULL), FALSE);
+	if (value) {
+		g_return_val_if_fail (g_utf8_validate (value, -1, NULL), FALSE);
 		g_return_val_if_fail (   scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB
 		                      || scheme == NM_SETTING_802_1X_CK_SCHEME_PATH,
 		                      FALSE);
@@ -1279,10 +1289,10 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *self,
 	g_free (priv->private_key_password);
 	priv->private_key_password = NULL;
 
-	if (!filename)
+	if (!value)
 		return TRUE;
 
-	data = crypto_load_and_verify_certificate (filename, &format, error);
+	data = crypto_load_and_verify_certificate (value, &format, error);
 	if (data) {
 		/* wpa_supplicant can only use raw x509 CA certs */
 		switch (format) {
@@ -1319,9 +1329,9 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *self,
 					priv->private_key_password = g_strdup (password);
 			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
 				/* Add the path scheme tag to the front, then the fielname */
-				priv->private_key = g_byte_array_sized_new (strlen (filename) + strlen (SCHEME_PATH) + 1);
+				priv->private_key = g_byte_array_sized_new (strlen (value) + strlen (SCHEME_PATH) + 1);
 				g_byte_array_append (priv->private_key, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
-				g_byte_array_append (priv->private_key, (const guint8 *) filename, strlen (filename));
+				g_byte_array_append (priv->private_key, (const guint8 *) value, strlen (value));
 				g_byte_array_append (priv->private_key, (const guint8 *) "\0", 1);
 
 				/* Always update the private key with paths since the key the
@@ -1346,7 +1356,7 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *self,
 		/* As a special case for private keys, even if the decrypt fails,
 		 * return the key's file type.
 		 */
-		if (out_format && crypto_is_pkcs12_file (filename, NULL))
+		if (out_format && crypto_is_pkcs12_file (value, NULL))
 			*out_format = NM_SETTING_802_1X_CK_FORMAT_PKCS12;
 	}
 
@@ -1498,9 +1508,11 @@ nm_setting_802_1x_get_phase2_private_key_path (NMSetting8021x *setting)
 /**
  * nm_setting_802_1x_set_phase2_private_key:
  * @setting: the #NMSetting8021x
- * @filename: path of the private key file (PEM, DER, or PKCS#12 format).  
- *   Filename must be UTF-8 encoded; use g_filename_to_utf8() to convert if
- *   needed.  Pass NULL to clear the private key.
+ * @value: when @scheme is set to either %NM_SETTING_802_1X_CK_SCHEME_PATH or
+ *   %NM_SETTING_802_1X_CK_SCHEME_BLOB, pass the path of the "phase2" private 
+ *   key file (PEM, DER, or PKCS#12 format).  The path must be UTF-8 encoded;
+ *   use g_filename_to_utf8() to convert if needed.  Passing NULL with any
+ *   @scheme clears the "phase2" private key.
  * @scheme: desired storage scheme for the private key
  * @out_format: on successful return, the type of the private key added
  * @error: on unsuccessful return, an error
@@ -1518,7 +1530,7 @@ nm_setting_802_1x_get_phase2_private_key_path (NMSetting8021x *setting)
  **/
 gboolean
 nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
-                                          const char *filename,
+                                          const char *value,
                                           const char *password,
                                           NMSetting8021xCKScheme scheme,
                                           NMSetting8021xCKFormat *out_format,
@@ -1530,8 +1542,8 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
 
-	if (filename) {
-		g_return_val_if_fail (g_utf8_validate (filename, -1, NULL), FALSE);
+	if (value) {
+		g_return_val_if_fail (g_utf8_validate (value, -1, NULL), FALSE);
 		g_return_val_if_fail (   scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB
 		                      || scheme == NM_SETTING_802_1X_CK_SCHEME_PATH,
 		                      FALSE);
@@ -1553,10 +1565,10 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
 	g_free (priv->phase2_private_key_password);
 	priv->phase2_private_key_password = NULL;
 
-	if (!filename)
+	if (!value)
 		return TRUE;
 
-	data = crypto_load_and_verify_certificate (filename, &format, error);
+	data = crypto_load_and_verify_certificate (value, &format, error);
 	if (data) {
 		/* wpa_supplicant can only use raw x509 CA certs */
 		switch (format) {
@@ -1593,9 +1605,9 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
 					priv->phase2_private_key_password = g_strdup (password);
 			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
 				/* Add the path scheme tag to the front, then the fielname */
-				priv->phase2_private_key = g_byte_array_sized_new (strlen (filename) + strlen (SCHEME_PATH) + 1);
+				priv->phase2_private_key = g_byte_array_sized_new (strlen (value) + strlen (SCHEME_PATH) + 1);
 				g_byte_array_append (priv->phase2_private_key, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
-				g_byte_array_append (priv->phase2_private_key, (const guint8 *) filename, strlen (filename));
+				g_byte_array_append (priv->phase2_private_key, (const guint8 *) value, strlen (value));
 				g_byte_array_append (priv->phase2_private_key, (const guint8 *) "\0", 1);
 
 				/* Always update the private key with paths since the key the
@@ -1620,7 +1632,7 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
 		/* As a special case for private keys, even if the decrypt fails,
 		 * return the key's file type.
 		 */
-		if (out_format && crypto_is_pkcs12_file (filename, NULL))
+		if (out_format && crypto_is_pkcs12_file (value, NULL))
 			*out_format = NM_SETTING_802_1X_CK_FORMAT_PKCS12;
 	}
 
