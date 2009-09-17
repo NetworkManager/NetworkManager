@@ -1733,7 +1733,7 @@ user_get_secrets_cb (DBusGProxy *proxy,
 	info->call = NULL;
 	free_get_secrets_info (info);
 
-	g_object_ref (provider);
+	g_object_unref (provider);
 }
 
 static GetSecretsInfo *
