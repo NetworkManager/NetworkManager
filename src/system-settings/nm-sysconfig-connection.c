@@ -56,6 +56,18 @@ string_to_gvalue (const char *str)
 	return val;
 }
 
+static GValue *
+byte_array_to_gvalue (const GByteArray *array)
+{
+	GValue *val;
+
+	val = g_slice_new0 (GValue);
+	g_value_init (val, DBUS_TYPE_G_UCHAR_ARRAY);
+	g_value_set_boxed (val, array);
+
+	return val;
+}
+
 static void
 copy_one_secret (gpointer key, gpointer value, gpointer user_data)
 {
@@ -80,6 +92,7 @@ add_secrets (NMSetting *setting,
 	if (!(flags & NM_SETTING_PARAM_SECRET))
 		return;
 
+	/* Copy secrets into the returned hash table */
 	if (G_VALUE_HOLDS_STRING (value)) {
 		const char *tmp;
 
@@ -89,6 +102,12 @@ add_secrets (NMSetting *setting,
 	} else if (G_VALUE_HOLDS (value, DBUS_TYPE_G_MAP_OF_STRING)) {
 		/* Flatten the string hash by pulling its keys/values out */
 		g_hash_table_foreach (g_value_get_boxed (value), copy_one_secret, secrets);
+	} else if (G_VALUE_TYPE (value) == DBUS_TYPE_G_UCHAR_ARRAY) {
+		GByteArray *array;
+
+		array = g_value_get_boxed (value);
+		if (array)
+			g_hash_table_insert (secrets, g_strdup (key), byte_array_to_gvalue (array));
 	}
 }
 
