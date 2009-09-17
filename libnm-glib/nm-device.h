@@ -85,6 +85,8 @@ NMDeviceState nm_device_get_state          (NMDevice *device);
 const char *  nm_device_get_product        (NMDevice *device);
 const char *  nm_device_get_vendor         (NMDevice *device);
 
+void  nm_device_disconnect                 (NMDevice *device, GError **error);
+
 G_END_DECLS
 
 #endif /* NM_DEVICE_H */

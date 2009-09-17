@@ -1065,3 +1065,16 @@ nm_device_get_vendor (NMDevice *device)
 	return priv->vendor;
 }
 
+void
+nm_device_disconnect (NMDevice *device, GError **error)
+{
+	NMDevicePrivate *priv;
+
+	g_return_if_fail (NM_IS_DEVICE (device));
+	priv = NM_DEVICE_GET_PRIVATE (device);
+	g_return_if_fail (priv);
+
+	if (!org_freedesktop_NetworkManager_Device_disconnect (priv->proxy, error))
+		g_warning ("Error in disconnect: %s", error && *error ? (*error)->message : "unknown");
+}
+
