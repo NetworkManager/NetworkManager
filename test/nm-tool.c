@@ -43,7 +43,12 @@
 #include <nm-vpn-connection.h>
 #include <nm-setting-connection.h>
 
-#include "nm-dbus-glib-types.h"
+/* Don't use nm-dbus-glib-types.h so that we can keep nm-tool
+ * building standalone outside of the NM tree.
+ */
+#define DBUS_TYPE_G_MAP_OF_VARIANT          (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE))
+#define DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT   (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, DBUS_TYPE_G_MAP_OF_VARIANT))
+#define DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH    (dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_OBJECT_PATH))
 
 static GHashTable *user_connections = NULL;
 static GHashTable *system_connections = NULL;
