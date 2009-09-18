@@ -1065,3 +1065,60 @@ nm_device_get_vendor (NMDevice *device)
 	return priv->vendor;
 }
 
+typedef struct {
+	NMDevice *device;
+	NMDeviceDeactivateFn fn;
+	gpointer user_data;
+} DeactivateInfo;
+
+static void
+deactivate_cb (DBusGProxy *proxy,
+               GError *error,
+               gpointer user_data)
+{
+	DeactivateInfo *info = user_data;
+
+	if (info->fn)
+		info->fn (info->device, error, info->user_data);
+	else if (error) {
+		g_warning ("%s: device %s deactivation failed: (%d) %s",
+		           __func__,
+		           nm_object_get_path (NM_OBJECT (info->device)),
+		           error ? error->code : -1,
+		           error && error->message ? error->message : "(unknown)");
+	}
+
+	g_object_unref (info->device);
+	g_slice_free (DeactivateInfo, info);
+}
+
+/**
+ * nm_device_disconnect:
+ * @device: a #NMDevice
+ * @error: a location to store an error on failure
+ *
+ * Disconnects the device if currently connected, and prevents the device from
+ * automatically connecting to networks until the next manual network connection
+ * request.
+ *
+ * Returns: TRUE on success, FALSE if an error occurred.
+ **/
+void
+nm_device_disconnect (NMDevice *device,
+                      NMDeviceDeactivateFn callback,
+                      gpointer user_data)
+{
+	DeactivateInfo *info;
+
+	g_return_if_fail (NM_IS_DEVICE (device));
+
+	info = g_slice_new (DeactivateInfo);
+	info->fn = callback;
+	info->user_data = user_data;
+	info->device = g_object_ref (device);
+
+	org_freedesktop_NetworkManager_Device_disconnect_async (NM_DEVICE_GET_PRIVATE (device)->proxy,
+	                                                        deactivate_cb,
+	                                                        info);
+}
+

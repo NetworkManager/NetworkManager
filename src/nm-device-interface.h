@@ -36,6 +36,7 @@ typedef enum
 {
 	NM_DEVICE_INTERFACE_ERROR_CONNECTION_ACTIVATING = 0,
 	NM_DEVICE_INTERFACE_ERROR_CONNECTION_INVALID,
+	NM_DEVICE_INTERFACE_ERROR_NOT_ACTIVE,
 } NMDeviceInterfaceError;
 
 #define NM_DEVICE_INTERFACE_ERROR (nm_device_interface_error_quark ())
@@ -68,7 +69,7 @@ typedef enum {
 	NM_DEVICE_INTERFACE_PROP_STATE,
 	NM_DEVICE_INTERFACE_PROP_DEVICE_TYPE,
 	NM_DEVICE_INTERFACE_PROP_MANAGED,
-	NM_DEVICE_INTERFACE_PROP_TYPE_DESC
+	NM_DEVICE_INTERFACE_PROP_TYPE_DESC,
 } NMDeviceInterfaceProp;
 
 
@@ -87,6 +88,7 @@ struct _NMDeviceInterface {
 	                      GError **error);
 
 	void (*deactivate) (NMDeviceInterface *device, NMDeviceStateReason reason);
+	gboolean (*disconnect) (NMDeviceInterface *device, GError **error);
 
 	gboolean (*spec_match_list) (NMDeviceInterface *device, const GSList *specs);
 
@@ -101,6 +103,8 @@ struct _NMDeviceInterface {
 
 GQuark nm_device_interface_error_quark (void);
 GType nm_device_interface_error_get_type (void);
+
+gboolean nm_device_interface_disconnect (NMDeviceInterface *device, GError **error);
 
 GType nm_device_interface_get_type (void);
 

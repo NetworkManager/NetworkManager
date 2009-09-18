@@ -2393,6 +2393,7 @@ impl_manager_sleep (NMManager *self, gboolean sleep, GError **error)
 		for (iter = priv->devices; iter; iter = iter->next) {
 			NMDevice *device = NM_DEVICE (iter->data);
 
+			nm_device_clear_autoconnect_inhibit (device);
 			if (nm_device_interface_spec_match_list (NM_DEVICE_INTERFACE (device), unmanaged_specs))
 				nm_device_set_managed (device, FALSE, NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
 			else
