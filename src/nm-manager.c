@@ -33,6 +33,7 @@
 #include "nm-device-private.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
+#include "nm-device-olpc-mesh.h"
 #include "nm-serial-device.h"
 #include "NetworkManagerSystem.h"
 #include "nm-properties-changed-signal.h"
@@ -1825,6 +1826,8 @@ hal_manager_udi_added_cb (NMHalManager *hal_mgr,
 		nm_info ("(%s): new Ethernet device (driver: '%s')", iface, driver);
 	else if (general_type == NM_TYPE_DEVICE_WIFI)
 		nm_info ("(%s): new 802.11 WiFi device (driver: '%s')", iface, driver);
+	else if (general_type == NM_TYPE_DEVICE_OLPC_MESH)
+		nm_info ("(%s): new 802.11 OLPC mesh device (driver: '%s')", iface, driver);
 	else if (general_type == NM_TYPE_SERIAL_DEVICE)
 		nm_info ("(%s): new Modem device (driver: '%s')", iface, driver);
 	else

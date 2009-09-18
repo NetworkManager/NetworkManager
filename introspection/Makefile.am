@@ -5,6 +5,7 @@ EXTRA_DIST = \
 	vpn-errors.xml \
 	nm-access-point.xml \
 	nm-device-wifi.xml \
+	nm-device-olpc-mesh.xml \
 	nm-device-ethernet.xml \
 	nm-device-cdma.xml \
 	nm-device-gsm.xml \

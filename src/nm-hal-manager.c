@@ -40,6 +40,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-utils.h"
 #include "nm-device-wifi.h"
+#include "nm-device-olpc-mesh.h"
 #include "nm-device-ethernet.h"
 #include "nm-gsm-device.h"
 #include "nm-hso-gsm-device.h"
@@ -1135,6 +1136,53 @@ out:
 	return device;
 }
 
+/* OLPC mesh creator */
+static gboolean
+is_olpc_mesh_device (NMHalManager *self, const char *udi)
+{
+	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
+	gboolean ret = FALSE;
+
+	nm_debug ("Checking if %s is an olpc mesh device", udi);
+
+	if (libhal_device_property_exists (priv->hal_ctx, udi, "info.category", NULL)) {
+		char *category;
+
+		category = libhal_device_get_property_string (priv->hal_ctx, udi, "info.category", NULL);
+		if (category) {
+			ret = strcmp (category, "net.olpcmesh") == 0;
+			libhal_free_string (category);
+		}
+	}
+
+	return ret;
+}
+
+static GObject *
+olpc_mesh_device_creator (NMHalManager *self,
+						  const char *udi,
+						  const char *origdev_udi,
+						  gboolean managed)
+{
+	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
+	GObject *device;
+	char *iface;
+	char *driver;
+
+	iface = libhal_device_get_property_string (priv->hal_ctx, udi, "net.interface", NULL);
+	if (!iface) {
+		nm_warning ("Couldn't get interface for %s, ignoring.", udi);
+		return NULL;
+	}
+
+	driver = nm_get_device_driver_name (priv->hal_ctx, origdev_udi);
+	device = (GObject *) nm_device_olpc_mesh_new (udi, iface, driver, managed);
+
+	libhal_free_string (iface);
+	g_free (driver);
+	return device;
+}
+
 static void
 register_built_in_creators (NMHalManager *self)
 {
@@ -1157,6 +1205,15 @@ register_built_in_creators (NMHalManager *self)
 	creator->category = g_strdup ("net");
 	creator->is_device_fn = is_wireless_device;
 	creator->creator_fn = wireless_device_creator;
+	priv->device_creators = g_slist_append (priv->device_creators, creator);
+
+	/* OLPC mesh device */
+	creator = g_slice_new0 (DeviceCreator);
+	creator->device_type = NM_TYPE_DEVICE_OLPC_MESH;
+	creator->capability_str = g_strdup ("net.olpcmesh");
+	creator->category = g_strdup ("net");
+	creator->is_device_fn = is_olpc_mesh_device;
+	creator->creator_fn = olpc_mesh_device_creator;
 	priv->device_creators = g_slist_append (priv->device_creators, creator);
 
 	/* Modem */
