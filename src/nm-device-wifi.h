@@ -47,6 +47,7 @@ G_BEGIN_DECLS
 #define NM_DEVICE_WIFI_BITRATE "bitrate"
 #define NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT "active-access-point"
 #define NM_DEVICE_WIFI_CAPABILITIES "wireless-capabilities"
+#define NM_DEVICE_WIFI_SCANNING "scanning"
 
 #ifndef NM_DEVICE_WIFI_DEFINED
 #define NM_DEVICE_WIFI_DEFINED
