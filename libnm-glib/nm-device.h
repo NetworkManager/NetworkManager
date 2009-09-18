@@ -85,7 +85,11 @@ NMDeviceState nm_device_get_state          (NMDevice *device);
 const char *  nm_device_get_product        (NMDevice *device);
 const char *  nm_device_get_vendor         (NMDevice *device);
 
-void  nm_device_disconnect                 (NMDevice *device, GError **error);
+typedef void (*NMDeviceDeactivateFn) (NMDevice *device, GError *error, gpointer user_data);
+
+void          nm_device_disconnect         (NMDevice *device,
+                                            NMDeviceDeactivateFn callback,
+                                            gpointer user_data);
 
 G_END_DECLS
 
