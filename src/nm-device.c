@@ -2080,8 +2080,8 @@ device_disconnect (NMDeviceInterface *device,
                    GError **error)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (NM_DEVICE (device));
+
 	priv->autoconnect_inhibit = TRUE;	
-	nm_device_deactivate (device, NM_DEVICE_STATE_REASON_USER_REQUESTED);
 	nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_USER_REQUESTED);
 	return TRUE;
 }

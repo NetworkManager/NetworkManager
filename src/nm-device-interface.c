@@ -53,6 +53,8 @@ nm_device_interface_error_get_type (void)
 			ENUM_ENTRY (NM_DEVICE_INTERFACE_ERROR_CONNECTION_ACTIVATING, "ConnectionActivating"),
 			/* Connection is invalid for this device. */
 			ENUM_ENTRY (NM_DEVICE_INTERFACE_ERROR_CONNECTION_INVALID, "ConnectionInvalid"),
+			/* Operation could not be performed because the device is not active. */
+			ENUM_ENTRY (NM_DEVICE_INTERFACE_ERROR_NOT_ACTIVE, "NotActive"),
 			{ 0, 0, 0 }
 		};
 		etype = g_enum_register_static ("NMDeviceInterfaceError", values);
@@ -277,11 +279,27 @@ gboolean
 nm_device_interface_disconnect (NMDeviceInterface *device,
                                 GError **error)
 {
-	g_return_val_if_fail (device, FALSE);
+	gboolean success = FALSE;
 
-	return NM_DEVICE_INTERFACE_GET_INTERFACE (device)->disconnect (device, error);
+	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), FALSE);
+
+	switch (nm_device_interface_get_state (device)) {
+	case NM_DEVICE_STATE_UNKNOWN:
+	case NM_DEVICE_STATE_UNMANAGED:
+	case NM_DEVICE_STATE_UNAVAILABLE:
+	case NM_DEVICE_STATE_DISCONNECTED:
+		g_set_error_literal (error,
+		                     NM_DEVICE_INTERFACE_ERROR,
+		                     NM_DEVICE_INTERFACE_ERROR_NOT_ACTIVE,
+		                     "Cannot disconnect an inactive device.");
+		break;
+	default:
+		success = NM_DEVICE_INTERFACE_GET_INTERFACE (device)->disconnect (device, error);
+		break;
+	}
+
+	return success;
 }
-
 
 static gboolean
 impl_device_disconnect (NMDeviceInterface *device,

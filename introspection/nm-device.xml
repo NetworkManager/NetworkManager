@@ -60,7 +60,7 @@
 
     <method name="Disconnect">
       <tp:docstring>
-        Manually disconnect a device
+        Disconnects a device and prevents the device from automatically activating further connections without user intervention.
       </tp:docstring>
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_disconnect"/>
     </method>
