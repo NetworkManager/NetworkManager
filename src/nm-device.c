@@ -94,6 +94,7 @@ struct _NMDevicePrivate
 	guint32             dhcp_timeout;
 	gulong              dhcp_state_sigid;
 	gulong              dhcp_timeout_sigid;
+	GByteArray *        dhcp_anycast_address;
 	NMDHCP4Config *     dhcp4_config;
 
 	/* dnsmasq stuff for shared connections */
@@ -891,6 +892,10 @@ real_act_stage3_ip_config_start (NMDevice *self, NMDeviceStateReason *reason)
 	if (!s_ip4 || !method || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
 		NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 		gboolean success;
+		guint8 *anycast = NULL;
+
+		if (priv->dhcp_anycast_address)
+			anycast = priv->dhcp_anycast_address->data;
 
 		/* Begin a DHCP transaction on the interface */
 		nm_device_set_use_dhcp (self, TRUE);
@@ -898,7 +903,7 @@ real_act_stage3_ip_config_start (NMDevice *self, NMDeviceStateReason *reason)
 		/* DHCP manager will cancel any transaction already in progress and we do not
 		   want to cancel this activation if we get "down" state from that. */
 		g_signal_handler_block (priv->dhcp_manager, priv->dhcp_state_sigid);
-		success = nm_dhcp_manager_begin_transaction (priv->dhcp_manager, ip_iface, uuid, s_ip4, priv->dhcp_timeout);
+		success = nm_dhcp_manager_begin_transaction (priv->dhcp_manager, ip_iface, uuid, s_ip4, priv->dhcp_timeout, anycast);
 		g_signal_handler_unblock (priv->dhcp_manager, priv->dhcp_state_sigid);
 
 		if (success) {
@@ -2217,6 +2222,8 @@ nm_device_finalize (GObject *object)
 	g_free (self->priv->iface);
 	g_free (self->priv->ip_iface);
 	g_free (self->priv->driver);
+	if (self->priv->dhcp_anycast_address)
+		g_byte_array_free (self->priv->dhcp_anycast_address, TRUE);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->finalize (object);
 }
@@ -2514,11 +2521,30 @@ nm_device_set_managed (NMDevice *device,
 }
 
 void
-nm_device_set_dhcp_timeout (NMDevice *device,
-                            guint32 timeout)
+nm_device_set_dhcp_timeout (NMDevice *device, guint32 timeout)
 {
 	g_return_if_fail (NM_IS_DEVICE (device));
 
 	NM_DEVICE_GET_PRIVATE (device)->dhcp_timeout = timeout;
+}
+
+void
+nm_device_set_dhcp_anycast_address (NMDevice *device, guint8 *addr)
+{
+	NMDevicePrivate *priv;
+
+	g_return_if_fail (NM_IS_DEVICE (device));
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+
+	if (priv->dhcp_anycast_address) {
+		g_byte_array_free (priv->dhcp_anycast_address, TRUE);
+		priv->dhcp_anycast_address = NULL;
+	}
+
+	if (addr) {
+		priv->dhcp_anycast_address = g_byte_array_sized_new (ETH_ALEN);
+		g_byte_array_append (priv->dhcp_anycast_address, addr, ETH_ALEN);
+	}
 }
 
