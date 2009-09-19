@@ -61,6 +61,8 @@ GQuark nm_setting_gsm_error_quark (void);
 #define NM_SETTING_GSM_NETWORK_TYPE "network-type"
 #define NM_SETTING_GSM_BAND         "band"
 #define NM_SETTING_GSM_PIN          "pin"
+
+/* DEPRECATED & UNUSED */
 #define NM_SETTING_GSM_PUK          "puk"
 
 enum {
