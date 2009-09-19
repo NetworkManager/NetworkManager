@@ -169,8 +169,6 @@ stage1_prepare_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_d
 
 		if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_PIN))
 			required_secret = NM_SETTING_GSM_PIN;
-		else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_PUK))
-			required_secret = NM_SETTING_GSM_PUK;
 		else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_WRONG)) {
 			clear_pin (device);
 			required_secret = NM_SETTING_GSM_PIN;

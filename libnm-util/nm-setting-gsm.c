@@ -80,7 +80,6 @@ typedef struct {
 	int band;
 
 	char *pin;
-	char *puk;
 } NMSettingGsmPrivate;
 
 enum {
@@ -180,9 +179,8 @@ nm_setting_gsm_get_pin (NMSettingGsm *setting)
 const char *
 nm_setting_gsm_get_puk (NMSettingGsm *setting)
 {
-	g_return_val_if_fail (NM_IS_SETTING_GSM (setting), NULL);
-
-	return NM_SETTING_GSM_GET_PRIVATE (setting)->puk;
+	g_warning ("Tried to set deprecated property " NM_SETTING_GSM_SETTING_NAME "/" NM_SETTING_GSM_PUK);
+	return NULL;
 }
 
 static gboolean
@@ -299,7 +297,6 @@ finalize (GObject *object)
 	g_free (priv->apn);
 	g_free (priv->network_id);
 	g_free (priv->pin);
-	g_free (priv->puk);
 
 	G_OBJECT_CLASS (nm_setting_gsm_parent_class)->finalize (object);
 }
@@ -342,9 +339,8 @@ set_property (GObject *object, guint prop_id,
 		priv->pin = g_value_dup_string (value);
 		break;
 	case PROP_PUK:
-		g_free (priv->puk);
-		priv->puk = g_value_dup_string (value);
-		break;	
+		g_warning ("Tried to set deprecated property " NM_SETTING_GSM_SETTING_NAME "/" NM_SETTING_GSM_PUK);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -383,7 +379,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, nm_setting_gsm_get_pin (setting));
 		break;
 	case PROP_PUK:
-		g_value_set_string (value, nm_setting_gsm_get_puk (setting));
+		g_warning ("Tried to get deprecated property " NM_SETTING_GSM_SETTING_NAME "/" NM_SETTING_GSM_PUK);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -476,8 +472,8 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_PUK,
 		 g_param_spec_string (NM_SETTING_GSM_PUK,
-						  "PUK",
-						  "PUK",
+						  "PUK (DEPRECATED and UNUSED)",
+						  "PUK (DEPRECATED and UNUSED)",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
 }
