@@ -179,7 +179,7 @@ nm_setting_gsm_get_pin (NMSettingGsm *setting)
 const char *
 nm_setting_gsm_get_puk (NMSettingGsm *setting)
 {
-	g_warning ("Tried to set deprecated property " NM_SETTING_GSM_SETTING_NAME "/" NM_SETTING_GSM_PUK);
+	g_warning ("Tried to get deprecated property " NM_SETTING_GSM_SETTING_NAME "/" NM_SETTING_GSM_PUK);
 	return NULL;
 }
 
@@ -379,7 +379,6 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, nm_setting_gsm_get_pin (setting));
 		break;
 	case PROP_PUK:
-		g_warning ("Tried to get deprecated property " NM_SETTING_GSM_SETTING_NAME "/" NM_SETTING_GSM_PUK);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
