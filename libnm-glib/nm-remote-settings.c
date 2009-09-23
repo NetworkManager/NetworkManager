@@ -45,6 +45,7 @@ typedef struct {
 	DBusGProxy *proxy;
 	GHashTable *connections;
 	GHashTable *pending;  /* Connections we don't have settings for yet */
+	gboolean service_running;
 
 	DBusGProxy *dbus_proxy;
 
@@ -57,6 +58,7 @@ enum {
 	PROP_0,
 	PROP_BUS,
 	PROP_SCOPE,
+	PROP_SERVICE_RUNNING,
 
 	LAST_PROP
 };
@@ -283,10 +285,14 @@ name_owner_changed (DBusGProxy *proxy,
 		if (priv->fetch_id)
 			g_source_remove (priv->fetch_id);
 
-		if (new_owner && strlen (new_owner) > 0)
+		if (new_owner && strlen (new_owner) > 0) {
 			priv->fetch_id = g_idle_add (fetch_connections, self);
-		else
+			priv->service_running = TRUE;
+		} else {
 			priv->fetch_id = g_idle_add (remove_connections, self);
+			priv->service_running = FALSE;
+		}
+		g_object_notify (G_OBJECT (self), NM_REMOTE_SETTINGS_SERVICE_RUNNING);
 	}
 }
 
@@ -339,6 +345,7 @@ constructor (GType type,
 	GObject *object;
 	NMRemoteSettingsPrivate *priv;
 	const char *service = NM_DBUS_SERVICE_USER_SETTINGS;
+	GError *error = NULL;
 
 	object = G_OBJECT_CLASS (nm_remote_settings_parent_class)->constructor (type, n_construct_params, construct_params);
 	if (!object)
@@ -368,6 +375,19 @@ constructor (GType type,
 	/* Settings service proxy */
 	if (priv->scope == NM_CONNECTION_SCOPE_SYSTEM)
 		service = NM_DBUS_SERVICE_SYSTEM_SETTINGS;
+
+	if (!dbus_g_proxy_call (priv->dbus_proxy, "NameHasOwner", &error,
+	                        G_TYPE_STRING, service,
+	                        G_TYPE_INVALID,
+	                        G_TYPE_BOOLEAN, &priv->service_running,
+	                        G_TYPE_INVALID)) {
+		g_warning ("%s (NMRemoteSettings) error getting remote settings service status: (%d) %s\n",
+		           __func__,
+		           error ? error->code : -1,
+		           error && error->message ? error->message : "(unknown)");
+		g_error_free (error);
+		priv->service_running = FALSE;
+	}
 
 	priv->proxy = dbus_g_proxy_new_for_name (priv->bus,
 	                                         service,
@@ -447,6 +467,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_SCOPE:
 		g_value_set_uint (value, priv->scope);
 		break;
+	case PROP_SERVICE_RUNNING:
+		g_value_set_boolean (value, priv->service_running);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -484,5 +507,13 @@ nm_remote_settings_class_init (NMRemoteSettingsClass *class)
 		                    NM_CONNECTION_SCOPE_USER,
 		                    NM_CONNECTION_SCOPE_USER,
 		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
+		(object_class, PROP_SERVICE_RUNNING,
+		 g_param_spec_boolean (NM_REMOTE_SETTINGS_SERVICE_RUNNING,
+		                       "Service running",
+		                       "Is service running",
+		                       FALSE,
+		                       G_PARAM_READABLE));
 }
 

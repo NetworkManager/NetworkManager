@@ -40,6 +40,7 @@ G_BEGIN_DECLS
 
 #define NM_REMOTE_SETTINGS_BUS "bus"
 #define NM_REMOTE_SETTINGS_SCOPE "scope"
+#define NM_REMOTE_SETTINGS_SERVICE_RUNNING "service-running"
 
 typedef struct {
 	GObject parent;
