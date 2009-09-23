@@ -124,6 +124,10 @@ connection_init_result_cb (NMRemoteConnection *remote,
 	}
 
 	g_hash_table_remove (priv->pending, path);
+
+	/* Let listeners know that all connections have been found */
+	if (!g_hash_table_size (priv->pending))
+		g_signal_emit_by_name (self, NM_SETTINGS_INTERFACE_CONNECTIONS_READ);
 }
 
 static void
@@ -168,6 +172,12 @@ fetch_connections_done (DBusGProxy *proxy,
 		           error->code,
 		           error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
+		return;
+	}
+
+	/* Let listeners know we are done getting connections */
+	if (connections->len == 0) {
+		g_signal_emit_by_name (self, NM_SETTINGS_INTERFACE_CONNECTIONS_READ);
 		return;
 	}
 

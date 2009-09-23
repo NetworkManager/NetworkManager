@@ -48,7 +48,8 @@ GType nm_settings_interface_error_get_type (void);
 #define NM_IS_SETTINGS_INTERFACE(obj)            (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_SETTINGS_INTERFACE))
 #define NM_SETTINGS_INTERFACE_GET_INTERFACE(obj) (G_TYPE_INSTANCE_GET_INTERFACE ((obj), NM_TYPE_SETTINGS_INTERFACE, NMSettingsInterface))
 
-#define NM_SETTINGS_INTERFACE_NEW_CONNECTION "new-connection"
+#define NM_SETTINGS_INTERFACE_NEW_CONNECTION   "new-connection"
+#define NM_SETTINGS_INTERFACE_CONNECTIONS_READ "connections-read"
 
 typedef struct _NMSettingsInterface NMSettingsInterface;
 
@@ -74,6 +75,8 @@ struct _NMSettingsInterface {
 	/* Signals */
 	void (*new_connection) (NMSettingsInterface *settings,
 	                        NMSettingsConnectionInterface *connection);
+
+	void (*connections_read) (NMSettingsInterface *settings);
 };
 
 GType nm_settings_interface_get_type (void);
