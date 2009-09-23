@@ -58,6 +58,8 @@ d_stop() {
 	start-stop-daemon --stop --retry 5 --quiet --pidfile $PIDFILE \
 		 --oknodo --user $USER --exec $DAEMON
  
+	# if found, kill NM 0.7 settings daemon
+	killall -q nm-system-settings || true
 }
 
 
