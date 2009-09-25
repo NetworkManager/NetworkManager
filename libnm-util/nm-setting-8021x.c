@@ -424,6 +424,29 @@ nm_setting_802_1x_get_ca_cert_blob (NMSetting8021x *setting)
 }
 
 /**
+ * nm_setting_802_1x_get_ca_cert:
+ * @setting: the #NMSetting8021x
+ *
+ * Returns the CA certificate blob if the CA certificate is stored using the
+ * %NM_SETTING_802_1X_CK_SCHEME_BLOB scheme.  Not all EAP methods use a
+ * CA certificate (LEAP for example), and those that can take advantage of the
+ * CA certificate allow it to be unset.  Note that lack of a CA certificate
+ * reduces security by allowing man-in-the-middle attacks, because the identity
+ * of the network cannot be confirmed by the client.
+ *
+ * Deprecated: 0.8: This function has been deprecated and should
+ *   not be used in newly written code. Calling this function is
+ *   equivalent to calling nm_setting_802_1x_get_ca_cert_blob().
+ *
+ * Returns: the CA certificate data
+ **/
+const GByteArray *
+nm_setting_802_1x_get_ca_cert (NMSetting8021x *setting)
+{
+	return nm_setting_802_1x_get_ca_cert_blob (setting);
+}
+
+/**
  * nm_setting_802_1x_get_ca_cert_path:
  * @setting: the #NMSetting8021x
  *
@@ -537,6 +560,61 @@ nm_setting_802_1x_set_ca_cert (NMSetting8021x *self,
 	return priv->ca_cert != NULL;
 }
 
+static NMSetting8021xCKType
+ck_format_to_type (NMSetting8021xCKFormat format)
+{
+	switch (format) {
+	case NM_SETTING_802_1X_CK_FORMAT_X509:
+		return NM_SETTING_802_1X_CK_TYPE_X509;
+	case NM_SETTING_802_1X_CK_FORMAT_RAW_KEY:
+		return NM_SETTING_802_1X_CK_TYPE_RAW_KEY;
+	case NM_SETTING_802_1X_CK_FORMAT_PKCS12:
+		return NM_SETTING_802_1X_CK_TYPE_PKCS12;
+	default:
+		break;
+	}
+	return NM_SETTING_802_1X_CK_TYPE_UNKNOWN;
+}
+
+/**
+ * nm_setting_802_1x_set_ca_cert_from_file:
+ * @setting: the #NMSetting8021x
+ * @filename: the path of the CA certificate file (PEM or DER format). Passing
+ *   NULL clears the CA certificate.
+ * @out_ck_type: on successful return, the type of the certificate added
+ * @error: on unsuccessful return, an error
+ *
+ * Reads a certificate from disk and sets the #NMSetting8021x:ca-cert property
+ * with the raw certificate data using the %NM_SETTING_802_1X_CK_SCHEME_BLOB
+ * scheme.
+ *
+ * Deprecated: 0.8: This function has been deprecated and should
+ *   not be used in newly written code. Calling this function is
+ *   equivalent to calling nm_setting_802_1x_set_ca_cert() with the
+ *   %NM_SETTING_802_1X_CK_SCHEME_BLOB scheme.
+ *
+ * Returns: TRUE if the operation succeeded, FALSE if it was unsuccessful
+ **/
+gboolean
+nm_setting_802_1x_set_ca_cert_from_file (NMSetting8021x *setting,
+                                         const char *filename,
+                                         NMSetting8021xCKType *out_ck_type,
+                                         GError **error)
+{
+	gboolean success;
+	NMSetting8021xCKFormat format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
+
+	success = nm_setting_802_1x_set_ca_cert (setting,
+	                                         filename,
+	                                         NM_SETTING_802_1X_CK_SCHEME_BLOB,
+	                                         &format,
+	                                         error);
+	if (success && out_ck_type)
+		*out_ck_type = ck_format_to_type (format);
+
+	return success;
+}
+
 /**
  * nm_setting_802_1x_get_client_cert_scheme:
  * @setting: the #NMSetting8021x
@@ -576,6 +654,26 @@ nm_setting_802_1x_get_client_cert_blob (NMSetting8021x *setting)
 	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB, NULL);
 
 	return NM_SETTING_802_1X_GET_PRIVATE (setting)->client_cert;
+}
+
+/**
+ * nm_setting_802_1x_get_client_cert:
+ * @setting: the #NMSetting8021x
+ *
+ * Client certificates are used to identify the connecting client to the network
+ * when EAP-TLS is used as either the "phase 1" or "phase 2" 802.1x
+ * authentication method.
+ *
+ * Deprecated: 0.8: This function has been deprecated and should
+ *   not be used in newly written code. Calling this function is
+ *   equivalent to calling nm_setting_802_1x_get_client_cert_blob().
+ *
+ * Returns: the client certificate data
+ **/
+const GByteArray *
+nm_setting_802_1x_get_client_cert (NMSetting8021x *setting)
+{
+	return nm_setting_802_1x_get_client_cert_blob (setting);
 }
 
 /**
@@ -695,6 +793,48 @@ nm_setting_802_1x_set_client_cert (NMSetting8021x *self,
 	}
 
 	return priv->client_cert != NULL;
+}
+
+/**
+ * nm_setting_802_1x_set_client_cert_from_file:
+ * @setting: the #NMSetting8021x
+ * @filename: the path of the client certificate file (PEM, DER, or
+ *   PKCS#12 format).  Passing NULL clears the client certificate.
+ * @out_ck_type: on successful return, the type of the certificate added
+ * @error: on unsuccessful return, an error
+ *
+ * Reads a certificate from disk and sets the #NMSetting8021x:client-cert
+ * property with the raw certificate data.
+ *
+ * Client certificates are used to identify the connecting client to the network
+ * when EAP-TLS is used as either the "phase 1" or "phase 2" 802.1x
+ * authentication method.
+ *
+ * Deprecated: 0.8: This function has been deprecated and should
+ *   not be used in newly written code. Calling this function is
+ *   equivalent to calling nm_setting_802_1x_set_client_cert() with the
+ *   %NM_SETTING_802_1X_CK_SCHEME_BLOB scheme.
+ *
+ * Returns: TRUE if the operation succeeded, FALSE if it was unsuccessful
+ **/
+gboolean
+nm_setting_802_1x_set_client_cert_from_file (NMSetting8021x *setting,
+                                             const char *filename,
+                                             NMSetting8021xCKType *out_ck_type,
+                                             GError **error)
+{
+	gboolean success;
+	NMSetting8021xCKFormat format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
+
+	success = nm_setting_802_1x_set_client_cert (setting,
+	                                             filename,
+	                                             NM_SETTING_802_1X_CK_SCHEME_BLOB,
+	                                             &format,
+	                                             error);
+	if (success && out_ck_type)
+		*out_ck_type = ck_format_to_type (format);
+
+	return success;
 }
 
 /**
@@ -843,6 +983,28 @@ nm_setting_802_1x_get_phase2_ca_cert_blob (NMSetting8021x *setting)
 }
 
 /**
+ * nm_setting_802_1x_get_phase2_ca_cert:
+ * @setting: the #NMSetting8021x
+ *
+ * Returns the "phase 2" CA certificate blob.  Not all EAP methods use
+ * a CA certificate (LEAP for example), and those that can take advantage of the
+ * CA certificate allow it to be unset.  Note that lack of a CA certificate
+ * reduces security by allowing man-in-the-middle attacks, because the identity
+ * of the network cannot be confirmed by the client.
+ *
+ * Deprecated: 0.8: This function has been deprecated and should
+ *   not be used in newly written code. Calling this function is
+ *   equivalent to calling nm_setting_802_1x_get_phase2_ca_cert_blob().
+ *
+ * Returns: the "phase 2" CA certificate data
+ **/
+const GByteArray *
+nm_setting_802_1x_get_phase2_ca_cert (NMSetting8021x *setting)
+{
+	return nm_setting_802_1x_get_phase2_ca_cert_blob (setting);
+}
+
+/**
  * nm_setting_802_1x_get_phase2_ca_cert_path:
  * @setting: the #NMSetting8021x
  *
@@ -957,6 +1119,44 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *self,
 }
 
 /**
+ * nm_setting_802_1x_set_phase2_ca_cert_from_file:
+ * @setting: the #NMSetting8021x
+ * @filename: the path of the "phase2" CA certificate file (PEM or DER format).
+ *   Passing NULL with any @scheme clears the "phase2" CA certificate.
+ * @out_ck_type: on successful return, the type of the certificate added
+ * @error: on unsuccessful return, an error
+ *
+ * Reads a certificate from disk and sets the #NMSetting8021x:phase2-ca-cert
+ * property with the raw certificate data.
+ *
+ * Deprecated: 0.8: This function has been deprecated and should
+ *   not be used in newly written code. Calling this function is
+ *   equivalent to calling nm_setting_802_1x_set_phase2_ca_cert().
+ *   with the %NM_SETTING_802_1X_CK_SCHEME_BLOB scheme.
+ *
+ * Returns: TRUE if the operation succeeded, FALSE if it was unsuccessful
+ **/
+gboolean
+nm_setting_802_1x_set_phase2_ca_cert_from_file (NMSetting8021x *setting,
+                                                const char *filename,
+                                                NMSetting8021xCKType *out_ck_type,
+                                                GError **error)
+{
+	gboolean success;
+	NMSetting8021xCKFormat format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
+
+	success = nm_setting_802_1x_set_phase2_ca_cert (setting,
+	                                                filename,
+	                                                NM_SETTING_802_1X_CK_SCHEME_BLOB,
+	                                                &format,
+	                                                error);
+	if (success && out_ck_type)
+		*out_ck_type = ck_format_to_type (format);
+
+	return success;
+}
+
+/**
  * nm_setting_802_1x_get_phase2_client_cert_scheme:
  * @setting: the #NMSetting8021x
  *
@@ -997,6 +1197,26 @@ nm_setting_802_1x_get_phase2_client_cert_blob (NMSetting8021x *setting)
 	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB, NULL);
 
 	return NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_client_cert;
+}
+
+/**
+ * nm_setting_802_1x_get_phase2_client_cert:
+ * @setting: the #NMSetting8021x
+ *
+ * Client certificates are used to identify the connecting client to the network
+ * when EAP-TLS is used as either the "phase 1" or "phase 2" 802.1x
+ * authentication method.
+ *
+ * Deprecated: 0.8: This function has been deprecated and should
+ *   not be used in newly written code. Calling this function is
+ *   equivalent to calling nm_setting_802_1x_get_phase2_client_cert_blob().
+ *
+ * Returns: the "phase 2" client certificate data
+ **/
+const GByteArray *
+nm_setting_802_1x_get_phase2_client_cert (NMSetting8021x *setting)
+{
+	return nm_setting_802_1x_get_phase2_client_cert_blob (setting);
 }
 
 /**
@@ -1119,6 +1339,48 @@ nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *self,
 }
 
 /**
+ * nm_setting_802_1x_set_phase2_client_cert_from_file:
+ * @setting: the #NMSetting8021x
+ * @filename: pass the path of the "phase2" client certificate file (PEM, DER,
+ *   or PKCS#12 format).  Passing NULL clears the "phase2" client certificate.
+ * @out_ck_type: on successful return, the type of the certificate added
+ * @error: on unsuccessful return, an error
+ *
+ * Reads a certificate from disk and sets the #NMSetting8021x:phase2-client-cert
+ * property with the raw certificate data.
+ *
+ * Client certificates are used to identify the connecting client to the network
+ * when EAP-TLS is used as either the "phase 1" or "phase 2" 802.1x
+ * authentication method.
+ *
+ * Deprecated: 0.8: This function has been deprecated and should
+ *   not be used in newly written code. Calling this function is
+ *   equivalent to calling nm_setting_802_1x_set_phase2_client_cert() with the.
+ *   %NM_SETTING_802_1X_CK_SCHEME_BLOB scheme.
+ *
+ * Returns: TRUE if the operation succeeded, FALSE if it was unsuccessful
+ **/
+gboolean
+nm_setting_802_1x_set_phase2_client_cert_from_file (NMSetting8021x *setting,
+                                                    const char *filename,
+                                                    NMSetting8021xCKType *out_ck_type,
+                                                    GError **error)
+{
+	gboolean success;
+	NMSetting8021xCKFormat format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
+
+	success = nm_setting_802_1x_set_phase2_client_cert (setting,
+	                                                    filename,
+	                                                    NM_SETTING_802_1X_CK_SCHEME_BLOB,
+	                                                    &format,
+	                                                    error);
+	if (success && out_ck_type)
+		*out_ck_type = ck_format_to_type (format);
+
+	return success;
+}
+
+/**
  * nm_setting_802_1x_get_password:
  * @setting: the #NMSetting8021x
  *
@@ -1204,6 +1466,26 @@ nm_setting_802_1x_get_private_key_blob (NMSetting8021x *setting)
 	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB, NULL);
 
 	return NM_SETTING_802_1X_GET_PRIVATE (setting)->private_key;
+}
+
+/**
+ * nm_setting_802_1x_get_private_key:
+ * @setting: the #NMSetting8021x
+ *
+ * Private keys are used to authenticate the connecting client to the network
+ * when EAP-TLS is used as either the "phase 1" or "phase 2" 802.1x
+ * authentication method.
+ *
+ * Deprecated: 0.8: This function has been deprecated and should
+ *   not be used in newly written code. Calling this function is
+ *   equivalent to calling nm_setting_802_1x_get_private_key_blob().
+ *
+ * Returns: the private key data
+ **/
+const GByteArray *
+nm_setting_802_1x_get_private_key (NMSetting8021x *setting)
+{
+	return nm_setting_802_1x_get_private_key_blob (setting);
 }
 
 /**
@@ -1385,6 +1667,51 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *self,
 }
 
 /**
+ * nm_setting_802_1x_set_private_key_from_file:
+ * @setting: the #NMSetting8021x
+ * @filename: the path of the private key file (PEM, DER, or PKCS#12 format).
+ *   Passing NULL clears the private key.
+ * @password: password used to decrypt the private key
+ * @out_ck_type: on successful return, the type of the private key added
+ * @error: on unsuccessful return, an error
+ *
+ * Reads a private key from disk and sets the #NMSetting8021x:private-key
+ * property with the raw private key data.
+ *
+ * Private keys are used to authenticate the connecting client to the network
+ * when EAP-TLS is used as either the "phase 1" or "phase 2" 802.1x
+ * authentication method.
+ *
+ * Deprecated: 0.8: This function has been deprecated and should
+ *   not be used in newly written code. Calling this function is
+ *   equivalent to calling nm_setting_802_1x_set_private_key() with.
+ *   the %NM_SETTING_802_1X_CK_SCHEME_BLOB scheme.
+ *
+ * Returns: TRUE if the operation succeeded, FALSE if it was unsuccessful
+ **/
+gboolean
+nm_setting_802_1x_set_private_key_from_file (NMSetting8021x *setting,
+                                             const char *filename,
+                                             const char *password,
+                                             NMSetting8021xCKType *out_ck_type,
+                                             GError **error)
+{
+	gboolean success;
+	NMSetting8021xCKFormat format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
+
+	success = nm_setting_802_1x_set_private_key (setting,
+	                                             filename,
+	                                             password,
+	                                             NM_SETTING_802_1X_CK_SCHEME_BLOB,
+	                                             &format,
+	                                             error);
+	if (success && out_ck_type)
+		*out_ck_type = ck_format_to_type (format);
+
+	return success;
+}
+
+/**
  * nm_setting_802_1x_get_private_key_password:
  * @setting: the #NMSetting8021x
  *
@@ -1441,6 +1768,23 @@ nm_setting_802_1x_get_private_key_format (NMSetting8021x *setting)
 	}
 
 	return NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
+}
+
+/**
+ * nm_setting_802_1x_get_private_key_type:
+ * @setting: the #NMSetting8021x
+ *
+ * Deprecated: 0.8: This function has been deprecated and should
+ *   not be used in newly written code. Calling this function is
+ *   equivalent to calling nm_setting_802_1x_get_private_key_format().
+ *
+ * Returns: the data format of the private key data stored in the
+ *   #NMSetting8021x:private-key property
+ **/
+NMSetting8021xCKType
+nm_setting_802_1x_get_private_key_type (NMSetting8021x *setting)
+{
+	return ck_format_to_type (nm_setting_802_1x_get_private_key_format (setting));
 }
 
 /**
@@ -1501,6 +1845,26 @@ nm_setting_802_1x_get_phase2_private_key_blob (NMSetting8021x *setting)
 	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB, NULL);
 
 	return NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_private_key;
+}
+
+/**
+ * nm_setting_802_1x_get_phase2_private_key:
+ * @setting: the #NMSetting8021x
+ *
+ * Private keys are used to authenticate the connecting client to the network
+ * when EAP-TLS is used as either the "phase 1" or "phase 2" 802.1x
+ * authentication method.
+ *
+ * Deprecated: 0.8: This function has been deprecated and should
+ *   not be used in newly written code. Calling this function is
+ *   equivalent to calling nm_setting_802_1x_get_private_key_blob().
+ *
+ * Returns: the "phase 2" private key data
+ **/
+const GByteArray *
+nm_setting_802_1x_get_phase2_private_key (NMSetting8021x *setting)
+{
+	return nm_setting_802_1x_get_phase2_private_key_blob (setting);
 }
 
 /**
@@ -1681,6 +2045,51 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
 }
 
 /**
+ * nm_setting_802_1x_set_phase2_private_key:
+ * @setting: the #NMSetting8021x
+ * @filename: the path of the "phase2" private key file (PEM, DER, or PKCS#12
+ *   format).  Passing NULL clears the "phase2" private key.
+ * @password: password used to decrypt the private key
+ * @out_ck_type: on successful return, the type of the private key added
+ * @error: on unsuccessful return, an error
+ *
+ * Reads a "phase 2" private key from disk and sets the
+ * #NMSetting8021x:phase2-private-key property with the raw private key data.
+ *
+ * Private keys are used to authenticate the connecting client to the network
+ * when EAP-TLS is used as either the "phase 1" or "phase 2" 802.1x
+ * authentication method.
+ *
+ * Deprecated: 0.8: This function has been deprecated and should
+ *   not be used in newly written code. Calling this function is
+ *   equivalent to calling nm_setting_802_1x_set_phase2_private_key() with
+ *   the %NM_SETTING_802_1X_CK_SCHEME_BLOB scheme.
+ *
+ * Returns: TRUE if the operation succeeded, FALSE if it was unsuccessful
+ **/
+gboolean
+nm_setting_802_1x_set_phase2_private_key_from_file (NMSetting8021x *setting,
+                                                    const char *filename,
+                                                    const char *password,
+                                                    NMSetting8021xCKType *out_ck_type,
+                                                    GError **error)
+{
+	gboolean success;
+	NMSetting8021xCKFormat format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
+
+	success = nm_setting_802_1x_set_phase2_private_key (setting,
+	                                                    filename,
+	                                                    password,
+	                                                    NM_SETTING_802_1X_CK_SCHEME_BLOB,
+	                                                    &format,
+	                                                    error);
+	if (success && out_ck_type)
+		*out_ck_type = ck_format_to_type (format);
+
+	return success;
+}
+
+/**
  * nm_setting_802_1x_get_phase2_private_key_format:
  * @setting: the #NMSetting8021x
  *
@@ -1720,6 +2129,23 @@ nm_setting_802_1x_get_phase2_private_key_format (NMSetting8021x *setting)
 	}
 
 	return NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
+}
+
+/**
+ * nm_setting_802_1x_get_phase2_private_key_type:
+ * @setting: the #NMSetting8021x
+ *
+ * Deprecated: 0.8: This function has been deprecated and should
+ *   not be used in newly written code. Calling this function is
+ *   equivalent to calling nm_setting_802_1x_get_phase2_private_key_format().
+ *
+ * Returns: the data format of the private key data stored in the
+ *   #NMSetting8021x:phase2-private-key property
+ **/
+NMSetting8021xCKType
+nm_setting_802_1x_get_phase2_private_key_type (NMSetting8021x *setting)
+{
+	return ck_format_to_type (nm_setting_802_1x_get_phase2_private_key_format (setting));
 }
 
 static void

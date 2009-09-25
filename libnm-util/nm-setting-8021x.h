@@ -217,6 +217,58 @@ const char *           nm_setting_802_1x_get_phase2_private_key_password (NMSett
 
 NMSetting8021xCKFormat nm_setting_802_1x_get_phase2_private_key_format   (NMSetting8021x *setting);
 
+
+/***** DEPRECATED; anything below will be removed in version 0.9 *****/
+
+typedef enum {
+	NM_SETTING_802_1X_CK_TYPE_UNKNOWN = 0,
+	NM_SETTING_802_1X_CK_TYPE_X509,
+	NM_SETTING_802_1X_CK_TYPE_RAW_KEY,
+	NM_SETTING_802_1X_CK_TYPE_PKCS12
+} NMSetting8021xCKType;
+
+const GByteArray *nm_setting_802_1x_get_ca_cert                      (NMSetting8021x *setting);
+gboolean          nm_setting_802_1x_set_ca_cert_from_file            (NMSetting8021x *setting,
+                                                                      const char *filename,
+                                                                      NMSetting8021xCKType *out_ck_type,
+                                                                      GError **error);
+
+const GByteArray *nm_setting_802_1x_get_client_cert                  (NMSetting8021x *setting);
+gboolean          nm_setting_802_1x_set_client_cert_from_file        (NMSetting8021x *setting,
+                                                                      const char *filename,
+                                                                      NMSetting8021xCKType *out_ck_type,
+                                                                      GError **error);
+
+const GByteArray *nm_setting_802_1x_get_phase2_ca_cert               (NMSetting8021x *setting);
+gboolean          nm_setting_802_1x_set_phase2_ca_cert_from_file     (NMSetting8021x *setting,
+                                                                      const char *filename,
+                                                                      NMSetting8021xCKType *out_ck_type,
+                                                                      GError **error);
+
+const GByteArray *nm_setting_802_1x_get_phase2_client_cert           (NMSetting8021x *setting);
+gboolean          nm_setting_802_1x_set_phase2_client_cert_from_file (NMSetting8021x *setting,
+                                                                      const char *filename,
+                                                                      NMSetting8021xCKType *out_ck_type,
+                                                                      GError **error);
+
+const GByteArray *nm_setting_802_1x_get_private_key                  (NMSetting8021x *setting);
+gboolean          nm_setting_802_1x_set_private_key_from_file        (NMSetting8021x *setting,
+                                                                      const char *filename,
+                                                                      const char *password,
+                                                                      NMSetting8021xCKType *out_ck_type,
+                                                                      GError **error);
+
+NMSetting8021xCKType nm_setting_802_1x_get_private_key_type          (NMSetting8021x *setting);
+
+const GByteArray *nm_setting_802_1x_get_phase2_private_key           (NMSetting8021x *setting);
+gboolean          nm_setting_802_1x_set_phase2_private_key_from_file (NMSetting8021x *setting,
+                                                                      const char *filename,
+                                                                      const char *password,
+                                                                      NMSetting8021xCKType *out_ck_type,
+                                                                      GError **error);
+
+NMSetting8021xCKType nm_setting_802_1x_get_phase2_private_key_type   (NMSetting8021x *setting);
+
 G_END_DECLS
 
 #endif /* NM_SETTING_8021X_H */
