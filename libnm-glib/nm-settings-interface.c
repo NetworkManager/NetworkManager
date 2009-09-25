@@ -162,6 +162,14 @@ nm_settings_interface_init (gpointer g_iface)
 				  g_cclosure_marshal_VOID__OBJECT,
 				  G_TYPE_NONE, 1, G_TYPE_OBJECT);
 
+	g_signal_new (NM_SETTINGS_INTERFACE_CONNECTIONS_READ,
+				  iface_type,
+				  G_SIGNAL_RUN_FIRST,
+				  G_STRUCT_OFFSET (NMSettingsInterface, connections_read),
+				  NULL, NULL,
+				  g_cclosure_marshal_VOID__VOID,
+				  G_TYPE_NONE, 0);
+
 	initialized = TRUE;
 }
 
