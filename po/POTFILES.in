@@ -11,7 +11,6 @@ src/dhcp-manager/nm-dhcp-dhclient.c
 src/ip6-manager/nm-netlink-listener.c
 src/named-manager/nm-named-manager.c
 src/system-settings/nm-default-wired-connection.c
-system-settings/plugins/ifcfg-rh/crypto.c
 system-settings/plugins/ifcfg-rh/reader.c
 policy/org.freedesktop.network-manager-settings.system.policy.in
 
