@@ -34,7 +34,7 @@
 #include "nm-utils-private.h"
 
 /**
- * SECTION:nm-setting-802-1x
+ * SECTION:nm-setting-8021x
  * @short_description: Describes 802.1x-authenticated connection properties
  * @include: nm-setting-8021x.h
  *
