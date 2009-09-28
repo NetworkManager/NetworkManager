@@ -668,6 +668,11 @@ make_ip4_setting (shvarFile *ifcfg,
 			              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default,
 			              NULL);
 			return NM_SETTING (s_ip4);
+		} else if (strlen (value)) {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "Unknown BOOTPROTO '%s'", value);
+			g_free (value);
+			goto error;
 		}
 		g_free (value);
 	} else {
