@@ -25,8 +25,8 @@ MKDB_OPTIONS=--sgml-mode --output-format=xml
 FIXXREF_OPTIONS=
 
 # Used for dependencies.
-HFILE_GLOB=
-CFILE_GLOB=
+HFILE_GLOB=$(top_srcdir)/libnm-glib/*.h
+CFILE_GLOB=$(top_srcdir)/libnm-glib/*.c
 
 # Header files to ignore when scanning.
 IGNORE_HFILES= \
@@ -77,4 +77,6 @@ GTKDOC_LIBS = $(top_builddir)/libnm-glib/libnm-glib.la
 
 # include common portion ...
 include $(top_srcdir)/gtk-doc.make
+
+CLEANFILES += libnm-glib-sections.txt
 
