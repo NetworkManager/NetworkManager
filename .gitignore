@@ -20,6 +20,16 @@ stamp-*
 .libs
 autom4te.cache
 intltool-*
+gtk-doc.make
+TAGS
+docs/libnm-glib/html/
+docs/libnm-glib/tmpl/
+docs/libnm-glib/xml/
+docs/libnm-glib/libnm-glib-*.txt
+docs/libnm-util/html/
+docs/libnm-util/tmpl/
+docs/libnm-util/xml/
+docs/libnm-util/libnm-util-*.txt
 COPYING
 INSTALL
 *.pc
