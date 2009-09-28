@@ -668,6 +668,8 @@ make_ip4_setting (shvarFile *ifcfg,
 			              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default,
 			              NULL);
 			return NM_SETTING (s_ip4);
+		} else if (!g_ascii_strcasecmp (value, "none")) {
+			/* Static IP */
 		} else if (strlen (value)) {
 			g_set_error (error, ifcfg_plugin_error_quark (), 0,
 			             "Unknown BOOTPROTO '%s'", value);
