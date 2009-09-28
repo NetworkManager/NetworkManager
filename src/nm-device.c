@@ -2731,8 +2731,8 @@ dispose (GObject *object)
 	/* Don't down can-assume-connection capable devices that are activated with
 	 * a connection that can be assumed.
 	 */
-	if (nm_device_interface_can_assume_connection (NM_DEVICE_INTERFACE (self))
-		&& (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED)) {
+	if (   nm_device_interface_can_assume_connection (NM_DEVICE_INTERFACE (self))
+	    && (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED)) {
 		NMConnection *connection;
 	    NMSettingIP4Config *s_ip4;
 		const char *method = NULL;
