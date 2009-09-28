@@ -517,3 +517,78 @@ nm_netlink_monitor_disconnect_handler (GIOChannel       *channel,
 	return FALSE;
 }
 
+typedef struct {
+	NMNetlinkMonitor *self;
+	struct rtnl_link *filter;
+	GError *error;
+	guint32 flags;
+} GetFlagsInfo;
+
+static void
+get_flags_sync_cb (struct nl_object *obj, void *arg)
+{
+	GetFlagsInfo *info = arg;
+
+	/* Ensure this cache item matches our filter */
+	if (nl_object_match_filter (obj, OBJ_CAST (info->filter)) != 0)
+		info->flags = rtnl_link_get_flags ((struct rtnl_link *) obj);
+}
+
+gboolean
+nm_netlink_monitor_get_flags_sync (NMNetlinkMonitor *self,
+                                   guint32 ifindex,
+                                   guint32 *ifflags,
+                                   GError **error)
+{
+	NMNetlinkMonitorPrivate *priv;
+	GetFlagsInfo info;
+	struct rtnl_link *filter;
+
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (self), FALSE);
+	g_return_val_if_fail (ifflags != NULL, FALSE);
+
+	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
+
+	/* Update the link cache with the latest information */
+	if (nl_cache_refill (priv->nlh, priv->nlh_link_cache)) {
+		g_set_error (error,
+		             NM_NETLINK_MONITOR_ERROR,
+		             NM_NETLINK_MONITOR_ERROR_LINK_CACHE_UPDATE,
+		             _("error updating link cache: %s"),
+		             nl_geterror ());
+		return FALSE;
+	}
+
+	/* Set up the filter */
+	filter = rtnl_link_alloc ();
+	if (!filter) {
+		g_set_error (error,
+		             NM_NETLINK_MONITOR_ERROR,
+		             NM_NETLINK_MONITOR_ERROR_BAD_ALLOC,
+		             _("error processing netlink message: %s"),
+		             nl_geterror ());
+		return FALSE;
+	}
+	rtnl_link_set_ifindex (filter, ifindex);
+
+	memset (&info, 0, sizeof (info));
+	info.self = self;
+	info.filter = filter;
+	info.error = NULL;
+	nl_cache_foreach_filter (priv->nlh_link_cache, NULL, get_flags_sync_cb, &info);
+
+	rtnl_link_put (filter);
+
+	if (info.error) {
+		if (error)
+			*error = info.error;
+		else
+			g_error_free (info.error);
+		return FALSE;
+	} else
+		*ifflags = info.flags;
+
+	return TRUE; /* success */
+}
+

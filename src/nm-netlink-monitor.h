@@ -74,6 +74,11 @@ void              nm_netlink_monitor_attach	          (NMNetlinkMonitor	*monitor
 void              nm_netlink_monitor_detach	          (NMNetlinkMonitor *monitor);
 gboolean          nm_netlink_monitor_request_status   (NMNetlinkMonitor *monitor,
 													   GError **error);
+gboolean          nm_netlink_monitor_get_flags_sync   (NMNetlinkMonitor *monitor,
+                                                       guint32 ifindex,
+                                                       guint32 *ifflags,
+                                                       GError **error);
+
 G_END_DECLS
 
 #endif  /* NM_NETLINK_MONITOR_H */
