@@ -112,7 +112,7 @@ typedef struct {
 	gulong              link_disconnected_id;
 
 	Supplicant          supplicant;
-	guint               link_timeout_id;
+	guint               supplicant_timeout_id;
 
 	/* PPPoE */
 	NMPPPManager *ppp_manager;
@@ -659,9 +659,9 @@ remove_supplicant_timeouts (NMDeviceEthernet *self)
 		priv->supplicant.con_timeout_id = 0;
 	}
 
-	if (priv->link_timeout_id) {
-		g_source_remove (priv->link_timeout_id);
-		priv->link_timeout_id = 0;
+	if (priv->supplicant_timeout_id) {
+		g_source_remove (priv->supplicant_timeout_id);
+		priv->supplicant_timeout_id = 0;
 	}
 }
 
@@ -749,7 +749,7 @@ link_timeout_cb (gpointer user_data)
 	NMConnection *connection;
 	const char *setting_name;
 
-	priv->link_timeout_id = 0;
+	priv->supplicant_timeout_id = 0;
 
 	req = nm_device_get_act_request (dev);
 
@@ -971,8 +971,8 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 			NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (task->self);
 
 			/* Start the link timeout so we allow some time for reauthentication */
-			if (!priv->link_timeout_id)
-				priv->link_timeout_id = g_timeout_add_seconds (15, link_timeout_cb, dev);
+			if (!priv->supplicant_timeout_id)
+				priv->supplicant_timeout_id = g_timeout_add_seconds (15, link_timeout_cb, dev);
 		}
 	}
 
