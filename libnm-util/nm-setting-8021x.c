@@ -1519,6 +1519,7 @@ nm_setting_802_1x_get_private_key_path (NMSetting8021x *setting)
  *   (PEM, DER, or PKCS#12 format).  The path must be UTF-8 encoded; use
  *   g_filename_to_utf8() to convert if needed.  Passing NULL with any @scheme
  *   clears the private key.
+ * @password: password used to decrypt the private key
  * @scheme: desired storage scheme for the private key
  * @out_format: on successful return, the type of the private key added
  * @error: on unsuccessful return, an error
@@ -1898,6 +1899,7 @@ nm_setting_802_1x_get_phase2_private_key_path (NMSetting8021x *setting)
  *   key file (PEM, DER, or PKCS#12 format).  The path must be UTF-8 encoded;
  *   use g_filename_to_utf8() to convert if needed.  Passing NULL with any
  *   @scheme clears the "phase2" private key.
+ * @password: password used to decrypt the private key
  * @scheme: desired storage scheme for the private key
  * @out_format: on successful return, the type of the private key added
  * @error: on unsuccessful return, an error
@@ -2045,7 +2047,7 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
 }
 
 /**
- * nm_setting_802_1x_set_phase2_private_key:
+ * nm_setting_802_1x_set_phase2_private_key_from_file:
  * @setting: the #NMSetting8021x
  * @filename: the path of the "phase2" private key file (PEM, DER, or PKCS#12
  *   format).  Passing NULL clears the "phase2" private key.
