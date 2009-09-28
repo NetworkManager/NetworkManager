@@ -110,6 +110,7 @@ typedef struct {
 	NMNetlinkMonitor *  monitor;
 	gulong              link_connected_id;
 	gulong              link_disconnected_id;
+	guint               carrier_action_defer_id;
 
 	Supplicant          supplicant;
 	guint               supplicant_timeout_id;
@@ -174,7 +175,41 @@ nm_ethernet_error_get_type (void)
 }
 
 static void
-set_carrier (NMDeviceEthernet *self, const gboolean carrier)
+carrier_action_defer_clear (NMDeviceEthernet *self)
+{
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+
+	if (priv->carrier_action_defer_id) {
+		g_source_remove (priv->carrier_action_defer_id);
+		priv->carrier_action_defer_id = 0;
+	}
+}
+
+static gboolean
+carrier_action_defer_cb (gpointer user_data)
+{
+	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (user_data);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+	NMDeviceState state;
+
+	priv->carrier_action_defer_id = 0;
+
+	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
+	if (state == NM_DEVICE_STATE_UNAVAILABLE) {
+		if (priv->carrier)
+			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_CARRIER);
+	} else if (state >= NM_DEVICE_STATE_DISCONNECTED) {
+		if (!priv->carrier)
+			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_CARRIER);
+	}
+
+	return FALSE;
+}
+
+static void
+set_carrier (NMDeviceEthernet *self,
+             const gboolean carrier,
+             const gboolean defer_action)
 {
 	NMDeviceEthernetPrivate *priv;
 	NMDeviceState state;
@@ -185,18 +220,23 @@ set_carrier (NMDeviceEthernet *self, const gboolean carrier)
 	if (priv->carrier == carrier)
 		return;
 
+	/* Clear any previous deferred action */
+	carrier_action_defer_clear (self);
+
 	priv->carrier = carrier;
 	g_object_notify (G_OBJECT (self), NM_DEVICE_ETHERNET_CARRIER);
 
 	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
-nm_info ("(%s): carrier now %s (device state %d)", nm_device_get_iface (NM_DEVICE (self)), carrier ? "ON" : "OFF", state);
-	if (state == NM_DEVICE_STATE_UNAVAILABLE) {
-		if (carrier)
-			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_CARRIER);
-	} else if (state >= NM_DEVICE_STATE_DISCONNECTED) {
-		if (!carrier)
-			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_CARRIER);
-	}
+	nm_info ("(%s): carrier now %s (device state %d%s)",
+	         nm_device_get_iface (NM_DEVICE (self)),
+	         carrier ? "ON" : "OFF",
+	         state,
+	         defer_action ? ", deferring action for 4 seconds" : "");
+
+	if (defer_action)
+		priv->carrier_action_defer_id = g_timeout_add_seconds (4, carrier_action_defer_cb, self);
+	else
+		carrier_action_defer_cb (self);
 }
 
 static void
@@ -216,7 +256,7 @@ carrier_on (NMNetlinkMonitor *monitor,
 		if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
 			return;
 
-		set_carrier (NM_DEVICE_ETHERNET (device), TRUE);
+		set_carrier (self, TRUE, FALSE);
 	}
 }
 
@@ -232,12 +272,23 @@ carrier_off (NMNetlinkMonitor *monitor,
 
 	/* Make sure signal is for us */
 	if (idx == priv->ifindex) {
+		NMDeviceState state;
+		gboolean defer = FALSE;
+
 		/* Ignore spurious netlink messages */
 		caps = nm_device_get_capabilities (device);
 		if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
 			return;
 
-		set_carrier (NM_DEVICE_ETHERNET (device), FALSE);
+		/* Defer carrier-off event actions while connected by a few seconds
+		 * so that tripping over a cable, power-cycling a switch, or breaking
+		 * off the RJ45 locking tab isn't so catastrophic.
+		 */
+		state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
+		if (state > NM_DEVICE_STATE_DISCONNECTED)
+			defer = TRUE;
+
+		set_carrier (self, FALSE, defer);
 	}
 }
 
@@ -286,6 +337,10 @@ constructor (GType type,
 			g_clear_error (&error);
 		} else
 			priv->carrier = !!(ifflags & IFF_LOWER_UP);
+
+		nm_info ("(%s): carrier is %s",
+		         nm_device_get_iface (NM_DEVICE (self)),
+		         priv->carrier ? "ON" : "OFF");
 
 		/* Request link state again just in case an error occurred getting the
 		 * initial link state.
@@ -1674,6 +1729,8 @@ dispose (GObject *object)
 		g_signal_handler_disconnect (priv->monitor, priv->link_disconnected_id);
 		priv->link_disconnected_id = 0;
 	}
+
+	carrier_action_defer_clear (self);
 
 	if (priv->monitor) {
 		g_object_unref (priv->monitor);
