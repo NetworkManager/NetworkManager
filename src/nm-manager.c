@@ -1201,6 +1201,7 @@ add_device (NMManager *self, NMDevice *device)
 	NMConnection *existing = NULL;
 	GHashTableIter iter;
 	gpointer value;
+	gboolean managed = FALSE;
 
 	priv->devices = g_slist_append (priv->devices, device);
 
@@ -1265,13 +1266,14 @@ add_device (NMManager *self, NMDevice *device)
 		                       TRUE,
 		                       existing ? NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED :
 		                                  NM_DEVICE_STATE_REASON_NOW_MANAGED);
+		managed = TRUE;
 	}
 
 	nm_sysconfig_settings_device_added (priv->sys_settings, device);
 	g_signal_emit (self, signals[DEVICE_ADDED], 0, device);
 
 	/* If the device has a connection it can assume, do that now */
-	if (existing) {
+	if (existing && managed && nm_device_is_available (device)) {
 		const char *ac_path;
 		GError *error = NULL;
 

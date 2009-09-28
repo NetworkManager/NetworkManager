@@ -31,7 +31,7 @@
 #include <linux/ethtool.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-#include <net/if.h>
+#include <linux/if.h>
 #include <errno.h>
 
 #include "nm-glib-compat.h"
@@ -263,6 +263,7 @@ constructor (GType type,
 	caps = nm_device_get_capabilities (self);
 	if (caps & NM_DEVICE_CAP_CARRIER_DETECT) {
 		GError *error = NULL;
+		guint32 ifflags = 0;
 
 		/* Only listen to netlink for cards that support carrier detect */
 		priv->monitor = nm_netlink_monitor_get ();
@@ -274,9 +275,26 @@ constructor (GType type,
 		                                               G_CALLBACK (carrier_off),
 		                                               self);
 
+		/* Get initial link state */
+		if (!nm_netlink_monitor_get_flags_sync (priv->monitor,
+		                                        priv->ifindex,
+		                                        &ifflags,
+		                                        &error)) {
+			nm_warning ("couldn't get initial carrier state: (%d) %s",
+			            error ? error->code : -1,
+			            (error && error->message) ? error->message : "unknown");
+			g_clear_error (&error);
+		} else
+			priv->carrier = !!(ifflags & IFF_LOWER_UP);
+
+		/* Request link state again just in case an error occurred getting the
+		 * initial link state.
+		 */
 		if (!nm_netlink_monitor_request_status (priv->monitor, &error)) {
-			nm_warning ("couldn't request carrier state: %s", error ? error->message : "unknown");
-			g_error_free (error);
+			nm_warning ("couldn't request carrier state: (%d) %s",
+			            error ? error->code : -1,
+			            (error && error->message) ? error->message : "unknown");
+			g_clear_error (&error);
 		}
 	} else {
 		nm_info ("(%s): driver '%s' does not support carrier detection.",
