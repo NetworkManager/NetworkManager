@@ -4215,7 +4215,8 @@ test_write_wifi_wpa_psk (const char *name,
                          const char *test_name,
                          gboolean wep_group,
                          gboolean wpa,
-                         gboolean wpa2)
+                         gboolean wpa2,
+                         const char *psk)
 {
 	NMConnection *connection;
 	NMConnection *reread;
@@ -4232,6 +4233,8 @@ test_write_wifi_wpa_psk (const char *name,
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
 	const unsigned char ssid_data[] = "blahblah";
+
+	g_return_if_fail (psk != NULL);
 
 	connection = nm_connection_new ();
 	ASSERT (connection != NULL,
@@ -4280,7 +4283,7 @@ test_write_wifi_wpa_psk (const char *name,
 
 	g_object_set (s_wsec,
 	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk",
-	              NM_SETTING_WIRELESS_SECURITY_PSK, "7d308b11df1b4243b0f78e5f3fc68cdbb9a264ed0edf4c188edf329ff5b467f0",
+	              NM_SETTING_WIRELESS_SECURITY_PSK, psk,
 	              NULL);
 
 	if (wep_group) {
@@ -5620,6 +5623,9 @@ test_write_mobile_broadband (gboolean gsm)
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_QUOTED TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-quoted"
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-hex"
 
+
+#define DEFAULT_HEX_PSK "7d308b11df1b4243b0f78e5f3fc68cdbb9a264ed0edf4c188edf329ff5b467f0"
+
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
@@ -5664,10 +5670,36 @@ int main (int argc, char **argv)
 	test_write_wifi_open_hex_ssid ();
 	test_write_wifi_wep ();
 	test_write_wifi_wep_adhoc ();
-	test_write_wifi_wpa_psk ("Test Write Wifi WPA PSK", "wifi-wpa-psk-write", FALSE, TRUE, FALSE);
-	test_write_wifi_wpa_psk ("Test Write Wifi WPA2 PSK", "wifi-wpa2-psk-write", FALSE, FALSE, TRUE);
-	test_write_wifi_wpa_psk ("Test Write Wifi WPA WPA2 PSK", "wifi-wpa-wpa2-psk-write", FALSE, TRUE, TRUE);
-	test_write_wifi_wpa_psk ("Test Write Wifi WEP WPA WPA2 PSK", "wifi-wep-wpa-wpa2-psk-write", TRUE, TRUE, TRUE);
+	test_write_wifi_wpa_psk ("Test Write Wifi WPA PSK",
+	                         "wifi-wpa-psk-write",
+	                         FALSE,
+	                         TRUE,
+	                         FALSE,
+	                         DEFAULT_HEX_PSK);
+	test_write_wifi_wpa_psk ("Test Write Wifi WPA2 PSK",
+	                         "wifi-wpa2-psk-write",
+	                         FALSE,
+	                         FALSE,
+	                         TRUE,
+	                         DEFAULT_HEX_PSK);
+	test_write_wifi_wpa_psk ("Test Write Wifi WPA WPA2 PSK",
+	                         "wifi-wpa-wpa2-psk-write",
+	                         FALSE,
+	                         TRUE,
+	                         TRUE,
+	                         DEFAULT_HEX_PSK);
+	test_write_wifi_wpa_psk ("Test Write Wifi WEP WPA WPA2 PSK",
+	                         "wifi-wep-wpa-wpa2-psk-write",
+	                         TRUE,
+	                         TRUE,
+	                         TRUE,
+	                         DEFAULT_HEX_PSK);
+	test_write_wifi_wpa_psk ("Test Write Wifi WPA WPA2 PSK Passphrase",
+	                         "wifi-wpa-wpa2-psk-passphrase-write",
+	                         FALSE,
+	                         TRUE,
+	                         TRUE,
+	                         "really insecure passphrase04!");
 	test_write_wifi_wpa_psk_adhoc ();
 	test_write_wifi_wpa_eap_tls ();
 	test_write_wifi_wpa_eap_ttls_tls ();
