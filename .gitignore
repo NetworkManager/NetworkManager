@@ -30,7 +30,6 @@ docs/libnm-util/html/
 docs/libnm-util/tmpl/
 docs/libnm-util/xml/
 docs/libnm-util/libnm-util-*.txt
-docs/libnm-util/libnm-util-docs.sgml
 COPYING
 INSTALL
 *.pc
