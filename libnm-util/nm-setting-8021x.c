@@ -33,6 +33,35 @@
 #include "crypto.h"
 #include "nm-utils-private.h"
 
+/**
+ * SECTION:nm-setting-8021x
+ * @short_description: Describes 802.1x-authenticated connection properties
+ * @include: nm-setting-8021x.h
+ *
+ * The #NMSetting8021x object is a #NMSetting subclass that describes
+ * properties necessary for connection to 802.1x-authenticated networks, such as
+ * WPA and WPA2 Enterprise WiFi networks and wired 802.1x networks.  802.1x
+ * connections typically use certificates and/or EAP authentication methods to
+ * securely verify, identify, and authenticate the client to the network itself,
+ * instead of simply relying on a widely shared static key.
+ *
+ * It's a good idea to read up on wpa_supplicant configuration before using this
+ * setting extensively, since most of the options here correspond closely with
+ * the relevant wpa_supplicant configuration options.
+ *
+ * Furthermore, to get a good idea of 802.1x, EAP, TLS, TTLS, etc and their
+ * applications to WiFi and wired networks, you'll want to get copies of the
+ * following books.
+ *
+ *  802.11 Wireless Networks: The Definitive Guide, Second Edition
+ *       Author: Matthew Gast
+ *       ISBN: 978-0596100520
+ *
+ *  Cisco Wireless LAN Security
+ *       Authors: Krishna Sankar, Sri Sundaralingam, Darrin Miller, and Andrew Balinsky
+ *       ISBN: 978-1587051548
+ **/
+
 GQuark
 nm_setting_802_1x_error_quark (void)
 {
