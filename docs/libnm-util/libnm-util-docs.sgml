@@ -26,10 +26,8 @@
     <xi:include href="xml/nm-setting-serial.xml"/>
     <xi:include href="xml/nm-setting-cdma.xml"/>
     <xi:include href="xml/nm-setting-gsm.xml"/>
-    <xi:include href="xml/nm-setting-olpc-mesh.xml"/>
     <xi:include href="xml/nm-setting-8021x.xml"/>
     <xi:include href="xml/nm-setting-ip4-config.xml"/>
-    <xi:include href="xml/nm-setting-ip6-config.xml"/>
     <xi:include href="xml/nm-setting-ppp.xml"/>
     <xi:include href="xml/nm-setting-pppoe.xml"/>
     <xi:include href="xml/nm-setting-vpn.xml"/>
