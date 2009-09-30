@@ -107,6 +107,12 @@ typedef struct {
 	                                  const char *key,
 	                                  GValue     *value,
 	                                  GError    **error);
+
+	/* Padding for future expansion */
+	void (*_reserved1) (void);
+	void (*_reserved2) (void);
+	void (*_reserved3) (void);
+	void (*_reserved4) (void);
 } NMSettingClass;
 
 typedef void (*NMSettingValueIterFn) (NMSetting *setting,

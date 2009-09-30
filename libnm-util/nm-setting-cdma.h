@@ -63,6 +63,12 @@ typedef struct {
 
 typedef struct {
 	NMSettingClass parent;
+
+	/* Padding for future expansion */
+	void (*_reserved1) (void);
+	void (*_reserved2) (void);
+	void (*_reserved3) (void);
+	void (*_reserved4) (void);
 } NMSettingCdmaClass;
 
 GType nm_setting_cdma_get_type (void);
