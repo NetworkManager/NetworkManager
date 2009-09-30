@@ -50,6 +50,14 @@ typedef struct {
 	void (*vpn_state_changed) (NMVPNConnection *connection,
 	                           NMVPNConnectionState state,
 	                           NMVPNConnectionStateReason reason);
+
+	/* Padding for future expansion */
+	void (*_reserved1) (void);
+	void (*_reserved2) (void);
+	void (*_reserved3) (void);
+	void (*_reserved4) (void);
+	void (*_reserved5) (void);
+	void (*_reserved6) (void);
 } NMVPNConnectionClass;
 
 GType nm_vpn_connection_get_type (void);

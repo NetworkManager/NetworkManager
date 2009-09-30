@@ -67,6 +67,14 @@ typedef struct {
 	                       NMDeviceState new_state,
 	                       NMDeviceState old_state,
 	                       NMDeviceStateReason reason);
+
+	/* Padding for future expansion */
+	void (*_reserved1) (void);
+	void (*_reserved2) (void);
+	void (*_reserved3) (void);
+	void (*_reserved4) (void);
+	void (*_reserved5) (void);
+	void (*_reserved6) (void);
 } NMDeviceClass;
 
 GType nm_device_get_type (void);

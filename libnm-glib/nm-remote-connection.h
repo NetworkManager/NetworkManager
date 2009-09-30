@@ -44,6 +44,14 @@ typedef struct {
 
 typedef struct {
 	NMConnectionClass parent_class;
+
+	/* Padding for future expansion */
+	void (*_reserved1) (void);
+	void (*_reserved2) (void);
+	void (*_reserved3) (void);
+	void (*_reserved4) (void);
+	void (*_reserved5) (void);
+	void (*_reserved6) (void);
 } NMRemoteConnectionClass;
 
 GType nm_remote_connection_get_type (void);

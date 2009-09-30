@@ -45,6 +45,14 @@ typedef struct {
 
 typedef struct {
 	NMRemoteSettingsClass parent;
+
+	/* Padding for future expansion */
+	void (*_reserved1) (void);
+	void (*_reserved2) (void);
+	void (*_reserved3) (void);
+	void (*_reserved4) (void);
+	void (*_reserved5) (void);
+	void (*_reserved6) (void);
 } NMRemoteSettingsSystemClass;
 
 GType nm_remote_settings_system_get_type (void);

@@ -112,6 +112,14 @@ struct _NMVpnPluginUiInterface {
 	 * related to the connection.
 	 */
 	gboolean (*delete_connection) (NMVpnPluginUiInterface *iface, NMConnection *connection, GError **error);
+
+	/* Padding for future expansion */
+	void (*_reserved1) (void);
+	void (*_reserved2) (void);
+	void (*_reserved3) (void);
+	void (*_reserved4) (void);
+	void (*_reserved5) (void);
+	void (*_reserved6) (void);
 };
 
 GType nm_vpn_plugin_ui_interface_get_type (void);

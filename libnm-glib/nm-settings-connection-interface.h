@@ -81,6 +81,14 @@ struct _NMSettingsConnectionInterface {
 	                 GHashTable *new_settings);
 
 	void (*removed) (NMSettingsConnectionInterface *connection);
+
+	/* Padding for future expansion */
+	void (*_reserved1) (void);
+	void (*_reserved2) (void);
+	void (*_reserved3) (void);
+	void (*_reserved4) (void);
+	void (*_reserved5) (void);
+	void (*_reserved6) (void);
 };
 
 GType nm_settings_connection_interface_get_type (void);

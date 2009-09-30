@@ -46,6 +46,14 @@ typedef struct {
 
 typedef struct {
 	NMDeviceClass parent;
+
+	/* Padding for future expansion */
+	void (*_reserved1) (void);
+	void (*_reserved2) (void);
+	void (*_reserved3) (void);
+	void (*_reserved4) (void);
+	void (*_reserved5) (void);
+	void (*_reserved6) (void);
 } NMDeviceBtClass;
 
 GType nm_device_bt_get_type (void);

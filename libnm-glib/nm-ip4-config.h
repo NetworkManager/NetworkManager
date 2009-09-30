@@ -44,6 +44,14 @@ typedef struct {
 
 typedef struct {
 	NMObjectClass parent;
+
+	/* Padding for future expansion */
+	void (*_reserved1) (void);
+	void (*_reserved2) (void);
+	void (*_reserved3) (void);
+	void (*_reserved4) (void);
+	void (*_reserved5) (void);
+	void (*_reserved6) (void);
 } NMIP4ConfigClass;
 
 #define NM_IP4_CONFIG_ADDRESSES "addresses"

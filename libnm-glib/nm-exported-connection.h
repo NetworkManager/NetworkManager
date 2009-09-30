@@ -55,6 +55,14 @@ typedef struct {
 	                     const gchar **hints,
 	                     gboolean request_new,
 	                     DBusGMethodInvocation *context);
+
+	/* Padding for future expansion */
+	void (*_reserved1) (void);
+	void (*_reserved2) (void);
+	void (*_reserved3) (void);
+	void (*_reserved4) (void);
+	void (*_reserved5) (void);
+	void (*_reserved6) (void);
 } NMExportedConnectionClass;
 
 GType nm_exported_connection_get_type (void);

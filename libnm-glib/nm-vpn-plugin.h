@@ -91,6 +91,14 @@ typedef struct {
 					    NMVPNPluginFailure reason);
 
 	void (*quit)           (NMVPNPlugin *plugin);
+
+	/* Padding for future expansion */
+	void (*_reserved1) (void);
+	void (*_reserved2) (void);
+	void (*_reserved3) (void);
+	void (*_reserved4) (void);
+	void (*_reserved5) (void);
+	void (*_reserved6) (void);
 } NMVPNPluginClass;
 
 GType  nm_vpn_plugin_get_type       (void);
