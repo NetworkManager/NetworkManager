@@ -2513,7 +2513,7 @@ verify_cert (GByteArray *array, const char *prop_name, GError **error)
 	g_set_error (error,
 	             NM_SETTING_802_1X_ERROR,
 	             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-	             prop_name);
+	             "%s", prop_name);
 	return FALSE;
 }
 
