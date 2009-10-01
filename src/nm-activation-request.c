@@ -575,22 +575,24 @@ nm_act_request_set_shared (NMActRequest *req, gboolean shared)
 	for (iter = list; iter; iter = g_slist_next (iter)) {
 		ShareRule *rule = (ShareRule *) iter->data;
 		char *envp[1] = { NULL };
-		char **argv;
+		char *argv[6];
 		char *cmd;
 		int status;
 		GError *error = NULL;
 
+		argv[0] = IPTABLES_PATH;
+		argv[1] = "--table";
+		argv[2] = rule->table;
+
 		if (shared)
-			cmd = g_strdup_printf ("/sbin/iptables --table %s --insert %s", rule->table, rule->rule);
+			argv[3] = "--insert";
 		else
-			cmd = g_strdup_printf ("/sbin/iptables --table %s --delete %s", rule->table, rule->rule);
+			argv[3] = "--delete";
 
-		argv = g_strsplit (cmd, " ", 0);
-		if (!argv || !argv[0]) {
-			continue;
-			g_free (cmd);
-		}
+		argv[4] = rule->rule;
+		argv[5] = NULL;
 
+		cmd = g_strjoinv (" ", argv);
 		nm_info ("Executing: %s", cmd);
 		g_free (cmd);
 
@@ -602,8 +604,6 @@ nm_act_request_set_shared (NMActRequest *req, gboolean shared)
 				g_error_free (error);
 		} else if (WEXITSTATUS (status))
 			nm_info ("** Command returned exit status %d.", WEXITSTATUS (status));
-
-		g_strfreev (argv);
 	}
 
 	g_slist_free (list);

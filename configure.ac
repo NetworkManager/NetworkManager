@@ -369,6 +369,19 @@ if test -n "${RESOLVCONF_PATH}"; then
 	AC_DEFINE_UNQUOTED(RESOLVCONF_PATH, "$RESOLVCONF_PATH", [Define if you have a resolvconf implementation])
 fi
 
+# iptables path
+AC_ARG_WITH(iptables, AC_HELP_STRING([--with-iptables=/path/to/iptables], [path to iptables])) 
+if test "x${with_iptables}" = x; then
+  AC_PATH_PROG(IPTABLES_PATH, iptables, [], $PATH:/sbin:/usr/sbin)
+  if ! test -x "$IPTABLES_PATH"; then
+        AC_MSG_ERROR(iptables was not installed.)
+  fi
+else
+  IPTABLES_PATH="$with_iptables"
+fi
+AC_DEFINE_UNQUOTED(IPTABLES_PATH, "$IPTABLES_PATH", [Define to path of iptables binary])
+AC_SUBST(IPTABLES_PATH)
+
 # system CA certificates path
 AC_ARG_WITH(system-ca-path, AS_HELP_STRING([--with-system-ca-path=/path/to/ssl/certs], [path to system CA certificates])) 
 if test "x${with_system_ca_path}" = x; then
