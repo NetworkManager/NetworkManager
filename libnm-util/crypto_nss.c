@@ -156,7 +156,7 @@ crypto_decrypt (const char *cipher,
 	PK11Context *ctx = NULL;
 	SECStatus s;
 	gboolean success = FALSE;
-	unsigned int pad_len = 0;
+	unsigned int pad_len = 0, extra = 0;
 	guint32 i, real_iv_len = 0;
 
 	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC)) {
@@ -248,7 +248,7 @@ crypto_decrypt (const char *cipher,
 
 	s = PK11_DigestFinal (ctx,
 	                      (unsigned char *) (output + decrypted_len),
-	                      &pad_len,
+	                      &extra,
 	                      data->len - decrypted_len);
 	if (s != SECSuccess) {
 		g_set_error (error, NM_CRYPTO_ERROR,
@@ -257,6 +257,7 @@ crypto_decrypt (const char *cipher,
 		             PORT_GetError ());
 		goto out;
 	}
+	decrypted_len += extra;
 	pad_len = data->len - decrypted_len;
 
 	/* Check if the padding at the end of the decrypted data is valid */
@@ -270,7 +271,7 @@ crypto_decrypt (const char *cipher,
 	/* Validate tail padding; last byte is the padding size, and all pad bytes
 	 * should contain the padding size.
 	 */
-	for (i = 1; i <= pad_len; ++i) {
+	for (i = pad_len; i > 0; i--) {
 		if (output[data->len - i] != pad_len) {
 			g_set_error (error, NM_CRYPTO_ERROR,
 			             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
