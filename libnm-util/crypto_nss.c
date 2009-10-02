@@ -18,7 +18,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2009 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -147,8 +147,7 @@ crypto_decrypt (const char *cipher,
                 GError **error)
 {
 	char *output = NULL;
-	int tmp1_len = 0;
-	unsigned int tmp2_len = 0;
+	int decrypted_len = 0;
 	CK_MECHANISM_TYPE cipher_mech;
 	PK11SlotInfo *slot = NULL;
 	SECItem key_item;
@@ -157,13 +156,16 @@ crypto_decrypt (const char *cipher,
 	PK11Context *ctx = NULL;
 	SECStatus s;
 	gboolean success = FALSE;
-	gsize len;
+	unsigned int pad_len = 0, extra = 0;
+	guint32 i, real_iv_len = 0;
 
-	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC))
+	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC)) {
 		cipher_mech = CKM_DES3_CBC_PAD;
-	else if (!strcmp (cipher, CIPHER_DES_CBC))
+		real_iv_len = 8;
+	} else if (!strcmp (cipher, CIPHER_DES_CBC)) {
 		cipher_mech = CKM_DES_CBC_PAD;
-	else {
+		real_iv_len = 8;
+	} else {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_UNKNOWN_CIPHER,
 		             _("Private key cipher '%s' was unknown."),
@@ -171,7 +173,15 @@ crypto_decrypt (const char *cipher,
 		return NULL;
 	}
 
-	output = g_malloc0 (data->len + 1);
+	if (iv_len < real_iv_len) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_RAW_IV_INVALID,
+		             _("Invalid IV length (must be at least %d)."),
+		             real_iv_len);
+		return NULL;
+	}
+
+	output = g_malloc0 (data->len);
 	if (!output) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_OUT_OF_MEMORY,
@@ -198,7 +208,7 @@ crypto_decrypt (const char *cipher,
 	}
 
 	key_item.data = (unsigned char *) iv;
-	key_item.len = iv_len;
+	key_item.len = real_iv_len;
 	sec_param = PK11_ParamFromIV (cipher_mech, &key_item);
 	if (!sec_param) {
 		g_set_error (error, NM_CRYPTO_ERROR,
@@ -217,7 +227,7 @@ crypto_decrypt (const char *cipher,
 
 	s = PK11_CipherOp (ctx,
 	                   (unsigned char *) output,
-	                   &tmp1_len,
+	                   &decrypted_len,
 	                   data->len,
 	                   data->data,
 	                   data->len);
@@ -229,10 +239,17 @@ crypto_decrypt (const char *cipher,
 		goto out;
 	}
 
+	if (decrypted_len > data->len) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
+		             _("Failed to decrypt the private key: decrypted data too large."));
+		goto out;
+	}
+
 	s = PK11_DigestFinal (ctx,
-	                      (unsigned char *) (output + tmp1_len),
-	                      &tmp2_len,
-	                      data->len - tmp1_len);
+	                      (unsigned char *) (output + decrypted_len),
+	                      &extra,
+	                      data->len - decrypted_len);
 	if (s != SECSuccess) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
@@ -240,12 +257,30 @@ crypto_decrypt (const char *cipher,
 		             PORT_GetError ());
 		goto out;
 	}
-	len = tmp1_len + tmp2_len;
-	if (len > data->len)
-		goto out;
+	decrypted_len += extra;
+	pad_len = data->len - decrypted_len;
 
-	*out_len = len;
-	output[*out_len] = '\0';
+	/* Check if the padding at the end of the decrypted data is valid */
+	if (pad_len == 0 || pad_len > real_iv_len) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
+		             _("Failed to decrypt the private key: unexpected padding length."));
+		goto out;
+	}
+
+	/* Validate tail padding; last byte is the padding size, and all pad bytes
+	 * should contain the padding size.
+	 */
+	for (i = pad_len; i > 0; i--) {
+		if (output[data->len - i] != pad_len) {
+			g_set_error (error, NM_CRYPTO_ERROR,
+			             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
+			             _("Failed to decrypt the private key."));
+			goto out;
+		}
+	}
+
+	*out_len = decrypted_len;
 	success = TRUE;
 
 out:
