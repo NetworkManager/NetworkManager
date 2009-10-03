@@ -10,5 +10,8 @@
 EXTRA_DIST = \
 	test_ca_cert.pem \
 	test_key_and_cert.pem \
-	test-cert.p12
+	test-cert.p12 \
+	test2_ca_cert.pem \
+	test2_key_and_cert.pem \
+	test2-cert.p12
 
