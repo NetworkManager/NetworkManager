@@ -248,18 +248,16 @@ udev_device_added (SCPluginIfupdown *self, GUdevDevice *device)
 	 * we want to either unmanage the device or lock it
 	 */
 	exported = (NMIfupdownConnection *) g_hash_table_lookup (priv->iface_connections, iface);
-	if (!exported) {
+	if (!exported && !g_hash_table_lookup (priv->well_known_interfaces, iface)) {
 		PLUGIN_PRINT("SCPlugin-Ifupdown",
-			"device added (path: %s, iface: %s): no exported connection", path, iface);
+			"device added (path: %s, iface: %s): no ifupdown configuration found.", path, iface);
 		return;
 	}
 
-	if (!g_hash_table_lookup (priv->well_known_interfaces, iface))
-		return;
-
 	g_hash_table_insert (priv->well_known_ifaces, g_strdup (iface), g_object_ref (device));
 
-	bind_device_to_connection (self, device, exported);
+	if (exported)
+		bind_device_to_connection (self, device, exported);
 
 	if (ALWAYS_UNMANAGE || priv->unmanage_well_known)
 		g_signal_emit_by_name (G_OBJECT (self), NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
