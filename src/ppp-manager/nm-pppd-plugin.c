@@ -109,6 +109,11 @@ nm_phasechange (void *data, int arg)
 		break;
 	}
 
+	g_message ("nm-ppp-plugin: (%s): status %d / phase '%s'",
+	           __func__,
+	           ppp_status,
+	           ppp_phase);
+
 	if (ppp_status != NM_PPP_STATUS_UNKNOWN) {
 		dbus_g_proxy_call_no_reply (proxy, "SetState",
 		                            G_TYPE_UINT, ppp_status, G_TYPE_INVALID,
@@ -161,8 +166,10 @@ nm_ip_up (void *data, int arg)
 
 	g_return_if_fail (DBUS_IS_G_PROXY (proxy));
 
+	g_message ("nm-ppp-plugin: (%s): ip-up event", __func__);
+
 	if (!opts.ouraddr) {
-		g_warning ("Didn't receive an internal IP from pppd!");
+		g_warning ("nm-ppp-plugin: (%s): didn't receive an internal IP from pppd!", __func__);
 		nm_phasechange (NULL, PHASE_DEAD);
 		return;
 	}
@@ -224,9 +231,11 @@ nm_ip_up (void *data, int arg)
 		g_hash_table_insert (hash, NM_PPP_IP4_CONFIG_WINS, val);
 	}
 
+	g_message ("nm-ppp-plugin: (%s): sending Ip4Config to NetworkManager...", __func__);
+
 	dbus_g_proxy_call_no_reply (proxy, "SetIp4Config",
-						   DBUS_TYPE_G_MAP_OF_VARIANT, hash, G_TYPE_INVALID,
-						   G_TYPE_INVALID);
+	                            DBUS_TYPE_G_MAP_OF_VARIANT, hash, G_TYPE_INVALID,
+	                            G_TYPE_INVALID);
 
 	g_hash_table_destroy (hash);
 }
@@ -258,17 +267,24 @@ get_credentials (char *username, char *password)
 
 	g_return_val_if_fail (DBUS_IS_G_PROXY (proxy), -1);
 
+	g_message ("nm-ppp-plugin: (%s): passwd-hook, requesting credentials...", __func__);
+
 	dbus_g_proxy_call (proxy, "NeedSecrets", &err,
-				    G_TYPE_INVALID,
-				    G_TYPE_STRING, &my_username,
-				    G_TYPE_STRING, &my_password,
-				    G_TYPE_INVALID);
+	                   G_TYPE_INVALID,
+	                   G_TYPE_STRING, &my_username,
+	                   G_TYPE_STRING, &my_password,
+	                   G_TYPE_INVALID);
 
 	if (err) {
-		g_warning ("Could not get secrets: %s", err->message);
+		g_warning ("nm-ppp-plugin: (%s): could not get secrets: (%d) %s",
+		           __func__,
+		           err ? err->code : -1,
+		           err->message ? err->message : "(unknown)");
 		g_error_free (err);
 		return -1;
 	}
+
+	g_message ("nm-ppp-plugin: (%s): got credentials from NetworkManager", __func__);
 
 	if (my_username) {
 		len = strlen (my_username) + 1;
@@ -298,6 +314,8 @@ nm_exit_notify (void *data, int arg)
 {
 	g_return_if_fail (DBUS_IS_G_PROXY (proxy));
 
+	g_message ("nm-ppp-plugin: (%s): cleaning up", __func__);
+
 	g_object_unref (proxy);
 	proxy = NULL;
 }
@@ -310,9 +328,14 @@ plugin_init (void)
 
 	g_type_init ();
 
+	g_message ("nm-ppp-plugin: (%s): initializing", __func__);
+
 	bus = dbus_g_bus_get (DBUS_BUS_SYSTEM, &err);
 	if (!bus) {
-		g_warning ("Couldn't connect to system bus: %s", err->message);
+		g_warning ("nm-pppd-plugin: (%s): couldn't connect to system bus: (%d) %s",
+		           __func__,
+		           err ? err->code : -1,
+		           err && err->message ? err->message : "(unknown)");
 		g_error_free (err);
 		return -1;
 	}
