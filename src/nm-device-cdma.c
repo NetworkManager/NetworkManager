@@ -39,8 +39,6 @@ G_DEFINE_TYPE (NMDeviceCdma, nm_device_cdma, NM_TYPE_DEVICE)
 #define NM_DEVICE_CDMA_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_CDMA, NMDeviceCdmaPrivate))
 
 typedef struct {
-	gboolean disposed;
-
 	NMModem *modem;
 } NMDeviceCdmaPrivate;
 
@@ -315,20 +313,14 @@ nm_device_cdma_init (NMDeviceCdma *self)
 }
 
 static void
-dispose (GObject *object)
+finalize (GObject *object)
 {
 	NMDeviceCdmaPrivate *priv = NM_DEVICE_CDMA_GET_PRIVATE (object);
-
-	if (priv->disposed) {
-		G_OBJECT_CLASS (nm_device_cdma_parent_class)->dispose (object);
-		return;
-	}
-	priv->disposed = TRUE;
 
 	g_object_unref (priv->modem);
 	priv->modem = NULL;
 
-	G_OBJECT_CLASS (nm_device_cdma_parent_class)->dispose (object);	
+	G_OBJECT_CLASS (nm_device_cdma_parent_class)->finalize (object);
 }
 
 static void
@@ -340,7 +332,7 @@ nm_device_cdma_class_init (NMDeviceCdmaClass *klass)
 	g_type_class_add_private (object_class, sizeof (NMDeviceCdmaPrivate));
 
 	/* Virtual methods */
-	object_class->dispose = dispose;
+	object_class->finalize = finalize;
 
 	device_class->get_best_auto_connection = real_get_best_auto_connection;
 	device_class->connection_secrets_updated = real_connection_secrets_updated;
