@@ -624,6 +624,14 @@ real_deactivate_quickly (NMModem *self, NMDevice *device)
 		g_warning ("Invalid IP method");
 		break;
 	}
+
+	/* Stop the modem and any ongoing connection... */
+	if (nm_device_interface_get_state (NM_DEVICE_INTERFACE (device))) {
+		dbus_g_proxy_call_no_reply (nm_modem_get_proxy (self, MM_DBUS_INTERFACE_MODEM),
+		                            "Enable",
+		                            G_TYPE_BOOLEAN, FALSE,
+		                            G_TYPE_INVALID);
+	}
 }
 
 void
