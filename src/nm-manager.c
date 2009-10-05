@@ -1203,8 +1203,6 @@ add_device (NMManager *self, NMDevice *device)
 	gpointer value;
 	gboolean managed = FALSE;
 
-	priv->devices = g_slist_append (priv->devices, device);
-
 	iface = nm_device_get_ip_iface (device);
 	g_assert (iface);
 
@@ -1212,6 +1210,8 @@ add_device (NMManager *self, NMDevice *device)
 		g_object_unref (device);
 		return;
 	}
+
+	priv->devices = g_slist_append (priv->devices, device);
 
 	g_signal_connect (device, "state-changed",
 					  G_CALLBACK (manager_device_state_changed),
