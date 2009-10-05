@@ -371,7 +371,7 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
 	req = nm_device_get_act_request (device);
 	g_assert (req);
 
-	switch (NM_MODEM_GET_PRIVATE (device)->ip_method) {
+	switch (NM_MODEM_GET_PRIVATE (self)->ip_method) {
 	case MM_MODEM_IP_METHOD_PPP:
 		ret = ppp_stage3_ip4_config_start (self, req, reason);
 		break;
