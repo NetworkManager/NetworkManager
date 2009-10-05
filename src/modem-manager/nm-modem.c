@@ -268,13 +268,13 @@ static_stage3_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
 	GValueArray *ret_array = NULL;
 	GError *error = NULL;
+	NMIP4Config *config = NULL;
 
 	priv->call = NULL;
 
 	if (dbus_g_proxy_end_call (proxy, call, &error,
 							   G_TYPE_VALUE_ARRAY, &ret_array,
 							   G_TYPE_INVALID)) {
-		NMIP4Config *config;
 		NMIP4Address *addr;
 		int i;
 
@@ -285,7 +285,7 @@ static_stage3_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 		nm_ip4_address_set_prefix (addr, 32);
 		nm_ip4_config_take_address (config, addr);
 
-		for (i = 1; i < ret_array->n_values; i++) {
+		for (i = 0; i < ret_array->n_values; i++) {
 			GValue *value = g_value_array_get_nth (ret_array, i);
 
 			nm_ip4_config_add_nameserver (config, g_value_get_uint (value));
@@ -294,15 +294,10 @@ static_stage3_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 
 		priv->pending_ip4_config = g_object_ref (config);
 		g_signal_emit (self, signals[IP4_CONFIG_RESULT], 0, NULL, config, NULL);
-	} else {
-		nm_warning ("%s: retrieving IP4 configuration failed: (%d) %s",
-		            __func__,
-		            error ? error->code : -1,
-		            error && error->message ? error->message : "(unknown)");
-
-		g_signal_emit (self, signals[IP4_CONFIG_RESULT], 0, NULL, NULL, error);
-		g_error_free (error);
 	}
+
+	g_signal_emit (self, signals[IP4_CONFIG_RESULT], 0, NULL, config, error);
+	g_clear_error (&error);
 }
 
 static NMActStageReturn
@@ -564,6 +559,26 @@ nm_modem_act_stage2_config (NMModem *self,
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
+NMConnection *
+nm_modem_get_best_auto_connection (NMModem *self,
+                                   GSList *connections,
+                                   char **specific_object)
+{
+	if (NM_MODEM_GET_CLASS (self)->get_best_auto_connection)
+		return NM_MODEM_GET_CLASS (self)->get_best_auto_connection (self, connections, specific_object);
+	return NULL;
+}
+
+gboolean
+nm_modem_check_connection_compatible (NMModem *self,
+                                      NMConnection *connection,
+                                      GError **error)
+{
+	if (NM_MODEM_GET_CLASS (self)->check_connection_compatible)
+		return NM_MODEM_GET_CLASS (self)->check_connection_compatible (self, connection, error);
+	return FALSE;
+}
+
 static void
 real_deactivate_quickly (NMModem *self, NMDevice *device)
 {
@@ -687,6 +702,15 @@ nm_modem_get_iface (NMModem *self)
 	g_return_val_if_fail (NM_IS_MODEM (self), NULL);
 
 	return NM_MODEM_GET_PRIVATE (self)->iface;
+}
+
+const char *
+nm_modem_get_path (NMModem *self)
+{
+	g_return_val_if_fail (self != NULL, NULL);
+	g_return_val_if_fail (NM_IS_MODEM (self), NULL);
+
+	return NM_MODEM_GET_PRIVATE (self)->path;
 }
 
 /*****************************************************************************/

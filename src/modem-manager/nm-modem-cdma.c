@@ -13,8 +13,6 @@
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 
-#include "nm-device-cdma-glue.h"
-
 G_DEFINE_TYPE (NMModemCdma, nm_modem_cdma, NM_TYPE_MODEM)
 
 #define NM_MODEM_CDMA_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_MODEM_CDMA, NMModemCdmaPrivate))

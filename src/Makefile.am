@@ -74,6 +74,8 @@ NetworkManager_SOURCES = \
 		nm-device-olpc-mesh.h	\
 		nm-device-bt.c \
 		nm-device-bt.h \
+		nm-device-cdma.c \
+		nm-device-cdma.h \
 		NetworkManagerAP.c \
 		NetworkManagerAP.h \
 		nm-dbus-manager.h \

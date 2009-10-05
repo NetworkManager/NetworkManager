@@ -37,6 +37,8 @@
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
 #include "nm-device-olpc-mesh.h"
+#include "nm-device-cdma.h"
+//#include "nm-device-gsm.h"
 #include "NetworkManagerSystem.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-setting-bluetooth.h"
@@ -134,6 +136,8 @@ remove_one_device (NMManager *manager,
                    NMDevice *device,
                    gboolean quitting,
                    gboolean force_unmanage);
+
+static NMDevice *nm_manager_get_device_by_udi (NMManager *manager, const char *udi);
 
 #define SSD_POKE_INTERVAL 120
 #define ORIGDEV_TAG "originating-device"
@@ -289,26 +293,16 @@ vpn_manager_connection_deactivated_cb (NMVPNManager *manager,
 
 static void
 modem_added (NMModemManager *modem_manager,
-			 NMDevice *modem,
+			 NMModem *modem,
+			 const char *driver,
 			 gpointer user_data)
 {
-	NMManagerPrivate *priv;
-	NMDeviceType type;
-	NMDevice *replace_device;
-	const char *type_name;
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMDevice *replace_device, *device = NULL;
 	const char *ip_iface;
 
-	priv = NM_MANAGER_GET_PRIVATE (user_data);
-
-	type = nm_device_get_device_type (NM_DEVICE (modem));
-	if (type == NM_DEVICE_TYPE_GSM)
-		type_name = "GSM modem";
-	else if (type == NM_DEVICE_TYPE_CDMA)
-		type_name = "CDMA modem";
-	else
-		type_name = "Unknown modem";
-
-	ip_iface = nm_device_get_ip_iface (modem);
+	ip_iface = nm_modem_get_iface (modem);
 
 	replace_device = find_device_by_iface (NM_MANAGER (user_data), ip_iface);
 	if (replace_device) {
@@ -319,7 +313,18 @@ modem_added (NMModemManager *modem_manager,
 		                                   TRUE);
 	}
 
-	add_device (NM_MANAGER (user_data), NM_DEVICE (g_object_ref (modem)));
+#if 0
+	if (NM_IS_MODEM_GSM (modem))
+		device = nm_device_gsm_new (NM_MODEM_GSM (modem), driver);
+	else
+#endif
+ if (NM_IS_MODEM_CDMA (modem))
+		device = nm_device_cdma_new (NM_MODEM_CDMA (modem), driver);
+	else
+		g_message ("%s: unhandled modem '%s'", __func__, ip_iface);
+
+	if (device)
+		add_device (self, device);
 }
 
 static void
@@ -417,13 +422,16 @@ remove_one_device (NMManager *manager,
 
 static void
 modem_removed (NMModemManager *modem_manager,
-			   NMDevice *modem,
+			   NMModem *modem,
 			   gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMDevice *found;
 
-	priv->devices = remove_one_device (self, priv->devices, modem, FALSE, TRUE);
+	found = nm_manager_get_device_by_udi (self, nm_modem_get_path (modem));
+	if (found)
+		priv->devices = remove_one_device (self, priv->devices, found, FALSE, TRUE);
 }
 
 static void
@@ -1208,7 +1216,7 @@ add_device (NMManager *self, NMDevice *device)
 	iface = nm_device_get_ip_iface (device);
 	g_assert (iface);
 
-	if (!NM_IS_MODEM(device) && nm_modem_manager_has_modem_for_iface (priv->modem_manager, iface)) {
+	if (!NM_IS_MODEM (device) && nm_modem_manager_has_modem_for_iface (priv->modem_manager, iface)) {
 		g_object_unref (device);
 		return;
 	}
@@ -2770,9 +2778,9 @@ nm_manager_init (NMManager *manager)
 	                                                  g_object_unref);
 
 	priv->modem_manager = nm_modem_manager_get ();
-	priv->modem_added_id = g_signal_connect (priv->modem_manager, "device-added",
+	priv->modem_added_id = g_signal_connect (priv->modem_manager, "modem-added",
 	                                         G_CALLBACK (modem_added), manager);
-	priv->modem_removed_id = g_signal_connect (priv->modem_manager, "device-removed",
+	priv->modem_removed_id = g_signal_connect (priv->modem_manager, "modem-removed",
 	                                           G_CALLBACK (modem_removed), manager);
 
 	priv->vpn_manager = nm_vpn_manager_get ();

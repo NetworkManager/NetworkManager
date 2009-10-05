@@ -22,6 +22,8 @@ G_BEGIN_DECLS
 #define NM_MODEM_IFACE     "iface"
 #define NM_MODEM_IP_METHOD "ip-method"
 
+#define NM_MODEM_PPP_STATS         "ppp-stats"
+#define NM_MODEM_PPP_FAILED        "ppp-failed"
 #define NM_MODEM_PREPARE_RESULT    "prepare-result"
 #define NM_MODEM_IP4_CONFIG_RESULT "ip4-config-result"
 #define NM_MODEM_NEED_AUTH         "need-auth"
@@ -78,6 +80,15 @@ GType nm_modem_get_type (void);
 NMPPPManager *nm_modem_get_ppp_manager (NMModem *modem);
 DBusGProxy *  nm_modem_get_proxy       (NMModem *modem, const char *interface);
 const char *  nm_modem_get_iface       (NMModem *modem);
+const char *  nm_modem_get_path        (NMModem *modem);
+
+NMConnection *nm_modem_get_best_auto_connection (NMModem *self,
+                                                 GSList *connections,
+                                                 char **specific_object);
+
+gboolean nm_modem_check_connection_compatible (NMModem *self,
+                                               NMConnection *connection,
+                                               GError **error);
 
 NMActStageReturn nm_modem_act_stage1_prepare (NMModem *modem,
                                               NMActRequest *req,

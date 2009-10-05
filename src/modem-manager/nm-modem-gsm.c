@@ -11,8 +11,6 @@
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 
-#include "nm-device-gsm-glue.h"
-
 typedef enum {
     MM_MODEM_GSM_MODE_UNKNOWN      = 0x00000000,
     MM_MODEM_GSM_MODE_ANY          = 0x00000001,
