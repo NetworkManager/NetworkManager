@@ -8,6 +8,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-utils.h"
 #include "nm-modem-types.h"
+#include "nm-marshal.h"
 
 #define MODEM_POKE_INTERVAL 120
 
@@ -24,8 +25,8 @@ typedef struct {
 } NMModemManagerPrivate;
 
 enum {
-	DEVICE_ADDED,
-	DEVICE_REMOVED,
+	MODEM_ADDED,
+	MODEM_REMOVED,
 
 	LAST_SIGNAL
 };
@@ -58,9 +59,10 @@ nm_modem_manager_has_modem_for_iface (NMModemManager *manager,
 	g_assert (iface);
 
 	for (iter = g_hash_table_get_values(priv->modems); iter != NULL; iter = iter->next) {
-		NMDevice *device = NM_DEVICE(iter->data);
-		const gchar *device_iface = nm_device_get_iface (device);
-		if (!g_strcmp0 (iface, device_iface))
+		NMModem *modem = NM_MODEM (iter->data);
+		const char *modem_iface = nm_modem_get_iface (modem);
+
+		if (!g_strcmp0 (iface, modem_iface))
 			return TRUE;
 	}
 	return FALSE;
@@ -162,7 +164,7 @@ static void
 create_modem (NMModemManager *manager, const char *path)
 {
 	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (manager);
-	NMDevice *device;
+	NMModem *modem;
 	char *data_device = NULL, *driver = NULL, *master_device = NULL;
 	uint modem_type = MM_MODEM_TYPE_UNKNOWN;
 	uint ip_method = MM_MODEM_IP_METHOD_PPP;
@@ -198,19 +200,20 @@ create_modem (NMModemManager *manager, const char *path)
 	}
 
 	if (modem_type == MM_MODEM_TYPE_GSM)
-		device = nm_modem_gsm_new (path, master_device, data_device, driver, ip_method);
+		modem = nm_modem_gsm_new (path, master_device, data_device, ip_method);
 	else if (modem_type == MM_MODEM_TYPE_CDMA)
-		device = nm_modem_cdma_new (path, master_device, data_device, driver);
+		modem = nm_modem_cdma_new (path, master_device, data_device, ip_method);
 	else
 		g_error ("Invalid modem type");
 
 	g_free (data_device);
-	g_free (driver);
 
-	if (device) {
-		g_hash_table_insert (priv->modems, g_strdup (path), device);
-		g_signal_emit (manager, signals[DEVICE_ADDED], 0, device);
+	if (modem) {
+		g_hash_table_insert (priv->modems, g_strdup (path), modem);
+		g_signal_emit (manager, signals[MODEM_ADDED], 0, modem, driver);
 	}
+
+	g_free (driver);
 }
 
 static void
@@ -227,7 +230,7 @@ modem_removed (DBusGProxy *proxy, const char *path, gpointer user_data)
 
 	modem = (NMModem *) g_hash_table_lookup (priv->modems, path);
 	if (modem) {
-		g_signal_emit (user_data, signals[DEVICE_REMOVED], 0, modem);
+		g_signal_emit (user_data, signals[MODEM_REMOVED], 0, modem);
 		g_hash_table_remove (priv->modems, path);
 	}
 }
@@ -310,7 +313,7 @@ modem_manager_appeared (NMModemManager *self, gboolean enumerate_devices)
 static gboolean
 remove_one_modem (gpointer key, gpointer value, gpointer user_data)
 {
-	g_signal_emit (user_data, signals[DEVICE_REMOVED], 0, value);
+	g_signal_emit (user_data, signals[MODEM_REMOVED], 0, value);
 
 	return TRUE;
 }
@@ -420,23 +423,21 @@ nm_modem_manager_class_init (NMModemManagerClass *klass)
 	object_class->dispose = dispose;
 
 	/* signals */
-	signals[DEVICE_ADDED] =
-		g_signal_new ("device-added",
+	signals[MODEM_ADDED] =
+		g_signal_new ("modem-added",
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMModemManagerClass, device_added),
+					  G_STRUCT_OFFSET (NMModemManagerClass, modem_added),
 					  NULL, NULL,
-					  g_cclosure_marshal_VOID__OBJECT,
-					  G_TYPE_NONE, 1,
-					  G_TYPE_OBJECT);
+					  _nm_marshal_VOID__OBJECT_STRING,
+					  G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_STRING);
 
-	signals[DEVICE_REMOVED] =
-		g_signal_new ("device-removed",
+	signals[MODEM_REMOVED] =
+		g_signal_new ("modem-removed",
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMModemManagerClass, device_removed),
+					  G_STRUCT_OFFSET (NMModemManagerClass, modem_removed),
 					  NULL, NULL,
 					  g_cclosure_marshal_VOID__OBJECT,
-					  G_TYPE_NONE, 1,
-					  G_TYPE_OBJECT);
+					  G_TYPE_NONE, 1, G_TYPE_OBJECT);
 }

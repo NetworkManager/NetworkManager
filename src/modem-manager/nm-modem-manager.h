@@ -4,7 +4,7 @@
 #define NM_MODEM_MANAGER_H
 
 #include <glib-object.h>
-#include "nm-device.h"
+#include "nm-modem.h"
 
 #define NM_TYPE_MODEM_MANAGER				(nm_modem_manager_get_type ())
 #define NM_MODEM_MANAGER(obj)				(G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MODEM_MANAGER, NMModemManager))
@@ -21,11 +21,9 @@ typedef struct {
 	GObjectClass parent;
 
 	/* Signals */
-	void (*device_added) (NMModemManager *manager,
-						  NMDevice *device);
+	void (*modem_added) (NMModemManager *manager, NMModem *modem, const char *driver);
 
-	void (*device_removed) (NMModemManager *manager,
-							NMDevice *device);
+	void (*modem_removed) (NMModemManager *manager, NMModem *modem);
 } NMModemManagerClass;
 
 GType nm_modem_manager_get_type (void);

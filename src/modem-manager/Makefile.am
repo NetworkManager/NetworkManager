@@ -7,12 +7,12 @@ INCLUDES = \
 noinst_LTLIBRARIES = libmodem-manager.la
 
 libmodem_manager_la_SOURCES = \
+	nm-modem.c \
+	nm-modem.h \
 	nm-modem-cdma.c \
 	nm-modem-cdma.h \
 	nm-modem-gsm.c \
 	nm-modem-gsm.h \
-	nm-modem.c \
-	nm-modem.h \
 	nm-modem-manager.h \
 	nm-modem-manager.c \
 	nm-modem-types.h
