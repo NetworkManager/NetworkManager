@@ -151,6 +151,12 @@ nm-active-connection-glue.h: $(top_srcdir)/introspection/nm-active-connection.xm
 nm-dhcp4-config-glue.h: $(top_srcdir)/introspection/nm-dhcp4-config.xml
 	dbus-binding-tool --prefix=nm_dhcp4_config --mode=glib-server --output=$@ $<
 
+nm-device-cdma-glue.h: $(top_srcdir)/introspection/nm-device-cdma.xml
+	dbus-binding-tool --prefix=nm_device_cdma --mode=glib-server --output=$@ $<
+
+nm-device-gsm-glue.h: $(top_srcdir)/introspection/nm-device-gsm.xml
+	dbus-binding-tool --prefix=nm_device_gsm --mode=glib-server --output=$@ $<
+
 BUILT_SOURCES = \
 	nm-access-point-glue.h \
 	nm-manager-glue.h \
@@ -159,6 +165,8 @@ BUILT_SOURCES = \
 	nm-device-wifi-glue.h \
 	nm-device-olpc-mesh-glue.h \
 	nm-device-bt-glue.h \
+	nm-device-cdma-glue.h \
+	nm-device-gsm-glue.h \
 	nm-ip4-config-glue.h \
 	nm-ip6-config-glue.h \
 	nm-active-connection-glue.h \
