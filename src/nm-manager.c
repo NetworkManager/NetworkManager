@@ -127,15 +127,13 @@ static const char *internal_activate_device (NMManager *manager,
                                              gboolean assumed,
                                              GError **error);
 
-static NMDevice *
-find_device_by_iface (NMManager *self, const gchar *iface);
+static NMDevice *find_device_by_iface (NMManager *self, const gchar *iface);
 
-static GSList *
-remove_one_device (NMManager *manager,
-                   GSList *list,
-                   NMDevice *device,
-                   gboolean quitting,
-                   gboolean force_unmanage);
+static GSList * remove_one_device (NMManager *manager,
+                                   GSList *list,
+                                   NMDevice *device,
+                                   gboolean quitting,
+                                   gboolean force_unmanage);
 
 static NMDevice *nm_manager_get_device_by_udi (NMManager *manager, const char *udi);
 
@@ -1214,7 +1212,7 @@ add_device (NMManager *self, NMDevice *device)
 	iface = nm_device_get_ip_iface (device);
 	g_assert (iface);
 
-	if (!NM_IS_MODEM (device) && nm_modem_manager_has_modem_for_iface (priv->modem_manager, iface)) {
+	if (!NM_IS_MODEM (device) && find_device_by_iface (self, iface)) {
 		g_object_unref (device);
 		return;
 	}

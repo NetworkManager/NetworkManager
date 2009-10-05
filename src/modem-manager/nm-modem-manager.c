@@ -48,26 +48,6 @@ nm_modem_manager_get (void)
 	return singleton;
 }
 
-gboolean
-nm_modem_manager_has_modem_for_iface (NMModemManager *manager,
-                                      const gchar *iface)
-{
-	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (manager);
-	GList *iter;
-	g_assert (manager);
-	g_assert (NM_IS_MODEM_MANAGER(manager));
-	g_assert (iface);
-
-	for (iter = g_hash_table_get_values(priv->modems); iter != NULL; iter = iter->next) {
-		NMModem *modem = NM_MODEM (iter->data);
-		const char *modem_iface = nm_modem_get_iface (modem);
-
-		if (!g_strcmp0 (iface, modem_iface))
-			return TRUE;
-	}
-	return FALSE;
-}
-
 static gboolean
 get_modem_properties (DBusGConnection *connection,
 					  const char *path,

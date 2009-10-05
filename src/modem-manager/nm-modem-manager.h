@@ -30,7 +30,4 @@ GType nm_modem_manager_get_type (void);
 
 NMModemManager *nm_modem_manager_get (void);
 
-gboolean nm_modem_manager_has_modem_for_iface (NMModemManager *manager,
-                                               const gchar *iface);
-
 #endif /* NM_MODEM_MANAGER_H */
