@@ -126,6 +126,8 @@ gboolean nm_modem_connection_secrets_updated (NMModem *modem,
                                               GSList *updated_settings,
                                               RequestSecretsCaller caller);
 
+const DBusGObjectInfo *nm_modem_get_serial_dbus_info (void);
+
 G_END_DECLS
 
 #endif /* NM_MODEM_H */

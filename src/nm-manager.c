@@ -38,7 +38,7 @@
 #include "nm-device-wifi.h"
 #include "nm-device-olpc-mesh.h"
 #include "nm-device-cdma.h"
-//#include "nm-device-gsm.h"
+#include "nm-device-gsm.h"
 #include "NetworkManagerSystem.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-setting-bluetooth.h"
@@ -311,12 +311,9 @@ modem_added (NMModemManager *modem_manager,
 		                                   TRUE);
 	}
 
-#if 0
 	if (NM_IS_MODEM_GSM (modem))
 		device = nm_device_gsm_new (NM_MODEM_GSM (modem), driver);
-	else
-#endif
- if (NM_IS_MODEM_CDMA (modem))
+	else if (NM_IS_MODEM_CDMA (modem))
 		device = nm_device_cdma_new (NM_MODEM_CDMA (modem), driver);
 	else
 		g_message ("%s: unhandled modem '%s'", __func__, ip_iface);

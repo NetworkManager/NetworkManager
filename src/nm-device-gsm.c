@@ -22,24 +22,24 @@
 
 #include "nm-dbus-glib-types.h"
 #include "nm-modem.h"
-#include "nm-modem-cdma.h"
+#include "nm-modem-gsm.h"
 #include "nm-device-interface.h"
 #include "nm-device-private.h"
-#include "nm-device-cdma.h"
+#include "nm-device-gsm.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-marshal.h"
 #include "nm-properties-changed-signal.h"
 
-#include "nm-device-cdma-glue.h"
+#include "nm-device-gsm-glue.h"
 
-G_DEFINE_TYPE (NMDeviceCdma, nm_device_cdma, NM_TYPE_DEVICE)
+G_DEFINE_TYPE (NMDeviceGsm, nm_device_gsm, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_CDMA_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_CDMA, NMDeviceCdmaPrivate))
+#define NM_DEVICE_GSM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_GSM, NMDeviceGsmPrivate))
 
 typedef struct {
 	NMModem *modem;
-} NMDeviceCdmaPrivate;
+} NMDeviceGsmPrivate;
 
 enum {
 	PPP_STATS,
@@ -56,7 +56,7 @@ ppp_stats (NMModem *modem,
 		   guint32 out_bytes,
 		   gpointer user_data)
 {
-	g_signal_emit (NM_DEVICE_CDMA (user_data), signals[PPP_STATS], 0, in_bytes, out_bytes);
+	g_signal_emit (NM_DEVICE_GSM (user_data), signals[PPP_STATS], 0, in_bytes, out_bytes);
 }
 
 static void
@@ -84,7 +84,7 @@ device_state_changed (NMDevice *device,
                       NMDeviceStateReason reason,
                       gpointer user_data)
 {
-	NMDeviceCdmaPrivate *priv = NM_DEVICE_CDMA_GET_PRIVATE (device);
+	NMDeviceGsmPrivate *priv = NM_DEVICE_GSM_GET_PRIVATE (device);
 
 	nm_modem_device_state_changed (priv->modem, new_state, old_state, reason);
 }
@@ -92,13 +92,13 @@ device_state_changed (NMDevice *device,
 static gboolean
 real_hw_is_up (NMDevice *device)
 {
-	return nm_modem_hw_is_up (NM_DEVICE_CDMA_GET_PRIVATE (device)->modem, device);
+	return nm_modem_hw_is_up (NM_DEVICE_GSM_GET_PRIVATE (device)->modem, device);
 }
 
 static gboolean
 real_hw_bring_up (NMDevice *device, gboolean *no_firmware)
 {
-	return nm_modem_hw_bring_up (NM_DEVICE_CDMA_GET_PRIVATE (device)->modem, device, no_firmware);
+	return nm_modem_hw_bring_up (NM_DEVICE_GSM_GET_PRIVATE (device)->modem, device, no_firmware);
 }
 
 static NMConnection *
@@ -106,7 +106,7 @@ real_get_best_auto_connection (NMDevice *device,
 							   GSList *connections,
 							   char **specific_object)
 {
-	NMDeviceCdmaPrivate *priv = NM_DEVICE_CDMA_GET_PRIVATE (device);
+	NMDeviceGsmPrivate *priv = NM_DEVICE_GSM_GET_PRIVATE (device);
 
 	return nm_modem_get_best_auto_connection (priv->modem, connections, specific_object);
 }
@@ -117,7 +117,7 @@ real_connection_secrets_updated (NMDevice *device,
 								 GSList *updated_settings,
 								 RequestSecretsCaller caller)
 {
-	NMDeviceCdmaPrivate *priv = NM_DEVICE_CDMA_GET_PRIVATE (device);
+	NMDeviceGsmPrivate *priv = NM_DEVICE_GSM_GET_PRIVATE (device);
 	NMActRequest *req;
 
 	req = nm_device_get_act_request (device);
@@ -136,7 +136,7 @@ real_connection_secrets_updated (NMDevice *device,
 	if (caller == SECRETS_CALLER_PPP)
 		return;
 
-	/* Otherwise, on success for CDMA secrets we need to schedule stage1 again */
+	/* Otherwise, on success for GSM secrets we need to schedule stage1 again */
 	g_return_if_fail (nm_device_get_state (device) == NM_DEVICE_STATE_NEED_AUTH);
 	nm_device_activate_schedule_stage1_device_prepare (device);
 }
@@ -146,7 +146,7 @@ real_check_connection_compatible (NMDevice *device,
                                   NMConnection *connection,
                                   GError **error)
 {
-	NMDeviceCdmaPrivate *priv = NM_DEVICE_CDMA_GET_PRIVATE (device);
+	NMDeviceGsmPrivate *priv = NM_DEVICE_GSM_GET_PRIVATE (device);
 
 	return nm_modem_check_connection_compatible (priv->modem, connection, error);
 }
@@ -161,7 +161,7 @@ modem_need_auth (NMModem *modem,
 	             const char *hint2,
 	             gpointer user_data)
 {
-	NMDeviceCdma *self = NM_DEVICE_CDMA (user_data);
+	NMDeviceGsm *self = NM_DEVICE_GSM (user_data);
 	NMActRequest *req;
 
 	req = nm_device_get_act_request (NM_DEVICE (self));
@@ -197,7 +197,7 @@ real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	req = nm_device_get_act_request (device);
 	g_assert (req);
 
-	return nm_modem_act_stage1_prepare (NM_DEVICE_CDMA_GET_PRIVATE (device)->modem, req, reason);
+	return nm_modem_act_stage1_prepare (NM_DEVICE_GSM_GET_PRIVATE (device)->modem, req, reason);
 }
 
 static NMActStageReturn
@@ -208,7 +208,7 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	req = nm_device_get_act_request (device);
 	g_assert (req);
 
-	return nm_modem_act_stage2_config (NM_DEVICE_CDMA_GET_PRIVATE (device)->modem, req, reason);
+	return nm_modem_act_stage2_config (NM_DEVICE_GSM_GET_PRIVATE (device)->modem, req, reason);
 }
 
 static void
@@ -242,9 +242,9 @@ modem_ip4_config_result (NMModem *self,
 static NMActStageReturn
 real_act_stage3_ip4_config_start (NMDevice *device, NMDeviceStateReason *reason)
 {
-	return nm_modem_stage3_ip4_config_start (NM_DEVICE_CDMA_GET_PRIVATE (device)->modem,
+	return nm_modem_stage3_ip4_config_start (NM_DEVICE_GSM_GET_PRIVATE (device)->modem,
 	                                         device,
-	                                         NM_DEVICE_CLASS (nm_device_cdma_parent_class),
+	                                         NM_DEVICE_CLASS (nm_device_gsm_parent_class),
 	                                         reason);
 }
 
@@ -253,9 +253,9 @@ real_act_stage4_get_ip4_config (NMDevice *device,
                                 NMIP4Config **config,
                                 NMDeviceStateReason *reason)
 {
-	return nm_modem_stage4_get_ip4_config (NM_DEVICE_CDMA_GET_PRIVATE (device)->modem,
+	return nm_modem_stage4_get_ip4_config (NM_DEVICE_GSM_GET_PRIVATE (device)->modem,
 	                                       device,
-	                                       NM_DEVICE_CLASS (nm_device_cdma_parent_class),
+	                                       NM_DEVICE_CLASS (nm_device_gsm_parent_class),
 	                                       config,
 	                                       reason);
 }
@@ -263,7 +263,7 @@ real_act_stage4_get_ip4_config (NMDevice *device,
 static void
 real_deactivate_quickly (NMDevice *device)
 {
-	NMDeviceCdmaPrivate *priv = NM_DEVICE_CDMA_GET_PRIVATE (device);
+	NMDeviceGsmPrivate *priv = NM_DEVICE_GSM_GET_PRIVATE (device);
 
 	nm_modem_deactivate_quickly (priv->modem, device);
 }
@@ -277,23 +277,23 @@ real_get_generic_capabilities (NMDevice *device)
 /*****************************************************************************/
 
 NMDevice *
-nm_device_cdma_new (NMModemCdma *modem, const char *driver)
+nm_device_gsm_new (NMModemGsm *modem, const char *driver)
 {
 	NMDevice *device;
 
 	g_return_val_if_fail (modem != NULL, NULL);
-	g_return_val_if_fail (NM_IS_MODEM_CDMA (modem), NULL);
+	g_return_val_if_fail (NM_IS_MODEM_GSM (modem), NULL);
 	g_return_val_if_fail (driver != NULL, NULL);
 
-	device = (NMDevice *) g_object_new (NM_TYPE_DEVICE_CDMA,
+	device = (NMDevice *) g_object_new (NM_TYPE_DEVICE_GSM,
 	                                    NM_DEVICE_INTERFACE_UDI, nm_modem_get_path (NM_MODEM (modem)),
 	                                    NM_DEVICE_INTERFACE_IFACE, nm_modem_get_iface (NM_MODEM (modem)),
 	                                    NM_DEVICE_INTERFACE_DRIVER, driver,
-	                                    NM_DEVICE_INTERFACE_TYPE_DESC, "CDMA",
-	                                    NM_DEVICE_INTERFACE_DEVICE_TYPE, NM_DEVICE_TYPE_CDMA,
+	                                    NM_DEVICE_INTERFACE_TYPE_DESC, "GSM",
+	                                    NM_DEVICE_INTERFACE_DEVICE_TYPE, NM_DEVICE_TYPE_GSM,
 	                                    NULL);
 	if (device) {
-		NM_DEVICE_CDMA_GET_PRIVATE (device)->modem = g_object_ref (modem);
+		NM_DEVICE_GSM_GET_PRIVATE (device)->modem = g_object_ref (modem);
 		g_signal_connect (device, "state-changed", G_CALLBACK (device_state_changed), device);
 
 		g_signal_connect (modem, NM_MODEM_PPP_STATS, G_CALLBACK (ppp_stats), device);
@@ -307,28 +307,28 @@ nm_device_cdma_new (NMModemCdma *modem, const char *driver)
 }
 
 static void
-nm_device_cdma_init (NMDeviceCdma *self)
+nm_device_gsm_init (NMDeviceGsm *self)
 {
 }
 
 static void
 finalize (GObject *object)
 {
-	NMDeviceCdmaPrivate *priv = NM_DEVICE_CDMA_GET_PRIVATE (object);
+	NMDeviceGsmPrivate *priv = NM_DEVICE_GSM_GET_PRIVATE (object);
 
 	g_object_unref (priv->modem);
 	priv->modem = NULL;
 
-	G_OBJECT_CLASS (nm_device_cdma_parent_class)->finalize (object);
+	G_OBJECT_CLASS (nm_device_gsm_parent_class)->finalize (object);
 }
 
 static void
-nm_device_cdma_class_init (NMDeviceCdmaClass *klass)
+nm_device_gsm_class_init (NMDeviceGsmClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
-	g_type_class_add_private (object_class, sizeof (NMDeviceCdmaPrivate));
+	g_type_class_add_private (object_class, sizeof (NMDeviceGsmPrivate));
 
 	/* Virtual methods */
 	object_class->finalize = finalize;
@@ -350,7 +350,7 @@ nm_device_cdma_class_init (NMDeviceCdmaClass *klass)
 		g_signal_new ("ppp-stats",
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMDeviceCdmaClass, ppp_stats),
+					  G_STRUCT_OFFSET (NMDeviceGsmClass, ppp_stats),
 					  NULL, NULL,
 					  _nm_marshal_VOID__UINT_UINT,
 					  G_TYPE_NONE, 2,
@@ -358,12 +358,12 @@ nm_device_cdma_class_init (NMDeviceCdmaClass *klass)
 
 	signals[PROPERTIES_CHANGED] = 
 		nm_properties_changed_signal_new (object_class,
-		                                  G_STRUCT_OFFSET (NMDeviceCdmaClass, properties_changed));
+		                                  G_STRUCT_OFFSET (NMDeviceGsmClass, properties_changed));
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
 	                                 nm_modem_get_serial_dbus_info ());
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
-	                                 &dbus_glib_nm_device_cdma_object_info);
+	                                 &dbus_glib_nm_device_gsm_object_info);
 }
 

@@ -13,6 +13,8 @@
 #include "nm-device-private.h"
 #include "nm-device-interface.h"
 
+#include "nm-serial-device-glue.h"
+
 G_DEFINE_TYPE (NMModem, nm_modem, G_TYPE_OBJECT)
 
 #define NM_MODEM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_MODEM, NMModemPrivate))
@@ -942,5 +944,11 @@ nm_modem_class_init (NMModemClass *klass)
 					  _nm_marshal_VOID__STRING_BOOLEAN_UINT_STRING_STRING,
 					  G_TYPE_NONE, 5,
 					  G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_UINT, G_TYPE_STRING, G_TYPE_STRING);
+}
+
+const DBusGObjectInfo *
+nm_modem_get_serial_dbus_info (void)
+{
+	return &dbus_glib_nm_serial_device_object_info;
 }
 

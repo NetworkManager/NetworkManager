@@ -76,6 +76,8 @@ NetworkManager_SOURCES = \
 		nm-device-bt.h \
 		nm-device-cdma.c \
 		nm-device-cdma.h \
+		nm-device-gsm.c \
+		nm-device-gsm.h \
 		NetworkManagerAP.c \
 		NetworkManagerAP.h \
 		nm-dbus-manager.h \
