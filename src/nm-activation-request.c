@@ -575,35 +575,35 @@ nm_act_request_set_shared (NMActRequest *req, gboolean shared)
 	for (iter = list; iter; iter = g_slist_next (iter)) {
 		ShareRule *rule = (ShareRule *) iter->data;
 		char *envp[1] = { NULL };
-		char *argv[6];
+		char **argv;
 		char *cmd;
-		int status;
-		GError *error = NULL;
 
-		argv[0] = IPTABLES_PATH;
-		argv[1] = "--table";
-		argv[2] = rule->table;
+		cmd = g_strdup_printf ("%s --table %s %s %s",
+		                       IPTABLES_PATH,
+		                       rule->table,
+		                       shared ? "--insert" : "--delete",
+		                       rule->rule);
+		if (!cmd)
+			continue;
 
-		if (shared)
-			argv[3] = "--insert";
-		else
-			argv[3] = "--delete";
+		argv = g_strsplit (cmd, " ", 0);
+		if (argv && argv[0]) {
+			int status;
+			GError *error = NULL;
 
-		argv[4] = rule->rule;
-		argv[5] = NULL;
-
-		cmd = g_strjoinv (" ", argv);
-		nm_info ("Executing: %s", cmd);
+			nm_info ("Executing: %s", cmd);
+			if (!g_spawn_sync ("/", argv, envp, G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
+			                   share_child_setup, NULL, NULL, NULL, &status, &error)) {
+				nm_info ("Error executing command: (%d) %s",
+				         error ? error->code : -1,
+				         (error && error->message) ? error->message : "(unknown)");
+				g_clear_error (&error);
+			} else if (WEXITSTATUS (status))
+				nm_info ("** Command returned exit status %d.", WEXITSTATUS (status));
+		}
 		g_free (cmd);
-
-		if (!g_spawn_sync ("/", argv, envp, G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
-		                   share_child_setup, NULL, NULL, NULL, &status, &error)) {
-			nm_info ("Error executing command: (%d) %s",
-			         error ? error->code : 0, (error && error->message) ? error->message : "unknown");
-			if (error)
-				g_error_free (error);
-		} else if (WEXITSTATUS (status))
-			nm_info ("** Command returned exit status %d.", WEXITSTATUS (status));
+		if (argv)
+			g_strfreev (argv);
 	}
 
 	g_slist_free (list);
