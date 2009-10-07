@@ -91,51 +91,21 @@ nm_default_wired_connection_get_device (NMDefaultWiredConnection *wired)
 	return NM_DEFAULT_WIRED_CONNECTION_GET_PRIVATE (wired)->device;
 }
 
-static GByteArray *
-dup_wired_mac (NMConnection *connection)
-{
-	NMSettingWired *s_wired;
-	const GByteArray *mac;
-	GByteArray *dup;
-
-	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
-	if (!s_wired)
-		return NULL;
-
-	mac = nm_setting_wired_get_mac_address (s_wired);	
-	if (!mac || (mac->len != ETH_ALEN))
-		return NULL;
-
-	dup = g_byte_array_sized_new (ETH_ALEN);
-	g_byte_array_append (dup, mac->data, ETH_ALEN);
-	return dup;
-}
-
 static gboolean
 update (NMSettingsConnectionInterface *connection,
 	    NMSettingsConnectionInterfaceUpdateFunc callback,
 	    gpointer user_data)
 {
 	NMDefaultWiredConnection *self = NM_DEFAULT_WIRED_CONNECTION (connection);
-	GByteArray *mac;
-	gboolean failed = FALSE;
 
-	/* Ensure object stays alive across signal emission */
-	g_object_ref (self);
-
-	/* Save a copy of the current MAC address just in case the user
-	 * changed it when updating the connection.
+	/* Keep the object alive over try-update since it might get removed
+	 * from the settings service there, but we still need it for the callback.
 	 */
-	mac = dup_wired_mac (NM_CONNECTION (self));
-
-	g_signal_emit (self, signals[TRY_UPDATE], 0, &failed);
-	if (!failed)
-		g_signal_emit (connection, signals[DELETED], 0, mac);
-
-	g_byte_array_free (mac, TRUE);
-	g_object_unref (self);
-
-	return parent_settings_connection_iface->update (connection, callback, user_data);
+	g_object_ref (connection);
+	g_signal_emit (self, signals[TRY_UPDATE], 0);
+	callback (connection, NULL, user_data);
+	g_object_unref (connection);
+	return TRUE;
 }
 
 static gboolean 
@@ -144,16 +114,9 @@ do_delete (NMSettingsConnectionInterface *connection,
 	       gpointer user_data)
 {
 	NMDefaultWiredConnection *self = NM_DEFAULT_WIRED_CONNECTION (connection);
-	GByteArray *mac;
+	NMDefaultWiredConnectionPrivate *priv = NM_DEFAULT_WIRED_CONNECTION_GET_PRIVATE (connection);
 
-	g_object_ref (self);
-	mac = dup_wired_mac (NM_CONNECTION (self));
-
-	g_signal_emit (self, signals[DELETED], 0, mac);
-	
-	g_byte_array_free (mac, TRUE);
-	g_object_unref (self);
-
+	g_signal_emit (self, signals[DELETED], 0, priv->mac);
 	return parent_settings_connection_iface->delete (connection, callback, user_data);
 }
 
@@ -283,22 +246,6 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
-static gboolean
-try_update_signal_accumulator (GSignalInvocationHint *ihint,
-                               GValue *return_accu,
-                               const GValue *handler_return,
-                               gpointer data)
-{
-	if (g_value_get_boolean (handler_return)) {
-		g_value_set_boolean (return_accu, TRUE);
-		/* Stop */
-		return FALSE;
-	}
-
-	/* Continue if handler didn't fail */
-	return TRUE;
-}
-
 static void
 nm_default_wired_connection_class_init (NMDefaultWiredConnectionClass *klass)
 {
@@ -341,9 +288,9 @@ nm_default_wired_connection_class_init (NMDefaultWiredConnectionClass *klass)
 		g_signal_new ("try-update",
 			      G_OBJECT_CLASS_TYPE (object_class),
 			      G_SIGNAL_RUN_LAST,
-			      0, try_update_signal_accumulator, NULL,
-			      _nm_marshal_BOOLEAN__VOID,
-			      G_TYPE_BOOLEAN, 0);
+			      0, NULL, NULL,
+			      g_cclosure_marshal_VOID__VOID,
+			      G_TYPE_NONE, 0);
 
 	/* The 'deleted' signal is used to signal intentional deletions (like
 	 * updating or user-requested deletion) rather than using the

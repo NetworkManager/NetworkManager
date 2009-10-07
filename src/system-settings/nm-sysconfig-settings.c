@@ -1109,6 +1109,11 @@ cleanup:
 	                   NULL);
 }
 
+static void
+delete_cb (NMSettingsConnectionInterface *connection, GError *error, gpointer user_data)
+{
+}
+
 static gboolean
 default_wired_try_update (NMDefaultWiredConnection *wired,
                           NMSysconfigSettings *self)
@@ -1129,6 +1134,10 @@ default_wired_try_update (NMDefaultWiredConnection *wired,
 
 	remove_connection (self, NM_SETTINGS_CONNECTION_INTERFACE (wired), FALSE);
 	if (add_new_connection (self, NM_CONNECTION (wired), &error)) {
+		nm_settings_connection_interface_delete (NM_SETTINGS_CONNECTION_INTERFACE (wired),
+		                                         delete_cb,
+		                                         NULL);
+
 		g_object_set_data (G_OBJECT (nm_default_wired_connection_get_device (wired)),
 		                   DEFAULT_WIRED_TAG,
 		                   NULL);

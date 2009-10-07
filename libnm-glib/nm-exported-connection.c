@@ -134,8 +134,10 @@ update (NMSettingsConnectionInterface *connection,
 	    NMSettingsConnectionInterfaceUpdateFunc callback,
 	    gpointer user_data)
 {
+	g_object_ref (connection);
 	nm_settings_connection_interface_emit_updated (connection);
 	callback (connection, NULL, user_data);
+	g_object_unref (connection);
 	return TRUE;
 }
 
@@ -183,8 +185,10 @@ do_delete (NMSettingsConnectionInterface *connection,
 	       NMSettingsConnectionInterfaceDeleteFunc callback,
 	       gpointer user_data)
 {
+	g_object_ref (connection);
 	g_signal_emit_by_name (connection, "removed");
 	callback (connection, NULL, user_data);
+	g_object_unref (connection);
 	return TRUE;
 }
 

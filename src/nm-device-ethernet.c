@@ -921,15 +921,14 @@ supplicant_mgr_state_cb (NMSupplicantInterface * iface,
 static NMSupplicantConfig *
 build_supplicant_config (NMDeviceEthernet *self)
 {
-	DBusGProxy *proxy;
 	const char *con_path;
 	NMSupplicantConfig *config = NULL;
 	NMSetting8021x *security;
 	NMConnection *connection;
 
 	connection = nm_act_request_get_connection (nm_device_get_act_request (NM_DEVICE (self)));
-	proxy = g_object_get_data (G_OBJECT (connection), "dbus-proxy");
-	con_path = dbus_g_proxy_get_path (proxy);
+	g_return_val_if_fail (connection, NULL);
+	con_path = nm_connection_get_path (connection);
 
 	config = nm_supplicant_config_new ();
 	if (!config)

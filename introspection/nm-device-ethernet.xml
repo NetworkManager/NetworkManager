@@ -11,7 +11,7 @@
 
     <property name="Speed" type="u" access="read">
       <tp:docstring>
-        Design speed of the device.
+        Design speed of the device, in megabits/second (Mb/s).
       </tp:docstring>
     </property>
 
