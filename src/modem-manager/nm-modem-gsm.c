@@ -226,16 +226,16 @@ create_connect_properties (NMConnection *connection)
 		value_hash_add_str (properties, "password", str);
 
 	switch (nm_setting_gsm_get_network_type (setting)) {
-	case NM_GSM_NETWORK_UMTS_HSPA:
+	case NM_SETTING_GSM_NETWORK_TYPE_UMTS_HSPA:
 		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_MODE_3G_ONLY);
 		break;
-	case NM_GSM_NETWORK_GPRS_EDGE:
+	case NM_SETTING_GSM_NETWORK_TYPE_GPRS_EDGE:
 		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_MODE_2G_ONLY);
 		break;
-	case NM_GSM_NETWORK_PREFER_UMTS_HSPA:
+	case NM_SETTING_GSM_NETWORK_TYPE_PREFER_UMTS_HSPA:
 		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_MODE_3G_PREFERRED);
 		break;
-	case NM_GSM_NETWORK_PREFER_GPRS_EDGE:
+	case NM_SETTING_GSM_NETWORK_TYPE_PREFER_GPRS_EDGE:
 		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_MODE_2G_PREFERRED);
 		break;
 	default:

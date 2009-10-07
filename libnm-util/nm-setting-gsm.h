@@ -53,25 +53,49 @@ GType nm_setting_gsm_error_get_type (void);
 #define NM_SETTING_GSM_ERROR nm_setting_gsm_error_quark ()
 GQuark nm_setting_gsm_error_quark (void);
 
-#define NM_SETTING_GSM_NUMBER       "number"
-#define NM_SETTING_GSM_USERNAME     "username"
-#define NM_SETTING_GSM_PASSWORD     "password"
-#define NM_SETTING_GSM_APN          "apn"
-#define NM_SETTING_GSM_NETWORK_ID   "network-id"
-#define NM_SETTING_GSM_NETWORK_TYPE "network-type"
-#define NM_SETTING_GSM_BAND         "band"
-#define NM_SETTING_GSM_PIN          "pin"
+#define NM_SETTING_GSM_NUMBER        "number"
+#define NM_SETTING_GSM_USERNAME      "username"
+#define NM_SETTING_GSM_PASSWORD      "password"
+#define NM_SETTING_GSM_APN           "apn"
+#define NM_SETTING_GSM_NETWORK_ID    "network-id"
+#define NM_SETTING_GSM_NETWORK_TYPE  "network-type"
+#define NM_SETTING_GSM_ALLOWED_BANDS "allowed-bands"
+#define NM_SETTING_GSM_PIN           "pin"
 
 /* DEPRECATED & UNUSED */
-#define NM_SETTING_GSM_PUK          "puk"
+#define NM_SETTING_GSM_PUK           "puk"
+#define NM_SETTING_GSM_BAND          "band"
 
-enum {
-	NM_GSM_NETWORK_ANY = -1,
-	NM_GSM_NETWORK_UMTS_HSPA = 0,
-	NM_GSM_NETWORK_GPRS_EDGE = 1,
-	NM_GSM_NETWORK_PREFER_UMTS_HSPA = 2,
-	NM_GSM_NETWORK_PREFER_GPRS_EDGE = 3
-};
+/* DEPRECATED, use NM_SETTING_NETWORK_TYPE_* instead */
+#define NM_GSM_NETWORK_ANY              NM_SETTING_GSM_NETWORK_TYPE_ANY
+#define NM_GSM_NETWORK_UMTS_HSPA        NM_SETTING_GSM_NETWORK_TYPE_UMTS_HSPA
+#define NM_GSM_NETWORK_GPRS_EDGE        NM_SETTING_GSM_NETWORK_TYPE_GPRS_EDGE
+#define NM_GSM_NETWORK_PREFER_UMTS_HSPA NM_SETTING_GSM_NETWORK_TYPE_PREFER_UMTS_HSPA
+#define NM_GSM_NETWORK_PREFER_GPRS_EDGE NM_SETTING_GSM_NETWORK_TYPE_PREFER_GPRS_EDGE
+
+typedef enum {
+	NM_SETTING_GSM_NETWORK_TYPE_ANY = -1,
+	NM_SETTING_GSM_NETWORK_TYPE_UMTS_HSPA = 0,
+	NM_SETTING_GSM_NETWORK_TYPE_GPRS_EDGE = 1,
+	NM_SETTING_GSM_NETWORK_TYPE_PREFER_UMTS_HSPA = 2,
+	NM_SETTING_GSM_NETWORK_TYPE_PREFER_GPRS_EDGE = 3
+} NMSettingGsmNetworkType;
+
+typedef enum {
+	NM_SETTING_GSM_BAND_UNKNOWN      = 0x00000000,
+	NM_SETTING_GSM_BAND_ANY          = 0x00000001,
+	NM_SETTING_GSM_BAND_EGSM         = 0x00000002, /*  900 MHz */
+	NM_SETTING_GSM_BAND_DCS          = 0x00000004, /* 1800 MHz */
+	NM_SETTING_GSM_BAND_PCS          = 0x00000008, /* 1900 MHz */
+	NM_SETTING_GSM_BAND_G850         = 0x00000010, /*  850 MHz */
+	NM_SETTING_GSM_BAND_U2100        = 0x00000020, /* WCDMA 3GPP UMTS 2100 MHz     (Class I) */
+	NM_SETTING_GSM_BAND_U1800        = 0x00000040, /* WCDMA 3GPP UMTS 1800 MHz     (Class III) */
+	NM_SETTING_GSM_BAND_U17IV        = 0x00000080, /* WCDMA 3GPP AWS 1700/2100 MHz (Class IV) */
+	NM_SETTING_GSM_BAND_U800         = 0x00000100, /* WCDMA 3GPP UMTS 800 MHz      (Class VI) */
+	NM_SETTING_GSM_BAND_U850         = 0x00000200, /* WCDMA 3GPP UMTS 850 MHz      (Class V) */
+	NM_SETTING_GSM_BAND_U900         = 0x00000400, /* WCDMA 3GPP UMTS 900 MHz      (Class VIII) */
+	NM_SETTING_GSM_BAND_U17IX        = 0x00000800, /* WCDMA 3GPP UMTS 1700 MHz     (Class IX) */
+} NMSettingGsmNetworkBand;
 
 typedef struct {
 	NMSetting parent;
@@ -89,16 +113,19 @@ typedef struct {
 
 GType nm_setting_gsm_get_type (void);
 
-NMSetting *nm_setting_gsm_new               (void);
-const char *nm_setting_gsm_get_number       (NMSettingGsm *setting);
-const char *nm_setting_gsm_get_username     (NMSettingGsm *setting);
-const char *nm_setting_gsm_get_password     (NMSettingGsm *setting);
-const char *nm_setting_gsm_get_apn          (NMSettingGsm *setting);
-const char *nm_setting_gsm_get_network_id   (NMSettingGsm *setting);
-int         nm_setting_gsm_get_network_type (NMSettingGsm *setting);
-int         nm_setting_gsm_get_band         (NMSettingGsm *setting);
-const char *nm_setting_gsm_get_pin          (NMSettingGsm *setting);
-const char *nm_setting_gsm_get_puk          (NMSettingGsm *setting);
+NMSetting *nm_setting_gsm_new                (void);
+const char *nm_setting_gsm_get_number        (NMSettingGsm *setting);
+const char *nm_setting_gsm_get_username      (NMSettingGsm *setting);
+const char *nm_setting_gsm_get_password      (NMSettingGsm *setting);
+const char *nm_setting_gsm_get_apn           (NMSettingGsm *setting);
+const char *nm_setting_gsm_get_network_id    (NMSettingGsm *setting);
+int         nm_setting_gsm_get_network_type  (NMSettingGsm *setting);
+guint32     nm_setting_gsm_get_allowed_bands (NMSettingGsm *setting);
+const char *nm_setting_gsm_get_pin           (NMSettingGsm *setting);
+
+/* DEPRECATED & UNUSED */
+const char *nm_setting_gsm_get_puk           (NMSettingGsm *setting);
+int         nm_setting_gsm_get_band          (NMSettingGsm *setting);
 
 G_END_DECLS
 
