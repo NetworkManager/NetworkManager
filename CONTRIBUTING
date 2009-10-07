@@ -17,3 +17,25 @@ with #ifdef MY_DEFINE / #endif in the code.
 			...
 		}
 
+* Keep a space between the function name and the opening '('.
+    GOOD: g_strdup (x)
+    BAD:  g_strdup(x)
+
+* C-style comments, except for FIXMEs.
+    GOOD: f(x);  /* comment */
+    BAD:  f(x);  // comment
+
+    GOOD: // FIXME: juice the gooblygok
+    BAD:  /* FIXME: juice the gooblygok */
+
+* Keep assignments in the variable declaration area pretty short.
+    GOOD: MyObject *object;
+    BAD: MyObject *object = complex_and_long_init_function(arg1, arg2, arg3);
+
+* 80-cols is a guideline, don't make the code uncomfortable in order to fit in
+  less than 80 cols.
+
+* Constants are CAPS_WITH_UNDERSCORES and use the preprocessor.
+    GOOD: #define MY_CONSTANT 42
+    BAD:  static const unsigned myConstant = 42;
+
