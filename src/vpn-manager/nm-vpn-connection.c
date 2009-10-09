@@ -912,6 +912,12 @@ vpn_cleanup (NMVPNConnection *connection)
 		g_free (priv->tundev);
 		priv->tundev = NULL;
 	}
+
+	/* Clear out connection secrets to ensure that the settings service
+	 * gets asked for them next time the connection is activated.
+	 */
+	if (priv->connection)
+		nm_connection_clear_secrets (priv->connection);
 }
 
 static void
