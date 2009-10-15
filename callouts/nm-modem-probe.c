@@ -100,7 +100,7 @@ if (verbose) { \
 }
 
 static gboolean
-modem_send_command (int fd, const char *cmd)
+modem_send_command (int fd, const char *cmd, gboolean *eio)
 {
 	int eagain_count = 1000;
 	guint32 i;
@@ -119,6 +119,8 @@ modem_send_command (int fd, const char *cmd)
 			 */
 			if ((written < 0) && (errno != EAGAIN)) {
 				g_printerr ("error writing command: %d\n", errno);
+				if (eio)
+					*eio = !!(errno == EIO);
 				return FALSE;
 			}
 			eagain_count--;
@@ -322,7 +324,53 @@ g_timeval_subtract (GTimeVal *result, GTimeVal *x, GTimeVal *y)
 	return x->tv_sec < y->tv_sec;
 }
 
-static int modem_probe_caps(int fd, glong timeout_ms, unsigned int vid)
+static int
+open_port (const char *port, glong *timeout_ms, struct termios *orig)
+{
+	int last_err = 0, fd = -1;
+	struct termios tmp, attrs;
+
+	/* If a timeout was specified, retry opening the serial port for that
+	 * amount of time.  Some devices (nozomi) aren't ready to be opened
+	 * even though their device node is created by udev already.
+	 */
+	do {
+		fd = open (port, O_RDWR | O_EXCL | O_NONBLOCK);
+		if (fd < 0) {
+			last_err = errno;
+			g_usleep (300000);
+			if (timeout_ms)
+				*timeout_ms -= 300;
+		}
+	} while (fd < 0 && timeout_ms && *timeout_ms > 0);
+
+	if (fd < 0) {
+		g_printerr ("open(%s) failed: %d\n", port, last_err);
+		return -1;
+	}
+
+	if (tcgetattr (fd, orig ? orig : &tmp)) {
+		g_printerr ("tcgetattr(%s): failed %d\n", port, errno);
+		close (fd);
+		return -1;
+	}
+
+	memcpy (&attrs, orig ? orig : &tmp, sizeof (attrs));
+	attrs.c_iflag &= ~(IGNCR | ICRNL | IUCLC | INPCK | IXON | IXANY | IGNPAR);
+	attrs.c_oflag &= ~(OPOST | OLCUC | OCRNL | ONLCR | ONLRET);
+	attrs.c_lflag &= ~(ICANON | XCASE | ECHO | ECHOE | ECHONL);
+	attrs.c_cc[VMIN] = 1;
+	attrs.c_cc[VTIME] = 0;
+	attrs.c_cc[VEOF] = 1;
+
+	attrs.c_cflag &= ~(CBAUD | CSIZE | CSTOPB | CLOCAL | PARENB);
+	attrs.c_cflag |= (B9600 | CS8 | CREAD | PARENB);
+
+	tcsetattr (fd, TCSANOW, &attrs);
+	return fd;
+}
+
+static int modem_probe_caps (const char *device, int *fd, glong timeout_ms, unsigned int vid)
 {
 	const char *gcap_responses[] = { GCAP_TAG, HUAWEI_EC121_TAG, NULL };
 	const char *terminators[] = { "OK", "ERROR", "ERR", "+CME ERROR", NULL };
@@ -349,8 +397,8 @@ static int modem_probe_caps(int fd, glong timeout_ms, unsigned int vid)
 
 			g_get_current_time (&start);
 
-			if (modem_send_command (fd, "ATE0+CPMS?\r")) {
-				idx = modem_wait_reply (fd, 2, cpms_responses, terminators, &term_idx, &reply);
+			if (modem_send_command (*fd, "ATE0+CPMS?\r", NULL)) {
+				idx = modem_wait_reply (*fd, 2, cpms_responses, terminators, &term_idx, &reply);
 				if (idx == 0)
 					success = TRUE;
 
@@ -386,15 +434,25 @@ static int modem_probe_caps(int fd, glong timeout_ms, unsigned int vid)
 	while (timeout_ms > 0) {
 		GTimeVal diff;
 		gulong sleep_time = 100000;
+		gboolean eio = FALSE;
 
 		g_get_current_time (&start);
 
 		idx = term_idx = 0;
-		send_success = modem_send_command (fd, "AT+GCAP\r");
+		send_success = modem_send_command (*fd, "AT+GCAP\r", &eio);
 		if (send_success)
-			idx = modem_wait_reply (fd, 2, gcap_responses, terminators, &term_idx, &reply);
-		else
+			idx = modem_wait_reply (*fd, 2, gcap_responses, terminators, &term_idx, &reply);
+		else {
+			if (eio) {
+				/* re-open the port if it was EIO */
+				verbose ("Re-opening port due to EIO...");
+				close (*fd);
+				*fd = open_port (device, &timeout_ms, NULL);
+				if (*fd < 0)
+					return 0;  /* no capabilities */
+			}
 			sleep_time = 300000;
+		}
 
 		g_get_current_time (&end);
 		g_timeval_subtract (&diff, &end, &start);
@@ -446,8 +504,8 @@ static int modem_probe_caps(int fd, glong timeout_ms, unsigned int vid)
 		reply = NULL;
 
 		verbose ("GCAP failed, trying ATI...");
-		if (modem_send_command (fd, "ATI\r")) {
-			idx = modem_wait_reply (fd, 3, ati_responses, terminators, &term_idx, &reply);
+		if (modem_send_command (*fd, "ATI\r", NULL)) {
+			idx = modem_wait_reply (*fd, 3, ati_responses, terminators, &term_idx, &reply);
 			if (0 == term_idx && 0 == idx) {
 				verbose ("ATI response: %s", reply);
 				ret = parse_gcap (ati_responses[idx], TRUE, reply);
@@ -465,8 +523,8 @@ static int modem_probe_caps(int fd, glong timeout_ms, unsigned int vid)
 	if ((idx != -2) && !(ret & MODEM_CAP_GSM) && !(ret & MODEM_CAP_IS707_A)) {
 		const char *cgmm_responses[] = { CGMM_TAG, NULL };
 
-		if (modem_send_command (fd, "AT+CGMM\r")) {
-			idx = modem_wait_reply (fd, 5, cgmm_responses, terminators, &term_idx, &reply);
+		if (modem_send_command (*fd, "AT+CGMM\r", NULL)) {
+			idx = modem_wait_reply (*fd, 5, cgmm_responses, terminators, &term_idx, &reply);
 			if (0 == term_idx && 0 == idx) {
 				verbose ("CGMM response: %s", reply);
 				ret |= parse_cgmm (reply);
@@ -518,10 +576,10 @@ main(int argc, char *argv[])
 	const char *logpath = NULL;
 	const char *driver = NULL;
 	gboolean export = 0;
-	struct termios orig, attrs;
+	struct termios orig;
 	int fd = -1, caps, ret = 0;
-	guint32 timeout_ms = 0, delay_ms = 0;
-	unsigned int vid = 0, pid = 0, usbif = 0, last_err = 0;
+	glong timeout_ms = 0, delay_ms = 0;
+	unsigned int vid = 0, pid = 0, usbif = 0;
 	unsigned long int tmp;
 	GTimeVal diff, start, end;
 
@@ -542,7 +600,7 @@ main(int argc, char *argv[])
 				fprintf (stderr, "Invalid timeout: %s\n", optarg);
 				return 1;
 			}
-			timeout_ms = (guint32) tmp;
+			timeout_ms = (glong) tmp;
 			break;
 		case 'a':
 			tmp = strtoul (optarg, NULL, 10);
@@ -550,7 +608,7 @@ main(int argc, char *argv[])
 				fprintf (stderr, "Invalid delay: %s\n", optarg);
 				return 1;
 			}
-			delay_ms = (guint32) tmp;
+			delay_ms = (glong) tmp;
 			break;
 		case 'v':
 			verbose = TRUE;
@@ -628,7 +686,7 @@ main(int argc, char *argv[])
 	}
 
 	if (delay_ms) {
-		verbose ("waiting %u ms before probing", delay_ms);
+		verbose ("waiting %lu ms before probing", delay_ms);
 		g_usleep (delay_ms * 1000);
 	}
 
@@ -636,45 +694,20 @@ main(int argc, char *argv[])
 
 	g_get_current_time (&start);
 
-	/* If a timeout was specified, retry opening the serial port for that
-	 * amount of time.  Some devices (nozomi) aren't ready to be opened
-	 * even though their device node is created by udev already.
-	 */
-	do {
-		fd = open (device, O_RDWR | O_EXCL | O_NONBLOCK);
-		if (fd < 0) {
-			last_err = errno;
-			g_usleep (300000);
-			timeout_ms -= 300;
-		}
-	} while (fd < 0 && timeout_ms > 0);
-
-	if (fd < 0) {
-		g_printerr ("open(%s) failed: %d\n", device, last_err);
-		ret = 4;
+	/* open the modem's port */
+	fd = open_port (device, &timeout_ms, &orig);
+	if (fd < 0)
 		goto exit;
+
+	/* probe it */
+	caps = modem_probe_caps (device, &fd, timeout_ms, vid);
+
+	/* note: fd may have been modified by modem_probe_caps */
+	if (fd >= 0) {
+		/* reset original port attributes */
+		tcsetattr (fd, TCSANOW, &orig);
+		close (fd);
 	}
-
-	if (tcgetattr (fd, &orig)) {
-		g_printerr ("tcgetattr(%s): failed %d\n", device, errno);
-		ret = 5;
-		goto exit;
-	}
-
-	memcpy (&attrs, &orig, sizeof (attrs));
-	attrs.c_iflag &= ~(IGNCR | ICRNL | IUCLC | INPCK | IXON | IXANY | IGNPAR);
-	attrs.c_oflag &= ~(OPOST | OLCUC | OCRNL | ONLCR | ONLRET);
-	attrs.c_lflag &= ~(ICANON | XCASE | ECHO | ECHOE | ECHONL);
-	attrs.c_cc[VMIN] = 1;
-	attrs.c_cc[VTIME] = 0;
-	attrs.c_cc[VEOF] = 1;
-
-	attrs.c_cflag &= ~(CBAUD | CSIZE | CSTOPB | CLOCAL | PARENB);
-	attrs.c_cflag |= (B9600 | CS8 | CREAD | PARENB);
-	
-	tcsetattr (fd, TCSANOW, &attrs);
-	caps = modem_probe_caps (fd, timeout_ms, vid);
-	tcsetattr (fd, TCSANOW, &orig);
 
 	g_get_current_time (&end);
 
@@ -708,8 +741,6 @@ main(int argc, char *argv[])
 	         (diff.tv_sec * 1000) + (diff.tv_usec / 1000));
 
 exit:
-	if (fd >= 0)
-		close (fd);
 	if (logfile)
 		fclose (logfile);
 	return ret;
