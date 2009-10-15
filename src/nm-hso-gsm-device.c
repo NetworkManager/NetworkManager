@@ -172,7 +172,7 @@ hso_clear_done (NMSerialDevice *device,
 
 	/* Try to connect */
 	command = g_strdup_printf ("AT_OWANCALL=%d,1,1", cid);
-	modem_wait_for_reply (NM_GSM_DEVICE (device), command, 10, responses, responses, hso_call_done, NULL);
+	modem_wait_for_reply (NM_GSM_DEVICE (device), command, 15, responses, responses, hso_call_done, NULL);
 	g_free (command);
 }
 
