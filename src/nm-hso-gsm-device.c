@@ -142,6 +142,7 @@ hso_call_done (NMSerialDevice *device,
 
 	switch (reply_index) {
 	case 0:
+	case 1:
 		nm_info ("Connected, Woo!");
 		success = TRUE;
 
@@ -166,7 +167,7 @@ hso_clear_done (NMSerialDevice *device,
                 const char *reply,
                 gpointer user_data)
 {
-	const char *responses[] = { "_OWANCALL: ", "ERROR", NULL };
+	const char *responses[] = { "_OWANCALL: 1,1", "_OWANCALL: 1, 1", "ERROR", NULL };
 	guint cid = GPOINTER_TO_UINT (user_data);
 	char *command;
 
@@ -249,11 +250,16 @@ do_hso_auth (NMHsoGsmDevice *device)
 	gsm_username = nm_setting_gsm_get_username (s_gsm);
 	gsm_password = nm_setting_gsm_get_password (s_gsm);
 
-	command = g_strdup_printf ("%s=%d,1,\"%s\",\"%s\"",
-	                           hso_auth_commands[priv->auth_idx],
-	                           cid,
-	                           gsm_password ? gsm_password : "",
-	                           gsm_username ? gsm_username : "");
+	if (!gsm_username && !gsm_password)
+		command = g_strdup_printf ("%s=%d,0", hso_auth_commands[priv->auth_idx], cid);
+	else {
+		command = g_strdup_printf ("%s=%d,1,\"%s\",\"%s\"",
+		                           hso_auth_commands[priv->auth_idx],
+		                           cid,
+		                           gsm_password ? gsm_password : "",
+		                           gsm_username ? gsm_username : "");
+	}
+
 	modem_wait_for_reply (NM_GSM_DEVICE (device), command, 5, responses, responses, hso_auth_done, GUINT_TO_POINTER (cid));
 	g_free (command);
 }
