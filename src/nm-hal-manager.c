@@ -273,7 +273,6 @@ wired_device_creator (NMHalManager *self,
 	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
 	GObject *device = NULL;
 	char *iface, *driver;
-	gboolean mbm = FALSE;
 
 	iface = libhal_device_get_property_string (priv->hal_ctx, udi, "net.interface", NULL);
 	if (!iface) {
@@ -286,10 +285,7 @@ wired_device_creator (NMHalManager *self,
 	/* Special handling of Ericsson F3507g 'mbm' devices; ignore the
 	 * cdc-ether device that it provides since we don't use it yet.
 	 */
-	if (driver && !strcmp (driver, "cdc_ether"))
-		mbm = is_mbm (priv->hal_ctx, udi, NULL);
-
-	if (!mbm)
+	if (!is_mbm (priv->hal_ctx, udi, NULL))
 		device = (GObject *) nm_device_ethernet_new (udi, iface, driver, managed);
 
 	libhal_free_string (iface);
