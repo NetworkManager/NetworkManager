@@ -50,6 +50,7 @@ typedef struct {
 
 	guint reg_tries;
 	guint init_tries;
+	gboolean init_retried;
 	gboolean init_ok;
 	guint pin_tries;
 
@@ -538,10 +539,17 @@ init_full_done (NMSerialDevice *device,
 		power_up (NM_GSM_DEVICE (device));
 		break;
 	case -1:
-		nm_warning ("Modem second stage initialization timed out");
-		nm_device_state_changed (NM_DEVICE (device),
-		                         NM_DEVICE_STATE_FAILED,
-		                         NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
+		/* Retry the init string once */
+		if (priv->init_retried) {
+			nm_warning ("Modem second stage initialization timed out");
+			nm_device_state_changed (NM_DEVICE (device),
+			                         NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
+		} else {
+			nm_info ("Retrying modem initialization (%d)", priv->init_tries);
+			init_modem_full (self);
+			priv->init_retried = TRUE;
+		}
 		break;
 	default:
 		if (priv->init_ok) {
@@ -783,6 +791,7 @@ init_done (NMSerialDevice *device,
 	switch (reply_index) {
 	case 0:
 		priv->init_ok = TRUE;
+		priv->init_retried = FALSE;
 		check_pin (NM_GSM_DEVICE (device));
 		break;
 	case 1:
@@ -790,10 +799,16 @@ init_done (NMSerialDevice *device,
 		schedule_init_modem_again (NM_GSM_DEVICE (device));
 		break;
 	case -1:
-		nm_warning ("Modem initialization timed out");
-		nm_device_state_changed (NM_DEVICE (device),
-		                         NM_DEVICE_STATE_FAILED,
-		                         NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
+		if (priv->init_retried) {
+			nm_warning ("Modem initialization timed out");
+			nm_device_state_changed (NM_DEVICE (device),
+			                         NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
+		} else {
+			nm_info ("Retrying modem initialization (%d)", priv->init_tries);
+			init_modem (NM_SERIAL_DEVICE (device));
+			priv->init_retried = TRUE;
+		}
 		break;
 	default:
 		priv->init_tries++;
@@ -837,6 +852,7 @@ real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 
 	NM_GSM_DEVICE_GET_PRIVATE (device)->init_tries = 0;
 	NM_GSM_DEVICE_GET_PRIVATE (device)->init_ok = FALSE;
+	NM_GSM_DEVICE_GET_PRIVATE (device)->init_retried = FALSE;
 	NM_GSM_DEVICE_GET_PRIVATE (device)->pin_tries = 0;
 	NM_GSM_DEVICE_GET_PRIVATE (device)->reg_tries = 0;
 
