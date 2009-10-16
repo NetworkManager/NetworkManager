@@ -570,8 +570,10 @@ nm_sysconfig_settings_add_new_connection (NMSysconfigSettings *self,
 		success = nm_system_config_interface_add_connection (NM_SYSTEM_CONFIG_INTERFACE (iter->data),
 		                                                     connection, &tmp_error);
 		g_clear_error (&last_error);
-		if (!success)
+		if (!success) {
 			last_error = tmp_error;
+			tmp_error = NULL;
+		}
 	}
 
 	g_object_unref (connection);
