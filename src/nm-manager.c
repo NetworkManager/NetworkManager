@@ -1949,6 +1949,7 @@ nm_manager_activate_connection (NMManager *manager,
                                 gboolean user_requested,
                                 GError **error)
 {
+	NMManagerPrivate *priv;
 	NMDevice *device = NULL;
 	char *path = NULL;
 	NMSettingConnection *s_con;
@@ -1958,26 +1959,47 @@ nm_manager_activate_connection (NMManager *manager,
 	g_return_val_if_fail (error != NULL, NULL);
 	g_return_val_if_fail (*error == NULL, NULL);
 
+	priv = NM_MANAGER_GET_PRIVATE (manager);
+
 	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_con);
 
 	if (!strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_VPN_SETTING_NAME)) {
-		NMActRequest *req;
+		NMActRequest *req = NULL;
 		NMVPNManager *vpn_manager;
 
 		/* VPN connection */
-		req = nm_manager_get_act_request_by_path (manager, specific_object, &device);
-		if (!req) {
-			g_set_error (error,
-			             NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
-			             "%s", "Base connection for VPN connection not active.");
-			return NULL;
+
+		if (specific_object) {
+			/* Find the specifc connection the client requested we use */
+			req = nm_manager_get_act_request_by_path (manager, specific_object, &device);
+			if (!req) {
+				g_set_error (error,
+				             NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
+				             "%s", "Base connection for VPN connection not active.");
+				return NULL;
+			}
+		} else {
+			GSList *iter;
+
+			/* Just find the current default connection */
+			for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+				NMDevice *candidate = NM_DEVICE (iter->data);
+				NMActRequest *candidate_req;
+
+				candidate_req = nm_device_get_act_request (candidate);
+				if (candidate_req && nm_act_request_get_default (candidate_req)) {
+					device = candidate;
+					req = candidate_req;
+					break;
+				}
+			}
 		}
 
-		if (!device) {
+		if (!device || !req) {
 			g_set_error (error,
 			             NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-			             "%s", "Source connection had no active device.");
+			             "%s", "Could not find source connection, or the source connection had no active device.");
 			return NULL;
 		}
 
