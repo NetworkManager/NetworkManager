@@ -594,8 +594,10 @@ add_new_connection (NMSysconfigSettings *self,
 		                                                     connection,
 		                                                     &tmp_error);
 		g_clear_error (&last_error);
-		if (!success)
+		if (!success) {
 			last_error = tmp_error;
+			tmp_error = NULL;
+		}
 	}
 
 	if (!success)
