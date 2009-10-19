@@ -4153,7 +4153,7 @@ test_write_wifi_leap (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
+	gboolean unmanaged = FALSE;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
@@ -4241,7 +4241,6 @@ test_write_wifi_leap (void)
 	reread = connection_from_file (testfile,
 	                               NULL,
 	                               TYPE_WIRELESS,
-	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
 	                               &error,
