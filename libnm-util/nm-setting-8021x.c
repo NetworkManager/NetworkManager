@@ -1007,7 +1007,7 @@ need_secrets_phase2 (NMSetting8021x *self,
 	for (i = 0; eap_methods_table[i].method; i++) {
 		if (eap_methods_table[i].ns_func == NULL)
 			continue;
-		if (strcmp (eap_methods_table[i].method, method)) {
+		if (!strcmp (eap_methods_table[i].method, method)) {
 			(*eap_methods_table[i].ns_func) (self, secrets, TRUE);
 			break;
 		}
