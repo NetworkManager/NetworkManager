@@ -395,9 +395,11 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PUK:
 		/* deprecated */
+		g_value_set_string (value, NULL);
 		break;
 	case PROP_BAND:
 		/* deprecated */
+		g_value_set_int (value, -1);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
