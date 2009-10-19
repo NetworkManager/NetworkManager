@@ -4,7 +4,7 @@ INCLUDES = \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/libnm-util
 
-noinst_PROGRAMS = test-settings-defaults test-crypto
+noinst_PROGRAMS = test-settings-defaults test-crypto test-need-secrets
 
 test_settings_defaults_SOURCES = \
 	test-settings-defaults.c
@@ -29,11 +29,24 @@ test_crypto_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(GLIB_LIBS)
 
+test_need_secrets_SOURCES = \
+	test-need-secrets.c
+
+test_need_secrets_CPPFLAGS = \
+	-DTEST_CERT_DIR=\"$(top_srcdir)/libnm-util/tests/certs/\" \
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS)
+
+test_need_secrets_LDADD = \
+	$(top_builddir)/libnm-util/libnm-util.la \
+	$(GLIB_LIBS) \
+	$(DBUS_LIBS)
 
 if WITH_TESTS
 
-check-local: test-settings-defaults test-crypto
+check-local: test-settings-defaults test-crypto test-need-secrets
 	$(abs_builddir)/test-settings-defaults
+	$(abs_builddir)/test-need-secrets
 
 # Cert with 8 bytes of tail padding
 	$(abs_builddir)/test-crypto \
