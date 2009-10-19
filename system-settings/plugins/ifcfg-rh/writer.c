@@ -546,7 +546,7 @@ write_wireless_security_setting (NMConnection *connection,
 			svSetValue (ifcfg, "SECURITYMODE", "open", FALSE);
 		else if (!strcmp (auth_alg, "leap")) {
 			svSetValue (ifcfg, "SECURITYMODE", "leap", FALSE);
-			svSetValue (ifcfg, "IEEE_8021X_USERNAME",
+			svSetValue (ifcfg, "IEEE_8021X_IDENTITY",
 			            nm_setting_wireless_security_get_leap_username (s_wsec),
 			            FALSE);
 			set_secret (ifcfg, "IEEE_8021X_PASSWORD",
