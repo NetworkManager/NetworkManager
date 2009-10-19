@@ -607,21 +607,22 @@ nm_device_cleanup_ip6 (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->ip6_manager) {
-		if (priv->ip6_addrconf_sigid) {
-			g_signal_handler_disconnect (priv->ip6_manager,
-										 priv->ip6_addrconf_sigid);
-			priv->ip6_addrconf_sigid = 0;
-		}
-		if (priv->ip6_config_changed_sigid) {
-			g_signal_handler_disconnect (priv->ip6_manager,
-										 priv->ip6_config_changed_sigid);
-			priv->ip6_config_changed_sigid = 0;
-		}
+	if (!priv->ip6_manager)
+		return;
 
-		g_object_unref (priv->ip6_manager);
-		priv->ip6_manager = NULL;
+	if (priv->ip6_addrconf_sigid) {
+		g_signal_handler_disconnect (priv->ip6_manager,
+		                             priv->ip6_addrconf_sigid);
+		priv->ip6_addrconf_sigid = 0;
 	}
+	if (priv->ip6_config_changed_sigid) {
+		g_signal_handler_disconnect (priv->ip6_manager,
+		                             priv->ip6_config_changed_sigid);
+		priv->ip6_config_changed_sigid = 0;
+	}
+
+	g_object_unref (priv->ip6_manager);
+	priv->ip6_manager = NULL;
 }
 
 /*
