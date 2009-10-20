@@ -78,7 +78,7 @@ typedef struct {
 
 	NMIP6DeviceState state;
 	NMIP6DeviceState target_state;
-	gboolean want_signal;
+	gboolean addrconf_complete;
 
 	GArray *rdnss_servers;
 	guint rdnss_timeout_id;
@@ -241,7 +241,7 @@ finish_addrconf (gpointer user_data)
 	char *iface_copy;
 
 	device->finish_addrconf_id = 0;
-	device->want_signal = FALSE;
+	device->addrconf_complete = TRUE;
 
 	if (device->state >= device->target_state) {
 		g_signal_emit (manager, signals[ADDRCONF_COMPLETE], 0,
@@ -368,7 +368,7 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
 //	if (flags & (IF_RA_MANAGED | IF_RA_OTHERCONF))
 //		device->need_dhcp = TRUE;
 
-	if (device->want_signal) {
+	if (!device->addrconf_complete) {
 		if (device->state >= device->target_state ||
 			device->state == NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT) {
 			/* device->finish_addrconf_id may currently be a timeout
@@ -466,7 +466,7 @@ process_prefix (NMIP6Manager *manager, struct nl_msg *msg)
 	pmsg = (struct prefixmsg *) NLMSG_DATA (nlmsg_hdr (msg));
 	device = nm_ip6_manager_get_device (manager, pmsg->prefix_ifindex);
 
-	if (!device || !device->want_signal)
+	if (!device || device->addrconf_complete)
 		return NULL;
 
 	return device;
@@ -727,6 +727,8 @@ nm_ip6_manager_begin_addrconf (NMIP6Manager *manager,
 	g_return_if_fail (device != NULL);
 
 	nm_info ("Activation (%s) Beginning IP6 addrconf.", iface);
+
+	device->addrconf_complete = FALSE;
 
 	/* Set up a timeout on the transaction to kill it after the timeout */
 	device->finish_addrconf_id = g_timeout_add_seconds (NM_IP6_TIMEOUT,

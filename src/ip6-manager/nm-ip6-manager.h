@@ -43,8 +43,16 @@ typedef struct {
 	GObjectClass parent;
 
 	/* Signals */
+
+	/* addrconf_complete is emitted only during initial configuration to indicate
+	 * that the initial configuration is complete.
+	 */
 	void (*addrconf_complete) (NMIP6Manager *manager, char *iface, gboolean success);
 
+	/* config_changed gets emitted only *after* initial configuration is
+	 * complete; it's like DHCP renew and indicates that the existing config
+	 * of the interface has changed.
+	 */
 	void (*config_changed)    (NMIP6Manager *manager, char *iface);
 } NMIP6ManagerClass;
 
