@@ -496,7 +496,7 @@ _nm_object_get_property (NMObject *object,
 		/* Don't warn about D-Bus no reply/timeout errors; it's mostly noise and
 		 * happens for example when NM quits and the applet is still running.
 		 */
-		if (err->code != DBUS_GERROR_NO_REPLY) {
+		if (!(err->domain == DBUS_GERROR && err->code == DBUS_GERROR_NO_REPLY)) {
 			g_warning ("%s: Error getting '%s' for %s: (%d) %s\n",
 			           __func__,
 			           prop_name,
