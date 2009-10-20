@@ -83,7 +83,7 @@ constructor (GType type,
 	priv = NM_OBJECT_GET_PRIVATE (object);
 
 	if (priv->connection == NULL || priv->path == NULL) {
-		g_warning ("Connection or path not received.");
+		g_warning ("%s: bus connection and path required.", __func__);
 		g_object_unref (object);
 		return NULL;
 	}
@@ -331,7 +331,10 @@ handle_property_changed (gpointer key, gpointer data, gpointer user_data)
 	prop_name = wincaps_to_dash ((char *) key);
 	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (self)), prop_name);
 	if (!pspec) {
-		g_warning ("Property '%s' change detected but couldn't be found on the object.", prop_name);
+		g_warning ("%s: property '%s' changed but wasn't defined by object type %s.",
+		           __func__,
+		           prop_name,
+		           G_OBJECT_TYPE_NAME (self));
 		goto out;
 	}
 
@@ -350,8 +353,12 @@ handle_property_changed (gpointer key, gpointer data, gpointer user_data)
 #if DEBUG
 		g_warning ("Property '%s' unhandled.", prop_name);
 #endif
-	} else if (!success)
-		g_warning ("Property '%s' could not be set due to errors.", prop_name);
+	} else if (!success) {
+		g_warning ("%s: failed to update property '%s' of object type %s.",
+		           __func__,
+		           prop_name,
+		           G_OBJECT_TYPE_NAME (self));
+	}
 
 out:
 	g_free (prop_name);
@@ -486,11 +493,17 @@ _nm_object_get_property (NMObject *object,
 							G_TYPE_INVALID,
 							G_TYPE_VALUE, value,
 							G_TYPE_INVALID)) {
-		g_warning ("%s: Error getting '%s' for %s: %s\n",
-		           __func__,
-		           prop_name,
-		           nm_object_get_path (object),
-		           err->message);
+		/* Don't warn about D-Bus no reply/timeout errors; it's mostly noise and
+		 * happens for example when NM quits and the applet is still running.
+		 */
+		if (err->code != DBUS_GERROR_NO_REPLY) {
+			g_warning ("%s: Error getting '%s' for %s: (%d) %s\n",
+			           __func__,
+			           prop_name,
+			           nm_object_get_path (object),
+			           err->code,
+			           err->message);
+		}
 		g_error_free (err);
 		return FALSE;
 	}
