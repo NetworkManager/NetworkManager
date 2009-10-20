@@ -413,10 +413,8 @@ test_read_unmanaged (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIRED_STATIC TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static"
-
 static void
-test_read_wired_static (void)
+test_read_wired_static (const char *file, const char *expected_id)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
@@ -429,7 +427,6 @@ test_read_wired_static (void)
 	const GByteArray *array;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0xee };
 	const char *tmp;
-	const char *expected_id = "System test-wired-static";
 	const char *expected_dns1 = "4.2.2.1";
 	const char *expected_dns2 = "4.2.2.2";
 	struct in_addr addr;
@@ -437,7 +434,7 @@ test_read_wired_static (void)
 	const char *expected_address1_gw = "192.168.1.1";
 	NMIP4Address *ip4_addr;
 
-	connection = connection_from_file (TEST_IFCFG_WIRED_STATIC,
+	connection = connection_from_file (file,
 	                                   NULL,
 	                                   TYPE_ETHERNET,
 	                                   NULL,
@@ -446,46 +443,46 @@ test_read_wired_static (void)
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
-	        "wired-static-read", "failed to read %s: %s", TEST_IFCFG_WIRED_STATIC, error->message);
+	        "wired-static-read", "failed to read %s: %s", file, error->message);
 
 	ASSERT (nm_connection_verify (connection, &error),
-	        "wired-static-verify", "failed to verify %s: %s", TEST_IFCFG_WIRED_STATIC, error->message);
+	        "wired-static-verify", "failed to verify %s: %s", file, error->message);
 
 	ASSERT (unmanaged == FALSE,
-	        "wired-static-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_STATIC);
+	        "wired-static-verify", "failed to verify %s: unexpected unmanaged value", file);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	ASSERT (s_con != NULL,
 	        "wired-static-verify-connection", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_STATIC,
+	        file,
 	        NM_SETTING_CONNECTION_SETTING_NAME);
 
 	/* ID */
 	tmp = nm_setting_connection_get_id (s_con);
 	ASSERT (tmp != NULL,
 	        "wired-static-verify-connection", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIRED_STATIC,
+	        file,
 	        NM_SETTING_CONNECTION_SETTING_NAME,
 	        NM_SETTING_CONNECTION_ID);
 	ASSERT (strcmp (tmp, expected_id) == 0,
 	        "wired-static-verify-connection", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_STATIC,
+	        file,
 	        NM_SETTING_CONNECTION_SETTING_NAME,
 	        NM_SETTING_CONNECTION_ID);
 
 	/* Timestamp */
 	ASSERT (nm_setting_connection_get_timestamp (s_con) == 0,
 	        "wired-static-verify-connection", "failed to verify %s: unexpected %s /%s key value",
-	        TEST_IFCFG_WIRED_STATIC,
+	        file,
 	        NM_SETTING_CONNECTION_SETTING_NAME,
 	        NM_SETTING_CONNECTION_TIMESTAMP);
 
 	/* Autoconnect */
 	ASSERT (nm_setting_connection_get_autoconnect (s_con) == TRUE,
 	        "wired-static-verify-connection", "failed to verify %s: unexpected %s /%s key value",
-	        TEST_IFCFG_WIRED_STATIC,
+	        file,
 	        NM_SETTING_CONNECTION_SETTING_NAME,
 	        NM_SETTING_CONNECTION_AUTOCONNECT);
 
@@ -494,30 +491,30 @@ test_read_wired_static (void)
 	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
 	ASSERT (s_wired != NULL,
 	        "wired-static-verify-wired", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_STATIC,
+	        file,
 	        NM_SETTING_WIRED_SETTING_NAME);
 
 	/* MAC address */
 	array = nm_setting_wired_get_mac_address (s_wired);
 	ASSERT (array != NULL,
 	        "wired-static-verify-wired", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIRED_STATIC,
+	        file,
 	        NM_SETTING_WIRED_SETTING_NAME,
 	        NM_SETTING_WIRED_MAC_ADDRESS);
 	ASSERT (array->len == ETH_ALEN,
 	        "wired-static-verify-wired", "failed to verify %s: unexpected %s / %s key value length",
-	        TEST_IFCFG_WIRED_STATIC,
+	        file,
 	        NM_SETTING_WIRED_SETTING_NAME,
 	        NM_SETTING_WIRED_MAC_ADDRESS);
 	ASSERT (memcmp (array->data, &expected_mac_address[0], sizeof (expected_mac_address)) == 0,
 	        "wired-static-verify-wired", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_STATIC,
+	        file,
 	        NM_SETTING_WIRED_SETTING_NAME,
 	        NM_SETTING_WIRED_MAC_ADDRESS);
 
 	ASSERT (nm_setting_wired_get_mtu (s_wired) == 1492,
 	        "wired-static-verify-wired", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_STATIC,
+	        file,
 	        NM_SETTING_WIRED_SETTING_NAME,
 	        NM_SETTING_WIRED_MTU);
 
@@ -526,49 +523,49 @@ test_read_wired_static (void)
 	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
 	ASSERT (s_ip4 != NULL,
 	        "wired-static-verify-ip4", "failed to verify %s: missing %s setting",
-	        TEST_IFCFG_WIRED_STATIC,
+	        file,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
 	/* Method */
 	tmp = nm_setting_ip4_config_get_method (s_ip4);
 	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0,
 	        "wired-static-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_STATIC,
+	        file,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_METHOD);
 
 	/* DNS Addresses */
 	ASSERT (nm_setting_ip4_config_get_num_dns (s_ip4) == 2,
 	        "wired-static-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_STATIC,
+	        file,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
 
 	ASSERT (inet_pton (AF_INET, expected_dns1, &addr) > 0,
 	        "wired-static-verify-ip4", "failed to verify %s: couldn't convert DNS IP address #1",
-	        TEST_IFCFG_WIRED_STATIC,
+	        file,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
 	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 0) == addr.s_addr,
 	        "wired-static-verify-ip4", "failed to verify %s: unexpected %s / %s key value #1",
-	        TEST_IFCFG_WIRED_STATIC,
+	        file,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
 
 	ASSERT (inet_pton (AF_INET, expected_dns2, &addr) > 0,
 	        "wired-static-verify-ip4", "failed to verify %s: couldn't convert DNS IP address #2",
-	        TEST_IFCFG_WIRED_STATIC,
+	        file,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
 	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 1) == addr.s_addr,
 	        "wired-static-verify-ip4", "failed to verify %s: unexpected %s / %s key value #2",
-	        TEST_IFCFG_WIRED_STATIC,
+	        file,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
 
 	ASSERT (nm_setting_ip4_config_get_num_addresses (s_ip4) == 1,
 	        "wired-static-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_STATIC,
+	        file,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
 
@@ -576,35 +573,35 @@ test_read_wired_static (void)
 	ip4_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
 	ASSERT (ip4_addr,
 	        "wired-static-verify-ip4", "failed to verify %s: missing IP4 address #1",
-	        TEST_IFCFG_WIRED_STATIC,
+	        file,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_ADDRESSES);
 
 	ASSERT (nm_ip4_address_get_prefix (ip4_addr) == 24,
 	        "wired-static-verify-ip4", "failed to verify %s: unexpected IP4 address #1 prefix",
-	        TEST_IFCFG_WIRED_STATIC,
+	        file,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_ADDRESSES);
 
 	ASSERT (inet_pton (AF_INET, expected_address1, &addr) > 0,
 	        "wired-static-verify-ip4", "failed to verify %s: couldn't convert IP address #1",
-	        TEST_IFCFG_WIRED_STATIC,
+	        file,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
 	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr.s_addr,
 	        "wired-static-verify-ip4", "failed to verify %s: unexpected IP4 address #1",
-	        TEST_IFCFG_WIRED_STATIC,
+	        file,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_ADDRESSES);
 
 	ASSERT (inet_pton (AF_INET, expected_address1_gw, &addr) > 0,
 	        "wired-static-verify-ip4", "failed to verify %s: couldn't convert IP address #1 gateway",
-	        TEST_IFCFG_WIRED_STATIC,
+	        file,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_ADDRESSES);
 	ASSERT (nm_ip4_address_get_gateway (ip4_addr) == addr.s_addr,
 	        "wired-static-verify-ip4", "failed to verify %s: unexpected IP4 address #1 gateway",
-	        TEST_IFCFG_WIRED_STATIC,
+	        file,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_ADDRESSES);
 
@@ -4211,6 +4208,140 @@ test_write_wifi_wep_adhoc (void)
 }
 
 static void
+test_write_wifi_leap (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	NMSettingIP4Config *s_ip4;
+	char *uuid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GByteArray *ssid;
+	const unsigned char ssid_data[] = "blahblah";
+	struct stat statbuf;
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "wifi-leap-write", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "wifi-leap-write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wifi LEAP",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wifi setting */
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	ASSERT (s_wifi != NULL,
+	        "wifi-leap-write", "failed to allocate new %s setting",
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	ssid = g_byte_array_sized_new (sizeof (ssid_data));
+	g_byte_array_append (ssid, ssid_data, sizeof (ssid_data));
+
+	g_object_set (s_wifi,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NM_SETTING_WIRELESS_MODE, "infrastructure",
+	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	              NULL);
+
+	g_byte_array_free (ssid, TRUE);
+
+	/* Wireless security setting */
+	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+	ASSERT (s_wsec != NULL,
+			"wifi-leap-write", "failed to allocate new %s setting",
+			NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+
+	g_object_set (s_wsec,
+	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x",
+	              NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "leap",
+	              NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, "Bill Smith",
+	              NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD, "foobar22",
+	              NULL);
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+			"wifi-leap-write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "wifi-leap-write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == TRUE,
+	        "wifi-leap-write", "failed to write connection to disk: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (testfile != NULL,
+	        "wifi-leap-write", "didn't get ifcfg file path back after writing connection");
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_WIRELESS,
+	                               NULL,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	ASSERT (keyfile != NULL,
+	        "wifi-leap-write-reread", "expected keyfile for '%s'", testfile);
+
+	ASSERT (stat (keyfile, &statbuf) == 0,
+	        "wifi-leap-write-reread", "couldn't stat() '%s'", keyfile);
+	ASSERT (S_ISREG (statbuf.st_mode),
+	        "wifi-leap-write-reread", "keyfile '%s' wasn't a normal file", keyfile);
+	ASSERT ((statbuf.st_mode & 0077) == 0,
+	        "wifi-leap-write-reread", "keyfile '%s' wasn't readable only by its owner", keyfile);
+
+	unlink (keyfile);
+
+	ASSERT (reread != NULL,
+	        "wifi-leap-write-reread", "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_verify (reread, &error),
+	        "wifi-leap-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+	        "wifi-leap-write", "written and re-read connection weren't the same.");
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
 test_write_wifi_wpa_psk (const char *name,
                          const char *test_name,
                          gboolean wep_group,
@@ -5624,6 +5755,9 @@ test_write_mobile_broadband (gboolean gsm)
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-hex"
 
 
+#define TEST_IFCFG_WIRED_STATIC           TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static"
+#define TEST_IFCFG_WIRED_STATIC_BOOTPROTO TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static-bootproto"
+
 #define DEFAULT_HEX_PSK "7d308b11df1b4243b0f78e5f3fc68cdbb9a264ed0edf4c188edf329ff5b467f0"
 
 int main (int argc, char **argv)
@@ -5641,7 +5775,8 @@ int main (int argc, char **argv)
 	/* The tests */
 	test_read_unmanaged ();
 	test_read_minimal ();
-	test_read_wired_static ();
+	test_read_wired_static (TEST_IFCFG_WIRED_STATIC, "System test-wired-static");
+	test_read_wired_static (TEST_IFCFG_WIRED_STATIC_BOOTPROTO, "System test-wired-static-bootproto");
 	test_read_wired_dhcp ();
 	test_read_wired_global_gateway ();
 	test_read_wired_never_default ();
@@ -5670,6 +5805,7 @@ int main (int argc, char **argv)
 	test_write_wifi_open_hex_ssid ();
 	test_write_wifi_wep ();
 	test_write_wifi_wep_adhoc ();
+	test_write_wifi_leap ();
 	test_write_wifi_wpa_psk ("Test Write Wifi WPA PSK",
 	                         "wifi-wpa-psk-write",
 	                         FALSE,

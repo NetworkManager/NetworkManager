@@ -90,10 +90,15 @@ get_all_cb  (DBusGProxy *proxy,
 	if (!dbus_g_proxy_end_call (proxy, call, &error,
 	                            DBUS_TYPE_G_MAP_OF_VARIANT, &props,
 	                            G_TYPE_INVALID)) {
-		g_warning ("%s: couldn't retrieve system settings properties: (%d) %s.",
-		           __func__,
-		           error ? error->code : -1,
-		           (error && error->message) ? error->message : "(unknown)");
+		/* Don't warn when the call times out because the settings service can't
+		 * be activated or whatever.
+		 */
+		if (!(error->domain == DBUS_GERROR && error->code == DBUS_GERROR_NO_REPLY)) {
+			g_warning ("%s: couldn't retrieve system settings properties: (%d) %s.",
+			           __func__,
+			           error ? error->code : -1,
+			           (error && error->message) ? error->message : "(unknown)");
+		}
 		g_clear_error (&error);
 		return;
 	}

@@ -39,12 +39,19 @@
       </arg>
       <arg name="device" type="o" direction="in">
         <tp:docstring>
-          The device to be activated.
+          The object path of device to be activated for physical connections.  This parameter is ignored for VPN connections, because the specific_object (if provided) specifies the device to use.
         </tp:docstring>
       </arg>
       <arg name="specific_object" type="o" direction="in">
         <tp:docstring>
-          The path of a device-type-specific object this activation should use, for example a WiFi access point.
+          The path of a connection-type-specific object this activation should use. 
+          This parameter is currently ignored for wired and mobile broadband connections,
+          and the value of "/" should be used (ie, no specific object).  For WiFi
+          connections, pass the object path of a specific AP from the card's scan
+          list, or "/" to pick and AP automatically.  For VPN connections, pass
+          the object path of an ActiveConnection object that should serve as the
+          "base" connection (to which the VPN connections lifetime will be tied),
+          or pass "/" and NM will automatically use the current default device.
         </tp:docstring>
       </arg>
       <arg name="active_connection" type="o" direction="out">

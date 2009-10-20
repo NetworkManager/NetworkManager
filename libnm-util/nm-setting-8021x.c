@@ -2173,27 +2173,39 @@ need_secrets_sim (NMSetting8021x *self,
 }
 
 static gboolean
-need_private_key_password (GByteArray *key, const char *password)
+need_private_key_password (const GByteArray *blob,
+                           const char *path,
+                           const char *password)
 {
-	GError *error = NULL;
-	gboolean needed = TRUE;
-
-	/* See if a private key password is needed, which basically is whether
-	 * or not the private key is a PKCS#12 file or not, since PKCS#1 files
-	 * are decrypted by the settings service.
+	/* Private key password is only un-needed if the private key scheme is BLOB,
+	 * because BLOB keys are decrypted by the settings service.  A private key
+	 * password is required if the private key is PKCS#12 format, or if the
+	 * private key scheme is PATH.
 	 */
-	if (!crypto_is_pkcs12_data (key))
-		return FALSE;
+	if (path) {
+		GByteArray *tmp;
+		NMCryptoKeyType key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
+		NMCryptoFileFormat key_format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 
-	if (crypto_verify_pkcs12 (key, password, &error))
-		return FALSE;  /* pkcs#12 validation successful */
+		/* check the password */
+		tmp = crypto_get_private_key (path, password, &key_type, &key_format, NULL);
+		if (tmp) {
+			/* Decrypt/verify successful; password must be OK */
+			g_byte_array_free (tmp, TRUE);
+			return FALSE;
+		}
+	} else if (blob) {
+		/* Non-PKCS#12 blob-scheme keys are already decrypted by their settings
+		 * service, thus if the private key is not PKCS#12 format, a new password
+		 * is not required.  If the PKCS#12 key can be decrypted with the given
+		 * password, then we don't need a new password either.
+		 */
+		if (!crypto_is_pkcs12_data (blob) || crypto_verify_pkcs12 (blob, password, NULL))
+			return FALSE;
+	} else
+		g_warning ("%s: unknown private key password scheme", __func__);
 
-	/* If the error was a decryption error then a password is needed */
-	if (!error || g_error_matches (error, NM_CRYPTO_ERROR, NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED))
-		needed = TRUE;
-
-	g_clear_error (&error);
-	return needed;
+	return TRUE;
 }
 
 static void
@@ -2202,16 +2214,47 @@ need_secrets_tls (NMSetting8021x *self,
                   gboolean phase2)
 {
 	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (self);
+	NMSetting8021xCKScheme scheme;
+	const GByteArray *blob = NULL;
+	const char *path = NULL;
 
 	if (phase2) {
-		if (!priv->phase2_private_key || !priv->phase2_private_key->len)
+		if (!priv->phase2_private_key || !priv->phase2_private_key->len) {
 			g_ptr_array_add (secrets, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
-		else if (need_private_key_password (priv->phase2_private_key, priv->phase2_private_key_password))
+			return;
+		}
+
+		scheme = nm_setting_802_1x_get_phase2_private_key_scheme (self);
+		if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+			path = nm_setting_802_1x_get_phase2_private_key_path (self);
+		else if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
+			blob = nm_setting_802_1x_get_phase2_private_key_blob (self);
+		else {
+			g_warning ("%s: unknown phase2 private key scheme %d", __func__, scheme);
+			g_ptr_array_add (secrets, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
+			return;
+		}
+
+		if (need_private_key_password (blob, path, priv->phase2_private_key_password))
 			g_ptr_array_add (secrets, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD);
 	} else {
-		if (!priv->private_key || !priv->private_key->len)
+		if (!priv->private_key || !priv->private_key->len) {
 			g_ptr_array_add (secrets, NM_SETTING_802_1X_PRIVATE_KEY);
-		else if (need_private_key_password (priv->private_key, priv->private_key_password))
+			return;
+		}
+
+		scheme = nm_setting_802_1x_get_private_key_scheme (self);
+		if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+			path = nm_setting_802_1x_get_private_key_path (self);
+		else if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
+			blob = nm_setting_802_1x_get_private_key_blob (self);
+		else {
+			g_warning ("%s: unknown private key scheme %d", __func__, scheme);
+			g_ptr_array_add (secrets, NM_SETTING_802_1X_PRIVATE_KEY);
+			return;
+		}
+
+		if (need_private_key_password (blob, path, priv->private_key_password))
 			g_ptr_array_add (secrets, NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
 	}
 }
@@ -2439,7 +2482,7 @@ need_secrets_phase2 (NMSetting8021x *self,
 	for (i = 0; eap_methods_table[i].method; i++) {
 		if (eap_methods_table[i].ns_func == NULL)
 			continue;
-		if (strcmp (eap_methods_table[i].method, method)) {
+		if (!strcmp (eap_methods_table[i].method, method)) {
 			(*eap_methods_table[i].ns_func) (self, secrets, TRUE);
 			break;
 		}

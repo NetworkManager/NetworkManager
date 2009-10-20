@@ -532,7 +532,7 @@ ip6_addrconf_complete (NMIP6Manager *ip6_manager,
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (strcmp (nm_device_get_iface (self), iface) != 0)
+	if (strcmp (nm_device_get_ip_iface (self), iface) != 0)
 		return;
 	if (!nm_device_get_act_request (self))
 		return;
@@ -553,7 +553,7 @@ ip6_config_changed (NMIP6Manager *ip6_manager,
 {
 	NMDevice *self = NM_DEVICE (user_data);
 
-	if (strcmp (nm_device_get_iface (self), iface) != 0)
+	if (strcmp (nm_device_get_ip_iface (self), iface) != 0)
 		return;
 	if (!nm_device_get_act_request (self))
 		return;
@@ -567,7 +567,7 @@ nm_device_setup_ip6 (NMDevice *self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActRequest *req;
 	NMConnection *connection;
-	const char *iface, *method = NULL;
+	const char *ip_iface, *method = NULL;
 	NMSettingIP6Config *s_ip6;
 
 	req = nm_device_get_act_request (self);
@@ -598,8 +598,8 @@ nm_device_setup_ip6 (NMDevice *self)
 
 	priv->ip6_waiting_for_config = FALSE;
 
-	iface = nm_device_get_iface (self);
-	nm_ip6_manager_prepare_interface (priv->ip6_manager, iface, s_ip6);
+	ip_iface = nm_device_get_ip_iface (self);
+	nm_ip6_manager_prepare_interface (priv->ip6_manager, ip_iface, s_ip6);
 }
 
 static void
@@ -607,21 +607,22 @@ nm_device_cleanup_ip6 (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->ip6_manager) {
-		if (priv->ip6_addrconf_sigid) {
-			g_signal_handler_disconnect (priv->ip6_manager,
-										 priv->ip6_addrconf_sigid);
-			priv->ip6_addrconf_sigid = 0;
-		}
-		if (priv->ip6_config_changed_sigid) {
-			g_signal_handler_disconnect (priv->ip6_manager,
-										 priv->ip6_config_changed_sigid);
-			priv->ip6_config_changed_sigid = 0;
-		}
+	if (!priv->ip6_manager)
+		return;
 
-		g_object_unref (priv->ip6_manager);
-		priv->ip6_manager = NULL;
+	if (priv->ip6_addrconf_sigid) {
+		g_signal_handler_disconnect (priv->ip6_manager,
+		                             priv->ip6_addrconf_sigid);
+		priv->ip6_addrconf_sigid = 0;
 	}
+	if (priv->ip6_config_changed_sigid) {
+		g_signal_handler_disconnect (priv->ip6_manager,
+		                             priv->ip6_config_changed_sigid);
+		priv->ip6_config_changed_sigid = 0;
+	}
+
+	g_object_unref (priv->ip6_manager);
+	priv->ip6_manager = NULL;
 }
 
 /*
@@ -1139,7 +1140,7 @@ static NMActStageReturn
 real_act_stage3_ip6_config_start (NMDevice *self, NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	const char *iface = nm_device_get_iface (self);
+	const char *ip_iface = nm_device_get_ip_iface (self);
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
@@ -1150,7 +1151,7 @@ real_act_stage3_ip6_config_start (NMDevice *self, NMDeviceStateReason *reason)
 		return NM_ACT_STAGE_RETURN_SUCCESS;
 
 	priv->ip6_waiting_for_config = TRUE;
-	nm_ip6_manager_begin_addrconf (priv->ip6_manager, iface);
+	nm_ip6_manager_begin_addrconf (priv->ip6_manager, ip_iface);
 
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }

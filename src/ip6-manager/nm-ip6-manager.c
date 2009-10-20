@@ -18,6 +18,7 @@
  * Copyright (C) 2009 Red Hat, Inc.
  */
 
+#include <errno.h>
 #include <netinet/icmp6.h>
 
 #include <netlink/route/rtnl.h>
@@ -68,12 +69,16 @@ typedef struct {
 	char *iface;
 	int index;
 
+	char *accept_ra_path;
+	gboolean accept_ra_save_valid;
+	guint32 accept_ra_save;
+
 	guint finish_addrconf_id;
 	guint config_changed_id;
 
 	NMIP6DeviceState state;
 	NMIP6DeviceState target_state;
-	gboolean want_signal;
+	gboolean addrconf_complete;
 
 	GArray *rdnss_servers;
 	guint rdnss_timeout_id;
@@ -179,6 +184,14 @@ nm_ip6_manager_class_init (NMIP6ManagerClass *manager_class)
 static void
 nm_ip6_device_destroy (NMIP6Device *device)
 {
+	g_return_if_fail (device != NULL);
+
+	/* reset the saved RA value */
+	if (device->accept_ra_save_valid) {
+		nm_utils_do_sysctl (device->accept_ra_path,
+		                    device->accept_ra_save ? "1\n" : "0\n");
+	}
+
 	if (device->finish_addrconf_id)
 		g_source_remove (device->finish_addrconf_id);
 	if (device->config_changed_id)
@@ -189,6 +202,7 @@ nm_ip6_device_destroy (NMIP6Device *device)
 	if (device->rdnss_timeout_id)
 		g_source_remove (device->rdnss_timeout_id);
 
+	g_free (device->accept_ra_path);
 	g_slice_free (NMIP6Device, device);
 }
 
@@ -227,7 +241,7 @@ finish_addrconf (gpointer user_data)
 	char *iface_copy;
 
 	device->finish_addrconf_id = 0;
-	device->want_signal = FALSE;
+	device->addrconf_complete = TRUE;
 
 	if (device->state >= device->target_state) {
 		g_signal_emit (manager, signals[ADDRCONF_COMPLETE], 0,
@@ -354,7 +368,7 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
 //	if (flags & (IF_RA_MANAGED | IF_RA_OTHERCONF))
 //		device->need_dhcp = TRUE;
 
-	if (device->want_signal) {
+	if (!device->addrconf_complete) {
 		if (device->state >= device->target_state ||
 			device->state == NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT) {
 			/* device->finish_addrconf_id may currently be a timeout
@@ -452,7 +466,7 @@ process_prefix (NMIP6Manager *manager, struct nl_msg *msg)
 	pmsg = (struct prefixmsg *) NLMSG_DATA (nlmsg_hdr (msg));
 	device = nm_ip6_manager_get_device (manager, pmsg->prefix_ifindex);
 
-	if (!device || !device->want_signal)
+	if (!device || device->addrconf_complete)
 		return NULL;
 
 	return device;
@@ -600,6 +614,8 @@ nm_ip6_device_new (NMIP6Manager *manager, const char *iface)
 {
 	NMIP6ManagerPrivate *priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
 	NMIP6Device *device;
+	GError *error = NULL;
+	char *contents = NULL;
 
 	device = g_slice_new0 (NMIP6Device);
 	if (!device) {
@@ -616,12 +632,41 @@ nm_ip6_device_new (NMIP6Manager *manager, const char *iface)
 	}
 	device->index = nm_netlink_iface_to_index (iface);
 
+	device->accept_ra_path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/accept_ra", iface);
+	if (!device->accept_ra_path) {
+		nm_warning ("%s: Out of memory creating IP6 addrconf object "
+		            "property 'accept_ra_path'.",
+		            iface);
+		goto error;
+	}
+
 	device->manager = manager;
 
 	device->rdnss_servers = g_array_new (FALSE, FALSE, sizeof (NMIP6RDNSS));
 
 	g_hash_table_replace (priv->devices_by_iface, device->iface, device);
 	g_hash_table_replace (priv->devices_by_index, GINT_TO_POINTER (device->index), device);
+
+	/* Grab the original value of "accept_ra" so we can restore it when the
+	 * device is taken down.
+	 */
+	if (!g_file_get_contents (device->accept_ra_path, &contents, NULL, &error)) {
+		nm_warning ("%s: error reading %s: (%d) %s",
+		            iface, device->accept_ra_path,
+		            error ? error->code : -1,
+		            error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
+	} else {
+		long int tmp;
+
+		errno = 0;
+		tmp = strtol (contents, NULL, 10);
+		if ((errno == 0) && (tmp == 0 || tmp == 1)) {
+			device->accept_ra_save = (guint32) tmp;
+			device->accept_ra_save_valid = TRUE;
+		}
+		g_free (contents);
+	}
 
 	return device;
 
@@ -638,7 +683,6 @@ nm_ip6_manager_prepare_interface (NMIP6Manager *manager,
 	NMIP6ManagerPrivate *priv;
 	NMIP6Device *device;
 	const char *method = NULL;
-	char *sysctl_path;
 
 	g_return_if_fail (NM_IS_IP6_MANAGER (manager));
 	g_return_if_fail (iface != NULL);
@@ -662,10 +706,9 @@ nm_ip6_manager_prepare_interface (NMIP6Manager *manager,
 					  strcmp (iface, "all") != 0 &&
 					  strcmp (iface, "default") != 0);
 
-	sysctl_path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/accept_ra", iface);
-	nm_utils_do_sysctl (sysctl_path,
-						device->target_state >= NM_IP6_DEVICE_GOT_ADDRESS ? "1\n" : "0\n");
-	g_free (sysctl_path);
+	/* Turn router advertisement acceptance on or off... */
+	nm_utils_do_sysctl (device->accept_ra_path,
+	                    device->target_state >= NM_IP6_DEVICE_GOT_ADDRESS ? "1\n" : "0\n");
 }
 
 void
@@ -684,6 +727,8 @@ nm_ip6_manager_begin_addrconf (NMIP6Manager *manager,
 	g_return_if_fail (device != NULL);
 
 	nm_info ("Activation (%s) Beginning IP6 addrconf.", iface);
+
+	device->addrconf_complete = FALSE;
 
 	/* Set up a timeout on the transaction to kill it after the timeout */
 	device->finish_addrconf_id = g_timeout_add_seconds (NM_IP6_TIMEOUT,

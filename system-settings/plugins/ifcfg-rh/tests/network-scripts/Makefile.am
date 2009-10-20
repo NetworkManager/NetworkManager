@@ -2,6 +2,7 @@ EXTRA_DIST = \
 	ifcfg-test-minimal \
 	ifcfg-test-nm-controlled \
 	ifcfg-test-wired-static \
+	ifcfg-test-wired-static-bootproto \
 	ifcfg-test-wired-dhcp \
 	ifcfg-test-wired-global-gateway \
 	network-test-wired-global-gateway \
