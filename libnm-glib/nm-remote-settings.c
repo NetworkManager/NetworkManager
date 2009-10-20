@@ -268,10 +268,20 @@ remove_connections (gpointer user_data)
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
 	GHashTableIter iter;
 	gpointer value;
+	GSList *list = NULL, *list_iter;
 
+	/* Build up the list of connections; we can't emit "removed" during hash
+	 * table iteration because emission of the "removed" signal may trigger code
+	 * that explicitly removes the the connection from the hash table somewhere
+	 * else.
+	 */
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, &value))
-		g_signal_emit_by_name (NM_REMOTE_CONNECTION (value), "removed");
+		list = g_slist_prepend (list, NM_REMOTE_CONNECTION (value));
+
+	for (list_iter = list; list_iter; list_iter = g_slist_next (list_iter))
+		g_signal_emit_by_name (NM_REMOTE_CONNECTION (list_iter->data), "removed");
+	g_slist_free (list);
 
 	g_hash_table_remove_all (priv->connections);
 	return FALSE;
