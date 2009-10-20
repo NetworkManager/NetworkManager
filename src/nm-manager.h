@@ -42,6 +42,7 @@
 
 /* Not exported */
 #define NM_MANAGER_HOSTNAME "hostname"
+#define NM_MANAGER_SLEEPING "sleeping"
 
 typedef struct {
 	GObject parent;

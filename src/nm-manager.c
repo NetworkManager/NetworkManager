@@ -214,6 +214,7 @@ enum {
 
 	/* Not exported */
 	PROP_HOSTNAME,
+	PROP_SLEEPING,
 
 	LAST_PROP
 };
@@ -2429,6 +2430,8 @@ impl_manager_sleep (NMManager *self, gboolean sleep, GError **error)
 	}
 
 	nm_manager_update_state (self);
+
+	g_object_notify (G_OBJECT (self), NM_MANAGER_SLEEPING);
 	return TRUE;
 }
 
@@ -2761,6 +2764,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_HOSTNAME:
 		g_value_set_string (value, priv->hostname);
 		break;
+	case PROP_SLEEPING:
+		g_value_set_boolean (value, priv->sleeping);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -2883,6 +2889,14 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		                      "Hostname",
 		                      NULL,
 		                      G_PARAM_READABLE | NM_PROPERTY_PARAM_NO_EXPORT));
+
+	g_object_class_install_property
+		(object_class, PROP_SLEEPING,
+		 g_param_spec_boolean (NM_MANAGER_SLEEPING,
+		                       "Sleeping",
+		                       "Sleeping",
+		                       FALSE,
+		                       G_PARAM_READABLE | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	/* signals */
 	signals[DEVICE_ADDED] =
