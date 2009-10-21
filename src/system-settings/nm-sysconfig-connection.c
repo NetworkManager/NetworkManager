@@ -42,6 +42,7 @@ G_DEFINE_TYPE_EXTENDED (NMSysconfigConnection, nm_sysconfig_connection, NM_TYPE_
 
 typedef struct {
 	PolkitAuthority *authority;
+	GSList *pk_calls;
 } NMSysconfigConnectionPrivate;
 
 /**************************************************************/
@@ -167,6 +168,7 @@ typedef struct {
 	DBusGMethodInvocation *context;
 	PolkitSubject *subject;
 	GCancellable *cancellable;
+	gboolean disposed;
 
 	/* Update */
 	NMConnection *connection;
@@ -242,10 +244,25 @@ pk_update_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 {
 	PolkitCall *call = user_data;
 	NMSysconfigConnection *self = call->self;
-	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
+	NMSysconfigConnectionPrivate *priv;
 	PolkitAuthorizationResult *pk_result;
 	GError *error = NULL;
 	GHashTable *settings;
+
+	/* If our NMSysconfigConnection is already gone, do nothing */
+	if (call->disposed) {
+		error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
+		                             NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
+		                             "Request was canceled.");
+		dbus_g_method_return_error (call->context, error);
+		g_error_free (error);
+		polkit_call_free (call);
+		return;
+	}
+
+	priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
+
+	priv->pk_calls = g_slist_remove (priv->pk_calls, call);
 
 	pk_result = polkit_authority_check_authorization_finish (priv->authority,
 	                                                         result,
@@ -321,6 +338,7 @@ dbus_update (NMExportedConnection *exported,
 	                                      call->cancellable,
 	                                      pk_update_cb,
 	                                      call);
+	priv->pk_calls = g_slist_prepend (priv->pk_calls, call);
 }
 
 static void
@@ -343,9 +361,24 @@ pk_delete_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 {
 	PolkitCall *call = user_data;
 	NMSysconfigConnection *self = call->self;
-	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
+	NMSysconfigConnectionPrivate *priv;
 	PolkitAuthorizationResult *pk_result;
 	GError *error = NULL;
+
+	/* If our NMSysconfigConnection is already gone, do nothing */
+	if (call->disposed) {
+		error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
+		                             NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
+		                             "Request was canceled.");
+		dbus_g_method_return_error (call->context, error);
+		g_error_free (error);
+		polkit_call_free (call);
+		return;
+	}
+
+	priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
+
+	priv->pk_calls = g_slist_remove (priv->pk_calls, call);
 
 	pk_result = polkit_authority_check_authorization_finish (priv->authority,
 	                                                         result,
@@ -396,6 +429,7 @@ dbus_delete (NMExportedConnection *exported,
 	                                      call->cancellable,
 	                                      pk_delete_cb,
 	                                      call);
+	priv->pk_calls = g_slist_prepend (priv->pk_calls, call);
 }
 
 static void
@@ -419,9 +453,24 @@ pk_secrets_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 {
 	PolkitCall *call = user_data;
 	NMSysconfigConnection *self = call->self;
-	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
+	NMSysconfigConnectionPrivate *priv;
 	PolkitAuthorizationResult *pk_result;
 	GError *error = NULL;
+
+	/* If our NMSysconfigConnection is already gone, do nothing */
+	if (call->disposed) {
+		error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
+		                             NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
+		                             "Request was canceled.");
+		dbus_g_method_return_error (call->context, error);
+		g_error_free (error);
+		polkit_call_free (call);
+		return;
+	}
+
+	priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
+
+	priv->pk_calls = g_slist_remove (priv->pk_calls, call);
 
 	pk_result = polkit_authority_check_authorization_finish (priv->authority,
 	                                                         result,
@@ -478,6 +527,7 @@ dbus_get_secrets (NMExportedConnection *exported,
 	                                      call->cancellable,
 	                                      pk_secrets_cb,
 	                                      call);
+	priv->pk_calls = g_slist_prepend (priv->pk_calls, call);
 }
 
 /**************************************************************/
@@ -501,10 +551,19 @@ nm_sysconfig_connection_init (NMSysconfigConnection *self)
 static void
 dispose (GObject *object)
 {
-	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (object);
+	NMSysconfigConnection *self = NM_SYSCONFIG_CONNECTION (object);
+	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
+	GSList *iter;
 
-	if (priv->authority)
-		g_object_unref (priv->authority);
+	/* Cancel PolicyKit requests */
+	for (iter = priv->pk_calls; iter; iter = g_slist_next (iter)) {
+		PolkitCall *call = iter->data;
+
+		call->disposed = TRUE;
+		g_cancellable_cancel (call->cancellable);
+	}
+	g_slist_free (priv->pk_calls);
+	priv->pk_calls = NULL;
 
 	G_OBJECT_CLASS (nm_sysconfig_connection_parent_class)->dispose (object);
 }
