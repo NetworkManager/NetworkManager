@@ -3,19 +3,26 @@
 <node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
   <interface name="org.freedesktop.NetworkManager.IP4Config">
     <property name="Addresses" type="aau" access="read">
-      <tp:docstring>Tuples of IPv4 address/prefix/gateway.</tp:docstring>
+      <tp:docstring>Array of tuples of IPv4 address/prefix/gateway.  All 3
+      elements of each tuple are in network byte order.  Essentially:
+      [(addr, prefix, gateway), (addr, prefix, gateway), ...]
+      </tp:docstring>
     </property>
     <property name="Nameservers" type="au" access="read">
       <tp:docstring>The nameservers in use.</tp:docstring>
     </property>
     <property name="WinsServers" type="au" access="read">
-      <tp:docstring>The Windows Internet Name Service servers associated with the connection.</tp:docstring>
+      <tp:docstring>The Windows Internet Name Service servers associated with the connection.  Each address is in network byte order.</tp:docstring>
     </property>
     <property name="Domains" type="as" access="read">
       <tp:docstring>A list of domains this address belongs to.</tp:docstring>
     </property>
     <property name="Routes" type="aau" access="read">
-      <tp:docstring>Tuples of IPv4 route/prefix/next-hop/metric.</tp:docstring>
+      <tp:docstring>Tuples of IPv4 route/prefix/next-hop/metric.  All 4 elements
+      of each tuple are in network byte order.  'route' and 'next hop' are IPv4
+      addresses, while prefix and metric are simple unsigned integers.  Essentially:
+      [(route, prefix, next-hop, metric), (route, prefix, next-hop, metric), ...]
+      </tp:docstring>
     </property>
   </interface>
 </node>
