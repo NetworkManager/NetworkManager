@@ -126,6 +126,7 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 	guint32 good_dns1 = htonl (0x04020201);  /* GTE nameserver */
 	guint32 bad_dns2 = htonl (0x0A0B0C0E);
 	guint32 good_dns2 = htonl (0x04020202);  /* GTE nameserver */
+	gboolean dns_workaround = FALSE;
 
 	/* Ignore PPP IP4 events that come in after initial configuration */
 	if (nm_device_get_state (device) != NM_DEVICE_STATE_IP_CONFIG)
@@ -157,11 +158,13 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 		 * could actually be valid in some cases, so only substitute if ppp
 		 * returns *only* the two bad nameservers.
 		 */
-		if (found1 && found2) {
-			nm_ip4_config_reset_nameservers (config);
-			nm_ip4_config_add_nameserver (config, good_dns1);
-			nm_ip4_config_add_nameserver (config, good_dns2);
-		}
+		dns_workaround = (found1 && found2);
+	}
+
+	if (!num || dns_workaround) {
+		nm_ip4_config_reset_nameservers (config);
+		nm_ip4_config_add_nameserver (config, good_dns1);
+		nm_ip4_config_add_nameserver (config, good_dns2);
 	}
 
 	nm_device_set_ip_iface (device, iface);
