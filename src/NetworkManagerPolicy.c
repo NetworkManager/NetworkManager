@@ -42,8 +42,6 @@
 #include "nm-vpn-manager.h"
 #include "nm-modem.h"
 
-#define STATE_IN_ACTIVATION_PHASE(state) ((state > NM_DEVICE_STATE_DISCONNECTED) && (state < NM_DEVICE_STATE_ACTIVATED))
-
 typedef struct LookupThread LookupThread;
 
 typedef void (*LookupCallback) (LookupThread *thread, gpointer user_data);
@@ -788,7 +786,7 @@ device_state_changed (NMDevice *device,
 		/* Mark the connection invalid if it failed during activation so that
 		 * it doesn't get automatically chosen over and over and over again.
 		 */
-		if (connection && STATE_IN_ACTIVATION_PHASE (old_state)) {
+		if (connection && IS_ACTIVATING_STATE (old_state)) {
 			g_object_set_data (G_OBJECT (connection), INVALID_TAG, GUINT_TO_POINTER (TRUE));
 			nm_info ("Marking connection '%s' invalid.", get_connection_id (connection));
 			nm_connection_clear_secrets (connection);
