@@ -24,7 +24,6 @@
  */
 
 #include <string.h>
-#include <ctype.h>
 #include "nm-setting-connection.h"
 
 /**
@@ -220,22 +219,6 @@ find_setting_by_name (gconstpointer a, gconstpointer b)
 }
 
 static gboolean
-validate_uuid (const char *uuid)
-{
-	int i;
-
-	if (!uuid || !strlen (uuid))
-		return FALSE;
-
-	for (i = 0; i < strlen (uuid); i++) {
-		if (!isxdigit (uuid[i]) && (uuid[i] != '-'))
-			return FALSE;
-	}
-
-	return TRUE;
-}
-
-static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
@@ -260,7 +243,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		             NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
 		             NM_SETTING_CONNECTION_UUID);
 		return FALSE;
-	} else if (!validate_uuid (priv->uuid)) {
+	} else if (!strlen (priv->uuid)) {
 		g_set_error (error,
 		             NM_SETTING_CONNECTION_ERROR,
 		             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
