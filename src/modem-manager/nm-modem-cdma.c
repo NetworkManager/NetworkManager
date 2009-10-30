@@ -169,6 +169,8 @@ real_connection_secrets_updated (NMDevice *dev,
 	gboolean found = FALSE;
 	GSList *iter;
 
+	g_return_if_fail (IS_ACTIVATING_STATE (nm_device_get_state (dev)));
+
 	if (caller == SECRETS_CALLER_PPP) {
 		NMPPPManager *ppp_manager;
 		NMSettingCdma *s_cdma = NULL;
