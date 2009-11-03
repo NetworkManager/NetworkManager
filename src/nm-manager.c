@@ -112,6 +112,8 @@ typedef struct {
 } PendingConnectionInfo;
 
 typedef struct {
+	char *state_file;
+
 	GSList *devices;
 	NMState state;
 
@@ -1498,7 +1500,9 @@ deferred_sync_devices (gpointer user_data)
 }
 
 NMManager *
-nm_manager_get (void)
+nm_manager_get (const char *state_file,
+                gboolean initial_net_enabled,
+                gboolean initial_wifi_enabled)
 {
 	static NMManager *singleton = NULL;
 	NMManagerPrivate *priv;
@@ -1510,6 +1514,12 @@ nm_manager_get (void)
 	g_assert (singleton);
 
 	priv = NM_MANAGER_GET_PRIVATE (singleton);
+
+	priv->state_file = g_strdup (state_file);
+
+	priv->sleeping = !initial_net_enabled;
+
+	priv->wireless_enabled = initial_wifi_enabled;
 
 	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (priv->dbus_mgr),
 	                                     NM_DBUS_PATH,
@@ -1590,11 +1600,62 @@ nm_manager_connections_destroy (NMManager *manager,
 	}
 }
 
+/* Store value into key-file; supported types: boolean, int, string */
+static gboolean
+write_value_to_state_file (const char *filename,
+                           const char *group,
+                           const char *key,
+                           GType value_type,
+                           gpointer value,
+                           GError **error)
+{
+	GKeyFile *key_file;
+	char *data;
+	gsize len = 0;
+	gboolean ret = FALSE;
+
+	g_return_val_if_fail (filename != NULL, FALSE);
+	g_return_val_if_fail (group != NULL, FALSE);
+	g_return_val_if_fail (key != NULL, FALSE);
+	g_return_val_if_fail (value_type == G_TYPE_BOOLEAN ||
+	                      value_type == G_TYPE_INT ||
+	                      value_type == G_TYPE_STRING,
+	                      FALSE);
+
+	key_file = g_key_file_new ();
+	if (!key_file)
+		return FALSE;
+
+	g_key_file_set_list_separator (key_file, ',');
+	g_key_file_load_from_file (key_file, filename, G_KEY_FILE_KEEP_COMMENTS, NULL);
+	switch (value_type) {
+	case G_TYPE_BOOLEAN:
+		g_key_file_set_boolean (key_file, group, key, *((gboolean *) value));
+		break;
+	case G_TYPE_INT:
+		g_key_file_set_integer (key_file, group, key, *((gint *) value));
+		break;
+	case G_TYPE_STRING:
+		g_key_file_set_string (key_file, group, key, *((const gchar **) value));
+		break;
+	}
+
+	data = g_key_file_to_data (key_file, &len, NULL);
+	if (data) {
+		ret = g_file_set_contents (filename, data, len, error);
+		g_free (data);
+	}
+	g_key_file_free (key_file);
+
+	return ret;
+}
+
 static void
 manager_set_wireless_enabled (NMManager *manager, gboolean enabled)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	GSList *iter;
+	GError *error = NULL;
 
 	if (priv->wireless_enabled == enabled)
 		return;
@@ -1606,6 +1667,19 @@ manager_set_wireless_enabled (NMManager *manager, gboolean enabled)
 	priv->wireless_enabled = enabled;
 
 	g_object_notify (G_OBJECT (manager), NM_MANAGER_WIRELESS_ENABLED);
+
+	/* Update "WirelessEnabled" key in state file */
+	if (priv->state_file) {
+		if (!write_value_to_state_file (priv->state_file,
+		                                "main", "WirelessEnabled",
+		                                G_TYPE_BOOLEAN, (gpointer) &priv->wireless_enabled,
+		                                &error)) {
+			g_warning ("Writing to state file %s failed: (%d) %s.",
+			           priv->state_file,
+			           error ? error->code : -1,
+			           (error && error->message) ? error->message : "unknown");
+		}
+	}
 
 	/* Don't touch devices if asleep/networking disabled */
 	if (priv->sleeping)
@@ -2342,6 +2416,23 @@ impl_manager_sleep (NMManager *manager, gboolean sleep, GError **error)
 	}
 
 	priv->sleeping = sleep;
+
+	/* Update "NetworkingEnabled" key in state file */
+	if (priv->state_file) {
+		GError *err = NULL;
+		gboolean networking_enabled = !sleep;
+
+		if (!write_value_to_state_file (priv->state_file,
+		                                "main", "NetworkingEnabled",
+		                                G_TYPE_BOOLEAN, (gpointer) &networking_enabled,
+		                                &err)) {
+			g_warning ("Writing to state file %s failed: (%d) %s.",
+			           priv->state_file,
+			           err ? err->code : -1,
+			           (err && err->message) ? err->message : "unknown");
+		}
+
+	}
 
 	if (sleep) {
 		GSList *iter;

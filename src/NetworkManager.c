@@ -53,6 +53,7 @@
 #include "nm-logging.h"
 
 #define NM_DEFAULT_PID_FILE	LOCALSTATEDIR"/run/NetworkManager.pid"
+#define NM_DEFAULT_SYSTEM_STATE_FILE LOCALSTATEDIR"/lib/NetworkManager/NetworkManager.state"
 
 /*
  * Globals
@@ -242,6 +243,94 @@ write_pidfile (const char *pidfile)
 		nm_warning ("Closing %s failed: %s", pidfile, strerror (errno));
 }
 
+static gboolean
+parse_state_file (const char *filename,
+                  gboolean *net_enabled,
+                  gboolean *wifi_enabled,
+                  GError **error)
+{
+	GKeyFile *state_file;
+	GError *tmp_error = NULL;
+	gboolean wifi, net;
+
+	g_return_val_if_fail (net_enabled != NULL, FALSE);
+	g_return_val_if_fail (wifi_enabled != NULL, FALSE);
+
+	state_file = g_key_file_new ();
+	if (!state_file) {
+		g_set_error (error, 0, 0,
+		             "Not enough memory to load state file.");
+		return FALSE;
+	}
+
+	g_key_file_set_list_separator (state_file, ',');
+	if (!g_key_file_load_from_file (state_file, filename, G_KEY_FILE_KEEP_COMMENTS, &tmp_error)) {
+		/* This is kinda ugly; create the file and directory if it doesn't
+		 * exist yet.  We can't rely on distros necessarily creating the
+		 * /var/lib/NetworkManager for us since we have to ensure that
+		 * users upgrading NM get this working too.
+		 */
+		if (   tmp_error->domain == G_FILE_ERROR
+		    && tmp_error->code == G_FILE_ERROR_NOENT) {
+			char *data, *dirname;
+			gsize len = 0;
+			gboolean ret = FALSE;
+
+			/* try to create the directory if it doesn't exist */
+			dirname = g_path_get_dirname (filename);
+			errno = 0;
+			if (mkdir (dirname, 0755) != 0) {
+				if (errno != EEXIST) {
+					g_set_error (error, G_FILE_ERROR, G_FILE_ERROR_ACCES,
+					             "Error creating state directory %s: %d", dirname, errno);
+					g_free (dirname);
+					return FALSE;
+				}
+			}
+			g_free (dirname);
+
+			/* Write out the initial state to the state file */
+			g_key_file_set_boolean (state_file, "main", "NetworkingEnabled", *net_enabled);
+			g_key_file_set_boolean (state_file, "main", "WirelessEnabled", *wifi_enabled);
+
+			data = g_key_file_to_data (state_file, &len, NULL);
+			if (data)
+				ret = g_file_set_contents (filename, data, len, error);
+			g_free (data);
+
+			return ret;
+		} else {
+			g_set_error_literal (error, tmp_error->domain, tmp_error->code, tmp_error->message);
+			g_clear_error (&tmp_error);
+		}
+
+		/* Otherwise, file probably corrupt or inaccessible */
+		return FALSE;
+	}
+
+	/* Reading state bits of NetworkManager; an error leaves the passed-in state
+	 * value unchanged.
+	 */
+	net = g_key_file_get_boolean (state_file, "main", "NetworkingEnabled", &tmp_error);
+	if (tmp_error)
+		g_set_error_literal (error, tmp_error->domain, tmp_error->code, tmp_error->message);
+	else
+		*net_enabled = net;
+	g_clear_error (&tmp_error);
+
+	wifi = g_key_file_get_boolean (state_file, "main", "WirelessEnabled", error);
+	if (tmp_error) {
+		g_clear_error (error);
+		g_set_error_literal (error, tmp_error->domain, tmp_error->code, tmp_error->message);
+	} else
+		*wifi_enabled = wifi;
+	g_clear_error (&tmp_error);
+
+	g_key_file_free (state_file);
+
+	return TRUE;
+}
+
 /*
  * main
  *
@@ -250,9 +339,11 @@ int
 main (int argc, char *argv[])
 {
 	GOptionContext *opt_ctx = NULL;
-	gboolean		become_daemon = FALSE;
-	char *		pidfile = NULL;
-	char *		user_pidfile = NULL;
+	gboolean become_daemon = FALSE;
+	char *pidfile = NULL;
+	char *user_pidfile = NULL;
+	char *state_file = NM_DEFAULT_SYSTEM_STATE_FILE;
+	gboolean wifi_enabled = TRUE, net_enabled = TRUE;
 	gboolean success;
 	NMPolicy *policy = NULL;
 	NMVPNManager *vpn_manager = NULL;
@@ -260,10 +351,12 @@ main (int argc, char *argv[])
 	NMDBusManager *dbus_mgr = NULL;
 	NMSupplicantManager *sup_mgr = NULL;
 	NMDHCPManager *dhcp_mgr = NULL;
+	GError *error = NULL;
 
 	GOptionEntry options[] = {
 		{"no-daemon", 0, 0, G_OPTION_ARG_NONE, &become_daemon, "Don't become a daemon", NULL},
 		{"pid-file", 0, 0, G_OPTION_ARG_FILENAME, &user_pidfile, "Specify the location of a PID file", "filename"},
+		{"state-file", 0, 0, G_OPTION_ARG_FILENAME, &state_file, "State file location", "/path/to/state.file"},
 		{NULL}
 	};
 
@@ -292,6 +385,15 @@ main (int argc, char *argv[])
 	if (!success) {
 		fprintf (stderr, _("Invalid option.  Please use --help to see a list of valid options.\n"));
 		exit (1);
+	}
+
+	/* Parse the state file */
+	if (!parse_state_file (state_file, &net_enabled, &wifi_enabled, &error)) {
+		g_warning ("State file %s parsing failed: (%d) %s.",
+		           state_file,
+		           error ? error->code : -1,
+		           (error && error->message) ? error->message : "unknown");
+		/* Not a hard failure */
 	}
 
 	pidfile = g_strdup (user_pidfile ? user_pidfile : NM_DEFAULT_PID_FILE);
@@ -347,7 +449,7 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	manager = nm_manager_get ();
+	manager = nm_manager_get (state_file, net_enabled, wifi_enabled);
 	if (manager == NULL) {
 		nm_error ("Failed to initialize the network manager.");
 		goto done;
