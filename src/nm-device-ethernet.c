@@ -1850,7 +1850,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 						   "Ifindex",
 						   "Interface index",
 						   0, G_MAXUINT32, 0,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	/* Signals */
 	signals[PROPERTIES_CHANGED] = 

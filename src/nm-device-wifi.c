@@ -3589,7 +3589,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		                   "Ifindex",
 		                   "Interface index",
 		                   0, G_MAXUINT32, 0,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	g_object_class_install_property (object_class, PROP_SCANNING,
 		g_param_spec_boolean (NM_DEVICE_WIFI_SCANNING,
