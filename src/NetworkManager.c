@@ -228,22 +228,77 @@ setup_signals (void)
 	sigaction (SIGUSR1,  &action, NULL);
 }
 
-static void
+static gboolean
 write_pidfile (const char *pidfile)
 {
  	char pid[16];
 	int fd;
+	gboolean success = FALSE;
  
-	if ((fd = open (pidfile, O_CREAT|O_WRONLY|O_TRUNC, 00644)) < 0)
-	{
+	if ((fd = open (pidfile, O_CREAT|O_WRONLY|O_TRUNC, 00644)) < 0) {
 		nm_warning ("Opening %s failed: %s", pidfile, strerror (errno));
-		return;
+		return FALSE;
 	}
+
  	snprintf (pid, sizeof (pid), "%d", getpid ());
 	if (write (fd, pid, strlen (pid)) < 0)
 		nm_warning ("Writing to %s failed: %s", pidfile, strerror (errno));
+	else
+		success = TRUE;
+
 	if (close (fd))
 		nm_warning ("Closing %s failed: %s", pidfile, strerror (errno));
+
+	return success;
+}
+
+/* Check whether the pidfile already exists and contains PID of a running NetworkManager
+ *  Returns:  FALSE - specified pidfile doesn't exist or doesn't contain PID of a running NM process
+ *            TRUE  - specified pidfile already exists and contains PID of a running NM process
+ */
+static gboolean
+check_pidfile (const char *pidfile)
+{
+	char *contents = NULL;
+	gsize len = 0;
+	glong pid;
+	char *proc_cmdline = NULL;
+	gboolean nm_running = FALSE;
+	const char *process_name;
+
+	if (!g_file_get_contents (pidfile, &contents, &len, NULL))
+		return FALSE;
+
+	if (len <= 0)
+		goto done;
+
+	errno = 0;
+	pid = strtol (contents, NULL, 10);
+	if (pid <= 0 || pid > 65536 || errno)
+		goto done;
+
+	g_free (contents);
+	proc_cmdline = g_strdup_printf ("/proc/%ld/cmdline", pid);
+	if (!g_file_get_contents (proc_cmdline, &contents, &len, NULL))
+		goto done;
+
+	process_name = strrchr (contents, '/');
+	if (process_name)
+		process_name++;
+	else
+		process_name = contents;
+	if (strcmp (process_name, "NetworkManager") == 0) {
+		/* Check that the process exists */
+		if (kill (pid, 0) == 0) {
+			g_warning ("NetworkManager is already running (pid %ld)", pid);
+			nm_running = TRUE;
+		}
+	}
+
+done:
+	g_free (proc_cmdline);
+	g_free (contents);
+	return nm_running;
 }
 
 static gboolean
@@ -380,6 +435,7 @@ main (int argc, char *argv[])
 	NMSupplicantManager *sup_mgr = NULL;
 	NMDHCPManager *dhcp_mgr = NULL;
 	GError *error = NULL;
+	gboolean wrote_pidfile = FALSE;
 
 	GOptionEntry options[] = {
 		{ "no-daemon", 0, 0, G_OPTION_ARG_NONE, &become_daemon, "Don't become a daemon", NULL },
@@ -423,6 +479,12 @@ main (int argc, char *argv[])
 		exit (1);
 	}
 
+	pidfile = g_strdup (user_pidfile ? user_pidfile : NM_DEFAULT_PID_FILE);
+
+	/* check pid file */
+	if (check_pidfile (pidfile))
+		exit (1);
+
 	/* Parse the config file */
 	if (config) {
 		if (!parse_config_file (config, &plugins, &error)) {
@@ -455,8 +517,6 @@ main (int argc, char *argv[])
 		/* Not a hard failure */
 	}
 
-	pidfile = g_strdup (user_pidfile ? user_pidfile : NM_DEFAULT_PID_FILE);
-
 	/* Tricky: become_daemon is FALSE by default, so unless it's TRUE because
 	 * of a CLI option, it'll become TRUE after this
 	 */
@@ -471,7 +531,8 @@ main (int argc, char *argv[])
 			          saved_errno);
 			exit (1);
 		}
-		write_pidfile (pidfile);
+		if (write_pidfile (pidfile))
+			wrote_pidfile = TRUE;
 	}
 
 	if (g_fatal_warnings) {
@@ -593,7 +654,7 @@ done:
 
 	nm_logging_shutdown ();
 
-	if (pidfile)
+	if (pidfile && wrote_pidfile)
 		unlink (pidfile);
 	g_free (pidfile);
 
