@@ -172,6 +172,7 @@ NetworkManager_LDADD = \
 	$(HAL_LIBS) \
 	$(LIBNL_LIBS) \
 	$(LIBUDEV_LIBS) \
+	$(LIBM) \
 	$(top_builddir)/marshallers/libmarshallers.la \
 	./named-manager/libnamed-manager.la \
 	./vpn-manager/libvpn-manager.la \
