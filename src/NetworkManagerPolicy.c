@@ -42,8 +42,6 @@
 #include "nm-vpn-manager.h"
 #include "nm-modem.h"
 
-#define STATE_IN_ACTIVATION_PHASE(state) ((state > NM_DEVICE_STATE_DISCONNECTED) && (state < NM_DEVICE_STATE_ACTIVATED))
-
 typedef struct LookupThread LookupThread;
 
 typedef void (*LookupCallback) (LookupThread *thread, gpointer user_data);
@@ -712,6 +710,24 @@ hostname_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 }
 
 static void
+sleeping_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
+{
+	gboolean sleeping = FALSE;
+	GSList *connections, *iter;
+
+	g_object_get (G_OBJECT (manager), NM_MANAGER_SLEEPING, &sleeping, NULL);
+
+	/* Clear the invalid flag on all connections so they'll get retried on wakeup */
+	if (sleeping) {
+		connections = nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_SYSTEM);
+		connections = g_slist_concat (connections, nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_USER));
+		for (iter = connections; iter; iter = g_slist_next (iter))
+			g_object_set_data (G_OBJECT (iter->data), INVALID_TAG, NULL);
+		g_slist_free (connections);
+	}
+}
+
+static void
 schedule_activate_check (NMPolicy *policy, NMDevice *device, guint delay_seconds)
 {
 	ActivateData *data;
@@ -770,7 +786,7 @@ device_state_changed (NMDevice *device,
 		/* Mark the connection invalid if it failed during activation so that
 		 * it doesn't get automatically chosen over and over and over again.
 		 */
-		if (connection && STATE_IN_ACTIVATION_PHASE (old_state)) {
+		if (connection && IS_ACTIVATING_STATE (old_state)) {
 			g_object_set_data (G_OBJECT (connection), INVALID_TAG, GUINT_TO_POINTER (TRUE));
 			nm_info ("Marking connection '%s' invalid.", get_connection_id (connection));
 			nm_connection_clear_secrets (connection);
@@ -992,8 +1008,12 @@ nm_policy_new (NMManager *manager, NMVPNManager *vpn_manager)
 	                       G_CALLBACK (global_state_changed), policy);
 	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
 
-	id = g_signal_connect (manager, "notify::hostname",
+	id = g_signal_connect (manager, "notify::" NM_MANAGER_HOSTNAME,
 	                       G_CALLBACK (hostname_changed), policy);
+	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
+
+	id = g_signal_connect (manager, "notify::" NM_MANAGER_SLEEPING,
+	                       G_CALLBACK (sleeping_changed), policy);
 	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
 
 	id = g_signal_connect (manager, "device-added",

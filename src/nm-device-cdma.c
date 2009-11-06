@@ -120,6 +120,8 @@ real_connection_secrets_updated (NMDevice *device,
 	NMDeviceCdmaPrivate *priv = NM_DEVICE_CDMA_GET_PRIVATE (device);
 	NMActRequest *req;
 
+	g_return_if_fail (IS_ACTIVATING_STATE (nm_device_get_state (device)));
+
 	req = nm_device_get_act_request (device);
 	g_assert (req);
 

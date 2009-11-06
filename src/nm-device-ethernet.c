@@ -632,8 +632,7 @@ real_connection_secrets_updated (NMDevice *dev,
 	gboolean valid = FALSE;
 	GSList *iter;
 
-	if (nm_device_get_state (dev) != NM_DEVICE_STATE_NEED_AUTH)
-		return;
+	g_return_if_fail (IS_ACTIVATING_STATE (nm_device_get_state (dev)));
 
 	/* PPPoE? */
 	if (caller == SECRETS_CALLER_PPP) {
@@ -663,6 +662,7 @@ real_connection_secrets_updated (NMDevice *dev,
 
 	/* Only caller could be ourselves for 802.1x */
 	g_return_if_fail (caller == SECRETS_CALLER_ETHERNET);
+	g_return_if_fail (nm_device_get_state (dev) == NM_DEVICE_STATE_NEED_AUTH);
 
 	for (iter = updated_settings; iter; iter = g_slist_next (iter)) {
 		const char *setting_name = (const char *) iter->data;
@@ -1850,7 +1850,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 						   "Ifindex",
 						   "Interface index",
 						   0, G_MAXUINT32, 0,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	/* Signals */
 	signals[PROPERTIES_CHANGED] = 

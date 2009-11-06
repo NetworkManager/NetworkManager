@@ -388,14 +388,29 @@ update_resolv_conf (const char *domain,
                     const char *iface,
                     GError **error)
 {
-	const char *tmp_resolv_conf = RESOLV_CONF ".tmp";
-	char tmp_resolv_conf_realpath [PATH_MAX];
+	char *tmp_resolv_conf;
+	char *tmp_resolv_conf_realpath;
+	char *resolv_conf_realpath;
 	FILE *f;
 	int do_rename = 1;
 	int old_errno = 0;
 
-	if (!realpath (tmp_resolv_conf, tmp_resolv_conf_realpath))
-		strcpy (tmp_resolv_conf_realpath, tmp_resolv_conf);
+	g_return_val_if_fail (error != NULL, FALSE);
+
+	/* Find the real path of resolv.conf; it could be a symlink to something */
+	resolv_conf_realpath = realpath (RESOLV_CONF, NULL);
+	if (!resolv_conf_realpath)
+		resolv_conf_realpath = strdup (RESOLV_CONF);
+
+	/* Build up the real path for the temp resolv.conf that we're about to
+	 * write out.
+	 */
+	tmp_resolv_conf = g_strdup_printf ("%s.tmp", resolv_conf_realpath);
+	tmp_resolv_conf_realpath = realpath (tmp_resolv_conf, NULL);
+	if (!tmp_resolv_conf_realpath)
+		tmp_resolv_conf_realpath = strdup (tmp_resolv_conf);
+	g_free (tmp_resolv_conf);
+	tmp_resolv_conf = NULL;
 
 	if ((f = fopen (tmp_resolv_conf_realpath, "w")) == NULL) {
 		do_rename = 0;
@@ -409,8 +424,11 @@ update_resolv_conf (const char *domain,
 			             g_strerror (old_errno),
 			             RESOLV_CONF,
 			             g_strerror (errno));
-			return FALSE;
+			goto out;
 		}
+		/* Update tmp_resolv_conf_realpath so the error message on fclose()
+		 * failure will be correct.
+		 */
 		strcpy (tmp_resolv_conf_realpath, RESOLV_CONF);
 	}
 
@@ -418,25 +436,34 @@ update_resolv_conf (const char *domain,
 
 	if (fclose (f) < 0) {
 		if (*error == NULL) {
+			/* only set an error here if write_resolv_conf() was successful,
+			 * since its error is more important.
+			 */
 			g_set_error (error,
-					   NM_NAMED_MANAGER_ERROR,
-					   NM_NAMED_MANAGER_ERROR_SYSTEM,
-					   "Could not close %s: %s\n",
-					   tmp_resolv_conf_realpath,
-					   g_strerror (errno));
+			             NM_NAMED_MANAGER_ERROR,
+			             NM_NAMED_MANAGER_ERROR_SYSTEM,
+			             "Could not close %s: %s\n",
+			             tmp_resolv_conf_realpath,
+			             g_strerror (errno));
 		}
 	}
 
+	/* Don't rename the tempfile over top of the existing resolv.conf if there
+	 * was an error writing it out.
+	 */
 	if (*error == NULL && do_rename) {
-		if (rename (tmp_resolv_conf, RESOLV_CONF) < 0) {
+		if (rename (tmp_resolv_conf_realpath, resolv_conf_realpath) < 0) {
 			g_set_error (error,
-					   NM_NAMED_MANAGER_ERROR,
-					   NM_NAMED_MANAGER_ERROR_SYSTEM,
-					   "Could not replace " RESOLV_CONF ": %s\n",
-					   g_strerror (errno));
+			             NM_NAMED_MANAGER_ERROR,
+			             NM_NAMED_MANAGER_ERROR_SYSTEM,
+			             "Could not replace " RESOLV_CONF ": %s\n",
+			             g_strerror (errno));
 		}
 	}
 
+out:
+	free (tmp_resolv_conf_realpath);
+	free (resolv_conf_realpath);
 	return *error ? FALSE : TRUE;
 }
 

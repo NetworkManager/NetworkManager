@@ -151,6 +151,7 @@ typedef struct {
 
 typedef struct {
 	char *config_file;
+	char *state_file;
 
 	GSList *devices;
 	NMState state;
@@ -216,6 +217,7 @@ enum {
 
 	/* Not exported */
 	PROP_HOSTNAME,
+	PROP_SLEEPING,
 
 	LAST_PROP
 };
@@ -1102,11 +1104,62 @@ nm_manager_name_owner_changed (NMDBusManager *mgr,
 	}
 }
 
+/* Store value into key-file; supported types: boolean, int, string */
+static gboolean
+write_value_to_state_file (const char *filename,
+                           const char *group,
+                           const char *key,
+                           GType value_type,
+                           gpointer value,
+                           GError **error)
+{
+	GKeyFile *key_file;
+	char *data;
+	gsize len = 0;
+	gboolean ret = FALSE;
+
+	g_return_val_if_fail (filename != NULL, FALSE);
+	g_return_val_if_fail (group != NULL, FALSE);
+	g_return_val_if_fail (key != NULL, FALSE);
+	g_return_val_if_fail (value_type == G_TYPE_BOOLEAN ||
+	                      value_type == G_TYPE_INT ||
+	                      value_type == G_TYPE_STRING,
+	                      FALSE);
+
+	key_file = g_key_file_new ();
+	if (!key_file)
+		return FALSE;
+
+	g_key_file_set_list_separator (key_file, ',');
+	g_key_file_load_from_file (key_file, filename, G_KEY_FILE_KEEP_COMMENTS, NULL);
+	switch (value_type) {
+	case G_TYPE_BOOLEAN:
+		g_key_file_set_boolean (key_file, group, key, *((gboolean *) value));
+		break;
+	case G_TYPE_INT:
+		g_key_file_set_integer (key_file, group, key, *((gint *) value));
+		break;
+	case G_TYPE_STRING:
+		g_key_file_set_string (key_file, group, key, *((const gchar **) value));
+		break;
+	}
+
+	data = g_key_file_to_data (key_file, &len, NULL);
+	if (data) {
+		ret = g_file_set_contents (filename, data, len, error);
+		g_free (data);
+	}
+	g_key_file_free (key_file);
+
+	return ret;
+}
+
 static void
 manager_set_wireless_enabled (NMManager *manager, gboolean enabled)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	GSList *iter;
+	GError *error = NULL;
 
 	if (priv->wireless_enabled == enabled)
 		return;
@@ -1118,6 +1171,19 @@ manager_set_wireless_enabled (NMManager *manager, gboolean enabled)
 	priv->wireless_enabled = enabled;
 
 	g_object_notify (G_OBJECT (manager), NM_MANAGER_WIRELESS_ENABLED);
+
+	/* Update "WirelessEnabled" key in state file */
+	if (priv->state_file) {
+		if (!write_value_to_state_file (priv->state_file,
+		                                "main", "WirelessEnabled",
+		                                G_TYPE_BOOLEAN, (gpointer) &priv->wireless_enabled,
+		                                &error)) {
+			g_warning ("Writing to state file %s failed: (%d) %s.",
+			           priv->state_file,
+			           error ? error->code : -1,
+			           (error && error->message) ? error->message : "unknown");
+		}
+	}
 
 	/* Don't touch devices if asleep/networking disabled */
 	if (priv->sleeping)
@@ -2401,6 +2467,23 @@ impl_manager_sleep (NMManager *self, gboolean sleep, GError **error)
 
 	priv->sleeping = sleep;
 
+	/* Update "NetworkingEnabled" key in state file */
+	if (priv->state_file) {
+		GError *err = NULL;
+		gboolean networking_enabled = !sleep;
+
+		if (!write_value_to_state_file (priv->state_file,
+		                                "main", "NetworkingEnabled",
+		                                G_TYPE_BOOLEAN, (gpointer) &networking_enabled,
+		                                &err)) {
+			g_warning ("Writing to state file %s failed: (%d) %s.",
+			           priv->state_file,
+			           err ? err->code : -1,
+			           (err && err->message) ? err->message : "unknown");
+		}
+
+	}
+
 	if (sleep) {
 		nm_info ("Sleeping...");
 
@@ -2432,6 +2515,8 @@ impl_manager_sleep (NMManager *self, gboolean sleep, GError **error)
 	}
 
 	nm_manager_update_state (self);
+
+	g_object_notify (G_OBJECT (self), NM_MANAGER_SLEEPING);
 	return TRUE;
 }
 
@@ -2569,9 +2654,10 @@ nm_manager_start (NMManager *self)
 		break;
 	}
 
-	nm_info ("Wireless now %s by radio killswitch",
-	         (priv->wireless_hw_enabled && we) ? "enabled" : "disabled");
-	manager_set_wireless_enabled (self, we);
+	nm_info ("Wireless %s by radio killswitch; %s by state file",
+	         (priv->wireless_hw_enabled && we) ? "enabled" : "disabled",
+	         (priv->wireless_enabled) ? "enabled" : "disabled");
+	manager_set_wireless_enabled (self, priv->wireless_enabled && we);
 
 	system_unmanaged_devices_changed_cb (priv->sys_settings, NULL, self);
 	system_hostname_changed_cb (priv->sys_settings, NULL, self);
@@ -2589,7 +2675,12 @@ nm_manager_start (NMManager *self)
 }
 
 NMManager *
-nm_manager_get (const char *config_file, const char *plugins, GError **error)
+nm_manager_get (const char *config_file,
+                const char *plugins,
+                const char *state_file,
+                gboolean initial_net_enabled,
+                gboolean initial_wifi_enabled,
+                GError **error)
 {
 	static NMManager *singleton = NULL;
 	NMManagerPrivate *priv;
@@ -2614,6 +2705,12 @@ nm_manager_get (const char *config_file, const char *plugins, GError **error)
 	nm_settings_service_export (NM_SETTINGS_SERVICE (priv->sys_settings));
 
 	priv->config_file = g_strdup (config_file);
+
+	priv->state_file = g_strdup (state_file);
+
+	priv->sleeping = !initial_net_enabled;
+
+	priv->wireless_enabled = initial_wifi_enabled;
 
 	g_signal_connect (priv->sys_settings, "notify::" NM_SYSCONFIG_SETTINGS_UNMANAGED_SPECS,
 	                  G_CALLBACK (system_unmanaged_devices_changed_cb), singleton);
@@ -2764,6 +2861,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_HOSTNAME:
 		g_value_set_string (value, priv->hostname);
 		break;
+	case PROP_SLEEPING:
+		g_value_set_boolean (value, priv->sleeping);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -2886,6 +2986,14 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		                      "Hostname",
 		                      NULL,
 		                      G_PARAM_READABLE | NM_PROPERTY_PARAM_NO_EXPORT));
+
+	g_object_class_install_property
+		(object_class, PROP_SLEEPING,
+		 g_param_spec_boolean (NM_MANAGER_SLEEPING,
+		                       "Sleeping",
+		                       "Sleeping",
+		                       FALSE,
+		                       G_PARAM_READABLE | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	/* signals */
 	signals[DEVICE_ADDED] =
