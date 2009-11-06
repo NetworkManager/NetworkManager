@@ -197,7 +197,8 @@ NetworkManager_LDADD = \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS) \
-	$(GMODULE_LIBS)
+	$(GMODULE_LIBS) \
+	$(LIBM)
 
 NetworkManager_LDFLAGS = -rdynamic
 
