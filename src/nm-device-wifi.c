@@ -3520,14 +3520,13 @@ nm_device_wifi_set_enabled (NMDeviceWifi *self, gboolean enabled)
 		/* Wait for some drivers like ipw3945 to come back to life */
 		success = wireless_get_range (self, &range, NULL);
 
-		if (!priv->supplicant.iface)
-			supplicant_interface_acquire (self);
-
+		/* iface should be NULL here, but handle it anyway if it's not */
 		if (priv->supplicant.iface) {
-			nm_device_state_changed (NM_DEVICE (self),
-			                         NM_DEVICE_STATE_DISCONNECTED,
-			                         NM_DEVICE_STATE_REASON_NONE);
+			nm_warning ("supplicant interface was unexpectedly still valid!");
+			supplicant_interface_release (self);
 		}
+
+		supplicant_interface_acquire (self);
 	} else {
 		nm_device_state_changed (NM_DEVICE (self),
 		                         NM_DEVICE_STATE_UNAVAILABLE,
