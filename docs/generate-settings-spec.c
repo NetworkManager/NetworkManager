@@ -137,7 +137,7 @@ write_one_setting (FILE *f, SettingNewFunc func)
 			g_object_get (G_OBJECT (s), NM_SETTING_NAME, &default_value, NULL);
 		}
 
-		w = fprintf (f, "<tr align=left>\n");
+		w = fprintf (f, "<tr align=left valign=top>\n");
 		w = fprintf (f, "<td><strong>%s</strong></td>\n", key_name);
 		w = fprintf (f, "<td>%s</td>\n", value_type);
 		w = fprintf (f, "<td>%s</td>\n", default_value ? default_value : "");
