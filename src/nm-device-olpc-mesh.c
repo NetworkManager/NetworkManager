@@ -884,7 +884,7 @@ is_companion (NMDeviceOlpcMesh *self, NMDevice *other)
 }
 
 static void
-device_added_cb (NMDevice *other, gpointer user_data)
+device_added_cb (NMManager *manager, NMDevice *other, gpointer user_data)
 {
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (user_data);
 
