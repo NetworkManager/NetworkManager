@@ -91,6 +91,18 @@ enum {
 	LAST_PROP
 };
 
+/**
+ * nm_setting_olpc_mesh_new:
+ *
+ * Creates a new #NMSettingOlpcMesh object with default values.
+ *
+ * Returns: the new empty #NMSettingOlpcMesh object
+ **/
+NMSetting *nm_setting_olpc_mesh_new (void)
+{
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_OLPC_MESH, NULL);
+}
+
 static void
 nm_setting_olpc_mesh_init (NMSettingOlpcMesh *setting)
 {
