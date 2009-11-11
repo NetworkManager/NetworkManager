@@ -263,30 +263,7 @@ nm_setting_ppp_get_lcp_echo_interval (NMSettingPPP *setting)
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
-	NMSettingPPPPrivate *priv = NM_SETTING_PPP_GET_PRIVATE (setting);
-
 	/* FIXME: Do we even want this or can we just let pppd evaluate the options? */
-	if (priv->mru > 0) {
-		if (priv->mru < 128 || priv->mru > 16384) {
-			g_set_error (error,
-			             NM_SETTING_PPP_ERROR,
-			             NM_SETTING_PPP_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_PPP_MRU);
-			return FALSE;
-		}
-	}
-
-	if (priv->lcp_echo_failure > 0) {
-		/* lcp_echo_interval must also be non-zero */
-		if (priv->lcp_echo_interval == 0) {
-			g_set_error (error,
-			             NM_SETTING_PPP_ERROR,
-			             NM_SETTING_PPP_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_PPP_LCP_ECHO_FAILURE);
-			return FALSE;
-		}
-	}
-
 	return TRUE;
 }
 
