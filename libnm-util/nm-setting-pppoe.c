@@ -242,27 +242,50 @@ nm_setting_pppoe_class_init (NMSettingPPPOEClass *setting_class)
 	parent_class->need_secrets = need_secrets;
 
 	/* Properties */
+	/**
+	 * NMSettingPPPOE:service:
+	 *
+	 * If specified, instruct PPPoE to only initiate sessions with access
+	 * concentrators that provide the specified serivce.  For most providers,
+	 * this should be left blank.  It is only required if there are multiple
+	 * access concentrators or a specific service is known to be required.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_SERVICE,
 		 g_param_spec_string (NM_SETTING_PPPOE_SERVICE,
 						  "Service",
-						  "Service",
+						  "If specified, instruct PPPoE to only initiate sessions "
+						  "with access concentrators that provide the specified "
+						  "serivce.  For most providers, this should be left "
+						  "blank.  It is only required if there are multiple "
+						  "access concentrators or a specific service is known "
+						  "to be required.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
+	/**
+	 * NMSettingPPPOE:username:
+	 *
+	 * Username used to authenticate with the PPPoE service.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_USERNAME,
 		 g_param_spec_string (NM_SETTING_PPPOE_USERNAME,
 						  "Username",
-						  "Username",
+						  "Username used to authenticate with the PPPoE service.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
+	/**
+	 * NMSettingPPPOE:password:
+	 *
+	 * Password used to authenticate with the PPPoE service.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_PASSWORD,
 		 g_param_spec_string (NM_SETTING_PPPOE_PASSWORD,
 						  "Password",
-						  "Password",
+						  "Password used to authenticate with the PPPoE service.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
 }
