@@ -320,7 +320,10 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *setting_class)
 		(object_class, PROP_NUMBER,
 		 g_param_spec_string (NM_SETTING_CDMA_NUMBER,
 						  "Number",
-						  "Number",
+						  "Number to dial when establishing a PPP data session "
+						  "with the CDMA-based mobile broadband network.  If not "
+						  "specified, the default number (#777) is used when "
+						  "required.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
@@ -335,7 +338,9 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *setting_class)
 		(object_class, PROP_USERNAME,
 		 g_param_spec_string (NM_SETTING_CDMA_USERNAME,
 						  "Username",
-						  "Username",
+						  "Username used to authenticate with the network, if "
+						  "required.  Note that many providers do not require "
+						  "a username or accept any username.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
@@ -350,7 +355,9 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *setting_class)
 		(object_class, PROP_PASSWORD,
 		 g_param_spec_string (NM_SETTING_CDMA_PASSWORD,
 						  "Password",
-						  "Password",
+						  "Password used to authenticate with the network, if "
+						  "required.  Note that many providers do not require "
+						  "a password or accept any password.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
 }
