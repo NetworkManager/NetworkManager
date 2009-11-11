@@ -236,43 +236,79 @@ nm_setting_serial_class_init (NMSettingSerialClass *setting_class)
 
 	/* Properties */
 
+	/**
+	 * NMSettingSerial:baud:
+	 *
+	 * Speed to use for communication over the serial port.  Note that this value
+	 * usually has no effect for mobile broadband modems as they generally
+	 * ignore speed settings and use the highest available speed.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_BAUD,
 		 g_param_spec_uint (NM_SETTING_SERIAL_BAUD,
 						"Baud",
-						"Baud rate",
+						"Speed to use for communication over the serial port.  "
+						"Note that this value usually has no effect for mobile "
+						"broadband modems as they generally ignore speed "
+						"settings and use the highest available speed.",
 						0, G_MAXUINT, 57600,
 						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
+	/**
+	 * NMSettingSerial:bits:
+	 *
+	 * Byte-width of the serial communication.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_BITS,
 		 g_param_spec_uint (NM_SETTING_SERIAL_BITS,
 						"Bits",
-						"Bits",
+						"Byte-width of the serial communication.  The 8 in "
+						"'8n1' for example.",
 						5, 8, 8,
 						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
+	/**
+	 * NMSettingSerial:parity:
+	 *
+	 * Parity setting of the serial port.  Either 'E' for even parity, 'o' for
+	 * odd parity, or 'n' for no parity.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_PARITY,
 		 g_param_spec_char (NM_SETTING_SERIAL_PARITY,
 						"Parity",
-						"Parity",
+						"Parity setting of the serial port.  Either 'E' for even "
+						"parity, 'o' for odd parity, or 'n' for no parity.",
 						'E', 'o', 'n',
 						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
+	/**
+	 * NMSettingSerial:stopbits:
+	 *
+	 * Number of stop bits for communication on the serial port.  Either 1 or 2.
+	 * The 1 in '8n1' for example.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_STOPBITS,
 		 g_param_spec_uint (NM_SETTING_SERIAL_STOPBITS,
 						"Stopbits",
-						"Stopbits",
+						"Number of stop bits for communication on the serial "
+						"port.  Either 1 or 2.  The 1 in '8n1' for example.",
 						1, 2, 1,
 						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
+	/**
+	 * NMSettingSerial:send-delay:
+	 *
+	 * Time to delay between each byte sent to the modem, in microseconds.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_SEND_DELAY,
 		 g_param_spec_uint64 (NM_SETTING_SERIAL_SEND_DELAY,
 						  "SendDelay",
-						  "Send delay",
+						  "Time to delay between each byte sent to the modem, "
+						  "in microseconds.",
 						  0, G_MAXUINT64, 0,
 						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 }
