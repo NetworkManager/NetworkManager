@@ -146,7 +146,7 @@ nm_setting_connection_get_uuid (NMSettingConnection *setting)
 }
 
 /**
- * nm_setting_connection_get_type:
+ * nm_setting_connection_get_connection_type:
  * @setting: the #NMSettingConnection
  *
  * Returns the #NMSettingConnection:type property of the connection.
