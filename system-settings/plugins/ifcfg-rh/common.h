@@ -29,6 +29,7 @@
 #define TILDE_TAG "~"
 #define ORIG_TAG ".orig"
 #define REJ_TAG ".rej"
+#define RPMNEW_TAG ".rpmnew"
 
 #define IFCFG_DIR SYSCONFDIR"/sysconfig/network-scripts"
 
