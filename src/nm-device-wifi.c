@@ -2205,6 +2205,15 @@ supplicant_iface_state_cb_handler (gpointer user_data)
 	if (task->new_state == NM_SUPPLICANT_INTERFACE_STATE_READY) {
 		priv->scan_interval = SCAN_INTERVAL_MIN;
 
+		/* If the interface can now be activated because the supplicant is now
+		 * available, transition to DISCONNECTED.
+		 */
+		if (   (nm_device_get_state (NM_DEVICE (self)) == NM_DEVICE_STATE_UNAVAILABLE)
+		    && priv->enabled) {
+			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED,
+			                         NM_DEVICE_STATE_REASON_NONE);
+		}
+
 		/* Request a scan to get latest results */
 		cancel_pending_scan (self);
 		request_wireless_scan (self);
@@ -3408,8 +3417,18 @@ device_state_changed (NMDevice *device,
 			if (!priv->supplicant.iface)
 				supplicant_interface_acquire (self);
 
-			if (priv->supplicant.iface)
-				priv->state_to_disconnected_id = g_idle_add (unavailable_to_disconnected, self);
+			if (priv->supplicant.iface) {
+				guint32 si_state;
+
+				/* Only jump to disconnected if the supplicant interface
+				 * is ready to be used.  Otherwise we'll get to disconnected
+				 * when the supplicant interface transitions to READY via
+				 * supplicant_iface_state_cb().
+				 */
+				si_state = nm_supplicant_interface_get_state (priv->supplicant.iface);
+				if (si_state == NM_SUPPLICANT_INTERFACE_STATE_READY)
+					priv->state_to_disconnected_id = g_idle_add (unavailable_to_disconnected, self);
+			}
 		}
 		clear_aps = TRUE;
 		break;
