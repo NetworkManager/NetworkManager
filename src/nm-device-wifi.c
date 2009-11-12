@@ -2245,10 +2245,6 @@ supplicant_iface_state_cb_handler (gpointer user_data)
 	if (task->new_state == NM_SUPPLICANT_INTERFACE_STATE_READY) {
 		priv->scan_interval = SCAN_INTERVAL_MIN;
 
-		/* Request a scan to get latest results */
-		cancel_pending_scan (self);
-		request_wireless_scan (self);
-
 		/* If the interface can now be activated because the supplicant is now
 		 * available, transition to DISCONNECTED.
 		 */
@@ -2257,6 +2253,10 @@ supplicant_iface_state_cb_handler (gpointer user_data)
 			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED,
 			                         NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE);
 		}
+
+		/* Request a scan to get latest results */
+		cancel_pending_scan (self);
+		request_wireless_scan (self);
 	} else if (task->new_state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
 		cleanup_association_attempt (self, FALSE);
 		supplicant_interface_release (self);
