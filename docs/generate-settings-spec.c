@@ -76,6 +76,7 @@ static TypeNameElement name_map[] = {
 	{ "guint64", "uint64" },
 	{ "gint", "int32" },
 	{ "guint", "uint32" },
+	{ "GArray_guint_", "array of uint32" },
 	{ "GPtrArray_GArray_guint__", "array of array of uint32" },
 	{ "GPtrArray_GArray_guchar__", "array of byte array" },
 	{ "GHashTable_gchararray+gchararray_", "dict of (string::string)" },
