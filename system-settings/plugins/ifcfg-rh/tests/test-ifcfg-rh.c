@@ -977,7 +977,7 @@ test_read_wired_defroute_no (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
-	char *unmanaged = NULL;
+	gboolean unmanaged = FALSE;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
@@ -987,7 +987,6 @@ test_read_wired_defroute_no (void)
 	connection = connection_from_file (TEST_IFCFG_WIRED_DEFROUTE_NO,
 	                                   NULL,
 	                                   TYPE_ETHERNET,
-	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &error,
@@ -1065,7 +1064,7 @@ test_read_wired_defroute_no_gatewaydev_yes (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
-	char *unmanaged = NULL;
+	gboolean unmanaged = FALSE;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
@@ -1075,7 +1074,6 @@ test_read_wired_defroute_no_gatewaydev_yes (void)
 	connection = connection_from_file (TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
 	                                   TEST_NETWORK_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
 	                                   TYPE_ETHERNET,
-	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &error,
