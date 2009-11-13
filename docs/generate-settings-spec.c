@@ -150,7 +150,6 @@ int
 main (int argc, char *argv[])
 {
 	GError *error = NULL;
-	DBusGConnection *bus;
 	FILE *f;
 	int w;
 	SettingNewFunc *fptr;
@@ -161,7 +160,6 @@ main (int argc, char *argv[])
 	}
 
 	g_type_init ();
-	bus = dbus_g_bus_get (DBUS_BUS_SESSION, NULL);
 
 	if (!nm_utils_init (&error)) {
 		fprintf (stderr, "ERR: failed to initialize libnm-util: %s", error->message);
