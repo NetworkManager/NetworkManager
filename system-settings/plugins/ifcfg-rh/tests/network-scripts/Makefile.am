@@ -8,6 +8,9 @@ EXTRA_DIST = \
 	network-test-wired-global-gateway \
 	ifcfg-test-wired-never-default \
 	network-test-wired-never-default \
+	ifcfg-test-wired-defroute-no \
+	ifcfg-test-wired-defroute-no-gatewaydev-yes \
+	network-test-wired-defroute-no-gatewaydev-yes \
 	ifcfg-test-wired-8021x-peap-mschapv2 \
 	keys-test-wired-8021x-peap-mschapv2 \
 	ifcfg-test-onboot-no \

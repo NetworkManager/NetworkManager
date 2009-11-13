@@ -341,6 +341,14 @@ make_ip4_setting (shvarFile *ifcfg, const char *network_file, GError **error)
 		return NULL;
 	}
 
+	/* First check if DEFROUTE is set for this device; DEFROUTE has the
+	 * opposite meaning from never-default. The default if DEFROUTE is not
+	 * specified is DEFROUTE=yes which means that this connection can be used
+	 * as a default route
+	 */
+	never_default = !svTrueValue (ifcfg, "DEFROUTE", TRUE);
+
+	/* Then check if GATEWAYDEV; it's global and overrides DEFROUTE */
 	network_ifcfg = svNewFile (network_file);
 	if (network_ifcfg) {
 		char *gatewaydev;
@@ -352,8 +360,8 @@ make_ip4_setting (shvarFile *ifcfg, const char *network_file, GError **error)
 		/* If there was a global gateway device specified, then only connections
 		 * for that device can be the default connection.
 		 */
-		if (gatewaydev && value && strcmp (value, gatewaydev))
-			never_default = TRUE;
+		if (gatewaydev && value)
+			never_default = !!strcmp (value, gatewaydev);
 
 		g_free (gatewaydev);
 		g_free (value);

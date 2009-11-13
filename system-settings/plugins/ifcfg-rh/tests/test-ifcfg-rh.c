@@ -274,6 +274,12 @@ test_read_minimal (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_METHOD);
 
+	ASSERT (nm_setting_ip4_config_get_never_default (s_ip4) == FALSE,
+	        "minimal-wired-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_MINIMAL,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_NEVER_DEFAULT);
+
 	g_object_unref (connection);
 }
 
@@ -958,6 +964,189 @@ test_read_wired_never_default (void)
 	        TEST_IFCFG_WIRED_NEVER_DEFAULT,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
+
+	g_object_unref (connection);
+}
+
+#define TEST_IFCFG_WIRED_DEFROUTE_NO TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-defroute-no"
+
+static void
+test_read_wired_defroute_no (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const char *expected_id = "System test-wired-defroute-no";
+
+	connection = connection_from_file (TEST_IFCFG_WIRED_DEFROUTE_NO,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "wired-defroute-no-read", "failed to read %s: %s", TEST_IFCFG_WIRED_DEFROUTE_NO, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wired-defroute-no-verify", "failed to verify %s: %s", TEST_IFCFG_WIRED_DEFROUTE_NO, error->message);
+
+	ASSERT (unmanaged == FALSE,
+	        "wired-defroute-no-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_DEFROUTE_NO);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "wired-defroute-no-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_DEFROUTE_NO,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "wired-defroute-no-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_DEFROUTE_NO,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_id) == 0,
+	        "wired-defroute-no-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_DEFROUTE_NO,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+	/* ===== WIRED SETTING ===== */
+
+	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	ASSERT (s_wired != NULL,
+	        "wired-defroute-no-verify-wired", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_DEFROUTE_NO,
+	        NM_SETTING_WIRED_SETTING_NAME);
+
+	/* ===== IPv4 SETTING ===== */
+
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	ASSERT (s_ip4 != NULL,
+	        "wired-defroute-no-verify-ip4", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_DEFROUTE_NO,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
+	        "wired-defroute-no-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_DEFROUTE_NO,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_METHOD);
+
+	ASSERT (nm_setting_ip4_config_get_never_default (s_ip4) == TRUE,
+	        "wired-defroute-no-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_DEFROUTE_NO,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_NEVER_DEFAULT);
+
+	g_object_unref (connection);
+}
+
+#define TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-defroute-no-gatewaydev-yes"
+#define TEST_NETWORK_WIRED_DEFROUTE_NO_GATEWAYDEV_YES TEST_IFCFG_DIR"/network-scripts/network-test-wired-defroute-no-gatewaydev-yes"
+
+static void
+test_read_wired_defroute_no_gatewaydev_yes (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const char *expected_id = "System test-wired-defroute-no-gatewaydev-yes";
+
+	connection = connection_from_file (TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
+	                                   TEST_NETWORK_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
+	                                   TYPE_ETHERNET,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "wired-defroute-no-gatewaydev-yes-read",
+	        "failed to read %s: %s",
+	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
+	        error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wired-defroute-no-gatewaydev-yes-verify",
+	        "failed to verify %s: %s",
+	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
+	        error->message);
+
+	ASSERT (unmanaged == FALSE,
+	        "wired-defroute-no-gatewaydev-yes-verify",
+	        "failed to verify %s: unexpected unmanaged value",
+	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "wired-defroute-no-gatewaydev-yes-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "wired-defroute-no-gatewaydev-yes-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_id) == 0,
+	        "wired-defroute-no-gatewaydev-yes-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+	/* ===== WIRED SETTING ===== */
+
+	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	ASSERT (s_wired != NULL,
+	        "wired-defroute-no-gatewaydev-yes-verify-wired", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
+	        NM_SETTING_WIRED_SETTING_NAME);
+
+	/* ===== IPv4 SETTING ===== */
+
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	ASSERT (s_ip4 != NULL,
+	        "wired-defroute-no-gatewaydev-yes-verify-ip4", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
+	        "wired-defroute-no-gatewaydev-yes-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_METHOD);
+
+	ASSERT (nm_setting_ip4_config_get_never_default (s_ip4) == FALSE,
+	        "wired-defroute-no-gatewaydev-yes-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_NEVER_DEFAULT);
 
 	g_object_unref (connection);
 }
@@ -5339,6 +5528,8 @@ int main (int argc, char **argv)
 	test_read_wired_dhcp ();
 	test_read_wired_global_gateway ();
 	test_read_wired_never_default ();
+	test_read_wired_defroute_no ();
+	test_read_wired_defroute_no_gatewaydev_yes ();
 	test_read_onboot_no ();
 	test_read_wired_8021x_peap_mschapv2 ();
 	test_read_wifi_open ();

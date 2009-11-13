@@ -920,6 +920,11 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	} else
 		svSetValue (ifcfg, "DOMAIN", NULL, FALSE);
 
+	/* DEFROUTE; remember that it has the opposite meaning from never-default */
+	svSetValue (ifcfg, "DEFROUTE",
+	            nm_setting_ip4_config_get_never_default (s_ip4) ? "no" : "yes",
+	            FALSE);
+
 	svSetValue (ifcfg, "PEERDNS", NULL, FALSE);
 	svSetValue (ifcfg, "PEERROUTES", NULL, FALSE);
 	svSetValue (ifcfg, "DHCP_HOSTNAME", NULL, FALSE);
