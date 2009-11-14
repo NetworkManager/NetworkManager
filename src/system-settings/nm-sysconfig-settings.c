@@ -1096,7 +1096,7 @@ default_wired_deleted (NMDefaultWiredConnection *wired,
 	GKeyFile *config;
 	char **list, **iter, **updated;
 	gboolean found = FALSE;
-	gsize len = 0;
+	gsize len = 0, i;
 	char *data;
 
 	/* If there was no config file specified, there's nothing to do */
@@ -1142,15 +1142,19 @@ default_wired_deleted (NMDefaultWiredConnection *wired,
 		                       mac->data[0], mac->data[1], mac->data[2],
 		                       mac->data[3], mac->data[4], mac->data[5]);
 
+		/* New list; size + 1 for the new element, + 1 again for ending NULL */
 		updated = g_malloc0 (sizeof (char*) * (len + 2));
-		if (list && len)
-			memcpy (updated, list, len);
-		updated[len] = tmp;
+
+		/* Copy original list and add new MAC */
+		for (i = 0; list && list[i]; i++)
+			updated[i] = list[i];
+		updated[i++] = tmp;
+		updated[i] = NULL;
 
 		g_key_file_set_string_list (config,
 		                            "main", CONFIG_KEY_NO_AUTO_DEFAULT,
 		                            (const char **) updated,
-		                            len + 1);
+		                            len + 2);
 		/* g_free() not g_strfreev() since 'updated' isn't a deep-copy */
 		g_free (updated);
 		g_free (tmp);
