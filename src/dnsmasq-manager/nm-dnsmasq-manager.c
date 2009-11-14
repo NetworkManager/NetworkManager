@@ -268,11 +268,22 @@ create_dm_cmd_line (const char *iface,
 	cmd = nm_cmd_line_new ();
 	nm_cmd_line_add_string (cmd, dm_binary);
 
+	if (getenv ("NM_DNSMASQ_DEBUG")) {
+		nm_cmd_line_add_string (cmd, "--log-dhcp");
+		nm_cmd_line_add_string (cmd, "--log-queries");
+	}
+
 	nm_cmd_line_add_string (cmd, "--no-hosts");
 	nm_cmd_line_add_string (cmd, "--keep-in-foreground");
 	nm_cmd_line_add_string (cmd, "--bind-interfaces");
-	nm_cmd_line_add_string (cmd, "--no-poll");
 	nm_cmd_line_add_string (cmd, "--except-interface=lo");
+	nm_cmd_line_add_string (cmd, "--clear-on-reload");
+
+	/* Use strict order since in the case of VPN connections, the VPN's
+	 * nameservers will be first in resolv.conf, and those need to be tried
+	 * first by dnsmasq to successfully resolve names from the VPN.
+	 */
+	nm_cmd_line_add_string (cmd, "--strict-order");
 
 	s = g_string_new ("--listen-address=");
 	addr.s_addr = nm_ip4_address_get_address (tmp);
