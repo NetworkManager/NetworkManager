@@ -593,67 +593,201 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	parent_class->verify       = verify;
 
 	/* Properties */
+	/**
+	 * NMSettingIP6Config:method:
+	 *
+	 * IPv6 configuration method.  If 'auto' is specified then the appropriate
+	 * automatic method (DHCP, PPP, advertisement, etc) is used for the
+	 * interface and most other properties can be left unset.  If 'link-local'
+	 * is specified, then an IPv6 link-local address will be assigned to the
+	 * interface.  If 'manual' is specified, static IP addressing is used and
+	 * at least one IP address must be given in the 'addresses' property.  If
+	 * 'ignored' is specified, IPv6 configuration is not done. This property
+	 * must be set.  NOTE: DHCP configuration and the 'shared' method are not
+	 * yet supported.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_METHOD,
 		 g_param_spec_string (NM_SETTING_IP6_CONFIG_METHOD,
 						      "Method",
-						      "IP configuration method",
+						      "IPv6 configuration method.  If 'auto' is specified "
+						      "then the appropriate automatic method (DHCP, PPP, "
+						      "advertisement, etc) is used for the device and "
+						      "most other properties can be left unset.  If "
+						      "'link-local' is specified, then an IPv6 link-local "
+						      "address will be assigned to the interface.  If "
+						      "'manual' is specified, static IP addressing is "
+						      "used and at least one IP address must be given in "
+						      " the 'addresses' property.  If 'ignored' is "
+						      "specified, IPv6 configuration is not done. This "
+						      "property must be set.  NOTE: DHCP configuration "
+						      "and the 'shared' method are not yet supported.",
 						      NULL,
 						      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
+	/**
+	 * NMSettingIP6Config:dns:
+	 *
+	 * Array of DNS servers, where each member of the array is a byte array
+	 * containing the IPv6 address of the DNS server (in network byte order).
+	 * For the 'auto' method, these DNS servers are appended to those (if any)
+	 * returned by automatic configuration.  DNS servers cannot be used with
+	 * the 'shared' or 'link-local' methods as there is no usptream network. In
+	 * all other methods, these DNS servers are used as the only DNS servers for
+	 * this connection.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_DNS,
 		 _nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_DNS,
 							   "DNS",
-							   "List of DNS servers",
+							   "Array of DNS servers, where each member of the "
+							   "array is a byte array containing the IPv6 address "
+							   "of the DNS server (in network byte order). For "
+							   "the 'auto' method, these DNS servers are "
+							   "appended to those (if any) returned by automatic "
+							   "configuration.  DNS servers cannot be used with "
+							   "the 'shared' or 'link-local' methods as there is "
+							   "no usptream network.  In all other methods, "
+							   "these DNS servers are used as the only DNS "
+							   "servers for this connection.",
 							   DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UCHAR,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
+	/**
+	 * NMSettingIP6Config:dns-search:
+	 *
+	 * List of DNS search domains.  For the 'auto' method, these search domains
+	 * are appended to those returned by automatic configuration. Search domains
+	 * cannot be used with the 'shared' or 'link-local' methods as there is no
+	 * upstream network.  In all other methods, these search domains are used
+	 * as the only search domains for this connection.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_DNS_SEARCH,
 		 _nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_DNS_SEARCH,
 							   "DNS search",
-							   "List of DNS search domains",
+							   "List of DNS search domains.  For the 'auto' "
+							   "method, these search domains are appended to "
+							   "those returned by automatic configuration. "
+							   "Search domains cannot be used with the 'shared' "
+							   "or 'link-local' methods as there is no upstream "
+							   "network.  In all other methods, these search "
+							   "domains are used as the only search domains for "
+							   "this connection.",
 							   DBUS_TYPE_G_LIST_OF_STRING,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
+	/**
+	 * NMSettingIP6Config:addresses:
+	 *
+	 * Array of IPv6 address structures.  Each IPv6 address structure is
+	 * composed of 2 members, the first being a byte array containing the IPv6
+	 * address (network byte order) and the second a 32-bit integer containing
+	 * the IPv6 address prefix.  For the 'auto' method, given IP addresses are
+	 * appended to those returned by automatic configuration.  Addresses cannot
+	 * be used with the 'shared' or 'link-local' methods as the interface is
+	 * automatically assigned an address with these methods.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_ADDRESSES,
 		 _nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_ADDRESSES,
 							   "Addresses",
-							   "List of NMSettingIP6Addresses",
+							   "Array of IPv6 address structures.  Each IPv6 "
+							   "address structure is composed of 2 members, the "
+							   "first being a byte array containing the IPv6 "
+							   "address (network byte order) and the second a "
+							   "32-bit integer containing the IPv6 address "
+							   "prefix.  For the 'auto' method, given IP "
+							   "addresses are appended to those returned by "
+							   "automatic configuration.  Addresses cannot be "
+							   "used with the 'shared' or 'link-local' methods "
+							   "as the interface is automatically assigned an "
+							   "address with these methods.",
 							   DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
+	/**
+	 * NMSettingIP6Config:routes:
+	 *
+	 * Array of IPv6 route structures.  Each IPv6 route structure is composed
+	 * of 4 members; the first being the destination IPv6 network or
+	 * address (network byte order) as a byte array, the second the destination
+	 * network or address IPv6 prefix, the third being the next-hop IPv6 address
+	 * (network byte order) if any, and the fourth being the route metric. For
+	 * the 'auto' method, given IP routes are appended to those returned by
+	 * automatic configuration.  Routes cannot be used with the 'shared' or
+	 * 'link-local' methods because there is no upstream network.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_ROUTES,
 		 _nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_ROUTES,
 							   "Routes",
-							   "List of NMSettingIP6Addresses",
+							   "Array of IPv6 route structures.  Each IPv6 route "
+							   "structure is composed of 4 members; the first "
+							   "being the destination IPv6 network or address "
+							   "(network byte order) as a byte array, the second "
+							   "the destination network or address IPv6 prefix, "
+							   "the third being the next-hop IPv6 address "
+							   "(network byte order) if any, and the fourth "
+							   "being the route metric. For the 'auto' method, "
+							   "given IP routes are appended to those returned "
+							   "by automatic configuration.  Routes cannot be "
+							   "used with the 'shared' or 'link-local' methods "
+							   "because there is no upstream network.",
 							   DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
+	/**
+	 * NMSettingIP6Config:ignore-auto-routes:
+	 *
+	 * When the method is set to 'auto' and this property to TRUE, automatically
+	 * configured routes are ignored and only routes specified in
+	 * #NMSettingIP6Config:routes, if any, are used.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_IGNORE_AUTO_ROUTES,
 		 g_param_spec_boolean (NM_SETTING_IP6_CONFIG_IGNORE_AUTO_ROUTES,
 						   "Ignore automatic routes",
-						   "Ignore automatic routes",
+						   "When the method is set to 'auto' and this property "
+						   "to TRUE, automatically configured routes are "
+						   "ignored and only routes specified in the 'routes' "
+						   "property, if any, are used.",
 						   FALSE,
 						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
+	/**
+	 * NMSettingIP6Config:ignore-auto-dns:
+	 *
+	 * When the method is set to 'auto' and this property to TRUE, automatically
+	 * configured nameservers and search domains are ignored and only namservers
+	 * and search domains specified in #NMSettingIP6Config:dns and
+	 * #NMSettingIP6Config:dns-search, if any, are used.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_IGNORE_AUTO_DNS,
 		 g_param_spec_boolean (NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS,
 						   "Ignore DHCPv6/RDNSS DNS",
-						   "Ignore DHCPv6/RDNSS DNS",
+						   "When the method is set to 'auto' and this property "
+						   "to TRUE, automatically configured nameservers and "
+						   "search domains are ignored and only namservers and "
+						   "search domains specified in the 'dns' and 'dns-search' "
+						   "properties, if any, are used.",
 						   FALSE,
 						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
+	/**
+	 * NMSettingIP6Config:never-default:
+	 *
+	 * If TRUE, this connection will never be the default IPv6 connection,
+	 * meaning it will never be assigned the default IPv6 route by NetworkManager.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_NEVER_DEFAULT,
 		 g_param_spec_boolean (NM_SETTING_IP6_CONFIG_NEVER_DEFAULT,
 						   "Never default",
-						   "Never make this connection the default IPv6 connection",
+						   "If TRUE, this connection will never be the default "
+						   "IPv6 connection, meaning it will never be assigned "
+						   "the default IPv6 route by NetworkManager.",
 						   FALSE,
 						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
