@@ -693,8 +693,8 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 * NMSettingIP4Config:method:
 	 *
 	 * IPv4 configuration method.  If 'auto' is specified then the appropriate
-	 * automatic method (DHCP, PPP, etc) is used for the device and most other
-	 * properties can be left unset.  If 'link-local' is specified, then a
+	 * automatic method (DHCP, PPP, etc) is used for the interface and most
+	 * other properties can be left unset.  If 'link-local' is specified, then a
 	 * link-local address in the 169.254/16 range will be assigned to the
 	 * interface.  If 'manual' is specified, static IP addressing is used and at
 	 * least one IP address must be given in the 'addresses' property.  If
@@ -710,7 +710,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 						      "Method",
 						      "IPv4 configuration method.  If 'auto' is specified "
 						      "then the appropriate automatic method (DHCP, PPP, "
-						      "etc) is used for the device and most other "
+						      "etc) is used for the interface and most other "
 						      "properties can be left unset.  If 'link-local' "
 						      "is specified, then a link-local address in the "
 						      "169.254/16 range will be assigned to the "
@@ -730,7 +730,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	/**
 	 * NMSettingIP4Config:dns:
 	 *
-	 * List of DNS servers (network byte order).  If the 'auto' method, these
+	 * List of DNS servers (network byte order).  For the 'auto' method, these
 	 * DNS servers are appended to those (if any) returned by automatic
 	 * configuration.  DNS servers cannot be used with the 'shared' or
 	 * 'link-local' methods as there is no usptream network.  In all other
@@ -741,7 +741,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 		(object_class, PROP_DNS,
 		 _nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_DNS,
 							   "DNS",
-							   "List of DNS servers (network byte order).  If "
+							   "List of DNS servers (network byte order). For "
 							   "the 'auto' method, these DNS servers are "
 							   "appended to those (if any) returned by automatic "
 							   "configuration.  DNS servers cannot be used with "
@@ -755,24 +755,24 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	/**
 	 * NMSettingIP4Config:dns-search:
 	 *
-	 * List of DNS search domains.  If the 'auto' method is used, these search
-	 * domains are appended to those returned by automatic configuration.
-	 * Search domains cannot be used with the 'shared' or 'link-local' methods
-	 * as there is no upstream network.  In all other methods, these search
-	 * domains are used as the only search domains for this connection.
+	 * List of DNS search domains.  For the 'auto' method, these search domains
+	 * are appended to those returned by automatic configuration. Search domains
+	 * cannot be used with the 'shared' or 'link-local' methods as there is no
+	 * upstream network.  In all other methods, these search domains are used
+	 * as the only search domains for this connection.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DNS_SEARCH,
 		 _nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_DNS_SEARCH,
 							   "DNS search",
-							   "List of DNS search domains.  If the 'auto' "
-							   "method is used, these search domains are "
-							   "appended to those returned by automatic "
-							   "configuration.  Search domains cannot be used "
-							   "with the 'shared' or 'link-local' methods as "
-							   "there is no upstream network.  In all other "
-							   "methods, these search domains are used as the "
-							   "only search domains for this connection.",
+							   "List of DNS search domains.  For the 'auto' "
+							   "method, these search domains are appended to "
+							   "those returned by automatic configuration. "
+							   "Search domains cannot be used with the 'shared' "
+							   "or 'link-local' methods as there is no upstream "
+							   "network.  In all other methods, these search "
+							   "domains are used as the only search domains for "
+							   "this connection.",
 							   DBUS_TYPE_G_LIST_OF_STRING,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
