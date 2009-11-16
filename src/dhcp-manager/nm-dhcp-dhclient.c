@@ -45,7 +45,7 @@
 
 #if defined(TARGET_DEBIAN)
 #define NM_DHCP_MANAGER_LEASE_DIR       LOCALSTATEDIR "/lib/dhcp3"
-#elif defined(TARGET_SUSE)
+#elif defined(TARGET_SUSE) || defined(TARGET_MANDRIVA)
 #define NM_DHCP_MANAGER_LEASE_DIR       LOCALSTATEDIR "/lib/dhcp"
 #else
 #define NM_DHCP_MANAGER_LEASE_DIR       LOCALSTATEDIR "/lib/dhclient"
