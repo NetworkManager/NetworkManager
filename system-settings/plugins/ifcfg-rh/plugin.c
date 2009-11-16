@@ -222,13 +222,6 @@ read_connections (SCPluginIfcfg *plugin)
 /* Monitoring */
 
 static void
-ignore_cb (NMSettingsConnectionInterface *connection,
-           GError *error,
-           gpointer user_data)
-{
-}
-
-static void
 connection_changed_handler (SCPluginIfcfg *plugin,
                             const char *path,
                             NMIfcfgConnection *connection,
@@ -237,7 +230,6 @@ connection_changed_handler (SCPluginIfcfg *plugin,
 {
 	NMIfcfgConnection *new;
 	GError *error = NULL;
-	GHashTable *settings;
 	gboolean ignore_error = FALSE;
 	const char *new_unmanaged = NULL, *old_unmanaged = NULL;
 
@@ -289,20 +281,12 @@ connection_changed_handler (SCPluginIfcfg *plugin,
 			g_signal_emit_by_name (plugin, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, connection);
 		}
 
-		/* Only update if different */
-		if (!nm_connection_compare (NM_CONNECTION (new),
-		                            NM_CONNECTION (connection),
-		                            NM_SETTING_COMPARE_FLAG_EXACT)) {
-			settings = nm_connection_to_hash (NM_CONNECTION (new));
-			if (!nm_connection_replace_settings (NM_CONNECTION (connection), settings, &error)) {
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error updating: %s",
-				             (error && error->message) ? error->message : "(unknown)");
-				g_clear_error (&error);
-			}
-			g_hash_table_destroy (settings);
-			nm_settings_connection_interface_update (NM_SETTINGS_CONNECTION_INTERFACE (connection),
-			                                         ignore_cb,
-			                                         NULL);
+		if (!nm_sysconfig_connection_update (NM_SYSCONFIG_CONNECTION (connection),
+		                                     NM_CONNECTION (new),
+		                                     &error)) {
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error updating: %s",
+			             (error && error->message) ? error->message : "(unknown)");
+			g_clear_error (&error);
 		}
 
 		/* Update unmanaged status */

@@ -47,6 +47,41 @@ typedef struct {
 
 /**************************************************************/
 
+static void
+ignore_cb (NMSettingsConnectionInterface *connection,
+           GError *error,
+           gpointer user_data)
+{
+}
+
+gboolean
+nm_sysconfig_connection_update (NMSysconfigConnection *self,
+                                NMConnection *new,
+                                GError **error)
+{
+	GHashTable *new_settings;
+	gboolean success = FALSE;
+
+	/* Do nothing if there's nothing to update */
+	if (nm_connection_compare (NM_CONNECTION (self),
+	                           NM_CONNECTION (new),
+	                           NM_SETTING_COMPARE_FLAG_EXACT))
+		return TRUE;
+
+	new_settings = nm_connection_to_hash (new);
+	g_assert (new_settings);
+	if (nm_connection_replace_settings (NM_CONNECTION (self), new_settings, error)) {
+		nm_settings_connection_interface_update (NM_SETTINGS_CONNECTION_INTERFACE (self),
+		                                         ignore_cb,
+		                                         NULL);
+		success = TRUE;
+	}
+	g_hash_table_destroy (new_settings);
+	return success;
+}
+
+/**************************************************************/
+
 static GValue *
 string_to_gvalue (const char *str)
 {
