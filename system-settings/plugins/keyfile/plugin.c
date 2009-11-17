@@ -130,6 +130,7 @@ update_connection_settings (NMKeyfileConnection *orig,
 
 	if (!nm_sysconfig_connection_update (NM_SYSCONFIG_CONNECTION (orig),
 	                                     NM_CONNECTION (new),
+	                                     TRUE,
 	                                     &error)) {
 		g_warning ("%s: '%s' / '%s' invalid: %d",
 		           __func__,

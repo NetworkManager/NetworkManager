@@ -57,6 +57,7 @@ ignore_cb (NMSettingsConnectionInterface *connection,
 gboolean
 nm_sysconfig_connection_update (NMSysconfigConnection *self,
                                 NMConnection *new,
+                                gboolean signal_update,
                                 GError **error)
 {
 	GHashTable *new_settings;
@@ -71,9 +72,11 @@ nm_sysconfig_connection_update (NMSysconfigConnection *self,
 	new_settings = nm_connection_to_hash (new);
 	g_assert (new_settings);
 	if (nm_connection_replace_settings (NM_CONNECTION (self), new_settings, error)) {
-		nm_settings_connection_interface_update (NM_SETTINGS_CONNECTION_INTERFACE (self),
-		                                         ignore_cb,
-		                                         NULL);
+		if (signal_update) {
+			nm_settings_connection_interface_update (NM_SETTINGS_CONNECTION_INTERFACE (self),
+			                                         ignore_cb,
+			                                         NULL);
+		}
 		success = TRUE;
 	}
 	g_hash_table_destroy (new_settings);
@@ -282,7 +285,6 @@ pk_update_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	NMSysconfigConnectionPrivate *priv;
 	PolkitAuthorizationResult *pk_result;
 	GError *error = NULL;
-	GHashTable *settings;
 
 	/* If our NMSysconfigConnection is already gone, do nothing */
 	if (call->disposed) {
@@ -322,19 +324,18 @@ pk_update_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	}
 
 	/* Update our settings internally so the update() call will save the new
-	 * ones.
+	 * ones.  We don't let nm_sysconfig_connection_update() handle the update
+	 * signal since we need our own callback after the update is done.
 	 */
-	settings = nm_connection_to_hash (call->connection);
-	if (!nm_connection_replace_settings (NM_CONNECTION (self), settings, &error)) {
+	if (!nm_sysconfig_connection_update (self, call->connection, FALSE, &error)) {
 		/* Shouldn't really happen since we've already validated the settings */
 		dbus_g_method_return_error (call->context, error);
 		g_error_free (error);
 		polkit_call_free (call);
 		goto out;
 	}
-	g_hash_table_destroy (settings);
 
-	/* Caller is authenticated, now we can finally try to update */
+	/* Caller is authenticated, now we can finally try to commit the update */
 	nm_settings_connection_interface_update (NM_SETTINGS_CONNECTION_INTERFACE (self),
 	                                         con_update_cb,
 	                                         call);

@@ -59,6 +59,7 @@ file_changed (GFileMonitor *monitor,
 		if (new) {
 			if (!nm_sysconfig_connection_update (NM_SYSCONFIG_CONNECTION (self),
 			                                     NM_CONNECTION (new),
+			                                     TRUE,
 			                                     &error)) {
 				g_warning ("%s: '%s' / '%s' invalid: %d",
 				           __func__,
@@ -87,7 +88,6 @@ nm_suse_connection_new (const char *iface, NMDeviceType dev_type)
 	GFileMonitor *monitor;
 	NMSuseConnection *exported;
 	NMSuseConnectionPrivate *priv;
-	GHashTable *settings;
 	NMSettingConnection *s_con;
 
 	g_return_val_if_fail (iface != NULL, NULL);
@@ -112,9 +112,7 @@ nm_suse_connection_new (const char *iface, NMDeviceType dev_type)
 	}
 
 	/* Update our settings with what was read from the file */
-	settings = nm_connection_to_hash (tmp);
-	nm_connection_replace_settings (NM_CONNECTION (exported), settings, NULL);
-	g_hash_table_destroy (settings);
+	nm_sysconfig_connection_update (NM_SYSCONFIG_CONNECTION (exported), tmp, FALSE, NULL);
 	g_object_unref (tmp);
 
 	priv = NM_SUSE_CONNECTION_GET_PRIVATE (exported);

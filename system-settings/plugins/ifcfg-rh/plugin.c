@@ -283,6 +283,7 @@ connection_changed_handler (SCPluginIfcfg *plugin,
 
 		if (!nm_sysconfig_connection_update (NM_SYSCONFIG_CONNECTION (connection),
 		                                     NM_CONNECTION (new),
+		                                     TRUE,
 		                                     &error)) {
 			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error updating: %s",
 			             (error && error->message) ? error->message : "(unknown)");
