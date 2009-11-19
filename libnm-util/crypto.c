@@ -58,7 +58,7 @@ find_tag (const char *tag, const char *buf, gsize len)
 	if (len < taglen)
 		return NULL;
 
-	for (i = 0; i < len - taglen; i++) {
+	for (i = 0; i < len - taglen + 1; i++) {
 		if (memcmp (buf + i, tag, taglen) == 0)
 			return buf + i;
 	}

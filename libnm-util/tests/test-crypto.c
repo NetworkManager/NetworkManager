@@ -220,35 +220,29 @@ int main (int argc, char **argv)
 {
 	GError *error = NULL;
 	char *progname;
-	const char *ca_cert;
-	const char *client_cert;
-	const char *priv_key;
-	const char *priv_key_password;
-	const char *pk12;
-	const char *pk12_password;
 
-	ASSERT (argc == 7, "test-crypto",
-	        "wrong number of arguments (expected ca-cert, client-cert, "
-	        "private-key, private-key-password, pkcs12-cert, pkcs12-password)");
+	ASSERT (argc > 2, "test-crypto",
+	        "wrong number of arguments (expected at least an operation and an object)");
 
 	if (!crypto_init (&error))
 		FAIL ("crypto-init", "failed to initialize crypto: %s", error->message);
 
-	ca_cert = argv[1];
-	client_cert = argv[2];
-	priv_key = argv[3];
-	priv_key_password = argv[4];
-	pk12 = argv[5];
-	pk12_password = argv[6];
+	if (!strcmp (argv[1], "--cert"))
+		test_load_cert (argv[2], "cert");
+	else if (!strcmp (argv[1], "--key")) {
+		ASSERT (argc == 4, "test-crypto",
+		        "wrong number of arguments (--key <key file> <password>)");
 
-	test_load_cert (ca_cert, "ca-cert");
-	test_load_cert (client_cert, "client-cert");
-	test_load_private_key (priv_key, priv_key_password, FALSE, "private-key");
-	test_load_private_key (priv_key, "blahblahblah", TRUE, "private-key-bad-password");
-	test_load_pkcs12 (pk12, pk12_password, FALSE, "pkcs12-private-key");
-	test_load_pkcs12 (pk12, "blahblahblah", TRUE, "pkcs12-private-key-bad-password");
-	test_is_pkcs12 (pk12, FALSE, "is-pkcs12");
-	test_is_pkcs12 (priv_key, TRUE, "is-pkcs12-not-pkcs12");
+		test_load_private_key (argv[2], argv[3], FALSE, "private-key");
+		test_load_private_key (argv[2], "blahblahblah", TRUE, "private-key-bad-password");
+		test_is_pkcs12 (argv[2], TRUE, "is-pkcs12-not-pkcs12");
+	} else if (!strcmp (argv[1], "--p12")) {
+		test_is_pkcs12 (argv[2], FALSE, "is-pkcs12");
+		test_load_pkcs12 (argv[2], argv[3], FALSE, "pkcs12-private-key");
+		test_load_pkcs12 (argv[2], "blahblahblah", TRUE, "pkcs12-private-key-bad-password");
+	} else {
+		ASSERT (argc > 2, "test-crypto", "unknown test type (not --cert, --key, or --p12)");
+	}
 
 	crypto_deinit ();
 
