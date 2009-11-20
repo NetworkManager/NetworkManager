@@ -2499,6 +2499,13 @@ impl_manager_sleep (NMManager *self, gboolean sleep, GError **error)
 		/* Re-manage managed devices */
 		for (iter = priv->devices; iter; iter = iter->next) {
 			NMDevice *device = NM_DEVICE (iter->data);
+			gboolean wifi_enabled = (priv->wireless_hw_enabled && priv->wireless_enabled);
+
+			/* enable/disable wireless devices since that we don't respond
+			 * to killswitch changes during sleep.
+			 */
+			if (NM_IS_DEVICE_WIFI (iter->data))
+				nm_device_wifi_set_enabled (NM_DEVICE_WIFI (iter->data), wifi_enabled);
 
 			nm_device_clear_autoconnect_inhibit (device);
 			if (nm_device_interface_spec_match_list (NM_DEVICE_INTERFACE (device), unmanaged_specs))
