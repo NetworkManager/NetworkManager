@@ -205,7 +205,7 @@ ppp_stage3_ip4_config_start (NMDevice *device, NMDeviceStateReason *reason)
 									  nm_act_request_get_connection (req));
 
 	priv->ppp_manager = nm_ppp_manager_new (nm_device_get_iface (device));
-	if (nm_ppp_manager_start (priv->ppp_manager, req, ppp_name, &err)) {
+	if (nm_ppp_manager_start (priv->ppp_manager, req, ppp_name, 20, &err)) {
 		g_signal_connect (priv->ppp_manager, "state-changed",
 						  G_CALLBACK (ppp_state_changed),
 						  device);
