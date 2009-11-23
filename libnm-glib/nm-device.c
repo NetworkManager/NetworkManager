@@ -1095,13 +1095,12 @@ deactivate_cb (DBusGProxy *proxy,
 /**
  * nm_device_disconnect:
  * @device: a #NMDevice
- * @error: a location to store an error on failure
+ * @callback: callback to be called when disconnect operation completes
+ * @user_data: caller-specific data passed to @callback
  *
  * Disconnects the device if currently connected, and prevents the device from
  * automatically connecting to networks until the next manual network connection
  * request.
- *
- * Returns: TRUE on success, FALSE if an error occurred.
  **/
 void
 nm_device_disconnect (NMDevice *device,
