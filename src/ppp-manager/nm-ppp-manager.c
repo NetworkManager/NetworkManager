@@ -66,7 +66,6 @@ static gboolean impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 #include "nm-ppp-manager-glue.h"
 
 #define NM_PPPD_PLUGIN PLUGINDIR "/nm-pppd-plugin.so"
-#define NM_PPP_WAIT_PPPD 20 /* seconds */
 #define PPP_MANAGER_SECRET_TRIES "ppp-manager-secret-tries"
 
 typedef struct {
@@ -915,6 +914,7 @@ gboolean
 nm_ppp_manager_start (NMPPPManager *manager,
                       NMActRequest *req,
                       const char *ppp_name,
+                      guint32 timeout_secs,
                       GError **err)
 {
 	NMPPPManagerPrivate *priv;
@@ -966,7 +966,7 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	nm_debug ("ppp started with pid %d", priv->pid);
 
 	priv->ppp_watch_id = g_child_watch_add (priv->pid, (GChildWatchFunc) ppp_watch_cb, manager);
-	priv->ppp_timeout_handler = g_timeout_add_seconds (NM_PPP_WAIT_PPPD, pppd_timed_out, manager);
+	priv->ppp_timeout_handler = g_timeout_add_seconds (timeout_secs, pppd_timed_out, manager);
 	priv->act_req = g_object_ref (req);
 
  out:
