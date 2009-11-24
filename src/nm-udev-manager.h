@@ -28,11 +28,7 @@
 #define G_UDEV_API_IS_SUBJECT_TO_CHANGE
 #include <gudev/gudev.h>
 
-typedef enum {
-	RFKILL_UNBLOCKED = 0,
-	RFKILL_SOFT_BLOCKED = 1,
-	RFKILL_HARD_BLOCKED = 2
-} RfKillState;
+#include "nm-rfkill.h"
 
 G_BEGIN_DECLS
 
