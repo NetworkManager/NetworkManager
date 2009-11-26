@@ -14,6 +14,8 @@ LABEL="probe"
 
 # Don't probe new-style beagleboard cdc-acm ports
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="0525", GOTO="nm_modem_probe_end"
+# Don't probe "Teensy" boards
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="16c0", ATTRS{idProduct}=="04[7-9]?", GOTO="nm_modem_probe_end"
 
 SUBSYSTEM=="tty", SUBSYSTEMS=="usb", DRIVERS=="?*", ENV{NM_MODEM_DRIVER}="$attr{driver}"
 SUBSYSTEM=="tty", SUBSYSTEMS=="usb", ATTRS{bInterfaceNumber}=="?*", ENV{NM_MODEM_USB_INTERFACE_NUMBER}="$attr{bInterfaceNumber}"
