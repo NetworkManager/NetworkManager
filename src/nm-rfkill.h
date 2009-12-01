@@ -1,5 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-/* NetworkManager system settings service
+/* NetworkManager -- Network link manager
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,32 +15,18 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2008 - 2009 Red Hat, Inc.
+ * Copyright (C) 2007 - 2008 Novell, Inc.
+ * Copyright (C) 2007 - 2008 Red Hat, Inc.
  */
 
-#ifndef __COMMON_H__
-#define __COMMON_H__
+#ifndef NM_RFKILL_H
+#define NM_RFKILL_H
 
-#include <glib.h>
+typedef enum {
+	RFKILL_UNBLOCKED = 0,
+	RFKILL_SOFT_BLOCKED = 1,
+	RFKILL_HARD_BLOCKED = 2
+} RfKillState;
 
-#define IFCFG_TAG "ifcfg-"
-#define KEYS_TAG "keys-"
-#define BAK_TAG ".bak"
-#define TILDE_TAG "~"
-#define ORIG_TAG ".orig"
-#define REJ_TAG ".rej"
-#define RPMNEW_TAG ".rpmnew"
-
-#define IFCFG_DIR SYSCONFDIR"/sysconfig/network-scripts"
-
-#define IFCFG_PLUGIN_NAME "ifcfg-rh"
-#define IFCFG_PLUGIN_INFO "(c) 2007 - 2008 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list."
-
-#define TYPE_ETHERNET "Ethernet"
-#define TYPE_WIRELESS "Wireless"
-
-GQuark ifcfg_plugin_error_quark (void);
-
-
-#endif  /* __COMMON_H__ */
+#endif  /* NM_RFKILL_H */
 

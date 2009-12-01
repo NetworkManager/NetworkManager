@@ -299,7 +299,7 @@ nm_access_point_get_max_bitrate (NMAccessPoint *ap)
 
 /**
  * nm_access_point_get_strength:
- * @ap: 
+ * @ap: a #NMAccessPoint
  *
  * Gets the current signal strength of the access point.
  *

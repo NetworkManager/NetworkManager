@@ -403,7 +403,9 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		(object_class, PROP_ID,
 		 g_param_spec_string (NM_SETTING_CONNECTION_ID,
 						  "ID",
-						  "User-readable connection identifier/name",
+						  "User-readable connection identifier/name.  Must be "
+						  "one or more characters and may change over the lifetime "
+						  "of the connection if the user decides to rename it.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
@@ -427,7 +429,16 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		(object_class, PROP_UUID,
 		 g_param_spec_string (NM_SETTING_CONNECTION_UUID,
 						  "UUID",
-						  "Universally unique connection identifier",
+						  "Universally unique connection identifier.  Must be "
+						  "in the format '2815492f-7e56-435e-b2e9-246bd7cdc664' "
+						  "(ie, contains only hexadecimal characters and '-'). "
+						  "The UUID should be assigned when the connection is "
+						  "created and never changed as long as the connection "
+						  "stilla pplies to the same network.  For example, "
+						  "it should not be changed when the user changes the "
+						  "connection's 'id', but should be recreated when the "
+						  "WiFi SSID, mobile broadband network provider, or the "
+						  "connection type changes.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
@@ -443,7 +454,13 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		(object_class, PROP_TYPE,
 		 g_param_spec_string (NM_SETTING_CONNECTION_TYPE,
 						  "Type",
-						  "Connection type",
+						  "Base type of the connection.  For hardware-dependent "
+						  "connections, should contain the setting name of the "
+						  "hardware-type specific setting (ie, '802-3-ethernet' "
+						  "or '802-11-wireless' or 'bluetooth', etc), and for "
+						  "non-hardware dependent connections like VPN or "
+						  "otherwise, should contain the setting name of that "
+						  "setting type (ie, 'vpn' or 'bridge', etc).",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
@@ -459,7 +476,10 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		(object_class, PROP_AUTOCONNECT,
 		 g_param_spec_boolean (NM_SETTING_CONNECTION_AUTOCONNECT,
 						   "Autoconnect",
-						   "Connection autoconnect",
+						   "If TRUE, NetworkManager will activate this connection "
+						   "when its network resources are available.  If FALSE, "
+						   "the connection must be manually activated by the user "
+						   "or some other mechanism.",
 						   TRUE,
 						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
@@ -473,7 +493,11 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		(object_class, PROP_TIMESTAMP,
 		 g_param_spec_uint64 (NM_SETTING_CONNECTION_TIMESTAMP,
 						  "Timestamp",
-						  "Connection timestamp",
+						  "Timestamp (in seconds since the Unix Epoch) that the "
+						  "connection was last successfully activated.  Settings "
+						  "services should update the connection timestamp "
+						  "periodically when the connection is active to ensure "
+						  "that an active connection has the latest timestamp.",
 						  0, G_MAXUINT64, 0,
 						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
@@ -488,7 +512,10 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	    (object_class, PROP_READ_ONLY,
 	     g_param_spec_boolean (NM_SETTING_CONNECTION_READ_ONLY,
 	                      "Read-Only",
-	                      "Read-Only",
+	                      "If TRUE, the connection is read-only and cannot be "
+	                      "changed by the user or any other mechanism.  This is "
+	                      "normally set for system connections whose plugin "
+	                      "cannot yet write updated connections back out.",
 	                      FALSE,
 	                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 }

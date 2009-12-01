@@ -177,11 +177,22 @@ if test "$ac_have_iwevgenie" = no; then
 	AC_MSG_ERROR(wireless-tools library and development headers >= 28pre9 not installed or not functional)
 fi
 
+dnl
+dnl Checks for libm - needed for pow()
+dnl
+LT_LIB_M
+
+dnl
+dnl Checks for libdl - on certain platforms its part of libc
+dnl
+AC_CHECK_LIB([dl], [dladdr], LIBDL="-ldl", LIBDL="")
+AC_SUBST(LIBDL)
+
 PKG_CHECK_MODULES(DBUS, dbus-1 >= 1.1 dbus-glib-1 >= 0.75)
 AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)
 
-PKG_CHECK_MODULES(GLIB, gthread-2.0 glib-2.0 >= 2.16 gobject-2.0)
+PKG_CHECK_MODULES(GLIB, gthread-2.0 glib-2.0 >= 2.18 gobject-2.0)
 AC_SUBST(GLIB_CFLAGS)
 AC_SUBST(GLIB_LIBS)
 

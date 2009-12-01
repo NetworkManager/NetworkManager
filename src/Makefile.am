@@ -116,7 +116,8 @@ NetworkManager_SOURCES = \
 		nm-netlink.c \
 		nm-netlink.h \
 		nm-dhcp4-config.c \
-		nm-dhcp4-config.h
+		nm-dhcp4-config.h \
+		nm-rfkill.h
 
 nm-access-point-glue.h: $(top_srcdir)/introspection/nm-access-point.xml
 	dbus-binding-tool --prefix=nm_access_point --mode=glib-server --output=$@ $<
@@ -209,7 +210,9 @@ NetworkManager_LDADD = \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS) \
-	$(GMODULE_LIBS)
+	$(GMODULE_LIBS) \
+	$(LIBM) \
+	$(LIBDL)
 
 NetworkManager_LDFLAGS = -rdynamic
 

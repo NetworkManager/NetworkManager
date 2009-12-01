@@ -42,13 +42,6 @@ typedef struct {
 } NMSuseConnectionPrivate;
 
 static void
-ignore_cb (NMSettingsConnectionInterface *connection,
-           GError *error,
-           gpointer user_data)
-{
-}
-
-static void
 file_changed (GFileMonitor *monitor,
               GFile *file,
               GFile *other_file,
@@ -58,30 +51,22 @@ file_changed (GFileMonitor *monitor,
 	NMSuseConnection *self = NM_SUSE_CONNECTION (user_data);
 	NMSuseConnectionPrivate *priv = NM_SUSE_CONNECTION_GET_PRIVATE (self);
 	NMConnection *new;
+	GError *error = NULL;
 
 	switch (event_type) {
 	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
 		new = parse_ifcfg (priv->iface, priv->dev_type);
 		if (new) {
-			GError *error = NULL;
-			GHashTable *settings;
-
-			if (!nm_connection_compare (new,
-			                            NM_CONNECTION (self),
-			                            NM_SETTING_COMPARE_FLAG_EXACT)) {
-				settings = nm_connection_to_hash (new);
-				if (!nm_connection_replace_settings (NM_CONNECTION (self), settings, &error)) {
-					g_warning ("%s: '%s' / '%s' invalid: %d",
-					           __func__,
-					           error ? g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)) : "(none)",
-					           (error && error->message) ? error->message : "(none)",
-					           error ? error->code : -1);
-					g_clear_error (&error);
-				}
-				g_hash_table_destroy (settings);
-				nm_settings_connection_interface_update (NM_SETTINGS_CONNECTION_INTERFACE (self),
-				                                         ignore_cb,
-				                                         NULL);
+			if (!nm_sysconfig_connection_update (NM_SYSCONFIG_CONNECTION (self),
+			                                     NM_CONNECTION (new),
+			                                     TRUE,
+			                                     &error)) {
+				g_warning ("%s: '%s' / '%s' invalid: %d",
+				           __func__,
+				           error ? g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)) : "(none)",
+				           (error && error->message) ? error->message : "(none)",
+				           error ? error->code : -1);
+				g_clear_error (&error);
 			}
 			g_object_unref (new);
 		} else
@@ -103,7 +88,6 @@ nm_suse_connection_new (const char *iface, NMDeviceType dev_type)
 	GFileMonitor *monitor;
 	NMSuseConnection *exported;
 	NMSuseConnectionPrivate *priv;
-	GHashTable *settings;
 	NMSettingConnection *s_con;
 
 	g_return_val_if_fail (iface != NULL, NULL);
@@ -128,9 +112,7 @@ nm_suse_connection_new (const char *iface, NMDeviceType dev_type)
 	}
 
 	/* Update our settings with what was read from the file */
-	settings = nm_connection_to_hash (tmp);
-	nm_connection_replace_settings (NM_CONNECTION (exported), settings, NULL);
-	g_hash_table_destroy (settings);
+	nm_sysconfig_connection_update (NM_SYSCONFIG_CONNECTION (exported), tmp, FALSE, NULL);
 	g_object_unref (tmp);
 
 	priv = NM_SUSE_CONNECTION_GET_PRIVATE (exported);

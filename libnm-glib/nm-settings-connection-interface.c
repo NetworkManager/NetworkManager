@@ -24,7 +24,7 @@
 
 /**
  * nm_settings_connection_interface_update:
- * @self: an object implementing #NMSettingsConnectionInterface
+ * @connection: an object implementing #NMSettingsConnectionInterface
  * @callback: a function to be called when the update completes
  * @user_data: caller-specific data to be passed to @callback
  *
@@ -51,7 +51,7 @@ nm_settings_connection_interface_update (NMSettingsConnectionInterface *connecti
 
 /**
  * nm_settings_connection_interface_delete:
- * @self: a objecting implementing #NMSettingsConnectionInterface
+ * @connection: a objecting implementing #NMSettingsConnectionInterface
  * @callback: a function to be called when the delete completes
  * @user_data: caller-specific data to be passed to @callback
  *
@@ -78,7 +78,7 @@ nm_settings_connection_interface_delete (NMSettingsConnectionInterface *connecti
 
 /**
  * nm_settings_connection_interface_get_secrets:
- * @self: a object implementing #NMSettingsConnectionInterface
+ * @connection: a object implementing #NMSettingsConnectionInterface
  * @setting_name: the #NMSetting object name to get secrets for
  * @hints: #NMSetting key names to get secrets for (optional)
  * @request_new: hint that new secrets (instead of cached or stored secrets) 

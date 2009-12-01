@@ -43,7 +43,61 @@ G_DEFINE_TYPE_EXTENDED (NMSysconfigConnection, nm_sysconfig_connection, NM_TYPE_
 typedef struct {
 	PolkitAuthority *authority;
 	GSList *pk_calls;
+	NMConnection *secrets;
 } NMSysconfigConnectionPrivate;
+
+/**************************************************************/
+
+static void
+ignore_cb (NMSettingsConnectionInterface *connection,
+           GError *error,
+           gpointer user_data)
+{
+}
+
+gboolean
+nm_sysconfig_connection_update (NMSysconfigConnection *self,
+                                NMConnection *new,
+                                gboolean signal_update,
+                                GError **error)
+{
+	NMSysconfigConnectionPrivate *priv;
+	GHashTable *new_settings;
+	gboolean success = FALSE;
+
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_SYSCONFIG_CONNECTION (self), FALSE);
+	g_return_val_if_fail (new != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (new), FALSE);
+
+	priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
+
+	/* Do nothing if there's nothing to update */
+	if (nm_connection_compare (NM_CONNECTION (self),
+	                           NM_CONNECTION (new),
+	                           NM_SETTING_COMPARE_FLAG_EXACT))
+		return TRUE;
+
+	new_settings = nm_connection_to_hash (new);
+	g_assert (new_settings);
+	if (nm_connection_replace_settings (NM_CONNECTION (self), new_settings, error)) {
+		/* Copy the connection to keep its secrets around even if NM
+		 * calls nm_connection_clear_secrets().
+		 */
+		if (priv->secrets)
+			g_object_unref (priv->secrets);
+		priv->secrets = nm_connection_duplicate (NM_CONNECTION (self));
+
+		if (signal_update) {
+			nm_settings_connection_interface_update (NM_SETTINGS_CONNECTION_INTERFACE (self),
+			                                         ignore_cb,
+			                                         NULL);
+		}
+		success = TRUE;
+	}
+	g_hash_table_destroy (new_settings);
+	return success;
+}
 
 /**************************************************************/
 
@@ -129,12 +183,29 @@ get_secrets (NMSettingsConnectionInterface *connection,
              NMSettingsConnectionInterfaceGetSecretsFunc callback,
              gpointer user_data)
 {
+	NMSysconfigConnection *self = NM_SYSCONFIG_CONNECTION (connection);
+	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
 	GHashTable *settings = NULL;
 	GHashTable *secrets = NULL;
 	NMSetting *setting;
 	GError *error = NULL;
 
-	setting = nm_connection_get_setting_by_name (NM_CONNECTION (connection), setting_name);
+	/* Use priv->secrets to work around the fact that nm_connection_clear_secrets()
+	 * will clear secrets on this object's settings.  priv->secrets should be
+	 * a complete copy of this object and kept in sync by
+	 * nm_sysconfig_connection_update().
+	 */
+	if (!priv->secrets) {
+		error = g_error_new (NM_SETTINGS_INTERFACE_ERROR,
+		                     NM_SETTINGS_INTERFACE_ERROR_INVALID_CONNECTION,
+		                     "%s.%d - Internal error; secrets cache invalid.",
+		                     __FILE__, __LINE__);
+		(*callback) (connection, NULL, error, user_data);
+		g_error_free (error);
+		return TRUE;
+	}
+
+	setting = nm_connection_get_setting_by_name (priv->secrets, setting_name);
 	if (!setting) {
 		error = g_error_new (NM_SETTINGS_INTERFACE_ERROR,
 		                     NM_SETTINGS_INTERFACE_ERROR_INVALID_CONNECTION,
@@ -247,7 +318,6 @@ pk_update_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	NMSysconfigConnectionPrivate *priv;
 	PolkitAuthorizationResult *pk_result;
 	GError *error = NULL;
-	GHashTable *settings;
 
 	/* If our NMSysconfigConnection is already gone, do nothing */
 	if (call->disposed) {
@@ -287,19 +357,18 @@ pk_update_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	}
 
 	/* Update our settings internally so the update() call will save the new
-	 * ones.
+	 * ones.  We don't let nm_sysconfig_connection_update() handle the update
+	 * signal since we need our own callback after the update is done.
 	 */
-	settings = nm_connection_to_hash (call->connection);
-	if (!nm_connection_replace_settings (NM_CONNECTION (self), settings, &error)) {
+	if (!nm_sysconfig_connection_update (self, call->connection, FALSE, &error)) {
 		/* Shouldn't really happen since we've already validated the settings */
 		dbus_g_method_return_error (call->context, error);
 		g_error_free (error);
 		polkit_call_free (call);
 		goto out;
 	}
-	g_hash_table_destroy (settings);
 
-	/* Caller is authenticated, now we can finally try to update */
+	/* Caller is authenticated, now we can finally try to commit the update */
 	nm_settings_connection_interface_update (NM_SETTINGS_CONNECTION_INTERFACE (self),
 	                                         con_update_cb,
 	                                         call);
@@ -554,6 +623,9 @@ dispose (GObject *object)
 	NMSysconfigConnection *self = NM_SYSCONFIG_CONNECTION (object);
 	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
 	GSList *iter;
+
+	if (priv->secrets)
+		g_object_unref (priv->secrets);
 
 	/* Cancel PolicyKit requests */
 	for (iter = priv->pk_calls; iter; iter = g_slist_next (iter)) {

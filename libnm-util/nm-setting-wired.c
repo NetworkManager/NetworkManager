@@ -278,51 +278,106 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	parent_class->verify       = verify;
 
 	/* Properties */
+	/**
+	 * NMSettingWired:port:
+	 *
+	 * Specific port type to use if multiple the device supports multiple
+	 * attachment methods.  One of 'tp' (Twisted Pair), 'aui' (Attachment Unit
+	 * Interface), 'bnc' (Thin Ethernet) or 'mii' (Media Independent Interface.
+	 * If the device supports only one port type, this setting is ignored.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_PORT,
 		 g_param_spec_string (NM_SETTING_WIRED_PORT,
 						  "Port",
-						  "Port type",
+						  "Specific port type to use if multiple the device "
+						  "supports multiple attachment methods.  One of "
+						  "'tp' (Twisted Pair), 'aui' (Attachment Unit Interface), "
+						  "'bnc' (Thin Ethernet) or 'mii' (Media Independent "
+						  "Interface.  If the device supports only one port "
+						  "type, this setting is ignored.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
+	/**
+	 * NMSettingWired:speed:
+	 *
+	 * If non-zero, request that the device use only the specified speed. 
+	 * In Mbit/s, ie 100 == 100Mbit/s.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_SPEED,
 		 g_param_spec_uint (NM_SETTING_WIRED_SPEED,
 						"Speed",
-						"Speed",
+						"If non-zero, request that the device use only the "
+						"specified speed.  In Mbit/s, ie 100 == 100Mbit/s.",
 						0, G_MAXUINT32, 0,
 						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
+	/**
+	 * NMSettingWired:duplex:
+	 *
+	 * If specified, request that the device only use the specified duplex mode.
+	 * Either 'half' or 'full'.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_DUPLEX,
 		 g_param_spec_string (NM_SETTING_WIRED_DUPLEX,
 						  "Duplex",
-						  "Duplex",
+						  "If specified, request that the device only use the "
+						  "specified duplex mode.  Either 'half' or 'full'.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
+	/**
+	 * NMSettingEthernet:auto-negotiate:
+	 *
+	 * If TRUE, allow auto-negotiation of port speed and duplex mode.  If FALSE,
+	 * do not allow auto-negotiation, in which case the 'speed' and 'duplex'
+	 * properties should be set.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_AUTO_NEGOTIATE,
 		 g_param_spec_boolean (NM_SETTING_WIRED_AUTO_NEGOTIATE,
 						   "AutoNegotiate",
-						   "Auto negotiate",
+						   "If TRUE, allow auto-negotiation of port speed and "
+						   "duplex mode.  If FALSE, do not allow auto-negotiation,"
+						   "in which case the 'speed' and 'duplex' properties "
+						   "should be set.",
 						   TRUE,
 						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
+	/**
+	 * NMSettingWired:mac-address:
+	 *
+	 * If specified, this connection will only apply to the ethernet device
+	 * whose MAC address matches. This property does not change the MAC address
+	 * of the device (known as MAC spoofing).
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
 		 _nm_param_spec_specialized (NM_SETTING_WIRED_MAC_ADDRESS,
 							   "MAC Address",
-							   "Harware address",
+							   "If specified, this connection will only apply to "
+							   "the ethernet device whose MAC address matches.  "
+							   "This property does not change the MAC address "
+							   "of the device (known as MAC spoofing).",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
+	/**
+	 * NMSettingWired:mtu:
+	 *
+	 * If non-zero, only transmit packets of the specified size or smaller,
+	 * breaking larger packets up into multiple Ethernet frames.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_MTU,
 		 g_param_spec_uint (NM_SETTING_WIRED_MTU,
 						"MTU",
-						"MTU",
+						"If non-zero, only transmit packets of the specified "
+						"size or smaller, breaking larger packets up into "
+						"multiple Ethernet frames.",
 						0, G_MAXUINT32, 0,
 						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 }

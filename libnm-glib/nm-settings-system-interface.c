@@ -64,6 +64,8 @@ nm_settings_system_interface_save_hostname (NMSettingsSystemInterface *settings,
  *
  * Requests an indication of the operations the caller is permitted to perform
  * including those that may require authorization.
+ *
+ * Returns: TRUE if the request was successful, FALSE if it failed
  **/
 gboolean
 nm_settings_system_interface_get_permissions (NMSettingsSystemInterface *settings,

@@ -108,7 +108,6 @@ nm_ifcfg_connection_new (const char *filename,
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	NMInotifyHelper *ih;
-	GHashTable *settings;
 
 	g_return_val_if_fail (filename != NULL, NULL);
 
@@ -126,9 +125,7 @@ nm_ifcfg_connection_new (const char *filename,
 	}
 
 	/* Update our settings with what was read from the file */
-	settings = nm_connection_to_hash (tmp);
-	nm_connection_replace_settings (NM_CONNECTION (object), settings, NULL);
-	g_hash_table_destroy (settings);
+	nm_sysconfig_connection_update (NM_SYSCONFIG_CONNECTION (object), tmp, FALSE, NULL);
 	g_object_unref (tmp);
 
 	priv = NM_IFCFG_CONNECTION_GET_PRIVATE (object);

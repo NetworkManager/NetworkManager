@@ -335,6 +335,7 @@ global:
 	nm_setting_olpc_mesh_get_ssid;
 	nm_setting_olpc_mesh_get_channel;
 	nm_setting_olpc_mesh_get_dhcp_anycast_address;
+	nm_setting_olpc_mesh_new;
 	nm_utils_deinit;
 	nm_utils_rsa_key_encrypt;
 	nm_utils_escape_ssid;

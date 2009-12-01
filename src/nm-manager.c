@@ -82,7 +82,6 @@ static gboolean impl_manager_legacy_state (NMManager *manager, guint32 *state, G
 #include "nm-manager-glue.h"
 
 static void user_destroy_connections (NMManager *manager);
-static void manager_set_wireless_enabled (NMManager *manager, gboolean enabled);
 
 static void connection_added_default_handler (NMManager *manager,
 									 NMConnection *connection,
@@ -96,10 +95,6 @@ static void udev_device_added_cb (NMUdevManager *udev_mgr,
 static void udev_device_removed_cb (NMUdevManager *udev_mgr,
                                     GUdevDevice *device,
                                     gpointer user_data);
-
-static void udev_manager_rfkill_changed_cb (NMUdevManager *udev_mgr,
-                                            RfKillState state,
-                                            gpointer user_data);
 
 static void bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
 					   const char *bdaddr,
@@ -1259,6 +1254,80 @@ next:
 	g_slist_free (connections);
 }
 
+static RfKillState
+nm_manager_get_ipw_rfkill_state (NMManager *self)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+	RfKillState ipw_state = RFKILL_UNBLOCKED;
+
+	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *candidate = NM_DEVICE (iter->data);
+		RfKillState candidate_state;
+
+		if (NM_IS_DEVICE_WIFI (candidate)) {
+			candidate_state = nm_device_wifi_get_ipw_rfkill_state (NM_DEVICE_WIFI (candidate));
+
+			if (candidate_state > ipw_state)
+				ipw_state = candidate_state;
+		}
+	}
+
+	return ipw_state;
+}
+
+static void
+nm_manager_rfkill_update (NMManager *self)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	RfKillState udev_state, ipw_state, composite;
+	gboolean new_we = TRUE, new_whe = TRUE;
+
+	udev_state = nm_udev_manager_get_rfkill_state (priv->udev_mgr);
+	ipw_state = nm_manager_get_ipw_rfkill_state (self);
+
+	/* The composite state is the "worst" of either udev or ipw states */
+	if (udev_state == RFKILL_HARD_BLOCKED || ipw_state == RFKILL_HARD_BLOCKED)
+		composite = RFKILL_HARD_BLOCKED;
+	else if (udev_state == RFKILL_SOFT_BLOCKED || ipw_state == RFKILL_SOFT_BLOCKED)
+		composite = RFKILL_SOFT_BLOCKED;
+	else
+		composite = RFKILL_UNBLOCKED;
+
+	switch (composite) {
+	case RFKILL_UNBLOCKED:
+		new_we = TRUE;
+		new_whe = TRUE;
+		break;
+	case RFKILL_SOFT_BLOCKED:
+		new_we = FALSE;
+		new_whe = TRUE;
+		break;
+	case RFKILL_HARD_BLOCKED:
+		new_we = FALSE;
+		new_whe = FALSE;
+		break;
+	default:
+		break;
+	}
+
+	nm_info ("Wireless now %s by radio killswitch",
+	         (new_we && new_whe) ? "enabled" : "disabled");
+	if (new_whe != priv->wireless_hw_enabled) {
+		priv->wireless_hw_enabled = new_whe;
+		g_object_notify (G_OBJECT (self), NM_MANAGER_WIRELESS_HARDWARE_ENABLED);
+	}
+	manager_set_wireless_enabled (self, new_we);
+}
+
+static void
+manager_ipw_rfkill_state_changed (NMDeviceWifi *device,
+                                  GParamSpec *pspec,
+                                  gpointer user_data)
+{
+	nm_manager_rfkill_update (NM_MANAGER (user_data));
+}
+
 static void
 add_device (NMManager *self, NMDevice *device)
 {
@@ -1286,15 +1355,25 @@ add_device (NMManager *self, NMDevice *device)
 					  G_CALLBACK (manager_device_state_changed),
 					  self);
 
-	/* Attach to the access-point-added signal so that the manager can fill
-	 * non-SSID-broadcasting APs with an SSID.
-	 */
 	if (NM_IS_DEVICE_WIFI (device)) {
+		/* Attach to the access-point-added signal so that the manager can fill
+		 * non-SSID-broadcasting APs with an SSID.
+		 */
 		g_signal_connect (device, "hidden-ap-found",
 						  G_CALLBACK (manager_hidden_ap_found),
 						  self);
 
-		/* Set initial rfkill state */
+		/* Hook up rfkill handling for ipw-based cards until they get converted
+		 * to use the kernel's rfkill subsystem in 2.6.33.
+		 */
+		g_signal_connect (device, "notify::" NM_DEVICE_WIFI_IPW_RFKILL_STATE,
+		                  G_CALLBACK (manager_ipw_rfkill_state_changed),
+		                  self);
+
+		/* Update global rfkill state with this device's rfkill state, and
+		 * then set this device's rfkill state based on the global state.
+		 */
+		nm_manager_rfkill_update (self);
 		nm_device_wifi_set_enabled (NM_DEVICE_WIFI (device), priv->wireless_enabled);
 	}
 
@@ -1616,37 +1695,10 @@ udev_device_removed_cb (NMUdevManager *manager,
 
 static void
 udev_manager_rfkill_changed_cb (NMUdevManager *udev_mgr,
-                                RfKillState state,
+                                RfKillState udev_state,
                                 gpointer user_data)
 {
-	NMManager *self = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	gboolean new_we = TRUE, new_whe = TRUE;
-
-	switch (state) {
-	case RFKILL_UNBLOCKED:
-		new_we = TRUE;
-		new_whe = TRUE;
-		break;
-	case RFKILL_SOFT_BLOCKED:
-		new_we = FALSE;
-		new_whe = TRUE;
-		break;
-	case RFKILL_HARD_BLOCKED:
-		new_we = FALSE;
-		new_whe = FALSE;
-		break;
-	default:
-		break;
-	}	
-
-	nm_info ("Wireless now %s by radio killswitch",
-	         (new_we && new_whe) ? "enabled" : "disabled");
-	if (new_whe != priv->wireless_hw_enabled) {
-		priv->wireless_hw_enabled = new_whe;
-		g_object_notify (G_OBJECT (self), NM_MANAGER_WIRELESS_HARDWARE_ENABLED);
-	}
-	manager_set_wireless_enabled (self, new_we);
+	nm_manager_rfkill_update (NM_MANAGER (user_data));
 }
 
 GSList *
@@ -2499,9 +2551,21 @@ impl_manager_sleep (NMManager *self, gboolean sleep, GError **error)
 
 		unmanaged_specs = nm_sysconfig_settings_get_unmanaged_specs (priv->sys_settings);
 
+		/* Ensure rfkill state is up-to-date since we don't respond to state
+		 * changes during sleep.
+		 */
+		nm_manager_rfkill_update (self);
+
 		/* Re-manage managed devices */
 		for (iter = priv->devices; iter; iter = iter->next) {
 			NMDevice *device = NM_DEVICE (iter->data);
+			gboolean wifi_enabled = (priv->wireless_hw_enabled && priv->wireless_enabled);
+
+			/* enable/disable wireless devices since that we don't respond
+			 * to killswitch changes during sleep.
+			 */
+			if (NM_IS_DEVICE_WIFI (iter->data))
+				nm_device_wifi_set_enabled (NM_DEVICE_WIFI (iter->data), wifi_enabled);
 
 			nm_device_clear_autoconnect_inhibit (device);
 			if (nm_device_interface_spec_match_list (NM_DEVICE_INTERFACE (device), unmanaged_specs))

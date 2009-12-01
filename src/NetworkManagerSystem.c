@@ -926,9 +926,8 @@ static void flush_addresses (const char *iface, gboolean ipv4_only)
 
 	g_return_if_fail (iface != NULL);
 	iface_idx = nm_netlink_iface_to_index (iface);
-	g_return_if_fail (iface_idx >= 0);
-
-	sync_addresses (iface, iface_idx, ipv4_only ? AF_INET : 0, NULL, 0);
+	if (iface_idx >= 0)
+		sync_addresses (iface, iface_idx, ipv4_only ? AF_INET : 0, NULL, 0);
 }
 
 /*
@@ -1006,14 +1005,14 @@ static void flush_routes (const char *iface, gboolean ipv4_only)
 
 	g_return_if_fail (iface != NULL);
 	iface_idx = nm_netlink_iface_to_index (iface);
-	g_return_if_fail (iface_idx >= 0);
+	if (iface_idx >= 0) {
+		memset (&check_data, 0, sizeof (check_data));
+		check_data.iface = iface;
+		check_data.iface_idx = iface_idx;
+		check_data.family = ipv4_only ? AF_INET : 0;
 
-	memset (&check_data, 0, sizeof (check_data));
-	check_data.iface = iface;
-	check_data.iface_idx = iface_idx;
-	check_data.family = ipv4_only ? AF_INET : 0;
-
-	foreach_route (check_one_route, &check_data);
+		foreach_route (check_one_route, &check_data);
+	}
 }
 
 /*

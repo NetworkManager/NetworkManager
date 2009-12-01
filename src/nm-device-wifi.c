@@ -84,6 +84,7 @@ enum {
 	PROP_CAPABILITIES,
 	PROP_IFINDEX,
 	PROP_SCANNING,
+	PROP_IPW_RFKILL_STATE,
 
 	LAST_PROP
 };
@@ -144,6 +145,11 @@ struct _NMDeviceWifiPrivate {
 
 	struct ether_addr hw_addr;
 	guint32           ifindex;
+
+	/* Legacy rfkill for ipw2x00; will be fixed with 2.6.33 kernel */
+	char *            ipw_rfkill_path;
+	guint             ipw_rfkill_id;
+	RfKillState       ipw_rfkill_state;
 
 	GByteArray *      ssid;
 	gint8             invalid_strength_counter;
@@ -260,10 +266,54 @@ nm_wifi_error_get_type (void)
 	return etype;
 }
 
-static void
-access_point_removed (NMDeviceWifi *device, NMAccessPoint *ap)
+/* IPW rfkill handling (until 2.6.33) */
+RfKillState
+nm_device_wifi_get_ipw_rfkill_state (NMDeviceWifi *self)
 {
-	g_signal_emit (device, signals[ACCESS_POINT_REMOVED], 0, ap);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	char *contents = NULL;
+	RfKillState state = RFKILL_UNBLOCKED;
+
+	if (   priv->ipw_rfkill_path
+	    && g_file_get_contents (priv->ipw_rfkill_path, &contents, NULL, NULL)) {
+		contents = g_strstrip (contents);
+
+		/* 0 - RF kill not enabled
+		 * 1 - SW based RF kill active (sysfs)
+		 * 2 - HW based RF kill active
+		 * 3 - Both HW and SW baed RF kill active
+		 */
+		switch (contents[0]) {
+		case '1':
+			state = RFKILL_SOFT_BLOCKED;
+			break;
+		case '2':
+		case '3':
+			state = RFKILL_HARD_BLOCKED;
+			break;
+		case '0':
+		default:
+			break;
+		}
+		g_free (contents);
+	}
+
+	return state;
+}
+
+static gboolean
+ipw_rfkill_state_work (gpointer user_data)
+{
+	NMDeviceWifi *self = NM_DEVICE_WIFI (user_data);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	RfKillState old_state;
+
+	old_state = priv->ipw_rfkill_state;
+	priv->ipw_rfkill_state = nm_device_wifi_get_ipw_rfkill_state (self);
+	if (priv->ipw_rfkill_state != old_state)
+		g_object_notify (G_OBJECT (self), NM_DEVICE_WIFI_IPW_RFKILL_STATE);
+
+	return TRUE;
 }
 
 /*
@@ -559,6 +609,22 @@ constructor (GType type,
 	                                                  "state",
 	                                                  G_CALLBACK (supplicant_mgr_state_cb),
 	                                                  self);
+
+	/* The ipw2x00 drivers don't integrate with the kernel rfkill subsystem until
+	 * 2.6.33.  Thus all our nice libgudev magic is useless.  So we get to poll.
+	 *
+	 * FIXME: when 2.6.33 comes lands, we can do some sysfs parkour to figure out
+	 * if we need to poll or not by matching /sys/class/net/ethX/device to one
+	 * of the /sys/class/rfkill/rfkillX/device links.  If there's a match, we
+	 * don't have to poll.
+	 */
+	priv->ipw_rfkill_path = g_strdup_printf ("/sys/class/net/%s/device/rf_kill",
+	                                         nm_device_get_iface (NM_DEVICE (self)));
+	if (!g_file_test (priv->ipw_rfkill_path, G_FILE_TEST_IS_REGULAR)) {
+		g_free (priv->ipw_rfkill_path);
+		priv->ipw_rfkill_path = NULL;
+	}
+	priv->ipw_rfkill_state = nm_device_wifi_get_ipw_rfkill_state (self);
 
 	return object;
 
@@ -1013,6 +1079,12 @@ real_bring_up (NMDevice *dev)
 
 	priv->periodic_source_id = g_timeout_add_seconds (6, nm_device_wifi_periodic_update, self);
 	return TRUE;
+}
+
+static void
+access_point_removed (NMDeviceWifi *device, NMAccessPoint *ap)
+{
+	g_signal_emit (device, signals[ACCESS_POINT_REMOVED], 0, ap);
 }
 
 static void
@@ -1624,32 +1696,41 @@ nm_device_wifi_get_bssid (NMDeviceWifi *self,
 
 
 static gboolean
-can_scan (NMDeviceWifi *self)
+scanning_allowed (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	guint32 sup_state;
-	NMDeviceState dev_state;
-	gboolean is_disconnected = FALSE;
 	NMActRequest *req;
 
 	g_return_val_if_fail (priv->supplicant.iface != NULL, FALSE);
 
-	sup_state = nm_supplicant_interface_get_connection_state (priv->supplicant.iface);
-	dev_state = nm_device_get_state (NM_DEVICE (self));
-
-	/* Don't scan when unknown, unmanaged, or unavailable */
-	if (dev_state < NM_DEVICE_STATE_DISCONNECTED)
+	switch (nm_device_get_state (NM_DEVICE (self))) {
+	case NM_DEVICE_STATE_UNKNOWN:
+	case NM_DEVICE_STATE_UNMANAGED:
+	case NM_DEVICE_STATE_UNAVAILABLE:
+	case NM_DEVICE_STATE_PREPARE:
+	case NM_DEVICE_STATE_CONFIG:
+	case NM_DEVICE_STATE_NEED_AUTH:
+	case NM_DEVICE_STATE_IP_CONFIG:
+		/* Don't scan when unusable or activating */
 		return FALSE;
-
-	is_disconnected = (   sup_state == NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED
-	                   || sup_state == NM_SUPPLICANT_INTERFACE_CON_STATE_INACTIVE
-	                   || sup_state == NM_SUPPLICANT_INTERFACE_CON_STATE_SCANNING
-	                   || dev_state == NM_DEVICE_STATE_DISCONNECTED
-	                   || dev_state == NM_DEVICE_STATE_FAILED) ? TRUE : FALSE;
-
-	/* All wireless devices can scan when disconnected */
-	if (is_disconnected)
+	case NM_DEVICE_STATE_DISCONNECTED:
+	case NM_DEVICE_STATE_FAILED:
+		/* Can always scan when disconnected */
 		return TRUE;
+	case NM_DEVICE_STATE_ACTIVATED:
+		/* Need to do further checks when activated */
+		break;
+	}
+
+	/* Don't scan if the supplicant is busy */
+	sup_state = nm_supplicant_interface_get_connection_state (priv->supplicant.iface);
+	if (   sup_state == NM_SUPPLICANT_INTERFACE_CON_STATE_ASSOCIATING
+	    || sup_state == NM_SUPPLICANT_INTERFACE_CON_STATE_ASSOCIATED
+	    || sup_state == NM_SUPPLICANT_INTERFACE_CON_STATE_4WAY_HANDSHAKE
+	    || sup_state == NM_SUPPLICANT_INTERFACE_CON_STATE_GROUP_HANDSHAKE
+	    || nm_supplicant_interface_get_scanning (priv->supplicant.iface))
+		return FALSE;
 
 	/* Don't scan when a shared connection is active; it makes drivers mad */
 	req = nm_device_get_act_request (NM_DEVICE (self));
@@ -1671,10 +1752,10 @@ can_scan (NMDeviceWifi *self)
 }
 
 static gboolean
-scan_allowed_accumulator (GSignalInvocationHint *ihint,
-                          GValue *return_accu,
-                          const GValue *handler_return,
-                          gpointer data)
+scanning_allowed_accumulator (GSignalInvocationHint *ihint,
+                              GValue *return_accu,
+                              const GValue *handler_return,
+                              gpointer data)
 {
 	if (!g_value_get_boolean (handler_return))
 		g_value_set_boolean (return_accu, FALSE);
@@ -1682,7 +1763,7 @@ scan_allowed_accumulator (GSignalInvocationHint *ihint,
 }
 
 static gboolean
-scan_allowed (NMDeviceWifi *self)
+check_scanning_allowed (NMDeviceWifi *self)
 {
 	GValue instance = { 0, };
 	GValue retval = { 0, };
@@ -1707,7 +1788,7 @@ request_wireless_scan (gpointer user_data)
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	gboolean backoff = FALSE;
 
-	if (can_scan (self) && scan_allowed (self)) {
+	if (check_scanning_allowed (self)) {
 		if (nm_supplicant_interface_request_scan (priv->supplicant.iface)) {
 			/* success */
 			backoff = TRUE;
@@ -1785,7 +1866,7 @@ supplicant_iface_scan_request_result_cb (NMSupplicantInterface *iface,
                                          gboolean success,
                                          NMDeviceWifi *self)
 {
-	if (can_scan (self))
+	if (check_scanning_allowed (self))
 		schedule_scan (self, TRUE);
 }
 
@@ -2245,10 +2326,6 @@ supplicant_iface_state_cb_handler (gpointer user_data)
 	if (task->new_state == NM_SUPPLICANT_INTERFACE_STATE_READY) {
 		priv->scan_interval = SCAN_INTERVAL_MIN;
 
-		/* Request a scan to get latest results */
-		cancel_pending_scan (self);
-		request_wireless_scan (self);
-
 		/* If the interface can now be activated because the supplicant is now
 		 * available, transition to DISCONNECTED.
 		 */
@@ -2257,6 +2334,10 @@ supplicant_iface_state_cb_handler (gpointer user_data)
 			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED,
 			                         NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE);
 		}
+
+		/* Request a scan to get latest results */
+		cancel_pending_scan (self);
+		request_wireless_scan (self);
 	} else if (task->new_state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
 		cleanup_association_attempt (self, FALSE);
 		supplicant_interface_release (self);
@@ -3251,6 +3332,19 @@ device_state_changed (NMDevice *device,
 			supplicant_interface_release (self);
 	}
 
+	/* Start or stop the rfkill poll worker for ipw cards */
+	if (priv->ipw_rfkill_path) {
+		if (new_state > NM_DEVICE_STATE_UNMANAGED) {
+			if (!priv->ipw_rfkill_id)
+				priv->ipw_rfkill_id = g_timeout_add_seconds (3, ipw_rfkill_state_work, self);
+		} else if (new_state <= NM_DEVICE_STATE_UNMANAGED) {
+			if (priv->ipw_rfkill_id) {
+				g_source_remove (priv->ipw_rfkill_id);
+				priv->ipw_rfkill_id = 0;
+			}
+		}
+	}
+
 	switch (new_state) {
 	case NM_DEVICE_STATE_UNMANAGED:
 		clear_aps = TRUE;
@@ -3360,14 +3454,12 @@ nm_device_wifi_set_enabled (NMDeviceWifi *self, gboolean enabled)
 		/* Wait for some drivers like ipw3945 to come back to life */
 		success = wireless_get_range (self, &range, NULL);
 
-		if (!priv->supplicant.iface)
-			supplicant_interface_acquire (self);
+		/* iface should be NULL here, but handle it anyway if it's not */
+		g_warn_if_fail (priv->supplicant.iface == NULL);
+		if (priv->supplicant.iface)
+			supplicant_interface_release (self);
 
-		if (priv->supplicant.iface) {
-			nm_device_state_changed (NM_DEVICE (self),
-			                         NM_DEVICE_STATE_DISCONNECTED,
-			                         NM_DEVICE_STATE_REASON_NONE);
-		}
+		supplicant_interface_acquire (self);
 	} else {
 		nm_device_state_changed (NM_DEVICE (self),
 		                         NM_DEVICE_STATE_UNAVAILABLE,
@@ -3449,6 +3541,12 @@ dispose (GObject *object)
 	set_current_ap (self, NULL);
 	remove_all_aps (self);
 
+	g_free (priv->ipw_rfkill_path);
+	if (priv->ipw_rfkill_id) {
+		g_source_remove (priv->ipw_rfkill_id);
+		priv->ipw_rfkill_id = 0;
+	}
+
 	G_OBJECT_CLASS (nm_device_wifi_parent_class)->dispose (object);
 }
 
@@ -3486,6 +3584,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_SCANNING:
 		g_value_set_boolean (value, nm_supplicant_interface_get_scanning (priv->supplicant.iface));
 		break;
+	case PROP_IPW_RFKILL_STATE:
+		g_value_set_uint (value, nm_device_wifi_get_ipw_rfkill_state (device));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -3502,6 +3603,10 @@ set_property (GObject *object, guint prop_id,
 	case PROP_IFINDEX:
 		/* construct-only */
 		priv->ifindex = g_value_get_uint (value);
+		break;
+	case PROP_IPW_RFKILL_STATE:
+		/* construct only */
+		priv->ipw_rfkill_state = g_value_get_uint (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -3545,6 +3650,8 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->deactivate_quickly = real_deactivate_quickly;
 	parent_class->can_interrupt_activation = real_can_interrupt_activation;
 	parent_class->spec_match_list = spec_match_list;
+
+	klass->scanning_allowed = scanning_allowed;
 
 	/* Properties */
 	g_object_class_install_property (object_class, PROP_HW_ADDRESS,
@@ -3598,6 +3705,13 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		                   FALSE,
 		                   G_PARAM_READABLE | NM_PROPERTY_PARAM_NO_EXPORT));
 
+	g_object_class_install_property (object_class, PROP_IPW_RFKILL_STATE,
+		g_param_spec_uint (NM_DEVICE_WIFI_IPW_RFKILL_STATE,
+		                   "IpwRfkillState",
+		                   "ipw rf-kill state",
+		                   RFKILL_UNBLOCKED, RFKILL_HARD_BLOCKED, RFKILL_UNBLOCKED,
+		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
+
 	/* Signals */
 	signals[ACCESS_POINT_ADDED] =
 		g_signal_new ("access-point-added",
@@ -3637,8 +3751,8 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		g_signal_new ("scanning-allowed",
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
-		              0,
-		              scan_allowed_accumulator, NULL,
+		              G_STRUCT_OFFSET (NMDeviceWifiClass, scanning_allowed),
+		              scanning_allowed_accumulator, NULL,
 		              _nm_marshal_BOOLEAN__VOID,
 		              G_TYPE_BOOLEAN, 0);
 

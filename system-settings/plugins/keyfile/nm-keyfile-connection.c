@@ -131,7 +131,6 @@ constructor (GType type,
 	NMKeyfileConnectionPrivate *priv;
 	NMSettingConnection *s_con;
 	NMConnection *tmp;
-	GHashTable *settings;
 
 	object = G_OBJECT_CLASS (nm_keyfile_connection_parent_class)->constructor (type, n_construct_params, construct_params);
 
@@ -148,9 +147,7 @@ constructor (GType type,
 		return NULL;
 	}
 	
-	settings = nm_connection_to_hash (tmp);
-	nm_connection_replace_settings (NM_CONNECTION (object), settings, NULL);
-	g_hash_table_destroy (settings);
+	nm_sysconfig_connection_update (NM_SYSCONFIG_CONNECTION (object), tmp, FALSE, NULL);
 	g_object_unref (tmp);
 
 	/* if for some reason the connection didn't have a UUID, add one */

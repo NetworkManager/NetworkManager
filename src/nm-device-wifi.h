@@ -26,7 +26,7 @@
 #include <dbus/dbus.h>
 #include <net/ethernet.h>
 
-
+#include "nm-rfkill.h"
 #include "nm-device.h"
 #include "NetworkManagerAP.h"
 
@@ -49,6 +49,7 @@ G_BEGIN_DECLS
 #define NM_DEVICE_WIFI_CAPABILITIES        "wireless-capabilities"
 #define NM_DEVICE_WIFI_IFINDEX             "ifindex"
 #define NM_DEVICE_WIFI_SCANNING            "scanning"
+#define NM_DEVICE_WIFI_IPW_RFKILL_STATE    "ipw-rfkill-state"
 
 #ifndef NM_DEVICE_WIFI_DEFINED
 #define NM_DEVICE_WIFI_DEFINED
@@ -75,6 +76,7 @@ struct _NMDeviceWifiClass
 	void (*access_point_removed) (NMDeviceWifi *device, NMAccessPoint *ap);
 	void (*hidden_ap_found)      (NMDeviceWifi *device, NMAccessPoint *ap);
 	void (*properties_changed)   (NMDeviceWifi *device, GHashTable *properties);
+	gboolean (*scanning_allowed) (NMDeviceWifi *device);
 };
 
 
@@ -103,6 +105,8 @@ NMAccessPoint * nm_device_wifi_get_activation_ap (NMDeviceWifi *self);
 void nm_device_wifi_set_enabled (NMDeviceWifi *self, gboolean enabled);
 
 guint32 nm_device_wifi_get_ifindex (NMDeviceWifi *self);
+
+RfKillState nm_device_wifi_get_ipw_rfkill_state (NMDeviceWifi *self);
 
 G_END_DECLS
 

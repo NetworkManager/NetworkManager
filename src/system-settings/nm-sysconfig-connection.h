@@ -43,6 +43,14 @@ typedef struct {
 
 GType nm_sysconfig_connection_get_type (void);
 
+/* Called by a system-settings plugin to update a connection is out of sync
+ * with it's backing storage.
+ */
+gboolean nm_sysconfig_connection_update (NMSysconfigConnection *self,
+                                         NMConnection *new_settings,
+                                         gboolean signal_update,
+                                         GError **error);
+
 G_END_DECLS
 
 #endif /* NM_SYSCONFIG_CONNECTION_H */

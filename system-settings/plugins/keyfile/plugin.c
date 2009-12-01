@@ -123,26 +123,24 @@ find_by_uuid (gpointer key, gpointer data, gpointer user_data)
 }
 
 static void
-update_connection_settings (NMConnection *orig,
-                            NMConnection *new)
+update_connection_settings (NMKeyfileConnection *orig,
+                            NMKeyfileConnection *new)
 {
-	GHashTable *new_settings;
 	GError *error = NULL;
 
-	new_settings = nm_connection_to_hash (new);
-	if (nm_connection_replace_settings (orig, new_settings, &error))
-		nm_settings_connection_interface_emit_updated (NM_SETTINGS_CONNECTION_INTERFACE (orig));
-	else {
+	if (!nm_sysconfig_connection_update (NM_SYSCONFIG_CONNECTION (orig),
+	                                     NM_CONNECTION (new),
+	                                     TRUE,
+	                                     &error)) {
 		g_warning ("%s: '%s' / '%s' invalid: %d",
 		           __func__,
 		           error ? g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)) : "(none)",
 		           (error && error->message) ? error->message : "(none)",
 		           error ? error->code : -1);
 		g_clear_error (&error);
+
 		g_signal_emit_by_name (orig, "removed");
 	}
-
-	g_hash_table_destroy (new_settings);
 }
 
 /* Monitoring */
@@ -180,7 +178,7 @@ dir_changed (GFileMonitor *monitor,
 
 			tmp = (NMKeyfileConnection *) nm_keyfile_connection_new (name);
 			if (tmp) {
-				update_connection_settings (NM_CONNECTION (connection), NM_CONNECTION (tmp));
+				update_connection_settings (connection, tmp);
 				g_object_unref (tmp);
 			}
 		} else {
@@ -219,8 +217,7 @@ dir_changed (GFileMonitor *monitor,
 					/* Updating settings should update the NMKeyfileConnection's
 					 * filename property too.
 					 */
-					update_connection_settings (NM_CONNECTION (found),
-					                            NM_CONNECTION (connection));
+					update_connection_settings (found, connection);
 
 					/* Re-insert the connection back into the hash with the new filename */
 					g_hash_table_insert (priv->hash,
