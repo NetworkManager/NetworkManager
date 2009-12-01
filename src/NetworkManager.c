@@ -355,7 +355,7 @@ parse_state_file (const char *filename,
 
 			return ret;
 		} else {
-			g_set_error_literal (error, tmp_error->domain, tmp_error->code, tmp_error->message);
+			g_set_error (error, tmp_error->domain, tmp_error->code, "%s", tmp_error->message);
 			g_clear_error (&tmp_error);
 		}
 
@@ -368,7 +368,7 @@ parse_state_file (const char *filename,
 	 */
 	net = g_key_file_get_boolean (state_file, "main", "NetworkingEnabled", &tmp_error);
 	if (tmp_error)
-		g_set_error_literal (error, tmp_error->domain, tmp_error->code, tmp_error->message);
+		g_set_error (error, tmp_error->domain, tmp_error->code, "%s", tmp_error->message);
 	else
 		*net_enabled = net;
 	g_clear_error (&tmp_error);
@@ -376,7 +376,7 @@ parse_state_file (const char *filename,
 	wifi = g_key_file_get_boolean (state_file, "main", "WirelessEnabled", error);
 	if (tmp_error) {
 		g_clear_error (error);
-		g_set_error_literal (error, tmp_error->domain, tmp_error->code, tmp_error->message);
+		g_set_error (error, tmp_error->domain, tmp_error->code, "%s", tmp_error->message);
 	} else
 		*wifi_enabled = wifi;
 	g_clear_error (&tmp_error);
