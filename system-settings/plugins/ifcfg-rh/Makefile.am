@@ -11,8 +11,6 @@ libifcfg_rh_io_la_SOURCES = \
 	reader.h \
 	writer.c \
 	writer.h \
-	sha1.c \
-	sha1.h \
 	errors.c \
 	common.h \
 	utils.c \

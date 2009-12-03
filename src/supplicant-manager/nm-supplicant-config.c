@@ -35,8 +35,6 @@
 #include "nm-setting.h"
 #include "NetworkManagerUtils.h"
 
-#include "gnome-keyring-md5.h"
-
 static char *hexstr2bin (const char *hex, size_t len);
 
 #define NM_SUPPLICANT_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
@@ -502,24 +500,34 @@ get_blob_id (const char *name, const char *seed_uid)
 	}
 
 
-static unsigned char *
-wep128_passphrase_hash (const char *input, size_t input_len, size_t *out_len)
+static gboolean
+wep128_passphrase_hash (const char *input,
+                        size_t input_len,
+                        guint8 *out_digest,
+                        size_t *out_digest_len)
 {
-	char md5_data[65];
-	unsigned char *digest;
+	GChecksum *sum;
+	guint8 data[64];
 	int i;
 
-	*out_len = 16;
-	digest = g_malloc0 (*out_len);
+	g_return_val_if_fail (out_digest != NULL, FALSE);
+	g_return_val_if_fail (out_digest_len != NULL, FALSE);
+	g_return_val_if_fail (*out_digest_len >= 16, FALSE);
 
-	/* Get at least 64 bytes */
-	for (i = 0; i < 64; i++)
-		md5_data[i] = input[i % input_len];
+	/* Get at least 64 bytes by repeating the passphrase into the buffer */
+	for (i = 0; i < sizeof (data); i++)
+		data[i] = input[i % input_len];
 
-	/* Null terminate md5 seed data and hash it */
-	md5_data[64] = 0;
-	gnome_keyring_md5_string (md5_data, digest);
-	return digest;
+	sum = g_checksum_new (G_CHECKSUM_MD5);
+	g_assert (sum);
+	g_checksum_update (sum, data, sizeof (data));
+	g_checksum_get_digest (sum, out_digest, out_digest_len);
+	g_checksum_free (sum);
+
+	g_assert (*out_digest_len == 16);
+	/* WEP104 keys are 13 bytes in length (26 hex characters) */
+	*out_digest_len = 13;
+	return TRUE;
 }
 
 static gboolean
@@ -555,12 +563,12 @@ add_wep_key (NMSupplicantConfig *self,
 			return FALSE;
 		}
 	} else if (wep_type == NM_WEP_KEY_TYPE_PASSPHRASE) {
-		char *digest;
-		size_t digest_len;
+		guint8 digest[16];
+		size_t digest_len = sizeof (digest);
 
-		digest = (char *) wep128_passphrase_hash (key, key_len, &digest_len);
-		success = nm_supplicant_config_add_option (self, name, digest, 13, TRUE);
-		g_free (digest);
+		success = wep128_passphrase_hash (key, key_len, digest, &digest_len);
+		if (success)
+			success = nm_supplicant_config_add_option (self, name, (const char *) digest, digest_len, TRUE);
 		if (!success) {
 			nm_warning ("Error adding %s to supplicant config.", name);
 			return FALSE;
