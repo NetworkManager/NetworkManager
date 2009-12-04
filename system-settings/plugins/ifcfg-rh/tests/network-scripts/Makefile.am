@@ -15,6 +15,7 @@ EXTRA_DIST = \
 	keys-test-wired-8021x-peap-mschapv2 \
 	ifcfg-test-onboot-no \
 	ifcfg-test-wifi-open \
+	ifcfg-test-wifi-open-auto \
 	ifcfg-test-wifi-open-ssid-quoted \
 	ifcfg-test-wifi-open-ssid-long-quoted \
 	ifcfg-test-wifi-open-ssid-hex \
