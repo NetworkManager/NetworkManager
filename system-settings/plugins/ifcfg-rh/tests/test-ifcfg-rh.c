@@ -1584,6 +1584,80 @@ test_read_wifi_open (void)
 	g_object_unref (connection);
 }
 
+#define TEST_IFCFG_WIFI_OPEN_AUTO TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-auto"
+
+static void
+test_read_wifi_open_auto (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wireless;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const char *expected_id = "System blahblah (test-wifi-open-auto)";
+	const char *expected_mode = "infrastructure";
+
+	connection = connection_from_file (TEST_IFCFG_WIFI_OPEN_AUTO,
+	                                   NULL,
+	                                   TYPE_WIRELESS,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "wifi-open-auto-read", "failed to read %s: %s", TEST_IFCFG_WIFI_OPEN_AUTO, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wifi-open-auto-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_OPEN_AUTO, error->message);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "wifi-open-auto-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_OPEN_AUTO,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "wifi-open-auto-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_OPEN_AUTO,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_id) == 0,
+	        "wifi-open-auto-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_OPEN_AUTO,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+	/* ===== WIRELESS SETTING ===== */
+
+	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	ASSERT (s_wireless != NULL,
+	        "wifi-open-auto-verify-wireless", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_OPEN_AUTO,
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+
+	tmp = nm_setting_wireless_get_mode (s_wireless);
+	ASSERT (tmp != NULL,
+	        "wifi-open-auto-verify-wireless", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_OPEN_AUTO,
+	        NM_SETTING_WIRELESS_SETTING_NAME,
+	        NM_SETTING_WIRELESS_MODE);
+	ASSERT (strcmp (tmp, expected_mode) == 0,
+	        "wifi-open-auto-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_OPEN_AUTO,
+	        NM_SETTING_WIRELESS_SETTING_NAME,
+	        NM_SETTING_WIRELESS_MODE);
+
+	g_object_unref (connection);
+}
+
 #define TEST_IFCFG_WIFI_OPEN_SSID_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-hex"
 
 static void
@@ -5974,6 +6048,7 @@ int main (int argc, char **argv)
 	test_read_onboot_no ();
 	test_read_wired_8021x_peap_mschapv2 ();
 	test_read_wifi_open ();
+	test_read_wifi_open_auto ();
 	test_read_wifi_open_ssid_hex ();
 	test_read_wifi_open_ssid_bad (TEST_IFCFG_WIFI_OPEN_SSID_BAD_HEX, "wifi-open-ssid-bad-hex-read");
 	test_read_wifi_open_ssid_bad (TEST_IFCFG_WIFI_OPEN_SSID_LONG_HEX, "wifi-open-ssid-long-hex-read");
