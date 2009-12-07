@@ -324,14 +324,266 @@ error:
 	return addr;
 }
 
+static NMIP4Route *
+read_one_ip4_route (shvarFile *ifcfg,
+                    const char *network_file,
+                    guint32 which,
+                    GError **error)
+{
+	NMIP4Route *route;
+	char *ip_tag, *netmask_tag, *gw_tag, *metric_tag, *value;
+	guint32 tmp;
+	gboolean success = FALSE;
+
+	g_return_val_if_fail (ifcfg != NULL, NULL);
+	g_return_val_if_fail (network_file != NULL, NULL);
+	g_return_val_if_fail (which >= 0, NULL);
+
+	route = nm_ip4_route_new ();
+
+	ip_tag = g_strdup_printf ("ADDRESS%u", which);
+	netmask_tag = g_strdup_printf ("NETMASK%u", which);
+	gw_tag = g_strdup_printf ("GATEWAY%u", which);
+	metric_tag = g_strdup_printf ("METRIC%u", which);
+
+	/* Destination */
+	if (!read_ip4_address (ifcfg, ip_tag, &tmp, error))
+		goto out;
+	if (!tmp) {
+		/* Check whether IP is missing or 0.0.0.0 */
+		char *val;
+		val = svGetValue (ifcfg, ip_tag, FALSE);
+		if (!val) {
+			nm_ip4_route_unref (route);
+			route = NULL;
+			success = TRUE;  /* done */
+			goto out;
+		}
+		g_free (val);
+	}
+	nm_ip4_route_set_dest (route, tmp);
+
+	/* Next hop */
+	if (!read_ip4_address (ifcfg, gw_tag, &tmp, error))
+		goto out;
+	if (!tmp) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Missing or invalid IP4 gateway address '%d'",
+		             tmp);
+		goto out;
+	}
+	nm_ip4_route_set_next_hop (route, tmp);
+
+	/* Prefix */
+	if (!read_ip4_address (ifcfg, netmask_tag, &tmp, error))
+		goto out;
+	nm_ip4_route_set_prefix (route, nm_utils_ip4_netmask_to_prefix (tmp));
+
+	/* Validate the prefix */
+	if (  !nm_ip4_route_get_prefix (route)
+	    || nm_ip4_route_get_prefix (route) > 32) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Missing or invalid IP4 prefix '%d'",
+		             nm_ip4_route_get_prefix (route));
+		goto out;
+	}
+
+	/* Metric */
+	value = svGetValue (ifcfg, metric_tag, FALSE);
+	if (value) {
+		long int metric;
+
+		errno = 0;
+		metric = strtol (value, NULL, 10);
+		if (errno || metric < 0) {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "Invalid IP4 route metric '%s'", value);
+			g_free (value);
+			goto out;
+		}
+		nm_ip4_route_set_metric (route, (guint32) metric);
+		g_free (value);
+	}
+
+	success = TRUE;
+
+out:
+	if (!success) {
+		nm_ip4_route_unref (route);
+		route = NULL;
+	}
+
+	g_free (ip_tag);
+	g_free (netmask_tag);
+	g_free (gw_tag);
+	g_free (metric_tag);
+	return route;
+}
+
+static gboolean
+read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError **error)
+{
+	char *contents = NULL;
+	gsize len = 0;
+	char **lines = NULL, **iter;
+	GRegex *regex_to1, *regex_to2, *regex_via, *regex_metric;
+	GMatchInfo *match_info;
+	NMIP4Route *route;
+	struct in_addr ip4_addr;
+	char *dest = NULL, *prefix = NULL, *next_hop = NULL, *metric = NULL;
+	long int prefix_int, metric_int;
+	gboolean success = FALSE;
+
+	const char *pattern_empty = "^\\s*(\\#.*)?$";
+	const char *pattern_to1 = "^\\s*(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|default)"  /* IP or 'default' keyword */
+	                          "(?:/(\\d{1,2}))?";                                         /* optional prefix */
+	const char *pattern_to2 = "to\\s+(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|default)" /* IP or 'default' keyword */
+	                          "(?:/(\\d{1,2}))?";                                         /* optional prefix */
+	const char *pattern_via = "via\\s+(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})";       /* IP of gateway */
+	const char *pattern_metric = "metric\\s+(\\d+)";                                      /* metric */
+
+	g_return_val_if_fail (filename != NULL, FALSE);
+	g_return_val_if_fail (s_ip4 != NULL, FALSE);
+	g_return_val_if_fail (error != NULL, FALSE);
+	g_return_val_if_fail (*error == NULL, FALSE);
+
+	/* Read the route file */
+	if (!g_file_get_contents (filename, &contents, &len, NULL))
+		return FALSE;
+
+	if (len == 0) {
+		g_free (contents);
+		return FALSE;
+	}
+
+	/* Create regexes for pieces to be matched */
+	regex_to1 = g_regex_new (pattern_to1, 0, 0, NULL);
+	regex_to2 = g_regex_new (pattern_to2, 0, 0, NULL);
+	regex_via = g_regex_new (pattern_via, 0, 0, NULL);
+	regex_metric = g_regex_new (pattern_metric, 0, 0, NULL);
+
+	/* New NMIP4Route structure */
+	route = nm_ip4_route_new ();
+
+	/* Iterate through file lines */
+	lines = g_strsplit_set (contents, "\n\r", -1);
+	for (iter = lines; iter && *iter; iter++) {
+
+		/* Skip empty lines */
+		if (g_regex_match_simple (pattern_empty, *iter, 0, 0))
+			continue;
+
+		/* Destination */
+		g_regex_match (regex_to1, *iter, 0, &match_info);
+		if (!g_match_info_matches (match_info)) {
+			g_match_info_free (match_info);
+			g_regex_match (regex_to2, *iter, 0, &match_info);
+			if (!g_match_info_matches (match_info)) {
+				g_match_info_free (match_info);
+				g_set_error (error, ifcfg_plugin_error_quark (), 0,
+					     "Missing IP4 route destination address in record: '%s'", *iter);
+				goto error;
+			}
+		}
+		dest = g_match_info_fetch (match_info, 1);
+		g_match_info_free (match_info);
+		if (!strcmp (dest, "default"))
+			strcpy (dest, "0.0.0.0");
+		if (inet_pton (AF_INET, dest, &ip4_addr) != 1) {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+				     "Invalid IP4 route destination address '%s'", dest);
+			g_free (dest);
+			goto error;
+		}
+		nm_ip4_route_set_dest (route, ip4_addr.s_addr);
+		g_free (dest);
+
+		/* Prefix - is optional; 32 if missing */
+		prefix = g_match_info_fetch (match_info, 2);
+		prefix_int = 32;
+		if (prefix) {
+			errno = 0;
+			prefix_int = strtol (prefix, NULL, 10);
+			if (errno || prefix_int < 0 || prefix_int > 32) {
+				g_set_error (error, ifcfg_plugin_error_quark (), 0,
+					     "Invalid IP4 route destination prefix '%s'", prefix);
+				g_free (prefix);
+				goto error;
+			}
+		}
+
+		nm_ip4_route_set_prefix (route, (guint32) prefix_int);
+		g_free (prefix);
+
+		/* Next hop */
+		g_regex_match (regex_via, *iter, 0, &match_info);
+		if (!g_match_info_matches (match_info)) {
+			g_match_info_free (match_info);
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "Missing IP4 route gateway address in record: '%s'", *iter);
+			goto error;
+		}
+		next_hop = g_match_info_fetch (match_info, 1);
+		g_match_info_free (match_info);
+		if (inet_pton (AF_INET, next_hop, &ip4_addr) != 1) {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "Invalid IP4 route gateway address '%s'", next_hop);
+			g_free (next_hop);
+			goto error;
+		}
+		nm_ip4_route_set_next_hop (route, ip4_addr.s_addr);
+		g_free (next_hop);
+
+		/* Metric */
+		g_regex_match (regex_metric, *iter, 0, &match_info);
+		metric_int = 0;
+		if (g_match_info_matches (match_info)) {
+			metric = g_match_info_fetch (match_info, 1);
+			errno = 0;
+			metric_int = strtol (metric, NULL, 10);
+			if (errno || metric_int < 0) {
+				g_match_info_free (match_info);
+				g_set_error (error, ifcfg_plugin_error_quark (), 0,
+				             "Invalid IP4 route metric '%s'", metric);
+				g_free (metric);
+				goto error;
+			}
+			g_free (metric);
+		}
+
+		nm_ip4_route_set_metric (route, (guint32) metric_int);
+		g_match_info_free (match_info);
+
+		if (!nm_setting_ip4_config_add_route (s_ip4, route))
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate IP4 route");
+
+	}
+
+	success = TRUE;
+
+error:
+	g_free (contents);
+	g_strfreev (lines);
+	nm_ip4_route_unref (route);
+	g_regex_unref (regex_to1);
+	g_regex_unref (regex_to2);
+	g_regex_unref (regex_via);
+	g_regex_unref (regex_metric);
+
+	return success;
+}
+
+
 static NMSetting *
 make_ip4_setting (shvarFile *ifcfg, const char *network_file, GError **error)
 {
 	NMSettingIP4Config *s_ip4 = NULL;
 	char *value = NULL;
+	char *route_path = NULL;
 	char *method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
 	guint32 i;
 	shvarFile *network_ifcfg;
+	shvarFile *route_ifcfg;
 	gboolean never_default = FALSE, tmp_success;
 
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
@@ -483,6 +735,43 @@ make_ip4_setting (shvarFile *ifcfg, const char *network_file, GError **error)
 			g_strfreev (searches);
 		}
 		g_free (value);
+	}
+
+	/* Static routes  - route-<name> file */
+	route_path = utils_get_route_path (ifcfg->fileName);
+	if (!route_path) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Could not get route file path for '%s'", ifcfg->fileName);
+		goto error;
+	}
+
+	/* First test new/legacy syntax */
+	if (utils_has_route_file_new_syntax (route_path)) {
+		/* Parse route file in new syntax */
+		g_free (route_path);
+		route_ifcfg = utils_get_route_ifcfg (ifcfg->fileName, FALSE);
+		if (route_ifcfg) {
+			NMIP4Route *route;
+			for (i = 0; i < 256; i++) {
+				route = read_one_ip4_route (route_ifcfg, network_file, i, error);
+				if (error && *error) {
+					svCloseFile (route_ifcfg);
+					goto error;
+				}
+				if (!route)
+					break;
+
+				if (!nm_setting_ip4_config_add_route (s_ip4, route))
+					PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate IP4 route");
+				nm_ip4_route_unref (route);
+			}
+			svCloseFile (route_ifcfg);
+		}
+	} else {
+		read_route_file_legacy (route_path, s_ip4, error);
+		g_free (route_path);
+		if (error && *error)
+			goto error;
 	}
 
 	/* Legacy value NM used for a while but is incorrect (rh #459370) */
@@ -2041,6 +2330,7 @@ connection_from_file (const char *filename,
                       const char *test_type,  /* for unit tests only */
                       gboolean *ignored,
                       char **keyfile,
+                      char **routefile,
                       GError **error,
                       gboolean *ignore_error)
 {
@@ -2055,6 +2345,8 @@ connection_from_file (const char *filename,
 	g_return_val_if_fail (ignored != NULL, NULL);
 	g_return_val_if_fail (keyfile != NULL, NULL);
 	g_return_val_if_fail (*keyfile == NULL, NULL);
+	g_return_val_if_fail (routefile != NULL, NULL);
+	g_return_val_if_fail (*routefile == NULL, NULL);
 
 	/* Non-NULL only for unit tests; normally use /etc/sysconfig/network */
 	if (!network_file)
@@ -2156,6 +2448,7 @@ connection_from_file (const char *filename,
 	}
 
 	*keyfile = utils_get_keys_path (filename);
+	*routefile = utils_get_route_path (filename);
 
 done:
 	svCloseFile (parsed);

@@ -1,0 +1,7 @@
+# Test route file in legacy format; i.e. lines passed as argumet to "ip route add"
+
+
+21.31.41.0/24 via 9.9.9.9 metric 1
+	via 8.8.8.8 to 32.42.52.62
+ 43.53.0.0/16 metric 3 via 7.7.7.7 dev eth2
+

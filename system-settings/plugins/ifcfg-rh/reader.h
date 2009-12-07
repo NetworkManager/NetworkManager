@@ -31,6 +31,7 @@ NMConnection *connection_from_file (const char *filename,
                                     const char *test_type,
                                     gboolean *ignored,
                                     char **keyfile,
+                                    char **routefile,
                                     GError **error,
                                     gboolean *ignore_error);
 

@@ -35,9 +35,15 @@ char *utils_cert_path (const char *parent, const char *suffix);
 
 char *utils_get_ifcfg_name (const char *file);
 
+char *utils_get_extra_path (const char *parent, const char *tag);
 char *utils_get_keys_path (const char *parent);
+char *utils_get_route_path (const char *parent);
 
+shvarFile *utils_get_extra_ifcfg (const char *parent, const char *tag, gboolean should_create);
 shvarFile *utils_get_keys_ifcfg (const char *parent, gboolean should_create);
+shvarFile *utils_get_route_ifcfg (const char *parent, gboolean should_create);
+
+gboolean utils_has_route_file_new_syntax (const char *filename);
 
 #endif  /* _UTILS_H_ */
 

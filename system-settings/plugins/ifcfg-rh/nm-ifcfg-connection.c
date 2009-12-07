@@ -54,6 +54,9 @@ typedef struct {
 	char *keyfile;
 	int keyfile_wd;
 
+	char *routefile;
+	int routefile_wd;
+
 	char *udi;
 	gboolean unmanaged;
 
@@ -232,7 +235,7 @@ files_changed_cb (NMInotifyHelper *ih,
 	NMIfcfgConnection *self = NM_IFCFG_CONNECTION (user_data);
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (self);
 
-	if ((evt->wd != priv->file_wd) && (evt->wd != priv->keyfile_wd))
+	if ((evt->wd != priv->file_wd) && (evt->wd != priv->keyfile_wd) && (evt->wd != priv->routefile_wd))
 		return;
 
 	/* push the event up to the plugin */
@@ -252,11 +255,12 @@ nm_ifcfg_connection_new (const char *filename,
 	gboolean unmanaged = FALSE;
 	char *udi;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	NMInotifyHelper *ih;
 
 	g_return_val_if_fail (filename != NULL, NULL);
 
-	wrapped = connection_from_file (filename, NULL, NULL, &unmanaged, &keyfile, error, ignore_error);
+	wrapped = connection_from_file (filename, NULL, NULL, &unmanaged, &keyfile, &routefile, error, ignore_error);
 	if (!wrapped)
 		return NULL;
 
@@ -286,6 +290,9 @@ nm_ifcfg_connection_new (const char *filename,
 
 	priv->keyfile = keyfile;
 	priv->keyfile_wd = nm_inotify_helper_add_watch (ih, keyfile);
+
+	priv->routefile = routefile;
+	priv->routefile_wd = nm_inotify_helper_add_watch (ih, routefile);
 
 out:
 	g_object_unref (wrapped);
@@ -328,7 +335,7 @@ nm_ifcfg_connection_update (NMIfcfgConnection *self, GHashTable *new_settings, G
 	if (!nm_connection_replace_settings (connection, new_settings, error))
 		return FALSE;
 
-	return writer_update_connection (connection, IFCFG_DIR, priv->filename, priv->keyfile, error);
+	return writer_update_connection (connection, IFCFG_DIR, priv->filename, priv->keyfile, priv->routefile, error);
 }
 
 static gboolean
@@ -348,6 +355,8 @@ do_delete (NMExportedConnection *exported, GError **error)
 	g_unlink (priv->filename);
 	if (priv->keyfile)
 		g_unlink (priv->keyfile);
+	if (priv->routefile)
+		g_unlink (priv->routefile);
 
 	return TRUE;
 }
@@ -383,6 +392,10 @@ finalize (GObject *object)
 	g_free (priv->keyfile);
 	if (priv->keyfile_wd >= 0)
 		nm_inotify_helper_remove_watch (ih, priv->keyfile_wd);
+
+	g_free (priv->routefile);
+	if (priv->routefile_wd >= 0)
+		nm_inotify_helper_remove_watch (ih, priv->routefile_wd);
 
 	if (priv->hal_mgr) {
 		if (priv->daid)

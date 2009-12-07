@@ -35,6 +35,7 @@
 #include <nm-setting-8021x.h>
 #include <nm-setting-ip4-config.h>
 #include <nm-setting-pppoe.h>
+#include <nm-utils.h>
 
 #include "common.h"
 #include "shvar.h"
@@ -816,13 +817,72 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 }
 
 static gboolean
+write_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError **error)
+{
+	char dest[INET_ADDRSTRLEN];
+	char next_hop[INET_ADDRSTRLEN];
+	char **route_items;
+	char *route_contents;
+	NMIP4Route *route;
+	guint32 ip, prefix, metric;
+	guint32 i, num;
+	gboolean success = FALSE;
+
+	g_return_val_if_fail (filename != NULL, FALSE);
+	g_return_val_if_fail (s_ip4 != NULL, FALSE);
+	g_return_val_if_fail (error != NULL, FALSE);
+	g_return_val_if_fail (*error == NULL, FALSE);
+
+	num = nm_setting_ip4_config_get_num_routes (s_ip4);
+	if (num == 0)
+		return TRUE;
+
+	route_items = g_malloc0 (sizeof (char*) * (num + 1));
+	for (i = 0; i < num; i++) {
+		route = nm_setting_ip4_config_get_route (s_ip4, i);
+
+		memset (dest, 0, sizeof (dest));
+		ip = nm_ip4_route_get_dest (route);
+		inet_ntop (AF_INET, (const void *) &ip, &dest[0], sizeof (dest));
+
+		prefix = nm_ip4_route_get_prefix (route);
+
+		memset (next_hop, 0, sizeof (next_hop));
+		ip = nm_ip4_route_get_next_hop (route);
+		inet_ntop (AF_INET, (const void *) &ip, &next_hop[0], sizeof (next_hop));
+
+		metric = nm_ip4_route_get_metric (route);
+
+		route_items[i] = g_strdup_printf ("%s/%u via %s metric %u\n", dest, prefix, next_hop, metric);
+	}
+	route_items[num] = NULL;
+	route_contents = g_strjoinv (NULL, route_items);
+	g_strfreev (route_items);
+
+	if (!g_file_set_contents (filename, route_contents, -1, NULL)) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Writing route file '%s' failed", filename);
+		goto error;
+	}
+
+	success = TRUE;
+
+error:
+	g_free (route_contents);
+
+	return success;
+}
+
+static gboolean
 write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 {
 	NMSettingIP4Config *s_ip4;
 	const char *value;
-	char *addr_key, *prefix_key, *gw_key, *tmp;
+	char *addr_key, *prefix_key, *netmask_key, *gw_key, *metric_key, *tmp;
+	char *route_path = NULL;
 	guint32 i, num;
 	GString *searches;
+	gboolean success = FALSE;
 
 	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
 	if (!s_ip4) {
@@ -947,8 +1007,93 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 			svSetValue (ifcfg, "DHCP_CLIENT_ID", value, FALSE);
 	}
 
+	/* Static routes - route-<name> file */
+	route_path = utils_get_route_path (ifcfg->fileName);
+	if (!route_path) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Could not get route file path for '%s'", ifcfg->fileName);
+		goto out;
+	}
 
-	return TRUE;
+	if (utils_has_route_file_new_syntax (route_path)) {
+		shvarFile *routefile;
+
+		g_free (route_path);
+		routefile = utils_get_route_ifcfg (ifcfg->fileName, TRUE);
+		if (!routefile) {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "Could not create route file '%s'", routefile->fileName);
+			goto out;
+		}
+
+		num = nm_setting_ip4_config_get_num_routes (s_ip4);
+		for (i = 0; i < 256; i++) {
+			char buf[INET_ADDRSTRLEN];
+			NMIP4Route *route;
+			guint32 ip, metric;
+
+			addr_key = g_strdup_printf ("ADDRESS%d", i);
+			netmask_key = g_strdup_printf ("NETMASK%d", i);
+			gw_key = g_strdup_printf ("GATEWAY%d", i);
+			metric_key = g_strdup_printf ("METRIC%d", i);
+
+			if (i >= num) {
+				svSetValue (routefile, addr_key, NULL, FALSE);
+				svSetValue (routefile, netmask_key, NULL, FALSE);
+				svSetValue (routefile, gw_key, NULL, FALSE);
+				svSetValue (routefile, metric_key, NULL, FALSE);
+			} else {
+				route = nm_setting_ip4_config_get_route (s_ip4, i);
+
+				memset (buf, 0, sizeof (buf));
+				ip = nm_ip4_route_get_dest (route);
+				inet_ntop (AF_INET, (const void *) &ip, &buf[0], sizeof (buf));
+				svSetValue (routefile, addr_key, &buf[0], FALSE);
+
+				memset (buf, 0, sizeof (buf));
+				ip = nm_utils_ip4_prefix_to_netmask (nm_ip4_route_get_prefix (route));
+				inet_ntop (AF_INET, (const void *) &ip, &buf[0], sizeof (buf));
+				svSetValue (routefile, netmask_key, &buf[0], FALSE);
+
+				memset (buf, 0, sizeof (buf));
+				ip = nm_ip4_route_get_next_hop (route);
+				inet_ntop (AF_INET, (const void *) &ip, &buf[0], sizeof (buf));
+				svSetValue (routefile, gw_key, &buf[0], FALSE);
+
+				memset (buf, 0, sizeof (buf));
+				metric = nm_ip4_route_get_metric (route);
+				if (metric == 0)
+					svSetValue (routefile, metric_key, NULL, FALSE);
+				else {
+					tmp = g_strdup_printf ("%u", metric);
+					svSetValue (routefile, metric_key, tmp, FALSE);
+					g_free (tmp);
+				}
+			}
+
+			g_free (addr_key);
+			g_free (netmask_key);
+			g_free (gw_key);
+			g_free (metric_key);
+		}
+		if (svWriteFile (routefile, 0644)) {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "Could not update route file '%s'", routefile->fileName);
+			svCloseFile (routefile);
+			goto out;
+		}
+		svCloseFile (routefile);
+	} else {
+		write_route_file_legacy (route_path, s_ip4, error);
+		g_free (route_path);
+		if (error && *error)
+			goto out;
+	}
+
+	success = TRUE;
+
+out:
+	return success;
 }
 
 static char *
@@ -976,6 +1121,7 @@ write_connection (NMConnection *connection,
                   const char *ifcfg_dir,
                   const char *filename,
                   const char *keyfile,
+                  const char *routefile,
                   char **out_filename,
                   GError **error)
 {
@@ -1076,7 +1222,7 @@ writer_new_connection (NMConnection *connection,
                        char **out_filename,
                        GError **error)
 {
-	return write_connection (connection, ifcfg_dir, NULL, NULL, out_filename, error);
+	return write_connection (connection, ifcfg_dir, NULL, NULL, NULL, out_filename, error);
 }
 
 gboolean
@@ -1084,8 +1230,9 @@ writer_update_connection (NMConnection *connection,
                           const char *ifcfg_dir,
                           const char *filename,
                           const char *keyfile,
+                          const char *routefile,
                           GError **error)
 {
-	return write_connection (connection, ifcfg_dir, filename, keyfile, NULL, error);
+	return write_connection (connection, ifcfg_dir, filename, keyfile, routefile, NULL, error);
 }
 
