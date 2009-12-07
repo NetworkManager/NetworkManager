@@ -1851,6 +1851,11 @@ make_wireless_setting (shvarFile *ifcfg,
 			}
 
 			g_byte_array_free (array, TRUE);
+		} else if (!nm_controlled) {
+			/* If NM_CONTROLLED=no but there wasn't a MAC address, notify
+			 * the user that the device cannot be unmanaged.
+			 */
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: NM_CONTROLLED was false but HWADDR was missing; device will be managed");
 		}
 	} else {
 		g_object_unref (s_wireless);
@@ -2138,6 +2143,11 @@ make_wired_setting (shvarFile *ifcfg,
 			}
 
 			g_byte_array_free (mac, TRUE);
+		} else if (!nm_controlled) {
+			/* If NM_CONTROLLED=no but there wasn't a MAC address, notify
+			 * the user that the device cannot be unmanaged.
+			 */
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: NM_CONTROLLED was false but HWADDR was missing; device will be managed");
 		}
 	} else {
 		g_object_unref (s_wired);
