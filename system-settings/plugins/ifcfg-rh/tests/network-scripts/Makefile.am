@@ -42,7 +42,13 @@ EXTRA_DIST = \
 	test_ca_cert.pem \
 	test1_key_and_cert.pem \
 	ifcfg-test-ibft-dhcp \
-	ifcfg-test-ibft-static
+	ifcfg-test-ibft-static \
+	ifcfg-test-static-routes-legacy \
+	route-test-static-routes-legacy \
+	ifcfg-test-wired-static-routes \
+	route-test-wired-static-routes \
+	ifcfg-test-wired-static-routes-legacy \
+	route-test-wired-static-routes-legacy
 
 check-local:
 	@for f in $(EXTRA_DIST); do \
