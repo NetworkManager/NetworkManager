@@ -1576,7 +1576,7 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *self,
 	if (!value)
 		return TRUE;
 
-	/* First verify private key password */
+	/* Verify the key and the private key password */
 	data = crypto_get_private_key (value,
 	                               password,
 	                               &key_type,
@@ -1591,77 +1591,69 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *self,
 
 		return FALSE;
 	}
-	memset (data->data, 0, data->len);
-	g_byte_array_free (data, TRUE);
 
-	/* Regular file verification */
-	format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-	data = crypto_load_and_verify_certificate (value, &format, error);
-	if (data) {
-		/* wpa_supplicant can only use raw x509 CA certs */
-		switch (format) {
-		case NM_CRYPTO_FILE_FORMAT_RAW_KEY:
-			if (out_format)
-				*out_format = NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
-			break;
-		case NM_CRYPTO_FILE_FORMAT_X509:
-			if (out_format)
-				*out_format = NM_SETTING_802_1X_CK_FORMAT_X509;
-			break;
-		case NM_CRYPTO_FILE_FORMAT_PKCS12:
-			if (out_format)
-				*out_format = NM_SETTING_802_1X_CK_FORMAT_PKCS12;
-			break;
-		default:
-			g_byte_array_free (data, TRUE);
-			data = NULL;
-			g_set_error (error,
-			             NM_SETTING_802_1X_ERROR,
-			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_802_1X_PRIVATE_KEY);
-			break;
-		}
-
-		if (data) {
-			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-				priv->private_key = data;
-
-				/* Always update the private key for blob + pkcs12 since the
-				 * pkcs12 files are encrypted
-				 */
-				if (format == NM_CRYPTO_FILE_FORMAT_PKCS12)
-					priv->private_key_password = g_strdup (password);
-			} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
-				/* Add the path scheme tag to the front, then the fielname */
-				priv->private_key = g_byte_array_sized_new (strlen (value) + strlen (SCHEME_PATH) + 1);
-				g_byte_array_append (priv->private_key, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
-				g_byte_array_append (priv->private_key, (const guint8 *) value, strlen (value));
-				g_byte_array_append (priv->private_key, (const guint8 *) "\0", 1);
-
-				/* Always update the private key with paths since the key the
-				 * cert refers to is encrypted.
-				 */
-				priv->private_key_password = g_strdup (password);
-			} else
-				g_assert_not_reached ();
-
-			/* As required by NM and wpa_supplicant, set the client-cert
-			 * property to the same PKCS#12 data.
-			 */
-			if (format == NM_CRYPTO_FILE_FORMAT_PKCS12) {
-				if (priv->client_cert)
-					g_byte_array_free (priv->client_cert, TRUE);
-	
-				priv->client_cert = g_byte_array_sized_new (priv->private_key->len);
-				g_byte_array_append (priv->client_cert, priv->private_key->data, priv->private_key->len);
-			}
-		}
-	} else {
-		/* As a special case for private keys, even if the decrypt fails,
-		 * return the key's file type.
-		 */
-		if (out_format && crypto_is_pkcs12_file (value, NULL))
+	switch (format) {
+	case NM_CRYPTO_FILE_FORMAT_RAW_KEY:
+		if (out_format)
+			*out_format = NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
+		break;
+	case NM_CRYPTO_FILE_FORMAT_X509:
+		if (out_format)
+			*out_format = NM_SETTING_802_1X_CK_FORMAT_X509;
+		break;
+	case NM_CRYPTO_FILE_FORMAT_PKCS12:
+		if (out_format)
 			*out_format = NM_SETTING_802_1X_CK_FORMAT_PKCS12;
+		break;
+	default:
+		memset (data->data, 0, data->len);
+		g_byte_array_free (data, TRUE);
+		g_set_error (error,
+		             NM_SETTING_802_1X_ERROR,
+		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_802_1X_PRIVATE_KEY);
+		return FALSE;
+	}
+
+	g_assert (data);
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+		priv->private_key = data;
+		data = NULL;
+
+		/* Always update the private key for blob + pkcs12 since the
+		 * pkcs12 files are encrypted
+		 */
+		if (format == NM_CRYPTO_FILE_FORMAT_PKCS12)
+			priv->private_key_password = g_strdup (password);
+	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
+		/* Add the path scheme tag to the front, then the fielname */
+		priv->private_key = g_byte_array_sized_new (strlen (value) + strlen (SCHEME_PATH) + 1);
+		g_byte_array_append (priv->private_key, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
+		g_byte_array_append (priv->private_key, (const guint8 *) value, strlen (value));
+		g_byte_array_append (priv->private_key, (const guint8 *) "\0", 1);
+
+		/* Always update the private key with paths since the key the
+		 * cert refers to is encrypted.
+		 */
+		priv->private_key_password = g_strdup (password);
+	} else
+		g_assert_not_reached ();
+
+	/* Clear and free private key data if it's no longer needed */
+	if (data) {
+		memset (data->data, 0, data->len);
+		g_byte_array_free (data, TRUE);
+	}
+
+	/* As required by NM and wpa_supplicant, set the client-cert
+	 * property to the same PKCS#12 data.
+	 */
+	if (format == NM_CRYPTO_FILE_FORMAT_PKCS12) {
+		if (priv->client_cert)
+			g_byte_array_free (priv->client_cert, TRUE);
+
+		priv->client_cert = g_byte_array_sized_new (priv->private_key->len);
+		g_byte_array_append (priv->client_cert, priv->private_key->data, priv->private_key->len);
 	}
 
 	return priv->private_key != NULL;
@@ -1956,7 +1948,7 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
 	if (!value)
 		return TRUE;
 
-	/* First verify private key password */
+	/* Verify the key and the private key password */
 	data = crypto_get_private_key (value,
 	                               password,
 	                               &key_type,
@@ -1971,76 +1963,69 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
 
 		return FALSE;
 	}
-	memset (data->data, 0, data->len);
-	g_byte_array_free (data, TRUE);
 
-	format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-	data = crypto_load_and_verify_certificate (value, &format, error);
-	if (data) {
-		/* wpa_supplicant can only use raw x509 CA certs */
-		switch (format) {
-		case NM_CRYPTO_FILE_FORMAT_RAW_KEY:
-			if (out_format)
-				*out_format = NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
-			break;
-		case NM_CRYPTO_FILE_FORMAT_X509:
-			if (out_format)
-				*out_format = NM_SETTING_802_1X_CK_FORMAT_X509;
-			break;
-		case NM_CRYPTO_FILE_FORMAT_PKCS12:
-			if (out_format)
-				*out_format = NM_SETTING_802_1X_CK_FORMAT_PKCS12;
-			break;
-		default:
-			g_byte_array_free (data, TRUE);
-			data = NULL;
-			g_set_error (error,
-			             NM_SETTING_802_1X_ERROR,
-			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
-			break;
-		}
-
-		if (data) {
-			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-				priv->phase2_private_key = data;
-
-				/* Always update the private key for blob + pkcs12 since the
-				 * pkcs12 files are encrypted
-				 */
-				if (format == NM_CRYPTO_FILE_FORMAT_PKCS12)
-					priv->phase2_private_key_password = g_strdup (password);
-			} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
-				/* Add the path scheme tag to the front, then the fielname */
-				priv->phase2_private_key = g_byte_array_sized_new (strlen (value) + strlen (SCHEME_PATH) + 1);
-				g_byte_array_append (priv->phase2_private_key, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
-				g_byte_array_append (priv->phase2_private_key, (const guint8 *) value, strlen (value));
-				g_byte_array_append (priv->phase2_private_key, (const guint8 *) "\0", 1);
-
-				/* Always update the private key with paths since the key the
-				 * cert refers to is encrypted.
-				 */
-				priv->phase2_private_key_password = g_strdup (password);
-			} else
-				g_assert_not_reached ();
-
-			/* As required by NM and wpa_supplicant, set the client-cert
-			 * property to the same PKCS#12 data.
-			 */
-			if (format == NM_CRYPTO_FILE_FORMAT_PKCS12) {
-				if (priv->phase2_client_cert)
-					g_byte_array_free (priv->phase2_client_cert, TRUE);
-	
-				priv->phase2_client_cert = g_byte_array_sized_new (priv->phase2_private_key->len);
-				g_byte_array_append (priv->phase2_client_cert, priv->phase2_private_key->data, priv->phase2_private_key->len);
-			}
-		}
-	} else {
-		/* As a special case for private keys, even if the decrypt fails,
-		 * return the key's file type.
-		 */
-		if (out_format && crypto_is_pkcs12_file (value, NULL))
+	switch (format) {
+	case NM_CRYPTO_FILE_FORMAT_RAW_KEY:
+		if (out_format)
+			*out_format = NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
+		break;
+	case NM_CRYPTO_FILE_FORMAT_X509:
+		if (out_format)
+			*out_format = NM_SETTING_802_1X_CK_FORMAT_X509;
+		break;
+	case NM_CRYPTO_FILE_FORMAT_PKCS12:
+		if (out_format)
 			*out_format = NM_SETTING_802_1X_CK_FORMAT_PKCS12;
+		break;
+	default:
+		memset (data->data, 0, data->len);
+		g_byte_array_free (data, TRUE);
+		g_set_error (error,
+		             NM_SETTING_802_1X_ERROR,
+		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
+		return FALSE;
+	}
+
+	g_assert (data);
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+		priv->phase2_private_key = data;
+		data = NULL;
+
+		/* Always update the private key for blob + pkcs12 since the
+		 * pkcs12 files are encrypted
+		 */
+		if (format == NM_CRYPTO_FILE_FORMAT_PKCS12)
+			priv->phase2_private_key_password = g_strdup (password);
+	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
+		/* Add the path scheme tag to the front, then the fielname */
+		priv->phase2_private_key = g_byte_array_sized_new (strlen (value) + strlen (SCHEME_PATH) + 1);
+		g_byte_array_append (priv->phase2_private_key, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
+		g_byte_array_append (priv->phase2_private_key, (const guint8 *) value, strlen (value));
+		g_byte_array_append (priv->phase2_private_key, (const guint8 *) "\0", 1);
+
+		/* Always update the private key with paths since the key the
+		 * cert refers to is encrypted.
+		 */
+		priv->phase2_private_key_password = g_strdup (password);
+	} else
+		g_assert_not_reached ();
+
+	/* Clear and free private key data if it's no longer needed */
+	if (data) {
+		memset (data->data, 0, data->len);
+		g_byte_array_free (data, TRUE);
+	}
+
+	/* As required by NM and wpa_supplicant, set the client-cert
+	 * property to the same PKCS#12 data.
+	 */
+	if (format == NM_CRYPTO_FILE_FORMAT_PKCS12) {
+		if (priv->phase2_client_cert)
+			g_byte_array_free (priv->phase2_client_cert, TRUE);
+
+		priv->phase2_client_cert = g_byte_array_sized_new (priv->phase2_private_key->len);
+		g_byte_array_append (priv->phase2_client_cert, priv->phase2_private_key->data, priv->phase2_private_key->len);
 	}
 
 	return priv->phase2_private_key != NULL;
