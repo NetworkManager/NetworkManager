@@ -4282,9 +4282,12 @@ test_read_write_static_routes_legacy (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_NEVER_DEFAULT);
 
-	/* Save the ifcfg */
+	/* Save the ifcfg; use a special different scratch dir to ensure that
+	 * we can clean up after the written connection in both the original
+	 * source tree and for 'make distcheck'.
+	 */
 	success = writer_new_connection (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 TEST_SCRATCH_DIR "/network-scripts/tmp",
 	                                 &testfile,
 	                                 &error);
 	ASSERT (success == TRUE,

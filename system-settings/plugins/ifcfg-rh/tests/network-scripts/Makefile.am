@@ -53,3 +53,6 @@ check-local:
 		chmod 0600 $(abs_srcdir)/$$f; \
 	done
 
+# Make the special temp dir for some written connections
+	mkdir -p $(abs_builddir)/tmp
+
