@@ -593,9 +593,27 @@ nm_exported_connection_delete (NMExportedConnection *connection, GError **err)
 void
 nm_exported_connection_signal_updated (NMExportedConnection *connection, GHashTable *settings)
 {
+	NMConnection *tmp;
+	GHashTable *clean_settings;
+
 	g_return_if_fail (NM_IS_EXPORTED_CONNECTION (connection));
 
-	g_signal_emit (connection, connection_signals[EC_UPDATED], 0, settings);
+	/* Enforce the no-secrets rule in world-readable signals */
+	tmp = nm_connection_new_from_hash (settings, NULL);
+	if (!tmp)
+		return;
+
+	nm_connection_clear_secrets (tmp);
+	clean_settings = nm_connection_to_hash (tmp);
+	if (!clean_settings) {
+		g_object_unref (tmp);
+		return;
+	}
+
+	g_signal_emit (connection, connection_signals[EC_UPDATED], 0, clean_settings);
+
+	g_hash_table_destroy (clean_settings);
+	g_object_unref (tmp);
 }
 
 void
