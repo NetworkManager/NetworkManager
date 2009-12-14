@@ -229,6 +229,8 @@ PKG_CHECK_MODULES(POLKIT, polkit-gobject-1)
 
 AC_SUBST(POLKIT_CFLAGS)
 
+PKG_CHECK_MODULES(WIMAX, libiWmxSdk-0)
+
 AC_ARG_WITH(crypto, AS_HELP_STRING([--with-crypto=nss | gnutls], [Cryptography library to use for certificate and key operations]),ac_crypto=$withval, ac_crypto=nss)
 
 with_nss=no
@@ -438,6 +440,7 @@ src/ppp-manager/Makefile
 src/dnsmasq-manager/Makefile
 src/modem-manager/Makefile
 src/bluez-manager/Makefile
+src/wimax/Makefile
 src/system-settings/Makefile
 src/backends/Makefile
 libnm-util/libnm-util.pc

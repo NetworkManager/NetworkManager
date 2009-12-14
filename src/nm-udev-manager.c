@@ -38,6 +38,7 @@
 #include "nm-device-wifi.h"
 #include "nm-device-olpc-mesh.h"
 #include "nm-device-ethernet.h"
+#include "nm-wimax-manager.h"
 
 typedef struct {
 	GUdevClient *client;
@@ -279,6 +280,12 @@ is_olpc_mesh (GUdevDevice *device)
 	return (prop != NULL);
 }
 
+static gboolean
+is_wimax (const char *driver)
+{
+	return g_strcmp0 (driver, "i2400m_usb") == 0;
+}
+
 static GObject *
 device_creator (NMUdevManager *manager,
                 GUdevDevice *udev_device,
@@ -331,6 +338,8 @@ device_creator (NMUdevManager *manager,
 		device = (GObject *) nm_device_olpc_mesh_new (path, ifname, driver, ifindex);
 	else if (is_wireless (udev_device))
 		device = (GObject *) nm_device_wifi_new (path, ifname, driver, ifindex);
+	else if (is_wimax (driver))
+		device = (GObject *) nm_wimax_manager_create_device (path, ifname, driver, ifindex);
 	else
 		device = (GObject *) nm_device_ethernet_new (path, ifname, driver, ifindex);
 

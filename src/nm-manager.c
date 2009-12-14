@@ -37,6 +37,7 @@
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
 #include "nm-device-olpc-mesh.h"
+#include "nm-wimax-device.h"
 #include "NetworkManagerSystem.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-setting-bluetooth.h"
@@ -1185,6 +1186,8 @@ manager_set_wireless_enabled (NMManager *manager, gboolean enabled)
 	for (iter = priv->devices; iter; iter = iter->next) {
 		if (NM_IS_DEVICE_WIFI (iter->data))
 			nm_device_wifi_set_enabled (NM_DEVICE_WIFI (iter->data), enabled);
+		else if (NM_IS_WIMAX_DEVICE (iter->data))
+			nm_wimax_device_set_enabled (NM_WIMAX_DEVICE (iter->data), enabled);
 	}
 }
 
@@ -1372,7 +1375,8 @@ add_device (NMManager *self, NMDevice *device)
 		 */
 		nm_manager_rfkill_update (self);
 		nm_device_wifi_set_enabled (NM_DEVICE_WIFI (device), priv->wireless_enabled);
-	}
+	} else if (NM_IS_WIMAX_DEVICE (device))
+		nm_wimax_device_set_enabled (NM_WIMAX_DEVICE (device), priv->wireless_enabled);
 
 	type_desc = nm_device_get_type_desc (device);
 	g_assert (type_desc);
@@ -2563,6 +2567,8 @@ impl_manager_sleep (NMManager *self, gboolean sleep, GError **error)
 			 */
 			if (NM_IS_DEVICE_WIFI (iter->data))
 				nm_device_wifi_set_enabled (NM_DEVICE_WIFI (iter->data), wifi_enabled);
+			else if (NM_IS_WIMAX_DEVICE (iter->data))
+				nm_wimax_device_set_enabled (NM_WIMAX_DEVICE (iter->data), wifi_enabled);
 
 			nm_device_clear_autoconnect_inhibit (device);
 			if (nm_device_interface_spec_match_list (NM_DEVICE_INTERFACE (device), unmanaged_specs))

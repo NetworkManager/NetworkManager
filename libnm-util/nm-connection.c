@@ -37,6 +37,7 @@
 #include "nm-setting-ip6-config.h"
 #include "nm-setting-ppp.h"
 #include "nm-setting-pppoe.h"
+#include "nm-setting-wimax.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
@@ -141,7 +142,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 static GHashTable *registered_settings = NULL;
 
-#define DEFAULT_MAP_SIZE 15
+#define DEFAULT_MAP_SIZE 16
 
 static struct SettingInfo {
 	const char *name;
@@ -236,6 +237,11 @@ register_default_settings (void)
 			      NM_TYPE_SETTING_BLUETOOTH,
 			      NM_SETTING_BLUETOOTH_ERROR,
 			      1);
+
+	register_one_setting (NM_SETTING_WIMAX_SETTING_NAME,
+	                      NM_TYPE_SETTING_WIMAX,
+	                      NM_SETTING_WIMAX_ERROR,
+	                      1);
 
 	register_one_setting (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	                      NM_TYPE_SETTING_WIRELESS_SECURITY,

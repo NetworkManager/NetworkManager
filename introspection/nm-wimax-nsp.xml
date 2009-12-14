@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+  <interface name="org.freedesktop.NetworkManager.WiMax.Nsp">
+
+    <property name="Name" type="s" access="read">
+      <tp:docstring>The name of the NSP.</tp:docstring>
+    </property>
+    <property name="SignalQuality" type="u" access="read">
+      <tp:docstring>The current signal quality of the NSP, in percent.</tp:docstring>
+    </property>
+    <property name="NetworkType" type="u" access="read" tp:type="NM_WIMAX_NSP_NETWORK_TYPE">
+      <tp:docstring>The network type of the NSP.</tp:docstring>
+    </property>
+
+    <signal name="PropertiesChanged">
+        <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
+            <tp:docstring>
+                A dictionary mapping property names to variant boxed values.
+            </tp:docstring>
+        </arg>
+    </signal>
+
+    <tp:flags name="NM_WIMAX_NSP_NETWORK_TYPE" value-prefix="NM_WIMAX_NSP_NETWORK_TYPE" type="u">
+      <tp:docstring>
+        Network type of the NSP.
+      </tp:docstring>
+      <tp:flag suffix="UNKNOWN" value="0x0">
+        <tp:docstring>Unknown network.</tp:docstring>
+      </tp:flag>
+      <tp:flag suffix="HOME" value="0x1">
+        <tp:docstring>Home network.</tp:docstring>
+      </tp:flag>
+      <tp:flag suffix="PARTNER" value="0x2">
+        <tp:docstring>Partner network.</tp:docstring>
+      </tp:flag>
+      <tp:flag suffix="ROAMING_PARTNER" value="0x3">
+        <tp:docstring>Roaming partner network.</tp:docstring>
+      </tp:flag>
+
+    </tp:flags>
+
+  </interface>
+</node>

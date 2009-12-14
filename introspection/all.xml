@@ -43,6 +43,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 <xi:include href="nm-active-connection.xml"/>
 <xi:include href="nm-vpn-connection.xml"/>
 <xi:include href="nm-vpn-plugin.xml"/>
+<xi:include href="nm-wimax-device.xml"/>
+<xi:include href="nm-wimax-nsp.xml"/>
 
 <xi:include href="errors.xml"/>
 <xi:include href="vpn-errors.xml"/>

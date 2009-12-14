@@ -9,6 +9,7 @@ SUBDIRS= \
 	dnsmasq-manager \
 	modem-manager \
 	bluez-manager \
+	wimax \
 	system-settings \
 	. \
 	tests
@@ -24,6 +25,7 @@ INCLUDES = -I${top_srcdir}                   \
            -I${top_srcdir}/src/dnsmasq-manager  \
            -I${top_srcdir}/src/modem-manager  \
            -I$(top_srcdir)/src/bluez-manager \
+           -I$(top_srcdir)/src/wimax \
            -I$(top_srcdir)/src/system-settings \
            -I${top_srcdir}/libnm-util \
            -I${top_srcdir}/libnm-glib \
@@ -169,6 +171,7 @@ NetworkManager_CPPFLAGS = \
 	$(OPENSSL_CFLAGS) \
 	$(LIBNL_CFLAGS) \
 	$(GMODULE_CFLAGS) \
+	$(WIMAX_CFLAGS) \
 	-DG_DISABLE_DEPRECATED \
 	-DBINDIR=\"$(bindir)\" \
 	-DSBINDIR=\"$(sbindir)\" \
@@ -191,6 +194,7 @@ NetworkManager_LDADD = \
 	./ppp-manager/libppp-manager.la \
 	./modem-manager/libmodem-manager.la \
 	./bluez-manager/libbluez-manager.la \
+	./wimax/libwimax.la \
 	./system-settings/libsystem-settings.la \
 	./backends/libnmbackend.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
