@@ -186,6 +186,7 @@ test_read_minimal (void)
 	NMSettingIP4Config *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -200,6 +201,7 @@ test_read_minimal (void)
 	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -316,6 +318,7 @@ test_read_unmanaged (void)
 	NMSettingIP4Config *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -330,6 +333,7 @@ test_read_unmanaged (void)
 	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -428,6 +432,7 @@ test_read_wired_static (const char *file, const char *expected_id)
 	NMSettingIP4Config *s_ip4;
 	char *unmanaged = FALSE;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const GByteArray *array;
@@ -446,6 +451,7 @@ test_read_wired_static (const char *file, const char *expected_id)
 	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -625,6 +631,7 @@ test_read_wired_dhcp (void)
 	NMSettingIP4Config *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const GByteArray *array;
@@ -642,6 +649,7 @@ test_read_wired_dhcp (void)
 	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -793,6 +801,7 @@ test_read_wired_global_gateway (void)
 	NMSettingIP4Config *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -808,6 +817,7 @@ test_read_wired_global_gateway (void)
 	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -915,6 +925,7 @@ test_read_wired_never_default (void)
 	NMSettingIP4Config *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -926,6 +937,7 @@ test_read_wired_never_default (void)
 	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -1009,6 +1021,7 @@ test_read_wired_defroute_no (void)
 	NMSettingIP4Config *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -1020,6 +1033,7 @@ test_read_wired_defroute_no (void)
 	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -1097,6 +1111,7 @@ test_read_wired_defroute_no_gatewaydev_yes (void)
 	NMSettingIP4Config *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -1108,6 +1123,7 @@ test_read_wired_defroute_no_gatewaydev_yes (void)
 	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -1181,6 +1197,369 @@ test_read_wired_defroute_no_gatewaydev_yes (void)
 	g_object_unref (connection);
 }
 
+#define TEST_IFCFG_WIRED_STATIC_ROUTES TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static-routes"
+
+static void
+test_read_wired_static_routes (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	NMIP4Route *ip4_route;
+	struct in_addr addr;
+	const char *expected_id = "System test-wired-static-routes";
+	const char *expected_dst1 = "11.22.33.0";
+	const char *expected_dst2 = "44.55.66.77";
+	const char *expected_gw1 = "192.168.1.5";
+	const char *expected_gw2 = "192.168.1.7";
+
+	connection = connection_from_file (TEST_IFCFG_WIRED_STATIC_ROUTES,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &error,
+	                                   &ignore_error);
+
+	ASSERT (connection != NULL,
+	        "wired-static-routes-read",
+	        "failed to read %s: %s",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wired-static-routes-verify", "failed to verify %s: %s",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES, error->message);
+
+	ASSERT (unmanaged == NULL,
+	        "wired-static-routes-verify",
+	        "failed to verify %s: unexpected unmanaged value",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "wired-static-routes-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "wired-static-routes-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_id) == 0,
+	        "wired-static-routes-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+	/* ===== WIRED SETTING ===== */
+
+	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	ASSERT (s_wired != NULL,
+	        "wired-static-routes-verify-wired", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES,
+	        NM_SETTING_WIRED_SETTING_NAME);
+
+	/* ===== IPv4 SETTING ===== */
+
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	ASSERT (s_ip4 != NULL,
+	        "wired-static-routes-verify-ip4", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0,
+	        "wired-static-routes-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_METHOD);
+
+	/* Routes */
+	ASSERT (nm_setting_ip4_config_get_num_routes (s_ip4) == 2,
+	        "wired-static-routes-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_ROUTES);
+
+	ip4_route = nm_setting_ip4_config_get_route (s_ip4, 0);
+	ASSERT (ip4_route,
+	        "wired-static-routes-verify-ip4", "failed to verify %s: missing IP4 route #1",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES);
+
+	ASSERT (inet_pton (AF_INET, expected_dst1, &addr) > 0,
+	        "wired-static-routes-verify-ip4", "failed to verify %s: couldn't convert destination IP address #1",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES);
+	ASSERT (nm_ip4_route_get_dest (ip4_route) == addr.s_addr,
+	        "wired-static-routes-verify-ip4", "failed to verify %s: unexpected %s / %s key value #1",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_ROUTES);
+
+	ASSERT (nm_ip4_route_get_prefix (ip4_route) == 24,
+	        "wired-static-routes-verify-ip4", "failed to verify %s: unexpected destination route #1 prefix",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES);
+
+	ASSERT (inet_pton (AF_INET, expected_gw1, &addr) > 0,
+	        "wired-static-routes-verify-ip4", "failed to verify %s: couldn't convert next hop IP address #1",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES);
+	ASSERT (nm_ip4_route_get_next_hop (ip4_route) == addr.s_addr,
+	        "wired-static-routes-verify-ip4", "failed to verify %s: unexpected %s / %s key value #1",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_ROUTES);
+
+	ip4_route = nm_setting_ip4_config_get_route (s_ip4, 1);
+	ASSERT (ip4_route,
+	        "wired-static-routes-verify-ip4", "failed to verify %s: missing IP4 route #2",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES);
+
+	ASSERT (inet_pton (AF_INET, expected_dst2, &addr) > 0,
+	        "wired-static-routes-verify-ip4", "failed to verify %s: couldn't convert destination IP address #2",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES);
+	ASSERT (nm_ip4_route_get_dest (ip4_route) == addr.s_addr,
+	        "wired-static-routes-verify-ip4", "failed to verify %s: unexpected %s / %s key value #2",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_ROUTES);
+
+	ASSERT (nm_ip4_route_get_prefix (ip4_route) == 32,
+	        "wired-static-routes-verify-ip4", "failed to verify %s: unexpected destination route #2 prefix",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES);
+
+	ASSERT (inet_pton (AF_INET, expected_gw2, &addr) > 0,
+	        "wired-static-routes-verify-ip4", "failed to verify %s: couldn't convert next hop IP address #2",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES);
+	ASSERT (nm_ip4_route_get_next_hop (ip4_route) == addr.s_addr,
+	        "wired-static-routes-verify-ip4", "failed to verify %s: unexpected %s / %s key value #2",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_ROUTES);
+	ASSERT (nm_ip4_route_get_metric (ip4_route) == 3,
+	        "wired-static-routes-verify-ip4", "failed to verify %s: unexpected route metric #2",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES);
+
+	g_free (keyfile);
+	g_free (routefile);
+	g_object_unref (connection);
+}
+
+#define TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static-routes-legacy"
+
+static void
+test_read_wired_static_routes_legacy (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	NMIP4Route *ip4_route;
+	struct in_addr addr;
+	const char *expected_id = "System test-wired-static-routes-legacy";
+	const char *expected_dst1 = "21.31.41.0";
+	const char *expected_dst2 = "32.42.52.62";
+	const char *expected_dst3 = "43.53.0.0";
+	const char *expected_gw1 = "9.9.9.9";
+	const char *expected_gw2 = "8.8.8.8";
+	const char *expected_gw3 = "7.7.7.7";
+
+	connection = connection_from_file (TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &error,
+	                                   &ignore_error);
+
+	ASSERT (connection != NULL,
+	        "wired-static-routes-legacy-read",
+	        "failed to read %s: %s",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wired-static-routes-legacy-verify", "failed to verify %s: %s",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY, error->message);
+
+	ASSERT (unmanaged == NULL,
+	        "wired-static-routes-legacy-verify",
+	        "failed to verify %s: unexpected unmanaged value",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "wired-static-routes-legacy-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "wired-static-routes-legacy-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_id) == 0,
+	        "wired-static-routes-legacy-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+	/* ===== WIRED SETTING ===== */
+
+	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	ASSERT (s_wired != NULL,
+	        "wired-static-routes-legacy-verify-wired", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
+	        NM_SETTING_WIRED_SETTING_NAME);
+
+	/* ===== IPv4 SETTING ===== */
+
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	ASSERT (s_ip4 != NULL,
+	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0,
+	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_METHOD);
+
+	/* Routes */
+	ASSERT (nm_setting_ip4_config_get_num_routes (s_ip4) == 3,
+	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_ROUTES);
+
+	/* Route #1 */
+	ip4_route = nm_setting_ip4_config_get_route (s_ip4, 0);
+	ASSERT (ip4_route,
+	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: missing IP4 route #1",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
+
+	ASSERT (inet_pton (AF_INET, expected_dst1, &addr) > 0,
+	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: couldn't convert destination IP address #1",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
+	ASSERT (nm_ip4_route_get_dest (ip4_route) == addr.s_addr,
+	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value #1",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_ROUTES);
+
+	ASSERT (nm_ip4_route_get_prefix (ip4_route) == 24,
+	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected destination route #1 prefix",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
+
+	ASSERT (inet_pton (AF_INET, expected_gw1, &addr) > 0,
+	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: couldn't convert next hop IP address #1",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
+	ASSERT (nm_ip4_route_get_next_hop (ip4_route) == addr.s_addr,
+	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value #1",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_ROUTES);
+
+	ASSERT (nm_ip4_route_get_metric (ip4_route) == 1,
+	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected destination route #1 metric",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
+
+	/* Route #2 */
+	ip4_route = nm_setting_ip4_config_get_route (s_ip4, 1);
+	ASSERT (ip4_route,
+	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: missing IP4 route #2",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
+
+	ASSERT (inet_pton (AF_INET, expected_dst2, &addr) > 0,
+	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: couldn't convert destination IP address #2",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
+	ASSERT (nm_ip4_route_get_dest (ip4_route) == addr.s_addr,
+	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value #2",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_ROUTES);
+
+	ASSERT (nm_ip4_route_get_prefix (ip4_route) == 32,
+	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected destination route #2 prefix",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
+
+	ASSERT (inet_pton (AF_INET, expected_gw2, &addr) > 0,
+	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: couldn't convert next hop IP address #2",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
+	ASSERT (nm_ip4_route_get_next_hop (ip4_route) == addr.s_addr,
+	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value #2",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_ROUTES);
+
+	ASSERT (nm_ip4_route_get_metric (ip4_route) == 0,
+	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected destination route #2 metric",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
+
+	/* Route #3 */
+	ip4_route = nm_setting_ip4_config_get_route (s_ip4, 2);
+	ASSERT (ip4_route,
+	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: missing IP4 route #3",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
+
+	ASSERT (inet_pton (AF_INET, expected_dst3, &addr) > 0,
+	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: couldn't convert destination IP address #3",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
+	ASSERT (nm_ip4_route_get_dest (ip4_route) == addr.s_addr,
+	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value #3",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_ROUTES);
+
+	ASSERT (nm_ip4_route_get_prefix (ip4_route) == 16,
+	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected destination route #3 prefix",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
+
+	ASSERT (inet_pton (AF_INET, expected_gw3, &addr) > 0,
+	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: couldn't convert next hop IP address #3",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
+	ASSERT (nm_ip4_route_get_next_hop (ip4_route) == addr.s_addr,
+	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value #3",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_ROUTES);
+
+	ASSERT (nm_ip4_route_get_metric (ip4_route) == 3,
+	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected destination route #3 metric",
+	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
+
+	g_free (keyfile);
+	g_free (routefile);
+	g_object_unref (connection);
+}
+
 #define TEST_IFCFG_ONBOOT_NO TEST_IFCFG_DIR"/network-scripts/ifcfg-test-onboot-no"
 
 static void
@@ -1190,6 +1569,7 @@ test_read_onboot_no (void)
 	NMSettingConnection *s_con;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 
@@ -1199,6 +1579,7 @@ test_read_onboot_no (void)
 	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -1241,6 +1622,7 @@ test_read_wired_8021x_peap_mschapv2 (void)
 	NMSetting8021x *tmp_8021x;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -1256,6 +1638,7 @@ test_read_wired_8021x_peap_mschapv2 (void)
 	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -1421,6 +1804,7 @@ test_read_wifi_open (void)
 	NMSettingIP4Config *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -1438,6 +1822,7 @@ test_read_wifi_open (void)
 	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -1584,6 +1969,82 @@ test_read_wifi_open (void)
 	g_object_unref (connection);
 }
 
+#define TEST_IFCFG_WIFI_OPEN_AUTO TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-auto"
+
+static void
+test_read_wifi_open_auto (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wireless;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const char *expected_id = "System blahblah (test-wifi-open-auto)";
+	const char *expected_mode = "infrastructure";
+
+	connection = connection_from_file (TEST_IFCFG_WIFI_OPEN_AUTO,
+	                                   NULL,
+	                                   TYPE_WIRELESS,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "wifi-open-auto-read", "failed to read %s: %s", TEST_IFCFG_WIFI_OPEN_AUTO, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wifi-open-auto-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_OPEN_AUTO, error->message);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "wifi-open-auto-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_OPEN_AUTO,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "wifi-open-auto-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_OPEN_AUTO,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_id) == 0,
+	        "wifi-open-auto-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_OPEN_AUTO,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+	/* ===== WIRELESS SETTING ===== */
+
+	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	ASSERT (s_wireless != NULL,
+	        "wifi-open-auto-verify-wireless", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_OPEN_AUTO,
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+
+	tmp = nm_setting_wireless_get_mode (s_wireless);
+	ASSERT (tmp != NULL,
+	        "wifi-open-auto-verify-wireless", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_OPEN_AUTO,
+	        NM_SETTING_WIRELESS_SETTING_NAME,
+	        NM_SETTING_WIRELESS_MODE);
+	ASSERT (strcmp (tmp, expected_mode) == 0,
+	        "wifi-open-auto-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_OPEN_AUTO,
+	        NM_SETTING_WIRELESS_SETTING_NAME,
+	        NM_SETTING_WIRELESS_MODE);
+
+	g_object_unref (connection);
+}
+
 #define TEST_IFCFG_WIFI_OPEN_SSID_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-hex"
 
 static void
@@ -1594,6 +2055,7 @@ test_read_wifi_open_ssid_hex (void)
 	NMSettingWireless *s_wireless;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -1607,6 +2069,7 @@ test_read_wifi_open_ssid_hex (void)
 	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -1671,6 +2134,7 @@ test_read_wifi_open_ssid_bad (const char *file, const char *test)
 	NMConnection *connection;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 
@@ -1680,6 +2144,7 @@ test_read_wifi_open_ssid_bad (const char *file, const char *test)
 	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection == NULL, test, "unexpected success reading %s", file);
@@ -1696,6 +2161,7 @@ test_read_wifi_open_ssid_quoted (void)
 	NMSettingWireless *s_wireless;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -1709,6 +2175,7 @@ test_read_wifi_open_ssid_quoted (void)
 	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -1779,6 +2246,7 @@ test_read_wifi_wep (void)
 	NMSettingIP4Config *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -1797,6 +2265,7 @@ test_read_wifi_wep (void)
 	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -2040,6 +2509,7 @@ test_read_wifi_wep_adhoc (void)
 	NMSettingIP4Config *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -2058,6 +2528,7 @@ test_read_wifi_wep_adhoc (void)
 	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -2299,6 +2770,7 @@ test_read_wifi_leap (void)
 	NMSettingWirelessSecurity *s_wsec;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -2312,6 +2784,7 @@ test_read_wifi_leap (void)
 	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -2432,6 +2905,7 @@ test_read_wifi_wpa_psk (void)
 	NMSettingIP4Config *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -2460,6 +2934,7 @@ test_read_wifi_wpa_psk (void)
 	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -2743,6 +3218,7 @@ test_read_wifi_wpa_psk_adhoc (void)
 	NMSettingIP4Config *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -2759,6 +3235,7 @@ test_read_wifi_wpa_psk_adhoc (void)
 	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -2927,6 +3404,7 @@ test_read_wifi_wpa_psk_hex (void)
 	NMSettingIP4Config *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -2942,6 +3420,7 @@ test_read_wifi_wpa_psk_hex (void)
 	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -3077,6 +3556,7 @@ test_read_wifi_wpa_eap_tls (void)
 	NMSetting8021x *s_8021x;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp, *password;
@@ -3089,6 +3569,7 @@ test_read_wifi_wpa_eap_tls (void)
 	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -3219,6 +3700,7 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 	NMSetting8021x *s_8021x;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp, *password;
@@ -3231,6 +3713,7 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -3383,6 +3866,7 @@ test_read_wifi_wep_eap_ttls_chap (void)
 	NMSetting8021x *s_8021x;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -3396,6 +3880,7 @@ test_read_wifi_wep_eap_ttls_chap (void)
 	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -3554,6 +4039,7 @@ test_write_wired_static (void)
 	char *testfile = NULL;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 
 	connection = nm_connection_new ();
@@ -3647,6 +4133,7 @@ test_write_wired_static (void)
 	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
+	                               &routefile,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -3679,6 +4166,7 @@ test_write_wired_dhcp (void)
 	char *testfile = NULL;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 
 	connection = nm_connection_new ();
@@ -3746,6 +4234,7 @@ test_write_wired_dhcp (void)
 	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
+	                               &routefile,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -3760,6 +4249,312 @@ test_write_wired_dhcp (void)
 	        "wired-dhcp-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+#define TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY TEST_IFCFG_DIR"/network-scripts/ifcfg-test-static-routes-legacy"
+
+static void
+test_read_write_static_routes_legacy (void)
+{
+	NMConnection *connection, *reread;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	char *unmanaged = NULL;
+	char *testfile = NULL;
+	char *keyfile = NULL;
+	char *keyfile2 = NULL;
+	char *routefile = NULL;
+	char *routefile2 = NULL;
+	gboolean ignore_error = FALSE;
+	gboolean success;
+	GError *error = NULL;
+	const char *tmp;
+
+	connection = connection_from_file (TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "read-write-static-routes-legacy-read", "failed to read %s: %s",
+	        TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "read-write-static-routes-legacy-verify", "failed to verify %s: %s",
+	        TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY, error->message);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "read-write-static-routes-legacy-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "read-write-static-routes-legacy-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+	/* Autoconnect */
+	ASSERT (nm_setting_connection_get_autoconnect (s_con) == TRUE,
+	        "read_write-static-routes-legacy-verify-connection", "failed to verify %s: unexpected %s /%s key value",
+	        TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_AUTOCONNECT);
+
+	/* ===== WIRED SETTING ===== */
+
+	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	ASSERT (s_wired != NULL,
+	        "read-write-static-routes-legacy-verify-wired", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY,
+	        NM_SETTING_WIRED_SETTING_NAME);
+
+	/* ===== IPv4 SETTING ===== */
+
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	ASSERT (s_ip4 != NULL,
+	        "read-write-static-routes-legacy-verify-ip4", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
+	        "read-write-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_METHOD);
+
+	ASSERT (nm_setting_ip4_config_get_never_default (s_ip4) == FALSE,
+	        "read-write-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_NEVER_DEFAULT);
+
+	/* Save the ifcfg; use a special different scratch dir to ensure that
+	 * we can clean up after the written connection in both the original
+	 * source tree and for 'make distcheck'.
+	 */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/tmp",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == TRUE,
+	        "read-write-static-routes-legacy-write", "failed to write connection to disk: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (testfile != NULL,
+	        "read-write-static-routes-legacy-write", "didn't get ifcfg file path back after writing connection");
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_ETHERNET,
+	                               NULL,
+	                               &unmanaged,
+	                               &keyfile2,
+	                               &routefile2,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+	unlink (routefile2);
+
+	ASSERT (reread != NULL,
+	        "read-write-static-routes-legacy-reread", "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (routefile2 != NULL,
+	        "read-write-static-routes-legacy-reread", "expected routefile for '%s'", testfile);
+
+	ASSERT (nm_connection_verify (reread, &error),
+	        "read-write-static-routes-legacy-reread-verify", "failed to verify %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+	        "read-write-static-routes-legacy-write", "written and re-read connection weren't the same.");
+
+	g_free (testfile);
+	g_free (keyfile);
+	g_free (keyfile2);
+	g_free (routefile);
+	g_free (routefile2);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
+test_write_wired_static_routes (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	static unsigned char tmpmac[] = { 0x31, 0x33, 0x33, 0x37, 0xbe, 0xcd };
+	GByteArray *mac;
+	guint32 mtu = 1492;
+	char *uuid;
+	guint64 timestamp = 0x12344433L;
+	const guint32 ip1 = htonl (0x01010103);
+	const guint32 ip2 = htonl (0x01010105);
+	const guint32 gw = htonl (0x01010101);
+	const guint32 dns1 = htonl (0x04020201);
+	const guint32 dns2 = htonl (0x04020202);
+	const guint32 route_dst1 = htonl (0x01020300);
+	const guint32 route_dst2= htonl (0x03020100);
+	const guint32 route_gw1 = htonl (0xdeadbeef);
+	const guint32 route_gw2 = htonl (0xcafeabbe);
+	const guint32 prefix = 24;
+	const char *dns_search1 = "foobar.com";
+	const char *dns_search2 = "lab.foobar.com";
+	NMIP4Address *addr;
+	NMIP4Route *route;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	gboolean ignore_error = FALSE;
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "wired-static-routes-write", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "wired-static-routes-write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wired Static Routes",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NM_SETTING_CONNECTION_TIMESTAMP, timestamp,
+	              NULL);
+	g_free (uuid);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	ASSERT (s_wired != NULL,
+	        "wired-static-routes-write", "failed to allocate new %s setting",
+	        NM_SETTING_WIRED_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	mac = g_byte_array_sized_new (sizeof (tmpmac));
+	g_byte_array_append (mac, &tmpmac[0], sizeof (tmpmac));
+
+	g_object_set (s_wired,
+	              NM_SETTING_WIRED_MAC_ADDRESS, mac,
+	              NM_SETTING_WIRED_MTU, mtu,
+	              NULL);
+	g_byte_array_free (mac, TRUE);
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+			"wired-static-routes-write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4,
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NULL);
+
+	addr = nm_ip4_address_new ();
+	nm_ip4_address_set_address (addr, ip1);
+	nm_ip4_address_set_prefix (addr, prefix);
+	nm_ip4_address_set_gateway (addr, gw);
+	nm_setting_ip4_config_add_address (s_ip4, addr);
+	nm_ip4_address_unref (addr);
+
+	addr = nm_ip4_address_new ();
+	nm_ip4_address_set_address (addr, ip2);
+	nm_ip4_address_set_prefix (addr, prefix);
+	nm_ip4_address_set_gateway (addr, gw);
+	nm_setting_ip4_config_add_address (s_ip4, addr);
+	nm_ip4_address_unref (addr);
+
+	/* Write out routes */
+	route = nm_ip4_route_new ();
+	nm_ip4_route_set_dest (route, route_dst1);
+	nm_ip4_route_set_prefix (route, prefix);
+	nm_ip4_route_set_next_hop (route, route_gw1);
+	nm_setting_ip4_config_add_route (s_ip4, route);
+	nm_ip4_route_unref (route);
+
+	route = nm_ip4_route_new ();
+	nm_ip4_route_set_dest (route, route_dst2);
+	nm_ip4_route_set_prefix (route, prefix);
+	nm_ip4_route_set_next_hop (route, route_gw2);
+	nm_ip4_route_set_metric (route, 77);
+	nm_setting_ip4_config_add_route (s_ip4, route);
+	nm_ip4_route_unref (route);
+
+	nm_setting_ip4_config_add_dns (s_ip4, dns1);
+	nm_setting_ip4_config_add_dns (s_ip4, dns2);
+
+	nm_setting_ip4_config_add_dns_search (s_ip4, dns_search1);
+	nm_setting_ip4_config_add_dns_search (s_ip4, dns_search2);
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "wired-static-routes-write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == TRUE,
+	        "wired-static-routes-write", "failed to write connection to disk: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (testfile != NULL,
+	        "wired-static-routes-write", "didn't get ifcfg file path back after writing connection");
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_ETHERNET,
+	                               NULL,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &routefile,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	ASSERT (reread != NULL,
+	        "wired-static-routes-write-reread", "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (routefile != NULL,
+	        "wired-static-routes-write-reread", "expected routefile for '%s'", testfile);
+	unlink (routefile);
+
+	ASSERT (nm_connection_verify (reread, &error),
+	        "wired-static-routes-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+	        "wired-static-routes-write", "written and re-read connection weren't the same.");
+
+	g_free (testfile);
+	g_free (keyfile);
+	g_free (routefile);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -3779,6 +4574,7 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 	char *testfile = NULL;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 
 	connection = nm_connection_new ();
@@ -3866,6 +4662,7 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
+	                               &routefile,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -3902,6 +4699,7 @@ test_write_wifi_open (void)
 	char *testfile = NULL;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
 	const unsigned char ssid_data[] = { 0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44 };
@@ -3991,6 +4789,7 @@ test_write_wifi_open (void)
 	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
+	                               &routefile,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -4023,6 +4822,7 @@ test_write_wifi_open_hex_ssid (void)
 	char *testfile = NULL;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
 	const unsigned char ssid_data[] = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd };
@@ -4096,6 +4896,7 @@ test_write_wifi_open_hex_ssid (void)
 	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
+	                               &routefile,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -4129,6 +4930,7 @@ test_write_wifi_wep (void)
 	char *testfile = NULL;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
 	const unsigned char ssid_data[] = "blahblah";
@@ -4221,6 +5023,7 @@ test_write_wifi_wep (void)
 	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
+	                               &routefile,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -4266,6 +5069,7 @@ test_write_wifi_wep_adhoc (void)
 	char *testfile = NULL;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
 	const unsigned char ssid_data[] = "blahblah";
@@ -4366,6 +5170,7 @@ test_write_wifi_wep_adhoc (void)
 	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
+	                               &routefile,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -4411,6 +5216,7 @@ test_write_wifi_leap (void)
 	char *testfile = NULL;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
 	const unsigned char ssid_data[] = "blahblah";
@@ -4500,6 +5306,7 @@ test_write_wifi_leap (void)
 	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
+	                               &routefile,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -4550,6 +5357,7 @@ test_write_wifi_wpa_psk (const char *name,
 	char *testfile = NULL;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
 	const unsigned char ssid_data[] = "blahblah";
@@ -4653,6 +5461,7 @@ test_write_wifi_wpa_psk (const char *name,
 	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
+	                               &routefile,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -4692,6 +5501,7 @@ test_write_wifi_wpa_psk_adhoc (void)
 	char *testfile = NULL;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
 	const unsigned char ssid_data[] = "blahblah";
@@ -4798,6 +5608,7 @@ test_write_wifi_wpa_psk_adhoc (void)
 	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
+	                               &routefile,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -4836,6 +5647,7 @@ test_write_wifi_wpa_eap_tls (void)
 	char *testfile = NULL;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
 	const char *ssid_data = "blahblah";
@@ -4961,6 +5773,7 @@ test_write_wifi_wpa_eap_tls (void)
 	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
+	                               &routefile,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -4999,6 +5812,7 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 	char *testfile = NULL;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
 	const char *ssid_data = "blahblah";
@@ -5142,6 +5956,7 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
+	                               &routefile,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -5180,6 +5995,7 @@ test_write_wifi_wpa_eap_ttls_mschapv2 (void)
 	char *testfile = NULL;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
 	const char *ssid_data = "blahblah";
@@ -5295,6 +6111,7 @@ test_write_wifi_wpa_eap_ttls_mschapv2 (void)
 	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
+	                               &routefile,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -5328,6 +6145,7 @@ test_read_ibft_dhcp (void)
 	NMSettingIP4Config *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -5342,6 +6160,7 @@ test_read_ibft_dhcp (void)
 	                                   TEST_IFCFG_DIR "/iscsiadm-test-dhcp",
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -5459,6 +6278,7 @@ test_read_ibft_static (void)
 	NMSettingIP4Config *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -5479,6 +6299,7 @@ test_read_ibft_static (void)
 	                                   TEST_IFCFG_DIR "/iscsiadm-test-static",
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -5662,6 +6483,7 @@ test_read_ibft_malformed (const char *name, const char *iscsiadm_path)
 	NMConnection *connection;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
+	char *routefile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 
@@ -5671,6 +6493,7 @@ test_read_ibft_malformed (const char *name, const char *iscsiadm_path)
 	                                   iscsiadm_path,
 	                                   &unmanaged,
 	                                   &keyfile,
+	                                   &routefile,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection == NULL,
@@ -5971,9 +6794,12 @@ int main (int argc, char **argv)
 	test_read_wired_never_default ();
 	test_read_wired_defroute_no ();
 	test_read_wired_defroute_no_gatewaydev_yes ();
+	test_read_wired_static_routes ();
+	test_read_wired_static_routes_legacy ();
 	test_read_onboot_no ();
 	test_read_wired_8021x_peap_mschapv2 ();
 	test_read_wifi_open ();
+	test_read_wifi_open_auto ();
 	test_read_wifi_open_ssid_hex ();
 	test_read_wifi_open_ssid_bad (TEST_IFCFG_WIFI_OPEN_SSID_BAD_HEX, "wifi-open-ssid-bad-hex-read");
 	test_read_wifi_open_ssid_bad (TEST_IFCFG_WIFI_OPEN_SSID_LONG_HEX, "wifi-open-ssid-long-hex-read");
@@ -5990,6 +6816,8 @@ int main (int argc, char **argv)
 	test_read_wifi_wep_eap_ttls_chap ();
 
 	test_write_wired_static ();
+	test_write_wired_static_routes ();
+	test_read_write_static_routes_legacy ();
 	test_write_wired_dhcp ();
 	test_write_wired_dhcp_8021x_peap_mschapv2 ();
 	test_write_wifi_open ();

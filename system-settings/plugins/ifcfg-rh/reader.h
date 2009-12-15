@@ -32,6 +32,7 @@ NMConnection *connection_from_file (const char *filename,
                                     const char *iscsiadm_path, /* for unit tests only */
                                     char **unmanaged,
                                     char **keyfile,
+                                    char **routefile,
                                     GError **error,
                                     gboolean *ignore_error);
 

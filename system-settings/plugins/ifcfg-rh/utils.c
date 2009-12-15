@@ -22,7 +22,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "utils.h"
-#include "sha1.h"
 #include "shvar.h"
 
 /*
@@ -144,11 +143,15 @@ utils_get_ifcfg_name (const char *file)
 	return ifcfg_name;
 }
 
+/* Used to get an extra file path for ifcfg-<name> in the form <tag><name>.
+ * Currently used for: keys-<name>
+ *                     route-<name>
+ */
 char *
-utils_get_keys_path (const char *parent)
+utils_get_extra_path (const char *parent, const char *tag)
 {
 	char *ifcfg_name;
-	char *keys_file = NULL;
+	char *extra_file = NULL;
 	char *tmp = NULL;
 
 	ifcfg_name = utils_get_ifcfg_name (parent);
@@ -159,21 +162,33 @@ utils_get_keys_path (const char *parent)
 	if (!tmp)
 		goto out;
 
-	keys_file = g_strdup_printf ("%s/" KEYS_TAG "%s", tmp, ifcfg_name);
+	extra_file = g_strdup_printf ("%s/%s%s", tmp, tag, ifcfg_name);
 
 out:
 	g_free (tmp);
 	g_free (ifcfg_name);
-	return keys_file;
+	return extra_file;
+}
+
+char *
+utils_get_keys_path (const char *parent)
+{
+	return utils_get_extra_path (parent, KEYS_TAG);
+}
+
+char *
+utils_get_route_path (const char *parent)
+{
+	return utils_get_extra_path (parent, ROUTE_TAG);
 }
 
 shvarFile *
-utils_get_keys_ifcfg (const char *parent, gboolean should_create)
+utils_get_extra_ifcfg (const char *parent, const char *tag, gboolean should_create)
 {
 	shvarFile *ifcfg = NULL;
 	char *path;
 
-	path = utils_get_keys_path (parent);
+	path = utils_get_extra_path (parent, tag);
 	if (!path)
 		return NULL;
 
@@ -185,5 +200,47 @@ utils_get_keys_ifcfg (const char *parent, gboolean should_create)
 
 	g_free (path);
 	return ifcfg;
+}
+
+shvarFile *
+utils_get_keys_ifcfg (const char *parent, gboolean should_create)
+{
+	return utils_get_extra_ifcfg (parent, KEYS_TAG, should_create);
+}
+
+shvarFile *
+utils_get_route_ifcfg (const char *parent, gboolean should_create)
+{
+	return utils_get_extra_ifcfg (parent, ROUTE_TAG, should_create);
+}
+
+/* Finds out if route file has new or older format
+ * Returns TRUE  - new syntax (ADDRESS<n>=a.b.c.d ...), error opening file or empty
+ *         FALSE - legacy syntax (1.2.3.0/24 via 11.22.33.44)
+ */
+gboolean
+utils_has_route_file_new_syntax (const char *filename)
+{
+	char *contents = NULL;
+	gsize len = 0;
+	gboolean ret = FALSE;
+	const char *pattern = "^[[:space:]]*ADDRESS[0-9]+=";
+
+	g_return_val_if_fail (filename != NULL, TRUE);
+
+	if (!g_file_get_contents (filename, &contents, &len, NULL))
+		return TRUE;
+
+	if (len <= 0) {
+		ret = TRUE;
+		goto gone;
+	}
+
+	if (g_regex_match_simple (pattern, contents, G_REGEX_MULTILINE, 0))
+		ret = TRUE;
+
+gone:
+	g_free (contents);
+	return ret;
 }
 
