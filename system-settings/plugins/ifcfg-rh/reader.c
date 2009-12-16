@@ -1360,6 +1360,7 @@ parse_wpa_psk (shvarFile *ifcfg,
 {
 	shvarFile *keys_ifcfg;
 	char *psk = NULL, *p, *hashed = NULL;
+	gboolean quoted = FALSE;
 
 	/* Passphrase must be between 10 and 66 characters in length becuase WPA
 	 * hex keys are exactly 64 characters (no quoting), and WPA passphrases
@@ -1385,21 +1386,11 @@ parse_wpa_psk (shvarFile *ifcfg,
 	}
 
 	p = psk;
-	if (p[0] == '"' && psk[strlen (psk) - 1] == '"') {
-		/* Get rid of the quotes */
-		p++;
-		p[strlen (p) - 1] = '\0';
 
-		/* Length check */
-		if (strlen (p) < 8 || strlen (p) > 63) {
-			g_set_error (error, ifcfg_plugin_error_quark (), 0,
-			             "Invalid WPA_PSK (passphrases must be between "
-			             "8 and 63 characters long (inclusive))");
-			goto out;
-		}
+	if (p[0] == '"' && psk[strlen (psk) - 1] == '"')
+		quoted = TRUE;
 
-		hashed = g_strdup (p);
-	} else if (strlen (psk) == 64) {
+	if (!quoted && (strlen (psk) == 64)) {
 		/* Verify the hex PSK; 64 digits */
 		while (*p) {
 			if (!isxdigit (*p++)) {
@@ -1410,6 +1401,30 @@ parse_wpa_psk (shvarFile *ifcfg,
 		}
 		hashed = g_strdup (psk);
 	} else {
+		/* Prior to 4f6eef9e77265484555663cf666cde4fa8323469 and
+		 * 28e2e446868b94b92edc4a82aa0bf1e3eda8ec54 the writer may not have
+		 * properly quoted passphrases, so just handle anything that's unquoted
+		 * and between 8 and 63 characters as a passphrase.
+		 */
+
+		if (quoted) {
+			/* Get rid of the quotes */
+			p++;
+			p[strlen (p) - 1] = '\0';
+		}
+
+		/* Length check */
+		if (strlen (p) < 8 || strlen (p) > 63) {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "Invalid WPA_PSK (passphrases must be between "
+			             "8 and 63 characters long (inclusive))");
+			goto out;
+		}
+
+		hashed = g_strdup (p);
+	}
+
+	if (!hashed) {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Invalid WPA_PSK (doesn't look like a passphrase or hex key)");
 		goto out;
