@@ -425,6 +425,10 @@ device_state_changed (NMDeviceInterface *device,
 {
 	NMModem *self = NM_MODEM (user_data);
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
+	gboolean was_connected = FALSE;
+
+	if (IS_ACTIVATING_STATE (old_state) || (old_state == NM_DEVICE_STATE_ACTIVATED))
+		was_connected = TRUE;
 
 	/* Make sure we don't leave the serial device open */
 	switch (new_state) {
@@ -436,10 +440,11 @@ device_state_changed (NMDeviceInterface *device,
 	case NM_DEVICE_STATE_UNAVAILABLE:
 	case NM_DEVICE_STATE_FAILED:
 	case NM_DEVICE_STATE_DISCONNECTED:
-		dbus_g_proxy_call_no_reply (nm_modem_get_proxy (self, NULL),
-		                            "Enable",
-		                            G_TYPE_BOOLEAN, FALSE,
-		                            G_TYPE_INVALID);
+		if (was_connected) {
+			dbus_g_proxy_call_no_reply (nm_modem_get_proxy (self, MM_DBUS_INTERFACE_MODEM),
+			                            "Disconnect",
+			                            G_TYPE_INVALID);
+		}
 		break;
 	default:
 		break;

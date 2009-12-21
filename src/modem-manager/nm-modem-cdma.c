@@ -115,11 +115,21 @@ create_connect_properties (NMConnection *connection)
 	return properties;
 }
 
-static NMActStageReturn
-real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
+static void
+stage1_enable_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 {
+	NMDevice *device = NM_DEVICE (user_data);
+	GError *error = NULL;
 	NMConnection *connection;
 	GHashTable *properties;
+
+	dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID);
+	if (error) {
+		nm_warning ("CDMA modem connection failed: %s", error->message);
+		g_error_free (error);
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NONE);
+		return;
+	}
 
 	connection = nm_act_request_get_connection (nm_device_get_act_request (device));
 	g_assert (connection);
@@ -129,6 +139,19 @@ real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 										  "Connect", stage1_prepare_done,
 										  device, NULL, 120000,
 										  DBUS_TYPE_G_MAP_OF_VARIANT, properties,
+										  G_TYPE_INVALID);
+	g_hash_table_destroy (properties);
+}
+
+static NMActStageReturn
+real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
+{
+	gboolean enable = TRUE;
+
+	dbus_g_proxy_begin_call_with_timeout (nm_modem_get_proxy (NM_MODEM (device), MM_DBUS_INTERFACE_MODEM),
+										  "Enable", stage1_enable_done,
+										  device, NULL, 20000,
+										  G_TYPE_BOOLEAN, enable,
 										  G_TYPE_INVALID);
 
 	return NM_ACT_STAGE_RETURN_POSTPONE;
