@@ -1280,7 +1280,7 @@ nm_manager_rfkill_update (NMManager *self)
 	RfKillState udev_state, ipw_state, composite;
 	gboolean new_we = TRUE, new_whe = TRUE;
 
-	udev_state = nm_udev_manager_get_rfkill_state (priv->udev_mgr);
+	udev_state = nm_udev_manager_get_rfkill_state (priv->udev_mgr, RFKILL_TYPE_WLAN);
 	ipw_state = nm_manager_get_ipw_rfkill_state (self);
 
 	/* The composite state is the "worst" of either udev or ipw states */
@@ -1692,6 +1692,7 @@ udev_device_removed_cb (NMUdevManager *manager,
 
 static void
 udev_manager_rfkill_changed_cb (NMUdevManager *udev_mgr,
+                                RfKillType rtype,
                                 RfKillState udev_state,
                                 gpointer user_data)
 {
@@ -2698,7 +2699,7 @@ nm_manager_start (NMManager *self)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	gboolean we = FALSE;
 
-	switch (nm_udev_manager_get_rfkill_state (priv->udev_mgr)) {
+	switch (nm_udev_manager_get_rfkill_state (priv->udev_mgr, RFKILL_TYPE_WLAN)) {
 	case RFKILL_UNBLOCKED:
 		we = TRUE;
 		priv->wireless_hw_enabled = TRUE;

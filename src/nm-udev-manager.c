@@ -43,7 +43,7 @@ typedef struct {
 	GUdevClient *client;
 
 	/* Authoritative rfkill state (RFKILL_* enum) */
-	RfKillState rfkill_state;
+	RfKillState rfkill_states[RFKILL_TYPE_MAX];
 	GSList *killswitches;
 
 	gboolean disposed;
@@ -69,19 +69,21 @@ typedef struct {
 	guint64 seqnum;
 	char *path;
 	char *driver;
+	RfKillType rtype;
 	gint state;
 } Killswitch;
 
 RfKillState
-nm_udev_manager_get_rfkill_state (NMUdevManager *self)
+nm_udev_manager_get_rfkill_state (NMUdevManager *self, RfKillType rtype)
 {
 	g_return_val_if_fail (self != NULL, RFKILL_UNBLOCKED);
+	g_return_val_if_fail (rtype < RFKILL_TYPE_MAX, RFKILL_UNBLOCKED);
 
-	return NM_UDEV_MANAGER_GET_PRIVATE (self)->rfkill_state;
+	return NM_UDEV_MANAGER_GET_PRIVATE (self)->rfkill_states[rtype];
 }
 
 static Killswitch *
-killswitch_new (GUdevDevice *device)
+killswitch_new (GUdevDevice *device, RfKillType rtype)
 {
 	Killswitch *ks;
 	GUdevDevice *parent = NULL;
@@ -91,6 +93,7 @@ killswitch_new (GUdevDevice *device)
 	ks->name = g_strdup (g_udev_device_get_name (device));
 	ks->seqnum = g_udev_device_get_seqnum (device);
 	ks->path = g_strdup (g_udev_device_get_sysfs_path (device));
+	ks->rtype = rtype;
 
 	driver = g_udev_device_get_property (device, "DRIVER");
 	if (!driver) {
@@ -147,7 +150,12 @@ recheck_killswitches (NMUdevManager *self)
 {
 	NMUdevManagerPrivate *priv = NM_UDEV_MANAGER_GET_PRIVATE (self);
 	GSList *iter;
-	RfKillState poll_state = RFKILL_UNBLOCKED;
+	RfKillState poll_states[RFKILL_TYPE_MAX];
+	int i;
+
+	/* Default state is unblocked */
+	for (i = 0; i < RFKILL_TYPE_MAX; i++)
+		poll_states[i] = RFKILL_UNBLOCKED;
 
 	for (iter = priv->killswitches; iter; iter = g_slist_next (iter)) {
 		Killswitch *ks = iter->data;
@@ -159,15 +167,17 @@ recheck_killswitches (NMUdevManager *self)
 			continue;
 
 		dev_state = sysfs_state_to_nm_state (g_udev_device_get_property_as_int (device, "RFKILL_STATE"));
-		if (dev_state > poll_state)
-			poll_state = dev_state;
+		if (dev_state > poll_states[ks->rtype])
+			poll_states[ks->rtype] = dev_state;
 
 		g_object_unref (device);
 	}
 
-	if (poll_state != priv->rfkill_state) {
-		priv->rfkill_state = poll_state;
-		g_signal_emit (self, signals[RFKILL_CHANGED], 0, priv->rfkill_state);
+	for (i = 0; i < RFKILL_TYPE_MAX; i++) {
+		if (poll_states[i] != priv->rfkill_states[i]) {
+			priv->rfkill_states[i] = poll_states[i];
+			g_signal_emit (self, signals[RFKILL_CHANGED], 0, i, priv->rfkill_states[i]);
+		}
 	}
 }
 
@@ -188,21 +198,39 @@ killswitch_find_by_name (NMUdevManager *self, const char *name)
 	return NULL;
 }
 
+static const RfKillType
+rfkill_type_to_enum (const char *str)
+{
+	g_return_val_if_fail (str != NULL, RFKILL_TYPE_UNKNOWN);
+
+	if (!strcmp (str, "wlan"))
+		return RFKILL_TYPE_WLAN;
+	else if (!strcmp (str, "wwan"))
+		return RFKILL_TYPE_WWAN;
+	else if (!strcmp (str, "wimax"))
+		return RFKILL_TYPE_WIMAX;
+
+	return RFKILL_TYPE_UNKNOWN;
+}
+
 static void
 add_one_killswitch (NMUdevManager *self, GUdevDevice *device)
 {
 	NMUdevManagerPrivate *priv = NM_UDEV_MANAGER_GET_PRIVATE (self);
-	const char *type;
+	const char *str_type;
+	RfKillType rtype;
 	Killswitch *ks;
 
-	type = g_udev_device_get_property (device, "RFKILL_TYPE");
-	if (!type || strcmp (type, "wlan"))
+	str_type = g_udev_device_get_property (device, "RFKILL_TYPE");
+	rtype = rfkill_type_to_enum (str_type);
+	if (rtype == RFKILL_TYPE_UNKNOWN)
 		return;
 
-	ks = killswitch_new (device);
+	ks = killswitch_new (device, rtype);
 	priv->killswitches = g_slist_prepend (priv->killswitches, ks);
 
-	nm_info ("Found radio killswitch %s (at %s) (driver %s)",
+	nm_info ("Found %s radio killswitch %s (at %s) (driver %s)",
+	         str_type,
 	         ks->name,
 	         ks->path,
 	         ks->driver ? ks->driver : "<unknown>");
@@ -422,8 +450,11 @@ nm_udev_manager_init (NMUdevManager *self)
 	NMUdevManagerPrivate *priv = NM_UDEV_MANAGER_GET_PRIVATE (self);
 	const char *subsys[3] = { "rfkill", "net", NULL };
 	GList *switches, *iter;
+	guint32 i;
 
-	priv->rfkill_state = RFKILL_UNBLOCKED;
+	for (i = 0; i < RFKILL_TYPE_MAX; i++)
+		priv->rfkill_states[i] = RFKILL_UNBLOCKED;
+
 	priv->client = g_udev_client_new (subsys);
 	g_signal_connect (priv->client, "uevent", G_CALLBACK (handle_uevent), self);
 
@@ -492,8 +523,7 @@ nm_udev_manager_class_init (NMUdevManagerClass *klass)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMUdevManagerClass, rfkill_changed),
 					  NULL, NULL,
-					  g_cclosure_marshal_VOID__UINT,
-					  G_TYPE_NONE, 1,
-					  G_TYPE_UINT);
+					  _nm_marshal_VOID__UINT_UINT,
+					  G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 }
 

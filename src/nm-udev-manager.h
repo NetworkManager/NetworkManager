@@ -57,7 +57,7 @@ typedef struct {
 
 	void (*device_removed) (NMUdevManager *manager, GUdevDevice *device);
 
-	void (*rfkill_changed) (NMUdevManager *manager, RfKillState state);
+	void (*rfkill_changed) (NMUdevManager *manager, RfKillType rtype, RfKillState state);
 } NMUdevManagerClass;
 
 GType nm_udev_manager_get_type (void);
@@ -66,7 +66,7 @@ NMUdevManager *nm_udev_manager_new (void);
 
 void nm_udev_manager_query_devices (NMUdevManager *manager);
 
-RfKillState nm_udev_manager_get_rfkill_state (NMUdevManager *manager);
+RfKillState nm_udev_manager_get_rfkill_state (NMUdevManager *manager, RfKillType rtype);
 
 #endif /* NM_UDEV_MANAGER_H */
 
