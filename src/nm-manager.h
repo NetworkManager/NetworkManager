@@ -79,6 +79,7 @@ NMManager *nm_manager_get (const char *config_file,
                            const char *state_file,
                            gboolean initial_net_enabled,
                            gboolean initial_wifi_enabled,
+                           gboolean initial_wwan_enabled,
                            GError **error);
 
 void nm_manager_start (NMManager *manager);
