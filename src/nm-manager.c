@@ -60,6 +60,8 @@
 #define NM_MANAGER_STATE "state"
 #define NM_MANAGER_WIRELESS_ENABLED "wireless-enabled"
 #define NM_MANAGER_WIRELESS_HARDWARE_ENABLED "wireless-hardware-enabled"
+#define NM_MANAGER_WWAN_ENABLED "wwan-enabled"
+#define NM_MANAGER_WWAN_HARDWARE_ENABLED "wwan-hardware-enabled"
 #define NM_MANAGER_ACTIVE_CONNECTIONS "active-connections"
 
 static gboolean impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err);
@@ -226,6 +228,8 @@ enum {
 	PROP_STATE,
 	PROP_WIRELESS_ENABLED,
 	PROP_WIRELESS_HARDWARE_ENABLED,
+	PROP_WWAN_ENABLED,
+	PROP_WWAN_HARDWARE_ENABLED,
 	PROP_ACTIVE_CONNECTIONS,
 
 	/* Not exported */
@@ -1299,10 +1303,39 @@ nm_manager_get_ipw_rfkill_state (NMManager *self)
 	return ipw_state;
 }
 
+static RfKillState
+nm_manager_get_modem_enabled_state (NMManager *self)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+	RfKillState wwan_state = RFKILL_UNBLOCKED;
+
+	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *candidate = NM_DEVICE (iter->data);
+		RfKillState candidate_state = RFKILL_UNBLOCKED;
+
+		if (NM_IS_MODEM (candidate)) {
+			if (nm_modem_get_mm_enabled (NM_MODEM (candidate)) == FALSE)
+				candidate_state = RFKILL_SOFT_BLOCKED;
+
+			if (candidate_state > wwan_state)
+				wwan_state = candidate_state;
+		}
+	}
+
+	return wwan_state;
+}
+
 static gboolean
 rfkill_wlan_filter (GObject *object)
 {
 	return NM_IS_DEVICE_WIFI (object);
+}
+
+static gboolean
+rfkill_wwan_filter (GObject *object)
+{
+	return NM_IS_MODEM (object);
 }
 
 static void
@@ -1383,6 +1416,14 @@ manager_ipw_rfkill_state_changed (NMDeviceWifi *device,
 }
 
 static void
+manager_modem_enabled_changed (NMModem *device,
+                               GParamSpec *pspec,
+                               gpointer user_data)
+{
+	nm_manager_rfkill_update (NM_MANAGER (user_data), RFKILL_TYPE_WWAN);
+}
+
+static void
 add_device (NMManager *self, NMDevice *device)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
@@ -1430,6 +1471,18 @@ add_device (NMManager *self, NMDevice *device)
 		nm_manager_rfkill_update (self, RFKILL_TYPE_WLAN);
 		nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (device),
 		                                 priv->radio_states[RFKILL_TYPE_WLAN].enabled);
+	} else if (NM_IS_MODEM (device)) {
+		g_signal_connect (device, "notify::" NM_MODEM_ENABLED,
+		                  G_CALLBACK (manager_modem_enabled_changed),
+		                  self);
+
+		nm_manager_rfkill_update (self, RFKILL_TYPE_WWAN);
+		/* Until we start respecting WWAN rfkill switches the modem itself
+		 * is the source of the enabled/disabled state, so the manager shouldn't
+		 * touch it here.
+		nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (device),
+		                                 priv->radio_states[RFKILL_TYPE_WWAN].enabled);
+		*/
 	}
 
 	type_desc = nm_device_get_type_desc (device);
@@ -2850,6 +2903,7 @@ nm_manager_get (const char *config_file,
 	priv->sleeping = !initial_net_enabled;
 
 	priv->radio_states[RFKILL_TYPE_WLAN].enabled = initial_wifi_enabled;
+	priv->radio_states[RFKILL_TYPE_WWAN].enabled = initial_wwan_enabled;
 
 	g_signal_connect (priv->sys_settings, "notify::" NM_SYSCONFIG_SETTINGS_UNMANAGED_SPECS,
 	                  G_CALLBACK (system_unmanaged_devices_changed_cb), singleton);
@@ -2975,6 +3029,11 @@ set_property (GObject *object, guint prop_id,
 		                           &priv->radio_states[RFKILL_TYPE_WLAN],
 		                           g_value_get_boolean (value));
 		break;
+	case PROP_WWAN_ENABLED:
+		manager_set_radio_enabled (NM_MANAGER (object),
+		                           &priv->radio_states[RFKILL_TYPE_WWAN],
+		                           g_value_get_boolean (value));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -2998,6 +3057,12 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_WIRELESS_HARDWARE_ENABLED:
 		g_value_set_boolean (value, priv->radio_states[RFKILL_TYPE_WLAN].hw_enabled);
+		break;
+	case PROP_WWAN_ENABLED:
+		g_value_set_boolean (value, priv->radio_states[RFKILL_TYPE_WWAN].enabled);
+		break;
+	case PROP_WWAN_HARDWARE_ENABLED:
+		g_value_set_boolean (value, priv->radio_states[RFKILL_TYPE_WWAN].hw_enabled);
 		break;
 	case PROP_ACTIVE_CONNECTIONS:
 		g_value_take_boxed (value, get_active_connections (self, NULL));
@@ -3031,6 +3096,14 @@ nm_manager_init (NMManager *manager)
 	priv->radio_states[RFKILL_TYPE_WLAN].desc = "WiFi";
 	priv->radio_states[RFKILL_TYPE_WLAN].other_enabled_func = nm_manager_get_ipw_rfkill_state;
 	priv->radio_states[RFKILL_TYPE_WLAN].object_filter_func = rfkill_wlan_filter;
+
+	priv->radio_states[RFKILL_TYPE_WWAN].enabled = TRUE;
+	priv->radio_states[RFKILL_TYPE_WWAN].key = "WWANEnabled";
+	priv->radio_states[RFKILL_TYPE_WWAN].prop = NM_MANAGER_WWAN_ENABLED;
+	priv->radio_states[RFKILL_TYPE_WWAN].hw_prop = NM_MANAGER_WWAN_HARDWARE_ENABLED;
+	priv->radio_states[RFKILL_TYPE_WWAN].desc = "WWAN";
+	priv->radio_states[RFKILL_TYPE_WWAN].other_enabled_func = nm_manager_get_modem_enabled_state;
+	priv->radio_states[RFKILL_TYPE_WWAN].object_filter_func = rfkill_wwan_filter;
 
 	for (i = 0; i < RFKILL_TYPE_MAX; i++)
 		priv->radio_states[i].hw_enabled = TRUE;
@@ -3123,6 +3196,22 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		 g_param_spec_boolean (NM_MANAGER_WIRELESS_HARDWARE_ENABLED,
 		                       "WirelessHardwareEnabled",
 		                       "RF kill state",
+		                       TRUE,
+		                       G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_WWAN_ENABLED,
+		 g_param_spec_boolean (NM_MANAGER_WWAN_ENABLED,
+		                       "WwanEnabled",
+		                       "Is mobile broadband enabled",
+		                       TRUE,
+		                       G_PARAM_READWRITE));
+
+	g_object_class_install_property
+		(object_class, PROP_WWAN_HARDWARE_ENABLED,
+		 g_param_spec_boolean (NM_MANAGER_WWAN_HARDWARE_ENABLED,
+		                       "WwanHardwareEnabled",
+		                       "Whether WWAN is disabled by a hardware switch or not",
 		                       TRUE,
 		                       G_PARAM_READABLE));
 
