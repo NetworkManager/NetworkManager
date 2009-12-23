@@ -45,6 +45,8 @@ G_BEGIN_DECLS
 #define NM_CLIENT_MANAGER_RUNNING "manager-running"
 #define NM_CLIENT_WIRELESS_ENABLED "wireless-enabled"
 #define NM_CLIENT_WIRELESS_HARDWARE_ENABLED "wireless-hardware-enabled"
+#define NM_CLIENT_WWAN_ENABLED "wwan-enabled"
+#define NM_CLIENT_WWAN_HARDWARE_ENABLED "wwan-hardware-enabled"
 #define NM_CLIENT_ACTIVE_CONNECTIONS "active-connections"
 
 typedef struct {
@@ -89,6 +91,11 @@ void nm_client_deactivate_connection (NMClient *client, NMActiveConnection *acti
 gboolean  nm_client_wireless_get_enabled (NMClient *client);
 void      nm_client_wireless_set_enabled (NMClient *client, gboolean enabled);
 gboolean  nm_client_wireless_hardware_get_enabled (NMClient *client);
+
+gboolean  nm_client_wwan_get_enabled (NMClient *client);
+void      nm_client_wwan_set_enabled (NMClient *client, gboolean enabled);
+gboolean  nm_client_wwan_hardware_get_enabled (NMClient *client);
+
 NMState   nm_client_get_state            (NMClient *client);
 gboolean  nm_client_get_manager_running  (NMClient *client);
 const GPtrArray *nm_client_get_active_connections (NMClient *client);

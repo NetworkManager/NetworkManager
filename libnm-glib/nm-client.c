@@ -60,6 +60,9 @@ typedef struct {
 
 	gboolean wireless_enabled;
 	gboolean wireless_hw_enabled;
+
+	gboolean wwan_enabled;
+	gboolean wwan_hw_enabled;
 } NMClientPrivate;
 
 enum {
@@ -68,6 +71,8 @@ enum {
 	PROP_MANAGER_RUNNING,
 	PROP_WIRELESS_ENABLED,
 	PROP_WIRELESS_HARDWARE_ENABLED,
+	PROP_WWAN_ENABLED,
+	PROP_WWAN_HARDWARE_ENABLED,
 	PROP_ACTIVE_CONNECTIONS,
 
 	LAST_PROP
@@ -153,6 +158,36 @@ wireless_enabled_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
 	poke_wireless_devices_with_rf_status (NM_CLIENT (object));
 }
 
+static void
+update_wwan_status (NMClient *client, gboolean notify)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
+	gboolean val;
+
+	val = _nm_object_get_boolean_property (NM_OBJECT (client),
+	                                       NM_DBUS_INTERFACE,
+	                                       "WwanHardwareEnabled");
+	if (val != priv->wwan_hw_enabled) {
+		priv->wwan_hw_enabled = val;
+		if (notify)
+			_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_WWAN_HARDWARE_ENABLED);
+	}
+
+	if (priv->wwan_hw_enabled == FALSE)
+		val = FALSE;
+	else {
+		val = _nm_object_get_boolean_property (NM_OBJECT (client),
+		                                       NM_DBUS_INTERFACE,
+		                                       "WwanEnabled");
+	}
+
+	if (val != priv->wwan_enabled) {
+		priv->wwan_enabled = val;
+		if (notify)
+			_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_WWAN_ENABLED);
+	}
+}
+
 static GObject *
 new_active_connection (DBusGConnection *connection, const char *path)
 {
@@ -217,6 +252,8 @@ register_for_property_changed (NMClient *client)
 		{ NM_CLIENT_STATE,                     _nm_object_demarshal_generic,  &priv->state },
 		{ NM_CLIENT_WIRELESS_ENABLED,          _nm_object_demarshal_generic,  &priv->wireless_enabled },
 		{ NM_CLIENT_WIRELESS_HARDWARE_ENABLED, _nm_object_demarshal_generic,  &priv->wireless_hw_enabled },
+		{ NM_CLIENT_WWAN_ENABLED,              _nm_object_demarshal_generic,  &priv->wwan_enabled },
+		{ NM_CLIENT_WWAN_HARDWARE_ENABLED,     _nm_object_demarshal_generic,  &priv->wwan_hw_enabled },
 		{ NM_CLIENT_ACTIVE_CONNECTIONS,        demarshal_active_connections, &priv->active_connections },
 		{ NULL },
 	};
@@ -291,6 +328,7 @@ constructor (GType type,
 
 	if (priv->manager_running) {
 		update_wireless_status (NM_CLIENT (object), FALSE);
+		update_wwan_status (NM_CLIENT (object), FALSE);
 		nm_client_get_state (NM_CLIENT (object));
 	}
 
@@ -353,6 +391,20 @@ set_property (GObject *object, guint prop_id,
 			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WIRELESS_HARDWARE_ENABLED);
 		}
 		break;
+	case PROP_WWAN_ENABLED:
+		b = g_value_get_boolean (value);
+		if (priv->wwan_enabled != b) {
+			priv->wwan_enabled = b;
+			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WWAN_ENABLED);
+		}
+		break;
+	case PROP_WWAN_HARDWARE_ENABLED:
+		b = g_value_get_boolean (value);
+		if (priv->wwan_hw_enabled != b) {
+			priv->wwan_hw_enabled = b;
+			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WWAN_HARDWARE_ENABLED);
+		}
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -380,6 +432,12 @@ get_property (GObject *object,
 		break;
 	case PROP_WIRELESS_HARDWARE_ENABLED:
 		g_value_set_boolean (value, priv->wireless_hw_enabled);
+		break;
+	case PROP_WWAN_ENABLED:
+		g_value_set_boolean (value, priv->wwan_enabled);
+		break;
+	case PROP_WWAN_HARDWARE_ENABLED:
+		g_value_set_boolean (value, priv->wwan_hw_enabled);
 		break;
 	case PROP_ACTIVE_CONNECTIONS:
 		g_value_set_boxed (value, nm_client_get_active_connections (self));
@@ -456,6 +514,32 @@ nm_client_class_init (NMClientClass *client_class)
 						   "Is wireless hardware enabled",
 						   TRUE,
 						   G_PARAM_READABLE));
+
+	/**
+	 * NMClient::wwan-enabled:
+	 *
+	 * Whether WWAN functionality is enabled.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_WWAN_ENABLED,
+		 g_param_spec_boolean (NM_CLIENT_WWAN_ENABLED,
+		                       "WwanEnabled",
+		                       "Is WWAN enabled",
+		                       TRUE,
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+
+	/**
+	 * NMClient::wwan-hardware-enabled:
+	 *
+	 * Whether the WWAN hardware is enabled.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_WWAN_HARDWARE_ENABLED,
+		 g_param_spec_boolean (NM_CLIENT_WWAN_HARDWARE_ENABLED,
+		                       "WwanHardwareEnabled",
+		                       "Is WWAN hardware enabled",
+		                       TRUE,
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	/**
 	 * NMClient::active-connections:
@@ -566,9 +650,12 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 		free_object_array (&priv->active_connections);
 		priv->wireless_enabled = FALSE;
 		priv->wireless_hw_enabled = FALSE;
+		priv->wwan_enabled = FALSE;
+		priv->wwan_hw_enabled = FALSE;
 	} else {
 		_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
 		update_wireless_status (client, TRUE);
+		update_wwan_status (client, TRUE);
 	}
 }
 
@@ -871,6 +958,61 @@ nm_client_wireless_hardware_get_enabled (NMClient *client)
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
 	return NM_CLIENT_GET_PRIVATE (client)->wireless_hw_enabled;
+}
+
+/**
+ * nm_client_wwan_get_enabled:
+ * @client: a #NMClient
+ *
+ * Determines whether WWAN is enabled.
+ *
+ * Returns: %TRUE if WWAN is enabled
+ **/
+gboolean
+nm_client_wwan_get_enabled (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+
+	return NM_CLIENT_GET_PRIVATE (client)->wwan_enabled;
+}
+
+/**
+ * nm_client_wwan_set_enabled:
+ * @client: a #NMClient
+ * @enabled: %TRUE to enable WWAN
+ *
+ * Enables or disables WWAN devices.
+ **/
+void
+nm_client_wwan_set_enabled (NMClient *client, gboolean enabled)
+{
+	GValue value = {0,};
+
+	g_return_if_fail (NM_IS_CLIENT (client));
+
+	g_value_init (&value, G_TYPE_BOOLEAN);
+	g_value_set_boolean (&value, enabled);
+
+	_nm_object_set_property (NM_OBJECT (client),
+	                         NM_DBUS_INTERFACE,
+	                         "WwanEnabled",
+	                         &value);
+}
+
+/**
+ * nm_client_wwan_hardware_get_enabled:
+ * @client: a #NMClient
+ *
+ * Determines whether the WWAN hardware is enabled.
+ *
+ * Returns: %TRUE if the WWAN hardware is enabled
+ **/
+gboolean
+nm_client_wwan_hardware_get_enabled (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+
+	return NM_CLIENT_GET_PRIVATE (client)->wwan_hw_enabled;
 }
 
 /**
