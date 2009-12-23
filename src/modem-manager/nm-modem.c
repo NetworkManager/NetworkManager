@@ -601,11 +601,13 @@ modem_properties_changed (DBusGProxy *proxy,
 		priv->mm_enabled = g_value_get_boolean (value);
 		g_object_notify (G_OBJECT (self), NM_MODEM_ENABLED);
 
-		state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
-		if (IS_ACTIVATING_STATE (state) || (state == NM_DEVICE_STATE_ACTIVATED)) {
-			nm_device_state_changed (NM_DEVICE (self),
-			                         NM_DEVICE_STATE_DISCONNECTED,
-			                         NM_DEVICE_STATE_REASON_NONE);
+		if (priv->mm_enabled == FALSE) {
+			state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
+			if (IS_ACTIVATING_STATE (state) || (state == NM_DEVICE_STATE_ACTIVATED)) {
+				nm_device_state_changed (NM_DEVICE (self),
+				                         NM_DEVICE_STATE_DISCONNECTED,
+				                         NM_DEVICE_STATE_REASON_NONE);
+			}
 		}
 	}
 }
