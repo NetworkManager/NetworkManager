@@ -220,18 +220,18 @@ real_do_dial (NMGsmDevice *device, guint cid)
 }
 
 static void
-set_apn_done (NMSerialDevice *device,
-              int reply_index,
-              const char *reply,
-              gpointer user_data)
+real_set_apn_done (NMGsmDevice *self,
+                   int reply_index,
+                   const char *reply,
+                   guint cid)
 {
 	switch (reply_index) {
 	case 0:
-		NM_GSM_DEVICE_GET_CLASS (device)->do_dial (NM_GSM_DEVICE (device), GPOINTER_TO_UINT (user_data));
+		NM_GSM_DEVICE_GET_CLASS (self)->do_dial (self, cid);
 		break;
 	default:
 		nm_warning ("Setting APN failed");
-		nm_device_state_changed (NM_DEVICE (device),
+		nm_device_state_changed (NM_DEVICE (self),
 		                         NM_DEVICE_STATE_FAILED,
 		                         NM_DEVICE_STATE_REASON_GSM_APN_FAILED);
 		break;
@@ -239,13 +239,22 @@ set_apn_done (NMSerialDevice *device,
 }
 
 static void
-set_apn (NMGsmDevice *device)
+set_apn_done (NMSerialDevice *device,
+              int reply_index,
+              const char *reply,
+              gpointer user_data)
+{
+	NM_GSM_DEVICE_GET_CLASS (device)->set_apn_done (NM_GSM_DEVICE (device), reply_index, reply, GPOINTER_TO_UINT (user_data));
+}
+
+void
+nm_gsm_device_set_apn (NMGsmDevice *device)
 {
 	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (device);
 	NMSettingGsm *setting;
 	char *command;
 	const char *apn;
-	const char *responses[] = { "OK", "ERROR", NULL };
+	const char *responses[] = { "OK", "ERROR", "+CME ERROR: GPRS - a profile (cid) is currently active", NULL };
 	guint cid = 1;
 
 	priv->reg_tries = 0;
@@ -292,7 +301,7 @@ manual_registration_response (NMSerialDevice *device,
 
 	switch (reply_index) {
 	case 0:
-		set_apn (NM_GSM_DEVICE (device));
+		nm_gsm_device_set_apn (NM_GSM_DEVICE (device));
 		break;
 	case -1:
 		/* Some cards (ex. Sierra AC860) don't immediately respond to commands
@@ -347,7 +356,7 @@ get_network_response (NMSerialDevice *device,
 		break;
 	}
 
-	set_apn (NM_GSM_DEVICE (device));
+	nm_gsm_device_set_apn (NM_GSM_DEVICE (device));
 }
 
 static void
@@ -1206,6 +1215,7 @@ nm_gsm_device_class_init (NMGsmDeviceClass *klass)
 	device_class->deactivate_quickly = real_deactivate_quickly;
 
 	klass->do_dial = real_do_dial;
+	klass->set_apn_done = real_set_apn_done;
 
 	serial_class->get_ppp_name = real_get_ppp_name;
 

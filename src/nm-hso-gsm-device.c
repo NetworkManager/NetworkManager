@@ -62,6 +62,7 @@ typedef struct {
 	NMIP4Config *pending_ip4_config;
 
 	guint auth_idx;
+	guint clear_tries;
 } NMHsoGsmDevicePrivate;
 
 enum {
@@ -129,6 +130,15 @@ gsm_device_get_setting (NMGsmDevice *device, GType setting_type)
 	}
 
 	return setting;
+}
+
+static NMActStageReturn
+real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
+{
+	NMHsoGsmDevicePrivate *priv = NM_HSO_GSM_DEVICE_GET_PRIVATE (device);
+
+	priv->clear_tries = 0;
+	return NM_DEVICE_CLASS (nm_hso_gsm_device_parent_class)->act_stage1_prepare (device, reason);
 }
 
 static void
@@ -322,6 +332,65 @@ real_do_dial (NMGsmDevice *device, guint cid)
 
 	nm_device_activate_schedule_stage2_device_config (NM_DEVICE (device));
 }
+
+static void
+disconnect_done (NMSerialDevice *device,
+                 int reply_index,
+                 const char *reply,
+                 gpointer user_data)
+{
+	NMHsoGsmDevicePrivate *priv = NM_HSO_GSM_DEVICE_GET_PRIVATE (device);
+
+	switch (reply_index) {
+	case 0:
+	case 1:
+		nm_gsm_device_set_apn (NM_GSM_DEVICE (device));
+		break;
+	default:
+		priv->clear_tries = 0;
+		nm_warning ("Setting APN failed (disconnect failed)");
+		nm_device_state_changed (NM_DEVICE (device),
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_GSM_APN_FAILED);
+		break;
+	}
+}
+
+static void
+real_set_apn_done (NMGsmDevice *self,
+                   int reply_index,
+                   const char *reply,
+                   guint cid)
+{
+	NMHsoGsmDevicePrivate *priv = NM_HSO_GSM_DEVICE_GET_PRIVATE (self);
+	const char *responses[] = { "_OWANCALL: ", "OK", "ERROR", "NO CARRIER", NULL };
+	char *command;
+
+	switch (reply_index) {
+	case 0:
+		NM_GSM_DEVICE_CLASS (nm_hso_gsm_device_parent_class)->set_apn_done (self, reply_index, reply, cid);
+		break;
+	default:
+		if (priv->clear_tries > 15) {
+			priv->clear_tries = 0;
+			nm_warning ("Setting APN failed (too many clear tries)");
+			nm_device_state_changed (NM_DEVICE (self),
+			                         NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_GSM_APN_FAILED);
+		} else {
+			/* Newer HSO devices won't allow AT+CGDCONT when there's already an
+			 * active data call.  Need to tear down an active call first.
+			 */
+			/* Kill any existing connection */
+			priv->clear_tries++;
+			command = g_strdup_printf ("AT_OWANCALL=%d,0,0", cid);
+			modem_wait_for_reply (NM_GSM_DEVICE (self), command, 5, responses, responses, disconnect_done, GUINT_TO_POINTER (cid));
+			g_free (command);
+		}
+		break;
+	}
+}
+
 
 #define OWANDATA_TAG "_OWANDATA: "
 
@@ -630,6 +699,7 @@ nm_hso_gsm_device_class_init (NMHsoGsmDeviceClass *klass)
 	object_class->set_property = set_property;
 	object_class->finalize = finalize;
 
+	device_class->act_stage1_prepare = real_act_stage1_prepare;
 	device_class->act_stage2_config = real_act_stage2_config;
 	device_class->act_stage3_ip_config_start = real_act_stage3_ip_config_start;
 	device_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
@@ -640,6 +710,7 @@ nm_hso_gsm_device_class_init (NMHsoGsmDeviceClass *klass)
 	device_class->hw_bring_up = real_hw_bring_up;
 
 	gsm_class->do_dial = real_do_dial;
+	gsm_class->set_apn_done = real_set_apn_done;
 
 	/* Properties */
 	g_object_class_install_property

@@ -44,6 +44,11 @@ typedef struct {
 
 	void (*do_dial) (NMGsmDevice *device, guint cid);
 
+	void (*set_apn_done) (NMGsmDevice *device,
+	                      int reply_index,
+	                      const char *reply,
+	                      guint cid);
+
 	/* Signals */
 	void (*properties_changed) (NMGsmDevice *device, GHashTable *properties);
 } NMGsmDeviceClass;
@@ -55,6 +60,8 @@ NMGsmDevice *nm_gsm_device_new (const char *udi,
 						  const char *monitor_iface,
 						  const char *driver,
 						  gboolean managed);
+
+void nm_gsm_device_set_apn (NMGsmDevice *device);
 
 G_END_DECLS
 
