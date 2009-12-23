@@ -457,7 +457,7 @@ aipd_handle_event (DBusGProxy *proxy,
 	NMManager *manager = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	GSList *iter;
-	gboolean handled;
+	gboolean handled = FALSE;
 
 	if (!event || !iface) {
 		nm_warning ("Incomplete message received from avahi-autoipd");
@@ -1931,7 +1931,6 @@ user_get_secrets_cb (DBusGProxy *proxy,
                      gpointer user_data)
 {
 	GetSecretsInfo *info = (GetSecretsInfo *) user_data;
-	NMManagerPrivate *priv;
 	GHashTable *settings = NULL;
 	GError *error = NULL;
 	GObject *provider;
@@ -1939,8 +1938,6 @@ user_get_secrets_cb (DBusGProxy *proxy,
 	g_return_if_fail (info != NULL);
 	g_return_if_fail (info->provider);
 	g_return_if_fail (info->setting_name);
-
-	priv = NM_MANAGER_GET_PRIVATE (info->manager);
 
 	provider = g_object_ref (info->provider);
 
