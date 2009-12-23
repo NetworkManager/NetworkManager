@@ -31,6 +31,10 @@ EXTRA_DIST = \
 	keys-test-wifi-leap \
 	ifcfg-test-wifi-wpa-psk \
 	keys-test-wifi-wpa-psk \
+	ifcfg-test-wifi-wpa-psk-unquoted \
+	keys-test-wifi-wpa-psk-unquoted \
+	ifcfg-test-wifi-wpa-psk-unquoted2 \
+	keys-test-wifi-wpa-psk-unquoted2 \
 	ifcfg-test-wifi-wpa-psk-adhoc \
 	keys-test-wifi-wpa-psk-adhoc \
 	ifcfg-test-wifi-wpa-psk-hex \

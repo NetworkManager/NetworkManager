@@ -3206,6 +3206,135 @@ test_read_wifi_wpa_psk (void)
 	g_object_unref (connection);
 }
 
+#define TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wpa-psk-unquoted"
+
+static void
+test_read_wifi_wpa_psk_unquoted (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wireless;
+	NMSettingWirelessSecurity *s_wsec;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const char *expected_id = "System blahblah (test-wifi-wpa-psk-unquoted)";
+	const char *expected_psk = "54336845e2f3f321c4c7";
+
+	connection = connection_from_file (TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
+	                                   NULL,
+	                                   TYPE_WIRELESS,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "wifi-wpa-psk-unquoted-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wifi-wpa-psk-unquoted-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED, error->message);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "wifi-wpa-psk-unquoted-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "wifi-wpa-psk-unquoted-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_id) == 0,
+	        "wifi-wpa-psk-unquoted-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+	/* ===== WIRELESS SETTING ===== */
+
+	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	ASSERT (s_wireless != NULL,
+	        "wifi-wpa-psk-unquoted-verify-wireless", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+
+	/* Security */
+	tmp = nm_setting_wireless_get_security (s_wireless);
+	ASSERT (tmp != NULL,
+	        "wifi-wpa-psk-unquoted-verify-wireless", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
+	        NM_SETTING_WIRELESS_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SEC);
+	ASSERT (strcmp (tmp, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0,
+	        "wifi-wpa-psk-unquoted-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
+	        NM_SETTING_WIRELESS_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SEC);
+
+	/* ===== WIRELESS SECURITY SETTING ===== */
+
+	s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY));
+	ASSERT (s_wsec != NULL,
+	        "wifi-wpa-psk-unquoted-verify-wireless", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+
+	/* PSK */
+	tmp = nm_setting_wireless_security_get_psk (s_wsec);
+	ASSERT (tmp != NULL,
+	        "wifi-wpa-psk-unquoted-verify-wireless", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_PSK);
+	ASSERT (strcmp (tmp, expected_psk) == 0,
+	        "wifi-wpa-psk-unquoted-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_PSK);
+
+	g_object_unref (connection);
+}
+
+#define TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED2 TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wpa-psk-unquoted2"
+
+static void
+test_read_wifi_wpa_psk_unquoted2 (void)
+{
+	NMConnection *connection;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+
+	/* Ensure a quoted 64-character WPA passphrase will fail since passphrases
+	 * must be between 8 and 63 ASCII characters inclusive per the WPA spec.
+	 */
+
+	connection = connection_from_file (TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED2,
+	                                   NULL,
+	                                   TYPE_WIRELESS,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection == NULL,
+	        "wifi-wpa-psk-unquoted-read", "unexpected success reading %s", TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED2);
+	g_clear_error (&error);
+}
+
 #define TEST_IFCFG_WIFI_WPA_PSK_ADHOC TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wpa-psk-adhoc"
 
 static void
@@ -6809,6 +6938,8 @@ int main (int argc, char **argv)
 	test_read_wifi_wep_adhoc ();
 	test_read_wifi_leap ();
 	test_read_wifi_wpa_psk ();
+	test_read_wifi_wpa_psk_unquoted ();
+	test_read_wifi_wpa_psk_unquoted2 ();
 	test_read_wifi_wpa_psk_adhoc ();
 	test_read_wifi_wpa_psk_hex ();
 	test_read_wifi_wpa_eap_tls ();
