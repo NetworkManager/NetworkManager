@@ -141,7 +141,7 @@ stage1_enable_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_da
 	NMDevice *device = NM_DEVICE (user_data);
 	GError *error = NULL;
 
-	if (!dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID))
+	if (dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID))
 		do_connect (NM_MODEM (device));
 	else {
 		nm_warning ("CDMA modem enable failed: (%d) %s",
