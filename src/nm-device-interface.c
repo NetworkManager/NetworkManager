@@ -355,3 +355,12 @@ nm_device_interface_can_assume_connection (NMDeviceInterface *device)
 	return !!NM_DEVICE_INTERFACE_GET_INTERFACE (device)->connection_match_config;
 }
 
+void
+nm_device_interface_set_enabled (NMDeviceInterface *device, gboolean enabled)
+{
+	g_return_if_fail (NM_IS_DEVICE_INTERFACE (device));
+
+	if (NM_DEVICE_INTERFACE_GET_INTERFACE (device)->set_enabled)
+		return NM_DEVICE_INTERFACE_GET_INTERFACE (device)->set_enabled (device, enabled);
+}
+

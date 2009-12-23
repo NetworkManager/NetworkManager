@@ -1184,7 +1184,7 @@ manager_set_wireless_enabled (NMManager *manager, gboolean enabled)
 	/* enable/disable wireless devices as required */
 	for (iter = priv->devices; iter; iter = iter->next) {
 		if (NM_IS_DEVICE_WIFI (iter->data))
-			nm_device_wifi_set_enabled (NM_DEVICE_WIFI (iter->data), enabled);
+			nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (iter->data), enabled);
 	}
 }
 
@@ -1371,7 +1371,7 @@ add_device (NMManager *self, NMDevice *device)
 		 * then set this device's rfkill state based on the global state.
 		 */
 		nm_manager_rfkill_update (self);
-		nm_device_wifi_set_enabled (NM_DEVICE_WIFI (device), priv->wireless_enabled);
+		nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (device), priv->wireless_enabled);
 	}
 
 	type_desc = nm_device_get_type_desc (device);
@@ -2562,7 +2562,7 @@ impl_manager_sleep (NMManager *self, gboolean sleep, GError **error)
 			 * to killswitch changes during sleep.
 			 */
 			if (NM_IS_DEVICE_WIFI (iter->data))
-				nm_device_wifi_set_enabled (NM_DEVICE_WIFI (iter->data), wifi_enabled);
+				nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (iter->data), wifi_enabled);
 
 			nm_device_clear_autoconnect_inhibit (device);
 			if (nm_device_interface_spec_match_list (NM_DEVICE_INTERFACE (device), unmanaged_specs))
