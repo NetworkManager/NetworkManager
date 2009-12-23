@@ -35,11 +35,6 @@
 #define NM_IS_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_MANAGER))
 #define NM_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_MANAGER, NMManagerClass))
 
-#define NM_MANAGER_STATE "state"
-#define NM_MANAGER_WIRELESS_ENABLED "wireless-enabled"
-#define NM_MANAGER_WIRELESS_HARDWARE_ENABLED "wireless-hardware-enabled"
-#define NM_MANAGER_ACTIVE_CONNECTIONS "active-connections"
-
 /* Not exported */
 #define NM_MANAGER_HOSTNAME "hostname"
 #define NM_MANAGER_SLEEPING "sleeping"
