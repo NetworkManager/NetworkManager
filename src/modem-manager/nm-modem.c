@@ -12,10 +12,14 @@
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-device-interface.h"
+#include "nm-dbus-glib-types.h"
 
 #include "nm-serial-device-glue.h"
 
-G_DEFINE_TYPE (NMModem, nm_modem, G_TYPE_OBJECT)
+static void device_interface_init (NMDeviceInterface *iface_class);
+
+G_DEFINE_TYPE_EXTENDED (NMModem, nm_modem, NM_TYPE_DEVICE, 0,
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_INTERFACE, device_interface_init))
 
 #define NM_MODEM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_MODEM, NMModemPrivate))
 
@@ -25,14 +29,17 @@ enum {
 	PROP_IFACE,
 	PROP_PATH,
 	PROP_IP_METHOD,
+	PROP_ENABLED,
 
 	LAST_PROP
 };
 
 typedef struct {
 	NMDBusManager *dbus_mgr;
-	char *path;
 	DBusGProxy *proxy;
+	DBusGProxy *props_proxy;
+
+	char *path;
 	NMPPPManager *ppp_manager;
 	NMIP4Config	 *pending_ip4_config;
 	guint32 ip_method;
@@ -42,6 +49,8 @@ typedef struct {
 	guint32 secrets_tries;
 
 	DBusGProxyCall *call;
+
+	gboolean mm_enabled;
 
 	/* PPP stats */
 	guint32 in_bytes;
@@ -68,6 +77,14 @@ nm_modem_get_ppp_manager (NMModem *self)
 	return NM_MODEM_GET_PRIVATE (self)->ppp_manager;
 }
 
+gboolean
+nm_modem_get_mm_enabled (NMModem *self)
+{
+	g_return_val_if_fail (NM_IS_MODEM (self), TRUE);
+
+	return NM_MODEM_GET_PRIVATE (self)->mm_enabled;
+}
+
 DBusGProxy *
 nm_modem_get_proxy (NMModem *self,
 					const char *interface)
@@ -81,6 +98,9 @@ nm_modem_get_proxy (NMModem *self,
 	/* Default to the default interface. */
 	if (interface == NULL)
 		interface = MM_DBUS_INTERFACE_MODEM;
+
+	if (interface && !strcmp (interface, DBUS_INTERFACE_PROPERTIES))
+		return priv->props_proxy;
 
 	current_iface = dbus_g_proxy_get_interface (priv->proxy);
 	if (!current_iface || strcmp (current_iface, interface))
@@ -651,8 +671,13 @@ nm_modem_device_state_changed (NMModem *self,
                                NMDeviceState old_state,
                                NMDeviceStateReason reason)
 {
+	gboolean was_connected = FALSE;
+
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_MODEM (self));
+
+	if (IS_ACTIVATING_STATE (old_state) || (old_state == NM_DEVICE_STATE_ACTIVATED))
+		was_connected = TRUE;
 
 	/* Make sure we don't leave the serial device open */
 	switch (new_state) {
@@ -664,10 +689,11 @@ nm_modem_device_state_changed (NMModem *self,
 	case NM_DEVICE_STATE_UNAVAILABLE:
 	case NM_DEVICE_STATE_FAILED:
 	case NM_DEVICE_STATE_DISCONNECTED:
-		dbus_g_proxy_call_no_reply (nm_modem_get_proxy (self, MM_DBUS_INTERFACE_MODEM),
-		                            "Enable",
-		                            G_TYPE_BOOLEAN, FALSE,
-		                            G_TYPE_INVALID);
+		if (was_connected) {
+			dbus_g_proxy_call_no_reply (nm_modem_get_proxy (self, MM_DBUS_INTERFACE_MODEM),
+			                            "Disconnect",
+			                            G_TYPE_INVALID);
+		}
 		break;
 	default:
 		break;
@@ -726,7 +752,118 @@ nm_modem_get_path (NMModem *self)
 	return NM_MODEM_GET_PRIVATE (self)->path;
 }
 
+static void
+get_mm_enabled_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
+{
+	NMModem *self = NM_MODEM (user_data);
+	GError *error = NULL;
+	GValue value = { 0, };
+
+	if (!dbus_g_proxy_end_call (proxy, call_id, &error,
+	                            G_TYPE_VALUE, &value,
+	                            G_TYPE_INVALID)) {
+		g_warning ("%s: failed get modem enabled state: (%d) %s",
+		           __func__,
+		           error ? error->code : -1,
+		           error && error->message ? error->message : "(unknown)");
+		return;
+	}
+
+	if (G_VALUE_HOLDS_BOOLEAN (&value)) {
+		NM_MODEM_GET_PRIVATE (self)->mm_enabled = g_value_get_boolean (&value);
+		g_object_notify (G_OBJECT (self), NM_MODEM_ENABLED);
+	} else
+		g_warning ("%s: failed get modem enabled state: unexpected reply type", __func__);
+
+	g_value_unset (&value);
+}
+
+static void
+query_mm_enabled (NMModem *self)
+{
+	dbus_g_proxy_begin_call (NM_MODEM_GET_PRIVATE (self)->props_proxy,
+	                         "Get", get_mm_enabled_done,
+	                         self, NULL,
+	                         G_TYPE_STRING, MM_DBUS_INTERFACE_MODEM,
+	                         G_TYPE_STRING, "Enabled",
+	                         G_TYPE_INVALID);
+}
+
+static void
+set_mm_enabled_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
+{
+	GError *error = NULL;
+
+	if (!dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID)) {
+		g_warning ("%s: failed to enable/disable modem: (%d) %s",
+		           __func__,
+		           error ? error->code : -1,
+		           error && error->message ? error->message : "(unknown)");
+	}
+
+	/* Update enabled/disabled state again */
+	query_mm_enabled (NM_MODEM (user_data));
+}
+
+static void
+real_set_enabled (NMDeviceInterface *device, gboolean enabled)
+{
+	NMModem *self = NM_MODEM (device);
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
+
+	/* FIXME: For now this just toggles the ModemManager enabled state.  In the
+	 * future we want to tie this into rfkill state instead so that the user can
+	 * toggle rfkill status of the WWAN modem.
+	 */
+
+	if (priv->mm_enabled != enabled) {
+		DBusGProxy *proxy;
+
+		proxy = nm_modem_get_proxy (NM_MODEM (device), MM_DBUS_INTERFACE_MODEM);
+		dbus_g_proxy_begin_call (proxy,
+		                         "Enable", set_mm_enabled_done,
+		                         device, NULL,
+		                         G_TYPE_BOOLEAN, enabled,
+		                         G_TYPE_INVALID);
+	}
+}
+
+static void
+modem_properties_changed (DBusGProxy *proxy,
+                          const char *interface,
+                          GHashTable *props,
+                          gpointer user_data)
+{
+	NMModem *self = NM_MODEM (user_data);
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
+	GValue *value;
+
+	if (strcmp (interface, MM_DBUS_INTERFACE_MODEM))
+		return;
+
+	value = g_hash_table_lookup (props, "Enabled");
+	if (value && G_VALUE_HOLDS_BOOLEAN (value)) {
+		NMDeviceState state;
+
+		priv->mm_enabled = g_value_get_boolean (value);
+		g_object_notify (G_OBJECT (self), NM_MODEM_ENABLED);
+
+		state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
+		if (IS_ACTIVATING_STATE (state) || (state == NM_DEVICE_STATE_ACTIVATED)) {
+			nm_device_state_changed (NM_DEVICE (self),
+			                         NM_DEVICE_STATE_DISCONNECTED,
+			                         NM_DEVICE_STATE_REASON_NONE);
+		}
+	}
+}
+
 /*****************************************************************************/
+
+static void
+device_interface_init (NMDeviceInterface *iface_class)
+{
+    iface_class->set_enabled = real_set_enabled;
+}
 
 static void
 nm_modem_init (NMModem *self)
@@ -743,6 +880,7 @@ constructor (GType type,
 {
 	GObject *object;
 	NMModemPrivate *priv;
+	DBusGConnection *bus;
 
 	object = G_OBJECT_CLASS (nm_modem_parent_class)->constructor (type,
 																  n_construct_params,
@@ -767,8 +905,29 @@ constructor (GType type,
 		goto err;
 	}
 
-	priv->proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (priv->dbus_mgr),
-											 MM_DBUS_SERVICE, priv->path, MM_DBUS_INTERFACE_MODEM);
+	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
+	priv->proxy = dbus_g_proxy_new_for_name (bus,
+	                                         MM_DBUS_SERVICE,
+	                                         priv->path,
+	                                         MM_DBUS_INTERFACE_MODEM);
+
+	priv->props_proxy = dbus_g_proxy_new_for_name (bus,
+	                                               MM_DBUS_SERVICE,
+	                                               priv->path,
+	                                               DBUS_INTERFACE_PROPERTIES);
+	dbus_g_object_register_marshaller (_nm_marshal_VOID__STRING_BOXED,
+	                                   G_TYPE_NONE,
+	                                   G_TYPE_STRING, DBUS_TYPE_G_MAP_OF_VARIANT,
+	                                   G_TYPE_INVALID);
+	dbus_g_proxy_add_signal (priv->props_proxy, "MmPropertiesChanged",
+	                         G_TYPE_STRING, DBUS_TYPE_G_MAP_OF_VARIANT,
+	                         G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->props_proxy, "MmPropertiesChanged",
+	                             G_CALLBACK (modem_properties_changed),
+	                             object,
+	                             NULL);
+
+	query_mm_enabled (NM_MODEM (object));
 
 	return object;
 
@@ -795,6 +954,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_IP_METHOD:
 		g_value_set_uint (value, priv->ip_method);
+		break;
+	case PROP_ENABLED:
+		g_value_set_boolean (value, priv->mm_enabled);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -826,6 +988,8 @@ set_property (GObject *object, guint prop_id,
 		/* Construct only */
 		priv->ip_method = g_value_get_uint (value);
 		break;
+	case PROP_ENABLED:
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -839,6 +1003,9 @@ finalize (GObject *object)
 
 	if (priv->proxy)
 		g_object_unref (priv->proxy);
+
+	if (priv->props_proxy)
+		g_object_unref (priv->props_proxy);
 
 	g_object_unref (priv->dbus_mgr);
 
@@ -899,6 +1066,14 @@ nm_modem_class_init (NMModemClass *klass)
 							MM_MODEM_IP_METHOD_DHCP,
 							MM_MODEM_IP_METHOD_PPP,
 							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
+		(object_class, PROP_ENABLED,
+		 g_param_spec_boolean (NM_MODEM_ENABLED,
+		                       "Enabled",
+		                       "Enabled",
+		                       TRUE,
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	/* Signals */
 	signals[PPP_STATS] =

@@ -108,6 +108,18 @@
       </tp:docstring>
     </property>
 
+    <property name="WwanEnabled" type="b" access="readwrite">
+      <tp:docstring>
+        Indicates if mobile broadband devices are currently enabled or not.
+      </tp:docstring>
+    </property>
+
+    <property name="WwanHardwareEnabled" type="b" access="read">
+      <tp:docstring>
+        Indicates if the mobile broadband hardware is currently enabled, i.e. the state of the RF kill switch.
+      </tp:docstring>
+    </property>
+
     <property name="ActiveConnections" type="ao" access="read">
       <tp:docstring>
         List of active connection object paths.

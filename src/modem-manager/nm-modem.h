@@ -21,6 +21,7 @@ G_BEGIN_DECLS
 #define NM_MODEM_DEVICE    "device"
 #define NM_MODEM_IFACE     "iface"
 #define NM_MODEM_IP_METHOD "ip-method"
+#define NM_MODEM_ENABLED   "enabled"
 
 #define NM_MODEM_PPP_STATS         "ppp-stats"
 #define NM_MODEM_PPP_FAILED        "ppp-failed"
@@ -127,6 +128,8 @@ gboolean nm_modem_connection_secrets_updated (NMModem *modem,
                                               RequestSecretsCaller caller);
 
 const DBusGObjectInfo *nm_modem_get_serial_dbus_info (void);
+
+gboolean      nm_modem_get_mm_enabled  (NMModem *self);
 
 G_END_DECLS
 

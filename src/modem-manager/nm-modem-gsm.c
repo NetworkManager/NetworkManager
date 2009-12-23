@@ -229,6 +229,43 @@ create_connect_properties (NMConnection *connection)
 	return properties;
 }
 
+static void
+do_connect (NMModem *modem)
+{
+	NMConnection *connection;
+	DBusGProxy *proxy;
+	GHashTable *properties;
+
+	connection = nm_act_request_get_connection (nm_device_get_act_request (NM_DEVICE (modem)));
+	g_assert (connection);
+
+	properties = create_connect_properties (connection);
+	proxy = nm_modem_get_proxy (modem, MM_DBUS_INTERFACE_MODEM_SIMPLE);
+	dbus_g_proxy_begin_call_with_timeout (proxy,
+	                                      "Connect", stage1_prepare_done,
+	                                      modem, NULL, 120000,
+	                                      DBUS_TYPE_G_MAP_OF_VARIANT, properties,
+	                                      G_TYPE_INVALID);
+	g_hash_table_destroy (properties);
+}
+
+static void
+stage1_enable_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (user_data);
+	GError *error = NULL;
+
+	if (dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID))
+		do_connect (NM_MODEM (device));
+	else {
+		nm_warning ("GSM modem enable failed: (%d) %s",
+		            error ? error->code : -1,
+		            error && error->message ? error->message : "(unknown)");
+		g_error_free (error);
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NONE);
+	}
+}
+
 static NMActStageReturn
 real_act_stage1_prepare (NMModem *modem,
                          NMActRequest *req,
@@ -236,8 +273,6 @@ real_act_stage1_prepare (NMModem *modem,
                          const char **out_setting_name,
                          NMDeviceStateReason *reason)
 {
-	NMModemGsm *self = NM_MODEM_GSM (modem);
-	NMModemGsmPrivate *priv = NM_MODEM_GSM_GET_PRIVATE (self);
 	NMConnection *connection;
 
 	connection = nm_act_request_get_connection (req);
@@ -245,17 +280,19 @@ real_act_stage1_prepare (NMModem *modem,
 
 	*out_setting_name = nm_connection_need_secrets (connection, out_hints);
 	if (!*out_setting_name) {
+		gboolean enabled = nm_modem_get_mm_enabled (modem);
 		DBusGProxy *proxy;
-		GHashTable *properties;
 
-		properties = create_connect_properties (connection);
-		proxy = nm_modem_get_proxy (modem, MM_DBUS_INTERFACE_MODEM_SIMPLE);
-		priv->call = dbus_g_proxy_begin_call_with_timeout (proxy,
-		                                                   "Connect", stage1_prepare_done,
-		                                                   self, NULL, 120000,
-		                                                   DBUS_TYPE_G_MAP_OF_VARIANT, properties,
-		                                                   G_TYPE_INVALID);
-		g_hash_table_destroy (properties);
+		if (enabled)
+			do_connect (modem);
+		else {
+			proxy = nm_modem_get_proxy (modem, MM_DBUS_INTERFACE_MODEM);
+			dbus_g_proxy_begin_call_with_timeout (proxy,
+			                                      "Enable", stage1_enable_done,
+			                                      modem, NULL, 20000,
+			                                      G_TYPE_BOOLEAN, TRUE,
+			                                      G_TYPE_INVALID);
+		}
 	} else {
 		/* NMModem will handle requesting secrets... */
 	}

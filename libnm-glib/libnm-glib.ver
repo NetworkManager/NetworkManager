@@ -40,6 +40,9 @@ global:
 	nm_client_wireless_get_enabled;
 	nm_client_wireless_hardware_get_enabled;
 	nm_client_wireless_set_enabled;
+	nm_client_wwan_get_enabled;
+	nm_client_wwan_hardware_get_enabled;
+	nm_client_wwan_set_enabled;
 	nm_dbus_settings_get_connection_by_path;
 	nm_dbus_settings_get_type;
 	nm_dbus_settings_new;
