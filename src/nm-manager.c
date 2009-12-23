@@ -257,7 +257,7 @@ aipd_handle_event (DBusGProxy *proxy,
 	NMManager *manager = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	GSList *iter;
-	gboolean handled;
+	gboolean handled = FALSE;
 
 	if (!event || !iface) {
 		nm_warning ("Incomplete message received from avahi-autoipd");
