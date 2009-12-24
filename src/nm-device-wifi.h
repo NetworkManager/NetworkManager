@@ -74,6 +74,7 @@ struct _NMDeviceWifiClass
 	void (*access_point_removed) (NMDeviceWifi *device, NMAccessPoint *ap);
 	void (*hidden_ap_found)      (NMDeviceWifi *device, NMAccessPoint *ap);
 	void (*properties_changed)   (NMDeviceWifi *device, GHashTable *properties);
+	gboolean (*scanning_allowed) (NMDeviceWifi *device);
 };
 
 
