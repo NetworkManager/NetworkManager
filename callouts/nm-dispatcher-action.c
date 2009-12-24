@@ -751,6 +751,7 @@ main (int argc, char **argv)
 	if (!g_option_context_parse (opt_ctx, &argc, &argv, &error)) {
 		g_warning ("%s\n", error->message);
 		g_error_free (error);
+		g_free (d);
 		return 1;
 	}
 
