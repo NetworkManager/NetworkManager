@@ -210,9 +210,14 @@ NetworkManager_DATA = gdb-cmd
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = NetworkManager.conf
 
+halfdidir = $(datadir)/hal/fdi/information/10freedesktop
+halfdi_DATA = \
+	70-nm-olpc-mesh.fdi
+
 EXTRA_DIST = \
 	$(dbusservice_DATA) \
-	$(NetworkManager_DATA)
+	$(NetworkManager_DATA) \
+	$(halfdi_DATA)
 
 rundir=$(localstatedir)/run/NetworkManager
 install-data-hook:

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="ISO-8859-1"?> <!-- -*- SGML -*- --> 
+<deviceinfo version="0.2">
+  <device>
+    <match key="net.interface" prefix="msh">
+      <merge key="info.category" type="string">net.olpcmesh</merge>
+      <append key="info.capabilities" type="strlist">net.olpcmesh</append>
+    </match>
+  </device>
+</deviceinfo>
