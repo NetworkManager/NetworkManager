@@ -334,7 +334,7 @@ parse_state_file (const char *filename,
 {
 	GKeyFile *state_file;
 	GError *tmp_error = NULL;
-	gboolean wifi, net;
+	gboolean wifi, net, wwan;
 
 	g_return_val_if_fail (net_enabled != NULL, FALSE);
 	g_return_val_if_fail (wifi_enabled != NULL, FALSE);
@@ -409,6 +409,14 @@ parse_state_file (const char *filename,
 		g_set_error_literal (error, tmp_error->domain, tmp_error->code, tmp_error->message);
 	} else
 		*wifi_enabled = wifi;
+	g_clear_error (&tmp_error);
+
+	wwan = g_key_file_get_boolean (state_file, "main", "WWANEnabled", &tmp_error);
+	if (tmp_error) {
+		g_clear_error (error);
+		g_set_error_literal (error, tmp_error->domain, tmp_error->code, tmp_error->message);
+	} else
+		*wwan_enabled = wwan;
 	g_clear_error (&tmp_error);
 
 	g_key_file_free (state_file);
