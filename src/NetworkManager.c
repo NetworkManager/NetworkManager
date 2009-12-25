@@ -373,7 +373,7 @@ parse_state_file (const char *filename,
 		*net_enabled = net;
 	g_clear_error (&tmp_error);
 
-	wifi = g_key_file_get_boolean (state_file, "main", "WirelessEnabled", error);
+	wifi = g_key_file_get_boolean (state_file, "main", "WirelessEnabled", &tmp_error);
 	if (tmp_error) {
 		g_clear_error (error);
 		g_set_error (error, tmp_error->domain, tmp_error->code, "%s", tmp_error->message);
