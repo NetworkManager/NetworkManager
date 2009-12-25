@@ -157,6 +157,7 @@ void			nm_device_activate_schedule_stage4_ip_config_timeout	(NMDevice *device);
 gboolean		nm_device_deactivate_quickly	(NMDevice *dev);
 gboolean		nm_device_is_activating		(NMDevice *dev);
 gboolean		nm_device_can_interrupt_activation		(NMDevice *self);
+gboolean		nm_device_autoconnect_allowed	(NMDevice *self);
 
 NMDeviceState nm_device_get_state (NMDevice *device);
 
@@ -164,6 +165,9 @@ gboolean nm_device_get_managed (NMDevice *device);
 void nm_device_set_managed (NMDevice *device,
                             gboolean managed,
                             NMDeviceStateReason reason);
+
+void nm_device_set_dhcp_timeout (NMDevice *device, guint32 timeout);
+void nm_device_set_dhcp_anycast_address (NMDevice *device, guint8 *addr);
 
 G_END_DECLS
 

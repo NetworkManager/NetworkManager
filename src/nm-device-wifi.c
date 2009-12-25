@@ -37,6 +37,7 @@
 #include "nm-device-interface.h"
 #include "nm-device-private.h"
 #include "nm-utils.h"
+#include "nm-marshal.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerPolicy.h"
 #include "nm-activation-request.h"
@@ -81,6 +82,7 @@ enum {
 	PROP_BITRATE,
 	PROP_ACTIVE_ACCESS_POINT,
 	PROP_CAPABILITIES,
+	PROP_SCANNING,
 
 	LAST_PROP
 };
@@ -90,6 +92,7 @@ enum {
 	ACCESS_POINT_REMOVED,
 	HIDDEN_AP_FOUND,
 	PROPERTIES_CHANGED,
+	SCANNING_ALLOWED,
 
 	LAST_SIGNAL
 };
@@ -125,6 +128,7 @@ typedef struct Supplicant {
 	guint iface_scan_request_result_id;
 	guint iface_scan_results_id;
 	guint iface_con_state_id;
+	guint iface_notify_scanning_id;
 
 	/* Timeouts and idles */
 	guint iface_con_error_cb_id;
@@ -214,6 +218,10 @@ static void supplicant_mgr_state_cb (NMSupplicantInterface * iface,
                                      guint32 new_state,
                                      guint32 old_state,
                                      NMDeviceWifi *self);
+
+static void supplicant_iface_notify_scanning_cb (NMSupplicantInterface * iface,
+                                                 GParamSpec * pspec,
+                                                 NMDeviceWifi * self);
 
 static guint32 nm_device_wifi_get_bitrate (NMDeviceWifi *self);
 
@@ -625,6 +633,12 @@ supplicant_interface_acquire (NMDeviceWifi *self)
 	                       self);
 	priv->supplicant.iface_con_state_id = id;
 
+	id = g_signal_connect (priv->supplicant.iface,
+	                       "notify::scanning",
+	                       G_CALLBACK (supplicant_iface_notify_scanning_cb),
+	                       self);
+	priv->supplicant.iface_notify_scanning_id = id;
+
 	return TRUE;
 }
 
@@ -714,6 +728,11 @@ supplicant_interface_release (NMDeviceWifi *self)
 	if (priv->supplicant.iface_con_state_id > 0) {
 		g_signal_handler_disconnect (priv->supplicant.iface, priv->supplicant.iface_con_state_id);
 		priv->supplicant.iface_con_state_id = 0;
+	}
+
+	if (priv->supplicant.iface_notify_scanning_id > 0) {
+		g_signal_handler_disconnect (priv->supplicant.iface, priv->supplicant.iface_notify_scanning_id);
+		priv->supplicant.iface_notify_scanning_id = 0;
 	}
 
 	if (priv->supplicant.iface) {
@@ -1616,7 +1635,6 @@ nm_device_wifi_get_bssid (NMDeviceWifi *self,
 	close (fd);
 }
 
-
 static gboolean
 scanning_allowed (NMDeviceWifi *self)
 {
@@ -1674,13 +1692,44 @@ scanning_allowed (NMDeviceWifi *self)
 }
 
 static gboolean
+scanning_allowed_accumulator (GSignalInvocationHint *ihint,
+                          GValue *return_accu,
+                          const GValue *handler_return,
+                          gpointer data)
+{
+	if (!g_value_get_boolean (handler_return))
+		g_value_set_boolean (return_accu, FALSE);
+	return TRUE;
+}
+
+static gboolean
+check_scanning_allowed (NMDeviceWifi *self)
+{
+	GValue instance = { 0, };
+	GValue retval = { 0, };
+
+	g_value_init (&instance, G_TYPE_OBJECT);
+	g_value_take_object (&instance, self);
+
+	g_value_init (&retval, G_TYPE_BOOLEAN);
+	g_value_set_boolean (&retval, TRUE);
+
+	/* Use g_signal_emitv() rather than g_signal_emit() to avoid the return
+	 * value being changed if no handlers are connected */
+	g_signal_emitv (&instance, signals[SCANNING_ALLOWED], 0, &retval);
+
+	return g_value_get_boolean (&retval);
+}
+
+
+static gboolean
 request_wireless_scan (gpointer user_data)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (user_data);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	gboolean backoff = FALSE;
 
-	if (scanning_allowed (self)) {
+	if (check_scanning_allowed (self)) {
 		if (nm_supplicant_interface_request_scan (priv->supplicant.iface)) {
 			/* success */
 			backoff = TRUE;
@@ -1758,7 +1807,7 @@ supplicant_iface_scan_request_result_cb (NMSupplicantInterface *iface,
                                          gboolean success,
                                          NMDeviceWifi *self)
 {
-	if (scanning_allowed (self))
+	if (check_scanning_allowed (self))
 		schedule_scan (self, TRUE);
 }
 
@@ -2462,6 +2511,14 @@ supplicant_iface_connection_error_cb (NMSupplicantInterface * iface,
 
 	id = g_idle_add (supplicant_iface_connection_error_cb_handler, cb_data);
 	priv->supplicant.iface_con_error_cb_id = id;
+}
+
+static void
+supplicant_iface_notify_scanning_cb (NMSupplicantInterface * iface,
+                                     GParamSpec * pspec,
+                                     NMDeviceWifi * self)
+{
+	g_object_notify (G_OBJECT (self), "scanning");
 }
 
 static void
@@ -3255,6 +3312,9 @@ get_property (GObject *object, guint prop_id,
 		else
 			g_value_set_boxed (value, "/");
 		break;
+	case PROP_SCANNING:
+		g_value_set_boolean (value, nm_supplicant_interface_get_scanning (priv->supplicant.iface));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -3295,6 +3355,8 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->deactivate_quickly = real_deactivate_quickly;
 	parent_class->can_interrupt_activation = real_can_interrupt_activation;
 
+	klass->scanning_allowed = scanning_allowed;
+
 	/* Properties */
 	g_object_class_install_property (object_class, PROP_HW_ADDRESS,
 		g_param_spec_string (NM_DEVICE_WIFI_HW_ADDRESS,
@@ -3333,6 +3395,12 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		                   0, G_MAXUINT32, NM_WIFI_DEVICE_CAP_NONE,
 		                   G_PARAM_READABLE));
 
+	g_object_class_install_property (object_class, PROP_SCANNING,
+		g_param_spec_boolean (NM_DEVICE_WIFI_SCANNING,
+		                   "Scanning",
+		                   "Scanning",
+		                   0, G_PARAM_READABLE));
+
 	/* Signals */
 	signals[ACCESS_POINT_ADDED] =
 		g_signal_new ("access-point-added",
@@ -3367,6 +3435,15 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	signals[PROPERTIES_CHANGED] =
 		nm_properties_changed_signal_new (object_class,
 		                                  G_STRUCT_OFFSET (NMDeviceWifiClass, properties_changed));
+
+	signals[SCANNING_ALLOWED] =
+		g_signal_new ("scanning-allowed",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_LAST,
+		              G_STRUCT_OFFSET (NMDeviceWifiClass, scanning_allowed),
+		              scanning_allowed_accumulator, NULL,
+		              _nm_marshal_BOOLEAN__VOID,
+		              G_TYPE_BOOLEAN, 0);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass), &dbus_glib_nm_device_wifi_object_info);
 

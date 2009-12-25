@@ -47,6 +47,7 @@ G_BEGIN_DECLS
 #define NM_DEVICE_WIFI_BITRATE "bitrate"
 #define NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT "active-access-point"
 #define NM_DEVICE_WIFI_CAPABILITIES "wireless-capabilities"
+#define NM_DEVICE_WIFI_SCANNING "scanning"
 
 #ifndef NM_DEVICE_WIFI_DEFINED
 #define NM_DEVICE_WIFI_DEFINED
@@ -73,6 +74,7 @@ struct _NMDeviceWifiClass
 	void (*access_point_removed) (NMDeviceWifi *device, NMAccessPoint *ap);
 	void (*hidden_ap_found)      (NMDeviceWifi *device, NMAccessPoint *ap);
 	void (*properties_changed)   (NMDeviceWifi *device, GHashTable *properties);
+	gboolean (*scanning_allowed) (NMDeviceWifi *device);
 };
 
 

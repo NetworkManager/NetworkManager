@@ -50,6 +50,7 @@
 #include "nm-setting-connection.h"
 #include "nm-dnsmasq-manager.h"
 #include "nm-dhcp4-config.h"
+#include "nm-marshal.h"
 
 #define NM_ACT_REQUEST_IP4_CONFIG "nm-act-request-ip4-config"
 
@@ -59,6 +60,13 @@ G_DEFINE_TYPE_EXTENDED (NMDevice, nm_device, G_TYPE_OBJECT,
 						G_TYPE_FLAG_ABSTRACT,
 						G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_INTERFACE,
 											   device_interface_init))
+
+enum {
+	AUTOCONNECT_ALLOWED,
+	LAST_SIGNAL,
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
 
 #define NM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE, NMDevicePrivate))
 
@@ -91,8 +99,10 @@ struct _NMDevicePrivate
 	/* IP configuration info */
 	NMIP4Config *		ip4_config;			/* Config from DHCP, PPP, or system config files */
 	NMDHCPManager *     dhcp_manager;
+	guint32             dhcp_timeout;
 	gulong              dhcp_state_sigid;
 	gulong              dhcp_timeout_sigid;
+	GByteArray *        dhcp_anycast_address;
 	NMDHCP4Config *     dhcp4_config;
 
 	/* dnsmasq stuff for shared connections */
@@ -142,6 +152,7 @@ nm_device_init (NMDevice * self)
 	self->priv->capabilities = NM_DEVICE_CAP_NONE;
 	memset (&self->priv->ip6_address, 0, sizeof (struct in6_addr));
 	self->priv->state = NM_DEVICE_STATE_UNMANAGED;
+	self->priv->dhcp_timeout = 0;
 }
 
 static gboolean
@@ -358,6 +369,34 @@ nm_device_can_activate (NMDevice *self)
 	if (NM_DEVICE_GET_CLASS (self)->can_activate)
 		return NM_DEVICE_GET_CLASS (self)->can_activate (self);
 	return TRUE;
+}
+
+static gboolean
+autoconnect_allowed_accumulator (GSignalInvocationHint *ihint,
+                                 GValue *return_accu,
+                                 const GValue *handler_return, gpointer data)
+{
+	if (!g_value_get_boolean (handler_return))
+		g_value_set_boolean (return_accu, FALSE);
+	return TRUE;
+}
+
+gboolean
+nm_device_autoconnect_allowed (NMDevice *self)
+{
+	GValue instance = { 0, };
+	GValue retval = { 0, };
+
+	g_value_init (&instance, G_TYPE_OBJECT);
+	g_value_take_object (&instance, self);
+
+	g_value_init (&retval, G_TYPE_BOOLEAN);
+	g_value_set_boolean (&retval, TRUE);
+
+	/* Use g_signal_emitv() rather than g_signal_emit() to avoid the return
+	 * value being changed if no handlers are connected */
+	g_signal_emitv (&instance, signals[AUTOCONNECT_ALLOWED], 0, &retval);
+	return g_value_get_boolean (&retval);
 }
 
 NMConnection *
@@ -889,6 +928,10 @@ real_act_stage3_ip_config_start (NMDevice *self, NMDeviceStateReason *reason)
 	if (!s_ip4 || !method || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
 		NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 		gboolean success;
+		guint8 *anycast = NULL;
+
+		if (priv->dhcp_anycast_address)
+			anycast = priv->dhcp_anycast_address->data;
 
 		/* Begin a DHCP transaction on the interface */
 		nm_device_set_use_dhcp (self, TRUE);
@@ -896,7 +939,7 @@ real_act_stage3_ip_config_start (NMDevice *self, NMDeviceStateReason *reason)
 		/* DHCP manager will cancel any transaction already in progress and we do not
 		   want to cancel this activation if we get "down" state from that. */
 		g_signal_handler_block (priv->dhcp_manager, priv->dhcp_state_sigid);
-		success = nm_dhcp_manager_begin_transaction (priv->dhcp_manager, ip_iface, uuid, s_ip4, 45);
+		success = nm_dhcp_manager_begin_transaction (priv->dhcp_manager, ip_iface, uuid, s_ip4, priv->dhcp_timeout, anycast);
 		g_signal_handler_unblock (priv->dhcp_manager, priv->dhcp_state_sigid);
 
 		if (success) {
@@ -2215,6 +2258,8 @@ nm_device_finalize (GObject *object)
 	g_free (self->priv->iface);
 	g_free (self->priv->ip_iface);
 	g_free (self->priv->driver);
+	if (self->priv->dhcp_anycast_address)
+		g_byte_array_free (self->priv->dhcp_anycast_address, TRUE);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->finalize (object);
 }
@@ -2374,6 +2419,15 @@ nm_device_class_init (NMDeviceClass *klass)
 	g_object_class_override_property (object_class,
 									  NM_DEVICE_INTERFACE_PROP_MANAGED,
 									  NM_DEVICE_INTERFACE_MANAGED);
+
+	signals[AUTOCONNECT_ALLOWED] =
+		g_signal_new ("autoconnect-allowed",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_LAST,
+		              0,
+		              autoconnect_allowed_accumulator, NULL,
+		              _nm_marshal_BOOLEAN__VOID,
+		              G_TYPE_BOOLEAN, 0);
 }
 
 static gboolean
@@ -2509,5 +2563,33 @@ nm_device_set_managed (NMDevice *device,
 		nm_device_state_changed (device, NM_DEVICE_STATE_UNAVAILABLE, reason);
 	else
 		nm_device_state_changed (device, NM_DEVICE_STATE_UNMANAGED, reason);
+}
+
+void
+nm_device_set_dhcp_timeout (NMDevice *device, guint32 timeout)
+{
+	g_return_if_fail (NM_IS_DEVICE (device));
+
+	NM_DEVICE_GET_PRIVATE (device)->dhcp_timeout = timeout;
+}
+
+void
+nm_device_set_dhcp_anycast_address (NMDevice *device, guint8 *addr)
+{
+	NMDevicePrivate *priv;
+
+	g_return_if_fail (NM_IS_DEVICE (device));
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+
+	if (priv->dhcp_anycast_address) {
+		g_byte_array_free (priv->dhcp_anycast_address, TRUE);
+		priv->dhcp_anycast_address = NULL;
+	}
+
+	if (addr) {
+		priv->dhcp_anycast_address = g_byte_array_sized_new (ETH_ALEN);
+		g_byte_array_append (priv->dhcp_anycast_address, addr, ETH_ALEN);
+	}
 }
 
