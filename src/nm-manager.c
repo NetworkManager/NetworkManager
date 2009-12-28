@@ -2674,8 +2674,10 @@ impl_manager_sleep (NMManager *self, gboolean sleep, GError **error)
 				RadioState *rstate = &priv->radio_states[i];
 				gboolean enabled = (rstate->hw_enabled && rstate->enabled);
 
-				if (rstate->object_filter_func (G_OBJECT (iter->data)))
-					nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (iter->data), enabled);
+				if (   rstate->object_filter_func
+				    && rstate->object_filter_func (G_OBJECT (device))) {
+					nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (device), enabled);
+				}
 			}
 
 			nm_device_clear_autoconnect_inhibit (device);
