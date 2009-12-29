@@ -102,8 +102,6 @@ NM80211Mode	nm_device_wifi_get_mode (NMDeviceWifi *self);
 
 NMAccessPoint * nm_device_wifi_get_activation_ap (NMDeviceWifi *self);
 
-void nm_device_wifi_set_enabled (NMDeviceWifi *self, gboolean enabled);
-
 guint32 nm_device_wifi_get_ifindex (NMDeviceWifi *self);
 
 RfKillState nm_device_wifi_get_ipw_rfkill_state (NMDeviceWifi *self);

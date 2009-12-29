@@ -2170,7 +2170,6 @@ make_wireless_setting (shvarFile *ifcfg,
 	if (value) {
 		gsize ssid_len = 0, value_len = strlen (value);
 		char *p = value, *tmp;
-		gboolean quoted = FALSE;
 		char buf[33];
 
 		ssid_len = value_len;
@@ -2182,7 +2181,6 @@ make_wireless_setting (shvarFile *ifcfg,
 			value[value_len - 1] = '\0';
 			svUnescape (p);
 			ssid_len = strlen (p);
-			quoted = TRUE;
 		} else if ((value_len > 2) && (strncmp (value, "0x", 2) == 0)) {
 			/* Hex representation */
 			if (value_len % 2) {

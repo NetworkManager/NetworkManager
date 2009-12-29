@@ -173,8 +173,11 @@ stage1_prepare_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_d
 			clear_pin (device);
 			required_secret = NM_SETTING_GSM_PIN;
 			retry_secret = TRUE;
-		} else
-			nm_warning ("GSM modem connection failed: %s", error->message);
+		} else {
+			nm_warning ("GSM modem connection failed: (%d) %s",
+			            error ? error->code : -1,
+			            error && error->message ? error->message : "(unknown)");
+		}
 
 		if (required_secret) {
 			nm_device_state_changed (device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
@@ -247,6 +250,41 @@ create_connect_properties (NMConnection *connection)
 	return properties;
 }
 
+static void
+do_connect (NMModem *modem)
+{
+	NMConnection *connection;
+	GHashTable *properties;
+
+	connection = nm_act_request_get_connection (nm_device_get_act_request (NM_DEVICE (modem)));
+	g_assert (connection);
+
+	properties = create_connect_properties (connection);
+	dbus_g_proxy_begin_call_with_timeout (nm_modem_get_proxy (modem, MM_DBUS_INTERFACE_MODEM_SIMPLE),
+	                                      "Connect", stage1_prepare_done,
+	                                      modem, NULL, 120000,
+	                                      DBUS_TYPE_G_MAP_OF_VARIANT, properties,
+	                                      G_TYPE_INVALID);
+	g_hash_table_destroy (properties);
+}
+
+static void
+stage1_enable_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (user_data);
+	GError *error = NULL;
+
+	if (dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID))
+		do_connect (NM_MODEM (device));
+	else {
+		nm_warning ("GSM modem enable failed: (%d) %s",
+		            error ? error->code : -1,
+		            error && error->message ? error->message : "(unknown)");
+		g_error_free (error);
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NONE);
+	}
+}
+
 static NMActStageReturn
 real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 {
@@ -264,14 +302,18 @@ real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 
 	setting_name = nm_connection_need_secrets (connection, &hints);
 	if (!setting_name) {
-		GHashTable *properties;
+		NMModem *modem = NM_MODEM (device);
+		gboolean enabled = nm_modem_get_mm_enabled (modem);
 
-		properties = create_connect_properties (connection);
-		dbus_g_proxy_begin_call_with_timeout (nm_modem_get_proxy (NM_MODEM (device), MM_DBUS_INTERFACE_MODEM_SIMPLE),
-											  "Connect", stage1_prepare_done,
-											  device, NULL, 120000,
-											  DBUS_TYPE_G_MAP_OF_VARIANT, properties,
-											  G_TYPE_INVALID);
+		if (enabled)
+			do_connect (modem);
+		else {
+			dbus_g_proxy_begin_call_with_timeout (nm_modem_get_proxy (modem, MM_DBUS_INTERFACE_MODEM),
+			                                      "Enable", stage1_enable_done,
+			                                      modem, NULL, 20000,
+			                                      G_TYPE_BOOLEAN, TRUE,
+			                                      G_TYPE_INVALID);
+		}
 
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 	}

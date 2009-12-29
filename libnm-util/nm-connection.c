@@ -1042,14 +1042,11 @@ NMConnection *
 nm_connection_new_from_hash (GHashTable *hash, GError **error)
 {
 	NMConnection *connection;
-	NMConnectionPrivate *priv;
 
 	g_return_val_if_fail (hash != NULL, NULL);
 
 	connection = nm_connection_new ();
 	g_hash_table_foreach (hash, parse_one_setting, connection);
-
-	priv = NM_CONNECTION_GET_PRIVATE (connection);
 
 	if (!nm_connection_verify (connection, error)) {
 		g_object_unref (connection);

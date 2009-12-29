@@ -254,6 +254,7 @@ nm_sysconfig_settings_get_hostname (NMSysconfigSettings *self)
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 	GSList *iter;
 	char *hostname = NULL;
+	gboolean have_hostname_providers = FALSE;
 
 	/* Hostname returned is the hostname returned from the first plugin
 	 * that provides one.
@@ -263,6 +264,8 @@ nm_sysconfig_settings_get_hostname (NMSysconfigSettings *self)
 
 		g_object_get (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES, &caps, NULL);
 		if (caps & NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME) {
+			have_hostname_providers = TRUE;
+
 			g_object_get (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME, &hostname, NULL);
 			if (hostname && strlen (hostname))
 				return hostname;
@@ -271,7 +274,7 @@ nm_sysconfig_settings_get_hostname (NMSysconfigSettings *self)
 	}
 
 	/* If no plugin provided a hostname, try the original hostname of the machine */
-	if (priv->orig_hostname)
+	if (!have_hostname_providers && priv->orig_hostname)
 		hostname = g_strdup (priv->orig_hostname);
 
 	return hostname;

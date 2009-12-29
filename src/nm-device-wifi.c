@@ -69,8 +69,10 @@ static gboolean impl_device_get_access_points (NMDeviceWifi *device,
 
 #define WIRELESS_SECRETS_TRIES "wireless-secrets-tries"
 
+static void device_interface_init (NMDeviceInterface *iface_class);
 
-G_DEFINE_TYPE (NMDeviceWifi, nm_device_wifi, NM_TYPE_DEVICE)
+G_DEFINE_TYPE_EXTENDED (NMDeviceWifi, nm_device_wifi, NM_TYPE_DEVICE, 0,
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_INTERFACE, device_interface_init))
 
 #define NM_DEVICE_WIFI_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_WIFI, NMDeviceWifiPrivate))
 
@@ -3231,7 +3233,6 @@ activation_success_handler (NMDevice *dev)
 
 		priv->ap_list = g_slist_remove (priv->ap_list, ap);
 		g_object_unref (ap);
-		ap = tmp_ap;
 	}
 
 done:
@@ -3420,15 +3421,13 @@ nm_device_wifi_get_activation_ap (NMDeviceWifi *self)
 	return NULL;
 }
 
-void
-nm_device_wifi_set_enabled (NMDeviceWifi *self, gboolean enabled)
+static void
+real_set_enabled (NMDeviceInterface *device, gboolean enabled)
 {
-	NMDeviceWifiPrivate *priv;
+	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMDeviceState state;
 
-	g_return_if_fail (NM_IS_DEVICE_WIFI (self));
-
-	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	if (priv->enabled == enabled)
 		return;
 
@@ -3488,6 +3487,12 @@ nm_device_wifi_new (const char *udi,
 	                                  NM_DEVICE_INTERFACE_TYPE_DESC, "802.11 WiFi",
 	                                  NM_DEVICE_INTERFACE_DEVICE_TYPE, NM_DEVICE_TYPE_WIFI,
 	                                  NULL);
+}
+
+static void
+device_interface_init (NMDeviceInterface *iface_class)
+{
+    iface_class->set_enabled = real_set_enabled;
 }
 
 static void

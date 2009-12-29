@@ -584,7 +584,6 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
                                                     NMSetting8021x *setting_8021x,
                                                     const char *connection_uid)
 {
-	NMSupplicantConfigPrivate *priv;
 	char *value;
 	gboolean success;
 	const char *key_mgmt, *auth_alg;
@@ -593,8 +592,6 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
 	g_return_val_if_fail (setting != NULL, FALSE);
 	g_return_val_if_fail (connection_uid != NULL, FALSE);
-
-	priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
 
 	key_mgmt = nm_setting_wireless_security_get_key_mgmt (setting);
 	if (!add_string_val (self, key_mgmt, "key_mgmt", TRUE, FALSE))
@@ -708,7 +705,6 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
                                         const char *connection_uid,
                                         gboolean wired)
 {
-	NMSupplicantConfigPrivate *priv;
 	char *tmp;
 	const char *peapver, *value, *path;
 	gboolean success, added;
@@ -718,8 +714,6 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
 	g_return_val_if_fail (setting != NULL, FALSE);
 	g_return_val_if_fail (connection_uid != NULL, FALSE);
-
-	priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
 
 	value = nm_setting_802_1x_get_password (setting);
 	if (!add_string_val (self, value, "password", FALSE, TRUE))

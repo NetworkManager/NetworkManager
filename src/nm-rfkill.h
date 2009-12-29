@@ -28,5 +28,18 @@ typedef enum {
 	RFKILL_HARD_BLOCKED = 2
 } RfKillState;
 
+typedef enum {
+	RFKILL_TYPE_WLAN = 0,
+	RFKILL_TYPE_WWAN = 1,
+	RFKILL_TYPE_WIMAX = 2,
+
+	/* UNKNOWN and MAX should always be 1 more than
+	 * the last rfkill type since RFKILL_TYPE_MAX is
+	 * used as an array size.
+	 */
+	RFKILL_TYPE_UNKNOWN = 3, /* KEEP LAST */
+	RFKILL_TYPE_MAX = RFKILL_TYPE_UNKNOWN
+} RfKillType;
+
 #endif  /* NM_RFKILL_H */
 

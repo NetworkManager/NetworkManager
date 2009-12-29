@@ -19,6 +19,7 @@ G_BEGIN_DECLS
 #define NM_MODEM_PATH      "path"
 #define NM_MODEM_DEVICE    "device"
 #define NM_MODEM_IP_METHOD "ip-method"
+#define NM_MODEM_ENABLED   "enabled"
 
 typedef struct {
 	NMDevice parent;
@@ -45,6 +46,8 @@ DBusGProxy	 *nm_modem_get_proxy	   (NMModem *self,
 
 const char	 *nm_modem_get_ppp_name	   (NMModem *self,
 										NMConnection *connection);
+
+gboolean      nm_modem_get_mm_enabled  (NMModem *self);
 
 G_END_DECLS
 

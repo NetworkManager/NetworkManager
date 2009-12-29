@@ -329,14 +329,16 @@ static gboolean
 parse_state_file (const char *filename,
                   gboolean *net_enabled,
                   gboolean *wifi_enabled,
+                  gboolean *wwan_enabled,
                   GError **error)
 {
 	GKeyFile *state_file;
 	GError *tmp_error = NULL;
-	gboolean wifi, net;
+	gboolean wifi, net, wwan;
 
 	g_return_val_if_fail (net_enabled != NULL, FALSE);
 	g_return_val_if_fail (wifi_enabled != NULL, FALSE);
+	g_return_val_if_fail (wwan_enabled != NULL, FALSE);
 
 	state_file = g_key_file_new ();
 	if (!state_file) {
@@ -374,6 +376,7 @@ parse_state_file (const char *filename,
 			/* Write out the initial state to the state file */
 			g_key_file_set_boolean (state_file, "main", "NetworkingEnabled", *net_enabled);
 			g_key_file_set_boolean (state_file, "main", "WirelessEnabled", *wifi_enabled);
+			g_key_file_set_boolean (state_file, "main", "WWANEnabled", *wwan_enabled);
 
 			data = g_key_file_to_data (state_file, &len, NULL);
 			if (data)
@@ -400,12 +403,20 @@ parse_state_file (const char *filename,
 		*net_enabled = net;
 	g_clear_error (&tmp_error);
 
-	wifi = g_key_file_get_boolean (state_file, "main", "WirelessEnabled", error);
+	wifi = g_key_file_get_boolean (state_file, "main", "WirelessEnabled", &tmp_error);
 	if (tmp_error) {
 		g_clear_error (error);
 		g_set_error_literal (error, tmp_error->domain, tmp_error->code, tmp_error->message);
 	} else
 		*wifi_enabled = wifi;
+	g_clear_error (&tmp_error);
+
+	wwan = g_key_file_get_boolean (state_file, "main", "WWANEnabled", &tmp_error);
+	if (tmp_error) {
+		g_clear_error (error);
+		g_set_error_literal (error, tmp_error->domain, tmp_error->code, tmp_error->message);
+	} else
+		*wwan_enabled = wwan;
 	g_clear_error (&tmp_error);
 
 	g_key_file_free (state_file);
@@ -426,7 +437,7 @@ main (int argc, char *argv[])
 	char *pidfile = NULL, *user_pidfile = NULL;
 	char *config = NULL, *plugins = NULL;
 	char *state_file = NM_DEFAULT_SYSTEM_STATE_FILE;
-	gboolean wifi_enabled = TRUE, net_enabled = TRUE;
+	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE;
 	gboolean success;
 	NMPolicy *policy = NULL;
 	NMVPNManager *vpn_manager = NULL;
@@ -509,7 +520,7 @@ main (int argc, char *argv[])
 	g_clear_error (&error);
 
 	/* Parse the state file */
-	if (!parse_state_file (state_file, &net_enabled, &wifi_enabled, &error)) {
+	if (!parse_state_file (state_file, &net_enabled, &wifi_enabled, &wwan_enabled, &error)) {
 		g_warning ("State file %s parsing failed: (%d) %s.",
 		           state_file,
 		           error ? error->code : -1,
@@ -583,7 +594,13 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	manager = nm_manager_get (config, plugins, state_file, net_enabled, wifi_enabled, &error);
+	manager = nm_manager_get (config,
+	                          plugins,
+	                          state_file,
+	                          net_enabled,
+	                          wifi_enabled,
+	                          wwan_enabled,
+	                          &error);
 	if (manager == NULL) {
 		nm_error ("Failed to initialize the network manager: %s",
 		          error && error->message ? error->message : "(unknown)");

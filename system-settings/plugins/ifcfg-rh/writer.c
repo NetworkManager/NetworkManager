@@ -339,17 +339,13 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 	char *generated_pw = NULL;
 	gboolean success = FALSE, is_pkcs12 = FALSE;
 	const ObjectType *otype = NULL;
-	const char *prop;
 	const GByteArray *blob = NULL;
 
 	/* CA certificate */
-	if (phase2) {
-		prop = NM_SETTING_802_1X_PHASE2_CA_CERT;
+	if (phase2)
 		otype = &phase2_ca_type;
-	} else {
-		prop = NM_SETTING_802_1X_CA_CERT;
+	else
 		otype = &ca_type;
-	}
 
 	if (!write_object (s_8021x, ifcfg, NULL, otype, error))
 		return FALSE;
@@ -407,13 +403,10 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 		            phase2 ? "IEEE_8021X_INNER_CLIENT_CERT" : "IEEE_8021X_CLIENT_CERT",
 		            NULL, FALSE);
 	} else {
-		if (phase2) {
-			prop = NM_SETTING_802_1X_PHASE2_CLIENT_CERT;
+		if (phase2)
 			otype = &phase2_client_type;
-		} else {
-			prop = NM_SETTING_802_1X_CLIENT_CERT;
+		else
 			otype = &client_type;
-		}
 
 		/* Save the client certificate */
 		if (!write_object (s_8021x, ifcfg, NULL, otype, error))
