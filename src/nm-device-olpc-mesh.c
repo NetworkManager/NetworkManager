@@ -909,7 +909,7 @@ check_companion_cb (gpointer user_data)
 	if (priv->device_added_cb != 0)
 		return FALSE;
 
-	manager = nm_manager_get (NULL, NULL, NULL, FALSE, FALSE, FALSE, NULL);
+	manager = nm_manager_get (NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL);
 
 	priv->device_added_cb = g_signal_connect (manager, "device-added",
 	                                          G_CALLBACK (device_added_cb), self);

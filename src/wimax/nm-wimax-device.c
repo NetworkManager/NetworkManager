@@ -38,7 +38,10 @@ static gboolean impl_device_get_nsp_list (NMWimaxDevice *device, GPtrArray **lis
 
 #include "nm-wimax-device-glue.h"
 
-G_DEFINE_TYPE (NMWimaxDevice, nm_wimax_device, NM_TYPE_DEVICE)
+static void device_interface_init (NMDeviceInterface *iface_class);
+
+G_DEFINE_TYPE_EXTENDED (NMWimaxDevice, nm_wimax_device, NM_TYPE_DEVICE, 0,
+						G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_INTERFACE, device_interface_init))
 
 enum {
 	PROP_0,
@@ -225,7 +228,7 @@ schedule_rf_state_update (NMWimaxDevice *self)
 {
 	NMWimaxDevicePrivate *priv = GET_PRIVATE (self);
 
-	/* This is scheduled because on startup we get nm_wimax_device_set_enabled()
+	/* This is scheduled because on startup we get nm_device_interface_set_enabled()
 	   while the device state is still unmanaged. It'll change to unavailable right
 	   after it, so it would result in enabling RF kill, followed by disabling it again.
 	   Pretty lame.
@@ -233,21 +236,6 @@ schedule_rf_state_update (NMWimaxDevice *self)
 
 	if (priv->rf_update_id == 0)
 		priv->rf_update_id = g_idle_add ((GSourceFunc) rf_state_update, self);
-}
-
-void
-nm_wimax_device_set_enabled (NMWimaxDevice *self, gboolean enabled)
-{
-	NMWimaxDevicePrivate *priv;
-
-	g_return_if_fail (NM_IS_WIMAX_DEVICE (self));
-
-	priv = GET_PRIVATE (self);
-	if (priv->enabled == enabled)
-		return;
-
-	priv->enabled = enabled;
-	schedule_rf_state_update (self);
 }
 
 GSList *
@@ -612,6 +600,20 @@ device_state_changed (NMDevice *device,
 	}
 }
 
+/* NMDeviceInterface interface */
+
+static void
+real_set_enabled (NMDeviceInterface *device, gboolean enabled)
+{
+	NMWimaxDevicePrivate *priv = GET_PRIVATE (device);
+
+	if (priv->enabled == enabled)
+		return;
+
+	priv->enabled = enabled;
+	schedule_rf_state_update (NM_WIMAX_DEVICE (device));
+}
+
 /* NMDevice methods */
 
 static void
@@ -861,6 +863,12 @@ real_deactivate_quickly (NMDevice *device)
 }
 
 /* GObject methods */
+
+static void
+device_interface_init (NMDeviceInterface *iface_class)
+{
+    iface_class->set_enabled = real_set_enabled;
+}
 
 static void
 nm_wimax_device_init (NMWimaxDevice *self)

@@ -47,6 +47,8 @@ G_BEGIN_DECLS
 #define NM_CLIENT_WIRELESS_HARDWARE_ENABLED "wireless-hardware-enabled"
 #define NM_CLIENT_WWAN_ENABLED "wwan-enabled"
 #define NM_CLIENT_WWAN_HARDWARE_ENABLED "wwan-hardware-enabled"
+#define NM_CLIENT_WIMAX_ENABLED "wimax-enabled"
+#define NM_CLIENT_WIMAX_HARDWARE_ENABLED "wimax-hardware-enabled"
 #define NM_CLIENT_ACTIVE_CONNECTIONS "active-connections"
 
 typedef struct {
@@ -95,6 +97,10 @@ gboolean  nm_client_wireless_hardware_get_enabled (NMClient *client);
 gboolean  nm_client_wwan_get_enabled (NMClient *client);
 void      nm_client_wwan_set_enabled (NMClient *client, gboolean enabled);
 gboolean  nm_client_wwan_hardware_get_enabled (NMClient *client);
+
+gboolean  nm_client_wimax_get_enabled (NMClient *client);
+void      nm_client_wimax_set_enabled (NMClient *client, gboolean enabled);
+gboolean  nm_client_wimax_hardware_get_enabled (NMClient *client);
 
 NMState   nm_client_get_state            (NMClient *client);
 gboolean  nm_client_get_manager_running  (NMClient *client);

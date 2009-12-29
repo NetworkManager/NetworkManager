@@ -65,9 +65,6 @@ void        nm_wimax_device_get_hw_address (NMWimaxDevice *self,
 											struct ether_addr *addr);
 
 guint32     nm_wimax_device_get_ifindex    (NMWimaxDevice *self);
-void        nm_wimax_device_set_enabled    (NMWimaxDevice *self,
-											gboolean enabled);
-
 GSList     *nm_wimax_device_get_nsps       (NMWimaxDevice *self);
 NMWimaxNsp *nm_wimax_device_get_active_nsp (NMWimaxDevice *self);
 
