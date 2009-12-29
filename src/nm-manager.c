@@ -1218,7 +1218,8 @@ manager_set_radio_enabled (NMManager *manager,
 
 	/* enable/disable wireless devices as required */
 	for (iter = priv->devices; iter; iter = iter->next) {
-		if (rstate->object_filter_func (G_OBJECT (iter->data)))
+		if (   rstate->object_filter_func
+			&& rstate->object_filter_func (G_OBJECT (iter->data)))
 			nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (iter->data), enabled);
 	}
 }
