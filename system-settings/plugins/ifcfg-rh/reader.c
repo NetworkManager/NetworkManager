@@ -111,11 +111,11 @@ make_connection_setting (const char *file,
                          const char *suggested)
 {
 	NMSettingConnection *s_con;
-	char *ifcfg_name = NULL;
+	const char *ifcfg_name = NULL;
 	char *new_id = NULL, *uuid = NULL, *value;
 	char *ifcfg_id;
 
-	ifcfg_name = utils_get_ifcfg_name (file);
+	ifcfg_name = utils_get_ifcfg_name (file, TRUE);
 	if (!ifcfg_name)
 		return NULL;
 
@@ -180,7 +180,6 @@ make_connection_setting (const char *file,
 		g_free (value);
 	}
 
-	g_free (ifcfg_name);
 	return NM_SETTING (s_con);
 }
 
@@ -2583,7 +2582,7 @@ connection_from_file (const char *filename,
 	shvarFile *parsed;
 	char *type, *nmc = NULL, *bootproto;
 	NMSetting *s_ip4;
-	char *ifcfg_name = NULL;
+	const char *ifcfg_name = NULL;
 	gboolean nm_controlled = TRUE;
 
 	g_return_val_if_fail (filename != NULL, NULL);
@@ -2601,13 +2600,12 @@ connection_from_file (const char *filename,
 	if (!iscsiadm_path)
 		iscsiadm_path = SBINDIR "/iscsiadm";
 
-	ifcfg_name = utils_get_ifcfg_name (filename);
+	ifcfg_name = utils_get_ifcfg_name (filename, TRUE);
 	if (!ifcfg_name) {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Ignoring connection '%s' because it's not an ifcfg file.", filename);
 		return NULL;
 	}
-	g_free (ifcfg_name);
 
 	parsed = svNewFile (filename);
 	if (!parsed) {

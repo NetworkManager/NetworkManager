@@ -45,6 +45,7 @@
 #include "nm-inotify-helper.h"
 #include "shvar.h"
 #include "writer.h"
+#include "utils.h"
 
 static void system_config_interface_init (NMSystemConfigInterface *system_config_interface_class);
 
@@ -153,44 +154,6 @@ read_one_connection (SCPluginIfcfg *plugin, const char *filename)
 	return connection;
 }
 
-static gboolean
-check_suffix (const char *base, const char *tag)
-{
-	int len, tag_len;
-
-	g_return_val_if_fail (base != NULL, TRUE);
-	g_return_val_if_fail (tag != NULL, TRUE);
-
-	len = strlen (base);
-	tag_len = strlen (tag);
-	if ((len > tag_len) && !strcasecmp (base + len - tag_len, tag))
-		return TRUE;
-	return FALSE;
-}
-
-static gboolean
-should_ignore_file (const char *filename)
-{
-	char *base;
-	gboolean ignore = TRUE;
-
-	g_return_val_if_fail (filename != NULL, TRUE);
-
-	base = g_path_get_basename (filename);
-	g_return_val_if_fail (base != NULL, TRUE);
-
-	if (   !strncmp (base, IFCFG_TAG, strlen (IFCFG_TAG))
-		&& !check_suffix (base, BAK_TAG)
-		&& !check_suffix (base, TILDE_TAG)
-		&& !check_suffix (base, ORIG_TAG)
-		&& !check_suffix (base, REJ_TAG)
-		&& !check_suffix (base, RPMNEW_TAG))
-		ignore = FALSE;
-
-	g_free (base);
-	return ignore;
-}
-
 static void
 read_connections (SCPluginIfcfg *plugin)
 {
@@ -204,7 +167,7 @@ read_connections (SCPluginIfcfg *plugin)
 		while ((item = g_dir_read_name (dir))) {
 			char *full_path;
 
-			if (should_ignore_file (item))
+			if (utils_should_ignore_file (item, TRUE))
 				continue;
 
 			full_path = g_build_filename (IFCFG_DIR, item, NULL);
@@ -331,7 +294,6 @@ handle_connection_remove_or_new (SCPluginIfcfg *plugin,
 		}
 	}
 }
-
 static void
 dir_changed (GFileMonitor *monitor,
 		   GFile *file,
@@ -341,15 +303,19 @@ dir_changed (GFileMonitor *monitor,
 {
 	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (user_data);
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
-	char *name;
+	char *path, *name;
 	NMIfcfgConnection *connection;
 	gboolean do_remove = FALSE, do_new = FALSE;
 
-	name = g_file_get_path (file);
-	if (should_ignore_file (name)) {
-		g_free (name);
+	path = g_file_get_path (file);
+	if (utils_should_ignore_file (path, FALSE)) {
+		g_free (path);
 		return;
 	}
+
+	/* Given any ifcfg, keys, or routes file, get the ifcfg file path */
+	name = utils_get_ifcfg_path (path);
+	g_free (path);
 
 	connection = g_hash_table_lookup (priv->connections, name);
 	if (!connection) {
