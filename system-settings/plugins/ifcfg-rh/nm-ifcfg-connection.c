@@ -63,6 +63,9 @@ typedef struct {
 	char *routefile;
 	int routefile_wd;
 
+	char *route6file;
+	int route6file_wd;
+
 	char *udi;
 	char *unmanaged;
 } NMIfcfgConnectionPrivate;
@@ -93,7 +96,7 @@ files_changed_cb (NMInotifyHelper *ih,
 	NMIfcfgConnection *self = NM_IFCFG_CONNECTION (user_data);
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (self);
 
-	if ((evt->wd != priv->file_wd) && (evt->wd != priv->keyfile_wd) && (evt->wd != priv->routefile_wd))
+	if ((evt->wd != priv->file_wd) && (evt->wd != priv->keyfile_wd) && (evt->wd != priv->routefile_wd) && (evt->wd != priv->route6file_wd))
 		return;
 
 	/* push the event up to the plugin */
@@ -111,11 +114,12 @@ nm_ifcfg_connection_new (const char *filename,
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	NMInotifyHelper *ih;
 
 	g_return_val_if_fail (filename != NULL, NULL);
 
-	tmp = connection_from_file (filename, NULL, NULL, NULL, &unmanaged, &keyfile, &routefile, error, ignore_error);
+	tmp = connection_from_file (filename, NULL, NULL, NULL, &unmanaged, &keyfile, &routefile, &route6file, error, ignore_error);
 	if (!tmp)
 		return NULL;
 
@@ -144,6 +148,9 @@ nm_ifcfg_connection_new (const char *filename,
 
 	priv->routefile = routefile;
 	priv->routefile_wd = nm_inotify_helper_add_watch (ih, routefile);
+
+	priv->route6file = route6file;
+	priv->route6file_wd = nm_inotify_helper_add_watch (ih, route6file);
 
 	return NM_IFCFG_CONNECTION (object);
 }
@@ -176,7 +183,6 @@ update (NMSettingsConnectionInterface *connection,
 	                               IFCFG_DIR,
 	                               priv->filename,
 	                               priv->keyfile,
-	                               priv->routefile,
 	                               &error)) {
 		callback (connection, error, user_data);
 		g_error_free (error);
@@ -198,6 +204,9 @@ do_delete (NMSettingsConnectionInterface *connection,
 		g_unlink (priv->keyfile);
 	if (priv->routefile)
 		g_unlink (priv->routefile);
+
+	if (priv->route6file)
+		g_unlink (priv->route6file);
 
 	return parent_settings_connection_iface->delete (connection, callback, user_data);
 }
@@ -242,6 +251,10 @@ finalize (GObject *object)
 	g_free (priv->routefile);
 	if (priv->routefile_wd >= 0)
 		nm_inotify_helper_remove_watch (ih, priv->routefile_wd);
+
+	g_free (priv->route6file);
+	if (priv->route6file_wd >= 0)
+		nm_inotify_helper_remove_watch (ih, priv->route6file_wd);
 
 	G_OBJECT_CLASS (nm_ifcfg_connection_parent_class)->finalize (object);
 }

@@ -149,7 +149,8 @@ utils_should_ignore_file (const char *filename, gboolean only_ifcfg)
 
 	if (only_ifcfg == FALSE) {
 		if (   !strncmp (base, KEYS_TAG, strlen (KEYS_TAG))
-		    || !strncmp (base, ROUTE_TAG, strlen (ROUTE_TAG)))
+		    || !strncmp (base, ROUTE_TAG, strlen (ROUTE_TAG))
+		    || !strncmp (base, ROUTE6_TAG, strlen (ROUTE6_TAG)))
 				is_other = TRUE;
 	}
 
@@ -208,6 +209,8 @@ utils_get_ifcfg_name (const char *file, gboolean only_ifcfg)
 			name = start + strlen (KEYS_TAG);
 		else if (!strncmp (start, ROUTE_TAG, strlen (ROUTE_TAG)))
 			name = start + strlen (ROUTE_TAG);
+		else if (!strncmp (start, ROUTE6_TAG, strlen (ROUTE6_TAG)))
+			name = start + strlen (ROUTE6_TAG);
 	}
 
 	return name;
@@ -259,6 +262,12 @@ utils_get_route_path (const char *parent)
 	return utils_get_extra_path (parent, ROUTE_TAG);
 }
 
+char *
+utils_get_route6_path (const char *parent)
+{
+	return utils_get_extra_path (parent, ROUTE6_TAG);
+}
+
 shvarFile *
 utils_get_extra_ifcfg (const char *parent, const char *tag, gboolean should_create)
 {
@@ -291,9 +300,15 @@ utils_get_route_ifcfg (const char *parent, gboolean should_create)
 	return utils_get_extra_ifcfg (parent, ROUTE_TAG, should_create);
 }
 
+shvarFile *
+utils_get_route6_ifcfg (const char *parent, gboolean should_create)
+{
+	return utils_get_extra_ifcfg (parent, ROUTE6_TAG, should_create);
+}
+
 /* Finds out if route file has new or older format
  * Returns TRUE  - new syntax (ADDRESS<n>=a.b.c.d ...), error opening file or empty
- *         FALSE - legacy syntax (1.2.3.0/24 via 11.22.33.44)
+ *         FALSE - older syntax, i.e. argument to 'ip route add' (1.2.3.0/24 via 11.22.33.44)
  */
 gboolean
 utils_has_route_file_new_syntax (const char *filename)

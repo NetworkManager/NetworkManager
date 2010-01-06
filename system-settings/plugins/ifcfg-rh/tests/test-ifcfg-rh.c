@@ -37,6 +37,7 @@
 #include <nm-setting-wireless.h>
 #include <nm-setting-wireless-security.h>
 #include <nm-setting-ip4-config.h>
+#include <nm-setting-ip6-config.h>
 #include <nm-setting-8021x.h>
 #include <nm-setting-pppoe.h>
 #include <nm-setting-ppp.h>
@@ -187,6 +188,7 @@ test_read_minimal (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -202,6 +204,7 @@ test_read_minimal (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -319,6 +322,7 @@ test_read_unmanaged (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -334,6 +338,7 @@ test_read_unmanaged (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -430,9 +435,11 @@ test_read_wired_static (const char *file, const char *expected_id)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
 	char *unmanaged = FALSE;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const GByteArray *array;
@@ -441,9 +448,15 @@ test_read_wired_static (const char *file, const char *expected_id)
 	const char *expected_dns1 = "4.2.2.1";
 	const char *expected_dns2 = "4.2.2.2";
 	struct in_addr addr;
+	struct in6_addr addr6;
 	const char *expected_address1 = "192.168.1.5";
 	const char *expected_address1_gw = "192.168.1.1";
+	const char *expected6_address1 = "dead:beaf::1";
+	const char *expected6_address2 = "dead:beaf::2";
+	const char *expected6_dns1 = "1:2:3:4::a";
+	const char *expected6_dns2 = "1:2:3:4::b";
 	NMIP4Address *ip4_addr;
+	NMIP6Address *ip6_addr;
 
 	connection = connection_from_file (file,
 	                                   NULL,
@@ -452,6 +465,7 @@ test_read_wired_static (const char *file, const char *expected_id)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -617,6 +631,89 @@ test_read_wired_static (const char *file, const char *expected_id)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_ADDRESSES);
 
+	if (!strcmp (expected_id, "System test-wired-static")) {
+		/* ===== IPv6 SETTING ===== */
+
+		s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG));
+		ASSERT (s_ip6 != NULL,
+			"wired-static-verify-ip6", "failed to verify %s: missing %s setting",
+			file,
+			NM_SETTING_IP6_CONFIG_SETTING_NAME);
+
+		/* Method */
+		tmp = nm_setting_ip6_config_get_method (s_ip6);
+		ASSERT (strcmp (tmp, NM_SETTING_IP6_CONFIG_METHOD_MANUAL) == 0,
+			"wired-static-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
+			file,
+			NM_SETTING_IP6_CONFIG_SETTING_NAME,
+			NM_SETTING_IP6_CONFIG_METHOD);
+
+		/* DNS Addresses */
+		ASSERT (nm_setting_ip6_config_get_num_dns (s_ip6) == 2,
+			"wired-static-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
+			file,
+			NM_SETTING_IP6_CONFIG_SETTING_NAME,
+			NM_SETTING_IP6_CONFIG_DNS);
+
+		ASSERT (inet_pton (AF_INET6, expected6_dns1, &addr6) > 0,
+			"wired-static-verify-ip6", "failed to verify %s: couldn't convert DNS IP address #1",
+			file);
+		ASSERT (IN6_ARE_ADDR_EQUAL (nm_setting_ip6_config_get_dns (s_ip6, 0), &addr6),
+			"wired-static-verify-ip6", "failed to verify %s: unexpected %s / %s key value #1",
+			file,
+			NM_SETTING_IP6_CONFIG_SETTING_NAME,
+			NM_SETTING_IP6_CONFIG_DNS);
+
+		ASSERT (inet_pton (AF_INET6, expected6_dns2, &addr6) > 0,
+			"wired-static-verify-ip6", "failed to verify %s: couldn't convert DNS IP address #2",
+			file);
+		ASSERT (IN6_ARE_ADDR_EQUAL (nm_setting_ip6_config_get_dns (s_ip6, 1), &addr6),
+			"wired-static-verify-ip6", "failed to verify %s: unexpected %s / %s key value #2",
+			file,
+			NM_SETTING_IP6_CONFIG_SETTING_NAME,
+			NM_SETTING_IP6_CONFIG_DNS);
+
+		ASSERT (nm_setting_ip6_config_get_num_addresses (s_ip6) == 2,
+			"wired-static-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
+			file,
+			NM_SETTING_IP6_CONFIG_SETTING_NAME,
+			NM_SETTING_IP6_CONFIG_ADDRESSES);
+
+		/* Address #1 */
+		ip6_addr = nm_setting_ip6_config_get_address (s_ip6, 0);
+		ASSERT (ip6_addr,
+			"wired-static-verify-ip6", "failed to verify %s: missing IP6 address #1",
+			file);
+
+		ASSERT (nm_ip6_address_get_prefix (ip6_addr) == 64,
+			"wired-static-verify-ip6", "failed to verify %s: unexpected IP6 address #1 prefix",
+			file);
+
+		ASSERT (inet_pton (AF_INET6, expected6_address1, &addr6) > 0,
+			"wired-static-verify-ip6", "failed to verify %s: couldn't convert IP address #1",
+			file);
+		ASSERT (IN6_ARE_ADDR_EQUAL (nm_ip6_address_get_address (ip6_addr), &addr6),
+			"wired-static-verify-ip6", "failed to verify %s: unexpected IP6 address #1",
+			file);
+
+		/* Address #2 */
+		ip6_addr = nm_setting_ip6_config_get_address (s_ip6, 1);
+		ASSERT (ip6_addr,
+			"wired-static-verify-ip6", "failed to verify %s: missing IP6 address #2",
+			file);
+
+		ASSERT (nm_ip6_address_get_prefix (ip6_addr) == 56,
+			"wired-static-verify-ip6", "failed to verify %s: unexpected IP6 address #2 prefix",
+			file);
+
+		ASSERT (inet_pton (AF_INET6, expected6_address2, &addr6) > 0,
+			"wired-static-verify-ip6", "failed to verify %s: couldn't convert IP address #2",
+			file);
+		ASSERT (IN6_ARE_ADDR_EQUAL (nm_ip6_address_get_address (ip6_addr), &addr6),
+			"wired-static-verify-ip6", "failed to verify %s: unexpected IP6 address #2",
+			file);
+	}
+
 	g_object_unref (connection);
 }
 
@@ -632,6 +729,7 @@ test_read_wired_dhcp (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const GByteArray *array;
@@ -650,6 +748,7 @@ test_read_wired_dhcp (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -802,6 +901,7 @@ test_read_wired_global_gateway (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -818,6 +918,7 @@ test_read_wired_global_gateway (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -923,9 +1024,11 @@ test_read_wired_never_default (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -938,6 +1041,7 @@ test_read_wired_never_default (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -1007,6 +1111,28 @@ test_read_wired_never_default (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
 
+	/* ===== IPv6 SETTING ===== */
+
+	s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG));
+	ASSERT (s_ip6 != NULL,
+	        "wired-never-default-verify-ip6", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_NEVER_DEFAULT,
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip6_config_get_method (s_ip6);
+	ASSERT (strcmp (tmp, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0,
+	        "wired-never-default-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_NEVER_DEFAULT,
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP6_CONFIG_METHOD);
+
+	ASSERT (nm_setting_ip6_config_get_never_default (s_ip6) == TRUE,
+	        "wired-never-default-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_NEVER_DEFAULT,
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP6_CONFIG_NEVER_DEFAULT);
+
 	g_object_unref (connection);
 }
 
@@ -1019,9 +1145,11 @@ test_read_wired_defroute_no (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -1034,6 +1162,7 @@ test_read_wired_defroute_no (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -1096,6 +1225,28 @@ test_read_wired_defroute_no (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_NEVER_DEFAULT);
 
+	/* ===== IPv6 SETTING ===== */
+
+	s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG));
+	ASSERT (s_ip6 != NULL,
+	        "wired-defroute-no-verify-ip6", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_DEFROUTE_NO,
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip6_config_get_method (s_ip6);
+	ASSERT (strcmp (tmp, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0,
+	        "wired-defroute-no-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_DEFROUTE_NO,
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP6_CONFIG_METHOD);
+
+	ASSERT (nm_setting_ip6_config_get_never_default (s_ip6) == TRUE,
+	        "wired-defroute-no-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_DEFROUTE_NO,
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP6_CONFIG_NEVER_DEFAULT);
+
 	g_object_unref (connection);
 }
 
@@ -1109,9 +1260,11 @@ test_read_wired_defroute_no_gatewaydev_yes (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -1124,6 +1277,7 @@ test_read_wired_defroute_no_gatewaydev_yes (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -1194,6 +1348,28 @@ test_read_wired_defroute_no_gatewaydev_yes (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_NEVER_DEFAULT);
 
+	/* ===== IPv6 SETTING ===== */
+
+	s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG));
+	ASSERT (s_ip6 != NULL,
+	        "wired-defroute-no-gatewaydev-yes-verify-ip6", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip6_config_get_method (s_ip6);
+	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
+	        "wired-defroute-no-gatewaydev-yes-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP6_CONFIG_METHOD);
+
+	ASSERT (nm_setting_ip6_config_get_never_default (s_ip6) == FALSE,
+	        "wired-defroute-no-gatewaydev-yes-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP6_CONFIG_NEVER_DEFAULT);
+
 	g_object_unref (connection);
 }
 
@@ -1209,6 +1385,7 @@ test_read_wired_static_routes (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -1227,6 +1404,7 @@ test_read_wired_static_routes (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 
@@ -1355,6 +1533,7 @@ test_read_wired_static_routes (void)
 
 	g_free (keyfile);
 	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -1370,6 +1549,7 @@ test_read_wired_static_routes_legacy (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -1390,6 +1570,7 @@ test_read_wired_static_routes_legacy (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 
@@ -1557,6 +1738,300 @@ test_read_wired_static_routes_legacy (void)
 
 	g_free (keyfile);
 	g_free (routefile);
+	g_free (route6file);
+	g_object_unref (connection);
+}
+
+#define TEST_IFCFG_WIRED_IPV6_MANUAL TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-ipv6-manual"
+
+static void
+test_read_wired_ipv6_manual (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const char *expected_id = "System test-wired-ipv6-manual";
+	const char *expected_address1 = "1001:abba::1234";
+	const char *expected_address2 = "2001:abba::2234";
+	const char *expected_address3 = "3001:abba::3234";
+	guint32 expected_prefix1 = 56;
+	guint32 expected_prefix2 = 64;
+	guint32 expected_prefix3 = 96;
+	const char *expected_route1_dest = "9876::1234";
+	guint32 expected_route1_prefix = 96;
+	const char *expected_route1_nexthop = "9876::7777";
+	guint32 expected_route1_metric = 2;
+	const char *expected_dns1 = "1:2:3:4::a";
+	const char *expected_dns2 = "1:2:3:4::b";
+	NMIP6Address *ip6_addr;
+	NMIP6Route *ip6_route;
+	struct in6_addr addr;
+
+	connection = connection_from_file (TEST_IFCFG_WIRED_IPV6_MANUAL,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "wired-ipv6-manual-read", "failed to read %s: %s", TEST_IFCFG_WIRED_IPV6_MANUAL, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wired-ipv6-manual-verify", "failed to verify %s: %s", TEST_IFCFG_WIRED_IPV6_MANUAL, error->message);
+
+	ASSERT (unmanaged == FALSE,
+	        "wired-ipv6-manual-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_IPV6_MANUAL);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "wired-ipv6-manual-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_IPV6_MANUAL,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "wired-ipv6-manual-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_IPV6_MANUAL,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_id) == 0,
+	        "wired-ipv6-manual-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_IPV6_MANUAL,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+	/* ===== WIRED SETTING ===== */
+
+	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	ASSERT (s_wired != NULL,
+	        "wired-ipv6-manual-verify-wired", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_IPV6_MANUAL,
+	        NM_SETTING_WIRED_SETTING_NAME);
+
+	/* ===== IPv4 SETTING ===== */
+
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	ASSERT (s_ip4 != NULL,
+	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_IPV6_MANUAL,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+
+	/* DNS Addresses */
+	ASSERT (nm_setting_ip4_config_get_num_dns (s_ip4) == 2,
+	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_IPV6_MANUAL,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_DNS);
+
+	/* DNS search domains */
+	ASSERT (nm_setting_ip4_config_get_num_dns_searches (s_ip4) == 3,
+	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_IPV6_MANUAL,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_DNS);
+
+	tmp = nm_setting_ip4_config_get_dns_search (s_ip4, 0);
+	ASSERT (tmp != NULL,
+	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_IPV6_MANUAL,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_DNS_SEARCH);
+	ASSERT (strcmp (tmp, "lorem.com") == 0,
+	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_IPV6_MANUAL,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_DNS_SEARCH);
+
+	tmp = nm_setting_ip4_config_get_dns_search (s_ip4, 1);
+	ASSERT (tmp != NULL,
+	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_IPV6_MANUAL,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_DNS_SEARCH);
+	ASSERT (strcmp (tmp, "ipsum.org") == 0,
+	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_IPV6_MANUAL,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_DNS_SEARCH);
+
+	tmp = nm_setting_ip4_config_get_dns_search (s_ip4, 2);
+	ASSERT (tmp != NULL,
+	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_IPV6_MANUAL,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_DNS_SEARCH);
+	ASSERT (strcmp (tmp, "dolor.edu") == 0,
+	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_IPV6_MANUAL,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_DNS_SEARCH);
+
+	/* ===== IPv6 SETTING ===== */
+
+	s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG));
+	ASSERT (s_ip6 != NULL,
+	        "wired-ipv6-manual-verify-ip6", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_IPV6_MANUAL,
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip6_config_get_method (s_ip6);
+	ASSERT (strcmp (tmp, NM_SETTING_IP6_CONFIG_METHOD_MANUAL) == 0,
+	        "wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_IPV6_MANUAL,
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP6_CONFIG_METHOD);
+
+	ASSERT (nm_setting_ip6_config_get_never_default (s_ip6) == FALSE,
+	        "wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_IPV6_MANUAL,
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP6_CONFIG_NEVER_DEFAULT);
+
+	/* IP addresses */
+	ASSERT (nm_setting_ip6_config_get_num_addresses (s_ip6) == 3,
+		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
+		TEST_IFCFG_WIRED_IPV6_MANUAL,
+		NM_SETTING_IP6_CONFIG_SETTING_NAME,
+		NM_SETTING_IP6_CONFIG_ADDRESSES);
+
+	/* Address #1 */
+	ip6_addr = nm_setting_ip6_config_get_address (s_ip6, 0);
+	ASSERT (ip6_addr,
+		"wired-ipv6-manual-verify-ip6", "failed to verify %s: missing IP6 address #1",
+		TEST_IFCFG_WIRED_IPV6_MANUAL);
+
+	ASSERT (nm_ip6_address_get_prefix (ip6_addr) == expected_prefix1,
+		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected IP6 address #1 prefix",
+		TEST_IFCFG_WIRED_IPV6_MANUAL);
+
+	ASSERT (inet_pton (AF_INET6, expected_address1, &addr) > 0,
+		"wired-ipv6-manual-verify-ip6", "failed to verify %s: couldn't convert IP address #1",
+		TEST_IFCFG_WIRED_IPV6_MANUAL);
+	ASSERT (IN6_ARE_ADDR_EQUAL (nm_ip6_address_get_address (ip6_addr), &addr),
+		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected IP6 address #1",
+		TEST_IFCFG_WIRED_IPV6_MANUAL);
+
+	/* Address #2 */
+	ip6_addr = nm_setting_ip6_config_get_address (s_ip6, 1);
+	ASSERT (ip6_addr,
+		"wired-ipv6-manual-verify-ip6", "failed to verify %s: missing IP6 address #2",
+		TEST_IFCFG_WIRED_IPV6_MANUAL);
+
+	ASSERT (nm_ip6_address_get_prefix (ip6_addr) == expected_prefix2,
+		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected IP6 address #2 prefix",
+		TEST_IFCFG_WIRED_IPV6_MANUAL);
+
+	ASSERT (inet_pton (AF_INET6, expected_address2, &addr) > 0,
+		"wired-ipv6-manual-verify-ip6", "failed to verify %s: couldn't convert IP address #2",
+		TEST_IFCFG_WIRED_IPV6_MANUAL);
+	ASSERT (IN6_ARE_ADDR_EQUAL (nm_ip6_address_get_address (ip6_addr), &addr),
+		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected IP6 address #2",
+		TEST_IFCFG_WIRED_IPV6_MANUAL);
+
+	/* Address #3 */
+	ip6_addr = nm_setting_ip6_config_get_address (s_ip6, 2);
+	ASSERT (ip6_addr,
+		"wired-ipv6-manual-verify-ip6", "failed to verify %s: missing IP6 address #3",
+		TEST_IFCFG_WIRED_IPV6_MANUAL);
+
+	ASSERT (nm_ip6_address_get_prefix (ip6_addr) == expected_prefix3,
+		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected IP6 address #3 prefix",
+		TEST_IFCFG_WIRED_IPV6_MANUAL);
+
+	ASSERT (inet_pton (AF_INET6, expected_address3, &addr) > 0,
+		"wired-ipv6-manual-verify-ip6", "failed to verify %s: couldn't convert IP address #3",
+		TEST_IFCFG_WIRED_IPV6_MANUAL);
+	ASSERT (IN6_ARE_ADDR_EQUAL (nm_ip6_address_get_address (ip6_addr), &addr),
+		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected IP6 address #3",
+		TEST_IFCFG_WIRED_IPV6_MANUAL);
+
+	/* Routes */
+	ASSERT (nm_setting_ip6_config_get_num_routes (s_ip6) == 1,
+		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
+		TEST_IFCFG_WIRED_IPV6_MANUAL,
+		NM_SETTING_IP6_CONFIG_SETTING_NAME,
+		NM_SETTING_IP6_CONFIG_ROUTES);
+
+	/* Route #1 */
+	ip6_route = nm_setting_ip6_config_get_route (s_ip6, 0);
+	ASSERT (ip6_route,
+		"wired-ipv6-manual-verify-ip6", "failed to verify %s: missing IP6 route #1",
+		TEST_IFCFG_WIRED_IPV6_MANUAL);
+
+	ASSERT (inet_pton (AF_INET6, expected_route1_dest, &addr) > 0,
+		"wired-ipv6-manual-verify-ip6", "failed to verify %s: couldn't convert IP route dest #1",
+		TEST_IFCFG_WIRED_IPV6_MANUAL);
+	ASSERT (IN6_ARE_ADDR_EQUAL (nm_ip6_route_get_dest (ip6_route), &addr),
+		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected IP6 route dest #1",
+		TEST_IFCFG_WIRED_IPV6_MANUAL);
+
+	ASSERT (nm_ip6_route_get_prefix (ip6_route) == expected_route1_prefix,
+		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected IP6 route #1 prefix",
+		TEST_IFCFG_WIRED_IPV6_MANUAL);
+
+	ASSERT (inet_pton (AF_INET6, expected_route1_nexthop, &addr) > 0,
+		"wired-ipv6-manual-verify-ip6", "failed to verify %s: couldn't convert IP route next_hop #1",
+		TEST_IFCFG_WIRED_IPV6_MANUAL);
+	ASSERT (IN6_ARE_ADDR_EQUAL (nm_ip6_route_get_next_hop (ip6_route), &addr),
+		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected IP6 route next hop #1",
+		TEST_IFCFG_WIRED_IPV6_MANUAL);
+
+	ASSERT (nm_ip6_route_get_metric (ip6_route) == expected_route1_metric,
+		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected IP6 route #1 metric",
+		TEST_IFCFG_WIRED_IPV6_MANUAL);
+
+	/* DNS Addresses */
+	ASSERT (nm_setting_ip6_config_get_num_dns (s_ip6) == 2,
+	        "wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_IPV6_MANUAL,
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP6_CONFIG_DNS);
+
+	ASSERT (inet_pton (AF_INET6, expected_dns1, &addr) > 0,
+		"wired-ipv6-manual-verify-ip6", "failed to verify %s: couldn't convert DNS IP address #1",
+		TEST_IFCFG_WIRED_IPV6_MANUAL);
+	ASSERT (IN6_ARE_ADDR_EQUAL (nm_setting_ip6_config_get_dns (s_ip6, 0), &addr),
+		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value #1",
+		TEST_IFCFG_WIRED_IPV6_MANUAL,
+		NM_SETTING_IP6_CONFIG_SETTING_NAME,
+		NM_SETTING_IP6_CONFIG_DNS);
+
+	ASSERT (inet_pton (AF_INET6, expected_dns2, &addr) > 0,
+		"wired-ipv6-manual-verify-ip6", "failed to verify %s: couldn't convert DNS IP address #2",
+		TEST_IFCFG_WIRED_IPV6_MANUAL);
+	ASSERT (IN6_ARE_ADDR_EQUAL (nm_setting_ip6_config_get_dns (s_ip6, 1), &addr),
+		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value #2",
+		TEST_IFCFG_WIRED_IPV6_MANUAL,
+		NM_SETTING_IP6_CONFIG_SETTING_NAME,
+		NM_SETTING_IP6_CONFIG_DNS);
+
+	/* DNS domains - none as domains are stuffed to 'ipv4' setting */
+	ASSERT (nm_setting_ip6_config_get_num_dns_searches (s_ip6) == 0,
+	        "wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_IPV6_MANUAL,
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP6_CONFIG_DNS);
+
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -1570,6 +2045,7 @@ test_read_onboot_no (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 
@@ -1580,6 +2056,7 @@ test_read_onboot_no (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -1623,6 +2100,7 @@ test_read_wired_8021x_peap_mschapv2 (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -1639,6 +2117,7 @@ test_read_wired_8021x_peap_mschapv2 (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -1805,6 +2284,7 @@ test_read_wifi_open (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -1823,6 +2303,7 @@ test_read_wifi_open (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -1980,6 +2461,7 @@ test_read_wifi_open_auto (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -1993,6 +2475,7 @@ test_read_wifi_open_auto (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -2056,6 +2539,7 @@ test_read_wifi_open_ssid_hex (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -2070,6 +2554,7 @@ test_read_wifi_open_ssid_hex (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -2135,6 +2620,7 @@ test_read_wifi_open_ssid_bad (const char *file, const char *test)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 
@@ -2145,6 +2631,7 @@ test_read_wifi_open_ssid_bad (const char *file, const char *test)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection == NULL, test, "unexpected success reading %s", file);
@@ -2162,6 +2649,7 @@ test_read_wifi_open_ssid_quoted (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -2176,6 +2664,7 @@ test_read_wifi_open_ssid_quoted (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -2247,6 +2736,7 @@ test_read_wifi_wep (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -2266,6 +2756,7 @@ test_read_wifi_wep (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -2510,6 +3001,7 @@ test_read_wifi_wep_adhoc (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -2529,6 +3021,7 @@ test_read_wifi_wep_adhoc (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -2771,6 +3264,7 @@ test_read_wifi_leap (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -2785,6 +3279,7 @@ test_read_wifi_leap (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -2906,6 +3401,7 @@ test_read_wifi_wpa_psk (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -2935,6 +3431,7 @@ test_read_wifi_wpa_psk (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -3218,6 +3715,7 @@ test_read_wifi_wpa_psk_unquoted (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -3231,6 +3729,7 @@ test_read_wifi_wpa_psk_unquoted (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -3314,6 +3813,7 @@ test_read_wifi_wpa_psk_unquoted2 (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 
@@ -3328,6 +3828,7 @@ test_read_wifi_wpa_psk_unquoted2 (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection == NULL,
@@ -3348,6 +3849,7 @@ test_read_wifi_wpa_psk_adhoc (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -3365,6 +3867,7 @@ test_read_wifi_wpa_psk_adhoc (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -3534,6 +4037,7 @@ test_read_wifi_wpa_psk_hex (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -3550,6 +4054,7 @@ test_read_wifi_wpa_psk_hex (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -3686,6 +4191,7 @@ test_read_wifi_wpa_eap_tls (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp, *password;
@@ -3699,6 +4205,7 @@ test_read_wifi_wpa_eap_tls (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -3830,6 +4337,7 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp, *password;
@@ -3843,6 +4351,7 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -3996,6 +4505,7 @@ test_read_wifi_wep_eap_ttls_chap (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -4010,6 +4520,7 @@ test_read_wifi_wep_eap_ttls_chap (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -4148,7 +4659,8 @@ test_write_wired_static (void)
 	NMConnection *reread;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIP4Config *s_ip4, *reread_s_ip4;
+	NMSettingIP6Config *s_ip6, *reread_s_ip6;
 	static unsigned char tmpmac[] = { 0x31, 0x33, 0x33, 0x37, 0xbe, 0xcd };
 	GByteArray *mac;
 	guint32 mtu = 1492;
@@ -4162,14 +4674,34 @@ test_write_wired_static (void)
 	const guint32 prefix = 24;
 	const char *dns_search1 = "foobar.com";
 	const char *dns_search2 = "lab.foobar.com";
+	const char *dns_search3 = "foobar6.com";
+	const char *dns_search4 = "lab6.foobar.com";
+	struct in6_addr ip6, ip6_1, ip6_2;
+	struct in6_addr route1_dest, route2_dest, route1_nexthop, route2_nexthop;
+	struct in6_addr dns6_1, dns6_2;
+	const guint32 route1_prefix = 64, route2_prefix = 0;
+	const guint32 route1_metric = 99, route2_metric = 1;
 	NMIP4Address *addr;
+	NMIP6Address *addr6;
+	NMIP6Route *route6;
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
+
+	inet_pton (AF_INET6, "1003:1234:abcd::1", &ip6);
+	inet_pton (AF_INET6, "2003:1234:abcd::2", &ip6_1);
+	inet_pton (AF_INET6, "3003:1234:abcd::3", &ip6_2);
+	inet_pton (AF_INET6, "2222:aaaa:bbbb:cccc::", &route1_dest);
+	inet_pton (AF_INET6, "2222:aaaa:bbbb:cccc:dddd:eeee:5555:6666", &route1_nexthop);
+	inet_pton (AF_INET6, "::", &route2_dest);
+	inet_pton (AF_INET6, "2222:aaaa::9999", &route2_nexthop);
+	inet_pton (AF_INET6, "fade:0102:0103::face", &dns6_1);
+	inet_pton (AF_INET6, "cafe:ffff:eeee:dddd:cccc:bbbb:aaaa:feed", &dns6_2);
 
 	connection = nm_connection_new ();
 	ASSERT (connection != NULL,
@@ -4239,6 +4771,61 @@ test_write_wired_static (void)
 	nm_setting_ip4_config_add_dns_search (s_ip4, dns_search1);
 	nm_setting_ip4_config_add_dns_search (s_ip4, dns_search2);
 
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	ASSERT (s_ip6 != NULL,
+	        "wired-static-write", "failed to allocate new %s setting",
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6,
+	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+	              NULL);
+
+	/* Add addresses */
+	addr6 = nm_ip6_address_new ();
+	nm_ip6_address_set_address (addr6, &ip6);
+	nm_ip6_address_set_prefix (addr6, 11);
+	nm_setting_ip6_config_add_address (s_ip6, addr6);
+	nm_ip6_address_unref (addr6);
+
+	addr6 = nm_ip6_address_new ();
+	nm_ip6_address_set_address (addr6, &ip6_1);
+	nm_ip6_address_set_prefix (addr6, 22);
+	nm_setting_ip6_config_add_address (s_ip6, addr6);
+	nm_ip6_address_unref (addr6);
+
+	addr6 = nm_ip6_address_new ();
+	nm_ip6_address_set_address (addr6, &ip6_2);
+	nm_ip6_address_set_prefix (addr6, 33);
+	nm_setting_ip6_config_add_address (s_ip6, addr6);
+	nm_ip6_address_unref (addr6);
+
+	/* Add routes */
+	route6 = nm_ip6_route_new ();
+	nm_ip6_route_set_dest (route6, &route1_dest);
+	nm_ip6_route_set_prefix (route6, route1_prefix);
+	nm_ip6_route_set_next_hop (route6, &route1_nexthop);
+	nm_ip6_route_set_metric (route6, route1_metric);
+	nm_setting_ip6_config_add_route (s_ip6, route6);
+	nm_ip6_route_unref (route6);
+
+	route6 = nm_ip6_route_new ();
+	nm_ip6_route_set_dest (route6, &route2_dest);
+	nm_ip6_route_set_prefix (route6, route2_prefix);
+	nm_ip6_route_set_next_hop (route6, &route2_nexthop);
+	nm_ip6_route_set_metric (route6, route2_metric);
+	nm_setting_ip6_config_add_route (s_ip6, route6);
+	nm_ip6_route_unref (route6);
+
+	/* DNS servers */
+	nm_setting_ip6_config_add_dns (s_ip6, &dns6_1);
+	nm_setting_ip6_config_add_dns (s_ip6, &dns6_2);
+
+	/* DNS domains */
+	nm_setting_ip6_config_add_dns_search (s_ip6, dns_search3);
+	nm_setting_ip6_config_add_dns_search (s_ip6, dns_search4);
+
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        "wired-static-write", "failed to verify connection: %s",
 	        (error && error->message) ? error->message : "(unknown)");
@@ -4263,6 +4850,7 @@ test_write_wired_static (void)
 	                               &unmanaged,
 	                               &keyfile,
 	                               &routefile,
+	                               &route6file,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -4273,10 +4861,27 @@ test_write_wired_static (void)
 	ASSERT (nm_connection_verify (reread, &error),
 	        "wired-static-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
 
+	/* FIXME: currently DNS domains from IPv6 setting are stored in 'DOMAIN' key in ifcfg-file 
+	 * However after re-reading they are dropped into IPv4 setting.
+	 * So, in order to comparison succeeded, move DNS domains back to IPv6 setting.
+	 */
+	reread_s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (reread, NM_TYPE_SETTING_IP4_CONFIG));
+	reread_s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting (reread, NM_TYPE_SETTING_IP6_CONFIG));
+	nm_setting_ip6_config_add_dns_search (reread_s_ip6, nm_setting_ip4_config_get_dns_search (reread_s_ip4, 2));
+	nm_setting_ip6_config_add_dns_search (reread_s_ip6, nm_setting_ip4_config_get_dns_search (reread_s_ip4, 3));
+	nm_setting_ip4_config_remove_dns_search (reread_s_ip4, 3);
+	nm_setting_ip4_config_remove_dns_search (reread_s_ip4, 2);
+
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
 	        "wired-static-write", "written and re-read connection weren't the same.");
 
+	if (route6file)
+		unlink (route6file);
+
 	g_free (testfile);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -4289,6 +4894,7 @@ test_write_wired_dhcp (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -4296,6 +4902,7 @@ test_write_wired_dhcp (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 
 	connection = nm_connection_new ();
@@ -4344,6 +4951,17 @@ test_write_wired_dhcp (void)
 	        "wired-dhcp-write", "failed to verify connection: %s",
 	        (error && error->message) ? error->message : "(unknown)");
 
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	ASSERT (s_ip6 != NULL,
+	        "wired-dhcp-write", "failed to allocate new %s setting",
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6,
+	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NULL);
+
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,
 	                                 TEST_SCRATCH_DIR "/network-scripts/",
@@ -4364,6 +4982,7 @@ test_write_wired_dhcp (void)
 	                               &unmanaged,
 	                               &keyfile,
 	                               &routefile,
+	                               &route6file,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -4397,6 +5016,8 @@ test_read_write_static_routes_legacy (void)
 	char *keyfile2 = NULL;
 	char *routefile = NULL;
 	char *routefile2 = NULL;
+	char *route6file = NULL;
+	char *route6file2 = NULL;
 	gboolean ignore_error = FALSE;
 	gboolean success;
 	GError *error = NULL;
@@ -4409,6 +5030,7 @@ test_read_write_static_routes_legacy (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -4495,10 +5117,12 @@ test_read_write_static_routes_legacy (void)
 	                               &unmanaged,
 	                               &keyfile2,
 	                               &routefile2,
+	                               &route6file2,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
 	unlink (routefile2);
+	unlink (route6file2);
 
 	ASSERT (reread != NULL,
 	        "read-write-static-routes-legacy-reread", "failed to read %s: %s", testfile, error->message);
@@ -4517,6 +5141,8 @@ test_read_write_static_routes_legacy (void)
 	g_free (keyfile2);
 	g_free (routefile);
 	g_free (routefile2);
+	g_free (route6file);
+	g_free (route6file2);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -4529,6 +5155,7 @@ test_write_wired_static_routes (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
 	static unsigned char tmpmac[] = { 0x31, 0x33, 0x33, 0x37, 0xbe, 0xcd };
 	GByteArray *mac;
 	guint32 mtu = 1492;
@@ -4554,6 +5181,7 @@ test_write_wired_static_routes (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 
 	connection = nm_connection_new ();
@@ -4640,6 +5268,15 @@ test_write_wired_static_routes (void)
 	nm_setting_ip4_config_add_dns_search (s_ip4, dns_search1);
 	nm_setting_ip4_config_add_dns_search (s_ip4, dns_search2);
 
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	ASSERT (s_ip6 != NULL,
+	        "wired-dhcp-8021x-peap-mschapv2write", "failed to allocate new %s setting",
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
+
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        "wired-static-routes-write", "failed to verify connection: %s",
 	        (error && error->message) ? error->message : "(unknown)");
@@ -4664,6 +5301,7 @@ test_write_wired_static_routes (void)
 	                               &unmanaged,
 	                               &keyfile,
 	                               &routefile,
+	                               &route6file,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -4684,6 +5322,7 @@ test_write_wired_static_routes (void)
 	g_free (testfile);
 	g_free (keyfile);
 	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -4696,6 +5335,7 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
 	NMSetting8021x *s_8021x;
 	char *uuid;
 	gboolean success;
@@ -4704,6 +5344,7 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 
 	connection = nm_connection_new ();
@@ -4741,6 +5382,15 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	ASSERT (s_ip6 != NULL,
+	        "wired-dhcp-8021x-peap-mschapv2write", "failed to allocate new %s setting",
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
 
 	/* 802.1x setting */
 	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
@@ -4792,6 +5442,7 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 	                               &unmanaged,
 	                               &keyfile,
 	                               &routefile,
+	                               &route6file,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -4822,6 +5473,7 @@ test_write_wifi_open (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -4829,6 +5481,7 @@ test_write_wifi_open (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
 	const unsigned char ssid_data[] = { 0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44 };
@@ -4895,6 +5548,15 @@ test_write_wifi_open (void)
 
 	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	ASSERT (s_ip6 != NULL,
+	        "wifi-open-write", "failed to allocate new %s setting",
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
+
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        "wifi-open-write", "failed to verify connection: %s",
 	        (error && error->message) ? error->message : "(unknown)");
@@ -4919,6 +5581,7 @@ test_write_wifi_open (void)
 	                               &unmanaged,
 	                               &keyfile,
 	                               &routefile,
+	                               &route6file,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -4945,6 +5608,7 @@ test_write_wifi_open_hex_ssid (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -4952,6 +5616,7 @@ test_write_wifi_open_hex_ssid (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
 	const unsigned char ssid_data[] = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd };
@@ -5002,6 +5667,15 @@ test_write_wifi_open_hex_ssid (void)
 
 	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	ASSERT (s_ip6 != NULL,
+	        "wifi-open-hex-ssid-write", "failed to allocate new %s setting",
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
+
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        "wifi-open-hex-ssid-write", "failed to verify connection: %s",
 	        (error && error->message) ? error->message : "(unknown)");
@@ -5026,6 +5700,7 @@ test_write_wifi_open_hex_ssid (void)
 	                               &unmanaged,
 	                               &keyfile,
 	                               &routefile,
+	                               &route6file,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -5053,6 +5728,7 @@ test_write_wifi_wep (void)
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -5060,6 +5736,7 @@ test_write_wifi_wep (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
 	const unsigned char ssid_data[] = "blahblah";
@@ -5129,6 +5806,15 @@ test_write_wifi_wep (void)
 
 	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	ASSERT (s_ip6 != NULL,
+	        "wifi-wep-write", "failed to allocate new %s setting",
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
+
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        "wifi-wep-write", "failed to verify connection: %s",
 	        (error && error->message) ? error->message : "(unknown)");
@@ -5153,6 +5839,7 @@ test_write_wifi_wep (void)
 	                               &unmanaged,
 	                               &keyfile,
 	                               &routefile,
+	                               &route6file,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -5192,6 +5879,7 @@ test_write_wifi_wep_adhoc (void)
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -5199,6 +5887,7 @@ test_write_wifi_wep_adhoc (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
 	const unsigned char ssid_data[] = "blahblah";
@@ -5276,6 +5965,15 @@ test_write_wifi_wep_adhoc (void)
 
 	nm_setting_ip4_config_add_dns (s_ip4, dns1);
 
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	ASSERT (s_ip6 != NULL,
+	        "wifi-wep-adhoc-write", "failed to allocate new %s setting",
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
+
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        "wifi-wep-adhoc-write", "failed to verify connection: %s",
 	        (error && error->message) ? error->message : "(unknown)");
@@ -5300,6 +5998,7 @@ test_write_wifi_wep_adhoc (void)
 	                               &unmanaged,
 	                               &keyfile,
 	                               &routefile,
+	                               &route6file,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -5339,6 +6038,7 @@ test_write_wifi_leap (void)
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -5346,6 +6046,7 @@ test_write_wifi_leap (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
 	const unsigned char ssid_data[] = "blahblah";
@@ -5412,6 +6113,15 @@ test_write_wifi_leap (void)
 
 	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	ASSERT (s_ip6 != NULL,
+	        "wifi-leap-write", "failed to allocate new %s setting",
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
+
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        "wifi-leap-write", "failed to verify connection: %s",
 	        (error && error->message) ? error->message : "(unknown)");
@@ -5436,6 +6146,7 @@ test_write_wifi_leap (void)
 	                               &unmanaged,
 	                               &keyfile,
 	                               &routefile,
+	                               &route6file,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -5480,6 +6191,7 @@ test_write_wifi_wpa_psk (const char *name,
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
 	char *uuid, *tmp;
 	gboolean success;
 	GError *error = NULL;
@@ -5487,6 +6199,7 @@ test_write_wifi_wpa_psk (const char *name,
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
 	const unsigned char ssid_data[] = "blahblah";
@@ -5567,6 +6280,15 @@ test_write_wifi_wpa_psk (const char *name,
 
 	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	ASSERT (s_ip6 != NULL,
+	        test_name, "failed to allocate new %s setting",
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
+
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        test_name, "failed to verify connection: %s",
 	        (error && error->message) ? error->message : "(unknown)");
@@ -5591,6 +6313,7 @@ test_write_wifi_wpa_psk (const char *name,
 	                               &unmanaged,
 	                               &keyfile,
 	                               &routefile,
+	                               &route6file,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -5624,6 +6347,7 @@ test_write_wifi_wpa_psk_adhoc (void)
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -5631,6 +6355,7 @@ test_write_wifi_wpa_psk_adhoc (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
 	const unsigned char ssid_data[] = "blahblah";
@@ -5714,6 +6439,15 @@ test_write_wifi_wpa_psk_adhoc (void)
 
 	nm_setting_ip4_config_add_dns (s_ip4, dns1);
 
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	ASSERT (s_ip6 != NULL,
+	        "wifi-wpa-psk-adhoc-write", "failed to allocate new %s setting",
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
+
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        "wifi-wpa-psk-adhoc-write", "failed to verify connection: %s",
 	        (error && error->message) ? error->message : "(unknown)");
@@ -5738,6 +6472,7 @@ test_write_wifi_wpa_psk_adhoc (void)
 	                               &unmanaged,
 	                               &keyfile,
 	                               &routefile,
+	                               &route6file,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -5770,6 +6505,7 @@ test_write_wifi_wpa_eap_tls (void)
 	NMSettingWirelessSecurity *s_wsec;
 	NMSetting8021x *s_8021x;
 	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -5777,6 +6513,7 @@ test_write_wifi_wpa_eap_tls (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
 	const char *ssid_data = "blahblah";
@@ -5879,6 +6616,15 @@ test_write_wifi_wpa_eap_tls (void)
 
 	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	ASSERT (s_ip6 != NULL,
+	        "wifi-wpa-eap-tls-write", "failed to allocate new %s setting",
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
+
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        "wifi-wpa-eap-tls-write", "failed to verify connection: %s",
 	        (error && error->message) ? error->message : "(unknown)");
@@ -5903,6 +6649,7 @@ test_write_wifi_wpa_eap_tls (void)
 	                               &unmanaged,
 	                               &keyfile,
 	                               &routefile,
+	                               &route6file,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -5935,6 +6682,7 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 	NMSettingWirelessSecurity *s_wsec;
 	NMSetting8021x *s_8021x;
 	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -5942,6 +6690,7 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
 	const char *ssid_data = "blahblah";
@@ -6062,6 +6811,15 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 
 	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	ASSERT (s_ip6 != NULL,
+	        "wifi-wpa-eap-ttls-tls-write", "failed to allocate new %s setting",
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
+
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        "wifi-wpa-eap-ttls-tls-write", "failed to verify connection: %s",
 	        (error && error->message) ? error->message : "(unknown)");
@@ -6086,6 +6844,7 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 	                               &unmanaged,
 	                               &keyfile,
 	                               &routefile,
+	                               &route6file,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -6118,6 +6877,7 @@ test_write_wifi_wpa_eap_ttls_mschapv2 (void)
 	NMSettingWirelessSecurity *s_wsec;
 	NMSetting8021x *s_8021x;
 	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -6125,6 +6885,7 @@ test_write_wifi_wpa_eap_ttls_mschapv2 (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
 	const char *ssid_data = "blahblah";
@@ -6217,6 +6978,15 @@ test_write_wifi_wpa_eap_ttls_mschapv2 (void)
 
 	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	ASSERT (s_ip6 != NULL,
+	        "wifi-wpa-eap-ttls-mschapv2-write", "failed to allocate new %s setting",
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
+
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        "wifi-wpa-eap-ttls-mschapv2-write", "failed to verify connection: %s",
 	        (error && error->message) ? error->message : "(unknown)");
@@ -6241,6 +7011,7 @@ test_write_wifi_wpa_eap_ttls_mschapv2 (void)
 	                               &unmanaged,
 	                               &keyfile,
 	                               &routefile,
+	                               &route6file,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -6275,6 +7046,7 @@ test_read_ibft_dhcp (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -6290,6 +7062,7 @@ test_read_ibft_dhcp (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -6408,6 +7181,7 @@ test_read_ibft_static (void)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -6429,6 +7203,7 @@ test_read_ibft_static (void)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -6613,6 +7388,7 @@ test_read_ibft_malformed (const char *name, const char *iscsiadm_path)
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 
@@ -6623,6 +7399,7 @@ test_read_ibft_malformed (const char *name, const char *iscsiadm_path)
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
+	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection == NULL,
@@ -6925,6 +7702,7 @@ int main (int argc, char **argv)
 	test_read_wired_defroute_no_gatewaydev_yes ();
 	test_read_wired_static_routes ();
 	test_read_wired_static_routes_legacy ();
+	test_read_wired_ipv6_manual ();
 	test_read_onboot_no ();
 	test_read_wired_8021x_peap_mschapv2 ();
 	test_read_wifi_open ();
