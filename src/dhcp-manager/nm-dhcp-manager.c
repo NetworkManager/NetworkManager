@@ -146,10 +146,13 @@ nm_dhcp_manager_class_init (NMDHCPManagerClass *manager_class)
 
 static gboolean state_is_bound (guint8 state)
 {
-	if ((state == DHC_BOUND)
-	    || (state == DHC_RENEW)
+	if (   (state == DHC_BOUND4)
+	    || (state == DHC_BOUND6)
+	    || (state == DHC_RENEW4)
+	    || (state == DHC_RENEW6)
 	    || (state == DHC_REBOOT)
-	    || (state == DHC_REBIND)
+	    || (state == DHC_REBIND4)
+	    || (state == DHC_REBIND6)
 	    || (state == DHC_IPV4LL))
 		return TRUE;
 
@@ -200,83 +203,60 @@ nm_dhcp_device_destroy (NMDHCPDevice *device)
 	g_slice_free (NMDHCPDevice, device);
 }
 
+typedef struct {
+	NMDHCPState state;
+	const char *name;
+} DhcState;
+
+#define STATE_TABLE_SIZE (sizeof (state_table) / sizeof (state_table[0]))
+
+static DhcState state_table[] = {
+	{ DHC_NBI,     "nbi" },
+	{ DHC_PREINIT, "preinit" },
+	{ DHC_BOUND4,  "bound" },
+	{ DHC_BOUND6,  "bound6" },
+	{ DHC_IPV4LL,  "ipv4ll" },
+	{ DHC_RENEW4,  "renew" },
+	{ DHC_RENEW6,  "renew6" },
+	{ DHC_REBOOT,  "reboot" },
+	{ DHC_REBIND4, "rebind" },
+	{ DHC_REBIND6, "rebind6" },
+	{ DHC_STOP,    "stop" },
+	{ DHC_MEDIUM,  "medium" },
+	{ DHC_TIMEOUT, "timeout" },
+	{ DHC_FAIL,    "fail" },
+	{ DHC_EXPIRE,  "expire" },
+	{ DHC_RELEASE, "release" },
+	{ DHC_START,   "start" },
+	{ DHC_ABEND,   "abend" },
+	{ DHC_END,     "end" },
+	{ DHC_DEPREF6, "depref6" },
+};
 
 static inline const char *
 state_to_string (guint32 state)
 {
-	switch (state)
-	{
-		case DHC_PREINIT:
-			return "preinit";
-		case DHC_BOUND:
-			return "bound";
-		case DHC_IPV4LL:
-			return "bound (ipv4ll)";
-		case DHC_RENEW:
-			return "renew";
-		case DHC_REBOOT:
-			return "reboot";
-		case DHC_REBIND:
-			return "rebind";
-		case DHC_STOP:
-			return "stop";
-		case DHC_MEDIUM:
-			return "medium";
-		case DHC_TIMEOUT:
-			return "timeout";
-		case DHC_FAIL:
-			return "fail";
-		case DHC_EXPIRE:
-			return "expire";
-		case DHC_RELEASE:
-			return "release";
-		case DHC_START:
-			return "successfully started";
-		case DHC_ABEND:
-			return "abnormal exit";
-		case DHC_END:
-			return "normal exit";
-		default:
-			break;
+	int i;
+
+	for (i = 0; i < STATE_TABLE_SIZE; i++) {
+		if (state == state_table[i].state)
+			return state_table[i].name;
 	}
+
 	return NULL;
 }
 
-static inline guint32
-string_to_state (const char *state)
+static inline NMDHCPState
+string_to_state (const char *name)
 {
-	if (strcmp("PREINIT", state) == 0)
-		return DHC_PREINIT;
-	else if (strcmp("BOUND", state) == 0)
-		return DHC_BOUND;
-	else if (strcmp("IPV4LL", state) == 0)
-		return DHC_IPV4LL;
-	else if (strcmp("RENEW", state) == 0)
-		return DHC_RENEW;
-	else if (strcmp("REBOOT", state) == 0)
-		return DHC_REBOOT;
-	else if (strcmp("REBIND", state) == 0)
-		return DHC_REBIND;
-	else if (strcmp("STOP", state) == 0)
-		return DHC_STOP;
-	else if (strcmp("MEDIUM", state) == 0)
-		return DHC_MEDIUM;
-	else if (strcmp("TIMEOUT", state) == 0)
-		return DHC_TIMEOUT;
-	else if (strcmp("FAIL", state) == 0)
-		return DHC_FAIL;
-	else if (strcmp("EXPIRE", state) == 0)
-		return DHC_EXPIRE;
-	else if (strcmp("RELEASE", state) == 0)
-		return DHC_RELEASE;
-	else if (strcmp("START", state) == 0)
-		return DHC_START;
-	else if (strcmp("ABEND", state) == 0)
-		return DHC_ABEND;
-	else if (strcmp("END", state) == 0)
-		return DHC_END;
-	else
-		return 255;
+	int i;
+
+	for (i = 0; i < STATE_TABLE_SIZE; i++) {
+		if (!strcasecmp (name, state_table[i].name))
+			return state_table[i].state;
+	}
+
+	return 255;
 }
 
 static char *

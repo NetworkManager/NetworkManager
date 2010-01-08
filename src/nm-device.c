@@ -2314,10 +2314,10 @@ dhcp_state_changed (NMDHCPManager *dhcp_manager,
 	dev_state = nm_device_get_state (device);
 
 	switch (state) {
-	case DHC_BOUND:	/* lease obtained */
-	case DHC_RENEW:	/* lease renewed */
-	case DHC_REBOOT:	/* have valid lease, but now obtained a different one */
-	case DHC_REBIND:	/* new, different lease */
+	case DHC_BOUND4:     /* lease obtained */
+	case DHC_RENEW4:     /* lease renewed */
+	case DHC_REBOOT:     /* have valid lease, but now obtained a different one */
+	case DHC_REBIND4:    /* new, different lease */
 		if (dev_state == NM_DEVICE_STATE_IP_CONFIG)
 			nm_device_activate_schedule_stage4_ip4_config_get (device);
 		else if (dev_state == NM_DEVICE_STATE_ACTIVATED)
