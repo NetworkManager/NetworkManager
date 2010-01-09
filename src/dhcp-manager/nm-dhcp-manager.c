@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2008 Red Hat, Inc.
+ * Copyright (C) 2005 - 2010 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  *
  */
@@ -50,9 +50,10 @@
 #define NM_DHCP_TIMEOUT   	45 /* DHCP timeout, in seconds */
 
 typedef struct {
+	guint32         next_id;
 	NMDBusManager * dbus_mgr;
-	GHashTable *	devices;
-	DBusGProxy *	proxy;
+	GHashTable *    clients;
+	DBusGProxy *    proxy;
 	NMHostnameProvider *hostname_provider;
 } NMDHCPManagerPrivate;
 
@@ -69,82 +70,9 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-static NMDHCPManager *nm_dhcp_manager_new (void);
+static void nm_dhcp_manager_cancel_transaction_real (NMDHCPClient *client);
 
-static void nm_dhcp_manager_cancel_transaction_real (NMDHCPDevice *device);
-
-static void hostname_provider_destroyed (gpointer data, GObject *destroyed_object);
-
-NMDHCPManager *
-nm_dhcp_manager_get (void)
-{
-	static NMDHCPManager *singleton = NULL;
-
-	if (!singleton)
-		singleton = nm_dhcp_manager_new ();
-	else
-		g_object_ref (singleton);
-
-	g_assert (singleton);
-	return singleton;
-}
-
-static void
-nm_dhcp_manager_init (NMDHCPManager *manager)
-{
-}
-
-static void
-finalize (GObject *object)
-{
-	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (object);
-
-	if (priv->hostname_provider) {
-		g_object_weak_unref (G_OBJECT (priv->hostname_provider), hostname_provider_destroyed, object);
-		priv->hostname_provider = NULL;
-	}
-
-	g_hash_table_destroy (priv->devices);
-	g_object_unref (priv->proxy);
-	g_object_unref (priv->dbus_mgr);
-
-	G_OBJECT_CLASS (nm_dhcp_manager_parent_class)->finalize (object);
-}
-
-static void
-nm_dhcp_manager_class_init (NMDHCPManagerClass *manager_class)
-{
-	GObjectClass *object_class = G_OBJECT_CLASS (manager_class);
-
-	g_type_class_add_private (manager_class, sizeof (NMDHCPManagerPrivate));
-
-	/* virtual methods */
-	object_class->finalize = finalize;
-
-	/* signals */
-	signals[STATE_CHANGED] =
-		g_signal_new ("state-changed",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMDHCPManagerClass, state_changed),
-					  NULL, NULL,
-					  _nm_marshal_VOID__STRING_UCHAR,
-					  G_TYPE_NONE, 2,
-					  G_TYPE_STRING,
-					  G_TYPE_UCHAR);
-
-	signals[TIMEOUT] =
-		g_signal_new ("timeout",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMDHCPManagerClass, timeout),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__STRING,
-					  G_TYPE_NONE, 1,
-					  G_TYPE_STRING);
-}
-
-static gboolean state_is_bound (guint8 state)
+static gboolean state_is_bound (guint32 state)
 {
 	if (   (state == DHC_BOUND4)
 	    || (state == DHC_BOUND6)
@@ -161,46 +89,46 @@ static gboolean state_is_bound (guint8 state)
 
 
 static void
-nm_dhcp_device_timeout_cleanup (NMDHCPDevice * device)
+nm_dhcp_client_timeout_cleanup (NMDHCPClient *client)
 {
-	if (device->timeout_id) {
-		g_source_remove (device->timeout_id);
-		device->timeout_id = 0;
+	if (client->timeout_id) {
+		g_source_remove (client->timeout_id);
+		client->timeout_id = 0;
 	}
 }
 
 static void
-nm_dhcp_device_watch_cleanup (NMDHCPDevice * device)
+nm_dhcp_client_watch_cleanup (NMDHCPClient *client)
 {
-	if (device->watch_id) {
-		g_source_remove (device->watch_id);
-		device->watch_id = 0;
+	if (client->watch_id) {
+		g_source_remove (client->watch_id);
+		client->watch_id = 0;
 	}
 }
 
 static void
-nm_dhcp_device_destroy (NMDHCPDevice *device)
+nm_dhcp_client_destroy (NMDHCPClient *client)
 {
 	int ignored;
 
-	nm_dhcp_device_timeout_cleanup (device);
+	nm_dhcp_client_timeout_cleanup (client);
 
-	if (device->pid)
-		nm_dhcp_client_stop (device, device->pid);
+	if (client->pid)
+		nm_dhcp_client_stop (client, client->pid);
 
-	if (device->options)
-		g_hash_table_destroy (device->options);
+	if (client->options)
+		g_hash_table_destroy (client->options);
 
-	if (device->conf_file) {
-		ignored = unlink (device->conf_file);
-		g_free (device->conf_file);
+	if (client->conf_file) {
+		ignored = unlink (client->conf_file);
+		g_free (client->conf_file);
 	}
 
-	g_free (device->pid_file);
-	g_free (device->lease_file);
-	g_free (device->iface);
+	g_free (client->pid_file);
+	g_free (client->lease_file);
+	g_free (client->iface);
 
-	g_slice_free (NMDHCPDevice, device);
+	g_slice_free (NMDHCPClient, client);
 }
 
 typedef struct {
@@ -316,7 +244,7 @@ copy_option (gpointer key,
              gpointer value,
              gpointer user_data)
 {
-	NMDHCPDevice * device = (NMDHCPDevice *) user_data;
+	NMDHCPClient *client = user_data;
 	const char *str_key = (const char *) key;
 	char *str_value = NULL;
 
@@ -329,21 +257,21 @@ copy_option (gpointer key,
 
 	str_value = garray_to_string ((GArray *) g_value_get_boxed (value), str_key);
 	if (str_value)
-		g_hash_table_insert (device->options, g_strdup (str_key), str_value);
+		g_hash_table_insert (client->options, g_strdup (str_key), str_value);
 }
 
 static void
-handle_options (NMDHCPManager * manager,
-                NMDHCPDevice * device,
-                GHashTable * options,
-                const char * reason)
+handle_options (NMDHCPManager *manager,
+                NMDHCPClient *client,
+                GHashTable *options,
+                const char *reason)
 {
-	guint32 old_state = device->state;
+	guint32 old_state = client->state;
 	guint32 new_state = string_to_state (reason);
 
 	/* Clear old and save new DHCP options */
-	g_hash_table_remove_all (device->options);
-	g_hash_table_foreach (options, copy_option, device);
+	g_hash_table_remove_all (client->options);
+	g_hash_table_foreach (options, copy_option, client);
 
 	if (old_state == new_state)
 		return;
@@ -351,20 +279,78 @@ handle_options (NMDHCPManager * manager,
 	/* Handle changed device state */
 	if (state_is_bound (new_state)) {
 		/* Cancel the timeout if the DHCP client is now bound */
-		nm_dhcp_device_timeout_cleanup (device);
+		nm_dhcp_client_timeout_cleanup (client);
 	}
 
-	device->state = new_state;
+	client->state = new_state;
 	nm_info ("DHCP: device %s state changed %s -> %s",
-	         device->iface,
+	         client->iface,
 	         state_to_string (old_state),
-	         state_to_string (device->state));
+	         state_to_string (client->state));
 
-	g_signal_emit (G_OBJECT (device->manager),
+	g_signal_emit (G_OBJECT (client->manager),
 	               signals[STATE_CHANGED],
 	               0,
-	               device->iface,
-	               device->state);
+	               client->id,
+	               client->state);
+}
+
+static NMDHCPClient *
+get_client_for_pid (NMDHCPManager *manager, GPid pid)
+{
+	NMDHCPManagerPrivate *priv;
+	GHashTableIter iter;
+	gpointer value;
+
+	g_return_val_if_fail (manager != NULL, NULL);
+	g_return_val_if_fail (NM_IS_DHCP_MANAGER (manager), NULL);
+
+	priv = NM_DHCP_MANAGER_GET_PRIVATE (manager);
+
+	g_hash_table_iter_init (&iter, priv->clients);
+	while (g_hash_table_iter_next (&iter, NULL, &value)) {
+		NMDHCPClient *candidate = value;
+
+		if (candidate->pid == pid)
+			return candidate;
+	}
+
+	return NULL;
+}
+
+static NMDHCPClient *
+get_client_for_iface (NMDHCPManager *manager, const char *iface)
+{
+	NMDHCPManagerPrivate *priv;
+	GHashTableIter iter;
+	gpointer value;
+
+	g_return_val_if_fail (manager != NULL, NULL);
+	g_return_val_if_fail (NM_IS_DHCP_MANAGER (manager), NULL);
+	g_return_val_if_fail (iface, NULL);
+
+	priv = NM_DHCP_MANAGER_GET_PRIVATE (manager);
+
+	g_hash_table_iter_init (&iter, priv->clients);
+	while (g_hash_table_iter_next (&iter, NULL, &value)) {
+		NMDHCPClient *candidate = value;
+
+		if (!strcmp (iface, candidate->iface))
+			return candidate;
+	}
+
+	return NULL;
+}
+
+static NMDHCPClient *
+get_client_for_id (NMDHCPManager *manager, guint32 id)
+{
+	g_return_val_if_fail (manager != NULL, NULL);
+	g_return_val_if_fail (NM_IS_DHCP_MANAGER (manager), NULL);
+	g_return_val_if_fail (id > 0, NULL);
+
+	return g_hash_table_lookup (NM_DHCP_MANAGER_GET_PRIVATE (manager)->clients,
+	                            GUINT_TO_POINTER (id));
 }
 
 static void
@@ -372,14 +358,13 @@ nm_dhcp_manager_handle_event (DBusGProxy *proxy,
                               GHashTable *options,
                               gpointer user_data)
 {
-	NMDHCPManager * manager;
-	NMDHCPManagerPrivate * priv;
-	NMDHCPDevice * device;
-	char * iface = NULL;
-	char * pid_str = NULL;
-	char * reason = NULL;
+	NMDHCPManager *manager;
+	NMDHCPManagerPrivate *priv;
+	NMDHCPClient *client;
+	char *iface = NULL;
+	char *pid_str = NULL;
+	char *reason = NULL;
 	unsigned long temp;
-	pid_t pid;
 
 	manager = NM_DHCP_MANAGER (user_data);
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (manager);
@@ -390,29 +375,27 @@ nm_dhcp_manager_handle_event (DBusGProxy *proxy,
 		goto out;
 	}
 
-	device = (NMDHCPDevice *) g_hash_table_lookup (priv->devices, iface);
-	if (device == NULL) {
-		nm_warning ("Unhandled DHCP event for interface %s", iface);
-		goto out;
-	}
-
 	pid_str = get_option (options, "pid");
 	if (pid_str == NULL) {
 		nm_warning ("DHCP event didn't have associated PID.");
 		goto out;
 	}
 
-	temp = strtoul(pid_str, NULL, 10);
+	temp = strtoul (pid_str, NULL, 10);
 	if ((temp == ULONG_MAX) && (errno == ERANGE)) {
 		nm_warning ("Couldn't convert PID");
 		goto out;
 	}
 
-	pid = (pid_t) temp;
-	if (pid != device->pid) {
-		nm_warning ("Received DHCP event from unexpected PID %u (expected %u)",
-		            pid,
-		            device->pid);
+	client = get_client_for_pid (manager, (GPid) temp);
+	if (client == NULL) {
+		nm_warning ("Unhandled DHCP event for interface %s", iface);
+		goto out;
+	}
+
+	if (strcmp (iface, client->iface)) {
+		nm_warning ("Received DHCP event from unexpected interface '%s' (expected '%s')",
+		            iface, client->iface);
 		goto out;
 	}
 
@@ -422,7 +405,7 @@ nm_dhcp_manager_handle_event (DBusGProxy *proxy,
 		goto out;
 	}
 
-	handle_options (manager, device, options, reason);
+	handle_options (manager, client, options, reason);
 
 out:
 	g_free (iface);
@@ -435,20 +418,18 @@ nm_dhcp_manager_new (void)
 {
 	NMDHCPManager *manager;
 	NMDHCPManagerPrivate *priv;
-	DBusGConnection * g_connection;
+	DBusGConnection *g_connection;
 
 	manager = g_object_new (NM_TYPE_DHCP_MANAGER, NULL);
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (manager);
 
-	priv->devices = g_hash_table_new_full (g_str_hash, g_str_equal,
-										   NULL,
-										   (GDestroyNotify) nm_dhcp_device_destroy);
-	if (!priv->devices) {
-		nm_warning ("Error: not enough memory to initialize DHCP manager "
-		            "tables");
+	priv->clients = g_hash_table_new_full (g_direct_hash, g_direct_equal,
+	                                       NULL,
+	                                       (GDestroyNotify) nm_dhcp_client_destroy);
+	if (!priv->clients) {
+		nm_warning ("Error: not enough memory to initialize DHCP manager tables");
 		g_object_unref (manager);
-		manager = NULL;
-		goto out;
+		return NULL;
 	}
 
 	priv->dbus_mgr = nm_dbus_manager_get ();
@@ -460,6 +441,7 @@ nm_dhcp_manager_new (void)
 	if (!priv->proxy) {
 		nm_warning ("Error: could not init DHCP manager proxy");
 		g_object_unref (manager);
+		return NULL;
 	}
 
 	dbus_g_proxy_add_signal (priv->proxy,
@@ -472,7 +454,6 @@ nm_dhcp_manager_new (void)
 								 manager,
 								 NULL);
 
-out:
 	return manager;
 }
 
@@ -486,56 +467,54 @@ out:
 static gboolean
 nm_dhcp_manager_handle_timeout (gpointer user_data)
 {
-	NMDHCPDevice *device = (NMDHCPDevice *) user_data;
+	NMDHCPClient *client = user_data;
 
-	nm_info ("(%s): DHCP transaction took too long, stopping it.", device->iface);
+	nm_info ("(%s): DHCP transaction took too long, stopping it.", client->iface);
 
-	nm_dhcp_manager_cancel_transaction (device->manager, device->iface);
+	nm_dhcp_manager_cancel_transaction (client->manager, client->id);
 
-	g_signal_emit (G_OBJECT (device->manager), signals[TIMEOUT], 0, device->iface);
+	g_signal_emit (G_OBJECT (client->manager), signals[TIMEOUT], 0, client->id);
 
 	return FALSE;
 }
 
-static NMDHCPDevice *
-nm_dhcp_device_new (NMDHCPManager *manager, const char *iface)
+static NMDHCPClient *
+nm_dhcp_client_new (NMDHCPManager *manager, const char *iface)
 {
-	NMDHCPDevice *device;
-	GHashTable * hash = NM_DHCP_MANAGER_GET_PRIVATE (manager)->devices;
+	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (manager);
+	NMDHCPClient *client;
 
-	device = g_slice_new0 (NMDHCPDevice);
-	if (!device) {
+	client = g_slice_new0 (NMDHCPClient);
+	if (!client) {
 		nm_warning ("%s: Out of memory creating DHCP transaction object.", iface);
 		return NULL;
 	}
 
-	device->iface = g_strdup (iface);
-	if (!device) {
+	client->id = priv->next_id++;
+	client->iface = g_strdup (iface);
+	if (!client) {
 		nm_warning ("%s: Out of memory creating DHCP transaction object "
 		            "property 'iface'.",
 		            iface);
 		goto error;
 	}
 	
-	device->manager = manager;
+	client->manager = manager;
 
 	/* Do this after the transaction cancel since that clears options out */
-	device->options = g_hash_table_new_full (g_str_hash,
-	                                         g_str_equal,
-	                                         g_free,
-	                                         g_free);
-	if (!device->options) {
+	client->options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	if (!client->options) {
 		nm_warning ("%s: Out of memory creating DHCP transaction object "
 		            "property 'options'.",
 		            iface);
 		goto error;
 	}
 
-	g_hash_table_insert (hash, device->iface, device);
-	return device;
+	g_hash_table_insert (priv->clients, GUINT_TO_POINTER (client->id), client);
+	return client;
 
 error:
-	nm_dhcp_device_destroy (device);
+	nm_dhcp_client_destroy (client);
 	return NULL;
 }
 
@@ -548,21 +527,21 @@ error:
  */
 static void dhcp_watch_cb (GPid pid, gint status, gpointer user_data)
 {
-	NMDHCPDevice *device = (NMDHCPDevice *)user_data;
+	NMDHCPClient *client = user_data;
 
 	if (!WIFEXITED (status)) {
-		device->state = DHC_ABEND;
+		client->state = DHC_ABEND;
 		nm_warning ("dhcp client died abnormally");
 	}
-	device->pid = 0;
+	client->pid = 0;
 
-	nm_dhcp_device_watch_cleanup (device);
-	nm_dhcp_device_timeout_cleanup (device);
+	nm_dhcp_client_watch_cleanup (client);
+	nm_dhcp_client_timeout_cleanup (client);
 
-	g_signal_emit (G_OBJECT (device->manager), signals[STATE_CHANGED], 0, device->iface, device->state);
+	g_signal_emit (G_OBJECT (client->manager), signals[STATE_CHANGED], 0, client->id, client->state);
 }
 
-gboolean
+guint32
 nm_dhcp_manager_begin_transaction (NMDHCPManager *manager,
                                    const char *iface,
                                    const char *uuid,
@@ -571,21 +550,22 @@ nm_dhcp_manager_begin_transaction (NMDHCPManager *manager,
                                    guint8 *dhcp_anycast_addr)
 {
 	NMDHCPManagerPrivate *priv;
-	NMDHCPDevice *device;
+	NMDHCPClient *client;
 	NMSettingIP4Config *setting;
 
-	g_return_val_if_fail (NM_IS_DHCP_MANAGER (manager), FALSE);
-	g_return_val_if_fail (iface != NULL, FALSE);
+	g_return_val_if_fail (manager, 0);
+	g_return_val_if_fail (NM_IS_DHCP_MANAGER (manager), 0);
+	g_return_val_if_fail (iface != NULL, 0);
 
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (manager);
 
-	device = (NMDHCPDevice *) g_hash_table_lookup (priv->devices, iface);
-	if (!device)
-		device = nm_dhcp_device_new (manager, iface);
+	client = get_client_for_iface (manager, iface);
+	if (!client)
+		client = nm_dhcp_client_new (manager, iface);
 
-	if (device->pid && (device->state < DHC_ABEND)) {
+	if (client->pid && (client->state < DHC_ABEND)) {
 		/* Cancel any DHCP transaction already in progress */
-		nm_dhcp_manager_cancel_transaction_real (device);
+		nm_dhcp_manager_cancel_transaction_real (client);
 	}
 
 	if (s_ip4 && 
@@ -601,44 +581,42 @@ nm_dhcp_manager_begin_transaction (NMDHCPManager *manager,
 					  NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME,
 					  nm_hostname_provider_get_hostname (priv->hostname_provider),
 					  NULL);
-	} else {
+	} else
 		setting = s_ip4 ? g_object_ref (s_ip4) : NULL;
-	}
 
 	if (timeout == 0)
 		timeout = NM_DHCP_TIMEOUT;
 
 	nm_info ("Activation (%s) Beginning DHCP transaction (timeout in %d seconds)",
 	         iface, timeout);
-	device->pid = nm_dhcp_client_start (device, uuid, setting, dhcp_anycast_addr);
+	client->pid = nm_dhcp4_client_start (client, uuid, setting, dhcp_anycast_addr);
 
 	if (setting)
 		g_object_unref (setting);
 
-	if (device->pid == 0)
+	if (client->pid == 0)
 		return FALSE;
 
 	/* Set up a timeout on the transaction to kill it after the timeout */
-	device->timeout_id = g_timeout_add_seconds (timeout,
+	client->timeout_id = g_timeout_add_seconds (timeout,
 	                                            nm_dhcp_manager_handle_timeout,
-	                                            device);
-	device->watch_id = g_child_watch_add (device->pid,
-					      (GChildWatchFunc) dhcp_watch_cb,
-					      device);
-	return TRUE;
+	                                            client);
+	client->watch_id = g_child_watch_add (client->pid,
+	                                      (GChildWatchFunc) dhcp_watch_cb,
+	                                      client);
+	return client->id;
 }
 
 void
-nm_dhcp_client_stop (NMDHCPDevice *device, pid_t pid)
+nm_dhcp_client_stop (NMDHCPClient *client, GPid pid)
 {
 	int i = 15; /* 3 seconds */
 
+	g_return_if_fail (client != NULL);
 	g_return_if_fail (pid > 0);
 
-	/* Clean up the watch handler since we're explicitly killing
-	 * the daemon
-	 */
-	nm_dhcp_device_watch_cleanup (device);
+	/* Clean up the watch handler since we're explicitly killing the daemon */
+	nm_dhcp_client_watch_cleanup (client);
 
 	/* Tell it to quit; maybe it wants to send out a RELEASE message */
 	kill (pid, SIGTERM);
@@ -663,7 +641,7 @@ nm_dhcp_client_stop (NMDHCPDevice *device, pid_t pid)
 	}
 
 	if (i <= 0) {
-		nm_warning ("%s: dhcp client pid %d didn't exit, will kill it.", device->iface, pid);
+		nm_warning ("%s: dhcp client pid %d didn't exit, will kill it.", client->iface, pid);
 		kill (pid, SIGKILL);
 
 		nm_debug ("waiting for dhcp client pid %d to exit", pid);
@@ -673,41 +651,42 @@ nm_dhcp_client_stop (NMDHCPDevice *device, pid_t pid)
 }
 
 static void
-nm_dhcp_manager_cancel_transaction_real (NMDHCPDevice *device)
+nm_dhcp_manager_cancel_transaction_real (NMDHCPClient *client)
 {
-	g_return_if_fail (device->pid > 0);
+	g_return_if_fail (client != NULL);
+	g_return_if_fail (client->pid > 0);
 
-	nm_dhcp_client_stop (device, device->pid);
+	nm_dhcp_client_stop (client, client->pid);
 
 	nm_info ("(%s): canceled DHCP transaction, dhcp client pid %d",
-	         device->iface,
-	         device->pid);
+	         client->iface,
+	         client->pid);
 
-	device->pid = 0;
-	device->state = DHC_END;
+	client->pid = 0;
+	client->state = DHC_END;
 
 	/* Clean up the pidfile if it got left around */
-	if (device->pid_file) {
-		remove (device->pid_file);
-		g_free (device->pid_file);
-		device->pid_file = NULL;
+	if (client->pid_file) {
+		remove (client->pid_file);
+		g_free (client->pid_file);
+		client->pid_file = NULL;
 	}
 
 	/* Free leasefile (but don't delete) */
-	if (device->lease_file) {
-		g_free (device->lease_file);
-		device->lease_file = NULL;
+	if (client->lease_file) {
+		g_free (client->lease_file);
+		client->lease_file = NULL;
 	}
 
 	/* Clean up config file if it got left around */
-	if (device->conf_file) {
-		remove (device->conf_file);
-		g_free (device->conf_file);
-		device->conf_file = NULL;
+	if (client->conf_file) {
+		remove (client->conf_file);
+		g_free (client->conf_file);
+		client->conf_file = NULL;
 	}
 
-	nm_dhcp_device_timeout_cleanup (device);
-	g_hash_table_remove_all (device->options);
+	nm_dhcp_client_timeout_cleanup (client);
+	g_hash_table_remove_all (client->options);
 }
 
 
@@ -718,23 +697,20 @@ nm_dhcp_manager_cancel_transaction_real (NMDHCPDevice *device)
  *
  */
 void
-nm_dhcp_manager_cancel_transaction (NMDHCPManager *manager,
-                                    const char *iface)
+nm_dhcp_manager_cancel_transaction (NMDHCPManager *manager, guint32 id)
 {
-	NMDHCPDevice *device;
+	NMDHCPClient *client;
 	NMDHCPManagerPrivate *priv;
 
+	g_return_if_fail (manager != NULL);
 	g_return_if_fail (NM_IS_DHCP_MANAGER (manager));
-	g_return_if_fail (iface != NULL);
+	g_return_if_fail (id > 0);
 
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (manager);
 
-	device = (NMDHCPDevice *) g_hash_table_lookup (priv->devices, iface);
-
-	if (!device || !device->pid)
-		return;
-
-	nm_dhcp_manager_cancel_transaction_real (device);
+	client = get_client_for_id (manager, id);
+	if (client && client->pid)
+		nm_dhcp_manager_cancel_transaction_real (client);
 }
 
 static void
@@ -823,7 +799,7 @@ out:
 
 /* Given a table of DHCP options from the client, convert into an IP4Config */
 NMIP4Config *
-nm_dhcp_manager_options_to_ip4_config (const char *iface, GHashTable *options)
+nm_dhcp4_manager_options_to_config (const char *iface, GHashTable *options)
 {
 	NMIP4Config *ip4_config = NULL;
 	struct in_addr tmp_addr;
@@ -863,7 +839,7 @@ nm_dhcp_manager_options_to_ip4_config (const char *iface, GHashTable *options)
 	/* Routes: if the server returns classless static routes, we MUST ignore
 	 * the 'static_routes' option.
 	 */
-	have_classless = nm_dhcp_client_process_classless_routes (options, ip4_config, &gwaddr);
+	have_classless = nm_dhcp4_client_process_classless_routes (options, ip4_config, &gwaddr);
 	if (!have_classless) {
 		gwaddr = 0;  /* Ensure client code doesn't lie */
 		process_classful_routes (options, ip4_config);
@@ -979,29 +955,29 @@ error:
  *
  */
 NMIP4Config *
-nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
-                                const char *iface)
+nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager, guint32 id)
 {
 	NMDHCPManagerPrivate *priv;
-	NMDHCPDevice *device;
+	NMDHCPClient *client;
 
+	g_return_val_if_fail (manager != NULL, NULL);
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (manager), NULL);
-	g_return_val_if_fail (iface != NULL, NULL);
+	g_return_val_if_fail (id > 0, NULL);
 
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (manager);
 
-	device = (NMDHCPDevice *) g_hash_table_lookup (priv->devices, iface);
-	if (!device) {
-		nm_warning ("Device '%s' transaction not started.", iface);
+	client = get_client_for_id (manager, id);
+	if (!client) {
+		nm_warning ("Device DHCP transaction %d not started.", id);
 		return NULL;
 	}
 
-	if (!state_is_bound (device->state)) {
-		nm_warning ("%s: dhcp client didn't bind to a lease.", device->iface);
+	if (!state_is_bound (client->state)) {
+		nm_warning ("%s: dhcp client didn't bind to a lease.", client->iface);
 		return NULL;
 	}
 
-	return nm_dhcp_manager_options_to_ip4_config (iface, device->options);
+	return nm_dhcp4_manager_options_to_config (client->iface, client->options);
 }
 
 #define NEW_TAG "new_"
@@ -1044,34 +1020,35 @@ iterate_dhcp4_config_option (gpointer key,
 
 gboolean
 nm_dhcp_manager_foreach_dhcp4_option (NMDHCPManager *self,
-                                      const char *iface,
+                                      guint32 id,
                                       GHFunc func,
                                       gpointer user_data)
 {
 	NMDHCPManagerPrivate *priv;
-	NMDHCPDevice *device;
+	NMDHCPClient *client;
 	Dhcp4ForeachInfo info = { NULL, NULL };
 
+	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), FALSE);
-	g_return_val_if_fail (iface != NULL, FALSE);
+	g_return_val_if_fail (id > 0, FALSE);
 	g_return_val_if_fail (func != NULL, FALSE);
 
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 
-	device = (NMDHCPDevice *) g_hash_table_lookup (priv->devices, iface);
-	if (!device) {
-		nm_warning ("Device '%s' transaction not started.", iface);
+	client = get_client_for_id (self, id);
+	if (!client) {
+		nm_warning ("Device DHCP transaction %d not started.", id);
 		return FALSE;
 	}
 
-	if (!state_is_bound (device->state)) {
-		nm_warning ("%s: dhclient didn't bind to a lease.", device->iface);
+	if (!state_is_bound (client->state)) {
+		nm_warning ("%s: dhclient didn't bind to a lease.", client->iface);
 		return FALSE;
 	}
 
 	info.func = func;
 	info.user_data = user_data;
-	g_hash_table_foreach (device->options, iterate_dhcp4_config_option, &info);
+	g_hash_table_foreach (client->options, iterate_dhcp4_config_option, &info);
 	return TRUE;
 }
 
@@ -1103,14 +1080,86 @@ nm_dhcp_manager_set_hostname_provider (NMDHCPManager *manager,
 }
 
 GSList *
-nm_dhcp_manager_get_lease_ip4_config (NMDHCPManager *self,
-                                      const char *iface,
-                                      const char *uuid)
+nm_dhcp4_manager_get_lease_config (NMDHCPManager *self,
+                                   const char *iface,
+                                   const char *uuid)
 {
+	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
 	g_return_val_if_fail (iface != NULL, NULL);
 	g_return_val_if_fail (uuid != NULL, NULL);
 
-	return nm_dhcp_client_get_lease_ip4_config (iface, uuid);
+	return nm_dhcp4_client_get_lease_config (iface, uuid);
+}
+
+/***************************************************/
+
+NMDHCPManager *
+nm_dhcp_manager_get (void)
+{
+	static NMDHCPManager *singleton = NULL;
+
+	if (!singleton)
+		singleton = nm_dhcp_manager_new ();
+	else
+		g_object_ref (singleton);
+
+	g_assert (singleton);
+	return singleton;
+}
+
+static void
+nm_dhcp_manager_init (NMDHCPManager *manager)
+{
+	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (manager);
+
+	priv->next_id = 1;
+}
+
+static void
+finalize (GObject *object)
+{
+	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (object);
+
+	if (priv->hostname_provider) {
+		g_object_weak_unref (G_OBJECT (priv->hostname_provider), hostname_provider_destroyed, object);
+		priv->hostname_provider = NULL;
+	}
+
+	g_hash_table_destroy (priv->clients);
+	g_object_unref (priv->proxy);
+	g_object_unref (priv->dbus_mgr);
+
+	G_OBJECT_CLASS (nm_dhcp_manager_parent_class)->finalize (object);
+}
+
+static void
+nm_dhcp_manager_class_init (NMDHCPManagerClass *manager_class)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (manager_class);
+
+	g_type_class_add_private (manager_class, sizeof (NMDHCPManagerPrivate));
+
+	/* virtual methods */
+	object_class->finalize = finalize;
+
+	/* signals */
+	signals[STATE_CHANGED] =
+		g_signal_new ("state-changed",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMDHCPManagerClass, state_changed),
+					  NULL, NULL,
+					  _nm_marshal_VOID__UINT_UINT,
+					  G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
+
+	signals[TIMEOUT] =
+		g_signal_new ("timeout",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMDHCPManagerClass, timeout),
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__UINT,
+					  G_TYPE_NONE, 1, G_TYPE_UINT);
 }
 

@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2008 - 2010 Red Hat, Inc.
  *
  */
 
@@ -88,7 +88,7 @@ test_generic_options (void)
 	const char *expected_route2_gw = "10.1.1.1";
 
 	options = fill_table (generic_options, NULL);
-	ip4_config = nm_dhcp_manager_options_to_ip4_config ("eth0", options);
+	ip4_config = nm_dhcp4_manager_options_to_config ("eth0", options);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-generic", "failed to parse DHCP4 options");
 
@@ -199,7 +199,7 @@ test_wins_options (void)
 	options = fill_table (generic_options, NULL);
 	options = fill_table (wins_options, options);
 
-	ip4_config = nm_dhcp_manager_options_to_ip4_config ("eth0", options);
+	ip4_config = nm_dhcp4_manager_options_to_config ("eth0", options);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-wins", "failed to parse DHCP4 options");
 
@@ -245,7 +245,7 @@ test_classless_static_routes (void)
 	options = fill_table (generic_options, NULL);
 	options = fill_table (classless_routes_options, options);
 
-	ip4_config = nm_dhcp_manager_options_to_ip4_config ("eth0", options);
+	ip4_config = nm_dhcp4_manager_options_to_config ("eth0", options);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-rfc3442", "failed to parse DHCP4 options");
 
@@ -311,7 +311,7 @@ test_invalid_classless_routes1 (void)
 	options = fill_table (generic_options, NULL);
 	options = fill_table (invalid_classless_routes1, options);
 
-	ip4_config = nm_dhcp_manager_options_to_ip4_config ("eth0", options);
+	ip4_config = nm_dhcp4_manager_options_to_config ("eth0", options);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-rfc3442-invalid-1", "failed to parse DHCP4 options");
 
@@ -362,7 +362,7 @@ test_invalid_classless_routes2 (void)
 	options = fill_table (generic_options, NULL);
 	options = fill_table (invalid_classless_routes2, options);
 
-	ip4_config = nm_dhcp_manager_options_to_ip4_config ("eth0", options);
+	ip4_config = nm_dhcp4_manager_options_to_config ("eth0", options);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-rfc3442-invalid-2", "failed to parse DHCP4 options");
 
@@ -432,7 +432,7 @@ test_invalid_classless_routes3 (void)
 	options = fill_table (generic_options, NULL);
 	options = fill_table (invalid_classless_routes3, options);
 
-	ip4_config = nm_dhcp_manager_options_to_ip4_config ("eth0", options);
+	ip4_config = nm_dhcp4_manager_options_to_config ("eth0", options);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-rfc3442-invalid-3", "failed to parse DHCP4 options");
 
@@ -483,7 +483,7 @@ test_gateway_in_classless_routes (void)
 	options = fill_table (generic_options, NULL);
 	options = fill_table (gw_in_classless_routes, options);
 
-	ip4_config = nm_dhcp_manager_options_to_ip4_config ("eth0", options);
+	ip4_config = nm_dhcp4_manager_options_to_config ("eth0", options);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-rfc3442-gateway", "failed to parse DHCP4 options");
 
@@ -537,7 +537,7 @@ test_escaped_domain_searches (void)
 	options = fill_table (generic_options, NULL);
 	options = fill_table (escaped_searches_options, options);
 
-	ip4_config = nm_dhcp_manager_options_to_ip4_config ("eth0", options);
+	ip4_config = nm_dhcp4_manager_options_to_config ("eth0", options);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-escaped-domain-searches", "failed to parse DHCP4 options");
 
@@ -568,7 +568,7 @@ test_invalid_escaped_domain_searches (void)
 	options = fill_table (generic_options, NULL);
 	options = fill_table (invalid_escaped_searches_options, options);
 
-	ip4_config = nm_dhcp_manager_options_to_ip4_config ("eth0", options);
+	ip4_config = nm_dhcp4_manager_options_to_config ("eth0", options);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-invalid-escaped-domain-searches", "failed to parse DHCP4 options");
 

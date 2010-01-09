@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2008 Red Hat, Inc.
+ * Copyright (C) 2005 - 2010 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -105,6 +105,7 @@ typedef struct {
 	/* IP4 configuration info */
 	NMIP4Config *   ip4_config;			/* Config from DHCP, PPP, or system config files */
 	NMDHCPManager * dhcp_manager;
+	guint32         dhcp4_id;
 	guint32         dhcp_timeout;
 	gulong          dhcp_state_sigid;
 	gulong          dhcp_timeout_sigid;
@@ -1090,7 +1091,6 @@ real_act_stage3_ip4_config_start (NMDevice *self, NMDeviceStateReason *reason)
 
 	if (!s_ip4 || !method || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
 		NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-		gboolean success;
 		guint8 *anycast = NULL;
 
 		if (priv->dhcp_anycast_address)
@@ -1102,10 +1102,15 @@ real_act_stage3_ip4_config_start (NMDevice *self, NMDeviceStateReason *reason)
 		/* DHCP manager will cancel any transaction already in progress and we do not
 		   want to cancel this activation if we get "down" state from that. */
 		g_signal_handler_block (priv->dhcp_manager, priv->dhcp_state_sigid);
-		success = nm_dhcp_manager_begin_transaction (priv->dhcp_manager, ip_iface, uuid, s_ip4, priv->dhcp_timeout, anycast);
+		priv->dhcp4_id = nm_dhcp_manager_begin_transaction (priv->dhcp_manager,
+		                                                    ip_iface,
+		                                                    uuid,
+		                                                    s_ip4,
+		                                                    priv->dhcp_timeout,
+		                                                    anycast);
 		g_signal_handler_unblock (priv->dhcp_manager, priv->dhcp_state_sigid);
 
-		if (success) {
+		if (priv->dhcp4_id) {
 			/* DHCP devices will be notified by the DHCP manager when
 			 * stuff happens.	
 			 */
@@ -1315,14 +1320,14 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
 
 	if (nm_device_get_use_dhcp (self)) {
-		*config = nm_dhcp_manager_get_ip4_config (priv->dhcp_manager, ip_iface);
+		*config = nm_dhcp_manager_get_ip4_config (priv->dhcp_manager, priv->dhcp4_id);
 		if (*config) {
 			/* Merge user-defined overrides into the IP4Config to be applied */
 			nm_utils_merge_ip4_config (*config, s_ip4);
 
 			nm_dhcp4_config_reset (priv->dhcp4_config);
 			nm_dhcp_manager_foreach_dhcp4_option (priv->dhcp_manager,
-			                                      ip_iface,
+			                                      priv->dhcp4_id,
 			                                      dhcp4_add_option_cb,
 			                                      priv->dhcp4_config);
 
@@ -2013,7 +2018,7 @@ nm_device_deactivate_quickly (NMDevice *self)
 	/* Stop any ongoing DHCP transaction on this device */
 	if (nm_device_get_act_request (self)) {
 		if (nm_device_get_use_dhcp (self)) {
-			nm_dhcp_manager_cancel_transaction (priv->dhcp_manager, nm_device_get_ip_iface (self));
+			nm_dhcp_manager_cancel_transaction (priv->dhcp_manager, priv->dhcp4_id);
 			nm_device_set_use_dhcp (self, FALSE);
 			/* Notify of invalid DHCP4 config */
 			g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_DHCP4_CONFIG);
@@ -2027,6 +2032,8 @@ nm_device_deactivate_quickly (NMDevice *self)
 			g_object_unref (priv->dnsmasq_manager);
 			priv->dnsmasq_manager = NULL;
 		}
+
+		priv->dhcp4_id = 0;
 	}
 
 	aipd_cleanup (self);
@@ -2255,7 +2262,6 @@ handle_dhcp_lease_change (NMDevice *device)
 	NMConnection *connection;
 	NMActRequest *req;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
-	const char *ip_iface;
 	gboolean assumed;
 
 	if (!nm_device_get_use_dhcp (device)) {
@@ -2263,9 +2269,7 @@ handle_dhcp_lease_change (NMDevice *device)
 		return;
 	}
 
-	ip_iface = nm_device_get_ip_iface (device);
-
-	config = nm_dhcp_manager_get_ip4_config (priv->dhcp_manager, ip_iface);
+	config = nm_dhcp_manager_get_ip4_config (priv->dhcp_manager, priv->dhcp4_id);
 	if (!config) {
 		nm_warning ("failed to get DHCP config for rebind");
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
@@ -2286,7 +2290,7 @@ handle_dhcp_lease_change (NMDevice *device)
 	if (nm_device_set_ip4_config (device, config, assumed, &reason)) {
 		nm_dhcp4_config_reset (priv->dhcp4_config);
 		nm_dhcp_manager_foreach_dhcp4_option (priv->dhcp_manager,
-		                                      ip_iface,
+		                                      priv->dhcp4_id,
 		                                      dhcp4_add_option_cb,
 		                                      priv->dhcp4_config);
 	} else {
@@ -2297,7 +2301,7 @@ handle_dhcp_lease_change (NMDevice *device)
 
 static void
 dhcp_state_changed (NMDHCPManager *dhcp_manager,
-					const char *iface,
+					guint32 id,
 					NMDHCPState state,
 					gpointer user_data)
 {
@@ -2305,10 +2309,8 @@ dhcp_state_changed (NMDHCPManager *dhcp_manager,
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 	NMDeviceState dev_state;
 
-	if (strcmp (nm_device_get_ip_iface (device), iface) != 0)
-		return;
-
-	if (!nm_device_get_act_request (device))
+	if (   !nm_device_get_act_request (device)
+	    || (priv->dhcp4_id != id))
 		return;
 
 	dev_state = nm_device_get_state (device);
@@ -2350,12 +2352,14 @@ dhcp_state_changed (NMDHCPManager *dhcp_manager,
 
 static void
 dhcp_timeout (NMDHCPManager *dhcp_manager,
-              const char *iface,
+              guint32 id,
               gpointer user_data)
 {
-	NMDevice * device = NM_DEVICE (user_data);
+	NMDevice *device = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 
-	if (strcmp (nm_device_get_ip_iface (device), iface) != 0)
+	if (   !nm_device_get_act_request (device)
+	    || (priv->dhcp4_id != id))
 		return;
 
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG)

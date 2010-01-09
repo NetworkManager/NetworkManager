@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2008 Red Hat, Inc.
+ * Copyright (C) 2005 - 2010 Red Hat, Inc.
  */
 
 #define _XOPEN_SOURCE
@@ -119,7 +119,7 @@ add_lease_option (GHashTable *hash, char *line)
 }
 
 GSList *
-nm_dhcp_client_get_lease_ip4_config (const char *iface, const char *uuid)
+nm_dhcp4_client_get_lease_config (const char *iface, const char *uuid)
 {
 	GSList *parsed = NULL, *iter, *leases = NULL;
 	char *contents = NULL;
@@ -288,7 +288,7 @@ out:
 #define DHCP_HOSTNAME_FORMAT DHCP_HOSTNAME_TAG " \"%s\"; # added by NetworkManager"
 
 static gboolean
-merge_dhclient_config (NMDHCPDevice *device,
+merge_dhclient_config (NMDHCPClient *client,
                        NMSettingIP4Config *s_ip4,
                        guint8 *anycast_addr,
                        const char *contents,
@@ -298,8 +298,8 @@ merge_dhclient_config (NMDHCPDevice *device,
 	GString *new_contents;
 	gboolean success = FALSE;
 
-	g_return_val_if_fail (device != NULL, FALSE);
-	g_return_val_if_fail (device->iface != NULL, FALSE);
+	g_return_val_if_fail (client != NULL, FALSE);
+	g_return_val_if_fail (client->iface != NULL, FALSE);
 	
 	new_contents = g_string_new (_("# Created by NetworkManager\n"));
 
@@ -374,13 +374,13 @@ merge_dhclient_config (NMDHCPDevice *device,
 		                        " initial-interval 1; \n"
 		                        " anycast-mac ethernet %02x:%02x:%02x:%02x:%02x:%02x;\n"
 		                        "}\n",
-		                        device->iface,
+		                        client->iface,
 		                        anycast_addr[0], anycast_addr[1],
 		                        anycast_addr[2], anycast_addr[3],
 		                        anycast_addr[4], anycast_addr[5]);
 	}
 
-	if (g_file_set_contents (device->conf_file, new_contents->str, -1, error))
+	if (g_file_set_contents (client->conf_file, new_contents->str, -1, error))
 		success = TRUE;
 
 	g_string_free (new_contents, TRUE);
@@ -394,7 +394,7 @@ merge_dhclient_config (NMDHCPDevice *device,
  * config file along with the NM options.
  */
 static gboolean
-create_dhclient_config (NMDHCPDevice *device,
+create_dhclient_config (NMDHCPClient *client,
                         NMSettingIP4Config *s_ip4,
                         guint8 *dhcp_anycast_addr)
 {
@@ -403,7 +403,8 @@ create_dhclient_config (NMDHCPDevice *device,
 	gboolean success = FALSE;
 	char *tmp;
 
-	g_return_val_if_fail (device != NULL, FALSE);
+	g_return_val_if_fail (client != NULL, FALSE);
+	g_return_val_if_fail (client->iface != NULL, FALSE);
 
 #if defined(TARGET_SUSE)
 	orig = g_strdup (SYSCONFDIR "/dhclient.conf");
@@ -412,16 +413,16 @@ create_dhclient_config (NMDHCPDevice *device,
 #elif defined(TARGET_GENTOO)
 	orig = g_strdup (SYSCONFDIR "/dhcp/dhclient.conf");
 #else
-	orig = g_strdup_printf (SYSCONFDIR "/dhclient-%s.conf", device->iface);
+	orig = g_strdup_printf (SYSCONFDIR "/dhclient-%s.conf", client->iface);
 #endif
 
 	if (!orig) {
-		nm_warning ("%s: not enough memory for dhclient options.", device->iface);
+		nm_warning ("%s: not enough memory for dhclient options.", client->iface);
 		return FALSE;
 	}
 
-	tmp = g_strdup_printf ("nm-dhclient-%s.conf", device->iface);
-	device->conf_file = g_build_filename ("/var", "run", tmp, NULL);
+	tmp = g_strdup_printf ("nm-dhclient-%s.conf", client->iface);
+	client->conf_file = g_build_filename ("/var", "run", tmp, NULL);
 	g_free (tmp);
 
 	if (!g_file_test (orig, G_FILE_TEST_EXISTS))
@@ -429,18 +430,18 @@ create_dhclient_config (NMDHCPDevice *device,
 
 	if (!g_file_get_contents (orig, &contents, NULL, &error)) {
 		nm_warning ("%s: error reading dhclient configuration %s: %s",
-		            device->iface, orig, error->message);
+		            client->iface, orig, error->message);
 		g_error_free (error);
 		goto out;
 	}
 
 out:
 	error = NULL;
-	if (merge_dhclient_config (device, s_ip4, dhcp_anycast_addr, contents, orig, &error))
+	if (merge_dhclient_config (client, s_ip4, dhcp_anycast_addr, contents, orig, &error))
 		success = TRUE;
 	else {
 		nm_warning ("%s: error creating dhclient configuration: %s",
-		            device->iface, error->message);
+		            client->iface, error->message);
 		g_error_free (error);
 	}
 
@@ -460,12 +461,12 @@ dhclient_child_setup (gpointer user_data G_GNUC_UNUSED)
 
 
 GPid
-nm_dhcp_client_start (NMDHCPDevice *device,
-                      const char *uuid,
-                      NMSettingIP4Config *s_ip4,
-                      guint8 *dhcp_anycast_addr)
+nm_dhcp4_client_start (NMDHCPClient *client,
+                       const char *uuid,
+                       NMSettingIP4Config *s_ip4,
+                       guint8 *dhcp_anycast_addr)
 {
-	GPtrArray *dhclient_argv = NULL;
+	GPtrArray *argv = NULL;
 	GPid pid = 0;
 	GError *error = NULL;
 	char *pid_contents = NULL;
@@ -475,51 +476,51 @@ nm_dhcp_client_start (NMDHCPDevice *device,
 		goto out;
 	}
 
-	device->pid_file = get_pidfile_for_iface (device->iface);
-	if (!device->pid_file) {
-		nm_warning ("%s: not enough memory for dhclient options.", device->iface);
+	client->pid_file = get_pidfile_for_iface (client->iface);
+	if (!client->pid_file) {
+		nm_warning ("%s: not enough memory for dhclient options.", client->iface);
 		goto out;
 	}
 
-	device->lease_file = get_leasefile_for_iface (device->iface, uuid);
-	if (!device->lease_file) {
-		nm_warning ("%s: not enough memory for dhclient options.", device->iface);
+	client->lease_file = get_leasefile_for_iface (client->iface, uuid);
+	if (!client->lease_file) {
+		nm_warning ("%s: not enough memory for dhclient options.", client->iface);
 		goto out;
 	}
 
-	if (!create_dhclient_config (device, s_ip4, dhcp_anycast_addr))
+	if (!create_dhclient_config (client, s_ip4, dhcp_anycast_addr))
 		goto out;
 
 	/* Kill any existing dhclient bound to this interface */
-	if (g_file_get_contents (device->pid_file, &pid_contents, NULL, NULL)) {
+	if (g_file_get_contents (client->pid_file, &pid_contents, NULL, NULL)) {
 		unsigned long int tmp = strtoul (pid_contents, NULL, 10);
 
 		if (!((tmp == ULONG_MAX) && (errno == ERANGE)))
-			nm_dhcp_client_stop (device, (pid_t) tmp);
-		remove (device->pid_file);
+			nm_dhcp_client_stop (client, (pid_t) tmp);
+		remove (client->pid_file);
 	}
 
-	dhclient_argv = g_ptr_array_new ();
-	g_ptr_array_add (dhclient_argv, (gpointer) DHCP_CLIENT_PATH);
+	argv = g_ptr_array_new ();
+	g_ptr_array_add (argv, (gpointer) DHCP_CLIENT_PATH);
 
-	g_ptr_array_add (dhclient_argv, (gpointer) "-d");
+	g_ptr_array_add (argv, (gpointer) "-d");
 
-	g_ptr_array_add (dhclient_argv, (gpointer) "-sf");	/* Set script file */
-	g_ptr_array_add (dhclient_argv, (gpointer) ACTION_SCRIPT_PATH );
+	g_ptr_array_add (argv, (gpointer) "-sf");	/* Set script file */
+	g_ptr_array_add (argv, (gpointer) ACTION_SCRIPT_PATH );
 
-	g_ptr_array_add (dhclient_argv, (gpointer) "-pf");	/* Set pid file */
-	g_ptr_array_add (dhclient_argv, (gpointer) device->pid_file);
+	g_ptr_array_add (argv, (gpointer) "-pf");	/* Set pid file */
+	g_ptr_array_add (argv, (gpointer) client->pid_file);
 
-	g_ptr_array_add (dhclient_argv, (gpointer) "-lf");	/* Set lease file */
-	g_ptr_array_add (dhclient_argv, (gpointer) device->lease_file);
+	g_ptr_array_add (argv, (gpointer) "-lf");	/* Set lease file */
+	g_ptr_array_add (argv, (gpointer) client->lease_file);
 
-	g_ptr_array_add (dhclient_argv, (gpointer) "-cf");	/* Set interface config file */
-	g_ptr_array_add (dhclient_argv, (gpointer) device->conf_file);
+	g_ptr_array_add (argv, (gpointer) "-cf");	/* Set interface config file */
+	g_ptr_array_add (argv, (gpointer) client->conf_file);
 
-	g_ptr_array_add (dhclient_argv, (gpointer) device->iface);
-	g_ptr_array_add (dhclient_argv, NULL);
+	g_ptr_array_add (argv, (gpointer) client->iface);
+	g_ptr_array_add (argv, NULL);
 
-	if (!g_spawn_async (NULL, (char **) dhclient_argv->pdata, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
+	if (!g_spawn_async (NULL, (char **) argv->pdata, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
 	                    &dhclient_child_setup, NULL, &pid, &error)) {
 		nm_warning ("dhclient failed to start.  error: '%s'", error->message);
 		g_error_free (error);
@@ -530,7 +531,7 @@ nm_dhcp_client_start (NMDHCPDevice *device,
 
 out:
 	g_free (pid_contents);
-	g_ptr_array_free (dhclient_argv, TRUE);
+	g_ptr_array_free (argv, TRUE);
 	return pid;
 }
 
@@ -596,9 +597,9 @@ error:
 }
 
 gboolean
-nm_dhcp_client_process_classless_routes (GHashTable *options,
-                                         NMIP4Config *ip4_config,
-                                         guint32 *gwaddr)
+nm_dhcp4_client_process_classless_routes (GHashTable *options,
+                                          NMIP4Config *ip4_config,
+                                          guint32 *gwaddr)
 {
 	const char *str;
 	char **octets, **o;

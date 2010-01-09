@@ -50,7 +50,7 @@ get_pidfile_for_iface (const char * iface)
 }
 
 GSList *
-nm_dhcp_client_get_lease_ip4_config (const char *iface, const char *uuid)
+nm_dhcp4_client_get_lease_config (const char *iface, const char *uuid)
 {
 	return NULL;
 }
@@ -65,10 +65,10 @@ dhcpcd_child_setup (gpointer user_data G_GNUC_UNUSED)
 
 
 GPid
-nm_dhcp_client_start (NMDHCPDevice *device,
-                      const char *uuid,
-                      NMSettingIP4Config *s_ip4,
-                      guint8 *dhcp_anycast_addr)
+nm_dhcp4_client_start (NMDHCPClient *client,
+                       const char *uuid,
+                       NMSettingIP4Config *s_ip4,
+                       guint8 *dhcp_anycast_addr)
 {
 	GPtrArray *argv = NULL;
 	GPid pid = 0;
@@ -80,19 +80,19 @@ nm_dhcp_client_start (NMDHCPDevice *device,
 		goto out;
 	}
 
-	device->pid_file = get_pidfile_for_iface (device->iface);
-	if (!device->pid_file) {
-		nm_warning ("%s: not enough memory for dhcpcd options.", device->iface);
+	client->pid_file = get_pidfile_for_iface (client->iface);
+	if (!client->pid_file) {
+		nm_warning ("%s: not enough memory for dhcpcd options.", client->iface);
 		goto out;
 	}
 
 	/* Kill any existing dhcpcd bound to this interface */
-	if (g_file_get_contents (device->pid_file, &pid_contents, NULL, NULL)) {
+	if (g_file_get_contents (client->pid_file, &pid_contents, NULL, NULL)) {
 		unsigned long int tmp = strtoul (pid_contents, NULL, 10);
 
 		if (!((tmp == ULONG_MAX) && (errno == ERANGE)))
-			nm_dhcp_client_stop (device, (pid_t) tmp);
-		remove (device->pid_file);
+			nm_dhcp_client_stop (client, (pid_t) tmp);
+		remove (client->pid_file);
 	}
 
 	argv = g_ptr_array_new ();
@@ -107,7 +107,7 @@ nm_dhcp_client_start (NMDHCPDevice *device,
 	g_ptr_array_add (argv, (gpointer) "-c");	/* Set script file */
 	g_ptr_array_add (argv, (gpointer) ACTION_SCRIPT_PATH );
 
-	g_ptr_array_add (argv, (gpointer) device->iface);
+	g_ptr_array_add (argv, (gpointer) client->iface);
 	g_ptr_array_add (argv, NULL);
 
 	if (!g_spawn_async (NULL, (char **) argv->pdata, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
@@ -126,9 +126,9 @@ out:
 }
 
 gboolean
-nm_dhcp_client_process_classless_routes (GHashTable *options,
-                                         NMIP4Config *ip4_config,
-                                         guint32 *gwaddr)
+nm_dhcp4_client_process_classless_routes (GHashTable *options,
+                                          NMIP4Config *ip4_config,
+                                          guint32 *gwaddr)
 {
 	const char *str;
 	char **routes, **r;
