@@ -286,67 +286,73 @@ else
 fi
 AC_SUBST(PPPD_PLUGIN_DIR)
 
-# DHCP client
-AC_ARG_WITH([dhcp-client], AS_HELP_STRING([--with-dhcp-client=dhcpcd|dhclient], [path to the chosen dhcp client]))
+# dhclient support
+AC_ARG_WITH([dhclient], AS_HELP_STRING([--with-dhclient=yes|no|path], [Enable dhclient 4.x support]))
 # If a full path is given, use that and do not test if it works or not.
-case "${with_dhcp_client}" in
+case "${with_dhclient}" in
 	/*)
-		DHCP_CLIENT_PATH="${with_dhcp_client}"
-		AC_MSG_NOTICE(using the DHCP client ${DHCP_CLIENT_PATH})
+		DHCLIENT_PATH="${with_dhclient}"
+		AC_MSG_NOTICE(using dhclient at ${DHCLIENT_PATH})
+		;;
+	no)	AC_MSG_NOTICE(dhclient support disabled)
+		;;
+	*)
+		AC_MSG_CHECKING(for dhclient)
+		# NM only works with ISC dhclient - other derivatives don't have
+		# the same userland.  NM also requires dhclient 4.x since older
+		# versions do not have IPv6 support.
+		for path in /sbin /usr/sbin /usr/pkg/sbin /usr/local/sbin; do
+			test -x "${path}/dhclient" || continue
+			case `"$path/dhclient" --version 2>&1` in
+				"isc-dhclient-4"*) DHCLIENT_PATH="$path/dhclient"; break;;
+			esac
+		done
+		if test -n "${DHCLIENT_PATH}"; then
+			AC_MSG_RESULT($DHCLIENT_PATH)
+		else
+			AC_MSG_RESULT(no)
+		fi
 		;;
 esac
-if test -z "$DHCP_CLIENT_PATH" -a \( -z "$with_dhcp_client" -o x`basename "$with_dhcp_client"` = "xdhclient" \); then
-	# We only work with ISC dhclient - the FreeBSD and OpenBSD derivatives don't have the same userland.
-	AC_MSG_CHECKING(for dhclient)
-	for client in "$with_dhcp_client" /sbin/dhclient /usr/pkg/sbin/dhclient /usr/local/sbin/dhclient; do
-		test -x "$client" || continue
-		case `"$client" --version 2>&1` in
-			"isc-dhclient-"*) DHCP_CLIENT_PATH="$client"; break;;
-		esac
-	done
-	if test -z "$DHCP_CLIENT_PATH"; then
-		AC_MSG_RESULT(no)
-		if test -n "$with_dhcp_client"; then
-			AC_MSG_ERROR([Could not find ISC dhclient])
+
+# dhcpcd support
+AC_ARG_WITH([dhcpcd], AS_HELP_STRING([--with-dhcpcd=yes|no|path], [Enable dhcpcd 4.x support]))
+# If a full path is given, use that and do not test if it works or not.
+case "${with_dhcpcd}" in
+	/*)
+		DHCPCD_PATH="${with_dhcpcd}"
+		AC_MSG_NOTICE(using dhcpcd at ${DHCPCD_PATH})
+		;;
+	no)	AC_MSG_NOTICE(dhcpcd support disabled)
+		;;
+	*)
+		AC_MSG_CHECKING(for dhcpcd)
+		# We fully work with upstream dhcpcd-4
+		for path in /sbin /usr/sbin /usr/pkg/sbin /usr/local/sbin; do
+			test -x "${path}/dhclient" || continue
+			case `"$path/dhcpcd" --version 2>/dev/null` in
+				"dhcpcd "[123]*);;
+				"dhcpcd "*) DHCP_CLIENT_PATH="$path/dhcpcd"; break;;
+			esac
+		done
+		if test -n "${DHCPCD_PATH}"; then
+			AC_MSG_RESULT($DHCPCD_PATH)
+		else
+			AC_MSG_RESULT(no)
 		fi
-	else
-		AC_MSG_RESULT($DHCP_CLIENT_PATH)
-	fi
-fi
-if test -z "$DHCP_CLIENT_PATH" -a \( -z "$with_dhcp_client" -o x`basename "$with_dhcp_client"` = "xdhcpcd" \); then
-	test -n "$DHCP_CLIENT_PATH" && echo bar
-	# We fully work with upstream dhcpcd-4
-	AC_MSG_CHECKING([for dhcpcd])
-	for client in "$with_dhcp_client" /sbin/dhcpcd /usr/pkg/sbin/dhcpcd /usr/local/sbin/dhcpcd; do
-		test -x "$client" || continue
-		case `"$client" --version 2>/dev/null` in
-			"dhcpcd "[123]*);;
-			"dhcpcd "*) DHCP_CLIENT_PATH="$client"; break;;
-		esac
-	done
-	if test -z "$DHCP_CLIENT_PATH"; then
-		AC_MSG_RESULT(no)
-		if test -n "$with_dhcp_client"; then
-			AC_MSG_ERROR([Could not find dhcpcd-4 or newer])
-		fi
-	else
-		AC_MSG_RESULT($DHCP_CLIENT_PATH)
-	fi
-fi
-if test -z "$DHCP_CLIENT_PATH"; then
+		;;
+esac
+
+if test -z "$DHCPCD_PATH" -a -z "$DHCLIENT_PATH"; then
 	# DHCP clients are not a build time dependency, only runtime.
 	# dhclient has been the longtime default for NM and it's in /sbin
 	# in most distros, so use it.
 	AC_MSG_WARN([Could not find a suitable DHCP client])
-	DHCP_CLIENT_PATH=/sbin/dhclient
+	DHCLIENT_PATH=/sbin/dhclient
 	AC_MSG_WARN([Falling back to ISC dhclient, ${DHCP_CLIENT_PATH}])
 fi
-AC_SUBST(DHCP_CLIENT_PATH)
-DHCP_CLIENT=`basename "$DHCP_CLIENT_PATH"`
-if test "$DHCP_CLIENT" != "dhclient" -a "$DHCP_CLIENT" != "dhcpcd"; then
-	AC_MSG_ERROR([No backend for the DHCP client ${DHCP_CLIENT}])
-fi
-AC_SUBST(DHCP_CLIENT)
+AC_SUBST(DHCLIENT_PATH)
+AC_SUBST(DHCPCD_PATH)
 
 # resolvconf support
 AC_ARG_WITH([resolvconf],
@@ -492,12 +498,25 @@ NetworkManager.pc
 AC_OUTPUT
 
 echo
-echo Distribution targeting: ${with_distro}
+echo Distribution target: ${with_distro}
 echo 'if this is not correct, please specifiy your distro with --with-distro=DISTRO'
+
+echo 
+
+if test -n "${DHCLIENT_PATH}"; then
+	echo ISC dhclient support: ${DHCLIENT_PATH}
+else
+	echo ISC dhclient support: no
+fi
+
+if test -n "${DHCPCD_PATH}"; then
+	echo dhcpcd support: ${DHCPCD_PATH}
+else
+	echo dhcpcd support: no
+fi
 
 echo
 echo Building documentation: ${with_docs}
-echo
 echo Building tests: ${with_tests}
 echo
 

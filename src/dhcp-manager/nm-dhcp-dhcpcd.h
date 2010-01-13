@@ -41,5 +41,7 @@ typedef struct {
 
 GType nm_dhcp_dhcpcd_get_type (void);
 
+GSList *nm_dhcp_dhcpcd_get_lease_config (const char *iface, const char *uuid);
+
 #endif /* NM_DHCP_DHCPCD_H */
 

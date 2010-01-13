@@ -47,7 +47,7 @@ typedef struct {
 
 
 GSList *
-nm_dhcp_backend_get_lease_config (const char *iface, const char *uuid)
+nm_dhcp_dhcpcd_get_lease_config (const char *iface, const char *uuid)
 {
 	return NULL;
 }
@@ -83,18 +83,18 @@ real_ip4_start (NMDHCPClient *client,
 		return -1;
 	}
 
-	if (!g_file_test (DHCP_CLIENT_PATH, G_FILE_TEST_EXISTS)) {
-		nm_warning (DHCP_CLIENT_PATH " does not exist.");
+	if (!g_file_test (DHCPCD_PATH, G_FILE_TEST_EXISTS)) {
+		nm_warning (DHCPCD_PATH " does not exist.");
 		return -1;
 	}
 
 	/* Kill any existing dhclient from the pidfile */
-	binary_name = g_path_get_basename (DHCP_CLIENT_PATH);
+	binary_name = g_path_get_basename (DHCPCD_PATH);
 	nm_dhcp_client_stop_existing (priv->pid_file, binary_name);
 	g_free (binary_name);
 
 	argv = g_ptr_array_new ();
-	g_ptr_array_add (argv, (gpointer) DHCP_CLIENT_PATH);
+	g_ptr_array_add (argv, (gpointer) DHCPCD_PATH);
 
 	g_ptr_array_add (argv, (gpointer) "-B");	/* Don't background on lease (disable fork()) */
 

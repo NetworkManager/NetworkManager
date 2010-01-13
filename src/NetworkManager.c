@@ -302,7 +302,10 @@ done:
 }
 
 static gboolean
-parse_config_file (const char *filename, char **plugins, GError **error)
+parse_config_file (const char *filename,
+                   char **plugins,
+                   char **dhcp_client,
+                   GError **error)
 {
 	GKeyFile *config;
 
@@ -320,6 +323,8 @@ parse_config_file (const char *filename, char **plugins, GError **error)
 	*plugins = g_key_file_get_value (config, "main", "plugins", error);
 	if (*error)
 		return FALSE;
+
+	*dhcp_client = g_key_file_get_value (config, "main", "dhcp", NULL);
 
 	g_key_file_free (config);
 	return TRUE;
@@ -435,7 +440,7 @@ main (int argc, char *argv[])
 	gboolean become_daemon = FALSE;
 	gboolean g_fatal_warnings = FALSE;
 	char *pidfile = NULL, *user_pidfile = NULL;
-	char *config = NULL, *plugins = NULL;
+	char *config = NULL, *plugins = NULL, *dhcp = NULL;
 	char *state_file = NM_DEFAULT_SYSTEM_STATE_FILE;
 	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE;
 	gboolean success;
@@ -498,7 +503,7 @@ main (int argc, char *argv[])
 
 	/* Parse the config file */
 	if (config) {
-		if (!parse_config_file (config, &plugins, &error)) {
+		if (!parse_config_file (config, &plugins, &dhcp, &error)) {
 			g_warning ("Config file %s invalid: (%d) %s.",
 			           config,
 			           error ? error->code : -1,
@@ -507,7 +512,7 @@ main (int argc, char *argv[])
 		}
 	} else {
 		config = NM_DEFAULT_SYSTEM_CONF_FILE;
-		if (!parse_config_file (config, &plugins, &error)) {
+		if (!parse_config_file (config, &plugins, &dhcp, &error)) {
 			g_warning ("Default config file %s invalid: (%d) %s.",
 			           config,
 			           error ? error->code : -1,
@@ -620,9 +625,9 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	dhcp_mgr = nm_dhcp_manager_get ();
+	dhcp_mgr = nm_dhcp_manager_new (dhcp ? dhcp : "dhclient", &error);
 	if (!dhcp_mgr) {
-		nm_warning ("Failed to start the DHCP manager.");
+		nm_warning ("Failed to start the DHCP manager: %s.", error->message);
 		goto done;
 	}
 

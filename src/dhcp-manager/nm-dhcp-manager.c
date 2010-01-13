@@ -36,6 +36,7 @@
 
 #include "nm-dhcp-manager.h"
 #include "nm-dhcp-dhclient.h"
+#include "nm-dhcp-dhcpcd.h"
 #include "nm-marshal.h"
 #include "nm-utils.h"
 #include "nm-dbus-manager.h"
@@ -46,8 +47,14 @@
 #define NM_DHCP_CLIENT_DBUS_SERVICE "org.freedesktop.nm_dhcp_client"
 #define NM_DHCP_CLIENT_DBUS_IFACE   "org.freedesktop.nm_dhcp_client"
 
+static NMDHCPManager *singleton = NULL;
+
+typedef GSList * (*GetLeaseConfigFunc) (const char *iface, const char *uuid);
+
 typedef struct {
-	guint32             next_id;
+	GType               client_type;
+	GetLeaseConfigFunc  get_lease_config_func;
+
 	NMDBusManager *     dbus_mgr;
 	GHashTable *        clients;
 	DBusGProxy *        proxy;
@@ -219,23 +226,36 @@ out:
 	g_free (reason);
 }
 
-static NMDHCPManager *
-nm_dhcp_manager_new (void)
+NMDHCPManager *
+nm_dhcp_manager_new (const char *client, GError **error)
 {
-	NMDHCPManager *manager;
 	NMDHCPManagerPrivate *priv;
 	DBusGConnection *g_connection;
 
-	manager = g_object_new (NM_TYPE_DHCP_MANAGER, NULL);
-	priv = NM_DHCP_MANAGER_GET_PRIVATE (manager);
+	g_warn_if_fail (singleton == NULL);
+	g_return_val_if_fail (client != NULL, NULL);
+
+	singleton = g_object_new (NM_TYPE_DHCP_MANAGER, NULL);
+	priv = NM_DHCP_MANAGER_GET_PRIVATE (singleton);
+
+	/* Figure out which DHCP client to use */
+	if (!strcmp (client, "dhclient") && strlen (DHCLIENT_PATH)) {
+		priv->client_type = NM_TYPE_DHCP_DHCLIENT;
+		priv->get_lease_config_func = nm_dhcp_dhclient_get_lease_config;
+	} else if (!strcmp (client, "dhcpcd") && strlen (DHCPCD_PATH)) {
+		priv->client_type = NM_TYPE_DHCP_DHCPCD;
+		priv->get_lease_config_func = nm_dhcp_dhcpcd_get_lease_config;
+	} else {
+		g_set_error (error, 0, 0, "unknown or missing DHCP client '%s'", client);
+		goto error;
+	}
 
 	priv->clients = g_hash_table_new_full (g_direct_hash, g_direct_equal,
 	                                       NULL,
 	                                       (GDestroyNotify) g_object_unref);
 	if (!priv->clients) {
-		nm_warning ("Error: not enough memory to initialize DHCP manager tables");
-		g_object_unref (manager);
-		return NULL;
+		g_set_error_literal (error, 0, 0, "not enough memory to initialize DHCP manager");
+		goto error;
 	}
 
 	priv->dbus_mgr = nm_dbus_manager_get ();
@@ -245,9 +265,8 @@ nm_dhcp_manager_new (void)
 	                                         "/",
 	                                         NM_DHCP_CLIENT_DBUS_IFACE);
 	if (!priv->proxy) {
-		nm_warning ("Error: could not init DHCP manager proxy");
-		g_object_unref (manager);
-		return NULL;
+		g_set_error_literal (error, 0, 0, "not enough memory to initialize DHCP manager proxy");
+		goto error;
 	}
 
 	dbus_g_proxy_add_signal (priv->proxy,
@@ -256,11 +275,16 @@ nm_dhcp_manager_new (void)
 	                         G_TYPE_INVALID);
 
 	dbus_g_proxy_connect_signal (priv->proxy, "Event",
-								 G_CALLBACK (nm_dhcp_manager_handle_event),
-								 manager,
-								 NULL);
+	                             G_CALLBACK (nm_dhcp_manager_handle_event),
+	                             singleton,
+	                             NULL);
 
-	return manager;
+	return singleton;
+
+error:
+	g_object_unref (singleton);
+	singleton = NULL;
+	return singleton;
 }
 
 #define STATE_ID_TAG "state-id"
@@ -416,7 +440,7 @@ nm_dhcp_manager_get_lease_config (NMDHCPManager *self,
 	g_return_val_if_fail (iface != NULL, NULL);
 	g_return_val_if_fail (uuid != NULL, NULL);
 
-	return nm_dhcp_backend_get_lease_config (iface, uuid);
+	return NM_DHCP_MANAGER_GET_PRIVATE (self)->get_lease_config_func (iface, uuid);
 }
 
 NMIP4Config *
@@ -443,23 +467,13 @@ nm_dhcp_manager_test_ip4_options_to_config (const char *iface,
 NMDHCPManager *
 nm_dhcp_manager_get (void)
 {
-	static NMDHCPManager *singleton = NULL;
-
-	if (!singleton)
-		singleton = nm_dhcp_manager_new ();
-	else
-		g_object_ref (singleton);
-
-	g_assert (singleton);
-	return singleton;
+	g_warn_if_fail (singleton != NULL);
+	return g_object_ref (singleton);
 }
 
 static void
 nm_dhcp_manager_init (NMDHCPManager *manager)
 {
-	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (manager);
-
-	priv->next_id = 1;
 }
 
 static void
@@ -468,10 +482,12 @@ dispose (GObject *object)
 	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (object);
 	GList *values, *iter;
 
-	values = g_hash_table_get_values (priv->clients);
-	for (iter = values; iter; iter = g_list_next (iter))
-		remove_client (NM_DHCP_MANAGER (object), NM_DHCP_CLIENT (iter->data));
-	g_list_free (values);
+	if (priv->clients) {
+		values = g_hash_table_get_values (priv->clients);
+		for (iter = values; iter; iter = g_list_next (iter))
+			remove_client (NM_DHCP_MANAGER (object), NM_DHCP_CLIENT (iter->data));
+		g_list_free (values);
+	}
 
 	G_OBJECT_CLASS (nm_dhcp_manager_parent_class)->dispose (object);
 }
@@ -486,9 +502,12 @@ finalize (GObject *object)
 		priv->hostname_provider = NULL;
 	}
 
-	g_hash_table_destroy (priv->clients);
-	g_object_unref (priv->proxy);
-	g_object_unref (priv->dbus_mgr);
+	if (priv->clients)
+		g_hash_table_destroy (priv->clients);
+	if (priv->proxy)
+		g_object_unref (priv->proxy);
+	if (priv->dbus_mgr)
+		g_object_unref (priv->dbus_mgr);
 
 	G_OBJECT_CLASS (nm_dhcp_manager_parent_class)->finalize (object);
 }

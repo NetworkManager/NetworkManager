@@ -27,7 +27,8 @@ libdhcp_manager_la_CPPFLAGS = \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
 	-DLOCALSTATEDIR=\"$(localstatedir)\" \
-	-DDHCP_CLIENT_PATH=\"$(DHCP_CLIENT_PATH)\"
+	-DDHCLIENT_PATH=\"$(DHCLIENT_PATH)\" \
+	-DDHCPCD_PATH=\"$(DHCPCD_PATH)\"
 
 libdhcp_manager_la_LIBADD = \
 	$(top_builddir)/marshallers/libmarshallers.la \

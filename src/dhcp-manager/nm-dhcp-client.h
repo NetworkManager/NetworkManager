@@ -114,9 +114,5 @@ NMIP4Config *nm_dhcp_client_get_ip4_config   (NMDHCPClient *self, gboolean test)
 /* Backend helpers */
 void nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name);
 
-/* Implemented by the backends */
-GSList *nm_dhcp_backend_get_lease_config (const char *iface,
-                                          const char *uuid);
-
 #endif /* NM_DHCP_CLIENT_H */
 

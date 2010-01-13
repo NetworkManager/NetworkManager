@@ -110,7 +110,7 @@ add_lease_option (GHashTable *hash, char *line)
 }
 
 GSList *
-nm_dhcp_backend_get_lease_config (const char *iface, const char *uuid)
+nm_dhcp_dhclient_get_lease_config (const char *iface, const char *uuid)
 {
 	GSList *parsed = NULL, *iter, *leases = NULL;
 	char *contents = NULL;
@@ -469,13 +469,13 @@ real_ip4_start (NMDHCPClient *client,
 		return -1;
 	}
 
-	if (!g_file_test (DHCP_CLIENT_PATH, G_FILE_TEST_EXISTS)) {
-		nm_warning (DHCP_CLIENT_PATH " does not exist.");
+	if (!g_file_test (DHCLIENT_PATH, G_FILE_TEST_EXISTS)) {
+		nm_warning (DHCLIENT_PATH " does not exist.");
 		return -1;
 	}
 
 	/* Kill any existing dhclient from the pidfile */
-	binary_name = g_path_get_basename (DHCP_CLIENT_PATH);
+	binary_name = g_path_get_basename (DHCLIENT_PATH);
 	nm_dhcp_client_stop_existing (priv->pid_file, binary_name);
 	g_free (binary_name);
 
@@ -492,7 +492,7 @@ real_ip4_start (NMDHCPClient *client,
 	}
 
 	argv = g_ptr_array_new ();
-	g_ptr_array_add (argv, (gpointer) DHCP_CLIENT_PATH);
+	g_ptr_array_add (argv, (gpointer) DHCLIENT_PATH);
 
 	g_ptr_array_add (argv, (gpointer) "-d");
 

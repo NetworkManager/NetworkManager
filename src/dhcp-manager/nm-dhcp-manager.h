@@ -70,4 +70,7 @@ NMIP4Config *nm_dhcp_manager_test_ip4_options_to_config (const char *iface,
                                                          GHashTable *options,
                                                          const char *reason);
 
+/* Only for NetworkManager.c */
+NMDHCPManager *nm_dhcp_manager_new (const char *client, GError **error);
+
 #endif /* NM_DHCP_MANAGER_H */
