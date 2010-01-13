@@ -27,11 +27,10 @@
 
 #include <nm-setting-ip4-config.h>
 
+#include "nm-dhcp-client.h"
 #include "nm-ip4-config.h"
 #include "nm-dhcp4-config.h"
 #include "nm-hostname-provider.h"
-
-#define NM_DHCP_MANAGER_RUN_DIR		LOCALSTATEDIR "/run"
 
 #define NM_TYPE_DHCP_MANAGER            (nm_dhcp_manager_get_type ())
 #define NM_DHCP_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP_MANAGER, NMDHCPManager))
@@ -40,98 +39,35 @@
 #define NM_IS_DHCP_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_DHCP_MANAGER))
 #define NM_DHCP_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP_MANAGER, NMDHCPManagerClass))
 
-typedef enum {
-	DHC_NBI = 0,     /* no broadcast interfaces found */
-	DHC_PREINIT,     /* configuration started */
-	DHC_BOUND4,      /* IPv4 lease obtained */
-	DHC_BOUND6,      /* IPv6 lease obtained */
-	DHC_IPV4LL,      /* IPv4LL address obtained */
-	DHC_RENEW4,      /* IPv4 lease renewed */
-	DHC_RENEW6,      /* IPv6 lease renewed */
-	DHC_REBOOT,      /* have valid lease, but now obtained a different one */
-	DHC_REBIND4,     /* IPv4 new/different lease */
-	DHC_REBIND6,     /* IPv6 new/different lease */
-	DHC_DEPREF6,     /* IPv6 lease depreferred */
-	DHC_STOP,        /* remove old lease */
-	DHC_MEDIUM,      /* media selection begun */
-	DHC_TIMEOUT,     /* timed out contacting DHCP server */
-	DHC_FAIL,        /* all attempts to contact server timed out, sleeping */
-	DHC_EXPIRE,      /* lease has expired, renewing */
-	DHC_RELEASE,     /* releasing lease */
-	DHC_START,       /* sent when dhclient started OK */
-	DHC_ABEND,       /* dhclient exited abnormally */
-	DHC_END,         /* dhclient exited normally */
-	DHC_END_OPTIONS, /* last option in subscription sent */
-} NMDHCPState;
-
 typedef struct {
 	GObject parent;
 } NMDHCPManager;
 
 typedef struct {
 	GObjectClass parent;
-
-	/* Signals */
-	void (*state_changed) (NMDHCPManager *manager, guint32 id, NMDHCPState state);
-	void (*timeout)       (NMDHCPManager *manager, guint32 id);
 } NMDHCPManagerClass;
-
-typedef struct {
-	GPid            id;
-	char *          iface;
-	guchar          state;
-	GPid            pid;
-	char *          pid_file;
-	char *          conf_file;
-	char *          lease_file;
-	guint           timeout_id;
-	guint           watch_id;
-	NMDHCPManager * manager;
-	GHashTable *    options;
-} NMDHCPClient;
 
 GType nm_dhcp_manager_get_type (void);
 
 NMDHCPManager *nm_dhcp_manager_get                  (void);
+
 void           nm_dhcp_manager_set_hostname_provider(NMDHCPManager *manager,
 													 NMHostnameProvider *provider);
 
-guint32        nm_dhcp_manager_begin_transaction    (NMDHCPManager *manager,
-                                                     const char *iface,
-                                                     const char *uuid,
-                                                     NMSettingIP4Config *s_ip4,
-                                                     guint32 timeout,
-                                                     guint8 *dhcp_anycast_addr);
-void           nm_dhcp_manager_cancel_transaction   (NMDHCPManager *manager,
-                                                     guint32 id);
-NMIP4Config *  nm_dhcp_manager_get_ip4_config       (NMDHCPManager *manager, guint32 id);
-NMDHCPState    nm_dhcp_manager_get_client_state     (NMDHCPManager *manager, guint32 id);
+NMDHCPClient * nm_dhcp_manager_start_client     (NMDHCPManager *manager,
+                                                 const char *iface,
+                                                 const char *uuid,
+                                                 NMSettingIP4Config *s_ip4,
+                                                 guint32 timeout,
+                                                 guint8 *dhcp_anycast_addr);
 
-gboolean       nm_dhcp_manager_foreach_dhcp4_option (NMDHCPManager *self,
-                                                     guint32 id,
-                                                     GHFunc func,
-                                                     gpointer user_data);
+GSList *       nm_dhcp_manager_get_lease_config (NMDHCPManager *self,
+                                                 const char *iface,
+                                                 const char *uuid);
 
-GSList *       nm_dhcp4_manager_get_lease_config    (NMDHCPManager *self,
-                                                     const char *iface,
-                                                     const char *uuid);
-
-/* The following are implemented by the DHCP client backends */
-GPid           nm_dhcp4_client_start                 (NMDHCPClient *client,
-                                                      const char *uuid,
-                                                      NMSettingIP4Config *s_ip4,
-                                                      guint8 *anycast_addr);
-void           nm_dhcp_client_stop                  (NMDHCPClient *client, pid_t pid);
-
-gboolean       nm_dhcp4_client_process_classless_routes (GHashTable *options,
-                                                         NMIP4Config *ip4_config,
-                                                         guint32 *gwaddr);
-
-GSList *       nm_dhcp4_client_get_lease_config  (const char *iface,
-                                                  const char *uuid);
-
-/* Test functions */
-NMIP4Config *nm_dhcp4_manager_options_to_config (const char *iface,
-                                                 GHashTable *options);
+/* For testing only */
+NMIP4Config *nm_dhcp_manager_test_ip4_options_to_config (const char *iface,
+                                                         GHashTable *options,
+                                                         const char *reason);
 
 #endif /* NM_DHCP_MANAGER_H */

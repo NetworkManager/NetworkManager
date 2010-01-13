@@ -36,46 +36,37 @@
 
 #include <config.h>
 
-#include "nm-dhcp-manager.h"
+#include "nm-dhcp-dhclient.h"
 #include "nm-utils.h"
 
+G_DEFINE_TYPE (NMDHCPDhclient, nm_dhcp_dhclient, NM_TYPE_DHCP_CLIENT)
 
-#define NM_DHCP_MANAGER_PID_FILENAME	"dhclient"
-#define NM_DHCP_MANAGER_PID_FILE_EXT	"pid"
+#define NM_DHCP_DHCLIENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_DHCLIENT, NMDHCPDhclientPrivate))
 
 #if defined(TARGET_DEBIAN)
-#define NM_DHCP_MANAGER_LEASE_DIR       LOCALSTATEDIR "/lib/dhcp3"
+#define NM_DHCLIENT_LEASE_DIR           LOCALSTATEDIR "/lib/dhcp3"
 #elif defined(TARGET_SUSE) || defined(TARGET_MANDRIVA)
-#define NM_DHCP_MANAGER_LEASE_DIR       LOCALSTATEDIR "/lib/dhcp"
+#define NM_DHCLIENT_LEASE_DIR           LOCALSTATEDIR "/lib/dhcp"
 #else
-#define NM_DHCP_MANAGER_LEASE_DIR       LOCALSTATEDIR "/lib/dhclient"
+#define NM_DHCLIENT_LEASE_DIR           LOCALSTATEDIR "/lib/dhclient"
 #endif
-#define NM_DHCP_MANAGER_LEASE_FILENAME	"dhclient"
-#define NM_DHCP_MANAGER_LEASE_FILE_EXT	"lease"
 
 #define ACTION_SCRIPT_PATH	LIBEXECDIR "/nm-dhcp-client.action"
 
-
-static char *
-get_pidfile_for_iface (const char * iface)
-{
-	return g_strdup_printf ("%s/%s-%s.%s",
-	                        NM_DHCP_MANAGER_RUN_DIR,
-	                        NM_DHCP_MANAGER_PID_FILENAME,
-	                        iface,
-	                        NM_DHCP_MANAGER_PID_FILE_EXT);
-}
+typedef struct {
+	char *conf_file;
+	char *lease_file;
+	char *pid_file;
+} NMDHCPDhclientPrivate;
 
 
 static char *
 get_leasefile_for_iface (const char * iface, const char *uuid)
 {
-	return g_strdup_printf ("%s/%s-%s-%s.%s",
-	                        NM_DHCP_MANAGER_LEASE_DIR,
-	                        NM_DHCP_MANAGER_LEASE_FILENAME,
+	return g_strdup_printf ("%s/dhclient-%s-%s.lease",
+	                        NM_DHCLIENT_LEASE_DIR,
 	                        uuid,
-	                        iface,
-	                        NM_DHCP_MANAGER_LEASE_FILE_EXT);
+	                        iface);
 }
 
 static void
@@ -119,7 +110,7 @@ add_lease_option (GHashTable *hash, char *line)
 }
 
 GSList *
-nm_dhcp4_client_get_lease_config (const char *iface, const char *uuid)
+nm_dhcp_backend_get_lease_config (const char *iface, const char *uuid)
 {
 	GSList *parsed = NULL, *iter, *leases = NULL;
 	char *contents = NULL;
@@ -288,28 +279,39 @@ out:
 #define DHCP_HOSTNAME_FORMAT DHCP_HOSTNAME_TAG " \"%s\"; # added by NetworkManager"
 
 static gboolean
-merge_dhclient_config (NMDHCPClient *client,
+merge_dhclient_config (const char *iface,
+                       const char *conf_file,
                        NMSettingIP4Config *s_ip4,
                        guint8 *anycast_addr,
-                       const char *contents,
-                       const char *orig,
+                       const char *orig_path,
                        GError **error)
 {
 	GString *new_contents;
+	char *orig_contents = NULL;
 	gboolean success = FALSE;
 
-	g_return_val_if_fail (client != NULL, FALSE);
-	g_return_val_if_fail (client->iface != NULL, FALSE);
-	
+	g_return_val_if_fail (iface != NULL, FALSE);
+	g_return_val_if_fail (conf_file != NULL, FALSE);
+
 	new_contents = g_string_new (_("# Created by NetworkManager\n"));
 
+	if (g_file_test (orig_path, G_FILE_TEST_EXISTS)) {
+		GError *read_error = NULL;
+
+		if (!g_file_get_contents (orig_path, &orig_contents, NULL, &read_error)) {
+			nm_warning ("%s: error reading dhclient configuration %s: %s",
+			            iface, orig_path, read_error->message);
+			g_error_free (read_error);
+		}
+	}
+
 	/* Add existing options, if any, but ignore stuff NM will replace. */
-	if (contents) {
+	if (orig_contents) {
 		char **lines = NULL, **line;
 
-		g_string_append_printf (new_contents, _("# Merged from %s\n\n"), orig);
+		g_string_append_printf (new_contents, _("# Merged from %s\n\n"), orig_path);
 
-		lines = g_strsplit_set (contents, "\n\r", 0);
+		lines = g_strsplit_set (orig_contents, "\n\r", 0);
 		for (line = lines; lines && *line; line++) {
 			gboolean ignore = FALSE;
 
@@ -334,6 +336,7 @@ merge_dhclient_config (NMDHCPClient *client,
 
 		if (lines)
 			g_strfreev (lines);
+		g_free (orig_contents);
 	} else
 		g_string_append_c (new_contents, '\n');
 
@@ -374,14 +377,13 @@ merge_dhclient_config (NMDHCPClient *client,
 		                        " initial-interval 1; \n"
 		                        " anycast-mac ethernet %02x:%02x:%02x:%02x:%02x:%02x;\n"
 		                        "}\n",
-		                        client->iface,
+		                        iface,
 		                        anycast_addr[0], anycast_addr[1],
 		                        anycast_addr[2], anycast_addr[3],
 		                        anycast_addr[4], anycast_addr[5]);
 	}
 
-	if (g_file_set_contents (client->conf_file, new_contents->str, -1, error))
-		success = TRUE;
+	success = g_file_set_contents (conf_file, new_contents->str, -1, error);
 
 	g_string_free (new_contents, TRUE);
 	return success;
@@ -393,18 +395,16 @@ merge_dhclient_config (NMDHCPClient *client,
  * read their single config file and merge that into a custom per-interface
  * config file along with the NM options.
  */
-static gboolean
-create_dhclient_config (NMDHCPClient *client,
+static char *
+create_dhclient_config (const char *iface,
                         NMSettingIP4Config *s_ip4,
                         guint8 *dhcp_anycast_addr)
 {
-	char *orig = NULL, *contents = NULL;
+	char *orig = NULL, *tmp, *conf_file = NULL;
 	GError *error = NULL;
 	gboolean success = FALSE;
-	char *tmp;
 
-	g_return_val_if_fail (client != NULL, FALSE);
-	g_return_val_if_fail (client->iface != NULL, FALSE);
+	g_return_val_if_fail (iface != NULL, FALSE);
 
 #if defined(TARGET_SUSE)
 	orig = g_strdup (SYSCONFDIR "/dhclient.conf");
@@ -413,41 +413,28 @@ create_dhclient_config (NMDHCPClient *client,
 #elif defined(TARGET_GENTOO)
 	orig = g_strdup (SYSCONFDIR "/dhcp/dhclient.conf");
 #else
-	orig = g_strdup_printf (SYSCONFDIR "/dhclient-%s.conf", client->iface);
+	orig = g_strdup_printf (SYSCONFDIR "/dhclient-%s.conf", iface);
 #endif
 
 	if (!orig) {
-		nm_warning ("%s: not enough memory for dhclient options.", client->iface);
+		nm_warning ("%s: not enough memory for dhclient options.", iface);
 		return FALSE;
 	}
 
-	tmp = g_strdup_printf ("nm-dhclient-%s.conf", client->iface);
-	client->conf_file = g_build_filename ("/var", "run", tmp, NULL);
+	tmp = g_strdup_printf ("nm-dhclient-%s.conf", iface);
+	conf_file = g_build_filename ("/var", "run", tmp, NULL);
 	g_free (tmp);
 
-	if (!g_file_test (orig, G_FILE_TEST_EXISTS))
-		goto out;
-
-	if (!g_file_get_contents (orig, &contents, NULL, &error)) {
-		nm_warning ("%s: error reading dhclient configuration %s: %s",
-		            client->iface, orig, error->message);
-		g_error_free (error);
-		goto out;
-	}
-
-out:
 	error = NULL;
-	if (merge_dhclient_config (client, s_ip4, dhcp_anycast_addr, contents, orig, &error))
-		success = TRUE;
-	else {
+	success = merge_dhclient_config (iface, conf_file, s_ip4, dhcp_anycast_addr, orig, &error);
+	if (!success) {
 		nm_warning ("%s: error creating dhclient configuration: %s",
-		            client->iface, error->message);
+		            iface, error->message);
 		g_error_free (error);
 	}
 
-	g_free (contents);
 	g_free (orig);
-	return success;
+	return conf_file;
 }
 
 
@@ -459,45 +446,49 @@ dhclient_child_setup (gpointer user_data G_GNUC_UNUSED)
 	setpgid (pid, pid);
 }
 
-
-GPid
-nm_dhcp4_client_start (NMDHCPClient *client,
-                       const char *uuid,
-                       NMSettingIP4Config *s_ip4,
-                       guint8 *dhcp_anycast_addr)
+static GPid
+real_ip4_start (NMDHCPClient *client,
+                const char *uuid,
+                NMSettingIP4Config *s_ip4,
+                guint8 *dhcp_anycast_addr)
 {
+	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
 	GPtrArray *argv = NULL;
 	GPid pid = 0;
 	GError *error = NULL;
-	char *pid_contents = NULL;
+	const char *iface;
+	char *binary_name;
+
+	g_return_val_if_fail (priv->pid_file == NULL, -1);
+
+	iface = nm_dhcp_client_get_iface (client);
+
+	priv->pid_file = g_strdup_printf (LOCALSTATEDIR "/run/dhclient-%s.pid", iface);
+	if (!priv->pid_file) {
+		nm_warning ("%s: not enough memory for dhcpcd options.", iface);
+		return -1;
+	}
 
 	if (!g_file_test (DHCP_CLIENT_PATH, G_FILE_TEST_EXISTS)) {
 		nm_warning (DHCP_CLIENT_PATH " does not exist.");
-		goto out;
+		return -1;
 	}
 
-	client->pid_file = get_pidfile_for_iface (client->iface);
-	if (!client->pid_file) {
-		nm_warning ("%s: not enough memory for dhclient options.", client->iface);
-		goto out;
+	/* Kill any existing dhclient from the pidfile */
+	binary_name = g_path_get_basename (DHCP_CLIENT_PATH);
+	nm_dhcp_client_stop_existing (priv->pid_file, binary_name);
+	g_free (binary_name);
+
+	priv->conf_file = create_dhclient_config (iface, s_ip4, dhcp_anycast_addr);
+	if (!priv->conf_file) {
+		nm_warning ("%s: error creating dhclient configuration file.", iface);
+		return -1;
 	}
 
-	client->lease_file = get_leasefile_for_iface (client->iface, uuid);
-	if (!client->lease_file) {
-		nm_warning ("%s: not enough memory for dhclient options.", client->iface);
-		goto out;
-	}
-
-	if (!create_dhclient_config (client, s_ip4, dhcp_anycast_addr))
-		goto out;
-
-	/* Kill any existing dhclient bound to this interface */
-	if (g_file_get_contents (client->pid_file, &pid_contents, NULL, NULL)) {
-		unsigned long int tmp = strtoul (pid_contents, NULL, 10);
-
-		if (!((tmp == ULONG_MAX) && (errno == ERANGE)))
-			nm_dhcp_client_stop (client, (pid_t) tmp);
-		remove (client->pid_file);
+	priv->lease_file = get_leasefile_for_iface (iface, uuid);
+	if (!priv->lease_file) {
+		nm_warning ("%s: not enough memory for dhclient options.", iface);
+		return -1;
 	}
 
 	argv = g_ptr_array_new ();
@@ -509,30 +500,41 @@ nm_dhcp4_client_start (NMDHCPClient *client,
 	g_ptr_array_add (argv, (gpointer) ACTION_SCRIPT_PATH );
 
 	g_ptr_array_add (argv, (gpointer) "-pf");	/* Set pid file */
-	g_ptr_array_add (argv, (gpointer) client->pid_file);
+	g_ptr_array_add (argv, (gpointer) priv->pid_file);
 
 	g_ptr_array_add (argv, (gpointer) "-lf");	/* Set lease file */
-	g_ptr_array_add (argv, (gpointer) client->lease_file);
+	g_ptr_array_add (argv, (gpointer) priv->lease_file);
 
 	g_ptr_array_add (argv, (gpointer) "-cf");	/* Set interface config file */
-	g_ptr_array_add (argv, (gpointer) client->conf_file);
+	g_ptr_array_add (argv, (gpointer) priv->conf_file);
 
-	g_ptr_array_add (argv, (gpointer) client->iface);
+	g_ptr_array_add (argv, (gpointer) iface);
 	g_ptr_array_add (argv, NULL);
 
 	if (!g_spawn_async (NULL, (char **) argv->pdata, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
 	                    &dhclient_child_setup, NULL, &pid, &error)) {
 		nm_warning ("dhclient failed to start.  error: '%s'", error->message);
 		g_error_free (error);
-		goto out;
-	}
+		pid = -1;
+	} else
+		nm_info ("dhclient started with pid %d", pid);
 
-	nm_info ("dhclient started with pid %d", pid);
-
-out:
-	g_free (pid_contents);
 	g_ptr_array_free (argv, TRUE);
 	return pid;
+}
+
+static void
+real_stop (NMDHCPClient *client)
+{
+	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
+
+	/* Chain up to parent */
+	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhclient_parent_class)->stop (client);
+
+	if (priv->conf_file)
+		remove (priv->conf_file);
+	if (priv->pid_file)
+		remove (priv->pid_file);
 }
 
 static const char **
@@ -596,10 +598,11 @@ error:
 	return o;
 }
 
-gboolean
-nm_dhcp4_client_process_classless_routes (GHashTable *options,
-                                          NMIP4Config *ip4_config,
-                                          guint32 *gwaddr)
+static gboolean
+real_ip4_process_classless_routes (NMDHCPClient *client,
+                                   GHashTable *options,
+                                   NMIP4Config *ip4_config,
+                                   guint32 *gwaddr)
 {
 	const char *str;
 	char **octets, **o;
@@ -662,5 +665,40 @@ nm_dhcp4_client_process_classless_routes (GHashTable *options,
 out:
 	g_strfreev (octets);
 	return have_routes;
+}
+
+/***************************************************/
+
+static void
+nm_dhcp_dhclient_init (NMDHCPDhclient *self)
+{
+}
+
+static void
+dispose (GObject *object)
+{
+	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (object);
+
+	g_free (priv->pid_file);
+	g_free (priv->conf_file);
+	g_free (priv->lease_file);
+
+	G_OBJECT_CLASS (nm_dhcp_dhclient_parent_class)->dispose (object);
+}
+
+static void
+nm_dhcp_dhclient_class_init (NMDHCPDhclientClass *dhclient_class)
+{
+	NMDHCPClientClass *client_class = NM_DHCP_CLIENT_CLASS (dhclient_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (dhclient_class);
+
+	g_type_class_add_private (dhclient_class, sizeof (NMDHCPDhclientPrivate));
+
+	/* virtual methods */
+	object_class->dispose = dispose;
+
+	client_class->ip4_start = real_ip4_start;
+	client_class->stop = real_stop;
+	client_class->ip4_process_classless_routes = real_ip4_process_classless_routes;
 }
 

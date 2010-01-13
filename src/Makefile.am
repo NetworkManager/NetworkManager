@@ -46,6 +46,7 @@ libtest_dhcp_la_CPPFLAGS = \
 	$(LIBNL_CFLAGS)
 
 libtest_dhcp_la_LIBADD = \
+	$(top_builddir)/marshallers/libmarshallers.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS) \

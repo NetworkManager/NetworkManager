@@ -9,9 +9,14 @@ INCLUDES = \
 noinst_LTLIBRARIES = libdhcp-manager.la
 
 libdhcp_manager_la_SOURCES = \
+	nm-dhcp-client.c \
+	nm-dhcp-client.h \
 	nm-dhcp-manager.c \
 	nm-dhcp-manager.h \
-	nm-dhcp-@DHCP_CLIENT@.c
+	nm-dhcp-dhclient.h \
+	nm-dhcp-dhclient.c \
+	nm-dhcp-dhcpcd.h \
+	nm-dhcp-dhcpcd.c
 
 libdhcp_manager_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
@@ -29,6 +34,3 @@ libdhcp_manager_la_LIBADD = \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS)
 
-EXTRA_DIST = \
-	     nm-dhcp-dhclient.c \
-	     nm-dhcp-dhcpcd.c

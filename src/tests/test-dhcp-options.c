@@ -35,15 +35,43 @@ typedef struct {
 	const char *value;
 } Option;
 
+static void
+destroy_gvalue (gpointer data)
+{
+	GValue *value = (GValue *) data;
+
+	g_value_unset (value);
+	g_slice_free (GValue, value);
+}
+
+static GValue *
+string_to_byte_array_gvalue (const char *str)
+{
+	GByteArray *array;
+	GValue *val;
+
+	array = g_byte_array_sized_new (strlen (str));
+	g_byte_array_append (array, (const guint8 *) str, strlen (str));
+
+	val = g_slice_new0 (GValue);
+	g_value_init (val, DBUS_TYPE_G_UCHAR_ARRAY);
+	g_value_take_boxed (val, array);
+
+	return val;
+}
+
 static GHashTable *
 fill_table (Option *test_options, GHashTable *table)
 {
 	Option *opt;
 
 	if (!table)
-		table = g_hash_table_new (g_str_hash, g_str_equal);
-	for (opt = test_options; opt->name; opt++)
-		g_hash_table_insert (table, (gpointer) opt->name, (gpointer) opt->value);
+		table = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, destroy_gvalue);
+	for (opt = test_options; opt->name; opt++) {
+		g_hash_table_insert (table,
+		                     (gpointer) opt->name,
+		                     string_to_byte_array_gvalue (opt->value));
+	}
 	return table;
 }
 
@@ -88,7 +116,7 @@ test_generic_options (void)
 	const char *expected_route2_gw = "10.1.1.1";
 
 	options = fill_table (generic_options, NULL);
-	ip4_config = nm_dhcp4_manager_options_to_config ("eth0", options);
+	ip4_config = nm_dhcp_manager_test_ip4_options_to_config ("eth0", options, "rebind");
 	ASSERT (ip4_config != NULL,
 	        "dhcp-generic", "failed to parse DHCP4 options");
 
@@ -199,7 +227,7 @@ test_wins_options (void)
 	options = fill_table (generic_options, NULL);
 	options = fill_table (wins_options, options);
 
-	ip4_config = nm_dhcp4_manager_options_to_config ("eth0", options);
+	ip4_config = nm_dhcp_manager_test_ip4_options_to_config ("eth0", options, "rebind");
 	ASSERT (ip4_config != NULL,
 	        "dhcp-wins", "failed to parse DHCP4 options");
 
@@ -245,7 +273,7 @@ test_classless_static_routes (void)
 	options = fill_table (generic_options, NULL);
 	options = fill_table (classless_routes_options, options);
 
-	ip4_config = nm_dhcp4_manager_options_to_config ("eth0", options);
+	ip4_config = nm_dhcp_manager_test_ip4_options_to_config ("eth0", options, "rebind");
 	ASSERT (ip4_config != NULL,
 	        "dhcp-rfc3442", "failed to parse DHCP4 options");
 
@@ -311,7 +339,7 @@ test_invalid_classless_routes1 (void)
 	options = fill_table (generic_options, NULL);
 	options = fill_table (invalid_classless_routes1, options);
 
-	ip4_config = nm_dhcp4_manager_options_to_config ("eth0", options);
+	ip4_config = nm_dhcp_manager_test_ip4_options_to_config ("eth0", options, "rebind");
 	ASSERT (ip4_config != NULL,
 	        "dhcp-rfc3442-invalid-1", "failed to parse DHCP4 options");
 
@@ -362,7 +390,7 @@ test_invalid_classless_routes2 (void)
 	options = fill_table (generic_options, NULL);
 	options = fill_table (invalid_classless_routes2, options);
 
-	ip4_config = nm_dhcp4_manager_options_to_config ("eth0", options);
+	ip4_config = nm_dhcp_manager_test_ip4_options_to_config ("eth0", options, "rebind");
 	ASSERT (ip4_config != NULL,
 	        "dhcp-rfc3442-invalid-2", "failed to parse DHCP4 options");
 
@@ -432,7 +460,7 @@ test_invalid_classless_routes3 (void)
 	options = fill_table (generic_options, NULL);
 	options = fill_table (invalid_classless_routes3, options);
 
-	ip4_config = nm_dhcp4_manager_options_to_config ("eth0", options);
+	ip4_config = nm_dhcp_manager_test_ip4_options_to_config ("eth0", options, "rebind");
 	ASSERT (ip4_config != NULL,
 	        "dhcp-rfc3442-invalid-3", "failed to parse DHCP4 options");
 
@@ -483,7 +511,7 @@ test_gateway_in_classless_routes (void)
 	options = fill_table (generic_options, NULL);
 	options = fill_table (gw_in_classless_routes, options);
 
-	ip4_config = nm_dhcp4_manager_options_to_config ("eth0", options);
+	ip4_config = nm_dhcp_manager_test_ip4_options_to_config ("eth0", options, "rebind");
 	ASSERT (ip4_config != NULL,
 	        "dhcp-rfc3442-gateway", "failed to parse DHCP4 options");
 
@@ -537,7 +565,7 @@ test_escaped_domain_searches (void)
 	options = fill_table (generic_options, NULL);
 	options = fill_table (escaped_searches_options, options);
 
-	ip4_config = nm_dhcp4_manager_options_to_config ("eth0", options);
+	ip4_config = nm_dhcp_manager_test_ip4_options_to_config ("eth0", options, "rebind");
 	ASSERT (ip4_config != NULL,
 	        "dhcp-escaped-domain-searches", "failed to parse DHCP4 options");
 
@@ -568,7 +596,7 @@ test_invalid_escaped_domain_searches (void)
 	options = fill_table (generic_options, NULL);
 	options = fill_table (invalid_escaped_searches_options, options);
 
-	ip4_config = nm_dhcp4_manager_options_to_config ("eth0", options);
+	ip4_config = nm_dhcp_manager_test_ip4_options_to_config ("eth0", options, "rebind");
 	ASSERT (ip4_config != NULL,
 	        "dhcp-invalid-escaped-domain-searches", "failed to parse DHCP4 options");
 

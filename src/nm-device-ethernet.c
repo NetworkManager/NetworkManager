@@ -1608,9 +1608,9 @@ ip4_match_config (NMDevice *self, NMConnection *connection)
 
 	/* Get any saved leases that apply to this connection */
 	dhcp_mgr = nm_dhcp_manager_get ();
-	leases = nm_dhcp4_manager_get_lease_config (dhcp_mgr,
-	                                            nm_device_get_iface (self),
-	                                            nm_setting_connection_get_uuid (s_con));
+	leases = nm_dhcp_manager_get_lease_config (dhcp_mgr,
+	                                           nm_device_get_iface (self),
+	                                           nm_setting_connection_get_uuid (s_con));
 	g_object_unref (dhcp_mgr);
 
 	method = nm_setting_ip4_config_get_method (s_ip4);
