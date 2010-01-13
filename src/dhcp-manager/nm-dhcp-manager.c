@@ -226,6 +226,21 @@ out:
 	g_free (reason);
 }
 
+static GType
+get_client_type (const char *client, GError **error)
+{
+	g_return_val_if_fail (client != NULL, 0);
+
+	if (!strcmp (client, "dhclient") && strlen (DHCLIENT_PATH))
+		return NM_TYPE_DHCP_DHCLIENT;
+	else if (!strcmp (client, "dhcpcd") && strlen (DHCPCD_PATH))
+		return NM_TYPE_DHCP_DHCPCD;
+	else
+		g_set_error (error, 0, 0, "unknown or missing DHCP client '%s'", client);
+
+	return 0;
+}
+
 NMDHCPManager *
 nm_dhcp_manager_new (const char *client, GError **error)
 {
@@ -239,16 +254,16 @@ nm_dhcp_manager_new (const char *client, GError **error)
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (singleton);
 
 	/* Figure out which DHCP client to use */
-	if (!strcmp (client, "dhclient") && strlen (DHCLIENT_PATH)) {
-		priv->client_type = NM_TYPE_DHCP_DHCLIENT;
-		priv->get_lease_config_func = nm_dhcp_dhclient_get_lease_config;
-	} else if (!strcmp (client, "dhcpcd") && strlen (DHCPCD_PATH)) {
-		priv->client_type = NM_TYPE_DHCP_DHCPCD;
-		priv->get_lease_config_func = nm_dhcp_dhcpcd_get_lease_config;
-	} else {
-		g_set_error (error, 0, 0, "unknown or missing DHCP client '%s'", client);
+	priv->client_type = get_client_type (client, error);
+	if (!priv->client_type)
 		goto error;
-	}
+
+	if (priv->client_type == NM_TYPE_DHCP_DHCLIENT)
+		priv->get_lease_config_func = nm_dhcp_dhclient_get_lease_config;
+	else if (priv->client_type == NM_TYPE_DHCP_DHCPCD)
+		priv->get_lease_config_func = nm_dhcp_dhcpcd_get_lease_config;
+	else
+		g_assert_not_reached ();
 
 	priv->clients = g_hash_table_new_full (g_direct_hash, g_direct_equal,
 	                                       NULL,
@@ -368,7 +383,7 @@ nm_dhcp_manager_start_client (NMDHCPManager *self,
 	}
 
 	/* And make a new one */
-	client = g_object_new (NM_TYPE_DHCP_DHCLIENT,
+	client = g_object_new (priv->client_type,
 	                       NM_DHCP_CLIENT_INTERFACE, iface,
 	                       NULL);
 	g_return_val_if_fail (client != NULL, NULL);
@@ -444,14 +459,24 @@ nm_dhcp_manager_get_lease_config (NMDHCPManager *self,
 }
 
 NMIP4Config *
-nm_dhcp_manager_test_ip4_options_to_config (const char *iface,
+nm_dhcp_manager_test_ip4_options_to_config (const char *dhcp_client,
+                                            const char *iface,
                                             GHashTable *options,
                                             const char *reason)
 {
 	NMDHCPClient *client;
 	NMIP4Config *config;
+	GType client_type;
+	GError *error = NULL;
 
-	client = (NMDHCPClient *) g_object_new (NM_TYPE_DHCP_DHCLIENT,
+	client_type = get_client_type (dhcp_client, &error);
+	if (!client_type) {
+		g_warning ("Error: %s", error ? error->message : "(unknown)");
+		g_clear_error (&error);
+		return NULL;
+	}
+
+	client = (NMDHCPClient *) g_object_new (client_type,
 	                                        NM_DHCP_CLIENT_INTERFACE, iface,
 	                                        NULL);
 	g_return_val_if_fail (client != NULL, NULL);
