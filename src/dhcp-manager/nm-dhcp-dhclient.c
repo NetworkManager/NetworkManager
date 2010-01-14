@@ -61,10 +61,11 @@ typedef struct {
 
 
 static char *
-get_leasefile_for_iface (const char * iface, const char *uuid)
+get_leasefile_for_iface (const char * iface, const char *uuid, gboolean ipv6)
 {
-	return g_strdup_printf ("%s/dhclient-%s-%s.lease",
+	return g_strdup_printf ("%s/dhclient%s-%s-%s.lease",
 	                        NM_DHCLIENT_LEASE_DIR,
+	                        ipv6 ? "6" : "",
 	                        uuid,
 	                        iface);
 }
@@ -118,7 +119,7 @@ nm_dhcp_dhclient_get_lease_config (const char *iface, const char *uuid)
 	char **line, **split = NULL;
 	GHashTable *hash = NULL;
 
-	leasefile = get_leasefile_for_iface (iface, uuid);
+	leasefile = get_leasefile_for_iface (iface, uuid, FALSE);
 	if (!leasefile)
 		return NULL;
 
@@ -456,14 +457,18 @@ dhclient_start (NMDHCPClient *client,
 	GError *error = NULL;
 	const char *iface, *uuid;
 	char *binary_name;
+	gboolean ipv6;
 
 	g_return_val_if_fail (priv->pid_file == NULL, -1);
 	g_return_val_if_fail (ip_opt != NULL, -1);
 
 	iface = nm_dhcp_client_get_iface (client);
 	uuid = nm_dhcp_client_get_uuid (client);
+	ipv6 = nm_dhcp_client_get_ipv6 (client);
 
-	priv->pid_file = g_strdup_printf (LOCALSTATEDIR "/run/dhclient-%s.pid", iface);
+	priv->pid_file = g_strdup_printf (LOCALSTATEDIR "/run/dhclient%s-%s.pid",
+	                                  ipv6 ? "6" : "",
+	                                  iface);
 	if (!priv->pid_file) {
 		nm_warning ("%s: not enough memory for dhcpcd options.", iface);
 		return -1;
@@ -479,7 +484,7 @@ dhclient_start (NMDHCPClient *client,
 	nm_dhcp_client_stop_existing (priv->pid_file, binary_name);
 	g_free (binary_name);
 
-	priv->lease_file = get_leasefile_for_iface (iface, uuid);
+	priv->lease_file = get_leasefile_for_iface (iface, uuid, ipv6);
 	if (!priv->lease_file) {
 		nm_warning ("%s: not enough memory for dhclient options.", iface);
 		return -1;
@@ -501,8 +506,10 @@ dhclient_start (NMDHCPClient *client,
 	g_ptr_array_add (argv, (gpointer) "-lf");	/* Set lease file */
 	g_ptr_array_add (argv, (gpointer) priv->lease_file);
 
-	g_ptr_array_add (argv, (gpointer) "-cf");	/* Set interface config file */
-	g_ptr_array_add (argv, (gpointer) priv->conf_file);
+	if (priv->conf_file) {
+		g_ptr_array_add (argv, (gpointer) "-cf");	/* Set interface config file */
+		g_ptr_array_add (argv, (gpointer) priv->conf_file);
+	}
 
 	g_ptr_array_add (argv, (gpointer) iface);
 	g_ptr_array_add (argv, NULL);
