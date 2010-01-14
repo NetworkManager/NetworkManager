@@ -114,6 +114,8 @@ NetworkManager_SOURCES = \
 		nm-netlink.h \
 		nm-dhcp4-config.c \
 		nm-dhcp4-config.h \
+		nm-dhcp6-config.c \
+		nm-dhcp6-config.h \
 		nm-rfkill.h
 
 nm-access-point-glue.h: $(top_srcdir)/introspection/nm-access-point.xml
@@ -149,6 +151,9 @@ nm-active-connection-glue.h: $(top_srcdir)/introspection/nm-active-connection.xm
 nm-dhcp4-config-glue.h: $(top_srcdir)/introspection/nm-dhcp4-config.xml
 	dbus-binding-tool --prefix=nm_dhcp4_config --mode=glib-server --output=$@ $<
 
+nm-dhcp6-config-glue.h: $(top_srcdir)/introspection/nm-dhcp6-config.xml
+	dbus-binding-tool --prefix=nm_dhcp6_config --mode=glib-server --output=$@ $<
+
 BUILT_SOURCES = \
 	nm-access-point-glue.h \
 	nm-manager-glue.h \
@@ -160,7 +165,8 @@ BUILT_SOURCES = \
 	nm-ip4-config-glue.h \
 	nm-ip6-config-glue.h \
 	nm-active-connection-glue.h \
-	nm-dhcp4-config-glue.h
+	nm-dhcp4-config-glue.h \
+	nm-dhcp6-config-glue.h
 
 NetworkManager_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
