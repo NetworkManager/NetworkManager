@@ -674,7 +674,10 @@ get_property (GObject *object, guint prop_id,
 		g_value_take_string (value, nm_ether_ntop (&hw_addr));
 		break;
 	case PROP_COMPANION:
-		g_value_set_string (value, nm_device_get_udi (priv->companion));
+		if (priv->companion)
+			g_value_set_boxed (value, nm_device_get_udi (priv->companion));
+		else
+			g_value_set_boxed (value, "/");
 		break;
 	case PROP_ACTIVE_CHANNEL:
 		g_value_set_uint (value, nm_device_olpc_mesh_get_channel (device));
@@ -720,13 +723,15 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 		                      "Hardware MAC address",
 		                      NULL,
 		                      G_PARAM_READABLE));
+
 	g_object_class_install_property
 		(object_class, PROP_COMPANION,
-		 g_param_spec_string (NM_DEVICE_OLPC_MESH_COMPANION,
-		                      "Companion device",
-		                      "Companion device object path",
-		                      NULL,
-		                      G_PARAM_READABLE));
+		 g_param_spec_boxed (NM_DEVICE_OLPC_MESH_COMPANION,
+		                     "Companion device",
+		                     "Companion device object path",
+		                     DBUS_TYPE_G_OBJECT_PATH,
+		                     G_PARAM_READABLE));
+
 	g_object_class_install_property
 		(object_class, PROP_ACTIVE_CHANNEL,
 		 g_param_spec_uint (NM_DEVICE_OLPC_MESH_ACTIVE_CHANNEL,
@@ -765,7 +770,11 @@ companion_notify_cb (NMDeviceWifi *companion, GParamSpec *pspec, gpointer user_d
 
 /* disconnect from mesh if someone starts using the companion */
 static void
-companion_state_changed_cb (NMDeviceWifi *companion, NMDeviceState state, NMDeviceState old_state, NMDeviceStateReason reason, gpointer user_data)
+companion_state_changed_cb (NMDeviceWifi *companion,
+                            NMDeviceState state,
+                            NMDeviceState old_state,
+                            NMDeviceStateReason reason,
+                            gpointer user_data)
 {
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (user_data);
 	NMDeviceState self_state = nm_device_get_state (NM_DEVICE (self));
@@ -843,6 +852,8 @@ is_companion (NMDeviceOlpcMesh *self, NMDevice *other)
 	                  G_CALLBACK (companion_scan_allowed_cb), self);
 	g_signal_connect (G_OBJECT (other), "autoconnect-allowed",
 	                  G_CALLBACK (companion_autoconnect_allowed_cb), self);
+
+	g_object_notify (G_OBJECT (self), NM_DEVICE_OLPC_MESH_COMPANION);
 
 	return TRUE;
 }
