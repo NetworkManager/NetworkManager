@@ -102,15 +102,16 @@ typedef struct {
 	gboolean        ip4_ready;
 	gboolean        ip6_ready;
 
+	/* Generic DHCP stuff */
 	NMDHCPManager * dhcp_manager;
+	guint32         dhcp_timeout;
+	GByteArray *    dhcp_anycast_address;
 
 	/* IP4 configuration info */
 	NMIP4Config *   ip4_config;			/* Config from DHCP, PPP, or system config files */
 	NMDHCPClient *  dhcp4_client;
-	guint32         dhcp_timeout;
-	gulong          dhcp_state_sigid;
-	gulong          dhcp_timeout_sigid;
-	GByteArray *    dhcp_anycast_address;
+	gulong          dhcp4_state_sigid;
+	gulong          dhcp4_timeout_sigid;
 	NMDHCP4Config * dhcp4_config;
 
 	/* dnsmasq stuff for shared connections */
@@ -1221,14 +1222,14 @@ real_act_stage3_ip4_config_start (NMDevice *self, NMDeviceStateReason *reason)
 		                                                priv->dhcp_timeout,
 		                                                anycast);
 		if (priv->dhcp4_client) {
-			priv->dhcp_state_sigid = g_signal_connect (priv->dhcp4_client,
-			                                           "state-changed",
-			                                           G_CALLBACK (dhcp_state_changed),
-			                                           self);
-			priv->dhcp_timeout_sigid = g_signal_connect (priv->dhcp4_client,
-			                                             "timeout",
-			                                             G_CALLBACK (dhcp_timeout),
-			                                             self);
+			priv->dhcp4_state_sigid = g_signal_connect (priv->dhcp4_client,
+			                                            "state-changed",
+			                                            G_CALLBACK (dhcp_state_changed),
+			                                            self);
+			priv->dhcp4_timeout_sigid = g_signal_connect (priv->dhcp4_client,
+			                                              "timeout",
+			                                              G_CALLBACK (dhcp_timeout),
+			                                              self);
 
 			/* DHCP devices will be notified by the DHCP manager when
 			 * stuff happens.	
@@ -2116,14 +2117,14 @@ dhcp4_cleanup (NMDevice *self, gboolean stop)
 
 	if (priv->dhcp4_client) {
 		/* Stop any ongoing DHCP transaction on this device */
-		if (priv->dhcp_state_sigid) {
-			g_signal_handler_disconnect (priv->dhcp4_client, priv->dhcp_state_sigid);
-			priv->dhcp_state_sigid = 0;
+		if (priv->dhcp4_state_sigid) {
+			g_signal_handler_disconnect (priv->dhcp4_client, priv->dhcp4_state_sigid);
+			priv->dhcp4_state_sigid = 0;
 		}
 
-		if (priv->dhcp_timeout_sigid) {
-			g_signal_handler_disconnect (priv->dhcp4_client, priv->dhcp_timeout_sigid);
-			priv->dhcp_timeout_sigid = 0;
+		if (priv->dhcp4_timeout_sigid) {
+			g_signal_handler_disconnect (priv->dhcp4_client, priv->dhcp4_timeout_sigid);
+			priv->dhcp4_timeout_sigid = 0;
 		}
 
 		if (stop)
