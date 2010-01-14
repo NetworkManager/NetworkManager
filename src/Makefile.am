@@ -37,6 +37,7 @@ noinst_LTLIBRARIES = libtest-dhcp.la
 
 libtest_dhcp_la_SOURCES = \
 	nm-ip4-config.c \
+	nm-ip6-config.c \
 	nm-hostname-provider.c \
 	nm-dbus-manager.c
 

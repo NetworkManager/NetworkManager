@@ -25,6 +25,7 @@
 #include <nm-setting-ip4-config.h>
 #include <nm-setting-ip6-config.h>
 #include <nm-ip4-config.h>
+#include <nm-ip6-config.h>
 
 #define NM_TYPE_DHCP_CLIENT            (nm_dhcp_client_get_type ())
 #define NM_DHCP_CLIENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP_CLIENT, NMDHCPClient))
@@ -41,6 +42,7 @@
 typedef enum {
 	DHC_NBI = 0,     /* no broadcast interfaces found */
 	DHC_PREINIT,     /* configuration started */
+	DHC_PREINIT6,    /* configuration started */
 	DHC_BOUND4,      /* IPv4 lease obtained */
 	DHC_BOUND6,      /* IPv6 lease obtained */
 	DHC_IPV4LL,      /* IPv4LL address obtained */
@@ -119,11 +121,13 @@ void nm_dhcp_client_new_options (NMDHCPClient *self,
                                  GHashTable *options,
                                  const char *reason);
 
-gboolean nm_dhcp_client_foreach_dhcp4_option (NMDHCPClient *self,
-                                              GHFunc func,
-                                              gpointer user_data);
+gboolean nm_dhcp_client_foreach_option (NMDHCPClient *self,
+                                        GHFunc func,
+                                        gpointer user_data);
 
 NMIP4Config *nm_dhcp_client_get_ip4_config   (NMDHCPClient *self, gboolean test);
+
+NMIP6Config *nm_dhcp_client_get_ip6_config   (NMDHCPClient *self, gboolean test);
 
 /* Backend helpers */
 void nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name);

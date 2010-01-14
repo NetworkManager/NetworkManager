@@ -375,6 +375,7 @@ typedef struct {
 static DhcState state_table[] = {
 	{ DHC_NBI,     "nbi" },
 	{ DHC_PREINIT, "preinit" },
+	{ DHC_PREINIT6,"preinit6" },
 	{ DHC_BOUND4,  "bound" },
 	{ DHC_BOUND6,  "bound6" },
 	{ DHC_IPV4LL,  "ipv4ll" },
@@ -507,7 +508,8 @@ nm_dhcp_client_new_options (NMDHCPClient *self,
 	}
 
 	priv->state = new_state;
-	g_message ("DHCP: device %s state changed %s -> %s",
+	g_message ("DHCPv%c: device %s state changed %s -> %s",
+	           priv->ipv6 ? '6' : '4',
 	           priv->iface,
 	           state_to_string (old_state),
 	           state_to_string (priv->state));
@@ -524,14 +526,14 @@ nm_dhcp_client_new_options (NMDHCPClient *self,
 typedef struct {
 	GHFunc func;
 	gpointer user_data;
-} Dhcp4ForeachInfo;
+} DhcpForeachInfo;
 
 static void
-iterate_dhcp4_config_option (gpointer key,
-                             gpointer value,
-                             gpointer user_data)
+iterate_dhcp_config_option (gpointer key,
+                            gpointer value,
+                            gpointer user_data)
 {
-	Dhcp4ForeachInfo *info = (Dhcp4ForeachInfo *) user_data;
+	DhcpForeachInfo *info = (DhcpForeachInfo *) user_data;
 	char *tmp_key = NULL;
 	const char **p;
 	static const char *filter_options[] = {
@@ -557,12 +559,12 @@ iterate_dhcp4_config_option (gpointer key,
 }
 
 gboolean
-nm_dhcp_client_foreach_dhcp4_option (NMDHCPClient *self,
-                                     GHFunc func,
-                                     gpointer user_data)
+nm_dhcp_client_foreach_option (NMDHCPClient *self,
+                               GHFunc func,
+                               gpointer user_data)
 {
 	NMDHCPClientPrivate *priv;
-	Dhcp4ForeachInfo info = { NULL, NULL };
+	DhcpForeachInfo info = { NULL, NULL };
 
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
@@ -577,7 +579,7 @@ nm_dhcp_client_foreach_dhcp4_option (NMDHCPClient *self,
 
 	info.func = func;
 	info.user_data = user_data;
-	g_hash_table_foreach (priv->options, iterate_dhcp4_config_option, &info);
+	g_hash_table_foreach (priv->options, iterate_dhcp_config_option, &info);
 	return TRUE;
 }
 
@@ -629,14 +631,14 @@ out:
 }
 
 static void
-process_domain_search (NMIP4Config *ip4_config, const char *str)
+process_domain_search (const char *str, GFunc add_func, gpointer user_data)
 {
 	char **searches, **s;
 	char *unescaped, *p;
 	int i;
 
 	g_return_if_fail (str != NULL);
-	g_return_if_fail (ip4_config != NULL);
+	g_return_if_fail (add_func != NULL);
 
 	p = unescaped = g_strdup (str);
 	do {
@@ -658,13 +660,19 @@ process_domain_search (NMIP4Config *ip4_config, const char *str)
 	for (s = searches; *s; s++) {
 		if (strlen (*s)) {
 			g_message ("  domain search '%s'", *s);
-			nm_ip4_config_add_search (ip4_config, *s);
+			add_func (*s, user_data);
 		}
 	}
 	g_strfreev (searches);
 
 out:
 	g_free (unescaped);
+}
+
+static void
+ip4_add_domain_search (gpointer data, gpointer user_data)
+{
+	nm_ip4_config_add_search (NM_IP4_CONFIG (user_data), (const char *) data);
 }
 
 /* Given a table of DHCP options from the client, convert into an IP4Config */
@@ -789,7 +797,7 @@ ip4_options_to_config (NMDHCPClient *self)
 
 	str = g_hash_table_lookup (priv->options, "new_domain_search");
 	if (str)
-		process_domain_search (ip4_config, str);
+		process_domain_search (str, ip4_add_domain_search, ip4_config);
 
 	str = g_hash_table_lookup (priv->options, "new_netbios_name_servers");
 	if (str) {
@@ -844,6 +852,115 @@ nm_dhcp_client_get_ip4_config (NMDHCPClient *self, gboolean test)
 	}
 
 	return ip4_options_to_config (self);
+}
+
+/********************************************/
+
+static void
+ip6_add_domain_search (gpointer data, gpointer user_data)
+{
+	nm_ip6_config_add_search (NM_IP6_CONFIG (user_data), (const char *) data);
+}
+
+/* Given a table of DHCP options from the client, convert into an IP6Config */
+static NMIP6Config *
+ip6_options_to_config (NMDHCPClient *self)
+{
+	NMDHCPClientPrivate *priv;
+	NMIP6Config *ip6_config = NULL;
+	struct in6_addr tmp_addr;
+	NMIP6Address *addr = NULL;
+	char *str = NULL;
+
+	g_return_val_if_fail (self != NULL, NULL);
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
+
+	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
+	g_return_val_if_fail (priv->options != NULL, NULL);
+
+	ip6_config = nm_ip6_config_new ();
+	if (!ip6_config) {
+		g_warning ("%s: couldn't allocate memory for an IP6Config!", priv->iface);
+		return NULL;
+	}
+
+	addr = nm_ip6_address_new ();
+	if (!addr) {
+		g_warning ("%s: couldn't allocate memory for an IP6 Address!", priv->iface);
+		goto error;
+	}
+
+	str = g_hash_table_lookup (priv->options, "new_ip6_address");
+	if (str && (inet_pton (AF_INET6, str, &tmp_addr) > 0)) {
+		nm_ip6_address_set_address (addr, &tmp_addr);
+		g_message ("  address %s", str);
+	} else
+		goto error;
+
+	str = g_hash_table_lookup (priv->options, "new_ip6_prefixlen");
+	if (str) {
+		long unsigned int prefix;
+
+		errno = 0;
+		prefix = strtoul (str, NULL, 10);
+		if (errno != 0 || prefix > 128)
+			goto error;
+
+		nm_ip6_address_set_prefix (addr, (guint32) prefix);
+		g_message ("  prefix %lu", prefix);
+	}
+
+	nm_ip6_config_take_address (ip6_config, addr);
+	addr = NULL;
+
+	str = g_hash_table_lookup (priv->options, "new_host_name");
+	if (str)
+		g_message ("  hostname '%s'", str);
+
+	str = g_hash_table_lookup (priv->options, "new_dhcp6_name_servers");
+	if (str) {
+		char **searches = g_strsplit (str, " ", 0);
+		char **s;
+
+		for (s = searches; *s; s++) {
+			if (inet_pton (AF_INET6, *s, &tmp_addr) > 0) {
+				nm_ip6_config_add_nameserver (ip6_config, &tmp_addr);
+				g_message ("  nameserver '%s'", *s);
+			} else
+				g_warning ("Ignoring invalid nameserver '%s'", *s);
+		}
+		g_strfreev (searches);
+	}
+
+	str = g_hash_table_lookup (priv->options, "new_dhcp6_domain_search");
+	if (str)
+		process_domain_search (str, ip6_add_domain_search, ip6_config);
+
+	return ip6_config;
+
+error:
+	if (addr)
+		nm_ip6_address_unref (addr);
+	g_object_unref (ip6_config);
+	return NULL;
+}
+
+NMIP6Config *
+nm_dhcp_client_get_ip6_config (NMDHCPClient *self, gboolean test)
+{
+	NMDHCPClientPrivate *priv;
+
+	g_return_val_if_fail (self != NULL, NULL);
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
+
+	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
+
+	if (test && !state_is_bound (priv->state)) {
+		g_warning ("%s: dhcp client didn't bind to a lease.", priv->iface);
+		return NULL;
+	}
+
+	return ip6_options_to_config (self);
 }
 
 /********************************************/
