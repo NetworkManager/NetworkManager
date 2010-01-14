@@ -32,10 +32,12 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-dhcp-client.h"
 
-#define NM_DHCP_TIMEOUT   	45 /* DHCP timeout, in seconds */
-
 typedef struct {
 	char *       iface;
+	gboolean     ipv6;
+	char *       uuid;
+	guint32      timeout;
+
 	guchar       state;
 	GPid         pid;
 	guint        timeout_id;
@@ -58,6 +60,9 @@ static guint signals[LAST_SIGNAL] = { 0 };
 enum {
 	PROP_0,
 	PROP_IFACE,
+	PROP_IPV6,
+	PROP_UUID,
+	PROP_TIMEOUT,
 	LAST_PROP
 };
 
@@ -79,6 +84,24 @@ nm_dhcp_client_get_iface (NMDHCPClient *self)
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
 
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->iface;
+}
+
+gboolean
+nm_dhcp_client_get_ipv6 (NMDHCPClient *self)
+{
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
+
+	return NM_DHCP_CLIENT_GET_PRIVATE (self)->ipv6;
+}
+
+const char *
+nm_dhcp_client_get_uuid (NMDHCPClient *self)
+{
+	g_return_val_if_fail (self != NULL, NULL);
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
+
+	return NM_DHCP_CLIENT_GET_PRIVATE (self)->uuid;
 }
 
 /********************************************/
@@ -193,12 +216,26 @@ daemon_watch_cb (GPid pid, gint status, gpointer user_data)
 	g_signal_emit (G_OBJECT (self), signals[STATE_CHANGED], 0, priv->state);
 }
 
+static void
+start_monitor (NMDHCPClient *self)
+{
+	NMDHCPClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
+
+	g_return_if_fail (priv->pid > 0);
+
+	/* Set up a timeout on the transaction to kill it after the timeout */
+	priv->timeout_id = g_timeout_add_seconds (priv->timeout,
+	                                          daemon_timeout,
+	                                          self);
+	priv->watch_id = g_child_watch_add (priv->pid,
+	                                    (GChildWatchFunc) daemon_watch_cb,
+	                                    self);
+}
+
 gboolean
-nm_dhcp_client_start (NMDHCPClient *self,
-                      const char *uuid,
-                      NMSettingIP4Config *s_ip4,
-                      guint32 timeout_secs,
-                      guint8 *dhcp_anycast_addr)
+nm_dhcp_client_start_ip4 (NMDHCPClient *self,
+                          NMSettingIP4Config *s_ip4,
+                          guint8 *dhcp_anycast_addr)
 {
 	NMDHCPClientPrivate *priv;
 
@@ -207,28 +244,42 @@ nm_dhcp_client_start (NMDHCPClient *self,
 
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 	g_return_val_if_fail (priv->pid == -1, FALSE);
+	g_return_val_if_fail (priv->ipv6 == FALSE, FALSE);
+	g_return_val_if_fail (priv->uuid != NULL, FALSE);
 
-	if (timeout_secs == 0)
-		timeout_secs = NM_DHCP_TIMEOUT;
+	g_message ("Activation (%s) Beginning DHCPv4 transaction (timeout in %d seconds)",
+	           priv->iface, priv->timeout);
 
-	g_message ("Activation (%s) Beginning DHCP transaction (timeout in %d seconds)",
-	           priv->iface, timeout_secs);
-	priv->pid = NM_DHCP_CLIENT_GET_CLASS (self)->ip4_start (self,
-	                                                        uuid,
-	                                                        s_ip4,
-	                                                        dhcp_anycast_addr);
-	if (priv->pid <= 0)
-		return FALSE;
+	priv->pid = NM_DHCP_CLIENT_GET_CLASS (self)->ip4_start (self, s_ip4, dhcp_anycast_addr);
+	if (priv->pid)
+		start_monitor (self);
 
-	/* Set up a timeout on the transaction to kill it after the timeout */
-	priv->timeout_id = g_timeout_add_seconds (timeout_secs,
-	                                          daemon_timeout,
-	                                          self);
-	priv->watch_id = g_child_watch_add (priv->pid,
-	                                    (GChildWatchFunc) daemon_watch_cb,
-	                                    self);
+	return priv->pid ? TRUE : FALSE;
+}
 
-	return TRUE;
+gboolean
+nm_dhcp_client_start_ip6 (NMDHCPClient *self,
+                          NMSettingIP6Config *s_ip6,
+                          guint8 *dhcp_anycast_addr)
+{
+	NMDHCPClientPrivate *priv;
+
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
+
+	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
+	g_return_val_if_fail (priv->pid == -1, FALSE);
+	g_return_val_if_fail (priv->ipv6 == TRUE, FALSE);
+	g_return_val_if_fail (priv->uuid != NULL, FALSE);
+
+	g_message ("Activation (%s) Beginning DHCPv6 transaction (timeout in %d seconds)",
+	           priv->iface, priv->timeout);
+
+	priv->pid = NM_DHCP_CLIENT_GET_CLASS (self)->ip6_start (self, s_ip6, dhcp_anycast_addr);
+	if (priv->pid > 0)
+		start_monitor (self);
+
+	return priv->pid ? TRUE : FALSE;
 }
 
 void
@@ -816,6 +867,15 @@ get_property (GObject *object, guint prop_id,
 	case PROP_IFACE:
 		g_value_set_string (value, priv->iface);
 		break;
+	case PROP_IPV6:
+		g_value_set_boolean (value, priv->ipv6);
+		break;
+	case PROP_UUID:
+		g_value_set_string (value, priv->uuid);
+		break;
+	case PROP_TIMEOUT:
+		g_value_set_uint (value, priv->timeout);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -832,6 +892,17 @@ set_property (GObject *object, guint prop_id,
 	case PROP_IFACE:
 		/* construct-only */
 		priv->iface = g_strdup (g_value_get_string (value));
+		break;
+	case PROP_IPV6:
+		/* construct-only */
+		priv->ipv6 = g_value_get_boolean (value);
+		break;
+	case PROP_UUID:
+		/* construct-only */
+		priv->uuid = g_value_dup_string (value);
+		break;
+	case PROP_TIMEOUT:
+		priv->timeout = g_value_get_uint (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -877,6 +948,30 @@ nm_dhcp_client_class_init (NMDHCPClientClass *client_class)
 		                      "Interface",
 		                      NULL,
 		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
+		(object_class, PROP_IPV6,
+		 g_param_spec_boolean (NM_DHCP_CLIENT_IPV6,
+		                       "ipv6",
+		                       "IPv6",
+		                       FALSE,
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
+		(object_class, PROP_UUID,
+		 g_param_spec_string (NM_DHCP_CLIENT_UUID,
+		                      "uuid",
+		                      "UUID",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
+		(object_class, PROP_TIMEOUT,
+		 g_param_spec_uint (NM_DHCP_CLIENT_TIMEOUT,
+		                    "timeout",
+		                    "Timeout",
+		                    0, G_MAXUINT, 45,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	/* signals */
 	signals[STATE_CHANGED] =

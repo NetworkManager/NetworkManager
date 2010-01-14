@@ -26,6 +26,7 @@
 #include <glib-object.h>
 
 #include <nm-setting-ip4-config.h>
+#include <nm-setting-ip6-config.h>
 
 #include "nm-dhcp-client.h"
 #include "nm-ip4-config.h"
@@ -54,12 +55,19 @@ NMDHCPManager *nm_dhcp_manager_get                  (void);
 void           nm_dhcp_manager_set_hostname_provider(NMDHCPManager *manager,
 													 NMHostnameProvider *provider);
 
-NMDHCPClient * nm_dhcp_manager_start_client     (NMDHCPManager *manager,
-                                                 const char *iface,
-                                                 const char *uuid,
-                                                 NMSettingIP4Config *s_ip4,
-                                                 guint32 timeout,
-                                                 guint8 *dhcp_anycast_addr);
+NMDHCPClient * nm_dhcp_manager_start_ip4     (NMDHCPManager *manager,
+                                              const char *iface,
+                                              const char *uuid,
+                                              NMSettingIP4Config *s_ip4,
+                                              guint32 timeout,
+                                              guint8 *dhcp_anycast_addr);
+
+NMDHCPClient * nm_dhcp_manager_start_ip6     (NMDHCPManager *manager,
+                                              const char *iface,
+                                              const char *uuid,
+                                              NMSettingIP6Config *s_ip6,
+                                              guint32 timeout,
+                                              guint8 *dhcp_anycast_addr);
 
 GSList *       nm_dhcp_manager_get_lease_config (NMDHCPManager *self,
                                                  const char *iface,

@@ -47,6 +47,8 @@
 #define NM_DHCP_CLIENT_DBUS_SERVICE "org.freedesktop.nm_dhcp_client"
 #define NM_DHCP_CLIENT_DBUS_IFACE   "org.freedesktop.nm_dhcp_client"
 
+#define DHCP_TIMEOUT 45 /* default DHCP timeout, in seconds */
+
 static NMDHCPManager *singleton = NULL;
 
 typedef GSList * (*GetLeaseConfigFunc) (const char *iface, const char *uuid);
@@ -124,7 +126,8 @@ get_client_for_pid (NMDHCPManager *manager, GPid pid)
 
 static NMDHCPClient *
 get_client_for_iface (NMDHCPManager *manager,
-                      const char *iface)
+                      const char *iface,
+                      gboolean ip6)
 {
 	NMDHCPManagerPrivate *priv;
 	GHashTableIter iter;
@@ -140,7 +143,8 @@ get_client_for_iface (NMDHCPManager *manager,
 	while (g_hash_table_iter_next (&iter, NULL, &value)) {
 		NMDHCPClient *candidate = NM_DHCP_CLIENT (value);
 
-		if (!strcmp (iface, nm_dhcp_client_get_iface (candidate)))
+		if (   !strcmp (iface, nm_dhcp_client_get_iface (candidate))
+		    && (nm_dhcp_client_get_ipv6 (candidate) == ip6))
 			return candidate;
 	}
 
@@ -355,28 +359,29 @@ add_client (NMDHCPManager *self, NMDHCPClient *client)
 	g_hash_table_insert (priv->clients, client, g_object_ref (client));
 }
 
-/* Caller owns a reference to the NMDHCPClient on return */
-NMDHCPClient *
-nm_dhcp_manager_start_client (NMDHCPManager *self,
-                              const char *iface,
-                              const char *uuid,
-                              NMSettingIP4Config *s_ip4,
-                              guint32 timeout,
-                              guint8 *dhcp_anycast_addr)
+static NMDHCPClient *
+client_start (NMDHCPManager *self,
+              const char *iface,
+              const char *uuid,
+              gboolean ipv6,
+              NMSettingIP4Config *s_ip4,
+              NMSettingIP6Config *s_ip6,
+              guint32 timeout,
+              guint8 *dhcp_anycast_addr)
 {
 	NMDHCPManagerPrivate *priv;
 	NMDHCPClient *client;
-	NMSettingIP4Config *setting = NULL;
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (self, NULL);
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
 	g_return_val_if_fail (iface != NULL, NULL);
+	g_return_val_if_fail (uuid != NULL, NULL);
 
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 
 	/* Kill any old client instance */
-	client = get_client_for_iface (self, iface);
+	client = get_client_for_iface (self, iface, ipv6);
 	if (client) {
 		nm_dhcp_client_stop (client);
 		remove_client (self, client);
@@ -385,29 +390,17 @@ nm_dhcp_manager_start_client (NMDHCPManager *self,
 	/* And make a new one */
 	client = g_object_new (priv->client_type,
 	                       NM_DHCP_CLIENT_INTERFACE, iface,
+	                       NM_DHCP_CLIENT_IPV6, ipv6,
+	                       NM_DHCP_CLIENT_UUID, uuid,
+	                       NM_DHCP_CLIENT_TIMEOUT, timeout ? timeout : DHCP_TIMEOUT,
 	                       NULL);
 	g_return_val_if_fail (client != NULL, NULL);
 	add_client (self, client);
 
-	if (   s_ip4
-	    && nm_setting_ip4_config_get_dhcp_send_hostname (s_ip4)
-		&& (nm_setting_ip4_config_get_dhcp_hostname (s_ip4) == NULL)
-		&& priv->hostname_provider != NULL) {
-
-		/* We're asked to send the hostname to DHCP server, the hostname
-		 * isn't specified, and a hostname provider is registered: use that
-		 */
-		setting = NM_SETTING_IP4_CONFIG (nm_setting_duplicate (NM_SETTING (s_ip4)));
-		g_object_set (G_OBJECT (setting),
-					  NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME,
-					  nm_hostname_provider_get_hostname (priv->hostname_provider),
-					  NULL);
-	}
-
-	success = nm_dhcp_client_start (client, uuid, setting, timeout, dhcp_anycast_addr);
-
-	if (setting)
-		g_object_unref (setting);
+	if (ipv6)
+		success = nm_dhcp_client_start_ip4 (client, s_ip4, dhcp_anycast_addr);
+	else
+		success = nm_dhcp_client_start_ip6 (client, s_ip6, dhcp_anycast_addr);
 
 	if (!success) {
 		remove_client (self, client);
@@ -416,6 +409,61 @@ nm_dhcp_manager_start_client (NMDHCPManager *self,
 	}
 
 	return client;
+}
+
+/* Caller owns a reference to the NMDHCPClient on return */
+NMDHCPClient *
+nm_dhcp_manager_start_ip4 (NMDHCPManager *self,
+                           const char *iface,
+                           const char *uuid,
+                           NMSettingIP4Config *s_ip4,
+                           guint32 timeout,
+                           guint8 *dhcp_anycast_addr)
+{
+	NMDHCPManagerPrivate *priv;
+	NMDHCPClient *client = NULL;
+
+	g_return_val_if_fail (self, NULL);
+	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
+
+	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
+
+	if (s_ip4) {
+		if (   nm_setting_ip4_config_get_dhcp_send_hostname (s_ip4)
+		    && (nm_setting_ip4_config_get_dhcp_hostname (s_ip4) == NULL)
+		    && priv->hostname_provider != NULL) {
+
+			s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_duplicate (NM_SETTING (s_ip4)));
+
+			/* We're asked to send the hostname to DHCP server, the hostname
+			 * isn't specified, and a hostname provider is registered: use that
+			 */
+			g_object_set (G_OBJECT (s_ip4),
+						  NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME,
+						  nm_hostname_provider_get_hostname (priv->hostname_provider),
+						  NULL);
+		} else
+			g_object_ref (s_ip4);
+	}
+
+	client = client_start (self, iface, uuid, FALSE, s_ip4, NULL, timeout, dhcp_anycast_addr);
+
+	if (s_ip4)
+		g_object_unref (s_ip4);
+
+	return client;
+}
+
+/* Caller owns a reference to the NMDHCPClient on return */
+NMDHCPClient *
+nm_dhcp_manager_start_ip6 (NMDHCPManager *self,
+                           const char *iface,
+                           const char *uuid,
+                           NMSettingIP6Config *s_ip6,
+                           guint32 timeout,
+                           guint8 *dhcp_anycast_addr)
+{
+	return client_start (self, iface, uuid, TRUE, NULL, s_ip6, timeout, dhcp_anycast_addr);
 }
 
 static void

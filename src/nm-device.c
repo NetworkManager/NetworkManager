@@ -1215,12 +1215,12 @@ real_act_stage3_ip4_config_start (NMDevice *self, NMDeviceStateReason *reason)
 
 		/* DHCP manager will cancel any transaction already in progress and we do not
 		   want to cancel this activation if we get "down" state from that. */
-		priv->dhcp4_client = nm_dhcp_manager_start_client (priv->dhcp_manager,
-		                                                   ip_iface,
-		                                                   uuid,
-		                                                   s_ip4,
-		                                                   priv->dhcp_timeout,
-		                                                   anycast);
+		priv->dhcp4_client = nm_dhcp_manager_start_ip4 (priv->dhcp_manager,
+		                                                ip_iface,
+		                                                uuid,
+		                                                s_ip4,
+		                                                priv->dhcp_timeout,
+		                                                anycast);
 		if (priv->dhcp4_client) {
 			priv->dhcp_state_sigid = g_signal_connect (priv->dhcp4_client,
 			                                           "state-changed",

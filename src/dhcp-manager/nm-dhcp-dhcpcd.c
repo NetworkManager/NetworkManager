@@ -62,7 +62,6 @@ dhcpcd_child_setup (gpointer user_data G_GNUC_UNUSED)
 
 static GPid
 real_ip4_start (NMDHCPClient *client,
-                const char *uuid,
                 NMSettingIP4Config *s_ip4,
                 guint8 *dhcp_anycast_addr)
 {
@@ -71,11 +70,12 @@ real_ip4_start (NMDHCPClient *client,
 	GPid pid = 0;
 	GError *error = NULL;
 	char *pid_contents = NULL, *binary_name;
-	const char *iface;
+	const char *iface, *uuid;
 
 	g_return_val_if_fail (priv->pid_file == NULL, -1);
 
 	iface = nm_dhcp_client_get_iface (client);
+	uuid = nm_dhcp_client_get_uuid (client);
 
 	priv->pid_file = g_strdup_printf (LOCALSTATEDIR "/run/dhcpcd-%s.pid", iface);
 	if (!priv->pid_file) {
@@ -118,6 +118,15 @@ real_ip4_start (NMDHCPClient *client,
 	g_free (pid_contents);
 	g_ptr_array_free (argv, TRUE);
 	return pid;
+}
+
+static GPid
+real_ip6_start (NMDHCPClient *client,
+                NMSettingIP6Config *s_ip6,
+                guint8 *dhcp_anycast_addr)
+{
+	g_warning ("The dhcpcd backend does not support IPv6.");
+	return -1;
 }
 
 static void
@@ -238,6 +247,7 @@ nm_dhcp_dhcpcd_class_init (NMDHCPDhcpcdClass *dhcpcd_class)
 	object_class->dispose = dispose;
 
 	client_class->ip4_start = real_ip4_start;
+	client_class->ip6_start = real_ip6_start;
 	client_class->stop = real_stop;
 	client_class->ip4_process_classless_routes = real_ip4_process_classless_routes;
 }

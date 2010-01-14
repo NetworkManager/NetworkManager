@@ -22,6 +22,8 @@
 #include <glib.h>
 #include <glib-object.h>
 
+#include <nm-setting-ip4-config.h>
+#include <nm-setting-ip6-config.h>
 #include <nm-ip4-config.h>
 
 #define NM_TYPE_DHCP_CLIENT            (nm_dhcp_client_get_type ())
@@ -32,6 +34,9 @@
 #define NM_DHCP_CLIENT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP_CLIENT, NMDHCPClientClass))
 
 #define NM_DHCP_CLIENT_INTERFACE "iface"
+#define NM_DHCP_CLIENT_IPV6      "ipv6"
+#define NM_DHCP_CLIENT_UUID      "uuid"
+#define NM_DHCP_CLIENT_TIMEOUT   "timeout"
 
 typedef enum {
 	DHC_NBI = 0,     /* no broadcast interfaces found */
@@ -76,9 +81,12 @@ typedef struct {
 	                                          guint32 *out_gwaddr);
 
 	GPid (*ip4_start)                        (NMDHCPClient *self,
-                                              const char *uuid,
-                                              NMSettingIP4Config *s_ip4,
-                                              guint8 *anycast_addr);
+	                                          NMSettingIP4Config *s_ip4,
+	                                          guint8 *anycast_addr);
+
+	GPid (*ip6_start)                        (NMDHCPClient *self,
+	                                          NMSettingIP6Config *s_ip6,
+	                                          guint8 *anycast_addr);
 
 	void (*stop)                             (NMDHCPClient *self);
 
@@ -93,11 +101,17 @@ GPid nm_dhcp_client_get_pid (NMDHCPClient *self);
 
 const char *nm_dhcp_client_get_iface (NMDHCPClient *self);
 
-gboolean nm_dhcp_client_start (NMDHCPClient *self,
-                               const char *uuid,
-                               NMSettingIP4Config *s_ip4,
-                               guint32 timeout_secs,
-                               guint8 *dhcp_anycast_addr);
+gboolean nm_dhcp_client_get_ipv6 (NMDHCPClient *self);
+
+const char *nm_dhcp_client_get_uuid (NMDHCPClient *self);
+
+gboolean nm_dhcp_client_start_ip4 (NMDHCPClient *self,
+                                   NMSettingIP4Config *s_ip4,
+                                   guint8 *dhcp_anycast_addr);
+
+gboolean nm_dhcp_client_start_ip6 (NMDHCPClient *self,
+                                   NMSettingIP6Config *s_ip6,
+                                   guint8 *dhcp_anycast_addr);
 
 void nm_dhcp_client_stop (NMDHCPClient *self);
 

@@ -447,21 +447,21 @@ dhclient_child_setup (gpointer user_data G_GNUC_UNUSED)
 }
 
 static GPid
-real_ip4_start (NMDHCPClient *client,
-                const char *uuid,
-                NMSettingIP4Config *s_ip4,
-                guint8 *dhcp_anycast_addr)
+dhclient_start (NMDHCPClient *client,
+                const char *ip_opt)
 {
 	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
 	GPtrArray *argv = NULL;
 	GPid pid = 0;
 	GError *error = NULL;
-	const char *iface;
+	const char *iface, *uuid;
 	char *binary_name;
 
 	g_return_val_if_fail (priv->pid_file == NULL, -1);
+	g_return_val_if_fail (ip_opt != NULL, -1);
 
 	iface = nm_dhcp_client_get_iface (client);
+	uuid = nm_dhcp_client_get_uuid (client);
 
 	priv->pid_file = g_strdup_printf (LOCALSTATEDIR "/run/dhclient-%s.pid", iface);
 	if (!priv->pid_file) {
@@ -479,12 +479,6 @@ real_ip4_start (NMDHCPClient *client,
 	nm_dhcp_client_stop_existing (priv->pid_file, binary_name);
 	g_free (binary_name);
 
-	priv->conf_file = create_dhclient_config (iface, s_ip4, dhcp_anycast_addr);
-	if (!priv->conf_file) {
-		nm_warning ("%s: error creating dhclient configuration file.", iface);
-		return -1;
-	}
-
 	priv->lease_file = get_leasefile_for_iface (iface, uuid);
 	if (!priv->lease_file) {
 		nm_warning ("%s: not enough memory for dhclient options.", iface);
@@ -495,6 +489,8 @@ real_ip4_start (NMDHCPClient *client,
 	g_ptr_array_add (argv, (gpointer) DHCLIENT_PATH);
 
 	g_ptr_array_add (argv, (gpointer) "-d");
+
+	g_ptr_array_add (argv, (gpointer) ip_opt);
 
 	g_ptr_array_add (argv, (gpointer) "-sf");	/* Set script file */
 	g_ptr_array_add (argv, (gpointer) ACTION_SCRIPT_PATH );
@@ -521,6 +517,33 @@ real_ip4_start (NMDHCPClient *client,
 
 	g_ptr_array_free (argv, TRUE);
 	return pid;
+}
+
+static GPid
+real_ip4_start (NMDHCPClient *client,
+                NMSettingIP4Config *s_ip4,
+                guint8 *dhcp_anycast_addr)
+{
+	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
+	const char *iface;
+
+	iface = nm_dhcp_client_get_iface (client);
+
+	priv->conf_file = create_dhclient_config (iface, s_ip4, dhcp_anycast_addr);
+	if (!priv->conf_file) {
+		nm_warning ("%s: error creating dhclient configuration file.", iface);
+		return -1;
+	}
+
+	return dhclient_start (client, "-4");
+}
+
+static GPid
+real_ip6_start (NMDHCPClient *client,
+                NMSettingIP6Config *s_ip6,
+                guint8 *dhcp_anycast_addr)
+{
+	return dhclient_start (client, "-6");
 }
 
 static void
@@ -698,6 +721,7 @@ nm_dhcp_dhclient_class_init (NMDHCPDhclientClass *dhclient_class)
 	object_class->dispose = dispose;
 
 	client_class->ip4_start = real_ip4_start;
+	client_class->ip6_start = real_ip6_start;
 	client_class->stop = real_stop;
 	client_class->ip4_process_classless_routes = real_ip4_process_classless_routes;
 }
