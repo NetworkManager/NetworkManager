@@ -398,9 +398,9 @@ client_start (NMDHCPManager *self,
 	add_client (self, client);
 
 	if (ipv6)
-		success = nm_dhcp_client_start_ip4 (client, s_ip4, dhcp_anycast_addr);
-	else
 		success = nm_dhcp_client_start_ip6 (client, s_ip6, dhcp_anycast_addr);
+	else
+		success = nm_dhcp_client_start_ip4 (client, s_ip4, dhcp_anycast_addr);
 
 	if (!success) {
 		remove_client (self, client);
