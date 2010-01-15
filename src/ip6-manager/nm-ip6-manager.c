@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 Red Hat, Inc.
+ * Copyright (C) 2009 - 2010 Red Hat, Inc.
  */
 
 #include <errno.h>
@@ -165,10 +165,8 @@ nm_ip6_manager_class_init (NMIP6ManagerClass *manager_class)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMIP6ManagerClass, addrconf_complete),
 					  NULL, NULL,
-					  _nm_marshal_VOID__STRING_BOOLEAN,
-					  G_TYPE_NONE, 2,
-					  G_TYPE_STRING,
-					  G_TYPE_BOOLEAN);
+					  _nm_marshal_VOID__STRING_UINT_BOOLEAN,
+					  G_TYPE_NONE, 3, G_TYPE_STRING, G_TYPE_UINT, G_TYPE_BOOLEAN);
 
 	signals[CONFIG_CHANGED] =
 		g_signal_new ("config-changed",
@@ -176,9 +174,8 @@ nm_ip6_manager_class_init (NMIP6ManagerClass *manager_class)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMIP6ManagerClass, config_changed),
 					  NULL, NULL,
-					  g_cclosure_marshal_VOID__STRING,
-					  G_TYPE_NONE, 1,
-					  G_TYPE_STRING);
+					  _nm_marshal_VOID__STRING_UINT,
+					  G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_UINT);
 }
 
 static void
@@ -233,10 +230,16 @@ nm_ip6_manager_get_device (NMIP6Manager *manager, int ifindex)
 								GINT_TO_POINTER (ifindex));
 }
 
+typedef struct {
+	NMIP6Device *device;
+	guint dhcp_opts;
+} CallbackInfo;
+
 static gboolean
 finish_addrconf (gpointer user_data)
 {
-	NMIP6Device *device = user_data;
+	CallbackInfo *info = user_data;
+	NMIP6Device *device = info->device;
 	NMIP6Manager *manager = device->manager;
 	char *iface_copy;
 
@@ -245,7 +248,7 @@ finish_addrconf (gpointer user_data)
 
 	if (device->state >= device->target_state) {
 		g_signal_emit (manager, signals[ADDRCONF_COMPLETE], 0,
-					   device->iface, TRUE);
+					   device->iface, info->dhcp_opts, TRUE);
 	} else {
 		nm_info ("Device '%s' IP6 addrconf timed out or failed.",
 				 device->iface);
@@ -254,7 +257,7 @@ finish_addrconf (gpointer user_data)
 
 		nm_ip6_manager_cancel_addrconf (manager, device->iface);
 		g_signal_emit (manager, signals[ADDRCONF_COMPLETE], 0,
-					   iface_copy, FALSE);
+					   iface_copy, info->dhcp_opts, FALSE);
 
 		g_free (iface_copy);
 	}
@@ -265,11 +268,12 @@ finish_addrconf (gpointer user_data)
 static gboolean
 emit_config_changed (gpointer user_data)
 {
-	NMIP6Device *device = user_data;
+	CallbackInfo *info = user_data;
+	NMIP6Device *device = info->device;
 	NMIP6Manager *manager = device->manager;
 
 	device->config_changed_id = 0;
-	g_signal_emit (manager, signals[CONFIG_CHANGED], 0, device->iface);
+	g_signal_emit (manager, signals[CONFIG_CHANGED], 0, device->iface, info->dhcp_opts);
 	return FALSE;
 }
 
@@ -279,9 +283,10 @@ static gboolean
 rdnss_expired (gpointer user_data)
 {
 	NMIP6Device *device = user_data;
+	CallbackInfo info = { device, IP6_DHCP_OPT_NONE };
 
 	set_rdnss_timeout (device);
-	emit_config_changed (device);
+	emit_config_changed (&info);
 	return FALSE;
 }
 
@@ -323,6 +328,18 @@ set_rdnss_timeout (NMIP6Device *device)
 	}
 }
 
+static CallbackInfo *
+callback_info_new (NMIP6Device *device, guint dhcp_opts)
+{
+	CallbackInfo *info;
+
+	info = g_malloc0 (sizeof (CallbackInfo));
+	info->device = device;
+	info->dhcp_opts = dhcp_opts;
+
+	return info;
+}
+
 static void
 nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
 {
@@ -333,6 +350,8 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
 	struct in6_addr *addr;
 	struct rtnl_link *link;
 	guint flags;
+	CallbackInfo *info;
+	guint dhcp_opts = IP6_DHCP_OPT_NONE;
 
 	for (rtnladdr = (struct rtnl_addr *)nl_cache_get_first (priv->addr_cache);
 		 rtnladdr;
@@ -365,8 +384,10 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
 	if ((flags & IF_RA_RCVD) && device->state < NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT)
 		device->state = NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT;
 
-//	if (flags & (IF_RA_MANAGED | IF_RA_OTHERCONF))
-//		device->need_dhcp = TRUE;
+	if (flags & IF_RA_MANAGED)
+		dhcp_opts = IP6_DHCP_OPT_MANAGED;
+	else if (flags & IF_RA_OTHERCONF)
+		dhcp_opts = IP6_DHCP_OPT_OTHERCONF;
 
 	if (!device->addrconf_complete) {
 		if (device->state >= device->target_state ||
@@ -376,13 +397,20 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
 			 */
 			if (device->finish_addrconf_id)
 				g_source_remove (device->finish_addrconf_id);
-			device->finish_addrconf_id = g_idle_add (finish_addrconf,
-													 device);
+
+			info = callback_info_new (device, dhcp_opts);
+			device->finish_addrconf_id = g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
+			                                              finish_addrconf,
+			                                              info,
+			                                              (GDestroyNotify) g_free);
 		}
 	} else if (config_changed) {
 		if (!device->config_changed_id) {
-			device->config_changed_id = g_idle_add (emit_config_changed,
-													device);
+			info = callback_info_new (device, dhcp_opts);
+			device->config_changed_id = g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
+			                                             emit_config_changed,
+			                                             info,
+			                                             (GDestroyNotify) g_free);
 		}
 	}
 }
@@ -717,6 +745,7 @@ nm_ip6_manager_begin_addrconf (NMIP6Manager *manager,
 {
 	NMIP6ManagerPrivate *priv;
 	NMIP6Device *device;
+	CallbackInfo *info;
 
 	g_return_if_fail (NM_IS_IP6_MANAGER (manager));
 	g_return_if_fail (iface != NULL);
@@ -731,9 +760,12 @@ nm_ip6_manager_begin_addrconf (NMIP6Manager *manager,
 	device->addrconf_complete = FALSE;
 
 	/* Set up a timeout on the transaction to kill it after the timeout */
-	device->finish_addrconf_id = g_timeout_add_seconds (NM_IP6_TIMEOUT,
-														finish_addrconf,
-														device);
+	info = callback_info_new (device, 0);
+	device->finish_addrconf_id = g_timeout_add_seconds_full (G_PRIORITY_DEFAULT,
+	                                                         NM_IP6_TIMEOUT,
+	                                                         finish_addrconf,
+	                                                         info,
+	                                                         (GDestroyNotify) g_free);
 
 	/* Sync flags, etc, from netlink; this will also notice if the
 	 * device is already fully configured and schedule the

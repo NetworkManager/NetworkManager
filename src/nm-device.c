@@ -535,9 +535,10 @@ activation_source_schedule (NMDevice *self, GSourceFunc func, int family)
 
 static void
 ip6_addrconf_complete (NMIP6Manager *ip6_manager,
-					   const char *iface,
-					   gboolean success,
-					   gpointer user_data)
+                       const char *iface,
+                       guint dhcp_opts,
+                       gboolean success,
+                       gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -558,8 +559,9 @@ ip6_addrconf_complete (NMIP6Manager *ip6_manager,
 
 static void
 ip6_config_changed (NMIP6Manager *ip6_manager,
-					const char *iface,
-					gpointer user_data)
+                    const char *iface,
+                    guint dhcp_opts,
+                    gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 
