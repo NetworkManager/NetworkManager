@@ -193,7 +193,8 @@ daemon_timeout (gpointer user_data)
 	NMDHCPClient *self = NM_DHCP_CLIENT (user_data);
 	NMDHCPClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 
-	g_message ("(%s): DHCP transaction took too long, stopping it.", priv->iface);
+	g_message ("(%s): DHCPv%c request timed out.",
+	           priv->iface, priv->ipv6 ? '6' : '4');
 	g_signal_emit (G_OBJECT (self), signals[TIMEOUT], 0);
 	return FALSE;
 }

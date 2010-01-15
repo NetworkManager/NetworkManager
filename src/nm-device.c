@@ -1224,6 +1224,8 @@ dhcp_timeout (NMDHCPClient *client, gpointer user_data)
 	if (!nm_device_get_act_request (device))
 		return;
 
+	nm_dhcp_client_stop (client);
+
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG) {
 		if (nm_dhcp_client_get_ipv6 (client))
 			nm_device_activate_schedule_stage4_ip6_config_timeout (device);
