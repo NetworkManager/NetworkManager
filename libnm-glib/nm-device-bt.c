@@ -95,8 +95,8 @@ nm_device_bt_get_hw_address (NMDeviceBt *device)
 	priv = NM_DEVICE_BT_GET_PRIVATE (device);
 	if (!priv->hw_address) {
 		priv->hw_address = _nm_object_get_string_property (NM_OBJECT (device),
-		                                                  NM_DBUS_INTERFACE_DEVICE_WIRED,
-		                                                  DBUS_PROP_HW_ADDRESS);
+		                                                   NM_DBUS_INTERFACE_DEVICE_BLUETOOTH,
+		                                                   DBUS_PROP_HW_ADDRESS);
 	}
 
 	return priv->hw_address;

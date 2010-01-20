@@ -560,6 +560,19 @@ nm_netlink_monitor_get_flags_sync (NMNetlinkMonitor *self,
 		return FALSE;
 	}
 
+	/* HACK: Apparently to get it working we have to refill the cache twice;
+	 * otherwise some kernels (or maybe libnl?) only send a few of the
+	 * interfaces in the refill request.
+	 */
+	if (nl_cache_refill (priv->nlh, priv->nlh_link_cache)) {
+		g_set_error (error,
+		             NM_NETLINK_MONITOR_ERROR,
+		             NM_NETLINK_MONITOR_ERROR_LINK_CACHE_UPDATE,
+		             _("error updating link cache: %s"),
+		             nl_geterror ());
+		return FALSE;
+	}
+
 	/* Set up the filter */
 	filter = rtnl_link_alloc ();
 	if (!filter) {

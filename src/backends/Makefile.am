@@ -49,6 +49,10 @@ if TARGET_MANDRIVA
 libnmbackend_la_SOURCES += NetworkManagerMandriva.c
 endif
 
+if TARGET_PARDUS
+libnmbackend_la_SOURCES += NetworkManagerPardus.c
+endif
+
 libnmbackend_la_LIBADD += $(DBUS_LIBS) $(GLIB_LIBS)
 libnmbackend_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
