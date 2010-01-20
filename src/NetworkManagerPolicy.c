@@ -315,9 +315,9 @@ update_etc_hosts (const char *hostname)
 
 	/* Hmm, /etc/hosts was empty for some reason */
 	if (!added) {
-		g_string_append (new_contents, "# Do not remove the following line, or various programs");
-		g_string_append (new_contents, "# that require network functionality will fail.");
-		g_string_append (new_contents, "127.0.0.1\t" FALLBACK_HOSTNAME "\tlocalhost");
+		g_string_append (new_contents, "# Do not remove the following line, or various programs\n");
+		g_string_append (new_contents, "# that require network functionality will fail.\n");
+		g_string_append (new_contents, "127.0.0.1\t" FALLBACK_HOSTNAME "\tlocalhost\n");
 	}
 
 	error = NULL;
