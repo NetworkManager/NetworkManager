@@ -1206,20 +1206,16 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
 		svSetValue (ifcfg, "IPV6INIT", "no", FALSE);
 		return TRUE;
-	}
-	else if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
+	} else if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
 		svSetValue (ifcfg, "IPV6INIT", "yes", FALSE);
 		svSetValue (ifcfg, "IPV6_AUTOCONF", "yes", FALSE);
-	}
-	else if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
+	} else if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
 		svSetValue (ifcfg, "IPV6INIT", "yes", FALSE);
 		svSetValue (ifcfg, "IPV6_AUTOCONF", "no", FALSE);
-	}
-	else if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL)) {
+	} else if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL)) {
 		svSetValue (ifcfg, "IPV6INIT", "yes", FALSE);
 		svSetValue (ifcfg, "IPV6_AUTOCONF", "no", FALSE);
-	}
-	else if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_SHARED)) {
+	} else if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_SHARED)) {
 		svSetValue (ifcfg, "IPV6INIT", "yes", FALSE);
 		/* TODO */
 	}
