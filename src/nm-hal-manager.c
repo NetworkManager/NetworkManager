@@ -138,32 +138,46 @@ hal_get_subsystem (LibHalContext *ctx, const char *udi)
 }
 
 static char *
-nm_get_device_driver_name (LibHalContext *ctx, const char *origdev_udi)
+nm_get_device_driver_name (LibHalContext *ctx, const char *udi)
 {
-	char *driver_name = NULL, *subsystem, *drv, *od_parent = NULL;
+	char *driver_name = NULL, *drv, *tmp_udi, *tmp2;
+	int i = 1;
 
-	if (!origdev_udi)
-		return NULL;
+	g_return_val_if_fail (udi != NULL, NULL);
 
-	/* s390 driver name is on the grandparent of the net device */
-	subsystem = hal_get_subsystem (ctx, origdev_udi);
-	if (subsystem) {
-		if (!strcmp (subsystem, "ibmebus")) {
-			od_parent = libhal_device_get_property_string (ctx, origdev_udi, "info.parent", NULL);
-			origdev_udi = (const char *) od_parent;
-		} else if (!strcmp (subsystem, "ssb")) {
-			od_parent = libhal_device_get_property_string (ctx, origdev_udi, "info.parent", NULL);
-			origdev_udi = (const char *) od_parent;
+	/* get the UDI again so we can free it consistently with libhal_free_string */
+	tmp_udi = libhal_device_get_property_string (ctx, udi, "info.udi", NULL);
+
+	/* Look at up to 4 ancestors until we get a usable driver */
+	do {
+		drv = libhal_device_get_property_string (ctx, tmp_udi, "info.linux.driver", NULL);
+		if (drv) {
+			/* Check if we've gone too far */
+			if (   !strcmp (drv, "usb")
+			    || !strcmp (drv, "ehci_hcd")
+			    || !strcmp (drv, "yenta_cardbus")) {
+				libhal_free_string (drv);
+				drv = NULL;
+				break;
+			}
+		} else {
+			tmp2 = libhal_device_get_property_string (ctx, tmp_udi, "info.parent", NULL);
+			libhal_free_string (tmp_udi);
+			tmp_udi = tmp2;
+
+			/* Check if we've gone too far */
+			if (tmp_udi && !strcmp (tmp_udi, "/org/freedesktop/Hal/devices/computer"))
+				break;
 		}
+	} while (!drv && (i++ < 4) && tmp_udi);
+
+	libhal_free_string (tmp_udi);
+
+	if (drv) {
+		driver_name = g_strdup (drv);
+		libhal_free_string (drv);
 	}
 
-	drv = libhal_device_get_property_string (ctx, origdev_udi, "info.linux.driver", NULL);
-	if (drv)
-		driver_name = g_strdup (drv);
-
-	libhal_free_string (drv);
-	libhal_free_string (od_parent);
-	libhal_free_string (subsystem);
 	return driver_name;
 }
 
@@ -281,7 +295,7 @@ wired_device_creator (NMHalManager *self,
 		return NULL;
 	}
 
-	driver = nm_get_device_driver_name (priv->hal_ctx, origdev_udi);
+	driver = nm_get_device_driver_name (priv->hal_ctx, udi);
 
 	/* Special handling of Ericsson F3507g 'mbm' devices; ignore the
 	 * cdc-ether device that it provides since we don't use it yet.
@@ -333,7 +347,7 @@ wireless_device_creator (NMHalManager *self,
 		return NULL;
 	}
 
-	driver = nm_get_device_driver_name (priv->hal_ctx, origdev_udi);
+	driver = nm_get_device_driver_name (priv->hal_ctx, udi);
 	device = (GObject *) nm_device_wifi_new (udi, iface, driver, managed);
 
 	libhal_free_string (iface);
@@ -976,24 +990,6 @@ new_modem_device (const char *udi,
 	return device;
 }
 
-static char *
-nm_get_modem_device_driver_name (LibHalContext *ctx, const char *udi)
-{
-	char *driver_name = NULL, *origdev_udi, *driver;
-
-	origdev_udi = hal_get_originating_device (ctx, udi, "serial");
-	if (!origdev_udi)
-		return NULL;
-
-	driver = libhal_device_get_property_string (ctx, origdev_udi, "info.linux.driver", NULL);
-	if (driver) {
-		driver_name = g_strdup (driver);
-		libhal_free_string (driver);
-	}
-	libhal_free_string (origdev_udi);
-	return driver_name;
-}
-
 static GObject *
 modem_device_creator (NMHalManager *self,
                       const char *udi,
@@ -1021,7 +1017,7 @@ modem_device_creator (NMHalManager *self,
 	/* For serial devices, 'origdev_udi' will be the actual USB or platform device,
 	 * not HAL's 'serial.originating_device'.
 	 */
-	driver = nm_get_modem_device_driver_name (priv->hal_ctx, udi);
+	driver = nm_get_device_driver_name (priv->hal_ctx, udi);
 	if (!serial_device || !driver)
 		goto out;
 
@@ -1175,7 +1171,7 @@ olpc_mesh_device_creator (NMHalManager *self,
 		return NULL;
 	}
 
-	driver = nm_get_device_driver_name (priv->hal_ctx, origdev_udi);
+	driver = nm_get_device_driver_name (priv->hal_ctx, udi);
 	device = (GObject *) nm_device_olpc_mesh_new (udi, iface, driver, managed);
 
 	libhal_free_string (iface);
