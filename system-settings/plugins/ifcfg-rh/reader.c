@@ -604,9 +604,28 @@ read_full_ip4_address (shvarFile *ifcfg,
 		nm_ip4_address_set_prefix (addr, nm_utils_ip4_netmask_to_prefix (tmp));
 	}
 
+	/* Try to autodetermine the prefix for the address' class */
+	if (!nm_ip4_address_get_prefix (addr)) {
+		guint32 tmp_addr, prefix = 0;
+
+		tmp_addr = nm_ip4_address_get_address (addr);
+		if (((ntohl(tmp_addr) & 0xFF000000) >> 24) <= 127)
+			prefix = 8;
+		else if (((ntohl(tmp_addr) & 0xFF000000) >> 24) <= 191)
+			prefix = 16;
+		else
+			prefix = 24;
+
+		nm_ip4_address_set_prefix (addr, prefix);
+
+		value = svGetValue (ifcfg, ip_tag, FALSE);
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: missing %s, assuming %s/%u",
+		             prefix_tag, value, prefix);
+		g_free (value);
+	}
+
 	/* Validate the prefix */
-	if (  !nm_ip4_address_get_prefix (addr)
-	    || nm_ip4_address_get_prefix (addr) > 32) {
+	if (nm_ip4_address_get_prefix (addr) > 32) {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Missing or invalid IP4 prefix '%d'",
 		             nm_ip4_address_get_prefix (addr));
