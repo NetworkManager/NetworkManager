@@ -717,6 +717,113 @@ test_read_wired_static (const char *file, const char *expected_id)
 	g_object_unref (connection);
 }
 
+#define TEST_IFCFG_STATIC_NO_PREFIX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static-no-prefix"
+
+static void
+test_read_wired_static_no_prefix (guint32 expected_prefix)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingIP4Config *s_ip4;
+	char *unmanaged = FALSE;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	NMIP4Address *ip4_addr;
+	char *file, *expected_id;
+	const char *tmp;
+
+	file = g_strdup_printf (TEST_IFCFG_STATIC_NO_PREFIX "-%u", expected_prefix);
+	ASSERT (file != NULL,
+	        "wired-static-no-prefix-read", "failed to create path to file");
+
+	expected_id = g_strdup_printf ("System test-wired-static-no-prefix-%u", expected_prefix);
+	ASSERT (expected_id != NULL,
+	        "wired-static-no-prefix-read", "failed to expected connection ID");
+
+	connection = connection_from_file (file,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "wired-static-no-prefix-read", "failed to read %s: %s", file, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wired-static-no-prefix-verify", "failed to verify %s: %s", file, error->message);
+
+	ASSERT (unmanaged == FALSE,
+	        "wired-static-no-prefix-verify", "failed to verify %s: unexpected unmanaged value", file);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "wired-static-no-prefix-verify-connection", "failed to verify %s: missing %s setting",
+	        file,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "wired-static-no-prefix-verify-connection", "failed to verify %s: missing %s / %s key",
+	        file,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_id) == 0,
+	        "wired-static-no-prefix-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        file,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	g_free (expected_id);
+
+	/* ===== IPv4 SETTING ===== */
+
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	ASSERT (s_ip4 != NULL,
+	        "wired-static-no-prefix-verify-ip4", "failed to verify %s: missing %s setting",
+	        file,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0,
+	        "wired-static-no-prefix-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        file,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_METHOD);
+
+	ASSERT (nm_setting_ip4_config_get_num_addresses (s_ip4) == 1,
+	        "wired-static-no-prefix-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        file,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_DNS);
+
+	/* Address #1 */
+	ip4_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
+	ASSERT (ip4_addr,
+	        "wired-static-no-prefix-verify-ip4", "failed to verify %s: missing IP4 address #1",
+	        file,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_ADDRESSES);
+
+	ASSERT (nm_ip4_address_get_prefix (ip4_addr) == expected_prefix,
+	        "wired-static-no-prefix-verify-ip4", "failed to verify %s: unexpected IP4 address #1 prefix",
+	        file,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_ADDRESSES);
+
+	g_free (file);
+	g_object_unref (connection);
+}
+
 #define TEST_IFCFG_WIRED_DHCP TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp"
 
 static void
@@ -7695,6 +7802,9 @@ int main (int argc, char **argv)
 	test_read_minimal ();
 	test_read_wired_static (TEST_IFCFG_WIRED_STATIC, "System test-wired-static");
 	test_read_wired_static (TEST_IFCFG_WIRED_STATIC_BOOTPROTO, "System test-wired-static-bootproto");
+	test_read_wired_static_no_prefix (8);
+	test_read_wired_static_no_prefix (16);
+	test_read_wired_static_no_prefix (24);
 	test_read_wired_dhcp ();
 	test_read_wired_global_gateway ();
 	test_read_wired_never_default ();

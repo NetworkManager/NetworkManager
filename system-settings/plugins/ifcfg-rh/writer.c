@@ -1253,6 +1253,9 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		svSetValue (ifcfg, "IPV6ADDR_SECONDARIES", ip_str2->str, FALSE);
 		g_string_free (ip_str1, TRUE);
 		g_string_free (ip_str2, TRUE);
+	} else {
+		svSetValue (ifcfg, "IPV6ADDR", NULL, FALSE);
+		svSetValue (ifcfg, "IPV6ADDR_SECONDARIES", NULL, FALSE);
 	}
 
 	/* Write out DNS - 'DNS' key is used both for IPv4 and IPv6 */
