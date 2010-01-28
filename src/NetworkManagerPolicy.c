@@ -461,7 +461,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best)
 					return;
 				}
 			}
-			nm_warning ("%s: DHCP-provided hostname '%s' looks invalid; not using it",
+			nm_warning ("%s: DHCP-provided hostname '%s' looks invalid; ignoring it",
 			            __func__, dhcp4_hostname);
 		}
 	}
