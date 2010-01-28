@@ -460,7 +460,7 @@ aipd_handle_event (DBusGProxy *proxy,
 	NMManager *manager = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	GSList *iter;
-	gboolean handled;
+	gboolean handled = FALSE;
 
 	if (!event || !iface) {
 		nm_warning ("Incomplete message received from avahi-autoipd");
@@ -1216,7 +1216,8 @@ manager_set_radio_enabled (NMManager *manager,
 
 	/* enable/disable wireless devices as required */
 	for (iter = priv->devices; iter; iter = iter->next) {
-		if (rstate->object_filter_func (G_OBJECT (iter->data)))
+		if (   rstate->object_filter_func
+			&& rstate->object_filter_func (G_OBJECT (iter->data)))
 			nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (iter->data), enabled);
 	}
 }
@@ -1934,7 +1935,6 @@ user_get_secrets_cb (DBusGProxy *proxy,
                      gpointer user_data)
 {
 	GetSecretsInfo *info = (GetSecretsInfo *) user_data;
-	NMManagerPrivate *priv;
 	GHashTable *settings = NULL;
 	GError *error = NULL;
 	GObject *provider;
@@ -1942,8 +1942,6 @@ user_get_secrets_cb (DBusGProxy *proxy,
 	g_return_if_fail (info != NULL);
 	g_return_if_fail (info->provider);
 	g_return_if_fail (info->setting_name);
-
-	priv = NM_MANAGER_GET_PRIVATE (info->manager);
 
 	provider = g_object_ref (info->provider);
 
@@ -2680,8 +2678,10 @@ impl_manager_sleep (NMManager *self, gboolean sleep, GError **error)
 				RadioState *rstate = &priv->radio_states[i];
 				gboolean enabled = (rstate->hw_enabled && rstate->enabled);
 
-				if (rstate->object_filter_func (G_OBJECT (iter->data)))
-					nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (iter->data), enabled);
+				if (   rstate->object_filter_func
+				    && rstate->object_filter_func (G_OBJECT (device))) {
+					nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (device), enabled);
+				}
 			}
 
 			nm_device_clear_autoconnect_inhibit (device);

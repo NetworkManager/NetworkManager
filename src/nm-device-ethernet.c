@@ -1913,12 +1913,9 @@ mdio_read (NMDeviceEthernet *self, int fd, struct ifreq *ifr, int location)
 {
 	struct mii_ioctl_data *mii;
 	int val = -1;
-	const char *	iface;
 
 	g_return_val_if_fail (fd >= 0, -1);
 	g_return_val_if_fail (ifr != NULL, -1);
-
-	iface = nm_device_get_iface (NM_DEVICE (self));
 
 	mii = (struct mii_ioctl_data *) &ifr->ifr_ifru;
 	mii->reg_num = location;

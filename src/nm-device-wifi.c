@@ -3233,7 +3233,6 @@ activation_success_handler (NMDevice *dev)
 
 		priv->ap_list = g_slist_remove (priv->ap_list, ap);
 		g_object_unref (ap);
-		ap = tmp_ap;
 	}
 
 done:

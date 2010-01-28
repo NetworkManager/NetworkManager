@@ -1,5 +1,4 @@
-/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
-
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /*
  * Dan Williams <dcbw@redhat.com>
  * Tambet Ingo <tambet@gmail.com>

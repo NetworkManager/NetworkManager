@@ -74,6 +74,8 @@ struct NMPolicy {
 	NMDevice *default_device;
 
 	LookupThread *lookup;
+
+	char *orig_hostname; /* hostname at NM start time */
 };
 
 static gboolean
@@ -315,9 +317,9 @@ update_etc_hosts (const char *hostname)
 
 	/* Hmm, /etc/hosts was empty for some reason */
 	if (!added) {
-		g_string_append (new_contents, "# Do not remove the following line, or various programs");
-		g_string_append (new_contents, "# that require network functionality will fail.");
-		g_string_append (new_contents, "127.0.0.1\t" FALLBACK_HOSTNAME "\tlocalhost");
+		g_string_append (new_contents, "# Do not remove the following line, or various programs\n");
+		g_string_append (new_contents, "# that require network functionality will fail.\n");
+		g_string_append (new_contents, "127.0.0.1\t" FALLBACK_HOSTNAME "\tlocalhost\n");
 	}
 
 	error = NULL;
@@ -416,15 +418,16 @@ update_system_hostname (NMPolicy *policy, NMDevice *best)
 		policy->lookup = NULL;
 	}
 
-	/* A configured hostname (via the system-settings service) overrides
-	 * all automatic hostname determination.  If there is no configured hostname,
-	 * the best device's automatically determined hostname (from DHCP, VPN, PPP,
-	 * etc) is used.  If there is no automatically determined hostname, reverse
-	 * DNS lookup using the best device's IP address is started to determined the
-	 * the hostname.
+	/* Hostname precedence order:
+	 *
+	 * 1) a configured hostname (from system-settings)
+	 * 2) automatic hostname from the default device's config (DHCP, VPN, etc)
+	 * 3) the original hostname when NM started
+	 * 4) reverse-DNS of the best device's IPv4 address
+	 *
 	 */
 
-	/* Try a configured hostname first */
+	/* Try a persistent hostname first */
 	g_object_get (G_OBJECT (policy->manager), NM_MANAGER_HOSTNAME, &configured_hostname, NULL);
 	if (configured_hostname) {
 		set_system_hostname (configured_hostname, "from system configuration");
@@ -437,25 +440,42 @@ update_system_hostname (NMPolicy *policy, NMDevice *best)
 		best = get_best_device (policy->manager, &best_req);
 
 	if (!best) {
-		/* No best device; fall back to localhost.localdomain */
-		set_system_hostname (NULL, "no default device");
+		/* No best device; fall back to original hostname or if there wasn't
+		 * one, 'localhost.localdomain'
+		 */
+		set_system_hostname (policy->orig_hostname, "no default device");
 		return;
 	}
 
 	/* Grab a hostname out of the device's DHCP4 config */
 	dhcp4_config = nm_device_get_dhcp4_config (best);
 	if (dhcp4_config) {
-		const char *dhcp4_hostname;
+		const char *dhcp4_hostname, *p;
 
-		dhcp4_hostname = nm_dhcp4_config_get_option (dhcp4_config, "host_name");
+		p = dhcp4_hostname = nm_dhcp4_config_get_option (dhcp4_config, "host_name");
 		if (dhcp4_hostname && strlen (dhcp4_hostname)) {
-			set_system_hostname (dhcp4_hostname, "from DHCP");
-			return;
+			/* Sanity check */
+			while (*p) {
+				if (!isblank (*p++)) {
+					set_system_hostname (dhcp4_hostname, "from DHCP");
+					return;
+				}
+			}
+			nm_warning ("%s: DHCP-provided hostname '%s' looks invalid; ignoring it",
+			            __func__, dhcp4_hostname);
 		}
 	}
 
-	/* No configured hostname, no automatically determined hostname either. Start
-	 * reverse DNS of the current IP address to try and find it.
+	/* If no automatically-configured hostname, try using the hostname from
+	 * when NM started up.
+	 */
+	if (policy->orig_hostname) {
+		set_system_hostname (policy->orig_hostname, "from system startup");
+		return;
+	}
+
+	/* No configured hostname, no automatically determined hostname, and
+	 * no bootup hostname. Start reverse DNS of the current IP address.
 	 */
 	ip4_config = nm_device_get_ip4_config (best);
 	if (   !ip4_config
@@ -988,6 +1008,7 @@ nm_policy_new (NMManager *manager, NMVPNManager *vpn_manager)
 	NMPolicy *policy;
 	static gboolean initialized = FALSE;
 	gulong id;
+	char hostname[HOST_NAME_MAX + 2];
 
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
 	g_return_val_if_fail (initialized == FALSE, NULL);
@@ -995,6 +1016,14 @@ nm_policy_new (NMManager *manager, NMVPNManager *vpn_manager)
 	policy = g_malloc0 (sizeof (NMPolicy));
 	policy->manager = g_object_ref (manager);
 	policy->update_state_id = 0;
+
+	/* Grab hostname on startup and use that if nothing provides one */
+	memset (hostname, 0, sizeof (hostname));
+	if (gethostname (&hostname[0], HOST_NAME_MAX) == 0) {
+		/* only cache it if it's a valid hostname */
+		if (strlen (hostname) && strcmp (hostname, "localhost") && strcmp (hostname, "localhost.localdomain"))
+			policy->orig_hostname = g_strdup (hostname);
+	}
 
 	policy->vpn_manager = g_object_ref (vpn_manager);
 	id = g_signal_connect (policy->vpn_manager, "connection-activated",
@@ -1085,6 +1114,8 @@ nm_policy_destroy (NMPolicy *policy)
 		g_free (data);
 	}
 	g_slist_free (policy->dev_signal_ids);
+
+	g_free (policy->orig_hostname);
 
 	g_object_unref (policy->manager);
 	g_free (policy);

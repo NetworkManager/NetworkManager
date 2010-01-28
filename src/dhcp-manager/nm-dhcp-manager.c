@@ -178,7 +178,7 @@ nm_dhcp_device_watch_cleanup (NMDHCPDevice * device)
 static void
 nm_dhcp_device_destroy (NMDHCPDevice *device)
 {
-	int ret;
+	int ignored;
 
 	nm_dhcp_device_timeout_cleanup (device);
 
@@ -189,7 +189,7 @@ nm_dhcp_device_destroy (NMDHCPDevice *device)
 		g_hash_table_destroy (device->options);
 
 	if (device->conf_file) {
-		ret = unlink (device->conf_file);
+		ignored = unlink (device->conf_file);
 		g_free (device->conf_file);
 	}
 

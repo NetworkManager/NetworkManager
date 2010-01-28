@@ -52,7 +52,12 @@ EXTRA_DIST = \
 	ifcfg-test-wired-static-routes \
 	route-test-wired-static-routes \
 	ifcfg-test-wired-static-routes-legacy \
-	route-test-wired-static-routes-legacy
+	route-test-wired-static-routes-legacy \
+	ifcfg-test-wired-ipv6-manual \
+	route6-test-wired-ipv6-manual \
+	ifcfg-test-wired-static-no-prefix-8 \
+	ifcfg-test-wired-static-no-prefix-16 \
+	ifcfg-test-wired-static-no-prefix-24
 
 check-local:
 	@for f in $(EXTRA_DIST); do \

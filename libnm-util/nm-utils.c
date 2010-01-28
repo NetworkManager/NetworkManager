@@ -1598,7 +1598,6 @@ nm_utils_rsa_key_encrypt (const GByteArray *data,
 	gsize key_len = 0, enc_len = 0;
 	GString *pem = NULL;
 	char *tmp, *tmp_password = NULL;
-	gboolean success = FALSE;
 	int left;
 	const char *p;
 	GByteArray *ret = NULL;
@@ -1679,14 +1678,13 @@ nm_utils_rsa_key_encrypt (const GByteArray *data,
 	g_byte_array_append (ret, (const unsigned char *) pem->str, pem->len);
 	if (tmp_password && out_password)
 		*out_password = g_strdup (tmp_password);
-	success = TRUE;
 
 out:
 	if (key) {
 		memset (key, 0, key_len);
 		g_free (key);
 	}
-	if (!enc) {
+	if (enc) {
 		memset (enc, 0, enc_len);
 		g_free (enc);
 	}
