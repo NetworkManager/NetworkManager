@@ -261,7 +261,8 @@ nm_dhcp_client_start_ip4 (NMDHCPClient *self,
 gboolean
 nm_dhcp_client_start_ip6 (NMDHCPClient *self,
                           NMSettingIP6Config *s_ip6,
-                          guint8 *dhcp_anycast_addr)
+                          guint8 *dhcp_anycast_addr,
+                          gboolean info_only)
 {
 	NMDHCPClientPrivate *priv;
 
@@ -276,7 +277,7 @@ nm_dhcp_client_start_ip6 (NMDHCPClient *self,
 	g_message ("Activation (%s) Beginning DHCPv6 transaction (timeout in %d seconds)",
 	           priv->iface, priv->timeout);
 
-	priv->pid = NM_DHCP_CLIENT_GET_CLASS (self)->ip6_start (self, s_ip6, dhcp_anycast_addr);
+	priv->pid = NM_DHCP_CLIENT_GET_CLASS (self)->ip6_start (self, s_ip6, dhcp_anycast_addr, info_only);
 	if (priv->pid > 0)
 		start_monitor (self);
 

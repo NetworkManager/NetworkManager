@@ -88,7 +88,8 @@ typedef struct {
 
 	GPid (*ip6_start)                        (NMDHCPClient *self,
 	                                          NMSettingIP6Config *s_ip6,
-	                                          guint8 *anycast_addr);
+	                                          guint8 *anycast_addr,
+	                                          gboolean info_only);
 
 	void (*stop)                             (NMDHCPClient *self);
 
@@ -113,7 +114,8 @@ gboolean nm_dhcp_client_start_ip4 (NMDHCPClient *self,
 
 gboolean nm_dhcp_client_start_ip6 (NMDHCPClient *self,
                                    NMSettingIP6Config *s_ip6,
-                                   guint8 *dhcp_anycast_addr);
+                                   guint8 *dhcp_anycast_addr,
+                                   gboolean info_only);
 
 void nm_dhcp_client_stop (NMDHCPClient *self);
 

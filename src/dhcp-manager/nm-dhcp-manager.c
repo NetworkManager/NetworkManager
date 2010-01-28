@@ -367,7 +367,8 @@ client_start (NMDHCPManager *self,
               NMSettingIP4Config *s_ip4,
               NMSettingIP6Config *s_ip6,
               guint32 timeout,
-              guint8 *dhcp_anycast_addr)
+              guint8 *dhcp_anycast_addr,
+              gboolean info_only)
 {
 	NMDHCPManagerPrivate *priv;
 	NMDHCPClient *client;
@@ -398,7 +399,7 @@ client_start (NMDHCPManager *self,
 	add_client (self, client);
 
 	if (ipv6)
-		success = nm_dhcp_client_start_ip6 (client, s_ip6, dhcp_anycast_addr);
+		success = nm_dhcp_client_start_ip6 (client, s_ip6, dhcp_anycast_addr, info_only);
 	else
 		success = nm_dhcp_client_start_ip4 (client, s_ip4, dhcp_anycast_addr);
 
@@ -446,7 +447,7 @@ nm_dhcp_manager_start_ip4 (NMDHCPManager *self,
 			g_object_ref (s_ip4);
 	}
 
-	client = client_start (self, iface, uuid, FALSE, s_ip4, NULL, timeout, dhcp_anycast_addr);
+	client = client_start (self, iface, uuid, FALSE, s_ip4, NULL, timeout, dhcp_anycast_addr, FALSE);
 
 	if (s_ip4)
 		g_object_unref (s_ip4);
@@ -461,9 +462,10 @@ nm_dhcp_manager_start_ip6 (NMDHCPManager *self,
                            const char *uuid,
                            NMSettingIP6Config *s_ip6,
                            guint32 timeout,
-                           guint8 *dhcp_anycast_addr)
+                           guint8 *dhcp_anycast_addr,
+                           gboolean info_only)
 {
-	return client_start (self, iface, uuid, TRUE, NULL, s_ip6, timeout, dhcp_anycast_addr);
+	return client_start (self, iface, uuid, TRUE, NULL, s_ip6, timeout, dhcp_anycast_addr, info_only);
 }
 
 static void

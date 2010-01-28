@@ -67,7 +67,8 @@ NMDHCPClient * nm_dhcp_manager_start_ip6     (NMDHCPManager *manager,
                                               const char *uuid,
                                               NMSettingIP6Config *s_ip6,
                                               guint32 timeout,
-                                              guint8 *dhcp_anycast_addr);
+                                              guint8 *dhcp_anycast_addr,
+                                              gboolean info_only);
 
 GSList *       nm_dhcp_manager_get_lease_config (NMDHCPManager *self,
                                                  const char *iface,

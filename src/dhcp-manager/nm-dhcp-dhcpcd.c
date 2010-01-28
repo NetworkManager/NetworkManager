@@ -123,7 +123,8 @@ real_ip4_start (NMDHCPClient *client,
 static GPid
 real_ip6_start (NMDHCPClient *client,
                 NMSettingIP6Config *s_ip6,
-                guint8 *dhcp_anycast_addr)
+                guint8 *dhcp_anycast_addr,
+                gboolean info_only)
 {
 	g_warning ("The dhcpcd backend does not support IPv6.");
 	return -1;

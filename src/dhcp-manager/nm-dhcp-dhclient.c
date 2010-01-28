@@ -449,7 +449,8 @@ dhclient_child_setup (gpointer user_data G_GNUC_UNUSED)
 
 static GPid
 dhclient_start (NMDHCPClient *client,
-                const char *ip_opt)
+                const char *ip_opt,
+                const char *mode_opt)
 {
 	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
 	GPtrArray *argv = NULL;
@@ -497,6 +498,9 @@ dhclient_start (NMDHCPClient *client,
 
 	g_ptr_array_add (argv, (gpointer) ip_opt);
 
+	if (mode_opt)
+		g_ptr_array_add (argv, (gpointer) mode_opt);
+
 	g_ptr_array_add (argv, (gpointer) "-sf");	/* Set script file */
 	g_ptr_array_add (argv, (gpointer) ACTION_SCRIPT_PATH );
 
@@ -542,15 +546,16 @@ real_ip4_start (NMDHCPClient *client,
 		return -1;
 	}
 
-	return dhclient_start (client, "-4");
+	return dhclient_start (client, "-4", NULL);
 }
 
 static GPid
 real_ip6_start (NMDHCPClient *client,
                 NMSettingIP6Config *s_ip6,
-                guint8 *dhcp_anycast_addr)
+                guint8 *dhcp_anycast_addr,
+                gboolean info_only)
 {
-	return dhclient_start (client, "-6");
+	return dhclient_start (client, "-6", info_only ? "-S" : "-N");
 }
 
 static void
