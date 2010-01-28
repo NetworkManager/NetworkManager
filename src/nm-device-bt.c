@@ -567,6 +567,7 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	NMActRequest *req;
 	NMDBusManager *dbus_mgr;
 	DBusGConnection *g_connection;
+	gboolean dun = FALSE;
 
 	req = nm_device_get_act_request (device);
 	g_assert (req);
@@ -581,42 +582,30 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	g_connection = nm_dbus_manager_get_connection (dbus_mgr);
 	g_object_unref (dbus_mgr);
 
-	if (priv->bt_type == NM_BT_CAPABILITY_DUN) {
-		priv->type_proxy = dbus_g_proxy_new_for_name (g_connection,
-							      BLUEZ_SERVICE,
-							      nm_device_get_udi (device),
-							      BLUEZ_SERIAL_INTERFACE);
-		if (!priv->type_proxy) {
-			// FIXME: set a reason code
-			return NM_ACT_STAGE_RETURN_FAILURE;
-		}
-
-		dbus_g_proxy_begin_call_with_timeout (priv->type_proxy, "Connect",
-		                                      nm_device_bt_connect_cb,
-		                                      device,
-		                                      NULL,
-		                                      20000,
-		                                      G_TYPE_STRING, BLUETOOTH_DUN_UUID,
-		                                      G_TYPE_INVALID);
-	} else if (priv->bt_type == NM_BT_CAPABILITY_NAP) {
-		priv->type_proxy = dbus_g_proxy_new_for_name (g_connection,
-							      BLUEZ_SERVICE,
-							      nm_device_get_udi (device),
-							      BLUEZ_NETWORK_INTERFACE);
-		if (!priv->type_proxy) {
-			// FIXME: set a reason code
-			return NM_ACT_STAGE_RETURN_FAILURE;
-		}
-
-		dbus_g_proxy_begin_call_with_timeout (priv->type_proxy, "Connect",
-		                                      nm_device_bt_connect_cb,
-		                                      device,
-		                                      NULL,
-		                                      20000,
-		                                      G_TYPE_STRING, BLUETOOTH_NAP_UUID,
-		                                      G_TYPE_INVALID);
-	} else
+	if (priv->bt_type == NM_BT_CAPABILITY_DUN)
+		dun = TRUE;
+	else if (priv->bt_type == NM_BT_CAPABILITY_NAP)
+		dun = FALSE;
+	else
 		g_assert_not_reached ();
+
+	priv->type_proxy = dbus_g_proxy_new_for_name (g_connection,
+	                                              BLUEZ_SERVICE,
+	                                              nm_device_get_udi (device),
+	                                              dun ? BLUEZ_SERIAL_INTERFACE : BLUEZ_NETWORK_INTERFACE);
+	if (!priv->type_proxy) {
+		// FIXME: set a reason code
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
+
+	/* Connect to the BT device */
+	dbus_g_proxy_begin_call_with_timeout (priv->type_proxy, "Connect",
+	                                      nm_device_bt_connect_cb,
+	                                      device,
+	                                      NULL,
+	                                      20000,
+	                                      G_TYPE_STRING, dun ? BLUETOOTH_DUN_UUID : BLUETOOTH_NAP_UUID,
+	                                      G_TYPE_INVALID);
 
 	/* Watch for BT device property changes */
 	dbus_g_object_register_marshaller (_nm_marshal_VOID__STRING_BOXED,
