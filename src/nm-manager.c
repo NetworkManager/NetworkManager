@@ -320,6 +320,7 @@ modem_added (NMModemManager *modem_manager,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDevice *replace_device, *device = NULL;
 	const char *ip_iface;
+	GSList *iter;
 
 	ip_iface = nm_modem_get_iface (modem);
 
@@ -332,6 +333,25 @@ modem_added (NMModemManager *modem_manager,
 		                                   TRUE);
 	}
 
+	/* Give Bluetooth DUN devices first chance to claim the modem */
+	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+		if (NM_IS_DEVICE_BT (iter->data)) {
+			if (nm_device_bt_modem_added (NM_DEVICE_BT (iter->data), modem, driver))
+				return;
+		}
+	}
+
+	/* If it was a Bluetooth modem and no bluetooth device claimed it, ignore
+	 * it.  The rfcomm port (and thus the modem) gets created automatically
+	 * by the Bluetooth code during the connection process.
+	 */
+	if (driver && !strcmp (driver, "bluetooth")) {
+		g_message ("%s: ignoring modem '%s' (no associated Bluetooth device)",
+		           __func__, ip_iface);
+		return;
+	}
+
+	/* Otherwise make a new top-level NMDevice for it */
 	if (NM_IS_MODEM_GSM (modem))
 		device = nm_device_gsm_new (NM_MODEM_GSM (modem), driver);
 	else if (NM_IS_MODEM_CDMA (modem))
@@ -444,7 +464,17 @@ modem_removed (NMModemManager *modem_manager,
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDevice *found;
+	GSList *iter;
 
+	/* Give Bluetooth DUN devices first chance to handle the modem removal */
+	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+		if (NM_IS_DEVICE_BT (iter->data)) {
+			if (nm_device_bt_modem_removed (NM_DEVICE_BT (iter->data), modem))
+				return;
+		}
+	}
+
+	/* Otherwise remove the standalone modem */
 	found = nm_manager_get_device_by_udi (self, nm_modem_get_path (modem));
 	if (found)
 		priv->devices = remove_one_device (self, priv->devices, found, FALSE, TRUE);
@@ -1736,12 +1766,14 @@ find_device_by_iface (NMManager *self, const gchar *iface)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GSList *iter;
+
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *device = NM_DEVICE (iter->data);
 		const gchar *d_iface = nm_device_get_ip_iface (device);
 		if (!strcmp (d_iface, iface))
 			return device;
 	}
+
 	return NULL;
 }
 

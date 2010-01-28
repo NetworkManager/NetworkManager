@@ -35,10 +35,7 @@
 
 #include "nm-serial-device-glue.h"
 
-static void device_interface_init (NMDeviceInterface *iface_class);
-
-G_DEFINE_TYPE_EXTENDED (NMModem, nm_modem, NM_TYPE_DEVICE, 0,
-                        G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_INTERFACE, device_interface_init))
+G_DEFINE_TYPE (NMModem, nm_modem, G_TYPE_OBJECT)
 
 #define NM_MODEM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_MODEM, NMModemPrivate))
 
@@ -668,14 +665,6 @@ real_deactivate_quickly (NMModem *self, NMDevice *device)
 		g_warning ("Invalid IP method");
 		break;
 	}
-
-	/* Stop the modem and any ongoing connection... */
-	if (nm_device_interface_get_state (NM_DEVICE_INTERFACE (device))) {
-		dbus_g_proxy_call_no_reply (nm_modem_get_proxy (self, MM_DBUS_INTERFACE_MODEM),
-		                            "Enable",
-		                            G_TYPE_BOOLEAN, FALSE,
-		                            G_TYPE_INVALID);
-	}
 }
 
 void
@@ -824,11 +813,15 @@ set_mm_enabled_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_d
 	query_mm_enabled (NM_MODEM (user_data));
 }
 
-static void
-real_set_enabled (NMDeviceInterface *device, gboolean enabled)
+void
+nm_modem_set_mm_enabled (NMModem *self, gboolean enabled)
 {
-	NMModem *self = NM_MODEM (device);
-	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
+	NMModemPrivate *priv;
+
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_MODEM (self));
+
+	priv = NM_MODEM_GET_PRIVATE (self);
 
 	/* FIXME: For now this just toggles the ModemManager enabled state.  In the
 	 * future we want to tie this into rfkill state instead so that the user can
@@ -838,10 +831,10 @@ real_set_enabled (NMDeviceInterface *device, gboolean enabled)
 	if (priv->mm_enabled != enabled) {
 		DBusGProxy *proxy;
 
-		proxy = nm_modem_get_proxy (NM_MODEM (device), MM_DBUS_INTERFACE_MODEM);
+		proxy = nm_modem_get_proxy (self, MM_DBUS_INTERFACE_MODEM);
 		dbus_g_proxy_begin_call (proxy,
 		                         "Enable", set_mm_enabled_done,
-		                         device, NULL,
+		                         self, NULL,
 		                         G_TYPE_BOOLEAN, enabled,
 		                         G_TYPE_INVALID);
 	}
@@ -879,12 +872,6 @@ modem_properties_changed (DBusGProxy *proxy,
 }
 
 /*****************************************************************************/
-
-static void
-device_interface_init (NMDeviceInterface *iface_class)
-{
-    iface_class->set_enabled = real_set_enabled;
-}
 
 static void
 nm_modem_init (NMModem *self)

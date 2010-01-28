@@ -365,6 +365,9 @@ typedef enum {
 	/* The supplicant is now available */
 	NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
 
+	/* The modem could not be found */
+	NM_DEVICE_STATE_REASON_MODEM_NOT_FOUND,
+
 	/* Unused */
 	NM_DEVICE_STATE_REASON_LAST = 0xFFFF
 } NMDeviceStateReason;

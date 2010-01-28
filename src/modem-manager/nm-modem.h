@@ -148,7 +148,9 @@ gboolean nm_modem_connection_secrets_updated (NMModem *modem,
 
 const DBusGObjectInfo *nm_modem_get_serial_dbus_info (void);
 
-gboolean      nm_modem_get_mm_enabled  (NMModem *self);
+gboolean      nm_modem_get_mm_enabled (NMModem *self);
+
+void          nm_modem_set_mm_enabled (NMModem *self, gboolean enabled);
 
 G_END_DECLS
 

@@ -22,8 +22,7 @@
 #include <string.h>
 #include "nm-dbus-glib-types.h"
 #include "nm-modem-gsm.h"
-#include "nm-device-private.h"
-#include "nm-device-interface.h"
+#include "nm-device.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-gsm.h"
 #include "nm-modem-types.h"
@@ -54,6 +53,8 @@ G_DEFINE_TYPE (NMModemGsm, nm_modem_gsm, NM_TYPE_MODEM)
 
 typedef struct {
 	DBusGProxyCall *call;
+
+	GHashTable *connect_properties;
 } NMModemGsmPrivate;
 
 
@@ -161,6 +162,11 @@ stage1_prepare_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data
 
 	priv->call = NULL;
 
+	if (priv->connect_properties) {
+		g_hash_table_destroy (priv->connect_properties);
+		priv->connect_properties = NULL;
+	}
+
 	if (dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
 		g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, TRUE, NM_DEVICE_STATE_REASON_NONE);
 	else {
@@ -189,6 +195,37 @@ stage1_prepare_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data
 			g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, translate_mm_error (error));
 
 		g_error_free (error);
+	}
+}
+
+static void
+do_connect (NMModemGsm *self)
+{
+	NMModemGsmPrivate *priv = NM_MODEM_GSM_GET_PRIVATE (self);
+	DBusGProxy *proxy;
+
+	proxy = nm_modem_get_proxy (NM_MODEM (self), MM_DBUS_INTERFACE_MODEM_SIMPLE);
+	dbus_g_proxy_begin_call_with_timeout (proxy,
+	                                      "Connect", stage1_prepare_done,
+	                                      self, NULL, 120000,
+	                                      DBUS_TYPE_G_MAP_OF_VARIANT, priv->connect_properties,
+	                                      G_TYPE_INVALID);
+}
+
+static void
+stage1_enable_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
+{
+	NMModemGsm *self = NM_MODEM_GSM (user_data);
+	GError *error = NULL;
+
+	if (dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID))
+		do_connect (self);
+	else {
+		nm_warning ("GSM modem enable failed: (%d) %s",
+		            error ? error->code : -1,
+		            error && error->message ? error->message : "(unknown)");
+		g_error_free (error);
+		g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
 	}
 }
 
@@ -248,43 +285,6 @@ create_connect_properties (NMConnection *connection)
 	return properties;
 }
 
-static void
-do_connect (NMModem *modem)
-{
-	NMConnection *connection;
-	DBusGProxy *proxy;
-	GHashTable *properties;
-
-	connection = nm_act_request_get_connection (nm_device_get_act_request (NM_DEVICE (modem)));
-	g_assert (connection);
-
-	properties = create_connect_properties (connection);
-	proxy = nm_modem_get_proxy (modem, MM_DBUS_INTERFACE_MODEM_SIMPLE);
-	dbus_g_proxy_begin_call_with_timeout (proxy,
-	                                      "Connect", stage1_prepare_done,
-	                                      modem, NULL, 120000,
-	                                      DBUS_TYPE_G_MAP_OF_VARIANT, properties,
-	                                      G_TYPE_INVALID);
-	g_hash_table_destroy (properties);
-}
-
-static void
-stage1_enable_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
-{
-	NMDevice *device = NM_DEVICE (user_data);
-	GError *error = NULL;
-
-	if (dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID))
-		do_connect (NM_MODEM (device));
-	else {
-		nm_warning ("GSM modem enable failed: (%d) %s",
-		            error ? error->code : -1,
-		            error && error->message ? error->message : "(unknown)");
-		g_error_free (error);
-		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NONE);
-	}
-}
-
 static NMActStageReturn
 real_act_stage1_prepare (NMModem *modem,
                          NMActRequest *req,
@@ -292,6 +292,8 @@ real_act_stage1_prepare (NMModem *modem,
                          const char **out_setting_name,
                          NMDeviceStateReason *reason)
 {
+	NMModemGsm *self = NM_MODEM_GSM (modem);
+	NMModemGsmPrivate *priv = NM_MODEM_GSM_GET_PRIVATE (self);
 	NMConnection *connection;
 
 	connection = nm_act_request_get_connection (req);
@@ -302,8 +304,12 @@ real_act_stage1_prepare (NMModem *modem,
 		gboolean enabled = nm_modem_get_mm_enabled (modem);
 		DBusGProxy *proxy;
 
+		if (priv->connect_properties)
+			g_hash_table_destroy (priv->connect_properties);
+		priv->connect_properties = create_connect_properties (connection);
+
 		if (enabled)
-			do_connect (modem);
+			do_connect (self);
 		else {
 			proxy = nm_modem_get_proxy (modem, MM_DBUS_INTERFACE_MODEM);
 			dbus_g_proxy_begin_call_with_timeout (proxy,
@@ -424,6 +430,18 @@ nm_modem_gsm_init (NMModemGsm *self)
 }
 
 static void
+dispose (GObject *object)
+{
+	NMModemGsm *self = NM_MODEM_GSM (object);
+	NMModemGsmPrivate *priv = NM_MODEM_GSM_GET_PRIVATE (self);
+
+	if (priv->connect_properties)
+		g_hash_table_destroy (priv->connect_properties);
+
+	G_OBJECT_CLASS (nm_modem_gsm_parent_class)->dispose (object);
+}
+
+static void
 nm_modem_gsm_class_init (NMModemGsmClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -432,14 +450,13 @@ nm_modem_gsm_class_init (NMModemGsmClass *klass)
 	g_type_class_add_private (object_class, sizeof (NMModemGsmPrivate));
 
 	/* Virtual methods */
+	object_class->dispose = dispose;
 	modem_class->get_user_pass = real_get_user_pass;
 	modem_class->get_setting_name = real_get_setting_name;
 	modem_class->get_best_auto_connection = real_get_best_auto_connection;
 	modem_class->check_connection_compatible = real_check_connection_compatible;
 	modem_class->act_stage1_prepare = real_act_stage1_prepare;
 	modem_class->deactivate_quickly = real_deactivate_quickly;
-
-//	device_class->act_stage2_config = real_act_stage2_config;
 
 	dbus_g_error_domain_register (NM_GSM_ERROR, NULL, NM_TYPE_GSM_ERROR);
 }

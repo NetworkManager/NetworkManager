@@ -33,7 +33,10 @@
 
 #include "nm-device-gsm-glue.h"
 
-G_DEFINE_TYPE (NMDeviceGsm, nm_device_gsm, NM_TYPE_DEVICE)
+static void device_interface_init (NMDeviceInterface *iface_class);
+
+G_DEFINE_TYPE_EXTENDED (NMDeviceGsm, nm_device_gsm, NM_TYPE_DEVICE, 0,
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_INTERFACE, device_interface_init))
 
 #define NM_DEVICE_GSM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_GSM, NMDeviceGsmPrivate))
 
@@ -276,6 +279,16 @@ real_get_generic_capabilities (NMDevice *device)
 	return NM_DEVICE_CAP_NM_SUPPORTED;
 }
 
+static void
+real_set_enabled (NMDeviceInterface *device, gboolean enabled)
+{
+	NMDeviceGsm *self = NM_DEVICE_GSM (device);
+	NMDeviceGsmPrivate *priv = NM_DEVICE_GSM_GET_PRIVATE (self);
+
+	if (priv->modem)
+		nm_modem_set_mm_enabled (priv->modem, enabled);
+}
+
 /*****************************************************************************/
 
 NMDevice *
@@ -306,6 +319,12 @@ nm_device_gsm_new (NMModemGsm *modem, const char *driver)
 	}
 
 	return device;
+}
+
+static void
+device_interface_init (NMDeviceInterface *iface_class)
+{
+    iface_class->set_enabled = real_set_enabled;
 }
 
 static void
