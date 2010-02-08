@@ -355,7 +355,7 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 	ifparser_init ();
 	block = ifparser_getfirst ();
 	while (block) {
-		if(!strcmp ("auto", block->type))
+		if(!strcmp ("auto", block->type) || !strcmp ("allow-hotplug", block->type))
 			g_hash_table_insert (auto_ifaces, block->name, GUINT_TO_POINTER (1));
 		else if (!strcmp ("iface", block->type) && strcmp ("lo", block->name)) {
 			NMIfupdownConnection *exported;
