@@ -622,7 +622,7 @@ modem_properties_changed (DBusGProxy *proxy,
 
 		if (priv->mm_enabled == FALSE) {
 			state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
-			if (IS_ACTIVATING_STATE (state) || (state == NM_DEVICE_STATE_ACTIVATED)) {
+			if (state == NM_DEVICE_STATE_ACTIVATED) {
 				nm_device_state_changed (NM_DEVICE (self),
 				                         NM_DEVICE_STATE_DISCONNECTED,
 				                         NM_DEVICE_STATE_REASON_NONE);
