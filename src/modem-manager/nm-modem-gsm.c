@@ -51,6 +51,7 @@ typedef enum {
 
 
 #define GSM_SECRETS_TRIES "gsm-secrets-tries"
+#define PIN_TRIES "pin-tries"
 
 G_DEFINE_TYPE (NMModemGsm, nm_modem_gsm, NM_TYPE_MODEM)
 
@@ -178,6 +179,7 @@ request_secrets (NMDevice *device,
                  const char *setting_name,
                  const char *hint1,
                  const char *hint2,
+                 const char *tries_tag,
                  gboolean always_ask)
 {
 	NMActRequest *req;
@@ -195,7 +197,7 @@ request_secrets (NMDevice *device,
 	nm_device_state_changed (device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
 
 	if (!always_ask)
-		tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), GSM_SECRETS_TRIES));
+		tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), tries_tag));
 
 	nm_act_request_get_secrets (req,
 	                            setting_name ? setting_name : NM_SETTING_GSM_SETTING_NAME,
@@ -205,7 +207,7 @@ request_secrets (NMDevice *device,
 	                            hint2);
 
 	if (!always_ask)
-		g_object_set_data (G_OBJECT (connection), GSM_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
+		g_object_set_data (G_OBJECT (connection), tries_tag, GUINT_TO_POINTER (++tries));
 }
 
 static void
@@ -221,9 +223,10 @@ stage1_prepare_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_d
 		const char *required_secret = NULL;
 		gboolean retry_secret = FALSE;
 
-		if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_PIN))
+		if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_PIN)) {
+			clear_pin (device);
 			required_secret = NM_SETTING_GSM_PIN;
-		else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_WRONG)) {
+		} else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_WRONG)) {
 			clear_pin (device);
 			required_secret = NM_SETTING_GSM_PIN;
 			retry_secret = TRUE;
@@ -234,7 +237,7 @@ stage1_prepare_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_d
 		}
 
 		if (required_secret)
-			request_secrets (device, NULL, required_secret, NULL, retry_secret);
+			request_secrets (device, NULL, required_secret, NULL, PIN_TRIES, retry_secret);
 		else
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, translate_mm_error (error));
 
@@ -365,7 +368,7 @@ handle_enable_pin_required (NMDevice *device)
 		                                      G_TYPE_INVALID);
 	} else {
 		/* Otherwise try to get the PIN */
-		request_secrets (device, NULL, NM_SETTING_GSM_PIN, NULL, FALSE);
+		request_secrets (device, NULL, NM_SETTING_GSM_PIN, NULL, PIN_TRIES, FALSE);
 	}
 }
 
@@ -424,7 +427,6 @@ real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	}
 
 	/* Get the required secrets */
-
 	if (hints) {
 		if (hints->len > 0)
 			hint1 = g_ptr_array_index (hints, 0);
@@ -432,7 +434,7 @@ real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 			hint2 = g_ptr_array_index (hints, 1);
 	}
 
-	request_secrets (device, setting_name, hint1, hint2, FALSE);
+	request_secrets (device, setting_name, hint1, hint2, GSM_SECRETS_TRIES, FALSE);
 
 	if (hints)
 		g_ptr_array_free (hints, TRUE);
@@ -562,6 +564,7 @@ real_deactivate_quickly (NMDevice *device)
 		connection = nm_act_request_get_connection (req);
 		g_assert (connection);
 		g_object_set_data (G_OBJECT (connection), GSM_SECRETS_TRIES, NULL);
+		g_object_set_data (G_OBJECT (connection), PIN_TRIES, NULL);
 	}
 
 	if (NM_DEVICE_CLASS (nm_modem_gsm_parent_class)->deactivate_quickly)
