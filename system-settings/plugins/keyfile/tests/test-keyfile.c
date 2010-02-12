@@ -446,6 +446,91 @@ test_write_wired_connection (void)
 	g_object_unref (connection);
 }
 
+#define TEST_WIRED_MAC_CASE_FILE TEST_KEYFILES_DIR"/Test_Wired_Connection_MAC_Case"
+
+static void
+test_read_wired_mac_case (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	GError *error = NULL;
+	const GByteArray *array;
+	char expected_mac_address[ETH_ALEN] = { 0x00, 0x11, 0xaa, 0xbb, 0xcc, 0x55 };
+	const char *tmp;
+	const char *expected_id = "Test Wired Connection MAC Case";
+	const char *expected_uuid = "4e80a56d-c99f-4aad-a6dd-b449bc398c57";
+
+	connection = connection_from_file (TEST_WIRED_MAC_CASE_FILE);
+	ASSERT (connection != NULL,
+			"connection-read", "failed to read %s", TEST_WIRED_MAC_CASE_FILE);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "connection-verify", "failed to verify %s: %s", TEST_WIRED_MAC_CASE_FILE, error->message);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "connection-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_WIRED_MAC_CASE_FILE,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "connection-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_WIRED_MAC_CASE_FILE,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_id) == 0,
+	        "connection-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_WIRED_MAC_CASE_FILE,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+	/* UUID */
+	tmp = nm_setting_connection_get_uuid (s_con);
+	ASSERT (tmp != NULL,
+	        "connection-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_WIRED_MAC_CASE_FILE,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_UUID);
+	ASSERT (strcmp (tmp, expected_uuid) == 0,
+	        "connection-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_WIRED_MAC_CASE_FILE,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_UUID);
+
+	/* ===== WIRED SETTING ===== */
+
+	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	ASSERT (s_wired != NULL,
+	        "connection-verify-wired", "failed to verify %s: missing %s setting",
+	        TEST_WIRED_MAC_CASE_FILE,
+	        NM_SETTING_WIRED_SETTING_NAME);
+
+	/* MAC address */
+	array = nm_setting_wired_get_mac_address (s_wired);
+	ASSERT (array != NULL,
+	        "connection-verify-wired", "failed to verify %s: missing %s / %s key",
+	        TEST_WIRED_MAC_CASE_FILE,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_MAC_ADDRESS);
+	ASSERT (array->len == ETH_ALEN,
+	        "connection-verify-wired", "failed to verify %s: unexpected %s / %s key value length",
+	        TEST_WIRED_MAC_CASE_FILE,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_MAC_ADDRESS);
+	ASSERT (memcmp (array->data, &expected_mac_address[0], sizeof (expected_mac_address)) == 0,
+	        "connection-verify-wired", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_WIRED_MAC_CASE_FILE,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_MAC_ADDRESS);
+
+	g_object_unref (connection);
+}
+
 static void
 test_read_valid_wireless_connection (void)
 {
@@ -681,6 +766,8 @@ int main (int argc, char **argv)
 	/* The tests */
 	test_read_valid_wired_connection ();
 	test_write_wired_connection ();
+
+	test_read_wired_mac_case ();
 
 	test_read_valid_wireless_connection ();
 	test_write_wireless_connection ();
