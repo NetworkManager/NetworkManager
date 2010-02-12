@@ -55,6 +55,7 @@ typedef struct {
 	DBusGProxyCall *call;
 
 	GHashTable *connect_properties;
+	guint32 pin_tries;
 } NMModemGsmPrivate;
 
 
@@ -154,6 +155,28 @@ translate_mm_error (GError *error)
 }
 
 static void
+ask_for_pin (NMModemGsm *self, gboolean always_ask)
+{
+	NMModemGsmPrivate *priv;
+	guint32 tries = 0;
+
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_MODEM_GSM (self));
+
+	priv = NM_MODEM_GSM_GET_PRIVATE (self);
+
+	if (!always_ask)
+		tries = priv->pin_tries++;
+
+	g_signal_emit_by_name (self, NM_MODEM_NEED_AUTH,
+	                       NM_SETTING_GSM_SETTING_NAME,
+	                       (tries || always_ask) ? TRUE : FALSE,
+	                       SECRETS_CALLER_MOBILE_BROADBAND,
+	                       NM_SETTING_GSM_PIN,
+	                       NULL);
+}
+
+static void
 stage1_prepare_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 {
 	NMModemGsm *self = NM_MODEM_GSM (user_data);
@@ -170,29 +193,17 @@ stage1_prepare_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data
 	if (dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
 		g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, TRUE, NM_DEVICE_STATE_REASON_NONE);
 	else {
-		const char *required_secret = NULL;
-		gboolean retry_secret = FALSE;
-
 		if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_PIN))
-			required_secret = NM_SETTING_GSM_PIN;
-		else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_WRONG)) {
-			required_secret = NM_SETTING_GSM_PIN;
-			retry_secret = TRUE;
-		} else {
+			ask_for_pin (self, FALSE);
+		else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_WRONG))
+			ask_for_pin (self, TRUE);
+		else {
 			nm_warning ("GSM connection failed: (%d) %s",
 			            error ? error->code : -1,
 			            error && error->message ? error->message : "(unknown)");
-		}
 
-		if (required_secret) {
-			g_signal_emit_by_name (self, NM_MODEM_NEED_AUTH,
-			                       NM_SETTING_GSM_SETTING_NAME,
-			                       retry_secret,
-			                       SECRETS_CALLER_MOBILE_BROADBAND,
-			                       required_secret,
-			                       NULL);
-		} else
 			g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, translate_mm_error (error));
+		}
 
 		g_error_free (error);
 	}
@@ -212,6 +223,68 @@ do_connect (NMModemGsm *self)
 	                                      G_TYPE_INVALID);
 }
 
+static void stage1_enable_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data);
+
+static void
+do_enable (NMModemGsm *self)
+{
+	DBusGProxy *proxy;
+
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_MODEM_GSM (self));
+
+	proxy = nm_modem_get_proxy (NM_MODEM (self), MM_DBUS_INTERFACE_MODEM);
+	dbus_g_proxy_begin_call_with_timeout (proxy,
+	                                      "Enable", stage1_enable_done,
+	                                      self, NULL, 20000,
+	                                      G_TYPE_BOOLEAN, TRUE,
+	                                      G_TYPE_INVALID);
+}
+
+static void
+stage1_pin_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
+{
+	NMModemGsm *self = NM_MODEM_GSM (user_data);
+	GError *error = NULL;
+
+	if (dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID)) {
+		/* Success; go back and try the enable again */
+		do_enable (self);
+	} else {
+		nm_warning ("GSM PIN unlock failed: (%d) %s",
+		            error ? error->code : -1,
+		            error && error->message ? error->message : "(unknown)");
+		g_error_free (error);
+
+		g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
+	}
+}
+
+static void
+handle_enable_pin_required (NMModemGsm *self)
+{
+	NMModemGsmPrivate *priv = NM_MODEM_GSM_GET_PRIVATE (self);
+	const char *pin = NULL;
+	GValue *value;
+	DBusGProxy *proxy;
+
+	/* See if we have a PIN already */
+	value = g_hash_table_lookup (priv->connect_properties, "pin");
+	if (value && G_VALUE_HOLDS_STRING (value))
+		pin = g_value_get_string (value);
+
+	/* If we do, send it */
+	if (pin) {
+		proxy = nm_modem_get_proxy (NM_MODEM (self), MM_DBUS_INTERFACE_MODEM_GSM_CARD);
+		dbus_g_proxy_begin_call_with_timeout (proxy,
+		                                      "SendPin", stage1_pin_done,
+		                                      self, NULL, 10000,
+		                                      G_TYPE_STRING, pin,
+		                                      G_TYPE_INVALID);
+	} else
+		ask_for_pin (self, FALSE);
+}
+
 static void
 stage1_enable_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 {
@@ -224,10 +297,16 @@ stage1_enable_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_da
 		nm_warning ("GSM modem enable failed: (%d) %s",
 		            error ? error->code : -1,
 		            error && error->message ? error->message : "(unknown)");
+
+		if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_PIN))
+			handle_enable_pin_required (self);
+		else
+			g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
+
 		g_error_free (error);
-		g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
 	}
 }
+
 
 static GHashTable *
 create_connect_properties (NMConnection *connection)
@@ -302,7 +381,6 @@ real_act_stage1_prepare (NMModem *modem,
 	*out_setting_name = nm_connection_need_secrets (connection, out_hints);
 	if (!*out_setting_name) {
 		gboolean enabled = nm_modem_get_mm_enabled (modem);
-		DBusGProxy *proxy;
 
 		if (priv->connect_properties)
 			g_hash_table_destroy (priv->connect_properties);
@@ -310,14 +388,8 @@ real_act_stage1_prepare (NMModem *modem,
 
 		if (enabled)
 			do_connect (self);
-		else {
-			proxy = nm_modem_get_proxy (modem, MM_DBUS_INTERFACE_MODEM);
-			dbus_g_proxy_begin_call_with_timeout (proxy,
-			                                      "Enable", stage1_enable_done,
-			                                      modem, NULL, 20000,
-			                                      G_TYPE_BOOLEAN, TRUE,
-			                                      G_TYPE_INVALID);
-		}
+		else
+			do_enable (self);
 	} else {
 		/* NMModem will handle requesting secrets... */
 	}
@@ -417,6 +489,8 @@ real_deactivate_quickly (NMModem *modem, NMDevice *device)
 		dbus_g_proxy_cancel_call (proxy, priv->call);
 		priv->call = NULL;
 	}
+
+	priv->pin_tries = 0;
 
 	NM_MODEM_CLASS (nm_modem_gsm_parent_class)->deactivate_quickly (modem, device);	
 }

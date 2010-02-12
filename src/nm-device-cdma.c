@@ -284,9 +284,20 @@ real_set_enabled (NMDeviceInterface *device, gboolean enabled)
 {
 	NMDeviceCdma *self = NM_DEVICE_CDMA (device);
 	NMDeviceCdmaPrivate *priv = NM_DEVICE_CDMA_GET_PRIVATE (self);
+	NMDeviceState state;
 
-	if (priv->modem)
+	if (priv->modem) {
 		nm_modem_set_mm_enabled (priv->modem, enabled);
+
+		if (enabled == FALSE) {
+			state = nm_device_interface_get_state (device);
+			if (state == NM_DEVICE_STATE_ACTIVATED) {
+				nm_device_state_changed (NM_DEVICE (device),
+				                         NM_DEVICE_STATE_DISCONNECTED,
+				                         NM_DEVICE_STATE_REASON_NONE);
+			}
+		}
+	}
 }
 
 /*****************************************************************************/

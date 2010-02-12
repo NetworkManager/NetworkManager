@@ -252,13 +252,84 @@ get_best_device (NMManager *manager, NMActRequest **out_req)
 	return best;
 }
 
+static gboolean
+is_localhost_mapping (const char *str)
+{
+	return (!strncmp (str, "127.0.0.1", strlen ("127.0.0.1")) && strstr (str, "localhost"));
+}
+
+static gboolean
+find_token (const char *line, const char *token)
+{
+	const char *start = line, *p = line;
+
+	g_return_val_if_fail (line != NULL, FALSE);
+	g_return_val_if_fail (token != NULL, FALSE);
+	g_return_val_if_fail (strlen (token) > 0, FALSE);
+
+	/* Walk through the line to find the next whitespace character */
+	while (p <= line + strlen (line)) {
+		if (isblank (*p) || (*p == '\0')) {
+			/* Token starts with 'start' and ends with 'end' */
+			if ((p > start) && *start && !strncmp (start, token, (p - start)))
+				return TRUE; /* found */
+
+			/* not found; advance start and continue looking */
+			start = p + 1;
+		}
+		p++;
+	}
+
+	return FALSE;
+}
+
+#if 0
+/* Testcase for find_token; break it out and add it to the testsuite */
+
+typedef struct {
+	const char *line;
+	const char *token;
+	gboolean expected;
+} Foo;
+
+static Foo foo[] = {
+	{ "127.0.0.1\tfoobar\tblah", "blah", TRUE },
+	{ "", "blah", FALSE },
+	{ "1.1.1.1\tbork\tfoo", "blah", FALSE },
+	{ "127.0.0.1 foobar\tblah", "blah", TRUE },
+	{ "127.0.0.1 foobar blah", "blah", TRUE },
+	{ "192.168.1.1 blah borkbork", "blah", TRUE },
+	{ "192.168.1.1 foobar\tblah borkbork", "blah", TRUE },
+	{ "192.168.1.1\tfoobar\tblah\tborkbork", "blah", TRUE },
+	{ "192.168.1.1 \tfoobar \tblah \tborkbork\t ", "blah", TRUE },
+	{ "\t\t\t\t   \t\t\tasdfadf  a\t\t\t\t\t   \t\t\t\t\t ", "blah", FALSE },
+	{ NULL, NULL, FALSE }
+};
+
+int main(int argc, char **argv)
+{
+	Foo *iter = &foo[0];
+
+	while (iter->line) {
+		if (find_token (iter->line, iter->token) != iter->expected) {
+			g_message ("Failed: '%s' <= '%s' (%d)", iter->line, iter->token, iter->expected);
+			return 1;
+		}
+		iter++;
+	}
+
+	g_message ("Success");
+	return 0;
+}
+#endif
+
 #define FALLBACK_HOSTNAME "localhost.localdomain"
 
 static gboolean
 update_etc_hosts (const char *hostname)
 {
 	char *contents = NULL;
-	char **lines = NULL, **line;
+	char **lines = NULL, **line, **host_mapping = NULL;
 	GError *error = NULL;
 	gboolean initial_comments = TRUE;
 	gboolean added = FALSE;
@@ -285,25 +356,62 @@ update_etc_hosts (const char *hostname)
 		return FALSE;
 	}
 
-	/* Replace any 127.0.0.1 entry that is at the beginning of the file or right
-	 * after initial comments.  If there is no 127.0.0.1 entry at the beginning
-	 * or after initial comments, add one there and ignore any other 127.0.0.1
-	 * entries.
+	/* Two-pass modification of /etc/hosts:
+	 *
+	 * 1) Look for a non-comment, non-localhost line that contains the current
+	 *    hostname.  Mark that line.
+	 *
+	 * 2) For each line in the existing /etc/hosts, add it to the new /etc/hosts
+	 *    unless it starts with 127.0.0.1 and is right after the initial comments
+	 *    (if any) and contains "localhost".
 	 */
+
+	/* Find any existing hostname mapping */
 	for (line = lines; lines && *line; line++) {
+		/* Look for any line that (a) contains the current hostname, and
+		 * (b) does not start with '127.0.0.1' and contain 'localhost'.
+		 */
+		if (   strlen (*line)
+		    && (*line[0] != '#')
+		    && find_token (*line, hostname)
+		    && !is_localhost_mapping (*line)) {
+			host_mapping = line;
+			break;
+		}
+	}
+
+	/* Construct the new hosts file; replace any 127.0.0.1 entry that is at the
+	 * beginning of the file or right after initial comments and contains
+	 * the string 'localhost'.  If there is no 127.0.0.1 entry at the beginning
+	 * or after initial comments that contains 'localhost', add one there
+	 * and ignore any other 127.0.0.1 entries that contain 'localhost'.
+	 */
+	for (line = lines, initial_comments = TRUE; lines && *line; line++) {
 		gboolean add_line = TRUE;
 
 		/* This is the first line after the initial comments */
-		if (initial_comments && (*line[0] != '#')) {
+		if (strlen (*line) && initial_comments && (*line[0] != '#')) {
 			initial_comments = FALSE;
-			g_string_append_printf (new_contents, "127.0.0.1\t%s", hostname);
+
+			/* If some other line contained the hostname, make a simple
+			 * localhost mapping and assume the user knows what they are doing
+			 * with their manual hostname entry.  Otherwise if the hostname
+			 * wasn't found somewhere else, add it to the localhost mapping line
+			 * to make sure it's mapped to something.
+			 */
+			if (host_mapping)
+				g_string_append (new_contents, "127.0.0.1");
+			else
+				g_string_append_printf (new_contents, "127.0.0.1\t%s", hostname);
+
 			if (strcmp (hostname, FALLBACK_HOSTNAME))
 				g_string_append_printf (new_contents, "\t" FALLBACK_HOSTNAME);
+
 			g_string_append (new_contents, "\tlocalhost\n");
 			added = TRUE;
 
 			/* Don't add the entry if it's supposed to be the actual localhost reverse mapping */
-			if (!strncmp (*line, "127.0.0.1", strlen ("127.0.0.1")) && strstr (*line, "localhost"))
+			if (is_localhost_mapping (*line))
 				add_line = FALSE;
 		}
 
