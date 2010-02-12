@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 Red Hat, Inc.
+ * Copyright (C) 2009 - 2010 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -300,6 +300,15 @@ real_set_enabled (NMDeviceInterface *device, gboolean enabled)
 	}
 }
 
+static void
+modem_enabled_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
+{
+	NMDeviceGsm *self = NM_DEVICE_GSM (user_data);
+	NMDeviceGsmPrivate *priv = NM_DEVICE_GSM_GET_PRIVATE (self);
+
+	real_set_enabled (NM_DEVICE_INTERFACE (self), nm_modem_get_mm_enabled (priv->modem));
+}
+
 /*****************************************************************************/
 
 NMDevice *
@@ -319,14 +328,15 @@ nm_device_gsm_new (NMModemGsm *modem, const char *driver)
 	                                    NM_DEVICE_INTERFACE_DEVICE_TYPE, NM_DEVICE_TYPE_GSM,
 	                                    NULL);
 	if (device) {
-		NM_DEVICE_GSM_GET_PRIVATE (device)->modem = g_object_ref (modem);
 		g_signal_connect (device, "state-changed", G_CALLBACK (device_state_changed), device);
 
+		NM_DEVICE_GSM_GET_PRIVATE (device)->modem = g_object_ref (modem);
 		g_signal_connect (modem, NM_MODEM_PPP_STATS, G_CALLBACK (ppp_stats), device);
 		g_signal_connect (modem, NM_MODEM_PPP_FAILED, G_CALLBACK (ppp_failed), device);
 		g_signal_connect (modem, NM_MODEM_PREPARE_RESULT, G_CALLBACK (modem_prepare_result), device);
 		g_signal_connect (modem, NM_MODEM_IP4_CONFIG_RESULT, G_CALLBACK (modem_ip4_config_result), device);
 		g_signal_connect (modem, NM_MODEM_NEED_AUTH, G_CALLBACK (modem_need_auth), device);
+		g_signal_connect (modem, "notify::" NM_MODEM_ENABLED, G_CALLBACK (modem_enabled_cb), device);
 	}
 
 	return device;
