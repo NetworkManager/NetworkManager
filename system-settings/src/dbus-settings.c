@@ -29,7 +29,20 @@
 #include <NetworkManager.h>
 #include <nm-connection.h>
 #include <dbus/dbus.h>
+
+#include <nm-setting-8021x.h>
+#include <nm-setting-cdma.h>
 #include <nm-setting-connection.h>
+#include <nm-setting-gsm.h>
+#include <nm-setting-ip4-config.h>
+#include <nm-setting-olpc-mesh.h>
+#include <nm-setting-ppp.h>
+#include <nm-setting-pppoe.h>
+#include <nm-setting-serial.h>
+#include <nm-setting-vpn.h>
+#include <nm-setting-wired.h>
+#include <nm-setting-wireless.h>
+#include <nm-setting-wireless-security.h>
 
 #include "nm-dbus-glib-types.h"
 #include "dbus-settings.h"
@@ -348,6 +361,22 @@ nm_sysconfig_settings_class_init (NMSysconfigSettingsClass *class)
 	dbus_g_error_domain_register (NM_SYSCONFIG_SETTINGS_ERROR,
 	                              NM_DBUS_IFACE_SETTINGS_SYSTEM,
 	                              NM_TYPE_SYSCONFIG_SETTINGS_ERROR);
+
+	/* And register all the settings errors with D-Bus */
+	dbus_g_error_domain_register (NM_SETTING_802_1X_ERROR, NULL, NM_TYPE_SETTING_802_1X_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_CDMA_ERROR, NULL, NM_TYPE_SETTING_CDMA_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_CONNECTION_ERROR, NULL, NM_TYPE_SETTING_CONNECTION_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_GSM_ERROR, NULL, NM_TYPE_SETTING_GSM_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_IP4_CONFIG_ERROR, NULL, NM_TYPE_SETTING_IP4_CONFIG_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_OLPC_MESH_ERROR, NULL, NM_TYPE_SETTING_OLPC_MESH_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_PPP_ERROR, NULL, NM_TYPE_SETTING_PPP_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_PPPOE_ERROR, NULL, NM_TYPE_SETTING_PPPOE_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_SERIAL_ERROR, NULL, NM_TYPE_SETTING_SERIAL_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_VPN_ERROR, NULL, NM_TYPE_SETTING_VPN_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_WIRED_ERROR, NULL, NM_TYPE_SETTING_WIRED_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_WIRELESS_SECURITY_ERROR, NULL, NM_TYPE_SETTING_WIRELESS_SECURITY_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_WIRELESS_ERROR, NULL, NM_TYPE_SETTING_WIRELESS_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_ERROR, NULL, NM_TYPE_SETTING_ERROR);
 }
 
 static void
