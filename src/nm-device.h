@@ -31,6 +31,7 @@
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 #include "nm-dhcp4-config.h"
+#include "nm-dhcp6-config.h"
 #include "nm-connection.h"
 
 typedef enum NMActStageReturn
@@ -140,10 +141,8 @@ int			nm_device_get_priority (NMDevice *dev);
 guint32			nm_device_get_ip4_address	(NMDevice *dev);
 void				nm_device_update_ip4_address	(NMDevice *dev);
 
-gboolean		nm_device_get_use_dhcp	(NMDevice *dev);
-void			nm_device_set_use_dhcp	(NMDevice *dev,
-								 gboolean use_dhcp);
 NMDHCP4Config * nm_device_get_dhcp4_config (NMDevice *dev);
+NMDHCP6Config * nm_device_get_dhcp6_config (NMDevice *dev);
 
 NMIP4Config *	nm_device_get_ip4_config	(NMDevice *dev);
 NMIP6Config *	nm_device_get_ip6_config	(NMDevice *dev);

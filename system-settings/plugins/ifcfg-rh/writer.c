@@ -1205,18 +1205,27 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	g_assert (value);
 	if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
 		svSetValue (ifcfg, "IPV6INIT", "no", FALSE);
+		svSetValue (ifcfg, "DHCPV6C", NULL, FALSE);
 		return TRUE;
 	} else if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
 		svSetValue (ifcfg, "IPV6INIT", "yes", FALSE);
 		svSetValue (ifcfg, "IPV6_AUTOCONF", "yes", FALSE);
+		svSetValue (ifcfg, "DHCPV6C", NULL, FALSE);
+	} else if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_DHCP)) {
+		svSetValue (ifcfg, "IPV6INIT", "yes", FALSE);
+		svSetValue (ifcfg, "IPV6_AUTOCONF", "no", FALSE);
+		svSetValue (ifcfg, "DHCPV6C", "yes", FALSE);
 	} else if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
 		svSetValue (ifcfg, "IPV6INIT", "yes", FALSE);
 		svSetValue (ifcfg, "IPV6_AUTOCONF", "no", FALSE);
+		svSetValue (ifcfg, "DHCPV6C", NULL, FALSE);
 	} else if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL)) {
 		svSetValue (ifcfg, "IPV6INIT", "yes", FALSE);
 		svSetValue (ifcfg, "IPV6_AUTOCONF", "no", FALSE);
+		svSetValue (ifcfg, "DHCPV6C", NULL, FALSE);
 	} else if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_SHARED)) {
 		svSetValue (ifcfg, "IPV6INIT", "yes", FALSE);
+		svSetValue (ifcfg, "DHCPV6C", NULL, FALSE);
 		/* TODO */
 	}
 

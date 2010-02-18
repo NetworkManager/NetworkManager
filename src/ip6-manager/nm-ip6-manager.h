@@ -35,6 +35,12 @@
 #define NM_IS_IP6_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_IP6_MANAGER))
 #define NM_IP6_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_IP6_MANAGER, NMIP6ManagerClass))
 
+enum {
+	IP6_DHCP_OPT_NONE = 0,
+	IP6_DHCP_OPT_OTHERCONF,
+	IP6_DHCP_OPT_MANAGED
+};
+
 typedef struct {
 	GObject parent;
 } NMIP6Manager;
@@ -47,13 +53,18 @@ typedef struct {
 	/* addrconf_complete is emitted only during initial configuration to indicate
 	 * that the initial configuration is complete.
 	 */
-	void (*addrconf_complete) (NMIP6Manager *manager, char *iface, gboolean success);
+	void (*addrconf_complete) (NMIP6Manager *manager,
+	                           char *iface,
+	                           guint dhcp_opts,
+	                           gboolean success);
 
 	/* config_changed gets emitted only *after* initial configuration is
 	 * complete; it's like DHCP renew and indicates that the existing config
 	 * of the interface has changed.
 	 */
-	void (*config_changed)    (NMIP6Manager *manager, char *iface);
+	void (*config_changed)    (NMIP6Manager *manager,
+	                           char *iface,
+	                           guint dhcp_opts);
 } NMIP6ManagerClass;
 
 GType nm_ip6_manager_get_type (void);

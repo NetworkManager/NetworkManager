@@ -13,7 +13,9 @@ test_dhcp_options_SOURCES = \
 
 test_dhcp_options_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS)
+	$(DBUS_CFLAGS) \
+	-DDHCLIENT_PATH=\"$(DHCLIENT_PATH)\" \
+	-DDHCPCD_PATH=\"$(DHCPCD_PATH)\"
 
 test_dhcp_options_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
