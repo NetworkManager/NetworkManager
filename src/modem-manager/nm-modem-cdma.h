@@ -46,10 +46,10 @@ typedef struct {
 
 GType nm_modem_cdma_get_type (void);
 
-NMDevice *nm_modem_cdma_new (const char *path,
-                             const char *device,
-                             const char *data_device,
-                             const char *driver);
+NMModem *nm_modem_cdma_new (const char *path,
+                            const char *device,
+                            const char *data_device,
+                            guint32 ip_method);
 
 G_END_DECLS
 

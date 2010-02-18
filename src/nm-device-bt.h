@@ -22,6 +22,7 @@
 #define NM_DEVICE_BT_H
 
 #include <nm-device.h>
+#include "nm-modem.h"
 
 G_BEGIN_DECLS
 
@@ -59,6 +60,12 @@ NMDevice *nm_device_bt_new (const char *udi,
 guint32 nm_device_bt_get_capabilities (NMDeviceBt *device);
 
 const char *nm_device_bt_get_hw_address (NMDeviceBt *device);
+
+gboolean nm_device_bt_modem_added (NMDeviceBt *device,
+                                   NMModem *modem,
+                                   const char *driver);
+
+gboolean nm_device_bt_modem_removed (NMDeviceBt *device, NMModem *modem);
 
 G_END_DECLS
 
