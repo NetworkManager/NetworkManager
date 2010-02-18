@@ -374,7 +374,6 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 			if (exported) {
 				g_hash_table_insert (priv->iface_connections, block->name, exported);
 				g_hash_table_insert (priv->well_known_interfaces, block->name, "known");
-				g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, exported);
 			}
 		} else if (!strcmp ("mapping", block->type)) {
 			g_hash_table_insert (priv->well_known_interfaces, block->name, "known");
@@ -441,6 +440,19 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 		g_object_unref (G_UDEV_DEVICE (iter->data));
 	}
 	g_list_free (keys);
+
+	/* Now if we're running in managed mode, let NM know there are new connections */
+	if (!priv->unmanage_well_known) {
+		GList *con_list = g_hash_table_get_values (priv->iface_connections);
+		GList *cl_iter;
+
+		for (cl_iter = con_list; cl_iter; cl_iter = g_list_next (cl_iter)) {
+			g_signal_emit_by_name (self,
+			                       NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED,
+			                       NM_EXPORTED_CONNECTION (cl_iter->data));
+		}
+		g_list_free (con_list);
+	}
 
 	PLUGIN_PRINT("SCPlugin-Ifupdown", "end _init.");
 }
