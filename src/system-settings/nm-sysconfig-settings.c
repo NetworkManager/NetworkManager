@@ -46,7 +46,6 @@
 #include <nm-setting-ppp.h>
 #include <nm-setting-pppoe.h>
 #include <nm-setting-serial.h>
-#include <nm-setting-template.h>
 #include <nm-setting-vpn.h>
 #include <nm-setting-wired.h>
 #include <nm-setting-wireless.h>
