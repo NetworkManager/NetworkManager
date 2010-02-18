@@ -69,7 +69,8 @@ dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = nm-ifcfg-rh.conf
 
 EXTRA_DIST = \
-	$(dbusservice_DATA)
+	$(dbusservice_DATA) \
+	nm-ifcfg-rh.xml
 
 CLEANFILES = $(BUILT_SOURCES)
 
