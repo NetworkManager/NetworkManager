@@ -1,20 +1,20 @@
-SUBDIRS = marshallers
-
-SUBDIRS += \
-	   libnm-util \
-	   libnm-glib \
-	   src \
-	   include \
-	   introspection \
-	   callouts \
-	   system-settings \
-	   tools \
-	   policy \
-	   initscript \
-	   test \
-	   po \
-	   man \
-	   docs
+SUBDIRS = \
+	marshallers \
+	libnm-util \
+	libnm-glib \
+	src \
+	include \
+	introspection \
+	callouts \
+	system-settings \
+	tools \
+	policy \
+	initscript \
+	test \
+	po \
+	man \
+	docs \
+	examples
 
 EXTRA_DIST = \
 	CONTRIBUTING \

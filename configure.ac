@@ -494,6 +494,8 @@ docs/Makefile
 docs/libnm-glib/Makefile
 docs/libnm-util/Makefile
 NetworkManager.pc
+examples/Makefile
+examples/python/Makefile
 ])
 AC_OUTPUT
 
