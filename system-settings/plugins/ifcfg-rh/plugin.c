@@ -563,8 +563,8 @@ impl_ifcfgrh_get_ifcfg_details (SCPluginIfcfg *plugin,
 		return FALSE;
 	}
 
-	*out_uuid = uuid;
-	*out_path = path;
+	*out_uuid = g_strdup (uuid);
+	*out_path = g_strdup (path);
 
 	return TRUE;
 }
