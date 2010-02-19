@@ -310,7 +310,7 @@ modem_prepare_result (NMModem *modem,
 	NMDeviceState state;
 
 	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (device));
-	g_return_if_fail (state == NM_DEVICE_STATE_CONFIG);
+	g_return_if_fail (state == NM_DEVICE_STATE_CONFIG || state == NM_DEVICE_STATE_NEED_AUTH);
 
 	if (success) {
 		NMActRequest *req;
