@@ -1,6 +1,11 @@
 [encoding: UTF-8]
 # List of source files containing translatable strings.
 # Please keep this file sorted alphabetically.
+cli/src/connections.c
+cli/src/devices.c
+cli/src/network-manager.c
+cli/src/nmcli.c
+cli/src/utils.c
 libnm-util/crypto.c
 libnm-util/crypto_gnutls.c
 libnm-util/crypto_nss.c

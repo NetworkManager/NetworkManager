@@ -7,6 +7,7 @@ SUBDIRS = \
 	introspection \
 	callouts \
 	system-settings \
+	cli \
 	tools \
 	policy \
 	initscript \

@@ -72,3 +72,4 @@ m4/lt*.m4
 
 policy/org.freedesktop.network-manager-settings.system.policy
 
+cli/src/nmcli

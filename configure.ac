@@ -472,6 +472,8 @@ system-settings/plugins/keyfile/Makefile
 system-settings/plugins/keyfile/io/Makefile
 system-settings/plugins/keyfile/tests/Makefile
 system-settings/plugins/keyfile/tests/keyfiles/Makefile
+cli/Makefile
+cli/src/Makefile
 test/Makefile
 initscript/Makefile
 initscript/RedHat/Makefile
