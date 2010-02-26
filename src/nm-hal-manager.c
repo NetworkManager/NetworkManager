@@ -156,8 +156,14 @@ nm_get_device_driver_name (LibHalContext *ctx, const char *udi)
 			if (   !strcmp (drv, "usb")
 			    || !strcmp (drv, "ehci_hcd")
 			    || !strcmp (drv, "yenta_cardbus")) {
-				libhal_free_string (drv);
-				drv = NULL;
+				/* Some drivers (libertas) are broken and report 'usb' as the
+				 * driver name even though the sysfs links are present.  Since
+				 * 0.7.2 used to handle that, we should stay compatible.
+				 */
+				if (strcmp (drv, "usb") != 0) {
+					libhal_free_string (drv);
+					drv = NULL;
+				}
 				break;
 			}
 		} else {
