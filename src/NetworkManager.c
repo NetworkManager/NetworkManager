@@ -439,9 +439,8 @@ main (int argc, char *argv[])
 	GOptionContext *opt_ctx = NULL;
 	gboolean become_daemon = FALSE;
 	gboolean g_fatal_warnings = FALSE;
-	char *pidfile = NULL, *user_pidfile = NULL;
-	char *config = NULL, *plugins = NULL, *dhcp = NULL;
-	char *state_file = NM_DEFAULT_SYSTEM_STATE_FILE;
+	char *pidfile = NULL, *state_file = NULL, *dhcp = NULL;
+	char *config = NULL, *plugins = NULL, *conf_plugins = NULL;
 	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE;
 	gboolean success;
 	NMPolicy *policy = NULL;
@@ -456,7 +455,7 @@ main (int argc, char *argv[])
 	GOptionEntry options[] = {
 		{ "no-daemon", 0, 0, G_OPTION_ARG_NONE, &become_daemon, "Don't become a daemon", NULL },
 		{ "g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &g_fatal_warnings, "Make all warnings fatal", NULL },
-		{ "pid-file", 0, 0, G_OPTION_ARG_FILENAME, &user_pidfile, "Specify the location of a PID file", "filename" },
+		{ "pid-file", 0, 0, G_OPTION_ARG_FILENAME, &pidfile, "Specify the location of a PID file", "filename" },
 		{ "state-file", 0, 0, G_OPTION_ARG_FILENAME, &state_file, "State file location", "/path/to/state.file" },
 		{ "config", 0, 0, G_OPTION_ARG_FILENAME, &config, "Config file location", "/path/to/config.file" },
 		{ "plugins", 0, 0, G_OPTION_ARG_STRING, &plugins, "List of plugins separated by ,", "plugin1,plugin2" },
@@ -495,7 +494,8 @@ main (int argc, char *argv[])
 		exit (1);
 	}
 
-	pidfile = g_strdup (user_pidfile ? user_pidfile : NM_DEFAULT_PID_FILE);
+	pidfile = pidfile ? pidfile : g_strdup (NM_DEFAULT_PID_FILE);
+	state_file = state_file ? state_file : g_strdup (NM_DEFAULT_SYSTEM_STATE_FILE);
 
 	/* check pid file */
 	if (check_pidfile (pidfile))
@@ -503,7 +503,7 @@ main (int argc, char *argv[])
 
 	/* Parse the config file */
 	if (config) {
-		if (!parse_config_file (config, &plugins, &dhcp, &error)) {
+		if (!parse_config_file (config, &conf_plugins, &dhcp, &error)) {
 			g_warning ("Config file %s invalid: (%d) %s.",
 			           config,
 			           error ? error->code : -1,
@@ -511,16 +511,21 @@ main (int argc, char *argv[])
 			exit (1);
 		}
 	} else {
-		config = NM_DEFAULT_SYSTEM_CONF_FILE;
-		if (!parse_config_file (config, &plugins, &dhcp, &error)) {
+		config = g_strdup (NM_DEFAULT_SYSTEM_CONF_FILE);
+		if (!parse_config_file (config, &conf_plugins, &dhcp, &error)) {
 			g_warning ("Default config file %s invalid: (%d) %s.",
 			           config,
 			           error ? error->code : -1,
 			           (error && error->message) ? error->message : "unknown");
+			g_free (config);
 			config = NULL;
 			/* Not a hard failure */
 		}
 	}
+
+	/* Plugins specified with '--plugins' override those of config file */
+	plugins = plugins ? plugins : g_strdup (conf_plugins);
+	g_free (conf_plugins);
 
 	g_clear_error (&error);
 
@@ -678,7 +683,13 @@ done:
 
 	if (pidfile && wrote_pidfile)
 		unlink (pidfile);
+
+	/* Free options */
 	g_free (pidfile);
+	g_free (state_file);
+	g_free (config);
+	g_free (plugins);
+	g_free (dhcp);
 
 	nm_info ("exiting (%s)", success ? "success" : "error");
 	exit (success ? 0 : 1);
