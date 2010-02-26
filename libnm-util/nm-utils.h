@@ -20,7 +20,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2005 - 2008 Red Hat, Inc.
+ * (C) Copyright 2005 - 2010 Red Hat, Inc.
  */
 
 #ifndef NM_UTILS_H
@@ -192,6 +192,7 @@ void nm_utils_ip4_routes_to_gvalue (GSList *list, GValue *value);
 
 guint32 nm_utils_ip4_netmask_to_prefix (guint32 netmask);
 guint32 nm_utils_ip4_prefix_to_netmask (guint32 prefix);
+guint32 nm_utils_ip4_get_default_prefix (guint32 ip);
 
 char *nm_utils_uuid_generate (void);
 char *nm_utils_uuid_generate_from_string (const char *s);

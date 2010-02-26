@@ -299,6 +299,19 @@ read_full_ip4_address (shvarFile *ifcfg,
 		nm_ip4_address_set_prefix (addr, nm_utils_ip4_netmask_to_prefix (tmp));
 	}
 
+	/* Try to autodetermine the prefix for the address' class */
+	if (!nm_ip4_address_get_prefix (addr)) {
+		guint32 prefix = 0;
+
+		prefix = nm_utils_ip4_get_default_prefix (nm_ip4_address_get_address (addr));
+		nm_ip4_address_set_prefix (addr, prefix);
+
+		value = svGetValue (ifcfg, ip_tag, FALSE);
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: missing %s, assuming %s/%u",
+		             prefix_tag, value, prefix);
+		g_free (value);
+	}
+
 	/* Validate the prefix */
 	if (  !nm_ip4_address_get_prefix (addr)
 	    || nm_ip4_address_get_prefix (addr) > 32) {

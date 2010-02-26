@@ -73,7 +73,6 @@ get_leasefile_for_iface (const char * iface, const char *uuid)
 }
 
 
-
 #define DHCP_CLIENT_ID_TAG "send dhcp-client-identifier"
 #define DHCP_CLIENT_ID_FORMAT DHCP_CLIENT_ID_TAG " \"%s\"; # added by NetworkManager"
 #define DHCP_CLIENT_ID_FORMAT_OCTETS DHCP_CLIENT_ID_TAG " %s; # added by NetworkManager"
