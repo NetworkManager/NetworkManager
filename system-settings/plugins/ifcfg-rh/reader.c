@@ -606,16 +606,9 @@ read_full_ip4_address (shvarFile *ifcfg,
 
 	/* Try to autodetermine the prefix for the address' class */
 	if (!nm_ip4_address_get_prefix (addr)) {
-		guint32 tmp_addr, prefix = 0;
+		guint32 prefix = 0;
 
-		tmp_addr = nm_ip4_address_get_address (addr);
-		if (((ntohl(tmp_addr) & 0xFF000000) >> 24) <= 127)
-			prefix = 8;
-		else if (((ntohl(tmp_addr) & 0xFF000000) >> 24) <= 191)
-			prefix = 16;
-		else
-			prefix = 24;
-
+		prefix = nm_utils_ip4_get_default_prefix (nm_ip4_address_get_address (addr));
 		nm_ip4_address_set_prefix (addr, prefix);
 
 		value = svGetValue (ifcfg, ip_tag, FALSE);

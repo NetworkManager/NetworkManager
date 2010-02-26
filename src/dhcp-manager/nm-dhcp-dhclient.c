@@ -237,13 +237,16 @@ nm_dhcp_dhclient_get_lease_config (const char *iface, const char *uuid)
 
 		/* Netmask */
 		data = g_hash_table_lookup (hash, "option subnet-mask");
-		if (!data)
-			data = "255.255.255.0"; /* FIXME: assume class C? */
-		if (!inet_pton (AF_INET, data, &tmp)) {
-			g_warning ("%s: couldn't parse IP4 subnet mask '%s'", __func__, data);
-			goto error;
+		if (data) {
+			if (!inet_pton (AF_INET, data, &tmp)) {
+				g_warning ("%s: couldn't parse IP4 subnet mask '%s'", __func__, data);
+				goto error;
+			}
+			prefix = nm_utils_ip4_netmask_to_prefix (tmp.s_addr);
+		} else {
+			/* Get default netmask for the IP according to appropriate class. */
+			prefix = nm_utils_ip4_get_default_prefix (nm_ip4_address_get_address (addr));
 		}
-		prefix = nm_utils_ip4_netmask_to_prefix (tmp.s_addr);
 		nm_ip4_address_set_prefix (addr, prefix);
 
 		/* Gateway */
