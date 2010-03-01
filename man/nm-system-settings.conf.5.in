@@ -1,0 +1,26 @@
+.\" nm-system-settings.conf(5) manual page
+.\"
+.\" Copyright (C) 2010 Red Hat, Inc.
+.\"
+.TH "nm-system-settings.conf" "5" "1 February 2010" ""
+.SH NAME
+nm\-system\-settings.conf \- Deprecated NetworkManager configuration file
+.SH SYNOPSIS
+/etc/NetworkManager/nm\-system\-settings.conf
+.br
+or
+.br
+\fI<SYSCONFDIR>\fP/NetworkManager/nm\-system\-settings.conf
+.br
+where <SYSCONFDIR> depends on your distribution or build.
+.SH DESCRIPTION
+.P
+.I nm\-system\-settings.conf
+is a deprecated configuration file for \fBNetworkManager\fP (5).  While this
+file can still be used, NetworkManager now defaults to reading the config
+file <SYSCONFDIR>\fP/NetworkManager/NetworkManager.conf\fP instead, falling back
+to nm\-system\-settings.conf if NetworkManager.conf does not exist.
+.SH "SEE ALSO"
+.BR NetworkManager (8),
+.BR NetworkManager.conf (5),
+.BR nm\-tool (1).
