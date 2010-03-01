@@ -54,9 +54,10 @@
 #include "nm-vpn-manager.h"
 #include "nm-logging.h"
 
-#define NM_DEFAULT_PID_FILE	LOCALSTATEDIR"/run/NetworkManager.pid"
-#define NM_DEFAULT_SYSTEM_CONF_FILE	SYSCONFDIR"/NetworkManager/nm-system-settings.conf"
-#define NM_DEFAULT_SYSTEM_STATE_FILE	LOCALSTATEDIR"/lib/NetworkManager/NetworkManager.state"
+#define NM_DEFAULT_PID_FILE          LOCALSTATEDIR"/run/NetworkManager.pid"
+#define NM_DEFAULT_SYSTEM_CONF_FILE  SYSCONFDIR"/NetworkManager/NetworkManager.conf"
+#define NM_OLD_SYSTEM_CONF_FILE      SYSCONFDIR"/NetworkManager/nm-system-settings.conf"
+#define NM_DEFAULT_SYSTEM_STATE_FILE LOCALSTATEDIR"/lib/NetworkManager/NetworkManager.state"
 
 /*
  * Globals
@@ -511,15 +512,35 @@ main (int argc, char *argv[])
 			exit (1);
 		}
 	} else {
-		config = g_strdup (NM_DEFAULT_SYSTEM_CONF_FILE);
-		if (!parse_config_file (config, &conf_plugins, &dhcp, &error)) {
-			g_warning ("Default config file %s invalid: (%d) %s.",
-			           config,
-			           error ? error->code : -1,
-			           (error && error->message) ? error->message : "unknown");
-			g_free (config);
-			config = NULL;
-			/* Not a hard failure */
+		gboolean parsed = FALSE;
+
+		/* Try NetworkManager.conf first */
+		if (g_file_test (NM_DEFAULT_SYSTEM_CONF_FILE, G_FILE_TEST_EXISTS)) {
+			config = g_strdup (NM_DEFAULT_SYSTEM_CONF_FILE);
+			parsed = parse_config_file (config, &conf_plugins, &dhcp, &error);
+			if (!parsed) {
+				g_warning ("Default config file %s invalid: (%d) %s.",
+				           config,
+				           error ? error->code : -1,
+				           (error && error->message) ? error->message : "unknown");
+				g_free (config);
+				config = NULL;
+				/* Not a hard failure */
+			}
+		}
+
+		/* Try old nm-system-settings.conf next */
+		if (!parsed) {
+			config = g_strdup (NM_OLD_SYSTEM_CONF_FILE);
+			if (!parse_config_file (config, &conf_plugins, &dhcp, &error)) {
+				g_warning ("Default config file %s invalid: (%d) %s.",
+				           config,
+				           error ? error->code : -1,
+				           (error && error->message) ? error->message : "unknown");
+				g_free (config);
+				config = NULL;
+				/* Not a hard failure */
+			}
 		}
 	}
 
