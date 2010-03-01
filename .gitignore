@@ -33,7 +33,7 @@ docs/libnm-util/libnm-util-*.txt
 COPYING
 INSTALL
 *.pc
-man/*.[18]
+man/*.[185]
 po/*.gmo
 
 callouts/nm-dhcp-client.action
