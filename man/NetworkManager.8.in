@@ -87,14 +87,10 @@ in conjunction with the "\-\-no\-daemon" option (thus echoing PPP and DHCP helpe
 output to stdout) these can quickly help pinpoint the source of connection
 issues.
 .TP
-.I "NM_SERIAL_DEBUG"
-(0.7.x only) When set to anything, causes NetworkManager to log all serial
-communication to and from serial devices like mobile broadband 3G modems.
-.TP
 .I "NM_PPP_DEBUG"
 When set to anything, causes NetworkManager to turn on PPP debugging in pppd,
 which logs all PPP and PPTP frames and client/server exchanges.
 .SH SEE ALSO
 .BR nm\-tool (1),
-.BR NetworkManager.conf (5),
+.BR NetworkManager.conf (5).
 

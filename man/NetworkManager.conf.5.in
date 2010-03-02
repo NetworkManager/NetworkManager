@@ -21,9 +21,8 @@ how NetworkManager handles system-wide connection settings. The location of
 the file may be changed through use of the "\-\-config=" argument for
 \fBNetworkManager\fP (8).
 
-It is not necessary to restart NetworkManager (for version 0.8) or nm\-system\-settings
-(for version 0.7) when making changes, as the configuration file is watched for changes
-and reloaded automatically when necessary.
+It is not necessary to restart NetworkManager when making changes, as the
+configuration file is watched for changes and reloaded automatically when necessary.
 .SH "FILE FORMAT"
 .P
 The configuration file format is so-called key file (sort of ini-style format).
