@@ -847,11 +847,11 @@ nm_dhcp_manager_options_to_ip4_config (const char *iface, GHashTable *options)
 	str = g_hash_table_lookup (options, "new_subnet_mask");
 	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
 		prefix = nm_utils_ip4_netmask_to_prefix (tmp_addr.s_addr);
-		nm_info ("  prefix %d (%s)", nm_ip4_address_get_prefix (addr), str);
+		nm_info ("  prefix %d (%s)", prefix, str);
 	} else {
 		/* Get default netmask for the IP according to appropriate class. */
 		prefix = nm_utils_ip4_get_default_prefix (nm_ip4_address_get_address (addr));
-		nm_info ("  prefix %d (default)", nm_ip4_address_get_prefix (addr));
+		nm_info ("  prefix %d (default)", prefix);
 	}
 	nm_ip4_address_set_prefix (addr, prefix);
 
