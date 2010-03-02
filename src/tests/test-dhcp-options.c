@@ -579,6 +579,69 @@ test_invalid_escaped_domain_searches (void)
 	g_hash_table_destroy (options);
 }
 
+static void
+test_ip4_missing_prefix (const char *ip, guint32 expected_prefix)
+{
+	GHashTable *options;
+	NMIP4Config *ip4_config;
+	NMIP4Address *addr;
+
+	options = fill_table (generic_options, NULL);
+	g_hash_table_insert (options, "new_ip_address", (gpointer) ip);
+	g_hash_table_insert (options, "new_subnet_mask", NULL);
+
+	ip4_config = nm_dhcp_manager_options_to_ip4_config ("eth0", options);
+	ASSERT (ip4_config != NULL,
+	        "dhcp-ip4-missing-prefix", "failed to parse DHCP4 options");
+
+	ASSERT (nm_ip4_config_get_num_addresses (ip4_config) == 1,
+	        "dhcp-ip4-missing-prefix", "unexpected number of IP4 addresses (not 1)");
+
+	addr = nm_ip4_config_get_address (ip4_config, 0);
+	ASSERT (addr != NULL,
+	        "dhcp-ip4-missing-prefix", "missing IP4 address #1");
+
+	ASSERT (nm_ip4_address_get_prefix (addr) == expected_prefix,
+	        "dhcp-ip4-missing-prefix", "unexpected IP4 address prefix %d (expected %d)",
+	        nm_ip4_address_get_prefix (addr), expected_prefix);
+
+	g_hash_table_destroy (options);
+}
+
+static void
+test_ip4_prefix_classless (void)
+{
+	GHashTable *options;
+	NMIP4Config *ip4_config;
+	NMIP4Address *addr;
+
+	/* Ensure that the missing-subnet-mask handler doesn't mangle classless
+	 * subnet masks at all.  The handler should trigger only if the server
+	 * doesn't send the subnet mask.
+	 */
+
+	options = fill_table (generic_options, NULL);
+	g_hash_table_insert (options, "new_ip_address", (gpointer) "172.16.54.22");
+	g_hash_table_insert (options, "new_subnet_mask", (gpointer) "255.255.252.0");
+
+	ip4_config = nm_dhcp_manager_options_to_ip4_config ("eth0", options);
+	ASSERT (ip4_config != NULL,
+	        "dhcp-ip4-prefix-classless", "failed to parse DHCP4 options");
+
+	ASSERT (nm_ip4_config_get_num_addresses (ip4_config) == 1,
+	        "dhcp-ip4-prefix-classless", "unexpected number of IP4 addresses (not 1)");
+
+	addr = nm_ip4_config_get_address (ip4_config, 0);
+	ASSERT (addr != NULL,
+	        "dhcp-ip4-prefix-classless", "missing IP4 address #1");
+
+	ASSERT (nm_ip4_address_get_prefix (addr) == 22,
+	        "dhcp-ip4-prefix-classless", "unexpected IP4 address prefix %d (expected 22)",
+	        nm_ip4_address_get_prefix (addr));
+
+	g_hash_table_destroy (options);
+}
+
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
@@ -601,6 +664,10 @@ int main (int argc, char **argv)
 	test_gateway_in_classless_routes ();
 	test_escaped_domain_searches ();
 	test_invalid_escaped_domain_searches ();
+	test_ip4_missing_prefix ("192.168.1.10", 24);
+	test_ip4_missing_prefix ("172.16.54.50", 16);
+	test_ip4_missing_prefix ("10.1.2.3", 8);
+	test_ip4_prefix_classless ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);

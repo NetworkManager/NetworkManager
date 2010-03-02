@@ -819,7 +819,7 @@ nm_dhcp_manager_options_to_ip4_config (const char *iface, GHashTable *options)
 	struct in_addr tmp_addr;
 	NMIP4Address *addr = NULL;
 	char *str = NULL;
-	guint32 gwaddr = 0;
+	guint32 gwaddr = 0, prefix = 0;
 	gboolean have_classless = FALSE;
 
 	g_return_val_if_fail (iface != NULL, NULL);
@@ -846,9 +846,14 @@ nm_dhcp_manager_options_to_ip4_config (const char *iface, GHashTable *options)
 
 	str = g_hash_table_lookup (options, "new_subnet_mask");
 	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
-		nm_ip4_address_set_prefix (addr, nm_utils_ip4_netmask_to_prefix (tmp_addr.s_addr));
+		prefix = nm_utils_ip4_netmask_to_prefix (tmp_addr.s_addr);
 		nm_info ("  prefix %d (%s)", nm_ip4_address_get_prefix (addr), str);
+	} else {
+		/* Get default netmask for the IP according to appropriate class. */
+		prefix = nm_utils_ip4_get_default_prefix (nm_ip4_address_get_address (addr));
+		nm_info ("  prefix %d (default)", nm_ip4_address_get_prefix (addr));
 	}
+	nm_ip4_address_set_prefix (addr, prefix);
 
 	/* Routes: if the server returns classless static routes, we MUST ignore
 	 * the 'static_routes' option.
