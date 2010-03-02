@@ -522,7 +522,7 @@ initscript/Mandriva/networkmanager
 introspection/Makefile
 man/Makefile
 man/NetworkManager.8
-man/NetworkManager.conf.5
+man/nm-system-settings.8
 man/nm-system-settings.conf.5
 man/nm-tool.1
 po/Makefile.in

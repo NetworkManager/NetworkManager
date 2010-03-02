@@ -1,0 +1,38 @@
+.\" nm-system-settings(8) manual page
+.\"
+.\" Copyright (C) 2010 Red Hat, Inc.
+.\"
+.TH "nm-system-settings" "8" "1 February 2010" ""
+.SH NAME
+nm\-system\-settings \- NetworkManager system settings daemon
+.SH SYNOPSIS
+.B nm-system-settings [\-\-debug] [\-\-config=<filename>] [\-\-plugins=<plugin1>,plugin2>,...]
+.SH DESCRIPTION
+The \fInm\-system\-settings\fP daemon provides system-wide configuration to
+\fBNetworkManager\fP(8) by translating distribution\-specific network configuration
+files into a format usable by NetworkManager and NetworkManager-enabled applications.
+The daemon is spawned automatically by NetworkManager and enabled applications
+and is not usually run by itself.
+.SH OPTIONS
+The following options are supported:
+.TP
+.I "\-\-config=<filename>"
+Specify configuration file identifying plugins and plugin configuration.  If not
+specified, the default value of '<SYSCONFDIR>/NetworkManager/nm\-system\-settings.conf'
+is used.  See \fBnm\-system\-settings.conf\fP(5) for more information on configuration
+file and the arguments below.
+.TP
+.I "\-\-plugins=<plugin1>,<plugin2>,..."
+List plugins used to manage system\-wide connection settings.  This list has
+precedence over plugins specified in the configuration file.  Currently supported
+plugins are: keyfile, ifcfg\-rh, ifcfg\-suse, ifupdown.
+See \fBnm\-system\-settings.conf\fP(5) for more information on the plugins.
+.TP
+.I "\-\-debug"
+Direct logging and debugging output to stdout instead of syslog.
+.SH "SEE ALSO"
+.BR http://live.gnome.org/NetworkManager/SystemSettings
+.sp
+.BR NetworkManager (8),
+.BR nm\-system\-settings.conf (8),
+.BR nm\-tool (1).

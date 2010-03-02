@@ -8,7 +8,7 @@
 .SH NAME
 NetworkManager \- network management daemon
 .SH SYNOPSIS
-.B NetworkManager [\-\-no\-daemon] [\-\-pid\-file=<filename>] [\-\-state\-file=<filename>] [\-\-config=<filename>] [\-\-plugins=<plugin1>,plugin2>,...]
+.B NetworkManager [\-\-no\-daemon] [\-\-pid\-file=<filename>] [\-\-state\-file=<filename>]
 .SH DESCRIPTION
 The \fINetworkManager\fP daemon attempts to make  networking configuration and
 operation as painless and automatic as possible by managing the primary network
@@ -67,20 +67,6 @@ running proccess and prevents running multiple instances.
 Specify file for storing state of the NetworkManager persistently.  If not specified,
 the default value of '<LOCALSTATEDIR>/lib/NetworkManager/NetworkManager.state' is
 used; where <LOCALSTATEDIR> is dependent on your distribution (usually it's /var).
-.TP
-.I "\-\-config=<filename>"
-Specify configuration file to set up various settings for NetworkManager.  If not
-specified, the default value of '<SYSCONFDIR>/NetworkManager/NetworkManager.conf'
-is used with a fallback to the older 'nm\-system\-settings.conf' if located in
-the same directory; where <SYSCONFDIR> is dependent on your distribution (usually
-it's /etc).  See \fBNetworkManager.conf\fP(5) for more information on configuration
-file.
-.TP
-.I "\-\-plugins=<plugin1>,<plugin2>, ...
-List plugins used to manage system-wide connection settings.   This list has
-preference over plugins specified in the configuration file.  Currently supported
-plugins are: keyfile, ifcfg\-rh, ifcfg\-suse, ifupdown.
-See \fBNetworkManager.conf\fP(5) for more information on the plugins.
 .SH DEBUGGING
 The following environment variables are supported to help debugging.  When used
 in conjunction with the "\-\-no\-daemon" option (thus echoing PPP and DHCP helper
@@ -88,13 +74,14 @@ output to stdout) these can quickly help pinpoint the source of connection
 issues.
 .TP
 .I "NM_SERIAL_DEBUG"
-(0.7.x only) When set to anything, causes NetworkManager to log all serial
-communication to and from serial devices like mobile broadband 3G modems.
+When set to anything, causes NetworkManager to log all serial communication to
+and from serial devices like mobile broadband 3G modems.
 .TP
 .I "NM_PPP_DEBUG"
 When set to anything, causes NetworkManager to turn on PPP debugging in pppd,
 which logs all PPP and PPTP frames and client/server exchanges.
 .SH SEE ALSO
 .BR nm\-tool (1),
-.BR NetworkManager.conf (5),
+.BR nm\-system\-settings (8),
+.BR nm\-system\-settings.conf (5).
 

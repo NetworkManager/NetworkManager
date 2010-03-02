@@ -1,6 +1,6 @@
 .\" nm-tool(1) manual page
 .\"
-.\" Copyright (C) 2005 - 2009 Red Hat, Inc.
+.\" Copyright (C) 2005 - 2010 Red Hat, Inc.
 .\" Copyright (C) 2005 - 2009 Novell, Inc.
 .\" Copyright (C) 2005 Robert Love
 .\"
@@ -14,4 +14,6 @@ The \fInm-tool\fP utility provides information about NetworkManager, device,
 and wireless networks.
 .SH SEE ALSO
 .BR NetworkManager (8),
+.BR nm\-system\-settings (8),
+.BR nm\-system\-settings.conf (5).
 
