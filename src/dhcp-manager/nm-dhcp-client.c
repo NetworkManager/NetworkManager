@@ -686,7 +686,7 @@ ip4_options_to_config (NMDHCPClient *self)
 	struct in_addr tmp_addr;
 	NMIP4Address *addr = NULL;
 	char *str = NULL;
-	guint32 gwaddr = 0;
+	guint32 gwaddr = 0, prefix = 0;
 	gboolean have_classless = FALSE;
 
 	g_return_val_if_fail (self != NULL, NULL);
@@ -716,9 +716,14 @@ ip4_options_to_config (NMDHCPClient *self)
 
 	str = g_hash_table_lookup (priv->options, "new_subnet_mask");
 	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
-		nm_ip4_address_set_prefix (addr, nm_utils_ip4_netmask_to_prefix (tmp_addr.s_addr));
-		g_message ("  prefix %d (%s)", nm_ip4_address_get_prefix (addr), str);
+		prefix = nm_utils_ip4_netmask_to_prefix (tmp_addr.s_addr);
+		g_message ("  prefix %d (%s)", prefix, str);
+	} else {
+		/* Get default netmask for the IP according to appropriate class. */
+		prefix = nm_utils_ip4_get_default_prefix (nm_ip4_address_get_address (addr));
+		g_message ("  prefix %d (default)", prefix);
 	}
+	nm_ip4_address_set_prefix (addr, prefix);
 
 	/* Routes: if the server returns classless static routes, we MUST ignore
 	 * the 'static_routes' option.

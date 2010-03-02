@@ -607,14 +607,76 @@ test_invalid_escaped_domain_searches (const char *client)
 	g_hash_table_destroy (options);
 }
 
-#define DHCLIENT "dhclient"
-#define DHCPCD "dhcpcd"
+static void
+test_ip4_missing_prefix (const char *client, const char *ip, guint32 expected_prefix)
+{
+	GHashTable *options;
+	NMIP4Config *ip4_config;
+	NMIP4Address *addr;
+
+	options = fill_table (generic_options, NULL);
+	g_hash_table_insert (options, "new_ip_address", string_to_byte_array_gvalue (ip));
+	g_hash_table_remove (options, "new_subnet_mask");
+
+	ip4_config = nm_dhcp_manager_test_ip4_options_to_config (client, "eth0", options, "rebind");
+	ASSERT (ip4_config != NULL,
+	        "dhcp-ip4-missing-prefix", "failed to parse DHCP4 options");
+
+	ASSERT (nm_ip4_config_get_num_addresses (ip4_config) == 1,
+	        "dhcp-ip4-missing-prefix", "unexpected number of IP4 addresses (not 1)");
+
+	addr = nm_ip4_config_get_address (ip4_config, 0);
+	ASSERT (addr != NULL,
+	        "dhcp-ip4-missing-prefix", "missing IP4 address #1");
+
+	ASSERT (nm_ip4_address_get_prefix (addr) == expected_prefix,
+	        "dhcp-ip4-missing-prefix", "unexpected IP4 address prefix %d (expected %d)",
+	        nm_ip4_address_get_prefix (addr), expected_prefix);
+
+	g_hash_table_destroy (options);
+}
+
+static void
+test_ip4_prefix_classless (const char *client)
+{
+	GHashTable *options;
+	NMIP4Config *ip4_config;
+	NMIP4Address *addr;
+
+	/* Ensure that the missing-subnet-mask handler doesn't mangle classless
+	 * subnet masks at all.  The handler should trigger only if the server
+	 * doesn't send the subnet mask.
+	 */
+
+	options = fill_table (generic_options, NULL);
+	g_hash_table_insert (options, "new_ip_address", string_to_byte_array_gvalue ("172.16.54.22"));
+	g_hash_table_insert (options, "new_subnet_mask", string_to_byte_array_gvalue ("255.255.252.0"));
+
+	ip4_config = nm_dhcp_manager_test_ip4_options_to_config (client, "eth0", options, "rebind");
+	ASSERT (ip4_config != NULL,
+	        "dhcp-ip4-prefix-classless", "failed to parse DHCP4 options");
+
+	ASSERT (nm_ip4_config_get_num_addresses (ip4_config) == 1,
+	        "dhcp-ip4-prefix-classless", "unexpected number of IP4 addresses (not 1)");
+
+	addr = nm_ip4_config_get_address (ip4_config, 0);
+	ASSERT (addr != NULL,
+	        "dhcp-ip4-prefix-classless", "missing IP4 address #1");
+
+	ASSERT (nm_ip4_address_get_prefix (addr) == 22,
+	        "dhcp-ip4-prefix-classless", "unexpected IP4 address prefix %d (expected 22)",
+	        nm_ip4_address_get_prefix (addr));
+
+	g_hash_table_destroy (options);
+}
 
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
 	DBusGConnection *bus;
 	char *base;
+	const char *clients[2][2] = { {DHCLIENT_PATH, "dhclient"}, {DHCPCD_PATH, "dhcpcd"} };
+	guint32 i;
 
 	g_type_init ();
 	bus = dbus_g_bus_get (DBUS_BUS_SESSION, NULL);
@@ -623,28 +685,26 @@ int main (int argc, char **argv)
 		FAIL ("nm-utils-init", "failed to initialize libnm-util: %s", error->message);
 
 	/* The tests */
-	if (strlen (DHCLIENT_PATH)) {
-		test_generic_options (DHCLIENT);
-		test_wins_options (DHCLIENT);
-		test_classless_static_routes (DHCLIENT);
-		test_invalid_classless_routes1 (DHCLIENT);
-		test_invalid_classless_routes2 (DHCLIENT);
-		test_invalid_classless_routes3 (DHCLIENT);
-		test_gateway_in_classless_routes (DHCLIENT);
-		test_escaped_domain_searches (DHCLIENT);
-		test_invalid_escaped_domain_searches (DHCLIENT);
-	}
+	for (i = 0; i < 2; i++) {
+		const char *client_path = clients[i][0];
+		const char *client = clients[i][1];
 
-	if (strlen (DHCPCD_PATH)) {
-		test_generic_options (DHCPCD);
-		test_wins_options (DHCPCD);
-		test_classless_static_routes (DHCPCD);
-		test_invalid_classless_routes1 (DHCPCD);
-		test_invalid_classless_routes2 (DHCPCD);
-		test_invalid_classless_routes3 (DHCPCD);
-		test_gateway_in_classless_routes (DHCPCD);
-		test_escaped_domain_searches (DHCPCD);
-		test_invalid_escaped_domain_searches (DHCPCD);
+		if (!client_path || !strlen (client_path))
+			continue;
+
+		test_generic_options (client);
+		test_wins_options (client);
+		test_classless_static_routes (client);
+		test_invalid_classless_routes1 (client);
+		test_invalid_classless_routes2 (client);
+		test_invalid_classless_routes3 (client);
+		test_gateway_in_classless_routes (client);
+		test_escaped_domain_searches (client);
+		test_invalid_escaped_domain_searches (client);
+		test_ip4_missing_prefix (client, "192.168.1.10", 24);
+		test_ip4_missing_prefix (client, "172.16.54.50", 16);
+		test_ip4_missing_prefix (client, "10.1.2.3", 8);
+		test_ip4_prefix_classless (client);
 	}
 
 	base = g_path_get_basename (argv[0]);
