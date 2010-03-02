@@ -43,7 +43,7 @@
 #include <glib/gi18n.h>
 
 #include "NetworkManager.h"
-#include "NetworkManagerSystem.h"
+#include "nm-system.h"
 #include "nm-netlink-listener.h"
 #include "nm-utils.h"
 #include "nm-marshal.h"

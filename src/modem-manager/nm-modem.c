@@ -21,7 +21,7 @@
 
 #include <string.h>
 #include "nm-modem.h"
-#include "NetworkManagerSystem.h"
+#include "nm-system.h"
 #include "nm-dbus-manager.h"
 #include "nm-setting-connection.h"
 #include "nm-marshal.h"

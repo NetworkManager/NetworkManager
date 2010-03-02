@@ -98,8 +98,8 @@ NetworkManager_SOURCES = \
 		nm-device-cdma.h \
 		nm-device-gsm.c \
 		nm-device-gsm.h \
-		NetworkManagerAP.c \
-		NetworkManagerAP.h \
+		nm-wifi-ap.c \
+		nm-wifi-ap.h \
 		nm-dbus-manager.h \
 		nm-dbus-manager.c \
 		nm-udev-manager.c \
@@ -114,15 +114,15 @@ NetworkManager_SOURCES = \
 		nm-secrets-provider-interface.h \
 		nm-active-connection.h \
 		nm-active-connection.c \
-		NetworkManager.c \
-		NetworkManagerPolicy.c \
-		NetworkManagerPolicy.h \
+		main.c \
+		nm-policy.c \
+		nm-policy.h \
 		nm-policy-hosts.c \
 		nm-policy-hosts.h \
 		NetworkManagerUtils.c \
 		NetworkManagerUtils.h \
-		NetworkManagerSystem.c \
-		NetworkManagerSystem.h \
+		nm-system.c \
+		nm-system.h \
 		nm-logging.c \
 		nm-logging.h \
 		nm-manager.c \

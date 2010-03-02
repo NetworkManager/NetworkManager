@@ -42,7 +42,7 @@
 #include <ctype.h>
 #include <net/if.h>
 
-#include "NetworkManagerSystem.h"
+#include "nm-system.h"
 #include "nm-device.h"
 #include "nm-named-manager.h"
 #include "NetworkManagerUtils.h"

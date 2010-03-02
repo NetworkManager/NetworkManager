@@ -31,7 +31,7 @@
 #include <stdlib.h>
 
 #include "NetworkManagerGeneric.h"
-#include "NetworkManagerSystem.h"
+#include "nm-system.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 

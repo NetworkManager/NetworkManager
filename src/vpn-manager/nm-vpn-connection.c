@@ -35,7 +35,7 @@
 #include "nm-setting-ip4-config.h"
 #include "nm-dbus-manager.h"
 #include "nm-manager.h"
-#include "NetworkManagerSystem.h"
+#include "nm-system.h"
 #include "nm-utils.h"
 #include "nm-vpn-plugin-bindings.h"
 #include "nm-marshal.h"

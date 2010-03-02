@@ -43,13 +43,16 @@
 #include "nm-device-private.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
-#include "NetworkManagerPolicy.h"
 #include "nm-activation-request.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-olpc-mesh.h"
-#include "NetworkManagerSystem.h"
+#include "nm-system.h"
 #include "nm-manager.h"
+
+/* This is a bug; but we can't really change API now... */
+#include "NetworkManagerVPN.h"
+
 
 #include "nm-device-olpc-mesh-glue.h"
 
@@ -585,6 +588,7 @@ real_act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	/* disconnect companion device, if it is connected */
 	if (nm_device_get_act_request (NM_DEVICE (priv->companion))) {
 		nm_warning ("disconnecting companion device");
+		/* FIXME: VPN stuff here is a bug; but we can't really change API now... */
 		nm_device_state_changed (NM_DEVICE (priv->companion),
 		                         NM_DEVICE_STATE_DISCONNECTED,
 		                         NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED);
@@ -822,6 +826,7 @@ companion_state_changed_cb (NMDeviceWifi *companion,
 		return;
 
 	nm_debug ("disconnecting mesh due to companion connectivity");
+	/* FIXME: VPN stuff here is a bug; but we can't really change API now... */
 	nm_device_state_changed (NM_DEVICE (self),
 	                         NM_DEVICE_STATE_DISCONNECTED,
 	                         NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED);

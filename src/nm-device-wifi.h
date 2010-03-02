@@ -28,7 +28,7 @@
 
 #include "nm-rfkill.h"
 #include "nm-device.h"
-#include "NetworkManagerAP.h"
+#include "nm-wifi-ap.h"
 
 struct NMAccessPointList;
 

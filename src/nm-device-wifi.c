@@ -39,7 +39,6 @@
 #include "nm-utils.h"
 #include "nm-marshal.h"
 #include "NetworkManagerUtils.h"
-#include "NetworkManagerPolicy.h"
 #include "nm-activation-request.h"
 #include "nm-supplicant-manager.h"
 #include "nm-supplicant-interface.h"
@@ -51,7 +50,7 @@
 #include "nm-setting-8021x.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
-#include "NetworkManagerSystem.h"
+#include "nm-system.h"
 
 static gboolean impl_device_get_access_points (NMDeviceWifi *device,
                                                GPtrArray **aps,

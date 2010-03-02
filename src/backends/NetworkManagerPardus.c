@@ -29,7 +29,7 @@
 #include <stdlib.h>
 
 #include "NetworkManagerGeneric.h"
-#include "NetworkManagerSystem.h"
+#include "nm-system.h"
 
 /*
  * nm_system_enable_loopback

@@ -23,7 +23,7 @@
 
 #include <string.h>
 
-#include "NetworkManagerAP.h"
+#include "nm-wifi-ap.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-dbus-manager.h"

@@ -39,7 +39,7 @@
 #include "nm-named-manager.h"
 #include "nm-ip4-config.h"
 #include "nm-utils.h"
-#include "NetworkManagerSystem.h"
+#include "nm-system.h"
 #include "NetworkManagerUtils.h"
 
 #ifdef HAVE_SELINUX

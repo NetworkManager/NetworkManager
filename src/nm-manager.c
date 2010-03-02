@@ -39,7 +39,7 @@
 #include "nm-device-olpc-mesh.h"
 #include "nm-device-cdma.h"
 #include "nm-device-gsm.h"
-#include "NetworkManagerSystem.h"
+#include "nm-system.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-setting-bluetooth.h"
 #include "nm-setting-connection.h"

@@ -25,9 +25,9 @@
 #include <netdb.h>
 #include <ctype.h>
 
-#include "NetworkManagerPolicy.h"
+#include "nm-policy.h"
 #include "NetworkManagerUtils.h"
-#include "NetworkManagerAP.h"
+#include "nm-wifi-ap.h"
 #include "nm-activation-request.h"
 #include "nm-utils.h"
 #include "nm-device-interface.h"
@@ -37,7 +37,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-connection.h"
-#include "NetworkManagerSystem.h"
+#include "nm-system.h"
 #include "nm-named-manager.h"
 #include "nm-vpn-manager.h"
 #include "nm-modem.h"
