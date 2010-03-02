@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2008 Red Hat, Inc.
+ * Copyright (C) 2004 - 2010 Red Hat, Inc.
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
@@ -41,6 +41,7 @@
 #include "nm-named-manager.h"
 #include "nm-vpn-manager.h"
 #include "nm-modem.h"
+#include "nm-policy-hosts.h"
 
 typedef struct LookupThread LookupThread;
 
@@ -252,195 +253,64 @@ get_best_device (NMManager *manager, NMActRequest **out_req)
 	return best;
 }
 
-static gboolean
-is_localhost_mapping (const char *str)
-{
-	return (!strncmp (str, "127.0.0.1", strlen ("127.0.0.1")) && strstr (str, "localhost"));
-}
-
-static gboolean
-find_token (const char *line, const char *token)
-{
-	const char *start = line, *p = line;
-
-	g_return_val_if_fail (line != NULL, FALSE);
-	g_return_val_if_fail (token != NULL, FALSE);
-	g_return_val_if_fail (strlen (token) > 0, FALSE);
-
-	/* Walk through the line to find the next whitespace character */
-	while (p <= line + strlen (line)) {
-		if (isblank (*p) || (*p == '\0')) {
-			/* Token starts with 'start' and ends with 'end' */
-			if ((p > start) && *start && !strncmp (start, token, (p - start)))
-				return TRUE; /* found */
-
-			/* not found; advance start and continue looking */
-			start = p + 1;
-		}
-		p++;
-	}
-
-	return FALSE;
-}
-
-#if 0
-/* Testcase for find_token; break it out and add it to the testsuite */
-
-typedef struct {
-	const char *line;
-	const char *token;
-	gboolean expected;
-} Foo;
-
-static Foo foo[] = {
-	{ "127.0.0.1\tfoobar\tblah", "blah", TRUE },
-	{ "", "blah", FALSE },
-	{ "1.1.1.1\tbork\tfoo", "blah", FALSE },
-	{ "127.0.0.1 foobar\tblah", "blah", TRUE },
-	{ "127.0.0.1 foobar blah", "blah", TRUE },
-	{ "192.168.1.1 blah borkbork", "blah", TRUE },
-	{ "192.168.1.1 foobar\tblah borkbork", "blah", TRUE },
-	{ "192.168.1.1\tfoobar\tblah\tborkbork", "blah", TRUE },
-	{ "192.168.1.1 \tfoobar \tblah \tborkbork\t ", "blah", TRUE },
-	{ "\t\t\t\t   \t\t\tasdfadf  a\t\t\t\t\t   \t\t\t\t\t ", "blah", FALSE },
-	{ NULL, NULL, FALSE }
-};
-
-int main(int argc, char **argv)
-{
-	Foo *iter = &foo[0];
-
-	while (iter->line) {
-		if (find_token (iter->line, iter->token) != iter->expected) {
-			g_message ("Failed: '%s' <= '%s' (%d)", iter->line, iter->token, iter->expected);
-			return 1;
-		}
-		iter++;
-	}
-
-	g_message ("Success");
-	return 0;
-}
-#endif
-
 #define FALLBACK_HOSTNAME "localhost.localdomain"
 
 static gboolean
-update_etc_hosts (const char *hostname)
+update_etc_hosts (const char *hostname, gboolean *out_changed)
 {
 	char *contents = NULL;
-	char **lines = NULL, **line, **host_mapping = NULL;
+	char **lines = NULL;
 	GError *error = NULL;
-	gboolean initial_comments = TRUE;
-	gboolean added = FALSE;
+	GString *new_contents = NULL;
 	gsize contents_len = 0;
-	GString *new_contents;
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (hostname != NULL, FALSE);
+	g_return_val_if_fail (out_changed != NULL, FALSE);
 
 	if (!g_file_get_contents (SYSCONFDIR "/hosts", &contents, &contents_len, &error)) {
 		nm_warning ("%s: couldn't read " SYSCONFDIR "/hosts: (%d) %s",
 		            __func__, error ? error->code : 0,
 		            (error && error->message) ? error->message : "(unknown)");
-		if (error)
-			g_error_free (error);
-	} else {
-		lines = g_strsplit_set (contents, "\n\r", 0);
-		g_free (contents);
-	}
-
-	new_contents = g_string_sized_new (contents_len ? contents_len + 100 : 200);
-	if (!new_contents) {
-		nm_warning ("%s: not enough memory to update " SYSCONFDIR "/hosts", __func__);
+		g_clear_error (&error);
 		return FALSE;
 	}
 
-	/* Two-pass modification of /etc/hosts:
-	 *
-	 * 1) Look for a non-comment, non-localhost line that contains the current
-	 *    hostname.  Mark that line.
-	 *
-	 * 2) For each line in the existing /etc/hosts, add it to the new /etc/hosts
-	 *    unless it starts with 127.0.0.1 and is right after the initial comments
-	 *    (if any) and contains "localhost".
-	 */
+	/* Get the new /etc/hosts contents */
+	lines = g_strsplit_set (contents, "\n\r", 0);
+	new_contents = nm_policy_get_etc_hosts ((const char **) lines,
+	                                        contents_len,
+	                                        hostname,
+	                                        FALLBACK_HOSTNAME,
+	                                        &error);
+	g_strfreev (lines);
+	g_free (contents);
 
-	/* Find any existing hostname mapping */
-	for (line = lines; lines && *line; line++) {
-		/* Look for any line that (a) contains the current hostname, and
-		 * (b) does not start with '127.0.0.1' and contain 'localhost'.
-		 */
-		if (   strlen (*line)
-		    && (*line[0] != '#')
-		    && find_token (*line, hostname)
-		    && !is_localhost_mapping (*line)) {
-			host_mapping = line;
-			break;
-		}
-	}
+	if (new_contents) {
+		nm_info ("Updating /etc/hosts with new system hostname");
 
-	/* Construct the new hosts file; replace any 127.0.0.1 entry that is at the
-	 * beginning of the file or right after initial comments and contains
-	 * the string 'localhost'.  If there is no 127.0.0.1 entry at the beginning
-	 * or after initial comments that contains 'localhost', add one there
-	 * and ignore any other 127.0.0.1 entries that contain 'localhost'.
-	 */
-	for (line = lines, initial_comments = TRUE; lines && *line; line++) {
-		gboolean add_line = TRUE;
-
-		/* This is the first line after the initial comments */
-		if (strlen (*line) && initial_comments && (*line[0] != '#')) {
-			initial_comments = FALSE;
-
-			/* If some other line contained the hostname, make a simple
-			 * localhost mapping and assume the user knows what they are doing
-			 * with their manual hostname entry.  Otherwise if the hostname
-			 * wasn't found somewhere else, add it to the localhost mapping line
-			 * to make sure it's mapped to something.
-			 */
-			if (host_mapping)
-				g_string_append (new_contents, "127.0.0.1");
-			else
-				g_string_append_printf (new_contents, "127.0.0.1\t%s", hostname);
-
-			if (strcmp (hostname, FALLBACK_HOSTNAME))
-				g_string_append_printf (new_contents, "\t" FALLBACK_HOSTNAME);
-
-			g_string_append (new_contents, "\tlocalhost\n");
-			added = TRUE;
-
-			/* Don't add the entry if it's supposed to be the actual localhost reverse mapping */
-			if (is_localhost_mapping (*line))
-				add_line = FALSE;
+		g_clear_error (&error);
+		/* And actually update /etc/hosts */
+		if (!g_file_set_contents (SYSCONFDIR "/hosts", new_contents->str, -1, &error)) {
+			nm_warning ("%s: couldn't update " SYSCONFDIR "/hosts: (%d) %s",
+			            __func__, error ? error->code : 0,
+			            (error && error->message) ? error->message : "(unknown)");
+			g_clear_error (&error);
+		} else {
+			success = TRUE;
+			*out_changed = TRUE;
 		}
 
-		if (add_line) {
-			g_string_append (new_contents, *line);
-			/* Only append the new line if this isn't the last line in the file */
-			if (*(line+1))
-				g_string_append_c (new_contents, '\n');
-		}
-	}
-
-	/* Hmm, /etc/hosts was empty for some reason */
-	if (!added) {
-		g_string_append (new_contents, "# Do not remove the following line, or various programs\n");
-		g_string_append (new_contents, "# that require network functionality will fail.\n");
-		g_string_append (new_contents, "127.0.0.1\t" FALLBACK_HOSTNAME "\tlocalhost\n");
-	}
-
-	error = NULL;
-	if (!g_file_set_contents (SYSCONFDIR "/hosts", new_contents->str, -1, &error)) {
-		nm_warning ("%s: couldn't update " SYSCONFDIR "/hosts: (%d) %s",
-		            __func__, error ? error->code : 0,
-		            (error && error->message) ? error->message : "(unknown)");
-		if (error)
-			g_error_free (error);
-	} else
+		g_string_free (new_contents, TRUE);
+	} else if (!error) {
+		/* No change required */
 		success = TRUE;
+	} else {
+		nm_warning ("%s: couldn't read " SYSCONFDIR "/hosts: (%d) %s",
+		            __func__, error->code, error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
+	}
 
-	g_string_free (new_contents, TRUE);
 	return success;
 }
 
@@ -450,6 +320,7 @@ set_system_hostname (const char *new_hostname, const char *msg)
 	char old_hostname[HOST_NAME_MAX + 1];
 	int ret = 0;
 	const char *name = new_hostname ? new_hostname : FALLBACK_HOSTNAME;
+	gboolean set_hostname = TRUE, changed = FALSE;
 
 	old_hostname[HOST_NAME_MAX] = '\0';
 	errno = 0;
@@ -458,30 +329,40 @@ set_system_hostname (const char *new_hostname, const char *msg)
 		nm_warning ("%s: couldn't get the system hostname: (%d) %s",
 		            __func__, errno, strerror (errno));
 	} else {
-		/* Do nothing if the hostname isn't actually changing */
+		/* Don't set the hostname if it isn't actually changing */
 		if (   (new_hostname && !strcmp (old_hostname, new_hostname))
 		    || (!new_hostname && !strcmp (old_hostname, FALLBACK_HOSTNAME)))
+			set_hostname = FALSE;
+	}
+
+	if (set_hostname) {
+		nm_info ("Setting system hostname to '%s' (%s)", name, msg);
+		ret = sethostname (name, strlen (name));
+		if (ret != 0) {
+			nm_warning ("%s: couldn't set the system hostname to '%s': (%d) %s",
+			            __func__, name, errno, strerror (errno));
 			return;
-	}
-
-	nm_info ("Setting system hostname to '%s' (%s)", name, msg);
-
-	ret = sethostname (name, strlen (name));
-	if (ret == 0) {
-		if (!update_etc_hosts (name)) {
-			/* error updating /etc/hosts; fallback to localhost.localdomain */
-			nm_info ("Setting system hostname to '" FALLBACK_HOSTNAME "' (error updating /etc/hosts)");
-			ret = sethostname (FALLBACK_HOSTNAME, strlen (FALLBACK_HOSTNAME));
-			if (ret != 0) {
-				nm_warning ("%s: couldn't set the fallback system hostname (%s): (%d) %s",
-				            __func__, FALLBACK_HOSTNAME, errno, strerror (errno));
-			}
 		}
-		nm_utils_call_dispatcher ("hostname", NULL, NULL, NULL);
-	} else {
-		nm_warning ("%s: couldn't set the system hostname to '%s': (%d) %s",
-		            __func__, name, errno, strerror (errno));
 	}
+
+	/* But still always try updating /etc/hosts just in case the hostname
+	 * changed while NM wasn't running; we need to make sure that /etc/hosts
+	 * has valid mappings for '127.0.0.1' and the current system hostname.  If
+	 * those exist, update_etc_hosts() will just return and won't touch
+	 * /etc/hosts at all.
+	 */
+	if (!update_etc_hosts (name, &changed)) {
+		/* error updating /etc/hosts; fallback to localhost.localdomain */
+		nm_info ("Setting system hostname to '" FALLBACK_HOSTNAME "' (error updating /etc/hosts)");
+		ret = sethostname (FALLBACK_HOSTNAME, strlen (FALLBACK_HOSTNAME));
+		if (ret != 0) {
+			nm_warning ("%s: couldn't set the fallback system hostname (%s): (%d) %s",
+			            __func__, FALLBACK_HOSTNAME, errno, strerror (errno));
+		}
+	}
+
+	if (changed)
+		nm_utils_call_dispatcher ("hostname", NULL, NULL, NULL);
 }
 
 static void

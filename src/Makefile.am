@@ -30,10 +30,14 @@ INCLUDES = -I${top_srcdir}                   \
            -I${top_srcdir}/callouts
 
 ###########################################
-# DHCP test library
+# Test libraries
 ###########################################
 
-noinst_LTLIBRARIES = libtest-dhcp.la
+noinst_LTLIBRARIES = libtest-dhcp.la libtest-policy-hosts.la
+
+###########################################
+# DHCP test library
+###########################################
 
 libtest_dhcp_la_SOURCES = \
 	nm-ip4-config.c \
@@ -52,6 +56,20 @@ libtest_dhcp_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS) \
 	$(LIBNL_LIBS)
+
+###########################################
+# Hosts policy test library
+###########################################
+
+libtest_policy_hosts_la_SOURCES = \
+	nm-policy-hosts.c \
+	nm-policy-hosts.h
+
+libtest_policy_hosts_la_CPPFLAGS = \
+	$(GLIB_CFLAGS)
+
+libtest_policy_hosts_la_LIBADD = \
+	$(GLIB_LIBS)
 
 
 ###########################################
@@ -99,6 +117,8 @@ NetworkManager_SOURCES = \
 		NetworkManager.c \
 		NetworkManagerPolicy.c \
 		NetworkManagerPolicy.h \
+		nm-policy-hosts.c \
+		nm-policy-hosts.h \
 		NetworkManagerUtils.c \
 		NetworkManagerUtils.h \
 		NetworkManagerSystem.c \

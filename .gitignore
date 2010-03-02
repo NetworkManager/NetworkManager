@@ -92,6 +92,7 @@ libnm-util/tests/test-general
 libnm-util/tests/test-need-secrets
 libnm-util/tests/test-setting-8021x
 src/tests/test-dhcp-options
+src/tests/test-policy-hosts
 
 system-settings/plugins/keyfile/tests/test-keyfile
 system-settings/plugins/ifcfg-rh/tests/test-ifcfg-rh
