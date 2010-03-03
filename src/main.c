@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2008 Red Hat, Inc.
+ * Copyright (C) 2004 - 2010 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
@@ -525,6 +525,7 @@ main (int argc, char *argv[])
 				           (error && error->message) ? error->message : "unknown");
 				g_free (config);
 				config = NULL;
+				g_clear_error (&error);
 				/* Not a hard failure */
 			}
 		}
@@ -539,6 +540,7 @@ main (int argc, char *argv[])
 				           (error && error->message) ? error->message : "unknown");
 				g_free (config);
 				config = NULL;
+				g_clear_error (&error);
 				/* Not a hard failure */
 			}
 		}
@@ -548,14 +550,13 @@ main (int argc, char *argv[])
 	plugins = plugins ? plugins : g_strdup (conf_plugins);
 	g_free (conf_plugins);
 
-	g_clear_error (&error);
-
 	/* Parse the state file */
 	if (!parse_state_file (state_file, &net_enabled, &wifi_enabled, &wwan_enabled, &error)) {
 		g_warning ("State file %s parsing failed: (%d) %s.",
 		           state_file,
 		           error ? error->code : -1,
 		           (error && error->message) ? error->message : "unknown");
+		g_clear_error (&error);
 		/* Not a hard failure */
 	}
 
