@@ -251,6 +251,20 @@ nm_dhcp_manager_new (const char *client, GError **error)
 	NMDHCPManagerPrivate *priv;
 	DBusGConnection *g_connection;
 
+	/* Set some defaults based on build-time options */
+	if (!client) {
+		if (strlen (DHCLIENT_PATH) && g_file_test (DHCLIENT_PATH, G_FILE_TEST_EXISTS))
+			client = "dhclient";
+		else if (strlen (DHCPCD_PATH) && g_file_test (DHCPCD_PATH, G_FILE_TEST_EXISTS))
+			client = "dhcpcd";
+		else {
+			g_set_error_literal (error, 0, 0,
+			                     "no suitable DHCP client; see 'man NetworkManager'"
+			                     " to specify one.");
+			return NULL;
+		}
+	}
+
 	g_warn_if_fail (singleton == NULL);
 	g_return_val_if_fail (client != NULL, NULL);
 

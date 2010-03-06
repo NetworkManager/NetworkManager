@@ -652,7 +652,8 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	dhcp_mgr = nm_dhcp_manager_new (dhcp ? dhcp : "dhclient", &error);
+	/* Initialize DHCP manager */
+	dhcp_mgr = nm_dhcp_manager_new (dhcp, &error);
 	if (!dhcp_mgr) {
 		nm_warning ("Failed to start the DHCP manager: %s.", error->message);
 		goto done;
