@@ -59,7 +59,9 @@
 #define IFUPDOWN_PLUGIN_INFO "(C) 2008 Canonical Ltd.  To report bugs please use the NetworkManager mailing list."
 #define IFUPDOWN_SYSTEM_HOSTNAME_FILE "/etc/hostname"
 
-#define IFUPDOWN_SYSTEM_SETTINGS_KEY_FILE SYSCONFDIR "/NetworkManager/nm-system-settings.conf"
+#define IFUPDOWN_SYSTEM_SETTINGS_KEY_FILE SYSCONFDIR "/NetworkManager/NetworkManager.conf"
+#define IFUPDOWN_OLD_SYSTEM_SETTINGS_KEY_FILE SYSCONFDIR "/NetworkManager/nm-system-settings.conf"
+
 #define IFUPDOWN_KEY_FILE_GROUP "ifupdown"
 #define IFUPDOWN_KEY_FILE_KEY_MANAGED "managed"
 #define IFUPDOWN_UNMANAGE_WELL_KNOWN_DEFAULT TRUE
@@ -78,6 +80,7 @@ typedef struct {
 	GHashTable *well_known_interfaces;
 	GHashTable *well_known_ifaces;
 	gboolean unmanage_well_known;
+	const char *conf_file;
 
 	gulong inotify_event_id;
 	int inotify_system_hostname_wd;
@@ -403,13 +406,19 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 	g_list_free (keys);
 	g_hash_table_destroy (auto_ifaces);
 
+	/* Find the config file */
+	if (g_file_test (IFUPDOWN_SYSTEM_SETTINGS_KEY_FILE, G_FILE_TEST_EXISTS))
+		priv->conf_file = IFUPDOWN_SYSTEM_SETTINGS_KEY_FILE;
+	else
+		priv->conf_file = IFUPDOWN_OLD_SYSTEM_SETTINGS_KEY_FILE;
+
 	keyfile = g_key_file_new ();
 	if (!g_key_file_load_from_file (keyfile,
-	                                IFUPDOWN_SYSTEM_SETTINGS_KEY_FILE,
+	                                priv->conf_file,
 	                                G_KEY_FILE_NONE,
 	                                &error)) {
 		nm_info ("loading system config file (%s) caused error: (%d) %s",
-		         IFUPDOWN_SYSTEM_SETTINGS_KEY_FILE,
+		         priv->conf_file,
 		         error ? error->code : -1,
 		         error && error->message ? error->message : "(unknown)");
 	} else {
