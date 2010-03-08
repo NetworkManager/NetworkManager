@@ -434,7 +434,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 						  "(ie, contains only hexadecimal characters and '-'). "
 						  "The UUID should be assigned when the connection is "
 						  "created and never changed as long as the connection "
-						  "stilla pplies to the same network.  For example, "
+						  "still applies to the same network.  For example, "
 						  "it should not be changed when the user changes the "
 						  "connection's 'id', but should be recreated when the "
 						  "WiFi SSID, mobile broadband network provider, or the "
