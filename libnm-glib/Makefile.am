@@ -23,6 +23,30 @@ BUILT_SOURCES = \
 	nm-ip6-config-bindings.h \
 	nm-dhcp6-config-bindings.h
 
+#####################################################
+# Deprecated original libnm_glib bits
+#####################################################
+
+noinst_LTLIBRARIES = libdeprecated-nm-glib.la
+
+libdeprecated_nm_glib_la_SOURCES = \
+	libnm_glib.h \
+	libnm_glib.c
+
+libdeprecated_nm_glib_la_CPPFLAGS = \
+	$(DBUS_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	-Wno-deprecated-declarations \
+	-Wno-deprecated
+
+libdeprecated_nm_glib_la_LIBADD = \
+	$(DBUS_LIBS) \
+	$(GLIB_LIBS)
+
+#####################################################
+# Real libnm-glib stuff
+#####################################################
+
 lib_LTLIBRARIES = libnm-glib.la libnm-glib-vpn.la
 
 libnm_glib_la_CFLAGS = \
@@ -64,7 +88,6 @@ libnminclude_HEADERS = \
 	nm-settings-service.h
 
 libnm_glib_la_SOURCES = \
-	libnm_glib.c \
 	nm-object.c \
 	nm-object-private.h \
 	nm-client.c \
@@ -102,6 +125,7 @@ libnm_glib_la_SOURCES = \
 libnm_glib_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(top_builddir)/marshallers/libmarshallers.la \
+	$(builddir)/libdeprecated-nm-glib.la \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS) \
 	$(GCONF_LIBS) \
@@ -185,5 +209,4 @@ DISTCLEANFILES = libnm-glib.pc libnm-glib.pc
 
 EXTRA_DIST = libnm-glib.pc.in libnm-glib-vpn.pc.in libnm-glib.ver libnm-glib-vpn.ver
 
-CLEANFILES = \
-	$(BUILT_SOURCES)
+CLEANFILES = $(BUILT_SOURCES)
