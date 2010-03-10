@@ -28,6 +28,9 @@ nm_online_LDADD = \
 	$(GLIB_LIBS)
 
 libnm_glib_test_SOURCES = libnm-glib-test.c
+libnm_glib_test_CFLAGS = \
+	-Wno-deprecated-declarations \
+	-Wno-deprecated
 libnm_glib_test_LDADD = \
 	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
