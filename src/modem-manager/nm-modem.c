@@ -673,6 +673,19 @@ nm_modem_deactivate_quickly (NMModem *self, NMDevice *device)
 	NM_MODEM_GET_CLASS (self)->deactivate_quickly (self, device);
 }
 
+static void
+disconnect_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
+{
+	GError *error = NULL;
+
+	if (!dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID)) {
+		g_warning ("%s: disconnect failed: (%d) %s",
+		           __func__,
+		           error ? error->code : -1,
+		           error && error->message ? error->message : "(unknown)");
+	}
+}
+
 void
 nm_modem_device_state_changed (NMModem *self,
                                NMDeviceState new_state,
@@ -698,9 +711,12 @@ nm_modem_device_state_changed (NMModem *self,
 	case NM_DEVICE_STATE_FAILED:
 	case NM_DEVICE_STATE_DISCONNECTED:
 		if (was_connected) {
-			dbus_g_proxy_call_no_reply (nm_modem_get_proxy (self, MM_DBUS_INTERFACE_MODEM),
-			                            "Disconnect",
-			                            G_TYPE_INVALID);
+			dbus_g_proxy_begin_call (nm_modem_get_proxy (self, MM_DBUS_INTERFACE_MODEM),
+			                         "Disconnect",
+			                         disconnect_done,
+			                         self,
+			                         NULL,
+			                         G_TYPE_INVALID);
 		}
 		break;
 	default:
