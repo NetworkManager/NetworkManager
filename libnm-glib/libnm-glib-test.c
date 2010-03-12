@@ -36,6 +36,7 @@
 #include "nm-device-wifi.h"
 #include "nm-utils.h"
 #include "nm-active-connection.h"
+#include "nm-vpn-connection.h"
 #include "nm-setting-ip4-config.h"
 
 static gboolean
@@ -291,8 +292,10 @@ active_connections_changed (NMClient *client, GParamSpec *pspec, gpointer user_d
 		connection = g_ptr_array_index (connections, i);
 		g_print ("    %s\n", nm_object_get_path (NM_OBJECT (connection)));
 		devices = nm_active_connection_get_devices (connection);
-		for (j = 0; j < devices->len; j++)
+		for (j = 0; devices && j < devices->len; j++)
 			g_print ("           %s\n", nm_device_get_udi (g_ptr_array_index (devices, j)));
+		if (NM_IS_VPN_CONNECTION (connection))
+			g_print ("           VPN base connection: %s\n", nm_active_connection_get_specific_object (connection));
 	}
 }
 
