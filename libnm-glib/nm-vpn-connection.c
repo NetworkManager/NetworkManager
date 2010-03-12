@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2010 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -39,6 +39,17 @@ typedef struct {
 	char *banner;
 	NMVPNConnectionState vpn_state;
 } NMVPNConnectionPrivate;
+
+enum {
+	PROP_0,
+	PROP_VPN_STATE,
+	PROP_BANNER,
+
+	LAST_PROP
+};
+
+#define DBUS_PROP_VPN_STATE "VpnState"
+#define DBUS_PROP_BANNER "Banner"
 
 enum {
 	VPN_STATE_CHANGED,
@@ -74,8 +85,8 @@ nm_vpn_connection_get_banner (NMVPNConnection *vpn)
 
 	if (!priv->banner) {
 		priv->banner = _nm_object_get_string_property (NM_OBJECT (vpn),
-		                                              NM_DBUS_INTERFACE_VPN_CONNECTION,
-		                                              "Banner");
+		                                               NM_DBUS_INTERFACE_VPN_CONNECTION,
+		                                               DBUS_PROP_BANNER);
 		if (priv->banner && !strlen (priv->banner)) {
 			g_free (priv->banner);
 			priv->banner = NULL;
@@ -94,8 +105,8 @@ nm_vpn_connection_get_vpn_state (NMVPNConnection *vpn)
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn);
 	if (priv->vpn_state == NM_VPN_CONNECTION_STATE_UNKNOWN) {
 		priv->vpn_state = _nm_object_get_uint_property (NM_OBJECT (vpn),
-		                                           NM_DBUS_INTERFACE_VPN_CONNECTION,
-		                                           "VpnState");
+		                                                NM_DBUS_INTERFACE_VPN_CONNECTION,
+		                                                DBUS_PROP_VPN_STATE);
 	}
 	return priv->vpn_state;
 }
@@ -173,6 +184,27 @@ finalize (GObject *object)
 }
 
 static void
+get_property (GObject *object,
+              guint prop_id,
+              GValue *value,
+              GParamSpec *pspec)
+{
+	NMVPNConnection *self = NM_VPN_CONNECTION (object);
+
+	switch (prop_id) {
+	case PROP_VPN_STATE:
+		g_value_set_uint (value, nm_vpn_connection_get_vpn_state (self));
+		break;
+	case PROP_BANNER:
+		g_value_set_string (value, nm_vpn_connection_get_banner (self));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
 nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (connection_class);
@@ -181,7 +213,36 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 
 	/* virtual methods */
 	object_class->constructor = constructor;
+	object_class->get_property = get_property;
 	object_class->finalize = finalize;
+
+	/* properties */
+
+	/**
+	 * NMVPNConnection:vpn-state:
+	 *
+	 * The VPN state of the active VPN connection.
+	 **/
+	g_object_class_install_property (object_class, PROP_VPN_STATE,
+	                                 g_param_spec_uint (NM_VPN_CONNECTION_VPN_STATE,
+	                                                    "VpnState",
+	                                                    "Current VPN state",
+	                                                    NM_VPN_CONNECTION_STATE_UNKNOWN,
+	                                                    NM_VPN_CONNECTION_STATE_DISCONNECTED,
+	                                                    NM_VPN_CONNECTION_STATE_UNKNOWN,
+	                                                    G_PARAM_READABLE));
+
+	/**
+	 * NMVPNConnection:banner:
+	 *
+	 * The VPN login banner of the active VPN connection.
+	 **/
+	g_object_class_install_property (object_class, PROP_BANNER,
+	                                 g_param_spec_string (NM_VPN_CONNECTION_BANNER,
+	                                                      "Banner",
+	                                                      "Login Banner",
+	                                                      NULL,
+	                                                      G_PARAM_READABLE));
 
 	/* signals */
 	signals[VPN_STATE_CHANGED] =

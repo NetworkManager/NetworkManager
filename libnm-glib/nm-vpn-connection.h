@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2010 Red Hat, Inc.
  */
 
 #ifndef NM_VPN_CONNECTION_H
@@ -38,6 +38,9 @@ G_BEGIN_DECLS
 #define NM_IS_VPN_CONNECTION(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_VPN_CONNECTION))
 #define NM_IS_VPN_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_VPN_CONNECTION))
 #define NM_VPN_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_VPN_CONNECTION, NMVPNConnectionClass))
+
+#define NM_VPN_CONNECTION_VPN_STATE "vpn-state"
+#define NM_VPN_CONNECTION_BANNER "banner"
 
 typedef struct {
 	NMActiveConnection parent;
