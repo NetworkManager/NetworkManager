@@ -553,6 +553,20 @@ value_hash_add_uint (GHashTable *hash,
 	value_hash_add (hash, key, value);
 }
 
+void
+value_hash_add_bool (GHashTable *hash,
+					 const char *key,
+					 gboolean val)
+{
+	GValue *value;
+
+	value = g_slice_new0 (GValue);
+	g_value_init (value, G_TYPE_BOOLEAN);
+	g_value_set_boolean (value, val);
+
+	value_hash_add (hash, key, value);
+}
+
 gboolean
 nm_utils_do_sysctl (const char *path, const char *value)
 {
