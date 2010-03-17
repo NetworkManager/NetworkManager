@@ -59,7 +59,7 @@ libnm_util_la_SOURCES=			\
 libnm_util_la_LIBADD = $(GLIB_LIBS) $(DBUS_LIBS) $(UUID_LIBS)
 
 libnm_util_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm-util.ver \
-	-version-info "3:0:2"
+	-version-info "4:0:3"
 
 if WITH_GNUTLS
 libnm_util_la_SOURCES += crypto_gnutls.c
