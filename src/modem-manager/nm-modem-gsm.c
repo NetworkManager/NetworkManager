@@ -30,21 +30,30 @@
 #include "NetworkManagerUtils.h"
 
 typedef enum {
-    MM_MODEM_GSM_MODE_UNKNOWN      = 0x00000000,
-    MM_MODEM_GSM_MODE_ANY          = 0x00000001,
-    MM_MODEM_GSM_MODE_GPRS         = 0x00000002,
-    MM_MODEM_GSM_MODE_EDGE         = 0x00000004,
-    MM_MODEM_GSM_MODE_UMTS         = 0x00000008,
-    MM_MODEM_GSM_MODE_HSDPA        = 0x00000010,
-    MM_MODEM_GSM_MODE_2G_PREFERRED = 0x00000020,
-    MM_MODEM_GSM_MODE_3G_PREFERRED = 0x00000040,
-    MM_MODEM_GSM_MODE_2G_ONLY      = 0x00000080,
-    MM_MODEM_GSM_MODE_3G_ONLY      = 0x00000100,
-    MM_MODEM_GSM_MODE_HSUPA        = 0x00000200,
-    MM_MODEM_GSM_MODE_HSPA         = 0x00000400,
+    MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_ANY = 0,
+    MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_GPRS,
+    MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_EDGE,
+    MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_UMTS,
+    MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_HSDPA,
+    MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_2G_PREFERRED,
+    MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_3G_PREFERRED,
+    MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_2G_ONLY,
+    MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_3G_ONLY,
+    MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_HSUPA,
+    MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_HSPA,
 
-    MM_MODEM_GSM_MODE_LAST = MM_MODEM_GSM_MODE_HSPA
-} MMModemGsmMode;
+    MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_LAST = MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_HSPA
+} MMModemDeprecatedMode;
+
+typedef enum {
+    MM_MODEM_GSM_ALLOWED_MODE_ANY          = 0,
+    MM_MODEM_GSM_ALLOWED_MODE_2G_PREFERRED = 1,
+    MM_MODEM_GSM_ALLOWED_MODE_3G_PREFERRED = 2,
+    MM_MODEM_GSM_ALLOWED_MODE_2G_ONLY      = 3,
+    MM_MODEM_GSM_ALLOWED_MODE_3G_ONLY      = 4,
+
+    MM_MODEM_GSM_ALLOWED_MODE_LAST = MM_MODEM_GSM_ALLOWED_MODE_3G_ONLY
+} MMModemGsmAllowedMode;
 
 
 G_DEFINE_TYPE (NMModemGsm, nm_modem_gsm, NM_TYPE_MODEM)
@@ -342,25 +351,34 @@ create_connect_properties (NMConnection *connection)
 	if (str)
 		value_hash_add_str (properties, "password", str);
 
+	/* Add both old and new preferred modes */
 	switch (nm_setting_gsm_get_network_type (setting)) {
 	case NM_SETTING_GSM_NETWORK_TYPE_UMTS_HSPA:
-		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_MODE_3G_ONLY);
+		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_3G_ONLY);
+		value_hash_add_uint (properties, "allowed_mode", MM_MODEM_GSM_ALLOWED_MODE_3G_ONLY);
 		break;
 	case NM_SETTING_GSM_NETWORK_TYPE_GPRS_EDGE:
-		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_MODE_2G_ONLY);
+		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_2G_ONLY);
+		value_hash_add_uint (properties, "allowed_mode", MM_MODEM_GSM_ALLOWED_MODE_2G_ONLY);
 		break;
 	case NM_SETTING_GSM_NETWORK_TYPE_PREFER_UMTS_HSPA:
-		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_MODE_3G_PREFERRED);
+		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_3G_PREFERRED);
+		value_hash_add_uint (properties, "allowed_mode", MM_MODEM_GSM_ALLOWED_MODE_3G_PREFERRED);
 		break;
 	case NM_SETTING_GSM_NETWORK_TYPE_PREFER_GPRS_EDGE:
-		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_MODE_2G_PREFERRED);
+		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_2G_PREFERRED);
+		value_hash_add_uint (properties, "allowed_mode", MM_MODEM_GSM_ALLOWED_MODE_2G_PREFERRED);
 		break;
 	default:
-		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_MODE_ANY);
+		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_ANY);
+		value_hash_add_uint (properties, "allowed_mode", MM_MODEM_GSM_ALLOWED_MODE_ANY);
 		break;
 	}
 
-	/* FIXME: band */
+	/* Roaming */
+	if (nm_setting_gsm_get_home_only (setting))
+		value_hash_add_bool (properties, "home_only", TRUE);
+
 	return properties;
 }
 
