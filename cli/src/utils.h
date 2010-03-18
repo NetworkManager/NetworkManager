@@ -20,8 +20,15 @@
 #ifndef NMC_UTILS_H
 #define NMC_UTILS_H
 
+#include <glib.h>
+
+#include "nmcli.h"
+
+/* === Functions === */
 int matches (const char *cmd, const char *pattern);
 int next_arg (int *argc, char ***argv);
+GArray *parse_output_fields (const char *fields_str, const NmcOutputField fields_array[], GError **error);
+void print_fields (const NmcPrintFields fields, const NmcOutputField field_values[]);
 void print_table_header (const char *name, ...);
 void print_table_line (int indent, ...);
 
