@@ -85,6 +85,8 @@ parse_output_fields (const char *fields_str, const NmcOutputField fields_array[]
 		}
 	}
 done:
+	if (fields)
+		g_strfreev (fields);
 	return array;
 }
 
