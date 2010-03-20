@@ -121,7 +121,10 @@ show_nm_status (NmCli *nmc)
 	nmc->print_fields.indices = parse_output_fields (fields_str, nmc->allowed_fields, &error);
 
 	if (error) {
-		g_string_printf (nmc->return_text, error->message);
+		if (error->code == 0)
+			g_string_printf (nmc->return_text, _("Error: 'nm status': %s"), error->message);
+		else
+			g_string_printf (nmc->return_text, _("Error: 'nm status': %s; allowed fields: %s"), error->message, NMC_FIELDS_NM_STATUS_ALL);
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		return nmc->return_value;
@@ -188,7 +191,7 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 			if (next_arg (&argc, &argv) != 0) {
 				/* no argument, show current WiFi state */
 				if (nmc->required_fields && strcasecmp (nmc->required_fields, "WIFI")) {
-					g_string_printf (nmc->return_text, _("Error: '--fields' value '%s' is not valid here; allowed fields: '%s'"),
+					g_string_printf (nmc->return_text, _("Error: '--fields' value '%s' is not valid here; allowed fields: %s"),
 					                 nmc->required_fields, NMC_FIELDS_NM_WIFI);
 					nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 					goto end;
@@ -218,7 +221,7 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 			if (next_arg (&argc, &argv) != 0) {
 				/* no argument, show current WWAN state */
 				if (nmc->required_fields && strcasecmp (nmc->required_fields, "WWAN")) {
-					g_string_printf (nmc->return_text, _("Error: '--fields' value '%s' is not valid here; allowed fields: '%s'"),
+					g_string_printf (nmc->return_text, _("Error: '--fields' value '%s' is not valid here; allowed fields: %s"),
 					                 nmc->required_fields, NMC_FIELDS_NM_WWAN);
 					nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 					goto end;

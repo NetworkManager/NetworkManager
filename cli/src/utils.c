@@ -52,6 +52,7 @@ next_arg (int *argc, char ***argv)
  * IN:  'field_str':    comma-separated fields names
  *      'fields_array': array of allowed fields
  * RETURN: GArray with indices representing fields in 'fields_array'.
+ *         Caller is responsible to free it.
  */
 GArray *
 parse_output_fields (const char *fields_str, const NmcOutputField fields_array[], GError **error)
@@ -75,10 +76,10 @@ parse_output_fields (const char *fields_str, const NmcOutputField fields_array[]
 		}
 		if (fields_array[i].name == NULL) {
 			if (!strcasecmp (*iter, "all") || !strcasecmp (*iter, "common"))
-				g_set_error (error, 0, 0, _("Error: 'con status': field '%s' has to be alone."), *iter);
+				g_set_error (error, 0, 0, _("field '%s' has to be alone"), *iter);
 
 			else
-				g_set_error (error, 0, 0, _("Error: 'con status': invalid field '%s'."), *iter);
+				g_set_error (error, 0, 1, _("invalid field '%s'"), *iter);
 			g_array_free (array, TRUE);
 			array = NULL;
 			goto done;
@@ -90,6 +91,12 @@ done:
 	return array;
 }
 
+/*
+ * Print both headers or values of 'field_values' array.
+ * Entries to print and their order are specified via indices
+ * in 'fields.indices' array.
+ * 'fields.flags' specify various aspects influencing the output.
+ */
 void
 print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 {
@@ -106,16 +113,21 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 	gboolean header = fields.flags & NMC_PF_FLAG_HEADER;
 	gboolean escape = fields.flags & NMC_PF_FLAG_ESCAPE;
 
-	/* Headers are not printed in terse mode */
+	/* No headers are printed in terse mode:
+	 * - neither whole name header nor field (column) names
+	 */
 	if (header && terse)
 		return;
 
 	if (multiline) {
 	/* --- Multiline mode --- */
+		enum { ML_HEADER_WIDTH = 79 };
 		if (header && pretty) {
 			/* Print the table header */
-			table_width = g_utf8_strlen (fields.header_name, -1) + 4;
-			line = g_strnfill (79, '=');
+			int header_width = g_utf8_strlen (fields.header_name, -1) + 4;
+			table_width = header_width < ML_HEADER_WIDTH ? ML_HEADER_WIDTH : header_width;
+
+			line = g_strnfill (ML_HEADER_WIDTH, '=');
 			width1 = strlen (fields.header_name);
 			width2 = g_utf8_strlen (fields.header_name, -1);
 			printf ("%s\n", line);
@@ -134,7 +146,7 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 				g_free (tmp);
 			}
 			if (pretty) {
-				line = g_strnfill (79, '-');
+				line = g_strnfill (ML_HEADER_WIDTH, '-');
 				printf ("%s\n", line);
 				g_free (line);
 			}
@@ -175,11 +187,11 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 		}
 	}
 
-	if (table_width <= 0)
-		table_width = g_utf8_strlen (fields.header_name, -1) + 4;
-
+	/* Print the table header */
 	if (header && pretty) {
-		/* Print the table header */
+		int header_width = g_utf8_strlen (fields.header_name, -1) + 4;
+		table_width = table_width < header_width ? header_width : table_width;
+
 		line = g_strnfill (table_width, '=');
 		width1 = strlen (fields.header_name);
 		width2 = g_utf8_strlen (fields.header_name, -1);
@@ -189,18 +201,18 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 		g_free (line);
 	}
 
-
-	/* Print the line */
+	/* Print actual values */
 	if (str->len > 0) {
 		g_string_truncate (str, str->len-1);  /* Chop off last column separator */
 		if (fields.indent > 0) {
 			indent_str = g_strnfill (fields.indent, ' ');
-			g_string_prepend (str,  indent_str);
+			g_string_prepend (str, indent_str);
 			g_free (indent_str);
 		}
 		printf ("%s\n", str->str);
 	}
 
+	/* Print horizontal separator */
 	if (header && pretty) {
 		if (str->len > 0) {
 			line = g_strnfill (table_width, '-');

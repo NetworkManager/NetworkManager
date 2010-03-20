@@ -540,7 +540,10 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 	nmc->print_fields.indices = parse_output_fields (fields_str, nmc->allowed_fields, &error);
 
 	if (error) {
-		g_string_printf (nmc->return_text, error->message);
+		if (error->code == 0)
+			g_string_printf (nmc->return_text, _("Error: 'dev status': %s"), error->message);
+		else
+			g_string_printf (nmc->return_text, _("Error: 'dev status': %s; allowed fields: %s"), error->message, NMC_FIELDS_DEV_STATUS_ALL);
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		goto error;
@@ -840,7 +843,10 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	nmc->print_fields.indices = parse_output_fields (fields_str, nmc->allowed_fields, &error);
 
 	if (error) {
-		g_string_printf (nmc->return_text, error->message);
+		if (error->code == 0)
+			g_string_printf (nmc->return_text, _("Error: 'dev wifi': %s"), error->message);
+		else
+			g_string_printf (nmc->return_text, _("Error: 'dev wifi': %s; allowed fields: %s"), error->message, NMC_FIELDS_DEV_WIFI_LIST_ALL);
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		goto error;

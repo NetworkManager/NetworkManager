@@ -215,7 +215,10 @@ do_connections_list (NmCli *nmc, int argc, char **argv)
 	nmc->print_fields.indices = parse_output_fields (fields_str, nmc->allowed_fields, &error);
 
 	if (error) {
-		g_string_printf (nmc->return_text, error->message);
+		if (error->code == 0)
+			g_string_printf (nmc->return_text, _("Error: 'con list': %s"), error->message);
+		else
+			g_string_printf (nmc->return_text, _("Error: 'con list': %s; allowed fields: %s"), error->message, NMC_FIELDS_CON_LIST_ALL);
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		goto error;
@@ -391,7 +394,10 @@ do_connections_status (NmCli *nmc, int argc, char **argv)
 	nmc->print_fields.indices = parse_output_fields (fields_str, nmc->allowed_fields, &error);
 
 	if (error) {
-		g_string_printf (nmc->return_text, error->message);
+		if (error->code == 0)
+			g_string_printf (nmc->return_text, _("Error: 'con status': %s"), error->message);
+		else
+			g_string_printf (nmc->return_text, _("Error: 'con status': %s; allowed fields: %s"), error->message, NMC_FIELDS_CON_STATUS_ALL);
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		goto error;
@@ -824,9 +830,9 @@ find_device_for_connection (NmCli *nmc, NMConnection *connection, const char *if
 			return TRUE;
 		} else {
 			if (iface)
-				g_set_error (error, 0, 0, "device '%s' not compatible with connection '%s'", iface, nm_setting_connection_get_id (s_con));
+				g_set_error (error, 0, 0, _("device '%s' not compatible with connection '%s'"), iface, nm_setting_connection_get_id (s_con));
 			else
-				g_set_error (error, 0, 0, "no device found for connection '%s'", nm_setting_connection_get_id (s_con));
+				g_set_error (error, 0, 0, _("no device found for connection '%s'"), nm_setting_connection_get_id (s_con));
 			return FALSE;
 		}
 	}
