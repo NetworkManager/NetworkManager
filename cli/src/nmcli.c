@@ -201,20 +201,6 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 		argv++;
 	}
 
-	/* Some validity options checks */
-	if (nmc->print_output == NMC_PRINT_TERSE) {
-		if (!nmc->required_fields) {
-			g_string_printf (nmc->return_text, _("Option '--terse' requires specifying '--fields'."));
-			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-			return nmc->return_value;
-		} else if (   !strcasecmp (nmc->required_fields, "all")
-		           || !strcasecmp (nmc->required_fields, "common")) {
-			g_string_printf (nmc->return_text, _("Option '--terse' requires specific '--fields' option, not 'all' or 'common'."));
-			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-			return nmc->return_value;
-		}
-	}
-
 	if (argc > 1)
 		return do_cmd (nmc, argv[1], argc-1, argv+1);
 

@@ -91,6 +91,24 @@ done:
 	return array;
 }
 
+gboolean
+nmc_terse_option_check (NMCPrintOutput print_output, const char *fields, GError **error)
+{
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (print_output == NMC_PRINT_TERSE) {
+		if (!fields) {
+			g_set_error (error, 0, 0, _("Option '--terse' requires specifying '--fields'"));
+			return FALSE;
+		} else if (   !strcasecmp (fields, "all")
+		           || !strcasecmp (fields, "common")) {
+			g_set_error (error, 0, 0, _("Option '--terse' requires specific '--fields' option values , not '%s'"), fields);
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+
 /*
  * Print both headers or values of 'field_values' array.
  * Entries to print and their order are specified via indices
@@ -110,20 +128,21 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 	gboolean multiline = fields.flags & NMC_PF_FLAG_MULTILINE;
 	gboolean terse = fields.flags & NMC_PF_FLAG_TERSE;
 	gboolean pretty = fields.flags & NMC_PF_FLAG_PRETTY;
-	gboolean header = fields.flags & NMC_PF_FLAG_HEADER;
+	gboolean main_header = fields.flags & NMC_PF_FLAG_MAIN_HEADER;
+	gboolean field_names = fields.flags & NMC_PF_FLAG_FIELD_NAMES;
 	gboolean escape = fields.flags & NMC_PF_FLAG_ESCAPE;
 
 	/* No headers are printed in terse mode:
-	 * - neither whole name header nor field (column) names
+	 * - neither main header nor field (column) names
 	 */
-	if (header && terse)
+	if ((main_header || field_names) && terse)
 		return;
 
 	if (multiline) {
 	/* --- Multiline mode --- */
 		enum { ML_HEADER_WIDTH = 79 };
-		if (header && pretty) {
-			/* Print the table header */
+		if (main_header && pretty) {
+			/* Print the main header */
 			int header_width = g_utf8_strlen (fields.header_name, -1) + 4;
 			table_width = header_width < ML_HEADER_WIDTH ? ML_HEADER_WIDTH : header_width;
 
@@ -137,7 +156,7 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 		}
 
 		/* Print values */
-		if (!header) {
+		if (!field_names) {
 			for (i = 0; i < fields.indices->len; i++) {
 				char *tmp;
 				idx = g_array_index (fields.indices, int, i);
@@ -159,7 +178,7 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 
 	for (i = 0; i < fields.indices->len; i++) {
 		idx = g_array_index (fields.indices, int, i);
-		if (header)
+		if (field_names)
 			value = _(field_values[idx].name_l10n);
 		else
 			value = field_values[idx].value;
@@ -187,8 +206,8 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 		}
 	}
 
-	/* Print the table header */
-	if (header && pretty) {
+	/* Print the main table header */
+	if (main_header && pretty) {
 		int header_width = g_utf8_strlen (fields.header_name, -1) + 4;
 		table_width = table_width < header_width ? header_width : table_width;
 
@@ -213,7 +232,7 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 	}
 
 	/* Print horizontal separator */
-	if (header && pretty) {
+	if (field_names && pretty) {
 		if (str->len > 0) {
 			line = g_strnfill (table_width, '-');
 			printf ("%s\n", line);

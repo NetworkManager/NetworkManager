@@ -154,7 +154,7 @@ show_connection (NMConnection *data, gpointer user_data)
 		nmc->allowed_fields[6].value = nm_setting_connection_get_autoconnect (s_con) ? _("yes") : _("no");
 		nmc->allowed_fields[7].value = nm_setting_connection_get_read_only (s_con) ? _("yes") : _("no");
 
-		nmc->print_fields.flags &= ~NMC_PF_FLAG_HEADER; /* Clear HEADER flag */
+		nmc->print_fields.flags &= ~NMC_PF_FLAG_MAIN_HEADER & ~NMC_PF_FLAG_FIELD_NAMES; /* Clear header flags */
 		print_fields (nmc->print_fields, nmc->allowed_fields);
 
 		g_free (timestamp_str);
@@ -227,12 +227,12 @@ do_connections_list (NmCli *nmc, int argc, char **argv)
 	if (argc == 0) {
 		valid_param_specified = TRUE;
 
-		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_HEADER;
+		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER | NMC_PF_FLAG_FIELD_NAMES;
 		nmc->print_fields.header_name = _("System connections");
 		print_fields (nmc->print_fields, nmc->allowed_fields);
 		g_slist_foreach (nmc->system_connections, (GFunc) show_connection, nmc);
 
-		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_HEADER;
+		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER | NMC_PF_FLAG_FIELD_NAMES;
 		nmc->print_fields.header_name = _("User connections");
 		print_fields (nmc->print_fields, nmc->allowed_fields);
 		g_slist_foreach (nmc->user_connections, (GFunc) show_connection, nmc);
@@ -264,7 +264,7 @@ do_connections_list (NmCli *nmc, int argc, char **argv)
 			else if (strcmp (*argv, "system") == 0) {
 				valid_param_specified = TRUE;
 
-				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_HEADER;
+				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER | NMC_PF_FLAG_FIELD_NAMES;
 				nmc->print_fields.header_name = _("System connections");
 				print_fields (nmc->print_fields, nmc->allowed_fields);
 				g_slist_foreach (nmc->system_connections, (GFunc) show_connection, nmc);
@@ -273,7 +273,7 @@ do_connections_list (NmCli *nmc, int argc, char **argv)
 			else if (strcmp (*argv, "user") == 0) {
 				valid_param_specified = TRUE;
 
-				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_HEADER;
+				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER | NMC_PF_FLAG_FIELD_NAMES;
 				nmc->print_fields.header_name = _("User connections");
 				print_fields (nmc->print_fields, nmc->allowed_fields);
 				g_slist_foreach (nmc->user_connections, (GFunc) show_connection, nmc);
@@ -353,7 +353,7 @@ show_active_connection (gpointer data, gpointer user_data)
 			info->nmc->allowed_fields[6].value = nm_active_connection_get_specific_object (active);
 			info->nmc->allowed_fields[7].value = NM_IS_VPN_CONNECTION (active) ? _("yes") : _("no");
 
-			info->nmc->print_fields.flags &= ~NMC_PF_FLAG_HEADER; /* Clear HEADER flag */
+			info->nmc->print_fields.flags &= ~NMC_PF_FLAG_MAIN_HEADER & ~NMC_PF_FLAG_FIELD_NAMES; /* Clear header flags */
 			print_fields (info->nmc->print_fields, info->nmc->allowed_fields);
 			break;
 		}
@@ -403,7 +403,7 @@ do_connections_status (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_HEADER;
+	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER | NMC_PF_FLAG_FIELD_NAMES;
 	nmc->print_fields.header_name = _("Active connections");
 	print_fields (nmc->print_fields, nmc->allowed_fields);
 
@@ -1266,6 +1266,7 @@ get_connections_cb (NMSettingsInterface *settings, gpointer user_data)
 	ArgsInfo *args = (ArgsInfo *) user_data;
 	static gboolean system_cb_called = FALSE;
 	static gboolean user_cb_called = FALSE;
+	GError *error = NULL;
 
 	if (NM_IS_REMOTE_SETTINGS_SYSTEM (settings)) {
 		system_cb_called = TRUE;
@@ -1282,13 +1283,19 @@ get_connections_cb (NMSettingsInterface *settings, gpointer user_data)
 		return;
 
 	if (args->argc == 0) {
+		if (!nmc_terse_option_check (args->nmc->print_output, args->nmc->required_fields, &error))
+			goto error;
 		args->nmc->return_value = do_connections_list (args->nmc, args->argc, args->argv);
 	} else {
 
 	 	if (matches (*args->argv, "list") == 0) {
+			if (!nmc_terse_option_check (args->nmc->print_output, args->nmc->required_fields, &error))
+				goto error;
 			args->nmc->return_value = do_connections_list (args->nmc, args->argc-1, args->argv+1);
 		}
 		else if (matches(*args->argv, "status") == 0) {
+			if (!nmc_terse_option_check (args->nmc->print_output, args->nmc->required_fields, &error))
+				goto error;
 			args->nmc->return_value = do_connections_status (args->nmc, args->argc-1, args->argv+1);
 		}
 		else if (matches(*args->argv, "up") == 0) {
@@ -1310,6 +1317,15 @@ get_connections_cb (NMSettingsInterface *settings, gpointer user_data)
 
 	if (!args->nmc->should_wait)
 		quit ();
+	return;
+
+error:
+	g_string_printf (args->nmc->return_text, _("Error: %s."), error->message);
+	args->nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+	args->nmc->should_wait = FALSE;
+	g_error_free (error);
+	quit ();
+	return;
 }
 
 
