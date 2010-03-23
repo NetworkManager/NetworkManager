@@ -556,9 +556,9 @@ main (int argc, char *argv[])
 		           state_file,
 		           error ? error->code : -1,
 		           (error && error->message) ? error->message : "unknown");
-		g_clear_error (&error);
 		/* Not a hard failure */
 	}
+	g_clear_error (&error);
 
 	/* Tricky: become_daemon is FALSE by default, so unless it's TRUE because
 	 * of a CLI option, it'll become TRUE after this
