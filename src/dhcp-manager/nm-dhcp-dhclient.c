@@ -54,11 +54,35 @@ G_DEFINE_TYPE (NMDHCPDhclient, nm_dhcp_dhclient, NM_TYPE_DHCP_CLIENT)
 #define ACTION_SCRIPT_PATH	LIBEXECDIR "/nm-dhcp-client.action"
 
 typedef struct {
+	const char *path;
 	char *conf_file;
 	char *lease_file;
 	char *pid_file;
 } NMDHCPDhclientPrivate;
 
+const char *
+nm_dhcp_dhclient_get_path (const char *try_first)
+{
+	static const char *dhclient_paths[] = {
+		"/sbin/dhclient",
+		"/usr/sbin/dhclient",
+		"/usr/pkg/sbin/dhclient",
+		"/usr/local/sbin/dhclient",
+		NULL
+	};
+	const char **path = dhclient_paths;
+
+	if (strlen (try_first) && g_file_test (try_first, G_FILE_TEST_EXISTS))
+		return try_first;
+
+	while (*path != NULL) {
+		if (g_file_test (*path, G_FILE_TEST_EXISTS))
+			break;
+		path++;
+	}
+
+	return *path;
+}
 
 static char *
 get_leasefile_for_iface (const char * iface, const char *uuid, gboolean ipv6)
@@ -478,13 +502,13 @@ dhclient_start (NMDHCPClient *client,
 		return -1;
 	}
 
-	if (!g_file_test (DHCLIENT_PATH, G_FILE_TEST_EXISTS)) {
-		nm_warning (DHCLIENT_PATH " does not exist.");
+	if (!g_file_test (priv->path, G_FILE_TEST_EXISTS)) {
+		nm_warning ("%s does not exist.", priv->path);
 		return -1;
 	}
 
 	/* Kill any existing dhclient from the pidfile */
-	binary_name = g_path_get_basename (DHCLIENT_PATH);
+	binary_name = g_path_get_basename (priv->path);
 	nm_dhcp_client_stop_existing (priv->pid_file, binary_name);
 	g_free (binary_name);
 
@@ -495,7 +519,7 @@ dhclient_start (NMDHCPClient *client,
 	}
 
 	argv = g_ptr_array_new ();
-	g_ptr_array_add (argv, (gpointer) DHCLIENT_PATH);
+	g_ptr_array_add (argv, (gpointer) priv->path);
 
 	g_ptr_array_add (argv, (gpointer) "-d");
 
@@ -710,6 +734,9 @@ out:
 static void
 nm_dhcp_dhclient_init (NMDHCPDhclient *self)
 {
+	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (self);
+
+	priv->path = nm_dhcp_dhclient_get_path (DHCLIENT_PATH);
 }
 
 static void
