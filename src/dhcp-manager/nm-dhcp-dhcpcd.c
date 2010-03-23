@@ -70,7 +70,7 @@ real_ip4_start (NMDHCPClient *client,
 	GPid pid = 0;
 	GError *error = NULL;
 	char *pid_contents = NULL, *binary_name;
-	const char *iface, *uuid;
+	const char *iface, *uuid, *hostname;
 
 	g_return_val_if_fail (priv->pid_file == NULL, -1);
 
@@ -104,6 +104,12 @@ real_ip4_start (NMDHCPClient *client,
 
 	g_ptr_array_add (argv, (gpointer) "-c");	/* Set script file */
 	g_ptr_array_add (argv, (gpointer) ACTION_SCRIPT_PATH );
+
+	hostname = nm_setting_ip4_config_get_dhcp_hostname (s_ip4);
+	if (hostname && strlen (hostname)) {
+		g_ptr_array_add (argv, (gpointer) "-h");	/* Send hostname to DHCP server */
+		g_ptr_array_add (argv, (gpointer) hostname );
+	}
 
 	g_ptr_array_add (argv, (gpointer) iface);
 	g_ptr_array_add (argv, NULL);
