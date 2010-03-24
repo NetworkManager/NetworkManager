@@ -124,6 +124,7 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 	char *line = NULL;
 	char *indent_str;
 	const char *value;
+	const char *not_set_str = _("not set");
 	int i, idx;
 	gboolean multiline = fields.flags & NMC_PF_FLAG_MULTILINE;
 	gboolean terse = fields.flags & NMC_PF_FLAG_TERSE;
@@ -161,7 +162,7 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 				char *tmp;
 				idx = g_array_index (fields.indices, int, i);
 				tmp = g_strdup_printf ("%s:", _(field_values[idx].name_l10n));
-				printf ("%-*s%s\n", terse ? 0 : 20, tmp, field_values[idx].value);
+				printf ("%-*s%s\n", terse ? 0 : 20, tmp, field_values[idx].value ? field_values[idx].value : not_set_str);
 				g_free (tmp);
 			}
 			if (pretty) {
@@ -181,7 +182,7 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 		if (field_names)
 			value = _(field_values[idx].name_l10n);
 		else
-			value = field_values[idx].value;
+			value = field_values[idx].value ? field_values[idx].value : not_set_str;
 		if (terse) {
 			if (escape) {
 				const char *p = value;
