@@ -158,10 +158,6 @@ typedef struct {
 	const char *key;
 	const char *prop;
 	const char *hw_prop;
-	/* Hack for WWAN for 0.8 release; we'll start using udev
-	 * after 0.8 gets out.
-	 */
-	gboolean ignore_udev;
 	RfKillState (*other_enabled_func) (NMManager *);
 	gboolean (*object_filter_func) (GObject *);
 } RadioState;
@@ -1383,8 +1379,7 @@ manager_rfkill_update_one_type (NMManager *self,
 	RfKillState composite;
 	gboolean new_e = TRUE, new_he = TRUE;
 
-	if (!rstate->ignore_udev)
-		udev_state = nm_udev_manager_get_rfkill_state (priv->udev_mgr, rtype);
+	udev_state = nm_udev_manager_get_rfkill_state (priv->udev_mgr, rtype);
 
 	if (rstate->other_enabled_func)
 		other_state = rstate->other_enabled_func (self);
@@ -2858,23 +2853,21 @@ nm_manager_start (NMManager *self)
 		if (!rstate->desc)
 			continue;
 
-		if (!rstate->ignore_udev) {
-			switch (nm_udev_manager_get_rfkill_state (priv->udev_mgr, i)) {
-			case RFKILL_UNBLOCKED:
-				enabled = TRUE;
-				hw_enabled = TRUE;
-				break;
-			case RFKILL_SOFT_BLOCKED:
-				enabled = FALSE;
-				hw_enabled = TRUE;
-				break;
-			case RFKILL_HARD_BLOCKED:
-				enabled = FALSE;
-				hw_enabled = FALSE;
-				break;
-			default:
-				break;
-			}
+		switch (nm_udev_manager_get_rfkill_state (priv->udev_mgr, i)) {
+		case RFKILL_UNBLOCKED:
+			enabled = TRUE;
+			hw_enabled = TRUE;
+			break;
+		case RFKILL_SOFT_BLOCKED:
+			enabled = FALSE;
+			hw_enabled = TRUE;
+			break;
+		case RFKILL_HARD_BLOCKED:
+			enabled = FALSE;
+			hw_enabled = FALSE;
+			break;
+		default:
+			break;
 		}
 
 		rstate->hw_enabled = hw_enabled;
