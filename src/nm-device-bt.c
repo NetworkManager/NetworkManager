@@ -542,11 +542,9 @@ static gboolean
 modem_find_timeout (gpointer user_data)
 {
 	NMDeviceBt *self = NM_DEVICE_BT (user_data);
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
 
-	priv->timeout_id = 0;
-
-	nm_device_state_changed (NM_DEVICE (user_data),
+	NM_DEVICE_BT_GET_PRIVATE (self)->timeout_id = 0;
+	nm_device_state_changed (NM_DEVICE (self),
 	                         NM_DEVICE_STATE_FAILED,
 	                         NM_DEVICE_STATE_REASON_MODEM_NOT_FOUND);
 	return FALSE;
@@ -602,16 +600,18 @@ bluez_connect_cb (DBusGProxy *proxy,
 		            error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
 
-		// FIXME: get a better reason code
-		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NONE);
+		nm_device_state_changed (NM_DEVICE (self),
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_BT_FAILED);
 		return;
 	}
 
 	if (!device || !strlen (device)) {
 		nm_warning ("Invalid network device returned by bluez");
 
-		// FIXME: get a better reason code
-		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NONE);
+		nm_device_state_changed (NM_DEVICE (self),
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_BT_FAILED);
 	}
 
 	if (priv->bt_type == NM_BT_CAPABILITY_DUN) {
@@ -668,6 +668,18 @@ bluez_property_changed (DBusGProxy *proxy,
 			priv->connected = FALSE;
 		}
 	}
+}
+
+static gboolean
+bt_connect_timeout (gpointer user_data)
+{
+	NMDeviceBt *self = NM_DEVICE_BT (user_data);
+
+	NM_DEVICE_BT_GET_PRIVATE (self)->timeout_id = 0;
+	nm_device_state_changed (NM_DEVICE (self),
+	                         NM_DEVICE_STATE_FAILED,
+	                         NM_DEVICE_STATE_REASON_BT_FAILED);
+	return FALSE;
 }
 
 static NMActStageReturn
@@ -735,6 +747,10 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	                                      20000,
 	                                      G_TYPE_STRING, dun ? BLUETOOTH_DUN_UUID : BLUETOOTH_NAP_UUID,
 	                                      G_TYPE_INVALID);
+
+	if (priv->timeout_id)
+		g_source_remove (priv->timeout_id);
+	priv->timeout_id = g_timeout_add_seconds (30, bt_connect_timeout, device);
 
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }

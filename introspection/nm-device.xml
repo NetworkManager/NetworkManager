@@ -397,6 +397,11 @@
           The modem could not be found.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="BT_FAILED" value="44">
+        <tp:docstring>
+          The Bluetooth connection timed out or failed.
+        </tp:docstring>
+      </tp:enumvalue>
     </tp:enum>
 
   </interface>

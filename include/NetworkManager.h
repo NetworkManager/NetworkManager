@@ -369,6 +369,9 @@ typedef enum {
 	/* The modem could not be found */
 	NM_DEVICE_STATE_REASON_MODEM_NOT_FOUND,
 
+	/* The Bluetooth connection failed or timed out */
+	NM_DEVICE_STATE_REASON_BT_FAILED,
+
 	/* Unused */
 	NM_DEVICE_STATE_REASON_LAST = 0xFFFF
 } NMDeviceStateReason;
