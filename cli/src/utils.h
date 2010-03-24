@@ -31,7 +31,5 @@ char *ssid_to_printable (const char *str, gsize len);
 GArray *parse_output_fields (const char *fields_str, const NmcOutputField fields_array[], GError **error);
 gboolean nmc_terse_option_check (NMCPrintOutput print_output, const char *fields, GError **error);
 void print_fields (const NmcPrintFields fields, const NmcOutputField field_values[]);
-void print_table_header (const char *name, ...);
-void print_table_line (int indent, ...);
 
 #endif /* NMC_UTILS_H */
