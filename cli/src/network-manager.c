@@ -126,7 +126,7 @@ show_nm_status (NmCli *nmc)
 		else
 			g_string_printf (nmc->return_text, _("Error: 'nm status': %s; allowed fields: %s"), error->message, NMC_FIELDS_NM_STATUS_ALL);
 		g_error_free (error);
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		return nmc->return_value;
 	}
 
@@ -176,14 +176,14 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 
 	if (argc == 0) {
 		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
-			goto error;
+			goto opt_error;
 		nmc->return_value = show_nm_status (nmc);
 	}
 
 	if (argc > 0) {
 		if (matches (*argv, "status") == 0) {
 			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
-				goto error;
+				goto opt_error;
 			nmc->return_value = show_nm_status (nmc);
 		}
 		else if (matches (*argv, "sleep") == 0) {
@@ -196,11 +196,11 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 			if (next_arg (&argc, &argv) != 0) {
 				/* no argument, show current WiFi state */
 				if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
-					goto error;
+					goto opt_error;
 				if (nmc->required_fields && strcasecmp (nmc->required_fields, "WIFI")) {
 					g_string_printf (nmc->return_text, _("Error: '--fields' value '%s' is not valid here; allowed fields: %s"),
 					                 nmc->required_fields, NMC_FIELDS_NM_WIFI);
-					nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 					goto end;
 				}
 				nmc->allowed_fields = nmc_fields_nm_status;
@@ -218,7 +218,7 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 					enable_wifi = FALSE;
 				else {
 					g_string_printf (nmc->return_text, _("Error: invalid 'wifi' parameter: '%s'."), *argv);
-					nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 					goto end;
 				}
 				nm_client_wireless_set_enabled (nmc->client, enable_wifi);
@@ -227,12 +227,12 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 		else if (matches (*argv, "wwan") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
-					goto error;
+					goto opt_error;
 				/* no argument, show current WWAN state */
 				if (nmc->required_fields && strcasecmp (nmc->required_fields, "WWAN")) {
 					g_string_printf (nmc->return_text, _("Error: '--fields' value '%s' is not valid here; allowed fields: %s"),
 					                 nmc->required_fields, NMC_FIELDS_NM_WWAN);
-					nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 					goto end;
 				}
 				nmc->allowed_fields = nmc_fields_nm_status;
@@ -250,7 +250,7 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 					enable_wwan = FALSE;
 				else {
 					g_string_printf (nmc->return_text, _("Error: invalid 'wwan' parameter: '%s'."), *argv);
-					nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 					goto end;
 				}
 				nm_client_wwan_set_enabled (nmc->client, enable_wwan);
@@ -261,7 +261,7 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 		}
 		else {
 			g_string_printf (nmc->return_text, _("Error: 'nm' command '%s' is not valid."), *argv);
-			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		}
 	}
 
@@ -269,10 +269,10 @@ end:
 	quit ();
 	return nmc->return_value;
 
-error:
+opt_error:
 	quit ();
 	g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-	nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+	nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 	g_error_free (error);
 	return nmc->return_value;
 }

@@ -654,7 +654,7 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 		else
 			g_string_printf (nmc->return_text, _("Error: 'dev status': %s; allowed fields: %s"), error->message, NMC_FIELDS_DEV_STATUS_ALL);
 		g_error_free (error);
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto error;
 	}
 
@@ -688,7 +688,7 @@ do_devices_list (NmCli *nmc, int argc, char **argv)
 
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: '%s' argument is missing."), *argv);
-				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
 
@@ -805,7 +805,7 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
-				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
 
@@ -815,7 +815,7 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 		} else if (strcmp (*argv, "--timeout") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
-				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
 
@@ -823,7 +823,7 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 			nmc->timeout = strtol (*argv, NULL, 10);
 			if (errno || nmc->timeout < 0) {
 				g_string_printf (nmc->return_text, _("Error: timeout value '%s' is not valid."), *argv);
-				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
 
@@ -837,7 +837,7 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 
 	if (!iface_specified) {
 		g_string_printf (nmc->return_text, _("Error: iface has to be specified."));
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto error;
 	}
 
@@ -913,14 +913,14 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		if (strcmp (*argv, "iface") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
-				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
 			iface = *argv;
 		} else if (strcmp (*argv, "hwaddr") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
-				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
 			hwaddr_user = *argv;
@@ -954,7 +954,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		else
 			g_string_printf (nmc->return_text, _("Error: 'dev wifi': %s; allowed fields: %s"), error->message, NMC_FIELDS_DEV_WIFI_LIST_ALL);
 		g_error_free (error);
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto error;
 	}
 
@@ -1074,7 +1074,7 @@ do_device_wifi (NmCli *nmc, int argc, char **argv)
 		}
 		else {
 			g_string_printf (nmc->return_text, _("Error: 'dev wifi' command '%s' is not valid."), *argv);
-			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		}
 	}
 
@@ -1093,14 +1093,14 @@ do_devices (NmCli *nmc, int argc, char **argv)
 
 	if (argc == 0) {
 		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
-			goto error;
+			goto opt_error;
 		nmc->return_value = do_devices_status (nmc, 0, NULL);
 	}
 
 	if (argc > 0) {
 		if (matches (*argv, "status") == 0) {
 			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
-				goto error;
+				goto opt_error;
 			nmc->return_value = do_devices_status (nmc, argc-1, argv+1);
 		}
 		else if (matches (*argv, "list") == 0) {
@@ -1111,7 +1111,7 @@ do_devices (NmCli *nmc, int argc, char **argv)
 		}
 		else if (matches (*argv, "wifi") == 0) {
 			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
-				goto error;
+				goto opt_error;
 			nmc->return_value = do_device_wifi (nmc, argc-1, argv+1);
 		}
 		else if (strcmp (*argv, "help") == 0) {
@@ -1119,16 +1119,16 @@ do_devices (NmCli *nmc, int argc, char **argv)
 		}
 		else {
 			g_string_printf (nmc->return_text, _("Error: 'dev' command '%s' is not valid."), *argv);
-			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		}
 	}
 
 end:
 	return nmc->return_value;
 
-error:
+opt_error:
 	g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-	nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+	nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 	g_error_free (error);
 	return nmc->return_value;
 }

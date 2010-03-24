@@ -106,8 +106,8 @@ do_cmd (NmCli *nmc, const char *argv0, int argc, char **argv)
 			return c->func (nmc, argc-1, argv+1);
 	}
 
-	g_string_printf (nmc->return_text, _("Object '%s' is unknown, try 'nmcli help'."), argv0);
-	nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+	g_string_printf (nmc->return_text, _("Error: Object '%s' is unknown, try 'nmcli help'."), argv0);
+	nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 	return nmc->return_value;
 }
 
@@ -136,26 +136,26 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 			opt++;
 		if (matches (opt, "-terse") == 0) {
 			if (nmc->print_output == NMC_PRINT_TERSE) {
-				g_string_printf (nmc->return_text, _("Option '--terse' is specified the second time."));
-				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				g_string_printf (nmc->return_text, _("Error: Option '--terse' is specified the second time."));
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
 			else if (nmc->print_output == NMC_PRINT_PRETTY) {
-				g_string_printf (nmc->return_text, _("Option '--terse' is mutually exclusive with '--pretty'."));
-				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				g_string_printf (nmc->return_text, _("Error: Option '--terse' is mutually exclusive with '--pretty'."));
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
 			else
 				nmc->print_output = NMC_PRINT_TERSE;
 		} else if (matches (opt, "-pretty") == 0) {
 			if (nmc->print_output == NMC_PRINT_PRETTY) {
-				g_string_printf (nmc->return_text, _("Option '--pretty' is specified the second time."));
-				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				g_string_printf (nmc->return_text, _("Error: Option '--pretty' is specified the second time."));
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
 			else if (nmc->print_output == NMC_PRINT_TERSE) {
-				g_string_printf (nmc->return_text, _("Option '--pretty' is mutually exclusive with '--terse'."));
-				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				g_string_printf (nmc->return_text, _("Error: Option '--pretty' is mutually exclusive with '--terse'."));
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
 			else
@@ -166,7 +166,7 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 			next_arg (&argc, &argv);
 			if (argc <= 1) {
 		 		g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
-				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
 			if (!strcmp (argv[1], "yes"))
@@ -175,14 +175,14 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 				nmc->escape_values = FALSE;
 			else {
 		 		g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[1], opt);
-				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
 		} else if (matches (opt, "-fields") == 0) {
 			next_arg (&argc, &argv);
 			if (argc <= 1) {
 		 		g_string_printf (nmc->return_text, _("Error: fields for '%s' options are missing."), opt);
-				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
 			nmc->required_fields = g_strdup (argv[1]);
@@ -193,8 +193,8 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 			usage (base);
 			return NMC_RESULT_SUCCESS;
 		} else {
-			g_string_printf (nmc->return_text, _("Option '%s' is unknown, try 'nmcli -help'."), opt);
-			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+			g_string_printf (nmc->return_text, _("Error: Option '%s' is unknown, try 'nmcli -help'."), opt);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 			return nmc->return_value;
 		}
 		argc--;

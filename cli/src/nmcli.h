@@ -32,25 +32,28 @@ typedef enum {
 	NMC_RESULT_SUCCESS = 0,
 
 	/* Unknown / unspecified error */
-	NMC_RESULT_ERROR_UNKNOWN,
+	NMC_RESULT_ERROR_UNKNOWN = 1,
+
+	/* Wrong invocation of nmcli */
+	NMC_RESULT_ERROR_USER_INPUT = 2,
 
 	/* A timeout expired */
-	NMC_RESULT_ERROR_TIMEOUT_EXPIRED,
+	NMC_RESULT_ERROR_TIMEOUT_EXPIRED = 3,
 
 	/* Error in connection activation */
-	NMC_RESULT_ERROR_CON_ACTIVATION,
+	NMC_RESULT_ERROR_CON_ACTIVATION = 4,
 
 	/* Error in connection deactivation */
-	NMC_RESULT_ERROR_CON_DEACTIVATION,
+	NMC_RESULT_ERROR_CON_DEACTIVATION = 5,
 
 	/* Error in device disconnect */
-	NMC_RESULT_ERROR_DEV_DISCONNECT
+	NMC_RESULT_ERROR_DEV_DISCONNECT = 6
 } NMCResultCode;
 
 typedef enum {
 	NMC_PRINT_TERSE = 0,
-	NMC_PRINT_NORMAL,
-	NMC_PRINT_PRETTY
+	NMC_PRINT_NORMAL = 1,
+	NMC_PRINT_PRETTY = 2
 } NMCPrintOutput;
 
 /* === Output fields === */

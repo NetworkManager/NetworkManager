@@ -220,7 +220,7 @@ do_connections_list (NmCli *nmc, int argc, char **argv)
 		else
 			g_string_printf (nmc->return_text, _("Error: 'con list': %s; allowed fields: %s"), error->message, NMC_FIELDS_CON_LIST_ALL);
 		g_error_free (error);
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto error;
 	}
 
@@ -246,7 +246,7 @@ do_connections_list (NmCli *nmc, int argc, char **argv)
 
 				if (next_arg (&argc, &argv) != 0) {
 					g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
-					nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 					goto error;
 				}
 				valid_param_specified = TRUE;
@@ -290,7 +290,7 @@ do_connections_list (NmCli *nmc, int argc, char **argv)
 
 	if (!valid_param_specified) {
 		g_string_printf (nmc->return_text, _("Error: no valid parameter specified."));
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 	}
 
 error:
@@ -399,7 +399,7 @@ do_connections_status (NmCli *nmc, int argc, char **argv)
 		else
 			g_string_printf (nmc->return_text, _("Error: 'con status': %s; allowed fields: %s"), error->message, NMC_FIELDS_CON_STATUS_ALL);
 		g_error_free (error);
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto error;
 	}
 
@@ -1081,7 +1081,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
-				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
 
@@ -1097,7 +1097,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 		else if (strcmp (*argv, "iface") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
-				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
 
@@ -1106,7 +1106,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 		else if (strcmp (*argv, "ap") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
-				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
 
@@ -1117,7 +1117,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 		} else if (strcmp (*argv, "--timeout") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
-				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
 
@@ -1125,7 +1125,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 			nmc->timeout = strtol (*argv, NULL, 10);
 			if (errno || nmc->timeout < 0) {
 				g_string_printf (nmc->return_text, _("Error: timeout value '%s' is not valid."), *argv);
-				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
 		} else {
@@ -1138,7 +1138,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 
 	if (!id_specified) {
 		g_string_printf (nmc->return_text, _("Error: id or uuid has to be specified."));
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto error;
 	}
 
@@ -1199,7 +1199,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
-				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
 
@@ -1225,7 +1225,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 
 	if (!id_specified) {
 		g_string_printf (nmc->return_text, _("Error: id or uuid has to be specified."));
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto error;
 	}
 
@@ -1284,18 +1284,18 @@ get_connections_cb (NMSettingsInterface *settings, gpointer user_data)
 
 	if (args->argc == 0) {
 		if (!nmc_terse_option_check (args->nmc->print_output, args->nmc->required_fields, &error))
-			goto error;
+			goto opt_error;
 		args->nmc->return_value = do_connections_list (args->nmc, args->argc, args->argv);
 	} else {
 
 	 	if (matches (*args->argv, "list") == 0) {
 			if (!nmc_terse_option_check (args->nmc->print_output, args->nmc->required_fields, &error))
-				goto error;
+				goto opt_error;
 			args->nmc->return_value = do_connections_list (args->nmc, args->argc-1, args->argv+1);
 		}
 		else if (matches(*args->argv, "status") == 0) {
 			if (!nmc_terse_option_check (args->nmc->print_output, args->nmc->required_fields, &error))
-				goto error;
+				goto opt_error;
 			args->nmc->return_value = do_connections_status (args->nmc, args->argc-1, args->argv+1);
 		}
 		else if (matches(*args->argv, "up") == 0) {
@@ -1310,7 +1310,7 @@ get_connections_cb (NMSettingsInterface *settings, gpointer user_data)
 		} else {
 			usage ();
 			g_string_printf (args->nmc->return_text, _("Error: 'con' command '%s' is not valid."), *args->argv);
-			args->nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+			args->nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 			args->nmc->should_wait = FALSE;
 		}
 	}
@@ -1319,9 +1319,9 @@ get_connections_cb (NMSettingsInterface *settings, gpointer user_data)
 		quit ();
 	return;
 
-error:
+opt_error:
 	g_string_printf (args->nmc->return_text, _("Error: %s."), error->message);
-	args->nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+	args->nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 	args->nmc->should_wait = FALSE;
 	g_error_free (error);
 	quit ();
