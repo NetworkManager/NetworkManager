@@ -129,14 +129,17 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 	gboolean multiline = fields.flags & NMC_PF_FLAG_MULTILINE;
 	gboolean terse = fields.flags & NMC_PF_FLAG_TERSE;
 	gboolean pretty = fields.flags & NMC_PF_FLAG_PRETTY;
-	gboolean main_header = fields.flags & NMC_PF_FLAG_MAIN_HEADER;
+	gboolean main_header_add = fields.flags & NMC_PF_FLAG_MAIN_HEADER_ADD;
+	gboolean main_header_only = fields.flags & NMC_PF_FLAG_MAIN_HEADER_ONLY;
 	gboolean field_names = fields.flags & NMC_PF_FLAG_FIELD_NAMES;
 	gboolean escape = fields.flags & NMC_PF_FLAG_ESCAPE;
+	gboolean section_prefix = fields.flags & NMC_PF_FLAG_SECTION_PREFIX;
+	gboolean main_header = main_header_add || main_header_only;
 
 	/* No headers are printed in terse mode:
 	 * - neither main header nor field (column) names
 	 */
-	if ((main_header || field_names) && terse)
+	if ((main_header_only || field_names) && terse)
 		return;
 
 	if (multiline) {
@@ -157,12 +160,16 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 		}
 
 		/* Print values */
-		if (!field_names) {
+		if (!main_header_only && !field_names) {
 			for (i = 0; i < fields.indices->len; i++) {
 				char *tmp;
 				idx = g_array_index (fields.indices, int, i);
-				tmp = g_strdup_printf ("%s:", _(field_values[idx].name_l10n));
-				printf ("%-*s%s\n", terse ? 0 : 20, tmp, field_values[idx].value ? field_values[idx].value : not_set_str);
+				if (section_prefix && idx == 0)  /* The first field is section prefix */
+					continue;
+				tmp = g_strdup_printf ("%s%s%s:", section_prefix ? field_values[0].value : "",
+				                                  section_prefix ? "." : "",
+				                                  _(field_values[idx].name_l10n));
+				printf ("%-*s%s\n", terse ? 0 : 32, tmp, field_values[idx].value ? field_values[idx].value : not_set_str);
 				g_free (tmp);
 			}
 			if (pretty) {
@@ -222,7 +229,7 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 	}
 
 	/* Print actual values */
-	if (str->len > 0) {
+	if (!main_header_only && str->len > 0) {
 		g_string_truncate (str, str->len-1);  /* Chop off last column separator */
 		if (fields.indent > 0) {
 			indent_str = g_strnfill (fields.indent, ' ');
@@ -233,7 +240,7 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 	}
 
 	/* Print horizontal separator */
-	if (field_names && pretty) {
+	if (!main_header_only && field_names && pretty) {
 		if (str->len > 0) {
 			line = g_strnfill (table_width, '-');
 			printf ("%s\n", line);

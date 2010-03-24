@@ -55,7 +55,7 @@
 #include "devices.h"
 
 
-/* Available field for 'dev status' */
+/* Available fields for 'dev status' */
 static NmcOutputField nmc_fields_dev_status[] = {
 	{"DEVICE",  N_("DEVICE"),    10, NULL, 0},  /* 0 */
 	{"TYPE",    N_("TYPE"),      17, NULL, 0},  /* 1 */
@@ -65,7 +65,22 @@ static NmcOutputField nmc_fields_dev_status[] = {
 #define NMC_FIELDS_DEV_STATUS_ALL     "DEVICE,TYPE,STATE"
 #define NMC_FIELDS_DEV_STATUS_COMMON  "DEVICE,TYPE,STATE"
 
-/* Available field for 'dev list' - general part */
+
+/* Available sections for 'dev list' */
+static NmcOutputField nmc_fields_dev_list_sections[] = {
+	{"GENERAL",           N_("GENERAL"),           0, NULL, 0},  /* 0 */
+	{"CAPABILITIES",      N_("CAPABILITIES"),      0, NULL, 0},  /* 1 */
+	{"WIFI-PROPERTIES",   N_("WIFI-PROPERTIES"),   0, NULL, 0},  /* 2 */
+	{"AP",                N_("AP"),                0, NULL, 0},  /* 3 */
+	{"WIRED-PROPERTIES",  N_("WIRED-PROPERTIES"),  0, NULL, 0},  /* 4 */
+	{"IP4-SETTINGS",      N_("IP4-SETTINGS"),      0, NULL, 0},  /* 5 */
+	{"IP4-DNS",           N_("IP4-DNS"),           0, NULL, 0},  /* 6 */
+	{NULL,                NULL,                    0, NULL, 0}
+};
+#define NMC_FIELDS_DEV_LIST_SECTIONS_ALL     "GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,IP4-SETTINGS,IP4-DNS"
+#define NMC_FIELDS_DEV_LIST_SECTIONS_COMMON  "GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,IP4-SETTINGS,IP4-DNS"
+
+/* Available fields for 'dev list' - GENERAL part */
 static NmcOutputField nmc_fields_dev_list_general[] = {
 	{"NAME",       N_("NAME"),        10, NULL, 0},  /* 0 */
 	{"DEVICE",     N_("DEVICE"),      10, NULL, 0},  /* 1 */
@@ -78,7 +93,7 @@ static NmcOutputField nmc_fields_dev_list_general[] = {
 #define NMC_FIELDS_DEV_LIST_GENERAL_ALL     "NAME,DEVICE,TYPE,DRIVER,HWADDR,STATE"
 #define NMC_FIELDS_DEV_LIST_GENERAL_COMMON  "NAME,DEVICE,TYPE,DRIVER,HWADDR,STATE"
 
-/* Available field for 'dev list' - capabilities part */
+/* Available fields for 'dev list' - CAPABILITIES part */
 static NmcOutputField nmc_fields_dev_list_cap[] = {
 	{"NAME",            N_("NAME"),            13, NULL, 0},  /* 0 */
 	{"CARRIER-DETECT",  N_("CARRIER-DETECT"),  16, NULL, 0},  /* 1 */
@@ -88,7 +103,7 @@ static NmcOutputField nmc_fields_dev_list_cap[] = {
 #define NMC_FIELDS_DEV_LIST_CAP_ALL     "NAME,CARRIER-DETECT,SPEED"
 #define NMC_FIELDS_DEV_LIST_CAP_COMMON  "NAME,CARRIER-DETECT,SPEED"
 
-/* Available field for 'dev list' - wired properties part */
+/* Available fields for 'dev list' - wired properties part */
 static NmcOutputField nmc_fields_dev_list_wired_prop[] = {
 	{"NAME",            N_("NAME"),     18, NULL, 0},  /* 0 */
 	{"CARRIER",         N_("CARRIER"),  10, NULL, 0},  /* 1 */
@@ -98,7 +113,7 @@ static NmcOutputField nmc_fields_dev_list_wired_prop[] = {
 #define NMC_FIELDS_DEV_LIST_WIRED_PROP_COMMON  "NAME,CARRIER"
 
 
-/* Available field for 'dev list' - wireless properties part */
+/* Available fields for 'dev list' - wireless properties part */
 static NmcOutputField nmc_fields_dev_list_wifi_prop[] = {
 	{"NAME",       N_("NAME"),        18, NULL, 0},  /* 0 */
 	{"WEP",        N_("WEP"),          5, NULL, 0},  /* 1 */
@@ -111,7 +126,7 @@ static NmcOutputField nmc_fields_dev_list_wifi_prop[] = {
 #define NMC_FIELDS_DEV_LIST_WIFI_PROP_ALL     "NAME,WEP,WPA,WPA2,TKIP,CCMP"
 #define NMC_FIELDS_DEV_LIST_WIFI_PROP_COMMON  "NAME,WEP,WPA,WPA2,TKIP,CCMP"
 
-/* Available field for 'dev list' - IPv4 settings part */
+/* Available fields for 'dev list' - IPv4 settings part */
 static NmcOutputField nmc_fields_dev_list_ip4_settings[] = {
 	{"NAME",       N_("NAME"),        15, NULL, 0},  /* 0 */
 	{"ADDRESS",    N_("ADDRESS"),     15, NULL, 0},  /* 1 */
@@ -122,7 +137,7 @@ static NmcOutputField nmc_fields_dev_list_ip4_settings[] = {
 #define NMC_FIELDS_DEV_LIST_IP4_SETTINGS_ALL     "NAME,ADDRESS,PREFIX,GATEWAY"
 #define NMC_FIELDS_DEV_LIST_IP4_SETTINGS_COMMON  "NAME,ADDRESS,PREFIX,GATEWAY"
 
-/* Available field for 'dev list' - IPv4 settings DNS part */
+/* Available fields for 'dev list' - IPv4 settings DNS part */
 static NmcOutputField nmc_fields_dev_list_ip4_dns[] = {
 	{"NAME",       N_("NAME"),        15, NULL, 0},  /* 0 */
 	{"DNS",        N_("DNS"),         17, NULL, 0},  /* 1 */
@@ -132,24 +147,24 @@ static NmcOutputField nmc_fields_dev_list_ip4_dns[] = {
 #define NMC_FIELDS_DEV_LIST_IP4_DNS_COMMON  "NAME,DNS"
 
 
-/* Available field for 'dev wifi list' */
+/* Available fields for 'dev wifi list' */
 static NmcOutputField nmc_fields_dev_wifi_list[] = {
-	{"SSID",       N_("SSID"),        33, NULL, 0},  /* 0 */
-	{"BSSID",      N_("BSSID"),       19, NULL, 0},  /* 1 */
-	{"MODE",       N_("MODE"),        16, NULL, 0},  /* 2 */
-	{"FREQ",       N_("FREQ"),        10, NULL, 0},  /* 3 */
-	{"RATE",       N_("RATE"),        10, NULL, 0},  /* 4 */
-	{"SIGNAL",     N_("SIGNAL"),       8, NULL, 0},  /* 5 */
-	{"SECURITY",   N_("SECURITY"),    10, NULL, 0},  /* 6 */
-	{"WPA-FLAGS",  N_("WPA-FLAGS"),   25, NULL, 0},  /* 7 */
-	{"RSN-FLAGS",  N_("RSN-FLAGS"),   25, NULL, 0},  /* 8 */
-	{"DEVICE",     N_("DEVICE"),      10, NULL, 0},  /* 9 */
-	{"ACTIVE",     N_("ACTIVE"),       8, NULL, 0},  /* 10 */
-	{"NAME",       N_("NAME"),         8, NULL, 0},  /* 11 */  /* For WiFi scan in nm dev list */
+	{"NAME",       N_("NAME"),        15, NULL, 0},  /* 0 */
+	{"SSID",       N_("SSID"),        33, NULL, 0},  /* 1 */
+	{"BSSID",      N_("BSSID"),       19, NULL, 0},  /* 2 */
+	{"MODE",       N_("MODE"),        16, NULL, 0},  /* 3 */
+	{"FREQ",       N_("FREQ"),        10, NULL, 0},  /* 4 */
+	{"RATE",       N_("RATE"),        10, NULL, 0},  /* 5 */
+	{"SIGNAL",     N_("SIGNAL"),       8, NULL, 0},  /* 6 */
+	{"SECURITY",   N_("SECURITY"),    10, NULL, 0},  /* 7 */
+	{"WPA-FLAGS",  N_("WPA-FLAGS"),   25, NULL, 0},  /* 8 */
+	{"RSN-FLAGS",  N_("RSN-FLAGS"),   25, NULL, 0},  /* 9 */
+	{"DEVICE",     N_("DEVICE"),      10, NULL, 0},  /* 10 */
+	{"ACTIVE",     N_("ACTIVE"),       8, NULL, 0},  /* 11 */
 	{NULL,         NULL,               0, NULL, 0}
 };
-#define NMC_FIELDS_DEV_WIFI_LIST_ALL     "SSID,BSSID,MODE,FREQ,RATE,SIGNAL,SECURITY,WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE"
-#define NMC_FIELDS_DEV_WIFI_LIST_COMMON  "SSID,BSSID,MODE,FREQ,RATE,SIGNAL,SECURITY,ACTIVE"
+#define NMC_FIELDS_DEV_WIFI_LIST_ALL           "SSID,BSSID,MODE,FREQ,RATE,SIGNAL,SECURITY,WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE"
+#define NMC_FIELDS_DEV_WIFI_LIST_COMMON        "SSID,BSSID,MODE,FREQ,RATE,SIGNAL,SECURITY,ACTIVE"
 #define NMC_FIELDS_DEV_WIFI_LIST_FOR_DEV_LIST  "NAME,"NMC_FIELDS_DEV_WIFI_LIST_COMMON
 
 
@@ -272,28 +287,6 @@ ap_wpa_rsn_flags_to_string (guint32 flags)
 	return ret_str;
 }
 
-#if 0
-static void
-print_header (const char *label, const char *iface, const char *connection)
-{
-	GString *string;
-
-	string = g_string_sized_new (79);
-	g_string_append_printf (string, "- %s: ", label);
-	if (iface)
-		g_string_append_printf (string, "%s ", iface);
-	if (connection)
-		g_string_append_printf (string, " [%s] ", connection);
-
-	while (string->len < 80)
-		g_string_append_c (string, '-');
-
-	printf ("%s\n", string->str);
-
-	g_string_free (string, TRUE);
-}
-#endif
-
 static gchar *
 ip4_address_as_string (guint32 ip)
 {
@@ -314,6 +307,7 @@ ip4_address_as_string (guint32 ip)
 
 typedef struct {
 	NmCli *nmc;
+	int index;
 	const char* active_bssid;
 	const char* device;
 } APInfo;
@@ -331,6 +325,7 @@ detail_access_point (gpointer data, gpointer user_data)
 	NM80211Mode mode;
 	char *freq_str, *ssid_str, *bitrate_str, *strength_str, *wpa_flags_str, *rsn_flags_str;
 	GString *security_str;
+	char *ap_name;
 
 	if (info->active_bssid) {
 		const char *current_bssid = nm_access_point_get_hw_address (ap);
@@ -378,22 +373,24 @@ detail_access_point (gpointer data, gpointer user_data)
 	if (security_str->len > 0)
 		g_string_truncate (security_str, security_str->len-1);  /* Chop off last space */
 
-	info->nmc->allowed_fields[0].value = ssid_str;
-	info->nmc->allowed_fields[1].value = hwaddr;
-	info->nmc->allowed_fields[2].value = mode == NM_802_11_MODE_ADHOC ? _("Ad-Hoc") : mode == NM_802_11_MODE_INFRA ? _("Infrastructure") : _("Unknown");
-	info->nmc->allowed_fields[3].value = freq_str;
-	info->nmc->allowed_fields[4].value = bitrate_str;
-	info->nmc->allowed_fields[5].value = strength_str;
-	info->nmc->allowed_fields[6].value = security_str->str;
-	info->nmc->allowed_fields[7].value = wpa_flags_str;
-	info->nmc->allowed_fields[8].value = rsn_flags_str;
-	info->nmc->allowed_fields[9].value = info->device;
-	info->nmc->allowed_fields[10].value = active ? _("yes") : _("no");
-	info->nmc->allowed_fields[11].value = "AP";
+	ap_name = g_strdup_printf ("AP%d", info->index++); /* AP */
+	info->nmc->allowed_fields[0].value = ap_name;
+	info->nmc->allowed_fields[1].value = ssid_str;
+	info->nmc->allowed_fields[2].value = hwaddr;
+	info->nmc->allowed_fields[3].value = mode == NM_802_11_MODE_ADHOC ? _("Ad-Hoc") : mode == NM_802_11_MODE_INFRA ? _("Infrastructure") : _("Unknown");
+	info->nmc->allowed_fields[4].value = freq_str;
+	info->nmc->allowed_fields[5].value = bitrate_str;
+	info->nmc->allowed_fields[6].value = strength_str;
+	info->nmc->allowed_fields[7].value = security_str->str;
+	info->nmc->allowed_fields[8].value = wpa_flags_str;
+	info->nmc->allowed_fields[9].value = rsn_flags_str;
+	info->nmc->allowed_fields[10].value = info->device;
+	info->nmc->allowed_fields[11].value = active ? _("yes") : _("no");
 
-	info->nmc->print_fields.flags &= ~NMC_PF_FLAG_MAIN_HEADER & ~NMC_PF_FLAG_FIELD_NAMES; /* Clear header flags */
+	info->nmc->print_fields.flags &= ~NMC_PF_FLAG_MAIN_HEADER_ADD & ~NMC_PF_FLAG_MAIN_HEADER_ONLY & ~NMC_PF_FLAG_FIELD_NAMES; /* Clear header flags */
 	print_fields (info->nmc->print_fields, info->nmc->allowed_fields);
 
+	g_free (ap_name);
 	g_free (ssid_str);
 	g_free (freq_str);
 	g_free (bitrate_str);
@@ -413,6 +410,7 @@ show_device_info (gpointer data, gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (data);
 	NmCli *nmc = (NmCli *) user_data;
+	GError *error = NULL;
 	APInfo *info;
 	char *tmp;
 	const char *hwaddr = NULL;
@@ -421,185 +419,243 @@ show_device_info (gpointer data, gpointer user_data)
 	guint32 speed;
 	char *speed_str = NULL;
 	const GArray *array;
+	GArray *sections_array;
+	int k;
+	char *fields_str;
+	char *fields_all =    NMC_FIELDS_DEV_LIST_SECTIONS_ALL;
+	char *fields_common = NMC_FIELDS_DEV_LIST_SECTIONS_COMMON;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
+	gboolean was_output = FALSE;
 
-	/* General information */
+	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
+		fields_str = fields_common;
+	else if (!nmc->required_fields || strcasecmp (nmc->required_fields, "all") == 0)
+		fields_str = fields_all;
+	else
+		fields_str = nmc->required_fields;
+
+	sections_array = parse_output_fields (fields_str, nmc_fields_dev_list_sections, &error);
+	if (error) {
+		if (error->code == 0)
+			g_string_printf (nmc->return_text, _("Error: 'dev list': %s"), error->message);
+		else
+			g_string_printf (nmc->return_text, _("Error: 'dev list': %s; allowed fields: %s"), error->message, NMC_FIELDS_DEV_LIST_SECTIONS_ALL);
+		g_error_free (error);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		return;
+	}
+
+	/* Main header */
 	nmc->allowed_fields = nmc_fields_dev_list_general;
-	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER | NMC_PF_FLAG_FIELD_NAMES;
+	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ONLY;
 	nmc->print_fields.header_name = _("Device details");
 	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_LIST_GENERAL_ALL, nmc->allowed_fields, NULL);
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
 
-	state = nm_device_get_state (device);
-	if (NM_IS_DEVICE_ETHERNET (device))
-		hwaddr = nm_device_ethernet_get_hw_address (NM_DEVICE_ETHERNET (device));
-	else if (NM_IS_DEVICE_WIFI (device))
-		hwaddr = nm_device_wifi_get_hw_address (NM_DEVICE_WIFI (device));
+	/* Loop through the required sections and print them. */
+	for (k = 0; k < sections_array->len; k++) {
+		int section_idx = g_array_index (sections_array, int, k);
 
-	nmc->allowed_fields[0].value = "GENERAL";
-	nmc->allowed_fields[1].value = nm_device_get_iface (device);
-	nmc->allowed_fields[2].value = get_device_type (device);
-	nmc->allowed_fields[3].value = nm_device_get_driver (device) ? nm_device_get_driver (device) : _("(unknown)");
-	nmc->allowed_fields[4].value = hwaddr ? hwaddr : _("unknown)");
-	nmc->allowed_fields[5].value = device_state_to_string (state);
+		if (nmc->print_output != NMC_PRINT_TERSE && !nmc->multiline_output && was_output)
+			printf ("\n"); /* Empty line */
 
-	nmc->print_fields.flags &= ~NMC_PF_FLAG_MAIN_HEADER & ~NMC_PF_FLAG_FIELD_NAMES; /* Clear header flags */
-	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+		was_output = FALSE;
 
-	printf ("\n"); /* empty line */
-
-	/* Capabilities */
-	nmc->allowed_fields = nmc_fields_dev_list_cap;
-	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_LIST_CAP_ALL, nmc->allowed_fields, NULL);
-	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
-
-	caps = nm_device_get_capabilities (device);
-	speed = 0;
-	if (NM_IS_DEVICE_ETHERNET (device)) {
-		/* Speed in Mb/s */
-		speed = nm_device_ethernet_get_speed (NM_DEVICE_ETHERNET (device));
-	} else if (NM_IS_DEVICE_WIFI (device)) {
-		/* Speed in b/s */
-		speed = nm_device_wifi_get_bitrate (NM_DEVICE_WIFI (device));
-		speed /= 1000;
-	}
-	if (speed)
-		speed_str = g_strdup_printf (_("%u Mb/s"), speed);
-
-	nmc->allowed_fields[0].value = "CAPABILITIES";
-	nmc->allowed_fields[1].value = (caps & NM_DEVICE_CAP_CARRIER_DETECT) ? _("yes") : _("no");
-	nmc->allowed_fields[2].value = speed_str ? speed_str : _("unknown");
-
-	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag;
-	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
-	g_free (speed_str);
-
-	/* Wireless specific information */
-	if ((NM_IS_DEVICE_WIFI (device))) {
-		guint32 wcaps;
-		NMAccessPoint *active_ap = NULL;
-		const char *active_bssid = NULL;
-		const GPtrArray *aps;
-
-		printf ("\n"); /* empty line */
-
-		wcaps = nm_device_wifi_get_capabilities (NM_DEVICE_WIFI (device));
-
-		nmc->allowed_fields = nmc_fields_dev_list_wifi_prop;
-		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
-		nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_LIST_WIFI_PROP_ALL, nmc->allowed_fields, NULL);
-		print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
-
-		nmc->allowed_fields[0].value = "WIFI-PROPERTIES";
-		nmc->allowed_fields[1].value = (wcaps & (NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104)) ? _("yes") : _("no");
-		nmc->allowed_fields[2].value = (wcaps & NM_WIFI_DEVICE_CAP_WPA) ? _("yes") : _("no");
-		nmc->allowed_fields[3].value = (wcaps & NM_WIFI_DEVICE_CAP_RSN) ? _("yes") : _("no");
-		nmc->allowed_fields[4].value = (wcaps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP) ? _("yes") : _("no");
-		nmc->allowed_fields[5].value = (wcaps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP) ? _("yes") : _("no");
-
-		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag;
-		print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
-
-		printf ("\n"); /* empty line */
-
-		/* Wireless access points */
-		if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
-			active_ap = nm_device_wifi_get_active_access_point (NM_DEVICE_WIFI (device));
-			active_bssid = active_ap ? nm_access_point_get_hw_address (active_ap) : NULL;
-		}
-
-		nmc->allowed_fields = nmc_fields_dev_wifi_list;
-		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
-		nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_WIFI_LIST_FOR_DEV_LIST, nmc->allowed_fields, NULL);
-		print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
-
-		info = g_malloc0 (sizeof (APInfo));
-		info->nmc = nmc;
-		info->active_bssid = active_bssid;
-		info->device = nm_device_get_iface (device);
-		aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (device));
-		if (aps && aps->len)
-			g_ptr_array_foreach ((GPtrArray *) aps, detail_access_point, (gpointer) info);
-		g_free (info);
-	} else if (NM_IS_DEVICE_ETHERNET (device)) {
-		printf ("\n"); /* empty line */
-		/* Wired properties */
-		nmc->allowed_fields = nmc_fields_dev_list_wired_prop;
-		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
-		nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_LIST_WIRED_PROP_ALL, nmc->allowed_fields, NULL);
-		print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
-
-		nmc->allowed_fields[0].value = "WIRED-PROPERTIES";
-		nmc->allowed_fields[1].value = (nm_device_ethernet_get_carrier (NM_DEVICE_ETHERNET (device))) ? _("on") : _("off");
-
-		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag;
-		print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
-	}
-
-	/* IP Setup info */
-	if (state == NM_DEVICE_STATE_ACTIVATED) {
-		NMIP4Config *cfg = nm_device_get_ip4_config (device);
-		GSList *iter;
-
-		printf ("\n"); /* empty line */
-
-		nmc->allowed_fields = nmc_fields_dev_list_ip4_settings;
-		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
-		nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_LIST_IP4_SETTINGS_ALL, nmc->allowed_fields, NULL);
-		print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
-
-		for (iter = (GSList *) nm_ip4_config_get_addresses (cfg); iter; iter = g_slist_next (iter)) {
-			NMIP4Address *addr = (NMIP4Address *) iter->data;
-			guint32 prefix = nm_ip4_address_get_prefix (addr);
-			char *tmp2;
-			char *addr_str, *prefix_str, *gateway_str;
-
-			addr_str = ip4_address_as_string (nm_ip4_address_get_address (addr));
-
-			tmp2 = ip4_address_as_string (nm_utils_ip4_prefix_to_netmask (prefix));
-			prefix_str = g_strdup_printf ("%d (%s)", prefix, tmp2);
-			g_free (tmp2);
-
-			gateway_str = ip4_address_as_string (nm_ip4_address_get_gateway (addr));
-
-			nmc->allowed_fields[0].value = "IPv4-SETTINGS";
-			nmc->allowed_fields[1].value = addr_str;
-			nmc->allowed_fields[2].value = prefix_str;
-			nmc->allowed_fields[3].value = gateway_str;
-
-			nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag;
-			print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
-			g_free (addr_str);
-			g_free (prefix_str);
-			g_free (gateway_str);
-		}
-		array = nm_ip4_config_get_nameservers (cfg);
-		if (array) {
-			int i;
-
-			printf ("\n"); /* empty line */
-
-			nmc->allowed_fields = nmc_fields_dev_list_ip4_dns;
+		/* section GENERAL */
+		if (!strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[0].name)) {
+			nmc->allowed_fields = nmc_fields_dev_list_general;
 			nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
-			nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_LIST_IP4_DNS_ALL, nmc->allowed_fields, NULL);
+			nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_LIST_GENERAL_ALL, nmc->allowed_fields, NULL);
 			print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
 
-			for (i = 0; i < array->len; i++) {
-				tmp = ip4_address_as_string (g_array_index (array, guint32, i));
-				nmc->allowed_fields[0].value = "IPv4-DNS";
-				nmc->allowed_fields[1].value = tmp;
+			state = nm_device_get_state (device);
+			if (NM_IS_DEVICE_ETHERNET (device))
+				hwaddr = nm_device_ethernet_get_hw_address (NM_DEVICE_ETHERNET (device));
+			else if (NM_IS_DEVICE_WIFI (device))
+				hwaddr = nm_device_wifi_get_hw_address (NM_DEVICE_WIFI (device));
 
-				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag;
+			nmc->allowed_fields[0].value = nmc_fields_dev_list_sections[0].name;  /* "GENERAL"*/
+			nmc->allowed_fields[1].value = nm_device_get_iface (device);
+			nmc->allowed_fields[2].value = get_device_type (device);
+			nmc->allowed_fields[3].value = nm_device_get_driver (device) ? nm_device_get_driver (device) : _("(unknown)");
+			nmc->allowed_fields[4].value = hwaddr ? hwaddr : _("unknown)");
+			nmc->allowed_fields[5].value = device_state_to_string (state);
+
+			nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
+			print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+			was_output = TRUE;
+		}
+
+		/* section CAPABILITIES */
+		if (!strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[1].name)) {
+			nmc->allowed_fields = nmc_fields_dev_list_cap;
+			nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
+			nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_LIST_CAP_ALL, nmc->allowed_fields, NULL);
+			print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+
+			caps = nm_device_get_capabilities (device);
+			speed = 0;
+			if (NM_IS_DEVICE_ETHERNET (device)) {
+				/* Speed in Mb/s */
+				speed = nm_device_ethernet_get_speed (NM_DEVICE_ETHERNET (device));
+			} else if (NM_IS_DEVICE_WIFI (device)) {
+				/* Speed in b/s */
+				speed = nm_device_wifi_get_bitrate (NM_DEVICE_WIFI (device));
+				speed /= 1000;
+			}
+			if (speed)
+				speed_str = g_strdup_printf (_("%u Mb/s"), speed);
+
+			nmc->allowed_fields[0].value = nmc_fields_dev_list_sections[1].name;  /* "CAPABILITIES" */
+			nmc->allowed_fields[1].value = (caps & NM_DEVICE_CAP_CARRIER_DETECT) ? _("yes") : _("no");
+			nmc->allowed_fields[2].value = speed_str ? speed_str : _("unknown");
+
+			nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
+			print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+			g_free (speed_str);
+			was_output = TRUE;
+		}
+
+		/* Wireless specific information */
+		if ((NM_IS_DEVICE_WIFI (device))) {
+			guint32 wcaps;
+			NMAccessPoint *active_ap = NULL;
+			const char *active_bssid = NULL;
+			const GPtrArray *aps;
+
+			/* section WIFI-PROPERTIES */
+			if (!strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[2].name)) {
+				wcaps = nm_device_wifi_get_capabilities (NM_DEVICE_WIFI (device));
+
+				nmc->allowed_fields = nmc_fields_dev_list_wifi_prop;
+				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
+				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_LIST_WIFI_PROP_ALL, nmc->allowed_fields, NULL);
+				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+
+				nmc->allowed_fields[0].value = nmc_fields_dev_list_sections[2].name;  /* "WIFI-PROPERTIES" */
+				nmc->allowed_fields[1].value = (wcaps & (NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104)) ? _("yes") : _("no");
+				nmc->allowed_fields[2].value = (wcaps & NM_WIFI_DEVICE_CAP_WPA) ? _("yes") : _("no");
+				nmc->allowed_fields[3].value = (wcaps & NM_WIFI_DEVICE_CAP_RSN) ? _("yes") : _("no");
+				nmc->allowed_fields[4].value = (wcaps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP) ? _("yes") : _("no");
+				nmc->allowed_fields[5].value = (wcaps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP) ? _("yes") : _("no");
+
+				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
-				g_free (tmp);
+				was_output = TRUE;
+			}
+
+			/* section AP */
+			if (!strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[3].name)) {
+				if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
+					active_ap = nm_device_wifi_get_active_access_point (NM_DEVICE_WIFI (device));
+					active_bssid = active_ap ? nm_access_point_get_hw_address (active_ap) : NULL;
+				}
+
+				nmc->allowed_fields = nmc_fields_dev_wifi_list;
+				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
+				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_WIFI_LIST_FOR_DEV_LIST, nmc->allowed_fields, NULL);
+				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+
+				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
+				info = g_malloc0 (sizeof (APInfo));
+				info->nmc = nmc;
+				info->index = 1;
+				info->active_bssid = active_bssid;
+				info->device = nm_device_get_iface (device);
+				aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (device));
+				if (aps && aps->len)
+					g_ptr_array_foreach ((GPtrArray *) aps, detail_access_point, (gpointer) info);
+				g_free (info);
+				was_output = TRUE;
+			}
+		} else if (NM_IS_DEVICE_ETHERNET (device)) {
+			/* WIRED-PROPERTIES */
+			if (!strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[4].name)) {
+				nmc->allowed_fields = nmc_fields_dev_list_wired_prop;
+				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
+				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_LIST_WIRED_PROP_ALL, nmc->allowed_fields, NULL);
+				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+
+				nmc->allowed_fields[0].value = nmc_fields_dev_list_sections[4].name;  /* "WIRED-PROPERTIES" */
+				nmc->allowed_fields[1].value = (nm_device_ethernet_get_carrier (NM_DEVICE_ETHERNET (device))) ? _("on") : _("off");
+
+				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
+				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+				was_output = TRUE;
+			}
+		}
+
+		/* IP Setup info */
+		if (state == NM_DEVICE_STATE_ACTIVATED) {
+			NMIP4Config *cfg = nm_device_get_ip4_config (device);
+			GSList *iter;
+
+			/* IP4-SETTINGS */
+			if (!strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[5].name)) {
+				nmc->allowed_fields = nmc_fields_dev_list_ip4_settings;
+				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
+				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_LIST_IP4_SETTINGS_ALL, nmc->allowed_fields, NULL);
+				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+
+				for (iter = (GSList *) nm_ip4_config_get_addresses (cfg); iter; iter = g_slist_next (iter)) {
+					NMIP4Address *addr = (NMIP4Address *) iter->data;
+					guint32 prefix = nm_ip4_address_get_prefix (addr);
+					char *tmp2;
+					char *addr_str, *prefix_str, *gateway_str;
+
+					addr_str = ip4_address_as_string (nm_ip4_address_get_address (addr));
+
+					tmp2 = ip4_address_as_string (nm_utils_ip4_prefix_to_netmask (prefix));
+					prefix_str = g_strdup_printf ("%d (%s)", prefix, tmp2);
+					g_free (tmp2);
+
+					gateway_str = ip4_address_as_string (nm_ip4_address_get_gateway (addr));
+
+					nmc->allowed_fields[0].value = nmc_fields_dev_list_sections[5].name;  /* "IP4-SETTINGS" */
+					nmc->allowed_fields[1].value = addr_str;
+					nmc->allowed_fields[2].value = prefix_str;
+					nmc->allowed_fields[3].value = gateway_str;
+
+					nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
+					print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+					g_free (addr_str);
+					g_free (prefix_str);
+					g_free (gateway_str);
+				}
+				was_output = TRUE;
+			}
+			/* IP4-DNS */
+			if (!strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[6].name)) {
+				array = nm_ip4_config_get_nameservers (cfg);
+				if (array) {
+					int i;
+
+					nmc->allowed_fields = nmc_fields_dev_list_ip4_dns;
+					nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
+					nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_LIST_IP4_DNS_ALL, nmc->allowed_fields, NULL);
+					print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+
+					for (i = 0; i < array->len; i++) {
+						char *dns_name = g_strdup_printf ("%s%d", nmc_fields_dev_list_sections[6].name, i+1);
+						tmp = ip4_address_as_string (g_array_index (array, guint32, i));
+						nmc->allowed_fields[0].value = dns_name;  /* "IP4-DNS<num>" */
+						nmc->allowed_fields[1].value = tmp;
+
+						nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
+						print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+						g_free (tmp);
+						g_free (dns_name);
+					}
+				}
+				was_output = TRUE;
 			}
 		}
 	}
 
-	printf ("\n");
+	if (sections_array)
+		g_array_free (sections_array, TRUE);
 }
 
 static void
@@ -609,7 +665,7 @@ show_device_status (NMDevice *device, NmCli *nmc)
 	nmc->allowed_fields[1].value = get_device_type (device);
 	nmc->allowed_fields[2].value = device_state_to_string (nm_device_get_state (device));
 
-	nmc->print_fields.flags &= ~NMC_PF_FLAG_MAIN_HEADER & ~NMC_PF_FLAG_FIELD_NAMES; /* Clear header flags */
+	nmc->print_fields.flags &= ~NMC_PF_FLAG_MAIN_HEADER_ADD & ~NMC_PF_FLAG_MAIN_HEADER_ONLY & ~NMC_PF_FLAG_FIELD_NAMES; /* Clear header flags */
 	print_fields (nmc->print_fields, nmc->allowed_fields);
 }
 
@@ -642,7 +698,7 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 		fields_str = fields_common;
 	else if (!nmc->required_fields || strcasecmp (nmc->required_fields, "all") == 0)
 		fields_str = fields_all;
-	else 
+	else
 		fields_str = nmc->required_fields;
 
 	nmc->allowed_fields = nmc_fields_dev_status;
@@ -658,7 +714,7 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER | NMC_PF_FLAG_FIELD_NAMES;
+	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
 	nmc->print_fields.header_name = _("Status of devices");
 	print_fields (nmc->print_fields, nmc->allowed_fields);
 
@@ -882,6 +938,7 @@ show_acces_point_info (NMDevice *device, NmCli *nmc)
 
 	info = g_malloc0 (sizeof (APInfo));
 	info->nmc = nmc;
+	info->index = 1;
 	info->active_bssid = active_bssid;
 	info->device = nm_device_get_iface (device);
 	aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (device));
@@ -942,7 +999,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		fields_str = fields_common;
 	else if (!nmc->required_fields || strcasecmp (nmc->required_fields, "all") == 0)
 		fields_str = fields_all;
-	else 
+	else
 		fields_str = nmc->required_fields;
 
 	nmc->allowed_fields = nmc_fields_dev_wifi_list;
@@ -958,7 +1015,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER | NMC_PF_FLAG_FIELD_NAMES;
+	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
 	nmc->print_fields.header_name = _("WiFi scan list");
 
 	if (iface) {
@@ -1000,6 +1057,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 				}
 				info = g_malloc0 (sizeof (APInfo));
 				info->nmc = nmc;
+				info->index = 1;
 				info->active_bssid = NULL;
 				info->device = nm_device_get_iface (device);
 				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
@@ -1037,6 +1095,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 
 						info = g_malloc0 (sizeof (APInfo));
 						info->nmc = nmc;
+						info->index = 1;
 						info->active_bssid = NULL;
 						info->device = nm_device_get_iface (dev);
 						detail_access_point (ap, info);

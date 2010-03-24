@@ -66,12 +66,14 @@ typedef struct {
 } NmcOutputField;
 
 /* Flags for NmcPrintFields */
-#define	NMC_PF_FLAG_MULTILINE     0x00000001   /* Multiline output instead of tabular*/
-#define	NMC_PF_FLAG_TERSE         0x00000002   /* Terse outpud mode */
-#define	NMC_PF_FLAG_PRETTY        0x00000004   /* Pretty output mode */
-#define	NMC_PF_FLAG_MAIN_HEADER   0x00000008   /* Print main header */
-#define	NMC_PF_FLAG_FIELD_NAMES   0x00000010   /* Print field names instead of values */
-#define	NMC_PF_FLAG_ESCAPE        0x00000020   /* Escape column separator and '\' */
+#define	NMC_PF_FLAG_MULTILINE          0x00000001   /* Multiline output instead of tabular */
+#define	NMC_PF_FLAG_TERSE              0x00000002   /* Terse output mode */
+#define	NMC_PF_FLAG_PRETTY             0x00000004   /* Pretty output mode */
+#define	NMC_PF_FLAG_MAIN_HEADER_ADD    0x00000008   /* Print main header in addition to values/field names */
+#define	NMC_PF_FLAG_MAIN_HEADER_ONLY   0x00000010   /* Print main header only */
+#define	NMC_PF_FLAG_FIELD_NAMES        0x00000020   /* Print field names instead of values */
+#define	NMC_PF_FLAG_ESCAPE             0x00000040   /* Escape column separator and '\' */
+#define	NMC_PF_FLAG_SECTION_PREFIX     0x00000080   /* Use the first value as section prefix for the other field names - just in multiline */
 
 typedef struct {
 	GArray *indices;      /* Array of field indices to the array of allowed fields */
