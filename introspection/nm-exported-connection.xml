@@ -46,7 +46,7 @@
             </tp:docstring>
             <arg name="settings" type="a{sa{sv}}" tp:type="String_String_Variant_Map_Map">
                 <tp:docstring>
-                    Contains the changed settings.
+                    Contains complete connection setting parameters, including changes.
                 </tp:docstring>
             </arg>
         </signal>
