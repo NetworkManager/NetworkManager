@@ -345,7 +345,7 @@ detail_access_point (gpointer data, gpointer user_data)
 	strength = nm_access_point_get_strength (ap);
 
 	/* Convert to strings */
-	ssid_str = g_strdup_printf ("%s", ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : _("(none)"));
+	ssid_str = ssid_to_printable ((const char *) ssid->data, ssid->len);
 	freq_str = g_strdup_printf (_("%u MHz"), freq);
 	bitrate_str = g_strdup_printf (_("%u MB/s"), bitrate/1000);
 	strength_str = g_strdup_printf ("%u", strength);

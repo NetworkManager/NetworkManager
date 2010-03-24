@@ -48,6 +48,33 @@ next_arg (int *argc, char ***argv)
 }
 
 /*
+ *  Convert SSID to a printable form.
+ *  If it is an UTF-8 string, enclose it in quotes and return it.
+ *  Otherwise convert it to a hex string representation.
+ *  Caller has to free the returned string using g_free()
+ */
+char *
+ssid_to_printable (const char *str, gsize len)
+{
+	GString *printable;
+	char *printable_str;
+	int i;
+
+	if (str == NULL || len == 0)
+		 return NULL;
+
+	if (g_utf8_validate (str, len, NULL))
+		return g_strdup_printf ("'%.*s'", (int) len, str);
+
+	printable = g_string_new (NULL);
+	for (i = 0; i < len; i++) {
+		g_string_append_printf (printable, "%02X", (unsigned char) str[i]);
+	}
+	printable_str = g_string_free (printable, FALSE);
+	return printable_str;
+}
+
+/*
  * Parse comma separated fields in 'fields_str' according to 'fields_array'.
  * IN:  'field_str':    comma-separated fields names
  *      'fields_array': array of allowed fields
