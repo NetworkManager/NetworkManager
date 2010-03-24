@@ -484,7 +484,7 @@ dhclient_start (NMDHCPClient *client,
 	GPid pid = 0;
 	GError *error = NULL;
 	const char *iface, *uuid;
-	char *binary_name;
+	char *binary_name, *cmd_str;
 	gboolean ipv6;
 
 	g_return_val_if_fail (priv->pid_file == NULL, -1);
@@ -544,6 +544,10 @@ dhclient_start (NMDHCPClient *client,
 
 	g_ptr_array_add (argv, (gpointer) iface);
 	g_ptr_array_add (argv, NULL);
+
+	cmd_str = g_strjoinv (" ", (gchar **) argv->pdata);
+	nm_info ("running: %s", cmd_str);
+	g_free (cmd_str);
 
 	if (!g_spawn_async (NULL, (char **) argv->pdata, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
 	                    &dhclient_child_setup, NULL, &pid, &error)) {

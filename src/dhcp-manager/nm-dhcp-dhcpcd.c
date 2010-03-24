@@ -93,7 +93,7 @@ real_ip4_start (NMDHCPClient *client,
 	GPtrArray *argv = NULL;
 	GPid pid = 0;
 	GError *error = NULL;
-	char *pid_contents = NULL, *binary_name;
+	char *pid_contents = NULL, *binary_name, *cmd_str;
 	const char *iface, *uuid, *hostname;
 
 	g_return_val_if_fail (priv->pid_file == NULL, -1);
@@ -137,6 +137,10 @@ real_ip4_start (NMDHCPClient *client,
 
 	g_ptr_array_add (argv, (gpointer) iface);
 	g_ptr_array_add (argv, NULL);
+
+	cmd_str = g_strjoinv (" ", (gchar **) argv->pdata);
+	nm_info ("running: %s", cmd_str);
+	g_free (cmd_str);
 
 	if (!g_spawn_async (NULL, (char **) argv->pdata, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
 	                    &dhcpcd_child_setup, NULL, &pid, &error)) {
