@@ -24,6 +24,7 @@
 #include "nm-device-interface.h"
 #include "nm-utils.h"
 #include "nm-properties-changed-signal.h"
+#include "nm-rfkill.h"
 
 static gboolean impl_device_disconnect (NMDeviceInterface *device,
                                         GError **error);
@@ -175,6 +176,15 @@ nm_device_interface_init (gpointer g_iface)
 							  "Device type description",
 							  NULL,
 							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
+
+	g_object_interface_install_property
+		(g_iface, g_param_spec_uint (NM_DEVICE_INTERFACE_RFKILL_TYPE,
+	                                 "Rfkill Type",
+	                                 "Type of rfkill switch (if any) supported by this device",
+	                                 RFKILL_TYPE_WLAN,
+	                                 RFKILL_TYPE_MAX,
+	                                 RFKILL_TYPE_UNKNOWN,
+	                                 G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	/* Signals */
 	g_signal_new ("state-changed",

@@ -30,6 +30,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-marshal.h"
 #include "nm-properties-changed-signal.h"
+#include "nm-rfkill.h"
 
 #include "nm-device-cdma-glue.h"
 
@@ -326,6 +327,7 @@ nm_device_cdma_new (NMModemCdma *modem, const char *driver)
 	                                    NM_DEVICE_INTERFACE_DRIVER, driver,
 	                                    NM_DEVICE_INTERFACE_TYPE_DESC, "CDMA",
 	                                    NM_DEVICE_INTERFACE_DEVICE_TYPE, NM_DEVICE_TYPE_CDMA,
+	                                    NM_DEVICE_INTERFACE_RFKILL_TYPE, RFKILL_TYPE_WWAN,
 	                                    NULL);
 	if (device) {
 		g_signal_connect (device, "state-changed", G_CALLBACK (device_state_changed), device);

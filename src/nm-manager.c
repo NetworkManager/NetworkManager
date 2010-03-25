@@ -154,12 +154,12 @@ typedef struct {
 typedef struct {
 	gboolean enabled;
 	gboolean hw_enabled;
+	RfKillType rtype;
 	const char *desc;
 	const char *key;
 	const char *prop;
 	const char *hw_prop;
 	RfKillState (*other_enabled_func) (NMManager *);
-	gboolean (*object_filter_func) (GObject *);
 } RadioState;
 
 typedef struct {
@@ -1242,8 +1242,10 @@ manager_set_radio_enabled (NMManager *manager,
 
 	/* enable/disable wireless devices as required */
 	for (iter = priv->devices; iter; iter = iter->next) {
-		if (   rstate->object_filter_func
-			&& rstate->object_filter_func (G_OBJECT (iter->data)))
+		RfKillType devtype = RFKILL_TYPE_UNKNOWN;
+
+		g_object_get (G_OBJECT (iter->data), NM_DEVICE_INTERFACE_RFKILL_TYPE, &devtype, NULL);
+		if (devtype == rstate->rtype)
 			nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (iter->data), enabled);
 	}
 }
@@ -1354,18 +1356,6 @@ nm_manager_get_modem_enabled_state (NMManager *self)
 	}
 
 	return wwan_state;
-}
-
-static gboolean
-rfkill_wlan_filter (GObject *object)
-{
-	return NM_IS_DEVICE_WIFI (object);
-}
-
-static gboolean
-rfkill_wwan_filter (GObject *object)
-{
-	return NM_IS_MODEM (object);
 }
 
 static void
@@ -2704,11 +2694,11 @@ impl_manager_sleep (NMManager *self, gboolean sleep, GError **error)
 			for (i = 0; i < RFKILL_TYPE_MAX; i++) {
 				RadioState *rstate = &priv->radio_states[i];
 				gboolean enabled = (rstate->hw_enabled && rstate->enabled);
+				RfKillType devtype = RFKILL_TYPE_UNKNOWN;
 
-				if (   rstate->object_filter_func
-				    && rstate->object_filter_func (G_OBJECT (device))) {
+				g_object_get (G_OBJECT (device), NM_DEVICE_INTERFACE_RFKILL_TYPE, &devtype, NULL);
+				if (devtype == rstate->rtype)
 					nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (device), enabled);
-				}
 			}
 
 			nm_device_clear_autoconnect_inhibit (device);
@@ -3123,7 +3113,7 @@ nm_manager_init (NMManager *manager)
 	priv->radio_states[RFKILL_TYPE_WLAN].hw_prop = NM_MANAGER_WIRELESS_HARDWARE_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WLAN].desc = "WiFi";
 	priv->radio_states[RFKILL_TYPE_WLAN].other_enabled_func = nm_manager_get_ipw_rfkill_state;
-	priv->radio_states[RFKILL_TYPE_WLAN].object_filter_func = rfkill_wlan_filter;
+	priv->radio_states[RFKILL_TYPE_WLAN].rtype = RFKILL_TYPE_WLAN;
 
 	priv->radio_states[RFKILL_TYPE_WWAN].enabled = TRUE;
 	priv->radio_states[RFKILL_TYPE_WWAN].key = "WWANEnabled";
@@ -3131,7 +3121,7 @@ nm_manager_init (NMManager *manager)
 	priv->radio_states[RFKILL_TYPE_WWAN].hw_prop = NM_MANAGER_WWAN_HARDWARE_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WWAN].desc = "WWAN";
 	priv->radio_states[RFKILL_TYPE_WWAN].other_enabled_func = nm_manager_get_modem_enabled_state;
-	priv->radio_states[RFKILL_TYPE_WWAN].object_filter_func = rfkill_wwan_filter;
+	priv->radio_states[RFKILL_TYPE_WWAN].rtype = RFKILL_TYPE_WWAN;
 
 	for (i = 0; i < RFKILL_TYPE_MAX; i++)
 		priv->radio_states[i].hw_enabled = TRUE;

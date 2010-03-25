@@ -52,6 +52,7 @@
 #include "nm-dhcp4-config.h"
 #include "nm-ip6-manager.h"
 #include "nm-marshal.h"
+#include "nm-rfkill.h"
 
 #define NM_ACT_REQUEST_IP4_CONFIG "nm-act-request-ip4-config"
 #define NM_ACT_REQUEST_IP6_CONFIG "nm-act-request-ip6-config"
@@ -87,6 +88,7 @@ typedef struct {
 	guint32       capabilities;
 	char *        driver;
 	gboolean      managed; /* whether managed by NM or not */
+	RfKillType    rfkill_type;
 
 	guint32         ip4_address;
 
@@ -194,6 +196,7 @@ nm_device_init (NMDevice *self)
 	priv->capabilities = NM_DEVICE_CAP_NONE;
 	priv->state = NM_DEVICE_STATE_UNMANAGED;
 	priv->dhcp_timeout = 0;
+	priv->rfkill_type = RFKILL_TYPE_UNKNOWN;
 }
 
 static GObject*
@@ -3069,6 +3072,9 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->type_desc);
 		priv->type_desc = g_value_dup_string (value);
 		break;
+	case NM_DEVICE_INTERFACE_PROP_RFKILL_TYPE:
+		priv->rfkill_type = g_value_get_uint (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -3144,6 +3150,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case NM_DEVICE_INTERFACE_PROP_TYPE_DESC:
 		g_value_set_string (value, priv->type_desc);
+		break;
+	case NM_DEVICE_INTERFACE_PROP_RFKILL_TYPE:
+		g_value_set_uint (value, priv->rfkill_type);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -3230,6 +3239,10 @@ nm_device_class_init (NMDeviceClass *klass)
 	g_object_class_override_property (object_class,
 									  NM_DEVICE_INTERFACE_PROP_TYPE_DESC,
 									  NM_DEVICE_INTERFACE_TYPE_DESC);
+
+	g_object_class_override_property (object_class,
+	                                  NM_DEVICE_INTERFACE_PROP_RFKILL_TYPE,
+	                                  NM_DEVICE_INTERFACE_RFKILL_TYPE);
 
 	signals[AUTOCONNECT_ALLOWED] =
 		g_signal_new ("autoconnect-allowed",
