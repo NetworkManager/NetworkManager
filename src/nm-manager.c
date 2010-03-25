@@ -30,7 +30,6 @@
 #include "nm-dbus-manager.h"
 #include "nm-vpn-manager.h"
 #include "nm-modem-manager.h"
-#include "nm-modem.h"
 #include "nm-device-bt.h"
 #include "nm-device-interface.h"
 #include "nm-device-private.h"
@@ -1345,9 +1344,11 @@ nm_manager_get_modem_enabled_state (NMManager *self)
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *candidate = NM_DEVICE (iter->data);
 		RfKillState candidate_state = RFKILL_UNBLOCKED;
+		RfKillType devtype = RFKILL_TYPE_UNKNOWN;
 
-		if (NM_IS_MODEM (candidate)) {
-			if (nm_modem_get_mm_enabled (NM_MODEM (candidate)) == FALSE)
+		g_object_get (G_OBJECT (candidate), NM_DEVICE_INTERFACE_RFKILL_TYPE, &devtype, NULL);
+		if (devtype == RFKILL_TYPE_WWAN) {
+			if (!nm_device_interface_get_enabled (NM_DEVICE_INTERFACE (candidate)))
 				candidate_state = RFKILL_SOFT_BLOCKED;
 
 			if (candidate_state > wwan_state)
@@ -1458,7 +1459,7 @@ add_device (NMManager *self, NMDevice *device)
 	iface = nm_device_get_ip_iface (device);
 	g_assert (iface);
 
-	if (!NM_IS_MODEM (device) && find_device_by_iface (self, iface)) {
+	if (!NM_IS_DEVICE_MODEM (device) && find_device_by_iface (self, iface)) {
 		g_object_unref (device);
 		return;
 	}
@@ -1490,7 +1491,7 @@ add_device (NMManager *self, NMDevice *device)
 		nm_manager_rfkill_update (self, RFKILL_TYPE_WLAN);
 		nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (device),
 		                                 priv->radio_states[RFKILL_TYPE_WLAN].enabled);
-	} else if (NM_IS_MODEM (device)) {
+	} else if (NM_IS_DEVICE_MODEM (device)) {
 		g_signal_connect (device, "notify::" NM_MODEM_ENABLED,
 		                  G_CALLBACK (manager_modem_enabled_changed),
 		                  self);

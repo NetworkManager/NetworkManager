@@ -36,7 +36,7 @@
 
 static void device_interface_init (NMDeviceInterface *iface_class);
 
-G_DEFINE_TYPE_EXTENDED (NMDeviceCdma, nm_device_cdma, NM_TYPE_DEVICE, 0,
+G_DEFINE_TYPE_EXTENDED (NMDeviceCdma, nm_device_cdma, NM_TYPE_DEVICE_MODEM, 0,
                         G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_INTERFACE, device_interface_init))
 
 #define NM_DEVICE_CDMA_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_CDMA, NMDeviceCdmaPrivate))
@@ -312,6 +312,14 @@ modem_enabled_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 
 /*****************************************************************************/
 
+static NMModem *
+real_get_modem (NMDeviceModem *device)
+{
+	return NM_DEVICE_CDMA_GET_PRIVATE (NM_DEVICE_CDMA (device))->modem;
+}
+
+/*****************************************************************************/
+
 NMDevice *
 nm_device_cdma_new (NMModemCdma *modem, const char *driver)
 {
@@ -371,6 +379,7 @@ nm_device_cdma_class_init (NMDeviceCdmaClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
+	NMDeviceModemClass *modem_class = NM_DEVICE_MODEM_CLASS (klass);
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceCdmaPrivate));
 
@@ -388,6 +397,8 @@ nm_device_cdma_class_init (NMDeviceCdmaClass *klass)
 	device_class->act_stage3_ip4_config_start = real_act_stage3_ip4_config_start;
 	device_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 	device_class->deactivate_quickly = real_deactivate_quickly;
+
+	modem_class->get_modem = real_get_modem;
 
 	/* Signals */
 	signals[PPP_STATS] =
