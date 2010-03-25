@@ -43,7 +43,6 @@ typedef struct {
 	/* Signals */
 	void (*signal_quality) (NMDeviceGsm *self, guint32 quality);
 
-	void (*ppp_stats) (NMDeviceGsm *self, guint32 in_bytes, guint32 out_bytes);
 	void (*properties_changed) (NMDeviceGsm *self, GHashTable *properties);
 } NMDeviceGsmClass;
 

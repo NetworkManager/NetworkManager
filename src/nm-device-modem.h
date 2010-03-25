@@ -34,6 +34,8 @@
 #define NM_IS_DEVICE_MODEM_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_DEVICE_MODEM))
 #define NM_DEVICE_MODEM_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_MODEM, NMDeviceModemClass))
 
+#define NM_DEVICE_MODEM_MODEM "modem"
+
 typedef struct {
 	NMDevice parent;
 } NMDeviceModem;
@@ -41,9 +43,12 @@ typedef struct {
 typedef struct {
 	NMDeviceClass parent;
 
-	NMModem * (*get_modem) (NMDeviceModem *modem);
+	void (*ppp_stats) (NMDeviceModem *self, guint32 in_bytes, guint32 out_bytes);
 } NMDeviceModemClass;
 
 GType nm_device_modem_get_type (void);
+
+/* Private for subclases */
+NMModem *nm_device_modem_get_modem (NMDeviceModem *self);
 
 #endif /* NM_DEVICE_MODEM_H */

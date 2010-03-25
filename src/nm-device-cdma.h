@@ -43,7 +43,6 @@ typedef struct {
 	/* Signals */
 	void (*signal_quality) (NMDeviceCdma *self, guint32 quality);
 
-	void (*ppp_stats) (NMDeviceCdma *self, guint32 in_bytes, guint32 out_bytes);
 	void (*properties_changed) (NMDeviceCdma *self, GHashTable *properties);
 } NMDeviceCdmaClass;
 
