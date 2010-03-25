@@ -414,7 +414,7 @@ show_device_info (gpointer data, gpointer user_data)
 	APInfo *info;
 	char *tmp;
 	const char *hwaddr = NULL;
-	NMDeviceState state;
+	NMDeviceState state = NM_DEVICE_STATE_UNKNOWN;
 	guint32 caps;
 	guint32 speed;
 	char *speed_str = NULL;
@@ -463,6 +463,8 @@ show_device_info (gpointer data, gpointer user_data)
 
 		was_output = FALSE;
 
+		state = nm_device_get_state (device);
+
 		/* section GENERAL */
 		if (!strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[0].name)) {
 			nmc->allowed_fields = nmc_fields_dev_list_general;
@@ -470,7 +472,6 @@ show_device_info (gpointer data, gpointer user_data)
 			nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_LIST_GENERAL_ALL, nmc->allowed_fields, NULL);
 			print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
 
-			state = nm_device_get_state (device);
 			if (NM_IS_DEVICE_ETHERNET (device))
 				hwaddr = nm_device_ethernet_get_hw_address (NM_DEVICE_ETHERNET (device));
 			else if (NM_IS_DEVICE_WIFI (device))
@@ -548,7 +549,7 @@ show_device_info (gpointer data, gpointer user_data)
 
 			/* section AP */
 			if (!strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[3].name)) {
-				if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
+				if (state == NM_DEVICE_STATE_ACTIVATED) {
 					active_ap = nm_device_wifi_get_active_access_point (NM_DEVICE_WIFI (device));
 					active_bssid = active_ap ? nm_access_point_get_hw_address (active_ap) : NULL;
 				}
