@@ -40,7 +40,6 @@ real_get_enabled (NMDeviceInterface *device)
 	g_assert (NM_DEVICE_MODEM_GET_CLASS (self)->get_modem);
 	modem = NM_DEVICE_MODEM_GET_CLASS (self)->get_modem (self);
 
-g_message ("%s: modem %p", __func__, modem);
 	return modem ? nm_modem_get_mm_enabled (modem) : TRUE;
 }
 
