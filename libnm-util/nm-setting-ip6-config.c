@@ -763,7 +763,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 *
 	 * When the method is set to 'auto' or 'dhcp' and this property is set to
 	 * TRUE, automatically configured nameservers and search domains are ignored
-	 * and only namservers and search domains specified in
+	 * and only nameservers and search domains specified in
 	 * #NMSettingIP6Config:dns and #NMSettingIP6Config:dns-search, if any, are
 	 * used.
 	 **/
@@ -774,7 +774,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 						   "When the method is set to 'auto' or 'dhcp' and this "
 						   "property is set to TRUE, automatically configured "
 						   "nameservers and search domains are ignored and only "
-						   "namservers and search domains specified in the 'dns' "
+						   "nameservers and search domains specified in the 'dns' "
 						   "and 'dns-search' properties, if any, are used.",
 						   FALSE,
 						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
