@@ -624,7 +624,7 @@ nm_utils_convert_uint_array_to_string (const GValue *src_value, GValue *dest_val
 }
 
 static void
-nm_utils_convert_ip4_addr_struct_array_to_string (const GValue *src_value, GValue *dest_value)
+nm_utils_convert_ip4_addr_route_struct_array_to_string (const GValue *src_value, GValue *dest_value)
 {
 	GPtrArray *ptr_array;
 	GString *printable;
@@ -639,6 +639,7 @@ nm_utils_convert_ip4_addr_struct_array_to_string (const GValue *src_value, GValu
 		GArray *array;
 		char buf[INET_ADDRSTRLEN + 1];
 		struct in_addr addr;
+		gboolean is_addr; /* array contains address x route */
 
 		if (i > 0)
 			g_string_append (printable, ", ");
@@ -649,13 +650,17 @@ nm_utils_convert_ip4_addr_struct_array_to_string (const GValue *src_value, GValu
 			g_string_append (printable, "invalid");
 			continue;
 		}
+		is_addr = (array->len < 4);
 
 		memset (buf, 0, sizeof (buf));
 		addr.s_addr = g_array_index (array, guint32, 0);
 		if (!inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN))
 			nm_warning ("%s: error converting IP4 address 0x%X",
 			            __func__, ntohl (addr.s_addr));
-		g_string_append_printf (printable, "ip = %s", buf);
+		if (is_addr)
+			g_string_append_printf (printable, "ip = %s", buf);
+		else
+			g_string_append_printf (printable, "dst = %s", buf);
 		g_string_append (printable, ", ");
 
 		memset (buf, 0, sizeof (buf));
@@ -670,7 +675,18 @@ nm_utils_convert_ip4_addr_struct_array_to_string (const GValue *src_value, GValu
 			if (!inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN))
 				nm_warning ("%s: error converting IP4 address 0x%X",
 				            __func__, ntohl (addr.s_addr));
-			g_string_append_printf (printable, "gw = %s", buf);
+			if (is_addr)
+				g_string_append_printf (printable, "gw = %s", buf);
+			else
+				g_string_append_printf (printable, "nh = %s", buf);
+		}
+
+		if (array->len > 3) {
+			g_string_append (printable, ", ");
+
+			memset (buf, 0, sizeof (buf));
+			g_string_append_printf (printable, "mt = %u",
+			                        g_array_index (array, guint32, 3));
 		}
 
 		g_string_append (printable, " }");
@@ -978,7 +994,7 @@ _nm_utils_register_value_transformations (void)
 		                                 nm_utils_convert_uint_array_to_string);
 		g_value_register_transform_func (DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
 		                                 G_TYPE_STRING, 
-		                                 nm_utils_convert_ip4_addr_struct_array_to_string);
+		                                 nm_utils_convert_ip4_addr_route_struct_array_to_string);
 		g_value_register_transform_func (DBUS_TYPE_G_MAP_OF_VARIANT,
 		                                 G_TYPE_STRING, 
 		                                 nm_utils_convert_gvalue_hash_to_string);
