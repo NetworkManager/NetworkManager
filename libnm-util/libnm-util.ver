@@ -132,6 +132,7 @@ global:
 	nm_setting_gsm_get_apn;
 	nm_setting_gsm_get_network_id;
 	nm_setting_gsm_get_network_type;
+	nm_setting_gsm_get_allowed_bands;
 	nm_setting_gsm_get_band;
 	nm_setting_gsm_get_pin;
 	nm_setting_gsm_get_puk;
