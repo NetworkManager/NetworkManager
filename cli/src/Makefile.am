@@ -15,6 +15,8 @@ nmcli_SOURCES = \
 	devices.h \
 	network-manager.c \
 	network-manager.h \
+	settings.c \
+	settings.h \
 	nmcli.c \
 	nmcli.h \
 	utils.c \

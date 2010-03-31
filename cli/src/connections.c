@@ -50,10 +50,11 @@
 #include <nm-vpn-connection.h>
 
 #include "utils.h"
+#include "settings.h"
 #include "connections.h"
 
 
-/* Available field for 'con status' */
+/* Available fields for 'con status' */
 static NmcOutputField nmc_fields_con_status[] = {
 	{"NAME",          N_("NAME"),         25, NULL, 0},  /* 0 */
 	{"UUID",          N_("UUID"),         38, NULL, 0},  /* 1 */
@@ -68,7 +69,7 @@ static NmcOutputField nmc_fields_con_status[] = {
 #define NMC_FIELDS_CON_STATUS_ALL     "NAME,UUID,DEVICES,SCOPE,DEFAULT,VPN,DBUS-SERVICE,SPEC-OBJECT"
 #define NMC_FIELDS_CON_STATUS_COMMON  "NAME,UUID,DEVICES,SCOPE,DEFAULT,VPN"
 
-/* Available field for 'con list' */
+/* Available fields for 'con list' */
 static NmcOutputField nmc_fields_con_list[] = {
 	{"NAME",            N_("NAME"),           25, NULL, 0},  /* 0 */
 	{"UUID",            N_("UUID"),           38, NULL, 0},  /* 1 */
@@ -82,6 +83,45 @@ static NmcOutputField nmc_fields_con_list[] = {
 };
 #define NMC_FIELDS_CON_LIST_ALL     "NAME,UUID,TYPE,SCOPE,TIMESTAMP,TIMESTAMP-REAL,AUTOCONNECT,READONLY"
 #define NMC_FIELDS_CON_LIST_COMMON  "NAME,UUID,TYPE,SCOPE,TIMESTAMP-REAL"
+
+
+/* Helper macro to define fields */
+#define SETTING_FIELD(setting, width) { setting, N_(setting), width, NULL, 0 }
+
+/* Available settings for 'con list id/uuid <con>' */
+static NmcOutputField nmc_fields_settings_names[] = {
+	SETTING_FIELD (NM_SETTING_CONNECTION_SETTING_NAME, 0),            /* 0 */
+	SETTING_FIELD (NM_SETTING_WIRED_SETTING_NAME, 0),                 /* 1 */
+	SETTING_FIELD (NM_SETTING_802_1X_SETTING_NAME, 0),                /* 2 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SETTING_NAME, 0),              /* 3 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, 0),     /* 4 */
+	SETTING_FIELD (NM_SETTING_IP4_CONFIG_SETTING_NAME, 0),            /* 5 */
+	SETTING_FIELD (NM_SETTING_IP6_CONFIG_SETTING_NAME, 0),            /* 6 */
+	SETTING_FIELD (NM_SETTING_SERIAL_SETTING_NAME, 0),                /* 7 */
+	SETTING_FIELD (NM_SETTING_PPP_SETTING_NAME, 0),                   /* 8 */
+	SETTING_FIELD (NM_SETTING_PPPOE_SETTING_NAME, 0),                 /* 9 */
+	SETTING_FIELD (NM_SETTING_GSM_SETTING_NAME, 0),                   /* 10 */
+	SETTING_FIELD (NM_SETTING_CDMA_SETTING_NAME, 0),                  /* 11 */
+	SETTING_FIELD (NM_SETTING_BLUETOOTH_SETTING_NAME, 0),             /* 12 */
+	SETTING_FIELD (NM_SETTING_OLPC_MESH_SETTING_NAME, 0),             /* 13 */
+	SETTING_FIELD (NM_SETTING_VPN_SETTING_NAME, 0),                   /* 14 */
+	{NULL, NULL, 0, NULL, 0}
+};
+#define NMC_FIELDS_SETTINGS_NAMES_ALL    NM_SETTING_CONNECTION_SETTING_NAME","\
+                                         NM_SETTING_WIRED_SETTING_NAME","\
+                                         NM_SETTING_802_1X_SETTING_NAME","\
+                                         NM_SETTING_WIRELESS_SETTING_NAME","\
+                                         NM_SETTING_WIRELESS_SECURITY_SETTING_NAME","\
+                                         NM_SETTING_IP4_CONFIG_SETTING_NAME","\
+                                         NM_SETTING_IP6_CONFIG_SETTING_NAME","\
+                                         NM_SETTING_SERIAL_SETTING_NAME","\
+                                         NM_SETTING_PPP_SETTING_NAME","\
+                                         NM_SETTING_PPPOE_SETTING_NAME","\
+                                         NM_SETTING_GSM_SETTING_NAME","\
+                                         NM_SETTING_CDMA_SETTING_NAME","\
+                                         NM_SETTING_BLUETOOTH_SETTING_NAME","\
+                                         NM_SETTING_OLPC_MESH_SETTING_NAME","\
+                                         NM_SETTING_VPN_SETTING_NAME
 
 
 typedef struct {
@@ -129,6 +169,196 @@ quit (void)
 	g_main_loop_quit (loop);  /* quit main loop */
 }
 
+static gboolean
+nmc_connection_detail (NMConnection *connection, NmCli *nmc)
+{
+	NMSetting *setting;
+	GError *error = NULL;
+	GArray *print_settings_array;
+	int i;
+	char *fields_str;
+	char *fields_all =    NMC_FIELDS_SETTINGS_NAMES_ALL;
+	char *fields_common = NMC_FIELDS_SETTINGS_NAMES_ALL;
+	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
+	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
+	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
+	gboolean was_output = FALSE;
+
+	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
+		fields_str = fields_common;
+	else if (!nmc->required_fields || strcasecmp (nmc->required_fields, "all") == 0)
+		fields_str = fields_all;
+	else
+		fields_str = nmc->required_fields;
+
+	print_settings_array = parse_output_fields (fields_str, nmc_fields_settings_names, &error);
+	if (error) {
+		if (error->code == 0)
+			g_string_printf (nmc->return_text, _("Error: 'con list': %s"), error->message);
+		else
+			g_string_printf (nmc->return_text, _("Error: 'con list': %s; allowed fields: %s"), error->message, NMC_FIELDS_SETTINGS_NAMES_ALL);
+		g_error_free (error);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		return FALSE;
+	}
+
+	nmc->allowed_fields = nmc_fields_settings_names;
+	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ONLY;
+	nmc->print_fields.header_name = _("Connection details");
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTINGS_NAMES_ALL, nmc->allowed_fields, NULL);
+	print_fields (nmc->print_fields, nmc->allowed_fields);
+
+	/* Loop through the required settings and print them. */
+	for (i = 0; i < print_settings_array->len; i++) {
+		int section_idx = g_array_index (print_settings_array, int, i);
+
+		if (nmc->print_output != NMC_PRINT_TERSE && !nmc->multiline_output && was_output)
+			printf ("\n"); /* Empty line */
+
+		was_output = FALSE;
+
+		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[0].name)) {
+			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+			if (setting) {
+				setting_connection_details (setting, nmc);
+				was_output = TRUE;
+				continue;
+			}
+		}
+
+		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[1].name)) {
+			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
+			if (setting) {
+				setting_wired_details (setting, nmc);
+				was_output = TRUE;
+				continue;
+			}
+		}
+
+		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[2].name)) {
+			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X);
+			if (setting) {
+				setting_802_1X_details (setting, nmc);
+				was_output = TRUE;
+				continue;
+			}
+		}
+
+		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[3].name)) {
+			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
+			if (setting) {
+				setting_wireless_details (setting, nmc);
+				was_output = TRUE;
+				continue;
+			}
+		}
+
+		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[4].name)) {
+			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
+			if (setting) {
+				setting_wireless_security_details (setting, nmc);
+				was_output = TRUE;
+				continue;
+			}
+		}
+
+		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[5].name)) {
+			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+			if (setting) {
+				setting_ip4_config_details (setting, nmc);
+				was_output = TRUE;
+				continue;
+			}
+		}
+
+		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[6].name)) {
+			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
+			if (setting) {
+				setting_ip6_config_details (setting, nmc);
+				was_output = TRUE;
+				continue;
+			}
+		}
+
+		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[7].name)) {
+			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL);
+			if (setting) {
+				setting_serial_details (setting, nmc);
+				was_output = TRUE;
+				continue;
+			}
+		}
+
+		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[8].name)) {
+			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP);
+			if (setting) {
+				setting_ppp_details (setting, nmc);
+				was_output = TRUE;
+				continue;
+			}
+		}
+
+		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[9].name)) {
+			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_PPPOE);
+			if (setting) {
+				setting_pppoe_details (setting, nmc);
+				was_output = TRUE;
+				continue;
+			}
+		}
+
+		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[10].name)) {
+			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM);
+			if (setting) {
+				setting_gsm_details (setting, nmc);
+				was_output = TRUE;
+				continue;
+			}
+		}
+
+		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[11].name)) {
+			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_CDMA);
+			if (setting) {
+				setting_cdma_details (setting, nmc);
+				was_output = TRUE;
+				continue;
+			}
+		}
+
+		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[12].name)) {
+			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_BLUETOOTH);
+			if (setting) {
+				setting_bluetooth_details (setting, nmc);
+				was_output = TRUE;
+				continue;
+			}
+		}
+
+		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[13].name)) {
+			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_OLPC_MESH);
+			if (setting) {
+				setting_olpc_mesh_details (setting, nmc);
+				was_output = TRUE;
+				continue;
+			}
+		}
+
+		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[14].name)) {
+			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
+			if (setting) {
+				setting_vpn_details (setting, nmc);
+				was_output = TRUE;
+				continue;
+			}
+		}
+	}
+
+	if (print_settings_array)
+		g_array_free (print_settings_array, FALSE);
+
+	return NMC_RESULT_SUCCESS;
+}
+
 static void
 show_connection (NMConnection *data, gpointer user_data)
 {
@@ -150,7 +380,7 @@ show_connection (NMConnection *data, gpointer user_data)
 		nmc->allowed_fields[2].value = nm_setting_connection_get_connection_type (s_con);
 		nmc->allowed_fields[3].value = nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_SYSTEM ? _("system") : _("user");
 		nmc->allowed_fields[4].value = timestamp_str;
- 		nmc->allowed_fields[5].value = timestamp ? timestamp_real_str : _("never");
+		nmc->allowed_fields[5].value = timestamp ? timestamp_real_str : _("never");
 		nmc->allowed_fields[6].value = nm_setting_connection_get_autoconnect (s_con) ? _("yes") : _("no");
 		nmc->allowed_fields[7].value = nm_setting_connection_get_read_only (s_con) ? _("yes") : _("no");
 
@@ -193,7 +423,8 @@ find_connection (GSList *list, const char *filter_type, const char *filter_val)
 static NMCResultCode
 do_connections_list (NmCli *nmc, int argc, char **argv)
 {
-	GError *error = NULL;
+	GError *error1 = NULL;
+	GError *error2 = NULL;
 	char *fields_str;
 	char *fields_all =    NMC_FIELDS_CON_LIST_ALL;
 	char *fields_common = NMC_FIELDS_CON_LIST_COMMON;
@@ -208,23 +439,18 @@ do_connections_list (NmCli *nmc, int argc, char **argv)
 		fields_str = fields_common;
 	else if (!nmc->required_fields || strcasecmp (nmc->required_fields, "all") == 0)
 		fields_str = fields_all;
-	else 
+	else
 		fields_str = nmc->required_fields;
 
 	nmc->allowed_fields = nmc_fields_con_list;
-	nmc->print_fields.indices = parse_output_fields (fields_str, nmc->allowed_fields, &error);
-
-	if (error) {
-		if (error->code == 0)
-			g_string_printf (nmc->return_text, _("Error: 'con list': %s"), error->message);
-		else
-			g_string_printf (nmc->return_text, _("Error: 'con list': %s; allowed fields: %s"), error->message, NMC_FIELDS_CON_LIST_ALL);
-		g_error_free (error);
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
-	}
+	nmc->print_fields.indices = parse_output_fields (fields_str, nmc->allowed_fields, &error1);
+	/* error1 is checked later - it's not valid for connection details */
 
 	if (argc == 0) {
+		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error2))
+			goto error;
+		if (error1)
+			goto error;
 		valid_param_specified = TRUE;
 
 		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
@@ -247,14 +473,14 @@ do_connections_list (NmCli *nmc, int argc, char **argv)
 				if (next_arg (&argc, &argv) != 0) {
 					g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
 					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-					goto error;
+					return nmc->return_value;
 				}
 				valid_param_specified = TRUE;
 
 				con1 = find_connection (nmc->system_connections, selector, *argv);
 				con2 = find_connection (nmc->user_connections, selector, *argv);
-				if (con1) nm_connection_dump (con1);
-				if (con2) nm_connection_dump (con2);
+				if (con1) nmc_connection_detail (con1, nmc);
+				if (con2) nmc_connection_detail (con2, nmc);
 				if (!con1 && !con2) {
 					g_string_printf (nmc->return_text, _("Error: %s - no such connection."), *argv);
 					nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
@@ -262,6 +488,10 @@ do_connections_list (NmCli *nmc, int argc, char **argv)
 				break;
 			}
 			else if (strcmp (*argv, "system") == 0) {
+				if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error2))
+					goto error;
+				if (error1)
+					goto error;
 				valid_param_specified = TRUE;
 
 				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
@@ -271,6 +501,10 @@ do_connections_list (NmCli *nmc, int argc, char **argv)
 				break;
 			}
 			else if (strcmp (*argv, "user") == 0) {
+				if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error2))
+					goto error;
+				if (error1)
+					goto error;
 				valid_param_specified = TRUE;
 
 				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
@@ -292,8 +526,23 @@ do_connections_list (NmCli *nmc, int argc, char **argv)
 		g_string_printf (nmc->return_text, _("Error: no valid parameter specified."));
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 	}
+	return nmc->return_value;
 
 error:
+	if (error1) {
+		if (error1->code == 0)
+			g_string_printf (nmc->return_text, _("Error: 'con list': %s"), error1->message);
+		else
+			g_string_printf (nmc->return_text, _("Error: 'con list': %s; allowed fields: %s"), error1->message, NMC_FIELDS_CON_LIST_ALL);
+		g_error_free (error1);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+	}
+	if (error2) {
+		g_string_printf (nmc->return_text, _("Error: %s."), error2->message);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		g_error_free (error2);
+	}
+
 	return nmc->return_value;
 }
 
@@ -387,7 +636,7 @@ do_connections_status (NmCli *nmc, int argc, char **argv)
 		fields_str = fields_common;
 	else if (!nmc->required_fields || strcasecmp (nmc->required_fields, "all") == 0)
 		fields_str = fields_all;
-	else 
+	else
 		fields_str = nmc->required_fields;
 
 	nmc->allowed_fields = nmc_fields_con_status;
@@ -921,7 +1170,7 @@ active_connection_state_cb (NMActiveConnection *active, GParamSpec *pspec, gpoin
 	if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
 		printf (_("Connection activated\n"));
 		quit ();
-	} else if (state == NM_ACTIVE_CONNECTION_STATE_UNKNOWN) { 
+	} else if (state == NM_ACTIVE_CONNECTION_STATE_UNKNOWN) {
 		g_string_printf (nmc->return_text, _("Error: Connection activation failed."));
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 		quit ();
@@ -1278,8 +1527,8 @@ get_connections_cb (NMSettingsInterface *settings, gpointer user_data)
 	}
 
 	/* return and wait for the callback of the second settings is called */
-	if ((args->nmc->system_settings_running && !system_cb_called) || 
-	    (args->nmc->user_settings_running && !user_cb_called))
+	if (   (args->nmc->system_settings_running && !system_cb_called)
+	    || (args->nmc->user_settings_running && !user_cb_called))
 		return;
 
 	if (args->argc == 0) {
@@ -1289,8 +1538,6 @@ get_connections_cb (NMSettingsInterface *settings, gpointer user_data)
 	} else {
 
 	 	if (matches (*args->argv, "list") == 0) {
-			if (!nmc_terse_option_check (args->nmc->print_output, args->nmc->required_fields, &error))
-				goto opt_error;
 			args->nmc->return_value = do_connections_list (args->nmc, args->argc-1, args->argv+1);
 		}
 		else if (matches(*args->argv, "status") == 0) {
