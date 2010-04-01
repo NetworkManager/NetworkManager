@@ -34,13 +34,13 @@
 #include "nm-device.h"
 #include "nm-device-wifi.h"
 #include "nm-device-ethernet.h"
+#include "nm-device-modem.h"
 #include "nm-dbus-manager.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-connection.h"
 #include "nm-system.h"
 #include "nm-named-manager.h"
 #include "nm-vpn-manager.h"
-#include "nm-modem.h"
 #include "nm-policy-hosts.h"
 
 typedef struct LookupThread LookupThread;
@@ -235,7 +235,7 @@ get_best_device (NMManager *manager, NMActRequest **out_req)
 			}
 		}
 
-		if (!can_default && !NM_IS_MODEM (dev))
+		if (!can_default && !NM_IS_DEVICE_MODEM (dev))
 			continue;
 
 		/* 'never-default' devices can't ever be the default */

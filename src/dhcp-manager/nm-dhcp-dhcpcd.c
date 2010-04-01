@@ -42,9 +42,33 @@ G_DEFINE_TYPE (NMDHCPDhcpcd, nm_dhcp_dhcpcd, NM_TYPE_DHCP_DHCPCD)
 #define ACTION_SCRIPT_PATH	LIBEXECDIR "/nm-dhcp-client.action"
 
 typedef struct {
+	const char *path;
 	char *pid_file;
 } NMDHCPDhcpcdPrivate;
 
+const char *
+nm_dhcp_dhcpcd_get_path (const char *try_first)
+{
+	static const char *dhcpcd_paths[] = {
+		"/sbin/dhcpcd",
+		"/usr/sbin/dhcpcd",
+		"/usr/pkg/sbin/dhcpcd",
+		"/usr/local/sbin/dhcpcd",
+		NULL
+	};
+	const char **path = dhcpcd_paths;
+
+	if (strlen (try_first) && g_file_test (try_first, G_FILE_TEST_EXISTS))
+		return try_first;
+
+	while (*path != NULL) {
+		if (g_file_test (*path, G_FILE_TEST_EXISTS))
+			break;
+		path++;
+	}
+
+	return *path;
+}
 
 GSList *
 nm_dhcp_dhcpcd_get_lease_config (const char *iface, const char *uuid)
@@ -69,8 +93,8 @@ real_ip4_start (NMDHCPClient *client,
 	GPtrArray *argv = NULL;
 	GPid pid = 0;
 	GError *error = NULL;
-	char *pid_contents = NULL, *binary_name;
-	const char *iface, *uuid;
+	char *pid_contents = NULL, *binary_name, *cmd_str;
+	const char *iface, *uuid, *hostname;
 
 	g_return_val_if_fail (priv->pid_file == NULL, -1);
 
@@ -83,18 +107,18 @@ real_ip4_start (NMDHCPClient *client,
 		return -1;
 	}
 
-	if (!g_file_test (DHCPCD_PATH, G_FILE_TEST_EXISTS)) {
-		nm_warning (DHCPCD_PATH " does not exist.");
+	if (!g_file_test (priv->path, G_FILE_TEST_EXISTS)) {
+		nm_warning ("%s does not exist.", priv->path);
 		return -1;
 	}
 
-	/* Kill any existing dhclient from the pidfile */
-	binary_name = g_path_get_basename (DHCPCD_PATH);
+	/* Kill any existing dhcpcd from the pidfile */
+	binary_name = g_path_get_basename (priv->path);
 	nm_dhcp_client_stop_existing (priv->pid_file, binary_name);
 	g_free (binary_name);
 
 	argv = g_ptr_array_new ();
-	g_ptr_array_add (argv, (gpointer) DHCPCD_PATH);
+	g_ptr_array_add (argv, (gpointer) priv->path);
 
 	g_ptr_array_add (argv, (gpointer) "-B");	/* Don't background on lease (disable fork()) */
 
@@ -105,8 +129,18 @@ real_ip4_start (NMDHCPClient *client,
 	g_ptr_array_add (argv, (gpointer) "-c");	/* Set script file */
 	g_ptr_array_add (argv, (gpointer) ACTION_SCRIPT_PATH );
 
+	hostname = nm_setting_ip4_config_get_dhcp_hostname (s_ip4);
+	if (hostname && strlen (hostname)) {
+		g_ptr_array_add (argv, (gpointer) "-h");	/* Send hostname to DHCP server */
+		g_ptr_array_add (argv, (gpointer) hostname );
+	}
+
 	g_ptr_array_add (argv, (gpointer) iface);
 	g_ptr_array_add (argv, NULL);
+
+	cmd_str = g_strjoinv (" ", (gchar **) argv->pdata);
+	nm_info ("running: %s", cmd_str);
+	g_free (cmd_str);
 
 	if (!g_spawn_async (NULL, (char **) argv->pdata, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
 	                    &dhcpcd_child_setup, NULL, &pid, &error)) {
@@ -224,6 +258,9 @@ out:
 static void
 nm_dhcp_dhcpcd_init (NMDHCPDhcpcd *self)
 {
+	NMDHCPDhcpcdPrivate *priv = NM_DHCP_DHCPCD_GET_PRIVATE (self);
+
+	priv->path = nm_dhcp_dhcpcd_get_path (DHCPCD_PATH);
 }
 
 static void

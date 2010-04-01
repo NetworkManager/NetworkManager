@@ -51,6 +51,9 @@ typedef struct {
 	char *name;
 	guint32 capabilities;
 
+	gboolean connected;
+	gboolean have_iface;
+
 	DBusGProxy *type_proxy;
 	DBusGProxy *dev_proxy;
 
@@ -535,6 +538,51 @@ nm_device_bt_modem_removed (NMDeviceBt *self, NMModem *modem)
 	return TRUE;
 }
 
+static gboolean
+modem_find_timeout (gpointer user_data)
+{
+	NMDeviceBt *self = NM_DEVICE_BT (user_data);
+
+	NM_DEVICE_BT_GET_PRIVATE (self)->timeout_id = 0;
+	nm_device_state_changed (NM_DEVICE (self),
+	                         NM_DEVICE_STATE_FAILED,
+	                         NM_DEVICE_STATE_REASON_MODEM_NOT_FOUND);
+	return FALSE;
+}
+
+static void
+check_connect_continue (NMDeviceBt *self)
+{
+	NMDevice *device = NM_DEVICE (self);
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
+	gboolean pan = (priv->bt_type == NM_BT_CAPABILITY_NAP);
+	gboolean dun = (priv->bt_type == NM_BT_CAPABILITY_DUN);
+
+	if (!priv->connected || !priv->have_iface)
+		return;
+
+	nm_info ("Activation (%s %s/bluetooth) Stage 2 of 5 (Device Configure) "
+	         "successful.  Will connect via %s.",
+	         nm_device_get_iface (device),
+	         nm_device_get_ip_iface (device),
+	         dun ? "DUN" : (pan ? "PAN" : "unknown"));
+
+	if (pan) {
+		/* Bluez says we're connected now.  Start IP config. */
+		nm_device_activate_schedule_stage3_ip_config_start (device);
+	} else if (dun) {
+		/* Wait for ModemManager to find the modem */
+		if (priv->timeout_id)
+			g_source_remove (priv->timeout_id);
+		priv->timeout_id = g_timeout_add_seconds (20, modem_find_timeout, self);
+
+		nm_info ("Activation (%s/bluetooth) Stage 2 of 5 (Device Configure) "
+		         "waiting for modem to appear.",
+		         nm_device_get_iface (device));
+	} else
+		g_assert_not_reached ();
+}
+
 static void
 bluez_connect_cb (DBusGProxy *proxy,
                   DBusGProxyCall *call_id,
@@ -552,16 +600,18 @@ bluez_connect_cb (DBusGProxy *proxy,
 		            error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
 
-		// FIXME: get a better reason code
-		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NONE);
+		nm_device_state_changed (NM_DEVICE (self),
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_BT_FAILED);
 		return;
 	}
 
 	if (!device || !strlen (device)) {
 		nm_warning ("Invalid network device returned by bluez");
 
-		// FIXME: get a better reason code
-		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NONE);
+		nm_device_state_changed (NM_DEVICE (self),
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_BT_FAILED);
 	}
 
 	if (priv->bt_type == NM_BT_CAPABILITY_DUN) {
@@ -573,20 +623,8 @@ bluez_connect_cb (DBusGProxy *proxy,
 	}
 
 	/* Stage 3 gets scheduled when Bluez says we're connected */
-}
-
-static gboolean
-modem_find_timeout (gpointer user_data)
-{
-	NMDeviceBt *self = NM_DEVICE_BT (user_data);
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
-
-	priv->timeout_id = 0;
-
-	nm_device_state_changed (NM_DEVICE (user_data),
-	                         NM_DEVICE_STATE_FAILED,
-	                         NM_DEVICE_STATE_REASON_MODEM_NOT_FOUND);
-	return FALSE;
+	priv->have_iface = TRUE;
+	check_connect_continue (self);
 }
 
 static void
@@ -608,28 +646,8 @@ bluez_property_changed (DBusGProxy *proxy,
 	connected = g_value_get_boolean (value);
 	if (connected) {
 		if (state == NM_DEVICE_STATE_CONFIG) {
-			gboolean pan = (priv->bt_type == NM_BT_CAPABILITY_NAP);
-			gboolean dun = (priv->bt_type == NM_BT_CAPABILITY_DUN);
-
-			nm_info ("Activation (%s/bluetooth) Stage 2 of 5 (Device Configure) "
-			         "successful.  Will connect via %s.",
-			         nm_device_get_iface (device),
-			         dun ? "DUN" : (pan ? "PAN" : "unknown"));
-
-			if (pan) {
-				/* Bluez says we're connected now.  Start IP config. */
-				nm_device_activate_schedule_stage3_ip_config_start (device);
-			} else if (dun) {
-				/* Wait for ModemManager to find the modem */
-				if (priv->timeout_id)
-					g_source_remove (priv->timeout_id);
-				priv->timeout_id = g_timeout_add_seconds (20, modem_find_timeout, self);
-
-				nm_info ("Activation (%s/bluetooth) Stage 2 of 5 (Device Configure) "
-				         "waiting for modem to appear.",
-				         nm_device_get_iface (device));
-			} else
-				g_assert_not_reached ();
+			priv->connected = TRUE;
+			check_connect_continue (self);
 		}
 	} else {
 		gboolean fail = FALSE;
@@ -645,9 +663,23 @@ bluez_property_changed (DBusGProxy *proxy,
 			fail = TRUE;
 		}
 
-		if (fail)
+		if (fail) {
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_CARRIER);
+			priv->connected = FALSE;
+		}
 	}
+}
+
+static gboolean
+bt_connect_timeout (gpointer user_data)
+{
+	NMDeviceBt *self = NM_DEVICE_BT (user_data);
+
+	NM_DEVICE_BT_GET_PRIVATE (self)->timeout_id = 0;
+	nm_device_state_changed (NM_DEVICE (self),
+	                         NM_DEVICE_STATE_FAILED,
+	                         NM_DEVICE_STATE_REASON_BT_FAILED);
+	return FALSE;
 }
 
 static NMActStageReturn
@@ -716,6 +748,10 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	                                      G_TYPE_STRING, dun ? BLUETOOTH_DUN_UUID : BLUETOOTH_NAP_UUID,
 	                                      G_TYPE_INVALID);
 
+	if (priv->timeout_id)
+		g_source_remove (priv->timeout_id);
+	priv->timeout_id = g_timeout_add_seconds (30, bt_connect_timeout, device);
+
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
 
@@ -760,6 +796,9 @@ static void
 real_deactivate_quickly (NMDevice *device)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
+
+	priv->have_iface = FALSE;
+	priv->connected = FALSE;
 
 	if (priv->bt_type == NM_BT_CAPABILITY_DUN) {
 

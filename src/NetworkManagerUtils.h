@@ -67,6 +67,10 @@ void        value_hash_add_uint        (GHashTable *hash,
 										const char *key,
 										guint32 val);
 
+void        value_hash_add_bool        (GHashTable *hash,
+					                    const char *key,
+					                    gboolean val);
+
 gboolean nm_utils_do_sysctl (const char *path, const char *value);
 
 #endif /* NETWORK_MANAGER_UTILS_H */

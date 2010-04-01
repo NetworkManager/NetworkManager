@@ -30,7 +30,6 @@
 #include "nm-dbus-manager.h"
 #include "nm-vpn-manager.h"
 #include "nm-modem-manager.h"
-#include "nm-modem.h"
 #include "nm-device-bt.h"
 #include "nm-device-interface.h"
 #include "nm-device-private.h"
@@ -154,16 +153,12 @@ typedef struct {
 typedef struct {
 	gboolean enabled;
 	gboolean hw_enabled;
+	RfKillType rtype;
 	const char *desc;
 	const char *key;
 	const char *prop;
 	const char *hw_prop;
-	/* Hack for WWAN for 0.8 release; we'll start using udev
-	 * after 0.8 gets out.
-	 */
-	gboolean ignore_udev;
 	RfKillState (*other_enabled_func) (NMManager *);
-	gboolean (*object_filter_func) (GObject *);
 } RadioState;
 
 typedef struct {
@@ -1246,8 +1241,10 @@ manager_set_radio_enabled (NMManager *manager,
 
 	/* enable/disable wireless devices as required */
 	for (iter = priv->devices; iter; iter = iter->next) {
-		if (   rstate->object_filter_func
-			&& rstate->object_filter_func (G_OBJECT (iter->data)))
+		RfKillType devtype = RFKILL_TYPE_UNKNOWN;
+
+		g_object_get (G_OBJECT (iter->data), NM_DEVICE_INTERFACE_RFKILL_TYPE, &devtype, NULL);
+		if (devtype == rstate->rtype)
 			nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (iter->data), enabled);
 	}
 }
@@ -1347,9 +1344,11 @@ nm_manager_get_modem_enabled_state (NMManager *self)
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *candidate = NM_DEVICE (iter->data);
 		RfKillState candidate_state = RFKILL_UNBLOCKED;
+		RfKillType devtype = RFKILL_TYPE_UNKNOWN;
 
-		if (NM_IS_MODEM (candidate)) {
-			if (nm_modem_get_mm_enabled (NM_MODEM (candidate)) == FALSE)
+		g_object_get (G_OBJECT (candidate), NM_DEVICE_INTERFACE_RFKILL_TYPE, &devtype, NULL);
+		if (devtype == RFKILL_TYPE_WWAN) {
+			if (!nm_device_interface_get_enabled (NM_DEVICE_INTERFACE (candidate)))
 				candidate_state = RFKILL_SOFT_BLOCKED;
 
 			if (candidate_state > wwan_state)
@@ -1358,18 +1357,6 @@ nm_manager_get_modem_enabled_state (NMManager *self)
 	}
 
 	return wwan_state;
-}
-
-static gboolean
-rfkill_wlan_filter (GObject *object)
-{
-	return NM_IS_DEVICE_WIFI (object);
-}
-
-static gboolean
-rfkill_wwan_filter (GObject *object)
-{
-	return NM_IS_MODEM (object);
 }
 
 static void
@@ -1383,8 +1370,7 @@ manager_rfkill_update_one_type (NMManager *self,
 	RfKillState composite;
 	gboolean new_e = TRUE, new_he = TRUE;
 
-	if (!rstate->ignore_udev)
-		udev_state = nm_udev_manager_get_rfkill_state (priv->udev_mgr, rtype);
+	udev_state = nm_udev_manager_get_rfkill_state (priv->udev_mgr, rtype);
 
 	if (rstate->other_enabled_func)
 		other_state = rstate->other_enabled_func (self);
@@ -1473,7 +1459,7 @@ add_device (NMManager *self, NMDevice *device)
 	iface = nm_device_get_ip_iface (device);
 	g_assert (iface);
 
-	if (!NM_IS_MODEM (device) && find_device_by_iface (self, iface)) {
+	if (!NM_IS_DEVICE_MODEM (device) && find_device_by_iface (self, iface)) {
 		g_object_unref (device);
 		return;
 	}
@@ -1505,7 +1491,7 @@ add_device (NMManager *self, NMDevice *device)
 		nm_manager_rfkill_update (self, RFKILL_TYPE_WLAN);
 		nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (device),
 		                                 priv->radio_states[RFKILL_TYPE_WLAN].enabled);
-	} else if (NM_IS_MODEM (device)) {
+	} else if (NM_IS_DEVICE_MODEM (device)) {
 		g_signal_connect (device, "notify::" NM_MODEM_ENABLED,
 		                  G_CALLBACK (manager_modem_enabled_changed),
 		                  self);
@@ -2709,11 +2695,11 @@ impl_manager_sleep (NMManager *self, gboolean sleep, GError **error)
 			for (i = 0; i < RFKILL_TYPE_MAX; i++) {
 				RadioState *rstate = &priv->radio_states[i];
 				gboolean enabled = (rstate->hw_enabled && rstate->enabled);
+				RfKillType devtype = RFKILL_TYPE_UNKNOWN;
 
-				if (   rstate->object_filter_func
-				    && rstate->object_filter_func (G_OBJECT (device))) {
+				g_object_get (G_OBJECT (device), NM_DEVICE_INTERFACE_RFKILL_TYPE, &devtype, NULL);
+				if (devtype == rstate->rtype)
 					nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (device), enabled);
-				}
 			}
 
 			nm_device_clear_autoconnect_inhibit (device);
@@ -2858,23 +2844,21 @@ nm_manager_start (NMManager *self)
 		if (!rstate->desc)
 			continue;
 
-		if (!rstate->ignore_udev) {
-			switch (nm_udev_manager_get_rfkill_state (priv->udev_mgr, i)) {
-			case RFKILL_UNBLOCKED:
-				enabled = TRUE;
-				hw_enabled = TRUE;
-				break;
-			case RFKILL_SOFT_BLOCKED:
-				enabled = FALSE;
-				hw_enabled = TRUE;
-				break;
-			case RFKILL_HARD_BLOCKED:
-				enabled = FALSE;
-				hw_enabled = FALSE;
-				break;
-			default:
-				break;
-			}
+		switch (nm_udev_manager_get_rfkill_state (priv->udev_mgr, i)) {
+		case RFKILL_UNBLOCKED:
+			enabled = TRUE;
+			hw_enabled = TRUE;
+			break;
+		case RFKILL_SOFT_BLOCKED:
+			enabled = FALSE;
+			hw_enabled = TRUE;
+			break;
+		case RFKILL_HARD_BLOCKED:
+			enabled = FALSE;
+			hw_enabled = FALSE;
+			break;
+		default:
+			break;
 		}
 
 		rstate->hw_enabled = hw_enabled;
@@ -3130,7 +3114,7 @@ nm_manager_init (NMManager *manager)
 	priv->radio_states[RFKILL_TYPE_WLAN].hw_prop = NM_MANAGER_WIRELESS_HARDWARE_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WLAN].desc = "WiFi";
 	priv->radio_states[RFKILL_TYPE_WLAN].other_enabled_func = nm_manager_get_ipw_rfkill_state;
-	priv->radio_states[RFKILL_TYPE_WLAN].object_filter_func = rfkill_wlan_filter;
+	priv->radio_states[RFKILL_TYPE_WLAN].rtype = RFKILL_TYPE_WLAN;
 
 	priv->radio_states[RFKILL_TYPE_WWAN].enabled = TRUE;
 	priv->radio_states[RFKILL_TYPE_WWAN].key = "WWANEnabled";
@@ -3138,7 +3122,7 @@ nm_manager_init (NMManager *manager)
 	priv->radio_states[RFKILL_TYPE_WWAN].hw_prop = NM_MANAGER_WWAN_HARDWARE_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WWAN].desc = "WWAN";
 	priv->radio_states[RFKILL_TYPE_WWAN].other_enabled_func = nm_manager_get_modem_enabled_state;
-	priv->radio_states[RFKILL_TYPE_WWAN].object_filter_func = rfkill_wwan_filter;
+	priv->radio_states[RFKILL_TYPE_WWAN].rtype = RFKILL_TYPE_WWAN;
 
 	for (i = 0; i < RFKILL_TYPE_MAX; i++)
 		priv->radio_states[i].hw_enabled = TRUE;

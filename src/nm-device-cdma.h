@@ -21,7 +21,7 @@
 #ifndef NM_DEVICE_CDMA_H
 #define NM_DEVICE_CDMA_H
 
-#include "nm-device.h"
+#include "nm-device-modem.h"
 #include "nm-modem-cdma.h"
 
 G_BEGIN_DECLS
@@ -34,16 +34,15 @@ G_BEGIN_DECLS
 #define NM_DEVICE_CDMA_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DEVICE_CDMA, NMDeviceCdmaClass))
 
 typedef struct {
-	NMDevice parent;
+	NMDeviceModem parent;
 } NMDeviceCdma;
 
 typedef struct {
-	NMDeviceClass parent;
+	NMDeviceModemClass parent;
 
 	/* Signals */
 	void (*signal_quality) (NMDeviceCdma *self, guint32 quality);
 
-	void (*ppp_stats) (NMDeviceCdma *self, guint32 in_bytes, guint32 out_bytes);
 	void (*properties_changed) (NMDeviceCdma *self, GHashTable *properties);
 } NMDeviceCdmaClass;
 

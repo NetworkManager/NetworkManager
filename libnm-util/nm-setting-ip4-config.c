@@ -879,7 +879,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 * NMSettingIP4Config:ignore-auto-dns:
 	 *
 	 * When the method is set to 'auto' and this property to TRUE, automatically
-	 * configured nameservers and search domains are ignored and only namservers
+	 * configured nameservers and search domains are ignored and only nameservers
 	 * and search domains specified in #NMSettingIP4Config:dns and
 	 * #NMSettingIP4Config:dns-search, if any, are used.
 	 **/
@@ -889,7 +889,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 						   "Ignore automatic DNS",
 						   "When the method is set to 'auto' and this property "
 						   "to TRUE, automatically configured nameservers and "
-						   "search domains are ignored and only namservers and "
+						   "search domains are ignored and only nameservers and "
 						   "search domains specified in the 'dns' and 'dns-search' "
 						   "properties, if any, are used.",
 						   FALSE,

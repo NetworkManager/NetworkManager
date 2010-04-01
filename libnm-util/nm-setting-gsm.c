@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2010 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -80,6 +80,8 @@ typedef struct {
 	guint32 allowed_bands;     /* A bitfield of NM_SETTING_GSM_BAND_* */
 
 	char *pin;
+
+	gboolean home_only;
 } NMSettingGsmPrivate;
 
 enum {
@@ -94,6 +96,7 @@ enum {
 	PROP_PIN,
 	PROP_PUK,
 	PROP_ALLOWED_BANDS,
+	PROP_HOME_ONLY,
 
 	LAST_PROP
 };
@@ -189,6 +192,14 @@ nm_setting_gsm_get_puk (NMSettingGsm *setting)
 {
 	g_warning ("Tried to get deprecated property " NM_SETTING_GSM_SETTING_NAME "/" NM_SETTING_GSM_PUK);
 	return NULL;
+}
+
+gboolean
+nm_setting_gsm_get_home_only (NMSettingGsm *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_GSM (setting), FALSE);
+
+	return NM_SETTING_GSM_GET_PRIVATE (setting)->home_only;
 }
 
 static gboolean
@@ -356,6 +367,9 @@ set_property (GObject *object, guint prop_id,
 		if (str && strlen (str))
 			g_warning ("Tried to set deprecated property " NM_SETTING_GSM_SETTING_NAME "/" NM_SETTING_GSM_PUK);
 		break;
+	case PROP_HOME_ONLY:
+		priv->home_only = g_value_get_boolean (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -400,6 +414,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_BAND:
 		/* deprecated */
 		g_value_set_int (value, -1);
+		break;
+	case PROP_HOME_ONLY:
+		g_value_set_boolean (value, nm_setting_gsm_get_home_only (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -572,7 +589,8 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 		                     || NM_SETTING_GSM_BAND_U800
 		                     || NM_SETTING_GSM_BAND_U850
 		                     || NM_SETTING_GSM_BAND_U900
-		                     || NM_SETTING_GSM_BAND_U17IX,
+		                     || NM_SETTING_GSM_BAND_U17IX
+		                     || NM_SETTING_GSM_BAND_U1900,
 		                    NM_SETTING_GSM_BAND_ANY,
 		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
@@ -592,6 +610,22 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 						  "the PIN here to allow operation of the device.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+
+	/**
+	 * NMSettingGsm:home-only:
+	 *
+	 * When TRUE, only connections to the home network will be allowed.
+	 * Connections to roaming networks will not be made.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_HOME_ONLY,
+		 g_param_spec_boolean (NM_SETTING_GSM_HOME_ONLY,
+						  "PIN",
+						  "When TRUE, only connections to the home network will "
+						  "be allowed.  Connections to roaming networks will "
+						  "not be made.",
+						  FALSE,
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	/* Deprecated properties */
 	/**

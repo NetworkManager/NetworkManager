@@ -43,5 +43,7 @@ GType nm_dhcp_dhclient_get_type (void);
 
 GSList *nm_dhcp_dhclient_get_lease_config (const char *iface, const char *uuid);
 
+const char *nm_dhcp_dhclient_get_path (const char *try_first);
+
 #endif /* NM_DHCP_DHCLIENT_H */
 

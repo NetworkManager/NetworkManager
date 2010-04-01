@@ -21,7 +21,7 @@
 #ifndef NM_DEVICE_GSM_H
 #define NM_DEVICE_GSM_H
 
-#include "nm-device.h"
+#include "nm-device-modem.h"
 #include "nm-modem-gsm.h"
 
 G_BEGIN_DECLS
@@ -34,16 +34,15 @@ G_BEGIN_DECLS
 #define NM_DEVICE_GSM_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DEVICE_GSM, NMDeviceGsmClass))
 
 typedef struct {
-	NMDevice parent;
+	NMDeviceModem parent;
 } NMDeviceGsm;
 
 typedef struct {
-	NMDeviceClass parent;
+	NMDeviceModemClass parent;
 
 	/* Signals */
 	void (*signal_quality) (NMDeviceGsm *self, guint32 quality);
 
-	void (*ppp_stats) (NMDeviceGsm *self, guint32 in_bytes, guint32 out_bytes);
 	void (*properties_changed) (NMDeviceGsm *self, GHashTable *properties);
 } NMDeviceGsmClass;
 

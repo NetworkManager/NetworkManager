@@ -44,6 +44,35 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 
+#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
+
+GQuark
+nm_dhcp_manager_error_quark (void)
+{
+    static GQuark ret = 0;
+
+    if (ret == 0)
+        ret = g_quark_from_static_string ("nm_dhcp_manager_error");
+
+    return ret;
+}
+
+GType
+nm_dhcp_manager_error_get_type (void)
+{
+    static GType etype = 0;
+
+    if (etype == 0) {
+        static const GEnumValue values[] = {
+            ENUM_ENTRY (NM_DHCP_MANAGER_ERROR_BAD_CLIENT, "BadClient"),
+            ENUM_ENTRY (NM_DHCP_MANAGER_ERROR_INTERNAL,   "InternalError"),
+            { 0, 0, 0 }
+        };
+        etype = g_enum_register_static ("NMDhcpManagerError", values);
+    }
+    return etype;
+}
+
 #define NM_DHCP_CLIENT_DBUS_SERVICE "org.freedesktop.nm_dhcp_client"
 #define NM_DHCP_CLIENT_DBUS_IFACE   "org.freedesktop.nm_dhcp_client"
 
@@ -233,15 +262,48 @@ out:
 static GType
 get_client_type (const char *client, GError **error)
 {
-	g_return_val_if_fail (client != NULL, 0);
+	const char *dhclient_path = NULL;
+	const char *dhcpcd_path = NULL;
 
-	if (!strcmp (client, "dhclient") && strlen (DHCLIENT_PATH))
+	dhclient_path = nm_dhcp_dhclient_get_path (DHCLIENT_PATH);
+	dhcpcd_path = nm_dhcp_dhcpcd_get_path (DHCPCD_PATH);
+
+	if (!client) {
+		if (dhclient_path)
+			return NM_TYPE_DHCP_DHCLIENT;
+		else if (dhcpcd_path)
+			return NM_TYPE_DHCP_DHCPCD;
+		else {
+			g_set_error_literal (error,
+			                     NM_DHCP_MANAGER_ERROR, NM_DHCP_MANAGER_ERROR_BAD_CLIENT,
+			                     _("no usable DHCP client could be found."));
+			return 0;
+		}
+	}
+
+	if (!strcmp (client, "dhclient")) {
+		if (!dhclient_path) {
+			g_set_error_literal (error,
+			                     NM_DHCP_MANAGER_ERROR, NM_DHCP_MANAGER_ERROR_BAD_CLIENT,
+			                     _("'dhclient' could be found."));
+			return 0;
+		}
 		return NM_TYPE_DHCP_DHCLIENT;
-	else if (!strcmp (client, "dhcpcd") && strlen (DHCPCD_PATH))
-		return NM_TYPE_DHCP_DHCPCD;
-	else
-		g_set_error (error, 0, 0, "unknown or missing DHCP client '%s'", client);
+	}
 
+	if (!strcmp (client, "dhcpcd")) {
+		if (!dhcpcd_path) {
+			g_set_error_literal (error,
+			                     NM_DHCP_MANAGER_ERROR, NM_DHCP_MANAGER_ERROR_BAD_CLIENT,
+			                     _("'dhcpcd' could be found."));
+			return 0;
+		}
+		return NM_TYPE_DHCP_DHCPCD;
+	}
+
+	g_set_error (error,
+	             NM_DHCP_MANAGER_ERROR, NM_DHCP_MANAGER_ERROR_BAD_CLIENT,
+	             _("unsupported DHCP client '%s'"), client);
 	return 0;
 }
 
@@ -250,32 +312,19 @@ nm_dhcp_manager_new (const char *client, GError **error)
 {
 	NMDHCPManagerPrivate *priv;
 	DBusGConnection *g_connection;
+	GType client_type;
 
-	/* Set some defaults based on build-time options */
-	if (!client) {
-		if (strlen (DHCLIENT_PATH) && g_file_test (DHCLIENT_PATH, G_FILE_TEST_EXISTS))
-			client = "dhclient";
-		else if (strlen (DHCPCD_PATH) && g_file_test (DHCPCD_PATH, G_FILE_TEST_EXISTS))
-			client = "dhcpcd";
-		else {
-			g_set_error_literal (error, 0, 0,
-			                     "no suitable DHCP client; see 'man NetworkManager'"
-			                     " to specify one.");
-			return NULL;
-		}
-	}
+	client_type = get_client_type (client, error);
+	if (!client_type)
+		return NULL;
 
 	g_warn_if_fail (singleton == NULL);
-	g_return_val_if_fail (client != NULL, NULL);
 
 	singleton = g_object_new (NM_TYPE_DHCP_MANAGER, NULL);
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (singleton);
 
-	/* Figure out which DHCP client to use */
-	priv->client_type = get_client_type (client, error);
-	if (!priv->client_type)
-		goto error;
-
+	/* Client-specific setup */
+	priv->client_type = client_type;
 	if (priv->client_type == NM_TYPE_DHCP_DHCLIENT)
 		priv->get_lease_config_func = nm_dhcp_dhclient_get_lease_config;
 	else if (priv->client_type == NM_TYPE_DHCP_DHCPCD)
@@ -286,10 +335,7 @@ nm_dhcp_manager_new (const char *client, GError **error)
 	priv->clients = g_hash_table_new_full (g_direct_hash, g_direct_equal,
 	                                       NULL,
 	                                       (GDestroyNotify) g_object_unref);
-	if (!priv->clients) {
-		g_set_error_literal (error, 0, 0, "not enough memory to initialize DHCP manager");
-		goto error;
-	}
+	g_assert (priv->clients);
 
 	priv->dbus_mgr = nm_dbus_manager_get ();
 	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
@@ -297,10 +343,7 @@ nm_dhcp_manager_new (const char *client, GError **error)
 	                                         NM_DHCP_CLIENT_DBUS_SERVICE,
 	                                         "/",
 	                                         NM_DHCP_CLIENT_DBUS_IFACE);
-	if (!priv->proxy) {
-		g_set_error_literal (error, 0, 0, "not enough memory to initialize DHCP manager proxy");
-		goto error;
-	}
+	g_assert (priv->proxy);
 
 	dbus_g_proxy_add_signal (priv->proxy,
 	                         "Event",
@@ -312,11 +355,6 @@ nm_dhcp_manager_new (const char *client, GError **error)
 	                             singleton,
 	                             NULL);
 
-	return singleton;
-
-error:
-	g_object_unref (singleton);
-	singleton = NULL;
 	return singleton;
 }
 

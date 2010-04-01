@@ -94,6 +94,8 @@ NetworkManager_SOURCES = \
 		nm-device-olpc-mesh.h	\
 		nm-device-bt.c \
 		nm-device-bt.h \
+		nm-device-modem.h \
+		nm-device-modem.c \
 		nm-device-cdma.c \
 		nm-device-cdma.h \
 		nm-device-gsm.c \

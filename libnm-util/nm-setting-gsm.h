@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2010 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -61,6 +61,7 @@ GQuark nm_setting_gsm_error_quark (void);
 #define NM_SETTING_GSM_NETWORK_TYPE  "network-type"
 #define NM_SETTING_GSM_ALLOWED_BANDS "allowed-bands"
 #define NM_SETTING_GSM_PIN           "pin"
+#define NM_SETTING_GSM_HOME_ONLY     "home-only"
 
 /* DEPRECATED & UNUSED */
 #define NM_SETTING_GSM_PUK           "puk"
@@ -95,6 +96,7 @@ typedef enum {
 	NM_SETTING_GSM_BAND_U850         = 0x00000200, /* WCDMA 3GPP UMTS 850 MHz      (Class V) */
 	NM_SETTING_GSM_BAND_U900         = 0x00000400, /* WCDMA 3GPP UMTS 900 MHz      (Class VIII) */
 	NM_SETTING_GSM_BAND_U17IX        = 0x00000800, /* WCDMA 3GPP UMTS 1700 MHz     (Class IX) */
+	NM_SETTING_GSM_BAND_U1900        = 0x00001000, /* WCDMA 3GPP UMTS 1900 MHz     (Class II) */
 } NMSettingGsmNetworkBand;
 
 typedef struct {
@@ -122,6 +124,7 @@ const char *nm_setting_gsm_get_network_id    (NMSettingGsm *setting);
 int         nm_setting_gsm_get_network_type  (NMSettingGsm *setting);
 guint32     nm_setting_gsm_get_allowed_bands (NMSettingGsm *setting);
 const char *nm_setting_gsm_get_pin           (NMSettingGsm *setting);
+gboolean    nm_setting_gsm_get_home_only     (NMSettingGsm *setting);
 
 /* DEPRECATED & UNUSED */
 const char *nm_setting_gsm_get_puk           (NMSettingGsm *setting);
