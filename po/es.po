@@ -542,7 +542,7 @@ msgid ""
 "  Wired Properties\n"
 msgstr ""
 "\n"
-"  Propiedades de la conexión cableada"
+"  Propiedades de la conexión cableada\n"
 
 #: ../cli/src/devices.c:377 ../cli/src/devices.c:379
 msgid "Carrier"
