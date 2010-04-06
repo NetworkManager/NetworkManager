@@ -39,7 +39,7 @@
 #include "nm-utils.h"
 
 static guint32 log_level = LOGL_INFO;
-static guint32 log_domains = LOGD_CORE | LOGD_HW;
+static guint32 log_domains = LOGD_CORE | LOGD_HW | LOGD_RFKILL | LOGD_SUSPEND;
 
 typedef struct {
 	guint32 num;
@@ -55,6 +55,7 @@ static const LogDesc level_descs[] = {
 };
 
 static const LogDesc domain_descs[] = {
+	{ LOGD_NONE,      "NONE" },
 	{ LOGD_HW,        "HW" },
 	{ LOGD_RFKILL,    "RFKILL" },
 	{ LOGD_ETHER,     "ETHER" },
