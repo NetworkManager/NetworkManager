@@ -48,6 +48,7 @@ enum {
 	LOGD_SYS_SET    = 0x00040000,
 	LOGD_SUSPEND    = 0x00080000,
 	LOGD_CORE       = 0x00100000, /* Core daemon and policy stuff */
+	LOGD_DEVICE     = 0x00200000, /* Device state and activation */
 };
 
 /* Log levels */

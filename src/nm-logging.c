@@ -77,6 +77,7 @@ static const LogDesc domain_descs[] = {
 	{ LOGD_SYS_SET,   "SYS_SET" },
 	{ LOGD_SUSPEND,   "SUSPEND" },
 	{ LOGD_CORE,      "CORE" },
+	{ LOGD_DEVICE,    "DEVICE" },
 	{ 0, NULL }
 };
 
