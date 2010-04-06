@@ -39,7 +39,8 @@
 #include "nm-utils.h"
 
 static guint32 log_level = LOGL_INFO;
-static guint32 log_domains = LOGD_CORE | LOGD_HW | LOGD_RFKILL | LOGD_SUSPEND;
+static guint32 log_domains = \
+	LOGD_CORE | LOGD_HW | LOGD_RFKILL | LOGD_SUSPEND | LOGD_MB | LOGD_BT;
 
 typedef struct {
 	guint32 num;
