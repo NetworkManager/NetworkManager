@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 Red Hat, Inc.
+ * Copyright (C) 2009 - 2010 Red Hat, Inc.
  * Copyright (C) 2009 Novell, Inc.
  */
 
@@ -27,7 +27,7 @@
 #include "nm-marshal.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-modem-types.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-device-interface.h"
@@ -203,6 +203,7 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 	}
 
 	if (!num || dns_workaround) {
+		nm_log_warn (LOGD_PPP, "compensating for invalid PPP-provided nameservers");
 		nm_ip4_config_reset_nameservers (config);
 		nm_ip4_config_add_nameserver (config, good_dns1);
 		nm_ip4_config_add_nameserver (config, good_dns2);
@@ -267,8 +268,7 @@ ppp_stage3_ip4_config_start (NMModem *self,
 
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else {
-		nm_warning ("%s: error starting PPP: (%d) %s",
-		            __func__,
+		nm_log_err (LOGD_PPP, "error starting PPP: (%d) %s",
 		            error ? error->code : -1,
 		            error && error->message ? error->message : "(unknown)");
 		g_error_free (error);
@@ -398,6 +398,7 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
                                   NMDeviceClass *device_class,
                                   NMDeviceStateReason *reason)
 {
+	NMModemPrivate *priv;
 	NMActRequest *req;
 	NMActStageReturn ret;
 
@@ -412,7 +413,8 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
 	req = nm_device_get_act_request (device);
 	g_assert (req);
 
-	switch (NM_MODEM_GET_PRIVATE (self)->ip_method) {
+	priv = NM_MODEM_GET_PRIVATE (self);
+	switch (priv->ip_method) {
 	case MM_MODEM_IP_METHOD_PPP:
 		ret = ppp_stage3_ip4_config_start (self, req, reason);
 		break;
@@ -423,7 +425,7 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
 		ret = device_class->act_stage3_ip4_config_start (device, reason);
 		break;
 	default:
-		g_warning ("Invalid IP method");
+		nm_log_err (LOGD_MB, "unknown IP method %d", priv->ip_method);
 		ret = NM_ACT_STAGE_RETURN_FAILURE;
 		break;
 	}
@@ -438,6 +440,7 @@ nm_modem_stage4_get_ip4_config (NMModem *self,
 								NMIP4Config **config,
 								NMDeviceStateReason *reason)
 {
+	NMModemPrivate *priv;
 	NMActRequest *req;
 	NMActStageReturn ret;
 
@@ -452,7 +455,8 @@ nm_modem_stage4_get_ip4_config (NMModem *self,
 	req = nm_device_get_act_request (device);
 	g_assert (req);
 
-	switch (NM_MODEM_GET_PRIVATE (self)->ip_method) {
+	priv = NM_MODEM_GET_PRIVATE (self);
+	switch (priv->ip_method) {
 	case MM_MODEM_IP_METHOD_PPP:
 		ret = ppp_stage4 (self, req, config, reason);
 		break;
@@ -463,7 +467,7 @@ nm_modem_stage4_get_ip4_config (NMModem *self,
 		ret = device_class->act_stage4_get_ip4_config (device, config, reason);
 		break;
 	default:
-		g_warning ("Invalid IP method");
+		nm_log_err (LOGD_MB, "unknown IP method %d", priv->ip_method);
 		ret = NM_ACT_STAGE_RETURN_FAILURE;
 		break;
 	}
@@ -526,7 +530,7 @@ nm_modem_connection_secrets_updated (NMModem *self,
 		if (!strcmp (candidate_setting_name, setting_name))
 			found = TRUE;
 		else {
-			nm_warning ("Ignoring updated secrets for setting '%s'.",
+			nm_log_warn (LOGD_MB, "ignoring updated secrets for setting '%s'.",
 			            candidate_setting_name);
 		}
 	}
@@ -662,7 +666,7 @@ real_deactivate_quickly (NMModem *self, NMDevice *device)
 		nm_system_device_set_up_down_with_iface (iface, FALSE, NULL);
 		break;
 	default:
-		g_warning ("Invalid IP method");
+		nm_log_err (LOGD_MB, "unknown IP method %d", priv->ip_method);
 		break;
 	}
 }
@@ -679,10 +683,9 @@ disconnect_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 	GError *error = NULL;
 
 	if (!dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID)) {
-		g_warning ("%s: disconnect failed: (%d) %s",
-		           __func__,
-		           error ? error->code : -1,
-		           error && error->message ? error->message : "(unknown)");
+		nm_log_info (LOGD_MB, "disconnect failed: (%d) %s",
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
 	}
 }
 
@@ -786,10 +789,9 @@ get_mm_enabled_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_d
 	if (!dbus_g_proxy_end_call (proxy, call_id, &error,
 	                            G_TYPE_VALUE, &value,
 	                            G_TYPE_INVALID)) {
-		g_warning ("%s: failed get modem enabled state: (%d) %s",
-		           __func__,
-		           error ? error->code : -1,
-		           error && error->message ? error->message : "(unknown)");
+		nm_log_warn (LOGD_MB, "failed get modem enabled state: (%d) %s",
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
 		return;
 	}
 
@@ -797,7 +799,7 @@ get_mm_enabled_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_d
 		NM_MODEM_GET_PRIVATE (self)->mm_enabled = g_value_get_boolean (&value);
 		g_object_notify (G_OBJECT (self), NM_MODEM_ENABLED);
 	} else
-		g_warning ("%s: failed get modem enabled state: unexpected reply type", __func__);
+		nm_log_warn (LOGD_MB, "failed get modem enabled state: unexpected reply type");
 
 	g_value_unset (&value);
 }
@@ -819,10 +821,9 @@ set_mm_enabled_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_d
 	GError *error = NULL;
 
 	if (!dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID)) {
-		g_warning ("%s: failed to enable/disable modem: (%d) %s",
-		           __func__,
-		           error ? error->code : -1,
-		           error && error->message ? error->message : "(unknown)");
+		nm_log_warn (LOGD_MB, "failed to enable/disable modem: (%d) %s",
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
 	}
 
 	/* Update enabled/disabled state again */
@@ -904,17 +905,17 @@ constructor (GType type,
 	priv = NM_MODEM_GET_PRIVATE (object);
 
 	if (!priv->device) {
-		g_warning ("Modem parent device not provided");
+		nm_log_err (LOGD_HW, "modem parent device not provided");
 		goto err;
 	}
 
 	if (!priv->device) {
-		g_warning ("Modem command interface not provided");
+		nm_log_err (LOGD_HW, "modem command interface not provided");
 		goto err;
 	}
 
 	if (!priv->path) {
-		g_warning ("DBus path not provided");
+		nm_log_err (LOGD_HW, "D-Bus path not provided");
 		goto err;
 	}
 
