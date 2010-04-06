@@ -104,7 +104,7 @@ struct _NMDeviceOlpcMeshPrivate
 
 	NMDevice *        companion;
 	gboolean          stage1_waiting;
-	guint             device_added_cb;
+	guint             device_added_id;
 };
 
 static GQuark
@@ -342,9 +342,7 @@ device_cleanup (NMDeviceOlpcMesh *self)
 static void
 real_take_down (NMDevice *dev)
 {
-	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (dev);
-
-	device_cleanup (self);
+	device_cleanup (NM_DEVICE_OLPC_MESH (dev));
 }
 
 static gboolean
@@ -638,24 +636,24 @@ real_act_stage4_ip4_config_timeout (NMDevice *dev,
 
 
 static void
-nm_device_olpc_mesh_dispose (GObject *object)
+dispose (GObject *object)
 {
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (object);
 	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
+	NMManager *manager;
 
 	if (priv->dispose_has_run) {
 		G_OBJECT_CLASS (nm_device_olpc_mesh_parent_class)->dispose (object);
 		return;
 	}
-
 	priv->dispose_has_run = TRUE;
 
 	device_cleanup (self);
 
-	if (priv->device_added_cb != 0)
-		g_source_remove (priv->device_added_cb);
-
-	priv->device_added_cb = 0;
+	manager = nm_manager_get (NULL, FALSE, FALSE);
+	if (priv->device_added_id)
+		g_signal_handler_disconnect (manager, priv->device_added_id);
+	g_object_unref (manager);
 
 	G_OBJECT_CLASS (nm_device_olpc_mesh_parent_class)->dispose (object);
 }
@@ -698,7 +696,7 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 
 	object_class->constructor = constructor;
 	object_class->get_property = get_property;
-	object_class->dispose = nm_device_olpc_mesh_dispose;
+	object_class->dispose = dispose;
 
 	parent_class->get_type_capabilities = NULL;
 	parent_class->get_generic_capabilities = real_get_generic_capabilities;
@@ -821,6 +819,7 @@ is_companion (NMDeviceOlpcMesh *self, NMDevice *other)
 {
 	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
 	struct ether_addr their_addr;
+	NMManager *manager;
 
 	if (!NM_IS_DEVICE_WIFI (other))
 		return FALSE;
@@ -835,14 +834,21 @@ is_companion (NMDeviceOlpcMesh *self, NMDevice *other)
 	/* FIXME detect when our companion leaves */
 	priv->companion = other;
 
-	g_source_remove (priv->device_added_cb);
-	priv->device_added_cb = 0;
+	/* When we've found the companion, stop listening for other devices */
+	manager = nm_manager_get (NULL, FALSE, FALSE);
+	if (priv->device_added_id) {
+		g_signal_handler_disconnect (manager, priv->device_added_id);
+		priv->device_added_id = 0;
+	}
+	g_object_unref (manager);
 
 	nm_device_state_changed (NM_DEVICE (self),
 	                         NM_DEVICE_STATE_DISCONNECTED,
 	                         NM_DEVICE_STATE_REASON_NONE);
 
-	nm_debug ("Found companion device: %s", nm_device_get_iface (other));
+	nm_info ("(%s): found companion WiFi device %s",
+	         nm_device_get_iface (NM_DEVICE (self)),
+	         nm_device_get_iface (other));
 
 	g_signal_connect (G_OBJECT (other), "state-changed",
 	                  G_CALLBACK (companion_state_changed_cb), self);
@@ -881,18 +887,19 @@ check_companion_cb (gpointer user_data)
 		return FALSE;
 	}
 
-	if (priv->device_added_cb != 0)
+	if (priv->device_added_id != 0)
 		return FALSE;
 
 	manager = nm_manager_get (NULL, FALSE, FALSE);
 
-	priv->device_added_cb = g_signal_connect (manager, "device-added",
+	priv->device_added_id = g_signal_connect (manager, "device-added",
 	                                          G_CALLBACK (device_added_cb), self);
 
-	list = nm_manager_get_devices (manager);
-	for (; list != NULL ; list = list->next)
+	/* Try to find the companion if it's already known to the NMManager */
+	for (list = nm_manager_get_devices (manager); list ; list = g_slist_next (list)) {
 		if (is_companion (self, NM_DEVICE (list->data)))
 			break;
+	}
 
 	g_object_unref (manager);
 
