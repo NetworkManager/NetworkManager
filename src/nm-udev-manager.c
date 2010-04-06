@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 Red Hat, Inc.
+ * Copyright (C) 2009 - 2010 Red Hat, Inc.
  */
 
 #include <signal.h>
@@ -33,7 +33,7 @@
 
 #include "nm-udev-manager.h"
 #include "nm-marshal.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-wifi.h"
 #include "nm-device-olpc-mesh.h"
@@ -139,7 +139,7 @@ sysfs_state_to_nm_state (gint sysfs_state)
 	case 2:
 		return RFKILL_HARD_BLOCKED;
 	default:
-		g_warning ("%s: Unhandled rfkill state %d", __func__, sysfs_state);
+		nm_log_warn (LOGD_RFKILL, "unhandled rfkill state %d", sysfs_state);
 		break;
 	}
 	return RFKILL_UNBLOCKED;
@@ -229,11 +229,11 @@ add_one_killswitch (NMUdevManager *self, GUdevDevice *device)
 	ks = killswitch_new (device, rtype);
 	priv->killswitches = g_slist_prepend (priv->killswitches, ks);
 
-	nm_info ("Found %s radio killswitch %s (at %s) (driver %s)",
-	         str_type,
-	         ks->name,
-	         ks->path,
-	         ks->driver ? ks->driver : "<unknown>");
+	nm_log_info (LOGD_RFKILL, "found %s radio killswitch %s (at %s) (driver %s)",
+	             str_type,
+	             ks->name,
+	             ks->path,
+	             ks->driver ? ks->driver : "<unknown>");
 }
 
 static void
@@ -265,7 +265,7 @@ rfkill_remove (NMUdevManager *self,
 		Killswitch *ks = iter->data;
 
 		if (!strcmp (ks->name, name)) {
-			nm_info ("Radio killswitch %s disappeared", ks->path);
+			nm_log_info (LOGD_RFKILL, "radio killswitch %s disappeared", ks->path);
 			priv->killswitches = g_slist_remove (priv->killswitches, ks);
 			killswitch_destroy (ks);
 			break;
@@ -322,7 +322,7 @@ device_creator (NMUdevManager *manager,
 
 	path = g_udev_device_get_sysfs_path (udev_device);
 	if (!path) {
-		nm_warning ("couldn't determine device path; ignoring...");
+		nm_log_warn (LOGD_HW, "couldn't determine device path; ignoring...");
 		return NULL;
 	}
 
@@ -345,13 +345,13 @@ device_creator (NMUdevManager *manager,
 	}
 
 	if (!driver) {
-		nm_warning ("%s: couldn't determine device driver; ignoring...", path);
+		nm_log_warn (LOGD_HW, "%s: couldn't determine device driver; ignoring...", path);
 		goto out;
 	}
 
 	ifindex = g_udev_device_get_sysfs_attr_as_int (udev_device, "ifindex");
 	if (ifindex <= 0) {
-		nm_warning ("%s: device had invalid ifindex %d; ignoring...", path, (guint32) ifindex);
+		nm_log_warn (LOGD_HW, "%s: device had invalid ifindex %d; ignoring...", path, (guint32) ifindex);
 		goto out;
 	}
 
