@@ -442,6 +442,7 @@ main (int argc, char *argv[])
 	gboolean g_fatal_warnings = FALSE;
 	char *pidfile = NULL, *state_file = NULL, *dhcp = NULL;
 	char *config = NULL, *plugins = NULL, *conf_plugins = NULL;
+	char *log_level = NULL, *log_domains = NULL;
 	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE;
 	gboolean success;
 	NMPolicy *policy = NULL;
@@ -460,6 +461,10 @@ main (int argc, char *argv[])
 		{ "state-file", 0, 0, G_OPTION_ARG_FILENAME, &state_file, "State file location", "/path/to/state.file" },
 		{ "config", 0, 0, G_OPTION_ARG_FILENAME, &config, "Config file location", "/path/to/config.file" },
 		{ "plugins", 0, 0, G_OPTION_ARG_STRING, &plugins, "List of plugins separated by ,", "plugin1,plugin2" },
+		{ "log-level", 0, 0, G_OPTION_ARG_STRING, &log_level, "Log level: one of [ERR, WARN, INFO, DEBUG]", "INFO" },
+		{ "log-domain", 0, 0, G_OPTION_ARG_STRING, &log_domains,
+		        "Log domains separated by ,: any combination of [HW,RKILL,ETHER,WIFI,BT,MB,DHCP4,DHCP6,PPP,WIFI_SCAN,IP4,IP6,AUTOIP4,DNS,VPN,SHARING,SUPPLICANT,USER_SET,SYS_SET,SUSPEND,CORE]",
+		        "HW,RFKILL,WIFI" },
 		{NULL}
 	};
 
@@ -492,6 +497,14 @@ main (int argc, char *argv[])
 
 	if (!success) {
 		fprintf (stderr, _("Invalid option.  Please use --help to see a list of valid options.\n"));
+		exit (1);
+	}
+
+	/* Logging setup */
+	if (!nm_logging_setup (log_level, log_domains, &error)) {
+		fprintf (stderr,
+		         _("%s.  Please use --help to see a list of valid options.\n"),
+		         error->message);
 		exit (1);
 	}
 
@@ -600,7 +613,7 @@ main (int argc, char *argv[])
 
 	setup_signals ();
 
-	nm_logging_setup (become_daemon);
+	nm_logging_start (become_daemon);
 
 	nm_info ("starting...");
 	success = FALSE;

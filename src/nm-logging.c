@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2006 - 2008 Red Hat, Inc.
+ * Copyright (C) 2006 - 2010 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -30,9 +30,149 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <execinfo.h>
+#include <strings.h>
+#include <string.h>
+
+#include <glib/gi18n.h>
 
 #include "nm-logging.h"
 #include "nm-utils.h"
+
+static guint32 log_level = LOGL_ERR;
+static guint32 log_domains = LOGD_CORE & LOGD_HW;
+
+typedef struct {
+	guint32 num;
+	const char *name;
+} LogDesc;
+
+static const LogDesc level_descs[] = {
+	{ LOGL_ERR, "ERR" },
+	{ LOGL_WARN, "WARN" },
+	{ LOGL_INFO, "INFO" },
+	{ LOGL_DEBUG, "DEBUG" },
+	{ 0, NULL }
+};
+
+static const LogDesc domain_descs[] = {
+	{ LOGD_HW,        "HW" },
+	{ LOGD_RFKILL,    "RFKILL" },
+	{ LOGD_ETHER,     "ETHER" },
+	{ LOGD_WIFI,      "WIFI" },
+	{ LOGD_BT,        "BT" },
+	{ LOGD_MB,        "MB" },
+	{ LOGD_DHCP4,     "DHCP4" },
+	{ LOGD_DHCP6,     "DHCP6" },
+	{ LOGD_PPP,       "PPP" },
+	{ LOGD_WIFI_SCAN, "WIFI_SCAN" },
+	{ LOGD_IP4,       "IP4" },
+	{ LOGD_IP6,       "IP6" },
+	{ LOGD_AUTOIP4,   "AUTOIP4" },
+	{ LOGD_DNS,       "DNS" },
+	{ LOGD_VPN,       "VPN" },
+	{ LOGD_SHARING,   "SHARING" },
+	{ LOGD_SUPPLICANT,"SUPPLICANT" },
+	{ LOGD_USER_SET,  "USER_SET" },
+	{ LOGD_SYS_SET,   "SYS_SET" },
+	{ LOGD_SUSPEND,   "SUSPEND" },
+	{ LOGD_CORE,      "CORE" },
+	{ 0, NULL }
+};
+
+
+/************************************************************************/
+
+gboolean
+nm_logging_setup (const char *level, const char *domains, GError **error)
+{
+	char **tmp, **iter;
+	guint32 new_level = 0;
+	guint32 new_domains = 0;
+
+	/* levels */
+	if (level && strlen (level)) {
+		tmp = g_strsplit (level, ",", 0);
+		for (iter = tmp; iter && *iter; iter++) {
+			const LogDesc *diter;
+			gboolean found = FALSE;
+
+			for (diter = &level_descs[0]; diter->name; diter++) {
+				if (!strcasecmp (diter->name, *iter)) {
+					new_level &= diter->num;
+					found = TRUE;
+					break;
+				}
+			}
+
+			if (!found) {
+				g_set_error (error, 0, 0, _("Unknown log level '%s'"), *iter);
+				return FALSE;
+			}
+		}
+		g_strfreev (tmp);
+		log_level = new_level;
+	}
+
+	/* domains */
+	if (domains && strlen (domains)) {
+		tmp = g_strsplit (domains, ",", 0);
+		for (iter = tmp; iter && *iter; iter++) {
+			const LogDesc *diter;
+			gboolean found = FALSE;
+
+			for (diter = &domain_descs[0]; diter->name; diter++) {
+				if (!strcasecmp (diter->name, *iter)) {
+					new_domains &= diter->num;
+					found = TRUE;
+					break;
+				}
+			}
+
+			if (!found) {
+				g_set_error (error, 0, 0, _("Unknown log domain '%s'"), *iter);
+				return FALSE;
+			}
+		}
+		g_strfreev (tmp);
+		log_domains = new_domains;
+	}
+
+	return TRUE;
+}
+
+void _nm_log (const char *loc,
+              const char *func,
+              guint32 domain,
+              guint32 level,
+              const char *fmt,
+              ...)
+{
+	va_list args;
+	char *msg;
+	GTimeVal tv;
+
+	if (!(log_level & level) || !(log_domains & domain))
+		return;
+
+	va_start (args, fmt);
+	msg = g_strdup_vprintf (fmt, args);
+	va_end (args);
+
+	if (log_level & LOGL_DEBUG) {
+		g_get_current_time (&tv);
+		syslog (LOG_DEBUG, "<debug> [%zu.%zu] [%s] %s(): %s\n", tv.tv_sec, tv.tv_usec, loc, func, msg);
+	} else if (log_level & LOGL_INFO)
+		syslog (LOG_INFO, "<info> [%s] %s(): %s\n", loc, func, msg);
+	else if (log_level & LOGL_WARN)
+		syslog (LOG_WARNING, "<warn> [%s] %s(): %s\n", loc, func, msg);
+	else if (log_level & LOGL_ERR) {
+		g_get_current_time (&tv);
+		syslog (LOG_ERR, "<error> [%zu.%zu] [%s] %s(): %s\n", tv.tv_sec, tv.tv_usec, loc, func, msg);
+	}
+	g_free (msg);
+}
+
+/************************************************************************/
 
 static void
 fallback_get_backtrace (void)
@@ -115,47 +255,40 @@ nm_logging_backtrace (void)
 
 
 static void
-nm_log_handler (const gchar *		log_domain,
-			  GLogLevelFlags	log_level,
-			  const gchar *	message,
-			  gpointer		ignored)
+nm_log_handler (const gchar *log_domain,
+                GLogLevelFlags level,
+                const gchar *message,
+                gpointer ignored)
 {
 	int syslog_priority;	
 
-	switch (log_level)
-	{
-		case G_LOG_LEVEL_ERROR:
-			syslog_priority = LOG_CRIT;
-			break;
-
-		case G_LOG_LEVEL_CRITICAL:
-			syslog_priority = LOG_ERR;
-			break;
-
-		case G_LOG_LEVEL_WARNING:
-			syslog_priority = LOG_WARNING;
-			break;
-
-		case G_LOG_LEVEL_MESSAGE:
-			syslog_priority = LOG_NOTICE;
-			break;
-
-		case G_LOG_LEVEL_DEBUG:
-			syslog_priority = LOG_DEBUG;
-			break;
-
-		case G_LOG_LEVEL_INFO:
-		default:
-			syslog_priority = LOG_INFO;
-			break;
+	switch (level) {
+	case G_LOG_LEVEL_ERROR:
+		syslog_priority = LOG_CRIT;
+		break;
+	case G_LOG_LEVEL_CRITICAL:
+		syslog_priority = LOG_ERR;
+		break;
+	case G_LOG_LEVEL_WARNING:
+		syslog_priority = LOG_WARNING;
+		break;
+	case G_LOG_LEVEL_MESSAGE:
+		syslog_priority = LOG_NOTICE;
+		break;
+	case G_LOG_LEVEL_DEBUG:
+		syslog_priority = LOG_DEBUG;
+		break;
+	case G_LOG_LEVEL_INFO:
+	default:
+		syslog_priority = LOG_INFO;
+		break;
 	}
 
 	syslog (syslog_priority, "%s", message);
 }
 
-
 void
-nm_logging_setup (gboolean become_daemon)
+nm_logging_start (gboolean become_daemon)
 {
 	if (become_daemon)
 		openlog (G_LOG_DOMAIN, 0, LOG_DAEMON);
@@ -163,9 +296,9 @@ nm_logging_setup (gboolean become_daemon)
 		openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR, LOG_USER);
 
 	g_log_set_handler (G_LOG_DOMAIN, 
-				    G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
-				    nm_log_handler,
-				    NULL);
+	                   G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
+	                   nm_log_handler,
+	                   NULL);
 }
 
 void
