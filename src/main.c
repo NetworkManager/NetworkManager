@@ -40,7 +40,6 @@
 #include <string.h>
 
 #include "NetworkManager.h"
-#include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-manager.h"
 #include "nm-policy.h"
@@ -75,7 +74,7 @@ typedef struct {
 static gboolean
 detach_monitor (gpointer data)
 {
-	nm_info ("Detaching netlink event monitor");
+	nm_log_warn (LOGD_HW, "detaching netlink event monitor");
 	nm_netlink_monitor_detach (NM_NETLINK_MONITOR (data));
 	return FALSE;
 }
@@ -90,10 +89,11 @@ nm_error_monitoring_device_link_state (NMNetlinkMonitor *monitor,
 
 	now = time (NULL);
 
-	if (info->domain != error->domain || info->code != error->code || (info->time && now > info->time + 10)) {
+	if (   (info->domain != error->domain)
+	    || (info->code != error->code)
+	    || (info->time && now > info->time + 10)) {
 		/* FIXME: Try to handle the error instead of just printing it. */
-		nm_warning ("error monitoring device for netlink events: %s\n",
-					error->message);
+		nm_log_warn (LOGD_HW, "error monitoring device for netlink events: %s\n", error->message);
 
 		info->time = now;
 		info->domain = error->domain;
@@ -106,26 +106,20 @@ nm_error_monitoring_device_link_state (NMNetlinkMonitor *monitor,
 		/* Broken drivers will sometimes cause a flood of netlink errors.
 		 * rh #459205, novell #443429, lp #284507
 		 */
-		nm_warning ("Excessive netlink errors ocurred, disabling netlink monitor.");
-		nm_warning ("Link change events will not be processed.");
+		nm_log_warn (LOGD_HW, "excessive netlink errors ocurred, disabling netlink monitor.");
+		nm_log_warn (LOGD_HW, "link change events will not be processed.");
 		g_idle_add_full (G_PRIORITY_HIGH, detach_monitor, monitor, NULL);
 	}
 }
 
 static gboolean
-nm_monitor_setup (void)
+nm_monitor_setup (GError **error)
 {
-	GError *error = NULL;
 	NMNetlinkMonitor *monitor;
 	MonitorInfo *info;
 
 	monitor = nm_netlink_monitor_get ();
-	nm_netlink_monitor_open_connection (monitor, &error);
-	if (error != NULL)
-	{
-		nm_warning ("could not monitor wired ethernet devices: %s",
-					error->message);
-		g_error_free (error);
+	if (!nm_netlink_monitor_open_connection (monitor, error)) {
 		g_object_unref (monitor);
 		return FALSE;
 	}
@@ -136,7 +130,6 @@ nm_monitor_setup (void)
 						   info,
 						   (GClosureNotify) g_free,
 						   0);
-
 	nm_netlink_monitor_attach (monitor);
 
 	/* Request initial status of cards */
@@ -163,7 +156,7 @@ nm_signal_handler (int signo)
 		case SIGBUS:
 		case SIGILL:
 		case SIGABRT:
-			nm_warning ("Caught signal %d.  Generating backtrace...", signo);
+			nm_log_warn (LOGD_CORE, "caught signal %d. Generating backtrace...", signo);
 			nm_logging_backtrace ();
 			exit (1);
 			break;
@@ -173,7 +166,7 @@ nm_signal_handler (int signo)
 			/* let the fatal signals interrupt us */
 			--in_fatal;
 
-			nm_warning ("Caught signal %d, shutting down abnormally.  Generating backtrace...", signo);
+			nm_log_warn (LOGD_CORE, "caught signal %d, shutting down abnormally. Generating backtrace...", signo);
 			nm_logging_backtrace ();
 			g_main_loop_quit (main_loop);
 			break;
@@ -183,7 +176,7 @@ nm_signal_handler (int signo)
 			/* let the fatal signals interrupt us */
 			--in_fatal;
 
-			nm_warning ("Caught signal %d, shutting down normally.", signo);
+			nm_log_info (LOGD_CORE, "caught signal %d, shutting down normally.", signo);
 			quit_early = TRUE;
 			g_main_loop_quit (main_loop);
 			break;
@@ -237,18 +230,18 @@ write_pidfile (const char *pidfile)
 	gboolean success = FALSE;
  
 	if ((fd = open (pidfile, O_CREAT|O_WRONLY|O_TRUNC, 00644)) < 0) {
-		fprintf (stderr, "Opening %s failed: %s", pidfile, strerror (errno));
+		fprintf (stderr, "Opening %s failed: %s\n", pidfile, strerror (errno));
 		return FALSE;
 	}
 
  	snprintf (pid, sizeof (pid), "%d", getpid ());
 	if (write (fd, pid, strlen (pid)) < 0)
-		fprintf (stderr, "Writing to %s failed: %s", pidfile, strerror (errno));
+		fprintf (stderr, "Writing to %s failed: %s\n", pidfile, strerror (errno));
 	else
 		success = TRUE;
 
 	if (close (fd))
-		fprintf (stderr, "Closing %s failed: %s", pidfile, strerror (errno));
+		fprintf (stderr, "Closing %s failed: %s\n", pidfile, strerror (errno));
 
 	return success;
 }
@@ -291,7 +284,7 @@ check_pidfile (const char *pidfile)
 	if (strcmp (process_name, "NetworkManager") == 0) {
 		/* Check that the process exists */
 		if (kill (pid, 0) == 0) {
-			fprintf (stderr, "NetworkManager is already running (pid %ld)", pid);
+			fprintf (stderr, "NetworkManager is already running (pid %ld)\n", pid);
 			nm_running = TRUE;
 		}
 	}
@@ -474,7 +467,7 @@ main (int argc, char *argv[])
 	}
 
 	if (!g_module_supported ()) {
-		fprintf (stderr, "GModules are not supported on your platform!");
+		fprintf (stderr, "GModules are not supported on your platform!\n");
 		exit (1);
 	}
 
@@ -518,7 +511,7 @@ main (int argc, char *argv[])
 	/* Parse the config file */
 	if (config) {
 		if (!parse_config_file (config, &conf_plugins, &dhcp, &error)) {
-			fprintf (stderr, "Config file %s invalid: (%d) %s.",
+			fprintf (stderr, "Config file %s invalid: (%d) %s\n",
 			         config,
 			         error ? error->code : -1,
 			         (error && error->message) ? error->message : "unknown");
@@ -532,7 +525,7 @@ main (int argc, char *argv[])
 			config = g_strdup (NM_DEFAULT_SYSTEM_CONF_FILE);
 			parsed = parse_config_file (config, &conf_plugins, &dhcp, &error);
 			if (!parsed) {
-				fprintf (stderr, "Default config file %s invalid: (%d) %s.",
+				fprintf (stderr, "Default config file %s invalid: (%d) %s\n",
 				         config,
 				         error ? error->code : -1,
 				         (error && error->message) ? error->message : "unknown");
@@ -547,7 +540,7 @@ main (int argc, char *argv[])
 		if (!parsed) {
 			config = g_strdup (NM_OLD_SYSTEM_CONF_FILE);
 			if (!parse_config_file (config, &conf_plugins, &dhcp, &error)) {
-				fprintf (stderr, "Default config file %s invalid: (%d) %s.",
+				fprintf (stderr, "Default config file %s invalid: (%d) %s\n",
 				         config,
 				         error ? error->code : -1,
 				         (error && error->message) ? error->message : "unknown");
@@ -565,7 +558,7 @@ main (int argc, char *argv[])
 
 	/* Parse the state file */
 	if (!parse_state_file (state_file, &net_enabled, &wifi_enabled, &wwan_enabled, &error)) {
-		fprintf (stderr, "State file %s parsing failed: (%d) %s.",
+		fprintf (stderr, "State file %s parsing failed: (%d) %s\n",
 		         state_file,
 		         error ? error->code : -1,
 		         (error && error->message) ? error->message : "unknown");
@@ -582,7 +575,7 @@ main (int argc, char *argv[])
 			int saved_errno;
 
 			saved_errno = errno;
-			fprintf (stderr, "Could not daemonize: %s [error %u]",
+			fprintf (stderr, "Could not daemonize: %s [error %u]\n",
 			         g_strerror (saved_errno),
 			         saved_errno);
 			exit (1);
@@ -615,27 +608,30 @@ main (int argc, char *argv[])
 
 	nm_logging_start (become_daemon);
 
-	nm_info ("starting...");
+	nm_log_info (LOGD_CORE, "starting...");
 	success = FALSE;
 
 	main_loop = g_main_loop_new (NULL, FALSE);
 
 	/* Create watch functions that monitor cards for link status. */
-	if (!nm_monitor_setup ())
+	if (!nm_monitor_setup (&error)) {
+		nm_log_err (LOGD_CORE, "failed to start monitoring devices: %s.",
+		            error && error->message ? error->message : "(unknown)");
 		goto done;
+	}
 
 	/* Initialize our DBus service & connection */
 	dbus_mgr = nm_dbus_manager_get ();
 
 	vpn_manager = nm_vpn_manager_get ();
 	if (!vpn_manager) {
-		nm_warning ("Failed to start the VPN manager.");
+		nm_log_err (LOGD_CORE, "failed to start the VPN manager.");
 		goto done;
 	}
 
 	named_mgr = nm_named_manager_get ();
 	if (!named_mgr) {
-		nm_warning ("Failed to start the named manager.");
+		nm_log_err (LOGD_CORE, "failed to start the named manager.");
 		goto done;
 	}
 
@@ -647,28 +643,28 @@ main (int argc, char *argv[])
 	                          wwan_enabled,
 	                          &error);
 	if (manager == NULL) {
-		nm_error ("Failed to initialize the network manager: %s",
+		nm_log_err (LOGD_CORE, "failed to initialize the network manager: %s",
 		          error && error->message ? error->message : "(unknown)");
 		goto done;
 	}
 
 	policy = nm_policy_new (manager, vpn_manager);
 	if (policy == NULL) {
-		nm_error ("Failed to initialize the policy.");
+		nm_log_err (LOGD_CORE, "failed to initialize the policy.");
 		goto done;
 	}
 
 	/* Initialize the supplicant manager */
 	sup_mgr = nm_supplicant_manager_get ();
 	if (!sup_mgr) {
-		nm_error ("Failed to initialize the supplicant manager.");
+		nm_log_err (LOGD_CORE, "failed to initialize the supplicant manager.");
 		goto done;
 	}
 
 	/* Initialize DHCP manager */
 	dhcp_mgr = nm_dhcp_manager_new (dhcp, &error);
 	if (!dhcp_mgr) {
-		nm_warning ("Failed to start the DHCP manager: %s.", error->message);
+		nm_log_err (LOGD_CORE, "failed to start the DHCP manager: %s.", error->message);
 		goto done;
 	}
 
@@ -676,7 +672,7 @@ main (int argc, char *argv[])
 
 	/* Start our DBus service */
 	if (!nm_dbus_manager_start_service (dbus_mgr)) {
-		nm_warning ("Failed to start the dbus service.");
+		nm_log_err (LOGD_CORE, "failed to start the dbus service.");
 		goto done;
 	}
 
@@ -727,6 +723,6 @@ done:
 	g_free (plugins);
 	g_free (dhcp);
 
-	nm_info ("exiting (%s)", success ? "success" : "error");
+	nm_log_info (LOGD_CORE, "exiting (%s)", success ? "success" : "error");
 	exit (success ? 0 : 1);
 }
