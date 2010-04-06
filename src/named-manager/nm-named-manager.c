@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2004 - 2005 Colin Walters <walters@redhat.com>
- * Copyright (C) 2004 - 2008 Red Hat, Inc.
+ * Copyright (C) 2004 - 2010 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  *   and others
  */
@@ -60,9 +60,9 @@ G_DEFINE_TYPE(NMNamedManager, nm_named_manager, G_TYPE_OBJECT)
 
 
 struct NMNamedManagerPrivate {
-	NMIP4Config *   vpn_config;
-	NMIP4Config *   device_config;
-	GSList *        configs;
+	NMIP4Config *vpn_config;
+	NMIP4Config *device_config;
+	GSList *configs;
 };
 
 
@@ -71,11 +71,10 @@ nm_named_manager_get (void)
 {
 	static NMNamedManager * singleton = NULL;
 
-	if (!singleton) {
+	if (!singleton)
 		singleton = NM_NAMED_MANAGER (g_object_new (NM_TYPE_NAMED_MANAGER, NULL));
-	} else {
+	else
 		g_object_ref (singleton);
-	}
 
 	g_assert (singleton);
 	return singleton;
