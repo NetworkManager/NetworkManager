@@ -48,9 +48,9 @@ typedef struct {
 
 static const LogDesc level_descs[] = {
 	{ LOGL_ERR, "ERR" },
-	{ LOGL_WARN, "WARN" },
-	{ LOGL_INFO, "INFO" },
-	{ LOGL_DEBUG, "DEBUG" },
+	{ LOGL_WARN | LOGL_ERR, "WARN" },
+	{ LOGL_INFO | LOGL_WARN | LOGL_ERR, "INFO" },
+	{ LOGL_DEBUG | LOGL_INFO | LOGL_WARN | LOGL_ERR, "DEBUG" },
 	{ 0, NULL }
 };
 
@@ -86,31 +86,25 @@ gboolean
 nm_logging_setup (const char *level, const char *domains, GError **error)
 {
 	char **tmp, **iter;
-	guint32 new_level = 0;
 	guint32 new_domains = 0;
 
 	/* levels */
 	if (level && strlen (level)) {
-		tmp = g_strsplit (level, ",", 0);
-		for (iter = tmp; iter && *iter; iter++) {
-			const LogDesc *diter;
-			gboolean found = FALSE;
+		gboolean found = FALSE;
+		const LogDesc *diter;
 
-			for (diter = &level_descs[0]; diter->name; diter++) {
-				if (!strcasecmp (diter->name, *iter)) {
-					new_level &= diter->num;
-					found = TRUE;
-					break;
-				}
-			}
-
-			if (!found) {
-				g_set_error (error, 0, 0, _("Unknown log level '%s'"), *iter);
-				return FALSE;
+		for (diter = &level_descs[0]; diter->name; diter++) {
+			if (!strcasecmp (diter->name, level)) {
+				log_level = diter->num;
+				found = TRUE;
+				break;
 			}
 		}
-		g_strfreev (tmp);
-		log_level = new_level;
+
+		if (!found) {
+			g_set_error (error, 0, 0, _("Unknown log level '%s'"), level);
+			return FALSE;
+		}
 	}
 
 	/* domains */
