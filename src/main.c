@@ -299,6 +299,8 @@ static gboolean
 parse_config_file (const char *filename,
                    char **plugins,
                    char **dhcp_client,
+                   char **log_level,
+                   char **log_domains,
                    GError **error)
 {
 	GKeyFile *config;
@@ -319,6 +321,9 @@ parse_config_file (const char *filename,
 		return FALSE;
 
 	*dhcp_client = g_key_file_get_value (config, "main", "dhcp", NULL);
+
+	*log_level = g_key_file_get_value (config, "main", "log-level", NULL);
+	*log_domains = g_key_file_get_value (config, "main", "log-domains", NULL);
 
 	g_key_file_free (config);
 	return TRUE;
@@ -446,6 +451,7 @@ main (int argc, char *argv[])
 	NMDHCPManager *dhcp_mgr = NULL;
 	GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
+	char *cfg_log_level = NULL, *cfg_log_domains = NULL;
 
 	GOptionEntry options[] = {
 		{ "no-daemon", 0, 0, G_OPTION_ARG_NONE, &become_daemon, "Don't become a daemon", NULL },
@@ -493,14 +499,6 @@ main (int argc, char *argv[])
 		exit (1);
 	}
 
-	/* Logging setup */
-	if (!nm_logging_setup (log_level, log_domains, &error)) {
-		fprintf (stderr,
-		         _("%s.  Please use --help to see a list of valid options.\n"),
-		         error->message);
-		exit (1);
-	}
-
 	pidfile = pidfile ? pidfile : g_strdup (NM_DEFAULT_PID_FILE);
 	state_file = state_file ? state_file : g_strdup (NM_DEFAULT_SYSTEM_STATE_FILE);
 
@@ -510,7 +508,7 @@ main (int argc, char *argv[])
 
 	/* Parse the config file */
 	if (config) {
-		if (!parse_config_file (config, &conf_plugins, &dhcp, &error)) {
+		if (!parse_config_file (config, &conf_plugins, &dhcp, &cfg_log_level, &cfg_log_domains, &error)) {
 			fprintf (stderr, "Config file %s invalid: (%d) %s\n",
 			         config,
 			         error ? error->code : -1,
@@ -523,7 +521,7 @@ main (int argc, char *argv[])
 		/* Try NetworkManager.conf first */
 		if (g_file_test (NM_DEFAULT_SYSTEM_CONF_FILE, G_FILE_TEST_EXISTS)) {
 			config = g_strdup (NM_DEFAULT_SYSTEM_CONF_FILE);
-			parsed = parse_config_file (config, &conf_plugins, &dhcp, &error);
+			parsed = parse_config_file (config, &conf_plugins, &dhcp, &cfg_log_level, &cfg_log_domains, &error);
 			if (!parsed) {
 				fprintf (stderr, "Default config file %s invalid: (%d) %s\n",
 				         config,
@@ -539,7 +537,7 @@ main (int argc, char *argv[])
 		/* Try old nm-system-settings.conf next */
 		if (!parsed) {
 			config = g_strdup (NM_OLD_SYSTEM_CONF_FILE);
-			if (!parse_config_file (config, &conf_plugins, &dhcp, &error)) {
+			if (!parse_config_file (config, &conf_plugins, &dhcp, &cfg_log_level, &cfg_log_domains, &error)) {
 				fprintf (stderr, "Default config file %s invalid: (%d) %s\n",
 				         config,
 				         error ? error->code : -1,
@@ -550,6 +548,16 @@ main (int argc, char *argv[])
 				/* Not a hard failure */
 			}
 		}
+	}
+
+	/* Logging setup */
+	if (!nm_logging_setup (log_level ? log_level : cfg_log_level,
+	                       log_domains ? log_domains : cfg_log_domains,
+	                       &error)) {
+		fprintf (stderr,
+		         _("%s.  Please use --help to see a list of valid options.\n"),
+		         error->message);
+		exit (1);
 	}
 
 	/* Plugins specified with '--plugins' override those of config file */
@@ -722,6 +730,10 @@ done:
 	g_free (config);
 	g_free (plugins);
 	g_free (dhcp);
+	g_free (log_level);
+	g_free (log_domains);
+	g_free (cfg_log_level);
+	g_free (cfg_log_domains);
 
 	nm_log_info (LOGD_CORE, "exiting (%s)", success ? "success" : "error");
 	exit (success ? 0 : 1);
