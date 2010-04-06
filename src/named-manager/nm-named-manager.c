@@ -38,7 +38,7 @@
 
 #include "nm-named-manager.h"
 #include "nm-ip4-config.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 #include "nm-system.h"
 #include "NetworkManagerUtils.h"
 
@@ -184,7 +184,7 @@ run_netconfig (GError **error, gint *stdin_fd)
 	argv[4] = NULL;
 
 	tmp = g_strjoinv (" ", argv);
-	nm_debug ("Spawning '%s'", tmp);
+	nm_log_debug (LOGD_DNS, "spawning '%s'", tmp);
 	g_free (tmp);
 
 	if (!g_spawn_async_with_pipes (NULL, argv, NULL, 0, netconfig_child_setup,
@@ -201,7 +201,7 @@ write_to_netconfig (gint fd, const char *key, const char *value)
 	int x;
 
 	str = g_strdup_printf ("%s='%s'\n", key, value);
-	nm_debug ("Writing to netconfig: %s", str);
+	nm_log_debug (LOGD_DNS, "writing to netconfig: %s", str);
 	x = write (fd, str, strlen (str));
 	g_free (str);
 }
@@ -326,7 +326,7 @@ write_resolv_conf (FILE *f, const char *domain,
 	}
 
 	if (fprintf (f, "%s%s%s",
-		     domain_str ? domain_str : "",
+	             domain_str ? domain_str : "",
 	             searches_str ? searches_str : "",
 	             nameservers_str ? nameservers_str : "") != -1)
 		retval = TRUE;
@@ -355,7 +355,7 @@ dispatch_resolvconf (const char *domain,
 
 	if (domain || searches || nameservers) {
 		cmd = g_strconcat (RESOLVCONF_PATH, " -a ", "NetworkManager", NULL);
-		nm_info ("(%s): writing resolv.conf to %s", iface, RESOLVCONF_PATH);
+		nm_log_info (LOGD_DNS, "(%s): writing resolv.conf to %s", iface, RESOLVCONF_PATH);
 		if ((f = popen (cmd, "w")) == NULL)
 			g_set_error (error,
 				     NM_NAMED_MANAGER_ERROR,
@@ -369,7 +369,7 @@ dispatch_resolvconf (const char *domain,
 		}
 	} else {
 		cmd = g_strconcat (RESOLVCONF_PATH, " -d ", "NetworkManager", NULL);
-		nm_info ("(%s): removing resolv.conf from %s", iface, RESOLVCONF_PATH);
+		nm_log_info (LOGD_DNS, "(%s): removing resolv.conf from %s", iface, RESOLVCONF_PATH);
 		if (nm_spawn_process (cmd) == 0)
 			retval = TRUE;
 	}
@@ -586,7 +586,7 @@ nm_named_manager_add_ip4_config (NMNamedManager *mgr,
 		priv->configs = g_slist_append (priv->configs, g_object_ref (config));
 
 	if (!rewrite_resolv_conf (mgr, iface, &error)) {
-		nm_warning ("Could not commit DNS changes.  Error: '%s'", error ? error->message : "(none)");
+		nm_log_warn (LOGD_DNS, "could not commit DNS changes: '%s'", error ? error->message : "(none)");
 		g_error_free (error);
 	}
 
@@ -622,7 +622,7 @@ nm_named_manager_remove_ip4_config (NMNamedManager *mgr,
 	g_object_unref (config);
 
 	if (!rewrite_resolv_conf (mgr, iface, &error)) {
-		nm_warning ("Could not commit DNS changes.  Error: '%s'", error ? error->message : "(none)");
+		nm_log_warn (LOGD_DNS, "could not commit DNS changes: '%s'", error ? error->message : "(none)");
 		if (error)
 			g_error_free (error);
 	}
@@ -652,7 +652,7 @@ nm_named_manager_add_ip6_config (NMNamedManager *mgr,
 		priv->configs = g_slist_append (priv->configs, g_object_ref (config));
 
 	if (!rewrite_resolv_conf (mgr, iface, &error)) {
-		nm_warning ("Could not commit DNS changes.  Error: '%s'", error ? error->message : "(none)");
+		nm_log_warn (LOGD_DNS, "could not commit DNS changes: '%s'", error ? error->message : "(none)");
 		g_error_free (error);
 	}
 
@@ -682,7 +682,7 @@ nm_named_manager_remove_ip6_config (NMNamedManager *mgr,
 	g_object_unref (config);	
 
 	if (!rewrite_resolv_conf (mgr, iface, &error)) {
-		nm_warning ("Could not commit DNS changes.  Error: '%s'", error ? error->message : "(none)");
+		nm_log_warn (LOGD_DNS, "could not commit DNS changes: '%s'", error ? error->message : "(none)");
 		if (error)
 			g_error_free (error);
 	}
