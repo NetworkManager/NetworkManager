@@ -120,6 +120,7 @@ write_one_setting (FILE *f, SettingNewFunc func)
 		value_desc = g_param_spec_get_blurb (*iter);
 
 		g_value_init (&value, G_PARAM_SPEC_VALUE_TYPE (*iter));
+		g_param_value_set_default (*iter, &value);
 		default_value = g_strdup_value_contents (&value);
 		if (default_value && !strcmp (default_value, "NULL")) {
 			g_free (default_value);
