@@ -38,8 +38,8 @@
 #include "nm-logging.h"
 #include "nm-utils.h"
 
-static guint32 log_level = LOGL_ERR;
-static guint32 log_domains = LOGD_CORE & LOGD_HW;
+static guint32 log_level = LOGL_INFO;
+static guint32 log_domains = LOGD_CORE | LOGD_HW;
 
 typedef struct {
 	guint32 num;
@@ -137,6 +137,7 @@ nm_logging_setup (const char *level, const char *domains, GError **error)
 		log_domains = new_domains;
 	}
 
+	fprintf (stdout, "NetworkManager: log level: 0x%04X log domains: 0x%08X\n", log_level, log_domains);
 	return TRUE;
 }
 
@@ -162,9 +163,9 @@ void _nm_log (const char *loc,
 		g_get_current_time (&tv);
 		syslog (LOG_DEBUG, "<debug> [%zu.%zu] [%s] %s(): %s\n", tv.tv_sec, tv.tv_usec, loc, func, msg);
 	} else if (log_level & LOGL_INFO)
-		syslog (LOG_INFO, "<info> [%s] %s(): %s\n", loc, func, msg);
+		syslog (LOG_INFO, "<info> %s\n", msg);
 	else if (log_level & LOGL_WARN)
-		syslog (LOG_WARNING, "<warn> [%s] %s(): %s\n", loc, func, msg);
+		syslog (LOG_WARNING, "<warn> %s\n", msg);
 	else if (log_level & LOGL_ERR) {
 		g_get_current_time (&tv);
 		syslog (LOG_ERR, "<error> [%zu.%zu] [%s] %s(): %s\n", tv.tv_sec, tv.tv_usec, loc, func, msg);
