@@ -237,18 +237,18 @@ write_pidfile (const char *pidfile)
 	gboolean success = FALSE;
  
 	if ((fd = open (pidfile, O_CREAT|O_WRONLY|O_TRUNC, 00644)) < 0) {
-		nm_warning ("Opening %s failed: %s", pidfile, strerror (errno));
+		fprintf (stderr, "Opening %s failed: %s", pidfile, strerror (errno));
 		return FALSE;
 	}
 
  	snprintf (pid, sizeof (pid), "%d", getpid ());
 	if (write (fd, pid, strlen (pid)) < 0)
-		nm_warning ("Writing to %s failed: %s", pidfile, strerror (errno));
+		fprintf (stderr, "Writing to %s failed: %s", pidfile, strerror (errno));
 	else
 		success = TRUE;
 
 	if (close (fd))
-		nm_warning ("Closing %s failed: %s", pidfile, strerror (errno));
+		fprintf (stderr, "Closing %s failed: %s", pidfile, strerror (errno));
 
 	return success;
 }
@@ -291,7 +291,7 @@ check_pidfile (const char *pidfile)
 	if (strcmp (process_name, "NetworkManager") == 0) {
 		/* Check that the process exists */
 		if (kill (pid, 0) == 0) {
-			g_warning ("NetworkManager is already running (pid %ld)", pid);
+			fprintf (stderr, "NetworkManager is already running (pid %ld)", pid);
 			nm_running = TRUE;
 		}
 	}
@@ -469,12 +469,12 @@ main (int argc, char *argv[])
 	};
 
 	if (getuid () != 0) {
-		g_printerr ("You must be root to run NetworkManager!\n");
+		fprintf (stderr, "You must be root to run NetworkManager!\n");
 		exit (1);
 	}
 
 	if (!g_module_supported ()) {
-		g_printerr ("GModules are not supported on your platform!");
+		fprintf (stderr, "GModules are not supported on your platform!");
 		exit (1);
 	}
 
@@ -518,10 +518,10 @@ main (int argc, char *argv[])
 	/* Parse the config file */
 	if (config) {
 		if (!parse_config_file (config, &conf_plugins, &dhcp, &error)) {
-			g_warning ("Config file %s invalid: (%d) %s.",
-			           config,
-			           error ? error->code : -1,
-			           (error && error->message) ? error->message : "unknown");
+			fprintf (stderr, "Config file %s invalid: (%d) %s.",
+			         config,
+			         error ? error->code : -1,
+			         (error && error->message) ? error->message : "unknown");
 			exit (1);
 		}
 	} else {
@@ -532,10 +532,10 @@ main (int argc, char *argv[])
 			config = g_strdup (NM_DEFAULT_SYSTEM_CONF_FILE);
 			parsed = parse_config_file (config, &conf_plugins, &dhcp, &error);
 			if (!parsed) {
-				g_warning ("Default config file %s invalid: (%d) %s.",
-				           config,
-				           error ? error->code : -1,
-				           (error && error->message) ? error->message : "unknown");
+				fprintf (stderr, "Default config file %s invalid: (%d) %s.",
+				         config,
+				         error ? error->code : -1,
+				         (error && error->message) ? error->message : "unknown");
 				g_free (config);
 				config = NULL;
 				g_clear_error (&error);
@@ -547,10 +547,10 @@ main (int argc, char *argv[])
 		if (!parsed) {
 			config = g_strdup (NM_OLD_SYSTEM_CONF_FILE);
 			if (!parse_config_file (config, &conf_plugins, &dhcp, &error)) {
-				g_warning ("Default config file %s invalid: (%d) %s.",
-				           config,
-				           error ? error->code : -1,
-				           (error && error->message) ? error->message : "unknown");
+				fprintf (stderr, "Default config file %s invalid: (%d) %s.",
+				         config,
+				         error ? error->code : -1,
+				         (error && error->message) ? error->message : "unknown");
 				g_free (config);
 				config = NULL;
 				g_clear_error (&error);
@@ -565,10 +565,10 @@ main (int argc, char *argv[])
 
 	/* Parse the state file */
 	if (!parse_state_file (state_file, &net_enabled, &wifi_enabled, &wwan_enabled, &error)) {
-		g_warning ("State file %s parsing failed: (%d) %s.",
-		           state_file,
-		           error ? error->code : -1,
-		           (error && error->message) ? error->message : "unknown");
+		fprintf (stderr, "State file %s parsing failed: (%d) %s.",
+		         state_file,
+		         error ? error->code : -1,
+		         (error && error->message) ? error->message : "unknown");
 		/* Not a hard failure */
 	}
 	g_clear_error (&error);
@@ -582,9 +582,9 @@ main (int argc, char *argv[])
 			int saved_errno;
 
 			saved_errno = errno;
-			nm_error ("Could not daemonize: %s [error %u]",
-			          g_strerror (saved_errno),
-			          saved_errno);
+			fprintf (stderr, "Could not daemonize: %s [error %u]",
+			         g_strerror (saved_errno),
+			         saved_errno);
 			exit (1);
 		}
 		if (write_pidfile (pidfile))
