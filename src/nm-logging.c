@@ -137,7 +137,6 @@ nm_logging_setup (const char *level, const char *domains, GError **error)
 		log_domains = new_domains;
 	}
 
-	fprintf (stdout, "NetworkManager: log level: 0x%04X log domains: 0x%08X\n", log_level, log_domains);
 	return TRUE;
 }
 
