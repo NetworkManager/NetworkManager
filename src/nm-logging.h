@@ -58,6 +58,18 @@ enum {
 	LOGL_DEBUG = 0x00000004
 };
 
+#define nm_log_err(domain, fmt, args...) \
+	{ _nm_log (G_STRFUNC, G_STRLOC, domain, LOGL_ERR, fmt, ##args); }
+
+#define nm_log_warn(domain, fmt, args...) \
+	{ _nm_log (G_STRFUNC, G_STRLOC, domain, LOGL_WARN, fmt, ##args); }
+
+#define nm_log_info(domain, fmt, args...) \
+	{ _nm_log (G_STRFUNC, G_STRLOC, domain, LOGL_INFO, fmt, ##args); }
+
+#define nm_log_dbg(domain, fmt, args...) \
+	{ _nm_log (G_STRFUNC, G_STRLOC, domain, LOGL_DEBUG, fmt, ##args); }
+
 #define nm_log(domain, level, fmt, args...) \
 	{ _nm_log (G_STRFUNC, G_STRLOC, domain, level, fmt, ##args); }
 
