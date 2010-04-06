@@ -476,6 +476,8 @@ do_connections_list (NmCli *nmc, int argc, char **argv)
 					return nmc->return_value;
 				}
 				valid_param_specified = TRUE;
+				if (!nmc->mode_specified)
+					nmc->multiline_output = TRUE;  /* multiline mode is default for 'con list id|uuid' */
 
 				con1 = find_connection (nmc->system_connections, selector, *argv);
 				con2 = find_connection (nmc->user_connections, selector, *argv);

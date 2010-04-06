@@ -66,7 +66,7 @@ usage (const char *prog_name)
 	         "OPTIONS\n"
 	         "  -t[erse]                                   terse output\n"
 	         "  -p[retty]                                  pretty output\n"
-	         "  -m[ultiline]                               multiline output\n"
+	         "  -m[ode] tabular|multiline                  output mode\n"
 	         "  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
 	         "  -e[scape] yes|no                           escape columns separators in values\n"
 	         "  -v[ersion]                                 show program version\n"
@@ -160,8 +160,23 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 			}
 			else
 				nmc->print_output = NMC_PRINT_PRETTY;
-		} else if (matches (opt, "-multiline") == 0) {
-			nmc->multiline_output = TRUE;
+		} else if (matches (opt, "-mode") == 0) {
+			nmc->mode_specified = TRUE;
+			next_arg (&argc, &argv);
+			if (argc <= 1) {
+		 		g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return nmc->return_value;
+			}
+			if (!strcmp (argv[1], "tabular"))
+				nmc->multiline_output = FALSE;
+			else if (!strcmp (argv[1], "multiline"))
+				nmc->multiline_output = TRUE;
+			else {
+		 		g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[1], opt);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return nmc->return_value;
+			}
 		} else if (matches (opt, "-escape") == 0) {
 			next_arg (&argc, &argv);
 			if (argc <= 1) {
@@ -269,6 +284,7 @@ nmc_init (NmCli *nmc)
 	nmc->should_wait = FALSE;
 	nmc->print_output = NMC_PRINT_NORMAL;
 	nmc->multiline_output = FALSE;
+	nmc->mode_specified = FALSE;
 	nmc->escape_values = TRUE;
 	nmc->required_fields = NULL;
 	nmc->allowed_fields = NULL;

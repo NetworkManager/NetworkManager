@@ -104,6 +104,7 @@ typedef struct _NmCli {
 	gboolean should_wait;                             /* Indication that nmcli should not end yet */
 	NMCPrintOutput print_output;                      /* Output mode */
 	gboolean multiline_output;                        /* Multiline output instead of default tabular */
+	gboolean mode_specified;                          /* Whether tabular/multiline mode was specified via '--mode' option */
 	gboolean escape_values;                           /* Whether to escape ':' and '\' in terse tabular mode */
 	char *required_fields;                            /* Required fields in output: '--fields' option */
 	NmcOutputField *allowed_fields;                   /* Array of allowed fields for particular commands */

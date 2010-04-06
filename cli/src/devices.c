@@ -1164,6 +1164,8 @@ do_devices (NmCli *nmc, int argc, char **argv)
 			nmc->return_value = do_devices_status (nmc, argc-1, argv+1);
 		}
 		else if (matches (*argv, "list") == 0) {
+			if (!nmc->mode_specified)
+				nmc->multiline_output = TRUE;  /* multiline mode is default for 'dev list' */
 			nmc->return_value = do_devices_list (nmc, argc-1, argv+1);
 		}
 		else if (matches (*argv, "disconnect") == 0) {
