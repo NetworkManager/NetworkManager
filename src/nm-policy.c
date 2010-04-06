@@ -803,9 +803,15 @@ device_state_changed (NMDevice *device,
 		schedule_activate_check (policy, device, 3);
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
-		/* Clear the invalid tag on the connection */
-		if (connection)
+		if (connection) {
+			/* Clear the invalid tag on the connection */
 			g_object_set_data (G_OBJECT (connection), INVALID_TAG, NULL);
+
+			/* And clear secrets so they will always be requested from the
+			 * settings service when the next connection is made.
+			 */
+			nm_connection_clear_secrets (connection);
+		}
 
 		update_routing_and_dns (policy, FALSE);
 		break;
