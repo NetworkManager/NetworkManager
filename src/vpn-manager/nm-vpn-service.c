@@ -29,7 +29,7 @@
 
 #include "nm-vpn-service.h"
 #include "nm-dbus-manager.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 #include "nm-vpn-manager.h"
 #include "nm-glib-compat.h"
 
@@ -198,18 +198,20 @@ vpn_service_watch_cb (GPid pid, gint status, gpointer user_data)
 	if (WIFEXITED (status)) {
 		guint err = WEXITSTATUS (status);
 
-		if (err != 0)
-			nm_warning ("VPN service '%s' exited with error: %d",
-					  nm_vpn_service_get_name (service), WSTOPSIG (status));
-	} else if (WIFSTOPPED (status))
-		nm_warning ("VPN service '%s' stopped unexpectedly with signal %d",
-				  nm_vpn_service_get_name (service), WSTOPSIG (status));
-	else if (WIFSIGNALED (status))
-		nm_warning ("VPN service '%s' died with signal %d",
-				  nm_vpn_service_get_name (service), WTERMSIG (status));
-	else
-		nm_warning ("VPN service '%s' died from an unknown cause", 
-				  nm_vpn_service_get_name (service));
+		if (err != 0) {
+			nm_log_warn (LOGD_VPN, "VPN service '%s' exited with error: %d",
+			             nm_vpn_service_get_name (service), WSTOPSIG (status));
+		}
+	} else if (WIFSTOPPED (status)) {
+		nm_log_warn (LOGD_VPN, "VPN service '%s' stopped unexpectedly with signal %d",
+		             nm_vpn_service_get_name (service), WSTOPSIG (status));
+	} else if (WIFSIGNALED (status)) {
+		nm_log_warn (LOGD_VPN, "VPN service '%s' died with signal %d",
+		             nm_vpn_service_get_name (service), WTERMSIG (status));
+	} else {
+		nm_log_warn (LOGD_VPN, "VPN service '%s' died from an unknown cause", 
+		             nm_vpn_service_get_name (service));
+	}
 
 	priv->pid = 0;
 	priv->service_child_watch = 0;
@@ -222,8 +224,8 @@ nm_vpn_service_timeout (gpointer data)
 {
 	NMVPNService *service = NM_VPN_SERVICE (data);
 
-	nm_info ("VPN service '%s' did not start in time, cancelling connections",
-		    nm_vpn_service_get_name (service));
+	nm_log_warn (LOGD_VPN, "VPN service '%s' did not start in time, cancelling connections",
+	             nm_vpn_service_get_name (service));
 
 	NM_VPN_SERVICE_GET_PRIVATE (service)->service_start_timeout = 0;
 	nm_vpn_service_connections_stop (service, TRUE, NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_TIMEOUT);
@@ -250,14 +252,14 @@ nm_vpn_service_daemon_exec (NMVPNService *service, GError **error)
 	                         nm_vpn_service_child_setup, NULL, &priv->pid,
 	                         &spawn_error);
 	if (success) {
-		nm_info ("VPN service '%s' started (%s), PID %d", 
-		         nm_vpn_service_get_name (service), priv->dbus_service, priv->pid);
+		nm_log_info (LOGD_VPN, "VPN service '%s' started (%s), PID %d", 
+		             nm_vpn_service_get_name (service), priv->dbus_service, priv->pid);
 
 		priv->service_child_watch = g_child_watch_add (priv->pid, vpn_service_watch_cb, service);
 		priv->service_start_timeout = g_timeout_add_seconds (5, nm_vpn_service_timeout, service);
 	} else {
-		nm_warning ("VPN service '%s': could not launch the VPN service. error: (%d) %s.",
-		            nm_vpn_service_get_name (service), spawn_error->code, spawn_error->message);
+		nm_log_warn (LOGD_VPN, "VPN service '%s': could not launch the VPN service. error: (%d) %s.",
+		             nm_vpn_service_get_name (service), spawn_error->code, spawn_error->message);
 
 		g_set_error (error,
 		             NM_VPN_MANAGER_ERROR, NM_VPN_MANAGER_ERROR_SERVICE_START_FAILED,
@@ -334,7 +336,8 @@ nm_vpn_service_activate (NMVPNService *service,
 		// FIXME: fill in error when errors happen
 		nm_vpn_connection_activate (vpn);
 	} else if (priv->service_start_timeout == 0) {
-		nm_info ("Starting VPN service '%s'...", nm_vpn_service_get_name (service));
+		nm_log_info (LOGD_VPN, "Starting VPN service '%s'...",
+		             nm_vpn_service_get_name (service));
 		if (!nm_vpn_service_daemon_exec (service, error))
 			vpn = NULL;
 	}
@@ -378,16 +381,16 @@ nm_vpn_service_name_owner_changed (NMDBusManager *mgr,
 		/* service just appeared */
 		GSList *iter;
 
-		nm_info ("VPN service '%s' just appeared, activating connections",
-			    nm_vpn_service_get_name (service));
+		nm_log_info (LOGD_VPN, "VPN service '%s' appeared, activating connections",
+		             nm_vpn_service_get_name (service));
 
 		for (iter = priv->connections; iter; iter = iter->next)
 			nm_vpn_connection_activate (NM_VPN_CONNECTION (iter->data));
 
 	} else if (old_owner_good && !new_owner_good) {
 		/* service went away */
-		nm_info ("VPN service '%s' disappeared, cancelling connections",
-			    nm_vpn_service_get_name (service));
+		nm_log_info (LOGD_VPN, "VPN service '%s' disappeared, cancelling connections",
+		             nm_vpn_service_get_name (service));
 		nm_vpn_service_connections_stop (service, TRUE, NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
 	}
 }
@@ -415,9 +418,9 @@ ensure_killed (gpointer data)
 		kill (pid, SIGKILL);
 
 	/* ensure the child is reaped */
-	nm_debug ("waiting for vpn service pid %d to exit", pid);
+	nm_log_dbg (LOGD_VPN, "waiting for VPN service pid %d to exit", pid);
 	waitpid (pid, NULL, 0);
-	nm_debug ("vpn service pid %d cleaned up", pid);
+	nm_log_dbg (LOGD_VPN, "VPN service pid %d cleaned up", pid);
 
 	return FALSE;
 }
@@ -446,9 +449,9 @@ finalize (GObject *object)
 			kill (priv->pid, SIGKILL);
 
 			/* ensure the child is reaped */
-			nm_debug ("waiting for vpn service pid %d to exit", priv->pid);
+			nm_log_dbg (LOGD_VPN, "waiting for VPN service pid %d to exit", priv->pid);
 			waitpid (priv->pid, NULL, 0);
-			nm_debug ("vpn service pid %d cleaned up", priv->pid);
+			nm_log_dbg (LOGD_VPN, "VPN service pid %d cleaned up", priv->pid);
 		}
 
 		priv->pid = 0;

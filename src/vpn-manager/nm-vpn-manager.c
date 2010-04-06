@@ -27,7 +27,6 @@
 #include "nm-setting-vpn.h"
 #include "nm-dbus-manager.h"
 #include "NetworkManagerVPN.h"
-#include "nm-utils.h"
 #include "nm-marshal.h"
 
 G_DEFINE_TYPE (NMVPNManager, nm_vpn_manager, G_TYPE_OBJECT)
