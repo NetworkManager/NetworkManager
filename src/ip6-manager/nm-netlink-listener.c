@@ -45,7 +45,6 @@
 #include "NetworkManager.h"
 #include "nm-system.h"
 #include "nm-netlink-listener.h"
-#include "nm-utils.h"
 #include "nm-marshal.h"
 #include "nm-netlink.h"
 
