@@ -60,8 +60,6 @@ static gboolean impl_device_get_access_points (NMDeviceWifi *device,
 #include "nm-device-wifi-glue.h"
 
 
-/* #define IW_QUAL_DEBUG */
-
 /* All of these are in seconds */
 #define SCAN_INTERVAL_MIN 0
 #define SCAN_INTERVAL_STEP 20
@@ -1475,17 +1473,16 @@ wireless_qual_to_percent (const struct iw_quality *qual,
 	g_return_val_if_fail (qual != NULL, -1);
 	g_return_val_if_fail (max_qual != NULL, -1);
 
-#ifdef IW_QUAL_DEBUG
-nm_debug ("QL: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X, updated: 0x%X  ** MAX: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X, updated: 0x%X",
-(__s8)qual->qual, qual->qual, qual->qual,
-(__s8)qual->level, qual->level, qual->level,
-(__s8)qual->noise, qual->noise, qual->noise,
-qual->updated,
-(__s8)max_qual->qual, max_qual->qual, max_qual->qual,
-(__s8)max_qual->level, max_qual->level, max_qual->level,
-(__s8)max_qual->noise, max_qual->noise, max_qual->noise,
-max_qual->updated);
-#endif
+	nm_log_dbg (LOGD_WIFI,
+	            "QL: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X, updated: 0x%X  ** MAX: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X, updated: 0x%X",
+	            (__s8) qual->qual, qual->qual, qual->qual,
+	            (__s8) qual->level, qual->level, qual->level,
+	            (__s8) qual->noise, qual->noise, qual->noise,
+	            qual->updated,
+	            (__s8) max_qual->qual, max_qual->qual, max_qual->qual,
+	            (__s8) max_qual->level, max_qual->level, max_qual->level,
+	            (__s8) max_qual->noise, max_qual->noise, max_qual->noise,
+	            max_qual->updated);
 
 	/* Try using the card's idea of the signal quality first as long as it tells us what the max quality is.
 	 * Drivers that fill in quality values MUST treat them as percentages, ie the "Link Quality" MUST be 
@@ -1510,8 +1507,7 @@ max_qual->updated);
 		&& !(qual->updated & IW_QUAL_LEVEL_INVALID)                                     /* Must have valid qual->level */
 		&& (    ((max_qual->noise > 0) && !(max_qual->updated & IW_QUAL_NOISE_INVALID)) /* Must have valid max_qual->noise */
 			|| ((qual->noise > 0) && !(qual->updated & IW_QUAL_NOISE_INVALID)))     /*    OR valid qual->noise */
-	   )
-	{
+	   ) {
 		/* Absolute power values (dBm) */
 
 		/* Reasonable fallbacks for dumb drivers that don't specify either level. */
@@ -1533,9 +1529,8 @@ max_qual->updated);
 		level_percent = (int)(100 - 70 *(
 		                                ((double)max_level - (double)level) /
 		                                ((double)max_level - (double)noise)));
-#ifdef IW_QUAL_DEBUG
-		nm_debug ("QL1: level_percent is %d.  max_level %d, level %d, noise_floor %d.", level_percent, max_level, level, noise);
-#endif
+		nm_log_dbg (LOGD_WIFI, "QL1: level_percent is %d.  max_level %d, level %d, noise_floor %d.",
+		            level_percent, max_level, level, noise);
 	} else if (   (max_qual->level != 0)
 	           && !(max_qual->updated & IW_QUAL_LEVEL_INVALID) /* Valid max_qual->level as upper bound */
 	           && !(qual->updated & IW_QUAL_LEVEL_INVALID)) {
@@ -1546,24 +1541,18 @@ max_qual->updated);
 		/* Signal level is relavtive (0 -> max_qual->level) */
 		level = CLAMP (level, 0, max_qual->level);
 		level_percent = (int)(100 * ((double)level / (double)max_qual->level));
-#ifdef IW_QUAL_DEBUG
-		nm_debug ("QL2: level_percent is %d.  max_level %d, level %d.", level_percent, max_qual->level, level);
-#endif
-	}
-	else if (percent == -1)
-	{
-#ifdef IW_QUAL_DEBUG
-		nm_debug ("QL: Could not get quality %% value from driver.  Driver is probably buggy.");
-#endif
+		nm_log_dbg (LOGD_WIFI, "QL2: level_percent is %d.  max_level %d, level %d.",
+		            level_percent, max_qual->level, level);
+	} else if (percent == -1) {
+		nm_log_dbg (LOGD_WIFI, "QL: Could not get quality %% value from driver.  Driver is probably buggy.");
 	}
 
 	/* If the quality percent was 0 or doesn't exist, then try to use signal levels instead */
 	if ((percent < 1) && (level_percent >= 0))
 		percent = level_percent;
 
-#ifdef IW_QUAL_DEBUG
-	nm_debug ("QL: Final quality percent is %d (%d).", percent, CLAMP (percent, 0, 100));
-#endif
+	nm_log_dbg (LOGD_WIFI, "QL: Final quality percent is %d (%d).",
+	            percent, CLAMP (percent, 0, 100));
 	return (CLAMP (percent, 0, 100));
 }
 
