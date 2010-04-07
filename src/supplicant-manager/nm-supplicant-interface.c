@@ -25,7 +25,7 @@
 
 #include "nm-supplicant-interface.h"
 #include "nm-supplicant-manager.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 #include "nm-marshal.h"
 #include "nm-supplicant-config.h"
 #include "nm-dbus-manager.h"
@@ -498,8 +498,10 @@ bssid_properties_cb  (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_
 	if (!dbus_g_proxy_end_call (proxy, call_id, &err,
 	                            DBUS_TYPE_G_MAP_OF_VARIANT, &hash,
 	                            G_TYPE_INVALID)) {
-		if (!strstr (err->message, "The BSSID requested was invalid"))
-			nm_warning ("Couldn't retrieve BSSID properties: %s.", err->message);
+		if (!strstr (err->message, "The BSSID requested was invalid")) {
+			nm_log_warn (LOGD_SUPPLICANT, "Couldn't retrieve BSSID properties: %s.",
+			             err->message);
+		}
 		g_error_free (err);
 	} else {
 		g_signal_emit (info->interface,
@@ -543,7 +545,7 @@ scan_results_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 	if (!dbus_g_proxy_end_call (proxy, call_id, &err,
 	                            DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH, &array,
 	                            G_TYPE_INVALID)) {
-		nm_warning ("could not get scan results: %s.", err->message);
+		nm_log_warn (LOGD_SUPPLICANT, "could not get scan results: %s.", err->message);
 		g_error_free (err);
 	} else {
 		int i;
@@ -672,7 +674,7 @@ iface_state_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 	if (!dbus_g_proxy_end_call (proxy, call_id, &err,
 	                            G_TYPE_STRING, &state_str,
 	                            G_TYPE_INVALID)) {
-		nm_warning ("could not get interface state: %s.", err->message);
+		nm_log_warn (LOGD_SUPPLICANT, "could not get interface state: %s.", err->message);
 		g_error_free (err);
 	} else {
 		NMSupplicantInfo *info = (NMSupplicantInfo *) user_data;
@@ -780,7 +782,8 @@ nm_supplicant_interface_add_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpoi
 			/* Interface already added, just try to get the interface */
 			nm_supplicant_interface_add_to_supplicant (info->interface, TRUE);
 		} else {
-			nm_warning ("Unexpected supplicant error getting interface: %s", err->message);
+			nm_log_warn (LOGD_SUPPLICANT, "Unexpected supplicant error getting interface: %s",
+			             err->message);
 		}
 
 		g_error_free (err);
@@ -893,7 +896,7 @@ nm_supplicant_interface_start (NMSupplicantInterface * self)
 		 * that its state has changed.
 		 */
 	} else
-		nm_warning ("Unknown supplicant manager state!");
+		nm_log_warn (LOGD_SUPPLICANT, "Unknown supplicant manager state!");
 }
 
 static void
@@ -914,7 +917,7 @@ nm_supplicant_interface_handle_supplicant_manager_idle_state (NMSupplicantInterf
 			/* Don't do anything here; interface can't get out of DOWN state */
 			break;
 		default:
-			nm_warning ("Unknown supplicant interface state!");
+			nm_log_warn (LOGD_SUPPLICANT, "Unknown supplicant interface state!");
 			break;
 	}
 }
@@ -970,7 +973,7 @@ nm_supplicant_interface_smgr_state_changed (NMSupplicantManager * smgr,
 			nm_supplicant_interface_handle_supplicant_manager_idle_state (self);
 			break;
 		default:
-			nm_warning ("Unknown supplicant manager state!");
+			nm_log_warn (LOGD_SUPPLICANT, "Unknown supplicant manager state!");
 			break;
 	}
 }
@@ -983,7 +986,8 @@ remove_network_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_dat
 	guint tmp;
 
 	if (!dbus_g_proxy_end_call (proxy, call_id, &err, G_TYPE_UINT, &tmp, G_TYPE_INVALID)) {
-		nm_warning ("Couldn't remove network from supplicant interface: %s.", err->message);
+		nm_log_dbg (LOGD_SUPPLICANT, "Couldn't remove network from supplicant interface: %s.",
+		            err->message);
 		g_error_free (err);
 	}
 }
@@ -995,7 +999,8 @@ disconnect_cb  (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 	guint tmp;
 
 	if (!dbus_g_proxy_end_call (proxy, call_id, &err, G_TYPE_UINT, &tmp, G_TYPE_INVALID)) {
-		nm_warning ("Couldn't disconnect supplicant interface: %s.", err->message);
+		nm_log_warn (LOGD_SUPPLICANT, "Couldn't disconnect supplicant interface: %s.",
+		             err->message);
 		g_error_free (err);
 	}
 }
@@ -1057,7 +1062,7 @@ select_network_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_dat
 	guint tmp;
 
 	if (!dbus_g_proxy_end_call (proxy, call_id, &err, G_TYPE_UINT, &tmp, G_TYPE_INVALID)) {
-		nm_warning ("Couldn't select network config: %s.", err->message);
+		nm_log_warn (LOGD_SUPPLICANT, "Couldn't select network config: %s.", err->message);
 		emit_error_helper (info->interface, err);
 		g_error_free (err);
 	}
@@ -1072,7 +1077,7 @@ set_network_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 	guint tmp;
 
 	if (!dbus_g_proxy_end_call (proxy, call_id, &err, G_TYPE_UINT, &tmp, G_TYPE_INVALID)) {
-		nm_warning ("Couldn't set network config: %s.", err->message);
+		nm_log_warn (LOGD_SUPPLICANT, "Couldn't set network config: %s.", err->message);
 		emit_error_helper (info->interface, err);
 		g_error_free (err);
 	} else {
@@ -1116,7 +1121,7 @@ set_blobs_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 	guint tmp;
 
 	if (!dbus_g_proxy_end_call (proxy, call_id, &err, G_TYPE_UINT, &tmp, G_TYPE_INVALID)) {
-		nm_warning ("Couldn't set network blobs: %s.", err->message);
+		nm_log_warn (LOGD_SUPPLICANT, "Couldn't set network certificates: %s.", err->message);
 		emit_error_helper (info->interface, err);
 		g_error_free (err);
 	} else {
@@ -1165,7 +1170,8 @@ call_set_blobs (NMSupplicantInfo *info, GHashTable *orig_blobs)
 	                               (GDestroyNotify) blob_free);
 	if (!blobs) {
 		const char *msg = "Not enough memory to create blob table.";
-		nm_warning ("%s", msg);
+
+		nm_log_warn (LOGD_SUPPLICANT, "%s", msg);
 		g_signal_emit (info->interface,
 		               nm_supplicant_interface_signals[CONNECTION_ERROR],
 		               0, "SendBlobError", msg);
@@ -1194,7 +1200,8 @@ add_network_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 	if (!dbus_g_proxy_end_call (proxy, call_id, &err,
 	                            DBUS_TYPE_G_OBJECT_PATH, &path,
 	                            G_TYPE_INVALID)) {
-		nm_warning ("Couldn't add a network to the supplicant interface: %s.", err->message);
+		nm_log_warn (LOGD_SUPPLICANT, "Couldn't add a network to the supplicant interface: %s.",
+		             err->message);
 		emit_error_helper (info->interface, err);
 		g_error_free (err);
 	} else {
@@ -1225,22 +1232,21 @@ static void
 set_ap_scan_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 {
 	NMSupplicantInfo *info = (NMSupplicantInfo *) user_data;
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (info->interface);
 	GError *err = NULL;
 	guint32 tmp;
 	DBusGProxyCall *call;
 
 	if (!dbus_g_proxy_end_call (proxy, call_id, &err, G_TYPE_UINT, &tmp, G_TYPE_INVALID)) {
-		nm_warning ("Couldn't send AP scan mode to the supplicant interface: %s.", err->message);
+		nm_log_warn (LOGD_SUPPLICANT, "Couldn't send AP scan mode to the supplicant interface: %s.",
+		             err->message);
 		emit_error_helper (info->interface, err);
 		g_error_free (err);
 		return;
 	}
 
-{
-NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (info->interface);
-int ap_scan = nm_supplicant_config_get_ap_scan (priv->cfg);
-nm_info ("Config: set interface ap_scan to %d", ap_scan);
-}
+	nm_log_info (LOGD_SUPPLICANT, "Config: set interface ap_scan to %d",
+	             nm_supplicant_config_get_ap_scan (priv->cfg));
 
 	info = nm_supplicant_info_new (info->interface, proxy, info->store);
 	call = dbus_g_proxy_begin_call (proxy, "addNetwork",
@@ -1306,7 +1312,7 @@ scan_request_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 	if (!dbus_g_proxy_end_call (proxy, call_id, &err,
 	                            G_TYPE_UINT, &success,
 	                            G_TYPE_INVALID)) {
-		nm_warning  ("Could not get scan request result: %s", err->message);
+		nm_log_warn (LOGD_SUPPLICANT, "Could not get scan request result: %s", err->message);
 		g_error_free (err);
 	} 
 

@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2006 - 2008 Red Hat, Inc.
+ * Copyright (C) 2006 - 2010 Red Hat, Inc.
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
@@ -31,7 +31,7 @@
 
 #include "nm-supplicant-config.h"
 #include "nm-supplicant-settings-verify.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 #include "nm-setting.h"
 #include "NetworkManagerUtils.h"
 
@@ -123,26 +123,26 @@ nm_supplicant_config_add_option_with_type (NMSupplicantConfig *self,
 			char buf[255];
 			memset (&buf[0], 0, sizeof (buf));
 			memcpy (&buf[0], value, len > 254 ? 254 : len);
-			nm_debug ("Key '%s' and/or value '%s' invalid.", key, buf);
+			nm_log_warn (LOGD_SUPPLICANT, "Key '%s' and/or value '%s' invalid.", key, buf);
 			return FALSE;
 		}
 	}
 
 	old_opt = (ConfigOption *) g_hash_table_lookup (priv->config, key);
 	if (old_opt) {
-		nm_debug ("Key '%s' already in table.", key);
+		nm_log_warn (LOGD_SUPPLICANT, "Key '%s' already in table.", key);
 		return FALSE;
 	}
 
 	opt = g_slice_new0 (ConfigOption);
 	if (opt == NULL) {
-		nm_debug ("Couldn't allocate memory for new config option.");
+		nm_log_warn (LOGD_SUPPLICANT, "Couldn't allocate memory for new config option.");
 		return FALSE;
 	}
 
 	opt->value = g_malloc0 ((sizeof (char) * len) + 1);
 	if (opt->value == NULL) {
-		nm_debug ("Couldn't allocate memory for new config option value.");
+		nm_log_warn (LOGD_SUPPLICANT, "Couldn't allocate memory for new config option value.");
 		g_slice_free (ConfigOption, opt);
 		return FALSE;
 	}
@@ -151,12 +151,13 @@ nm_supplicant_config_add_option_with_type (NMSupplicantConfig *self,
 	opt->len = len;
 	opt->type = type;	
 
-{
-char buf[255];
-memset (&buf[0], 0, sizeof (buf));
-memcpy (&buf[0], opt->value, opt->len > 254 ? 254 : opt->len);
-nm_info ("Config: added '%s' value '%s'", key, secret ? "<omitted>" : &buf[0]);
-}
+	{
+		char buf[255];
+		memset (&buf[0], 0, sizeof (buf));
+		memcpy (&buf[0], opt->value, opt->len > 254 ? 254 : opt->len);
+		nm_log_info (LOGD_SUPPLICANT, "Config: added '%s' value '%s'", key, secret ? "<omitted>" : &buf[0]);
+	}
+
 	g_hash_table_insert (priv->config, g_strdup (key), opt);
 
 	return TRUE;
@@ -194,33 +195,33 @@ nm_supplicant_config_add_blob (NMSupplicantConfig *self,
 
 	type = nm_supplicant_settings_verify_setting (key, (const char *) value->data, value->len);
 	if (type == TYPE_INVALID) {
-		nm_debug ("Key '%s' and/or it's contained value is invalid.", key);
+		nm_log_warn (LOGD_SUPPLICANT, "Key '%s' and/or it's contained value is invalid.", key);
 		return FALSE;
 	}
 
 	old_opt = (ConfigOption *) g_hash_table_lookup (priv->config, key);
 	if (old_opt) {
-		nm_debug ("Key '%s' already in table.", key);
+		nm_log_warn (LOGD_SUPPLICANT, "Key '%s' already in table.", key);
 		return FALSE;
 	}
 
 	blob = g_byte_array_sized_new (value->len);
 	if (!blob) {
-		nm_debug ("Couldn't allocate memory for new config blob.");
+		nm_log_warn (LOGD_SUPPLICANT, "Couldn't allocate memory for new config blob.");
 		return FALSE;
 	}
 	g_byte_array_append (blob, value->data, value->len);
 
 	opt = g_slice_new0 (ConfigOption);
 	if (opt == NULL) {
-		nm_debug ("Couldn't allocate memory for new config option.");
+		nm_log_warn (LOGD_SUPPLICANT, "Couldn't allocate memory for new config option.");
 		g_byte_array_free (blob, TRUE);
 		return FALSE;
 	}
 
 	opt->value = g_strdup_printf ("blob://%s", blobid);
 	if (opt->value == NULL) {
-		nm_debug ("Couldn't allocate memory for new config option value.");
+		nm_log_warn (LOGD_SUPPLICANT, "Couldn't allocate memory for new config option value.");
 		g_byte_array_free (blob, TRUE);
 		g_slice_free (ConfigOption, opt);
 		return FALSE;
@@ -229,7 +230,7 @@ nm_supplicant_config_add_blob (NMSupplicantConfig *self,
 	opt->len = strlen (opt->value);
 	opt->type = type;	
 
-nm_info ("Config: added '%s' value '%s'", key, opt->value);
+	nm_log_info (LOGD_SUPPLICANT, "Config: added '%s' value '%s'", key, opt->value);
 
 	g_hash_table_insert (priv->config, g_strdup (key), opt);
 	g_hash_table_insert (priv->blobs, g_strdup (blobid), blob);
@@ -378,13 +379,13 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 
 	id = nm_setting_wireless_get_ssid (setting);
 	if (!nm_supplicant_config_add_option (self, "ssid", (char *) id->data, id->len, FALSE)) {
-		nm_warning ("Error adding SSID to supplicant config.");
+		nm_log_warn (LOGD_SUPPLICANT, "Error adding SSID to supplicant config.");
 		return FALSE;
 	}
 
 	if (is_adhoc) {
 		if (!nm_supplicant_config_add_option (self, "mode", "1", -1, FALSE)) {
-			nm_warning ("Error adding mode to supplicant config.");
+			nm_log_warn (LOGD_SUPPLICANT, "Error adding mode to supplicant config.");
 			return FALSE;
 		}
 
@@ -394,7 +395,7 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 			str_freq = g_strdup_printf ("%u", adhoc_freq);
 			if (!nm_supplicant_config_add_option (self, "frequency", str_freq, -1, FALSE)) {
 				g_free (str_freq);
-				nm_warning ("Error adding Ad-Hoc frequency to supplicant config.");
+				nm_log_warn (LOGD_SUPPLICANT, "Error adding Ad-Hoc frequency to supplicant config.");
 				return FALSE;
 			}
 			g_free (str_freq);
@@ -418,7 +419,7 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 		                                      str_bssid, strlen (str_bssid),
 		                                      FALSE)) {
 			g_free (str_bssid);
-			nm_warning ("Error adding BSSID to supplicant config.");
+			nm_log_warn (LOGD_SUPPLICANT, "Error adding BSSID to supplicant config.");
 			return FALSE;
 		}
 		g_free (str_bssid);
@@ -445,7 +446,7 @@ add_string_val (NMSupplicantConfig *self,
 	value = ucase ? g_ascii_strup (field, -1) : g_strdup (field);
 	success = nm_supplicant_config_add_option (self, name, value, strlen (field), secret);
 	if (!success)
-		nm_warning ("Error adding %s to supplicant config.", name);
+		nm_log_warn (LOGD_SUPPLICANT, "Error adding %s to supplicant config.", name);
 	g_free (value);
 	return success;
 }
@@ -471,7 +472,7 @@ add_string_val (NMSupplicantConfig *self,
 			success = TRUE; \
 		g_string_free (str, TRUE); \
 		if (!success) { \
-			nm_warning ("Error adding %s to supplicant config.", name); \
+			nm_log_warn (LOGD_SUPPLICANT, "Error adding %s to supplicant config.", name); \
 			return FALSE; \
 		} \
 	}
@@ -494,7 +495,7 @@ get_blob_id (const char *name, const char *seed_uid)
 		success = nm_supplicant_config_add_blob (self, name, field, uid); \
 		g_free (uid); \
 		if (!success) { \
-			nm_warning ("Error adding %s to supplicant config.", name); \
+			nm_log_warn (LOGD_SUPPLICANT, "Error adding %s to supplicant config.", name); \
 			return FALSE; \
 		} \
 	}
@@ -550,16 +551,16 @@ add_wep_key (NMSupplicantConfig *self,
 			success = nm_supplicant_config_add_option (self, name, value, key_len / 2, TRUE);
 			g_free (value);
 			if (!success) {
-				nm_warning ("Error adding %s to supplicant config.", name);
+				nm_log_warn (LOGD_SUPPLICANT, "Error adding %s to supplicant config.", name);
 				return FALSE;
 			}
 		} else if ((key_len == 5) || (key_len == 13)) {
 			if (!nm_supplicant_config_add_option (self, name, key, key_len, TRUE)) {
-				nm_warning ("Error adding %s to supplicant config.", name);
+				nm_log_warn (LOGD_SUPPLICANT, "Error adding %s to supplicant config.", name);
 				return FALSE;
 			}
 		} else {
-			nm_warning ("Invalid WEP key '%s'", name);
+			nm_log_warn (LOGD_SUPPLICANT, "Invalid WEP key '%s'", name);
 			return FALSE;
 		}
 	} else if (wep_type == NM_WEP_KEY_TYPE_PASSPHRASE) {
@@ -570,7 +571,7 @@ add_wep_key (NMSupplicantConfig *self,
 		if (success)
 			success = nm_supplicant_config_add_option (self, name, (const char *) digest, digest_len, TRUE);
 		if (!success) {
-			nm_warning ("Error adding %s to supplicant config.", name);
+			nm_log_warn (LOGD_SUPPLICANT, "Error adding %s to supplicant config.", name);
 			return FALSE;
 		}
 	}
@@ -611,7 +612,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 			success = nm_supplicant_config_add_option (self, "psk", value, psk_len / 2, TRUE);
 			g_free (value);
 			if (!success) {
-				nm_warning ("Error adding 'psk' to supplicant config.");
+				nm_log_warn (LOGD_SUPPLICANT, "Error adding 'psk' to supplicant config.");
 				return FALSE;
 			}
 		} else if (psk_len >= 8 && psk_len <= 63) {
@@ -621,12 +622,12 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 			 * passphrase and not a hex key.
 			 */
 			if (!nm_supplicant_config_add_option_with_type (self, "psk", psk, -1, TYPE_STRING, TRUE)) {
-				nm_warning ("Error adding 'psk' to supplicant config.");
+				nm_log_warn (LOGD_SUPPLICANT, "Error adding 'psk' to supplicant config.");
 				return FALSE;
 			}
 		} else {
 			/* Invalid PSK */
-			nm_warning ("Invalid PSK length %u: not between 8 and 63 characters inclusive.", (guint32) psk_len);
+			nm_log_warn (LOGD_SUPPLICANT, "Invalid PSK length %u: not between 8 and 63 characters inclusive.", (guint32) psk_len);
 			return FALSE;
 		}
 	}
@@ -662,7 +663,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 			success = nm_supplicant_config_add_option (self, "wep_tx_keyidx", value, -1, FALSE);
 			g_free (value);
 			if (!success) {
-				nm_warning ("Error adding wep_tx_keyidx to supplicant config.");
+				nm_log_warn (LOGD_SUPPLICANT, "Error adding wep_tx_keyidx to supplicant config.");
 				return FALSE;
 			}
 		}
