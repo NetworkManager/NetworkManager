@@ -181,10 +181,6 @@ struct _NMDeviceWifiPrivate {
 
 static guint32 nm_device_wifi_get_frequency (NMDeviceWifi *self);
 
-#if DEBUG
-static void nm_device_wifi_ap_list_print (NMDeviceWifi *self);
-#endif
-
 static gboolean request_wireless_scan (gpointer user_data);
 
 static void schedule_scan (NMDeviceWifi *self, gboolean backoff);
@@ -759,6 +755,8 @@ supplicant_interface_release (NMDeviceWifi *self)
 
 	/* Reset the scan interval to be pretty frequent when disconnected */
 	priv->scan_interval = SCAN_INTERVAL_MIN + SCAN_INTERVAL_STEP;
+	nm_log_dbg (LOGD_WIFI_SCAN, "(%s): reset scanning interval to %d seconds",
+	            nm_device_get_iface (NM_DEVICE (self)));
 
 	remove_supplicant_interface_error_handler (self);
 
@@ -1298,12 +1296,12 @@ nm_device_wifi_ap_list_print (NMDeviceWifi *self)
 
 	g_return_if_fail (NM_IS_DEVICE_WIFI (self));
 
-	nm_log_dbg (LOGD_WIFI_SCAN, "AP_LIST_PRINT:");
+	nm_log_dbg (LOGD_WIFI_SCAN, "Current AP list:");
 	for (elt = priv->ap_list; elt; elt = g_slist_next (elt), i++) {
 		NMAccessPoint * ap = NM_AP (elt->data);
-		nm_ap_print_self (ap, "::\t");
+		nm_ap_print_self (ap, "AP: ");
 	}
-	nm_log_dbg (LOGD_WIFI_SCAN, "AP_LIST_PRINT: done");
+	nm_log_dbg (LOGD_WIFI_SCAN, "Current AP list: done");
 }
 
 static gboolean
@@ -1778,10 +1776,16 @@ request_wireless_scan (gpointer user_data)
 	gboolean backoff = FALSE;
 
 	if (check_scanning_allowed (self)) {
+		nm_log_dbg (LOGD_WIFI_SCAN, "(%s): scanning requested",
+		            nm_device_get_iface (NM_DEVICE (self)));
+
 		if (nm_supplicant_interface_request_scan (priv->supplicant.iface)) {
 			/* success */
 			backoff = TRUE;
 		}
+	} else {
+		nm_log_dbg (LOGD_WIFI_SCAN, "(%s): scan requested but not allowed at this time",
+		            nm_device_get_iface (NM_DEVICE (self)));
 	}
 
 	priv->pending_scan_id = 0;
@@ -1811,13 +1815,13 @@ schedule_scan (NMDeviceWifi *self, gboolean backoff)
 	}
 
 	if (!priv->pending_scan_id) {
-		guint factor = 2;
+		guint factor = 2, next_scan = priv->scan_interval;
 
 		if (    nm_device_is_activating (NM_DEVICE (self))
 		    || (nm_device_get_state (NM_DEVICE (self)) == NM_DEVICE_STATE_ACTIVATED))
 			factor = 1;
 
-		priv->pending_scan_id = g_timeout_add_seconds (priv->scan_interval,
+		priv->pending_scan_id = g_timeout_add_seconds (next_scan,
 		                                               request_wireless_scan,
 		                                               self);
 
@@ -1834,6 +1838,12 @@ schedule_scan (NMDeviceWifi *self, gboolean backoff)
 			 */
 			priv->scan_interval = 5;
 		}
+
+		nm_log_dbg (LOGD_WIFI_SCAN, "(%s): scheduled scan in %d seconds (interval now %d seconds)",
+		            nm_device_get_iface (NM_DEVICE (self)),
+		            next_scan,
+		            priv->scan_interval);
+
 	}
 }
 
@@ -1855,6 +1865,10 @@ supplicant_iface_scan_request_result_cb (NMSupplicantInterface *iface,
                                          gboolean success,
                                          NMDeviceWifi *self)
 {
+	nm_log_dbg (LOGD_WIFI_SCAN, "(%s): scan request %s",
+	            nm_device_get_iface (NM_DEVICE (self)),
+	            success ? "successful" : "failed");
+
 	if (check_scanning_allowed (self))
 		schedule_scan (self, TRUE);
 }
@@ -1864,11 +1878,15 @@ supplicant_iface_scan_results_cb (NMSupplicantInterface *iface,
                                   guint32 num_results,
                                   NMDeviceWifi *self)
 {
+	nm_log_dbg (LOGD_WIFI_SCAN, "(%s): scan results available (%d APs found)",
+	            nm_device_get_iface (NM_DEVICE (self)),
+	            num_results);
 	if (num_results == 0) {
 		/* ensure that old APs get culled, which otherwise only
 		 * happens when there are actual scan results to process.
 		 */
 		cull_scan_list (self);
+		nm_device_wifi_ap_list_print (self);
 	}
 }
 
@@ -2022,11 +2040,12 @@ static void
 cull_scan_list (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv;
-	GTimeVal        cur_time;
-	GSList *        outdated_list = NULL;
-	GSList *        elt;
-	NMActRequest *  req;
-	const char *    cur_ap_path = NULL;
+	GTimeVal cur_time;
+	GSList *outdated_list = NULL;
+	GSList *elt;
+	NMActRequest *req;
+	const char *cur_ap_path = NULL;
+	guint32 removed = 0, total = 0;
 
 	g_return_if_fail (self != NULL);
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -2037,10 +2056,13 @@ cull_scan_list (NMDeviceWifi *self)
 	if (req)
 		cur_ap_path = nm_act_request_get_specific_object (req);
 
+	nm_log_dbg (LOGD_WIFI_SCAN, "(%s): checking scan list for outdated APs",
+	            nm_device_get_iface (NM_DEVICE (self)));
+
 	/* Walk the access point list and remove any access points older than
 	 * three times the inactive scan interval.
 	 */
-	for (elt = priv->ap_list; elt; elt = g_slist_next (elt)) {
+	for (elt = priv->ap_list; elt; elt = g_slist_next (elt), total++) {
 		NMAccessPoint * ap = NM_AP (elt->data);
 		const glong     ap_time = nm_ap_get_last_seen (ap);
 		gboolean        keep = FALSE;
@@ -2058,13 +2080,31 @@ cull_scan_list (NMDeviceWifi *self)
 
 	/* Remove outdated APs */
 	for (elt = outdated_list; elt; elt = g_slist_next (elt)) {
-		NMAccessPoint * outdated_ap = NM_AP (elt->data);
+		NMAccessPoint *outdated_ap = NM_AP (elt->data);
+		const struct ether_addr *bssid;
+		const GByteArray *ssid;
+
+		bssid = nm_ap_get_address (outdated_ap);
+		ssid = nm_ap_get_ssid (outdated_ap);
+		nm_log_dbg (LOGD_WIFI_SCAN,
+		            "   removing %02x:%02x:%02x:%02x:%02x:%02x (%s%s%s)",
+		            bssid->ether_addr_octet[0], bssid->ether_addr_octet[1],
+		            bssid->ether_addr_octet[2], bssid->ether_addr_octet[3],
+		            bssid->ether_addr_octet[4], bssid->ether_addr_octet[5],
+		            ssid ? "'" : "",
+		            ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
+		            ssid ? "'" : "");
 
 		access_point_removed (self, outdated_ap);
 		priv->ap_list = g_slist_remove (priv->ap_list, outdated_ap);
 		g_object_unref (outdated_ap);
+		removed++;
 	}
 	g_slist_free (outdated_list);
+
+	nm_log_dbg (LOGD_WIFI_SCAN, "(%s): removed %d APs (of %d)",
+	            nm_device_get_iface (NM_DEVICE (self)),
+	            removed, total);
 }
 
 #define SET_QUALITY_MEMBER(qual_item, lc_member, uc_member) \
@@ -2123,20 +2163,23 @@ supplicant_iface_scanned_ap_cb (NMSupplicantInterface *iface,
 		return;
 
 	ap = nm_ap_new_from_properties (properties);
-	if (!ap)
-		return;
+	if (ap) {
+		set_ap_strength_from_properties (self, ap, properties);
 
-	set_ap_strength_from_properties (self, ap, properties);
+		nm_ap_print_self (ap, "AP: ");
 
-	/* Add the AP to the device's AP list */
-	merge_scanned_ap (self, ap);
+		/* Add the AP to the device's AP list */
+		merge_scanned_ap (self, ap);
+		g_object_unref (ap);
 
-	/* Remove outdated access points */
-	cull_scan_list (self);
+		/* Remove outdated access points */
+		cull_scan_list (self);
 
-	nm_device_wifi_ap_list_print (self);
-
-	g_object_unref (ap);
+		nm_device_wifi_ap_list_print (self);
+	} else {
+		nm_log_warn (LOGD_WIFI_SCAN, "(%s): invalid AP properties received",
+		             nm_device_get_iface (NM_DEVICE (self)));
+	}
 }
 
 
@@ -2326,6 +2369,9 @@ supplicant_iface_state_cb_handler (gpointer user_data)
 			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED,
 			                         NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE);
 		}
+
+		nm_log_dbg (LOGD_WIFI_SCAN, "(%s): supplicant ready, requesting initial scan",
+		            nm_device_get_iface (NM_DEVICE (self)));
 
 		/* Request a scan to get latest results */
 		cancel_pending_scan (self);
@@ -2571,10 +2617,17 @@ supplicant_iface_connection_error_cb (NMSupplicantInterface * iface,
 }
 
 static void
-supplicant_iface_notify_scanning_cb (NMSupplicantInterface * iface,
-                                     GParamSpec * pspec,
-                                     NMDeviceWifi * self)
+supplicant_iface_notify_scanning_cb (NMSupplicantInterface *iface,
+                                     GParamSpec *pspec,
+                                     NMDeviceWifi *self)
 {
+	gboolean scanning;
+
+	scanning = nm_supplicant_interface_get_scanning (iface);
+	nm_log_dbg (LOGD_WIFI_SCAN, "(%s): now %s",
+	            nm_device_get_iface (NM_DEVICE (self)),
+	            scanning ? "scanning" : "not scanning");
+
 	g_object_notify (G_OBJECT (self), "scanning");
 }
 
