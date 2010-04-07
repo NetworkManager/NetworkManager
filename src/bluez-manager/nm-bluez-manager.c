@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2009 Red Hat, Inc.
+ * Copyright (C) 2007 - 2010 Red Hat, Inc.
  */
 
 #include <signal.h>
@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <dbus/dbus-glib.h>
 
-#include "nm-utils.h"
+#include "nm-logging.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-marshal.h"
 #include "nm-bluez-manager.h"
@@ -181,8 +181,8 @@ default_adapter_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	if (!dbus_g_proxy_end_call (proxy, call, &err,
 	                            DBUS_TYPE_G_OBJECT_PATH, &default_adapter,
 	                            G_TYPE_INVALID)) {
-		nm_warning ("bluez error getting default adapter: %s",
-		            err && err->message ? err->message : "(unknown)");
+		nm_log_warn (LOGD_BT, "bluez error getting default adapter: %s",
+		             err && err->message ? err->message : "(unknown)");
 		g_error_free (err);
 		return;
 	}
@@ -201,7 +201,7 @@ query_default_adapter (NMBluezManager *self)
 	                                self,
 	                                NULL, G_TYPE_INVALID);
 	if (!call)
-		nm_warning ("failed to request default Bluetooth adapter.");
+		nm_log_warn (LOGD_BT, "failed to request default Bluetooth adapter.");
 }
 
 static void

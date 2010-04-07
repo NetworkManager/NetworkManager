@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 Red Hat, Inc.
+ * Copyright (C) 2009 - 2010 Red Hat, Inc.
  */
 
 #include <glib.h>
@@ -26,7 +26,7 @@
 #include "nm-bluez-device.h"
 #include "nm-bluez-common.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 #include "nm-marshal.h"
 
 
@@ -228,8 +228,8 @@ get_properties_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	if (!dbus_g_proxy_end_call (proxy, call, &err,
 	                            DBUS_TYPE_G_MAP_OF_VARIANT, &properties,
 	                            G_TYPE_INVALID)) {
-		nm_warning ("bluez error getting device properties: %s",
-		            err && err->message ? err->message : "(unknown)");
+		nm_log_warn (LOGD_BT, "bluez error getting device properties: %s",
+		             err && err->message ? err->message : "(unknown)");
 		g_error_free (err);
 		g_signal_emit (self, signals[INITIALIZED], 0, FALSE);
 		return;
@@ -270,8 +270,8 @@ query_properties (NMBluezDevice *self)
 	                                self,
 	                                NULL, G_TYPE_INVALID);
 	if (!call) {
-		nm_warning ("failed to request Bluetooth device properties for %s.",
-		            priv->path);
+		nm_log_warn (LOGD_BT, "failed to request Bluetooth device properties for %s.",
+		             priv->path);
 	}
 }
 
