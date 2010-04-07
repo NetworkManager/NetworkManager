@@ -51,6 +51,8 @@ enum {
 	LOGD_DEVICE     = 0x00200000, /* Device state and activation */
 };
 
+#define LOGD_DHCP (LOGD_DHCP4 | LOGD_DHCP6)
+
 /* Log levels */
 enum {
 	LOGL_ERR   = 0x00000000,
