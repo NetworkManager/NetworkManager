@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2008 - 2010 Red Hat, Inc.
  */
 
 #include <sys/types.h>
@@ -27,7 +27,7 @@
 #include <stdlib.h>
 
 #include "nm-dnsmasq-manager.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 #include "nm-glib-compat.h"
 
 typedef struct {
@@ -168,13 +168,12 @@ nm_cmd_line_add_string (NMCmdLine *cmd, const char *str)
 static inline const char *
 nm_find_dnsmasq (void)
 {
-	static const char *dnsmasq_binary_paths[] =
-		{
-			"/usr/local/sbin/dnsmasq",
-			"/usr/sbin/dnsmasq",
-			"/sbin/dnsmasq",
-			NULL
-		};
+	static const char *dnsmasq_binary_paths[] = {
+		"/usr/local/sbin/dnsmasq",
+		"/usr/sbin/dnsmasq",
+		"/sbin/dnsmasq",
+		NULL
+	};
 
 	const char **dnsmasq_binary = dnsmasq_binary_paths;
 
@@ -214,7 +213,7 @@ dm_exit_code (guint dm_exit_status)
 		break;
 	}
 
-	g_warning ("dnsmasq exited with error: %s (%d)", msg, dm_exit_status);
+	nm_log_warn (LOGD_SHARING, "dnsmasq exited with error: %s (%d)", msg, dm_exit_status);
 }
 
 static void
@@ -228,12 +227,13 @@ dm_watch_cb (GPid pid, gint status, gpointer user_data)
 		err = WEXITSTATUS (status);
 		if (err != 0)
 			dm_exit_code (err);
-	} else if (WIFSTOPPED (status))
-		g_warning ("dnsmasq stopped unexpectedly with signal %d", WSTOPSIG (status));
-	else if (WIFSIGNALED (status))
-		g_warning ("dnsmasq died with signal %d", WTERMSIG (status));
-	else
-		g_warning ("dnsmasq died from an unknown cause");
+	} else if (WIFSTOPPED (status)) {
+		nm_log_warn (LOGD_SHARING, "dnsmasq stopped unexpectedly with signal %d", WSTOPSIG (status));
+	} else if (WIFSIGNALED (status)) {
+		nm_log_warn (LOGD_SHARING, "dnsmasq died with signal %d", WTERMSIG (status));
+	} else {
+		nm_log_warn (LOGD_SHARING, "dnsmasq died from an unknown cause");
+	}
   
 	priv->pid = 0;
 
@@ -288,8 +288,8 @@ create_dm_cmd_line (const char *iface,
 	s = g_string_new ("--listen-address=");
 	addr.s_addr = nm_ip4_address_get_address (tmp);
 	if (!inet_ntop (AF_INET, &addr, &localaddr[0], INET_ADDRSTRLEN)) {
-		nm_warning ("%s: error converting IP4 address 0x%X",
-		            __func__, ntohl (addr.s_addr));
+		nm_log_warn (LOGD_SHARING, "error converting IP4 address 0x%X",
+		             ntohl (addr.s_addr));
 		goto error;
 	}
 	g_string_append (s, localaddr);
@@ -301,8 +301,8 @@ create_dm_cmd_line (const char *iface,
 	/* Add start of address range */
 	addr.s_addr = nm_ip4_address_get_address (tmp) + htonl (9);
 	if (!inet_ntop (AF_INET, &addr, &buf[0], INET_ADDRSTRLEN)) {
-		nm_warning ("%s: error converting IP4 address 0x%X",
-		            __func__, ntohl (addr.s_addr));
+		nm_log_warn (LOGD_SHARING, "error converting IP4 address 0x%X",
+		             ntohl (addr.s_addr));
 		goto error;
 	}
 	g_string_append (s, buf);
@@ -312,8 +312,8 @@ create_dm_cmd_line (const char *iface,
 	/* Add end of address range */
 	addr.s_addr = nm_ip4_address_get_address (tmp) + htonl (99);
 	if (!inet_ntop (AF_INET, &addr, &buf[0], INET_ADDRSTRLEN)) {
-		nm_warning ("%s: error converting IP4 address 0x%X",
-		            __func__, ntohl (addr.s_addr));
+		nm_log_warn (LOGD_SHARING, "error converting IP4 address 0x%X",
+		             ntohl (addr.s_addr));
 		goto error;
 	}
 	g_string_append (s, buf);
@@ -370,7 +370,7 @@ kill_existing_for_iface (const char *iface, const char *pidfile)
 
 	if (strstr (cmdline_contents, "bin/dnsmasq")) {
 		if (kill (pid, 0)) {
-			nm_info ("Killing stale dnsmasq process %ld", pid);
+			nm_log_dbg (LOGD_SHARING, "Killing stale dnsmasq process %ld", pid);
 			kill (pid, SIGKILL);
 		}
 		unlink (pidfile);
@@ -405,10 +405,10 @@ nm_dnsmasq_manager_start (NMDnsMasqManager *manager,
 
 	g_ptr_array_add (dm_cmd->array, NULL);
 
-	nm_info ("Starting dnsmasq...");
+	nm_log_info (LOGD_SHARING, "Starting dnsmasq...");
 
 	cmd_str = nm_cmd_line_to_str (dm_cmd);
-	nm_debug ("Command line: %s", cmd_str);
+	nm_log_dbg (LOGD_SHARING, "Command line: %s", cmd_str);
 	g_free (cmd_str);
 
 	priv->pid = 0;
@@ -419,7 +419,7 @@ nm_dnsmasq_manager_start (NMDnsMasqManager *manager,
 		goto out;
 	}
 
-	nm_debug ("dnsmasq started with pid %d", priv->pid);
+	nm_log_dbg (LOGD_SHARING, "dnsmasq started with pid %d", priv->pid);
 
 	priv->dm_watch_id = g_child_watch_add (priv->pid, (GChildWatchFunc) dm_watch_cb, manager);
 
@@ -439,9 +439,9 @@ ensure_killed (gpointer data)
 		kill (pid, SIGKILL);
 
 	/* ensure the child is reaped */
-	nm_debug ("waiting for dnsmasq pid %d to exit", pid);
+	nm_log_dbg (LOGD_SHARING, "waiting for dnsmasq pid %d to exit", pid);
 	waitpid (pid, NULL, 0);
-	nm_debug ("dnsmasq pid %d cleaned up", pid);
+	nm_log_dbg (LOGD_SHARING, "dnsmasq pid %d cleaned up", pid);
 
 	return FALSE;
 }
@@ -467,9 +467,9 @@ nm_dnsmasq_manager_stop (NMDnsMasqManager *manager)
 			kill (priv->pid, SIGKILL);
 
 			/* ensure the child is reaped */
-			nm_debug ("waiting for dnsmasq pid %d to exit", priv->pid);
+			nm_log_dbg (LOGD_SHARING, "waiting for dnsmasq pid %d to exit", priv->pid);
 			waitpid (priv->pid, NULL, 0);
-			nm_debug ("dnsmasq pid %d cleaned up", priv->pid);
+			nm_log_dbg (LOGD_SHARING, "dnsmasq pid %d cleaned up", priv->pid);
 		}
 
 		priv->pid = 0;
