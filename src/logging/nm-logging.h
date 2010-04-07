@@ -63,21 +63,21 @@ enum {
 };
 
 #define nm_log_err(domain, fmt, args...) \
-	{ _nm_log (G_STRFUNC, G_STRLOC, domain, LOGL_ERR, fmt, ##args); }
+	{ _nm_log (G_STRLOC, G_STRFUNC, domain, LOGL_ERR, fmt, ##args); }
 
 #define nm_log_warn(domain, fmt, args...) \
-	{ _nm_log (G_STRFUNC, G_STRLOC, domain, LOGL_WARN, fmt, ##args); }
+	{ _nm_log (G_STRLOC, G_STRFUNC, domain, LOGL_WARN, fmt, ##args); }
 
 #define nm_log_info(domain, fmt, args...) \
-	{ _nm_log (G_STRFUNC, G_STRLOC, domain, LOGL_INFO, fmt, ##args); }
+	{ _nm_log (G_STRLOC, G_STRFUNC, domain, LOGL_INFO, fmt, ##args); }
 
 #define nm_log_dbg(domain, fmt, args...) \
-	{ _nm_log (G_STRFUNC, G_STRLOC, domain, LOGL_DEBUG, fmt, ##args); }
+	{ _nm_log (G_STRLOC, G_STRFUNC, domain, LOGL_DEBUG, fmt, ##args); }
 
 #define nm_log(domain, level, fmt, args...) \
-	{ _nm_log (G_STRFUNC, G_STRLOC, domain, level, fmt, ##args); }
+	{ _nm_log (G_STRLOC, G_STRFUNC, domain, level, fmt, ##args); }
 
-void _nm_log (const char *func, const char *loc,
+void _nm_log (const char *loc, const char *func,
               guint32 domain, guint32 level,
               const char *fmt, ...);
 
