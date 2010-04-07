@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2008 Red Hat, Inc.
+ * Copyright (C) 2004 - 2010 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  * Copyright (C) 1996 - 1997 Yoichi Hariguchi <yoichi@fore.com>
  * Copyright (C) January, 1998 Sergei Viznyuk <sv@phystech.com>
@@ -47,6 +47,7 @@
 #include "nm-named-manager.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
+#include "nm-logging.h"
 #include "nm-netlink.h"
 
 /* Because of a bug in libnl, rtnl.h should be included before route.h */
@@ -95,10 +96,11 @@ create_route (int iface_idx, int mss)
 	if (route) {
 		rtnl_route_set_oif (route, iface_idx);
 
-		if (mss && rtnl_route_set_metric (route, RTAX_ADVMSS, mss) < 0)
-			nm_warning ("Could not set mss");
+		if (mss && rtnl_route_set_metric (route, RTAX_ADVMSS, mss) < 0) {
+			nm_log_warn (LOGD_DEVICE, "could not set mss");
+		}
 	} else
-		nm_warning ("Could not allocate route");
+		nm_log_err (LOGD_DEVICE, "could not allocate route");
 
 	return route;
 }
@@ -141,7 +143,7 @@ nm_system_device_set_ip4_route (const char *iface,
 			rtnl_route_set_gateway (route, gw_addr);
 			rtnl_route_set_scope (route, RT_SCOPE_UNIVERSE);
 		} else {
-			nm_warning ("Invalid gateway");
+			nm_log_err (LOGD_DEVICE | LOGD_IP4, "Invalid gateway 0x%X", ip4_gateway);
 			rtnl_route_put (route);
 			return NULL;
 		}
@@ -176,7 +178,9 @@ nm_system_device_set_ip4_route (const char *iface,
 		nl_addr_put (gw_addr);
 
 	if (err) {
-		nm_warning ("Failed to set IPv4 route on '%s': %s", iface, nl_geterror ());
+		nm_log_err (LOGD_DEVICE | LOGD_IP4,
+		            "(%s): failed to set IPv4 route: %s",
+		            iface, nl_geterror ());
 		rtnl_route_put (route);
 		route = NULL;
 	}
@@ -193,6 +197,9 @@ sync_addresses (const char *iface, int ifindex, int family,
 	struct rtnl_addr *filter_addr, *match_addr;
 	struct nl_object *match;
 	int i, err;
+	guint32 log_domain = (family == AF_INET) ? LOGD_IP4 : LOGD_IP6;
+
+	log_domain |= LOGD_DEVICE;
 
 	nlh = nm_netlink_get_default_handle ();
 	if (!nlh)
@@ -247,7 +254,7 @@ sync_addresses (const char *iface, int ifindex, int family,
 		/* Otherwise, match_addr should be removed from the interface. */
 		err = rtnl_addr_delete (nlh, match_addr, 0);
 		if (err < 0) {
-			nm_warning ("(%s) error %d returned from rtnl_addr_delete(): %s",
+			nm_log_err (log_domain, "(%s): error %d returned from rtnl_addr_delete(): %s",
 						iface, err, nl_geterror ());
 		}
 	}
@@ -262,7 +269,8 @@ sync_addresses (const char *iface, int ifindex, int family,
 
 		err = rtnl_addr_add (nlh, addrs[i], 0);
 		if (err < 0) {
-			nm_warning ("(%s) error %d returned from rtnl_addr_add():\n%s",
+			nm_log_err (log_domain,
+			            "(%s): error %d returned from rtnl_addr_add():\n%s",
 						iface, err, nl_geterror ());
 		}
 
@@ -301,7 +309,9 @@ add_ip4_addresses (NMIP4Config *config, const char *iface)
 
 		addrs[i] = nm_ip4_config_to_rtnl_addr (config, i, flags);
 		if (!addrs[i]) {
-			nm_warning ("couldn't create rtnl address!\n");
+			nm_log_warn (LOGD_DEVICE | LOGD_IP4,
+			             "(%s): couldn't create rtnl address!",
+			             iface);
 			continue;
 		}
 		rtnl_addr_set_ifindex (addrs[i], iface_idx);
@@ -464,7 +474,7 @@ nm_system_device_set_ip6_route (const char *iface,
 			rtnl_route_set_gateway (route, gw_addr);
 			rtnl_route_set_scope (route, RT_SCOPE_UNIVERSE);
 		} else {
-			nm_warning ("Invalid gateway");
+			nm_log_warn (LOGD_DEVICE | LOGD_IP6, "Invalid gateway");
 			rtnl_route_put (route);
 			return NULL;
 		}
@@ -499,7 +509,9 @@ nm_system_device_set_ip6_route (const char *iface,
 		nl_addr_put (gw_addr);
 
 	if (err) {
-		nm_warning ("Failed to set IPv6 route on '%s': %s", iface, nl_geterror ());
+		nm_log_err (LOGD_DEVICE | LOGD_IP6,
+		            "(%s): failed to set IPv6 route: %s",
+		            iface, nl_geterror ());
 		rtnl_route_put (route);
 		route = NULL;
 	}
@@ -526,7 +538,9 @@ add_ip6_addresses (NMIP6Config *config, const char *iface)
 
 		addrs[i] = nm_ip6_config_to_rtnl_addr (config, i, NM_RTNL_ADDR_DEFAULT);
 		if (!addrs[i]) {
-			nm_warning ("couldn't create rtnl address!\n");
+			nm_log_warn (LOGD_DEVICE | LOGD_IP6,
+			             "(%s): couldn't create rtnl address!",
+			             iface);
 			continue;
 		}
 		rtnl_addr_set_ifindex (addrs[i], iface_idx);
@@ -661,7 +675,7 @@ nm_system_device_is_up_with_iface (const char *iface)
 
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
-		nm_warning ("couldn't open control socket.");
+		nm_log_err (LOGD_HW, "couldn't open control socket.");
 		return FALSE;
 	}
 
@@ -670,8 +684,8 @@ nm_system_device_is_up_with_iface (const char *iface)
 	strncpy (ifr.ifr_name, iface, IFNAMSIZ);
 	if (ioctl (fd, SIOCGIFFLAGS, &ifr) < 0) {
 		if (errno != ENODEV) {
-			nm_warning ("%s: could not get flags for device %s.  errno = %d", 
-			            __func__, iface, errno);
+			nm_log_err (LOGD_HW, "(%s): could not get flags: errno %d",
+			            iface, errno);
 		}
 	} else {
 		up = !!(ifr.ifr_flags & IFF_UP);
@@ -753,7 +767,9 @@ add_ip4_route_to_gateway (const char *iface, guint32 gw, guint32 mss)
 	/* Add direct route to the gateway */
 	err = rtnl_route_add (nlh, route, 0);
 	if (err) {
-		nm_warning ("(%s): failed to add IPv4 route to gateway (%d)", iface, err);
+		nm_log_err (LOGD_DEVICE | LOGD_IP4,
+		            "(%s): failed to add IPv4 route to gateway (%d)",
+		            iface, err);
 		goto error;
 	}
 
@@ -853,7 +869,8 @@ nm_system_replace_default_ip4_route_vpn (const char *iface,
 	if (err == 0) {
 		return TRUE;
 	} else if (err != -ESRCH) {
-		nm_warning ("(%s): failed to set IPv4 default route: %d",
+		nm_log_err (LOGD_DEVICE | LOGD_IP4,
+		            "(%s): failed to set IPv4 default route: %d",
 		            iface, err);
 		return FALSE;
 	}
@@ -867,7 +884,8 @@ nm_system_replace_default_ip4_route_vpn (const char *iface,
 	err = replace_default_ip4_route (iface, int_gw, mss);
 	if (err != 0) {
 		rtnl_route_del (nlh, gw_route, 0);
-		nm_warning ("(%s): failed to set IPv4 default route (pass #2): %d",
+		nm_log_err (LOGD_DEVICE | LOGD_IP4,
+		            "(%s): failed to set IPv4 default route (pass #2): %d",
 		            iface, err);
 	} else
 		success = TRUE;
@@ -897,7 +915,8 @@ nm_system_replace_default_ip4_route (const char *iface, guint32 gw, guint32 mss)
 	if (err == 0) {
 		return TRUE;
 	} else if (err != -ESRCH) {
-		nm_warning ("(%s): failed to set IPv4 default route: %d",
+		nm_log_err (LOGD_DEVICE | LOGD_IP4,
+		            "(%s): failed to set IPv4 default route: %d",
 		            iface, err);
 		return FALSE;
 	}
@@ -911,7 +930,8 @@ nm_system_replace_default_ip4_route (const char *iface, guint32 gw, guint32 mss)
 	err = replace_default_ip4_route (iface, gw, mss);
 	if (err != 0) {
 		rtnl_route_del (nlh, gw_route, 0);
-		nm_warning ("(%s): failed to set IPv4 default route (pass #2): %d",
+		nm_log_err (LOGD_DEVICE | LOGD_IP4,
+		            "(%s): failed to set IPv4 default route (pass #2): %d",
 		            iface, err);
 	} else
 		success = TRUE;
@@ -993,7 +1013,8 @@ check_one_route (struct nl_object *object, void *user_data)
 
 	err = rtnl_route_del (nm_netlink_get_default_handle (), route, 0);
 	if (err < 0) {
-		nm_warning ("(%s) error %d returned from rtnl_route_del(): %s",
+		nm_log_err (LOGD_DEVICE,
+		            "(%s): error %d returned from rtnl_route_del(): %s",
 		            data->iface, err, nl_geterror());
 	}
 }
