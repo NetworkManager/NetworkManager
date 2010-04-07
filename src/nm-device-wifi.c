@@ -395,7 +395,8 @@ wireless_get_range (NMDeviceWifi *self,
 			success = TRUE;
 			break;
 		} else if (errno != EAGAIN) {
-			nm_log_err (LOGD_HW, "(%s): couldn't get driver range information (%d).",
+			nm_log_err (LOGD_HW | LOGD_WIFI,
+			            "(%s): couldn't get driver range information (%d).",
 			            iface, errno);
 			break;
 		}
@@ -404,7 +405,7 @@ wireless_get_range (NMDeviceWifi *self,
 	}
 
 	if (i <= 0) {
-		nm_log_warn (LOGD_HW,
+		nm_log_warn (LOGD_HW | LOGD_WIFI,
 		             "(%s): driver took too long to respond to IWRANGE query.",
 		             iface);
 	}
@@ -430,7 +431,8 @@ real_get_generic_capabilities (NMDevice *dev)
 
 	/* Check for Wireless Extensions support >= 16 for wireless devices */
 	if ((response_len < 300) || (range.we_version_compiled < 16)) {
-		nm_log_err (LOGD_HW, "(%s): driver's Wireless Extensions version (%d) is too old.",
+		nm_log_err (LOGD_HW | LOGD_WIFI,
+		            "(%s): driver's Wireless Extensions version (%d) is too old.",
 					iface, range.we_version_compiled);
 		return NM_DEVICE_CAP_NONE;
 	}
@@ -595,11 +597,13 @@ constructor (GType type,
 	scan_capa_range = (struct iw_range_with_scan_capa *) &range;
 	if (scan_capa_range->scan_capa & NM_IW_SCAN_CAPA_ESSID) {
 		priv->has_scan_capa_ssid = TRUE;
-		nm_log_info (LOGD_HW, "(%s): driver supports SSID scans (scan_capa 0x%02X).",
+		nm_log_info (LOGD_HW | LOGD_WIFI,
+		             "(%s): driver supports SSID scans (scan_capa 0x%02X).",
 		             nm_device_get_iface (NM_DEVICE (self)),
 		             scan_capa_range->scan_capa);
 	} else {
-		nm_log_info (LOGD_HW, "(%s): driver does not support SSID scans (scan_capa 0x%02X).",
+		nm_log_info (LOGD_HW | LOGD_WIFI,
+		             "(%s): driver does not support SSID scans (scan_capa 0x%02X).",
 		             nm_device_get_iface (NM_DEVICE (self)),
 		             scan_capa_range->scan_capa);
 	}
@@ -1358,7 +1362,8 @@ nm_device_wifi_get_mode (NMDeviceWifi *self)
 		}
 	} else {
 		if (errno != ENODEV) {
-			nm_log_warn (LOGD_HW, "(%s): error %d getting card mode",
+			nm_log_warn (LOGD_HW | LOGD_WIFI,
+			             "(%s): error %d getting card mode",
 			             iface, strerror (errno));
 		}
 	}
@@ -1410,7 +1415,8 @@ nm_device_wifi_set_mode (NMDeviceWifi *self, const NM80211Mode mode)
 
 	if (ioctl (fd, SIOCSIWMODE, &wrq) < 0) {
 		if (errno != ENODEV) {
-			nm_log_err (LOGD_HW, "(%s): error setting mode %d",
+			nm_log_err (LOGD_HW | LOGD_WIFI,
+			            "(%s): error setting mode %d",
 			            iface, mode, strerror (errno));
 		}
 	} else
@@ -1447,7 +1453,8 @@ nm_device_wifi_get_frequency (NMDeviceWifi *self)
 	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
 
 	if (ioctl (fd, SIOCGIWFREQ, &wrq) < 0) {
-		nm_log_warn (LOGD_HW, "(%s): error getting frequency: %s",
+		nm_log_warn (LOGD_HW | LOGD_WIFI,
+		             "(%s): error getting frequency: %s",
 		             iface, strerror (errno));
 	} else
 		freq = iw_freq_to_uint32 (&wrq.u.freq);
@@ -1588,7 +1595,7 @@ nm_device_wifi_get_ssid (NMDeviceWifi *self)
 	strncpy (wrq.ifr_name, nm_device_get_iface (NM_DEVICE (self)), IFNAMSIZ);
 
 	if (ioctl (sk, SIOCGIWESSID, &wrq) < 0) {
-		nm_log_err (LOGD_HW, "(%s): couldn't get SSID: %d",
+		nm_log_err (LOGD_HW | LOGD_WIFI, "(%s): couldn't get SSID: %d",
 		            nm_device_get_iface (NM_DEVICE (self)), errno);
 		goto out;
 	}
@@ -2850,7 +2857,7 @@ real_update_hw_address (NMDevice *dev)
 	memset (&req, 0, sizeof (struct ifreq));
 	strncpy (req.ifr_name, nm_device_get_iface (dev), IFNAMSIZ);
 	if (ioctl (fd, SIOCGIFHWADDR, &req) < 0) {
-		nm_log_err (LOGD_HW, "(%s) error getting hardware address: %d",
+		nm_log_err (LOGD_HW | LOGD_WIFI, "(%s) error getting hardware address: %d",
 		            nm_device_get_iface (dev), errno);
 		goto out;
 	}
