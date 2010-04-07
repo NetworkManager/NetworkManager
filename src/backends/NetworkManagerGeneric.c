@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /* NetworkManager -- Network link manager
  *
  * Timothee Lecomte <timothee.lecomte@ens.fr>
@@ -36,7 +37,7 @@
 #include "nm-system.h"
 #include "NetworkManagerUtils.h"
 #include "nm-netlink.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 
 /* Because of a bug in libnl, rtnl.h should be included before route.h */
 #include <netlink/route/rtnl.h>
@@ -93,8 +94,9 @@ void nm_generic_enable_loopback (void)
 	rtnl_addr_set_label (addr, "lo");
 
 	if ((err = rtnl_addr_add (nlh, addr, 0)) < 0) {
-		if (err != -EEXIST)
-			nm_warning ("error %d returned from rtnl_addr_add():\n%s", err, nl_geterror());
+		if (err != -EEXIST) {
+			nm_log_warn (LOGD_CORE, "error %d returned from rtnl_addr_add():\n%s", err, nl_geterror());
+		}
 	}
 out:
 	if (addr)
