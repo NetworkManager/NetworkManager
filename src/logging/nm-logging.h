@@ -49,6 +49,7 @@ enum {
 	LOGD_SUSPEND    = 0x00080000, /* Suspend/Resume */
 	LOGD_CORE       = 0x00100000, /* Core daemon and policy stuff */
 	LOGD_DEVICE     = 0x00200000, /* Device state and activation */
+	LOGD_OLPC_MESH  = 0x00400000,
 };
 
 #define LOGD_DHCP (LOGD_DHCP4 | LOGD_DHCP6)
