@@ -78,6 +78,7 @@ static const LogDesc domain_descs[] = {
 	{ LOGD_SUSPEND,   "SUSPEND" },
 	{ LOGD_CORE,      "CORE" },
 	{ LOGD_DEVICE,    "DEVICE" },
+	{ LOGD_OLPC_MESH, "OLPC" },
 	{ 0, NULL }
 };
 

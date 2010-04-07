@@ -462,7 +462,7 @@ main (int argc, char *argv[])
 		{ "plugins", 0, 0, G_OPTION_ARG_STRING, &plugins, "List of plugins separated by ','", "plugin1,plugin2" },
 		{ "log-level", 0, 0, G_OPTION_ARG_STRING, &log_level, "Log level: one of [ERR, WARN, INFO, DEBUG]", "INFO" },
 		{ "log-domain", 0, 0, G_OPTION_ARG_STRING, &log_domains,
-		        "Log domains separated by ',': any combination of [NONE,HW,RKILL,ETHER,WIFI,BT,MB,DHCP4,DHCP6,PPP,WIFI_SCAN,IP4,IP6,AUTOIP4,DNS,VPN,SHARING,SUPPLICANT,USER_SET,SYS_SET,SUSPEND,CORE,DEVICE]",
+		        "Log domains separated by ',': any combination of [NONE,HW,RKILL,ETHER,WIFI,BT,MB,DHCP4,DHCP6,PPP,WIFI_SCAN,IP4,IP6,AUTOIP4,DNS,VPN,SHARING,SUPPLICANT,USER_SET,SYS_SET,SUSPEND,CORE,DEVICE,OLPC]",
 		        "HW,RFKILL,WIFI" },
 		{NULL}
 	};
