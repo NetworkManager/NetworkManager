@@ -27,7 +27,7 @@
 /* Log domains */
 enum {
 	LOGD_NONE       = 0x00000000,
-	LOGD_HW         = 0x00000001,
+	LOGD_HW         = 0x00000001, /* Hardware detection and info */
 	LOGD_RFKILL     = 0x00000002,
 	LOGD_ETHER      = 0x00000004,
 	LOGD_WIFI       = 0x00000008,
@@ -42,11 +42,11 @@ enum {
 	LOGD_AUTOIP4    = 0x00001000,
 	LOGD_DNS        = 0x00002000,
 	LOGD_VPN        = 0x00004000,
-	LOGD_SHARING    = 0x00008000,
-	LOGD_SUPPLICANT = 0x00010000,
-	LOGD_USER_SET   = 0x00020000,
-	LOGD_SYS_SET    = 0x00040000,
-	LOGD_SUSPEND    = 0x00080000,
+	LOGD_SHARING    = 0x00008000, /* Connection sharing/dnsmasq */
+	LOGD_SUPPLICANT = 0x00010000, /* WiFi and 802.1x */
+	LOGD_USER_SET   = 0x00020000, /* User settings */
+	LOGD_SYS_SET    = 0x00040000, /* System settings */
+	LOGD_SUSPEND    = 0x00080000, /* Suspend/Resume */
 	LOGD_CORE       = 0x00100000, /* Core daemon and policy stuff */
 	LOGD_DEVICE     = 0x00200000, /* Device state and activation */
 };
