@@ -158,14 +158,14 @@ void _nm_log (const char *loc,
 	msg = g_strdup_vprintf (fmt, args);
 	va_end (args);
 
-	if (log_level & LOGL_DEBUG) {
+	if ((log_level & LOGL_DEBUG) && (level == LOGL_DEBUG)) {
 		g_get_current_time (&tv);
 		syslog (LOG_DEBUG, "<debug> [%zu.%zu] [%s] %s(): %s\n", tv.tv_sec, tv.tv_usec, loc, func, msg);
-	} else if (log_level & LOGL_INFO)
+	} else if ((log_level & LOGL_INFO) && (level == LOGL_INFO))
 		syslog (LOG_INFO, "<info> %s\n", msg);
-	else if (log_level & LOGL_WARN)
+	else if ((log_level & LOGL_WARN) && (level == LOGL_WARN))
 		syslog (LOG_WARNING, "<warn> %s\n", msg);
-	else if (log_level & LOGL_ERR) {
+	else if ((log_level & LOGL_ERR) && (level == LOGL_ERR)) {
 		g_get_current_time (&tv);
 		syslog (LOG_ERR, "<error> [%zu.%zu] [%s] %s(): %s\n", tv.tv_sec, tv.tv_usec, loc, func, msg);
 	}
