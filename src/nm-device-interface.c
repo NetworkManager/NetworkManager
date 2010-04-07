@@ -22,7 +22,7 @@
 #include "nm-marshal.h"
 #include "nm-setting-connection.h"
 #include "nm-device-interface.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-rfkill.h"
 
@@ -282,8 +282,8 @@ nm_device_interface_activate (NMDeviceInterface *device,
 	g_assert (s_con);
 
 	iface = nm_device_interface_get_iface (device);
-	nm_info ("Activation (%s) starting connection '%s'", iface,
-			 nm_setting_connection_get_id (s_con));
+	nm_log_info (LOGD_DEVICE, "Activation (%s) starting connection '%s'", iface,
+			     nm_setting_connection_get_id (s_con));
 	g_free (iface);
 
 	success = NM_DEVICE_INTERFACE_GET_INTERFACE (device)->activate (device, req, error);
