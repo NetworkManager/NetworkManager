@@ -122,7 +122,7 @@ nm_logging_setup (const char *level, const char *domains, GError **error)
 
 			for (diter = &domain_descs[0]; diter->name; diter++) {
 				if (!strcasecmp (diter->name, *iter)) {
-					new_domains &= diter->num;
+					new_domains |= diter->num;
 					found = TRUE;
 					break;
 				}
