@@ -697,25 +697,25 @@ nm_ap_print_self (NMAccessPoint *ap,
 {
 	NMAccessPointPrivate *priv;
 
+	g_return_if_fail (ap != NULL);
 	g_return_if_fail (NM_IS_AP (ap));
 
 	priv = NM_AP_GET_PRIVATE (ap);
 
-	nm_log_dbg (LOGD_WIFI_SCAN, "%s'%s' (%p) stamp=%ld flags=0x%X wpa-flags=0x%X rsn-flags=0x%x "
-	            "bssid=" MAC_FMT " strength=%d freq=%d rate=%d mode=%d seen=%ld",
+	nm_log_dbg (LOGD_WIFI_SCAN, "%s'%s' (%p)",
 	            prefix,
 	            priv->ssid ? nm_utils_escape_ssid (priv->ssid->data, priv->ssid->len) : "(none)",
-	            ap,
-	            priv->timestamp.tv_sec,
-	            priv->flags,
-	            priv->wpa_flags,
-	            priv->rsn_flags,
-	            MAC_ARG (priv->address.ether_addr_octet),
-	            priv->strength,
-	            priv->freq,
-	            priv->max_bitrate,
-	            priv->mode,
-	            priv->last_seen);
+	            ap);
+	nm_log_dbg (LOGD_WIFI_SCAN, "    BSSID     " MAC_FMT, MAC_ARG (priv->address.ether_addr_octet));
+	nm_log_dbg (LOGD_WIFI_SCAN, "    mode      %d", priv->mode);
+	nm_log_dbg (LOGD_WIFI_SCAN, "    timestamp %ld", priv->timestamp.tv_sec);
+	nm_log_dbg (LOGD_WIFI_SCAN, "    flags     0x%X", priv->flags);
+	nm_log_dbg (LOGD_WIFI_SCAN, "    wpa flags 0x%X", priv->wpa_flags);
+	nm_log_dbg (LOGD_WIFI_SCAN, "    rsn flags 0x%X", priv->rsn_flags);
+	nm_log_dbg (LOGD_WIFI_SCAN, "    quality   %d", priv->strength);
+	nm_log_dbg (LOGD_WIFI_SCAN, "    frequency %d", priv->freq);
+	nm_log_dbg (LOGD_WIFI_SCAN, "    max rate  %d", priv->max_bitrate);
+	nm_log_dbg (LOGD_WIFI_SCAN, "    last-seen %ld", priv->last_seen);
 }
 
 const char *
