@@ -25,7 +25,7 @@
 
 #include <nm-setting-8021x.h>
 #include <nm-setting-wireless-security.h>
-#include "nm-utils.h"
+#include "nm-logging.h"
 
 static void
 nm_secrets_provider_interface_init (gpointer g_iface)
@@ -108,7 +108,7 @@ nm_secrets_provider_interface_get_secrets (NMSecretsProviderInterface *self,
 	                       connection, setting_name, request_new, caller, hint1, hint2,
 	                       &success);
 	if (!success) {
-		nm_warning ("failed to get connection secrets.");
+		nm_log_warn (LOGD_CORE, "failed to get connection secrets.");
 		return FALSE;
 	}
 
@@ -193,7 +193,7 @@ nm_secrets_provider_interface_get_secrets_result (NMSecretsProviderInterface *se
 
 		hash = g_hash_table_lookup (settings, name);
 		if (!hash) {
-			nm_warning ("couldn't get setting secrets for '%s'", name);
+			nm_log_warn (LOGD_CORE, "couldn't get setting secrets for '%s'", name);
 			continue;
 		}
 

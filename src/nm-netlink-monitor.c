@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2008 Red Hat, Inc.
+ * Copyright (C) 2005 - 2010 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  * Copyright (C) 2005 Ray Strode
  *
@@ -43,7 +43,7 @@
 #include "NetworkManager.h"
 #include "nm-system.h"
 #include "nm-netlink-monitor.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 #include "nm-marshal.h"
 #include "nm-netlink.h"
 
@@ -407,9 +407,9 @@ deferred_emit_carrier_state (gpointer user_data)
 	/* Update the link cache with latest state, and if there are no errors
 	 * emit the link states for all the interfaces in the cache.
 	 */
-	if (nl_cache_refill (priv->nlh, priv->nlh_link_cache))
-		nm_warning ("error updating link cache: %s", nl_geterror ());
-	else {
+	if (nl_cache_refill (priv->nlh, priv->nlh_link_cache)) {
+		nm_log_err (LOGD_HW, "error updating link cache: %s", nl_geterror ());
+	} else {
 		nl_cache_foreach_filter (priv->nlh_link_cache,
 		                         NULL,
 		                         netlink_object_message_handler,
