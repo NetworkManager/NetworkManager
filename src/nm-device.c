@@ -2345,10 +2345,14 @@ delayed_transitions_clear (NMDevice *self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (priv->failed_to_disconnected_id) {
+		nm_log_dbg (LOGD_DEVICE, "(%s): clearing failed->disconnected transition",
+		            nm_device_get_iface (self));
 		g_source_remove (priv->failed_to_disconnected_id);
 		priv->failed_to_disconnected_id = 0;
 	}
 	if (priv->unavailable_to_disconnected_id) {
+		nm_log_dbg (LOGD_DEVICE, "(%s): clearing unavailable->disconnected transition",
+		            nm_device_get_iface (self));
 		g_source_remove (priv->unavailable_to_disconnected_id);
 		priv->unavailable_to_disconnected_id = 0;
 	}
@@ -3294,6 +3298,8 @@ failed_to_disconnected (gpointer user_data)
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
+	nm_log_dbg (LOGD_DEVICE, "(%s): running failed->disconnected transition",
+	            nm_device_get_iface (self));
 	priv->failed_to_disconnected_id = 0;
 	nm_device_state_changed (self, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
 	return FALSE;
@@ -3305,6 +3311,8 @@ unavailable_to_disconnected (gpointer user_data)
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
+	nm_log_dbg (LOGD_DEVICE, "(%s): running unavailable->disconnected transition",
+	            nm_device_get_iface (self));
 	priv->unavailable_to_disconnected_id = 0;
 	nm_device_state_changed (self, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
 	return FALSE;
@@ -3381,8 +3389,11 @@ nm_device_state_changed (NMDevice *device,
 		 * we can't change states again from the state handler for a variety of
 		 * reasons.
 		 */
-		if (nm_device_is_available (device))
+		if (nm_device_is_available (device)) {
+			nm_log_dbg (LOGD_WIFI, "(%s): device is available, will transition to DISCONNECTED",
+			            nm_device_get_iface (device));
 			priv->unavailable_to_disconnected_id = g_idle_add (unavailable_to_disconnected, device);
+		}
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
 		nm_log_info (LOGD_DEVICE, "Activation (%s) successful, device activated.",
