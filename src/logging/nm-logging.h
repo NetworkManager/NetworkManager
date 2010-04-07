@@ -78,6 +78,17 @@ void _nm_log (const char *func, const char *loc,
               guint32 domain, guint32 level,
               const char *fmt, ...);
 
+/* Undefine the nm-utils.h logging stuff to ensure errors */
+#undef nm_print_backtrace
+#undef nm_get_timestamp
+#undef nm_info
+#undef nm_info_str
+#undef nm_debug
+#undef nm_debug_str
+#undef nm_warning
+#undef nm_warning_str
+#undef nm_error
+#undef nm_error_str
 
 gboolean nm_logging_setup     (const char *level, const char *domains, GError **error);
 void     nm_logging_start     (gboolean become_daemon);

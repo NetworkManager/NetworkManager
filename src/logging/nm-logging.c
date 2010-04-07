@@ -36,7 +36,6 @@
 #include <glib/gi18n.h>
 
 #include "nm-logging.h"
-#include "nm-utils.h"
 
 static guint32 log_level = LOGL_INFO;
 static guint32 log_domains = \

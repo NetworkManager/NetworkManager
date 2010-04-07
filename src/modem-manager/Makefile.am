@@ -1,5 +1,6 @@
 INCLUDES = \
 	-I${top_srcdir}/src \
+	-I${top_srcdir}/src/logging \
 	-I${top_srcdir}/include \
 	-I${top_srcdir}/libnm-util \
 	-I${top_builddir}/marshallers
@@ -22,6 +23,7 @@ libmodem_manager_la_CPPFLAGS = \
 
 libmodem_manager_la_LIBADD = \
 	$(top_builddir)/marshallers/libmarshallers.la \
+	$(top_builddir)/src/logging/libnm-logging.la \
 	$(DBUS_LIBS)
 
 nm-serial-device-glue.h: $(top_srcdir)/introspection/nm-device-serial.xml

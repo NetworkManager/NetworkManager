@@ -1,4 +1,5 @@
 SUBDIRS= \
+	logging \
 	named-manager \
 	vpn-manager \
 	dhcp-manager \
@@ -16,6 +17,7 @@ SUBDIRS= \
 INCLUDES = -I${top_srcdir}                   \
            -I${top_srcdir}/include           \
            -I${top_builddir}/marshallers   \
+           -I${top_srcdir}/src/logging \
            -I${top_srcdir}/src/named-manager \
            -I${top_srcdir}/src/vpn-manager   \
            -I${top_srcdir}/src/dhcp-manager  \
@@ -125,8 +127,6 @@ NetworkManager_SOURCES = \
 		NetworkManagerUtils.h \
 		nm-system.c \
 		nm-system.h \
-		nm-logging.c \
-		nm-logging.h \
 		nm-manager.c \
 		nm-manager.h \
 		nm-netlink-monitor.c \
@@ -224,6 +224,7 @@ NetworkManager_CPPFLAGS = \
 
 NetworkManager_LDADD = \
 	$(top_builddir)/marshallers/libmarshallers.la \
+	./logging/libnm-logging.la \
 	./named-manager/libnamed-manager.la \
 	./vpn-manager/libvpn-manager.la \
 	./dhcp-manager/libdhcp-manager.la \

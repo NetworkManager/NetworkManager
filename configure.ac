@@ -440,6 +440,7 @@ include/Makefile
 src/Makefile
 src/tests/Makefile
 marshallers/Makefile
+src/logging/Makefile
 src/named-manager/Makefile
 src/vpn-manager/Makefile
 src/dhcp-manager/Makefile
