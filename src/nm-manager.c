@@ -1242,8 +1242,12 @@ manager_set_radio_enabled (NMManager *manager,
 		RfKillType devtype = RFKILL_TYPE_UNKNOWN;
 
 		g_object_get (G_OBJECT (iter->data), NM_DEVICE_INTERFACE_RFKILL_TYPE, &devtype, NULL);
-		if (devtype == rstate->rtype)
+		if (devtype == rstate->rtype) {
+			nm_log_dbg (LOGD_RFKILL, "(%s): setting radio %s",
+			            nm_device_get_iface (NM_DEVICE (iter->data)),
+			            enabled ? "enabled" : "disabled");
 			nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (iter->data), enabled);
+		}
 	}
 }
 
@@ -1530,6 +1534,15 @@ add_device (NMManager *self, NMDevice *device)
 		existing = nm_device_interface_connection_match_config (NM_DEVICE_INTERFACE (device),
 		                                                        (const GSList *) connections);
 		g_slist_free (connections);
+
+		if (existing) {
+			NMSettingConnection *s_con;
+
+			s_con = (NMSettingConnection *) nm_connection_get_setting (existing, NM_TYPE_SETTING_CONNECTION);
+			nm_log_dbg (LOGD_DEVICE, "(%s): found existing device connection '%s'",
+			            nm_device_get_iface (device),
+			            nm_setting_connection_get_id (s_con));
+		}
 	}
 
 	/* Start the device if it's supposed to be managed */
@@ -1551,11 +1564,14 @@ add_device (NMManager *self, NMDevice *device)
 		const char *ac_path;
 		GError *error = NULL;
 
+		nm_log_dbg (LOGD_DEVICE, "(%s): will attempt to assume existing connection",
+		            nm_device_get_iface (device));
+
 		ac_path = internal_activate_device (self, device, existing, NULL, FALSE, TRUE, &error);
 		if (ac_path)
 			g_object_notify (G_OBJECT (self), NM_MANAGER_ACTIVE_CONNECTIONS);
 		else {
-			nm_log_warn (LOGD_CORE, "assumed connection (%d) %s failed to activate: (%d) %s",
+			nm_log_warn (LOGD_DEVICE, "assumed connection (%d) %s failed to activate: (%d) %s",
 			             nm_connection_get_scope (existing),
 			             nm_connection_get_path (existing),
 			             error ? error->code : -1,
