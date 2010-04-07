@@ -19,7 +19,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2009 Red Hat, Inc.
+ * (C) Copyright 2007 - 2010 Red Hat, Inc.
  * (C) Copyright 2008 Novell, Inc.
  */
 
@@ -57,8 +57,8 @@
 #include "nm-sysconfig-connection.h"
 #include "nm-polkit-helpers.h"
 #include "nm-system-config-error.h"
-#include "nm-utils.h"
 #include "nm-default-wired-connection.h"
+#include "nm-logging.h"
 
 #define CONFIG_KEY_NO_AUTO_DEFAULT "no-auto-default"
 
@@ -368,7 +368,7 @@ add_plugin (NMSysconfigSettings *self, NMSystemConfigInterface *plugin)
 	              NM_SYSTEM_CONFIG_INTERFACE_INFO, &pinfo,
 	              NULL);
 
-	g_message ("Loaded plugin %s: %s", pname, pinfo);
+	nm_log_info (LOGD_SYS_SET, "Loaded plugin %s: %s", pname, pinfo);
 	g_free (pname);
 	g_free (pinfo);
 }
@@ -859,11 +859,11 @@ permission_call_done (GObject *object, GAsyncResult *result, gpointer user_data)
 	                                                         &error);
 	/* Some random error happened */
 	if (error) {
-		g_warning ("%s.%d (%s): error checking '%s' permission: (%d) %s",
-		           __FILE__, __LINE__, __func__,
-		           call->pk_action,
-		           error ? error->code : -1,
-		           error && error->message ? error->message : "(unknown)");
+		nm_log_err (LOGD_SYS_SET, "error checking '%s' permission: (%d) %s",
+		            __FILE__, __LINE__, __func__,
+		            call->pk_action,
+		            error ? error->code : -1,
+		            error && error->message ? error->message : "(unknown)");
 		if (error)
 			g_error_free (error);
 	} else {
@@ -1064,7 +1064,7 @@ is_mac_auto_wired_blacklisted (NMSysconfigSettings *self, const GByteArray *mac)
 
 	config = g_key_file_new ();
 	if (!config) {
-		g_warning ("%s: not enough memory to load config file.", __func__);
+		nm_log_warn (LOGD_SYS_SET, "not enough memory to load config file.");
 		return FALSE;
 	}
 
@@ -1216,14 +1216,14 @@ default_wired_try_update (NMDefaultWiredConnection *wired,
 		g_object_set_data (G_OBJECT (nm_default_wired_connection_get_device (wired)),
 		                   DEFAULT_WIRED_TAG,
 		                   NULL);
-		g_message ("Saved default wired connection '%s' to persistent storage", id);
+		nm_log_info (LOGD_SYS_SET, "Saved default wired connection '%s' to persistent storage", id);
 		return FALSE;
 	}
 
-	g_warning ("%s: couldn't save default wired connection '%s': %d / %s",
-	           __func__, id,
-	           error ? error->code : -1,
-	           (error && error->message) ? error->message : "(unknown)");
+	nm_log_warn (LOGD_SYS_SET, "couldn't save default wired connection '%s': %d / %s",
+	             id,
+	             error ? error->code : -1,
+	             (error && error->message) ? error->message : "(unknown)");
 
 	/* If there was an error, don't destroy the default wired connection,
 	 * but add it back to the system settings service. Connection is already
@@ -1275,7 +1275,8 @@ nm_sysconfig_settings_device_added (NMSysconfigSettings *self, NMDevice *device)
 	id = nm_setting_connection_get_id (s_con);
 	g_assert (id);
 
-	g_message ("Added default wired connection '%s' for %s", id, nm_device_get_udi (device));
+	nm_log_info (LOGD_SYS_SET, "Added default wired connection '%s' for %s",
+	             id, nm_device_get_udi (device));
 
 	g_signal_connect (wired, "try-update", (GCallback) default_wired_try_update, self);
 	g_signal_connect (wired, "deleted", (GCallback) default_wired_deleted, self);
@@ -1507,6 +1508,6 @@ nm_sysconfig_settings_init (NMSysconfigSettings *self)
 		                                          G_CALLBACK (pk_authority_changed_cb),
 		                                          self);
 	} else
-		g_warning ("%s: failed to create PolicyKit authority.", __func__);
+		nm_log_warn (LOGD_SYS_SET, "failed to create PolicyKit authority.");
 }
 
