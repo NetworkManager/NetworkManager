@@ -38,6 +38,7 @@
 
 #include "nm-dhcp-dhclient.h"
 #include "nm-utils.h"
+#include "nm-logging.h"
 
 G_DEFINE_TYPE (NMDHCPDhclient, nm_dhcp_dhclient, NM_TYPE_DHCP_CLIENT)
 
@@ -101,7 +102,7 @@ add_lease_option (GHashTable *hash, char *line)
 
 	spc = strchr (line, ' ');
 	if (!spc) {
-		g_warning ("%s: line '%s' did not contain a space", __func__, line);
+		nm_log_warn (LOGD_DHCP, "DHCP lease file line '%s' did not contain a space", line);
 		return;
 	}
 
@@ -109,8 +110,8 @@ add_lease_option (GHashTable *hash, char *line)
 	if (g_str_has_prefix (line, "option ")) {
 		spc = strchr (spc + 1, ' ');
 		if (!spc) {
-			g_warning ("%s: option line '%s' did not contain a second space",
-			           __func__, line);
+			nm_log_warn (LOGD_DHCP, "DHCP lease file option line '%s' did not contain a second space",
+			             line);
 			return;
 		}
 	}
@@ -168,9 +169,9 @@ nm_dhcp_dhclient_get_lease_config (const char *iface, const char *uuid)
 		} else if (!strcmp (*line, "lease {")) {
 			/* Beginning of a new lease */
 			if (hash) {
-				g_warning ("%s: lease file %s malformed; new lease started "
-				           "without ending previous lease",
-				           __func__, leasefile);
+				nm_log_warn (LOGD_DHCP, "DHCP lease file %s malformed; new lease started "
+				             "without ending previous lease",
+				             leasefile);
 				g_hash_table_destroy (hash);
 			}
 
@@ -182,9 +183,9 @@ nm_dhcp_dhclient_get_lease_config (const char *iface, const char *uuid)
 
 	/* Check if the last lease in the file was properly ended */
 	if (hash) {
-		g_warning ("%s: lease file %s malformed; new lease started "
-		           "without ending previous lease",
-		           __func__, leasefile);
+		nm_log_warn (LOGD_DHCP, "DHCP lease file %s malformed; new lease started "
+		             "without ending previous lease",
+		             leasefile);
 		g_hash_table_destroy (hash);
 		hash = NULL;
 	}
@@ -211,8 +212,8 @@ nm_dhcp_dhclient_get_lease_config (const char *iface, const char *uuid)
 
 			/* Read lease expiration (in UTC) */
 			if (!strptime (data, "%w %Y/%m/%d %H:%M:%S", &expire)) {
-				g_warning ("%s: couldn't parse expire time '%s'",
-				           __func__, data);
+				nm_log_warn (LOGD_DHCP, "couldn't parse DHCP lease file expire time '%s'",
+				             data);
 				continue;
 			}
 
@@ -254,7 +255,7 @@ nm_dhcp_dhclient_get_lease_config (const char *iface, const char *uuid)
 
 		/* IP4 address */
 		if (!inet_pton (AF_INET, data, &tmp)) {
-			g_warning ("%s: couldn't parse IP4 address '%s'", __func__, data);
+			nm_log_warn (LOGD_DHCP, "couldn't parse DHCP lease file IP4 address '%s'", data);
 			goto error;
 		}
 		nm_ip4_address_set_address (addr, tmp.s_addr);
@@ -263,7 +264,7 @@ nm_dhcp_dhclient_get_lease_config (const char *iface, const char *uuid)
 		data = g_hash_table_lookup (hash, "option subnet-mask");
 		if (data) {
 			if (!inet_pton (AF_INET, data, &tmp)) {
-				g_warning ("%s: couldn't parse IP4 subnet mask '%s'", __func__, data);
+				nm_log_warn (LOGD_DHCP, "couldn't parse DHCP lease file IP4 subnet mask '%s'", data);
 				goto error;
 			}
 			prefix = nm_utils_ip4_netmask_to_prefix (tmp.s_addr);
@@ -277,7 +278,7 @@ nm_dhcp_dhclient_get_lease_config (const char *iface, const char *uuid)
 		data = g_hash_table_lookup (hash, "option routers");
 		if (data) {
 			if (!inet_pton (AF_INET, data, &tmp)) {
-				g_warning ("%s: couldn't parse IP4 gateway '%s'", __func__, data);
+				nm_log_warn (LOGD_DHCP, "couldn't parse DHCP lease file IP4 gateway '%s'", data);
 				goto error;
 			}
 			nm_ip4_address_set_gateway (addr, tmp.s_addr);
@@ -327,8 +328,8 @@ merge_dhclient_config (const char *iface,
 		GError *read_error = NULL;
 
 		if (!g_file_get_contents (orig_path, &orig_contents, NULL, &read_error)) {
-			nm_warning ("%s: error reading dhclient configuration %s: %s",
-			            iface, orig_path, read_error->message);
+			nm_log_warn (LOGD_DHCP, "(%s): error reading dhclient configuration %s: %s",
+			             iface, orig_path, read_error->message);
 			g_error_free (read_error);
 		}
 	}
@@ -445,7 +446,7 @@ create_dhclient_config (const char *iface,
 #endif
 
 	if (!orig) {
-		nm_warning ("%s: not enough memory for dhclient options.", iface);
+		nm_log_warn (LOGD_DHCP, "(%s): not enough memory for dhclient options.", iface);
 		return FALSE;
 	}
 
@@ -456,8 +457,8 @@ create_dhclient_config (const char *iface,
 	error = NULL;
 	success = merge_dhclient_config (iface, conf_file, s_ip4, dhcp_anycast_addr, orig, &error);
 	if (!success) {
-		nm_warning ("%s: error creating dhclient configuration: %s",
-		            iface, error->message);
+		nm_log_warn (LOGD_DHCP, "(%s): error creating dhclient configuration: %s",
+		             iface, error->message);
 		g_error_free (error);
 	}
 
@@ -486,6 +487,7 @@ dhclient_start (NMDHCPClient *client,
 	const char *iface, *uuid;
 	char *binary_name, *cmd_str;
 	gboolean ipv6;
+	guint log_domain;
 
 	g_return_val_if_fail (priv->pid_file == NULL, -1);
 	g_return_val_if_fail (ip_opt != NULL, -1);
@@ -494,16 +496,18 @@ dhclient_start (NMDHCPClient *client,
 	uuid = nm_dhcp_client_get_uuid (client);
 	ipv6 = nm_dhcp_client_get_ipv6 (client);
 
+	log_domain = ipv6 ? LOGD_DHCP6 : LOGD_DHCP4;
+
 	priv->pid_file = g_strdup_printf (LOCALSTATEDIR "/run/dhclient%s-%s.pid",
 	                                  ipv6 ? "6" : "",
 	                                  iface);
 	if (!priv->pid_file) {
-		nm_warning ("%s: not enough memory for dhcpcd options.", iface);
+		nm_log_warn (log_domain, "(%s): not enough memory for dhcpcd options.", iface);
 		return -1;
 	}
 
 	if (!g_file_test (priv->path, G_FILE_TEST_EXISTS)) {
-		nm_warning ("%s does not exist.", priv->path);
+		nm_log_warn (log_domain, "%s does not exist.", priv->path);
 		return -1;
 	}
 
@@ -514,7 +518,7 @@ dhclient_start (NMDHCPClient *client,
 
 	priv->lease_file = get_leasefile_for_iface (iface, uuid, ipv6);
 	if (!priv->lease_file) {
-		nm_warning ("%s: not enough memory for dhclient options.", iface);
+		nm_log_warn (log_domain, "(%s): not enough memory for dhclient options.", iface);
 		return -1;
 	}
 
@@ -546,16 +550,16 @@ dhclient_start (NMDHCPClient *client,
 	g_ptr_array_add (argv, NULL);
 
 	cmd_str = g_strjoinv (" ", (gchar **) argv->pdata);
-	nm_info ("running: %s", cmd_str);
+	nm_log_dbg (log_domain, "running: %s", cmd_str);
 	g_free (cmd_str);
 
 	if (!g_spawn_async (NULL, (char **) argv->pdata, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
 	                    &dhclient_child_setup, NULL, &pid, &error)) {
-		nm_warning ("dhclient failed to start.  error: '%s'", error->message);
+		nm_log_warn (log_domain, "dhclient failed to start: '%s'", error->message);
 		g_error_free (error);
 		pid = -1;
 	} else
-		nm_info ("dhclient started with pid %d", pid);
+		nm_log_info (log_domain, "dhclient started with pid %d", pid);
 
 	g_ptr_array_free (argv, TRUE);
 	return pid;
@@ -573,7 +577,7 @@ real_ip4_start (NMDHCPClient *client,
 
 	priv->conf_file = create_dhclient_config (iface, s_ip4, dhcp_anycast_addr);
 	if (!priv->conf_file) {
-		nm_warning ("%s: error creating dhclient configuration file.", iface);
+		nm_log_warn (LOGD_DHCP4, "(%s): error creating dhclient configuration file.", iface);
 		return -1;
 	}
 
@@ -694,7 +698,7 @@ real_ip4_process_classless_routes (NMDHCPClient *client,
 
 	o = octets = g_strsplit (str, " ", 0);
 	if (g_strv_length (octets) < 5) {
-		nm_warning ("Ignoring invalid classless static routes '%s'", str);
+		nm_log_warn (LOGD_DHCP4, "ignoring invalid classless static routes '%s'", str);
 		goto out;
 	}
 
@@ -702,7 +706,7 @@ real_ip4_process_classless_routes (NMDHCPClient *client,
 		route = NULL;
 		o = (char **) process_rfc3442_route ((const char **) o, &route);
 		if (!route) {
-			nm_warning ("Ignoring invalid classless static routes");
+			nm_log_warn (LOGD_DHCP4, "ignoring invalid classless static routes");
 			break;
 		}
 
@@ -723,8 +727,8 @@ real_ip4_process_classless_routes (NMDHCPClient *client,
 			inet_ntop (AF_INET, &tmp, addr, sizeof (addr));
 			tmp.s_addr = nm_ip4_route_get_next_hop (route);
 			inet_ntop (AF_INET, &tmp, nh, sizeof (nh));
-			nm_info ("  classless static route %s/%d gw %s",
-			         addr, nm_ip4_route_get_prefix (route), nh);
+			nm_log_info (LOGD_DHCP4, "  classless static route %s/%d gw %s",
+			             addr, nm_ip4_route_get_prefix (route), nh);
 		}
 	}
 

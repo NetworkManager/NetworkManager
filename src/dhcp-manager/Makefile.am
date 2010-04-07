@@ -2,6 +2,7 @@ INCLUDES = \
 	-I${top_srcdir} \
 	-I${top_srcdir}/include \
 	-I${top_builddir}/marshallers \
+	-I${top_srcdir}/src/logging \
 	-I${top_srcdir}/libnm-util \
 	-I${top_srcdir}/src \
 	-I${top_srcdir}/src/named-manager
@@ -32,6 +33,7 @@ libdhcp_manager_la_CPPFLAGS = \
 
 libdhcp_manager_la_LIBADD = \
 	$(top_builddir)/marshallers/libmarshallers.la \
+	$(top_builddir)/src/logging/libnm-logging.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS)
 

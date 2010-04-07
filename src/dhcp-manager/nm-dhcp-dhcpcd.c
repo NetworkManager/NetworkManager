@@ -34,6 +34,7 @@
 
 #include "nm-dhcp-dhcpcd.h"
 #include "nm-utils.h"
+#include "nm-logging.h"
 
 G_DEFINE_TYPE (NMDHCPDhcpcd, nm_dhcp_dhcpcd, NM_TYPE_DHCP_DHCPCD)
 
@@ -103,12 +104,12 @@ real_ip4_start (NMDHCPClient *client,
 
 	priv->pid_file = g_strdup_printf (LOCALSTATEDIR "/run/dhcpcd-%s.pid", iface);
 	if (!priv->pid_file) {
-		nm_warning ("%s: not enough memory for dhcpcd options.", iface);
+		nm_log_warn (LOGD_DHCP4, "(%s): not enough memory for dhcpcd options.", iface);
 		return -1;
 	}
 
 	if (!g_file_test (priv->path, G_FILE_TEST_EXISTS)) {
-		nm_warning ("%s does not exist.", priv->path);
+		nm_log_warn (LOGD_DHCP4, "%s does not exist.", priv->path);
 		return -1;
 	}
 
@@ -139,15 +140,15 @@ real_ip4_start (NMDHCPClient *client,
 	g_ptr_array_add (argv, NULL);
 
 	cmd_str = g_strjoinv (" ", (gchar **) argv->pdata);
-	nm_info ("running: %s", cmd_str);
+	nm_log_dbg (LOGD_DHCP4, "running: %s", cmd_str);
 	g_free (cmd_str);
 
 	if (!g_spawn_async (NULL, (char **) argv->pdata, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
 	                    &dhcpcd_child_setup, NULL, &pid, &error)) {
-		nm_warning ("dhcpcd failed to start.  error: '%s'", error->message);
+		nm_log_warn (LOGD_DHCP4, "dhcpcd failed to start.  error: '%s'", error->message);
 		g_error_free (error);
 	} else
-		nm_info ("dhcpcd started with pid %d", pid);
+		nm_log_info (LOGD_DHCP4, "dhcpcd started with pid %d", pid);
 
 	g_free (pid_contents);
 	g_ptr_array_free (argv, TRUE);
@@ -160,7 +161,7 @@ real_ip6_start (NMDHCPClient *client,
                 guint8 *dhcp_anycast_addr,
                 gboolean info_only)
 {
-	g_warning ("The dhcpcd backend does not support IPv6.");
+	nm_log_warn (LOGD_DHCP6, "the dhcpcd backend does not support IPv6.");
 	return -1;
 }
 
@@ -202,7 +203,7 @@ real_ip4_process_classless_routes (NMDHCPClient *client,
 		goto out;
 
 	if ((g_strv_length (routes) % 2) != 0) {
-		nm_info ("  classless static routes provided, but invalid");
+		nm_log_warn (LOGD_DHCP4, "  classless static routes provided, but invalid");
 		goto out;
 	}
 
@@ -219,16 +220,16 @@ real_ip4_process_classless_routes (NMDHCPClient *client,
 			errno = 0;
 			rt_cidr = strtol (slash + 1, NULL, 10);
 			if ((errno == EINVAL) || (errno == ERANGE)) {
-				nm_warning ("DHCP provided invalid classless static route cidr: '%s'", slash + 1);
+				nm_log_warn (LOGD_DHCP4, "DHCP provided invalid classless static route cidr: '%s'", slash + 1);
 				continue;
 			}
 		}
 		if (inet_pton (AF_INET, *r, &rt_addr) <= 0) {
-			nm_warning ("DHCP provided invalid classless static route address: '%s'", *r);
+			nm_log_warn (LOGD_DHCP4, "DHCP provided invalid classless static route address: '%s'", *r);
 			continue;
 		}
 		if (inet_pton (AF_INET, *(r + 1), &rt_route) <= 0) {
-			nm_warning ("DHCP provided invalid classless static route gateway: '%s'", *(r + 1));
+			nm_log_warn (LOGD_DHCP4, "DHCP provided invalid classless static route gateway: '%s'", *(r + 1));
 			continue;
 		}
 
@@ -244,7 +245,7 @@ real_ip4_process_classless_routes (NMDHCPClient *client,
 
 
 			nm_ip4_config_take_route (ip4_config, route);
-			nm_info ("  classless static route %s/%d gw %s", *r, rt_cidr, *(r + 1));
+			nm_log_info (LOGD_DHCP4, "  classless static route %s/%d gw %s", *r, rt_cidr, *(r + 1));
 		}
 	}
 
