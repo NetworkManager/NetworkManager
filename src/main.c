@@ -322,8 +322,8 @@ parse_config_file (const char *filename,
 
 	*dhcp_client = g_key_file_get_value (config, "main", "dhcp", NULL);
 
-	*log_level = g_key_file_get_value (config, "main", "log-level", NULL);
-	*log_domains = g_key_file_get_value (config, "main", "log-domains", NULL);
+	*log_level = g_key_file_get_value (config, "logging", "level", NULL);
+	*log_domains = g_key_file_get_value (config, "logging", "domains", NULL);
 
 	g_key_file_free (config);
 	return TRUE;
