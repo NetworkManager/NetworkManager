@@ -768,6 +768,7 @@ static void
 nm_supplicant_interface_add_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 {
 	NMSupplicantInfo *info = (NMSupplicantInfo *) user_data;
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (info->interface);
 	GError *err = NULL;
 	char *path = NULL;
 
@@ -782,13 +783,13 @@ nm_supplicant_interface_add_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpoi
 			/* Interface already added, just try to get the interface */
 			nm_supplicant_interface_add_to_supplicant (info->interface, TRUE);
 		} else {
-			nm_log_warn (LOGD_SUPPLICANT, "Unexpected supplicant error getting interface: %s",
-			             err->message);
+			nm_log_err (LOGD_SUPPLICANT, "(%s): error getting interface: %s",
+			            priv->dev, err->message);
 		}
 
 		g_error_free (err);
 	} else {
-		NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (info->interface);
+		nm_log_dbg (LOGD_SUPPLICANT, "(%s): interface added to supplicant", priv->dev);
 
 		priv->object_path = path;
 
@@ -886,6 +887,8 @@ nm_supplicant_interface_start (NMSupplicantInterface * self)
 
 	/* Can only start the interface from INIT state */
 	g_return_if_fail (priv->state == NM_SUPPLICANT_INTERFACE_STATE_INIT);
+
+	nm_log_dbg (LOGD_SUPPLICANT, "(%s): adding interface to supplicant", priv->dev);
 
 	state = nm_supplicant_manager_get_state (priv->smgr);
 	if (state == NM_SUPPLICANT_MANAGER_STATE_IDLE) {

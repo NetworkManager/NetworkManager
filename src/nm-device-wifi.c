@@ -1208,16 +1208,25 @@ real_is_available (NMDevice *dev)
 	NMSupplicantInterface *sup_iface;
 	guint32 state;
 
-	if (!priv->enabled)
+	if (!priv->enabled) {
+		nm_log_dbg (LOGD_WIFI, "(%s): not available because not enabled",
+		            nm_device_get_iface (dev));
 		return FALSE;
+	}
 
 	sup_iface = priv->supplicant.iface;
-	if (!sup_iface)
+	if (!sup_iface) {
+		nm_log_dbg (LOGD_WIFI, "(%s): not available because supplicant not running",
+		            nm_device_get_iface (dev));
 		return FALSE;
+	}
 
 	state = nm_supplicant_interface_get_state (sup_iface);
-	if (state != NM_SUPPLICANT_INTERFACE_STATE_READY)
+	if (state != NM_SUPPLICANT_INTERFACE_STATE_READY) {
+		nm_log_dbg (LOGD_WIFI, "(%s): not available because supplicant interface not ready",
+		            nm_device_get_iface (dev));
 		return FALSE;
+	}
 
 	return TRUE;
 }
@@ -3499,9 +3508,16 @@ real_set_enabled (NMDeviceInterface *device, gboolean enabled)
 
 	priv->enabled = enabled;
 
+	nm_log_dbg (LOGD_WIFI, "(%s): device now %s",
+	            nm_device_get_iface (NM_DEVICE (device)),
+	            enabled ? "enabled" : "disabled");
+
 	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
-	if (state < NM_DEVICE_STATE_UNAVAILABLE)
+	if (state < NM_DEVICE_STATE_UNAVAILABLE) {
+		nm_log_dbg (LOGD_WIFI, "(%s): enable blocked by UNMANAGED state",
+		            nm_device_get_iface (NM_DEVICE (device)));
 		return;
+	}
 
 	if (enabled) {
 		gboolean no_firmware = FALSE, success;
@@ -3511,6 +3527,9 @@ real_set_enabled (NMDeviceInterface *device, gboolean enabled)
 			nm_log_warn (LOGD_CORE, "not in expected unavailable state!");
 
 		if (!nm_device_hw_bring_up (NM_DEVICE (self), TRUE, &no_firmware)) {
+			nm_log_dbg (LOGD_WIFI, "(%s): enable blocked by failure to bring device up",
+			            nm_device_get_iface (NM_DEVICE (device)));
+
 			/* The device sucks, or HAL was lying to us about the killswitch state */
 			priv->enabled = FALSE;
 			return;
@@ -3525,6 +3544,8 @@ real_set_enabled (NMDeviceInterface *device, gboolean enabled)
 			supplicant_interface_release (self);
 
 		supplicant_interface_acquire (self);
+		nm_log_dbg (LOGD_WIFI, "(%s): enable waiting on supplicant state",
+		            nm_device_get_iface (NM_DEVICE (device)));
 	} else {
 		nm_device_state_changed (NM_DEVICE (self),
 		                         NM_DEVICE_STATE_UNAVAILABLE,
