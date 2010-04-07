@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 Red Hat, Inc.
+ * Copyright (C) 2009 - 2010 Red Hat, Inc.
  */
 
 #include <stdio.h>
@@ -28,7 +28,7 @@
 #include "nm-device-bt.h"
 #include "nm-device-interface.h"
 #include "nm-device-private.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 #include "nm-marshal.h"
 #include "ppp-manager/nm-ppp-manager.h"
 #include "nm-properties-changed-signal.h"
@@ -366,10 +366,11 @@ modem_ip4_config_result (NMModem *self,
 	g_return_if_fail (state == NM_DEVICE_STATE_IP_CONFIG);
 
 	if (error) {
-		nm_warning ("%s: retrieving IP4 configuration failed: (%d) %s",
-		            __func__,
-		            error ? error->code : -1,
-		            error && error->message ? error->message : "(unknown)");
+		nm_log_warn (LOGD_MB | LOGD_IP4 | LOGD_BT,
+		             "(%s): retrieving IP4 configuration failed: (%d) %s",
+		             nm_device_get_ip_iface (device),
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
 
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 	} else {
@@ -483,14 +484,16 @@ nm_device_bt_modem_added (NMDeviceBt *self,
 	 */
 	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
 	if (state != NM_DEVICE_STATE_CONFIG) {
-		nm_warning ("(%s): modem found but device not in correct state (%d)",
-		            nm_device_get_iface (NM_DEVICE (self)),
-		            nm_device_get_state (NM_DEVICE (self)));
+		nm_log_warn (LOGD_BT | LOGD_MB,
+		             "(%s): modem found but device not in correct state (%d)",
+		             nm_device_get_iface (NM_DEVICE (self)),
+		             nm_device_get_state (NM_DEVICE (self)));
 		return TRUE;
 	}
 
-	nm_info ("Activation (%s/bluetooth) Stage 2 of 5 (Device Configure) modem found.",
-	         nm_device_get_iface (NM_DEVICE (self)));
+	nm_log_info (LOGD_BT | LOGD_MB,
+	             "Activation (%s/bluetooth) Stage 2 of 5 (Device Configure) modem found.",
+	             nm_device_get_iface (NM_DEVICE (self)));
 
 	if (priv->modem) {
 		g_warn_if_reached ();
@@ -561,11 +564,11 @@ check_connect_continue (NMDeviceBt *self)
 	if (!priv->connected || !priv->have_iface)
 		return;
 
-	nm_info ("Activation (%s %s/bluetooth) Stage 2 of 5 (Device Configure) "
-	         "successful.  Will connect via %s.",
-	         nm_device_get_iface (device),
-	         nm_device_get_ip_iface (device),
-	         dun ? "DUN" : (pan ? "PAN" : "unknown"));
+	nm_log_info (LOGD_BT, "Activation (%s %s/bluetooth) Stage 2 of 5 (Device Configure) "
+	             "successful.  Will connect via %s.",
+	             nm_device_get_iface (device),
+	             nm_device_get_ip_iface (device),
+	             dun ? "DUN" : (pan ? "PAN" : "unknown"));
 
 	if (pan) {
 		/* Bluez says we're connected now.  Start IP config. */
@@ -576,9 +579,9 @@ check_connect_continue (NMDeviceBt *self)
 			g_source_remove (priv->timeout_id);
 		priv->timeout_id = g_timeout_add_seconds (20, modem_find_timeout, self);
 
-		nm_info ("Activation (%s/bluetooth) Stage 2 of 5 (Device Configure) "
-		         "waiting for modem to appear.",
-		         nm_device_get_iface (device));
+		nm_log_info (LOGD_BT | LOGD_MB, "Activation (%s/bluetooth) Stage 2 of 5 (Device Configure) "
+		             "waiting for modem to appear.",
+		             nm_device_get_iface (device));
 	} else
 		g_assert_not_reached ();
 }
@@ -596,8 +599,8 @@ bluez_connect_cb (DBusGProxy *proxy,
 	if (dbus_g_proxy_end_call (proxy, call_id, &error,
 	                           G_TYPE_STRING, &device,
 	                           G_TYPE_INVALID) == FALSE) {
-		nm_warning ("Error connecting with bluez: %s",
-		            error && error->message ? error->message : "(unknown)");
+		nm_log_warn (LOGD_BT, "Error connecting with bluez: %s",
+		             error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
 
 		nm_device_state_changed (NM_DEVICE (self),
@@ -607,7 +610,7 @@ bluez_connect_cb (DBusGProxy *proxy,
 	}
 
 	if (!device || !strlen (device)) {
-		nm_warning ("Invalid network device returned by bluez");
+		nm_log_warn (LOGD_BT, "Invalid network device returned by bluez");
 
 		nm_device_state_changed (NM_DEVICE (self),
 		                         NM_DEVICE_STATE_FAILED,
@@ -655,11 +658,13 @@ bluez_property_changed (DBusGProxy *proxy,
 		/* Bluez says we're disconnected from the device.  Suck. */
 
 		if (nm_device_is_activating (device)) {
-			nm_info ("Activation (%s/bluetooth): bluetooth link disconnected.",
-			         nm_device_get_iface (device));
+			nm_log_info (LOGD_BT,
+			             "Activation (%s/bluetooth): bluetooth link disconnected.",
+			             nm_device_get_iface (device));
 			fail = TRUE;
 		} else if (state == NM_DEVICE_STATE_ACTIVATED) {
-			nm_info ("%s: bluetooth link disconnected.", nm_device_get_iface (device));
+			nm_log_info (LOGD_BT, "(%s): bluetooth link disconnected.",
+			             nm_device_get_iface (device));
 			fail = TRUE;
 		}
 
