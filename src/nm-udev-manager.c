@@ -82,6 +82,30 @@ nm_udev_manager_get_rfkill_state (NMUdevManager *self, RfKillType rtype)
 	return NM_UDEV_MANAGER_GET_PRIVATE (self)->rfkill_states[rtype];
 }
 
+static const char *
+rfkill_type_to_desc (RfKillType rtype)
+{
+	if (rtype == 0)
+		return "WiFi";
+	else if (rtype == 1)
+		return "WWan";
+	else if (rtype == 2)
+		return "WiMAX";
+	return "unknown";
+}
+
+static const char *
+rfkill_state_to_desc (RfKillState rstate)
+{
+	if (rstate == 0)
+		return "unblocked";
+	else if (rstate == 1)
+		return "soft-blocked";
+	else if (rstate == 2)
+		return "hard-blocked";
+	return "unknown";
+}
+
 static Killswitch *
 killswitch_new (GUdevDevice *device, RfKillType rtype)
 {
@@ -175,6 +199,10 @@ recheck_killswitches (NMUdevManager *self)
 
 	for (i = 0; i < RFKILL_TYPE_MAX; i++) {
 		if (poll_states[i] != priv->rfkill_states[i]) {
+			nm_log_dbg (LOGD_RFKILL, "%s rfkill state now '%s'",
+			            rfkill_type_to_desc (i),
+			            rfkill_state_to_desc (poll_states[i]));
+
 			priv->rfkill_states[i] = poll_states[i];
 			g_signal_emit (self, signals[RFKILL_CHANGED], 0, i, priv->rfkill_states[i]);
 		}
@@ -230,7 +258,7 @@ add_one_killswitch (NMUdevManager *self, GUdevDevice *device)
 	priv->killswitches = g_slist_prepend (priv->killswitches, ks);
 
 	nm_log_info (LOGD_RFKILL, "found %s radio killswitch %s (at %s) (driver %s)",
-	             str_type,
+	             rfkill_type_to_desc (rtype),
 	             ks->name,
 	             ks->path,
 	             ks->driver ? ks->driver : "<unknown>");
@@ -426,6 +454,9 @@ handle_uevent (GUdevClient *client,
 	/* A bit paranoid */
 	subsys = g_udev_device_get_subsystem (device);
 	g_return_if_fail (subsys != NULL);
+
+	nm_log_dbg (LOGD_HW, "UDEV event: action '%s' subsys '%s' device '%s'",
+	            action, subsys, g_udev_device_get_name (device));
 
 	g_return_if_fail (!strcmp (subsys, "rfkill") || !strcmp (subsys, "net"));
 
