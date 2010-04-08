@@ -1919,13 +1919,18 @@ supports_ethtool_carrier_detect (NMDeviceEthernet *self)
 	edata.cmd = ETHTOOL_GLINK;
 	ifr.ifr_data = (char *) &edata;
 
-	if (ioctl (fd, SIOCETHTOOL, &ifr) < 0)
+	errno = 0;
+	if (ioctl (fd, SIOCETHTOOL, &ifr) < 0) {
+		nm_log_dbg (LOGD_HW | LOGD_ETHER, "SIOCETHTOOL failed: %d", errno);
 		goto out;
+	}
 
 	supports_ethtool = TRUE;
 
 out:
 	close (fd);
+	nm_log_dbg (LOGD_HW | LOGD_ETHER, "ethtool %s supported",
+	            supports_ethtool ? "is" : "not");
 	return supports_ethtool;
 }
 
@@ -1949,8 +1954,13 @@ mdio_read (NMDeviceEthernet *self, int fd, struct ifreq *ifr, int location)
 	mii = (struct mii_ioctl_data *) &ifr->ifr_ifru;
 	mii->reg_num = location;
 
-	if (ioctl (fd, SIOCGMIIREG, ifr) == 0)
+	errno = 0;
+	if (ioctl (fd, SIOCGMIIREG, ifr) == 0) {
+		nm_log_dbg (LOGD_HW | LOGD_ETHER, "SIOCGMIIREG result 0x%X", mii->val_out);
 		val = mii->val_out;
+	} else {
+		nm_log_dbg (LOGD_HW | LOGD_ETHER, "SIOCGMIIREG failed: %d", errno);
+	}
 
 	return val;
 }
@@ -1973,12 +1983,17 @@ supports_mii_carrier_detect (NMDeviceEthernet *self)
 	memset (&ifr, 0, sizeof (struct ifreq));
 	strncpy (ifr.ifr_name, nm_device_get_iface (NM_DEVICE (self)), IFNAMSIZ);
 
-	if (ioctl (fd, SIOCGMIIPHY, &ifr) < 0)
+	errno = 0;
+	if (ioctl (fd, SIOCGMIIPHY, &ifr) < 0) {
+		nm_log_dbg (LOGD_HW | LOGD_ETHER, "SIOCGMIIPHY failed: %d", errno);
 		goto out;
+	}
 
 	/* If we can read the BMSR register, we assume that the card supports MII link detection */
 	bmsr = mdio_read (self, fd, &ifr, MII_BMSR);
 	supports_mii = (bmsr != -1) ? TRUE : FALSE;
+	nm_log_dbg (LOGD_HW | LOGD_ETHER, "MII %s supported",
+	            supports_mii ? "is" : "not");
 
 out:
 	close (fd);
