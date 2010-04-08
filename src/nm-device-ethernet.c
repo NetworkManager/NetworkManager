@@ -311,7 +311,7 @@ constructor (GType type,
 	self = NM_DEVICE (object);
 	priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
-	nm_log_dbg (LOGD_HW | LOGD_ETHER, "(%s): kernel interface #%d",
+	nm_log_dbg (LOGD_HW | LOGD_OLPC_MESH, "(%s): kernel ifindex %d",
 	            nm_device_get_iface (NM_DEVICE (self)), priv->ifindex);
 
 	caps = nm_device_get_capabilities (self);
