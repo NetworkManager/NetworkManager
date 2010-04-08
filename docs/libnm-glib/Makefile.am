@@ -34,23 +34,26 @@ IGNORE_HFILES= \
 	nm-device-private.h \
 	nm-object-cache.h \
 	nm-object-private.h \
+	nm-remote-connection-private.h \
 	nm-types-private.h \
 	nm-access-point-bindings.h \
+	nm-active-connection-bindings.h \
 	nm-client-bindings.h \
 	nm-device-bindings.h \
+	nm-device-bt-bindings.h \
 	nm-device-ethernet-bindings.h \
 	nm-device-wifi-bindings.h \
-	nm-exported-connection-glue.h \
+	nm-dhcp4-config-bindings.h \
+	nm-dhcp6-config-bindings.h \
 	nm-exported-connection-bindings.h \
-	nm-settings-glue.h \
+	nm-exported-connection-glue.h \
+	nm-ip4-config-bindings.h \
+	nm-ip6-config-bindings.h \
 	nm-settings-bindings.h \
+	nm-settings-glue.h \
 	nm-settings-system-bindings.h \
 	nm-vpn-connection-bindings.h \
-	nm-vpn-plugin-glue.h \
-	nm-active-connection-bindings.h \
-	nm-ip4-config-bindings.h \
-	nm-dhcp4-config-bindings.h \
-	nm-ip4-config-bindings.h
+	nm-vpn-plugin-glue.h
 
 # Images to copy into HTML directory.
 HTML_IMAGES = 
