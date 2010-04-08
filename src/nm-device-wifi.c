@@ -578,6 +578,9 @@ constructor (GType type,
 	self = NM_DEVICE_WIFI (object);
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
+	nm_log_dbg (LOGD_HW | LOGD_WIFI, "(%s): kernel ifindex %d",
+	            nm_device_get_iface (NM_DEVICE (self)), priv->ifindex);
+
 	memset (&range, 0, sizeof (struct iw_range));
 	success = wireless_get_range (NM_DEVICE_WIFI (object), &range, &response_len);
 	if (!success)

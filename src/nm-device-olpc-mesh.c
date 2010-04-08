@@ -262,6 +262,9 @@ constructor (GType type,
 	self = NM_DEVICE_OLPC_MESH (object);
 	priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
 
+	nm_log_dbg (LOGD_HW | LOGD_OLPC_MESH, "(%s): kernel ifindex %d",
+	            nm_device_get_iface (NM_DEVICE (self)), priv->ifindex);
+
 	iface = nm_device_get_iface (NM_DEVICE (self));
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0)
