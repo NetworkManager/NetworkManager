@@ -3390,9 +3390,12 @@ nm_device_state_changed (NMDevice *device,
 		 * reasons.
 		 */
 		if (nm_device_is_available (device)) {
-			nm_log_dbg (LOGD_WIFI, "(%s): device is available, will transition to DISCONNECTED",
+			nm_log_dbg (LOGD_DEVICE, "(%s): device is available, will transition to DISCONNECTED",
 			            nm_device_get_iface (device));
 			priv->unavailable_to_disconnected_id = g_idle_add (unavailable_to_disconnected, device);
+		} else {
+			nm_log_dbg (LOGD_DEVICE, "(%s): device not yet available for transition to DISCONNECTED",
+			            nm_device_get_iface (device));
 		}
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
