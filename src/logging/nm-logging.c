@@ -85,6 +85,40 @@ static const LogDesc domain_descs[] = {
 	{ 0, NULL }
 };
 
+/************************************************************************/
+
+enum {
+    NM_LOGGING_ERROR_UNKNOWN_LEVEL = 0,
+    NM_LOGGING_ERROR_UNKNOWN_DOMAIN = 1,
+};
+
+#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
+
+GQuark
+nm_logging_error_quark (void)
+{
+    static GQuark ret = 0;
+
+    if (ret == 0)
+        ret = g_quark_from_static_string ("nm_logging_error");
+    return ret;
+}
+
+GType
+nm_logging_error_get_type (void)
+{
+    static GType etype = 0;
+
+    if (etype == 0) {
+        static const GEnumValue values[] = {
+            ENUM_ENTRY (NM_LOGGING_ERROR_UNKNOWN_LEVEL,  "UnknownLevel"),
+            ENUM_ENTRY (NM_LOGGING_ERROR_UNKNOWN_DOMAIN, "UnknownDomain"),
+            { 0, 0, 0 }
+        };
+        etype = g_enum_register_static ("NMLoggingError", values);
+    }
+    return etype;
+}
 
 /************************************************************************/
 
@@ -108,17 +142,21 @@ nm_logging_setup (const char *level, const char *domains, GError **error)
 		}
 
 		if (!found) {
-			g_set_error (error, 0, 0, _("Unknown log level '%s'"), level);
+			g_set_error (error, NM_LOGGING_ERROR, NM_LOGGING_ERROR_UNKNOWN_LEVEL,
+			             _("Unknown log level '%s'"), level);
 			return FALSE;
 		}
 	}
 
 	/* domains */
 	if (domains && strlen (domains)) {
-		tmp = g_strsplit (domains, ",", 0);
+		tmp = g_strsplit_set (domains, ", ", 0);
 		for (iter = tmp; iter && *iter; iter++) {
 			const LogDesc *diter;
 			gboolean found = FALSE;
+
+			if (!strlen (*iter))
+				continue;
 
 			for (diter = &domain_descs[0]; diter->name; diter++) {
 				if (!strcasecmp (diter->name, *iter)) {
@@ -129,7 +167,8 @@ nm_logging_setup (const char *level, const char *domains, GError **error)
 			}
 
 			if (!found) {
-				g_set_error (error, 0, 0, _("Unknown log domain '%s'"), *iter);
+				g_set_error (error, NM_LOGGING_ERROR, NM_LOGGING_ERROR_UNKNOWN_DOMAIN,
+				             _("Unknown log domain '%s'"), *iter);
 				return FALSE;
 			}
 		}

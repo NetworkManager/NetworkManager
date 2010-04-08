@@ -79,6 +79,11 @@ static gboolean impl_manager_deactivate_connection (NMManager *manager,
 
 static gboolean impl_manager_sleep (NMManager *manager, gboolean sleep, GError **err);
 
+static gboolean impl_manager_set_logging (NMManager *manager,
+                                          const char *level,
+                                          const char *domains,
+                                          GError **error);
+
 /* Legacy 0.6 compatibility interface */
 
 static gboolean impl_manager_legacy_sleep (NMManager *manager, GError **err);
@@ -2756,6 +2761,18 @@ impl_manager_legacy_state (NMManager *manager, guint32 *state, GError **err)
 	return TRUE;
 }
 
+static gboolean
+impl_manager_set_logging (NMManager *manager,
+                          const char *level,
+                          const char *domains,
+                          GError **error)
+{
+	if (nm_logging_setup (level, domains, error)) {
+		nm_log_info (LOGD_CORE, "logging: level '%s' domains '%s'", level, domains);
+		return TRUE;
+	}
+	return FALSE;
+}
 
 /* Connections */
 
@@ -3353,5 +3370,6 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	                                 &dbus_glib_nm_manager_object_info);
 
 	dbus_g_error_domain_register (NM_MANAGER_ERROR, NULL, NM_TYPE_MANAGER_ERROR);
+	dbus_g_error_domain_register (NM_LOGGING_ERROR, "org.freedesktop.NetworkManager.Logging", NM_TYPE_LOGGING_ERROR);
 }
 

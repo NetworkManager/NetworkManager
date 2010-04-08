@@ -23,6 +23,7 @@
 #define NM_LOGGING_H
 
 #include <glib.h>
+#include <glib-object.h>
 
 /* Log domains */
 enum {
@@ -61,6 +62,12 @@ enum {
 	LOGL_INFO  = 0x00000002,
 	LOGL_DEBUG = 0x00000004
 };
+
+#define NM_LOGGING_ERROR (nm_logging_error_quark ())
+#define NM_TYPE_LOGGING_ERROR (nm_logging_error_get_type ())
+GQuark nm_logging_error_quark    (void);
+GType  nm_logging_error_get_type (void);
+
 
 #define nm_log_err(domain, fmt, args...) \
 	{ _nm_log (G_STRLOC, G_STRFUNC, domain, LOGL_ERR, fmt, ##args); }
