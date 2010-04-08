@@ -10,3 +10,6 @@ EXTRA_DIST =				\
 	NetworkManager.conf.5.in	\
 	nm-system-settings.conf.5.in	\
 	nm-tool.1.in
+
+CLEANFILES = $(man_MANS)
+

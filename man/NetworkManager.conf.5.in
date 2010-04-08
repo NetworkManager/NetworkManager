@@ -97,6 +97,26 @@ ignored by NetworkManager. Remember that NetworkManager controls the default rou
 so because the interface is ignored, NetworkManager may assign the default route to
 some other interface.
 When the option is missing, \fIfalse\fP value is taken as default.
+.SS [logging]
+This section controls NetworkManager's logging.  Any settings here are
+overridden by the --log-level and --log-domain command-line options.
+.TP
+.B level=\fI<level>\fP
+One of [ERR, WARN, INFO, DEBUG].  The ERR level logs only critical errors.  WARN
+logs warnings that may reflect operation.  INFO logs various informational
+messages that are useful for tracking state and operations.  DEBUG enables
+verbose logging for debugging purposes.  Subsequent levels also log all messages
+from earlier levels; thus setting the log level to INFO also logs error and
+warning messages.
+.TP
+.B domains=\fI<domain1>,<domain2>, ...\fP
+The following log domains are available: [NONE, HW, RKILL, ETHER, WIFI, BT, MB,
+DHCP4, DHCP6, PPP, WIFI_SCAN, IP4, IP6, AUTOIP4, DNS, VPN, SHARING, SUPPLICANT,
+USER_SET, SYS_SET, SUSPEND, CORE, DEVICE, OLPC].  When "NONE" is given by itself,
+logging is disabled.  MB = Mobile Broadband, USER_SET = user settings operations
+and communication, SYS_SET = system settings service operations, OLPC = OLPC
+Mesh device operations, CORE = core daemon operations, DEVICE = activation and
+general interface operations.
 .SH "SEE ALSO"
 .BR http://live.gnome.org/NetworkManager/SystemSettings
 .sp
