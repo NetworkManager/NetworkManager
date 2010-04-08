@@ -199,7 +199,7 @@ void _nm_log (const char *loc,
 
 	if ((log_level & LOGL_DEBUG) && (level == LOGL_DEBUG)) {
 		g_get_current_time (&tv);
-		syslog (LOG_DEBUG, "<debug> [%ld.%ld] [%s] %s(): %s\n", tv.tv_sec, tv.tv_usec, loc, func, msg);
+		syslog (LOG_INFO, "<debug> [%ld.%ld] [%s] %s(): %s\n", tv.tv_sec, tv.tv_usec, loc, func, msg);
 	} else if ((log_level & LOGL_INFO) && (level == LOGL_INFO))
 		syslog (LOG_INFO, "<info> %s\n", msg);
 	else if ((log_level & LOGL_WARN) && (level == LOGL_WARN))
