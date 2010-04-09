@@ -1407,13 +1407,19 @@ manager_rfkill_update_one_type (NMManager *self,
 		break;
 	}
 
+	if (rstate->desc) {
+		nm_log_dbg (LOGD_RFKILL, "%s hw-enabled %d enabled %d",
+		            rstate->desc, new_he, new_e);
+	}
+
 	if (new_he != rstate->hw_enabled) {
 		nm_log_info (LOGD_RFKILL, "%s now %s by radio killswitch",
 		             rstate->desc,
 		             (new_e && new_he) ? "enabled" : "disabled");
 
 		rstate->hw_enabled = new_he;
-		g_object_notify (G_OBJECT (self), rstate->hw_prop);
+		if (rstate->hw_prop)
+			g_object_notify (G_OBJECT (self), rstate->hw_prop);
 	}
 	manager_set_radio_enabled (self, rstate, new_e);
 }
@@ -2715,6 +2721,12 @@ impl_manager_sleep (NMManager *self, gboolean sleep, GError **error)
 				gboolean enabled = (rstate->hw_enabled && rstate->enabled);
 				RfKillType devtype = RFKILL_TYPE_UNKNOWN;
 
+				if (rstate->desc) {
+					nm_log_dbg (LOGD_RFKILL, "%s %s devices (hw_enabled %d, enabled %d)",
+					            enabled ? "enabling" : "disabling",
+					            rstate->desc, rstate->hw_enabled, rstate->enabled);
+				}
+
 				g_object_get (G_OBJECT (device), NM_DEVICE_INTERFACE_RFKILL_TYPE, &devtype, NULL);
 				if (devtype == rstate->rtype)
 					nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (device), enabled);
@@ -2898,6 +2910,10 @@ nm_manager_start (NMManager *self)
 		             (rstate->enabled) ? "enabled" : "disabled");
 		manager_set_radio_enabled (self, rstate, rstate->enabled && enabled);
 	}
+
+	/* Log overall networking status - asleep/running */
+	nm_log_info (LOGD_CORE, "Networking is %s by state file",
+	             priv->sleeping ? "disabled" : "enabled");
 
 	system_unmanaged_devices_changed_cb (priv->sys_settings, NULL, self);
 	system_hostname_changed_cb (priv->sys_settings, NULL, self);
@@ -3153,6 +3169,14 @@ nm_manager_init (NMManager *manager)
 	priv->radio_states[RFKILL_TYPE_WWAN].desc = "WWAN";
 	priv->radio_states[RFKILL_TYPE_WWAN].other_enabled_func = nm_manager_get_modem_enabled_state;
 	priv->radio_states[RFKILL_TYPE_WWAN].rtype = RFKILL_TYPE_WWAN;
+
+	priv->radio_states[RFKILL_TYPE_WIMAX].enabled = TRUE;
+	priv->radio_states[RFKILL_TYPE_WIMAX].key = "WiMAXEnabled";
+	priv->radio_states[RFKILL_TYPE_WIMAX].prop = NULL;
+	priv->radio_states[RFKILL_TYPE_WIMAX].hw_prop = NULL;
+	priv->radio_states[RFKILL_TYPE_WIMAX].desc = "WiMAX";
+	priv->radio_states[RFKILL_TYPE_WIMAX].other_enabled_func = NULL;
+	priv->radio_states[RFKILL_TYPE_WIMAX].rtype = RFKILL_TYPE_WIMAX;
 
 	for (i = 0; i < RFKILL_TYPE_MAX; i++)
 		priv->radio_states[i].hw_enabled = TRUE;
