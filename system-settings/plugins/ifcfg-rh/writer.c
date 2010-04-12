@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 Red Hat, Inc.
+ * Copyright (C) 2009 - 2010 Red Hat, Inc.
  */
 
 #include <ctype.h>
@@ -911,9 +911,30 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 
 	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
 	if (!s_ip4) {
-		g_set_error (error, ifcfg_plugin_error_quark (), 0,
-		             "Missing '%s' setting", NM_SETTING_IP4_CONFIG_SETTING_NAME);
-		return FALSE;
+		int result;
+
+		/* IPv4 disabled, clear IPv4 related parameters */
+		svSetValue (ifcfg, "BOOTPROTO", NULL, FALSE);
+		for (i = 0; i < 254; i++) {
+			if (i == 0) {
+				addr_key = g_strdup ("IPADDR");
+				prefix_key = g_strdup ("PREFIX");
+				gw_key = g_strdup ("GATEWAY");
+			} else {
+				addr_key = g_strdup_printf ("IPADDR%d", i + 1);
+				prefix_key = g_strdup_printf ("PREFIX%d", i + 1);
+				gw_key = g_strdup_printf ("GATEWAY%d", i + 1);
+			}
+
+			svSetValue (ifcfg, addr_key, NULL, FALSE);
+			svSetValue (ifcfg, prefix_key, NULL, FALSE);
+			svSetValue (ifcfg, gw_key, NULL, FALSE);
+		}
+
+		route_path = utils_get_route_path (ifcfg->fileName);
+		result = unlink (route_path);
+		g_free (route_path);
+		return TRUE;
 	}
 
 	value = nm_setting_ip4_config_get_method (s_ip4);
