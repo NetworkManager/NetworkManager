@@ -37,7 +37,7 @@
 
 #include "nm-logging.h"
 
-static guint32 log_level = LOGL_INFO;
+static guint32 log_level = LOGL_INFO | LOGL_WARN | LOGL_ERR;
 static guint32 log_domains = \
 	LOGD_HW | LOGD_RFKILL | LOGD_ETHER | LOGD_WIFI | LOGD_BT | LOGD_MB | \
 	LOGD_DHCP4 | LOGD_DHCP6 | LOGD_PPP | LOGD_IP4 | LOGD_IP6 | LOGD_AUTOIP4 | \
