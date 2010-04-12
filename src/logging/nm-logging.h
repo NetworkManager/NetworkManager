@@ -57,10 +57,10 @@ enum {
 
 /* Log levels */
 enum {
-	LOGL_ERR   = 0x00000000,
-	LOGL_WARN  = 0x00000001,
-	LOGL_INFO  = 0x00000002,
-	LOGL_DEBUG = 0x00000004
+	LOGL_ERR   = 0x00000001,
+	LOGL_WARN  = 0x00000002,
+	LOGL_INFO  = 0x00000004,
+	LOGL_DEBUG = 0x00000008
 };
 
 #define NM_LOGGING_ERROR (nm_logging_error_quark ())
