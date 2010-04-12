@@ -11,8 +11,8 @@ msgstr ""
 "Project-Id-Version: NetworkManager.HEAD\n"
 "Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
 "product=NetworkManager&component=general\n"
-"POT-Creation-Date: 2010-02-26 03:24+0000\n"
-"PO-Revision-Date: 2010-03-28 18:46+0200\n"
+"POT-Creation-Date: 2010-04-09 03:24+0000\n"
+"PO-Revision-Date: 2010-04-10 19:52+0200\n"
 "Last-Translator: Jorge González <jorgegonz@svn.gnome.org>\n"
 "Language-Team: Español <gnome-es-list@gnome.org>\n"
 "MIME-Version: 1.0\n"
@@ -1186,85 +1186,91 @@ msgstr "No se pudo verificar el archivo PKCS#12: %d"
 msgid "Could not generate random data."
 msgstr "No se pudo generar datos aleatorios."
 
-#: ../libnm-util/nm-utils.c:1802
+#: ../libnm-util/nm-utils.c:1818
 #, c-format
 msgid "Not enough memory to make encryption key."
 msgstr "No hay memoria suficiente para crear la clave privada de cifrado."
 
-#: ../libnm-util/nm-utils.c:1912
+#: ../libnm-util/nm-utils.c:1928
 msgid "Could not allocate memory for PEM file creation."
 msgstr "No se pudo reservar memoria para crear el archivo PEM."
 
-#: ../libnm-util/nm-utils.c:1924
+#: ../libnm-util/nm-utils.c:1940
 #, c-format
 msgid "Could not allocate memory for writing IV to PEM file."
 msgstr "No se pudo asignar memoria para escribir IV en el archivo PEM."
 
-#: ../libnm-util/nm-utils.c:1936
+#: ../libnm-util/nm-utils.c:1952
 #, c-format
 msgid "Could not allocate memory for writing encrypted key to PEM file."
 msgstr ""
 "No se pudo asignar memoria para escribir la clave cifrada en el archivo PEM."
 
-#: ../libnm-util/nm-utils.c:1955
+#: ../libnm-util/nm-utils.c:1971
 #, c-format
 msgid "Could not allocate memory for PEM file data."
 msgstr "No se pudo reservar memoria para el archivo de datos PEM."
 
-#: ../src/nm-netlink-monitor.c:194 ../src/nm-netlink-monitor.c:464
-#: ../src/nm-netlink-monitor.c:582
-#: ../src/ip6-manager/nm-netlink-listener.c:352
+#: ../src/nm-netlink-monitor.c:195 ../src/nm-netlink-monitor.c:463
+#: ../src/nm-netlink-monitor.c:581
+#: ../src/ip6-manager/nm-netlink-listener.c:351
 #, c-format
 msgid "error processing netlink message: %s"
 msgstr "error al procesar el mensaje de netlink: %s"
 
-#: ../src/nm-netlink-monitor.c:260
+#: ../src/nm-netlink-monitor.c:259
 #, c-format
 msgid "unable to allocate netlink handle for monitoring link status: %s"
 msgstr ""
 "no se puede asignar el manejador netlink para monitorizar el estado del "
 "enlace: %s"
 
-#: ../src/nm-netlink-monitor.c:270
+#: ../src/nm-netlink-monitor.c:269
 #, c-format
 msgid "unable to connect to netlink for monitoring link status: %s"
 msgstr ""
 "no se puede conectar con netlink para monitorizar el estado del enlace: %s"
 
-#: ../src/nm-netlink-monitor.c:278
+#: ../src/nm-netlink-monitor.c:277
 #, c-format
 msgid "unable to join netlink group for monitoring link status: %s"
 msgstr ""
 "no pudo unirse al grupo netlink para monitorizar el estado del enlace: %s"
 
-#: ../src/nm-netlink-monitor.c:286
+#: ../src/nm-netlink-monitor.c:285
 #, c-format
 msgid "unable to allocate netlink link cache for monitoring link status: %s"
 msgstr ""
 "no se puede asignar el enlace a la caché de netlink para monitorizar el "
 "estado del enlace: %s"
 
-#: ../src/nm-netlink-monitor.c:494
-#: ../src/ip6-manager/nm-netlink-listener.c:382
+#: ../src/nm-netlink-monitor.c:493
+#: ../src/ip6-manager/nm-netlink-listener.c:381
 msgid "error occurred while waiting for data on socket"
 msgstr "ha ocurrido un error mientras esperaban datos en un socket"
 
-#: ../src/nm-netlink-monitor.c:558 ../src/nm-netlink-monitor.c:571
+#: ../src/nm-netlink-monitor.c:557 ../src/nm-netlink-monitor.c:570
 #, c-format
 msgid "error updating link cache: %s"
 msgstr "error al actualizar el enlace caché: %s"
 
-#: ../src/main.c:494
+#: ../src/main.c:498
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr ""
 "Opción no válida. Use --help para ver una lista de las opciones válidas.\n"
 
-#: ../src/dhcp-manager/nm-dhcp-dhclient.c:324
+#: ../src/main.c:558
+#, c-format
+#| msgid "Invalid option.  Please use --help to see a list of valid options.\n"
+msgid "%s.  Please use --help to see a list of valid options.\n"
+msgstr "%s. Use --help para ver una lista de las opciones válidas.\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:325
 msgid "# Created by NetworkManager\n"
 msgstr "# Creado por NetworkManager\n"
 
-#: ../src/dhcp-manager/nm-dhcp-dhclient.c:340
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:341
 #, c-format
 msgid ""
 "# Merged from %s\n"
@@ -1290,28 +1296,38 @@ msgstr "no se pudo encontrar «dhcpd»."
 msgid "unsupported DHCP client '%s'"
 msgstr "no se soporta el cliente de DHCP «%s»"
 
-#: ../src/ip6-manager/nm-netlink-listener.c:200
+#: ../src/ip6-manager/nm-netlink-listener.c:199
 #, c-format
 msgid "unable to allocate netlink handle: %s"
 msgstr "no se puede asignar el manejador netlink: %s"
 
-#: ../src/ip6-manager/nm-netlink-listener.c:210
+#: ../src/ip6-manager/nm-netlink-listener.c:209
 #, c-format
 msgid "unable to connect to netlink: %s"
 msgstr "no se puede conectar con netlink: %s"
 
-#: ../src/ip6-manager/nm-netlink-listener.c:307
+#: ../src/ip6-manager/nm-netlink-listener.c:306
 #, c-format
 msgid "unable to join netlink group: %s"
 msgstr "no pudo unirse al grupo netlink: %s"
 
-#: ../src/named-manager/nm-named-manager.c:315
+#: ../src/logging/nm-logging.c:146
+#, c-format
+msgid "Unknown log level '%s'"
+msgstr "Nivel de registro «%s» desconocido"
+
+#: ../src/logging/nm-logging.c:171
+#, c-format
+msgid "Unknown log domain '%s'"
+msgstr "Dominio de registro «%s» desconocido"
+
+#: ../src/named-manager/nm-named-manager.c:314
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr ""
 "NOTA: el resolutor de nombres de libc puede que no soporte más de 3 "
 "servidores de nombres."
 
-#: ../src/named-manager/nm-named-manager.c:317
+#: ../src/named-manager/nm-named-manager.c:316
 msgid "The nameservers listed below may not be recognized."
 msgstr "Puede que los servidores de nombres listados abajo no se reconozcan."
 
