@@ -16,8 +16,8 @@ where <SYSCONFDIR> depends on your distribution or build.
 .SH DESCRIPTION
 .P
 .I NetworkManager.conf
-is a configuration file for NetworkManager. As the name suggests, it configures
-how NetworkManager handles system-wide connection settings. The location of
+is a configuration file for NetworkManager. It is used to set up various
+aspects of NetworkManager's behavior. The location of
 the file may be changed through use of the "\-\-config=" argument for
 \fBNetworkManager\fP (8).
 
@@ -81,11 +81,26 @@ plugin is only provided for simple backward compatibility with SUSE and OpenSUSE
 Most setups should be using the \fIkeyfile\fP plugin instead. The \fIifcfg\-suse\fP plugin supports
 reading wired and WiFi connections, but does not support saving any connection types.
 .RE
+.TP
+.B dhcp=\fIdhclient\fP | \fIdhcpcd\fP
+This key sets up what DHCP client NetworkManager will use. Presently
+\fIdhclient\fP and \fIdhcpcd\fP are supported. The client configured here should
+be available on your system too. If this key is missing, available DHCP clients
+are looked for in this order: dhclient, dhcpcd.
 .SS [keyfile]
 This section contains keyfile-specific options and thus only has effect when using \fIkeyfile\fP plugin.
 .TP
 .B hostname=\fI<hostname>\fP
 Set a persistent hostname when using the \fIkeyfile\fP plugin.
+.TP
+.B unmanaged-devices=\fImac:<hwaddr>\fP;\fImac:<hwaddr>\fP;...
+Set devices that should be ignored by NetworkManager when using the \fIkeyfile\fP
+plugin. Devices are specified in the following format: "mac:<hwaddr>", where
+<hwaddr> is MAC address of the device to be ignored, in lowercase. Multiple
+entries are separated by a semicolon. Example:
+.nf
+unmanaged-devices=mac:00:22:68:1c:59:b1;mac:00:1e:65:30:d1:c4
+.fi
 .SS [ifupdown]
 This section contains ifupdown-specific options and thus only has effect when using \fIifupdown\fP plugin.
 .TP
@@ -99,7 +114,7 @@ some other interface.
 When the option is missing, \fIfalse\fP value is taken as default.
 .SS [logging]
 This section controls NetworkManager's logging.  Any settings here are
-overridden by the --log-level and --log-domain command-line options.
+overridden by the \-\-log\-level and \-\-log\-domains command-line options.
 .TP
 .B level=\fI<level>\fP
 One of [ERR, WARN, INFO, DEBUG].  The ERR level logs only critical errors.  WARN
