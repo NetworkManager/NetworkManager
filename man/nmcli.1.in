@@ -1,0 +1,321 @@
+.\" nmcli (1) manual page
+.\"
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, write to the Free
+.\" Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111,
+.\" USA.
+.\"
+.\" Copyright (C) 2010 Red Hat, Inc.
+.\"
+.TH NMCLI "1" "14 April 2010"
+
+.SH NAME
+nmcli \- command-line tool for controlling NetworkManager
+.SH SYNOPSIS
+.ad l
+.B nmcli
+.RI " [ " OPTIONS " ] " OBJECT " { " COMMAND " | "
+.BR help " } "
+.sp
+
+.IR OBJECT " := { "
+.BR nm " | " con " | " dev " } "
+.sp
+
+.IR OPTIONS " := { "
+.br
+\fB\-t\fR[\fIerse\fR]
+.br
+\fB\-p\fR[\fIretty\fR]
+.br
+\fB\-m\fR[\fImode\fR] tabular | multiline
+.br
+\fB\-f\fR[\fIields\fR] <field1,field2,...> | all | common
+.br
+\fB\-e\fR[\fIscape\fR] yes | no
+.br
+\fB\-v\fR[\fIersion\fR]
+.br
+\fB\-h\fR[\fIelp\fR]
+.br
+.RI "}"
+
+.SH DESCRIPTION
+.B nmcli
+is a command-line tool for controlling NetworkManager and getting its status.
+It is not meant as a replacement of \fInm-applet\fP or other similar clients.
+Rather it's a complementary utility to these programs.
+The main \fInmcli\fP's usage is on servers, headless machines or just for
+power users who prefer the command line.
+.P
+The use cases comprise:
+.IP \(em 4
+Initscripts: ifup/ifdown can utilize NetworkManager via \fInmcli\fP instead of
+having to manage connections itself and possible interfere with NetworkManager.
+.IP \(em 4
+Servers, headless machines: No GUI is available; then \fInmcli\fP is used to
+talk directly to NetworkManager and control only system-wide connections.
+.IP \(em 4
+User sessions: For this case, \fInmcli\fP can talk to \fInm-applet\fP to find
+user connections.  It can still talk directly to NetworkManager for manipulating
+these connections.  As \fInmcli\fP doesn't have direct access to user
+configuration data in GConf, \fInm-applet\fP handles that itself.  That may,
+for example, cause the applet to pop up keyring dialogs when secrets are needed.
+.SS \fIOPTIONS\fP
+.TP
+.B \-t, \-\-terse
+Output is terse.  This mode is designed and suitable for computer (script)
+processing.
+.TP
+.B \-p, \-\-pretty
+Output is pretty.  This causes \fInmcli\fP to produce easy readable outputs
+for humans, i.e. values are aligned, headers are printed, etc.
+.TP
+.B \-m, \-\-mode tabular | multiline
+Switch between \fItabular\fP and \fImultiline\fP output.
+If omitted, default is \fItabular\fP for most commands.  For the commands
+producing more structured information, that cannot be displayed on a single
+line, default is \fImultiline\fP. Currenly, they are:
+.br
+.nf
+  'nmcli con list id|uuid <name>'
+  'nmcli dev list'
+.fi
+\fItabular\fP   - Output is a table where each line describes a single entry.
+Columns define particular properties of the entry.
+.br
+\fImultiline\fP - Each entry comprises more lines, each property on its own line.
+The values are prefixed with the property name.
+.TP
+.B \-f, \-\-fields <field1,field2,...> | all | common
+This option is used to specify what fields (column names) should be printed.
+Valid field names differ for specific commands. List available fields by
+providing an invalid value to the \fI--fields\fP option.
+.br
+\fIall\fP is used to print all valid field values of the command.
+\fIcommon\fP is used to print common field values of the command.
+If omitted, default is \fIcommon\fP.
+The option is mandatory when \fI--terse\fP is used.  In this case, generic
+values \fIall\fP and \fIcommon\fP cannot be used.  (This is to maintain
+compatibility when new fields are added in the future).
+.TP
+.B \-e, \-\-escape yes | no
+Whether to escape ':' and '\\' characters in terse tabular mode.  The escape
+character is '\\'.
+If omitted, default is \fIyes\fP.
+.TP
+.B \-v, \-\-version
+Show \fInmcli\fP version.
+.TP
+.B \-h, \-\-help
+Print help information.
+.SS \fIOBJECT\fP
+.TP
+.B nm
+NetworkManager
+.br
+Use this object to inquire and change state of NetworkManager.
+.TP
+.SS \fICOMMAND\fP := { status | sleep | wakeup | wifi | wwan }
+.sp
+.RS
+.TP
+.B status
+.br
+Show overall status of NetworkManager.  This is the default action, when no
+command is provided to \fInm\fP object.
+.br
+.nf
+\fBReference to D-Bus:\fP
+No simple reference.
+.fi
+.TP
+.B sleep
+.br
+Put NetworkManager to sleeping mode.  Thus all interfaces that NetworkManager
+manages are deactivated.
+.br
+.nf
+\fBReference to D-Bus:\fP
+interface: org.freedesktop.NetworkManager
+method:    Sleep
+arguments: TRUE
+.fi
+.TP
+.B wakeup
+.br
+Awake NetworkManager from sleep.  When NetworkManager is awaken, devices are
+available to be activated.
+.br
+.nf
+\fBReference to D-Bus:\fP
+interface: org.freedesktop.NetworkManager
+method:    Sleep
+arguments: FALSE
+.fi
+.TP
+.B wifi [on|off]
+.br
+Inquire or set status of WiFi in NetworkManager.  Without any further argument,
+WiFi status is printed; \fIon\fP enables WiFi; \fIoff\fP disables WiFi.
+.br
+.nf
+\fBReference to D-Bus:\fP
+No simple reference.
+.fi
+.TP
+.B wwan [on|off]
+.br
+Inquire or set status of WWAN in NetworkManager.  Without any further argument,
+WWAN status is printed; \fIon\fP enables WWAN; \fIoff\fP disables WWAN.
+.br
+.nf
+\fBReference to D-Bus:\fP
+No simple reference.
+.fi
+.RE
+
+.TP
+.B con
+Connections
+.br
+Get information about NetworkManager's connections.
+.TP
+.SS \fICOMMAND\fP := { list | status | up | down }
+.sp
+.RS
+.TP
+.B list [id <id> | uuid <id> | system | user]
+.br
+List configured connections.  Without a parameter, configured connection from
+both system and user settings services are listed.  \fIsystem\fP argument filters
+only system-wide connections, \fIuser\fP prints user connections only.
+In order to get connection details, \fIid\fP with connection's name or \fIuuid\fP
+with connection's UUID shall be specified.
+When no command is given to \fIcon\fP object, the default action is 'nmcli con list'.
+.br
+.nf
+\fBReference to D-Bus:\fP
+No simple reference.
+.fi
+.TP
+.B status
+.br
+Print status of active connections.
+.br
+.nf
+\fBReference to D-Bus:\fP
+No simple reference.
+.fi
+.TP
+.B up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [\-\-nowait] [\-\-timeout <timeout>]
+.br
+Activate a connection.  The connection is identified by its name using \fIid\fP
+or UUID using \fIuuid\fP.  For requiring particular device to activate
+the connection on, \fIiface\fP option with interface name should be given.
+\fIap\fP option can further concretize what AP should be used in case of WiFi
+connection.  \fI\-\-nowait\fP option causes \fInmcli\fP to exit immediately and
+not to wait for command completion.  \fI\-\-timeout\fP option provides a means
+to specify how long to wait for operation completion.
+.br
+.nf
+\fBReference to D-Bus:\fP
+interface: org.freedesktop.NetworkManager
+method:    ActivateConnection
+arguments: according to arguments
+.fi
+.TP
+.B down id <id> | uuid <id>
+.br
+Deactivate a connection.
+The connection is identified by its name using \fIid\fP
+or UUID using \fIuuid\fP.
+.br
+.nf
+\fBReference to D-Bus:\fP
+interface: org.freedesktop.NetworkManager
+method:    DeactivateConnection
+arguments: according to arguments
+.fi
+.RE
+
+.TP
+.B dev
+Devices
+.br
+Get information about devices.
+.TP
+.SS \fICOMMAND\fP := { status | list | disconnect | wifi }
+.sp
+.RS
+.TP
+.B status
+.br
+Print status of devices.  This is the default action, when no command
+is specified to \fIdev\fP object.
+.br
+.nf
+\fBReference to D-Bus:\fP
+No simple reference.
+.fi
+.TP
+.B list [iface <iface>]
+.br
+Get detailed information about devices.  Without an argument, all devices are
+examined.  To get information for a specific device, \fIiface\fP argument
+with the interface name should be provided.
+.br
+.nf
+\fBReference to D-Bus:\fP
+No simple reference.
+.fi
+.TP
+.B disconnect iface <iface> [\-\-nowait] [\-\-timeout <timeout>]
+.br
+Disconnect a device and prevent the device from automatically activating further
+connections without user/manual intervention.  \fI\-\-nowait\fP option causes
+\fInmcli\fP to exit immediately and not to wait for command completion.
+\fI\-\-timeout\fP option provides a means to specify how long to wait for
+operation completion.
+.br
+.nf
+\fBReference to D-Bus:\fP
+interface: org.freedesktop.NetworkManager.Device
+method:    Disconnect
+arguments: none
+.fi
+.TP
+.B wifi [list [iface <iface>] [hwaddr <hwaddr>]]
+.br
+List available WiFi access points.  \fIiface\fP and \fIhwaddr\fP options
+can be used to get just APs for particular interface or specific AP,
+respectively.
+.br
+.nf
+\fBReference to D-Bus:\fP
+No simple reference.
+.fi
+.RE
+
+.SH BUGS
+There are probably some.  If you find a bug, please report to
+https://bugzilla.gnome.org/ \- product \fINetworkManager\fP.
+
+.SH SEE ALSO
+.BR nm\-tool (1),
+.BR NetworkManager(8).
