@@ -188,12 +188,17 @@ nm_supplicant_info_destroy (gpointer user_data)
 	if (!info->disposing) {
 		info->disposing = TRUE;
 
-		if (info->call)
+		if (info->call) {
 			nm_call_store_remove (info->store, G_OBJECT (info->proxy), info->call);
+			info->call = NULL;
+		}
 
 		g_object_unref (info->proxy);
+		info->proxy = NULL;
 		g_object_unref (info->interface);
+		info->interface = NULL;
 
+		memset (info, 0, sizeof (NMSupplicantInfo));
 		g_slice_free (NMSupplicantInfo, info);
 	}
 }
