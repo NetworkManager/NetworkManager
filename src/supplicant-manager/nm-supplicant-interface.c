@@ -144,6 +144,7 @@ typedef struct {
 	DBusGProxy *proxy;
 	NMCallStore *store;
 	DBusGProxyCall *call;
+	gboolean disposing;
 } NMSupplicantInfo;
 
 static NMSupplicantInfo *
@@ -164,10 +165,11 @@ nm_supplicant_info_new (NMSupplicantInterface *interface,
 static void
 nm_supplicant_info_set_call (NMSupplicantInfo *info, DBusGProxyCall *call)
 {
-	if (call) {
-		nm_call_store_add (info->store, G_OBJECT (info->proxy), (gpointer) call);
-		info->call = call;
-	}
+	g_return_if_fail (info != NULL);
+	g_return_if_fail (call != NULL);
+
+	nm_call_store_add (info->store, G_OBJECT (info->proxy), (gpointer) call);
+	info->call = call;
 }
 
 static void
@@ -175,13 +177,25 @@ nm_supplicant_info_destroy (gpointer user_data)
 {
 	NMSupplicantInfo *info = (NMSupplicantInfo *) user_data;
 
-	if (info->call)
-		nm_call_store_remove (info->store, G_OBJECT (info->proxy), info->call);
+	/* Guard against double-disposal; since DBusGProxy doesn't guard against
+	 * double-disposal, we could infinite loop here if we're in the middle of
+	 * some wpa_supplicant D-Bus calls.  When the supplicant dies we'll dispose
+	 * of the proxy, which kills all its pending calls, which brings us here.
+	 * Then when we unref the proxy here, its dispose() function will get called
+	 * again, and we get right back here until we segfault because our callstack
+	 * is too long.
+	 */
+	if (!info->disposing) {
+		info->disposing = TRUE;
 
-	g_object_unref (info->proxy);
-	g_object_unref (info->interface);
+		if (info->call)
+			nm_call_store_remove (info->store, G_OBJECT (info->proxy), info->call);
 
-	g_slice_free (NMSupplicantInfo, info);
+		g_object_unref (info->proxy);
+		g_object_unref (info->interface);
+
+		g_slice_free (NMSupplicantInfo, info);
+	}
 }
 
 
