@@ -2248,7 +2248,7 @@ nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 		if (s_ip4)
 			method = nm_setting_ip4_config_get_method (s_ip4);
 
-		if (s_ip4 && !strcmp (method, "shared")) {
+		if (s_ip4 && !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
 			if (!start_sharing (self)) {
 				nm_log_warn (LOGD_SHARING, "Activation (%s) Stage 5 of 5 (IP Configure Commit) start sharing failed.", iface);
 				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SHARED_START_FAILED);
