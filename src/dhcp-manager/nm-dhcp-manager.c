@@ -482,6 +482,13 @@ nm_dhcp_manager_start_ip4 (NMDHCPManager *self,
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 
 	if (s_ip4) {
+		const char *method = nm_setting_ip4_config_get_method (s_ip4);
+
+		if (method) {
+			/* Method must be 'auto' */
+			g_return_val_if_fail (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0, NULL);
+		}
+
 		if (   nm_setting_ip4_config_get_dhcp_send_hostname (s_ip4)
 		    && (nm_setting_ip4_config_get_dhcp_hostname (s_ip4) == NULL)
 		    && priv->hostname_provider != NULL) {
