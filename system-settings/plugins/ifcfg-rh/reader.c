@@ -1215,7 +1215,10 @@ make_ip4_setting (shvarFile *ifcfg,
 		if (!tmp_ip4 && !tmp_prefix && !tmp_netmask) {
 			if (valid_ip6_config) {
 				/* Nope, no IPv4 */
-				goto done;
+				g_object_set (s_ip4,
+				              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
+				              NULL);
+				return NM_SETTING (s_ip4);
 			}
 
 			method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
