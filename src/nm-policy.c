@@ -828,9 +828,9 @@ device_state_changed (NMDevice *device,
 }
 
 static void
-device_ip4_config_changed (NMDevice *device,
-                           GParamSpec *pspec,
-                           gpointer user_data)
+device_ip_config_changed (NMDevice *device,
+                          GParamSpec *pspec,
+                          gpointer user_data)
 {
 	update_routing_and_dns ((NMPolicy *) user_data, TRUE);
 }
@@ -872,7 +872,12 @@ device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 	policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
 
 	id = g_signal_connect (device, "notify::" NM_DEVICE_INTERFACE_IP4_CONFIG,
-	                       G_CALLBACK (device_ip4_config_changed),
+	                       G_CALLBACK (device_ip_config_changed),
+	                       policy);
+	policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
+
+	id = g_signal_connect (device, "notify::" NM_DEVICE_INTERFACE_IP6_CONFIG,
+	                       G_CALLBACK (device_ip_config_changed),
 	                       policy);
 	policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
 
