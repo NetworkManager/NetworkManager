@@ -18,7 +18,10 @@
       <tp:docstring>The state of this active connection.</tp:docstring>
     </property>
     <property name="Default" type="b" access="read">
-      <tp:docstring>Whether this active connection is the default connection, i.e. whether it currently owns the default route.</tp:docstring>
+      <tp:docstring>Whether this active connection is the default IPv4 connection, i.e. whether it currently owns the default IPv4 route.</tp:docstring>
+    </property>
+    <property name="Default6" type="b" access="read">
+      <tp:docstring>Whether this active connection is the default IPv6 connection, i.e. whether it currently owns the default IPv6 route.</tp:docstring>
     </property>
     <property name="Vpn" type="b" access="read">
       <tp:docstring>Whether this active connection is also a VPN connection.</tp:docstring>

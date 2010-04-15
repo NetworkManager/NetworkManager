@@ -17,7 +17,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2010 Red Hat, Inc.
  * Copyright (C) 2008 Novell, Inc.
  */
 
@@ -45,6 +45,7 @@ G_BEGIN_DECLS
 #define NM_ACTIVE_CONNECTION_DEVICES             "devices"
 #define NM_ACTIVE_CONNECTION_STATE               "state"
 #define NM_ACTIVE_CONNECTION_DEFAULT             "default"
+#define NM_ACTIVE_CONNECTION_DEFAULT6            "default6"
 
 typedef struct {
 	NMObject parent;
@@ -73,6 +74,7 @@ const char * nm_active_connection_get_specific_object     (NMActiveConnection *c
 const GPtrArray *nm_active_connection_get_devices         (NMActiveConnection *connection);
 NMActiveConnectionState nm_active_connection_get_state    (NMActiveConnection *connection);
 gboolean nm_active_connection_get_default                 (NMActiveConnection *connection);
+gboolean nm_active_connection_get_default6                (NMActiveConnection *connection);
 
 G_END_DECLS
 
