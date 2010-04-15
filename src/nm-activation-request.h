@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2005 - 2008 Red Hat, Inc.
+ * (C) Copyright 2005 - 2010 Red Hat, Inc.
  */
 
 #ifndef NM_ACTIVATION_REQUEST_H
@@ -75,6 +75,10 @@ const char *  nm_act_request_get_active_connection_path (NMActRequest *req);
 void          nm_act_request_set_default (NMActRequest *req, gboolean is_default);
 
 gboolean      nm_act_request_get_default (NMActRequest *req);
+
+void          nm_act_request_set_default6 (NMActRequest *req, gboolean is_default6);
+
+gboolean      nm_act_request_get_default6 (NMActRequest *req);
 
 gboolean      nm_act_request_get_shared (NMActRequest *req);
 

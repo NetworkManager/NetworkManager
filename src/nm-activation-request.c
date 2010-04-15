@@ -72,6 +72,7 @@ typedef struct {
 
 	NMActiveConnectionState state;
 	gboolean is_default;
+	gboolean is_default6;
 	gboolean shared;
 	GSList *share_rules;
 
@@ -88,6 +89,7 @@ enum {
 	PROP_DEVICES,
 	PROP_STATE,
 	PROP_DEFAULT,
+	PROP_DEFAULT6,
 	PROP_VPN,
 
 	LAST_PROP
@@ -104,7 +106,7 @@ device_state_changed (NMDevice *device,
 	NMActRequest *self = NM_ACT_REQUEST (user_data);
 	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (self);
 	NMActiveConnectionState new_ac_state;
-	gboolean new_default = FALSE;
+	gboolean new_default = FALSE, new_default6 = FALSE;
 
 	/* Set NMActiveConnection state based on the device's state */
 	switch (new_state) {
@@ -117,6 +119,7 @@ device_state_changed (NMDevice *device,
 	case NM_DEVICE_STATE_ACTIVATED:
 		new_ac_state = NM_ACTIVE_CONNECTION_STATE_ACTIVATED;
 		new_default = priv->is_default;
+		new_default6 = priv->is_default6;
 		break;
 	default:
 		new_ac_state = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
@@ -131,6 +134,11 @@ device_state_changed (NMDevice *device,
 	if (new_default != priv->is_default) {
 		priv->is_default = new_default;
 		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_DEFAULT);
+	}
+
+	if (new_default6 != priv->is_default6) {
+		priv->is_default6 = new_default6;
+		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_DEFAULT6);
 	}
 }
 
@@ -271,6 +279,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_DEFAULT:
 		g_value_set_boolean (value, priv->is_default);
 		break;
+	case PROP_DEFAULT6:
+		g_value_set_boolean (value, priv->is_default6);
+		break;
 	case PROP_VPN:
 		g_value_set_boolean (value, FALSE);
 		break;
@@ -334,7 +345,14 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 		(object_class, PROP_DEFAULT,
 		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_DEFAULT,
 							   "Default",
-							   "Is the default active connection",
+							   "Is the default IPv4 active connection",
+							   FALSE,
+							   G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_DEFAULT6,
+		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_DEFAULT6,
+							   "Default6",
+							   "Is the default IPv6 active connection",
 							   FALSE,
 							   G_PARAM_READABLE));
 	g_object_class_install_property
@@ -546,6 +564,29 @@ nm_act_request_get_default (NMActRequest *req)
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
 
 	return NM_ACT_REQUEST_GET_PRIVATE (req)->is_default;
+}
+
+void
+nm_act_request_set_default6 (NMActRequest *req, gboolean is_default6)
+{
+	NMActRequestPrivate *priv;
+
+	g_return_if_fail (NM_IS_ACT_REQUEST (req));
+
+	priv = NM_ACT_REQUEST_GET_PRIVATE (req);
+	if (priv->is_default6 == is_default6)
+		return;
+
+	priv->is_default6 = is_default6;
+	g_object_notify (G_OBJECT (req), NM_ACTIVE_CONNECTION_DEFAULT6);
+}
+
+gboolean
+nm_act_request_get_default6 (NMActRequest *req)
+{
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
+
+	return NM_ACT_REQUEST_GET_PRIVATE (req)->is_default6;
 }
 
 static void
