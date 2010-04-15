@@ -1674,7 +1674,8 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 			*config = nm_device_new_ip4_shared_config (self, reason);
 			if (*config)
 				priv->dnsmasq_manager = nm_dnsmasq_manager_new (ip_iface);
-		}
+		} else if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
+			ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	}
 
 	if (!*config) {
