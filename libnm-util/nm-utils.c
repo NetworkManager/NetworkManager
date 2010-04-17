@@ -1459,8 +1459,8 @@ nm_utils_ip4_get_default_prefix (guint32 ip)
  * @value: gvalue containing a GPtrArray of GValueArrays of (GArray of guchars) and guint32
  *
  * Utility function to convert a #GPtrArray of #GValueArrays of (#GArray of guchars) and guint32
- * representing a list of NetworkManager IPv6 addresses (which is a pair of address
- * and prefix), into a GSList of #NMIP6Address objects.  The specific format of
+ * representing a list of NetworkManager IPv6 addresses (which is a tuple of address,
+ * prefix, and gateway), into a GSList of #NMIP6Address objects.  The specific format of
  * this serialization is not guaranteed to be stable and the #GValueArray may be
  * extended in the future.
  *
@@ -1479,12 +1479,24 @@ nm_utils_ip6_addresses_from_gvalue (const GValue *value)
 		GValueArray *elements = (GValueArray *) g_ptr_array_index (addresses, i);
 		GValue *tmp;
 		GByteArray *ba_addr;
+		GByteArray *ba_gw = NULL;
 		NMIP6Address *addr;
 		guint32 prefix;
 
-		if (   (elements->n_values != 2)
-		    || (G_VALUE_TYPE (g_value_array_get_nth (elements, 0)) != DBUS_TYPE_G_UCHAR_ARRAY)
+		if (elements->n_values < 2 || elements->n_values > 3) {
+			nm_warning ("%s: ignoring invalid IP6 address structure", __func__);
+			continue;
+		}
+
+		if (   (G_VALUE_TYPE (g_value_array_get_nth (elements, 0)) != DBUS_TYPE_G_UCHAR_ARRAY)
 		    || (G_VALUE_TYPE (g_value_array_get_nth (elements, 1)) != G_TYPE_UINT)) {
+			nm_warning ("%s: ignoring invalid IP6 address structure", __func__);
+			continue;
+		}
+
+		/* Check optional 3rd element (gateway) */
+		if (   elements->n_values == 3
+		    && (G_VALUE_TYPE (g_value_array_get_nth (elements, 2)) != DBUS_TYPE_G_UCHAR_ARRAY)) {
 			nm_warning ("%s: ignoring invalid IP6 address structure", __func__);
 			continue;
 		}
@@ -1505,9 +1517,22 @@ nm_utils_ip6_addresses_from_gvalue (const GValue *value)
 			continue;
 		}
 
+		if (elements->n_values == 3) {
+			tmp = g_value_array_get_nth (elements, 2);
+			ba_gw = g_value_get_boxed (tmp);
+			if (ba_gw->len != 16) {
+				nm_warning ("%s: ignoring invalid IP6 gateway address of length %d",
+				            __func__, ba_gw->len);
+				continue;
+			}
+		}
+
 		addr = nm_ip6_address_new ();
 		nm_ip6_address_set_prefix (addr, prefix);
 		nm_ip6_address_set_address (addr, (const struct in6_addr *) ba_addr->data);
+		if (ba_gw)
+			nm_ip6_address_set_gateway (addr, (const struct in6_addr *) ba_gw->data);
+
 		list = g_slist_prepend (list, addr);
 	}
 
@@ -1522,10 +1547,10 @@ nm_utils_ip6_addresses_from_gvalue (const GValue *value)
  * g_value_unset().
  *
  * Utility function to convert a #GSList of #NMIP6Address objects into a
- * GPtrArray of GValueArrays of (GArray or guchars) and guint32 representing a list
- * of NetworkManager IPv6 addresses (which is a pair of address and prefix).
- * The specific format of this serialization is not guaranteed to be stable and may be
- * extended in the future.
+ * GPtrArray of GValueArrays representing a list of NetworkManager IPv6 addresses
+ * (which is a tuple of address, prefix, and gateway). The specific format of
+ * this serialization is not guaranteed to be stable and may be extended in the
+ * future.
  **/
 void
 nm_utils_ip6_addresses_to_gvalue (GSList *list, GValue *value)
@@ -1541,8 +1566,9 @@ nm_utils_ip6_addresses_to_gvalue (GSList *list, GValue *value)
 		GValue element = {0, };
 		GByteArray *ba;
 
-		array = g_value_array_new (2);
+		array = g_value_array_new (3);
 
+		/* IP address */
 		g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
 		ba = g_byte_array_new ();
 		g_byte_array_append (ba, (guint8 *) nm_ip6_address_get_address (addr), 16);
@@ -1550,8 +1576,17 @@ nm_utils_ip6_addresses_to_gvalue (GSList *list, GValue *value)
 		g_value_array_append (array, &element);
 		g_value_unset (&element);
 
+		/* Prefix */
 		g_value_init (&element, G_TYPE_UINT);
 		g_value_set_uint (&element, nm_ip6_address_get_prefix (addr));
+		g_value_array_append (array, &element);
+		g_value_unset (&element);
+
+		/* Gateway */
+		g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
+		ba = g_byte_array_new ();
+		g_byte_array_append (ba, (guint8 *) nm_ip6_address_get_gateway (addr), 16);
+		g_value_take_boxed (&element, ba);
 		g_value_array_append (array, &element);
 		g_value_unset (&element);
 

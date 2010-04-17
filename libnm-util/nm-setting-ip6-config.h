@@ -88,6 +88,10 @@ guint32                nm_ip6_address_get_prefix  (NMIP6Address *address);
 void                   nm_ip6_address_set_prefix  (NMIP6Address *address,
                                                    guint32 prefix);
 
+const struct in6_addr *nm_ip6_address_get_gateway (NMIP6Address *address);
+void                   nm_ip6_address_set_gateway (NMIP6Address *address,
+                                                   const struct in6_addr *gw);
+
 typedef struct NMIP6Route NMIP6Route;
 
 NMIP6Route *           nm_ip6_route_new          (void);

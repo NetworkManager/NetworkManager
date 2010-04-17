@@ -797,10 +797,13 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 
 }
 
+/********************************************************************/
+
 struct NMIP6Address {
 	guint32 refcount;
 	struct in6_addr address;
 	guint32 prefix;
+	struct in6_addr gateway;
 };
 
 NMIP6Address *
@@ -901,6 +904,27 @@ nm_ip6_address_set_prefix (NMIP6Address *address, guint32 prefix)
 
 	address->prefix = prefix;
 }
+
+const struct in6_addr *
+nm_ip6_address_get_gateway (NMIP6Address *address)
+{
+	g_return_val_if_fail (address != NULL, 0);
+	g_return_val_if_fail (address->refcount > 0, 0);
+
+	return &address->gateway;
+}
+
+void
+nm_ip6_address_set_gateway (NMIP6Address *address, const struct in6_addr *gw)
+{
+	g_return_if_fail (address != NULL);
+	g_return_if_fail (address->refcount > 0);
+	g_return_if_fail (gw != NULL);
+
+	memcpy (&address->gateway, gw, sizeof (struct in6_addr));
+}
+
+/********************************************************************/
 
 struct NMIP6Route {
 	guint32 refcount;
