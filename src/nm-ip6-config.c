@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2008 Red Hat, Inc.
+ * Copyright (C) 2005 - 2010 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -697,7 +697,7 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 		 g_param_spec_boxed (NM_IP6_CONFIG_ADDRESSES,
 							"Addresses",
 							"IP6 addresses",
-							DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
+							DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS,
 							G_PARAM_READABLE));
 	g_object_class_install_property
 		(object_class, PROP_NAMESERVERS,
