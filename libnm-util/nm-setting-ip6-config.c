@@ -684,25 +684,32 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * NMSettingIP6Config:addresses:
 	 *
 	 * Array of IPv6 address structures.  Each IPv6 address structure is
-	 * composed of 2 members, the first being a byte array containing the IPv6
-	 * address (network byte order) and the second a 32-bit integer containing
-	 * the IPv6 address prefix.  For the 'auto' method, given IP addresses are
-	 * appended to those returned by automatic configuration.  Addresses cannot
-	 * be used with the 'shared' or 'link-local' methods as the interface is
-	 * automatically assigned an address with these methods.
+	 * composed of 3 members, the first being a byte array containing the IPv6
+	 * address (network byte order), the second a 32-bit integer containing the
+	 * IPv6 address prefix, and the third a byte array containing the IPv6
+	 * address (network byte order) of the gateway associated with this address,
+	 * if any.  If no gateway is given, the third element should be given as
+	 * all zeros.  For the 'auto' method, given IP addresses are appended to
+	 * those returned by automatic configuration.  Addresses cannot be used with
+	 * the 'shared' or 'link-local' methods as the interface is automatically
+	 * assigned an address with these methods.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ADDRESSES,
 		 _nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_ADDRESSES,
 							   "Addresses",
 							   "Array of IPv6 address structures.  Each IPv6 "
-							   "address structure is composed of 2 members, the "
+							   "address structure is composed of 3 members, the "
 							   "first being a byte array containing the IPv6 "
-							   "address (network byte order) and the second a "
+							   "address (network byte order), the second a "
 							   "32-bit integer containing the IPv6 address "
-							   "prefix.  For the 'auto' method, given IP "
-							   "addresses are appended to those returned by "
-							   "automatic configuration.  Addresses cannot be "
+							   "prefix, and the third a byte array containing "
+							   "the IPv6 address (network byte order) of the "
+							   "gateway associated with this address, if any. "
+							   "If no gateway is given, the third element should "
+							   "be given as all zeros.  For the 'auto' method, "
+							   "given IP addresses are appended to those returned "
+							   "by automatic configuration.  Addresses cannot be "
 							   "used with the 'shared' or 'link-local' methods "
 							   "as the interface is automatically assigned an "
 							   "address with these methods.",
