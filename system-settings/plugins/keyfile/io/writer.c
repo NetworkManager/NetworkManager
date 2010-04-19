@@ -298,9 +298,9 @@ ip6_addr_writer (GKeyFile *file,
 		GValueArray *values = g_ptr_array_index (array, i);
 		char *key_name, *ip6_addr;
 
-		if (values->n_values % 2) {
-			nm_warning ("%s: error writing IP6 address %d; address array length"
-			            " %d is not a multiple of 2.",
+		if (values->n_values != 3) {
+			nm_warning ("%s: error writing IP6 address %d (address array length "
+			            "%d is not 3)",
 			            __func__, i, values->n_values);
 			continue;
 		}
