@@ -747,7 +747,8 @@ nm_utils_convert_string_hash_to_string (const GValue *src_value, GValue *dest_va
 	hash = (GHashTable *) g_value_get_boxed (src_value);
 
 	printable = g_string_new ("[");
-	g_hash_table_foreach (hash, convert_one_string_hash_entry, printable);
+	if (hash)
+		g_hash_table_foreach (hash, convert_one_string_hash_entry, printable);
 	g_string_append (printable, " ]");
 
 	g_value_take_string (dest_value, printable->str);
