@@ -16,25 +16,32 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2004 - 2010 Red Hat, Inc.
+ * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
-#ifndef NM_POLICY_HOSTS_H
-#define NM_POLICT_HOSTS_H
+#ifndef NM_POLICY_HOSTNAME_H
+#define NM_POLICY_HOSTNAME_H
 
 #include <glib.h>
 
-gboolean nm_policy_hosts_update_etc_hosts (const char *hostname,
-                                           const char *fallback_hostname,
-                                           gboolean *out_changed);
+gboolean nm_policy_set_system_hostname (const char *new_hostname, const char *msg);
 
-/* Only for testcases; don't use outside of nm-policy-hosts.c */
-gboolean nm_policy_hosts_find_token (const char *line, const char *token);
 
-GString *nm_policy_get_etc_hosts (const char **lines,
-                                  gsize existing_len,
-                                  const char *hostname,
-                                  const char *fallback_hostname,
-                                  GError **error);
+typedef struct HostnameThread HostnameThread;
 
-#endif /* NM_POLICY_HOSTS_H */
+typedef void (*HostnameThreadCallback) (HostnameThread *ht,
+                                        int error,
+                                        const char *hostname,
+                                        gpointer user_data);
 
+HostnameThread * hostname_thread_new (guint32 ip4_addr,
+                                      HostnameThreadCallback callback,
+                                      gpointer user_data);
+
+void             hostname_thread_free (HostnameThread *ht);
+
+gboolean         hostname_thread_is_dead (HostnameThread *ht);
+
+void             hostname_thread_kill (HostnameThread *ht);
+
+#endif /* NM_POLICY_HOSTNAME_H */

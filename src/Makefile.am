@@ -68,9 +68,11 @@ libtest_policy_hosts_la_SOURCES = \
 	nm-policy-hosts.h
 
 libtest_policy_hosts_la_CPPFLAGS = \
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	$(GLIB_CFLAGS)
 
 libtest_policy_hosts_la_LIBADD = \
+	${top_builddir}/src/logging/libnm-logging.la \
 	$(GLIB_LIBS)
 
 
@@ -123,6 +125,8 @@ NetworkManager_SOURCES = \
 		nm-policy.h \
 		nm-policy-hosts.c \
 		nm-policy-hosts.h \
+		nm-policy-hostname.c \
+		nm-policy-hostname.h \
 		NetworkManagerUtils.c \
 		NetworkManagerUtils.h \
 		nm-system.c \

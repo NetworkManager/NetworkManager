@@ -25,6 +25,7 @@
 #include <ctype.h>
 
 #include "nm-policy-hosts.h"
+#include "nm-logging.h"
 
 gboolean
 nm_policy_hosts_find_token (const char *line, const char *token)
@@ -169,5 +170,66 @@ nm_policy_get_etc_hosts (const char **lines,
 	}
 
 	return contents;
+}
+
+gboolean
+nm_policy_hosts_update_etc_hosts (const char *hostname,
+                                  const char *fallback_hostname,
+                                  gboolean *out_changed)
+{
+	char *contents = NULL;
+	char **lines = NULL;
+	GError *error = NULL;
+	GString *new_contents = NULL;
+	gsize contents_len = 0;
+	gboolean success = FALSE;
+
+	g_return_val_if_fail (hostname != NULL, FALSE);
+	g_return_val_if_fail (out_changed != NULL, FALSE);
+
+	if (!g_file_get_contents (SYSCONFDIR "/hosts", &contents, &contents_len, &error)) {
+		nm_log_warn (LOGD_DNS, "couldn't read " SYSCONFDIR "/hosts: (%d) %s",
+		             error ? error->code : 0,
+		             (error && error->message) ? error->message : "(unknown)");
+		g_clear_error (&error);
+		return FALSE;
+	}
+
+	/* Get the new /etc/hosts contents */
+	lines = g_strsplit_set (contents, "\n\r", 0);
+	new_contents = nm_policy_get_etc_hosts ((const char **) lines,
+	                                        contents_len,
+	                                        hostname,
+	                                        fallback_hostname,
+	                                        &error);
+	g_strfreev (lines);
+	g_free (contents);
+
+	if (new_contents) {
+		nm_log_info (LOGD_DNS, "Updating /etc/hosts with new system hostname");
+
+		g_clear_error (&error);
+		/* And actually update /etc/hosts */
+		if (!g_file_set_contents (SYSCONFDIR "/hosts", new_contents->str, -1, &error)) {
+			nm_log_warn (LOGD_DNS, "couldn't update " SYSCONFDIR "/hosts: (%d) %s",
+			             error ? error->code : 0,
+			             (error && error->message) ? error->message : "(unknown)");
+			g_clear_error (&error);
+		} else {
+			success = TRUE;
+			*out_changed = TRUE;
+		}
+
+		g_string_free (new_contents, TRUE);
+	} else if (!error) {
+		/* No change required */
+		success = TRUE;
+	} else {
+		nm_log_warn (LOGD_DNS, "couldn't read " SYSCONFDIR "/hosts: (%d) %s",
+		             error->code, error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
+	}
+
+	return success;
 }
 

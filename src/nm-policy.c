@@ -42,24 +42,7 @@
 #include "nm-named-manager.h"
 #include "nm-vpn-manager.h"
 #include "nm-policy-hosts.h"
-
-typedef struct LookupThread LookupThread;
-
-typedef void (*LookupCallback) (LookupThread *thread, gpointer user_data);
-
-struct LookupThread {
-	GThread *thread;
-
-	GMutex *lock;
-	gboolean die;
-	int ret;
-
-	guint32 ip4_addr;
-	char hostname[NI_MAXHOST + 1];
-
-	LookupCallback callback;
-	gpointer user_data;
-};
+#include "nm-policy-hostname.h"
 
 struct NMPolicy {
 	NMManager *manager;
@@ -74,96 +57,10 @@ struct NMPolicy {
 
 	NMDevice *default_device;
 
-	LookupThread *lookup;
+	HostnameThread *lookup;
 
 	char *orig_hostname; /* hostname at NM start time */
 };
-
-static gboolean
-lookup_thread_run_cb (gpointer user_data)
-{
-	LookupThread *thread = (LookupThread *) user_data;
-
-	(*thread->callback) (thread, thread->user_data);
-	return FALSE;
-}
-
-static gpointer
-lookup_thread_worker (gpointer data)
-{
-	LookupThread *thread = (LookupThread *) data;
-	struct sockaddr_in addr;
-
-	g_mutex_lock (thread->lock);
-	if (thread->die) {
-		g_mutex_unlock (thread->lock);
-		return (gpointer) NULL;
-	}
-	g_mutex_unlock (thread->lock);
-
-	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = thread->ip4_addr;
-
-	thread->ret = getnameinfo ((struct sockaddr *) &addr, sizeof (struct sockaddr_in),
-	                           thread->hostname, NI_MAXHOST, NULL, 0,
-	                           NI_NAMEREQD);
-	if (thread->ret == 0) {
-		int i;
-
-		for (i = 0; i < strlen (thread->hostname); i++)
-			thread->hostname[i] = tolower (thread->hostname[i]);
-	}
-
-	/* Don't track the idle handler ID because by the time the g_idle_add()
-	 * returns the ID, the handler may already have run and freed the
-	 * LookupThread.
-	 */
-	g_idle_add (lookup_thread_run_cb, thread);
-	return (gpointer) TRUE;
-}
-
-static void
-lookup_thread_free (LookupThread *thread)
-{
-	g_return_if_fail (thread != NULL);
-
-	g_mutex_free (thread->lock);
-	memset (thread, 0, sizeof (LookupThread));
-	g_free (thread);
-}
-
-static LookupThread *
-lookup_thread_new (guint32 ip4_addr, LookupCallback callback, gpointer user_data)
-{
-	LookupThread *thread;
-
-	thread = g_malloc0 (sizeof (LookupThread));
-	if (!thread)
-		return NULL;
-
-	thread->lock = g_mutex_new ();
-	thread->callback = callback;
-	thread->user_data = user_data;
-	thread->ip4_addr = ip4_addr;
-
-	thread->thread = g_thread_create (lookup_thread_worker, thread, FALSE, NULL);
-	if (!thread->thread) {
-		lookup_thread_free (thread);
-		return NULL;
-	}
-
-	return thread;
-}
-
-static void
-lookup_thread_die (LookupThread *thread)
-{
-	g_return_if_fail (thread != NULL);
-
-	g_mutex_lock (thread->lock);
-	thread->die = TRUE;
-	g_mutex_unlock (thread->lock);
-}
 
 #define INVALID_TAG "invalid"
 
@@ -253,142 +150,34 @@ get_best_device (NMManager *manager, NMActRequest **out_req)
 	return best;
 }
 
-#define FALLBACK_HOSTNAME "localhost.localdomain"
-
-static gboolean
-update_etc_hosts (const char *hostname, gboolean *out_changed)
-{
-	char *contents = NULL;
-	char **lines = NULL;
-	GError *error = NULL;
-	GString *new_contents = NULL;
-	gsize contents_len = 0;
-	gboolean success = FALSE;
-
-	g_return_val_if_fail (hostname != NULL, FALSE);
-	g_return_val_if_fail (out_changed != NULL, FALSE);
-
-	if (!g_file_get_contents (SYSCONFDIR "/hosts", &contents, &contents_len, &error)) {
-		nm_log_warn (LOGD_DNS, "couldn't read " SYSCONFDIR "/hosts: (%d) %s",
-		             error ? error->code : 0,
-		             (error && error->message) ? error->message : "(unknown)");
-		g_clear_error (&error);
-		return FALSE;
-	}
-
-	/* Get the new /etc/hosts contents */
-	lines = g_strsplit_set (contents, "\n\r", 0);
-	new_contents = nm_policy_get_etc_hosts ((const char **) lines,
-	                                        contents_len,
-	                                        hostname,
-	                                        FALLBACK_HOSTNAME,
-	                                        &error);
-	g_strfreev (lines);
-	g_free (contents);
-
-	if (new_contents) {
-		nm_log_info (LOGD_DNS, "Updating /etc/hosts with new system hostname");
-
-		g_clear_error (&error);
-		/* And actually update /etc/hosts */
-		if (!g_file_set_contents (SYSCONFDIR "/hosts", new_contents->str, -1, &error)) {
-			nm_log_warn (LOGD_DNS, "couldn't update " SYSCONFDIR "/hosts: (%d) %s",
-			             error ? error->code : 0,
-			             (error && error->message) ? error->message : "(unknown)");
-			g_clear_error (&error);
-		} else {
-			success = TRUE;
-			*out_changed = TRUE;
-		}
-
-		g_string_free (new_contents, TRUE);
-	} else if (!error) {
-		/* No change required */
-		success = TRUE;
-	} else {
-		nm_log_warn (LOGD_DNS, "couldn't read " SYSCONFDIR "/hosts: (%d) %s",
-		             error->code, error->message ? error->message : "(unknown)");
-		g_clear_error (&error);
-	}
-
-	return success;
-}
-
 static void
-set_system_hostname (const char *new_hostname, const char *msg)
+_set_hostname (const char *new_hostname, const char *msg)
 {
-	char old_hostname[HOST_NAME_MAX + 1];
-	int ret = 0;
-	const char *name = new_hostname ? new_hostname : FALLBACK_HOSTNAME;
-	gboolean set_hostname = TRUE, changed = FALSE;
-
-	old_hostname[HOST_NAME_MAX] = '\0';
-	errno = 0;
-	ret = gethostname (old_hostname, HOST_NAME_MAX);
-	if (ret != 0) {
-		nm_log_warn (LOGD_DNS, "couldn't get the system hostname: (%d) %s",
-		             errno, strerror (errno));
-	} else {
-		/* Don't set the hostname if it isn't actually changing */
-		if (   (new_hostname && !strcmp (old_hostname, new_hostname))
-		    || (!new_hostname && !strcmp (old_hostname, FALLBACK_HOSTNAME)))
-			set_hostname = FALSE;
-	}
-
-	if (set_hostname) {
-		nm_log_info (LOGD_DNS, "Setting system hostname to '%s' (%s)", name, msg);
-		ret = sethostname (name, strlen (name));
-		if (ret != 0) {
-			nm_log_warn (LOGD_DNS, "couldn't set the system hostname to '%s': (%d) %s",
-			             name, errno, strerror (errno));
-			return;
-		}
-	}
-
-	/* But still always try updating /etc/hosts just in case the hostname
-	 * changed while NM wasn't running; we need to make sure that /etc/hosts
-	 * has valid mappings for '127.0.0.1' and the current system hostname.  If
-	 * those exist, update_etc_hosts() will just return and won't touch
-	 * /etc/hosts at all.
-	 */
-	if (!update_etc_hosts (name, &changed)) {
-		/* error updating /etc/hosts; fallback to localhost.localdomain */
-		nm_log_info (LOGD_DNS, "Setting system hostname to '" FALLBACK_HOSTNAME "' (error updating /etc/hosts)");
-		ret = sethostname (FALLBACK_HOSTNAME, strlen (FALLBACK_HOSTNAME));
-		if (ret != 0) {
-			nm_log_warn (LOGD_DNS, "couldn't set the fallback system hostname (%s): (%d) %s",
-			             FALLBACK_HOSTNAME, errno, strerror (errno));
-		}
-	}
-
-	if (changed)
+	if (nm_policy_set_system_hostname (new_hostname, msg))
 		nm_utils_call_dispatcher ("hostname", NULL, NULL, NULL);
 }
 
 static void
-lookup_callback (LookupThread *thread, gpointer user_data)
+lookup_callback (HostnameThread *thread,
+                 int result,
+                 const char *hostname,
+                 gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
+	char *msg;
 
-	/* If the thread was told to die or it's not the current in-progress
-	 * hostname lookup, nothing to do.
-	 */
-	if (thread->die || (thread != policy->lookup))
-		goto done;
-
-	policy->lookup = NULL;
-	if (!strlen (thread->hostname)) {
-		char *msg;
-
-		/* No valid IP4 config (!!); fall back to localhost.localdomain */
-		msg = g_strdup_printf ("address lookup failed: %d", thread->ret);
-		set_system_hostname (NULL, msg);
-		g_free (msg);
-	} else
-		set_system_hostname (thread->hostname, "from address lookup");
-
-done:
-	lookup_thread_free (thread);
+	/* Update the hostname if the calling lookup thread is the in-progress one */
+	if (!hostname_thread_is_dead (thread) && (thread == policy->lookup)) {
+		policy->lookup = NULL;
+		if (!hostname) {
+			/* No valid IP4 config (!!); fall back to localhost.localdomain */
+			msg = g_strdup_printf ("address lookup failed: %d", result);
+			_set_hostname (NULL, msg);
+			g_free (msg);
+		} else
+			_set_hostname (hostname, "from address lookup");
+	}
+	hostname_thread_free (thread);
 }
 
 static void
@@ -403,7 +192,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best)
 	g_return_if_fail (policy != NULL);
 
 	if (policy->lookup) {
-		lookup_thread_die (policy->lookup);
+		hostname_thread_kill (policy->lookup);
 		policy->lookup = NULL;
 	}
 
@@ -419,7 +208,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best)
 	/* Try a persistent hostname first */
 	g_object_get (G_OBJECT (policy->manager), NM_MANAGER_HOSTNAME, &configured_hostname, NULL);
 	if (configured_hostname) {
-		set_system_hostname (configured_hostname, "from system configuration");
+		_set_hostname (configured_hostname, "from system configuration");
 		g_free (configured_hostname);
 		return;
 	}
@@ -432,7 +221,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best)
 		/* No best device; fall back to original hostname or if there wasn't
 		 * one, 'localhost.localdomain'
 		 */
-		set_system_hostname (policy->orig_hostname, "no default device");
+		_set_hostname (policy->orig_hostname, "no default device");
 		return;
 	}
 
@@ -446,7 +235,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best)
 			/* Sanity check */
 			while (*p) {
 				if (!isblank (*p++)) {
-					set_system_hostname (dhcp4_hostname, "from DHCP");
+					_set_hostname (dhcp4_hostname, "from DHCP");
 					return;
 				}
 			}
@@ -459,7 +248,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best)
 	 * when NM started up.
 	 */
 	if (policy->orig_hostname) {
-		set_system_hostname (policy->orig_hostname, "from system startup");
+		_set_hostname (policy->orig_hostname, "from system startup");
 		return;
 	}
 
@@ -471,7 +260,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best)
 	    || (nm_ip4_config_get_num_nameservers (ip4_config) == 0)
 	    || (nm_ip4_config_get_num_addresses (ip4_config) == 0)) {
 		/* No valid IP4 config (!!); fall back to localhost.localdomain */
-		set_system_hostname (NULL, "no IPv4 config");
+		_set_hostname (NULL, "no IPv4 config");
 		return;
 	}
 
@@ -479,10 +268,10 @@ update_system_hostname (NMPolicy *policy, NMDevice *best)
 	g_assert (addr); /* checked for > 1 address above */
 
 	/* Start the hostname lookup thread */
-	policy->lookup = lookup_thread_new (nm_ip4_address_get_address (addr), lookup_callback, policy);
+	policy->lookup = hostname_thread_new (nm_ip4_address_get_address (addr), lookup_callback, policy);
 	if (!policy->lookup) {
 		/* Fall back to 'localhost.localdomain' */
-		set_system_hostname (NULL, "error starting hostname thread");
+		_set_hostname (NULL, "error starting hostname thread");
 	}
 }
 
@@ -1088,7 +877,7 @@ nm_policy_destroy (NMPolicy *policy)
 	 * by the lookup thread callback.
 	  */
 	if (policy->lookup) {
-		lookup_thread_die (policy->lookup);
+		hostname_thread_kill (policy->lookup);
 		policy->lookup = NULL;
 	}
 
