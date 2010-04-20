@@ -47,7 +47,6 @@
 #include "nm-system.h"
 #include "nm-netlink-monitor.h"
 #include "nm-logging.h"
-#include "nm-marshal.h"
 #include "nm-netlink.h"
 
 #define EVENT_CONDITIONS      ((GIOCondition) (G_IO_IN | G_IO_PRI))
@@ -70,19 +69,19 @@ typedef struct {
 } NMNetlinkMonitorPrivate;
 
 enum {
-  CARRIER_ON = 0,
-  CARRIER_OFF,
-  ERROR,
-
-  LAST_SIGNAL
+	NOTIFICATION = 0,
+	CARRIER_ON,
+	CARRIER_OFF,
+	ERROR,
+	LAST_SIGNAL
 };
-
 static guint signals[LAST_SIGNAL] = { 0 };
+
 
 G_DEFINE_TYPE (NMNetlinkMonitor, nm_netlink_monitor, G_TYPE_OBJECT);
 
 static void
-netlink_object_message_handler (struct nl_object *obj, void *arg)
+link_msg_handler (struct nl_object *obj, void *arg)
 {
 	NMNetlinkMonitor *monitor = NM_NETLINK_MONITOR (arg);
 	GError *error;
@@ -97,9 +96,7 @@ netlink_object_message_handler (struct nl_object *obj, void *arg)
 		                     NM_NETLINK_MONITOR_ERROR_BAD_ALLOC,
 		                     _("error processing netlink message: %s"),
 		                     nl_geterror ());
-		g_signal_emit (G_OBJECT (monitor), 
-		               signals[ERROR],
-		               0, error);
+		g_signal_emit (G_OBJECT (monitor), signals[ERROR], 0, error);
 		g_error_free (error);
 		return;
 	}
@@ -162,8 +159,13 @@ netlink_event_input (struct nl_msg *msg, void *arg)
 		return NL_STOP;
 	}
 
-	nl_msg_parse (msg, &netlink_object_message_handler, arg);
-	return NL_SKIP;
+	/* Let clients handle generic messages */
+	g_signal_emit (self, signals[NOTIFICATION], 0, msg);
+
+	/* Parse carrier messages */
+	nl_msg_parse (msg, &link_msg_handler, self);
+
+	return NL_OK;
 }
 
 static gboolean
@@ -250,6 +252,9 @@ nm_netlink_monitor_open_connection (NMNetlinkMonitor *monitor,
 		goto error;
 	}
 
+	/* Enable unix socket peer credentials which we use for verifying that the
+	 * sender of the message is actually the kernel.
+	 */
 	if (nl_set_passcred (priv->nlh, 1) < 0) {
 		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
 		             NM_NETLINK_MONITOR_ERROR_NETLINK_CONNECT,
@@ -381,12 +386,8 @@ deferred_emit_carrier_state (gpointer user_data)
 	 */
 	if (nl_cache_refill (priv->nlh, priv->nlh_link_cache)) {
 		nm_log_err (LOGD_HW, "error updating link cache: %s", nl_geterror ());
-	} else {
-		nl_cache_foreach_filter (priv->nlh_link_cache,
-		                         NULL,
-		                         netlink_object_message_handler,
-		                         monitor);
-	}
+	} else
+		nl_cache_foreach_filter (priv->nlh_link_cache, NULL, link_msg_handler, monitor);
 
 	return FALSE;
 }
@@ -557,6 +558,14 @@ nm_netlink_monitor_class_init (NMNetlinkMonitorClass *monitor_class)
 	object_class->finalize = finalize;
 
 	/* Signals */
+	signals[NOTIFICATION] =
+		g_signal_new ("notification",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_LAST,
+		              G_STRUCT_OFFSET (NMNetlinkMonitorClass, notification),
+		              NULL, NULL, g_cclosure_marshal_VOID__POINTER,
+		              G_TYPE_NONE, 1, G_TYPE_POINTER);
+
 	signals[CARRIER_ON] =
 		g_signal_new ("carrier-on",
 		              G_OBJECT_CLASS_TYPE (object_class),
@@ -578,7 +587,7 @@ nm_netlink_monitor_class_init (NMNetlinkMonitorClass *monitor_class)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMNetlinkMonitorClass, error),
-		              NULL, NULL, _nm_marshal_VOID__POINTER,
+		              NULL, NULL, g_cclosure_marshal_VOID__POINTER,
 		              G_TYPE_NONE, 1, G_TYPE_POINTER);
 }
 
