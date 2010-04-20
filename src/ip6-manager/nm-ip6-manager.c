@@ -21,6 +21,7 @@
 #include <errno.h>
 #include <netinet/icmp6.h>
 
+#include <netlink/route/addr.h>
 #include <netlink/route/rtnl.h>
 #include <netlink/route/route.h>
 

@@ -28,6 +28,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <netlink/object-api.h>
+#include <netlink/route/addr.h>
 
 static struct nl_cache * link_cache = NULL;
 static struct nl_handle * def_nl_handle = NULL;

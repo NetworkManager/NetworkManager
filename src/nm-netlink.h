@@ -21,10 +21,7 @@
 #ifndef NM_NETLINK_H
 #define NM_NETLINK_H
 
-#include <asm/types.h>
-#include <netlink/route/addr.h>
 #include <netlink/netlink.h>
-#include <netlink/utils.h>
 #include <netlink/route/link.h>
 
 int    nm_netlink_iface_to_index (const char *iface);

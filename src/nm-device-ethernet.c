@@ -34,6 +34,8 @@
 #include <linux/if.h>
 #include <errno.h>
 
+#include <netlink/route/addr.h>
+
 #include "nm-glib-compat.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-interface.h"
