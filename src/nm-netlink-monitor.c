@@ -66,18 +66,6 @@ typedef struct {
 	guint request_status_id;
 } NMNetlinkMonitorPrivate;
 
-static gboolean nm_netlink_monitor_event_handler (GIOChannel       *channel,
-                                                  GIOCondition      io_condition,
-                                                  gpointer          user_data);
-
-static gboolean nm_netlink_monitor_error_handler (GIOChannel       *channel,
-                                                  GIOCondition      io_condition,
-                                                  NMNetlinkMonitor *monitor);
-
-static gboolean nm_netlink_monitor_disconnect_handler (GIOChannel       *channel,
-                                                       GIOCondition      io_condition,
-                                                       NMNetlinkMonitor *monitor);
-
 enum {
   CARRIER_ON = 0,
   CARRIER_OFF,
@@ -232,6 +220,56 @@ netlink_event_input (struct nl_msg *msg, void *arg)
 	return NL_STOP;
 }
 
+static gboolean
+event_handler (GIOChannel *channel,
+               GIOCondition io_condition,
+               gpointer user_data)
+{
+	NMNetlinkMonitor *monitor = (NMNetlinkMonitor *) user_data;
+	NMNetlinkMonitorPrivate *priv;
+	GError *error = NULL;
+
+	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (monitor), TRUE);
+
+	priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
+	g_return_val_if_fail (priv->event_id > 0, TRUE);
+
+	if (io_condition & ERROR_CONDITIONS) {
+		const char *err_msg;
+		int err_code = 0;
+		socklen_t err_len = sizeof (err_code);
+
+		/* Grab error information */	 
+		if (getsockopt (g_io_channel_unix_get_fd (channel), 
+						SOL_SOCKET, SO_ERROR, (void *) &err_code, &err_len))
+			err_msg = strerror (err_code);
+		else
+			err_msg = _("error occurred while waiting for data on socket");
+
+		error = g_error_new (NM_NETLINK_MONITOR_ERROR,
+		                     NM_NETLINK_MONITOR_ERROR_WAITING_FOR_SOCKET_DATA,
+		                     "%s", err_msg);
+		g_signal_emit (monitor, signals[ERROR], 0, error);
+		g_error_free (error);
+		return TRUE;
+	} else if (io_condition & DISCONNECT_CONDITIONS)
+		return FALSE;
+
+	g_return_val_if_fail (!(io_condition & ~EVENT_CONDITIONS), FALSE);
+
+	/* Process the netlink messages */
+	if (nl_recvmsgs_default (priv->nlh) < 0) {
+		error = g_error_new (NM_NETLINK_MONITOR_ERROR,
+		                     NM_NETLINK_MONITOR_ERROR_PROCESSING_MESSAGE,
+		                     _("error processing netlink message: %s"),
+		                     nl_geterror ());
+		g_signal_emit (G_OBJECT (monitor), signals[ERROR], 0, error);
+		g_error_free (error);
+	}
+
+	return TRUE;
+}
+
 gboolean
 nm_netlink_monitor_open_connection (NMNetlinkMonitor *monitor,
 									GError **error)
@@ -370,8 +408,7 @@ nm_netlink_monitor_attach (NMNetlinkMonitor *monitor)
 
 	priv->event_id = g_io_add_watch (priv->io_channel,
 	                                 (EVENT_CONDITIONS | ERROR_CONDITIONS | DISCONNECT_CONDITIONS),
-	                                 nm_netlink_monitor_event_handler,
-	                                 monitor);
+	                                 event_handler, monitor);
 }
 
 void
@@ -427,86 +464,6 @@ nm_netlink_monitor_request_status (NMNetlinkMonitor  *monitor,
 		priv->request_status_id = g_idle_add (deferred_emit_carrier_state, monitor);
 
 	return TRUE;
-}
-
-static gboolean
-nm_netlink_monitor_event_handler (GIOChannel       *channel,
-                                  GIOCondition      io_condition,
-                                  gpointer          user_data)
-{
-	NMNetlinkMonitor *monitor = (NMNetlinkMonitor *) user_data;
-	NMNetlinkMonitorPrivate *priv;
-	GError *error = NULL;
-
-	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (monitor), TRUE);
-
-	priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
-	g_return_val_if_fail (priv->event_id > 0, TRUE);
-
-	if (io_condition & ERROR_CONDITIONS)
-		return nm_netlink_monitor_error_handler (channel, io_condition, monitor);
-	else if (io_condition & DISCONNECT_CONDITIONS)
-		return nm_netlink_monitor_disconnect_handler (channel, io_condition, monitor);
-
-	g_return_val_if_fail (!(io_condition & ~EVENT_CONDITIONS), FALSE);
-
-	if (nl_recvmsgs_default (priv->nlh) < 0) {
-		error = g_error_new (NM_NETLINK_MONITOR_ERROR,
-		                     NM_NETLINK_MONITOR_ERROR_PROCESSING_MESSAGE,
-		                     _("error processing netlink message: %s"),
-		                     nl_geterror ());
-
-		g_signal_emit (G_OBJECT (monitor), 
-		               signals[ERROR],
-		               0, error);
-		g_error_free (error);
-	}
-
-	return TRUE;
-}
-
-static gboolean 
-nm_netlink_monitor_error_handler (GIOChannel       *channel,
-                                  GIOCondition      io_condition,
-                                  NMNetlinkMonitor *monitor)
-{
-	GError *socket_error;
-	const char *err_msg;
-	int err_code;
-	socklen_t err_len;
- 
-	g_return_val_if_fail (io_condition & ERROR_CONDITIONS, FALSE);
-
-	err_code = 0;
-	err_len = sizeof (err_code);
-	if (getsockopt (g_io_channel_unix_get_fd (channel), 
-					SOL_SOCKET, SO_ERROR, (void *) &err_code, &err_len))
-		err_msg = strerror (err_code);
-	else
-		err_msg = _("error occurred while waiting for data on socket");
-
-	socket_error = g_error_new (NM_NETLINK_MONITOR_ERROR,
-	                            NM_NETLINK_MONITOR_ERROR_WAITING_FOR_SOCKET_DATA,
-	                            "%s",
-	                            err_msg);
-
-	g_signal_emit (G_OBJECT (monitor), 
-	               signals[ERROR],
-	               0, socket_error);
-
-	g_error_free (socket_error);
-
-	return TRUE;
-}
-
-static gboolean 
-nm_netlink_monitor_disconnect_handler (GIOChannel       *channel,
-                                       GIOCondition      io_condition,
-                                       NMNetlinkMonitor *monitor)
-{
-
-	g_return_val_if_fail (!(io_condition & ~DISCONNECT_CONDITIONS), FALSE);
-	return FALSE;
 }
 
 typedef struct {
