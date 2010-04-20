@@ -25,6 +25,9 @@
  * Copyright (C) 2004 Novell, Inc.
  */
 
+/* for struct ucred */
+#include <config.h>
+
 #include <errno.h>
 #include <string.h>
 #include <sys/types.h>
@@ -209,15 +212,41 @@ out:
 static int
 netlink_event_input (struct nl_msg *msg, void *arg)
 {
+	NMNetlinkMonitor *self = NM_NETLINK_MONITOR (arg);
+	NMNetlinkMonitorPrivate *priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
 	struct nlmsghdr *hdr = nlmsg_hdr (msg);
+	struct ucred *creds = nlmsg_get_creds (msg);
+	guint32 local_port;
+	gboolean accept_msg = FALSE;
 
-	if (hdr->nlmsg_pid != 0)
+	/* Only messages sent from the kernel */
+	if (!creds || creds->uid != 0) {
+		nm_log_dbg (LOGD_HW, "ignoring netlink message from UID %d",
+		            creds ? creds->uid : -1);
 		return NL_STOP;
+	}
+
+	/* Accept any messages from the kernel */
+	if (hdr->nlmsg_pid == 0)
+		accept_msg = TRUE;
+
+	/* And any multicast message directed to our netlink PID, since multicast
+	 * currently requires CAP_ADMIN to use.
+	 */
+	local_port = nl_socket_get_local_port (priv->nlh);
+	if ((hdr->nlmsg_pid == local_port) && (hdr->nlmsg_flags & NLM_F_MULTI))
+		accept_msg = TRUE;
+
+	if (accept_msg == FALSE) {
+		nm_log_dbg (LOGD_HW, "ignoring netlink message from PID %d (local PID %d, multicast %d)",
+		            hdr->nlmsg_pid,
+		            local_port,
+		            (hdr->nlmsg_flags & NLM_F_MULTI));
+		return NL_STOP;
+	}
 
 	nl_msg_parse (msg, &netlink_object_message_handler, arg);
-
-	/* Stop processing messages */
-	return NL_STOP;
+	return NL_SKIP;
 }
 
 static gboolean
@@ -300,6 +329,14 @@ nm_netlink_monitor_open_connection (NMNetlinkMonitor *monitor,
 		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
 		             NM_NETLINK_MONITOR_ERROR_NETLINK_CONNECT,
 		             _("unable to connect to netlink for monitoring link status: %s"),
+		             nl_geterror ());
+		goto error;
+	}
+
+	if (nl_set_passcred (priv->nlh, 1) < 0) {
+		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
+		             NM_NETLINK_MONITOR_ERROR_NETLINK_CONNECT,
+		             _("unable to enable netlink handle credential passing: %s"),
 		             nl_geterror ());
 		goto error;
 	}
