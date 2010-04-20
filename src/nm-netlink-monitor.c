@@ -81,89 +81,6 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 G_DEFINE_TYPE (NMNetlinkMonitor, nm_netlink_monitor, G_TYPE_OBJECT);
 
-NMNetlinkMonitor *
-nm_netlink_monitor_get (void)
-{
-	static NMNetlinkMonitor *singleton = NULL;
-
-	if (!singleton)
-		singleton = NM_NETLINK_MONITOR (g_object_new (NM_TYPE_NETLINK_MONITOR, NULL));
-	else
-		g_object_ref (singleton);
-
-	return singleton;
-}
-
-static void
-nm_netlink_monitor_init (NMNetlinkMonitor *monitor)
-{
-}
-
-static void 
-finalize (GObject *object)
-{
-	NMNetlinkMonitorPrivate *priv = NM_NETLINK_MONITOR_GET_PRIVATE (object);
-
-	if (priv->request_status_id)
-		g_source_remove (priv->request_status_id);
-
-	if (priv->io_channel)
-		nm_netlink_monitor_close_connection (NM_NETLINK_MONITOR (object));
-
-	if (priv->nlh_link_cache) {
-		nl_cache_free (priv->nlh_link_cache);
-		priv->nlh_link_cache = NULL;
-	}
-
-	if (priv->nlh) {
-		nl_handle_destroy (priv->nlh);
-		priv->nlh = NULL;
-	}
-
-	if (priv->nlh_cb) {
-		nl_cb_put (priv->nlh_cb);
-		priv->nlh_cb = NULL;
-	}
-
-	G_OBJECT_CLASS (nm_netlink_monitor_parent_class)->finalize (object);
-}
-
-static void
-nm_netlink_monitor_class_init (NMNetlinkMonitorClass *monitor_class)
-{
-	GObjectClass *object_class = G_OBJECT_CLASS (monitor_class);
-
-	g_type_class_add_private (monitor_class, sizeof (NMNetlinkMonitorPrivate));
-
-	/* Virtual methods */
-	object_class->finalize = finalize;
-
-	/* Signals */
-	signals[CARRIER_ON] =
-		g_signal_new ("carrier-on",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_LAST,
-					  G_STRUCT_OFFSET (NMNetlinkMonitorClass, carrier_on),
-					  NULL, NULL, g_cclosure_marshal_VOID__INT,
-					  G_TYPE_NONE, 1, G_TYPE_INT);
-
-	signals[CARRIER_OFF] =
-		g_signal_new ("carrier-off",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_LAST,
-					  G_STRUCT_OFFSET (NMNetlinkMonitorClass, carrier_off),
-					  NULL, NULL, g_cclosure_marshal_VOID__INT,
-					  G_TYPE_NONE, 1, G_TYPE_INT);
-
-	signals[ERROR] =
-		g_signal_new ("error",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_LAST,
-					  G_STRUCT_OFFSET (NMNetlinkMonitorClass, error),
-					  NULL, NULL, _nm_marshal_VOID__POINTER,
-					  G_TYPE_NONE, 1, G_TYPE_POINTER);
-}
-
 static void
 netlink_object_message_handler (struct nl_object *obj, void *arg)
 {
@@ -421,17 +338,6 @@ nm_netlink_monitor_close_connection (NMNetlinkMonitor  *monitor)
 	priv->io_channel = NULL;
 }
 
-GQuark
-nm_netlink_monitor_error_quark (void)
-{
-	static GQuark error_quark = 0;
-
-	if (error_quark == 0)
-		error_quark = g_quark_from_static_string ("nm-netlink-monitor-error-quark");
-
-	return error_quark;
-}
-
 void
 nm_netlink_monitor_attach (NMNetlinkMonitor *monitor)
 {
@@ -589,5 +495,100 @@ nm_netlink_monitor_get_flags_sync (NMNetlinkMonitor *self,
 		*ifflags = info.flags;
 
 	return TRUE; /* success */
+}
+
+/***************************************************************/
+
+NMNetlinkMonitor *
+nm_netlink_monitor_get (void)
+{
+	static NMNetlinkMonitor *singleton = NULL;
+
+	if (!singleton)
+		singleton = NM_NETLINK_MONITOR (g_object_new (NM_TYPE_NETLINK_MONITOR, NULL));
+	else
+		g_object_ref (singleton);
+
+	return singleton;
+}
+
+static void
+nm_netlink_monitor_init (NMNetlinkMonitor *monitor)
+{
+}
+
+static void
+finalize (GObject *object)
+{
+	NMNetlinkMonitorPrivate *priv = NM_NETLINK_MONITOR_GET_PRIVATE (object);
+
+	if (priv->request_status_id)
+		g_source_remove (priv->request_status_id);
+
+	if (priv->io_channel)
+		nm_netlink_monitor_close_connection (NM_NETLINK_MONITOR (object));
+
+	if (priv->nlh_link_cache) {
+		nl_cache_free (priv->nlh_link_cache);
+		priv->nlh_link_cache = NULL;
+	}
+
+	if (priv->nlh) {
+		nl_handle_destroy (priv->nlh);
+		priv->nlh = NULL;
+	}
+
+	if (priv->nlh_cb) {
+		nl_cb_put (priv->nlh_cb);
+		priv->nlh_cb = NULL;
+	}
+
+	G_OBJECT_CLASS (nm_netlink_monitor_parent_class)->finalize (object);
+}
+
+static void
+nm_netlink_monitor_class_init (NMNetlinkMonitorClass *monitor_class)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (monitor_class);
+
+	g_type_class_add_private (monitor_class, sizeof (NMNetlinkMonitorPrivate));
+
+	/* Virtual methods */
+	object_class->finalize = finalize;
+
+	/* Signals */
+	signals[CARRIER_ON] =
+		g_signal_new ("carrier-on",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_LAST,
+		              G_STRUCT_OFFSET (NMNetlinkMonitorClass, carrier_on),
+		              NULL, NULL, g_cclosure_marshal_VOID__INT,
+		              G_TYPE_NONE, 1, G_TYPE_INT);
+
+	signals[CARRIER_OFF] =
+		g_signal_new ("carrier-off",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_LAST,
+		              G_STRUCT_OFFSET (NMNetlinkMonitorClass, carrier_off),
+		              NULL, NULL, g_cclosure_marshal_VOID__INT,
+		              G_TYPE_NONE, 1, G_TYPE_INT);
+
+	signals[ERROR] =
+		g_signal_new ("error",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_LAST,
+		              G_STRUCT_OFFSET (NMNetlinkMonitorClass, error),
+		              NULL, NULL, _nm_marshal_VOID__POINTER,
+		              G_TYPE_NONE, 1, G_TYPE_POINTER);
+}
+
+GQuark
+nm_netlink_monitor_error_quark (void)
+{
+	static GQuark error_quark = 0;
+
+	if (G_UNLIKELY (error_quark == 0))
+		error_quark = g_quark_from_static_string ("nm-netlink-monitor-error-quark");
+	return error_quark;
 }
 
