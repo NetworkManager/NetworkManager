@@ -83,7 +83,7 @@ G_DEFINE_TYPE (NMNetlinkMonitor, nm_netlink_monitor, G_TYPE_OBJECT);
 static void
 link_msg_handler (struct nl_object *obj, void *arg)
 {
-	NMNetlinkMonitor *monitor = NM_NETLINK_MONITOR (arg);
+	NMNetlinkMonitor *self = NM_NETLINK_MONITOR (arg);
 	GError *error;
 	struct rtnl_link *filter;
 	struct rtnl_link *link_obj;
@@ -96,7 +96,7 @@ link_msg_handler (struct nl_object *obj, void *arg)
 		                     NM_NETLINK_MONITOR_ERROR_BAD_ALLOC,
 		                     _("error processing netlink message: %s"),
 		                     nl_geterror ());
-		g_signal_emit (G_OBJECT (monitor), signals[ERROR], 0, error);
+		g_signal_emit (self, signals[ERROR], 0, error);
 		g_error_free (error);
 		return;
 	}
@@ -115,9 +115,9 @@ link_msg_handler (struct nl_object *obj, void *arg)
 	 * b00055aacdb172c05067612278ba27265fcd05ce in 2.6.17.
 	 */
 	if (flags & IFF_LOWER_UP)
-		g_signal_emit (G_OBJECT (monitor), signals[CARRIER_ON], 0, ifidx);
+		g_signal_emit (self, signals[CARRIER_ON], 0, ifidx);
 	else
-		g_signal_emit (G_OBJECT (monitor), signals[CARRIER_OFF], 0, ifidx);
+		g_signal_emit (self, signals[CARRIER_OFF], 0, ifidx);
 
 out:
 	rtnl_link_put (filter);
@@ -173,13 +173,13 @@ event_handler (GIOChannel *channel,
                GIOCondition io_condition,
                gpointer user_data)
 {
-	NMNetlinkMonitor *monitor = (NMNetlinkMonitor *) user_data;
+	NMNetlinkMonitor *self = (NMNetlinkMonitor *) user_data;
 	NMNetlinkMonitorPrivate *priv;
 	GError *error = NULL;
 
-	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (monitor), TRUE);
+	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (self), TRUE);
 
-	priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
+	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
 	g_return_val_if_fail (priv->event_id > 0, TRUE);
 
 	if (io_condition & ERROR_CONDITIONS) {
@@ -197,7 +197,7 @@ event_handler (GIOChannel *channel,
 		error = g_error_new (NM_NETLINK_MONITOR_ERROR,
 		                     NM_NETLINK_MONITOR_ERROR_WAITING_FOR_SOCKET_DATA,
 		                     "%s", err_msg);
-		g_signal_emit (monitor, signals[ERROR], 0, error);
+		g_signal_emit (self, signals[ERROR], 0, error);
 		g_error_free (error);
 		return TRUE;
 	} else if (io_condition & DISCONNECT_CONDITIONS)
@@ -211,7 +211,7 @@ event_handler (GIOChannel *channel,
 		                     NM_NETLINK_MONITOR_ERROR_PROCESSING_MESSAGE,
 		                     _("error processing netlink message: %s"),
 		                     nl_geterror ());
-		g_signal_emit (G_OBJECT (monitor), signals[ERROR], 0, error);
+		g_signal_emit (self, signals[ERROR], 0, error);
 		g_error_free (error);
 	}
 
@@ -219,17 +219,17 @@ event_handler (GIOChannel *channel,
 }
 
 gboolean
-nm_netlink_monitor_open_connection (NMNetlinkMonitor *monitor,
-									GError **error)
+nm_netlink_monitor_open_connection (NMNetlinkMonitor *self, GError **error)
 {
 	NMNetlinkMonitorPrivate *priv;
-	int fd;
 	GError *channel_error = NULL;
 	GIOFlags channel_flags;
+	int fd;
 
-	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (monitor), FALSE);
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (self), FALSE);
 
-	priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
+	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
 	g_return_val_if_fail (priv->io_channel == NULL, FALSE);
 
 	priv->nlh_cb = nl_cb_alloc (NL_CB_VERBOSE);
@@ -243,7 +243,7 @@ nm_netlink_monitor_open_connection (NMNetlinkMonitor *monitor,
 	}
 
 	nl_disable_sequence_check (priv->nlh);
-	nl_socket_modify_cb (priv->nlh, NL_CB_VALID, NL_CB_CUSTOM, netlink_event_input, monitor);
+	nl_socket_modify_cb (priv->nlh, NL_CB_VALID, NL_CB_CUSTOM, netlink_event_input, self);
 	if (nl_connect (priv->nlh, NETLINK_ROUTE) < 0) {
 		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
 		             NM_NETLINK_MONITOR_ERROR_NETLINK_CONNECT,
@@ -303,7 +303,7 @@ nm_netlink_monitor_open_connection (NMNetlinkMonitor *monitor,
 
 error:
 	if (priv->io_channel)
-		nm_netlink_monitor_close_connection (monitor);
+		nm_netlink_monitor_close_connection (self);
 
 	if (priv->nlh_link_cache) {
 		nl_cache_free (priv->nlh_link_cache);
@@ -323,17 +323,17 @@ error:
 }
 
 void
-nm_netlink_monitor_close_connection (NMNetlinkMonitor  *monitor)
+nm_netlink_monitor_close_connection (NMNetlinkMonitor  *self)
 {
 	NMNetlinkMonitorPrivate *priv;
 
-	g_return_if_fail (NM_IS_NETLINK_MONITOR (monitor));
+	g_return_if_fail (NM_IS_NETLINK_MONITOR (self));
 
-	priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
+	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
 	g_return_if_fail (priv->io_channel != NULL);
 
 	if (priv->event_id)
-		nm_netlink_monitor_detach (monitor);
+		nm_netlink_monitor_detach (self);
 
 	g_io_channel_shutdown (priv->io_channel,
 			       TRUE /* flush pending data */,
@@ -344,29 +344,29 @@ nm_netlink_monitor_close_connection (NMNetlinkMonitor  *monitor)
 }
 
 void
-nm_netlink_monitor_attach (NMNetlinkMonitor *monitor)
+nm_netlink_monitor_attach (NMNetlinkMonitor *self)
 {
 	NMNetlinkMonitorPrivate *priv;
 
-	g_return_if_fail (NM_IS_NETLINK_MONITOR (monitor));
+	g_return_if_fail (NM_IS_NETLINK_MONITOR (self));
 
-	priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
+	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
 	g_return_if_fail (priv->nlh != NULL);
 	g_return_if_fail (priv->event_id == 0);
 
 	priv->event_id = g_io_add_watch (priv->io_channel,
 	                                 (EVENT_CONDITIONS | ERROR_CONDITIONS | DISCONNECT_CONDITIONS),
-	                                 event_handler, monitor);
+	                                 event_handler, self);
 }
 
 void
-nm_netlink_monitor_detach (NMNetlinkMonitor *monitor)
+nm_netlink_monitor_detach (NMNetlinkMonitor *self)
 {
 	NMNetlinkMonitorPrivate *priv;
 
-	g_return_if_fail (NM_IS_NETLINK_MONITOR (monitor));
+	g_return_if_fail (NM_IS_NETLINK_MONITOR (self));
 
-	priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
+	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
 	g_return_if_fail (priv->event_id > 0);
 
 	g_source_remove (priv->event_id);
@@ -376,8 +376,8 @@ nm_netlink_monitor_detach (NMNetlinkMonitor *monitor)
 static gboolean
 deferred_emit_carrier_state (gpointer user_data)
 {
-	NMNetlinkMonitor *monitor = NM_NETLINK_MONITOR (user_data);
-	NMNetlinkMonitorPrivate *priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
+	NMNetlinkMonitor *self = NM_NETLINK_MONITOR (user_data);
+	NMNetlinkMonitorPrivate *priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
 
 	priv->request_status_id = 0;
 
@@ -387,25 +387,24 @@ deferred_emit_carrier_state (gpointer user_data)
 	if (nl_cache_refill (priv->nlh, priv->nlh_link_cache)) {
 		nm_log_err (LOGD_HW, "error updating link cache: %s", nl_geterror ());
 	} else
-		nl_cache_foreach_filter (priv->nlh_link_cache, NULL, link_msg_handler, monitor);
+		nl_cache_foreach_filter (priv->nlh_link_cache, NULL, link_msg_handler, self);
 
 	return FALSE;
 }
 
 gboolean
-nm_netlink_monitor_request_status (NMNetlinkMonitor  *monitor,
-                                   GError           **error)
+nm_netlink_monitor_request_status (NMNetlinkMonitor *self, GError **error)
 {
 	NMNetlinkMonitorPrivate *priv;
 
-	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (monitor), FALSE);
+	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (self), FALSE);
 
-	priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
+	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
 	g_return_val_if_fail (priv->event_id > 0, FALSE);
 
 	/* Schedule the carrier state emission */
 	if (!priv->request_status_id)
-		priv->request_status_id = g_idle_add (deferred_emit_carrier_state, monitor);
+		priv->request_status_id = g_idle_add (deferred_emit_carrier_state, self);
 
 	return TRUE;
 }
@@ -514,7 +513,7 @@ nm_netlink_monitor_get (void)
 }
 
 static void
-nm_netlink_monitor_init (NMNetlinkMonitor *monitor)
+nm_netlink_monitor_init (NMNetlinkMonitor *self)
 {
 }
 
