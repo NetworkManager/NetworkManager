@@ -11,9 +11,7 @@ noinst_LTLIBRARIES = libip6-manager.la
 
 libip6_manager_la_SOURCES = \
 	nm-ip6-manager.c \
-	nm-ip6-manager.h \
-	nm-netlink-listener.c \
-	nm-netlink-listener.h
+	nm-ip6-manager.h
 
 libip6_manager_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \

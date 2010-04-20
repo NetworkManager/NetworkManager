@@ -25,7 +25,8 @@
 #include <netlink/route/route.h>
 
 #include "nm-ip6-manager.h"
-#include "nm-netlink-listener.h"
+#include "nm-netlink-monitor.h"
+#include "nm-netlink.h"
 #include "NetworkManagerUtils.h"
 #include "nm-marshal.h"
 #include "nm-logging.h"
@@ -40,7 +41,7 @@
 #define IF_RS_SENT      0x10
 
 typedef struct {
-	NMNetlinkListener *netlink;
+	NMNetlinkMonitor *monitor;
 	GHashTable *devices_by_iface, *devices_by_index;
 
 	struct nl_handle *nlh;
@@ -82,6 +83,8 @@ typedef struct {
 
 	GArray *rdnss_servers;
 	guint rdnss_timeout_id;
+
+	guint32 ra_flags;
 } NMIP6Device;
 
 G_DEFINE_TYPE (NMIP6Manager, nm_ip6_manager, G_TYPE_OBJECT)
@@ -96,7 +99,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 static NMIP6Manager *nm_ip6_manager_new (void);
 
-static void netlink_notification (NMNetlinkListener *listener, struct nl_msg *msg, gpointer user_data);
+static void netlink_notification (NMNetlinkMonitor *monitor, struct nl_msg *msg, gpointer user_data);
 
 static void nm_ip6_device_destroy (NMIP6Device *device);
 
@@ -122,12 +125,14 @@ nm_ip6_manager_init (NMIP6Manager *manager)
 													(GDestroyNotify) nm_ip6_device_destroy);
 	priv->devices_by_index = g_hash_table_new (NULL, NULL);
 
-	priv->netlink = nm_netlink_listener_get ();
-	g_signal_connect (priv->netlink, "notification",
-					  G_CALLBACK (netlink_notification), manager);
-	nm_netlink_listener_subscribe (priv->netlink, RTNLGRP_IPV6_IFADDR, NULL);
-	nm_netlink_listener_subscribe (priv->netlink, RTNLGRP_IPV6_PREFIX, NULL);
-	nm_netlink_listener_subscribe (priv->netlink, RTNLGRP_ND_USEROPT, NULL);
+	priv->monitor = nm_netlink_monitor_get ();
+	nm_netlink_monitor_subscribe (priv->monitor, RTNLGRP_IPV6_IFADDR, NULL);
+	nm_netlink_monitor_subscribe (priv->monitor, RTNLGRP_IPV6_PREFIX, NULL);
+	nm_netlink_monitor_subscribe (priv->monitor, RTNLGRP_ND_USEROPT, NULL);
+	nm_netlink_monitor_subscribe (priv->monitor, RTNLGRP_LINK, NULL);
+
+	g_signal_connect (priv->monitor, "notification",
+	                  G_CALLBACK (netlink_notification), manager);
 
 	priv->nlh = nm_netlink_get_default_handle ();
 	priv->addr_cache = rtnl_addr_alloc_cache (priv->nlh);
@@ -141,7 +146,7 @@ finalize (GObject *object)
 
 	g_hash_table_destroy (priv->devices_by_iface);
 	g_hash_table_destroy (priv->devices_by_index);
-	g_object_unref (priv->netlink);
+	g_object_unref (priv->monitor);
 	nl_cache_free (priv->addr_cache);
 	nl_cache_free (priv->route_cache);
 
@@ -348,8 +353,6 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
 	struct rtnl_addr *rtnladdr;
 	struct nl_addr *nladdr;
 	struct in6_addr *addr;
-	struct rtnl_link *link;
-	guint flags;
 	CallbackInfo *info;
 	guint dhcp_opts = IP6_DHCP_OPT_NONE;
 
@@ -373,21 +376,16 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
 		}
 	}
 
-	/* Note: we don't want to keep a cache of links, because the
-	 * kernel doesn't send notifications when the flags change, so the
-	 * cached rtnl_links would have out-of-date flags.
-	 */
-	link = nm_netlink_index_to_rtnl_link (device->index);
-	flags = rtnl_link_get_flags (link);
-	rtnl_link_put (link);
-
-	if ((flags & IF_RA_RCVD) && device->state < NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT)
+	if ((device->ra_flags & IF_RA_RCVD) && device->state < NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT)
 		device->state = NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT;
 
-	if (flags & IF_RA_MANAGED)
+	if (device->ra_flags & IF_RA_MANAGED) {
 		dhcp_opts = IP6_DHCP_OPT_MANAGED;
-	else if (flags & IF_RA_OTHERCONF)
+		nm_log_dbg (LOGD_IP6, "router advertisement deferred to DHCPv6");
+	} else if (device->ra_flags & IF_RA_OTHERCONF) {
 		dhcp_opts = IP6_DHCP_OPT_OTHERCONF;
+		nm_log_dbg (LOGD_IP6, "router advertisement requests parallel DHCPv6");
+	}
 
 	if (!device->addrconf_complete) {
 		if (device->state >= device->target_state ||
@@ -598,8 +596,58 @@ process_nduseropt (NMIP6Manager *manager, struct nl_msg *msg)
 		return NULL;
 }
 
+static struct nla_policy link_policy[IFLA_MAX + 1] = {
+	[IFLA_PROTINFO] = { .type = NLA_NESTED },
+};
+
+static struct nla_policy link_prot_policy[IFLA_INET6_MAX + 1] = {
+	[IFLA_INET6_FLAGS]	= { .type = NLA_U32 },
+};
+
+static NMIP6Device *
+process_newlink (NMIP6Manager *manager, struct nl_msg *msg)
+{
+	struct nlmsghdr *hdr = nlmsg_hdr (msg);
+	struct ifinfomsg *ifi;
+	NMIP6Device *device;
+	struct nlattr *tb[IFLA_MAX + 1];
+	struct nlattr *pi[IFLA_INET6_MAX + 1];
+	int err;
+
+	ifi = nlmsg_data (hdr);
+	if (ifi->ifi_family != AF_INET6)
+		return NULL;
+
+	device = nm_ip6_manager_get_device (manager, ifi->ifi_index);
+	if (!device || device->addrconf_complete)
+		return NULL;
+
+	/* FIXME: we have to do this manually for now since libnl doesn't yet
+	 * support the IFLA_PROTINFO attribute of NEWLINK messages.  When it does,
+	 * we can get rid of this function and just grab IFLA_PROTINFO from
+	 * nm_ip6_device_sync_from_netlink(), then get the IFLA_INET6_FLAGS out of
+	 * the PROTINFO.
+	 */
+
+	err = nlmsg_parse (hdr, sizeof (*ifi), tb, IFLA_MAX, link_policy);
+	if (err < 0)
+		return NULL;
+	if (!tb[IFLA_PROTINFO])
+		return NULL;
+
+	err = nla_parse_nested (pi, IFLA_INET6_MAX, tb[IFLA_PROTINFO], link_prot_policy);
+	if (err < 0)
+		return NULL;
+	if (!pi[IFLA_INET6_FLAGS])
+		return NULL;
+
+	device->ra_flags = nla_get_u32 (pi[IFLA_INET6_FLAGS]);
+
+	return device;
+}
+
 static void
-netlink_notification (NMNetlinkListener *listener, struct nl_msg *msg, gpointer user_data)
+netlink_notification (NMNetlinkMonitor *monitor, struct nl_msg *msg, gpointer user_data)
 {
 	NMIP6Manager *manager = (NMIP6Manager *) user_data;
 	NMIP6Device *device;
@@ -613,22 +661,22 @@ netlink_notification (NMNetlinkListener *listener, struct nl_msg *msg, gpointer 
 		device = process_addr (manager, msg);
 		config_changed = TRUE;
 		break;
-
 	case RTM_NEWROUTE:
 	case RTM_DELROUTE:
 		device = process_route (manager, msg);
 		config_changed = TRUE;
 		break;
-
 	case RTM_NEWPREFIX:
 		device = process_prefix (manager, msg);
 		break;
-
 	case RTM_NEWNDUSEROPT:
 		device = process_nduseropt (manager, msg);
 		config_changed = TRUE;
 		break;
-
+	case RTM_NEWLINK:
+		device = process_newlink (manager, msg);
+		config_changed = TRUE;
+		break;
 	default:
 		return;
 	}
@@ -758,6 +806,7 @@ nm_ip6_manager_begin_addrconf (NMIP6Manager *manager,
 	nm_log_info (LOGD_IP6, "Activation (%s) Beginning IP6 addrconf.", iface);
 
 	device->addrconf_complete = FALSE;
+	device->ra_flags = 0;
 
 	/* Set up a timeout on the transaction to kill it after the timeout */
 	info = callback_info_new (device, 0);
@@ -771,6 +820,7 @@ nm_ip6_manager_begin_addrconf (NMIP6Manager *manager,
 	 * device is already fully configured and schedule the
 	 * ADDRCONF_COMPLETE signal in that case.
 	 */
+	nm_netlink_monitor_request_ip6_info (priv->monitor, NULL);
 	nm_ip6_device_sync_from_netlink (device, FALSE);
 }
 

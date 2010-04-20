@@ -79,6 +79,8 @@ gboolean          nm_netlink_monitor_subscribe        (NMNetlinkMonitor *monitor
 void              nm_netlink_monitor_unsubscribe      (NMNetlinkMonitor *monitor,
                                                        int group);
 
+gboolean          nm_netlink_monitor_request_ip6_info (NMNetlinkMonitor *monitor,
+                                                       GError **error);
 
 gboolean          nm_netlink_monitor_request_status   (NMNetlinkMonitor *monitor,
                                                        GError **error);

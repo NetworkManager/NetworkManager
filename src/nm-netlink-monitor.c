@@ -442,6 +442,28 @@ nm_netlink_monitor_unsubscribe (NMNetlinkMonitor *self, int group)
 	set_subs (self, group, subs);
 }
 
+/***************************************************************/
+
+gboolean
+nm_netlink_monitor_request_ip6_info (NMNetlinkMonitor *self, GError **error)
+{
+	NMNetlinkMonitorPrivate *priv;
+
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (self), FALSE);
+
+	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
+
+	/* FIXME: nl_rtgen_request() gets the return value screwed up with
+	 * libnl-1.1; revisit this and return a proper error when we port to
+	 * a later libnl.
+	 */
+	nl_rtgen_request (priv->nlh, RTM_GETLINK, AF_INET6, NLM_F_DUMP);
+
+	return TRUE;
+}
+
+
 static gboolean
 deferred_emit_carrier_state (gpointer user_data)
 {
