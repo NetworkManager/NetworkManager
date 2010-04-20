@@ -67,11 +67,19 @@ GQuark nm_netlink_monitor_error_quark (void) G_GNUC_CONST;
 
 NMNetlinkMonitor *nm_netlink_monitor_get (void);
 
-gboolean          nm_netlink_monitor_open_connection (NMNetlinkMonitor *monitor,
-                                                      GError **error);
+gboolean          nm_netlink_monitor_open_connection  (NMNetlinkMonitor *monitor,
+                                                       GError **error);
 void              nm_netlink_monitor_close_connection (NMNetlinkMonitor *monitor);
 void              nm_netlink_monitor_attach           (NMNetlinkMonitor *monitor);
 void              nm_netlink_monitor_detach           (NMNetlinkMonitor *monitor);
+
+gboolean          nm_netlink_monitor_subscribe        (NMNetlinkMonitor *monitor,
+                                                       int group,
+                                                       GError **error);
+void              nm_netlink_monitor_unsubscribe      (NMNetlinkMonitor *monitor,
+                                                       int group);
+
+
 gboolean          nm_netlink_monitor_request_status   (NMNetlinkMonitor *monitor,
                                                        GError **error);
 gboolean          nm_netlink_monitor_get_flags_sync   (NMNetlinkMonitor *monitor,

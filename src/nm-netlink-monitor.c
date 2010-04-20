@@ -66,6 +66,8 @@ typedef struct {
 	guint             event_id;
 
 	guint request_status_id;
+
+	GHashTable *subscriptions;
 } NMNetlinkMonitorPrivate;
 
 enum {
@@ -263,13 +265,9 @@ nm_netlink_monitor_open_connection (NMNetlinkMonitor *self, GError **error)
 		goto error;
 	}
 
-	if (nl_socket_add_membership (priv->nlh, RTNLGRP_LINK) < 0) {
-		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
-		             NM_NETLINK_MONITOR_ERROR_NETLINK_JOIN_GROUP,
-		             _("unable to join netlink group for monitoring link status: %s"),
-		             nl_geterror ());
+	/* Subscribe to the LINK group for internal carrier signals */
+	if (!nm_netlink_monitor_subscribe (self, RTNLGRP_LINK, error))
 		goto error;
-	}
 
 	if ((priv->nlh_link_cache = rtnl_link_alloc_cache (priv->nlh)) == NULL) {
 		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
@@ -371,6 +369,77 @@ nm_netlink_monitor_detach (NMNetlinkMonitor *self)
 
 	g_source_remove (priv->event_id);
 	priv->event_id = 0;
+}
+
+static int
+get_subs (NMNetlinkMonitor *self, int group)
+{
+	NMNetlinkMonitorPrivate *priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
+
+	return GPOINTER_TO_INT (g_hash_table_lookup (priv->subscriptions,
+	                                             GINT_TO_POINTER (group)));
+}
+
+static void
+set_subs (NMNetlinkMonitor *self, int group, int new_subs)
+{
+	NMNetlinkMonitorPrivate *priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
+
+	g_hash_table_insert (priv->subscriptions,
+	                     GINT_TO_POINTER (group),
+	                     GINT_TO_POINTER (new_subs));
+}
+
+gboolean
+nm_netlink_monitor_subscribe (NMNetlinkMonitor *self, int group, GError **error)
+{
+	NMNetlinkMonitorPrivate *priv;
+	int subs;
+
+	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (self), FALSE);
+
+	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
+
+	if (!priv->nlh) {
+		if (!nm_netlink_monitor_open_connection (self, error))
+			return FALSE;
+	}
+
+	subs = get_subs (self, group) + 1;
+	if (subs == 1) {
+		if (nl_socket_add_membership (priv->nlh, group) < 0) {
+			g_set_error (error, NM_NETLINK_MONITOR_ERROR,
+			             NM_NETLINK_MONITOR_ERROR_NETLINK_JOIN_GROUP,
+			             _("unable to join netlink group: %s"),
+			             nl_geterror ());
+			return FALSE;
+		}
+	}
+
+	/* Update # of subscriptions for this group */
+	set_subs (self, group, subs);
+
+	return TRUE;
+}
+
+void
+nm_netlink_monitor_unsubscribe (NMNetlinkMonitor *self, int group)
+{
+	NMNetlinkMonitorPrivate *priv;
+	int subs;
+
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_NETLINK_MONITOR (self));
+
+	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
+	g_return_if_fail (priv->nlh != NULL);
+
+	subs = get_subs (self, group) - 1;
+	if (subs == 0)
+		nl_socket_drop_membership (priv->nlh, group);
+
+	/* Update # of subscriptions for this group */
+	set_subs (self, group, subs);
 }
 
 static gboolean
@@ -515,6 +584,9 @@ nm_netlink_monitor_get (void)
 static void
 nm_netlink_monitor_init (NMNetlinkMonitor *self)
 {
+	NMNetlinkMonitorPrivate *priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
+
+	priv->subscriptions = g_hash_table_new (g_int_hash, g_int_equal);
 }
 
 static void
@@ -542,6 +614,8 @@ finalize (GObject *object)
 		nl_cb_put (priv->nlh_cb);
 		priv->nlh_cb = NULL;
 	}
+
+	g_hash_table_destroy (priv->subscriptions);
 
 	G_OBJECT_CLASS (nm_netlink_monitor_parent_class)->finalize (object);
 }
