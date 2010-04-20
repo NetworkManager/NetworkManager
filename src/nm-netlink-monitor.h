@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2008 Red Hat, Inc.
+ * Copyright (C) 2005 - 2010 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  * Copyright (C) 2005 Ray Strode
  */
@@ -25,16 +25,14 @@
 
 #include <glib.h>
 #include <glib-object.h>
+#include <netlink/netlink.h>
 
-G_BEGIN_DECLS
-
-#define NM_TYPE_NETLINK_MONITOR	    (nm_netlink_monitor_get_type ())
-#define NM_NETLINK_MONITOR(obj)	    (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_NETLINK_MONITOR, NMNetlinkMonitor))
+#define NM_TYPE_NETLINK_MONITOR            (nm_netlink_monitor_get_type ())
+#define NM_NETLINK_MONITOR(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_NETLINK_MONITOR, NMNetlinkMonitor))
 #define NM_NETLINK_MONITOR_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_NETLINK_MONITOR, NMNetlinkMonitorClass))
-#define NM_IS_NETLINK_MONITOR(obj)	 (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_NETLINK_MONITOR))
+#define NM_IS_NETLINK_MONITOR(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_NETLINK_MONITOR))
 #define NM_IS_NETLINK_MONITOR_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_NETLINK_MONITOR))
 #define NM_NETLINK_MONITOR_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_NETLINK_MONITOR, NMNetlinkMonitorClass))
-#define NM_NETLINK_MONITOR_ERROR	   (nm_netlink_monitor_error_quark ())
 
 typedef enum {
 	NM_NETLINK_MONITOR_ERROR_GENERIC = 0,
@@ -56,29 +54,29 @@ typedef struct {
 	GObjectClass parent_class;
 
 	/* Signals */
-	void (*carrier_on)    (NMNetlinkMonitor *monitor, int index);
-	void (*carrier_off)   (NMNetlinkMonitor *monitor, int index);
-	void (*error)         (NMNetlinkMonitor *monitor, GError *error);
+	void (*notification) (NMNetlinkMonitor *monitor, struct nl_msg *msg);
+	void (*carrier_on)   (NMNetlinkMonitor *monitor, int index);
+	void (*carrier_off)  (NMNetlinkMonitor *monitor, int index);
+	void (*error)        (NMNetlinkMonitor *monitor, GError *error);
 } NMNetlinkMonitorClass;
 
 
-GType	nm_netlink_monitor_get_type	(void)	G_GNUC_CONST;
-GQuark	nm_netlink_monitor_error_quark	(void)	G_GNUC_CONST;
+#define NM_NETLINK_MONITOR_ERROR      (nm_netlink_monitor_error_quark ())
+GType  nm_netlink_monitor_get_type    (void) G_GNUC_CONST;
+GQuark nm_netlink_monitor_error_quark (void) G_GNUC_CONST;
 
 NMNetlinkMonitor *nm_netlink_monitor_get (void);
 
 gboolean          nm_netlink_monitor_open_connection (NMNetlinkMonitor *monitor,
-													  GError **error);
+                                                      GError **error);
 void              nm_netlink_monitor_close_connection (NMNetlinkMonitor *monitor);
-void              nm_netlink_monitor_attach	          (NMNetlinkMonitor	*monitor);
-void              nm_netlink_monitor_detach	          (NMNetlinkMonitor *monitor);
+void              nm_netlink_monitor_attach           (NMNetlinkMonitor *monitor);
+void              nm_netlink_monitor_detach           (NMNetlinkMonitor *monitor);
 gboolean          nm_netlink_monitor_request_status   (NMNetlinkMonitor *monitor,
-													   GError **error);
+                                                       GError **error);
 gboolean          nm_netlink_monitor_get_flags_sync   (NMNetlinkMonitor *monitor,
                                                        guint32 ifindex,
                                                        guint32 *ifflags,
                                                        GError **error);
-
-G_END_DECLS
 
 #endif  /* NM_NETLINK_MONITOR_H */
