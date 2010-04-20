@@ -47,14 +47,9 @@
 #include "nm-marshal.h"
 #include "nm-netlink.h"
 
-#define NM_NETLINK_MONITOR_EVENT_CONDITIONS \
-	((GIOCondition) (G_IO_IN | G_IO_PRI))
-
-#define NM_NETLINK_MONITOR_ERROR_CONDITIONS \
-	((GIOCondition) (G_IO_ERR | G_IO_NVAL))
-
-#define NM_NETLINK_MONITOR_DISCONNECT_CONDITIONS \
-	((GIOCondition) (G_IO_HUP))
+#define EVENT_CONDITIONS      ((GIOCondition) (G_IO_IN | G_IO_PRI))
+#define ERROR_CONDITIONS      ((GIOCondition) (G_IO_ERR | G_IO_NVAL))
+#define DISCONNECT_CONDITIONS ((GIOCondition) (G_IO_HUP))
 
 #define NM_NETLINK_MONITOR_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
                                            NM_TYPE_NETLINK_MONITOR, \
@@ -374,9 +369,7 @@ nm_netlink_monitor_attach (NMNetlinkMonitor *monitor)
 	g_return_if_fail (priv->event_id == 0);
 
 	priv->event_id = g_io_add_watch (priv->io_channel,
-	                                 (NM_NETLINK_MONITOR_EVENT_CONDITIONS |
-	                                  NM_NETLINK_MONITOR_ERROR_CONDITIONS |
-	                                  NM_NETLINK_MONITOR_DISCONNECT_CONDITIONS),
+	                                 (EVENT_CONDITIONS | ERROR_CONDITIONS | DISCONNECT_CONDITIONS),
 	                                 nm_netlink_monitor_event_handler,
 	                                 monitor);
 }
@@ -450,12 +443,12 @@ nm_netlink_monitor_event_handler (GIOChannel       *channel,
 	priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
 	g_return_val_if_fail (priv->event_id > 0, TRUE);
 
-	if (io_condition & NM_NETLINK_MONITOR_ERROR_CONDITIONS)
+	if (io_condition & ERROR_CONDITIONS)
 		return nm_netlink_monitor_error_handler (channel, io_condition, monitor);
-	else if (io_condition & NM_NETLINK_MONITOR_DISCONNECT_CONDITIONS)
+	else if (io_condition & DISCONNECT_CONDITIONS)
 		return nm_netlink_monitor_disconnect_handler (channel, io_condition, monitor);
 
-	g_return_val_if_fail (!(io_condition & ~(NM_NETLINK_MONITOR_EVENT_CONDITIONS)), FALSE);
+	g_return_val_if_fail (!(io_condition & ~EVENT_CONDITIONS), FALSE);
 
 	if (nl_recvmsgs_default (priv->nlh) < 0) {
 		error = g_error_new (NM_NETLINK_MONITOR_ERROR,
@@ -482,7 +475,7 @@ nm_netlink_monitor_error_handler (GIOChannel       *channel,
 	int err_code;
 	socklen_t err_len;
  
-	g_return_val_if_fail (io_condition & NM_NETLINK_MONITOR_ERROR_CONDITIONS, FALSE);
+	g_return_val_if_fail (io_condition & ERROR_CONDITIONS, FALSE);
 
 	err_code = 0;
 	err_len = sizeof (err_code);
@@ -512,7 +505,7 @@ nm_netlink_monitor_disconnect_handler (GIOChannel       *channel,
                                        NMNetlinkMonitor *monitor)
 {
 
-	g_return_val_if_fail (!(io_condition & ~(NM_NETLINK_MONITOR_DISCONNECT_CONDITIONS)), FALSE);
+	g_return_val_if_fail (!(io_condition & ~DISCONNECT_CONDITIONS), FALSE);
 	return FALSE;
 }
 
