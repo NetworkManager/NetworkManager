@@ -18,7 +18,6 @@ libip6_manager_la_SOURCES = \
 libip6_manager_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
-	$(HAL_CFLAGS) \
 	-DG_DISABLE_DEPRECATED
 
 libip6_manager_la_LIBADD = \
