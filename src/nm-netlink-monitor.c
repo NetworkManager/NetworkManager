@@ -132,6 +132,7 @@ netlink_event_input (struct nl_msg *msg, void *arg)
 	NMNetlinkMonitorPrivate *priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
 	struct nlmsghdr *hdr = nlmsg_hdr (msg);
 	struct ucred *creds = nlmsg_get_creds (msg);
+	const struct sockaddr_nl *snl;
 	guint32 local_port;
 	gboolean accept_msg = FALSE;
 
@@ -142,15 +143,18 @@ netlink_event_input (struct nl_msg *msg, void *arg)
 		return NL_STOP;
 	}
 
+	snl = nlmsg_get_src (msg);
+	g_assert (snl);
+
 	/* Accept any messages from the kernel */
-	if (hdr->nlmsg_pid == 0)
+	if (hdr->nlmsg_pid == 0 || snl->nl_pid == 0)
 		accept_msg = TRUE;
 
 	/* And any multicast message directed to our netlink PID, since multicast
 	 * currently requires CAP_ADMIN to use.
 	 */
 	local_port = nl_socket_get_local_port (priv->nlh);
-	if ((hdr->nlmsg_pid == local_port) && (hdr->nlmsg_flags & NLM_F_MULTI))
+	if ((hdr->nlmsg_pid == local_port) && snl->nl_groups)
 		accept_msg = TRUE;
 
 	if (accept_msg == FALSE) {
@@ -268,6 +272,14 @@ nm_netlink_monitor_open_connection (NMNetlinkMonitor *self, GError **error)
 		goto error;
 	}
 
+	if (nl_socket_recv_pktinfo (priv->nlh, 1) < 0) {
+		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
+		             NM_NETLINK_MONITOR_ERROR_NETLINK_CONNECT,
+		             _("unable to enable netlink handle packet info: %s"),
+		             nl_geterror ());
+		goto error;
+	}
+
 #ifdef LIBNL_NEEDS_ADDR_CACHING_WORKAROUND
 	/* Work around apparent libnl bug; rtnl_addr requires that all
 	 * addresses have the "peer" attribute set in order to be compared
@@ -291,8 +303,6 @@ nm_netlink_monitor_open_connection (NMNetlinkMonitor *self, GError **error)
 		             nl_geterror ());
 		goto error;
 	}
-
-	nl_cache_mngt_provide (priv->link_cache);
 
 	fd = nl_socket_get_fd (priv->nlh);
 	priv->io_channel = g_io_channel_unix_new (fd);
