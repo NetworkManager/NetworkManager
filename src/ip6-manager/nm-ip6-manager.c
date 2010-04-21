@@ -55,8 +55,6 @@ typedef enum {
 	NM_IP6_DEVICE_GOT_LINK_LOCAL,
 	NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT,
 	NM_IP6_DEVICE_GOT_ADDRESS,
-	NM_IP6_DEVICE_WAITING_FOR_DHCP,
-	NM_IP6_DEVICE_GOT_DHCP,
 	NM_IP6_DEVICE_TIMED_OUT
 } NMIP6DeviceState;
 
@@ -83,6 +81,8 @@ typedef struct {
 
 	GArray *rdnss_servers;
 	guint rdnss_timeout_id;
+
+	guint ip6flags_poll_id;
 
 	guint32 ra_flags;
 } NMIP6Device;
@@ -201,6 +201,8 @@ nm_ip6_device_destroy (NMIP6Device *device)
 		g_array_free (device->rdnss_servers, TRUE);
 	if (device->rdnss_timeout_id)
 		g_source_remove (device->rdnss_timeout_id);
+	if (device->ip6flags_poll_id)
+		g_source_remove (device->ip6flags_poll_id);
 
 	g_free (device->accept_ra_path);
 	g_slice_free (NMIP6Device, device);
@@ -235,6 +237,7 @@ nm_ip6_manager_get_device (NMIP6Manager *manager, int ifindex)
 typedef struct {
 	NMIP6Device *device;
 	guint dhcp_opts;
+	gboolean success;
 } CallbackInfo;
 
 static gboolean
@@ -249,16 +252,23 @@ finish_addrconf (gpointer user_data)
 	device->addrconf_complete = TRUE;
 	ifindex = device->ifindex;
 
-	if (device->state >= device->target_state) {
+	/* We're done, stop polling IPv6 flags */
+	if (device->ip6flags_poll_id) {
+		g_source_remove (device->ip6flags_poll_id);
+		device->ip6flags_poll_id = 0;
+	}
+
+	/* And tell listeners that addrconf is complete */
+	if (info->success) {
 		g_signal_emit (manager, signals[ADDRCONF_COMPLETE], 0,
-					   ifindex, info->dhcp_opts, TRUE);
+		               ifindex, info->dhcp_opts, TRUE);
 	} else {
 		nm_log_info (LOGD_IP6, "(%s): IP6 addrconf timed out or failed.",
-				     device->iface);
+		             device->iface);
 
 		nm_ip6_manager_cancel_addrconf (manager, ifindex);
 		g_signal_emit (manager, signals[ADDRCONF_COMPLETE], 0,
-					   ifindex, info->dhcp_opts, FALSE);
+		               ifindex, info->dhcp_opts, FALSE);
 	}
 
 	return FALSE;
@@ -328,14 +338,14 @@ set_rdnss_timeout (NMIP6Device *device)
 }
 
 static CallbackInfo *
-callback_info_new (NMIP6Device *device, guint dhcp_opts)
+callback_info_new (NMIP6Device *device, guint dhcp_opts, gboolean success)
 {
 	CallbackInfo *info;
 
 	info = g_malloc0 (sizeof (CallbackInfo));
 	info->device = device;
 	info->dhcp_opts = dhcp_opts;
-
+	info->success = success;
 	return info;
 }
 
@@ -350,9 +360,10 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
 	CallbackInfo *info;
 	guint dhcp_opts = IP6_DHCP_OPT_NONE;
 
-	for (rtnladdr = (struct rtnl_addr *)nl_cache_get_first (priv->addr_cache);
+	/* Look for any IPv6 addresses the kernel may have set for the device */
+	for (rtnladdr = (struct rtnl_addr *) nl_cache_get_first (priv->addr_cache);
 		 rtnladdr;
-		 rtnladdr = (struct rtnl_addr *)nl_cache_get_next ((struct nl_object *)rtnladdr)) {
+		 rtnladdr = (struct rtnl_addr *) nl_cache_get_next ((struct nl_object *) rtnladdr)) {
 		if (rtnl_addr_get_ifindex (rtnladdr) != device->ifindex)
 			continue;
 
@@ -370,27 +381,35 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
 		}
 	}
 
-	if ((device->ra_flags & IF_RA_RCVD) && device->state < NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT)
-		device->state = NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT;
+	/* We only care about router advertisements if we want for a real IPv6 address */
+	if (device->target_state == NM_IP6_DEVICE_GOT_ADDRESS) {
+		if (   (device->ra_flags & IF_RA_RCVD)
+		    && (device->state < NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT))
+			device->state = NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT;
 
-	if (device->ra_flags & IF_RA_MANAGED) {
-		dhcp_opts = IP6_DHCP_OPT_MANAGED;
-		nm_log_dbg (LOGD_IP6, "router advertisement deferred to DHCPv6");
-	} else if (device->ra_flags & IF_RA_OTHERCONF) {
-		dhcp_opts = IP6_DHCP_OPT_OTHERCONF;
-		nm_log_dbg (LOGD_IP6, "router advertisement requests parallel DHCPv6");
+		if (device->ra_flags & IF_RA_MANAGED) {
+			dhcp_opts = IP6_DHCP_OPT_MANAGED;
+			nm_log_dbg (LOGD_IP6, "router advertisement deferred to DHCPv6");
+		} else if (device->ra_flags & IF_RA_OTHERCONF) {
+			dhcp_opts = IP6_DHCP_OPT_OTHERCONF;
+			nm_log_dbg (LOGD_IP6, "router advertisement requests parallel DHCPv6");
+		}
 	}
 
 	if (!device->addrconf_complete) {
-		if (device->state >= device->target_state ||
-			device->state == NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT) {
+		/* Managed mode (ie DHCP only) short-circuits automatic addrconf, so
+		 * we don't bother waiting for the device's target state to be reached
+		 * when the RA requests managed mode.
+		 */
+		if (   (device->state >= device->target_state)
+		    || (dhcp_opts == IP6_DHCP_OPT_MANAGED)) {
 			/* device->finish_addrconf_id may currently be a timeout
 			 * rather than an idle, so we remove the existing source.
 			 */
 			if (device->finish_addrconf_id)
 				g_source_remove (device->finish_addrconf_id);
 
-			info = callback_info_new (device, dhcp_opts);
+			info = callback_info_new (device, dhcp_opts, TRUE);
 			device->finish_addrconf_id = g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
 			                                              finish_addrconf,
 			                                              info,
@@ -398,7 +417,7 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
 		}
 	} else if (config_changed) {
 		if (!device->config_changed_id) {
-			info = callback_info_new (device, dhcp_opts);
+			info = callback_info_new (device, dhcp_opts, TRUE);
 			device->config_changed_id = g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
 			                                             emit_config_changed,
 			                                             info,
@@ -636,6 +655,7 @@ process_newlink (NMIP6Manager *manager, struct nl_msg *msg)
 		return NULL;
 
 	device->ra_flags = nla_get_u32 (pi[IFLA_INET6_FLAGS]);
+	nm_log_dbg (LOGD_IP6, "(%s): got IPv6 flags 0x%X", device->iface, device->ra_flags);
 
 	return device;
 }
@@ -783,6 +803,13 @@ nm_ip6_manager_prepare_interface (NMIP6Manager *manager,
 	                    device->target_state >= NM_IP6_DEVICE_GOT_ADDRESS ? "1\n" : "0\n");
 }
 
+static gboolean
+poll_ip6_flags (gpointer user_data)
+{
+	nm_netlink_monitor_request_ip6_info (NM_NETLINK_MONITOR (user_data), NULL);
+	return TRUE;
+}
+
 void
 nm_ip6_manager_begin_addrconf (NMIP6Manager *manager, int ifindex)
 {
@@ -804,18 +831,22 @@ nm_ip6_manager_begin_addrconf (NMIP6Manager *manager, int ifindex)
 	device->ra_flags = 0;
 
 	/* Set up a timeout on the transaction to kill it after the timeout */
-	info = callback_info_new (device, 0);
+	info = callback_info_new (device, 0, FALSE);
 	device->finish_addrconf_id = g_timeout_add_seconds_full (G_PRIORITY_DEFAULT,
 	                                                         NM_IP6_TIMEOUT,
 	                                                         finish_addrconf,
 	                                                         info,
 	                                                         (GDestroyNotify) g_free);
 
+	device->ip6flags_poll_id = g_timeout_add_seconds (1, poll_ip6_flags, priv->monitor);
+
+	/* Kick off the initial IPv6 flags request */
+	nm_netlink_monitor_request_ip6_info (priv->monitor, NULL);
+
 	/* Sync flags, etc, from netlink; this will also notice if the
 	 * device is already fully configured and schedule the
 	 * ADDRCONF_COMPLETE signal in that case.
 	 */
-	nm_netlink_monitor_request_ip6_info (priv->monitor, NULL);
 	nm_ip6_device_sync_from_netlink (device, FALSE);
 }
 
