@@ -702,7 +702,7 @@ nm_netlink_monitor_init (NMNetlinkMonitor *self)
 {
 	NMNetlinkMonitorPrivate *priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
 
-	priv->subscriptions = g_hash_table_new (g_int_hash, g_int_equal);
+	priv->subscriptions = g_hash_table_new (g_direct_hash, g_direct_equal);
 }
 
 static void
