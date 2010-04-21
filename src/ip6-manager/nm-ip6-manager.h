@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 Red Hat, Inc.
+ * Copyright (C) 2009 - 2010 Red Hat, Inc.
  */
 
 #ifndef NM_IP6_MANAGER_H
@@ -54,7 +54,7 @@ typedef struct {
 	 * that the initial configuration is complete.
 	 */
 	void (*addrconf_complete) (NMIP6Manager *manager,
-	                           char *iface,
+	                           guint32 ifindex,
 	                           guint dhcp_opts,
 	                           gboolean success);
 
@@ -63,22 +63,22 @@ typedef struct {
 	 * of the interface has changed.
 	 */
 	void (*config_changed)    (NMIP6Manager *manager,
-	                           char *iface,
+	                           guint32 ifindex,
 	                           guint dhcp_opts);
 } NMIP6ManagerClass;
 
 GType nm_ip6_manager_get_type (void);
 
-NMIP6Manager *nm_ip6_manager_get                  (void);
-void          nm_ip6_manager_prepare_interface    (NMIP6Manager *manager,
-												   const char *iface,
-												   NMSettingIP6Config *s_ip6);
-void          nm_ip6_manager_begin_addrconf       (NMIP6Manager *manager,
-												   const char *iface);
-void          nm_ip6_manager_cancel_addrconf      (NMIP6Manager *manager,
-												   const char *iface);
+NMIP6Manager *nm_ip6_manager_get               (void);
+void          nm_ip6_manager_prepare_interface (NMIP6Manager *manager,
+                                                int ifindex,
+                                                NMSettingIP6Config *s_ip6);
+void          nm_ip6_manager_begin_addrconf    (NMIP6Manager *manager,
+                                                int ifindex);
+void          nm_ip6_manager_cancel_addrconf   (NMIP6Manager *manager,
+                                                int ifindex);
 
-NMIP6Config * nm_ip6_manager_get_ip6_config       (NMIP6Manager *manager,
-												   const char *iface);
+NMIP6Config * nm_ip6_manager_get_ip6_config    (NMIP6Manager *manager,
+                                                int ifindex);
 
 #endif /* NM_IP6_MANAGER_H */

@@ -42,7 +42,7 @@
 
 typedef struct {
 	NMNetlinkMonitor *monitor;
-	GHashTable *devices_by_iface, *devices_by_index;
+	GHashTable *devices;
 
 	struct nl_handle *nlh;
 	struct nl_cache *addr_cache, *route_cache;
@@ -68,7 +68,7 @@ typedef struct {
 typedef struct {
 	NMIP6Manager *manager;
 	char *iface;
-	int index;
+	int ifindex;
 
 	char *accept_ra_path;
 	gboolean accept_ra_save_valid;
@@ -120,10 +120,9 @@ nm_ip6_manager_init (NMIP6Manager *manager)
 {
 	NMIP6ManagerPrivate *priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
 
-	priv->devices_by_iface = g_hash_table_new_full (g_str_hash, g_str_equal,
-													NULL,
-													(GDestroyNotify) nm_ip6_device_destroy);
-	priv->devices_by_index = g_hash_table_new (NULL, NULL);
+	priv->devices = g_hash_table_new_full (g_direct_hash, g_direct_equal,
+	                                       NULL,
+	                                       (GDestroyNotify) nm_ip6_device_destroy);
 
 	priv->monitor = nm_netlink_monitor_get ();
 	nm_netlink_monitor_subscribe (priv->monitor, RTNLGRP_IPV6_IFADDR, NULL);
@@ -144,8 +143,7 @@ finalize (GObject *object)
 {
 	NMIP6ManagerPrivate *priv = NM_IP6_MANAGER_GET_PRIVATE (object);
 
-	g_hash_table_destroy (priv->devices_by_iface);
-	g_hash_table_destroy (priv->devices_by_index);
+	g_hash_table_destroy (priv->devices);
 	g_object_unref (priv->monitor);
 	nl_cache_free (priv->addr_cache);
 	nl_cache_free (priv->route_cache);
@@ -170,8 +168,8 @@ nm_ip6_manager_class_init (NMIP6ManagerClass *manager_class)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMIP6ManagerClass, addrconf_complete),
 					  NULL, NULL,
-					  _nm_marshal_VOID__STRING_UINT_BOOLEAN,
-					  G_TYPE_NONE, 3, G_TYPE_STRING, G_TYPE_UINT, G_TYPE_BOOLEAN);
+					  _nm_marshal_VOID__INT_UINT_BOOLEAN,
+					  G_TYPE_NONE, 3, G_TYPE_INT, G_TYPE_UINT, G_TYPE_BOOLEAN);
 
 	signals[CONFIG_CHANGED] =
 		g_signal_new ("config-changed",
@@ -179,8 +177,8 @@ nm_ip6_manager_class_init (NMIP6ManagerClass *manager_class)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMIP6ManagerClass, config_changed),
 					  NULL, NULL,
-					  _nm_marshal_VOID__STRING_UINT,
-					  G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_UINT);
+					  _nm_marshal_VOID__INT_UINT,
+					  G_TYPE_NONE, 2, G_TYPE_INT, G_TYPE_UINT);
 }
 
 static void
@@ -217,7 +215,7 @@ nm_ip6_manager_new (void)
 	manager = g_object_new (NM_TYPE_IP6_MANAGER, NULL);
 	priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
 
-	if (!priv->devices_by_iface || !priv->devices_by_index) {
+	if (!priv->devices) {
 		nm_log_err (LOGD_IP6, "not enough memory to initialize IP6 manager tables");
 		g_object_unref (manager);
 		manager = NULL;
@@ -231,8 +229,7 @@ nm_ip6_manager_get_device (NMIP6Manager *manager, int ifindex)
 {
 	NMIP6ManagerPrivate *priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
 
-	return g_hash_table_lookup (priv->devices_by_index,
-								GINT_TO_POINTER (ifindex));
+	return g_hash_table_lookup (priv->devices, GINT_TO_POINTER (ifindex));
 }
 
 typedef struct {
@@ -246,25 +243,22 @@ finish_addrconf (gpointer user_data)
 	CallbackInfo *info = user_data;
 	NMIP6Device *device = info->device;
 	NMIP6Manager *manager = device->manager;
-	char *iface_copy;
+	int ifindex;
 
 	device->finish_addrconf_id = 0;
 	device->addrconf_complete = TRUE;
+	ifindex = device->ifindex;
 
 	if (device->state >= device->target_state) {
 		g_signal_emit (manager, signals[ADDRCONF_COMPLETE], 0,
-					   device->iface, info->dhcp_opts, TRUE);
+					   ifindex, info->dhcp_opts, TRUE);
 	} else {
 		nm_log_info (LOGD_IP6, "(%s): IP6 addrconf timed out or failed.",
 				     device->iface);
 
-		iface_copy = g_strdup (device->iface);
-
-		nm_ip6_manager_cancel_addrconf (manager, device->iface);
+		nm_ip6_manager_cancel_addrconf (manager, ifindex);
 		g_signal_emit (manager, signals[ADDRCONF_COMPLETE], 0,
-					   iface_copy, info->dhcp_opts, FALSE);
-
-		g_free (iface_copy);
+					   ifindex, info->dhcp_opts, FALSE);
 	}
 
 	return FALSE;
@@ -278,7 +272,7 @@ emit_config_changed (gpointer user_data)
 	NMIP6Manager *manager = device->manager;
 
 	device->config_changed_id = 0;
-	g_signal_emit (manager, signals[CONFIG_CHANGED], 0, device->iface, info->dhcp_opts);
+	g_signal_emit (manager, signals[CONFIG_CHANGED], 0, device->ifindex, info->dhcp_opts);
 	return FALSE;
 }
 
@@ -359,7 +353,7 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
 	for (rtnladdr = (struct rtnl_addr *)nl_cache_get_first (priv->addr_cache);
 		 rtnladdr;
 		 rtnladdr = (struct rtnl_addr *)nl_cache_get_next ((struct nl_object *)rtnladdr)) {
-		if (rtnl_addr_get_ifindex (rtnladdr) != device->index)
+		if (rtnl_addr_get_ifindex (rtnladdr) != device->ifindex)
 			continue;
 
 		nladdr = rtnl_addr_get_local (rtnladdr);
@@ -686,33 +680,36 @@ netlink_notification (NMNetlinkMonitor *monitor, struct nl_msg *msg, gpointer us
 }
 
 static NMIP6Device *
-nm_ip6_device_new (NMIP6Manager *manager, const char *iface)
+nm_ip6_device_new (NMIP6Manager *manager, int ifindex)
 {
 	NMIP6ManagerPrivate *priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
 	NMIP6Device *device;
 	GError *error = NULL;
 	char *contents = NULL;
 
+	g_return_val_if_fail (ifindex > 0, NULL);
+
 	device = g_slice_new0 (NMIP6Device);
 	if (!device) {
-		nm_log_err (LOGD_IP6, "(%s): out of memory creating IP6 addrconf object.", iface);
+		nm_log_err (LOGD_IP6, "(%d): out of memory creating IP6 addrconf object.",
+		            ifindex);
 		return NULL;
 	}
 
-	device->iface = g_strdup (iface);
+	device->ifindex = ifindex;
+	device->iface = g_strdup (nm_netlink_index_to_iface (ifindex));
 	if (!device->iface) {
-		nm_log_err (LOGD_IP6, "(%s): out of memory creating IP6 addrconf object "
-		            "property 'iface'.",
-		            iface);
+		nm_log_err (LOGD_IP6, "(%d): could not find interface name from index.",
+		            ifindex);
 		goto error;
 	}
-	device->index = nm_netlink_iface_to_index (iface);
 
-	device->accept_ra_path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/accept_ra", iface);
+	device->accept_ra_path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/accept_ra",
+	                                          device->iface);
 	if (!device->accept_ra_path) {
 		nm_log_err (LOGD_IP6, "(%s): out of memory creating IP6 addrconf object "
 		            "property 'accept_ra_path'.",
-		            iface);
+		            device->iface);
 		goto error;
 	}
 
@@ -720,15 +717,14 @@ nm_ip6_device_new (NMIP6Manager *manager, const char *iface)
 
 	device->rdnss_servers = g_array_new (FALSE, FALSE, sizeof (NMIP6RDNSS));
 
-	g_hash_table_replace (priv->devices_by_iface, device->iface, device);
-	g_hash_table_replace (priv->devices_by_index, GINT_TO_POINTER (device->index), device);
+	g_hash_table_replace (priv->devices, GINT_TO_POINTER (device->ifindex), device);
 
 	/* Grab the original value of "accept_ra" so we can restore it when the
 	 * device is taken down.
 	 */
 	if (!g_file_get_contents (device->accept_ra_path, &contents, NULL, &error)) {
 		nm_log_warn (LOGD_IP6, "(%s): error reading %s: (%d) %s",
-		             iface, device->accept_ra_path,
+		             device->iface, device->accept_ra_path,
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
@@ -753,7 +749,7 @@ error:
 
 void
 nm_ip6_manager_prepare_interface (NMIP6Manager *manager,
-								  const char *iface,
+								  int ifindex,
 								  NMSettingIP6Config *s_ip6)
 {
 	NMIP6ManagerPrivate *priv;
@@ -761,11 +757,11 @@ nm_ip6_manager_prepare_interface (NMIP6Manager *manager,
 	const char *method = NULL;
 
 	g_return_if_fail (NM_IS_IP6_MANAGER (manager));
-	g_return_if_fail (iface != NULL);
+	g_return_if_fail (ifindex > 0);
 
 	priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
 
-	device = nm_ip6_device_new (manager, iface);
+	device = nm_ip6_device_new (manager, ifindex);
 
 	if (s_ip6)
 		method = nm_setting_ip6_config_get_method (s_ip6);
@@ -778,9 +774,9 @@ nm_ip6_manager_prepare_interface (NMIP6Manager *manager,
 	else
 		device->target_state = NM_IP6_DEVICE_GOT_ADDRESS;
 
-	g_return_if_fail (strchr (iface, '/') == NULL &&
-					  strcmp (iface, "all") != 0 &&
-					  strcmp (iface, "default") != 0);
+	g_return_if_fail (   strchr (device->iface, '/') == NULL
+	                  && strcmp (device->iface, "all") != 0
+	                  && strcmp (device->iface, "default") != 0);
 
 	/* Turn router advertisement acceptance on or off... */
 	nm_utils_do_sysctl (device->accept_ra_path,
@@ -788,22 +784,21 @@ nm_ip6_manager_prepare_interface (NMIP6Manager *manager,
 }
 
 void
-nm_ip6_manager_begin_addrconf (NMIP6Manager *manager,
-							   const char *iface)
+nm_ip6_manager_begin_addrconf (NMIP6Manager *manager, int ifindex)
 {
 	NMIP6ManagerPrivate *priv;
 	NMIP6Device *device;
 	CallbackInfo *info;
 
 	g_return_if_fail (NM_IS_IP6_MANAGER (manager));
-	g_return_if_fail (iface != NULL);
+	g_return_if_fail (ifindex > 0);
 
 	priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
 
-	device = (NMIP6Device *) g_hash_table_lookup (priv->devices_by_iface, iface);
+	device = (NMIP6Device *) g_hash_table_lookup (priv->devices, GINT_TO_POINTER (ifindex));
 	g_return_if_fail (device != NULL);
 
-	nm_log_info (LOGD_IP6, "Activation (%s) Beginning IP6 addrconf.", iface);
+	nm_log_info (LOGD_IP6, "Activation (%s) Beginning IP6 addrconf.", device->iface);
 
 	device->addrconf_complete = FALSE;
 	device->ra_flags = 0;
@@ -825,27 +820,17 @@ nm_ip6_manager_begin_addrconf (NMIP6Manager *manager,
 }
 
 void
-nm_ip6_manager_cancel_addrconf (NMIP6Manager *manager,
-								const char *iface)
+nm_ip6_manager_cancel_addrconf (NMIP6Manager *manager, int ifindex)
 {
-	NMIP6ManagerPrivate *priv;
-	NMIP6Device *device;
-
 	g_return_if_fail (NM_IS_IP6_MANAGER (manager));
-	g_return_if_fail (iface != NULL);
+	g_return_if_fail (ifindex > 0);
 
-	priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
-
-	device = g_hash_table_lookup (priv->devices_by_iface, iface);
-	if (device) {
-		g_hash_table_remove (priv->devices_by_index, GINT_TO_POINTER (device->index));
-		g_hash_table_remove (priv->devices_by_iface, iface);
-	}
+	g_hash_table_remove (NM_IP6_MANAGER_GET_PRIVATE (manager)->devices,
+	                     GINT_TO_POINTER (ifindex));
 }
 
 NMIP6Config *
-nm_ip6_manager_get_ip6_config (NMIP6Manager *manager,
-							   const char *iface)
+nm_ip6_manager_get_ip6_config (NMIP6Manager *manager, int ifindex)
 {
 	NMIP6ManagerPrivate *priv;
 	NMIP6Device *device;
@@ -862,20 +847,21 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager,
 	int i;
 
 	g_return_val_if_fail (NM_IS_IP6_MANAGER (manager), NULL);
-	g_return_val_if_fail (iface != NULL, NULL);
+	g_return_val_if_fail (ifindex > 0, NULL);
 
 	priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
 
-	device = (NMIP6Device *) g_hash_table_lookup (priv->devices_by_iface, iface);
+	device = (NMIP6Device *) g_hash_table_lookup (priv->devices,
+	                                              GINT_TO_POINTER (ifindex));
 	if (!device) {
-		nm_log_warn (LOGD_IP6, "(%s): addrconf not started.", iface);
+		nm_log_warn (LOGD_IP6, "(%d): addrconf not started.", ifindex);
 		return NULL;
 	}
 
 	config = nm_ip6_config_new ();
 	if (!config) {
 		nm_log_err (LOGD_IP6, "(%s): out of memory creating IP6 config object.",
-		            iface);
+		            device->iface);
 		return NULL;
 	}
 
@@ -883,7 +869,7 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager,
 	for (rtnladdr = (struct rtnl_addr *)nl_cache_get_first (priv->addr_cache);
 		 rtnladdr;
 		 rtnladdr = (struct rtnl_addr *)nl_cache_get_next ((struct nl_object *)rtnladdr)) {
-		if (rtnl_addr_get_ifindex (rtnladdr) != device->index)
+		if (rtnl_addr_get_ifindex (rtnladdr) != device->ifindex)
 			continue;
 
 		nladdr = rtnl_addr_get_local (rtnladdr);
@@ -901,7 +887,7 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager,
 	for (rtnlroute = (struct rtnl_route *)nl_cache_get_first (priv->route_cache);
 		 rtnlroute;
 		 rtnlroute = (struct rtnl_route *)nl_cache_get_next ((struct nl_object *)rtnlroute)) {
-		if (rtnl_route_get_oif (rtnlroute) != device->index)
+		if (rtnl_route_get_oif (rtnlroute) != device->ifindex)
 			continue;
 
 		nldest = rtnl_route_get_dst (rtnlroute);

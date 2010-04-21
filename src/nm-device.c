@@ -83,7 +83,9 @@ typedef struct {
 	char *        udi;
 	char *        path;
 	char *        iface;   /* may change, could be renamed by user */
+	int           ifindex;
 	char *        ip_iface;
+	int           ip_ifindex;
 	NMDeviceType  type;
 	char *        type_desc;
 	guint32       capabilities;
@@ -304,6 +306,13 @@ nm_device_get_iface (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->iface;
 }
 
+int
+nm_device_get_ifindex (NMDevice *self)
+{
+	g_return_val_if_fail (self != NULL, 0);
+
+	return NM_DEVICE_GET_PRIVATE (self)->ifindex;
+}
 
 const char *
 nm_device_get_ip_iface (NMDevice *self)
@@ -317,14 +326,36 @@ nm_device_get_ip_iface (NMDevice *self)
 	return priv->ip_iface ? priv->ip_iface : priv->iface;
 }
 
+int
+nm_device_get_ip_ifindex (NMDevice *self)
+{
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (self != NULL, 0);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	/* If it's not set, default to iface */
+	return priv->ip_iface ? priv->ip_ifindex : priv->ifindex;
+}
 
 void
 nm_device_set_ip_iface (NMDevice *self, const char *iface)
 {
+	NMDevicePrivate *priv;
+
 	g_return_if_fail (NM_IS_DEVICE (self));
 
-	g_free (NM_DEVICE_GET_PRIVATE (self)->ip_iface);
-	NM_DEVICE_GET_PRIVATE (self)->ip_iface = iface ? g_strdup (iface) : NULL;
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	g_free (priv->ip_iface);
+	priv->ip_ifindex = 0;
+
+	priv->ip_iface = g_strdup (iface);
+	if (priv->ip_iface) {
+		priv->ip_ifindex = nm_netlink_iface_to_index (priv->ip_iface);
+		if (!priv->ip_ifindex) {
+			nm_log_warn (LOGD_HW, "(%s): failed to look up interface index", iface);
+		}
+	}
 }
 
 
@@ -545,7 +576,7 @@ activation_source_schedule (NMDevice *self, GSourceFunc func, int family)
 
 static void
 ip6_addrconf_complete (NMIP6Manager *ip6_manager,
-                       const char *iface,
+                       int ifindex,
                        guint dhcp_opts,
                        gboolean success,
                        gpointer user_data)
@@ -558,7 +589,7 @@ ip6_addrconf_complete (NMIP6Manager *ip6_manager,
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 	NMDeviceState state;
 
-	if (strcmp (nm_device_get_ip_iface (self), iface) != 0)
+	if (ifindex != nm_device_get_ip_ifindex (self))
 		return;
 	req = nm_device_get_act_request (self);
 	if (!req)
@@ -614,13 +645,13 @@ ip6_addrconf_complete (NMIP6Manager *ip6_manager,
 
 static void
 ip6_config_changed (NMIP6Manager *ip6_manager,
-                    const char *iface,
+                    int ifindex,
                     guint dhcp_opts,
                     gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 
-	if (strcmp (nm_device_get_ip_iface (self), iface) != 0)
+	if (ifindex != nm_device_get_ip_ifindex (self))
 		return;
 	if (!nm_device_get_act_request (self))
 		return;
@@ -675,7 +706,9 @@ addrconf6_setup (NMDevice *self)
 
 	ip_iface = nm_device_get_ip_iface (self);
 	s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
-	nm_ip6_manager_prepare_interface (priv->ip6_manager, ip_iface, s_ip6);
+	nm_ip6_manager_prepare_interface (priv->ip6_manager,
+	                                  nm_device_get_ip_ifindex (self),
+	                                  s_ip6);
 }
 
 static void
@@ -1481,7 +1514,7 @@ real_act_stage3_ip6_config_start (NMDevice *self, NMDeviceStateReason *reason)
 
 	if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
 		priv->ip6_waiting_for_config = TRUE;
-		nm_ip6_manager_begin_addrconf (priv->ip6_manager, ip_iface);
+		nm_ip6_manager_begin_addrconf (priv->ip6_manager, nm_device_get_ip_ifindex (self));
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_DHCP))
 		ret = dhcp6_start (self, connection, IP6_DHCP_OPT_MANAGED, reason);
@@ -1867,7 +1900,8 @@ real_act_stage4_get_ip6_config (NMDevice *self,
 	s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
 
 	if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
-		*config = nm_ip6_manager_get_ip6_config (priv->ip6_manager, ip_iface);
+		*config = nm_ip6_manager_get_ip6_config (priv->ip6_manager,
+		                                         nm_device_get_ip_ifindex (self));
 		if (*config) {
 			/* Merge user-defined overrides into the IP6Config to be applied */
 			nm_utils_merge_ip6_config (*config, s_ip6);
@@ -3089,7 +3123,14 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case NM_DEVICE_INTERFACE_PROP_IFACE:
 		g_free (priv->iface);
+		priv->ifindex = 0;
 		priv->iface = g_value_dup_string (value);
+		if (priv->iface) {
+			priv->ifindex = nm_netlink_iface_to_index (priv->iface);
+			if (priv->ifindex < 0) {
+				nm_log_warn (LOGD_HW, "(%s): failed to look up interface index", priv->iface);
+			}
+		}
 		break;
 	case NM_DEVICE_INTERFACE_PROP_DRIVER:
 		priv->driver = g_strdup (g_value_get_string (value));
@@ -3136,6 +3177,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case NM_DEVICE_INTERFACE_PROP_IFACE:
 		g_value_set_string (value, priv->iface);
+		break;
+	case NM_DEVICE_INTERFACE_PROP_IFINDEX:
+		g_value_set_int (value, priv->ifindex);
 		break;
 	case NM_DEVICE_INTERFACE_PROP_DRIVER:
 		g_value_set_string (value, priv->driver);
@@ -3234,6 +3278,10 @@ nm_device_class_init (NMDeviceClass *klass)
 	g_object_class_override_property (object_class,
 									  NM_DEVICE_INTERFACE_PROP_IFACE,
 									  NM_DEVICE_INTERFACE_IFACE);
+
+	g_object_class_override_property (object_class,
+	                                  NM_DEVICE_INTERFACE_PROP_IFINDEX,
+	                                  NM_DEVICE_INTERFACE_IFINDEX);
 
 	g_object_class_override_property (object_class,
 									  NM_DEVICE_INTERFACE_PROP_DRIVER,

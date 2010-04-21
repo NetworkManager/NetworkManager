@@ -82,7 +82,6 @@ enum {
 	PROP_BITRATE,
 	PROP_ACTIVE_ACCESS_POINT,
 	PROP_CAPABILITIES,
-	PROP_IFINDEX,
 	PROP_SCANNING,
 	PROP_IPW_RFKILL_STATE,
 
@@ -144,7 +143,6 @@ struct _NMDeviceWifiPrivate {
 	gboolean          disposed;
 
 	struct ether_addr hw_addr;
-	guint32           ifindex;
 
 	/* Legacy rfkill for ipw2x00; will be fixed with 2.6.33 kernel */
 	char *            ipw_rfkill_path;
@@ -579,7 +577,8 @@ constructor (GType type,
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
 	nm_log_dbg (LOGD_HW | LOGD_WIFI, "(%s): kernel ifindex %d",
-	            nm_device_get_iface (NM_DEVICE (self)), priv->ifindex);
+	            nm_device_get_iface (NM_DEVICE (self)),
+	            nm_device_get_ifindex (NM_DEVICE (self)));
 
 	memset (&range, 0, sizeof (struct iw_range));
 	success = wireless_get_range (NM_DEVICE_WIFI (object), &range, &response_len);
@@ -3462,14 +3461,6 @@ device_state_changed (NMDevice *device,
 		remove_all_aps (self);
 }
 
-guint32
-nm_device_wifi_get_ifindex (NMDeviceWifi *self)
-{
-	g_return_val_if_fail (self != NULL, FALSE);
-
-	return NM_DEVICE_WIFI_GET_PRIVATE (self)->ifindex;
-}
-
 NMAccessPoint *
 nm_device_wifi_get_activation_ap (NMDeviceWifi *self)
 {
@@ -3563,8 +3554,7 @@ real_set_enabled (NMDeviceInterface *device, gboolean enabled)
 NMDevice *
 nm_device_wifi_new (const char *udi,
                     const char *iface,
-                    const char *driver,
-                    guint32 ifindex)
+                    const char *driver)
 {
 	g_return_val_if_fail (udi != NULL, NULL);
 	g_return_val_if_fail (iface != NULL, NULL);
@@ -3574,7 +3564,6 @@ nm_device_wifi_new (const char *udi,
 	                                  NM_DEVICE_INTERFACE_UDI, udi,
 	                                  NM_DEVICE_INTERFACE_IFACE, iface,
 	                                  NM_DEVICE_INTERFACE_DRIVER, driver,
-	                                  NM_DEVICE_WIFI_IFINDEX, ifindex,
 	                                  NM_DEVICE_INTERFACE_TYPE_DESC, "802.11 WiFi",
 	                                  NM_DEVICE_INTERFACE_DEVICE_TYPE, NM_DEVICE_TYPE_WIFI,
 	                                  NM_DEVICE_INTERFACE_RFKILL_TYPE, RFKILL_TYPE_WLAN,
@@ -3675,9 +3664,6 @@ get_property (GObject *object, guint prop_id,
 		else
 			g_value_set_boxed (value, "/");
 		break;
-	case PROP_IFINDEX:
-		g_value_set_uint (value, nm_device_wifi_get_ifindex (device));
-		break;
 	case PROP_SCANNING:
 		g_value_set_boolean (value, nm_supplicant_interface_get_scanning (priv->supplicant.iface));
 		break;
@@ -3697,10 +3683,6 @@ set_property (GObject *object, guint prop_id,
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_IFINDEX:
-		/* construct-only */
-		priv->ifindex = g_value_get_uint (value);
-		break;
 	case PROP_IPW_RFKILL_STATE:
 		/* construct only */
 		priv->ipw_rfkill_state = g_value_get_uint (value);
@@ -3787,13 +3769,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		                   "Wireless Capabilities",
 		                   0, G_MAXUINT32, NM_WIFI_DEVICE_CAP_NONE,
 		                   G_PARAM_READABLE));
-
-	g_object_class_install_property (object_class, PROP_IFINDEX,
-		g_param_spec_uint (NM_DEVICE_WIFI_IFINDEX,
-		                   "Ifindex",
-		                   "Interface index",
-		                   0, G_MAXUINT32, 0,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	g_object_class_install_property (object_class, PROP_SCANNING,
 		g_param_spec_boolean (NM_DEVICE_WIFI_SCANNING,

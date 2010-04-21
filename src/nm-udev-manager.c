@@ -384,11 +384,11 @@ device_creator (NMUdevManager *manager,
 	}
 
 	if (is_olpc_mesh (udev_device)) /* must be before is_wireless */
-		device = (GObject *) nm_device_olpc_mesh_new (path, ifname, driver, ifindex);
+		device = (GObject *) nm_device_olpc_mesh_new (path, ifname, driver);
 	else if (is_wireless (udev_device))
-		device = (GObject *) nm_device_wifi_new (path, ifname, driver, ifindex);
+		device = (GObject *) nm_device_wifi_new (path, ifname, driver);
 	else
-		device = (GObject *) nm_device_ethernet_new (path, ifname, driver, ifindex);
+		device = (GObject *) nm_device_ethernet_new (path, ifname, driver);
 
 out:
 	if (grandparent)

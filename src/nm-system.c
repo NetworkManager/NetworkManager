@@ -986,7 +986,7 @@ foreach_route (void (*callback)(struct nl_object *, gpointer),
 
 	nlh = nm_netlink_get_default_handle ();
 	route_cache = rtnl_route_alloc_cache (nlh);
-	nl_cache_mngt_provide (route_cache);
+	g_assert (route_cache);
 	nl_cache_foreach (route_cache, callback, user_data);
 	nl_cache_free (route_cache);
 }

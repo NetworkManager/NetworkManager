@@ -743,7 +743,8 @@ nm_netlink_index_to_rtnl_link (int idx)
 	NMNetlinkMonitorPrivate *priv;
 	struct rtnl_link *ret = NULL;
 
-	g_return_val_if_fail (idx >= 0, NULL);
+	if (idx <= 0)
+		return NULL;
 
 	self = nm_netlink_monitor_get ();
 	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);

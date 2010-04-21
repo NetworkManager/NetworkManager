@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2010 Red Hat, Inc.
  */
 
 #include "nm-marshal.h"
@@ -185,6 +185,14 @@ nm_device_interface_init (gpointer g_iface)
 	                                 RFKILL_TYPE_MAX,
 	                                 RFKILL_TYPE_UNKNOWN,
 	                                 G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
+
+	g_object_interface_install_property
+		(g_iface,
+		 g_param_spec_int (NM_DEVICE_INTERFACE_IFINDEX,
+							"Ifindex",
+							"Ifindex",
+							0, G_MAXINT, 0,
+							G_PARAM_READABLE | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	/* Signals */
 	g_signal_new ("state-changed",
