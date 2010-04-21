@@ -730,6 +730,7 @@ addrconf6_cleanup (NMDevice *self)
 		priv->ip6_config_changed_sigid = 0;
 	}
 
+	nm_ip6_manager_cancel_addrconf (priv->ip6_manager, nm_device_get_ip_ifindex (self));
 	g_object_unref (priv->ip6_manager);
 	priv->ip6_manager = NULL;
 }
