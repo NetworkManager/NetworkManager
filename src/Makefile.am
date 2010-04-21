@@ -141,8 +141,6 @@ NetworkManager_SOURCES = \
 		nm-properties-changed-signal.h \
 		wpa.c \
 		wpa.h \
-		nm-netlink.c \
-		nm-netlink.h \
 		nm-dhcp4-config.c \
 		nm-dhcp4-config.h \
 		nm-dhcp6-config.c \

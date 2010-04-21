@@ -25,7 +25,7 @@
  * Copyright (C) 2004 Novell, Inc.
  */
 
-/* for struct ucred */
+/* for struct ucred and LIBNL_NEEDS_ADDR_CACHING_WORKAROUND */
 #include <config.h>
 
 #include <errno.h>
@@ -38,16 +38,15 @@
 #include <linux/if.h>
 #include <linux/unistd.h>
 #include <unistd.h>
-#include <stdio.h>
+#include <netlink/object-api.h>
+#include <netlink/route/addr.h>
+#include <netlink/route/rtnl.h>
 
 #include <glib.h>
 #include <glib/gi18n.h>
 
-#include "NetworkManager.h"
-#include "nm-system.h"
 #include "nm-netlink-monitor.h"
 #include "nm-logging.h"
-#include "nm-netlink.h"
 
 #define EVENT_CONDITIONS      ((GIOCondition) (G_IO_IN | G_IO_PRI))
 #define ERROR_CONDITIONS      ((GIOCondition) (G_IO_ERR | G_IO_NVAL))
@@ -60,7 +59,7 @@
 typedef struct {
 	struct nl_handle *nlh;
 	struct nl_cb *    nlh_cb;
-	struct nl_cache * nlh_link_cache;
+	struct nl_cache * link_cache;
 
 	GIOChannel *	  io_channel;
 	guint             event_id;
@@ -104,8 +103,10 @@ link_msg_handler (struct nl_object *obj, void *arg)
 	}
 
 	/* Ensure it's a link object */
-	if (nl_object_match_filter(obj, OBJ_CAST (filter)) == 0)
-		goto out;
+	if (nl_object_match_filter(obj, OBJ_CAST (filter)) == 0) {
+		rtnl_link_put (filter);
+		return;
+	}
 
 	link_obj = (struct rtnl_link *) obj;
 	flags = rtnl_link_get_flags (link_obj);
@@ -121,7 +122,6 @@ link_msg_handler (struct nl_object *obj, void *arg)
 	else
 		g_signal_emit (self, signals[CARRIER_OFF], 0, ifidx);
 
-out:
 	rtnl_link_put (filter);
 }
 
@@ -227,6 +227,9 @@ nm_netlink_monitor_open_connection (NMNetlinkMonitor *self, GError **error)
 	GError *channel_error = NULL;
 	GIOFlags channel_flags;
 	int fd;
+#ifdef LIBNL_NEEDS_ADDR_CACHING_WORKAROUND
+	struct nl_cache *addr_cache;
+#endif
 
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (self), FALSE);
@@ -265,11 +268,23 @@ nm_netlink_monitor_open_connection (NMNetlinkMonitor *self, GError **error)
 		goto error;
 	}
 
+#ifdef LIBNL_NEEDS_ADDR_CACHING_WORKAROUND
+	/* Work around apparent libnl bug; rtnl_addr requires that all
+	 * addresses have the "peer" attribute set in order to be compared
+	 * for equality, but this attribute is not normally set. As a
+	 * result, most addresses will not compare as equal even to
+	 * themselves, busting caching.
+	 */
+	addr_cache = rtnl_addr_alloc_cache (priv->nlh);
+	nl_cache_get_ops (addr_cache)->co_obj_ops->oo_id_attrs &= ~0x80;
+	nl_cache_free (addr_cache);
+#endif
+
 	/* Subscribe to the LINK group for internal carrier signals */
 	if (!nm_netlink_monitor_subscribe (self, RTNLGRP_LINK, error))
 		goto error;
 
-	if ((priv->nlh_link_cache = rtnl_link_alloc_cache (priv->nlh)) == NULL) {
+	if ((priv->link_cache = rtnl_link_alloc_cache (priv->nlh)) == NULL) {
 		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
 		             NM_NETLINK_MONITOR_ERROR_NETLINK_ALLOC_LINK_CACHE,
 		             _("unable to allocate netlink link cache for monitoring link status: %s"),
@@ -277,7 +292,7 @@ nm_netlink_monitor_open_connection (NMNetlinkMonitor *self, GError **error)
 		goto error;
 	}
 
-	nl_cache_mngt_provide (priv->nlh_link_cache);
+	nl_cache_mngt_provide (priv->link_cache);
 
 	fd = nl_socket_get_fd (priv->nlh);
 	priv->io_channel = g_io_channel_unix_new (fd);
@@ -303,9 +318,9 @@ error:
 	if (priv->io_channel)
 		nm_netlink_monitor_close_connection (self);
 
-	if (priv->nlh_link_cache) {
-		nl_cache_free (priv->nlh_link_cache);
-		priv->nlh_link_cache = NULL;
+	if (priv->link_cache) {
+		nl_cache_free (priv->link_cache);
+		priv->link_cache = NULL;
 	}
 
 	if (priv->nlh) {
@@ -475,10 +490,10 @@ deferred_emit_carrier_state (gpointer user_data)
 	/* Update the link cache with latest state, and if there are no errors
 	 * emit the link states for all the interfaces in the cache.
 	 */
-	if (nl_cache_refill (priv->nlh, priv->nlh_link_cache)) {
+	if (nl_cache_refill (priv->nlh, priv->link_cache)) {
 		nm_log_err (LOGD_HW, "error updating link cache: %s", nl_geterror ());
 	} else
-		nl_cache_foreach_filter (priv->nlh_link_cache, NULL, link_msg_handler, self);
+		nl_cache_foreach_filter (priv->link_cache, NULL, link_msg_handler, self);
 
 	return FALSE;
 }
@@ -534,7 +549,7 @@ nm_netlink_monitor_get_flags_sync (NMNetlinkMonitor *self,
 	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
 
 	/* Update the link cache with the latest information */
-	if (nl_cache_refill (priv->nlh, priv->nlh_link_cache)) {
+	if (nl_cache_refill (priv->nlh, priv->link_cache)) {
 		g_set_error (error,
 		             NM_NETLINK_MONITOR_ERROR,
 		             NM_NETLINK_MONITOR_ERROR_LINK_CACHE_UPDATE,
@@ -547,7 +562,7 @@ nm_netlink_monitor_get_flags_sync (NMNetlinkMonitor *self,
 	 * otherwise some kernels (or maybe libnl?) only send a few of the
 	 * interfaces in the refill request.
 	 */
-	if (nl_cache_refill (priv->nlh, priv->nlh_link_cache)) {
+	if (nl_cache_refill (priv->nlh, priv->link_cache)) {
 		g_set_error (error,
 		             NM_NETLINK_MONITOR_ERROR,
 		             NM_NETLINK_MONITOR_ERROR_LINK_CACHE_UPDATE,
@@ -572,7 +587,7 @@ nm_netlink_monitor_get_flags_sync (NMNetlinkMonitor *self,
 	info.self = self;
 	info.filter = filter;
 	info.error = NULL;
-	nl_cache_foreach_filter (priv->nlh_link_cache, NULL, get_flags_sync_cb, &info);
+	nl_cache_foreach_filter (priv->link_cache, NULL, get_flags_sync_cb, &info);
 
 	rtnl_link_put (filter);
 
@@ -586,6 +601,85 @@ nm_netlink_monitor_get_flags_sync (NMNetlinkMonitor *self,
 		*ifflags = info.flags;
 
 	return TRUE; /* success */
+}
+
+/***************************************************************/
+
+struct nl_handle *
+nm_netlink_get_default_handle (void)
+{
+	NMNetlinkMonitor *self;
+	struct nl_handle *nlh;
+
+	self = nm_netlink_monitor_get ();
+	nlh = NM_NETLINK_MONITOR_GET_PRIVATE (self)->nlh;
+	g_object_unref (self);
+
+	return nlh;
+}
+
+int
+nm_netlink_iface_to_index (const char *iface)
+{
+	NMNetlinkMonitor *self;
+	NMNetlinkMonitorPrivate *priv;
+	int idx;
+
+	g_return_val_if_fail (iface != NULL, -1);
+
+	self = nm_netlink_monitor_get ();
+	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
+
+	nl_cache_update (priv->nlh, priv->link_cache);
+	idx = rtnl_link_name2i (priv->link_cache, iface);
+	g_object_unref (self);
+
+	return idx;
+}
+
+#define MAX_IFACE_LEN 33
+char *
+nm_netlink_index_to_iface (int idx)
+{
+	NMNetlinkMonitor *self;
+	NMNetlinkMonitorPrivate *priv;
+	char *buf = NULL;
+
+	g_return_val_if_fail (idx >= 0, NULL);
+
+	self = nm_netlink_monitor_get ();
+	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
+
+	buf = g_malloc0 (MAX_IFACE_LEN);
+	g_assert (buf);
+
+	nl_cache_update (priv->nlh, priv->link_cache);
+	if (!rtnl_link_i2name (priv->link_cache, idx, buf, MAX_IFACE_LEN - 1)) {
+		g_free (buf);
+		buf = NULL;
+	}
+
+	g_object_unref (self);
+	return buf;
+}
+
+struct rtnl_link *
+nm_netlink_index_to_rtnl_link (int idx)
+{
+	NMNetlinkMonitor *self;
+	NMNetlinkMonitorPrivate *priv;
+	struct rtnl_link *ret = NULL;
+
+	g_return_val_if_fail (idx >= 0, NULL);
+
+	self = nm_netlink_monitor_get ();
+	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
+
+	nl_cache_update (priv->nlh, priv->link_cache);
+	ret = rtnl_link_get (priv->link_cache, idx);
+	g_object_unref (self);
+
+	return ret;
 }
 
 /***************************************************************/
@@ -622,9 +716,9 @@ finalize (GObject *object)
 	if (priv->io_channel)
 		nm_netlink_monitor_close_connection (NM_NETLINK_MONITOR (object));
 
-	if (priv->nlh_link_cache) {
-		nl_cache_free (priv->nlh_link_cache);
-		priv->nlh_link_cache = NULL;
+	if (priv->link_cache) {
+		nl_cache_free (priv->link_cache);
+		priv->link_cache = NULL;
 	}
 
 	if (priv->nlh) {

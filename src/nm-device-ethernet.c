@@ -45,7 +45,6 @@
 #include "nm-supplicant-manager.h"
 #include "nm-supplicant-interface.h"
 #include "nm-supplicant-config.h"
-#include "nm-netlink.h"
 #include "nm-netlink-monitor.h"
 #include "nm-system.h"
 #include "nm-setting-connection.h"

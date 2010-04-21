@@ -45,7 +45,7 @@
 #include "nm-named-manager.h"
 #include "nm-utils.h"
 #include "nm-logging.h"
-#include "nm-netlink.h"
+#include "nm-netlink-monitor.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-setting-connection.h"

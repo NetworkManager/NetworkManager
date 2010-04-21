@@ -27,7 +27,6 @@
 
 #include "nm-ip6-manager.h"
 #include "nm-netlink-monitor.h"
-#include "nm-netlink.h"
 #include "NetworkManagerUtils.h"
 #include "nm-marshal.h"
 #include "nm-logging.h"

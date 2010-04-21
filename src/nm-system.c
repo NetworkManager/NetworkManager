@@ -48,7 +48,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-logging.h"
-#include "nm-netlink.h"
+#include "nm-netlink-monitor.h"
 
 /* Because of a bug in libnl, rtnl.h should be included before route.h */
 #include <netlink/route/rtnl.h>

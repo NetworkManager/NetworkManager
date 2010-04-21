@@ -45,7 +45,7 @@
 #include "nm-dbus-glib-types.h"
 #include "NetworkManagerUtils.h"
 #include "nm-named-manager.h"
-#include "nm-netlink.h"
+#include "nm-netlink-monitor.h"
 #include "nm-glib-compat.h"
 
 #include "nm-vpn-connection-glue.h"
