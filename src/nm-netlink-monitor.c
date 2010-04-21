@@ -57,12 +57,14 @@
                                            NMNetlinkMonitorPrivate))
 
 typedef struct {
-	struct nl_handle *nlh;
-	struct nl_cb *    nlh_cb;
-	struct nl_cache * link_cache;
-
+	/* Async event listener connection */
+	struct nl_handle *nlh_event;
 	GIOChannel *	  io_channel;
 	guint             event_id;
+
+	/* Sync/blocking request/response connection */
+	struct nl_handle *nlh_sync;
+	struct nl_cache * link_cache;
 
 	guint request_status_id;
 
@@ -103,7 +105,7 @@ link_msg_handler (struct nl_object *obj, void *arg)
 	}
 
 	/* Ensure it's a link object */
-	if (nl_object_match_filter(obj, OBJ_CAST (filter)) == 0) {
+	if (nl_object_match_filter (obj, OBJ_CAST (filter)) == 0) {
 		rtnl_link_put (filter);
 		return;
 	}
@@ -126,10 +128,9 @@ link_msg_handler (struct nl_object *obj, void *arg)
 }
 
 static int
-netlink_event_input (struct nl_msg *msg, void *arg)
+event_msg_recv (struct nl_msg *msg, void *arg)
 {
-	NMNetlinkMonitor *self = NM_NETLINK_MONITOR (arg);
-	NMNetlinkMonitorPrivate *priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
+	struct nl_handle *nlh = arg;
 	struct nlmsghdr *hdr = nlmsg_hdr (msg);
 	struct ucred *creds = nlmsg_get_creds (msg);
 	const struct sockaddr_nl *snl;
@@ -140,7 +141,7 @@ netlink_event_input (struct nl_msg *msg, void *arg)
 	if (!creds || creds->uid != 0) {
 		nm_log_dbg (LOGD_HW, "ignoring netlink message from UID %d",
 		            creds ? creds->uid : -1);
-		return NL_STOP;
+		return NL_SKIP;
 	}
 
 	snl = nlmsg_get_src (msg);
@@ -153,7 +154,7 @@ netlink_event_input (struct nl_msg *msg, void *arg)
 	/* And any multicast message directed to our netlink PID, since multicast
 	 * currently requires CAP_ADMIN to use.
 	 */
-	local_port = nl_socket_get_local_port (priv->nlh);
+	local_port = nl_socket_get_local_port (nlh);
 	if ((hdr->nlmsg_pid == local_port) && snl->nl_groups)
 		accept_msg = TRUE;
 
@@ -162,8 +163,20 @@ netlink_event_input (struct nl_msg *msg, void *arg)
 		            hdr->nlmsg_pid,
 		            local_port,
 		            (hdr->nlmsg_flags & NLM_F_MULTI));
-		return NL_STOP;
+		return NL_SKIP;
 	}
+
+	return NL_OK;
+}
+
+static int
+event_msg_ready (struct nl_msg *msg, void *arg)
+{
+	NMNetlinkMonitor *self = NM_NETLINK_MONITOR (arg);
+
+	/* By the time the message gets here we've already checked the sender
+	 * and we're sure it's safe to parse this message.
+	 */
 
 	/* Let clients handle generic messages */
 	g_signal_emit (self, signals[NOTIFICATION], 0, msg);
@@ -212,7 +225,7 @@ event_handler (GIOChannel *channel,
 	g_return_val_if_fail (!(io_condition & ~EVENT_CONDITIONS), FALSE);
 
 	/* Process the netlink messages */
-	if (nl_recvmsgs_default (priv->nlh) < 0) {
+	if (nl_recvmsgs_default (priv->nlh_event) < 0) {
 		error = g_error_new (NM_NETLINK_MONITOR_ERROR,
 		                     NM_NETLINK_MONITOR_ERROR_PROCESSING_MESSAGE,
 		                     _("error processing netlink message: %s"),
@@ -224,26 +237,55 @@ event_handler (GIOChannel *channel,
 	return TRUE;
 }
 
-gboolean
-nm_netlink_monitor_open_connection (NMNetlinkMonitor *self, GError **error)
+static gboolean
+nlh_setup (struct nl_handle *nlh,
+           nl_recvmsg_msg_cb_t valid_func,
+           gpointer cb_data,
+           GError **error)
 {
-	NMNetlinkMonitorPrivate *priv;
+	nl_socket_modify_cb (nlh, NL_CB_MSG_IN, NL_CB_CUSTOM, event_msg_recv, cb_data);
+
+	if (valid_func)
+		nl_socket_modify_cb (nlh, NL_CB_VALID, NL_CB_CUSTOM, valid_func, cb_data);
+
+	if (nl_connect (nlh, NETLINK_ROUTE) < 0) {
+		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
+		             NM_NETLINK_MONITOR_ERROR_NETLINK_CONNECT,
+		             _("unable to connect to netlink for monitoring link status: %s"),
+		             nl_geterror ());
+		return FALSE;
+	}
+
+	/* Enable unix socket peer credentials which we use for verifying that the
+	 * sender of the message is actually the kernel.
+	 */
+	if (nl_set_passcred (nlh, 1) < 0) {
+		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
+		             NM_NETLINK_MONITOR_ERROR_NETLINK_CONNECT,
+		             _("unable to enable netlink handle credential passing: %s"),
+		             nl_geterror ());
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
+event_connection_setup (NMNetlinkMonitor *self, GError **error)
+{
+	NMNetlinkMonitorPrivate *priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
 	GError *channel_error = NULL;
 	GIOFlags channel_flags;
+	struct nl_cb *cb;
 	int fd;
-#ifdef LIBNL_NEEDS_ADDR_CACHING_WORKAROUND
-	struct nl_cache *addr_cache;
-#endif
 
-	g_return_val_if_fail (self != NULL, FALSE);
-	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (self), FALSE);
-
-	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
 	g_return_val_if_fail (priv->io_channel == NULL, FALSE);
 
-	priv->nlh_cb = nl_cb_alloc (NL_CB_VERBOSE);
-	priv->nlh = nl_handle_alloc_cb (priv->nlh_cb);
-	if (!priv->nlh) {
+	/* Set up the event listener connection */
+	cb = nl_cb_alloc (NL_CB_VERBOSE);
+	priv->nlh_event = nl_handle_alloc_cb (cb);
+	nl_cb_put (cb);
+	if (!priv->nlh_event) {
 		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
 		             NM_NETLINK_MONITOR_ERROR_NETLINK_ALLOC_HANDLE,
 		             _("unable to allocate netlink handle for monitoring link status: %s"),
@@ -251,60 +293,16 @@ nm_netlink_monitor_open_connection (NMNetlinkMonitor *self, GError **error)
 		goto error;
 	}
 
-	nl_disable_sequence_check (priv->nlh);
-	nl_socket_modify_cb (priv->nlh, NL_CB_VALID, NL_CB_CUSTOM, netlink_event_input, self);
-	if (nl_connect (priv->nlh, NETLINK_ROUTE) < 0) {
-		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
-		             NM_NETLINK_MONITOR_ERROR_NETLINK_CONNECT,
-		             _("unable to connect to netlink for monitoring link status: %s"),
-		             nl_geterror ());
+	if (!nlh_setup (priv->nlh_event, event_msg_ready, self, error))
 		goto error;
-	}
 
-	/* Enable unix socket peer credentials which we use for verifying that the
-	 * sender of the message is actually the kernel.
-	 */
-	if (nl_set_passcred (priv->nlh, 1) < 0) {
-		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
-		             NM_NETLINK_MONITOR_ERROR_NETLINK_CONNECT,
-		             _("unable to enable netlink handle credential passing: %s"),
-		             nl_geterror ());
-		goto error;
-	}
-
-	if (nl_socket_recv_pktinfo (priv->nlh, 1) < 0) {
-		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
-		             NM_NETLINK_MONITOR_ERROR_NETLINK_CONNECT,
-		             _("unable to enable netlink handle packet info: %s"),
-		             nl_geterror ());
-		goto error;
-	}
-
-#ifdef LIBNL_NEEDS_ADDR_CACHING_WORKAROUND
-	/* Work around apparent libnl bug; rtnl_addr requires that all
-	 * addresses have the "peer" attribute set in order to be compared
-	 * for equality, but this attribute is not normally set. As a
-	 * result, most addresses will not compare as equal even to
-	 * themselves, busting caching.
-	 */
-	addr_cache = rtnl_addr_alloc_cache (priv->nlh);
-	nl_cache_get_ops (addr_cache)->co_obj_ops->oo_id_attrs &= ~0x80;
-	nl_cache_free (addr_cache);
-#endif
+	nl_disable_sequence_check (priv->nlh_event);
 
 	/* Subscribe to the LINK group for internal carrier signals */
 	if (!nm_netlink_monitor_subscribe (self, RTNLGRP_LINK, error))
 		goto error;
 
-	if ((priv->link_cache = rtnl_link_alloc_cache (priv->nlh)) == NULL) {
-		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
-		             NM_NETLINK_MONITOR_ERROR_NETLINK_ALLOC_LINK_CACHE,
-		             _("unable to allocate netlink link cache for monitoring link status: %s"),
-		             nl_geterror ());
-		goto error;
-	}
-
-	fd = nl_socket_get_fd (priv->nlh);
+	fd = nl_socket_get_fd (priv->nlh_event);
 	priv->io_channel = g_io_channel_unix_new (fd);
 
 	g_io_channel_set_encoding (priv->io_channel, NULL, &channel_error);
@@ -328,21 +326,88 @@ error:
 	if (priv->io_channel)
 		nm_netlink_monitor_close_connection (self);
 
+	if (priv->nlh_event) {
+		nl_handle_destroy (priv->nlh_event);
+		priv->nlh_event = NULL;
+	}
+
+	return FALSE;
+}
+
+static gboolean
+sync_connection_setup (NMNetlinkMonitor *self, GError **error)
+{
+	NMNetlinkMonitorPrivate *priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
+	struct nl_cb *cb;
+#ifdef LIBNL_NEEDS_ADDR_CACHING_WORKAROUND
+	struct nl_cache *addr_cache;
+#endif
+
+	/* Set up the event listener connection */
+	cb = nl_cb_alloc (NL_CB_VERBOSE);
+	priv->nlh_sync = nl_handle_alloc_cb (cb);
+	nl_cb_put (cb);
+	if (!priv->nlh_sync) {
+		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
+		             NM_NETLINK_MONITOR_ERROR_NETLINK_ALLOC_HANDLE,
+		             _("unable to allocate netlink handle for monitoring link status: %s"),
+		             nl_geterror ());
+		goto error;
+	}
+
+	if (!nlh_setup (priv->nlh_sync, NULL, self, error))
+		goto error;
+
+#ifdef LIBNL_NEEDS_ADDR_CACHING_WORKAROUND
+	/* Work around apparent libnl bug; rtnl_addr requires that all
+	 * addresses have the "peer" attribute set in order to be compared
+	 * for equality, but this attribute is not normally set. As a
+	 * result, most addresses will not compare as equal even to
+	 * themselves, busting caching.
+	 */
+	addr_cache = rtnl_addr_alloc_cache (priv->nlh_sync);
+	nl_cache_get_ops (addr_cache)->co_obj_ops->oo_id_attrs &= ~0x80;
+	nl_cache_free (addr_cache);
+#endif
+
+	if ((priv->link_cache = rtnl_link_alloc_cache (priv->nlh_sync)) == NULL) {
+		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
+		             NM_NETLINK_MONITOR_ERROR_NETLINK_ALLOC_LINK_CACHE,
+		             _("unable to allocate netlink link cache for monitoring link status: %s"),
+		             nl_geterror ());
+		goto error;
+	}
+	nl_cache_mngt_provide (priv->link_cache);
+
+	return TRUE;
+
+error:
 	if (priv->link_cache) {
 		nl_cache_free (priv->link_cache);
 		priv->link_cache = NULL;
 	}
 
-	if (priv->nlh) {
-		nl_handle_destroy (priv->nlh);
-		priv->nlh = NULL;
+	if (priv->nlh_sync) {
+		nl_handle_destroy (priv->nlh_sync);
+		priv->nlh_sync = NULL;
 	}
 
-	if (priv->nlh_cb) {
-		nl_cb_put (priv->nlh_cb);
-		priv->nlh_cb = NULL;
-	}
 	return FALSE;
+}
+
+gboolean
+nm_netlink_monitor_open_connection (NMNetlinkMonitor *self, GError **error)
+{
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (self), FALSE);
+
+	if (!event_connection_setup (self, error))
+		return FALSE;
+
+	if (!sync_connection_setup (self, error))
+		return FALSE;
+
+	return TRUE;
 }
 
 void
@@ -359,9 +424,8 @@ nm_netlink_monitor_close_connection (NMNetlinkMonitor  *self)
 		nm_netlink_monitor_detach (self);
 
 	g_io_channel_shutdown (priv->io_channel,
-			       TRUE /* flush pending data */,
-			       NULL);
-
+	                       TRUE /* flush pending data */,
+	                       NULL);
 	g_io_channel_unref (priv->io_channel);
 	priv->io_channel = NULL;
 }
@@ -374,7 +438,7 @@ nm_netlink_monitor_attach (NMNetlinkMonitor *self)
 	g_return_if_fail (NM_IS_NETLINK_MONITOR (self));
 
 	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
-	g_return_if_fail (priv->nlh != NULL);
+	g_return_if_fail (priv->nlh_event != NULL);
 	g_return_if_fail (priv->event_id == 0);
 
 	priv->event_id = g_io_add_watch (priv->io_channel,
@@ -425,14 +489,14 @@ nm_netlink_monitor_subscribe (NMNetlinkMonitor *self, int group, GError **error)
 
 	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
 
-	if (!priv->nlh) {
+	if (!priv->nlh_event) {
 		if (!nm_netlink_monitor_open_connection (self, error))
 			return FALSE;
 	}
 
 	subs = get_subs (self, group) + 1;
 	if (subs == 1) {
-		if (nl_socket_add_membership (priv->nlh, group) < 0) {
+		if (nl_socket_add_membership (priv->nlh_event, group) < 0) {
 			g_set_error (error, NM_NETLINK_MONITOR_ERROR,
 			             NM_NETLINK_MONITOR_ERROR_NETLINK_JOIN_GROUP,
 			             _("unable to join netlink group: %s"),
@@ -457,11 +521,11 @@ nm_netlink_monitor_unsubscribe (NMNetlinkMonitor *self, int group)
 	g_return_if_fail (NM_IS_NETLINK_MONITOR (self));
 
 	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
-	g_return_if_fail (priv->nlh != NULL);
+	g_return_if_fail (priv->nlh_event != NULL);
 
 	subs = get_subs (self, group) - 1;
 	if (subs == 0)
-		nl_socket_drop_membership (priv->nlh, group);
+		nl_socket_drop_membership (priv->nlh_event, group);
 
 	/* Update # of subscriptions for this group */
 	set_subs (self, group, subs);
@@ -483,7 +547,7 @@ nm_netlink_monitor_request_ip6_info (NMNetlinkMonitor *self, GError **error)
 	 * libnl-1.1; revisit this and return a proper error when we port to
 	 * a later libnl.
 	 */
-	nl_rtgen_request (priv->nlh, RTM_GETLINK, AF_INET6, NLM_F_DUMP);
+	nl_rtgen_request (priv->nlh_event, RTM_GETLINK, AF_INET6, NLM_F_DUMP);
 
 	return TRUE;
 }
@@ -500,7 +564,7 @@ deferred_emit_carrier_state (gpointer user_data)
 	/* Update the link cache with latest state, and if there are no errors
 	 * emit the link states for all the interfaces in the cache.
 	 */
-	if (nl_cache_refill (priv->nlh, priv->link_cache)) {
+	if (nl_cache_refill (priv->nlh_sync, priv->link_cache)) {
 		nm_log_err (LOGD_HW, "error updating link cache: %s", nl_geterror ());
 	} else
 		nl_cache_foreach_filter (priv->link_cache, NULL, link_msg_handler, self);
@@ -516,7 +580,6 @@ nm_netlink_monitor_request_status (NMNetlinkMonitor *self, GError **error)
 	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (self), FALSE);
 
 	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
-	g_return_val_if_fail (priv->event_id > 0, FALSE);
 
 	/* Schedule the carrier state emission */
 	if (!priv->request_status_id)
@@ -559,7 +622,7 @@ nm_netlink_monitor_get_flags_sync (NMNetlinkMonitor *self,
 	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
 
 	/* Update the link cache with the latest information */
-	if (nl_cache_refill (priv->nlh, priv->link_cache)) {
+	if (nl_cache_refill (priv->nlh_sync, priv->link_cache)) {
 		g_set_error (error,
 		             NM_NETLINK_MONITOR_ERROR,
 		             NM_NETLINK_MONITOR_ERROR_LINK_CACHE_UPDATE,
@@ -572,7 +635,7 @@ nm_netlink_monitor_get_flags_sync (NMNetlinkMonitor *self,
 	 * otherwise some kernels (or maybe libnl?) only send a few of the
 	 * interfaces in the refill request.
 	 */
-	if (nl_cache_refill (priv->nlh, priv->link_cache)) {
+	if (nl_cache_refill (priv->nlh_sync, priv->link_cache)) {
 		g_set_error (error,
 		             NM_NETLINK_MONITOR_ERROR,
 		             NM_NETLINK_MONITOR_ERROR_LINK_CACHE_UPDATE,
@@ -622,7 +685,7 @@ nm_netlink_get_default_handle (void)
 	struct nl_handle *nlh;
 
 	self = nm_netlink_monitor_get ();
-	nlh = NM_NETLINK_MONITOR_GET_PRIVATE (self)->nlh;
+	nlh = NM_NETLINK_MONITOR_GET_PRIVATE (self)->nlh_sync;
 	g_object_unref (self);
 
 	return nlh;
@@ -640,7 +703,7 @@ nm_netlink_iface_to_index (const char *iface)
 	self = nm_netlink_monitor_get ();
 	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
 
-	nl_cache_update (priv->nlh, priv->link_cache);
+	nl_cache_refill (priv->nlh_sync, priv->link_cache);
 	idx = rtnl_link_name2i (priv->link_cache, iface);
 	g_object_unref (self);
 
@@ -663,7 +726,7 @@ nm_netlink_index_to_iface (int idx)
 	buf = g_malloc0 (MAX_IFACE_LEN);
 	g_assert (buf);
 
-	nl_cache_update (priv->nlh, priv->link_cache);
+	nl_cache_refill (priv->nlh_sync, priv->link_cache);
 	if (!rtnl_link_i2name (priv->link_cache, idx, buf, MAX_IFACE_LEN - 1)) {
 		g_free (buf);
 		buf = NULL;
@@ -685,7 +748,7 @@ nm_netlink_index_to_rtnl_link (int idx)
 	self = nm_netlink_monitor_get ();
 	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
 
-	nl_cache_update (priv->nlh, priv->link_cache);
+	nl_cache_refill (priv->nlh_sync, priv->link_cache);
 	ret = rtnl_link_get (priv->link_cache, idx);
 	g_object_unref (self);
 
@@ -731,14 +794,14 @@ finalize (GObject *object)
 		priv->link_cache = NULL;
 	}
 
-	if (priv->nlh) {
-		nl_handle_destroy (priv->nlh);
-		priv->nlh = NULL;
+	if (priv->nlh_event) {
+		nl_handle_destroy (priv->nlh_event);
+		priv->nlh_event = NULL;
 	}
 
-	if (priv->nlh_cb) {
-		nl_cb_put (priv->nlh_cb);
-		priv->nlh_cb = NULL;
+	if (priv->nlh_sync) {
+		nl_handle_destroy (priv->nlh_sync);
+		priv->nlh_sync = NULL;
 	}
 
 	g_hash_table_destroy (priv->subscriptions);
