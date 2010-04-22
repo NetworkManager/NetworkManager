@@ -1475,7 +1475,12 @@ nm_sysconfig_settings_class_init (NMSysconfigSettingsClass *class)
 	                              NM_DBUS_IFACE_SETTINGS_SYSTEM,
 	                              NM_TYPE_SYSCONFIG_SETTINGS_ERROR);
 
+	dbus_g_error_domain_register (NM_SETTINGS_INTERFACE_ERROR,
+	                              NM_DBUS_IFACE_SETTINGS,
+	                              NM_TYPE_SETTINGS_INTERFACE_ERROR);
+
 	/* And register all the settings errors with D-Bus */
+	dbus_g_error_domain_register (NM_CONNECTION_ERROR, NULL, NM_TYPE_CONNECTION_ERROR);
 	dbus_g_error_domain_register (NM_SETTING_802_1X_ERROR, NULL, NM_TYPE_SETTING_802_1X_ERROR);
 	dbus_g_error_domain_register (NM_SETTING_BLUETOOTH_ERROR, NULL, NM_TYPE_SETTING_BLUETOOTH_ERROR);
 	dbus_g_error_domain_register (NM_SETTING_CDMA_ERROR, NULL, NM_TYPE_SETTING_CDMA_ERROR);
