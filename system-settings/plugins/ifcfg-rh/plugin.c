@@ -38,6 +38,7 @@
 #include <dbus/dbus-glib-lowlevel.h>
 
 #include <nm-setting-connection.h>
+#include <nm-settings-interface.h>
 
 #include "common.h"
 #include "nm-dbus-glib-types.h"
@@ -535,31 +536,46 @@ impl_ifcfgrh_get_ifcfg_details (SCPluginIfcfg *plugin,
 	const char *path;
 
 	if (!g_path_is_absolute (in_ifcfg)) {
-		g_set_error (error, 0, 0, "ifcfg path '%s' is not absolute", in_ifcfg);
+		g_set_error (error,
+		             NM_SETTINGS_INTERFACE_ERROR,
+		             NM_SETTINGS_INTERFACE_ERROR_INVALID_CONNECTION,
+		             "ifcfg path '%s' is not absolute", in_ifcfg);
 		return FALSE;
 	}
 
 	connection = g_hash_table_lookup (priv->connections, in_ifcfg);
 	if (!connection) {
-		g_set_error (error, 0, 0, "ifcfg file '%s' unknown", in_ifcfg);
+		g_set_error (error,
+		             NM_SETTINGS_INTERFACE_ERROR,
+		             NM_SETTINGS_INTERFACE_ERROR_INVALID_CONNECTION,
+		             "ifcfg file '%s' unknown", in_ifcfg);
 		return FALSE;
 	}
 
 	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (connection), NM_TYPE_SETTING_CONNECTION);
 	if (!s_con) {
-		g_set_error_literal (error, 0, 0, "unable to retrieve the connection setting");
+		g_set_error (error,
+		             NM_SETTINGS_INTERFACE_ERROR,
+		             NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
+		             "unable to retrieve the connection setting");
 		return FALSE;
 	}
 
 	uuid = nm_setting_connection_get_uuid (s_con);
 	if (!uuid) {
-		g_set_error_literal (error, 0, 0, "unable to get the UUID");
+		g_set_error (error,
+		             NM_SETTINGS_INTERFACE_ERROR,
+		             NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
+		             "unable to get the UUID");
 		return FALSE;
 	}
 	
 	path = nm_connection_get_path (NM_CONNECTION (connection));
 	if (!path) {
-		g_set_error_literal (error, 0, 0, "unable to get the connection D-Bus path");
+		g_set_error (error,
+		             NM_SETTINGS_INTERFACE_ERROR,
+		             NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
+		             "unable to get the connection D-Bus path");
 		return FALSE;
 	}
 
