@@ -228,7 +228,9 @@ impl_exported_connection_get_secrets (NMExportedConnection *self,
 	if (NM_EXPORTED_CONNECTION_GET_CLASS (self)->get_secrets)
 		NM_EXPORTED_CONNECTION_GET_CLASS (self)->get_secrets (self, setting_name, hints, request_new, context);
 	else {
-		error = g_error_new (0, 0, "%s: %s:%d get_secrets() unimplemented", __func__, __FILE__, __LINE__);
+		error = g_error_new (NM_SETTINGS_INTERFACE_ERROR,
+		                     NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
+		                     "%s: %s:%d get_secrets() unimplemented", __func__, __FILE__, __LINE__);
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
 	}
