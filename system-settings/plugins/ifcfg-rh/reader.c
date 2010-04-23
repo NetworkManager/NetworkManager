@@ -1581,6 +1581,7 @@ static gboolean
 add_one_wep_key (shvarFile *ifcfg,
                  const char *shvar_key,
                  guint8 key_idx,
+                 gboolean passphrase,
                  NMSettingWirelessSecurity *s_wsec,
                  GError **error)
 {
@@ -1600,42 +1601,51 @@ add_one_wep_key (shvarFile *ifcfg,
 	}
 
 	/* Validate keys */
-	if (strlen (value) == 10 || strlen (value) == 26) {
-		/* Hexadecimal WEP key */
-		char *p = value;
-
-		while (*p) {
-			if (!g_ascii_isxdigit (*p)) {
-				g_set_error (error, ifcfg_plugin_error_quark (), 0,
-				             "Invalid hexadecimal WEP key.");
-				goto out;
-			}
-			p++;
+	if (passphrase) {
+		if (strlen (value) && strlen (value) < 64) {
+			key = g_strdup (value);
+			g_object_set (G_OBJECT (s_wsec),
+			              NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE,
+			              NM_WEP_KEY_TYPE_PASSPHRASE,
+			              NULL);
 		}
-		key = g_strdup (value);
-	} else if (   strncmp (value, "s:", 2)
-	           && (strlen (value) == 7 || strlen (value) == 15)) {
-		/* ASCII passphrase */
-		char *p = value + 2;
-
-		while (*p) {
-			if (!isascii ((int) (*p))) {
-				g_set_error (error, ifcfg_plugin_error_quark (), 0,
-				             "Invalid ASCII WEP passphrase.");
-				goto out;
-			}
-			p++;
-		}
-
-		key = utils_bin2hexstr (value, strlen (value), strlen (value) * 2);
 	} else {
-		g_set_error (error, ifcfg_plugin_error_quark (), 0, "Invalid WEP key length.");
+		if (strlen (value) == 10 || strlen (value) == 26) {
+			/* Hexadecimal WEP key */
+			char *p = value;
+
+			while (*p) {
+				if (!g_ascii_isxdigit (*p)) {
+					g_set_error (error, ifcfg_plugin_error_quark (), 0,
+					             "Invalid hexadecimal WEP key.");
+					goto out;
+				}
+				p++;
+			}
+			key = g_strdup (value);
+		} else if (   strncmp (value, "s:", 2)
+		           && (strlen (value) == 7 || strlen (value) == 15)) {
+			/* ASCII passphrase */
+			char *p = value + 2;
+
+			while (*p) {
+				if (!isascii ((int) (*p))) {
+					g_set_error (error, ifcfg_plugin_error_quark (), 0,
+					             "Invalid ASCII WEP passphrase.");
+					goto out;
+				}
+				p++;
+			}
+
+			key = utils_bin2hexstr (value, strlen (value), strlen (value) * 2);
+		}
 	}
 
 	if (key) {
 		nm_setting_wireless_security_set_wep_key (s_wsec, key_idx, key);
 		success = TRUE;
-	}
+	} else
+		g_set_error (error, ifcfg_plugin_error_quark (), 0, "Invalid WEP key length.");
 
 out:
 	g_free (value);
@@ -1648,15 +1658,26 @@ read_wep_keys (shvarFile *ifcfg,
                NMSettingWirelessSecurity *s_wsec,
                GError **error)
 {
-	if (!add_one_wep_key (ifcfg, "KEY1", 0, s_wsec, error))
+	/* Try hex/ascii keys first */
+	if (!add_one_wep_key (ifcfg, "KEY1", 0, FALSE, s_wsec, error))
 		return FALSE;
-	if (!add_one_wep_key (ifcfg, "KEY2", 1, s_wsec, error))
+	if (!add_one_wep_key (ifcfg, "KEY2", 1, FALSE, s_wsec, error))
 		return FALSE;
-	if (!add_one_wep_key (ifcfg, "KEY3", 2, s_wsec, error))
+	if (!add_one_wep_key (ifcfg, "KEY3", 2, FALSE, s_wsec, error))
 		return FALSE;
-	if (!add_one_wep_key (ifcfg, "KEY4", 3, s_wsec, error))
+	if (!add_one_wep_key (ifcfg, "KEY4", 3, FALSE, s_wsec, error))
 		return FALSE;
-	if (!add_one_wep_key (ifcfg, "KEY", def_idx, s_wsec, error))
+	if (!add_one_wep_key (ifcfg, "KEY", def_idx, FALSE, s_wsec, error))
+		return FALSE;
+
+	/* And then passphrases */
+	if (!add_one_wep_key (ifcfg, "KEY_PASSPHRASE1", 0, TRUE, s_wsec, error))
+		return FALSE;
+	if (!add_one_wep_key (ifcfg, "KEY_PASSPHRASE2", 1, TRUE, s_wsec, error))
+		return FALSE;
+	if (!add_one_wep_key (ifcfg, "KEY_PASSPHRASE3", 2, TRUE, s_wsec, error))
+		return FALSE;
+	if (!add_one_wep_key (ifcfg, "KEY_PASSPHRASE4", 3, TRUE, s_wsec, error))
 		return FALSE;
 
 	return TRUE;
@@ -1704,6 +1725,7 @@ make_wep_setting (shvarFile *ifcfg,
 			goto error;
 		}
 		svCloseFile (keys_ifcfg);
+		g_assert (error == NULL || *error == NULL);
 	}
 
 	/* If there's a default key, ensure that key exists */
