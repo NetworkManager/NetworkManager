@@ -38,7 +38,8 @@ typedef enum NMActStageReturn
 {
 	NM_ACT_STAGE_RETURN_FAILURE = 0,
 	NM_ACT_STAGE_RETURN_SUCCESS,
-	NM_ACT_STAGE_RETURN_POSTPONE
+	NM_ACT_STAGE_RETURN_POSTPONE,
+	NM_ACT_STAGE_RETURN_STOP         /* This activation chain is done */
 } NMActStageReturn;
 
 

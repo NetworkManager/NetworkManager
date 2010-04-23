@@ -1338,6 +1338,7 @@ dhcp_timeout (NMDHCPClient *client, gpointer user_data)
 static NMActStageReturn
 real_act_stage3_ip4_config_start (NMDevice *self, NMDeviceStateReason *reason)
 {
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingIP4Config *s_ip4;
@@ -1367,7 +1368,6 @@ real_act_stage3_ip4_config_start (NMDevice *self, NMDeviceStateReason *reason)
 		method = nm_setting_ip4_config_get_method (s_ip4);
 
 	if (!s_ip4 || !method || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
-		NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 		guint8 *anycast = NULL;
 
 		/* Begin a DHCP transaction on the interface */
@@ -1423,6 +1423,10 @@ real_act_stage3_ip4_config_start (NMDevice *self, NMDeviceStateReason *reason)
 			*reason = NM_DEVICE_STATE_REASON_AUTOIP_START_FAILED;
 			ret = NM_ACT_STAGE_RETURN_FAILURE;
 		}
+	} else if (s_ip4 && !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
+		/* Nothing to do... */
+		priv->ip4_ready = TRUE;
+		ret = NM_ACT_STAGE_RETURN_STOP;
 	}
 
 	return ret;
@@ -1519,6 +1523,10 @@ real_act_stage3_ip6_config_start (NMDevice *self, NMDeviceStateReason *reason)
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_DHCP))
 		ret = dhcp6_start (self, connection, IP6_DHCP_OPT_MANAGED, reason);
+	else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
+		priv->ip6_ready = TRUE;
+		ret = NM_ACT_STAGE_RETURN_STOP;
+	}
 
 	return ret;
 }
@@ -1551,6 +1559,8 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 	else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 		goto out;
+	} else if (ret == NM_ACT_STAGE_RETURN_STOP) {
+		/* Nothing to do */
 	} else
 		g_assert (ret == NM_ACT_STAGE_RETURN_POSTPONE);
 
@@ -1560,6 +1570,8 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 	else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 		goto out;
+	} else if (ret == NM_ACT_STAGE_RETURN_STOP) {
+		/* Nothing to do */
 	} else
 		g_assert (ret == NM_ACT_STAGE_RETURN_POSTPONE);
 
