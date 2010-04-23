@@ -53,11 +53,14 @@ typedef enum {
 	DHC_REBIND6,     /* IPv6 new/different lease */
 	DHC_DEPREF6,     /* IPv6 lease depreferred */
 	DHC_STOP,        /* remove old lease */
+	DHC_STOP6,       /* remove old lease */
 	DHC_MEDIUM,      /* media selection begun */
 	DHC_TIMEOUT,     /* timed out contacting DHCP server */
 	DHC_FAIL,        /* all attempts to contact server timed out, sleeping */
 	DHC_EXPIRE,      /* lease has expired, renewing */
+	DHC_EXPIRE6,     /* lease has expired, renewing */
 	DHC_RELEASE,     /* releasing lease */
+	DHC_RELEASE6,    /* releasing lease */
 	DHC_START,       /* sent when dhclient started OK */
 	DHC_ABEND,       /* dhclient exited abnormally */
 	DHC_END,         /* dhclient exited normally */
