@@ -585,10 +585,23 @@ device_state_changed (NMDevice *device,
 		/* Mark the connection invalid if it failed during activation so that
 		 * it doesn't get automatically chosen over and over and over again.
 		 */
-		if (connection && IS_ACTIVATING_STATE (old_state)) {
-			g_object_set_data (G_OBJECT (connection), INVALID_TAG, GUINT_TO_POINTER (TRUE));
-			nm_log_info (LOGD_DEVICE, "Marking connection '%s' invalid.", get_connection_id (connection));
-			nm_connection_clear_secrets (connection);
+		if (connection) {
+			gboolean fail = FALSE;
+
+			if (IS_ACTIVATING_STATE (old_state)) {
+				nm_log_info (LOGD_DEVICE, "Marking connection '%s' invalid.", get_connection_id (connection));
+				fail = TRUE;
+			} else if (   (old_state == NM_DEVICE_STATE_ACTIVATED)
+			         && (reason == NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED)) {
+				nm_log_info (LOGD_DEVICE, "Marking connection '%s' invalid because IP configuration expired.",
+				             get_connection_id (connection));
+				fail = TRUE;
+			}
+
+			if (fail) {
+				g_object_set_data (G_OBJECT (connection), INVALID_TAG, GUINT_TO_POINTER (TRUE));
+				nm_connection_clear_secrets (connection);
+			}
 		}
 		schedule_activate_check (policy, device, 3);
 		break;
