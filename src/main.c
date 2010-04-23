@@ -616,7 +616,10 @@ main (int argc, char *argv[])
 
 	nm_logging_start (become_daemon);
 
-	nm_log_info (LOGD_CORE, "starting...");
+#if !defined(NM_DIST_VERSION)
+# define NM_DIST_VERSION VERSION
+#endif
+	nm_log_info (LOGD_CORE, "NetworkManager-" NM_DIST_VERSION " is starting...");
 	success = FALSE;
 
 	main_loop = g_main_loop_new (NULL, FALSE);
