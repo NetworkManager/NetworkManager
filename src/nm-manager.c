@@ -2099,7 +2099,9 @@ system_get_secrets_idle_cb (gpointer user_data)
 	connection = nm_settings_interface_get_connection_by_path (NM_SETTINGS_INTERFACE (priv->sys_settings), 
 	                                                           info->connection_path);
 	if (!connection) {
-		error = g_error_new_literal (0, 0, "unknown connection (not exported by system settings)");
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
+		                             "unknown connection (not exported by system settings)");
 		nm_secrets_provider_interface_get_secrets_result (info->provider,
 		                                                  info->setting_name,
 		                                                  info->caller,
