@@ -914,7 +914,11 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	if (s_ip4)
 		method = nm_setting_ip4_config_get_method (s_ip4);
 
-	if (!s_ip4 || (method && !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED))) {
+	/* Missing IP4 setting is assumed to be DHCP */
+	if (!method)
+		method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
+
+	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
 		int result;
 
 		/* IPv4 disabled, clear IPv4 related parameters */
