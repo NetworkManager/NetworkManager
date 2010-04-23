@@ -557,20 +557,46 @@ write_wireless_security_setting (NMConnection *connection,
 		}
 	}
 
+	/* WEP keys */
+
+	/* Clear existing keys */
+	set_secret (ifcfg, "KEY", NULL, FALSE); /* Clear any default key */
+	for (i = 0; i < 4; i++) {
+		tmp = g_strdup_printf ("KEY_PASSPHRASE%d", i + 1);
+		set_secret (ifcfg, tmp, NULL, FALSE);
+		g_free (tmp);
+
+		tmp = g_strdup_printf ("KEY%d", i + 1);
+		set_secret (ifcfg, tmp, NULL, FALSE);
+		g_free (tmp);
+	}
+
+	/* And write the new ones out */
 	if (wep) {
 		/* Default WEP TX key index */
 		tmp = g_strdup_printf ("%d", nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec) + 1);
 		svSetValue (ifcfg, "DEFAULTKEY", tmp, FALSE);
 		g_free (tmp);
-	}
 
-	/* WEP keys */
-	set_secret (ifcfg, "KEY", NULL, FALSE); /* Clear any default key */
-	for (i = 0; i < 4; i++) {
-		key = nm_setting_wireless_security_get_wep_key (s_wsec, i);
-		tmp = g_strdup_printf ("KEY%d", i + 1);
-		set_secret (ifcfg, tmp, (wep && key) ? key : NULL, FALSE);
-		g_free (tmp);
+		for (i = 0; i < 4; i++) {
+			NMWepKeyType key_type;
+
+			key = nm_setting_wireless_security_get_wep_key (s_wsec, i);
+			if (key) {
+				/* Passphrase needs a different ifcfg key since with WEP, there
+				 * are some passphrases that are indistinguishable from WEP hex
+				 * keys.
+				 */
+				key_type = nm_setting_wireless_security_get_wep_key_type (s_wsec);
+				if (key_type == NM_WEP_KEY_TYPE_PASSPHRASE)
+					tmp = g_strdup_printf ("KEY_PASSPHRASE%d", i + 1);
+				else
+					tmp = g_strdup_printf ("KEY%d", i + 1);
+
+				set_secret (ifcfg, tmp, key, FALSE);
+				g_free (tmp);
+			}
+		}
 	}
 
 	/* WPA protos */

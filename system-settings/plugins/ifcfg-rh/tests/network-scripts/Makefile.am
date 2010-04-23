@@ -46,7 +46,9 @@ EXTRA_DIST = \
 	ifcfg-test-wired-static-routes \
 	route-test-wired-static-routes \
 	ifcfg-test-wired-static-routes-legacy \
-	route-test-wired-static-routes-legacy
+	route-test-wired-static-routes-legacy \
+	ifcfg-test-wifi-wep-passphrase \
+	keys-test-wifi-wep-passphrase
 
 check-local:
 	@for f in $(EXTRA_DIST); do \

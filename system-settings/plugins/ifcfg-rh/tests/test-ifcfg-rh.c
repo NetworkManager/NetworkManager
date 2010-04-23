@@ -2223,6 +2223,7 @@ test_read_wifi_wep (void)
 	const char *expected_mode = "infrastructure";
 	const guint32 expected_channel = 1;
 	const char *expected_wep_key0 = "0123456789abcdef0123456789";
+	NMWepKeyType key_type;
 
 	connection = connection_from_file (TEST_IFCFG_WIFI_WEP,
 	                                   NULL,
@@ -2391,6 +2392,13 @@ test_read_wifi_wep (void)
 	        TEST_IFCFG_WIFI_WEP,
 	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	        NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX);
+
+	/* WEP key type */
+	key_type = nm_setting_wireless_security_get_wep_key_type (s_wsec);
+	ASSERT (key_type == NM_WEP_KEY_TYPE_UNKNOWN || key_type == NM_WEP_KEY_TYPE_KEY,
+	        "wifi-wep-verify-wireless", "failed to verify %s: unexpected WEP key type %d",
+	        TEST_IFCFG_WIFI_WEP,
+	        key_type);
 
 	/* WEP key index 0 */
 	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 0);
@@ -2718,6 +2726,139 @@ test_read_wifi_wep_adhoc (void)
 	        TEST_IFCFG_WIFI_WEP_ADHOC,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
+
+	g_object_unref (connection);
+}
+
+#define TEST_IFCFG_WIFI_WEP_PASSPHRASE TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wep-passphrase"
+
+static void
+test_read_wifi_wep_passphrase (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wireless;
+	NMSettingWirelessSecurity *s_wsec;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const char *expected_wep_key0 = "foobar222blahblah";
+	NMWepKeyType key_type;
+
+	connection = connection_from_file (TEST_IFCFG_WIFI_WEP_PASSPHRASE,
+	                                   NULL,
+	                                   TYPE_WIRELESS,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "wifi-wep-passphrase-read", "failed to read %s: %s",
+	        TEST_IFCFG_WIFI_WEP_PASSPHRASE, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wifi-wep-passphrase-verify", "failed to verify %s: %s",
+	        TEST_IFCFG_WIFI_WEP_PASSPHRASE, error->message);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "wifi-wep-passphrase-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ===== WIRELESS SETTING ===== */
+
+	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	ASSERT (s_wireless != NULL,
+	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+
+	/* Security */
+	tmp = nm_setting_wireless_get_security (s_wireless);
+	ASSERT (tmp != NULL,
+	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
+	        NM_SETTING_WIRELESS_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SEC);
+	ASSERT (strcmp (tmp, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0,
+	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
+	        NM_SETTING_WIRELESS_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SEC);
+
+
+	/* ===== WIRELESS SECURITY SETTING ===== */
+
+	s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY));
+	ASSERT (s_wsec != NULL,
+	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+
+	/* Key management */
+	ASSERT (strcmp (nm_setting_wireless_security_get_key_mgmt (s_wsec), "none") == 0,
+	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+
+	/* WEP key index */
+	ASSERT (nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec) == 0,
+	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX);
+
+	/* WEP key type */
+	key_type = nm_setting_wireless_security_get_wep_key_type (s_wsec);
+	ASSERT (key_type == NM_WEP_KEY_TYPE_PASSPHRASE,
+	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: unexpected WEP key type %d",
+	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
+	        key_type);
+
+	/* WEP key index 0 */
+	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 0);
+	ASSERT (tmp != NULL,
+	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+	ASSERT (strcmp (tmp, expected_wep_key0) == 0,
+	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+
+	/* WEP key index 1 */
+	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 1);
+	ASSERT (tmp == NULL,
+	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: unexpected %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY1);
+
+	/* WEP key index 2 */
+	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 2);
+	ASSERT (tmp == NULL,
+	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: unexpected %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY2);
+
+	/* WEP key index 3 */
+	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 3);
+	ASSERT (tmp == NULL,
+	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: unexpected %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
 
 	g_object_unref (connection);
 }
@@ -5133,6 +5274,142 @@ test_write_wifi_wep_adhoc (void)
 }
 
 static void
+test_write_wifi_wep_passphrase (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	NMSettingIP4Config *s_ip4;
+	char *uuid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	gboolean ignore_error = FALSE;
+	GByteArray *ssid;
+	const unsigned char ssid_data[] = "blahblah";
+	struct stat statbuf;
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "wifi-wep-passphrase-write", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "wifi-wep-passphrase-write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wifi WEP Passphrase",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wifi setting */
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	ASSERT (s_wifi != NULL,
+	        "wifi-wep-passphrase-write", "failed to allocate new %s setting",
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	ssid = g_byte_array_sized_new (sizeof (ssid_data));
+	g_byte_array_append (ssid, ssid_data, sizeof (ssid_data));
+
+	g_object_set (s_wifi,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NM_SETTING_WIRELESS_MODE, "infrastructure",
+	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	              NULL);
+
+	g_byte_array_free (ssid, TRUE);
+
+	/* Wireless security setting */
+	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+	ASSERT (s_wsec != NULL,
+			"wifi-wep-passphrase-write", "failed to allocate new %s setting",
+			NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+
+	g_object_set (s_wsec,
+	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none",
+	              NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, 0,
+	              NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "shared",
+	              NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, NM_WEP_KEY_TYPE_PASSPHRASE,
+	              NULL);
+	nm_setting_wireless_security_set_wep_key (s_wsec, 0, "asdfdjaslfjasd;flasjdfl;aksdf");
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+			"wifi-wep-passphrase-write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "wifi-wep-passphrase-write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == TRUE,
+	        "wifi-wep-passphrase-write", "failed to write connection to disk: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (testfile != NULL,
+	        "wifi-wep-passphrase-write", "didn't get ifcfg file path back after writing connection");
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_WIRELESS,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &routefile,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	ASSERT (keyfile != NULL,
+	        "wifi-wep-passphrase-write-reread", "expected keyfile for '%s'", testfile);
+
+	ASSERT (stat (keyfile, &statbuf) == 0,
+	        "wifi-wep-passphrase-write-reread", "couldn't stat() '%s'", keyfile);
+	ASSERT (S_ISREG (statbuf.st_mode),
+	        "wifi-wep-passphrase-write-reread", "keyfile '%s' wasn't a normal file", keyfile);
+	ASSERT ((statbuf.st_mode & 0077) == 0,
+	        "wifi-wep-passphrase-write-reread", "keyfile '%s' wasn't readable only by its owner", keyfile);
+
+	unlink (keyfile);
+
+	ASSERT (reread != NULL,
+	        "wifi-wep-passphrase-write-reread", "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_verify (reread, &error),
+	        "wifi-wep-passphrase-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+	        "wifi-wep-passphrase-write", "written and re-read connection weren't the same.");
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
 test_write_wifi_leap (void)
 {
 	NMConnection *connection;
@@ -6358,6 +6635,7 @@ int main (int argc, char **argv)
 	test_read_wifi_open_ssid_quoted ();
 	test_read_wifi_wep ();
 	test_read_wifi_wep_adhoc ();
+	test_read_wifi_wep_passphrase ();
 	test_read_wifi_leap ();
 	test_read_wifi_wpa_psk ();
 	test_read_wifi_wpa_psk_adhoc ();
@@ -6375,6 +6653,7 @@ int main (int argc, char **argv)
 	test_write_wifi_open_hex_ssid ();
 	test_write_wifi_wep ();
 	test_write_wifi_wep_adhoc ();
+	test_write_wifi_wep_passphrase ();
 	test_write_wifi_leap ();
 	test_write_wifi_wpa_psk ("Test Write Wifi WPA PSK",
 	                         "wifi-wpa-psk-write",
