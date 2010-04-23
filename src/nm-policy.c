@@ -55,7 +55,7 @@ struct NMPolicy {
 	gulong vpn_activated_id;
 	gulong vpn_deactivated_id;
 
-	NMDevice *default_device;
+	NMDevice *default_device4;
 
 	HostnameThread *lookup;
 
@@ -276,7 +276,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best)
 }
 
 static void
-update_routing_and_dns (NMPolicy *policy, gboolean force_update)
+update_ip4_routing_and_dns (NMPolicy *policy, gboolean force_update)
 {
 	NMNamedIPConfigType dns_type = NM_NAMED_IP_CONFIG_TYPE_BEST_DEVICE;
 	NMDevice *best = NULL;
@@ -293,7 +293,7 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	best = get_best_device (policy->manager, &best_req);
 	if (!best)
 		goto out;
-	if (!force_update && (best == policy->default_device))
+	if (!force_update && (best == policy->default_device4))
 		goto out;
 
 	/* If a VPN connection is active, it is preferred */
@@ -393,10 +393,16 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	}
 
 out:
-	/* Update the system hostname */
-	update_system_hostname (policy, best);
+	policy->default_device4 = best;	
+}
 
-	policy->default_device = best;	
+static void
+update_routing_and_dns (NMPolicy *policy, gboolean force_update)
+{
+	update_ip4_routing_and_dns (policy, force_update);
+
+	/* Update the system hostname */
+	update_system_hostname (policy, policy->default_device4);
 }
 
 typedef struct {
