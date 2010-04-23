@@ -357,8 +357,6 @@ add_plugin (NMSysconfigSettings *self, NMSystemConfigInterface *plugin)
 
 	g_signal_connect (plugin, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED,
 	                  G_CALLBACK (plugin_connection_added), self);
-	g_signal_connect (plugin, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED,
-	                  G_CALLBACK (unmanaged_specs_changed), self);
 	g_signal_connect (plugin, "notify::hostname", G_CALLBACK (hostname_changed), self);
 
 	nm_system_config_interface_init (plugin, NULL);
@@ -367,6 +365,9 @@ add_plugin (NMSysconfigSettings *self, NMSystemConfigInterface *plugin)
 	              NM_SYSTEM_CONFIG_INTERFACE_NAME, &pname,
 	              NM_SYSTEM_CONFIG_INTERFACE_INFO, &pinfo,
 	              NULL);
+
+	g_signal_connect (plugin, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED,
+	                  G_CALLBACK (unmanaged_specs_changed), self);
 
 	nm_log_info (LOGD_SYS_SET, "Loaded plugin %s: %s", pname, pinfo);
 	g_free (pname);
@@ -1328,6 +1329,7 @@ nm_sysconfig_settings_new (const char *config_file,
 			g_object_unref (self);
 			return NULL;
 		}
+		unmanaged_specs_changed (NULL, self);
 	}
 
 	return self;

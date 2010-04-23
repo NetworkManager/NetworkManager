@@ -53,6 +53,10 @@
 #include "nm-vpn-manager.h"
 #include "nm-logging.h"
 
+#if !defined(NM_DIST_VERSION)
+# define NM_DIST_VERSION VERSION
+#endif
+
 #define NM_DEFAULT_PID_FILE          LOCALSTATEDIR"/run/NetworkManager.pid"
 #define NM_DEFAULT_SYSTEM_CONF_FILE  SYSCONFDIR"/NetworkManager/NetworkManager.conf"
 #define NM_OLD_SYSTEM_CONF_FILE      SYSCONFDIR"/NetworkManager/nm-system-settings.conf"
@@ -616,7 +620,7 @@ main (int argc, char *argv[])
 
 	nm_logging_start (become_daemon);
 
-	nm_log_info (LOGD_CORE, "starting...");
+	nm_log_info (LOGD_CORE, "NetworkManager (version " NM_DIST_VERSION ") is starting...");
 	success = FALSE;
 
 	main_loop = g_main_loop_new (NULL, FALSE);
