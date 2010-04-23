@@ -1468,7 +1468,7 @@ channel_to_freq (guint32 channel, const char *band)
 	} else if (!strcmp (band, "bg")) {
 		while (bg_table[i].chan && (bg_table[i].chan != channel))
 			i++;
-		return a_table[i].freq;
+		return bg_table[i].freq;
 	}
 
 	return 0;
