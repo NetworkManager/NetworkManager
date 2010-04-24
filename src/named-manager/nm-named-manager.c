@@ -38,6 +38,7 @@
 
 #include "nm-named-manager.h"
 #include "nm-ip4-config.h"
+#include "nm-ip6-config.h"
 #include "nm-logging.h"
 #include "nm-system.h"
 #include "NetworkManagerUtils.h"
@@ -60,8 +61,10 @@ G_DEFINE_TYPE(NMNamedManager, nm_named_manager, G_TYPE_OBJECT)
 
 
 struct NMNamedManagerPrivate {
-	NMIP4Config *vpn_config;
-	NMIP4Config *device_config;
+	NMIP4Config *ip4_vpn_config;
+	NMIP4Config *ip4_device_config;
+	NMIP6Config *ip6_vpn_config;
+	NMIP6Config *ip6_device_config;
 	GSList *configs;
 };
 
@@ -487,25 +490,33 @@ rewrite_resolv_conf (NMNamedManager *mgr, const char *iface, GError **error)
 	rc.domain = NULL;
 	rc.searches = g_ptr_array_new ();
 
-	if (priv->vpn_config)
-		merge_one_ip4_config (&rc, priv->vpn_config);
+	if (priv->ip4_vpn_config)
+		merge_one_ip4_config (&rc, priv->ip4_vpn_config);
+	if (priv->ip4_device_config)
+		merge_one_ip4_config (&rc, priv->ip4_device_config);
 
-	if (priv->device_config)
-		merge_one_ip4_config (&rc, priv->device_config);
+	if (priv->ip6_vpn_config)
+		merge_one_ip6_config (&rc, priv->ip6_vpn_config);
+	if (priv->ip6_device_config)
+		merge_one_ip6_config (&rc, priv->ip6_device_config);
 
 	for (iter = priv->configs; iter; iter = g_slist_next (iter)) {
+		if (   (iter->data == priv->ip4_vpn_config)
+		    || (iter->data == priv->ip4_device_config)
+		    || (iter->data == priv->ip6_vpn_config)
+		    || (iter->data == priv->ip6_device_config))
+			continue;
+
 		if (NM_IS_IP4_CONFIG (iter->data)) {
 			NMIP4Config *config = NM_IP4_CONFIG (iter->data);
 
-			if ((config == priv->vpn_config) || (config == priv->device_config))
-				continue;
-
 			merge_one_ip4_config (&rc, config);
-		} else {
+		} else if (NM_IS_IP6_CONFIG (iter->data)) {
 			NMIP6Config *config = NM_IP6_CONFIG (iter->data);
 
 			merge_one_ip6_config (&rc, config);
-		}
+		} else
+			g_assert_not_reached ();
 	}
 
 	domain = rc.domain;
@@ -572,10 +583,10 @@ nm_named_manager_add_ip4_config (NMNamedManager *mgr,
 
 	switch (cfg_type) {
 	case NM_NAMED_IP_CONFIG_TYPE_VPN:
-		priv->vpn_config = config;
+		priv->ip4_vpn_config = config;
 		break;
 	case NM_NAMED_IP_CONFIG_TYPE_BEST_DEVICE:
-		priv->device_config = config;
+		priv->ip4_device_config = config;
 		break;
 	default:
 		break;
@@ -613,11 +624,10 @@ nm_named_manager_remove_ip4_config (NMNamedManager *mgr,
 
 	priv->configs = g_slist_remove (priv->configs, config);
 
-	if (config == priv->vpn_config)
-		priv->vpn_config = NULL;
-
-	if (config == priv->device_config)
-		priv->device_config = NULL;
+	if (config == priv->ip4_vpn_config)
+		priv->ip4_vpn_config = NULL;
+	if (config == priv->ip4_device_config)
+		priv->ip4_device_config = NULL;
 
 	g_object_unref (config);
 
@@ -643,9 +653,20 @@ nm_named_manager_add_ip6_config (NMNamedManager *mgr,
 	g_return_val_if_fail (iface != NULL, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
 
-	g_return_val_if_fail (cfg_type == NM_NAMED_IP_CONFIG_TYPE_DEFAULT, FALSE);
-
 	priv = NM_NAMED_MANAGER_GET_PRIVATE (mgr);
+
+	switch (cfg_type) {
+	case NM_NAMED_IP_CONFIG_TYPE_VPN:
+		/* FIXME: not quite yet... */
+		g_return_val_if_fail (cfg_type != NM_NAMED_IP_CONFIG_TYPE_VPN, FALSE);
+		priv->ip6_vpn_config = config;
+		break;
+	case NM_NAMED_IP_CONFIG_TYPE_BEST_DEVICE:
+		priv->ip6_device_config = config;
+		break;
+	default:
+		break;
+	}
 
 	/* Don't allow the same zone added twice */
 	if (!g_slist_find (priv->configs, config))
@@ -678,6 +699,11 @@ nm_named_manager_remove_ip6_config (NMNamedManager *mgr,
 		return FALSE;
 
 	priv->configs = g_slist_remove (priv->configs, config);
+
+	if (config == priv->ip6_vpn_config)
+		priv->ip6_vpn_config = NULL;
+	if (config == priv->ip6_device_config)
+		priv->ip6_device_config = NULL;
 
 	g_object_unref (config);	
 
