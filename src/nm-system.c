@@ -940,6 +940,158 @@ nm_system_replace_default_ip4_route (const char *iface, guint32 gw, guint32 mss)
 	return success;
 }
 
+static struct rtnl_route *
+add_ip6_route_to_gateway (const char *iface, const struct in6_addr *gw)
+{
+	struct nl_handle *nlh;
+	struct rtnl_route *route = NULL;
+	struct nl_addr *gw_addr = NULL;
+	int iface_idx, err;
+
+	nlh = nm_netlink_get_default_handle ();
+	g_return_val_if_fail (nlh != NULL, NULL);
+
+	iface_idx = nm_netlink_iface_to_index (iface);
+	if (iface_idx < 0)
+		return NULL;
+
+	/* Gateway might be over a bridge; try adding a route to gateway first */
+	route = rtnl_route_alloc ();
+	if (route == NULL)
+		return NULL;
+
+	rtnl_route_set_family (route, AF_INET6);
+	rtnl_route_set_table (route, RT_TABLE_MAIN);
+	rtnl_route_set_oif (route, iface_idx);
+	rtnl_route_set_scope (route, RT_SCOPE_LINK);
+
+	gw_addr = nl_addr_build (AF_INET, (void *) gw, sizeof (*gw));
+	if (!gw_addr)
+		goto error;
+	nl_addr_set_prefixlen (gw_addr, 128);
+	rtnl_route_set_dst (route, gw_addr);
+	nl_addr_put (gw_addr);
+
+	/* Add direct route to the gateway */
+	err = rtnl_route_add (nlh, route, 0);
+	if (err) {
+		nm_log_err (LOGD_DEVICE | LOGD_IP6,
+		            "(%s): failed to add IPv4 route to gateway (%d)",
+		            iface, err);
+		goto error;
+	}
+
+	return route;
+
+error:
+	rtnl_route_put (route);
+	return NULL;
+}
+
+static int
+replace_default_ip6_route (const char *iface, const struct in6_addr *gw)
+{
+	struct rtnl_route *route = NULL;
+	struct nl_handle *nlh;
+	struct nl_addr *dst_addr = NULL;
+	struct nl_addr *gw_addr = NULL;
+	struct in6_addr dst;
+	int iface_idx, err = -1;
+
+	g_return_val_if_fail (iface != NULL, -ENODEV);
+
+	nlh = nm_netlink_get_default_handle ();
+	g_return_val_if_fail (nlh != NULL, -ENOMEM);
+
+	iface_idx = nm_netlink_iface_to_index (iface);
+	if (iface_idx < 0)
+		return -ENODEV;
+
+	route = rtnl_route_alloc();
+	g_return_val_if_fail (route != NULL, -ENOMEM);
+
+	rtnl_route_set_family (route, AF_INET6);
+	rtnl_route_set_table (route, RT_TABLE_MAIN);
+	rtnl_route_set_scope (route, RT_SCOPE_UNIVERSE);
+	rtnl_route_set_oif (route, iface_idx);
+
+	/* Build up the destination address */
+	memset (&dst, 0, sizeof (dst));
+	dst_addr = nl_addr_build (AF_INET6, &dst, sizeof (dst));
+	if (!dst_addr) {
+		err = -ENOMEM;
+		goto out;
+	}
+	nl_addr_set_prefixlen (dst_addr, 0);
+	rtnl_route_set_dst (route, dst_addr);
+
+	/* Build up the gateway address */
+	gw_addr = nl_addr_build (AF_INET6, (void *) gw, sizeof (*gw));
+	if (!gw_addr) {
+		err = -ENOMEM;
+		goto out;
+	}
+	nl_addr_set_prefixlen (gw_addr, 0);
+	rtnl_route_set_gateway (route, gw_addr);
+
+	/* Add the new default route */
+	err = rtnl_route_add (nlh, route, NLM_F_REPLACE);
+
+out:
+	if (dst_addr)
+		nl_addr_put (dst_addr);
+	if (gw_addr)
+		nl_addr_put (gw_addr);
+	rtnl_route_put (route);
+	return err;
+}
+
+/*
+ * nm_system_replace_default_ip6_route
+ *
+ * Replace default IPv6 route with one via the given gateway
+ *
+ */
+gboolean
+nm_system_replace_default_ip6_route (const char *iface, const struct in6_addr *gw)
+{
+	struct rtnl_route *gw_route = NULL;
+	struct nl_handle *nlh;
+	gboolean success = FALSE;
+	int err;
+
+	nlh = nm_netlink_get_default_handle ();
+	g_return_val_if_fail (nlh != NULL, FALSE);
+
+	err = replace_default_ip6_route (iface, gw);
+	if (err == 0) {
+		return TRUE;
+	} else if (err != -ESRCH) {
+		nm_log_err (LOGD_DEVICE | LOGD_IP6,
+		            "(%s): failed to set IPv6 default route: %d",
+		            iface, err);
+		return FALSE;
+	}
+
+	/* Try adding a direct route to the gateway first */
+	gw_route = add_ip6_route_to_gateway (iface, gw);
+	if (!gw_route)
+		return FALSE;
+
+	/* Try adding the original route again */
+	err = replace_default_ip6_route (iface, gw);
+	if (err != 0) {
+		rtnl_route_del (nlh, gw_route, 0);
+		nm_log_err (LOGD_DEVICE | LOGD_IP6,
+		            "(%s): failed to set IPv6 default route (pass #2): %d",
+		            iface, err);
+	} else
+		success = TRUE;
+
+	rtnl_route_put (gw_route);
+	return success;
+}
+
 static void flush_addresses (const char *iface, gboolean ipv4_only)
 {
 	int iface_idx;
