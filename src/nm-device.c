@@ -1960,10 +1960,8 @@ real_act_stage4_get_ip6_config (NMDevice *self,
 		} else {
 			*reason = NM_DEVICE_STATE_REASON_DHCP_ERROR;
 		}
-	} else {
-		*config = NULL;
+	} else
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
-	}
 
 out:
 	return ret;
