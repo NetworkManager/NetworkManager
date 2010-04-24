@@ -2084,7 +2084,7 @@ nm_device_activate_stage4_ip6_config_timeout (gpointer user_data)
 		goto out;
 	}
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
-	/* FIXME g_assert (ip6_config); */
+	g_assert (ip6_config);
 
 	g_object_set_data (G_OBJECT (nm_device_get_act_request (self)),
 					   NM_ACT_REQUEST_IP6_CONFIG, ip6_config);
