@@ -2292,6 +2292,16 @@ nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 
 	assumed = nm_act_request_get_assumed (priv->act_request);
 
+	if (!ip6_config && !ip4_config) {
+		nm_log_info (LOGD_DEVICE,
+		             "Activation (%s) Stage 5 of 5 (IP Configure Commit) failed (no IP configuration found)",
+				     iface);
+		nm_device_state_changed (self,
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+		goto out;
+	}
+
 	if (ip4_config && !nm_device_set_ip4_config (self, ip4_config, assumed, &reason)) {
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 		goto out;
@@ -2301,6 +2311,8 @@ nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 		nm_log_info (LOGD_DEVICE | LOGD_IP6,
 		             "Activation (%s) Stage 5 of 5 (IP Configure Commit) IPv6 failed",
 				     iface);
+		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
+		goto out;
 	}
 
 	connection = nm_act_request_get_connection (nm_device_get_act_request (self));
