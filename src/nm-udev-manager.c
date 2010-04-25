@@ -401,18 +401,36 @@ out:
 static void
 net_add (NMUdevManager *self, GUdevDevice *device)
 {
-	gint devtype;
+	gint etype;
 	const char *iface;
+	const char *devtype;
 
 	g_return_if_fail (device != NULL);
 
-	devtype = g_udev_device_get_sysfs_attr_as_int (device, "type");
-	if (devtype != 1)
+	etype = g_udev_device_get_sysfs_attr_as_int (device, "type");
+	if (etype != 1) {
+		nm_log_dbg (LOGD_HW, "ignoring interface with type %d", etype);
 		return; /* Not using ethernet encapsulation, don't care */
+	}
+
+	/* Not all ethernet devices are immediately usable; newer mobile broadband
+	 * devices (Ericsson, Option, Sierra) require setup on the tty before the
+	 * ethernet device is usable.  2.6.33 and later kernels set the 'DEVTYPE'
+	 * uevent variable which we can use to ignore the interface as a NMDevice
+	 * subclass.  ModemManager will pick it up though and so we'll handle it
+	 * through the mobile broadband stuff.
+	 */
+	devtype = g_udev_device_get_property (device, "DEVTYPE");
+	if (devtype && !strcmp (devtype, "wwan")) {
+		nm_log_dbg (LOGD_HW, "ignoring interface with devtype '%s'", devtype);
+		return;
+	}
 
 	iface = g_udev_device_get_name (device);
-	if (!iface)
+	if (!iface) {
+		nm_log_dbg (LOGD_HW, "failed to get device's interface");
 		return;
+	}
 
 	g_signal_emit (self, signals[DEVICE_ADDED], 0, device, device_creator);
 }
