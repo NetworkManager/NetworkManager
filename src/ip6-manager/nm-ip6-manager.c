@@ -30,6 +30,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-marshal.h"
 #include "nm-logging.h"
+#include "nm-system.h"
 
 /* Pre-DHCP addrconf timeout, in seconds */
 #define NM_IP6_TIMEOUT 10
@@ -71,6 +72,10 @@ typedef struct {
 	char *accept_ra_path;
 	gboolean accept_ra_save_valid;
 	guint32 accept_ra_save;
+
+	char *disable_ip6_path;
+	gboolean disable_ip6_save_valid;
+	guint32 disable_ip6_save;
 
 	guint finish_addrconf_id;
 	guint config_changed_id;
@@ -190,6 +195,12 @@ nm_ip6_device_destroy (NMIP6Device *device)
 	if (device->accept_ra_save_valid) {
 		nm_utils_do_sysctl (device->accept_ra_path,
 		                    device->accept_ra_save ? "1\n" : "0\n");
+	}
+
+	/* reset the saved IPv6 value */
+	if (device->disable_ip6_save_valid) {
+		nm_utils_do_sysctl (device->disable_ip6_path,
+		                    device->disable_ip6_save ? "1\n" : "0\n");
 	}
 
 	if (device->finish_addrconf_id)
@@ -699,13 +710,38 @@ netlink_notification (NMNetlinkMonitor *monitor, struct nl_msg *msg, gpointer us
 		nm_ip6_device_sync_from_netlink (device, config_changed);
 }
 
+static gboolean
+get_proc_sys_net_value (const char *path, const char *iface, guint32 *out_value)
+{
+	GError *error;
+	char *contents = NULL;
+	gboolean success = FALSE;
+	long int tmp;
+
+	if (!g_file_get_contents (path, &contents, NULL, &error)) {
+		nm_log_warn (LOGD_IP6, "(%s): error reading %s: (%d) %s",
+		             iface, path,
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
+	} else {
+		errno = 0;
+		tmp = strtol (contents, NULL, 10);
+		if ((errno == 0) && (tmp == 0 || tmp == 1)) {
+			*out_value = (guint32) tmp;
+			success = TRUE;
+		}
+		g_free (contents);
+	}
+
+	return success;
+}
+
 static NMIP6Device *
 nm_ip6_device_new (NMIP6Manager *manager, int ifindex)
 {
 	NMIP6ManagerPrivate *priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
 	NMIP6Device *device;
-	GError *error = NULL;
-	char *contents = NULL;
 
 	g_return_val_if_fail (ifindex > 0, NULL);
 
@@ -724,15 +760,6 @@ nm_ip6_device_new (NMIP6Manager *manager, int ifindex)
 		goto error;
 	}
 
-	device->accept_ra_path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/accept_ra",
-	                                          device->iface);
-	if (!device->accept_ra_path) {
-		nm_log_err (LOGD_IP6, "(%s): out of memory creating IP6 addrconf object "
-		            "property 'accept_ra_path'.",
-		            device->iface);
-		goto error;
-	}
-
 	device->manager = manager;
 
 	device->rdnss_servers = g_array_new (FALSE, FALSE, sizeof (NMIP6RDNSS));
@@ -742,23 +769,20 @@ nm_ip6_device_new (NMIP6Manager *manager, int ifindex)
 	/* Grab the original value of "accept_ra" so we can restore it when the
 	 * device is taken down.
 	 */
-	if (!g_file_get_contents (device->accept_ra_path, &contents, NULL, &error)) {
-		nm_log_warn (LOGD_IP6, "(%s): error reading %s: (%d) %s",
-		             device->iface, device->accept_ra_path,
-		             error ? error->code : -1,
-		             error && error->message ? error->message : "(unknown)");
-		g_clear_error (&error);
-	} else {
-		long int tmp;
+	device->accept_ra_path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/accept_ra",
+	                                          device->iface);
+	g_assert (device->accept_ra_path);
+	device->accept_ra_save_valid = get_proc_sys_net_value (device->accept_ra_path,
+	                                                       device->iface,
+	                                                       &device->accept_ra_save);
 
-		errno = 0;
-		tmp = strtol (contents, NULL, 10);
-		if ((errno == 0) && (tmp == 0 || tmp == 1)) {
-			device->accept_ra_save = (guint32) tmp;
-			device->accept_ra_save_valid = TRUE;
-		}
-		g_free (contents);
-	}
+	/* and the original value of IPv6 enable/disable */
+	device->disable_ip6_path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/disable_ipv6",
+	                                            device->iface);
+	g_assert (device->disable_ip6_path);
+	device->disable_ip6_save_valid = get_proc_sys_net_value (device->disable_ip6_path,
+	                                                         device->iface,
+	                                                         &device->disable_ip6_save);
 
 	return device;
 
@@ -782,25 +806,25 @@ nm_ip6_manager_prepare_interface (NMIP6Manager *manager,
 	priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
 
 	device = nm_ip6_device_new (manager, ifindex);
+	g_return_if_fail (device != NULL);
+	g_return_if_fail (   strchr (device->iface, '/') == NULL
+	                  && strcmp (device->iface, "all") != 0
+	                  && strcmp (device->iface, "default") != 0);
 
 	if (s_ip6)
 		method = nm_setting_ip6_config_get_method (s_ip6);
 	if (!method)
 		method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
 
+	/* Establish target state and turn router advertisement acceptance on or off */
 	if (   !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL)
-		|| !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL))
+		|| !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL)) {
 		device->target_state = NM_IP6_DEVICE_GOT_LINK_LOCAL;
-	else
+		nm_utils_do_sysctl (device->accept_ra_path, "0\n");
+	} else {
 		device->target_state = NM_IP6_DEVICE_GOT_ADDRESS;
-
-	g_return_if_fail (   strchr (device->iface, '/') == NULL
-	                  && strcmp (device->iface, "all") != 0
-	                  && strcmp (device->iface, "default") != 0);
-
-	/* Turn router advertisement acceptance on or off... */
-	nm_utils_do_sysctl (device->accept_ra_path,
-	                    device->target_state >= NM_IP6_DEVICE_GOT_ADDRESS ? "1\n" : "0\n");
+		nm_utils_do_sysctl (device->accept_ra_path, "1\n");
+	}
 }
 
 static gboolean
@@ -838,6 +862,15 @@ nm_ip6_manager_begin_addrconf (NMIP6Manager *manager, int ifindex)
 	                                                         info,
 	                                                         (GDestroyNotify) g_free);
 
+	/* Bounce IPv6 on the interface to ensure the kernel will start looking for
+	 * new RAs; there doesn't seem to be a better way to do this right now.
+	 */
+	if (device->target_state >= NM_IP6_DEVICE_GOT_ADDRESS) {
+		nm_utils_do_sysctl (device->disable_ip6_path, "1\n");
+		g_usleep (200);
+		nm_utils_do_sysctl (device->disable_ip6_path, "0\n");
+	}
+
 	device->ip6flags_poll_id = g_timeout_add_seconds (1, poll_ip6_flags, priv->monitor);
 
 	/* Kick off the initial IPv6 flags request */
@@ -860,6 +893,12 @@ nm_ip6_manager_cancel_addrconf (NMIP6Manager *manager, int ifindex)
 	                     GINT_TO_POINTER (ifindex));
 }
 
+#define FIRST_ROUTE(m) ((struct rtnl_route *) nl_cache_get_first (m))
+#define NEXT_ROUTE(m) ((struct rtnl_route *) nl_cache_get_next ((struct nl_object *) m))
+
+#define FIRST_ADDR(m) ((struct rtnl_addr *) nl_cache_get_first (m))
+#define NEXT_ADDR(m) ((struct rtnl_addr *) nl_cache_get_next ((struct nl_object *) m))
+
 NMIP6Config *
 nm_ip6_manager_get_ip6_config (NMIP6Manager *manager, int ifindex)
 {
@@ -873,6 +912,8 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager, int ifindex)
 	struct rtnl_route *rtnlroute;
 	struct nl_addr *nldest, *nlgateway;
 	struct in6_addr *dest, *gateway;
+	gboolean defgw_set = FALSE;
+	struct in6_addr defgw;
 	uint32_t metric;
 	NMIP6Route *ip6route;
 	int i;
@@ -896,29 +937,19 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager, int ifindex)
 		return NULL;
 	}
 
-	/* Add addresses */
-	for (rtnladdr = (struct rtnl_addr *)nl_cache_get_first (priv->addr_cache);
-		 rtnladdr;
-		 rtnladdr = (struct rtnl_addr *)nl_cache_get_next ((struct nl_object *)rtnladdr)) {
-		if (rtnl_addr_get_ifindex (rtnladdr) != device->ifindex)
-			continue;
-
-		nladdr = rtnl_addr_get_local (rtnladdr);
-		if (!nladdr || nl_addr_get_family (nladdr) != AF_INET6)
-			continue;
-
-		addr = nl_addr_get_binary_addr (nladdr);
-		ip6addr = nm_ip6_address_new ();
-		nm_ip6_address_set_prefix (ip6addr, rtnl_addr_get_prefixlen (rtnladdr));
-		nm_ip6_address_set_address (ip6addr, addr);
-		nm_ip6_config_take_address (config, ip6addr);
-	}
+	/* Make sure we refill the route and address caches, otherwise we won't get
+	 * up-to-date information here since the netlink route/addr change messages
+	 * may be lagging a bit.
+	 */
+	nl_cache_refill (priv->nlh, priv->route_cache);
+	nl_cache_refill (priv->nlh, priv->addr_cache);
 
 	/* Add routes */
-	for (rtnlroute = (struct rtnl_route *)nl_cache_get_first (priv->route_cache);
-		 rtnlroute;
-		 rtnlroute = (struct rtnl_route *)nl_cache_get_next ((struct nl_object *)rtnlroute)) {
+	for (rtnlroute = FIRST_ROUTE (priv->route_cache); rtnlroute; rtnlroute = NEXT_ROUTE (rtnlroute)) {
+		/* Make sure it's an IPv6 route for this device */
 		if (rtnl_route_get_oif (rtnlroute) != device->ifindex)
+			continue;
+		if (rtnl_route_get_family (rtnlroute) != AF_INET6)
 			continue;
 
 		nldest = rtnl_route_get_dst (rtnlroute);
@@ -931,6 +962,15 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager, int ifindex)
 			continue;
 		gateway = nl_addr_get_binary_addr (nlgateway);
 
+		if (rtnl_route_get_dst_len (rtnlroute) == 0) {
+			/* Default gateway route; don't add to normal routes but to each address */
+			if (!defgw_set) {
+				memcpy (&defgw, gateway, sizeof (defgw));
+				defgw_set = TRUE;
+			}
+			continue;
+		}
+
 		ip6route = nm_ip6_route_new ();
 		nm_ip6_route_set_dest (ip6route, dest);
 		nm_ip6_route_set_prefix (ip6route, rtnl_route_get_dst_len (rtnlroute));
@@ -939,6 +979,24 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager, int ifindex)
 		if (metric != UINT_MAX)
 			nm_ip6_route_set_metric (ip6route, metric);
 		nm_ip6_config_take_route (config, ip6route);
+	}
+
+	/* Add addresses */
+	for (rtnladdr = FIRST_ADDR (priv->addr_cache); rtnladdr; rtnladdr = NEXT_ADDR (rtnladdr)) {
+		if (rtnl_addr_get_ifindex (rtnladdr) != device->ifindex)
+			continue;
+
+		nladdr = rtnl_addr_get_local (rtnladdr);
+		if (!nladdr || nl_addr_get_family (nladdr) != AF_INET6)
+			continue;
+
+		addr = nl_addr_get_binary_addr (nladdr);
+		ip6addr = nm_ip6_address_new ();
+		nm_ip6_address_set_prefix (ip6addr, rtnl_addr_get_prefixlen (rtnladdr));
+		nm_ip6_address_set_address (ip6addr, addr);
+		nm_ip6_config_take_address (config, ip6addr);
+		if (defgw_set)
+			nm_ip6_address_set_gateway (ip6addr, &defgw);
 	}
 
 	/* Add DNS servers */
