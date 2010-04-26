@@ -460,7 +460,7 @@ nm_system_device_set_ip6_route (const char *iface,
 	g_return_val_if_fail (route != NULL, NULL);
 
 	/* Destination */
-	dest_addr = nl_addr_build (AF_INET6, (struct in6_addr *)ip6_dest, sizeof (*ip6_dest));
+	dest_addr = nl_addr_build (AF_INET6, (struct in6_addr *) ip6_dest, sizeof (*ip6_dest));
 	g_return_val_if_fail (dest_addr != NULL, NULL);
 	nl_addr_set_prefixlen (dest_addr, (int) ip6_prefix);
 
@@ -469,7 +469,7 @@ nm_system_device_set_ip6_route (const char *iface,
 
 	/* Gateway */
 	if (ip6_gateway && !IN6_IS_ADDR_UNSPECIFIED (ip6_gateway)) {
-		gw_addr = nl_addr_build (AF_INET6, (struct in6_addr *)ip6_gateway, sizeof (*ip6_gateway));
+		gw_addr = nl_addr_build (AF_INET6, (struct in6_addr *) ip6_gateway, sizeof (*ip6_gateway));
 		if (gw_addr) {
 			rtnl_route_set_gateway (route, gw_addr);
 			rtnl_route_set_scope (route, RT_SCOPE_UNIVERSE);
@@ -993,9 +993,7 @@ replace_default_ip6_route (const char *iface, const struct in6_addr *gw)
 {
 	struct rtnl_route *route = NULL;
 	struct nl_handle *nlh;
-	struct nl_addr *dst_addr = NULL;
 	struct nl_addr *gw_addr = NULL;
-	struct in6_addr dst;
 	int iface_idx, err = -1;
 
 	g_return_val_if_fail (iface != NULL, -ENODEV);
@@ -1015,31 +1013,28 @@ replace_default_ip6_route (const char *iface, const struct in6_addr *gw)
 	rtnl_route_set_scope (route, RT_SCOPE_UNIVERSE);
 	rtnl_route_set_oif (route, iface_idx);
 
-	/* Build up the destination address */
-	memset (&dst, 0, sizeof (dst));
-	dst_addr = nl_addr_build (AF_INET6, &dst, sizeof (dst));
-	if (!dst_addr) {
-		err = -ENOMEM;
-		goto out;
+	if (gw && !IN6_IS_ADDR_UNSPECIFIED (gw)) {
+		/* Build up the gateway address */
+		gw_addr = nl_addr_build (AF_INET6, (void *) gw, sizeof (*gw));
+		if (!gw_addr) {
+			err = -ENOMEM;
+			goto out;
+		}
+		nl_addr_set_prefixlen (gw_addr, -1);
+		rtnl_route_set_gateway (route, gw_addr);
 	}
-	nl_addr_set_prefixlen (dst_addr, 0);
-	rtnl_route_set_dst (route, dst_addr);
-
-	/* Build up the gateway address */
-	gw_addr = nl_addr_build (AF_INET6, (void *) gw, sizeof (*gw));
-	if (!gw_addr) {
-		err = -ENOMEM;
-		goto out;
-	}
-	nl_addr_set_prefixlen (gw_addr, 0);
-	rtnl_route_set_gateway (route, gw_addr);
 
 	/* Add the new default route */
 	err = rtnl_route_add (nlh, route, NLM_F_REPLACE);
+	if (err == -EEXIST) {
+		/* FIXME: even though we use NLM_F_REPLACE the kernel won't replace
+		 * the route if it's the same.  Should try to remove it first, then
+		 * add the new one again here.
+		 */
+		err = 0;
+	}
 
 out:
-	if (dst_addr)
-		nl_addr_put (dst_addr);
 	if (gw_addr)
 		nl_addr_put (gw_addr);
 	rtnl_route_put (route);
