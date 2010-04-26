@@ -98,6 +98,26 @@ typedef struct {
 } NMResolvConfData;
 
 static void
+add_string_item (GPtrArray *array, const char *str)
+{
+	int i;
+
+	g_return_if_fail (array != NULL);
+	g_return_if_fail (str != NULL);
+
+	/* Check for dupes before adding */
+	for (i = 0; i < array->len; i++) {
+		const char *candidate = g_ptr_array_index (array, i);
+
+		if (candidate && !strcmp (candidate, str))
+			return;
+	}
+
+	/* No dupes, add the new item */
+	g_ptr_array_add (array, g_strdup (str));
+}
+
+static void
 merge_one_ip4_config (NMResolvConfData *rc, NMIP4Config *src)
 {
 	guint32 num, i;
@@ -109,19 +129,22 @@ merge_one_ip4_config (NMResolvConfData *rc, NMIP4Config *src)
 
 		addr.s_addr = nm_ip4_config_get_nameserver (src, i);
 		if (inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN) > 0)
-			g_ptr_array_add (rc->nameservers, g_strdup (buf));
+			add_string_item (rc->nameservers, buf);
 	}
 
 	num = nm_ip4_config_get_num_domains (src);
 	for (i = 0; i < num; i++) {
+		const char *domain;
+
+		domain = nm_ip4_config_get_domain (src, i);
 		if (!rc->domain)
-			rc->domain = nm_ip4_config_get_domain (src, i);
-		g_ptr_array_add (rc->searches, g_strdup (nm_ip4_config_get_domain (src, i)));
+			rc->domain = domain;
+		add_string_item (rc->searches, domain);
 	}
 
 	num = nm_ip4_config_get_num_searches (src);
 	for (i = 0; i < num; i++)
-		g_ptr_array_add (rc->searches, g_strdup (nm_ip4_config_get_search (src, i)));
+		add_string_item (rc->searches, nm_ip4_config_get_search (src, i));
 }
 
 static void
@@ -139,23 +162,26 @@ merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src)
 		/* inet_ntop is probably supposed to do this for us, but it doesn't */
 		if (IN6_IS_ADDR_V4MAPPED (addr)) {
 			if (inet_ntop (AF_INET, &(addr->s6_addr32[3]), buf, INET_ADDRSTRLEN) > 0)
-				g_ptr_array_add (rc->nameservers, g_strdup (buf));
+				add_string_item (rc->nameservers, buf);
 		} else {
 			if (inet_ntop (AF_INET6, addr, buf, INET6_ADDRSTRLEN) > 0)
-				g_ptr_array_add (rc->nameservers, g_strdup (buf));
+				add_string_item (rc->nameservers, buf);
 		}
 	}
 
 	num = nm_ip6_config_get_num_domains (src);
 	for (i = 0; i < num; i++) {
+		const char *domain;
+
+		domain = nm_ip6_config_get_domain (src, i);
 		if (!rc->domain)
-			rc->domain = nm_ip6_config_get_domain (src, i);
-		g_ptr_array_add (rc->searches, g_strdup (nm_ip6_config_get_domain (src, i)));
+			rc->domain = domain;
+		add_string_item (rc->searches, domain);
 	}
 
 	num = nm_ip6_config_get_num_searches (src);
 	for (i = 0; i < num; i++)
-		g_ptr_array_add (rc->searches, g_strdup (nm_ip6_config_get_search (src, i)));
+		add_string_item (rc->searches, nm_ip6_config_get_search (src, i));
 }
 
 
