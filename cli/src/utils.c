@@ -75,6 +75,24 @@ ssid_to_printable (const char *str, gsize len)
 }
 
 /*
+ * Find out how many columns an UTF-8 string occupies on the screen
+ */
+int
+nmc_string_screen_width (const char *start, const char *end)
+{
+	int width = 0;
+
+	if (end == NULL)
+		end = start + strlen (start);
+
+	while (start < end) {
+		width += g_unichar_iswide (g_utf8_get_char (start)) ? 2 : g_unichar_iszerowidth (g_utf8_get_char (start)) ? 0 : 1;
+		start = g_utf8_next_char (start);
+	}
+	return width;
+}
+
+/*
  * Parse comma separated fields in 'fields_str' according to 'fields_array'.
  * IN:  'field_str':    comma-separated fields names
  *      'fields_array': array of allowed fields
@@ -174,12 +192,12 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 		enum { ML_HEADER_WIDTH = 79 };
 		if (main_header && pretty) {
 			/* Print the main header */
-			int header_width = g_utf8_strlen (fields.header_name, -1) + 4;
+			int header_width = nmc_string_screen_width (fields.header_name, NULL) + 4;
 			table_width = header_width < ML_HEADER_WIDTH ? ML_HEADER_WIDTH : header_width;
 
 			line = g_strnfill (ML_HEADER_WIDTH, '=');
 			width1 = strlen (fields.header_name);
-			width2 = g_utf8_strlen (fields.header_name, -1);
+			width2 = nmc_string_screen_width (fields.header_name, NULL);
 			printf ("%s\n", line);
 			printf ("%*s\n", (table_width + width2)/2 + width1 - width2, fields.header_name);
 			printf ("%s\n", line);
@@ -232,7 +250,7 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 			g_string_append_c (str, ':');  /* Column separator */
 		} else {
 			width1 = strlen (value);
-			width2 = g_utf8_strlen (value, -1);  /* Width of the string (in screen colums) */
+			width2 = nmc_string_screen_width (value, NULL);  /* Width of the string (in screen colums) */
 			if (strlen (value) == 0)
 				value = "--";
 			g_string_append_printf (str, "%-*s", field_values[idx].width + width1 - width2, value);
@@ -243,12 +261,12 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 
 	/* Print the main table header */
 	if (main_header && pretty) {
-		int header_width = g_utf8_strlen (fields.header_name, -1) + 4;
+		int header_width = nmc_string_screen_width (fields.header_name, NULL) + 4;
 		table_width = table_width < header_width ? header_width : table_width;
 
 		line = g_strnfill (table_width, '=');
 		width1 = strlen (fields.header_name);
-		width2 = g_utf8_strlen (fields.header_name, -1);
+		width2 = nmc_string_screen_width (fields.header_name, NULL);
 		printf ("%s\n", line);
 		printf ("%*s\n", (table_width + width2)/2 + width1 - width2, fields.header_name);
 		printf ("%s\n", line);
