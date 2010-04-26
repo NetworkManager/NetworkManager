@@ -45,7 +45,11 @@
 #include "devices.h"
 #include "network-manager.h"
 
-#define NMCLI_VERSION "0.2"
+#if defined(NM_DIST_VERSION)
+# define NMCLI_VERSION NM_DIST_VERSION
+#else
+# define NMCLI_VERSION VERSION
+#endif
 
 
 typedef struct {
