@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2009 Red Hat, Inc.
+ * Copyright (C) 2009 - 2010 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -414,6 +414,7 @@ constructor (GType type,
 	                                         NM_DBUS_PATH_SETTINGS,
 	                                         NM_DBUS_IFACE_SETTINGS);
 	g_assert (priv->proxy);
+	dbus_g_proxy_set_default_timeout (priv->proxy, G_MAXINT);
 
 	dbus_g_proxy_add_signal (priv->proxy, "NewConnection",
 	                         DBUS_TYPE_G_OBJECT_PATH,
