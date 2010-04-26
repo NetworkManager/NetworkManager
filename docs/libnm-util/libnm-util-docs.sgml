@@ -8,9 +8,9 @@
   <bookinfo>
     <title>libnm-util Reference Manual</title>
     <releaseinfo>
-      for libnm-util [VERSION]
+      for libnm-util 0.8
       The latest version of this documentation can be found on-line at
-      <ulink role="online-location" url="http://[SERVER]/libnm-util/index.html">http://[SERVER]/libnm-util/</ulink>.
+      <ulink role="online-location" url="http://projects.gnome.org/NetworkManager/developers/libnm-util/08/">http://projects.gnome.org/NetworkManager/developers/libnm-util/08/</ulink>.
     </releaseinfo>
   </bookinfo>
 

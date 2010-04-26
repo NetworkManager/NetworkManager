@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 Red Hat, Inc.
+ * Copyright (C) 2009 - 2010 Red Hat, Inc.
  */
 
 #include <signal.h>
@@ -33,7 +33,7 @@
 
 #include "nm-udev-manager.h"
 #include "nm-marshal.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-wifi.h"
 #include "nm-device-olpc-mesh.h"
@@ -80,6 +80,30 @@ nm_udev_manager_get_rfkill_state (NMUdevManager *self, RfKillType rtype)
 	g_return_val_if_fail (rtype < RFKILL_TYPE_MAX, RFKILL_UNBLOCKED);
 
 	return NM_UDEV_MANAGER_GET_PRIVATE (self)->rfkill_states[rtype];
+}
+
+static const char *
+rfkill_type_to_desc (RfKillType rtype)
+{
+	if (rtype == 0)
+		return "WiFi";
+	else if (rtype == 1)
+		return "WWan";
+	else if (rtype == 2)
+		return "WiMAX";
+	return "unknown";
+}
+
+static const char *
+rfkill_state_to_desc (RfKillState rstate)
+{
+	if (rstate == 0)
+		return "unblocked";
+	else if (rstate == 1)
+		return "soft-blocked";
+	else if (rstate == 2)
+		return "hard-blocked";
+	return "unknown";
 }
 
 static Killswitch *
@@ -139,7 +163,7 @@ sysfs_state_to_nm_state (gint sysfs_state)
 	case 2:
 		return RFKILL_HARD_BLOCKED;
 	default:
-		g_warning ("%s: Unhandled rfkill state %d", __func__, sysfs_state);
+		nm_log_warn (LOGD_RFKILL, "unhandled rfkill state %d", sysfs_state);
 		break;
 	}
 	return RFKILL_UNBLOCKED;
@@ -175,6 +199,10 @@ recheck_killswitches (NMUdevManager *self)
 
 	for (i = 0; i < RFKILL_TYPE_MAX; i++) {
 		if (poll_states[i] != priv->rfkill_states[i]) {
+			nm_log_dbg (LOGD_RFKILL, "%s rfkill state now '%s'",
+			            rfkill_type_to_desc (i),
+			            rfkill_state_to_desc (poll_states[i]));
+
 			priv->rfkill_states[i] = poll_states[i];
 			g_signal_emit (self, signals[RFKILL_CHANGED], 0, i, priv->rfkill_states[i]);
 		}
@@ -229,11 +257,11 @@ add_one_killswitch (NMUdevManager *self, GUdevDevice *device)
 	ks = killswitch_new (device, rtype);
 	priv->killswitches = g_slist_prepend (priv->killswitches, ks);
 
-	nm_info ("Found %s radio killswitch %s (at %s) (driver %s)",
-	         str_type,
-	         ks->name,
-	         ks->path,
-	         ks->driver ? ks->driver : "<unknown>");
+	nm_log_info (LOGD_RFKILL, "found %s radio killswitch %s (at %s) (driver %s)",
+	             rfkill_type_to_desc (rtype),
+	             ks->name,
+	             ks->path,
+	             ks->driver ? ks->driver : "<unknown>");
 }
 
 static void
@@ -265,7 +293,7 @@ rfkill_remove (NMUdevManager *self,
 		Killswitch *ks = iter->data;
 
 		if (!strcmp (ks->name, name)) {
-			nm_info ("Radio killswitch %s disappeared", ks->path);
+			nm_log_info (LOGD_RFKILL, "radio killswitch %s disappeared", ks->path);
 			priv->killswitches = g_slist_remove (priv->killswitches, ks);
 			killswitch_destroy (ks);
 			break;
@@ -322,7 +350,7 @@ device_creator (NMUdevManager *manager,
 
 	path = g_udev_device_get_sysfs_path (udev_device);
 	if (!path) {
-		nm_warning ("couldn't determine device path; ignoring...");
+		nm_log_warn (LOGD_HW, "couldn't determine device path; ignoring...");
 		return NULL;
 	}
 
@@ -345,13 +373,13 @@ device_creator (NMUdevManager *manager,
 	}
 
 	if (!driver) {
-		nm_warning ("%s: couldn't determine device driver; ignoring...", path);
+		nm_log_warn (LOGD_HW, "%s: couldn't determine device driver; ignoring...", path);
 		goto out;
 	}
 
 	ifindex = g_udev_device_get_sysfs_attr_as_int (udev_device, "ifindex");
 	if (ifindex <= 0) {
-		nm_warning ("%s: device had invalid ifindex %d; ignoring...", path, (guint32) ifindex);
+		nm_log_warn (LOGD_HW, "%s: device had invalid ifindex %d; ignoring...", path, (guint32) ifindex);
 		goto out;
 	}
 
@@ -373,18 +401,36 @@ out:
 static void
 net_add (NMUdevManager *self, GUdevDevice *device)
 {
-	gint devtype;
+	gint etype;
 	const char *iface;
+	const char *devtype;
 
 	g_return_if_fail (device != NULL);
 
-	devtype = g_udev_device_get_sysfs_attr_as_int (device, "type");
-	if (devtype != 1)
+	etype = g_udev_device_get_sysfs_attr_as_int (device, "type");
+	if (etype != 1) {
+		nm_log_dbg (LOGD_HW, "ignoring interface with type %d", etype);
 		return; /* Not using ethernet encapsulation, don't care */
+	}
+
+	/* Not all ethernet devices are immediately usable; newer mobile broadband
+	 * devices (Ericsson, Option, Sierra) require setup on the tty before the
+	 * ethernet device is usable.  2.6.33 and later kernels set the 'DEVTYPE'
+	 * uevent variable which we can use to ignore the interface as a NMDevice
+	 * subclass.  ModemManager will pick it up though and so we'll handle it
+	 * through the mobile broadband stuff.
+	 */
+	devtype = g_udev_device_get_property (device, "DEVTYPE");
+	if (devtype && !strcmp (devtype, "wwan")) {
+		nm_log_dbg (LOGD_HW, "ignoring interface with devtype '%s'", devtype);
+		return;
+	}
 
 	iface = g_udev_device_get_name (device);
-	if (!iface)
+	if (!iface) {
+		nm_log_dbg (LOGD_HW, "failed to get device's interface");
 		return;
+	}
 
 	g_signal_emit (self, signals[DEVICE_ADDED], 0, device, device_creator);
 }
@@ -426,6 +472,9 @@ handle_uevent (GUdevClient *client,
 	/* A bit paranoid */
 	subsys = g_udev_device_get_subsystem (device);
 	g_return_if_fail (subsys != NULL);
+
+	nm_log_dbg (LOGD_HW, "UDEV event: action '%s' subsys '%s' device '%s'",
+	            action, subsys, g_udev_device_get_name (device));
 
 	g_return_if_fail (!strcmp (subsys, "rfkill") || !strcmp (subsys, "net"));
 

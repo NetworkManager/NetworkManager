@@ -15,18 +15,18 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 Red Hat, Inc.
+ * Copyright (C) 2009 - 2010 Red Hat, Inc.
  * Copyright (C) 2009 Novell, Inc.
  * Copyright (C) 2009 Canonical Ltd.
  */
 
 #include <string.h>
 #include "nm-modem-manager.h"
+#include "nm-logging.h"
 #include "nm-modem.h"
 #include "nm-modem-gsm.h"
 #include "nm-modem-cdma.h"
 #include "nm-dbus-manager.h"
-#include "nm-utils.h"
 #include "nm-modem-types.h"
 #include "nm-marshal.h"
 
@@ -95,7 +95,7 @@ get_modem_properties (DBusGConnection *connection,
 		*type = g_value_get_uint (&value);
 		g_value_unset (&value);
 	} else {
-		g_warning ("Could not get device type: %s", err->message);
+		nm_log_warn (LOGD_MB, "could not get device type: %s", err->message);
 		goto out;
 	}
 
@@ -108,7 +108,7 @@ get_modem_properties (DBusGConnection *connection,
 		*device = g_value_dup_string (&value);
 		g_value_unset (&value);
 	} else {
-		g_warning ("Could not get device: %s", err->message);
+		nm_log_warn (LOGD_MB, "could not get device: %s", err->message);
 		goto out;
 	}
 
@@ -121,7 +121,7 @@ get_modem_properties (DBusGConnection *connection,
 		*ip_method = g_value_get_uint (&value);
 		g_value_unset (&value);
 	} else {
-		g_warning ("Could not get IP method: %s", err->message);
+		nm_log_warn (LOGD_MB, "could not get IP method: %s", err->message);
 		goto out;
 	}
 
@@ -134,7 +134,7 @@ get_modem_properties (DBusGConnection *connection,
 		*data_device = g_value_dup_string (&value);
 		g_value_unset (&value);
 	} else {
-		g_warning ("Could not get modem data device: %s", err->message);
+		nm_log_warn (LOGD_MB, "could not get modem data device: %s", err->message);
 		goto out;
 	}
 
@@ -147,7 +147,7 @@ get_modem_properties (DBusGConnection *connection,
 		*driver = g_value_dup_string (&value);
 		g_value_unset (&value);
 	} else {
-		g_warning ("Could not get modem driver: %s", err->message);
+		nm_log_warn (LOGD_MB, "could not get modem driver: %s", err->message);
 		goto out;
 	}
 
@@ -164,13 +164,13 @@ static void
 create_modem (NMModemManager *manager, const char *path)
 {
 	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (manager);
-	NMModem *modem;
+	NMModem *modem = NULL;
 	char *data_device = NULL, *driver = NULL, *master_device = NULL;
 	uint modem_type = MM_MODEM_TYPE_UNKNOWN;
 	uint ip_method = MM_MODEM_IP_METHOD_PPP;
 
 	if (g_hash_table_lookup (priv->modems, path)) {
-		nm_warning ("Modem with path %s already exists, ignoring", path);
+		nm_log_warn (LOGD_MB, "modem with path %s already exists, ignoring", path);
 		return;
 	}
 
@@ -180,22 +180,22 @@ create_modem (NMModemManager *manager, const char *path)
 		return;
 
 	if (modem_type == MM_MODEM_TYPE_UNKNOWN) {
-		nm_warning ("Modem with path %s has unknown type, ignoring", path);
+		nm_log_warn (LOGD_MB, "modem with path %s has unknown type, ignoring", path);
 		return;
 	}
 
 	if (!master_device || !strlen (master_device)) {
-		nm_warning ("Modem with path %s has unknown device, ignoring", path);
+		nm_log_warn (LOGD_MB, "modem with path %s has unknown device, ignoring", path);
 		return;
 	}
 
 	if (!driver || !strlen (driver)) {
-		nm_warning ("Modem with path %s has unknown driver, ignoring", path);
+		nm_log_warn (LOGD_MB, "modem with path %s has unknown driver, ignoring", path);
 		return;
 	}
 
 	if (!data_device || !strlen (data_device)) {
-		nm_warning ("Modem with path %s has unknown data device, ignoring", path);
+		nm_log_warn (LOGD_MB, "modem with path %s has unknown data device, ignoring", path);
 		return;
 	}
 
@@ -204,7 +204,7 @@ create_modem (NMModemManager *manager, const char *path)
 	else if (modem_type == MM_MODEM_TYPE_CDMA)
 		modem = nm_modem_cdma_new (path, master_device, data_device, ip_method);
 	else
-		g_error ("Invalid modem type");
+		nm_log_warn (LOGD_MB, "unknown modem type '%d'", modem_type);
 
 	g_free (data_device);
 
@@ -265,7 +265,7 @@ enumerate_devices_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer dat
 	if (!dbus_g_proxy_end_call (proxy, call_id, &error,
 								dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_OBJECT_PATH), &modems,
 								G_TYPE_INVALID)) {
-		nm_warning ("Could not get modem list: %s", error->message);
+		nm_log_warn (LOGD_MB, "could not get modem list: %s", error->message);
 		g_error_free (error);
 	} else {
 		int i;
@@ -291,7 +291,7 @@ modem_manager_appeared (NMModemManager *self, gboolean enumerate_devices)
 		priv->poke_id = 0;
 	}
 
-	nm_info ("modem-manager is now available");
+	nm_log_info (LOGD_MB, "modem-manager is now available");
 
 	priv->proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (priv->dbus_mgr),
 											 MM_DBUS_SERVICE, MM_DBUS_PATH, MM_DBUS_INTERFACE);
@@ -331,7 +331,7 @@ modem_manager_disappeared (NMModemManager *self)
 	}
 
 	/* Try to activate the modem-manager */
-	nm_info ("Trying to start the modem-manager...");
+	nm_log_info (LOGD_MB, "trying to start the modem manager...");
 	poke_modem_cb (self);
 	priv->poke_id = g_timeout_add_seconds (MODEM_POKE_INTERVAL, poke_modem_cb, self);
 }
@@ -356,7 +356,7 @@ nm_modem_manager_name_owner_changed (NMDBusManager *dbus_mgr,
 	if (!old_owner_good && new_owner_good) {
 		modem_manager_appeared (NM_MODEM_MANAGER (user_data), FALSE);
 	} else if (old_owner_good && !new_owner_good) {
-		nm_info ("modem manager disappeared");
+		nm_log_info (LOGD_MB, "the modem manager disappeared");
 		modem_manager_disappeared (NM_MODEM_MANAGER (user_data));
 	}
 }

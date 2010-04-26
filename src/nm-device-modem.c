@@ -26,6 +26,7 @@
 #include "nm-device-private.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-marshal.h"
+#include "nm-logging.h"
 
 static void device_interface_init (NMDeviceInterface *iface_class);
 
@@ -131,10 +132,9 @@ modem_ip4_config_result (NMModem *self,
 	g_return_if_fail (state == NM_DEVICE_STATE_IP_CONFIG);
 
 	if (error) {
-		g_warning ("%s: retrieving IP4 configuration failed: (%d) %s",
-		           __func__,
-		           error ? error->code : -1,
-		           error && error->message ? error->message : "(unknown)");
+		nm_log_warn (LOGD_MB | LOGD_IP4, "retrieving IP4 configuration failed: (%d) %s",
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
 
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 	} else {

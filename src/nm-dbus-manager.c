@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2006 - 2008 Red Hat, Inc.
+ * Copyright (C) 2006 - 2010 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -29,7 +29,7 @@
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include <string.h>
-#include "nm-utils.h"
+#include "nm-logging.h"
 
 enum {
 	DBUS_CONNECTION_CHANGED = 0,
@@ -158,7 +158,7 @@ nm_dbus_manager_reconnect (gpointer user_data)
 
 	if (nm_dbus_manager_init_bus (self)) {
 		if (nm_dbus_manager_start_service (self)) {
-			nm_info ("reconnected to the system bus.");
+			nm_log_info (LOGD_CORE, "reconnected to the system bus.");
 			g_signal_emit (self, signals[DBUS_CONNECTION_CHANGED],
 			               0, priv->connection);
 			priv->reconnect_id = 0;
@@ -223,8 +223,8 @@ nm_dbus_manager_name_has_owner (NMDBusManager *self,
 					    G_TYPE_INVALID,
 					    G_TYPE_BOOLEAN, &has_owner,
 					    G_TYPE_INVALID)) {
-		nm_warning ("NameHasOwner request failed: %s",
-		            (err && err->message) ? err->message : "(unknown)");
+		nm_log_warn (LOGD_CORE, "NameHasOwner request failed: %s",
+		             (err && err->message) ? err->message : "(unknown)");
 		g_clear_error (&err);
 	}
 
@@ -248,7 +248,7 @@ destroy_cb (DBusGProxy *proxy, gpointer user_data)
 	NMDBusManager *self = NM_DBUS_MANAGER (user_data);
 
 	/* Clean up existing connection */
-	nm_info ("disconnected by the system bus.");
+	nm_log_warn (LOGD_CORE, "disconnected by the system bus.");
 	NM_DBUS_MANAGER_GET_PRIVATE (self)->proxy = NULL;
 
 	nm_dbus_manager_cleanup (self, FALSE);
@@ -265,7 +265,7 @@ nm_dbus_manager_init_bus (NMDBusManager *self)
 	GError *err = NULL;
 
 	if (priv->connection) {
-		nm_warning ("DBus Manager already has a valid connection.");
+		nm_log_warn (LOGD_CORE, "DBus Manager already has a valid connection.");
 		return FALSE;
 	}
 
@@ -273,7 +273,7 @@ nm_dbus_manager_init_bus (NMDBusManager *self)
 
 	priv->g_connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &err);
 	if (!priv->g_connection) {
-		nm_warning ("Could not get the system bus.  Make sure "
+		nm_log_err (LOGD_CORE, "Could not get the system bus.  Make sure "
 		            "the message bus daemon is running!  Message: %s",
 		            err->message);
 		g_error_free (err);
@@ -317,7 +317,7 @@ nm_dbus_manager_start_service (NMDBusManager *self)
 	priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 
 	if (priv->started) {
-		nm_warning ("Service has already started.");
+		nm_log_err (LOGD_CORE, "Service has already started.");
 		return FALSE;
 	}
 
@@ -327,7 +327,7 @@ nm_dbus_manager_start_service (NMDBusManager *self)
 	                        G_TYPE_INVALID,
 	                        G_TYPE_UINT, &result,
 	                        G_TYPE_INVALID)) {
-		nm_warning ("Could not acquire the NetworkManager service.\n"
+		nm_log_err (LOGD_CORE, "Could not acquire the NetworkManager service.\n"
 		            "  Error: '%s'",
 		            (err && err->message) ? err->message : "(unknown)");
 		g_error_free (err);
@@ -335,7 +335,7 @@ nm_dbus_manager_start_service (NMDBusManager *self)
 	}
 
 	if (result != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
-		nm_warning ("Could not acquire the NetworkManager service as it is already taken.");
+		nm_log_err (LOGD_CORE, "Could not acquire the NetworkManager service as it is already taken.");
 		return FALSE;
 	}
 
@@ -345,15 +345,15 @@ nm_dbus_manager_start_service (NMDBusManager *self)
 							G_TYPE_INVALID,
 							G_TYPE_UINT, &result,
 							G_TYPE_INVALID)) {
-		g_warning ("Could not acquire the NetworkManagerSystemSettings service.\n"
-		           "  Message: '%s'", err->message);
+		nm_log_warn (LOGD_CORE, "Could not acquire the NetworkManagerSystemSettings service.\n"
+		             "  Message: '%s'", err->message);
 		g_error_free (err);
 		return FALSE;
 	}
 
 	if (result != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
-		g_warning ("Could not acquire the NetworkManagerSystemSettings service "
-		           "as it is already taken.");
+		nm_log_warn (LOGD_CORE, "Could not acquire the NetworkManagerSystemSettings service "
+		             "as it is already taken.");
 		return FALSE;
 	}
 

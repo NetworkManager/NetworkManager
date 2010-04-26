@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2008 Red Hat, Inc.
+ * Copyright (C) 2004 - 2010 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
@@ -28,6 +28,7 @@
 
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
+#include "nm-logging.h"
 #include "nm-device.h"
 #include "nm-device-wifi.h"
 #include "nm-device-ethernet.h"
@@ -85,13 +86,13 @@ nm_spawn_process (const char *args)
 	g_return_val_if_fail (args != NULL, -1);
 
 	if (!g_shell_parse_argv (args, &num_args, &argv, &error)) {
-		nm_warning ("could not parse arguments for '%s': %s", args, error->message);
+		nm_log_warn (LOGD_CORE, "could not parse arguments for '%s': %s", args, error->message);
 		g_error_free (error);
 		return -1;
 	}
 
 	if (!g_spawn_sync ("/", argv, NULL, 0, NULL, NULL, NULL, NULL, &status, &error)) {
-		nm_warning ("could not spawn process '%s': %s", args, error->message);
+		nm_log_warn (LOGD_CORE, "could not spawn process '%s': %s", args, error->message);
 		g_error_free (error);
 	}
 
@@ -394,7 +395,7 @@ nm_utils_call_dispatcher (const char *action,
 	                                   NM_DISPATCHER_DBUS_PATH,
 	                                   NM_DISPATCHER_DBUS_IFACE);
 	if (!proxy) {
-		nm_warning ("Error: could not get dispatcher proxy!");
+		nm_log_err (LOGD_CORE, "could not get dispatcher proxy!");
 		g_object_unref (dbus_mgr);
 		return;
 	}

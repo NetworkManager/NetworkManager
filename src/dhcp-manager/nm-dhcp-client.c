@@ -29,6 +29,7 @@
 #include <stdlib.h>
 
 #include "nm-utils.h"
+#include "nm-logging.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-dhcp-client.h"
 
@@ -159,14 +160,14 @@ stop_process (GPid pid, const char *iface)
 
 	if (i <= 0) {
 		if (iface) {
-			g_warning ("%s: dhcp client pid %d didn't exit, will kill it.",
-			           iface, pid);
+			nm_log_warn (LOGD_DHCP, "(%s): DHCP client pid %d didn't exit, will kill it.",
+			             iface, pid);
 		}
 		kill (pid, SIGKILL);
 
-		g_warning ("waiting for dhcp client pid %d to exit", pid);
+		nm_log_dbg (LOGD_DHCP, "waiting for DHCP client pid %d to exit", pid);
 		waitpid (pid, NULL, 0);
-		g_warning ("dhcp client pid %d cleaned up", pid);
+		nm_log_dbg (LOGD_DHCP, "DHCP client pid %d cleaned up", pid);
 	}
 }
 
@@ -193,8 +194,11 @@ daemon_timeout (gpointer user_data)
 	NMDHCPClient *self = NM_DHCP_CLIENT (user_data);
 	NMDHCPClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 
-	g_message ("(%s): DHCPv%c request timed out.",
-	           priv->iface, priv->ipv6 ? '6' : '4');
+	if (priv->ipv6) {
+		nm_log_warn (LOGD_DHCP6, "(%s): DHCPv6 request timed out.", priv->iface);
+	} else {
+		nm_log_warn (LOGD_DHCP4, "(%s): DHCPv4 request timed out.", priv->iface);
+	}
 	g_signal_emit (G_OBJECT (self), signals[TIMEOUT], 0);
 	return FALSE;
 }
@@ -207,7 +211,7 @@ daemon_watch_cb (GPid pid, gint status, gpointer user_data)
 
 	if (!WIFEXITED (status)) {
 		priv->state = DHC_ABEND;
-		g_warning ("dhcp client died abnormally");
+		nm_log_warn (LOGD_DHCP, "DHCP client died abnormally");
 	}
 	priv->pid = 0;
 
@@ -248,8 +252,8 @@ nm_dhcp_client_start_ip4 (NMDHCPClient *self,
 	g_return_val_if_fail (priv->ipv6 == FALSE, FALSE);
 	g_return_val_if_fail (priv->uuid != NULL, FALSE);
 
-	g_message ("Activation (%s) Beginning DHCPv4 transaction (timeout in %d seconds)",
-	           priv->iface, priv->timeout);
+	nm_log_info (LOGD_DHCP, "Activation (%s) Beginning DHCPv4 transaction (timeout in %d seconds)",
+	             priv->iface, priv->timeout);
 
 	priv->pid = NM_DHCP_CLIENT_GET_CLASS (self)->ip4_start (self, s_ip4, dhcp_anycast_addr);
 	if (priv->pid)
@@ -274,8 +278,8 @@ nm_dhcp_client_start_ip6 (NMDHCPClient *self,
 	g_return_val_if_fail (priv->ipv6 == TRUE, FALSE);
 	g_return_val_if_fail (priv->uuid != NULL, FALSE);
 
-	g_message ("Activation (%s) Beginning DHCPv6 transaction (timeout in %d seconds)",
-	           priv->iface, priv->timeout);
+	nm_log_info (LOGD_DHCP, "Activation (%s) Beginning DHCPv6 transaction (timeout in %d seconds)",
+	             priv->iface, priv->timeout);
 
 	priv->pid = NM_DHCP_CLIENT_GET_CLASS (self)->ip6_start (self, s_ip6, dhcp_anycast_addr, info_only);
 	if (priv->pid > 0)
@@ -333,9 +337,8 @@ nm_dhcp_client_stop (NMDHCPClient *self)
 	if (priv->pid > 0) {
 		NM_DHCP_CLIENT_GET_CLASS (self)->stop (self);
 
-		g_message ("(%s): canceled DHCP transaction, dhcp client pid %d",
-		           priv->iface,
-		           priv->pid);
+		nm_log_info (LOGD_DHCP, "(%s): canceled DHCP transaction, DHCP client pid %d",
+		             priv->iface, priv->pid);
 	}
 
 	/* And clean stuff up */
@@ -452,7 +455,7 @@ garray_to_string (GArray *array, const char *key)
 
 	converted = str->str;
 	if (!g_utf8_validate (converted, -1, NULL))
-		g_warning ("%s: DHCP option '%s' couldn't be converted to UTF-8", __func__, key);
+		nm_log_warn (LOGD_DHCP, "DHCP option '%s' couldn't be converted to UTF-8", key);
 	g_string_free (str, FALSE);
 	return converted;
 }
@@ -467,9 +470,9 @@ copy_option (gpointer key,
 	char *str_value = NULL;
 
 	if (G_VALUE_TYPE (value) != DBUS_TYPE_G_UCHAR_ARRAY) {
-		g_warning ("Unexpected key %s value type was not "
-		           "DBUS_TYPE_G_UCHAR_ARRAY",
-		           str_key);
+		nm_log_warn (LOGD_DHCP, "unexpected key %s value type was not "
+		             "DBUS_TYPE_G_UCHAR_ARRAY",
+		             str_key);
 		return;
 	}
 
@@ -510,11 +513,17 @@ nm_dhcp_client_new_options (NMDHCPClient *self,
 	}
 
 	priv->state = new_state;
-	g_message ("DHCPv%c: device %s state changed %s -> %s",
-	           priv->ipv6 ? '6' : '4',
-	           priv->iface,
-	           state_to_string (old_state),
-	           state_to_string (priv->state));
+	if (priv->ipv6) {
+		nm_log_info (LOGD_DHCP6, "(%s): DHCPv6 state changed %s -> %s",
+		            priv->iface,
+		            state_to_string (old_state),
+		            state_to_string (priv->state));
+	} else {
+		nm_log_info (LOGD_DHCP4, "(%s): DHCPv4 state changed %s -> %s",
+		            priv->iface,
+		            state_to_string (old_state),
+		            state_to_string (priv->state));
+	}
 
 	g_signal_emit (G_OBJECT (self),
 	               signals[STATE_CHANGED],
@@ -575,7 +584,11 @@ nm_dhcp_client_foreach_option (NMDHCPClient *self,
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 
 	if (!state_is_bound (priv->state)) {
-		g_warning ("%s: dhclient didn't bind to a lease.", priv->iface);
+		if (priv->ipv6) {
+			nm_log_warn (LOGD_DHCP6, "(%s): DHCPv6 client didn't bind to a lease.", priv->iface);
+		} else {
+			nm_log_warn (LOGD_DHCP4, "(%s): DHCPv4 client didn't bind to a lease.", priv->iface);
+		}
 		return FALSE;
 	}
 
@@ -599,7 +612,7 @@ process_classful_routes (GHashTable *options, NMIP4Config *ip4_config)
 
 	searches = g_strsplit (str, " ", 0);
 	if ((g_strv_length (searches) % 2)) {
-		g_message ("  static routes provided, but invalid");
+		nm_log_info (LOGD_DHCP, "  static routes provided, but invalid");
 		goto out;
 	}
 
@@ -609,11 +622,11 @@ process_classful_routes (GHashTable *options, NMIP4Config *ip4_config)
 		struct in_addr rt_route;
 
 		if (inet_pton (AF_INET, *s, &rt_addr) <= 0) {
-			g_warning ("DHCP provided invalid static route address: '%s'", *s);
+			nm_log_warn (LOGD_DHCP, "DHCP provided invalid static route address: '%s'", *s);
 			continue;
 		}
 		if (inet_pton (AF_INET, *(s + 1), &rt_route) <= 0) {
-			g_warning ("DHCP provided invalid static route gateway: '%s'", *(s + 1));
+			nm_log_warn (LOGD_DHCP, "DHCP provided invalid static route gateway: '%s'", *(s + 1));
 			continue;
 		}
 
@@ -625,7 +638,7 @@ process_classful_routes (GHashTable *options, NMIP4Config *ip4_config)
 		nm_ip4_route_set_next_hop (route, (guint32) rt_route.s_addr);
 
 		nm_ip4_config_take_route (ip4_config, route);
-		g_message ("  static route %s gw %s", *s, *(s + 1));
+		nm_log_info (LOGD_DHCP, "  static route %s gw %s", *s, *(s + 1));
 	}
 
 out:
@@ -654,14 +667,14 @@ process_domain_search (const char *str, GFunc add_func, gpointer user_data)
 	} while (*p++);
 
 	if (strchr (unescaped, '\\')) {
-		g_message ("  invalid domain search: '%s'", unescaped);
+		nm_log_warn (LOGD_DHCP, "  invalid domain search: '%s'", unescaped);
 		goto out;
 	}
 
 	searches = g_strsplit (unescaped, " ", 0);
 	for (s = searches; *s; s++) {
 		if (strlen (*s)) {
-			g_message ("  domain search '%s'", *s);
+			nm_log_info (LOGD_DHCP, "  domain search '%s'", *s);
 			add_func (*s, user_data);
 		}
 	}
@@ -697,31 +710,31 @@ ip4_options_to_config (NMDHCPClient *self)
 
 	ip4_config = nm_ip4_config_new ();
 	if (!ip4_config) {
-		g_warning ("%s: couldn't allocate memory for an IP4Config!", priv->iface);
+		nm_log_warn (LOGD_DHCP4, "(%s): couldn't allocate memory for an IP4Config!", priv->iface);
 		return NULL;
 	}
 
 	addr = nm_ip4_address_new ();
 	if (!addr) {
-		g_warning ("%s: couldn't allocate memory for an IP4 Address!", priv->iface);
+		nm_log_warn (LOGD_DHCP4, "(%s): couldn't allocate memory for an IP4 Address!", priv->iface);
 		goto error;
 	}
 
 	str = g_hash_table_lookup (priv->options, "new_ip_address");
 	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
 		nm_ip4_address_set_address (addr, tmp_addr.s_addr);
-		g_message ("  address %s", str);
+		nm_log_info (LOGD_DHCP4, "  address %s", str);
 	} else
 		goto error;
 
 	str = g_hash_table_lookup (priv->options, "new_subnet_mask");
 	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
 		prefix = nm_utils_ip4_netmask_to_prefix (tmp_addr.s_addr);
-		g_message ("  prefix %d (%s)", prefix, str);
+		nm_log_info (LOGD_DHCP4, "  prefix %d (%s)", prefix, str);
 	} else {
 		/* Get default netmask for the IP according to appropriate class. */
 		prefix = nm_utils_ip4_get_default_prefix (nm_ip4_address_get_address (addr));
-		g_message ("  prefix %d (default)", prefix);
+		nm_log_info (LOGD_DHCP4, "  prefix %d (default)", prefix);
 	}
 	nm_ip4_address_set_prefix (addr, prefix);
 
@@ -744,7 +757,7 @@ ip4_options_to_config (NMDHCPClient *self)
 		char buf[INET_ADDRSTRLEN + 1];
 
 		inet_ntop (AF_INET, &gwaddr, buf, sizeof (buf));
-		g_message ("  gateway %s", buf);
+		nm_log_info (LOGD_DHCP4, "  gateway %s", buf);
 		nm_ip4_address_set_gateway (addr, gwaddr);
 	} else {
 		/* If the gateway wasn't provided as a classless static route with a
@@ -759,10 +772,10 @@ ip4_options_to_config (NMDHCPClient *self)
 				/* FIXME: how to handle multiple routers? */
 				if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
 					nm_ip4_address_set_gateway (addr, tmp_addr.s_addr);
-					g_message ("  gateway %s", *s);
+					nm_log_info (LOGD_DHCP4, "  gateway %s", *s);
 					break;
 				} else
-					g_warning ("Ignoring invalid gateway '%s'", *s);
+					nm_log_warn (LOGD_DHCP4, "ignoring invalid gateway '%s'", *s);
 			}
 			g_strfreev (routers);
 		}
@@ -773,7 +786,7 @@ ip4_options_to_config (NMDHCPClient *self)
 
 	str = g_hash_table_lookup (priv->options, "new_host_name");
 	if (str)
-		g_message ("  hostname '%s'", str);
+		nm_log_info (LOGD_DHCP4, "  hostname '%s'", str);
 
 	str = g_hash_table_lookup (priv->options, "new_domain_name_servers");
 	if (str) {
@@ -783,9 +796,9 @@ ip4_options_to_config (NMDHCPClient *self)
 		for (s = searches; *s; s++) {
 			if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
 				nm_ip4_config_add_nameserver (ip4_config, tmp_addr.s_addr);
-				g_message ("  nameserver '%s'", *s);
+				nm_log_info (LOGD_DHCP4, "  nameserver '%s'", *s);
 			} else
-				g_warning ("Ignoring invalid nameserver '%s'", *s);
+				nm_log_warn (LOGD_DHCP4, "ignoring invalid nameserver '%s'", *s);
 		}
 		g_strfreev (searches);
 	}
@@ -796,7 +809,7 @@ ip4_options_to_config (NMDHCPClient *self)
 		char **s;
 
 		for (s = domains; *s; s++) {
-			g_message ("  domain name '%s'", *s);
+			nm_log_info (LOGD_DHCP4, "  domain name '%s'", *s);
 			nm_ip4_config_add_domain (ip4_config, *s);
 		}
 		g_strfreev (domains);
@@ -814,9 +827,9 @@ ip4_options_to_config (NMDHCPClient *self)
 		for (s = searches; *s; s++) {
 			if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
 				nm_ip4_config_add_wins (ip4_config, tmp_addr.s_addr);
-				g_message ("  wins '%s'", *s);
+				nm_log_info (LOGD_DHCP4, "  wins '%s'", *s);
 			} else
-				g_warning ("Ignoring invalid WINS server '%s'", *s);
+				nm_log_warn (LOGD_DHCP4, "ignoring invalid WINS server '%s'", *s);
 		}
 		g_strfreev (searches);
 	}
@@ -854,7 +867,7 @@ nm_dhcp_client_get_ip4_config (NMDHCPClient *self, gboolean test)
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 
 	if (test && !state_is_bound (priv->state)) {
-		g_warning ("%s: dhcp client didn't bind to a lease.", priv->iface);
+		nm_log_warn (LOGD_DHCP4, "(%s): DHCP client didn't bind to a lease.", priv->iface);
 		return NULL;
 	}
 
@@ -887,20 +900,20 @@ ip6_options_to_config (NMDHCPClient *self)
 
 	ip6_config = nm_ip6_config_new ();
 	if (!ip6_config) {
-		g_warning ("%s: couldn't allocate memory for an IP6Config!", priv->iface);
+		nm_log_warn (LOGD_DHCP6, "(%s): couldn't allocate memory for an IP6Config!", priv->iface);
 		return NULL;
 	}
 
 	addr = nm_ip6_address_new ();
 	if (!addr) {
-		g_warning ("%s: couldn't allocate memory for an IP6 Address!", priv->iface);
+		nm_log_warn (LOGD_DHCP6, "(%s): couldn't allocate memory for an IP6 Address!", priv->iface);
 		goto error;
 	}
 
 	str = g_hash_table_lookup (priv->options, "new_ip6_address");
 	if (str && (inet_pton (AF_INET6, str, &tmp_addr) > 0)) {
 		nm_ip6_address_set_address (addr, &tmp_addr);
-		g_message ("  address %s", str);
+		nm_log_info (LOGD_DHCP6, "  address %s", str);
 	} else
 		goto error;
 
@@ -914,7 +927,7 @@ ip6_options_to_config (NMDHCPClient *self)
 			goto error;
 
 		nm_ip6_address_set_prefix (addr, (guint32) prefix);
-		g_message ("  prefix %lu", prefix);
+		nm_log_info (LOGD_DHCP6, "  prefix %lu", prefix);
 	}
 
 	nm_ip6_config_take_address (ip6_config, addr);
@@ -922,7 +935,7 @@ ip6_options_to_config (NMDHCPClient *self)
 
 	str = g_hash_table_lookup (priv->options, "new_host_name");
 	if (str)
-		g_message ("  hostname '%s'", str);
+		nm_log_info (LOGD_DHCP6, "  hostname '%s'", str);
 
 	str = g_hash_table_lookup (priv->options, "new_dhcp6_name_servers");
 	if (str) {
@@ -932,9 +945,9 @@ ip6_options_to_config (NMDHCPClient *self)
 		for (s = searches; *s; s++) {
 			if (inet_pton (AF_INET6, *s, &tmp_addr) > 0) {
 				nm_ip6_config_add_nameserver (ip6_config, &tmp_addr);
-				g_message ("  nameserver '%s'", *s);
+				nm_log_info (LOGD_DHCP6, "  nameserver '%s'", *s);
 			} else
-				g_warning ("Ignoring invalid nameserver '%s'", *s);
+				nm_log_warn (LOGD_DHCP6, "ignoring invalid nameserver '%s'", *s);
 		}
 		g_strfreev (searches);
 	}
@@ -963,7 +976,7 @@ nm_dhcp_client_get_ip6_config (NMDHCPClient *self, gboolean test)
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 
 	if (test && !state_is_bound (priv->state)) {
-		g_warning ("%s: dhcp client didn't bind to a lease.", priv->iface);
+		nm_log_warn (LOGD_DHCP6, "(%s): dhcp client didn't bind to a lease.", priv->iface);
 		return NULL;
 	}
 

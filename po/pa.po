@@ -4,221 +4,1478 @@
 #
 # Amanpreet Singh Alam <aalam@redhat.com>, 2004.
 # Amanpreet Singh Alam <amanpreetalam@yahoo.com>, 2005.
-# A S Alam <aalam@users.sf.net>, 2007.
+# A S Alam <aalam@users.sf.net>, 2007, 2010.
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager.HEAD\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-02-03 18:35+0000\n"
-"PO-Revision-Date: 2007-02-04 08:37+0530\n"
+"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug."
+"cgi?product=NetworkManager&component=general\n"
+"POT-Creation-Date: 2010-03-24 03:26+0000\n"
+"PO-Revision-Date: 2010-04-03 14:08+0530\n"
 "Last-Translator: A S Alam <aalam@users.sf.net>\n"
-"Language-Team: Punjabi <fedora-trans-pa@redhat.com>\n"
+"Language-Team: Punjabi/Panjabi <kde-i18n-doc@kde.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: KBabel 1.11.4\n"
+"X-Generator: Lokalize 1.0\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "\n"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:417
-msgid "Cannot add VPN connection"
-msgstr "VPN ਕੁਨੈਕਸ਼ਨ ਜੋੜਿਆ ਨਹੀਂ ਜਾ ਸਕਦਾ ਹੈ"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:419
-msgid ""
-"No suitable VPN software was found on your system. Contact your system "
-"administrator."
-msgstr ""
-"ਤੁਹਾਡੇ ਸਿਸਟਮ ਉੱਤੇ ਕੋਈ ਠੀਕ VPN ਸਾਫਟਵੇਅਰ ਨਹੀਂ ਲੱਭਾ ਹੈ। ਆਪਣੇ ਸਿਸਟਮ "
-"ਪਰਸ਼ਾਸ਼ਕ ਨਾਲ ਸੰਪਰਕ ਕਰੋ।"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:461
-msgid "Cannot import VPN connection"
-msgstr "VPN ਕੁਨੈਕਸ਼ਨ ਆਯਾਤ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਦਾ"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:463
+#: ../cli/src/connections.c:86
 #, c-format
 msgid ""
-"Cannot find suitable software for VPN connection type '%s' to import the "
-"file '%s'. Contact your system administrator."
+"Usage: nmcli con { COMMAND | help }\n"
+"  COMMAND := { list | status | up | down }\n"
+"\n"
+"  list [id <id> | uuid <id> | system | user]\n"
+"  status\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--timeout "
+"<timeout>]\n"
+"  down id <id> | uuid <id>\n"
 msgstr ""
-"VPN ਕੁਨੈਕਸ਼ਨ ਕਿਸਮ '%s' ਲਈ ਫਾਇਲ '%s' ਆਯਾਤ ਕਰਨ ਲਈ ਕੋਈ ਢੁੱਕਵਾਂ "
-"ਸਾਫਟਵੇਅਰ ਨਹੀਂ ਲੱਭਿਆ ਹੈ। ਆਪਣੇ ਸਿਸਟਮ ਪਰਸ਼ਾਸ਼ਕ ਨਾਲ ਸੰਪਰਕ ਕਰੋ।"
+"ਵਰਤੋਂ: nmcli con { COMMAND | help }\n"
+"  COMMAND := { list | status | up | down }\n"
+"\n"
+"  list [id <id> | uuid <id> | system | user]\n"
+"  status\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--timeout "
+"<timeout>]\n"
+"  down id <id> | uuid <id>\n"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:580
+#: ../cli/src/connections.c:158
+#| msgid "VPN Connections"
+msgid "Connections"
+msgstr "ਕੁਨੈਕਸ਼ਨ"
+
+#: ../cli/src/connections.c:158 ../cli/src/connections.c:160
+#: ../cli/src/connections.c:196 ../cli/src/connections.c:198
+#: ../cli/src/connections.c:205 ../cli/src/connections.c:207
+#: ../cli/src/devices.c:298 ../cli/src/devices.c:458 ../cli/src/devices.c:460
+msgid "Type"
+msgstr "ਕਿਸਮ"
+
+#: ../cli/src/connections.c:158 ../cli/src/connections.c:160
+#: ../cli/src/connections.c:196 ../cli/src/connections.c:198
+#: ../cli/src/connections.c:205 ../cli/src/connections.c:207
+#: ../cli/src/connections.c:297 ../cli/src/connections.c:299
+msgid "UUID"
+msgstr "UUID"
+
+#: ../cli/src/connections.c:158 ../cli/src/connections.c:160
+#: ../cli/src/connections.c:196 ../cli/src/connections.c:198
+#: ../cli/src/connections.c:205 ../cli/src/connections.c:207
+#: ../cli/src/connections.c:297 ../cli/src/connections.c:299
+msgid "Name"
+msgstr "ਨਾਂ"
+
+#: ../cli/src/connections.c:163
 #, c-format
-msgid "Error retrieving VPN connection '%s'"
-msgstr "VPN ਕੁਨੈਕਸ਼ਨ '%s' ਲੈਣ ਦੌਰਾਨ ਗਲਤੀ"
+#| msgid "VPN Connections"
+msgid "System connections:\n"
+msgstr "ਸਿਸਟਮ ਕੁਨੈਕਸ਼ਨ:\n"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:583
+#: ../cli/src/connections.c:167
 #, c-format
-msgid ""
-"Could not find the UI files for VPN connection type '%s'. Contact your "
-"system administrator."
-msgstr ""
-"VPN ਕੁਨੈਕਸ਼ਨ ਕਿਸਮ '%s' ਲਈ UI ਫਾਇਲਾਂ ਨਹੀਂ ਲੱਭੀਆਂ ਹਨ। ਆਪਣੇ ਸਿਸਟਮ "
-"ਪਰਸ਼ਾਸ਼ਕ ਨਾਲ ਸੰਪਰਕ ਕਰੋ।"
+#| msgid "VPN Connections"
+msgid "User connections:\n"
+msgstr "ਯੂਜ਼ਰ ਕੁਨੈਕਸ਼ਨ:\n"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:727
+#: ../cli/src/connections.c:178 ../cli/src/connections.c:967
+#: ../cli/src/connections.c:983 ../cli/src/connections.c:992
+#: ../cli/src/connections.c:1003 ../cli/src/connections.c:1085
+#: ../cli/src/devices.c:604 ../cli/src/devices.c:614 ../cli/src/devices.c:699
+#: ../cli/src/devices.c:785 ../cli/src/devices.c:792
 #, c-format
-msgid "Delete VPN connection \"%s\"?"
-msgstr "ਕੀ VPN \"%s\" ਕੁਨੈਕਸ਼ਨ ਹਟਾਉਣਾ ਹੈ?"
+msgid "Error: %s argument is missing."
+msgstr "ਗਲਤੀ: %s ਆਰਗੂਮੈਂਟ ਮੌਜੂਦ ਨਹੀਂ ਹੈ।"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:730
+#: ../cli/src/connections.c:189
 #, c-format
-msgid ""
-"All information about the VPN connection \"%s\" will be lost and you may "
-"need your system administrator to provide information to create a new "
-"connection."
-msgstr ""
-"VPN ਕੁਨੈਕਸ਼ਨ \"%s\" ਬਾਰੇ ਸਭ ਜਾਣਕਾਰੀ ਖਤਮ ਹੋ ਗਈ ਹੈ ਅਤੇ ਤੁਹਾਨੂੰ "
-"ਨਵੇਂ ਕੁਨੈਕਸ਼ਨ ਬਣਾਉਣ ਲਈ ਜਾਣਕਾਰੀ ਵਾਸਤੇ ਆਪਣੇ ਸਿਸਟਮ ਪਰਸ਼ਾਸ਼ਕ "
-"ਨਾਲ ਸੰਪਰਕ ਕਰਨਾ ਪਵੇਗਾ।"
+msgid "Error: %s - no such connection."
+msgstr "ਗਲਤੀ: %s - ਇੰਝ ਦਾ ਕੋਈ ਕੁਨੈਕਸ਼ਨ ਨਹੀਂ ਹੈ"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:924
-msgid "Unable to load"
-msgstr "ਲੋਡ ਕਰਨ ਲਈ ਫੇਲ੍ਹ"
+#: ../cli/src/connections.c:196
+msgid "System-wide connections"
+msgstr "ਸਿਸਟਮ-ਲਈ ਕੁਨੈਕਸ਼ਨ"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:926
-msgid "Cannot find some needed resources (the glade file)!"
-msgstr "ਕੁਝ ਲੋੜੀਦੇ ਸਰੋਤ ਨਹੀਂ ਮਿਲੇ (ਗਲੇਡ ਫਾਇਲ)!"
+#: ../cli/src/connections.c:205
+#| msgid "VPN Connections"
+msgid "User connections"
+msgstr "ਯੂਜ਼ਰ ਕੁਨੈਕਸ਼ਨ"
 
-#. druid_window = GTK_DIALOG (gtk_dialog_new_with_buttons (_("Create VPN Connection"),
-#. NULL,
-#. GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-#. GTK_STOCK_CANCEL,
-#. GTK_RESPONSE_REJECT,
-#. GTK_STOCK_APPLY,
-#. GTK_RESPONSE_ACCEPT,
-#. NULL));
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1081
-msgid "Create VPN Connection"
-msgstr "VPN ਕੁਨੈਕਸ਼ਨ ਬਣਾਓ"
+#: ../cli/src/connections.c:212 ../cli/src/connections.c:1016
+#: ../cli/src/connections.c:1103 ../cli/src/devices.c:446
+#: ../cli/src/devices.c:494 ../cli/src/devices.c:628 ../cli/src/devices.c:706
+#: ../cli/src/devices.c:798
+#, c-format
+msgid "Unknown parameter: %s\n"
+msgstr "ਅਣਜਾਣ ਪੈਰਾਮੀਟਰ: %s\n"
 
-#. gtk_container_add (GTK_CONTAINER (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")));
-#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(druid), TRUE,TRUE,0);
-#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")), TRUE,TRUE,0);
-#. toplevel = gtk_widget_get_toplevel (GTK_WIDGET (druid));
-#. gtk_signal_connect (GTK_OBJECT (toplevel), "delete_event", GTK_SIGNAL_FUNC (vpn_window_close), NULL);
-#. make the druid window modal wrt. our main window
-#. gtk_window_set_modal (druid_window, TRUE);
-#. gtk_window_set_transient_for (GTK_WINDOW(druid_window), GTK_WINDOW (dialog));
-#. Edit dialog
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1099
-msgid "Edit VPN Connection"
-msgstr "VPN ਕੁਨੈਕਸ਼ਨ ਸੋਧ"
+#: ../cli/src/connections.c:221
+#, c-format
+msgid "Error: no valid parameter specified."
+msgstr "ਗਲਤੀ: ਕੋਈ ਢੁੱਕਵਾਂ ਪੈਰਾਮੀਟਰ ਨਹੀਂ ਦਿੱਤਾ।"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:1
-msgid "Add a new VPN connection"
-msgstr "ਇੱਕ ਨਵਾਂ VPN ਕੁਨੈਕਸ਼ਨ ਸ਼ਾਮਿਲ"
+#. FIXME: Fix the output
+#: ../cli/src/connections.c:268 ../cli/src/devices.c:302
+#: ../cli/src/devices.c:321 ../cli/src/devices.c:353 ../cli/src/devices.c:355
+#: ../cli/src/devices.c:357 ../cli/src/devices.c:359 ../cli/src/devices.c:361
+msgid "yes"
+msgstr "ਹਾਂ"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
-msgid "Delete the selected VPN connection"
-msgstr "ਚੁਣਿਆ VPN ਕੁਨੈਕਸ਼ਨ ਹਟਾਓ"
+#: ../cli/src/connections.c:268 ../cli/src/devices.c:304
+#| msgid "none"
+msgid "no"
+msgstr "ਨਹੀਂ"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
-msgid "E_xport"
-msgstr "ਨਿਰਯਾਤ(_x)"
+#: ../cli/src/connections.c:297
+#| msgid "VPN Connections"
+msgid "Active connections"
+msgstr "ਚਾਲੂ ਕੁਨੈਕਸ਼ਨ"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
-msgid "Edit the selected VPN connection"
-msgstr "ਚੁਣੇ VPN ਕੁਨੈਕਸ਼ਨ 'ਚ ਸੋਧ"
+#: ../cli/src/connections.c:297 ../cli/src/connections.c:299
+#: ../cli/src/devices.c:302 ../cli/src/devices.c:304
+msgid "Default"
+msgstr "ਡਿਫਾਲਟ"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
-msgid "Export the VPN settings to a file"
-msgstr "VPN ਸੈਟਿੰਗ ਨੂੰ ਫਾਇਲ 'ਚ ਭੇਜੋ"
+#: ../cli/src/connections.c:297 ../cli/src/connections.c:299
+msgid "Service"
+msgstr "ਸਰਵਿਸ"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
-msgid "Export the selected VPN connection to a file"
-msgstr "ਚੁਣੇ VPN ਕੁਨੈਕਸ਼ਨ ਫਾਇਲ 'ਚ ਭੇਜੋ"
+#: ../cli/src/connections.c:297 ../cli/src/connections.c:299
+msgid "Devices"
+msgstr "ਜੰਤਰ"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
-msgid "Manage Virtual Private Network Connections"
-msgstr "ਵੁਰਚੁਅਲ ਪ੍ਰਾਈਵੇਟ ਨੈੱਟਵਰਕ ਕੁਨੈਕਸ਼ਨ ਪਰਬੰਧ"
+#: ../cli/src/connections.c:659
+#, c-format
+msgid "no active connection on device '%s'"
+msgstr "ਜੰਤਰ '%s' ਉੱਤੇ ਕੋਈ ਚਾਲੂ ਕੁਨੈਕਸ਼ਨ ਨਹੀਂ ਹੈ"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
-msgid "VPN Connections"
-msgstr "VPN ਕੁਨੈਕਸ਼ਨ"
+#: ../cli/src/connections.c:667
+#, c-format
+msgid "no active connection or device"
+msgstr "ਕੋਈ ਚਾਲੂ ਕੁਨੈਕਸ਼ਨ ਜਾਂ ਜੰਤਰ ਨਹੀਂ ਹੈ"
 
-#: ../src/nm-ap-security-wep.c:52
-msgid "40-bit WEP"
-msgstr "40-ਬਿੱਟ WEP"
+#: ../cli/src/connections.c:730
+msgid "activating"
+msgstr "ਚਾਲੂ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ"
 
-#: ../src/nm-ap-security-wep.c:54
-msgid "104-bit WEP"
-msgstr "104-ਬਿੱਟ WEP"
+#: ../cli/src/connections.c:732
+msgid "activated"
+msgstr "ਚਾਲੂ ਕੀਤਾ"
 
-#: ../src/nm-ap-security-wpa-psk.c:51
-msgid "WPA TKIP"
-msgstr "WPA TKIP"
+#: ../cli/src/connections.c:735 ../cli/src/connections.c:758
+#: ../cli/src/connections.c:791 ../cli/src/devices.c:111
+#: ../cli/src/network-manager.c:76 ../cli/src/network-manager.c:98
+msgid "unknown"
+msgstr "ਅਣਜਾਣ"
 
-#: ../src/nm-ap-security-wpa-psk.c:53
-msgid "WPA CCMP"
-msgstr "WPA CCMP"
+#: ../cli/src/connections.c:744
+#| msgid "VPN Connections"
+msgid "VPN connecting (prepare)"
+msgstr "VPN ਕੁਨੈਕਸ਼ਨ (ਤਿਆਰੀ)"
 
-#: ../src/nm-ap-security-wpa-psk.c:55
-msgid "WPA Automatic"
-msgstr "WPA ਆਟੋਮੈਟਿਕ"
+#: ../cli/src/connections.c:746
+msgid "VPN connecting (need authentication)"
+msgstr "VPN ਕੁਨੈਕਟ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ (ਪਰਮਾਣਕਿਤਾ ਦੀ ਲੋੜ ਹੈ)"
 
-#: ../src/nm-ap-security-wpa-psk.c:60
-msgid "WPA2 TKIP"
-msgstr "WPA2 TKIP"
+#: ../cli/src/connections.c:748
+#| msgid "VPN Connections"
+msgid "VPN connecting"
+msgstr "VPN ਕੁਨੈਕਟ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ"
 
-#: ../src/nm-ap-security-wpa-psk.c:62
-msgid "WPA2 CCMP"
-msgstr "WPA2 CCMP"
+#: ../cli/src/connections.c:750
+msgid "VPN connecting (getting IP configuration)"
+msgstr "VPN ਕੁਨੈਕਟ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ (IP ਸੰਰਚਨਾ ਲਈ ਜਾ ਰਹੀ ਹੈ)"
 
-#: ../src/nm-ap-security-wpa-psk.c:64
-msgid "WPA2 Automatic"
-msgstr "WPA2 ਆਟੋਮੈਟਿਕ"
+#: ../cli/src/connections.c:752
+#| msgid "VPN Connections"
+msgid "VPN connected"
+msgstr "VPN ਕੁਨੈਕਟ ਹੈ"
 
-#: ../src/nm-ap-security.c:334
+#: ../cli/src/connections.c:754
+#| msgid "VPN Connections"
+msgid "VPN connection failed"
+msgstr "VPN ਕੁਨੈਕਸ਼ਨ ਫੇਲ੍ਹ ਹੋਇਆ"
+
+#: ../cli/src/connections.c:756
+#| msgid "VPN Connections"
+msgid "VPN disconnected"
+msgstr "VPN ਡਿਸ-ਕੁਨੈਕਟ"
+
+#: ../cli/src/connections.c:767
+msgid "unknown reason"
+msgstr "ਅਣਜਾਣ ਕਾਰਨ"
+
+#: ../cli/src/connections.c:769
 msgid "none"
 msgstr "ਕੋਈ ਨਹੀਂ"
 
-#: ../src/nm-netlink-monitor.c:174
+#: ../cli/src/connections.c:771
+msgid "the user was disconnected"
+msgstr "ਯੂਜ਼ਰ ਡਿਸ-ਕੁਨੈਕਟ ਹੋ ਗਿਆ"
+
+#: ../cli/src/connections.c:773
+msgid "the base network connection was interrupted"
+msgstr "ਬੇਸ ਨੈੱਟਵਰਕ ਕੁਨੈਕਸ਼ਨ 'ਚ ਰੁਕਾਵਟ"
+
+#: ../cli/src/connections.c:775
+msgid "the VPN service stopped unexpectedly"
+msgstr "VPN ਸਰਵਿਸ ਅਚਾਨਕ ਰੁਕ ਗਈ"
+
+#: ../cli/src/connections.c:777
+msgid "the VPN service returned invalid configuration"
+msgstr "VPN ਸਰਵਿਸ ਨੇ ਅਢੁੱਕਵੀਂ ਸੰਰਚਨਾ ਵਾਪਸ ਕੀਤੀ"
+
+#: ../cli/src/connections.c:779
+msgid "the connection attempt timed out"
+msgstr "ਕੁਨੈਕਸ਼ਨ ਕੋਸ਼ਿਸ਼ ਦੌਰਾਨ ਸਮਾਂ ਸਮਾਪਤ ਹੋ ਗਿਆ"
+
+#: ../cli/src/connections.c:781
+msgid "the VPN service did not start in time"
+msgstr "VPN ਸਰਵਿਸ ਸਮੇਂ 'ਚ ਸ਼ੁਰੂ ਨਹੀਂ ਹੋਈ"
+
+#: ../cli/src/connections.c:783
+msgid "the VPN service failed to start"
+msgstr "VPN ਸਰਵਿਸ ਸ਼ੁਰੂ ਹੋਣ ਲਈ ਫੇਲ੍ਹ ਹੋਈ"
+
+#: ../cli/src/connections.c:785
+msgid "no valid VPN secrets"
+msgstr "ਕੋਈ ਢੁੱਕਵਾਂ VPN ਭੇਦ  ਨਹੀਂ"
+
+#: ../cli/src/connections.c:787
+msgid "invalid VPN secrets"
+msgstr "ਅਢੁੱਕਵਾਂ VPN ਭੇਦ"
+
+#: ../cli/src/connections.c:789
+msgid "the connection was removed"
+msgstr "ਕੁਨੈਕਸ਼ਨ ਹਟਾਇਆ ਗਿਆ"
+
+#: ../cli/src/connections.c:803
 #, c-format
-msgid "unable to create netlink socket for monitoring wired ethernet devices - %s"
-msgstr ""
-"ਤਾਰ ਵਾਲੇ ਇਥਰਨੈੱਟ ਜੰਤਰ - %s ਦੀ ਨਿਗਰਾਨੀ ਲਈ netlink ਸਾਕਟ ਬਣਾਉਣ "
-"ਲਈ ਅਸਫ਼ਲ"
+msgid "state: %s\n"
+msgstr "ਹਾਲਤ: %s\n"
 
-#: ../src/nm-netlink-monitor.c:192
+#: ../cli/src/connections.c:806 ../cli/src/connections.c:832
 #, c-format
-msgid "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgid "Connection activated\n"
+msgstr "ਕੁਨੈਕਸ਼ਨ ਚਾਲੂ ਕੀਤਾ\n"
+
+#: ../cli/src/connections.c:809
+#, c-format
+msgid "Error: Connection activation failed."
+msgstr "ਗਲਤ: ਕੁਨੈਕਸ਼ਨ ਚਾਲੂ ਕਰਨ ਲਈ ਫੇਲ੍ਹ ਹੈ।"
+
+#: ../cli/src/connections.c:828
+#, c-format
+msgid "state: %s (%d)\n"
+msgstr "ਹਾਲਤ: %s (%d)\n"
+
+#: ../cli/src/connections.c:838
+#, c-format
+msgid "Error: Connection activation failed: %s."
+msgstr "ਗਲਤੀ: ਕੁਨੈਕਸ਼ਨ ਚਾਲੂ ਕਰਨ ਲਈ ਫੇਲ੍ਹ: %s।"
+
+#: ../cli/src/connections.c:855 ../cli/src/devices.c:551
+#, c-format
+msgid "Error: Timeout %d sec expired."
+msgstr "ਗਲਤੀ: ਸਮਾਂ-ਸਮਾਪਤੀ %d ਸਕਿੰਟ ਖਤਮ ਹੋਏ।"
+
+#: ../cli/src/connections.c:898
+#, c-format
+msgid "Error: Connection activation failed: %s"
+msgstr "ਗਲਤੀ: ਕੁਨੈਕਸ਼ਨ ਚਾਲੂ ਕਰਨ ਲਈ ਫੇਲ੍ਹ: %s"
+
+#: ../cli/src/connections.c:912
+#, c-format
+#| msgid "Error retrieving VPN connection '%s'"
+msgid "Error: Obtaining active connection for '%s' failed."
+msgstr "ਗਲਤੀ: '%s' ਲਈ ਚਾਲੂ ਕੁਨੈਕਸ਼ਨ ਲੈਣ ਲਈ ਫੇਲ੍ਹ ਹੈ।"
+
+#: ../cli/src/connections.c:921
+#, c-format
+msgid "Active connection state: %s\n"
+msgstr "ਚਾਲੂ ਕੁਨੈਕਸ਼ਨ ਹਾਲਤ: %s\n"
+
+#: ../cli/src/connections.c:922
+#, c-format
+msgid "Active connection path: %s\n"
+msgstr "ਚਾਲੂ ਕੁਨੈਕਸ਼ਨ ਪਾਥ: %s\n"
+
+#: ../cli/src/connections.c:976 ../cli/src/connections.c:1094
+#, c-format
+#| msgid "Error retrieving VPN connection '%s'"
+msgid "Error: Unknown connection: %s."
+msgstr "ਗਲਤੀ: ਅਣਜਾਣ ਕੁਨੈਕਸ਼ਨ: %s।"
+
+#: ../cli/src/connections.c:1011 ../cli/src/devices.c:622
+#, c-format
+msgid "Error: timeout value '%s' is not valid."
+msgstr "ਗਲਤੀ: ਸਮਾਂ-ਸਮਾਪਤੀ ਮੁੱਲ '%s' ਢੁੱਕਵਾਂ ਨਹੀਂ ਹੈ।"
+
+#: ../cli/src/connections.c:1024 ../cli/src/connections.c:1111
+#, c-format
+msgid "Error: id or uuid has to be specified."
+msgstr "ਗਲਤੀ: id ਜਾਂ uuid ਨਹੀਂ ਦਿੱਤਾ।"
+
+#: ../cli/src/connections.c:1044
+#, c-format
+msgid "Error: No suitable device found: %s."
+msgstr "ਗਲਤੀ: ਕੋਈ ਢੁੱਕਵਾਂ ਜੰਤਰ ਨਹੀਂ ਲੱਭਿਆ: %s।"
+
+#: ../cli/src/connections.c:1046
+#, c-format
+msgid "Error: No suitable device found."
+msgstr "ਗਲਤੀ: ਕੋਈ ਢੁੱਕਵਾਂ ਜੰਤਰ ਨਹੀਂ ਮਿਲਿਆ।"
+
+#: ../cli/src/connections.c:1138
+#, c-format
+msgid "Warning: Connection not active\n"
+msgstr "ਚੇਤਾਵਨੀ: ਕੁਨੈਕਸ਼ਨ ਚਾਲੂ ਨਹੀਂ ਹੈ\n"
+
+#: ../cli/src/connections.c:1189
+#, c-format
+msgid "Error: 'con' command '%s' is not valid."
+msgstr "ਗਲਤੀ: 'con' ਕਮਾਂਡ '%s' ਢੁੱਕਵਾਂ ਨਹੀਂ।"
+
+#: ../cli/src/connections.c:1216
+#, c-format
+msgid "Error: could not connect to D-Bus."
+msgstr "ਗਲਤੀ: ਡੀ-ਬੱਸ ਨਾਲ ਕੁਨੈਕਟ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ।"
+
+#: ../cli/src/connections.c:1223
+#, c-format
+msgid "Error: Could not get system settings."
+msgstr "ਗਲਤੀ: ਸਿਸਟਮ ਸੈਟਿੰਗ ਨਹੀਂ ਲਈ ਜਾ ਸਕੀ।"
+
+#: ../cli/src/connections.c:1231
+#, c-format
+msgid "Error: Could not get user settings."
+msgstr "ਗਲਤੀ: ਯੂਜ਼ਰ ਸੈਟਿੰਗ ਨਹੀਂ ਲਈ ਜਾ ਸਕੀ।"
+
+#: ../cli/src/connections.c:1241
+#, c-format
+msgid "Error: Can't obtain connections: settings services are not running."
+msgstr "ਗਲਤੀ: ਕੁਨੈਕਸ਼ਨ ਨਹੀਂ ਲਿਆ ਜਾ ਸਕਦਾ: ਸਿਸਟਮ ਸਰਵਿਸ ਨਹੀਂ ਚੱਲ ਰਹੀ ਹੈ।"
+
+#: ../cli/src/devices.c:73
+#, c-format
+msgid ""
+"Usage: nmcli dev { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | list | disconnect | wifi }\n"
+"\n"
+"  status\n"
+"  list [iface <iface>]\n"
+"  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
+"  wifi [list [iface <iface>] | apinfo iface <iface> hwaddr <hwaddr>]\n"
+"\n"
 msgstr ""
-"ਤਾਰ ਵਾਲੇ ਇਥਰਨੈੱਟ ਜੰਤਰ - %s ਦੀ ਨਿਗਰਾਨੀ ਲਈ netlink ਸਾਕਟ ਜੋੜਨ "
-"ਲਈ ਅਸਫ਼ਲ"
+"ਵਰਤੋਂ: nmcli dev { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | list | disconnect | wifi }\n"
+"\n"
+"  status\n"
+"  list [iface <iface>]\n"
+"  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
+"  wifi [list [iface <iface>] | apinfo iface <iface> hwaddr <hwaddr>]\n"
+"\n"
 
-#: ../src/nm-netlink-monitor.c:427
-msgid "operation took too long"
-msgstr "ਓਪਰੇਸ਼ਨ ਨੂੰ ਬਹੁਤ ਸਮਾਂ ਲੱਗ ਗਿਆ"
+#: ../cli/src/devices.c:93
+msgid "unmanaged"
+msgstr "ਬਿਨ-ਪਰਬੰਧ"
 
-#: ../src/nm-netlink-monitor.c:524
-msgid "received data from wrong type of sender"
-msgstr "ਭੇਜਣ ਵਾਲੇ ਦੀ ਗਲਤ ਕਿਸਮ ਤੋਂ ਡਾਟਾ ਮਿਲਿਆ"
+#: ../cli/src/devices.c:95
+msgid "unavailable"
+msgstr "ਅਣ-ਉਪਲੱਬਧ"
 
-#: ../src/nm-netlink-monitor.c:537
-msgid "received data from unexpected sender"
-msgstr "ਅਣਜਾਣ ਭੇਜਣ ਵਾਲੇ ਵਲੋਂ ਡਾਟਾ ਮਿਲਿਆ"
+#: ../cli/src/devices.c:97 ../cli/src/network-manager.c:73
+msgid "disconnected"
+msgstr "ਡਿਸ-ਕੁਨੈਕਟ ਕੀਤਾ"
 
-#: ../src/nm-netlink-monitor.c:666
-msgid "too much data was sent over socket and some of it was lost"
-msgstr "ਸਾਕਟ ਉੱਤੇ ਬਹੁਤ ਵੱਧ ਡਾਟਾ ਭੇਜਿਆ ਗਿਆ ਅਤੇ ਇਸ 'ਚੋਂ ਕੁਝ ਗੁੰਮ ਹੋ ਗਿਆ"
+#: ../cli/src/devices.c:99
+msgid "connecting (prepare)"
+msgstr "ਕੁਨੈਕਟ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ (ਤਿਆਰੀ)"
 
-#: ../src/nm-netlink-monitor.c:774
+#: ../cli/src/devices.c:101
+msgid "connecting (configuring)"
+msgstr "ਕੁਨੈਕਟ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ (ਸੰਰਚਨਾ ਜਾਰੀ)"
+
+#: ../cli/src/devices.c:103
+msgid "connecting (need authentication)"
+msgstr "ਕੁਨੈਕਟ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ (ਪਰਮਾਣਕਿਤਾ ਦੀ ਲੋੜ)"
+
+#: ../cli/src/devices.c:105
+msgid "connecting (getting IP configuration)"
+msgstr "ਕੁਨੈਕਟ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ (IP ਸੰਰਚਨਾ ਲਈ ਜਾ ਰਹੀ ਹੈ)"
+
+#: ../cli/src/devices.c:107 ../cli/src/network-manager.c:71
+msgid "connected"
+msgstr "ਕੁਨੈਕਟ ਹੋਇਆ"
+
+#: ../cli/src/devices.c:109
+msgid "connection failed"
+msgstr "ਕੁਨੈਕਸ਼ਨ ਫੇਲ੍ਹ ਹੈ"
+
+#: ../cli/src/devices.c:132 ../cli/src/devices.c:876
+msgid "Unknown"
+msgstr "ਅਣਜਾਣ"
+
+#. print them
+#: ../cli/src/devices.c:164 ../cli/src/devices.c:266 ../cli/src/devices.c:861
+#: ../cli/src/devices.c:879
+#| msgid "none"
+msgid "(none)"
+msgstr "(ਕੋਈ ਨਹੀਂ)"
+
+#: ../cli/src/devices.c:209
+#, c-format
+msgid "%s: error converting IP4 address 0x%X"
+msgstr "%s: IP4 ਐਡਰੈੱਸ 0x%X ਬਦਲਣ ਦੌਰਾਨ ਗਲਤੀ"
+
+#: ../cli/src/devices.c:238
+#, c-format
+msgid "%s, %s, Freq %d MHz, Rate %d Mb/s, Strength %d"
+msgstr "%s, %s, ਫਰੀਕਿਊਂਸੀ %d MHz, ਦਰ %d Mb/s, ਤਾਕਤ %d"
+
+#: ../cli/src/devices.c:239
+msgid "Ad-Hoc"
+msgstr "ਐਡ-ਹਾਕ"
+
+#: ../cli/src/devices.c:248
+msgid ", Encrypted: "
+msgstr ", ਇੰਕ੍ਰਿਪਟ ਕੀਤਾ: "
+
+#: ../cli/src/devices.c:253
+msgid " WEP"
+msgstr " WEP"
+
+#: ../cli/src/devices.c:255
+msgid " WPA"
+msgstr " WPA"
+
+#: ../cli/src/devices.c:257
+msgid " WPA2"
+msgstr " WPA2"
+
+#: ../cli/src/devices.c:260
+#| msgid "WPA Enterprise"
+msgid " Enterprise"
+msgstr " ਇੰਟਰਪਰਾਈਸ"
+
+#: ../cli/src/devices.c:294 ../cli/src/devices.c:458 ../cli/src/devices.c:460
+msgid "Device"
+msgstr "ਜੰਤਰ"
+
+#: ../cli/src/devices.c:299
+msgid "Driver"
+msgstr "ਡਰਾਇਵਰ"
+
+#: ../cli/src/devices.c:299 ../cli/src/devices.c:567
+msgid "(unknown)"
+msgstr "(ਅਣਜਾਣ)"
+
+#: ../cli/src/devices.c:300 ../cli/src/devices.c:458 ../cli/src/devices.c:460
+msgid "State"
+msgstr "ਹਾਲਤ"
+
+#: ../cli/src/devices.c:313
+msgid "HW Address"
+msgstr "HW ਐਡਰੈੱਸ"
+
+#: ../cli/src/devices.c:319
+#, c-format
+msgid ""
+"\n"
+"  Capabilities:\n"
+msgstr ""
+"\n"
+"  ਸਮਰੱਥਾ:\n"
+
+#: ../cli/src/devices.c:321
+msgid "Carrier Detect"
+msgstr "ਕੈਰੀਅਰ ਖੋਜ"
+
+#: ../cli/src/devices.c:336
+#, c-format
+msgid "%u Mb/s"
+msgstr "%u Mb/s"
+
+#: ../cli/src/devices.c:337
+msgid "Speed"
+msgstr "ਸਪੀਡ"
+
+#: ../cli/src/devices.c:348
+#, c-format
+msgid ""
+"\n"
+"  Wireless Properties\n"
+msgstr ""
+"\n"
+" ਬੇਤਾਰ ਵਿਸ਼ੇਸ਼ਤਾ\n"
+
+#: ../cli/src/devices.c:353
+msgid "WEP Encryption"
+msgstr "WEP ਇੰਕ੍ਰਿਪਸ਼ਨ"
+
+#: ../cli/src/devices.c:355
+#| msgid "WPA Enterprise"
+msgid "WPA Encryption"
+msgstr "WPA ਇੰਕ੍ਰਿਪਸ਼ਨ"
+
+#: ../cli/src/devices.c:357
+#| msgid "WPA2 Enterprise"
+msgid "WPA2 Encryption"
+msgstr "WPA2  ਇੰਕ੍ਰਿਪਸ਼ਨ"
+
+#: ../cli/src/devices.c:359
+msgid "TKIP cipher"
+msgstr "TKIP ਸਿਫਰ"
+
+#: ../cli/src/devices.c:361
+msgid "CCMP cipher"
+msgstr "CCMP ਸੀਫਰ"
+
+#: ../cli/src/devices.c:368
+#, c-format
+msgid ""
+"\n"
+"  Wireless Access Points %s\n"
+msgstr ""
+"\n"
+"  ਬੇਤਾਰ ਅਸੈੱਸ ਪੁਆਇੰਟ %s\n"
+
+#: ../cli/src/devices.c:368
+msgid "(* = current AP)"
+msgstr "(* = ਮੌਜੂਦਾ AP)"
+
+#: ../cli/src/devices.c:374
+#, c-format
+msgid ""
+"\n"
+"  Wired Properties\n"
+msgstr ""
+"\n"
+"  ਤਾਰ ਨਾਲ ਵਿਸ਼ੇਸ਼ਤਾ\n"
+
+#: ../cli/src/devices.c:377 ../cli/src/devices.c:379
+msgid "Carrier"
+msgstr "ਕੈਰੀਅਰ"
+
+#: ../cli/src/devices.c:377
+#| msgid "none"
+msgid "on"
+msgstr "ਚਾਲੂ"
+
+#: ../cli/src/devices.c:379
+msgid "off"
+msgstr "ਬੰਦ"
+
+#: ../cli/src/devices.c:387
+#, c-format
+msgid ""
+"\n"
+"  IPv4 Settings:\n"
+msgstr ""
+"\n"
+"  IPv4 ਵਿਸ਼ੇਸ਼ਤਾ:\n"
+
+#: ../cli/src/devices.c:395
+msgid "Address"
+msgstr "ਐਡਰੈੱਸ"
+
+#: ../cli/src/devices.c:401
+msgid "Prefix"
+msgstr "ਪ੍ਰੀ-ਫਿਕਸ"
+
+#: ../cli/src/devices.c:405
+msgid "Gateway"
+msgstr "ਗੇਟਵੇ"
+
+#: ../cli/src/devices.c:416
+msgid "DNS"
+msgstr "DNS"
+
+#: ../cli/src/devices.c:458
+msgid "Status of devices"
+msgstr "ਜੰਤਰਾਂ ਦੀ ਹਾਲਤ"
+
+#: ../cli/src/devices.c:487
+#, c-format
+msgid "Error: '%s' argument is missing."
+msgstr "ਗਲਤੀ: '%s' ਆਰਗੂਮੈਂਟ ਗੁੰਮ ਹੈ।"
+
+#: ../cli/src/devices.c:516 ../cli/src/devices.c:655 ../cli/src/devices.c:729
+#, c-format
+msgid "Error: Device '%s' not found."
+msgstr "ਗਲਤੀ: ਜੰਤਰ '%s' ਨਹੀਂ ਲੱਭਿਆ।"
+
+#: ../cli/src/devices.c:539
+#, c-format
+msgid "Success: Device '%s' successfully disconnected."
+msgstr "ਸਫ਼ਲ: ਜੰਤਰ '%s' ਠੀਕ ਤਰ੍ਹਾਂ ਡਿਸ-ਕੁਨੈਕਟ ਹੋ ਗਿਆ।"
+
+#: ../cli/src/devices.c:564
+#, c-format
+msgid "Error: Device '%s' (%s) disconnecting failed: %s"
+msgstr "ਗਲਤੀ: ਜੰਤਰ '%s' (%s) ਡਿਸ-ਕੁਨੈਕਸ਼ਨ ਫੇਲ੍ਹ: %s"
+
+#: ../cli/src/devices.c:572
+#, c-format
+msgid "Device state: %d (%s)\n"
+msgstr "ਜੰਤਰ ਹਾਲਤ: %d (%s)\n"
+
+#: ../cli/src/devices.c:636
+#, c-format
+msgid "Error: iface has to be specified."
+msgstr "ਗਲਤੀ: iface ਦੇਣ ਲਈ ਫੇਲ੍ਹ ਹੈ।"
+
+#: ../cli/src/devices.c:736 ../cli/src/devices.c:746
+msgid "WiFi scan list"
+msgstr "ਵਾਈਫਾਈ ਸਕੈਨ ਲਿਸਟ"
+
+#: ../cli/src/devices.c:740
+#, c-format
+msgid "Error: Device '%s' is not a WiFi device."
+msgstr "ਗਲਤੀ: ਜੰਤਰ '%s' ਵਾਈ-ਫਾਈ ਜੰਤਰ ਨਹੀਂ ਹੈ।"
+
+#: ../cli/src/devices.c:754
+msgid "Device:"
+msgstr "ਜੰਤਰ:"
+
+#: ../cli/src/devices.c:806
+#, c-format
+msgid "Error: hwaddr has to be specified."
+msgstr "ਗਲਤੀ: hwaddr ਦੇਣ ਦੀ ਲੋੜ ਹੈ।"
+
+#: ../cli/src/devices.c:844
+#, c-format
+msgid "Error: Access point with hwaddr '%s' not found."
+msgstr "ਗਲਤੀ: hwaddr '%s' ਵਾਲਾ ਅਸੈੱਸ ਪੁਆਇੰਟ ਨਹੀਂ ਲੱਭਿਆ।"
+
+#: ../cli/src/devices.c:862
+#, c-format
+msgid "%u MHz"
+msgstr "%u MHz"
+
+#: ../cli/src/devices.c:863
+#, c-format
+msgid "%u MB/s"
+msgstr "%u MB/s"
+
+#: ../cli/src/devices.c:869 ../cli/src/devices.c:871
+msgid "AP parameters"
+msgstr "AP ਪੈਰਾਮੀਟਰ"
+
+#: ../cli/src/devices.c:873
+msgid "SSID:"
+msgstr "SSID:"
+
+#: ../cli/src/devices.c:874
+msgid "BSSID:"
+msgstr "BSSID:"
+
+#: ../cli/src/devices.c:875
+msgid "Frequency:"
+msgstr "ਫਰੀਕਿਊਨਸੀ:"
+
+#: ../cli/src/devices.c:876
+msgid "Mode:"
+msgstr "ਮੋਡ:"
+
+#: ../cli/src/devices.c:876
+msgid "Ad-hoc"
+msgstr "ਐਡ-ਹਾਕ"
+
+#: ../cli/src/devices.c:876
+msgid "Infrastructure"
+msgstr "ਇੰਫਰਾਸਟੱਕਚਰ"
+
+#: ../cli/src/devices.c:877
+msgid "Maximal bitrate:"
+msgstr "ਵੱਧੋ-ਵੱਧ ਬਿੱਟਰੇਟ:"
+
+#: ../cli/src/devices.c:878
+msgid "Strength:"
+msgstr "ਤਾਕਤ:"
+
+#: ../cli/src/devices.c:879
+msgid "Flags:"
+msgstr "ਫਲੈਗ:"
+
+#: ../cli/src/devices.c:879
+msgid "privacy"
+msgstr "ਪਰਾਈਵੇਸੀ"
+
+#: ../cli/src/devices.c:880
+msgid "WPA flags:"
+msgstr "WPA ਫਲੈਗ:"
+
+#: ../cli/src/devices.c:881
+msgid "RSN flags:"
+msgstr "RSN ਫਲੈਗ:"
+
+#: ../cli/src/devices.c:907
+#, c-format
+msgid "Error: 'dev wifi' command '%s' is not valid."
+msgstr "ਗਲਤੀ: 'dev wifi' ਕਮਾਂਡ '%s' ਢੁੱਕਵੀਂ ਨਹੀਂ ਹੈ।"
+
+#: ../cli/src/devices.c:943
+#, c-format
+msgid "Error: 'dev' command '%s' is not valid."
+msgstr "ਗਲਤੀ: 'dev' ਕਮਾਂਡ '%s' ਢੁੱਕਵੀਂ ਨਹੀਂ ਹੈ।"
+
+#: ../cli/src/network-manager.c:46
+#, c-format
+msgid ""
+"Usage: nmcli nm { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | sleep | wakeup | wifi | wwan }\n"
+"\n"
+"  status\n"
+"  sleep\n"
+"  wakeup\n"
+"  wifi [on|off]\n"
+"  wwan [on|off]\n"
+"\n"
+msgstr ""
+"ਵਰਤੋਂ: nmcli nm { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | sleep | wakeup | wifi | wwan }\n"
+"\n"
+"  status\n"
+"  sleep\n"
+"  wakeup\n"
+"  wifi [on|off]\n"
+"  wwan [on|off]\n"
+"\n"
+
+#: ../cli/src/network-manager.c:67
+msgid "asleep"
+msgstr "asleep"
+
+#: ../cli/src/network-manager.c:69
+#| msgid "VPN Connections"
+msgid "connecting"
+msgstr "ਕੁਨੈਕਟ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ"
+
+#: ../cli/src/network-manager.c:93 ../cli/src/network-manager.c:94
+#: ../cli/src/network-manager.c:95 ../cli/src/network-manager.c:96
+#: ../cli/src/network-manager.c:143 ../cli/src/network-manager.c:160
+msgid "enabled"
+msgstr "ਚਾਲੂ ਹੈ"
+
+#: ../cli/src/network-manager.c:93 ../cli/src/network-manager.c:94
+#: ../cli/src/network-manager.c:95 ../cli/src/network-manager.c:96
+#: ../cli/src/network-manager.c:143 ../cli/src/network-manager.c:160
+msgid "disabled"
+msgstr "ਬੰਦ ਹੈ"
+
+#: ../cli/src/network-manager.c:102
+msgid "NetworkManager status"
+msgstr "ਨੈੱਟਵਰਕਮੈਨੇਜਰ ਹਾਲਤ"
+
+#: ../cli/src/network-manager.c:104
+msgid "NM running:"
+msgstr "NM ਚੱਲ ਰਿਹਾ ਹੈ:"
+
+#: ../cli/src/network-manager.c:104
+msgid "running"
+msgstr "ਚੱਲ ਰਿਹਾ ਹੈ"
+
+#: ../cli/src/network-manager.c:104
+msgid "not running"
+msgstr "ਨਹੀਂ ਚੱਲ ਰਿਹਾ ਹੈ"
+
+#: ../cli/src/network-manager.c:105
+msgid "NM state:"
+msgstr "NM ਹਾਲਤ:"
+
+#: ../cli/src/network-manager.c:106
+msgid "NM wireless hardware:"
+msgstr "NM ਬੇਤਾਰ ਹਾਰਡਵੇਅਰ:"
+
+#. no argument, show current state
+#: ../cli/src/network-manager.c:107 ../cli/src/network-manager.c:143
+msgid "NM wireless:"
+msgstr "NM ਬੇਤਾਰ:"
+
+#: ../cli/src/network-manager.c:108
+msgid "NM WWAN hardware:"
+msgstr "NM WWAN ਹਾਰਡਵੇਅਰ:"
+
+#. no argument, show current state
+#: ../cli/src/network-manager.c:109 ../cli/src/network-manager.c:160
+msgid "NM WWAN:"
+msgstr "NM WWAN:"
+
+#: ../cli/src/network-manager.c:150
+#, c-format
+msgid "Error: invalid 'wifi' parameter: '%s'."
+msgstr "ਗਲਤੀ: ਅਢੁੱਕਵਾਂ 'wifi' ਪੈਰਾਮੀਟਰ: '%s'."
+
+#: ../cli/src/network-manager.c:167
+#, c-format
+msgid "Error: invalid 'wwan' parameter: '%s'."
+msgstr "ਗਲਤੀ: ਅਢੁੱਕਵਾਂ 'wwan' ਪੈਰਾਮੀਟਰ: '%s'."
+
+#: ../cli/src/network-manager.c:178
+#, c-format
+msgid "Error: 'nm' command '%s' is not valid."
+msgstr "ਗਲਤੀ: 'nm' ਕਮਾਂਡ '%s' ਢੁੱਕਵੀਂ ਨਹੀਂ ਹੈ।"
+
+#: ../cli/src/nmcli.c:65
+#, c-format
+msgid ""
+"Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
+"\n"
+"OPTIONS\n"
+"  -t[erse]    terse output\n"
+"  -p[retty]   pretty output\n"
+"  -v[ersion]  show program version\n"
+"  -h[elp]     print this help\n"
+"\n"
+"OBJECT\n"
+"  nm          NetworkManager status\n"
+"  con         NetworkManager connections\n"
+"  dev         devices managed by NetworkManager\n"
+"\n"
+msgstr ""
+"ਵਰਤੋਂ: %s [OPTIONS] OBJECT { COMMAND | help }\n"
+"\n"
+"OPTIONS\n"
+"  -t[erse]    terse output\n"
+"  -p[retty]   pretty output\n"
+"  -v[ersion]  show program version\n"
+"  -h[elp]     print this help\n"
+"\n"
+"OBJECT\n"
+"  nm          NetworkManager status\n"
+"  con         NetworkManager connections\n"
+"  dev         devices managed by NetworkManager\n"
+"\n"
+
+#: ../cli/src/nmcli.c:106
+#, c-format
+msgid "Object '%s' is unknown, try 'nmcli help'."
+msgstr "ਆਬਜੈਕਟ '%s' ਅਣਜਾਣ ਹੈ, 'nmcli help' ਵਰਤ ਕੇ ਵੇਖੋ।"
+
+#: ../cli/src/nmcli.c:139
+#, c-format
+msgid "nmcli tool, version %s\n"
+msgstr "nmcli ਟੂਲ, ਵਰਜਨ %s\n"
+
+#: ../cli/src/nmcli.c:145
+#, c-format
+msgid "Option '%s' is unknown, try 'nmcli -help'."
+msgstr "ਚੋਣ '%s' ਅਣਜਾਣੀ ਹੈ 'nmcli -help' ਵਰਤ ਕੇ ਵੇਖੋ।"
+
+#: ../cli/src/nmcli.c:164
+#, c-format
+msgid "Caught signal %d, shutting down..."
+msgstr "%d ਸਿਗਨਲ ਮਿਲਿਆ, ਬੰਦ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ..."
+
+#: ../cli/src/nmcli.c:189
+#, c-format
+msgid "Error: Could not connect to NetworkManager."
+msgstr "ਗਲਤੀ: ਨੈੱਟਵਰਕਮੈਨੇਜਰ ਨਾਲ ਕੁਨੈਕਟ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ।"
+
+#: ../cli/src/nmcli.c:205
+msgid "Success"
+msgstr "ਸਫ਼ਲ"
+
+#: ../libnm-util/crypto.c:120
+#, c-format
+msgid "PEM key file had no end tag '%s'."
+msgstr "PEM ਕੁੰਜੀ ਫਾਇਲ ਵਿੱਚ ਕੋਈ ਅੰਤ ਟੈਗ '%s' ਨਹੀਂ ਹੈ।"
+
+#: ../libnm-util/crypto.c:130
+#, c-format
+msgid "Doesn't look like a PEM private key file."
+msgstr "PEM ਪ੍ਰਾਈਵੇਟ ਕੁੰਜੀ ਫਾਇਲ ਵਾਂਗ ਨਹੀਂ ਜਾਪਦੀ।"
+
+#: ../libnm-util/crypto.c:138
+#, c-format
+msgid "Not enough memory to store PEM file data."
+msgstr "PEM ਫਾਇਲ ਡਾਟਾ ਸਟੋਰ ਕਰਨ ਲਈ ਲੋੜੀਦੀ ਮੈਮੋਰੀ ਨਹੀਂ ਹੈ।"
+
+#: ../libnm-util/crypto.c:154
+#, c-format
+msgid "Malformed PEM file: Proc-Type was not first tag."
+msgstr "ਨਿਕਾਰਾ PEM ਫਾਇਲ: Proc-Type ਪਹਿਲਾਂ ਟੈਗ ਨਹੀਂ ਹੈ।"
+
+#: ../libnm-util/crypto.c:162
+#, c-format
+msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
+msgstr "ਨਿਕਾਰਾ PEM ਫਾਇਲ: ਅਣਜਾਣ Proc-Type ਟੈਗ '%s' ਹੈ।"
+
+#: ../libnm-util/crypto.c:172
+#, c-format
+msgid "Malformed PEM file: DEK-Info was not the second tag."
+msgstr "ਨਿਕਾਰਾ PEM ਫਾਇਲ: DEK-Info ਦੂਜਾ ਟੈਗ ਨਹੀਂ ਹੈ।"
+
+#: ../libnm-util/crypto.c:183
+#, c-format
+msgid "Malformed PEM file: no IV found in DEK-Info tag."
+msgstr "ਨਿਕਾਰਾ PEM ਫਾਇਲ: DEK-Info ਟੈਗ ਵਿੱਚ ਕੋਈ IV ਨਹੀਂ ਲੱਭਿਆ।"
+
+#: ../libnm-util/crypto.c:190
+#, c-format
+msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
+msgstr " ਨਿਕਾਰਾ PEM ਫਾਇਲ: DEK-Info ਟੈਗ ਵਿੱਚ ਗਲਤ ਫਾਰਮੈਟ IV"
+
+#: ../libnm-util/crypto.c:203
+#, c-format
+msgid "Malformed PEM file: unknown private key cipher '%s'."
+msgstr "ਨਿਕਾਰਾ PEM ਫਾਇਲ: ਅਣਜਾਣ ਪ੍ਰਾਈਵੇਟ ਕੁੰਜੀ ਸੀਫਰ '%s'।"
+
+#: ../libnm-util/crypto.c:222
+#, c-format
+msgid "Could not decode private key."
+msgstr "ਪ੍ਰਾਈਵੇਟ ਕੁੰਜੀ ਡੀਕੋਡ ਨਹੀਂ ਕੀਤੀ ਜਾ ਸਕੀ।"
+
+#: ../libnm-util/crypto.c:267
+#, c-format
+msgid "PEM certificate '%s' had no end tag '%s'."
+msgstr "PEM ਸਰਟੀਫਿਕੇਟ '%s' ਵਿੱਚ ਕੋਈ ਅੰਤ ਟੈਗ '%s' ਨਹੀਂ ਹੈ।"
+
+#: ../libnm-util/crypto.c:277
+#, c-format
+msgid "Failed to decode certificate."
+msgstr "ਸਰਟੀਫਿਕੇਟ ਡੀਕੋਡ ਕਰਨ ਲਈ ਫੇਲ੍ਹ ਹੈ।"
+
+#: ../libnm-util/crypto.c:286
+#, c-format
+msgid "Not enough memory to store certificate data."
+msgstr "ਸਰਟੀਫਿਕੇਟ ਡਾਟਾ ਸਟੋਰ ਕਰਨ ਲਈ ਲੋੜੀਦੀ ਮੈਮੋਰੀ ਨਹੀਂ ਹੈ।"
+
+#: ../libnm-util/crypto.c:294
+#, c-format
+msgid "Not enough memory to store file data."
+msgstr "ਫਾਇਲ ਡਾਟਾ ਸਟੋਰ ਕਰਨ ਲਈ ਲੋੜੀਦੀ ਮੈਮੋਰੀ ਨਹੀਂ ਹੈ।"
+
+#: ../libnm-util/crypto.c:324
+#, c-format
+msgid "IV must be an even number of bytes in length."
+msgstr "IV ਲਈ ਲੰਬਾਈ ਜਿਸਤ ਅੰਕ ਹੋਣੀ ਲਾਜ਼ਮੀ ਹੈ।"
+
+#: ../libnm-util/crypto.c:333
+#, c-format
+msgid "Not enough memory to store the IV."
+msgstr "IV ਸਟੋਰ ਕਰਨ ਲਈ ਲੋੜੀਦੀ ਮੈਮੋਰੀ ਨਹੀਂ ਹੈ।"
+
+#: ../libnm-util/crypto.c:344
+#, c-format
+msgid "IV contains non-hexadecimal digits."
+msgstr "IV ਵਿੱਚ ਗ਼ੈਰ-ਹੈਕਸਾਡੈਸੀਮਲ ਅੰਕ ਹਨ।"
+
+#: ../libnm-util/crypto.c:382 ../libnm-util/crypto_gnutls.c:148
+#: ../libnm-util/crypto_gnutls.c:266 ../libnm-util/crypto_nss.c:171
+#: ../libnm-util/crypto_nss.c:336
+#, c-format
+msgid "Private key cipher '%s' was unknown."
+msgstr "ਪ੍ਰਾਈਵੇਟ ਕੁੰਜੀ ਸੀਫ਼ਰ '%s' ਅਣਜਾਣ ਹੈ।"
+
+#: ../libnm-util/crypto.c:391
+#, c-format
+msgid "Not enough memory to decrypt private key."
+msgstr "ਪ੍ਰਾਈਵੇਟ ਕੁੰਜੀ ਡੀਕੋਡ ਕਰਨ ਲਈ ਲੋੜੀਦੀ ਮੈਮੋਰੀ ਨਹੀਂ ਹੈ।"
+
+#: ../libnm-util/crypto.c:511
+#, c-format
+msgid "Unable to determine private key type."
+msgstr "ਪ੍ਰਾਈਵੇਟ ਕੁੰਜੀ ਕਿਸਮ ਜਾਣਨ ਲਈ ਅਸਮਰੱਥ ਹੈ।"
+
+#: ../libnm-util/crypto.c:530
+#, c-format
+msgid "Not enough memory to store decrypted private key."
+msgstr "ਡਿਕ੍ਰਿਪਟ ਕੀਤੀ ਪ੍ਰਾਈਵੇਟ ਕੁੰਜੀ ਸਟੋਰ ਕਰਨ ਲਈ ਲੋੜੀਦੀ ਮੈਮੋਰੀ ਨਹੀਂ ਹੈ।"
+
+#: ../libnm-util/crypto_gnutls.c:49
+msgid "Failed to initialize the crypto engine."
+msgstr "ਕ੍ਰਿਪਟੂ ਇੰਜਣ ਸ਼ੁਰੂ ਕਰਨ ਲਈ ਫੇਲ੍ਹ ਹੈ।"
+
+#: ../libnm-util/crypto_gnutls.c:93
+#, c-format
+msgid "Failed to initialize the MD5 engine: %s / %s."
+msgstr "MD5 ਇੰਜਣ ਸ਼ੁਰੂ ਕਰਨ ਲਈ ਫੇਲ੍ਹ ਹੈ: %s / %s"
+
+#: ../libnm-util/crypto_gnutls.c:156
+#, c-format
+msgid "Invalid IV length (must be at least %zd)."
+msgstr "ਅਢੁੱਕਵੀਂ IV ਲੰਬਾਈ (ਘੱਟੋ-ਘੱਟ %zd ਹੋਣੀ ਲਾਜ਼ਮੀ ਹੈ)।"
+
+#: ../libnm-util/crypto_gnutls.c:165 ../libnm-util/crypto_nss.c:188
+#, c-format
+msgid "Not enough memory for decrypted key buffer."
+msgstr "ਡੀਕ੍ਰਿਪਟ ਕੀਤੇ ਕੁੰਜੀ ਬਫ਼ਰ ਲਈ ਲੋੜੀਦੀ ਮੈਮੋਰੀ ਨਹੀਂ ਹੈ।"
+
+#: ../libnm-util/crypto_gnutls.c:173
+#, c-format
+msgid "Failed to initialize the decryption cipher context: %s / %s."
+msgstr "ਡਿਕ੍ਰਿਪਸ਼ਨ ਸੀਫਰ ਪਰਸੰਗ ਸ਼ੁਰੂ ਕਰਨ ਲਈ ਫੇਲ੍ਹ: %s / %s"
+
+#: ../libnm-util/crypto_gnutls.c:182
+#, c-format
+msgid "Failed to set symmetric key for decryption: %s / %s."
+msgstr "ਡਿਕ੍ਰਿਪਸ਼ਨ ਲਈ ਸਮਮਿਤੀ ਕੁੰਜੀ ਸੈੱਟ ਕਰਨ ਲਈ ਫੇਲ੍ਹ: %s / %s"
+
+#: ../libnm-util/crypto_gnutls.c:191
+#, c-format
+msgid "Failed to set IV for decryption: %s / %s."
+msgstr "%s / %s : ਡਿਕ੍ਰਿਪਟ ਲਈ IV ਸੈੱਟ ਕਰਨ ਲਈ ਫੇਲ੍ਹ ਹੈ।"
+
+#: ../libnm-util/crypto_gnutls.c:200
+#, c-format
+msgid "Failed to decrypt the private key: %s / %s."
+msgstr "ਪ੍ਰਾਈਵੇਟ ਕੁੰਜੀ ਡਿਕ੍ਰਿਪਟ ਕਰਨ ਲਈ ਫੇਲ੍ਹ: %s / %s"
+
+#: ../libnm-util/crypto_gnutls.c:210 ../libnm-util/crypto_nss.c:267
+#, c-format
+msgid "Failed to decrypt the private key: unexpected padding length."
+msgstr "ਪ੍ਰਾਈਵੇਟ ਕੁੰਜੀ ਡਿਕ੍ਰਿਪਟ ਕਰਨ ਲਈ ਫੇਲ੍ਹ: ਅਣਜਾਣ ਪੈਡਿੰਗ ਲੰਬਾਈ।"
+
+#: ../libnm-util/crypto_gnutls.c:221 ../libnm-util/crypto_nss.c:278
+#, c-format
+msgid "Failed to decrypt the private key."
+msgstr "ਪ੍ਰਾਈਵੇਟ ਕੁੰਜੀ ਡਿਕ੍ਰਿਪਟ ਕਰਨ ਲਈ ਫੇਲ੍ਹ"
+
+#: ../libnm-util/crypto_gnutls.c:286 ../libnm-util/crypto_nss.c:356
+#, c-format
+msgid "Could not allocate memory for encrypting."
+msgstr "ਇੰਕ੍ਰਿਪਸ਼ਨ ਲਈ ਮੈਮੋਰੀ ਜਾਰੀ ਨਹੀਂ ਕੀਤੀ ਜਾ ਸਕੀ।"
+
+#: ../libnm-util/crypto_gnutls.c:294
+#, c-format
+msgid "Failed to initialize the encryption cipher context: %s / %s."
+msgstr "ਇੰਕ੍ਰਿਪਸ਼ਨ ਸੀਫ਼ਰ ਪਰਸੰਗ ਸ਼ੁਰੂ ਕਰਨ ਲਈ ਫੇਲ੍ਹ: %s / %s"
+
+#: ../libnm-util/crypto_gnutls.c:303
+#, c-format
+msgid "Failed to set symmetric key for encryption: %s / %s."
+msgstr "ਇੰਕ੍ਰਿਪਸ਼ਨ ਲਈ ਸਮਮਿਤੀ ਕੁੰਜੀ ਸੈੱਟ ਕਰਨ ਲਈ ਫੇਲ੍ਹ: %s / %s"
+
+#: ../libnm-util/crypto_gnutls.c:313
+#, c-format
+msgid "Failed to set IV for encryption: %s / %s."
+msgstr "ਇੰਕ੍ਰਿਪਸ਼ਨ ਲਈ IV ਸੈੱਟ ਕਰਨ ਵਾਸਤੇ ਫੇਲ੍ਹ: %s / %s"
+
+#: ../libnm-util/crypto_gnutls.c:322
+#, c-format
+msgid "Failed to encrypt the data: %s / %s."
+msgstr "ਡਾਟਾ ਡਿਕ੍ਰਿਪਟ ਕਰਨ ਲਈ ਫੇਲ੍ਹ: %s / %s"
+
+#: ../libnm-util/crypto_gnutls.c:362
+#, c-format
+msgid "Error initializing certificate data: %s"
+msgstr "ਸਰਟੀਫਿਕੇਟ ਡਾਟਾ ਸ਼ੁਰੂ 'ਚ ਗਲਤੀ: %s"
+
+#: ../libnm-util/crypto_gnutls.c:384
+#, c-format
+msgid "Couldn't decode certificate: %s"
+msgstr "ਸਰਟੀਫਿਕੇਟ ਡੀਕੋਡ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ: %s"
+
+#: ../libnm-util/crypto_gnutls.c:408
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %s"
+msgstr "PKCS#12 ਡੀਕੋਡਰ ਸ਼ੁਰੂ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ: %s"
+
+#: ../libnm-util/crypto_gnutls.c:421
+#, c-format
+msgid "Couldn't decode PKCS#12 file: %s"
+msgstr "PKCS#12 ਫਾਇਲ ਡੀਕੋਡ ਨਹੀਂ ਜਾ ਸਕੀ: %s"
+
+#: ../libnm-util/crypto_gnutls.c:433
+#, c-format
+msgid "Couldn't verify PKCS#12 file: %s"
+msgstr "PKCS#12 ਫਾਇਲ ਜਾਂਚੀ ਨਹੀਂ ਜਾ ਸਕੀ: %s"
+
+#: ../libnm-util/crypto_nss.c:56
+#, c-format
+msgid "Failed to initialize the crypto engine: %d."
+msgstr "ਕ੍ਰਿਪਟੂ ਇੰਜਣ ਸ਼ੁਰੂ ਕਰਨ ਲਈ ਫੇਲ੍ਹ: %d"
+
+#: ../libnm-util/crypto_nss.c:111
+#, c-format
+msgid "Failed to initialize the MD5 context: %d."
+msgstr "MD5 ਪਰਸੰਗ ਸ਼ੁਰੂ ਕਰਨ ਲਈ ਫੇਲ੍ਹ: %d"
+
+#: ../libnm-util/crypto_nss.c:179
+#, c-format
+msgid "Invalid IV length (must be at least %d)."
+msgstr "ਅਢੁੱਕਵੀਂ IV ਲੰਬਾਈ (ਘੱਟੋ-ਘੱਟ %d ਹੋਣੀ ਲਾਜ਼ਮੀ ਹੈ)।"
+
+#: ../libnm-util/crypto_nss.c:196
+#, c-format
+msgid "Failed to initialize the decryption cipher slot."
+msgstr "ਡਿਕ੍ਰਿਪਸ਼ਨ ਸੀਫਰ ਸਲਾਟ ਸ਼ੁਰੂ ਕਰਨ ਲਈ ਫੇਲ੍ਹ ਹੈ।"
+
+#: ../libnm-util/crypto_nss.c:206
+#, c-format
+msgid "Failed to set symmetric key for decryption."
+msgstr "ਡਿਕ੍ਰਿਪਸ਼ਨ ਲਈ ਸਮਮਿਤੀ ਕੁੰਜੀ ਸੈੱਟ ਕਰਨ ਲਈ ਫੇਲ੍ਹ ਹੈ।"
+
+#: ../libnm-util/crypto_nss.c:216
+#, c-format
+msgid "Failed to set IV for decryption."
+msgstr "ਡਿਕ੍ਰਿਪਟ ਲਈ IV ਸੈੱਟ ਕਰਨ ਲਈ ਫੇਲ੍ਹ ਹੈ।"
+
+#: ../libnm-util/crypto_nss.c:224
+#, c-format
+msgid "Failed to initialize the decryption context."
+msgstr "ਡਿਕ੍ਰਿਪਸ਼ਨ ਪਰਸੰਗ ਸ਼ੁਰੂ ਕਰਨ ਲਈ ਫੇਲ੍ਹ: "
+
+#: ../libnm-util/crypto_nss.c:237
+#, c-format
+msgid "Failed to decrypt the private key: %d."
+msgstr "ਪ੍ਰਾਈਵੇਟ ਕੁੰਜੀ ਡਿਕ੍ਰਿਪਟ ਕਰਨ ਲਈ ਫੇਲ੍ਹ: %d"
+
+#: ../libnm-util/crypto_nss.c:245
+#, c-format
+msgid "Failed to decrypt the private key: decrypted data too large."
+msgstr "ਪ੍ਰਾਈਵੇਟ ਕੁੰਜੀ ਡਿਕ੍ਰਿਪਟ ਕਰਨ ਲਈ ਫੇਲ੍ਹ: ਡਿਕ੍ਰਿਪਟ ਡਾਟਾ ਬਹੁਤ ਵੱਡਾ ਹੈ।"
+
+#: ../libnm-util/crypto_nss.c:256
+#, c-format
+msgid "Failed to finalize decryption of the private key: %d."
+msgstr "ਪ੍ਰਾਈਵੇਟ ਕੁੰਜ ਲਈ ਡੀਕ੍ਰਿਪਸ਼ਨ ਮੁਕੰਮਲ ਕਰਨ ਲਈ ਫੇਲ੍ਹ ਹੈ: %d।"
+
+#: ../libnm-util/crypto_nss.c:364
+#, c-format
+msgid "Failed to initialize the encryption cipher slot."
+msgstr "ਕ੍ਰਿਪਸ਼ਨ ਸੀਫ਼ਰ ਸਲਾਟ ਸ਼ੁਰੂ ਕਰਨ ਲਈ ਫੇਲ੍ਹ ਹੈ।"
+
+#: ../libnm-util/crypto_nss.c:372
+#, c-format
+msgid "Failed to set symmetric key for encryption."
+msgstr "ਇੰਕ੍ਰਿਪਸ਼ਨ ਲਈ ਸਮਮਿਤੀ ਕੁੰਜੀ ਸੈੱਟ ਕਰਨ ਲਈ ਫੇਲ੍ਹ।"
+
+#: ../libnm-util/crypto_nss.c:380
+#, c-format
+msgid "Failed to set IV for encryption."
+msgstr "ਇੰਕ੍ਰਿਪਸ਼ਨ ਲਈ IV ਸੈੱਟ ਕਰਨ ਵਾਸਤੇ ਫੇਲ੍ਹ।"
+
+#: ../libnm-util/crypto_nss.c:388
+#, c-format
+msgid "Failed to initialize the encryption context."
+msgstr "ਇੰਕ੍ਰਿਪਸ਼ਨ ਪਰਸੰਗ ਸ਼ੁਰੂ ਕਰਨ ਲਈ ਫੇਲ੍ਹ ਹੈ।"
+
+#: ../libnm-util/crypto_nss.c:396
+#, c-format
+msgid "Failed to encrypt: %d."
+msgstr "ਇੰਕ੍ਰਿਪਟ ਕਰਨ ਲਈ ਫੇਲ੍ਹ: %d."
+
+#: ../libnm-util/crypto_nss.c:404
+#, c-format
+msgid "Unexpected amount of data after encrypting."
+msgstr "ਇੰਕ੍ਰਿਪਟ ਕਰਨ ਦੇ ਬਾਅਦ ਅਚਾਨਕ ਅਣਜਾਣ ਮਾਤਰਾ 'ਚ ਡਾਟਾ।"
+
+#: ../libnm-util/crypto_nss.c:447
+#, c-format
+msgid "Couldn't decode certificate: %d"
+msgstr "ਸਰਟੀਫਿਕੇਟ ਡੀਕੋਡ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ: %d"
+
+#: ../libnm-util/crypto_nss.c:482
+#, c-format
+msgid "Couldn't convert password to UCS2: %d"
+msgstr "ਪਾਸਵਰਡ ਨੂੰ UCS2 'ਚ ਬਦਲਿਆ ਨਹੀਂ ਜਾ ਸਕਿਆ: %d"
+
+#: ../libnm-util/crypto_nss.c:510
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %d"
+msgstr "PKCS#12 ਡੀਕੋਡਰ ਸ਼ੁਰੂ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ: %d"
+
+#: ../libnm-util/crypto_nss.c:519
+#, c-format
+msgid "Couldn't decode PKCS#12 file: %d"
+msgstr "PKCS#12 ਫਾਇਲ ਜਾਂਚੀ ਨਹੀਂ ਜਾ ਸਕੀ: %d"
+
+#: ../libnm-util/crypto_nss.c:528
+#, c-format
+msgid "Couldn't verify PKCS#12 file: %d"
+msgstr "PKCS#12 ਫਾਇਲ ਜਾਂਚੀ ਨਹੀਂ ਜਾ ਸਕੀ: %d"
+
+#: ../libnm-util/crypto_nss.c:557
+msgid "Could not generate random data."
+msgstr "ਰਲਵਾਂ ਡਾਟਾ ਤਿਆਰ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ।"
+
+#: ../libnm-util/nm-utils.c:1802
+#, c-format
+msgid "Not enough memory to make encryption key."
+msgstr "ਇੰਕ੍ਰਿਪਸ਼ਨ ਕੁੰਜੀ ਬਣਾਉਣ ਲਈ ਲੋੜੀਦੀ ਮੈਮੋਰੀ ਨਹੀਂ ਹੈ।"
+
+#: ../libnm-util/nm-utils.c:1912
+msgid "Could not allocate memory for PEM file creation."
+msgstr "PEM ਫਾਇਲ ਬਣਾਉਣ ਲਈ ਮੈਮੋਰੀ ਜਾਰੀ ਨਹੀਂ ਕੀਤੀ ਜਾ ਸਕੀ।"
+
+#: ../libnm-util/nm-utils.c:1924
+#, c-format
+msgid "Could not allocate memory for writing IV to PEM file."
+msgstr "PEM ਫਾਇਲ ਵਾਸਤੇ IV ਲਿਖਣ ਲਈ ਮੈਮੋਰੀ ਦਿੱਤੀ ਨਹੀਂ ਜਾ ਸਕੀ।"
+
+#: ../libnm-util/nm-utils.c:1936
+#, c-format
+msgid "Could not allocate memory for writing encrypted key to PEM file."
+msgstr "PEM ਫਾਇਲ ਵਾਸਤੇ ਇੰਕ੍ਰਿਪਟ ਕੀਤੀ ਕੁੰਜੀ ਲਿਖਣ ਲਈ ਮੈਮੋਰੀ ਦਿੱਤੀ ਨਹੀਂ ਜਾ ਸਕੀ।"
+
+#: ../libnm-util/nm-utils.c:1955
+#, c-format
+msgid "Could not allocate memory for PEM file data."
+msgstr "PEM ਫਾਇਲ ਡਾਟੇ ਲਈ ਮੈਮੋਰੀ ਜਾਰੀ ਨਹੀਂ ਕੀਤੀ ਜਾ ਸਕੀ"
+
+#: ../src/nm-netlink-monitor.c:194 ../src/nm-netlink-monitor.c:464
+#: ../src/nm-netlink-monitor.c:582
+#: ../src/ip6-manager/nm-netlink-listener.c:352
+#, c-format
+msgid "error processing netlink message: %s"
+msgstr "ਨੈੱਟਲਿੰਕ ਸੁਨੇਹੇ ਉੱਤੇ ਕਾਰਵਾਈ ਕਰਨ ਦੌਰਾਨ ਗਲਤੀ: %s"
+
+#: ../src/nm-netlink-monitor.c:260
+#, c-format
+#| msgid ""
+#| "unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgstr "ਲਿੰਕ ਹਾਲਤ ਦੀ ਨਿਗਰਾਨੀ ਲਈ ਨੈੱਟਲਿੰਕ ਜਾਰੀ ਕਰਨ ਲਈ ਅਸਮਰੱਥ: %s"
+
+#: ../src/nm-netlink-monitor.c:270
+#, c-format
+#| msgid ""
+#| "unable to bind to netlink socket for monitoring wired ethernet devices - %"
+#| "s"
+msgid "unable to connect to netlink for monitoring link status: %s"
+msgstr "ਲਿੰਕ ਹਾਲਤ ਦੀ ਨਿਗਰਾਨੀ ਲਈ ਨੈੱਟਲਿੰਕ ਨਾਲ ਕੁਨੈਕਟ ਕਰਨ ਲਈ ਅਸਮਰੱਥ: %s"
+
+#: ../src/nm-netlink-monitor.c:278
+#, c-format
+#| msgid ""
+#| "unable to bind to netlink socket for monitoring wired ethernet devices - %"
+#| "s"
+msgid "unable to join netlink group for monitoring link status: %s"
+msgstr "ਲਿੰਕ ਹਾਲਤ ਦੀ ਨਿਗਰਾਨੀ ਲਈ ਨੈੱਟਲਿੰਕ ਗਰੁੱਪ ਜੁਆਇੰਨ ਕਰਨ ਲਈ ਅਸਮਰੱਥ: %s"
+
+#: ../src/nm-netlink-monitor.c:286
+#, c-format
+#| msgid ""
+#| "unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgid "unable to allocate netlink link cache for monitoring link status: %s"
+msgstr "ਲਿੰਕ ਹਾਲਤ ਦੀ ਨਿਗਰਾਨੀ ਲਈ ਨੈੱਟਲਿੰਕ ਲਿੰਕ ਕੈਸ਼ ਜਾਰੀ ਕਰਨ ਲਈ ਅਸਮਰੱਥ: %s"
+
+#: ../src/nm-netlink-monitor.c:494
+#: ../src/ip6-manager/nm-netlink-listener.c:382
 msgid "error occurred while waiting for data on socket"
 msgstr "ਸਾਕਟ ਉੱਤੇ ਡਾਟੇ ਦੀ ਉਡੀਕ ਕਰਨ ਦੌਰਾਨ ਗਲਤੀ"
 
-#: ../src/nm-ap-security-wpa-eap.c:93 ../src/nm-ap-security-wpa-eap.c:117
-msgid "WPA2 Enterprise"
-msgstr "WPA2 ਇੰਟਰਪਰਾਈਸ"
+#: ../src/nm-netlink-monitor.c:558 ../src/nm-netlink-monitor.c:571
+#, c-format
+msgid "error updating link cache: %s"
+msgstr "ਲਿੰਕ ਕੈਸ਼ ਅੱਪਡੇਟ ਕਰਨ ਦੌਰਾਨ ਗਲਤੀ: %s"
 
-#: ../src/nm-ap-security-wpa-eap.c:95 ../src/nm-ap-security-wpa-eap.c:122
-msgid "WPA Enterprise"
-msgstr "WPA ਇੰਟਰਪਰਾਈਸ"
+#: ../src/main.c:494
+#, c-format
+msgid "Invalid option.  Please use --help to see a list of valid options.\n"
+msgstr "ਗਲਤ ਚੋਣ। ਢੁੱਕਵੀਆਂ ਚੋਣਾਂ ਵੇਖਣ ਲਈ --help ਵਰਤੋਂ ਜੀ।\n"
 
-#: ../src/nm-ap-security-leap.c:66 ../src/nm-ap-security-leap.c:82
-msgid "LEAP"
-msgstr "LEAP"
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:324
+msgid "# Created by NetworkManager\n"
+msgstr "#ਨੈੱਟਵਰਕ ਮੈਨੇਜਰ ਵਲੋਂ ਬਣਾਈ\n"
 
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:340
+#, c-format
+msgid ""
+"# Merged from %s\n"
+"\n"
+msgstr ""
+"#%s ਤੋਂ ਮਿਲਾਇਆ\n"
+"\n"
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:279
+msgid "no usable DHCP client could be found."
+msgstr "ਕੋਈ ਵਰਤੋਂਯੋਗ DHCP ਕਲਾਇਟ ਨਹੀਂ ਲੱਭਿਆ ਜਾ ਸਕਿਆ।"
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:288
+msgid "'dhclient' could be found."
+msgstr "'dhclient' ਲੱਭਿਆ ਜਾ ਸਕਿਆ।"
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:298
+msgid "'dhcpcd' could be found."
+msgstr "'dhcpcd' ਲੱਭਿਆ ਜਾ ਸਕਿਆ।"
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:306
+#, c-format
+msgid "unsupported DHCP client '%s'"
+msgstr "ਗੈਰਸਹਾਇਕ DHCP ਕਲਾਇਟ '%s'"
+
+#: ../src/ip6-manager/nm-netlink-listener.c:200
+#, c-format
+msgid "unable to allocate netlink handle: %s"
+msgstr "netlink ਹੈੱਡਲ ਦੇਣ ਲਈ ਅਸਮਰੱਥ: %s"
+
+#: ../src/ip6-manager/nm-netlink-listener.c:210
+#, c-format
+msgid "unable to connect to netlink: %s"
+msgstr "netlink ਨਾਲ ਕੁਨੈਕਟ ਹੋਣ ਲਈ ਅਸਮਰੱਥ: %s"
+
+#: ../src/ip6-manager/nm-netlink-listener.c:307
+#, c-format
+msgid "unable to join netlink group: %s"
+msgstr "netlink ਗਰੁੱਪ ਜੁਆਇੰਨ ਕਰਨ ਲਈ ਅਣਸਮਰੱਥ:: %s"
+
+#: ../src/named-manager/nm-named-manager.c:315
+msgid "NOTE: the libc resolver may not support more than 3 nameservers."
+msgstr "ਨੋਟ: libc ਰਿਜ਼ੋਲਵਰ ੩ ਤੋਂ ਵੱਧ ਨੇਮ-ਸਰਵਰ ਲਈ ਸਹਾਇਕ ਨਹੀਂ ਹੋ ਸਕਦਾ ਹੈ।"
+
+#: ../src/named-manager/nm-named-manager.c:317
+msgid "The nameservers listed below may not be recognized."
+msgstr "ਹੇਠਾਂ ਦਿੱਤੇ ਨੇਮ-ਸਰਵਰ ਪਛਾਣੇ ਨਹੀਂ ਜਾ ਸਕਦੇ।"
+
+#: ../src/system-settings/nm-default-wired-connection.c:157
+#, c-format
+msgid "Auto %s"
+msgstr "ਆਟੋ %s"
+
+#: ../system-settings/plugins/ifcfg-rh/reader.c:3213
+msgid "System"
+msgstr "ਸਿਸਟਮ"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:1
+msgid "Connection sharing via a protected WiFi network"
+msgstr "ਸੁਰੱਖਿਅਤ ਵਾਈ-ਫਾਈ ਨੈੱਟਵਰਕ ਰਾਹੀਂ ਕੁਨੈਕਸ਼ਨ ਸਾਂਝਾ ਕਰੋ"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:2
+msgid "Connection sharing via an open WiFi network"
+msgstr "ਓਪਨ ਵਾਈ-ਫਾਈ ਨੈੱਟਵਰਕ ਰਾਹੀਂ ਕੁਨੈਕਸ਼ਨ ਸਾਂਝਾ ਕਰੋ"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:3
+msgid "Modify persistent system hostname"
+msgstr "ਸਥਿਰ ਸਿਸਟਮ ਹੋਸਟ-ਨਾਂ ਸੋਧ"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:4
+msgid "Modify system connections"
+msgstr "ਸਿਸਟਮ ਕੁਨੈਸ਼ਨ ਸੋਧ"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:5
+msgid "System policy prevents modification of system settings"
+msgstr "ਸਿਸਟਮ ਪਾਲਸੀ ਸਿਸਟਮ ਸੈਟਿੰਗ ਲਈ ਸੋਧ ਤੋਂ ਰੋਕਦੀ ਹੈ"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:6
+msgid "System policy prevents modification of the persistent system hostname"
+msgstr "ਸਿਸਟਮ ਪਾਲਸੀ ਸਥਿਰ ਸਿਸਟਮ ਹੋਸਟ-ਨਾਂ ਲਈ ਸੋਧਾਂ ਤੋਂ ਰੋਕਦੀ ਹੈ"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:7
+msgid "System policy prevents sharing connections via a protected WiFi network"
+msgstr ""
+"ਸਿਸਟਮ ਪਾਲਸੀ ਕੁਨੈਕਸ਼ਨ ਨੂੰ ਸੁਰੱਖਿਅਤ ਵਾਈ-ਫਾਈ ਨੈੱਟਵਰਕ ਰਾਹੀਂ ਸਾਂਝਾ ਕਰਨ ਤੋਂ ਰੋਕਦੀ "
+"ਹੈ"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:8
+msgid "System policy prevents sharing connections via an open WiFi network"
+msgstr ""
+"ਸਿਸਟਮ ਪਾਲਸੀ ਕੁਨੈਕਸ਼ਨ ਨੂੰ ਓਪਨ ਵਾਈ-ਫਾਈ ਨੈੱਟਵਰਕ ਰਾਹੀਂ ਸਾਂਝਾ ਕਰਨ ਤੋਂ ਰੋਕਦੀ ਹੈ"
+
+#~ msgid "Cannot add VPN connection"
+#~ msgstr "VPN ਕੁਨੈਕਸ਼ਨ ਜੋੜਿਆ ਨਹੀਂ ਜਾ ਸਕਦਾ ਹੈ"
+
+#~ msgid ""
+#~ "No suitable VPN software was found on your system. Contact your system "
+#~ "administrator."
+#~ msgstr ""
+#~ "ਤੁਹਾਡੇ ਸਿਸਟਮ ਉੱਤੇ ਕੋਈ ਠੀਕ VPN ਸਾਫਟਵੇਅਰ ਨਹੀਂ ਲੱਭਾ ਹੈ। ਆਪਣੇ ਸਿਸਟਮ ਪਰਸ਼ਾਸ਼ਕ ਨਾਲ ਸੰਪਰਕ ਕਰੋ।"
+
+#~ msgid "Cannot import VPN connection"
+#~ msgstr "VPN ਕੁਨੈਕਸ਼ਨ ਆਯਾਤ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਦਾ"
+
+#~ msgid ""
+#~ "Cannot find suitable software for VPN connection type '%s' to import the "
+#~ "file '%s'. Contact your system administrator."
+#~ msgstr ""
+#~ "VPN ਕੁਨੈਕਸ਼ਨ ਕਿਸਮ '%s' ਲਈ ਫਾਇਲ '%s' ਆਯਾਤ ਕਰਨ ਲਈ ਕੋਈ ਢੁੱਕਵਾਂ ਸਾਫਟਵੇਅਰ ਨਹੀਂ ਲੱਭਿਆ ਹੈ। "
+#~ "ਆਪਣੇ ਸਿਸਟਮ ਪਰਸ਼ਾਸ਼ਕ ਨਾਲ ਸੰਪਰਕ ਕਰੋ।"
+
+#~ msgid ""
+#~ "Could not find the UI files for VPN connection type '%s'. Contact your "
+#~ "system administrator."
+#~ msgstr ""
+#~ "VPN ਕੁਨੈਕਸ਼ਨ ਕਿਸਮ '%s' ਲਈ UI ਫਾਇਲਾਂ ਨਹੀਂ ਲੱਭੀਆਂ ਹਨ। ਆਪਣੇ ਸਿਸਟਮ ਪਰਸ਼ਾਸ਼ਕ ਨਾਲ ਸੰਪਰਕ ਕਰੋ।"
+
+#~ msgid "Delete VPN connection \"%s\"?"
+#~ msgstr "ਕੀ VPN \"%s\" ਕੁਨੈਕਸ਼ਨ ਹਟਾਉਣਾ ਹੈ?"
+
+#~ msgid ""
+#~ "All information about the VPN connection \"%s\" will be lost and you may "
+#~ "need your system administrator to provide information to create a new "
+#~ "connection."
+#~ msgstr ""
+#~ "VPN ਕੁਨੈਕਸ਼ਨ \"%s\" ਬਾਰੇ ਸਭ ਜਾਣਕਾਰੀ ਖਤਮ ਹੋ ਗਈ ਹੈ ਅਤੇ ਤੁਹਾਨੂੰ ਨਵੇਂ ਕੁਨੈਕਸ਼ਨ ਬਣਾਉਣ ਲਈ "
+#~ "ਜਾਣਕਾਰੀ ਵਾਸਤੇ ਆਪਣੇ ਸਿਸਟਮ ਪਰਸ਼ਾਸ਼ਕ ਨਾਲ ਸੰਪਰਕ ਕਰਨਾ ਪਵੇਗਾ।"
+
+#~ msgid "Unable to load"
+#~ msgstr "ਲੋਡ ਕਰਨ ਲਈ ਫੇਲ੍ਹ"
+
+#~ msgid "Cannot find some needed resources (the glade file)!"
+#~ msgstr "ਕੁਝ ਲੋੜੀਦੇ ਸਰੋਤ ਨਹੀਂ ਮਿਲੇ (ਗਲੇਡ ਫਾਇਲ)!"
+
+#~ msgid "Create VPN Connection"
+#~ msgstr "VPN ਕੁਨੈਕਸ਼ਨ ਬਣਾਓ"
+
+#~ msgid "Edit VPN Connection"
+#~ msgstr "VPN ਕੁਨੈਕਸ਼ਨ ਸੋਧ"
+
+#~ msgid "Add a new VPN connection"
+#~ msgstr "ਇੱਕ ਨਵਾਂ VPN ਕੁਨੈਕਸ਼ਨ ਸ਼ਾਮਿਲ"
+
+#~ msgid "Delete the selected VPN connection"
+#~ msgstr "ਚੁਣਿਆ VPN ਕੁਨੈਕਸ਼ਨ ਹਟਾਓ"
+
+#~ msgid "E_xport"
+#~ msgstr "ਨਿਰਯਾਤ(_x)"
+
+#~ msgid "Edit the selected VPN connection"
+#~ msgstr "ਚੁਣੇ VPN ਕੁਨੈਕਸ਼ਨ 'ਚ ਸੋਧ"
+
+#~ msgid "Export the VPN settings to a file"
+#~ msgstr "VPN ਸੈਟਿੰਗ ਨੂੰ ਫਾਇਲ 'ਚ ਭੇਜੋ"
+
+#~ msgid "Export the selected VPN connection to a file"
+#~ msgstr "ਚੁਣੇ VPN ਕੁਨੈਕਸ਼ਨ ਫਾਇਲ 'ਚ ਭੇਜੋ"
+
+#~ msgid "Manage Virtual Private Network Connections"
+#~ msgstr "ਵੁਰਚੁਅਲ ਪ੍ਰਾਈਵੇਟ ਨੈੱਟਵਰਕ ਕੁਨੈਕਸ਼ਨ ਪਰਬੰਧ"
+
+#~ msgid "40-bit WEP"
+#~ msgstr "40-ਬਿੱਟ WEP"
+
+#~ msgid "104-bit WEP"
+#~ msgstr "104-ਬਿੱਟ WEP"
+
+#~ msgid "WPA TKIP"
+#~ msgstr "WPA TKIP"
+
+#~ msgid "WPA CCMP"
+#~ msgstr "WPA CCMP"
+
+#~ msgid "WPA Automatic"
+#~ msgstr "WPA ਆਟੋਮੈਟਿਕ"
+
+#~ msgid "WPA2 TKIP"
+#~ msgstr "WPA2 TKIP"
+
+#~ msgid "WPA2 CCMP"
+#~ msgstr "WPA2 CCMP"
+
+#~ msgid "WPA2 Automatic"
+#~ msgstr "WPA2 ਆਟੋਮੈਟਿਕ"
+
+#~ msgid "operation took too long"
+#~ msgstr "ਓਪਰੇਸ਼ਨ ਨੂੰ ਬਹੁਤ ਸਮਾਂ ਲੱਗ ਗਿਆ"
+
+#~ msgid "received data from wrong type of sender"
+#~ msgstr "ਭੇਜਣ ਵਾਲੇ ਦੀ ਗਲਤ ਕਿਸਮ ਤੋਂ ਡਾਟਾ ਮਿਲਿਆ"
+
+#~ msgid "received data from unexpected sender"
+#~ msgstr "ਅਣਜਾਣ ਭੇਜਣ ਵਾਲੇ ਵਲੋਂ ਡਾਟਾ ਮਿਲਿਆ"
+
+#~ msgid "too much data was sent over socket and some of it was lost"
+#~ msgstr "ਸਾਕਟ ਉੱਤੇ ਬਹੁਤ ਵੱਧ ਡਾਟਾ ਭੇਜਿਆ ਗਿਆ ਅਤੇ ਇਸ 'ਚੋਂ ਕੁਝ ਗੁੰਮ ਹੋ ਗਿਆ"
+
+#~ msgid "LEAP"
+#~ msgstr "LEAP"

@@ -28,7 +28,7 @@
 #include "nm-netlink-listener.h"
 #include "NetworkManagerUtils.h"
 #include "nm-marshal.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 
 /* Pre-DHCP addrconf timeout, in seconds */
 #define NM_IP6_TIMEOUT 10
@@ -213,7 +213,7 @@ nm_ip6_manager_new (void)
 	priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
 
 	if (!priv->devices_by_iface || !priv->devices_by_index) {
-		nm_warning ("Error: not enough memory to initialize IP6 manager tables");
+		nm_log_err (LOGD_IP6, "not enough memory to initialize IP6 manager tables");
 		g_object_unref (manager);
 		manager = NULL;
 	}
@@ -250,8 +250,8 @@ finish_addrconf (gpointer user_data)
 		g_signal_emit (manager, signals[ADDRCONF_COMPLETE], 0,
 					   device->iface, info->dhcp_opts, TRUE);
 	} else {
-		nm_info ("Device '%s' IP6 addrconf timed out or failed.",
-				 device->iface);
+		nm_log_info (LOGD_IP6, "(%s): IP6 addrconf timed out or failed.",
+				     device->iface);
 
 		iface_copy = g_strdup (device->iface);
 
@@ -647,13 +647,13 @@ nm_ip6_device_new (NMIP6Manager *manager, const char *iface)
 
 	device = g_slice_new0 (NMIP6Device);
 	if (!device) {
-		nm_warning ("%s: Out of memory creating IP6 addrconf object.", iface);
+		nm_log_err (LOGD_IP6, "(%s): out of memory creating IP6 addrconf object.", iface);
 		return NULL;
 	}
 
 	device->iface = g_strdup (iface);
 	if (!device->iface) {
-		nm_warning ("%s: Out of memory creating IP6 addrconf object "
+		nm_log_err (LOGD_IP6, "(%s): out of memory creating IP6 addrconf object "
 		            "property 'iface'.",
 		            iface);
 		goto error;
@@ -662,7 +662,7 @@ nm_ip6_device_new (NMIP6Manager *manager, const char *iface)
 
 	device->accept_ra_path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/accept_ra", iface);
 	if (!device->accept_ra_path) {
-		nm_warning ("%s: Out of memory creating IP6 addrconf object "
+		nm_log_err (LOGD_IP6, "(%s): out of memory creating IP6 addrconf object "
 		            "property 'accept_ra_path'.",
 		            iface);
 		goto error;
@@ -679,10 +679,10 @@ nm_ip6_device_new (NMIP6Manager *manager, const char *iface)
 	 * device is taken down.
 	 */
 	if (!g_file_get_contents (device->accept_ra_path, &contents, NULL, &error)) {
-		nm_warning ("%s: error reading %s: (%d) %s",
-		            iface, device->accept_ra_path,
-		            error ? error->code : -1,
-		            error && error->message ? error->message : "(unknown)");
+		nm_log_warn (LOGD_IP6, "(%s): error reading %s: (%d) %s",
+		             iface, device->accept_ra_path,
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
 	} else {
 		long int tmp;
@@ -755,7 +755,7 @@ nm_ip6_manager_begin_addrconf (NMIP6Manager *manager,
 	device = (NMIP6Device *) g_hash_table_lookup (priv->devices_by_iface, iface);
 	g_return_if_fail (device != NULL);
 
-	nm_info ("Activation (%s) Beginning IP6 addrconf.", iface);
+	nm_log_info (LOGD_IP6, "Activation (%s) Beginning IP6 addrconf.", iface);
 
 	device->addrconf_complete = FALSE;
 
@@ -818,13 +818,13 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager,
 
 	device = (NMIP6Device *) g_hash_table_lookup (priv->devices_by_iface, iface);
 	if (!device) {
-		nm_warning ("Device '%s' addrconf not started.", iface);
+		nm_log_warn (LOGD_IP6, "(%s): addrconf not started.", iface);
 		return NULL;
 	}
 
 	config = nm_ip6_config_new ();
 	if (!config) {
-		nm_warning ("%s: Out of memory creating IP6 config object.",
+		nm_log_err (LOGD_IP6, "(%s): out of memory creating IP6 config object.",
 		            iface);
 		return NULL;
 	}

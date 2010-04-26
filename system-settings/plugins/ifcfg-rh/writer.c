@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 Red Hat, Inc.
+ * Copyright (C) 2009 - 2010 Red Hat, Inc.
  */
 
 #include <ctype.h>
@@ -579,20 +579,46 @@ write_wireless_security_setting (NMConnection *connection,
 		}
 	}
 
+	/* WEP keys */
+
+	/* Clear existing keys */
+	set_secret (ifcfg, "KEY", NULL, FALSE); /* Clear any default key */
+	for (i = 0; i < 4; i++) {
+		tmp = g_strdup_printf ("KEY_PASSPHRASE%d", i + 1);
+		set_secret (ifcfg, tmp, NULL, FALSE);
+		g_free (tmp);
+
+		tmp = g_strdup_printf ("KEY%d", i + 1);
+		set_secret (ifcfg, tmp, NULL, FALSE);
+		g_free (tmp);
+	}
+
+	/* And write the new ones out */
 	if (wep) {
 		/* Default WEP TX key index */
 		tmp = g_strdup_printf ("%d", nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec) + 1);
 		svSetValue (ifcfg, "DEFAULTKEY", tmp, FALSE);
 		g_free (tmp);
-	}
 
-	/* WEP keys */
-	set_secret (ifcfg, "KEY", NULL, FALSE); /* Clear any default key */
-	for (i = 0; i < 4; i++) {
-		key = nm_setting_wireless_security_get_wep_key (s_wsec, i);
-		tmp = g_strdup_printf ("KEY%d", i + 1);
-		set_secret (ifcfg, tmp, (wep && key) ? key : NULL, FALSE);
-		g_free (tmp);
+		for (i = 0; i < 4; i++) {
+			NMWepKeyType key_type;
+
+			key = nm_setting_wireless_security_get_wep_key (s_wsec, i);
+			if (key) {
+				/* Passphrase needs a different ifcfg key since with WEP, there
+				 * are some passphrases that are indistinguishable from WEP hex
+				 * keys.
+				 */
+				key_type = nm_setting_wireless_security_get_wep_key_type (s_wsec);
+				if (key_type == NM_WEP_KEY_TYPE_PASSPHRASE)
+					tmp = g_strdup_printf ("KEY_PASSPHRASE%d", i + 1);
+				else
+					tmp = g_strdup_printf ("KEY%d", i + 1);
+
+				set_secret (ifcfg, tmp, key, FALSE);
+				g_free (tmp);
+			}
+		}
 	}
 
 	/* WPA protos */
@@ -807,6 +833,7 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		g_free (tmp);
 	}
 
+	svSetValue (ifcfg, "MTU", NULL, FALSE);
 	mtu = nm_setting_wired_get_mtu (s_wired);
 	if (mtu) {
 		tmp = g_strdup_printf ("%u", mtu);
@@ -910,9 +937,30 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 
 	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
 	if (!s_ip4) {
-		g_set_error (error, ifcfg_plugin_error_quark (), 0,
-		             "Missing '%s' setting", NM_SETTING_IP4_CONFIG_SETTING_NAME);
-		return FALSE;
+		int result;
+
+		/* IPv4 disabled, clear IPv4 related parameters */
+		svSetValue (ifcfg, "BOOTPROTO", NULL, FALSE);
+		for (i = 0; i < 254; i++) {
+			if (i == 0) {
+				addr_key = g_strdup ("IPADDR");
+				prefix_key = g_strdup ("PREFIX");
+				gw_key = g_strdup ("GATEWAY");
+			} else {
+				addr_key = g_strdup_printf ("IPADDR%d", i + 1);
+				prefix_key = g_strdup_printf ("PREFIX%d", i + 1);
+				gw_key = g_strdup_printf ("GATEWAY%d", i + 1);
+			}
+
+			svSetValue (ifcfg, addr_key, NULL, FALSE);
+			svSetValue (ifcfg, prefix_key, NULL, FALSE);
+			svSetValue (ifcfg, gw_key, NULL, FALSE);
+		}
+
+		route_path = utils_get_route_path (ifcfg->fileName);
+		result = unlink (route_path);
+		g_free (route_path);
+		return TRUE;
 	}
 
 	value = nm_setting_ip4_config_get_method (s_ip4);

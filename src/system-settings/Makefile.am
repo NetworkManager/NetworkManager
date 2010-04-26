@@ -2,6 +2,7 @@ INCLUDES = -I${top_srcdir} \
            -I${top_srcdir}/include \
            -I${top_srcdir}/libnm-util \
            -I${top_srcdir}/libnm-glib \
+           -I${top_srcdir}/src/logging \
            -I${top_srcdir}/src \
            -I${top_builddir}/marshallers
 
@@ -44,6 +45,7 @@ libsystem_settings_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(top_builddir)/marshallers/libmarshallers.la \
+	$(top_builddir)/src/logging/libnm-logging.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
 	$(GMODULE_LIBS) \

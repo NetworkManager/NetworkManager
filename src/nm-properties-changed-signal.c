@@ -106,7 +106,7 @@ properties_changed (gpointer data)
 	{
 		char buf[2048] = { 0, };
 		g_hash_table_foreach (info->hash, add_to_string, &buf);
-		g_message ("%s: %s -> %s", __func__, G_OBJECT_TYPE_NAME (object), buf);
+		nm_log_dbg (LOGD_CORE, "%s -> %s", G_OBJECT_TYPE_NAME (object), buf);
 	}
 #endif
 

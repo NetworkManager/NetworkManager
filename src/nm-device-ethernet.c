@@ -51,7 +51,7 @@
 #include "nm-setting-8021x.h"
 #include "nm-setting-pppoe.h"
 #include "ppp-manager/nm-ppp-manager.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-dhcp-manager.h"
 
@@ -227,11 +227,11 @@ set_carrier (NMDeviceEthernet *self,
 	g_object_notify (G_OBJECT (self), NM_DEVICE_ETHERNET_CARRIER);
 
 	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
-	nm_info ("(%s): carrier now %s (device state %d%s)",
-	         nm_device_get_iface (NM_DEVICE (self)),
-	         carrier ? "ON" : "OFF",
-	         state,
-	         defer_action ? ", deferring action for 4 seconds" : "");
+	nm_log_info (LOGD_HW | LOGD_ETHER, "(%s): carrier now %s (device state %d%s)",
+	             nm_device_get_iface (NM_DEVICE (self)),
+	             carrier ? "ON" : "OFF",
+	             state,
+	             defer_action ? ", deferring action for 4 seconds" : "");
 
 	if (defer_action)
 		priv->carrier_action_defer_id = g_timeout_add_seconds (4, carrier_action_defer_cb, self);
@@ -311,6 +311,9 @@ constructor (GType type,
 	self = NM_DEVICE (object);
 	priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
+	nm_log_dbg (LOGD_HW | LOGD_OLPC_MESH, "(%s): kernel ifindex %d",
+	            nm_device_get_iface (NM_DEVICE (self)), priv->ifindex);
+
 	caps = nm_device_get_capabilities (self);
 	if (caps & NM_DEVICE_CAP_CARRIER_DETECT) {
 		GError *error = NULL;
@@ -331,30 +334,36 @@ constructor (GType type,
 		                                        priv->ifindex,
 		                                        &ifflags,
 		                                        &error)) {
-			nm_warning ("couldn't get initial carrier state: (%d) %s",
-			            error ? error->code : -1,
-			            (error && error->message) ? error->message : "unknown");
+			nm_log_warn (LOGD_HW | LOGD_ETHER,
+			             "(%s): couldn't get initial carrier state: (%d) %s",
+			             nm_device_get_iface (NM_DEVICE (self)),
+			             error ? error->code : -1,
+			             (error && error->message) ? error->message : "unknown");
 			g_clear_error (&error);
 		} else
 			priv->carrier = !!(ifflags & IFF_LOWER_UP);
 
-		nm_info ("(%s): carrier is %s",
-		         nm_device_get_iface (NM_DEVICE (self)),
-		         priv->carrier ? "ON" : "OFF");
+		nm_log_info (LOGD_HW | LOGD_ETHER,
+		             "(%s): carrier is %s",
+		             nm_device_get_iface (NM_DEVICE (self)),
+		             priv->carrier ? "ON" : "OFF");
 
 		/* Request link state again just in case an error occurred getting the
 		 * initial link state.
 		 */
 		if (!nm_netlink_monitor_request_status (priv->monitor, &error)) {
-			nm_warning ("couldn't request carrier state: (%d) %s",
-			            error ? error->code : -1,
-			            (error && error->message) ? error->message : "unknown");
+			nm_log_warn (LOGD_HW | LOGD_ETHER,
+			             "(%s): couldn't request carrier state: (%d) %s",
+			             nm_device_get_iface (NM_DEVICE (self)),
+			             error ? error->code : -1,
+			             (error && error->message) ? error->message : "unknown");
 			g_clear_error (&error);
 		}
 	} else {
-		nm_info ("(%s): driver '%s' does not support carrier detection.",
-		         nm_device_get_iface (self),
-		         nm_device_get_driver (self));
+		nm_log_info (LOGD_HW | LOGD_ETHER,
+		             "(%s): driver '%s' does not support carrier detection.",
+		             nm_device_get_iface (self),
+		             nm_device_get_driver (self));
 		priv->carrier = TRUE;
 	}
 
@@ -473,7 +482,7 @@ nm_device_ethernet_get_speed (NMDeviceEthernet *self)
 
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
-		nm_warning ("couldn't open control socket.");
+		nm_log_warn (LOGD_HW, "couldn't open control socket.");
 		return 0;
 	}
 
@@ -508,15 +517,16 @@ real_update_hw_address (NMDevice *dev)
 
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
-		nm_warning ("couldn't open control socket.");
+		nm_log_warn (LOGD_HW, "couldn't open control socket.");
 		return;
 	}
 
 	memset (&req, 0, sizeof (struct ifreq));
 	strncpy (req.ifr_name, nm_device_get_iface (dev), IFNAMSIZ);
 	if (ioctl (fd, SIOCGIFHWADDR, &req) < 0) {
-		nm_warning ("%s: (%s) error getting hardware address: %d",
-		            __func__, nm_device_get_iface (dev), errno);
+		nm_log_err (LOGD_HW | LOGD_ETHER,
+		            "(%s) error getting hardware address: %d",
+		            nm_device_get_iface (dev), errno);
 		goto out;
 	}
 
@@ -670,7 +680,8 @@ real_connection_secrets_updated (NMDevice *dev,
 		if (!strcmp (setting_name, NM_SETTING_802_1X_SETTING_NAME)) {
 			valid = TRUE;
 		} else {
-			nm_warning ("Ignoring updated secrets for setting '%s'.", setting_name);
+			nm_log_warn (LOGD_DEVICE, "Ignoring updated secrets for setting '%s'.",
+			             setting_name);
 		}
 	}
 
@@ -827,8 +838,10 @@ link_timeout_cb (gpointer user_data)
 	if (!setting_name)
 		goto time_out;
 
-	nm_info ("Activation (%s/wired): disconnected during authentication,"
-	         " asking for new key.", nm_device_get_iface (dev));
+	nm_log_info (LOGD_DEVICE | LOGD_ETHER,
+	             "Activation (%s/wired): disconnected during authentication,"
+	             " asking for new key.",
+	             nm_device_get_iface (dev));
 	supplicant_interface_release (self);
 
 	nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
@@ -842,7 +855,8 @@ link_timeout_cb (gpointer user_data)
 	return FALSE;
 
 time_out:
-	nm_info ("%s: link timed out.", nm_device_get_iface (dev));
+	nm_log_warn (LOGD_DEVICE | LOGD_ETHER,
+	             "(%s): link timed out.", nm_device_get_iface (dev));
 	nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
 
 	return FALSE;
@@ -863,7 +877,7 @@ schedule_state_handler (NMDeviceEthernet *self,
 
 	task = g_slice_new0 (SupplicantStateTask);
 	if (!task) {
-		nm_warning ("Not enough memory to process supplicant manager state change.");
+		nm_log_err (LOGD_DEVICE, "Not enough memory to process supplicant manager state change.");
 		return FALSE;
 	}
 
@@ -906,10 +920,11 @@ supplicant_mgr_state_cb (NMSupplicantInterface * iface,
                          guint32 old_state,
                          gpointer user_data)
 {
-	nm_info ("(%s): supplicant manager state:  %s -> %s",
-	         nm_device_get_iface (NM_DEVICE (user_data)),
-	         nm_supplicant_manager_state_to_string (old_state),
-	         nm_supplicant_manager_state_to_string (new_state));
+	nm_log_info (LOGD_DEVICE | LOGD_ETHER,
+	             "(%s): supplicant manager state:  %s -> %s",
+	             nm_device_get_iface (NM_DEVICE (user_data)),
+	             nm_supplicant_manager_state_to_string (old_state),
+	             nm_supplicant_manager_state_to_string (new_state));
 
 	schedule_state_handler (NM_DEVICE_ETHERNET (user_data),
 	                        supplicant_mgr_state_cb_handler,
@@ -936,7 +951,7 @@ build_supplicant_config (NMDeviceEthernet *self)
 
 	security = NM_SETTING_802_1X (nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X));
 	if (!nm_supplicant_config_add_setting_8021x (config, security, con_path, TRUE)) {
-		nm_warning ("Couldn't add 802.1X security setting to supplicant config.");
+		nm_log_warn (LOGD_DEVICE, "Couldn't add 802.1X security setting to supplicant config.");
 		g_object_unref (config);
 		config = NULL;
 	}
@@ -962,11 +977,17 @@ supplicant_iface_state_cb_handler (gpointer user_data)
 			success = nm_supplicant_interface_set_config (priv->supplicant.iface, config);
 			g_object_unref (config);
 
-			if (!success)
-				nm_warning ("Activation (%s/wired): couldn't send security "
-						  "configuration to the supplicant.", iface);
-		} else
-			nm_warning ("Activation (%s/wired): couldn't build security configuration.", iface);
+			if (!success) {
+				nm_log_err (LOGD_DEVICE | LOGD_ETHER,
+				            "Activation (%s/wired): couldn't send security "
+						    "configuration to the supplicant.",
+						    iface);
+			}
+		} else {
+			nm_log_warn (LOGD_DEVICE | LOGD_ETHER,
+			             "Activation (%s/wired): couldn't build security configuration.",
+			             iface);
+		}
 
 		if (!success)
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED);
@@ -990,10 +1011,11 @@ supplicant_iface_state_cb (NMSupplicantInterface * iface,
                            gpointer user_data)
 {
 
-	nm_info ("(%s): supplicant interface state:  %s -> %s",
-	         nm_device_get_iface (NM_DEVICE (user_data)),
-	         nm_supplicant_interface_state_to_string (old_state),
-	         nm_supplicant_interface_state_to_string (new_state));
+	nm_log_info (LOGD_DEVICE | LOGD_ETHER,
+	             "(%s): supplicant interface state:  %s -> %s",
+	             nm_device_get_iface (NM_DEVICE (user_data)),
+	             nm_supplicant_interface_state_to_string (old_state),
+	             nm_supplicant_interface_state_to_string (new_state));
 
 	schedule_state_handler (NM_DEVICE_ETHERNET (user_data),
 	                        supplicant_iface_state_cb_handler,
@@ -1016,8 +1038,9 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 		 * schedule the next activation stage.
 		 */
 		if (nm_device_get_state (dev) == NM_DEVICE_STATE_CONFIG) {
-			nm_info ("Activation (%s/wired) Stage 2 of 5 (Device Configure) successful.",
-				    nm_device_get_iface (dev));
+			nm_log_info (LOGD_DEVICE | LOGD_ETHER,
+			             "Activation (%s/wired) Stage 2 of 5 (Device Configure) successful.",
+				         nm_device_get_iface (dev));
 			nm_device_activate_schedule_stage3_ip_config_start (dev);
 		}
 	} else if (task->new_state == NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED) {
@@ -1040,10 +1063,11 @@ supplicant_iface_connection_state_cb (NMSupplicantInterface * iface,
                                       guint32 old_state,
                                       gpointer user_data)
 {
-	nm_info ("(%s) supplicant connection state:  %s -> %s",
-	         nm_device_get_iface (NM_DEVICE (user_data)),
-	         nm_supplicant_interface_connection_state_to_string (old_state),
-	         nm_supplicant_interface_connection_state_to_string (new_state));
+	nm_log_info (LOGD_DEVICE | LOGD_ETHER,
+	             "(%s) supplicant connection state:  %s -> %s",
+	             nm_device_get_iface (NM_DEVICE (user_data)),
+	             nm_supplicant_interface_connection_state_to_string (old_state),
+	             nm_supplicant_interface_connection_state_to_string (new_state));
 
 	schedule_state_handler (NM_DEVICE_ETHERNET (user_data),
 	                        supplicant_iface_connection_state_cb_handler,
@@ -1075,8 +1099,9 @@ supplicant_iface_connection_error_cb (NMSupplicantInterface *iface,
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	guint id;
 
-	nm_info ("Activation (%s/wired): association request to the supplicant failed: %s - %s",
-	         nm_device_get_iface (NM_DEVICE (self)), name, message);
+	nm_log_warn (LOGD_DEVICE | LOGD_ETHER,
+	             "Activation (%s/wired): association request to the supplicant failed: %s - %s",
+	             nm_device_get_iface (NM_DEVICE (self)), name, message);
 
 	if (priv->supplicant.iface_con_error_cb_id)
 		g_source_remove (priv->supplicant.iface_con_error_cb_id);
@@ -1120,8 +1145,9 @@ handle_auth_or_fail (NMDeviceEthernet *self,
 		                            NULL);
 
 		g_object_set_data (G_OBJECT (connection), WIRED_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
-	} else
-		nm_warning ("Cleared secrets, but setting didn't need any secrets.");
+	} else {
+		nm_log_info (LOGD_DEVICE, "Cleared secrets, but setting didn't need any secrets.");
+	}
 
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
@@ -1140,15 +1166,17 @@ supplicant_connection_timeout_cb (gpointer user_data)
 	iface = nm_device_get_iface (device);
 
 	/* Authentication failed, encryption key is probably bad */
-	nm_info ("Activation (%s/wired): association took too long.", iface);
+	nm_log_warn (LOGD_DEVICE | LOGD_ETHER,
+	             "Activation (%s/wired): association took too long.", iface);
 
 	supplicant_interface_release (self);
 	req = nm_device_get_act_request (device);
 	g_assert (req);
 
-	if (handle_auth_or_fail (self, req, TRUE) == NM_ACT_STAGE_RETURN_POSTPONE)
-		nm_info ("Activation (%s/wired): asking for new secrets", iface);
-	else
+	if (handle_auth_or_fail (self, req, TRUE) == NM_ACT_STAGE_RETURN_POSTPONE) {
+		nm_log_info (LOGD_DEVICE | LOGD_ETHER,
+		             "Activation (%s/wired): asking for new secrets", iface);
+	} else
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NO_SECRETS);
 
 	return FALSE;
@@ -1165,7 +1193,9 @@ supplicant_interface_init (NMDeviceEthernet *self)
 	/* Create supplicant interface */
 	priv->supplicant.iface = nm_supplicant_manager_get_iface (priv->supplicant.mgr, iface, FALSE);
 	if (!priv->supplicant.iface) {
-		nm_warning ("Couldn't initialize supplicant interface for %s.", iface);
+		nm_log_err (LOGD_DEVICE | LOGD_ETHER,
+		            "Couldn't initialize supplicant interface for %s.",
+		            iface);
 		supplicant_interface_release (self);
 
 		return FALSE;
@@ -1213,7 +1243,7 @@ nm_8021x_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *reason)
 	connection = nm_act_request_get_connection (nm_device_get_act_request (NM_DEVICE (self)));
 	security = NM_SETTING_802_1X (nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X));
 	if (!security) {
-		nm_warning ("Invalid or missing 802.1X security");
+		nm_log_err (LOGD_DEVICE, "Invalid or missing 802.1X security");
 		*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
 		return ret;
 	}
@@ -1226,15 +1256,17 @@ nm_8021x_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *reason)
 	if (setting_name) {
 		NMActRequest *req = nm_device_get_act_request (NM_DEVICE (self));
 
-		nm_info ("Activation (%s/wired): connection '%s' has security, but secrets are required.",
-				 iface, nm_setting_connection_get_id (s_connection));
+		nm_log_info (LOGD_DEVICE | LOGD_ETHER,
+		             "Activation (%s/wired): connection '%s' has security, but secrets are required.",
+				     iface, nm_setting_connection_get_id (s_connection));
 
 		ret = handle_auth_or_fail (self, req, FALSE);
 		if (ret != NM_ACT_STAGE_RETURN_POSTPONE)
 			*reason = NM_DEVICE_STATE_REASON_NO_SECRETS;
 	} else {
-		nm_info ("Activation (%s/wired): connection '%s' requires no security. No secrets needed.",
-				 iface, nm_setting_connection_get_id (s_connection));
+		nm_log_info (LOGD_DEVICE | LOGD_ETHER,
+		             "Activation (%s/wired): connection '%s' requires no security. No secrets needed.",
+				     iface, nm_setting_connection_get_id (s_connection));
 
 		if (supplicant_interface_init (self))
 			ret = NM_ACT_STAGE_RETURN_POSTPONE;
@@ -1311,8 +1343,8 @@ pppoe_stage3_ip4_config_start (NMDeviceEthernet *self, NMDeviceStateReason *reas
 					   self);
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else {
-		nm_warning ("(%s): PPPoE failed to start: %s",
-		            nm_device_get_iface (NM_DEVICE (self)), err->message);
+		nm_log_warn (LOGD_DEVICE, "(%s): PPPoE failed to start: %s",
+		             nm_device_get_iface (NM_DEVICE (self)), err->message);
 		g_error_free (err);
 
 		g_object_unref (priv->ppp_manager);
@@ -1880,7 +1912,7 @@ supports_ethtool_carrier_detect (NMDeviceEthernet *self)
 
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
-		nm_warning ("couldn't open control socket.");
+		nm_log_err (LOGD_HW, "couldn't open control socket.");
 		return FALSE;
 	}
 
@@ -1890,13 +1922,18 @@ supports_ethtool_carrier_detect (NMDeviceEthernet *self)
 	edata.cmd = ETHTOOL_GLINK;
 	ifr.ifr_data = (char *) &edata;
 
-	if (ioctl (fd, SIOCETHTOOL, &ifr) < 0)
+	errno = 0;
+	if (ioctl (fd, SIOCETHTOOL, &ifr) < 0) {
+		nm_log_dbg (LOGD_HW | LOGD_ETHER, "SIOCETHTOOL failed: %d", errno);
 		goto out;
+	}
 
 	supports_ethtool = TRUE;
 
 out:
 	close (fd);
+	nm_log_dbg (LOGD_HW | LOGD_ETHER, "ethtool %s supported",
+	            supports_ethtool ? "is" : "not");
 	return supports_ethtool;
 }
 
@@ -1920,8 +1957,13 @@ mdio_read (NMDeviceEthernet *self, int fd, struct ifreq *ifr, int location)
 	mii = (struct mii_ioctl_data *) &ifr->ifr_ifru;
 	mii->reg_num = location;
 
-	if (ioctl (fd, SIOCGMIIREG, ifr) == 0)
+	errno = 0;
+	if (ioctl (fd, SIOCGMIIREG, ifr) == 0) {
+		nm_log_dbg (LOGD_HW | LOGD_ETHER, "SIOCGMIIREG result 0x%X", mii->val_out);
 		val = mii->val_out;
+	} else {
+		nm_log_dbg (LOGD_HW | LOGD_ETHER, "SIOCGMIIREG failed: %d", errno);
+	}
 
 	return val;
 }
@@ -1937,19 +1979,24 @@ supports_mii_carrier_detect (NMDeviceEthernet *self)
 
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
-		nm_warning ("couldn't open control socket.");
+		nm_log_err (LOGD_HW, "couldn't open control socket.");
 		return 0;
 	}
 
 	memset (&ifr, 0, sizeof (struct ifreq));
 	strncpy (ifr.ifr_name, nm_device_get_iface (NM_DEVICE (self)), IFNAMSIZ);
 
-	if (ioctl (fd, SIOCGMIIPHY, &ifr) < 0)
+	errno = 0;
+	if (ioctl (fd, SIOCGMIIPHY, &ifr) < 0) {
+		nm_log_dbg (LOGD_HW | LOGD_ETHER, "SIOCGMIIPHY failed: %d", errno);
 		goto out;
+	}
 
 	/* If we can read the BMSR register, we assume that the card supports MII link detection */
 	bmsr = mdio_read (self, fd, &ifr, MII_BMSR);
 	supports_mii = (bmsr != -1) ? TRUE : FALSE;
+	nm_log_dbg (LOGD_HW | LOGD_ETHER, "MII %s supported",
+	            supports_mii ? "is" : "not");
 
 out:
 	close (fd);

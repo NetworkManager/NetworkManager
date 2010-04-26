@@ -44,6 +44,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-named-manager.h"
 #include "nm-utils.h"
+#include "nm-logging.h"
 #include "nm-netlink.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
@@ -218,18 +219,18 @@ constructor (GType type,
 	priv = NM_DEVICE_GET_PRIVATE (dev);
 
 	if (!priv->udi) {
-		nm_warning ("No device udi provided, ignoring");
+		nm_log_err (LOGD_DEVICE, "No device udi provided, ignoring");
 		goto error;
 	}
 
 	if (!priv->iface) {
-		nm_warning ("No device interface provided, ignoring");
+		nm_log_err (LOGD_DEVICE, "No device interface provided, ignoring");
 		goto error;
 	}
 
 	priv->capabilities |= NM_DEVICE_GET_CLASS (dev)->get_generic_capabilities (dev);
 	if (!(priv->capabilities & NM_DEVICE_CAP_NM_SUPPORTED)) {
-		nm_warning ("(%s): Device unsupported, ignoring.", priv->iface);
+		nm_log_warn (LOGD_DEVICE, "(%s): Device unsupported, ignoring.", priv->iface);
 		goto error;
 	}
 
@@ -526,8 +527,9 @@ activation_source_schedule (NMDevice *self, GSourceFunc func, int family)
 		act_source_func = &priv->act_source_func;
 	}
 
-	if (*act_source_id)
-		nm_warning ("activation stage already scheduled");
+	if (*act_source_id) {
+		nm_log_err (LOGD_DEVICE, "activation stage already scheduled");
+	}
 
 	/* Don't bother rescheduling the same function that's about to
 	 * run anyway.  Fixes issues with crappy wireless drivers sending
@@ -589,9 +591,10 @@ ip6_addrconf_complete (NMIP6Manager *ip6_manager,
 	if ((state != NM_DEVICE_STATE_IP_CONFIG) || priv->dhcp6_client)
 		return;
 
-	nm_info ("Activation (%s) Stage 3 of 5 (IP Configure Start) starting DHCPv6"
-	         " as requested by IPv6 router...",
-	         priv->iface);
+	nm_log_info (LOGD_DEVICE | LOGD_DHCP6,
+	             "Activation (%s) Stage 3 of 5 (IP Configure Start) starting DHCPv6"
+	             " as requested by IPv6 router...",
+	             priv->iface);
 
 	ret = dhcp6_start (self, connection, dhcp_opts, &reason);
 	switch (ret) {
@@ -726,7 +729,7 @@ nm_device_activate_stage1_device_prepare (gpointer user_data)
 	priv->ip4_ready = priv->ip6_ready = FALSE;
 
 	iface = nm_device_get_iface (self);
-	nm_info ("Activation (%s) Stage 1 of 5 (Device Prepare) started...", iface);
+	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 1 of 5 (Device Prepare) started...", iface);
 	nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_REASON_NONE);
 
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage1_prepare (self, &reason);
@@ -741,7 +744,7 @@ nm_device_activate_stage1_device_prepare (gpointer user_data)
 	nm_device_activate_schedule_stage2_device_config (self);
 
 out:
-	nm_info ("Activation (%s) Stage 1 of 5 (Device Prepare) complete.", iface);
+	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 1 of 5 (Device Prepare) complete.", iface);
 	return FALSE;
 }
 
@@ -764,8 +767,8 @@ nm_device_activate_schedule_stage1_device_prepare (NMDevice *self)
 
 	activation_source_schedule (self, nm_device_activate_stage1_device_prepare, 0);
 
-	nm_info ("Activation (%s) Stage 1 of 5 (Device Prepare) scheduled...",
-	         nm_device_get_iface (self));
+	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 1 of 5 (Device Prepare) scheduled...",
+	             nm_device_get_iface (self));
 }
 
 static NMActStageReturn
@@ -795,7 +798,7 @@ nm_device_activate_stage2_device_config (gpointer user_data)
 	activation_source_clear (self, FALSE, 0);
 
 	iface = nm_device_get_iface (self);
-	nm_info ("Activation (%s) Stage 2 of 5 (Device Configure) starting...", iface);
+	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 2 of 5 (Device Configure) starting...", iface);
 	nm_device_state_changed (self, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 
 	if (!nm_device_bring_up (self, FALSE, &no_firmware)) {
@@ -816,12 +819,12 @@ nm_device_activate_stage2_device_config (gpointer user_data)
 	}
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);	
 
-	nm_info ("Activation (%s) Stage 2 of 5 (Device Configure) successful.", iface);
+	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 2 of 5 (Device Configure) successful.", iface);
 
 	nm_device_activate_schedule_stage3_ip_config_start (self);
 
 out:
-	nm_info ("Activation (%s) Stage 2 of 5 (Device Configure) complete.", iface);
+	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 2 of 5 (Device Configure) complete.", iface);
 	return FALSE;
 }
 
@@ -844,7 +847,7 @@ nm_device_activate_schedule_stage2_device_config (NMDevice *self)
 
 	activation_source_schedule (self, nm_device_activate_stage2_device_config, 0);
 
-	nm_info ("Activation (%s) Stage 2 of 5 (Device Configure) scheduled...",
+	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 2 of 5 (Device Configure) scheduled...",
 	         nm_device_get_iface (self));
 }
 
@@ -873,9 +876,9 @@ aipd_cleanup (NMDevice *self)
 		kill (priv->aipd_pid, SIGKILL);
 
 		/* ensure the child is reaped */
-		nm_debug ("waiting for ppp pid %d to exit", priv->aipd_pid);
+		nm_log_dbg (LOGD_AUTOIP4, "waiting for avahi-autoipd pid %d to exit", priv->aipd_pid);
 		waitpid (priv->aipd_pid, NULL, 0);
-		nm_debug ("ppp pid %d cleaned up", priv->aipd_pid);
+		nm_log_dbg (LOGD_AUTOIP4, "avahi-autoip pid %d cleaned up", priv->aipd_pid);
 
 		priv->aipd_pid = -1;
 	}
@@ -919,7 +922,7 @@ handle_autoip_change (NMDevice *self, NMDeviceStateReason *reason)
 
 	config = aipd_get_ip4_config (self, reason);
 	if (!config) {
-		nm_warning ("failed to get autoip config for rebind");
+		nm_log_err (LOGD_AUTOIP4, "failed to get autoip config for rebind");
 		return FALSE;
 	}
 
@@ -931,7 +934,7 @@ handle_autoip_change (NMDevice *self, NMDeviceStateReason *reason)
 	g_object_set_data (G_OBJECT (req), NM_ACT_REQUEST_IP4_CONFIG, config);
 
 	if (!nm_device_set_ip4_config (self, config, FALSE, reason)) {
-		nm_warning ("(%s): failed to update IP4 config in response to autoip event.",
+		nm_log_err (LOGD_AUTOIP4, "(%s): failed to update IP4 config in response to autoip event.",
 		            nm_device_get_iface (self));
 		return FALSE;
 	}
@@ -980,14 +983,14 @@ nm_device_handle_autoip4_event (NMDevice *self,
 		NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
 		if (inet_pton (AF_INET, address, &ip) <= 0) {
-			nm_warning ("(%s): invalid address %s received from avahi-autoipd.",
+			nm_log_err (LOGD_AUTOIP4, "(%s): invalid address %s received from avahi-autoipd.",
 			            iface, address);
 			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_AUTOIP_ERROR);
 			return;
 		}
 
 		if ((ip.s_addr & IPV4LL_NETMASK) != IPV4LL_NETWORK) {
-			nm_warning ("(%s): invalid address %s received from avahi-autoipd.",
+			nm_log_err (LOGD_AUTOIP4, "(%s): invalid address %s received from avahi-autoipd (not link-local).",
 			            iface, address);
 			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_AUTOIP_ERROR);
 			return;
@@ -996,7 +999,7 @@ nm_device_handle_autoip4_event (NMDevice *self,
 		switch (state) {
 		case NM_DEVICE_STATE_IP_CONFIG:
 			if (priv->aipd_addr) {
-				nm_warning ("(%s): already have autoip address!", iface);
+				nm_log_warn (LOGD_AUTOIP4, "(%s): already have autoip address!", iface);
 				return;
 			}
 
@@ -1010,12 +1013,12 @@ nm_device_handle_autoip4_event (NMDevice *self,
 				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 			break;
 		default:
-			nm_warning ("(%s): unexpected avahi-autoip event %s for %s.",
+			nm_log_warn (LOGD_AUTOIP4, "(%s): unexpected avahi-autoip event %s for %s.",
 			            iface, event, address);
 			break;
 		}
 	} else {
-		nm_warning ("%s: autoip address %s no longer valid because '%s'.",
+		nm_log_warn (LOGD_AUTOIP4, "(%s): autoip address %s no longer valid because '%s'.",
 		            iface, address, event);
 
 		/* The address is gone; terminate the connection or fail activation */
@@ -1037,14 +1040,18 @@ aipd_watch_cb (GPid pid, gint status, gpointer user_data)
 
 	iface = nm_device_get_iface (self);
 
-	if (WIFEXITED (status))
-		nm_warning ("%s: avahi-autoipd exited with error code %d", iface, WEXITSTATUS (status));
-	else if (WIFSTOPPED (status)) 
-		nm_warning ("%s: avahi-autoipd stopped unexpectedly with signal %d", iface, WSTOPSIG (status));
-	else if (WIFSIGNALED (status))
-		nm_warning ("%s: avahi-autoipd died with signal %d", iface, WTERMSIG (status));
-	else
-		nm_warning ("%s: avahi-autoipd died from an unknown cause", iface);
+	if (WIFEXITED (status)) {
+		nm_log_dbg (LOGD_AUTOIP4, "(%s): avahi-autoipd exited with error code %d",
+		            iface, WEXITSTATUS (status));
+	} else if (WIFSTOPPED (status)) {
+		nm_log_warn (LOGD_AUTOIP4, "(%s): avahi-autoipd stopped unexpectedly with signal %d",
+		            iface, WSTOPSIG (status));
+	} else if (WIFSIGNALED (status)) {
+		nm_log_warn (LOGD_AUTOIP4, "(%s): avahi-autoipd died with signal %d",
+		             iface, WTERMSIG (status));
+	} else {
+		nm_log_warn (LOGD_AUTOIP4, "(%s): avahi-autoipd died from an unknown cause", iface);
+	}
 
 	aipd_cleanup (self);
 
@@ -1063,7 +1070,7 @@ aipd_timeout_cb (gpointer user_data)
 		return FALSE;
 	priv->aipd_timeout = 0;
 
-	nm_info ("%s: avahi-autoipd timed out.", nm_device_get_iface (self));
+	nm_log_info (LOGD_AUTOIP4, "(%s): avahi-autoipd timed out.", nm_device_get_iface (self));
 	aipd_cleanup (self);
 
 	if (nm_device_get_state (self) == NM_DEVICE_STATE_IP_CONFIG)
@@ -1169,7 +1176,8 @@ handle_dhcp_lease_change (NMDevice *device, gboolean ipv6)
 	if (ipv6) {
 		ip6_config = nm_dhcp_client_get_ip6_config (priv->dhcp6_client, FALSE);
 		if (!ip6_config) {
-			nm_warning ("failed to get DHCPv6 config for rebind");
+			nm_log_warn (LOGD_DHCP6, "(%s): failed to get DHCPv6 config for rebind",
+			             nm_device_get_ip_iface (device));
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
 			return;
 		}
@@ -1185,13 +1193,15 @@ handle_dhcp_lease_change (NMDevice *device, gboolean ipv6)
 			                               dhcp6_add_option_cb,
 			                               priv->dhcp6_config);
 		} else {
-			nm_warning ("Failed to update IPv6 config in response to DHCP event.");
+			nm_log_warn (LOGD_DHCP6, "(%s): failed to update IPv6 config in response to DHCP event.",
+			             nm_device_get_ip_iface (device));
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
 		}
 	} else {
 		ip4_config = nm_dhcp_client_get_ip4_config (priv->dhcp4_client, FALSE);
 		if (!ip4_config) {
-			nm_warning ("failed to get DHCPv4 config for rebind");
+			nm_log_warn (LOGD_DHCP6, "(%s): failed to get DHCPv4 config for rebind",
+			             nm_device_get_ip_iface (device));
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
 			return;
 		}
@@ -1207,7 +1217,8 @@ handle_dhcp_lease_change (NMDevice *device, gboolean ipv6)
 			                               dhcp4_add_option_cb,
 			                               priv->dhcp4_config);
 		} else {
-			nm_warning ("Failed to update IPv4 config in response to DHCP event.");
+			nm_log_warn (LOGD_DHCP6, "(%s): failed to update IPv4 config in response to DHCP event.",
+			             nm_device_get_ip_iface (device));
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
 		}
 	}
@@ -1365,12 +1376,14 @@ real_act_stage3_ip4_config_start (NMDevice *self, NMDeviceStateReason *reason)
 
 		/* Start avahi-autoipd */
 		if (aipd_exec (self, &error)) {
-			nm_info ("Activation (%s) Stage 3 of 5 (IP Configure Start) started"
-			         " avahi-autoipd...", iface);
+			nm_log_info (LOGD_DEVICE | LOGD_AUTOIP4,
+			             "Activation (%s) Stage 3 of 5 (IP Configure Start) started"
+			             " avahi-autoipd...", iface);
 			ret = NM_ACT_STAGE_RETURN_POSTPONE;
 		} else {
-			nm_info ("Activation (%s) Stage 3 of 5 (IP Configure Start) failed"
-			         " to start avahi-autoipd: %s", iface, error->message);
+			nm_log_info (LOGD_DEVICE | LOGD_AUTOIP4,
+			             "Activation (%s) Stage 3 of 5 (IP Configure Start) failed"
+			             " to start avahi-autoipd: %s", iface, error->message);
 			g_error_free (error);
 			aipd_cleanup (self);
 			*reason = NM_DEVICE_STATE_REASON_AUTOIP_START_FAILED;
@@ -1495,7 +1508,7 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 	activation_source_clear (self, FALSE, 0);
 
 	iface = nm_device_get_iface (self);
-	nm_info ("Activation (%s) Stage 3 of 5 (IP Configure Start) started...", iface);
+	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 3 of 5 (IP Configure Start) started...", iface);
 	nm_device_state_changed (self, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage3_ip4_config_start (self, &reason);
@@ -1517,7 +1530,7 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 		g_assert (ret == NM_ACT_STAGE_RETURN_POSTPONE);
 
 out:
-	nm_info ("Activation (%s) Stage 3 of 5 (IP Configure Start) complete.", iface);
+	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 3 of 5 (IP Configure Start) complete.", iface);
 	return FALSE;
 }
 
@@ -1539,8 +1552,8 @@ nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 
 	activation_source_schedule (self, nm_device_activate_stage3_ip_config_start, 0);
 
-	nm_info ("Activation (%s) Stage 3 of 5 (IP Configure Start) scheduled.",
-	         nm_device_get_iface (self));
+	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 3 of 5 (IP Configure Start) scheduled.",
+	             nm_device_get_iface (self));
 }
 
 static GHashTable *shared_ips = NULL;
@@ -1560,7 +1573,7 @@ reserve_shared_ip (void)
 	while (g_hash_table_lookup (shared_ips, GUINT_TO_POINTER (start + count))) {
 		count += ntohl (0x100);
 		if (count > ntohl (0xFE00)) {
-			nm_warning ("%s: ran out of shared IP addresses!", __func__);
+			nm_log_err (LOGD_SHARING, "ran out of shared IP addresses!");
 			return 0;
 		}
 	}
@@ -1692,7 +1705,9 @@ nm_device_activate_stage4_ip4_config_get (gpointer user_data)
 	activation_source_clear (self, FALSE, AF_INET);
 
 	iface = nm_device_get_iface (self);
-	nm_info ("Activation (%s) Stage 4 of 5 (IP4 Configure Get) started...", iface);
+	nm_log_info (LOGD_DEVICE | LOGD_IP4,
+	             "Activation (%s) Stage 4 of 5 (IP4 Configure Get) started...",
+	             iface);
 
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_get_ip4_config (self, &ip4_config, &reason);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
@@ -1710,7 +1725,9 @@ nm_device_activate_stage4_ip4_config_get (gpointer user_data)
 	nm_device_activate_schedule_stage5_ip_config_commit (self, AF_INET);
 
 out:
-	nm_info ("Activation (%s) Stage 4 of 5 (IP4 Configure Get) complete.", iface);
+	nm_log_info (LOGD_DEVICE | LOGD_IP4,
+	             "Activation (%s) Stage 4 of 5 (IP4 Configure Get) complete.",
+	             iface);
 	return FALSE;
 }
 
@@ -1733,8 +1750,9 @@ nm_device_activate_schedule_stage4_ip4_config_get (NMDevice *self)
 
 	activation_source_schedule (self, nm_device_activate_stage4_ip4_config_get, AF_INET);
 
-	nm_info ("Activation (%s) Stage 4 of 5 (IP4 Configure Get) scheduled...",
-	         nm_device_get_iface (self));
+	nm_log_info (LOGD_DEVICE | LOGD_IP4,
+	             "Activation (%s) Stage 4 of 5 (IP4 Configure Get) scheduled...",
+	             nm_device_get_iface (self));
 }
 
 
@@ -1774,7 +1792,9 @@ nm_device_activate_stage4_ip4_config_timeout (gpointer user_data)
 	activation_source_clear (self, FALSE, AF_INET);
 
 	iface = nm_device_get_iface (self);
-	nm_info ("Activation (%s) Stage 4 of 5 (IP4 Configure Timeout) started...", iface);
+	nm_log_info (LOGD_DEVICE | LOGD_IP4,
+	             "Activation (%s) Stage 4 of 5 (IP4 Configure Timeout) started...",
+	             iface);
 
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_ip4_config_timeout (self, &ip4_config, &reason);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {
@@ -1792,7 +1812,9 @@ nm_device_activate_stage4_ip4_config_timeout (gpointer user_data)
 	nm_device_activate_schedule_stage5_ip_config_commit (self, AF_INET);
 
 out:
-	nm_info ("Activation (%s) Stage 4 of 5 (IP4 Configure Timeout) complete.", iface);
+	nm_log_info (LOGD_DEVICE | LOGD_IP4,
+	             "Activation (%s) Stage 4 of 5 (IP4 Configure Timeout) complete.",
+	             iface);
 	return FALSE;
 }
 
@@ -1815,8 +1837,9 @@ nm_device_activate_schedule_stage4_ip4_config_timeout (NMDevice *self)
 
 	activation_source_schedule (self, nm_device_activate_stage4_ip4_config_timeout, AF_INET);
 
-	nm_info ("Activation (%s) Stage 4 of 5 (IP4 Configure Timeout) scheduled...",
-	         nm_device_get_iface (self));
+	nm_log_info (LOGD_DEVICE | LOGD_IP4,
+	             "Activation (%s) Stage 4 of 5 (IP4 Configure Timeout) scheduled...",
+	             nm_device_get_iface (self));
 }
 
 static NMActStageReturn
@@ -1901,7 +1924,9 @@ nm_device_activate_stage4_ip6_config_get (gpointer user_data)
 	activation_source_clear (self, FALSE, AF_INET6);
 
 	iface = nm_device_get_iface (self);
-	nm_info ("Activation (%s) Stage 4 of 5 (IP6 Configure Get) started...", iface);
+	nm_log_info (LOGD_DEVICE | LOGD_IP6,
+	             "Activation (%s) Stage 4 of 5 (IP6 Configure Get) started...",
+	             iface);
 
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_get_ip6_config (self, &ip6_config, &reason);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
@@ -1919,7 +1944,9 @@ nm_device_activate_stage4_ip6_config_get (gpointer user_data)
 	nm_device_activate_schedule_stage5_ip_config_commit (self, AF_INET6);
 
 out:
-	nm_info ("Activation (%s) Stage 4 of 5 (IP6 Configure Get) complete.", iface);
+	nm_log_info (LOGD_DEVICE | LOGD_IP6,
+	             "Activation (%s) Stage 4 of 5 (IP6 Configure Get) complete.",
+	             iface);
 	return FALSE;
 }
 
@@ -1942,8 +1969,9 @@ nm_device_activate_schedule_stage4_ip6_config_get (NMDevice *self)
 
 	activation_source_schedule (self, nm_device_activate_stage4_ip6_config_get, AF_INET6);
 
-	nm_info ("Activation (%s) Stage 4 of 5 (IP6 Configure Get) scheduled...",
-	         nm_device_get_iface (self));
+	nm_log_info (LOGD_DEVICE | LOGD_IP6,
+	             "Activation (%s) Stage 4 of 5 (IP6 Configure Get) scheduled...",
+	             nm_device_get_iface (self));
 }
 
 
@@ -1982,7 +2010,9 @@ nm_device_activate_stage4_ip6_config_timeout (gpointer user_data)
 	activation_source_clear (self, FALSE, AF_INET6);
 
 	iface = nm_device_get_iface (self);
-	nm_info ("Activation (%s) Stage 4 of 5 (IP6 Configure Timeout) started...", iface);
+	nm_log_info (LOGD_DEVICE | LOGD_IP6,
+	             "Activation (%s) Stage 4 of 5 (IP6 Configure Timeout) started...",
+	             iface);
 
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_ip6_config_timeout (self, &ip6_config, &reason);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {
@@ -2000,7 +2030,9 @@ nm_device_activate_stage4_ip6_config_timeout (gpointer user_data)
 	nm_device_activate_schedule_stage5_ip_config_commit (self, AF_INET6);
 
 out:
-	nm_info ("Activation (%s) Stage 4 of 5 (IP6 Configure Timeout) complete.", iface);
+	nm_log_info (LOGD_DEVICE | LOGD_IP6,
+	             "Activation (%s) Stage 4 of 5 (IP6 Configure Timeout) complete.",
+	             iface);
 	return FALSE;
 }
 
@@ -2023,8 +2055,9 @@ nm_device_activate_schedule_stage4_ip6_config_timeout (NMDevice *self)
 
 	activation_source_schedule (self, nm_device_activate_stage4_ip6_config_timeout, AF_INET6);
 
-	nm_info ("Activation (%s) Stage 4 of 5 (IP6 Configure Timeout) scheduled...",
-	         nm_device_get_iface (self));
+	nm_log_info (LOGD_DEVICE | LOGD_IP6,
+	             "Activation (%s) Stage 4 of 5 (IP6 Configure Timeout) scheduled...",
+	             nm_device_get_iface (self));
 }
 
 static void
@@ -2045,14 +2078,14 @@ share_init (void)
 	char **iter;
 
 	if (!nm_utils_do_sysctl ("/proc/sys/net/ipv4/ip_forward", "1\n")) {
-		nm_warning ("%s: Error starting IP forwarding: (%d) %s",
-					__func__, errno, strerror (errno));
+		nm_log_err (LOGD_SHARING, "Error starting IP forwarding: (%d) %s",
+					errno, strerror (errno));
 		return FALSE;
 	}
 
 	if (!nm_utils_do_sysctl ("/proc/sys/net/ipv4/ip_dynaddr", "1\n")) {
-		nm_warning ("%s: Error starting IP forwarding: (%d) %s",
-					__func__, errno, strerror (errno));
+		nm_log_err (LOGD_SHARING, "error starting IP forwarding: (%d) %s",
+					errno, strerror (errno));
 	}
 
 	for (iter = modules; *iter; iter++) {
@@ -2062,9 +2095,9 @@ share_init (void)
 
 		if (!g_spawn_sync ("/", argv, envp, G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
 		                   share_child_setup, NULL, NULL, NULL, &status, &error)) {
-			nm_info ("%s: Error loading NAT module %s: (%d) %s",
-			         __func__, *iter, error ? error->code : 0,
-			         (error && error->message) ? error->message : "unknown");
+			nm_log_err (LOGD_SHARING, "error loading NAT module %s: (%d) %s",
+			            *iter, error ? error->code : 0,
+			            (error && error->message) ? error->message : "unknown");
 			if (error)
 				g_error_free (error);
 		}
@@ -2138,7 +2171,7 @@ start_sharing (NMDevice *self)
 	nm_act_request_set_shared (req, TRUE);
 
 	if (!nm_dnsmasq_manager_start (priv->dnsmasq_manager, ip4_config, &error)) {
-		nm_warning ("(%s/%s): failed to start dnsmasq: %s",
+		nm_log_err (LOGD_SHARING, "(%s/%s): failed to start dnsmasq: %s",
 		            nm_device_get_iface (self), ip_iface, error->message);
 		g_error_free (error);
 		nm_act_request_set_shared (req, FALSE);
@@ -2192,8 +2225,8 @@ nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 	activation_source_clear (self, FALSE, 0);
 
 	iface = nm_device_get_iface (self);
-	nm_info ("Activation (%s) Stage 5 of 5 (IP Configure Commit) started...",
-	         iface);
+	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 5 of 5 (IP Configure Commit) started...",
+	             iface);
 
 	assumed = nm_act_request_get_assumed (priv->act_request);
 
@@ -2203,8 +2236,9 @@ nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 	}
 
 	if (ip6_config && !nm_device_set_ip6_config (self, ip6_config, assumed, &reason)) {
-		nm_info ("Activation (%s) Stage 5 of 5 (IP Configure Commit) IPv6 failed",
-				 iface);
+		nm_log_info (LOGD_DEVICE | LOGD_IP6,
+		             "Activation (%s) Stage 5 of 5 (IP Configure Commit) IPv6 failed",
+				     iface);
 	}
 
 	connection = nm_act_request_get_connection (nm_device_get_act_request (self));
@@ -2216,7 +2250,7 @@ nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 
 		if (s_ip4 && !strcmp (method, "shared")) {
 			if (!start_sharing (self)) {
-				nm_warning ("Activation (%s) Stage 5 of 5 (IP Configure Commit) start sharing failed.", iface);
+				nm_log_warn (LOGD_SHARING, "Activation (%s) Stage 5 of 5 (IP Configure Commit) start sharing failed.", iface);
 				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SHARED_START_FAILED);
 				goto out;
 			}
@@ -2226,8 +2260,8 @@ nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 	nm_device_state_changed (self, NM_DEVICE_STATE_ACTIVATED, NM_DEVICE_STATE_REASON_NONE);
 
 out:
-	nm_info ("Activation (%s) Stage 5 of 5 (IP Configure Commit) complete.",
-	         iface);
+	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 5 of 5 (IP Configure Commit) complete.",
+	             iface);
 
 	/* Balance IP config creation; device takes ownership in set_ip*_config() */
 	if (ip4_config)
@@ -2269,8 +2303,9 @@ nm_device_activate_schedule_stage5_ip_config_commit (NMDevice *self, int family)
 
 	activation_source_schedule (self, nm_device_activate_stage5_ip_config_commit, 0);
 
-	nm_info ("Activation (%s) Stage 5 of 5 (IP Configure Commit) scheduled...",
-	         nm_device_get_iface (self));
+	nm_log_info (LOGD_DEVICE,
+	             "Activation (%s) Stage 5 of 5 (IP Configure Commit) scheduled...",
+	             nm_device_get_iface (self));
 }
 
 
@@ -2310,10 +2345,14 @@ delayed_transitions_clear (NMDevice *self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (priv->failed_to_disconnected_id) {
+		nm_log_dbg (LOGD_DEVICE, "(%s): clearing failed->disconnected transition",
+		            nm_device_get_iface (self));
 		g_source_remove (priv->failed_to_disconnected_id);
 		priv->failed_to_disconnected_id = 0;
 	}
 	if (priv->unavailable_to_disconnected_id) {
+		nm_log_dbg (LOGD_DEVICE, "(%s): clearing unavailable->disconnected transition",
+		            nm_device_get_iface (self));
 		g_source_remove (priv->unavailable_to_disconnected_id);
 		priv->unavailable_to_disconnected_id = 0;
 	}
@@ -2452,9 +2491,8 @@ nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason)
 
 	g_return_if_fail (self != NULL);
 
-	nm_info ("(%s): deactivating device (reason: %d).",
-	         nm_device_get_iface (self),
-	         reason);
+	nm_log_info (LOGD_DEVICE, "(%s): deactivating device (reason: %d).",
+	             nm_device_get_iface (self), reason);
 
 	nm_device_deactivate_quickly (self);
 
@@ -2750,7 +2788,7 @@ nm_device_update_ip4_address (NMDevice *self)
 
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
-		nm_warning ("couldn't open control socket.");
+		nm_log_err (LOGD_IP4, "couldn't open control socket.");
 		return;
 	}
 
@@ -2865,7 +2903,7 @@ nm_device_hw_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 	if (nm_device_hw_is_up (self))
 		goto out;
 
-	nm_info ("(%s): bringing up device.", nm_device_get_iface (self));
+	nm_log_info (LOGD_HW, "(%s): bringing up device.", nm_device_get_iface (self));
 
 	if (NM_DEVICE_GET_CLASS (self)->hw_bring_up) {
 		success = NM_DEVICE_GET_CLASS (self)->hw_bring_up (self, no_firmware);
@@ -2878,7 +2916,7 @@ nm_device_hw_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 		g_usleep (200);
 
 	if (!nm_device_hw_is_up (self)) {
-		nm_warning ("(%s): device not up after timeout!", nm_device_get_iface (self));
+		nm_log_warn (LOGD_HW, "(%s): device not up after timeout!", nm_device_get_iface (self));
 		return FALSE;
 	}
 
@@ -2901,7 +2939,7 @@ nm_device_hw_take_down (NMDevice *self, gboolean block)
 	if (!nm_device_hw_is_up (self))
 		return;
 
-	nm_info ("(%s): taking down device.", nm_device_get_iface (self));
+	nm_log_info (LOGD_HW, "(%s): taking down device.", nm_device_get_iface (self));
 
 	if (NM_DEVICE_GET_CLASS (self)->hw_take_down)
 		NM_DEVICE_GET_CLASS (self)->hw_take_down (self);
@@ -2924,7 +2962,7 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 	if (nm_device_is_up (self))
 		return TRUE;
 
-	nm_info ("(%s): preparing device.", nm_device_get_iface (self));
+	nm_log_info (LOGD_HW, "(%s): preparing device.", nm_device_get_iface (self));
 
 	if (NM_DEVICE_GET_CLASS (self)->bring_up)
 		success = NM_DEVICE_GET_CLASS (self)->bring_up (self);
@@ -2941,7 +2979,7 @@ nm_device_take_down (NMDevice *self, gboolean block, NMDeviceStateReason reason)
 		nm_device_interface_deactivate (NM_DEVICE_INTERFACE (self), reason);
 
 	if (nm_device_is_up (self)) {
-		nm_info ("(%s): cleaning up...", nm_device_get_iface (self));
+		nm_log_info (LOGD_HW, "(%s): cleaning up...", nm_device_get_iface (self));
 
 		if (NM_DEVICE_GET_CLASS (self)->take_down)
 			NM_DEVICE_GET_CLASS (self)->take_down (self);
@@ -3260,6 +3298,8 @@ failed_to_disconnected (gpointer user_data)
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
+	nm_log_dbg (LOGD_DEVICE, "(%s): running failed->disconnected transition",
+	            nm_device_get_iface (self));
 	priv->failed_to_disconnected_id = 0;
 	nm_device_state_changed (self, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
 	return FALSE;
@@ -3271,6 +3311,8 @@ unavailable_to_disconnected (gpointer user_data)
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
+	nm_log_dbg (LOGD_DEVICE, "(%s): running unavailable->disconnected transition",
+	            nm_device_get_iface (self));
 	priv->unavailable_to_disconnected_id = 0;
 	nm_device_state_changed (self, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
 	return FALSE;
@@ -3294,8 +3336,8 @@ nm_device_state_changed (NMDevice *device,
 	old_state = priv->state;
 	priv->state = state;
 
-	nm_info ("(%s): device state change: %d -> %d (reason %d)",
-	         nm_device_get_iface (device), old_state, state, reason);
+	nm_log_info (LOGD_DEVICE, "(%s): device state change: %d -> %d (reason %d)",
+	             nm_device_get_iface (device), old_state, state, reason);
 
 	/* Clear any delayed transitions */
 	delayed_transitions_clear (device);
@@ -3313,8 +3355,9 @@ nm_device_state_changed (NMDevice *device,
 		break;
 	case NM_DEVICE_STATE_UNAVAILABLE:
 		if (old_state == NM_DEVICE_STATE_UNMANAGED) {
-			if (!nm_device_bring_up (device, TRUE, &no_firmware) && no_firmware)
-				nm_warning ("%s: firmware may be missing.", nm_device_get_iface (device));
+			if (!nm_device_bring_up (device, TRUE, &no_firmware) && no_firmware) {
+				nm_log_warn (LOGD_HW, "%s: firmware may be missing.", nm_device_get_iface (device));
+			}
 		}
 		/* Ensure the device gets deactivated in response to stuff like
 		 * carrier changes or rfkill.  But don't deactivate devices that are
@@ -3346,15 +3389,22 @@ nm_device_state_changed (NMDevice *device,
 		 * we can't change states again from the state handler for a variety of
 		 * reasons.
 		 */
-		if (nm_device_is_available (device))
+		if (nm_device_is_available (device)) {
+			nm_log_dbg (LOGD_DEVICE, "(%s): device is available, will transition to DISCONNECTED",
+			            nm_device_get_iface (device));
 			priv->unavailable_to_disconnected_id = g_idle_add (unavailable_to_disconnected, device);
+		} else {
+			nm_log_dbg (LOGD_DEVICE, "(%s): device not yet available for transition to DISCONNECTED",
+			            nm_device_get_iface (device));
+		}
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
-		nm_info ("Activation (%s) successful, device activated.", nm_device_get_iface (device));
+		nm_log_info (LOGD_DEVICE, "Activation (%s) successful, device activated.",
+		             nm_device_get_iface (device));
 		nm_utils_call_dispatcher ("up", nm_act_request_get_connection (req), device, NULL);
 		break;
 	case NM_DEVICE_STATE_FAILED:
-		nm_info ("Activation (%s) failed.", nm_device_get_iface (device));
+		nm_log_warn (LOGD_DEVICE, "Activation (%s) failed.", nm_device_get_iface (device));
 		/* Schedule the transition to DISCONNECTED.  The device can't transition
 		 * immediately becuase we can't change states again from the state
 		 * handler for a variety of reasons.
@@ -3403,7 +3453,9 @@ nm_device_set_managed (NMDevice *device,
 		return;
 
 	priv->managed = managed;
-	nm_info ("(%s): now %s", nm_device_get_iface (device), managed ? "managed" : "unmanaged");
+	nm_log_info (LOGD_DEVICE, "(%s): now %s",
+	             nm_device_get_iface (device),
+	             managed ? "managed" : "unmanaged");
 
 	g_object_notify (G_OBJECT (device), NM_DEVICE_INTERFACE_MANAGED);
 

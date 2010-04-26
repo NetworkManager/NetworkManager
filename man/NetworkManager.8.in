@@ -8,7 +8,7 @@
 .SH NAME
 NetworkManager \- network management daemon
 .SH SYNOPSIS
-.B NetworkManager [\-\-no\-daemon] [\-\-pid\-file=<filename>] [\-\-state\-file=<filename>] [\-\-config=<filename>] [\-\-plugins=<plugin1>,plugin2>,...]
+.B NetworkManager [\-\-no\-daemon] [\-\-pid\-file=<filename>] [\-\-state\-file=<filename>] [\-\-config=<filename>] [\-\-plugins=<plugin1>,plugin2>,...] [\-\-log\-level=<level>] [\-\-log\-domains=<domain1>,<domain2>,...]
 .SH DESCRIPTION
 The \fINetworkManager\fP daemon attempts to make  networking configuration and
 operation as painless and automatic as possible by managing the primary network
@@ -55,7 +55,7 @@ The system hostname has been updated.  Use gethostname(2) to retrieve it.
 .SH OPTIONS
 The following options are supported:
 .TP
-.I "\-\-no-daemon"
+.I "\-\-no\-daemon"
 Do not daemonize.  This is useful for debugging, and directs log output to the
 controlling terminal in addition to syslog.
 .TP
@@ -81,11 +81,23 @@ List plugins used to manage system-wide connection settings.   This list has
 preference over plugins specified in the configuration file.  Currently supported
 plugins are: keyfile, ifcfg\-rh, ifcfg\-suse, ifupdown.
 See \fBNetworkManager.conf\fP(5) for more information on the plugins.
+.TP
+.I "\-\-log\-level=<level>
+Sets how much information NetworkManager sends to the log destination (usually
+syslog's "daemon" facility).  By default, only informational, warning, and error
+messages are logged.  See \fBNetworkManager.conf\fP(5) for more information on
+log levels and domains.
+.TP
+.I "\-\-log\-domains=<domain1>,<domain2>, ...
+Sets which operations are logged to the log destination (usually syslog).  By
+default, most domains are logging-enabled.  See \fBNetworkManager.conf\fP(5) for
+more information on log levels and domains.
 .SH DEBUGGING
 The following environment variables are supported to help debugging.  When used
 in conjunction with the "\-\-no\-daemon" option (thus echoing PPP and DHCP helper
 output to stdout) these can quickly help pinpoint the source of connection
-issues.
+issues.  Also see the \-\-log\-level and \-\-log\-domains to enable debug logging inside
+NetworkManager itself.
 .TP
 .I "NM_PPP_DEBUG"
 When set to anything, causes NetworkManager to turn on PPP debugging in pppd,

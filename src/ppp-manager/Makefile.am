@@ -3,6 +3,7 @@ INCLUDES = \
 	-I${top_srcdir}/include \
 	-I${top_srcdir}/libnm-util \
 	-I${top_srcdir}/src \
+	-I${top_srcdir}/src/logging \
 	-I${top_builddir}/marshallers
 
 noinst_LTLIBRARIES = libppp-manager.la
@@ -28,6 +29,7 @@ libppp_manager_la_CPPFLAGS = \
 
 libppp_manager_la_LIBADD = \
 	$(top_builddir)/marshallers/libmarshallers.la \
+	$(top_builddir)/src/logging/libnm-logging.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS)
 

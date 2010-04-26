@@ -164,6 +164,14 @@ if test x"$with_distro" = xpardus; then
   AC_DEFINE(TARGET_PARDUS, 1, [Define if you have Pardus])
 fi
 
+dnl
+dnl Distribution version string
+dnl
+AC_ARG_WITH(dist-version, AS_HELP_STRING([--with-dist-version=<NM-distribution-version>], [Define the NM's distribution version string]), ac_distver=$withval, ac_distver="")
+if ! test x"$ac_distver" = x""; then
+  AC_DEFINE_UNQUOTED(NM_DIST_VERSION, "$ac_distver", [Define the distribution version string])
+fi
+
 AC_MSG_CHECKING([Linux Wireless Extensions >= 18])
 AC_TRY_COMPILE([#ifndef __user
                 #define __user
@@ -440,6 +448,7 @@ include/Makefile
 src/Makefile
 src/tests/Makefile
 marshallers/Makefile
+src/logging/Makefile
 src/named-manager/Makefile
 src/vpn-manager/Makefile
 src/dhcp-manager/Makefile

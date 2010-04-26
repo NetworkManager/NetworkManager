@@ -1,9 +1,11 @@
-INCLUDES = -I${top_srcdir}				\
-		 -I${top_srcdir}/include			\
-		 -I${top_srcdir}/src			\
-		 -I${top_srcdir}/src/vpn-manager	\
-		 -I${top_srcdir}/src/named-manager	\
-		 -I${top_srcdir}/libnm-util
+INCLUDES = \
+	-I${top_srcdir} \
+	-I${top_srcdir}/src/logging \
+	-I${top_srcdir}/include \
+	-I${top_srcdir}/src \
+	-I${top_srcdir}/src/vpn-manager \
+	-I${top_srcdir}/src/named-manager \
+	-I${top_srcdir}/libnm-util
 
 noinst_LTLIBRARIES = libnmbackend.la
 
@@ -53,7 +55,11 @@ if TARGET_PARDUS
 libnmbackend_la_SOURCES += NetworkManagerPardus.c
 endif
 
-libnmbackend_la_LIBADD += $(DBUS_LIBS) $(GLIB_LIBS)
+libnmbackend_la_LIBADD += \
+	$(top_builddir)/src/logging/libnm-logging.la \
+	$(DBUS_LIBS) \
+	$(GLIB_LIBS)
+
 libnmbackend_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \

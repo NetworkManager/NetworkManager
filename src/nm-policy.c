@@ -29,7 +29,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-wifi-ap.h"
 #include "nm-activation-request.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 #include "nm-device-interface.h"
 #include "nm-device.h"
 #include "nm-device-wifi.h"
@@ -269,9 +269,9 @@ update_etc_hosts (const char *hostname, gboolean *out_changed)
 	g_return_val_if_fail (out_changed != NULL, FALSE);
 
 	if (!g_file_get_contents (SYSCONFDIR "/hosts", &contents, &contents_len, &error)) {
-		nm_warning ("%s: couldn't read " SYSCONFDIR "/hosts: (%d) %s",
-		            __func__, error ? error->code : 0,
-		            (error && error->message) ? error->message : "(unknown)");
+		nm_log_warn (LOGD_DNS, "couldn't read " SYSCONFDIR "/hosts: (%d) %s",
+		             error ? error->code : 0,
+		             (error && error->message) ? error->message : "(unknown)");
 		g_clear_error (&error);
 		return FALSE;
 	}
@@ -287,14 +287,14 @@ update_etc_hosts (const char *hostname, gboolean *out_changed)
 	g_free (contents);
 
 	if (new_contents) {
-		nm_info ("Updating /etc/hosts with new system hostname");
+		nm_log_info (LOGD_DNS, "Updating /etc/hosts with new system hostname");
 
 		g_clear_error (&error);
 		/* And actually update /etc/hosts */
 		if (!g_file_set_contents (SYSCONFDIR "/hosts", new_contents->str, -1, &error)) {
-			nm_warning ("%s: couldn't update " SYSCONFDIR "/hosts: (%d) %s",
-			            __func__, error ? error->code : 0,
-			            (error && error->message) ? error->message : "(unknown)");
+			nm_log_warn (LOGD_DNS, "couldn't update " SYSCONFDIR "/hosts: (%d) %s",
+			             error ? error->code : 0,
+			             (error && error->message) ? error->message : "(unknown)");
 			g_clear_error (&error);
 		} else {
 			success = TRUE;
@@ -306,8 +306,8 @@ update_etc_hosts (const char *hostname, gboolean *out_changed)
 		/* No change required */
 		success = TRUE;
 	} else {
-		nm_warning ("%s: couldn't read " SYSCONFDIR "/hosts: (%d) %s",
-		            __func__, error->code, error->message ? error->message : "(unknown)");
+		nm_log_warn (LOGD_DNS, "couldn't read " SYSCONFDIR "/hosts: (%d) %s",
+		             error->code, error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
 	}
 
@@ -326,8 +326,8 @@ set_system_hostname (const char *new_hostname, const char *msg)
 	errno = 0;
 	ret = gethostname (old_hostname, HOST_NAME_MAX);
 	if (ret != 0) {
-		nm_warning ("%s: couldn't get the system hostname: (%d) %s",
-		            __func__, errno, strerror (errno));
+		nm_log_warn (LOGD_DNS, "couldn't get the system hostname: (%d) %s",
+		             errno, strerror (errno));
 	} else {
 		/* Don't set the hostname if it isn't actually changing */
 		if (   (new_hostname && !strcmp (old_hostname, new_hostname))
@@ -336,11 +336,11 @@ set_system_hostname (const char *new_hostname, const char *msg)
 	}
 
 	if (set_hostname) {
-		nm_info ("Setting system hostname to '%s' (%s)", name, msg);
+		nm_log_info (LOGD_DNS, "Setting system hostname to '%s' (%s)", name, msg);
 		ret = sethostname (name, strlen (name));
 		if (ret != 0) {
-			nm_warning ("%s: couldn't set the system hostname to '%s': (%d) %s",
-			            __func__, name, errno, strerror (errno));
+			nm_log_warn (LOGD_DNS, "couldn't set the system hostname to '%s': (%d) %s",
+			             name, errno, strerror (errno));
 			return;
 		}
 	}
@@ -353,11 +353,11 @@ set_system_hostname (const char *new_hostname, const char *msg)
 	 */
 	if (!update_etc_hosts (name, &changed)) {
 		/* error updating /etc/hosts; fallback to localhost.localdomain */
-		nm_info ("Setting system hostname to '" FALLBACK_HOSTNAME "' (error updating /etc/hosts)");
+		nm_log_info (LOGD_DNS, "Setting system hostname to '" FALLBACK_HOSTNAME "' (error updating /etc/hosts)");
 		ret = sethostname (FALLBACK_HOSTNAME, strlen (FALLBACK_HOSTNAME));
 		if (ret != 0) {
-			nm_warning ("%s: couldn't set the fallback system hostname (%s): (%d) %s",
-			            __func__, FALLBACK_HOSTNAME, errno, strerror (errno));
+			nm_log_warn (LOGD_DNS, "couldn't set the fallback system hostname (%s): (%d) %s",
+			             FALLBACK_HOSTNAME, errno, strerror (errno));
 		}
 	}
 
@@ -450,8 +450,8 @@ update_system_hostname (NMPolicy *policy, NMDevice *best)
 					return;
 				}
 			}
-			nm_warning ("%s: DHCP-provided hostname '%s' looks invalid; ignoring it",
-			            __func__, dhcp4_hostname);
+			nm_log_warn (LOGD_DNS, "DHCP-provided hostname '%s' looks invalid; ignoring it",
+			             dhcp4_hostname);
 		}
 	}
 
@@ -563,8 +563,8 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	}
 
 	if (!ip_iface || !ip4_config) {
-		nm_warning ("%s: couldn't determine IP interface (%p) or IPv4 config (%p)!",
-		            __func__, ip_iface, ip4_config);
+		nm_log_warn (LOGD_CORE, "couldn't determine IP interface (%p) or IPv4 config (%p)!",
+		             ip_iface, ip4_config);
 		goto out;
 	}
 
@@ -597,10 +597,11 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 
 	connection_id = s_con ? nm_setting_connection_get_id (s_con) : NULL;
-	if (connection_id)
-		nm_info ("Policy set '%s' (%s) as default for routing and DNS.", connection_id, ip_iface);
-	else
-		nm_info ("Policy set (%s) as default for routing and DNS.", ip_iface);
+	if (connection_id) {
+		nm_log_info (LOGD_CORE, "Policy set '%s' (%s) as default for routing and DNS.", connection_id, ip_iface);
+	} else {
+		nm_log_info (LOGD_CORE, "Policy set (%s) as default for routing and DNS.", ip_iface);
+	}
 
 out:
 	/* Update the system hostname */
@@ -669,8 +670,8 @@ auto_activate_device (gpointer user_data)
 			s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (best_connection, NM_TYPE_SETTING_CONNECTION));
 			g_assert (s_con);
 
-			nm_warning ("Connection '%s' auto-activation failed: (%d) %s",
-			            nm_setting_connection_get_id (s_con), error->code, error->message);
+			nm_log_info (LOGD_DEVICE, "Connection '%s' auto-activation failed: (%d) %s",
+			             nm_setting_connection_get_id (s_con), error->code, error->message);
 			g_error_free (error);
 		}
 	}
@@ -797,15 +798,21 @@ device_state_changed (NMDevice *device,
 		 */
 		if (connection && IS_ACTIVATING_STATE (old_state)) {
 			g_object_set_data (G_OBJECT (connection), INVALID_TAG, GUINT_TO_POINTER (TRUE));
-			nm_info ("Marking connection '%s' invalid.", get_connection_id (connection));
+			nm_log_info (LOGD_DEVICE, "Marking connection '%s' invalid.", get_connection_id (connection));
 			nm_connection_clear_secrets (connection);
 		}
 		schedule_activate_check (policy, device, 3);
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
-		/* Clear the invalid tag on the connection */
-		if (connection)
+		if (connection) {
+			/* Clear the invalid tag on the connection */
 			g_object_set_data (G_OBJECT (connection), INVALID_TAG, NULL);
+
+			/* And clear secrets so they will always be requested from the
+			 * settings service when the next connection is made.
+			 */
+			nm_connection_clear_secrets (connection);
+		}
 
 		update_routing_and_dns (policy, FALSE);
 		break;
@@ -982,8 +989,8 @@ connection_removed (NMManager *manager,
 		GError *error = NULL;
 
 		if (!nm_manager_deactivate_connection (manager, path, NM_DEVICE_STATE_REASON_CONNECTION_REMOVED, &error)) {
-			nm_warning ("Connection '%s' disappeared, but error deactivating it: (%d) %s",
-			            nm_setting_connection_get_id (s_con), error->code, error->message);
+			nm_log_warn (LOGD_DEVICE, "Connection '%s' disappeared, but error deactivating it: (%d) %s",
+			             nm_setting_connection_get_id (s_con), error->code, error->message);
 			g_error_free (error);
 		}
 		g_free (path);

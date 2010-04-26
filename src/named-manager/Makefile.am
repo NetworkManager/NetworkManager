@@ -1,4 +1,8 @@
-INCLUDES = -I${top_srcdir}/libnm-util -I${top_srcdir}/src -I${top_srcdir}/include
+INCLUDES = \
+	-I${top_srcdir}/src/logging \
+	-I${top_srcdir}/libnm-util \
+	-I${top_srcdir}/src \
+	-I${top_srcdir}/include
 
 noinst_LTLIBRARIES = libnamed-manager.la
 
@@ -10,4 +14,8 @@ libnamed_manager_la_CPPFLAGS = \
 	-DNM_PKGDATADIR=\"$(pkgdatadir)\" \
 	-DNM_LOCALSTATEDIR=\"$(localstatedir)\"
 
-libnamed_manager_la_LIBADD = $(DBUS_LIBS) $(GLIB_LIBS)
+libnamed_manager_la_LIBADD = \
+	$(top_builddir)/src/logging/libnm-logging.la \
+	$(DBUS_LIBS) \
+	$(GLIB_LIBS)
+

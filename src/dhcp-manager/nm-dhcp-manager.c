@@ -38,7 +38,7 @@
 #include "nm-dhcp-dhclient.h"
 #include "nm-dhcp-dhcpcd.h"
 #include "nm-marshal.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 #include "nm-dbus-manager.h"
 #include "nm-hostname-provider.h"
 #include "nm-dbus-glib-types.h"
@@ -125,7 +125,7 @@ garray_to_string (GArray *array, const char *key)
 
 	converted = str->str;
 	if (!g_utf8_validate (converted, -1, NULL))
-		nm_warning ("%s: DHCP option '%s' couldn't be converted to UTF-8", __func__, key);
+		nm_log_warn (LOGD_DHCP, "DHCP option '%s' couldn't be converted to UTF-8", key);
 	g_string_free (str, FALSE);
 	return converted;
 }
@@ -190,9 +190,9 @@ get_option (GHashTable *hash, const char *key)
 		return NULL;
 
 	if (G_VALUE_TYPE (value) != DBUS_TYPE_G_UCHAR_ARRAY) {
-		g_warning ("Unexpected key %s value type was not "
-		           "DBUS_TYPE_G_UCHAR_ARRAY",
-		           (char *) key);
+		nm_log_warn (LOGD_DHCP, "unexpected key %s value type was not "
+		             "DBUS_TYPE_G_UCHAR_ARRAY",
+		             (char *) key);
 		return NULL;
 	}
 
@@ -217,37 +217,37 @@ nm_dhcp_manager_handle_event (DBusGProxy *proxy,
 
 	iface = get_option (options, "interface");
 	if (iface == NULL) {
-		nm_warning ("DHCP event didn't have associated interface.");
+		nm_log_warn (LOGD_DHCP, "DHCP event didn't have associated interface.");
 		goto out;
 	}
 
 	pid_str = get_option (options, "pid");
 	if (pid_str == NULL) {
-		nm_warning ("DHCP event didn't have associated PID.");
+		nm_log_warn (LOGD_DHCP, "DHCP event didn't have associated PID.");
 		goto out;
 	}
 
 	temp = strtoul (pid_str, NULL, 10);
 	if ((temp == ULONG_MAX) && (errno == ERANGE)) {
-		nm_warning ("Couldn't convert PID");
+		nm_log_warn (LOGD_DHCP, "couldn't convert PID");
 		goto out;
 	}
 
 	client = get_client_for_pid (manager, (GPid) temp);
 	if (client == NULL) {
-		nm_warning ("Unhandled DHCP event for interface %s", iface);
+		nm_log_warn (LOGD_DHCP, "unhandled DHCP event for interface %s", iface);
 		goto out;
 	}
 
 	if (strcmp (iface, nm_dhcp_client_get_iface (client))) {
-		nm_warning ("Received DHCP event from unexpected interface '%s' (expected '%s')",
-		            iface, nm_dhcp_client_get_iface (client));
+		nm_log_warn (LOGD_DHCP, "received DHCP event from unexpected interface '%s' (expected '%s')",
+		             iface, nm_dhcp_client_get_iface (client));
 		goto out;
 	}
 
 	reason = get_option (options, "reason");
 	if (reason == NULL) {
-		nm_warning ("DHCP event didn't have a reason");
+		nm_log_warn (LOGD_DHCP, "DHCP event didn't have a reason");
 		goto out;
 	}
 
@@ -573,7 +573,7 @@ nm_dhcp_manager_test_ip4_options_to_config (const char *dhcp_client,
 
 	client_type = get_client_type (dhcp_client, &error);
 	if (!client_type) {
-		g_warning ("Error: %s", error ? error->message : "(unknown)");
+		nm_log_err (LOGD_DHCP4, "error: %s", error ? error->message : "(unknown)");
 		g_clear_error (&error);
 		return NULL;
 	}

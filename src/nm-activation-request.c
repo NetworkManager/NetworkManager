@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2008 Red Hat, Inc.
+ * Copyright (C) 2005 - 2010 Red Hat, Inc.
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
@@ -27,7 +27,7 @@
 
 #include "nm-activation-request.h"
 #include "nm-marshal.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"
 #include "nm-dbus-manager.h"
@@ -418,9 +418,9 @@ secrets_update_setting (NMSecretsProviderInterface *interface,
 		nm_connection_add_setting (priv->connection, setting);
 	else {
 		if (!nm_connection_update_secrets (priv->connection, setting_name, new, &error)) {
-			nm_warning ("Failed to update connection secrets: %d %s",
-			            error ? error->code : -1,
-			            error && error->message ? error->message : "(none)");
+			nm_log_warn (LOGD_DEVICE, "Failed to update connection secrets: %d %s",
+			             error ? error->code : -1,
+			             error && error->message ? error->message : "(none)");
 			g_clear_error (&error);
 		}
 	}
@@ -591,15 +591,17 @@ nm_act_request_set_shared (NMActRequest *req, gboolean shared)
 			int status;
 			GError *error = NULL;
 
-			nm_info ("Executing: %s", cmd);
+			nm_log_info (LOGD_SHARING, "Executing: %s", cmd);
 			if (!g_spawn_sync ("/", argv, envp, G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
 			                   share_child_setup, NULL, NULL, NULL, &status, &error)) {
-				nm_info ("Error executing command: (%d) %s",
-				         error ? error->code : -1,
-				         (error && error->message) ? error->message : "(unknown)");
+				nm_log_warn (LOGD_SHARING, "Error executing command: (%d) %s",
+				             error ? error->code : -1,
+				             (error && error->message) ? error->message : "(unknown)");
 				g_clear_error (&error);
-			} else if (WEXITSTATUS (status))
-				nm_info ("** Command returned exit status %d.", WEXITSTATUS (status));
+			} else if (WEXITSTATUS (status)) {
+				nm_log_warn (LOGD_SHARING, "** Command returned exit status %d.",
+				             WEXITSTATUS (status));
+			}
 		}
 		g_free (cmd);
 		if (argv)

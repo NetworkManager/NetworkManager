@@ -12,3 +12,6 @@ EXTRA_DIST =				\
 	nm-system-settings.conf.5.in	\
 	nm-tool.1.in			\
 	nmcli.1.in
+
+CLEANFILES = $(man_MANS)
+

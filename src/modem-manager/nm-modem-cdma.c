@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 Red Hat, Inc.
+ * Copyright (C) 2009 - 2010 Red Hat, Inc.
  * Copyright (C) 2009 Novell, Inc.
  */
 
@@ -28,8 +28,8 @@
 #include "nm-dbus-manager.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-cdma.h"
-#include "nm-utils.h"
 #include "NetworkManagerUtils.h"
+#include "nm-logging.h"
 
 G_DEFINE_TYPE (NMModemCdma, nm_modem_cdma, NM_TYPE_MODEM)
 
@@ -119,9 +119,9 @@ stage1_prepare_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data
 	if (dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
 		g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, TRUE, NM_DEVICE_STATE_REASON_NONE);
 	else {
-		nm_warning ("CDMA connection failed: (%d) %s",
-		            error ? error->code : -1,
-		            error && error->message ? error->message : "(unknown)");
+		nm_log_warn (LOGD_MB, "CDMA connection failed: (%d) %s",
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
 		g_error_free (error);
 		g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, NM_DEVICE_STATE_REASON_NONE);
 	}
@@ -150,9 +150,9 @@ stage1_enable_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_da
 	if (dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID))
 		do_connect (self);
 	else {
-		nm_warning ("CDMA modem enable failed: (%d) %s",
-		            error ? error->code : -1,
-		            error && error->message ? error->message : "(unknown)");
+		nm_log_warn (LOGD_MB, "CDMA modem enable failed: (%d) %s",
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
 		g_error_free (error);
 		g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
 	}

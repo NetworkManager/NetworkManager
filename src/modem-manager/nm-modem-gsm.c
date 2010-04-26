@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 Red Hat, Inc.
+ * Copyright (C) 2009 - 2010 Red Hat, Inc.
  * Copyright (C) 2009 Novell, Inc.
  */
 
@@ -26,7 +26,7 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-gsm.h"
 #include "nm-modem-types.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 
 typedef enum {
@@ -207,9 +207,9 @@ stage1_prepare_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data
 		else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_WRONG))
 			ask_for_pin (self, TRUE);
 		else {
-			nm_warning ("GSM connection failed: (%d) %s",
-			            error ? error->code : -1,
-			            error && error->message ? error->message : "(unknown)");
+			nm_log_warn (LOGD_MB, "GSM connection failed: (%d) %s",
+			             error ? error->code : -1,
+			             error && error->message ? error->message : "(unknown)");
 
 			g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, translate_mm_error (error));
 		}
@@ -260,9 +260,9 @@ stage1_pin_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 		/* Success; go back and try the enable again */
 		do_enable (self);
 	} else {
-		nm_warning ("GSM PIN unlock failed: (%d) %s",
-		            error ? error->code : -1,
-		            error && error->message ? error->message : "(unknown)");
+		nm_log_warn (LOGD_MB, "GSM PIN unlock failed: (%d) %s",
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
 		g_error_free (error);
 
 		g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
@@ -303,9 +303,9 @@ stage1_enable_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_da
 	if (dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID))
 		do_connect (self);
 	else {
-		nm_warning ("GSM modem enable failed: (%d) %s",
-		            error ? error->code : -1,
-		            error && error->message ? error->message : "(unknown)");
+		nm_log_warn (LOGD_MB, "GSM modem enable failed: (%d) %s",
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
 
 		if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_PIN))
 			handle_enable_pin_required (self);

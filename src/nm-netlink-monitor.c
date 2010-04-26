@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2008 Red Hat, Inc.
+ * Copyright (C) 2005 - 2010 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  * Copyright (C) 2005 Ray Strode
  *
@@ -43,7 +43,7 @@
 #include "NetworkManager.h"
 #include "nm-system.h"
 #include "nm-netlink-monitor.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 #include "nm-marshal.h"
 #include "nm-netlink.h"
 
@@ -186,6 +186,7 @@ netlink_object_message_handler (struct nl_object *obj, void *arg)
 	struct rtnl_link *filter;
 	struct rtnl_link *link_obj;
 	guint flags;
+	guint ifidx;
 
 	filter = rtnl_link_alloc ();
 	if (!filter) {
@@ -206,19 +207,17 @@ netlink_object_message_handler (struct nl_object *obj, void *arg)
 
 	link_obj = (struct rtnl_link *) obj;
 	flags = rtnl_link_get_flags (link_obj);
+	ifidx = rtnl_link_get_ifindex (link_obj);
+
+	nm_log_dbg (LOGD_HW, "netlink link message: iface idx %d flags 0x%X", ifidx, flags);
 
 	/* IFF_LOWER_UP is the indicator of carrier status since kernel commit
 	 * b00055aacdb172c05067612278ba27265fcd05ce in 2.6.17.
 	 */
-	if (flags & IFF_LOWER_UP) {
-		g_signal_emit (G_OBJECT (monitor),
-		               signals[CARRIER_ON],
-		               0, rtnl_link_get_ifindex (link_obj));
-	} else {
-		g_signal_emit (G_OBJECT (monitor),
-		               signals[CARRIER_OFF],
-		               0, rtnl_link_get_ifindex (link_obj));
-	}
+	if (flags & IFF_LOWER_UP)
+		g_signal_emit (G_OBJECT (monitor), signals[CARRIER_ON], 0, ifidx);
+	else
+		g_signal_emit (G_OBJECT (monitor), signals[CARRIER_OFF], 0, ifidx);
 
 out:
 	rtnl_link_put (filter);
@@ -407,9 +406,9 @@ deferred_emit_carrier_state (gpointer user_data)
 	/* Update the link cache with latest state, and if there are no errors
 	 * emit the link states for all the interfaces in the cache.
 	 */
-	if (nl_cache_refill (priv->nlh, priv->nlh_link_cache))
-		nm_warning ("error updating link cache: %s", nl_geterror ());
-	else {
+	if (nl_cache_refill (priv->nlh, priv->nlh_link_cache)) {
+		nm_log_err (LOGD_HW, "error updating link cache: %s", nl_geterror ());
+	} else {
 		nl_cache_foreach_filter (priv->nlh_link_cache,
 		                         NULL,
 		                         netlink_object_message_handler,

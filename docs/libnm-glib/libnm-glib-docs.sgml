@@ -5,35 +5,40 @@
   <bookinfo>
     <title>libnm-glib Reference Manual</title>
     <releaseinfo>
-      for libnm-glib [VERSION]
+      for libnm-glib 0.8
       The latest version of this documentation can be found on-line at
-      <ulink role="online-location" url="http://[SERVER]/libnm-glib/index.html">http://[SERVER]/libnm-glib/</ulink>.
+      <ulink role="online-location" url="http://projects.gnome.org/NetworkManager/developers/libnm-glib/08/">http://projects.gnome.org/NetworkManager/developers/libnm-glib/08/</ulink>.
     </releaseinfo>
   </bookinfo>
 
   <chapter>
-    <title>[Insert title here]</title>
-    <xi:include href="xml/nm-access-point.xml"/>
-    <xi:include href="xml/nm-cdma-device.xml"/>
+    <title>libnm-glib Objects</title>
     <xi:include href="xml/nm-client.xml"/>
-    <xi:include href="xml/nm-gsm-device.xml"/>
-    <xi:include href="xml/nm-device.xml"/>
-    <xi:include href="xml/nm-ip4-config.xml"/>
-    <xi:include href="xml/nm-ip6-config.xml"/>
-    <xi:include href="xml/nm-object.xml"/>
-    <xi:include href="xml/nm-settings.xml"/>
-    <xi:include href="xml/nm-vpn-connection.xml"/>
-    <xi:include href="xml/nm-vpn-plugin.xml"/>
-    <xi:include href="xml/nm-dbus-settings-system.xml"/>
     <xi:include href="xml/nm-active-connection.xml"/>
+    <xi:include href="xml/nm-device.xml"/>
     <xi:include href="xml/nm-device-ethernet.xml"/>
     <xi:include href="xml/nm-device-wifi.xml"/>
-    <xi:include href="xml/nm-dbus-connection.xml"/>
     <xi:include href="xml/nm-serial-device.xml"/>
-    <xi:include href="xml/nm-dbus-settings.xml"/>
+    <xi:include href="xml/nm-gsm-device.xml"/>
+    <xi:include href="xml/nm-cdma-device.xml"/>
+    <xi:include href="xml/nm-device-bt.xml"/>
+    <xi:include href="xml/nm-access-point.xml"/>
+    <xi:include href="xml/nm-ip4-config.xml"/>
+    <xi:include href="xml/nm-ip6-config.xml"/>
     <xi:include href="xml/nm-dhcp4-config.xml"/>
-    <xi:include href="xml/nm-vpn-plugin-ui-interface.xml"/>
-    <xi:include href="xml/libnm_glib.xml"/>
+    <xi:include href="xml/nm-dhcp6-config.xml"/>
+    <xi:include href="xml/nm-exported-connection.xml"/>
+    <xi:include href="xml/nm-object.xml"/>
+    <xi:include href="xml/nm-remote-connection.xml"/>
+    <xi:include href="xml/nm-remote-settings.xml"/>
+    <xi:include href="xml/nm-remote-settings-system.xml"/>
+    <xi:include href="xml/nm-settings-connection-interface.xml"/>
+    <xi:include href="xml/nm-settings-interface.xml"/>
+    <xi:include href="xml/nm-settings-service.xml"/>
+    <xi:include href="xml/nm-settings-system-interface.xml"/>
     <xi:include href="xml/nm-types.xml"/>
+    <xi:include href="xml/nm-vpn-connection.xml"/>
+    <xi:include href="xml/nm-vpn-plugin.xml"/>
+    <xi:include href="xml/nm-vpn-plugin-ui-interface.xml"/>
   </chapter>
 </book>
