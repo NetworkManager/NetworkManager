@@ -40,6 +40,9 @@ gboolean		nm_system_replace_default_ip4_route   (const char *iface,
                                                        guint32 gw,
                                                        guint32 mss);
 
+gboolean		nm_system_replace_default_ip6_route   (const char *iface,
+                                                       const struct in6_addr *gw);
+
 gboolean		nm_system_replace_default_ip4_route_vpn (const char *iface,
                                                          guint32 ext_gw,
                                                          guint32 int_gw,

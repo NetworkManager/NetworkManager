@@ -46,7 +46,6 @@ G_BEGIN_DECLS
 #define NM_DEVICE_OLPC_MESH_COMPANION      "companion"
 #define NM_DEVICE_OLPC_MESH_BITRATE        "bitrate"
 #define NM_DEVICE_OLPC_MESH_ACTIVE_CHANNEL "active-channel"
-#define NM_DEVICE_OLPC_MESH_IFINDEX        "ifindex"
 
 #ifndef NM_DEVICE_OLPC_MESH_DEFINED
 #define NM_DEVICE_OLPC_MESH_DEFINED
@@ -75,10 +74,7 @@ GType nm_device_olpc_mesh_get_type (void);
 
 NMDevice *nm_device_olpc_mesh_new (const char *udi,
                                    const char *iface,
-                                   const char *driver,
-                                   guint32 ifindex);
-
-guint32 nm_device_olpc_mesh_get_ifindex (NMDeviceOlpcMesh *self);
+                                   const char *driver);
 
 G_END_DECLS
 

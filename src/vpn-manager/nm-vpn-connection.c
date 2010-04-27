@@ -45,7 +45,7 @@
 #include "nm-dbus-glib-types.h"
 #include "NetworkManagerUtils.h"
 #include "nm-named-manager.h"
-#include "nm-netlink.h"
+#include "nm-netlink-monitor.h"
 #include "nm-glib-compat.h"
 
 #include "nm-vpn-connection-glue.h"
@@ -69,6 +69,7 @@ typedef struct {
 	gulong device_ip4;
 
 	gboolean is_default;
+	gboolean is_default6;
 	NMActiveConnectionState state;
 
 	NMVPNConnectionState vpn_state;
@@ -102,6 +103,7 @@ enum {
 	PROP_DEVICES,
 	PROP_STATE,
 	PROP_DEFAULT,
+	PROP_DEFAULT6,
 	PROP_VPN,
 	PROP_VPN_STATE,
 	PROP_BANNER,
@@ -1052,6 +1054,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_DEFAULT:
 		g_value_set_boolean (value, priv->is_default);
 		break;
+	case PROP_DEFAULT6:
+		g_value_set_boolean (value, priv->is_default6);
+		break;
 	case PROP_VPN:
 		g_value_set_boolean (value, TRUE);
 		break;
@@ -1122,7 +1127,14 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 		(object_class, PROP_DEFAULT,
 		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_DEFAULT,
 							   "Default",
-							   "Is the default active connection",
+							   "Is the default IPv4 active connection",
+							   FALSE,
+							   G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_DEFAULT6,
+		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_DEFAULT6,
+							   "Default6",
+							   "Is the default IPv6 active connection",
 							   FALSE,
 							   G_PARAM_READABLE));
 	g_object_class_install_property

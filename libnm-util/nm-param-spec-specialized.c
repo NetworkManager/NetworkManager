@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2010 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -377,6 +377,7 @@ nm_gvalue_ip6_address_compare (const GValue *value1, const GValue *value2)
 	GValue *tmp_val;
 	GByteArray *addr1, *addr2;
 	guint32 prefix1, prefix2;
+	GByteArray *gw1, *gw2;
 	gint ret = 0;
 	int i;
 
@@ -387,8 +388,8 @@ nm_gvalue_ip6_address_compare (const GValue *value1, const GValue *value2)
 	/* Since they are NM IPv6 address structures, we expect both
 	 * to contain two elements as specified in nm-dbus-glib-types.h.
 	 */
-	g_return_val_if_fail (values1->n_values == 2, 0);
-	g_return_val_if_fail (values2->n_values == 2, 0);
+	g_return_val_if_fail (values1->n_values == 3, 0);
+	g_return_val_if_fail (values2->n_values == 3, 0);
 
 	/* First struct IPv6 address */
 	tmp_val = g_value_array_get_nth (values1, 0);
@@ -396,6 +397,9 @@ nm_gvalue_ip6_address_compare (const GValue *value1, const GValue *value2)
 	/* First struct IPv6 prefix */
 	tmp_val = g_value_array_get_nth (values1, 1);
 	prefix1 = g_value_get_uint (tmp_val);
+	/* First struct IPv6 gateway */
+	tmp_val = g_value_array_get_nth (values1, 2);
+	gw1 = g_value_get_boxed (tmp_val);
 
 	/* Second struct IPv6 address */
 	tmp_val = g_value_array_get_nth (values2, 0);
@@ -403,6 +407,9 @@ nm_gvalue_ip6_address_compare (const GValue *value1, const GValue *value2)
 	/* Second struct IPv6 prefix */
 	tmp_val = g_value_array_get_nth (values2, 1);
 	prefix2 = g_value_get_uint (tmp_val);
+	/* Second struct IPv6 gateway */
+	tmp_val = g_value_array_get_nth (values2, 2);
+	gw2 = g_value_get_boxed (tmp_val);
 
 	/* Compare IPv6 addresses */
 	if (prefix1 != prefix2)
@@ -411,6 +418,11 @@ nm_gvalue_ip6_address_compare (const GValue *value1, const GValue *value2)
 	if (!IN6_ARE_ADDR_EQUAL ((struct in6_addr *)addr1->data, (struct in6_addr *)addr2->data)) {
 		for (i = 0; ret == 0 && i < addr1->len; i++)
 			ret = addr1->data[i] < addr2->data[i] ? -1 : addr1->data[i] > addr2->data[i];
+	}
+
+	if (!IN6_ARE_ADDR_EQUAL ((struct in6_addr *) gw1->data, (struct in6_addr *) gw2->data)) {
+		for (i = 0; ret == 0 && i < gw1->len; i++)
+			ret = gw1->data[i] < gw2->data[i] ? -1 : gw1->data[i] > gw2->data[i];
 	}
 
 	return ret;

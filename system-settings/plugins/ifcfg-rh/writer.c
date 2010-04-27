@@ -934,9 +934,17 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	guint32 i, num;
 	GString *searches;
 	gboolean success = FALSE;
+	const char *method = NULL;
 
 	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
-	if (!s_ip4) {
+	if (s_ip4)
+		method = nm_setting_ip4_config_get_method (s_ip4);
+
+	/* Missing IP4 setting is assumed to be DHCP */
+	if (!method)
+		method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
+
+	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
 		int result;
 
 		/* IPv4 disabled, clear IPv4 related parameters */

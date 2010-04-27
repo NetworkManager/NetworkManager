@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2010 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -69,6 +69,7 @@ GQuark nm_setting_ip4_config_error_quark (void);
 #define NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL "link-local"
 #define NM_SETTING_IP4_CONFIG_METHOD_MANUAL     "manual"
 #define NM_SETTING_IP4_CONFIG_METHOD_SHARED     "shared"
+#define NM_SETTING_IP4_CONFIG_METHOD_DISABLED   "disabled"
 
 typedef struct NMIP4Address NMIP4Address;
 

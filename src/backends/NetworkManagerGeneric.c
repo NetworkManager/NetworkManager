@@ -1,10 +1,6 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /* NetworkManager -- Network link manager
  *
- * Timothee Lecomte <timothee.lecomte@ens.fr>
- *
- * Heavily based on NetworkManagerRedhat.c by Dan Williams <dcbw@redhat.com>
- *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -19,7 +15,8 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2004 Red Hat, Inc.
+ * (C) Copyright 2004 - 2010 Red Hat, Inc.
+ * (C) Copyright 2006 Timothee Lecomte <timothee.lecomte@ens.fr>
  */
 
 #ifdef HAVE_CONFIG_H
@@ -36,8 +33,8 @@
 #include "NetworkManagerGeneric.h"
 #include "nm-system.h"
 #include "NetworkManagerUtils.h"
-#include "nm-netlink.h"
 #include "nm-logging.h"
+#include "nm-netlink-monitor.h"
 
 /* Because of a bug in libnl, rtnl.h should be included before route.h */
 #include <netlink/route/rtnl.h>

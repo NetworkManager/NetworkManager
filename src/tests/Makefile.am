@@ -35,6 +35,7 @@ test_policy_hosts_CPPFLAGS = \
 	$(GLIB_CFLAGS)
 
 test_policy_hosts_LDADD = \
+	-ldl \
 	$(top_builddir)/src/libtest-policy-hosts.la \
 	$(GLIB_LIBS)
 

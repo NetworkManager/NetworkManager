@@ -14,7 +14,6 @@ src/nm-netlink-monitor.c
 src/main.c
 src/dhcp-manager/nm-dhcp-dhclient.c
 src/dhcp-manager/nm-dhcp-manager.c
-src/ip6-manager/nm-netlink-listener.c
 src/logging/nm-logging.c
 src/named-manager/nm-named-manager.c
 src/system-settings/nm-default-wired-connection.c

@@ -10,5 +10,6 @@ libnm_logging_la_CPPFLAGS = \
 	-DG_DISABLE_DEPRECATED
 
 libnm_logging_la_LIBADD = \
+	-ldl \
 	$(GLIB_LIBS)
 

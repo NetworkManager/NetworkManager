@@ -1523,7 +1523,8 @@ add_device (NMManager *self, NMDevice *device)
 	driver = nm_device_get_driver (device);
 	if (!driver)
 		driver = "unknown";
-	nm_log_info (LOGD_HW, "(%s): new %s device (driver: '%s')", iface, type_desc, driver);
+	nm_log_info (LOGD_HW, "(%s): new %s device (driver: '%s' ifindex: %d)",
+	             iface, type_desc, driver, nm_device_get_ifindex (device));
 
 	path = g_strdup_printf ("/org/freedesktop/NetworkManager/Devices/%d", devcount++);
 	nm_device_set_path (device, path);
@@ -1794,20 +1795,11 @@ find_device_by_ifindex (NMManager *self, guint32 ifindex)
 	GSList *iter;
 
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *device = NM_DEVICE (iter->data);
-		gint candidate_idx = 0;
+		NMDevice *candidate = NM_DEVICE (iter->data);
 
-		if (NM_IS_DEVICE_ETHERNET (device))
-			candidate_idx = nm_device_ethernet_get_ifindex (NM_DEVICE_ETHERNET (device));
-		else if (NM_IS_DEVICE_WIFI (device))
-			candidate_idx = nm_device_wifi_get_ifindex (NM_DEVICE_WIFI (device));
-		else if (NM_IS_DEVICE_OLPC_MESH (device))
-			candidate_idx = nm_device_olpc_mesh_get_ifindex (NM_DEVICE_OLPC_MESH (device));
-
-		if (candidate_idx == ifindex)
-			return device;
+		if (ifindex == nm_device_get_ifindex (candidate))
+			return candidate;
 	}
-
 	return NULL;
 }
 

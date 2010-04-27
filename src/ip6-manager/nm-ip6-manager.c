@@ -21,14 +21,16 @@
 #include <errno.h>
 #include <netinet/icmp6.h>
 
+#include <netlink/route/addr.h>
 #include <netlink/route/rtnl.h>
 #include <netlink/route/route.h>
 
 #include "nm-ip6-manager.h"
-#include "nm-netlink-listener.h"
+#include "nm-netlink-monitor.h"
 #include "NetworkManagerUtils.h"
 #include "nm-marshal.h"
 #include "nm-logging.h"
+#include "nm-system.h"
 
 /* Pre-DHCP addrconf timeout, in seconds */
 #define NM_IP6_TIMEOUT 10
@@ -40,49 +42,14 @@
 #define IF_RS_SENT      0x10
 
 typedef struct {
-	NMNetlinkListener *netlink;
-	GHashTable *devices_by_iface, *devices_by_index;
+	NMNetlinkMonitor *monitor;
+	GHashTable *devices;
 
 	struct nl_handle *nlh;
 	struct nl_cache *addr_cache, *route_cache;
 } NMIP6ManagerPrivate;
 
 #define NM_IP6_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IP6_MANAGER, NMIP6ManagerPrivate))
-
-typedef enum {
-	NM_IP6_DEVICE_UNCONFIGURED,
-	NM_IP6_DEVICE_GOT_LINK_LOCAL,
-	NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT,
-	NM_IP6_DEVICE_GOT_ADDRESS,
-	NM_IP6_DEVICE_WAITING_FOR_DHCP,
-	NM_IP6_DEVICE_GOT_DHCP,
-	NM_IP6_DEVICE_TIMED_OUT
-} NMIP6DeviceState;
-
-typedef struct {
-	struct in6_addr addr;
-	time_t expires;
-} NMIP6RDNSS;
-
-typedef struct {
-	NMIP6Manager *manager;
-	char *iface;
-	int index;
-
-	char *accept_ra_path;
-	gboolean accept_ra_save_valid;
-	guint32 accept_ra_save;
-
-	guint finish_addrconf_id;
-	guint config_changed_id;
-
-	NMIP6DeviceState state;
-	NMIP6DeviceState target_state;
-	gboolean addrconf_complete;
-
-	GArray *rdnss_servers;
-	guint rdnss_timeout_id;
-} NMIP6Device;
 
 G_DEFINE_TYPE (NMIP6Manager, nm_ip6_manager, G_TYPE_OBJECT)
 
@@ -94,89 +61,48 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-static NMIP6Manager *nm_ip6_manager_new (void);
+typedef enum {
+	NM_IP6_DEVICE_UNCONFIGURED,
+	NM_IP6_DEVICE_GOT_LINK_LOCAL,
+	NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT,
+	NM_IP6_DEVICE_GOT_ADDRESS,
+	NM_IP6_DEVICE_TIMED_OUT
+} NMIP6DeviceState;
 
-static void netlink_notification (NMNetlinkListener *listener, struct nl_msg *msg, gpointer user_data);
+typedef struct {
+	struct in6_addr addr;
+	time_t expires;
+} NMIP6RDNSS;
 
-static void nm_ip6_device_destroy (NMIP6Device *device);
+/******************************************************************/
 
-NMIP6Manager *
-nm_ip6_manager_get (void)
-{
-	static NMIP6Manager *singleton = NULL;
+typedef struct {
+	NMIP6Manager *manager;
+	char *iface;
+	int ifindex;
 
-	if (!singleton)
-		singleton = nm_ip6_manager_new ();
-	g_assert (singleton);
+	char *accept_ra_path;
+	gboolean accept_ra_save_valid;
+	guint32 accept_ra_save;
 
-	return g_object_ref (singleton);
-}
+	char *disable_ip6_path;
+	gboolean disable_ip6_save_valid;
+	guint32 disable_ip6_save;
 
-static void
-nm_ip6_manager_init (NMIP6Manager *manager)
-{
-	NMIP6ManagerPrivate *priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
+	guint finish_addrconf_id;
+	guint config_changed_id;
 
-	priv->devices_by_iface = g_hash_table_new_full (g_str_hash, g_str_equal,
-													NULL,
-													(GDestroyNotify) nm_ip6_device_destroy);
-	priv->devices_by_index = g_hash_table_new (NULL, NULL);
+	NMIP6DeviceState state;
+	NMIP6DeviceState target_state;
+	gboolean addrconf_complete;
 
-	priv->netlink = nm_netlink_listener_get ();
-	g_signal_connect (priv->netlink, "notification",
-					  G_CALLBACK (netlink_notification), manager);
-	nm_netlink_listener_subscribe (priv->netlink, RTNLGRP_IPV6_IFADDR, NULL);
-	nm_netlink_listener_subscribe (priv->netlink, RTNLGRP_IPV6_PREFIX, NULL);
-	nm_netlink_listener_subscribe (priv->netlink, RTNLGRP_ND_USEROPT, NULL);
+	GArray *rdnss_servers;
+	guint rdnss_timeout_id;
 
-	priv->nlh = nm_netlink_get_default_handle ();
-	priv->addr_cache = rtnl_addr_alloc_cache (priv->nlh);
-	priv->route_cache = rtnl_route_alloc_cache (priv->nlh);
-}
+	guint ip6flags_poll_id;
 
-static void
-finalize (GObject *object)
-{
-	NMIP6ManagerPrivate *priv = NM_IP6_MANAGER_GET_PRIVATE (object);
-
-	g_hash_table_destroy (priv->devices_by_iface);
-	g_hash_table_destroy (priv->devices_by_index);
-	g_object_unref (priv->netlink);
-	nl_cache_free (priv->addr_cache);
-	nl_cache_free (priv->route_cache);
-
-	G_OBJECT_CLASS (nm_ip6_manager_parent_class)->finalize (object);
-}
-
-static void
-nm_ip6_manager_class_init (NMIP6ManagerClass *manager_class)
-{
-	GObjectClass *object_class = G_OBJECT_CLASS (manager_class);
-
-	g_type_class_add_private (manager_class, sizeof (NMIP6ManagerPrivate));
-
-	/* virtual methods */
-	object_class->finalize = finalize;
-
-	/* signals */
-	signals[ADDRCONF_COMPLETE] =
-		g_signal_new ("addrconf-complete",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMIP6ManagerClass, addrconf_complete),
-					  NULL, NULL,
-					  _nm_marshal_VOID__STRING_UINT_BOOLEAN,
-					  G_TYPE_NONE, 3, G_TYPE_STRING, G_TYPE_UINT, G_TYPE_BOOLEAN);
-
-	signals[CONFIG_CHANGED] =
-		g_signal_new ("config-changed",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMIP6ManagerClass, config_changed),
-					  NULL, NULL,
-					  _nm_marshal_VOID__STRING_UINT,
-					  G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_UINT);
-}
+	guint32 ra_flags;
+} NMIP6Device;
 
 static void
 nm_ip6_device_destroy (NMIP6Device *device)
@@ -189,6 +115,12 @@ nm_ip6_device_destroy (NMIP6Device *device)
 		                    device->accept_ra_save ? "1\n" : "0\n");
 	}
 
+	/* reset the saved IPv6 value */
+	if (device->disable_ip6_save_valid) {
+		nm_utils_do_sysctl (device->disable_ip6_path,
+		                    device->disable_ip6_save ? "1\n" : "0\n");
+	}
+
 	if (device->finish_addrconf_id)
 		g_source_remove (device->finish_addrconf_id);
 	if (device->config_changed_id)
@@ -198,27 +130,92 @@ nm_ip6_device_destroy (NMIP6Device *device)
 		g_array_free (device->rdnss_servers, TRUE);
 	if (device->rdnss_timeout_id)
 		g_source_remove (device->rdnss_timeout_id);
+	if (device->ip6flags_poll_id)
+		g_source_remove (device->ip6flags_poll_id);
 
 	g_free (device->accept_ra_path);
 	g_slice_free (NMIP6Device, device);
 }
 
-static NMIP6Manager *
-nm_ip6_manager_new (void)
+static gboolean
+get_proc_sys_net_value (const char *path, const char *iface, guint32 *out_value)
 {
-	NMIP6Manager *manager;
-	NMIP6ManagerPrivate *priv;
+	GError *error;
+	char *contents = NULL;
+	gboolean success = FALSE;
+	long int tmp;
 
-	manager = g_object_new (NM_TYPE_IP6_MANAGER, NULL);
-	priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
-
-	if (!priv->devices_by_iface || !priv->devices_by_index) {
-		nm_log_err (LOGD_IP6, "not enough memory to initialize IP6 manager tables");
-		g_object_unref (manager);
-		manager = NULL;
+	if (!g_file_get_contents (path, &contents, NULL, &error)) {
+		nm_log_warn (LOGD_IP6, "(%s): error reading %s: (%d) %s",
+		             iface, path,
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
+	} else {
+		errno = 0;
+		tmp = strtol (contents, NULL, 10);
+		if ((errno == 0) && (tmp == 0 || tmp == 1)) {
+			*out_value = (guint32) tmp;
+			success = TRUE;
+		}
+		g_free (contents);
 	}
 
-	return manager;
+	return success;
+}
+
+static NMIP6Device *
+nm_ip6_device_new (NMIP6Manager *manager, int ifindex)
+{
+	NMIP6ManagerPrivate *priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
+	NMIP6Device *device;
+
+	g_return_val_if_fail (ifindex > 0, NULL);
+
+	device = g_slice_new0 (NMIP6Device);
+	if (!device) {
+		nm_log_err (LOGD_IP6, "(%d): out of memory creating IP6 addrconf object.",
+		            ifindex);
+		return NULL;
+	}
+
+	device->ifindex = ifindex;
+	device->iface = g_strdup (nm_netlink_index_to_iface (ifindex));
+	if (!device->iface) {
+		nm_log_err (LOGD_IP6, "(%d): could not find interface name from index.",
+		            ifindex);
+		goto error;
+	}
+
+	device->manager = manager;
+
+	device->rdnss_servers = g_array_new (FALSE, FALSE, sizeof (NMIP6RDNSS));
+
+	g_hash_table_replace (priv->devices, GINT_TO_POINTER (device->ifindex), device);
+
+	/* Grab the original value of "accept_ra" so we can restore it when the
+	 * device is taken down.
+	 */
+	device->accept_ra_path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/accept_ra",
+	                                          device->iface);
+	g_assert (device->accept_ra_path);
+	device->accept_ra_save_valid = get_proc_sys_net_value (device->accept_ra_path,
+	                                                       device->iface,
+	                                                       &device->accept_ra_save);
+
+	/* and the original value of IPv6 enable/disable */
+	device->disable_ip6_path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/disable_ipv6",
+	                                            device->iface);
+	g_assert (device->disable_ip6_path);
+	device->disable_ip6_save_valid = get_proc_sys_net_value (device->disable_ip6_path,
+	                                                         device->iface,
+	                                                         &device->disable_ip6_save);
+
+	return device;
+
+error:
+	nm_ip6_device_destroy (device);
+	return NULL;
 }
 
 static NMIP6Device *
@@ -226,13 +223,15 @@ nm_ip6_manager_get_device (NMIP6Manager *manager, int ifindex)
 {
 	NMIP6ManagerPrivate *priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
 
-	return g_hash_table_lookup (priv->devices_by_index,
-								GINT_TO_POINTER (ifindex));
+	return g_hash_table_lookup (priv->devices, GINT_TO_POINTER (ifindex));
 }
+
+/******************************************************************/
 
 typedef struct {
 	NMIP6Device *device;
 	guint dhcp_opts;
+	gboolean success;
 } CallbackInfo;
 
 static gboolean
@@ -241,25 +240,29 @@ finish_addrconf (gpointer user_data)
 	CallbackInfo *info = user_data;
 	NMIP6Device *device = info->device;
 	NMIP6Manager *manager = device->manager;
-	char *iface_copy;
+	int ifindex;
 
 	device->finish_addrconf_id = 0;
 	device->addrconf_complete = TRUE;
+	ifindex = device->ifindex;
 
-	if (device->state >= device->target_state) {
+	/* We're done, stop polling IPv6 flags */
+	if (device->ip6flags_poll_id) {
+		g_source_remove (device->ip6flags_poll_id);
+		device->ip6flags_poll_id = 0;
+	}
+
+	/* And tell listeners that addrconf is complete */
+	if (info->success) {
 		g_signal_emit (manager, signals[ADDRCONF_COMPLETE], 0,
-					   device->iface, info->dhcp_opts, TRUE);
+		               ifindex, info->dhcp_opts, TRUE);
 	} else {
 		nm_log_info (LOGD_IP6, "(%s): IP6 addrconf timed out or failed.",
-				     device->iface);
+		             device->iface);
 
-		iface_copy = g_strdup (device->iface);
-
-		nm_ip6_manager_cancel_addrconf (manager, device->iface);
+		nm_ip6_manager_cancel_addrconf (manager, ifindex);
 		g_signal_emit (manager, signals[ADDRCONF_COMPLETE], 0,
-					   iface_copy, info->dhcp_opts, FALSE);
-
-		g_free (iface_copy);
+		               ifindex, info->dhcp_opts, FALSE);
 	}
 
 	return FALSE;
@@ -273,7 +276,7 @@ emit_config_changed (gpointer user_data)
 	NMIP6Manager *manager = device->manager;
 
 	device->config_changed_id = 0;
-	g_signal_emit (manager, signals[CONFIG_CHANGED], 0, device->iface, info->dhcp_opts);
+	g_signal_emit (manager, signals[CONFIG_CHANGED], 0, device->ifindex, info->dhcp_opts);
 	return FALSE;
 }
 
@@ -329,14 +332,14 @@ set_rdnss_timeout (NMIP6Device *device)
 }
 
 static CallbackInfo *
-callback_info_new (NMIP6Device *device, guint dhcp_opts)
+callback_info_new (NMIP6Device *device, guint dhcp_opts, gboolean success)
 {
 	CallbackInfo *info;
 
 	info = g_malloc0 (sizeof (CallbackInfo));
 	info->device = device;
 	info->dhcp_opts = dhcp_opts;
-
+	info->success = success;
 	return info;
 }
 
@@ -348,15 +351,14 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
 	struct rtnl_addr *rtnladdr;
 	struct nl_addr *nladdr;
 	struct in6_addr *addr;
-	struct rtnl_link *link;
-	guint flags;
 	CallbackInfo *info;
 	guint dhcp_opts = IP6_DHCP_OPT_NONE;
 
-	for (rtnladdr = (struct rtnl_addr *)nl_cache_get_first (priv->addr_cache);
+	/* Look for any IPv6 addresses the kernel may have set for the device */
+	for (rtnladdr = (struct rtnl_addr *) nl_cache_get_first (priv->addr_cache);
 		 rtnladdr;
-		 rtnladdr = (struct rtnl_addr *)nl_cache_get_next ((struct nl_object *)rtnladdr)) {
-		if (rtnl_addr_get_ifindex (rtnladdr) != device->index)
+		 rtnladdr = (struct rtnl_addr *) nl_cache_get_next ((struct nl_object *) rtnladdr)) {
+		if (rtnl_addr_get_ifindex (rtnladdr) != device->ifindex)
 			continue;
 
 		nladdr = rtnl_addr_get_local (rtnladdr);
@@ -373,32 +375,35 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
 		}
 	}
 
-	/* Note: we don't want to keep a cache of links, because the
-	 * kernel doesn't send notifications when the flags change, so the
-	 * cached rtnl_links would have out-of-date flags.
-	 */
-	link = nm_netlink_index_to_rtnl_link (device->index);
-	flags = rtnl_link_get_flags (link);
-	rtnl_link_put (link);
+	/* We only care about router advertisements if we want for a real IPv6 address */
+	if (device->target_state == NM_IP6_DEVICE_GOT_ADDRESS) {
+		if (   (device->ra_flags & IF_RA_RCVD)
+		    && (device->state < NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT))
+			device->state = NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT;
 
-	if ((flags & IF_RA_RCVD) && device->state < NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT)
-		device->state = NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT;
-
-	if (flags & IF_RA_MANAGED)
-		dhcp_opts = IP6_DHCP_OPT_MANAGED;
-	else if (flags & IF_RA_OTHERCONF)
-		dhcp_opts = IP6_DHCP_OPT_OTHERCONF;
+		if (device->ra_flags & IF_RA_MANAGED) {
+			dhcp_opts = IP6_DHCP_OPT_MANAGED;
+			nm_log_dbg (LOGD_IP6, "router advertisement deferred to DHCPv6");
+		} else if (device->ra_flags & IF_RA_OTHERCONF) {
+			dhcp_opts = IP6_DHCP_OPT_OTHERCONF;
+			nm_log_dbg (LOGD_IP6, "router advertisement requests parallel DHCPv6");
+		}
+	}
 
 	if (!device->addrconf_complete) {
-		if (device->state >= device->target_state ||
-			device->state == NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT) {
+		/* Managed mode (ie DHCP only) short-circuits automatic addrconf, so
+		 * we don't bother waiting for the device's target state to be reached
+		 * when the RA requests managed mode.
+		 */
+		if (   (device->state >= device->target_state)
+		    || (dhcp_opts == IP6_DHCP_OPT_MANAGED)) {
 			/* device->finish_addrconf_id may currently be a timeout
 			 * rather than an idle, so we remove the existing source.
 			 */
 			if (device->finish_addrconf_id)
 				g_source_remove (device->finish_addrconf_id);
 
-			info = callback_info_new (device, dhcp_opts);
+			info = callback_info_new (device, dhcp_opts, TRUE);
 			device->finish_addrconf_id = g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
 			                                              finish_addrconf,
 			                                              info,
@@ -406,7 +411,7 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
 		}
 	} else if (config_changed) {
 		if (!device->config_changed_id) {
-			info = callback_info_new (device, dhcp_opts);
+			info = callback_info_new (device, dhcp_opts, TRUE);
 			device->config_changed_id = g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
 			                                             emit_config_changed,
 			                                             info,
@@ -598,8 +603,59 @@ process_nduseropt (NMIP6Manager *manager, struct nl_msg *msg)
 		return NULL;
 }
 
+static struct nla_policy link_policy[IFLA_MAX + 1] = {
+	[IFLA_PROTINFO] = { .type = NLA_NESTED },
+};
+
+static struct nla_policy link_prot_policy[IFLA_INET6_MAX + 1] = {
+	[IFLA_INET6_FLAGS]	= { .type = NLA_U32 },
+};
+
+static NMIP6Device *
+process_newlink (NMIP6Manager *manager, struct nl_msg *msg)
+{
+	struct nlmsghdr *hdr = nlmsg_hdr (msg);
+	struct ifinfomsg *ifi;
+	NMIP6Device *device;
+	struct nlattr *tb[IFLA_MAX + 1];
+	struct nlattr *pi[IFLA_INET6_MAX + 1];
+	int err;
+
+	ifi = nlmsg_data (hdr);
+	if (ifi->ifi_family != AF_INET6)
+		return NULL;
+
+	device = nm_ip6_manager_get_device (manager, ifi->ifi_index);
+	if (!device || device->addrconf_complete)
+		return NULL;
+
+	/* FIXME: we have to do this manually for now since libnl doesn't yet
+	 * support the IFLA_PROTINFO attribute of NEWLINK messages.  When it does,
+	 * we can get rid of this function and just grab IFLA_PROTINFO from
+	 * nm_ip6_device_sync_from_netlink(), then get the IFLA_INET6_FLAGS out of
+	 * the PROTINFO.
+	 */
+
+	err = nlmsg_parse (hdr, sizeof (*ifi), tb, IFLA_MAX, link_policy);
+	if (err < 0)
+		return NULL;
+	if (!tb[IFLA_PROTINFO])
+		return NULL;
+
+	err = nla_parse_nested (pi, IFLA_INET6_MAX, tb[IFLA_PROTINFO], link_prot_policy);
+	if (err < 0)
+		return NULL;
+	if (!pi[IFLA_INET6_FLAGS])
+		return NULL;
+
+	device->ra_flags = nla_get_u32 (pi[IFLA_INET6_FLAGS]);
+	nm_log_dbg (LOGD_IP6, "(%s): got IPv6 flags 0x%X", device->iface, device->ra_flags);
+
+	return device;
+}
+
 static void
-netlink_notification (NMNetlinkListener *listener, struct nl_msg *msg, gpointer user_data)
+netlink_notification (NMNetlinkMonitor *monitor, struct nl_msg *msg, gpointer user_data)
 {
 	NMIP6Manager *manager = (NMIP6Manager *) user_data;
 	NMIP6Device *device;
@@ -613,22 +669,22 @@ netlink_notification (NMNetlinkListener *listener, struct nl_msg *msg, gpointer 
 		device = process_addr (manager, msg);
 		config_changed = TRUE;
 		break;
-
 	case RTM_NEWROUTE:
 	case RTM_DELROUTE:
 		device = process_route (manager, msg);
 		config_changed = TRUE;
 		break;
-
 	case RTM_NEWPREFIX:
 		device = process_prefix (manager, msg);
 		break;
-
 	case RTM_NEWNDUSEROPT:
 		device = process_nduseropt (manager, msg);
 		config_changed = TRUE;
 		break;
-
+	case RTM_NEWLINK:
+		device = process_newlink (manager, msg);
+		config_changed = TRUE;
+		break;
 	default:
 		return;
 	}
@@ -637,75 +693,9 @@ netlink_notification (NMNetlinkListener *listener, struct nl_msg *msg, gpointer 
 		nm_ip6_device_sync_from_netlink (device, config_changed);
 }
 
-static NMIP6Device *
-nm_ip6_device_new (NMIP6Manager *manager, const char *iface)
-{
-	NMIP6ManagerPrivate *priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
-	NMIP6Device *device;
-	GError *error = NULL;
-	char *contents = NULL;
-
-	device = g_slice_new0 (NMIP6Device);
-	if (!device) {
-		nm_log_err (LOGD_IP6, "(%s): out of memory creating IP6 addrconf object.", iface);
-		return NULL;
-	}
-
-	device->iface = g_strdup (iface);
-	if (!device->iface) {
-		nm_log_err (LOGD_IP6, "(%s): out of memory creating IP6 addrconf object "
-		            "property 'iface'.",
-		            iface);
-		goto error;
-	}
-	device->index = nm_netlink_iface_to_index (iface);
-
-	device->accept_ra_path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/accept_ra", iface);
-	if (!device->accept_ra_path) {
-		nm_log_err (LOGD_IP6, "(%s): out of memory creating IP6 addrconf object "
-		            "property 'accept_ra_path'.",
-		            iface);
-		goto error;
-	}
-
-	device->manager = manager;
-
-	device->rdnss_servers = g_array_new (FALSE, FALSE, sizeof (NMIP6RDNSS));
-
-	g_hash_table_replace (priv->devices_by_iface, device->iface, device);
-	g_hash_table_replace (priv->devices_by_index, GINT_TO_POINTER (device->index), device);
-
-	/* Grab the original value of "accept_ra" so we can restore it when the
-	 * device is taken down.
-	 */
-	if (!g_file_get_contents (device->accept_ra_path, &contents, NULL, &error)) {
-		nm_log_warn (LOGD_IP6, "(%s): error reading %s: (%d) %s",
-		             iface, device->accept_ra_path,
-		             error ? error->code : -1,
-		             error && error->message ? error->message : "(unknown)");
-		g_clear_error (&error);
-	} else {
-		long int tmp;
-
-		errno = 0;
-		tmp = strtol (contents, NULL, 10);
-		if ((errno == 0) && (tmp == 0 || tmp == 1)) {
-			device->accept_ra_save = (guint32) tmp;
-			device->accept_ra_save_valid = TRUE;
-		}
-		g_free (contents);
-	}
-
-	return device;
-
-error:
-	nm_ip6_device_destroy (device);
-	return NULL;
-}
-
 void
 nm_ip6_manager_prepare_interface (NMIP6Manager *manager,
-								  const char *iface,
+								  int ifindex,
 								  NMSettingIP6Config *s_ip6)
 {
 	NMIP6ManagerPrivate *priv;
@@ -713,59 +703,80 @@ nm_ip6_manager_prepare_interface (NMIP6Manager *manager,
 	const char *method = NULL;
 
 	g_return_if_fail (NM_IS_IP6_MANAGER (manager));
-	g_return_if_fail (iface != NULL);
+	g_return_if_fail (ifindex > 0);
 
 	priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
 
-	device = nm_ip6_device_new (manager, iface);
+	device = nm_ip6_device_new (manager, ifindex);
+	g_return_if_fail (device != NULL);
+	g_return_if_fail (   strchr (device->iface, '/') == NULL
+	                  && strcmp (device->iface, "all") != 0
+	                  && strcmp (device->iface, "default") != 0);
 
 	if (s_ip6)
 		method = nm_setting_ip6_config_get_method (s_ip6);
 	if (!method)
 		method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
 
+	/* Establish target state and turn router advertisement acceptance on or off */
 	if (   !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL)
-		|| !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL))
+		|| !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL)) {
 		device->target_state = NM_IP6_DEVICE_GOT_LINK_LOCAL;
-	else
+		nm_utils_do_sysctl (device->accept_ra_path, "0\n");
+	} else {
 		device->target_state = NM_IP6_DEVICE_GOT_ADDRESS;
+		nm_utils_do_sysctl (device->accept_ra_path, "1\n");
+	}
+}
 
-	g_return_if_fail (strchr (iface, '/') == NULL &&
-					  strcmp (iface, "all") != 0 &&
-					  strcmp (iface, "default") != 0);
-
-	/* Turn router advertisement acceptance on or off... */
-	nm_utils_do_sysctl (device->accept_ra_path,
-	                    device->target_state >= NM_IP6_DEVICE_GOT_ADDRESS ? "1\n" : "0\n");
+static gboolean
+poll_ip6_flags (gpointer user_data)
+{
+	nm_netlink_monitor_request_ip6_info (NM_NETLINK_MONITOR (user_data), NULL);
+	return TRUE;
 }
 
 void
-nm_ip6_manager_begin_addrconf (NMIP6Manager *manager,
-							   const char *iface)
+nm_ip6_manager_begin_addrconf (NMIP6Manager *manager, int ifindex)
 {
 	NMIP6ManagerPrivate *priv;
 	NMIP6Device *device;
 	CallbackInfo *info;
 
 	g_return_if_fail (NM_IS_IP6_MANAGER (manager));
-	g_return_if_fail (iface != NULL);
+	g_return_if_fail (ifindex > 0);
 
 	priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
 
-	device = (NMIP6Device *) g_hash_table_lookup (priv->devices_by_iface, iface);
+	device = (NMIP6Device *) g_hash_table_lookup (priv->devices, GINT_TO_POINTER (ifindex));
 	g_return_if_fail (device != NULL);
 
-	nm_log_info (LOGD_IP6, "Activation (%s) Beginning IP6 addrconf.", iface);
+	nm_log_info (LOGD_IP6, "Activation (%s) Beginning IP6 addrconf.", device->iface);
 
 	device->addrconf_complete = FALSE;
+	device->ra_flags = 0;
 
 	/* Set up a timeout on the transaction to kill it after the timeout */
-	info = callback_info_new (device, 0);
+	info = callback_info_new (device, 0, FALSE);
 	device->finish_addrconf_id = g_timeout_add_seconds_full (G_PRIORITY_DEFAULT,
 	                                                         NM_IP6_TIMEOUT,
 	                                                         finish_addrconf,
 	                                                         info,
 	                                                         (GDestroyNotify) g_free);
+
+	/* Bounce IPv6 on the interface to ensure the kernel will start looking for
+	 * new RAs; there doesn't seem to be a better way to do this right now.
+	 */
+	if (device->target_state >= NM_IP6_DEVICE_GOT_ADDRESS) {
+		nm_utils_do_sysctl (device->disable_ip6_path, "1\n");
+		g_usleep (200);
+		nm_utils_do_sysctl (device->disable_ip6_path, "0\n");
+	}
+
+	device->ip6flags_poll_id = g_timeout_add_seconds (1, poll_ip6_flags, priv->monitor);
+
+	/* Kick off the initial IPv6 flags request */
+	nm_netlink_monitor_request_ip6_info (priv->monitor, NULL);
 
 	/* Sync flags, etc, from netlink; this will also notice if the
 	 * device is already fully configured and schedule the
@@ -775,27 +786,23 @@ nm_ip6_manager_begin_addrconf (NMIP6Manager *manager,
 }
 
 void
-nm_ip6_manager_cancel_addrconf (NMIP6Manager *manager,
-								const char *iface)
+nm_ip6_manager_cancel_addrconf (NMIP6Manager *manager, int ifindex)
 {
-	NMIP6ManagerPrivate *priv;
-	NMIP6Device *device;
-
 	g_return_if_fail (NM_IS_IP6_MANAGER (manager));
-	g_return_if_fail (iface != NULL);
+	g_return_if_fail (ifindex > 0);
 
-	priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
-
-	device = g_hash_table_lookup (priv->devices_by_iface, iface);
-	if (device) {
-		g_hash_table_remove (priv->devices_by_index, GINT_TO_POINTER (device->index));
-		g_hash_table_remove (priv->devices_by_iface, iface);
-	}
+	g_hash_table_remove (NM_IP6_MANAGER_GET_PRIVATE (manager)->devices,
+	                     GINT_TO_POINTER (ifindex));
 }
 
+#define FIRST_ROUTE(m) ((struct rtnl_route *) nl_cache_get_first (m))
+#define NEXT_ROUTE(m) ((struct rtnl_route *) nl_cache_get_next ((struct nl_object *) m))
+
+#define FIRST_ADDR(m) ((struct rtnl_addr *) nl_cache_get_first (m))
+#define NEXT_ADDR(m) ((struct rtnl_addr *) nl_cache_get_next ((struct nl_object *) m))
+
 NMIP6Config *
-nm_ip6_manager_get_ip6_config (NMIP6Manager *manager,
-							   const char *iface)
+nm_ip6_manager_get_ip6_config (NMIP6Manager *manager, int ifindex)
 {
 	NMIP6ManagerPrivate *priv;
 	NMIP6Device *device;
@@ -807,51 +814,44 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager,
 	struct rtnl_route *rtnlroute;
 	struct nl_addr *nldest, *nlgateway;
 	struct in6_addr *dest, *gateway;
+	gboolean defgw_set = FALSE;
+	struct in6_addr defgw;
 	uint32_t metric;
 	NMIP6Route *ip6route;
 	int i;
 
 	g_return_val_if_fail (NM_IS_IP6_MANAGER (manager), NULL);
-	g_return_val_if_fail (iface != NULL, NULL);
+	g_return_val_if_fail (ifindex > 0, NULL);
 
 	priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
 
-	device = (NMIP6Device *) g_hash_table_lookup (priv->devices_by_iface, iface);
+	device = (NMIP6Device *) g_hash_table_lookup (priv->devices,
+	                                              GINT_TO_POINTER (ifindex));
 	if (!device) {
-		nm_log_warn (LOGD_IP6, "(%s): addrconf not started.", iface);
+		nm_log_warn (LOGD_IP6, "(%d): addrconf not started.", ifindex);
 		return NULL;
 	}
 
 	config = nm_ip6_config_new ();
 	if (!config) {
 		nm_log_err (LOGD_IP6, "(%s): out of memory creating IP6 config object.",
-		            iface);
+		            device->iface);
 		return NULL;
 	}
 
-	/* Add addresses */
-	for (rtnladdr = (struct rtnl_addr *)nl_cache_get_first (priv->addr_cache);
-		 rtnladdr;
-		 rtnladdr = (struct rtnl_addr *)nl_cache_get_next ((struct nl_object *)rtnladdr)) {
-		if (rtnl_addr_get_ifindex (rtnladdr) != device->index)
-			continue;
-
-		nladdr = rtnl_addr_get_local (rtnladdr);
-		if (!nladdr || nl_addr_get_family (nladdr) != AF_INET6)
-			continue;
-
-		addr = nl_addr_get_binary_addr (nladdr);
-		ip6addr = nm_ip6_address_new ();
-		nm_ip6_address_set_prefix (ip6addr, rtnl_addr_get_prefixlen (rtnladdr));
-		nm_ip6_address_set_address (ip6addr, addr);
-		nm_ip6_config_take_address (config, ip6addr);
-	}
+	/* Make sure we refill the route and address caches, otherwise we won't get
+	 * up-to-date information here since the netlink route/addr change messages
+	 * may be lagging a bit.
+	 */
+	nl_cache_refill (priv->nlh, priv->route_cache);
+	nl_cache_refill (priv->nlh, priv->addr_cache);
 
 	/* Add routes */
-	for (rtnlroute = (struct rtnl_route *)nl_cache_get_first (priv->route_cache);
-		 rtnlroute;
-		 rtnlroute = (struct rtnl_route *)nl_cache_get_next ((struct nl_object *)rtnlroute)) {
-		if (rtnl_route_get_oif (rtnlroute) != device->index)
+	for (rtnlroute = FIRST_ROUTE (priv->route_cache); rtnlroute; rtnlroute = NEXT_ROUTE (rtnlroute)) {
+		/* Make sure it's an IPv6 route for this device */
+		if (rtnl_route_get_oif (rtnlroute) != device->ifindex)
+			continue;
+		if (rtnl_route_get_family (rtnlroute) != AF_INET6)
 			continue;
 
 		nldest = rtnl_route_get_dst (rtnlroute);
@@ -864,6 +864,15 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager,
 			continue;
 		gateway = nl_addr_get_binary_addr (nlgateway);
 
+		if (rtnl_route_get_dst_len (rtnlroute) == 0) {
+			/* Default gateway route; don't add to normal routes but to each address */
+			if (!defgw_set) {
+				memcpy (&defgw, gateway, sizeof (defgw));
+				defgw_set = TRUE;
+			}
+			continue;
+		}
+
 		ip6route = nm_ip6_route_new ();
 		nm_ip6_route_set_dest (ip6route, dest);
 		nm_ip6_route_set_prefix (ip6route, rtnl_route_get_dst_len (rtnlroute));
@@ -872,6 +881,24 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager,
 		if (metric != UINT_MAX)
 			nm_ip6_route_set_metric (ip6route, metric);
 		nm_ip6_config_take_route (config, ip6route);
+	}
+
+	/* Add addresses */
+	for (rtnladdr = FIRST_ADDR (priv->addr_cache); rtnladdr; rtnladdr = NEXT_ADDR (rtnladdr)) {
+		if (rtnl_addr_get_ifindex (rtnladdr) != device->ifindex)
+			continue;
+
+		nladdr = rtnl_addr_get_local (rtnladdr);
+		if (!nladdr || nl_addr_get_family (nladdr) != AF_INET6)
+			continue;
+
+		addr = nl_addr_get_binary_addr (nladdr);
+		ip6addr = nm_ip6_address_new ();
+		nm_ip6_address_set_prefix (ip6addr, rtnl_addr_get_prefixlen (rtnladdr));
+		nm_ip6_address_set_address (ip6addr, addr);
+		nm_ip6_config_take_address (config, ip6addr);
+		if (defgw_set)
+			nm_ip6_address_set_gateway (ip6addr, &defgw);
 	}
 
 	/* Add DNS servers */
@@ -884,3 +911,104 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager,
 
 	return config;
 }
+
+/******************************************************************/
+
+static NMIP6Manager *
+nm_ip6_manager_new (void)
+{
+	NMIP6Manager *manager;
+	NMIP6ManagerPrivate *priv;
+
+	manager = g_object_new (NM_TYPE_IP6_MANAGER, NULL);
+	priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
+
+	if (!priv->devices) {
+		nm_log_err (LOGD_IP6, "not enough memory to initialize IP6 manager tables");
+		g_object_unref (manager);
+		manager = NULL;
+	}
+
+	return manager;
+}
+
+NMIP6Manager *
+nm_ip6_manager_get (void)
+{
+	static NMIP6Manager *singleton = NULL;
+
+	if (!singleton) {
+		singleton = nm_ip6_manager_new ();
+		g_assert (singleton);
+	} else
+		g_object_ref (singleton);
+
+	return singleton;
+}
+
+static void
+nm_ip6_manager_init (NMIP6Manager *manager)
+{
+	NMIP6ManagerPrivate *priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
+
+	priv->devices = g_hash_table_new_full (g_direct_hash, g_direct_equal,
+	                                       NULL,
+	                                       (GDestroyNotify) nm_ip6_device_destroy);
+
+	priv->monitor = nm_netlink_monitor_get ();
+	nm_netlink_monitor_subscribe (priv->monitor, RTNLGRP_IPV6_IFADDR, NULL);
+	nm_netlink_monitor_subscribe (priv->monitor, RTNLGRP_IPV6_PREFIX, NULL);
+	nm_netlink_monitor_subscribe (priv->monitor, RTNLGRP_ND_USEROPT, NULL);
+	nm_netlink_monitor_subscribe (priv->monitor, RTNLGRP_LINK, NULL);
+
+	g_signal_connect (priv->monitor, "notification",
+	                  G_CALLBACK (netlink_notification), manager);
+
+	priv->nlh = nm_netlink_get_default_handle ();
+	priv->addr_cache = rtnl_addr_alloc_cache (priv->nlh);
+	priv->route_cache = rtnl_route_alloc_cache (priv->nlh);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMIP6ManagerPrivate *priv = NM_IP6_MANAGER_GET_PRIVATE (object);
+
+	g_hash_table_destroy (priv->devices);
+	g_object_unref (priv->monitor);
+	nl_cache_free (priv->addr_cache);
+	nl_cache_free (priv->route_cache);
+
+	G_OBJECT_CLASS (nm_ip6_manager_parent_class)->finalize (object);
+}
+
+static void
+nm_ip6_manager_class_init (NMIP6ManagerClass *manager_class)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (manager_class);
+
+	g_type_class_add_private (manager_class, sizeof (NMIP6ManagerPrivate));
+
+	/* virtual methods */
+	object_class->finalize = finalize;
+
+	/* signals */
+	signals[ADDRCONF_COMPLETE] =
+		g_signal_new ("addrconf-complete",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMIP6ManagerClass, addrconf_complete),
+					  NULL, NULL,
+					  _nm_marshal_VOID__INT_UINT_BOOLEAN,
+					  G_TYPE_NONE, 3, G_TYPE_INT, G_TYPE_UINT, G_TYPE_BOOLEAN);
+
+	signals[CONFIG_CHANGED] =
+		g_signal_new ("config-changed",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMIP6ManagerClass, config_changed),
+					  NULL, NULL,
+					  _nm_marshal_VOID__INT_UINT,
+					  G_TYPE_NONE, 2, G_TYPE_INT, G_TYPE_UINT);
+}
+
