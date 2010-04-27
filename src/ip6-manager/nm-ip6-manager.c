@@ -140,7 +140,7 @@ nm_ip6_device_destroy (NMIP6Device *device)
 static gboolean
 get_proc_sys_net_value (const char *path, const char *iface, guint32 *out_value)
 {
-	GError *error;
+	GError *error = NULL;
 	char *contents = NULL;
 	gboolean success = FALSE;
 	long int tmp;
