@@ -47,6 +47,8 @@ typedef struct {
 
 	struct nl_handle *nlh;
 	struct nl_cache *addr_cache, *route_cache;
+
+	guint netlink_id;
 } NMIP6ManagerPrivate;
 
 #define NM_IP6_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IP6_MANAGER, NMIP6ManagerPrivate))
@@ -221,8 +223,12 @@ error:
 static NMIP6Device *
 nm_ip6_manager_get_device (NMIP6Manager *manager, int ifindex)
 {
-	NMIP6ManagerPrivate *priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
+	NMIP6ManagerPrivate *priv;
 
+	g_return_val_if_fail (manager != NULL, NULL);
+	g_return_val_if_fail (NM_IS_IP6_MANAGER (manager), NULL);
+
+	priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
 	return g_hash_table_lookup (priv->devices, GINT_TO_POINTER (ifindex));
 }
 
@@ -443,6 +449,8 @@ process_addr (NMIP6Manager *manager, struct nl_msg *msg)
 		return NULL;
 
 	device = nm_ip6_manager_get_device (manager, rtnl_addr_get_ifindex (rtnladdr));
+	if (!device)
+		return NULL;
 
 	old_size = nl_cache_nitems (priv->addr_cache);
 	nl_cache_include (priv->addr_cache, (struct nl_object *)rtnladdr, NULL);
@@ -472,6 +480,8 @@ process_route (NMIP6Manager *manager, struct nl_msg *msg)
 		return NULL;
 
 	device = nm_ip6_manager_get_device (manager, rtnl_route_get_oif (rtnlroute));
+	if (!device)
+		return NULL;
 
 	old_size = nl_cache_nitems (priv->route_cache);
 	nl_cache_include (priv->route_cache, (struct nl_object *)rtnlroute, NULL);
@@ -961,8 +971,8 @@ nm_ip6_manager_init (NMIP6Manager *manager)
 	nm_netlink_monitor_subscribe (priv->monitor, RTNLGRP_ND_USEROPT, NULL);
 	nm_netlink_monitor_subscribe (priv->monitor, RTNLGRP_LINK, NULL);
 
-	g_signal_connect (priv->monitor, "notification",
-	                  G_CALLBACK (netlink_notification), manager);
+	priv->netlink_id = g_signal_connect (priv->monitor, "notification",
+	                                     G_CALLBACK (netlink_notification), manager);
 
 	priv->nlh = nm_netlink_get_default_handle ();
 	priv->addr_cache = rtnl_addr_alloc_cache (priv->nlh);
@@ -973,6 +983,8 @@ static void
 finalize (GObject *object)
 {
 	NMIP6ManagerPrivate *priv = NM_IP6_MANAGER_GET_PRIVATE (object);
+
+	g_signal_handler_disconnect (priv->monitor, priv->netlink_id);
 
 	g_hash_table_destroy (priv->devices);
 	g_object_unref (priv->monitor);
