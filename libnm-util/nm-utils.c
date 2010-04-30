@@ -861,10 +861,11 @@ nm_utils_convert_ip6_addr_struct_array_to_string (const GValue *src_value, GValu
 
 		g_string_append (printable, "{ ");
 		elements = (GValueArray *) g_ptr_array_index (ptr_array, i++);
-		if (   (elements->n_values != 2)
+		if (   (elements->n_values != 3)
 		    || (G_VALUE_TYPE (g_value_array_get_nth (elements, 0)) != DBUS_TYPE_G_UCHAR_ARRAY)
-		    || (G_VALUE_TYPE (g_value_array_get_nth (elements, 1)) != G_TYPE_UINT)) {
-			g_string_append (printable, "invalid");
+		    || (G_VALUE_TYPE (g_value_array_get_nth (elements, 1)) != G_TYPE_UINT)
+		    || (G_VALUE_TYPE (g_value_array_get_nth (elements, 2)) != DBUS_TYPE_G_UCHAR_ARRAY)) {
+			g_string_append (printable, "invalid }");
 			continue;
 		}
 
@@ -872,7 +873,7 @@ nm_utils_convert_ip6_addr_struct_array_to_string (const GValue *src_value, GValu
 		tmp = g_value_array_get_nth (elements, 0);
 		ba_addr = g_value_get_boxed (tmp);
 		if (ba_addr->len != 16) {
-			g_string_append (printable, "invalid");
+			g_string_append (printable, "invalid }");
 			continue;
 		}
 		addr = (struct in6_addr *) ba_addr->data;
@@ -885,7 +886,7 @@ nm_utils_convert_ip6_addr_struct_array_to_string (const GValue *src_value, GValu
 		tmp = g_value_array_get_nth (elements, 1);
 		prefix = g_value_get_uint (tmp);
 		if (prefix > 128) {
-			g_string_append (printable, "invalid");
+			g_string_append (printable, "invalid }");
 			continue;
 		}
 		g_string_append_printf (printable, "px = %u", prefix);
@@ -895,7 +896,7 @@ nm_utils_convert_ip6_addr_struct_array_to_string (const GValue *src_value, GValu
 		tmp = g_value_array_get_nth (elements, 2);
 		ba_addr = g_value_get_boxed (tmp);
 		if (ba_addr->len != 16) {
-			g_string_append (printable, "invalid");
+			g_string_append (printable, "invalid }");
 			continue;
 		}
 		addr = (struct in6_addr *) ba_addr->data;
