@@ -33,7 +33,7 @@
 #include "nm-system.h"
 
 /* Pre-DHCP addrconf timeout, in seconds */
-#define NM_IP6_TIMEOUT 10
+#define NM_IP6_TIMEOUT 20
 
 /* FIXME? Stolen from the kernel sources */
 #define IF_RA_OTHERCONF 0x80
