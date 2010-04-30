@@ -729,8 +729,7 @@ nm_ip6_manager_prepare_interface (NMIP6Manager *manager,
 		method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
 
 	/* Establish target state and turn router advertisement acceptance on or off */
-	if (   !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL)
-		|| !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL)) {
+	if (!strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL)) {
 		device->target_state = NM_IP6_DEVICE_GOT_LINK_LOCAL;
 		nm_utils_do_sysctl (device->accept_ra_path, "0\n");
 	} else {
