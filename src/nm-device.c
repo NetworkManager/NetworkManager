@@ -672,25 +672,18 @@ ip6_method_matches (NMConnection *connection, const char *match)
 	return method && !strcmp (method, match);
 }
 
-static void
+static gboolean
 addrconf6_setup (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActRequest *req;
 	NMConnection *connection;
-	const char *ip_iface;
 	NMSettingIP6Config *s_ip6;
-
-	priv->ip6_waiting_for_config = FALSE;
-	priv->ip6_dhcp_opt = IP6_DHCP_OPT_NONE;
 
 	req = nm_device_get_act_request (self);
 	g_assert (req);
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
-
-	if (!ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_AUTO))
-		return;
 
 	if (!priv->ip6_manager) {
 		priv->ip6_manager = nm_ip6_manager_get ();
@@ -704,11 +697,15 @@ addrconf6_setup (NMDevice *self)
 		                                                   self);
 	}
 
-	ip_iface = nm_device_get_ip_iface (self);
+	priv->ip6_dhcp_opt = IP6_DHCP_OPT_NONE;
+
 	s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
 	nm_ip6_manager_prepare_interface (priv->ip6_manager,
 	                                  nm_device_get_ip_ifindex (self),
 	                                  s_ip6);
+	priv->ip6_waiting_for_config = TRUE;
+
+	return TRUE;
 }
 
 static void
@@ -738,7 +735,6 @@ addrconf6_cleanup (NMDevice *self)
 static NMActStageReturn
 real_act_stage1_prepare (NMDevice *self, NMDeviceStateReason *reason)
 {
-	addrconf6_setup (self);
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
@@ -1535,7 +1531,10 @@ real_act_stage3_ip6_config_start (NMDevice *self, NMDeviceStateReason *reason)
 
 	if (   ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_AUTO)
 	    || ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL)) {
-		priv->ip6_waiting_for_config = TRUE;
+		if (!addrconf6_setup (self)) {
+			*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
+			goto out;
+		}
 		nm_ip6_manager_begin_addrconf (priv->ip6_manager, nm_device_get_ip_ifindex (self));
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_DHCP))
@@ -1548,6 +1547,7 @@ real_act_stage3_ip6_config_start (NMDevice *self, NMDeviceStateReason *reason)
 
 	/* Other methods (shared) aren't implemented yet */
 
+out:
 	return ret;
 }
 
@@ -1931,7 +1931,8 @@ real_act_stage4_get_ip6_config (NMDevice *self,
 
 	s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
 
-	if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
+	if (   ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_AUTO)
+	    || ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL)) {
 		*config = nm_ip6_manager_get_ip6_config (priv->ip6_manager,
 		                                         nm_device_get_ip_ifindex (self));
 		if (!*config) {
