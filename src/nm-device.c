@@ -1520,7 +1520,7 @@ real_act_stage3_ip6_config_start (NMDevice *self, NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	const char *ip_iface;
-	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
+	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMActRequest *req;
 	NMConnection *connection;
 
@@ -1533,7 +1533,8 @@ real_act_stage3_ip6_config_start (NMDevice *self, NMDeviceStateReason *reason)
 
 	ip_iface = nm_device_get_ip_iface (self);
 
-	if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
+	if (   ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_AUTO)
+	    || ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL)) {
 		priv->ip6_waiting_for_config = TRUE;
 		nm_ip6_manager_begin_addrconf (priv->ip6_manager, nm_device_get_ip_ifindex (self));
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
@@ -1542,7 +1543,10 @@ real_act_stage3_ip6_config_start (NMDevice *self, NMDeviceStateReason *reason)
 	else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
 		priv->ip6_ready = TRUE;
 		ret = NM_ACT_STAGE_RETURN_STOP;
-	}
+	} else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_MANUAL))
+		ret = NM_ACT_STAGE_RETURN_SUCCESS;
+
+	/* Other methods (shared) aren't implemented yet */
 
 	return ret;
 }
@@ -1911,7 +1915,6 @@ real_act_stage4_get_ip6_config (NMDevice *self,
                                 NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMConnection *connection;
 	NMSettingIP6Config *s_ip6;
 	const char *ip_iface;
@@ -1931,40 +1934,45 @@ real_act_stage4_get_ip6_config (NMDevice *self,
 	if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
 		*config = nm_ip6_manager_get_ip6_config (priv->ip6_manager,
 		                                         nm_device_get_ip_ifindex (self));
-		if (*config) {
-			/* Merge user-defined overrides into the IP6Config to be applied */
-			nm_utils_merge_ip6_config (*config, s_ip6);
-			ret = NM_ACT_STAGE_RETURN_SUCCESS;
-		} else {
+		if (!*config) {
 			*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
 			goto out;
 		}
+
+		/* Merge user-defined overrides into the IP6Config to be applied */
+		nm_utils_merge_ip6_config (*config, s_ip6);
+	} else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
+		*config = nm_ip6_config_new ();
+		if (!*config) {
+			*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
+			goto out;
+		}
+		nm_utils_merge_ip6_config (*config, s_ip6);
 	} else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_DHCP))
 		g_assert (priv->dhcp6_client);  /* sanity check */
 
 	/* Autoconf might have triggered DHCPv6 too */
 	if (priv->dhcp6_client) {
 		*config = nm_dhcp_client_get_ip6_config (priv->dhcp6_client, FALSE);
-		if (*config) {
-			/* Merge user-defined overrides into the IP4Config to be applied */
-			nm_utils_merge_ip6_config (*config, s_ip6);
-
-			nm_dhcp6_config_reset (priv->dhcp6_config);
-			nm_dhcp_client_foreach_option (priv->dhcp6_client,
-			                               dhcp6_add_option_cb,
-			                               priv->dhcp6_config);
-
-			/* Notify of new DHCP4 config */
-			g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_DHCP6_CONFIG);
-			ret = NM_ACT_STAGE_RETURN_SUCCESS;
-		} else {
+		if (!*config) {
 			*reason = NM_DEVICE_STATE_REASON_DHCP_ERROR;
+			goto out;
 		}
-	} else
-		ret = NM_ACT_STAGE_RETURN_SUCCESS;
+
+		/* Merge user-defined overrides into the IP4Config to be applied */
+		nm_utils_merge_ip6_config (*config, s_ip6);
+
+		nm_dhcp6_config_reset (priv->dhcp6_config);
+		nm_dhcp_client_foreach_option (priv->dhcp6_client,
+		                               dhcp6_add_option_cb,
+		                               priv->dhcp6_config);
+
+		/* Notify of new DHCP6 config */
+		g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_DHCP6_CONFIG);
+	}
 
 out:
-	return ret;
+	return *config ? NM_ACT_STAGE_RETURN_SUCCESS : NM_ACT_STAGE_RETURN_FAILURE;
 }
 
 /*
