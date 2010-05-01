@@ -212,11 +212,22 @@ daemon_watch_cb (GPid pid, gint status, gpointer user_data)
 	NMDHCPClient *self = NM_DHCP_CLIENT (user_data);
 	NMDHCPClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 
+	if (priv->ipv6) {
+		nm_log_info (LOGD_DHCP6, "(%s): DHCPv6 client pid %d exited with status %d",
+		             priv->iface, pid,
+		             WIFEXITED (status) ? WEXITSTATUS (status) : -1);
+	} else {
+		nm_log_info (LOGD_DHCP6, "(%s): DHCPv4 client pid %d exited with status %d",
+		             priv->iface, pid,
+		             WIFEXITED (status) ? WEXITSTATUS (status) : -1);
+	}
+
 	if (!WIFEXITED (status)) {
 		priv->state = DHC_ABEND;
 		nm_log_warn (LOGD_DHCP, "DHCP client died abnormally");
-	}
-	priv->pid = 0;
+	} else
+		priv->state = DHC_END;
+	priv->pid = -1;
 
 	watch_cleanup (self);
 	timeout_cleanup (self);
@@ -875,7 +886,7 @@ nm_dhcp_client_get_ip4_config (NMDHCPClient *self, gboolean test)
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 
 	if (test && !state_is_bound (priv->state)) {
-		nm_log_warn (LOGD_DHCP4, "(%s): DHCP client didn't bind to a lease.", priv->iface);
+		nm_log_warn (LOGD_DHCP4, "(%s): DHCPv4 client didn't bind to a lease.", priv->iface);
 		return NULL;
 	}
 
@@ -1008,7 +1019,7 @@ nm_dhcp_client_get_ip6_config (NMDHCPClient *self, gboolean test)
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 
 	if (test && !state_is_bound (priv->state)) {
-		nm_log_warn (LOGD_DHCP6, "(%s): dhcp client didn't bind to a lease.", priv->iface);
+		nm_log_warn (LOGD_DHCP6, "(%s): DHCPv6 client didn't bind to a lease.", priv->iface);
 		return NULL;
 	}
 
