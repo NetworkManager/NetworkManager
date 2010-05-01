@@ -553,48 +553,14 @@ nm_dhcp_client_new_options (NMDHCPClient *self,
 #define NEW_TAG "new_"
 #define OLD_TAG "old_"
 
-typedef struct {
-	GHFunc func;
-	gpointer user_data;
-} DhcpForeachInfo;
-
-static void
-iterate_dhcp_config_option (gpointer key,
-                            gpointer value,
-                            gpointer user_data)
-{
-	DhcpForeachInfo *info = (DhcpForeachInfo *) user_data;
-	char *tmp_key = NULL;
-	const char **p;
-	static const char *filter_options[] = {
-		"interface", "pid", "reason", "dhcp_message_type", NULL
-	};
-	
-	/* Filter out stuff that's not actually new DHCP options */
-	for (p = filter_options; *p; p++) {
-		if (!strcmp (*p, (const char *) key))
-			return;
-		if (!strncmp ((const char *) key, OLD_TAG, strlen (OLD_TAG)))
-			return;
-	}
-
-	/* Remove the "new_" prefix that dhclient passes back */
-	if (!strncmp ((const char *) key, NEW_TAG, strlen (NEW_TAG)))
-		tmp_key = g_strdup ((const char *) (key + strlen (NEW_TAG)));
-	else
-		tmp_key = g_strdup ((const char *) key);
-
-	(*info->func) ((gpointer) tmp_key, value, info->user_data);
-	g_free (tmp_key);
-}
-
 gboolean
 nm_dhcp_client_foreach_option (NMDHCPClient *self,
                                GHFunc func,
                                gpointer user_data)
 {
 	NMDHCPClientPrivate *priv;
-	DhcpForeachInfo info = { NULL, NULL };
+	GHashTableIter iter;
+	gpointer iterkey, itervalue;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
@@ -608,12 +574,35 @@ nm_dhcp_client_foreach_option (NMDHCPClient *self,
 		} else {
 			nm_log_warn (LOGD_DHCP4, "(%s): DHCPv4 client didn't bind to a lease.", priv->iface);
 		}
-		return FALSE;
 	}
 
-	info.func = func;
-	info.user_data = user_data;
-	g_hash_table_foreach (priv->options, iterate_dhcp_config_option, &info);
+	g_hash_table_iter_init (&iter, priv->options);
+	while (g_hash_table_iter_next (&iter, &iterkey, &itervalue)) {
+		const char *key = iterkey, *value = itervalue;
+		const char **p;
+		static const char *filter_options[] = {
+			"interface", "pid", "reason", "dhcp_message_type", NULL
+		};
+		gboolean ignore = FALSE;
+
+		/* Filter out stuff that's not actually new DHCP options */
+		for (p = filter_options; *p; p++) {
+			if (!strcmp (*p, key) || !strncmp (key, OLD_TAG, strlen (OLD_TAG))) {
+				ignore = TRUE;
+				break;
+			}
+		}
+
+		if (!ignore) {
+			const char *tmp_key = value;
+
+			/* Remove the "new_" prefix that dhclient passes back */
+			if (!strncmp (key, NEW_TAG, strlen (NEW_TAG)))
+				tmp_key = key + strlen (NEW_TAG);
+
+			func ((gpointer) tmp_key, (gpointer) value, user_data);
+		}
+	}
 	return TRUE;
 }
 
