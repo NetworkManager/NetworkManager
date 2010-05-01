@@ -134,9 +134,9 @@ typedef struct {
 	gulong         ip6_addrconf_sigid;
 	gulong         ip6_config_changed_sigid;
 	gboolean       ip6_waiting_for_config;
-	guint32        ip6_dhcp_opt;
 
 	NMDHCPClient *  dhcp6_client;
+	guint32         dhcp6_mode;
 	gulong          dhcp6_state_sigid;
 	gulong          dhcp6_timeout_sigid;
 	NMDHCP6Config * dhcp6_config;
@@ -607,10 +607,10 @@ ip6_addrconf_complete (NMIP6Manager *ip6_manager,
 		return;
 	}
 
-	priv->ip6_dhcp_opt = dhcp_opts;
+	priv->dhcp6_mode = dhcp_opts;
 
 	/* If addrconf is all that's required, we're done */
-	if (dhcp_opts == IP6_DHCP_OPT_NONE) {
+	if (priv->dhcp6_mode == IP6_DHCP_OPT_NONE) {
 		nm_device_activate_schedule_stage4_ip6_config_get (self);
 		return;
 	}
@@ -627,7 +627,7 @@ ip6_addrconf_complete (NMIP6Manager *ip6_manager,
 	             " as requested by IPv6 router...",
 	             priv->iface);
 
-	ret = dhcp6_start (self, connection, dhcp_opts, &reason);
+	ret = dhcp6_start (self, connection, priv->dhcp6_mode, &reason);
 	switch (ret) {
 	case NM_ACT_STAGE_RETURN_SUCCESS:
 		/* Shouldn't get this, but handle it anyway */
@@ -655,6 +655,8 @@ ip6_config_changed (NMIP6Manager *ip6_manager,
 		return;
 	if (!nm_device_get_act_request (self))
 		return;
+
+	/* FIXME: re-run DHCPv6 here to get any new nameservers or whatever */
 
 	nm_device_activate_schedule_stage4_ip6_config_get (self);
 }
@@ -696,8 +698,6 @@ addrconf6_setup (NMDevice *self)
 		                                                   G_CALLBACK (ip6_config_changed),
 		                                                   self);
 	}
-
-	priv->ip6_dhcp_opt = IP6_DHCP_OPT_NONE;
 
 	s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
 	nm_ip6_manager_prepare_interface (priv->ip6_manager,
@@ -1302,9 +1302,16 @@ dhcp_state_changed (NMDHCPClient *client,
 				nm_device_activate_schedule_stage4_ip4_config_timeout (device);
 		}
 		break;
+	case DHC_END: /* dhclient exited normally */
+		/* In IPv6 info-only mode, the client doesn't handle leases so it
+		 * may exit right after getting a response from the server.  That's
+		 * normal.  In that case we just ignore the exit.
+		 */
+		if (ipv6 && (priv->dhcp6_mode == IP6_DHCP_OPT_OTHERCONF))
+			break;
+		/* Otherwise, fall through */
 	case DHC_FAIL: /* all attempts to contact server timed out, sleeping */
 	case DHC_ABEND: /* dhclient exited abnormally */
-	case DHC_END: /* dhclient exited normally */
 		if (ipv6)
 			nm_dhcp6_config_reset (priv->dhcp6_config);
 		else
@@ -1537,6 +1544,8 @@ real_act_stage3_ip6_config_start (NMDevice *self, NMDeviceStateReason *reason)
 
 	ip_iface = nm_device_get_ip_iface (self);
 
+	priv->dhcp6_mode = IP6_DHCP_OPT_NONE;
+
 	if (   ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_AUTO)
 	    || ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL)) {
 		if (!addrconf6_setup (self)) {
@@ -1545,9 +1554,10 @@ real_act_stage3_ip6_config_start (NMDevice *self, NMDeviceStateReason *reason)
 		}
 		nm_ip6_manager_begin_addrconf (priv->ip6_manager, nm_device_get_ip_ifindex (self));
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
-	} else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_DHCP))
-		ret = dhcp6_start (self, connection, IP6_DHCP_OPT_MANAGED, reason);
-	else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
+	} else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_DHCP)) {
+		priv->dhcp6_mode = IP6_DHCP_OPT_MANAGED;
+		ret = dhcp6_start (self, connection, priv->dhcp6_mode, reason);
+	} else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
 		priv->ip6_ready = TRUE;
 		ret = NM_ACT_STAGE_RETURN_STOP;
 	} else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_MANUAL))
@@ -2537,6 +2547,8 @@ static void
 dhcp6_cleanup (NMDevice *self, gboolean stop)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	priv->dhcp6_mode = IP6_DHCP_OPT_NONE;
 
 	if (priv->dhcp6_config) {
 		g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_DHCP6_CONFIG);
