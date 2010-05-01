@@ -227,7 +227,6 @@ daemon_watch_cb (GPid pid, gint status, gpointer user_data)
 		nm_log_warn (LOGD_DHCP, "DHCP client died abnormally");
 	} else
 		priv->state = DHC_END;
-	priv->pid = -1;
 
 	watch_cleanup (self);
 	timeout_cleanup (self);
