@@ -1909,6 +1909,42 @@ nm_device_activate_schedule_stage4_ip4_config_timeout (NMDevice *self)
 	             nm_device_get_iface (self));
 }
 
+static void
+merge_dhcp_config_to_master (NMIP6Config *dst, NMIP6Config *src)
+{
+	guint32 i;
+
+	g_return_if_fail (src != NULL);
+	g_return_if_fail (dst != NULL);
+
+	/* addresses */
+	for (i = 0; i < nm_ip6_config_get_num_addresses (src); i++)
+		nm_ip6_config_add_address (dst, nm_ip6_config_get_address (src, i));
+
+	/* ptp address; only replace if src doesn't have one */
+	if (!nm_ip6_config_get_ptp_address (dst))
+		nm_ip6_config_set_ptp_address (dst, nm_ip6_config_get_ptp_address (src));
+
+	/* nameservers */
+	for (i = 0; i < nm_ip6_config_get_num_nameservers (src); i++)
+		nm_ip6_config_add_nameserver (dst, nm_ip6_config_get_nameserver (src, i));
+
+	/* routes */
+	for (i = 0; i < nm_ip6_config_get_num_routes (src); i++)
+		nm_ip6_config_add_route (dst, nm_ip6_config_get_route (src, i));
+
+	/* domains */
+	for (i = 0; i < nm_ip6_config_get_num_domains (src); i++)
+		nm_ip6_config_add_domain (dst, nm_ip6_config_get_domain (src, i));
+
+	/* dns searches */
+	for (i = 0; i < nm_ip6_config_get_num_searches (src); i++)
+		nm_ip6_config_add_search (dst, nm_ip6_config_get_search (src, i));
+
+	if (!nm_ip6_config_get_mss (dst))
+		nm_ip6_config_set_mss (dst, nm_ip6_config_get_mss (src));
+}
+
 static NMActStageReturn
 real_act_stage4_get_ip6_config (NMDevice *self,
                                 NMIP6Config **config,
@@ -1929,8 +1965,6 @@ real_act_stage4_get_ip6_config (NMDevice *self,
 	connection = nm_act_request_get_connection (nm_device_get_act_request (self));
 	g_assert (connection);
 
-	s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
-
 	if (   ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_AUTO)
 	    || ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL)) {
 		*config = nm_ip6_manager_get_ip6_config (priv->ip6_manager,
@@ -1939,30 +1973,43 @@ real_act_stage4_get_ip6_config (NMDevice *self,
 			*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
 			goto out;
 		}
-
-		/* Merge user-defined overrides into the IP6Config to be applied */
-		nm_utils_merge_ip6_config (*config, s_ip6);
 	} else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
 		*config = nm_ip6_config_new ();
 		if (!*config) {
 			*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
 			goto out;
 		}
-		nm_utils_merge_ip6_config (*config, s_ip6);
 	} else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_DHCP))
 		g_assert (priv->dhcp6_client);  /* sanity check */
 
 	/* Autoconf might have triggered DHCPv6 too */
 	if (priv->dhcp6_client) {
-		*config = nm_dhcp_client_get_ip6_config (priv->dhcp6_client, FALSE);
-		if (!*config) {
+		NMIP6Config *dhcp;
+
+		dhcp = nm_dhcp_client_get_ip6_config (priv->dhcp6_client, FALSE);
+		if (!dhcp) {
 			*reason = NM_DEVICE_STATE_REASON_DHCP_ERROR;
 			goto out;
 		}
 
-		/* Merge user-defined overrides into the IP4Config to be applied */
-		nm_utils_merge_ip6_config (*config, s_ip6);
+		/* For "managed" and DHCP-only setups, we use only the DHCP-supplied
+		 * IPv6 config.  But when autoconf is enabled, we have to merge the
+		 * autoconf config and the DHCP-supplied config, then merge the
+		 * user's overrides from the connection to get the final configuration
+		 * that gets applied to the device.
+		 */
+		if (*config) {
+			/* Merge autoconf and DHCP configs */
+			merge_dhcp_config_to_master (*config, dhcp);
+			g_object_unref (dhcp);
+			dhcp = NULL;
+		} else {
+			*config = dhcp;
+		}
 
+		/* Copy the new DHCPv6 configuration into the DHCP config object that's
+		 * exported over D-Bus to clients.
+		 */
 		nm_dhcp6_config_reset (priv->dhcp6_config);
 		nm_dhcp_client_foreach_option (priv->dhcp6_client,
 		                               dhcp6_add_option_cb,
@@ -1970,6 +2017,12 @@ real_act_stage4_get_ip6_config (NMDevice *self,
 
 		/* Notify of new DHCP6 config */
 		g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_DHCP6_CONFIG);
+	}
+
+	/* Merge user-defined overrides into the IP6Config to be applied */
+	if (*config) {
+		s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
+		nm_utils_merge_ip6_config (*config, s_ip6);
 	}
 
 out:
