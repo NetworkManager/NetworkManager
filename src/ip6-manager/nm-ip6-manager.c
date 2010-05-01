@@ -515,7 +515,8 @@ process_addr (NMIP6Manager *manager, struct nl_msg *msg)
 	 * to notify higher levels if we actually changed something.
 	 */
 	if (nl_cache_nitems (priv->addr_cache) == old_size) {
-		nm_log_dbg (LOGD_IP6, "(%s): address cache unchanged, ignoring message");
+		nm_log_dbg (LOGD_IP6, "(%s): address cache unchanged, ignoring message",
+		            device->iface);
 		return NULL;
 	}
 
@@ -551,7 +552,8 @@ process_route (NMIP6Manager *manager, struct nl_msg *msg)
 
 	/* As above in process_addr */
 	if (nl_cache_nitems (priv->route_cache) == old_size) {
-		nm_log_dbg (LOGD_IP6, "(%s): route cache unchanged, ignoring message");
+		nm_log_dbg (LOGD_IP6, "(%s): route cache unchanged, ignoring message",
+		            device->iface);
 		return NULL;
 	}
 
