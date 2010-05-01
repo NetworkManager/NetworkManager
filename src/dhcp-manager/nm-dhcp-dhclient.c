@@ -482,7 +482,7 @@ dhclient_start (NMDHCPClient *client,
 {
 	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
 	GPtrArray *argv = NULL;
-	GPid pid = 0;
+	GPid pid = -1;
 	GError *error = NULL;
 	const char *iface, *uuid;
 	char *binary_name, *cmd_str;
