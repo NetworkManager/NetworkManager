@@ -44,6 +44,7 @@ typedef struct {
 	guint        timeout_id;
 	guint        watch_id;
 	GHashTable * options;
+	gboolean     info_only;
 } NMDHCPClientPrivate;
 
 #define NM_DHCP_CLIENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_CLIENT, NMDHCPClientPrivate))
@@ -186,6 +187,8 @@ real_stop (NMDHCPClient *self)
 	watch_cleanup (self);
 
 	stop_process (priv->pid, priv->iface);
+
+	priv->info_only = FALSE;
 }
 
 static gboolean
@@ -277,6 +280,8 @@ nm_dhcp_client_start_ip6 (NMDHCPClient *self,
 	g_return_val_if_fail (priv->pid == -1, FALSE);
 	g_return_val_if_fail (priv->ipv6 == TRUE, FALSE);
 	g_return_val_if_fail (priv->uuid != NULL, FALSE);
+
+	priv->info_only = info_only;
 
 	nm_log_info (LOGD_DHCP, "Activation (%s) Beginning DHCPv6 transaction (timeout in %d seconds)",
 	             priv->iface, priv->timeout);
@@ -894,12 +899,20 @@ ip6_options_to_config (NMDHCPClient *self)
 	struct in6_addr tmp_addr;
 	NMIP6Address *addr = NULL;
 	char *str = NULL;
+	GHashTableIter iter;
+	gpointer key, value;
 
 	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
 
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 	g_return_val_if_fail (priv->options != NULL, NULL);
+
+	g_hash_table_iter_init (&iter, priv->options);
+	while (g_hash_table_iter_next (&iter, &key, &value)) {
+		nm_log_dbg (LOGD_DHCP6, "(%s): option '%s'=>'%s'",
+		            priv->iface, (const char *) key, (const char *) value);
+	}
 
 	ip6_config = nm_ip6_config_new ();
 	if (!ip6_config) {
@@ -914,27 +927,43 @@ ip6_options_to_config (NMDHCPClient *self)
 	}
 
 	str = g_hash_table_lookup (priv->options, "new_ip6_address");
-	if (str && (inet_pton (AF_INET6, str, &tmp_addr) > 0)) {
+	if (str) {
+		if (!inet_pton (AF_INET6, str, &tmp_addr)) {
+			nm_log_warn (LOGD_DHCP6, "(%s): DHCP returned invalid address '%s'",
+			             priv->iface);
+			goto error;
+		}
+
 		nm_ip6_address_set_address (addr, &tmp_addr);
 		nm_log_info (LOGD_DHCP6, "  address %s", str);
-	} else
-		goto error;
-
-	str = g_hash_table_lookup (priv->options, "new_ip6_prefixlen");
-	if (str) {
-		long unsigned int prefix;
-
-		errno = 0;
-		prefix = strtoul (str, NULL, 10);
-		if (errno != 0 || prefix > 128)
+	} else {
+		/* No address in managed mode is a hard error */
+		if (priv->info_only == FALSE)
 			goto error;
 
-		nm_ip6_address_set_prefix (addr, (guint32) prefix);
-		nm_log_info (LOGD_DHCP6, "  prefix %lu", prefix);
+		/* But "info-only" setups don't necessarily need an address */
+		nm_ip6_address_unref (addr);
+		addr = NULL;
 	}
 
-	nm_ip6_config_take_address (ip6_config, addr);
-	addr = NULL;
+	/* Only care about prefix if we got an address */
+	if (addr) {
+		str = g_hash_table_lookup (priv->options, "new_ip6_prefixlen");
+		if (str) {
+			long unsigned int prefix;
+
+			errno = 0;
+			prefix = strtoul (str, NULL, 10);
+			if (errno != 0 || prefix > 128)
+				goto error;
+
+			nm_ip6_address_set_prefix (addr, (guint32) prefix);
+			nm_log_info (LOGD_DHCP6, "  prefix %lu", prefix);
+		}
+
+		nm_ip6_config_take_address (ip6_config, addr);
+		addr = NULL;
+	}
 
 	str = g_hash_table_lookup (priv->options, "new_host_name");
 	if (str)
