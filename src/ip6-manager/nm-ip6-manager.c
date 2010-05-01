@@ -941,11 +941,11 @@ nm_ip6_manager_new (void)
 	return manager;
 }
 
+static NMIP6Manager *singleton = NULL;
+
 NMIP6Manager *
 nm_ip6_manager_get (void)
 {
-	static NMIP6Manager *singleton = NULL;
-
 	if (!singleton) {
 		singleton = nm_ip6_manager_new ();
 		g_assert (singleton);
@@ -989,6 +989,8 @@ finalize (GObject *object)
 	g_object_unref (priv->monitor);
 	nl_cache_free (priv->addr_cache);
 	nl_cache_free (priv->route_cache);
+
+	singleton = NULL;
 
 	G_OBJECT_CLASS (nm_ip6_manager_parent_class)->finalize (object);
 }
