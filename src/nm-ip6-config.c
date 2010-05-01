@@ -183,7 +183,7 @@ const struct in6_addr *nm_ip6_config_get_ptp_address (NMIP6Config *config)
 	return &NM_IP6_CONFIG_GET_PRIVATE (config)->ptp_address;
 }
 
-void nm_ip6_config_set_ptp_address (NMIP6Config *config, struct in6_addr *ptp_addr)
+void nm_ip6_config_set_ptp_address (NMIP6Config *config, const struct in6_addr *ptp_addr)
 {
 	g_return_if_fail (NM_IS_IP6_CONFIG (config));
 
@@ -197,7 +197,7 @@ void nm_ip6_config_add_nameserver (NMIP6Config *config, const struct in6_addr *n
 	int i;
 
 	g_return_if_fail (NM_IS_IP6_CONFIG (config));
-	g_return_if_fail (nameserver > 0);
+	g_return_if_fail (nameserver != NULL);
 
 	priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
