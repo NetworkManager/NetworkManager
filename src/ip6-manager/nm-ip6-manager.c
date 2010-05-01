@@ -349,6 +349,25 @@ callback_info_new (NMIP6Device *device, guint dhcp_opts, gboolean success)
 	return info;
 }
 
+static const char *
+state_to_string (NMIP6DeviceState state)
+{
+	switch (state) {
+	case NM_IP6_DEVICE_UNCONFIGURED:
+		return "unconfigured";
+	case NM_IP6_DEVICE_GOT_LINK_LOCAL:
+		return "got-link-local";
+	case NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT:
+		return "got-ra";
+	case NM_IP6_DEVICE_GOT_ADDRESS:
+		return "got-address";
+	case NM_IP6_DEVICE_TIMED_OUT:
+		return "timed-out";
+	default:
+		return "unknown";
+	}
+}
+
 static void
 nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
 {
@@ -359,11 +378,19 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
 	struct in6_addr *addr;
 	CallbackInfo *info;
 	guint dhcp_opts = IP6_DHCP_OPT_NONE;
+	gboolean found_linklocal = FALSE;
+
+	nm_log_dbg (LOGD_IP6, "(%s): syncing with netlink (ra_flags 0x%X) (state/target '%s'/'%s')",
+	            device->iface, device->ra_flags,
+	            state_to_string (device->state),
+	            state_to_string (device->target_state));
 
 	/* Look for any IPv6 addresses the kernel may have set for the device */
 	for (rtnladdr = (struct rtnl_addr *) nl_cache_get_first (priv->addr_cache);
 		 rtnladdr;
 		 rtnladdr = (struct rtnl_addr *) nl_cache_get_next ((struct nl_object *) rtnladdr)) {
+		char buf[INET6_ADDRSTRLEN];
+
 		if (rtnl_addr_get_ifindex (rtnladdr) != device->ifindex)
 			continue;
 
@@ -372,16 +399,33 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
 			continue;
 
 		addr = nl_addr_get_binary_addr (nladdr);
+
+		if (inet_ntop (AF_INET6, addr, buf, INET6_ADDRSTRLEN) > 0) {
+			nm_log_dbg (LOGD_IP6, "(%s): netlink address: %s",
+			            device->iface, buf);
+		}
+
 		if (IN6_IS_ADDR_LINKLOCAL (addr)) {
 			if (device->state == NM_IP6_DEVICE_UNCONFIGURED)
 				device->state = NM_IP6_DEVICE_GOT_LINK_LOCAL;
+			found_linklocal = TRUE;
 		} else {
 			if (device->state < NM_IP6_DEVICE_GOT_ADDRESS)
 				device->state = NM_IP6_DEVICE_GOT_ADDRESS;
 		}
 	}
 
-	/* We only care about router advertisements if we want for a real IPv6 address */
+	/* There might be a LL address hanging around on the interface from
+	 * before in the initial run, but if it goes away later, make sure we
+	 * regress from GOT_LINK_LOCAL back to UNCONFIGURED.
+	 */
+	if ((device->state == NM_IP6_DEVICE_GOT_LINK_LOCAL) && !found_linklocal)
+		device->state = NM_IP6_DEVICE_UNCONFIGURED;
+
+	nm_log_dbg (LOGD_IP6, "(%s): addresses synced (state %s)",
+	            device->iface, state_to_string (device->state));
+
+	/* We only care about router advertisements if we want a real IPv6 address */
 	if (device->target_state == NM_IP6_DEVICE_GOT_ADDRESS) {
 		if (   (device->ra_flags & IF_RA_RCVD)
 		    && (device->state < NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT))
@@ -408,6 +452,10 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
 			 */
 			if (device->finish_addrconf_id)
 				g_source_remove (device->finish_addrconf_id);
+
+			nm_log_dbg (LOGD_IP6, "(%s): reached target state or Managed-mode requested (state '%s') (dhcp opts 0x%X)",
+			            device->iface, state_to_string (device->state),
+			            dhcp_opts);
 
 			info = callback_info_new (device, dhcp_opts, TRUE);
 			device->finish_addrconf_id = g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
@@ -443,14 +491,20 @@ process_addr (NMIP6Manager *manager, struct nl_msg *msg)
 	struct rtnl_addr *rtnladdr;
 	int old_size;
 
+	nm_log_dbg (LOGD_IP6, "processing netlink new/del address message");
+
 	rtnladdr = NULL;
 	nl_msg_parse (msg, ref_object, &rtnladdr);
-	if (!rtnladdr)
+	if (!rtnladdr) {
+		nm_log_dbg (LOGD_IP6, "error processing netlink new/del address message");
 		return NULL;
+	}
 
 	device = nm_ip6_manager_get_device (manager, rtnl_addr_get_ifindex (rtnladdr));
-	if (!device)
+	if (!device) {
+		nm_log_dbg (LOGD_IP6, "ignoring message for unknown device");
 		return NULL;
+	}
 
 	old_size = nl_cache_nitems (priv->addr_cache);
 	nl_cache_include (priv->addr_cache, (struct nl_object *)rtnladdr, NULL);
@@ -460,8 +514,10 @@ process_addr (NMIP6Manager *manager, struct nl_msg *msg)
 	 * every time it gets another router advertisement. We only want
 	 * to notify higher levels if we actually changed something.
 	 */
-	if (nl_cache_nitems (priv->addr_cache) == old_size)
+	if (nl_cache_nitems (priv->addr_cache) == old_size) {
+		nm_log_dbg (LOGD_IP6, "(%s): address cache unchanged, ignoring message");
 		return NULL;
+	}
 
 	return device;
 }
@@ -474,22 +530,30 @@ process_route (NMIP6Manager *manager, struct nl_msg *msg)
 	struct rtnl_route *rtnlroute;
 	int old_size;
 
+	nm_log_dbg (LOGD_IP6, "processing netlink new/del route message");
+
 	rtnlroute = NULL;
 	nl_msg_parse (msg, ref_object, &rtnlroute);
-	if (!rtnlroute)
+	if (!rtnlroute) {
+		nm_log_dbg (LOGD_IP6, "error processing netlink new/del route message");
 		return NULL;
+	}
 
 	device = nm_ip6_manager_get_device (manager, rtnl_route_get_oif (rtnlroute));
-	if (!device)
+	if (!device) {
+		nm_log_dbg (LOGD_IP6, "ignoring message for unknown device");
 		return NULL;
+	}
 
 	old_size = nl_cache_nitems (priv->route_cache);
 	nl_cache_include (priv->route_cache, (struct nl_object *)rtnlroute, NULL);
 	rtnl_route_put (rtnlroute);
 
 	/* As above in process_addr */
-	if (nl_cache_nitems (priv->route_cache) == old_size)
+	if (nl_cache_nitems (priv->route_cache) == old_size) {
+		nm_log_dbg (LOGD_IP6, "(%s): route cache unchanged, ignoring message");
 		return NULL;
+	}
 
 	return device;
 }
@@ -506,11 +570,16 @@ process_prefix (NMIP6Manager *manager, struct nl_msg *msg)
 	 * way to notice immediately that an RA was received.
 	 */
 
+	nm_log_dbg (LOGD_IP6, "processing netlink new prefix message");
+
 	pmsg = (struct prefixmsg *) NLMSG_DATA (nlmsg_hdr (msg));
 	device = nm_ip6_manager_get_device (manager, pmsg->prefix_ifindex);
 
-	if (!device || device->addrconf_complete)
+	if (!device || device->addrconf_complete) {
+		nm_log_dbg (LOGD_IP6, "(%s): ignoring unknown or completed device",
+		            device ? device->iface : "(none)");
 		return NULL;
+	}
 
 	return device;
 }
@@ -542,16 +611,22 @@ process_nduseropt (NMIP6Manager *manager, struct nl_msg *msg)
 	NMIP6RDNSS server, *sa, *sb;
 	gboolean changed;
 
+	nm_log_dbg (LOGD_IP6, "processing netlink nduseropt message");
+
 	ndmsg = (struct nduseroptmsg *) NLMSG_DATA (nlmsg_hdr (msg));
 
 	if (ndmsg->nduseropt_family != AF_INET6 ||
 		ndmsg->nduseropt_icmp_type != ND_ROUTER_ADVERT ||
-		ndmsg->nduseropt_icmp_code != 0)
+		ndmsg->nduseropt_icmp_code != 0) {
+		nm_log_dbg (LOGD_IP6, "ignoring non-Router Advertisement message");
 		return NULL;
+	}
 
 	device = nm_ip6_manager_get_device (manager, ndmsg->nduseropt_ifindex);
-	if (!device)
+	if (!device) {
+		nm_log_dbg (LOGD_IP6, "ignoring message for unknown device");
 		return NULL;
+	}
 
 	servers = g_array_new (FALSE, FALSE, sizeof (NMIP6RDNSS));
 
@@ -574,6 +649,13 @@ process_nduseropt (NMIP6Manager *manager, struct nl_msg *msg)
 
 		server.expires = now + ntohl (rdnss_opt->nd_opt_rdnss_lifetime);
 		for (addr = (struct in6_addr *) (rdnss_opt + 1); nd_opt_len >= 2; addr++, nd_opt_len -= 2) {
+			char buf[INET6_ADDRSTRLEN];
+
+			if (inet_ntop (AF_INET6, &addr, buf, INET6_ADDRSTRLEN) > 0) {
+				nm_log_dbg (LOGD_IP6, "(%s): found RA-provided nameserver %s",
+				            device->iface, buf);
+			}
+
 			server.addr = *addr;
 			g_array_append_val (servers, server);
 		}
@@ -599,6 +681,7 @@ process_nduseropt (NMIP6Manager *manager, struct nl_msg *msg)
 	}
 
 	if (changed) {
+		nm_log_dbg (LOGD_IP6, "(%s): RA-provided nameservers changed", device->iface);
 		g_array_free (device->rdnss_servers, TRUE);
 		device->rdnss_servers = servers;
 	} else
@@ -632,12 +715,17 @@ process_newlink (NMIP6Manager *manager, struct nl_msg *msg)
 	int err;
 
 	ifi = nlmsg_data (hdr);
-	if (ifi->ifi_family != AF_INET6)
+	if (ifi->ifi_family != AF_INET6) {
+		nm_log_dbg (LOGD_IP6, "ignoring netlink message family %d", ifi->ifi_family);
 		return NULL;
+	}
 
 	device = nm_ip6_manager_get_device (manager, ifi->ifi_index);
-	if (!device || device->addrconf_complete)
+	if (!device || device->addrconf_complete) {
+		nm_log_dbg (LOGD_IP6, "(%s): ignoring unknown or completed device",
+		            device ? device->iface : "(none)");
 		return NULL;
+	}
 
 	/* FIXME: we have to do this manually for now since libnl doesn't yet
 	 * support the IFLA_PROTINFO attribute of NEWLINK messages.  When it does,
@@ -647,16 +735,24 @@ process_newlink (NMIP6Manager *manager, struct nl_msg *msg)
 	 */
 
 	err = nlmsg_parse (hdr, sizeof (*ifi), tb, IFLA_MAX, link_policy);
-	if (err < 0)
+	if (err < 0) {
+		nm_log_dbg (LOGD_IP6, "(%s): error parsing PROTINFO attribute", device->iface);
 		return NULL;
-	if (!tb[IFLA_PROTINFO])
+	}
+	if (!tb[IFLA_PROTINFO]) {
+		nm_log_dbg (LOGD_IP6, "(%s): message had no PROTINFO attribute", device->iface);
 		return NULL;
+	}
 
 	err = nla_parse_nested (pi, IFLA_INET6_MAX, tb[IFLA_PROTINFO], link_prot_policy);
-	if (err < 0)
+	if (err < 0) {
+		nm_log_dbg (LOGD_IP6, "(%s): error parsing PROTINFO flags", device->iface);
 		return NULL;
-	if (!pi[IFLA_INET6_FLAGS])
+	}
+	if (!pi[IFLA_INET6_FLAGS]) {
+		nm_log_dbg (LOGD_IP6, "(%s): message had no PROTINFO flags", device->iface);
 		return NULL;
+	}
 
 	device->ra_flags = nla_get_u32 (pi[IFLA_INET6_FLAGS]);
 	nm_log_dbg (LOGD_IP6, "(%s): got IPv6 flags 0x%X", device->iface, device->ra_flags);
@@ -673,6 +769,7 @@ netlink_notification (NMNetlinkMonitor *monitor, struct nl_msg *msg, gpointer us
 	gboolean config_changed = FALSE;
 
 	hdr = nlmsg_hdr (msg);
+	nm_log_dbg (LOGD_HW, "netlink notificate type %d", hdr->nlmsg_type);
 	switch (hdr->nlmsg_type) {
 	case RTM_NEWADDR:
 	case RTM_DELADDR:
@@ -699,8 +796,10 @@ netlink_notification (NMNetlinkMonitor *monitor, struct nl_msg *msg, gpointer us
 		return;
 	}
 
-	if (device)
+	if (device) {
+		nm_log_dbg (LOGD_IP6, "(%s): syncing device with netlink changes", device->iface);
 		nm_ip6_device_sync_from_netlink (device, config_changed);
+	}
 }
 
 void
