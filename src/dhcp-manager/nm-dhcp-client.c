@@ -915,6 +915,11 @@ nm_dhcp_client_get_ip4_config (NMDHCPClient *self, gboolean test)
 		return NULL;
 	}
 
+	if (!g_hash_table_size (priv->options)) {
+		/* We never got a response from the DHCP client */
+		return NULL;
+	}
+
 	return ip4_options_to_config (self);
 }
 
@@ -1045,6 +1050,11 @@ nm_dhcp_client_get_ip6_config (NMDHCPClient *self, gboolean test)
 
 	if (test && !state_is_bound (priv->state)) {
 		nm_log_warn (LOGD_DHCP6, "(%s): DHCPv6 client didn't bind to a lease.", priv->iface);
+		return NULL;
+	}
+
+	if (!g_hash_table_size (priv->options)) {
+		/* We never got a response from the DHCP client */
 		return NULL;
 	}
 
