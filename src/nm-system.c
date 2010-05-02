@@ -486,23 +486,18 @@ nm_system_device_set_ip6_route (const char *iface,
 
 	/* Add the route */
 	err = rtnl_route_add (nlh, route, 0);
-g_message ("%s: 1 err %d", __func__, err);
 	if (err == -ESRCH && ip6_gateway) {
 		/* Gateway might be over a bridge; try adding a route to gateway first */
 		struct rtnl_route *route2;
 
-g_message ("%s: 2", __func__);
 		route2 = create_route (iface_idx, mss);
 		if (route2) {
-g_message ("%s: 3", __func__);
 			/* Add route to gateway over bridge */
 			rtnl_route_set_dst (route2, gw_addr);
 			err = rtnl_route_add (nlh, route2, 0);
-g_message ("%s: 4 err %d", __func__, err);
 			if (!err) {
 				/* Try adding the route again */
 				err = rtnl_route_add (nlh, route, 0);
-g_message ("%s: 5 err %d", __func__, err);
 				if (err)
 					rtnl_route_del (nlh, route2, 0);
 			}
