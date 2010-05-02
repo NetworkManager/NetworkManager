@@ -983,6 +983,13 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager, int ifindex)
 			continue;
 		}
 
+		/* Also ignore routes where the destination and gateway are the same,
+		 * which apparently get added by the kernel but return -EINVAL when
+		 * we try to add them via netlink.
+		 */
+		if (gateway && !memcmp (dest, gateway, sizeof (struct in6_addr)))
+			continue;
+
 		ip6route = nm_ip6_route_new ();
 		nm_ip6_route_set_dest (ip6route, dest);
 		nm_ip6_route_set_prefix (ip6route, rtnl_route_get_dst_len (rtnlroute));
