@@ -358,7 +358,7 @@ nm_dhcp_manager_new (const char *client, GError **error)
 	return singleton;
 }
 
-#define STATE_ID_TAG "state-id"
+#define REMOVE_ID_TAG "remove-id"
 #define TIMEOUT_ID_TAG "timeout-id"
 
 static void
@@ -367,7 +367,7 @@ remove_client (NMDHCPManager *self, NMDHCPClient *client)
 	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 	guint id;
 
-	id = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (client), STATE_ID_TAG));
+	id = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (client), REMOVE_ID_TAG));
 	if (id)
 		g_signal_handler_disconnect (client, id);
 
@@ -384,28 +384,15 @@ remove_client (NMDHCPManager *self, NMDHCPClient *client)
 }
 
 static void
-client_state_changed (NMDHCPClient *client, NMDHCPState new_state, gpointer user_data)
-{
-	if (new_state == DHC_ABEND || new_state == DHC_END)
-		remove_client (NM_DHCP_MANAGER (user_data), client);
-}
-
-static void
-client_timeout (NMDHCPClient *client, gpointer user_data)
-{
-	remove_client (NM_DHCP_MANAGER (user_data), client);
-}
-
-static void
 add_client (NMDHCPManager *self, NMDHCPClient *client)
 {
 	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 	guint id;
 
-	id = g_signal_connect (client, "state-changed", G_CALLBACK (client_state_changed), self);
-	g_object_set_data (G_OBJECT (client), STATE_ID_TAG, GUINT_TO_POINTER (id));
+	id = g_signal_connect_swapped (client, "remove", G_CALLBACK (remove_client), self);
+	g_object_set_data (G_OBJECT (client), REMOVE_ID_TAG, GUINT_TO_POINTER (id));
 
-	id = g_signal_connect (client, "timeout", G_CALLBACK (client_timeout), self);
+	id = g_signal_connect_swapped (client, "timeout", G_CALLBACK (remove_client), self);
 	g_object_set_data (G_OBJECT (client), TIMEOUT_ID_TAG, GUINT_TO_POINTER (id));
 
 	g_hash_table_insert (priv->clients, client, g_object_ref (client));

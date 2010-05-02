@@ -99,6 +99,7 @@ typedef struct {
 	/* Signals */
 	void (*state_changed) (NMDHCPClient *self, NMDHCPState state);
 	void (*timeout)       (NMDHCPClient *self);
+	void (*remove)        (NMDHCPClient *self);
 } NMDHCPClientClass;
 
 GType nm_dhcp_client_get_type (void);
