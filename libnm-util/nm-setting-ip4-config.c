@@ -83,6 +83,7 @@ typedef struct {
 	gboolean dhcp_send_hostname;
 	char *dhcp_hostname;
 	gboolean never_default;
+	gboolean may_fail;
 } NMSettingIP4ConfigPrivate;
 
 enum {
@@ -98,6 +99,7 @@ enum {
 	PROP_DHCP_SEND_HOSTNAME,
 	PROP_DHCP_HOSTNAME,
 	PROP_NEVER_DEFAULT,
+	PROP_MAY_FAIL,
 
 	LAST_PROP
 };
@@ -438,6 +440,14 @@ nm_setting_ip4_config_get_never_default (NMSettingIP4Config *setting)
 	return NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->never_default;
 }
 
+gboolean
+nm_setting_ip4_config_get_may_fail (NMSettingIP4Config *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), FALSE);
+
+	return NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->may_fail;
+}
+
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
@@ -641,6 +651,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_NEVER_DEFAULT:
 		priv->never_default = g_value_get_boolean (value);
 		break;
+	case PROP_MAY_FAIL:
+		priv->may_fail = g_value_get_boolean (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -687,6 +700,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_NEVER_DEFAULT:
 		g_value_set_boolean (value, priv->never_default);
+		break;
+	case PROP_MAY_FAIL:
+		g_value_set_boolean (value, priv->may_fail);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -966,6 +982,31 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 						   "If TRUE, this connection will never be the default "
 						   "IPv4 connection, meaning it will never be assigned "
 						   "the default route by NetworkManager.",
+						   FALSE,
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
+	 * NMSettingIP4Config:may-fail:
+	 *
+	 * If TRUE, allow overall network configuration to proceed even if IPv4
+	 * configuration fails or times out.  Note that at least one IP configuration
+	 * must succeed or overall network configuration will still fail.  For
+	 * example, in IPv6-only networks, setting this property to TRUE allows
+	 * the overall network configuration to succeed if IPv4 configuration fails
+	 * but IPv6 configuration completes successfully.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_MAY_FAIL,
+		 g_param_spec_boolean (NM_SETTING_IP4_CONFIG_MAY_FAIL,
+						   "May Fail",
+						   "If TRUE, allow overall network configuration to "
+						   "proceed even if IPv4 configuration fails or times "
+						   "out.  Note that at least one IP configuration must "
+						   "succeed or overall network configuration will still "
+						   "fail.  For example, in IPv6-only networks, setting "
+						   "this property to TRUE allows the overall network "
+						   "configuration to succeed if IPv4 configuration "
+						   "fails but IPv6 configuration completes successfully.",
 						   FALSE,
 						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 }

@@ -62,6 +62,7 @@ GQuark nm_setting_ip6_config_error_quark (void);
 #define NM_SETTING_IP6_CONFIG_IGNORE_AUTO_ROUTES "ignore-auto-routes"
 #define NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS    "ignore-auto-dns"
 #define NM_SETTING_IP6_CONFIG_NEVER_DEFAULT      "never-default"
+#define NM_SETTING_IP6_CONFIG_MAY_FAIL           "may-fail"
 
 #define NM_SETTING_IP6_CONFIG_METHOD_IGNORE     "ignore"
 #define NM_SETTING_IP6_CONFIG_METHOD_AUTO       "auto"
@@ -163,6 +164,7 @@ gboolean               nm_setting_ip6_config_get_ignore_auto_routes (NMSettingIP
 
 gboolean               nm_setting_ip6_config_get_ignore_auto_dns    (NMSettingIP6Config *setting);
 gboolean               nm_setting_ip6_config_get_never_default      (NMSettingIP6Config *setting);
+gboolean               nm_setting_ip6_config_get_may_fail           (NMSettingIP6Config *setting);
 
 G_END_DECLS
 
