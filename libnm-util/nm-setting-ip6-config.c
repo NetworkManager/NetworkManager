@@ -834,6 +834,7 @@ nm_ip6_address_dup (NMIP6Address *source)
 	address = nm_ip6_address_new ();
 	address->prefix = source->prefix;
 	memcpy (&address->address, &source->address, sizeof (struct in6_addr));
+	memcpy (&address->gateway, &source->gateway, sizeof (struct in6_addr));
 
 	return address;
 }
@@ -870,7 +871,8 @@ nm_ip6_address_compare (NMIP6Address *address, NMIP6Address *other)
 	g_return_val_if_fail (other->refcount > 0, FALSE);
 
 	if (   memcmp (&address->address, &other->address, sizeof (struct in6_addr))
-	    || address->prefix != other->prefix)
+	    || address->prefix != other->prefix
+	    || memcmp (&address->gateway, &other->gateway, sizeof (struct in6_addr)))
 		return FALSE;
 	return TRUE;
 }
