@@ -560,6 +560,13 @@ test_read_wired_static (const char *file, const char *expected_id)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_METHOD);
 
+	/* Implicit may-fail */
+	ASSERT (nm_setting_ip4_config_get_may_fail (s_ip4) == FALSE,
+	        "wired-static-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
+	        file,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_MAY_FAIL);
+
 	/* DNS Addresses */
 	ASSERT (nm_setting_ip4_config_get_num_dns (s_ip4) == 2,
 	        "wired-static-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
@@ -647,6 +654,13 @@ test_read_wired_static (const char *file, const char *expected_id)
 			file,
 			NM_SETTING_IP6_CONFIG_SETTING_NAME,
 			NM_SETTING_IP6_CONFIG_METHOD);
+
+		/* Implicit may-fail */
+		ASSERT (nm_setting_ip6_config_get_may_fail (s_ip6) == TRUE,
+		        "wired-static-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
+		        file,
+		        NM_SETTING_IP6_CONFIG_SETTING_NAME,
+		        NM_SETTING_IP6_CONFIG_MAY_FAIL);
 
 		/* DNS Addresses */
 		ASSERT (nm_setting_ip6_config_get_num_dns (s_ip6) == 2,
