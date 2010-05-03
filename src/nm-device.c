@@ -177,6 +177,11 @@ static NMActStageReturn dhcp6_start (NMDevice *self,
                                      guint32 dhcp_opt,
                                      NMDeviceStateReason *reason);
 
+static void addrconf6_cleanup (NMDevice *self);
+static void dhcp6_cleanup (NMDevice *self, gboolean stop);
+static void dhcp4_cleanup (NMDevice *self, gboolean stop);
+
+
 static void
 device_interface_init (NMDeviceInterface *device_interface_class)
 {
@@ -572,6 +577,35 @@ activation_source_schedule (NMDevice *self, GSourceFunc func, int family)
 		*act_source_id = g_idle_add (func, self);
 		*act_source_func = func;
 	}
+}
+
+gboolean
+nm_device_ip_config_should_fail (NMDevice *self, gboolean ip6)
+{
+	NMActRequest *req;
+	NMConnection *connection;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+
+	g_return_val_if_fail (self != NULL, TRUE);
+
+	req = nm_device_get_act_request (self);
+	g_assert (req);
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+
+	/* Fail the connection if the failed IP method is required to complete */
+	if (ip6) {
+		s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
+		if (s_ip6 && !nm_setting_ip6_config_get_may_fail (s_ip6))
+			return TRUE;
+	} else {
+		s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+		if (s_ip4 && !nm_setting_ip4_config_get_may_fail (s_ip4))
+			return TRUE;
+	}
+
+	return FALSE;
 }
 
 static void
@@ -1318,9 +1352,12 @@ dhcp_state_changed (NMDHCPClient *client,
 			nm_dhcp4_config_reset (priv->dhcp4_config);
 
 		/* dhclient quit and can't get/renew a lease; so kill the connection */
-		if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG)
-			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_DHCP_FAILED);
-		else if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED)
+		if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG) {
+			if (ipv6)
+				nm_device_activate_schedule_stage4_ip6_config_timeout (device);
+			else
+				nm_device_activate_schedule_stage4_ip4_config_timeout (device);
+		} else if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED)
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
 		break;
 	case DHC_STOP:
@@ -1797,8 +1834,7 @@ nm_device_activate_stage4_ip4_config_get (gpointer user_data)
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_get_ip4_config (self, &ip4_config, &reason);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
 		goto out;
-	else if (!ip4_config || (ret == NM_ACT_STAGE_RETURN_FAILURE))
-	{
+	else if (!ip4_config || (ret == NM_ACT_STAGE_RETURN_FAILURE)) {
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 		goto out;
 	}
@@ -1852,9 +1888,12 @@ real_act_stage4_ip4_config_timeout (NMDevice *self,
 	/* Notify of invalid DHCP4 config object */
 	g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_DHCP4_CONFIG);
 
-	/* DHCP failed; connection must fail */
-	*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
-	return NM_ACT_STAGE_RETURN_FAILURE;
+	if (nm_device_ip_config_should_fail (self, FALSE)) {
+		*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
+
+	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
 
@@ -1882,17 +1921,18 @@ nm_device_activate_stage4_ip4_config_timeout (gpointer user_data)
 	             iface);
 
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_ip4_config_timeout (self, &ip4_config, &reason);
-	if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {
+	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
 		goto out;
-	} else if (!ip4_config || (ret == NM_ACT_STAGE_RETURN_FAILURE)) {
+	else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 		goto out;
 	}
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);	
-	g_assert (ip4_config);
 
-	g_object_set_data (G_OBJECT (nm_device_get_act_request (self)),
-					   NM_ACT_REQUEST_IP4_CONFIG, ip4_config);
+	if (ip4_config) {
+		g_object_set_data (G_OBJECT (nm_device_get_act_request (self)),
+						   NM_ACT_REQUEST_IP4_CONFIG, ip4_config);
+	}
 
 	nm_device_activate_schedule_stage5_ip_config_commit (self, AF_INET);
 
@@ -2125,11 +2165,15 @@ real_act_stage4_ip6_config_timeout (NMDevice *self,
 	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-	/* Notify of invalid DHCP6 config object */
+	/* Notify of invalid DHCP4 config object */
 	g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_DHCP6_CONFIG);
 
-	*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
-	return NM_ACT_STAGE_RETURN_FAILURE;
+	if (nm_device_ip_config_should_fail (self, TRUE)) {
+		*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
+
+	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
 
@@ -2157,17 +2201,18 @@ nm_device_activate_stage4_ip6_config_timeout (gpointer user_data)
 	             iface);
 
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_ip6_config_timeout (self, &ip6_config, &reason);
-	if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {
+	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
 		goto out;
-	} else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
+	else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 		goto out;
 	}
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
-	g_assert (ip6_config);
 
-	g_object_set_data (G_OBJECT (nm_device_get_act_request (self)),
-					   NM_ACT_REQUEST_IP6_CONFIG, ip6_config);
+	if (ip6_config) {
+		g_object_set_data (G_OBJECT (nm_device_get_act_request (self)),
+						   NM_ACT_REQUEST_IP6_CONFIG, ip6_config);
+	}
 
 	nm_device_activate_schedule_stage5_ip_config_commit (self, AF_INET6);
 

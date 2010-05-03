@@ -40,4 +40,6 @@ void nm_device_handle_autoip4_event (NMDevice *self,
                                      const char *event,
                                      const char *address);
 
+gboolean nm_device_ip_config_should_fail (NMDevice *self, gboolean ip6);
+
 #endif	/* NM_DEVICE_PRIVATE_H */

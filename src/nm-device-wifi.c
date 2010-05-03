@@ -2676,7 +2676,11 @@ handle_auth_or_fail (NMDeviceWifi *self,
 	NMConnection *connection;
 
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (self), NM_ACT_STAGE_RETURN_FAILURE);
-	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), NM_ACT_STAGE_RETURN_FAILURE);
+
+	if (!req) {
+		req = nm_device_get_act_request (NM_DEVICE (self));
+		g_assert (req);
+	}
 
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
@@ -3187,21 +3191,19 @@ real_act_stage4_get_ip4_config (NMDevice *dev,
 
 
 static NMActStageReturn
-real_act_stage4_ip4_config_timeout (NMDevice *dev,
-									NMIP4Config **config,
-									NMDeviceStateReason *reason)
+handle_ip_config_timeout (NMDeviceWifi *self,
+                          NMConnection *connection,
+                          gboolean may_fail,
+                          gboolean *chain_up,
+                          NMDeviceStateReason *reason)
 {
-	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
-	NMAccessPoint *ap = nm_device_wifi_get_activation_ap (self);
+	NMAccessPoint *ap;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
-	NMIP4Config *real_config = NULL;
-	NMActRequest *req = nm_device_get_act_request (dev);
-	NMConnection *connection;
 	gboolean auth_enforced = FALSE, encrypted = FALSE;
 
-	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
-	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
+	g_return_val_if_fail (connection != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
+	ap = nm_device_wifi_get_activation_ap (self);
 	g_assert (ap);
 
 	/* If nothing checks the security authentication information (as in
@@ -3209,9 +3211,8 @@ real_act_stage4_ip4_config_timeout (NMDevice *dev,
 	 * the encryption key is likely wrong.  Ask the user for a new one.
 	 * Otherwise the failure likely happened after a successful authentication.
 	 */
-	connection = nm_act_request_get_connection (req);
 	auth_enforced = ap_auth_enforced (connection, ap, &encrypted);
-	if (encrypted && !auth_enforced) {
+	if (encrypted && !auth_enforced && !may_fail) {
 		NMSettingConnection *s_con;
 
 		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
@@ -3220,38 +3221,82 @@ real_act_stage4_ip4_config_timeout (NMDevice *dev,
 		nm_log_warn (LOGD_DEVICE | LOGD_WIFI,
 		             "Activation (%s/wireless): could not get IP configuration for "
 		             "connection '%s'.",
-				     nm_device_get_iface (dev), nm_setting_connection_get_id (s_con));
+				     nm_device_get_iface (NM_DEVICE (self)),
+				     nm_setting_connection_get_id (s_con));
 
-		ret = handle_auth_or_fail (self, req, TRUE);
+		ret = handle_auth_or_fail (self, NULL, TRUE);
 		if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {
 			nm_log_info (LOGD_DEVICE | LOGD_WIFI,
 			             "Activation (%s/wireless): asking for new secrets",
-			             nm_device_get_iface (dev));
+			             nm_device_get_iface (NM_DEVICE (self)));
 		} else {
 			*reason = NM_DEVICE_STATE_REASON_NO_SECRETS;
 		}
-	} else if (nm_ap_get_mode (ap) == NM_802_11_MODE_ADHOC) {
-		NMDeviceWifiClass *klass;
-		NMDeviceClass * parent_class;
-
-		/* For Ad-Hoc networks, chain up to parent to get a Zeroconf IP */
-		klass = NM_DEVICE_WIFI_GET_CLASS (self);
-		parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
-		ret = parent_class->act_stage4_ip4_config_timeout (dev, &real_config, reason);
 	} else {
 		/* Non-encrypted network or authentication is enforced by some
-		 * entity (AP, RADIUS server, etc), but IP configure failed.  Alert
-		 * the user.
+		 * entity (AP, RADIUS server, etc), but IP configure failed. Let the
+		 * superclass handle it.
 		 */
-		*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
-		ret = NM_ACT_STAGE_RETURN_FAILURE;
+		*chain_up = TRUE;
 	}
-
-	*config = real_config;
 
 	return ret;
 }
 
+
+static NMActStageReturn
+real_act_stage4_ip4_config_timeout (NMDevice *dev,
+                                    NMIP4Config **config,
+                                    NMDeviceStateReason *reason)
+{
+	NMActRequest *req;
+	NMConnection *connection;
+	NMSettingIP4Config *s_ip4;
+	gboolean may_fail = FALSE, chain_up = FALSE;
+	NMActStageReturn ret;
+
+	req = nm_device_get_act_request (dev);
+	g_assert (req);
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+
+	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	if (s_ip4)
+		may_fail = nm_setting_ip4_config_get_may_fail (s_ip4);
+
+	ret = handle_ip_config_timeout (NM_DEVICE_WIFI (dev), connection, may_fail, &chain_up, reason);
+	if (chain_up)
+		ret = NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage4_ip4_config_timeout (dev, config, reason);
+
+	return ret;
+}
+
+static NMActStageReturn
+real_act_stage4_ip6_config_timeout (NMDevice *dev,
+                                    NMIP6Config **config,
+                                    NMDeviceStateReason *reason)
+{
+	NMActRequest *req;
+	NMConnection *connection;
+	NMSettingIP6Config *s_ip6;
+	gboolean may_fail = FALSE, chain_up = FALSE;
+	NMActStageReturn ret;
+
+	req = nm_device_get_act_request (dev);
+	g_assert (req);
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+
+	s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
+	if (s_ip6)
+		may_fail = nm_setting_ip6_config_get_may_fail (s_ip6);
+
+	ret = handle_ip_config_timeout (NM_DEVICE_WIFI (dev), connection, may_fail, &chain_up, reason);
+	if (chain_up)
+		ret = NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage4_ip6_config_timeout (dev, config, reason);
+
+	return ret;
+}
 
 static void
 activation_success_handler (NMDevice *dev)
@@ -3725,6 +3770,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->act_stage2_config = real_act_stage2_config;
 	parent_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 	parent_class->act_stage4_ip4_config_timeout = real_act_stage4_ip4_config_timeout;
+	parent_class->act_stage4_ip6_config_timeout = real_act_stage4_ip6_config_timeout;
 	parent_class->deactivate = real_deactivate;
 	parent_class->deactivate_quickly = real_deactivate_quickly;
 	parent_class->can_interrupt_activation = real_can_interrupt_activation;
