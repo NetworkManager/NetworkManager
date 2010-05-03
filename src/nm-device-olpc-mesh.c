@@ -637,15 +637,6 @@ real_act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
-static NMActStageReturn
-real_act_stage4_ip4_config_timeout (NMDevice *dev,
-                                    NMIP4Config **config,
-                                    NMDeviceStateReason *reason)
-{
-	return NM_ACT_STAGE_RETURN_FAILURE;
-}
-
-
 static void
 dispose (GObject *object)
 {
@@ -734,7 +725,6 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 
 	parent_class->act_stage1_prepare = real_act_stage1_prepare;
 	parent_class->act_stage2_config = real_act_stage2_config;
-	parent_class->act_stage4_ip4_config_timeout = real_act_stage4_ip4_config_timeout;
 
 	/* Properties */
 	g_object_class_install_property
