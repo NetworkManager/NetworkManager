@@ -196,8 +196,10 @@ sync_addresses (const char *iface, int ifindex, int family,
 	struct nl_cache *addr_cache;
 	struct rtnl_addr *filter_addr, *match_addr;
 	struct nl_object *match;
+	struct nl_addr *nladdr;
 	int i, err;
 	guint32 log_domain = (family == AF_INET) ? LOGD_IP4 : LOGD_IP6;
+	char buf[INET6_ADDRSTRLEN + 1];
 
 	log_domain |= LOGD_DEVICE;
 
@@ -218,20 +220,22 @@ sync_addresses (const char *iface, int ifindex, int family,
 	if (family)
 		rtnl_addr_set_family (filter_addr, family);
 
+	nm_log_dbg (log_domain, "(%s): syncing addresses (family %d)", iface, family);
+
 	/* Walk through the cache, comparing the addresses already on
 	 * the interface to the addresses in addrs.
 	 */
 	for (match = nl_cache_get_first (addr_cache); match; match = nl_cache_get_next (match)) {
-		match_addr = (struct rtnl_addr *)match;
+		gboolean buf_valid = FALSE;
+		match_addr = (struct rtnl_addr *) match;
 
 		/* Skip addresses not on our interface */
-		if (!nl_object_match_filter (match, (struct nl_object *)filter_addr))
+		if (!nl_object_match_filter (match, (struct nl_object *) filter_addr))
 			continue;
 
 		if (addrs) {
 			for (i = 0; i < num_addrs; i++) {
-				if (addrs[i] &&
-					nl_object_identical (match, (struct nl_object *)addrs[i]))
+				if (addrs[i] && nl_object_identical (match, (struct nl_object *) addrs[i]))
 					break;
 			}
 
@@ -245,10 +249,31 @@ sync_addresses (const char *iface, int ifindex, int family,
 			}
 		}
 
+		nladdr = rtnl_addr_get_local (match_addr);
+
 		/* Don't delete IPv6 link-local addresses; they don't belong to NM */
-		if (rtnl_addr_get_family (match_addr) == AF_INET6 &&
-			rtnl_addr_get_scope (match_addr) == RT_SCOPE_LINK) {
-			continue;
+		if (rtnl_addr_get_family (match_addr) == AF_INET6) {
+			struct in6_addr *tmp;
+
+			if (rtnl_addr_get_scope (match_addr) == RT_SCOPE_LINK) {
+				nm_log_dbg (log_domain, "(%s): ignoring IPv6 link-local address", iface);
+				continue;
+			}
+
+			tmp = nl_addr_get_binary_addr (nladdr);
+			if (inet_ntop (AF_INET6, tmp, buf, sizeof (buf)))
+				buf_valid = TRUE;
+		} else if (rtnl_addr_get_family (match_addr) == AF_INET) {
+			struct in_addr *tmp;
+
+			tmp = nl_addr_get_binary_addr (nladdr);
+			if (inet_ntop (AF_INET, tmp, buf, sizeof (buf)))
+				buf_valid = TRUE;
+		}
+
+		if (buf_valid) {
+			nm_log_dbg (log_domain, "(%s): removing address '%s/%d'",
+			            iface, buf, nl_addr_get_prefixlen (nladdr));
 		}
 
 		/* Otherwise, match_addr should be removed from the interface. */
@@ -264,8 +289,28 @@ sync_addresses (const char *iface, int ifindex, int family,
 
 	/* Now add the remaining new addresses */
 	for (i = 0; i < num_addrs; i++) {
+		struct in6_addr *in6tmp;
+		struct in_addr *in4tmp;
+		gboolean buf_valid = FALSE;
+
 		if (!addrs[i])
 			continue;
+
+		nladdr = rtnl_addr_get_local (addrs[i]);
+		if (rtnl_addr_get_family (addrs[i]) == AF_INET6) {
+			in6tmp = nl_addr_get_binary_addr (nladdr);
+			if (inet_ntop (AF_INET6, in6tmp, buf, sizeof (buf)))
+				buf_valid = TRUE;
+		} else if (rtnl_addr_get_family (addrs[i]) == AF_INET) {
+			in4tmp = nl_addr_get_binary_addr (nladdr);
+			if (inet_ntop (AF_INET, in4tmp, buf, sizeof (buf)))
+				buf_valid = TRUE;
+		}
+
+		if (buf_valid) {
+			nm_log_dbg (log_domain, "(%s): adding address '%s/%d'",
+			            iface, buf, nl_addr_get_prefixlen (nladdr));
+		}
 
 		err = rtnl_addr_add (nlh, addrs[i], 0);
 		if (err < 0) {
@@ -1094,7 +1139,7 @@ static void flush_addresses (const char *iface, gboolean ipv4_only)
 	g_return_if_fail (iface != NULL);
 	iface_idx = nm_netlink_iface_to_index (iface);
 	if (iface_idx >= 0)
-		sync_addresses (iface, iface_idx, ipv4_only ? AF_INET : 0, NULL, 0);
+		sync_addresses (iface, iface_idx, ipv4_only ? AF_INET : AF_UNSPEC, NULL, 0);
 }
 
 /*
