@@ -64,7 +64,8 @@ typedef struct {
 	 */
 	void (*config_changed)    (NMIP6Manager *manager,
 	                           guint32 ifindex,
-	                           guint dhcp_opts);
+	                           guint dhcp_opts,
+	                           gboolean success);
 } NMIP6ManagerClass;
 
 GType nm_ip6_manager_get_type (void);

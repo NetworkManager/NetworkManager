@@ -282,7 +282,10 @@ emit_config_changed (gpointer user_data)
 	NMIP6Manager *manager = device->manager;
 
 	device->config_changed_id = 0;
-	g_signal_emit (manager, signals[CONFIG_CHANGED], 0, device->ifindex, info->dhcp_opts);
+	g_signal_emit (manager, signals[CONFIG_CHANGED], 0,
+	               device->ifindex,
+	               info->dhcp_opts,
+	               info->success);
 	return FALSE;
 }
 
@@ -386,7 +389,7 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
 	struct in6_addr *addr;
 	CallbackInfo *info;
 	guint dhcp_opts = IP6_DHCP_OPT_NONE;
-	gboolean found_linklocal = FALSE;
+	gboolean found_linklocal = FALSE, found_other = FALSE;
 
 	nm_log_dbg (LOGD_IP6, "(%s): syncing with netlink (ra_flags 0x%X) (state/target '%s'/'%s')",
 	            device->iface, device->ra_flags,
@@ -420,6 +423,7 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
 		} else {
 			if (device->state < NM_IP6_DEVICE_GOT_ADDRESS)
 				device->state = NM_IP6_DEVICE_GOT_ADDRESS;
+			found_other = TRUE;
 		}
 	}
 
@@ -473,7 +477,20 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
 		}
 	} else if (config_changed) {
 		if (!device->config_changed_id) {
-			info = callback_info_new (device, dhcp_opts, TRUE);
+			gboolean success = TRUE;
+
+			/* If for some reason an RA-provided address disappeared, we need
+			 * to make sure we fail the connection as it's no longer valid.
+			 */
+			if (   (device->state == NM_IP6_DEVICE_GOT_ADDRESS)
+			    && (device->target_state == NM_IP6_DEVICE_GOT_ADDRESS)
+			    && !found_other) {
+				nm_log_dbg (LOGD_IP6, "(%s): RA-provided address no longer valid",
+				            device->iface);
+				success = FALSE;
+			}
+
+			info = callback_info_new (device, dhcp_opts, success);
 			device->config_changed_id = g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
 			                                             emit_config_changed,
 			                                             info,
@@ -1141,7 +1158,7 @@ nm_ip6_manager_class_init (NMIP6ManagerClass *manager_class)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMIP6ManagerClass, config_changed),
 					  NULL, NULL,
-					  _nm_marshal_VOID__INT_UINT,
-					  G_TYPE_NONE, 2, G_TYPE_INT, G_TYPE_UINT);
+					  _nm_marshal_VOID__INT_UINT_BOOLEAN,
+					  G_TYPE_NONE, 3, G_TYPE_INT, G_TYPE_UINT, G_TYPE_BOOLEAN);
 }
 

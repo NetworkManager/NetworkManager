@@ -681,6 +681,7 @@ static void
 ip6_config_changed (NMIP6Manager *ip6_manager,
                     int ifindex,
                     guint dhcp_opts,
+                    gboolean success,
                     gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
@@ -691,6 +692,13 @@ ip6_config_changed (NMIP6Manager *ip6_manager,
 		return;
 
 	/* FIXME: re-run DHCPv6 here to get any new nameservers or whatever */
+
+	if (!success && (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED)) {
+		nm_device_state_changed (self,
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+		return;
+	}
 
 	nm_device_activate_schedule_stage4_ip6_config_get (self);
 }
