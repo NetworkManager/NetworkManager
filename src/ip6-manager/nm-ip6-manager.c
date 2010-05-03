@@ -294,6 +294,8 @@ rdnss_expired (gpointer user_data)
 	NMIP6Device *device = user_data;
 	CallbackInfo info = { device, IP6_DHCP_OPT_NONE };
 
+	nm_log_dbg (LOGD_IP6, "(%s): IPv6 RDNSS information expired", device->iface);
+
 	set_rdnss_timeout (device);
 	emit_config_changed (&info);
 	return FALSE;
@@ -322,6 +324,12 @@ set_rdnss_timeout (NMIP6Device *device)
 		 * bit.
 		 */
 		if (rdnss->expires <= now + 1) {
+			char buf[INET6_ADDRSTRLEN + 1];
+
+			if (inet_ntop (AF_INET6, &(rdnss->addr), buf, sizeof (buf)) > 0) {
+				nm_log_dbg (LOGD_IP6, "(%s): removing expired RA-provided nameserver %s",
+				            device->iface, buf);
+			}
 			g_array_remove_index_fast (device->rdnss_servers, i--);
 			continue;
 		}
@@ -651,11 +659,12 @@ process_nduseropt (NMIP6Manager *manager, struct nl_msg *msg)
 
 		server.expires = now + ntohl (rdnss_opt->nd_opt_rdnss_lifetime);
 		for (addr = (struct in6_addr *) (rdnss_opt + 1); nd_opt_len >= 2; addr++, nd_opt_len -= 2) {
-			char buf[INET6_ADDRSTRLEN];
+			char buf[INET6_ADDRSTRLEN + 1];
 
-			if (inet_ntop (AF_INET6, &addr, buf, INET6_ADDRSTRLEN) > 0) {
-				nm_log_dbg (LOGD_IP6, "(%s): found RA-provided nameserver %s",
-				            device->iface, buf);
+			if (inet_ntop (AF_INET6, addr, buf, sizeof (buf))) {
+				nm_log_dbg (LOGD_IP6, "(%s): found RA-provided nameserver %s (expires in %d seconds)",
+				            device->iface, buf,
+				            ntohl (rdnss_opt->nd_opt_rdnss_lifetime));
 			}
 
 			server.addr = *addr;
