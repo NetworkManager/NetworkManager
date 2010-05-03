@@ -693,10 +693,13 @@ process_nduseropt (NMIP6Manager *manager, struct nl_msg *msg)
 
 	if (changed) {
 		nm_log_dbg (LOGD_IP6, "(%s): RA-provided nameservers changed", device->iface);
-		g_array_free (device->rdnss_servers, TRUE);
-		device->rdnss_servers = servers;
-	} else
-		g_array_free (servers, TRUE);
+	}
+
+	/* Always copy in new servers (even if unchanged) to get their updated
+	 * expiration times.
+	 */
+	g_array_free (device->rdnss_servers, TRUE);
+	device->rdnss_servers = servers;
 
 	/* Timeouts may have changed even if IPs didn't */
 	set_rdnss_timeout (device);
