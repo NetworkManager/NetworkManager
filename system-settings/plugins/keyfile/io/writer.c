@@ -226,18 +226,27 @@ ip6_dns_writer (GKeyFile *file,
 }
 
 static gboolean
-ip6_array_to_addr (GValueArray *values, guint32 idx, char *buf, size_t buflen)
+ip6_array_to_addr (GValueArray *values,
+                   guint32 idx,
+                   char *buf,
+                   size_t buflen,
+                   gboolean *out_is_unspec)
 {
 	GByteArray *byte_array;
 	GValue *addr_val;
+	struct in6_addr *addr;
 
 	g_return_val_if_fail (buflen >= INET6_ADDRSTRLEN, FALSE);
 
-	/* address */
 	addr_val = g_value_array_get_nth (values, idx);
 	byte_array = g_value_get_boxed (addr_val);
+	addr = (struct in6_addr *) byte_array->data;
+
+	if (out_is_unspec && IN6_IS_ADDR_UNSPECIFIED (addr))
+		*out_is_unspec = TRUE;
+
 	errno = 0;
-	if (!inet_ntop (AF_INET6, (struct in6_addr *) byte_array->data, buf, buflen)) {
+	if (!inet_ntop (AF_INET6, addr, buf, buflen)) {
 		GString *ip6_str = g_string_sized_new (INET6_ADDRSTRLEN + 10);
 
 		/* error converting the address */
@@ -259,17 +268,23 @@ ip6_array_to_addr_prefix (GValueArray *values)
 	GValue *prefix_val;
 	char *ret = NULL;
 	GString *ip6_str;
-	char buf[INET6_ADDRSTRLEN];
+	char buf[INET6_ADDRSTRLEN + 1];
+	gboolean is_unspec = FALSE;
 
 	/* address */
-	if (ip6_array_to_addr (values, 0, buf, sizeof (buf))) {
+	if (ip6_array_to_addr (values, 0, buf, sizeof (buf), NULL)) {
 		/* Enough space for the address, '/', and the prefix */
-		ip6_str = g_string_sized_new (INET6_ADDRSTRLEN + 5);
+		ip6_str = g_string_sized_new ((INET6_ADDRSTRLEN * 2) + 5);
 
 		/* prefix */
 		g_string_append (ip6_str, buf);
 		prefix_val = g_value_array_get_nth (values, 1);
 		g_string_append_printf (ip6_str, "/%u", g_value_get_uint (prefix_val));
+
+		if (ip6_array_to_addr (values, 2, buf, sizeof (buf), &is_unspec)) {
+			if (!is_unspec)
+				g_string_append_printf (ip6_str, ",%s", buf);
+		}
 
 		ret = ip6_str->str;
 		g_string_free (ip6_str, FALSE);
@@ -337,7 +352,8 @@ ip6_route_writer (GKeyFile *file,
 		GValueArray *values = g_ptr_array_index (array, i);
 		char *key_name;
 		guint32 int_val;
-		char buf[INET6_ADDRSTRLEN];
+		char buf[INET6_ADDRSTRLEN + 1];
+		gboolean is_unspec = FALSE;
 
 		memset (list, 0, sizeof (list));
 
@@ -347,7 +363,9 @@ ip6_route_writer (GKeyFile *file,
 			continue;
 
 		/* Next Hop */
-		if (!ip6_array_to_addr (values, 2, buf, sizeof (buf)))
+		if (!ip6_array_to_addr (values, 2, buf, sizeof (buf), &is_unspec))
+			continue;
+		if (is_unspec)
 			continue;
 		list[1] = g_strdup (buf);
 
