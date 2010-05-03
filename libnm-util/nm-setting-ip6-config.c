@@ -822,7 +822,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * NMSettingIP6Config:may-fail:
 	 *
 	 * If TRUE, allow overall network configuration to proceed even if IPv6
-	 * configuration fails or times out.  Note that at least one IP configuration
+	 * configuration times out.  Note that at least one IP configuration
 	 * must succeed or overall network configuration will still fail.  For
 	 * example, in IPv4-only networks, setting this property to TRUE allows
 	 * the overall network configuration to succeed if IPv6 configuration fails
@@ -833,8 +833,8 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 		 g_param_spec_boolean (NM_SETTING_IP6_CONFIG_MAY_FAIL,
 						   "May Fail",
 						   "If TRUE, allow overall network configuration to "
-						   "proceed even if IPv6 configuration fails or times "
-						   "out.  Note that at least one IP configuration must "
+						   "proceed even if IPv6 configuration times out. "
+						   "Note that at least one IP configuration must "
 						   "succeed or overall network configuration will still "
 						   "fail.  For example, in IPv4-only networks, setting "
 						   "this property to TRUE allows the overall network "
