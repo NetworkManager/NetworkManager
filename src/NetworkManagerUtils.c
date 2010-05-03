@@ -594,3 +594,32 @@ nm_utils_do_sysctl (const char *path, const char *value)
 	return TRUE;
 }
 
+gboolean
+nm_utils_get_proc_sys_net_value (const char *path,
+                                 const char *iface,
+                                 guint32 *out_value)
+{
+	GError *error = NULL;
+	char *contents = NULL;
+	gboolean success = FALSE;
+	long int tmp;
+
+	if (!g_file_get_contents (path, &contents, NULL, &error)) {
+		nm_log_warn (LOGD_DEVICE, "(%s): error reading %s: (%d) %s",
+		             iface, path,
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
+	} else {
+		errno = 0;
+		tmp = strtol (contents, NULL, 10);
+		if ((errno == 0) && (tmp == 0 || tmp == 1)) {
+			*out_value = (guint32) tmp;
+			success = TRUE;
+		}
+		g_free (contents);
+	}
+
+	return success;
+}
+

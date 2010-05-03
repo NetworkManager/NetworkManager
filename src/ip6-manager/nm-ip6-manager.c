@@ -83,10 +83,6 @@ typedef struct {
 	char *iface;
 	int ifindex;
 
-	char *accept_ra_path;
-	gboolean accept_ra_save_valid;
-	guint32 accept_ra_save;
-
 	char *disable_ip6_path;
 	gboolean disable_ip6_save_valid;
 	guint32 disable_ip6_save;
@@ -111,12 +107,6 @@ nm_ip6_device_destroy (NMIP6Device *device)
 {
 	g_return_if_fail (device != NULL);
 
-	/* reset the saved RA value */
-	if (device->accept_ra_save_valid) {
-		nm_utils_do_sysctl (device->accept_ra_path,
-		                    device->accept_ra_save ? "1\n" : "0\n");
-	}
-
 	/* reset the saved IPv6 value */
 	if (device->disable_ip6_save_valid) {
 		nm_utils_do_sysctl (device->disable_ip6_path,
@@ -135,35 +125,7 @@ nm_ip6_device_destroy (NMIP6Device *device)
 	if (device->ip6flags_poll_id)
 		g_source_remove (device->ip6flags_poll_id);
 
-	g_free (device->accept_ra_path);
 	g_slice_free (NMIP6Device, device);
-}
-
-static gboolean
-get_proc_sys_net_value (const char *path, const char *iface, guint32 *out_value)
-{
-	GError *error = NULL;
-	char *contents = NULL;
-	gboolean success = FALSE;
-	long int tmp;
-
-	if (!g_file_get_contents (path, &contents, NULL, &error)) {
-		nm_log_warn (LOGD_IP6, "(%s): error reading %s: (%d) %s",
-		             iface, path,
-		             error ? error->code : -1,
-		             error && error->message ? error->message : "(unknown)");
-		g_clear_error (&error);
-	} else {
-		errno = 0;
-		tmp = strtol (contents, NULL, 10);
-		if ((errno == 0) && (tmp == 0 || tmp == 1)) {
-			*out_value = (guint32) tmp;
-			success = TRUE;
-		}
-		g_free (contents);
-	}
-
-	return success;
 }
 
 static NMIP6Device *
@@ -195,23 +157,13 @@ nm_ip6_device_new (NMIP6Manager *manager, int ifindex)
 
 	g_hash_table_replace (priv->devices, GINT_TO_POINTER (device->ifindex), device);
 
-	/* Grab the original value of "accept_ra" so we can restore it when the
-	 * device is taken down.
-	 */
-	device->accept_ra_path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/accept_ra",
-	                                          device->iface);
-	g_assert (device->accept_ra_path);
-	device->accept_ra_save_valid = get_proc_sys_net_value (device->accept_ra_path,
-	                                                       device->iface,
-	                                                       &device->accept_ra_save);
-
 	/* and the original value of IPv6 enable/disable */
 	device->disable_ip6_path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/disable_ipv6",
 	                                            device->iface);
 	g_assert (device->disable_ip6_path);
-	device->disable_ip6_save_valid = get_proc_sys_net_value (device->disable_ip6_path,
-	                                                         device->iface,
-	                                                         &device->disable_ip6_save);
+	device->disable_ip6_save_valid = nm_utils_get_proc_sys_net_value (device->disable_ip6_path,
+	                                                                  device->iface,
+	                                                                  &device->disable_ip6_save);
 
 	return device;
 
@@ -835,8 +787,9 @@ netlink_notification (NMNetlinkMonitor *monitor, struct nl_msg *msg, gpointer us
 
 void
 nm_ip6_manager_prepare_interface (NMIP6Manager *manager,
-								  int ifindex,
-								  NMSettingIP6Config *s_ip6)
+                                  int ifindex,
+                                  NMSettingIP6Config *s_ip6,
+                                  const char *accept_ra_path)
 {
 	NMIP6ManagerPrivate *priv;
 	NMIP6Device *device;
@@ -861,10 +814,10 @@ nm_ip6_manager_prepare_interface (NMIP6Manager *manager,
 	/* Establish target state and turn router advertisement acceptance on or off */
 	if (!strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL)) {
 		device->target_state = NM_IP6_DEVICE_GOT_LINK_LOCAL;
-		nm_utils_do_sysctl (device->accept_ra_path, "0\n");
+		nm_utils_do_sysctl (accept_ra_path, "0\n");
 	} else {
 		device->target_state = NM_IP6_DEVICE_GOT_ADDRESS;
-		nm_utils_do_sysctl (device->accept_ra_path, "1\n");
+		nm_utils_do_sysctl (accept_ra_path, "1\n");
 	}
 }
 

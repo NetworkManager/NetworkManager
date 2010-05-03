@@ -135,6 +135,9 @@ typedef struct {
 	gulong         ip6_config_changed_sigid;
 	gboolean       ip6_waiting_for_config;
 
+	char *         ip6_accept_ra_path;
+	guint32        ip6_accept_ra_save;
+
 	NMDHCPClient *  dhcp6_client;
 	guint32         dhcp6_mode;
 	gulong          dhcp6_state_sigid;
@@ -207,6 +210,41 @@ nm_device_init (NMDevice *self)
 	priv->rfkill_type = RFKILL_TYPE_UNKNOWN;
 }
 
+static void
+update_accept_ra_save (NMDevice *self)
+{
+	NMDevicePrivate *priv;
+	const char *ip_iface;
+	char *new_path;
+
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	ip_iface = nm_device_get_ip_iface (self);
+
+	new_path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/accept_ra", ip_iface);
+	g_assert (new_path);
+
+	if (priv->ip6_accept_ra_path) {
+		/* If the IP iface is different from before, use the new value */
+		if (!strcmp (new_path, priv->ip6_accept_ra_path)) {
+			g_free (new_path);
+			return;
+		}
+		g_free (priv->ip6_accept_ra_path);
+	}
+
+	/* Grab the original value of "accept_ra" so we can restore it when NM exits */
+	priv->ip6_accept_ra_path = new_path;
+	if (!nm_utils_get_proc_sys_net_value (priv->ip6_accept_ra_path,
+	                                      ip_iface,
+	                                      &priv->ip6_accept_ra_save)) {
+		g_free (priv->ip6_accept_ra_path);
+		priv->ip6_accept_ra_path = NULL;
+	}
+}
+
 static GObject*
 constructor (GType type,
 			 guint n_construct_params,
@@ -245,6 +283,8 @@ constructor (GType type,
 		NM_DEVICE_GET_CLASS (dev)->update_hw_address (dev);
 
 	priv->dhcp_manager = nm_dhcp_manager_get ();
+
+	update_accept_ra_save (dev);
 
 	priv->initialized = TRUE;
 	return object;
@@ -744,7 +784,8 @@ addrconf6_setup (NMDevice *self)
 	s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
 	nm_ip6_manager_prepare_interface (priv->ip6_manager,
 	                                  nm_device_get_ip_ifindex (self),
-	                                  s_ip6);
+	                                  s_ip6,
+	                                  priv->ip6_accept_ra_path);
 	priv->ip6_waiting_for_config = TRUE;
 
 	return TRUE;
@@ -1589,6 +1630,8 @@ real_act_stage3_ip6_config_start (NMDevice *self, NMDeviceStateReason *reason)
 
 	ip_iface = nm_device_get_ip_iface (self);
 
+	update_accept_ra_save (self);
+
 	priv->dhcp6_mode = IP6_DHCP_OPT_NONE;
 
 	if (   ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_AUTO)
@@ -1600,13 +1643,21 @@ real_act_stage3_ip6_config_start (NMDevice *self, NMDeviceStateReason *reason)
 		nm_ip6_manager_begin_addrconf (priv->ip6_manager, nm_device_get_ip_ifindex (self));
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_DHCP)) {
+		/* Router advertisements shouldn't be used in pure DHCP mode */
+		if (priv->ip6_accept_ra_path)
+			nm_utils_do_sysctl (priv->ip6_accept_ra_path, "0\n");
+
 		priv->dhcp6_mode = IP6_DHCP_OPT_MANAGED;
 		ret = dhcp6_start (self, connection, priv->dhcp6_mode, reason);
 	} else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
 		priv->ip6_ready = TRUE;
 		ret = NM_ACT_STAGE_RETURN_STOP;
-	} else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_MANUAL))
+	} else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
+		/* Router advertisements shouldn't be used in manual mode */
+		if (priv->ip6_accept_ra_path)
+			nm_utils_do_sysctl (priv->ip6_accept_ra_path, "0\n");
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
+	}
 
 	/* Other methods (shared) aren't implemented yet */
 
@@ -2676,6 +2727,10 @@ nm_device_deactivate_quickly (NMDevice *self)
 	dnsmasq_cleanup (self);
 	aipd_cleanup (self);
 
+	/* Turn off router advertisements until they are needed */
+	if (priv->ip6_accept_ra_path)
+		nm_utils_do_sysctl (priv->ip6_accept_ra_path, "0\n");
+
 	/* Call device type-specific deactivation */
 	if (NM_DEVICE_GET_CLASS (self)->deactivate_quickly)
 		NM_DEVICE_GET_CLASS (self)->deactivate_quickly (self);
@@ -3246,6 +3301,13 @@ dispose (GObject *object)
 	dhcp6_cleanup (self, take_down);
 	addrconf6_cleanup (self);
 	dnsmasq_cleanup (self);
+
+	/* reset the saved RA value */
+	if (priv->ip6_accept_ra_path) {
+		nm_utils_do_sysctl (priv->ip6_accept_ra_path,
+		                    priv->ip6_accept_ra_save ? "1\n" : "0\n");
+	}
+	g_free (priv->ip6_accept_ra_path);
 
 	/* Take the device itself down and clear its IPv4 configuration */
 	if (priv->managed && take_down) {

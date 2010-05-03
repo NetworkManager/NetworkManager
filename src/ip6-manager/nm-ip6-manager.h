@@ -73,7 +73,8 @@ GType nm_ip6_manager_get_type (void);
 NMIP6Manager *nm_ip6_manager_get               (void);
 void          nm_ip6_manager_prepare_interface (NMIP6Manager *manager,
                                                 int ifindex,
-                                                NMSettingIP6Config *s_ip6);
+                                                NMSettingIP6Config *s_ip6,
+                                                const char *accept_ra_path);
 void          nm_ip6_manager_begin_addrconf    (NMIP6Manager *manager,
                                                 int ifindex);
 void          nm_ip6_manager_cancel_addrconf   (NMIP6Manager *manager,
