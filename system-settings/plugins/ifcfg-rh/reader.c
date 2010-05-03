@@ -1233,6 +1233,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	              NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS, !svTrueValue (ifcfg, "PEERDNS", TRUE),
 	              NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES, !svTrueValue (ifcfg, "PEERROUTES", TRUE),
 	              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default,
+	              NM_SETTING_IP4_CONFIG_MAY_FAIL, !svTrueValue (ifcfg, "IPV4_FAILURE_FATAL", TRUE),
 	              NULL);
 
 	/* Handle manual settings */
@@ -1488,6 +1489,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	              NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS, !svTrueValue (ifcfg, "IPV6_PEERDNS", TRUE),
 	              NM_SETTING_IP6_CONFIG_IGNORE_AUTO_ROUTES, !svTrueValue (ifcfg, "IPV6_PEERROUTES", TRUE),
 	              NM_SETTING_IP6_CONFIG_NEVER_DEFAULT, never_default,
+	              NM_SETTING_IP6_CONFIG_MAY_FAIL, !svTrueValue (ifcfg, "IPV6_FAILURE_FATAL", FALSE),
 	              NULL);
 
 	if (!strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {

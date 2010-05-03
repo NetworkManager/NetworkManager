@@ -1087,6 +1087,10 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 			svSetValue (ifcfg, "DHCP_CLIENT_ID", value, FALSE);
 	}
 
+	svSetValue (ifcfg, "IPV4_FAILURE_FATAL",
+	            nm_setting_ip4_config_get_may_fail (s_ip4) ? "no" : "yes",
+	            FALSE);
+
 	/* Static routes - route-<name> file */
 	route_path = utils_get_route_path (ifcfg->fileName);
 	if (!route_path) {
@@ -1372,6 +1376,10 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		            nm_setting_ip6_config_get_ignore_auto_routes (s_ip6) ? "no" : "yes",
 		            FALSE);
 	}
+
+	svSetValue (ifcfg, "IPV6_FAILURE_FATAL",
+	            nm_setting_ip6_config_get_may_fail (s_ip6) ? "no" : "yes",
+	            FALSE);
 
 	/* Static routes go to route6-<dev> file */
 	route6_path = utils_get_route6_path (ifcfg->fileName);

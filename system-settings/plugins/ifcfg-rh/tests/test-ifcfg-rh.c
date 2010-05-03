@@ -2011,6 +2011,12 @@ test_read_wired_ipv6_manual (void)
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP6_CONFIG_NEVER_DEFAULT);
 
+	ASSERT (nm_setting_ip6_config_get_may_fail (s_ip6) == TRUE,
+	        "wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_IPV6_MANUAL,
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP6_CONFIG_MAY_FAIL);
+
 	/* IP addresses */
 	ASSERT (nm_setting_ip6_config_get_num_addresses (s_ip6) == 3,
 		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
@@ -5157,6 +5163,7 @@ test_write_wired_static (void)
 
 	g_object_set (s_ip4,
 	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP4_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	addr = nm_ip4_address_new ();
@@ -5188,6 +5195,7 @@ test_write_wired_static (void)
 
 	g_object_set (s_ip6,
 	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	/* Add addresses */
