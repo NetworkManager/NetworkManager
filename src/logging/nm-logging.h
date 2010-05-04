@@ -88,6 +88,9 @@ void _nm_log (const char *loc, const char *func,
               guint32 domain, guint32 level,
               const char *fmt, ...);
 
+const char *nm_logging_level_to_string (void);
+char *nm_logging_domains_to_string (void);
+
 /* Undefine the nm-utils.h logging stuff to ensure errors */
 #undef nm_print_backtrace
 #undef nm_get_timestamp
