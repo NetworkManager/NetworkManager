@@ -652,7 +652,7 @@ process_nduseropt (NMIP6Manager *manager, struct nl_msg *msg)
 		for (i = 0; i < servers->len; i++) {
 			sa = &(g_array_index (servers, NMIP6RDNSS, i));
 			sb = &(g_array_index (device->rdnss_servers, NMIP6RDNSS, i));
-			if (memcmp (&sa->addr, &sb->addr, sizeof (struct in6_addr)) != 0) {
+			if (IN6_ARE_ADDR_EQUAL (&sa->addr, &sb->addr) == FALSE) {
 				changed = TRUE;
 				break;
 			}
@@ -965,11 +965,11 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager, int ifindex)
 			continue;
 		}
 
-		/* Also ignore routes where the destination and gateway are the same,
-		 * which apparently get added by the kernel but return -EINVAL when
-		 * we try to add them via netlink.
+		/* Also ignore link-local routes where the destination and gateway are
+		 * the same, which apparently get added by the kernel but return -EINVAL
+		 * when we try to add them via netlink.
 		 */
-		if (gateway && !memcmp (dest, gateway, sizeof (struct in6_addr)))
+		if (gateway && IN6_ARE_ADDR_EQUAL (dest, gateway))
 			continue;
 
 		ip6route = nm_ip6_route_new ();

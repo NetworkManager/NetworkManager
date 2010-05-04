@@ -203,9 +203,8 @@ void nm_ip6_config_add_nameserver (NMIP6Config *config, const struct in6_addr *n
 
 	/* No dupes */
 	nameservers = (struct in6_addr *)priv->nameservers->data;
-	for (i = 0; i < priv->nameservers->len; i++) {
-		g_return_if_fail (memcmp (nameserver, &nameservers[i], sizeof (struct in6_addr)) != 0);
-	}
+	for (i = 0; i < priv->nameservers->len; i++)
+		g_return_if_fail (IN6_ARE_ADDR_EQUAL (nameserver, &nameservers[i]) == FALSE);
 
 	g_array_append_val (priv->nameservers, *nameserver);
 }
@@ -572,7 +571,7 @@ addr_array_compare (GArray *a, GArray *b)
 	addrs_b = (struct in6_addr *)b->data;
 	for (i = 0; i < a->len; i++) {
 		for (j = 0, found = FALSE; j < b->len; j++) {
-			if (memcmp (&addrs_a[i], &addrs_b[j], sizeof (struct in6_addr)) == 0) {
+			if (IN6_ARE_ADDR_EQUAL (&addrs_a[i], &addrs_b[j])) {
 				found = TRUE;
 				break;
 			}
