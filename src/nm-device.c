@@ -750,8 +750,14 @@ ip6_method_matches (NMConnection *connection, const char *match)
 	const char *method = NULL;
 
 	s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
-	if (s_ip6)
+	if (s_ip6) {
 		method = nm_setting_ip6_config_get_method (s_ip6);
+		g_assert (method);
+	}
+
+	/* Treat missing IP6 setting as IGNORE */
+	if (!s_ip6 && !strcmp (match, NM_SETTING_IP6_CONFIG_METHOD_IGNORE))
+		return TRUE;
 
 	return method && !strcmp (method, match);
 }
