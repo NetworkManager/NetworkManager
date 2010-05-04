@@ -605,10 +605,10 @@ nm_utils_get_proc_sys_net_value (const char *path,
 	long int tmp;
 
 	if (!g_file_get_contents (path, &contents, NULL, &error)) {
-		nm_log_warn (LOGD_DEVICE, "(%s): error reading %s: (%d) %s",
-		             iface, path,
-		             error ? error->code : -1,
-		             error && error->message ? error->message : "(unknown)");
+		nm_log_dbg (LOGD_DEVICE, "(%s): error reading %s: (%d) %s",
+		            iface, path,
+		            error ? error->code : -1,
+		            error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
 	} else {
 		errno = 0;
