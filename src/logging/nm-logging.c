@@ -360,9 +360,9 @@ void
 nm_logging_start (gboolean become_daemon)
 {
 	if (become_daemon)
-		openlog (G_LOG_DOMAIN, 0, LOG_DAEMON);
+		openlog (G_LOG_DOMAIN, LOG_PID, LOG_DAEMON);
 	else
-		openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR, LOG_USER);
+		openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR | LOG_PID, LOG_USER);
 
 	g_log_set_handler (G_LOG_DOMAIN, 
 	                   G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
