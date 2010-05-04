@@ -51,8 +51,12 @@ static gboolean
 hostname_thread_run_cb (gpointer user_data)
 {
 	HostnameThread *ht = (HostnameThread *) user_data;
+	const char *hostname = NULL;
 
-	(*ht->callback) (ht, ht->ret, ht->hostname, ht->user_data);
+	if (strlen (ht->hostname))
+		hostname = ht->hostname;
+
+	(*ht->callback) (ht, ht->ret, hostname, ht->user_data);
 	return FALSE;
 }
 
@@ -148,8 +152,13 @@ nm_policy_set_system_hostname (const char *new_hostname, const char *msg)
 {
 	char old_hostname[HOST_NAME_MAX + 1];
 	int ret = 0;
-	const char *name = new_hostname ? new_hostname : FALLBACK_HOSTNAME;
+	const char *name;
 	gboolean set_hostname = TRUE, changed = FALSE;
+
+	if (new_hostname)
+		g_warn_if_fail (strlen (new_hostname));
+
+	name = (new_hostname && strlen (new_hostname)) ? new_hostname : FALLBACK_HOSTNAME;
 
 	old_hostname[HOST_NAME_MAX] = '\0';
 	errno = 0;
