@@ -5,6 +5,7 @@ cli/src/connections.c
 cli/src/devices.c
 cli/src/network-manager.c
 cli/src/nmcli.c
+cli/src/settings.c
 cli/src/utils.c
 libnm-util/crypto.c
 libnm-util/crypto_gnutls.c
