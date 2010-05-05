@@ -1211,21 +1211,25 @@ check_one_route (struct nl_object *object, void *user_data)
 	}
 }
 
-static void flush_routes (const char *iface, gboolean ipv4_only)
+static void flush_routes (int ifindex, const char *iface, int family)
 {
-	int iface_idx;
 	RouteCheckData check_data;
 
 	g_return_if_fail (iface != NULL);
-	iface_idx = nm_netlink_iface_to_index (iface);
-	if (iface_idx >= 0) {
-		memset (&check_data, 0, sizeof (check_data));
-		check_data.iface = iface;
-		check_data.iface_idx = iface_idx;
-		check_data.family = ipv4_only ? AF_INET : 0;
 
-		foreach_route (check_one_route, &check_data);
+	if (ifindex < 0) {
+		ifindex = nm_netlink_iface_to_index (iface);
+		if (ifindex < 0) {
+			nm_log_dbg (LOGD_DEVICE, "(%s) failed to lookup interface index", iface);
+			return;
+		}
 	}
+
+	memset (&check_data, 0, sizeof (check_data));
+	check_data.iface = iface;
+	check_data.iface_idx = ifindex;
+	check_data.family = family;
+	foreach_route (check_one_route, &check_data);
 }
 
 /*
@@ -1234,23 +1238,25 @@ static void flush_routes (const char *iface, gboolean ipv4_only)
  * Flush all network addresses associated with a network device
  *
  */
-void nm_system_device_flush_routes (NMDevice *dev)
+void nm_system_device_flush_routes (NMDevice *dev, int family)
 {
 	g_return_if_fail (dev != NULL);
 
-	flush_routes (nm_device_get_ip_iface (dev),
-				  nm_device_get_ip6_config (dev) == NULL);
+	flush_routes (nm_device_get_ip_ifindex (dev),
+	              nm_device_get_ip_iface (dev),
+	              family);
 }
 
 /*
  * nm_system_device_flush_routes_with_iface
  *
- * Flush all routes associated with a network device
+ * Flush all routes associated with a network device.  'family' is an
+ * address family, either AF_INET, AF_INET6, or AF_UNSPEC.
  *
  */
-void nm_system_device_flush_routes_with_iface (const char *iface)
+void nm_system_device_flush_routes_with_iface (const char *iface, int family)
 {
-	flush_routes (iface, FALSE);
+	flush_routes (-1, iface, family);
 }
 
 typedef struct {

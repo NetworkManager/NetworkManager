@@ -2767,7 +2767,7 @@ nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason)
 	nm_device_deactivate_quickly (self);
 
 	/* Take out any entries in the routing table and any IP address the device had. */
-	nm_system_device_flush_routes (self);
+	nm_system_device_flush_routes (self, nm_device_get_ip6_config (self) ? AF_UNSPEC : AF_INET);
 	nm_system_device_flush_addresses (self);
 	nm_device_update_ip4_address (self);	
 
