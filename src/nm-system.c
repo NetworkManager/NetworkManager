@@ -1203,6 +1203,25 @@ check_one_route (struct nl_object *object, void *user_data)
 	if (data->family && rtnl_route_get_family (route) != data->family)
 		return;
 
+	/* We don't want to flush IPv6 link-local routes that may exist on the
+	 * the interface since the LL address and routes should normally stay
+	 * assigned all the time.
+	 */
+	if (   (data->family == AF_INET6 || data->family == AF_UNSPEC)
+	    && (rtnl_route_get_family (route) == AF_INET6)) {
+		struct nl_addr *nl;
+		struct in6_addr *addr = NULL;
+
+		nl = rtnl_route_get_dst (route);
+		if (nl)
+			addr = nl_addr_get_binary_addr (nl);
+
+		if (addr) {
+			if (IN6_IS_ADDR_LINKLOCAL (addr) || IN6_IS_ADDR_MC_LINKLOCAL (addr))
+				return;
+		}
+	}
+
 	err = rtnl_route_del (nm_netlink_get_default_handle (), route, 0);
 	if (err < 0) {
 		nm_log_err (LOGD_DEVICE,
