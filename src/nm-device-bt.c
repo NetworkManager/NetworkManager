@@ -635,6 +635,9 @@ bluez_connect_cb (DBusGProxy *proxy,
 		g_free (device);
 	}
 
+	nm_log_dbg (LOGD_BT, "(%s): connect request successful",
+	            nm_device_get_iface (NM_DEVICE (self)));
+
 	/* Stage 3 gets scheduled when Bluez says we're connected */
 	priv->have_iface = TRUE;
 	check_connect_continue (self);
@@ -651,6 +654,17 @@ bluez_property_changed (DBusGProxy *proxy,
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
 	gboolean connected;
 	NMDeviceState state;
+	const char *prop_str = "(unknown)";
+
+	if (G_VALUE_HOLDS_STRING (value))
+		prop_str = g_value_get_string (value);
+	else if (G_VALUE_HOLDS_BOOLEAN (value))
+		prop_str = g_value_get_boolean (value) ? "true" : "false";
+
+	nm_log_dbg (LOGD_BT, "(%s): bluez property '%s' changed to '%s'",
+	            nm_device_get_iface (device),
+	            property,
+	            prop_str);
 
 	if (strcmp (property, "Connected"))
 		return;
@@ -659,6 +673,9 @@ bluez_property_changed (DBusGProxy *proxy,
 	connected = g_value_get_boolean (value);
 	if (connected) {
 		if (state == NM_DEVICE_STATE_CONFIG) {
+			nm_log_dbg (LOGD_BT, "(%s): connected to the device",
+			            nm_device_get_iface (device));
+
 			priv->connected = TRUE;
 			check_connect_continue (self);
 		}
@@ -689,6 +706,9 @@ static gboolean
 bt_connect_timeout (gpointer user_data)
 {
 	NMDeviceBt *self = NM_DEVICE_BT (user_data);
+
+	nm_log_dbg (LOGD_BT, "(%s): initial connection timed out",
+	            nm_device_get_iface (NM_DEVICE (self)));
 
 	NM_DEVICE_BT_GET_PRIVATE (self)->timeout_id = 0;
 	nm_device_state_changed (NM_DEVICE (self),
@@ -753,6 +773,9 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 		// FIXME: set a reason code
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
+
+	nm_log_dbg (LOGD_BT, "(%s): requesting connection to the device",
+	            nm_device_get_iface (device));
 
 	/* Connect to the BT device */
 	dbus_g_proxy_begin_call_with_timeout (priv->type_proxy, "Connect",
