@@ -275,9 +275,15 @@ ppp_failed (NMModem *modem, NMDeviceStateReason reason, gpointer user_data)
 	case NM_DEVICE_STATE_PREPARE:
 	case NM_DEVICE_STATE_CONFIG:
 	case NM_DEVICE_STATE_NEED_AUTH:
-	case NM_DEVICE_STATE_IP_CONFIG:
 	case NM_DEVICE_STATE_ACTIVATED:
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
+		break;
+	case NM_DEVICE_STATE_IP_CONFIG:
+		if (nm_device_ip_config_should_fail (device, FALSE)) {
+			nm_device_state_changed (device,
+			                         NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+		}
 		break;
 	default:
 		break;

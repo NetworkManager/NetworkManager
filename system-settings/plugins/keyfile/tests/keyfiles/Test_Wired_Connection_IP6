@@ -1,0 +1,20 @@
+
+[connection]
+id=Test Wired Connection IP6
+uuid=4e80a56d-c99f-4aad-a6dd-b449bc398c57
+type=802-3-ethernet
+autoconnect=true
+timestamp=6654332
+
+[802-3-ethernet]
+auto-negotiate=true
+mtu=1400
+
+[ipv4]
+method=disabled
+
+[ipv6]
+method=manual
+addresses1=abcd:1234:ffff::cdde/64,abcd:1234:ffff::cdd1
+dns=1111:dddd::aaaa;1::cafe;
+

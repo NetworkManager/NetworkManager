@@ -661,7 +661,8 @@ real_deactivate_quickly (NMModem *self, NMDevice *device)
 	case MM_MODEM_IP_METHOD_STATIC:
 	case MM_MODEM_IP_METHOD_DHCP:
 		iface = nm_device_get_ip_iface (device);
-		nm_system_device_flush_routes_with_iface (iface);
+		/* FIXME: use AF_UNSPEC here when we have IPv6 support */
+		nm_system_device_flush_routes_with_iface (iface, AF_INET);
 		nm_system_device_flush_addresses_with_iface (iface);
 		nm_system_device_set_up_down_with_iface (iface, FALSE, NULL);
 		break;

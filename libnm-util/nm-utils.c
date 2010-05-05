@@ -275,6 +275,8 @@ nm_utils_init (GError **error)
 		if (!crypto_init (error))
 			return FALSE;
 
+		_nm_utils_register_value_transformations ();
+
 		atexit (nm_utils_deinit);
 		initialized = TRUE;
 	}
@@ -745,7 +747,8 @@ nm_utils_convert_string_hash_to_string (const GValue *src_value, GValue *dest_va
 	hash = (GHashTable *) g_value_get_boxed (src_value);
 
 	printable = g_string_new ("[");
-	g_hash_table_foreach (hash, convert_one_string_hash_entry, printable);
+	if (hash)
+		g_hash_table_foreach (hash, convert_one_string_hash_entry, printable);
 	g_string_append (printable, " ]");
 
 	g_value_take_string (dest_value, printable->str);
@@ -858,10 +861,11 @@ nm_utils_convert_ip6_addr_struct_array_to_string (const GValue *src_value, GValu
 
 		g_string_append (printable, "{ ");
 		elements = (GValueArray *) g_ptr_array_index (ptr_array, i++);
-		if (   (elements->n_values != 2)
+		if (   (elements->n_values != 3)
 		    || (G_VALUE_TYPE (g_value_array_get_nth (elements, 0)) != DBUS_TYPE_G_UCHAR_ARRAY)
-		    || (G_VALUE_TYPE (g_value_array_get_nth (elements, 1)) != G_TYPE_UINT)) {
-			g_string_append (printable, "invalid");
+		    || (G_VALUE_TYPE (g_value_array_get_nth (elements, 1)) != G_TYPE_UINT)
+		    || (G_VALUE_TYPE (g_value_array_get_nth (elements, 2)) != DBUS_TYPE_G_UCHAR_ARRAY)) {
+			g_string_append (printable, "invalid }");
 			continue;
 		}
 
@@ -869,7 +873,7 @@ nm_utils_convert_ip6_addr_struct_array_to_string (const GValue *src_value, GValu
 		tmp = g_value_array_get_nth (elements, 0);
 		ba_addr = g_value_get_boxed (tmp);
 		if (ba_addr->len != 16) {
-			g_string_append (printable, "invalid");
+			g_string_append (printable, "invalid }");
 			continue;
 		}
 		addr = (struct in6_addr *) ba_addr->data;
@@ -882,10 +886,23 @@ nm_utils_convert_ip6_addr_struct_array_to_string (const GValue *src_value, GValu
 		tmp = g_value_array_get_nth (elements, 1);
 		prefix = g_value_get_uint (tmp);
 		if (prefix > 128) {
-			g_string_append (printable, "invalid");
+			g_string_append (printable, "invalid }");
 			continue;
 		}
 		g_string_append_printf (printable, "px = %u", prefix);
+		g_string_append (printable, ", ");
+
+		/* IPv6 Gateway */
+		tmp = g_value_array_get_nth (elements, 2);
+		ba_addr = g_value_get_boxed (tmp);
+		if (ba_addr->len != 16) {
+			g_string_append (printable, "invalid }");
+			continue;
+		}
+		addr = (struct in6_addr *) ba_addr->data;
+		memset (buf, 0, sizeof (buf));
+		nm_utils_inet6_ntop (addr, buf);
+		g_string_append_printf (printable, "gw = %s", buf);
 		g_string_append (printable, " }");
 	}
 	g_string_append_c (printable, ']');
@@ -977,6 +994,58 @@ nm_utils_convert_ip6_route_struct_array_to_string (const GValue *src_value, GVal
 	g_string_free (printable, FALSE);
 }
 
+#define OLD_DBUS_TYPE_G_IP6_ADDRESS (dbus_g_type_get_struct ("GValueArray", DBUS_TYPE_G_UCHAR_ARRAY, G_TYPE_UINT, G_TYPE_INVALID))
+#define OLD_DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS (dbus_g_type_get_collection ("GPtrArray", OLD_DBUS_TYPE_G_IP6_ADDRESS))
+
+static void
+nm_utils_convert_old_ip6_addr_array (const GValue *src_value, GValue *dst_value)
+{
+	GPtrArray *src_outer_array;
+	GPtrArray *dst_outer_array;
+	guint i;
+
+	g_return_if_fail (g_type_is_a (G_VALUE_TYPE (src_value), OLD_DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS));
+
+	src_outer_array = (GPtrArray *) g_value_get_boxed (src_value);
+	dst_outer_array = g_ptr_array_new ();
+
+	for (i = 0; src_outer_array && (i < src_outer_array->len); i++) {
+		GValueArray *src_addr_array;
+		GValueArray *dst_addr_array;
+		GValue element = {0, };
+		GValue *src_addr, *src_prefix;
+		GByteArray *ba;
+
+		src_addr_array = (GValueArray *) g_ptr_array_index (src_outer_array, i);
+
+		if (   (src_addr_array->n_values != 2)
+		    || (G_VALUE_TYPE (g_value_array_get_nth (src_addr_array, 0)) != DBUS_TYPE_G_UCHAR_ARRAY)
+		    || (G_VALUE_TYPE (g_value_array_get_nth (src_addr_array, 1)) != G_TYPE_UINT)) {
+			g_warning ("%s: invalid old IPv6 address type", __func__);
+			return;
+		}
+
+		dst_addr_array = g_value_array_new (3);
+
+		src_addr = g_value_array_get_nth (src_addr_array, 0);
+		g_value_array_append (dst_addr_array, src_addr);
+		src_prefix = g_value_array_get_nth (src_addr_array, 1);
+		g_value_array_append (dst_addr_array, src_prefix);
+
+		/* Blank Gateway */
+		g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
+		ba = g_byte_array_new ();
+		g_byte_array_append (ba, (guint8 *) "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", 16);
+		g_value_take_boxed (&element, ba);
+		g_value_array_append (dst_addr_array, &element);
+		g_value_unset (&element);
+
+		g_ptr_array_add (dst_outer_array, dst_addr_array);
+	}
+
+	g_value_take_boxed (dst_value, dst_outer_array);
+}
+
 void
 _nm_utils_register_value_transformations (void)
 {
@@ -1013,6 +1082,9 @@ _nm_utils_register_value_transformations (void)
 		g_value_register_transform_func (DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE,
 		                                 G_TYPE_STRING, 
 		                                 nm_utils_convert_ip6_route_struct_array_to_string);
+		g_value_register_transform_func (OLD_DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS,
+		                                 DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS,
+		                                 nm_utils_convert_old_ip6_addr_array);
 		registered = TRUE;
 	}
 }
@@ -1459,8 +1531,8 @@ nm_utils_ip4_get_default_prefix (guint32 ip)
  * @value: gvalue containing a GPtrArray of GValueArrays of (GArray of guchars) and guint32
  *
  * Utility function to convert a #GPtrArray of #GValueArrays of (#GArray of guchars) and guint32
- * representing a list of NetworkManager IPv6 addresses (which is a pair of address
- * and prefix), into a GSList of #NMIP6Address objects.  The specific format of
+ * representing a list of NetworkManager IPv6 addresses (which is a tuple of address,
+ * prefix, and gateway), into a GSList of #NMIP6Address objects.  The specific format of
  * this serialization is not guaranteed to be stable and the #GValueArray may be
  * extended in the future.
  *
@@ -1479,12 +1551,24 @@ nm_utils_ip6_addresses_from_gvalue (const GValue *value)
 		GValueArray *elements = (GValueArray *) g_ptr_array_index (addresses, i);
 		GValue *tmp;
 		GByteArray *ba_addr;
+		GByteArray *ba_gw = NULL;
 		NMIP6Address *addr;
 		guint32 prefix;
 
-		if (   (elements->n_values != 2)
-		    || (G_VALUE_TYPE (g_value_array_get_nth (elements, 0)) != DBUS_TYPE_G_UCHAR_ARRAY)
+		if (elements->n_values < 2 || elements->n_values > 3) {
+			nm_warning ("%s: ignoring invalid IP6 address structure", __func__);
+			continue;
+		}
+
+		if (   (G_VALUE_TYPE (g_value_array_get_nth (elements, 0)) != DBUS_TYPE_G_UCHAR_ARRAY)
 		    || (G_VALUE_TYPE (g_value_array_get_nth (elements, 1)) != G_TYPE_UINT)) {
+			nm_warning ("%s: ignoring invalid IP6 address structure", __func__);
+			continue;
+		}
+
+		/* Check optional 3rd element (gateway) */
+		if (   elements->n_values == 3
+		    && (G_VALUE_TYPE (g_value_array_get_nth (elements, 2)) != DBUS_TYPE_G_UCHAR_ARRAY)) {
 			nm_warning ("%s: ignoring invalid IP6 address structure", __func__);
 			continue;
 		}
@@ -1505,9 +1589,22 @@ nm_utils_ip6_addresses_from_gvalue (const GValue *value)
 			continue;
 		}
 
+		if (elements->n_values == 3) {
+			tmp = g_value_array_get_nth (elements, 2);
+			ba_gw = g_value_get_boxed (tmp);
+			if (ba_gw->len != 16) {
+				nm_warning ("%s: ignoring invalid IP6 gateway address of length %d",
+				            __func__, ba_gw->len);
+				continue;
+			}
+		}
+
 		addr = nm_ip6_address_new ();
 		nm_ip6_address_set_prefix (addr, prefix);
 		nm_ip6_address_set_address (addr, (const struct in6_addr *) ba_addr->data);
+		if (ba_gw)
+			nm_ip6_address_set_gateway (addr, (const struct in6_addr *) ba_gw->data);
+
 		list = g_slist_prepend (list, addr);
 	}
 
@@ -1522,10 +1619,10 @@ nm_utils_ip6_addresses_from_gvalue (const GValue *value)
  * g_value_unset().
  *
  * Utility function to convert a #GSList of #NMIP6Address objects into a
- * GPtrArray of GValueArrays of (GArray or guchars) and guint32 representing a list
- * of NetworkManager IPv6 addresses (which is a pair of address and prefix).
- * The specific format of this serialization is not guaranteed to be stable and may be
- * extended in the future.
+ * GPtrArray of GValueArrays representing a list of NetworkManager IPv6 addresses
+ * (which is a tuple of address, prefix, and gateway). The specific format of
+ * this serialization is not guaranteed to be stable and may be extended in the
+ * future.
  **/
 void
 nm_utils_ip6_addresses_to_gvalue (GSList *list, GValue *value)
@@ -1541,8 +1638,9 @@ nm_utils_ip6_addresses_to_gvalue (GSList *list, GValue *value)
 		GValue element = {0, };
 		GByteArray *ba;
 
-		array = g_value_array_new (2);
+		array = g_value_array_new (3);
 
+		/* IP address */
 		g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
 		ba = g_byte_array_new ();
 		g_byte_array_append (ba, (guint8 *) nm_ip6_address_get_address (addr), 16);
@@ -1550,8 +1648,17 @@ nm_utils_ip6_addresses_to_gvalue (GSList *list, GValue *value)
 		g_value_array_append (array, &element);
 		g_value_unset (&element);
 
+		/* Prefix */
 		g_value_init (&element, G_TYPE_UINT);
 		g_value_set_uint (&element, nm_ip6_address_get_prefix (addr));
+		g_value_array_append (array, &element);
+		g_value_unset (&element);
+
+		/* Gateway */
+		g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
+		ba = g_byte_array_new ();
+		g_byte_array_append (ba, (guint8 *) nm_ip6_address_get_gateway (addr), 16);
+		g_value_take_boxed (&element, ba);
 		g_value_array_append (array, &element);
 		g_value_unset (&element);
 

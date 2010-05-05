@@ -68,9 +68,11 @@ libtest_policy_hosts_la_SOURCES = \
 	nm-policy-hosts.h
 
 libtest_policy_hosts_la_CPPFLAGS = \
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	$(GLIB_CFLAGS)
 
 libtest_policy_hosts_la_LIBADD = \
+	${top_builddir}/src/logging/libnm-logging.la \
 	$(GLIB_LIBS)
 
 
@@ -123,6 +125,8 @@ NetworkManager_SOURCES = \
 		nm-policy.h \
 		nm-policy-hosts.c \
 		nm-policy-hosts.h \
+		nm-policy-hostname.c \
+		nm-policy-hostname.h \
 		NetworkManagerUtils.c \
 		NetworkManagerUtils.h \
 		nm-system.c \
@@ -137,8 +141,6 @@ NetworkManager_SOURCES = \
 		nm-properties-changed-signal.h \
 		wpa.c \
 		wpa.h \
-		nm-netlink.c \
-		nm-netlink.h \
 		nm-dhcp4-config.c \
 		nm-dhcp4-config.h \
 		nm-dhcp6-config.c \
@@ -206,9 +208,7 @@ BUILT_SOURCES = \
 NetworkManager_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
-	$(HAL_CFLAGS) \
 	$(GUDEV_CFLAGS) \
-	$(OPENSSL_CFLAGS) \
 	$(LIBNL_CFLAGS) \
 	$(GMODULE_CFLAGS) \
 	-DG_DISABLE_DEPRECATED \

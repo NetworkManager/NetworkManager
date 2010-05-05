@@ -560,6 +560,13 @@ test_read_wired_static (const char *file, const char *expected_id)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_METHOD);
 
+	/* Implicit may-fail */
+	ASSERT (nm_setting_ip4_config_get_may_fail (s_ip4) == FALSE,
+	        "wired-static-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
+	        file,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_MAY_FAIL);
+
 	/* DNS Addresses */
 	ASSERT (nm_setting_ip4_config_get_num_dns (s_ip4) == 2,
 	        "wired-static-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
@@ -647,6 +654,13 @@ test_read_wired_static (const char *file, const char *expected_id)
 			file,
 			NM_SETTING_IP6_CONFIG_SETTING_NAME,
 			NM_SETTING_IP6_CONFIG_METHOD);
+
+		/* Implicit may-fail */
+		ASSERT (nm_setting_ip6_config_get_may_fail (s_ip6) == TRUE,
+		        "wired-static-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
+		        file,
+		        NM_SETTING_IP6_CONFIG_SETTING_NAME,
+		        NM_SETTING_IP6_CONFIG_MAY_FAIL);
 
 		/* DNS Addresses */
 		ASSERT (nm_setting_ip6_config_get_num_dns (s_ip6) == 2,
@@ -2011,6 +2025,12 @@ test_read_wired_ipv6_manual (void)
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP6_CONFIG_NEVER_DEFAULT);
 
+	ASSERT (nm_setting_ip6_config_get_may_fail (s_ip6) == TRUE,
+	        "wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_IPV6_MANUAL,
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP6_CONFIG_MAY_FAIL);
+
 	/* IP addresses */
 	ASSERT (nm_setting_ip6_config_get_num_addresses (s_ip6) == 3,
 		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
@@ -2165,6 +2185,7 @@ test_read_wired_ipv6_only (void)
 	const char *expected_dns1 = "1:2:3:4::a";
 	NMIP6Address *ip6_addr;
 	struct in6_addr addr;
+	const char *method;
 
 	connection = connection_from_file (TEST_IFCFG_WIRED_IPV6_ONLY,
 	                                   NULL,
@@ -2217,10 +2238,17 @@ test_read_wired_ipv6_only (void)
 	/* ===== IPv4 SETTING ===== */
 
 	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
-	ASSERT (s_ip4 == NULL,
-	        "wired-ipv6-only-verify-ip4", "failed to verify %s: unexpected %s setting",
+	ASSERT (s_ip4 != NULL,
+	        "wired-ipv6-only-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+
+	method = nm_setting_ip4_config_get_method (s_ip4);
+	ASSERT (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0,
+	        "wired-ipv6-only-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_IPV6_MANUAL,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_METHOD);
 
 	/* ===== IPv6 SETTING ===== */
 
@@ -5149,6 +5177,7 @@ test_write_wired_static (void)
 
 	g_object_set (s_ip4,
 	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP4_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	addr = nm_ip4_address_new ();
@@ -5180,6 +5209,7 @@ test_write_wired_static (void)
 
 	g_object_set (s_ip6,
 	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	/* Add addresses */
@@ -5408,6 +5438,7 @@ test_write_wired_static_ip6_only (void)
 	NMConnection *reread;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
 	NMSettingIP6Config *s_ip6;
 	static unsigned char tmpmac[] = { 0x31, 0x33, 0x33, 0x37, 0xbe, 0xcd };
 	GByteArray *mac;
@@ -5460,6 +5491,17 @@ test_write_wired_static_ip6_only (void)
 	g_byte_array_append (mac, &tmpmac[0], sizeof (tmpmac));
 	g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
 	g_byte_array_free (mac, TRUE);
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+	        "wired-static-ip6-only-write", "failed to allocate new %s setting",
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4,
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
+	              NULL);
 
 	/* IP6 setting */
 	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
@@ -5516,9 +5558,6 @@ test_write_wired_static_ip6_only (void)
 
 	ASSERT (nm_connection_verify (reread, &error),
 	        "wired-static-ip6-only-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_get_setting (reread, NM_TYPE_SETTING_IP4_CONFIG) == NULL,
-	        "wired-static-ip6-only-write-reread-verify", "unexpected IPv4 setting");
 
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
 	        "wired-static-ip6-only-write", "written and re-read connection weren't the same.");

@@ -168,8 +168,7 @@ global:
 	nm_setting_ip4_config_get_dhcp_hostname;
 	nm_setting_ip4_config_get_dhcp_send_hostname;
 	nm_setting_ip4_config_get_never_default;
-	nm_setting_ip6_config_error_get_type;
-	nm_setting_ip6_config_error_quark;
+	nm_setting_ip4_config_get_may_fail;
 	nm_ip6_address_new;
 	nm_ip6_address_dup;
 	nm_ip6_address_ref;
@@ -177,6 +176,8 @@ global:
 	nm_ip6_address_compare;
 	nm_ip6_address_get_address;
 	nm_ip6_address_set_address;
+	nm_ip6_address_get_gateway;
+	nm_ip6_address_set_gateway;
 	nm_ip6_address_get_prefix;
 	nm_ip6_address_set_prefix;
 	nm_ip6_route_new;
@@ -192,6 +193,8 @@ global:
 	nm_ip6_route_set_next_hop;
 	nm_ip6_route_get_metric;
 	nm_ip6_route_set_metric;
+	nm_setting_ip6_config_error_get_type;
+	nm_setting_ip6_config_error_quark;
 	nm_setting_ip6_config_get_type;
 	nm_setting_ip6_config_new;
 	nm_setting_ip6_config_get_method;
@@ -218,6 +221,7 @@ global:
 	nm_setting_ip6_config_get_ignore_auto_routes;
 	nm_setting_ip6_config_get_ignore_auto_dns;
 	nm_setting_ip6_config_get_never_default;
+	nm_setting_ip6_config_get_may_fail;
 	nm_setting_need_secrets;
 	nm_setting_ppp_error_get_type;
 	nm_setting_ppp_error_quark;

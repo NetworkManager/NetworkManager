@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2008 - 2010 Red Hat, Inc.
  */
 
 #ifndef NM_ACTIVE_CONNECTION_H
@@ -30,6 +30,7 @@
 #define NM_ACTIVE_CONNECTION_DEVICES "devices"
 #define NM_ACTIVE_CONNECTION_STATE "state"
 #define NM_ACTIVE_CONNECTION_DEFAULT "default"
+#define NM_ACTIVE_CONNECTION_DEFAULT6 "default6"
 #define NM_ACTIVE_CONNECTION_VPN "vpn"
 
 char *nm_active_connection_get_next_object_path (void);

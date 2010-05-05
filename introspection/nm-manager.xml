@@ -110,7 +110,7 @@
         <tp:docstring>
           A combination of logging domains separated by commas (','), or "NONE"
           to disable logging.  Each domain enables logging for operations
-          related to that domain.  Available domains are: [NONE, HW, RKILL,
+          related to that domain.  Available domains are: [NONE, HW, RFKILL,
           ETHER, WIFI, BT, MB, DHCP4, DHCP6, PPP, WIFI_SCAN, IP4, IP6, AUTOIP4,
           DNS, VPN, SHARING, SUPPLICANT, USER_SET, SYS_SET, SUSPEND, CORE,
           DEVICE, OLPC]

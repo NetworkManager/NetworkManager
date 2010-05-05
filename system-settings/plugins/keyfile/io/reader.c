@@ -337,13 +337,30 @@ split_prefix (char *addr)
 	return slash;
 }
 
+static char *
+split_gw (char *str)
+{
+	char *comma;
+
+	g_return_val_if_fail (str != NULL, NULL);
+
+	/* Find the prefix and split the string */
+	comma = strchr (str, ',');
+	if (comma && comma > str) {
+		comma++;
+		*(comma - 1) = '\0';
+		return comma;
+	}
+	return NULL;
+}
+
 static GPtrArray *
 read_ip6_addresses (GKeyFile *file,
                     const char *setting_name,
                     const char *key)
 {
 	GPtrArray *addresses;
-	struct in6_addr addr;
+	struct in6_addr addr, gw;
 	guint32 prefix;
 	int i = 0;
 
@@ -351,10 +368,11 @@ read_ip6_addresses (GKeyFile *file,
 
 	/* Look for individual addresses */
 	while (i++ < 1000) {
-		char *tmp, *key_name, *str_prefix;
+		char *tmp, *key_name, *str_prefix, *str_gw;
 		int ret;
 		GValueArray *values;
 		GByteArray *address;
+		GByteArray *gateway;
 		GValue value = { 0 };
 
 		key_name = g_strdup_printf ("%s%d", key, i);
@@ -377,6 +395,7 @@ read_ip6_addresses (GKeyFile *file,
 			g_value_array_free (values);
 			goto next;
 		}
+
 		address = g_byte_array_new ();
 		g_byte_array_append (address, (guint8 *) addr.s6_addr, 16);
 		g_value_init (&value, DBUS_TYPE_G_UCHAR_ARRAY);
@@ -401,6 +420,26 @@ read_ip6_addresses (GKeyFile *file,
 		g_value_array_append (values, &value);
 		g_value_unset (&value);
 
+		/* Gateway (optional) */
+		str_gw = split_gw (str_prefix);
+		if (str_gw) {
+			ret = inet_pton (AF_INET6, str_gw, &gw);
+			if (ret <= 0) {
+				g_warning ("%s: ignoring invalid IPv6 %s gateway '%s'", __func__, key_name, tmp);
+				g_value_array_free (values);
+				goto next;
+			}
+
+			if (!IN6_IS_ADDR_UNSPECIFIED (&gw)) {
+				gateway = g_byte_array_new ();
+				g_byte_array_append (gateway, (guint8 *) gw.s6_addr, 16);
+				g_value_init (&value, DBUS_TYPE_G_UCHAR_ARRAY);
+				g_value_take_boxed (&value, gateway);
+				g_value_array_append (values, &value);
+				g_value_unset (&value);
+			}
+		}
+
 		g_ptr_array_add (addresses, values);
 
 next:
@@ -422,7 +461,6 @@ ip6_addr_parser (NMSetting *setting, const char *key, GKeyFile *keyfile)
 	const char *setting_name = nm_setting_get_name (setting);
 
 	addresses = read_ip6_addresses (keyfile, setting_name, key);
-
 	if (addresses) {
 		g_object_set (setting, key, addresses, NULL);
 		g_ptr_array_foreach (addresses, free_one_ip6_address, NULL);

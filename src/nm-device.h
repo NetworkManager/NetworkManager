@@ -38,7 +38,8 @@ typedef enum NMActStageReturn
 {
 	NM_ACT_STAGE_RETURN_FAILURE = 0,
 	NM_ACT_STAGE_RETURN_SUCCESS,
-	NM_ACT_STAGE_RETURN_POSTPONE
+	NM_ACT_STAGE_RETURN_POSTPONE,
+	NM_ACT_STAGE_RETURN_STOP         /* This activation chain is done */
 } NMActStageReturn;
 
 
@@ -128,7 +129,9 @@ void            nm_device_set_path (NMDevice *dev, const char *path);
 
 const char *	nm_device_get_udi		(NMDevice *dev);
 const char *	nm_device_get_iface		(NMDevice *dev);
+int             nm_device_get_ifindex	(NMDevice *dev);
 const char *	nm_device_get_ip_iface	(NMDevice *dev);
+int             nm_device_get_ip_ifindex(NMDevice *dev);
 const char *	nm_device_get_driver	(NMDevice *dev);
 const char *	nm_device_get_type_desc (NMDevice *dev);
 

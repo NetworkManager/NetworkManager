@@ -69,7 +69,6 @@ enum {
 	PROP_HW_ADDRESS,
 	PROP_COMPANION,
 	PROP_ACTIVE_CHANNEL,
-	PROP_IFINDEX,
 
 	LAST_PROP
 };
@@ -98,7 +97,6 @@ struct _NMDeviceOlpcMeshPrivate
 	gboolean          dispose_has_run;
 
 	struct ether_addr hw_addr;
-	guint32           ifindex;
 
 	GByteArray *      ssid;
 
@@ -263,7 +261,8 @@ constructor (GType type,
 	priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
 
 	nm_log_dbg (LOGD_HW | LOGD_OLPC_MESH, "(%s): kernel ifindex %d",
-	            nm_device_get_iface (NM_DEVICE (self)), priv->ifindex);
+	            nm_device_get_iface (NM_DEVICE (self)),
+	            nm_device_get_ifindex (NM_DEVICE (self)));
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
@@ -539,15 +538,6 @@ nm_device_olpc_mesh_set_ssid (NMDeviceOlpcMesh *self, const GByteArray * ssid)
 	close (sk);
 }
 
-
-guint32
-nm_device_olpc_mesh_get_ifindex (NMDeviceOlpcMesh *self)
-{
-	g_return_val_if_fail (self != NULL, FALSE);
-
-	return NM_DEVICE_OLPC_MESH_GET_PRIVATE (self)->ifindex;
-}
-
 /****************************************************************************/
 
 static void
@@ -647,15 +637,6 @@ real_act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
-static NMActStageReturn
-real_act_stage4_ip4_config_timeout (NMDevice *dev,
-                                    NMIP4Config **config,
-                                    NMDeviceStateReason *reason)
-{
-	return NM_ACT_STAGE_RETURN_FAILURE;
-}
-
-
 static void
 dispose (GObject *object)
 {
@@ -701,9 +682,6 @@ get_property (GObject *object, guint prop_id,
 	case PROP_ACTIVE_CHANNEL:
 		g_value_set_uint (value, nm_device_olpc_mesh_get_channel (device));
 		break;
-	case PROP_IFINDEX:
-		g_value_set_uint (value, nm_device_olpc_mesh_get_ifindex (device));
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -714,13 +692,7 @@ static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
-	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (object);
-
 	switch (prop_id) {
-	case PROP_IFINDEX:
-		/* construct-only */
-		priv->ifindex = g_value_get_uint (value);
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -753,7 +725,6 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 
 	parent_class->act_stage1_prepare = real_act_stage1_prepare;
 	parent_class->act_stage2_config = real_act_stage2_config;
-	parent_class->act_stage4_ip4_config_timeout = real_act_stage4_ip4_config_timeout;
 
 	/* Properties */
 	g_object_class_install_property
@@ -779,13 +750,6 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 		                   "Active channel",
 		                   0, G_MAXUINT32, 0,
 		                   G_PARAM_READABLE));
-
-	g_object_class_install_property (object_class, PROP_IFINDEX,
-		g_param_spec_uint (NM_DEVICE_OLPC_MESH_IFINDEX,
-		                   "Ifindex",
-		                   "Interface index",
-		                   0, G_MAXUINT32, 0,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	signals[PROPERTIES_CHANGED] =
 		nm_properties_changed_signal_new (object_class,
@@ -986,8 +950,7 @@ state_changed_cb (NMDevice *device, NMDeviceState state, gpointer user_data)
 NMDevice *
 nm_device_olpc_mesh_new (const char *udi,
                          const char *iface,
-                         const char *driver,
-                         guint32 ifindex)
+                         const char *driver)
 {
 	GObject *obj;
 
@@ -999,7 +962,6 @@ nm_device_olpc_mesh_new (const char *udi,
 	                    NM_DEVICE_INTERFACE_UDI, udi,
 	                    NM_DEVICE_INTERFACE_IFACE, iface,
 	                    NM_DEVICE_INTERFACE_DRIVER, driver,
-	                    NM_DEVICE_OLPC_MESH_IFINDEX, ifindex,
 	                    NM_DEVICE_INTERFACE_TYPE_DESC, "802.11 OLPC Mesh",
 	                    NM_DEVICE_INTERFACE_DEVICE_TYPE, NM_DEVICE_TYPE_OLPC_MESH,
 	                    NULL);

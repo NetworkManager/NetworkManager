@@ -36,7 +36,7 @@
 #include "nm-utils.h"
 #include "nm-logging.h"
 
-G_DEFINE_TYPE (NMDHCPDhcpcd, nm_dhcp_dhcpcd, NM_TYPE_DHCP_DHCPCD)
+G_DEFINE_TYPE (NMDHCPDhcpcd, nm_dhcp_dhcpcd, NM_TYPE_DHCP_CLIENT)
 
 #define NM_DHCP_DHCPCD_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_DHCPCD, NMDHCPDhcpcdPrivate))
 
@@ -92,7 +92,7 @@ real_ip4_start (NMDHCPClient *client,
 {
 	NMDHCPDhcpcdPrivate *priv = NM_DHCP_DHCPCD_GET_PRIVATE (client);
 	GPtrArray *argv = NULL;
-	GPid pid = 0;
+	GPid pid = -1;
 	GError *error = NULL;
 	char *pid_contents = NULL, *binary_name, *cmd_str;
 	const char *iface, *uuid, *hostname;
@@ -147,6 +147,7 @@ real_ip4_start (NMDHCPClient *client,
 	                    &dhcpcd_child_setup, NULL, &pid, &error)) {
 		nm_log_warn (LOGD_DHCP4, "dhcpcd failed to start.  error: '%s'", error->message);
 		g_error_free (error);
+		pid = -1;
 	} else
 		nm_log_info (LOGD_DHCP4, "dhcpcd started with pid %d", pid);
 

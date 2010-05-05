@@ -33,12 +33,15 @@
  * implemented in the backend files in backends/ directory
  */
 
-void			nm_system_device_flush_routes				(NMDevice *dev);
-void			nm_system_device_flush_routes_with_iface	(const char *iface);
+void			nm_system_device_flush_routes				(NMDevice *dev, int family);
+void			nm_system_device_flush_routes_with_iface	(const char *iface, int family);
 
 gboolean		nm_system_replace_default_ip4_route   (const char *iface,
                                                        guint32 gw,
                                                        guint32 mss);
+
+gboolean		nm_system_replace_default_ip6_route   (const char *iface,
+                                                       const struct in6_addr *gw);
 
 gboolean		nm_system_replace_default_ip4_route_vpn (const char *iface,
                                                          guint32 ext_gw,

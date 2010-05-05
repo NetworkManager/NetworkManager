@@ -179,6 +179,36 @@ nm_logging_setup (const char *level, const char *domains, GError **error)
 	return TRUE;
 }
 
+const char *
+nm_logging_level_to_string (void)
+{
+	const LogDesc *diter;
+
+	for (diter = &level_descs[0]; diter->name; diter++) {
+		if (diter->num == log_level)
+			return diter->name;
+	}
+	g_warn_if_reached ();
+	return "";
+}
+
+char *
+nm_logging_domains_to_string (void)
+{
+	const LogDesc *diter;
+	GString *str;
+
+	str = g_string_sized_new (75);
+	for (diter = &domain_descs[0]; diter->name; diter++) {
+		if (diter->num & log_domains) {
+			if (str->len)
+				g_string_append_c (str, ',');
+			g_string_append (str, diter->name);
+		}
+	}
+	return g_string_free (str, FALSE);
+}
+
 void _nm_log (const char *loc,
               const char *func,
               guint32 domain,
@@ -330,9 +360,9 @@ void
 nm_logging_start (gboolean become_daemon)
 {
 	if (become_daemon)
-		openlog (G_LOG_DOMAIN, 0, LOG_DAEMON);
+		openlog (G_LOG_DOMAIN, LOG_PID, LOG_DAEMON);
 	else
-		openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR, LOG_USER);
+		openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR | LOG_PID, LOG_USER);
 
 	g_log_set_handler (G_LOG_DOMAIN, 
 	                   G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,

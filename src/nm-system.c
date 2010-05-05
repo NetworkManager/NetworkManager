@@ -48,7 +48,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-logging.h"
-#include "nm-netlink.h"
+#include "nm-netlink-monitor.h"
 
 /* Because of a bug in libnl, rtnl.h should be included before route.h */
 #include <netlink/route/rtnl.h>
@@ -196,8 +196,10 @@ sync_addresses (const char *iface, int ifindex, int family,
 	struct nl_cache *addr_cache;
 	struct rtnl_addr *filter_addr, *match_addr;
 	struct nl_object *match;
+	struct nl_addr *nladdr;
 	int i, err;
 	guint32 log_domain = (family == AF_INET) ? LOGD_IP4 : LOGD_IP6;
+	char buf[INET6_ADDRSTRLEN + 1];
 
 	log_domain |= LOGD_DEVICE;
 
@@ -218,20 +220,22 @@ sync_addresses (const char *iface, int ifindex, int family,
 	if (family)
 		rtnl_addr_set_family (filter_addr, family);
 
+	nm_log_dbg (log_domain, "(%s): syncing addresses (family %d)", iface, family);
+
 	/* Walk through the cache, comparing the addresses already on
 	 * the interface to the addresses in addrs.
 	 */
 	for (match = nl_cache_get_first (addr_cache); match; match = nl_cache_get_next (match)) {
-		match_addr = (struct rtnl_addr *)match;
+		gboolean buf_valid = FALSE;
+		match_addr = (struct rtnl_addr *) match;
 
 		/* Skip addresses not on our interface */
-		if (!nl_object_match_filter (match, (struct nl_object *)filter_addr))
+		if (!nl_object_match_filter (match, (struct nl_object *) filter_addr))
 			continue;
 
 		if (addrs) {
 			for (i = 0; i < num_addrs; i++) {
-				if (addrs[i] &&
-					nl_object_identical (match, (struct nl_object *)addrs[i]))
+				if (addrs[i] && nl_object_identical (match, (struct nl_object *) addrs[i]))
 					break;
 			}
 
@@ -245,10 +249,31 @@ sync_addresses (const char *iface, int ifindex, int family,
 			}
 		}
 
+		nladdr = rtnl_addr_get_local (match_addr);
+
 		/* Don't delete IPv6 link-local addresses; they don't belong to NM */
-		if (rtnl_addr_get_family (match_addr) == AF_INET6 &&
-			rtnl_addr_get_scope (match_addr) == RT_SCOPE_LINK) {
-			continue;
+		if (rtnl_addr_get_family (match_addr) == AF_INET6) {
+			struct in6_addr *tmp;
+
+			if (rtnl_addr_get_scope (match_addr) == RT_SCOPE_LINK) {
+				nm_log_dbg (log_domain, "(%s): ignoring IPv6 link-local address", iface);
+				continue;
+			}
+
+			tmp = nl_addr_get_binary_addr (nladdr);
+			if (inet_ntop (AF_INET6, tmp, buf, sizeof (buf)))
+				buf_valid = TRUE;
+		} else if (rtnl_addr_get_family (match_addr) == AF_INET) {
+			struct in_addr *tmp;
+
+			tmp = nl_addr_get_binary_addr (nladdr);
+			if (inet_ntop (AF_INET, tmp, buf, sizeof (buf)))
+				buf_valid = TRUE;
+		}
+
+		if (buf_valid) {
+			nm_log_dbg (log_domain, "(%s): removing address '%s/%d'",
+			            iface, buf, nl_addr_get_prefixlen (nladdr));
 		}
 
 		/* Otherwise, match_addr should be removed from the interface. */
@@ -264,8 +289,28 @@ sync_addresses (const char *iface, int ifindex, int family,
 
 	/* Now add the remaining new addresses */
 	for (i = 0; i < num_addrs; i++) {
+		struct in6_addr *in6tmp;
+		struct in_addr *in4tmp;
+		gboolean buf_valid = FALSE;
+
 		if (!addrs[i])
 			continue;
+
+		nladdr = rtnl_addr_get_local (addrs[i]);
+		if (rtnl_addr_get_family (addrs[i]) == AF_INET6) {
+			in6tmp = nl_addr_get_binary_addr (nladdr);
+			if (inet_ntop (AF_INET6, in6tmp, buf, sizeof (buf)))
+				buf_valid = TRUE;
+		} else if (rtnl_addr_get_family (addrs[i]) == AF_INET) {
+			in4tmp = nl_addr_get_binary_addr (nladdr);
+			if (inet_ntop (AF_INET, in4tmp, buf, sizeof (buf)))
+				buf_valid = TRUE;
+		}
+
+		if (buf_valid) {
+			nm_log_dbg (log_domain, "(%s): adding address '%s/%d'",
+			            iface, buf, nl_addr_get_prefixlen (nladdr));
+		}
 
 		err = rtnl_addr_add (nlh, addrs[i], 0);
 		if (err < 0) {
@@ -460,7 +505,7 @@ nm_system_device_set_ip6_route (const char *iface,
 	g_return_val_if_fail (route != NULL, NULL);
 
 	/* Destination */
-	dest_addr = nl_addr_build (AF_INET6, (struct in6_addr *)ip6_dest, sizeof (*ip6_dest));
+	dest_addr = nl_addr_build (AF_INET6, (struct in6_addr *) ip6_dest, sizeof (*ip6_dest));
 	g_return_val_if_fail (dest_addr != NULL, NULL);
 	nl_addr_set_prefixlen (dest_addr, (int) ip6_prefix);
 
@@ -469,7 +514,7 @@ nm_system_device_set_ip6_route (const char *iface,
 
 	/* Gateway */
 	if (ip6_gateway && !IN6_IS_ADDR_UNSPECIFIED (ip6_gateway)) {
-		gw_addr = nl_addr_build (AF_INET6, (struct in6_addr *)ip6_gateway, sizeof (*ip6_gateway));
+		gw_addr = nl_addr_build (AF_INET6, (struct in6_addr *) ip6_gateway, sizeof (*ip6_gateway));
 		if (gw_addr) {
 			rtnl_route_set_gateway (route, gw_addr);
 			rtnl_route_set_scope (route, RT_SCOPE_UNIVERSE);
@@ -940,6 +985,153 @@ nm_system_replace_default_ip4_route (const char *iface, guint32 gw, guint32 mss)
 	return success;
 }
 
+static struct rtnl_route *
+add_ip6_route_to_gateway (const char *iface, const struct in6_addr *gw)
+{
+	struct nl_handle *nlh;
+	struct rtnl_route *route = NULL;
+	struct nl_addr *gw_addr = NULL;
+	int iface_idx, err;
+
+	nlh = nm_netlink_get_default_handle ();
+	g_return_val_if_fail (nlh != NULL, NULL);
+
+	iface_idx = nm_netlink_iface_to_index (iface);
+	if (iface_idx < 0)
+		return NULL;
+
+	/* Gateway might be over a bridge; try adding a route to gateway first */
+	route = rtnl_route_alloc ();
+	if (route == NULL)
+		return NULL;
+
+	rtnl_route_set_family (route, AF_INET6);
+	rtnl_route_set_table (route, RT_TABLE_MAIN);
+	rtnl_route_set_oif (route, iface_idx);
+	rtnl_route_set_scope (route, RT_SCOPE_LINK);
+
+	gw_addr = nl_addr_build (AF_INET, (void *) gw, sizeof (*gw));
+	if (!gw_addr)
+		goto error;
+	nl_addr_set_prefixlen (gw_addr, 128);
+	rtnl_route_set_dst (route, gw_addr);
+	nl_addr_put (gw_addr);
+
+	/* Add direct route to the gateway */
+	err = rtnl_route_add (nlh, route, 0);
+	if (err) {
+		nm_log_err (LOGD_DEVICE | LOGD_IP6,
+		            "(%s): failed to add IPv4 route to gateway (%d)",
+		            iface, err);
+		goto error;
+	}
+
+	return route;
+
+error:
+	rtnl_route_put (route);
+	return NULL;
+}
+
+static int
+replace_default_ip6_route (const char *iface, const struct in6_addr *gw)
+{
+	struct rtnl_route *route = NULL;
+	struct nl_handle *nlh;
+	struct nl_addr *gw_addr = NULL;
+	int iface_idx, err = -1;
+
+	g_return_val_if_fail (iface != NULL, -ENODEV);
+
+	nlh = nm_netlink_get_default_handle ();
+	g_return_val_if_fail (nlh != NULL, -ENOMEM);
+
+	iface_idx = nm_netlink_iface_to_index (iface);
+	if (iface_idx < 0)
+		return -ENODEV;
+
+	route = rtnl_route_alloc();
+	g_return_val_if_fail (route != NULL, -ENOMEM);
+
+	rtnl_route_set_family (route, AF_INET6);
+	rtnl_route_set_table (route, RT_TABLE_MAIN);
+	rtnl_route_set_scope (route, RT_SCOPE_UNIVERSE);
+	rtnl_route_set_oif (route, iface_idx);
+
+	if (gw && !IN6_IS_ADDR_UNSPECIFIED (gw)) {
+		/* Build up the gateway address */
+		gw_addr = nl_addr_build (AF_INET6, (void *) gw, sizeof (*gw));
+		if (!gw_addr) {
+			err = -ENOMEM;
+			goto out;
+		}
+		nl_addr_set_prefixlen (gw_addr, -1);
+		rtnl_route_set_gateway (route, gw_addr);
+	}
+
+	/* Add the new default route */
+	err = rtnl_route_add (nlh, route, NLM_F_REPLACE);
+	if (err == -EEXIST) {
+		/* FIXME: even though we use NLM_F_REPLACE the kernel won't replace
+		 * the route if it's the same.  Should try to remove it first, then
+		 * add the new one again here.
+		 */
+		err = 0;
+	}
+
+out:
+	if (gw_addr)
+		nl_addr_put (gw_addr);
+	rtnl_route_put (route);
+	return err;
+}
+
+/*
+ * nm_system_replace_default_ip6_route
+ *
+ * Replace default IPv6 route with one via the given gateway
+ *
+ */
+gboolean
+nm_system_replace_default_ip6_route (const char *iface, const struct in6_addr *gw)
+{
+	struct rtnl_route *gw_route = NULL;
+	struct nl_handle *nlh;
+	gboolean success = FALSE;
+	int err;
+
+	nlh = nm_netlink_get_default_handle ();
+	g_return_val_if_fail (nlh != NULL, FALSE);
+
+	err = replace_default_ip6_route (iface, gw);
+	if (err == 0) {
+		return TRUE;
+	} else if (err != -ESRCH) {
+		nm_log_err (LOGD_DEVICE | LOGD_IP6,
+		            "(%s): failed to set IPv6 default route: %d",
+		            iface, err);
+		return FALSE;
+	}
+
+	/* Try adding a direct route to the gateway first */
+	gw_route = add_ip6_route_to_gateway (iface, gw);
+	if (!gw_route)
+		return FALSE;
+
+	/* Try adding the original route again */
+	err = replace_default_ip6_route (iface, gw);
+	if (err != 0) {
+		rtnl_route_del (nlh, gw_route, 0);
+		nm_log_err (LOGD_DEVICE | LOGD_IP6,
+		            "(%s): failed to set IPv6 default route (pass #2): %d",
+		            iface, err);
+	} else
+		success = TRUE;
+
+	rtnl_route_put (gw_route);
+	return success;
+}
+
 static void flush_addresses (const char *iface, gboolean ipv4_only)
 {
 	int iface_idx;
@@ -947,7 +1139,7 @@ static void flush_addresses (const char *iface, gboolean ipv4_only)
 	g_return_if_fail (iface != NULL);
 	iface_idx = nm_netlink_iface_to_index (iface);
 	if (iface_idx >= 0)
-		sync_addresses (iface, iface_idx, ipv4_only ? AF_INET : 0, NULL, 0);
+		sync_addresses (iface, iface_idx, ipv4_only ? AF_INET : AF_UNSPEC, NULL, 0);
 }
 
 /*
@@ -986,7 +1178,7 @@ foreach_route (void (*callback)(struct nl_object *, gpointer),
 
 	nlh = nm_netlink_get_default_handle ();
 	route_cache = rtnl_route_alloc_cache (nlh);
-	nl_cache_mngt_provide (route_cache);
+	g_assert (route_cache);
 	nl_cache_foreach (route_cache, callback, user_data);
 	nl_cache_free (route_cache);
 }
@@ -1011,6 +1203,25 @@ check_one_route (struct nl_object *object, void *user_data)
 	if (data->family && rtnl_route_get_family (route) != data->family)
 		return;
 
+	/* We don't want to flush IPv6 link-local routes that may exist on the
+	 * the interface since the LL address and routes should normally stay
+	 * assigned all the time.
+	 */
+	if (   (data->family == AF_INET6 || data->family == AF_UNSPEC)
+	    && (rtnl_route_get_family (route) == AF_INET6)) {
+		struct nl_addr *nl;
+		struct in6_addr *addr = NULL;
+
+		nl = rtnl_route_get_dst (route);
+		if (nl)
+			addr = nl_addr_get_binary_addr (nl);
+
+		if (addr) {
+			if (IN6_IS_ADDR_LINKLOCAL (addr) || IN6_IS_ADDR_MC_LINKLOCAL (addr))
+				return;
+		}
+	}
+
 	err = rtnl_route_del (nm_netlink_get_default_handle (), route, 0);
 	if (err < 0) {
 		nm_log_err (LOGD_DEVICE,
@@ -1019,21 +1230,25 @@ check_one_route (struct nl_object *object, void *user_data)
 	}
 }
 
-static void flush_routes (const char *iface, gboolean ipv4_only)
+static void flush_routes (int ifindex, const char *iface, int family)
 {
-	int iface_idx;
 	RouteCheckData check_data;
 
 	g_return_if_fail (iface != NULL);
-	iface_idx = nm_netlink_iface_to_index (iface);
-	if (iface_idx >= 0) {
-		memset (&check_data, 0, sizeof (check_data));
-		check_data.iface = iface;
-		check_data.iface_idx = iface_idx;
-		check_data.family = ipv4_only ? AF_INET : 0;
 
-		foreach_route (check_one_route, &check_data);
+	if (ifindex < 0) {
+		ifindex = nm_netlink_iface_to_index (iface);
+		if (ifindex < 0) {
+			nm_log_dbg (LOGD_DEVICE, "(%s) failed to lookup interface index", iface);
+			return;
+		}
 	}
+
+	memset (&check_data, 0, sizeof (check_data));
+	check_data.iface = iface;
+	check_data.iface_idx = ifindex;
+	check_data.family = family;
+	foreach_route (check_one_route, &check_data);
 }
 
 /*
@@ -1042,23 +1257,25 @@ static void flush_routes (const char *iface, gboolean ipv4_only)
  * Flush all network addresses associated with a network device
  *
  */
-void nm_system_device_flush_routes (NMDevice *dev)
+void nm_system_device_flush_routes (NMDevice *dev, int family)
 {
 	g_return_if_fail (dev != NULL);
 
-	flush_routes (nm_device_get_ip_iface (dev),
-				  nm_device_get_ip6_config (dev) == NULL);
+	flush_routes (nm_device_get_ip_ifindex (dev),
+	              nm_device_get_ip_iface (dev),
+	              family);
 }
 
 /*
  * nm_system_device_flush_routes_with_iface
  *
- * Flush all routes associated with a network device
+ * Flush all routes associated with a network device.  'family' is an
+ * address family, either AF_INET, AF_INET6, or AF_UNSPEC.
  *
  */
-void nm_system_device_flush_routes_with_iface (const char *iface)
+void nm_system_device_flush_routes_with_iface (const char *iface, int family)
 {
-	flush_routes (iface, FALSE);
+	flush_routes (-1, iface, family);
 }
 
 typedef struct {

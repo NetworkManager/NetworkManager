@@ -34,6 +34,8 @@
 #include <linux/if.h>
 #include <errno.h>
 
+#include <netlink/route/addr.h>
+
 #include "nm-glib-compat.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-interface.h"
@@ -43,7 +45,6 @@
 #include "nm-supplicant-manager.h"
 #include "nm-supplicant-interface.h"
 #include "nm-supplicant-config.h"
-#include "nm-netlink.h"
 #include "nm-netlink-monitor.h"
 #include "nm-system.h"
 #include "nm-setting-connection.h"
@@ -105,7 +106,6 @@ typedef struct {
 
 	struct ether_addr	hw_addr;
 	gboolean			carrier;
-	guint32				ifindex;
 
 	NMNetlinkMonitor *  monitor;
 	gulong              link_connected_id;
@@ -133,7 +133,6 @@ enum {
 	PROP_HW_ADDRESS,
 	PROP_SPEED,
 	PROP_CARRIER,
-	PROP_IFINDEX,
 
 	LAST_PROP
 };
@@ -246,11 +245,10 @@ carrier_on (NMNetlinkMonitor *monitor,
 {
 	NMDevice *device = NM_DEVICE (user_data);
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	guint32 caps;
 
 	/* Make sure signal is for us */
-	if (idx == priv->ifindex) {
+	if (idx == nm_device_get_ifindex (device)) {
 		/* Ignore spurious netlink messages */
 		caps = nm_device_get_capabilities (device);
 		if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
@@ -267,11 +265,10 @@ carrier_off (NMNetlinkMonitor *monitor,
 {
 	NMDevice *device = NM_DEVICE (user_data);
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	guint32 caps;
 
 	/* Make sure signal is for us */
-	if (idx == priv->ifindex) {
+	if (idx == nm_device_get_ifindex (device)) {
 		NMDeviceState state;
 		gboolean defer = FALSE;
 
@@ -312,7 +309,8 @@ constructor (GType type,
 	priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
 	nm_log_dbg (LOGD_HW | LOGD_OLPC_MESH, "(%s): kernel ifindex %d",
-	            nm_device_get_iface (NM_DEVICE (self)), priv->ifindex);
+	            nm_device_get_iface (NM_DEVICE (self)),
+	            nm_device_get_ifindex (NM_DEVICE (self)));
 
 	caps = nm_device_get_capabilities (self);
 	if (caps & NM_DEVICE_CAP_CARRIER_DETECT) {
@@ -331,7 +329,7 @@ constructor (GType type,
 
 		/* Get initial link state */
 		if (!nm_netlink_monitor_get_flags_sync (priv->monitor,
-		                                        priv->ifindex,
+		                                        nm_device_get_ifindex (NM_DEVICE (self)),
 		                                        &ifflags,
 		                                        &error)) {
 			nm_log_warn (LOGD_HW | LOGD_ETHER,
@@ -426,8 +424,7 @@ real_hw_take_down (NMDevice *dev)
 NMDevice *
 nm_device_ethernet_new (const char *udi,
 						const char *iface,
-						const char *driver,
-						guint32 ifindex)
+						const char *driver)
 {
 	g_return_val_if_fail (udi != NULL, NULL);
 	g_return_val_if_fail (iface != NULL, NULL);
@@ -437,7 +434,6 @@ nm_device_ethernet_new (const char *udi,
 	                                  NM_DEVICE_INTERFACE_UDI, udi,
 	                                  NM_DEVICE_INTERFACE_IFACE, iface,
 	                                  NM_DEVICE_INTERFACE_DRIVER, driver,
-	                                  NM_DEVICE_ETHERNET_IFINDEX, ifindex,
 	                                  NM_DEVICE_INTERFACE_TYPE_DESC, "Ethernet",
 	                                  NM_DEVICE_INTERFACE_DEVICE_TYPE, NM_DEVICE_TYPE_ETHERNET,
 	                                  NULL);
@@ -457,14 +453,6 @@ nm_device_ethernet_get_address (NMDeviceEthernet *self, struct ether_addr *addr)
 	g_return_if_fail (addr != NULL);
 
 	memcpy (addr, &(NM_DEVICE_ETHERNET_GET_PRIVATE (self)->hw_addr), sizeof (struct ether_addr));
-}
-
-guint32
-nm_device_ethernet_get_ifindex (NMDeviceEthernet *self)
-{
-	g_return_val_if_fail (self != NULL, FALSE);
-
-	return NM_DEVICE_ETHERNET_GET_PRIVATE (self)->ifindex;
 }
 
 /* Returns speed in Mb/s */
@@ -1618,7 +1606,7 @@ ip4_match_config (NMDevice *self, NMConnection *connection)
 	int ifindex;
 	AddrData check_data;
 
-	ifindex = nm_device_ethernet_get_ifindex (NM_DEVICE_ETHERNET (self));
+	ifindex = nm_device_get_ifindex (self);
 
 	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 	g_assert (s_con);
@@ -1790,9 +1778,6 @@ get_property (GObject *object, guint prop_id,
 	case PROP_CARRIER:
 		g_value_set_boolean (value, priv->carrier);
 		break;
-	case PROP_IFINDEX:
-		g_value_set_uint (value, priv->ifindex);
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1803,13 +1788,7 @@ static void
 set_property (GObject *object, guint prop_id,
 			  const GValue *value, GParamSpec *pspec)
 {
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (object);
-
 	switch (prop_id) {
-	case PROP_IFINDEX:
-		/* construct-only */
-		priv->ifindex = g_value_get_uint (value);
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1875,14 +1854,6 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 							   "Carrier",
 							   FALSE,
 							   G_PARAM_READABLE));
-
-	g_object_class_install_property
-		(object_class, PROP_IFINDEX,
-		 g_param_spec_uint (NM_DEVICE_ETHERNET_IFINDEX,
-						   "Ifindex",
-						   "Interface index",
-						   0, G_MAXUINT32, 0,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	/* Signals */
 	signals[PROPERTIES_CHANGED] = 
