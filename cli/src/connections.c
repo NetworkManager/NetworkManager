@@ -373,7 +373,7 @@ show_connection (NMConnection *data, gpointer user_data)
 	if (s_con) {
 		/* Obtain field values */
 		timestamp = nm_setting_connection_get_timestamp (s_con);
-		timestamp_str = g_strdup_printf ("%ld", timestamp);
+		timestamp_str = g_strdup_printf ("%" G_GUINT64_FORMAT, timestamp);
 		strftime (timestamp_real_str, sizeof (timestamp_real_str), "%c", localtime ((time_t *) &timestamp));
 		nmc->allowed_fields[0].value = nm_setting_connection_get_id (s_con);
 		nmc->allowed_fields[1].value = nm_setting_connection_get_uuid (s_con);

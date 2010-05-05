@@ -495,7 +495,7 @@ setting_connection_details (NMSetting *setting, NmCli *nmc)
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
 	timestamp = nm_setting_connection_get_timestamp (s_con);
-	timestamp_str = g_strdup_printf ("%ld", timestamp);
+	timestamp_str = g_strdup_printf ("%" G_GUINT64_FORMAT, timestamp);
 
 	nmc->allowed_fields[0].value = NM_SETTING_CONNECTION_SETTING_NAME;
 	nmc->allowed_fields[1].value = nm_setting_connection_get_id (s_con);
@@ -1075,7 +1075,7 @@ setting_serial_details (NMSetting *setting, NmCli *nmc)
 	bits_str = g_strdup_printf ("%d", nm_setting_serial_get_bits (s_serial));
 	parity_str = g_strdup_printf ("%c", nm_setting_serial_get_parity (s_serial));
 	stopbits_str = g_strdup_printf ("%d", nm_setting_serial_get_stopbits (s_serial));
-	send_delay_str = g_strdup_printf ("%ld", nm_setting_serial_get_send_delay (s_serial));
+	send_delay_str = g_strdup_printf ("%" G_GUINT64_FORMAT, nm_setting_serial_get_send_delay (s_serial));
 
 	nmc->allowed_fields[0].value = NM_SETTING_SERIAL_SETTING_NAME;
 	nmc->allowed_fields[1].value = baud_str;
