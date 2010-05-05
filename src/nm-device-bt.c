@@ -576,13 +576,17 @@ check_connect_continue (NMDeviceBt *self)
 	             nm_device_get_ip_iface (device),
 	             dun ? "DUN" : (pan ? "PAN" : "unknown"));
 
+	/* Kill the connect timeout since we're connected now */
+	if (priv->timeout_id) {
+		g_source_remove (priv->timeout_id);
+		priv->timeout_id = 0;
+	}
+
 	if (pan) {
 		/* Bluez says we're connected now.  Start IP config. */
 		nm_device_activate_schedule_stage3_ip_config_start (device);
 	} else if (dun) {
 		/* Wait for ModemManager to find the modem */
-		if (priv->timeout_id)
-			g_source_remove (priv->timeout_id);
 		priv->timeout_id = g_timeout_add_seconds (20, modem_find_timeout, self);
 
 		nm_log_info (LOGD_BT | LOGD_MB, "Activation (%s/bluetooth) Stage 2 of 5 (Device Configure) "
