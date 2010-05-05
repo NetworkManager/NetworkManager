@@ -1656,6 +1656,12 @@ real_act_stage3_ip6_config_start (NMDevice *self, NMDeviceStateReason *reason)
 		priv->dhcp6_mode = IP6_DHCP_OPT_MANAGED;
 		ret = dhcp6_start (self, connection, priv->dhcp6_mode, reason);
 	} else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
+		/* reset the saved RA value when ipv6 is ignored */
+		if (priv->ip6_accept_ra_path) {
+			nm_utils_do_sysctl (priv->ip6_accept_ra_path,
+			                    priv->ip6_accept_ra_save ? "1\n" : "0\n");
+		}
+
 		priv->ip6_ready = TRUE;
 		ret = NM_ACT_STAGE_RETURN_STOP;
 	} else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
