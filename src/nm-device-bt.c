@@ -587,7 +587,7 @@ check_connect_continue (NMDeviceBt *self)
 		nm_device_activate_schedule_stage3_ip_config_start (device);
 	} else if (dun) {
 		/* Wait for ModemManager to find the modem */
-		priv->timeout_id = g_timeout_add_seconds (20, modem_find_timeout, self);
+		priv->timeout_id = g_timeout_add_seconds (30, modem_find_timeout, self);
 
 		nm_log_info (LOGD_BT | LOGD_MB, "Activation (%s/bluetooth) Stage 2 of 5 (Device Configure) "
 		             "waiting for modem to appear.",
