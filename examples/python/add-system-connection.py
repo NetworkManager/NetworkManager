@@ -25,7 +25,7 @@ s_con = dbus.Dictionary({
             'uuid': '7371bb78-c1f7-42a3-a9db-5b9566e8ca07',
             'id': 'MyConnection'})
 
-addr1 = dbus.Array([dbus.UInt32(50462986L), dbus.UInt32(0L), dbus.UInt32(16908554L)], signature=dbus.Signature('u'))
+addr1 = dbus.Array([dbus.UInt32(50462986L), dbus.UInt32(8L), dbus.UInt32(16908554L)], signature=dbus.Signature('u'))
 s_ip4 = dbus.Dictionary({
             'addresses': dbus.Array([addr1], signature=dbus.Signature('au')),
             'method': 'manual'})
