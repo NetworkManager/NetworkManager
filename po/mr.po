@@ -7,11 +7,11 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: mr\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-04-15 15:38+0530\n"
-"PO-Revision-Date: 2010-04-21 10:08+0530\n"
+"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?product=NetworkManager&component=general\n"
+"POT-Creation-Date: 2010-04-30 03:24+0000\n"
+"PO-Revision-Date: 2010-05-10 13:46+0530\n"
 "Last-Translator: Sandeep Shedmake <sshedmak@redhat.com>\n"
-"Language-Team: Marathi <maajhe-sanganak@freelists.org>\n"
+"Language-Team: Marathi <fedora-trans-mr@redhat.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -41,7 +41,7 @@ msgstr ""
 
 #: ../cli/src/connections.c:158
 msgid "Connections"
-msgstr "जोडणी"
+msgstr "जोडण्या"
 
 #: ../cli/src/connections.c:158 ../cli/src/connections.c:160
 #: ../cli/src/connections.c:196 ../cli/src/connections.c:198
@@ -67,12 +67,12 @@ msgstr "नाव"
 #: ../cli/src/connections.c:163
 #, c-format
 msgid "System connections:\n"
-msgstr "प्रणाली जोडणी:\n"
+msgstr "प्रणाली जोडण्या:\n"
 
 #: ../cli/src/connections.c:167
 #, c-format
 msgid "User connections:\n"
-msgstr "प्रणाली जोडणी:\n"
+msgstr "वापरकर्ताच्या जोडण्या:\n"
 
 #: ../cli/src/connections.c:178 ../cli/src/connections.c:967
 #: ../cli/src/connections.c:983 ../cli/src/connections.c:992
@@ -90,7 +90,7 @@ msgstr "त्रुटी: %s - याप्रकारची जोडणी 
 
 #: ../cli/src/connections.c:196
 msgid "System-wide connections"
-msgstr "प्रणाली-भर जोडणी"
+msgstr "प्रणाली-भर जोडण्या"
 
 #: ../cli/src/connections.c:205
 msgid "User connections"
@@ -131,7 +131,7 @@ msgstr "पूर्वनिर्धारीत"
 
 #: ../cli/src/connections.c:297 ../cli/src/connections.c:299
 msgid "Service"
-msgstr "सर्व्हिस"
+msgstr "सर्व्हिस्"
 
 #: ../cli/src/connections.c:297 ../cli/src/connections.c:299
 msgid "Devices"
@@ -355,7 +355,7 @@ msgid ""
 "  wifi [list [iface <iface>] | apinfo iface <iface> hwaddr <hwaddr>]\n"
 "\n"
 msgstr ""
-"वापरणी: nmcli dev { COMMAND | help }\n"
+"वापर: nmcli dev { COMMAND | help }\n"
 "\n"
 "  COMMAND := { status | list | disconnect | wifi }\n"
 "\n"
@@ -419,7 +419,7 @@ msgstr "%s: IP4 पत्ता 0x%X यांस रूपांतरीत �
 #: ../cli/src/devices.c:238
 #, c-format
 msgid "%s, %s, Freq %d MHz, Rate %d Mb/s, Strength %d"
-msgstr "%s, %s, फ्रिक्वेंसी %d MHz, रेट %d Mb/s, स्ट्रेंग्थ %d"
+msgstr "%s, %s, क्रिक %d MHz, रेट %d Mb/s, स्ट्रेंग्थ् %d"
 
 #: ../cli/src/devices.c:239
 msgid "Ad-Hoc"
@@ -443,7 +443,7 @@ msgstr " WPA2"
 
 #: ../cli/src/devices.c:260
 msgid " Enterprise"
-msgstr " एनटरप्राइज"
+msgstr " एंटरप्राइज"
 
 #: ../cli/src/devices.c:294 ../cli/src/devices.c:458 ../cli/src/devices.c:460
 msgid "Device"
@@ -476,7 +476,7 @@ msgstr ""
 
 #: ../cli/src/devices.c:321
 msgid "Carrier Detect"
-msgstr "कॅरीअर आढळले"
+msgstr "कॅरिअर आढळले"
 
 #: ../cli/src/devices.c:336
 #, c-format
@@ -485,7 +485,7 @@ msgstr "%u Mb/s"
 
 #: ../cli/src/devices.c:337
 msgid "Speed"
-msgstr "वेग"
+msgstr "गती"
 
 #: ../cli/src/devices.c:348
 #, c-format
@@ -510,11 +510,11 @@ msgstr "WPA2 एनक्रिप्शन"
 
 #: ../cli/src/devices.c:359
 msgid "TKIP cipher"
-msgstr "TKIP सीफर"
+msgstr "TKIP सिफर"
 
 #: ../cli/src/devices.c:361
 msgid "CCMP cipher"
-msgstr "CCMP सीफर"
+msgstr "CCMP सिफर"
 
 #: ../cli/src/devices.c:368
 #, c-format
@@ -523,11 +523,11 @@ msgid ""
 "  Wireless Access Points %s\n"
 msgstr ""
 "\n"
-"  वायरलेस एक्सेस् पॉईंट्स् %s\n"
+"  वायरलेस् ऍक्सेस् पॉईंटस् %s\n"
 
 #: ../cli/src/devices.c:368
 msgid "(* = current AP)"
-msgstr "(* = current AP)"
+msgstr "(* = सध्याचे AP)"
 
 #: ../cli/src/devices.c:374
 #, c-format
@@ -536,11 +536,11 @@ msgid ""
 "  Wired Properties\n"
 msgstr ""
 "\n"
-"  वायर्ड गुणधर्म\n"
+"  वायर्ड् गुणधर्म\n"
 
 #: ../cli/src/devices.c:377 ../cli/src/devices.c:379
 msgid "Carrier"
-msgstr "कॅरीअर"
+msgstr "कॅरिअर"
 
 #: ../cli/src/devices.c:377
 msgid "on"
@@ -565,7 +565,7 @@ msgstr "पत्ता"
 
 #: ../cli/src/devices.c:401
 msgid "Prefix"
-msgstr "प्रिकिक्स्"
+msgstr "प्रिफिक्स्"
 
 #: ../cli/src/devices.c:405
 msgid "Gateway"
@@ -577,7 +577,7 @@ msgstr "DNS"
 
 #: ../cli/src/devices.c:458
 msgid "Status of devices"
-msgstr "साधणाची स्थिती"
+msgstr "साधणांची स्थिती"
 
 #: ../cli/src/devices.c:487
 #, c-format
@@ -656,7 +656,7 @@ msgstr "BSSID:"
 
 #: ../cli/src/devices.c:875
 msgid "Frequency:"
-msgstr "फ्रिक्वेंसी:"
+msgstr "क्रिक्वेंसी:"
 
 #: ../cli/src/devices.c:876
 msgid "Mode:"
@@ -672,11 +672,11 @@ msgstr "इंफ्रास्ट्रक्चर"
 
 #: ../cli/src/devices.c:877
 msgid "Maximal bitrate:"
-msgstr "कमाल बीटरेट:"
+msgstr "कमाल बिटरेट:"
 
 #: ../cli/src/devices.c:878
 msgid "Strength:"
-msgstr "स्ट्रेंग्थ:"
+msgstr "स्ट्रेंग्थ्:"
 
 #: ../cli/src/devices.c:879
 msgid "Flags:"
@@ -718,7 +718,7 @@ msgid ""
 "  wwan [on|off]\n"
 "\n"
 msgstr ""
-"वापरणी: nmcli nm { COMMAND | help }\n"
+"वापर: nmcli nm { COMMAND | help }\n"
 "\n"
 "  COMMAND := { status | sleep | wakeup | wifi | wwan }\n"
 "\n"
@@ -755,7 +755,7 @@ msgstr "NetworkManager स्थिती"
 
 #: ../cli/src/network-manager.c:104
 msgid "NM running:"
-msgstr "NM कार्यरत आहे:"
+msgstr "NM सुरू आहे:"
 
 #: ../cli/src/network-manager.c:104
 msgid "running"
@@ -819,7 +819,7 @@ msgid ""
 "  dev         devices managed by NetworkManager\n"
 "\n"
 msgstr ""
-"वापरणी: %s [OPTIONS] OBJECT { COMMAND | help }\n"
+"वापर: %s [OPTIONS] OBJECT { COMMAND | help }\n"
 "\n"
 "OPTIONS\n"
 "  -t[erse]    terse output\n"
@@ -1177,73 +1177,76 @@ msgstr "PKCS#12 फाइल तपास करण्यास अशक्य:
 msgid "Could not generate random data."
 msgstr "विनाक्रम डाटा निर्माण करणे अशक्य."
 
-#: ../libnm-util/nm-utils.c:1818
+#: ../libnm-util/nm-utils.c:1924
 #, c-format
 msgid "Not enough memory to make encryption key."
 msgstr "एनक्रिप्शन कि निर्माण करण्यास अतिरीक्त मेमरी आढळली नाही."
 
-#: ../libnm-util/nm-utils.c:1928
+#: ../libnm-util/nm-utils.c:2034
 msgid "Could not allocate memory for PEM file creation."
 msgstr "PEM फाइल निर्माणकरीता मेमरीचे वाटप करणे अशक्य."
 
-#: ../libnm-util/nm-utils.c:1940
+#: ../libnm-util/nm-utils.c:2046
 #, c-format
 msgid "Could not allocate memory for writing IV to PEM file."
 msgstr "IV ला PEM फाइलवर लिहण्यासाठी मेमरीचे वाटप करणे अशक्य."
 
-#: ../libnm-util/nm-utils.c:1952
+#: ../libnm-util/nm-utils.c:2058
 #, c-format
 msgid "Could not allocate memory for writing encrypted key to PEM file."
 msgstr "एनक्रिप्टेड किला PEM फाइलवर लिहण्यासाठी मेमरीचे वाटप करणे अशक्य."
 
-#: ../libnm-util/nm-utils.c:1971
+#: ../libnm-util/nm-utils.c:2077
 #, c-format
 msgid "Could not allocate memory for PEM file data."
 msgstr "PEM फाइल डाटाकरीता मेमरीचे वाटप करणे अशक्य."
 
-#: ../src/nm-netlink-monitor.c:195 ../src/nm-netlink-monitor.c:463
-#: ../src/nm-netlink-monitor.c:581
-#: ../src/ip6-manager/nm-netlink-listener.c:351
+#: ../src/nm-netlink-monitor.c:100 ../src/nm-netlink-monitor.c:231
+#: ../src/nm-netlink-monitor.c:653
 #, c-format
 msgid "error processing netlink message: %s"
 msgstr "netlink संदेश विश्लेषीत करतेवेळी त्रुटी: %s"
 
-#: ../src/nm-netlink-monitor.c:259
-#, c-format
-msgid "unable to allocate netlink handle for monitoring link status: %s"
-msgstr "दुवा स्थिती नियंत्रीत करण्याकरीता netlink handle चे वाटप अशक्य: %s"
+#: ../src/nm-netlink-monitor.c:214
+msgid "error occurred while waiting for data on socket"
+msgstr "सॉकेट वरील माहिती करीता प्रतिक्षा करतेवेळी त्रुटी आढळली"
 
-#: ../src/nm-netlink-monitor.c:269
+#: ../src/nm-netlink-monitor.c:254
 #, c-format
 msgid "unable to connect to netlink for monitoring link status: %s"
 msgstr "दुवा स्थिती नियंत्रीत करण्याकरीता netlink शी जुळवणी स्थापीत करणे अशक्य: %s"
 
-#: ../src/nm-netlink-monitor.c:277
+#: ../src/nm-netlink-monitor.c:265
 #, c-format
-msgid "unable to join netlink group for monitoring link status: %s"
-msgstr "दुवा स्थिती नियंत्रीत करण्याकरीता netlink गट शी जुळवणी स्थापीत करणे अशक्य: %s"
+msgid "unable to enable netlink handle credential passing: %s"
+msgstr "netlink द्वारे परवानगी स्वीकारणे समर्थीत करण्यास अशक्य: %s"
 
-#: ../src/nm-netlink-monitor.c:285
+#: ../src/nm-netlink-monitor.c:291 ../src/nm-netlink-monitor.c:353
+#, c-format
+msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgstr "दुवा स्थिती नियंत्रीत करण्याकरीता netlink handle चे वाटप अशक्य: %s"
+
+#: ../src/nm-netlink-monitor.c:376
 #, c-format
 msgid "unable to allocate netlink link cache for monitoring link status: %s"
 msgstr "दुवा स्थिती नियंत्रीत करण्याकरीता netlink दुवा कॅशे वाटप करणे अशक्य: %s"
 
-#: ../src/nm-netlink-monitor.c:493
-#: ../src/ip6-manager/nm-netlink-listener.c:381
-msgid "error occurred while waiting for data on socket"
-msgstr "सॉकेट वरील माहिती करीता प्रतिक्षा करतेवेळी त्रुटी आढळली"
+#: ../src/nm-netlink-monitor.c:502
+#, c-format
+msgid "unable to join netlink group: %s"
+msgstr "netlink गटसह जोडणी करणे अशक्य: %s"
 
-#: ../src/nm-netlink-monitor.c:557 ../src/nm-netlink-monitor.c:570
+#: ../src/nm-netlink-monitor.c:629 ../src/nm-netlink-monitor.c:642
 #, c-format
 msgid "error updating link cache: %s"
 msgstr "दुवा कॅशे अद्ययावत करतेवेळी त्रुटी: %s"
 
-#: ../src/main.c:498
+#: ../src/main.c:502
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr "अवैध पर्याय.  वैध पर्यायची यादी पहाण्याकरीता कृपया --help वापरा.\n"
 
-#: ../src/main.c:558
+#: ../src/main.c:562
 #, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr "%s.  वैध पर्यायची सूची पहाण्याकरीता कृपया --help वापरा.\n"
@@ -1278,21 +1281,6 @@ msgstr "'dhcpcd' आढळले नाही."
 msgid "unsupported DHCP client '%s'"
 msgstr "असमर्थीत DHCP क्लाएंट '%s'"
 
-#: ../src/ip6-manager/nm-netlink-listener.c:199
-#, c-format
-msgid "unable to allocate netlink handle: %s"
-msgstr "netlink हँडलचे वाटप करणे अशक्य: %s"
-
-#: ../src/ip6-manager/nm-netlink-listener.c:209
-#, c-format
-msgid "unable to connect to netlink: %s"
-msgstr "netlink शी जोडणी करणे अशक्य: %s"
-
-#: ../src/ip6-manager/nm-netlink-listener.c:306
-#, c-format
-msgid "unable to join netlink group: %s"
-msgstr "netlink गटसह जोडणी करणे अशक्य: %s"
-
 #: ../src/logging/nm-logging.c:146
 #, c-format
 msgid "Unknown log level '%s'"
@@ -1303,11 +1291,11 @@ msgstr "अपरिचीत लॉग स्तर '%s'"
 msgid "Unknown log domain '%s'"
 msgstr "अपरिचीत लॉग डोमेन '%s'"
 
-#: ../src/named-manager/nm-named-manager.c:314
+#: ../src/named-manager/nm-named-manager.c:343
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "NOTE: libc रिजॉलव्हर 3 पेक्षा जास्त नेमसर्व्हर्स् करीता समर्थन पुरवू शकणार नाही."
 
-#: ../src/named-manager/nm-named-manager.c:316
+#: ../src/named-manager/nm-named-manager.c:345
 msgid "The nameservers listed below may not be recognized."
 msgstr "खालिल यादीतील नेमसर्व्हर्स् अनोळखी राहतील."
 
@@ -1316,7 +1304,7 @@ msgstr "खालिल यादीतील नेमसर्व्हर्�
 msgid "Auto %s"
 msgstr "स्वयं %s"
 
-#: ../system-settings/plugins/ifcfg-rh/reader.c:3213
+#: ../system-settings/plugins/ifcfg-rh/reader.c:3254
 msgid "System"
 msgstr "प्रणाली"
 
