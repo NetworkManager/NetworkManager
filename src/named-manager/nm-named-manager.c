@@ -213,7 +213,7 @@ run_netconfig (GError **error, gint *stdin_fd)
 	argv[4] = NULL;
 
 	tmp = g_strjoinv (" ", argv);
-	nm_log_debug (LOGD_DNS, "spawning '%s'", tmp);
+	nm_log_dbg (LOGD_DNS, "spawning '%s'", tmp);
 	g_free (tmp);
 
 	if (!g_spawn_async_with_pipes (NULL, argv, NULL, 0, netconfig_child_setup,
@@ -230,7 +230,7 @@ write_to_netconfig (gint fd, const char *key, const char *value)
 	int x;
 
 	str = g_strdup_printf ("%s='%s'\n", key, value);
-	nm_log_debug (LOGD_DNS, "writing to netconfig: %s", str);
+	nm_log_dbg (LOGD_DNS, "writing to netconfig: %s", str);
 	x = write (fd, str, strlen (str));
 	g_free (str);
 }
