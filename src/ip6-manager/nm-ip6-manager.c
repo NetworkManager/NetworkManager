@@ -390,9 +390,10 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
 	            device->iface, state_to_string (device->state));
 
 	/* We only care about router advertisements if we want a real IPv6 address */
-	if (device->target_state == NM_IP6_DEVICE_GOT_ADDRESS) {
-		if (   (device->ra_flags & IF_RA_RCVD)
-		    && (device->state < NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT))
+	if (   (device->target_state == NM_IP6_DEVICE_GOT_ADDRESS)
+	    && (device->ra_flags & IF_RA_RCVD)) {
+
+		if (device->state < NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT)
 			device->state = NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT;
 
 		if (device->ra_flags & IF_RA_MANAGED) {
