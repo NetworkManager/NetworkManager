@@ -681,7 +681,7 @@ setting_wireless_details (NMSetting *setting, NmCli *nmc)
 	ssid_str = ssid_to_printable ((const char *) ssid->data, ssid->len);
 	channel_str = g_strdup_printf ("%d", nm_setting_wireless_get_channel (s_wireless));
 	rate_str = g_strdup_printf ("%d", nm_setting_wireless_get_rate (s_wireless));
-	bssid = nm_setting_wireless_get_mac_address (s_wireless);
+	bssid = nm_setting_wireless_get_bssid (s_wireless);
 	if (bssid)
 		bssid_str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X", bssid->data[0], bssid->data[1], bssid->data[2], bssid->data[3], bssid->data[4], bssid->data[5]);
 	tx_power_str = g_strdup_printf ("%d", nm_setting_wireless_get_tx_power (s_wireless));
