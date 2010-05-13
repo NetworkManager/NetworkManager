@@ -503,6 +503,12 @@ main (int argc, char *argv[])
 		exit (1);
 	}
 
+	/* Make GIO ignore the remote VFS service; otherwise it tries to use the
+	 * session bus to contact the remote service, and NM shouldn't ever be
+	 * talking on the session bus.  See rh #588745
+	 */
+	setenv ("GIO_USE_VFS", "local", 1);
+
 	pidfile = pidfile ? pidfile : g_strdup (NM_DEFAULT_PID_FILE);
 	state_file = state_file ? state_file : g_strdup (NM_DEFAULT_SYSTEM_STATE_FILE);
 
