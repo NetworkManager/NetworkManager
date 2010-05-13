@@ -1,41 +1,1561 @@
+# translation of zh_TW.po to Traditional Chinese
 # Traditional Chinese translation of Network Manager.
-# Copyright (C) 2005 Free Software Foundation, Inc.
+# Copyright (C) 2005, 2010 Free Software Foundation, Inc.
+#
 # Woodman Tuen <wmtuen@gmail.com>, 2005.
 # Chao-Hsiung Liao <j_h_liau@yahoo.com.tw>, 2008.
-#
+# Chester Cheng <ccheng 於 redhat>, 2010.
+# Chester Cheng <ccheng@紅帽子>, 2010.
+# Terry Chuang <tchuang at redhat>, 2010.
+# Terry Chuang <tchuang@redhat.com>, 2010.
 msgid ""
 msgstr ""
-"Project-Id-Version: Network Manager 0.7.0\n"
+"Project-Id-Version: zh_TW\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-08-21 20:14+0800\n"
-"PO-Revision-Date: 2008-08-21 15:37+0800\n"
-"Last-Translator: Chao-Hsiung Liao <j_h_liau@yahoo.com.tw>\n"
-"Language-Team: Chinese/Traditional <community@linuxhall.org>\n"
+"POT-Creation-Date: 2010-05-06 14:31+0530\n"
+"PO-Revision-Date: 2010-05-07 10:59+1000\n"
+"Last-Translator: Terry Chuang <tchuang@redhat.com>\n"
+"Language-Team: Traditional Chinese <zh@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: KBabel 1.11.4\n"
 
-#: ../src/nm-netlink-monitor.c:193 ../src/nm-netlink-monitor.c:474
+#: ../cli/src/connections.c:59 ../cli/src/connections.c:74
+#: ../cli/src/devices.c:85 ../cli/src/devices.c:98 ../cli/src/devices.c:108
+#: ../cli/src/devices.c:118 ../cli/src/devices.c:131 ../cli/src/devices.c:142
+#: ../cli/src/devices.c:152
+msgid "NAME"
+msgstr "NAME"
+
+#. 0
+#: ../cli/src/connections.c:60 ../cli/src/connections.c:75
+msgid "UUID"
+msgstr "UUID"
+
+#. 1
+#: ../cli/src/connections.c:61
+msgid "DEVICES"
+msgstr "DEVICES"
+
+#. 2
+#: ../cli/src/connections.c:62 ../cli/src/connections.c:77
+msgid "SCOPE"
+msgstr "SCOPE"
+
+#. 3
+#: ../cli/src/connections.c:63
+msgid "DEFAULT"
+msgstr "DEFAULT"
+
+#. 4
+#: ../cli/src/connections.c:64
+msgid "DBUS-SERVICE"
+msgstr "DBUS-SERVICE"
+
+#. 5
+#: ../cli/src/connections.c:65
+msgid "SPEC-OBJECT"
+msgstr "SPEC-OBJECT"
+
+#. 6
+#: ../cli/src/connections.c:66
+msgid "VPN"
+msgstr "VPN"
+
+#. 1
+#. 0
+#. 1
+#: ../cli/src/connections.c:76 ../cli/src/devices.c:61 ../cli/src/devices.c:87
+msgid "TYPE"
+msgstr "TYPE"
+
+#. 3
+#: ../cli/src/connections.c:78
+msgid "TIMESTAMP"
+msgstr "TIMESTAMP"
+
+#. 4
+#: ../cli/src/connections.c:79
+msgid "TIMESTAMP-REAL"
+msgstr "TIMESTAMP-REAL"
+
+#. 5
+#: ../cli/src/connections.c:80
+msgid "AUTOCONNECT"
+msgstr "AUTOCONNECT"
+
+#. 6
+#: ../cli/src/connections.c:81
+msgid "READONLY"
+msgstr "READONLY"
+
+#: ../cli/src/connections.c:157
+#, c-format
+msgid ""
+"Usage: nmcli con { COMMAND | help }\n"
+"  COMMAND := { list | status | up | down }\n"
+"\n"
+"  list [id <id> | uuid <id> | system | user]\n"
+"  status\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--timeout "
+"<timeout>]\n"
+"  down id <id> | uuid <id>\n"
+msgstr ""
+"Usage: nmcli con { COMMAND | help }\n"
+"  COMMAND := { list | status | up | down }\n"
+"\n"
+"  list [id <id> | uuid <id> | system | user]\n"
+"  status\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--timeout "
+"<timeout>]\n"
+"  down id <id> | uuid <id>\n"
+
+#: ../cli/src/connections.c:197 ../cli/src/connections.c:536
+#, c-format
+msgid "Error: 'con list': %s"
+msgstr "錯誤：'con list': %s"
+
+#: ../cli/src/connections.c:199 ../cli/src/connections.c:538
+#, c-format
+msgid "Error: 'con list': %s; allowed fields: %s"
+msgstr "錯誤：'con list': %s; 允許的欄位為：%s"
+
+#: ../cli/src/connections.c:207
+msgid "Connection details"
+msgstr "連線詳情"
+
+#: ../cli/src/connections.c:381 ../cli/src/connections.c:601
+msgid "system"
+msgstr "系統"
+
+#: ../cli/src/connections.c:381 ../cli/src/connections.c:601
+msgid "user"
+msgstr "使用者"
+
+#: ../cli/src/connections.c:383
+msgid "never"
+msgstr "永不"
+
+#. "CAPABILITIES"
+#. Print header
+#. "WIFI-PROPERTIES"
+#: ../cli/src/connections.c:384 ../cli/src/connections.c:385
+#: ../cli/src/connections.c:602 ../cli/src/connections.c:605
+#: ../cli/src/devices.c:388 ../cli/src/devices.c:513 ../cli/src/devices.c:539
+#: ../cli/src/devices.c:540 ../cli/src/devices.c:541 ../cli/src/devices.c:542
+#: ../cli/src/devices.c:543 ../cli/src/settings.c:504
+#: ../cli/src/settings.c:544 ../cli/src/settings.c:643
+#: ../cli/src/settings.c:912 ../cli/src/settings.c:913
+#: ../cli/src/settings.c:915 ../cli/src/settings.c:917
+#: ../cli/src/settings.c:1042 ../cli/src/settings.c:1043
+#: ../cli/src/settings.c:1044 ../cli/src/settings.c:1123
+#: ../cli/src/settings.c:1124 ../cli/src/settings.c:1125
+#: ../cli/src/settings.c:1126 ../cli/src/settings.c:1127
+#: ../cli/src/settings.c:1128 ../cli/src/settings.c:1129
+#: ../cli/src/settings.c:1130 ../cli/src/settings.c:1131
+#: ../cli/src/settings.c:1132 ../cli/src/settings.c:1133
+#: ../cli/src/settings.c:1134 ../cli/src/settings.c:1135
+#: ../cli/src/settings.c:1210
+msgid "yes"
+msgstr "是"
+
+#: ../cli/src/connections.c:384 ../cli/src/connections.c:385
+#: ../cli/src/connections.c:602 ../cli/src/connections.c:605
+#: ../cli/src/devices.c:388 ../cli/src/devices.c:513 ../cli/src/devices.c:539
+#: ../cli/src/devices.c:540 ../cli/src/devices.c:541 ../cli/src/devices.c:542
+#: ../cli/src/devices.c:543 ../cli/src/settings.c:504
+#: ../cli/src/settings.c:506 ../cli/src/settings.c:544
+#: ../cli/src/settings.c:643 ../cli/src/settings.c:912
+#: ../cli/src/settings.c:913 ../cli/src/settings.c:915
+#: ../cli/src/settings.c:917 ../cli/src/settings.c:1042
+#: ../cli/src/settings.c:1043 ../cli/src/settings.c:1044
+#: ../cli/src/settings.c:1123 ../cli/src/settings.c:1124
+#: ../cli/src/settings.c:1125 ../cli/src/settings.c:1126
+#: ../cli/src/settings.c:1127 ../cli/src/settings.c:1128
+#: ../cli/src/settings.c:1129 ../cli/src/settings.c:1130
+#: ../cli/src/settings.c:1131 ../cli/src/settings.c:1132
+#: ../cli/src/settings.c:1133 ../cli/src/settings.c:1134
+#: ../cli/src/settings.c:1135 ../cli/src/settings.c:1210
+msgid "no"
+msgstr "否"
+
+#: ../cli/src/connections.c:457 ../cli/src/connections.c:500
+msgid "System connections"
+msgstr "系統連線"
+
+#: ../cli/src/connections.c:462 ../cli/src/connections.c:513
+msgid "User connections"
+msgstr "使用者連線"
+
+#: ../cli/src/connections.c:474 ../cli/src/connections.c:1334
+#: ../cli/src/connections.c:1350 ../cli/src/connections.c:1359
+#: ../cli/src/connections.c:1370 ../cli/src/connections.c:1452
+#: ../cli/src/devices.c:864 ../cli/src/devices.c:874 ../cli/src/devices.c:973
+#: ../cli/src/devices.c:980
+#, c-format
+msgid "Error: %s argument is missing."
+msgstr "錯誤：沒有 %s 參數。"
+
+#: ../cli/src/connections.c:487
+#, c-format
+msgid "Error: %s - no such connection."
+msgstr "錯誤：%s - 此連線不存在。"
+
+#: ../cli/src/connections.c:519 ../cli/src/connections.c:1383
+#: ../cli/src/connections.c:1470 ../cli/src/devices.c:687
+#: ../cli/src/devices.c:754 ../cli/src/devices.c:888 ../cli/src/devices.c:986
+#, c-format
+msgid "Unknown parameter: %s\n"
+msgstr "不明的參數：%s\n"
+
+#: ../cli/src/connections.c:528
+#, c-format
+msgid "Error: no valid parameter specified."
+msgstr "錯誤：未指定合於規定的參數。"
+
+#: ../cli/src/connections.c:543 ../cli/src/connections.c:1572
+#: ../cli/src/devices.c:1192 ../cli/src/network-manager.c:274
+#, c-format
+msgid "Error: %s."
+msgstr "錯誤：%s。"
+
+#: ../cli/src/connections.c:649
+#, c-format
+msgid "Error: 'con status': %s"
+msgstr "錯誤：'con status': %s"
+
+#: ../cli/src/connections.c:651
+#, c-format
+msgid "Error: 'con status': %s; allowed fields: %s"
+msgstr "錯誤：'con status': %s; 允許的欄位為：%s"
+
+#: ../cli/src/connections.c:658
+msgid "Active connections"
+msgstr "使用中的連線"
+
+#: ../cli/src/connections.c:1026
+#, c-format
+msgid "no active connection on device '%s'"
+msgstr "裝置「%s」沒有使用中的連線"
+
+#: ../cli/src/connections.c:1034
+#, c-format
+msgid "no active connection or device"
+msgstr "沒有使用中的連線或裝置"
+
+#: ../cli/src/connections.c:1084
+#, c-format
+msgid "device '%s' not compatible with connection '%s'"
+msgstr "裝置 '%s' 和連線 '%s' 不相容"
+
+#: ../cli/src/connections.c:1086
+#, c-format
+msgid "no device found for connection '%s'"
+msgstr "連線「%s」沒有找到任何裝置"
+
+#: ../cli/src/connections.c:1097
+msgid "activating"
+msgstr "啟用中"
+
+#: ../cli/src/connections.c:1099
+msgid "activated"
+msgstr "已啟用"
+
+#: ../cli/src/connections.c:1102 ../cli/src/connections.c:1125
+#: ../cli/src/connections.c:1158 ../cli/src/devices.c:224
+#: ../cli/src/devices.c:514 ../cli/src/network-manager.c:92
+#: ../cli/src/network-manager.c:145 ../cli/src/settings.c:469
+msgid "unknown"
+msgstr "不明"
+
+#: ../cli/src/connections.c:1111
+msgid "VPN connecting (prepare)"
+msgstr "VPN 連線（準備）"
+
+#: ../cli/src/connections.c:1113
+msgid "VPN connecting (need authentication)"
+msgstr "VPN 連線（需要身份認證）"
+
+#: ../cli/src/connections.c:1115
+msgid "VPN connecting"
+msgstr "VPN 連線"
+
+#: ../cli/src/connections.c:1117
+msgid "VPN connecting (getting IP configuration)"
+msgstr "VPN 連線（取得 IP 配置）"
+
+#: ../cli/src/connections.c:1119
+msgid "VPN connected"
+msgstr "VPN 已連線"
+
+#: ../cli/src/connections.c:1121
+msgid "VPN connection failed"
+msgstr "VPN 連線失敗"
+
+#: ../cli/src/connections.c:1123
+msgid "VPN disconnected"
+msgstr "VPN 已離線"
+
+#: ../cli/src/connections.c:1134
+msgid "unknown reason"
+msgstr "原因不明"
+
+#: ../cli/src/connections.c:1136
+msgid "none"
+msgstr "none"
+
+#: ../cli/src/connections.c:1138
+msgid "the user was disconnected"
+msgstr "該使用者已經斷線"
+
+#: ../cli/src/connections.c:1140
+msgid "the base network connection was interrupted"
+msgstr "基礎的網路連線已經中斷"
+
+#: ../cli/src/connections.c:1142
+msgid "the VPN service stopped unexpectedly"
+msgstr "VPN 服務無預期停止"
+
+#: ../cli/src/connections.c:1144
+msgid "the VPN service returned invalid configuration"
+msgstr "VPN 服務傳回無效的配置"
+
+#: ../cli/src/connections.c:1146
+msgid "the connection attempt timed out"
+msgstr "嚐試連線已經逾時"
+
+#: ../cli/src/connections.c:1148
+msgid "the VPN service did not start in time"
+msgstr "VPN 服務並沒有按時開始"
+
+#: ../cli/src/connections.c:1150
+msgid "the VPN service failed to start"
+msgstr "VPN 服務無法開始"
+
+#: ../cli/src/connections.c:1152
+msgid "no valid VPN secrets"
+msgstr "VPN 密碼不正確"
+
+#: ../cli/src/connections.c:1154
+msgid "invalid VPN secrets"
+msgstr "VPN 密碼不正確"
+
+#: ../cli/src/connections.c:1156
+msgid "the connection was removed"
+msgstr "連線已移除"
+
+#: ../cli/src/connections.c:1170
+#, c-format
+msgid "state: %s\n"
+msgstr "狀態：%s\n"
+
+#: ../cli/src/connections.c:1173 ../cli/src/connections.c:1199
+#, c-format
+msgid "Connection activated\n"
+msgstr "連線已啟動\n"
+
+#: ../cli/src/connections.c:1176
+#, c-format
+msgid "Error: Connection activation failed."
+msgstr "錯誤：啟動連線失敗。"
+
+#: ../cli/src/connections.c:1195
+#, c-format
+msgid "state: %s (%d)\n"
+msgstr "狀態：%s (%d)\n"
+
+#: ../cli/src/connections.c:1205
+#, c-format
+msgid "Error: Connection activation failed: %s."
+msgstr "錯誤：啟動連線失敗：%s。"
+
+#: ../cli/src/connections.c:1222 ../cli/src/devices.c:811
+#, c-format
+msgid "Error: Timeout %d sec expired."
+msgstr "錯誤：逾時 %d 秒。"
+
+#: ../cli/src/connections.c:1265
+#, c-format
+msgid "Error: Connection activation failed: %s"
+msgstr "錯誤：啟動連線失敗：%s"
+
+#: ../cli/src/connections.c:1279
+#, c-format
+msgid "Error: Obtaining active connection for '%s' failed."
+msgstr "錯誤：為「%s」取得啟用中的連線失敗。"
+
+#: ../cli/src/connections.c:1288
+#, c-format
+msgid "Active connection state: %s\n"
+msgstr "啟用中連線的狀態：%s\n"
+
+#: ../cli/src/connections.c:1289
+#, c-format
+msgid "Active connection path: %s\n"
+msgstr "啟用中連線的路徑：%s\n"
+
+#: ../cli/src/connections.c:1343 ../cli/src/connections.c:1461
+#, c-format
+msgid "Error: Unknown connection: %s."
+msgstr "錯誤：不明的連線：%s。"
+
+#: ../cli/src/connections.c:1378 ../cli/src/devices.c:882
+#, c-format
+msgid "Error: timeout value '%s' is not valid."
+msgstr "錯誤：逾時值「%s」不合乎規定。"
+
+#: ../cli/src/connections.c:1391 ../cli/src/connections.c:1478
+#, c-format
+msgid "Error: id or uuid has to be specified."
+msgstr "錯誤：未指定 id 或 uuid。"
+
+#: ../cli/src/connections.c:1411
+#, c-format
+msgid "Error: No suitable device found: %s."
+msgstr "錯誤：找不到適用的裝置：%s。"
+
+#: ../cli/src/connections.c:1413
+#, c-format
+msgid "Error: No suitable device found."
+msgstr "錯誤：找不到適用的裝置。"
+
+#: ../cli/src/connections.c:1505
+#, c-format
+msgid "Warning: Connection not active\n"
+msgstr "警告：連線並未啟用\n"
+
+#: ../cli/src/connections.c:1561
+#, c-format
+msgid "Error: 'con' command '%s' is not valid."
+msgstr "錯誤：「con」指令「%s」不合乎規定。"
+
+#: ../cli/src/connections.c:1597
+#, c-format
+msgid "Error: could not connect to D-Bus."
+msgstr "錯誤：無法連到 D-Bus。"
+
+#: ../cli/src/connections.c:1604
+#, c-format
+msgid "Error: Could not get system settings."
+msgstr "錯誤：無法取得系統設定。"
+
+#: ../cli/src/connections.c:1612
+#, c-format
+msgid "Error: Could not get user settings."
+msgstr "錯誤：無法取得使用者設定。"
+
+#: ../cli/src/connections.c:1622
+#, c-format
+msgid "Error: Can't obtain connections: settings services are not running."
+msgstr "錯誤：無法取得連線：設定服務並未執行。"
+
+#. 0
+#. 9
+#: ../cli/src/devices.c:60 ../cli/src/devices.c:86 ../cli/src/devices.c:162
+msgid "DEVICE"
+msgstr "DEVICE"
+
+#. 1
+#. 4
+#. 0
+#: ../cli/src/devices.c:62 ../cli/src/devices.c:90
+#: ../cli/src/network-manager.c:36
+msgid "STATE"
+msgstr "STATE"
+
+#: ../cli/src/devices.c:71
+msgid "GENERAL"
+msgstr "GENERAL"
+
+#. 0
+#: ../cli/src/devices.c:72
+msgid "CAPABILITIES"
+msgstr "CAPABILITIES"
+
+#. 1
+#: ../cli/src/devices.c:73
+msgid "WIFI-PROPERTIES"
+msgstr "WIFI-PROPERTIES"
+
+#. 2
+#: ../cli/src/devices.c:74
+msgid "AP"
+msgstr "AP"
+
+#. 3
+#: ../cli/src/devices.c:75
+msgid "WIRED-PROPERTIES"
+msgstr "WIRED-PROPERTIES"
+
+#. 4
+#: ../cli/src/devices.c:76
+msgid "IP4-SETTINGS"
+msgstr "IP4-SETTINGS"
+
+#. 5
+#: ../cli/src/devices.c:77
+msgid "IP4-DNS"
+msgstr "IP4-DNS"
+
+#. 2
+#: ../cli/src/devices.c:88
+msgid "DRIVER"
+msgstr "DRIVER"
+
+#. 3
+#: ../cli/src/devices.c:89
+msgid "HWADDR"
+msgstr "HWADDR"
+
+#. 0
+#: ../cli/src/devices.c:99
+msgid "CARRIER-DETECT"
+msgstr "CARRIER-DETECT"
+
+#. 1
+#: ../cli/src/devices.c:100
+msgid "SPEED"
+msgstr "SPEED"
+
+#. 0
+#: ../cli/src/devices.c:109
+msgid "CARRIER"
+msgstr "CARRIER"
+
+#. 0
+#: ../cli/src/devices.c:119
+msgid "WEP"
+msgstr "WEP"
+
+#. 1
+#: ../cli/src/devices.c:120
+msgid "WPA"
+msgstr "WPA"
+
+#. 2
+#: ../cli/src/devices.c:121
+msgid "WPA2"
+msgstr "WPA2"
+
+#. 3
+#: ../cli/src/devices.c:122
+msgid "TKIP"
+msgstr "TKIP"
+
+#. 4
+#: ../cli/src/devices.c:123
+msgid "CCMP"
+msgstr "CCMP"
+
+#. 0
+#: ../cli/src/devices.c:132
+msgid "ADDRESS"
+msgstr "ADDRESS"
+
+#. 1
+#: ../cli/src/devices.c:133
+msgid "PREFIX"
+msgstr "PREFIX"
+
+#. 2
+#: ../cli/src/devices.c:134
+msgid "GATEWAY"
+msgstr "GATEWAY"
+
+#. 0
+#: ../cli/src/devices.c:143
+msgid "DNS"
+msgstr "DNS"
+
+#. 0
+#: ../cli/src/devices.c:153
+msgid "SSID"
+msgstr "SSID"
+
+#. 1
+#: ../cli/src/devices.c:154
+msgid "BSSID"
+msgstr "BSSID"
+
+#. 2
+#: ../cli/src/devices.c:155
+msgid "MODE"
+msgstr "MODE"
+
+#. 3
+#: ../cli/src/devices.c:156
+msgid "FREQ"
+msgstr "FREQ"
+
+#. 4
+#: ../cli/src/devices.c:157
+msgid "RATE"
+msgstr "RATE"
+
+#. 5
+#: ../cli/src/devices.c:158
+msgid "SIGNAL"
+msgstr "SIGNAL"
+
+#. 6
+#: ../cli/src/devices.c:159
+msgid "SECURITY"
+msgstr "SECURITY"
+
+#. 7
+#: ../cli/src/devices.c:160
+msgid "WPA-FLAGS"
+msgstr "WPA-FLAGS"
+
+#. 8
+#: ../cli/src/devices.c:161
+msgid "RSN-FLAGS"
+msgstr "RSN-FLAGS"
+
+#. 10
+#: ../cli/src/devices.c:163
+msgid "ACTIVE"
+msgstr "ACTIVE"
+
+#: ../cli/src/devices.c:186
+#, c-format
+msgid ""
+"Usage: nmcli dev { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | list | disconnect | wifi }\n"
+"\n"
+"  status\n"
+"  list [iface <iface>]\n"
+"  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
+"  wifi [list [iface <iface>] [hwaddr <hwaddr>]]\n"
+"\n"
+msgstr ""
+"Usage: nmcli dev { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | list | disconnect | wifi }\n"
+"\n"
+"  status\n"
+"  list [iface <iface>]\n"
+"  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
+"  wifi [list [iface <iface>] [hwaddr <hwaddr>]]\n"
+"\n"
+
+#: ../cli/src/devices.c:206
+msgid "unmanaged"
+msgstr "不受管理的"
+
+#: ../cli/src/devices.c:208
+msgid "unavailable"
+msgstr "無法使用"
+
+#: ../cli/src/devices.c:210 ../cli/src/network-manager.c:89
+msgid "disconnected"
+msgstr "離線"
+
+#: ../cli/src/devices.c:212
+msgid "connecting (prepare)"
+msgstr "連線中（準備）"
+
+#: ../cli/src/devices.c:214
+msgid "connecting (configuring)"
+msgstr "連線中（配置中）"
+
+#: ../cli/src/devices.c:216
+msgid "connecting (need authentication)"
+msgstr "連線中（需要身份認證）"
+
+#: ../cli/src/devices.c:218
+msgid "connecting (getting IP configuration)"
+msgstr "連線中（正在取得 IP 配置）"
+
+#: ../cli/src/devices.c:220 ../cli/src/network-manager.c:87
+msgid "connected"
+msgstr "已連線"
+
+#: ../cli/src/devices.c:222
+msgid "connection failed"
+msgstr "連線失敗"
+
+#: ../cli/src/devices.c:245 ../cli/src/devices.c:380
+msgid "Unknown"
+msgstr "不明"
+
+#: ../cli/src/devices.c:277
+msgid "(none)"
+msgstr "(none)"
+
+#: ../cli/src/devices.c:302
+#, c-format
+msgid "%s: error converting IP4 address 0x%X"
+msgstr "%s：轉換 IP4 位址 0x%x 時發生錯誤"
+
+#: ../cli/src/devices.c:349
+#, c-format
+msgid "%u MHz"
+msgstr "%u MHz"
+
+#: ../cli/src/devices.c:350
+#, c-format
+msgid "%u MB/s"
+msgstr "%u MB/s"
+
+#: ../cli/src/devices.c:359
+msgid "Encrypted: "
+msgstr "已加密："
+
+#: ../cli/src/devices.c:364
+msgid "WEP "
+msgstr "WEP "
+
+#: ../cli/src/devices.c:366
+msgid "WPA "
+msgstr "WPA "
+
+#: ../cli/src/devices.c:368
+msgid "WPA2 "
+msgstr "WPA2 "
+
+#: ../cli/src/devices.c:371
+msgid "Enterprise "
+msgstr "企業版 "
+
+#: ../cli/src/devices.c:380
+msgid "Ad-Hoc"
+msgstr "點對點"
+
+#: ../cli/src/devices.c:380
+msgid "Infrastructure"
+msgstr "基礎建設"
+
+#: ../cli/src/devices.c:442
+#, c-format
+msgid "Error: 'dev list': %s"
+msgstr "錯誤：'dev list': %s"
+
+#: ../cli/src/devices.c:444
+#, c-format
+msgid "Error: 'dev list': %s; allowed fields: %s"
+msgstr "錯誤：'dev list': %s; 允許的欄位為：%s"
+
+#: ../cli/src/devices.c:453
+msgid "Device details"
+msgstr "裝置詳細資訊"
+
+#: ../cli/src/devices.c:483 ../cli/src/devices.c:827
+msgid "(unknown)"
+msgstr "(不明)"
+
+#: ../cli/src/devices.c:484
+msgid "unknown)"
+msgstr "不明)"
+
+#: ../cli/src/devices.c:510
+#, c-format
+msgid "%u Mb/s"
+msgstr "%u Mb/s"
+
+#. Print header
+#. "WIRED-PROPERTIES"
+#: ../cli/src/devices.c:583
+msgid "on"
+msgstr "開"
+
+#: ../cli/src/devices.c:583
+msgid "off"
+msgstr "關"
+
+#: ../cli/src/devices.c:710
+#, c-format
+msgid "Error: 'dev status': %s"
+msgstr "錯誤：'dev status': %s"
+
+#: ../cli/src/devices.c:712
+#, c-format
+msgid "Error: 'dev status': %s; allowed fields: %s"
+msgstr "錯誤：'dev status'：%s; 允許的欄位為：%s"
+
+#: ../cli/src/devices.c:719
+msgid "Status of devices"
+msgstr "裝置的狀態"
+
+#: ../cli/src/devices.c:747
+#, c-format
+msgid "Error: '%s' argument is missing."
+msgstr "錯誤：找不到「%s」參數。"
+
+#: ../cli/src/devices.c:776 ../cli/src/devices.c:915 ../cli/src/devices.c:1035
+#, c-format
+msgid "Error: Device '%s' not found."
+msgstr "錯誤：找不到「%s」裝置。"
+
+#: ../cli/src/devices.c:799
+#, c-format
+msgid "Success: Device '%s' successfully disconnected."
+msgstr "成功：裝置「%s」已經成功地斷線。"
+
+#: ../cli/src/devices.c:824
+#, c-format
+msgid "Error: Device '%s' (%s) disconnecting failed: %s"
+msgstr "錯誤：裝置「%s」（%s）斷線失敗：%s"
+
+#: ../cli/src/devices.c:832
+#, c-format
+msgid "Device state: %d (%s)\n"
+msgstr "裝置狀態：%d (%s)\n"
+
+#: ../cli/src/devices.c:896
+#, c-format
+msgid "Error: iface has to be specified."
+msgstr "錯誤：必須指定 iface。"
+
+#: ../cli/src/devices.c:1011
+#, c-format
+msgid "Error: 'dev wifi': %s"
+msgstr "錯誤：'dev wifi'：%s"
+
+#: ../cli/src/devices.c:1013
+#, c-format
+msgid "Error: 'dev wifi': %s; allowed fields: %s"
+msgstr "錯誤：'dev wifi'：%s; 允許的欄位為：%s"
+
+#: ../cli/src/devices.c:1020
+msgid "WiFi scan list"
+msgstr "WiFi 掃描清單"
+
+#: ../cli/src/devices.c:1055 ../cli/src/devices.c:1109
+#, c-format
+msgid "Error: Access point with hwaddr '%s' not found."
+msgstr "錯誤：找不到擁有 hwaddr「%s」的存取點。"
+
+#: ../cli/src/devices.c:1072
+#, c-format
+msgid "Error: Device '%s' is not a WiFi device."
+msgstr "錯誤：「%s」不是 WiFi 裝置。"
+
+#: ../cli/src/devices.c:1136
+#, c-format
+msgid "Error: 'dev wifi' command '%s' is not valid."
+msgstr "錯誤：「dev wifi」指令「%s」不合乎規定。"
+
+#: ../cli/src/devices.c:1183
+#, c-format
+msgid "Error: 'dev' command '%s' is not valid."
+msgstr "錯誤：「dev」指令「%s」不合乎規定。"
+
+#: ../cli/src/network-manager.c:35
+msgid "RUNNING"
+msgstr "RUNNING"
+
+#. 1
+#: ../cli/src/network-manager.c:37
+msgid "WIFI-HARDWARE"
+msgstr "WIFI-HARDWARE"
+
+#. 2
+#: ../cli/src/network-manager.c:38
+msgid "WIFI"
+msgstr "WIFI-HARDWARE"
+
+#. 3
+#: ../cli/src/network-manager.c:39
+msgid "WWAN-HARDWARE"
+msgstr "WWAN-HARDWARE"
+
+#. 4
+#: ../cli/src/network-manager.c:40
+msgid "WWAN"
+msgstr "WWAN"
+
+#: ../cli/src/network-manager.c:62
+#, c-format
+msgid ""
+"Usage: nmcli nm { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | sleep | wakeup | wifi | wwan }\n"
+"\n"
+"  status\n"
+"  sleep\n"
+"  wakeup\n"
+"  wifi [on|off]\n"
+"  wwan [on|off]\n"
+"\n"
+msgstr ""
+"Usage: nmcli nm { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | sleep | wakeup | wifi | wwan }\n"
+"\n"
+"  status\n"
+"  sleep\n"
+"  wakeup\n"
+"  wifi [on|off]\n"
+"  wwan [on|off]\n"
+"\n"
+
+#: ../cli/src/network-manager.c:83
+msgid "asleep"
+msgstr "asleep"
+
+#: ../cli/src/network-manager.c:85
+msgid "connecting"
+msgstr "連線中"
+
+#: ../cli/src/network-manager.c:125
+#, c-format
+msgid "Error: 'nm status': %s"
+msgstr "錯誤：'nm status'：%s"
+
+#: ../cli/src/network-manager.c:127
+#, c-format
+msgid "Error: 'nm status': %s; allowed fields: %s"
+msgstr "錯誤：'nm status'：%s; 允許的欄位為：%s"
+
+#: ../cli/src/network-manager.c:134
+msgid "NetworkManager status"
+msgstr "NetworkManager 狀態"
+
+#. Print header
+#: ../cli/src/network-manager.c:140 ../cli/src/network-manager.c:141
+#: ../cli/src/network-manager.c:142 ../cli/src/network-manager.c:143
+#: ../cli/src/network-manager.c:211 ../cli/src/network-manager.c:243
+msgid "enabled"
+msgstr "已啟用"
+
+#: ../cli/src/network-manager.c:140 ../cli/src/network-manager.c:141
+#: ../cli/src/network-manager.c:142 ../cli/src/network-manager.c:143
+#: ../cli/src/network-manager.c:211 ../cli/src/network-manager.c:243
+msgid "disabled"
+msgstr "已停用"
+
+#: ../cli/src/network-manager.c:148
+msgid "running"
+msgstr "執行中"
+
+#: ../cli/src/network-manager.c:148
+msgid "not running"
+msgstr "非執行中"
+
+#: ../cli/src/network-manager.c:201 ../cli/src/network-manager.c:233
+#, c-format
+msgid "Error: '--fields' value '%s' is not valid here; allowed fields: %s"
+msgstr "錯誤：'--fields' 值 '%s' 在此無效; 允許的欄位為：%s"
+
+#: ../cli/src/network-manager.c:209
+msgid "WiFi enabled"
+msgstr "WiFi 已啟用"
+
+#: ../cli/src/network-manager.c:220
+#, c-format
+msgid "Error: invalid 'wifi' parameter: '%s'."
+msgstr "錯誤：不合乎規定的「wifi」參數：%s。"
+
+#: ../cli/src/network-manager.c:241
+msgid "WWAN enabled"
+msgstr "WWAN 已啟用"
+
+#: ../cli/src/network-manager.c:252
+#, c-format
+msgid "Error: invalid 'wwan' parameter: '%s'."
+msgstr "錯誤：不合乎規定的「wwan」參數：%s。"
+
+#: ../cli/src/network-manager.c:263
+#, c-format
+msgid "Error: 'nm' command '%s' is not valid."
+msgstr "錯誤：「nm」指令「%s」不合乎規定。"
+
+#: ../cli/src/nmcli.c:69
+#, c-format
+msgid ""
+"Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
+"\n"
+"OPTIONS\n"
+"  -t[erse]                                   terse output\n"
+"  -p[retty]                                  pretty output\n"
+"  -m[ode] tabular|multiline                  output mode\n"
+"  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
+"  -e[scape] yes|no                           escape columns separators in "
+"values\n"
+"  -v[ersion]                                 show program version\n"
+"  -h[elp]                                    print this help\n"
+"\n"
+"OBJECT\n"
+"  nm          NetworkManager status\n"
+"  con         NetworkManager connections\n"
+"  dev         devices managed by NetworkManager\n"
+"\n"
+msgstr ""
+"Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
+"\n"
+"OPTIONS\n"
+"  -t[erse]                                   terse output\n"
+"  -p[retty]                                  pretty output\n"
+"  -m[ode] tabular|multiline                  output mode\n"
+"  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
+"  -e[scape] yes|no                           escape columns separators in "
+"values\n"
+"  -v[ersion]                                 show program version\n"
+"  -h[elp]                                    print this help\n"
+"\n"
+"OBJECT\n"
+"  nm          NetworkManager status\n"
+"  con         NetworkManager connections\n"
+"  dev         devices managed by NetworkManager\n"
+"\n"
+
+#: ../cli/src/nmcli.c:113
+#, c-format
+msgid "Error: Object '%s' is unknown, try 'nmcli help'."
+msgstr "錯誤：物件 '%s' 不明，請嘗試 'nmcli help'。"
+
+#: ../cli/src/nmcli.c:143
+#, c-format
+msgid "Error: Option '--terse' is specified the second time."
+msgstr "錯誤：選項 '--terse' 已指定了第二次。"
+
+#: ../cli/src/nmcli.c:148
+#, c-format
+msgid "Error: Option '--terse' is mutually exclusive with '--pretty'."
+msgstr "錯誤：選項 '--terse' 和 '--pretty' 是互斥的。"
+
+#: ../cli/src/nmcli.c:156
+#, c-format
+msgid "Error: Option '--pretty' is specified the second time."
+msgstr "錯誤：選項 '--pretty' 已指定了第二次。"
+
+#: ../cli/src/nmcli.c:161
+#, c-format
+msgid "Error: Option '--pretty' is mutually exclusive with '--terse'."
+msgstr "錯誤：選項 '--pretty' 和 '--terse' 是互斥的。"
+
+#: ../cli/src/nmcli.c:171 ../cli/src/nmcli.c:187
+#, c-format
+msgid "Error: missing argument for '%s' option."
+msgstr "錯誤：'%s' 選項的引數遺失。"
+
+#: ../cli/src/nmcli.c:180 ../cli/src/nmcli.c:196
+#, c-format
+msgid "Error: '%s' is not valid argument for '%s' option."
+msgstr "錯誤：'%s' 不是 '%s' 選項的有效引數。"
+
+#: ../cli/src/nmcli.c:203
+#, c-format
+msgid "Error: fields for '%s' options are missing."
+msgstr "錯誤：找不到 '%s' 選項的欄位。"
+
+#: ../cli/src/nmcli.c:209
+#, c-format
+msgid "nmcli tool, version %s\n"
+msgstr "nmcli 工具，版本 %s\n"
+
+#: ../cli/src/nmcli.c:215
+#, c-format
+msgid "Error: Option '%s' is unknown, try 'nmcli -help'."
+msgstr "錯誤：選項 '%s' 不明，請嚐試 'nmcli -help'。"
+
+#: ../cli/src/nmcli.c:234
+#, c-format
+msgid "Caught signal %d, shutting down..."
+msgstr "捕捉到訊號 %d，關閉..."
+
+#: ../cli/src/nmcli.c:259
+#, c-format
+msgid "Error: Could not connect to NetworkManager."
+msgstr "錯誤：無法連上 NetworkManager。"
+
+#: ../cli/src/nmcli.c:275
+msgid "Success"
+msgstr "成功"
+
+#: ../cli/src/settings.c:407
+#, c-format
+msgid "%d (hex-ascii-key)"
+msgstr "%d（十六進位的 ascii-key）"
+
+#: ../cli/src/settings.c:409
+#, c-format
+msgid "%d (104/128-bit passphrase)"
+msgstr "%d（104/128 位元密碼）"
+
+#: ../cli/src/settings.c:412
+#, c-format
+msgid "%d (unknown)"
+msgstr "%d（不明）"
+
+#: ../cli/src/settings.c:438
+msgid "0 (unknown)"
+msgstr "0（不明）"
+
+#: ../cli/src/settings.c:444
+msgid "any, "
+msgstr "任何，"
+
+#: ../cli/src/settings.c:446
+msgid "900 MHz, "
+msgstr "900 MHz, "
+
+#: ../cli/src/settings.c:448
+msgid "1800 MHz, "
+msgstr "1800 MHz, "
+
+#: ../cli/src/settings.c:450
+msgid "1900 MHz, "
+msgstr "1900 MHz, "
+
+#: ../cli/src/settings.c:452
+msgid "850 MHz, "
+msgstr "850 MHz, "
+
+#: ../cli/src/settings.c:454
+msgid "WCDMA 3GPP UMTS 2100 MHz, "
+msgstr "WCDMA 3GPP UMTS 2100 MHz, "
+
+#: ../cli/src/settings.c:456
+msgid "WCDMA 3GPP UMTS 1800 MHz, "
+msgstr "WCDMA 3GPP UMTS 1800 MHz, "
+
+#: ../cli/src/settings.c:458
+msgid "WCDMA 3GPP UMTS 1700/2100 MHz, "
+msgstr "WCDMA 3GPP UMTS 1700/2100 MHz, "
+
+#: ../cli/src/settings.c:460
+msgid "WCDMA 3GPP UMTS 800 MHz, "
+msgstr "WCDMA 3GPP UMTS 800 MHz, "
+
+#: ../cli/src/settings.c:462
+msgid "WCDMA 3GPP UMTS 850 MHz, "
+msgstr "WCDMA 3GPP UMTS 850 MHz, "
+
+#: ../cli/src/settings.c:464
+msgid "WCDMA 3GPP UMTS 900 MHz, "
+msgstr "WCDMA 3GPP UMTS 900 MHz, "
+
+#: ../cli/src/settings.c:466
+msgid "WCDMA 3GPP UMTS 1700 MHz, "
+msgstr "WCDMA 3GPP UMTS 1700 MHz, "
+
+#: ../cli/src/settings.c:546 ../cli/src/settings.c:708
+msgid "auto"
+msgstr "自動"
+
+#: ../cli/src/settings.c:704 ../cli/src/settings.c:707 ../cli/src/utils.c:172
+msgid "not set"
+msgstr "不設置"
+
+#: ../cli/src/utils.c:124
+#, c-format
+msgid "field '%s' has to be alone"
+msgstr "欄位 '%s' 必須是單獨的"
+
+#: ../cli/src/utils.c:127
+#, c-format
+msgid "invalid field '%s'"
+msgstr "無效的欄位 '%s'"
+
+#: ../cli/src/utils.c:146
+#, c-format
+msgid "Option '--terse' requires specifying '--fields'"
+msgstr "選項 '--terse' 需指定 '--fields'"
+
+#: ../cli/src/utils.c:150
+#, c-format
+msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
+msgstr "選項 '--terse' 需要特定的 '--fields' 選項值，而不是 '%s'"
+
+#: ../libnm-util/crypto.c:120
+#, c-format
+msgid "PEM key file had no end tag '%s'."
+msgstr "PEM 金鑰檔案沒有結束標籤「%s」。"
+
+#: ../libnm-util/crypto.c:130
+#, c-format
+msgid "Doesn't look like a PEM private key file."
+msgstr "看起來不像是 PEM 私密金鑰檔案。"
+
+#: ../libnm-util/crypto.c:138
+#, c-format
+msgid "Not enough memory to store PEM file data."
+msgstr "沒有足夠的記憶體可儲存 PEM 檔案資料。"
+
+#: ../libnm-util/crypto.c:154
+#, c-format
+msgid "Malformed PEM file: Proc-Type was not first tag."
+msgstr "格式不良的 PEM 檔案：Proc-Type 不是第一個標籤。"
+
+#: ../libnm-util/crypto.c:162
+#, c-format
+msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
+msgstr "格式不良的 PEM 檔案：不明的 Proc-Type 標籤「%s」"
+
+#: ../libnm-util/crypto.c:172
+#, c-format
+msgid "Malformed PEM file: DEK-Info was not the second tag."
+msgstr "格式不良的 PEM 檔案：DEK-Info 不是第二個標籤。"
+
+#: ../libnm-util/crypto.c:183
+#, c-format
+msgid "Malformed PEM file: no IV found in DEK-Info tag."
+msgstr "格式不良的 PEM 檔案：在 DEK-Info 標籤中找不到 IV。"
+
+#: ../libnm-util/crypto.c:190
+#, c-format
+msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
+msgstr "格式不良的 PEM 檔案：DEK-Info 標籤中的 IV 格式是無效的。"
+
+#: ../libnm-util/crypto.c:203
+#, c-format
+msgid "Malformed PEM file: unknown private key cipher '%s'."
+msgstr "格式不良的 PEM 檔案：不明的私密金鑰加密器「%s」。"
+
+#: ../libnm-util/crypto.c:222
+#, c-format
+msgid "Could not decode private key."
+msgstr "無法解碼私密金鑰。"
+
+#: ../libnm-util/crypto.c:267
+#, c-format
+msgid "PEM certificate '%s' had no end tag '%s'."
+msgstr "PEM 憑證「%s」沒有結束標籤「%s」。"
+
+#: ../libnm-util/crypto.c:277
+#, c-format
+msgid "Failed to decode certificate."
+msgstr "解碼憑證失敗。"
+
+#: ../libnm-util/crypto.c:286
+#, c-format
+msgid "Not enough memory to store certificate data."
+msgstr "沒有足夠的記憶體可儲存憑證資料。"
+
+#: ../libnm-util/crypto.c:294
+#, c-format
+msgid "Not enough memory to store file data."
+msgstr "沒有足夠的記憶體可儲存檔案資料。"
+
+#: ../libnm-util/crypto.c:324
+#, c-format
+msgid "IV must be an even number of bytes in length."
+msgstr "IV 的長度必須為偶數位元組。"
+
+#: ../libnm-util/crypto.c:333
+#, c-format
+msgid "Not enough memory to store the IV."
+msgstr "沒有足夠的記憶體可儲存 IV。"
+
+#: ../libnm-util/crypto.c:344
+#, c-format
+msgid "IV contains non-hexadecimal digits."
+msgstr "IV 包含非十六進位的數字。"
+
+#: ../libnm-util/crypto.c:382 ../libnm-util/crypto_gnutls.c:148
+#: ../libnm-util/crypto_gnutls.c:266 ../libnm-util/crypto_nss.c:171
+#: ../libnm-util/crypto_nss.c:336
+#, c-format
+msgid "Private key cipher '%s' was unknown."
+msgstr "私密金鑰加密器「%s」不明。"
+
+#: ../libnm-util/crypto.c:391
+#, c-format
+msgid "Not enough memory to decrypt private key."
+msgstr "沒有足夠的記憶體可解密私密金鑰。"
+
+#: ../libnm-util/crypto.c:511
+#, c-format
+msgid "Unable to determine private key type."
+msgstr "無法決定私密金鑰的類型。"
+
+#: ../libnm-util/crypto.c:530
+#, c-format
+msgid "Not enough memory to store decrypted private key."
+msgstr "沒有足夠的記憶體可儲存解密的私密金鑰。"
+
+#: ../libnm-util/crypto_gnutls.c:49
+msgid "Failed to initialize the crypto engine."
+msgstr "初始化 crypto 引擎失敗。"
+
+#: ../libnm-util/crypto_gnutls.c:93
+#, c-format
+msgid "Failed to initialize the MD5 engine: %s / %s."
+msgstr "初始化 MD5 引擎失敗： %s / %s。"
+
+#: ../libnm-util/crypto_gnutls.c:156
+#, c-format
+msgid "Invalid IV length (must be at least %zd)."
+msgstr "不合乎規定的 IV 長度（必須至少是 %zd）。"
+
+#: ../libnm-util/crypto_gnutls.c:165 ../libnm-util/crypto_nss.c:188
+#, c-format
+msgid "Not enough memory for decrypted key buffer."
+msgstr "沒有足夠的記憶體供作解密金鑰緩衝區。"
+
+#: ../libnm-util/crypto_gnutls.c:173
+#, c-format
+msgid "Failed to initialize the decryption cipher context: %s / %s."
+msgstr "初始化解密用的加密器失敗： %s / %s。"
+
+#: ../libnm-util/crypto_gnutls.c:182
+#, c-format
+msgid "Failed to set symmetric key for decryption: %s / %s."
+msgstr "設定解密用的對稱式金鑰失敗： %s / %s。"
+
+#: ../libnm-util/crypto_gnutls.c:191
+#, c-format
+msgid "Failed to set IV for decryption: %s / %s."
+msgstr "設定解密用的 IV 失敗： %s / %s。"
+
+#: ../libnm-util/crypto_gnutls.c:200
+#, c-format
+msgid "Failed to decrypt the private key: %s / %s."
+msgstr "解密私密金鑰失敗： %s / %s。"
+
+#: ../libnm-util/crypto_gnutls.c:210 ../libnm-util/crypto_nss.c:267
+#, c-format
+msgid "Failed to decrypt the private key: unexpected padding length."
+msgstr "解密私密金鑰失敗：無預期的填空長度。"
+
+#: ../libnm-util/crypto_gnutls.c:221 ../libnm-util/crypto_nss.c:278
+#, c-format
+msgid "Failed to decrypt the private key."
+msgstr "解密私密金鑰失敗。"
+
+#: ../libnm-util/crypto_gnutls.c:286 ../libnm-util/crypto_nss.c:356
+#, c-format
+msgid "Could not allocate memory for encrypting."
+msgstr "無法分配記憶體，以供加密。"
+
+#: ../libnm-util/crypto_gnutls.c:294
+#, c-format
+msgid "Failed to initialize the encryption cipher context: %s / %s."
+msgstr "初始化加密用的加密器失敗： %s / %s。"
+
+#: ../libnm-util/crypto_gnutls.c:303
+#, c-format
+msgid "Failed to set symmetric key for encryption: %s / %s."
+msgstr "設定加密用的對稱式金鑰失敗： %s / %s。"
+
+#: ../libnm-util/crypto_gnutls.c:313
+#, c-format
+msgid "Failed to set IV for encryption: %s / %s."
+msgstr "設定加密用的 IV 失敗： %s / %s。"
+
+#: ../libnm-util/crypto_gnutls.c:322
+#, c-format
+msgid "Failed to encrypt the data: %s / %s."
+msgstr "加密私密金鑰失敗： %s / %s。"
+
+#: ../libnm-util/crypto_gnutls.c:362
+#, c-format
+msgid "Error initializing certificate data: %s"
+msgstr "初始化憑證資料時發生錯誤：%s"
+
+#: ../libnm-util/crypto_gnutls.c:384
+#, c-format
+msgid "Couldn't decode certificate: %s"
+msgstr "無法解碼憑證：%s"
+
+#: ../libnm-util/crypto_gnutls.c:408
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %s"
+msgstr "無法啟動 PKCS#12 解碼程式：%s"
+
+#: ../libnm-util/crypto_gnutls.c:421
+#, c-format
+msgid "Couldn't decode PKCS#12 file: %s"
+msgstr "無法解碼 PKCS#12 檔案：%s"
+
+#: ../libnm-util/crypto_gnutls.c:433
+#, c-format
+msgid "Couldn't verify PKCS#12 file: %s"
+msgstr "無法驗證 PKCS# 12 檔案：%s"
+
+#: ../libnm-util/crypto_nss.c:56
+#, c-format
+msgid "Failed to initialize the crypto engine: %d."
+msgstr "初始化 crypto 引擎失敗： %d。"
+
+#: ../libnm-util/crypto_nss.c:111
+#, c-format
+msgid "Failed to initialize the MD5 context: %d."
+msgstr "初始化 MD5 本文失敗：%d。"
+
+#: ../libnm-util/crypto_nss.c:179
+#, c-format
+msgid "Invalid IV length (must be at least %d)."
+msgstr "不合於規定的 IV 長度（必須至少是 %d）。"
+
+#: ../libnm-util/crypto_nss.c:196
+#, c-format
+msgid "Failed to initialize the decryption cipher slot."
+msgstr "初始化解密用的加密器插槽失敗。"
+
+#: ../libnm-util/crypto_nss.c:206
+#, c-format
+msgid "Failed to set symmetric key for decryption."
+msgstr "設定解密用的對稱式金鑰失敗。"
+
+#: ../libnm-util/crypto_nss.c:216
+#, c-format
+msgid "Failed to set IV for decryption."
+msgstr "設定解密用的 IV 失敗。"
+
+#: ../libnm-util/crypto_nss.c:224
+#, c-format
+msgid "Failed to initialize the decryption context."
+msgstr "初始化解密上下文失敗。"
+
+#: ../libnm-util/crypto_nss.c:237
+#, c-format
+msgid "Failed to decrypt the private key: %d."
+msgstr "解密私密金鑰失敗：%d。"
+
+#: ../libnm-util/crypto_nss.c:245
+#, c-format
+msgid "Failed to decrypt the private key: decrypted data too large."
+msgstr "解密私密金鑰失敗：解密的資料太龐大。"
+
+#: ../libnm-util/crypto_nss.c:256
+#, c-format
+msgid "Failed to finalize decryption of the private key: %d."
+msgstr "結束私密金鑰的解密失敗：%d。"
+
+#: ../libnm-util/crypto_nss.c:364
+#, c-format
+msgid "Failed to initialize the encryption cipher slot."
+msgstr "初始化加密用的加密器插槽失敗。"
+
+#: ../libnm-util/crypto_nss.c:372
+#, c-format
+msgid "Failed to set symmetric key for encryption."
+msgstr "設定加密用的對稱式金鑰失敗。"
+
+#: ../libnm-util/crypto_nss.c:380
+#, c-format
+msgid "Failed to set IV for encryption."
+msgstr "設定加密用的 IV 失敗。"
+
+#: ../libnm-util/crypto_nss.c:388
+#, c-format
+msgid "Failed to initialize the encryption context."
+msgstr "初始化加密本文失敗。"
+
+#: ../libnm-util/crypto_nss.c:396
+#, c-format
+msgid "Failed to encrypt: %d."
+msgstr "加密失敗：%d。"
+
+#: ../libnm-util/crypto_nss.c:404
+#, c-format
+msgid "Unexpected amount of data after encrypting."
+msgstr "加密後無預期的資料量。"
+
+#: ../libnm-util/crypto_nss.c:447
+#, c-format
+msgid "Couldn't decode certificate: %d"
+msgstr "無法解碼憑證：%d"
+
+#: ../libnm-util/crypto_nss.c:482
+#, c-format
+msgid "Couldn't convert password to UCS2: %d"
+msgstr "無法將密碼轉為 UCS2：%d"
+
+#: ../libnm-util/crypto_nss.c:510
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %d"
+msgstr "無法初始化 PKCS#12 解碼程式：%d"
+
+#: ../libnm-util/crypto_nss.c:519
+#, c-format
+msgid "Couldn't decode PKCS#12 file: %d"
+msgstr "無法解碼 PKCS#12 檔案：%d"
+
+#: ../libnm-util/crypto_nss.c:528
+#, c-format
+msgid "Couldn't verify PKCS#12 file: %d"
+msgstr "無法驗證 PKCS#12 檔案：%d"
+
+#: ../libnm-util/crypto_nss.c:557
+msgid "Could not generate random data."
+msgstr "無法產生隨機資料。"
+
+#: ../libnm-util/nm-utils.c:1925
+#, c-format
+msgid "Not enough memory to make encryption key."
+msgstr "沒有足夠的記憶體建立加密金鑰。"
+
+#: ../libnm-util/nm-utils.c:2035
+msgid "Could not allocate memory for PEM file creation."
+msgstr "無法分配記憶體，以建立 PEM 檔案。"
+
+#: ../libnm-util/nm-utils.c:2047
+#, c-format
+msgid "Could not allocate memory for writing IV to PEM file."
+msgstr "無法分配記憶體，好將 IV 寫入 PEM 檔案。"
+
+#: ../libnm-util/nm-utils.c:2059
+#, c-format
+msgid "Could not allocate memory for writing encrypted key to PEM file."
+msgstr "無法分配記憶體，將加密金鑰寫入 PEM 檔案。"
+
+#: ../libnm-util/nm-utils.c:2078
+#, c-format
+msgid "Could not allocate memory for PEM file data."
+msgstr "無法分配記憶體給 PEM 檔案資料。"
+
+#: ../src/nm-netlink-monitor.c:100 ../src/nm-netlink-monitor.c:231
+#: ../src/nm-netlink-monitor.c:653
 #, c-format
 msgid "error processing netlink message: %s"
 msgstr "處理 netlink 訊息時發生錯誤：%s"
 
-#: ../src/nm-netlink-monitor.c:439
+#: ../src/nm-netlink-monitor.c:214
+msgid "error occurred while waiting for data on socket"
+msgstr "等待 socket 上的資料時發生錯誤"
+
+#: ../src/nm-netlink-monitor.c:254
+#, c-format
+msgid "unable to connect to netlink for monitoring link status: %s"
+msgstr "無法連結 netlink 以監控連線狀態：%s"
+
+#: ../src/nm-netlink-monitor.c:265
+#, c-format
+msgid "unable to enable netlink handle credential passing: %s"
+msgstr "無法啟用 netlink handle credential passing：%s"
+
+#: ../src/nm-netlink-monitor.c:291 ../src/nm-netlink-monitor.c:353
+#, c-format
+msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgstr "無法配置 netlink 處理器以監控連線狀態：%s"
+
+#: ../src/nm-netlink-monitor.c:376
+#, c-format
+msgid "unable to allocate netlink link cache for monitoring link status: %s"
+msgstr "無法配置 netlink 連線快取以監控連線狀態：%s"
+
+#: ../src/nm-netlink-monitor.c:502
+#, c-format
+msgid "unable to join netlink group: %s"
+msgstr "無法加入 netlink 群組：%s"
+
+#: ../src/nm-netlink-monitor.c:629 ../src/nm-netlink-monitor.c:642
 #, c-format
 msgid "error updating link cache: %s"
 msgstr "更新連線快取時發生錯誤：%s"
 
-#: ../src/NetworkManager.c:250
+#: ../src/main.c:502
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr "無效的選項。請使用 --help 來查看有效選項的清單。\n"
 
-#: ../src/dhcp-manager/nm-dhcp-dhclient.c:87
+#: ../src/main.c:562
+#, c-format
+msgid "%s.  Please use --help to see a list of valid options.\n"
+msgstr "%s。請使用 --help 來查看有效選項的清單。\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:325
 msgid "# Created by NetworkManager\n"
 msgstr "# Created by NetworkManager\n"
 
-#: ../src/dhcp-manager/nm-dhcp-dhclient.c:93
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:341
 #, c-format
 msgid ""
 "# Merged from %s\n"
@@ -44,961 +1564,79 @@ msgstr ""
 "# Merged from %s\n"
 "\n"
 
-#: ../src/named-manager/nm-named-manager.c:257
-msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
-msgstr "注意：glibc 解析器不支援 3 個以上的名稱伺服器。"
+#: ../src/dhcp-manager/nm-dhcp-manager.c:279
+msgid "no usable DHCP client could be found."
+msgstr "找不到可重複使用的 DHCP 用戶端。"
 
-#: ../src/named-manager/nm-named-manager.c:259
+#: ../src/dhcp-manager/nm-dhcp-manager.c:288
+msgid "'dhclient' could be found."
+msgstr "找不到「dhclient」。"
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:298
+msgid "'dhcpcd' could be found."
+msgstr "找不到「dhcpcd」。"
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:306
+#, c-format
+msgid "unsupported DHCP client '%s'"
+msgstr "不支援的 DHCP 用戶端「%s」"
+
+#: ../src/logging/nm-logging.c:146
+#, c-format
+msgid "Unknown log level '%s'"
+msgstr "不明日誌層級「%s」"
+
+#: ../src/logging/nm-logging.c:171
+#, c-format
+msgid "Unknown log domain '%s'"
+msgstr "不明日誌網域「%s」"
+
+#: ../src/named-manager/nm-named-manager.c:343
+msgid "NOTE: the libc resolver may not support more than 3 nameservers."
+msgstr "注意：libc 解析器不支援 3 個以上的名稱伺服器。"
+
+#: ../src/named-manager/nm-named-manager.c:345
 msgid "The nameservers listed below may not be recognized."
 msgstr "下面列出的名稱伺服器可能不會被辨識。"
 
-#: ../system-settings/src/main.c:365
+#: ../src/system-settings/nm-default-wired-connection.c:157
 #, c-format
 msgid "Auto %s"
 msgstr "自動 %s"
 
-#: ../libnm-util/crypto.c:125
-#, c-format
-msgid "PEM key file had no end tag '%s'."
-msgstr "PEM 金鑰檔案沒有結束標籤「%s」。"
+#: ../system-settings/plugins/ifcfg-rh/reader.c:3256
+msgid "System"
+msgstr "系統"
 
-#: ../libnm-util/crypto.c:135
-#, c-format
-msgid "Doesn't look like a PEM private key file."
-msgstr "看起來不像是 PEM 私密金鑰檔案。"
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:1
+msgid "Connection sharing via a protected WiFi network"
+msgstr "透過受保護的 WiFi 網路共享連線"
 
-#: ../libnm-util/crypto.c:143
-#, c-format
-msgid "Not enough memory to store PEM file data."
-msgstr "沒有足夠的記憶體可儲存 PEM 檔案資料。"
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:2
+msgid "Connection sharing via an open WiFi network"
+msgstr "透過開放的 WiFi 網路共享連線"
 
-#: ../libnm-util/crypto.c:159
-#, c-format
-msgid "Malformed PEM file: Proc-Type was not first tag."
-msgstr "格式不良的 PEM 檔案：Proc-Type 不是第一個標籤。"
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:3
+msgid "Modify persistent system hostname"
+msgstr "修改永久系統的主機名稱"
 
-#: ../libnm-util/crypto.c:167
-#, c-format
-msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
-msgstr "格式不良的 PEM 檔案：未知的 Proc-Type 標籤「%s」"
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:4
+msgid "Modify system connections"
+msgstr "修改系統連線"
 
-#: ../libnm-util/crypto.c:177
-#, c-format
-msgid "Malformed PEM file: DEK-Info was not the second tag."
-msgstr "格式不良的 PEM 檔案：DEK-Info 不是第二個標籤。"
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:5
+msgid "System policy prevents modification of system settings"
+msgstr "系統政策讓您無法修改系統設定"
 
-#: ../libnm-util/crypto.c:188
-#, c-format
-msgid "Malformed PEM file: no IV found in DEK-Info tag."
-msgstr "格式不良的 PEM 檔案：在 DEK-Info 標籤中找不到 IV。"
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:6
+msgid "System policy prevents modification of the persistent system hostname"
+msgstr "系統政策讓您無法修改永久的系統主機名稱"
 
-#: ../libnm-util/crypto.c:195
-#, c-format
-msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
-msgstr "格式不良的 PEM 檔案：DEK-Info 標籤中的 IV 格式是無效的。"
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:7
+msgid "System policy prevents sharing connections via a protected WiFi network"
+msgstr "系統政策讓您無法透過受保護的 WiFi 網路共享連結"
 
-#: ../libnm-util/crypto.c:208
-#, c-format
-msgid "Malformed PEM file: unknown private key cipher '%s'."
-msgstr "格式不良的 PEM 檔案：未知的私密金鑰加密器「%s」。"
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:8
+msgid "System policy prevents sharing connections via an open WiFi network"
+msgstr "系統政策讓您無法透過開放的 WiFi 網路共享連線"
 
-#: ../libnm-util/crypto.c:227
-#, c-format
-msgid "Could not decode private key."
-msgstr "無法解碼私密金鑰。"
-
-#: ../libnm-util/crypto.c:271
-#, c-format
-msgid "PEM certificate '%s' had no end tag '%s'."
-msgstr "PEM 憑證「%s」沒有結束標籤「%s」。"
-
-#: ../libnm-util/crypto.c:281
-#, c-format
-msgid "Failed to decode certificate."
-msgstr "解碼憑證失敗。"
-
-#: ../libnm-util/crypto.c:290 ../libnm-util/crypto.c:298
-#, c-format
-msgid "Not enough memory to store certificate data."
-msgstr "沒有足夠的記憶體可儲存憑證資料。"
-
-#: ../libnm-util/crypto.c:328
-#, c-format
-msgid "IV must be an even number of bytes in length."
-msgstr "IV 的長度必須為偶數位元組。"
-
-#: ../libnm-util/crypto.c:337
-#, c-format
-msgid "Not enough memory to store the IV."
-msgstr "沒有足夠的記憶體可儲存 IV。"
-
-#: ../libnm-util/crypto.c:348
-#, c-format
-msgid "IV contains non-hexadecimal digits."
-msgstr "IV 包含非十六進位的數字。"
-
-#: ../libnm-util/crypto.c:386 ../libnm-util/crypto_gnutls.c:126
-#: ../libnm-util/crypto_nss.c:136
-#, c-format
-msgid "Private key cipher '%s' was unknown."
-msgstr "私密金鑰加密器「%s」不明。"
-
-#: ../libnm-util/crypto.c:395
-#, c-format
-msgid "Not enough memory to create private key decryption key."
-msgstr "沒有足夠的記憶體可建立私密金鑰的解密鑰匙。"
-
-#: ../libnm-util/crypto.c:513
-#, c-format
-msgid "Not enough memory to store decrypted private key."
-msgstr "沒有足夠的記憶體可儲存解密的私密金鑰。"
-
-#: ../libnm-util/crypto_gnutls.c:73
-#, c-format
-msgid "Failed to initialize the MD5 engine: %s / %s."
-msgstr "初始化 MD5 引擎失敗： %s / %s。"
-
-#: ../libnm-util/crypto_gnutls.c:135 ../libnm-util/crypto_nss.c:145
-#, c-format
-msgid "Not enough memory for decrypted key buffer."
-msgstr "沒有足夠的記憶體供作解密金鑰緩衝區。"
-
-#: ../libnm-util/crypto_gnutls.c:143
-#, c-format
-msgid "Failed to initialize the decryption cipher context: %s / %s."
-msgstr "初始化解密用的加密器失敗： %s / %s。"
-
-#: ../libnm-util/crypto_gnutls.c:152
-#, c-format
-msgid "Failed to set symmetric key for decryption: %s / %s."
-msgstr "設定解密用的對稱式金鑰失敗： %s / %s。"
-
-#: ../libnm-util/crypto_gnutls.c:161
-#, c-format
-msgid "Failed to set IV for decryption: %s / %s."
-msgstr "設定解密用的 IV 失敗： %s / %s。"
-
-#: ../libnm-util/crypto_gnutls.c:170
-#, c-format
-msgid "Failed to decrypt the private key: %s / %s."
-msgstr "解密私密金鑰失敗： %s / %s。"
-
-#: ../libnm-util/crypto_gnutls.c:208
-#, c-format
-msgid "Error initializing certificate data: %s"
-msgstr "初始化憑證資料時發生錯誤：%s"
-
-#: ../libnm-util/crypto_gnutls.c:220
-#, c-format
-msgid "Couldn't decode certificate: %s"
-msgstr "無法解碼憑證：%s"
-
-#: ../libnm-util/crypto_nss.c:78
-#, c-format
-msgid "Failed to initialize the MD5 context: %d."
-msgstr "初始化 MD5 失敗：%d。"
-
-#: ../libnm-util/crypto_nss.c:153
-#, c-format
-msgid "Failed to initialize the decryption cipher slot."
-msgstr "初始化解密用的加密器插槽失敗。"
-
-#: ../libnm-util/crypto_nss.c:163
-#, c-format
-msgid "Failed to set symmetric key for decryption."
-msgstr "設定解密用的對稱式金鑰失敗。"
-
-#: ../libnm-util/crypto_nss.c:173
-#, c-format
-msgid "Failed to set IV for decryption."
-msgstr "設定解密用的 IV 失敗。"
-
-#: ../libnm-util/crypto_nss.c:181
-#, c-format
-msgid "Failed to initialize the decryption context."
-msgstr "初始化解密上下文失敗。"
-
-#: ../libnm-util/crypto_nss.c:194
-#, c-format
-msgid "Failed to decrypt the private key: %d."
-msgstr "解密私密金鑰失敗：%d。"
-
-#: ../libnm-util/crypto_nss.c:206
-#, c-format
-msgid "Failed to finalize decryption of the private key: %d."
-msgstr "結束私密金鑰的解密失敗：%d。"
-
-#: ../libnm-util/crypto_nss.c:250
-#, c-format
-msgid "Couldn't decode certificate: %d"
-msgstr "無法解碼憑證：%d"
-
-#: ../src/nm-netlink-monitor.c:250
-#, c-format
-msgid "unable to allocate netlink handle for monitoring link status: %s"
-msgstr "無法配置 netlink 處理器以監控連線狀態：%s"
-
-#: ../src/nm-netlink-monitor.c:260
-#, c-format
-msgid "unable to connect to netlink for monitoring link status: %s"
-msgstr "無法連結 netlink 以監控連線狀態：%s"
-
-#: ../src/nm-netlink-monitor.c:268
-#, c-format
-msgid "unable to join netlink group for monitoring link status: %s"
-msgstr "無法加入 netlink 群組以監控連線狀態：%s"
-
-#: ../src/nm-netlink-monitor.c:276
-#, c-format
-msgid "unable to allocate netlink link cache for monitoring link status: %s"
-msgstr "無法配置 netlink 連線快取以監控連線狀態：%s"
-
-#: ../src/nm-netlink-monitor.c:497
-#, c-format
-msgid "error occurred while waiting for data on socket"
-msgstr "等待 socket 上的資料時發生錯誤"
-
-#~ msgid "Passphrase for wireless network %s"
-#~ msgstr "無線網路 %s 的通行碼"
-
-#~ msgid "Connection to the wireless network '%s' failed."
-#~ msgstr "連接無線網路‘%s’失敗。"
-
-#~ msgid "Connection to the wired network failed."
-#~ msgstr "連接有線網路失敗。"
-
-#~ msgid "Error displaying connection information:"
-#~ msgstr "顯示連線資訊時發生錯誤:"
-
-#~ msgid "Could not find some required resources (the glade file)!"
-#~ msgstr "無法找到一些需要的資源（glade 檔）！"
-
-#~ msgid "No active connections!"
-#~ msgstr "沒有使用中的連線"
-
-#~ msgid "%d Mb/s"
-#~ msgstr "%d Mb/s"
-
-#~ msgid "Wired Ethernet (%s)"
-#~ msgstr "有線乙太網路 (%s)"
-
-#~ msgid "Wireless Ethernet (%s)"
-#~ msgstr "有線乙太網路 (%s)"
-
-#~ msgid "Unknown"
-#~ msgstr "不明"
-
-#~ msgid "NetworkManager Applet"
-#~ msgstr "NetworkManager 面板程式"
-
-#~ msgid ""
-#~ "Copyright © 2004-2006 Red Hat, Inc.\n"
-#~ "Copyright © 2005-2006 Novell, Inc."
-#~ msgstr ""
-#~ "版權所有 (C) 2004-2006 Red Hat, Inc.\n"
-#~ "版權所有 (C) 2005-2006 Novell, Inc."
-
-#~ msgid ""
-#~ "Notification area applet for managing your network devices and "
-#~ "connections."
-#~ msgstr "管理網路裝置與連線的通知區面板程式。"
-
-#~ msgid "translator-credits"
-#~ msgstr ""
-#~ "如對翻譯有任何意見，請送一封電子郵件給\n"
-#~ "以下地址，GNOME 翻譯團隊會盡快回覆您：\n"
-#~ "community@linuxhall.org\n"
-#~ "\n"
-#~ "Woodman Tuen <wmtuen@gmail.com>, 2005."
-
-#~ msgid ""
-#~ "Copyright © 2004-2005 Red Hat, Inc.\n"
-#~ "Copyright © 2005-2006 Novell, Inc."
-#~ msgstr ""
-#~ "版權所有 (C) 2004-2005 Red Hat, Inc.\n"
-#~ "版權所有 (C) 2005-2006 Novell, Inc."
-
-#~ msgid "VPN Login Failure"
-#~ msgstr "VPN 登入失敗"
-
-#~ msgid "Could not start the VPN connection '%s' due to a login failure."
-#~ msgstr "因為登入失敗所以無法執行 VPN 連線‘%s’。"
-
-#~ msgid "VPN Start Failure"
-#~ msgstr "VPN 啟動失敗"
-
-#~ msgid ""
-#~ "Could not start the VPN connection '%s' due to a failure launching the "
-#~ "VPN program."
-#~ msgstr "因為執行 VPN 程式失敗所以無法建立 VPN 連線‘%s’。"
-
-#~ msgid "VPN Connect Failure"
-#~ msgstr "VPN 連線失敗"
-
-#~ msgid "Could not start the VPN connection '%s' due to a connection error."
-#~ msgstr "因為連線錯誤，所以無法啟動 VPN 連線‘%s’。"
-
-#~ msgid "VPN Configuration Error"
-#~ msgstr "VPN 組態發生錯誤"
-
-#~ msgid "The VPN connection '%s' was not correctly configured."
-#~ msgstr "VPN 連線‘%s’沒有設定正確。"
-
-#~ msgid ""
-#~ "Could not start the VPN connection '%s' because the VPN server did not "
-#~ "return an adequate network configuration."
-#~ msgstr "因為 VPN 伺服器沒有傳回足夠的網路組態所以無法建立 VPN 連線‘%s’。"
-
-#~ msgid "VPN Login Message"
-#~ msgstr "VPN 登入訊息"
-
-#~ msgid ""
-#~ "The NetworkManager Applet could not find some required resources (the "
-#~ "glade file was not found)."
-#~ msgstr "NetworkManager 面板程式無法找到一些需要的資源（找不到 glade 檔）"
-
-#~ msgid "The network device \"%s (%s)\" does not support wireless scanning."
-#~ msgstr "網路裝置“%s (%s)”不支援無線網路掃描。"
-
-#~ msgid "The network device \"%s (%s)\" does not support link detection."
-#~ msgstr "網路裝置“%s (%s)”不支援連接偵測"
-
-#~ msgid "(unknown)"
-#~ msgstr "(未知)"
-
-#~ msgid "Preparing device %s for the wired network..."
-#~ msgstr "裝置 %s 正準備連接有線網路..."
-
-#~ msgid "Preparing device %s for the wireless network '%s'..."
-#~ msgstr "裝置 %s 正準備連接無線網路‘%s’..."
-
-#~ msgid "Configuring device %s for the wired network..."
-#~ msgstr "設定有線網路裝置 %s ..."
-
-#~ msgid "Attempting to join the wireless network '%s'..."
-#~ msgstr "正在嘗試加入無線網路‘%s’..."
-
-#~ msgid "Waiting for Network Key for the wireless network '%s'..."
-#~ msgstr "正在等待無線網路‘%s’的網路金鑰..."
-
-#~ msgid "Requesting a network address from the wired network..."
-#~ msgstr "正要求有線網路提供網路位址..."
-
-#~ msgid "Requesting a network address from the wireless network '%s'..."
-#~ msgstr "正要求無線網路‘%s’提供網路位址..."
-
-#~ msgid "Finishing connection to the wired network..."
-#~ msgstr "連接有線網路完成..."
-
-#~ msgid "Finishing connection to the wireless network '%s'..."
-#~ msgstr "連接無線網路‘%s’完成..."
-
-#~ msgid "NetworkManager is not running"
-#~ msgstr "NetworkManager 沒有執行"
-
-#~ msgid "Networking disabled"
-#~ msgstr "網路功能停用"
-
-#~ msgid "No network connection"
-#~ msgstr "沒有網路連接"
-
-#~ msgid "Wired network connection"
-#~ msgstr "有線網路連接"
-
-#~ msgid "Connected to an Ad-Hoc wireless network"
-#~ msgstr "連接到 Ad-Hoc 點對點式無線網路"
-
-#~ msgid "Wireless network connection to '%s' (%d%%)"
-#~ msgstr "無線網路連接到‘%s’ (%d%%)"
-
-#~ msgid "VPN connection to '%s'"
-#~ msgstr "VPN 連線連接到‘%s’"
-
-#~ msgid "VPN connecting to '%s'"
-#~ msgstr "VPN 連線至‘%s’"
-
-#~ msgid "_Connect to Other Wireless Network..."
-#~ msgstr "連接到其它的無線網路(_C)..."
-
-#~ msgid "Create _New Wireless Network..."
-#~ msgstr "建立新的無線網路(_N)..."
-
-#~ msgid "_VPN Connections"
-#~ msgstr "_VPN 連線"
-
-#~ msgid "_Configure VPN..."
-#~ msgstr "設定 VP_N..."
-
-#~ msgid "_Disconnect VPN..."
-#~ msgstr "與 V_PN 斷線..."
-
-#~ msgid "_Dial Up Connections"
-#~ msgstr "播接連線(_D)"
-
-#~ msgid "Connect to %s..."
-#~ msgstr "連線到 %s..."
-
-#~ msgid "Disconnect from %s..."
-#~ msgstr "與 %s 斷線..."
-
-#~ msgid "No network devices have been found"
-#~ msgstr "找不到任何網路裝置"
-
-#~ msgid "NetworkManager is not running..."
-#~ msgstr "NetworkManager 沒有執行...."
-
-#~ msgid "Enable _Networking"
-#~ msgstr "啟用網路功能(_N)"
-
-#~ msgid "Enable _Wireless"
-#~ msgstr "啟用無線網路(_W)"
-
-#~ msgid "Connection _Information"
-#~ msgstr "連線資訊(_I)"
-
-#~ msgid "_Help"
-#~ msgstr "求助(_H)"
-
-#~ msgid "_About"
-#~ msgstr "關於(_A)"
-
-#~ msgid ""
-#~ "The NetworkManager applet could not find some required resources.  It "
-#~ "cannot continue.\n"
-#~ msgstr "NetworkManager 面板程式無法找到一些需要的資源。它無法繼續。\n"
-
-#~ msgid "Open System"
-#~ msgstr "開放系統"
-
-#~ msgid "Shared Key"
-#~ msgstr "分享金鑰"
-
-#~ msgid "Automatic (Default)"
-#~ msgstr "自動(預設值)"
-
-#~ msgid "AES-CCMP"
-#~ msgstr "AES-CCMP"
-
-#~ msgid "TKIP"
-#~ msgstr "TKIP"
-
-#~ msgid "Dynamic WEP"
-#~ msgstr "動態 WEP"
-
-#~ msgid "None"
-#~ msgstr "None"
-
-#~ msgid "WEP 64/128-bit ASCII"
-#~ msgstr "WEP 64/128-bit ASCII"
-
-#~ msgid "WEP 64/128-bit Hex"
-#~ msgstr "WEP 64/128-bit Hex"
-
-#~ msgid "WEP 128-bit Passphrase"
-#~ msgstr "WEP 128-bit 密語"
-
-#~ msgid "PEAP"
-#~ msgstr "PEAP"
-
-#~ msgid "TLS"
-#~ msgstr "TLS"
-
-#~ msgid "TTLS"
-#~ msgstr "TTLS"
-
-#~ msgid "WPA2 Enterprise"
-#~ msgstr "WPA2 企業版"
-
-#~ msgid "WPA Enterprise"
-#~ msgstr "WPA 企業版"
-
-#~ msgid "WPA2 Personal"
-#~ msgstr "WPA2 個人版"
-
-#~ msgid "WPA Personal"
-#~ msgstr "WPA 個人版"
-
-#~ msgid "Orientation"
-#~ msgstr "方向"
-
-#~ msgid "The orientation of the tray."
-#~ msgstr "面板的方向"
-
-#~ msgid "Wired Network (%s)"
-#~ msgstr "有線網路 (%s)"
-
-#~ msgid "_Wired Network"
-#~ msgstr "有線網路(_W)"
-
-#~ msgid "Wireless Network (%s)"
-#~ msgid_plural "Wireless Networks (%s)"
-#~ msgstr[0] "無線網路 (%s)"
-
-#~ msgid "Wireless Network"
-#~ msgid_plural "Wireless Networks"
-#~ msgstr[0] "無線網路"
-
-#~ msgid " (invalid Unicode)"
-#~ msgstr "（無效的統一碼）"
-
-#~ msgid ""
-#~ "By default, the wireless network's name is set to your computer's name, %"
-#~ "s, with no encryption enabled"
-#~ msgstr "預設上無線網路的名稱是設為您的電腦名稱，%s，並不使用加密"
-
-#~ msgid "Create new wireless network"
-#~ msgstr "建立新的無線網路"
-
-#~ msgid ""
-#~ "Enter the name and security settings of the wireless network you wish to "
-#~ "create."
-#~ msgstr "輸入您要建立的無線網路的名稱及安全設定。"
-
-#~ msgid "Create New Wireless Network"
-#~ msgstr "建立一個新的無線網路"
-
-#~ msgid "Existing wireless network"
-#~ msgstr "現有的無線網路"
-
-#~ msgid "Enter the name of the wireless network to which you wish to connect."
-#~ msgstr "輸入您要連接的無線網路的名稱。"
-
-#~ msgid "Connect to Other Wireless Network"
-#~ msgstr "連接到其它的無線網路"
-
-#~ msgid "Error connecting to wireless network"
-#~ msgstr "連接到無線網路發生錯誤"
-
-#~ msgid ""
-#~ "The requested wireless network requires security capabilities unsupported "
-#~ "by your hardware."
-#~ msgstr "您的硬體不支援該無線網路所需的安全性機能。"
-
-#~ msgid "Cannot start VPN connection '%s'"
-#~ msgstr "無法執行 VPN 連線‘%s’"
-
-#~ msgid ""
-#~ "Could not find the authentication dialog for VPN connection type '%s'. "
-#~ "Contact your system administrator."
-#~ msgstr "找不到 VPN 連線類型‘%s’的驗證對話盒。請連絡您的系統管理者。"
-
-#~ msgid ""
-#~ "There was a problem launching the authentication dialog for VPN "
-#~ "connection type '%s'. Contact your system administrator."
-#~ msgstr "執行 VPN 連線類型‘%s’的驗證對話盒時發生問題。請連絡您的系統管理者。"
-
-#~ msgid " "
-#~ msgstr " "
-
-#~ msgid ""
-#~ "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
-#~ msgstr "<span weight=\"bold\">使用中的連線資訊：</span>"
-
-#~ msgid ""
-#~ "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
-#~ "Network</span>\n"
-#~ "\n"
-#~ "A passphrase or encryption key is required to access the wireless network "
-#~ "'%s'."
-#~ msgstr ""
-#~ "<span weight=\"bold\" size=\"larger\">無線網路通行碼請求</span>\n"
-#~ "\n"
-#~ "需要一個通行碼或是密鑰來存取無線網路‘%s’"
-
-#~ msgid ""
-#~ "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</"
-#~ "span>\n"
-#~ "\n"
-#~ "%s  It will not be completely functional."
-#~ msgstr ""
-#~ "<span weight=\"bold\" size=\"larger\">簡化的網路功能</span>\n"
-#~ "\n"
-#~ "%s  它並不能完整的作用。"
-
-#~ msgid ""
-#~ "<span weight=\"bold\" size=\"larger\">Wireless Network Login "
-#~ "Confirmation</span>\n"
-#~ "\n"
-#~ "You have chosen to log in to the wireless network '%s'.  If you are sure "
-#~ "that this wireless network is secure, click the checkbox below and "
-#~ "NetworkManager will not require confirmation on subsequent log ins."
-#~ msgstr ""
-#~ "<span weight=\"bold\" size=\"larger\">無線網路登入確認</span>\n"
-#~ "\n"
-#~ "您已經選擇登入無線網路‘%s’。如果確定此無線網路是安全的，按下下面的核取方"
-#~ "塊，NetworkManager 在接下來的登入就不會再要求確認。"
-
-#~ msgid "Anonymous Identity:"
-#~ msgstr "匿名身分:"
-
-#~ msgid "Authentication:"
-#~ msgstr "驗證方式:"
-
-#~ msgid "Broadcast Address:"
-#~ msgstr "廣播位址："
-
-#~ msgid "CA Certificate File:"
-#~ msgstr "CA 憑證檔案:"
-
-#~ msgid "C_onnect"
-#~ msgstr "連線(_O)"
-
-#~ msgid "Client Certificate File:"
-#~ msgstr "客戶端憑證檔案:"
-
-#~ msgid "Connection Information"
-#~ msgstr "連線資訊"
-
-#~ msgid "Default Route:"
-#~ msgstr "預設路由:"
-
-#~ msgid "Destination Address:"
-#~ msgstr "目的地位址："
-
-#~ msgid "Driver:"
-#~ msgstr "驅動程式:"
-
-#~ msgid "EAP Method:"
-#~ msgstr "EAP 方法:"
-
-#~ msgid "Hardware Address:"
-#~ msgstr "硬體位址："
-
-#~ msgid "IP Address:"
-#~ msgstr "IP 位址："
-
-#~ msgid "Identity:"
-#~ msgstr "身分:"
-
-#~ msgid "Interface:"
-#~ msgstr "介面："
-
-#~ msgid "Key Type:"
-#~ msgstr "金鑰類型："
-
-#~ msgid "Key management:"
-#~ msgstr "金鑰管理:"
-
-#~ msgid "Key:"
-#~ msgstr "金鑰:"
-
-#~ msgid ""
-#~ "None\n"
-#~ "WEP 128-bit Passphrase\n"
-#~ "WEP 64/128-bit Hex\n"
-#~ "WEP 64/128-bit ASCII\n"
-#~ msgstr ""
-#~ "無\n"
-#~ "WEP 128-bit 密語\n"
-#~ "WEP 64/128-bit Hex\n"
-#~ "WEP 64/128-bit ASCII\n"
-
-#~ msgid ""
-#~ "Open System\n"
-#~ "Shared Key"
-#~ msgstr ""
-#~ "開放系統\n"
-#~ "分享金鑰"
-
-#~ msgid "Other Wireless Network..."
-#~ msgstr "其它無線網路..."
-
-#~ msgid "Passphrase:"
-#~ msgstr "通行碼："
-
-#~ msgid "Password:"
-#~ msgstr "密碼:"
-
-#~ msgid "Primary DNS:"
-#~ msgstr "主要 DNS:"
-
-#~ msgid "Private Key File:"
-#~ msgstr "私密金鑰檔案:"
-
-#~ msgid "Private Key Password:"
-#~ msgstr "私密金鑰密碼 :"
-
-#~ msgid "Secondary DNS:"
-#~ msgstr "次要 DNS:"
-
-#~ msgid "Select the CA Certificate File"
-#~ msgstr "選擇 CA 憑證檔案"
-
-#~ msgid "Select the Client Certificate File"
-#~ msgstr "選擇客戶端憑證檔案"
-
-#~ msgid "Select the Private Key File"
-#~ msgstr "選擇私密金鑰檔案"
-
-#~ msgid "Show key"
-#~ msgstr "顯示金鑰"
-
-#~ msgid "Show passphrase"
-#~ msgstr "顯示密語"
-
-#~ msgid "Show password"
-#~ msgstr "顯示密碼"
-
-#~ msgid "Show passwords"
-#~ msgstr "顯示密碼"
-
-#~ msgid "Speed:"
-#~ msgstr "連線速度:"
-
-#~ msgid "Subnet Mask:"
-#~ msgstr "子網路遮罩："
-
-#~ msgid "Type:"
-#~ msgstr "Type:"
-
-#~ msgid "User Name:"
-#~ msgstr "使用者名稱:"
-
-#~ msgid "Wireless Network Key Required"
-#~ msgstr "需要無線網路金鑰"
-
-#~ msgid "Wireless _adapter:"
-#~ msgstr "無線網絡卡(_A)："
-
-#~ msgid "_Always Trust this Wireless Network"
-#~ msgstr "總是信任這無線網路(_A)"
-
-#~ msgid "_Don't remind me again"
-#~ msgstr "不要再提醒我(_D)"
-
-#~ msgid "_Fallback on this Network"
-#~ msgstr "退出此網路(_F)"
-
-#~ msgid "_Login to Network"
-#~ msgstr "登入網路(_L)"
-
-#~ msgid "_Network Name:"
-#~ msgstr "網路名稱(_N):"
-
-#~ msgid "_Wireless Security:"
-#~ msgstr "無線安全性(_W):"
-
-#~ msgid "Cannot add VPN connection"
-#~ msgstr "無法加入 VPN 連線"
-
-#~ msgid ""
-#~ "No suitable VPN software was found on your system. Contact your system "
-#~ "administrator."
-#~ msgstr "在您的系統上找不到合適的 VPN 軟體。請連絡您的系統管理者。"
-
-#~ msgid "Cannot import VPN connection"
-#~ msgstr "無法匯入 VPN 網路連線"
-
-#~ msgid ""
-#~ "Cannot find suitable software for VPN connection type '%s' to import the "
-#~ "file '%s'. Contact your system administrator."
-#~ msgstr ""
-#~ "找不到適合 VPN 連線類型‘%s’的軟體來匯入檔案‘%s’。請連絡您的系統管理者。"
-
-#~ msgid "Error retrieving VPN connection '%s'"
-#~ msgstr "接收 VPN 連線‘%s’時發生錯誤"
-
-#~ msgid ""
-#~ "Could not find the UI files for VPN connection type '%s'. Contact your "
-#~ "system administrator."
-#~ msgstr "找不到 VPN 連線類型‘%s’的 UI 檔案。請連絡您的系統管理者。"
-
-#~ msgid "Delete VPN connection \"%s\"?"
-#~ msgstr "刪除 VPN 連線“%s”？"
-
-#~ msgid ""
-#~ "All information about the VPN connection \"%s\" will be lost and you may "
-#~ "need your system administrator to provide information to create a new "
-#~ "connection."
-#~ msgstr ""
-#~ "所有 VPN 連線‘%s’的相關資訊都會消失，而您需要請系統管理者提供建立新連線的"
-#~ "資訊。"
-
-#~ msgid "Unable to load"
-#~ msgstr "無法載入"
-
-#~ msgid "Cannot find some needed resources (the glade file)!"
-#~ msgstr "無法找到一些需要的資源（ glade 檔）！"
-
-#~ msgid "Create VPN Connection"
-#~ msgstr "建立 VPN 連線"
-
-#~ msgid "Edit VPN Connection"
-#~ msgstr "編輯 VPN 連線"
-
-#~ msgid "Add a new VPN connection"
-#~ msgstr "加入新的 VPN 連線"
-
-#~ msgid "Delete the selected VPN connection"
-#~ msgstr "刪除選擇的 VPN 連線"
-
-#~ msgid "E_xport"
-#~ msgstr "匯出(_X)"
-
-#~ msgid "Edit the selected VPN connection"
-#~ msgstr "編輯已選的 VPN 連線"
-
-#~ msgid "Export the VPN settings to a file"
-#~ msgstr "匯出 VPN 設定至檔案"
-
-#~ msgid "Export the selected VPN connection to a file"
-#~ msgstr "匯出選擇的 VPN 連線至檔案"
-
-#~ msgid "Manage Virtual Private Network Connections"
-#~ msgstr "管理虛擬私有網路連線"
-
-#~ msgid "VPN Connections"
-#~ msgstr "VPN 連線"
-
-#~ msgid "40-bit WEP"
-#~ msgstr "40-bit WEP"
-
-#~ msgid "104-bit WEP"
-#~ msgstr "104-bit WEP"
-
-#~ msgid "WPA TKIP"
-#~ msgstr "WPA TKIP"
-
-#~ msgid "WPA CCMP"
-#~ msgstr "WPA CCMP"
-
-#~ msgid "WPA Automatic"
-#~ msgstr "WPA 自動"
-
-#~ msgid "WPA2 TKIP"
-#~ msgstr "WPA2 TKIP"
-
-#~ msgid "WPA2 CCMP"
-#~ msgstr "WPA2 CCMP"
-
-#~ msgid "WPA2 Automatic"
-#~ msgstr "WPA 自動"
-
-#~ msgid "none"
-#~ msgstr "none"
-
-#~ msgid "operation took too long"
-#~ msgstr "操作時間太久"
-
-#~ msgid "received data from wrong type of sender"
-#~ msgstr "從傳送者接收錯誤類型的資料"
-
-#~ msgid "received data from unexpected sender"
-#~ msgstr "從傳送者接收未預期類型的資料"
-
-#~ msgid "too much data was sent over socket and some of it was lost"
-#~ msgstr "透過 socket 傳送太多資料以致其中有些遺失了"
-
-#~ msgid "You are now connected to the Ad-Hoc wireless network '%s'."
-#~ msgstr "您目前連接到 Ad-Hoc 點對點式無線網路‘%s’。"
-
-#~ msgid "You are now connected to the wireless network '%s'."
-#~ msgstr "您目前連接到無線網路‘%s’。"
-
-#~ msgid "You are now connected to the wired network."
-#~ msgstr "您目前連接到有線網路‘%s’。"
-
-#~ msgid "Connection Established"
-#~ msgstr "連線已建立"
-
-#~ msgid "Disconnected"
-#~ msgstr "Disconnected"
-
-#~ msgid "The network connection has been disconnected."
-#~ msgstr "該網路連線已經斷線。"
-
-#~ msgid "LEAP"
-#~ msgstr "LEAP"
-
-#~ msgid "Failed to get information about the interface!"
-#~ msgstr "無法取得網路介面的訊資！"
-
-#~ msgid "VPN Error"
-#~ msgstr "VPN 錯誤"
-
-#~ msgid ""
-#~ "<span weight=\"bold\" size=\"larger\">VPN Login Message</span>\n"
-#~ "\n"
-#~ "VPN connection '%s' said:\n"
-#~ "\n"
-#~ "\"%s\""
-#~ msgstr ""
-#~ "<span weight=\"bold\" size=\"larger\">VPN 登入訊息</span>\n"
-#~ "\n"
-#~ "VPN 連線‘%s’說：\n"
-#~ "\n"
-#~ "\"%s\""
-
-#~ msgid "_Stop All Wireless Devices"
-#~ msgstr "停止所有無線網路裝置(_S)"
-
-#~ msgid "_Start All Wireless Devices"
-#~ msgstr "開始執行所有無線網路裝置(_S)"
-
-#, fuzzy
-#~ msgid "_Wireless Network Discovery"
-#~ msgstr "無線網路 (%s)"
-
-#~ msgid "Always Search"
-#~ msgstr "總是搜尋"
-
-#~ msgid "Search Only When Disconnected"
-#~ msgstr "在斷線時才搜尋"
-
-#~ msgid "Never Search"
-#~ msgstr "永不搜尋"
-
-#~ msgid "Stop All Wireless Devices"
-#~ msgstr "停止所有無線網路裝置"
-
-#, fuzzy
-#~ msgid "ASCII Key:"
-#~ msgstr "Acii 格式金鑰："
-
-#~ msgid ""
-#~ "128-bit Passphrase (WEP)\n"
-#~ "Ascii Key (WEP)\n"
-#~ "Hex Key (WEP)"
-#~ msgstr ""
-#~ "128位元通行碼 (WEP)\n"
-#~ "Acii 格式金鑰 (WEP)\n"
-#~ "Hex 格式金鑰 (WEP)"
-
-#~ msgid ""
-#~ "128-bit passphrase (WEP)\n"
-#~ "Ascii key (WEP)\n"
-#~ "Hex key (WEP)"
-#~ msgstr ""
-#~ "128位元通行碼 (WEP)\n"
-#~ "Acii 格式金鑰 (WEP)\n"
-#~ "Hex 格式金鑰 (WEP)"
-
-#~ msgid "Key type:"
-#~ msgstr "金鑰類型："
-
-#~ msgid "Wireless _network:"
-#~ msgstr "無線網路(_N)："
-
-#~ msgid "_OK"
-#~ msgstr "確定(_O)"
-
-#~ msgid "Create VPN Connection - 1 of 2"
-#~ msgstr "建立 VPN 連線 - 第一步"
-
-#~ msgid "Create VPN Connection - 2 of 2"
-#~ msgstr "建立 VPN 連線 - 第二步"
-
-#~ msgid "Finish create VPN Connection"
-#~ msgstr "建立 VPN 連線完成"
-
-#~ msgid "%s"
-#~ msgstr "%s"
-
-#~ msgid "Modify Wireless Networks"
-#~ msgstr "修改無線網路"
-
-#~ msgid "*"
-#~ msgstr "*"
-
-#~ msgid "You must log in to access the private network %s"
-#~ msgstr "您需要登入來存取私有網路 %s"
