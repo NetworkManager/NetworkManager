@@ -627,7 +627,12 @@ process_nduseropt (NMIP6Manager *manager, struct nl_msg *msg)
 
 		rdnss_opt = (struct nd_opt_rdnss *) opt;
 
-		server.expires = now + ntohl (rdnss_opt->nd_opt_rdnss_lifetime);
+		/* Pad the DNS server expiry somewhat to give a bit of slack in cases
+		 * where one RA gets lost or something (which can happen on unreliable
+		 * links like wifi where certain types of frames are not retransmitted).
+		 */
+		server.expires = now + ntohl (rdnss_opt->nd_opt_rdnss_lifetime) + 10;
+
 		for (addr = (struct in6_addr *) (rdnss_opt + 1); nd_opt_len >= 2; addr++, nd_opt_len -= 2) {
 			char buf[INET6_ADDRSTRLEN + 1];
 
