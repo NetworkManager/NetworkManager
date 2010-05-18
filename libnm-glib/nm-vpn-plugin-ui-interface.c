@@ -17,7 +17,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2008 - 2010 Red Hat, Inc.
  * Copyright (C) 2008 Novell, Inc.
  */
 
@@ -113,8 +113,8 @@ nm_vpn_plugin_ui_interface_import (NMVpnPluginUiInterface *iface,
 	g_return_val_if_fail (NM_IS_VPN_PLUGIN_UI_INTERFACE (iface), NULL);
 
 	if (nm_vpn_plugin_ui_interface_get_capabilities (iface) & NM_VPN_PLUGIN_UI_CAPABILITY_IMPORT) {
-		g_return_val_if_fail (NM_VPN_PLUGIN_UI_INTERFACE_GET_INTERFACE (iface)->import != NULL, NULL);
-		return NM_VPN_PLUGIN_UI_INTERFACE_GET_INTERFACE (iface)->import (iface, path, error);
+		g_return_val_if_fail (NM_VPN_PLUGIN_UI_INTERFACE_GET_INTERFACE (iface)->import_from_file != NULL, NULL);
+		return NM_VPN_PLUGIN_UI_INTERFACE_GET_INTERFACE (iface)->import_from_file (iface, path, error);
 	}
 	return NULL;
 }
@@ -128,8 +128,8 @@ nm_vpn_plugin_ui_interface_export (NMVpnPluginUiInterface *iface,
 	g_return_val_if_fail (NM_IS_VPN_PLUGIN_UI_INTERFACE (iface), FALSE);
 
 	if (nm_vpn_plugin_ui_interface_get_capabilities (iface) & NM_VPN_PLUGIN_UI_CAPABILITY_EXPORT) {
-		g_return_val_if_fail (NM_VPN_PLUGIN_UI_INTERFACE_GET_INTERFACE (iface)->export != NULL, FALSE);
-		return NM_VPN_PLUGIN_UI_INTERFACE_GET_INTERFACE (iface)->export (iface, path, connection, error);
+		g_return_val_if_fail (NM_VPN_PLUGIN_UI_INTERFACE_GET_INTERFACE (iface)->export_to_file != NULL, FALSE);
+		return NM_VPN_PLUGIN_UI_INTERFACE_GET_INTERFACE (iface)->export_to_file (iface, path, connection, error);
 	}
 	return FALSE;
 }

@@ -17,7 +17,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2008 - 2010 Red Hat, Inc.
  * Copyright (C) 2008 Novell, Inc.
  */
 
@@ -91,14 +91,19 @@ struct _NMVpnPluginUiInterface {
 	 * additional information.  Note that 'error' can be NULL, in which case no
 	 * additional error information should be provided.
 	 */
-	NMConnection * (*import) (NMVpnPluginUiInterface *iface, const char *path, GError **error);
+	NMConnection * (*import_from_file) (NMVpnPluginUiInterface *iface,
+	                                    const char *path,
+	                                    GError **error);
 
 	/* Export the given connection to the specified path.  Return TRUE on success.
 	 * On error, return FALSE and set 'error' with additional error information.
 	 * Note that 'error' can be NULL, in which case no additional error information
 	 * should be provided.
 	 */
-	gboolean (*export) (NMVpnPluginUiInterface *iface, const char *path, NMConnection *connection, GError **error);
+	gboolean (*export_to_file) (NMVpnPluginUiInterface *iface,
+	                            const char *path,
+	                            NMConnection *connection,
+	                            GError **error);
 
 	/* For a given connection, return a suggested file name.  Returned value should
 	 * be NULL or a suggested file name allocated via g_malloc/g_new/etc to be freed
