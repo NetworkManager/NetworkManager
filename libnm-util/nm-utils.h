@@ -31,6 +31,8 @@
 
 #include "nm-connection.h"
 
+G_BEGIN_DECLS
+
 /*********************************************************/
 /* The API defined here is _NOT_ guaranteed in any way!! */
 /*********************************************************/
@@ -210,5 +212,7 @@ GByteArray *nm_utils_rsa_key_encrypt (const GByteArray *data,
                                       const char *in_password,
                                       char **out_password,
                                       GError **error);
+
+G_END_DECLS
 
 #endif /* NM_UTILS_H */

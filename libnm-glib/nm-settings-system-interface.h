@@ -27,6 +27,8 @@
 
 #include "NetworkManager.h"
 
+G_BEGIN_DECLS
+
 typedef enum {
 	NM_SETTINGS_SYSTEM_PERMISSION_NONE = 0x0,
 	NM_SETTINGS_SYSTEM_PERMISSION_CONNECTION_MODIFY = 0x1,
@@ -100,5 +102,7 @@ gboolean nm_settings_system_interface_save_hostname (NMSettingsSystemInterface *
 gboolean nm_settings_system_interface_get_permissions (NMSettingsSystemInterface *settings,
                                                        NMSettingsSystemGetPermissionsFunc callback,
                                                        gpointer user_data);
+
+G_END_DECLS
 
 #endif /* NM_SETTINGS_SYSTEM_INTERFACE_H */

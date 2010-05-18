@@ -28,6 +28,8 @@
 #include "NetworkManager.h"
 #include "nm-settings-connection-interface.h"
 
+G_BEGIN_DECLS
+
 typedef enum {
 	NM_SETTINGS_INTERFACE_ERROR_INVALID_CONNECTION = 0,
 	NM_SETTINGS_INTERFACE_ERROR_READ_ONLY_CONNECTION,
@@ -101,5 +103,6 @@ gboolean nm_settings_interface_add_connection (NMSettingsInterface *settings,
                                                NMSettingsAddConnectionFunc callback,
                                                gpointer user_data);
 
+G_END_DECLS
 
 #endif /* NM_SETTINGS_INTERFACE_H */

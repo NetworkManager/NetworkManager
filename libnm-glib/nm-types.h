@@ -26,6 +26,8 @@
 #include <glib.h>
 #include <glib-object.h>
 
+G_BEGIN_DECLS
+
 #define NM_TYPE_SSID  (nm_ssid_get_type ())
 GType     nm_ssid_get_type (void) G_GNUC_CONST;
 
@@ -46,5 +48,7 @@ GType     nm_ip6_address_array_get_type (void) G_GNUC_CONST;
 
 #define NM_TYPE_IP6_ROUTE_OBJECT_ARRAY  (nm_ip6_route_object_array_get_type ())
 GType     nm_ip6_route_object_array_get_type (void) G_GNUC_CONST;
+
+G_END_DECLS
 
 #endif /* NM_TYPES_H */
