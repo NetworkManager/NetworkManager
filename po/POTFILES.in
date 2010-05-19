@@ -1,14 +1,21 @@
 [encoding: UTF-8]
 # List of source files containing translatable strings.
 # Please keep this file sorted alphabetically.
+cli/src/connections.c
+cli/src/devices.c
+cli/src/network-manager.c
+cli/src/nmcli.c
+cli/src/settings.c
+cli/src/utils.c
 libnm-util/crypto.c
 libnm-util/crypto_gnutls.c
 libnm-util/crypto_nss.c
 libnm-util/nm-utils.c
 src/nm-netlink-monitor.c
-src/NetworkManager.c
+src/main.c
 src/dhcp-manager/nm-dhcp-dhclient.c
-src/ip6-manager/nm-netlink-listener.c
+src/dhcp-manager/nm-dhcp-manager.c
+src/logging/nm-logging.c
 src/named-manager/nm-named-manager.c
 src/system-settings/nm-default-wired-connection.c
 system-settings/plugins/ifcfg-rh/reader.c

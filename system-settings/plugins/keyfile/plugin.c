@@ -42,7 +42,8 @@
 #define KEYFILE_PLUGIN_NAME "keyfile"
 #define KEYFILE_PLUGIN_INFO "(c) 2007 - 2008 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list."
 
-#define CONF_FILE SYSCONFDIR "/NetworkManager/nm-system-settings.conf"
+#define CONF_FILE SYSCONFDIR "/NetworkManager/NetworkManager.conf"
+#define OLD_CONF_FILE SYSCONFDIR "/NetworkManager/nm-system-settings.conf"
 
 static char *plugin_get_hostname (SCPluginKeyfile *plugin);
 static void system_config_interface_init (NMSystemConfigInterface *system_config_interface_class);
@@ -59,6 +60,7 @@ typedef struct {
 	GFileMonitor *monitor;
 	guint monitor_id;
 
+	const char *conf_file;
 	GFileMonitor *conf_file_monitor;
 	guint conf_file_monitor_id;
 
@@ -297,7 +299,7 @@ setup_monitoring (NMSystemConfigInterface *config)
 		priv->monitor = monitor;
 	}
 
-	file = g_file_new_for_path (CONF_FILE);
+	file = g_file_new_for_path (priv->conf_file);
 	monitor = g_file_monitor_file (file, G_FILE_MONITOR_NONE, NULL, NULL);
 	g_object_unref (file);
 
@@ -344,12 +346,13 @@ add_connection (NMSystemConfigInterface *config,
 static GSList *
 get_unmanaged_specs (NMSystemConfigInterface *config)
 {
+	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (config);
 	GKeyFile *key_file;
 	GSList *specs = NULL;
 	GError *error = NULL;
 
 	key_file = g_key_file_new ();
-	if (g_key_file_load_from_file (key_file, CONF_FILE, G_KEY_FILE_NONE, &error)) {
+	if (g_key_file_load_from_file (key_file, priv->conf_file, G_KEY_FILE_NONE, &error)) {
 		char *str;
 
 		str = g_key_file_get_value (key_file, "keyfile", "unmanaged-devices", NULL);
@@ -366,7 +369,7 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 			g_free (udis); /* Yes, g_free, not g_strfreev because we need the strings in the list */
 		}
 	} else {
-		g_warning ("Error parsing file '%s': %s", CONF_FILE, error->message);
+		g_warning ("Error parsing file '%s': %s", priv->conf_file, error->message);
 		g_error_free (error);
 	}
 
@@ -378,15 +381,16 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 static char *
 plugin_get_hostname (SCPluginKeyfile *plugin)
 {
+	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (plugin);
 	GKeyFile *key_file;
 	char *hostname = NULL;
 	GError *error = NULL;
 
 	key_file = g_key_file_new ();
-	if (g_key_file_load_from_file (key_file, CONF_FILE, G_KEY_FILE_NONE, &error))
+	if (g_key_file_load_from_file (key_file, priv->conf_file, G_KEY_FILE_NONE, &error))
 		hostname = g_key_file_get_value (key_file, "keyfile", "hostname", NULL);
 	else {
-		g_warning ("Error parsing file '%s': %s", CONF_FILE, error->message);
+		g_warning ("Error parsing file '%s': %s", priv->conf_file, error->message);
 		g_error_free (error);
 	}
 
@@ -404,7 +408,7 @@ plugin_set_hostname (SCPluginKeyfile *plugin, const char *hostname)
 	gboolean result = FALSE;
 
 	key_file = g_key_file_new ();
-	if (g_key_file_load_from_file (key_file, CONF_FILE, G_KEY_FILE_NONE, &error)) {
+	if (g_key_file_load_from_file (key_file, priv->conf_file, G_KEY_FILE_NONE, &error)) {
 		char *data;
 		gsize len;
 
@@ -412,7 +416,7 @@ plugin_set_hostname (SCPluginKeyfile *plugin, const char *hostname)
 
 		data = g_key_file_to_data (key_file, &len, &error);
 		if (data) {
-			g_file_set_contents (CONF_FILE, data, len, &error);
+			g_file_set_contents (priv->conf_file, data, len, &error);
 			g_free (data);
 
 			g_free (priv->hostname);
@@ -425,7 +429,7 @@ plugin_set_hostname (SCPluginKeyfile *plugin, const char *hostname)
 			g_error_free (error);
 		}
 	} else {
-		g_warning ("Error parsing file '%s': %s", CONF_FILE, error->message);
+		g_warning ("Error parsing file '%s': %s", priv->conf_file, error->message);
 		g_error_free (error);
 	}
 
@@ -440,6 +444,11 @@ static void
 sc_plugin_keyfile_init (SCPluginKeyfile *plugin)
 {
 	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (plugin);
+
+	if (g_file_test (CONF_FILE, G_FILE_TEST_EXISTS))
+		priv->conf_file = CONF_FILE;
+	else
+		priv->conf_file = OLD_CONF_FILE;
 
 	priv->hostname = plugin_get_hostname (plugin);
 }

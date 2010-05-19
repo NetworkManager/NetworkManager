@@ -1,14 +1,14 @@
 .\" NetworkManager(8) manual page
 .\"
-.\" Copyright (C) 2005 - 2009 Red Hat, Inc.
+.\" Copyright (C) 2005 - 2010 Red Hat, Inc.
 .\" Copyright (C) 2005 - 2009 Novell, Inc.
 .\" Copyright (C) 2005 Robert Love
 .\"
-.TH NETWORKMANAGER "8"
+.TH NETWORKMANAGER "8" "January 29, 2010"
 .SH NAME
 NetworkManager \- network management daemon
 .SH SYNOPSIS
-.B NetworkManager [\-\-no-daemon]
+.B NetworkManager [\-\-no\-daemon] [\-\-pid\-file=<filename>] [\-\-state\-file=<filename>] [\-\-config=<filename>] [\-\-plugins=<plugin1>,plugin2>,...] [\-\-log\-level=<level>] [\-\-log\-domains=<domain1>,<domain2>,...]
 .SH DESCRIPTION
 The \fINetworkManager\fP daemon attempts to make  networking configuration and
 operation as painless and automatic as possible by managing the primary network
@@ -18,7 +18,7 @@ connection for that device becomes available, unless that behavior is disabled.
 Information about networking is exported via a D-Bus interface to any interested
 application, providing a rich API with which to inspect and control network
 settings and operation.
-.TP
+.P
 NetworkManager will execute scripts in the /etc/NetworkManager/dispatcher.d
 directory in alphabetical order in response to network events.  Each script
 should be (a) a regular file, (b) owned by root, (c) not writable by group or
@@ -29,12 +29,12 @@ and second an action.
 .I "up"
 The interface has been activated.  The environment contains more information
 about the interface; CONNECTION_UUID contains the UUID of the connection.  Other
-variables are IP4_ADDRESS_N where N is a number from 0 to (# IPv4 addresses - 1),
+variables are IP4_ADDRESS_N where N is a number from 0 to (# IPv4 addresses \- 1),
 in the format "address/prefix gateway".  IP4_NUM_ADDRESSES contains the number
 addresses the script may expect.  IP4_NAMESERVERS contains a space-separated
 list of the DNS servers, and IP4_DOMAINS contains a space-separated list of the
 search domains.  Routes use the format IP4_ROUTE_N where N is a number from 0
-to (# IPv4 routes - 1), in the format "address/prefix next-hop metric", and
+to (# IPv4 routes \- 1), in the format "address/prefix next-hop metric", and
 IP4_NUM_ROUTES contains the number of routes to expect.  If the connection used
 DHCP for address configuration, the received DHCP configuration is passed in the
 environment using standard DHCP option names, prefixed with "DHCP4_", like
@@ -43,11 +43,11 @@ environment using standard DHCP option names, prefixed with "DHCP4_", like
 .I "down"
 The interface has been deactivated.
 .TP
-.I "vpn-up"
+.I "vpn\-up"
 A VPN connection has been activated.  The environment contains the connection
 UUID in the variable CONNECTION_UUID.
 .TP
-.I "vpn-down"
+.I "vpn\-down"
 A VPN connection has been deactivated.
 .TP
 .I "hostname"
@@ -55,21 +55,54 @@ The system hostname has been updated.  Use gethostname(2) to retrieve it.
 .SH OPTIONS
 The following options are supported:
 .TP
-.I "--no-daemon"
+.I "\-\-no\-daemon"
 Do not daemonize.  This is useful for debugging, and directs log output to the
 controlling terminal in addition to syslog.
+.TP
+.I "\-\-pid\-file=<filename>"
+Specify location of a PID file.  The PID file is used for storing PID of the
+running proccess and prevents running multiple instances.
+.TP
+.I "\-\-state\-file=<filename>"
+Specify file for storing state of the NetworkManager persistently.  If not specified,
+the default value of '<LOCALSTATEDIR>/lib/NetworkManager/NetworkManager.state' is
+used; where <LOCALSTATEDIR> is dependent on your distribution (usually it's /var).
+.TP
+.I "\-\-config=<filename>"
+Specify configuration file to set up various settings for NetworkManager.  If not
+specified, the default value of '<SYSCONFDIR>/NetworkManager/NetworkManager.conf'
+is used with a fallback to the older 'nm\-system\-settings.conf' if located in
+the same directory; where <SYSCONFDIR> is dependent on your distribution (usually
+it's /etc).  See \fBNetworkManager.conf\fP(5) for more information on configuration
+file.
+.TP
+.I "\-\-plugins=<plugin1>,<plugin2>, ...
+List plugins used to manage system-wide connection settings.   This list has
+preference over plugins specified in the configuration file.  Currently supported
+plugins are: keyfile, ifcfg\-rh, ifcfg\-suse, ifupdown.
+See \fBNetworkManager.conf\fP(5) for more information on the plugins.
+.TP
+.I "\-\-log\-level=<level>
+Sets how much information NetworkManager sends to the log destination (usually
+syslog's "daemon" facility).  By default, only informational, warning, and error
+messages are logged.  See \fBNetworkManager.conf\fP(5) for more information on
+log levels and domains.
+.TP
+.I "\-\-log\-domains=<domain1>,<domain2>, ...
+Sets which operations are logged to the log destination (usually syslog).  By
+default, most domains are logging-enabled.  See \fBNetworkManager.conf\fP(5) for
+more information on log levels and domains.
 .SH DEBUGGING
 The following environment variables are supported to help debugging.  When used
-in conjunction with the "--no-daemon" option (thus echoing PPP and DHCP helper
+in conjunction with the "\-\-no\-daemon" option (thus echoing PPP and DHCP helper
 output to stdout) these can quickly help pinpoint the source of connection
-issues.
-.TP
-.I "NM_SERIAL_DEBUG"
-When set to anything, causes NetworkManager to log all serial communication to
-and from serial devices like mobile broadband 3G modems.
+issues.  Also see the \-\-log\-level and \-\-log\-domains to enable debug logging inside
+NetworkManager itself.
 .TP
 .I "NM_PPP_DEBUG"
 When set to anything, causes NetworkManager to turn on PPP debugging in pppd,
 which logs all PPP and PPTP frames and client/server exchanges.
 .SH SEE ALSO
-.BR nm-tool (1)
+.BR nm\-tool (1),
+.BR NetworkManager.conf (5).
+

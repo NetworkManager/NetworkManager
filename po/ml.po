@@ -1,0 +1,1637 @@
+# translation of ml.po to
+# translation of NetworkManager.master_upstream.ml.po to
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Ani Peter <apeter@redhat.com>, 2010
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: ml\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2010-05-06 14:31+0530\n"
+"PO-Revision-Date: 2010-05-10 15:31+0530\n"
+"Last-Translator: \n"
+"Language-Team:  <en@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.4\n"
+
+#: ../cli/src/connections.c:59 ../cli/src/connections.c:74
+#: ../cli/src/devices.c:85 ../cli/src/devices.c:98 ../cli/src/devices.c:108
+#: ../cli/src/devices.c:118 ../cli/src/devices.c:131 ../cli/src/devices.c:142
+#: ../cli/src/devices.c:152
+msgid "NAME"
+msgstr "NAME"
+
+#. 0
+#: ../cli/src/connections.c:60 ../cli/src/connections.c:75
+msgid "UUID"
+msgstr "UUID"
+
+#. 1
+#: ../cli/src/connections.c:61
+msgid "DEVICES"
+msgstr "DEVICES"
+
+#. 2
+#: ../cli/src/connections.c:62 ../cli/src/connections.c:77
+msgid "SCOPE"
+msgstr "SCOPE"
+
+#. 3
+#: ../cli/src/connections.c:63
+msgid "DEFAULT"
+msgstr "DEFAULT"
+
+#. 4
+#: ../cli/src/connections.c:64
+msgid "DBUS-SERVICE"
+msgstr "DBUS-SERVICE"
+
+#. 5
+#: ../cli/src/connections.c:65
+msgid "SPEC-OBJECT"
+msgstr "SPEC-OBJECT"
+
+#. 6
+#: ../cli/src/connections.c:66
+msgid "VPN"
+msgstr "VPN"
+
+#. 1
+#. 0
+#. 1
+#: ../cli/src/connections.c:76 ../cli/src/devices.c:61 ../cli/src/devices.c:87
+msgid "TYPE"
+msgstr "TYPE"
+
+#. 3
+#: ../cli/src/connections.c:78
+msgid "TIMESTAMP"
+msgstr "TIMESTAMP"
+
+#. 4
+#: ../cli/src/connections.c:79
+msgid "TIMESTAMP-REAL"
+msgstr "TIMESTAMP-REAL"
+
+#. 5
+#: ../cli/src/connections.c:80
+msgid "AUTOCONNECT"
+msgstr "AUTOCONNECT"
+
+#. 6
+#: ../cli/src/connections.c:81
+msgid "READONLY"
+msgstr "READONLY"
+
+#: ../cli/src/connections.c:157
+#, c-format
+msgid ""
+"Usage: nmcli con { COMMAND | help }\n"
+"  COMMAND := { list | status | up | down }\n"
+"\n"
+"  list [id <id> | uuid <id> | system | user]\n"
+"  status\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--timeout "
+"<timeout>]\n"
+"  down id <id> | uuid <id>\n"
+msgstr ""
+"ഉപയോഗിക്കേണ്ട വിധം: nmcli con { COMMAND | help }\n"
+"  COMMAND := { list | status | up | down }\n"
+"\n"
+"  list [id <id> | uuid <id> | system | user]\n"
+"  status\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--timeout "
+"<timeout>]\n"
+"  down id <id> | uuid <id>\n"
+
+#: ../cli/src/connections.c:197 ../cli/src/connections.c:536
+#, c-format
+msgid "Error: 'con list': %s"
+msgstr "പിശക്: 'con list': %s"
+
+#: ../cli/src/connections.c:199 ../cli/src/connections.c:538
+#, c-format
+msgid "Error: 'con list': %s; allowed fields: %s"
+msgstr "പിശക്: 'con list': %s; അനുവദിക്കുന്ന ഫീള്‍ഡുകള്‍: %s"
+
+#: ../cli/src/connections.c:207
+msgid "Connection details"
+msgstr "കണക്ഷന്‍ വിശദാംശങ്ങള്‍"
+
+#: ../cli/src/connections.c:381 ../cli/src/connections.c:601
+msgid "system"
+msgstr "സിസ്റ്റം"
+
+#: ../cli/src/connections.c:381 ../cli/src/connections.c:601
+msgid "user"
+msgstr "ഉപയോക്താവു്"
+
+#: ../cli/src/connections.c:383
+msgid "never"
+msgstr "ഒരിക്കലുമില്ല"
+
+#. "CAPABILITIES"
+#. Print header
+#. "WIFI-PROPERTIES"
+#: ../cli/src/connections.c:384 ../cli/src/connections.c:385
+#: ../cli/src/connections.c:602 ../cli/src/connections.c:605
+#: ../cli/src/devices.c:388 ../cli/src/devices.c:513 ../cli/src/devices.c:539
+#: ../cli/src/devices.c:540 ../cli/src/devices.c:541 ../cli/src/devices.c:542
+#: ../cli/src/devices.c:543 ../cli/src/settings.c:504
+#: ../cli/src/settings.c:544 ../cli/src/settings.c:643
+#: ../cli/src/settings.c:912 ../cli/src/settings.c:913
+#: ../cli/src/settings.c:915 ../cli/src/settings.c:917
+#: ../cli/src/settings.c:1042 ../cli/src/settings.c:1043
+#: ../cli/src/settings.c:1044 ../cli/src/settings.c:1123
+#: ../cli/src/settings.c:1124 ../cli/src/settings.c:1125
+#: ../cli/src/settings.c:1126 ../cli/src/settings.c:1127
+#: ../cli/src/settings.c:1128 ../cli/src/settings.c:1129
+#: ../cli/src/settings.c:1130 ../cli/src/settings.c:1131
+#: ../cli/src/settings.c:1132 ../cli/src/settings.c:1133
+#: ../cli/src/settings.c:1134 ../cli/src/settings.c:1135
+#: ../cli/src/settings.c:1210
+msgid "yes"
+msgstr "ഉവ്വു്"
+
+#: ../cli/src/connections.c:384 ../cli/src/connections.c:385
+#: ../cli/src/connections.c:602 ../cli/src/connections.c:605
+#: ../cli/src/devices.c:388 ../cli/src/devices.c:513 ../cli/src/devices.c:539
+#: ../cli/src/devices.c:540 ../cli/src/devices.c:541 ../cli/src/devices.c:542
+#: ../cli/src/devices.c:543 ../cli/src/settings.c:504
+#: ../cli/src/settings.c:506 ../cli/src/settings.c:544
+#: ../cli/src/settings.c:643 ../cli/src/settings.c:912
+#: ../cli/src/settings.c:913 ../cli/src/settings.c:915
+#: ../cli/src/settings.c:917 ../cli/src/settings.c:1042
+#: ../cli/src/settings.c:1043 ../cli/src/settings.c:1044
+#: ../cli/src/settings.c:1123 ../cli/src/settings.c:1124
+#: ../cli/src/settings.c:1125 ../cli/src/settings.c:1126
+#: ../cli/src/settings.c:1127 ../cli/src/settings.c:1128
+#: ../cli/src/settings.c:1129 ../cli/src/settings.c:1130
+#: ../cli/src/settings.c:1131 ../cli/src/settings.c:1132
+#: ../cli/src/settings.c:1133 ../cli/src/settings.c:1134
+#: ../cli/src/settings.c:1135 ../cli/src/settings.c:1210
+msgid "no"
+msgstr "ഇല്ല"
+
+#: ../cli/src/connections.c:457 ../cli/src/connections.c:500
+msgid "System connections"
+msgstr "സിസ്റ്റം കണക്ഷനുകള്‍"
+
+#: ../cli/src/connections.c:462 ../cli/src/connections.c:513
+msgid "User connections"
+msgstr "ഉപയോക്താവിനുള്ള കണക്ഷനുകള്‍"
+
+#: ../cli/src/connections.c:474 ../cli/src/connections.c:1334
+#: ../cli/src/connections.c:1350 ../cli/src/connections.c:1359
+#: ../cli/src/connections.c:1370 ../cli/src/connections.c:1452
+#: ../cli/src/devices.c:864 ../cli/src/devices.c:874 ../cli/src/devices.c:973
+#: ../cli/src/devices.c:980
+#, c-format
+msgid "Error: %s argument is missing."
+msgstr "പിശക്: %s ആര്‍ഗ്യുമെന്റ് ലഭ്യമല്ല."
+
+#: ../cli/src/connections.c:487
+#, c-format
+msgid "Error: %s - no such connection."
+msgstr "പിശക്: %s - ഇത്തരം കണക്ഷന്‍ ലഭ്യമല്ല."
+
+#: ../cli/src/connections.c:519 ../cli/src/connections.c:1383
+#: ../cli/src/connections.c:1470 ../cli/src/devices.c:687
+#: ../cli/src/devices.c:754 ../cli/src/devices.c:888 ../cli/src/devices.c:986
+#, c-format
+msgid "Unknown parameter: %s\n"
+msgstr "അപരിചിതമായ പരാമീറ്റര്‍: %s\n"
+
+#: ../cli/src/connections.c:528
+#, c-format
+msgid "Error: no valid parameter specified."
+msgstr "പിശക്: ശരിയായ പരാമീറ്റര്‍ നല്‍കിയിട്ടില്ല."
+
+#: ../cli/src/connections.c:543 ../cli/src/connections.c:1572
+#: ../cli/src/devices.c:1192 ../cli/src/network-manager.c:274
+#, c-format
+msgid "Error: %s."
+msgstr "പിശക്: %s."
+
+#: ../cli/src/connections.c:649
+#, c-format
+msgid "Error: 'con status': %s"
+msgstr "പിശക്: 'con status': %s"
+
+#: ../cli/src/connections.c:651
+#, c-format
+msgid "Error: 'con status': %s; allowed fields: %s"
+msgstr "പിശക്: 'con status': %s; അനുവദിക്കുന്ന ഫീള്‍ഡുകള്‍: %s"
+
+#: ../cli/src/connections.c:658
+msgid "Active connections"
+msgstr "സജീവമായ കണക്ഷനുകള്‍"
+
+#: ../cli/src/connections.c:1026
+#, c-format
+msgid "no active connection on device '%s'"
+msgstr "ഡിവൈസ് '%s'-ല്‍ സജീവമായ കണക്ഷന്‍ ലഭ്യമല്ല"
+
+#: ../cli/src/connections.c:1034
+#, c-format
+msgid "no active connection or device"
+msgstr "സജീവമായ കണക്ഷന്‍ അല്ലെങ്കില്‍ ഡിവൈസ് ലഭ്യമല്ല"
+
+#: ../cli/src/connections.c:1084
+#, c-format
+msgid "device '%s' not compatible with connection '%s'"
+msgstr "'%s' ഡിവൈസ് '%s' കണക്ഷനുമായി പൊരുത്തപ്പെടുന്നില്ല"
+
+#: ../cli/src/connections.c:1086
+#, c-format
+msgid "no device found for connection '%s'"
+msgstr "ഡിവൈസ് '%s'-ല്‍ സജീവമായ കണക്ഷന്‍ ലഭ്യമല്ല"
+
+#: ../cli/src/connections.c:1097
+msgid "activating"
+msgstr "സജീവമാക്കുന്നു"
+
+#: ../cli/src/connections.c:1099
+msgid "activated"
+msgstr "സജീവമാക്കിയിരിക്കുന്നു"
+
+#: ../cli/src/connections.c:1102 ../cli/src/connections.c:1125
+#: ../cli/src/connections.c:1158 ../cli/src/devices.c:224
+#: ../cli/src/devices.c:514 ../cli/src/network-manager.c:92
+#: ../cli/src/network-manager.c:145 ../cli/src/settings.c:469
+msgid "unknown"
+msgstr "അപരിചിതം"
+
+#: ../cli/src/connections.c:1111
+msgid "VPN connecting (prepare)"
+msgstr "വിപിഎന്‍ കണക്ട് ചെയ്യുന്നു (തയ്യാറാകുക)"
+
+#: ../cli/src/connections.c:1113
+msgid "VPN connecting (need authentication)"
+msgstr "വിപിഎന്‍ കണക്ട് ചെയ്യുന്നു (ആധികാരികത ഉറപ്പാക്കേണ്ടതുണ്ടു്)"
+
+#: ../cli/src/connections.c:1115
+msgid "VPN connecting"
+msgstr "വിപിഎന്‍ കണക്ട് ചെയ്യുന്നു"
+
+#: ../cli/src/connections.c:1117
+msgid "VPN connecting (getting IP configuration)"
+msgstr "വിപിഎന്‍ കണക്ട് ചെയ്യുന്നു (ഐപി ക്രമീകരണം ലഭ്യമാക്കുന്നു)"
+
+#: ../cli/src/connections.c:1119
+msgid "VPN connected"
+msgstr "വിപിഎന്‍ കണക്ട് ചെയ്തിരിക്കുന്നു"
+
+#: ../cli/src/connections.c:1121
+msgid "VPN connection failed"
+msgstr "വിപിഎന്‍ കണക്ഷന്‍ പരാജയപ്പെട്ടു"
+
+#: ../cli/src/connections.c:1123
+msgid "VPN disconnected"
+msgstr "വിപിഎന്‍ വിഛേദിച്ചിരിക്കുന്നു"
+
+#: ../cli/src/connections.c:1134
+msgid "unknown reason"
+msgstr "അപരിചിതമായ കാരണം"
+
+#: ../cli/src/connections.c:1136
+msgid "none"
+msgstr "ഒന്നുമില്ല"
+
+#: ../cli/src/connections.c:1138
+msgid "the user was disconnected"
+msgstr "ഉപയോക്താവു് വിഛേദിച്ചിരിക്കുന്നു"
+
+#: ../cli/src/connections.c:1140
+msgid "the base network connection was interrupted"
+msgstr "അടിസ്ഥാന നെറ്റ്‌വര്‍ക്ക് കണക്ഷന്‍ തടസ്സപ്പെടുത്തിയിരിക്കുന്നു"
+
+#: ../cli/src/connections.c:1142
+msgid "the VPN service stopped unexpectedly"
+msgstr "വിപിഎന്‍ സര്‍വീസ് അപ്രതീക്ഷിതമായി നിര്‍ത്തിയിരിക്കുന്നു"
+
+#: ../cli/src/connections.c:1144
+msgid "the VPN service returned invalid configuration"
+msgstr "വിപിഎന്‍ സര്‍വീസ് തെറ്റായ ക്രമീകരണം തിരികെ നല്‍കിയിരിക്കുന്നു"
+
+#: ../cli/src/connections.c:1146
+msgid "the connection attempt timed out"
+msgstr "കണക്ഷനുള്ള ശ്രമം കഴിഞ്ഞിരിക്കുന്നു"
+
+#: ../cli/src/connections.c:1148
+msgid "the VPN service did not start in time"
+msgstr "വിപിഎന്‍ സര്‍വീസ് സമയത്തിനു് ആരംഭിച്ചില്ല"
+
+#: ../cli/src/connections.c:1150
+msgid "the VPN service failed to start"
+msgstr "വിപിഎന്‍ സര്‍വീസ് ആരംഭിക്കുന്നതില്‍ പരാജയപ്പെട്ടു"
+
+#: ../cli/src/connections.c:1152
+msgid "no valid VPN secrets"
+msgstr "ശരിയായ വിപിഎന്‍ രഹസ്യങ്ങള്‍ ലഭ്യമല്ല"
+
+#: ../cli/src/connections.c:1154
+msgid "invalid VPN secrets"
+msgstr "തെറ്റായ വിപിഎന്‍ രഹസ്യങ്ങള്‍"
+
+#: ../cli/src/connections.c:1156
+msgid "the connection was removed"
+msgstr "കണക്ഷന്‍ നീക്കം ചെയ്തിരിക്കുന്നു"
+
+#: ../cli/src/connections.c:1170
+#, c-format
+msgid "state: %s\n"
+msgstr "അവസ്ഥ: %s\n"
+
+#: ../cli/src/connections.c:1173 ../cli/src/connections.c:1199
+#, c-format
+msgid "Connection activated\n"
+msgstr "കണക്ഷന്‍ സജീവമാക്കിയിരിക്കുന്നു\n"
+
+#: ../cli/src/connections.c:1176
+#, c-format
+msgid "Error: Connection activation failed."
+msgstr "പിശക്: കണക്ഷന്‍ സജീവമാക്കല്‍ പരാജയപ്പെട്ടു."
+
+#: ../cli/src/connections.c:1195
+#, c-format
+msgid "state: %s (%d)\n"
+msgstr "അവസ്ഥ: %s (%d)\n"
+
+#: ../cli/src/connections.c:1205
+#, c-format
+msgid "Error: Connection activation failed: %s."
+msgstr "പിശക്: കണക്ഷന്‍ സജീവമാക്കല്‍ പരാജയപ്പെട്ടു: %s."
+
+#: ../cli/src/connections.c:1222 ../cli/src/devices.c:811
+#, c-format
+msgid "Error: Timeout %d sec expired."
+msgstr "പിശക്: സമയപരിധി %d നിമിഷത്തിന്റെ കാലാവധി കഴിഞ്ഞിരിക്കുന്നു."
+
+#: ../cli/src/connections.c:1265
+#, c-format
+msgid "Error: Connection activation failed: %s"
+msgstr "പിശക്: കണക്ഷന്‍ സജീവമാക്കല്‍ പരാജയപ്പെട്ടു: %s"
+
+#: ../cli/src/connections.c:1279
+#, c-format
+msgid "Error: Obtaining active connection for '%s' failed."
+msgstr "പിശക്: '%s'-നുള്ള സജീവമായ കണക്ഷന്‍ ലഭ്യമാക്കുന്നതില്‍ പരാജയപ്പെട്ടു."
+
+#: ../cli/src/connections.c:1288
+#, c-format
+msgid "Active connection state: %s\n"
+msgstr "സജീവമായ കണക്ഷന്റെ അവസ്ഥ: %s\n"
+
+#: ../cli/src/connections.c:1289
+#, c-format
+msgid "Active connection path: %s\n"
+msgstr "സജീവമായ കണക്ഷന്‍ പാഥ്: %s\n"
+
+#: ../cli/src/connections.c:1343 ../cli/src/connections.c:1461
+#, c-format
+msgid "Error: Unknown connection: %s."
+msgstr "പിശക്: അപരിചിതമായ കണക്ഷന്‍: %s."
+
+#: ../cli/src/connections.c:1378 ../cli/src/devices.c:882
+#, c-format
+msgid "Error: timeout value '%s' is not valid."
+msgstr "പിശഖ്: സമയപരിധിയുടെ മൂല്ല്യം '%s' തെറ്റാണു്."
+
+#: ../cli/src/connections.c:1391 ../cli/src/connections.c:1478
+#, c-format
+msgid "Error: id or uuid has to be specified."
+msgstr "പിശക്: id അല്ലെങ്കില്‍ uuid വ്യക്തമാക്കേണ്ടതുണ്ടു്."
+
+#: ../cli/src/connections.c:1411
+#, c-format
+msgid "Error: No suitable device found: %s."
+msgstr "പിശക്: ഉചിതമായ ഡിവൈസ് ലഭ്യമായില്ല: %s."
+
+#: ../cli/src/connections.c:1413
+#, c-format
+msgid "Error: No suitable device found."
+msgstr "പിശക്: ഉചിതമായ ഡിവൈസ് ലഭ്യമായില്ല."
+
+#: ../cli/src/connections.c:1505
+#, c-format
+msgid "Warning: Connection not active\n"
+msgstr "മുന്നറിയിപ്പു്: കണക്ഷന്‍ സജീവമല്ല\n"
+
+#: ../cli/src/connections.c:1561
+#, c-format
+msgid "Error: 'con' command '%s' is not valid."
+msgstr "പിശക്: 'con' കമാന്‍ഡ് '%s' ശരിയല്ല."
+
+#: ../cli/src/connections.c:1597
+#, c-format
+msgid "Error: could not connect to D-Bus."
+msgstr "പിശക്: D-Bus-ലേക്കു് കണക്ട് ചെയ്യുവാന്‍ സാധ്യമായില്ല."
+
+#: ../cli/src/connections.c:1604
+#, c-format
+msgid "Error: Could not get system settings."
+msgstr "പിശക്: സിസ്റ്റം സജ്ജീകരണങ്ങള്‍ ലഭ്യമാക്കവാന്‍ സാധ്യമായില്ല."
+
+#: ../cli/src/connections.c:1612
+#, c-format
+msgid "Error: Could not get user settings."
+msgstr "പിശക്: ഉപയോക്താവിനുള്ള സജ്ജീകരണങ്ങള്‍ ലഭ്യമാക്കുവാന്‍ സാധ്യമായില്ല."
+
+#: ../cli/src/connections.c:1622
+#, c-format
+msgid "Error: Can't obtain connections: settings services are not running."
+msgstr "പിശക്: കണക്ഷനുകള്‍ ലഭ്യമാക്കുവാന്‍ സാധ്യമല്ല: സജ്ജീകരണങ്ങള്‍ക്കുള്ള സര്‍വീസുകള്‍ പ്രവര്‍ത്തിക്കുന്നില്ല."
+
+#. 0
+#. 9
+#: ../cli/src/devices.c:60 ../cli/src/devices.c:86 ../cli/src/devices.c:162
+msgid "DEVICE"
+msgstr "DEVICE"
+
+#. 1
+#. 4
+#. 0
+#: ../cli/src/devices.c:62 ../cli/src/devices.c:90
+#: ../cli/src/network-manager.c:36
+msgid "STATE"
+msgstr "STATE"
+
+#: ../cli/src/devices.c:71
+msgid "GENERAL"
+msgstr "GENERAL"
+
+#. 0
+#: ../cli/src/devices.c:72
+msgid "CAPABILITIES"
+msgstr "CAPABILITIES"
+
+#. 1
+#: ../cli/src/devices.c:73
+msgid "WIFI-PROPERTIES"
+msgstr "WIFI-PROPERTIES"
+
+#. 2
+#: ../cli/src/devices.c:74
+msgid "AP"
+msgstr "AP"
+
+#. 3
+#: ../cli/src/devices.c:75
+msgid "WIRED-PROPERTIES"
+msgstr "WIRED-PROPERTIES"
+
+#. 4
+#: ../cli/src/devices.c:76
+msgid "IP4-SETTINGS"
+msgstr "IP4-SETTINGS"
+
+#. 5
+#: ../cli/src/devices.c:77
+msgid "IP4-DNS"
+msgstr "IP4-DNS"
+
+#. 2
+#: ../cli/src/devices.c:88
+msgid "DRIVER"
+msgstr "DRIVER"
+
+#. 3
+#: ../cli/src/devices.c:89
+msgid "HWADDR"
+msgstr "HWADDR"
+
+#. 0
+#: ../cli/src/devices.c:99
+msgid "CARRIER-DETECT"
+msgstr "CARRIER-DETECT"
+
+#. 1
+#: ../cli/src/devices.c:100
+msgid "SPEED"
+msgstr "SPEED"
+
+#. 0
+#: ../cli/src/devices.c:109
+msgid "CARRIER"
+msgstr "CARRIER"
+
+#. 0
+#: ../cli/src/devices.c:119
+msgid "WEP"
+msgstr "WEP"
+
+#. 1
+#: ../cli/src/devices.c:120
+msgid "WPA"
+msgstr "WPA"
+
+#. 2
+#: ../cli/src/devices.c:121
+msgid "WPA2"
+msgstr "WPA2"
+
+#. 3
+#: ../cli/src/devices.c:122
+msgid "TKIP"
+msgstr "TKIP"
+
+#. 4
+#: ../cli/src/devices.c:123
+msgid "CCMP"
+msgstr "CCMP"
+
+#. 0
+#: ../cli/src/devices.c:132
+msgid "ADDRESS"
+msgstr "ADDRESS"
+
+#. 1
+#: ../cli/src/devices.c:133
+msgid "PREFIX"
+msgstr "PREFIX"
+
+#. 2
+#: ../cli/src/devices.c:134
+msgid "GATEWAY"
+msgstr "GATEWAY"
+
+#. 0
+#: ../cli/src/devices.c:143
+msgid "DNS"
+msgstr "DNS"
+
+#. 0
+#: ../cli/src/devices.c:153
+msgid "SSID"
+msgstr "SSID"
+
+#. 1
+#: ../cli/src/devices.c:154
+msgid "BSSID"
+msgstr "BSSID"
+
+#. 2
+#: ../cli/src/devices.c:155
+msgid "MODE"
+msgstr "MODE"
+
+#. 3
+#: ../cli/src/devices.c:156
+msgid "FREQ"
+msgstr "FREQ"
+
+#. 4
+#: ../cli/src/devices.c:157
+msgid "RATE"
+msgstr "RATE"
+
+#. 5
+#: ../cli/src/devices.c:158
+msgid "SIGNAL"
+msgstr "SIGNAL"
+
+#. 6
+#: ../cli/src/devices.c:159
+msgid "SECURITY"
+msgstr "SECURITY"
+
+#. 7
+#: ../cli/src/devices.c:160
+msgid "WPA-FLAGS"
+msgstr "WPA-FLAGS"
+
+#. 8
+#: ../cli/src/devices.c:161
+msgid "RSN-FLAGS"
+msgstr "RSN-FLAGS"
+
+#. 10
+#: ../cli/src/devices.c:163
+msgid "ACTIVE"
+msgstr "ACTIVE"
+
+#: ../cli/src/devices.c:186
+#, c-format
+msgid ""
+"Usage: nmcli dev { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | list | disconnect | wifi }\n"
+"\n"
+"  status\n"
+"  list [iface <iface>]\n"
+"  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
+"  wifi [list [iface <iface>] [hwaddr <hwaddr>]]\n"
+"\n"
+msgstr ""
+"Usage: nmcli dev { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | list | disconnect | wifi }\n"
+"\n"
+"  status\n"
+"  list [iface <iface>]\n"
+"  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
+"  wifi [list [iface <iface>] [hwaddr <hwaddr>]]\n"
+"\n"
+
+#: ../cli/src/devices.c:206
+msgid "unmanaged"
+msgstr "കൈകാര്യം ചെയ്തിട്ടില്ലാത്തതു്"
+
+#: ../cli/src/devices.c:208
+msgid "unavailable"
+msgstr "ലഭ്യമല്ലാത്തതു്"
+
+#: ../cli/src/devices.c:210 ../cli/src/network-manager.c:89
+msgid "disconnected"
+msgstr "വിഛേദിച്ചിരിക്കുന്നു"
+
+#: ../cli/src/devices.c:212
+msgid "connecting (prepare)"
+msgstr "കണക്ട് ചെയ്യുന്നു (തയ്യാറാക്കുക)"
+
+#: ../cli/src/devices.c:214
+msgid "connecting (configuring)"
+msgstr "കണക്ട് ചെയ്യുന്നു (ക്രമീകരിക്കുന്നു)"
+
+#: ../cli/src/devices.c:216
+msgid "connecting (need authentication)"
+msgstr "കണക്ട് ചെയ്യുന്നു (ആധികാരികത ഉറപ്പാക്കേണ്ടതുണ്ടു്)"
+
+#: ../cli/src/devices.c:218
+msgid "connecting (getting IP configuration)"
+msgstr "കണക്ട് ചെയ്യുന്നു (ഐപി ക്രമീകരണം ലഭ്യമാക്കുന്നു)"
+
+#: ../cli/src/devices.c:220 ../cli/src/network-manager.c:87
+msgid "connected"
+msgstr "കണക്ട് ചെയ്തിരിക്കുന്നു"
+
+#: ../cli/src/devices.c:222
+msgid "connection failed"
+msgstr "കണക്ഷന്‍ പരാജയപ്പെട്ടു"
+
+#: ../cli/src/devices.c:245 ../cli/src/devices.c:380
+msgid "Unknown"
+msgstr "അപരിചിതം"
+
+#: ../cli/src/devices.c:277
+msgid "(none)"
+msgstr "(ഒന്നുമില്ല)"
+
+#: ../cli/src/devices.c:302
+#, c-format
+msgid "%s: error converting IP4 address 0x%X"
+msgstr "%s:IP4 വിലാസം 0x%X വേര്‍തിരിക്കുന്നതില്‍ പിശക്"
+
+#: ../cli/src/devices.c:349
+#, c-format
+msgid "%u MHz"
+msgstr "%u MHz"
+
+#: ../cli/src/devices.c:350
+#, c-format
+msgid "%u MB/s"
+msgstr "%u MB/s"
+
+#: ../cli/src/devices.c:359
+msgid "Encrypted: "
+msgstr "എന്‍ക്രിപ്റ്റ് ചെയ്തിരിക്കുന്നു: "
+
+#: ../cli/src/devices.c:364
+msgid "WEP "
+msgstr "WEP "
+
+#: ../cli/src/devices.c:366
+msgid "WPA "
+msgstr "WPA "
+
+#: ../cli/src/devices.c:368
+msgid "WPA2 "
+msgstr "WPA2 "
+
+#: ../cli/src/devices.c:371
+msgid "Enterprise "
+msgstr "എന്റര്‍പ്രൈസ്"
+
+#: ../cli/src/devices.c:380
+msgid "Ad-Hoc"
+msgstr "അഡ്-ഹോക്"
+
+#: ../cli/src/devices.c:380
+msgid "Infrastructure"
+msgstr "ഇന്‍ഫ്രാസ്ട്രക്ചര്‍"
+
+#: ../cli/src/devices.c:442
+#, c-format
+msgid "Error: 'dev list': %s"
+msgstr "പിശക്: 'dev list': %s"
+
+#: ../cli/src/devices.c:444
+#, c-format
+msgid "Error: 'dev list': %s; allowed fields: %s"
+msgstr "പിശക്: 'dev list': %s, അനുവദിക്കുന്ന ഫീള്‍ഡുകള്‍: %s"
+
+#: ../cli/src/devices.c:453
+msgid "Device details"
+msgstr "ഡിവൈസിന്റെ വിശദാംശങ്ങള്‍"
+
+#: ../cli/src/devices.c:483 ../cli/src/devices.c:827
+msgid "(unknown)"
+msgstr "(അപരിചിതം)"
+
+#: ../cli/src/devices.c:484
+msgid "unknown)"
+msgstr "(അപരിചിതം)"
+
+#: ../cli/src/devices.c:510
+#, c-format
+msgid "%u Mb/s"
+msgstr "%u Mb/s"
+
+#. Print header
+#. "WIRED-PROPERTIES"
+#: ../cli/src/devices.c:583
+msgid "on"
+msgstr "ഓണ്‍"
+
+#: ../cli/src/devices.c:583
+msgid "off"
+msgstr "ഓഫ്"
+
+#: ../cli/src/devices.c:710
+#, c-format
+msgid "Error: 'dev status': %s"
+msgstr "പിശക്: 'dev status': %s"
+
+#: ../cli/src/devices.c:712
+#, c-format
+msgid "Error: 'dev status': %s; allowed fields: %s"
+msgstr "പിശക്: 'dev status': %s; അനുവദിക്കുന്ന ഫീള്‍ഡുകള്‍: %s"
+
+#: ../cli/src/devices.c:719
+msgid "Status of devices"
+msgstr "ഡിവൈസുകളുടെ അവസ്ഥ"
+
+#: ../cli/src/devices.c:747
+#, c-format
+msgid "Error: '%s' argument is missing."
+msgstr "പിശക്: '%s' ആര്‍ഗ്യുമെന്റ് ലഭ്യമല്ല."
+
+#: ../cli/src/devices.c:776 ../cli/src/devices.c:915 ../cli/src/devices.c:1035
+#, c-format
+msgid "Error: Device '%s' not found."
+msgstr "പിശക്: ഡിവൈസ് '%s' ലഭ്യമായില്ല."
+
+#: ../cli/src/devices.c:799
+#, c-format
+msgid "Success: Device '%s' successfully disconnected."
+msgstr "വിജയിച്ചു: ഡിവൈസ് '%s' വിജയകരമായി വിഛേദിച്ചിരിക്കുന്നു."
+
+#: ../cli/src/devices.c:824
+#, c-format
+msgid "Error: Device '%s' (%s) disconnecting failed: %s"
+msgstr "പിശക്: ഡിവൈസ് '%s' (%s) വിഛേദിക്കുന്നതില്‍ പരാജയപ്പെട്ടു: %s"
+
+#: ../cli/src/devices.c:832
+#, c-format
+msgid "Device state: %d (%s)\n"
+msgstr "ഡിവൈസിന്റെ അവസ്ഥ: %d (%s)\n"
+
+#: ../cli/src/devices.c:896
+#, c-format
+msgid "Error: iface has to be specified."
+msgstr "പിശക്: iface നല്‍കേണ്ടതുണ്ടു്."
+
+#: ../cli/src/devices.c:1011
+#, c-format
+msgid "Error: 'dev wifi': %s"
+msgstr "പിശക്: 'dev wifi': %s"
+
+#: ../cli/src/devices.c:1013
+#, c-format
+msgid "Error: 'dev wifi': %s; allowed fields: %s"
+msgstr "പിശക്: 'dev wifi': %s; അനുവദിക്കുന്ന ഫീള്‍ഡുകള്‍: %s"
+
+#: ../cli/src/devices.c:1020
+msgid "WiFi scan list"
+msgstr "WiFi പരിശോധന പട്ടിക"
+
+#: ../cli/src/devices.c:1055 ../cli/src/devices.c:1109
+#, c-format
+msgid "Error: Access point with hwaddr '%s' not found."
+msgstr "പിശക്: hwaddr '%s'-നുള്ള ആക്സെസ്സ് പോയിന്റ് ലഭ്യമല്ല."
+
+#: ../cli/src/devices.c:1072
+#, c-format
+msgid "Error: Device '%s' is not a WiFi device."
+msgstr "പിശക്: '%s' ഡിവൈസ് ഒരു വൈഫൈ ഡിവൈസല്ല."
+
+#: ../cli/src/devices.c:1136
+#, c-format
+msgid "Error: 'dev wifi' command '%s' is not valid."
+msgstr "പിശക്: 'dev wifi' കമാന്‍ഡ് '%s' ശരിയല്ല."
+
+#: ../cli/src/devices.c:1183
+#, c-format
+msgid "Error: 'dev' command '%s' is not valid."
+msgstr "പിശക്: 'dev' കമാന്‍ഡ് '%s' ശരിയല്ല."
+
+#: ../cli/src/network-manager.c:35
+msgid "RUNNING"
+msgstr "RUNNING"
+
+#. 1
+#: ../cli/src/network-manager.c:37
+msgid "WIFI-HARDWARE"
+msgstr "WIFI-HARDWARE"
+
+#. 2
+#: ../cli/src/network-manager.c:38
+msgid "WIFI"
+msgstr "WIFI"
+
+#. 3
+#: ../cli/src/network-manager.c:39
+msgid "WWAN-HARDWARE"
+msgstr "WWAN-HARDWARE"
+
+#. 4
+#: ../cli/src/network-manager.c:40
+msgid "WWAN"
+msgstr "WWAN"
+
+#: ../cli/src/network-manager.c:62
+#, c-format
+msgid ""
+"Usage: nmcli nm { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | sleep | wakeup | wifi | wwan }\n"
+"\n"
+"  status\n"
+"  sleep\n"
+"  wakeup\n"
+"  wifi [on|off]\n"
+"  wwan [on|off]\n"
+"\n"
+msgstr ""
+"ഉപയോഗിക്കേണ്ട വിധം: nmcli nm { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | sleep | wakeup | wifi | wwan }\n"
+"\n"
+"  status\n"
+"  sleep\n"
+"  wakeup\n"
+"  wifi [on|off]\n"
+"  wwan [on|off]\n"
+"\n"
+
+#: ../cli/src/network-manager.c:83
+msgid "asleep"
+msgstr "asleep"
+
+#: ../cli/src/network-manager.c:85
+msgid "connecting"
+msgstr "കണക്ട് ചെയ്യുന്നു"
+
+#: ../cli/src/network-manager.c:125
+#, c-format
+msgid "Error: 'nm status': %s"
+msgstr "പിശക്: 'nm status': %s"
+
+#: ../cli/src/network-manager.c:127
+#, c-format
+msgid "Error: 'nm status': %s; allowed fields: %s"
+msgstr "പിശക്: 'nm status': %s; അനുവദിക്കുന്ന ഫീള്‍ഡുകള്‍: %s"
+
+#: ../cli/src/network-manager.c:134
+msgid "NetworkManager status"
+msgstr "നെറ്റ്‌വര്‍ക്ക്മാനേജറിന്റെ അവസ്ഥ"
+
+#. Print header
+#: ../cli/src/network-manager.c:140 ../cli/src/network-manager.c:141
+#: ../cli/src/network-manager.c:142 ../cli/src/network-manager.c:143
+#: ../cli/src/network-manager.c:211 ../cli/src/network-manager.c:243
+msgid "enabled"
+msgstr "enabled"
+
+#: ../cli/src/network-manager.c:140 ../cli/src/network-manager.c:141
+#: ../cli/src/network-manager.c:142 ../cli/src/network-manager.c:143
+#: ../cli/src/network-manager.c:211 ../cli/src/network-manager.c:243
+msgid "disabled"
+msgstr "disabled"
+
+#: ../cli/src/network-manager.c:148
+msgid "running"
+msgstr "പ്രവര്‍ത്തനത്തില്‍"
+
+#: ../cli/src/network-manager.c:148
+msgid "not running"
+msgstr "പ്രവര്‍ത്തനത്തിലില്ല"
+
+#: ../cli/src/network-manager.c:201 ../cli/src/network-manager.c:233
+#, c-format
+msgid "Error: '--fields' value '%s' is not valid here; allowed fields: %s"
+msgstr "പിശക്: '%s' എന്നു് '--fields'-നുള്ള മൂല്ല്യം അസാധുവാണു്; അനുവദിക്കുന്ന ഫീള്‍ഡുകള്‍: %s"
+
+#: ../cli/src/network-manager.c:209
+msgid "WiFi enabled"
+msgstr "WiFi സജ്ജം"
+
+#: ../cli/src/network-manager.c:220
+#, c-format
+msgid "Error: invalid 'wifi' parameter: '%s'."
+msgstr "പിശക്: തെറ്റായ 'wifi' പരാമീറ്റര്‍: '%s'."
+
+#: ../cli/src/network-manager.c:241
+msgid "WWAN enabled"
+msgstr "WWAN സജ്ജം"
+
+#: ../cli/src/network-manager.c:252
+#, c-format
+msgid "Error: invalid 'wwan' parameter: '%s'."
+msgstr "പിശക്: തെറ്റായ 'wwan' പരാമീറ്റര്‍: '%s'."
+
+#: ../cli/src/network-manager.c:263
+#, c-format
+msgid "Error: 'nm' command '%s' is not valid."
+msgstr "പിശക്: 'nm' കമാന്‍ഡ് '%s' ശരിയല്ല."
+
+#: ../cli/src/nmcli.c:69
+#, c-format
+msgid ""
+"Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
+"\n"
+"OPTIONS\n"
+"  -t[erse]                                   terse output\n"
+"  -p[retty]                                  pretty output\n"
+"  -m[ode] tabular|multiline                  output mode\n"
+"  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
+"  -e[scape] yes|no                           escape columns separators in "
+"values\n"
+"  -v[ersion]                                 show program version\n"
+"  -h[elp]                                    print this help\n"
+"\n"
+"OBJECT\n"
+"  nm          NetworkManager status\n"
+"  con         NetworkManager connections\n"
+"  dev         devices managed by NetworkManager\n"
+"\n"
+msgstr ""
+"Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
+"\n"
+"OPTIONS\n"
+"  -t[erse]                                   terse output\n"
+"  -p[retty]                                  pretty output\n"
+"  -m[ode] tabular|multiline                  output mode\n"
+"  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
+"  -e[scape] yes|no                           escape columns separators in "
+"values\n"
+"  -v[ersion]                                 show program version\n"
+"  -h[elp]                                    print this help\n"
+"\n"
+"OBJECT\n"
+"  nm          NetworkManager status\n"
+"  con         NetworkManager connections\n"
+"  dev         devices managed by NetworkManager\n"
+"\n"
+
+#: ../cli/src/nmcli.c:113
+#, c-format
+msgid "Error: Object '%s' is unknown, try 'nmcli help'."
+msgstr "പിശക്: '%s'വസ്തു അപരിചിതം, 'nmcli help' ശ്രമിക്കുക."
+
+#: ../cli/src/nmcli.c:143
+#, c-format
+msgid "Error: Option '--terse' is specified the second time."
+msgstr "പിശക്: '--terse' രണ്ടാമതും നല്‍കിയിരിക്കുന്നു."
+
+#: ../cli/src/nmcli.c:148
+#, c-format
+msgid "Error: Option '--terse' is mutually exclusive with '--pretty'."
+msgstr "Error: Option '--terse' is mutually exclusive with '--pretty'."
+
+#: ../cli/src/nmcli.c:156
+#, c-format
+msgid "Error: Option '--pretty' is specified the second time."
+msgstr "പിശക്: '--pretty' രണ്ടാമതും നല്‍കിയിരിക്കുന്നു."
+
+#: ../cli/src/nmcli.c:161
+#, c-format
+msgid "Error: Option '--pretty' is mutually exclusive with '--terse'."
+msgstr "Error: Option '--pretty' is mutually exclusive with '--terse'."
+
+#: ../cli/src/nmcli.c:171 ../cli/src/nmcli.c:187
+#, c-format
+msgid "Error: missing argument for '%s' option."
+msgstr "പിശക്: '%s' ഐച്ഛികത്തിനുള്ള ആര്‍ഗ്യുമെന്റ് ലഭ്യമല്ല."
+
+#: ../cli/src/nmcli.c:180 ../cli/src/nmcli.c:196
+#, c-format
+msgid "Error: '%s' is not valid argument for '%s' option."
+msgstr "പിശക്: '%s' ഐച്ഛികത്തിനുള്ള '%s' ശരിയായ ആര്‍ഗ്യുമെന്റല്ല."
+
+#: ../cli/src/nmcli.c:203
+#, c-format
+msgid "Error: fields for '%s' options are missing."
+msgstr "പിശക്: '%s' ഐച്ഛികങ്ങള്‍ക്കുള്ള ഫീള്‍ഡുകള്‍ ലഭ്യമല്ല."
+
+#: ../cli/src/nmcli.c:209
+#, c-format
+msgid "nmcli tool, version %s\n"
+msgstr "nmcli പ്രയോഗം, പതിപ്പു് %s\n"
+
+#: ../cli/src/nmcli.c:215
+#, c-format
+msgid "Error: Option '%s' is unknown, try 'nmcli -help'."
+msgstr "പിശക്: '%s' ഐഛികം അപരിചിതം, 'nmcli -help' ശ്രമിക്കുക."
+
+#: ../cli/src/nmcli.c:234
+#, c-format
+msgid "Caught signal %d, shutting down..."
+msgstr "%d സിഗ്നല്‍ ലഭ്യമായി, അടച്ചു പൂട്ടുന്നു..."
+
+#: ../cli/src/nmcli.c:259
+#, c-format
+msgid "Error: Could not connect to NetworkManager."
+msgstr "പിശക്: നെറ്റ്‌വര്‍ക്ക്മാനേജറിലേക്കു് കണക്ട് ചെയ്യുവാന്‍ സാധ്യമായില്ല."
+
+#: ../cli/src/nmcli.c:275
+msgid "Success"
+msgstr "വിജയിച്ചു"
+
+#: ../cli/src/settings.c:407
+#, c-format
+msgid "%d (hex-ascii-key)"
+msgstr "%d (hex-ascii-key)"
+
+#: ../cli/src/settings.c:409
+#, c-format
+msgid "%d (104/128-bit passphrase)"
+msgstr "%d (104/128-ബിറ്റ് പാസ്ഫ്രെയിസ്)"
+
+#: ../cli/src/settings.c:412
+#, c-format
+msgid "%d (unknown)"
+msgstr "%d (അപരിചിതം)"
+
+#: ../cli/src/settings.c:438
+msgid "0 (unknown)"
+msgstr "0 (അപരിചിതം)"
+
+#: ../cli/src/settings.c:444
+msgid "any, "
+msgstr "ഏതെങ്കിലും,"
+
+#: ../cli/src/settings.c:446
+msgid "900 MHz, "
+msgstr "900 MHz, "
+
+#: ../cli/src/settings.c:448
+msgid "1800 MHz, "
+msgstr "1800 MHz, "
+
+#: ../cli/src/settings.c:450
+msgid "1900 MHz, "
+msgstr "1900 MHz, "
+
+#: ../cli/src/settings.c:452
+msgid "850 MHz, "
+msgstr "850 MHz, "
+
+#: ../cli/src/settings.c:454
+msgid "WCDMA 3GPP UMTS 2100 MHz, "
+msgstr "WCDMA 3GPP UMTS 2100 MHz, "
+
+#: ../cli/src/settings.c:456
+msgid "WCDMA 3GPP UMTS 1800 MHz, "
+msgstr "WCDMA 3GPP UMTS 1800 MHz, "
+
+#: ../cli/src/settings.c:458
+msgid "WCDMA 3GPP UMTS 1700/2100 MHz, "
+msgstr "WCDMA 3GPP UMTS 1700/2100 MHz, "
+
+#: ../cli/src/settings.c:460
+msgid "WCDMA 3GPP UMTS 800 MHz, "
+msgstr "WCDMA 3GPP UMTS 800 MHz, "
+
+#: ../cli/src/settings.c:462
+msgid "WCDMA 3GPP UMTS 850 MHz, "
+msgstr "WCDMA 3GPP UMTS 850 MHz, "
+
+#: ../cli/src/settings.c:464
+msgid "WCDMA 3GPP UMTS 900 MHz, "
+msgstr "WCDMA 3GPP UMTS 900 MHz, "
+
+#: ../cli/src/settings.c:466
+msgid "WCDMA 3GPP UMTS 1700 MHz, "
+msgstr "WCDMA 3GPP UMTS 1700 MHz, "
+
+#: ../cli/src/settings.c:546 ../cli/src/settings.c:708
+msgid "auto"
+msgstr "ഓട്ടോ"
+
+#: ../cli/src/settings.c:704 ../cli/src/settings.c:707 ../cli/src/utils.c:172
+msgid "not set"
+msgstr "സജ്ജമല്ല"
+
+#: ../cli/src/utils.c:124
+#, c-format
+msgid "field '%s' has to be alone"
+msgstr "ഫീള്‍ഡ് '%s' മാത്രമായിരിക്കണം"
+
+#: ../cli/src/utils.c:127
+#, c-format
+msgid "invalid field '%s'"
+msgstr "തെറ്റായ ഫീള്‍ഡ് '%s'"
+
+#: ../cli/src/utils.c:146
+#, c-format
+msgid "Option '--terse' requires specifying '--fields'"
+msgstr "'--terse' ഐച്ഛികത്തിനു് '--fields' നല്‍കേണ്ടതുണ്ടു്"
+
+#: ../cli/src/utils.c:150
+#, c-format
+msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
+msgstr "'--terse' എന്ന ഐച്ഛികത്തിനു് പ്രത്യേക '--fields' ഐച്ഛികം ആവശ്യമുണ്ടു്, '%s' അല്ല"
+
+#: ../libnm-util/crypto.c:120
+#, c-format
+msgid "PEM key file had no end tag '%s'."
+msgstr "PEM കീ ഫയലിനു് അവസാനമുള്ള റ്റാഗ് '%s' ലഭ്യമല്ല."
+
+#: ../libnm-util/crypto.c:130
+#, c-format
+msgid "Doesn't look like a PEM private key file."
+msgstr "ഒരു PEM സ്വകാര്യ കീ ഫയല്‍ പോലെയല്ലിതു്."
+
+#: ../libnm-util/crypto.c:138
+#, c-format
+msgid "Not enough memory to store PEM file data."
+msgstr " ‌PEM ഫയല്‍ ഡേറ്റാ സൂക്ഷിക്കുന്നതിനാവശ്യമായ മെമ്മറി ലഭ്യമല്ല."
+
+#: ../libnm-util/crypto.c:154
+#, c-format
+msgid "Malformed PEM file: Proc-Type was not first tag."
+msgstr "തെറ്റായ PEM ഫയല്‍: Proc-രീതിയിലുള്ളതു് ആദ്യത്തെ റ്റാഗ് അല്ല."
+
+#: ../libnm-util/crypto.c:162
+#, c-format
+msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
+msgstr "തെറ്റായ PEM ഫയല്‍: അപരിചിതമായ Proc-രീതിയിലുള്ള റ്റാഗ് '%s'."
+
+#: ../libnm-util/crypto.c:172
+#, c-format
+msgid "Malformed PEM file: DEK-Info was not the second tag."
+msgstr "തെറ്റായ PEM ഫയല്‍: DEK-Info രണ്ടാത്തെ റ്റാഗ് അല്ല."
+
+#: ../libnm-util/crypto.c:183
+#, c-format
+msgid "Malformed PEM file: no IV found in DEK-Info tag."
+msgstr "തെറ്റായ PEM ഫയല്‍: DEK-Info റ്റാഗില്‍ IV ലഭ്യമായില്ല."
+
+#: ../libnm-util/crypto.c:190
+#, c-format
+msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
+msgstr "തെറ്റായ PEM ഫയല്‍: DEK-Info റ്റാഗില്‍ IV-ന്റെ ശൈലി തെറ്റാണു്."
+
+#: ../libnm-util/crypto.c:203
+#, c-format
+msgid "Malformed PEM file: unknown private key cipher '%s'."
+msgstr "തെറ്റായ PEM ഫയല്‍: അപരിചിതമായ സ്വകാര്യ കീ സിഫര്‍ '%s'."
+
+#: ../libnm-util/crypto.c:222
+#, c-format
+msgid "Could not decode private key."
+msgstr "സ്വകാര്യ കീ ഡീകോഡ് ചെയ്യുവാന്‍ സാധ്യമല്ല."
+
+#: ../libnm-util/crypto.c:267
+#, c-format
+msgid "PEM certificate '%s' had no end tag '%s'."
+msgstr "PEM സര്‍ട്ടിഫിക്കേറ്റ് '%s'-നു് ഒടുവിലുള്ള റ്റാഗ് '%s' ലഭ്യമല്ല."
+
+#: ../libnm-util/crypto.c:277
+#, c-format
+msgid "Failed to decode certificate."
+msgstr "സര്‍ട്ടിഫിക്കേറ്റ് ഡീകോഡ് ചെയ്യുന്നതില്‍ പരാജയപ്പെട്ടു."
+
+#: ../libnm-util/crypto.c:286
+#, c-format
+msgid "Not enough memory to store certificate data."
+msgstr "‌സര്‍ട്ടിഫിക്കേറ്റ് ഡേറ്റാ സൂക്ഷിക്കുന്നതിനാവശ്യമായ മെമ്മറി ലഭ്യമല്ല."
+
+#: ../libnm-util/crypto.c:294
+#, c-format
+msgid "Not enough memory to store file data."
+msgstr "ഫയല്‍ ഡേറ്റാ സൂക്ഷിക്കുന്നതിനാവശ്യമായ മെമ്മറി ലഭ്യമല്ല."
+
+#: ../libnm-util/crypto.c:324
+#, c-format
+msgid "IV must be an even number of bytes in length."
+msgstr "IV-ന്റെ വ്യാപ്തി ഈവന്‍ അക്കത്തിലുള്ള ബൈറ്റുകളായിരിക്കണം."
+
+#: ../libnm-util/crypto.c:333
+#, c-format
+msgid "Not enough memory to store the IV."
+msgstr "IV സൂക്ഷിക്കുന്നതിനാവശ്യമായ മെമ്മറി ലഭ്യമല്ല."
+
+#: ../libnm-util/crypto.c:344
+#, c-format
+msgid "IV contains non-hexadecimal digits."
+msgstr "IV-ല്‍ നോണ്‍-ഹെക്സാഡെസിമല്‍ അക്കങ്ങളുണ്ടു്."
+
+#: ../libnm-util/crypto.c:382 ../libnm-util/crypto_gnutls.c:148
+#: ../libnm-util/crypto_gnutls.c:266 ../libnm-util/crypto_nss.c:171
+#: ../libnm-util/crypto_nss.c:336
+#, c-format
+msgid "Private key cipher '%s' was unknown."
+msgstr "സ്വകാര്യ കീ സിഫര്‍ '%s' അപരിചിതം."
+
+#: ../libnm-util/crypto.c:391
+#, c-format
+msgid "Not enough memory to decrypt private key."
+msgstr "സ്വകാര്യ കീ ഡീക്രിപ്റ്റ് ചെയ്യന്നതിനാവശ്യമായ മെമ്മറി ലഭ്യമല്ല."
+
+#: ../libnm-util/crypto.c:511
+#, c-format
+msgid "Unable to determine private key type."
+msgstr "സ്വകാര്യ കീ രീതി കണ്ടുപിടിക്കുവാന്‍ സാധ്യമല്ല."
+
+#: ../libnm-util/crypto.c:530
+#, c-format
+msgid "Not enough memory to store decrypted private key."
+msgstr "ഡീക്രിപ്റ്റ് ചെയ്ത സ്വകാര്യ കീ സൂക്ഷിക്കുന്നതിനാവശ്യമായ മെമ്മറി ലഭ്യമല്ല."
+
+#: ../libnm-util/crypto_gnutls.c:49
+msgid "Failed to initialize the crypto engine."
+msgstr "ക്രിപ്റ്റോ എഞ്ചില്‍ ആരംഭിക്കുന്നതില്‍ പരാജയം."
+
+#: ../libnm-util/crypto_gnutls.c:93
+#, c-format
+msgid "Failed to initialize the MD5 engine: %s / %s."
+msgstr "MD5 എഞ്ചില്‍ ആരംഭിക്കുവാന്‍ പരാജയപ്പെട്ടു: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:156
+#, c-format
+msgid "Invalid IV length (must be at least %zd)."
+msgstr "തെറ്റായ IV വ്യാപ്തി (കുറഞ്ഞതു് %zd ആയിരിക്കണം)"
+
+#: ../libnm-util/crypto_gnutls.c:165 ../libnm-util/crypto_nss.c:188
+#, c-format
+msgid "Not enough memory for decrypted key buffer."
+msgstr "ഡീക്രിപ്റ്റ് ചെയ്ത കീ ബഫറിനാവശ്യമായ മെമ്മറി ലഭ്യമല്ല."
+
+#: ../libnm-util/crypto_gnutls.c:173
+#, c-format
+msgid "Failed to initialize the decryption cipher context: %s / %s."
+msgstr "ഡീക്രിപ്ഷന്‍ സിഫര്‍ കോണ്‍ടെക്സ്റ്റ് ആരംഭിക്കുന്നതില്‍ പരാജയം: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:182
+#, c-format
+msgid "Failed to set symmetric key for decryption: %s / %s."
+msgstr "ഡീക്രിപ്ഷനുള്ള സിമ്മെട്രിക് കീ സജ്ജമാക്കുന്നതില്‍ പരാജയപ്പെട്ടു: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:191
+#, c-format
+msgid "Failed to set IV for decryption: %s / %s."
+msgstr "ഡീക്രിപ്ഷനുള്ള IV സജ്ജമാക്കുന്നതില്‍ പരാജയപ്പെട്ടു: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:200
+#, c-format
+msgid "Failed to decrypt the private key: %s / %s."
+msgstr "സ്വകാര്യ കീ ഡീക്രിപ്റ്റ് ചെയ്യുന്നതില്‍ പരാജയപ്പെട്ടു: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:210 ../libnm-util/crypto_nss.c:267
+#, c-format
+msgid "Failed to decrypt the private key: unexpected padding length."
+msgstr "സ്വകാര്യ കീ ഡീക്രിപ്റ്റ് ചെയ്യുന്നതില്‍ പരാജയപ്പെട്ടു: അപ്രതീക്ഷിതമായ പാഢിങ് നീളം."
+
+#: ../libnm-util/crypto_gnutls.c:221 ../libnm-util/crypto_nss.c:278
+#, c-format
+msgid "Failed to decrypt the private key."
+msgstr "സ്വകാര്യ കീ ഡീക്രിപ്റ്റ് ചെയ്യുന്നതില്‍ പരാജയപ്പെട്ടു."
+
+#: ../libnm-util/crypto_gnutls.c:286 ../libnm-util/crypto_nss.c:356
+#, c-format
+msgid "Could not allocate memory for encrypting."
+msgstr "എന്‍ക്രിപ്റ്റിങിനുള്ള മെമ്മറി അനുവദിക്കുന്നതില്‍ പരാജയപ്പെട്ടു,"
+
+#: ../libnm-util/crypto_gnutls.c:294
+#, c-format
+msgid "Failed to initialize the encryption cipher context: %s / %s."
+msgstr "എന്‍ക്രിപ്ഷന്‍ സിഫര്‍ കോണ്‍ടെക്സ്റ്റ് ആരംഭിക്കുന്നതില്‍ പരാജയപ്പെട്ടു: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:303
+#, c-format
+msgid "Failed to set symmetric key for encryption: %s / %s."
+msgstr "എന്‍ക്രിപ്ഷനുള്ള സിമ്മെട്രിക് കീ സജ്ജമാക്കുന്നതില്‍ പരാജയപ്പെട്ടു: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:313
+#, c-format
+msgid "Failed to set IV for encryption: %s / %s."
+msgstr "എന്‍ക്രിപ്ഷനുള്ള IV സജ്ജമാക്കുന്നതില്‍ പരാജയപ്പെട്ടു: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:322
+#, c-format
+msgid "Failed to encrypt the data: %s / %s."
+msgstr "ഡേറ്റാ എന്‍ക്രിപ്റ്റ് ചെയ്യുന്നതില്‍ പരാജയപ്പെട്ടു: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:362
+#, c-format
+msgid "Error initializing certificate data: %s"
+msgstr "സര്‍ട്ടിഫിക്കേറ്റ് ഡേറ്റാ ആരംഭിക്കുന്നതില്‍ പിശക്: %s"
+
+#: ../libnm-util/crypto_gnutls.c:384
+#, c-format
+msgid "Couldn't decode certificate: %s"
+msgstr "സര്‍ട്ടിഫിക്കേറ്റ് ഡീകോഡ് ചെയ്യുവാന്‍ സാധ്യമല്ല: %s"
+
+#: ../libnm-util/crypto_gnutls.c:408
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %s"
+msgstr "PKCS#12 ഡീകോഡര്‍ ആരംഭിക്കുവാന്‍ സാധ്യമായില്ല: %s"
+
+#: ../libnm-util/crypto_gnutls.c:421
+#, c-format
+msgid "Couldn't decode PKCS#12 file: %s"
+msgstr "PKCS#12 ഫയല്‍ ഡീകോഡ് ചെയ്യുവാന്‍ സാധ്യമായില്ല: %s"
+
+#: ../libnm-util/crypto_gnutls.c:433
+#, c-format
+msgid "Couldn't verify PKCS#12 file: %s"
+msgstr "PKCS#12 ഫയല്‍ ഉറപ്പാക്കുവാന്‍ സാധ്യമായില്ല: %s"
+
+#: ../libnm-util/crypto_nss.c:56
+#, c-format
+msgid "Failed to initialize the crypto engine: %d."
+msgstr "ക്രിപ്റ്റോ എഞ്ചിന്‍ ആരംഭിക്കുന്നതില്‍ പരാജയപ്പെട്ടു: %d."
+
+#: ../libnm-util/crypto_nss.c:111
+#, c-format
+msgid "Failed to initialize the MD5 context: %d."
+msgstr "MD5 കോണ്‍ടെക്സ്റ്റ് ആരംഭിക്കുന്നതില്‍ പരാജയപ്പെട്ടു: %d."
+
+#: ../libnm-util/crypto_nss.c:179
+#, c-format
+msgid "Invalid IV length (must be at least %d)."
+msgstr "തെറ്റായ IV നീളം (കുറഞ്ഞതു് %d ആയിരിക്കണം)."
+
+#: ../libnm-util/crypto_nss.c:196
+#, c-format
+msgid "Failed to initialize the decryption cipher slot."
+msgstr "ഡീക്രിപ്ഷന്‍ സിഫര്‍ സ്ലോട്ട് ആരംഭിക്കുന്നതില്‍ പരാജയപ്പെട്ടു."
+
+#: ../libnm-util/crypto_nss.c:206
+#, c-format
+msgid "Failed to set symmetric key for decryption."
+msgstr "ഡീക്രിപ്ഷനുള്ള സിമ്മെട്രിക് കീ സജ്ജമാക്കുന്നതില്‍ പരാജയപ്പെട്ടു."
+
+#: ../libnm-util/crypto_nss.c:216
+#, c-format
+msgid "Failed to set IV for decryption."
+msgstr "ഡീക്രിപ്ഷനായി IV സജ്ജമാക്കുന്നതില്‍ പരാജയപ്പെട്ടു."
+
+#: ../libnm-util/crypto_nss.c:224
+#, c-format
+msgid "Failed to initialize the decryption context."
+msgstr "ഡീക്രിപ്ഷന്‍ കോണ്‍ടെക്സ്റ്റ് ആരംഭിക്കുന്നതില്‍ പരാജയപ്പെട്ടു."
+
+#: ../libnm-util/crypto_nss.c:237
+#, c-format
+msgid "Failed to decrypt the private key: %d."
+msgstr "സ്വകാര്യ കീ ഡീക്രിപ്റ്റ് ചെയ്യുന്നതില്‍ പരാജയപ്പെട്ടു: %d."
+
+#: ../libnm-util/crypto_nss.c:245
+#, c-format
+msgid "Failed to decrypt the private key: decrypted data too large."
+msgstr "സ്വകാര്യ കീ ഡീക്രിപ്റ്റ് ചെയ്യുന്നതില്‍ പരാജയപ്പെട്ടു: ഡീക്രിപ്റ്റ് ചെയ്ത ഡേറ്റ വളരെ വലുതാണു്."
+
+#: ../libnm-util/crypto_nss.c:256
+#, c-format
+msgid "Failed to finalize decryption of the private key: %d."
+msgstr "സ്വകാര്യ കീയുടെ ‍ഡീക്രിപ്ഷന്‍ ഉറപ്പാക്കുന്നതില്‍ പരാജയപ്പെട്ടു: %d."
+
+#: ../libnm-util/crypto_nss.c:364
+#, c-format
+msgid "Failed to initialize the encryption cipher slot."
+msgstr "എന്‍ക്രിപ്ഷന്‍ സിഫര്‍ സ്ലോട്ട് ആരംഭിക്കുന്നതില്‍ പരാജയപ്പെട്ടു."
+
+#: ../libnm-util/crypto_nss.c:372
+#, c-format
+msgid "Failed to set symmetric key for encryption."
+msgstr "എന്‍ക്രിപ്ഷനുള്ള സിമ്മെട്രിക് കീ സജ്ജമാക്കുന്നതില്‍ പരാജയപ്പെട്ടു."
+
+#: ../libnm-util/crypto_nss.c:380
+#, c-format
+msgid "Failed to set IV for encryption."
+msgstr "എന്‍ക്രിപ്ഷനുള്ള IV കീ സജ്ജമാക്കുന്നതില്‍ പരാജയപ്പെട്ടു."
+
+#: ../libnm-util/crypto_nss.c:388
+#, c-format
+msgid "Failed to initialize the encryption context."
+msgstr "എന്‍ക്രിപ്ഷന്‍ കോണ്‍ടെക്സ്റ്റ് ആരംഭിക്കുന്നതില്‍ പരാജയപ്പെട്ടു."
+
+#: ../libnm-util/crypto_nss.c:396
+#, c-format
+msgid "Failed to encrypt: %d."
+msgstr "എന്‍ക്രിപ്റ്റ് ചെയ്യുന്നതില്‍ പരാജയപ്പെട്ടു: %d."
+
+#: ../libnm-util/crypto_nss.c:404
+#, c-format
+msgid "Unexpected amount of data after encrypting."
+msgstr "എന്‍ക്രിപ്റ്റ് ചെയ്തതിനു് ശേഷം അപ്രതീക്ഷിതമായ ഡേറ്റാ"
+
+#: ../libnm-util/crypto_nss.c:447
+#, c-format
+msgid "Couldn't decode certificate: %d"
+msgstr "സര്‍ട്ടിഫിക്കേറ്റ് ഡീകോഡ് ചെയ്യുവാന്‍ സാധ്യമായില്ല: %d"
+
+#: ../libnm-util/crypto_nss.c:482
+#, c-format
+msgid "Couldn't convert password to UCS2: %d"
+msgstr "രഹസ്യവാക്ക് UCS2-ലേക്ക് വേര്‍തിരിക്കുവാന്‍ സാധ്യമായില്ല: %d"
+
+#: ../libnm-util/crypto_nss.c:510
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %d"
+msgstr "PKCS#12 ഡീകോഡര്‍ ആരംഭിക്കുവാന്‍ സാധ്യമായില്ല: %d"
+
+#: ../libnm-util/crypto_nss.c:519
+#, c-format
+msgid "Couldn't decode PKCS#12 file: %d"
+msgstr "PKCS#12 ഫയല്‍ ഡീകോഡ് ചെയ്യുവാന്‍ സാധ്യമായില്ല: %d"
+
+#: ../libnm-util/crypto_nss.c:528
+#, c-format
+msgid "Couldn't verify PKCS#12 file: %d"
+msgstr "PKCS#12 ഫയല്‍ ഉറപ്പാക്കുവാന്‍ സാധ്യമായില്ല: %d"
+
+#: ../libnm-util/crypto_nss.c:557
+msgid "Could not generate random data."
+msgstr "വേഗത്തില്‍ ഡേറ്റാ തയ്യാറാക്കുവാന്‍ സാധ്യമായില്ല."
+
+#: ../libnm-util/nm-utils.c:1925
+#, c-format
+msgid "Not enough memory to make encryption key."
+msgstr "എന്‍ക്രിപ്ഷന്‍ കീ തയ്യാറാക്കുന്നതിനാവശ്യമായ മെമ്മറി ലഭ്യമല്ല."
+
+#: ../libnm-util/nm-utils.c:2035
+msgid "Could not allocate memory for PEM file creation."
+msgstr "PEM ഫയല്‍ ഉണ്ടാക്കുന്നതിനുള്ള മെമ്മറി അനുവദിക്കുവാന്‍ സാധ്യമായില്ല."
+
+#: ../libnm-util/nm-utils.c:2047
+#, c-format
+msgid "Could not allocate memory for writing IV to PEM file."
+msgstr "PEM ഫയലിലേക്ക് IV സൂക്ഷിക്കുന്നതിനാവശ്യമുള്ള മെമ്മറി അനുവദിക്കുവാന്‍ സാധ്യമായില്ല."
+
+#: ../libnm-util/nm-utils.c:2059
+#, c-format
+msgid "Could not allocate memory for writing encrypted key to PEM file."
+msgstr "PEM ഫയലിലേക്ക് എന്‍ക്രിപ്റ്റ് ചെയ്ത കീ സൂക്ഷിക്കുന്നതിനുള്ള മെമ്മറി അനുവദിക്കുവാന്‍ സാധ്യമായില്ല."
+
+#: ../libnm-util/nm-utils.c:2078
+#, c-format
+msgid "Could not allocate memory for PEM file data."
+msgstr "PEM ഫയല്‍ ഡേറ്റായ്ക്കുള്ള മെമ്മറി അനുവദിക്കുവാന്‍ സാധ്യമായില്ല."
+
+#: ../src/nm-netlink-monitor.c:100 ../src/nm-netlink-monitor.c:231
+#: ../src/nm-netlink-monitor.c:653
+#, c-format
+msgid "error processing netlink message: %s"
+msgstr "നെറ്റ്ലിങ്ക് സന്ദേശം പ്രവര്‍ത്തിപ്പിക്കുമ്പോള്‍ പിശക്: %s"
+
+#: ../src/nm-netlink-monitor.c:214
+msgid "error occurred while waiting for data on socket"
+msgstr "സോക്കറ്റില്‍ ഡേറ്റായ്ക്കായി കാത്തിരിക്കുമ്പോള്‍ പിശകുണ്ടായിരിക്കുന്നു"
+
+#: ../src/nm-netlink-monitor.c:254
+#, c-format
+msgid "unable to connect to netlink for monitoring link status: %s"
+msgstr "ലിങ്കിന്റെ അവസ്ഥ നിരീക്ഷിക്കുന്നതിനുള്ള നെറ്റ്ലിങ്കുമായി കണക്ട് ചെയ്യുവാന്‍ സാധ്യമല്ല: %s"
+
+#: ../src/nm-netlink-monitor.c:265
+#, c-format
+msgid "unable to enable netlink handle credential passing: %s"
+msgstr "നെറ്റ്ലിങ്ക് ഹാന്‍ഡില്‍ അനുവദിക്കുവാന്‍ സാധ്യമല്ല: %s"
+
+#: ../src/nm-netlink-monitor.c:291 ../src/nm-netlink-monitor.c:353
+#, c-format
+msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgstr "ലിിങ്കിന്റെ അവസ്ഥ നിരീക്ഷിക്കുന്നതിനുള്ള നെറ്റ്ലിങ്ക് ഹാന്‍ഡില്‍ അനുവദിക്കുവാന്‍ സാധ്യമല്ല: %s"
+
+#: ../src/nm-netlink-monitor.c:376
+#, c-format
+msgid "unable to allocate netlink link cache for monitoring link status: %s"
+msgstr "ലിങ്കിന്റെ അവസ്ഥ നിരീക്ഷിക്കുന്നതിനുള്ള നെറ്റ്ലിങ്ക് ലിങ്ക് കാഷേ അനുവദിക്കുവാന്‍ സാധ്യമല്ല: %s "
+
+#: ../src/nm-netlink-monitor.c:502
+#, c-format
+msgid "unable to join netlink group: %s"
+msgstr "നെറ്റ്ലിങ്ക് ഗ്രൂപ്പില്‍ ചേരുവാന്‍ സാധ്യമല്ല: %s"
+
+#: ../src/nm-netlink-monitor.c:629 ../src/nm-netlink-monitor.c:642
+#, c-format
+msgid "error updating link cache: %s"
+msgstr "ലിങ്ക് കാഷേ പരിഷ്കരിക്കുന്നതില്‍ പിശക്: %s"
+
+#: ../src/main.c:502
+#, c-format
+msgid "Invalid option.  Please use --help to see a list of valid options.\n"
+msgstr "തെറ്റായ ഉപാധി.  ശരിയായ കൂടുതല്‍ ഉപാധികള്‍ക്കായി ദയവായി --help ഉപയോഗിക്കുക.\n"
+
+#: ../src/main.c:562
+#, c-format
+msgid "%s.  Please use --help to see a list of valid options.\n"
+msgstr "%s.  ശരിയായ കൂടുതല്‍ ഉപാധികള്‍ക്കായി ദയവായി --help ഉപയോഗിക്കുക.\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:325
+msgid "# Created by NetworkManager\n"
+msgstr "# തയ്യാറാക്കിയതു് NetworkManager\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:341
+#, c-format
+msgid ""
+"# Merged from %s\n"
+"\n"
+msgstr ""
+"# %s-ല്‍ നിന്നും കൂട്ടിചേര്‍ത്തിരിക്കുന്നു\n"
+"\n"
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:279
+msgid "no usable DHCP client could be found."
+msgstr "ഉപയോഗിക്കുവാന്‍ സാധിക്കുന്ന DHCP ക്ലയന്റ് ലഭ്യമായില്ല."
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:288
+msgid "'dhclient' could be found."
+msgstr "'dhclient' ലഭ്യമായില്ല."
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:298
+msgid "'dhcpcd' could be found."
+msgstr "'dhcpcd' ലഭ്യമായില്ല."
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:306
+#, c-format
+msgid "unsupported DHCP client '%s'"
+msgstr "പിന്തണലഭ്യമല്ലാത്ത DHCP ക്ലയന്റ് '%s'"
+
+#: ../src/logging/nm-logging.c:146
+#, c-format
+msgid "Unknown log level '%s'"
+msgstr "അപരിചതമായ ലോഗ് ലവല്‍ '%s'"
+
+#: ../src/logging/nm-logging.c:171
+#, c-format
+msgid "Unknown log domain '%s'"
+msgstr "അപരിചിതമായ ലോഗ് ഡൊമെയിന്‍ '%s'"
+
+#: ../src/named-manager/nm-named-manager.c:343
+msgid "NOTE: the libc resolver may not support more than 3 nameservers."
+msgstr "കുറിപ്പു്: libc റിസോള്‍വര്‍ 3 നെയിംസര്‍വറുകളില്‍ കൂടതല്‍ പിന്തുണയ്ക്കുന്നതല്ല."
+
+#: ../src/named-manager/nm-named-manager.c:345
+msgid "The nameservers listed below may not be recognized."
+msgstr "താഴെ പറഞ്ഞിരിക്കുന്ന നെയിംസര്‍വറുകള്‍ തിരിച്ചറിയപ്പെടുന്നവയല്ല."
+
+#: ../src/system-settings/nm-default-wired-connection.c:157
+#, c-format
+msgid "Auto %s"
+msgstr "ഓട്ടോ %s"
+
+#: ../system-settings/plugins/ifcfg-rh/reader.c:3256
+msgid "System"
+msgstr "സിസ്റ്റം"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:1
+msgid "Connection sharing via a protected WiFi network"
+msgstr "സുരക്ഷിതമായ ഒരു വൈഫൈ നെറ്റ്‌വര്‍ക്ക് വഴി കണക്ഷന്‍ പങ്കിടുക"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:2
+msgid "Connection sharing via an open WiFi network"
+msgstr "ഒരു തുറന്ന വൈഫൈ നെറ്റ്‌വര്‍ക്ക് വഴി കണക്ഷന്‍ പങ്കിടുക"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:3
+msgid "Modify persistent system hostname"
+msgstr "സിസ്റ്റത്തിന്റെ ഹോസ്റ്റ്നാമത്തില്‍ മാറ്റം വരുത്തുക"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:4
+msgid "Modify system connections"
+msgstr "സിസ്റ്റം കണക്ഷനുകളില്‍ മാറ്റം വരുത്തുക"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:5
+msgid "System policy prevents modification of system settings"
+msgstr " സിസ്റ്റത്തിന്റെ സജ്ജീകരണങ്ങളില്‍ മാറ്റം വരുത്തുന്നതു് സിസ്റ്റം പോളിസി തടയുന്നു"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:6
+msgid "System policy prevents modification of the persistent system hostname"
+msgstr "സിസ്റ്റത്തിന്റെ ഹോസ്റ്റ്നാമത്തില്‍ മാറ്റം വരുത്തുന്നതു് സിസ്റ്റം പോളിസി തടയുന്നു"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:7
+msgid "System policy prevents sharing connections via a protected WiFi network"
+msgstr "സുരക്ഷിതമായ ഒരു വൈഫൈ നെറ്റ്‌വര്‍ക്ക് വഴി കണക്ഷനുകള്‍ പങ്കിടുന്നതു് സിസ്റ്റം പോളിസി തടയുന്നു"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:8
+msgid "System policy prevents sharing connections via an open WiFi network"
+msgstr "ഒരു തുറന്ന വൈഫൈ നെറ്റ്‌വര്‍ക്ക് വഴി കണക്ഷനുകള്‍ പങ്കിടുന്നതു് സിസ്റ്റം പോളിസി തടയുന്നു"
+

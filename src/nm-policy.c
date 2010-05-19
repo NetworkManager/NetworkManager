@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2008 Red Hat, Inc.
+ * Copyright (C) 2004 - 2010 Red Hat, Inc.
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
@@ -25,40 +25,24 @@
 #include <netdb.h>
 #include <ctype.h>
 
-#include "NetworkManagerPolicy.h"
+#include "nm-policy.h"
 #include "NetworkManagerUtils.h"
-#include "NetworkManagerAP.h"
+#include "nm-wifi-ap.h"
 #include "nm-activation-request.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 #include "nm-device-interface.h"
 #include "nm-device.h"
 #include "nm-device-wifi.h"
 #include "nm-device-ethernet.h"
+#include "nm-device-modem.h"
 #include "nm-dbus-manager.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-connection.h"
-#include "NetworkManagerSystem.h"
+#include "nm-system.h"
 #include "nm-named-manager.h"
 #include "nm-vpn-manager.h"
-#include "nm-modem.h"
-
-typedef struct LookupThread LookupThread;
-
-typedef void (*LookupCallback) (LookupThread *thread, gpointer user_data);
-
-struct LookupThread {
-	GThread *thread;
-
-	GMutex *lock;
-	gboolean die;
-	int ret;
-
-	guint32 ip4_addr;
-	char hostname[NI_MAXHOST + 1];
-
-	LookupCallback callback;
-	gpointer user_data;
-};
+#include "nm-policy-hosts.h"
+#include "nm-policy-hostname.h"
 
 struct NMPolicy {
 	NMManager *manager;
@@ -71,96 +55,13 @@ struct NMPolicy {
 	gulong vpn_activated_id;
 	gulong vpn_deactivated_id;
 
-	NMDevice *default_device;
+	NMDevice *default_device4;
+	NMDevice *default_device6;
 
-	LookupThread *lookup;
+	HostnameThread *lookup;
+
+	char *orig_hostname; /* hostname at NM start time */
 };
-
-static gboolean
-lookup_thread_run_cb (gpointer user_data)
-{
-	LookupThread *thread = (LookupThread *) user_data;
-
-	(*thread->callback) (thread, thread->user_data);
-	return FALSE;
-}
-
-static gpointer
-lookup_thread_worker (gpointer data)
-{
-	LookupThread *thread = (LookupThread *) data;
-	struct sockaddr_in addr;
-
-	g_mutex_lock (thread->lock);
-	if (thread->die) {
-		g_mutex_unlock (thread->lock);
-		return (gpointer) NULL;
-	}
-	g_mutex_unlock (thread->lock);
-
-	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = thread->ip4_addr;
-
-	thread->ret = getnameinfo ((struct sockaddr *) &addr, sizeof (struct sockaddr_in),
-	                           thread->hostname, NI_MAXHOST, NULL, 0,
-	                           NI_NAMEREQD);
-	if (thread->ret == 0) {
-		int i;
-
-		for (i = 0; i < strlen (thread->hostname); i++)
-			thread->hostname[i] = tolower (thread->hostname[i]);
-	}
-
-	/* Don't track the idle handler ID because by the time the g_idle_add()
-	 * returns the ID, the handler may already have run and freed the
-	 * LookupThread.
-	 */
-	g_idle_add (lookup_thread_run_cb, thread);
-	return (gpointer) TRUE;
-}
-
-static void
-lookup_thread_free (LookupThread *thread)
-{
-	g_return_if_fail (thread != NULL);
-
-	g_mutex_free (thread->lock);
-	memset (thread, 0, sizeof (LookupThread));
-	g_free (thread);
-}
-
-static LookupThread *
-lookup_thread_new (guint32 ip4_addr, LookupCallback callback, gpointer user_data)
-{
-	LookupThread *thread;
-
-	thread = g_malloc0 (sizeof (LookupThread));
-	if (!thread)
-		return NULL;
-
-	thread->lock = g_mutex_new ();
-	thread->callback = callback;
-	thread->user_data = user_data;
-	thread->ip4_addr = ip4_addr;
-
-	thread->thread = g_thread_create (lookup_thread_worker, thread, FALSE, NULL);
-	if (!thread->thread) {
-		lookup_thread_free (thread);
-		return NULL;
-	}
-
-	return thread;
-}
-
-static void
-lookup_thread_die (LookupThread *thread)
-{
-	g_return_if_fail (thread != NULL);
-
-	g_mutex_lock (thread->lock);
-	thread->die = TRUE;
-	g_mutex_unlock (thread->lock);
-}
 
 #define INVALID_TAG "invalid"
 
@@ -178,7 +79,7 @@ get_connection_id (NMConnection *connection)
 }
 
 static NMDevice *
-get_best_device (NMManager *manager, NMActRequest **out_req)
+get_best_ip4_device (NMManager *manager, NMActRequest **out_req)
 {
 	GSList *devices, *iter;
 	NMDevice *best = NULL;
@@ -232,7 +133,7 @@ get_best_device (NMManager *manager, NMActRequest **out_req)
 			}
 		}
 
-		if (!can_default && !NM_IS_MODEM (dev))
+		if (!can_default && !NM_IS_DEVICE_MODEM (dev))
 			continue;
 
 		/* 'never-default' devices can't ever be the default */
@@ -250,154 +151,107 @@ get_best_device (NMManager *manager, NMActRequest **out_req)
 	return best;
 }
 
-#define FALLBACK_HOSTNAME "localhost.localdomain"
-
-static gboolean
-update_etc_hosts (const char *hostname)
+static NMDevice *
+get_best_ip6_device (NMManager *manager, NMActRequest **out_req)
 {
-	char *contents = NULL;
-	char **lines = NULL, **line;
-	GError *error = NULL;
-	gboolean initial_comments = TRUE;
-	gboolean added = FALSE;
-	gsize contents_len = 0;
-	GString *new_contents;
-	gboolean success = FALSE;
+	GSList *devices, *iter;
+	NMDevice *best = NULL;
+	int best_prio = G_MAXINT;
 
-	g_return_val_if_fail (hostname != NULL, FALSE);
+	g_return_val_if_fail (manager != NULL, NULL);
+	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
+	g_return_val_if_fail (out_req != NULL, NULL);
+	g_return_val_if_fail (*out_req == NULL, NULL);
 
-	if (!g_file_get_contents (SYSCONFDIR "/hosts", &contents, &contents_len, &error)) {
-		nm_warning ("%s: couldn't read " SYSCONFDIR "/hosts: (%d) %s",
-		            __func__, error ? error->code : 0,
-		            (error && error->message) ? error->message : "(unknown)");
-		if (error)
-			g_error_free (error);
-	} else {
-		lines = g_strsplit_set (contents, "\n\r", 0);
-		g_free (contents);
-	}
+	devices = nm_manager_get_devices (manager);
+	for (iter = devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *dev = NM_DEVICE (iter->data);
+		NMActRequest *req;
+		NMConnection *connection;
+		NMIP6Config *ip6_config;
+		NMSettingIP6Config *s_ip6;
+		int prio;
+		guint i;
+		gboolean can_default = FALSE;
+		const char *method = NULL;
 
-	new_contents = g_string_sized_new (contents_len ? contents_len + 100 : 200);
-	if (!new_contents) {
-		nm_warning ("%s: not enough memory to update " SYSCONFDIR "/hosts", __func__);
-		return FALSE;
-	}
+		if (nm_device_get_state (dev) != NM_DEVICE_STATE_ACTIVATED)
+			continue;
 
-	/* Replace any 127.0.0.1 entry that is at the beginning of the file or right
-	 * after initial comments.  If there is no 127.0.0.1 entry at the beginning
-	 * or after initial comments, add one there and ignore any other 127.0.0.1
-	 * entries.
-	 */
-	for (line = lines; lines && *line; line++) {
-		gboolean add_line = TRUE;
+		ip6_config = nm_device_get_ip6_config (dev);
+		if (!ip6_config)
+			continue;
 
-		/* This is the first line after the initial comments */
-		if (initial_comments && (*line[0] != '#')) {
-			initial_comments = FALSE;
-			g_string_append_printf (new_contents, "127.0.0.1\t%s", hostname);
-			if (strcmp (hostname, FALLBACK_HOSTNAME))
-				g_string_append_printf (new_contents, "\t" FALLBACK_HOSTNAME);
-			g_string_append (new_contents, "\tlocalhost\n");
-			added = TRUE;
+		req = nm_device_get_act_request (dev);
+		g_assert (req);
+		connection = nm_act_request_get_connection (req);
+		g_assert (connection);
 
-			/* Don't add the entry if it's supposed to be the actual localhost reverse mapping */
-			if (!strncmp (*line, "127.0.0.1", strlen ("127.0.0.1")) && strstr (*line, "localhost"))
-				add_line = FALSE;
-		}
+		/* Never set the default route through an IPv4LL-addressed device */
+		s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
+		if (s_ip6)
+			method = nm_setting_ip6_config_get_method (s_ip6);
 
-		if (add_line) {
-			g_string_append (new_contents, *line);
-			/* Only append the new line if this isn't the last line in the file */
-			if (*(line+1))
-				g_string_append_c (new_contents, '\n');
-		}
-	}
+		if (method && !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL))
+			continue;
 
-	/* Hmm, /etc/hosts was empty for some reason */
-	if (!added) {
-		g_string_append (new_contents, "# Do not remove the following line, or various programs");
-		g_string_append (new_contents, "# that require network functionality will fail.");
-		g_string_append (new_contents, "127.0.0.1\t" FALLBACK_HOSTNAME "\tlocalhost");
-	}
+		/* Make sure at least one of this device's IP addresses has a gateway */
+		for (i = 0; i < nm_ip6_config_get_num_addresses (ip6_config); i++) {
+			NMIP6Address *addr;
 
-	error = NULL;
-	if (!g_file_set_contents (SYSCONFDIR "/hosts", new_contents->str, -1, &error)) {
-		nm_warning ("%s: couldn't update " SYSCONFDIR "/hosts: (%d) %s",
-		            __func__, error ? error->code : 0,
-		            (error && error->message) ? error->message : "(unknown)");
-		if (error)
-			g_error_free (error);
-	} else
-		success = TRUE;
-
-	g_string_free (new_contents, TRUE);
-	return success;
-}
-
-static void
-set_system_hostname (const char *new_hostname, const char *msg)
-{
-	char old_hostname[HOST_NAME_MAX + 1];
-	int ret = 0;
-	const char *name = new_hostname ? new_hostname : FALLBACK_HOSTNAME;
-
-	old_hostname[HOST_NAME_MAX] = '\0';
-	errno = 0;
-	ret = gethostname (old_hostname, HOST_NAME_MAX);
-	if (ret != 0) {
-		nm_warning ("%s: couldn't get the system hostname: (%d) %s",
-		            __func__, errno, strerror (errno));
-	} else {
-		/* Do nothing if the hostname isn't actually changing */
-		if (   (new_hostname && !strcmp (old_hostname, new_hostname))
-		    || (!new_hostname && !strcmp (old_hostname, FALLBACK_HOSTNAME)))
-			return;
-	}
-
-	nm_info ("Setting system hostname to '%s' (%s)", name, msg);
-
-	ret = sethostname (name, strlen (name));
-	if (ret == 0) {
-		if (!update_etc_hosts (name)) {
-			/* error updating /etc/hosts; fallback to localhost.localdomain */
-			nm_info ("Setting system hostname to '" FALLBACK_HOSTNAME "' (error updating /etc/hosts)");
-			ret = sethostname (FALLBACK_HOSTNAME, strlen (FALLBACK_HOSTNAME));
-			if (ret != 0) {
-				nm_warning ("%s: couldn't set the fallback system hostname (%s): (%d) %s",
-				            __func__, FALLBACK_HOSTNAME, errno, strerror (errno));
+			addr = nm_ip6_config_get_address (ip6_config, i);
+			if (nm_ip6_address_get_gateway (addr)) {
+				can_default = TRUE;
+				break;
 			}
 		}
-		nm_utils_call_dispatcher ("hostname", NULL, NULL, NULL);
-	} else {
-		nm_warning ("%s: couldn't set the system hostname to '%s': (%d) %s",
-		            __func__, name, errno, strerror (errno));
+
+		if (!can_default && !NM_IS_DEVICE_MODEM (dev))
+			continue;
+
+		/* 'never-default' devices can't ever be the default */
+		if (s_ip6 && nm_setting_ip6_config_get_never_default (s_ip6))
+			continue;
+
+		prio = nm_device_get_priority (dev);
+		if (prio > 0 && prio < best_prio) {
+			best = dev;
+			best_prio = prio;
+			*out_req = req;
+		}
 	}
+
+	return best;
 }
 
 static void
-lookup_callback (LookupThread *thread, gpointer user_data)
+_set_hostname (const char *new_hostname, const char *msg)
+{
+	if (nm_policy_set_system_hostname (new_hostname, msg))
+		nm_utils_call_dispatcher ("hostname", NULL, NULL, NULL);
+}
+
+static void
+lookup_callback (HostnameThread *thread,
+                 int result,
+                 const char *hostname,
+                 gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
+	char *msg;
 
-	/* If the thread was told to die or it's not the current in-progress
-	 * hostname lookup, nothing to do.
-	 */
-	if (thread->die || (thread != policy->lookup))
-		goto done;
-
-	policy->lookup = NULL;
-	if (!strlen (thread->hostname)) {
-		char *msg;
-
-		/* No valid IP4 config (!!); fall back to localhost.localdomain */
-		msg = g_strdup_printf ("address lookup failed: %d", thread->ret);
-		set_system_hostname (NULL, msg);
-		g_free (msg);
-	} else
-		set_system_hostname (thread->hostname, "from address lookup");
-
-done:
-	lookup_thread_free (thread);
+	/* Update the hostname if the calling lookup thread is the in-progress one */
+	if (!hostname_thread_is_dead (thread) && (thread == policy->lookup)) {
+		policy->lookup = NULL;
+		if (!hostname) {
+			/* No valid IP4 config (!!); fall back to localhost.localdomain */
+			msg = g_strdup_printf ("address lookup failed: %d", result);
+			_set_hostname (NULL, msg);
+			g_free (msg);
+		} else
+			_set_hostname (hostname, "from address lookup");
+	}
+	hostname_thread_free (thread);
 }
 
 static void
@@ -412,57 +266,75 @@ update_system_hostname (NMPolicy *policy, NMDevice *best)
 	g_return_if_fail (policy != NULL);
 
 	if (policy->lookup) {
-		lookup_thread_die (policy->lookup);
+		hostname_thread_kill (policy->lookup);
 		policy->lookup = NULL;
 	}
 
-	/* A configured hostname (via the system-settings service) overrides
-	 * all automatic hostname determination.  If there is no configured hostname,
-	 * the best device's automatically determined hostname (from DHCP, VPN, PPP,
-	 * etc) is used.  If there is no automatically determined hostname, reverse
-	 * DNS lookup using the best device's IP address is started to determined the
-	 * the hostname.
+	/* Hostname precedence order:
+	 *
+	 * 1) a configured hostname (from system-settings)
+	 * 2) automatic hostname from the default device's config (DHCP, VPN, etc)
+	 * 3) the original hostname when NM started
+	 * 4) reverse-DNS of the best device's IPv4 address
+	 *
 	 */
 
-	/* Try a configured hostname first */
+	/* Try a persistent hostname first */
 	g_object_get (G_OBJECT (policy->manager), NM_MANAGER_HOSTNAME, &configured_hostname, NULL);
 	if (configured_hostname) {
-		set_system_hostname (configured_hostname, "from system configuration");
+		_set_hostname (configured_hostname, "from system configuration");
 		g_free (configured_hostname);
 		return;
 	}
 
 	/* Try automatically determined hostname from the best device's IP config */
 	if (!best)
-		best = get_best_device (policy->manager, &best_req);
+		best = get_best_ip4_device (policy->manager, &best_req);
 
 	if (!best) {
-		/* No best device; fall back to localhost.localdomain */
-		set_system_hostname (NULL, "no default device");
+		/* No best device; fall back to original hostname or if there wasn't
+		 * one, 'localhost.localdomain'
+		 */
+		_set_hostname (policy->orig_hostname, "no default device");
 		return;
 	}
 
 	/* Grab a hostname out of the device's DHCP4 config */
 	dhcp4_config = nm_device_get_dhcp4_config (best);
 	if (dhcp4_config) {
-		const char *dhcp4_hostname;
+		const char *dhcp4_hostname, *p;
 
-		dhcp4_hostname = nm_dhcp4_config_get_option (dhcp4_config, "host_name");
+		p = dhcp4_hostname = nm_dhcp4_config_get_option (dhcp4_config, "host_name");
 		if (dhcp4_hostname && strlen (dhcp4_hostname)) {
-			set_system_hostname (dhcp4_hostname, "from DHCP");
-			return;
+			/* Sanity check */
+			while (*p) {
+				if (!isblank (*p++)) {
+					_set_hostname (dhcp4_hostname, "from DHCP");
+					return;
+				}
+			}
+			nm_log_warn (LOGD_DNS, "DHCP-provided hostname '%s' looks invalid; ignoring it",
+			             dhcp4_hostname);
 		}
 	}
 
-	/* No configured hostname, no automatically determined hostname either. Start
-	 * reverse DNS of the current IP address to try and find it.
+	/* If no automatically-configured hostname, try using the hostname from
+	 * when NM started up.
+	 */
+	if (policy->orig_hostname) {
+		_set_hostname (policy->orig_hostname, "from system startup");
+		return;
+	}
+
+	/* No configured hostname, no automatically determined hostname, and
+	 * no bootup hostname. Start reverse DNS of the current IP address.
 	 */
 	ip4_config = nm_device_get_ip4_config (best);
 	if (   !ip4_config
 	    || (nm_ip4_config_get_num_nameservers (ip4_config) == 0)
 	    || (nm_ip4_config_get_num_addresses (ip4_config) == 0)) {
 		/* No valid IP4 config (!!); fall back to localhost.localdomain */
-		set_system_hostname (NULL, "no IPv4 config");
+		_set_hostname (NULL, "no IPv4 config");
 		return;
 	}
 
@@ -470,15 +342,15 @@ update_system_hostname (NMPolicy *policy, NMDevice *best)
 	g_assert (addr); /* checked for > 1 address above */
 
 	/* Start the hostname lookup thread */
-	policy->lookup = lookup_thread_new (nm_ip4_address_get_address (addr), lookup_callback, policy);
+	policy->lookup = hostname_thread_new (nm_ip4_address_get_address (addr), lookup_callback, policy);
 	if (!policy->lookup) {
 		/* Fall back to 'localhost.localdomain' */
-		set_system_hostname (NULL, "error starting hostname thread");
+		_set_hostname (NULL, "error starting hostname thread");
 	}
 }
 
 static void
-update_routing_and_dns (NMPolicy *policy, gboolean force_update)
+update_ip4_routing_and_dns (NMPolicy *policy, gboolean force_update)
 {
 	NMNamedIPConfigType dns_type = NM_NAMED_IP_CONFIG_TYPE_BEST_DEVICE;
 	NMDevice *best = NULL;
@@ -492,10 +364,10 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	NMSettingConnection *s_con = NULL;
 	const char *connection_id;
 
-	best = get_best_device (policy->manager, &best_req);
+	best = get_best_ip4_device (policy->manager, &best_req);
 	if (!best)
 		goto out;
-	if (!force_update && (best == policy->default_device))
+	if (!force_update && (best == policy->default_device4))
 		goto out;
 
 	/* If a VPN connection is active, it is preferred */
@@ -554,8 +426,8 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	}
 
 	if (!ip_iface || !ip4_config) {
-		nm_warning ("%s: couldn't determine IP interface (%p) or IPv4 config (%p)!",
-		            __func__, ip_iface, ip4_config);
+		nm_log_warn (LOGD_CORE, "couldn't determine IP interface (%p) or IPv4 config (%p)!",
+		             ip_iface, ip4_config);
 		goto out;
 	}
 
@@ -588,16 +460,150 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 
 	connection_id = s_con ? nm_setting_connection_get_id (s_con) : NULL;
-	if (connection_id)
-		nm_info ("Policy set '%s' (%s) as default for routing and DNS.", connection_id, ip_iface);
-	else
-		nm_info ("Policy set (%s) as default for routing and DNS.", ip_iface);
+	if (connection_id) {
+		nm_log_info (LOGD_CORE, "Policy set '%s' (%s) as default for IPv4 routing and DNS.", connection_id, ip_iface);
+	} else {
+		nm_log_info (LOGD_CORE, "Policy set (%s) as default for IPv4 routing and DNS.", ip_iface);
+	}
 
 out:
-	/* Update the system hostname */
-	update_system_hostname (policy, best);
+	policy->default_device4 = best;
+}
 
-	policy->default_device = best;	
+static void
+update_ip6_routing_and_dns (NMPolicy *policy, gboolean force_update)
+{
+	NMNamedIPConfigType dns_type = NM_NAMED_IP_CONFIG_TYPE_BEST_DEVICE;
+	NMDevice *best = NULL;
+	NMActRequest *best_req = NULL;
+	NMNamedManager *named_mgr;
+	GSList *devices = NULL, *iter;
+#if NOT_YET
+	GSList *vpns;
+#endif
+	NMIP6Config *ip6_config = NULL;
+	NMIP6Address *addr;
+	const char *ip_iface = NULL;
+	NMConnection *connection = NULL;
+	NMSettingConnection *s_con = NULL;
+	const char *connection_id;
+
+	best = get_best_ip6_device (policy->manager, &best_req);
+	if (!best)
+		goto out;
+	if (!force_update && (best == policy->default_device6))
+		goto out;
+
+#if NOT_YET
+	/* If a VPN connection is active, it is preferred */
+	vpns = nm_vpn_manager_get_active_connections (policy->vpn_manager);
+	for (iter = vpns; iter; iter = g_slist_next (iter)) {
+		NMVPNConnection *candidate = NM_VPN_CONNECTION (iter->data);
+		NMConnection *vpn_connection;
+		NMSettingIP6Config *s_ip6;
+		gboolean can_default = TRUE;
+		NMVPNConnectionState vpn_state;
+
+		/* If it's marked 'never-default', don't make it default */
+		vpn_connection = nm_vpn_connection_get_connection (candidate);
+		g_assert (vpn_connection);
+		s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (vpn_connection, NM_TYPE_SETTING_IP6_CONFIG);
+		if (s_ip6 && nm_setting_ip6_config_get_never_default (s_ip6))
+			can_default = FALSE;
+
+		vpn_state = nm_vpn_connection_get_vpn_state (candidate);
+		if (can_default && (vpn_state == NM_VPN_CONNECTION_STATE_ACTIVATED)) {
+			NMIP6Config *parent_ip6;
+			NMDevice *parent;
+
+			ip_iface = nm_vpn_connection_get_ip_iface (candidate);
+			connection = nm_vpn_connection_get_connection (candidate);
+			ip6_config = nm_vpn_connection_get_ip6_config (candidate);
+			addr = nm_ip6_config_get_address (ip6_config, 0);
+
+			parent = nm_vpn_connection_get_parent_device (candidate);
+			parent_ip6 = nm_device_get_ip6_config (parent);
+
+			nm_system_replace_default_ip6_route_vpn (ip_iface,
+			                                         nm_ip6_address_get_gateway (addr),
+			                                         nm_vpn_connection_get_ip4_internal_gateway (candidate),
+			                                         nm_ip6_config_get_mss (ip4_config),
+			                                         nm_device_get_ip_iface (parent),
+			                                         nm_ip6_config_get_mss (parent_ip4));
+
+			dns_type = NM_NAMED_IP_CONFIG_TYPE_VPN;
+		}
+		g_object_unref (candidate);
+	}
+	g_slist_free (vpns);
+#endif
+
+	/* The best device gets the default route if a VPN connection didn't */
+	if (!ip_iface || !ip6_config) {
+		connection = nm_act_request_get_connection (best_req);
+		ip_iface = nm_device_get_ip_iface (best);
+		ip6_config = nm_device_get_ip6_config (best);
+		g_assert (ip6_config);
+		addr = nm_ip6_config_get_address (ip6_config, 0);
+
+		nm_system_replace_default_ip6_route (ip_iface, nm_ip6_address_get_gateway (addr));
+
+		dns_type = NM_NAMED_IP_CONFIG_TYPE_BEST_DEVICE;
+	}
+
+	if (!ip_iface || !ip6_config) {
+		nm_log_warn (LOGD_CORE, "couldn't determine IP interface (%p) or IPv6 config (%p)!",
+		             ip_iface, ip6_config);
+		goto out;
+	}
+
+	/* Update the default active connection.  Only mark the new default
+	 * active connection after setting default = FALSE on all other connections
+	 * first.  The order is important, we don't want two connections marked
+	 * default at the same time ever.
+	 */
+	devices = nm_manager_get_devices (policy->manager);
+	for (iter = devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *dev = NM_DEVICE (iter->data);
+		NMActRequest *req;
+
+		req = nm_device_get_act_request (dev);
+		if (req && (req != best_req))
+			nm_act_request_set_default6 (req, FALSE);
+	}
+
+	named_mgr = nm_named_manager_get ();
+	nm_named_manager_add_ip6_config (named_mgr, ip_iface, ip6_config, dns_type);
+	g_object_unref (named_mgr);
+
+	/* Now set new default active connection _after_ updating DNS info, so that
+	 * if the connection is shared dnsmasq picks up the right stuff.
+	 */
+	if (best_req)
+		nm_act_request_set_default6 (best_req, TRUE);
+
+	if (connection)
+		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+
+	connection_id = s_con ? nm_setting_connection_get_id (s_con) : NULL;
+	if (connection_id) {
+		nm_log_info (LOGD_CORE, "Policy set '%s' (%s) as default for IPv6 routing and DNS.", connection_id, ip_iface);
+	} else {
+		nm_log_info (LOGD_CORE, "Policy set (%s) as default for IPv6 routing and DNS.", ip_iface);
+	}
+
+out:
+	policy->default_device6 = best;
+}
+
+static void
+update_routing_and_dns (NMPolicy *policy, gboolean force_update)
+{
+	update_ip4_routing_and_dns (policy, force_update);
+	update_ip6_routing_and_dns (policy, force_update);
+
+	/* Update the system hostname */
+	update_system_hostname (policy, policy->default_device4);
 }
 
 typedef struct {
@@ -660,8 +666,8 @@ auto_activate_device (gpointer user_data)
 			s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (best_connection, NM_TYPE_SETTING_CONNECTION));
 			g_assert (s_con);
 
-			nm_warning ("Connection '%s' auto-activation failed: (%d) %s",
-			            nm_setting_connection_get_id (s_con), error->code, error->message);
+			nm_log_info (LOGD_DEVICE, "Connection '%s' auto-activation failed: (%d) %s",
+			             nm_setting_connection_get_id (s_con), error->code, error->message);
 			g_error_free (error);
 		}
 	}
@@ -786,17 +792,36 @@ device_state_changed (NMDevice *device,
 		/* Mark the connection invalid if it failed during activation so that
 		 * it doesn't get automatically chosen over and over and over again.
 		 */
-		if (connection && IS_ACTIVATING_STATE (old_state)) {
-			g_object_set_data (G_OBJECT (connection), INVALID_TAG, GUINT_TO_POINTER (TRUE));
-			nm_info ("Marking connection '%s' invalid.", get_connection_id (connection));
-			nm_connection_clear_secrets (connection);
+		if (connection) {
+			gboolean fail = FALSE;
+
+			if (IS_ACTIVATING_STATE (old_state)) {
+				nm_log_info (LOGD_DEVICE, "Marking connection '%s' invalid.", get_connection_id (connection));
+				fail = TRUE;
+			} else if (   (old_state == NM_DEVICE_STATE_ACTIVATED)
+			         && (reason == NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED)) {
+				nm_log_info (LOGD_DEVICE, "Marking connection '%s' invalid because IP configuration expired.",
+				             get_connection_id (connection));
+				fail = TRUE;
+			}
+
+			if (fail) {
+				g_object_set_data (G_OBJECT (connection), INVALID_TAG, GUINT_TO_POINTER (TRUE));
+				nm_connection_clear_secrets (connection);
+			}
 		}
 		schedule_activate_check (policy, device, 3);
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
-		/* Clear the invalid tag on the connection */
-		if (connection)
+		if (connection) {
+			/* Clear the invalid tag on the connection */
 			g_object_set_data (G_OBJECT (connection), INVALID_TAG, NULL);
+
+			/* And clear secrets so they will always be requested from the
+			 * settings service when the next connection is made.
+			 */
+			nm_connection_clear_secrets (connection);
+		}
 
 		update_routing_and_dns (policy, FALSE);
 		break;
@@ -812,9 +837,9 @@ device_state_changed (NMDevice *device,
 }
 
 static void
-device_ip4_config_changed (NMDevice *device,
-                           GParamSpec *pspec,
-                           gpointer user_data)
+device_ip_config_changed (NMDevice *device,
+                          GParamSpec *pspec,
+                          gpointer user_data)
 {
 	update_routing_and_dns ((NMPolicy *) user_data, TRUE);
 }
@@ -856,7 +881,12 @@ device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 	policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
 
 	id = g_signal_connect (device, "notify::" NM_DEVICE_INTERFACE_IP4_CONFIG,
-	                       G_CALLBACK (device_ip4_config_changed),
+	                       G_CALLBACK (device_ip_config_changed),
+	                       policy);
+	policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
+
+	id = g_signal_connect (device, "notify::" NM_DEVICE_INTERFACE_IP6_CONFIG,
+	                       G_CALLBACK (device_ip_config_changed),
 	                       policy);
 	policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
 
@@ -973,8 +1003,8 @@ connection_removed (NMManager *manager,
 		GError *error = NULL;
 
 		if (!nm_manager_deactivate_connection (manager, path, NM_DEVICE_STATE_REASON_CONNECTION_REMOVED, &error)) {
-			nm_warning ("Connection '%s' disappeared, but error deactivating it: (%d) %s",
-			            nm_setting_connection_get_id (s_con), error->code, error->message);
+			nm_log_warn (LOGD_DEVICE, "Connection '%s' disappeared, but error deactivating it: (%d) %s",
+			             nm_setting_connection_get_id (s_con), error->code, error->message);
 			g_error_free (error);
 		}
 		g_free (path);
@@ -988,6 +1018,7 @@ nm_policy_new (NMManager *manager, NMVPNManager *vpn_manager)
 	NMPolicy *policy;
 	static gboolean initialized = FALSE;
 	gulong id;
+	char hostname[HOST_NAME_MAX + 2];
 
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
 	g_return_val_if_fail (initialized == FALSE, NULL);
@@ -995,6 +1026,14 @@ nm_policy_new (NMManager *manager, NMVPNManager *vpn_manager)
 	policy = g_malloc0 (sizeof (NMPolicy));
 	policy->manager = g_object_ref (manager);
 	policy->update_state_id = 0;
+
+	/* Grab hostname on startup and use that if nothing provides one */
+	memset (hostname, 0, sizeof (hostname));
+	if (gethostname (&hostname[0], HOST_NAME_MAX) == 0) {
+		/* only cache it if it's a valid hostname */
+		if (strlen (hostname) && strcmp (hostname, "localhost") && strcmp (hostname, "localhost.localdomain"))
+			policy->orig_hostname = g_strdup (hostname);
+	}
 
 	policy->vpn_manager = g_object_ref (vpn_manager);
 	id = g_signal_connect (policy->vpn_manager, "connection-activated",
@@ -1058,7 +1097,7 @@ nm_policy_destroy (NMPolicy *policy)
 	 * by the lookup thread callback.
 	  */
 	if (policy->lookup) {
-		lookup_thread_die (policy->lookup);
+		hostname_thread_kill (policy->lookup);
 		policy->lookup = NULL;
 	}
 
@@ -1085,6 +1124,8 @@ nm_policy_destroy (NMPolicy *policy)
 		g_free (data);
 	}
 	g_slist_free (policy->dev_signal_ids);
+
+	g_free (policy->orig_hostname);
 
 	g_object_unref (policy->manager);
 	g_free (policy);

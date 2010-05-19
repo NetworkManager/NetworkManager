@@ -27,7 +27,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "NetworkManagerSystem.h"
+#include "nm-system.h"
 
 /* Provided by the frugalwareutils package on Frugalware */
 #include <libfwnetconfig.h> 

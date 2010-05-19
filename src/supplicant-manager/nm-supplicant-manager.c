@@ -27,7 +27,7 @@
 #include "nm-supplicant-interface.h"
 #include "nm-dbus-manager.h"
 #include "nm-marshal.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 #include "nm-glib-compat.h"
 
 #define SUPPLICANT_POKE_INTERVAL 120
@@ -97,11 +97,11 @@ poke_supplicant_cb (gpointer user_data)
 	                                   WPAS_DBUS_PATH,
 	                                   WPAS_DBUS_INTERFACE);
 	if (!proxy) {
-		nm_warning ("Error: could not init wpa_supplicant proxy");
+		nm_log_warn (LOGD_SUPPLICANT, "Error: could not init wpa_supplicant proxy");
 		goto out;
 	}
 
-	nm_info ("Trying to start the supplicant...");
+	nm_log_info (LOGD_SUPPLICANT, "Trying to start the supplicant...");
 	dbus_g_proxy_call_no_reply (proxy, "getInterface", G_TYPE_STRING, tmp, G_TYPE_INVALID);
 	g_object_unref (proxy);
 
@@ -288,9 +288,12 @@ nm_supplicant_manager_get_iface (NMSupplicantManager * self,
 	}
 
 	if (!iface) {
+		nm_log_dbg (LOGD_SUPPLICANT, "(%s): creating new supplicant interface", ifname);
 		iface = nm_supplicant_interface_new (self, ifname, is_wireless);
 		if (iface)
 			priv->ifaces = g_slist_append (priv->ifaces, iface);
+	} else {
+		nm_log_dbg (LOGD_SUPPLICANT, "(%s): returning existing supplicant interface", ifname);
 	}
 
 	return iface;

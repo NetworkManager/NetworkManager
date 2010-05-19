@@ -5,66 +5,1283 @@
 # Miloslav Trmac <mitr@volny.cz>, 2004 - 2006.
 # Jakub Friedl <jfriedl@suse.cz>, 2006.
 # Jiří Eischmann <jiri@eischmann.cz>, 2008.
-#
+# Marek Černocký <marek@manet.cz>, 2010.
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-09-17 22:27+0200\n"
-"PO-Revision-Date: 2008-09-17 22:08+0200\n"
-"Last-Translator: Petr Kovar <pknbe@volny.cz>\n"
+"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
+"product=NetworkManager&component=general\n"
+"POT-Creation-Date: 2010-04-09 03:24+0000\n"
+"PO-Revision-Date: 2010-04-23 13:02+0200\n"
+"Last-Translator: Marek Černocký <marek@manet.cz>\n"
 "Language-Team: Czech <gnome-cs-list@gnome.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 
-#: ../src/nm-netlink-monitor.c:193 ../src/nm-netlink-monitor.c:474
+#: ../cli/src/connections.c:86
+#, c-format
+msgid ""
+"Usage: nmcli con { COMMAND | help }\n"
+"  COMMAND := { list | status | up | down }\n"
+"\n"
+"  list [id <id> | uuid <id> | system | user]\n"
+"  status\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--timeout "
+"<timeout>]\n"
+"  down id <id> | uuid <id>\n"
+msgstr ""
+"Použití: nmcli con {PŘÍKAZ | help}\n"
+"  PŘÍKAZ := {list | status | up | down}\n"
+"\n"
+"  list [id <id> | uuid <id> | system | user]\n"
+"  status\n"
+"  up id <id> | uuid <id> [iface <rozhraní>] [ap <hw_adresa>] [--nowait] [--"
+"timeout <časový_limit>]\n"
+"  down id <id> | uuid <id>\n"
+
+#: ../cli/src/connections.c:158
+msgid "Connections"
+msgstr "Připojení"
+
+#: ../cli/src/connections.c:158 ../cli/src/connections.c:160
+#: ../cli/src/connections.c:196 ../cli/src/connections.c:198
+#: ../cli/src/connections.c:205 ../cli/src/connections.c:207
+#: ../cli/src/devices.c:298 ../cli/src/devices.c:458 ../cli/src/devices.c:460
+msgid "Type"
+msgstr "Typ"
+
+#: ../cli/src/connections.c:158 ../cli/src/connections.c:160
+#: ../cli/src/connections.c:196 ../cli/src/connections.c:198
+#: ../cli/src/connections.c:205 ../cli/src/connections.c:207
+#: ../cli/src/connections.c:297 ../cli/src/connections.c:299
+msgid "UUID"
+msgstr "UUID"
+
+#: ../cli/src/connections.c:158 ../cli/src/connections.c:160
+#: ../cli/src/connections.c:196 ../cli/src/connections.c:198
+#: ../cli/src/connections.c:205 ../cli/src/connections.c:207
+#: ../cli/src/connections.c:297 ../cli/src/connections.c:299
+msgid "Name"
+msgstr "Název"
+
+#: ../cli/src/connections.c:163
+#, c-format
+msgid "System connections:\n"
+msgstr "Systémová připojení:\n"
+
+#: ../cli/src/connections.c:167
+#, c-format
+msgid "User connections:\n"
+msgstr "Uživatelská připojení:\n"
+
+#: ../cli/src/connections.c:178 ../cli/src/connections.c:967
+#: ../cli/src/connections.c:983 ../cli/src/connections.c:992
+#: ../cli/src/connections.c:1003 ../cli/src/connections.c:1085
+#: ../cli/src/devices.c:604 ../cli/src/devices.c:614 ../cli/src/devices.c:699
+#: ../cli/src/devices.c:785 ../cli/src/devices.c:792
+#, c-format
+msgid "Error: %s argument is missing."
+msgstr "Chyba: schází argument %s."
+
+#: ../cli/src/connections.c:189
+#, c-format
+msgid "Error: %s - no such connection."
+msgstr "Chyba: %s - takové připojení neexistuje."
+
+#: ../cli/src/connections.c:196
+msgid "System-wide connections"
+msgstr "Připojení v rámci systému"
+
+#: ../cli/src/connections.c:205
+msgid "User connections"
+msgstr "Uživatelská připojení"
+
+#: ../cli/src/connections.c:212 ../cli/src/connections.c:1016
+#: ../cli/src/connections.c:1103 ../cli/src/devices.c:446
+#: ../cli/src/devices.c:494 ../cli/src/devices.c:628 ../cli/src/devices.c:706
+#: ../cli/src/devices.c:798
+#, c-format
+msgid "Unknown parameter: %s\n"
+msgstr "Neznámý parametr: %s\n"
+
+#: ../cli/src/connections.c:221
+#, c-format
+msgid "Error: no valid parameter specified."
+msgstr "Chyba: nezadán žádný platný parametr."
+
+#. FIXME: Fix the output
+#: ../cli/src/connections.c:268 ../cli/src/devices.c:302
+#: ../cli/src/devices.c:321 ../cli/src/devices.c:353 ../cli/src/devices.c:355
+#: ../cli/src/devices.c:357 ../cli/src/devices.c:359 ../cli/src/devices.c:361
+msgid "yes"
+msgstr "ano"
+
+#: ../cli/src/connections.c:268 ../cli/src/devices.c:304
+msgid "no"
+msgstr "ne"
+
+#: ../cli/src/connections.c:297
+msgid "Active connections"
+msgstr "Aktivní připojení"
+
+#: ../cli/src/connections.c:297 ../cli/src/connections.c:299
+#: ../cli/src/devices.c:302 ../cli/src/devices.c:304
+msgid "Default"
+msgstr "Výchozí"
+
+#: ../cli/src/connections.c:297 ../cli/src/connections.c:299
+msgid "Service"
+msgstr "Služba"
+
+#: ../cli/src/connections.c:297 ../cli/src/connections.c:299
+msgid "Devices"
+msgstr "Zařízení"
+
+#: ../cli/src/connections.c:659
+#, c-format
+msgid "no active connection on device '%s'"
+msgstr "žádné aktivní připojení nebo zařízení „%s“"
+
+#: ../cli/src/connections.c:667
+#, c-format
+msgid "no active connection or device"
+msgstr "žádné aktivní připojení nebo zařízení"
+
+#: ../cli/src/connections.c:730
+msgid "activating"
+msgstr "aktivuje se"
+
+#: ../cli/src/connections.c:732
+msgid "activated"
+msgstr "aktivováno"
+
+#: ../cli/src/connections.c:735 ../cli/src/connections.c:758
+#: ../cli/src/connections.c:791 ../cli/src/devices.c:111
+#: ../cli/src/network-manager.c:76 ../cli/src/network-manager.c:98
+msgid "unknown"
+msgstr "neznámo"
+
+#: ../cli/src/connections.c:744
+msgid "VPN connecting (prepare)"
+msgstr "VPN se připojuje (příprava)"
+
+#: ../cli/src/connections.c:746
+msgid "VPN connecting (need authentication)"
+msgstr "VPN se připojuje (požaduje ověření)"
+
+#: ../cli/src/connections.c:748
+msgid "VPN connecting"
+msgstr "VPN se připojuje"
+
+#: ../cli/src/connections.c:750
+msgid "VPN connecting (getting IP configuration)"
+msgstr "VPN se připojuje (získává se nastavení IP)"
+
+#: ../cli/src/connections.c:752
+msgid "VPN connected"
+msgstr "VPN připojena"
+
+#: ../cli/src/connections.c:754
+msgid "VPN connection failed"
+msgstr "VPN se nezdařilo připojit"
+
+#: ../cli/src/connections.c:756
+msgid "VPN disconnected"
+msgstr "VPN odpojena"
+
+#: ../cli/src/connections.c:767
+msgid "unknown reason"
+msgstr "neznámý důvod"
+
+#: ../cli/src/connections.c:769
+msgid "none"
+msgstr "žádný"
+
+#: ../cli/src/connections.c:771
+msgid "the user was disconnected"
+msgstr "uživatel byl odpojen"
+
+#: ../cli/src/connections.c:773
+msgid "the base network connection was interrupted"
+msgstr "základní síťové připojení bylo přerušeno"
+
+#: ../cli/src/connections.c:775
+msgid "the VPN service stopped unexpectedly"
+msgstr "služba VPN neočekávaně zastavena"
+
+#: ../cli/src/connections.c:777
+msgid "the VPN service returned invalid configuration"
+msgstr "služba VPN vrátila neplatné nastavení"
+
+#: ../cli/src/connections.c:779
+msgid "the connection attempt timed out"
+msgstr "pokusu o připojení vypršel časový limit"
+
+#: ../cli/src/connections.c:781
+msgid "the VPN service did not start in time"
+msgstr "služba VPN se nespustila v časovém limitu"
+
+#: ../cli/src/connections.c:783
+msgid "the VPN service failed to start"
+msgstr "službu VPN se nezdařilo spustit"
+
+#: ../cli/src/connections.c:785
+msgid "no valid VPN secrets"
+msgstr "žádná platná utajení VPN"
+
+#: ../cli/src/connections.c:787
+msgid "invalid VPN secrets"
+msgstr "neplatná utajení VPN"
+
+#: ../cli/src/connections.c:789
+msgid "the connection was removed"
+msgstr "připojení odstraněno"
+
+#: ../cli/src/connections.c:803
+#, c-format
+msgid "state: %s\n"
+msgstr "stav: %s\n"
+
+#: ../cli/src/connections.c:806 ../cli/src/connections.c:832
+#, c-format
+msgid "Connection activated\n"
+msgstr "Připojení aktivováno\n"
+
+#: ../cli/src/connections.c:809
+#, c-format
+msgid "Error: Connection activation failed."
+msgstr "Chyba: Selhala aktivace připojení."
+
+#: ../cli/src/connections.c:828
+#, c-format
+msgid "state: %s (%d)\n"
+msgstr "stav: %s (%d)\n"
+
+#: ../cli/src/connections.c:838
+#, c-format
+msgid "Error: Connection activation failed: %s."
+msgstr "Chyba: Selhala aktivace připojení: %s"
+
+#: ../cli/src/connections.c:855 ../cli/src/devices.c:551
+#, c-format
+msgid "Error: Timeout %d sec expired."
+msgstr "Chyba: Časový limit %d sekund vypršel."
+
+#: ../cli/src/connections.c:898
+#, c-format
+msgid "Error: Connection activation failed: %s"
+msgstr "Chyba: Selhala aktivace připojení: %s"
+
+#: ../cli/src/connections.c:912
+#, c-format
+msgid "Error: Obtaining active connection for '%s' failed."
+msgstr "Chyba: Získání aktivního připojení pro „%s“ selhalo."
+
+#: ../cli/src/connections.c:921
+#, c-format
+msgid "Active connection state: %s\n"
+msgstr "Stav aktivního připojení: %s\n"
+
+#: ../cli/src/connections.c:922
+#, c-format
+msgid "Active connection path: %s\n"
+msgstr "Cesta aktivního připojení: %s\n"
+
+#: ../cli/src/connections.c:976 ../cli/src/connections.c:1094
+#, c-format
+msgid "Error: Unknown connection: %s."
+msgstr "Chyba: Neznámé připojení: %s."
+
+#: ../cli/src/connections.c:1011 ../cli/src/devices.c:622
+#, c-format
+msgid "Error: timeout value '%s' is not valid."
+msgstr "Chyba: hodnota časového limitu „%s“ není platná."
+
+#: ../cli/src/connections.c:1024 ../cli/src/connections.c:1111
+#, c-format
+msgid "Error: id or uuid has to be specified."
+msgstr "Chyba: nebylo určeno id nebo uuid."
+
+#: ../cli/src/connections.c:1044
+#, c-format
+msgid "Error: No suitable device found: %s."
+msgstr "Chyba: Nenalezeno vhodné zařízení: %s."
+
+#: ../cli/src/connections.c:1046
+#, c-format
+msgid "Error: No suitable device found."
+msgstr "Chyba: Nenalezeno vhodné zařízení."
+
+#: ../cli/src/connections.c:1138
+#, c-format
+msgid "Warning: Connection not active\n"
+msgstr "Varování: Připojení není aktivní\n"
+
+#: ../cli/src/connections.c:1189
+#, c-format
+msgid "Error: 'con' command '%s' is not valid."
+msgstr "Chyba: příkaz „%s“ není pro „con“ platný."
+
+#: ../cli/src/connections.c:1216
+#, c-format
+msgid "Error: could not connect to D-Bus."
+msgstr "Chyba: nelze se připojit ke sběrnici D-Bus."
+
+#: ../cli/src/connections.c:1223
+#, c-format
+msgid "Error: Could not get system settings."
+msgstr "Chyba: Nelze získat systémová nastavení."
+
+#: ../cli/src/connections.c:1231
+#, c-format
+msgid "Error: Could not get user settings."
+msgstr "Chyba: Nelze získat uživatelská nastavení."
+
+#: ../cli/src/connections.c:1241
+#, c-format
+msgid "Error: Can't obtain connections: settings services are not running."
+msgstr "Chyba: Nelze získat připojení: služba správy nastavení neběží."
+
+#: ../cli/src/devices.c:73
+#, c-format
+msgid ""
+"Usage: nmcli dev { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | list | disconnect | wifi }\n"
+"\n"
+"  status\n"
+"  list [iface <iface>]\n"
+"  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
+"  wifi [list [iface <iface>] | apinfo iface <iface> hwaddr <hwaddr>]\n"
+"\n"
+msgstr ""
+"Použití: nmcli dev {PŘÍKAZ | help}\n"
+"\n"
+"  PŘÍKAZ := {status | list | disconnect | wifi}\n"
+"\n"
+"  status\n"
+"  list [iface <rozhraní>]\n"
+"  disconnect iface <rozhraní> [--nowait] [--timeout <časový_limit>]\n"
+"  wifi [list [iface <rozhraní>] | apinfo iface <rozhraní> hwaddr "
+"<hw_adresa>]\n"
+"\n"
+
+#: ../cli/src/devices.c:93
+msgid "unmanaged"
+msgstr "není pod správou"
+
+#: ../cli/src/devices.c:95
+msgid "unavailable"
+msgstr "nedostupné"
+
+#: ../cli/src/devices.c:97 ../cli/src/network-manager.c:73
+msgid "disconnected"
+msgstr "odpojeno"
+
+#: ../cli/src/devices.c:99
+msgid "connecting (prepare)"
+msgstr "připojuje se (příprava)"
+
+#: ../cli/src/devices.c:101
+msgid "connecting (configuring)"
+msgstr "připojuje se (nastavování)"
+
+#: ../cli/src/devices.c:103
+msgid "connecting (need authentication)"
+msgstr "připojuje se (požadováno ověření)"
+
+#: ../cli/src/devices.c:105
+msgid "connecting (getting IP configuration)"
+msgstr "připojuje se (získává se nastavení IP)"
+
+#: ../cli/src/devices.c:107 ../cli/src/network-manager.c:71
+msgid "connected"
+msgstr "připojeno"
+
+#: ../cli/src/devices.c:109
+msgid "connection failed"
+msgstr "připojení se nezdařilo"
+
+#: ../cli/src/devices.c:132 ../cli/src/devices.c:876
+msgid "Unknown"
+msgstr "Neznámý"
+
+#. print them
+#: ../cli/src/devices.c:164 ../cli/src/devices.c:266 ../cli/src/devices.c:861
+#: ../cli/src/devices.c:879
+msgid "(none)"
+msgstr "(nic)"
+
+#: ../cli/src/devices.c:209
+#, c-format
+msgid "%s: error converting IP4 address 0x%X"
+msgstr "%s: chyba převodu adresy IP4 0x%X"
+
+#: ../cli/src/devices.c:238
+#, c-format
+msgid "%s, %s, Freq %d MHz, Rate %d Mb/s, Strength %d"
+msgstr "%s, %s, Frekv %d MHz, Rychlost %d Mb/s, Síla sig %d"
+
+#: ../cli/src/devices.c:239
+msgid "Ad-Hoc"
+msgstr "Ad-Hoc"
+
+#: ../cli/src/devices.c:248
+msgid ", Encrypted: "
+msgstr ", Šifrováno: "
+
+#: ../cli/src/devices.c:253
+msgid " WEP"
+msgstr " WEP"
+
+#: ../cli/src/devices.c:255
+msgid " WPA"
+msgstr " WPA"
+
+#: ../cli/src/devices.c:257
+msgid " WPA2"
+msgstr " WPA2"
+
+#: ../cli/src/devices.c:260
+msgid " Enterprise"
+msgstr " Podnikové"
+
+#: ../cli/src/devices.c:294 ../cli/src/devices.c:458 ../cli/src/devices.c:460
+msgid "Device"
+msgstr "Zařízení"
+
+#: ../cli/src/devices.c:299
+msgid "Driver"
+msgstr "Ovladač"
+
+#: ../cli/src/devices.c:299 ../cli/src/devices.c:567
+msgid "(unknown)"
+msgstr "(neznámo)"
+
+#: ../cli/src/devices.c:300 ../cli/src/devices.c:458 ../cli/src/devices.c:460
+msgid "State"
+msgstr "Stav"
+
+#: ../cli/src/devices.c:313
+msgid "HW Address"
+msgstr "HW adresa"
+
+#: ../cli/src/devices.c:319
+#, c-format
+msgid ""
+"\n"
+"  Capabilities:\n"
+msgstr ""
+"\n"
+"  Schopnosti:\n"
+
+#: ../cli/src/devices.c:321
+msgid "Carrier Detect"
+msgstr "Detekce nosného signálu"
+
+#: ../cli/src/devices.c:336
+#, c-format
+msgid "%u Mb/s"
+msgstr "%u Mb/s"
+
+#: ../cli/src/devices.c:337
+msgid "Speed"
+msgstr "Rychlost"
+
+#: ../cli/src/devices.c:348
+#, c-format
+msgid ""
+"\n"
+"  Wireless Properties\n"
+msgstr ""
+"\n"
+"  Vlastnosti bezdrátové části\n"
+
+#: ../cli/src/devices.c:353
+msgid "WEP Encryption"
+msgstr "Šifrování WEP"
+
+#: ../cli/src/devices.c:355
+msgid "WPA Encryption"
+msgstr "Šifrování WPA"
+
+#: ../cli/src/devices.c:357
+msgid "WPA2 Encryption"
+msgstr "Šifrování WPA2"
+
+#: ../cli/src/devices.c:359
+msgid "TKIP cipher"
+msgstr "Šifra TKIP"
+
+#: ../cli/src/devices.c:361
+msgid "CCMP cipher"
+msgstr "Šifra CCMP"
+
+#: ../cli/src/devices.c:368
+#, c-format
+msgid ""
+"\n"
+"  Wireless Access Points %s\n"
+msgstr ""
+"\n"
+"  Bezdrátový přístupový bod %s\n"
+
+#: ../cli/src/devices.c:368
+msgid "(* = current AP)"
+msgstr "(* = aktuální přístupový bod)"
+
+#: ../cli/src/devices.c:374
+#, c-format
+msgid ""
+"\n"
+"  Wired Properties\n"
+msgstr ""
+"\n"
+"  Vlastnosti drátové části\n"
+
+#: ../cli/src/devices.c:377 ../cli/src/devices.c:379
+msgid "Carrier"
+msgstr "Nosný signál"
+
+#: ../cli/src/devices.c:377
+msgid "on"
+msgstr "zapnut"
+
+#: ../cli/src/devices.c:379
+msgid "off"
+msgstr "vypnut"
+
+#: ../cli/src/devices.c:387
+#, c-format
+msgid ""
+"\n"
+"  IPv4 Settings:\n"
+msgstr ""
+"\n"
+"  Nastavení IPv4:\n"
+
+#: ../cli/src/devices.c:395
+msgid "Address"
+msgstr "Adresa"
+
+#: ../cli/src/devices.c:401
+msgid "Prefix"
+msgstr "Předčíslí"
+
+#: ../cli/src/devices.c:405
+msgid "Gateway"
+msgstr "Brána"
+
+#: ../cli/src/devices.c:416
+msgid "DNS"
+msgstr "DNS"
+
+#: ../cli/src/devices.c:458
+msgid "Status of devices"
+msgstr "Stav zařízení"
+
+#: ../cli/src/devices.c:487
+#, c-format
+msgid "Error: '%s' argument is missing."
+msgstr "Chyba: schází argument „%s“."
+
+#: ../cli/src/devices.c:516 ../cli/src/devices.c:655 ../cli/src/devices.c:729
+#, c-format
+msgid "Error: Device '%s' not found."
+msgstr "Chyba: Zařízení „%s“ nenalezeno."
+
+#: ../cli/src/devices.c:539
+#, c-format
+msgid "Success: Device '%s' successfully disconnected."
+msgstr "Úspěch: Zařízení „%s“ úspěšně odpojeno."
+
+#: ../cli/src/devices.c:564
+#, c-format
+msgid "Error: Device '%s' (%s) disconnecting failed: %s"
+msgstr "Chyba: Odpojení zařízení „%s“ (%s) selhalo: %s"
+
+#: ../cli/src/devices.c:572
+#, c-format
+msgid "Device state: %d (%s)\n"
+msgstr "Stav zařízení: %d (%s)\n"
+
+#: ../cli/src/devices.c:636
+#, c-format
+msgid "Error: iface has to be specified."
+msgstr "Chyba: nebylo určeno rozhraní."
+
+#: ../cli/src/devices.c:736 ../cli/src/devices.c:746
+msgid "WiFi scan list"
+msgstr "Seznam prohledání WiFi"
+
+#: ../cli/src/devices.c:740
+#, c-format
+msgid "Error: Device '%s' is not a WiFi device."
+msgstr "Chyba: Zařízení „%s“ není zařízení WiFi."
+
+#: ../cli/src/devices.c:754
+msgid "Device:"
+msgstr "Zařízení:"
+
+#: ../cli/src/devices.c:806
+#, c-format
+msgid "Error: hwaddr has to be specified."
+msgstr "Chyba: musí být určena hardwarová adresa."
+
+#: ../cli/src/devices.c:844
+#, c-format
+msgid "Error: Access point with hwaddr '%s' not found."
+msgstr "Chyba: Přístupový bod s hardwarovou adresou „%s“ nenalezen."
+
+#: ../cli/src/devices.c:862
+#, c-format
+msgid "%u MHz"
+msgstr "%u MHz"
+
+#: ../cli/src/devices.c:863
+#, c-format
+msgid "%u MB/s"
+msgstr "%u MB/s"
+
+#: ../cli/src/devices.c:869 ../cli/src/devices.c:871
+msgid "AP parameters"
+msgstr "Parametry přístupového bodu"
+
+#: ../cli/src/devices.c:873
+msgid "SSID:"
+msgstr "SSID:"
+
+#: ../cli/src/devices.c:874
+msgid "BSSID:"
+msgstr "BSSID:"
+
+#: ../cli/src/devices.c:875
+msgid "Frequency:"
+msgstr "Kmitočet:"
+
+#: ../cli/src/devices.c:876
+msgid "Mode:"
+msgstr "Režim:"
+
+#: ../cli/src/devices.c:876
+msgid "Ad-hoc"
+msgstr "Ad-hoc"
+
+#: ../cli/src/devices.c:876
+msgid "Infrastructure"
+msgstr "Infrastruktura"
+
+#: ../cli/src/devices.c:877
+msgid "Maximal bitrate:"
+msgstr "Max. přenosová rychlost:"
+
+#: ../cli/src/devices.c:878
+msgid "Strength:"
+msgstr "Síla signálu:"
+
+#: ../cli/src/devices.c:879
+msgid "Flags:"
+msgstr "Příznaky:"
+
+#: ../cli/src/devices.c:879
+msgid "privacy"
+msgstr "soukromé"
+
+#: ../cli/src/devices.c:880
+msgid "WPA flags:"
+msgstr "Příznaky WPA:"
+
+#: ../cli/src/devices.c:881
+msgid "RSN flags:"
+msgstr "Příznaky RSN:"
+
+#: ../cli/src/devices.c:907
+#, c-format
+msgid "Error: 'dev wifi' command '%s' is not valid."
+msgstr "Chyba: příkaz „%s“ není pro „dev wifi“ platný."
+
+#: ../cli/src/devices.c:943
+#, c-format
+msgid "Error: 'dev' command '%s' is not valid."
+msgstr "Chyba: příkaz „%s“ není pro „dev“ platný."
+
+#: ../cli/src/network-manager.c:46
+#, c-format
+msgid ""
+"Usage: nmcli nm { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | sleep | wakeup | wifi | wwan }\n"
+"\n"
+"  status\n"
+"  sleep\n"
+"  wakeup\n"
+"  wifi [on|off]\n"
+"  wwan [on|off]\n"
+"\n"
+msgstr ""
+"Použití: nmcli nm {PŘÍKAZ | help}\n"
+"\n"
+"  PŘÍKAZ := {status | sleep | wakeup | wifi | wwan}\n"
+"\n"
+"  status\n"
+"  sleep\n"
+"  wakeup\n"
+"  wifi [on|off]\n"
+"  wwan [on|off]\n"
+"\n"
+
+#: ../cli/src/network-manager.c:67
+msgid "asleep"
+msgstr "uspán"
+
+#: ../cli/src/network-manager.c:69
+msgid "connecting"
+msgstr "připojuje se"
+
+#: ../cli/src/network-manager.c:93 ../cli/src/network-manager.c:94
+#: ../cli/src/network-manager.c:95 ../cli/src/network-manager.c:96
+#: ../cli/src/network-manager.c:143 ../cli/src/network-manager.c:160
+msgid "enabled"
+msgstr "povoleno"
+
+#: ../cli/src/network-manager.c:93 ../cli/src/network-manager.c:94
+#: ../cli/src/network-manager.c:95 ../cli/src/network-manager.c:96
+#: ../cli/src/network-manager.c:143 ../cli/src/network-manager.c:160
+msgid "disabled"
+msgstr "zakázáno"
+
+#: ../cli/src/network-manager.c:102
+msgid "NetworkManager status"
+msgstr "Stav správce sítě NetworkManager"
+
+#: ../cli/src/network-manager.c:104
+msgid "NM running:"
+msgstr "Běh NM:"
+
+#: ../cli/src/network-manager.c:104
+msgid "running"
+msgstr "běží"
+
+#: ../cli/src/network-manager.c:104
+msgid "not running"
+msgstr "neběží"
+
+#: ../cli/src/network-manager.c:105
+msgid "NM state:"
+msgstr "Stav NM:"
+
+#: ../cli/src/network-manager.c:106
+msgid "NM wireless hardware:"
+msgstr "Bezdrátový hardware NM:"
+
+#. no argument, show current state
+#: ../cli/src/network-manager.c:107 ../cli/src/network-manager.c:143
+msgid "NM wireless:"
+msgstr "Bezdrátové sítě NM:"
+
+#: ../cli/src/network-manager.c:108
+msgid "NM WWAN hardware:"
+msgstr "Hardware WWAN NM"
+
+#. no argument, show current state
+#: ../cli/src/network-manager.c:109 ../cli/src/network-manager.c:160
+msgid "NM WWAN:"
+msgstr "Sítě WWAN NM:"
+
+#: ../cli/src/network-manager.c:150
+#, c-format
+msgid "Error: invalid 'wifi' parameter: '%s'."
+msgstr "Chyba: neplatný parametr pro „wifi“: „%s“"
+
+#: ../cli/src/network-manager.c:167
+#, c-format
+msgid "Error: invalid 'wwan' parameter: '%s'."
+msgstr "Chyba: neplatný parametr pro „wwan“: „%s“"
+
+#: ../cli/src/network-manager.c:178
+#, c-format
+msgid "Error: 'nm' command '%s' is not valid."
+msgstr "Chyba: příkaz „%s“ není pro „nm“ platný."
+
+#: ../cli/src/nmcli.c:65
+#, c-format
+msgid ""
+"Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
+"\n"
+"OPTIONS\n"
+"  -t[erse]    terse output\n"
+"  -p[retty]   pretty output\n"
+"  -v[ersion]  show program version\n"
+"  -h[elp]     print this help\n"
+"\n"
+"OBJECT\n"
+"  nm          NetworkManager status\n"
+"  con         NetworkManager connections\n"
+"  dev         devices managed by NetworkManager\n"
+"\n"
+msgstr ""
+"Použití: %s [PŘEPÍNAČE] OBJEKT {PŘÍKAZ | help}\n"
+"\n"
+"PŘEPÍNAČE\n"
+"  -t[erse]    stručný výpis\n"
+"  -p[retty]   hezký výpis\n"
+"  -v[ersion]  zobrazit verzi programu\n"
+"  -h[elp]     zobrazit tuto nápovědu\n"
+"\n"
+"OBJEKT\n"
+"  nm          stav NetworkManageru\n"
+"  con         připojení v NetworkManageru\n"
+"  dev         zařízení spravovaná NetworkManagerem\n"
+"\n"
+
+#: ../cli/src/nmcli.c:106
+#, c-format
+msgid "Object '%s' is unknown, try 'nmcli help'."
+msgstr "Objekt „%s“ je neznámý, zkuste „nmcli help“."
+
+#: ../cli/src/nmcli.c:139
+#, c-format
+msgid "nmcli tool, version %s\n"
+msgstr "nástroj nmcli, verze %s\n"
+
+#: ../cli/src/nmcli.c:145
+#, c-format
+msgid "Option '%s' is unknown, try 'nmcli -help'."
+msgstr "Přepínač „%s“ je neznámý, zkuste „nmcli -help“."
+
+#: ../cli/src/nmcli.c:164
+#, c-format
+msgid "Caught signal %d, shutting down..."
+msgstr "Zachycen signál %d, vypíná se…"
+
+#: ../cli/src/nmcli.c:189
+#, c-format
+msgid "Error: Could not connect to NetworkManager."
+msgstr "Chyba: Nelze se připojit ke správci sítě NetworkManager."
+
+#: ../cli/src/nmcli.c:205
+msgid "Success"
+msgstr "Úspěch"
+
+#: ../libnm-util/crypto.c:120
+#, c-format
+msgid "PEM key file had no end tag '%s'."
+msgstr "Soubor klíče PEM neměl koncovou značku „%s“."
+
+#: ../libnm-util/crypto.c:130
+#, c-format
+msgid "Doesn't look like a PEM private key file."
+msgstr "Nevypadá jako soubor soukromého klíče PEM."
+
+#: ../libnm-util/crypto.c:138
+#, c-format
+msgid "Not enough memory to store PEM file data."
+msgstr "Není dostatek paměti pro uložení dat souboru PEM."
+
+#: ../libnm-util/crypto.c:154
+#, c-format
+msgid "Malformed PEM file: Proc-Type was not first tag."
+msgstr "Vadný soubor PEM: značka Proc-Type nebyla první značkou."
+
+#: ../libnm-util/crypto.c:162
+#, c-format
+msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
+msgstr "Vadný soubor PEM: neznámá značka Proc-Type „%s“."
+
+#: ../libnm-util/crypto.c:172
+#, c-format
+msgid "Malformed PEM file: DEK-Info was not the second tag."
+msgstr "Vadný soubor PEM: značka DEK-Info nebyla druhou značkou."
+
+#: ../libnm-util/crypto.c:183
+#, c-format
+msgid "Malformed PEM file: no IV found in DEK-Info tag."
+msgstr "Vadný soubor PEM: nebyl nalezen IV ve značce DEK-Info."
+
+#: ../libnm-util/crypto.c:190
+#, c-format
+msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
+msgstr "Vadný soubor PEM: neplatný formát IV ve značce DEK-Info."
+
+#: ../libnm-util/crypto.c:203
+#, c-format
+msgid "Malformed PEM file: unknown private key cipher '%s'."
+msgstr "Vadný soubor PEM: neznámá šifra soukromého klíče „%s“."
+
+#: ../libnm-util/crypto.c:222
+#, c-format
+msgid "Could not decode private key."
+msgstr "Nelze dekódovat soukromý klíč."
+
+#: ../libnm-util/crypto.c:267
+#, c-format
+msgid "PEM certificate '%s' had no end tag '%s'."
+msgstr "Certifikát PEM „%s“ nemá koncovou značku „%s“."
+
+#: ../libnm-util/crypto.c:277
+#, c-format
+msgid "Failed to decode certificate."
+msgstr "Selhalo dekódování certifikátu."
+
+#: ../libnm-util/crypto.c:286
+#, c-format
+msgid "Not enough memory to store certificate data."
+msgstr "Nedostatek paměti pro uložení dat certifikátu."
+
+#: ../libnm-util/crypto.c:294
+#, c-format
+#| msgid "Not enough memory to store PEM file data."
+msgid "Not enough memory to store file data."
+msgstr "Nedostatek paměti na uložení dat souboru."
+
+#: ../libnm-util/crypto.c:324
+#, c-format
+msgid "IV must be an even number of bytes in length."
+msgstr "IV musí mít na délku sudý počet bajtů."
+
+#: ../libnm-util/crypto.c:333
+#, c-format
+msgid "Not enough memory to store the IV."
+msgstr "Nedostatek paměti pro uložení IV."
+
+#: ../libnm-util/crypto.c:344
+#, c-format
+msgid "IV contains non-hexadecimal digits."
+msgstr "IV obsahuje jiné než šestnáctkové číslice."
+
+#: ../libnm-util/crypto.c:382 ../libnm-util/crypto_gnutls.c:148
+#: ../libnm-util/crypto_gnutls.c:266 ../libnm-util/crypto_nss.c:171
+#: ../libnm-util/crypto_nss.c:336
+#, c-format
+msgid "Private key cipher '%s' was unknown."
+msgstr "Šifra soukromého klíče „%s“ je neznámá."
+
+#: ../libnm-util/crypto.c:391
+#, c-format
+#| msgid "Not enough memory to store decrypted private key."
+msgid "Not enough memory to decrypt private key."
+msgstr "Nedostatek paměti pro dešifrování soukromého klíče."
+
+#: ../libnm-util/crypto.c:511
+#, c-format
+#| msgid "Failed to decrypt the private key: %d."
+msgid "Unable to determine private key type."
+msgstr "Nelze určit typ soukromého klíče."
+
+#: ../libnm-util/crypto.c:530
+#, c-format
+msgid "Not enough memory to store decrypted private key."
+msgstr "Nedostatek paměti pro uložení dešifrovaného soukromého klíče."
+
+#: ../libnm-util/crypto_gnutls.c:49
+msgid "Failed to initialize the crypto engine."
+msgstr "Selhala inicializace šifrovacího programu."
+
+#: ../libnm-util/crypto_gnutls.c:93
+#, c-format
+msgid "Failed to initialize the MD5 engine: %s / %s."
+msgstr "Selhala inicializace programu pro MD5: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:156
+#, c-format
+msgid "Invalid IV length (must be at least %zd)."
+msgstr "Neplatná délka IV (musí být nejméně %zd)."
+
+#: ../libnm-util/crypto_gnutls.c:165 ../libnm-util/crypto_nss.c:188
+#, c-format
+msgid "Not enough memory for decrypted key buffer."
+msgstr "Nedostatek paměti pro vyrovnávací paměť dešifrovaného klíče."
+
+#: ../libnm-util/crypto_gnutls.c:173
+#, c-format
+msgid "Failed to initialize the decryption cipher context: %s / %s."
+msgstr "Selhala inicializace kontextu dešifrovací šifry: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:182
+#, c-format
+msgid "Failed to set symmetric key for decryption: %s / %s."
+msgstr "Selhalo nastavení symetrického klíče pro dešifrování: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:191
+#, c-format
+msgid "Failed to set IV for decryption: %s / %s."
+msgstr "Selhalo nastavení IV pro dekódování: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:200
+#, c-format
+msgid "Failed to decrypt the private key: %s / %s."
+msgstr "Selhalo dekódování soukromého klíče: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:210 ../libnm-util/crypto_nss.c:267
+#, c-format
+#| msgid "Failed to decrypt the private key: %d."
+msgid "Failed to decrypt the private key: unexpected padding length."
+msgstr "Selhalo dešifrování soukromého klíče: neočekávané zarovnání délky."
+
+#: ../libnm-util/crypto_gnutls.c:221 ../libnm-util/crypto_nss.c:278
+#, c-format
+#| msgid "Failed to decrypt the private key: %d."
+msgid "Failed to decrypt the private key."
+msgstr "Selhalo dešifrování soukromého klíče."
+
+#: ../libnm-util/crypto_gnutls.c:286 ../libnm-util/crypto_nss.c:356
+#, c-format
+msgid "Could not allocate memory for encrypting."
+msgstr "Nelze alokovat paměť pro šifrování."
+
+#: ../libnm-util/crypto_gnutls.c:294
+#, c-format
+#| msgid "Failed to initialize the decryption cipher context: %s / %s."
+msgid "Failed to initialize the encryption cipher context: %s / %s."
+msgstr "Selhala inicializace kontextu šifrovací šifry: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:303
+#, c-format
+#| msgid "Failed to set symmetric key for decryption: %s / %s."
+msgid "Failed to set symmetric key for encryption: %s / %s."
+msgstr "Selhalo nastavení symetrického klíče pro šifrování: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:313
+#, c-format
+#| msgid "Failed to set IV for decryption: %s / %s."
+msgid "Failed to set IV for encryption: %s / %s."
+msgstr "Selhalo nastavení IV pro šifrování: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:322
+#, c-format
+#| msgid "Failed to decrypt the private key: %s / %s."
+msgid "Failed to encrypt the data: %s / %s."
+msgstr "Selhalo šifrování dat: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:362
+#, c-format
+msgid "Error initializing certificate data: %s"
+msgstr "Chyba při inicializaci dat certifikátu: %s"
+
+#: ../libnm-util/crypto_gnutls.c:384
+#, c-format
+msgid "Couldn't decode certificate: %s"
+msgstr "Nelze dekódovat certifikát: %s"
+
+#: ../libnm-util/crypto_gnutls.c:408
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %s"
+msgstr "Nelze inicializovat dekodér PKCS#12: %s"
+
+#: ../libnm-util/crypto_gnutls.c:421
+#, c-format
+#| msgid "Couldn't decode certificate: %s"
+msgid "Couldn't decode PKCS#12 file: %s"
+msgstr "Nelze dekódovat soubor PKCS#12: %s"
+
+#: ../libnm-util/crypto_gnutls.c:433
+#, c-format
+#| msgid "Couldn't decode certificate: %s"
+msgid "Couldn't verify PKCS#12 file: %s"
+msgstr "Nelze ověřit soubor PKCS#12: %s"
+
+#: ../libnm-util/crypto_nss.c:56
+#, c-format
+msgid "Failed to initialize the crypto engine: %d."
+msgstr "Selhala inicializace šifrovacího programu: %d."
+
+#: ../libnm-util/crypto_nss.c:111
+#, c-format
+msgid "Failed to initialize the MD5 context: %d."
+msgstr "Selhala inicializace kontextu MD5: %d."
+
+#: ../libnm-util/crypto_nss.c:179
+#, c-format
+msgid "Invalid IV length (must be at least %d)."
+msgstr "Neplatná délka IV (musí být nejméně %d)."
+
+#: ../libnm-util/crypto_nss.c:196
+#, c-format
+msgid "Failed to initialize the decryption cipher slot."
+msgstr "Selhala inicializace slotu dešifrovací šifry."
+
+#: ../libnm-util/crypto_nss.c:206
+#, c-format
+msgid "Failed to set symmetric key for decryption."
+msgstr "Selhalo nastavení symetrického klíče pro dešifrování."
+
+#: ../libnm-util/crypto_nss.c:216
+#, c-format
+msgid "Failed to set IV for decryption."
+msgstr "Selhalo nastavení IV pro dešifrování."
+
+#: ../libnm-util/crypto_nss.c:224
+#, c-format
+msgid "Failed to initialize the decryption context."
+msgstr "Selhala inicializace dešifrovacího kontextu."
+
+#: ../libnm-util/crypto_nss.c:237
+#, c-format
+msgid "Failed to decrypt the private key: %d."
+msgstr "Selhalo dešifrování soukromého klíče: %d."
+
+#: ../libnm-util/crypto_nss.c:245
+#, c-format
+#| msgid "Failed to decrypt the private key: %d."
+msgid "Failed to decrypt the private key: decrypted data too large."
+msgstr ""
+"Selhalo dešifrování soukromého klíče: dešifrovaná data jsou příliš velká."
+
+#: ../libnm-util/crypto_nss.c:256
+#, c-format
+msgid "Failed to finalize decryption of the private key: %d."
+msgstr "Selhalo dokončení dešifrování soukromého klíče: %d."
+
+#: ../libnm-util/crypto_nss.c:364
+#, c-format
+#| msgid "Failed to initialize the decryption cipher slot."
+msgid "Failed to initialize the encryption cipher slot."
+msgstr "Selhala inicializace slotu šifrovací šifry."
+
+#: ../libnm-util/crypto_nss.c:372
+#, c-format
+#| msgid "Failed to set symmetric key for decryption."
+msgid "Failed to set symmetric key for encryption."
+msgstr "Selhalo nastavení symetrického klíče pro šifrování."
+
+#: ../libnm-util/crypto_nss.c:380
+#, c-format
+#| msgid "Failed to set IV for decryption."
+msgid "Failed to set IV for encryption."
+msgstr "Selhalo nastavení IV pro šifrování."
+
+#: ../libnm-util/crypto_nss.c:388
+#, c-format
+#| msgid "Failed to initialize the decryption context."
+msgid "Failed to initialize the encryption context."
+msgstr "Selhala inicializace kontextu šifrování."
+
+#: ../libnm-util/crypto_nss.c:396
+#, c-format
+#| msgid "Failed to decrypt the private key: %d."
+msgid "Failed to encrypt: %d."
+msgstr "Selhalo šifrování: %d"
+
+#: ../libnm-util/crypto_nss.c:404
+#, c-format
+msgid "Unexpected amount of data after encrypting."
+msgstr "Neočekávané množství dat po zašifrování."
+
+#: ../libnm-util/crypto_nss.c:447
+#, c-format
+msgid "Couldn't decode certificate: %d"
+msgstr "Nelze dekódovat certifikát: %d"
+
+#: ../libnm-util/crypto_nss.c:482
+#, c-format
+msgid "Couldn't convert password to UCS2: %d"
+msgstr "Nelze převést heslo na UCS2: %d"
+
+#: ../libnm-util/crypto_nss.c:510
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %d"
+msgstr "Nelze inicializovat dekodér PKCS#12: %d"
+
+#: ../libnm-util/crypto_nss.c:519
+#, c-format
+#| msgid "Couldn't decode certificate: %d"
+msgid "Couldn't decode PKCS#12 file: %d"
+msgstr "Nelze dekódovat soubor PKCS#12: %d"
+
+#: ../libnm-util/crypto_nss.c:528
+#, c-format
+#| msgid "Couldn't decode certificate: %d"
+msgid "Couldn't verify PKCS#12 file: %d"
+msgstr "Nelze ověřit soubor PKCS#12: %d"
+
+#: ../libnm-util/crypto_nss.c:557
+#| msgid "Could not decode private key."
+msgid "Could not generate random data."
+msgstr "Nelze vygenerovat náhodná data."
+
+#: ../libnm-util/nm-utils.c:1818
+#, c-format
+#| msgid "Not enough memory to create private key decryption key."
+msgid "Not enough memory to make encryption key."
+msgstr "Nedostatek paměti pro vytvoření šifrovacího klíče."
+
+#: ../libnm-util/nm-utils.c:1928
+#| msgid "Not enough memory to store PEM file data."
+msgid "Could not allocate memory for PEM file creation."
+msgstr "Nelze alokovat paměť pro vytvoření souboru PEM."
+
+#: ../libnm-util/nm-utils.c:1940
+#, c-format
+msgid "Could not allocate memory for writing IV to PEM file."
+msgstr "Nelze alokovat paměť pro zápis IV do souboru PEM."
+
+#: ../libnm-util/nm-utils.c:1952
+#, c-format
+msgid "Could not allocate memory for writing encrypted key to PEM file."
+msgstr "Nelze alokovat paměť pro zápis šifrovaného klíče do souboru PEM."
+
+#: ../libnm-util/nm-utils.c:1971
+#, c-format
+#| msgid "Not enough memory to store PEM file data."
+msgid "Could not allocate memory for PEM file data."
+msgstr "Nelze alokovat paměť pro data souboru PEM."
+
+#: ../src/nm-netlink-monitor.c:195 ../src/nm-netlink-monitor.c:463
+#: ../src/nm-netlink-monitor.c:581
+#: ../src/ip6-manager/nm-netlink-listener.c:351
 #, c-format
 msgid "error processing netlink message: %s"
 msgstr "chyba při zpracování zprávy netlink: %s"
 
-#: ../src/nm-netlink-monitor.c:250
+#: ../src/nm-netlink-monitor.c:259
 #, c-format
 msgid "unable to allocate netlink handle for monitoring link status: %s"
 msgstr "nelze alokovat ovládání netlinku pro sledování stavu spojení: %s"
 
-#: ../src/nm-netlink-monitor.c:260
+#: ../src/nm-netlink-monitor.c:269
 #, c-format
 msgid "unable to connect to netlink for monitoring link status: %s"
 msgstr "nelze se připojit k netlinku pro sledování stavu spojení: %s"
 
-#: ../src/nm-netlink-monitor.c:268
+#: ../src/nm-netlink-monitor.c:277
 #, c-format
 msgid "unable to join netlink group for monitoring link status: %s"
 msgstr "nelze se připojit ke skupině netlink pro sledování stavu spojení: %s"
 
-#: ../src/nm-netlink-monitor.c:276
+#: ../src/nm-netlink-monitor.c:285
 #, c-format
 msgid "unable to allocate netlink link cache for monitoring link status: %s"
-msgstr ""
-"nelze alokovat vyrovnávací paměť netlinku pro sledování stavu spojení: %s"
+msgstr "nelze alokovat mezipaměť netlinku pro sledování stavu spojení: %s"
 
-#: ../src/nm-netlink-monitor.c:439
+#: ../src/nm-netlink-monitor.c:493
+#: ../src/ip6-manager/nm-netlink-listener.c:381
+msgid "error occurred while waiting for data on socket"
+msgstr "vyskytla se chyba při čekání na data ze soketu"
+
+#: ../src/nm-netlink-monitor.c:557 ../src/nm-netlink-monitor.c:570
 #, c-format
 msgid "error updating link cache: %s"
-msgstr "chyba při aktualizaci link cache: %s"
+msgstr "chyba při aktualizaci mezipaměti spojení: %s"
 
-#: ../src/nm-netlink-monitor.c:497
-#, c-format
-msgid "error occurred while waiting for data on socket"
-msgstr "při čekání na data ze socketu došlo k chybě"
-
-#: ../src/NetworkManager.c:250
+#: ../src/main.c:498
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
-msgstr "Neplatná volba. Platné volby uvidíte při použití --help.\n"
+msgstr ""
+"Neplatný přepínač. Platné přepínače si můžete zobrazit pomocí --help.\n"
 
-#: ../src/dhcp-manager/nm-dhcp-dhclient.c:89
+#: ../src/main.c:558
+#, c-format
+#| msgid "Invalid option.  Please use --help to see a list of valid options.\n"
+msgid "%s.  Please use --help to see a list of valid options.\n"
+msgstr "%s. Pomocí --help si prosím zobrazte seznam platných přepínačů.\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:325
 msgid "# Created by NetworkManager\n"
 msgstr "# Vytvořeno NetworkManagerem\n"
 
-#: ../src/dhcp-manager/nm-dhcp-dhclient.c:95
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:341
 #, c-format
 msgid ""
 "# Merged from %s\n"
@@ -73,201 +1290,97 @@ msgstr ""
 "# Sloučeno z %s\n"
 "\n"
 
-#: ../src/named-manager/nm-named-manager.c:256
+#: ../src/dhcp-manager/nm-dhcp-manager.c:279
+msgid "no usable DHCP client could be found."
+msgstr "nebyl nalezen žádný použitelný klient DHCP."
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:288
+msgid "'dhclient' could be found."
+msgstr "„dhclient“ byl nalezen."
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:298
+msgid "'dhcpcd' could be found."
+msgstr "„dhcpcd“ byl nalezen."
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:306
+#, c-format
+msgid "unsupported DHCP client '%s'"
+msgstr "nepodporovaný klient DHCP „%s“"
+
+#: ../src/ip6-manager/nm-netlink-listener.c:199
+#, c-format
+#| msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgid "unable to allocate netlink handle: %s"
+msgstr "nelze alokovat ovládání netlinku: %s"
+
+#: ../src/ip6-manager/nm-netlink-listener.c:209
+#, c-format
+#| msgid "unable to connect to netlink for monitoring link status: %s"
+msgid "unable to connect to netlink: %s"
+msgstr "nelze se připojit k netlinku: %s"
+
+#: ../src/ip6-manager/nm-netlink-listener.c:306
+#, c-format
+#| msgid "unable to join netlink group for monitoring link status: %s"
+msgid "unable to join netlink group: %s"
+msgstr "nelze se připojit ke skupině netlink: %s"
+
+#: ../src/logging/nm-logging.c:146
+#, c-format
+msgid "Unknown log level '%s'"
+msgstr "Neznámá úroveň evidence „%s“"
+
+#: ../src/logging/nm-logging.c:171
+#, c-format
+msgid "Unknown log domain '%s'"
+msgstr "Neznámá doména evidence „%s“"
+
+#: ../src/named-manager/nm-named-manager.c:314
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
-msgstr "Poznámka: libc resolver nemůže podporovat více než 3 nameservery."
+msgstr ""
+"Poznámka: překladač adres z libc nemůže podporovat více než 3 jmenné servery."
 
-#: ../src/named-manager/nm-named-manager.c:258
+#: ../src/named-manager/nm-named-manager.c:316
 msgid "The nameservers listed below may not be recognized."
-msgstr "Nameservery uvedené v seznamu dole nelze rozpoznat."
+msgstr "Jmenné servery uvedené v následujícím seznamu nelze rozpoznat."
 
-#: ../system-settings/src/main.c:366
+#: ../src/system-settings/nm-default-wired-connection.c:157
 #, c-format
 msgid "Auto %s"
-msgstr "Auto %s"
+msgstr "%s (automaticky)"
 
-#: ../libnm-util/crypto.c:125
-#, c-format
-msgid "PEM key file had no end tag '%s'."
-msgstr "Soubor klíče PEM neměl koncovou značku '%s'."
+#: ../system-settings/plugins/ifcfg-rh/reader.c:3213
+msgid "System"
+msgstr "Systém"
 
-#: ../libnm-util/crypto.c:135
-#, c-format
-msgid "Doesn't look like a PEM private key file."
-msgstr "Nevypadá jako soubor soukromého klíče PEM."
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:1
+msgid "Connection sharing via a protected WiFi network"
+msgstr "Sdílení připojení přes chráněnou síť WiFi"
 
-#: ../libnm-util/crypto.c:143
-#, c-format
-msgid "Not enough memory to store PEM file data."
-msgstr "Není dostatek paměti na uložení dat PEM souboru."
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:2
+msgid "Connection sharing via an open WiFi network"
+msgstr "Sdílení připojení přes otevřenou síť WiFi"
 
-#: ../libnm-util/crypto.c:159
-#, c-format
-msgid "Malformed PEM file: Proc-Type was not first tag."
-msgstr "Nesprávný PEM soubor: Proc-Type nebylo první značkou."
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:3
+msgid "Modify persistent system hostname"
+msgstr "Měnit trvalý systémový název počítače"
 
-#: ../libnm-util/crypto.c:167
-#, c-format
-msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
-msgstr "Nesprávný PEM soubor: neznámá značka Proc-Type '%s'."
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:4
+msgid "Modify system connections"
+msgstr "Měnit systémová připojení"
 
-#: ../libnm-util/crypto.c:177
-#, c-format
-msgid "Malformed PEM file: DEK-Info was not the second tag."
-msgstr "Nesprávný PEM soubor: DEK-Info nebylo druhou značkou."
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:5
+msgid "System policy prevents modification of system settings"
+msgstr "Systémová politika zabránila změně systémového nastavení."
 
-#: ../libnm-util/crypto.c:188
-#, c-format
-msgid "Malformed PEM file: no IV found in DEK-Info tag."
-msgstr "Nesprávný PEM soubor: nebylo nalezeno IV ve značce DEK-Info."
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:6
+msgid "System policy prevents modification of the persistent system hostname"
+msgstr "Systémová politika zabránila změně trvalého systémového názvu počítače"
 
-#: ../libnm-util/crypto.c:195
-#, c-format
-msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
-msgstr "Nesprávný PEM soubor: neplatný formát IV ve značce DEK-Info."
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:7
+msgid "System policy prevents sharing connections via a protected WiFi network"
+msgstr "Systémová politika zabránila sdílení připojení přes chráněnou síť WiFi"
 
-#: ../libnm-util/crypto.c:208
-#, c-format
-msgid "Malformed PEM file: unknown private key cipher '%s'."
-msgstr "Nesprávný PEM soubor: neznámá šifra soukromého klíče '%s'."
-
-#: ../libnm-util/crypto.c:227
-#, c-format
-msgid "Could not decode private key."
-msgstr "Nelze dekódovat soukromý klíč."
-
-#: ../libnm-util/crypto.c:271
-#, c-format
-msgid "PEM certificate '%s' had no end tag '%s'."
-msgstr "PEM certifikát '%s' nemá koncovou značku '%s'."
-
-#: ../libnm-util/crypto.c:281
-#, c-format
-msgid "Failed to decode certificate."
-msgstr "Selhalo dekódování certifikátu."
-
-#: ../libnm-util/crypto.c:290 ../libnm-util/crypto.c:298
-#, c-format
-msgid "Not enough memory to store certificate data."
-msgstr "Není dostatek paměti na uložení dat certifikátu."
-
-#: ../libnm-util/crypto.c:328
-#, c-format
-msgid "IV must be an even number of bytes in length."
-msgstr "IV musí být sudé číslo bajtů na délku."
-
-#: ../libnm-util/crypto.c:337
-#, c-format
-msgid "Not enough memory to store the IV."
-msgstr "Není dostatek paměti pro uložení IV."
-
-#: ../libnm-util/crypto.c:348
-#, c-format
-msgid "IV contains non-hexadecimal digits."
-msgstr "IV obsahuje nešestnáctkové číslice."
-
-#: ../libnm-util/crypto.c:386 ../libnm-util/crypto_gnutls.c:143
-#: ../libnm-util/crypto_nss.c:157
-#, c-format
-msgid "Private key cipher '%s' was unknown."
-msgstr "Šifra soukromého klíče '%s' je neznámá."
-
-#: ../libnm-util/crypto.c:395
-#, c-format
-msgid "Not enough memory to create private key decryption key."
-msgstr ""
-"Není dostatek paměti pro vytvoření dešifrovacího klíče k soukromému klíči."
-
-#: ../libnm-util/crypto.c:513
-#, c-format
-msgid "Not enough memory to store decrypted private key."
-msgstr "Není dostatek paměti pro uložení dešifrovaného soukromého klíče."
-
-#: ../libnm-util/crypto_gnutls.c:45
-msgid "Failed to initialize the crypto engine."
-msgstr "Nelze inicializovat šifrovací engine."
-
-#: ../libnm-util/crypto_gnutls.c:89
-#, c-format
-msgid "Failed to initialize the MD5 engine: %s / %s."
-msgstr "Nelze inicializovat MD5 engine: %s / %s."
-
-#: ../libnm-util/crypto_gnutls.c:152 ../libnm-util/crypto_nss.c:166
-#, c-format
-msgid "Not enough memory for decrypted key buffer."
-msgstr "Není dostatek paměti pro vyrovnávací paměť dešifrovaného klíče."
-
-#: ../libnm-util/crypto_gnutls.c:160
-#, c-format
-msgid "Failed to initialize the decryption cipher context: %s / %s."
-msgstr "Nelze inicializovat kontext dekódovací šifry: %s / %s."
-
-#: ../libnm-util/crypto_gnutls.c:169
-#, c-format
-msgid "Failed to set symmetric key for decryption: %s / %s."
-msgstr "Nelze nastavit symetrický klíč pro dekódování: %s / %s."
-
-#: ../libnm-util/crypto_gnutls.c:178
-#, c-format
-msgid "Failed to set IV for decryption: %s / %s."
-msgstr "Nelze nastavit IV pro dekódování: %s / %s."
-
-#: ../libnm-util/crypto_gnutls.c:187
-#, c-format
-msgid "Failed to decrypt the private key: %s / %s."
-msgstr "Nelze dekódovat soukromý klíč: %s / %s."
-
-#: ../libnm-util/crypto_gnutls.c:225
-#, c-format
-msgid "Error initializing certificate data: %s"
-msgstr "Chyba při inicializaci dat certifikátu: %s"
-
-#: ../libnm-util/crypto_gnutls.c:237
-#, c-format
-msgid "Couldn't decode certificate: %s"
-msgstr "Nelze dekódovat certifikát: %s"
-
-#: ../libnm-util/crypto_nss.c:52
-#, c-format
-msgid "Failed to initialize the crypto engine: %d."
-msgstr "Nelze inicializovat šifrovací engine: %d."
-
-#: ../libnm-util/crypto_nss.c:98
-#, c-format
-msgid "Failed to initialize the MD5 context: %d."
-msgstr "Nelze inicializovat MD5 kontext: %d."
-
-#: ../libnm-util/crypto_nss.c:174
-#, c-format
-msgid "Failed to initialize the decryption cipher slot."
-msgstr "Nelze inicializovat slot dekódovací šifry."
-
-#: ../libnm-util/crypto_nss.c:184
-#, c-format
-msgid "Failed to set symmetric key for decryption."
-msgstr "Nelze nastavit symetrický klíč pro dekódování."
-
-#: ../libnm-util/crypto_nss.c:194
-#, c-format
-msgid "Failed to set IV for decryption."
-msgstr "Nelze nastavit IV pro dekódování."
-
-#: ../libnm-util/crypto_nss.c:202
-#, c-format
-msgid "Failed to initialize the decryption context."
-msgstr "Nelze inicializovat kontext dekódování."
-
-#: ../libnm-util/crypto_nss.c:215
-#, c-format
-msgid "Failed to decrypt the private key: %d."
-msgstr "Nelze dekódovat soukromý klíč: %d."
-
-#: ../libnm-util/crypto_nss.c:227
-#, c-format
-msgid "Failed to finalize decryption of the private key: %d."
-msgstr "Nelze dokončit dekódování soukromého klíče: %d."
-
-#: ../libnm-util/crypto_nss.c:271
-#, c-format
-msgid "Couldn't decode certificate: %d"
-msgstr "Nelze dekódovat certifikát: %d"
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:8
+msgid "System policy prevents sharing connections via an open WiFi network"
+msgstr "Systémová politika zabránila sdílení připojení přes otevřenou síť WiFi"

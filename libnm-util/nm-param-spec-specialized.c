@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2010 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -31,7 +31,10 @@ struct _NMParamSpecSpecialized {
 
 #include <string.h>
 #include <math.h>
+#include <netinet/in.h>
 #include <dbus/dbus-glib.h>
+
+#include "nm-dbus-glib-types.h"
 
 /***********************************************************/
 /* nm_gvalues_compare */
@@ -368,10 +371,140 @@ nm_gvalues_compare_map (const GValue *value1, const GValue *value2)
 }
 
 static gint
+nm_gvalue_ip6_address_compare (const GValue *value1, const GValue *value2)
+{
+	GValueArray *values1, *values2;
+	GValue *tmp_val;
+	GByteArray *addr1, *addr2;
+	guint32 prefix1, prefix2;
+	GByteArray *gw1, *gw2;
+	gint ret = 0;
+	int i;
+
+	/* IP6 addresses are GValueArrays (see nm-dbus-glib-types.h) */
+	values1 = g_value_get_boxed (value1);
+	values2 = g_value_get_boxed (value2);
+
+	/* Since they are NM IPv6 address structures, we expect both
+	 * to contain two elements as specified in nm-dbus-glib-types.h.
+	 */
+	g_return_val_if_fail (values1->n_values == 3, 0);
+	g_return_val_if_fail (values2->n_values == 3, 0);
+
+	/* First struct IPv6 address */
+	tmp_val = g_value_array_get_nth (values1, 0);
+	addr1 = g_value_get_boxed (tmp_val);
+	/* First struct IPv6 prefix */
+	tmp_val = g_value_array_get_nth (values1, 1);
+	prefix1 = g_value_get_uint (tmp_val);
+	/* First struct IPv6 gateway */
+	tmp_val = g_value_array_get_nth (values1, 2);
+	gw1 = g_value_get_boxed (tmp_val);
+
+	/* Second struct IPv6 address */
+	tmp_val = g_value_array_get_nth (values2, 0);
+	addr2 = g_value_get_boxed (tmp_val);
+	/* Second struct IPv6 prefix */
+	tmp_val = g_value_array_get_nth (values2, 1);
+	prefix2 = g_value_get_uint (tmp_val);
+	/* Second struct IPv6 gateway */
+	tmp_val = g_value_array_get_nth (values2, 2);
+	gw2 = g_value_get_boxed (tmp_val);
+
+	/* Compare IPv6 addresses */
+	if (prefix1 != prefix2)
+		return prefix1 < prefix2 ? -1 : prefix1 > prefix2;
+
+	if (!IN6_ARE_ADDR_EQUAL ((struct in6_addr *)addr1->data, (struct in6_addr *)addr2->data)) {
+		for (i = 0; ret == 0 && i < addr1->len; i++)
+			ret = addr1->data[i] < addr2->data[i] ? -1 : addr1->data[i] > addr2->data[i];
+	}
+
+	if (!IN6_ARE_ADDR_EQUAL ((struct in6_addr *) gw1->data, (struct in6_addr *) gw2->data)) {
+		for (i = 0; ret == 0 && i < gw1->len; i++)
+			ret = gw1->data[i] < gw2->data[i] ? -1 : gw1->data[i] > gw2->data[i];
+	}
+
+	return ret;
+}
+
+static gint
+nm_gvalue_ip6_route_compare (const GValue *value1, const GValue *value2)
+{
+	GValueArray *values1, *values2;
+	GValue *tmp_val;
+	GByteArray *dest1, *dest2;
+	GByteArray *next_hop1, *next_hop2;
+	guint32 prefix1, prefix2;
+	guint32 metric1, metric2;
+	gint ret = 0;
+	int i;
+
+	/* IP6 routes are GValueArrays (see nm-dbus-glib-types.h) */
+	values1 = g_value_get_boxed (value1);
+	values2 = g_value_get_boxed (value2);
+
+	/* Since they are NM IPv6 route structures, we expect both
+	 * to contain 4 elements as specified in nm-dbus-glib-types.h.
+	 */
+	g_return_val_if_fail (values1->n_values == 4, 0);
+	g_return_val_if_fail (values2->n_values == 4, 0);
+
+	/* First struct IPv6 route */
+	tmp_val = g_value_array_get_nth (values1, 0);
+	dest1 = g_value_get_boxed (tmp_val);
+	tmp_val = g_value_array_get_nth (values1, 1);
+	prefix1 = g_value_get_uint (tmp_val);
+	tmp_val = g_value_array_get_nth (values1, 2);
+	next_hop1 = g_value_get_boxed (tmp_val);
+	tmp_val = g_value_array_get_nth (values1, 3);
+	metric1 = g_value_get_uint (tmp_val);
+
+	/* Second struct IPv6 route */
+	tmp_val = g_value_array_get_nth (values2, 0);
+	dest2 = g_value_get_boxed (tmp_val);
+	tmp_val = g_value_array_get_nth (values2, 1);
+	prefix2 = g_value_get_uint (tmp_val);
+	tmp_val = g_value_array_get_nth (values2, 2);
+	next_hop2 = g_value_get_boxed (tmp_val);
+	tmp_val = g_value_array_get_nth (values2, 3);
+	metric2 = g_value_get_uint (tmp_val);
+
+	/* Compare the routes */
+	if (prefix1 != prefix2)
+		return prefix1 < prefix2 ? -1 : prefix1 > prefix2;
+
+	if (!IN6_ARE_ADDR_EQUAL ((struct in6_addr *)dest1->data, (struct in6_addr *)dest2->data)) {
+		for (i = 0; ret == 0 && i < dest1->len; i++)
+			ret = dest1->data[i] < dest2->data[i] ? -1 : dest1->data[i] > dest2->data[i];
+	}
+
+	if (!IN6_ARE_ADDR_EQUAL ((struct in6_addr *)next_hop1->data, (struct in6_addr *)next_hop2->data)) {
+		for (i = 0; ret == 0 && i < next_hop1->len; i++)
+			ret = next_hop1->data[i] < next_hop2->data[i] ? -1 : next_hop1->data[i] > next_hop2->data[i];
+	}
+
+	if (metric1 != metric2)
+		ret = metric1 < metric2 ? -1 : metric1 > metric2;
+
+	return ret;
+}
+
+static gint
 nm_gvalues_compare_struct (const GValue *value1, const GValue *value2)
 {
-	g_warning ("Not implemented");
-	return 0;
+	/* value1 and value2 must contain the same type since
+	 * nm_gvalues_compare() enforced that already.
+	 */
+
+	if (G_VALUE_HOLDS (value1, DBUS_TYPE_G_IP6_ADDRESS)) {
+		return nm_gvalue_ip6_address_compare (value1, value2);
+	} else if (G_VALUE_HOLDS (value1, DBUS_TYPE_G_IP6_ROUTE)) {
+		return nm_gvalue_ip6_route_compare (value1, value2);
+	} else {
+		g_warning ("Don't know how to compare structures");
+		return (value1 == value2);
+	}
 }
 
 gint
@@ -736,6 +869,87 @@ compare_gvalue_hash (void)
 	g_print ("Comparing different str hashes: %d\n", nm_gvalues_compare (&value1, &value2));
 }
 
+static void
+compare_ip6_addresses (void)
+{
+	GValueArray *array1;
+	GValueArray *array2;
+	GValueArray *array3;
+	GByteArray *ba1;
+	GByteArray *ba2;
+	GByteArray *ba3;
+	GValue element = { 0 };
+	GValue value1 = { 0 };
+	GValue value2 = { 0 };
+	struct in6_addr addr1;
+	struct in6_addr addr2;
+	struct in6_addr addr3;
+	guint32 prefix1 = 64;
+	guint32 prefix2 = 64;
+	guint32 prefix3 = 0;
+
+	inet_pton (AF_INET6, "1:2:3:4:5:6:7:8", &addr1, sizeof (struct in6_addr));
+	inet_pton (AF_INET6, "ffff:2:3:4:5:6:7:8", &addr2, sizeof (struct in6_addr));
+	inet_pton (AF_INET6, "::", &addr3, sizeof (struct in6_addr));
+
+	/* address 1 */
+	ba1 = g_byte_array_new ();
+	array1 = g_value_array_new (2);
+	g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
+	g_byte_array_append (ba1, (guint8 *) addr1.s6_addr, 16);
+	g_value_take_boxed (&element, ba1);
+	g_value_array_append (array1, &element);
+	g_value_unset (&element);
+
+	g_value_init (&element, G_TYPE_UINT);
+	g_value_set_uint (&element, prefix1);
+	g_value_array_append (array1, &element);
+	g_value_unset (&element);
+
+	/* address 2 */
+	ba2 = g_byte_array_new ();
+	array2 = g_value_array_new (2);
+	g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
+	g_byte_array_append (ba2, (guint8 *) addr2.s6_addr, 16);
+	g_value_take_boxed (&element, ba2);
+	g_value_array_append (array2, &element);
+	g_value_unset (&element);
+
+	g_value_init (&element, G_TYPE_UINT);
+	g_value_set_uint (&element, prefix2);
+	g_value_array_append (array2, &element);
+	g_value_unset (&element);
+
+	/* address 3 */
+	ba3 = g_byte_array_new ();
+	array3 = g_value_array_new (2);
+	g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
+	g_byte_array_append (ba3, (guint8 *) addr3.s6_addr, 16);
+	g_value_take_boxed (&element, ba3);
+	g_value_array_append (array3, &element);
+	g_value_unset (&element);
+
+	g_value_init (&element, G_TYPE_UINT);
+	g_value_set_uint (&element, prefix3);
+	g_value_array_append (array3, &element);
+	g_value_unset (&element);
+
+	g_value_init (&value1, DBUS_TYPE_G_IP6_ADDRESS);
+	g_value_init (&value2, DBUS_TYPE_G_IP6_ADDRESS);
+
+	g_value_set_boxed (&value1, array1);
+	g_value_set_boxed (&value2, array1);
+	g_print ("Comparing identical IPv6 address structures: %d\n", nm_gvalues_compare (&value1, &value2));
+
+	g_value_set_boxed (&value1, array1);
+	g_value_set_boxed (&value2, array2);
+	g_print ("Comparing different IPv6 address structures: %d\n", nm_gvalues_compare (&value1, &value2));
+
+	g_value_set_boxed (&value1, array1);
+	g_value_set_boxed (&value2, array3);
+	g_print ("Comparing different IPv6 address structures: %d\n", nm_gvalues_compare (&value1, &value2));
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -751,6 +965,7 @@ main (int argc, char *argv[])
 	compare_ptrarrays ();
 	compare_str_hash ();
 	compare_gvalue_hash ();
+	compare_ip6_addresses ();
 
 	return 0;
 }

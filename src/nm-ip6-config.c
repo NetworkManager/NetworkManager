@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2008 Red Hat, Inc.
+ * Copyright (C) 2005 - 2010 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -183,7 +183,7 @@ const struct in6_addr *nm_ip6_config_get_ptp_address (NMIP6Config *config)
 	return &NM_IP6_CONFIG_GET_PRIVATE (config)->ptp_address;
 }
 
-void nm_ip6_config_set_ptp_address (NMIP6Config *config, struct in6_addr *ptp_addr)
+void nm_ip6_config_set_ptp_address (NMIP6Config *config, const struct in6_addr *ptp_addr)
 {
 	g_return_if_fail (NM_IS_IP6_CONFIG (config));
 
@@ -197,15 +197,14 @@ void nm_ip6_config_add_nameserver (NMIP6Config *config, const struct in6_addr *n
 	int i;
 
 	g_return_if_fail (NM_IS_IP6_CONFIG (config));
-	g_return_if_fail (nameserver > 0);
+	g_return_if_fail (nameserver != NULL);
 
 	priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
 	/* No dupes */
 	nameservers = (struct in6_addr *)priv->nameservers->data;
-	for (i = 0; i < priv->nameservers->len; i++) {
-		g_return_if_fail (memcmp (nameserver, &nameservers[i], sizeof (struct in6_addr)) != 0);
-	}
+	for (i = 0; i < priv->nameservers->len; i++)
+		g_return_if_fail (IN6_ARE_ADDR_EQUAL (nameserver, &nameservers[i]) == FALSE);
 
 	g_array_append_val (priv->nameservers, *nameserver);
 }
@@ -572,7 +571,7 @@ addr_array_compare (GArray *a, GArray *b)
 	addrs_b = (struct in6_addr *)b->data;
 	for (i = 0; i < a->len; i++) {
 		for (j = 0, found = FALSE; j < b->len; j++) {
-			if (memcmp (&addrs_a[i], &addrs_b[j], sizeof (struct in6_addr)) == 0) {
+			if (IN6_ARE_ADDR_EQUAL (&addrs_a[i], &addrs_b[j])) {
 				found = TRUE;
 				break;
 			}
@@ -692,34 +691,33 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	object_class->finalize = finalize;
 
 	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_ADDRESSES,
-		 g_param_spec_boxed (NM_IP6_CONFIG_ADDRESSES,
-							"Addresses",
-							"IP6 addresses",
-							DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
-							G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_NAMESERVERS,
-		 g_param_spec_boxed (NM_IP6_CONFIG_NAMESERVERS,
-							 "Nameservers",
-							 "DNS list",
-							 DBUS_TYPE_G_UINT_ARRAY,
-							 G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_DOMAINS,
-		 g_param_spec_boxed (NM_IP6_CONFIG_DOMAINS,
-							 "Domains",
-							 "Domains",
-							 DBUS_TYPE_G_ARRAY_OF_STRING,
-							 G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_ROUTES,
-		 g_param_spec_boxed (NM_IP6_CONFIG_ROUTES,
-						 "Routes",
-						 "Routes",
-						 DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
-						 G_PARAM_READABLE));
+	g_object_class_install_property (object_class, PROP_ADDRESSES,
+		g_param_spec_boxed (NM_IP6_CONFIG_ADDRESSES,
+		                    "Addresses",
+		                    "IP6 addresses",
+		                    DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS,
+		                    G_PARAM_READABLE));
+
+	g_object_class_install_property (object_class, PROP_NAMESERVERS,
+		g_param_spec_boxed (NM_IP6_CONFIG_NAMESERVERS,
+		                    "Nameservers",
+		                    "DNS list",
+		                    DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UCHAR,
+		                    G_PARAM_READABLE));
+
+	g_object_class_install_property (object_class, PROP_DOMAINS,
+		g_param_spec_boxed (NM_IP6_CONFIG_DOMAINS,
+		                    "Domains",
+		                    "Domains",
+		                    DBUS_TYPE_G_ARRAY_OF_STRING,
+		                    G_PARAM_READABLE));
+
+	g_object_class_install_property (object_class, PROP_ROUTES,
+		g_param_spec_boxed (NM_IP6_CONFIG_ROUTES,
+		                    "Routes",
+		                    "Routes",
+		                    DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE,
+		                    G_PARAM_READABLE));
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (config_class),
 									 &dbus_glib_nm_ip6_config_object_info);

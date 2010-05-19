@@ -392,7 +392,17 @@
           The 802.1x supplicant is now available.
         </tp:docstring>
       </tp:enumvalue>
-	</tp:enum>
+      <tp:enumvalue suffix="MODEM_NOT_FOUND" value="43">
+        <tp:docstring>
+          The modem could not be found.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="BT_FAILED" value="44">
+        <tp:docstring>
+          The Bluetooth connection timed out or failed.
+        </tp:docstring>
+      </tp:enumvalue>
+    </tp:enum>
 
   </interface>
 </node>

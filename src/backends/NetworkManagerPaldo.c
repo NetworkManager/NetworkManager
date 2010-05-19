@@ -31,9 +31,9 @@
 #include <stdlib.h>
 
 #include "NetworkManagerGeneric.h"
-#include "NetworkManagerSystem.h"
+#include "nm-system.h"
 #include "NetworkManagerUtils.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 
 /*
  * nm_system_enable_loopback
@@ -55,7 +55,7 @@ void nm_system_enable_loopback (void)
  */
 void nm_system_update_dns (void)
 {
-	nm_info ("Clearing nscd hosts cache.");
+	nm_log_info (LOGD_DNS, "Clearing nscd hosts cache.");
 	nm_spawn_process ("/usr/sbin/nscd -i hosts");
 }
 

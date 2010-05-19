@@ -1,19 +1,20 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /* NetworkManager system settings service
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the
+ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA 02110-1301 USA.
  *
  * (C) Copyright 2008 Novell, Inc.
  * (C) Copyright 2008 - 2009 Red Hat, Inc.
@@ -227,7 +228,9 @@ impl_exported_connection_get_secrets (NMExportedConnection *self,
 	if (NM_EXPORTED_CONNECTION_GET_CLASS (self)->get_secrets)
 		NM_EXPORTED_CONNECTION_GET_CLASS (self)->get_secrets (self, setting_name, hints, request_new, context);
 	else {
-		error = g_error_new (0, 0, "%s: %s:%d get_secrets() unimplemented", __func__, __FILE__, __LINE__);
+		error = g_error_new (NM_SETTINGS_INTERFACE_ERROR,
+		                     NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
+		                     "%s: %s:%d get_secrets() unimplemented", __func__, __FILE__, __LINE__);
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
 	}

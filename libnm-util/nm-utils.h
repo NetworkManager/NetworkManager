@@ -20,7 +20,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2005 - 2008 Red Hat, Inc.
+ * (C) Copyright 2005 - 2010 Red Hat, Inc.
  */
 
 #ifndef NM_UTILS_H
@@ -30,6 +30,8 @@
 #include <execinfo.h>
 
 #include "nm-connection.h"
+
+G_BEGIN_DECLS
 
 /*********************************************************/
 /* The API defined here is _NOT_ guaranteed in any way!! */
@@ -192,6 +194,7 @@ void nm_utils_ip4_routes_to_gvalue (GSList *list, GValue *value);
 
 guint32 nm_utils_ip4_netmask_to_prefix (guint32 netmask);
 guint32 nm_utils_ip4_prefix_to_netmask (guint32 prefix);
+guint32 nm_utils_ip4_get_default_prefix (guint32 ip);
 
 GSList *nm_utils_ip6_addresses_from_gvalue (const GValue *value);
 void nm_utils_ip6_addresses_to_gvalue (GSList *list, GValue *value);
@@ -209,5 +212,7 @@ GByteArray *nm_utils_rsa_key_encrypt (const GByteArray *data,
                                       const char *in_password,
                                       char **out_password,
                                       GError **error);
+
+G_END_DECLS
 
 #endif /* NM_UTILS_H */

@@ -1,5 +1,6 @@
 INCLUDES = \
 	-I${top_srcdir}/libnm-util \
+	-I${top_srcdir}/src/logging \
 	-I${top_srcdir}/src \
 	-I${top_srcdir}/include
 
@@ -13,4 +14,6 @@ libdnsmasq_manager_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	-DLOCALSTATEDIR=\"$(localstatedir)\"
 
-libdnsmasq_manager_la_LIBADD = $(GLIB_LIBS)
+libdnsmasq_manager_la_LIBADD = \
+	$(top_builddir)/src/logging/libnm-logging.la \
+	$(GLIB_LIBS)

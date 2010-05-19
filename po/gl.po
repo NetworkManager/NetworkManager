@@ -2,53 +2,487 @@
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 #
-# Ignacio Casal Quinteiro <icq@cvs.gnome.org>, 2007.
-# Ignacio Casal Quinteiro <icq@svn.gnome.org>, 2008.
+# Ignacio Casal Quinteiro <icq@cvs.gnome.org>, 2007, 2008.
+# Miguel Anxo Bouzada <mbouzada@gmail.com>, 2010.
 msgid ""
 msgstr ""
 "Project-Id-Version: gl\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-02-13 16:21+0100\n"
-"PO-Revision-Date: 2008-02-13 16:23+0100\n"
-"Last-Translator: Ignacio Casal Quinteiro <icq@svn.gnome.org>\n"
+"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?product=NetworkManager&component=general\n"
+"POT-Creation-Date: 2009-09-29 03:25+0000\n"
+"PO-Revision-Date: 2010-02-25 11:06+0100\n"
+"Last-Translator: Miguel Anxo Bouzada <mbouzada@gmail.com>\n"
 "Language-Team: Galego <proxecto@trasno.net>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: KBabel 1.11.4\n"
 
-#: ../src/nm-netlink-monitor.c:188 ../src/nm-netlink-monitor.c:448
+#: ../libnm-util/crypto.c:120
+#, c-format
+msgid "PEM key file had no end tag '%s'."
+msgstr "O ficheiro de chave PEM non ten a etiqueta de final «%s»."
+
+#: ../libnm-util/crypto.c:130
+#, c-format
+msgid "Doesn't look like a PEM private key file."
+msgstr "Non parece un ficheiro de chave privada PEM."
+
+#: ../libnm-util/crypto.c:138
+#, c-format
+msgid "Not enough memory to store PEM file data."
+msgstr "Non hai memoria abondo para almacenar o ficheiro PEM."
+
+#: ../libnm-util/crypto.c:154
+#, c-format
+msgid "Malformed PEM file: Proc-Type was not first tag."
+msgstr "Ficheiro PEM malformado: Proc-Type non é a primeira etiqueta."
+
+#: ../libnm-util/crypto.c:162
+#, c-format
+msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
+msgstr "Ficheiro PEM malformado: a etiqueta Proc-Type «%s »é descoñecida."
+
+#: ../libnm-util/crypto.c:172
+#, c-format
+msgid "Malformed PEM file: DEK-Info was not the second tag."
+msgstr "Ficheiro PEM malformado: Proc-Type non é a segunda etiqueta."
+
+#: ../libnm-util/crypto.c:183
+#, c-format
+msgid "Malformed PEM file: no IV found in DEK-Info tag."
+msgstr "Ficheiro PEM malformado: non se atopou ningún IV na etiqueta DEK-Info"
+
+#: ../libnm-util/crypto.c:190
+#, c-format
+msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
+msgstr "Ficheiro PEM malformado: formato de IV incorrecto na etiqueta DEK-Info"
+
+#: ../libnm-util/crypto.c:203
+#, c-format
+msgid "Malformed PEM file: unknown private key cipher '%s'."
+msgstr "Ficheiro PEM malformado: o cifrado da chave privada «%s» é descoñecido"
+
+#: ../libnm-util/crypto.c:222
+#, c-format
+msgid "Could not decode private key."
+msgstr "Non puido ser decodificada a chave privada."
+
+#: ../libnm-util/crypto.c:267
+#, c-format
+msgid "PEM certificate '%s' had no end tag '%s'."
+msgstr "O certificado PEM «%s» non ten unha etiqueta de final «%s»."
+
+#: ../libnm-util/crypto.c:277
+#, c-format
+msgid "Failed to decode certificate."
+msgstr "Fallou ao decodificar o certificado"
+
+#: ../libnm-util/crypto.c:286
+#, c-format
+msgid "Not enough memory to store certificate data."
+msgstr "Non hai memoria abondo para almacenar os datos do certificado"
+
+#: ../libnm-util/crypto.c:294
+#, c-format
+msgid "Not enough memory to store file data."
+msgstr "Non hai memoriaabondo para almacenar os datos do ficheiro"
+
+#: ../libnm-util/crypto.c:324
+#, c-format
+msgid "IV must be an even number of bytes in length."
+msgstr "IV debe ter un número par de bytes en lonxitude."
+
+#: ../libnm-util/crypto.c:333
+#, c-format
+msgid "Not enough memory to store the IV."
+msgstr "Non hai memoria abondo para almacenar o IV."
+
+#: ../libnm-util/crypto.c:344
+#, c-format
+msgid "IV contains non-hexadecimal digits."
+msgstr "IV contén díxitos non hexadecimais."
+
+#: ../libnm-util/crypto.c:382
+#: ../libnm-util/crypto_gnutls.c:148
+#: ../libnm-util/crypto_gnutls.c:266
+#: ../libnm-util/crypto_nss.c:171
+#: ../libnm-util/crypto_nss.c:335
+#, c-format
+msgid "Private key cipher '%s' was unknown."
+msgstr "O cifrado «%s» da chave privada é descoñecido."
+
+#: ../libnm-util/crypto.c:391
+#, c-format
+msgid "Not enough memory to decrypt private key."
+msgstr "Non hai memoria abondo para descifrar esta chave privada."
+
+#: ../libnm-util/crypto.c:511
+#, c-format
+msgid "Unable to determine private key type."
+msgstr "Non foi posíbel determinar o tipo de chave privada"
+
+#: ../libnm-util/crypto.c:530
+#, c-format
+msgid "Not enough memory to store decrypted private key."
+msgstr "Non hai memoria abondo para almacenar a chave privada descifrada."
+
+#: ../libnm-util/crypto_gnutls.c:49
+msgid "Failed to initialize the crypto engine."
+msgstr "Produciuse un erro ao iniciar o motor de cifrado"
+
+#: ../libnm-util/crypto_gnutls.c:93
+#, c-format
+msgid "Failed to initialize the MD5 engine: %s / %s."
+msgstr "Produciuse un erro ao iniciar a arquitectura MD5: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:156
+#, c-format
+msgid "Invalid IV length (must be at least %zd)."
+msgstr "Lonxitude de IV incorrecta (debe ser polo menos %zd)."
+
+#: ../libnm-util/crypto_gnutls.c:165
+#: ../libnm-util/crypto_nss.c:188
+#, c-format
+msgid "Not enough memory for decrypted key buffer."
+msgstr "Non hai memoria abondo para o búfer da chave descifrada."
+
+#: ../libnm-util/crypto_gnutls.c:173
+#, c-format
+msgid "Failed to initialize the decryption cipher context: %s / %s."
+msgstr "Produciuse un erro ao inicializar o contexto de cifrado para o descifrado: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:182
+#, c-format
+msgid "Failed to set symmetric key for decryption: %s / %s."
+msgstr "Produciuse un erro ao establecer a chave simétrica para o descifrado: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:191
+#, c-format
+msgid "Failed to set IV for decryption: %s / %s."
+msgstr "Produciuse un erro ao establecer IV para o descifrado: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:200
+#, c-format
+msgid "Failed to decrypt the private key: %s / %s."
+msgstr "Produciuse un erro ao descifrar a chave privada: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:210
+#: ../libnm-util/crypto_nss.c:266
+#, c-format
+msgid "Failed to decrypt the private key: unexpected padding length."
+msgstr "Produciuse un fallo ao descifrar a chave privada: lonxitude de desprazamento non esperada."
+
+#: ../libnm-util/crypto_gnutls.c:221
+#: ../libnm-util/crypto_nss.c:277
+#, c-format
+msgid "Failed to decrypt the private key."
+msgstr "Produciuse un erro ao descifrar a chave privada"
+
+#: ../libnm-util/crypto_gnutls.c:286
+#: ../libnm-util/crypto_nss.c:355
+#, c-format
+msgid "Could not allocate memory for encrypting."
+msgstr "Non foi posíbel asignar a memoria para cifrar."
+
+#: ../libnm-util/crypto_gnutls.c:294
+#, c-format
+msgid "Failed to initialize the encryption cipher context: %s / %s."
+msgstr "Produciuse un erro ao inicializar o contexto da chave de cifrado: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:303
+#, c-format
+msgid "Failed to set symmetric key for encryption: %s / %s."
+msgstr "Produciuse un erro ao establecer a chave simétrica para o cifrado: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:313
+#, c-format
+msgid "Failed to set IV for encryption: %s / %s."
+msgstr "Produciuse un erro ao establecer IV para o cifrado: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:322
+#, c-format
+msgid "Failed to encrypt the data: %s / %s."
+msgstr "Produciuse un erro ao cifrar os datos: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:362
+#, c-format
+msgid "Error initializing certificate data: %s"
+msgstr "Produciuse un erro ao iniciar a certificación dos datos: %s"
+
+#: ../libnm-util/crypto_gnutls.c:384
+#, c-format
+msgid "Couldn't decode certificate: %s"
+msgstr "Non se puido decodificar o certificado: %s"
+
+#: ../libnm-util/crypto_gnutls.c:408
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %s"
+msgstr "Non foi posíbel iniciar o decodificador PKCS#12: %s"
+
+#: ../libnm-util/crypto_gnutls.c:421
+#, c-format
+msgid "Couldn't decode PKCS#12 file: %s"
+msgstr "Non foi posíbel decodificar o ficheiro PKCS#12: %s"
+
+#: ../libnm-util/crypto_gnutls.c:433
+#, c-format
+msgid "Couldn't verify PKCS#12 file: %s"
+msgstr "Non foi posíbel verificar o ficheiro PKCS#12: %s"
+
+#: ../libnm-util/crypto_nss.c:57
+#, c-format
+msgid "Failed to initialize the crypto engine: %d."
+msgstr "Produciuse un erro ao iniciar o motor de cifrado:%d."
+
+#: ../libnm-util/crypto_nss.c:111
+#, c-format
+msgid "Failed to initialize the MD5 context: %d."
+msgstr "Produciuse un erro ao iniciar o contexto MD5: %d."
+
+#: ../libnm-util/crypto_nss.c:179
+#, c-format
+msgid "Invalid IV length (must be at least %d)."
+msgstr "Lonxitude de IV incorrecta (debe ser polo menos %d)."
+
+#: ../libnm-util/crypto_nss.c:196
+#, c-format
+msgid "Failed to initialize the decryption cipher slot."
+msgstr "Produciuse un erro ao iniciar a rañura de cifrado para o descifrado"
+
+#: ../libnm-util/crypto_nss.c:206
+#, c-format
+msgid "Failed to set symmetric key for decryption."
+msgstr "Produciuse un erro ao establecer a chave simétrica para o descifrado."
+
+#: ../libnm-util/crypto_nss.c:216
+#, c-format
+msgid "Failed to set IV for decryption."
+msgstr "Produciuse un erro ao establecer IV para o descifrado."
+
+#: ../libnm-util/crypto_nss.c:224
+#, c-format
+msgid "Failed to initialize the decryption context."
+msgstr "Produciuse un erro ao iniciar o contexto de descifrado."
+
+#: ../libnm-util/crypto_nss.c:237
+#, c-format
+msgid "Failed to decrypt the private key: %d."
+msgstr "Produciuse un erro ao descifrar a chave privada: %d."
+
+#: ../libnm-util/crypto_nss.c:245
+#, c-format
+msgid "Failed to decrypt the private key: decrypted data too large."
+msgstr "Produciuse un erro ao descifrar a chave privada: os datos descifrados son moi grandes."
+
+#: ../libnm-util/crypto_nss.c:256
+#, c-format
+msgid "Failed to finalize decryption of the private key: %d."
+msgstr "Produciuse un erro ao finalizar o descifrado da chave privada: %d."
+
+#: ../libnm-util/crypto_nss.c:363
+#, c-format
+msgid "Failed to initialize the encryption cipher slot."
+msgstr "Produciuse un erro ao inicializar a rañura da cifra de cifrado."
+
+#: ../libnm-util/crypto_nss.c:371
+#, c-format
+msgid "Failed to set symmetric key for encryption."
+msgstr "Produciuse un erro ao establecer a chave simétrica para o cifrado."
+
+#: ../libnm-util/crypto_nss.c:379
+#, c-format
+msgid "Failed to set IV for encryption."
+msgstr "Produciuse un erro ao establecer IV para o cifrado."
+
+#: ../libnm-util/crypto_nss.c:387
+#, c-format
+msgid "Failed to initialize the encryption context."
+msgstr "Produciuse un erro ao inicializar o contexto de cifrado."
+
+#: ../libnm-util/crypto_nss.c:395
+#, c-format
+msgid "Failed to encrypt: %d."
+msgstr "Produciuse un erro ao cifrar: %d."
+
+#: ../libnm-util/crypto_nss.c:403
+#, c-format
+msgid "Unexpected amount of data after encrypting."
+msgstr "Tamaño non agardado de datos despois de cifrar."
+
+#: ../libnm-util/crypto_nss.c:446
+#, c-format
+msgid "Couldn't decode certificate: %d"
+msgstr "Non foi posíbel decodificar o certificado: %d"
+
+#: ../libnm-util/crypto_nss.c:481
+#, c-format
+msgid "Couldn't convert password to UCS2: %d"
+msgstr "Non foi posíbel converter a chave a UCS2: %d"
+
+#: ../libnm-util/crypto_nss.c:509
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %d"
+msgstr "Non foi posíbel iniciar o decodificador PKCS#12: %d"
+
+#: ../libnm-util/crypto_nss.c:518
+#, c-format
+msgid "Couldn't decode PKCS#12 file: %d"
+msgstr "Non fo posíbel decodificar o ficheiro PKCS#12: %d"
+
+#: ../libnm-util/crypto_nss.c:527
+#, c-format
+msgid "Couldn't verify PKCS#12 file: %d"
+msgstr "Non foi posíbel verficar o ficheiro PKCS#12: %d"
+
+#: ../libnm-util/crypto_nss.c:556
+msgid "Could not generate random data."
+msgstr "Non foi posíbel xerar datos aleatorios."
+
+#: ../libnm-util/nm-utils.c:1522
+#, c-format
+msgid "Not enough memory to make encryption key."
+msgstr "Sen memoria abondo para crear a chave de cifrado."
+
+#: ../libnm-util/nm-utils.c:1633
+msgid "Could not allocate memory for PEM file creation."
+msgstr "Non foi posíbel asignar memoria para a creación do ficheiro PEM,"
+
+#: ../libnm-util/nm-utils.c:1645
+#, c-format
+msgid "Could not allocate memory for writing IV to PEM file."
+msgstr "Non foi posíbel asignar memoria para escribir IV no ficheiro PEM."
+
+#: ../libnm-util/nm-utils.c:1657
+#, c-format
+msgid "Could not allocate memory for writing encrypted key to PEM file."
+msgstr "Non foi posíbel asignar memoria para escribir a chave cifrada no ficheiro PEM."
+
+#: ../libnm-util/nm-utils.c:1676
+#, c-format
+msgid "Could not allocate memory for PEM file data."
+msgstr "Non foi posíbel asignar memoria para os datos do ficheiro PEM."
+
+#: ../src/nm-netlink-monitor.c:194
+#: ../src/nm-netlink-monitor.c:464
+#: ../src/nm-netlink-monitor.c:569
+#: ../src/ip6-manager/nm-netlink-listener.c:352
 #, c-format
 msgid "error processing netlink message: %s"
-msgstr "erro procesando a mensaxe netlink: %s"
+msgstr "produciuse un erro procesando a mensaxe netlink: %s"
 
-#: ../src/nm-netlink-monitor.c:245
+#: ../src/nm-netlink-monitor.c:260
 #, c-format
 msgid "unable to allocate netlink handle for monitoring link status: %s"
-msgstr "non se pode crear o manexador netlink para monitorizar o estado da ligazón: %s"
+msgstr "non é posíbel crear o manexador netlink para monitorizar o estado da ligazón: %s"
 
-#: ../src/nm-netlink-monitor.c:255
+#: ../src/nm-netlink-monitor.c:270
 #, c-format
 msgid "unable to connect to netlink for monitoring link status: %s"
-msgstr "non se pode conectar ao netlink para monitorizar o estado da lingazón: %s"
+msgstr "non é posíbel conectar ao netlink para monitorizar o estado da lingazón: %s"
 
-#: ../src/nm-netlink-monitor.c:263
+#: ../src/nm-netlink-monitor.c:278
 #, c-format
 msgid "unable to join netlink group for monitoring link status: %s"
-msgstr "non se pode unir ao grupo netlink para monitorizar o estado da ligazón: %s"
+msgstr "non é posíbel unir ao grupo netlink para monitorizar o estado da ligazón: %s"
 
-#: ../src/nm-netlink-monitor.c:271
+#: ../src/nm-netlink-monitor.c:286
 #, c-format
 msgid "unable to allocate netlink link cache for monitoring link status: %s"
-msgstr "non se pode asignar a ligazón á caché netlink para monitorizar o estado da ligazón: %s"
+msgstr "non é posíbel asignar a ligazón á caché netlink para monitorizar o estado da ligazón: %s"
 
-#: ../src/nm-netlink-monitor.c:471
-#, c-format
+#: ../src/nm-netlink-monitor.c:494
+#: ../src/ip6-manager/nm-netlink-listener.c:382
 msgid "error occurred while waiting for data on socket"
-msgstr "ocorreu un erro agardando por datos nun socket"
+msgstr "producouse un erro agardando por datos nun socket"
 
-#: ../src/NetworkManager.c:255
+#: ../src/nm-netlink-monitor.c:558
+#, c-format
+#| msgid "error processing netlink message: %s"
+msgid "error updating link cache: %s"
+msgstr "produciuse un erro ao actualizar a caché de ligazóns: %s"
+
+#: ../src/NetworkManager.c:330
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
-msgstr "Opción inválida. Use --help para ver a lista de opcións válidas.\n"
+msgstr "Opción incorrecta. Use --help para ver a lista de opcións válidas.\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:304
+msgid "# Created by NetworkManager\n"
+msgstr "# Creado por NetworkManager\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:310
+#, c-format
+msgid ""
+"# Merged from %s\n"
+"\n"
+msgstr ""
+"# Fusionado desde %s\n"
+"\n"
+
+#: ../src/ip6-manager/nm-netlink-listener.c:200
+#, c-format
+#| msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgid "unable to allocate netlink handle: %s"
+msgstr "non é posíbel asignar un manexador para a ligazon de rede: %s"
+
+#: ../src/ip6-manager/nm-netlink-listener.c:210
+#, c-format
+#| msgid "unable to connect to netlink for monitoring link status: %s"
+msgid "unable to connect to netlink: %s"
+msgstr "non é posíbel conectar coa ligazón de rede: %s"
+
+#: ../src/ip6-manager/nm-netlink-listener.c:307
+#, c-format
+#| msgid "unable to join netlink group for monitoring link status: %s"
+msgid "unable to join netlink group: %s"
+msgstr "non é posíbel unir ao grupo da ligazón de rede: %s"
+
+#: ../src/named-manager/nm-named-manager.c:315
+msgid "NOTE: the libc resolver may not support more than 3 nameservers."
+msgstr "NOTE: o importador libc non permite máis de 3 nomes de servidores."
+
+#: ../src/named-manager/nm-named-manager.c:317
+msgid "The nameservers listed below may not be recognized."
+msgstr "Os nomes de servidores listados a seguir poden non ser recoñecidos"
+
+#: ../src/system-settings/nm-default-wired-connection.c:194
+#, c-format
+msgid "Auto %s"
+msgstr "Auto %s"
+
+#: ../system-settings/plugins/ifcfg-rh/reader.c:2406
+msgid "System"
+msgstr "Sistema"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:1
+msgid "Connection sharing via a protected WiFi network"
+msgstr "Conexión compartida a través dunha rede WiFi protexida"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:2
+msgid "Connection sharing via an open WiFi network"
+msgstr "Conexión compartida a través dunha rede WiFi aberta"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:3
+msgid "Modify persistent system hostname"
+msgstr "Modificar o nome persistente do anfitrión do sistema"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:4
+msgid "Modify system connections"
+msgstr "Modificar as conexións do sistema"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:5
+msgid "System policy prevents modification of system settings"
+msgstr "A política do sistema impide a modificación da configuración do sistema"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:6
+msgid "System policy prevents modification of the persistent system hostname"
+msgstr "A política do sistema impide a modificación do nome do anfitrión do sistema"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:7
+msgid "System policy prevents sharing connections via a protected WiFi network"
+msgstr "A política do sistema impide compartir conexións a través dunha rede WiFi protexida"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:8
+msgid "System policy prevents sharing connections via an open WiFi network"
+msgstr "A política do sistema impide compartir conexións a través dunha rede WiFi aberta"
 

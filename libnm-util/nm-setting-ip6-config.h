@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2010 Red Hat, Inc.
  */
 
 #ifndef NM_SETTING_IP6_CONFIG_H
@@ -62,9 +62,11 @@ GQuark nm_setting_ip6_config_error_quark (void);
 #define NM_SETTING_IP6_CONFIG_IGNORE_AUTO_ROUTES "ignore-auto-routes"
 #define NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS    "ignore-auto-dns"
 #define NM_SETTING_IP6_CONFIG_NEVER_DEFAULT      "never-default"
+#define NM_SETTING_IP6_CONFIG_MAY_FAIL           "may-fail"
 
 #define NM_SETTING_IP6_CONFIG_METHOD_IGNORE     "ignore"
 #define NM_SETTING_IP6_CONFIG_METHOD_AUTO       "auto"
+#define NM_SETTING_IP6_CONFIG_METHOD_DHCP       "dhcp"
 #define NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL "link-local"
 #define NM_SETTING_IP6_CONFIG_METHOD_MANUAL     "manual"
 #define NM_SETTING_IP6_CONFIG_METHOD_SHARED     "shared"
@@ -86,6 +88,10 @@ void                   nm_ip6_address_set_address (NMIP6Address *address,
 guint32                nm_ip6_address_get_prefix  (NMIP6Address *address);
 void                   nm_ip6_address_set_prefix  (NMIP6Address *address,
                                                    guint32 prefix);
+
+const struct in6_addr *nm_ip6_address_get_gateway (NMIP6Address *address);
+void                   nm_ip6_address_set_gateway (NMIP6Address *address,
+                                                   const struct in6_addr *gw);
 
 typedef struct NMIP6Route NMIP6Route;
 
@@ -158,6 +164,7 @@ gboolean               nm_setting_ip6_config_get_ignore_auto_routes (NMSettingIP
 
 gboolean               nm_setting_ip6_config_get_ignore_auto_dns    (NMSettingIP6Config *setting);
 gboolean               nm_setting_ip6_config_get_never_default      (NMSettingIP6Config *setting);
+gboolean               nm_setting_ip6_config_get_may_fail           (NMSettingIP6Config *setting);
 
 G_END_DECLS
 

@@ -16,14 +16,15 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2010 Red Hat, Inc.
  */
 
 #include "nm-marshal.h"
 #include "nm-setting-connection.h"
 #include "nm-device-interface.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 #include "nm-properties-changed-signal.h"
+#include "nm-rfkill.h"
 
 static gboolean impl_device_disconnect (NMDeviceInterface *device,
                                         GError **error);
@@ -139,6 +140,14 @@ nm_device_interface_init (gpointer g_iface)
 
 	g_object_interface_install_property
 		(g_iface,
+		 g_param_spec_boxed (NM_DEVICE_INTERFACE_DHCP6_CONFIG,
+							  "DHCP6 Config",
+							  "DHCP6 Config",
+							  DBUS_TYPE_G_OBJECT_PATH,
+							  G_PARAM_READWRITE));
+
+	g_object_interface_install_property
+		(g_iface,
 		 g_param_spec_uint (NM_DEVICE_INTERFACE_STATE,
 							"State",
 							"State",
@@ -167,6 +176,23 @@ nm_device_interface_init (gpointer g_iface)
 							  "Device type description",
 							  NULL,
 							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
+
+	g_object_interface_install_property
+		(g_iface, g_param_spec_uint (NM_DEVICE_INTERFACE_RFKILL_TYPE,
+	                                 "Rfkill Type",
+	                                 "Type of rfkill switch (if any) supported by this device",
+	                                 RFKILL_TYPE_WLAN,
+	                                 RFKILL_TYPE_MAX,
+	                                 RFKILL_TYPE_UNKNOWN,
+	                                 G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
+
+	g_object_interface_install_property
+		(g_iface,
+		 g_param_spec_int (NM_DEVICE_INTERFACE_IFINDEX,
+							"Ifindex",
+							"Ifindex",
+							0, G_MAXINT, 0,
+							G_PARAM_READABLE | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	/* Signals */
 	g_signal_new ("state-changed",
@@ -264,8 +290,8 @@ nm_device_interface_activate (NMDeviceInterface *device,
 	g_assert (s_con);
 
 	iface = nm_device_interface_get_iface (device);
-	nm_info ("Activation (%s) starting connection '%s'", iface,
-			 nm_setting_connection_get_id (s_con));
+	nm_log_info (LOGD_DEVICE, "Activation (%s) starting connection '%s'", iface,
+			     nm_setting_connection_get_id (s_con));
 	g_free (iface);
 
 	success = NM_DEVICE_INTERFACE_GET_INTERFACE (device)->activate (device, req, error);
@@ -361,6 +387,16 @@ nm_device_interface_set_enabled (NMDeviceInterface *device, gboolean enabled)
 	g_return_if_fail (NM_IS_DEVICE_INTERFACE (device));
 
 	if (NM_DEVICE_INTERFACE_GET_INTERFACE (device)->set_enabled)
-		return NM_DEVICE_INTERFACE_GET_INTERFACE (device)->set_enabled (device, enabled);
+		NM_DEVICE_INTERFACE_GET_INTERFACE (device)->set_enabled (device, enabled);
+}
+
+gboolean
+nm_device_interface_get_enabled (NMDeviceInterface *device)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), FALSE);
+
+	if (NM_DEVICE_INTERFACE_GET_INTERFACE (device)->get_enabled)
+		return NM_DEVICE_INTERFACE_GET_INTERFACE (device)->get_enabled (device);
+	return TRUE;
 }
 

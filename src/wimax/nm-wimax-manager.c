@@ -100,8 +100,7 @@ wimax_device_matches (struct WIMAX_API_HW_DEVICE_ID *hw_id,
 NMDevice *
 nm_wimax_manager_create_device (const char *path,
 								const char *ifname,
-								const char *driver,
-								int ifindex)
+								const char *driver)
 {
 	NMWimaxManager *manager;
 	struct WIMAX_API_HW_DEVICE_ID device_id_list[5];
@@ -123,7 +122,7 @@ nm_wimax_manager_create_device (const char *path,
 
 		for (i = 0; i < device_id_list_size; i++) {
 			if (wimax_device_matches (&device_id_list[i], ifname, ifindex)) {
-				device = nm_wimax_device_new (path, ifname, driver, ifindex, device_id_list[0].deviceIndex);
+				device = nm_wimax_device_new (path, ifname, driver, device_id_list[0].deviceIndex);
 				break;
 			}
 		}

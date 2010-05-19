@@ -33,6 +33,7 @@ NMConnection *connection_from_file (const char *filename,
                                     char **unmanaged,
                                     char **keyfile,
                                     char **routefile,
+                                    char **route6file,
                                     GError **error,
                                     gboolean *ignore_error);
 

@@ -1,0 +1,139 @@
+.\" NetworkManager.conf(5) manual page
+.\"
+.\" Copyright (C) 2010 Red Hat, Inc.
+.\"
+.TH "NetworkManager.conf" "5" "1 February 2010" ""
+.SH NAME
+NetworkManager.conf \- NetworkManager configuration file
+.SH SYNOPSIS
+/etc/NetworkManager/NetworkManager.conf
+.br
+or
+.br
+\fI<SYSCONFDIR>\fP/NetworkManager/NetworkManager.conf
+.br
+where <SYSCONFDIR> depends on your distribution or build.
+.SH DESCRIPTION
+.P
+.I NetworkManager.conf
+is a configuration file for NetworkManager. It is used to set up various
+aspects of NetworkManager's behavior. The location of
+the file may be changed through use of the "\-\-config=" argument for
+\fBNetworkManager\fP (8).
+
+It is not necessary to restart NetworkManager when making changes, as the
+configuration file is watched for changes and reloaded automatically when necessary.
+.SH "FILE FORMAT"
+.P
+The configuration file format is so-called key file (sort of ini-style format).
+It consists of sections (groups) of key-value pairs. Lines beginning with a '#' and blank
+lines are considered comments. Sections are started by a header line containing
+the section enclosed in '[' and ']', and ended implicitly by the start of
+the next section or the end of the file. Each key-value pair must be contained
+in a section.
+.br
+Minimal system settings configuration file looks like this:
+.P
+.nf
+[main]
+plugins=keyfile
+.fi
+.P
+Description of sections and available keys follows:
+.SS [main]
+This section is the only mandatory section of the configuration file.
+.TP
+.B plugins=\fIplugin1\fP,\fIplugin2\fP, ...
+List plugin names separated by ','. Plugins are used to read/write system-wide
+connection. When more plugins are specified, the connections are read from all
+listed plugins. When writing connections, the plugins will be asked to save the
+connection in the order listed here. If the first plugin cannot write out that
+connection type, or can't write out any connections, the next plugin is tried.
+If none of the plugins can save the connection, the error is returned to the user.
+.P
+.RS
+.B "Available plugins:"
+.br
+.TP 
+.I keyfile
+plugin is the generic plugin that supports all the connection types and
+capabilities that NetworkManager has. It writes files out in a .ini-style format in
+/etc/NetworkManager/system-connections. For security, it will ignore files
+that are readable or writeable by any user or group other than
+.I root
+since private keys and passphrases may be stored in plaintext inside the file.
+.TP 
+.I ifcfg\-rh
+plugin is used on the Fedora and Red Hat Enterprise Linux distributions
+to read and write configuration from the standard /etc/sysconfig/network-scripts/ifcfg-* files.
+It currently supports reading wired, WiFi, and 802.1x connections, but does not yet support reading
+or writing mobile broadband, PPPoE, or VPN connections. To allow reading and writing of these
+add \fIkeyfile\fP plugin to your configuration as well.
+.TP
+.I ifupdown
+plugin is used on the Debian and Ubuntu distributions, and reads connections from
+/etc/network/interfaces. Since it cannot write connections out (that support isn't planned),
+it is usually paired with the \fIkeyfile\fP plugin to enable saving and editing of new connections.
+The \fIifupdown\fP plugin supports basic wired and WiFi connections, including WPA-PSK.
+.TP
+.I ifcfg\-suse
+plugin is only provided for simple backward compatibility with SUSE and OpenSUSE configuration.
+Most setups should be using the \fIkeyfile\fP plugin instead. The \fIifcfg\-suse\fP plugin supports
+reading wired and WiFi connections, but does not support saving any connection types.
+.RE
+.TP
+.B dhcp=\fIdhclient\fP | \fIdhcpcd\fP
+This key sets up what DHCP client NetworkManager will use. Presently
+\fIdhclient\fP and \fIdhcpcd\fP are supported. The client configured here should
+be available on your system too. If this key is missing, available DHCP clients
+are looked for in this order: dhclient, dhcpcd.
+.SS [keyfile]
+This section contains keyfile-specific options and thus only has effect when using \fIkeyfile\fP plugin.
+.TP
+.B hostname=\fI<hostname>\fP
+Set a persistent hostname when using the \fIkeyfile\fP plugin.
+.TP
+.B unmanaged-devices=\fImac:<hwaddr>\fP;\fImac:<hwaddr>\fP;...
+Set devices that should be ignored by NetworkManager when using the \fIkeyfile\fP
+plugin. Devices are specified in the following format: "mac:<hwaddr>", where
+<hwaddr> is MAC address of the device to be ignored, in lowercase. Multiple
+entries are separated by a semicolon. Example:
+.nf
+unmanaged-devices=mac:00:22:68:1c:59:b1;mac:00:1e:65:30:d1:c4
+.fi
+.SS [ifupdown]
+This section contains ifupdown-specific options and thus only has effect when using \fIifupdown\fP plugin.
+.TP
+.B managed=\fIfalse\fP | \fItrue\fP
+Controls whether interfaces listed in the 'interfaces' file are managed by NetworkManager.
+If set to \fItrue\fP, then interfaces listed in /etc/network/interfaces are managed by NetworkManager.
+If set to \fIfalse\fP, then any interface listed in /etc/network/interfaces will be
+ignored by NetworkManager. Remember that NetworkManager controls the default route,
+so because the interface is ignored, NetworkManager may assign the default route to
+some other interface.
+When the option is missing, \fIfalse\fP value is taken as default.
+.SS [logging]
+This section controls NetworkManager's logging.  Any settings here are
+overridden by the \-\-log\-level and \-\-log\-domains command-line options.
+.TP
+.B level=\fI<level>\fP
+One of [ERR, WARN, INFO, DEBUG].  The ERR level logs only critical errors.  WARN
+logs warnings that may reflect operation.  INFO logs various informational
+messages that are useful for tracking state and operations.  DEBUG enables
+verbose logging for debugging purposes.  Subsequent levels also log all messages
+from earlier levels; thus setting the log level to INFO also logs error and
+warning messages.
+.TP
+.B domains=\fI<domain1>,<domain2>, ...\fP
+The following log domains are available: [NONE, HW, RKILL, ETHER, WIFI, BT, MB,
+DHCP4, DHCP6, PPP, WIFI_SCAN, IP4, IP6, AUTOIP4, DNS, VPN, SHARING, SUPPLICANT,
+USER_SET, SYS_SET, SUSPEND, CORE, DEVICE, OLPC].  When "NONE" is given by itself,
+logging is disabled.  MB = Mobile Broadband, USER_SET = user settings operations
+and communication, SYS_SET = system settings service operations, OLPC = OLPC
+Mesh device operations, CORE = core daemon operations, DEVICE = activation and
+general interface operations.
+.SH "SEE ALSO"
+.BR http://live.gnome.org/NetworkManager/SystemSettings
+.sp
+.BR NetworkManager (8),
+.BR nm\-tool (1).

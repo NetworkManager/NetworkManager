@@ -23,9 +23,10 @@
 
 #include <string.h>
 
-#include "NetworkManagerAP.h"
+#include "nm-wifi-ap.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
+#include "nm-logging.h"
 #include "nm-dbus-manager.h"
 #include "wpa.h"
 #include "nm-properties-changed-signal.h"
@@ -333,7 +334,7 @@ nm_ap_export_to_dbus (NMAccessPoint *ap)
 	priv = NM_AP_GET_PRIVATE (ap);
 
 	if (priv->dbus_path) {
-		nm_warning ("Tried to export AP %s twice.", priv->dbus_path);
+		nm_log_err (LOGD_CORE, "Tried to export AP %s twice.", priv->dbus_path);
 		return;
 	}
 
@@ -696,25 +697,25 @@ nm_ap_print_self (NMAccessPoint *ap,
 {
 	NMAccessPointPrivate *priv;
 
+	g_return_if_fail (ap != NULL);
 	g_return_if_fail (NM_IS_AP (ap));
 
 	priv = NM_AP_GET_PRIVATE (ap);
 
-	nm_info ("%s'%s' (%p) stamp=%ld flags=0x%X wpa-flags=0x%X rsn-flags=0x%x "
-	         "bssid=" MAC_FMT " strength=%d freq=%d rate=%d mode=%d seen=%ld",
-	         prefix,
-	         priv->ssid ? nm_utils_escape_ssid (priv->ssid->data, priv->ssid->len) : "(none)",
-	         ap,
-	         priv->timestamp.tv_sec,
-	         priv->flags,
-	         priv->wpa_flags,
-	         priv->rsn_flags,
-	         MAC_ARG (priv->address.ether_addr_octet),
-	         priv->strength,
-	         priv->freq,
-	         priv->max_bitrate,
-	         priv->mode,
-	         priv->last_seen);
+	nm_log_dbg (LOGD_WIFI_SCAN, "%s'%s' (%p)",
+	            prefix,
+	            priv->ssid ? nm_utils_escape_ssid (priv->ssid->data, priv->ssid->len) : "(none)",
+	            ap);
+	nm_log_dbg (LOGD_WIFI_SCAN, "    BSSID     " MAC_FMT, MAC_ARG (priv->address.ether_addr_octet));
+	nm_log_dbg (LOGD_WIFI_SCAN, "    mode      %d", priv->mode);
+	nm_log_dbg (LOGD_WIFI_SCAN, "    timestamp %ld", priv->timestamp.tv_sec);
+	nm_log_dbg (LOGD_WIFI_SCAN, "    flags     0x%X", priv->flags);
+	nm_log_dbg (LOGD_WIFI_SCAN, "    wpa flags 0x%X", priv->wpa_flags);
+	nm_log_dbg (LOGD_WIFI_SCAN, "    rsn flags 0x%X", priv->rsn_flags);
+	nm_log_dbg (LOGD_WIFI_SCAN, "    quality   %d", priv->strength);
+	nm_log_dbg (LOGD_WIFI_SCAN, "    frequency %d", priv->freq);
+	nm_log_dbg (LOGD_WIFI_SCAN, "    max rate  %d", priv->max_bitrate);
+	nm_log_dbg (LOGD_WIFI_SCAN, "    last-seen %ld", priv->last_seen);
 }
 
 const char *
@@ -940,7 +941,7 @@ void nm_ap_set_mode (NMAccessPoint *ap, const NM80211Mode mode)
 			g_object_notify (G_OBJECT (ap), NM_AP_MODE);
 		}
 	} else
-		nm_warning ("Invalid AP mode '%d'", mode);
+		nm_log_warn (LOGD_WIFI, "Invalid AP mode '%d'", mode);
 }
 
 
@@ -1468,7 +1469,7 @@ channel_to_freq (guint32 channel, const char *band)
 	} else if (!strcmp (band, "bg")) {
 		while (bg_table[i].chan && (bg_table[i].chan != channel))
 			i++;
-		return a_table[i].freq;
+		return bg_table[i].freq;
 	}
 
 	return 0;

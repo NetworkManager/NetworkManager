@@ -51,11 +51,11 @@ crypto_init (GError **error)
 	PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 1);
 	ret = NSS_NoDB_Init (NULL);
 	if (ret != SECSuccess) {
-		PR_Cleanup ();
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_INIT_FAILED,
 		             _("Failed to initialize the crypto engine: %d."),
 		             PR_GetError ());
+		PR_Cleanup ();
 		return FALSE;
 	}
 

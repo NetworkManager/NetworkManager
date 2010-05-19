@@ -28,6 +28,7 @@
 #include "nm-settings-connection-interface.h"
 #include "nm-settings-interface.h"
 #include "nm-polkit-helpers.h"
+#include "nm-logging.h"
 
 
 static void settings_connection_interface_init (NMSettingsConnectionInterface *klass);
@@ -613,8 +614,9 @@ nm_sysconfig_connection_init (NMSysconfigConnection *self)
 	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
 
 	priv->authority = polkit_authority_get ();
-	if (!priv->authority)
-		g_warning ("%s: error creating PolicyKit authority", __func__);
+	if (!priv->authority) {
+		nm_log_err (LOGD_SYS_SET, "%s: error creating PolicyKit authority");
+	}
 }
 
 static void

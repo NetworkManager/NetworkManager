@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2008 Red Hat, Inc.
+ * Copyright (C) 2004 - 2010 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
@@ -28,6 +28,7 @@
 
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
+#include "nm-logging.h"
 #include "nm-device.h"
 #include "nm-device-wifi.h"
 #include "nm-device-ethernet.h"
@@ -85,13 +86,13 @@ nm_spawn_process (const char *args)
 	g_return_val_if_fail (args != NULL, -1);
 
 	if (!g_shell_parse_argv (args, &num_args, &argv, &error)) {
-		nm_warning ("could not parse arguments for '%s': %s", args, error->message);
+		nm_log_warn (LOGD_CORE, "could not parse arguments for '%s': %s", args, error->message);
 		g_error_free (error);
 		return -1;
 	}
 
 	if (!g_spawn_sync ("/", argv, NULL, 0, NULL, NULL, NULL, NULL, &status, &error)) {
-		nm_warning ("could not spawn process '%s': %s", args, error->message);
+		nm_log_warn (LOGD_CORE, "could not spawn process '%s': %s", args, error->message);
 		g_error_free (error);
 	}
 
@@ -394,7 +395,7 @@ nm_utils_call_dispatcher (const char *action,
 	                                   NM_DISPATCHER_DBUS_PATH,
 	                                   NM_DISPATCHER_DBUS_IFACE);
 	if (!proxy) {
-		nm_warning ("Error: could not get dispatcher proxy!");
+		nm_log_err (LOGD_CORE, "could not get dispatcher proxy!");
 		g_object_unref (dbus_mgr);
 		return;
 	}
@@ -553,6 +554,20 @@ value_hash_add_uint (GHashTable *hash,
 	value_hash_add (hash, key, value);
 }
 
+void
+value_hash_add_bool (GHashTable *hash,
+					 const char *key,
+					 gboolean val)
+{
+	GValue *value;
+
+	value = g_slice_new0 (GValue);
+	g_value_init (value, G_TYPE_BOOLEAN);
+	g_value_set_boolean (value, val);
+
+	value_hash_add (hash, key, value);
+}
+
 gboolean
 nm_utils_do_sysctl (const char *path, const char *value)
 {
@@ -577,5 +592,34 @@ nm_utils_do_sysctl (const char *path, const char *value)
 
 	close (fd);
 	return TRUE;
+}
+
+gboolean
+nm_utils_get_proc_sys_net_value (const char *path,
+                                 const char *iface,
+                                 guint32 *out_value)
+{
+	GError *error = NULL;
+	char *contents = NULL;
+	gboolean success = FALSE;
+	long int tmp;
+
+	if (!g_file_get_contents (path, &contents, NULL, &error)) {
+		nm_log_dbg (LOGD_DEVICE, "(%s): error reading %s: (%d) %s",
+		            iface, path,
+		            error ? error->code : -1,
+		            error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
+	} else {
+		errno = 0;
+		tmp = strtol (contents, NULL, 10);
+		if ((errno == 0) && (tmp == 0 || tmp == 1)) {
+			*out_value = (guint32) tmp;
+			success = TRUE;
+		}
+		g_free (contents);
+	}
+
+	return success;
 }
 

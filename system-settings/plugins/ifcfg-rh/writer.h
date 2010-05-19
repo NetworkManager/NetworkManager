@@ -34,7 +34,6 @@ gboolean writer_update_connection (NMConnection *connection,
                                    const char *ifcfg_dir,
                                    const char *filename,
                                    const char *keyfile,
-                                   const char *routefile,
                                    GError **error);
 
 #endif /* _WRITER_H_ */

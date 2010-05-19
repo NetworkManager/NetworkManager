@@ -7,12 +7,14 @@
         The hardware address of the device.
       </tp:docstring>
     </property>
-    <property name="Companion" type="s" access="read">
+
+    <property name="Companion" type="o" access="read">
       <tp:docstring>
         The object path of the companion device.
       </tp:docstring>
     </property>
-    <property name="ActiveChannel" type="o" access="read">
+
+    <property name="ActiveChannel" type="u" access="read">
       <tp:docstring>
         The currently active channel.
       </tp:docstring>

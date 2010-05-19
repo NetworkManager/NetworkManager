@@ -1,13 +1,34 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+/* NetworkManager -- Network link manager
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Copyright (C) 2009 - 2010 Red Hat, Inc.
+ * Copyright (C) 2009 Novell, Inc.
+ * Copyright (C) 2009 Canonical Ltd.
+ */
 
 #include <string.h>
 #include "nm-modem-manager.h"
+#include "nm-logging.h"
 #include "nm-modem.h"
 #include "nm-modem-gsm.h"
 #include "nm-modem-cdma.h"
 #include "nm-dbus-manager.h"
-#include "nm-utils.h"
 #include "nm-modem-types.h"
+#include "nm-marshal.h"
 
 #define MODEM_POKE_INTERVAL 120
 
@@ -24,8 +45,8 @@ typedef struct {
 } NMModemManagerPrivate;
 
 enum {
-	DEVICE_ADDED,
-	DEVICE_REMOVED,
+	MODEM_ADDED,
+	MODEM_REMOVED,
 
 	LAST_SIGNAL
 };
@@ -45,25 +66,6 @@ nm_modem_manager_get (void)
 
 	g_assert (singleton);
 	return singleton;
-}
-
-gboolean
-nm_modem_manager_has_modem_for_iface (NMModemManager *manager,
-                                      const gchar *iface)
-{
-	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (manager);
-	GList *iter;
-	g_assert (manager);
-	g_assert (NM_IS_MODEM_MANAGER(manager));
-	g_assert (iface);
-
-	for (iter = g_hash_table_get_values(priv->modems); iter != NULL; iter = iter->next) {
-		NMDevice *device = NM_DEVICE(iter->data);
-		const gchar *device_iface = nm_device_get_iface (device);
-		if (!g_strcmp0 (iface, device_iface))
-			return TRUE;
-	}
-	return FALSE;
 }
 
 static gboolean
@@ -93,7 +95,7 @@ get_modem_properties (DBusGConnection *connection,
 		*type = g_value_get_uint (&value);
 		g_value_unset (&value);
 	} else {
-		g_warning ("Could not get device type: %s", err->message);
+		nm_log_warn (LOGD_MB, "could not get device type: %s", err->message);
 		goto out;
 	}
 
@@ -106,7 +108,7 @@ get_modem_properties (DBusGConnection *connection,
 		*device = g_value_dup_string (&value);
 		g_value_unset (&value);
 	} else {
-		g_warning ("Could not get device: %s", err->message);
+		nm_log_warn (LOGD_MB, "could not get device: %s", err->message);
 		goto out;
 	}
 
@@ -119,7 +121,7 @@ get_modem_properties (DBusGConnection *connection,
 		*ip_method = g_value_get_uint (&value);
 		g_value_unset (&value);
 	} else {
-		g_warning ("Could not get IP method: %s", err->message);
+		nm_log_warn (LOGD_MB, "could not get IP method: %s", err->message);
 		goto out;
 	}
 
@@ -132,7 +134,7 @@ get_modem_properties (DBusGConnection *connection,
 		*data_device = g_value_dup_string (&value);
 		g_value_unset (&value);
 	} else {
-		g_warning ("Could not get modem data device: %s", err->message);
+		nm_log_warn (LOGD_MB, "could not get modem data device: %s", err->message);
 		goto out;
 	}
 
@@ -145,7 +147,7 @@ get_modem_properties (DBusGConnection *connection,
 		*driver = g_value_dup_string (&value);
 		g_value_unset (&value);
 	} else {
-		g_warning ("Could not get modem driver: %s", err->message);
+		nm_log_warn (LOGD_MB, "could not get modem driver: %s", err->message);
 		goto out;
 	}
 
@@ -162,13 +164,13 @@ static void
 create_modem (NMModemManager *manager, const char *path)
 {
 	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (manager);
-	NMDevice *device;
+	NMModem *modem = NULL;
 	char *data_device = NULL, *driver = NULL, *master_device = NULL;
 	uint modem_type = MM_MODEM_TYPE_UNKNOWN;
 	uint ip_method = MM_MODEM_IP_METHOD_PPP;
 
 	if (g_hash_table_lookup (priv->modems, path)) {
-		nm_warning ("Modem with path %s already exists, ignoring", path);
+		nm_log_warn (LOGD_MB, "modem with path %s already exists, ignoring", path);
 		return;
 	}
 
@@ -178,39 +180,40 @@ create_modem (NMModemManager *manager, const char *path)
 		return;
 
 	if (modem_type == MM_MODEM_TYPE_UNKNOWN) {
-		nm_warning ("Modem with path %s has unknown type, ignoring", path);
+		nm_log_warn (LOGD_MB, "modem with path %s has unknown type, ignoring", path);
 		return;
 	}
 
 	if (!master_device || !strlen (master_device)) {
-		nm_warning ("Modem with path %s has unknown device, ignoring", path);
+		nm_log_warn (LOGD_MB, "modem with path %s has unknown device, ignoring", path);
 		return;
 	}
 
 	if (!driver || !strlen (driver)) {
-		nm_warning ("Modem with path %s has unknown driver, ignoring", path);
+		nm_log_warn (LOGD_MB, "modem with path %s has unknown driver, ignoring", path);
 		return;
 	}
 
 	if (!data_device || !strlen (data_device)) {
-		nm_warning ("Modem with path %s has unknown data device, ignoring", path);
+		nm_log_warn (LOGD_MB, "modem with path %s has unknown data device, ignoring", path);
 		return;
 	}
 
 	if (modem_type == MM_MODEM_TYPE_GSM)
-		device = nm_modem_gsm_new (path, master_device, data_device, driver, ip_method);
+		modem = nm_modem_gsm_new (path, master_device, data_device, ip_method);
 	else if (modem_type == MM_MODEM_TYPE_CDMA)
-		device = nm_modem_cdma_new (path, master_device, data_device, driver);
+		modem = nm_modem_cdma_new (path, master_device, data_device, ip_method);
 	else
-		g_error ("Invalid modem type");
+		nm_log_warn (LOGD_MB, "unknown modem type '%d'", modem_type);
 
 	g_free (data_device);
-	g_free (driver);
 
-	if (device) {
-		g_hash_table_insert (priv->modems, g_strdup (path), device);
-		g_signal_emit (manager, signals[DEVICE_ADDED], 0, device);
+	if (modem) {
+		g_hash_table_insert (priv->modems, g_strdup (path), modem);
+		g_signal_emit (manager, signals[MODEM_ADDED], 0, modem, driver);
 	}
+
+	g_free (driver);
 }
 
 static void
@@ -227,7 +230,7 @@ modem_removed (DBusGProxy *proxy, const char *path, gpointer user_data)
 
 	modem = (NMModem *) g_hash_table_lookup (priv->modems, path);
 	if (modem) {
-		g_signal_emit (user_data, signals[DEVICE_REMOVED], 0, modem);
+		g_signal_emit (user_data, signals[MODEM_REMOVED], 0, modem);
 		g_hash_table_remove (priv->modems, path);
 	}
 }
@@ -262,7 +265,7 @@ enumerate_devices_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer dat
 	if (!dbus_g_proxy_end_call (proxy, call_id, &error,
 								dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_OBJECT_PATH), &modems,
 								G_TYPE_INVALID)) {
-		nm_warning ("Could not get modem list: %s", error->message);
+		nm_log_warn (LOGD_MB, "could not get modem list: %s", error->message);
 		g_error_free (error);
 	} else {
 		int i;
@@ -288,7 +291,7 @@ modem_manager_appeared (NMModemManager *self, gboolean enumerate_devices)
 		priv->poke_id = 0;
 	}
 
-	nm_info ("modem-manager is now available");
+	nm_log_info (LOGD_MB, "modem-manager is now available");
 
 	priv->proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (priv->dbus_mgr),
 											 MM_DBUS_SERVICE, MM_DBUS_PATH, MM_DBUS_INTERFACE);
@@ -310,7 +313,7 @@ modem_manager_appeared (NMModemManager *self, gboolean enumerate_devices)
 static gboolean
 remove_one_modem (gpointer key, gpointer value, gpointer user_data)
 {
-	g_signal_emit (user_data, signals[DEVICE_REMOVED], 0, value);
+	g_signal_emit (user_data, signals[MODEM_REMOVED], 0, value);
 
 	return TRUE;
 }
@@ -328,7 +331,7 @@ modem_manager_disappeared (NMModemManager *self)
 	}
 
 	/* Try to activate the modem-manager */
-	nm_info ("Trying to start the modem-manager...");
+	nm_log_info (LOGD_MB, "trying to start the modem manager...");
 	poke_modem_cb (self);
 	priv->poke_id = g_timeout_add_seconds (MODEM_POKE_INTERVAL, poke_modem_cb, self);
 }
@@ -353,7 +356,7 @@ nm_modem_manager_name_owner_changed (NMDBusManager *dbus_mgr,
 	if (!old_owner_good && new_owner_good) {
 		modem_manager_appeared (NM_MODEM_MANAGER (user_data), FALSE);
 	} else if (old_owner_good && !new_owner_good) {
-		nm_info ("modem manager disappeared");
+		nm_log_info (LOGD_MB, "the modem manager disappeared");
 		modem_manager_disappeared (NM_MODEM_MANAGER (user_data));
 	}
 }
@@ -420,23 +423,21 @@ nm_modem_manager_class_init (NMModemManagerClass *klass)
 	object_class->dispose = dispose;
 
 	/* signals */
-	signals[DEVICE_ADDED] =
-		g_signal_new ("device-added",
+	signals[MODEM_ADDED] =
+		g_signal_new ("modem-added",
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMModemManagerClass, device_added),
+					  G_STRUCT_OFFSET (NMModemManagerClass, modem_added),
 					  NULL, NULL,
-					  g_cclosure_marshal_VOID__OBJECT,
-					  G_TYPE_NONE, 1,
-					  G_TYPE_OBJECT);
+					  _nm_marshal_VOID__OBJECT_STRING,
+					  G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_STRING);
 
-	signals[DEVICE_REMOVED] =
-		g_signal_new ("device-removed",
+	signals[MODEM_REMOVED] =
+		g_signal_new ("modem-removed",
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMModemManagerClass, device_removed),
+					  G_STRUCT_OFFSET (NMModemManagerClass, modem_removed),
 					  NULL, NULL,
 					  g_cclosure_marshal_VOID__OBJECT,
-					  G_TYPE_NONE, 1,
-					  G_TYPE_OBJECT);
+					  G_TYPE_NONE, 1, G_TYPE_OBJECT);
 }

@@ -115,59 +115,139 @@ utils_hexstr2bin (const char *hex, size_t len)
 
 /* End from hostap */
 
-char *
-utils_cert_path (const char *parent, const char *suffix)
+static gboolean
+check_suffix (const char *base, const char *tag)
 {
-	char *name, *dir, *path;
+	int len, tag_len;
 
-	name = utils_get_ifcfg_name (parent);
-	dir = g_path_get_dirname (parent);
-	path = g_strdup_printf ("%s/%s-%s", dir, name, suffix);
-	g_free (dir);
-	g_free (name);
-	return path;
+	g_return_val_if_fail (base != NULL, TRUE);
+	g_return_val_if_fail (tag != NULL, TRUE);
+
+	len = strlen (base);
+	tag_len = strlen (tag);
+	if ((len > tag_len) && !strcasecmp (base + len - tag_len, tag))
+		return TRUE;
+	return FALSE;
+}
+
+gboolean
+utils_should_ignore_file (const char *filename, gboolean only_ifcfg)
+{
+	char *base;
+	gboolean ignore = TRUE;
+	gboolean is_ifcfg = FALSE;
+	gboolean is_other = FALSE;
+
+	g_return_val_if_fail (filename != NULL, TRUE);
+
+	base = g_path_get_basename (filename);
+	g_return_val_if_fail (base != NULL, TRUE);
+
+	/* Only handle ifcfg, keys, and routes files */
+	if (!strncmp (base, IFCFG_TAG, strlen (IFCFG_TAG)))
+		is_ifcfg = TRUE;
+
+	if (only_ifcfg == FALSE) {
+		if (   !strncmp (base, KEYS_TAG, strlen (KEYS_TAG))
+		    || !strncmp (base, ROUTE_TAG, strlen (ROUTE_TAG))
+		    || !strncmp (base, ROUTE6_TAG, strlen (ROUTE6_TAG)))
+				is_other = TRUE;
+	}
+
+	/* But not those that have certain suffixes */
+	if (   (is_ifcfg || is_other)
+	    && !check_suffix (base, BAK_TAG)
+	    && !check_suffix (base, TILDE_TAG)
+	    && !check_suffix (base, ORIG_TAG)
+	    && !check_suffix (base, REJ_TAG)
+	    && !check_suffix (base, RPMNEW_TAG))
+		ignore = FALSE;
+
+	g_free (base);
+	return ignore;
 }
 
 char *
-utils_get_ifcfg_name (const char *file)
+utils_cert_path (const char *parent, const char *suffix)
 {
-	char *ifcfg_name;
+	const char *name;
+	char *dir, *path;
+
+	g_return_val_if_fail (parent != NULL, NULL);
+	g_return_val_if_fail (suffix != NULL, NULL);
+
+	name = utils_get_ifcfg_name (parent, FALSE);
+	dir = g_path_get_dirname (parent);
+	path = g_strdup_printf ("%s/%s-%s", dir, name, suffix);
+	g_free (dir);
+	return path;
+}
+
+const char *
+utils_get_ifcfg_name (const char *file, gboolean only_ifcfg)
+{
+	const char *name = NULL, *start = NULL;
 	char *base;
+
+	g_return_val_if_fail (file != NULL, NULL);
 
 	base = g_path_get_basename (file);
 	if (!base)
 		return NULL;
 
-	ifcfg_name = g_strdup (base + strlen (IFCFG_TAG));
+	/* Find the point in 'file' where 'base' starts.  We use 'file' since it's
+	 * const and thus will survive after we free 'base'.
+	 */
+	start = file + strlen (file) - strlen (base);
+	g_assert (strcmp (start, base) == 0);
 	g_free (base);
-	return ifcfg_name;
+
+	if (!strncmp (start, IFCFG_TAG, strlen (IFCFG_TAG)))
+		name = start + strlen (IFCFG_TAG);
+	else if (only_ifcfg == FALSE)  {
+		if (!strncmp (start, KEYS_TAG, strlen (KEYS_TAG)))
+			name = start + strlen (KEYS_TAG);
+		else if (!strncmp (start, ROUTE_TAG, strlen (ROUTE_TAG)))
+			name = start + strlen (ROUTE_TAG);
+		else if (!strncmp (start, ROUTE6_TAG, strlen (ROUTE6_TAG)))
+			name = start + strlen (ROUTE6_TAG);
+	}
+
+	return name;
 }
 
-/* Used to get an extra file path for ifcfg-<name> in the form <tag><name>.
- * Currently used for: keys-<name>
- *                     route-<name>
+/* Used to get any ifcfg/extra file path from any other ifcfg/extra path
+ * in the form <tag><name>.
  */
-char *
+static char *
 utils_get_extra_path (const char *parent, const char *tag)
 {
-	char *ifcfg_name;
-	char *extra_file = NULL;
-	char *tmp = NULL;
+	char *item_path = NULL, *dirname;
+	const char *name;
 
-	ifcfg_name = utils_get_ifcfg_name (parent);
-	if (!ifcfg_name)
+	g_return_val_if_fail (parent != NULL, NULL);
+	g_return_val_if_fail (tag != NULL, NULL);
+
+	dirname = g_path_get_dirname (parent);
+	if (!dirname)
 		return NULL;
 
-	tmp = g_path_get_dirname (parent);
-	if (!tmp)
-		goto out;
+	name = utils_get_ifcfg_name (parent, FALSE);
+	if (name) {
+		if (!strcmp (dirname, "."))
+			item_path = g_strdup_printf ("%s%s", tag, name);
+		else
+			item_path = g_strdup_printf ("%s/%s%s", dirname, tag, name);
+	}
+	g_free (dirname);
 
-	extra_file = g_strdup_printf ("%s/%s%s", tmp, tag, ifcfg_name);
+	return item_path;
+}
 
-out:
-	g_free (tmp);
-	g_free (ifcfg_name);
-	return extra_file;
+char *
+utils_get_ifcfg_path (const char *parent)
+{
+	return utils_get_extra_path (parent, IFCFG_TAG);
 }
 
 char *
@@ -180,6 +260,12 @@ char *
 utils_get_route_path (const char *parent)
 {
 	return utils_get_extra_path (parent, ROUTE_TAG);
+}
+
+char *
+utils_get_route6_path (const char *parent)
+{
+	return utils_get_extra_path (parent, ROUTE6_TAG);
 }
 
 shvarFile *
@@ -214,9 +300,15 @@ utils_get_route_ifcfg (const char *parent, gboolean should_create)
 	return utils_get_extra_ifcfg (parent, ROUTE_TAG, should_create);
 }
 
+shvarFile *
+utils_get_route6_ifcfg (const char *parent, gboolean should_create)
+{
+	return utils_get_extra_ifcfg (parent, ROUTE6_TAG, should_create);
+}
+
 /* Finds out if route file has new or older format
  * Returns TRUE  - new syntax (ADDRESS<n>=a.b.c.d ...), error opening file or empty
- *         FALSE - legacy syntax (1.2.3.0/24 via 11.22.33.44)
+ *         FALSE - older syntax, i.e. argument to 'ip route add' (1.2.3.0/24 via 11.22.33.44)
  */
 gboolean
 utils_has_route_file_new_syntax (const char *filename)

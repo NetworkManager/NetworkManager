@@ -1,5 +1,6 @@
 INCLUDES = \
 	-I${top_srcdir}/src \
+	-I${top_srcdir}/src/logging \
 	-I${top_srcdir}/include \
 	-I${top_srcdir}/libnm-util \
 	-I${top_builddir}/marshallers
@@ -7,12 +8,12 @@ INCLUDES = \
 noinst_LTLIBRARIES = libmodem-manager.la
 
 libmodem_manager_la_SOURCES = \
+	nm-modem.c \
+	nm-modem.h \
 	nm-modem-cdma.c \
 	nm-modem-cdma.h \
 	nm-modem-gsm.c \
 	nm-modem-gsm.h \
-	nm-modem.c \
-	nm-modem.h \
 	nm-modem-manager.h \
 	nm-modem-manager.c \
 	nm-modem-types.h
@@ -22,20 +23,13 @@ libmodem_manager_la_CPPFLAGS = \
 
 libmodem_manager_la_LIBADD = \
 	$(top_builddir)/marshallers/libmarshallers.la \
+	$(top_builddir)/src/logging/libnm-logging.la \
 	$(DBUS_LIBS)
-
-nm-device-cdma-glue.h: $(top_srcdir)/introspection/nm-device-cdma.xml
-	dbus-binding-tool --prefix=nm_device_cdma --mode=glib-server --output=$@ $<
-
-nm-device-gsm-glue.h: $(top_srcdir)/introspection/nm-device-gsm.xml
-	dbus-binding-tool --prefix=nm_device_gsm --mode=glib-server --output=$@ $<
 
 nm-serial-device-glue.h: $(top_srcdir)/introspection/nm-device-serial.xml
 	dbus-binding-tool --prefix=nm_serial_device --mode=glib-server --output=$@ $<
 
 BUILT_SOURCES = \
-	nm-device-cdma-glue.h \
-	nm-device-gsm-glue.h \
 	nm-serial-device-glue.h
 
 CLEANFILES = $(BUILT_SOURCES)

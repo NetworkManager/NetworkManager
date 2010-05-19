@@ -28,7 +28,7 @@
 
 #include "nm-rfkill.h"
 #include "nm-device.h"
-#include "NetworkManagerAP.h"
+#include "nm-wifi-ap.h"
 
 struct NMAccessPointList;
 
@@ -47,7 +47,6 @@ G_BEGIN_DECLS
 #define NM_DEVICE_WIFI_BITRATE             "bitrate"
 #define NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT "active-access-point"
 #define NM_DEVICE_WIFI_CAPABILITIES        "wireless-capabilities"
-#define NM_DEVICE_WIFI_IFINDEX             "ifindex"
 #define NM_DEVICE_WIFI_SCANNING            "scanning"
 #define NM_DEVICE_WIFI_IPW_RFKILL_STATE    "ipw-rfkill-state"
 
@@ -84,8 +83,7 @@ GType nm_device_wifi_get_type (void);
 
 NMDevice *nm_device_wifi_new (const char *udi,
                               const char *iface,
-                              const char *driver,
-                              guint32 ifindex);
+                              const char *driver);
 
 void nm_device_wifi_get_address (NMDeviceWifi *dev,
 								   struct ether_addr *addr);
@@ -101,8 +99,6 @@ gboolean		nm_device_wifi_set_mode (NMDeviceWifi *self,
 NM80211Mode	nm_device_wifi_get_mode (NMDeviceWifi *self);
 
 NMAccessPoint * nm_device_wifi_get_activation_ap (NMDeviceWifi *self);
-
-guint32 nm_device_wifi_get_ifindex (NMDeviceWifi *self);
 
 RfKillState nm_device_wifi_get_ipw_rfkill_state (NMDeviceWifi *self);
 

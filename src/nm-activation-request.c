@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2008 Red Hat, Inc.
+ * Copyright (C) 2005 - 2010 Red Hat, Inc.
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
@@ -27,7 +27,7 @@
 
 #include "nm-activation-request.h"
 #include "nm-marshal.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"
 #include "nm-dbus-manager.h"
@@ -72,6 +72,7 @@ typedef struct {
 
 	NMActiveConnectionState state;
 	gboolean is_default;
+	gboolean is_default6;
 	gboolean shared;
 	GSList *share_rules;
 
@@ -88,6 +89,7 @@ enum {
 	PROP_DEVICES,
 	PROP_STATE,
 	PROP_DEFAULT,
+	PROP_DEFAULT6,
 	PROP_VPN,
 
 	LAST_PROP
@@ -104,7 +106,7 @@ device_state_changed (NMDevice *device,
 	NMActRequest *self = NM_ACT_REQUEST (user_data);
 	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (self);
 	NMActiveConnectionState new_ac_state;
-	gboolean new_default = FALSE;
+	gboolean new_default = FALSE, new_default6 = FALSE;
 
 	/* Set NMActiveConnection state based on the device's state */
 	switch (new_state) {
@@ -117,6 +119,7 @@ device_state_changed (NMDevice *device,
 	case NM_DEVICE_STATE_ACTIVATED:
 		new_ac_state = NM_ACTIVE_CONNECTION_STATE_ACTIVATED;
 		new_default = priv->is_default;
+		new_default6 = priv->is_default6;
 		break;
 	default:
 		new_ac_state = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
@@ -131,6 +134,11 @@ device_state_changed (NMDevice *device,
 	if (new_default != priv->is_default) {
 		priv->is_default = new_default;
 		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_DEFAULT);
+	}
+
+	if (new_default6 != priv->is_default6) {
+		priv->is_default6 = new_default6;
+		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_DEFAULT6);
 	}
 }
 
@@ -271,6 +279,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_DEFAULT:
 		g_value_set_boolean (value, priv->is_default);
 		break;
+	case PROP_DEFAULT6:
+		g_value_set_boolean (value, priv->is_default6);
+		break;
 	case PROP_VPN:
 		g_value_set_boolean (value, FALSE);
 		break;
@@ -334,7 +345,14 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 		(object_class, PROP_DEFAULT,
 		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_DEFAULT,
 							   "Default",
-							   "Is the default active connection",
+							   "Is the default IPv4 active connection",
+							   FALSE,
+							   G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_DEFAULT6,
+		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_DEFAULT6,
+							   "Default6",
+							   "Is the default IPv6 active connection",
 							   FALSE,
 							   G_PARAM_READABLE));
 	g_object_class_install_property
@@ -418,9 +436,9 @@ secrets_update_setting (NMSecretsProviderInterface *interface,
 		nm_connection_add_setting (priv->connection, setting);
 	else {
 		if (!nm_connection_update_secrets (priv->connection, setting_name, new, &error)) {
-			nm_warning ("Failed to update connection secrets: %d %s",
-			            error ? error->code : -1,
-			            error && error->message ? error->message : "(none)");
+			nm_log_warn (LOGD_DEVICE, "Failed to update connection secrets: %d %s",
+			             error ? error->code : -1,
+			             error && error->message ? error->message : "(none)");
 			g_clear_error (&error);
 		}
 	}
@@ -548,6 +566,29 @@ nm_act_request_get_default (NMActRequest *req)
 	return NM_ACT_REQUEST_GET_PRIVATE (req)->is_default;
 }
 
+void
+nm_act_request_set_default6 (NMActRequest *req, gboolean is_default6)
+{
+	NMActRequestPrivate *priv;
+
+	g_return_if_fail (NM_IS_ACT_REQUEST (req));
+
+	priv = NM_ACT_REQUEST_GET_PRIVATE (req);
+	if (priv->is_default6 == is_default6)
+		return;
+
+	priv->is_default6 = is_default6;
+	g_object_notify (G_OBJECT (req), NM_ACTIVE_CONNECTION_DEFAULT6);
+}
+
+gboolean
+nm_act_request_get_default6 (NMActRequest *req)
+{
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
+
+	return NM_ACT_REQUEST_GET_PRIVATE (req)->is_default6;
+}
+
 static void
 share_child_setup (gpointer user_data G_GNUC_UNUSED)
 {
@@ -591,15 +632,17 @@ nm_act_request_set_shared (NMActRequest *req, gboolean shared)
 			int status;
 			GError *error = NULL;
 
-			nm_info ("Executing: %s", cmd);
+			nm_log_info (LOGD_SHARING, "Executing: %s", cmd);
 			if (!g_spawn_sync ("/", argv, envp, G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
 			                   share_child_setup, NULL, NULL, NULL, &status, &error)) {
-				nm_info ("Error executing command: (%d) %s",
-				         error ? error->code : -1,
-				         (error && error->message) ? error->message : "(unknown)");
+				nm_log_warn (LOGD_SHARING, "Error executing command: (%d) %s",
+				             error ? error->code : -1,
+				             (error && error->message) ? error->message : "(unknown)");
 				g_clear_error (&error);
-			} else if (WEXITSTATUS (status))
-				nm_info ("** Command returned exit status %d.", WEXITSTATUS (status));
+			} else if (WEXITSTATUS (status)) {
+				nm_log_warn (LOGD_SHARING, "** Command returned exit status %d.",
+				             WEXITSTATUS (status));
+			}
 		}
 		g_free (cmd);
 		if (argv)

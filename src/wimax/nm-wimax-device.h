@@ -36,7 +36,6 @@ G_BEGIN_DECLS
 #define NM_WIMAX_DEVICE_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_WIMAX_DEVICE, NMWimaxDeviceClass))
 
 #define NM_WIMAX_DEVICE_INDEX      "index"
-#define NM_WIMAX_DEVICE_IFINDEX    "ifindex"
 #define NM_WIMAX_DEVICE_HW_ADDRESS "hw-address"
 #define NM_WIMAX_DEVICE_ACTIVE_NSP "active-nsp"
 
@@ -58,13 +57,11 @@ GType nm_wimax_device_get_type (void);
 NMDevice   *nm_wimax_device_new            (const char *udi,
 											const char *iface,
 											const char *driver,
-											int ifindex,
 											guchar wimax_device_index);
 
 void        nm_wimax_device_get_hw_address (NMWimaxDevice *self,
 											struct ether_addr *addr);
 
-guint32     nm_wimax_device_get_ifindex    (NMWimaxDevice *self);
 GSList     *nm_wimax_device_get_nsps       (NMWimaxDevice *self);
 NMWimaxNsp *nm_wimax_device_get_active_nsp (NMWimaxDevice *self);
 

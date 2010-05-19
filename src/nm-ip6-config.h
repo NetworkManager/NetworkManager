@@ -60,7 +60,7 @@ NMIP6Address *nm_ip6_config_get_address         (NMIP6Config *config, guint32 i)
 guint32       nm_ip6_config_get_num_addresses   (NMIP6Config *config);
 
 const struct in6_addr *nm_ip6_config_get_ptp_address (NMIP6Config *config);
-void          nm_ip6_config_set_ptp_address     (NMIP6Config *config, struct in6_addr *ptp_addr);
+void          nm_ip6_config_set_ptp_address     (NMIP6Config *config, const struct in6_addr *ptp_addr);
 
 void          nm_ip6_config_add_nameserver      (NMIP6Config *config, const struct in6_addr *nameserver);
 const struct in6_addr *nm_ip6_config_get_nameserver      (NMIP6Config *config, guint i);

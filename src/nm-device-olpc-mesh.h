@@ -16,9 +16,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * (C) Copyright 2005 Red Hat, Inc.
  * (C) Copyright 2008 Collabora Ltd.
@@ -46,7 +46,6 @@ G_BEGIN_DECLS
 #define NM_DEVICE_OLPC_MESH_COMPANION      "companion"
 #define NM_DEVICE_OLPC_MESH_BITRATE        "bitrate"
 #define NM_DEVICE_OLPC_MESH_ACTIVE_CHANNEL "active-channel"
-#define NM_DEVICE_OLPC_MESH_IFINDEX        "ifindex"
 
 #ifndef NM_DEVICE_OLPC_MESH_DEFINED
 #define NM_DEVICE_OLPC_MESH_DEFINED
@@ -75,10 +74,7 @@ GType nm_device_olpc_mesh_get_type (void);
 
 NMDevice *nm_device_olpc_mesh_new (const char *udi,
                                    const char *iface,
-                                   const char *driver,
-                                   guint32 ifindex);
-
-guint32 nm_device_olpc_mesh_get_ifindex (NMDeviceOlpcMesh *self);
+                                   const char *driver);
 
 G_END_DECLS
 

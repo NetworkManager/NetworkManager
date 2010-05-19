@@ -2,8 +2,8 @@
 
 <node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
   <interface name="org.freedesktop.NetworkManager.IP6Config">
-    <property name="Addresses" type="a(ayu)" access="read">
-      <tp:docstring>Tuples of IPv6 address/prefix.</tp:docstring>
+    <property name="Addresses" type="a(ayuay)" access="read">
+      <tp:docstring>Tuples of IPv6 address/prefix/gateway.</tp:docstring>
     </property>
     <property name="Nameservers" type="aay" access="read">
       <tp:docstring>The nameservers in use.</tp:docstring>

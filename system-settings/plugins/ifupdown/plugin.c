@@ -59,7 +59,9 @@
 #define IFUPDOWN_PLUGIN_INFO "(C) 2008 Canonical Ltd.  To report bugs please use the NetworkManager mailing list."
 #define IFUPDOWN_SYSTEM_HOSTNAME_FILE "/etc/hostname"
 
-#define IFUPDOWN_SYSTEM_SETTINGS_KEY_FILE SYSCONFDIR "/NetworkManager/nm-system-settings.conf"
+#define IFUPDOWN_SYSTEM_SETTINGS_KEY_FILE SYSCONFDIR "/NetworkManager/NetworkManager.conf"
+#define IFUPDOWN_OLD_SYSTEM_SETTINGS_KEY_FILE SYSCONFDIR "/NetworkManager/nm-system-settings.conf"
+
 #define IFUPDOWN_KEY_FILE_GROUP "ifupdown"
 #define IFUPDOWN_KEY_FILE_KEY_MANAGED "managed"
 #define IFUPDOWN_UNMANAGE_WELL_KNOWN_DEFAULT TRUE
@@ -78,6 +80,7 @@ typedef struct {
 	GHashTable *well_known_interfaces;
 	GHashTable *well_known_ifaces;
 	gboolean unmanage_well_known;
+	const char *conf_file;
 
 	gulong inotify_event_id;
 	int inotify_system_hostname_wd;
@@ -355,7 +358,7 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 	ifparser_init ();
 	block = ifparser_getfirst ();
 	while (block) {
-		if(!strcmp ("auto", block->type))
+		if(!strcmp ("auto", block->type) || !strcmp ("allow-hotplug", block->type))
 			g_hash_table_insert (auto_ifaces, block->name, GUINT_TO_POINTER (1));
 		else if (!strcmp ("iface", block->type) && strcmp ("lo", block->name)) {
 			NMIfupdownConnection *exported;
@@ -374,7 +377,6 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 			if (exported) {
 				g_hash_table_insert (priv->iface_connections, block->name, exported);
 				g_hash_table_insert (priv->well_known_interfaces, block->name, "known");
-				g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, exported);
 			}
 		} else if (!strcmp ("mapping", block->type)) {
 			g_hash_table_insert (priv->well_known_interfaces, block->name, "known");
@@ -404,13 +406,19 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 	g_list_free (keys);
 	g_hash_table_destroy (auto_ifaces);
 
+	/* Find the config file */
+	if (g_file_test (IFUPDOWN_SYSTEM_SETTINGS_KEY_FILE, G_FILE_TEST_EXISTS))
+		priv->conf_file = IFUPDOWN_SYSTEM_SETTINGS_KEY_FILE;
+	else
+		priv->conf_file = IFUPDOWN_OLD_SYSTEM_SETTINGS_KEY_FILE;
+
 	keyfile = g_key_file_new ();
 	if (!g_key_file_load_from_file (keyfile,
-	                                IFUPDOWN_SYSTEM_SETTINGS_KEY_FILE,
+	                                priv->conf_file,
 	                                G_KEY_FILE_NONE,
 	                                &error)) {
 		nm_info ("loading system config file (%s) caused error: (%d) %s",
-		         IFUPDOWN_SYSTEM_SETTINGS_KEY_FILE,
+		         priv->conf_file,
 		         error ? error->code : -1,
 		         error && error->message ? error->message : "(unknown)");
 	} else {
@@ -441,6 +449,19 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 		g_object_unref (G_UDEV_DEVICE (iter->data));
 	}
 	g_list_free (keys);
+
+	/* Now if we're running in managed mode, let NM know there are new connections */
+	if (!priv->unmanage_well_known) {
+		GList *con_list = g_hash_table_get_values (priv->iface_connections);
+		GList *cl_iter;
+
+		for (cl_iter = con_list; cl_iter; cl_iter = g_list_next (cl_iter)) {
+			g_signal_emit_by_name (self,
+			                       NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED,
+			                       NM_EXPORTED_CONNECTION (cl_iter->data));
+		}
+		g_list_free (con_list);
+	}
 
 	PLUGIN_PRINT("SCPlugin-Ifupdown", "end _init.");
 }

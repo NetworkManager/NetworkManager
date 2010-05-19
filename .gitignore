@@ -2,6 +2,7 @@
 *.o
 *.lo
 *.la
+*.bz2
 Makefile
 Makefile.in*
 configure
@@ -22,24 +23,47 @@ autom4te.cache
 intltool-*
 gtk-doc.make
 TAGS
+COPYING
+INSTALL
+*.pc
+man/*.[185]
+po/*.gmo
+po/.intltool-merge-cache
+
+docs/libnm-glib/*.stamp
 docs/libnm-glib/html/
 docs/libnm-glib/tmpl/
 docs/libnm-glib/xml/
 docs/libnm-glib/libnm-glib-*.txt
+docs/libnm-glib/libnm-glib.args
+docs/libnm-glib/libnm-glib.hierarchy
+docs/libnm-glib/libnm-glib.interfaces
+docs/libnm-glib/libnm-glib.prerequisites
+docs/libnm-glib/libnm-glib.signals
+
+docs/libnm-util/*.stamp
 docs/libnm-util/html/
 docs/libnm-util/tmpl/
 docs/libnm-util/xml/
 docs/libnm-util/libnm-util-*.txt
-COPYING
-INSTALL
-*.pc
-man/*.[18]
-po/*.gmo
+docs/libnm-util/libnm-util-decl-list.txt.bak
+docs/libnm-util/libnm-util-decl.txt.bak
+docs/libnm-util/libnm-util.args
+docs/libnm-util/libnm-util.hierarchy
+docs/libnm-util/libnm-util.interfaces
+docs/libnm-util/libnm-util.prerequisites
+docs/libnm-util/libnm-util.signals
+docs/libnm-util/libnm-util.types
+
+docs/generate-settings-spec
+docs/settings-spec.html
+docs/spec.html
 
 callouts/nm-dhcp-client.action
 callouts/nm-avahi-autoipd.action
 callouts/nm-dispatcher.action
 callouts/org.freedesktop.nm_dispatcher.service
+callouts/nm-modem-probe
 dispatcher-daemon/NetworkManagerDispatcher
 initscript/*/NetworkManagerDispatcher
 initscript/*/networkmanager-dispatcher
@@ -53,8 +77,10 @@ nm-marshal.[ch]
 libnm-glib/libnm-glib-test
 src/NetworkManager
 src/nm-crash-logger
+src/supplicant-manager/tests/test-supplicant-config
 system-settings/src/nm-system-settings
 system-settings/src/org.freedesktop.NetworkManagerSystemSettings.service
+test/libnm-glib-test
 test/libnm_glib_test
 test/nm-online
 test/nm-tool
@@ -62,8 +88,17 @@ test/nmtestdevices
 libnm-util/test-crypto
 libnm-util/tests/test-crypto
 libnm-util/tests/test-settings-defaults
+libnm-util/tests/test-general
+libnm-util/tests/test-need-secrets
+libnm-util/tests/test-setting-8021x
 src/tests/test-dhcp-options
+src/tests/test-policy-hosts
+
 system-settings/plugins/keyfile/tests/test-keyfile
+system-settings/plugins/ifcfg-rh/tests/test-ifcfg-rh
+system-settings/plugins/ifcfg-rh/tests/test-ifcfg-rh-utils
+system-settings/plugins/ifcfg-rh/tests/network-scripts/Test_Write_*
+system-settings/plugins/ifcfg-rh/tests/network-scripts/*-Test_Write_*
 
 m4/gtk-doc.m4
 m4/intltool.m4
@@ -72,3 +107,4 @@ m4/lt*.m4
 
 policy/org.freedesktop.network-manager-settings.system.policy
 
+cli/src/nmcli

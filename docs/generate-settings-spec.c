@@ -17,7 +17,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2009 Red Hat, Inc.
+ * (C) Copyright 2009 - 2010 Red Hat, Inc.
  */
 
 #include <stdio.h>
@@ -86,7 +86,7 @@ static TypeNameElement name_map[] = {
 	{ "GPtrArray_GArray_guint__", "array of array of uint32" },
 	{ "GPtrArray_GArray_guchar__", "array of byte array" },
 	{ "GHashTable_gchararray+gchararray_", "dict of (string::string)" },
-	{ "GPtrArray_GValueArray_GArray_guchar_+guint__", "array of (byte array, uint32)" },
+	{ "GPtrArray_GValueArray_GArray_guchar_+guint+GArray_guchar___", "array of (byte array, uint32, byte array)" },
 	{ "GPtrArray_GValueArray_GArray_guchar_+guint+GArray_guchar_+guint__", "array of (byte array, uint32, byte array, uint32)" },
 	{ NULL, NULL }
 };
@@ -128,6 +128,7 @@ write_one_setting (FILE *f, SettingNewFunc func)
 		value_desc = g_param_spec_get_blurb (*iter);
 
 		g_value_init (&value, G_PARAM_SPEC_VALUE_TYPE (*iter));
+		g_param_value_set_default (*iter, &value);
 		default_value = g_strdup_value_contents (&value);
 		if (default_value && !strcmp (default_value, "NULL")) {
 			g_free (default_value);

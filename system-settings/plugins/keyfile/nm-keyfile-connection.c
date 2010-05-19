@@ -88,7 +88,8 @@ update (NMSettingsConnectionInterface *connection,
 		success = parent_settings_connection_iface->update (connection, callback, user_data);
 	} else {
 		callback (connection, error, user_data);
-		g_error_free (error);
+		if (error)
+			g_error_free (error);
 		g_free (filename);
 	}
 

@@ -1,0 +1,19 @@
+# Intel Corporation 82567LM Gigabit Network Connection
+TYPE=Ethernet
+DEVICE=eth2
+HWADDR=00:11:22:33:44:ee
+BOOTPROTO=dhcp
+ONBOOT=yes
+USERCTL=yes
+NM_CONTROLLED=yes
+PEERDNS=yes
+DNS1=10.2.0.4
+DNS2=10.2.0.5
+DNS3=1:2:3:4::a
+DNS4=1:2:3:4::b
+DOMAIN="lorem.com ipsum.org dolor.edu"
+IPV6INIT=yes
+IPV6_AUTOCONF=no
+IPV6ADDR="1001:abba::1234/56"
+IPV6ADDR_SECONDARIES="2001:abba::2234/64 3001:abba::3234/96"
+IPV6_FAILURE_FATAL=no

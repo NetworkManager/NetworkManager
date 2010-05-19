@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2008 - 2010 Red Hat, Inc.
  */
 
 #include <sys/stat.h>
@@ -26,6 +26,7 @@
 #include <nm-setting.h>
 #include <nm-setting-connection.h>
 #include <nm-setting-ip4-config.h>
+#include <nm-setting-ip6-config.h>
 #include <nm-setting-vpn.h>
 #include <nm-setting-wired.h>
 #include <nm-setting-wireless.h>
@@ -185,6 +186,207 @@ ip4_route_writer (GKeyFile *file,
 }
 
 static void
+ip6_dns_writer (GKeyFile *file,
+                NMSetting *setting,
+                const char *key,
+                const GValue *value)
+{
+	GPtrArray *array;
+	GByteArray *byte_array;
+	char **list;
+	int i, num = 0;
+
+	g_return_if_fail (G_VALUE_HOLDS (value, DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UCHAR));
+
+	array = (GPtrArray *) g_value_get_boxed (value);
+	if (!array || !array->len)
+		return;
+
+	list = g_new0 (char *, array->len + 1);
+
+	for (i = 0; i < array->len; i++) {
+		char buf[INET6_ADDRSTRLEN];
+
+		byte_array = g_ptr_array_index (array, i);
+		if (!inet_ntop (AF_INET6, (struct in6_addr *) byte_array->data, buf, sizeof (buf))) {
+			int j;
+			GString *ip6_str = g_string_new (NULL);
+			g_string_append_printf (ip6_str, "%02X", byte_array->data[0]);
+			for (j = 1; j < 16; j++)
+				g_string_append_printf (ip6_str, " %02X", byte_array->data[j]);
+			nm_warning ("%s: error converting IP6 address %s",
+			            __func__, ip6_str->str);
+			g_string_free (ip6_str, TRUE);
+		} else
+			list[num++] = g_strdup (buf);
+	}
+
+	g_key_file_set_string_list (file, nm_setting_get_name (setting), key, (const char **) list, num);
+	g_strfreev (list);
+}
+
+static gboolean
+ip6_array_to_addr (GValueArray *values,
+                   guint32 idx,
+                   char *buf,
+                   size_t buflen,
+                   gboolean *out_is_unspec)
+{
+	GByteArray *byte_array;
+	GValue *addr_val;
+	struct in6_addr *addr;
+
+	g_return_val_if_fail (buflen >= INET6_ADDRSTRLEN, FALSE);
+
+	addr_val = g_value_array_get_nth (values, idx);
+	byte_array = g_value_get_boxed (addr_val);
+	addr = (struct in6_addr *) byte_array->data;
+
+	if (out_is_unspec && IN6_IS_ADDR_UNSPECIFIED (addr))
+		*out_is_unspec = TRUE;
+
+	errno = 0;
+	if (!inet_ntop (AF_INET6, addr, buf, buflen)) {
+		GString *ip6_str = g_string_sized_new (INET6_ADDRSTRLEN + 10);
+
+		/* error converting the address */
+		g_string_append_printf (ip6_str, "%02X", byte_array->data[0]);
+		for (idx = 1; idx < 16; idx++)
+			g_string_append_printf (ip6_str, " %02X", byte_array->data[idx]);
+		nm_warning ("%s: error %d converting IP6 address %s",
+		            __func__, errno, ip6_str->str);
+		g_string_free (ip6_str, TRUE);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static char *
+ip6_array_to_addr_prefix (GValueArray *values)
+{
+	GValue *prefix_val;
+	char *ret = NULL;
+	GString *ip6_str;
+	char buf[INET6_ADDRSTRLEN + 1];
+	gboolean is_unspec = FALSE;
+
+	/* address */
+	if (ip6_array_to_addr (values, 0, buf, sizeof (buf), NULL)) {
+		/* Enough space for the address, '/', and the prefix */
+		ip6_str = g_string_sized_new ((INET6_ADDRSTRLEN * 2) + 5);
+
+		/* prefix */
+		g_string_append (ip6_str, buf);
+		prefix_val = g_value_array_get_nth (values, 1);
+		g_string_append_printf (ip6_str, "/%u", g_value_get_uint (prefix_val));
+
+		if (ip6_array_to_addr (values, 2, buf, sizeof (buf), &is_unspec)) {
+			if (!is_unspec)
+				g_string_append_printf (ip6_str, ",%s", buf);
+		}
+
+		ret = ip6_str->str;
+		g_string_free (ip6_str, FALSE);
+	}
+
+	return ret;
+}
+
+static void
+ip6_addr_writer (GKeyFile *file,
+                 NMSetting *setting,
+                 const char *key,
+                 const GValue *value)
+{
+	GPtrArray *array;
+	const char *setting_name = nm_setting_get_name (setting);
+	int i, j;
+
+	g_return_if_fail (G_VALUE_HOLDS (value, DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS));
+
+	array = (GPtrArray *) g_value_get_boxed (value);
+	if (!array || !array->len)
+		return;
+
+	for (i = 0, j = 1; i < array->len; i++) {
+		GValueArray *values = g_ptr_array_index (array, i);
+		char *key_name, *ip6_addr;
+
+		if (values->n_values != 3) {
+			nm_warning ("%s: error writing IP6 address %d (address array length "
+			            "%d is not 3)",
+			            __func__, i, values->n_values);
+			continue;
+		}
+
+		ip6_addr = ip6_array_to_addr_prefix (values);
+		if (ip6_addr) {
+			/* Write it out */
+			key_name = g_strdup_printf ("%s%d", key, j++);
+			g_key_file_set_string (file, setting_name, key_name, ip6_addr);
+			g_free (key_name);
+			g_free (ip6_addr);
+		}
+	}
+}
+
+static void
+ip6_route_writer (GKeyFile *file,
+                  NMSetting *setting,
+                  const char *key,
+                  const GValue *value)
+{
+	GPtrArray *array;
+	const char *setting_name = nm_setting_get_name (setting);
+	char *list[3];
+	int i, j;
+
+	g_return_if_fail (G_VALUE_HOLDS (value, DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE));
+
+	array = (GPtrArray *) g_value_get_boxed (value);
+	if (!array || !array->len)
+		return;
+
+	for (i = 0, j = 1; i < array->len; i++) {
+		GValueArray *values = g_ptr_array_index (array, i);
+		char *key_name;
+		guint32 int_val;
+		char buf[INET6_ADDRSTRLEN + 1];
+		gboolean is_unspec = FALSE;
+
+		memset (list, 0, sizeof (list));
+
+		/* Address and prefix */
+		list[0] = ip6_array_to_addr_prefix (values);
+		if (!list[0])
+			continue;
+
+		/* Next Hop */
+		if (!ip6_array_to_addr (values, 2, buf, sizeof (buf), &is_unspec))
+			continue;
+		if (is_unspec)
+			continue;
+		list[1] = g_strdup (buf);
+
+		/* Metric */
+		value = g_value_array_get_nth (values, 3);
+		int_val = g_value_get_uint (value);
+		list[2] = g_strdup_printf ("%d", int_val);
+
+		/* Write it out */
+		key_name = g_strdup_printf ("%s%d", key, j++);
+		g_key_file_set_string_list (file, setting_name, key_name, (const char **) list, 3);
+		g_free (key_name);
+
+		g_free (list[0]);
+		g_free (list[1]);
+		g_free (list[2]);
+	}
+}
+
+
+static void
 mac_address_writer (GKeyFile *file,
                     NMSetting *setting,
                     const char *key,
@@ -259,19 +461,29 @@ typedef struct {
 
 /* A table of keys that require further parsing/conversion becuase they are
  * stored in a format that can't be automatically read using the key's type.
- * i.e. IP addresses, which are stored in NetworkManager as guint32, but are
- * stored in keyfiles as strings, eg "10.1.1.2".
+ * i.e. IPv4 addresses, which are stored in NetworkManager as guint32, but are
+ * stored in keyfiles as strings, eg "10.1.1.2" or IPv6 addresses stored 
+ * in struct in6_addr internally, but as string in keyfiles.
  */
 static KeyWriter key_writers[] = {
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP4_CONFIG_ADDRESSES,
 	  ip4_addr_writer },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	  NM_SETTING_IP6_CONFIG_ADDRESSES,
+	  ip6_addr_writer },
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP4_CONFIG_ROUTES,
 	  ip4_route_writer },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	  NM_SETTING_IP6_CONFIG_ROUTES,
+	  ip6_route_writer },
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP4_CONFIG_DNS,
 	  ip4_dns_writer },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	  NM_SETTING_IP6_CONFIG_DNS,
+	  ip6_dns_writer },
 	{ NM_SETTING_WIRED_SETTING_NAME,
 	  NM_SETTING_WIRED_MAC_ADDRESS,
 	  mac_address_writer },

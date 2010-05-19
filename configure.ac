@@ -1,6 +1,6 @@
 AC_PREREQ(2.52)
 
-AC_INIT(NetworkManager, 0.7.997, dcbw@redhat.com, NetworkManager)
+AC_INIT(NetworkManager, 0.8.0.997, dcbw@redhat.com, NetworkManager)
 AM_INIT_AUTOMAKE([1.9 subdir-objects tar-ustar no-dist-gzip dist-bzip2])
 AM_MAINTAINER_MODE
 
@@ -83,7 +83,7 @@ dnl Make sha1.c happy on big endian systems
 dnl
 AC_C_BIGENDIAN
 
-AC_ARG_WITH(distro, AS_HELP_STRING([--with-distro=DISTRO], [Specify the Linux distribution to target: One of redhat, suse, gentoo, debian, arch, slackware, paldo or mandriva]))
+AC_ARG_WITH(distro, AS_HELP_STRING([--with-distro=DISTRO], [Specify the Linux distribution to target: One of redhat, suse, gentoo, debian, arch, slackware, paldo, mandriva or pardus]))
 if test "z$with_distro" = "z"; then
 	AC_CHECK_FILE(/etc/redhat-release,with_distro="redhat")
 	AC_CHECK_FILE(/etc/SuSE-release,with_distro="suse")
@@ -94,6 +94,7 @@ if test "z$with_distro" = "z"; then
 	AC_CHECK_FILE(/etc/slackware-version,with_distro="slackware")
 	AC_CHECK_FILE(/etc/frugalware-release,with_distro="frugalware")
 	AC_CHECK_FILE(/etc/mandriva-release,with_distro="mandriva")
+	AC_CHECK_FILE(/etc/pardus-release,with_distro="pardus")
 	if test "z$with_distro" = "z"; then
 		with_distro=`lsb_release -is`
 	fi
@@ -105,7 +106,7 @@ if test "z$with_distro" = "z"; then
 	exit 1
 else
 	case $with_distro in
-		redhat|suse|gentoo|debian|slackware|arch|paldo|frugalware|mandriva) ;;
+		redhat|suse|gentoo|debian|slackware|arch|paldo|frugalware|mandriva|pardus) ;;
 		*)
 			echo "Your distribution (${with_distro}) is not yet supported!  (patches welcome)"
 			exit 1
@@ -156,6 +157,19 @@ fi
 AM_CONDITIONAL(TARGET_MANDRIVA, test x"$with_distro" = xmandriva)
 if test x"$with_distro" = xmandriva; then
   AC_DEFINE(TARGET_MANDRIVA, 1, [Define if you have Mandriva])
+fi
+
+AM_CONDITIONAL(TARGET_PARDUS, test x"$with_distro" = xpardus)
+if test x"$with_distro" = xpardus; then
+  AC_DEFINE(TARGET_PARDUS, 1, [Define if you have Pardus])
+fi
+
+dnl
+dnl Distribution version string
+dnl
+AC_ARG_WITH(dist-version, AS_HELP_STRING([--with-dist-version=<NM-distribution-version>], [Define the NM's distribution version string]), ac_distver=$withval, ac_distver="")
+if ! test x"$ac_distver" = x""; then
+  AC_DEFINE_UNQUOTED(NM_DIST_VERSION, "$ac_distver", [Define the distribution version string])
 fi
 
 AC_MSG_CHECKING([Linux Wireless Extensions >= 18])
@@ -284,71 +298,77 @@ AC_ARG_WITH([pppd-plugin-dir], AS_HELP_STRING([--with-pppd-plugin-dir=DIR], [pat
 if test -n "$with_pppd_plugin_dir" ; then
 	PPPD_PLUGIN_DIR="$with_pppd_plugin_dir"
 else
-	PPPD_PLUGIN_DIR="${libdir}/pppd/2.4.4"
+	PPPD_PLUGIN_DIR="${libdir}/pppd/2.4.5"
 fi
 AC_SUBST(PPPD_PLUGIN_DIR)
 
-# DHCP client
-AC_ARG_WITH([dhcp-client], AS_HELP_STRING([--with-dhcp-client=dhcpcd|dhclient], [path to the chosen dhcp client]))
+# dhclient support
+AC_ARG_WITH([dhclient], AS_HELP_STRING([--with-dhclient=yes|no|path], [Enable dhclient 4.x support]))
 # If a full path is given, use that and do not test if it works or not.
-case "${with_dhcp_client}" in
+case "${with_dhclient}" in
 	/*)
-		DHCP_CLIENT_PATH="${with_dhcp_client}"
-		AC_MSG_NOTICE(using the DHCP client ${DHCP_CLIENT_PATH})
+		DHCLIENT_PATH="${with_dhclient}"
+		AC_MSG_NOTICE(using dhclient at ${DHCLIENT_PATH})
+		;;
+	no)	AC_MSG_NOTICE(dhclient support disabled)
+		;;
+	*)
+		AC_MSG_CHECKING(for dhclient)
+		# NM only works with ISC dhclient - other derivatives don't have
+		# the same userland.  NM also requires dhclient 4.x since older
+		# versions do not have IPv6 support.
+		for path in /sbin /usr/sbin /usr/pkg/sbin /usr/local/sbin; do
+			test -x "${path}/dhclient" || continue
+			case `"$path/dhclient" --version 2>&1` in
+				"isc-dhclient-4"*) DHCLIENT_PATH="$path/dhclient"; break;;
+			esac
+		done
+		if test -n "${DHCLIENT_PATH}"; then
+			AC_MSG_RESULT($DHCLIENT_PATH)
+		else
+			AC_MSG_RESULT(no)
+		fi
 		;;
 esac
-if test -z "$DHCP_CLIENT_PATH" -a \( -z "$with_dhcp_client" -o x`basename "$with_dhcp_client"` = "xdhclient" \); then
-	# We only work with ISC dhclient - the FreeBSD and OpenBSD derivatives don't have the same userland.
-	AC_MSG_CHECKING(for dhclient)
-	for client in "$with_dhcp_client" /sbin/dhclient /usr/pkg/sbin/dhclient /usr/local/sbin/dhclient; do
-		test -x "$client" || continue
-		case `"$client" --version 2>&1` in
-			"isc-dhclient-"*) DHCP_CLIENT_PATH="$client"; break;;
-		esac
-	done
-	if test -z "$DHCP_CLIENT_PATH"; then
-		AC_MSG_RESULT(no)
-		if test -n "$with_dhcp_client"; then
-			AC_MSG_ERROR([Could not find ISC dhclient])
+
+# dhcpcd support
+AC_ARG_WITH([dhcpcd], AS_HELP_STRING([--with-dhcpcd=yes|no|path], [Enable dhcpcd 4.x support]))
+# If a full path is given, use that and do not test if it works or not.
+case "${with_dhcpcd}" in
+	/*)
+		DHCPCD_PATH="${with_dhcpcd}"
+		AC_MSG_NOTICE(using dhcpcd at ${DHCPCD_PATH})
+		;;
+	no)	AC_MSG_NOTICE(dhcpcd support disabled)
+		;;
+	*)
+		AC_MSG_CHECKING(for dhcpcd)
+		# We fully work with upstream dhcpcd-4
+		for path in /sbin /usr/sbin /usr/pkg/sbin /usr/local/sbin; do
+			test -x "${path}/dhclient" || continue
+			case `"$path/dhcpcd" --version 2>/dev/null` in
+				"dhcpcd "[123]*);;
+				"dhcpcd "*) DHCP_CLIENT_PATH="$path/dhcpcd"; break;;
+			esac
+		done
+		if test -n "${DHCPCD_PATH}"; then
+			AC_MSG_RESULT($DHCPCD_PATH)
+		else
+			AC_MSG_RESULT(no)
 		fi
-	else
-		AC_MSG_RESULT($DHCP_CLIENT_PATH)
-	fi
-fi
-if test -z "$DHCP_CLIENT_PATH" -a \( -z "$with_dhcp_client" -o x`basename "$with_dhcp_client"` = "xdhcpcd" \); then
-	test -n "$DHCP_CLIENT_PATH" && echo bar
-	# We fully work with upstream dhcpcd-4
-	AC_MSG_CHECKING([for dhcpcd])
-	for client in "$with_dhcp_client" /sbin/dhcpcd /usr/pkg/sbin/dhcpcd /usr/local/sbin/dhcpcd; do
-		test -x "$client" || continue
-		case `"$client" --version 2>/dev/null` in
-			"dhcpcd "[123]*);;
-			"dhcpcd "*) DHCP_CLIENT_PATH="$client"; break;;
-		esac
-	done
-	if test -z "$DHCP_CLIENT_PATH"; then
-		AC_MSG_RESULT(no)
-		if test -n "$with_dhcp_client"; then
-			AC_MSG_ERROR([Could not find dhcpcd-4 or newer])
-		fi
-	else
-		AC_MSG_RESULT($DHCP_CLIENT_PATH)
-	fi
-fi
-if test -z "$DHCP_CLIENT_PATH"; then
+		;;
+esac
+
+if test -z "$DHCPCD_PATH" -a -z "$DHCLIENT_PATH"; then
 	# DHCP clients are not a build time dependency, only runtime.
 	# dhclient has been the longtime default for NM and it's in /sbin
 	# in most distros, so use it.
 	AC_MSG_WARN([Could not find a suitable DHCP client])
-	DHCP_CLIENT_PATH=/sbin/dhclient
+	DHCLIENT_PATH=/sbin/dhclient
 	AC_MSG_WARN([Falling back to ISC dhclient, ${DHCP_CLIENT_PATH}])
 fi
-AC_SUBST(DHCP_CLIENT_PATH)
-DHCP_CLIENT=`basename "$DHCP_CLIENT_PATH"`
-if test "$DHCP_CLIENT" != "dhclient" -a "$DHCP_CLIENT" != "dhcpcd"; then
-	AC_MSG_ERROR([No backend for the DHCP client ${DHCP_CLIENT}])
-fi
-AC_SUBST(DHCP_CLIENT)
+AC_SUBST(DHCLIENT_PATH)
+AC_SUBST(DHCPCD_PATH)
 
 # resolvconf support
 AC_ARG_WITH([resolvconf],
@@ -430,6 +450,7 @@ include/Makefile
 src/Makefile
 src/tests/Makefile
 marshallers/Makefile
+src/logging/Makefile
 src/named-manager/Makefile
 src/vpn-manager/Makefile
 src/dhcp-manager/Makefile
@@ -463,6 +484,8 @@ system-settings/plugins/keyfile/Makefile
 system-settings/plugins/keyfile/io/Makefile
 system-settings/plugins/keyfile/tests/Makefile
 system-settings/plugins/keyfile/tests/keyfiles/Makefile
+cli/Makefile
+cli/src/Makefile
 test/Makefile
 initscript/Makefile
 initscript/RedHat/Makefile
@@ -484,23 +507,41 @@ initscript/Mandriva/networkmanager
 introspection/Makefile
 man/Makefile
 man/NetworkManager.8
+man/NetworkManager.conf.5
+man/nm-system-settings.conf.5
 man/nm-tool.1
+man/nmcli.1
 po/Makefile.in
 policy/Makefile
 docs/Makefile
 docs/libnm-glib/Makefile
 docs/libnm-util/Makefile
 NetworkManager.pc
+examples/Makefile
+examples/python/Makefile
 ])
 AC_OUTPUT
 
 echo
-echo Distribution targeting: ${with_distro}
+echo Distribution target: ${with_distro}
 echo 'if this is not correct, please specifiy your distro with --with-distro=DISTRO'
+
+echo 
+
+if test -n "${DHCLIENT_PATH}"; then
+	echo ISC dhclient support: ${DHCLIENT_PATH}
+else
+	echo ISC dhclient support: no
+fi
+
+if test -n "${DHCPCD_PATH}"; then
+	echo dhcpcd support: ${DHCPCD_PATH}
+else
+	echo dhcpcd support: no
+fi
 
 echo
 echo Building documentation: ${with_docs}
-echo
 echo Building tests: ${with_tests}
 echo
 

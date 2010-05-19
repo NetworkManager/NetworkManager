@@ -1,5 +1,11 @@
 SUBDIRS=. tests
 
+nm-ifcfg-rh-glue.h: nm-ifcfg-rh.xml
+	dbus-binding-tool --prefix=nm_ifcfg_rh --mode=glib-server --output=$@ $<
+
+BUILT_SOURCES = \
+	nm-ifcfg-rh-glue.h
+
 pkglib_LTLIBRARIES = libnm-settings-plugin-ifcfg-rh.la
 
 noinst_LTLIBRARIES = libifcfg-rh-io.la
@@ -58,4 +64,13 @@ libnm_settings_plugin_ifcfg_rh_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(GMODULE_LIBS) \
 	$(GIO_LIBS)
+
+dbusservicedir = $(DBUS_SYS_DIR)
+dbusservice_DATA = nm-ifcfg-rh.conf
+
+EXTRA_DIST = \
+	$(dbusservice_DATA) \
+	nm-ifcfg-rh.xml
+
+CLEANFILES = $(BUILT_SOURCES)
 

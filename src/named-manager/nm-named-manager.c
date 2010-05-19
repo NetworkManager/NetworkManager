@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2004 - 2005 Colin Walters <walters@redhat.com>
- * Copyright (C) 2004 - 2008 Red Hat, Inc.
+ * Copyright (C) 2004 - 2010 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  *   and others
  */
@@ -38,8 +38,9 @@
 
 #include "nm-named-manager.h"
 #include "nm-ip4-config.h"
-#include "nm-utils.h"
-#include "NetworkManagerSystem.h"
+#include "nm-ip6-config.h"
+#include "nm-logging.h"
+#include "nm-system.h"
 #include "NetworkManagerUtils.h"
 
 #ifdef HAVE_SELINUX
@@ -60,9 +61,11 @@ G_DEFINE_TYPE(NMNamedManager, nm_named_manager, G_TYPE_OBJECT)
 
 
 struct NMNamedManagerPrivate {
-	NMIP4Config *   vpn_config;
-	NMIP4Config *   device_config;
-	GSList *        configs;
+	NMIP4Config *ip4_vpn_config;
+	NMIP4Config *ip4_device_config;
+	NMIP6Config *ip6_vpn_config;
+	NMIP6Config *ip6_device_config;
+	GSList *configs;
 };
 
 
@@ -71,11 +74,10 @@ nm_named_manager_get (void)
 {
 	static NMNamedManager * singleton = NULL;
 
-	if (!singleton) {
+	if (!singleton)
 		singleton = NM_NAMED_MANAGER (g_object_new (NM_TYPE_NAMED_MANAGER, NULL));
-	} else {
+	else
 		g_object_ref (singleton);
-	}
 
 	g_assert (singleton);
 	return singleton;
@@ -99,6 +101,26 @@ typedef struct {
 } NMResolvConfData;
 
 static void
+add_string_item (GPtrArray *array, const char *str)
+{
+	int i;
+
+	g_return_if_fail (array != NULL);
+	g_return_if_fail (str != NULL);
+
+	/* Check for dupes before adding */
+	for (i = 0; i < array->len; i++) {
+		const char *candidate = g_ptr_array_index (array, i);
+
+		if (candidate && !strcmp (candidate, str))
+			return;
+	}
+
+	/* No dupes, add the new item */
+	g_ptr_array_add (array, g_strdup (str));
+}
+
+static void
 merge_one_ip4_config (NMResolvConfData *rc, NMIP4Config *src)
 {
 	guint32 num, i;
@@ -110,19 +132,22 @@ merge_one_ip4_config (NMResolvConfData *rc, NMIP4Config *src)
 
 		addr.s_addr = nm_ip4_config_get_nameserver (src, i);
 		if (inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN) > 0)
-			g_ptr_array_add (rc->nameservers, g_strdup (buf));
+			add_string_item (rc->nameservers, buf);
 	}
 
 	num = nm_ip4_config_get_num_domains (src);
 	for (i = 0; i < num; i++) {
+		const char *domain;
+
+		domain = nm_ip4_config_get_domain (src, i);
 		if (!rc->domain)
-			rc->domain = nm_ip4_config_get_domain (src, i);
-		g_ptr_array_add (rc->searches, g_strdup (nm_ip4_config_get_domain (src, i)));
+			rc->domain = domain;
+		add_string_item (rc->searches, domain);
 	}
 
 	num = nm_ip4_config_get_num_searches (src);
 	for (i = 0; i < num; i++)
-		g_ptr_array_add (rc->searches, g_strdup (nm_ip4_config_get_search (src, i)));
+		add_string_item (rc->searches, nm_ip4_config_get_search (src, i));
 }
 
 static void
@@ -140,23 +165,26 @@ merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src)
 		/* inet_ntop is probably supposed to do this for us, but it doesn't */
 		if (IN6_IS_ADDR_V4MAPPED (addr)) {
 			if (inet_ntop (AF_INET, &(addr->s6_addr32[3]), buf, INET_ADDRSTRLEN) > 0)
-				g_ptr_array_add (rc->nameservers, g_strdup (buf));
+				add_string_item (rc->nameservers, buf);
 		} else {
 			if (inet_ntop (AF_INET6, addr, buf, INET6_ADDRSTRLEN) > 0)
-				g_ptr_array_add (rc->nameservers, g_strdup (buf));
+				add_string_item (rc->nameservers, buf);
 		}
 	}
 
 	num = nm_ip6_config_get_num_domains (src);
 	for (i = 0; i < num; i++) {
+		const char *domain;
+
+		domain = nm_ip6_config_get_domain (src, i);
 		if (!rc->domain)
-			rc->domain = nm_ip6_config_get_domain (src, i);
-		g_ptr_array_add (rc->searches, g_strdup (nm_ip6_config_get_domain (src, i)));
+			rc->domain = domain;
+		add_string_item (rc->searches, domain);
 	}
 
 	num = nm_ip6_config_get_num_searches (src);
 	for (i = 0; i < num; i++)
-		g_ptr_array_add (rc->searches, g_strdup (nm_ip6_config_get_search (src, i)));
+		add_string_item (rc->searches, nm_ip6_config_get_search (src, i));
 }
 
 
@@ -185,7 +213,7 @@ run_netconfig (GError **error, gint *stdin_fd)
 	argv[4] = NULL;
 
 	tmp = g_strjoinv (" ", argv);
-	nm_debug ("Spawning '%s'", tmp);
+	nm_log_dbg (LOGD_DNS, "spawning '%s'", tmp);
 	g_free (tmp);
 
 	if (!g_spawn_async_with_pipes (NULL, argv, NULL, 0, netconfig_child_setup,
@@ -202,7 +230,7 @@ write_to_netconfig (gint fd, const char *key, const char *value)
 	int x;
 
 	str = g_strdup_printf ("%s='%s'\n", key, value);
-	nm_debug ("Writing to netconfig: %s", str);
+	nm_log_dbg (LOGD_DNS, "writing to netconfig: %s", str);
 	x = write (fd, str, strlen (str));
 	g_free (str);
 }
@@ -327,7 +355,7 @@ write_resolv_conf (FILE *f, const char *domain,
 	}
 
 	if (fprintf (f, "%s%s%s",
-		     domain_str ? domain_str : "",
+	             domain_str ? domain_str : "",
 	             searches_str ? searches_str : "",
 	             nameservers_str ? nameservers_str : "") != -1)
 		retval = TRUE;
@@ -356,7 +384,7 @@ dispatch_resolvconf (const char *domain,
 
 	if (domain || searches || nameservers) {
 		cmd = g_strconcat (RESOLVCONF_PATH, " -a ", "NetworkManager", NULL);
-		nm_info ("(%s): writing resolv.conf to %s", iface, RESOLVCONF_PATH);
+		nm_log_info (LOGD_DNS, "(%s): writing resolv.conf to %s", iface, RESOLVCONF_PATH);
 		if ((f = popen (cmd, "w")) == NULL)
 			g_set_error (error,
 				     NM_NAMED_MANAGER_ERROR,
@@ -370,7 +398,7 @@ dispatch_resolvconf (const char *domain,
 		}
 	} else {
 		cmd = g_strconcat (RESOLVCONF_PATH, " -d ", "NetworkManager", NULL);
-		nm_info ("(%s): removing resolv.conf from %s", iface, RESOLVCONF_PATH);
+		nm_log_info (LOGD_DNS, "(%s): removing resolv.conf from %s", iface, RESOLVCONF_PATH);
 		if (nm_spawn_process (cmd) == 0)
 			retval = TRUE;
 	}
@@ -488,25 +516,33 @@ rewrite_resolv_conf (NMNamedManager *mgr, const char *iface, GError **error)
 	rc.domain = NULL;
 	rc.searches = g_ptr_array_new ();
 
-	if (priv->vpn_config)
-		merge_one_ip4_config (&rc, priv->vpn_config);
+	if (priv->ip4_vpn_config)
+		merge_one_ip4_config (&rc, priv->ip4_vpn_config);
+	if (priv->ip4_device_config)
+		merge_one_ip4_config (&rc, priv->ip4_device_config);
 
-	if (priv->device_config)
-		merge_one_ip4_config (&rc, priv->device_config);
+	if (priv->ip6_vpn_config)
+		merge_one_ip6_config (&rc, priv->ip6_vpn_config);
+	if (priv->ip6_device_config)
+		merge_one_ip6_config (&rc, priv->ip6_device_config);
 
 	for (iter = priv->configs; iter; iter = g_slist_next (iter)) {
+		if (   (iter->data == priv->ip4_vpn_config)
+		    || (iter->data == priv->ip4_device_config)
+		    || (iter->data == priv->ip6_vpn_config)
+		    || (iter->data == priv->ip6_device_config))
+			continue;
+
 		if (NM_IS_IP4_CONFIG (iter->data)) {
 			NMIP4Config *config = NM_IP4_CONFIG (iter->data);
 
-			if ((config == priv->vpn_config) || (config == priv->device_config))
-				continue;
-
 			merge_one_ip4_config (&rc, config);
-		} else {
+		} else if (NM_IS_IP6_CONFIG (iter->data)) {
 			NMIP6Config *config = NM_IP6_CONFIG (iter->data);
 
 			merge_one_ip6_config (&rc, config);
-		}
+		} else
+			g_assert_not_reached ();
 	}
 
 	domain = rc.domain;
@@ -573,10 +609,10 @@ nm_named_manager_add_ip4_config (NMNamedManager *mgr,
 
 	switch (cfg_type) {
 	case NM_NAMED_IP_CONFIG_TYPE_VPN:
-		priv->vpn_config = config;
+		priv->ip4_vpn_config = config;
 		break;
 	case NM_NAMED_IP_CONFIG_TYPE_BEST_DEVICE:
-		priv->device_config = config;
+		priv->ip4_device_config = config;
 		break;
 	default:
 		break;
@@ -587,7 +623,7 @@ nm_named_manager_add_ip4_config (NMNamedManager *mgr,
 		priv->configs = g_slist_append (priv->configs, g_object_ref (config));
 
 	if (!rewrite_resolv_conf (mgr, iface, &error)) {
-		nm_warning ("Could not commit DNS changes.  Error: '%s'", error ? error->message : "(none)");
+		nm_log_warn (LOGD_DNS, "could not commit DNS changes: '%s'", error ? error->message : "(none)");
 		g_error_free (error);
 	}
 
@@ -614,16 +650,15 @@ nm_named_manager_remove_ip4_config (NMNamedManager *mgr,
 
 	priv->configs = g_slist_remove (priv->configs, config);
 
-	if (config == priv->vpn_config)
-		priv->vpn_config = NULL;
-
-	if (config == priv->device_config)
-		priv->device_config = NULL;
+	if (config == priv->ip4_vpn_config)
+		priv->ip4_vpn_config = NULL;
+	if (config == priv->ip4_device_config)
+		priv->ip4_device_config = NULL;
 
 	g_object_unref (config);
 
 	if (!rewrite_resolv_conf (mgr, iface, &error)) {
-		nm_warning ("Could not commit DNS changes.  Error: '%s'", error ? error->message : "(none)");
+		nm_log_warn (LOGD_DNS, "could not commit DNS changes: '%s'", error ? error->message : "(none)");
 		if (error)
 			g_error_free (error);
 	}
@@ -644,16 +679,27 @@ nm_named_manager_add_ip6_config (NMNamedManager *mgr,
 	g_return_val_if_fail (iface != NULL, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
 
-	g_return_val_if_fail (cfg_type == NM_NAMED_IP_CONFIG_TYPE_DEFAULT, FALSE);
-
 	priv = NM_NAMED_MANAGER_GET_PRIVATE (mgr);
+
+	switch (cfg_type) {
+	case NM_NAMED_IP_CONFIG_TYPE_VPN:
+		/* FIXME: not quite yet... */
+		g_return_val_if_fail (cfg_type != NM_NAMED_IP_CONFIG_TYPE_VPN, FALSE);
+		priv->ip6_vpn_config = config;
+		break;
+	case NM_NAMED_IP_CONFIG_TYPE_BEST_DEVICE:
+		priv->ip6_device_config = config;
+		break;
+	default:
+		break;
+	}
 
 	/* Don't allow the same zone added twice */
 	if (!g_slist_find (priv->configs, config))
 		priv->configs = g_slist_append (priv->configs, g_object_ref (config));
 
 	if (!rewrite_resolv_conf (mgr, iface, &error)) {
-		nm_warning ("Could not commit DNS changes.  Error: '%s'", error ? error->message : "(none)");
+		nm_log_warn (LOGD_DNS, "could not commit DNS changes: '%s'", error ? error->message : "(none)");
 		g_error_free (error);
 	}
 
@@ -680,10 +726,15 @@ nm_named_manager_remove_ip6_config (NMNamedManager *mgr,
 
 	priv->configs = g_slist_remove (priv->configs, config);
 
+	if (config == priv->ip6_vpn_config)
+		priv->ip6_vpn_config = NULL;
+	if (config == priv->ip6_device_config)
+		priv->ip6_device_config = NULL;
+
 	g_object_unref (config);	
 
 	if (!rewrite_resolv_conf (mgr, iface, &error)) {
-		nm_warning ("Could not commit DNS changes.  Error: '%s'", error ? error->message : "(none)");
+		nm_log_warn (LOGD_DNS, "could not commit DNS changes: '%s'", error ? error->message : "(none)");
 		if (error)
 			g_error_free (error);
 	}

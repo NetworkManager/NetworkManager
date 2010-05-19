@@ -1,21 +1,1160 @@
+# translation of zh_CN.po to Wei Liu
 # Simplified Chinese translation to NetworkManager
-# Copyright (C) 2009 Free Software Foundation, Inc.
+# Copyright (C) 2009, 2010 Free Software Foundation, Inc.
 # This file is distributed under the same license as the NetworkManager package.
+#
 # Funda Wang <fundawang@linux.net.cn>, 2004.
 # Aron Xu <happyaron.xu@gmail.com>, 2009.
-#
+# Leah Liu <lliu@redhat.com>, 2010.
 msgid ""
 msgstr ""
-"Project-Id-Version: NetworkManager\n"
+"Project-Id-Version: zh_CN\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-09-06 21:44+0800\n"
-"PO-Revision-Date: 2009-09-06 22:25+0800\n"
-"Last-Translator: Aron Xu <happyaron.xu@gmail.com>\n"
-"Language-Team: Simplified Chinese <i18n-zh@googlegroups.com>\n"
+"POT-Creation-Date: 2010-05-06 14:31+0530\n"
+"PO-Revision-Date: 2010-05-10 19:25+1000\n"
+"Last-Translator: Leah Liu <lliu@redhat.com>\n"
+"Language-Team: Wei Liu\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: KBabel 1.11.4\n"
+
+#: ../cli/src/connections.c:59 ../cli/src/connections.c:74
+#: ../cli/src/devices.c:85 ../cli/src/devices.c:98 ../cli/src/devices.c:108
+#: ../cli/src/devices.c:118 ../cli/src/devices.c:131 ../cli/src/devices.c:142
+#: ../cli/src/devices.c:152
+msgid "NAME"
+msgstr "名称"
+
+#. 0
+#: ../cli/src/connections.c:60 ../cli/src/connections.c:75
+msgid "UUID"
+msgstr "UUID"
+
+#. 1
+#: ../cli/src/connections.c:61
+msgid "DEVICES"
+msgstr "设备"
+
+#. 2
+#: ../cli/src/connections.c:62 ../cli/src/connections.c:77
+msgid "SCOPE"
+msgstr "范围"
+
+#. 3
+#: ../cli/src/connections.c:63
+msgid "DEFAULT"
+msgstr "默认"
+
+#. 4
+#: ../cli/src/connections.c:64
+msgid "DBUS-SERVICE"
+msgstr "DBUS 服务"
+
+#. 5
+#: ../cli/src/connections.c:65
+msgid "SPEC-OBJECT"
+msgstr "SPEC 对象"
+
+#. 6
+#: ../cli/src/connections.c:66
+msgid "VPN"
+msgstr "VPN"
+
+#. 1
+#. 0
+#. 1
+#: ../cli/src/connections.c:76 ../cli/src/devices.c:61 ../cli/src/devices.c:87
+msgid "TYPE"
+msgstr "类型"
+
+#. 3
+#: ../cli/src/connections.c:78
+msgid "TIMESTAMP"
+msgstr "时间戳"
+
+#. 4
+#: ../cli/src/connections.c:79
+msgid "TIMESTAMP-REAL"
+msgstr "真实时间戳"
+
+#. 5
+#: ../cli/src/connections.c:80
+msgid "AUTOCONNECT"
+msgstr "自动连接"
+
+#. 6
+#: ../cli/src/connections.c:81
+msgid "READONLY"
+msgstr "只读"
+
+#: ../cli/src/connections.c:157
+#, c-format
+msgid ""
+"Usage: nmcli con { COMMAND | help }\n"
+"  COMMAND := { list | status | up | down }\n"
+"\n"
+"  list [id <id> | uuid <id> | system | user]\n"
+"  status\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--timeout "
+"<timeout>]\n"
+"  down id <id> | uuid <id>\n"
+msgstr ""
+"用法：nmcli con { COMMAND | help }\n"
+"  COMMAND := { list | status | up | down }\n"
+"\n"
+"  list [id <id> | uuid <id> | system | user]\n"
+"  status\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--timeout "
+"<timeout>]\n"
+"  down id <id> | uuid <id>\n"
+
+#: ../cli/src/connections.c:197 ../cli/src/connections.c:536
+#, c-format
+msgid "Error: 'con list': %s"
+msgstr "错误：'con list': %s"
+
+#: ../cli/src/connections.c:199 ../cli/src/connections.c:538
+#, c-format
+msgid "Error: 'con list': %s; allowed fields: %s"
+msgstr "错误：'con list': %s；允许的字段：%s"
+
+#: ../cli/src/connections.c:207
+msgid "Connection details"
+msgstr "连接详情"
+
+#: ../cli/src/connections.c:381 ../cli/src/connections.c:601
+msgid "system"
+msgstr "系统"
+
+#: ../cli/src/connections.c:381 ../cli/src/connections.c:601
+msgid "user"
+msgstr "用户"
+
+#: ../cli/src/connections.c:383
+msgid "never"
+msgstr "从不"
+
+#. "CAPABILITIES"
+#. Print header
+#. "WIFI-PROPERTIES"
+#: ../cli/src/connections.c:384 ../cli/src/connections.c:385
+#: ../cli/src/connections.c:602 ../cli/src/connections.c:605
+#: ../cli/src/devices.c:388 ../cli/src/devices.c:513 ../cli/src/devices.c:539
+#: ../cli/src/devices.c:540 ../cli/src/devices.c:541 ../cli/src/devices.c:542
+#: ../cli/src/devices.c:543 ../cli/src/settings.c:504
+#: ../cli/src/settings.c:544 ../cli/src/settings.c:643
+#: ../cli/src/settings.c:912 ../cli/src/settings.c:913
+#: ../cli/src/settings.c:915 ../cli/src/settings.c:917
+#: ../cli/src/settings.c:1042 ../cli/src/settings.c:1043
+#: ../cli/src/settings.c:1044 ../cli/src/settings.c:1123
+#: ../cli/src/settings.c:1124 ../cli/src/settings.c:1125
+#: ../cli/src/settings.c:1126 ../cli/src/settings.c:1127
+#: ../cli/src/settings.c:1128 ../cli/src/settings.c:1129
+#: ../cli/src/settings.c:1130 ../cli/src/settings.c:1131
+#: ../cli/src/settings.c:1132 ../cli/src/settings.c:1133
+#: ../cli/src/settings.c:1134 ../cli/src/settings.c:1135
+#: ../cli/src/settings.c:1210
+msgid "yes"
+msgstr "是"
+
+#: ../cli/src/connections.c:384 ../cli/src/connections.c:385
+#: ../cli/src/connections.c:602 ../cli/src/connections.c:605
+#: ../cli/src/devices.c:388 ../cli/src/devices.c:513 ../cli/src/devices.c:539
+#: ../cli/src/devices.c:540 ../cli/src/devices.c:541 ../cli/src/devices.c:542
+#: ../cli/src/devices.c:543 ../cli/src/settings.c:504
+#: ../cli/src/settings.c:506 ../cli/src/settings.c:544
+#: ../cli/src/settings.c:643 ../cli/src/settings.c:912
+#: ../cli/src/settings.c:913 ../cli/src/settings.c:915
+#: ../cli/src/settings.c:917 ../cli/src/settings.c:1042
+#: ../cli/src/settings.c:1043 ../cli/src/settings.c:1044
+#: ../cli/src/settings.c:1123 ../cli/src/settings.c:1124
+#: ../cli/src/settings.c:1125 ../cli/src/settings.c:1126
+#: ../cli/src/settings.c:1127 ../cli/src/settings.c:1128
+#: ../cli/src/settings.c:1129 ../cli/src/settings.c:1130
+#: ../cli/src/settings.c:1131 ../cli/src/settings.c:1132
+#: ../cli/src/settings.c:1133 ../cli/src/settings.c:1134
+#: ../cli/src/settings.c:1135 ../cli/src/settings.c:1210
+msgid "no"
+msgstr "否"
+
+#: ../cli/src/connections.c:457 ../cli/src/connections.c:500
+msgid "System connections"
+msgstr "系统连接"
+
+#: ../cli/src/connections.c:462 ../cli/src/connections.c:513
+msgid "User connections"
+msgstr "用户连接"
+
+#: ../cli/src/connections.c:474 ../cli/src/connections.c:1334
+#: ../cli/src/connections.c:1350 ../cli/src/connections.c:1359
+#: ../cli/src/connections.c:1370 ../cli/src/connections.c:1452
+#: ../cli/src/devices.c:864 ../cli/src/devices.c:874 ../cli/src/devices.c:973
+#: ../cli/src/devices.c:980
+#, c-format
+msgid "Error: %s argument is missing."
+msgstr "错误：缺少 %s 参数。"
+
+#: ../cli/src/connections.c:487
+#, c-format
+msgid "Error: %s - no such connection."
+msgstr "错误：%s - 没有这个连接。"
+
+#: ../cli/src/connections.c:519 ../cli/src/connections.c:1383
+#: ../cli/src/connections.c:1470 ../cli/src/devices.c:687
+#: ../cli/src/devices.c:754 ../cli/src/devices.c:888 ../cli/src/devices.c:986
+#, c-format
+msgid "Unknown parameter: %s\n"
+msgstr "未知参数：%s\n"
+
+#: ../cli/src/connections.c:528
+#, c-format
+msgid "Error: no valid parameter specified."
+msgstr "错误：没有指定有效参数。"
+
+#: ../cli/src/connections.c:543 ../cli/src/connections.c:1572
+#: ../cli/src/devices.c:1192 ../cli/src/network-manager.c:274
+#, c-format
+msgid "Error: %s."
+msgstr "错误：%s。"
+
+#: ../cli/src/connections.c:649
+#, c-format
+msgid "Error: 'con status': %s"
+msgstr "错误：'con status': %s"
+
+#: ../cli/src/connections.c:651
+#, c-format
+msgid "Error: 'con status': %s; allowed fields: %s"
+msgstr "错误：'con status': %s；允许的字段：%s"
+
+#: ../cli/src/connections.c:658
+msgid "Active connections"
+msgstr "活跃连接"
+
+#: ../cli/src/connections.c:1026
+#, c-format
+msgid "no active connection on device '%s'"
+msgstr "设备 '%s' 中没有活跃连接"
+
+#: ../cli/src/connections.c:1034
+#, c-format
+msgid "no active connection or device"
+msgstr "没有活跃连接或者设备"
+
+#: ../cli/src/connections.c:1084
+#, c-format
+msgid "device '%s' not compatible with connection '%s'"
+msgstr "设备 '%s' 不兼容连接 '%s'"
+
+#: ../cli/src/connections.c:1086
+#, c-format
+msgid "no device found for connection '%s'"
+msgstr "没有找到可用于连接 '%s' 的设备"
+
+#: ../cli/src/connections.c:1097
+msgid "activating"
+msgstr "激活中"
+
+#: ../cli/src/connections.c:1099
+msgid "activated"
+msgstr "激活的"
+
+#: ../cli/src/connections.c:1102 ../cli/src/connections.c:1125
+#: ../cli/src/connections.c:1158 ../cli/src/devices.c:224
+#: ../cli/src/devices.c:514 ../cli/src/network-manager.c:92
+#: ../cli/src/network-manager.c:145 ../cli/src/settings.c:469
+msgid "unknown"
+msgstr "未知"
+
+#: ../cli/src/connections.c:1111
+msgid "VPN connecting (prepare)"
+msgstr "VPN 连接（准备）"
+
+#: ../cli/src/connections.c:1113
+msgid "VPN connecting (need authentication)"
+msgstr "VPN 连接中（需要验证）"
+
+#: ../cli/src/connections.c:1115
+msgid "VPN connecting"
+msgstr "VPN 连接中"
+
+#: ../cli/src/connections.c:1117
+msgid "VPN connecting (getting IP configuration)"
+msgstr "VPN 连接中（获取 IP 配置）"
+
+#: ../cli/src/connections.c:1119
+msgid "VPN connected"
+msgstr "VNP 连接"
+
+#: ../cli/src/connections.c:1121
+msgid "VPN connection failed"
+msgstr "VPN 连接失败"
+
+#: ../cli/src/connections.c:1123
+msgid "VPN disconnected"
+msgstr "断开 VPN 连接"
+
+#: ../cli/src/connections.c:1134
+msgid "unknown reason"
+msgstr "未知原因"
+
+#: ../cli/src/connections.c:1136
+msgid "none"
+msgstr "无"
+
+#: ../cli/src/connections.c:1138
+msgid "the user was disconnected"
+msgstr "断开连接的用户"
+
+#: ../cli/src/connections.c:1140
+msgid "the base network connection was interrupted"
+msgstr "基点网络连接中断"
+
+#: ../cli/src/connections.c:1142
+msgid "the VPN service stopped unexpectedly"
+msgstr "VPN 服务意外停止"
+
+#: ../cli/src/connections.c:1144
+msgid "the VPN service returned invalid configuration"
+msgstr "VPN 服务返回无效配置"
+
+#: ../cli/src/connections.c:1146
+msgid "the connection attempt timed out"
+msgstr "连接尝试超时"
+
+#: ../cli/src/connections.c:1148
+msgid "the VPN service did not start in time"
+msgstr "VPN 连接没有按时启动"
+
+#: ../cli/src/connections.c:1150
+msgid "the VPN service failed to start"
+msgstr "VPN 服务启动失败"
+
+#: ../cli/src/connections.c:1152
+msgid "no valid VPN secrets"
+msgstr "没有有效 VPN secret"
+
+#: ../cli/src/connections.c:1154
+msgid "invalid VPN secrets"
+msgstr "无效 VPN secret"
+
+#: ../cli/src/connections.c:1156
+msgid "the connection was removed"
+msgstr "连接被删除"
+
+#: ../cli/src/connections.c:1170
+#, c-format
+msgid "state: %s\n"
+msgstr "状态：%s\n"
+
+#: ../cli/src/connections.c:1173 ../cli/src/connections.c:1199
+#, c-format
+msgid "Connection activated\n"
+msgstr "连接被激活\n"
+
+#: ../cli/src/connections.c:1176
+#, c-format
+msgid "Error: Connection activation failed."
+msgstr "错误：激活连接失败。"
+
+#: ../cli/src/connections.c:1195
+#, c-format
+msgid "state: %s (%d)\n"
+msgstr "状态：%s (%d)\n"
+
+#: ../cli/src/connections.c:1205
+#, c-format
+msgid "Error: Connection activation failed: %s."
+msgstr "错误：激活连接失败：%s。"
+
+#: ../cli/src/connections.c:1222 ../cli/src/devices.c:811
+#, c-format
+msgid "Error: Timeout %d sec expired."
+msgstr "错误：超时 %d 秒过期。"
+
+#: ../cli/src/connections.c:1265
+#, c-format
+msgid "Error: Connection activation failed: %s"
+msgstr "错误：激活连接失败：%s"
+
+#: ../cli/src/connections.c:1279
+#, c-format
+msgid "Error: Obtaining active connection for '%s' failed."
+msgstr "错误：获取 '%s' 的活跃连接失败。"
+
+#: ../cli/src/connections.c:1288
+#, c-format
+msgid "Active connection state: %s\n"
+msgstr "活跃连接状态：%s\n"
+
+#: ../cli/src/connections.c:1289
+#, c-format
+msgid "Active connection path: %s\n"
+msgstr "活跃连接路径：%s\n"
+
+#: ../cli/src/connections.c:1343 ../cli/src/connections.c:1461
+#, c-format
+msgid "Error: Unknown connection: %s."
+msgstr "错误：未知连接：%s"
+
+#: ../cli/src/connections.c:1378 ../cli/src/devices.c:882
+#, c-format
+msgid "Error: timeout value '%s' is not valid."
+msgstr "错误：超时值 '%s' 无效。"
+
+#: ../cli/src/connections.c:1391 ../cli/src/connections.c:1478
+#, c-format
+msgid "Error: id or uuid has to be specified."
+msgstr "错误：必须指定 id 或者 uuid。"
+
+#: ../cli/src/connections.c:1411
+#, c-format
+msgid "Error: No suitable device found: %s."
+msgstr "错误：没有找到合适的设备：%s。"
+
+#: ../cli/src/connections.c:1413
+#, c-format
+msgid "Error: No suitable device found."
+msgstr "错误：没有找到合适的设备。"
+
+#: ../cli/src/connections.c:1505
+#, c-format
+msgid "Warning: Connection not active\n"
+msgstr "警告：连接没有激活\n"
+
+#: ../cli/src/connections.c:1561
+#, c-format
+msgid "Error: 'con' command '%s' is not valid."
+msgstr "错误：'con' 命令 '%s' 无效。"
+
+#: ../cli/src/connections.c:1597
+#, c-format
+msgid "Error: could not connect to D-Bus."
+msgstr "错误：无法连接到 D-Bus。"
+
+#: ../cli/src/connections.c:1604
+#, c-format
+msgid "Error: Could not get system settings."
+msgstr "错误：无法获得系统设置。"
+
+#: ../cli/src/connections.c:1612
+#, c-format
+msgid "Error: Could not get user settings."
+msgstr "错误：无法获得用户设置。"
+
+#: ../cli/src/connections.c:1622
+#, c-format
+msgid "Error: Can't obtain connections: settings services are not running."
+msgstr "错误：无法获得连接：设定服务没有运行。"
+
+#. 0
+#. 9
+#: ../cli/src/devices.c:60 ../cli/src/devices.c:86 ../cli/src/devices.c:162
+msgid "DEVICE"
+msgstr "设备"
+
+#. 1
+#. 4
+#. 0
+#: ../cli/src/devices.c:62 ../cli/src/devices.c:90
+#: ../cli/src/network-manager.c:36
+msgid "STATE"
+msgstr "状态"
+
+#: ../cli/src/devices.c:71
+msgid "GENERAL"
+msgstr "常规"
+
+#. 0
+#: ../cli/src/devices.c:72
+msgid "CAPABILITIES"
+msgstr "功能"
+
+#. 1
+#: ../cli/src/devices.c:73
+msgid "WIFI-PROPERTIES"
+msgstr "WIFI 属性"
+
+#. 2
+#: ../cli/src/devices.c:74
+msgid "AP"
+msgstr "AP"
+
+#. 3
+#: ../cli/src/devices.c:75
+msgid "WIRED-PROPERTIES"
+msgstr "有线连接属性"
+
+#. 4
+#: ../cli/src/devices.c:76
+msgid "IP4-SETTINGS"
+msgstr "IP4 设置"
+
+#. 5
+#: ../cli/src/devices.c:77
+msgid "IP4-DNS"
+msgstr "IP4-DNS"
+
+#. 2
+#: ../cli/src/devices.c:88
+msgid "DRIVER"
+msgstr "驱动程序"
+
+#. 3
+#: ../cli/src/devices.c:89
+msgid "HWADDR"
+msgstr "硬盘"
+
+#. 0
+#: ../cli/src/devices.c:99
+msgid "CARRIER-DETECT"
+msgstr "容器探测"
+
+#. 1
+#: ../cli/src/devices.c:100
+msgid "SPEED"
+msgstr "速度"
+
+#. 0
+#: ../cli/src/devices.c:109
+msgid "CARRIER"
+msgstr "容器"
+
+#. 0
+#: ../cli/src/devices.c:119
+msgid "WEP"
+msgstr "WEP"
+
+#. 1
+#: ../cli/src/devices.c:120
+msgid "WPA"
+msgstr "WPA"
+
+#. 2
+#: ../cli/src/devices.c:121
+msgid "WPA2"
+msgstr "WPA2"
+
+#. 3
+#: ../cli/src/devices.c:122
+msgid "TKIP"
+msgstr "TKIP"
+
+#. 4
+#: ../cli/src/devices.c:123
+msgid "CCMP"
+msgstr "CCMP"
+
+#. 0
+#: ../cli/src/devices.c:132
+msgid "ADDRESS"
+msgstr "地址"
+
+#. 1
+#: ../cli/src/devices.c:133
+msgid "PREFIX"
+msgstr "前缀"
+
+#. 2
+#: ../cli/src/devices.c:134
+msgid "GATEWAY"
+msgstr "网关"
+
+#. 0
+#: ../cli/src/devices.c:143
+msgid "DNS"
+msgstr "DNS"
+
+#. 0
+#: ../cli/src/devices.c:153
+msgid "SSID"
+msgstr "SSID"
+
+#. 1
+#: ../cli/src/devices.c:154
+msgid "BSSID"
+msgstr "BSSID"
+
+#. 2
+#: ../cli/src/devices.c:155
+msgid "MODE"
+msgstr "型号"
+
+#. 3
+#: ../cli/src/devices.c:156
+msgid "FREQ"
+msgstr "FREQ"
+
+#. 4
+#: ../cli/src/devices.c:157
+msgid "RATE"
+msgstr "频率"
+
+#. 5
+#: ../cli/src/devices.c:158
+msgid "SIGNAL"
+msgstr "信号"
+
+#. 6
+#: ../cli/src/devices.c:159
+msgid "SECURITY"
+msgstr "安全性"
+
+#. 7
+#: ../cli/src/devices.c:160
+msgid "WPA-FLAGS"
+msgstr "WPA-标志"
+
+#. 8
+#: ../cli/src/devices.c:161
+msgid "RSN-FLAGS"
+msgstr "RSN-标志"
+
+#. 10
+#: ../cli/src/devices.c:163
+msgid "ACTIVE"
+msgstr "活跃"
+
+#: ../cli/src/devices.c:186
+#, c-format
+msgid ""
+"Usage: nmcli dev { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | list | disconnect | wifi }\n"
+"\n"
+"  status\n"
+"  list [iface <iface>]\n"
+"  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
+"  wifi [list [iface <iface>] [hwaddr <hwaddr>]]\n"
+"\n"
+msgstr ""
+"用法：nmcli dev { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | list | disconnect | wifi }\n"
+"\n"
+"  status\n"
+"  list [iface <iface>]\n"
+"  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
+"  wifi [list [iface <iface>] | apinfo iface <iface> hwaddr <hwaddr>]\n"
+"\n"
+
+#: ../cli/src/devices.c:206
+msgid "unmanaged"
+msgstr "未管理的"
+
+#: ../cli/src/devices.c:208
+msgid "unavailable"
+msgstr "不可用的"
+
+#: ../cli/src/devices.c:210 ../cli/src/network-manager.c:89
+msgid "disconnected"
+msgstr "断开连接"
+
+#: ../cli/src/devices.c:212
+msgid "connecting (prepare)"
+msgstr "连接中（准备）"
+
+#: ../cli/src/devices.c:214
+msgid "connecting (configuring)"
+msgstr "连接中（配置中）"
+
+#: ../cli/src/devices.c:216
+msgid "connecting (need authentication)"
+msgstr "连接中（需要验证）"
+
+#: ../cli/src/devices.c:218
+msgid "connecting (getting IP configuration)"
+msgstr "连接中（获得 IP 配置）"
+
+#: ../cli/src/devices.c:220 ../cli/src/network-manager.c:87
+msgid "connected"
+msgstr "连接的"
+
+#: ../cli/src/devices.c:222
+msgid "connection failed"
+msgstr "连接失败"
+
+#: ../cli/src/devices.c:245 ../cli/src/devices.c:380
+msgid "Unknown"
+msgstr "未知"
+
+#: ../cli/src/devices.c:277
+msgid "(none)"
+msgstr "（无）"
+
+#: ../cli/src/devices.c:302
+#, c-format
+msgid "%s: error converting IP4 address 0x%X"
+msgstr "%s：转换 IP4 地址 0x%X 出错"
+
+#: ../cli/src/devices.c:349
+#, c-format
+msgid "%u MHz"
+msgstr "%u MHz"
+
+#: ../cli/src/devices.c:350
+#, c-format
+msgid "%u MB/s"
+msgstr "%u MB/s"
+
+#: ../cli/src/devices.c:359
+msgid "Encrypted: "
+msgstr "加密的："
+
+#: ../cli/src/devices.c:364
+msgid "WEP "
+msgstr "WEP"
+
+#: ../cli/src/devices.c:366
+msgid "WPA "
+msgstr "WPA"
+
+#: ../cli/src/devices.c:368
+msgid "WPA2 "
+msgstr "WPA2"
+
+#: ../cli/src/devices.c:371
+msgid "Enterprise "
+msgstr "企业级"
+
+#: ../cli/src/devices.c:380
+msgid "Ad-Hoc"
+msgstr "Ad-Hoc"
+
+#: ../cli/src/devices.c:380
+msgid "Infrastructure"
+msgstr "基础构架"
+
+#: ../cli/src/devices.c:442
+#, c-format
+msgid "Error: 'dev list': %s"
+msgstr "错误：'dev list': %s"
+
+#: ../cli/src/devices.c:444
+#, c-format
+msgid "Error: 'dev list': %s; allowed fields: %s"
+msgstr "错误：'dev list': %s；允许的字段：%s"
+
+#: ../cli/src/devices.c:453
+msgid "Device details"
+msgstr "设备详情"
+
+#: ../cli/src/devices.c:483 ../cli/src/devices.c:827
+msgid "(unknown)"
+msgstr "（未知）"
+
+#: ../cli/src/devices.c:484
+msgid "unknown)"
+msgstr "未知）"
+
+#: ../cli/src/devices.c:510
+#, c-format
+msgid "%u Mb/s"
+msgstr "%u Mb/s"
+
+#. Print header
+#. "WIRED-PROPERTIES"
+#: ../cli/src/devices.c:583
+msgid "on"
+msgstr "开"
+
+#: ../cli/src/devices.c:583
+msgid "off"
+msgstr "关"
+
+#: ../cli/src/devices.c:710
+#, c-format
+msgid "Error: 'dev status': %s"
+msgstr "错误：'dev status': %s"
+
+#: ../cli/src/devices.c:712
+#, c-format
+msgid "Error: 'dev status': %s; allowed fields: %s"
+msgstr "错误：'dev status': %s；允许的字段：%s"
+
+#: ../cli/src/devices.c:719
+msgid "Status of devices"
+msgstr "设备状态"
+
+#: ../cli/src/devices.c:747
+#, c-format
+msgid "Error: '%s' argument is missing."
+msgstr "错误：缺少 '%s' 参数。"
+
+#: ../cli/src/devices.c:776 ../cli/src/devices.c:915 ../cli/src/devices.c:1035
+#, c-format
+msgid "Error: Device '%s' not found."
+msgstr "错误：没有找到设备 '%s'。"
+
+#: ../cli/src/devices.c:799
+#, c-format
+msgid "Success: Device '%s' successfully disconnected."
+msgstr "成功：成功断开设备 '%s'。"
+
+#: ../cli/src/devices.c:824
+#, c-format
+msgid "Error: Device '%s' (%s) disconnecting failed: %s"
+msgstr "错误：断开设备 '%s'（%s）失败：%s"
+
+#: ../cli/src/devices.c:832
+#, c-format
+msgid "Device state: %d (%s)\n"
+msgstr "设备状态：%d (%s)\n"
+
+#: ../cli/src/devices.c:896
+#, c-format
+msgid "Error: iface has to be specified."
+msgstr "错误：没有指定 iface。"
+
+#: ../cli/src/devices.c:1011
+#, c-format
+msgid "Error: 'dev wifi': %s"
+msgstr "错误：'dev wifi'：%s"
+
+#: ../cli/src/devices.c:1013
+#, c-format
+msgid "Error: 'dev wifi': %s; allowed fields: %s"
+msgstr "错误：'dev wifi': %s；允许的字段：%s"
+
+#: ../cli/src/devices.c:1020
+msgid "WiFi scan list"
+msgstr "WiFi 扫描列表"
+
+#: ../cli/src/devices.c:1055 ../cli/src/devices.c:1109
+#, c-format
+msgid "Error: Access point with hwaddr '%s' not found."
+msgstr "错误：没有找到使用 hwaddr '%s' 的访问点。"
+
+#: ../cli/src/devices.c:1072
+#, c-format
+msgid "Error: Device '%s' is not a WiFi device."
+msgstr "错误：设备 '%s' 不是 WiFi 设备。"
+
+#: ../cli/src/devices.c:1136
+#, c-format
+msgid "Error: 'dev wifi' command '%s' is not valid."
+msgstr "错误：'dev wifi' 命令 '%s' 无效。"
+
+#: ../cli/src/devices.c:1183
+#, c-format
+msgid "Error: 'dev' command '%s' is not valid."
+msgstr "错误：'dev' 命令 '%s' 无效。"
+
+#: ../cli/src/network-manager.c:35
+msgid "RUNNING"
+msgstr "运行中"
+
+#. 1
+#: ../cli/src/network-manager.c:37
+msgid "WIFI-HARDWARE"
+msgstr "WIFI 硬件"
+
+#. 2
+#: ../cli/src/network-manager.c:38
+msgid "WIFI"
+msgstr "WIFI"
+
+#. 3
+#: ../cli/src/network-manager.c:39
+msgid "WWAN-HARDWARE"
+msgstr "WWAN 硬件"
+
+#. 4
+#: ../cli/src/network-manager.c:40
+msgid "WWAN"
+msgstr "WWAN"
+
+#: ../cli/src/network-manager.c:62
+#, c-format
+msgid ""
+"Usage: nmcli nm { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | sleep | wakeup | wifi | wwan }\n"
+"\n"
+"  status\n"
+"  sleep\n"
+"  wakeup\n"
+"  wifi [on|off]\n"
+"  wwan [on|off]\n"
+"\n"
+msgstr ""
+"Usage: nmcli nm { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | sleep | wakeup | wifi | wwan }\n"
+"\n"
+"  status\n"
+"  sleep\n"
+"  wakeup\n"
+"  wifi [on|off]\n"
+"  wwan [on|off]\n"
+"\n"
+
+#: ../cli/src/network-manager.c:83
+msgid "asleep"
+msgstr "asleep"
+
+#: ../cli/src/network-manager.c:85
+msgid "connecting"
+msgstr "连接中"
+
+#: ../cli/src/network-manager.c:125
+#, c-format
+msgid "Error: 'nm status': %s"
+msgstr "错误：'nm status': %s"
+
+#: ../cli/src/network-manager.c:127
+#, c-format
+msgid "Error: 'nm status': %s; allowed fields: %s"
+msgstr "错误：'nm status': %s；允许的字段：%s"
+
+#: ../cli/src/network-manager.c:134
+msgid "NetworkManager status"
+msgstr "网络管理器状态"
+
+#. Print header
+#: ../cli/src/network-manager.c:140 ../cli/src/network-manager.c:141
+#: ../cli/src/network-manager.c:142 ../cli/src/network-manager.c:143
+#: ../cli/src/network-manager.c:211 ../cli/src/network-manager.c:243
+msgid "enabled"
+msgstr "启用的"
+
+#: ../cli/src/network-manager.c:140 ../cli/src/network-manager.c:141
+#: ../cli/src/network-manager.c:142 ../cli/src/network-manager.c:143
+#: ../cli/src/network-manager.c:211 ../cli/src/network-manager.c:243
+msgid "disabled"
+msgstr "禁用的"
+
+#: ../cli/src/network-manager.c:148
+msgid "running"
+msgstr "运行中"
+
+#: ../cli/src/network-manager.c:148
+msgid "not running"
+msgstr "没有运行"
+
+#: ../cli/src/network-manager.c:201 ../cli/src/network-manager.c:233
+#, c-format
+msgid "Error: '--fields' value '%s' is not valid here; allowed fields: %s"
+msgstr "错误：'--fields' 值 '%s' 在此无效；允许的字段：%s"
+
+#: ../cli/src/network-manager.c:209
+msgid "WiFi enabled"
+msgstr "启用 WiFi"
+
+#: ../cli/src/network-manager.c:220
+#, c-format
+msgid "Error: invalid 'wifi' parameter: '%s'."
+msgstr "错误：无效 'wifi' 参数：'%s'。"
+
+#: ../cli/src/network-manager.c:241
+msgid "WWAN enabled"
+msgstr "启用 WWAN"
+
+#: ../cli/src/network-manager.c:252
+#, c-format
+msgid "Error: invalid 'wwan' parameter: '%s'."
+msgstr "错误：无效 'wwan' 参数：'%s'。"
+
+#: ../cli/src/network-manager.c:263
+#, c-format
+msgid "Error: 'nm' command '%s' is not valid."
+msgstr "错误：'nm' 命令 '%s' 无效。"
+
+#: ../cli/src/nmcli.c:69
+#, c-format
+msgid ""
+"Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
+"\n"
+"OPTIONS\n"
+"  -t[erse]                                   terse output\n"
+"  -p[retty]                                  pretty output\n"
+"  -m[ode] tabular|multiline                  output mode\n"
+"  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
+"  -e[scape] yes|no                           escape columns separators in "
+"values\n"
+"  -v[ersion]                                 show program version\n"
+"  -h[elp]                                    print this help\n"
+"\n"
+"OBJECT\n"
+"  nm          NetworkManager status\n"
+"  con         NetworkManager connections\n"
+"  dev         devices managed by NetworkManager\n"
+"\n"
+msgstr ""
+"用法：%s [OPTIONS] OBJECT { COMMAND | help }\n"
+"\n"
+"OPTIONS\n"
+"  -t[erse]    terse output\n"
+"  -p[retty]   pretty output\n"
+"  -v[ersion]  show program version\n"
+"  -h[elp]     print this help\n"
+"\n"
+"OBJECT\n"
+"  nm          NetworkManager status\n"
+"  con         NetworkManager connections\n"
+"  dev         devices managed by NetworkManager\n"
+"\n"
+
+#: ../cli/src/nmcli.c:113
+#, c-format
+msgid "Error: Object '%s' is unknown, try 'nmcli help'."
+msgstr "错误：对象 '%s' 未知，尝试 'nmcli help'。"
+
+#: ../cli/src/nmcli.c:143
+#, c-format
+msgid "Error: Option '--terse' is specified the second time."
+msgstr "错误：第二此指定选项 '--terse'。"
+
+#: ../cli/src/nmcli.c:148
+#, c-format
+msgid "Error: Option '--terse' is mutually exclusive with '--pretty'."
+msgstr "错误：选项 '--terse' 与 '--pretty' 相互排斥。"
+
+#: ../cli/src/nmcli.c:156
+#, c-format
+msgid "Error: Option '--pretty' is specified the second time."
+msgstr "错误：第二次指定选项 '--pretty'。"
+
+#: ../cli/src/nmcli.c:161
+#, c-format
+msgid "Error: Option '--pretty' is mutually exclusive with '--terse'."
+msgstr "错误：选项 '--pretty' 与 '--terse' 相互排斥。"
+
+#: ../cli/src/nmcli.c:171 ../cli/src/nmcli.c:187
+#, c-format
+msgid "Error: missing argument for '%s' option."
+msgstr "错误：'%s' 选项缺少参数。"
+
+#: ../cli/src/nmcli.c:180 ../cli/src/nmcli.c:196
+#, c-format
+msgid "Error: '%s' is not valid argument for '%s' option."
+msgstr "错误：'%s' 不是 '%s' 选项的有效参数。"
+
+#: ../cli/src/nmcli.c:203
+#, c-format
+msgid "Error: fields for '%s' options are missing."
+msgstr "错误：缺少 '%s' 选项字段。"
+
+#: ../cli/src/nmcli.c:209
+#, c-format
+msgid "nmcli tool, version %s\n"
+msgstr "nmcli 工具，版本 %s\n"
+
+#: ../cli/src/nmcli.c:215
+#, c-format
+msgid "Error: Option '%s' is unknown, try 'nmcli -help'."
+msgstr "错误：选项 '%s' 未知，尝试 'nmcli -help'。"
+
+#: ../cli/src/nmcli.c:234
+#, c-format
+msgid "Caught signal %d, shutting down..."
+msgstr "捕获信号 %d，关闭中......"
+
+#: ../cli/src/nmcli.c:259
+#, c-format
+msgid "Error: Could not connect to NetworkManager."
+msgstr "错误：无法连接到网络管理器。"
+
+#: ../cli/src/nmcli.c:275
+msgid "Success"
+msgstr "成功"
+
+#: ../cli/src/settings.c:407
+#, c-format
+msgid "%d (hex-ascii-key)"
+msgstr "%d (hex-ascii-key)"
+
+#: ../cli/src/settings.c:409
+#, c-format
+msgid "%d (104/128-bit passphrase)"
+msgstr "%d（104/128 位密码短语）"
+
+#: ../cli/src/settings.c:412
+#, c-format
+msgid "%d (unknown)"
+msgstr "%d（未知）"
+
+#: ../cli/src/settings.c:438
+msgid "0 (unknown)"
+msgstr "0（未知）"
+
+#: ../cli/src/settings.c:444
+msgid "any, "
+msgstr "任意，"
+
+#: ../cli/src/settings.c:446
+msgid "900 MHz, "
+msgstr "900 MHz，"
+
+#: ../cli/src/settings.c:448
+msgid "1800 MHz, "
+msgstr "1800 MHz，"
+
+#: ../cli/src/settings.c:450
+msgid "1900 MHz, "
+msgstr "1900 MHz，"
+
+#: ../cli/src/settings.c:452
+msgid "850 MHz, "
+msgstr "850 MHz，"
+
+#: ../cli/src/settings.c:454
+msgid "WCDMA 3GPP UMTS 2100 MHz, "
+msgstr "WCDMA 3GPP UMTS 2100 MHz，"
+
+#: ../cli/src/settings.c:456
+msgid "WCDMA 3GPP UMTS 1800 MHz, "
+msgstr "WCDMA 3GPP UMTS 1800 MHz，"
+
+#: ../cli/src/settings.c:458
+msgid "WCDMA 3GPP UMTS 1700/2100 MHz, "
+msgstr "WCDMA 3GPP UMTS 1700/2100 MHz，"
+
+#: ../cli/src/settings.c:460
+msgid "WCDMA 3GPP UMTS 800 MHz, "
+msgstr "WCDMA 3GPP UMTS 800 MHz，"
+
+#: ../cli/src/settings.c:462
+msgid "WCDMA 3GPP UMTS 850 MHz, "
+msgstr "WCDMA 3GPP UMTS 850 MHz，"
+
+#: ../cli/src/settings.c:464
+msgid "WCDMA 3GPP UMTS 900 MHz, "
+msgstr "WCDMA 3GPP UMTS 900 MHz，"
+
+#: ../cli/src/settings.c:466
+msgid "WCDMA 3GPP UMTS 1700 MHz, "
+msgstr "WCDMA 3GPP UMTS 1700 MHz，"
+
+#: ../cli/src/settings.c:546 ../cli/src/settings.c:708
+msgid "auto"
+msgstr "自动"
+
+#: ../cli/src/settings.c:704 ../cli/src/settings.c:707 ../cli/src/utils.c:172
+msgid "not set"
+msgstr "未设置"
+
+#: ../cli/src/utils.c:124
+#, c-format
+msgid "field '%s' has to be alone"
+msgstr "字段 '%s' 必须是单独的"
+
+#: ../cli/src/utils.c:127
+#, c-format
+msgid "invalid field '%s'"
+msgstr "无效字段 '%s'"
+
+#: ../cli/src/utils.c:146
+#, c-format
+msgid "Option '--terse' requires specifying '--fields'"
+msgstr "选项 '--terse' 要求指定 '--fields'"
+
+#: ../cli/src/utils.c:150
+#, c-format
+msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
+msgstr "选项 '--terse' 需要特定 '--fields' 选项值，不是 '%s'"
 
 #: ../libnm-util/crypto.c:120
 #, c-format
@@ -60,7 +1199,7 @@ msgstr "错误的 PEM 文件格式：DEK-Info 标签中的初始向量格式无�
 #: ../libnm-util/crypto.c:203
 #, c-format
 msgid "Malformed PEM file: unknown private key cipher '%s'."
-msgstr ""
+msgstr "对 PEM 文件进行操作：未知专用密钥 '%s'。"
 
 #: ../libnm-util/crypto.c:222
 #, c-format
@@ -90,7 +1229,7 @@ msgstr "没有足够的空间储存文件数据。"
 #: ../libnm-util/crypto.c:324
 #, c-format
 msgid "IV must be an even number of bytes in length."
-msgstr ""
+msgstr "IV 长度必须是偶数字节。"
 
 #: ../libnm-util/crypto.c:333
 #, c-format
@@ -102,11 +1241,12 @@ msgstr "没有足够的空间储存初始向量。"
 msgid "IV contains non-hexadecimal digits."
 msgstr "初始向量中包含非十六进制数字。"
 
-#: ../libnm-util/crypto.c:382 ../libnm-util/crypto_gnutls.c:143
-#: ../libnm-util/crypto_nss.c:169
+#: ../libnm-util/crypto.c:382 ../libnm-util/crypto_gnutls.c:148
+#: ../libnm-util/crypto_gnutls.c:266 ../libnm-util/crypto_nss.c:171
+#: ../libnm-util/crypto_nss.c:336
 #, c-format
 msgid "Private key cipher '%s' was unknown."
-msgstr ""
+msgstr "未知专用密钥密码 '%s'。"
 
 #: ../libnm-util/crypto.c:391
 #, c-format
@@ -123,72 +1263,106 @@ msgstr "无法确定私钥类型。"
 msgid "Not enough memory to store decrypted private key."
 msgstr "没有足够的空间储存解密后的私钥。"
 
-#: ../libnm-util/crypto_gnutls.c:46
+#: ../libnm-util/crypto_gnutls.c:49
 msgid "Failed to initialize the crypto engine."
 msgstr "初始化加密引擎失败。"
 
-#: ../libnm-util/crypto_gnutls.c:90
+#: ../libnm-util/crypto_gnutls.c:93
 #, c-format
 msgid "Failed to initialize the MD5 engine: %s / %s."
 msgstr "初始化 MD5 引擎失败：%s / %s。"
 
-#: ../libnm-util/crypto_gnutls.c:152 ../libnm-util/crypto_nss.c:178
+#: ../libnm-util/crypto_gnutls.c:156
+#, c-format
+msgid "Invalid IV length (must be at least %zd)."
+msgstr "无效 IV 长度（必须至少为 %zd）。"
+
+#: ../libnm-util/crypto_gnutls.c:165 ../libnm-util/crypto_nss.c:188
 #, c-format
 msgid "Not enough memory for decrypted key buffer."
 msgstr "没有足够的空间作为已解密密钥缓冲。"
 
-#: ../libnm-util/crypto_gnutls.c:160
+#: ../libnm-util/crypto_gnutls.c:173
 #, c-format
 msgid "Failed to initialize the decryption cipher context: %s / %s."
-msgstr ""
+msgstr "初始化解密计算内容失败：%s / %s。"
 
-#: ../libnm-util/crypto_gnutls.c:169
+#: ../libnm-util/crypto_gnutls.c:182
 #, c-format
 msgid "Failed to set symmetric key for decryption: %s / %s."
-msgstr ""
+msgstr "为解密设定对称密钥失败：%s / %s。"
 
-#: ../libnm-util/crypto_gnutls.c:178
+#: ../libnm-util/crypto_gnutls.c:191
 #, c-format
 msgid "Failed to set IV for decryption: %s / %s."
 msgstr "为解密设置初始向量失败：%s / %s。"
 
-#: ../libnm-util/crypto_gnutls.c:187
+#: ../libnm-util/crypto_gnutls.c:200
 #, c-format
 msgid "Failed to decrypt the private key: %s / %s."
 msgstr "解密私钥失败：%s / %s"
 
-#: ../libnm-util/crypto_gnutls.c:200
+#: ../libnm-util/crypto_gnutls.c:210 ../libnm-util/crypto_nss.c:267
+#, c-format
+msgid "Failed to decrypt the private key: unexpected padding length."
+msgstr "解密私钥失败：意外的填充长度。"
+
+#: ../libnm-util/crypto_gnutls.c:221 ../libnm-util/crypto_nss.c:278
 #, c-format
 msgid "Failed to decrypt the private key."
 msgstr "解密私钥失败。"
 
-#: ../libnm-util/crypto_gnutls.c:235
+#: ../libnm-util/crypto_gnutls.c:286 ../libnm-util/crypto_nss.c:356
+#, c-format
+msgid "Could not allocate memory for encrypting."
+msgstr "无法为加密分配内存。"
+
+#: ../libnm-util/crypto_gnutls.c:294
+#, c-format
+msgid "Failed to initialize the encryption cipher context: %s / %s."
+msgstr "初始化加密计算内容失败：%s / %s。"
+
+#: ../libnm-util/crypto_gnutls.c:303
+#, c-format
+msgid "Failed to set symmetric key for encryption: %s / %s."
+msgstr "为加密设置对称密钥失败：%s / %s。"
+
+#: ../libnm-util/crypto_gnutls.c:313
+#, c-format
+msgid "Failed to set IV for encryption: %s / %s."
+msgstr "为加密设置 IV 失败：%s / %s。"
+
+#: ../libnm-util/crypto_gnutls.c:322
+#, c-format
+msgid "Failed to encrypt the data: %s / %s."
+msgstr "加密数据失败：%s / %s。"
+
+#: ../libnm-util/crypto_gnutls.c:362
 #, c-format
 msgid "Error initializing certificate data: %s"
 msgstr "初始化证书数据出错：%s"
 
-#: ../libnm-util/crypto_gnutls.c:257
+#: ../libnm-util/crypto_gnutls.c:384
 #, c-format
 msgid "Couldn't decode certificate: %s"
 msgstr "无法解码证书：%s"
 
-#: ../libnm-util/crypto_gnutls.c:281
+#: ../libnm-util/crypto_gnutls.c:408
 #, c-format
 msgid "Couldn't initialize PKCS#12 decoder: %s"
 msgstr "无法初始化 PKCS#12 解码器：%s"
 
-#: ../libnm-util/crypto_gnutls.c:294
+#: ../libnm-util/crypto_gnutls.c:421
 #, c-format
 msgid "Couldn't decode PKCS#12 file: %s"
 msgstr "无法解码 PKCS#12 文件：%s"
 
-#: ../libnm-util/crypto_gnutls.c:306
+#: ../libnm-util/crypto_gnutls.c:433
 #, c-format
 msgid "Couldn't verify PKCS#12 file: %s"
 msgstr "无法校验 PKCS#12 文件：%s"
 
-#: ../libnm-util/crypto_nss.c:57
-#: ../system-settings/plugins/ifcfg-rh/crypto.c:52
+#: ../libnm-util/crypto_nss.c:56
 #, c-format
 msgid "Failed to initialize the crypto engine: %d."
 msgstr "初始化加密引擎失败：%d。"
@@ -198,100 +1372,184 @@ msgstr "初始化加密引擎失败：%d。"
 msgid "Failed to initialize the MD5 context: %d."
 msgstr "初始化 MD5 环境失败：%d。"
 
-#: ../libnm-util/crypto_nss.c:186
+#: ../libnm-util/crypto_nss.c:179
 #, c-format
-msgid "Failed to initialize the decryption cipher slot."
-msgstr ""
+msgid "Invalid IV length (must be at least %d)."
+msgstr "无效 IV 长度（必须至少 %d）。"
 
 #: ../libnm-util/crypto_nss.c:196
 #, c-format
-msgid "Failed to set symmetric key for decryption."
-msgstr ""
+msgid "Failed to initialize the decryption cipher slot."
+msgstr "初始化解密计算插槽失败。"
 
 #: ../libnm-util/crypto_nss.c:206
+#, c-format
+msgid "Failed to set symmetric key for decryption."
+msgstr "为解密设置对称密钥失败。"
+
+#: ../libnm-util/crypto_nss.c:216
 #, c-format
 msgid "Failed to set IV for decryption."
 msgstr "为解密设置初始向量失败。"
 
-#: ../libnm-util/crypto_nss.c:214
+#: ../libnm-util/crypto_nss.c:224
 #, c-format
 msgid "Failed to initialize the decryption context."
 msgstr "初始化解密环境失败。"
 
-#: ../libnm-util/crypto_nss.c:227
+#: ../libnm-util/crypto_nss.c:237
 #, c-format
 msgid "Failed to decrypt the private key: %d."
 msgstr "解密私钥失败：%d。"
 
-#: ../libnm-util/crypto_nss.c:239
+#: ../libnm-util/crypto_nss.c:245
+#, c-format
+msgid "Failed to decrypt the private key: decrypted data too large."
+msgstr "解密私钥失败：解密数据太大。"
+
+#: ../libnm-util/crypto_nss.c:256
 #, c-format
 msgid "Failed to finalize decryption of the private key: %d."
 msgstr "结束解密私钥失败：%d。"
 
-#: ../libnm-util/crypto_nss.c:284
+#: ../libnm-util/crypto_nss.c:364
+#, c-format
+msgid "Failed to initialize the encryption cipher slot."
+msgstr "初始化加密计算插槽失败。"
+
+#: ../libnm-util/crypto_nss.c:372
+#, c-format
+msgid "Failed to set symmetric key for encryption."
+msgstr "为加密设置对称密钥失败。"
+
+#: ../libnm-util/crypto_nss.c:380
+#, c-format
+msgid "Failed to set IV for encryption."
+msgstr "为加密设置 IV 失败。"
+
+#: ../libnm-util/crypto_nss.c:388
+#, c-format
+msgid "Failed to initialize the encryption context."
+msgstr "初始化加密内容失败。"
+
+#: ../libnm-util/crypto_nss.c:396
+#, c-format
+msgid "Failed to encrypt: %d."
+msgstr "加密失败：%d。"
+
+#: ../libnm-util/crypto_nss.c:404
+#, c-format
+msgid "Unexpected amount of data after encrypting."
+msgstr "加密后意外的数据量。"
+
+#: ../libnm-util/crypto_nss.c:447
 #, c-format
 msgid "Couldn't decode certificate: %d"
 msgstr "无法解码证书：%d"
 
-#: ../libnm-util/crypto_nss.c:319
+#: ../libnm-util/crypto_nss.c:482
 #, c-format
 msgid "Couldn't convert password to UCS2: %d"
 msgstr "无法将密码转换为 USC2 方式：%d"
 
-#: ../libnm-util/crypto_nss.c:347
+#: ../libnm-util/crypto_nss.c:510
 #, c-format
 msgid "Couldn't initialize PKCS#12 decoder: %d"
 msgstr "无法初始化 PKCS#12 解码器：%d"
 
-#: ../libnm-util/crypto_nss.c:356
+#: ../libnm-util/crypto_nss.c:519
 #, c-format
 msgid "Couldn't decode PKCS#12 file: %d"
 msgstr "无法解码 PKCS#12 文件：%d"
 
-#: ../libnm-util/crypto_nss.c:365
+#: ../libnm-util/crypto_nss.c:528
 #, c-format
 msgid "Couldn't verify PKCS#12 file: %d"
 msgstr "无法校验 PKCS#12 文件：%d"
 
-#: ../src/nm-netlink-monitor.c:194 ../src/nm-netlink-monitor.c:464
+#: ../libnm-util/crypto_nss.c:557
+msgid "Could not generate random data."
+msgstr "无法生成随机数据。"
+
+#: ../libnm-util/nm-utils.c:1925
+#, c-format
+msgid "Not enough memory to make encryption key."
+msgstr "没有足够的空间生成加密密钥。"
+
+#: ../libnm-util/nm-utils.c:2035
+msgid "Could not allocate memory for PEM file creation."
+msgstr "无法为创建 PEM 文件分配内存。"
+
+#: ../libnm-util/nm-utils.c:2047
+#, c-format
+msgid "Could not allocate memory for writing IV to PEM file."
+msgstr "无法为在 PEM 文件中写入 IV 分配内存。"
+
+#: ../libnm-util/nm-utils.c:2059
+#, c-format
+msgid "Could not allocate memory for writing encrypted key to PEM file."
+msgstr "无法为在 PEM 文件中写入加密密钥分配内存。"
+
+#: ../libnm-util/nm-utils.c:2078
+#, c-format
+msgid "Could not allocate memory for PEM file data."
+msgstr "无法为 PEM 文件数据分配内存。"
+
+#: ../src/nm-netlink-monitor.c:100 ../src/nm-netlink-monitor.c:231
+#: ../src/nm-netlink-monitor.c:653
 #, c-format
 msgid "error processing netlink message: %s"
 msgstr "处理网路信息出错：%s"
 
-#: ../src/nm-netlink-monitor.c:260
-#, c-format
-msgid "unable to allocate netlink handle for monitoring link status: %s"
-msgstr "无法为监视连接状态分配网路句柄：%s"
+#: ../src/nm-netlink-monitor.c:214
+msgid "error occurred while waiting for data on socket"
+msgstr "等候套接字上的数据时发生了错误"
 
-#: ../src/nm-netlink-monitor.c:270
+#: ../src/nm-netlink-monitor.c:254
 #, c-format
 msgid "unable to connect to netlink for monitoring link status: %s"
 msgstr "无法为监视连接状态连接到网路：%s"
 
-#: ../src/nm-netlink-monitor.c:278
+#: ../src/nm-netlink-monitor.c:265
 #, c-format
-msgid "unable to join netlink group for monitoring link status: %s"
-msgstr "无法为监视连接状态加入网路组：%s"
+msgid "unable to enable netlink handle credential passing: %s"
+msgstr "无法启用网络链接句柄证书通过：%s"
 
-#: ../src/nm-netlink-monitor.c:286
+#: ../src/nm-netlink-monitor.c:291 ../src/nm-netlink-monitor.c:353
+#, c-format
+msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgstr "无法为监视连接状态分配网路句柄：%s"
+
+#: ../src/nm-netlink-monitor.c:376
 #, c-format
 msgid "unable to allocate netlink link cache for monitoring link status: %s"
 msgstr "无法为监视连接状态分配网路连接：%s"
 
-#: ../src/nm-netlink-monitor.c:494
-msgid "error occurred while waiting for data on socket"
-msgstr "等候套接字上的数据时发生了错误"
+#: ../src/nm-netlink-monitor.c:502
+#, c-format
+msgid "unable to join netlink group: %s"
+msgstr "无法加入网络链接组群：%s"
 
-#: ../src/NetworkManager.c:330
+#: ../src/nm-netlink-monitor.c:629 ../src/nm-netlink-monitor.c:642
+#, c-format
+msgid "error updating link cache: %s"
+msgstr "更新链接缓存出错：%s"
+
+#: ../src/main.c:502
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr "无效选项。请使用 --help 查看有效选项列表。\n"
 
-#: ../src/dhcp-manager/nm-dhcp-dhclient.c:304
+#: ../src/main.c:562
+#, c-format
+msgid "%s.  Please use --help to see a list of valid options.\n"
+msgstr "%s。请使用 --help 查看有效选项列表。\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:325
 msgid "# Created by NetworkManager\n"
 msgstr "# 由 NetworkManger 创建\n"
 
-#: ../src/dhcp-manager/nm-dhcp-dhclient.c:310
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:341
 #, c-format
 msgid ""
 "# Merged from %s\n"
@@ -300,20 +1558,47 @@ msgstr ""
 "# 合并自 %s\n"
 "\n"
 
-#: ../src/named-manager/nm-named-manager.c:315
+#: ../src/dhcp-manager/nm-dhcp-manager.c:279
+msgid "no usable DHCP client could be found."
+msgstr "找到无法使用的 DHCP 客户端。"
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:288
+msgid "'dhclient' could be found."
+msgstr "找到 'dhclient'。"
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:298
+msgid "'dhcpcd' could be found."
+msgstr "找到 'dhcpcd'。"
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:306
+#, c-format
+msgid "unsupported DHCP client '%s'"
+msgstr "不支持的 DHCP 客户端 '%s'"
+
+#: ../src/logging/nm-logging.c:146
+#, c-format
+msgid "Unknown log level '%s'"
+msgstr "未知日志等级 '%s'"
+
+#: ../src/logging/nm-logging.c:171
+#, c-format
+msgid "Unknown log domain '%s'"
+msgstr "未知日志域 '%s'"
+
+#: ../src/named-manager/nm-named-manager.c:343
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "注意：libc 解析器可能不支持超过三个名字服务器。"
 
-#: ../src/named-manager/nm-named-manager.c:317
+#: ../src/named-manager/nm-named-manager.c:345
 msgid "The nameservers listed below may not be recognized."
 msgstr "以下列出的名字服务器可能无法被识别。"
 
-#: ../src/system-settings/nm-default-wired-connection.c:194
+#: ../src/system-settings/nm-default-wired-connection.c:157
 #, c-format
 msgid "Auto %s"
 msgstr "自动 %s"
 
-#: ../system-settings/plugins/ifcfg-rh/reader.c:2446
+#: ../system-settings/plugins/ifcfg-rh/reader.c:3256
 msgid "System"
 msgstr "系统"
 
@@ -349,642 +1634,3 @@ msgstr "系统策略阻止使用受保护的 WiFi 网络共享连接"
 msgid "System policy prevents sharing connections via an open WiFi network"
 msgstr "系统策略组织使用公开 WiFi 网络共享连接"
 
-#~ msgid "Passphrase for wireless network %s"
-#~ msgstr "无线网络 %s 的密码句"
-
-#~ msgid "Connection to the wireless network '%s' failed."
-#~ msgstr "到无线网络“%s”的连接失败。"
-
-#~ msgid "Connection to the wired network failed."
-#~ msgstr "连接到有线网络失败。"
-
-#~ msgid "Error displaying connection information:"
-#~ msgstr "显示连接信息出错："
-
-#~ msgid "Could not find some required resources (the glade file)!"
-#~ msgstr "序找不到所需的资源(glade 文件未找到)！"
-
-#~ msgid "Wired Ethernet (%s)"
-#~ msgstr "有线以太网(%s)"
-
-#~ msgid "Wireless Ethernet (%s)"
-#~ msgstr "无线以太网(%s)"
-
-#~ msgid "NetworkManager Applet"
-#~ msgstr "网络管理器小程序"
-
-#~ msgid "Copyright © 2004-2005 Red Hat, Inc."
-#~ msgstr "版权 (C) 2004-2005 Red Hat, Inc."
-
-#~ msgid ""
-#~ "Notification area applet for managing your network devices and "
-#~ "connections."
-#~ msgstr "管理您网络设备和连接的通知区域小程序"
-
-#~ msgid "translator-credits"
-#~ msgstr "Funda Wang <fundawang@linux.net.cn>"
-
-#~ msgid "VPN Login Failure"
-#~ msgstr "VPN 登录失败"
-
-#~ msgid "Could not start the VPN connection '%s' due to a login failure."
-#~ msgstr "无法启动 VPN 连接“%s”，原因是登录失败。"
-
-#~ msgid "VPN Start Failure"
-#~ msgstr "VPN 启动失败"
-
-#~ msgid ""
-#~ "Could not start the VPN connection '%s' due to a failure launching the "
-#~ "VPN program."
-#~ msgstr "无法启动 VPN 连接“%s”，原因是调用 VPN 程序失败。"
-
-#~ msgid "VPN Connect Failure"
-#~ msgstr "VPN 连接失败"
-
-#~ msgid "Could not start the VPN connection '%s' due to a connection error."
-#~ msgstr "无法启动 VPN 连接“%s”，原因是连接出错。"
-
-#~ msgid "VPN Configuration Error"
-#~ msgstr "VPN 配置错误"
-
-#~ msgid "The VPN connection '%s' was not correctly configured."
-#~ msgstr "VPN 连接“%s”未正确配置。"
-
-#~ msgid ""
-#~ "Could not start the VPN connection '%s' because the VPN server did not "
-#~ "return an adequate network configuration."
-#~ msgstr "无法启动 VPN 连接“%s”，原因是 VPN 服务器未返回足够的网络配置。"
-
-#~ msgid "VPN Login Message"
-#~ msgstr "VPN 登录消息"
-
-#~ msgid ""
-#~ "The NetworkManager Applet could not find some required resources (the "
-#~ "glade file was not found)."
-#~ msgstr "网络管理器小程序找不到所需的资源(glade 文件未找到)。"
-
-#~ msgid "The network device \"%s (%s)\" does not support wireless scanning."
-#~ msgstr "网络设备“%s(%s)”不支持无线扫描。"
-
-#~ msgid "The network device \"%s (%s)\" does not support link detection."
-#~ msgstr "网络设备“%s(%s)”不支持链接检测。"
-
-#~ msgid "Preparing device %s for the wired network..."
-#~ msgstr "正在为有线网络准备设备 %s..."
-
-#~ msgid "Preparing device %s for the wireless network '%s'..."
-#~ msgstr "正在为无线网络“%2$s”准备设备 %1$s..."
-
-#~ msgid "Configuring device %s for the wired network..."
-#~ msgstr "正在为有线网络配置设备 %s..."
-
-#~ msgid "Attempting to join the wireless network '%s'..."
-#~ msgstr "正在试图加入无线网络“%s”..."
-
-#~ msgid "Waiting for Network Key for the wireless network '%s'..."
-#~ msgstr "正在等待无线网络“%s”的网络密钥..."
-
-#~ msgid "Requesting a network address from the wired network..."
-#~ msgstr "正在从有线网络请求网络地址..."
-
-#~ msgid "Requesting a network address from the wireless network '%s'..."
-#~ msgstr "正在从无线网络“%s”请求网络地址..."
-
-#~ msgid "Finishing connection to the wired network..."
-#~ msgstr "正在完成到有线网络的连接..."
-
-#~ msgid "Finishing connection to the wireless network '%s'..."
-#~ msgstr "正在完成到无线网络“%s”的连接..."
-
-#~ msgid "NetworkManager is not running"
-#~ msgstr "网络管理器未运行"
-
-#~ msgid "Networking disabled"
-#~ msgstr "网络已禁用"
-
-#~ msgid "No network connection"
-#~ msgstr "没有网络连接"
-
-#~ msgid "Wired network connection"
-#~ msgstr "有线网络连接"
-
-#~ msgid "Connected to an Ad-Hoc wireless network"
-#~ msgstr "已连接到 Ad-Hoc 无线网络"
-
-#~ msgid "Wireless network connection to '%s' (%d%%)"
-#~ msgstr "到“%s”的无线网络连接(%d%%)"
-
-#~ msgid "VPN connection to '%s'"
-#~ msgstr "到“%s”的 VPN 连接"
-
-#~ msgid "VPN connecting to '%s'"
-#~ msgstr "连接到“%s”的 VPN"
-
-#~ msgid "_Connect to Other Wireless Network..."
-#~ msgstr "连接到其它无线网络(_C)..."
-
-#~ msgid "Create _New Wireless Network..."
-#~ msgstr "创建新的无线网络(_N)..."
-
-#~ msgid "_VPN Connections"
-#~ msgstr "_VPN 连接"
-
-#~ msgid "_Configure VPN..."
-#~ msgstr "配置 VPN(_C)..."
-
-#~ msgid "_Disconnect VPN..."
-#~ msgstr "断开 VPN(_D)..."
-
-#~ msgid "_Dial Up Connections"
-#~ msgstr "拨号连接(_D)"
-
-#~ msgid "Connect to %s..."
-#~ msgstr "正在连接到 %s..."
-
-#~ msgid "Disconnect from %s..."
-#~ msgstr "正在从 %s 断开..."
-
-#~ msgid "No network devices have been found"
-#~ msgstr "没有发现网络设备"
-
-#~ msgid "NetworkManager is not running..."
-#~ msgstr "网络管理器未运行..."
-
-#~ msgid "Enable _Networking"
-#~ msgstr "启用联网(_N)"
-
-#~ msgid "Enable _Wireless"
-#~ msgstr "启用无线(_W)"
-
-#~ msgid "Connection _Information"
-#~ msgstr "连接信息(_I)"
-
-#~ msgid "_Help"
-#~ msgstr "帮助(_H)"
-
-#~ msgid "_About"
-#~ msgstr "关于(_A)"
-
-#~ msgid ""
-#~ "The NetworkManager applet could not find some required resources.  It "
-#~ "cannot continue.\n"
-#~ msgstr "网络管理器小程序找不到所需的资源。无法继续。\n"
-
-#~ msgid "Shared Key"
-#~ msgstr "共享密钥"
-
-#~ msgid "Automatic (Default)"
-#~ msgstr "自动(默认)"
-
-#~ msgid "AES-CCMP"
-#~ msgstr "AES-CCMP"
-
-#~ msgid "TKIP"
-#~ msgstr "TKIP"
-
-#~ msgid "Dynamic WEP"
-#~ msgstr "动态 WEP"
-
-#~ msgid "None"
-#~ msgstr "无"
-
-#~ msgid "WEP 64/128-bit ASCII"
-#~ msgstr "WEP 64/128 位 ASCII"
-
-#~ msgid "WEP 64/128-bit Hex"
-#~ msgstr "WEP 64/128 位十六进制"
-
-#~ msgid "WEP 128-bit Passphrase"
-#~ msgstr "WEP 128 位密码句"
-
-#~ msgid "PEAP"
-#~ msgstr "PEAP"
-
-#~ msgid "TLS"
-#~ msgstr "TLS"
-
-#~ msgid "TTLS"
-#~ msgstr "TTLS"
-
-#~ msgid "WPA2 Enterprise"
-#~ msgstr "WPA2 企业"
-
-#~ msgid "WPA Enterprise"
-#~ msgstr "WPA 企业"
-
-#~ msgid "WPA2 Personal"
-#~ msgstr "WPA2 个人"
-
-#~ msgid "WPA Personal"
-#~ msgstr "WPA 个人"
-
-#~ msgid "Orientation"
-#~ msgstr "方向"
-
-#~ msgid "The orientation of the tray."
-#~ msgstr "托盘方向。"
-
-#~ msgid "Wired Network (%s)"
-#~ msgstr "有线网络(%s)"
-
-#~ msgid "_Wired Network"
-#~ msgstr "有线网络(_W)"
-
-#~ msgid "Wireless Network (%s)"
-#~ msgid_plural "Wireless Networks (%s)"
-#~ msgstr[0] "无线网络(%s)"
-
-#~ msgid "Wireless Network"
-#~ msgid_plural "Wireless Networks"
-#~ msgstr[0] "无线网络"
-
-#~ msgid " (invalid Unicode)"
-#~ msgstr " (无效的 Unicode)"
-
-#~ msgid ""
-#~ "By default, the wireless network's name is set to your computer's name, %"
-#~ "s, with no encryption enabled"
-#~ msgstr ""
-#~ "默认情况下，无线网络的名称会设定为您的计算机名称，%s，如果没有加密的话"
-
-#~ msgid "Create new wireless network"
-#~ msgstr "创建新的无线网络"
-
-#~ msgid ""
-#~ "Enter the name and security settings of the wireless network you wish to "
-#~ "create."
-#~ msgstr "输入您想要创建的无线网络的名称和安全设置。"
-
-#~ msgid "Create New Wireless Network"
-#~ msgstr "创建新的无线网络"
-
-#~ msgid "Existing wireless network"
-#~ msgstr "现有无线网络"
-
-#~ msgid "Enter the name of the wireless network to which you wish to connect."
-#~ msgstr "输入您想要连接的无线网络的名称。"
-
-#~ msgid "Connect to Other Wireless Network"
-#~ msgstr "连接到其它无线网络"
-
-#~ msgid "Error connecting to wireless network"
-#~ msgstr "连接到无线网络出错"
-
-#~ msgid ""
-#~ "The requested wireless network requires security capabilities unsupported "
-#~ "by your hardware."
-#~ msgstr "您的硬件不支持请求的无线网络所需的安全特性。"
-
-#~ msgid "Cannot start VPN connection '%s'"
-#~ msgstr "无法启动 VPN 连接“%s”"
-
-#~ msgid ""
-#~ "Could not find the authentication dialog for VPN connection type '%s'. "
-#~ "Contact your system administrator."
-#~ msgstr "找不到 VPN 连接类型“%s”的身份验证对话。请联系您的系统管理员。"
-
-#~ msgid ""
-#~ "There was a problem launching the authentication dialog for VPN "
-#~ "connection type '%s'. Contact your system administrator."
-#~ msgstr "调用 VPN 连接类型“%s”的身份验证对话有问题。请联系您的系统管理员。"
-
-#~ msgid " "
-#~ msgstr " "
-
-#~ msgid ""
-#~ "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
-#~ msgstr "<span weight=\"bold\" size=\"larger\">活动连接信息</span>"
-
-#~ msgid ""
-#~ "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
-#~ "Network</span>\n"
-#~ "\n"
-#~ "A passphrase or encryption key is required to access the wireless network "
-#~ "'%s'."
-#~ msgstr ""
-#~ "<span weight=\"bold\" size=\"larger\">无线网络需要密码句</span>\n"
-#~ "\n"
-#~ "要访问无线网络“%s”，需要提供密码句或加密密钥。"
-
-#~ msgid ""
-#~ "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</"
-#~ "span>\n"
-#~ "\n"
-#~ "%s  It will not be completely functional."
-#~ msgstr ""
-#~ "<span weight=\"bold\" size=\"larger\">削减的网络功能</span>\n"
-#~ "\n"
-#~ "%s  该网络无法完整工作。"
-
-#~ msgid ""
-#~ "<span weight=\"bold\" size=\"larger\">Wireless Network Login "
-#~ "Confirmation</span>\n"
-#~ "\n"
-#~ "You have chosen to log in to the wireless network '%s'.  If you are sure "
-#~ "that this wireless network is secure, click the checkbox below and "
-#~ "NetworkManager will not require confirmation on subsequent log ins."
-#~ msgstr ""
-#~ "<span weight=\"bold\" size=\"larger\">无线网络登录确认</span>\n"
-#~ "\n"
-#~ "您选择登录到无线网络“%s”。如果您确定此无线网络是安全的，请选中下面的复选"
-#~ "框，网络管理器在以后登录时将不会请求确认。"
-
-#~ msgid "Anonymous Identity:"
-#~ msgstr "匿名身份："
-
-#~ msgid "Authentication:"
-#~ msgstr "认证："
-
-#~ msgid "Broadcast Address:"
-#~ msgstr "广播地址："
-
-#~ msgid "CA Certificate File:"
-#~ msgstr "CA 证书文件："
-
-#~ msgid "C_onnect"
-#~ msgstr "连接(_O)"
-
-#~ msgid "Client Certificate File:"
-#~ msgstr "客户端证书文件："
-
-#~ msgid "Connection Information"
-#~ msgstr "连接信息"
-
-#~ msgid "Default Route:"
-#~ msgstr "默认路由："
-
-#~ msgid "Destination Address:"
-#~ msgstr "目的地址："
-
-#~ msgid "Driver:"
-#~ msgstr "驱动程序："
-
-#~ msgid "EAP Method:"
-#~ msgstr "EAP 方法："
-
-#~ msgid "Hardware Address:"
-#~ msgstr "硬件地址："
-
-#~ msgid "IP Address:"
-#~ msgstr "IP 地址："
-
-#~ msgid "Identity:"
-#~ msgstr "身份："
-
-#~ msgid "Interface:"
-#~ msgstr "接口："
-
-#~ msgid "Key Type:"
-#~ msgstr "密钥类型："
-
-#~ msgid "Key:"
-#~ msgstr "密钥："
-
-#~ msgid ""
-#~ "None\n"
-#~ "WEP 128-bit Passphrase\n"
-#~ "WEP 64/128-bit Hex\n"
-#~ "WEP 64/128-bit ASCII\n"
-#~ msgstr ""
-#~ "无\n"
-#~ "WEP 128 位密码句\n"
-#~ "WEP 64/128 位十六进制\n"
-#~ "WEP 64/128 位 ASCII\n"
-
-#~ msgid ""
-#~ "Open System\n"
-#~ "Shared Key"
-#~ msgstr ""
-#~ "开放式系统\n"
-#~ "共享密钥"
-
-#~ msgid "Other Wireless Network..."
-#~ msgstr "其它无线网络..."
-
-#~ msgid "Passphrase:"
-#~ msgstr "密码句："
-
-#~ msgid "Password:"
-#~ msgstr "密码："
-
-#~ msgid "Primary DNS:"
-#~ msgstr "主 DNS："
-
-#~ msgid "Private Key File:"
-#~ msgstr "私钥文件："
-
-#~ msgid "Private Key Password:"
-#~ msgstr "私用密钥密码："
-
-#~ msgid "Secondary DNS:"
-#~ msgstr "辅 DNS："
-
-#~ msgid "Select the CA Certificate File"
-#~ msgstr "选择 CA 证书文件"
-
-#~ msgid "Select the Client Certificate File"
-#~ msgstr "选择客户端证书文件"
-
-#~ msgid "Select the Private Key File"
-#~ msgstr "选择私钥文件"
-
-#~ msgid "Show key"
-#~ msgstr "显示密钥"
-
-#~ msgid "Show passphrase"
-#~ msgstr "显示密码句"
-
-#~ msgid "Show password"
-#~ msgstr "显示密码"
-
-#~ msgid "Show passwords"
-#~ msgstr "显示密码"
-
-#~ msgid "Speed:"
-#~ msgstr "速度："
-
-#~ msgid "Subnet Mask:"
-#~ msgstr "子网掩码："
-
-#~ msgid "Type:"
-#~ msgstr "类型："
-
-#~ msgid "User Name:"
-#~ msgstr "用户名："
-
-#~ msgid "Wireless Network Key Required"
-#~ msgstr "需要无线网络密钥"
-
-#~ msgid "Wireless _adapter:"
-#~ msgstr "无线适配器(_A)："
-
-#~ msgid "_Always Trust this Wireless Network"
-#~ msgstr "总是信任此无线网络(_A)"
-
-#~ msgid "_Don't remind me again"
-#~ msgstr "以后不再提醒(_D)"
-
-#~ msgid "_Login to Network"
-#~ msgstr "登录到网络(_L)"
-
-#~ msgid "_Network Name:"
-#~ msgstr "网络名称(_N)："
-
-#~ msgid "_Wireless Security:"
-#~ msgstr "无线安全性(_W)："
-
-#~ msgid "Cannot add VPN connection"
-#~ msgstr "无法添加 VPN 连接"
-
-#~ msgid ""
-#~ "No suitable VPN software was found on your system. Contact your system "
-#~ "administrator."
-#~ msgstr "您的系统上未找到合适的 VPN 软件。请联系您的系统管理员。"
-
-#~ msgid "Cannot import VPN connection"
-#~ msgstr "无法导入 VPN 连接"
-
-#~ msgid ""
-#~ "Cannot find suitable software for VPN connection type '%s' to import the "
-#~ "file '%s'. Contact your system administrator."
-#~ msgstr ""
-#~ "找不到合适的软件来导入 VPN 连接类型“%s”的文件“%s”。请联系您的系统管理员。"
-
-#~ msgid "Error retrieving VPN connection '%s'"
-#~ msgstr "获取 VPN 连接“%s”出错"
-
-#~ msgid ""
-#~ "Could not find the UI files for VPN connection type '%s'. Contact your "
-#~ "system administrator."
-#~ msgstr "找不到 VPN 连接类型“%s”的用户界面文件。请联系您的系统管理员。"
-
-#~ msgid "Delete VPN connection \"%s\"?"
-#~ msgstr "删除 VPN 连接“%s”吗？"
-
-#~ msgid ""
-#~ "All information about the VPN connection \"%s\" will be lost and you may "
-#~ "need your system administrator to provide information to create a new "
-#~ "connection."
-#~ msgstr ""
-#~ "关于 VPN 连接“%s”的全部信息都将丢失。要创建新连接的话，您就必须请求您的系"
-#~ "统管理员提供相应信息。"
-
-#~ msgid "Unable to load"
-#~ msgstr "无法装入"
-
-#~ msgid "Cannot find some needed resources (the glade file)!"
-#~ msgstr "找不到所需的资源(glade 文件)！"
-
-#~ msgid "Edit VPN Connection"
-#~ msgstr "编辑 VPN 连接"
-
-#~ msgid "Add a new VPN connection"
-#~ msgstr "添加新的 VPN 连接"
-
-#~ msgid "Choose which type of VPN connection you wish to create."
-#~ msgstr "选择您想要创建的 VPN 连接类型。"
-
-#~ msgid "Connect to:"
-#~ msgstr "连接到："
-
-#~ msgid "Create VPN Connection"
-#~ msgstr "创建 VPN 连接"
-
-#~ msgid "Create VPN Connection - 1 of 2"
-#~ msgstr "创建 VPN 连接 - 第一步，共两步"
-
-#~ msgid "Create VPN Connection - 2 of 2"
-#~ msgstr "创建 VPN 连接 - 第二步，共两步"
-
-#~ msgid "Delete the selected VPN connection"
-#~ msgstr "删除选中的 VPN 连接"
-
-#~ msgid "E_xport"
-#~ msgstr "导出(_X)"
-
-#~ msgid "Edit the selected VPN connection"
-#~ msgstr "编辑选中的 VPN 连接"
-
-#~ msgid "Export the VPN settings to a file"
-#~ msgstr "将 VPN 设置导出到文件"
-
-#~ msgid "Export the selected VPN connection to a file"
-#~ msgstr "将选中的 VPN 连接导出到文件"
-
-#~ msgid "Finish Creating VPN Connection"
-#~ msgstr "创建 VPN 连接完成"
-
-#~ msgid "Manage Virtual Private Network Connections"
-#~ msgstr "管理虚拟私网连接"
-
-#~ msgid ""
-#~ "This assistant will guide you through the creation of a connection to a "
-#~ "Virtual Private Network (VPN).\n"
-#~ "\n"
-#~ "It will require some information, such as IP addresses and secrets.  "
-#~ "Please see your system administrator to obtain this information."
-#~ msgstr ""
-#~ "此助手将指引您创建到虚拟私网(VPN)的连接。\n"
-#~ "\n"
-#~ "此向导需要您提供的某些信息，比如 IP 地址和机密问题，您可能需要求助系统管理"
-#~ "员才能知晓。"
-
-#~ msgid "VPN Connections"
-#~ msgstr "VPN 连接"
-
-#~ msgid "40-bit WEP"
-#~ msgstr "40 位 WEP"
-
-#~ msgid "104-bit WEP"
-#~ msgstr "104 位 WEP"
-
-#~ msgid "WPA TKIP"
-#~ msgstr "WPA TKIP"
-
-#~ msgid "WPA CCMP"
-#~ msgstr "WPA CCMP"
-
-#~ msgid "WPA Automatic"
-#~ msgstr "WPA 自动"
-
-#~ msgid "WPA2 TKIP"
-#~ msgstr "WPA2 TKIP"
-
-#~ msgid "WPA2 CCMP"
-#~ msgstr "WPA2 CCMP"
-
-#~ msgid "WPA2 Automatic"
-#~ msgstr "WPA2 自动"
-
-#~ msgid "none"
-#~ msgstr "无"
-
-#~ msgid "operation took too long"
-#~ msgstr "操作时间太长"
-
-#~ msgid "received data from wrong type of sender"
-#~ msgstr "从错误的发送者类型收到数据"
-
-#~ msgid "received data from unexpected sender"
-#~ msgstr "从未知的发送者收到数据"
-
-#~ msgid "too much data was sent over socket and some of it was lost"
-#~ msgstr "向套接字发送的数据太多，其中有些已经丢失"
-
-#~ msgid "You are now connected to the Ad-Hoc wireless network '%s'."
-#~ msgstr "您现在已连接到 Ad-Hoc 无线网络“%s”。"
-
-#~ msgid "You are now connected to the wireless network '%s'."
-#~ msgstr "您现在已连接到无线网络“%s”。"
-
-#~ msgid "You are now connected to the wired network."
-#~ msgstr "您现在已连接到有线网络。"
-
-#~ msgid "Connection Established"
-#~ msgstr "连接已建立"
-
-#~ msgid "Disconnected"
-#~ msgstr "已断开连接"
-
-#~ msgid "The network connection has been disconnected."
-#~ msgstr "网络连接现已断开。"

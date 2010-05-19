@@ -24,6 +24,7 @@ EXTRA_DIST = \
 	nm-ppp-manager.xml \
 	nm-active-connection.xml \
 	nm-dhcp4-config.xml \
+	nm-dhcp6-config.xml \
 	nm-wimax-device.xml \
 	nm-wimax-nsp.xml
 

@@ -39,7 +39,6 @@ G_BEGIN_DECLS
 #define NM_DEVICE_ETHERNET_HW_ADDRESS "hw-address"
 #define NM_DEVICE_ETHERNET_SPEED "speed"
 #define NM_DEVICE_ETHERNET_CARRIER "carrier"
-#define NM_DEVICE_ETHERNET_IFINDEX "ifindex"
 
 typedef struct {
 	NMDevice parent;
@@ -58,13 +57,10 @@ GType nm_device_ethernet_get_type (void);
 
 NMDevice *nm_device_ethernet_new (const char *udi,
                                   const char *iface,
-                                  const char *driver,
-                                  guint32 ifindex);
+                                  const char *driver);
 
 void nm_device_ethernet_get_address (NMDeviceEthernet *dev,
                                      struct ether_addr *addr);
-
-guint32 nm_device_ethernet_get_ifindex (NMDeviceEthernet *dev);
 
 G_END_DECLS
 

@@ -25,6 +25,7 @@
 
 #include "nm-marshal.h"
 #include "nm-inotify-helper.h"
+#include "nm-logging.h"
 
 G_DEFINE_TYPE (NMInotifyHelper, nm_inotify_helper, G_TYPE_OBJECT)
 
@@ -122,14 +123,14 @@ init_inotify (NMInotifyHelper *self)
 
 	priv->ifd = inotify_init ();
 	if (priv->ifd == -1) {
-		g_warning ("%s: couldn't initialize inotify", __func__);
+		nm_log_warn (LOGD_SYS_SET, "couldn't initialize inotify");
 		return FALSE;
 	}
 
 	/* Watch the inotify descriptor for file/directory change events */
 	channel = g_io_channel_unix_new (priv->ifd);
 	if (!channel) {
-		g_warning ("%s: couldn't create new GIOChannel", __func__);
+		nm_log_warn (LOGD_SYS_SET, "couldn't create new GIOChannel");
 		close (priv->ifd);
 		priv->ifd = -1;
 		return FALSE;

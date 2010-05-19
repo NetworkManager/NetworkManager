@@ -31,13 +31,15 @@
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 #include "nm-dhcp4-config.h"
+#include "nm-dhcp6-config.h"
 #include "nm-connection.h"
 
 typedef enum NMActStageReturn
 {
 	NM_ACT_STAGE_RETURN_FAILURE = 0,
 	NM_ACT_STAGE_RETURN_SUCCESS,
-	NM_ACT_STAGE_RETURN_POSTPONE
+	NM_ACT_STAGE_RETURN_POSTPONE,
+	NM_ACT_STAGE_RETURN_STOP         /* This activation chain is done */
 } NMActStageReturn;
 
 
@@ -127,7 +129,9 @@ void            nm_device_set_path (NMDevice *dev, const char *path);
 
 const char *	nm_device_get_udi		(NMDevice *dev);
 const char *	nm_device_get_iface		(NMDevice *dev);
+int             nm_device_get_ifindex	(NMDevice *dev);
 const char *	nm_device_get_ip_iface	(NMDevice *dev);
+int             nm_device_get_ip_ifindex(NMDevice *dev);
 const char *	nm_device_get_driver	(NMDevice *dev);
 const char *	nm_device_get_type_desc (NMDevice *dev);
 
@@ -140,10 +144,8 @@ int			nm_device_get_priority (NMDevice *dev);
 guint32			nm_device_get_ip4_address	(NMDevice *dev);
 void				nm_device_update_ip4_address	(NMDevice *dev);
 
-gboolean		nm_device_get_use_dhcp	(NMDevice *dev);
-void			nm_device_set_use_dhcp	(NMDevice *dev,
-								 gboolean use_dhcp);
 NMDHCP4Config * nm_device_get_dhcp4_config (NMDevice *dev);
+NMDHCP6Config * nm_device_get_dhcp6_config (NMDevice *dev);
 
 NMIP4Config *	nm_device_get_ip4_config	(NMDevice *dev);
 NMIP6Config *	nm_device_get_ip6_config	(NMDevice *dev);

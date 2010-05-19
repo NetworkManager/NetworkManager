@@ -25,7 +25,6 @@
 
 NMDevice *nm_wimax_manager_create_device (const char *path,
 										  const char *ifname,
-										  const char *driver,
-										  int ifindex);
+										  const char *driver);
 
 #endif /* NM_WIMAX_MANAGER_H */

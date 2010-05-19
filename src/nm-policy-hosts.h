@@ -15,17 +15,26 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2006 - 2008 Red Hat, Inc.
- * Copyright (C) 2006 - 2008 Novell, Inc.
+ * Copyright (C) 2004 - 2010 Red Hat, Inc.
  */
 
-#ifndef NM_LOGGING_H
-#define NM_LOGGING_H
+#ifndef NM_POLICY_HOSTS_H
+#define NM_POLICT_HOSTS_H
 
 #include <glib.h>
 
-void nm_logging_setup     (gboolean become_daemon);
-void nm_logging_backtrace (void);
-void nm_logging_shutdown  (void);
+gboolean nm_policy_hosts_update_etc_hosts (const char *hostname,
+                                           const char *fallback_hostname,
+                                           gboolean *out_changed);
 
-#endif /* NM_LOGGING_H */
+/* Only for testcases; don't use outside of nm-policy-hosts.c */
+gboolean nm_policy_hosts_find_token (const char *line, const char *token);
+
+GString *nm_policy_get_etc_hosts (const char **lines,
+                                  gsize existing_len,
+                                  const char *hostname,
+                                  const char *fallback_hostname,
+                                  GError **error);
+
+#endif /* NM_POLICY_HOSTS_H */
+

@@ -15,13 +15,14 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2008 - 2010 Red Hat, Inc.
  */
 
 #include <glib.h>
 #include "nm-active-connection.h"
 #include "NetworkManager.h"
 #include "nm-active-connection-glue.h"
+#include "nm-logging.h"
 
 char *
 nm_active_connection_get_next_object_path (void)
@@ -54,7 +55,7 @@ nm_active_connection_scope_to_value (NMConnection *connection, GValue *value)
 		g_value_set_string (value, NM_DBUS_SERVICE_USER_SETTINGS);
 		break;
 	default:
-		g_warning ("%s: unknown connection scope!", __func__);
+		nm_log_err (LOGD_CORE, "unknown connection scope!");
 		break;
 	}
 }

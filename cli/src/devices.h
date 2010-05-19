@@ -1,5 +1,4 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-/* NetworkManager -- Network link manager
+/* nmcli - command-line tool to control NetworkManager
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,22 +14,14 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2010 Red Hat, Inc.
  */
 
-#ifndef NM_NETLINK_H
-#define NM_NETLINK_H
+#ifndef NMC_DEVICES_H
+#define NMC_DEVICES_H
 
-#include <asm/types.h>
-#include <netlink/route/addr.h>
-#include <netlink/netlink.h>
-#include <netlink/utils.h>
-#include <netlink/route/link.h>
+#include "nmcli.h"
 
-int    nm_netlink_iface_to_index (const char *iface);
-char * nm_netlink_index_to_iface (int idx);
-struct rtnl_link * nm_netlink_index_to_rtnl_link (int idx);
+NMCResultCode do_devices (NmCli *nmc, int argc, char **argv);
 
-struct nl_handle * nm_netlink_get_default_handle (void);
-
-#endif /* NM_NETLINK_H */
+#endif /* NMC_DEVICES_H */

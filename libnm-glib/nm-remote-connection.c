@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2009 Red Hat, Inc.
+ * Copyright (C) 2007 - 2010 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -324,12 +324,14 @@ constructor (GType type,
 	                                         nm_connection_get_path (NM_CONNECTION (object)),
 	                                         NM_DBUS_IFACE_SETTINGS_CONNECTION);
 	g_assert (priv->proxy);
+	dbus_g_proxy_set_default_timeout (priv->proxy, G_MAXINT);
 
 	priv->secrets_proxy = dbus_g_proxy_new_for_name (priv->bus,
 	                                                 service,
 	                                                 nm_connection_get_path (NM_CONNECTION (object)),
 	                                                 NM_DBUS_IFACE_SETTINGS_CONNECTION_SECRETS);
 	g_assert (priv->secrets_proxy);
+	dbus_g_proxy_set_default_timeout (priv->secrets_proxy, G_MAXINT);
 
 	dbus_g_proxy_add_signal (priv->proxy, "Updated", DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->proxy, "Updated", G_CALLBACK (updated_cb), object, NULL);

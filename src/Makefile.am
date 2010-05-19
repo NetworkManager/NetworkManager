@@ -1,4 +1,5 @@
 SUBDIRS= \
+	logging \
 	named-manager \
 	vpn-manager \
 	dhcp-manager \
@@ -17,6 +18,7 @@ SUBDIRS= \
 INCLUDES = -I${top_srcdir}                   \
            -I${top_srcdir}/include           \
            -I${top_builddir}/marshallers   \
+           -I${top_srcdir}/src/logging \
            -I${top_srcdir}/src/named-manager \
            -I${top_srcdir}/src/vpn-manager   \
            -I${top_srcdir}/src/dhcp-manager  \
@@ -32,13 +34,18 @@ INCLUDES = -I${top_srcdir}                   \
            -I${top_srcdir}/callouts
 
 ###########################################
+# Test libraries
+###########################################
+
+noinst_LTLIBRARIES = libtest-dhcp.la libtest-policy-hosts.la
+
+###########################################
 # DHCP test library
 ###########################################
 
-noinst_LTLIBRARIES = libtest-dhcp.la
-
 libtest_dhcp_la_SOURCES = \
 	nm-ip4-config.c \
+	nm-ip6-config.c \
 	nm-hostname-provider.c \
 	nm-dbus-manager.c
 
@@ -48,10 +55,27 @@ libtest_dhcp_la_CPPFLAGS = \
 	$(LIBNL_CFLAGS)
 
 libtest_dhcp_la_LIBADD = \
+	$(top_builddir)/marshallers/libmarshallers.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS) \
 	$(LIBNL_LIBS)
+
+###########################################
+# Hosts policy test library
+###########################################
+
+libtest_policy_hosts_la_SOURCES = \
+	nm-policy-hosts.c \
+	nm-policy-hosts.h
+
+libtest_policy_hosts_la_CPPFLAGS = \
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
+	$(GLIB_CFLAGS)
+
+libtest_policy_hosts_la_LIBADD = \
+	${top_builddir}/src/logging/libnm-logging.la \
+	$(GLIB_LIBS)
 
 
 ###########################################
@@ -76,8 +100,14 @@ NetworkManager_SOURCES = \
 		nm-device-olpc-mesh.h	\
 		nm-device-bt.c \
 		nm-device-bt.h \
-		NetworkManagerAP.c \
-		NetworkManagerAP.h \
+		nm-device-modem.h \
+		nm-device-modem.c \
+		nm-device-cdma.c \
+		nm-device-cdma.h \
+		nm-device-gsm.c \
+		nm-device-gsm.h \
+		nm-wifi-ap.c \
+		nm-wifi-ap.h \
 		nm-dbus-manager.h \
 		nm-dbus-manager.c \
 		nm-udev-manager.c \
@@ -92,15 +122,17 @@ NetworkManager_SOURCES = \
 		nm-secrets-provider-interface.h \
 		nm-active-connection.h \
 		nm-active-connection.c \
-		NetworkManager.c \
-		NetworkManagerPolicy.c \
-		NetworkManagerPolicy.h \
+		main.c \
+		nm-policy.c \
+		nm-policy.h \
+		nm-policy-hosts.c \
+		nm-policy-hosts.h \
+		nm-policy-hostname.c \
+		nm-policy-hostname.h \
 		NetworkManagerUtils.c \
 		NetworkManagerUtils.h \
-		NetworkManagerSystem.c \
-		NetworkManagerSystem.h \
-		nm-logging.c \
-		nm-logging.h \
+		nm-system.c \
+		nm-system.h \
 		nm-manager.c \
 		nm-manager.h \
 		nm-netlink-monitor.c \
@@ -111,10 +143,10 @@ NetworkManager_SOURCES = \
 		nm-properties-changed-signal.h \
 		wpa.c \
 		wpa.h \
-		nm-netlink.c \
-		nm-netlink.h \
 		nm-dhcp4-config.c \
 		nm-dhcp4-config.h \
+		nm-dhcp6-config.c \
+		nm-dhcp6-config.h \
 		nm-rfkill.h
 
 nm-access-point-glue.h: $(top_srcdir)/introspection/nm-access-point.xml
@@ -150,6 +182,15 @@ nm-active-connection-glue.h: $(top_srcdir)/introspection/nm-active-connection.xm
 nm-dhcp4-config-glue.h: $(top_srcdir)/introspection/nm-dhcp4-config.xml
 	dbus-binding-tool --prefix=nm_dhcp4_config --mode=glib-server --output=$@ $<
 
+nm-dhcp6-config-glue.h: $(top_srcdir)/introspection/nm-dhcp6-config.xml
+	dbus-binding-tool --prefix=nm_dhcp6_config --mode=glib-server --output=$@ $<
+
+nm-device-cdma-glue.h: $(top_srcdir)/introspection/nm-device-cdma.xml
+	dbus-binding-tool --prefix=nm_device_cdma --mode=glib-server --output=$@ $<
+
+nm-device-gsm-glue.h: $(top_srcdir)/introspection/nm-device-gsm.xml
+	dbus-binding-tool --prefix=nm_device_gsm --mode=glib-server --output=$@ $<
+
 BUILT_SOURCES = \
 	nm-access-point-glue.h \
 	nm-manager-glue.h \
@@ -158,17 +199,18 @@ BUILT_SOURCES = \
 	nm-device-wifi-glue.h \
 	nm-device-olpc-mesh-glue.h \
 	nm-device-bt-glue.h \
+	nm-device-cdma-glue.h \
+	nm-device-gsm-glue.h \
 	nm-ip4-config-glue.h \
 	nm-ip6-config-glue.h \
 	nm-active-connection-glue.h \
-	nm-dhcp4-config-glue.h
+	nm-dhcp4-config-glue.h \
+	nm-dhcp6-config-glue.h
 
 NetworkManager_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
-	$(HAL_CFLAGS) \
 	$(GUDEV_CFLAGS) \
-	$(OPENSSL_CFLAGS) \
 	$(LIBNL_CFLAGS) \
 	$(GMODULE_CFLAGS) \
 	$(WIMAX_CFLAGS) \
@@ -185,6 +227,7 @@ NetworkManager_CPPFLAGS = \
 
 NetworkManager_LDADD = \
 	$(top_builddir)/marshallers/libmarshallers.la \
+	./logging/libnm-logging.la \
 	./named-manager/libnamed-manager.la \
 	./vpn-manager/libvpn-manager.la \
 	./dhcp-manager/libdhcp-manager.la \

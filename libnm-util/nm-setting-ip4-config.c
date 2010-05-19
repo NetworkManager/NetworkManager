@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2010 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -83,6 +83,7 @@ typedef struct {
 	gboolean dhcp_send_hostname;
 	char *dhcp_hostname;
 	gboolean never_default;
+	gboolean may_fail;
 } NMSettingIP4ConfigPrivate;
 
 enum {
@@ -98,6 +99,7 @@ enum {
 	PROP_DHCP_SEND_HOSTNAME,
 	PROP_DHCP_HOSTNAME,
 	PROP_NEVER_DEFAULT,
+	PROP_MAY_FAIL,
 
 	LAST_PROP
 };
@@ -438,6 +440,14 @@ nm_setting_ip4_config_get_never_default (NMSettingIP4Config *setting)
 	return NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->never_default;
 }
 
+gboolean
+nm_setting_ip4_config_get_may_fail (NMSettingIP4Config *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), FALSE);
+
+	return NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->may_fail;
+}
+
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
@@ -462,7 +472,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			return FALSE;
 		}
 	} else if (   !strcmp (priv->method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)
-	           || !strcmp (priv->method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
+	           || !strcmp (priv->method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)
+	           || !strcmp (priv->method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
 		if (priv->dns && priv->dns->len) {
 			g_set_error (error,
 			             NM_SETTING_IP4_CONFIG_ERROR,
@@ -640,6 +651,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_NEVER_DEFAULT:
 		priv->never_default = g_value_get_boolean (value);
 		break;
+	case PROP_MAY_FAIL:
+		priv->may_fail = g_value_get_boolean (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -687,6 +701,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_NEVER_DEFAULT:
 		g_value_set_boolean (value, priv->never_default);
 		break;
+	case PROP_MAY_FAIL:
+		g_value_set_boolean (value, priv->may_fail);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -721,7 +738,8 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 * network access to other computers) then the interface is assigned an
 	 * address in the 10.42.x.1/24 range and a DHCP and forwarding DNS server
 	 * are started, and the interface is NAT-ed to the current default network
-	 * connection.  This property must be set.
+	 * connection.  'disabled' means IPv4 will not be used on this connection.
+	 * This property must be set.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_METHOD,
@@ -742,7 +760,8 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 						      "address in the 10.42.x.1/24 range and a DHCP and "
 						      "forwarding DNS server are started, and the "
 						      "interface is NAT-ed to the current default network "
-						      "connection.  This property must be set.",
+						      "connection.  'disabled' means IPv4 will not be "
+						      "used on this connection.  This property must be set.",
 						      NULL,
 						      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
@@ -751,8 +770,8 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 *
 	 * List of DNS servers (network byte order).  For the 'auto' method, these
 	 * DNS servers are appended to those (if any) returned by automatic
-	 * configuration.  DNS servers cannot be used with the 'shared' or
-	 * 'link-local' methods as there is no usptream network.  In all other
+	 * configuration.  DNS servers cannot be used with the 'shared', 'link-local',
+	 * or 'disabled' methods as there is no usptream network.  In all other
 	 * methods, these DNS servers are used as the only DNS servers for this
 	 * connection.
 	 **/
@@ -764,10 +783,10 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 							   "the 'auto' method, these DNS servers are "
 							   "appended to those (if any) returned by automatic "
 							   "configuration.  DNS servers cannot be used with "
-							   "the 'shared' or 'link-local' methods as there is "
-							   "no usptream network.  In all other methods, "
-							   "these DNS servers are used as the only DNS "
-							   "servers for this connection.",
+							   "the 'shared', 'link-local', or 'disabled' "
+							   "methods as there is no usptream network.  In all "
+							   "other methods, these DNS servers are used as the "
+							   "only DNS servers for this connection.",
 							   DBUS_TYPE_G_UINT_ARRAY,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
@@ -776,9 +795,9 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 *
 	 * List of DNS search domains.  For the 'auto' method, these search domains
 	 * are appended to those returned by automatic configuration. Search domains
-	 * cannot be used with the 'shared' or 'link-local' methods as there is no
-	 * upstream network.  In all other methods, these search domains are used
-	 * as the only search domains for this connection.
+	 * cannot be used with the 'shared', 'link-local', or 'disabled' methods as
+	 * there is no upstream network.  In all other methods, these search domains
+	 * are used as the only search domains for this connection.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DNS_SEARCH,
@@ -787,11 +806,11 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 							   "List of DNS search domains.  For the 'auto' "
 							   "method, these search domains are appended to "
 							   "those returned by automatic configuration. "
-							   "Search domains cannot be used with the 'shared' "
-							   "or 'link-local' methods as there is no upstream "
-							   "network.  In all other methods, these search "
-							   "domains are used as the only search domains for "
-							   "this connection.",
+							   "Search domains cannot be used with the 'shared', "
+							   "'link-local', or 'disabled' methods as there is "
+							   "no upstream network.  In all other methods, these "
+							   "search domains are used as the only search domains "
+							   "for this connection.",
 							   DBUS_TYPE_G_LIST_OF_STRING,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
@@ -804,8 +823,8 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 * (network byte order). The gateway may be left as 0 if no gateway exists
 	 * for that subnet.  For the 'auto' method, given IP addresses are appended
 	 * to those returned by automatic configuration.  Addresses cannot be used
-	 * with the 'shared' or 'link-local' methods as the interface is
-	 * automatically assigned an address with these methods.
+	 * with the 'shared', 'link-local', or 'disabled' methods as addressing is
+	 * either automatic or disabled with these methods.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ADDRESSES,
@@ -820,9 +839,9 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 							   "for that subnet.  For the 'auto' method, given "
 							   "IP addresses are appended to those returned by "
 							   "automatic configuration.  Addresses cannot be "
-							   "used with the 'shared' or 'link-local' methods "
-							   "as the interface is automatically assigned an "
-							   "address with these methods.",
+							   "used with the 'shared', 'link-local', or "
+							   "'disabled' methods as addressing is either "
+							   "automatic or disabled with these methods.",
 							   DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
@@ -835,8 +854,8 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 * address prefix (1 - 32), the third being the next-hop (network byte
 	 * order) if any, and the fourth being the route metric. For the 'auto'
 	 * method, given IP routes are appended to those returned by automatic
-	 * configuration.  Routes cannot be used with the 'shared' or 'link-local'
-	 * methods because there is no upstream network.
+	 * configuration.  Routes cannot be used with the 'shared', 'link-local',
+	 * or 'disabled' methods because there is no upstream network.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ROUTES,
@@ -852,8 +871,8 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 							   "For the 'auto' method, given IP routes are "
 							   "appended to those returned by automatic "
 							   "configuration.  Routes cannot be used with the "
-							   "'shared' or 'link-local' methods as there is no "
-							   "upstream network.",
+							   "'shared', 'link-local', or 'disabled', methods "
+							   "as there is no upstream network.",
 							   DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
@@ -879,7 +898,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 * NMSettingIP4Config:ignore-auto-dns:
 	 *
 	 * When the method is set to 'auto' and this property to TRUE, automatically
-	 * configured nameservers and search domains are ignored and only namservers
+	 * configured nameservers and search domains are ignored and only nameservers
 	 * and search domains specified in #NMSettingIP4Config:dns and
 	 * #NMSettingIP4Config:dns-search, if any, are used.
 	 **/
@@ -889,7 +908,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 						   "Ignore automatic DNS",
 						   "When the method is set to 'auto' and this property "
 						   "to TRUE, automatically configured nameservers and "
-						   "search domains are ignored and only namservers and "
+						   "search domains are ignored and only nameservers and "
 						   "search domains specified in the 'dns' and 'dns-search' "
 						   "properties, if any, are used.",
 						   FALSE,
@@ -963,6 +982,31 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 						   "If TRUE, this connection will never be the default "
 						   "IPv4 connection, meaning it will never be assigned "
 						   "the default route by NetworkManager.",
+						   FALSE,
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
+	 * NMSettingIP4Config:may-fail:
+	 *
+	 * If TRUE, allow overall network configuration to proceed even if IPv4
+	 * configuration times out.  Note that at least one IP configuration
+	 * must succeed or overall network configuration will still fail.  For
+	 * example, in IPv6-only networks, setting this property to TRUE allows
+	 * the overall network configuration to succeed if IPv4 configuration fails
+	 * but IPv6 configuration completes successfully.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_MAY_FAIL,
+		 g_param_spec_boolean (NM_SETTING_IP4_CONFIG_MAY_FAIL,
+						   "May Fail",
+						   "If TRUE, allow overall network configuration to "
+						   "proceed even if IPv4 configuration times out. "
+						   "Note that at least one IP configuration must "
+						   "succeed or overall network configuration will still "
+						   "fail.  For example, in IPv6-only networks, setting "
+						   "this property to TRUE allows the overall network "
+						   "configuration to succeed if IPv4 configuration "
+						   "fails but IPv6 configuration completes successfully.",
 						   FALSE,
 						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 }

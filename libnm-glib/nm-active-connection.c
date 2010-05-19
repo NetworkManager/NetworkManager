@@ -17,7 +17,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2010 Red Hat, Inc.
  * Copyright (C) 2008 Novell, Inc.
  */
 
@@ -50,6 +50,7 @@ typedef struct {
 	GPtrArray *devices;
 	NMActiveConnectionState state;
 	gboolean is_default;
+	gboolean is_default6;
 } NMActiveConnectionPrivate;
 
 enum {
@@ -60,6 +61,7 @@ enum {
 	PROP_DEVICES,
 	PROP_STATE,
 	PROP_DEFAULT,
+	PROP_DEFAULT6,
 
 	LAST_PROP
 };
@@ -70,6 +72,7 @@ enum {
 #define DBUS_PROP_DEVICES "Devices"
 #define DBUS_PROP_STATE "State"
 #define DBUS_PROP_DEFAULT "Default"
+#define DBUS_PROP_DEFAULT6 "Default6"
 
 /**
  * nm_active_connection_new:
@@ -263,10 +266,10 @@ nm_active_connection_get_state (NMActiveConnection *connection)
  * nm_active_connection_get_default:
  * @connection: a #NMActiveConnection
  *
- * Whether the active connection is the default one (that is, is used for the default route
- * and DNS information).
+ * Whether the active connection is the default IPv4 one (that is, is used for
+ * the default IPv4 route and DNS information).
  *
- * Returns: %TRUE if the active connection is the default one
+ * Returns: %TRUE if the active connection is the default IPv4 connection
  **/
 gboolean
 nm_active_connection_get_default (NMActiveConnection *connection)
@@ -278,11 +281,37 @@ nm_active_connection_get_default (NMActiveConnection *connection)
 	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
 	if (!priv->is_default) {
 		priv->is_default = _nm_object_get_boolean_property (NM_OBJECT (connection),
-		                                                   NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
-		                                                   DBUS_PROP_DEFAULT);
+		                                                    NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
+		                                                    DBUS_PROP_DEFAULT);
 	}
 
 	return priv->is_default;
+}
+
+/**
+ * nm_active_connection_get_default6:
+ * @connection: a #NMActiveConnection
+ *
+ * Whether the active connection is the default IPv6 one (that is, is used for
+ * the default IPv6 route and DNS information).
+ *
+ * Returns: %TRUE if the active connection is the default IPv6 connection
+ **/
+gboolean
+nm_active_connection_get_default6 (NMActiveConnection *connection)
+{
+	NMActiveConnectionPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), FALSE);
+
+	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
+	if (!priv->is_default6) {
+		priv->is_default6 = _nm_object_get_boolean_property (NM_OBJECT (connection),
+		                                                     NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
+		                                                     DBUS_PROP_DEFAULT6);
+	}
+
+	return priv->is_default6;
 }
 
 static void
@@ -350,6 +379,9 @@ get_property (GObject *object,
 	case PROP_DEFAULT:
 		g_value_set_boolean (value, nm_active_connection_get_default (self));
 		break;
+	case PROP_DEFAULT6:
+		g_value_set_boolean (value, nm_active_connection_get_default6 (self));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -392,6 +424,7 @@ register_for_property_changed (NMActiveConnection *connection)
 		{ NM_ACTIVE_CONNECTION_DEVICES,             demarshal_devices,           &priv->devices },
 		{ NM_ACTIVE_CONNECTION_STATE,               _nm_object_demarshal_generic, &priv->state },
 		{ NM_ACTIVE_CONNECTION_DEFAULT,             _nm_object_demarshal_generic, &priv->is_default },
+		{ NM_ACTIVE_CONNECTION_DEFAULT6,            _nm_object_demarshal_generic, &priv->is_default6 },
 		{ NULL },
 	};
 
@@ -512,13 +545,26 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	/**
 	 * NMActiveConnection:default:
 	 *
-	 * Whether the active connection is the default one.
+	 * Whether the active connection is the default IPv4 one.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DEFAULT,
 		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_DEFAULT,
 							   "Default",
-							   "Is the default active connection",
+							   "Is the default IPv4 active connection",
+							   FALSE,
+							   G_PARAM_READABLE));
+
+	/**
+	 * NMActiveConnection:default6:
+	 *
+	 * Whether the active connection is the default IPv6 one.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_DEFAULT6,
+		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_DEFAULT6,
+							   "Default6",
+							   "Is the default IPv6 active connection",
 							   FALSE,
 							   G_PARAM_READABLE));
 }

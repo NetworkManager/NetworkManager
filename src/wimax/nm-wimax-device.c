@@ -46,7 +46,6 @@ G_DEFINE_TYPE_EXTENDED (NMWimaxDevice, nm_wimax_device, NM_TYPE_DEVICE, 0,
 enum {
 	PROP_0,
 	PROP_INDEX,
-	PROP_IFINDEX,
 	PROP_HW_ADDRESS,
 	PROP_ACTIVE_NSP,
 
@@ -71,7 +70,6 @@ typedef struct {
 
 	gboolean enabled;
 	struct ether_addr hw_addr;
-	guint32 ifindex;
 	guint activation_timeout_id;
 
 	GSList *nsp_list;
@@ -130,7 +128,6 @@ NMDevice *
 nm_wimax_device_new (const char *udi,
 					 const char *iface,
 					 const char *driver,
-					 int ifindex,
 					 guchar wimax_device_index)
 {
 	g_return_val_if_fail (udi != NULL, NULL);
@@ -145,7 +142,6 @@ nm_wimax_device_new (const char *udi,
 									NM_DEVICE_INTERFACE_TYPE_DESC, "WiMAX",
 									NM_DEVICE_INTERFACE_DEVICE_TYPE, NM_DEVICE_TYPE_WIMAX,
 									NM_WIMAX_DEVICE_INDEX, wimax_device_index,
-									NM_WIMAX_DEVICE_IFINDEX, ifindex,
 									NULL));
 }
 
@@ -156,14 +152,6 @@ nm_wimax_device_get_hw_address (NMWimaxDevice *self, struct ether_addr *addr)
 	g_return_if_fail (addr != NULL);
 
 	memcpy (addr, &(GET_PRIVATE (self)->hw_addr), sizeof (struct ether_addr));
-}
-
-guint32
-nm_wimax_device_get_ifindex (NMWimaxDevice *self)
-{
-	g_return_val_if_fail (NM_IS_WIMAX_DEVICE (self), 0);
-
-	return GET_PRIVATE (self)->ifindex;
 }
 
 static gboolean
@@ -919,9 +907,6 @@ set_property (GObject *object, guint prop_id,
 	case PROP_INDEX:
 		priv->device_id.deviceIndex = g_value_get_uchar (value);
 		break;
-	case PROP_IFINDEX:
-		priv->ifindex = g_value_get_uint (value);
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1007,14 +992,6 @@ nm_wimax_device_class_init (NMWimaxDeviceClass *klass)
 							 "Index",
 							 0, 1, 0,
 							 G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
-
-	g_object_class_install_property
-		(object_class, PROP_IFINDEX,
-		 g_param_spec_uint (NM_WIMAX_DEVICE_IFINDEX,
-							"Ifindex",
-							"Interface index",
-							0, G_MAXUINT32, 0,
-							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,

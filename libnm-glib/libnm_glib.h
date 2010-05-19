@@ -37,21 +37,21 @@ typedef enum libnm_glib_state
 	LIBNM_NO_NETWORK_CONNECTION,
 	LIBNM_ACTIVE_NETWORK_CONNECTION,
 	LIBNM_INVALID_CONTEXT
-} libnm_glib_state;
+} libnm_glib_state G_GNUC_DEPRECATED;
 
-typedef struct libnm_glib_ctx libnm_glib_ctx;
-
-
-typedef void (*libnm_glib_callback_func) (libnm_glib_ctx *libnm_ctx, gpointer user_data);
+typedef struct libnm_glib_ctx libnm_glib_ctx G_GNUC_DEPRECATED;
 
 
-libnm_glib_ctx		*libnm_glib_init				(void);
-void				 libnm_glib_shutdown			(libnm_glib_ctx *ctx);
+typedef void (*libnm_glib_callback_func) (libnm_glib_ctx *libnm_ctx, gpointer user_data) G_GNUC_DEPRECATED;
 
-libnm_glib_state	 libnm_glib_get_network_state		(const libnm_glib_ctx *ctx);
 
-guint				 libnm_glib_register_callback		(libnm_glib_ctx *ctx, libnm_glib_callback_func func, gpointer user_data, GMainContext *g_main_ctx);
-void				 libnm_glib_unregister_callback	(libnm_glib_ctx *ctx, guint id);
+G_GNUC_DEPRECATED libnm_glib_ctx *  libnm_glib_init                (void);
+G_GNUC_DEPRECATED void              libnm_glib_shutdown            (libnm_glib_ctx *ctx);
+
+G_GNUC_DEPRECATED libnm_glib_state  libnm_glib_get_network_state   (const libnm_glib_ctx *ctx);
+
+G_GNUC_DEPRECATED guint             libnm_glib_register_callback   (libnm_glib_ctx *ctx, libnm_glib_callback_func func, gpointer user_data, GMainContext *g_main_ctx);
+G_GNUC_DEPRECATED void              libnm_glib_unregister_callback (libnm_glib_ctx *ctx, guint id);
 
 G_END_DECLS
 

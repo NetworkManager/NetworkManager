@@ -19,7 +19,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2009 Red Hat, Inc.
+ * (C) Copyright 2007 - 2010 Red Hat, Inc.
  * (C) Copyright 2008 Novell, Inc.
  */
 
@@ -33,11 +33,23 @@
 #include <nm-connection.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
-#include <nm-setting-connection.h>
-#include <nm-setting-wired.h>
-#include <nm-setting-pppoe.h>
-#include <nm-settings-interface.h>
 #include <nm-settings-system-interface.h>
+
+#include <nm-setting-8021x.h>
+#include <nm-setting-bluetooth.h>
+#include <nm-setting-cdma.h>
+#include <nm-setting-connection.h>
+#include <nm-setting-gsm.h>
+#include <nm-setting-ip4-config.h>
+#include <nm-setting-ip6-config.h>
+#include <nm-setting-olpc-mesh.h>
+#include <nm-setting-ppp.h>
+#include <nm-setting-pppoe.h>
+#include <nm-setting-serial.h>
+#include <nm-setting-vpn.h>
+#include <nm-setting-wired.h>
+#include <nm-setting-wireless.h>
+#include <nm-setting-wireless-security.h>
 
 #include "../nm-device-ethernet.h"
 #include "nm-dbus-glib-types.h"
@@ -45,8 +57,8 @@
 #include "nm-sysconfig-connection.h"
 #include "nm-polkit-helpers.h"
 #include "nm-system-config-error.h"
-#include "nm-utils.h"
 #include "nm-default-wired-connection.h"
+#include "nm-logging.h"
 
 #define CONFIG_KEY_NO_AUTO_DEFAULT "no-auto-default"
 
@@ -90,7 +102,6 @@ typedef struct {
 	gboolean connections_loaded;
 	GHashTable *connections;
 	GSList *unmanaged_specs;
-	char *orig_hostname;
 } NMSysconfigSettingsPrivate;
 
 static void settings_system_interface_init (NMSettingsSystemInterface *klass);
@@ -254,7 +265,6 @@ nm_sysconfig_settings_get_hostname (NMSysconfigSettings *self)
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 	GSList *iter;
 	char *hostname = NULL;
-	gboolean have_hostname_providers = FALSE;
 
 	/* Hostname returned is the hostname returned from the first plugin
 	 * that provides one.
@@ -264,18 +274,12 @@ nm_sysconfig_settings_get_hostname (NMSysconfigSettings *self)
 
 		g_object_get (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES, &caps, NULL);
 		if (caps & NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME) {
-			have_hostname_providers = TRUE;
-
 			g_object_get (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME, &hostname, NULL);
 			if (hostname && strlen (hostname))
 				return hostname;
 			g_free (hostname);
 		}
 	}
-
-	/* If no plugin provided a hostname, try the original hostname of the machine */
-	if (!have_hostname_providers && priv->orig_hostname)
-		hostname = g_strdup (priv->orig_hostname);
 
 	return hostname;
 }
@@ -353,8 +357,6 @@ add_plugin (NMSysconfigSettings *self, NMSystemConfigInterface *plugin)
 
 	g_signal_connect (plugin, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED,
 	                  G_CALLBACK (plugin_connection_added), self);
-	g_signal_connect (plugin, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED,
-	                  G_CALLBACK (unmanaged_specs_changed), self);
 	g_signal_connect (plugin, "notify::hostname", G_CALLBACK (hostname_changed), self);
 
 	nm_system_config_interface_init (plugin, NULL);
@@ -364,7 +366,10 @@ add_plugin (NMSysconfigSettings *self, NMSystemConfigInterface *plugin)
 	              NM_SYSTEM_CONFIG_INTERFACE_INFO, &pinfo,
 	              NULL);
 
-	g_message ("Loaded plugin %s: %s", pname, pinfo);
+	g_signal_connect (plugin, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED,
+	                  G_CALLBACK (unmanaged_specs_changed), self);
+
+	nm_log_info (LOGD_SYS_SET, "Loaded plugin %s: %s", pname, pinfo);
 	g_free (pname);
 	g_free (pinfo);
 }
@@ -855,11 +860,11 @@ permission_call_done (GObject *object, GAsyncResult *result, gpointer user_data)
 	                                                         &error);
 	/* Some random error happened */
 	if (error) {
-		g_warning ("%s.%d (%s): error checking '%s' permission: (%d) %s",
-		           __FILE__, __LINE__, __func__,
-		           call->pk_action,
-		           error ? error->code : -1,
-		           error && error->message ? error->message : "(unknown)");
+		nm_log_err (LOGD_SYS_SET, "error checking '%s' permission: (%d) %s",
+		            __FILE__, __LINE__, __func__,
+		            call->pk_action,
+		            error ? error->code : -1,
+		            error && error->message ? error->message : "(unknown)");
 		if (error)
 			g_error_free (error);
 	} else {
@@ -1060,7 +1065,7 @@ is_mac_auto_wired_blacklisted (NMSysconfigSettings *self, const GByteArray *mac)
 
 	config = g_key_file_new ();
 	if (!config) {
-		g_warning ("%s: not enough memory to load config file.", __func__);
+		nm_log_warn (LOGD_SYS_SET, "not enough memory to load config file.");
 		return FALSE;
 	}
 
@@ -1212,14 +1217,14 @@ default_wired_try_update (NMDefaultWiredConnection *wired,
 		g_object_set_data (G_OBJECT (nm_default_wired_connection_get_device (wired)),
 		                   DEFAULT_WIRED_TAG,
 		                   NULL);
-		g_message ("Saved default wired connection '%s' to persistent storage", id);
+		nm_log_info (LOGD_SYS_SET, "Saved default wired connection '%s' to persistent storage", id);
 		return FALSE;
 	}
 
-	g_warning ("%s: couldn't save default wired connection '%s': %d / %s",
-	           __func__, id,
-	           error ? error->code : -1,
-	           (error && error->message) ? error->message : "(unknown)");
+	nm_log_warn (LOGD_SYS_SET, "couldn't save default wired connection '%s': %d / %s",
+	             id,
+	             error ? error->code : -1,
+	             (error && error->message) ? error->message : "(unknown)");
 
 	/* If there was an error, don't destroy the default wired connection,
 	 * but add it back to the system settings service. Connection is already
@@ -1271,7 +1276,8 @@ nm_sysconfig_settings_device_added (NMSysconfigSettings *self, NMDevice *device)
 	id = nm_setting_connection_get_id (s_con);
 	g_assert (id);
 
-	g_message ("Added default wired connection '%s' for %s", id, nm_device_get_udi (device));
+	nm_log_info (LOGD_SYS_SET, "Added default wired connection '%s' for %s",
+	             id, nm_device_get_udi (device));
 
 	g_signal_connect (wired, "try-update", (GCallback) default_wired_try_update, self);
 	g_signal_connect (wired, "deleted", (GCallback) default_wired_deleted, self);
@@ -1323,6 +1329,7 @@ nm_sysconfig_settings_new (const char *config_file,
 			g_object_unref (self);
 			return NULL;
 		}
+		unmanaged_specs_changed (NULL, self);
 	}
 
 	return self;
@@ -1378,7 +1385,6 @@ finalize (GObject *object)
 	g_slist_foreach (priv->plugins, (GFunc) g_object_unref, NULL);
 	g_slist_free (priv->plugins);
 
-	g_free (priv->orig_hostname);
 	g_free (priv->config_file);
 
 	G_OBJECT_CLASS (nm_sysconfig_settings_parent_class)->finalize (object);
@@ -1470,13 +1476,35 @@ nm_sysconfig_settings_class_init (NMSysconfigSettingsClass *class)
 	dbus_g_error_domain_register (NM_SYSCONFIG_SETTINGS_ERROR,
 	                              NM_DBUS_IFACE_SETTINGS_SYSTEM,
 	                              NM_TYPE_SYSCONFIG_SETTINGS_ERROR);
+
+	dbus_g_error_domain_register (NM_SETTINGS_INTERFACE_ERROR,
+	                              NM_DBUS_IFACE_SETTINGS,
+	                              NM_TYPE_SETTINGS_INTERFACE_ERROR);
+
+	/* And register all the settings errors with D-Bus */
+	dbus_g_error_domain_register (NM_CONNECTION_ERROR, NULL, NM_TYPE_CONNECTION_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_802_1X_ERROR, NULL, NM_TYPE_SETTING_802_1X_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_BLUETOOTH_ERROR, NULL, NM_TYPE_SETTING_BLUETOOTH_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_CDMA_ERROR, NULL, NM_TYPE_SETTING_CDMA_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_CONNECTION_ERROR, NULL, NM_TYPE_SETTING_CONNECTION_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_GSM_ERROR, NULL, NM_TYPE_SETTING_GSM_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_IP4_CONFIG_ERROR, NULL, NM_TYPE_SETTING_IP4_CONFIG_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_IP6_CONFIG_ERROR, NULL, NM_TYPE_SETTING_IP6_CONFIG_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_OLPC_MESH_ERROR, NULL, NM_TYPE_SETTING_OLPC_MESH_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_PPP_ERROR, NULL, NM_TYPE_SETTING_PPP_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_PPPOE_ERROR, NULL, NM_TYPE_SETTING_PPPOE_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_SERIAL_ERROR, NULL, NM_TYPE_SETTING_SERIAL_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_VPN_ERROR, NULL, NM_TYPE_SETTING_VPN_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_WIRED_ERROR, NULL, NM_TYPE_SETTING_WIRED_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_WIRELESS_SECURITY_ERROR, NULL, NM_TYPE_SETTING_WIRELESS_SECURITY_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_WIRELESS_ERROR, NULL, NM_TYPE_SETTING_WIRELESS_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_ERROR, NULL, NM_TYPE_SETTING_ERROR);
 }
 
 static void
 nm_sysconfig_settings_init (NMSysconfigSettings *self)
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
-	char hostname[HOST_NAME_MAX + 2];
 
 	priv->connections = g_hash_table_new_full (g_direct_hash, g_direct_equal, g_object_unref, NULL);
 
@@ -1487,14 +1515,6 @@ nm_sysconfig_settings_init (NMSysconfigSettings *self)
 		                                          G_CALLBACK (pk_authority_changed_cb),
 		                                          self);
 	} else
-		g_warning ("%s: failed to create PolicyKit authority.", __func__);
-
-	/* Grab hostname on startup and use that if no plugins provide one */
-	memset (hostname, 0, sizeof (hostname));
-	if (gethostname (&hostname[0], HOST_NAME_MAX) == 0) {
-		/* only cache it if it's a valid hostname */
-		if (strlen (hostname) && strcmp (hostname, "localhost") && strcmp (hostname, "localhost.localdomain"))
-			priv->orig_hostname = g_strdup (hostname);
-	}
+		nm_log_warn (LOGD_SYS_SET, "failed to create PolicyKit authority.");
 }
 

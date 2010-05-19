@@ -1,8 +1,5 @@
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /* NetworkManager -- Network link manager
- *
- * Timothee Lecomte <timothee.lecomte@ens.fr>
- *
- * Heavily based on NetworkManagerRedhat.c by Dan Williams <dcbw@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +15,8 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2004 Red Hat, Inc.
+ * (C) Copyright 2004 - 2010 Red Hat, Inc.
+ * (C) Copyright 2006 Timothee Lecomte <timothee.lecomte@ens.fr>
  */
 
 #ifdef HAVE_CONFIG_H
@@ -33,10 +31,10 @@
 #include <string.h>
 
 #include "NetworkManagerGeneric.h"
-#include "NetworkManagerSystem.h"
+#include "nm-system.h"
 #include "NetworkManagerUtils.h"
-#include "nm-netlink.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
+#include "nm-netlink-monitor.h"
 
 /* Because of a bug in libnl, rtnl.h should be included before route.h */
 #include <netlink/route/rtnl.h>
@@ -93,8 +91,9 @@ void nm_generic_enable_loopback (void)
 	rtnl_addr_set_label (addr, "lo");
 
 	if ((err = rtnl_addr_add (nlh, addr, 0)) < 0) {
-		if (err != -EEXIST)
-			nm_warning ("error %d returned from rtnl_addr_add():\n%s", err, nl_geterror());
+		if (err != -EEXIST) {
+			nm_log_warn (LOGD_CORE, "error %d returned from rtnl_addr_add():\n%s", err, nl_geterror());
+		}
 	}
 out:
 	if (addr)

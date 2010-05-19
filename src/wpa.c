@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /*
  * WPA Supplicant - WPA state machine and EAPOL-Key processing
  * Copyright (c) 2003-2005, Jouni Malinen <jkmaline@cc.hut.fi>
@@ -19,7 +20,7 @@
 #include <glib.h>
 
 #include "wpa.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 
 typedef guint16 u16;
 typedef guint8 u8;
@@ -207,8 +208,8 @@ static int wpa_parse_wpa_ie_wpa(const u8 *wpa_ie, size_t wpa_ie_len,
 	}
 
 	if (wpa_ie_len < sizeof(struct wpa_ie_hdr)) {
-		nm_debug ("%s: ie len too short %lu",
-			   __func__, (unsigned long) wpa_ie_len);
+		nm_log_dbg (LOGD_WIFI, "IE len too short %lu",
+			    (unsigned long) wpa_ie_len);
 		return -1;
 	}
 
@@ -218,8 +219,7 @@ static int wpa_parse_wpa_ie_wpa(const u8 *wpa_ie, size_t wpa_ie_len,
 	    hdr->len != wpa_ie_len - 2 ||
 	    memcmp(hdr->oui, WPA_OUI_TYPE, WPA_SELECTOR_LEN) != 0 ||
 	    WPA_GET_LE16(hdr->version) != WPA_VERSION) {
-		nm_debug ("%s: malformed ie or unknown version",
-			   __func__);
+		nm_log_dbg (LOGD_WIFI, "malformed IE or unknown version");
 		return -1;
 	}
 
@@ -231,8 +231,7 @@ static int wpa_parse_wpa_ie_wpa(const u8 *wpa_ie, size_t wpa_ie_len,
 		pos += WPA_SELECTOR_LEN;
 		left -= WPA_SELECTOR_LEN;
 	} else if (left > 0) {
-		nm_debug ("%s: ie length mismatch, %u too much",
-			   __func__, left);
+		nm_log_dbg (LOGD_WIFI, "IE length mismatch, %u too much", left);
 		return -1;
 	}
 
@@ -242,8 +241,8 @@ static int wpa_parse_wpa_ie_wpa(const u8 *wpa_ie, size_t wpa_ie_len,
 		pos += 2;
 		left -= 2;
 		if (count == 0 || left < count * WPA_SELECTOR_LEN) {
-			nm_debug ("%s: ie count botch (pairwise), "
-				   "count %u left %u", __func__, count, left);
+			nm_log_dbg (LOGD_WIFI, "IE count botch (pairwise), "
+			            "count %u left %u", count, left);
 			return -1;
 		}
 		for (i = 0; i < count; i++) {
@@ -252,8 +251,7 @@ static int wpa_parse_wpa_ie_wpa(const u8 *wpa_ie, size_t wpa_ie_len,
 			left -= WPA_SELECTOR_LEN;
 		}
 	} else if (left == 1) {
-		nm_debug ("%s: ie too short (for key mgmt)",
-			   __func__);
+		nm_log_dbg (LOGD_WIFI, "IE too short (for key mgmt)");
 		return -1;
 	}
 
@@ -263,8 +261,8 @@ static int wpa_parse_wpa_ie_wpa(const u8 *wpa_ie, size_t wpa_ie_len,
 		pos += 2;
 		left -= 2;
 		if (count == 0 || left < count * WPA_SELECTOR_LEN) {
-			nm_debug ("%s: ie count botch (key mgmt), "
-				   "count %u left %u", __func__, count, left);
+			nm_log_dbg (LOGD_WIFI, "IE count botch (key mgmt), "
+				   "count %u left %u", count, left);
 			return -1;
 		}
 		for (i = 0; i < count; i++) {
@@ -273,8 +271,7 @@ static int wpa_parse_wpa_ie_wpa(const u8 *wpa_ie, size_t wpa_ie_len,
 			left -= WPA_SELECTOR_LEN;
 		}
 	} else if (left == 1) {
-		nm_debug ("%s: ie too short (for capabilities)",
-			   __func__);
+		nm_log_dbg (LOGD_WIFI, "IE too short (for capabilities)");
 		return -1;
 	}
 
@@ -286,8 +283,7 @@ static int wpa_parse_wpa_ie_wpa(const u8 *wpa_ie, size_t wpa_ie_len,
 	}
 
 	if (left > 0) {
-		nm_debug ("%s: ie has %u trailing bytes",
-			   __func__, left);
+		nm_log_dbg (LOGD_WIFI, "IE has %u trailing bytes", left);
 		return -1;
 	}
 
@@ -317,8 +313,8 @@ static int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 	}
 
 	if (rsn_ie_len < sizeof(struct rsn_ie_hdr)) {
-		nm_debug ("%s: ie len too short %lu",
-			   __func__, (unsigned long) rsn_ie_len);
+		nm_log_dbg (LOGD_WIFI, "IE len too short %lu",
+			    (unsigned long) rsn_ie_len);
 		return -1;
 	}
 
@@ -327,8 +323,7 @@ static int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 	if (hdr->elem_id != WPA_RSN_INFO_ELEM ||
 	    hdr->len != rsn_ie_len - 2 ||
 	    WPA_GET_LE16(hdr->version) != RSN_VERSION) {
-		nm_debug ("%s: malformed ie or unknown version",
-			   __func__);
+		nm_log_dbg (LOGD_WIFI, "malformed IE or unknown version");
 		return -1;
 	}
 
@@ -340,8 +335,7 @@ static int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 		pos += RSN_SELECTOR_LEN;
 		left -= RSN_SELECTOR_LEN;
 	} else if (left > 0) {
-		nm_debug ("%s: ie length mismatch, %u too much",
-			   __func__, left);
+		nm_log_dbg (LOGD_WIFI, "IE length mismatch, %u too much", left);
 		return -1;
 	}
 
@@ -351,8 +345,8 @@ static int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 		pos += 2;
 		left -= 2;
 		if (count == 0 || left < count * RSN_SELECTOR_LEN) {
-			nm_debug ("%s: ie count botch (pairwise), "
-				   "count %u left %u", __func__, count, left);
+			nm_log_dbg (LOGD_WIFI, "IE count botch (pairwise), "
+				    "count %u left %u", count, left);
 			return -1;
 		}
 		for (i = 0; i < count; i++) {
@@ -361,8 +355,7 @@ static int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 			left -= RSN_SELECTOR_LEN;
 		}
 	} else if (left == 1) {
-		nm_debug ("%s: ie too short (for key mgmt)",
-			   __func__);
+		nm_log_dbg (LOGD_WIFI, "IE too short (for key mgmt)");
 		return -1;
 	}
 
@@ -372,8 +365,8 @@ static int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 		pos += 2;
 		left -= 2;
 		if (count == 0 || left < count * RSN_SELECTOR_LEN) {
-			nm_debug ("%s: ie count botch (key mgmt), "
-				   "count %u left %u", __func__, count, left);
+			nm_log_dbg (LOGD_WIFI, "IE count botch (key mgmt), "
+				   "count %u left %u", count, left);
 			return -1;
 		}
 		for (i = 0; i < count; i++) {
@@ -382,8 +375,7 @@ static int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 			left -= RSN_SELECTOR_LEN;
 		}
 	} else if (left == 1) {
-		nm_debug ("%s: ie too short (for capabilities)",
-			   __func__);
+		nm_log_dbg (LOGD_WIFI, "IE too short (for capabilities)");
 		return -1;
 	}
 
@@ -399,9 +391,9 @@ static int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 		pos += 2;
 		left -= 2;
 		if (left < data->num_pmkid * PMKID_LEN) {
-			nm_debug ("%s: PMKID underflow "
-				   "(num_pmkid=%d left=%d)",
-				   __func__, data->num_pmkid, left);
+			nm_log_dbg (LOGD_WIFI, "PMKID underflow "
+				    "(num_pmkid=%d left=%d)",
+				    data->num_pmkid, left);
 			data->num_pmkid = 0;
 		} else {
 			data->pmkid = pos;
@@ -411,8 +403,7 @@ static int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 	}
 
 	if (left > 0) {
-		nm_debug ("%s: ie has %u trailing bytes - ignored",
-			   __func__, left);
+		nm_log_dbg (LOGD_WIFI, "IE has %u trailing bytes - ignored", left);
 	}
 
 	return 0;
@@ -430,8 +421,8 @@ static int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
  */
 wpa_ie_data * wpa_parse_wpa_ie(const u8 *wpa_ie, size_t wpa_ie_len)
 {
-	wpa_ie_data *	data = NULL;
-	int			err = -1;
+	wpa_ie_data *data = NULL;
+	int err = -1;
 
 	if (!wpa_ie || wpa_ie_len <= 0)
 		return NULL;
@@ -443,25 +434,21 @@ wpa_ie_data * wpa_parse_wpa_ie(const u8 *wpa_ie, size_t wpa_ie_len)
 	else
 		err = wpa_parse_wpa_ie_wpa(wpa_ie, wpa_ie_len, data);
 
-	if (err != 0)
-	{
+	if (err != 0) {
 		g_slice_free (wpa_ie_data, data);
 		data = NULL;
 	}
 
-#if 0
-	if (data)
-	{
-		nm_debug ("WPA IE: -------------------");
-		nm_debug ("   proto        0x%X", data->proto);
-		nm_debug ("   pw cipher    0x%X", data->pairwise_cipher);
-		nm_debug ("   gr cipher    0x%X", data->group_cipher);
-		nm_debug ("   key mgmt     0x%X", data->key_mgmt);
-		nm_debug ("   capabilities 0x%X", data->capabilities);
-		nm_debug ("   # pmkid      0x%X", data->num_pmkid);
-		nm_debug ("");
+	if (data) {
+		nm_log_dbg (LOGD_WIFI, "WPA IE: -------------------");
+		nm_log_dbg (LOGD_WIFI, "   proto        0x%X", data->proto);
+		nm_log_dbg (LOGD_WIFI, "   pw cipher    0x%X", data->pairwise_cipher);
+		nm_log_dbg (LOGD_WIFI, "   gr cipher    0x%X", data->group_cipher);
+		nm_log_dbg (LOGD_WIFI, "   key mgmt     0x%X", data->key_mgmt);
+		nm_log_dbg (LOGD_WIFI, "   capabilities 0x%X", data->capabilities);
+		nm_log_dbg (LOGD_WIFI, "   # pmkid      0x%X", data->num_pmkid);
+		nm_log_dbg (LOGD_WIFI, "");
 	}
-#endif
 
 	return data;
 }
