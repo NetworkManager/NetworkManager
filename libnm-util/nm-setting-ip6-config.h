@@ -66,7 +66,6 @@ GQuark nm_setting_ip6_config_error_quark (void);
 
 #define NM_SETTING_IP6_CONFIG_METHOD_IGNORE     "ignore"
 #define NM_SETTING_IP6_CONFIG_METHOD_AUTO       "auto"
-#define NM_SETTING_IP6_CONFIG_METHOD_DHCP       "dhcp"
 #define NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL "link-local"
 #define NM_SETTING_IP6_CONFIG_METHOD_MANUAL     "manual"
 #define NM_SETTING_IP6_CONFIG_METHOD_SHARED     "shared"
