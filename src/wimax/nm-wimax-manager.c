@@ -27,7 +27,7 @@
 #include "nm-wimax-util.h"
 
 typedef struct {
-	struct WIMAX_API_DEVICE_ID device_id;
+	WIMAX_API_DEVICE_ID device_id;
 	int refs;
 } NMWimaxManager;
 
@@ -69,9 +69,8 @@ nm_wimax_manager_unref (NMWimaxManager *manager)
 }
 
 static gboolean
-wimax_device_matches (struct WIMAX_API_HW_DEVICE_ID *hw_id,
-					  const char *ifname,
-					  int ifindex)
+wimax_device_matches (WIMAX_API_HW_DEVICE_ID *hw_id,
+					  const char *ifname)
 {
 	const char *device_name;
 	char *s;
@@ -91,9 +90,6 @@ wimax_device_matches (struct WIMAX_API_HW_DEVICE_ID *hw_id,
 	if (g_strcmp0 (ifname, hw_ifname))
 		return FALSE;
 
-	if (if_nametoindex (hw_ifname) != ifindex)
-		return FALSE;
-
 	return TRUE;
 }
 
@@ -103,9 +99,9 @@ nm_wimax_manager_create_device (const char *path,
 								const char *driver)
 {
 	NMWimaxManager *manager;
-	struct WIMAX_API_HW_DEVICE_ID device_id_list[5];
+	WIMAX_API_HW_DEVICE_ID device_id_list[5];
 	NMDevice *device = NULL;
-    gsize device_id_list_size = 5;
+    guint32 device_id_list_size = 5;
 	WIMAX_API_RET result;
 
 	g_return_val_if_fail (path != NULL, NULL);
@@ -121,7 +117,7 @@ nm_wimax_manager_create_device (const char *path,
 		int i;
 
 		for (i = 0; i < device_id_list_size; i++) {
-			if (wimax_device_matches (&device_id_list[i], ifname, ifindex)) {
+			if (wimax_device_matches (&device_id_list[i], ifname)) {
 				device = nm_wimax_device_new (path, ifname, driver, device_id_list[0].deviceIndex);
 				break;
 			}

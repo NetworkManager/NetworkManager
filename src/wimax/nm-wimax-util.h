@@ -22,9 +22,10 @@
 #define NM_WIMAX_UTIL_H
 
 #include <WiMaxType.h>
+#include <WiMaxError.h>
 #include "nm-wimax-types.h"
 
-void nm_wimax_util_error (struct WIMAX_API_DEVICE_ID *device_id,
+void nm_wimax_util_error (WIMAX_API_DEVICE_ID *device_id,
 			  const char *message,
 			  WIMAX_API_RET result);
 

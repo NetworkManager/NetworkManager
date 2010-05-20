@@ -23,13 +23,13 @@
 #include "nm-utils.h"
 
 void
-nm_wimax_util_error (struct WIMAX_API_DEVICE_ID *device_id,
+nm_wimax_util_error (WIMAX_API_DEVICE_ID *device_id,
 					 const char *message,
 					 WIMAX_API_RET result)
 {
 	char *warning_msg;
     char str[MAX_SIZE_OF_STRING_BUFFER];
-    gsize str_len = MAX_SIZE_OF_STRING_BUFFER;
+    guint32 str_len = MAX_SIZE_OF_STRING_BUFFER;
 
     GetErrorString (device_id, result, str, &str_len);
     warning_msg = g_strconcat (message, ": %s (%d)", NULL);
@@ -109,8 +109,6 @@ nm_wimax_util_device_status_to_str (WIMAX_API_DEVICE_STATUS status)
 		return "Connection in progress";
 	case WIMAX_API_DEVICE_STATUS_Data_Connected:
 		return "Layer 2 connected";
-	case WIMAX_API_DEVICE_STATUS_Connection_Idle:
-		return "Idle connection";
 	}
 
 	return "Unknown device state";

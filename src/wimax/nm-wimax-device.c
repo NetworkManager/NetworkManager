@@ -26,7 +26,7 @@
 #include "nm-wimax-util.h"
 #include "nm-device-interface.h"
 #include "nm-device-private.h"
-#include "NetworkManagerSystem.h"
+#include "nm-system.h"
 #include "NetworkManagerUtils.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-connection.h"
@@ -65,7 +65,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 #define GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_WIMAX_DEVICE, NMWimaxDevicePrivate))
 
 typedef struct {
-	struct WIMAX_API_DEVICE_ID device_id;
+	WIMAX_API_DEVICE_ID device_id;
 	NMWimaxDevice *object;
 
 	gboolean enabled;
@@ -192,7 +192,6 @@ rf_state_update (NMWimaxDevice *self)
 	case WIMAX_API_DEVICE_STATUS_Scanning:
 	case WIMAX_API_DEVICE_STATUS_Connecting:
 	case WIMAX_API_DEVICE_STATUS_Data_Connected:
-	case WIMAX_API_DEVICE_STATUS_Connection_Idle:
 		if (enable)
 			/* Already matches */
 			goto out;
@@ -301,7 +300,7 @@ activation_timed_out (gpointer data)
 }
 
 static void
-wimax_status_change_cb (struct WIMAX_API_DEVICE_ID *device_id,
+wimax_status_change_cb (WIMAX_API_DEVICE_ID *device_id,
 						WIMAX_API_DEVICE_STATUS status,
 						WIMAX_API_STATUS_REASON reason,
 						WIMAX_API_CONNECTION_PROGRESS_INFO progress)
@@ -328,7 +327,6 @@ wimax_status_change_cb (struct WIMAX_API_DEVICE_ID *device_id,
 	case WIMAX_API_DEVICE_STATUS_Scanning:
 	case WIMAX_API_DEVICE_STATUS_Connecting:
 	case WIMAX_API_DEVICE_STATUS_Data_Connected:
-	case WIMAX_API_DEVICE_STATUS_Connection_Idle:
 		priv->enabled = TRUE;
 		if (device_state < NM_DEVICE_STATE_DISCONNECTED)
 			nm_device_state_changed (NM_DEVICE (self),
@@ -359,7 +357,7 @@ remove_all_nsps (NMWimaxDevice *self)
 
 static void
 remove_outdated_nsps (NMWimaxDevice *self,
-					  struct WIMAX_API_NSP_INFO_EX *nsp_list,
+					  WIMAX_API_NSP_INFO_EX *nsp_list,
 					  guint32 list_size)
 {
 	NMWimaxDevicePrivate *priv = GET_PRIVATE (self);
@@ -372,7 +370,7 @@ remove_outdated_nsps (NMWimaxDevice *self,
 		gboolean found = FALSE;
 
 		for (i = 0; i < list_size; i++) {
-			struct WIMAX_API_NSP_INFO_EX *info = &nsp_list[i];
+			WIMAX_API_NSP_INFO_EX *info = &nsp_list[i];
 
 			if (!g_strcmp0 (nm_wimax_nsp_get_name (nsp), (char *) info->NSPName)) {
 				found = TRUE;
@@ -412,8 +410,8 @@ get_nsp_by_name (NMWimaxDevice *self, const char *name)
 }
 
 static void
-wimax_scan_cb (struct WIMAX_API_DEVICE_ID *device_id,
-			   struct WIMAX_API_NSP_INFO_EX *nsp_list,
+wimax_scan_cb (WIMAX_API_DEVICE_ID *device_id,
+			   WIMAX_API_NSP_INFO_EX *nsp_list,
 			   guint32 list_size,
 			   guint32 progress)
 {
@@ -424,7 +422,7 @@ wimax_scan_cb (struct WIMAX_API_DEVICE_ID *device_id,
 	remove_outdated_nsps (self, nsp_list, list_size);
 
 	for (i = 0; i < list_size; i++) {
-		struct WIMAX_API_NSP_INFO_EX *info = &nsp_list[i];
+		WIMAX_API_NSP_INFO_EX *info = &nsp_list[i];
 		NMWimaxNsp *nsp;
 		gboolean new_nsp;
 		guint32 quality;
@@ -454,15 +452,15 @@ wimax_scan_cb (struct WIMAX_API_DEVICE_ID *device_id,
 }
 
 static void
-wimax_wide_scan_cb (struct WIMAX_API_DEVICE_ID *device_id,
-					struct WIMAX_API_NSP_INFO_EX *nsp_list,
+wimax_wide_scan_cb (WIMAX_API_DEVICE_ID *device_id,
+					WIMAX_API_NSP_INFO_EX *nsp_list,
 					guint32 list_size)
 {
 	wimax_scan_cb (device_id, nsp_list, list_size, 0);
 }
 
 static void
-wimax_connect_cb (struct WIMAX_API_DEVICE_ID *device_id,
+wimax_connect_cb (WIMAX_API_DEVICE_ID *device_id,
 				  WIMAX_API_NETWORK_CONNECTION_RESP response)
 {
 	NMWimaxDevicePrivate *priv = (NMWimaxDevicePrivate *) device_id;
@@ -483,7 +481,7 @@ wimax_connect_cb (struct WIMAX_API_DEVICE_ID *device_id,
 }
 
 static void
-wimax_disconnect_cb (struct WIMAX_API_DEVICE_ID *device_id,
+wimax_disconnect_cb (WIMAX_API_DEVICE_ID *device_id,
 					 WIMAX_API_NETWORK_CONNECTION_RESP response)
 {
 	if (response == WIMAX_API_CONNECTION_SUCCESS) {
@@ -635,7 +633,7 @@ static void
 real_update_hw_address (NMDevice *device)
 {
 	NMWimaxDevicePrivate *priv = GET_PRIVATE (device);
-	struct WIMAX_API_DEVICE_INFO info = { 0, };
+	WIMAX_API_DEVICE_INFO info = { 0, };
     WIMAX_API_RET result;
 
     result = GetDeviceInformation (&priv->device_id, &info);
@@ -806,7 +804,7 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	g_assert (s_wimax);
 
 	result = CmdConnectToNetwork (&priv->device_id,
-								  (WIMAX_API_ASTRING) nm_setting_wimax_get_network_name (s_wimax),
+								  (WIMAX_API_WSTRING) nm_setting_wimax_get_network_name (s_wimax),
 								  0, NULL);
 
 	if (result != WIMAX_API_RET_SUCCESS) {
@@ -841,8 +839,7 @@ real_deactivate_quickly (NMDevice *device)
 		nm_wimax_util_error (&priv->device_id, "Reading WiMax device status failed", result);
 
 	if (status == WIMAX_API_DEVICE_STATUS_Connecting ||
-		status == WIMAX_API_DEVICE_STATUS_Data_Connected || 
-		status == WIMAX_API_DEVICE_STATUS_Connection_Idle) {
+		status == WIMAX_API_DEVICE_STATUS_Data_Connected) {
 
 		result = CmdDisconnectFromNetwork (&priv->device_id);
 		if (result != WIMAX_API_RET_SUCCESS)

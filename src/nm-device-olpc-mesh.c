@@ -652,7 +652,7 @@ dispose (GObject *object)
 
 	device_cleanup (self);
 
-	manager = nm_manager_get (NULL, NULL, NULL, FALSE, FALSE, FALSE, NULL);
+	manager = nm_manager_get (NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL);
 	if (priv->device_added_id)
 		g_signal_handler_disconnect (manager, priv->device_added_id);
 	g_object_unref (manager);
@@ -850,7 +850,7 @@ is_companion (NMDeviceOlpcMesh *self, NMDevice *other)
 	priv->companion = other;
 
 	/* When we've found the companion, stop listening for other devices */
-	manager = nm_manager_get (NULL, NULL, NULL, FALSE, FALSE, FALSE, NULL);
+	manager = nm_manager_get (NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, NULL);
 	if (priv->device_added_id) {
 		g_signal_handler_disconnect (manager, priv->device_added_id);
 		priv->device_added_id = 0;
