@@ -1389,7 +1389,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	char *value = NULL;
 	char *str_value;
 	char *route6_path = NULL;
-	gboolean bool_value, ipv6forwarding, ipv6_autoconf, dhcp6 = FALSE;
+	gboolean bool_value, ipv6forwarding, ipv6_autoconf;
 	char *method = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
 	guint32 i;
 	shvarFile *network_ifcfg;
@@ -1466,12 +1466,9 @@ make_ip6_setting (shvarFile *ifcfg,
 	/* Find out method property */
 	ipv6forwarding = svTrueValue (ifcfg, "IPV6FORWARDING", FALSE);
 	ipv6_autoconf = svTrueValue (ifcfg, "IPV6_AUTOCONF", !ipv6forwarding);
-	dhcp6 = svTrueValue (ifcfg, "DHCPV6C", FALSE);
 
 	if (ipv6_autoconf)
 		method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
-	else if (dhcp6)
-		method = NM_SETTING_IP6_CONFIG_METHOD_DHCP;
 	else {
 		/* IPV6_AUTOCONF=no and no IPv6 address -> method 'link-local' */
 		str_value = svGetValue (ifcfg, "IPV6ADDR", FALSE);
