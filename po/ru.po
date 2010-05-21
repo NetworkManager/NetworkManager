@@ -10,8 +10,8 @@ msgstr ""
 "Project-Id-Version: ru\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2010-05-06 14:31+0530\n"
-"PO-Revision-Date: 2010-05-07 14:56+1000\n"
-"Last-Translator: Yulia <ypoyarko@redhat.com>\n"
+"PO-Revision-Date: 2010-05-19 12:20+1000\n"
+"Last-Translator: \n"
 "Language-Team: Russian\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -490,7 +490,7 @@ msgstr "СВОЙСТВА ПРОВОДНОГО СОЕДИНЕНИЯ"
 #. 4
 #: ../cli/src/devices.c:76
 msgid "IP4-SETTINGS"
-msgstr "НАСТРОЙКИ IP4"
+msgstr "ПАРАМЕТРЫ IP4"
 
 #. 5
 #: ../cli/src/devices.c:77
