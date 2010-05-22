@@ -39,6 +39,12 @@ object.  dbus-glib generates the same bound function names for D-Bus the methods
       <arg name="sleep" type="b" direction="in"/>
     </method>
 
+    <method name="Enable">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_enable"/>
+      <arg name="enable" type="b" direction="in"/>
+    </method>
+
+    <property name="NetworkingEnabled" type="b" access="read"/>
     <property name="WirelessEnabled" type="b" access="readwrite"/>
     <property name="WirelessHardwareEnabled" type="b" access="read"/>
     <property name="WwanEnabled" type="b" access="readwrite"/>

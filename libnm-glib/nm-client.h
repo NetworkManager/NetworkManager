@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2010 Red Hat, Inc.
  */
 
 #ifndef NM_CLIENT_H
@@ -43,6 +43,7 @@ G_BEGIN_DECLS
 
 #define NM_CLIENT_STATE "state"
 #define NM_CLIENT_MANAGER_RUNNING "manager-running"
+#define NM_CLIENT_NETWORKING_ENABLED "networking-enabled"
 #define NM_CLIENT_WIRELESS_ENABLED "wireless-enabled"
 #define NM_CLIENT_WIRELESS_HARDWARE_ENABLED "wireless-hardware-enabled"
 #define NM_CLIENT_WWAN_ENABLED "wwan-enabled"
@@ -87,6 +88,9 @@ void nm_client_activate_connection (NMClient *client,
 						  gpointer user_data);
 
 void nm_client_deactivate_connection (NMClient *client, NMActiveConnection *active);
+
+gboolean  nm_client_networking_get_enabled (NMClient *client);
+void      nm_client_networking_set_enabled (NMClient *client, gboolean enabled);
 
 gboolean  nm_client_wireless_get_enabled (NMClient *client);
 void      nm_client_wireless_set_enabled (NMClient *client, gboolean enabled);
