@@ -58,6 +58,7 @@ typedef struct {
 	GPtrArray *devices;
 	GPtrArray *active_connections;
 
+	gboolean have_networking_enabled;
 	gboolean networking_enabled;
 	gboolean wireless_enabled;
 	gboolean wireless_hw_enabled;
@@ -94,11 +95,28 @@ static void client_device_added_proxy (DBusGProxy *proxy, char *path, gpointer u
 static void client_device_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data);
 
 static void
+handle_net_enabled_changed (GObject *object,
+                            GParamSpec *pspec,
+                            GValue *value,
+                            gpointer user_data)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
+
+	/* Update the cache flag when it changes */
+	priv->have_networking_enabled = TRUE;
+}
+
+static void
 nm_client_init (NMClient *client)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
 
 	priv->state = NM_STATE_UNKNOWN;
+
+	g_signal_connect (client,
+	                  "notify::" NM_CLIENT_NETWORKING_ENABLED,
+	                  G_CALLBACK (handle_net_enabled_changed),
+	                  client);
 }
 
 static void
@@ -916,6 +934,35 @@ nm_client_get_state (NMClient *client)
 		priv->state = _nm_object_get_uint_property (NM_OBJECT (client), NM_DBUS_INTERFACE, "State");
 
 	return priv->state;
+}
+
+/**
+ * nm_client_networking_get_enabled:
+ * @client: a #NMClient
+ *
+ * Whether networking is enabled or disabled.
+ *
+ * Returns: %TRUE if networking is disabled, %FALSE if networking is enabled
+ **/
+gboolean
+nm_client_networking_get_enabled (NMClient *client)
+{
+	NMClientPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+
+	priv = NM_CLIENT_GET_PRIVATE (client);
+	if (!priv->have_networking_enabled) {
+		priv = NM_CLIENT_GET_PRIVATE (client);
+		if (!priv->networking_enabled) {
+			priv->networking_enabled = _nm_object_get_boolean_property (NM_OBJECT (client),
+			                                                            NM_DBUS_INTERFACE,
+			                                                            "NetworkingEnabled");
+			priv->have_networking_enabled = TRUE;
+		}
+	}
+
+	return priv->networking_enabled;
 }
 
 /**
