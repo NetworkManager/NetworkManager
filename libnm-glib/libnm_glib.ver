@@ -35,6 +35,8 @@ global:
 	nm_client_get_manager_running;
 	nm_client_get_state;
 	nm_client_get_type;
+	nm_client_networking_get_enabled;
+	nm_client_networking_set_enabled;
 	nm_client_new;
 	nm_client_sleep;
 	nm_client_wireless_get_enabled;

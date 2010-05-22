@@ -90,7 +90,7 @@ libnm_glib_la_LIBADD = \
 	$(GNOME_KEYRING_LIBS)
 
 libnm_glib_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm_glib.ver \
-	-version-info "1:0:1"
+	-version-info "2:0:2"
 
 noinst_PROGRAMS = libnm-glib-test
 
