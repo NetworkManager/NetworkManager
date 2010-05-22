@@ -58,13 +58,6 @@
 #define NM_AUTOIP_DBUS_SERVICE "org.freedesktop.nm_avahi_autoipd"
 #define NM_AUTOIP_DBUS_IFACE   "org.freedesktop.nm_avahi_autoipd"
 
-#define NM_MANAGER_STATE "state"
-#define NM_MANAGER_WIRELESS_ENABLED "wireless-enabled"
-#define NM_MANAGER_WIRELESS_HARDWARE_ENABLED "wireless-hardware-enabled"
-#define NM_MANAGER_WWAN_ENABLED "wwan-enabled"
-#define NM_MANAGER_WWAN_HARDWARE_ENABLED "wwan-hardware-enabled"
-#define NM_MANAGER_ACTIVE_CONNECTIONS "active-connections"
-
 static gboolean impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err);
 static void impl_manager_activate_connection (NMManager *manager,
 								  const char *service_name,
@@ -78,6 +71,8 @@ static gboolean impl_manager_deactivate_connection (NMManager *manager,
                                                     GError **error);
 
 static gboolean impl_manager_sleep (NMManager *manager, gboolean sleep, GError **err);
+
+static gboolean impl_manager_enable (NMManager *manager, gboolean enable, GError **err);
 
 static gboolean impl_manager_set_logging (NMManager *manager,
                                           const char *level,
@@ -190,6 +185,7 @@ typedef struct {
 
 	RadioState radio_states[RFKILL_TYPE_MAX];
 	gboolean sleeping;
+	gboolean net_enabled;
 
 	NMVPNManager *vpn_manager;
 	guint vpn_manager_id;
@@ -228,6 +224,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 enum {
 	PROP_0,
 	PROP_STATE,
+	PROP_NETWORKING_ENABLED,
 	PROP_WIRELESS_ENABLED,
 	PROP_WIRELESS_HARDWARE_ENABLED,
 	PROP_WWAN_ENABLED,
@@ -251,6 +248,7 @@ typedef enum
 	NM_MANAGER_ERROR_PERMISSION_DENIED,
 	NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
 	NM_MANAGER_ERROR_ALREADY_ASLEEP_OR_AWAKE,
+	NM_MANAGER_ERROR_ALREADY_ENABLED_OR_DISABLED,
 } NMManagerError;
 
 #define NM_MANAGER_ERROR (nm_manager_error_quark ())
@@ -293,11 +291,23 @@ nm_manager_error_get_type (void)
 			ENUM_ENTRY (NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE, "ConnectionNotActive"),
 			/* The manager is already in the requested sleep state */
 			ENUM_ENTRY (NM_MANAGER_ERROR_ALREADY_ASLEEP_OR_AWAKE, "AlreadyAsleepOrAwake"),
+			/* The manager is already in the requested enabled/disabled state */
+			ENUM_ENTRY (NM_MANAGER_ERROR_ALREADY_ENABLED_OR_DISABLED, "AlreadyEnabledOrDisabled"),
 			{ 0, 0, 0 },
 		};
 		etype = g_enum_register_static ("NMManagerError", values);
 	}
 	return etype;
+}
+
+static gboolean
+manager_sleeping (NMManager *self)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+
+	if (priv->sleeping || !priv->net_enabled)
+		return TRUE;
+	return FALSE;
 }
 
 static void
@@ -372,9 +382,9 @@ nm_manager_update_state (NMManager *manager)
 
 	priv = NM_MANAGER_GET_PRIVATE (manager);
 
-	if (priv->sleeping) {
+	if (manager_sleeping (manager))
 		new_state = NM_STATE_ASLEEP;
-	} else {
+	else {
 		GSList *iter;
 
 		for (iter = priv->devices; iter; iter = iter->next) {
@@ -1239,7 +1249,7 @@ manager_set_radio_enabled (NMManager *manager,
 	}
 
 	/* Don't touch devices if asleep/networking disabled */
-	if (priv->sleeping)
+	if (manager_sleeping (manager))
 		return;
 
 	/* enable/disable wireless devices as required */
@@ -1559,7 +1569,7 @@ add_device (NMManager *self, NMDevice *device)
 
 	/* Start the device if it's supposed to be managed */
 	unmanaged_specs = nm_sysconfig_settings_get_unmanaged_specs (priv->sys_settings);
-	if (   !priv->sleeping
+	if (   !manager_sleeping (self)
 	    && !nm_device_interface_spec_match_list (NM_DEVICE_INTERFACE (device), unmanaged_specs)) {
 		nm_device_set_managed (device,
 		                       TRUE,
@@ -1810,7 +1820,6 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
                       gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GObject *device;
 	guint32 ifindex;
 
@@ -1818,7 +1827,7 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 	if (find_device_by_ifindex (self, ifindex))
 		return;
 
-	device = creator_fn (udev_mgr, udev_device, priv->sleeping);
+	device = creator_fn (udev_mgr, udev_device, manager_sleeping (self));
 	if (device)
 		add_device (self, NM_DEVICE (device));
 }
@@ -2646,54 +2655,25 @@ impl_manager_deactivate_connection (NMManager *manager,
 	                                         error);
 }
 
-static gboolean
-impl_manager_sleep (NMManager *self, gboolean sleep, GError **error)
+static void
+do_sleep_wake (NMManager *self)
 {
-	NMManagerPrivate *priv;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	const GSList *unmanaged_specs;
 	GSList *iter;
 
-	g_return_val_if_fail (NM_IS_MANAGER (self), FALSE);
-
-	priv = NM_MANAGER_GET_PRIVATE (self);
-
-	if (priv->sleeping == sleep) {
-		g_set_error (error,
-		             NM_MANAGER_ERROR, NM_MANAGER_ERROR_ALREADY_ASLEEP_OR_AWAKE,
-		             "Already %s", sleep ? "asleep" : "awake");		
-		return FALSE;
-	}
-
-	priv->sleeping = sleep;
-
-	/* Update "NetworkingEnabled" key in state file */
-	if (priv->state_file) {
-		GError *err = NULL;
-		gboolean networking_enabled = !sleep;
-
-		if (!write_value_to_state_file (priv->state_file,
-		                                "main", "NetworkingEnabled",
-		                                G_TYPE_BOOLEAN, (gpointer) &networking_enabled,
-		                                &err)) {
-			nm_log_warn (LOGD_SUSPEND, "writing to state file %s failed: (%d) %s.",
-			             priv->state_file,
-			             err ? err->code : -1,
-			             (err && err->message) ? err->message : "unknown");
-		}
-
-	}
-
-	if (sleep) {
-		nm_log_info (LOGD_SUSPEND, "sleeping...");
+	if (manager_sleeping (self)) {
+		nm_log_info (LOGD_SUSPEND, "sleeping or disabling...");
 
 		/* Just deactivate and down all devices from the device list,
-		 * we'll remove them in 'wake' for speed's sake.
+		 * to keep things fast the device list will get resynced when
+		 * the manager wakes up.
 		 */
 		for (iter = priv->devices; iter; iter = iter->next)
 			nm_device_set_managed (NM_DEVICE (iter->data), FALSE, NM_DEVICE_STATE_REASON_SLEEPING);
-	} else {
-		const GSList *unmanaged_specs;
 
-		nm_log_info (LOGD_SUSPEND, "waking up...");
+	} else {
+		nm_log_info (LOGD_SUSPEND, "waking up and re-enabling...");
 
 		unmanaged_specs = nm_sysconfig_settings_get_unmanaged_specs (priv->sys_settings);
 
@@ -2738,8 +2718,79 @@ impl_manager_sleep (NMManager *self, gboolean sleep, GError **error)
 	}
 
 	nm_manager_update_state (self);
+}
+
+static gboolean
+impl_manager_sleep (NMManager *self, gboolean sleep, GError **error)
+{
+	NMManagerPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_MANAGER (self), FALSE);
+
+	priv = NM_MANAGER_GET_PRIVATE (self);
+
+	if (priv->sleeping == sleep) {
+		g_set_error (error,
+		             NM_MANAGER_ERROR, NM_MANAGER_ERROR_ALREADY_ASLEEP_OR_AWAKE,
+		             "Already %s", sleep ? "asleep" : "awake");
+		return FALSE;
+	}
+
+	nm_log_info (LOGD_SUSPEND, "%s requested (sleeping: %s  enabled: %s)",
+	             sleep ? "sleep" : "wake",
+	             priv->sleeping ? "yes" : "no",
+	             priv->net_enabled ? "yes" : "no");
+
+	priv->sleeping = sleep;
+
+	do_sleep_wake (self);
 
 	g_object_notify (G_OBJECT (self), NM_MANAGER_SLEEPING);
+	return TRUE;
+}
+
+static gboolean
+impl_manager_enable (NMManager *self, gboolean enable, GError **error)
+{
+	NMManagerPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_MANAGER (self), FALSE);
+
+	priv = NM_MANAGER_GET_PRIVATE (self);
+
+	if (priv->net_enabled == enable) {
+		g_set_error (error,
+		             NM_MANAGER_ERROR, NM_MANAGER_ERROR_ALREADY_ENABLED_OR_DISABLED,
+		             "Already %s", enable ? "enabled" : "disabled");
+		return FALSE;
+	}
+
+	/* Update "NetworkingEnabled" key in state file */
+	if (priv->state_file) {
+		GError *err = NULL;
+
+		if (!write_value_to_state_file (priv->state_file,
+		                                "main", "NetworkingEnabled",
+		                                G_TYPE_BOOLEAN, (gpointer) &enable,
+		                                &err)) {
+			/* Not a hard error */
+			nm_log_warn (LOGD_SUSPEND, "writing to state file %s failed: (%d) %s.",
+			             priv->state_file,
+			             err ? err->code : -1,
+			             (err && err->message) ? err->message : "unknown");
+		}
+	}
+
+	nm_log_info (LOGD_SUSPEND, "%s requested (sleeping: %s  enabled: %s)",
+	             enable ? "enable" : "disable",
+	             priv->sleeping ? "yes" : "no",
+	             priv->net_enabled ? "yes" : "no");
+
+	priv->net_enabled = enable;
+
+	do_sleep_wake (self);
+
+	g_object_notify (G_OBJECT (self), NM_MANAGER_NETWORKING_ENABLED);
 	return TRUE;
 }
 
@@ -2910,9 +2961,9 @@ nm_manager_start (NMManager *self)
 		manager_set_radio_enabled (self, rstate, rstate->enabled && enabled);
 	}
 
-	/* Log overall networking status - asleep/running */
+	/* Log overall networking status - enabled/disabled */
 	nm_log_info (LOGD_CORE, "Networking is %s by state file",
-	             priv->sleeping ? "disabled" : "enabled");
+	             priv->net_enabled ? "enabled" : "disabled");
 
 	system_unmanaged_devices_changed_cb (priv->sys_settings, NULL, self);
 	system_hostname_changed_cb (priv->sys_settings, NULL, self);
@@ -2964,7 +3015,7 @@ nm_manager_get (const char *config_file,
 
 	priv->state_file = g_strdup (state_file);
 
-	priv->sleeping = !initial_net_enabled;
+	priv->net_enabled = initial_net_enabled;
 
 	priv->radio_states[RFKILL_TYPE_WLAN].enabled = initial_wifi_enabled;
 	priv->radio_states[RFKILL_TYPE_WWAN].enabled = initial_wwan_enabled;
@@ -3088,6 +3139,10 @@ set_property (GObject *object, guint prop_id,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
 	switch (prop_id) {
+	case PROP_NETWORKING_ENABLED:
+		/* Construct only for now */
+		priv->net_enabled = g_value_get_boolean (value);
+		break;
 	case PROP_WIRELESS_ENABLED:
 		manager_set_radio_enabled (NM_MANAGER (object),
 		                           &priv->radio_states[RFKILL_TYPE_WLAN],
@@ -3115,6 +3170,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_STATE:
 		nm_manager_update_state (self);
 		g_value_set_uint (value, priv->state);
+		break;
+	case PROP_NETWORKING_ENABLED:
+		g_value_set_boolean (value, priv->net_enabled);
 		break;
 	case PROP_WIRELESS_ENABLED:
 		g_value_set_boolean (value, priv->radio_states[RFKILL_TYPE_WLAN].enabled);
@@ -3256,6 +3314,14 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		                    G_PARAM_READABLE));
 
 	g_object_class_install_property
+		(object_class, PROP_NETWORKING_ENABLED,
+		 g_param_spec_boolean (NM_MANAGER_NETWORKING_ENABLED,
+		                       "NetworkingEnabled",
+		                       "Is networking enabled",
+		                       TRUE,
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
 		(object_class, PROP_WIRELESS_ENABLED,
 		 g_param_spec_boolean (NM_MANAGER_WIRELESS_ENABLED,
 		                       "WirelessEnabled",
@@ -3304,6 +3370,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		                      NULL,
 		                      G_PARAM_READABLE | NM_PROPERTY_PARAM_NO_EXPORT));
 
+	/* Sleeping is not exported over D-Bus */
 	g_object_class_install_property
 		(object_class, PROP_SLEEPING,
 		 g_param_spec_boolean (NM_MANAGER_SLEEPING,

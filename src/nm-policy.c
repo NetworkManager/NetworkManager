@@ -718,13 +718,14 @@ hostname_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 static void
 sleeping_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 {
-	gboolean sleeping = FALSE;
+	gboolean sleeping = FALSE, enabled = FALSE;
 	GSList *connections, *iter;
 
 	g_object_get (G_OBJECT (manager), NM_MANAGER_SLEEPING, &sleeping, NULL);
+	g_object_get (G_OBJECT (manager), NM_MANAGER_NETWORKING_ENABLED, &enabled, NULL);
 
 	/* Clear the invalid flag on all connections so they'll get retried on wakeup */
-	if (sleeping) {
+	if (sleeping || !enabled) {
 		connections = nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_SYSTEM);
 		connections = g_slist_concat (connections, nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_USER));
 		for (iter = connections; iter; iter = g_slist_next (iter))
@@ -1052,6 +1053,10 @@ nm_policy_new (NMManager *manager, NMVPNManager *vpn_manager)
 	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
 
 	id = g_signal_connect (manager, "notify::" NM_MANAGER_SLEEPING,
+	                       G_CALLBACK (sleeping_changed), policy);
+	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
+
+	id = g_signal_connect (manager, "notify::" NM_MANAGER_NETWORKING_ENABLED,
 	                       G_CALLBACK (sleeping_changed), policy);
 	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
 

@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2010 Red Hat, Inc.
  */
 
 #ifndef NM_MANAGER_H
@@ -34,6 +34,14 @@
 #define NM_IS_MANAGER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_MANAGER))
 #define NM_IS_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_MANAGER))
 #define NM_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_MANAGER, NMManagerClass))
+
+#define NM_MANAGER_STATE "state"
+#define NM_MANAGER_NETWORKING_ENABLED "networking-enabled"
+#define NM_MANAGER_WIRELESS_ENABLED "wireless-enabled"
+#define NM_MANAGER_WIRELESS_HARDWARE_ENABLED "wireless-hardware-enabled"
+#define NM_MANAGER_WWAN_ENABLED "wwan-enabled"
+#define NM_MANAGER_WWAN_HARDWARE_ENABLED "wwan-hardware-enabled"
+#define NM_MANAGER_ACTIVE_CONNECTIONS "active-connections"
 
 /* Not exported */
 #define NM_MANAGER_HOSTNAME "hostname"

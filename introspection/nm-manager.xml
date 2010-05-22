@@ -87,11 +87,31 @@
     <method name="Sleep">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_sleep"/>
       <tp:docstring>
-        Control the NetworkManager daemon's sleep state.  When asleep, all interfaces that it manages are deactivated.  When awake, devices are available to be activated.
+        Control the NetworkManager daemon's sleep state.  When asleep, all
+        interfaces that it manages are deactivated.  When awake, devices are
+        available to be activated.  This command should not be called directly
+        by users or clients; it is intended for system suspend/resume tracking.
       </tp:docstring>
       <arg name="sleep" type="b" direction="in">
         <tp:docstring>
           Indicates whether the NetworkManager daemon should sleep or wake.
+        </tp:docstring>
+      </arg>
+    </method>
+
+    <method name="Enable">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_enable"/>
+      <tp:docstring>
+        Control whether overall networking is enabled or disabled.  When
+        disabled, all interfaces that NM manages are deactivated.  When enabled,
+        all managed interfaces are re-enabled and available to be activated.
+        This command should be used by clients that provide to users the ability
+        to enable/disable all networking.
+      </tp:docstring>
+      <arg name="enable" type="b" direction="in">
+        <tp:docstring>
+          If FALSE, indicates that all networking should be disabled.  If TRUE,
+          indicates that NetworkManager should begin managing network devices.
         </tp:docstring>
       </arg>
     </method>
@@ -117,6 +137,13 @@
         </tp:docstring>
       </arg>
     </method>
+
+    <property name="NetworkingEnabled" type="b" access="read">
+      <tp:docstring>
+        Indicates if overall networking is currently enabled or not.  See the
+        Enable() method.
+      </tp:docstring>
+    </property>
 
     <property name="WirelessEnabled" type="b" access="readwrite">
       <tp:docstring>
