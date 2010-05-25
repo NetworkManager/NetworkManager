@@ -46,6 +46,7 @@ enum {
 
 enum {
 	PPP_STATS,
+	ENABLE_CHANGED,
 	LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -158,6 +159,8 @@ modem_enabled_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (self);
 
 	real_set_enabled (NM_DEVICE_INTERFACE (self), nm_modem_get_mm_enabled (priv->modem));
+
+	g_signal_emit (G_OBJECT (self), signals[ENABLE_CHANGED], 0);
 }
 
 /*****************************************************************************/
@@ -452,6 +455,15 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 					  _nm_marshal_VOID__UINT_UINT,
 					  G_TYPE_NONE, 2,
 					  G_TYPE_UINT, G_TYPE_UINT);
+
+	signals[ENABLE_CHANGED] =
+		g_signal_new (NM_DEVICE_MODEM_ENABLE_CHANGED,
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  0,
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__VOID,
+					  G_TYPE_NONE, 0);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (mclass),
 	                                 nm_modem_get_serial_dbus_info ());
