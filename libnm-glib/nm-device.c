@@ -1051,7 +1051,7 @@ nm_device_update_description (NMDevice *device)
 {
 	NMDevicePrivate *priv;
 	const char *subsys[3] = { "net", "tty", NULL };
-	GUdevDevice *udev_device = NULL, *tmpdev;
+	GUdevDevice *udev_device = NULL, *tmpdev, *olddev;
 	const char *ifname;
 	guint32 count = 0;
 	const char *vendor, *model;
@@ -1084,7 +1084,11 @@ nm_device_update_description (NMDevice *device)
 	/* Walk up the chain of the device and its parents a few steps to grab
 	 * vendor and device ID information off it.
 	 */
-	tmpdev = udev_device;
+
+	/* Ref the device again becuase we have to unref it each iteration,
+	 * as g_udev_device_get_parent() returns a ref-ed object.
+	 */
+	tmpdev = g_object_ref (udev_device);
 	while ((count++ < 3) && tmpdev && (!priv->vendor || !priv->product)) {
 		if (!priv->vendor)
 			priv->vendor = get_decoded_property (tmpdev, "ID_VENDOR_ENC");
@@ -1092,11 +1096,23 @@ nm_device_update_description (NMDevice *device)
 		if (!priv->product)
 			priv->product = get_decoded_property (tmpdev, "ID_MODEL_ENC");
 
+		olddev = tmpdev;
 		tmpdev = g_udev_device_get_parent (tmpdev);
+		g_object_unref (olddev);
 	}
 
+	/* Unref the last device if we found what we needed before running out
+	 * of parents.
+	 */
+	if (tmpdev)
+		g_object_unref (tmpdev);
+
 	/* If we didn't get strings directly from the device, try database strings */
-	tmpdev = udev_device;
+
+	/* Again, ref the original device as we need to unref it every iteration
+	 * since g_udev_device_get_parent() returns a refed object.
+	 */
+	tmpdev = g_object_ref (udev_device);
 	count = 0;
 	while ((count++ < 3) && tmpdev && (!priv->vendor || !priv->product)) {
 		if (!priv->vendor) {
@@ -1111,8 +1127,19 @@ nm_device_update_description (NMDevice *device)
 				priv->product = g_strdup (model);
 		}
 
+		olddev = tmpdev;
 		tmpdev = g_udev_device_get_parent (tmpdev);
+		g_object_unref (olddev);
 	}
+
+	/* Unref the last device if we found what we needed before running out
+	 * of parents.
+	 */
+	if (tmpdev)
+		g_object_unref (tmpdev);
+
+	/* Balance the initial g_udev_client_query_by_subsystem_and_name() */
+	g_object_unref (udev_device);
 
 	_nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_VENDOR);
 	_nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_PRODUCT);
