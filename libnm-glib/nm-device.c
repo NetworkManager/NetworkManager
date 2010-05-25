@@ -1069,9 +1069,8 @@ nm_device_update_description (NMDevice *device)
 	if (!ifname)
 		return;
 
-	if (NM_IS_DEVICE_ETHERNET (device) || NM_IS_DEVICE_WIFI (device))
-		udev_device = g_udev_client_query_by_subsystem_and_name (priv->client, "net", ifname);
-	else if (NM_IS_GSM_DEVICE (device) || NM_IS_CDMA_DEVICE (device))
+	udev_device = g_udev_client_query_by_subsystem_and_name (priv->client, "net", ifname);
+	if (!udev_device)
 		udev_device = g_udev_client_query_by_subsystem_and_name (priv->client, "tty", ifname);
 	if (!udev_device)
 		return;
