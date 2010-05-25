@@ -92,6 +92,7 @@ typedef struct {
 	char *        driver;
 	gboolean      managed; /* whether managed by NM or not */
 	RfKillType    rfkill_type;
+	gboolean      firmware_missing;
 
 	guint32         ip4_address;
 
@@ -492,6 +493,11 @@ nm_device_get_act_request (NMDevice *self)
 gboolean
 nm_device_is_available (NMDevice *self)
 {
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->firmware_missing)
+		return FALSE;
+
 	if (NM_DEVICE_GET_CLASS (self)->is_available)
 		return NM_DEVICE_GET_CLASS (self)->is_available (self);
 	return TRUE;
@@ -3384,6 +3390,9 @@ set_property (GObject *object, guint prop_id,
 	case NM_DEVICE_INTERFACE_PROP_MANAGED:
 		priv->managed = g_value_get_boolean (value);
 		break;
+	case NM_DEVICE_INTERFACE_PROP_FIRMWARE_MISSING:
+		priv->firmware_missing = g_value_get_boolean (value);
+		break;
 	case NM_DEVICE_INTERFACE_PROP_DEVICE_TYPE:
 		g_return_if_fail (priv->type == NM_DEVICE_TYPE_UNKNOWN);
 		priv->type = g_value_get_uint (value);
@@ -3470,6 +3479,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case NM_DEVICE_INTERFACE_PROP_MANAGED:
 		g_value_set_boolean (value, priv->managed);
+		break;
+	case NM_DEVICE_INTERFACE_PROP_FIRMWARE_MISSING:
+		g_value_set_boolean (value, priv->firmware_missing);
 		break;
 	case NM_DEVICE_INTERFACE_PROP_TYPE_DESC:
 		g_value_set_string (value, priv->type_desc);
@@ -3564,6 +3576,10 @@ nm_device_class_init (NMDeviceClass *klass)
 									  NM_DEVICE_INTERFACE_MANAGED);
 
 	g_object_class_override_property (object_class,
+									  NM_DEVICE_INTERFACE_PROP_FIRMWARE_MISSING,
+									  NM_DEVICE_INTERFACE_FIRMWARE_MISSING);
+
+	g_object_class_override_property (object_class,
 									  NM_DEVICE_INTERFACE_PROP_TYPE_DESC,
 									  NM_DEVICE_INTERFACE_TYPE_DESC);
 
@@ -3607,6 +3623,17 @@ unavailable_to_disconnected (gpointer user_data)
 	return FALSE;
 }
 
+static void
+set_firmware_missing (NMDevice *self, gboolean new_missing)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->firmware_missing != new_missing) {
+		priv->firmware_missing = new_missing;
+		g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_FIRMWARE_MISSING);
+	}
+}
+
 void
 nm_device_state_changed (NMDevice *device,
                          NMDeviceState state,
@@ -3639,6 +3666,7 @@ nm_device_state_changed (NMDevice *device,
 	 */
 	switch (state) {
 	case NM_DEVICE_STATE_UNMANAGED:
+		set_firmware_missing (device, FALSE);
 		if (old_state > NM_DEVICE_STATE_UNMANAGED)
 			nm_device_take_down (device, TRUE, reason);
 		break;
@@ -3646,6 +3674,7 @@ nm_device_state_changed (NMDevice *device,
 		if (old_state == NM_DEVICE_STATE_UNMANAGED) {
 			if (!nm_device_bring_up (device, TRUE, &no_firmware) && no_firmware) {
 				nm_log_warn (LOGD_HW, "%s: firmware may be missing.", nm_device_get_iface (device));
+				set_firmware_missing (device, TRUE);
 			}
 		}
 		/* Ensure the device gets deactivated in response to stuff like

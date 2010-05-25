@@ -52,6 +52,12 @@
         Whether or not this device is managed by NetworkManager.
       </tp:docstring>
     </property>
+    <property name="FirmwareMissing" type="b" access="read">
+      <tp:docstring>
+        If TRUE, indicates the device is likely missing firmware necessary for
+        its operation.
+      </tp:docstring>
+    </property>
     <property name="DeviceType" type="u" access="read" tp:type="NM_DEVICE_TYPE">
       <tp:docstring>
         The general type of the network device; ie Ethernet, WiFi, etc.

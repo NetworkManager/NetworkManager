@@ -170,6 +170,13 @@ nm_device_interface_init (gpointer g_iface)
 	                                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_interface_install_property
+		(g_iface, g_param_spec_boolean (NM_DEVICE_INTERFACE_FIRMWARE_MISSING,
+	                                   "FirmwareMissing",
+	                                   "Firmware missing",
+	                                   FALSE,
+	                                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_interface_install_property
 		(g_iface,
 		 g_param_spec_string (NM_DEVICE_INTERFACE_TYPE_DESC,
 							  "Type Description",

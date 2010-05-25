@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2010 Red Hat, Inc.
  */
 
 #ifndef NM_DEVICE_H
@@ -49,6 +49,7 @@ G_BEGIN_DECLS
 #define NM_DEVICE_DRIVER "driver"
 #define NM_DEVICE_CAPABILITIES "capabilities"
 #define NM_DEVICE_MANAGED "managed"
+#define NM_DEVICE_FIRMWARE_MISSING "firmware-missing"
 #define NM_DEVICE_IP4_CONFIG "ip4-config"
 #define NM_DEVICE_DHCP4_CONFIG "dhcp4-config"
 #define NM_DEVICE_IP6_CONFIG "ip6-config"
@@ -83,18 +84,19 @@ GType nm_device_get_type (void);
 
 GObject * nm_device_new (DBusGConnection *connection, const char *path);
 
-const char *  nm_device_get_iface          (NMDevice *device);
-const char *  nm_device_get_udi            (NMDevice *device);
-const char *  nm_device_get_driver         (NMDevice *device);
-guint32       nm_device_get_capabilities   (NMDevice *device);
-gboolean      nm_device_get_managed        (NMDevice *device);
-NMIP4Config * nm_device_get_ip4_config     (NMDevice *device);
-NMDHCP4Config * nm_device_get_dhcp4_config (NMDevice *device);
-NMIP6Config * nm_device_get_ip6_config     (NMDevice *device);
-NMDHCP6Config * nm_device_get_dhcp6_config (NMDevice *device);
-NMDeviceState nm_device_get_state          (NMDevice *device);
-const char *  nm_device_get_product        (NMDevice *device);
-const char *  nm_device_get_vendor         (NMDevice *device);
+const char *  nm_device_get_iface            (NMDevice *device);
+const char *  nm_device_get_udi              (NMDevice *device);
+const char *  nm_device_get_driver           (NMDevice *device);
+guint32       nm_device_get_capabilities     (NMDevice *device);
+gboolean      nm_device_get_managed          (NMDevice *device);
+gboolean      nm_device_get_firmware_missing (NMDevice *device);
+NMIP4Config * nm_device_get_ip4_config       (NMDevice *device);
+NMDHCP4Config * nm_device_get_dhcp4_config   (NMDevice *device);
+NMIP6Config * nm_device_get_ip6_config       (NMDevice *device);
+NMDHCP6Config * nm_device_get_dhcp6_config   (NMDevice *device);
+NMDeviceState nm_device_get_state            (NMDevice *device);
+const char *  nm_device_get_product          (NMDevice *device);
+const char *  nm_device_get_vendor           (NMDevice *device);
 
 typedef void (*NMDeviceDeactivateFn) (NMDevice *device, GError *error, gpointer user_data);
 
