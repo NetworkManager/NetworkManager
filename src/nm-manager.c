@@ -1459,9 +1459,7 @@ manager_ipw_rfkill_state_changed (NMDeviceWifi *device,
 }
 
 static void
-manager_modem_enabled_changed (NMModem *device,
-                               GParamSpec *pspec,
-                               gpointer user_data)
+manager_modem_enabled_changed (NMModem *device, gpointer user_data)
 {
 	nm_manager_rfkill_update (NM_MANAGER (user_data), RFKILL_TYPE_WWAN);
 }
@@ -1515,7 +1513,7 @@ add_device (NMManager *self, NMDevice *device)
 		nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (device),
 		                                 priv->radio_states[RFKILL_TYPE_WLAN].enabled);
 	} else if (NM_IS_DEVICE_MODEM (device)) {
-		g_signal_connect (device, "notify::" NM_MODEM_ENABLED,
+		g_signal_connect (device, NM_DEVICE_MODEM_ENABLE_CHANGED,
 		                  G_CALLBACK (manager_modem_enabled_changed),
 		                  self);
 
