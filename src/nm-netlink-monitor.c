@@ -282,7 +282,7 @@ event_connection_setup (NMNetlinkMonitor *self, GError **error)
 	g_return_val_if_fail (priv->io_channel == NULL, FALSE);
 
 	/* Set up the event listener connection */
-	cb = nl_cb_alloc (NL_CB_VERBOSE);
+	cb = nl_cb_alloc (NL_CB_DEFAULT);
 	priv->nlh_event = nl_handle_alloc_cb (cb);
 	nl_cb_put (cb);
 	if (!priv->nlh_event) {
@@ -344,7 +344,7 @@ sync_connection_setup (NMNetlinkMonitor *self, GError **error)
 #endif
 
 	/* Set up the event listener connection */
-	cb = nl_cb_alloc (NL_CB_VERBOSE);
+	cb = nl_cb_alloc (NL_CB_DEFAULT);
 	priv->nlh_sync = nl_handle_alloc_cb (cb);
 	nl_cb_put (cb);
 	if (!priv->nlh_sync) {
