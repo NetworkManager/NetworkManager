@@ -1581,6 +1581,268 @@ test_write_bt_dun_connection (void)
 	g_object_unref (connection);
 }
 
+#define TEST_GSM_FILE TEST_KEYFILES_DIR"/ATT_Data_Connect_Plain"
+
+static void
+test_read_gsm_connection (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingSerial *s_serial;
+	NMSettingPPP *s_ppp;
+	NMSettingGsm *s_gsm;
+	NMSetting *s_bluetooth;
+	GError *error = NULL;
+	const char *tmp;
+	const char *expected_id = "AT&T Data Connect";
+	const char *expected_apn = "ISP.CINGULAR";
+	const char *expected_username = "ISP@CINGULARGPRS.COM";
+	const char *expected_password = "CINGULAR1";
+	const char *expected_network_id = "24005";
+	const char *expected_pin = "2345";
+
+	connection = connection_from_file (TEST_GSM_FILE);
+	ASSERT (connection != NULL,
+			"connection-read", "failed to read %s", TEST_GSM_FILE);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "connection-verify", "failed to verify %s: %s", TEST_GSM_FILE, error->message);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "connection-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_GSM_FILE,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "connection-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_GSM_FILE,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_id) == 0,
+	        "connection-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_GSM_FILE,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+	tmp = nm_setting_connection_get_connection_type (s_con);
+	ASSERT (tmp != NULL,
+	        "connection-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_GSM_FILE,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, NM_SETTING_GSM_SETTING_NAME) == 0,
+	        "connection-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_GSM_FILE,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_TYPE);
+
+	/* ===== BLUETOOTH SETTING ===== */
+
+	/* Plain GSM, so no BT setting expected */
+	s_bluetooth = nm_connection_get_setting (connection, NM_TYPE_SETTING_BLUETOOTH);
+	ASSERT (s_bluetooth == NULL,
+	        "connection-verify-bt", "unexpected %s setting",
+	        TEST_GSM_FILE,
+	        NM_SETTING_BLUETOOTH_SETTING_NAME);
+
+	/* ===== GSM SETTING ===== */
+
+	s_gsm = NM_SETTING_GSM (nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM));
+	ASSERT (s_gsm != NULL,
+	        "connection-verify-gsm", "failed to verify %s: missing %s setting",
+	        TEST_GSM_FILE,
+	        NM_SETTING_GSM_SETTING_NAME);
+
+	/* APN */
+	tmp = nm_setting_gsm_get_apn (s_gsm);
+	ASSERT (tmp != NULL,
+	        "connection-verify-gsm", "failed to verify %s: missing %s / %s key",
+	        TEST_GSM_FILE,
+	        NM_SETTING_GSM_SETTING_NAME,
+	        NM_SETTING_GSM_APN);
+	ASSERT (strcmp (tmp, expected_apn) == 0,
+	        "connection-verify-gsm", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_GSM_FILE,
+	        NM_SETTING_GSM_SETTING_NAME,
+	        NM_SETTING_GSM_APN);
+
+	/* Username */
+	tmp = nm_setting_gsm_get_username (s_gsm);
+	ASSERT (tmp != NULL,
+	        "connection-verify-gsm", "failed to verify %s: missing %s / %s key",
+	        TEST_GSM_FILE,
+	        NM_SETTING_GSM_SETTING_NAME,
+	        NM_SETTING_GSM_USERNAME);
+	ASSERT (strcmp (tmp, expected_username) == 0,
+	        "connection-verify-gsm", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_GSM_FILE,
+	        NM_SETTING_GSM_SETTING_NAME,
+	        NM_SETTING_GSM_USERNAME);
+
+	/* Password */
+	tmp = nm_setting_gsm_get_password (s_gsm);
+	ASSERT (tmp != NULL,
+	        "connection-verify-gsm", "failed to verify %s: missing %s / %s key",
+	        TEST_GSM_FILE,
+	        NM_SETTING_GSM_SETTING_NAME,
+	        NM_SETTING_GSM_PASSWORD);
+	ASSERT (strcmp (tmp, expected_password) == 0,
+	        "connection-verify-gsm", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_GSM_FILE,
+	        NM_SETTING_GSM_SETTING_NAME,
+	        NM_SETTING_GSM_PASSWORD);
+
+	/* Network ID */
+	tmp = nm_setting_gsm_get_network_id (s_gsm);
+	ASSERT (tmp != NULL,
+	        "connection-verify-gsm", "failed to verify %s: missing %s / %s key",
+	        TEST_GSM_FILE,
+	        NM_SETTING_GSM_SETTING_NAME,
+	        NM_SETTING_GSM_NETWORK_ID);
+	ASSERT (strcmp (tmp, expected_network_id) == 0,
+	        "connection-verify-gsm", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_GSM_FILE,
+	        NM_SETTING_GSM_SETTING_NAME,
+	        NM_SETTING_GSM_NETWORK_ID);
+
+	/* PIN */
+	tmp = nm_setting_gsm_get_pin (s_gsm);
+	ASSERT (tmp != NULL,
+	        "connection-verify-gsm", "failed to verify %s: missing %s / %s key",
+	        TEST_GSM_FILE,
+	        NM_SETTING_GSM_SETTING_NAME,
+	        NM_SETTING_GSM_PIN);
+	ASSERT (strcmp (tmp, expected_pin) == 0,
+	        "connection-verify-gsm", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_GSM_FILE,
+	        NM_SETTING_GSM_SETTING_NAME,
+	        NM_SETTING_GSM_PIN);
+
+	/* ===== SERIAL SETTING ===== */
+
+	s_serial = NM_SETTING_SERIAL (nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL));
+	ASSERT (s_serial != NULL,
+	        "connection-verify-serial", "failed to verify %s: missing %s setting",
+	        TEST_GSM_FILE,
+	        NM_SETTING_SERIAL_SETTING_NAME);
+
+	/* ===== PPP SETTING ===== */
+
+	s_ppp = NM_SETTING_PPP (nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP));
+	ASSERT (s_ppp != NULL,
+	        "connection-verify-ppp", "failed to verify %s: missing %s setting",
+	        TEST_GSM_FILE,
+	        NM_SETTING_PPP_SETTING_NAME);
+
+	g_object_unref (connection);
+}
+
+static void
+test_write_gsm_connection (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingIP4Config *s_ip4;
+	NMSettingGsm *s_gsm;
+	char *uuid;
+	gboolean success;
+	NMConnection *reread;
+	char *testfile = NULL;
+	GError *error = NULL;
+	pid_t owner_grp;
+	uid_t owner_uid;
+	guint64 timestamp = 0x12344433L;
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "connection-write", "failed to allocate new connection");
+
+	/* Connection setting */
+
+	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
+	ASSERT (s_con != NULL,
+	        "connection-write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "T-Mobile Funkadelic 2",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, FALSE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_GSM_SETTING_NAME,
+	              NM_SETTING_CONNECTION_TIMESTAMP, timestamp,
+	              NULL);
+	g_free (uuid);
+
+	/* IP4 setting */
+
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new ());
+	ASSERT (s_ip4 != NULL,
+			"connection-write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4,
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NULL);
+
+	/* GSM setting */
+	s_gsm = NM_SETTING_GSM (nm_setting_gsm_new ());
+	ASSERT (s_gsm != NULL,
+			"connection-write", "failed to allocate new %s setting",
+			NM_SETTING_GSM_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_gsm));
+
+	g_object_set (s_gsm,
+	              NM_SETTING_GSM_APN, "internet2.voicestream.com",
+	              NM_SETTING_GSM_USERNAME, "george.clinton.again",
+	              NM_SETTING_GSM_PASSWORD, "parliament2",
+	              NM_SETTING_GSM_NUMBER,  "*99#",
+	              NM_SETTING_GSM_PIN, "123456",
+	              NM_SETTING_GSM_NETWORK_ID, "254098",
+	              NM_SETTING_GSM_HOME_ONLY, TRUE,
+	              NM_SETTING_GSM_NETWORK_TYPE, NM_SETTING_GSM_NETWORK_TYPE_PREFER_UMTS_HSPA,
+	              NULL);
+
+	/* Serial setting */
+	nm_connection_add_setting (connection, nm_setting_serial_new ());
+
+	/* PPP setting */
+	nm_connection_add_setting (connection, nm_setting_ppp_new ());
+
+
+	/* Write out the connection */
+	owner_uid = geteuid ();
+	owner_grp = getegid ();
+	success = write_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
+	ASSERT (success == TRUE,
+			"connection-write", "failed to allocate write keyfile: %s",
+			error ? error->message : "(none)");
+
+	ASSERT (testfile != NULL,
+			"connection-write", "didn't get keyfile name back after writing connection");
+
+	/* Read the connection back in and compare it to the one we just wrote out */
+	reread = connection_from_file (testfile);
+	ASSERT (reread != NULL, "connection-write", "failed to re-read test connection");
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+			"connection-write", "written and re-read connection weren't the same");
+
+	g_clear_error (&error);
+	unlink (testfile);
+	g_free (testfile);
+
+	g_object_unref (reread);
+	g_object_unref (connection);
+}
+
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
@@ -1607,6 +1869,9 @@ int main (int argc, char **argv)
 
 	test_read_bt_dun_connection ();
 	test_write_bt_dun_connection ();
+
+	test_read_gsm_connection ();
+	test_write_gsm_connection ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);

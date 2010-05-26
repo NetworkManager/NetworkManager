@@ -1,0 +1,20 @@
+
+[connection]
+id=AT&T Data Connect
+uuid=15d742f1-2b5a-421e-9f27-fcb1fc26d72c
+type=gsm
+autoconnect=false
+
+[ipv4]
+method=auto
+
+[gsm]
+number=*99#
+username=ISP@CINGULARGPRS.COM
+password=CINGULAR1
+apn=ISP.CINGULAR
+network-id=24005
+pin=2345
+
+[serial]
+baud=115200
