@@ -509,10 +509,9 @@ write_setting_value (NMSetting *setting,
 {
 	GKeyFile *file = (GKeyFile *) user_data;
 	const char *setting_name;
-	GType type;
+	GType type = G_VALUE_TYPE (value);
 	KeyWriter *writer = &key_writers[0];
-
-	type = G_VALUE_TYPE (value);
+	GParamSpec *pspec;
 
 	/* Setting name gets picked up from the keyfile's section name instead */
 	if (!strcmp (key, NM_SETTING_NAME))
@@ -524,6 +523,15 @@ write_setting_value (NMSetting *setting,
 		return;
 
 	setting_name = nm_setting_get_name (setting);
+
+	/* If the value is the default value, remove the item from the keyfile */
+	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), key);
+	if (pspec) {
+		if (g_param_value_defaults (pspec, (GValue *) value)) {
+			g_key_file_remove_key (file, setting_name, key, NULL);
+			return;
+		}
+	}
 
 	/* Look through the list of handlers for non-standard format key values */
 	while (writer->setting_name) {
