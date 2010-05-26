@@ -105,6 +105,7 @@ typedef struct {
 	gboolean	disposed;
 
 	struct ether_addr	hw_addr;
+	char *              zvm_subchannels;
 	gboolean			carrier;
 
 	NMNetlinkMonitor *  monitor;
@@ -1519,6 +1520,7 @@ real_check_connection_compatible (NMDevice *device,
 static gboolean
 spec_match_list (NMDevice *device, const GSList *specs)
 {
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 	struct ether_addr ether;
 	char *hwaddr;
 	gboolean matched;
@@ -1527,6 +1529,9 @@ spec_match_list (NMDevice *device, const GSList *specs)
 	hwaddr = nm_ether_ntop (&ether);
 	matched = nm_match_spec_hwaddr (specs, hwaddr);
 	g_free (hwaddr);
+
+	if (!matched && priv->zvm_subchannels)
+		matched = nm_match_spec_zvm_subchannels (specs, priv->zvm_subchannels);
 
 	return matched;
 }
