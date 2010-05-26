@@ -608,9 +608,8 @@ nm_connection_verify (NMConnection *connection, GError **error)
 
 	/* Build up the list of settings */
 	g_hash_table_iter_init (&iter, priv->settings);
-	while (g_hash_table_iter_next (&iter, NULL, &value)) {
+	while (g_hash_table_iter_next (&iter, NULL, &value))
 		all_settings = g_slist_append (all_settings, value);
-	}
 
 	/* Now, run the verify function of each setting */
 	g_hash_table_iter_init (&iter, priv->settings);
