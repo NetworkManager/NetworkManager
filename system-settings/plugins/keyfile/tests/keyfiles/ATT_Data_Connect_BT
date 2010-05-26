@@ -1,0 +1,23 @@
+
+[connection]
+id=AT&T Data Connect BT
+uuid=089130ab-ce28-46e4-ad77-d44869b03d19
+type=bluetooth
+autoconnect=false
+
+[ipv4]
+method=auto
+
+[gsm]
+number=*99#
+username=ISP@CINGULARGPRS.COM
+password=CINGULAR1
+apn=ISP.CINGULAR
+
+[serial]
+baud=115200
+
+[bluetooth]
+bdaddr=00:11:22:33:44:55
+type=dun
+

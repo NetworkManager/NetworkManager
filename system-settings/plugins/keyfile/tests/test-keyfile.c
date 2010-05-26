@@ -35,6 +35,10 @@
 #include <nm-setting-wireless.h>
 #include <nm-setting-ip4-config.h>
 #include <nm-setting-ip6-config.h>
+#include <nm-setting-bluetooth.h>
+#include <nm-setting-serial.h>
+#include <nm-setting-ppp.h>
+#include <nm-setting-gsm.h>
 
 #include "nm-test-helpers.h"
 
@@ -1292,6 +1296,173 @@ test_write_wireless_connection (void)
 	g_object_unref (connection);
 }
 
+#define TEST_BT_DUN_FILE TEST_KEYFILES_DIR"/ATT_Data_Connect_BT"
+
+static void
+test_read_bt_dun_connection (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingBluetooth *s_bluetooth;
+	NMSettingSerial *s_serial;
+	NMSettingPPP *s_ppp;
+	NMSettingGsm *s_gsm;
+	GError *error = NULL;
+	const GByteArray *array;
+	char expected_bdaddr[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 };
+	const char *tmp;
+	const char *expected_id = "AT&T Data Connect BT";
+	const char *expected_uuid = "089130ab-ce28-46e4-ad77-d44869b03d19";
+	const char *expected_apn = "ISP.CINGULAR";
+	const char *expected_username = "ISP@CINGULARGPRS.COM";
+	const char *expected_password = "CINGULAR1";
+
+	connection = connection_from_file (TEST_BT_DUN_FILE);
+	ASSERT (connection != NULL,
+			"connection-read", "failed to read %s", TEST_BT_DUN_FILE);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "connection-verify", "failed to verify %s: %s", TEST_BT_DUN_FILE, error->message);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "connection-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_BT_DUN_FILE,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "connection-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_BT_DUN_FILE,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_id) == 0,
+	        "connection-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_BT_DUN_FILE,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+	/* UUID */
+	tmp = nm_setting_connection_get_uuid (s_con);
+	ASSERT (tmp != NULL,
+	        "connection-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_WIRELESS_FILE,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_UUID);
+	ASSERT (strcmp (tmp, expected_uuid) == 0,
+	        "connection-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_WIRELESS_FILE,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_UUID);
+
+	/* ===== BLUETOOTH SETTING ===== */
+
+	s_bluetooth = NM_SETTING_BLUETOOTH (nm_connection_get_setting (connection, NM_TYPE_SETTING_BLUETOOTH));
+	ASSERT (s_bluetooth != NULL,
+	        "connection-verify-bt", "failed to verify %s: missing %s setting",
+	        TEST_WIRELESS_FILE,
+	        NM_SETTING_WIRED_SETTING_NAME);
+
+	/* BDADDR */
+	array = nm_setting_bluetooth_get_bdaddr (s_bluetooth);
+	ASSERT (array != NULL,
+	        "connection-verify-bt", "failed to verify %s: missing %s / %s key",
+	        TEST_BT_DUN_FILE,
+	        NM_SETTING_BLUETOOTH_SETTING_NAME,
+	        NM_SETTING_BLUETOOTH_BDADDR);
+	ASSERT (array->len == ETH_ALEN,
+	        "connection-verify-bt", "failed to verify %s: unexpected %s / %s key value length",
+	        TEST_BT_DUN_FILE,
+	        NM_SETTING_BLUETOOTH_SETTING_NAME,
+	        NM_SETTING_BLUETOOTH_BDADDR);
+	ASSERT (memcmp (array->data, &expected_bdaddr[0], sizeof (expected_bdaddr)) == 0,
+	        "connection-verify-bt", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_BT_DUN_FILE,
+	        NM_SETTING_BLUETOOTH_SETTING_NAME,
+	        NM_SETTING_BLUETOOTH_BDADDR);
+
+	/* Type */
+	tmp = nm_setting_bluetooth_get_connection_type (s_bluetooth);
+	ASSERT (tmp != NULL,
+	        "connection-verify-bt", "failed to verify %s: missing %s / %s key",
+	        TEST_BT_DUN_FILE,
+	        NM_SETTING_BLUETOOTH_SETTING_NAME,
+	        NM_SETTING_BLUETOOTH_TYPE);
+	ASSERT (strcmp (tmp, NM_SETTING_BLUETOOTH_TYPE_DUN) == 0,
+	        "connection-verify-bt", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_BT_DUN_FILE,
+	        NM_SETTING_BLUETOOTH_SETTING_NAME,
+	        NM_SETTING_BLUETOOTH_TYPE);
+
+	/* ===== GSM SETTING ===== */
+
+	s_gsm = NM_SETTING_GSM (nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM));
+	ASSERT (s_gsm != NULL,
+	        "connection-verify-gsm", "failed to verify %s: missing %s setting",
+	        TEST_BT_DUN_FILE,
+	        NM_SETTING_GSM_SETTING_NAME);
+
+	/* APN */
+	tmp = nm_setting_gsm_get_apn (s_gsm);
+	ASSERT (tmp != NULL,
+	        "connection-verify-gsm", "failed to verify %s: missing %s / %s key",
+	        TEST_BT_DUN_FILE,
+	        NM_SETTING_GSM_SETTING_NAME,
+	        NM_SETTING_GSM_APN);
+	ASSERT (strcmp (tmp, expected_apn) == 0,
+	        "connection-verify-bt", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_BT_DUN_FILE,
+	        NM_SETTING_GSM_SETTING_NAME,
+	        NM_SETTING_GSM_APN);
+
+	/* Username */
+	tmp = nm_setting_gsm_get_username (s_gsm);
+	ASSERT (tmp != NULL,
+	        "connection-verify-gsm", "failed to verify %s: missing %s / %s key",
+	        TEST_BT_DUN_FILE,
+	        NM_SETTING_GSM_SETTING_NAME,
+	        NM_SETTING_GSM_USERNAME);
+	ASSERT (strcmp (tmp, expected_username) == 0,
+	        "connection-verify-bt", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_BT_DUN_FILE,
+	        NM_SETTING_GSM_SETTING_NAME,
+	        NM_SETTING_GSM_USERNAME);
+
+	/* Password */
+	tmp = nm_setting_gsm_get_password (s_gsm);
+	ASSERT (tmp != NULL,
+	        "connection-verify-gsm", "failed to verify %s: missing %s / %s key",
+	        TEST_BT_DUN_FILE,
+	        NM_SETTING_GSM_SETTING_NAME,
+	        NM_SETTING_GSM_PASSWORD);
+	ASSERT (strcmp (tmp, expected_password) == 0,
+	        "connection-verify-bt", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_BT_DUN_FILE,
+	        NM_SETTING_GSM_SETTING_NAME,
+	        NM_SETTING_GSM_PASSWORD);
+
+	/* ===== SERIAL SETTING ===== */
+
+	s_serial = NM_SETTING_SERIAL (nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL));
+	ASSERT (s_serial != NULL,
+	        "connection-verify-serial", "failed to verify %s: missing %s setting",
+	        TEST_BT_DUN_FILE,
+	        NM_SETTING_SERIAL_SETTING_NAME);
+
+	/* ===== PPP SETTING ===== */
+
+	s_ppp = NM_SETTING_PPP (nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP));
+	ASSERT (s_ppp != NULL,
+	        "connection-verify-ppp", "failed to verify %s: missing %s setting",
+	        TEST_BT_DUN_FILE,
+	        NM_SETTING_PPP_SETTING_NAME);
+
+	g_object_unref (connection);
+}
+
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
@@ -1315,6 +1486,8 @@ int main (int argc, char **argv)
 
 	test_read_valid_wireless_connection ();
 	test_write_wireless_connection ();
+
+	test_read_bt_dun_connection ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);
