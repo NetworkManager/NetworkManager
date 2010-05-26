@@ -352,7 +352,7 @@ nm_utils_ssid_to_utf8 (const char *ssid, guint32 len)
 
 /* Shamelessly ripped from the Linux kernel ieee80211 stack */
 /**
- * nm_utils_deinit:
+ * nm_utils_is_empty_ssid:
  * @ssid: pointer to a buffer containing the SSID data
  * @len: length of the SSID data in @ssid
  *
