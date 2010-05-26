@@ -556,30 +556,6 @@ nm_connection_compare (NMConnection *a,
 	return info.failed ? FALSE : TRUE;
 }
 
-typedef struct {
-	gboolean success;
-	GSList *all_settings;
-	GError **error;
-} VerifySettingsInfo;
-
-static void
-verify_one_setting (gpointer data, gpointer user_data)
-{
-	NMSetting *setting = NM_SETTING (data);
-	VerifySettingsInfo *info = (VerifySettingsInfo *) user_data;
-
-	if (info->success)
-		info->success = nm_setting_verify (setting, info->all_settings, info->error);
-}
-
-static void
-hash_values_to_slist (gpointer key, gpointer value, gpointer user_data)
-{
-	GSList **list = (GSList **) user_data;
-
-	*list = g_slist_prepend (*list, value);
-}
-
 /**
  * nm_connection_verify:
  * @connection: the #NMConnection to verify
@@ -602,7 +578,10 @@ nm_connection_verify (NMConnection *connection, GError **error)
 {
 	NMConnectionPrivate *priv;
 	NMSetting *s_con;
-	VerifySettingsInfo info;
+	GHashTableIter iter;
+	gpointer value;
+	GSList *all_settings = NULL;
+	gboolean success = TRUE;
 
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
@@ -627,15 +606,19 @@ nm_connection_verify (NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	/* Now, run the verify function of each setting */
-	memset (&info, 0, sizeof (info));
-	info.success = TRUE;
-	info.error = error;
-	g_hash_table_foreach (priv->settings, hash_values_to_slist, &info.all_settings);
+	/* Build up the list of settings */
+	g_hash_table_iter_init (&iter, priv->settings);
+	while (g_hash_table_iter_next (&iter, NULL, &value)) {
+		all_settings = g_slist_append (all_settings, value);
+	}
 
-	g_slist_foreach (info.all_settings, verify_one_setting, &info);
-	g_slist_free (info.all_settings);
-	return info.success;
+	/* Now, run the verify function of each setting */
+	g_hash_table_iter_init (&iter, priv->settings);
+	while (g_hash_table_iter_next (&iter, NULL, &value) && success)
+		success = nm_setting_verify (NM_SETTING (value), all_settings, error);
+
+	g_slist_free (all_settings);
+	return success;
 }
 
 /**
