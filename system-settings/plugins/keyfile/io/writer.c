@@ -31,6 +31,7 @@
 #include <nm-setting-wired.h>
 #include <nm-setting-wireless.h>
 #include <nm-setting-ip4-config.h>
+#include <nm-setting-bluetooth.h>
 #include <nm-utils.h>
 #include <string.h>
 #include <arpa/inet.h>
@@ -492,6 +493,9 @@ static KeyWriter key_writers[] = {
 	  mac_address_writer },
 	{ NM_SETTING_WIRELESS_SETTING_NAME,
 	  NM_SETTING_WIRELESS_BSSID,
+	  mac_address_writer },
+	{ NM_SETTING_BLUETOOTH_SETTING_NAME,
+	  NM_SETTING_BLUETOOTH_BDADDR,
 	  mac_address_writer },
 	{ NULL, NULL, NULL }
 };

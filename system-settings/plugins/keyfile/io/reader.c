@@ -32,6 +32,7 @@
 #include <nm-setting-connection.h>
 #include <nm-setting-wired.h>
 #include <nm-setting-wireless.h>
+#include <nm-setting-bluetooth.h>
 #include <arpa/inet.h>
 #include <netinet/ether.h>
 #include <string.h>
@@ -774,6 +775,10 @@ static KeyParser key_parsers[] = {
 	  mac_address_parser },
 	{ NM_SETTING_WIRELESS_SETTING_NAME,
 	  NM_SETTING_WIRELESS_BSSID,
+	  TRUE,
+	  mac_address_parser },
+	{ NM_SETTING_BLUETOOTH_SETTING_NAME,
+	  NM_SETTING_BLUETOOTH_BDADDR,
 	  TRUE,
 	  mac_address_parser },
 	{ NULL, NULL, FALSE }
