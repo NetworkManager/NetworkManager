@@ -107,6 +107,12 @@ struct _NMSystemConfigInterface {
 	 *
 	 * Method: mac    Data: device MAC address formatted with leading zeros and
 	 *                      lowercase letters, like 00:0a:0b:0c:0d:0e
+	 *
+	 * Method: zvm-subchannels  Data: string of 3 z/VM subchannels separated by
+	 *                                commas (,) that identify the device,
+	 *                                like "0.0.09a0,0.0.09a1,0.0.09a2".  The
+	 *                                string may contain only the following
+	 *                                characters: [a-fA-F0-9,.]
 	 */
 	GSList * (*get_unmanaged_specs) (NMSystemConfigInterface *config);
 
