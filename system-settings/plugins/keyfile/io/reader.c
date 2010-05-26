@@ -33,6 +33,8 @@
 #include <nm-setting-wired.h>
 #include <nm-setting-wireless.h>
 #include <nm-setting-bluetooth.h>
+#include <nm-setting-serial.h>
+#include <nm-setting-ppp.h>
 #include <arpa/inet.h>
 #include <netinet/ether.h>
 #include <string.h>
@@ -1033,6 +1035,12 @@ connection_from_file (const char *filename)
 				if (setting)
 					nm_connection_add_setting (connection, setting);
 			}
+		}
+
+		/* Serial connections require a PPP setting too */
+		if (nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL)) {
+			if (!nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP))
+				nm_connection_add_setting (connection, nm_setting_ppp_new ());
 		}
 
 		/* Handle vpn secrets after the 'vpn' setting was read */
