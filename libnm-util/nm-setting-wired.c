@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2010 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -29,6 +29,7 @@
 #include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
+#include "nm-dbus-glib-types.h"
 
 GQuark
 nm_setting_wired_error_quark (void)
@@ -75,6 +76,7 @@ typedef struct {
 	gboolean auto_negotiate;
 	GByteArray *mac_address;
 	guint32 mtu;
+	GPtrArray *zvm_subchannels;
 } NMSettingWiredPrivate;
 
 enum {
@@ -85,6 +87,7 @@ enum {
 	PROP_AUTO_NEGOTIATE,
 	PROP_MAC_ADDRESS,
 	PROP_MTU,
+	PROP_ZVM_SUBCHANNELS,
 
 	LAST_PROP
 };
@@ -143,6 +146,14 @@ nm_setting_wired_get_mtu (NMSettingWired *setting)
 	return NM_SETTING_WIRED_GET_PRIVATE (setting)->mtu;
 }
 
+const GPtrArray *
+nm_setting_wired_get_zvm_subchannels (NMSettingWired *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), NULL);
+
+	return NM_SETTING_WIRED_GET_PRIVATE (setting)->zvm_subchannels;
+}
+
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
@@ -171,6 +182,14 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		             NM_SETTING_WIRED_ERROR,
 		             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
 		             NM_SETTING_WIRED_MAC_ADDRESS);
+		return FALSE;
+	}
+
+	if (priv->zvm_subchannels && priv->zvm_subchannels->len != 3) {
+		g_set_error (error,
+		             NM_SETTING_WIRED_ERROR,
+		             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_WIRED_ZVM_SUBCHANNELS);
 		return FALSE;
 	}
 
@@ -226,6 +245,13 @@ set_property (GObject *object, guint prop_id,
 	case PROP_MTU:
 		priv->mtu = g_value_get_uint (value);
 		break;
+	case PROP_ZVM_SUBCHANNELS:
+		if (priv->zvm_subchannels) {
+			g_ptr_array_foreach (priv->zvm_subchannels, (GFunc) g_free, NULL);
+			g_ptr_array_free (priv->zvm_subchannels, TRUE);
+		}
+		priv->zvm_subchannels = g_value_dup_boxed (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -256,6 +282,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_MTU:
 		g_value_set_uint (value, nm_setting_wired_get_mtu (setting));
+		break;
+	case PROP_ZVM_SUBCHANNELS:
+		g_value_set_boxed (value, nm_setting_wired_get_zvm_subchannels (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -380,5 +409,31 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 						"multiple Ethernet frames.",
 						0, G_MAXUINT32, 0,
 						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+
+	/**
+	 * NMSettingWired:zvm-subchannels:
+	 *
+	 * Identifies specific subchannels that this network device uses for
+	 * communcation with z/VM or s390 host.  Like #NMSettingWired:mac-address
+	 * for non-z/VM devices, this property can be used to ensure this connection
+	 * only applies to the network device that uses these subchannels.  The
+	 * list should contain exactly 3 strings, and each string may only only be
+	 * composed of hexadecimal characters and the period (.) character.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_ZVM_SUBCHANNELS,
+		 _nm_param_spec_specialized (NM_SETTING_WIRED_ZVM_SUBCHANNELS,
+		                       "z/VM Subchannels",
+		                       "Identifies specific subchannels that this "
+		                       "network device uses for communcation with z/VM "
+		                       "or s390 host.  Like the 'mac-address' property "
+		                       "for non-z/VM devices, this property can be used "
+		                       "to ensure this connection only applies to the "
+		                       "network device that uses these subchannels. The "
+		                       "list should contain exactly 3 strings, and each "
+		                       "string may only only be composed of hexadecimal "
+		                       "characters and the period (.) character.",
+		                       DBUS_TYPE_G_ARRAY_OF_STRING,
+		                       G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 }
 

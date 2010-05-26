@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2010 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -58,6 +58,7 @@ GQuark nm_setting_wired_error_quark (void);
 #define NM_SETTING_WIRED_AUTO_NEGOTIATE "auto-negotiate"
 #define NM_SETTING_WIRED_MAC_ADDRESS "mac-address"
 #define NM_SETTING_WIRED_MTU "mtu"
+#define NM_SETTING_WIRED_ZVM_SUBCHANNELS "zvm-subchannels"
 
 typedef struct {
 	NMSetting parent;
@@ -75,13 +76,14 @@ typedef struct {
 
 GType nm_setting_wired_get_type (void);
 
-NMSetting        *nm_setting_wired_new                (void);
-const char       *nm_setting_wired_get_port           (NMSettingWired *setting);
-guint32           nm_setting_wired_get_speed          (NMSettingWired *setting);
-const char       *nm_setting_wired_get_duplex         (NMSettingWired *setting);
-gboolean          nm_setting_wired_get_auto_negotiate (NMSettingWired *setting);
-const GByteArray *nm_setting_wired_get_mac_address    (NMSettingWired *setting);
-guint32           nm_setting_wired_get_mtu            (NMSettingWired *setting);
+NMSetting *       nm_setting_wired_new                 (void);
+const char *      nm_setting_wired_get_port            (NMSettingWired *setting);
+guint32           nm_setting_wired_get_speed           (NMSettingWired *setting);
+const char *      nm_setting_wired_get_duplex          (NMSettingWired *setting);
+gboolean          nm_setting_wired_get_auto_negotiate  (NMSettingWired *setting);
+const GByteArray *nm_setting_wired_get_mac_address     (NMSettingWired *setting);
+guint32           nm_setting_wired_get_mtu             (NMSettingWired *setting);
+const GPtrArray * nm_setting_wired_get_zvm_subchannels (NMSettingWired *setting);
 
 G_END_DECLS
 
