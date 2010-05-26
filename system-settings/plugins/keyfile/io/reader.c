@@ -995,17 +995,18 @@ connection_from_file (const char *filename)
 
 	key_file = g_key_file_new ();
 	if (g_key_file_load_from_file (key_file, filename, G_KEY_FILE_NONE, &err)) {
+		NMSettingConnection *s_con;
+		NMSetting *setting;
 		gchar **groups;
 		gsize length;
 		int i;
 		gboolean vpn_secrets = FALSE;
+		const char *ctype;
 
 		connection = nm_connection_new ();
 
 		groups = g_key_file_get_groups (key_file, &length);
 		for (i = 0; i < length; i++) {
-			NMSetting *setting;
-
 			/* Only read out secrets when needed */
 			if (!strcmp (groups[i], VPN_SECRETS_GROUP)) {
 				vpn_secrets = TRUE;
@@ -1015,6 +1016,23 @@ connection_from_file (const char *filename)
 			setting = read_setting (key_file, groups[i]);
 			if (setting)
 				nm_connection_add_setting (connection, setting);
+		}
+
+		/* Make sure that we have the base device type setting even if
+		 * the keyfile didn't include it, which can happen when the base
+		 * device type setting is all default values (like ethernet).
+		 */
+		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+		if (s_con) {
+			ctype = nm_setting_connection_get_connection_type (s_con);
+			setting = nm_connection_get_setting_by_name (connection, ctype);
+			if (!setting && ctype) {
+				if (!strcmp (ctype, NM_SETTING_WIRED_SETTING_NAME))
+					setting = nm_setting_wired_new ();
+
+				if (setting)
+					nm_connection_add_setting (connection, setting);
+			}
 		}
 
 		/* Handle vpn secrets after the 'vpn' setting was read */
