@@ -2951,15 +2951,61 @@ make_wired_setting (shvarFile *ifcfg,
 			}
 
 			g_byte_array_free (mac, TRUE);
-		} else if (!nm_controlled) {
-			/* If NM_CONTROLLED=no but there wasn't a MAC address, notify
-			 * the user that the device cannot be unmanaged.
-			 */
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: NM_CONTROLLED was false but HWADDR was missing; device will be managed");
 		}
 	} else {
 		g_object_unref (s_wired);
-		s_wired = NULL;
+		return NULL;
+	}
+
+	value = svGetValue (ifcfg, "SUBCHANNELS", FALSE);
+	if (value) {
+		const char *p = value;
+		gboolean success = TRUE;
+		char **chans = NULL;
+
+		/* basic sanity checks */
+		while (*p) {
+			if (!isxdigit (*p) && (*p != ',') && (*p != '.')) {
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid SUBCHANNELS '%s'", value);
+				success = FALSE;
+				break;
+			}
+			p++;
+		}
+
+		if (success) {
+			guint32 num_chans;
+
+			chans = g_strsplit_set (value, ",", 0);
+			num_chans = g_strv_length (chans);
+			if (num_chans < 2 || num_chans > 3) {
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid SUBCHANNELS '%s' (%d channels, 2 or 3 expected)",
+				             value, g_strv_length (chans));
+			} else {
+				GPtrArray *array = g_ptr_array_sized_new (num_chans);
+
+				g_ptr_array_add (array, chans[0]);
+				g_ptr_array_add (array, chans[1]);
+				if (num_chans == 3)
+					g_ptr_array_add (array, chans[2]);
+
+				g_object_set (s_wired, NM_SETTING_WIRED_ZVM_SUBCHANNELS, array, NULL);
+				g_ptr_array_free (array, TRUE);
+
+				/* set the unmanaged spec too */
+				if (!nm_controlled && !*unmanaged)
+					*unmanaged = g_strdup_printf ("zvm-subchannels:%s", value);
+			}
+			g_strfreev (chans);
+		}
+		g_free (value);
+	}
+
+	if (!nm_controlled && !*unmanaged) {
+		/* If NM_CONTROLLED=no but there wasn't a MAC address or z/VM
+		 * subchannels, notify the user that the device cannot be unmanaged.
+		 */
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: NM_CONTROLLED was false but HWADDR or SUBCHANNELS was missing; device will be managed");
 	}
 
 	value = svGetValue (ifcfg, "KEY_MGMT", FALSE);

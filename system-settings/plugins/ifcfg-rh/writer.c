@@ -816,6 +816,7 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	const GByteArray *mac;
 	char *tmp;
 	guint32 mtu;
+	const GPtrArray *zvm_subchannels;
 
 	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
 	if (!s_wired) {
@@ -824,6 +825,7 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		return FALSE;
 	}
 
+	svSetValue (ifcfg, "HWADDR", NULL, FALSE);
 	mac = nm_setting_wired_get_mac_address (s_wired);
 	if (mac) {
 		tmp = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
@@ -838,6 +840,23 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	if (mtu) {
 		tmp = g_strdup_printf ("%u", mtu);
 		svSetValue (ifcfg, "MTU", tmp, FALSE);
+		g_free (tmp);
+	}
+
+	svSetValue (ifcfg, "SUBCHANNELS", NULL, FALSE);
+	zvm_subchannels = nm_setting_wired_get_zvm_subchannels (s_wired);
+	if (zvm_subchannels) {
+	    if (zvm_subchannels->len == 2) {
+			tmp = g_strdup_printf ("%s,%s",
+				                   (const char *) g_ptr_array_index (zvm_subchannels, 0),
+				                   (const char *) g_ptr_array_index (zvm_subchannels, 1));
+	    } else if (zvm_subchannels->len == 3) {
+			tmp = g_strdup_printf ("%s,%s,%s",
+				                   (const char *) g_ptr_array_index (zvm_subchannels, 0),
+				                   (const char *) g_ptr_array_index (zvm_subchannels, 1),
+				                   (const char *) g_ptr_array_index (zvm_subchannels, 2));
+		}
+		svSetValue (ifcfg, "SUBCHANNELS", tmp, FALSE);
 		g_free (tmp);
 	}
 

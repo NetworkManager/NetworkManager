@@ -60,7 +60,8 @@ EXTRA_DIST = \
 	ifcfg-test-wired-static-no-prefix-24 \
 	ifcfg-test-wired-ipv6-only \
 	ifcfg-test-wifi-wep-passphrase \
-	keys-test-wifi-wep-passphrase
+	keys-test-wifi-wep-passphrase \
+	ifcfg-test-wired-qeth-static
 
 check-local:
 	@for f in $(EXTRA_DIST); do \
