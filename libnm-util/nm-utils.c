@@ -594,6 +594,32 @@ nm_utils_convert_strv_to_string (const GValue *src_value, GValue *dest_value)
 }
 
 static void
+nm_utils_convert_string_array_to_string (const GValue *src_value, GValue *dest_value)
+{
+	GPtrArray *strings;
+	GString *printable;
+	int i;
+
+	g_return_if_fail (g_type_is_a (G_VALUE_TYPE (src_value), DBUS_TYPE_G_ARRAY_OF_STRING));
+
+	strings = (GPtrArray *) g_value_get_boxed (src_value);
+
+	printable = g_string_new ("[");
+	for (i = 0; strings && i < strings->len; i++) {
+		if (i > 0)
+			g_string_append (printable, ", '");
+		else
+			g_string_append_c (printable, '\'');
+		g_string_append (printable, g_ptr_array_index (strings, i));
+		g_string_append_c (printable, '\'');
+	}
+	g_string_append_c (printable, ']');
+
+	g_value_take_string (dest_value, printable->str);
+	g_string_free (printable, FALSE);
+}
+
+static void
 nm_utils_convert_uint_array_to_string (const GValue *src_value, GValue *dest_value)
 {
 	GArray *array;
@@ -1058,6 +1084,9 @@ _nm_utils_register_value_transformations (void)
 		g_value_register_transform_func (DBUS_TYPE_G_LIST_OF_STRING,
 		                                 G_TYPE_STRING, 
 		                                 nm_utils_convert_strv_to_string);
+		g_value_register_transform_func (DBUS_TYPE_G_ARRAY_OF_STRING,
+		                                 G_TYPE_STRING,
+		                                 nm_utils_convert_string_array_to_string);
 		g_value_register_transform_func (DBUS_TYPE_G_UINT_ARRAY,
 		                                 G_TYPE_STRING, 
 		                                 nm_utils_convert_uint_array_to_string);
