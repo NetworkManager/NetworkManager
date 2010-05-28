@@ -2719,7 +2719,7 @@ do_sleep_wake (NMManager *self)
 }
 
 static gboolean
-impl_manager_sleep (NMManager *self, gboolean sleep, GError **error)
+impl_manager_sleep (NMManager *self, gboolean do_sleep, GError **error)
 {
 	NMManagerPrivate *priv;
 
@@ -2727,19 +2727,19 @@ impl_manager_sleep (NMManager *self, gboolean sleep, GError **error)
 
 	priv = NM_MANAGER_GET_PRIVATE (self);
 
-	if (priv->sleeping == sleep) {
+	if (priv->sleeping == do_sleep) {
 		g_set_error (error,
 		             NM_MANAGER_ERROR, NM_MANAGER_ERROR_ALREADY_ASLEEP_OR_AWAKE,
-		             "Already %s", sleep ? "asleep" : "awake");
+		             "Already %s", do_sleep ? "asleep" : "awake");
 		return FALSE;
 	}
 
 	nm_log_info (LOGD_SUSPEND, "%s requested (sleeping: %s  enabled: %s)",
-	             sleep ? "sleep" : "wake",
+	             do_sleep ? "sleep" : "wake",
 	             priv->sleeping ? "yes" : "no",
 	             priv->net_enabled ? "yes" : "no");
 
-	priv->sleeping = sleep;
+	priv->sleeping = do_sleep;
 
 	do_sleep_wake (self);
 
