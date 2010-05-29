@@ -133,6 +133,8 @@ NetworkManager_SOURCES = \
 		nm-system.h \
 		nm-manager.c \
 		nm-manager.h \
+		nm-manager-auth.c \
+		nm-manager-auth.h \
 		nm-netlink-monitor.c \
 		nm-netlink-monitor.h \
 		nm-activation-request.c \
@@ -211,6 +213,7 @@ NetworkManager_CPPFLAGS = \
 	$(GUDEV_CFLAGS) \
 	$(LIBNL_CFLAGS) \
 	$(GMODULE_CFLAGS) \
+	$(POLKIT_CFLAGS) \
 	-DG_DISABLE_DEPRECATED \
 	-DBINDIR=\"$(bindir)\" \
 	-DSBINDIR=\"$(sbindir)\" \
@@ -242,6 +245,7 @@ NetworkManager_LDADD = \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS) \
 	$(GMODULE_LIBS) \
+	$(POLKIT_LIBS) \
 	$(LIBM) \
 	$(LIBDL)
 

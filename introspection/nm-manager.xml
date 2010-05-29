@@ -116,6 +116,34 @@
       </arg>
     </method>
 
+    <method name="GetPermissions">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_get_permissions"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+      <tp:docstring>
+        Returns the permissions a caller has for various authenticated operations
+        that NetworkManager provides, like Enable/Disable networking, changing
+        WiFi, WWAN, and WiMAX state, etc.
+      </tp:docstring>
+      <arg name="permissions" type="a{ss}" direction="out">
+        <tp:docstring>
+          Dictionary of available permissions and results.  Each permission
+          is represented by a name (ie "org.freedesktop.NetworkManager.Foobar")
+          and each result is one of the following values: "yes" (the permission
+          is available), "auth" (the permission is available after a successful
+          authentication), or "no" (the permission is denied).  Clients may use
+          these values in the UI to indicate the ability to perform certain
+          operations.
+        </tp:docstring>
+      </arg>
+    </method>
+
+    <signal name="CheckPermissions">
+      <tp:docstring>
+        Emitted when system authorization details change, indicating that
+        clients may wish to recheck permissions with GetPermissions.
+      </tp:docstring>
+    </signal>
+
     <method name="SetLogging">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_set_logging"/>
       <tp:docstring>

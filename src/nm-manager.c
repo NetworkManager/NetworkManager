@@ -54,6 +54,7 @@
 #include "nm-secrets-provider-interface.h"
 #include "nm-settings-interface.h"
 #include "nm-settings-system-interface.h"
+#include "nm-manager-auth.h"
 
 #define NM_AUTOIP_DBUS_SERVICE "org.freedesktop.nm_avahi_autoipd"
 #define NM_AUTOIP_DBUS_IFACE   "org.freedesktop.nm_avahi_autoipd"
@@ -73,6 +74,9 @@ static gboolean impl_manager_deactivate_connection (NMManager *manager,
 static gboolean impl_manager_sleep (NMManager *manager, gboolean sleep, GError **err);
 
 static gboolean impl_manager_enable (NMManager *manager, gboolean enable, GError **err);
+
+static void impl_manager_get_permissions (NMManager *manager,
+                                          DBusGMethodInvocation *context);
 
 static gboolean impl_manager_set_logging (NMManager *manager,
                                           const char *level,
@@ -196,6 +200,10 @@ typedef struct {
 
 	DBusGProxy *aipd_proxy;
 
+	PolkitAuthority *authority;
+	guint auth_changed_id;
+	GSList *auth_chains;
+
 	gboolean disposed;
 } NMManagerPrivate;
 
@@ -215,6 +223,7 @@ enum {
 	CONNECTION_ADDED,
 	CONNECTION_UPDATED,
 	CONNECTION_REMOVED,
+	CHECK_PERMISSIONS,
 
 	LAST_SIGNAL
 };
@@ -2792,6 +2801,109 @@ impl_manager_enable (NMManager *self, gboolean enable, GError **error)
 	return TRUE;
 }
 
+/* Permissions */
+
+static void
+pk_authority_changed_cb (GObject *object, gpointer user_data)
+{
+	/* Let clients know they should re-check their authorization */
+	g_signal_emit (NM_MANAGER (user_data), signals[CHECK_PERMISSIONS], 0);
+}
+
+static void
+get_permissions_done_cb (NMAuthChain *chain,
+                         GError *error,
+                         DBusGMethodInvocation *context,
+                         gpointer user_data,
+                         gpointer user_data2)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GHashTable *hash = user_data2;
+	GError *ret_error;
+
+	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+	if (error) {
+		nm_log_dbg (LOGD_CORE, "Permissions request failed: %s", error->message);
+		ret_error = g_error_new (NM_MANAGER_ERROR,
+		                         NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                         "Permissions request failed: %s",
+		                         error->message);
+		dbus_g_method_return_error (context, ret_error);
+		g_error_free (ret_error);
+	} else {
+		g_assert (user_data2);
+		dbus_g_method_return (context, hash);
+	}
+
+	g_hash_table_destroy (hash);
+	nm_auth_chain_unref (chain);
+}
+
+static void
+get_permissions_call_done_cb (NMAuthChain *chain,
+                              const char *permission,
+                              GError *error,
+                              guint result,
+                              gpointer user_data,
+                              gpointer user_data2)
+{
+	GHashTable *hash = user_data2;
+	const char *str_result = NULL;
+
+	if (!error) {
+		g_assert (result != NM_AUTH_CALL_RESULT_UNKNOWN);
+
+		if (result == NM_AUTH_CALL_RESULT_YES)
+			str_result = "yes";
+		else if (result == NM_AUTH_CALL_RESULT_NO)
+			str_result = "no";
+		else if (result == NM_AUTH_CALL_RESULT_AUTH)
+			str_result = "auth";
+		else {
+			nm_log_dbg (LOGD_CORE, "unknown auth chain result %d", result);
+		}
+
+		if (str_result)
+			g_hash_table_insert (hash, g_strdup (permission), g_strdup (str_result));
+	}
+}
+
+static void
+impl_manager_get_permissions (NMManager *self,
+                              DBusGMethodInvocation *context)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMAuthChain *chain;
+	GHashTable *results;
+
+	if (!priv->authority) {
+		GError *error;
+
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             "Permissions request failed: PolicyKit not initialized");
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	results = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	chain = nm_auth_chain_new (priv->authority,
+	                           context,
+	                           get_permissions_done_cb,
+	                           get_permissions_call_done_cb,
+	                           self,
+	                           results);
+	g_assert (chain);
+	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS);
+}
+
 /* Legacy 0.6 compatibility interface */
 
 static gboolean
@@ -3078,6 +3190,10 @@ dispose (GObject *object)
 	pending_connection_info_destroy (priv->pending_connection_info);
 	priv->pending_connection_info = NULL;
 
+	g_slist_foreach (priv->auth_chains, (GFunc) nm_auth_chain_unref, NULL);
+	g_slist_free (priv->auth_chains);
+	g_object_unref (priv->authority);
+
 	while (g_slist_length (priv->secrets_calls))
 		free_get_secrets_info ((GetSecretsInfo *) priv->secrets_calls->data);
 
@@ -3286,6 +3402,15 @@ nm_manager_init (NMManager *manager)
 		                             NULL);
 	} else
 		nm_log_warn (LOGD_AUTOIP4, "could not initialize avahi-autoipd D-Bus proxy");
+
+	priv->authority = polkit_authority_get ();
+	if (priv->authority) {
+		priv->auth_changed_id = g_signal_connect (priv->authority,
+		                                          "changed",
+		                                          G_CALLBACK (pk_authority_changed_cb),
+		                                          manager);
+	} else
+		nm_log_warn (LOGD_CORE, "failed to create PolicyKit authority.");
 }
 
 static void
@@ -3444,6 +3569,14 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		              NULL, NULL,
 		              _nm_marshal_VOID__OBJECT_UINT,
 		              G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_UINT);
+
+	signals[CHECK_PERMISSIONS] =
+		g_signal_new ("check-permissions",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL,
+		              g_cclosure_marshal_VOID__VOID,
+		              G_TYPE_NONE, 0);
 
 	/* StateChange is DEPRECATED */
 	signals[STATE_CHANGE] =

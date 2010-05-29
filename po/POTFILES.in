@@ -11,6 +11,8 @@ libnm-util/crypto.c
 libnm-util/crypto_gnutls.c
 libnm-util/crypto_nss.c
 libnm-util/nm-utils.c
+policy/org.freedesktop.network-manager-settings.system.policy.in
+policy/org.freedesktop.NetworkManager.policy.in
 src/nm-netlink-monitor.c
 src/main.c
 src/dhcp-manager/nm-dhcp-dhclient.c
@@ -19,5 +21,4 @@ src/logging/nm-logging.c
 src/named-manager/nm-named-manager.c
 src/system-settings/nm-default-wired-connection.c
 system-settings/plugins/ifcfg-rh/reader.c
-policy/org.freedesktop.network-manager-settings.system.policy.in
 

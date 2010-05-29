@@ -50,6 +50,25 @@ G_BEGIN_DECLS
 #define NM_CLIENT_WWAN_HARDWARE_ENABLED "wwan-hardware-enabled"
 #define NM_CLIENT_ACTIVE_CONNECTIONS "active-connections"
 
+/* Permissions */
+typedef enum {
+	NM_CLIENT_PERMISSION_NONE = 0,
+	NM_CLIENT_PERMISSION_ENABLE_DISABLE_NETWORK = 1,
+	NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIFI = 2,
+	NM_CLIENT_PERMISSION_ENABLE_DISABLE_WWAN = 3,
+	NM_CLIENT_PERMISSION_USE_USER_CONNECTIONS = 4,
+
+	NM_CLIENT_PERMISSION_LAST = NM_CLIENT_PERMISSION_USE_USER_CONNECTIONS
+} NMClientPermission;
+
+typedef enum {
+	NM_CLIENT_PERMISSION_RESULT_UNKNOWN = 0,
+	NM_CLIENT_PERMISSION_RESULT_YES,
+	NM_CLIENT_PERMISSION_RESULT_AUTH,
+	NM_CLIENT_PERMISSION_RESULT_NO
+} NMClientPermissionResult;
+
+
 typedef struct {
 	NMObject parent;
 } NMClient;
@@ -104,6 +123,9 @@ NMState   nm_client_get_state            (NMClient *client);
 gboolean  nm_client_get_manager_running  (NMClient *client);
 const GPtrArray *nm_client_get_active_connections (NMClient *client);
 void      nm_client_sleep                (NMClient *client, gboolean sleep);
+
+NMClientPermissionResult nm_client_get_permission_result (NMClient *client,
+                                                          NMClientPermission permission);
 
 G_END_DECLS
 
