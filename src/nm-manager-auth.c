@@ -264,3 +264,55 @@ nm_auth_chain_unref (NMAuthChain *self)
 	g_free (self);
 }
 
+/************ utils **************/
+
+gboolean
+nm_auth_is_caller_root (DBusGMethodInvocation *context,
+                        NMDBusManager *dbus_mgr,
+                        gboolean *out_is_root,
+                        const char **out_error_desc)
+{
+	DBusConnection *connection;
+	char *sender = NULL;
+	gulong sender_uid = G_MAXULONG;
+	gboolean success = FALSE;
+	DBusError dbus_error;
+
+	g_return_val_if_fail (context != NULL, FALSE);
+	g_return_val_if_fail (dbus_mgr != NULL, FALSE);
+	g_return_val_if_fail (out_is_root != NULL, FALSE);
+
+	*out_is_root = FALSE;
+
+	sender = dbus_g_method_get_sender (context);
+	if (!sender) {
+		if (out_error_desc)
+			*out_error_desc = "Could not determine D-Bus requestor";
+		goto out;
+	}
+
+	connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
+	if (!connection) {
+		if (out_error_desc)
+			*out_error_desc = "Could not get the D-Bus system bus";
+		goto out;
+	}
+
+	dbus_error_init (&dbus_error);
+	/* FIXME: do this async */
+	sender_uid = dbus_bus_get_unix_user (connection, sender, &dbus_error);
+	if (dbus_error_is_set (&dbus_error)) {
+		if (out_error_desc)
+			*out_error_desc = "Could not determine the Unix user ID of the requestor";
+		dbus_error_free (&dbus_error);
+		goto out;
+	}
+
+	success = TRUE;
+	if (0 == sender_uid)
+		*out_is_root = TRUE;
+
+out:
+	return success;
+}
+

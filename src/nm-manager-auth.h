@@ -25,6 +25,8 @@
 #include <glib.h>
 #include <dbus/dbus-glib.h>
 
+#include "nm-dbus-manager.h"
+
 #define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK "org.freedesktop.NetworkManager.enable-disable-network"
 #define NM_AUTH_PERMISSION_SLEEP_WAKE             "org.freedesktop.NetworkManager.sleep-wake"
 #define NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI    "org.freedesktop.NetworkManager.enable-disable-wifi"
@@ -70,6 +72,12 @@ gboolean nm_auth_chain_add_call (NMAuthChain *chain,
                                  gboolean allow_interaction);
 
 void nm_auth_chain_unref (NMAuthChain *chain);
+
+/* Utils */
+gboolean nm_auth_is_caller_root (DBusGMethodInvocation *context,
+                                 NMDBusManager *dbus_mgr,
+                                 gboolean *out_is_root,
+                                 const char **out_error_desc);
 
 #endif /* NM_MANAGER_AUTH_H */
 

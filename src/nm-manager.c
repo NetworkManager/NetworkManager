@@ -2732,9 +2732,9 @@ do_sleep_wake (NMManager *self)
 }
 
 static gboolean
-return_permission_denied_error (PolkitAuthority *authority,
-                                const char *detail,
-                                DBusGMethodInvocation *context)
+return_no_pk_error (PolkitAuthority *authority,
+                    const char *detail,
+                    DBusGMethodInvocation *context)
 {
 	GError *error;
 
@@ -2825,7 +2825,9 @@ impl_manager_sleep (NMManager *self,
 {
 	NMManagerPrivate *priv;
 	NMAuthChain *chain;
-	GError *error;
+	GError *error = NULL;
+	gboolean is_root = FALSE;
+	const char *error_desc = NULL;
 
 	g_return_if_fail (NM_IS_MANAGER (self));
 
@@ -2840,7 +2842,23 @@ impl_manager_sleep (NMManager *self,
 		return;
 	}
 
-	if (!return_permission_denied_error (priv->authority, "Permission", context))
+	if (!nm_auth_is_caller_root (context, priv->dbus_mgr, &is_root, &error_desc)) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	/* Root doesn't need PK authentication */
+	if (is_root) {
+		_internal_sleep (self, do_sleep);
+		dbus_g_method_return (context);
+		return;
+	}
+
+	if (!return_no_pk_error (priv->authority, "Permission", context))
 		return;
 
 	chain = nm_auth_chain_new (priv->authority,
@@ -2943,7 +2961,9 @@ impl_manager_enable (NMManager *self,
 {
 	NMManagerPrivate *priv;
 	NMAuthChain *chain;
-	GError *error;
+	GError *error = NULL;
+	gboolean is_root = FALSE;
+	const char *error_desc = NULL;
 
 	g_return_if_fail (NM_IS_MANAGER (self));
 
@@ -2958,7 +2978,23 @@ impl_manager_enable (NMManager *self,
 		return;
 	}
 
-	if (!return_permission_denied_error (priv->authority, "Permission", context))
+	if (!nm_auth_is_caller_root (context, priv->dbus_mgr, &is_root, &error_desc)) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	/* Root doesn't need PK authentication */
+	if (is_root) {
+		_internal_enable (self, enable);
+		dbus_g_method_return (context);
+		return;
+	}
+
+	if (!return_no_pk_error (priv->authority, "Permission", context))
 		return;
 
 	chain = nm_auth_chain_new (priv->authority,
