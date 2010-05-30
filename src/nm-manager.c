@@ -73,7 +73,9 @@ static gboolean impl_manager_deactivate_connection (NMManager *manager,
 
 static gboolean impl_manager_sleep (NMManager *manager, gboolean sleep, GError **err);
 
-static gboolean impl_manager_enable (NMManager *manager, gboolean enable, GError **err);
+static void impl_manager_enable (NMManager *manager,
+                                 gboolean enable,
+                                 DBusGMethodInvocation *context);
 
 static void impl_manager_get_permissions (NMManager *manager,
                                           DBusGMethodInvocation *context);
@@ -2728,6 +2730,27 @@ do_sleep_wake (NMManager *self)
 }
 
 static gboolean
+return_permission_denied_error (PolkitAuthority *authority,
+                                const char *detail,
+                                DBusGMethodInvocation *context)
+{
+	GError *error;
+
+	g_assert (context);
+
+	if (!authority) {
+		error = g_error_new (NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                     "%s request failed: PolicyKit not initialized",
+		                     detail);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return FALSE;
+	}
+	return TRUE;
+}
+
+static gboolean
 impl_manager_sleep (NMManager *self, gboolean do_sleep, GError **error)
 {
 	NMManagerPrivate *priv;
@@ -2756,26 +2779,14 @@ impl_manager_sleep (NMManager *self, gboolean do_sleep, GError **error)
 	return TRUE;
 }
 
-static gboolean
-impl_manager_enable (NMManager *self, gboolean enable, GError **error)
+static void
+_internal_enable (NMManager *self, gboolean enable)
 {
-	NMManagerPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_MANAGER (self), FALSE);
-
-	priv = NM_MANAGER_GET_PRIVATE (self);
-
-	if (priv->net_enabled == enable) {
-		g_set_error (error,
-		             NM_MANAGER_ERROR, NM_MANAGER_ERROR_ALREADY_ENABLED_OR_DISABLED,
-		             "Already %s", enable ? "enabled" : "disabled");
-		return FALSE;
-	}
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GError *err = NULL;
 
 	/* Update "NetworkingEnabled" key in state file */
 	if (priv->state_file) {
-		GError *err = NULL;
-
 		if (!write_value_to_state_file (priv->state_file,
 		                                "main", "NetworkingEnabled",
 		                                G_TYPE_BOOLEAN, (gpointer) &enable,
@@ -2798,7 +2809,92 @@ impl_manager_enable (NMManager *self, gboolean enable, GError **error)
 	do_sleep_wake (self);
 
 	g_object_notify (G_OBJECT (self), NM_MANAGER_NETWORKING_ENABLED);
-	return TRUE;
+}
+
+static void
+enable_net_done_cb (NMAuthChain *chain,
+                    GError *error,
+                    DBusGMethodInvocation *context,
+                    gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GError *ret_error;
+	NMAuthCallResult result;
+	gboolean enable;
+
+	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "result"));
+	enable = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "enable"));
+
+	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+	if (error) {
+		nm_log_dbg (LOGD_CORE, "Enable request failed: %s", error->message);
+		ret_error = g_error_new (NM_MANAGER_ERROR,
+		                         NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                         "Enable request failed: %s",
+		                         error->message);
+		dbus_g_method_return_error (context, ret_error);
+		g_error_free (ret_error);
+	} else if (result != NM_AUTH_CALL_RESULT_YES) {
+		ret_error = g_error_new_literal (NM_MANAGER_ERROR,
+		                                 NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                                 "Not authorized to enable/disable networking");
+		dbus_g_method_return_error (context, ret_error);
+		g_error_free (ret_error);
+	} else {
+		_internal_enable (self, enable);
+		dbus_g_method_return (context);
+	}
+
+	nm_auth_chain_unref (chain);
+}
+
+static void
+enable_net_call_done_cb (NMAuthChain *chain,
+                         const char *permission,
+                         GError *error,
+                         NMAuthCallResult result,
+                         gpointer user_data)
+{
+	if (!error)
+		nm_auth_chain_set_data (chain, "result", GUINT_TO_POINTER (result), NULL);
+}
+
+static void
+impl_manager_enable (NMManager *self,
+                     gboolean enable,
+                     DBusGMethodInvocation *context)
+{
+	NMManagerPrivate *priv;
+	NMAuthChain *chain;
+	GError *error;
+
+	g_return_if_fail (NM_IS_MANAGER (self));
+
+	priv = NM_MANAGER_GET_PRIVATE (self);
+
+	if (priv->net_enabled == enable) {
+		error = g_error_new (NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_ALREADY_ENABLED_OR_DISABLED,
+		                     "Already %s", enable ? "enabled" : "disabled");
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	if (!return_permission_denied_error (priv->authority, "Permission", context))
+		return;
+
+	chain = nm_auth_chain_new (priv->authority,
+	                           context,
+	                           enable_net_done_cb,
+	                           enable_net_call_done_cb,
+	                           self);
+	g_assert (chain);
+	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+
+	nm_auth_chain_set_data (chain, "enable", GUINT_TO_POINTER (enable), NULL);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK, TRUE);
 }
 
 /* Permissions */
@@ -2814,12 +2910,10 @@ static void
 get_permissions_done_cb (NMAuthChain *chain,
                          GError *error,
                          DBusGMethodInvocation *context,
-                         gpointer user_data,
-                         gpointer user_data2)
+                         gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GHashTable *hash = user_data2;
 	GError *ret_error;
 
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
@@ -2832,11 +2926,9 @@ get_permissions_done_cb (NMAuthChain *chain,
 		dbus_g_method_return_error (context, ret_error);
 		g_error_free (ret_error);
 	} else {
-		g_assert (user_data2);
-		dbus_g_method_return (context, hash);
+		dbus_g_method_return (context, nm_auth_chain_get_data (chain, "results"));
 	}
 
-	g_hash_table_destroy (hash);
 	nm_auth_chain_unref (chain);
 }
 
@@ -2845,28 +2937,28 @@ get_permissions_call_done_cb (NMAuthChain *chain,
                               const char *permission,
                               GError *error,
                               guint result,
-                              gpointer user_data,
-                              gpointer user_data2)
+                              gpointer user_data)
 {
-	GHashTable *hash = user_data2;
+	GHashTable *hash;
 	const char *str_result = NULL;
 
-	if (!error) {
-		g_assert (result != NM_AUTH_CALL_RESULT_UNKNOWN);
+	if (error)
+		return;
 
-		if (result == NM_AUTH_CALL_RESULT_YES)
-			str_result = "yes";
-		else if (result == NM_AUTH_CALL_RESULT_NO)
-			str_result = "no";
-		else if (result == NM_AUTH_CALL_RESULT_AUTH)
-			str_result = "auth";
-		else {
-			nm_log_dbg (LOGD_CORE, "unknown auth chain result %d", result);
-		}
+	hash = nm_auth_chain_get_data (chain, "results");
 
-		if (str_result)
-			g_hash_table_insert (hash, g_strdup (permission), g_strdup (str_result));
+	if (result == NM_AUTH_CALL_RESULT_YES)
+		str_result = "yes";
+	else if (result == NM_AUTH_CALL_RESULT_NO)
+		str_result = "no";
+	else if (result == NM_AUTH_CALL_RESULT_AUTH)
+		str_result = "auth";
+	else {
+		nm_log_dbg (LOGD_CORE, "unknown auth chain result %d", result);
 	}
+
+	if (str_result)
+		g_hash_table_insert (hash, g_strdup (permission), g_strdup (str_result));
 }
 
 static void
@@ -2888,20 +2980,21 @@ impl_manager_get_permissions (NMManager *self,
 		return;
 	}
 
-	results = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 	chain = nm_auth_chain_new (priv->authority,
 	                           context,
 	                           get_permissions_done_cb,
 	                           get_permissions_call_done_cb,
-	                           self,
-	                           results);
+	                           self);
 	g_assert (chain);
 	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
 
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS);
+	results = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	nm_auth_chain_set_data (chain, "results", results, (GDestroyNotify) g_hash_table_destroy);
+
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS, FALSE);
 }
 
 /* Legacy 0.6 compatibility interface */

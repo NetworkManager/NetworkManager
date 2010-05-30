@@ -101,6 +101,7 @@
 
     <method name="Enable">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_enable"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <tp:docstring>
         Control whether overall networking is enabled or disabled.  When
         disabled, all interfaces that NM manages are deactivated.  When enabled,

@@ -33,35 +33,40 @@
 
 typedef struct NMAuthChain NMAuthChain;
 
-enum {
+typedef enum {
 	NM_AUTH_CALL_RESULT_UNKNOWN,
 	NM_AUTH_CALL_RESULT_YES,
 	NM_AUTH_CALL_RESULT_AUTH,
 	NM_AUTH_CALL_RESULT_NO,
-};
+} NMAuthCallResult;
 
 typedef void (*NMAuthChainResultFunc) (NMAuthChain *chain,
                                        GError *error,
                                        DBusGMethodInvocation *context,
-                                       gpointer user_data,
-                                       gpointer user_data2);
+                                       gpointer user_data);
 
 typedef void (*NMAuthChainCallFunc) (NMAuthChain *chain,
                                      const char *permission,
                                      GError *error,
-                                     guint result,
-                                     gpointer user_data,
-                                     gpointer user_data2);
+                                     NMAuthCallResult result,
+                                     gpointer user_data);
 
 NMAuthChain *nm_auth_chain_new (PolkitAuthority *authority,
                                 DBusGMethodInvocation *context,
                                 NMAuthChainResultFunc done_func,
                                 NMAuthChainCallFunc call_func,
-                                gpointer user_data,
-                                gpointer user_data2);
+                                gpointer user_data);
+
+gpointer nm_auth_chain_get_data (NMAuthChain *chain, const char *tag);
+
+void nm_auth_chain_set_data (NMAuthChain *chain,
+                             const char *tag,
+                             gpointer data,
+                             GDestroyNotify data_destroy);
 
 gboolean nm_auth_chain_add_call (NMAuthChain *chain,
-                                 const char *permission);
+                                 const char *permission,
+                                 gboolean allow_interaction);
 
 void nm_auth_chain_unref (NMAuthChain *chain);
 

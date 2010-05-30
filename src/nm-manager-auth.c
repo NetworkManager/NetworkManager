@@ -28,6 +28,7 @@ struct NMAuthChain {
 	guint32 refcount;
 	PolkitAuthority *authority;
 	GSList *calls;
+	GHashTable *data;
 
 	DBusGMethodInvocation *context;
 	GError *error;
@@ -35,7 +36,6 @@ struct NMAuthChain {
 	NMAuthChainResultFunc done_func;
 	NMAuthChainCallFunc call_func;
 	gpointer user_data;
-	gpointer user_data2;
 };
 
 typedef struct {
@@ -45,26 +45,74 @@ typedef struct {
 	gboolean disposed;
 } PolkitCall;
 
+typedef struct {
+	gpointer data;
+	GDestroyNotify destroy;
+} ChainData;
+
+static void
+free_data (gpointer data)
+{
+	ChainData *tmp = data;
+
+	if (tmp->destroy)
+		tmp->destroy (tmp->data);
+	memset (tmp, 0, sizeof (ChainData));
+	g_free (tmp);
+}
 
 NMAuthChain *
 nm_auth_chain_new (PolkitAuthority *authority,
                    DBusGMethodInvocation *context,
                    NMAuthChainResultFunc done_func,
                    NMAuthChainCallFunc call_func,
-                   gpointer user_data,
-                   gpointer user_data2)
+                   gpointer user_data)
 {
 	NMAuthChain *self;
 
 	self = g_malloc0 (sizeof (NMAuthChain));
 	self->refcount = 1;
 	self->authority = g_object_ref (authority);
+	self->data = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, free_data);
 	self->done_func = done_func;
 	self->call_func = call_func;
 	self->context = context;
 	self->user_data = user_data;
-	self->user_data2 = user_data2;
 	return self;
+}
+
+gpointer
+nm_auth_chain_get_data (NMAuthChain *self, const char *tag)
+{
+	ChainData *tmp;
+
+	g_return_val_if_fail (self != NULL, NULL);
+	g_return_val_if_fail (tag != NULL, NULL);
+
+	tmp = g_hash_table_lookup (self->data, tag);
+	return tmp ? tmp->data : NULL;
+}
+
+void
+nm_auth_chain_set_data (NMAuthChain *self,
+                        const char *tag,
+                        gpointer data,
+                        GDestroyNotify data_destroy)
+{
+	ChainData *tmp;
+
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (tag != NULL);
+
+	if (data == NULL)
+		g_hash_table_remove (self->data, tag);
+	else {
+		tmp = g_malloc0 (sizeof (ChainData));
+		tmp->data = data;
+		tmp->destroy = data_destroy;
+
+		g_hash_table_insert (self->data, g_strdup (tag), tmp);
+	}
 }
 
 static void
@@ -75,7 +123,7 @@ nm_auth_chain_check_done (NMAuthChain *self)
 	if (g_slist_length (self->calls) == 0) {
 		/* Ensure we say alive across the callback */
 		self->refcount++;
-		self->done_func (self, self->error, self->context, self->user_data, self->user_data2);
+		self->done_func (self, self->error, self->context, self->user_data);
 		nm_auth_chain_unref (self);
 	}
 }
@@ -141,7 +189,7 @@ pk_call_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 			call_result = NM_AUTH_CALL_RESULT_NO;
 	}
 
-	chain->call_func (chain, call->permission, error, call_result, chain->user_data, chain->user_data2);
+	chain->call_func (chain, call->permission, error, call_result, chain->user_data);
 	nm_auth_chain_check_done (chain);
 
 	g_clear_error (&error);
@@ -152,11 +200,13 @@ pk_call_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 
 gboolean
 nm_auth_chain_add_call (NMAuthChain *self,
-                        const char *permission)
+                        const char *permission,
+                        gboolean allow_interaction)
 {
 	PolkitCall *call;
 	char *sender;
 	PolkitSubject *subject;
+	PolkitCheckAuthorizationFlags flags = POLKIT_CHECK_AUTHORIZATION_FLAGS_NONE;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (self->context != NULL, FALSE);
@@ -175,11 +225,14 @@ nm_auth_chain_add_call (NMAuthChain *self,
 
 	self->calls = g_slist_append (self->calls, call);
 
+	if (allow_interaction)
+		flags = POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION;
+
 	polkit_authority_check_authorization (self->authority,
 	                                      subject,
 	                                      permission,
 	                                      NULL,
-	                                      POLKIT_CHECK_AUTHORIZATION_FLAGS_NONE,
+	                                      flags,
 	                                      call->cancellable,
 	                                      pk_call_cb,
 	                                      call);
@@ -205,6 +258,7 @@ nm_auth_chain_unref (NMAuthChain *self)
 	g_slist_free (self->calls);
 
 	g_clear_error (&self->error);
+	g_hash_table_destroy (self->data);
 
 	memset (self, 0, sizeof (NMAuthChain));
 	g_free (self);
