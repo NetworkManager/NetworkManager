@@ -86,6 +86,7 @@
 
     <method name="Sleep">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_sleep"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <tp:docstring>
         Control the NetworkManager daemon's sleep state.  When asleep, all
         interfaces that it manages are deactivated.  When awake, devices are
@@ -303,6 +304,7 @@
         DEPRECATED.  Control the NetworkManager daemon's sleep state.  When asleep, all interfaces that it manages are deactivated.
       </tp:docstring>
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_legacy_sleep"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
     </method>
 
     <method name="wake">
@@ -310,6 +312,7 @@
         DEPRECATED.  Control the NetworkManager daemon's sleep state.  When awake, all known interfaces are available to be activated.
       </tp:docstring>
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_legacy_wake"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
     </method>
 
     <method name="state">

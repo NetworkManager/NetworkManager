@@ -18,6 +18,15 @@
     </defaults>
   </action>
 
+  <action id="org.freedesktop.NetworkManager.sleep-wake">
+    <_description>Put NetworkManager to sleep or wake it up (should only be used by system power management)</_description>
+    <_message>System policy prevents putting NetworkManager to sleep or waking it up</_message>
+    <defaults>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>no</allow_active>
+    </defaults>
+  </action>
+
   <action id="org.freedesktop.NetworkManager.enable-disable-wifi">
     <_description>Enable or disable WiFi devices</_description>
     <_message>System policy prevents enabling or disabling WiFi devices</_message>

@@ -71,7 +71,9 @@ static gboolean impl_manager_deactivate_connection (NMManager *manager,
                                                     const char *connection_path,
                                                     GError **error);
 
-static gboolean impl_manager_sleep (NMManager *manager, gboolean sleep, GError **err);
+static void impl_manager_sleep (NMManager *manager,
+                                gboolean do_sleep,
+                                DBusGMethodInvocation *context);
 
 static void impl_manager_enable (NMManager *manager,
                                  gboolean enable,
@@ -87,8 +89,8 @@ static gboolean impl_manager_set_logging (NMManager *manager,
 
 /* Legacy 0.6 compatibility interface */
 
-static gboolean impl_manager_legacy_sleep (NMManager *manager, GError **err);
-static gboolean impl_manager_legacy_wake  (NMManager *manager, GError **err);
+static void impl_manager_legacy_sleep (NMManager *manager, DBusGMethodInvocation *context);
+static void impl_manager_legacy_wake  (NMManager *manager, DBusGMethodInvocation *context);
 static gboolean impl_manager_legacy_state (NMManager *manager, guint32 *state, GError **err);
 
 #include "nm-manager-glue.h"
@@ -2750,21 +2752,10 @@ return_permission_denied_error (PolkitAuthority *authority,
 	return TRUE;
 }
 
-static gboolean
-impl_manager_sleep (NMManager *self, gboolean do_sleep, GError **error)
+static void
+_internal_sleep (NMManager *self, gboolean do_sleep)
 {
-	NMManagerPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_MANAGER (self), FALSE);
-
-	priv = NM_MANAGER_GET_PRIVATE (self);
-
-	if (priv->sleeping == do_sleep) {
-		g_set_error (error,
-		             NM_MANAGER_ERROR, NM_MANAGER_ERROR_ALREADY_ASLEEP_OR_AWAKE,
-		             "Already %s", do_sleep ? "asleep" : "awake");
-		return FALSE;
-	}
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
 	nm_log_info (LOGD_SUSPEND, "%s requested (sleeping: %s  enabled: %s)",
 	             do_sleep ? "sleep" : "wake",
@@ -2776,7 +2767,92 @@ impl_manager_sleep (NMManager *self, gboolean do_sleep, GError **error)
 	do_sleep_wake (self);
 
 	g_object_notify (G_OBJECT (self), NM_MANAGER_SLEEPING);
-	return TRUE;
+}
+
+static void
+sleep_auth_done_cb (NMAuthChain *chain,
+                    GError *error,
+                    DBusGMethodInvocation *context,
+                    gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GError *ret_error;
+	NMAuthCallResult result;
+	gboolean do_sleep;
+
+	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "result"));
+	do_sleep = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "sleep"));
+
+	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+	if (error) {
+		nm_log_dbg (LOGD_CORE, "Sleep/wake request failed: %s", error->message);
+		ret_error = g_error_new (NM_MANAGER_ERROR,
+		                         NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                         "Sleep/wake request failed: %s",
+		                         error->message);
+		dbus_g_method_return_error (context, ret_error);
+		g_error_free (ret_error);
+	} else if (result != NM_AUTH_CALL_RESULT_YES) {
+		ret_error = g_error_new_literal (NM_MANAGER_ERROR,
+		                                 NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                                 "Not authorized to sleep/wake");
+		dbus_g_method_return_error (context, ret_error);
+		g_error_free (ret_error);
+	} else {
+		_internal_sleep (self, do_sleep);
+		dbus_g_method_return (context);
+	}
+
+	nm_auth_chain_unref (chain);
+}
+
+static void
+sleep_auth_call_done_cb (NMAuthChain *chain,
+                         const char *permission,
+                         GError *error,
+                         NMAuthCallResult result,
+                         gpointer user_data)
+{
+	if (!error)
+		nm_auth_chain_set_data (chain, "result", GUINT_TO_POINTER (result), NULL);
+}
+
+static void
+impl_manager_sleep (NMManager *self,
+                    gboolean do_sleep,
+                    DBusGMethodInvocation *context)
+{
+	NMManagerPrivate *priv;
+	NMAuthChain *chain;
+	GError *error;
+
+	g_return_if_fail (NM_IS_MANAGER (self));
+
+	priv = NM_MANAGER_GET_PRIVATE (self);
+
+	if (priv->sleeping == do_sleep) {
+		error = g_error_new (NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_ALREADY_ASLEEP_OR_AWAKE,
+		                     "Already %s", do_sleep ? "asleep" : "awake");
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	if (!return_permission_denied_error (priv->authority, "Permission", context))
+		return;
+
+	chain = nm_auth_chain_new (priv->authority,
+	                           context,
+	                           sleep_auth_done_cb,
+	                           sleep_auth_call_done_cb,
+	                           self);
+	g_assert (chain);
+	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+
+	nm_auth_chain_set_data (chain, "sleep", GUINT_TO_POINTER (do_sleep), NULL);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SLEEP_WAKE, TRUE);
 }
 
 static void
@@ -2992,6 +3068,7 @@ impl_manager_get_permissions (NMManager *self,
 	nm_auth_chain_set_data (chain, "results", results, (GDestroyNotify) g_hash_table_destroy);
 
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SLEEP_WAKE, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS, FALSE);
@@ -2999,16 +3076,16 @@ impl_manager_get_permissions (NMManager *self,
 
 /* Legacy 0.6 compatibility interface */
 
-static gboolean
-impl_manager_legacy_sleep (NMManager *manager, GError **error)
+static void
+impl_manager_legacy_sleep (NMManager *manager, DBusGMethodInvocation *context)
 {
-	return impl_manager_sleep (manager, TRUE, error);
+	return impl_manager_sleep (manager, TRUE, context);
 }
 
-static gboolean
-impl_manager_legacy_wake  (NMManager *manager, GError **error)
+static void
+impl_manager_legacy_wake  (NMManager *manager, DBusGMethodInvocation *context)
 {
-	return impl_manager_sleep (manager, FALSE, error);
+	return impl_manager_sleep (manager, FALSE, context);
 }
 
 static gboolean
