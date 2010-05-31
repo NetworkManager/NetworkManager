@@ -2468,14 +2468,23 @@ is_user_request_authorized (NMManager *manager,
 		g_set_error (error, NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		             "%s", "Could not determine user settings service name");
-	}
 		goto out;
+	}
 
 	service_owner = nm_dbus_manager_get_name_owner (priv->dbus_mgr, service_name, NULL);
 	if (!service_owner) {
 		g_set_error (error, NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		             "%s", "Could not determine D-Bus owner of the user settings service");
+		goto out;
+	}
+
+	connection = nm_dbus_manager_get_dbus_connection (priv->dbus_mgr);
+	if (!connection) {
+		g_set_error_literal (error,
+		                     NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                     "Could not get the D-Bus system bus");
 		goto out;
 	}
 
@@ -2495,10 +2504,8 @@ is_user_request_authorized (NMManager *manager,
 		g_set_error (error, NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		             "%s", "Requestor UID does not match the UID of the user settings service");
-		goto out;
-	}
-
-	success = TRUE;
+	} else
+		success = TRUE;
 
 out:
 	g_free (service_owner);
