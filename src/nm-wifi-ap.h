@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2008 Red Hat, Inc.
+ * Copyright (C) 2004 - 2010 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -122,8 +122,5 @@ NMAccessPoint *     nm_ap_match_in_list (NMAccessPoint *find_ap,
                                          gboolean strict_match);
 
 void				nm_ap_print_self (NMAccessPoint *ap, const char * prefix);
-
-guint32 freq_to_channel (guint32 freq);
-guint32 channel_to_freq (guint32 channel, const char *band);
 
 #endif /* NM_ACCESS_POINT_H */
