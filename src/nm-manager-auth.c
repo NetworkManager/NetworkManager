@@ -267,22 +267,21 @@ nm_auth_chain_unref (NMAuthChain *self)
 /************ utils **************/
 
 gboolean
-nm_auth_is_caller_root (DBusGMethodInvocation *context,
+nm_auth_get_caller_uid (DBusGMethodInvocation *context,
                         NMDBusManager *dbus_mgr,
-                        gboolean *out_is_root,
+                        gulong *out_uid,
                         const char **out_error_desc)
 {
 	DBusConnection *connection;
 	char *sender = NULL;
-	gulong sender_uid = G_MAXULONG;
 	gboolean success = FALSE;
 	DBusError dbus_error;
 
 	g_return_val_if_fail (context != NULL, FALSE);
 	g_return_val_if_fail (dbus_mgr != NULL, FALSE);
-	g_return_val_if_fail (out_is_root != NULL, FALSE);
+	g_return_val_if_fail (out_uid != NULL, FALSE);
 
-	*out_is_root = FALSE;
+	*out_uid = G_MAXULONG;
 
 	sender = dbus_g_method_get_sender (context);
 	if (!sender) {
@@ -300,19 +299,17 @@ nm_auth_is_caller_root (DBusGMethodInvocation *context,
 
 	dbus_error_init (&dbus_error);
 	/* FIXME: do this async */
-	sender_uid = dbus_bus_get_unix_user (connection, sender, &dbus_error);
+	*out_uid = dbus_bus_get_unix_user (connection, sender, &dbus_error);
 	if (dbus_error_is_set (&dbus_error)) {
 		if (out_error_desc)
-			*out_error_desc = "Could not determine the Unix user ID of the requestor";
+			*out_error_desc = "Could not determine the user ID of the requestor";
 		dbus_error_free (&dbus_error);
-		goto out;
-	}
-
-	success = TRUE;
-	if (0 == sender_uid)
-		*out_is_root = TRUE;
+		*out_uid = G_MAXULONG;
+	} else
+		success = TRUE;
 
 out:
+	g_free (sender);
 	return success;
 }
 

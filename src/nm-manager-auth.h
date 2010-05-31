@@ -74,9 +74,9 @@ gboolean nm_auth_chain_add_call (NMAuthChain *chain,
 void nm_auth_chain_unref (NMAuthChain *chain);
 
 /* Utils */
-gboolean nm_auth_is_caller_root (DBusGMethodInvocation *context,
+gboolean nm_auth_get_caller_uid (DBusGMethodInvocation *context,
                                  NMDBusManager *dbus_mgr,
-                                 gboolean *out_is_root,
+                                 gulong *out_uid,
                                  const char **out_error_desc);
 
 #endif /* NM_MANAGER_AUTH_H */

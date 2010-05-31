@@ -2430,13 +2430,13 @@ is_user_request_authorized (NMManager *manager,
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	DBusConnection *connection;
-	char *sender = NULL;
 	gulong sender_uid = G_MAXULONG;
 	DBusError dbus_error;
 	char *service_owner = NULL;
 	const char *service_name;
 	gulong service_uid = G_MAXULONG;
 	gboolean success = FALSE;
+	const char *error_desc = NULL;
 
 	/* Ensure the request to activate the user connection came from the
 	 * same session as the user settings service.  FIXME: use ConsoleKit
@@ -2449,36 +2449,15 @@ is_user_request_authorized (NMManager *manager,
 		goto out;
 	}
 
-	sender = dbus_g_method_get_sender (context);
-	if (!sender) {
-		g_set_error (error, NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		             "%s", "Could not determine D-Bus requestor");
+	if (!nm_auth_get_caller_uid (context, priv->dbus_mgr, &sender_uid, &error_desc)) {
+		g_set_error_literal (error,
+		                     NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                     error_desc);
 		goto out;
 	}
 
-	connection = nm_dbus_manager_get_dbus_connection (priv->dbus_mgr);
-	if (!connection) {
-		g_set_error (error, NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		             "%s", "Could not get the D-Bus system bus");
-		goto out;
-	}
-
-	dbus_error_init (&dbus_error);
-	/* FIXME: do this async */
-	sender_uid = dbus_bus_get_unix_user (connection, sender, &dbus_error);
-	if (dbus_error_is_set (&dbus_error)) {
-		dbus_error_free (&dbus_error);
-		g_set_error (error, NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		             "%s", "Could not determine the Unix user ID of the requestor");
-		goto out;
-	}
-
-	/* Let root activate anything.
-	 * FIXME: use a PolicyKit permission instead
-	 */
+	/* Let root activate anything */
 	if (0 == sender_uid) {
 		success = TRUE;
 		goto out;
@@ -2489,8 +2468,8 @@ is_user_request_authorized (NMManager *manager,
 		g_set_error (error, NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		             "%s", "Could not determine user settings service name");
-		goto out;
 	}
+		goto out;
 
 	service_owner = nm_dbus_manager_get_name_owner (priv->dbus_mgr, service_name, NULL);
 	if (!service_owner) {
@@ -2522,10 +2501,11 @@ is_user_request_authorized (NMManager *manager,
 	success = TRUE;
 
 out:
-	g_free (sender);
 	g_free (service_owner);
 	return success;
 }
+
+
 
 static void
 impl_manager_activate_connection (NMManager *manager,
@@ -2826,7 +2806,7 @@ impl_manager_sleep (NMManager *self,
 	NMManagerPrivate *priv;
 	NMAuthChain *chain;
 	GError *error = NULL;
-	gboolean is_root = FALSE;
+	gulong sender_uid = G_MAXULONG;
 	const char *error_desc = NULL;
 
 	g_return_if_fail (NM_IS_MANAGER (self));
@@ -2842,7 +2822,7 @@ impl_manager_sleep (NMManager *self,
 		return;
 	}
 
-	if (!nm_auth_is_caller_root (context, priv->dbus_mgr, &is_root, &error_desc)) {
+	if (!nm_auth_get_caller_uid (context, priv->dbus_mgr, &sender_uid, &error_desc)) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             error_desc);
@@ -2852,7 +2832,7 @@ impl_manager_sleep (NMManager *self,
 	}
 
 	/* Root doesn't need PK authentication */
-	if (is_root) {
+	if (0 == sender_uid) {
 		_internal_sleep (self, do_sleep);
 		dbus_g_method_return (context);
 		return;
@@ -2962,7 +2942,7 @@ impl_manager_enable (NMManager *self,
 	NMManagerPrivate *priv;
 	NMAuthChain *chain;
 	GError *error = NULL;
-	gboolean is_root = FALSE;
+	gulong sender_uid = G_MAXULONG;
 	const char *error_desc = NULL;
 
 	g_return_if_fail (NM_IS_MANAGER (self));
@@ -2978,7 +2958,7 @@ impl_manager_enable (NMManager *self,
 		return;
 	}
 
-	if (!nm_auth_is_caller_root (context, priv->dbus_mgr, &is_root, &error_desc)) {
+	if (!nm_auth_get_caller_uid (context, priv->dbus_mgr, &sender_uid, &error_desc)) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             error_desc);
@@ -2988,7 +2968,7 @@ impl_manager_enable (NMManager *self,
 	}
 
 	/* Root doesn't need PK authentication */
-	if (is_root) {
+	if (0 == sender_uid) {
 		_internal_enable (self, enable);
 		dbus_g_method_return (context);
 		return;
