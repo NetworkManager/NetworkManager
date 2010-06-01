@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2010 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -480,31 +480,11 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	}
 
 	if (priv->channel) {
-		if (!strcmp (priv->band, "a")) {
-			int i;
-			int valid_channels[] = { 7, 8, 9, 11, 12, 16, 34, 36, 40, 44, 48,
-			                         52, 56, 60, 64, 100, 104, 108, 112, 116,
-			                         120, 124, 128, 132, 136, 140, 149, 153,
-			                         157, 161, 165, 183, 184, 185, 187, 188,
-			                         192, 196, 0 };
-
-			for (i = 0; valid_channels[i]; i++) {
-				if (priv->channel == valid_channels[i])
-					break;
-			}
-
-			if (valid_channels[i] == 0) {
-				g_set_error (error,
-				             NM_SETTING_WIRELESS_ERROR,
-				             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
-				             NM_SETTING_WIRELESS_CHANNEL);
-				return FALSE;
-			}
-		} else if (!strcmp (priv->band, "bg") && priv->channel > 14) {
-				g_set_error (error,
-				             NM_SETTING_WIRELESS_ERROR,
-				             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
-				             NM_SETTING_WIRELESS_CHANNEL);
+		if (!nm_utils_wifi_is_channel_valid (priv->channel, priv->band)) {
+			g_set_error (error,
+			             NM_SETTING_WIRELESS_ERROR,
+			             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
+			             NM_SETTING_WIRELESS_CHANNEL);
 			return FALSE;
 		}
 	}
