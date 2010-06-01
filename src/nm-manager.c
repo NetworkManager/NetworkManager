@@ -150,13 +150,17 @@ static NMDevice *nm_manager_get_device_by_udi (NMManager *manager, const char *u
 #define ORIGDEV_TAG "originating-device"
 
 typedef struct {
-	DBusGMethodInvocation *context;
+	NMManager *manager;
+
+	/* More than one caller may have requested this connection */
+	GSList *contexts;
+
 	NMConnectionScope scope;
 	char *connection_path;
 	char *specific_object_path;
 	char *device_path;
 	guint timeout_id;
-} PendingConnectionInfo;
+} PendingActivation;
 
 typedef struct {
 	gboolean enabled;
@@ -189,7 +193,7 @@ typedef struct {
 
 	GSList *secrets_calls;
 
-	PendingConnectionInfo *pending_connection_info;
+	GSList *pending_activations;
 
 	RadioState radio_states[RFKILL_TYPE_MAX];
 	gboolean sleeping;
@@ -573,19 +577,73 @@ emit_removed (gpointer key, gpointer value, gpointer user_data)
 }
 
 static void
-pending_connection_info_destroy (PendingConnectionInfo *info)
+nm_manager_pending_activation_remove (NMManager *self,
+                                      PendingActivation *pending)
 {
-	if (!info)
-		return;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
-	if (info->timeout_id)
-		g_source_remove (info->timeout_id);
+	priv->pending_activations = g_slist_remove (priv->pending_activations, pending);
+}
 
-	g_free (info->connection_path);
-	g_free (info->specific_object_path);
-	g_free (info->device_path);
+static PendingActivation *
+pending_activation_new (NMManager *manager,
+                        const char *device_path,
+                        NMConnectionScope scope,
+                        const char *connection_path,
+                        const char *specific_object_path)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	PendingActivation *pending;
 
-	g_slice_free (PendingConnectionInfo, info);
+	pending = g_slice_new0 (PendingActivation);
+	pending->manager = manager;
+	pending->device_path = g_strdup (device_path);
+	pending->scope = scope;
+	pending->connection_path = g_strdup (connection_path);
+	pending->specific_object_path = g_strdup (specific_object_path);
+
+	priv->pending_activations = g_slist_append (priv->pending_activations, pending);
+
+	return pending;
+}
+
+static void
+pending_activation_add_caller (PendingActivation *pending,
+                               DBusGMethodInvocation *context)
+{
+	/* Ensure no dupes */
+	if (!g_slist_find (pending->contexts, context))
+		pending->contexts = g_slist_prepend (pending->contexts, context);
+}
+
+static void
+pending_activation_destroy (PendingActivation *pending,
+                            GError *error,
+                            const char *ac_path)
+{
+	GSList *iter;
+
+	g_return_if_fail (pending != NULL);
+
+	if (pending->timeout_id)
+		g_source_remove (pending->timeout_id);
+	g_free (pending->connection_path);
+	g_free (pending->specific_object_path);
+	g_free (pending->device_path);
+
+	/* Send a reply (either error or the ActiveConnection path) if needed */
+	for (iter = pending->contexts; iter; iter = g_slist_next (iter)) {
+		DBusGMethodInvocation *context = iter->data;
+
+		if (error)
+			dbus_g_method_return_error (context, error);
+		else if (ac_path)
+			dbus_g_method_return (context, ac_path);
+	}
+	g_slist_free (pending->contexts);
+
+	memset (pending, 0, sizeof (PendingActivation));
+	g_slice_free (PendingActivation, pending);
 }
 
 static GPtrArray *
@@ -2253,25 +2311,21 @@ internal_activate_device (NMManager *manager,
 static gboolean
 wait_for_connection_expired (gpointer data)
 {
-	NMManager *manager = NM_MANAGER (data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	PendingConnectionInfo *info = priv->pending_connection_info;
+	PendingActivation *pending = data;
 	GError *error = NULL;
 
-	g_return_val_if_fail (info != NULL, FALSE);
+	g_return_val_if_fail (pending != NULL, FALSE);
 
-	g_set_error (&error,
-	             NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
-	             "%s", "Connection was not provided by any settings service");
-	nm_log_warn (LOGD_CORE, "connection (%d) %s failed to activate (timeout): (%d) %s",
-	             info->scope, info->connection_path, error->code, error->message);
-	dbus_g_method_return_error (info->context, error);
+	nm_log_warn (LOGD_CORE, "connection %s (scope %d) failed to activate (timeout)",
+	             pending->scope, pending->connection_path);
+
+	nm_manager_pending_activation_remove (pending->manager, pending);
+
+	error = g_error_new_literal (NM_MANAGER_ERROR,
+	                             NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
+	                             "Connection was not provided by any settings service");
+	pending_activation_destroy (pending, error, NULL);
 	g_error_free (error);
-
-	info->timeout_id = 0;
-	pending_connection_info_destroy (priv->pending_connection_info);
-	priv->pending_connection_info = NULL;
-
 	return FALSE;
 }
 
@@ -2382,45 +2436,55 @@ nm_manager_activate_connection (NMManager *manager,
 	return path;
 }
 
+static PendingActivation *
+nm_manager_pending_activation_find (NMManager *self,
+                                    const char *path,
+                                    NMConnectionScope scope)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+
+	for (iter = priv->pending_activations; iter; iter = g_slist_next (iter)) {
+		PendingActivation *pending = iter->data;
+
+		if (!strcmp (pending->connection_path, path) && (pending->scope == scope))
+			return pending;
+	}
+	return NULL;
+}
+
 static void
 connection_added_default_handler (NMManager *manager,
-						    NMConnection *connection,
-						    NMConnectionScope scope)
+                                  NMConnection *connection,
+                                  NMConnectionScope scope)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	PendingConnectionInfo *info = priv->pending_connection_info;
-	const char *path;
+	PendingActivation *pending;
+	const char *path = NULL;
 	GError *error = NULL;
 
-	if (!info)
-		return;
-
-	if (scope != info->scope)
-		return;
-
-	if (strcmp (info->connection_path, nm_connection_get_path (connection)))
+	pending = nm_manager_pending_activation_find (manager,
+	                                              nm_connection_get_path (connection),
+	                                              scope);
+	if (!pending)
 		return;
 
 	/* Will destroy below; can't be valid during the initial activation start */
-	priv->pending_connection_info = NULL;
+	nm_manager_pending_activation_remove (manager, pending);
 
 	path = nm_manager_activate_connection (manager,
 	                                       connection,
-	                                       info->specific_object_path,
-	                                       info->device_path,
+	                                       pending->specific_object_path,
+	                                       pending->device_path,
 	                                       TRUE,
 	                                       &error);
-	if (path) {
-		dbus_g_method_return (info->context, path);
-		g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
-	} else {
-		dbus_g_method_return_error (info->context, error);
+	if (!path) {
 		nm_log_warn (LOGD_CORE, "connection (%d) %s failed to activate: (%d) %s",
-		             scope, info->connection_path, error->code, error->message);
-		g_error_free (error);
-	}
+		             scope, pending->connection_path, error->code, error->message);
+	} else
+		g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
 
-	pending_connection_info_destroy (info);
+	pending_activation_destroy (pending, error, path);
+	g_clear_error (&error);
 }
 
 static gboolean
@@ -2559,28 +2623,19 @@ impl_manager_activate_connection (NMManager *manager,
 			g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
 		}
 	} else {
-		PendingConnectionInfo *info;
-		NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-
-		if (priv->pending_connection_info) {
-			pending_connection_info_destroy (priv->pending_connection_info);
-			priv->pending_connection_info = NULL;
-		}
+		PendingActivation *pending;
 
 		/* Don't have the connection quite yet, probably created by
-		 * the client on-the-fly.  Defer the activation until we have it
+		 * the client on-the-fly.  Defer the activation until we have it.
 		 */
 
-		info = g_slice_new0 (PendingConnectionInfo);
-		info->context = context;
-		info->device_path = g_strdup (device_path);
-		info->scope = scope;
-		info->connection_path = g_strdup (connection_path);
-		info->specific_object_path = g_strdup (real_sop);
-		info->timeout_id = g_timeout_add_seconds (5, wait_for_connection_expired, manager);
-
-		// FIXME: should probably be per-device, not global to the manager
-		NM_MANAGER_GET_PRIVATE (manager)->pending_connection_info = info;
+		pending = nm_manager_pending_activation_find (manager, connection_path, scope);
+		if (!pending) {
+			pending = pending_activation_new (manager, device_path, scope, connection_path, real_sop);
+			/* Add a timeout waiting for the connection to be added */
+			pending->timeout_id = g_timeout_add_seconds (5, wait_for_connection_expired, pending);
+		}
+		pending_activation_add_caller (pending, context);
 	}
 
  err:
@@ -3373,6 +3428,7 @@ dispose (GObject *object)
 {
 	NMManager *manager = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	GSList *iter;
 
 	if (priv->disposed) {
 		G_OBJECT_CLASS (nm_manager_parent_class)->dispose (object);
@@ -3380,8 +3436,10 @@ dispose (GObject *object)
 	}
 	priv->disposed = TRUE;
 
-	pending_connection_info_destroy (priv->pending_connection_info);
-	priv->pending_connection_info = NULL;
+	for (iter = priv->pending_activations; iter; iter = g_slist_next (iter))
+		pending_activation_destroy ((PendingActivation *) iter->data, NULL, NULL);
+	g_slist_free (priv->pending_activations);
+	priv->pending_activations = NULL;
 
 	g_slist_foreach (priv->auth_chains, (GFunc) nm_auth_chain_unref, NULL);
 	g_slist_free (priv->auth_chains);
