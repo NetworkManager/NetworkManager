@@ -2780,8 +2780,6 @@ return_no_pk_error (PolkitAuthority *authority,
 {
 	GError *error;
 
-	g_assert (context);
-
 	if (!authority) {
 		error = g_error_new (NM_MANAGER_ERROR,
 		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
@@ -2890,7 +2888,7 @@ impl_manager_sleep (NMManager *self,
 		return;
 	}
 
-	if (!return_no_pk_error (priv->authority, "Permission", context))
+	if (!return_no_pk_error (priv->authority, "Sleep/wake", context))
 		return;
 
 	chain = nm_auth_chain_new (priv->authority, context, sleep_auth_done_cb, self);
@@ -3012,7 +3010,7 @@ impl_manager_enable (NMManager *self,
 		return;
 	}
 
-	if (!return_no_pk_error (priv->authority, "Permission", context))
+	if (!return_no_pk_error (priv->authority, "Enable/disable", context))
 		return;
 
 	chain = nm_auth_chain_new (priv->authority, context, enable_net_done_cb, self);
@@ -3091,16 +3089,8 @@ impl_manager_get_permissions (NMManager *self,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMAuthChain *chain;
 
-	if (!priv->authority) {
-		GError *error;
-
-		error = g_error_new_literal (NM_MANAGER_ERROR,
-		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             "Permissions request failed: PolicyKit not initialized");
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
+	if (!return_no_pk_error (priv->authority, "Permissions", context))
 		return;
-	}
 
 	chain = nm_auth_chain_new (priv->authority, context, get_permissions_done_cb, self);
 	g_assert (chain);
