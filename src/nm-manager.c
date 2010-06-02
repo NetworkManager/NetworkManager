@@ -2823,10 +2823,9 @@ sleep_auth_done_cb (NMAuthChain *chain,
 	NMAuthCallResult result;
 	gboolean do_sleep;
 
-	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "result"));
-	do_sleep = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "sleep"));
-
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+
+	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_SLEEP_WAKE));
 	if (error) {
 		nm_log_dbg (LOGD_CORE, "Sleep/wake request failed: %s", error->message);
 		ret_error = g_error_new (NM_MANAGER_ERROR,
@@ -2842,22 +2841,13 @@ sleep_auth_done_cb (NMAuthChain *chain,
 		dbus_g_method_return_error (context, ret_error);
 		g_error_free (ret_error);
 	} else {
+		/* Auth success */
+		do_sleep = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "sleep"));
 		_internal_sleep (self, do_sleep);
 		dbus_g_method_return (context);
 	}
 
 	nm_auth_chain_unref (chain);
-}
-
-static void
-sleep_auth_call_done_cb (NMAuthChain *chain,
-                         const char *permission,
-                         GError *error,
-                         NMAuthCallResult result,
-                         gpointer user_data)
-{
-	if (!error)
-		nm_auth_chain_set_data (chain, "result", GUINT_TO_POINTER (result), NULL);
 }
 
 static void
@@ -2903,11 +2893,7 @@ impl_manager_sleep (NMManager *self,
 	if (!return_no_pk_error (priv->authority, "Permission", context))
 		return;
 
-	chain = nm_auth_chain_new (priv->authority,
-	                           context,
-	                           sleep_auth_done_cb,
-	                           sleep_auth_call_done_cb,
-	                           self);
+	chain = nm_auth_chain_new (priv->authority, context, sleep_auth_done_cb, self);
 	g_assert (chain);
 	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
 
@@ -2959,10 +2945,9 @@ enable_net_done_cb (NMAuthChain *chain,
 	NMAuthCallResult result;
 	gboolean enable;
 
-	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "result"));
-	enable = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "enable"));
-
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+
+	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK));
 	if (error) {
 		nm_log_dbg (LOGD_CORE, "Enable request failed: %s", error->message);
 		ret_error = g_error_new (NM_MANAGER_ERROR,
@@ -2978,22 +2963,13 @@ enable_net_done_cb (NMAuthChain *chain,
 		dbus_g_method_return_error (context, ret_error);
 		g_error_free (ret_error);
 	} else {
+		/* Auth success */
+		enable = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "enable"));
 		_internal_enable (self, enable);
 		dbus_g_method_return (context);
 	}
 
 	nm_auth_chain_unref (chain);
-}
-
-static void
-enable_net_call_done_cb (NMAuthChain *chain,
-                         const char *permission,
-                         GError *error,
-                         NMAuthCallResult result,
-                         gpointer user_data)
-{
-	if (!error)
-		nm_auth_chain_set_data (chain, "result", GUINT_TO_POINTER (result), NULL);
 }
 
 static void
@@ -3039,11 +3015,7 @@ impl_manager_enable (NMManager *self,
 	if (!return_no_pk_error (priv->authority, "Permission", context))
 		return;
 
-	chain = nm_auth_chain_new (priv->authority,
-	                           context,
-	                           enable_net_done_cb,
-	                           enable_net_call_done_cb,
-	                           self);
+	chain = nm_auth_chain_new (priv->authority, context, enable_net_done_cb, self);
 	g_assert (chain);
 	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
 
@@ -3061,6 +3033,23 @@ pk_authority_changed_cb (GObject *object, gpointer user_data)
 }
 
 static void
+get_perm_add_result (NMAuthChain *chain, GHashTable *results, const char *permission)
+{
+	NMAuthCallResult result;
+
+	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, permission));
+	if (result == NM_AUTH_CALL_RESULT_YES)
+		g_hash_table_insert (results, (char *) permission, "yes");
+	else if (result == NM_AUTH_CALL_RESULT_NO)
+		g_hash_table_insert (results, (char *) permission, "no");
+	else if (result == NM_AUTH_CALL_RESULT_AUTH)
+		g_hash_table_insert (results, (char *) permission, "auth");
+	else {
+		nm_log_dbg (LOGD_CORE, "unknown auth chain result %d", result);
+	}
+}
+
+static void
 get_permissions_done_cb (NMAuthChain *chain,
                          GError *error,
                          DBusGMethodInvocation *context,
@@ -3069,6 +3058,7 @@ get_permissions_done_cb (NMAuthChain *chain,
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GError *ret_error;
+	GHashTable *results;
 
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
 	if (error) {
@@ -3080,39 +3070,17 @@ get_permissions_done_cb (NMAuthChain *chain,
 		dbus_g_method_return_error (context, ret_error);
 		g_error_free (ret_error);
 	} else {
-		dbus_g_method_return (context, nm_auth_chain_get_data (chain, "results"));
+		results = g_hash_table_new (g_str_hash, g_str_equal);
+		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK);
+		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_SLEEP_WAKE);
+		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI);
+		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN);
+		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS);
+		dbus_g_method_return (context, results);
+		g_hash_table_destroy (results);
 	}
 
 	nm_auth_chain_unref (chain);
-}
-
-static void
-get_permissions_call_done_cb (NMAuthChain *chain,
-                              const char *permission,
-                              GError *error,
-                              guint result,
-                              gpointer user_data)
-{
-	GHashTable *hash;
-	const char *str_result = NULL;
-
-	if (error)
-		return;
-
-	hash = nm_auth_chain_get_data (chain, "results");
-
-	if (result == NM_AUTH_CALL_RESULT_YES)
-		str_result = "yes";
-	else if (result == NM_AUTH_CALL_RESULT_NO)
-		str_result = "no";
-	else if (result == NM_AUTH_CALL_RESULT_AUTH)
-		str_result = "auth";
-	else {
-		nm_log_dbg (LOGD_CORE, "unknown auth chain result %d", result);
-	}
-
-	if (str_result)
-		g_hash_table_insert (hash, g_strdup (permission), g_strdup (str_result));
 }
 
 static void
@@ -3121,7 +3089,6 @@ impl_manager_get_permissions (NMManager *self,
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMAuthChain *chain;
-	GHashTable *results;
 
 	if (!priv->authority) {
 		GError *error;
@@ -3134,16 +3101,9 @@ impl_manager_get_permissions (NMManager *self,
 		return;
 	}
 
-	chain = nm_auth_chain_new (priv->authority,
-	                           context,
-	                           get_permissions_done_cb,
-	                           get_permissions_call_done_cb,
-	                           self);
+	chain = nm_auth_chain_new (priv->authority, context, get_permissions_done_cb, self);
 	g_assert (chain);
 	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
-
-	results = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
-	nm_auth_chain_set_data (chain, "results", results, (GDestroyNotify) g_hash_table_destroy);
 
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SLEEP_WAKE, FALSE);

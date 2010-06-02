@@ -61,11 +61,21 @@ free_data (gpointer data)
 	g_free (tmp);
 }
 
+static void
+default_call_func (NMAuthChain *chain,
+                   const char *permission,
+                   GError *error,
+                   NMAuthCallResult result,
+                   gpointer user_data)
+{
+	if (!error)
+		nm_auth_chain_set_data (chain, permission, GUINT_TO_POINTER (result), NULL);
+}
+
 NMAuthChain *
 nm_auth_chain_new (PolkitAuthority *authority,
                    DBusGMethodInvocation *context,
                    NMAuthChainResultFunc done_func,
-                   NMAuthChainCallFunc call_func,
                    gpointer user_data)
 {
 	NMAuthChain *self;
@@ -75,7 +85,7 @@ nm_auth_chain_new (PolkitAuthority *authority,
 	self->authority = g_object_ref (authority);
 	self->data = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, free_data);
 	self->done_func = done_func;
-	self->call_func = call_func;
+	self->call_func = /* call_func ? call_func : */ default_call_func;
 	self->context = context;
 	self->user_data = user_data;
 	return self;
