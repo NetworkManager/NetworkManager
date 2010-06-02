@@ -32,6 +32,7 @@
 #define NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI    "org.freedesktop.NetworkManager.enable-disable-wifi"
 #define NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN    "org.freedesktop.NetworkManager.enable-disable-wwan"
 #define NM_AUTH_PERMISSION_USE_USER_CONNECTIONS   "org.freedesktop.NetworkManager.use-user-connections"
+#define NM_AUTH_PERMISSION_NETWORK_CONTROL        "org.freedesktop.NetworkManager.network-control"
 
 
 typedef struct NMAuthChain NMAuthChain;
