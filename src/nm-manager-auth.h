@@ -57,6 +57,7 @@ typedef void (*NMAuthChainCallFunc) (NMAuthChain *chain,
 
 NMAuthChain *nm_auth_chain_new (PolkitAuthority *authority,
                                 DBusGMethodInvocation *context,
+                                DBusGProxy *proxy,
                                 NMAuthChainResultFunc done_func,
                                 gpointer user_data);
 

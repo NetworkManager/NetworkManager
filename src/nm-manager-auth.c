@@ -31,6 +31,7 @@ struct NMAuthChain {
 	GHashTable *data;
 
 	DBusGMethodInvocation *context;
+	char *owner;
 	GError *error;
 
 	NMAuthChainResultFunc done_func;
@@ -75,10 +76,13 @@ default_call_func (NMAuthChain *chain,
 NMAuthChain *
 nm_auth_chain_new (PolkitAuthority *authority,
                    DBusGMethodInvocation *context,
+                   DBusGProxy *proxy,
                    NMAuthChainResultFunc done_func,
                    gpointer user_data)
 {
 	NMAuthChain *self;
+
+	g_return_val_if_fail (context || proxy, NULL);
 
 	self = g_malloc0 (sizeof (NMAuthChain));
 	self->refcount = 1;
@@ -86,8 +90,21 @@ nm_auth_chain_new (PolkitAuthority *authority,
 	self->data = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, free_data);
 	self->done_func = done_func;
 	self->call_func = /* call_func ? call_func : */ default_call_func;
-	self->context = context;
 	self->user_data = user_data;
+	self->context = context;
+
+	if (proxy)
+		self->owner = g_strdup (dbus_g_proxy_get_bus_name (proxy));
+	else if (context)
+		self->owner = dbus_g_method_get_sender (context);
+
+	if (!self->owner) {
+		/* Need an owner */
+		g_warn_if_fail (self->owner);
+		nm_auth_chain_unref (self);
+		self = NULL;
+	}
+
 	return self;
 }
 
@@ -214,17 +231,14 @@ nm_auth_chain_add_call (NMAuthChain *self,
                         gboolean allow_interaction)
 {
 	PolkitCall *call;
-	char *sender;
 	PolkitSubject *subject;
 	PolkitCheckAuthorizationFlags flags = POLKIT_CHECK_AUTHORIZATION_FLAGS_NONE;
 
 	g_return_val_if_fail (self != NULL, FALSE);
-	g_return_val_if_fail (self->context != NULL, FALSE);
+	g_return_val_if_fail (self->owner != NULL, FALSE);
 	g_return_val_if_fail (permission != NULL, FALSE);
 
- 	sender = dbus_g_method_get_sender (self->context);
-	subject = polkit_system_bus_name_new (sender);
-	g_free (sender);
+	subject = polkit_system_bus_name_new (self->owner);
 	if (!subject)
 		return FALSE;
 
@@ -262,6 +276,7 @@ nm_auth_chain_unref (NMAuthChain *self)
 		return;
 
 	g_object_unref (self->authority);
+	g_free (self->owner);
 
 	for (iter = self->calls; iter; iter = g_slist_next (iter))
 		polkit_call_cancel ((PolkitCall *) iter->data);

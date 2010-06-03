@@ -95,8 +95,6 @@ static gboolean impl_manager_legacy_state (NMManager *manager, guint32 *state, G
 
 #include "nm-manager-glue.h"
 
-static void user_destroy_connections (NMManager *manager);
-
 static void connection_added_default_handler (NMManager *manager,
 									 NMConnection *connection,
 									 NMConnectionScope scope);
@@ -186,6 +184,8 @@ typedef struct {
 
 	GHashTable *user_connections;
 	DBusGProxy *user_proxy;
+	NMAuthCallResult user_con_perm;
+	NMAuthCallResult user_net_perm;
 
 	GHashTable *system_connections;
 	NMSysconfigSettings *sys_settings;
@@ -703,18 +703,26 @@ remove_connection (NMManager *manager,
 /*******************************************************************/
 
 static void
-user_destroy_connections (NMManager *manager)
+user_proxy_cleanup (NMManager *self, gboolean resync_bt)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
 	if (priv->user_connections) {
-		g_hash_table_foreach (priv->user_connections, emit_removed, manager);
+		g_hash_table_foreach (priv->user_connections, emit_removed, self);
 		g_hash_table_remove_all (priv->user_connections);
 	}
+
+	priv->user_net_perm = NM_AUTH_CALL_RESULT_UNKNOWN;
+	priv->user_con_perm = NM_AUTH_CALL_RESULT_UNKNOWN;
 
 	if (priv->user_proxy) {
 		g_object_unref (priv->user_proxy);
 		priv->user_proxy = NULL;
+	}
+
+	if (resync_bt) {
+		/* Resync BT devices since they are generated from connections */
+		bluez_manager_resync_devices (self);
 	}
 }
 
@@ -997,49 +1005,143 @@ out:
 }
 
 static void
+user_proxy_destroyed_cb (DBusGProxy *proxy, NMManager *self)
+{
+	nm_log_dbg (LOGD_USER_SET, "Removing user connections...");
+
+	/* At this point the user proxy is already being disposed */
+	NM_MANAGER_GET_PRIVATE (self)->user_proxy = NULL;
+
+	/* User Settings service disappeared; throw away user connections */
+	user_proxy_cleanup (self, TRUE);
+}
+
+static void
 user_new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
 {
 	user_internal_new_connection_cb (proxy, path, NM_MANAGER (user_data), NULL);
 }
 
-static void
-user_query_connections (NMManager *manager)
+static gboolean
+user_settings_authorized (NMManager *self, NMAuthChain *chain)
 {
-	NMManagerPrivate *priv;
-	DBusGProxyCall *call;
-	DBusGConnection *g_connection;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
-	g_return_if_fail (NM_IS_MANAGER (manager));
+	/* If the user could potentially get authorization to use networking and/or
+	 * to use user connections, the user settings service is authorized.
+	 */
+	priv->user_net_perm = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL));
+	priv->user_con_perm = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS));
 
-	priv = NM_MANAGER_GET_PRIVATE (manager);
-	if (!priv->user_proxy) {
-		g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
-		priv->user_proxy = dbus_g_proxy_new_for_name (g_connection,
-		                                              NM_DBUS_SERVICE_USER_SETTINGS,
-		                                              NM_DBUS_PATH_SETTINGS,
-		                                              NM_DBUS_IFACE_SETTINGS);
-		if (!priv->user_proxy) {
-			nm_log_err (LOGD_USER_SET, "could not init user settings proxy");
-			return;
-		}
+	nm_log_dbg (LOGD_USER_SET, "User connections permissions: net %d, con %d",
+	            priv->user_net_perm, priv->user_con_perm);
+
+	/* If the user can't control the network they certainly aren't allowed
+	 * to provide user connections.
+	 */
+	if (   priv->user_net_perm == NM_AUTH_CALL_RESULT_UNKNOWN
+	    || priv->user_net_perm == NM_AUTH_CALL_RESULT_NO)
+		return FALSE;
+
+	/* And of course if they aren't allowed to use user connections, they can't
+	 * provide them either.
+	 */
+	if (   priv->user_con_perm == NM_AUTH_CALL_RESULT_UNKNOWN
+	    || priv->user_con_perm == NM_AUTH_CALL_RESULT_NO)
+		return FALSE;
+
+	return TRUE;
+}
+
+static void
+user_proxy_auth_done (NMAuthChain *chain,
+                      GError *error,
+                      DBusGMethodInvocation *context,
+                      gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	gboolean authorized = FALSE;
+
+	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+
+	if (error) {
+		nm_log_warn (LOGD_USER_SET, "User connections unavailable: (%d) %s",
+		             error->code, error->message ? error->message : "(unknown)");
+	} else
+		authorized = user_settings_authorized (self, chain);
+
+	if (authorized) {
+		/* If authorized, finish setting up the user settings service proxy */
+		nm_log_dbg (LOGD_USER_SET, "Requesting user connections...");
+
+		authorized = TRUE;
 
 		dbus_g_proxy_add_signal (priv->user_proxy,
-		                         "NewConnection",
-		                         DBUS_TYPE_G_OBJECT_PATH,
-		                         G_TYPE_INVALID);
-
+			                     "NewConnection",
+			                     DBUS_TYPE_G_OBJECT_PATH,
+			                     G_TYPE_INVALID);
 		dbus_g_proxy_connect_signal (priv->user_proxy, "NewConnection",
-		                             G_CALLBACK (user_new_connection_cb),
-		                             manager,
-		                             NULL);
+			                         G_CALLBACK (user_new_connection_cb),
+			                         self,
+			                         NULL);
+
+		/* Clean up when the user settings proxy goes away */
+		g_signal_connect (priv->user_proxy, "destroy",
+			              G_CALLBACK (user_proxy_destroyed_cb),
+			              self);
+
+		/* Request user connections */
+		dbus_g_proxy_begin_call (priv->user_proxy, "ListConnections",
+			                     user_list_connections_cb,
+			                     self,
+			                     NULL,
+			                     G_TYPE_INVALID);
+	} else {
+		/* Otherwise, we ignore the user settings service completely */
+		user_proxy_cleanup (self, TRUE);
 	}
 
-	/* grab connections */
-	call = dbus_g_proxy_begin_call (priv->user_proxy, "ListConnections",
-	                                user_list_connections_cb,
-	                                manager,
-	                                NULL,
-	                                G_TYPE_INVALID);
+	nm_auth_chain_unref (chain);
+}
+
+static void
+user_proxy_init (NMManager *self)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	DBusGConnection *bus;
+	NMAuthChain *chain;
+	GError *error = NULL;
+
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (priv->user_proxy == NULL);
+
+	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
+	priv->user_proxy = dbus_g_proxy_new_for_name_owner (bus,
+	                                                    NM_DBUS_SERVICE_USER_SETTINGS,
+	                                                    NM_DBUS_PATH_SETTINGS,
+	                                                    NM_DBUS_IFACE_SETTINGS,
+	                                                    &error);
+	if (!priv->user_proxy) {
+		nm_log_err (LOGD_USER_SET, "could not init user settings proxy: (%d) %s",
+		            error ? error->code : -1,
+		            error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
+		return;
+	}
+
+	/* Kick off some PolicyKit authorization requests to figure out what
+	 * permissions this user settings service has.
+	 */
+	chain = nm_auth_chain_new (priv->authority,
+	                           NULL,
+	                           priv->user_proxy,
+	                           user_proxy_auth_done,
+	                           self);
+	priv->auth_chains = g_slist_prepend (priv->auth_chains, chain);
+
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, FALSE);
 }
 
 /*******************************************************************/
@@ -1221,14 +1323,10 @@ nm_manager_name_owner_changed (NMDBusManager *mgr,
 	gboolean new_owner_good = (new && (strlen (new) > 0));
 
 	if (strcmp (name, NM_DBUS_SERVICE_USER_SETTINGS) == 0) {
-		if (!old_owner_good && new_owner_good) {
-			/* User Settings service appeared, update stuff */
-			user_query_connections (manager);
-		} else {
-			/* User Settings service disappeared, throw them away (?) */
-			user_destroy_connections (manager);
-			bluez_manager_resync_devices (manager);
-		}
+		if (!old_owner_good && new_owner_good)
+			user_proxy_init (manager);
+		else
+			user_proxy_cleanup (manager, TRUE);
 	}
 }
 
@@ -2891,7 +2989,7 @@ impl_manager_sleep (NMManager *self,
 	if (!return_no_pk_error (priv->authority, "Sleep/wake", context))
 		return;
 
-	chain = nm_auth_chain_new (priv->authority, context, sleep_auth_done_cb, self);
+	chain = nm_auth_chain_new (priv->authority, context, NULL, sleep_auth_done_cb, self);
 	g_assert (chain);
 	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
 
@@ -3013,7 +3111,7 @@ impl_manager_enable (NMManager *self,
 	if (!return_no_pk_error (priv->authority, "Enable/disable", context))
 		return;
 
-	chain = nm_auth_chain_new (priv->authority, context, enable_net_done_cb, self);
+	chain = nm_auth_chain_new (priv->authority, context, NULL, enable_net_done_cb, self);
 	g_assert (chain);
 	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
 
@@ -3024,8 +3122,60 @@ impl_manager_enable (NMManager *self,
 /* Permissions */
 
 static void
+user_proxy_permissions_changed_done (NMAuthChain *chain,
+                                     GError *error,
+                                     DBusGMethodInvocation *context,
+                                     gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	gboolean authorized = FALSE;
+
+	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+
+	if (error) {
+		nm_log_warn (LOGD_USER_SET, "User connections unavailable: (%d) %s",
+		             error->code, error->message ? error->message : "(unknown)");
+	} else
+		authorized = user_settings_authorized (self, chain);
+
+	if (authorized) {
+		/* User connections are authorized */
+		if (!priv->user_proxy)
+			user_proxy_init (self);
+	} else
+		user_proxy_cleanup (self, TRUE);
+
+	nm_auth_chain_unref (chain);
+}
+
+static void
 pk_authority_changed_cb (GObject *object, gpointer user_data)
 {
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMAuthChain *chain;
+
+	/* If the user settings service wasn't previously authorized, we wouldn't
+	 * care about it.  But it might be authorized now, so lets check.
+	 */
+	if (!priv->user_proxy)
+		user_proxy_init (self);
+	else {
+		/* Otherwise the user settings permissions could have changed so we
+		 * need to recheck them.
+		 */
+		chain = nm_auth_chain_new (priv->authority,
+		                           NULL,
+		                           priv->user_proxy,
+		                           user_proxy_permissions_changed_done,
+		                           self);
+		priv->auth_chains = g_slist_prepend (priv->auth_chains, chain);
+
+		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS, FALSE);
+		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, FALSE);
+	}
+
 	/* Let clients know they should re-check their authorization */
 	g_signal_emit (NM_MANAGER (user_data), signals[CHECK_PERMISSIONS], 0);
 }
@@ -3092,7 +3242,7 @@ impl_manager_get_permissions (NMManager *self,
 	if (!return_no_pk_error (priv->authority, "Permissions", context))
 		return;
 
-	chain = nm_auth_chain_new (priv->authority, context, get_permissions_done_cb, self);
+	chain = nm_auth_chain_new (priv->authority, context, NULL, get_permissions_done_cb, self);
 	g_assert (chain);
 	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
 
@@ -3284,7 +3434,7 @@ nm_manager_start (NMManager *self)
 	 * bus in nm_manager_name_owner_changed().
 	 */
 	if (nm_dbus_manager_name_has_owner (priv->dbus_mgr, NM_DBUS_SERVICE_USER_SETTINGS))
-		user_query_connections (self);
+		user_proxy_init (self);
 
 	nm_udev_manager_query_devices (priv->udev_mgr);
 	bluez_manager_resync_devices (self);
@@ -3408,7 +3558,7 @@ dispose (GObject *object)
 		                                   FALSE);
 	}
 
-	user_destroy_connections (manager);
+	user_proxy_cleanup (manager, FALSE);
 	g_hash_table_destroy (priv->user_connections);
 	priv->user_connections = NULL;
 
