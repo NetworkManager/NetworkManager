@@ -1873,11 +1873,9 @@ disconnect_user_auth_done_cb (NMAuthChain *chain,
 
 	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS));
 	ret_error = deactivate_disconnect_check_error (error, result, "Disconnect");
-g_message ("%s: here! ret error %p", __func__, ret_error);
 	if (!ret_error) {
 		/* Everything authorized, deactivate the connection */
 		device = nm_auth_chain_get_data (chain, "device");
-g_message ("%s: here! device %p", __func__, device);
 		if (nm_device_interface_disconnect (NM_DEVICE_INTERFACE (device), &ret_error))
 			dbus_g_method_return (context);
 	}
@@ -1906,7 +1904,6 @@ disconnect_net_auth_done_cb (NMAuthChain *chain,
 
 	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL));
 	ret_error = deactivate_disconnect_check_error (error, result, "Disconnect");
-g_message ("%s: here! ret error %p", __func__, ret_error);
 	if (ret_error) {
 		dbus_g_method_return_error (context, ret_error);
 		g_error_free (ret_error);
