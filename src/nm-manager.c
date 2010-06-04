@@ -724,7 +724,6 @@ check_user_authorized (NMDBusManager *dbus_mgr,
                        const char **out_error_desc)
 {
 	g_return_val_if_fail (dbus_mgr != NULL, FALSE);
-	g_return_val_if_fail (user_proxy != NULL, FALSE);
 	g_return_val_if_fail (context != NULL, FALSE);
 	g_return_val_if_fail (out_sender_uid != NULL, FALSE);
 	g_return_val_if_fail (out_error_desc != NULL, FALSE);
@@ -761,7 +760,6 @@ pending_activation_check_authorized (PendingActivation *pending,
 
 	g_return_if_fail (pending != NULL);
 	g_return_if_fail (dbus_mgr != NULL);
-	g_return_if_fail (user_proxy != NULL);
 
 	if (!check_user_authorized (dbus_mgr,
 	                            user_proxy,
