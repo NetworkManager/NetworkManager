@@ -61,11 +61,11 @@
 
 static gboolean impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err);
 static void impl_manager_activate_connection (NMManager *manager,
-								  const char *service_name,
-								  const char *connection_path,
-								  const char *device_path,
-								  const char *specific_object_path,
-								  DBusGMethodInvocation *context);
+                                              const char *service_name,
+                                              const char *connection_path,
+                                              const char *device_path,
+                                              const char *specific_object_path,
+                                              DBusGMethodInvocation *context);
 
 static gboolean impl_manager_deactivate_connection (NMManager *manager,
                                                     const char *connection_path,
@@ -147,18 +147,27 @@ static NMDevice *nm_manager_get_device_by_udi (NMManager *manager, const char *u
 #define SSD_POKE_INTERVAL 120
 #define ORIGDEV_TAG "originating-device"
 
-typedef struct {
+typedef struct PendingActivation PendingActivation;
+typedef void (*PendingActivationFunc) (PendingActivation *pending,
+                                       GError *error);
+
+struct PendingActivation {
 	NMManager *manager;
 
-	/* More than one caller may have requested this connection */
-	GSList *contexts;
+	DBusGMethodInvocation *context;
+	PolkitAuthority *authority;
+	PendingActivationFunc callback;
+	NMAuthChain *chain;
+
+	gboolean have_connection;
+	gboolean authorized;
 
 	NMConnectionScope scope;
 	char *connection_path;
 	char *specific_object_path;
 	char *device_path;
 	guint timeout_id;
-} PendingActivation;
+};
 
 typedef struct {
 	gboolean enabled;
@@ -587,33 +596,178 @@ nm_manager_pending_activation_remove (NMManager *self,
 
 static PendingActivation *
 pending_activation_new (NMManager *manager,
+                        PolkitAuthority *authority,
+                        DBusGMethodInvocation *context,
                         const char *device_path,
                         NMConnectionScope scope,
                         const char *connection_path,
-                        const char *specific_object_path)
+                        const char *specific_object_path,
+                        PendingActivationFunc callback)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	PendingActivation *pending;
+
+	g_return_val_if_fail (manager != NULL, NULL);
+	g_return_val_if_fail (authority != NULL, NULL);
+	g_return_val_if_fail (context != NULL, NULL);
+	g_return_val_if_fail (device_path != NULL, NULL);
+	g_return_val_if_fail (connection_path != NULL, NULL);
 
 	pending = g_slice_new0 (PendingActivation);
 	pending->manager = manager;
+	pending->authority = authority;
+	pending->context = context;
+	pending->callback = callback;
+
 	pending->device_path = g_strdup (device_path);
 	pending->scope = scope;
 	pending->connection_path = g_strdup (connection_path);
-	pending->specific_object_path = g_strdup (specific_object_path);
 
-	priv->pending_activations = g_slist_append (priv->pending_activations, pending);
+	/* "/" is special-cased to NULL to get through D-Bus */
+	if (specific_object_path && strcmp (specific_object_path, "/"))
+		pending->specific_object_path = g_strdup (specific_object_path);
 
 	return pending;
 }
 
 static void
-pending_activation_add_caller (PendingActivation *pending,
-                               DBusGMethodInvocation *context)
+pending_auth_user_done (NMAuthChain *chain,
+                        GError *error,
+                        DBusGMethodInvocation *context,
+                        gpointer user_data)
 {
-	/* Ensure no dupes */
-	if (!g_slist_find (pending->contexts, context))
-		pending->contexts = g_slist_prepend (pending->contexts, context);
+	PendingActivation *pending = user_data;
+	NMAuthCallResult result;
+
+	pending->chain = NULL;
+
+	if (error) {
+		pending->callback (pending, error);
+		goto out;
+	}
+
+	/* Caller has had a chance to obtain authorization, so we only need to
+	 * check for 'yes' here.
+	 */
+	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS));
+	if (result != NM_AUTH_CALL_RESULT_YES) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             "Not authorized to use user connections.");
+		pending->callback (pending, error);
+		g_error_free (error);
+	} else
+		pending->callback (pending, NULL);
+
+out:
+	nm_auth_chain_unref (chain);
+}
+
+static void
+pending_auth_net_done (NMAuthChain *chain,
+                       GError *error,
+                       DBusGMethodInvocation *context,
+                       gpointer user_data)
+{
+	PendingActivation *pending = user_data;
+	NMAuthCallResult result;
+
+	pending->chain = NULL;
+
+	if (error) {
+		pending->callback (pending, error);
+		goto out;
+	}
+
+	/* Caller has had a chance to obtain authorization, so we only need to
+	 * check for 'yes' here.
+	 */
+	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL));
+	if (result != NM_AUTH_CALL_RESULT_YES) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             "Not authorized to control networking.");
+		pending->callback (pending, error);
+		g_error_free (error);
+		goto out;
+	}
+
+	if (pending->scope == NM_CONNECTION_SCOPE_SYSTEM) {
+		/* System connection and the user is authorized for that if they have
+		 * the network-control permission.
+		 */
+		pending->callback (pending, NULL);
+	} else {
+		g_assert (pending->scope == NM_CONNECTION_SCOPE_USER);
+
+		/* User connection, check the 'use-user-connections' permission */
+		pending->chain = nm_auth_chain_new (pending->authority,
+			                                pending->context,
+			                                NULL,
+			                                pending_auth_user_done,
+			                                pending);
+		nm_auth_chain_add_call (pending->chain,
+			                    NM_AUTH_PERMISSION_USE_USER_CONNECTIONS,
+			                    TRUE);
+	}
+
+out:
+	nm_auth_chain_unref (chain);
+}
+
+static void
+pending_activation_check_authorized (PendingActivation *pending,
+                                     NMDBusManager *dbus_mgr,
+                                     DBusGProxy *user_proxy)
+{
+	const char *error_desc = NULL;
+	gulong sender_uid = G_MAXULONG;
+	GError *error;
+
+	g_return_if_fail (pending != NULL);
+	g_return_if_fail (dbus_mgr != NULL);
+	g_return_if_fail (user_proxy != NULL);
+
+	/* Get the UID */
+	if (!nm_auth_get_caller_uid (pending->context, dbus_mgr, &sender_uid, &error_desc)) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		pending->callback (pending, error);
+		g_error_free (error);
+		return;
+	}
+
+	/* root gets to do anything */
+	if (0 == sender_uid) {
+		pending->callback (pending, NULL);
+		return;
+	}
+
+	/* Check whether the UID is authorized for user connections */
+	if (   pending->scope == NM_CONNECTION_SCOPE_USER
+	    && !nm_auth_uid_authorized (sender_uid,
+	                                dbus_mgr,
+	                                user_proxy,
+	                                &error_desc)) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		pending->callback (pending, error);
+		g_error_free (error);
+		return;
+	}
+
+	/* First check if the user is allowed to use networking at all, giving
+	 * the user a chance to authenticate to gain the permission.
+	 */
+	pending->chain = nm_auth_chain_new (pending->authority,
+	                                    pending->context,
+	                                    NULL,
+	                                    pending_auth_net_done,
+	                                    pending);
+	nm_auth_chain_add_call (pending->chain,
+	                        NM_AUTH_PERMISSION_NETWORK_CONTROL,
+	                        TRUE);
 }
 
 static void
@@ -621,8 +775,6 @@ pending_activation_destroy (PendingActivation *pending,
                             GError *error,
                             const char *ac_path)
 {
-	GSList *iter;
-
 	g_return_if_fail (pending != NULL);
 
 	if (pending->timeout_id)
@@ -631,16 +783,13 @@ pending_activation_destroy (PendingActivation *pending,
 	g_free (pending->specific_object_path);
 	g_free (pending->device_path);
 
-	/* Send a reply (either error or the ActiveConnection path) if needed */
-	for (iter = pending->contexts; iter; iter = g_slist_next (iter)) {
-		DBusGMethodInvocation *context = iter->data;
+	if (error)
+		dbus_g_method_return_error (pending->context, error);
+	else if (ac_path)
+		dbus_g_method_return (pending->context, ac_path);
 
-		if (error)
-			dbus_g_method_return_error (context, error);
-		else if (ac_path)
-			dbus_g_method_return (context, ac_path);
-	}
-	g_slist_free (pending->contexts);
+	if (pending->chain)
+		nm_auth_chain_unref (pending->chain);
 
 	memset (pending, 0, sizeof (PendingActivation));
 	g_slice_free (PendingActivation, pending);
@@ -1016,10 +1165,33 @@ user_proxy_destroyed_cb (DBusGProxy *proxy, NMManager *self)
 	user_proxy_cleanup (self, TRUE);
 }
 
+typedef struct {
+	DBusGProxy *proxy;
+	char *path;
+	NMManager *manager;
+} Foo;
+
+static gboolean
+blah (gpointer user_data)
+{
+	Foo *f = user_data;
+
+	user_internal_new_connection_cb (f->proxy, f->path, f->manager, NULL);
+	g_free (f->path);
+	g_free (f);
+	return FALSE;
+}
+
 static void
 user_new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
 {
-	user_internal_new_connection_cb (proxy, path, NM_MANAGER (user_data), NULL);
+	Foo *f = g_malloc0 (sizeof (Foo));
+
+	f->proxy = proxy;
+	f->path = g_strdup (path);
+	f->manager = NM_MANAGER (user_data);
+
+	g_timeout_add_seconds (6, blah, f);
 }
 
 static gboolean
@@ -2415,7 +2587,7 @@ wait_for_connection_expired (gpointer data)
 	g_return_val_if_fail (pending != NULL, FALSE);
 
 	nm_log_warn (LOGD_CORE, "connection %s (scope %d) failed to activate (timeout)",
-	             pending->scope, pending->connection_path);
+	             pending->connection_path, pending->scope);
 
 	nm_manager_pending_activation_remove (pending->manager, pending);
 
@@ -2552,24 +2724,30 @@ nm_manager_pending_activation_find (NMManager *self,
 }
 
 static void
-connection_added_default_handler (NMManager *manager,
-                                  NMConnection *connection,
-                                  NMConnectionScope scope)
+check_pending_ready (NMManager *self, PendingActivation *pending)
 {
-	PendingActivation *pending;
+	NMConnection *connection;
 	const char *path = NULL;
 	GError *error = NULL;
 
-	pending = nm_manager_pending_activation_find (manager,
-	                                              nm_connection_get_path (connection),
-	                                              scope);
-	if (!pending)
+	if (!pending->have_connection || !pending->authorized)
 		return;
 
-	/* Will destroy below; can't be valid during the initial activation start */
-	nm_manager_pending_activation_remove (manager, pending);
+	/* Ok, we're authorized and the connection is available */
 
-	path = nm_manager_activate_connection (manager,
+	nm_manager_pending_activation_remove (self, pending);
+
+	connection = nm_manager_get_connection_by_object_path (self,
+	                                                       pending->scope,
+	                                                       pending->connection_path);
+	if (!connection) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
+		                             "Connection could not be found.");
+		goto out;
+	}
+
+	path = nm_manager_activate_connection (self,
 	                                       connection,
 	                                       pending->specific_object_path,
 	                                       pending->device_path,
@@ -2577,174 +2755,96 @@ connection_added_default_handler (NMManager *manager,
 	                                       &error);
 	if (!path) {
 		nm_log_warn (LOGD_CORE, "connection (%d) %s failed to activate: (%d) %s",
-		             scope, pending->connection_path, error->code, error->message);
+		             pending->scope, pending->connection_path, error->code, error->message);
 	} else
-		g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
+		g_object_notify (G_OBJECT (pending->manager), NM_MANAGER_ACTIVE_CONNECTIONS);
 
+out:
 	pending_activation_destroy (pending, error, path);
 	g_clear_error (&error);
 }
 
-static gboolean
-is_user_request_authorized (NMManager *manager,
-                            DBusGMethodInvocation *context,
-                            GError **error)
+static void
+connection_added_default_handler (NMManager *self,
+                                  NMConnection *connection,
+                                  NMConnectionScope scope)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	DBusConnection *connection;
-	gulong sender_uid = G_MAXULONG;
-	DBusError dbus_error;
-	char *service_owner = NULL;
-	const char *service_name;
-	gulong service_uid = G_MAXULONG;
-	gboolean success = FALSE;
-	const char *error_desc = NULL;
+	PendingActivation *pending;
 
-	/* Ensure the request to activate the user connection came from the
-	 * same session as the user settings service.  FIXME: use ConsoleKit
-	 * too.
-	 */
-	if (!priv->user_proxy) {
-		g_set_error (error, NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_INVALID_SERVICE,
-		             "%s", "No user settings service available");
-		goto out;
+	pending = nm_manager_pending_activation_find (self,
+	                                              nm_connection_get_path (connection),
+	                                              scope);
+	if (pending) {
+		pending->have_connection = TRUE;
+		check_pending_ready (self, pending);
 	}
-
-	if (!nm_auth_get_caller_uid (context, priv->dbus_mgr, &sender_uid, &error_desc)) {
-		g_set_error_literal (error,
-		                     NM_MANAGER_ERROR,
-		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                     error_desc);
-		goto out;
-	}
-
-	/* Let root activate anything */
-	if (0 == sender_uid) {
-		success = TRUE;
-		goto out;
-	}
-
-	service_name = dbus_g_proxy_get_bus_name (priv->user_proxy);
-	if (!service_name) {
-		g_set_error (error, NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		             "%s", "Could not determine user settings service name");
-		goto out;
-	}
-
-	service_owner = nm_dbus_manager_get_name_owner (priv->dbus_mgr, service_name, NULL);
-	if (!service_owner) {
-		g_set_error (error, NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		             "%s", "Could not determine D-Bus owner of the user settings service");
-		goto out;
-	}
-
-	connection = nm_dbus_manager_get_dbus_connection (priv->dbus_mgr);
-	if (!connection) {
-		g_set_error_literal (error,
-		                     NM_MANAGER_ERROR,
-		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                     "Could not get the D-Bus system bus");
-		goto out;
-	}
-
-	dbus_error_init (&dbus_error);
-	/* FIXME: do this async */
-	service_uid = dbus_bus_get_unix_user (connection, service_owner, &dbus_error);
-	if (dbus_error_is_set (&dbus_error)) {
-		dbus_error_free (&dbus_error);
-		g_set_error (error, NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		             "%s", "Could not determine the Unix UID of the sender of the request");
-		goto out;
-	}
-
-	/* And finally, the actual UID check */
-	if (sender_uid != service_uid) {
-		g_set_error (error, NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		             "%s", "Requestor UID does not match the UID of the user settings service");
-	} else
-		success = TRUE;
-
-out:
-	g_free (service_owner);
-	return success;
 }
 
+static void
+activation_auth_done (PendingActivation *pending, GError *error)
+{
+	if (error) {
+		nm_manager_pending_activation_remove (pending->manager, pending);
+		pending_activation_destroy (pending, error, NULL);
+		return;
+	} else {
+		pending->authorized = TRUE;
 
+		/* Now that we're authorized, if the connection hasn't shown up yet,
+		 * start a timer and wait for it.
+		 */
+		if (!pending->have_connection && !pending->timeout_id)
+			pending->timeout_id = g_timeout_add_seconds (5, wait_for_connection_expired, pending);
+
+		check_pending_ready (pending->manager, pending);
+	}
+}
 
 static void
-impl_manager_activate_connection (NMManager *manager,
+impl_manager_activate_connection (NMManager *self,
                                   const char *service_name,
                                   const char *connection_path,
                                   const char *device_path,
                                   const char *specific_object_path,
                                   DBusGMethodInvocation *context)
 {
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMConnectionScope scope = NM_CONNECTION_SCOPE_UNKNOWN;
-	NMConnection *connection;
+	PendingActivation *pending;
 	GError *error = NULL;
-	char *real_sop = NULL;
-	char *path = NULL;
 
-	if (!strcmp (service_name, NM_DBUS_SERVICE_USER_SETTINGS)) {
-		if (!is_user_request_authorized (manager, context, &error))
-			goto err;
-
+	if (!strcmp (service_name, NM_DBUS_SERVICE_USER_SETTINGS))
 		scope = NM_CONNECTION_SCOPE_USER;
-	} else if (!strcmp (service_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS))
+	else if (!strcmp (service_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS))
 		scope = NM_CONNECTION_SCOPE_SYSTEM;
 	else {
-		g_set_error (&error,
-		             NM_MANAGER_ERROR, NM_MANAGER_ERROR_INVALID_SERVICE,
-		             "%s", "Invalid settings service name");
-		goto err;
-	}
-
-	/* "/" is special-cased to NULL to get through D-Bus */
-	if (specific_object_path && strcmp (specific_object_path, "/"))
-		real_sop = g_strdup (specific_object_path);
-
-	connection = nm_manager_get_connection_by_object_path (manager, scope, connection_path);
-	if (connection) {
-		path = (char *) nm_manager_activate_connection (manager,
-		                                                connection,
-		                                                real_sop,
-		                                                device_path,
-		                                                TRUE,
-		                                                &error);
-		if (path) {
-			dbus_g_method_return (context, path);
-			g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
-		}
-	} else {
-		PendingActivation *pending;
-
-		/* Don't have the connection quite yet, probably created by
-		 * the client on-the-fly.  Defer the activation until we have it.
-		 */
-
-		pending = nm_manager_pending_activation_find (manager, connection_path, scope);
-		if (!pending) {
-			pending = pending_activation_new (manager, device_path, scope, connection_path, real_sop);
-			/* Add a timeout waiting for the connection to be added */
-			pending->timeout_id = g_timeout_add_seconds (5, wait_for_connection_expired, pending);
-		}
-		pending_activation_add_caller (pending, context);
-	}
-
- err:
-	if (error) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_INVALID_SERVICE,
+		                             "Invalid settings service name");
 		dbus_g_method_return_error (context, error);
 		nm_log_warn (LOGD_CORE, "connection (%d) %s failed to activate: (%d) %s",
 		             scope, connection_path, error->code, error->message);
 		g_error_free (error);
+		return;
 	}
 
-	g_free (real_sop);
+	/* Need to check the caller's permissions and stuff before we can
+	 * activate the connection.
+	 */
+	pending = pending_activation_new (self,
+	                                  priv->authority,
+	                                  context,
+	                                  device_path,
+	                                  scope,
+	                                  connection_path,
+	                                  specific_object_path,
+	                                  activation_auth_done);
+	priv->pending_activations = g_slist_prepend (priv->pending_activations, pending);
+
+	if (nm_manager_get_connection_by_object_path (self, scope, connection_path))
+		pending->have_connection = TRUE;
+
+	pending_activation_check_authorized (pending, priv->dbus_mgr, priv->user_proxy);
 }
 
 gboolean
