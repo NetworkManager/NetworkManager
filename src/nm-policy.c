@@ -633,7 +633,8 @@ auto_activate_device (gpointer user_data)
 
 	/* System connections first, then user connections */
 	connections = nm_manager_get_connections (policy->manager, NM_CONNECTION_SCOPE_SYSTEM);
-	connections = g_slist_concat (connections, nm_manager_get_connections (policy->manager, NM_CONNECTION_SCOPE_USER));
+	if (nm_manager_auto_user_connections_allowed (policy->manager))
+		connections = g_slist_concat (connections, nm_manager_get_connections (policy->manager, NM_CONNECTION_SCOPE_USER));
 
 	/* Remove connections that are in the invalid list. */
 	iter = connections;
@@ -652,13 +653,11 @@ auto_activate_device (gpointer user_data)
 	best_connection = nm_device_get_best_auto_connection (data->device, connections, &specific_object);
 	if (best_connection) {
 		GError *error = NULL;
-		const char *device_path;
 
-		device_path = nm_device_get_path (data->device);
 		if (!nm_manager_activate_connection (policy->manager,
 		                                     best_connection,
 		                                     specific_object,
-		                                     device_path,
+		                                     nm_device_get_path (data->device),
 		                                     FALSE,
 		                                     &error)) {
 			NMSettingConnection *s_con;
@@ -1013,6 +1012,12 @@ connection_removed (NMManager *manager,
 	g_ptr_array_free (list, TRUE);
 }
 
+static void
+manager_user_permissions_changed (NMManager *manager, NMPolicy *policy)
+{
+	schedule_activate_all (policy);
+}
+
 NMPolicy *
 nm_policy_new (NMManager *manager, NMVPNManager *vpn_manager)
 {
@@ -1086,6 +1091,10 @@ nm_policy_new (NMManager *manager, NMVPNManager *vpn_manager)
 
 	id = g_signal_connect (manager, "connection-removed",
 	                       G_CALLBACK (connection_removed), policy);
+	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
+
+	id = g_signal_connect (manager, "user-permissions-changed",
+	                       G_CALLBACK (manager_user_permissions_changed), policy);
 	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
 
 	return policy;

@@ -241,6 +241,7 @@ enum {
 	CONNECTION_UPDATED,
 	CONNECTION_REMOVED,
 	CHECK_PERMISSIONS,
+	USER_PERMISSIONS_CHANGED,
 
 	LAST_SIGNAL
 };
@@ -1224,6 +1225,8 @@ static gboolean
 user_settings_authorized (NMManager *self, NMAuthChain *chain)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMAuthCallResult old_net_perm = priv->user_net_perm;
+	NMAuthCallResult old_con_perm = priv->user_con_perm;
 
 	/* If the user could potentially get authorization to use networking and/or
 	 * to use user connections, the user settings service is authorized.
@@ -1233,6 +1236,9 @@ user_settings_authorized (NMManager *self, NMAuthChain *chain)
 
 	nm_log_dbg (LOGD_USER_SET, "User connections permissions: net %d, con %d",
 	            priv->user_net_perm, priv->user_con_perm);
+
+	if (old_net_perm != priv->user_net_perm || old_con_perm != priv->user_con_perm)
+		g_signal_emit (self, signals[USER_PERMISSIONS_CHANGED], 0);
 
 	/* If the user can't control the network they certainly aren't allowed
 	 * to provide user connections.
@@ -3755,6 +3761,15 @@ impl_manager_set_logging (NMManager *manager,
 
 /* Connections */
 
+gboolean
+nm_manager_auto_user_connections_allowed (NMManager *self)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+
+	return    priv->user_net_perm == NM_AUTH_CALL_RESULT_YES
+	       && priv->user_con_perm == NM_AUTH_CALL_RESULT_YES;
+}
+
 static int
 connection_sort (gconstpointer pa, gconstpointer pb)
 {
@@ -4382,6 +4397,14 @@ nm_manager_class_init (NMManagerClass *manager_class)
 
 	signals[CHECK_PERMISSIONS] =
 		g_signal_new ("check-permissions",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL,
+		              g_cclosure_marshal_VOID__VOID,
+		              G_TYPE_NONE, 0);
+
+	signals[USER_PERMISSIONS_CHANGED] =
+		g_signal_new ("user-permissions-changed",
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              0, NULL, NULL,
