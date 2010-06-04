@@ -338,3 +338,65 @@ out:
 	return success;
 }
 
+gboolean
+nm_auth_uid_authorized (gulong uid,
+                        NMDBusManager *dbus_mgr,
+                        DBusGProxy *user_proxy,
+                        const char **out_error_desc)
+{
+	DBusConnection *connection;
+	DBusError dbus_error;
+	char *service_owner = NULL;
+	const char *service_name;
+	gulong service_uid = G_MAXULONG;
+
+	g_return_val_if_fail (dbus_mgr != NULL, FALSE);
+	g_return_val_if_fail (out_error_desc != NULL, FALSE);
+
+	/* Ensure the request to activate the user connection came from the
+	 * same session as the user settings service.  FIXME: use ConsoleKit
+	 * too.
+	 */
+
+	if (!user_proxy) {
+		*out_error_desc = "No user settings service available";
+		return FALSE;
+	}
+
+	service_name = dbus_g_proxy_get_bus_name (user_proxy);
+	if (!service_name) {
+		*out_error_desc = "Could not determine user settings service name";
+		return FALSE;
+	}
+
+	connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
+	if (!connection) {
+		*out_error_desc = "Could not get the D-Bus system bus";
+		return FALSE;
+	}
+
+	service_owner = nm_dbus_manager_get_name_owner (dbus_mgr, service_name, NULL);
+	if (!service_owner) {
+		*out_error_desc = "Could not determine D-Bus owner of the user settings service";
+		return FALSE;
+	}
+
+	dbus_error_init (&dbus_error);
+	service_uid = dbus_bus_get_unix_user (connection, service_owner, &dbus_error);
+	g_free (service_owner);
+
+	if (dbus_error_is_set (&dbus_error)) {
+		dbus_error_free (&dbus_error);
+		*out_error_desc = "Could not determine the Unix UID of the sender of the request";
+		return FALSE;
+	}
+
+	/* And finally, the actual UID check */
+	if (uid != service_uid) {
+		*out_error_desc = "Requestor UID does not match the UID of the user settings service";
+		return FALSE;
+	}
+
+	return TRUE;
+}
+

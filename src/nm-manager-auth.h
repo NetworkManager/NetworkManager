@@ -80,5 +80,10 @@ gboolean nm_auth_get_caller_uid (DBusGMethodInvocation *context,
                                  gulong *out_uid,
                                  const char **out_error_desc);
 
+gboolean nm_auth_uid_authorized (gulong uid,
+                                 NMDBusManager *dbus_mgr,
+                                 DBusGProxy *user_proxy,
+                                 const char **out_error_desc);
+
 #endif /* NM_MANAGER_AUTH_H */
 
