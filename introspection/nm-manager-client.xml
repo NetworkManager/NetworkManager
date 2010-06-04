@@ -31,16 +31,19 @@ object.  dbus-glib generates the same bound function names for D-Bus the methods
 
     <method name="DeactivateConnection">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_deactivate_connection"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <arg name="active_connection" type="o" direction="in"/>
     </method>
 
     <method name="Sleep">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_sleep"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <arg name="sleep" type="b" direction="in"/>
     </method>
 
     <method name="Enable">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_enable"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <arg name="enable" type="b" direction="in"/>
     </method>
 

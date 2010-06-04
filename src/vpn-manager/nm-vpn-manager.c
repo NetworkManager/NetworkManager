@@ -304,6 +304,33 @@ nm_vpn_manager_get_active_connections (NMVPNManager *manager)
 	return list;
 }
 
+NMConnection *
+nm_vpn_manager_get_connection_for_active (NMVPNManager *manager,
+                                          const char *active_path)
+{
+	NMVPNManagerPrivate *priv;
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_VPN_MANAGER (manager), NULL);
+
+	priv = NM_VPN_MANAGER_GET_PRIVATE (manager);
+	for (iter = priv->services; iter; iter = g_slist_next (iter)) {
+		GSList *active, *elt;
+
+		active = nm_vpn_service_get_active_connections (NM_VPN_SERVICE (iter->data));
+		for (elt = active; elt; elt = g_slist_next (elt)) {
+			NMVPNConnection *candidate = NM_VPN_CONNECTION (elt->data);
+			const char *ac_path;
+
+			ac_path = nm_vpn_connection_get_active_connection_path (candidate);
+			if (ac_path && !strcmp (ac_path, active_path))
+				return nm_vpn_connection_get_connection (candidate);
+		}
+	}
+
+	return NULL;
+}
+
 NMVPNManager *
 nm_vpn_manager_get (void)
 {

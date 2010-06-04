@@ -45,6 +45,8 @@ typedef enum
 #define NM_DEVICE_INTERFACE_ERROR (nm_device_interface_error_quark ())
 #define NM_TYPE_DEVICE_INTERFACE_ERROR (nm_device_interface_error_get_type ()) 
 
+#define NM_DEVICE_INTERFACE_DISCONNECT_REQUEST "disconnect-request"
+
 #define NM_DEVICE_INTERFACE_UDI              "udi"
 #define NM_DEVICE_INTERFACE_IFACE            "interface"
 #define NM_DEVICE_INTERFACE_DRIVER           "driver"

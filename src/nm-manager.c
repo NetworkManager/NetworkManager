@@ -67,9 +67,9 @@ static void impl_manager_activate_connection (NMManager *manager,
                                               const char *specific_object_path,
                                               DBusGMethodInvocation *context);
 
-static gboolean impl_manager_deactivate_connection (NMManager *manager,
-                                                    const char *connection_path,
-                                                    GError **error);
+static void impl_manager_deactivate_connection (NMManager *manager,
+                                                const char *connection_path,
+                                                DBusGMethodInvocation *context);
 
 static void impl_manager_sleep (NMManager *manager,
                                 gboolean do_sleep,
@@ -714,6 +714,41 @@ out:
 	nm_auth_chain_unref (chain);
 }
 
+static gboolean
+check_user_authorized (NMDBusManager *dbus_mgr,
+                       DBusGProxy *user_proxy,
+                       DBusGMethodInvocation *context,
+                       NMConnectionScope scope,
+                       gulong *out_sender_uid,
+                       const char **out_error_desc)
+{
+	g_return_val_if_fail (dbus_mgr != NULL, FALSE);
+	g_return_val_if_fail (user_proxy != NULL, FALSE);
+	g_return_val_if_fail (context != NULL, FALSE);
+	g_return_val_if_fail (out_sender_uid != NULL, FALSE);
+	g_return_val_if_fail (out_error_desc != NULL, FALSE);
+
+	*out_sender_uid = G_MAXULONG;
+
+	/* Get the UID */
+	if (!nm_auth_get_caller_uid (context, dbus_mgr, out_sender_uid, out_error_desc))
+		return FALSE;
+
+	/* root gets to do anything */
+	if (0 == *out_sender_uid)
+		return TRUE;
+
+	/* Check whether the UID is authorized for user connections */
+	if (   scope == NM_CONNECTION_SCOPE_USER
+	    && !nm_auth_uid_authorized (*out_sender_uid,
+	                                dbus_mgr,
+	                                user_proxy,
+	                                out_error_desc))
+		return FALSE;
+
+	return TRUE;
+}
+
 static void
 pending_activation_check_authorized (PendingActivation *pending,
                                      NMDBusManager *dbus_mgr,
@@ -727,8 +762,12 @@ pending_activation_check_authorized (PendingActivation *pending,
 	g_return_if_fail (dbus_mgr != NULL);
 	g_return_if_fail (user_proxy != NULL);
 
-	/* Get the UID */
-	if (!nm_auth_get_caller_uid (pending->context, dbus_mgr, &sender_uid, &error_desc)) {
+	if (!check_user_authorized (dbus_mgr,
+	                            user_proxy,
+	                            pending->context,
+	                            pending->scope,
+	                            &sender_uid,
+	                            &error_desc)) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             error_desc);
@@ -737,23 +776,9 @@ pending_activation_check_authorized (PendingActivation *pending,
 		return;
 	}
 
-	/* root gets to do anything */
+	/* Yay for root */
 	if (0 == sender_uid) {
 		pending->callback (pending, NULL);
-		return;
-	}
-
-	/* Check whether the UID is authorized for user connections */
-	if (   pending->scope == NM_CONNECTION_SCOPE_USER
-	    && !nm_auth_uid_authorized (sender_uid,
-	                                dbus_mgr,
-	                                user_proxy,
-	                                &error_desc)) {
-		error = g_error_new_literal (NM_MANAGER_ERROR,
-		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             error_desc);
-		pending->callback (pending, error);
-		g_error_free (error);
 		return;
 	}
 
@@ -765,6 +790,7 @@ pending_activation_check_authorized (PendingActivation *pending,
 	                                    NULL,
 	                                    pending_auth_net_done,
 	                                    pending);
+	g_assert (pending->chain);
 	nm_auth_chain_add_call (pending->chain,
 	                        NM_AUTH_PERMISSION_NETWORK_CONTROL,
 	                        TRUE);
@@ -1805,6 +1831,175 @@ manager_modem_enabled_changed (NMModem *device, gpointer user_data)
 	nm_manager_rfkill_update (NM_MANAGER (user_data), RFKILL_TYPE_WWAN);
 }
 
+static GError *
+deactivate_disconnect_check_error (GError *auth_error,
+                                   NMAuthCallResult result,
+                                   const char *detail)
+{
+	if (auth_error) {
+		nm_log_dbg (LOGD_CORE, "%s request failed: %s", detail, auth_error->message);
+		return g_error_new (NM_MANAGER_ERROR,
+		                    NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                    "%s request failed: %s",
+		                    detail, auth_error->message);
+	} else if (result != NM_AUTH_CALL_RESULT_YES) {
+		return g_error_new (NM_MANAGER_ERROR,
+		                    NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                    "Not authorized to %s user connections",
+		                    detail);
+	}
+	return NULL;
+}
+
+static void
+disconnect_user_auth_done_cb (NMAuthChain *chain,
+                              GError *error,
+                              DBusGMethodInvocation *context,
+                              gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GError *ret_error = NULL;
+	NMAuthCallResult result;
+	NMDevice *device;
+
+	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+
+	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS));
+	ret_error = deactivate_disconnect_check_error (error, result, "Disconnect");
+g_message ("%s: here! ret error %p", __func__, ret_error);
+	if (!ret_error) {
+		/* Everything authorized, deactivate the connection */
+		device = nm_auth_chain_get_data (chain, "device");
+g_message ("%s: here! device %p", __func__, device);
+		if (nm_device_interface_disconnect (NM_DEVICE_INTERFACE (device), &ret_error))
+			dbus_g_method_return (context);
+	}
+
+	if (ret_error)
+		dbus_g_method_return_error (context, ret_error);
+	g_clear_error (&ret_error);
+
+	nm_auth_chain_unref (chain);
+}
+
+static void
+disconnect_net_auth_done_cb (NMAuthChain *chain,
+                             GError *error,
+                             DBusGMethodInvocation *context,
+                             gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GError *ret_error = NULL;
+	NMAuthCallResult result;
+	NMConnectionScope scope;
+	NMDevice *device;
+
+	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+
+	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL));
+	ret_error = deactivate_disconnect_check_error (error, result, "Disconnect");
+g_message ("%s: here! ret error %p", __func__, ret_error);
+	if (ret_error) {
+		dbus_g_method_return_error (context, ret_error);
+		g_error_free (ret_error);
+		goto done;
+	}
+
+	/* If it's a system connection, we're done */
+	device = nm_auth_chain_get_data (chain, "device");
+	scope = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "scope"));
+	if (scope == NM_CONNECTION_SCOPE_USER) {
+		NMAuthChain *user_chain;
+
+		/* It's a user connection, so we need to ensure the caller is
+		 * authorized to manipulate user connections.
+		 */
+		user_chain = nm_auth_chain_new (priv->authority, context, NULL, disconnect_user_auth_done_cb, self);
+		g_assert (user_chain);
+		priv->auth_chains = g_slist_append (priv->auth_chains, user_chain);
+
+		nm_auth_chain_set_data (user_chain, "device", g_object_ref (device), g_object_unref);
+		nm_auth_chain_set_data (user_chain, "scope", GUINT_TO_POINTER (scope), NULL);
+		nm_auth_chain_add_call (user_chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS, TRUE);
+	} else {
+		if (!nm_device_interface_disconnect (NM_DEVICE_INTERFACE (device), &ret_error)) {
+			dbus_g_method_return_error (context, ret_error);
+			g_clear_error (&ret_error);
+		} else
+			dbus_g_method_return (context);
+	}
+
+done:
+	nm_auth_chain_unref (chain);
+}
+
+static void
+manager_device_disconnect_request (NMDevice *device,
+                                   DBusGMethodInvocation *context,
+                                   NMManager *self)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMActRequest *req;
+	NMConnection *connection;
+	GError *error = NULL;
+	NMConnectionScope scope;
+	gulong sender_uid = G_MAXULONG;
+	const char *error_desc = NULL;
+
+	req = nm_device_get_act_request (device);
+	if (!req) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
+		                             "This device is not active");
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+
+	/* Need to check the caller's permissions and stuff before we can
+	 * deactivate the connection.
+	 */
+	scope = nm_connection_get_scope (connection);
+	if (!check_user_authorized (priv->dbus_mgr,
+	                            priv->user_proxy,
+	                            context,
+	                            scope,
+	                            &sender_uid,
+	                            &error_desc)) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	/* Yay for root */
+	if (0 == sender_uid) {
+		if (!nm_device_interface_disconnect (NM_DEVICE_INTERFACE (device), &error)) {
+			dbus_g_method_return_error (context, error);
+			g_clear_error (&error);
+		} else
+			dbus_g_method_return (context);
+	} else {
+		NMAuthChain *chain;
+
+		/* Otherwise validate the user request */
+		chain = nm_auth_chain_new (priv->authority, context, NULL, disconnect_net_auth_done_cb, self);
+		g_assert (chain);
+		priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+
+		nm_auth_chain_set_data (chain, "device", g_object_ref (device), g_object_unref);
+		nm_auth_chain_set_data (chain, "scope", GUINT_TO_POINTER (scope), NULL);
+		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
+	}
+}
+
 static void
 add_device (NMManager *self, NMDevice *device)
 {
@@ -1830,6 +2025,10 @@ add_device (NMManager *self, NMDevice *device)
 
 	g_signal_connect (device, "state-changed",
 					  G_CALLBACK (manager_device_state_changed),
+					  self);
+
+	g_signal_connect (device, NM_DEVICE_INTERFACE_DISCONNECT_REQUEST,
+					  G_CALLBACK (manager_device_disconnect_request),
 					  self);
 
 	if (NM_IS_DEVICE_WIFI (device)) {
@@ -2895,15 +3094,173 @@ done:
 	return success;
 }
 
-static gboolean
-impl_manager_deactivate_connection (NMManager *manager,
-                                    const char *connection_path,
-                                    GError **error)
+static void
+deactivate_user_auth_done_cb (NMAuthChain *chain,
+                              GError *error,
+                              DBusGMethodInvocation *context,
+                              gpointer user_data)
 {
-	return nm_manager_deactivate_connection (manager,
-	                                         connection_path,
-	                                         NM_DEVICE_STATE_REASON_USER_REQUESTED,
-	                                         error);
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GError *ret_error = NULL;
+	NMAuthCallResult result;
+
+	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+
+	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS));
+	ret_error = deactivate_disconnect_check_error (error, result, "Deactivate");
+	if (!ret_error) {
+		/* Everything authorized, deactivate the connection */
+		if (nm_manager_deactivate_connection (self,
+		                                      nm_auth_chain_get_data (chain, "path"),
+		                                      NM_DEVICE_STATE_REASON_USER_REQUESTED,
+		                                      &ret_error))
+			dbus_g_method_return (context);
+	}
+
+	if (ret_error)
+		dbus_g_method_return_error (context, ret_error);
+	g_clear_error (&ret_error);
+
+	nm_auth_chain_unref (chain);
+}
+
+static void
+deactivate_net_auth_done_cb (NMAuthChain *chain,
+                             GError *error,
+                             DBusGMethodInvocation *context,
+                             gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GError *ret_error = NULL;
+	NMAuthCallResult result;
+	const char *active_path;
+	NMConnectionScope scope;
+
+	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+
+	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL));
+	ret_error = deactivate_disconnect_check_error (error, result, "Deactivate");
+	if (ret_error) {
+		dbus_g_method_return_error (context, ret_error);
+		g_error_free (ret_error);
+		goto done;
+	}
+
+	/* If it's a system connection, we're done */
+	active_path = nm_auth_chain_get_data (chain, "path");
+	scope = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "scope"));
+	if (scope == NM_CONNECTION_SCOPE_USER) {
+		NMAuthChain *user_chain;
+
+		/* It's a user connection, so we need to ensure the caller is
+		 * authorized to manipulate user connections.
+		 */
+		user_chain = nm_auth_chain_new (priv->authority, context, NULL, deactivate_user_auth_done_cb, self);
+		g_assert (user_chain);
+		priv->auth_chains = g_slist_append (priv->auth_chains, user_chain);
+
+		nm_auth_chain_set_data (user_chain, "path", g_strdup (active_path), g_free);
+		nm_auth_chain_set_data (user_chain, "scope", GUINT_TO_POINTER (scope), NULL);
+		nm_auth_chain_add_call (user_chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS, TRUE);
+	} else {
+		if (!nm_manager_deactivate_connection (self,
+		                                       active_path,
+		                                       NM_DEVICE_STATE_REASON_USER_REQUESTED,
+		                                       &ret_error)) {
+			dbus_g_method_return_error (context, ret_error);
+			g_clear_error (&ret_error);
+		} else
+			dbus_g_method_return (context);
+	}
+
+done:
+	nm_auth_chain_unref (chain);
+}
+
+static void
+impl_manager_deactivate_connection (NMManager *self,
+                                    const char *active_path,
+                                    DBusGMethodInvocation *context)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMConnection *connection = NULL;
+	GError *error = NULL;
+	GSList *iter;
+	NMAuthChain *chain;
+	gulong sender_uid = G_MAXULONG;
+	NMConnectionScope scope;
+	const char *error_desc = NULL;
+
+	/* Check for device connections first */
+	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+		NMActRequest *req;
+		const char *req_path = NULL;
+
+		req = nm_device_get_act_request (NM_DEVICE (iter->data));
+		if (req)
+			req_path = nm_act_request_get_active_connection_path (req);
+
+		if (req_path && !strcmp (active_path, req_path)) {
+			connection = nm_act_request_get_connection (req);
+			break;
+		}
+	}
+
+	/* Maybe it's a VPN */
+	if (!connection)
+		connection = nm_vpn_manager_get_connection_for_active (priv->vpn_manager, active_path);
+
+	if (!connection) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
+		                             "The connection was not active.");
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	/* Need to check the caller's permissions and stuff before we can
+	 * deactivate the connection.
+	 */
+	scope = nm_connection_get_scope (connection);
+	if (!check_user_authorized (priv->dbus_mgr,
+	                            priv->user_proxy,
+	                            context,
+	                            scope,
+	                            &sender_uid,
+	                            &error_desc)) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	/* Yay for root */
+	if (0 == sender_uid) {
+		if (!nm_manager_deactivate_connection (self,
+		                                       active_path,
+		                                       NM_DEVICE_STATE_REASON_USER_REQUESTED,
+		                                       &error)) {
+			dbus_g_method_return_error (context, error);
+			g_clear_error (&error);
+		} else
+			dbus_g_method_return (context);
+
+		return;
+	}
+
+	/* Otherwise validate the user request */
+	chain = nm_auth_chain_new (priv->authority, context, NULL, deactivate_net_auth_done_cb, self);
+	g_assert (chain);
+	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+
+	nm_auth_chain_set_data (chain, "path", g_strdup (active_path), g_free);
+	nm_auth_chain_set_data (chain, "scope", GUINT_TO_POINTER (scope), NULL);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
 }
 
 static void
