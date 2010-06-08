@@ -255,13 +255,12 @@ lookup_callback (HostnameThread *thread,
 }
 
 static void
-update_system_hostname (NMPolicy *policy, NMDevice *best)
+update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 {
 	char *configured_hostname = NULL;
-	NMActRequest *best_req = NULL;
-	NMDHCP4Config *dhcp4_config;
-	NMIP4Config *ip4_config;
-	NMIP4Address *addr;
+	NMActRequest *best_req4 = NULL;
+	NMActRequest *best_req6 = NULL;
+	const char *dhcp_hostname, *p;
 
 	g_return_if_fail (policy != NULL);
 
@@ -288,10 +287,12 @@ update_system_hostname (NMPolicy *policy, NMDevice *best)
 	}
 
 	/* Try automatically determined hostname from the best device's IP config */
-	if (!best)
-		best = get_best_ip4_device (policy->manager, &best_req);
+	if (!best4)
+		best4 = get_best_ip4_device (policy->manager, &best_req4);
+	if (!best6)
+		best6 = get_best_ip6_device (policy->manager, &best_req6);
 
-	if (!best) {
+	if (!best4 && !best6) {
 		/* No best device; fall back to original hostname or if there wasn't
 		 * one, 'localhost.localdomain'
 		 */
@@ -299,22 +300,43 @@ update_system_hostname (NMPolicy *policy, NMDevice *best)
 		return;
 	}
 
-	/* Grab a hostname out of the device's DHCP4 config */
-	dhcp4_config = nm_device_get_dhcp4_config (best);
-	if (dhcp4_config) {
-		const char *dhcp4_hostname, *p;
+	if (best4) {
+		NMDHCP4Config *dhcp4_config;
 
-		p = dhcp4_hostname = nm_dhcp4_config_get_option (dhcp4_config, "host_name");
-		if (dhcp4_hostname && strlen (dhcp4_hostname)) {
-			/* Sanity check */
-			while (*p) {
-				if (!isblank (*p++)) {
-					_set_hostname (dhcp4_hostname, "from DHCP");
-					return;
+		/* Grab a hostname out of the device's DHCP4 config */
+		dhcp4_config = nm_device_get_dhcp4_config (best4);
+		if (dhcp4_config) {
+			p = dhcp_hostname = nm_dhcp4_config_get_option (dhcp4_config, "host_name");
+			if (dhcp_hostname && strlen (dhcp_hostname)) {
+				/* Sanity check; strip leading spaces */
+				while (*p) {
+					if (!isblank (*p++)) {
+						_set_hostname (dhcp_hostname, "from DHCPv4");
+						return;
+					}
 				}
+				nm_log_warn (LOGD_DNS, "DHCPv4-provided hostname '%s' looks invalid; ignoring it",
+					         dhcp_hostname);
 			}
-			nm_log_warn (LOGD_DNS, "DHCP-provided hostname '%s' looks invalid; ignoring it",
-			             dhcp4_hostname);
+		}
+	} else if (best6) {
+		NMDHCP6Config *dhcp6_config;
+
+		/* Grab a hostname out of the device's DHCP4 config */
+		dhcp6_config = nm_device_get_dhcp6_config (best6);
+		if (dhcp6_config) {
+			p = dhcp_hostname = nm_dhcp6_config_get_option (dhcp6_config, "host_name");
+			if (dhcp_hostname && strlen (dhcp_hostname)) {
+				/* Sanity check; strip leading spaces */
+				while (*p) {
+					if (!isblank (*p++)) {
+						_set_hostname (dhcp_hostname, "from DHCPv6");
+						return;
+					}
+				}
+				nm_log_warn (LOGD_DNS, "DHCPv6-provided hostname '%s' looks invalid; ignoring it",
+					         dhcp_hostname);
+			}
 		}
 	}
 
@@ -326,23 +348,47 @@ update_system_hostname (NMPolicy *policy, NMDevice *best)
 		return;
 	}
 
-	/* No configured hostname, no automatically determined hostname, and
-	 * no bootup hostname. Start reverse DNS of the current IP address.
+	/* No configured hostname, no automatically determined hostname, and no
+	 * bootup hostname. Start reverse DNS of the current IPv4 or IPv6 address.
 	 */
-	ip4_config = nm_device_get_ip4_config (best);
-	if (   !ip4_config
-	    || (nm_ip4_config_get_num_nameservers (ip4_config) == 0)
-	    || (nm_ip4_config_get_num_addresses (ip4_config) == 0)) {
-		/* No valid IP4 config (!!); fall back to localhost.localdomain */
-		_set_hostname (NULL, "no IPv4 config");
-		return;
+	if (best4) {
+		NMIP4Config *ip4_config;
+		NMIP4Address *addr4;
+
+		ip4_config = nm_device_get_ip4_config (best4);
+		if (   !ip4_config
+		    || (nm_ip4_config_get_num_nameservers (ip4_config) == 0)
+		    || (nm_ip4_config_get_num_addresses (ip4_config) == 0)) {
+			/* No valid IP4 config (!!); fall back to localhost.localdomain */
+			_set_hostname (NULL, "no IPv4 config");
+			return;
+		}
+
+		addr4 = nm_ip4_config_get_address (ip4_config, 0);
+		g_assert (addr4); /* checked for > 1 address above */
+
+		/* Start the hostname lookup thread */
+		policy->lookup = hostname4_thread_new (nm_ip4_address_get_address (addr4), lookup_callback, policy);
+	} else if (best6) {
+		NMIP6Config *ip6_config;
+		NMIP6Address *addr6;
+
+		ip6_config = nm_device_get_ip6_config (best6);
+		if (   !ip6_config
+		    || (nm_ip6_config_get_num_nameservers (ip6_config) == 0)
+		    || (nm_ip6_config_get_num_addresses (ip6_config) == 0)) {
+			/* No valid IP6 config (!!); fall back to localhost.localdomain */
+			_set_hostname (NULL, "no IPv6 config");
+			return;
+		}
+
+		addr6 = nm_ip6_config_get_address (ip6_config, 0);
+		g_assert (addr6); /* checked for > 1 address above */
+
+		/* Start the hostname lookup thread */
+		policy->lookup = hostname6_thread_new (nm_ip6_address_get_address (addr6), lookup_callback, policy);
 	}
 
-	addr = nm_ip4_config_get_address (ip4_config, 0);
-	g_assert (addr); /* checked for > 1 address above */
-
-	/* Start the hostname lookup thread */
-	policy->lookup = hostname_thread_new (nm_ip4_address_get_address (addr), lookup_callback, policy);
 	if (!policy->lookup) {
 		/* Fall back to 'localhost.localdomain' */
 		_set_hostname (NULL, "error starting hostname thread");
@@ -603,7 +649,7 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	update_ip6_routing_and_dns (policy, force_update);
 
 	/* Update the system hostname */
-	update_system_hostname (policy, policy->default_device4);
+	update_system_hostname (policy, policy->default_device4, policy->default_device6);
 }
 
 typedef struct {
@@ -711,7 +757,7 @@ global_state_changed (NMManager *manager, NMState state, gpointer user_data)
 static void
 hostname_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 {
-	update_system_hostname ((NMPolicy *) user_data, NULL);
+	update_system_hostname ((NMPolicy *) user_data, NULL, NULL);
 }
 
 static void
