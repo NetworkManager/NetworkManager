@@ -658,6 +658,7 @@ aipd_get_ip4_config (NMDevice *self, NMDeviceStateReason *reason)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMIP4Config *config = NULL;
 	NMIP4Address *addr;
+	NMIP4Route *route;
 
 	g_return_val_if_fail (priv->aipd_addr > 0, NULL);
 
@@ -671,6 +672,14 @@ aipd_get_ip4_config (NMDevice *self, NMDeviceStateReason *reason)
 	nm_ip4_address_set_address (addr, (guint32) priv->aipd_addr);
 	nm_ip4_address_set_prefix (addr, 16);
 	nm_ip4_config_take_address (config, addr);
+
+	/* Add a multicast route for link-local connections: destination= 224.0.0.0, netmask=240.0.0.0 */
+	route = nm_ip4_route_new ();
+	nm_ip4_route_set_dest (route, (guint32) htonl (0xE0000000L));
+	nm_ip4_route_set_prefix (route, 4);
+	nm_ip4_route_set_next_hop (route, (guint32) 0);
+	nm_ip4_route_set_metric (route, 0);
+	nm_ip4_config_take_route (config, route);
 
 	return config;	
 }
