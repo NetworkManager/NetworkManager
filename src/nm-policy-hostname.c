@@ -57,7 +57,7 @@ hostname_thread_run_cb (gpointer user_data)
 	HostnameThread *ht = (HostnameThread *) user_data;
 	const char *hostname = NULL;
 
-	if (strlen (ht->hostname) && strcmp (hostname, "."))
+	if (strlen (ht->hostname) && strcmp (ht->hostname, "."))
 		hostname = ht->hostname;
 
 	nm_log_dbg (LOGD_DNS, "(%p) calling address reverse-lookup result handler", ht);
