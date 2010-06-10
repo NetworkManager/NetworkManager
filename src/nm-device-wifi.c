@@ -53,6 +53,8 @@
 #include "nm-setting-ip6-config.h"
 #include "NetworkManagerSystem.h"
 
+static gboolean enable_debug = FALSE;
+
 static gboolean impl_device_get_access_points (NMDeviceWifi *device,
                                                GPtrArray **aps,
                                                GError **err);
@@ -573,6 +575,8 @@ constructor (GType type,
 	                                                  G_CALLBACK (supplicant_mgr_state_cb),
 	                                                  self);
 
+	enable_debug = !!getenv ("NM_WIFI_ENABLE_DEBUG");
+
 	return object;
 
 error:
@@ -997,8 +1001,13 @@ real_hw_is_up (NMDevice *device)
 static gboolean
 real_hw_bring_up (NMDevice *device, gboolean *no_firmware)
 {
-	if (!NM_DEVICE_WIFI_GET_PRIVATE (device)->enabled)
+	if (!NM_DEVICE_WIFI_GET_PRIVATE (device)->enabled) {
+		if (enable_debug) {
+			nm_debug ("(%s): could not bring up because not enabled",
+			          nm_device_get_iface (device));
+		}
 		return FALSE;
+	}
 
 	return nm_system_device_set_up_down (device, TRUE, no_firmware);
 }
@@ -1150,16 +1159,34 @@ real_can_activate (NMDevice *dev)
 	NMSupplicantInterface *sup_iface;
 	guint32 state;
 
-	if (!priv->enabled)
+	if (!priv->enabled) {
+		if (enable_debug) {
+			nm_debug ("(%s): could not activate because not enabled",
+			          nm_device_get_iface (dev));
+		}
 		return FALSE;
+	}
 
 	sup_iface = priv->supplicant.iface;
-	if (!sup_iface)
+	if (!sup_iface) {
+		if (enable_debug) {
+			nm_debug ("(%s): could not activate because supplicant not started",
+			          nm_device_get_iface (dev));
+		}
 		return FALSE;
+	}
 
 	state = nm_supplicant_interface_get_state (sup_iface);
-	if (state != NM_SUPPLICANT_INTERFACE_STATE_READY)
+	if (state != NM_SUPPLICANT_INTERFACE_STATE_READY) {
+		if (enable_debug) {
+			nm_debug ("(%s): could not activate because supplicant not ready",
+			          nm_device_get_iface (dev));
+		}
 		return FALSE;
+	}
+
+	if (enable_debug)
+		nm_debug ("(%s): available to be activated", nm_device_get_iface (dev));
 
 	return TRUE;
 }
@@ -2270,6 +2297,13 @@ supplicant_iface_state_cb_handler (gpointer user_data)
 		    && priv->enabled) {
 			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED,
 			                         NM_DEVICE_STATE_REASON_NONE);
+		} else {
+			if (enable_debug) {
+				nm_debug ("(%s): no DISCONNECTED transition because enabled %d state %d",
+				          nm_device_get_iface (NM_DEVICE (self)),
+				          nm_device_get_state (NM_DEVICE (self)),
+				          priv->enabled);
+			}
 		}
 
 		/* Request a scan to get latest results */
@@ -2421,6 +2455,14 @@ supplicant_mgr_state_cb_handler (gpointer user_data)
 			if (priv->supplicant.iface) {
 				nm_device_state_changed (dev, NM_DEVICE_STATE_DISCONNECTED,
 				                         NM_DEVICE_STATE_REASON_NONE);
+			}
+		} else {
+			if (enable_debug) {
+				nm_debug ("(%s): no DISCONNECTED transition because enabled %d state %d supiface %p",
+				          nm_device_get_iface (dev),
+				          dev_state,
+				          priv->enabled,
+				          priv->supplicant.iface);
 			}
 		}
 	}
@@ -3515,6 +3557,11 @@ device_state_changed (NMDevice *device,
 				if (si_state == NM_SUPPLICANT_INTERFACE_STATE_READY)
 					priv->state_to_disconnected_id = g_idle_add (unavailable_to_disconnected, self);
 			}
+		} else {
+			if (enable_debug) {
+				nm_debug ("(%s): no DISCONNECTED transition because not enabled",
+				          nm_device_get_iface (device));
+			}
 		}
 		clear_aps = TRUE;
 		break;
@@ -3604,6 +3651,12 @@ nm_device_wifi_set_enabled (NMDeviceWifi *self, gboolean enabled)
 		return;
 
 	priv->enabled = enabled;
+
+	if (enable_debug) {
+		nm_debug ("(%s): device now %s",
+		          nm_device_get_iface (NM_DEVICE (self)),
+		          enabled ? "enabled" : "disabled");
+	}
 
 	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
 	if (state < NM_DEVICE_STATE_UNAVAILABLE)

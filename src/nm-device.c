@@ -2122,8 +2122,10 @@ nm_device_hw_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 
 	if (NM_DEVICE_GET_CLASS (self)->hw_bring_up) {
 		success = NM_DEVICE_GET_CLASS (self)->hw_bring_up (self, no_firmware);
-		if (!success)
+		if (!success) {
+			nm_warning ("(%s): failed to bring up device hardware", nm_device_get_iface (self));
 			return FALSE;
+		}
 	}
 
 	/* Wait for the device to come up if requested */
