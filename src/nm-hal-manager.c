@@ -1395,6 +1395,8 @@ killswitch_getpower_done (gpointer user_data)
 
 	if (priv->poll_rfkilled != priv->rfkilled) {
 		priv->rfkilled = priv->poll_rfkilled;
+		nm_info ("Radio killswitches now %s radios",
+		         priv->rfkilled ? "block" : "allow");
 		g_signal_emit (self, signals[RFKILL_CHANGED], 0, priv->rfkilled);
 	}
 
