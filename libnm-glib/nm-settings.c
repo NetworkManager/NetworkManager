@@ -166,11 +166,11 @@ nm_settings_class_init (NMSettingsClass *settings_class)
 
 /**
  * nm_settings_list_connections:
- * @settings: 
+ * @settings: a #NMSetting
  *
  * Lists all the available connections.
  *
- * Returns: the #GSList containing #NMExportedConnection<!-- -->s
+ * Returns: the #GSList containing #NMExportedConnection objects
  **/
 GSList *
 nm_settings_list_connections (NMSettings *settings)
