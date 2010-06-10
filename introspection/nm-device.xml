@@ -9,7 +9,15 @@
     </property>
     <property name="Interface" type="s" access="read">
       <tp:docstring>
-        The network interface offered by the device.
+        The name of the device's control (and often data) interface.
+      </tp:docstring>
+    </property>
+    <property name="IpInterface" type="s" access="read">
+      <tp:docstring>
+        The name of the device's data interface when available.  This property
+        may not refer to the actual data interface until the device has
+        successfully established a data connection, indicated by the device's
+        State becoming ACTIVATED.
       </tp:docstring>
     </property>
     <property name="Driver" type="s" access="read">

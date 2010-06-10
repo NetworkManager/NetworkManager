@@ -90,7 +90,15 @@ nm_device_interface_init (gpointer g_iface)
 							  "Interface",
 							  "Interface",
 							  NULL,
-							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_interface_install_property
+		(g_iface,
+		 g_param_spec_string (NM_DEVICE_INTERFACE_IP_IFACE,
+		                      "IP Interface",
+		                      "IP Interface",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_interface_install_property
 		(g_iface,
