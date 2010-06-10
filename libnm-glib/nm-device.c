@@ -49,6 +49,7 @@ typedef struct {
 	DBusGProxy *proxy;
 
 	char *iface;
+	char *ip_iface;
 	char *udi;
 	char *driver;
 	guint32 capabilities;
@@ -84,6 +85,7 @@ enum {
 	PROP_PRODUCT,
 	PROP_VENDOR,
 	PROP_DHCP6_CONFIG,
+	PROP_IP_INTERFACE,
 
 	LAST_PROP
 };
@@ -272,6 +274,7 @@ register_for_property_changed (NMDevice *device)
 	const NMPropertiesChangedInfo property_changed_info[] = {
 		{ NM_DEVICE_UDI,              _nm_object_demarshal_generic, &priv->udi },
 		{ NM_DEVICE_INTERFACE,        _nm_object_demarshal_generic, &priv->iface },
+		{ NM_DEVICE_IP_INTERFACE,     _nm_object_demarshal_generic, &priv->ip_iface },
 		{ NM_DEVICE_DRIVER,           _nm_object_demarshal_generic, &priv->driver },
 		{ NM_DEVICE_CAPABILITIES,     _nm_object_demarshal_generic, &priv->capabilities },
 		{ NM_DEVICE_MANAGED,          _nm_object_demarshal_generic, &priv->managed },
@@ -379,6 +382,7 @@ finalize (GObject *object)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
 
 	g_free (priv->iface);
+	g_free (priv->ip_iface);
 	g_free (priv->udi);
 	g_free (priv->driver);
 	g_free (priv->product);
@@ -401,6 +405,9 @@ get_property (GObject *object,
 		break;
 	case PROP_INTERFACE:
 		g_value_set_string (value, nm_device_get_iface (device));
+		break;
+	case PROP_IP_INTERFACE:
+		g_value_set_string (value, nm_device_get_ip_iface (device));
 		break;
 	case PROP_DRIVER:
 		g_value_set_string (value, nm_device_get_driver (device));
@@ -744,6 +751,33 @@ nm_device_get_iface (NMDevice *device)
 	}
 
 	return priv->iface;
+}
+
+/**
+ * nm_device_get_ip_iface:
+ * @device: a #NMDevice
+ *
+ * Gets the IP interface name of the #NMDevice over which IP traffic flows
+ * when the device is in the ACTIVATED state.
+ *
+ * Returns: the IP traffic interface of the device. This is the internal string
+ * used by the device, and must not be modified.
+ **/
+const char *
+nm_device_get_ip_iface (NMDevice *device)
+{
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+	if (!priv->ip_iface) {
+		priv->ip_iface = _nm_object_get_string_property (NM_OBJECT (device),
+		                                                 NM_DBUS_INTERFACE_DEVICE,
+		                                                 "IpInterface");
+	}
+
+	return priv->ip_iface;
 }
 
 /**

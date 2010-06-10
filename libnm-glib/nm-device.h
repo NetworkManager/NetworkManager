@@ -46,6 +46,7 @@ G_BEGIN_DECLS
 
 #define NM_DEVICE_UDI "udi"
 #define NM_DEVICE_INTERFACE "interface"
+#define NM_DEVICE_IP_INTERFACE "ip-interface"
 #define NM_DEVICE_DRIVER "driver"
 #define NM_DEVICE_CAPABILITIES "capabilities"
 #define NM_DEVICE_MANAGED "managed"
@@ -85,6 +86,7 @@ GType nm_device_get_type (void);
 GObject * nm_device_new (DBusGConnection *connection, const char *path);
 
 const char *  nm_device_get_iface            (NMDevice *device);
+const char *  nm_device_get_ip_iface         (NMDevice *device);
 const char *  nm_device_get_udi              (NMDevice *device);
 const char *  nm_device_get_driver           (NMDevice *device);
 guint32       nm_device_get_capabilities     (NMDevice *device);
