@@ -62,7 +62,7 @@ nm_netlink_get_default_handle (void)
 	if (def_nl_handle)
 		return def_nl_handle;
 
-	cb = nl_cb_alloc(NL_CB_VERBOSE);
+	cb = nl_cb_alloc(NL_CB_DEFAULT);
 	def_nl_handle = nl_handle_alloc_cb (cb);
 	if (!def_nl_handle) {
 		nm_warning ("couldn't allocate netlink handle.");

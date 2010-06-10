@@ -252,7 +252,7 @@ nm_netlink_monitor_open_connection (NMNetlinkMonitor *monitor,
 	priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
 	g_return_val_if_fail (priv->io_channel == NULL, FALSE);
 
-	priv->nlh_cb = nl_cb_alloc (NL_CB_VERBOSE);
+	priv->nlh_cb = nl_cb_alloc (NL_CB_DEFAULT);
 	priv->nlh = nl_handle_alloc_cb (priv->nlh_cb);
 	if (!priv->nlh) {
 		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
