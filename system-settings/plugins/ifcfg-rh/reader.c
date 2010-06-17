@@ -892,21 +892,27 @@ add_one_wep_key (shvarFile *ifcfg,
 				p++;
 			}
 			key = g_strdup (value);
-		} else if (   strncmp (value, "s:", 2)
+		} else if (   !strncmp (value, "s:", 2)
 		           && (strlen (value) == 7 || strlen (value) == 15)) {
-			/* ASCII passphrase */
+			/* ASCII key */
 			char *p = value + 2;
 
 			while (*p) {
 				if (!isascii ((int) (*p))) {
 					g_set_error (error, ifcfg_plugin_error_quark (), 0,
-					             "Invalid ASCII WEP passphrase.");
+					             "Invalid ASCII WEP key.");
 					goto out;
 				}
 				p++;
 			}
 
-			key = utils_bin2hexstr (value, strlen (value), strlen (value) * 2);
+			/* Remove 's:' prefix.
+			 * Don't convert to hex string. wpa_supplicant takes 'wep_key0' option over D-Bus as byte array
+			 * and converts it to hex string itself. Even though we convert hex string keys into a bin string
+			 * before passing to wpa_supplicant, this prevents two unnecessary conversions. And mainly,
+			 * ASCII WEP key doesn't change to HEX WEP key in UI, which could confuse users.
+			 */
+			key = g_strdup (value + 2);
 		}
 	}
 
