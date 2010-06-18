@@ -5160,17 +5160,17 @@ test_read_wired_qeth_static (void)
 	        NM_SETTING_WIRED_MAC_ADDRESS);
 
 	/* Subchannels */
-	subchannels = nm_setting_wired_get_zvm_subchannels (s_wired);
+	subchannels = nm_setting_wired_get_s390_subchannels (s_wired);
 	ASSERT (subchannels != NULL,
 	        "wired-qeth-static-verify-wired", "failed to verify %s: missing %s / %s key",
 	        TEST_IFCFG_WIRED_QETH_STATIC,
 	        NM_SETTING_WIRED_SETTING_NAME,
-	        NM_SETTING_WIRED_ZVM_SUBCHANNELS);
+	        NM_SETTING_WIRED_S390_SUBCHANNELS);
 	ASSERT (subchannels->len == 3,
 	        "wired-qeth-static-verify-wired", "failed to verify %s: invalid %s / %s key (not 3 elements)",
 	        TEST_IFCFG_WIRED_QETH_STATIC,
 	        NM_SETTING_WIRED_SETTING_NAME,
-	        NM_SETTING_WIRED_ZVM_SUBCHANNELS);
+	        NM_SETTING_WIRED_S390_SUBCHANNELS);
 
 	tmp = (const char *) g_ptr_array_index (subchannels, 0);
 	ASSERT (strcmp (tmp, expected_channel0) == 0,
@@ -8306,7 +8306,7 @@ test_write_wired_qeth_dhcp (void)
 	g_ptr_array_add (subchans, "0.0.601");
 	g_ptr_array_add (subchans, "0.0.602");
 	g_object_set (s_wired,
-	              NM_SETTING_WIRED_ZVM_SUBCHANNELS, subchans,
+	              NM_SETTING_WIRED_S390_SUBCHANNELS, subchans,
 	              NULL);
 	g_ptr_array_free (subchans, TRUE);
 

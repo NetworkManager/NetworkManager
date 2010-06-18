@@ -826,7 +826,7 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	const GByteArray *mac;
 	char *tmp;
 	guint32 mtu;
-	const GPtrArray *zvm_subchannels;
+	const GPtrArray *s390_subchannels;
 
 	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
 	if (!s_wired) {
@@ -854,17 +854,17 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	}
 
 	svSetValue (ifcfg, "SUBCHANNELS", NULL, FALSE);
-	zvm_subchannels = nm_setting_wired_get_zvm_subchannels (s_wired);
-	if (zvm_subchannels) {
-	    if (zvm_subchannels->len == 2) {
+	s390_subchannels = nm_setting_wired_get_s390_subchannels (s_wired);
+	if (s390_subchannels) {
+	    if (s390_subchannels->len == 2) {
 			tmp = g_strdup_printf ("%s,%s",
-				                   (const char *) g_ptr_array_index (zvm_subchannels, 0),
-				                   (const char *) g_ptr_array_index (zvm_subchannels, 1));
-	    } else if (zvm_subchannels->len == 3) {
+				                   (const char *) g_ptr_array_index (s390_subchannels, 0),
+				                   (const char *) g_ptr_array_index (s390_subchannels, 1));
+	    } else if (s390_subchannels->len == 3) {
 			tmp = g_strdup_printf ("%s,%s,%s",
-				                   (const char *) g_ptr_array_index (zvm_subchannels, 0),
-				                   (const char *) g_ptr_array_index (zvm_subchannels, 1),
-				                   (const char *) g_ptr_array_index (zvm_subchannels, 2));
+				                   (const char *) g_ptr_array_index (s390_subchannels, 0),
+				                   (const char *) g_ptr_array_index (s390_subchannels, 1),
+				                   (const char *) g_ptr_array_index (s390_subchannels, 2));
 		}
 		svSetValue (ifcfg, "SUBCHANNELS", tmp, FALSE);
 		g_free (tmp);

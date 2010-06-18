@@ -105,7 +105,7 @@ typedef struct {
 	gboolean	disposed;
 
 	struct ether_addr	hw_addr;
-	char *              zvm_subchannels;
+	char *              s390_subchannels;
 	gboolean			carrier;
 
 	NMNetlinkMonitor *  monitor;
@@ -1528,8 +1528,8 @@ spec_match_list (NMDevice *device, const GSList *specs)
 	matched = nm_match_spec_hwaddr (specs, hwaddr);
 	g_free (hwaddr);
 
-	if (!matched && priv->zvm_subchannels)
-		matched = nm_match_spec_zvm_subchannels (specs, priv->zvm_subchannels);
+	if (!matched && priv->s390_subchannels)
+		matched = nm_match_spec_s390_subchannels (specs, priv->s390_subchannels);
 
 	return matched;
 }

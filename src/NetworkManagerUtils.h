@@ -48,7 +48,7 @@ void nm_utils_call_dispatcher (const char *action,
                                const char *vpn_iface);
 
 gboolean nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr);
-gboolean nm_match_spec_zvm_subchannels (const GSList *specs, const char *subchannels);
+gboolean nm_match_spec_s390_subchannels (const GSList *specs, const char *subchannels);
 
 
 GHashTable *value_hash_create          (void);

@@ -2995,12 +2995,12 @@ make_wired_setting (shvarFile *ifcfg,
 				if (num_chans == 3)
 					g_ptr_array_add (array, chans[2]);
 
-				g_object_set (s_wired, NM_SETTING_WIRED_ZVM_SUBCHANNELS, array, NULL);
+				g_object_set (s_wired, NM_SETTING_WIRED_S390_SUBCHANNELS, array, NULL);
 				g_ptr_array_free (array, TRUE);
 
 				/* set the unmanaged spec too */
 				if (!nm_controlled && !*unmanaged)
-					*unmanaged = g_strdup_printf ("zvm-subchannels:%s", value);
+					*unmanaged = g_strdup_printf ("s390-subchannels:%s", value);
 			}
 			g_strfreev (chans);
 		}

@@ -554,10 +554,10 @@ parse_subchannels (const char *subchannels, guint32 *a, guint32 *b, guint32 *c)
 	return TRUE;
 }
 
-#define SUBCHAN_TAG "zvm-subchannels:"
+#define SUBCHAN_TAG "s390-subchannels:"
 
 gboolean
-nm_match_spec_zvm_subchannels (const GSList *specs, const char *subchannels)
+nm_match_spec_s390_subchannels (const GSList *specs, const char *subchannels)
 {
 	const GSList *iter;
 	guint32 a = 0, b = 0, c = 0;

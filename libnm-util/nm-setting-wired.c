@@ -76,7 +76,7 @@ typedef struct {
 	gboolean auto_negotiate;
 	GByteArray *mac_address;
 	guint32 mtu;
-	GPtrArray *zvm_subchannels;
+	GPtrArray *s390_subchannels;
 } NMSettingWiredPrivate;
 
 enum {
@@ -87,7 +87,7 @@ enum {
 	PROP_AUTO_NEGOTIATE,
 	PROP_MAC_ADDRESS,
 	PROP_MTU,
-	PROP_ZVM_SUBCHANNELS,
+	PROP_S390_SUBCHANNELS,
 
 	LAST_PROP
 };
@@ -147,11 +147,11 @@ nm_setting_wired_get_mtu (NMSettingWired *setting)
 }
 
 const GPtrArray *
-nm_setting_wired_get_zvm_subchannels (NMSettingWired *setting)
+nm_setting_wired_get_s390_subchannels (NMSettingWired *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), NULL);
 
-	return NM_SETTING_WIRED_GET_PRIVATE (setting)->zvm_subchannels;
+	return NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_subchannels;
 }
 
 static gboolean
@@ -185,11 +185,11 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->zvm_subchannels && priv->zvm_subchannels->len != 3) {
+	if (priv->s390_subchannels && priv->s390_subchannels->len != 3) {
 		g_set_error (error,
 		             NM_SETTING_WIRED_ERROR,
 		             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_WIRED_ZVM_SUBCHANNELS);
+		             NM_SETTING_WIRED_S390_SUBCHANNELS);
 		return FALSE;
 	}
 
@@ -245,12 +245,12 @@ set_property (GObject *object, guint prop_id,
 	case PROP_MTU:
 		priv->mtu = g_value_get_uint (value);
 		break;
-	case PROP_ZVM_SUBCHANNELS:
-		if (priv->zvm_subchannels) {
-			g_ptr_array_foreach (priv->zvm_subchannels, (GFunc) g_free, NULL);
-			g_ptr_array_free (priv->zvm_subchannels, TRUE);
+	case PROP_S390_SUBCHANNELS:
+		if (priv->s390_subchannels) {
+			g_ptr_array_foreach (priv->s390_subchannels, (GFunc) g_free, NULL);
+			g_ptr_array_free (priv->s390_subchannels, TRUE);
 		}
-		priv->zvm_subchannels = g_value_dup_boxed (value);
+		priv->s390_subchannels = g_value_dup_boxed (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -283,8 +283,8 @@ get_property (GObject *object, guint prop_id,
 	case PROP_MTU:
 		g_value_set_uint (value, nm_setting_wired_get_mtu (setting));
 		break;
-	case PROP_ZVM_SUBCHANNELS:
-		g_value_set_boxed (value, nm_setting_wired_get_zvm_subchannels (setting));
+	case PROP_S390_SUBCHANNELS:
+		g_value_set_boxed (value, nm_setting_wired_get_s390_subchannels (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -411,7 +411,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
-	 * NMSettingWired:zvm-subchannels:
+	 * NMSettingWired:s390-subchannels:
 	 *
 	 * Identifies specific subchannels that this network device uses for
 	 * communcation with z/VM or s390 host.  Like #NMSettingWired:mac-address
@@ -421,8 +421,8 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	 * composed of hexadecimal characters and the period (.) character.
 	 **/
 	g_object_class_install_property
-		(object_class, PROP_ZVM_SUBCHANNELS,
-		 _nm_param_spec_specialized (NM_SETTING_WIRED_ZVM_SUBCHANNELS,
+		(object_class, PROP_S390_SUBCHANNELS,
+		 _nm_param_spec_specialized (NM_SETTING_WIRED_S390_SUBCHANNELS,
 		                       "z/VM Subchannels",
 		                       "Identifies specific subchannels that this "
 		                       "network device uses for communcation with z/VM "
