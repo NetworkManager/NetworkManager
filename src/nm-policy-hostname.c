@@ -208,7 +208,10 @@ hostname_thread_is_dead (HostnameThread *ht)
 #define FALLBACK_HOSTNAME "localhost.localdomain"
 
 gboolean
-nm_policy_set_system_hostname (const char *new_hostname, const char *msg)
+nm_policy_set_system_hostname (const char *new_hostname,
+                               const char *ip4_addr,
+                               const char *ip6_addr,
+                               const char *msg)
 {
 	char old_hostname[HOST_NAME_MAX + 1];
 	int ret = 0;
@@ -250,7 +253,7 @@ nm_policy_set_system_hostname (const char *new_hostname, const char *msg)
 	 * nm_policy_hosts_update_etc_hosts() will just return and won't touch
 	 * /etc/hosts at all.
 	 */
-	if (!nm_policy_hosts_update_etc_hosts (name, FALLBACK_HOSTNAME, &changed)) {
+	if (!nm_policy_hosts_update_etc_hosts (name, FALLBACK_HOSTNAME, ip4_addr, ip6_addr, &changed)) {
 		/* error updating /etc/hosts; fallback to localhost.localdomain */
 		nm_log_info (LOGD_DNS, "Setting system hostname to '" FALLBACK_HOSTNAME "' (error updating /etc/hosts)");
 		ret = sethostname (FALLBACK_HOSTNAME, strlen (FALLBACK_HOSTNAME));

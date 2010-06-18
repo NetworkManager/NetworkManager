@@ -25,6 +25,8 @@
 
 gboolean nm_policy_hosts_update_etc_hosts (const char *hostname,
                                            const char *fallback_hostname,
+                                           const char *ip4_addr,
+                                           const char *ip6_addr,
                                            gboolean *out_changed);
 
 /* Only for testcases; don't use outside of nm-policy-hosts.c */

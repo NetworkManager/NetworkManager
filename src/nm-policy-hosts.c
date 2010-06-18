@@ -175,6 +175,8 @@ nm_policy_get_etc_hosts (const char **lines,
 gboolean
 nm_policy_hosts_update_etc_hosts (const char *hostname,
                                   const char *fallback_hostname,
+                                  const char *ip4_addr,
+                                  const char *ip6_addr,
                                   gboolean *out_changed)
 {
 	char *contents = NULL;
@@ -186,6 +188,8 @@ nm_policy_hosts_update_etc_hosts (const char *hostname,
 
 	g_return_val_if_fail (hostname != NULL, FALSE);
 	g_return_val_if_fail (out_changed != NULL, FALSE);
+
+g_message ("%s: ip4 '%s', ip6 '%s'", __func__, ip4_addr, ip6_addr);
 
 	if (!g_file_get_contents (SYSCONFDIR "/hosts", &contents, &contents_len, &error)) {
 		nm_log_warn (LOGD_DNS, "couldn't read " SYSCONFDIR "/hosts: (%d) %s",
