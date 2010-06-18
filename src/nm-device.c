@@ -388,11 +388,12 @@ void
 nm_device_set_ip_iface (NMDevice *self, const char *iface)
 {
 	NMDevicePrivate *priv;
+	char *old_ip_iface;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
-	g_free (priv->ip_iface);
+	old_ip_iface = priv->ip_iface;
 	priv->ip_ifindex = 0;
 
 	priv->ip_iface = g_strdup (iface);
@@ -402,6 +403,11 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 			nm_log_warn (LOGD_HW, "(%s): failed to look up interface index", iface);
 		}
 	}
+
+	/* Emit change notification */
+	if (g_strcmp0 (old_ip_iface, priv->ip_iface))
+		g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_IP_IFACE);
+	g_free (old_ip_iface);
 }
 
 
@@ -1019,6 +1025,7 @@ aipd_get_ip4_config (NMDevice *self, NMDeviceStateReason *reason)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMIP4Config *config = NULL;
 	NMIP4Address *addr;
+	NMIP4Route *route;
 
 	g_return_val_if_fail (priv->aipd_addr > 0, NULL);
 
@@ -1032,6 +1039,14 @@ aipd_get_ip4_config (NMDevice *self, NMDeviceStateReason *reason)
 	nm_ip4_address_set_address (addr, (guint32) priv->aipd_addr);
 	nm_ip4_address_set_prefix (addr, 16);
 	nm_ip4_config_take_address (config, addr);
+
+	/* Add a multicast route for link-local connections: destination= 224.0.0.0, netmask=240.0.0.0 */
+	route = nm_ip4_route_new ();
+	nm_ip4_route_set_dest (route, (guint32) htonl (0xE0000000L));
+	nm_ip4_route_set_prefix (route, 4);
+	nm_ip4_route_set_next_hop (route, (guint32) 0);
+	nm_ip4_route_set_metric (route, 0);
+	nm_ip4_config_take_route (config, route);
 
 	return config;	
 }
@@ -2737,6 +2752,8 @@ nm_device_deactivate_quickly (NMDevice *self)
 	dnsmasq_cleanup (self);
 	aipd_cleanup (self);
 
+	nm_device_set_ip_iface (self, NULL);
+
 	/* Turn off router advertisements until they are needed */
 	if (priv->ip6_accept_ra_path)
 		nm_utils_do_sysctl (priv->ip6_accept_ra_path, "0\n");
@@ -3378,6 +3395,8 @@ set_property (GObject *object, guint prop_id,
 			}
 		}
 		break;
+	case NM_DEVICE_INTERFACE_PROP_IP_IFACE:
+		break;
 	case NM_DEVICE_INTERFACE_PROP_DRIVER:
 		priv->driver = g_strdup (g_value_get_string (value));
 		break;
@@ -3426,6 +3445,12 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case NM_DEVICE_INTERFACE_PROP_IFACE:
 		g_value_set_string (value, priv->iface);
+		break;
+	case NM_DEVICE_INTERFACE_PROP_IP_IFACE:
+		if ((state == NM_DEVICE_STATE_ACTIVATED) || (state == NM_DEVICE_STATE_IP_CONFIG))
+			g_value_set_string (value, nm_device_get_ip_iface (self));
+		else
+			g_value_set_string (value, NULL);
 		break;
 	case NM_DEVICE_INTERFACE_PROP_IFINDEX:
 		g_value_set_int (value, priv->ifindex);
@@ -3530,6 +3555,10 @@ nm_device_class_init (NMDeviceClass *klass)
 	g_object_class_override_property (object_class,
 									  NM_DEVICE_INTERFACE_PROP_IFACE,
 									  NM_DEVICE_INTERFACE_IFACE);
+
+	g_object_class_override_property (object_class,
+	                                  NM_DEVICE_INTERFACE_PROP_IP_IFACE,
+	                                  NM_DEVICE_INTERFACE_IP_IFACE);
 
 	g_object_class_override_property (object_class,
 	                                  NM_DEVICE_INTERFACE_PROP_IFINDEX,

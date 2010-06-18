@@ -77,6 +77,7 @@
         Deactivate an active connection.
       </tp:docstring>
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_deactivate_connection"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <arg name="active_connection" type="o" direction="in">
         <tp:docstring>
           The currently active connection to deactivate.
@@ -86,6 +87,7 @@
 
     <method name="Sleep">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_sleep"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <tp:docstring>
         Control the NetworkManager daemon's sleep state.  When asleep, all
         interfaces that it manages are deactivated.  When awake, devices are
@@ -101,6 +103,7 @@
 
     <method name="Enable">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_enable"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <tp:docstring>
         Control whether overall networking is enabled or disabled.  When
         disabled, all interfaces that NM manages are deactivated.  When enabled,
@@ -115,6 +118,34 @@
         </tp:docstring>
       </arg>
     </method>
+
+    <method name="GetPermissions">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_get_permissions"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+      <tp:docstring>
+        Returns the permissions a caller has for various authenticated operations
+        that NetworkManager provides, like Enable/Disable networking, changing
+        WiFi, WWAN, and WiMAX state, etc.
+      </tp:docstring>
+      <arg name="permissions" type="a{ss}" direction="out">
+        <tp:docstring>
+          Dictionary of available permissions and results.  Each permission
+          is represented by a name (ie "org.freedesktop.NetworkManager.Foobar")
+          and each result is one of the following values: "yes" (the permission
+          is available), "auth" (the permission is available after a successful
+          authentication), or "no" (the permission is denied).  Clients may use
+          these values in the UI to indicate the ability to perform certain
+          operations.
+        </tp:docstring>
+      </arg>
+    </method>
+
+    <signal name="CheckPermissions">
+      <tp:docstring>
+        Emitted when system authorization details change, indicating that
+        clients may wish to recheck permissions with GetPermissions.
+      </tp:docstring>
+    </signal>
 
     <method name="SetLogging">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_set_logging"/>
@@ -274,6 +305,7 @@
         DEPRECATED.  Control the NetworkManager daemon's sleep state.  When asleep, all interfaces that it manages are deactivated.
       </tp:docstring>
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_legacy_sleep"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
     </method>
 
     <method name="wake">
@@ -281,6 +313,7 @@
         DEPRECATED.  Control the NetworkManager daemon's sleep state.  When awake, all known interfaces are available to be activated.
       </tp:docstring>
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_legacy_wake"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
     </method>
 
     <method name="state">

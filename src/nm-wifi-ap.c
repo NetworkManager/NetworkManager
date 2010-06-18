@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2008 Red Hat, Inc.
+ * Copyright (C) 2004 - 2010 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -604,7 +604,7 @@ nm_ap_new_fake_from_connection (NMConnection *connection)
 	channel = nm_setting_wireless_get_channel (s_wireless);
 
 	if (band && channel) {
-		guint32 freq = channel_to_freq (channel, band);
+		guint32 freq = nm_utils_wifi_channel_to_freq (channel, band);
 
 		if (freq == 0)
 			goto error;
@@ -1256,21 +1256,21 @@ nm_ap_check_compatible (NMAccessPoint *self,
 
 	channel = nm_setting_wireless_get_channel (s_wireless);
 	if (channel) {
-		guint32 ap_chan = freq_to_channel (priv->freq);
+		guint32 ap_chan = nm_utils_wifi_freq_to_channel (priv->freq);
 
 		if (channel != ap_chan)
 			return FALSE;
 	}
 
 	s_wireless_sec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection,
-															    NM_TYPE_SETTING_WIRELESS_SECURITY);
+	                                                                          NM_TYPE_SETTING_WIRELESS_SECURITY);
 
 	return nm_setting_wireless_ap_security_compatible (s_wireless,
-											 s_wireless_sec,
-											 nm_ap_get_flags (self),
-											 nm_ap_get_wpa_flags (self),
-											 nm_ap_get_rsn_flags (self),
-											 nm_ap_get_mode (self));
+	                                                   s_wireless_sec,
+	                                                   nm_ap_get_flags (self),
+	                                                   nm_ap_get_wpa_flags (self),
+	                                                   nm_ap_get_rsn_flags (self),
+	                                                   nm_ap_get_mode (self));
 }
 
 static gboolean
@@ -1362,116 +1362,5 @@ nm_ap_match_in_list (NMAccessPoint *find_ap,
 	}
 
 	return NULL;
-}
-
-
-struct cf_pair {
-	guint32 chan;
-	guint32 freq;
-};
-
-static struct cf_pair a_table[] = {
-	/* A band */
-	{  7, 5035 },
-	{  8, 5040 },
-	{  9, 5045 },
-	{ 11, 5055 },
-	{ 12, 5060 },
-	{ 16, 5080 },
-	{ 34, 5170 },
-	{ 36, 5180 },
-	{ 38, 5190 },
-	{ 40, 5200 },
-	{ 42, 5210 },
-	{ 44, 5220 },
-	{ 46, 5230 },
-	{ 48, 5240 },
-	{ 50, 5250 },
-	{ 52, 5260 },
-	{ 56, 5280 },
-	{ 58, 5290 },
-	{ 60, 5300 },
-	{ 64, 5320 },
-	{ 100, 5500 },
-	{ 104, 5520 },
-	{ 108, 5540 },
-	{ 112, 5560 },
-	{ 116, 5580 },
-	{ 120, 5600 },
-	{ 124, 5620 },
-	{ 128, 5640 },
-	{ 132, 5660 },
-	{ 136, 5680 },
-	{ 140, 5700 },
-	{ 149, 5745 },
-	{ 152, 5760 },
-	{ 153, 5765 },
-	{ 157, 5785 },
-	{ 160, 5800 },
-	{ 161, 5805 },
-	{ 165, 5825 },
-	{ 183, 4915 },
-	{ 184, 4920 },
-	{ 185, 4925 },
-	{ 187, 4935 },
-	{ 188, 4945 },
-	{ 192, 4960 },
-	{ 196, 4980 },
-	{ 0, -1 }
-};
-
-static struct cf_pair bg_table[] = {
-	/* B/G band */
-	{ 1, 2412 },
-	{ 2, 2417 },
-	{ 3, 2422 },
-	{ 4, 2427 },
-	{ 5, 2432 },
-	{ 6, 2437 },
-	{ 7, 2442 },
-	{ 8, 2447 },
-	{ 9, 2452 },
-	{ 10, 2457 },
-	{ 11, 2462 },
-	{ 12, 2467 },
-	{ 13, 2472 },
-	{ 14, 2484 },
-	{ 0, -1 }
-};
-
-guint32
-freq_to_channel (guint32 freq)
-{
-	int i = 0;
-
-	if (freq > 4900) {
-		while (a_table[i].chan && (a_table[i].freq != freq))
-			i++;
-		return a_table[i].chan;
-	} else {
-		while (bg_table[i].chan && (bg_table[i].freq != freq))
-			i++;
-		return bg_table[i].chan;
-	}
-
-	return 0;
-}
-
-guint32
-channel_to_freq (guint32 channel, const char *band)
-{
-	int i = 0;
-
-	if (!strcmp (band, "a")) {
-		while (a_table[i].chan && (a_table[i].chan != channel))
-			i++;
-		return a_table[i].freq;
-	} else if (!strcmp (band, "bg")) {
-		while (bg_table[i].chan && (bg_table[i].chan != channel))
-			i++;
-		return bg_table[i].freq;
-	}
-
-	return 0;
 }
 

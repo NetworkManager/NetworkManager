@@ -45,8 +45,11 @@ typedef enum
 #define NM_DEVICE_INTERFACE_ERROR (nm_device_interface_error_quark ())
 #define NM_TYPE_DEVICE_INTERFACE_ERROR (nm_device_interface_error_get_type ()) 
 
+#define NM_DEVICE_INTERFACE_DISCONNECT_REQUEST "disconnect-request"
+
 #define NM_DEVICE_INTERFACE_UDI              "udi"
 #define NM_DEVICE_INTERFACE_IFACE            "interface"
+#define NM_DEVICE_INTERFACE_IP_IFACE         "ip-interface"
 #define NM_DEVICE_INTERFACE_DRIVER           "driver"
 #define NM_DEVICE_INTERFACE_CAPABILITIES     "capabilities"
 #define NM_DEVICE_INTERFACE_IP4_ADDRESS      "ip4-address"
@@ -67,6 +70,7 @@ typedef enum {
 
 	NM_DEVICE_INTERFACE_PROP_UDI = NM_DEVICE_INTERFACE_PROP_FIRST,
 	NM_DEVICE_INTERFACE_PROP_IFACE,
+	NM_DEVICE_INTERFACE_PROP_IP_IFACE,
 	NM_DEVICE_INTERFACE_PROP_DRIVER,
 	NM_DEVICE_INTERFACE_PROP_CAPABILITIES,
 	NM_DEVICE_INTERFACE_PROP_IP4_ADDRESS,

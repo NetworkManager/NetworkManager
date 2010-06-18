@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <netdb.h>
 #include <ctype.h>
+#include <arpa/inet.h>
 
 #include <glib.h>
 
@@ -40,7 +41,10 @@ struct HostnameThread {
 	gboolean dead;
 	int ret;
 
-	guint32 ip4_addr;
+	struct sockaddr_in addr4;
+	struct sockaddr_in6 addr6;
+	struct sockaddr *addr;
+	size_t addr_size;
 	char hostname[NI_MAXHOST + 1];
 
 	HostnameThreadCallback callback;
@@ -53,9 +57,10 @@ hostname_thread_run_cb (gpointer user_data)
 	HostnameThread *ht = (HostnameThread *) user_data;
 	const char *hostname = NULL;
 
-	if (strlen (ht->hostname))
+	if (strlen (ht->hostname) && strcmp (ht->hostname, "."))
 		hostname = ht->hostname;
 
+	nm_log_dbg (LOGD_DNS, "(%p) calling address reverse-lookup result handler", ht);
 	(*ht->callback) (ht, ht->ret, hostname, ht->user_data);
 	return FALSE;
 }
@@ -64,8 +69,9 @@ static gpointer
 hostname_thread_worker (gpointer data)
 {
 	HostnameThread *ht = (HostnameThread *) data;
-	struct sockaddr_in addr;
 	int i;
+
+	nm_log_dbg (LOGD_DNS, "(%p) starting address reverse-lookup", ht);
 
 	g_mutex_lock (ht->lock);
 	if (ht->dead) {
@@ -74,21 +80,22 @@ hostname_thread_worker (gpointer data)
 	}
 	g_mutex_unlock (ht->lock);
 
-	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = ht->ip4_addr;
-
-	ht->ret = getnameinfo ((struct sockaddr *) &addr, sizeof (struct sockaddr_in),
-	                       ht->hostname, NI_MAXHOST, NULL, 0,
-	                       NI_NAMEREQD);
+	ht->ret = getnameinfo (ht->addr, ht->addr_size, ht->hostname, NI_MAXHOST, NULL, 0, NI_NAMEREQD);
 	if (ht->ret == 0) {
+		nm_log_dbg (LOGD_DNS, "(%p) address reverse-lookup returned hostname '%s'",
+		            ht, ht->hostname);
 		for (i = 0; i < strlen (ht->hostname); i++)
 			ht->hostname[i] = tolower (ht->hostname[i]);
+	} else {
+		nm_log_dbg (LOGD_DNS, "(%p) address reverse-lookup failed: (%d) %s",
+		            ht, ht->ret, gai_strerror (ht->ret));
 	}
 
 	/* Don't track the idle handler ID because by the time the g_idle_add()
 	 * returns the ID, the handler may already have run and freed the
 	 * HostnameThread.
 	 */
+	nm_log_dbg (LOGD_DNS, "(%p) scheduling address reverse-lookup result handler", ht);
 	g_idle_add (hostname_thread_run_cb, ht);
 	return (gpointer) TRUE;
 }
@@ -98,15 +105,21 @@ hostname_thread_free (HostnameThread *ht)
 {
 	g_return_if_fail (ht != NULL);
 
+	nm_log_dbg (LOGD_DNS, "(%p) freeing reverse-lookup thread", ht);
+
 	g_mutex_free (ht->lock);
 	memset (ht, 0, sizeof (HostnameThread));
 	g_free (ht);
 }
 
 HostnameThread *
-hostname_thread_new (guint32 ip4_addr, HostnameThreadCallback callback, gpointer user_data)
+hostname4_thread_new (guint32 ip4_addr,
+                      HostnameThreadCallback callback,
+                      gpointer user_data)
 {
 	HostnameThread *ht;
+	struct sockaddr_in addr4;
+	char buf[INET_ADDRSTRLEN + 1];
 
 	ht = g_malloc0 (sizeof (HostnameThread));
 	g_assert (ht);
@@ -114,13 +127,58 @@ hostname_thread_new (guint32 ip4_addr, HostnameThreadCallback callback, gpointer
 	ht->lock = g_mutex_new ();
 	ht->callback = callback;
 	ht->user_data = user_data;
-	ht->ip4_addr = ip4_addr;
+
+	ht->addr4.sin_family = AF_INET;
+	ht->addr4.sin_addr.s_addr = ip4_addr;
+	ht->addr = (struct sockaddr *) &ht->addr4;
+	ht->addr_size = sizeof (ht->addr4);
 
 	ht->thread = g_thread_create (hostname_thread_worker, ht, FALSE, NULL);
 	if (!ht->thread) {
 		hostname_thread_free (ht);
-		ht = NULL;
+		return NULL;
 	}
+
+	if (!inet_ntop (AF_INET, &addr4.sin_addr, buf, sizeof (buf)))
+		strcpy (buf, "(unknown)");
+
+	nm_log_dbg (LOGD_DNS, "(%p) started IPv4 reverse-lookup thread for address '%s'",
+	            ht, buf);
+
+	return ht;
+}
+
+HostnameThread *
+hostname6_thread_new (const struct in6_addr *ip6_addr,
+                      HostnameThreadCallback callback,
+                      gpointer user_data)
+{
+	HostnameThread *ht;
+	char buf[INET6_ADDRSTRLEN + 1];
+
+	ht = g_malloc0 (sizeof (HostnameThread));
+	g_assert (ht);
+
+	ht->lock = g_mutex_new ();
+	ht->callback = callback;
+	ht->user_data = user_data;
+
+	ht->addr6.sin6_family = AF_INET6;
+	ht->addr6.sin6_addr = *ip6_addr;
+	ht->addr = (struct sockaddr *) &ht->addr6;
+	ht->addr_size = sizeof (ht->addr6);
+
+	ht->thread = g_thread_create (hostname_thread_worker, ht, FALSE, NULL);
+	if (!ht->thread) {
+		hostname_thread_free (ht);
+		return NULL;
+	}
+
+	if (!inet_ntop (AF_INET, ip6_addr, buf, sizeof (buf)))
+		strcpy (buf, "(unknown)");
+
+	nm_log_dbg (LOGD_DNS, "(%p) started IPv6 reverse-lookup thread for address '%s'",
+	            ht, buf);
 
 	return ht;
 }
@@ -129,6 +187,8 @@ void
 hostname_thread_kill (HostnameThread *ht)
 {
 	g_return_if_fail (ht != NULL);
+
+	nm_log_dbg (LOGD_DNS, "(%p) stopping reverse-lookup thread", ht);
 
 	g_mutex_lock (ht->lock);
 	ht->dead = TRUE;

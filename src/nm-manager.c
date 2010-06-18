@@ -54,25 +54,33 @@
 #include "nm-secrets-provider-interface.h"
 #include "nm-settings-interface.h"
 #include "nm-settings-system-interface.h"
+#include "nm-manager-auth.h"
 
 #define NM_AUTOIP_DBUS_SERVICE "org.freedesktop.nm_avahi_autoipd"
 #define NM_AUTOIP_DBUS_IFACE   "org.freedesktop.nm_avahi_autoipd"
 
 static gboolean impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err);
 static void impl_manager_activate_connection (NMManager *manager,
-								  const char *service_name,
-								  const char *connection_path,
-								  const char *device_path,
-								  const char *specific_object_path,
-								  DBusGMethodInvocation *context);
+                                              const char *service_name,
+                                              const char *connection_path,
+                                              const char *device_path,
+                                              const char *specific_object_path,
+                                              DBusGMethodInvocation *context);
 
-static gboolean impl_manager_deactivate_connection (NMManager *manager,
-                                                    const char *connection_path,
-                                                    GError **error);
+static void impl_manager_deactivate_connection (NMManager *manager,
+                                                const char *connection_path,
+                                                DBusGMethodInvocation *context);
 
-static gboolean impl_manager_sleep (NMManager *manager, gboolean sleep, GError **err);
+static void impl_manager_sleep (NMManager *manager,
+                                gboolean do_sleep,
+                                DBusGMethodInvocation *context);
 
-static gboolean impl_manager_enable (NMManager *manager, gboolean enable, GError **err);
+static void impl_manager_enable (NMManager *manager,
+                                 gboolean enable,
+                                 DBusGMethodInvocation *context);
+
+static void impl_manager_get_permissions (NMManager *manager,
+                                          DBusGMethodInvocation *context);
 
 static gboolean impl_manager_set_logging (NMManager *manager,
                                           const char *level,
@@ -81,13 +89,11 @@ static gboolean impl_manager_set_logging (NMManager *manager,
 
 /* Legacy 0.6 compatibility interface */
 
-static gboolean impl_manager_legacy_sleep (NMManager *manager, GError **err);
-static gboolean impl_manager_legacy_wake  (NMManager *manager, GError **err);
+static void impl_manager_legacy_sleep (NMManager *manager, DBusGMethodInvocation *context);
+static void impl_manager_legacy_wake  (NMManager *manager, DBusGMethodInvocation *context);
 static gboolean impl_manager_legacy_state (NMManager *manager, guint32 *state, GError **err);
 
 #include "nm-manager-glue.h"
-
-static void user_destroy_connections (NMManager *manager);
 
 static void connection_added_default_handler (NMManager *manager,
 									 NMConnection *connection,
@@ -141,14 +147,27 @@ static NMDevice *nm_manager_get_device_by_udi (NMManager *manager, const char *u
 #define SSD_POKE_INTERVAL 120
 #define ORIGDEV_TAG "originating-device"
 
-typedef struct {
+typedef struct PendingActivation PendingActivation;
+typedef void (*PendingActivationFunc) (PendingActivation *pending,
+                                       GError *error);
+
+struct PendingActivation {
+	NMManager *manager;
+
 	DBusGMethodInvocation *context;
+	PolkitAuthority *authority;
+	PendingActivationFunc callback;
+	NMAuthChain *chain;
+
+	gboolean have_connection;
+	gboolean authorized;
+
 	NMConnectionScope scope;
 	char *connection_path;
 	char *specific_object_path;
 	char *device_path;
 	guint timeout_id;
-} PendingConnectionInfo;
+};
 
 typedef struct {
 	gboolean enabled;
@@ -174,6 +193,8 @@ typedef struct {
 
 	GHashTable *user_connections;
 	DBusGProxy *user_proxy;
+	NMAuthCallResult user_con_perm;
+	NMAuthCallResult user_net_perm;
 
 	GHashTable *system_connections;
 	NMSysconfigSettings *sys_settings;
@@ -181,7 +202,7 @@ typedef struct {
 
 	GSList *secrets_calls;
 
-	PendingConnectionInfo *pending_connection_info;
+	GSList *pending_activations;
 
 	RadioState radio_states[RFKILL_TYPE_MAX];
 	gboolean sleeping;
@@ -195,6 +216,10 @@ typedef struct {
 	guint modem_removed_id;
 
 	DBusGProxy *aipd_proxy;
+
+	PolkitAuthority *authority;
+	guint auth_changed_id;
+	GSList *auth_chains;
 
 	gboolean disposed;
 } NMManagerPrivate;
@@ -215,6 +240,8 @@ enum {
 	CONNECTION_ADDED,
 	CONNECTION_UPDATED,
 	CONNECTION_REMOVED,
+	CHECK_PERMISSIONS,
+	USER_PERMISSIONS_CHANGED,
 
 	LAST_SIGNAL
 };
@@ -560,19 +587,237 @@ emit_removed (gpointer key, gpointer value, gpointer user_data)
 }
 
 static void
-pending_connection_info_destroy (PendingConnectionInfo *info)
+nm_manager_pending_activation_remove (NMManager *self,
+                                      PendingActivation *pending)
 {
-	if (!info)
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+
+	priv->pending_activations = g_slist_remove (priv->pending_activations, pending);
+}
+
+static PendingActivation *
+pending_activation_new (NMManager *manager,
+                        PolkitAuthority *authority,
+                        DBusGMethodInvocation *context,
+                        const char *device_path,
+                        NMConnectionScope scope,
+                        const char *connection_path,
+                        const char *specific_object_path,
+                        PendingActivationFunc callback)
+{
+	PendingActivation *pending;
+
+	g_return_val_if_fail (manager != NULL, NULL);
+	g_return_val_if_fail (authority != NULL, NULL);
+	g_return_val_if_fail (context != NULL, NULL);
+	g_return_val_if_fail (device_path != NULL, NULL);
+	g_return_val_if_fail (connection_path != NULL, NULL);
+
+	pending = g_slice_new0 (PendingActivation);
+	pending->manager = manager;
+	pending->authority = authority;
+	pending->context = context;
+	pending->callback = callback;
+
+	pending->device_path = g_strdup (device_path);
+	pending->scope = scope;
+	pending->connection_path = g_strdup (connection_path);
+
+	/* "/" is special-cased to NULL to get through D-Bus */
+	if (specific_object_path && strcmp (specific_object_path, "/"))
+		pending->specific_object_path = g_strdup (specific_object_path);
+
+	return pending;
+}
+
+static void
+pending_auth_user_done (NMAuthChain *chain,
+                        GError *error,
+                        DBusGMethodInvocation *context,
+                        gpointer user_data)
+{
+	PendingActivation *pending = user_data;
+	NMAuthCallResult result;
+
+	pending->chain = NULL;
+
+	if (error) {
+		pending->callback (pending, error);
+		goto out;
+	}
+
+	/* Caller has had a chance to obtain authorization, so we only need to
+	 * check for 'yes' here.
+	 */
+	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS));
+	if (result != NM_AUTH_CALL_RESULT_YES) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             "Not authorized to use user connections.");
+		pending->callback (pending, error);
+		g_error_free (error);
+	} else
+		pending->callback (pending, NULL);
+
+out:
+	nm_auth_chain_unref (chain);
+}
+
+static void
+pending_auth_net_done (NMAuthChain *chain,
+                       GError *error,
+                       DBusGMethodInvocation *context,
+                       gpointer user_data)
+{
+	PendingActivation *pending = user_data;
+	NMAuthCallResult result;
+
+	pending->chain = NULL;
+
+	if (error) {
+		pending->callback (pending, error);
+		goto out;
+	}
+
+	/* Caller has had a chance to obtain authorization, so we only need to
+	 * check for 'yes' here.
+	 */
+	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL));
+	if (result != NM_AUTH_CALL_RESULT_YES) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             "Not authorized to control networking.");
+		pending->callback (pending, error);
+		g_error_free (error);
+		goto out;
+	}
+
+	if (pending->scope == NM_CONNECTION_SCOPE_SYSTEM) {
+		/* System connection and the user is authorized for that if they have
+		 * the network-control permission.
+		 */
+		pending->callback (pending, NULL);
+	} else {
+		g_assert (pending->scope == NM_CONNECTION_SCOPE_USER);
+
+		/* User connection, check the 'use-user-connections' permission */
+		pending->chain = nm_auth_chain_new (pending->authority,
+			                                pending->context,
+			                                NULL,
+			                                pending_auth_user_done,
+			                                pending);
+		nm_auth_chain_add_call (pending->chain,
+			                    NM_AUTH_PERMISSION_USE_USER_CONNECTIONS,
+			                    TRUE);
+	}
+
+out:
+	nm_auth_chain_unref (chain);
+}
+
+static gboolean
+check_user_authorized (NMDBusManager *dbus_mgr,
+                       DBusGProxy *user_proxy,
+                       DBusGMethodInvocation *context,
+                       NMConnectionScope scope,
+                       gulong *out_sender_uid,
+                       const char **out_error_desc)
+{
+	g_return_val_if_fail (dbus_mgr != NULL, FALSE);
+	g_return_val_if_fail (context != NULL, FALSE);
+	g_return_val_if_fail (out_sender_uid != NULL, FALSE);
+	g_return_val_if_fail (out_error_desc != NULL, FALSE);
+
+	*out_sender_uid = G_MAXULONG;
+
+	/* Get the UID */
+	if (!nm_auth_get_caller_uid (context, dbus_mgr, out_sender_uid, out_error_desc))
+		return FALSE;
+
+	/* root gets to do anything */
+	if (0 == *out_sender_uid)
+		return TRUE;
+
+	/* Check whether the UID is authorized for user connections */
+	if (   scope == NM_CONNECTION_SCOPE_USER
+	    && !nm_auth_uid_authorized (*out_sender_uid,
+	                                dbus_mgr,
+	                                user_proxy,
+	                                out_error_desc))
+		return FALSE;
+
+	return TRUE;
+}
+
+static void
+pending_activation_check_authorized (PendingActivation *pending,
+                                     NMDBusManager *dbus_mgr,
+                                     DBusGProxy *user_proxy)
+{
+	const char *error_desc = NULL;
+	gulong sender_uid = G_MAXULONG;
+	GError *error;
+
+	g_return_if_fail (pending != NULL);
+	g_return_if_fail (dbus_mgr != NULL);
+
+	if (!check_user_authorized (dbus_mgr,
+	                            user_proxy,
+	                            pending->context,
+	                            pending->scope,
+	                            &sender_uid,
+	                            &error_desc)) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		pending->callback (pending, error);
+		g_error_free (error);
 		return;
+	}
 
-	if (info->timeout_id)
-		g_source_remove (info->timeout_id);
+	/* Yay for root */
+	if (0 == sender_uid) {
+		pending->callback (pending, NULL);
+		return;
+	}
 
-	g_free (info->connection_path);
-	g_free (info->specific_object_path);
-	g_free (info->device_path);
+	/* First check if the user is allowed to use networking at all, giving
+	 * the user a chance to authenticate to gain the permission.
+	 */
+	pending->chain = nm_auth_chain_new (pending->authority,
+	                                    pending->context,
+	                                    NULL,
+	                                    pending_auth_net_done,
+	                                    pending);
+	g_assert (pending->chain);
+	nm_auth_chain_add_call (pending->chain,
+	                        NM_AUTH_PERMISSION_NETWORK_CONTROL,
+	                        TRUE);
+}
 
-	g_slice_free (PendingConnectionInfo, info);
+static void
+pending_activation_destroy (PendingActivation *pending,
+                            GError *error,
+                            const char *ac_path)
+{
+	g_return_if_fail (pending != NULL);
+
+	if (pending->timeout_id)
+		g_source_remove (pending->timeout_id);
+	g_free (pending->connection_path);
+	g_free (pending->specific_object_path);
+	g_free (pending->device_path);
+
+	if (error)
+		dbus_g_method_return_error (pending->context, error);
+	else if (ac_path)
+		dbus_g_method_return (pending->context, ac_path);
+
+	if (pending->chain)
+		nm_auth_chain_unref (pending->chain);
+
+	memset (pending, 0, sizeof (PendingActivation));
+	g_slice_free (PendingActivation, pending);
 }
 
 static GPtrArray *
@@ -632,18 +877,26 @@ remove_connection (NMManager *manager,
 /*******************************************************************/
 
 static void
-user_destroy_connections (NMManager *manager)
+user_proxy_cleanup (NMManager *self, gboolean resync_bt)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
 	if (priv->user_connections) {
-		g_hash_table_foreach (priv->user_connections, emit_removed, manager);
+		g_hash_table_foreach (priv->user_connections, emit_removed, self);
 		g_hash_table_remove_all (priv->user_connections);
 	}
+
+	priv->user_net_perm = NM_AUTH_CALL_RESULT_UNKNOWN;
+	priv->user_con_perm = NM_AUTH_CALL_RESULT_UNKNOWN;
 
 	if (priv->user_proxy) {
 		g_object_unref (priv->user_proxy);
 		priv->user_proxy = NULL;
+	}
+
+	if (resync_bt) {
+		/* Resync BT devices since they are generated from connections */
+		bluez_manager_resync_devices (self);
 	}
 }
 
@@ -926,49 +1179,171 @@ out:
 }
 
 static void
-user_new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
+user_proxy_destroyed_cb (DBusGProxy *proxy, NMManager *self)
 {
-	user_internal_new_connection_cb (proxy, path, NM_MANAGER (user_data), NULL);
+	nm_log_dbg (LOGD_USER_SET, "Removing user connections...");
+
+	/* At this point the user proxy is already being disposed */
+	NM_MANAGER_GET_PRIVATE (self)->user_proxy = NULL;
+
+	/* User Settings service disappeared; throw away user connections */
+	user_proxy_cleanup (self, TRUE);
+}
+
+typedef struct {
+	DBusGProxy *proxy;
+	char *path;
+	NMManager *manager;
+} Foo;
+
+static gboolean
+blah (gpointer user_data)
+{
+	Foo *f = user_data;
+
+	user_internal_new_connection_cb (f->proxy, f->path, f->manager, NULL);
+	g_free (f->path);
+	g_free (f);
+	return FALSE;
 }
 
 static void
-user_query_connections (NMManager *manager)
+user_new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
 {
-	NMManagerPrivate *priv;
-	DBusGProxyCall *call;
-	DBusGConnection *g_connection;
+	Foo *f = g_malloc0 (sizeof (Foo));
 
-	g_return_if_fail (NM_IS_MANAGER (manager));
+	f->proxy = proxy;
+	f->path = g_strdup (path);
+	f->manager = NM_MANAGER (user_data);
 
-	priv = NM_MANAGER_GET_PRIVATE (manager);
-	if (!priv->user_proxy) {
-		g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
-		priv->user_proxy = dbus_g_proxy_new_for_name (g_connection,
-		                                              NM_DBUS_SERVICE_USER_SETTINGS,
-		                                              NM_DBUS_PATH_SETTINGS,
-		                                              NM_DBUS_IFACE_SETTINGS);
-		if (!priv->user_proxy) {
-			nm_log_err (LOGD_USER_SET, "could not init user settings proxy");
-			return;
-		}
+	g_timeout_add_seconds (6, blah, f);
+}
+
+static gboolean
+user_settings_authorized (NMManager *self, NMAuthChain *chain)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMAuthCallResult old_net_perm = priv->user_net_perm;
+	NMAuthCallResult old_con_perm = priv->user_con_perm;
+
+	/* If the user could potentially get authorization to use networking and/or
+	 * to use user connections, the user settings service is authorized.
+	 */
+	priv->user_net_perm = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL));
+	priv->user_con_perm = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS));
+
+	nm_log_dbg (LOGD_USER_SET, "User connections permissions: net %d, con %d",
+	            priv->user_net_perm, priv->user_con_perm);
+
+	if (old_net_perm != priv->user_net_perm || old_con_perm != priv->user_con_perm)
+		g_signal_emit (self, signals[USER_PERMISSIONS_CHANGED], 0);
+
+	/* If the user can't control the network they certainly aren't allowed
+	 * to provide user connections.
+	 */
+	if (   priv->user_net_perm == NM_AUTH_CALL_RESULT_UNKNOWN
+	    || priv->user_net_perm == NM_AUTH_CALL_RESULT_NO)
+		return FALSE;
+
+	/* And of course if they aren't allowed to use user connections, they can't
+	 * provide them either.
+	 */
+	if (   priv->user_con_perm == NM_AUTH_CALL_RESULT_UNKNOWN
+	    || priv->user_con_perm == NM_AUTH_CALL_RESULT_NO)
+		return FALSE;
+
+	return TRUE;
+}
+
+static void
+user_proxy_auth_done (NMAuthChain *chain,
+                      GError *error,
+                      DBusGMethodInvocation *context,
+                      gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	gboolean authorized = FALSE;
+
+	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+
+	if (error) {
+		nm_log_warn (LOGD_USER_SET, "User connections unavailable: (%d) %s",
+		             error->code, error->message ? error->message : "(unknown)");
+	} else
+		authorized = user_settings_authorized (self, chain);
+
+	if (authorized) {
+		/* If authorized, finish setting up the user settings service proxy */
+		nm_log_dbg (LOGD_USER_SET, "Requesting user connections...");
+
+		authorized = TRUE;
 
 		dbus_g_proxy_add_signal (priv->user_proxy,
-		                         "NewConnection",
-		                         DBUS_TYPE_G_OBJECT_PATH,
-		                         G_TYPE_INVALID);
-
+			                     "NewConnection",
+			                     DBUS_TYPE_G_OBJECT_PATH,
+			                     G_TYPE_INVALID);
 		dbus_g_proxy_connect_signal (priv->user_proxy, "NewConnection",
-		                             G_CALLBACK (user_new_connection_cb),
-		                             manager,
-		                             NULL);
+			                         G_CALLBACK (user_new_connection_cb),
+			                         self,
+			                         NULL);
+
+		/* Clean up when the user settings proxy goes away */
+		g_signal_connect (priv->user_proxy, "destroy",
+			              G_CALLBACK (user_proxy_destroyed_cb),
+			              self);
+
+		/* Request user connections */
+		dbus_g_proxy_begin_call (priv->user_proxy, "ListConnections",
+			                     user_list_connections_cb,
+			                     self,
+			                     NULL,
+			                     G_TYPE_INVALID);
+	} else {
+		/* Otherwise, we ignore the user settings service completely */
+		user_proxy_cleanup (self, TRUE);
 	}
 
-	/* grab connections */
-	call = dbus_g_proxy_begin_call (priv->user_proxy, "ListConnections",
-	                                user_list_connections_cb,
-	                                manager,
-	                                NULL,
-	                                G_TYPE_INVALID);
+	nm_auth_chain_unref (chain);
+}
+
+static void
+user_proxy_init (NMManager *self)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	DBusGConnection *bus;
+	NMAuthChain *chain;
+	GError *error = NULL;
+
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (priv->user_proxy == NULL);
+
+	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
+	priv->user_proxy = dbus_g_proxy_new_for_name_owner (bus,
+	                                                    NM_DBUS_SERVICE_USER_SETTINGS,
+	                                                    NM_DBUS_PATH_SETTINGS,
+	                                                    NM_DBUS_IFACE_SETTINGS,
+	                                                    &error);
+	if (!priv->user_proxy) {
+		nm_log_err (LOGD_USER_SET, "could not init user settings proxy: (%d) %s",
+		            error ? error->code : -1,
+		            error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
+		return;
+	}
+
+	/* Kick off some PolicyKit authorization requests to figure out what
+	 * permissions this user settings service has.
+	 */
+	chain = nm_auth_chain_new (priv->authority,
+	                           NULL,
+	                           priv->user_proxy,
+	                           user_proxy_auth_done,
+	                           self);
+	priv->auth_chains = g_slist_prepend (priv->auth_chains, chain);
+
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, FALSE);
 }
 
 /*******************************************************************/
@@ -1150,14 +1525,10 @@ nm_manager_name_owner_changed (NMDBusManager *mgr,
 	gboolean new_owner_good = (new && (strlen (new) > 0));
 
 	if (strcmp (name, NM_DBUS_SERVICE_USER_SETTINGS) == 0) {
-		if (!old_owner_good && new_owner_good) {
-			/* User Settings service appeared, update stuff */
-			user_query_connections (manager);
-		} else {
-			/* User Settings service disappeared, throw them away (?) */
-			user_destroy_connections (manager);
-			bluez_manager_resync_devices (manager);
-		}
+		if (!old_owner_good && new_owner_good)
+			user_proxy_init (manager);
+		else
+			user_proxy_cleanup (manager, TRUE);
 	}
 }
 
@@ -1464,6 +1835,172 @@ manager_modem_enabled_changed (NMModem *device, gpointer user_data)
 	nm_manager_rfkill_update (NM_MANAGER (user_data), RFKILL_TYPE_WWAN);
 }
 
+static GError *
+deactivate_disconnect_check_error (GError *auth_error,
+                                   NMAuthCallResult result,
+                                   const char *detail)
+{
+	if (auth_error) {
+		nm_log_dbg (LOGD_CORE, "%s request failed: %s", detail, auth_error->message);
+		return g_error_new (NM_MANAGER_ERROR,
+		                    NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                    "%s request failed: %s",
+		                    detail, auth_error->message);
+	} else if (result != NM_AUTH_CALL_RESULT_YES) {
+		return g_error_new (NM_MANAGER_ERROR,
+		                    NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                    "Not authorized to %s user connections",
+		                    detail);
+	}
+	return NULL;
+}
+
+static void
+disconnect_user_auth_done_cb (NMAuthChain *chain,
+                              GError *error,
+                              DBusGMethodInvocation *context,
+                              gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GError *ret_error = NULL;
+	NMAuthCallResult result;
+	NMDevice *device;
+
+	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+
+	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS));
+	ret_error = deactivate_disconnect_check_error (error, result, "Disconnect");
+	if (!ret_error) {
+		/* Everything authorized, deactivate the connection */
+		device = nm_auth_chain_get_data (chain, "device");
+		if (nm_device_interface_disconnect (NM_DEVICE_INTERFACE (device), &ret_error))
+			dbus_g_method_return (context);
+	}
+
+	if (ret_error)
+		dbus_g_method_return_error (context, ret_error);
+	g_clear_error (&ret_error);
+
+	nm_auth_chain_unref (chain);
+}
+
+static void
+disconnect_net_auth_done_cb (NMAuthChain *chain,
+                             GError *error,
+                             DBusGMethodInvocation *context,
+                             gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GError *ret_error = NULL;
+	NMAuthCallResult result;
+	NMConnectionScope scope;
+	NMDevice *device;
+
+	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+
+	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL));
+	ret_error = deactivate_disconnect_check_error (error, result, "Disconnect");
+	if (ret_error) {
+		dbus_g_method_return_error (context, ret_error);
+		g_error_free (ret_error);
+		goto done;
+	}
+
+	/* If it's a system connection, we're done */
+	device = nm_auth_chain_get_data (chain, "device");
+	scope = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "scope"));
+	if (scope == NM_CONNECTION_SCOPE_USER) {
+		NMAuthChain *user_chain;
+
+		/* It's a user connection, so we need to ensure the caller is
+		 * authorized to manipulate user connections.
+		 */
+		user_chain = nm_auth_chain_new (priv->authority, context, NULL, disconnect_user_auth_done_cb, self);
+		g_assert (user_chain);
+		priv->auth_chains = g_slist_append (priv->auth_chains, user_chain);
+
+		nm_auth_chain_set_data (user_chain, "device", g_object_ref (device), g_object_unref);
+		nm_auth_chain_set_data (user_chain, "scope", GUINT_TO_POINTER (scope), NULL);
+		nm_auth_chain_add_call (user_chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS, TRUE);
+	} else {
+		if (!nm_device_interface_disconnect (NM_DEVICE_INTERFACE (device), &ret_error)) {
+			dbus_g_method_return_error (context, ret_error);
+			g_clear_error (&ret_error);
+		} else
+			dbus_g_method_return (context);
+	}
+
+done:
+	nm_auth_chain_unref (chain);
+}
+
+static void
+manager_device_disconnect_request (NMDevice *device,
+                                   DBusGMethodInvocation *context,
+                                   NMManager *self)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMActRequest *req;
+	NMConnection *connection;
+	GError *error = NULL;
+	NMConnectionScope scope;
+	gulong sender_uid = G_MAXULONG;
+	const char *error_desc = NULL;
+
+	req = nm_device_get_act_request (device);
+	if (!req) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
+		                             "This device is not active");
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+
+	/* Need to check the caller's permissions and stuff before we can
+	 * deactivate the connection.
+	 */
+	scope = nm_connection_get_scope (connection);
+	if (!check_user_authorized (priv->dbus_mgr,
+	                            priv->user_proxy,
+	                            context,
+	                            scope,
+	                            &sender_uid,
+	                            &error_desc)) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	/* Yay for root */
+	if (0 == sender_uid) {
+		if (!nm_device_interface_disconnect (NM_DEVICE_INTERFACE (device), &error)) {
+			dbus_g_method_return_error (context, error);
+			g_clear_error (&error);
+		} else
+			dbus_g_method_return (context);
+	} else {
+		NMAuthChain *chain;
+
+		/* Otherwise validate the user request */
+		chain = nm_auth_chain_new (priv->authority, context, NULL, disconnect_net_auth_done_cb, self);
+		g_assert (chain);
+		priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+
+		nm_auth_chain_set_data (chain, "device", g_object_ref (device), g_object_unref);
+		nm_auth_chain_set_data (chain, "scope", GUINT_TO_POINTER (scope), NULL);
+		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
+	}
+}
+
 static void
 add_device (NMManager *self, NMDevice *device)
 {
@@ -1489,6 +2026,10 @@ add_device (NMManager *self, NMDevice *device)
 
 	g_signal_connect (device, "state-changed",
 					  G_CALLBACK (manager_device_state_changed),
+					  self);
+
+	g_signal_connect (device, NM_DEVICE_INTERFACE_DISCONNECT_REQUEST,
+					  G_CALLBACK (manager_device_disconnect_request),
 					  self);
 
 	if (NM_IS_DEVICE_WIFI (device)) {
@@ -2240,25 +2781,21 @@ internal_activate_device (NMManager *manager,
 static gboolean
 wait_for_connection_expired (gpointer data)
 {
-	NMManager *manager = NM_MANAGER (data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	PendingConnectionInfo *info = priv->pending_connection_info;
+	PendingActivation *pending = data;
 	GError *error = NULL;
 
-	g_return_val_if_fail (info != NULL, FALSE);
+	g_return_val_if_fail (pending != NULL, FALSE);
 
-	g_set_error (&error,
-	             NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
-	             "%s", "Connection was not provided by any settings service");
-	nm_log_warn (LOGD_CORE, "connection (%d) %s failed to activate (timeout): (%d) %s",
-	             info->scope, info->connection_path, error->code, error->message);
-	dbus_g_method_return_error (info->context, error);
+	nm_log_warn (LOGD_CORE, "connection %s (scope %d) failed to activate (timeout)",
+	             pending->connection_path, pending->scope);
+
+	nm_manager_pending_activation_remove (pending->manager, pending);
+
+	error = g_error_new_literal (NM_MANAGER_ERROR,
+	                             NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
+	                             "Connection was not provided by any settings service");
+	pending_activation_destroy (pending, error, NULL);
 	g_error_free (error);
-
-	info->timeout_id = 0;
-	pending_connection_info_destroy (priv->pending_connection_info);
-	priv->pending_connection_info = NULL;
-
 	return FALSE;
 }
 
@@ -2369,229 +2906,145 @@ nm_manager_activate_connection (NMManager *manager,
 	return path;
 }
 
-static void
-connection_added_default_handler (NMManager *manager,
-						    NMConnection *connection,
-						    NMConnectionScope scope)
+static PendingActivation *
+nm_manager_pending_activation_find (NMManager *self,
+                                    const char *path,
+                                    NMConnectionScope scope)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	PendingConnectionInfo *info = priv->pending_connection_info;
-	const char *path;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+
+	for (iter = priv->pending_activations; iter; iter = g_slist_next (iter)) {
+		PendingActivation *pending = iter->data;
+
+		if (!strcmp (pending->connection_path, path) && (pending->scope == scope))
+			return pending;
+	}
+	return NULL;
+}
+
+static void
+check_pending_ready (NMManager *self, PendingActivation *pending)
+{
+	NMConnection *connection;
+	const char *path = NULL;
 	GError *error = NULL;
 
-	if (!info)
+	if (!pending->have_connection || !pending->authorized)
 		return;
 
-	if (scope != info->scope)
-		return;
+	/* Ok, we're authorized and the connection is available */
 
-	if (strcmp (info->connection_path, nm_connection_get_path (connection)))
-		return;
+	nm_manager_pending_activation_remove (self, pending);
 
-	/* Will destroy below; can't be valid during the initial activation start */
-	priv->pending_connection_info = NULL;
+	connection = nm_manager_get_connection_by_object_path (self,
+	                                                       pending->scope,
+	                                                       pending->connection_path);
+	if (!connection) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
+		                             "Connection could not be found.");
+		goto out;
+	}
 
-	path = nm_manager_activate_connection (manager,
+	path = nm_manager_activate_connection (self,
 	                                       connection,
-	                                       info->specific_object_path,
-	                                       info->device_path,
+	                                       pending->specific_object_path,
+	                                       pending->device_path,
 	                                       TRUE,
 	                                       &error);
-	if (path) {
-		dbus_g_method_return (info->context, path);
-		g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
-	} else {
-		dbus_g_method_return_error (info->context, error);
+	if (!path) {
 		nm_log_warn (LOGD_CORE, "connection (%d) %s failed to activate: (%d) %s",
-		             scope, info->connection_path, error->code, error->message);
-		g_error_free (error);
-	}
-
-	pending_connection_info_destroy (info);
-}
-
-static gboolean
-is_user_request_authorized (NMManager *manager,
-                            DBusGMethodInvocation *context,
-                            GError **error)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	DBusConnection *connection;
-	char *sender = NULL;
-	gulong sender_uid = G_MAXULONG;
-	DBusError dbus_error;
-	char *service_owner = NULL;
-	const char *service_name;
-	gulong service_uid = G_MAXULONG;
-	gboolean success = FALSE;
-
-	/* Ensure the request to activate the user connection came from the
-	 * same session as the user settings service.  FIXME: use ConsoleKit
-	 * too.
-	 */
-	if (!priv->user_proxy) {
-		g_set_error (error, NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_INVALID_SERVICE,
-		             "%s", "No user settings service available");
-		goto out;
-	}
-
-	sender = dbus_g_method_get_sender (context);
-	if (!sender) {
-		g_set_error (error, NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		             "%s", "Could not determine D-Bus requestor");
-		goto out;
-	}
-
-	connection = nm_dbus_manager_get_dbus_connection (priv->dbus_mgr);
-	if (!connection) {
-		g_set_error (error, NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		             "%s", "Could not get the D-Bus system bus");
-		goto out;
-	}
-
-	dbus_error_init (&dbus_error);
-	/* FIXME: do this async */
-	sender_uid = dbus_bus_get_unix_user (connection, sender, &dbus_error);
-	if (dbus_error_is_set (&dbus_error)) {
-		dbus_error_free (&dbus_error);
-		g_set_error (error, NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		             "%s", "Could not determine the Unix user ID of the requestor");
-		goto out;
-	}
-
-	/* Let root activate anything.
-	 * FIXME: use a PolicyKit permission instead
-	 */
-	if (0 == sender_uid) {
-		success = TRUE;
-		goto out;
-	}
-
-	service_name = dbus_g_proxy_get_bus_name (priv->user_proxy);
-	if (!service_name) {
-		g_set_error (error, NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		             "%s", "Could not determine user settings service name");
-		goto out;
-	}
-
-	service_owner = nm_dbus_manager_get_name_owner (priv->dbus_mgr, service_name, NULL);
-	if (!service_owner) {
-		g_set_error (error, NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		             "%s", "Could not determine D-Bus owner of the user settings service");
-		goto out;
-	}
-
-	dbus_error_init (&dbus_error);
-	/* FIXME: do this async */
-	service_uid = dbus_bus_get_unix_user (connection, service_owner, &dbus_error);
-	if (dbus_error_is_set (&dbus_error)) {
-		dbus_error_free (&dbus_error);
-		g_set_error (error, NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		             "%s", "Could not determine the Unix UID of the sender of the request");
-		goto out;
-	}
-
-	/* And finally, the actual UID check */
-	if (sender_uid != service_uid) {
-		g_set_error (error, NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		             "%s", "Requestor UID does not match the UID of the user settings service");
-		goto out;
-	}
-
-	success = TRUE;
+		             pending->scope, pending->connection_path, error->code, error->message);
+	} else
+		g_object_notify (G_OBJECT (pending->manager), NM_MANAGER_ACTIVE_CONNECTIONS);
 
 out:
-	g_free (sender);
-	g_free (service_owner);
-	return success;
+	pending_activation_destroy (pending, error, path);
+	g_clear_error (&error);
 }
 
 static void
-impl_manager_activate_connection (NMManager *manager,
+connection_added_default_handler (NMManager *self,
+                                  NMConnection *connection,
+                                  NMConnectionScope scope)
+{
+	PendingActivation *pending;
+
+	pending = nm_manager_pending_activation_find (self,
+	                                              nm_connection_get_path (connection),
+	                                              scope);
+	if (pending) {
+		pending->have_connection = TRUE;
+		check_pending_ready (self, pending);
+	}
+}
+
+static void
+activation_auth_done (PendingActivation *pending, GError *error)
+{
+	if (error) {
+		nm_manager_pending_activation_remove (pending->manager, pending);
+		pending_activation_destroy (pending, error, NULL);
+		return;
+	} else {
+		pending->authorized = TRUE;
+
+		/* Now that we're authorized, if the connection hasn't shown up yet,
+		 * start a timer and wait for it.
+		 */
+		if (!pending->have_connection && !pending->timeout_id)
+			pending->timeout_id = g_timeout_add_seconds (5, wait_for_connection_expired, pending);
+
+		check_pending_ready (pending->manager, pending);
+	}
+}
+
+static void
+impl_manager_activate_connection (NMManager *self,
                                   const char *service_name,
                                   const char *connection_path,
                                   const char *device_path,
                                   const char *specific_object_path,
                                   DBusGMethodInvocation *context)
 {
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMConnectionScope scope = NM_CONNECTION_SCOPE_UNKNOWN;
-	NMConnection *connection;
+	PendingActivation *pending;
 	GError *error = NULL;
-	char *real_sop = NULL;
-	char *path = NULL;
 
-	if (!strcmp (service_name, NM_DBUS_SERVICE_USER_SETTINGS)) {
-		if (!is_user_request_authorized (manager, context, &error))
-			goto err;
-
+	if (!strcmp (service_name, NM_DBUS_SERVICE_USER_SETTINGS))
 		scope = NM_CONNECTION_SCOPE_USER;
-	} else if (!strcmp (service_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS))
+	else if (!strcmp (service_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS))
 		scope = NM_CONNECTION_SCOPE_SYSTEM;
 	else {
-		g_set_error (&error,
-		             NM_MANAGER_ERROR, NM_MANAGER_ERROR_INVALID_SERVICE,
-		             "%s", "Invalid settings service name");
-		goto err;
-	}
-
-	/* "/" is special-cased to NULL to get through D-Bus */
-	if (specific_object_path && strcmp (specific_object_path, "/"))
-		real_sop = g_strdup (specific_object_path);
-
-	connection = nm_manager_get_connection_by_object_path (manager, scope, connection_path);
-	if (connection) {
-		path = (char *) nm_manager_activate_connection (manager,
-		                                                connection,
-		                                                real_sop,
-		                                                device_path,
-		                                                TRUE,
-		                                                &error);
-		if (path) {
-			dbus_g_method_return (context, path);
-			g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
-		}
-	} else {
-		PendingConnectionInfo *info;
-		NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-
-		if (priv->pending_connection_info) {
-			pending_connection_info_destroy (priv->pending_connection_info);
-			priv->pending_connection_info = NULL;
-		}
-
-		/* Don't have the connection quite yet, probably created by
-		 * the client on-the-fly.  Defer the activation until we have it
-		 */
-
-		info = g_slice_new0 (PendingConnectionInfo);
-		info->context = context;
-		info->device_path = g_strdup (device_path);
-		info->scope = scope;
-		info->connection_path = g_strdup (connection_path);
-		info->specific_object_path = g_strdup (real_sop);
-		info->timeout_id = g_timeout_add_seconds (5, wait_for_connection_expired, manager);
-
-		// FIXME: should probably be per-device, not global to the manager
-		NM_MANAGER_GET_PRIVATE (manager)->pending_connection_info = info;
-	}
-
- err:
-	if (error) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_INVALID_SERVICE,
+		                             "Invalid settings service name");
 		dbus_g_method_return_error (context, error);
 		nm_log_warn (LOGD_CORE, "connection (%d) %s failed to activate: (%d) %s",
 		             scope, connection_path, error->code, error->message);
 		g_error_free (error);
+		return;
 	}
 
-	g_free (real_sop);
+	/* Need to check the caller's permissions and stuff before we can
+	 * activate the connection.
+	 */
+	pending = pending_activation_new (self,
+	                                  priv->authority,
+	                                  context,
+	                                  device_path,
+	                                  scope,
+	                                  connection_path,
+	                                  specific_object_path,
+	                                  activation_auth_done);
+	priv->pending_activations = g_slist_prepend (priv->pending_activations, pending);
+
+	if (nm_manager_get_connection_by_object_path (self, scope, connection_path))
+		pending->have_connection = TRUE;
+
+	pending_activation_check_authorized (pending, priv->dbus_mgr, priv->user_proxy);
 }
 
 gboolean
@@ -2642,15 +3095,173 @@ done:
 	return success;
 }
 
-static gboolean
-impl_manager_deactivate_connection (NMManager *manager,
-                                    const char *connection_path,
-                                    GError **error)
+static void
+deactivate_user_auth_done_cb (NMAuthChain *chain,
+                              GError *error,
+                              DBusGMethodInvocation *context,
+                              gpointer user_data)
 {
-	return nm_manager_deactivate_connection (manager,
-	                                         connection_path,
-	                                         NM_DEVICE_STATE_REASON_USER_REQUESTED,
-	                                         error);
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GError *ret_error = NULL;
+	NMAuthCallResult result;
+
+	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+
+	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS));
+	ret_error = deactivate_disconnect_check_error (error, result, "Deactivate");
+	if (!ret_error) {
+		/* Everything authorized, deactivate the connection */
+		if (nm_manager_deactivate_connection (self,
+		                                      nm_auth_chain_get_data (chain, "path"),
+		                                      NM_DEVICE_STATE_REASON_USER_REQUESTED,
+		                                      &ret_error))
+			dbus_g_method_return (context);
+	}
+
+	if (ret_error)
+		dbus_g_method_return_error (context, ret_error);
+	g_clear_error (&ret_error);
+
+	nm_auth_chain_unref (chain);
+}
+
+static void
+deactivate_net_auth_done_cb (NMAuthChain *chain,
+                             GError *error,
+                             DBusGMethodInvocation *context,
+                             gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GError *ret_error = NULL;
+	NMAuthCallResult result;
+	const char *active_path;
+	NMConnectionScope scope;
+
+	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+
+	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL));
+	ret_error = deactivate_disconnect_check_error (error, result, "Deactivate");
+	if (ret_error) {
+		dbus_g_method_return_error (context, ret_error);
+		g_error_free (ret_error);
+		goto done;
+	}
+
+	/* If it's a system connection, we're done */
+	active_path = nm_auth_chain_get_data (chain, "path");
+	scope = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "scope"));
+	if (scope == NM_CONNECTION_SCOPE_USER) {
+		NMAuthChain *user_chain;
+
+		/* It's a user connection, so we need to ensure the caller is
+		 * authorized to manipulate user connections.
+		 */
+		user_chain = nm_auth_chain_new (priv->authority, context, NULL, deactivate_user_auth_done_cb, self);
+		g_assert (user_chain);
+		priv->auth_chains = g_slist_append (priv->auth_chains, user_chain);
+
+		nm_auth_chain_set_data (user_chain, "path", g_strdup (active_path), g_free);
+		nm_auth_chain_set_data (user_chain, "scope", GUINT_TO_POINTER (scope), NULL);
+		nm_auth_chain_add_call (user_chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS, TRUE);
+	} else {
+		if (!nm_manager_deactivate_connection (self,
+		                                       active_path,
+		                                       NM_DEVICE_STATE_REASON_USER_REQUESTED,
+		                                       &ret_error)) {
+			dbus_g_method_return_error (context, ret_error);
+			g_clear_error (&ret_error);
+		} else
+			dbus_g_method_return (context);
+	}
+
+done:
+	nm_auth_chain_unref (chain);
+}
+
+static void
+impl_manager_deactivate_connection (NMManager *self,
+                                    const char *active_path,
+                                    DBusGMethodInvocation *context)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMConnection *connection = NULL;
+	GError *error = NULL;
+	GSList *iter;
+	NMAuthChain *chain;
+	gulong sender_uid = G_MAXULONG;
+	NMConnectionScope scope;
+	const char *error_desc = NULL;
+
+	/* Check for device connections first */
+	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+		NMActRequest *req;
+		const char *req_path = NULL;
+
+		req = nm_device_get_act_request (NM_DEVICE (iter->data));
+		if (req)
+			req_path = nm_act_request_get_active_connection_path (req);
+
+		if (req_path && !strcmp (active_path, req_path)) {
+			connection = nm_act_request_get_connection (req);
+			break;
+		}
+	}
+
+	/* Maybe it's a VPN */
+	if (!connection)
+		connection = nm_vpn_manager_get_connection_for_active (priv->vpn_manager, active_path);
+
+	if (!connection) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
+		                             "The connection was not active.");
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	/* Need to check the caller's permissions and stuff before we can
+	 * deactivate the connection.
+	 */
+	scope = nm_connection_get_scope (connection);
+	if (!check_user_authorized (priv->dbus_mgr,
+	                            priv->user_proxy,
+	                            context,
+	                            scope,
+	                            &sender_uid,
+	                            &error_desc)) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	/* Yay for root */
+	if (0 == sender_uid) {
+		if (!nm_manager_deactivate_connection (self,
+		                                       active_path,
+		                                       NM_DEVICE_STATE_REASON_USER_REQUESTED,
+		                                       &error)) {
+			dbus_g_method_return_error (context, error);
+			g_clear_error (&error);
+		} else
+			dbus_g_method_return (context);
+
+		return;
+	}
+
+	/* Otherwise validate the user request */
+	chain = nm_auth_chain_new (priv->authority, context, NULL, deactivate_net_auth_done_cb, self);
+	g_assert (chain);
+	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+
+	nm_auth_chain_set_data (chain, "path", g_strdup (active_path), g_free);
+	nm_auth_chain_set_data (chain, "scope", GUINT_TO_POINTER (scope), NULL);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
 }
 
 static void
@@ -2719,54 +3330,139 @@ do_sleep_wake (NMManager *self)
 }
 
 static gboolean
-impl_manager_sleep (NMManager *self, gboolean sleep, GError **error)
+return_no_pk_error (PolkitAuthority *authority,
+                    const char *detail,
+                    DBusGMethodInvocation *context)
 {
-	NMManagerPrivate *priv;
+	GError *error;
 
-	g_return_val_if_fail (NM_IS_MANAGER (self), FALSE);
-
-	priv = NM_MANAGER_GET_PRIVATE (self);
-
-	if (priv->sleeping == sleep) {
-		g_set_error (error,
-		             NM_MANAGER_ERROR, NM_MANAGER_ERROR_ALREADY_ASLEEP_OR_AWAKE,
-		             "Already %s", sleep ? "asleep" : "awake");
+	if (!authority) {
+		error = g_error_new (NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                     "%s request failed: PolicyKit not initialized",
+		                     detail);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
 		return FALSE;
 	}
+	return TRUE;
+}
+
+static void
+_internal_sleep (NMManager *self, gboolean do_sleep)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
 	nm_log_info (LOGD_SUSPEND, "%s requested (sleeping: %s  enabled: %s)",
-	             sleep ? "sleep" : "wake",
+	             do_sleep ? "sleep" : "wake",
 	             priv->sleeping ? "yes" : "no",
 	             priv->net_enabled ? "yes" : "no");
 
-	priv->sleeping = sleep;
+	priv->sleeping = do_sleep;
 
 	do_sleep_wake (self);
 
 	g_object_notify (G_OBJECT (self), NM_MANAGER_SLEEPING);
-	return TRUE;
 }
 
-static gboolean
-impl_manager_enable (NMManager *self, gboolean enable, GError **error)
+static void
+sleep_auth_done_cb (NMAuthChain *chain,
+                    GError *error,
+                    DBusGMethodInvocation *context,
+                    gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GError *ret_error;
+	NMAuthCallResult result;
+	gboolean do_sleep;
+
+	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+
+	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_SLEEP_WAKE));
+	if (error) {
+		nm_log_dbg (LOGD_CORE, "Sleep/wake request failed: %s", error->message);
+		ret_error = g_error_new (NM_MANAGER_ERROR,
+		                         NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                         "Sleep/wake request failed: %s",
+		                         error->message);
+		dbus_g_method_return_error (context, ret_error);
+		g_error_free (ret_error);
+	} else if (result != NM_AUTH_CALL_RESULT_YES) {
+		ret_error = g_error_new_literal (NM_MANAGER_ERROR,
+		                                 NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                                 "Not authorized to sleep/wake");
+		dbus_g_method_return_error (context, ret_error);
+		g_error_free (ret_error);
+	} else {
+		/* Auth success */
+		do_sleep = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "sleep"));
+		_internal_sleep (self, do_sleep);
+		dbus_g_method_return (context);
+	}
+
+	nm_auth_chain_unref (chain);
+}
+
+static void
+impl_manager_sleep (NMManager *self,
+                    gboolean do_sleep,
+                    DBusGMethodInvocation *context)
 {
 	NMManagerPrivate *priv;
+	NMAuthChain *chain;
+	GError *error = NULL;
+	gulong sender_uid = G_MAXULONG;
+	const char *error_desc = NULL;
 
-	g_return_val_if_fail (NM_IS_MANAGER (self), FALSE);
+	g_return_if_fail (NM_IS_MANAGER (self));
 
 	priv = NM_MANAGER_GET_PRIVATE (self);
 
-	if (priv->net_enabled == enable) {
-		g_set_error (error,
-		             NM_MANAGER_ERROR, NM_MANAGER_ERROR_ALREADY_ENABLED_OR_DISABLED,
-		             "Already %s", enable ? "enabled" : "disabled");
-		return FALSE;
+	if (priv->sleeping == do_sleep) {
+		error = g_error_new (NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_ALREADY_ASLEEP_OR_AWAKE,
+		                     "Already %s", do_sleep ? "asleep" : "awake");
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
 	}
+
+	if (!nm_auth_get_caller_uid (context, priv->dbus_mgr, &sender_uid, &error_desc)) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	/* Root doesn't need PK authentication */
+	if (0 == sender_uid) {
+		_internal_sleep (self, do_sleep);
+		dbus_g_method_return (context);
+		return;
+	}
+
+	if (!return_no_pk_error (priv->authority, "Sleep/wake", context))
+		return;
+
+	chain = nm_auth_chain_new (priv->authority, context, NULL, sleep_auth_done_cb, self);
+	g_assert (chain);
+	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+
+	nm_auth_chain_set_data (chain, "sleep", GUINT_TO_POINTER (do_sleep), NULL);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SLEEP_WAKE, TRUE);
+}
+
+static void
+_internal_enable (NMManager *self, gboolean enable)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GError *err = NULL;
 
 	/* Update "NetworkingEnabled" key in state file */
 	if (priv->state_file) {
-		GError *err = NULL;
-
 		if (!write_value_to_state_file (priv->state_file,
 		                                "main", "NetworkingEnabled",
 		                                G_TYPE_BOOLEAN, (gpointer) &enable,
@@ -2789,21 +3485,245 @@ impl_manager_enable (NMManager *self, gboolean enable, GError **error)
 	do_sleep_wake (self);
 
 	g_object_notify (G_OBJECT (self), NM_MANAGER_NETWORKING_ENABLED);
-	return TRUE;
+}
+
+static void
+enable_net_done_cb (NMAuthChain *chain,
+                    GError *error,
+                    DBusGMethodInvocation *context,
+                    gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GError *ret_error;
+	NMAuthCallResult result;
+	gboolean enable;
+
+	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+
+	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK));
+	if (error) {
+		nm_log_dbg (LOGD_CORE, "Enable request failed: %s", error->message);
+		ret_error = g_error_new (NM_MANAGER_ERROR,
+		                         NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                         "Enable request failed: %s",
+		                         error->message);
+		dbus_g_method_return_error (context, ret_error);
+		g_error_free (ret_error);
+	} else if (result != NM_AUTH_CALL_RESULT_YES) {
+		ret_error = g_error_new_literal (NM_MANAGER_ERROR,
+		                                 NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                                 "Not authorized to enable/disable networking");
+		dbus_g_method_return_error (context, ret_error);
+		g_error_free (ret_error);
+	} else {
+		/* Auth success */
+		enable = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "enable"));
+		_internal_enable (self, enable);
+		dbus_g_method_return (context);
+	}
+
+	nm_auth_chain_unref (chain);
+}
+
+static void
+impl_manager_enable (NMManager *self,
+                     gboolean enable,
+                     DBusGMethodInvocation *context)
+{
+	NMManagerPrivate *priv;
+	NMAuthChain *chain;
+	GError *error = NULL;
+	gulong sender_uid = G_MAXULONG;
+	const char *error_desc = NULL;
+
+	g_return_if_fail (NM_IS_MANAGER (self));
+
+	priv = NM_MANAGER_GET_PRIVATE (self);
+
+	if (priv->net_enabled == enable) {
+		error = g_error_new (NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_ALREADY_ENABLED_OR_DISABLED,
+		                     "Already %s", enable ? "enabled" : "disabled");
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	if (!nm_auth_get_caller_uid (context, priv->dbus_mgr, &sender_uid, &error_desc)) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	/* Root doesn't need PK authentication */
+	if (0 == sender_uid) {
+		_internal_enable (self, enable);
+		dbus_g_method_return (context);
+		return;
+	}
+
+	if (!return_no_pk_error (priv->authority, "Enable/disable", context))
+		return;
+
+	chain = nm_auth_chain_new (priv->authority, context, NULL, enable_net_done_cb, self);
+	g_assert (chain);
+	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+
+	nm_auth_chain_set_data (chain, "enable", GUINT_TO_POINTER (enable), NULL);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK, TRUE);
+}
+
+/* Permissions */
+
+static void
+user_proxy_permissions_changed_done (NMAuthChain *chain,
+                                     GError *error,
+                                     DBusGMethodInvocation *context,
+                                     gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	gboolean authorized = FALSE;
+
+	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+
+	if (error) {
+		nm_log_warn (LOGD_USER_SET, "User connections unavailable: (%d) %s",
+		             error->code, error->message ? error->message : "(unknown)");
+	} else
+		authorized = user_settings_authorized (self, chain);
+
+	if (authorized) {
+		/* User connections are authorized */
+		if (!priv->user_proxy)
+			user_proxy_init (self);
+	} else
+		user_proxy_cleanup (self, TRUE);
+
+	nm_auth_chain_unref (chain);
+}
+
+static void
+pk_authority_changed_cb (GObject *object, gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMAuthChain *chain;
+
+	/* If the user settings service wasn't previously authorized, we wouldn't
+	 * care about it.  But it might be authorized now, so lets check.
+	 */
+	if (!priv->user_proxy)
+		user_proxy_init (self);
+	else {
+		/* Otherwise the user settings permissions could have changed so we
+		 * need to recheck them.
+		 */
+		chain = nm_auth_chain_new (priv->authority,
+		                           NULL,
+		                           priv->user_proxy,
+		                           user_proxy_permissions_changed_done,
+		                           self);
+		priv->auth_chains = g_slist_prepend (priv->auth_chains, chain);
+
+		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS, FALSE);
+		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, FALSE);
+	}
+
+	/* Let clients know they should re-check their authorization */
+	g_signal_emit (NM_MANAGER (user_data), signals[CHECK_PERMISSIONS], 0);
+}
+
+static void
+get_perm_add_result (NMAuthChain *chain, GHashTable *results, const char *permission)
+{
+	NMAuthCallResult result;
+
+	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, permission));
+	if (result == NM_AUTH_CALL_RESULT_YES)
+		g_hash_table_insert (results, (char *) permission, "yes");
+	else if (result == NM_AUTH_CALL_RESULT_NO)
+		g_hash_table_insert (results, (char *) permission, "no");
+	else if (result == NM_AUTH_CALL_RESULT_AUTH)
+		g_hash_table_insert (results, (char *) permission, "auth");
+	else {
+		nm_log_dbg (LOGD_CORE, "unknown auth chain result %d", result);
+	}
+}
+
+static void
+get_permissions_done_cb (NMAuthChain *chain,
+                         GError *error,
+                         DBusGMethodInvocation *context,
+                         gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GError *ret_error;
+	GHashTable *results;
+
+	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+	if (error) {
+		nm_log_dbg (LOGD_CORE, "Permissions request failed: %s", error->message);
+		ret_error = g_error_new (NM_MANAGER_ERROR,
+		                         NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                         "Permissions request failed: %s",
+		                         error->message);
+		dbus_g_method_return_error (context, ret_error);
+		g_error_free (ret_error);
+	} else {
+		results = g_hash_table_new (g_str_hash, g_str_equal);
+		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK);
+		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_SLEEP_WAKE);
+		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI);
+		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN);
+		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS);
+		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_NETWORK_CONTROL);
+		dbus_g_method_return (context, results);
+		g_hash_table_destroy (results);
+	}
+
+	nm_auth_chain_unref (chain);
+}
+
+static void
+impl_manager_get_permissions (NMManager *self,
+                              DBusGMethodInvocation *context)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMAuthChain *chain;
+
+	if (!return_no_pk_error (priv->authority, "Permissions", context))
+		return;
+
+	chain = nm_auth_chain_new (priv->authority, context, NULL, get_permissions_done_cb, self);
+	g_assert (chain);
+	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SLEEP_WAKE, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, FALSE);
 }
 
 /* Legacy 0.6 compatibility interface */
 
-static gboolean
-impl_manager_legacy_sleep (NMManager *manager, GError **error)
+static void
+impl_manager_legacy_sleep (NMManager *manager, DBusGMethodInvocation *context)
 {
-	return impl_manager_sleep (manager, TRUE, error);
+	return impl_manager_sleep (manager, TRUE, context);
 }
 
-static gboolean
-impl_manager_legacy_wake  (NMManager *manager, GError **error)
+static void
+impl_manager_legacy_wake  (NMManager *manager, DBusGMethodInvocation *context)
 {
-	return impl_manager_sleep (manager, FALSE, error);
+	return impl_manager_sleep (manager, FALSE, context);
 }
 
 static gboolean
@@ -2835,6 +3755,15 @@ impl_manager_set_logging (NMManager *manager,
 }
 
 /* Connections */
+
+gboolean
+nm_manager_auto_user_connections_allowed (NMManager *self)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+
+	return    priv->user_net_perm == NM_AUTH_CALL_RESULT_YES
+	       && priv->user_con_perm == NM_AUTH_CALL_RESULT_YES;
+}
 
 static int
 connection_sort (gconstpointer pa, gconstpointer pb)
@@ -2972,7 +3901,7 @@ nm_manager_start (NMManager *self)
 	 * bus in nm_manager_name_owner_changed().
 	 */
 	if (nm_dbus_manager_name_has_owner (priv->dbus_mgr, NM_DBUS_SERVICE_USER_SETTINGS))
-		user_query_connections (self);
+		user_proxy_init (self);
 
 	nm_udev_manager_query_devices (priv->udev_mgr);
 	bluez_manager_resync_devices (self);
@@ -3068,6 +3997,7 @@ dispose (GObject *object)
 {
 	NMManager *manager = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	GSList *iter;
 
 	if (priv->disposed) {
 		G_OBJECT_CLASS (nm_manager_parent_class)->dispose (object);
@@ -3075,8 +4005,14 @@ dispose (GObject *object)
 	}
 	priv->disposed = TRUE;
 
-	pending_connection_info_destroy (priv->pending_connection_info);
-	priv->pending_connection_info = NULL;
+	for (iter = priv->pending_activations; iter; iter = g_slist_next (iter))
+		pending_activation_destroy ((PendingActivation *) iter->data, NULL, NULL);
+	g_slist_free (priv->pending_activations);
+	priv->pending_activations = NULL;
+
+	g_slist_foreach (priv->auth_chains, (GFunc) nm_auth_chain_unref, NULL);
+	g_slist_free (priv->auth_chains);
+	g_object_unref (priv->authority);
 
 	while (g_slist_length (priv->secrets_calls))
 		free_get_secrets_info ((GetSecretsInfo *) priv->secrets_calls->data);
@@ -3089,7 +4025,7 @@ dispose (GObject *object)
 		                                   FALSE);
 	}
 
-	user_destroy_connections (manager);
+	user_proxy_cleanup (manager, FALSE);
 	g_hash_table_destroy (priv->user_connections);
 	priv->user_connections = NULL;
 
@@ -3286,6 +4222,15 @@ nm_manager_init (NMManager *manager)
 		                             NULL);
 	} else
 		nm_log_warn (LOGD_AUTOIP4, "could not initialize avahi-autoipd D-Bus proxy");
+
+	priv->authority = polkit_authority_get ();
+	if (priv->authority) {
+		priv->auth_changed_id = g_signal_connect (priv->authority,
+		                                          "changed",
+		                                          G_CALLBACK (pk_authority_changed_cb),
+		                                          manager);
+	} else
+		nm_log_warn (LOGD_CORE, "failed to create PolicyKit authority.");
 }
 
 static void
@@ -3444,6 +4389,22 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		              NULL, NULL,
 		              _nm_marshal_VOID__OBJECT_UINT,
 		              G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_UINT);
+
+	signals[CHECK_PERMISSIONS] =
+		g_signal_new ("check-permissions",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL,
+		              g_cclosure_marshal_VOID__VOID,
+		              G_TYPE_NONE, 0);
+
+	signals[USER_PERMISSIONS_CHANGED] =
+		g_signal_new ("user-permissions-changed",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL,
+		              g_cclosure_marshal_VOID__VOID,
+		              G_TYPE_NONE, 0);
 
 	/* StateChange is DEPRECATED */
 	signals[STATE_CHANGE] =
