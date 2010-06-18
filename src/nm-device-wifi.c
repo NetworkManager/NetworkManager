@@ -966,8 +966,10 @@ periodic_update (NMDeviceWifi *self)
 		struct ether_addr bssid = { {0x0, 0x0, 0x0, 0x0, 0x0, 0x0} };
 
 		nm_device_wifi_get_bssid (self, &bssid);
-		/* 0x02 is the first byte of IBSS BSSIDs */
-		if (   (bssid.ether_addr_octet[0] == 0x02)
+		/* 0x02 means "locally administered" and should be OR-ed into
+		 * the first byte of IBSS BSSIDs.
+		 */
+		if (   (bssid.ether_addr_octet[0] & 0x02)
 		    && nm_ethernet_address_is_valid (&bssid))
 			nm_ap_set_address (priv->current_ap, &bssid);
 	}
