@@ -2872,10 +2872,9 @@ test_read_wifi_wep_40_ascii (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	char *unmanaged = NULL;
+	gboolean unmanaged = FALSE;
 	char *keyfile = NULL;
 	char *routefile = NULL;
-	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -2885,11 +2884,9 @@ test_read_wifi_wep_40_ascii (void)
 	connection = connection_from_file (TEST_IFCFG_WIFI_WEP_40_ASCII,
 	                                   NULL,
 	                                   TYPE_WIRELESS,
-	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
-	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -3005,10 +3002,9 @@ test_read_wifi_wep_104_ascii (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	char *unmanaged = NULL;
+	gboolean unmanaged = FALSE;
 	char *keyfile = NULL;
 	char *routefile = NULL;
-	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
@@ -3018,11 +3014,9 @@ test_read_wifi_wep_104_ascii (void)
 	connection = connection_from_file (TEST_IFCFG_WIFI_WEP_104_ASCII,
 	                                   NULL,
 	                                   TYPE_WIRELESS,
-	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &routefile,
-	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
@@ -5684,15 +5678,13 @@ test_write_wifi_wep_40_ascii (void)
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
+	gboolean unmanaged = FALSE;
 	char *keyfile = NULL;
 	char *routefile = NULL;
-	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
 	const unsigned char ssid_data[] = "blahblah40";
@@ -5762,15 +5754,6 @@ test_write_wifi_wep_40_ascii (void)
 
 	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
-	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
-	ASSERT (s_ip6 != NULL,
-	        "wifi-wep-40-ascii-write", "failed to allocate new %s setting",
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
-	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
-
-	g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
-
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        "wifi-wep-40-ascii-write", "failed to verify connection: %s",
 	        (error && error->message) ? error->message : "(unknown)");
@@ -5791,11 +5774,9 @@ test_write_wifi_wep_40_ascii (void)
 	reread = connection_from_file (testfile,
 	                               NULL,
 	                               TYPE_WIRELESS,
-	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
 	                               &routefile,
-	                               &route6file,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
@@ -5835,15 +5816,13 @@ test_write_wifi_wep_104_ascii (void)
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
+	gboolean unmanaged = FALSE;
 	char *keyfile = NULL;
 	char *routefile = NULL;
-	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
 	const unsigned char ssid_data[] = "blahblah104";
@@ -5913,15 +5892,6 @@ test_write_wifi_wep_104_ascii (void)
 
 	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
-	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
-	ASSERT (s_ip6 != NULL,
-	        "wifi-wep-104-ascii-write", "failed to allocate new %s setting",
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
-	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
-
-	g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
-
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        "wifi-wep-104-ascii-write", "failed to verify connection: %s",
 	        (error && error->message) ? error->message : "(unknown)");
@@ -5942,11 +5912,9 @@ test_write_wifi_wep_104_ascii (void)
 	reread = connection_from_file (testfile,
 	                               NULL,
 	                               TYPE_WIRELESS,
-	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
 	                               &routefile,
-	                               &route6file,
 	                               &error,
 	                               &ignore_error);
 	unlink (testfile);
