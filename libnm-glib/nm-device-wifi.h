@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2010 Red Hat, Inc.
  */
 
 #ifndef NM_DEVICE_WIFI_H
@@ -37,6 +37,7 @@ G_BEGIN_DECLS
 #define NM_DEVICE_WIFI_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_WIFI, NMDeviceWifiClass))
 
 #define NM_DEVICE_WIFI_HW_ADDRESS          "hw-address"
+#define NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS "perm-hw-address"
 #define NM_DEVICE_WIFI_MODE                "mode"
 #define NM_DEVICE_WIFI_BITRATE             "bitrate"
 #define NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT "active-access-point"
@@ -67,6 +68,7 @@ GType nm_device_wifi_get_type (void);
 GObject *nm_device_wifi_new (DBusGConnection *connection, const char *path);
 
 const char *    nm_device_wifi_get_hw_address           (NMDeviceWifi *device);
+const char *    nm_device_wifi_get_permanent_hw_address (NMDeviceWifi *device);
 NM80211Mode     nm_device_wifi_get_mode                 (NMDeviceWifi *device);
 guint32         nm_device_wifi_get_bitrate              (NMDeviceWifi *device);
 guint32         nm_device_wifi_get_capabilities         (NMDeviceWifi *device);

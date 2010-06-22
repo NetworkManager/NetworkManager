@@ -288,6 +288,7 @@ global:
 	nm_setting_wired_get_duplex;
 	nm_setting_wired_get_auto_negotiate;
 	nm_setting_wired_get_mac_address;
+	nm_setting_wired_get_cloned_mac_address;
 	nm_setting_wired_get_mtu;
 	nm_setting_wireless_ap_security_compatible;
 	nm_setting_wireless_error_get_type;
@@ -302,6 +303,7 @@ global:
 	nm_setting_wireless_get_rate;
 	nm_setting_wireless_get_tx_power;
 	nm_setting_wireless_get_mac_address;
+	nm_setting_wireless_get_cloned_mac_address;
 	nm_setting_wireless_get_mtu;
 	nm_setting_wireless_get_security;
 	nm_setting_wireless_add_seen_bssid;

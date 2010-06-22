@@ -704,7 +704,7 @@ write_wireless_setting (NMConnection *connection,
 {
 	NMSettingWireless *s_wireless;
 	char *tmp, *tmp2;
-	const GByteArray *ssid, *mac, *bssid;
+	const GByteArray *ssid, *device_mac, *cloned_mac, *bssid;
 	const char *mode;
 	char buf[33];
 	guint32 mtu, chan, i;
@@ -718,12 +718,22 @@ write_wireless_setting (NMConnection *connection,
 	}
 
 	svSetValue (ifcfg, "HWADDR", NULL, FALSE);
-	mac = nm_setting_wireless_get_mac_address (s_wireless);
-	if (mac) {
+	device_mac = nm_setting_wireless_get_mac_address (s_wireless);
+	if (device_mac) {
 		tmp = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
-		                       mac->data[0], mac->data[1], mac->data[2],
-		                       mac->data[3], mac->data[4], mac->data[5]);
+		                       device_mac->data[0], device_mac->data[1], device_mac->data[2],
+		                       device_mac->data[3], device_mac->data[4], device_mac->data[5]);
 		svSetValue (ifcfg, "HWADDR", tmp, FALSE);
+		g_free (tmp);
+	}
+
+	svSetValue (ifcfg, "MACADDR", NULL, FALSE);
+	cloned_mac = nm_setting_wireless_get_cloned_mac_address (s_wireless);
+	if (cloned_mac) {
+		tmp = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
+		                       cloned_mac->data[0], cloned_mac->data[1], cloned_mac->data[2],
+		                       cloned_mac->data[3], cloned_mac->data[4], cloned_mac->data[5]);
+		svSetValue (ifcfg, "MACADDR", tmp, FALSE);
 		g_free (tmp);
 	}
 
@@ -823,7 +833,7 @@ static gboolean
 write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 {
 	NMSettingWired *s_wired;
-	const GByteArray *mac;
+	const GByteArray *device_mac, *cloned_mac;
 	char *tmp;
 	guint32 mtu;
 
@@ -834,12 +844,21 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		return FALSE;
 	}
 
-	mac = nm_setting_wired_get_mac_address (s_wired);
-	if (mac) {
+	device_mac = nm_setting_wired_get_mac_address (s_wired);
+	if (device_mac) {
 		tmp = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
-		                       mac->data[0], mac->data[1], mac->data[2],
-		                       mac->data[3], mac->data[4], mac->data[5]);
+		                       device_mac->data[0], device_mac->data[1], device_mac->data[2],
+		                       device_mac->data[3], device_mac->data[4], device_mac->data[5]);
 		svSetValue (ifcfg, "HWADDR", tmp, FALSE);
+		g_free (tmp);
+	}
+
+	cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
+	if (cloned_mac) {
+		tmp = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
+		                       cloned_mac->data[0], cloned_mac->data[1], cloned_mac->data[2],
+		                       cloned_mac->data[3], cloned_mac->data[4], cloned_mac->data[5]);
+		svSetValue (ifcfg, "MACADDR", tmp, FALSE);
 		g_free (tmp);
 	}
 

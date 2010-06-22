@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2008 Red Hat, Inc.
+ * Copyright (C) 2004 - 2010 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
@@ -24,6 +24,8 @@
 
 #include <netlink/route/rtnl.h>
 #include <netlink/route/route.h>
+
+#include <net/ethernet.h>
 
 #include <glib.h>
 #include "nm-device.h"
@@ -80,5 +82,6 @@ gboolean        nm_system_device_is_up (NMDevice *device);
 gboolean        nm_system_device_is_up_with_iface (const char *iface);
 
 gboolean		nm_system_device_set_mtu (const char *iface, guint32 mtu);
+gboolean		nm_system_device_set_mac (const char *iface, const struct ether_addr *mac);
 
 #endif

@@ -713,7 +713,7 @@ check_ethernet_compatible (NMDeviceEthernet *device, NMConnection *connection, G
 		const char *device_mac_str;
 		struct ether_addr *device_mac;
 
-		device_mac_str = nm_device_ethernet_get_hw_address (device);
+		device_mac_str = nm_device_ethernet_get_permanent_hw_address (device);
 		device_mac = ether_aton (device_mac_str);
 		if (!device_mac) {
 			g_set_error (error, 0, 0, "Invalid device MAC address.");
@@ -762,7 +762,7 @@ check_wifi_compatible (NMDeviceWifi *device, NMConnection *connection, GError **
 		const char *device_mac_str;
 		struct ether_addr *device_mac;
 
-		device_mac_str = nm_device_wifi_get_hw_address (device);
+		device_mac_str = nm_device_wifi_get_permanent_hw_address (device);
 		device_mac = ether_aton (device_mac_str);
 		if (!device_mac) {
 			g_set_error (error, 0, 0, "Invalid device MAC address.");
