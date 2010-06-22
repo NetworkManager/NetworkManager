@@ -24,7 +24,8 @@
 #include <glib.h>
 
 gboolean nm_policy_hosts_update_etc_hosts (const char *hostname,
-                                           const char *fallback_hostname,
+                                           const char *fallback_hostname4,
+                                           const char *fallback_hostname6,
                                            const char *ip4_addr,
                                            const char *ip6_addr,
                                            gboolean *out_changed);
@@ -35,7 +36,10 @@ gboolean nm_policy_hosts_find_token (const char *line, const char *token);
 GString *nm_policy_get_etc_hosts (const char **lines,
                                   gsize existing_len,
                                   const char *hostname,
-                                  const char *fallback_hostname,
+                                  const char *fallback_hostname4,
+                                  const char *fallback_hostname6,
+                                  const char *ip4_addr,
+                                  const char *ip6_addr,
                                   GError **error);
 
 #endif /* NM_POLICY_HOSTS_H */

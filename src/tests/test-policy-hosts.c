@@ -23,12 +23,15 @@
 
 #include "nm-policy-hosts.h"
 
-#define FALLBACK_HOSTNAME "localhost.localdomain"
+#define FALLBACK_HOSTNAME4 "localhost.localdomain"
+#define FALLBACK_HOSTNAME6 "localhost6.localdomain6"
 
 static void
 test_generic (const char *before,
               const char *after,
               const char *hostname,
+              const char *ip4_addr,
+              const char *ip6_addr,
               gboolean expect_error)
 {
 	char **lines;
@@ -40,7 +43,10 @@ test_generic (const char *before,
 	newc = nm_policy_get_etc_hosts ((const char **) lines,
 	                                strlen (before),
 	                                hostname,
-	                                FALLBACK_HOSTNAME,
+	                                FALLBACK_HOSTNAME4,
+	                                FALLBACK_HOSTNAME6,
+	                                ip4_addr,
+	                                ip6_addr,
 	                                &error);
 	g_strfreev (lines);
 
@@ -50,6 +56,14 @@ test_generic (const char *before,
 		g_clear_error (&error);
 	} else if (after == NULL) {
 		/* No change to /etc/hosts required */
+#if 0
+		if (newc != NULL) {
+			g_message ("\n- NEW ---------------------------------\n"
+			           "%s"
+			           "- EXPECTED NONE -------------------------\n",
+			           newc->str);
+		}
+#endif
 		g_assert (newc == NULL);
 		g_assert (error == NULL);
 	} else {
@@ -57,10 +71,12 @@ test_generic (const char *before,
 		g_assert (error == NULL);
 
 #if 0
-		g_message ("\n--------------------------------------\n"
+		g_message ("\n- NEW ---------------------------------\n"
 		           "%s"
-		           "--------------------------------------",
-		           newc->str);
+		           "- EXPECTED ------------------------------\n"
+		           "%s"
+		           "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n",
+		           newc->str, after);
 #endif
 		g_assert (strlen (newc->str) == strlen (after));
 		g_assert (strcmp (newc->str, after) == 0);
@@ -80,7 +96,7 @@ static const char *generic_before = \
 static void
 test_hosts_generic (void)
 {
-	test_generic (generic_before, NULL, "localhost.localdomain", FALSE);
+	test_generic (generic_before, NULL, "localhost.localdomain", NULL, NULL, FALSE);
 }
 
 /*******************************************/
@@ -93,20 +109,19 @@ static const char *generic_no_boilerplate_before = \
 static void
 test_hosts_generic_no_boilerplate (void)
 {
-	test_generic (generic_no_boilerplate_before, NULL, "localhost.localdomain", FALSE);
+	test_generic (generic_no_boilerplate_before, NULL, "localhost.localdomain", NULL, NULL, FALSE);
 }
 
 /*******************************************/
 
 static const char *generic_no_boilerplate_no_lh_before = \
 	"127.0.0.1	localhost.localdomain\n"
-	"::1		localhost6.localdomain6 localhost6\n"
+	"::1		localhost6.localdomain6	localhost6\n"
 	"127.0.0.1	lcmd.us.intellitxt.com\n";
 
 static const char *generic_no_boilerplate_no_lh_after = \
-	"127.0.0.1	localhost\n"
-	"127.0.0.1	localhost.localdomain\n"
-	"::1		localhost6.localdomain6 localhost6\n"
+	"127.0.0.1	localhost.localdomain	localhost\n"
+	"::1	localhost6.localdomain6	localhost6\n"
 	"127.0.0.1	lcmd.us.intellitxt.com\n";
 
 static void
@@ -115,6 +130,8 @@ test_hosts_generic_no_boilerplate_no_lh (void)
 	test_generic (generic_no_boilerplate_no_lh_before,
 	              generic_no_boilerplate_no_lh_after,
 	              "localhost.localdomain",
+	              NULL,
+	              NULL,
 	              FALSE);
 }
 
@@ -128,7 +145,7 @@ static const char *generic_no_boilerplate_no_lh_no_host_before = \
 
 static const char *generic_no_boilerplate_no_lh_no_host_after = \
 	"127.0.0.1	comet	localhost.localdomain	localhost\n"
-	"::1		localhost6.localdomain6 localhost6\n"
+	"::1	comet	localhost6.localdomain6	localhost6\n"
 	"127.0.0.1	lcmd.us.intellitxt.com\n";
 
 static void
@@ -137,6 +154,8 @@ test_hosts_generic_no_boilerplate_no_lh_no_host (void)
 	test_generic (generic_no_boilerplate_no_lh_no_host_before,
 	              generic_no_boilerplate_no_lh_no_host_after,
 	              "comet",
+	              NULL,
+	              NULL,
 	              FALSE);
 }
 
@@ -151,32 +170,48 @@ static const char *named_generic_before = \
 static void
 test_hosts_named_generic (void)
 {
-	test_generic (named_generic_before, NULL, "playboy", FALSE);
+	test_generic (named_generic_before, NULL, "playboy", NULL, NULL, FALSE);
 }
 
 /*******************************************/
 
-static const char *named_non127_before = \
+static const char *named4_non127_before = \
 	"# Do not remove the following line, or various programs\n"
 	"# that require network functionality will fail.\n"
 	"127.0.0.1	localhost.localdomain localhost\n"
-	"::1		localhost6.localdomain6 localhost6\n"
+	"::1	tomcat	localhost6.localdomain6 localhost6\n"
 	"127.0.0.1	lcmd.us.intellitxt.com\n"
 	"192.168.1.2	tomcat\n";
 
 static void
-test_hosts_named_non127 (void)
+test_hosts_named4_non127 (void)
 {
-	test_generic (named_non127_before, NULL, "tomcat", FALSE);
+	test_generic (named4_non127_before, NULL, "tomcat", "192.168.1.2", NULL, FALSE);
 }
 
 /*******************************************/
 
-static const char *named2_non127_before = \
+static const char *named6_non127_before = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	tomcat localhost.localdomain localhost\n"
+	"::1	localhost6.localdomain6 localhost6\n"
+	"127.0.0.1	lcmd.us.intellitxt.com\n"
+	"3001:abba::3234 tomcat\n";
+
+static void
+test_hosts_named6_non127 (void)
+{
+	test_generic (named6_non127_before, NULL, "tomcat", NULL, "3001:abba::3234", FALSE);
+}
+
+/*******************************************/
+
+static const char *named4_non127_more_before = \
 	"# Do not remove the following line, or various programs\n"
 	"# that require network functionality will fail.\n"
 	"127.0.0.1	localhost.localdomain localhost\n"
-	"::1		localhost6.localdomain6 localhost6\n"
+	"::1	tomcat	localhost6.localdomain6 localhost6\n"
 	"127.0.0.1	lcmd.us.intellitxt.com\n"
 	"192.168.1.2	tomcat\n"
 	"127.0.0.1	lcmd.us.intellitxt.com\n"
@@ -184,9 +219,28 @@ static const char *named2_non127_before = \
 	"127.0.0.1	cdn5.tribalfusion.com\n";
 
 static void
-test_hosts_named2_non127 (void)
+test_hosts_named4_non127_more (void)
 {
-	test_generic (named2_non127_before, NULL, "tomcat", FALSE);
+	test_generic (named4_non127_more_before, NULL, "tomcat", "192.168.1.2", NULL, FALSE);
+}
+
+/*******************************************/
+
+static const char *named6_non127_more_before = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	tomcat localhost.localdomain localhost\n"
+	"::1	localhost6.localdomain6 localhost6\n"
+	"127.0.0.1	lcmd.us.intellitxt.com\n"
+	"3001:abba::3234	tomcat\n"
+	"127.0.0.1	lcmd.us.intellitxt.com\n"
+	"127.0.0.1	srx.main.ebayrtm.com\n"
+	"127.0.0.1	cdn5.tribalfusion.com\n";
+
+static void
+test_hosts_named6_non127_more (void)
+{
+	test_generic (named6_non127_more_before, NULL, "tomcat", NULL, "3001:abba::3234", FALSE);
 }
 
 /*******************************************/
@@ -203,14 +257,14 @@ static const char *named_no_lh_after = \
 	"# Do not remove the following line, or various programs\n"
 	"# that require network functionality will fail.\n"
 	"127.0.0.1	localhost.localdomain	localhost\n"
-	"::1		localhost6.localdomain6 localhost6\n"
+	"::1	tomcat	localhost6.localdomain6	localhost6\n"
 	"127.0.0.1	lcmd.us.intellitxt.com\n"
 	"192.168.1.2	tomcat\n";
 
 static void
 test_hosts_named_no_localhost (void)
 {
-	test_generic (named_no_lh_before, named_no_lh_after, "tomcat", FALSE);
+	test_generic (named_no_lh_before, named_no_lh_after, "tomcat", "192.168.1.2", NULL, FALSE);
 }
 
 /*******************************************/
@@ -225,15 +279,14 @@ static const char *no_lh_before = \
 static const char *no_lh_after = \
 	"# Do not remove the following line, or various programs\n"
 	"# that require network functionality will fail.\n"
-	"127.0.0.1	localhost.localdomain	localhost\n"
-	"127.0.0.1	tomcat\n"
-	"::1		localhost6.localdomain6 localhost6\n"
+	"127.0.0.1	tomcat	localhost.localdomain	localhost\n"
+	"::1	tomcat	localhost6.localdomain6	localhost6\n"
 	"127.0.0.1	lcmd.us.intellitxt.com\n";
 
 static void
 test_hosts_no_localhost (void)
 {
-	test_generic (no_lh_before, no_lh_after, "tomcat", FALSE);
+	test_generic (no_lh_before, no_lh_after, "tomcat", NULL, NULL, FALSE);
 }
 
 /*******************************************/
@@ -247,12 +300,12 @@ static const char *named_last_before = \
 static void
 test_hosts_named_last (void)
 {
-	test_generic (named_last_before, NULL, "sparcbook.ausil.us", FALSE);
+	test_generic (named_last_before, NULL, "sparcbook.ausil.us", NULL, NULL, FALSE);
 }
 
 /*******************************************/
 
-static const char *no_host_before = \
+static const char *no_host4_before = \
 	"# Do not remove the following line, or various programs\n"
 	"# that require network functionality will fail.\n"
 	"::1		localhost6.localdomain6 localhost6\n"
@@ -262,11 +315,11 @@ static const char *no_host_before = \
 	"127.0.0.1	cdn5.tribalfusion.com\n"
 	"127.0.0.1	a.tribalfusion.com\n";
 
-static const char *no_host_after = \
+static const char *no_host4_after = \
 	"# Do not remove the following line, or various programs\n"
 	"# that require network functionality will fail.\n"
 	"127.0.0.1	comet	localhost.localdomain	localhost\n"
-	"::1		localhost6.localdomain6 localhost6\n"
+	"::1	comet	localhost6.localdomain6	localhost6\n"
 	"\n"
 	"127.0.0.1	lcmd.us.intellitxt.com\n"
 	"127.0.0.1	srx.main.ebayrtm.com\n"
@@ -274,9 +327,162 @@ static const char *no_host_after = \
 	"127.0.0.1	a.tribalfusion.com\n";
 
 static void
-test_hosts_no_host (void)
+test_hosts_no_host4 (void)
 {
-	test_generic (no_host_before, no_host_after, "comet", FALSE);
+	test_generic (no_host4_before, no_host4_after, "comet", NULL, NULL, FALSE);
+}
+
+/*******************************************/
+
+static const char *no_host6_before = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	localhost.localdomain localhost\n"
+	"\n"
+	"127.0.0.1	lcmd.us.intellitxt.com\n";
+
+static const char *no_host6_after = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	comet	localhost.localdomain	localhost\n"
+	"::1	comet	localhost6.localdomain6	localhost6\n"
+	"\n"
+	"127.0.0.1	lcmd.us.intellitxt.com\n";
+
+static void
+test_hosts_no_host6 (void)
+{
+	test_generic (no_host6_before, no_host6_after, "comet", NULL, NULL, FALSE);
+}
+
+/*******************************************/
+
+static const char *named46_non127_before = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	localhost.localdomain localhost\n"
+	"::1	localhost6.localdomain6	localhost6\n"
+	"192.168.1.2 comet\n"
+	"3001:abba::3234 comet\n"
+	"\n"
+	"127.0.0.1	lcmd.us.intellitxt.com\n";
+
+static void
+test_hosts_named46_non127 (void)
+{
+	test_generic (named46_non127_before, NULL, "comet", "192.168.1.2", "3001:abba::3234", FALSE);
+}
+
+/*******************************************/
+
+static const char *named46_non127_other4_before = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	localhost.localdomain localhost\n"
+	"::1	localhost6.localdomain6	localhost6\n"
+	"192.168.1.3	comet\n"
+	"3001:abba::3234	comet\n"
+	"\n"
+	"127.0.0.1	lcmd.us.intellitxt.com\n";
+
+static const char *named46_non127_other4_after = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	localhost.localdomain	localhost\n"
+	"::1	localhost6.localdomain6	localhost6\n"
+	"192.168.1.2	comet	# Added by NetworkManager\n"
+	"192.168.1.3	comet\n"
+	"3001:abba::3234	comet\n"
+	"\n"
+	"127.0.0.1	lcmd.us.intellitxt.com\n";
+
+static void
+test_hosts_named46_non127_other4 (void)
+{
+	test_generic (named46_non127_other4_before, named46_non127_other4_after, "comet", "192.168.1.2", "3001:abba::3234", FALSE);
+}
+
+/*******************************************/
+
+static const char *named46_non127_other6_before = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	localhost.localdomain localhost\n"
+	"::1	localhost6.localdomain6	localhost6\n"
+	"192.168.1.2	comet\n"
+	"3001:abba::9675	comet\n"
+	"\n"
+	"127.0.0.1	lcmd.us.intellitxt.com\n";
+
+static const char *named46_non127_other6_after = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	localhost.localdomain	localhost\n"
+	"::1	localhost6.localdomain6	localhost6\n"
+	"3001:abba::3234	comet	# Added by NetworkManager\n"
+	"192.168.1.2	comet\n"
+	"3001:abba::9675	comet\n"
+	"\n"
+	"127.0.0.1	lcmd.us.intellitxt.com\n";
+
+static void
+test_hosts_named46_non127_other6 (void)
+{
+	test_generic (named46_non127_other6_before, named46_non127_other6_after, "comet", "192.168.1.2", "3001:abba::3234", FALSE);
+}
+
+/*******************************************/
+
+static const char *unnamed46_non127_before = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	localhost.localdomain localhost\n"
+	"::1	localhost6.localdomain6	localhost6\n"
+	"\n"
+	"127.0.0.1	lcmd.us.intellitxt.com\n";
+
+static const char *unnamed46_non127_after = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	localhost.localdomain	localhost\n"
+	"::1	localhost6.localdomain6	localhost6\n"
+	"192.168.1.2	comet	# Added by NetworkManager\n"
+	"3001:abba::3234	comet	# Added by NetworkManager\n"
+	"\n"
+	"127.0.0.1	lcmd.us.intellitxt.com\n";
+
+static void
+test_hosts_unnamed46_non127 (void)
+{
+	test_generic (unnamed46_non127_before, unnamed46_non127_after, "comet", "192.168.1.2", "3001:abba::3234", FALSE);
+}
+
+/*******************************************/
+
+static const char *named46_non127_wrong_before = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	localhost.localdomain localhost\n"
+	"::1	localhost6.localdomain6	localhost6\n"
+	"192.168.1.3	comet	# Added by NetworkManager\n"
+	"3001:abba::9876	comet	# Added by NetworkManager\n"
+	"\n"
+	"127.0.0.1	lcmd.us.intellitxt.com\n";
+
+static const char *named46_non127_wrong_after = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	localhost.localdomain	localhost\n"
+	"::1	localhost6.localdomain6	localhost6\n"
+	"192.168.1.2	comet	# Added by NetworkManager\n"
+	"3001:abba::3234	comet	# Added by NetworkManager\n"
+	"\n"
+	"127.0.0.1	lcmd.us.intellitxt.com\n";
+
+static void
+test_hosts_named46_non127_wrong (void)
+{
+	test_generic (named46_non127_wrong_before, named46_non127_wrong_after, "comet", "192.168.1.2", "3001:abba::3234", FALSE);
 }
 
 /*******************************************/
@@ -318,7 +524,7 @@ static const char *long_before = \
 static void
 test_hosts_long (void)
 {
-	test_generic (long_before, NULL, "comet", FALSE);
+	test_generic (long_before, NULL, "comet", NULL, NULL, FALSE);
 }
 
 /*******************************************/
@@ -381,12 +587,20 @@ int main (int argc, char **argv)
 	g_test_suite_add (suite, TESTCASE (test_hosts_generic_no_boilerplate_no_lh, NULL));
 	g_test_suite_add (suite, TESTCASE (test_hosts_generic_no_boilerplate_no_lh_no_host, NULL));
 	g_test_suite_add (suite, TESTCASE (test_hosts_named_generic, NULL));
-	g_test_suite_add (suite, TESTCASE (test_hosts_named_non127, NULL));
-	g_test_suite_add (suite, TESTCASE (test_hosts_named2_non127, NULL));
+	g_test_suite_add (suite, TESTCASE (test_hosts_named4_non127, NULL));
+	g_test_suite_add (suite, TESTCASE (test_hosts_named6_non127, NULL));
+	g_test_suite_add (suite, TESTCASE (test_hosts_named4_non127_more, NULL));
+	g_test_suite_add (suite, TESTCASE (test_hosts_named6_non127_more, NULL));
+	g_test_suite_add (suite, TESTCASE (test_hosts_named46_non127, NULL));
+	g_test_suite_add (suite, TESTCASE (test_hosts_named46_non127_other4, NULL));
+	g_test_suite_add (suite, TESTCASE (test_hosts_named46_non127_other6, NULL));
+	g_test_suite_add (suite, TESTCASE (test_hosts_named46_non127_wrong, NULL));
+	g_test_suite_add (suite, TESTCASE (test_hosts_unnamed46_non127, NULL));
 	g_test_suite_add (suite, TESTCASE (test_hosts_named_no_localhost, NULL));
 	g_test_suite_add (suite, TESTCASE (test_hosts_no_localhost, NULL));
 	g_test_suite_add (suite, TESTCASE (test_hosts_named_last, NULL));
-	g_test_suite_add (suite, TESTCASE (test_hosts_no_host, NULL));
+	g_test_suite_add (suite, TESTCASE (test_hosts_no_host4, NULL));
+	g_test_suite_add (suite, TESTCASE (test_hosts_no_host6, NULL));
 	g_test_suite_add (suite, TESTCASE (test_hosts_long, NULL));
 
 	return g_test_run ();
