@@ -1839,6 +1839,8 @@ hal_manager_udi_added_cb (NMHalManager *hal_mgr,
 					  G_CALLBACK (manager_device_state_changed),
 					  self);
 
+	iface = nm_device_get_iface (NM_DEVICE (device));
+
 	/* Attach to the access-point-added signal so that the manager can fill
 	 * non-SSID-broadcasting APs with an SSID.
 	 */
@@ -1853,7 +1855,6 @@ hal_manager_udi_added_cb (NMHalManager *hal_mgr,
 		nm_device_wifi_set_enabled (NM_DEVICE_WIFI (device), priv->wireless_enabled);
 	}
 
-	iface = nm_device_get_iface (NM_DEVICE (device));
 	driver = nm_device_get_driver (NM_DEVICE (device));
 	if (!driver)
 		driver = "unknown";

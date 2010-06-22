@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2009 Red Hat, Inc.
+ * Copyright (C) 2007 - 2010 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -57,7 +57,6 @@ typedef struct {
 	char *category;
 	gboolean (*is_device_fn) (NMHalManager *self, const char *udi);
 	NMDeviceCreatorFn creator_fn;
-	gboolean killswitches_polled;
 } DeviceCreator;
 
 static void emit_udi_added (NMHalManager *self, const char *udi, DeviceCreator *creator);
@@ -79,6 +78,7 @@ typedef struct {
 	gboolean poll_rfkilled;
 	guint32 pending_polls;
 	GSList *poll_proxies;
+	gboolean killswitches_polled;
 
 	gboolean disposed;
 } NMHalManagerPrivate;
