@@ -510,6 +510,9 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
+	nm_info ("Networking %s by state file", net_enabled ? "enabled" : "disabled");
+	nm_info ("WiFi %s by state file", wifi_enabled ? "enabled" : "disabled");
+
 	manager = nm_manager_get (state_file, net_enabled, wifi_enabled);
 	if (manager == NULL) {
 		nm_error ("Failed to initialize the network manager.");

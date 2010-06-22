@@ -1848,6 +1848,8 @@ hal_manager_udi_added_cb (NMHalManager *hal_mgr,
 						  self);
 
 		/* Set initial rfkill state */
+		nm_info ("(%s): radio initially %s", iface,
+		         priv->wireless_enabled ? "enabled" : "disabled");
 		nm_device_wifi_set_enabled (NM_DEVICE_WIFI (device), priv->wireless_enabled);
 	}
 
@@ -1922,11 +1924,11 @@ hal_manager_rfkill_changed_cb (NMHalManager *hal_mgr,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	gboolean enabled = !rfkilled;
 
+	nm_info ("Wireless now %s by radio killswitch", enabled ? "enabled" : "disabled");
+
 	if (priv->wireless_hw_enabled != enabled) {
-		nm_info ("Wireless now %s by radio killswitch", enabled ? "enabled" : "disabled");
 		priv->wireless_hw_enabled = enabled;
 		g_object_notify (G_OBJECT (self), NM_MANAGER_WIRELESS_HARDWARE_ENABLED);
-
 		manager_set_wireless_enabled (self, enabled);
 	}
 }

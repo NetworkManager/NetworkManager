@@ -3649,6 +3649,14 @@ nm_device_wifi_set_enabled (NMDeviceWifi *self, gboolean enabled)
 	g_return_if_fail (NM_IS_DEVICE_WIFI (self));
 
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+
+	if (enable_debug) {
+		nm_debug ("(%s): request to %s device, currently %s",
+		          nm_device_get_iface (NM_DEVICE (self)),
+		          enabled ? "enable" : "disable",
+		          priv->enabled ? "enabled" : "disabled");
+	}
+
 	if (priv->enabled == enabled)
 		return;
 

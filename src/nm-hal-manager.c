@@ -57,6 +57,7 @@ typedef struct {
 	char *category;
 	gboolean (*is_device_fn) (NMHalManager *self, const char *udi);
 	NMDeviceCreatorFn creator_fn;
+	gboolean killswitches_polled;
 } DeviceCreator;
 
 static void emit_udi_added (NMHalManager *self, const char *udi, DeviceCreator *creator);
@@ -1393,7 +1394,7 @@ killswitch_getpower_done (gpointer user_data)
 	if (priv->pending_polls > 0)
 		return;
 
-	if (priv->poll_rfkilled != priv->rfkilled) {
+	if (priv->poll_rfkilled != priv->rfkilled || !priv->killswitches_polled) {
 		priv->rfkilled = priv->poll_rfkilled;
 		nm_info ("Radio killswitches now %s radios",
 		         priv->rfkilled ? "block" : "allow");
@@ -1406,6 +1407,8 @@ killswitch_getpower_done (gpointer user_data)
 	priv->killswitch_poll_id = g_timeout_add_seconds (RFKILL_POLL_FREQUENCY,
 	                                          poll_killswitches,
 	                                          self);
+
+	priv->killswitches_polled = TRUE;
 }
 
 static void 
