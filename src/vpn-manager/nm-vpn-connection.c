@@ -119,6 +119,7 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 	NMVPNConnectionPrivate *priv;
 	NMActiveConnectionState new_ac_state;
 	NMVPNConnectionState old_vpn_state;
+	char *ip_iface;
 
 	g_return_if_fail (NM_IS_VPN_CONNECTION (connection));
 
@@ -129,6 +130,11 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 
 	old_vpn_state = priv->vpn_state;
 	priv->vpn_state = vpn_state;
+
+	/* Save ip_iface since when the VPN goes down it may get freed
+	 * before we're done with it.
+	 */
+	ip_iface = g_strdup (priv->tundev);
 
 	/* Set the NMActiveConnection state based on VPN state */
 	switch (vpn_state) {
@@ -166,7 +172,7 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 		nm_utils_call_dispatcher ("vpn-up",
 		                          priv->connection,
 		                          priv->parent_dev,
-		                          priv->tundev);
+		                          ip_iface);
 		break;
 	case NM_VPN_CONNECTION_STATE_FAILED:
 	case NM_VPN_CONNECTION_STATE_DISCONNECTED:
@@ -174,13 +180,14 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 			nm_utils_call_dispatcher ("vpn-down",
 			                          priv->connection,
 			                          priv->parent_dev,
-			                          priv->tundev);
+			                          ip_iface);
 		}
 		break;
 	default:
 		break;
 	}
 
+	g_free (ip_iface);
 	g_object_unref (connection);
 }
 
