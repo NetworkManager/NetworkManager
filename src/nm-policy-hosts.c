@@ -131,6 +131,8 @@ nm_policy_get_etc_hosts (const char **lines,
 	gboolean added = FALSE;
 	gboolean hostname4_is_fallback;
 	gboolean hostname6_is_fallback;
+	gboolean host4_before = FALSE;
+	gboolean host6_before = FALSE;
 
 	g_return_val_if_fail (lines != NULL, FALSE);
 	g_return_val_if_fail (hostname != NULL, FALSE);
@@ -148,10 +150,14 @@ nm_policy_get_etc_hosts (const char **lines,
 	 * If all these things exist we don't need to bother updating the file.
 	 */
 
-	if (!ip4_addr)
+	if (!ip4_addr) {
 		found_host4 = TRUE;
-	if (!ip6_addr)
+		host4_before = TRUE;
+	}
+	if (!ip6_addr) {
 		found_host6 = TRUE;
+		host6_before = TRUE;
+	}
 
 	/* Look for the four cases from above */
 	for (line = lines; lines && *line; line++) {
@@ -162,13 +168,23 @@ nm_policy_get_etc_hosts (const char **lines,
 			/* Found the current hostname on this line */
 			if (ip4_addr && ip4_addr_matches (*line, ip4_addr)) {
 				found_host4 = TRUE;
-				if (!strstr (*line, ADDED_TAG))
+				if (strstr (*line, ADDED_TAG)) {
+					if (!host4_before)
+						host4_before = !found_localhost4;
+				} else {
 					found_user_host4 = TRUE;
+					host4_before = TRUE;  /* Ignore if user added mapping manually */
+				}
 			}
 			if (ip6_addr && ip6_addr_matches (*line, ip6_addr)) {
 				found_host6 = TRUE;
-				if (!strstr (*line, ADDED_TAG))
+				if (strstr (*line, ADDED_TAG)) {
+					if (!host6_before)
+						host6_before = !found_localhost6;
+				} else {
 					found_user_host6 = TRUE;
+					host6_before = TRUE;  /* Ignore if user added mapping manually */
+				}
 			}
 		}
 
@@ -180,7 +196,7 @@ nm_policy_get_etc_hosts (const char **lines,
 			found_localhost6 = TRUE;
 		}
 
-		if (found_localhost4 && found_host4 && found_localhost6 && found_host6)
+		if (found_localhost4 && found_host4 && found_localhost6 && found_host6 && host4_before && host6_before)
 			return NULL;  /* No update required */
 	}
 
@@ -212,6 +228,12 @@ nm_policy_get_etc_hosts (const char **lines,
 			 * mapping line to make sure it's mapped to something.
 			 */
 
+			/* Add the address mappings first so they take precedence */
+			if (!hostname4_is_fallback && ip4_addr && !found_user_host4)
+				g_string_append_printf (contents, "%s\t%s\t%s\n", ip4_addr, hostname, ADDED_TAG);
+			if (!hostname6_is_fallback && ip6_addr && !found_user_host6)
+				g_string_append_printf (contents, "%s\t%s\t%s\n", ip6_addr, hostname, ADDED_TAG);
+
 			/* IPv4 localhost line */
 			g_string_append (contents, "127.0.0.1");
 			if (!hostname4_is_fallback && !ip4_addr && !found_user_host4)
@@ -223,12 +245,6 @@ nm_policy_get_etc_hosts (const char **lines,
 			if (!hostname6_is_fallback && !hostname4_is_fallback && !ip6_addr && !found_user_host6)
 				g_string_append_printf (contents, "\t%s", hostname);
 			g_string_append_printf (contents, "\t%s\tlocalhost6\n", fallback_hostname6);
-
-			/* Add the address mappings */
-			if (!hostname4_is_fallback && ip4_addr && !found_user_host4)
-				g_string_append_printf (contents, "%s\t%s\t%s\n", ip4_addr, hostname, ADDED_TAG);
-			if (!hostname6_is_fallback && ip6_addr && !found_user_host6)
-				g_string_append_printf (contents, "%s\t%s\t%s\n", ip6_addr, hostname, ADDED_TAG);
 
 			added = TRUE;
 		}
@@ -259,14 +275,15 @@ nm_policy_get_etc_hosts (const char **lines,
 	if (!added) {
 		g_string_append (contents, "# Do not remove the following lines, or various programs\n");
 		g_string_append (contents, "# that require network functionality will fail.\n");
-		g_string_append_printf (contents, "127.0.0.1\t%s\tlocalhost\n", fallback_hostname4);
-		g_string_append_printf (contents, "::1\t%s\tlocalhost6\n", fallback_hostname6);
 
-		/* Add the address mappings */
+		/* Add the address mappings first so they take precedence */
 		if (!hostname4_is_fallback && ip4_addr)
 			g_string_append_printf (contents, "%s\t%s\t%s\n", ip4_addr, hostname, ADDED_TAG);
 		if (!hostname6_is_fallback && ip6_addr)
 			g_string_append_printf (contents, "%s\t%s\t%s\n", ip6_addr, hostname, ADDED_TAG);
+
+		g_string_append_printf (contents, "127.0.0.1\t%s\tlocalhost\n", fallback_hostname4);
+		g_string_append_printf (contents, "::1\t%s\tlocalhost6\n", fallback_hostname6);
 	}
 
 	return contents;

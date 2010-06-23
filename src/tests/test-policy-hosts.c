@@ -388,9 +388,9 @@ static const char *named46_non127_other4_before = \
 static const char *named46_non127_other4_after = \
 	"# Do not remove the following line, or various programs\n"
 	"# that require network functionality will fail.\n"
+	"192.168.1.2	comet	# Added by NetworkManager\n"
 	"127.0.0.1	localhost.localdomain	localhost\n"
 	"::1	localhost6.localdomain6	localhost6\n"
-	"192.168.1.2	comet	# Added by NetworkManager\n"
 	"192.168.1.3	comet\n"
 	"3001:abba::3234	comet\n"
 	"\n"
@@ -417,9 +417,9 @@ static const char *named46_non127_other6_before = \
 static const char *named46_non127_other6_after = \
 	"# Do not remove the following line, or various programs\n"
 	"# that require network functionality will fail.\n"
+	"3001:abba::3234	comet	# Added by NetworkManager\n"
 	"127.0.0.1	localhost.localdomain	localhost\n"
 	"::1	localhost6.localdomain6	localhost6\n"
-	"3001:abba::3234	comet	# Added by NetworkManager\n"
 	"192.168.1.2	comet\n"
 	"3001:abba::9675	comet\n"
 	"\n"
@@ -444,10 +444,10 @@ static const char *unnamed46_non127_before = \
 static const char *unnamed46_non127_after = \
 	"# Do not remove the following line, or various programs\n"
 	"# that require network functionality will fail.\n"
-	"127.0.0.1	localhost.localdomain	localhost\n"
-	"::1	localhost6.localdomain6	localhost6\n"
 	"192.168.1.2	comet	# Added by NetworkManager\n"
 	"3001:abba::3234	comet	# Added by NetworkManager\n"
+	"127.0.0.1	localhost.localdomain	localhost\n"
+	"::1	localhost6.localdomain6	localhost6\n"
 	"\n"
 	"127.0.0.1	lcmd.us.intellitxt.com\n";
 
@@ -472,10 +472,10 @@ static const char *named46_non127_wrong_before = \
 static const char *named46_non127_wrong_after = \
 	"# Do not remove the following line, or various programs\n"
 	"# that require network functionality will fail.\n"
-	"127.0.0.1	localhost.localdomain	localhost\n"
-	"::1	localhost6.localdomain6	localhost6\n"
 	"192.168.1.2	comet	# Added by NetworkManager\n"
 	"3001:abba::3234	comet	# Added by NetworkManager\n"
+	"127.0.0.1	localhost.localdomain	localhost\n"
+	"::1	localhost6.localdomain6	localhost6\n"
 	"\n"
 	"127.0.0.1	lcmd.us.intellitxt.com\n";
 
