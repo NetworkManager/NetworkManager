@@ -235,8 +235,14 @@ _set_hostname (NMPolicy *policy,
 	char ip6_addr[INET6_ADDRSTRLEN + 1];
 
 	if (change_hostname) {
+		NMNamedManager *named_mgr;
+
 		g_free (policy->cur_hostname);
 		policy->cur_hostname = g_strdup (new_hostname);
+
+		named_mgr = nm_named_manager_get ();
+		nm_named_manager_set_hostname (named_mgr, policy->cur_hostname);
+		g_object_unref (named_mgr);
 	}
 
 	/* Get the default IPv4 and IPv6 addresses so we can assign
