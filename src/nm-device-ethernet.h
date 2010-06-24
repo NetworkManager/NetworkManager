@@ -63,9 +63,6 @@ NMDevice *nm_device_ethernet_new (const char *udi,
 void nm_device_ethernet_get_address (NMDeviceEthernet *dev,
                                      struct ether_addr *addr);
 
-void nm_device_ethernet_get_permanent_address (NMDeviceEthernet *dev,
-                                               struct ether_addr *addr);
-
 G_END_DECLS
 
 #endif	/* NM_DEVICE_ETHERNET_H */

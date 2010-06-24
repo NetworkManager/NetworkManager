@@ -88,8 +88,6 @@ NMDevice *nm_device_wifi_new (const char *udi,
 
 void nm_device_wifi_get_address (NMDeviceWifi *dev, struct ether_addr *addr);
 
-void nm_device_wifi_get_permanent_address (NMDeviceWifi *dev, struct ether_addr *addr);
-
 void nm_device_wifi_get_bssid (NMDeviceWifi *dev, struct ether_addr *bssid);
 
 const GByteArray * nm_device_wifi_get_ssid (NMDeviceWifi *self);
