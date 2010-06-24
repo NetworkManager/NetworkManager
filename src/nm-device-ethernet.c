@@ -545,7 +545,7 @@ out:
 }
 
 static void
-real_obtain_permanent_hw_address (NMDevice *dev)
+real_update_permanent_hw_address (NMDevice *dev)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (dev);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
@@ -1932,7 +1932,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->take_down = real_take_down;
 	parent_class->can_interrupt_activation = real_can_interrupt_activation;
 	parent_class->update_hw_address = real_update_hw_address;
-	parent_class->obtain_permanent_hw_address = real_obtain_permanent_hw_address;
+	parent_class->update_permanent_hw_address = real_update_permanent_hw_address;
 	parent_class->get_best_auto_connection = real_get_best_auto_connection;
 	parent_class->is_available = real_is_available;
 	parent_class->connection_secrets_updated = real_connection_secrets_updated;
