@@ -3032,7 +3032,7 @@ real_update_permanent_hw_address (NMDevice *dev)
 
 	errno = 0;
 	ret = ioctl (fd, SIOCETHTOOL, &req);
-	if (ret < 0) {
+	if ((ret < 0) || !nm_ethernet_address_is_valid ((struct ether_addr *) epaddr->data)) {
 		nm_log_err (LOGD_HW | LOGD_ETHER, "(%s): unable to read permanent MAC address (error %d)",
 		            nm_device_get_iface (dev), errno);
 		/* Fall back to current address */
