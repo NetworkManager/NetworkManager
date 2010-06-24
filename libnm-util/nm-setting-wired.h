@@ -59,6 +59,10 @@ GQuark nm_setting_wired_error_quark (void);
 #define NM_SETTING_WIRED_MAC_ADDRESS "mac-address"
 #define NM_SETTING_WIRED_MTU "mtu"
 #define NM_SETTING_WIRED_S390_SUBCHANNELS "s390-subchannels"
+#define NM_SETTING_WIRED_S390_PORT_NAME "s390-port-name"
+#define NM_SETTING_WIRED_S390_PORT_NUMBER "s390-port-number"
+#define NM_SETTING_WIRED_S390_QETH_LAYER "s390-qeth-layer"
+#define NM_SETTING_WIRED_S390_NETTYPE "s390-nettype"
 
 typedef struct {
 	NMSetting parent;
@@ -84,6 +88,10 @@ gboolean          nm_setting_wired_get_auto_negotiate   (NMSettingWired *setting
 const GByteArray *nm_setting_wired_get_mac_address      (NMSettingWired *setting);
 guint32           nm_setting_wired_get_mtu              (NMSettingWired *setting);
 const GPtrArray * nm_setting_wired_get_s390_subchannels (NMSettingWired *setting);
+const char *      nm_setting_wired_get_s390_port_name   (NMSettingWired *setting);
+guint32           nm_setting_wired_get_s390_port_number (NMSettingWired *setting);
+guint32           nm_setting_wired_get_s390_qeth_layer  (NMSettingWired *setting);
+const char *      nm_setting_wired_get_s390_nettype     (NMSettingWired *setting);
 
 G_END_DECLS
 

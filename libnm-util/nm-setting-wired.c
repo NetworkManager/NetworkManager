@@ -23,6 +23,7 @@
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
+#include <string.h>
 #include <net/ethernet.h>
 #include <dbus/dbus-glib.h>
 #include "nm-setting-wired.h"
@@ -77,6 +78,10 @@ typedef struct {
 	GByteArray *mac_address;
 	guint32 mtu;
 	GPtrArray *s390_subchannels;
+	char *s390_port_name;
+	guint32 s390_port_number;
+	guint32 s390_qeth_layer;
+	char *s390_nettype;
 } NMSettingWiredPrivate;
 
 enum {
@@ -88,6 +93,10 @@ enum {
 	PROP_MAC_ADDRESS,
 	PROP_MTU,
 	PROP_S390_SUBCHANNELS,
+	PROP_S390_PORT_NAME,
+	PROP_S390_PORT_NUMBER,
+	PROP_S390_QETH_LAYER,
+	PROP_S390_NETTYPE,
 
 	LAST_PROP
 };
@@ -154,6 +163,38 @@ nm_setting_wired_get_s390_subchannels (NMSettingWired *setting)
 	return NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_subchannels;
 }
 
+const char *
+nm_setting_wired_get_s390_port_name (NMSettingWired *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), NULL);
+
+	return NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_port_name;
+}
+
+guint32
+nm_setting_wired_get_s390_port_number (NMSettingWired *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), 0);
+
+	return NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_port_number;
+}
+
+guint32
+nm_setting_wired_get_s390_qeth_layer (NMSettingWired *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), 2);
+
+	return NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_qeth_layer;
+}
+
+const char *
+nm_setting_wired_get_s390_nettype (NMSettingWired *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), NULL);
+
+	return NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_nettype;
+}
+
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
@@ -193,6 +234,26 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
+	if (priv->s390_nettype) {
+		if (   strcmp (priv->s390_nettype, "qeth")
+		    && strcmp (priv->s390_nettype, "lcs")
+		    && strcmp (priv->s390_nettype, "ctc")) {
+			g_set_error (error,
+				         NM_SETTING_WIRED_ERROR,
+				         NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
+				         NM_SETTING_WIRED_S390_NETTYPE);
+			return FALSE;
+		}
+	}
+
+	if (priv->s390_port_name && strlen (priv->s390_port_name) > 8) {
+		g_set_error (error,
+			         NM_SETTING_WIRED_ERROR,
+			         NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
+			         NM_SETTING_WIRED_S390_PORT_NAME);
+		return FALSE;
+	}
+
 	return TRUE;
 }
 
@@ -209,6 +270,8 @@ finalize (GObject *object)
 
 	g_free (priv->port);
 	g_free (priv->duplex);
+	g_free (priv->s390_port_name);
+	g_free (priv->s390_nettype);
 
 	if (priv->mac_address)
 		g_byte_array_free (priv->mac_address, TRUE);
@@ -252,6 +315,20 @@ set_property (GObject *object, guint prop_id,
 		}
 		priv->s390_subchannels = g_value_dup_boxed (value);
 		break;
+	case PROP_S390_PORT_NAME:
+		g_free (priv->s390_port_name);
+		priv->s390_port_name = g_value_dup_string (value);
+		break;
+	case PROP_S390_PORT_NUMBER:
+		priv->s390_port_number = g_value_get_uint (value);
+		break;
+	case PROP_S390_QETH_LAYER:
+		priv->s390_qeth_layer = g_value_get_uint (value);
+		break;
+	case PROP_S390_NETTYPE:
+		g_free (priv->s390_nettype);
+		priv->s390_nettype = g_value_dup_string (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -285,6 +362,18 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_S390_SUBCHANNELS:
 		g_value_set_boxed (value, nm_setting_wired_get_s390_subchannels (setting));
+		break;
+	case PROP_S390_PORT_NAME:
+		g_value_set_string (value, nm_setting_wired_get_s390_port_name (setting));
+		break;
+	case PROP_S390_PORT_NUMBER:
+		g_value_set_uint (value, nm_setting_wired_get_s390_port_number (setting));
+		break;
+	case PROP_S390_QETH_LAYER:
+		g_value_set_uint (value, nm_setting_wired_get_s390_qeth_layer (setting));
+		break;
+	case PROP_S390_NETTYPE:
+		g_value_set_string (value, nm_setting_wired_get_s390_nettype (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -435,5 +524,63 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 		                       "characters and the period (.) character.",
 		                       DBUS_TYPE_G_ARRAY_OF_STRING,
 		                       G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
+	 * NMSettingWired:s390-port-name:
+	 *
+	 * s390 device port name, if required by your configuration.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_S390_PORT_NAME,
+		 g_param_spec_string (NM_SETTING_WIRED_S390_PORT_NAME,
+						  "s390 Port Name",
+						  "s390 device port name, if required by your configuration.",
+						  NULL,
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
+	 * NMSettingWired:s390-port-number:
+	 *
+	 * s390 device port number, if required by your configuration.  For 'qeth'
+	 * devices, this is the "relative port number".
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_S390_PORT_NUMBER,
+		 g_param_spec_uint (NM_SETTING_WIRED_S390_PORT_NUMBER,
+						  "s390 Port Number",
+		                  "s390 device port number, if required by your "
+		                  "configuration.  For 'qeth' devices, this is the "
+		                  "'relative port number'.",
+						  0, 100, 0,
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
+	 * NMSettingWired:s390-qeth-layer:
+	 *
+	 * s390 'qeth' device layer, either '2' or '3'.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_S390_QETH_LAYER,
+		 g_param_spec_uint (NM_SETTING_WIRED_S390_QETH_LAYER,
+						  "s390 'qeth' layer",
+		                  "s390 'qeth' device layer, either '2' or '3'.",
+						  2, 3, 2,
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
+	 * NMSettingWired:s390-nettype:
+	 *
+	 * s390 network device type; one of 'qeth', 'lcs', or 'ctc', representing
+	 * the different types of virtual network devices available on s390 systems.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_S390_NETTYPE,
+		 g_param_spec_string (NM_SETTING_WIRED_S390_NETTYPE,
+						  "s390 Net Type",
+						  "s390 network device type; one of 'qeth', 'lcs', or "
+						  "'ctc', representing the different types of virtual "
+						  "network devices available on s390 systems.",
+						  NULL,
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 }
 
