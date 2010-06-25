@@ -778,13 +778,20 @@ write_wireless_setting (NMConnection *connection,
 		svSetValue (ifcfg, "ESSID", str->str, TRUE);
 		g_string_free (str, TRUE);
 	} else {
-		/* Printable SSIDs get quoted */
+		/* Printable SSIDs always get quoted */
 		memset (buf, 0, sizeof (buf));
 		memcpy (buf, ssid->data, ssid->len);
-		tmp2 = svEscape (buf);
-		tmp = g_strdup_printf ("\"%s\"", tmp2);
-		svSetValue (ifcfg, "ESSID", tmp, TRUE);
-		g_free (tmp2);
+		tmp = svEscape (buf);
+
+		/* svEscape will usually quote the string, but just for consistency,
+		 * if svEscape doesn't quote the ESSID, we quote it ourselves.
+		 */
+		if (tmp[0] != '"' && tmp[strlen (tmp) - 1] != '"') {
+			tmp2 = g_strdup_printf ("\"%s\"", tmp);
+			svSetValue (ifcfg, "ESSID", tmp2, TRUE);
+			g_free (tmp2);
+		} else
+			svSetValue (ifcfg, "ESSID", tmp, TRUE);
 		g_free (tmp);
 	}
 
