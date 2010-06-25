@@ -5044,6 +5044,8 @@ test_write_wifi_open (void)
 	guint32 channel = 9, mtu = 1345;
 	GByteArray *mac;
 	const unsigned char mac_data[] = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
+	shvarFile *ifcfg;
+	char *tmp;
 
 	connection = nm_connection_new ();
 	ASSERT (connection != NULL,
@@ -5127,6 +5129,22 @@ test_write_wifi_open (void)
 	                               &routefile,
 	                               &error,
 	                               &ignore_error);
+
+	/* Now make sure that the ESSID item isn't double-quoted (rh #606518) */
+	ifcfg = svNewFile (testfile);
+	ASSERT (ifcfg != NULL,
+	        "wifi-open-write-reread", "failed to load %s as shvarfile", testfile);
+
+	tmp = svGetValue (ifcfg, "ESSID", TRUE);
+	ASSERT (tmp != NULL,
+	        "wifi-open-write-reread", "failed to read ESSID key from %s", testfile);
+
+	g_message (tmp);
+	ASSERT (strncmp (tmp, "\"\"", 2) != 0,
+	        "wifi-open-write-reread", "unexpected ESSID double-quote in %s", testfile);
+
+	svCloseFile (ifcfg);
+
 	unlink (testfile);
 
 	ASSERT (reread != NULL,
