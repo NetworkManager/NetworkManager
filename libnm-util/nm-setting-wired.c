@@ -597,7 +597,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 		                  "configuration.  For 'qeth' devices, this is the "
 		                  "'relative port number'.",
 						  0, 100, 0,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
 	 * NMSettingWired:s390-qeth-layer:
@@ -610,7 +610,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 						  "s390 'qeth' layer",
 		                  "s390 'qeth' device layer, either '2' or '3'.",
 						  2, 3, 2,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
 	 * NMSettingWired:s390-nettype:
