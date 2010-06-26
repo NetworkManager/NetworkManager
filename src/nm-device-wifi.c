@@ -1740,19 +1740,31 @@ scanning_allowed (NMDeviceWifi *self)
 	    || nm_supplicant_interface_get_scanning (priv->supplicant.iface))
 		return FALSE;
 
-	/* Don't scan when a shared connection is active; it makes drivers mad */
 	req = nm_device_get_act_request (NM_DEVICE (self));
 	if (req) {
 		NMConnection *connection;
 		NMSettingIP4Config *s_ip4;
+		NMSettingWireless *s_wifi;
 		const char *ip4_method = NULL;
+		const GByteArray *bssid;
 
+		/* Don't scan when a shared connection is active; it makes drivers mad */
 		connection = nm_act_request_get_connection (req);
 		s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
 		if (s_ip4)
 			ip4_method = nm_setting_ip4_config_get_method (s_ip4);
 
 		if (s_ip4 && !strcmp (ip4_method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
+			return FALSE;
+
+		/* Don't scan when the connection is locked to a specifc AP, since
+		 * intra-ESS roaming (which requires periodic scanning) isn't being
+		 * used due to the specific AP lock. (bgo #513820)
+		 */
+		s_wifi = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
+		g_assert (s_wifi);
+		bssid = nm_setting_wireless_get_bssid (s_wifi);
+		if (bssid && bssid->len == ETH_ALEN)
 			return FALSE;
 	}
 
