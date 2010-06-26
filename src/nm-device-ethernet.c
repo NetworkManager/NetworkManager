@@ -34,6 +34,9 @@
 #include <linux/if.h>
 #include <errno.h>
 
+#define G_UDEV_API_IS_SUBJECT_TO_CHANGE
+#include <gudev/gudev.h>
+
 #include <netlink/route/addr.h>
 
 #include "nm-glib-compat.h"
@@ -115,6 +118,11 @@ typedef struct {
 
 	Supplicant          supplicant;
 	guint               supplicant_timeout_id;
+
+	/* s390 */
+	char *              subchan1;
+	char *              subchan2;
+	char *              subchan3;
 
 	/* PPPoE */
 	NMPPPManager *ppp_manager;
@@ -290,6 +298,101 @@ carrier_off (NMNetlinkMonitor *monitor,
 	}
 }
 
+static void
+_update_s390_subchannels (NMDeviceEthernet *self)
+{
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+	const char *iface;
+	GUdevClient *client;
+	GUdevDevice *dev;
+	GUdevDevice *parent;
+	const char *parent_path, *item, *driver;
+	const char *subsystems[] = { "net", NULL };
+	GDir *dir;
+	GError *error = NULL;
+
+	iface = nm_device_get_iface (NM_DEVICE (self));
+
+	client = g_udev_client_new (subsystems);
+	if (!client) {
+		nm_log_warn (LOGD_DEVICE | LOGD_HW, "(%s): failed to initialize GUdev client", iface);
+		return;
+	}
+
+	dev = g_udev_client_query_by_subsystem_and_name (client, "net", iface);
+	if (!dev) {
+		nm_log_warn (LOGD_DEVICE | LOGD_HW, "(%s): failed to find device with udev", iface);
+		goto out;
+	}
+
+	/* Try for the "ccwgroup" parent */
+	parent = g_udev_device_get_parent_with_subsystem (dev, "ccwgroup", NULL);
+	if (!parent) {
+		/* FIXME: whatever 'lcs' devices' subsystem is here... */
+		if (!parent) {
+			/* Not an s390 device */
+			goto out;
+		}
+	}
+
+	parent_path = g_udev_device_get_sysfs_path (parent);
+	dir = g_dir_open (parent_path, 0, &error);
+	if (!dir) {
+		nm_log_warn (LOGD_DEVICE | LOGD_HW, "(%s): failed to open directory '%s': %s",
+		             iface, parent_path,
+		             error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
+		goto out;
+	}
+
+	/* FIXME: we probably care about ordering here to ensure that we map
+	 * cdev0 -> subchan1, cdev1 -> subchan2, etc.
+	 */
+	while ((item = g_dir_read_name (dir))) {
+		char buf[50];
+		char *cdev_path;
+
+		if (strncmp (item, "cdev", 4))
+			continue;  /* Not a subchannel link */
+
+		cdev_path = g_strdup_printf ("%s/%s", parent_path, item);
+
+		memset (buf, 0, sizeof (buf));
+		errno = 0;
+		if (readlink (cdev_path, &buf[0], sizeof (buf) - 1) >= 0) {
+			if (!priv->subchan1)
+				priv->subchan1 = g_path_get_basename (buf);
+			else if (!priv->subchan2)
+				priv->subchan2 = g_path_get_basename (buf);
+			else if (!priv->subchan3)
+				priv->subchan3 = g_path_get_basename (buf);
+		} else {
+			nm_log_warn (LOGD_DEVICE | LOGD_HW,
+			             "(%s): failed to read cdev link '%s': %s",
+			             iface, cdev_path, errno);
+		}
+		g_free (cdev_path);
+	};
+
+	driver = nm_device_get_driver (NM_DEVICE (self));
+	nm_log_info (LOGD_DEVICE | LOGD_HW,
+	             "(%s): found s390 '%s' subchannels [%s, %s, %s]",
+	             iface,
+	             driver ? driver : "(unknown driver)",
+	             priv->subchan1 ? priv->subchan1 : "(none)",
+	             priv->subchan2 ? priv->subchan2 : "(none)",
+	             priv->subchan3 ? priv->subchan3 : "(none)");
+
+	g_dir_close (dir);
+
+out:
+	if (parent)
+		g_object_unref (parent);
+	if (dev)
+		g_object_unref (dev);
+	g_object_unref (client);
+}
+
 static GObject*
 constructor (GType type,
 			 guint n_construct_params,
@@ -312,6 +415,9 @@ constructor (GType type,
 	nm_log_dbg (LOGD_HW | LOGD_OLPC_MESH, "(%s): kernel ifindex %d",
 	            nm_device_get_iface (NM_DEVICE (self)),
 	            nm_device_get_ifindex (NM_DEVICE (self)));
+
+	/* s390 stuff */
+	_update_s390_subchannels (NM_DEVICE_ETHERNET (self));
 
 	caps = nm_device_get_capabilities (self);
 	if (caps & NM_DEVICE_CAP_CARRIER_DETECT) {
@@ -1758,6 +1864,10 @@ dispose (GObject *object)
 		g_object_unref (priv->monitor);
 		priv->monitor = NULL;
 	}
+
+	g_free (priv->subchan1);
+	g_free (priv->subchan2);
+	g_free (priv->subchan3);
 
 	G_OBJECT_CLASS (nm_device_ethernet_parent_class)->dispose (object);
 }
