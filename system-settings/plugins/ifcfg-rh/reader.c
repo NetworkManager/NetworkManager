@@ -2926,6 +2926,35 @@ wireless_connection_from_ifcfg (const char *file,
 	return connection;
 }
 
+#define LAYER2_TAG "layer2="
+#define PORTNO_TAG "portno="
+
+static gboolean
+get_s390_option (const char *tag,
+                 guint32 min,
+                 guint32 max,
+                 const char *value,
+                 int *out_int_val)
+{
+	g_return_val_if_fail (tag != NULL, FALSE);
+	g_return_val_if_fail (value != NULL, FALSE);
+
+	if (strncmp (value, tag, strlen (tag)))
+		return FALSE;
+
+	if (get_int (value + strlen (tag), out_int_val)) {
+		if (*out_int_val < min || *out_int_val > max) {
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid s390 %s value '%d'", tag, *out_int_val);
+			return FALSE;
+		}
+	} else {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid s390 %s '%s'", tag, value);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 static NMSetting *
 make_wired_setting (shvarFile *ifcfg,
                     const char *file,
@@ -2936,8 +2965,9 @@ make_wired_setting (shvarFile *ifcfg,
 {
 	NMSettingWired *s_wired;
 	char *value = NULL;
-	int mtu;
+	int mtu, portno, layer2;
 	GByteArray *mac = NULL;
+	char *nettype;
 
 	s_wired = NM_SETTING_WIRED (nm_setting_wired_new ());
 
@@ -3014,6 +3044,44 @@ make_wired_setting (shvarFile *ifcfg,
 		}
 		g_free (value);
 	}
+
+	value = svGetValue (ifcfg, "PORTNAME", FALSE);
+	if (value && strlen (value))
+		g_object_set (s_wired, NM_SETTING_WIRED_S390_PORT_NAME, value, NULL);
+	g_free (value);
+
+	nettype = svGetValue (ifcfg, "NETTYPE", FALSE);
+	if (nettype && strlen (nettype)) {
+		if (!strcmp (nettype, "qeth") || !strcmp (nettype, "lcs") || !strcmp (nettype, "ctc"))
+			g_object_set (s_wired, NM_SETTING_WIRED_S390_NETTYPE, nettype, NULL);
+		else
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: unknown s390 NETTYPE '%s'", nettype);
+	}
+
+	value = svGetValue (ifcfg, "OPTIONS", FALSE);
+	if (value && strlen (value)) {
+		char **options, **iter;
+
+		iter = options = g_strsplit_set (value, " ", 0);
+		while (iter && *iter) {
+			if (get_s390_option (LAYER2_TAG, 0, 1, *iter, &layer2)) {
+				if (!nettype || strcmp (nettype, "qeth")) {
+					PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: s390 layer2 set but NETTYPE not 'qeth'");
+				} else {
+					if (layer2 == 0)
+						g_object_set (s_wired, NM_SETTING_WIRED_S390_QETH_LAYER, 3, NULL);
+					else if (layer2 == 1)
+						g_object_set (s_wired, NM_SETTING_WIRED_S390_QETH_LAYER, 2, NULL);
+				}
+			} else if (get_s390_option (PORTNO_TAG, 0, 100, *iter, &portno))
+				g_object_set (s_wired, NM_SETTING_WIRED_S390_PORT_NUMBER, portno, NULL);
+			iter++;
+		}
+		g_strfreev (options);
+	}
+	g_free (value);
+
+	g_free (nettype);
 
 	if (!nm_controlled && !*unmanaged) {
 		/* If NM_CONTROLLED=no but there wasn't a MAC address or z/VM

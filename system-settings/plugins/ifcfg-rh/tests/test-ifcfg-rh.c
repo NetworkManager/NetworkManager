@@ -5368,6 +5368,7 @@ test_read_wired_qeth_static (void)
 	const char *expected_channel1 = "0.0.0601";
 	const char *expected_channel2 = "0.0.0602";
 	const GPtrArray *subchannels;
+	guint32 num;
 
 	connection = connection_from_file (TEST_IFCFG_WIRED_QETH_STATIC,
 	                                   NULL,
@@ -5452,6 +5453,48 @@ test_read_wired_qeth_static (void)
 	ASSERT (strcmp (tmp, expected_channel2) == 0,
 	        "wired-qeth-static-verify-wired", "failed to verify %s: unexpected subchannel #2",
 	        TEST_IFCFG_WIRED_QETH_STATIC);
+
+	/* Nettype */
+	tmp = nm_setting_wired_get_s390_nettype (s_wired);
+	ASSERT (tmp != NULL,
+	        "wired-qeth-static-verify-wired", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_QETH_STATIC,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_S390_NETTYPE);
+	ASSERT (strcmp (tmp, "qeth") == 0,
+	        "wired-qeth-static-verify-wired", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_QETH_STATIC,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_S390_NETTYPE);
+
+	/* port name */
+	tmp = nm_setting_wired_get_s390_port_name (s_wired);
+	ASSERT (tmp != NULL,
+	        "wired-qeth-static-verify-wired", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_QETH_STATIC,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_S390_PORT_NAME);
+	ASSERT (strcmp (tmp, "OSAPORT") == 0,
+	        "wired-qeth-static-verify-wired", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_QETH_STATIC,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_S390_PORT_NAME);
+
+	/* port number */
+	num = nm_setting_wired_get_s390_port_number (s_wired);
+	ASSERT (num == 0,
+	        "wired-qeth-static-verify-wired", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_QETH_STATIC,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_S390_PORT_NUMBER);
+
+	/* layer */
+	num = nm_setting_wired_get_s390_qeth_layer (s_wired);
+	ASSERT (num == 2,
+	        "wired-qeth-static-verify-wired", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_QETH_STATIC,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_S390_QETH_LAYER);
 
 	/* ===== IPv4 SETTING ===== */
 
@@ -8893,6 +8936,10 @@ test_write_wired_qeth_dhcp (void)
 	g_ptr_array_add (subchans, "0.0.602");
 	g_object_set (s_wired,
 	              NM_SETTING_WIRED_S390_SUBCHANNELS, subchans,
+	              NM_SETTING_WIRED_S390_NETTYPE, "qeth",
+	              NM_SETTING_WIRED_S390_PORT_NAME, "OSAPORT",
+	              NM_SETTING_WIRED_S390_PORT_NUMBER, 5,
+	              NM_SETTING_WIRED_S390_QETH_LAYER, 3,
 	              NULL);
 	g_ptr_array_free (subchans, TRUE);
 

@@ -842,8 +842,10 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	NMSettingWired *s_wired;
 	const GByteArray *device_mac, *cloned_mac;
 	char *tmp;
-	guint32 mtu;
+	const char *nettype, *portname;
+	guint32 mtu, layer, portno;
 	const GPtrArray *s390_subchannels;
+	GString *str;
 
 	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
 	if (!s_wired) {
@@ -894,6 +896,30 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		}
 		svSetValue (ifcfg, "SUBCHANNELS", tmp, FALSE);
 		g_free (tmp);
+	}
+
+	svSetValue (ifcfg, "NETTYPE", NULL, FALSE);
+	nettype = nm_setting_wired_get_s390_nettype (s_wired);
+	if (nettype)
+		svSetValue (ifcfg, "NETTYPE", nettype, FALSE);
+
+	svSetValue (ifcfg, "PORTNAME", NULL, FALSE);
+	portname = nm_setting_wired_get_s390_port_name (s_wired);
+	if (portname)
+		svSetValue (ifcfg, "PORTNAME", portname, FALSE);
+
+	svSetValue (ifcfg, "OPTIONS", NULL, FALSE);
+	if (s390_subchannels && nettype) {
+		str = g_string_sized_new (20);
+		if (!strcmp (nettype, "qeth")) {
+			layer = nm_setting_wired_get_s390_qeth_layer (s_wired);
+			g_string_append_printf (str, "layer2=%d ", layer == 2 ? 1 : 0);
+		}
+		portno = nm_setting_wired_get_s390_port_number (s_wired);
+		g_string_append_printf (str, "portno=%d", portno);
+
+		svSetValue (ifcfg, "OPTIONS", str->str, FALSE);
+		g_string_free (str, TRUE);
 	}
 
 	svSetValue (ifcfg, "TYPE", TYPE_ETHERNET, FALSE);
