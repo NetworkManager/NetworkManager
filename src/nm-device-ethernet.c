@@ -109,7 +109,6 @@ typedef struct {
 
 	guint8              hw_addr[ETH_ALEN];      /* Currently set MAC address */
 	guint8              perm_hw_addr[ETH_ALEN]; /* Currently set MAC address */
-	char *              s390_subchannels;
 	gboolean            carrier;
 
 	NMNetlinkMonitor *  monitor;
@@ -124,6 +123,7 @@ typedef struct {
 	char *              subchan1;
 	char *              subchan2;
 	char *              subchan3;
+	char *              subchannels; /* Composite used for checking unmanaged specs */
 
 	/* PPPoE */
 	NMPPPManager *ppp_manager;
@@ -386,6 +386,18 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 	             priv->subchan3 ? priv->subchan3 : "(none)");
 
 	g_dir_close (dir);
+
+	if (priv->subchan3) {
+		priv->subchannels = g_strdup_printf ("%s,%s,%s",
+		                                     priv->subchan1,
+		                                     priv->subchan2,
+		                                     priv->subchan3);
+	} else if (priv->subchan2) {
+		priv->subchannels = g_strdup_printf ("%s,%s",
+		                                     priv->subchan1,
+		                                     priv->subchan2);
+	} else
+		priv->subchannels = g_strdup (priv->subchan1);
 
 out:
 	if (parent)
@@ -1758,8 +1770,8 @@ spec_match_list (NMDevice *device, const GSList *specs)
 	matched = nm_match_spec_hwaddr (specs, hwaddr);
 	g_free (hwaddr);
 
-	if (!matched && priv->s390_subchannels)
-		matched = nm_match_spec_s390_subchannels (specs, priv->s390_subchannels);
+	if (!matched && priv->subchannels)
+		matched = nm_match_spec_s390_subchannels (specs, priv->subchannels);
 
 	return matched;
 }
@@ -1988,6 +2000,7 @@ dispose (GObject *object)
 	g_free (priv->subchan1);
 	g_free (priv->subchan2);
 	g_free (priv->subchan3);
+	g_free (priv->subchannels);
 
 	G_OBJECT_CLASS (nm_device_ethernet_parent_class)->dispose (object);
 }
