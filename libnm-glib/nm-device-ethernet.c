@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2010 Red Hat, Inc.
  */
 
 #include "nm-device-ethernet.h"
@@ -34,7 +34,8 @@ G_DEFINE_TYPE (NMDeviceEthernet, nm_device_ethernet, NM_TYPE_DEVICE)
 typedef struct {
 	DBusGProxy *proxy;
 
-	char * hw_address;
+	char *hw_address;
+	char *perm_hw_address;
 	guint32 speed;
 	gboolean carrier;
 	gboolean carrier_valid;
@@ -45,6 +46,7 @@ typedef struct {
 enum {
 	PROP_0,
 	PROP_HW_ADDRESS,
+	PROP_PERM_HW_ADDRESS,
 	PROP_SPEED,
 	PROP_CARRIER,
 
@@ -52,6 +54,7 @@ enum {
 };
 
 #define DBUS_PROP_HW_ADDRESS "HwAddress"
+#define DBUS_PROP_PERM_HW_ADDRESS "PermHwAddress"
 #define DBUS_PROP_SPEED "Speed"
 #define DBUS_PROP_CARRIER "Carrier"
 
@@ -80,9 +83,9 @@ nm_device_ethernet_new (DBusGConnection *connection, const char *path)
  * nm_device_ethernet_get_hw_address:
  * @device: a #NMDeviceEthernet
  *
- * Gets the hardware (MAC) address of the #NMDeviceEthernet
+ * Gets the active hardware (MAC) address of the #NMDeviceEthernet
  *
- * Returns: the hardware address. This is the internal string used by the
+ * Returns: the active hardware address. This is the internal string used by the
  * device, and must not be modified.
  **/
 const char *
@@ -100,6 +103,32 @@ nm_device_ethernet_get_hw_address (NMDeviceEthernet *device)
 	}
 
 	return priv->hw_address;
+}
+
+/**
+ * nm_device_ethernet_get_permanent_hw_address:
+ * @device: a #NMDeviceEthernet
+ *
+ * Gets the permanent hardware (MAC) address of the #NMDeviceEthernet
+ *
+ * Returns: the permanent hardware address. This is the internal string used by the
+ * device, and must not be modified.
+ **/
+const char *
+nm_device_ethernet_get_permanent_hw_address (NMDeviceEthernet *device)
+{
+	NMDeviceEthernetPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE_ETHERNET (device), NULL);
+
+	priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
+	if (!priv->perm_hw_address) {
+		priv->perm_hw_address = _nm_object_get_string_property (NM_OBJECT (device),
+		                                                        NM_DBUS_INTERFACE_DEVICE_WIRED,
+		                                                        DBUS_PROP_PERM_HW_ADDRESS);
+	}
+
+	return priv->perm_hw_address;
 }
 
 /**
@@ -168,9 +197,10 @@ register_for_property_changed (NMDeviceEthernet *device)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_DEVICE_ETHERNET_HW_ADDRESS, _nm_object_demarshal_generic, &priv->hw_address },
-		{ NM_DEVICE_ETHERNET_SPEED,      _nm_object_demarshal_generic, &priv->speed },
-		{ NM_DEVICE_ETHERNET_CARRIER,    _nm_object_demarshal_generic, &priv->carrier },
+		{ NM_DEVICE_ETHERNET_HW_ADDRESS,           _nm_object_demarshal_generic, &priv->hw_address },
+		{ NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS, _nm_object_demarshal_generic, &priv->perm_hw_address },
+		{ NM_DEVICE_ETHERNET_SPEED,                _nm_object_demarshal_generic, &priv->speed },
+		{ NM_DEVICE_ETHERNET_CARRIER,              _nm_object_demarshal_generic, &priv->carrier },
 		{ NULL },
 	};
 
@@ -230,6 +260,9 @@ finalize (GObject *object)
 	if (priv->hw_address)
 		g_free (priv->hw_address);
 
+	if (priv->perm_hw_address)
+		g_free (priv->perm_hw_address);
+
 	G_OBJECT_CLASS (nm_device_ethernet_parent_class)->finalize (object);
 }
 
@@ -244,6 +277,9 @@ get_property (GObject *object,
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
 		g_value_set_string (value, nm_device_ethernet_get_hw_address (device));
+		break;
+	case PROP_PERM_HW_ADDRESS:
+		g_value_set_string (value, nm_device_ethernet_get_permanent_hw_address (device));
 		break;
 	case PROP_SPEED:
 		g_value_set_uint (value, nm_device_ethernet_get_speed (device));
@@ -275,13 +311,26 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *device_class)
 	/**
 	 * NMDeviceEthernet:hw-address:
 	 *
-	 * The hardware (MAC) address of the device.
+	 * The active hardware (MAC) address of the device.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,
 		 g_param_spec_string (NM_DEVICE_ETHERNET_HW_ADDRESS,
-						  "MAC Address",
-						  "Hardware MAC address",
+						  "Active MAC Address",
+						  "Currently set hardware MAC address",
+						  NULL,
+						  G_PARAM_READABLE));
+
+	/**
+	 * NMDeviceEthernet:perm-hw-address:
+	 *
+	 * The permanent hardware (MAC) address of the device.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_PERM_HW_ADDRESS,
+		 g_param_spec_string (NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS,
+						  "Permanent MAC Address",
+						  "Permanent hardware MAC address",
 						  NULL,
 						  G_PARAM_READABLE));
 

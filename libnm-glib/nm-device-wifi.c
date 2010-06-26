@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2010 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -45,6 +45,7 @@ typedef struct {
 	DBusGProxy *proxy;
 
 	char *hw_address;
+	char *perm_hw_address;
 	NM80211Mode mode;
 	guint32 rate;
 	NMAccessPoint *active_ap;
@@ -58,6 +59,7 @@ typedef struct {
 enum {
 	PROP_0,
 	PROP_HW_ADDRESS,
+	PROP_PERM_HW_ADDRESS,
 	PROP_MODE,
 	PROP_BITRATE,
 	PROP_ACTIVE_ACCESS_POINT,
@@ -67,6 +69,7 @@ enum {
 };
 
 #define DBUS_PROP_HW_ADDRESS "HwAddress"
+#define DBUS_PROP_PERM_HW_ADDRESS "PermHwAddress"
 #define DBUS_PROP_MODE "Mode"
 #define DBUS_PROP_BITRATE "Bitrate"
 #define DBUS_PROP_ACTIVE_ACCESS_POINT "ActiveAccessPoint"
@@ -106,9 +109,9 @@ nm_device_wifi_new (DBusGConnection *connection, const char *path)
  * nm_device_wifi_get_hw_address:
  * @device: a #NMDeviceWifi
  *
- * Gets the hardware (MAC) address of the #NMDeviceWifi
+ * Gets the actual hardware (MAC) address of the #NMDeviceWifi
  *
- * Returns: the hardware address. This is the internal string used by the
+ * Returns: the actual hardware address. This is the internal string used by the
  * device, and must not be modified.
  **/
 const char *
@@ -126,6 +129,32 @@ nm_device_wifi_get_hw_address (NMDeviceWifi *device)
 	}
 
 	return priv->hw_address;
+}
+
+/**
+ * nm_device_wifi_get_permanent_hw_address:
+ * @device: a #NMDeviceWifi
+ *
+ * Gets the permanent hardware (MAC) address of the #NMDeviceWifi
+ *
+ * Returns: the permanent hardware address. This is the internal string used by the
+ * device, and must not be modified.
+ **/
+const char *
+nm_device_wifi_get_permanent_hw_address (NMDeviceWifi *device)
+{
+	NMDeviceWifiPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), NULL);
+
+	priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
+	if (!priv->perm_hw_address) {
+		priv->perm_hw_address = _nm_object_get_string_property (NM_OBJECT (device),
+		                                                        NM_DBUS_INTERFACE_DEVICE_WIRELESS,
+		                                                        DBUS_PROP_PERM_HW_ADDRESS);
+	}
+
+	return priv->perm_hw_address;
 }
 
 /**
@@ -464,6 +493,9 @@ get_property (GObject *object,
 	case PROP_HW_ADDRESS:
 		g_value_set_string (value, nm_device_wifi_get_hw_address (self));
 		break;
+	case PROP_PERM_HW_ADDRESS:
+		g_value_set_string (value, nm_device_wifi_get_permanent_hw_address (self));
+		break;
 	case PROP_MODE:
 		g_value_set_uint (value, nm_device_wifi_get_mode (self));
 		break;
@@ -554,11 +586,12 @@ register_for_property_changed (NMDeviceWifi *device)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
 	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_DEVICE_WIFI_HW_ADDRESS,          _nm_object_demarshal_generic, &priv->hw_address },
-		{ NM_DEVICE_WIFI_MODE,                _nm_object_demarshal_generic, &priv->mode },
-		{ NM_DEVICE_WIFI_BITRATE,             _nm_object_demarshal_generic, &priv->rate },
-		{ NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT, demarshal_active_ap,         &priv->active_ap },
-		{ NM_DEVICE_WIFI_CAPABILITIES,        _nm_object_demarshal_generic, &priv->wireless_caps },
+		{ NM_DEVICE_WIFI_HW_ADDRESS,           _nm_object_demarshal_generic, &priv->hw_address },
+		{ NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS, _nm_object_demarshal_generic, &priv->perm_hw_address },
+		{ NM_DEVICE_WIFI_MODE,                 _nm_object_demarshal_generic, &priv->mode },
+		{ NM_DEVICE_WIFI_BITRATE,              _nm_object_demarshal_generic, &priv->rate },
+		{ NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT,  demarshal_active_ap,         &priv->active_ap },
+		{ NM_DEVICE_WIFI_CAPABILITIES,         _nm_object_demarshal_generic, &priv->wireless_caps },
 		{ NULL },
 	};
 
@@ -638,6 +671,9 @@ finalize (GObject *object)
 	if (priv->hw_address)
 		g_free (priv->hw_address);
 
+	if (priv->perm_hw_address)
+		g_free (priv->perm_hw_address);
+
 	G_OBJECT_CLASS (nm_device_wifi_parent_class)->finalize (object);
 }
 
@@ -664,8 +700,21 @@ nm_device_wifi_class_init (NMDeviceWifiClass *device_class)
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,
 		 g_param_spec_string (NM_DEVICE_WIFI_HW_ADDRESS,
-						  "MAC Address",
-						  "Hardware MAC address",
+						  "Active MAC Address",
+						  "Currently set hardware MAC address",
+						  NULL,
+						  G_PARAM_READABLE));
+
+	/**
+	 * NMDeviceWifi:perm-hw-address:
+	 *
+	 * The hardware (MAC) address of the device.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_PERM_HW_ADDRESS,
+		 g_param_spec_string (NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS,
+						  "Permanent MAC Address",
+						  "Permanent hardware MAC address",
 						  NULL,
 						  G_PARAM_READABLE));
 

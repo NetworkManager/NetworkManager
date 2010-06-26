@@ -86,7 +86,8 @@ typedef struct {
 	GByteArray *bssid;
 	guint32 rate;
 	guint32 tx_power;
-	GByteArray *mac_address;
+	GByteArray *device_mac_address;
+	GByteArray *cloned_mac_address;
 	guint32 mtu;
 	GSList *seen_bssids;
 	char *security;
@@ -102,6 +103,7 @@ enum {
 	PROP_RATE,
 	PROP_TX_POWER,
 	PROP_MAC_ADDRESS,
+	PROP_CLONED_MAC_ADDRESS,
 	PROP_MTU,
 	PROP_SEEN_BSSIDS,
 	PROP_SEC,
@@ -353,7 +355,15 @@ nm_setting_wireless_get_mac_address (NMSettingWireless *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), NULL);
 
-	return NM_SETTING_WIRELESS_GET_PRIVATE (setting)->mac_address;
+	return NM_SETTING_WIRELESS_GET_PRIVATE (setting)->device_mac_address;
+}
+
+const GByteArray *
+nm_setting_wireless_get_cloned_mac_address (NMSettingWireless *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), NULL);
+
+	return NM_SETTING_WIRELESS_GET_PRIVATE (setting)->cloned_mac_address;
 }
 
 guint32
@@ -497,11 +507,19 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->mac_address && priv->mac_address->len != ETH_ALEN) {
+	if (priv->device_mac_address && priv->device_mac_address->len != ETH_ALEN) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_ERROR,
 		             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
 		             NM_SETTING_WIRELESS_MAC_ADDRESS);
+		return FALSE;
+	}
+
+	if (priv->cloned_mac_address && priv->cloned_mac_address->len != ETH_ALEN) {
+		g_set_error (error,
+		             NM_SETTING_WIRELESS_ERROR,
+		             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS);
 		return FALSE;
 	}
 
@@ -548,8 +566,10 @@ finalize (GObject *object)
 		g_byte_array_free (priv->ssid, TRUE);
 	if (priv->bssid)
 		g_byte_array_free (priv->bssid, TRUE);
-	if (priv->mac_address)
-		g_byte_array_free (priv->mac_address, TRUE);
+	if (priv->device_mac_address)
+		g_byte_array_free (priv->device_mac_address, TRUE);
+	if (priv->cloned_mac_address)
+		g_byte_array_free (priv->cloned_mac_address, TRUE);
 
 	nm_utils_slist_free (priv->seen_bssids, g_free);
 
@@ -591,9 +611,14 @@ set_property (GObject *object, guint prop_id,
 		priv->tx_power = g_value_get_uint (value);
 		break;
 	case PROP_MAC_ADDRESS:
-		if (priv->mac_address)
-			g_byte_array_free (priv->mac_address, TRUE);
-		priv->mac_address = g_value_dup_boxed (value);
+		if (priv->device_mac_address)
+			g_byte_array_free (priv->device_mac_address, TRUE);
+		priv->device_mac_address = g_value_dup_boxed (value);
+		break;
+	case PROP_CLONED_MAC_ADDRESS:
+		if (priv->cloned_mac_address)
+			g_byte_array_free (priv->cloned_mac_address, TRUE);
+		priv->cloned_mac_address = g_value_dup_boxed (value);
 		break;
 	case PROP_MTU:
 		priv->mtu = g_value_get_uint (value);
@@ -642,6 +667,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_MAC_ADDRESS:
 		g_value_set_boxed (value, nm_setting_wireless_get_mac_address (setting));
+		break;
+	case PROP_CLONED_MAC_ADDRESS:
+		g_value_set_boxed (value, nm_setting_wireless_get_cloned_mac_address (setting));
 		break;
 	case PROP_MTU:
 		g_value_set_uint (value, nm_setting_wireless_get_mtu (setting));
@@ -809,19 +837,35 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 * NMSettingWireless:mac-address:
 	 *
 	 * If specified, this connection will only apply to the WiFi device
-	 * whose MAC address matches. This property does not change the MAC address
-	 * of the device (known as MAC spoofing).
+	 * whose permanent MAC address matches. This property does not change the MAC address
+	 * of the device (i.e. MAC spoofing).
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
 		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_MAC_ADDRESS,
-							   "MAC Address",
+							   "Device MAC Address",
 							   "If specified, this connection will only apply to "
-							   "the WiFi device whose MAC address matches.  "
+							   "the WiFi device whose permanent MAC address matches.  "
 							   "This property does not change the MAC address "
-							   "of the device (known as MAC spoofing).",
+							   "of the device (i.e. MAC spoofing).",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
+	 * NMSettingWireless:cloned-mac-address:
+	 *
+	 * If specified, request that the Wifi device use this MAC address instead of its
+	 * permanent MAC address.  This is known as MAC cloning or spoofing.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_CLONED_MAC_ADDRESS,
+		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS,
+	                                     "Spoof MAC Address",
+	                                     "If specified, request that the WiFi device use "
+	                                     "this MAC address instead of its permanent MAC address.  "
+	                                     "This is known as MAC cloning or spoofing.",
+	                                     DBUS_TYPE_G_UCHAR_ARRAY,
+	                                     G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
 	 * NMSettingWireless:seen-bssids:

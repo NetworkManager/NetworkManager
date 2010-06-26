@@ -75,7 +75,8 @@ typedef struct {
 	guint32 speed;
 	char *duplex;
 	gboolean auto_negotiate;
-	GByteArray *mac_address;
+	GByteArray *device_mac_address;
+	GByteArray *cloned_mac_address;
 	guint32 mtu;
 	GPtrArray *s390_subchannels;
 	char *s390_port_name;
@@ -91,6 +92,7 @@ enum {
 	PROP_DUPLEX,
 	PROP_AUTO_NEGOTIATE,
 	PROP_MAC_ADDRESS,
+	PROP_CLONED_MAC_ADDRESS,
 	PROP_MTU,
 	PROP_S390_SUBCHANNELS,
 	PROP_S390_PORT_NAME,
@@ -144,7 +146,15 @@ nm_setting_wired_get_mac_address (NMSettingWired *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), NULL);
 
-	return NM_SETTING_WIRED_GET_PRIVATE (setting)->mac_address;
+	return NM_SETTING_WIRED_GET_PRIVATE (setting)->device_mac_address;
+}
+
+const GByteArray *
+nm_setting_wired_get_cloned_mac_address (NMSettingWired *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), NULL);
+
+	return NM_SETTING_WIRED_GET_PRIVATE (setting)->cloned_mac_address;
 }
 
 guint32
@@ -218,7 +228,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->mac_address && priv->mac_address->len != ETH_ALEN) {
+	if (priv->device_mac_address && priv->device_mac_address->len != ETH_ALEN) {
 		g_set_error (error,
 		             NM_SETTING_WIRED_ERROR,
 		             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
@@ -254,6 +264,14 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
+	if (priv->cloned_mac_address && priv->cloned_mac_address->len != ETH_ALEN) {
+		g_set_error (error,
+		             NM_SETTING_WIRED_ERROR,
+		             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_WIRED_CLONED_MAC_ADDRESS);
+		return FALSE;
+	}
+
 	return TRUE;
 }
 
@@ -273,8 +291,11 @@ finalize (GObject *object)
 	g_free (priv->s390_port_name);
 	g_free (priv->s390_nettype);
 
-	if (priv->mac_address)
-		g_byte_array_free (priv->mac_address, TRUE);
+	if (priv->device_mac_address)
+		g_byte_array_free (priv->device_mac_address, TRUE);
+
+	if (priv->cloned_mac_address)
+		g_byte_array_free (priv->cloned_mac_address, TRUE);
 
 	G_OBJECT_CLASS (nm_setting_wired_parent_class)->finalize (object);
 }
@@ -301,9 +322,14 @@ set_property (GObject *object, guint prop_id,
 		priv->auto_negotiate = g_value_get_boolean (value);
 		break;
 	case PROP_MAC_ADDRESS:
-		if (priv->mac_address)
-			g_byte_array_free (priv->mac_address, TRUE);
-		priv->mac_address = g_value_dup_boxed (value);
+		if (priv->device_mac_address)
+			g_byte_array_free (priv->device_mac_address, TRUE);
+		priv->device_mac_address = g_value_dup_boxed (value);
+		break;
+	case PROP_CLONED_MAC_ADDRESS:
+		if (priv->cloned_mac_address)
+			g_byte_array_free (priv->cloned_mac_address, TRUE);
+		priv->cloned_mac_address = g_value_dup_boxed (value);
 		break;
 	case PROP_MTU:
 		priv->mtu = g_value_get_uint (value);
@@ -356,6 +382,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_MAC_ADDRESS:
 		g_value_set_boxed (value, nm_setting_wired_get_mac_address (setting));
+		break;
+	case PROP_CLONED_MAC_ADDRESS:
+		g_value_set_boxed (value, nm_setting_wired_get_cloned_mac_address (setting));
 		break;
 	case PROP_MTU:
 		g_value_set_uint (value, nm_setting_wired_get_mtu (setting));
@@ -469,19 +498,35 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	 * NMSettingWired:mac-address:
 	 *
 	 * If specified, this connection will only apply to the ethernet device
-	 * whose MAC address matches. This property does not change the MAC address
-	 * of the device (known as MAC spoofing).
+	 * whose permanent MAC address matches. This property does not change the MAC address
+	 * of the device (i.e. MAC spoofing).
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
 		 _nm_param_spec_specialized (NM_SETTING_WIRED_MAC_ADDRESS,
-							   "MAC Address",
+							   "Device MAC Address",
 							   "If specified, this connection will only apply to "
-							   "the ethernet device whose MAC address matches.  "
+							   "the ethernet device whose permanent MAC address matches.  "
 							   "This property does not change the MAC address "
-							   "of the device (known as MAC spoofing).",
+							   "of the device (i.e. MAC spoofing).",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
+	 * NMSettingWired:cloned-mac-address:
+	 *
+	 * If specified, request that the device use this MAC address instead of its
+	 * permanent MAC address.  This is known as MAC cloning or spoofing.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_CLONED_MAC_ADDRESS,
+		 _nm_param_spec_specialized (NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
+	                                     "Cloned MAC Address",
+	                                     "If specified, request that the device use "
+	                                     "this MAC address instead of its permanent MAC address.  "
+	                                     "This is known as MAC cloning or spoofing.",
+	                                     DBUS_TYPE_G_UCHAR_ARRAY,
+	                                     G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
 	 * NMSettingWired:mtu:

@@ -205,10 +205,14 @@ hostname_thread_is_dead (HostnameThread *ht)
 
 /************************************************************************/
 
-#define FALLBACK_HOSTNAME "localhost.localdomain"
+#define FALLBACK_HOSTNAME4 "localhost.localdomain"
+#define FALLBACK_HOSTNAME6 "localhost6.localdomain6"
 
 gboolean
-nm_policy_set_system_hostname (const char *new_hostname, const char *msg)
+nm_policy_set_system_hostname (const char *new_hostname,
+                               const char *ip4_addr,
+                               const char *ip6_addr,
+                               const char *msg)
 {
 	char old_hostname[HOST_NAME_MAX + 1];
 	int ret = 0;
@@ -218,7 +222,7 @@ nm_policy_set_system_hostname (const char *new_hostname, const char *msg)
 	if (new_hostname)
 		g_warn_if_fail (strlen (new_hostname));
 
-	name = (new_hostname && strlen (new_hostname)) ? new_hostname : FALLBACK_HOSTNAME;
+	name = (new_hostname && strlen (new_hostname)) ? new_hostname : FALLBACK_HOSTNAME4;
 
 	old_hostname[HOST_NAME_MAX] = '\0';
 	errno = 0;
@@ -229,7 +233,7 @@ nm_policy_set_system_hostname (const char *new_hostname, const char *msg)
 	} else {
 		/* Don't set the hostname if it isn't actually changing */
 		if (   (new_hostname && !strcmp (old_hostname, new_hostname))
-		    || (!new_hostname && !strcmp (old_hostname, FALLBACK_HOSTNAME)))
+		    || (!new_hostname && !strcmp (old_hostname, FALLBACK_HOSTNAME4)))
 			set_hostname = FALSE;
 	}
 
@@ -250,13 +254,18 @@ nm_policy_set_system_hostname (const char *new_hostname, const char *msg)
 	 * nm_policy_hosts_update_etc_hosts() will just return and won't touch
 	 * /etc/hosts at all.
 	 */
-	if (!nm_policy_hosts_update_etc_hosts (name, FALLBACK_HOSTNAME, &changed)) {
+	if (!nm_policy_hosts_update_etc_hosts (name,
+	                                       FALLBACK_HOSTNAME4,
+	                                       FALLBACK_HOSTNAME6,
+	                                       ip4_addr,
+	                                       ip6_addr,
+	                                       &changed)) {
 		/* error updating /etc/hosts; fallback to localhost.localdomain */
-		nm_log_info (LOGD_DNS, "Setting system hostname to '" FALLBACK_HOSTNAME "' (error updating /etc/hosts)");
-		ret = sethostname (FALLBACK_HOSTNAME, strlen (FALLBACK_HOSTNAME));
+		nm_log_info (LOGD_DNS, "Setting system hostname to '" FALLBACK_HOSTNAME4 "' (error updating /etc/hosts)");
+		ret = sethostname (FALLBACK_HOSTNAME4, strlen (FALLBACK_HOSTNAME4));
 		if (ret != 0) {
 			nm_log_warn (LOGD_DNS, "couldn't set the fallback system hostname (%s): (%d) %s",
-			             FALLBACK_HOSTNAME, errno, strerror (errno));
+			             FALLBACK_HOSTNAME4, errno, strerror (errno));
 		}
 	}
 

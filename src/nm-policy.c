@@ -61,6 +61,7 @@ struct NMPolicy {
 	HostnameThread *lookup;
 
 	char *orig_hostname; /* hostname at NM start time */
+	char *cur_hostname;  /* hostname we want to assign */
 };
 
 #define INVALID_TAG "invalid"
@@ -225,9 +226,62 @@ get_best_ip6_device (NMManager *manager, NMActRequest **out_req)
 }
 
 static void
-_set_hostname (const char *new_hostname, const char *msg)
+_set_hostname (NMPolicy *policy,
+               gboolean change_hostname,
+               const char *new_hostname,
+               const char *msg)
 {
-	if (nm_policy_set_system_hostname (new_hostname, msg))
+	char ip4_addr[INET_ADDRSTRLEN + 1];
+	char ip6_addr[INET6_ADDRSTRLEN + 1];
+
+	if (change_hostname) {
+		NMNamedManager *named_mgr;
+
+		g_free (policy->cur_hostname);
+		policy->cur_hostname = g_strdup (new_hostname);
+
+		named_mgr = nm_named_manager_get ();
+		nm_named_manager_set_hostname (named_mgr, policy->cur_hostname);
+		g_object_unref (named_mgr);
+	}
+
+	/* Get the default IPv4 and IPv6 addresses so we can assign
+	 * the hostname to them in /etc/hosts.
+	 */
+	memset (ip4_addr, 0, sizeof (ip4_addr));
+	if (policy->default_device4) {
+		NMIP4Config *config = NULL;
+		NMIP4Address *addr = NULL;
+
+		config = nm_device_get_ip4_config (policy->default_device4);
+		if (config)
+			addr = nm_ip4_config_get_address (config, 0);
+
+		if (addr) {
+			struct in_addr tmp;
+
+			tmp.s_addr = nm_ip4_address_get_address (addr);
+			inet_ntop (AF_INET, &tmp, ip4_addr, sizeof (ip4_addr));
+		}
+	}
+
+	memset (ip6_addr, 0, sizeof (ip6_addr));
+	if (policy->default_device6) {
+		NMIP6Config *config = NULL;
+		NMIP6Address *addr = NULL;
+
+		config = nm_device_get_ip6_config (policy->default_device6);
+		if (config)
+			addr = nm_ip6_config_get_address (config, 0);
+
+		if (addr)
+			inet_ntop (AF_INET6, nm_ip6_address_get_address (addr), ip6_addr, sizeof (ip6_addr));
+	}
+
+	if (nm_policy_set_system_hostname (policy->cur_hostname,
+	                                   strlen (ip4_addr) ? ip4_addr : NULL,
+	                                   strlen (ip6_addr) ? ip6_addr : NULL,
+	                                   msg))
 		nm_utils_call_dispatcher ("hostname", NULL, NULL, NULL);
 }
 
@@ -244,12 +298,12 @@ lookup_callback (HostnameThread *thread,
 	if (!hostname_thread_is_dead (thread) && (thread == policy->lookup)) {
 		policy->lookup = NULL;
 		if (!hostname) {
-			/* No valid IP4 config (!!); fall back to localhost.localdomain */
+			/* Fall back to localhost.localdomain */
 			msg = g_strdup_printf ("address lookup failed: %d", result);
-			_set_hostname (NULL, msg);
+			_set_hostname (policy, TRUE, NULL, msg);
 			g_free (msg);
 		} else
-			_set_hostname (hostname, "from address lookup");
+			_set_hostname (policy, TRUE, hostname, "from address lookup");
 	}
 	hostname_thread_free (thread);
 }
@@ -281,7 +335,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 	/* Try a persistent hostname first */
 	g_object_get (G_OBJECT (policy->manager), NM_MANAGER_HOSTNAME, &configured_hostname, NULL);
 	if (configured_hostname) {
-		_set_hostname (configured_hostname, "from system configuration");
+		_set_hostname (policy, TRUE, configured_hostname, "from system configuration");
 		g_free (configured_hostname);
 		return;
 	}
@@ -296,7 +350,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 		/* No best device; fall back to original hostname or if there wasn't
 		 * one, 'localhost.localdomain'
 		 */
-		_set_hostname (policy->orig_hostname, "no default device");
+		_set_hostname (policy, TRUE, policy->orig_hostname, "no default device");
 		return;
 	}
 
@@ -311,7 +365,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 				/* Sanity check; strip leading spaces */
 				while (*p) {
 					if (!isblank (*p++)) {
-						_set_hostname (dhcp_hostname, "from DHCPv4");
+						_set_hostname (policy, TRUE, dhcp_hostname, "from DHCPv4");
 						return;
 					}
 				}
@@ -330,7 +384,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 				/* Sanity check; strip leading spaces */
 				while (*p) {
 					if (!isblank (*p++)) {
-						_set_hostname (dhcp_hostname, "from DHCPv6");
+						_set_hostname (policy, TRUE, dhcp_hostname, "from DHCPv6");
 						return;
 					}
 				}
@@ -344,7 +398,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 	 * when NM started up.
 	 */
 	if (policy->orig_hostname) {
-		_set_hostname (policy->orig_hostname, "from system startup");
+		_set_hostname (policy, TRUE, policy->orig_hostname, "from system startup");
 		return;
 	}
 
@@ -360,7 +414,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 		    || (nm_ip4_config_get_num_nameservers (ip4_config) == 0)
 		    || (nm_ip4_config_get_num_addresses (ip4_config) == 0)) {
 			/* No valid IP4 config (!!); fall back to localhost.localdomain */
-			_set_hostname (NULL, "no IPv4 config");
+			_set_hostname (policy, TRUE, NULL, "no IPv4 config");
 			return;
 		}
 
@@ -378,7 +432,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 		    || (nm_ip6_config_get_num_nameservers (ip6_config) == 0)
 		    || (nm_ip6_config_get_num_addresses (ip6_config) == 0)) {
 			/* No valid IP6 config (!!); fall back to localhost.localdomain */
-			_set_hostname (NULL, "no IPv6 config");
+			_set_hostname (policy, TRUE, NULL, "no IPv6 config");
 			return;
 		}
 
@@ -391,7 +445,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 
 	if (!policy->lookup) {
 		/* Fall back to 'localhost.localdomain' */
-		_set_hostname (NULL, "error starting hostname thread");
+		_set_hostname (policy, TRUE, NULL, "error starting hostname thread");
 	}
 }
 
@@ -1186,6 +1240,7 @@ nm_policy_destroy (NMPolicy *policy)
 	g_slist_free (policy->dev_signal_ids);
 
 	g_free (policy->orig_hostname);
+	g_free (policy->cur_hostname);
 
 	g_object_unref (policy->manager);
 	g_free (policy);

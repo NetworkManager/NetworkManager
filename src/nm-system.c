@@ -772,6 +772,48 @@ nm_system_device_set_mtu (const char *iface, guint32 mtu)
 	return success;
 }
 
+gboolean
+nm_system_device_set_mac (const char *iface, const struct ether_addr *mac)
+{
+	struct rtnl_link *old;
+	struct rtnl_link *new;
+	gboolean success = FALSE;
+	struct nl_handle *nlh;
+	int iface_idx;
+	struct nl_addr *addr = NULL;
+
+	g_return_val_if_fail (iface != NULL, FALSE);
+	g_return_val_if_fail (mac != NULL, FALSE);
+
+	new = rtnl_link_alloc ();
+	if (!new)
+		return FALSE;
+
+	iface_idx = nm_netlink_iface_to_index (iface);
+	old = nm_netlink_index_to_rtnl_link (iface_idx);
+	if (old) {
+		addr = nl_addr_build (AF_LLC, (void *) mac, ETH_ALEN);
+		if (!addr) {
+			char *mac_str;
+			mac_str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X", mac->ether_addr_octet[0], mac->ether_addr_octet[1], mac->ether_addr_octet[2],
+			                                                            mac->ether_addr_octet[3], mac->ether_addr_octet[4], mac->ether_addr_octet[5]);
+			nm_log_err (LOGD_DEVICE, "(%s): could not allocate memory for MAC address (%s)", iface, mac_str);
+			g_free (mac_str);
+			return FALSE;
+		}
+		rtnl_link_set_addr (new, addr);
+		nlh = nm_netlink_get_default_handle ();
+		if (nlh) {
+			rtnl_link_change (nlh, old, new, 0);
+			success = TRUE;
+		}
+		rtnl_link_put (old);
+	}
+
+	rtnl_link_put (new);
+	return success;
+}
+
 static struct rtnl_route *
 add_ip4_route_to_gateway (const char *iface, guint32 gw, guint32 mss)
 {

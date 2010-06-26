@@ -283,6 +283,9 @@ constructor (GType type,
 	if (NM_DEVICE_GET_CLASS (dev)->update_hw_address)
 		NM_DEVICE_GET_CLASS (dev)->update_hw_address (dev);
 
+	if (NM_DEVICE_GET_CLASS (dev)->update_permanent_hw_address)
+		NM_DEVICE_GET_CLASS (dev)->update_permanent_hw_address (dev);
+
 	priv->dhcp_manager = nm_dhcp_manager_get ();
 
 	update_accept_ra_save (dev);

@@ -185,7 +185,7 @@ make_connection_setting (const char *file,
 }
 
 static gboolean
-read_mac_address (shvarFile *ifcfg, GByteArray **array, GError **error)
+read_mac_address (shvarFile *ifcfg, const char *key, GByteArray **array, GError **error)
 {
 	char *value = NULL;
 	struct ether_addr *mac;
@@ -196,7 +196,7 @@ read_mac_address (shvarFile *ifcfg, GByteArray **array, GError **error)
 	g_return_val_if_fail (error != NULL, FALSE);
 	g_return_val_if_fail (*error == NULL, FALSE);
 
-	value = svGetValue (ifcfg, "HWADDR", FALSE);
+	value = svGetValue (ifcfg, key, FALSE);
 	if (!value || !strlen (value)) {
 		g_free (value);
 		return TRUE;
@@ -206,7 +206,7 @@ read_mac_address (shvarFile *ifcfg, GByteArray **array, GError **error)
 	if (!mac) {
 		g_free (value);
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
-		             "The MAC address '%s' was invalid.", value);
+		             "%s: the MAC address '%s' was invalid.", key, value);
 		return FALSE;
 	}
 
@@ -294,7 +294,7 @@ fill_ip4_setting_from_ibft (shvarFile *ifcfg,
 		goto done;
 	}
 
-	if (!read_mac_address (ifcfg, &ifcfg_mac, error))
+	if (!read_mac_address (ifcfg, "HWADDR", &ifcfg_mac, error))
 		goto done;
 	/* Ensure we got a MAC */
 	if (!ifcfg_mac) {
@@ -2655,7 +2655,7 @@ make_wireless_setting (shvarFile *ifcfg,
 
 	s_wireless = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
 
-	if (read_mac_address (ifcfg, &array, error)) {
+	if (read_mac_address (ifcfg, "HWADDR", &array, error)) {
 		if (array) {
 			g_object_set (s_wireless, NM_SETTING_WIRELESS_MAC_ADDRESS, array, NULL);
 
@@ -2676,6 +2676,14 @@ make_wireless_setting (shvarFile *ifcfg,
 	} else {
 		g_object_unref (s_wireless);
 		return NULL;
+	}
+
+	array = NULL;
+	if (read_mac_address (ifcfg, "MACADDR", &array, error)) {
+		if (array) {
+			g_object_set (s_wireless, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, array, NULL);
+			g_byte_array_free (array, TRUE);
+		}
 	}
 
 	value = svGetValue (ifcfg, "ESSID", TRUE);
@@ -2945,7 +2953,7 @@ make_wired_setting (shvarFile *ifcfg,
 		g_free (value);
 	}
 
-	if (read_mac_address (ifcfg, &mac, error)) {
+	if (read_mac_address (ifcfg, "HWADDR", &mac, error)) {
 		if (mac) {
 			g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
 
@@ -3012,6 +3020,14 @@ make_wired_setting (shvarFile *ifcfg,
 		 * subchannels, notify the user that the device cannot be unmanaged.
 		 */
 		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: NM_CONTROLLED was false but HWADDR or SUBCHANNELS was missing; device will be managed");
+	}
+
+	mac = NULL;
+	if (read_mac_address (ifcfg, "MACADDR", &mac, error)) {
+		if (mac) {
+			g_object_set (s_wired, NM_SETTING_WIRED_CLONED_MAC_ADDRESS, mac, NULL);
+			g_byte_array_free (mac, TRUE);
+		}
 	}
 
 	value = svGetValue (ifcfg, "KEY_MGMT", FALSE);

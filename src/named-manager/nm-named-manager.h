@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2004 - 2005 Colin Walters <walters@redhat.com>
- * Copyright (C) 2004 - 2008 Red Hat, Inc.
+ * Copyright (C) 2004 - 2010 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  *   and others
  */
@@ -86,6 +86,9 @@ gboolean nm_named_manager_add_ip6_config (NMNamedManager *mgr,
 gboolean nm_named_manager_remove_ip6_config (NMNamedManager *mgr,
 											 const char *iface,
 											 NMIP6Config *config);
+
+void nm_named_manager_set_hostname (NMNamedManager *mgr,
+                                    const char *hostname);
 
 G_END_DECLS
 

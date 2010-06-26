@@ -1190,33 +1190,10 @@ user_proxy_destroyed_cb (DBusGProxy *proxy, NMManager *self)
 	user_proxy_cleanup (self, TRUE);
 }
 
-typedef struct {
-	DBusGProxy *proxy;
-	char *path;
-	NMManager *manager;
-} Foo;
-
-static gboolean
-blah (gpointer user_data)
-{
-	Foo *f = user_data;
-
-	user_internal_new_connection_cb (f->proxy, f->path, f->manager, NULL);
-	g_free (f->path);
-	g_free (f);
-	return FALSE;
-}
-
 static void
 user_new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
 {
-	Foo *f = g_malloc0 (sizeof (Foo));
-
-	f->proxy = proxy;
-	f->path = g_strdup (path);
-	f->manager = NM_MANAGER (user_data);
-
-	g_timeout_add_seconds (6, blah, f);
+	user_internal_new_connection_cb (proxy, path, NM_MANAGER (user_data), NULL);
 }
 
 static gboolean

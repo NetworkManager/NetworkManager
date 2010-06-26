@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2010 Red Hat, Inc.
  */
 
 #ifndef NM_DEVICE_ETHERNET_H
@@ -36,6 +36,7 @@ G_BEGIN_DECLS
 #define NM_DEVICE_ETHERNET_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_ETHERNET, NMDeviceEthernetClass))
 
 #define NM_DEVICE_ETHERNET_HW_ADDRESS  "hw-address"
+#define NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS "perm-hw-address"
 #define NM_DEVICE_ETHERNET_SPEED       "speed"
 #define NM_DEVICE_ETHERNET_CARRIER     "carrier"
 
@@ -60,6 +61,7 @@ GType nm_device_ethernet_get_type (void);
 GObject *nm_device_ethernet_new (DBusGConnection *connection, const char *path);
 
 const char * nm_device_ethernet_get_hw_address (NMDeviceEthernet *device);
+const char * nm_device_ethernet_get_permanent_hw_address (NMDeviceEthernet *device);
 guint32      nm_device_ethernet_get_speed   (NMDeviceEthernet *device);
 gboolean     nm_device_ethernet_get_carrier (NMDeviceEthernet *device);
 

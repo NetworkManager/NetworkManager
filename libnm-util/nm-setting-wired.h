@@ -57,6 +57,7 @@ GQuark nm_setting_wired_error_quark (void);
 #define NM_SETTING_WIRED_DUPLEX "duplex"
 #define NM_SETTING_WIRED_AUTO_NEGOTIATE "auto-negotiate"
 #define NM_SETTING_WIRED_MAC_ADDRESS "mac-address"
+#define NM_SETTING_WIRED_CLONED_MAC_ADDRESS "cloned-mac-address"
 #define NM_SETTING_WIRED_MTU "mtu"
 #define NM_SETTING_WIRED_S390_SUBCHANNELS "s390-subchannels"
 #define NM_SETTING_WIRED_S390_PORT_NAME "s390-port-name"
@@ -86,6 +87,7 @@ guint32           nm_setting_wired_get_speed            (NMSettingWired *setting
 const char *      nm_setting_wired_get_duplex           (NMSettingWired *setting);
 gboolean          nm_setting_wired_get_auto_negotiate   (NMSettingWired *setting);
 const GByteArray *nm_setting_wired_get_mac_address      (NMSettingWired *setting);
+const GByteArray *nm_setting_wired_get_cloned_mac_address (NMSettingWired *setting);
 guint32           nm_setting_wired_get_mtu              (NMSettingWired *setting);
 const GPtrArray * nm_setting_wired_get_s390_subchannels (NMSettingWired *setting);
 const char *      nm_setting_wired_get_s390_port_name   (NMSettingWired *setting);

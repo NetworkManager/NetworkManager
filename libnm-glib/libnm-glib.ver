@@ -63,6 +63,7 @@ global:
 	nm_device_bt_get_type;
 	nm_device_ethernet_get_carrier;
 	nm_device_ethernet_get_hw_address;
+	nm_device_ethernet_get_permanent_hw_address;
 	nm_device_ethernet_get_speed;
 	nm_device_ethernet_get_type;
 	nm_device_ethernet_new;
@@ -86,6 +87,7 @@ global:
 	nm_device_wifi_get_bitrate;
 	nm_device_wifi_get_capabilities;
 	nm_device_wifi_get_hw_address;
+	nm_device_wifi_get_permanent_hw_address;
 	nm_device_wifi_get_mode;
 	nm_device_wifi_get_type;
 	nm_device_wifi_new;

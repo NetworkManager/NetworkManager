@@ -61,6 +61,10 @@ EXTRA_DIST = \
 	ifcfg-test-wired-ipv6-only \
 	ifcfg-test-wifi-wep-passphrase \
 	keys-test-wifi-wep-passphrase \
+	ifcfg-test-wifi-wep-40-ascii \
+	keys-test-wifi-wep-40-ascii \
+	ifcfg-test-wifi-wep-104-ascii \
+	keys-test-wifi-wep-104-ascii \
 	ifcfg-test-wired-qeth-static
 
 check-local:

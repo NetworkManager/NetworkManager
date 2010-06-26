@@ -50,13 +50,14 @@ static NmcOutputField nmc_fields_setting_connection[] = {
 
 /* Available fields for NM_SETTING_WIRED_SETTING_NAME */
 static NmcOutputField nmc_fields_setting_wired[] = {
-	SETTING_FIELD ("name",  17),                          /* 0 */
-	SETTING_FIELD (NM_SETTING_WIRED_PORT, 8),             /* 1 */
-	SETTING_FIELD (NM_SETTING_WIRED_SPEED, 10),           /* 2 */
-	SETTING_FIELD (NM_SETTING_WIRED_DUPLEX, 10),          /* 3 */
-	SETTING_FIELD (NM_SETTING_WIRED_AUTO_NEGOTIATE, 15),  /* 4 */
-	SETTING_FIELD (NM_SETTING_WIRED_MAC_ADDRESS, 19),     /* 5 */
-	SETTING_FIELD (NM_SETTING_WIRED_MTU, 6),              /* 6 */
+	SETTING_FIELD ("name",  17),                             /* 0 */
+	SETTING_FIELD (NM_SETTING_WIRED_PORT, 8),                /* 1 */
+	SETTING_FIELD (NM_SETTING_WIRED_SPEED, 10),              /* 2 */
+	SETTING_FIELD (NM_SETTING_WIRED_DUPLEX, 10),             /* 3 */
+	SETTING_FIELD (NM_SETTING_WIRED_AUTO_NEGOTIATE, 15),     /* 4 */
+	SETTING_FIELD (NM_SETTING_WIRED_MAC_ADDRESS, 19),        /* 5 */
+	SETTING_FIELD (NM_SETTING_WIRED_CLONED_MAC_ADDRESS, 19), /* 6 */
+	SETTING_FIELD (NM_SETTING_WIRED_MTU, 6),                 /* 7 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTING_WIRED_ALL     "name"","\
@@ -65,6 +66,7 @@ static NmcOutputField nmc_fields_setting_wired[] = {
                                          NM_SETTING_WIRED_DUPLEX","\
                                          NM_SETTING_WIRED_AUTO_NEGOTIATE","\
                                          NM_SETTING_WIRED_MAC_ADDRESS","\
+                                         NM_SETTING_WIRED_CLONED_MAC_ADDRESS","\
                                          NM_SETTING_WIRED_MTU
 #define NMC_FIELDS_SETTING_WIRED_COMMON  NMC_FIELDS_SETTING_WIRED_ALL
 
@@ -131,9 +133,10 @@ static NmcOutputField nmc_fields_setting_wireless[] = {
 	SETTING_FIELD (NM_SETTING_WIRELESS_RATE, 10),                      /* 6 */
 	SETTING_FIELD (NM_SETTING_WIRELESS_TX_POWER, 10),                  /* 7 */
 	SETTING_FIELD (NM_SETTING_WIRELESS_MAC_ADDRESS, 19),               /* 8 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_MTU, 6),                        /* 9 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SEEN_BSSIDS, 35),               /* 10 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SEC, 10),                       /* 11 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, 19),        /* 9 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_MTU, 6),                        /* 10 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SEEN_BSSIDS, 35),               /* 11 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SEC, 10),                       /* 12 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTING_WIRELESS_ALL     "name"","\
@@ -145,6 +148,7 @@ static NmcOutputField nmc_fields_setting_wireless[] = {
                                             NM_SETTING_WIRELESS_RATE","\
                                             NM_SETTING_WIRELESS_TX_POWER","\
                                             NM_SETTING_WIRELESS_MAC_ADDRESS","\
+                                            NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS","\
                                             NM_SETTING_WIRELESS_MTU","\
                                             NM_SETTING_WIRELESS_SEEN_BSSIDS","\
                                             NM_SETTING_WIRELESS_SEC
@@ -518,7 +522,7 @@ setting_wired_details (NMSetting *setting, NmCli *nmc)
 {
 	NMSettingWired *s_wired;
 	const GByteArray *mac;
-	char *speed_str, *mtu_str, *mac_str = NULL;
+	char *speed_str, *mtu_str, *device_mac_str = NULL, *cloned_mac_str = NULL;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -535,21 +539,26 @@ setting_wired_details (NMSetting *setting, NmCli *nmc)
 	mtu_str = g_strdup_printf ("%d", nm_setting_wired_get_mtu (s_wired));
 	mac = nm_setting_wired_get_mac_address (s_wired);
 	if (mac)
-		mac_str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X", mac->data[0], mac->data[1], mac->data[2], mac->data[3], mac->data[4], mac->data[5]);
+		device_mac_str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X", mac->data[0], mac->data[1], mac->data[2], mac->data[3], mac->data[4], mac->data[5]);
+	mac = nm_setting_wired_get_cloned_mac_address (s_wired);
+	if (mac)
+		cloned_mac_str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X", mac->data[0], mac->data[1], mac->data[2], mac->data[3], mac->data[4], mac->data[5]);
 
 	nmc->allowed_fields[0].value = NM_SETTING_WIRED_SETTING_NAME;
 	nmc->allowed_fields[1].value = nm_setting_wired_get_port (s_wired);
 	nmc->allowed_fields[2].value = speed_str;
 	nmc->allowed_fields[3].value = nm_setting_wired_get_duplex (s_wired);
 	nmc->allowed_fields[4].value = nm_setting_wired_get_auto_negotiate (s_wired) ? _("yes") : _("no");
-	nmc->allowed_fields[5].value = mac_str;
-	nmc->allowed_fields[6].value = strcmp (mtu_str, "0") ? mtu_str : _("auto");
+	nmc->allowed_fields[5].value = device_mac_str;
+	nmc->allowed_fields[6].value = cloned_mac_str;
+	nmc->allowed_fields[7].value = strcmp (mtu_str, "0") ? mtu_str : _("auto");
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
 	g_free (speed_str);
-	g_free (mac_str);
+	g_free (device_mac_str);
+	g_free (cloned_mac_str);
 	g_free (mtu_str);
 
 	return TRUE;
@@ -663,7 +672,7 @@ setting_wireless_details (NMSetting *setting, NmCli *nmc)
 	int i;
 	const GByteArray *ssid, *bssid, *mac;
 	char *ssid_str, *channel_str, *rate_str, *tx_power_str, *mtu_str;
-	char *mac_str = NULL, *bssid_str = NULL;
+	char *device_mac_str = NULL, *cloned_mac_str = NULL, *bssid_str = NULL;
 	GString *seen_bssids;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
@@ -688,7 +697,10 @@ setting_wireless_details (NMSetting *setting, NmCli *nmc)
 	mtu_str = g_strdup_printf ("%d", nm_setting_wireless_get_mtu (s_wireless));
 	mac = nm_setting_wireless_get_mac_address (s_wireless);
 	if (mac)
-		mac_str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X", mac->data[0], mac->data[1], mac->data[2], mac->data[3], mac->data[4], mac->data[5]);
+		device_mac_str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X", mac->data[0], mac->data[1], mac->data[2], mac->data[3], mac->data[4], mac->data[5]);
+	mac = nm_setting_wireless_get_cloned_mac_address (s_wireless);
+	if (mac)
+		cloned_mac_str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X", mac->data[0], mac->data[1], mac->data[2], mac->data[3], mac->data[4], mac->data[5]);
 	seen_bssids = g_string_new (NULL);
 	for (i = 0; i < nm_setting_wireless_get_num_seen_bssids (s_wireless); i++) {
 		if (i > 0)
@@ -704,10 +716,11 @@ setting_wireless_details (NMSetting *setting, NmCli *nmc)
 	nmc->allowed_fields[5].value = bssid_str ? bssid_str : _("not set");
 	nmc->allowed_fields[6].value = rate_str;
 	nmc->allowed_fields[7].value = tx_power_str;
-	nmc->allowed_fields[8].value = mac_str ? mac_str : _("not set");
-	nmc->allowed_fields[9].value = strcmp (mtu_str, "0") ?  mtu_str : _("auto");
-	nmc->allowed_fields[10].value = seen_bssids->str;
-	nmc->allowed_fields[11].value = nm_setting_wireless_get_security (s_wireless);
+	nmc->allowed_fields[8].value = device_mac_str ? device_mac_str : _("not set");
+	nmc->allowed_fields[9].value = cloned_mac_str ? cloned_mac_str : _("not set");
+	nmc->allowed_fields[10].value = strcmp (mtu_str, "0") ?  mtu_str : _("auto");
+	nmc->allowed_fields[11].value = seen_bssids->str;
+	nmc->allowed_fields[12].value = nm_setting_wireless_get_security (s_wireless);
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
@@ -717,7 +730,8 @@ setting_wireless_details (NMSetting *setting, NmCli *nmc)
 	g_free (bssid_str);
 	g_free (rate_str);
 	g_free (tx_power_str);
-	g_free (mac_str);
+	g_free (device_mac_str);
+	g_free (cloned_mac_str);
 	g_free (mtu_str);
 	g_string_free (seen_bssids, TRUE);
 

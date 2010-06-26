@@ -66,6 +66,13 @@ struct NMNamedManagerPrivate {
 	NMIP6Config *ip6_vpn_config;
 	NMIP6Config *ip6_device_config;
 	GSList *configs;
+	char *hostname;
+
+	/* This is a hack because SUSE's netconfig always wants changes
+	 * associated with a network interface, but sometimes a change isn't
+	 * associated with a network interface (like hostnames).
+	 */
+	char *last_iface;
 };
 
 
@@ -512,6 +519,11 @@ rewrite_resolv_conf (NMNamedManager *mgr, const char *iface, GError **error)
 
 	priv = NM_NAMED_MANAGER_GET_PRIVATE (mgr);
 
+	if (iface) {
+		g_free (priv->last_iface);
+		priv->last_iface = g_strdup (iface);
+	}
+
 	rc.nameservers = g_ptr_array_new ();
 	rc.domain = NULL;
 	rc.searches = g_ptr_array_new ();
@@ -543,6 +555,20 @@ rewrite_resolv_conf (NMNamedManager *mgr, const char *iface, GError **error)
 			merge_one_ip6_config (&rc, config);
 		} else
 			g_assert_not_reached ();
+	}
+
+	/* Add the current domain name (from the hostname) to the searches list;
+	 * see rh #600407.  The bug report is that when the hostname is set to
+	 * something like 'dcbw.foobar.com' (ie an FQDN) that pinging 'dcbw' doesn't
+	 * work because the resolver doesn't have anything to append to 'dcbw' when
+	 * looking it up.
+	 */
+	if (priv->hostname) {
+		const char *hostsearch = strchr (priv->hostname, '.');
+
+		/* +1 to get rid of the dot */
+		if (hostsearch && strlen (hostsearch + 1))
+			add_string_item (rc.searches, hostsearch + 1);
 	}
 
 	domain = rc.domain;
@@ -742,6 +768,40 @@ nm_named_manager_remove_ip6_config (NMNamedManager *mgr,
 	return TRUE;
 }
 
+void
+nm_named_manager_set_hostname (NMNamedManager *mgr,
+                               const char *hostname)
+{
+	NMNamedManagerPrivate *priv = NM_NAMED_MANAGER_GET_PRIVATE (mgr);
+	GError *error = NULL;
+	const char *filtered = NULL;
+
+	/* Certain hostnames we don't want to include in resolv.conf 'searches' */
+	if (   hostname
+	    && strcmp (hostname, "localhost.localdomain")
+	    && strcmp (hostname, "localhost6.localdomain6")
+	    && !strstr (hostname, ".in-addr.arpa")
+	    && strchr (hostname, '.')) {
+		filtered = hostname;
+	}
+
+	if (   (!priv->hostname && !filtered)
+	    || (priv->hostname && filtered && !strcmp (priv->hostname, filtered)))
+		return;
+
+	g_free (priv->hostname);
+	priv->hostname = g_strdup (filtered);
+
+	/* Passing the last interface here is completely bogus, but SUSE's netconfig
+	 * wants one.  But hostname changes are system-wide and *not* tied to a
+	 * specific interface, so netconfig can't really handle this.  Fake it.
+	 */
+	if (!rewrite_resolv_conf (mgr, priv->last_iface, &error)) {
+		nm_log_warn (LOGD_DNS, "could not commit DNS changes: '%s'", error ? error->message : "(none)");
+		g_clear_error (&error);
+	}
+}
+
 
 static void
 nm_named_manager_init (NMNamedManager *mgr)
@@ -755,6 +815,8 @@ nm_named_manager_finalize (GObject *object)
 
 	g_slist_foreach (priv->configs, (GFunc) g_object_unref, NULL);
 	g_slist_free (priv->configs);
+	g_free (priv->hostname);
+	g_free (priv->last_iface);
 
 	G_OBJECT_CLASS (nm_named_manager_parent_class)->finalize (object);
 }
