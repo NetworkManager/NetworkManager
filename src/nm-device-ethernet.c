@@ -1703,6 +1703,41 @@ real_deactivate_quickly (NMDevice *device)
 }
 
 static gboolean
+match_subchans (NMDeviceEthernet *self, NMSettingWired *s_wired, gboolean *try_mac)
+{
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+	const GPtrArray *subchans;
+	int i;
+
+	*try_mac = TRUE;
+
+	subchans = nm_setting_wired_get_s390_subchannels (s_wired);
+	if (!subchans)
+		return TRUE;
+
+	/* connection requires subchannels but the device has none */
+	if (!priv->subchannels)
+		return FALSE;
+
+	/* Make sure each subchannel in the connection is a subchannel of this device */
+	for (i = 0; i < subchans->len; i++) {
+		const char *candidate = g_ptr_array_index (subchans, i);
+		gboolean found = FALSE;
+
+		if (   (priv->subchan1 && !strcmp (priv->subchan1, candidate))
+		    || (priv->subchan2 && !strcmp (priv->subchan2, candidate))
+		    || (priv->subchan3 && !strcmp (priv->subchan3, candidate)))
+			found = TRUE;
+
+		if (!found)
+			return FALSE;
+	}
+
+	*try_mac = FALSE;
+	return TRUE;
+}
+
+static gboolean
 real_check_connection_compatible (NMDevice *device,
                                   NMConnection *connection,
                                   GError **error)
@@ -1713,6 +1748,8 @@ real_check_connection_compatible (NMDevice *device,
 	NMSettingWired *s_wired;
 	const char *connection_type;
 	gboolean is_pppoe = FALSE;
+	const GByteArray *mac;
+	gboolean try_mac = TRUE;
 
 	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_con);
@@ -1739,10 +1776,15 @@ real_check_connection_compatible (NMDevice *device,
 	}
 
 	if (s_wired) {
-		const GByteArray *mac;
+		if (!match_subchans (self, s_wired, &try_mac)) {
+			g_set_error (error,
+			             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INCOMPATIBLE,
+			             "The connection's s390 subchannels did not match this device.");
+			return FALSE;
+		}
 
 		mac = nm_setting_wired_get_mac_address (s_wired);
-		if (mac && memcmp (mac->data, &priv->perm_hw_addr, ETH_ALEN)) {
+		if (try_mac && mac && memcmp (mac->data, &priv->perm_hw_addr, ETH_ALEN)) {
 			g_set_error (error,
 			             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INCOMPATIBLE,
 			             "The connection's MAC address did not match this device.");
@@ -1778,14 +1820,18 @@ wired_match_config (NMDevice *self, NMConnection *connection)
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMSettingWired *s_wired;
 	const GByteArray *s_ether;
+	gboolean try_mac = TRUE;
 
 	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
 	if (!s_wired)
 		return FALSE;
 
+	if (!match_subchans (NM_DEVICE_ETHERNET (self), s_wired, &try_mac))
+		return FALSE;
+
 	/* MAC address check */
 	s_ether = nm_setting_wired_get_mac_address (s_wired);
-	if (s_ether && memcmp (s_ether->data, priv->perm_hw_addr, ETH_ALEN))
+	if (try_mac && s_ether && memcmp (s_ether->data, priv->perm_hw_addr, ETH_ALEN))
 		return FALSE;
 
 	return TRUE;
