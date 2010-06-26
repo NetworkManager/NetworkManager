@@ -376,15 +376,6 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 		g_free (cdev_path);
 	};
 
-	driver = nm_device_get_driver (NM_DEVICE (self));
-	nm_log_info (LOGD_DEVICE | LOGD_HW,
-	             "(%s): found s390 '%s' subchannels [%s, %s, %s]",
-	             iface,
-	             driver ? driver : "(unknown driver)",
-	             priv->subchan1 ? priv->subchan1 : "(none)",
-	             priv->subchan2 ? priv->subchan2 : "(none)",
-	             priv->subchan3 ? priv->subchan3 : "(none)");
-
 	g_dir_close (dir);
 
 	if (priv->subchan3) {
@@ -398,6 +389,11 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 		                                     priv->subchan2);
 	} else
 		priv->subchannels = g_strdup (priv->subchan1);
+
+	driver = nm_device_get_driver (NM_DEVICE (self));
+	nm_log_info (LOGD_DEVICE | LOGD_HW,
+	             "(%s): found s390 '%s' subchannels [%s]",
+	             iface, driver ? driver : "(unknown driver)", priv->subchannels);
 
 out:
 	if (parent)
