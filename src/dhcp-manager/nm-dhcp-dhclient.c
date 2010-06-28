@@ -450,6 +450,18 @@ create_dhclient_config (const char *iface,
 		return FALSE;
 	}
 
+#if !defined(TARGET_SUSE) && !defined(TARGET_DEBIAN) && !defined(TARGET_GENTOO)
+	/* Try /etc/dhcp/ too (rh #607759) */
+	if (!g_file_test (orig, G_FILE_TEST_EXISTS)) {
+		g_free (orig);
+		orig = g_strdup_printf (SYSCONFDIR "/dhcp/dhclient-%s.conf", iface);
+		if (!orig) {
+			nm_log_warn (LOGD_DHCP, "(%s): not enough memory for dhclient options.", iface);
+			return FALSE;
+		}
+	}
+#endif
+
 	tmp = g_strdup_printf ("nm-dhclient-%s.conf", iface);
 	conf_file = g_build_filename ("/var", "run", tmp, NULL);
 	g_free (tmp);
