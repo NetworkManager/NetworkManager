@@ -655,6 +655,27 @@ finalize (GObject *object)
 }
 
 static void
+nameservers_to_gvalue (GArray *array, GValue *value)
+{
+	GPtrArray *dns;
+	guint i = 0;
+
+	dns = g_ptr_array_new ();
+
+	while (array && (i < array->len)) {
+		struct in6_addr *addr;
+		GByteArray *bytearray;
+		addr = &g_array_index (array, struct in6_addr, i++);
+
+		bytearray = g_byte_array_sized_new (16);
+		g_byte_array_append (bytearray, (guint8 *) addr->s6_addr, 16);
+		g_ptr_array_add (dns, bytearray);
+	}
+
+	g_value_take_boxed (value, dns);
+}
+
+static void
 get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
@@ -665,7 +686,7 @@ get_property (GObject *object, guint prop_id,
 		nm_utils_ip6_addresses_to_gvalue (priv->addresses, value);
 		break;
 	case PROP_NAMESERVERS:
-		g_value_set_boxed (value, priv->nameservers);
+		nameservers_to_gvalue (priv->nameservers, value);
 		break;
 	case PROP_DOMAINS:
 		g_value_set_boxed (value, priv->domains);
