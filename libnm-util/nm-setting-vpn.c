@@ -248,6 +248,7 @@ static gboolean
 update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **error)
 {
 	NMSettingVPNPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
+	char *str;
 
 	g_return_val_if_fail (key != NULL, FALSE);
 	g_return_val_if_fail (value != NULL, FALSE);
@@ -259,8 +260,17 @@ update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **
 		return FALSE;
 	}
 
-	g_hash_table_insert (priv->secrets, g_strdup (key), g_value_dup_string (value));
-	return FALSE;
+	str = g_value_dup_string (value);
+	if (!str || !strlen (str)) {
+		g_set_error (error, NM_SETTING_ERROR,
+		             NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
+		             "Secret %s was empty", key);
+		g_free (str);
+		return FALSE;
+	}
+
+	g_hash_table_insert (priv->secrets, g_strdup (key), str);
+	return TRUE;
 }
 
 static void
