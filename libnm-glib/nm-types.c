@@ -359,7 +359,7 @@ _nm_ip6_address_array_demarshal (GValue *value, GSList **dest)
 {
 	GPtrArray *array;
 
-	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_UINT_ARRAY))
+	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UCHAR))
 		return FALSE;
 
 	if (*dest) {
@@ -373,12 +373,12 @@ _nm_ip6_address_array_demarshal (GValue *value, GSList **dest)
 		int i;
 
 		for (i = 0; i < array->len; i++) {
-			struct in6_addr *addr = g_ptr_array_index (array, i);
-			struct in6_addr *dup;
+			GByteArray *bytearray = (GByteArray *) g_ptr_array_index (array, i);
+			struct in6_addr *addr;
 
-			dup = g_malloc0 (sizeof (struct in6_addr));
-			memcpy (dup, addr, sizeof (struct in6_addr));
-			*dest = g_slist_append (*dest, dup);
+			addr = g_malloc0 (sizeof (struct in6_addr));
+			memcpy (addr->s6_addr, bytearray->data, bytearray->len);
+			*dest = g_slist_append (*dest, addr);
 		}
 	}
 
