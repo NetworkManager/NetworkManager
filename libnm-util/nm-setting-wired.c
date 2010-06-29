@@ -24,8 +24,10 @@
  */
 
 #include <string.h>
+#include <ctype.h>
 #include <net/ethernet.h>
 #include <dbus/dbus-glib.h>
+
 #include "nm-setting-wired.h"
 #include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
@@ -79,10 +81,8 @@ typedef struct {
 	GByteArray *cloned_mac_address;
 	guint32 mtu;
 	GPtrArray *s390_subchannels;
-	char *s390_port_name;
-	guint32 s390_port_number;
-	guint32 s390_qeth_layer;
 	char *s390_nettype;
+	GHashTable *s390_options;
 } NMSettingWiredPrivate;
 
 enum {
@@ -95,12 +95,20 @@ enum {
 	PROP_CLONED_MAC_ADDRESS,
 	PROP_MTU,
 	PROP_S390_SUBCHANNELS,
-	PROP_S390_PORT_NAME,
-	PROP_S390_PORT_NUMBER,
-	PROP_S390_QETH_LAYER,
 	PROP_S390_NETTYPE,
+	PROP_S390_OPTIONS,
 
 	LAST_PROP
+};
+
+static const char *valid_s390_opts[] = {
+	"portno", "layer2", "portname", "protocol", "priority_queueing",
+	"buffer_count", "isolation", "total", "inter", "inter_jumbo", "route4",
+	"route6", "fake_broadcast", "broadcast_mode", "canonical_macaddr",
+	"checksumming", "sniffer", "large_send", "ipato_enable", "ipato_invert4",
+	"ipato_add4", "ipato_invert6", "ipato_add6", "vipa_add4", "vipa_add6",
+	"rxip_add4", "rxip_add6", "lancmd_timeout",
+	NULL
 };
 
 NMSetting *
@@ -165,6 +173,17 @@ nm_setting_wired_get_mtu (NMSettingWired *setting)
 	return NM_SETTING_WIRED_GET_PRIVATE (setting)->mtu;
 }
 
+/**
+ * nm_setting_wired_get_s390_subchannels:
+ * @setting: the #NMSettingWired
+ *
+ * Return the list of s390 subchannels that identify the device that this
+ * connection is applicable to.  The connection should only be used in
+ * conjunction with that device.
+ *
+ * Returns: a #GPtrArray of strings, each specifying one subchannel the
+ * s390 device uses to communicate to the host.
+ **/
 const GPtrArray *
 nm_setting_wired_get_s390_subchannels (NMSettingWired *setting)
 {
@@ -173,30 +192,15 @@ nm_setting_wired_get_s390_subchannels (NMSettingWired *setting)
 	return NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_subchannels;
 }
 
-const char *
-nm_setting_wired_get_s390_port_name (NMSettingWired *setting)
-{
-	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), NULL);
-
-	return NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_port_name;
-}
-
-guint32
-nm_setting_wired_get_s390_port_number (NMSettingWired *setting)
-{
-	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), 0);
-
-	return NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_port_number;
-}
-
-guint32
-nm_setting_wired_get_s390_qeth_layer (NMSettingWired *setting)
-{
-	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), 2);
-
-	return NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_qeth_layer;
-}
-
+/**
+ * nm_setting_wired_get_s390_nettype:
+ * @setting: the #NMSettingWired
+ *
+ * Returns the s390 device type this connection should apply to.  Will be one
+ * of 'qeth', 'lcs', or 'ctcm'.
+ *
+ * Returns: the s390 device type
+ **/
 const char *
 nm_setting_wired_get_s390_nettype (NMSettingWired *setting)
 {
@@ -205,12 +209,161 @@ nm_setting_wired_get_s390_nettype (NMSettingWired *setting)
 	return NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_nettype;
 }
 
+/**
+ * nm_setting_wired_get_num_s390_options:
+ * @setting: the #NMSettingWired
+ *
+ * Returns the number of s390-specific options that should be set for this
+ * device when it is activated.  This can be used to retrieve each s390
+ * option individually using nm_setting_wired_get_s390_option().
+ *
+ * Returns: the number of s390-specific device options
+ **/
+guint32
+nm_setting_wired_get_num_s390_options (NMSettingWired *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), 0);
+
+	return g_hash_table_size (NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_options);
+}
+
+/**
+ * nm_setting_wired_get_s390_option:
+ * @setting: the #NMSettingWired
+ * @idx: index of the desired option, from 0 to
+ * nm_setting_wired_get_num_s390_options() - 1
+ * @out_key: on return, the key name of the s390 specific option; this value is
+ * owned by the setting and should not be modified
+ * @out_value: on return, the value of the key of the s390 specific option; this
+ * value is owned by the setting and should not be modified
+ *
+ * Given an index, return the value of the s390 option at that index.  indexes
+ * are *not* guaranteed to be static across modifications to options done by
+ * nm_setting_wired_add_s390_option() and nm_setting_wired_remove_s390_option(),
+ * and should not be used to refer to options except for short periods of time
+ * such as during option iteration.
+ *
+ * Returns: %TRUE on success if the index was valid and an option was found,
+ * %FALSE if the index was invalid (ie, greater than the number of options
+ * currently held by the setting)
+ **/
+gboolean
+nm_setting_wired_get_s390_option (NMSettingWired *setting,
+                                  guint32 idx,
+                                  const char **out_key,
+                                  const char **out_value)
+{
+	NMSettingWiredPrivate *priv;
+	guint32 num_keys;
+	GList *keys;
+	const char *_key = NULL, *_value = NULL;
+
+	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), FALSE);
+
+	priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
+
+	num_keys = nm_setting_wired_get_num_s390_options (setting);
+	g_return_val_if_fail (idx < num_keys, FALSE);
+
+	keys = g_hash_table_get_keys (priv->s390_options);
+	_key = g_list_nth_data (keys, idx);
+	_value = g_hash_table_lookup (priv->s390_options, _key);
+
+	if (out_key)
+		*out_key = _key;
+	if (out_value)
+		*out_value = _value;
+	return TRUE;
+}
+
+/**
+ * nm_setting_wired_get_s390_option_by_key:
+ * @setting: the #NMSettingWired
+ * @key: the key for which to retrieve the value
+ *
+ * Returns the value associated with the s390-specific option specified by
+ * @key, if it exists.
+ *
+ * Returns: the value, or NULL if the key/value pair was never added to the
+ * setting; the value is owned by the setting and must not be modified
+ **/
+const char *
+nm_setting_wired_get_s390_option_by_key (NMSettingWired *setting,
+                                         const char *key)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), NULL);
+	g_return_val_if_fail (key != NULL, NULL);
+	g_return_val_if_fail (strlen (key), NULL);
+
+	return g_hash_table_lookup (NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_options, key);
+}
+
+/**
+ * nm_setting_wired_add_s390_options:
+ * @setting: the #NMSettingWired
+ * @key: key name for the option
+ * @value: value for the option
+ *
+ * Add an option to the table.  The option is compared to an internal list
+ * of allowed options.  Key names may contain only alphanumeric characters
+ * (ie [a-zA-Z0-9]).  Adding a new key replaces any existing key/value pair that
+ * may already exist.
+ *
+ * Returns: %TRUE if the option was valid and was added to the internal option
+ * list, %FALSE if it was not.
+ **/
+gboolean nm_setting_wired_add_s390_option (NMSettingWired *setting,
+                                           const char *key,
+                                           const char *value)
+{
+	size_t value_len;
+
+	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), FALSE);
+	g_return_val_if_fail (key != NULL, FALSE);
+	g_return_val_if_fail (strlen (key), FALSE);
+	g_return_val_if_fail (_nm_utils_string_in_list (key, valid_s390_opts), FALSE);
+	g_return_val_if_fail (value != NULL, FALSE);
+
+	value_len = strlen (value);
+	g_return_val_if_fail (value_len > 0 && value_len < 200, FALSE);
+
+	g_hash_table_insert (NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_options,
+	                     g_strdup (key),
+	                     g_strdup (value));
+	return TRUE;
+}
+
+/**
+ * nm_setting_wired_remove_s390_options:
+ * @setting: the #NMSettingWired
+ * @key: key name for the option to remove
+ *
+ * Remove the s390-specific option referenced by @key from the internal option
+ * list.
+ *
+ * Returns: %TRUE if the option was found and removed from the internal option
+ * list, %FALSE if it was not.
+ **/
+gboolean
+nm_setting_wired_remove_s390_option (NMSettingWired *setting,
+                                     const char *key)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), FALSE);
+	g_return_val_if_fail (key != NULL, FALSE);
+	g_return_val_if_fail (strlen (key), FALSE);
+
+	return g_hash_table_remove (NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_options, key);
+}
+
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
 	const char *valid_ports[] = { "tp", "aui", "bnc", "mii", NULL };
 	const char *valid_duplex[] = { "half", "full", NULL };
+	const char *valid_nettype[] = { "qeth", "lcs", "ctcm", NULL };
+	GHashTableIter iter;
+	const char *key, *value;
 
 	if (priv->port && !_nm_utils_string_in_list (priv->port, valid_ports)) {
 		g_set_error (error,
@@ -236,7 +389,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->s390_subchannels && priv->s390_subchannels->len != 3) {
+	if (   priv->s390_subchannels
+	    && !(priv->s390_subchannels->len == 3 || priv->s390_subchannels->len == 2)) {
 		g_set_error (error,
 		             NM_SETTING_WIRED_ERROR,
 		             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
@@ -244,24 +398,25 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->s390_nettype) {
-		if (   strcmp (priv->s390_nettype, "qeth")
-		    && strcmp (priv->s390_nettype, "lcs")
-		    && strcmp (priv->s390_nettype, "ctc")) {
-			g_set_error (error,
-				         NM_SETTING_WIRED_ERROR,
-				         NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
-				         NM_SETTING_WIRED_S390_NETTYPE);
-			return FALSE;
-		}
-	}
-
-	if (priv->s390_port_name && strlen (priv->s390_port_name) > 8) {
+	if (priv->s390_nettype && !_nm_utils_string_in_list (priv->s390_nettype, valid_nettype)) {
 		g_set_error (error,
 			         NM_SETTING_WIRED_ERROR,
 			         NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
-			         NM_SETTING_WIRED_S390_PORT_NAME);
+			         NM_SETTING_WIRED_S390_NETTYPE);
 		return FALSE;
+	}
+
+	g_hash_table_iter_init (&iter, priv->s390_options);
+	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &value)) {
+		if (   !_nm_utils_string_in_list (key, valid_s390_opts)
+		    || !strlen (value)
+		    || (strlen (value) > 200)) {
+			g_set_error (error,
+				         NM_SETTING_WIRED_ERROR,
+				         NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
+				         NM_SETTING_WIRED_S390_OPTIONS);
+			return FALSE;
+		}
 	}
 
 	if (priv->cloned_mac_address && priv->cloned_mac_address->len != ETH_ALEN) {
@@ -278,7 +433,10 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 static void
 nm_setting_wired_init (NMSettingWired *setting)
 {
+	NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
+
 	g_object_set (setting, NM_SETTING_NAME, NM_SETTING_WIRED_SETTING_NAME, NULL);
+	priv->s390_options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 }
 
 static void
@@ -288,8 +446,9 @@ finalize (GObject *object)
 
 	g_free (priv->port);
 	g_free (priv->duplex);
-	g_free (priv->s390_port_name);
 	g_free (priv->s390_nettype);
+
+	g_hash_table_destroy (priv->s390_options);
 
 	if (priv->device_mac_address)
 		g_byte_array_free (priv->device_mac_address, TRUE);
@@ -301,10 +460,17 @@ finalize (GObject *object)
 }
 
 static void
+copy_hash (gpointer key, gpointer value, gpointer user_data)
+{
+	g_hash_table_insert ((GHashTable *) user_data, g_strdup (key), g_strdup (value));
+}
+
+static void
 set_property (GObject *object, guint prop_id,
-		    const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE (object);
+	GHashTable *new_hash;
 
 	switch (prop_id) {
 	case PROP_PORT:
@@ -341,19 +507,16 @@ set_property (GObject *object, guint prop_id,
 		}
 		priv->s390_subchannels = g_value_dup_boxed (value);
 		break;
-	case PROP_S390_PORT_NAME:
-		g_free (priv->s390_port_name);
-		priv->s390_port_name = g_value_dup_string (value);
-		break;
-	case PROP_S390_PORT_NUMBER:
-		priv->s390_port_number = g_value_get_uint (value);
-		break;
-	case PROP_S390_QETH_LAYER:
-		priv->s390_qeth_layer = g_value_get_uint (value);
-		break;
 	case PROP_S390_NETTYPE:
 		g_free (priv->s390_nettype);
 		priv->s390_nettype = g_value_dup_string (value);
+		break;
+	case PROP_S390_OPTIONS:
+		/* Must make a deep copy of the hash table here... */
+		g_hash_table_remove_all (priv->s390_options);
+		new_hash = g_value_get_boxed (value);
+		if (new_hash)
+			g_hash_table_foreach (new_hash, copy_hash, priv->s390_options);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -363,9 +526,10 @@ set_property (GObject *object, guint prop_id,
 
 static void
 get_property (GObject *object, guint prop_id,
-		    GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
 	NMSettingWired *setting = NM_SETTING_WIRED (object);
+	NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
 
 	switch (prop_id) {
 	case PROP_PORT:
@@ -392,17 +556,11 @@ get_property (GObject *object, guint prop_id,
 	case PROP_S390_SUBCHANNELS:
 		g_value_set_boxed (value, nm_setting_wired_get_s390_subchannels (setting));
 		break;
-	case PROP_S390_PORT_NAME:
-		g_value_set_string (value, nm_setting_wired_get_s390_port_name (setting));
-		break;
-	case PROP_S390_PORT_NUMBER:
-		g_value_set_uint (value, nm_setting_wired_get_s390_port_number (setting));
-		break;
-	case PROP_S390_QETH_LAYER:
-		g_value_set_uint (value, nm_setting_wired_get_s390_qeth_layer (setting));
-		break;
 	case PROP_S390_NETTYPE:
 		g_value_set_string (value, nm_setting_wired_get_s390_nettype (setting));
+		break;
+	case PROP_S390_OPTIONS:
+		g_value_set_boxed (value, priv->s390_options);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -571,48 +729,6 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 		                       G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
-	 * NMSettingWired:s390-port-name:
-	 *
-	 * s390 device port name, if required by your configuration.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_S390_PORT_NAME,
-		 g_param_spec_string (NM_SETTING_WIRED_S390_PORT_NAME,
-						  "s390 Port Name",
-						  "s390 device port name, if required by your configuration.",
-						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
-
-	/**
-	 * NMSettingWired:s390-port-number:
-	 *
-	 * s390 device port number, if required by your configuration.  For 'qeth'
-	 * devices, this is the "relative port number".
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_S390_PORT_NUMBER,
-		 g_param_spec_uint (NM_SETTING_WIRED_S390_PORT_NUMBER,
-						  "s390 Port Number",
-		                  "s390 device port number, if required by your "
-		                  "configuration.  For 'qeth' devices, this is the "
-		                  "'relative port number'.",
-						  0, 100, 0,
-						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
-
-	/**
-	 * NMSettingWired:s390-qeth-layer:
-	 *
-	 * s390 'qeth' device layer, either '2' or '3'.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_S390_QETH_LAYER,
-		 g_param_spec_uint (NM_SETTING_WIRED_S390_QETH_LAYER,
-						  "s390 'qeth' layer",
-		                  "s390 'qeth' device layer, either '2' or '3'.",
-						  2, 3, 2,
-						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
-
-	/**
 	 * NMSettingWired:s390-nettype:
 	 *
 	 * s390 network device type; one of 'qeth', 'lcs', or 'ctc', representing
@@ -627,5 +743,24 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 						  "network devices available on s390 systems.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
+	 * NMSettingWired:s390-options:
+	 *
+	 * Dictionary of key/value pairs of s390-specific device options.  Both keys
+	 * and values must be strings.  Allowed keys include 'portno', 'layer2',
+	 * 'portname', 'protocol', among others.  Key names must contain only
+	 * alphanumeric characters (ie, [a-zA-Z0-9]).
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_S390_OPTIONS,
+		 _nm_param_spec_specialized (NM_SETTING_WIRED_S390_OPTIONS,
+							   "s390 Options",
+							   "Dictionary of key/value pairs of s390-specific "
+							   "device options.  Both keys and values must be "
+							   "strings.  Allowed keys include 'portno', "
+							   "'layer2', 'portname', 'protocol', among others.",
+							   DBUS_TYPE_G_MAP_OF_STRING,
+							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 }
 
