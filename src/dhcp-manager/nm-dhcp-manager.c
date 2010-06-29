@@ -407,6 +407,7 @@ client_start (NMDHCPManager *self,
               NMSettingIP6Config *s_ip6,
               guint32 timeout,
               guint8 *dhcp_anycast_addr,
+              const char *hostname,
               gboolean info_only)
 {
 	NMDHCPManagerPrivate *priv;
@@ -438,9 +439,9 @@ client_start (NMDHCPManager *self,
 	add_client (self, client);
 
 	if (ipv6)
-		success = nm_dhcp_client_start_ip6 (client, s_ip6, dhcp_anycast_addr, info_only);
+		success = nm_dhcp_client_start_ip6 (client, s_ip6, dhcp_anycast_addr, hostname, info_only);
 	else
-		success = nm_dhcp_client_start_ip4 (client, s_ip4, dhcp_anycast_addr);
+		success = nm_dhcp_client_start_ip4 (client, s_ip4, dhcp_anycast_addr, hostname);
 
 	if (!success) {
 		remove_client (self, client);
@@ -462,6 +463,7 @@ nm_dhcp_manager_start_ip4 (NMDHCPManager *self,
 {
 	NMDHCPManagerPrivate *priv;
 	NMDHCPClient *client = NULL;
+	const char *hostname = NULL;
 
 	g_return_val_if_fail (self, NULL);
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
@@ -476,27 +478,26 @@ nm_dhcp_manager_start_ip4 (NMDHCPManager *self,
 			g_return_val_if_fail (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0, NULL);
 		}
 
-		if (   nm_setting_ip4_config_get_dhcp_send_hostname (s_ip4)
-		    && (nm_setting_ip4_config_get_dhcp_hostname (s_ip4) == NULL)
-		    && priv->hostname_provider != NULL) {
+		/* If we're asked to send the hostname to DHCP server, and the hostname
+		 * isn't specified, and a hostname provider is registered: use that
+		 */
+		if (nm_setting_ip4_config_get_dhcp_send_hostname (s_ip4)) {
+			hostname = nm_setting_ip4_config_get_dhcp_hostname (s_ip4);
 
-			s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_duplicate (NM_SETTING (s_ip4)));
-
-			/* We're asked to send the hostname to DHCP server, the hostname
-			 * isn't specified, and a hostname provider is registered: use that
+			/* If we're supposed to send the hostname to the DHCP server but
+			 * the user didn't specify one, use the persistent hostname.
 			 */
-			g_object_set (G_OBJECT (s_ip4),
-						  NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME,
-						  nm_hostname_provider_get_hostname (priv->hostname_provider),
-						  NULL);
-		} else
-			g_object_ref (s_ip4);
+			if (!hostname && priv->hostname_provider) {
+				hostname = nm_hostname_provider_get_hostname (priv->hostname_provider);
+				if (   hostname
+				    && (!strcmp (hostname, "localhost.localdomain") ||
+				        !strcmp (hostname, "localhost6.localdomain6")))
+					hostname = NULL;
+			}
+		}
 	}
 
-	client = client_start (self, iface, uuid, FALSE, s_ip4, NULL, timeout, dhcp_anycast_addr, FALSE);
-
-	if (s_ip4)
-		g_object_unref (s_ip4);
+	client = client_start (self, iface, uuid, FALSE, s_ip4, NULL, timeout, dhcp_anycast_addr, hostname, FALSE);
 
 	return client;
 }
@@ -511,7 +512,7 @@ nm_dhcp_manager_start_ip6 (NMDHCPManager *self,
                            guint8 *dhcp_anycast_addr,
                            gboolean info_only)
 {
-	return client_start (self, iface, uuid, TRUE, NULL, s_ip6, timeout, dhcp_anycast_addr, info_only);
+	return client_start (self, iface, uuid, TRUE, NULL, s_ip6, timeout, dhcp_anycast_addr, NULL, info_only);
 }
 
 static void
