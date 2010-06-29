@@ -92,7 +92,7 @@ demarshal_ip6_nameserver_array (NMObject *object, GParamSpec *pspec, GValue *val
 	if (!_nm_ip6_address_array_demarshal (value, (GSList **) field))
 		return FALSE;
 
-	if (!strcmp (pspec->name, NM_IP6_CONFIG_NAMESERVERS))
+	if (pspec && !strcmp (pspec->name, NM_IP6_CONFIG_NAMESERVERS))
 		_nm_object_queue_notify (object, NM_IP6_CONFIG_NAMESERVERS);
 
 	return TRUE;
@@ -188,6 +188,7 @@ const GSList *
 nm_ip6_config_get_nameservers (NMIP6Config *config)
 {
 	NMIP6ConfigPrivate *priv;
+	GParamSpec *pspec;
 	GValue value = {0,};
 
 	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
@@ -203,7 +204,8 @@ nm_ip6_config_get_nameservers (NMIP6Config *config)
 		return NULL;
 	}
 
-	demarshal_ip6_nameserver_array (NM_OBJECT (config), NULL, &value, &priv->nameservers);
+	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (config)), NM_IP6_CONFIG_NAMESERVERS);
+	demarshal_ip6_nameserver_array (NM_OBJECT (config), pspec, &value, &priv->nameservers);
 	g_value_unset (&value);
 
 	return priv->nameservers;

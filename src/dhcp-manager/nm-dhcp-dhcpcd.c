@@ -88,14 +88,15 @@ dhcpcd_child_setup (gpointer user_data G_GNUC_UNUSED)
 static GPid
 real_ip4_start (NMDHCPClient *client,
                 NMSettingIP4Config *s_ip4,
-                guint8 *dhcp_anycast_addr)
+                guint8 *dhcp_anycast_addr,
+                const char *hostname)
 {
 	NMDHCPDhcpcdPrivate *priv = NM_DHCP_DHCPCD_GET_PRIVATE (client);
 	GPtrArray *argv = NULL;
 	GPid pid = -1;
 	GError *error = NULL;
 	char *pid_contents = NULL, *binary_name, *cmd_str;
-	const char *iface, *uuid, *hostname;
+	const char *iface, *uuid;
 
 	g_return_val_if_fail (priv->pid_file == NULL, -1);
 
@@ -130,7 +131,6 @@ real_ip4_start (NMDHCPClient *client,
 	g_ptr_array_add (argv, (gpointer) "-c");	/* Set script file */
 	g_ptr_array_add (argv, (gpointer) ACTION_SCRIPT_PATH );
 
-	hostname = nm_setting_ip4_config_get_dhcp_hostname (s_ip4);
 	if (hostname && strlen (hostname)) {
 		g_ptr_array_add (argv, (gpointer) "-h");	/* Send hostname to DHCP server */
 		g_ptr_array_add (argv, (gpointer) hostname );
@@ -160,6 +160,7 @@ static GPid
 real_ip6_start (NMDHCPClient *client,
                 NMSettingIP6Config *s_ip6,
                 guint8 *dhcp_anycast_addr,
+                const char *hostname,
                 gboolean info_only)
 {
 	nm_log_warn (LOGD_DHCP6, "the dhcpcd backend does not support IPv6.");

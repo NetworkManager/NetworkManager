@@ -40,6 +40,7 @@
 #include <nm-device-bt.h>
 #include <nm-utils.h>
 #include <nm-setting-ip4-config.h>
+#include <nm-setting-ip6-config.h>
 #include <nm-vpn-connection.h>
 #include <nm-setting-connection.h>
 
@@ -206,6 +207,28 @@ ip4_address_as_string (guint32 ip)
 	} else {
 		nm_warning ("%s: error converting IP4 address 0x%X",
 		            __func__, ntohl (tmp_addr.s_addr));
+		return NULL;
+	}
+}
+
+static gchar *
+ip6_address_as_string (const struct in6_addr *ip)
+{
+	char buf[INET6_ADDRSTRLEN];
+
+	memset (&buf, '\0', sizeof (buf));
+
+	if (inet_ntop (AF_INET6, ip, buf, INET6_ADDRSTRLEN)) {
+		return g_strdup (buf);
+	} else {
+		int j;
+		GString *ip6_str = g_string_new (NULL);
+		g_string_append_printf (ip6_str, "%02X", ip->s6_addr[0]);
+		for (j = 1; j < 16; j++)
+			g_string_append_printf (ip6_str, " %02X", ip->s6_addr[j]);
+		nm_warning ("%s: error converting IP6 address %s",
+		            __func__, ip6_str->str);
+		g_string_free (ip6_str, TRUE);
 		return NULL;
 	}
 }
@@ -399,38 +422,69 @@ detail_device (gpointer data, gpointer user_data)
 
 	/* IP Setup info */
 	if (state == NM_DEVICE_STATE_ACTIVATED) {
-		NMIP4Config *cfg = nm_device_get_ip4_config (device);
+		NMIP4Config *cfg4 = nm_device_get_ip4_config (device);
+		NMIP6Config *cfg6 = nm_device_get_ip6_config (device);
 		GSList *iter;
 
-		printf ("\n  IPv4 Settings:\n");
+		if (cfg4) {
+			printf ("\n  IPv4 Settings:\n");
 
-		for (iter = (GSList *) nm_ip4_config_get_addresses (cfg); iter; iter = g_slist_next (iter)) {
-			NMIP4Address *addr = (NMIP4Address *) iter->data;
-			guint32 prefix = nm_ip4_address_get_prefix (addr);
-			char *tmp2;
+			for (iter = (GSList *) nm_ip4_config_get_addresses (cfg4); iter; iter = g_slist_next (iter)) {
+				NMIP4Address *addr = (NMIP4Address *) iter->data;
+				guint32 prefix = nm_ip4_address_get_prefix (addr);
+				char *tmp2;
 
-			tmp = ip4_address_as_string (nm_ip4_address_get_address (addr));
-			print_string ("  Address", tmp);
-			g_free (tmp);
+				tmp = ip4_address_as_string (nm_ip4_address_get_address (addr));
+				print_string ("  Address", tmp);
+				g_free (tmp);
 
-			tmp2 = ip4_address_as_string (nm_utils_ip4_prefix_to_netmask (prefix));
-			tmp = g_strdup_printf ("%d (%s)", prefix, tmp2);
-			g_free (tmp2);
-			print_string ("  Prefix", tmp);
-			g_free (tmp);
+				tmp2 = ip4_address_as_string (nm_utils_ip4_prefix_to_netmask (prefix));
+				tmp = g_strdup_printf ("%d (%s)", prefix, tmp2);
+				g_free (tmp2);
+				print_string ("  Prefix", tmp);
+				g_free (tmp);
 
-			tmp = ip4_address_as_string (nm_ip4_address_get_gateway (addr));
-			print_string ("  Gateway", tmp);
-			g_free (tmp);
-			printf ("\n");
+				tmp = ip4_address_as_string (nm_ip4_address_get_gateway (addr));
+				print_string ("  Gateway", tmp);
+				g_free (tmp);
+				printf ("\n");
+			}
+
+			array = nm_ip4_config_get_nameservers (cfg4);
+			if (array) {
+				int i;
+
+				for (i = 0; i < array->len; i++) {
+					tmp = ip4_address_as_string (g_array_index (array, guint32, i));
+					print_string ("  DNS", tmp);
+					g_free (tmp);
+				}
+			}
 		}
 
-		array = nm_ip4_config_get_nameservers (cfg);
-		if (array) {
-			int i;
+		if (cfg6) {
+			printf ("\n  IPv6 Settings:\n");
 
-			for (i = 0; i < array->len; i++) {
-				tmp = ip4_address_as_string (g_array_index (array, guint32, i));
+			for (iter = (GSList *) nm_ip6_config_get_addresses (cfg6); iter; iter = g_slist_next (iter)) {
+				NMIP6Address *addr = (NMIP6Address *) iter->data;
+				guint32 prefix = nm_ip6_address_get_prefix (addr);
+
+				tmp = ip6_address_as_string (nm_ip6_address_get_address (addr));
+				print_string ("  Address", tmp);
+				g_free (tmp);
+
+				tmp = g_strdup_printf ("%d", prefix);
+				print_string ("  Prefix", tmp);
+				g_free (tmp);
+
+				tmp = ip6_address_as_string (nm_ip6_address_get_gateway (addr));
+				print_string ("  Gateway", tmp);
+				g_free (tmp);
+				printf ("\n");
+			}
+
+			for (iter = (GSList *) nm_ip6_config_get_nameservers (cfg6); iter; iter = g_slist_next (iter)) {
+				tmp = ip6_address_as_string (iter->data);
 				print_string ("  DNS", tmp);
 				g_free (tmp);
 			}

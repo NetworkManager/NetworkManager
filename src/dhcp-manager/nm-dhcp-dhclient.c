@@ -312,6 +312,7 @@ merge_dhclient_config (const char *iface,
                        const char *conf_file,
                        NMSettingIP4Config *s_ip4,
                        guint8 *anycast_addr,
+                       const char *hostname,
                        const char *orig_path,
                        GError **error)
 {
@@ -353,7 +354,7 @@ merge_dhclient_config (const char *iface,
 				ignore = TRUE;
 
 			if (   s_ip4
-			    && nm_setting_ip4_config_get_dhcp_hostname (s_ip4)
+			    && hostname
 			    && !strncmp (*line, DHCP_HOSTNAME_TAG, strlen (DHCP_HOSTNAME_TAG)))
 				ignore = TRUE;
 
@@ -396,9 +397,8 @@ merge_dhclient_config (const char *iface,
 				g_string_append_printf (new_contents, DHCP_CLIENT_ID_FORMAT "\n", tmp);
 		}
 
-		tmp = nm_setting_ip4_config_get_dhcp_hostname (s_ip4);
-		if (tmp)
-			g_string_append_printf (new_contents, DHCP_HOSTNAME_FORMAT "\n", tmp);
+		if (hostname)
+			g_string_append_printf (new_contents, DHCP_HOSTNAME_FORMAT "\n", hostname);
 	}
 
 	if (anycast_addr) {
@@ -427,7 +427,8 @@ merge_dhclient_config (const char *iface,
 static char *
 create_dhclient_config (const char *iface,
                         NMSettingIP4Config *s_ip4,
-                        guint8 *dhcp_anycast_addr)
+                        guint8 *dhcp_anycast_addr,
+                        const char *hostname)
 {
 	char *orig = NULL, *tmp, *conf_file = NULL;
 	GError *error = NULL;
@@ -450,12 +451,24 @@ create_dhclient_config (const char *iface,
 		return FALSE;
 	}
 
+#if !defined(TARGET_SUSE) && !defined(TARGET_DEBIAN) && !defined(TARGET_GENTOO)
+	/* Try /etc/dhcp/ too (rh #607759) */
+	if (!g_file_test (orig, G_FILE_TEST_EXISTS)) {
+		g_free (orig);
+		orig = g_strdup_printf (SYSCONFDIR "/dhcp/dhclient-%s.conf", iface);
+		if (!orig) {
+			nm_log_warn (LOGD_DHCP, "(%s): not enough memory for dhclient options.", iface);
+			return FALSE;
+		}
+	}
+#endif
+
 	tmp = g_strdup_printf ("nm-dhclient-%s.conf", iface);
 	conf_file = g_build_filename ("/var", "run", tmp, NULL);
 	g_free (tmp);
 
 	error = NULL;
-	success = merge_dhclient_config (iface, conf_file, s_ip4, dhcp_anycast_addr, orig, &error);
+	success = merge_dhclient_config (iface, conf_file, s_ip4, dhcp_anycast_addr, hostname, orig, &error);
 	if (!success) {
 		nm_log_warn (LOGD_DHCP, "(%s): error creating dhclient configuration: %s",
 		             iface, error->message);
@@ -568,14 +581,15 @@ dhclient_start (NMDHCPClient *client,
 static GPid
 real_ip4_start (NMDHCPClient *client,
                 NMSettingIP4Config *s_ip4,
-                guint8 *dhcp_anycast_addr)
+                guint8 *dhcp_anycast_addr,
+                const char *hostname)
 {
 	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
 	const char *iface;
 
 	iface = nm_dhcp_client_get_iface (client);
 
-	priv->conf_file = create_dhclient_config (iface, s_ip4, dhcp_anycast_addr);
+	priv->conf_file = create_dhclient_config (iface, s_ip4, dhcp_anycast_addr, hostname);
 	if (!priv->conf_file) {
 		nm_log_warn (LOGD_DHCP4, "(%s): error creating dhclient configuration file.", iface);
 		return -1;
@@ -588,6 +602,7 @@ static GPid
 real_ip6_start (NMDHCPClient *client,
                 NMSettingIP6Config *s_ip6,
                 guint8 *dhcp_anycast_addr,
+                const char *hostname,
                 gboolean info_only)
 {
 	return dhclient_start (client, "-6", info_only ? "-S" : "-N");
