@@ -41,6 +41,7 @@
 //#include <nm-device-olpc-mesh.h>
 #include <nm-utils.h>
 #include <nm-setting-ip4-config.h>
+#include <nm-setting-ip6-config.h>
 #include <nm-vpn-connection.h>
 #include <nm-setting-connection.h>
 #include <nm-setting-wired.h>
@@ -75,10 +76,12 @@ static NmcOutputField nmc_fields_dev_list_sections[] = {
 	{"WIRED-PROPERTIES",  N_("WIRED-PROPERTIES"),  0, NULL, 0},  /* 4 */
 	{"IP4-SETTINGS",      N_("IP4-SETTINGS"),      0, NULL, 0},  /* 5 */
 	{"IP4-DNS",           N_("IP4-DNS"),           0, NULL, 0},  /* 6 */
+	{"IP6-SETTINGS",      N_("IP6-SETTINGS"),      0, NULL, 0},  /* 7 */
+	{"IP6-DNS",           N_("IP6-DNS"),           0, NULL, 0},  /* 8 */
 	{NULL,                NULL,                    0, NULL, 0}
 };
-#define NMC_FIELDS_DEV_LIST_SECTIONS_ALL     "GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,IP4-SETTINGS,IP4-DNS"
-#define NMC_FIELDS_DEV_LIST_SECTIONS_COMMON  "GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,IP4-SETTINGS,IP4-DNS"
+#define NMC_FIELDS_DEV_LIST_SECTIONS_ALL     "GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,IP4-SETTINGS,IP4-DNS,IP6-SETTINGS,IP6-DNS"
+#define NMC_FIELDS_DEV_LIST_SECTIONS_COMMON  "GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,IP4-SETTINGS,IP4-DNS,IP6-SETTINGS,IP6-DNS"
 
 /* Available fields for 'dev list' - GENERAL part */
 static NmcOutputField nmc_fields_dev_list_general[] = {
@@ -137,6 +140,17 @@ static NmcOutputField nmc_fields_dev_list_ip4_settings[] = {
 #define NMC_FIELDS_DEV_LIST_IP4_SETTINGS_ALL     "NAME,ADDRESS,PREFIX,GATEWAY"
 #define NMC_FIELDS_DEV_LIST_IP4_SETTINGS_COMMON  "NAME,ADDRESS,PREFIX,GATEWAY"
 
+/* Available fields for 'dev list' - IPv6 settings part */
+static NmcOutputField nmc_fields_dev_list_ip6_settings[] = {
+	{"NAME",       N_("NAME"),        15, NULL, 0},  /* 0 */
+	{"ADDRESS",    N_("ADDRESS"),     15, NULL, 0},  /* 1 */
+	{"PREFIX",     N_("PREFIX"),      20, NULL, 0},  /* 2 */
+	{"GATEWAY",    N_("GATEWAY"),     20, NULL, 0},  /* 3 */
+	{NULL,         NULL,               0, NULL, 0}
+};
+#define NMC_FIELDS_DEV_LIST_IP6_SETTINGS_ALL     "NAME,ADDRESS,PREFIX,GATEWAY"
+#define NMC_FIELDS_DEV_LIST_IP6_SETTINGS_COMMON  "NAME,ADDRESS,PREFIX,GATEWAY"
+
 /* Available fields for 'dev list' - IPv4 settings DNS part */
 static NmcOutputField nmc_fields_dev_list_ip4_dns[] = {
 	{"NAME",       N_("NAME"),        15, NULL, 0},  /* 0 */
@@ -146,6 +160,14 @@ static NmcOutputField nmc_fields_dev_list_ip4_dns[] = {
 #define NMC_FIELDS_DEV_LIST_IP4_DNS_ALL     "NAME,DNS"
 #define NMC_FIELDS_DEV_LIST_IP4_DNS_COMMON  "NAME,DNS"
 
+/* Available fields for 'dev list' - IPv6 settings DNS part */
+static NmcOutputField nmc_fields_dev_list_ip6_dns[] = {
+	{"NAME",       N_("NAME"),        15, NULL, 0},  /* 0 */
+	{"DNS",        N_("DNS"),         17, NULL, 0},  /* 1 */
+	{NULL,         NULL,               0, NULL, 0}
+};
+#define NMC_FIELDS_DEV_LIST_IP6_DNS_ALL     "NAME,DNS"
+#define NMC_FIELDS_DEV_LIST_IP6_DNS_COMMON  "NAME,DNS"
 
 /* Available fields for 'dev wifi list' */
 static NmcOutputField nmc_fields_dev_wifi_list[] = {
@@ -301,6 +323,28 @@ ip4_address_as_string (guint32 ip)
 	} else {
 		g_warning (_("%s: error converting IP4 address 0x%X"),
 		            __func__, ntohl (tmp_addr.s_addr));
+		return NULL;
+	}
+}
+
+static gchar *
+ip6_address_as_string (const struct in6_addr *ip)
+{
+	char buf[INET6_ADDRSTRLEN];
+
+	memset (&buf, '\0', sizeof (buf));
+
+	if (inet_ntop (AF_INET6, ip, buf, INET6_ADDRSTRLEN)) {
+		return g_strdup (buf);
+	} else {
+		int j;
+		GString *ip6_str = g_string_new (NULL);
+		g_string_append_printf (ip6_str, "%02X", ip->s6_addr[0]);
+		for (j = 1; j < 16; j++)
+			g_string_append_printf (ip6_str, " %02X", ip->s6_addr[j]);
+		nm_warning ("%s: error converting IP6 address %s",
+		            __func__, ip6_str->str);
+		g_string_free (ip6_str, TRUE);
 		return NULL;
 	}
 }
@@ -590,17 +634,18 @@ show_device_info (gpointer data, gpointer user_data)
 
 		/* IP Setup info */
 		if (state == NM_DEVICE_STATE_ACTIVATED) {
-			NMIP4Config *cfg = nm_device_get_ip4_config (device);
+			NMIP4Config *cfg4 = nm_device_get_ip4_config (device);
+			NMIP6Config *cfg6 = nm_device_get_ip6_config (device);
 			GSList *iter;
 
 			/* IP4-SETTINGS */
-			if (!strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[5].name)) {
+			if (cfg4 && !strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[5].name)) {
 				nmc->allowed_fields = nmc_fields_dev_list_ip4_settings;
 				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_LIST_IP4_SETTINGS_ALL, nmc->allowed_fields, NULL);
 				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
 
-				for (iter = (GSList *) nm_ip4_config_get_addresses (cfg); iter; iter = g_slist_next (iter)) {
+				for (iter = (GSList *) nm_ip4_config_get_addresses (cfg4); iter; iter = g_slist_next (iter)) {
 					NMIP4Address *addr = (NMIP4Address *) iter->data;
 					guint32 prefix = nm_ip4_address_get_prefix (addr);
 					char *tmp2;
@@ -628,8 +673,8 @@ show_device_info (gpointer data, gpointer user_data)
 				was_output = TRUE;
 			}
 			/* IP4-DNS */
-			if (!strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[6].name)) {
-				array = nm_ip4_config_get_nameservers (cfg);
+			if (cfg4 && !strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[6].name)) {
+				array = nm_ip4_config_get_nameservers (cfg4);
 				if (array) {
 					int i;
 
@@ -649,6 +694,59 @@ show_device_info (gpointer data, gpointer user_data)
 						g_free (tmp);
 						g_free (dns_name);
 					}
+				}
+				was_output = TRUE;
+			}
+
+			/* IP6-SETTINGS */
+			if (cfg6 && !strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[7].name)) {
+				nmc->allowed_fields = nmc_fields_dev_list_ip6_settings;
+				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
+				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_LIST_IP6_SETTINGS_ALL, nmc->allowed_fields, NULL);
+				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+
+				for (iter = (GSList *) nm_ip6_config_get_addresses (cfg6); iter; iter = g_slist_next (iter)) {
+					NMIP6Address *addr = (NMIP6Address *) iter->data;
+					guint32 prefix = nm_ip6_address_get_prefix (addr);
+					char *addr_str, *prefix_str, *gateway_str;
+
+					addr_str = ip6_address_as_string (nm_ip6_address_get_address (addr));
+
+					prefix_str = g_strdup_printf ("%d", prefix);
+					gateway_str = ip6_address_as_string (nm_ip6_address_get_gateway (addr));
+
+					nmc->allowed_fields[0].value = nmc_fields_dev_list_sections[7].name;  /* "IP6-SETTINGS" */
+					nmc->allowed_fields[1].value = addr_str;
+					nmc->allowed_fields[2].value = prefix_str;
+					nmc->allowed_fields[3].value = gateway_str;
+
+					nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
+					print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+					g_free (addr_str);
+					g_free (prefix_str);
+					g_free (gateway_str);
+				}
+				was_output = TRUE;
+			}
+			/* IP6-DNS */
+			if (cfg6 && !strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[8].name)) {
+				int i = 1;
+				nmc->allowed_fields = nmc_fields_dev_list_ip6_dns;
+				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
+				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_LIST_IP6_DNS_ALL, nmc->allowed_fields, NULL);
+				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+
+				for (iter = (GSList *) nm_ip6_config_get_nameservers (cfg6); iter; iter = g_slist_next (iter)) {
+					char *dns_name = g_strdup_printf ("%s%d", nmc_fields_dev_list_sections[8].name, i++);
+
+					tmp = ip6_address_as_string (iter->data);
+					nmc->allowed_fields[0].value = dns_name;  /* "IP6-DNS<num>" */
+					nmc->allowed_fields[1].value = tmp;
+
+					nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
+					print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+					g_free (tmp);
+					g_free (dns_name);
 				}
 				was_output = TRUE;
 			}
