@@ -47,7 +47,7 @@ typedef struct {
 	NMObject *parent;
 
 	GSList *notify_props;
-	gulong notify_id;
+	guint32 notify_id;
 	gboolean disposed;
 } NMObjectPrivate;
 
@@ -255,18 +255,23 @@ deferred_notify_cb (gpointer data)
 {
 	NMObject *object = NM_OBJECT (data);
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
-	GSList *iter;
+	GSList *props, *iter;
 
 	priv->notify_id = 0;
 
-	priv->notify_props = g_slist_reverse (priv->notify_props);
-	for (iter = priv->notify_props; iter; iter = g_slist_next (iter)) {
+	/* Clear priv->notify_props early so that an NMObject subclass that
+	 * listens to property changes can queue up other property changes
+	 * during the g_object_notify() call separately from the property
+	 * list we're iterating.
+	 */
+	props = g_slist_reverse (priv->notify_props);
+	priv->notify_props = NULL;
+
+	for (iter = props; iter; iter = g_slist_next (iter)) {
 		g_object_notify (G_OBJECT (object), (const char *) iter->data);
 		g_free (iter->data);
 	}
-	g_slist_free (priv->notify_props);
-	priv->notify_props = NULL;
-
+	g_slist_free (props);
 	return FALSE;
 }
 
