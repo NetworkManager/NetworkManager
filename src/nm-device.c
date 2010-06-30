@@ -3315,13 +3315,6 @@ dispose (GObject *object)
 	addrconf6_cleanup (self);
 	dnsmasq_cleanup (self);
 
-	/* reset the saved RA value */
-	if (priv->ip6_accept_ra_path) {
-		nm_utils_do_sysctl (priv->ip6_accept_ra_path,
-		                    priv->ip6_accept_ra_save ? "1\n" : "0\n");
-	}
-	g_free (priv->ip6_accept_ra_path);
-
 	/* Take the device itself down and clear its IPv4 configuration */
 	if (priv->managed && take_down) {
 		NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
@@ -3329,6 +3322,13 @@ dispose (GObject *object)
 		nm_device_take_down (self, FALSE, NM_DEVICE_STATE_REASON_REMOVED);
 		nm_device_set_ip4_config (self, NULL, FALSE, &ignored);
 	}
+
+	/* reset the saved RA value */
+	if (priv->ip6_accept_ra_path) {
+		nm_utils_do_sysctl (priv->ip6_accept_ra_path,
+		                    priv->ip6_accept_ra_save ? "1\n" : "0\n");
+	}
+	g_free (priv->ip6_accept_ra_path);
 
 	activation_source_clear (self, TRUE, AF_INET);
 	activation_source_clear (self, TRUE, AF_INET6);
