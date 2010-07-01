@@ -221,6 +221,11 @@ typedef struct {
 	guint auth_changed_id;
 	GSList *auth_chains;
 
+	/* Firmware dir monitor */
+	GFileMonitor *fw_monitor;
+	guint fw_monitor_id;
+	guint fw_changed_id;
+
 	gboolean disposed;
 } NMManagerPrivate;
 
@@ -3884,6 +3889,65 @@ nm_manager_start (NMManager *self)
 	bluez_manager_resync_devices (self);
 }
 
+static gboolean
+handle_firmware_changed (gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+
+	priv->fw_changed_id = 0;
+
+	if (manager_sleeping (self))
+		return FALSE;
+
+	/* Try to re-enable devices with missing firmware */
+	for (iter = priv->devices; iter; iter = iter->next) {
+		NMDevice *candidate = NM_DEVICE (iter->data);
+		NMDeviceState state = nm_device_get_state (candidate);
+
+		if (   nm_device_get_firmware_missing (candidate)
+		    && (state == NM_DEVICE_STATE_UNAVAILABLE)) {
+			nm_log_info (LOGD_CORE, "(%s): firmware may now be available",
+			             nm_device_get_iface (candidate));
+
+			/* Re-set unavailable state to try bringing the device up again */
+			nm_device_state_changed (candidate,
+			                         NM_DEVICE_STATE_UNAVAILABLE,
+			                         NM_DEVICE_STATE_REASON_NONE);
+		}
+	}
+
+	return FALSE;
+}
+
+static void
+firmware_dir_changed (GFileMonitor *monitor,
+                      GFile *file,
+                      GFile *other_file,
+                      GFileMonitorEvent event_type,
+                      gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+
+	switch (event_type) {
+	case G_FILE_MONITOR_EVENT_CREATED:
+	case G_FILE_MONITOR_EVENT_CHANGED:
+	case G_FILE_MONITOR_EVENT_MOVED:
+	case G_FILE_MONITOR_EVENT_ATTRIBUTE_CHANGED:
+	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
+		if (!priv->fw_changed_id) {
+			priv->fw_changed_id = g_timeout_add_seconds (4, handle_firmware_changed, self);
+			nm_log_info (LOGD_CORE, "kernel firmware directory '%s' changed",
+			             KERNEL_FIRMWARE_DIR);
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 NMManager *
 nm_manager_get (const char *config_file,
                 const char *plugins,
@@ -4039,6 +4103,17 @@ dispose (GObject *object)
 	if (priv->bluez_mgr)
 		g_object_unref (priv->bluez_mgr);
 
+	if (priv->fw_monitor) {
+		if (priv->fw_monitor_id)
+			g_signal_handler_disconnect (priv->fw_monitor, priv->fw_monitor_id);
+
+		if (priv->fw_changed_id)
+			g_source_remove (priv->fw_changed_id);
+
+		g_file_monitor_cancel (priv->fw_monitor);
+		g_object_unref (priv->fw_monitor);
+	}
+
 	G_OBJECT_CLASS (nm_manager_parent_class)->dispose (object);
 }
 
@@ -4118,6 +4193,7 @@ nm_manager_init (NMManager *manager)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	DBusGConnection *g_connection;
 	guint id, i;
+	GFile *file;
 
 	/* Initialize rfkill structures and states */
 	memset (priv->radio_states, 0, sizeof (priv->radio_states));
@@ -4208,6 +4284,24 @@ nm_manager_init (NMManager *manager)
 		                                          manager);
 	} else
 		nm_log_warn (LOGD_CORE, "failed to create PolicyKit authority.");
+
+	/* Monitor the firmware directory */
+	if (strlen (KERNEL_FIRMWARE_DIR)) {
+		file = g_file_new_for_path (KERNEL_FIRMWARE_DIR "/");
+		priv->fw_monitor = g_file_monitor_directory (file, G_FILE_MONITOR_NONE, NULL, NULL);
+		g_object_unref (file);
+	}
+
+	if (priv->fw_monitor) {
+		priv->fw_monitor_id = g_signal_connect (priv->fw_monitor, "changed",
+		                                        G_CALLBACK (firmware_dir_changed),
+		                                        manager);
+		nm_log_info (LOGD_CORE, "monitoring kernel firmware directory '%s'.",
+		             KERNEL_FIRMWARE_DIR);
+	} else {
+		nm_log_warn (LOGD_CORE, "failed to monitor kernel firmware directory '%s'.",
+		             KERNEL_FIRMWARE_DIR);
+	}
 }
 
 static void

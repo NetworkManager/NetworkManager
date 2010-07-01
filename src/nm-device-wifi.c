@@ -2609,7 +2609,8 @@ supplicant_mgr_state_cb_handler (gpointer user_data)
 		dev_state = nm_device_get_state (dev);
 		if (    priv->enabled
 		    && !priv->supplicant.iface
-		    && (dev_state >= NM_DEVICE_STATE_UNAVAILABLE)) {
+		    && (dev_state >= NM_DEVICE_STATE_UNAVAILABLE)
+		    && (nm_device_get_firmware_missing (NM_DEVICE (self)) == FALSE)) {
 			/* request a supplicant interface from the supplicant manager */
 			supplicant_interface_acquire (self);
 
@@ -3599,7 +3600,7 @@ device_state_changed (NMDevice *device,
 		 * acquire a supplicant interface and transition to DISCONNECTED because
 		 * the device is now ready to use.
 		 */
-		if (priv->enabled) {
+		if (priv->enabled && (nm_device_get_firmware_missing (device) == FALSE)) {
 			gboolean success;
 			struct iw_range range;
 
@@ -3692,8 +3693,12 @@ real_set_enabled (NMDeviceInterface *device, gboolean enabled)
 			nm_log_dbg (LOGD_WIFI, "(%s): enable blocked by failure to bring device up",
 			            nm_device_get_iface (NM_DEVICE (device)));
 
-			/* The device sucks, or HAL was lying to us about the killswitch state */
-			priv->enabled = FALSE;
+			if (no_firmware)
+				nm_device_set_firmware_missing (NM_DEVICE (device), TRUE);
+			else {
+				/* The device sucks, or the kernel was lying to us about the killswitch state */
+				priv->enabled = FALSE;
+			}
 			return;
 		}
 

@@ -42,4 +42,8 @@ void nm_device_handle_autoip4_event (NMDevice *self,
 
 gboolean nm_device_ip_config_should_fail (NMDevice *self, gboolean ip6);
 
+gboolean nm_device_get_firmware_missing (NMDevice *self);
+
+void nm_device_set_firmware_missing (NMDevice *self, gboolean missing);
+
 #endif	/* NM_DEVICE_PRIVATE_H */

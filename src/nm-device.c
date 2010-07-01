@@ -3655,15 +3655,25 @@ unavailable_to_disconnected (gpointer user_data)
 	return FALSE;
 }
 
-static void
-set_firmware_missing (NMDevice *self, gboolean new_missing)
+void
+nm_device_set_firmware_missing (NMDevice *self, gboolean new_missing)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevicePrivate *priv;
 
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
 	if (priv->firmware_missing != new_missing) {
 		priv->firmware_missing = new_missing;
 		g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_FIRMWARE_MISSING);
 	}
+}
+
+gboolean
+nm_device_get_firmware_missing (NMDevice *self)
+{
+	return NM_DEVICE_GET_PRIVATE (self)->firmware_missing;
 }
 
 void
@@ -3678,7 +3688,12 @@ nm_device_state_changed (NMDevice *device,
 
 	g_return_if_fail (NM_IS_DEVICE (device));
 
-	if (priv->state == state)
+	/* Do nothing if state isn't changing, but as a special case allow
+	 * re-setting UNAVAILABLE if the device is missing firmware so that we
+	 * can retry device initialization.
+	 */
+	if (   (priv->state == state)
+	    && !(state == NM_DEVICE_STATE_UNAVAILABLE && priv->firmware_missing))
 		return;
 
 	old_state = priv->state;
@@ -3698,16 +3713,15 @@ nm_device_state_changed (NMDevice *device,
 	 */
 	switch (state) {
 	case NM_DEVICE_STATE_UNMANAGED:
-		set_firmware_missing (device, FALSE);
+		nm_device_set_firmware_missing (device, FALSE);
 		if (old_state > NM_DEVICE_STATE_UNMANAGED)
 			nm_device_take_down (device, TRUE, reason);
 		break;
 	case NM_DEVICE_STATE_UNAVAILABLE:
-		if (old_state == NM_DEVICE_STATE_UNMANAGED) {
-			if (!nm_device_bring_up (device, TRUE, &no_firmware) && no_firmware) {
-				nm_log_warn (LOGD_HW, "%s: firmware may be missing.", nm_device_get_iface (device));
-				set_firmware_missing (device, TRUE);
-			}
+		if (old_state == NM_DEVICE_STATE_UNMANAGED || priv->firmware_missing) {
+			if (!nm_device_bring_up (device, TRUE, &no_firmware) && no_firmware)
+				nm_log_warn (LOGD_HW, "(%s): firmware may be missing.", nm_device_get_iface (device));
+			nm_device_set_firmware_missing (device, no_firmware ? TRUE : FALSE);
 		}
 		/* Ensure the device gets deactivated in response to stuff like
 		 * carrier changes or rfkill.  But don't deactivate devices that are

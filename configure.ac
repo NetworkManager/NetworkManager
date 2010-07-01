@@ -423,6 +423,16 @@ fi
 AC_DEFINE_UNQUOTED(SYSTEM_CA_PATH, "$SYSTEM_CA_PATH", [Define to path to system CA certificates])
 AC_SUBST(SYSTEM_CA_PATH)
 
+AC_ARG_WITH(kernel-firmware-dir, AS_HELP_STRING([--with-kernel-firmware-dir=DIR], [where kernel firmware directory is (default is /lib/firmware)]))
+
+if test -n "$with_kernel_firmware_dir" ; then
+    KERNEL_FIRMWARE_DIR="$with_kernel_firmware_dir"
+else
+    KERNEL_FIRMWARE_DIR="/lib/firmware"
+fi
+AC_DEFINE_UNQUOTED(KERNEL_FIRMWARE_DIR, "$KERNEL_FIRMWARE_DIR", [Define to path of the kernel firmware directory])
+AC_SUBST(KERNEL_FIRMWARE_DIR)
+
 NM_COMPILER_WARNINGS
 
 GTK_DOC_CHECK(1.0)
