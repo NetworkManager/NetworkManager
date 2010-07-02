@@ -36,6 +36,13 @@ static void impl_settings_add_connection (NMSettingsService *self,
                                           GHashTable *settings,
                                           DBusGMethodInvocation *context);
 
+static void impl_settings_get_secrets_for_connection (NMSettingsService *self,
+                                                      const char *settings_service,
+                                                      const char *connection_path,
+                                                      const char *setting_name,
+                                                      const char **hints,
+                                                      DBusGMethodInvocation *context);
+
 #include "nm-settings-glue.h"
 
 static void settings_interface_init (NMSettingsInterface *class);
@@ -217,6 +224,49 @@ impl_settings_add_connection (NMSettingsService *self,
 	}
 
 	g_object_unref (tmp);
+}
+
+static void
+dbus_get_secrets_cb (NMSettingsInterface *settings,
+                     GHashTable *secrets,
+                     GError *error,
+                     gpointer user_data)
+{
+	DBusGMethodInvocation *context = user_data;
+
+	if (error)
+		dbus_g_method_return_error (context, error);
+	else
+		dbus_g_method_return (context, secrets);
+}
+
+static void
+impl_settings_get_secrets_for_connection (NMSettingsService *self,
+                                          const char *settings_service,
+                                          const char *connection_path,
+                                          const char *setting_name,
+                                          const char **hints,
+                                          DBusGMethodInvocation *context)
+{
+	GError *error = NULL;
+
+	if (NM_SETTINGS_SERVICE_GET_CLASS (self)->get_secrets_for_connection)
+		NM_SETTINGS_SERVICE_GET_CLASS (self)->get_secrets_for_connection (self,
+		                                                                  settings_service,
+		                                                                  connection_path,
+		                                                                  setting_name,
+		                                                                  hints,
+		                                                                  context,
+		                                                                  dbus_get_secrets_cb,
+		                                                                  context);
+	else {
+		error = g_error_new (NM_SETTINGS_INTERFACE_ERROR,
+		                     NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
+		                     "%s: %s:%d get_secrets_for_connection() not implemented",
+		                     __func__, __FILE__, __LINE__);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+	}
 }
 
 void

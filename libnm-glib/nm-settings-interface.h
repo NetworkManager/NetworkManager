@@ -60,6 +60,11 @@ typedef void (*NMSettingsAddConnectionFunc) (NMSettingsInterface *settings,
                                              GError *error,
                                              gpointer user_data);
 
+typedef void (*NMSettingsGetSecretsForConnectionFunc) (NMSettingsInterface *settings,
+                                                       GHashTable *secrets,
+                                                       GError *error,
+                                                       gpointer user_data);
+
 struct _NMSettingsInterface {
 	GTypeInterface g_iface;
 
@@ -81,13 +86,21 @@ struct _NMSettingsInterface {
 
 	void (*connections_read) (NMSettingsInterface *settings);
 
+	/* Function */
+	gboolean (*get_secrets_for_connection) (NMSettingsInterface *self,
+	                                        const char *settings_service,
+	                                        const char *connection_path,
+	                                        const char *setting_name,
+	                                        const char **hints,
+	                                        NMSettingsGetSecretsForConnectionFunc callback,
+	                                        gpointer user_data);
+
 	/* Padding for future expansion */
 	void (*_reserved1) (void);
 	void (*_reserved2) (void);
 	void (*_reserved3) (void);
 	void (*_reserved4) (void);
 	void (*_reserved5) (void);
-	void (*_reserved6) (void);
 };
 
 GType nm_settings_interface_get_type (void);
@@ -102,6 +115,14 @@ gboolean nm_settings_interface_add_connection (NMSettingsInterface *settings,
                                                NMConnection *connection,
                                                NMSettingsAddConnectionFunc callback,
                                                gpointer user_data);
+
+gboolean nm_settings_interface_get_secrets_for_connection (NMSettingsInterface *settings,
+                                                           const char *settings_service,
+                                                           const char *connection_path,
+                                                           const char *setting_name,
+                                                           const char **hints,
+                                                           NMSettingsGetSecretsForConnectionFunc callback,
+                                                           gpointer user_data);
 
 G_END_DECLS
 

@@ -143,6 +143,48 @@ nm_settings_interface_add_connection (NMSettingsInterface *settings,
 	return FALSE;
 }
 
+/**
+ * nm_settings_interface_get_secrets_for_connection:
+ * @settings: a object implementing %NMSettingsInterface
+ * @settings_service: name of the settings service providing this connection
+ * @connection_path: object path of the connection provided by @settings_service
+ * @setting_name: the name of the setting for which to get secrets
+ * @hints: a list of hints
+ * @callback: function to call when the operation is complete
+ * @user_data: context-specific data passed to @callback
+ *
+ * Requests that the settings service get the secrets for the requested connection.
+ *
+ * Returns: TRUE if the request was successful, FALSE if it failed
+ **/
+gboolean
+nm_settings_interface_get_secrets_for_connection (NMSettingsInterface *settings,
+                                                  const char *settings_service,
+                                                  const char *connection_path,
+                                                  const char *setting_name,
+                                                  const char **hints,
+                                                  NMSettingsGetSecretsForConnectionFunc callback,
+                                                  gpointer user_data)
+{
+	g_return_val_if_fail (settings != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_SETTINGS_INTERFACE (settings), FALSE);
+	g_return_val_if_fail (connection_path != NULL, FALSE);
+	g_return_val_if_fail (setting_name != NULL, FALSE);
+	g_return_val_if_fail (hints != NULL, FALSE);
+	g_return_val_if_fail (callback != NULL, FALSE);
+
+	if (NM_SETTINGS_INTERFACE_GET_INTERFACE (settings)->get_secrets_for_connection) {
+		return NM_SETTINGS_INTERFACE_GET_INTERFACE (settings)->get_secrets_for_connection (settings,
+		                                                                                   settings_service,
+		                                                                                   connection_path,
+		                                                                                   setting_name,
+		                                                                                   hints,
+		                                                                                   callback,
+		                                                                                   user_data);
+	}
+	return FALSE;
+}
+
 /*****************************************************************/
 
 static void

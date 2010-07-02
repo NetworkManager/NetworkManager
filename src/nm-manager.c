@@ -2447,7 +2447,7 @@ typedef struct GetSecretsInfo {
 	guint32 idle_id;
 	char *hint1;
 	char *hint2;
-	char *connection_path;
+	NMConnection *connection;
 } GetSecretsInfo;
 
 static void
@@ -2472,7 +2472,7 @@ free_get_secrets_info (gpointer data)
 	g_free (info->hint1);
 	g_free (info->hint2);
 	g_free (info->setting_name);
-	g_free (info->connection_path);
+	g_object_unref (info->connection);
 	memset (info, 0, sizeof (GetSecretsInfo));
 	g_free (info);
 }
@@ -2490,6 +2490,16 @@ provider_cancel_secrets (NMSecretsProviderInterface *provider, gpointer user_dat
 			free_get_secrets_info (candidate);
 			break;
 		}
+	}
+}
+
+static void
+system_connection_update_cb (NMSettingsConnectionInterface *connection,
+                             GError *error,
+                             gpointer user_data)
+{
+	if (error != NULL) {
+		nm_log_warn (LOGD_SYS_SET, "could not update system connection: %s", error->message);
 	}
 }
 
@@ -2517,6 +2527,14 @@ user_get_secrets_cb (DBusGProxy *proxy,
 		                                                  info->caller,
 		                                                  settings,
 		                                                  NULL);
+
+		/* If this connection is a system one, we need to update it on our end */
+		if (nm_connection_get_scope (info->connection) == NM_CONNECTION_SCOPE_SYSTEM) {
+			nm_settings_connection_interface_update (NM_SETTINGS_CONNECTION_INTERFACE (info->connection),
+			                                         system_connection_update_cb,
+			                                         NULL);
+		}
+
 		g_hash_table_destroy (settings);
 	} else {
 		nm_secrets_provider_interface_get_secrets_result (info->provider,
@@ -2608,18 +2626,62 @@ system_get_secrets_reply_cb (NMSettingsConnectionInterface *connection,
 }
 
 static gboolean
+system_get_secrets_from_user (GetSecretsInfo *info)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (info->manager);
+	DBusGConnection *g_connection;
+	GPtrArray *hints = NULL;
+
+	/* Only user settings services that are allowed to control the network
+	 * are allowed to provide new secrets for system connections.
+	 */
+	if (priv->user_net_perm != NM_AUTH_CALL_RESULT_YES)
+		return FALSE;
+
+	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
+	info->proxy = dbus_g_proxy_new_for_name (g_connection,
+	                                         NM_DBUS_SERVICE_USER_SETTINGS,
+	                                         NM_DBUS_PATH_SETTINGS,
+	                                         NM_DBUS_IFACE_SETTINGS_SECRETS);
+	if (!info->proxy) {
+		nm_log_warn (LOGD_SYS_SET, "could not create user settings secrets proxy");
+		system_get_secrets_reply_cb (NULL, NULL, NULL, info); // FIXME pass error
+		return FALSE;
+	}
+
+	hints = g_ptr_array_sized_new (2);
+	if (info->hint1)
+		g_ptr_array_add (hints, (char *) info->hint1);
+	if (info->hint2)
+		g_ptr_array_add (hints, (char *) info->hint2);
+
+	info->call = dbus_g_proxy_begin_call_with_timeout (info->proxy, "GetSecretsForConnection",
+	                                                   user_get_secrets_cb,
+	                                                   info,
+	                                                   NULL,
+	                                                   G_MAXINT32,
+	                                                   G_TYPE_STRING, NM_DBUS_SERVICE_SYSTEM_SETTINGS,
+	                                                   DBUS_TYPE_G_OBJECT_PATH, nm_connection_get_path (info->connection),
+	                                                   G_TYPE_STRING, info->setting_name,
+	                                                   DBUS_TYPE_G_ARRAY_OF_STRING, hints,
+	                                                   G_TYPE_INVALID);
+	g_ptr_array_free (hints, TRUE);
+	return TRUE;
+}
+
+static gboolean
 system_get_secrets_idle_cb (gpointer user_data)
 {
 	GetSecretsInfo *info = user_data;
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (info->manager);
 	NMSettingsConnectionInterface *connection;
 	GError *error = NULL;
-	const char *hints[3] = { NULL, NULL, NULL };
+	gboolean success = FALSE;
 
 	info->idle_id = 0;
 
 	connection = nm_settings_interface_get_connection_by_path (NM_SETTINGS_INTERFACE (priv->sys_settings), 
-	                                                           info->connection_path);
+	                                                           nm_connection_get_path (info->connection));
 	if (!connection) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
@@ -2634,14 +2696,29 @@ system_get_secrets_idle_cb (gpointer user_data)
 		return FALSE;
 	}
 
-	hints[0] = info->hint1;
-	hints[1] = info->hint2;
-	nm_settings_connection_interface_get_secrets (connection,
-	                                              info->setting_name,
-	                                              hints,
-	                                              info->request_new,
-	                                              system_get_secrets_reply_cb,
-	                                              info);
+	/* If new secrets are requested, try asking the user settings service for
+	 * them since the system settings service can't interact with anything
+	 * to get new secrets.
+	 */
+	if (info->request_new)
+		success = system_get_secrets_from_user (info);
+
+	/* If the user wasn't authorized, or we should retry using existing
+	 * secrets, just ask the system settings service.
+	 */
+	if (!success) {
+		const char *hints[3] = { NULL, NULL, NULL };
+
+		hints[0] = info->hint1;
+		hints[1] = info->hint2;
+		nm_settings_connection_interface_get_secrets (connection,
+		                                              info->setting_name,
+		                                              hints,
+		                                              info->request_new,
+		                                              system_get_secrets_reply_cb,
+		                                              info);
+	}
+
 	return FALSE;
 }
 
@@ -2664,7 +2741,7 @@ system_get_secrets (NMManager *self,
 	info->setting_name = g_strdup (setting_name);
 	info->hint1 = hint1 ? g_strdup (hint1) : NULL;
 	info->hint2 = hint2 ? g_strdup (hint2) : NULL;
-	info->connection_path = g_strdup (nm_connection_get_path (connection));
+	info->connection = g_object_ref (connection);
 	info->request_new = request_new;
 
 	g_object_weak_ref (G_OBJECT (provider), (GWeakNotify) free_get_secrets_info, info);
@@ -3934,7 +4011,9 @@ firmware_dir_changed (GFileMonitor *monitor,
 	switch (event_type) {
 	case G_FILE_MONITOR_EVENT_CREATED:
 	case G_FILE_MONITOR_EVENT_CHANGED:
+#if GLIB_CHECK_VERSION(2,23,4)
 	case G_FILE_MONITOR_EVENT_MOVED:
+#endif
 	case G_FILE_MONITOR_EVENT_ATTRIBUTE_CHANGED:
 	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
 		if (!priv->fw_changed_id) {
