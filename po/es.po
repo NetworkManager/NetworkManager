@@ -7,16 +7,18 @@
 # Antonio Ognio <antonio@linux.org.pe>, 2004.
 # Francisco Javier F. Serrador <serrador@cvs.gnome.org>, 2004, 2005, 2006.
 # Lucas Vieites Fariña <lucas@asixinformatica.com>, 2005, 2006.
-# Jorge González <jorgegonz@svn.gnome.org>, 2007, 2008, 2010.
 # Gladys Guerrero  <gguerrer@redhat.com>, 2010.
+# Jorge González <jorgegonz@svn.gnome.org>, 2007, 2008, 2010.
+#
 msgid ""
 msgstr ""
-"Project-Id-Version: es\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-05-06 14:31+0530\n"
-"PO-Revision-Date: 2010-05-07 14:32+1000\n"
-"Last-Translator: Gladys Guerrero  <gguerrer@redhat.com>\n"
-"Language-Team: Spanish <es@li.org>\n"
+"Project-Id-Version: NetworkManager.HEAD\n"
+"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
+"product=NetworkManager&component=general\n"
+"POT-Creation-Date: 2010-06-28 08:52+0000\n"
+"PO-Revision-Date: 2010-07-11 10:42+0200\n"
+"Last-Translator: Jorge González <jorgegonz@svn.gnome.org>\n"
+"Language-Team: Español <gnome-es-list@gnome.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -146,19 +148,19 @@ msgstr "nunca"
 #: ../cli/src/connections.c:602 ../cli/src/connections.c:605
 #: ../cli/src/devices.c:388 ../cli/src/devices.c:513 ../cli/src/devices.c:539
 #: ../cli/src/devices.c:540 ../cli/src/devices.c:541 ../cli/src/devices.c:542
-#: ../cli/src/devices.c:543 ../cli/src/settings.c:504
-#: ../cli/src/settings.c:544 ../cli/src/settings.c:643
-#: ../cli/src/settings.c:912 ../cli/src/settings.c:913
-#: ../cli/src/settings.c:915 ../cli/src/settings.c:917
-#: ../cli/src/settings.c:1042 ../cli/src/settings.c:1043
-#: ../cli/src/settings.c:1044 ../cli/src/settings.c:1123
-#: ../cli/src/settings.c:1124 ../cli/src/settings.c:1125
-#: ../cli/src/settings.c:1126 ../cli/src/settings.c:1127
-#: ../cli/src/settings.c:1128 ../cli/src/settings.c:1129
-#: ../cli/src/settings.c:1130 ../cli/src/settings.c:1131
-#: ../cli/src/settings.c:1132 ../cli/src/settings.c:1133
-#: ../cli/src/settings.c:1134 ../cli/src/settings.c:1135
-#: ../cli/src/settings.c:1210
+#: ../cli/src/devices.c:543 ../cli/src/settings.c:508
+#: ../cli/src/settings.c:551 ../cli/src/settings.c:652
+#: ../cli/src/settings.c:926 ../cli/src/settings.c:927
+#: ../cli/src/settings.c:929 ../cli/src/settings.c:931
+#: ../cli/src/settings.c:1056 ../cli/src/settings.c:1057
+#: ../cli/src/settings.c:1058 ../cli/src/settings.c:1137
+#: ../cli/src/settings.c:1138 ../cli/src/settings.c:1139
+#: ../cli/src/settings.c:1140 ../cli/src/settings.c:1141
+#: ../cli/src/settings.c:1142 ../cli/src/settings.c:1143
+#: ../cli/src/settings.c:1144 ../cli/src/settings.c:1145
+#: ../cli/src/settings.c:1146 ../cli/src/settings.c:1147
+#: ../cli/src/settings.c:1148 ../cli/src/settings.c:1149
+#: ../cli/src/settings.c:1224
 msgid "yes"
 msgstr "sí"
 
@@ -166,19 +168,19 @@ msgstr "sí"
 #: ../cli/src/connections.c:602 ../cli/src/connections.c:605
 #: ../cli/src/devices.c:388 ../cli/src/devices.c:513 ../cli/src/devices.c:539
 #: ../cli/src/devices.c:540 ../cli/src/devices.c:541 ../cli/src/devices.c:542
-#: ../cli/src/devices.c:543 ../cli/src/settings.c:504
-#: ../cli/src/settings.c:506 ../cli/src/settings.c:544
-#: ../cli/src/settings.c:643 ../cli/src/settings.c:912
-#: ../cli/src/settings.c:913 ../cli/src/settings.c:915
-#: ../cli/src/settings.c:917 ../cli/src/settings.c:1042
-#: ../cli/src/settings.c:1043 ../cli/src/settings.c:1044
-#: ../cli/src/settings.c:1123 ../cli/src/settings.c:1124
-#: ../cli/src/settings.c:1125 ../cli/src/settings.c:1126
-#: ../cli/src/settings.c:1127 ../cli/src/settings.c:1128
-#: ../cli/src/settings.c:1129 ../cli/src/settings.c:1130
-#: ../cli/src/settings.c:1131 ../cli/src/settings.c:1132
-#: ../cli/src/settings.c:1133 ../cli/src/settings.c:1134
-#: ../cli/src/settings.c:1135 ../cli/src/settings.c:1210
+#: ../cli/src/devices.c:543 ../cli/src/settings.c:508
+#: ../cli/src/settings.c:510 ../cli/src/settings.c:551
+#: ../cli/src/settings.c:652 ../cli/src/settings.c:926
+#: ../cli/src/settings.c:927 ../cli/src/settings.c:929
+#: ../cli/src/settings.c:931 ../cli/src/settings.c:1056
+#: ../cli/src/settings.c:1057 ../cli/src/settings.c:1058
+#: ../cli/src/settings.c:1137 ../cli/src/settings.c:1138
+#: ../cli/src/settings.c:1139 ../cli/src/settings.c:1140
+#: ../cli/src/settings.c:1141 ../cli/src/settings.c:1142
+#: ../cli/src/settings.c:1143 ../cli/src/settings.c:1144
+#: ../cli/src/settings.c:1145 ../cli/src/settings.c:1146
+#: ../cli/src/settings.c:1147 ../cli/src/settings.c:1148
+#: ../cli/src/settings.c:1149 ../cli/src/settings.c:1224
 msgid "no"
 msgstr "no"
 
@@ -267,7 +269,7 @@ msgstr "activada"
 #: ../cli/src/connections.c:1102 ../cli/src/connections.c:1125
 #: ../cli/src/connections.c:1158 ../cli/src/devices.c:224
 #: ../cli/src/devices.c:514 ../cli/src/network-manager.c:92
-#: ../cli/src/network-manager.c:145 ../cli/src/settings.c:469
+#: ../cli/src/network-manager.c:145 ../cli/src/settings.c:473
 msgid "unknown"
 msgstr "desconocido"
 
@@ -1066,78 +1068,79 @@ msgstr "Error: No se pudo conectar al NetworkManager."
 msgid "Success"
 msgstr "Éxito"
 
-#: ../cli/src/settings.c:407
+#: ../cli/src/settings.c:411
 #, c-format
 msgid "%d (hex-ascii-key)"
 msgstr "%d (clave-hex-ascii)"
 
-#: ../cli/src/settings.c:409
+#: ../cli/src/settings.c:413
 #, c-format
 msgid "%d (104/128-bit passphrase)"
 msgstr "%d (frase de acceso 104/128-bits)"
 
-#: ../cli/src/settings.c:412
+#: ../cli/src/settings.c:416
 #, c-format
 msgid "%d (unknown)"
 msgstr "%d (desconocido)"
 
-#: ../cli/src/settings.c:438
+#: ../cli/src/settings.c:442
 msgid "0 (unknown)"
 msgstr "0 (desconocido)"
 
-#: ../cli/src/settings.c:444
+#: ../cli/src/settings.c:448
 msgid "any, "
 msgstr "cualquiera,"
 
-#: ../cli/src/settings.c:446
+#: ../cli/src/settings.c:450
 msgid "900 MHz, "
 msgstr "900 MHz, "
 
-#: ../cli/src/settings.c:448
+#: ../cli/src/settings.c:452
 msgid "1800 MHz, "
 msgstr "1800 MHz, "
 
-#: ../cli/src/settings.c:450
+#: ../cli/src/settings.c:454
 msgid "1900 MHz, "
 msgstr "1900 MHz, "
 
-#: ../cli/src/settings.c:452
+#: ../cli/src/settings.c:456
 msgid "850 MHz, "
 msgstr "850 MHz, "
 
-#: ../cli/src/settings.c:454
+#: ../cli/src/settings.c:458
 msgid "WCDMA 3GPP UMTS 2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 2100 MHz, "
 
-#: ../cli/src/settings.c:456
+#: ../cli/src/settings.c:460
 msgid "WCDMA 3GPP UMTS 1800 MHz, "
 msgstr "WCDMA 3GPP UMTS 1800 MHz, "
 
-#: ../cli/src/settings.c:458
+#: ../cli/src/settings.c:462
 msgid "WCDMA 3GPP UMTS 1700/2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700/2100 MHz, "
 
-#: ../cli/src/settings.c:460
+#: ../cli/src/settings.c:464
 msgid "WCDMA 3GPP UMTS 800 MHz, "
 msgstr "WCDMA 3GPP UMTS 800 MHz, "
 
-#: ../cli/src/settings.c:462
+#: ../cli/src/settings.c:466
 msgid "WCDMA 3GPP UMTS 850 MHz, "
 msgstr "WCDMA 3GPP UMTS 850 MHz, "
 
-#: ../cli/src/settings.c:464
+#: ../cli/src/settings.c:468
 msgid "WCDMA 3GPP UMTS 900 MHz, "
 msgstr "WCDMA 3GPP UMTS 900 MHz, "
 
-#: ../cli/src/settings.c:466
+#: ../cli/src/settings.c:470
 msgid "WCDMA 3GPP UMTS 1700 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700 MHz, "
 
-#: ../cli/src/settings.c:546 ../cli/src/settings.c:708
+#: ../cli/src/settings.c:554 ../cli/src/settings.c:721
 msgid "auto"
 msgstr "auto"
 
-#: ../cli/src/settings.c:704 ../cli/src/settings.c:707 ../cli/src/utils.c:172
+#: ../cli/src/settings.c:716 ../cli/src/settings.c:719
+#: ../cli/src/settings.c:720 ../cli/src/utils.c:172
 msgid "not set"
 msgstr "no establecido"
 
@@ -1199,7 +1202,8 @@ msgstr "Archivo PEM mal formado: no se encontró IV en la etiqueta DEK-Info."
 #: ../libnm-util/crypto.c:190
 #, c-format
 msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
-msgstr "Archivo PEM mal formado: formato de IV no válido en la etiqueta DEK-Info."
+msgstr ""
+"Archivo PEM mal formado: formato de IV no válido en la etiqueta DEK-Info."
 
 #: ../libnm-util/crypto.c:203
 #, c-format
@@ -1495,12 +1499,113 @@ msgstr "No pudo asignar memoria para escribir IV al archivo PEM."
 #: ../libnm-util/nm-utils.c:2059
 #, c-format
 msgid "Could not allocate memory for writing encrypted key to PEM file."
-msgstr "No se pudo asignar memoria para escribir llave encriptada al archivo PEM."
+msgstr ""
+"No se pudo asignar memoria para escribir llave encriptada al archivo PEM."
 
 #: ../libnm-util/nm-utils.c:2078
 #, c-format
 msgid "Could not allocate memory for PEM file data."
 msgstr "No se pudo reservar memoria para el archivo de datos PEM."
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:1
+msgid "Connection sharing via a protected WiFi network"
+msgstr "Compartir conexión a través de una red WIFI protegida"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:2
+msgid "Connection sharing via an open WiFi network"
+msgstr "Compartir conexión a través de una red WIFI abierta"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:3
+msgid "Modify persistent system hostname"
+msgstr "Modificar nombre de host de sistema persistente"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:4
+msgid "Modify system connections"
+msgstr "Modificar conexiones de sistema"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:5
+msgid "System policy prevents modification of system settings"
+msgstr "Política de sistema evita modificación de configuración de sistema"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:6
+msgid "System policy prevents modification of the persistent system hostname"
+msgstr ""
+"Política de sistema evita modificación de nombre de host de sistema "
+"persistente"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:7
+msgid "System policy prevents sharing connections via a protected WiFi network"
+msgstr ""
+"Política de sistema evita compartir conexiones a través de una red WIFI "
+"protegida"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:8
+msgid "System policy prevents sharing connections via an open WiFi network"
+msgstr ""
+"Política de sistema evita compartir conexiones a través de una red WIFI "
+"abierta"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:1
+msgid "Allow control of network connections"
+msgstr "Permitir controlar las conexiones de red"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:2
+msgid "Allow use of user-specific connections"
+msgstr "Permitir el uso de conexiones específicas de usuario"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:3
+msgid "Enable or disable WiFi devices"
+msgstr "Activar o desactivar los dispositivos inalámbricos"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:4
+msgid "Enable or disable mobile broadband devices"
+msgstr "Activar o desactivar los dispositivos de banda ancha móvil"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:5
+msgid "Enable or disable system networking"
+msgstr "Activar o desactivar la red del sistema"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:6
+msgid ""
+"Put NetworkManager to sleep or wake it up (should only be used by system "
+"power management)"
+msgstr ""
+"Poner NetworkManager a dormir o despertarlo (sólo lo debería usar el gestor "
+"de energía del sistema)"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:7
+#| msgid "System policy prevents modification of system settings"
+msgid "System policy prevents control of network connections"
+msgstr "La política de sistema evita el control de las conexiones de red"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:8
+#| msgid "System policy prevents sharing connections via an open WiFi network"
+msgid "System policy prevents enabling or disabling WiFi devices"
+msgstr ""
+"La política de sistema evita activar o desactivar los dispositivos "
+"inalámbricos"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:9
+msgid "System policy prevents enabling or disabling mobile broadband devices"
+msgstr ""
+"La política del sistema evita activar o desactivar los dispositivos de banda "
+"ancha móvil"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:10
+#| msgid "System policy prevents modification of system settings"
+msgid "System policy prevents enabling or disabling system networking"
+msgstr "La política del sistema evita activar o desactivar la red del sistema"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:11
+msgid "System policy prevents putting NetworkManager to sleep or waking it up"
+msgstr ""
+"La política del sistema evita poner a NetworkManager a dormir o despertarlo"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:12
+#| msgid "System policy prevents modification of system settings"
+msgid "System policy prevents use of user-specific connections"
+msgstr ""
+"La política del sistema evita el uso de conexiones específicas de usuario"
 
 #: ../src/nm-netlink-monitor.c:100 ../src/nm-netlink-monitor.c:231
 #: ../src/nm-netlink-monitor.c:653
@@ -1515,7 +1620,8 @@ msgstr "ha ocurrido un error mientras esperaban datos en un socket"
 #: ../src/nm-netlink-monitor.c:254
 #, c-format
 msgid "unable to connect to netlink for monitoring link status: %s"
-msgstr "no se puede conectar con netlink para monitorizar el estado del enlace: %s"
+msgstr ""
+"no se puede conectar con netlink para monitorizar el estado del enlace: %s"
 
 #: ../src/nm-netlink-monitor.c:265
 #, c-format
@@ -1549,9 +1655,10 @@ msgstr "error al actualizar el enlace caché: %s"
 #: ../src/main.c:502
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
-msgstr "Opción no válida. Use --help para ver una lista de las opciones válidas.\n"
+msgstr ""
+"Opción no válida. Use --help para ver una lista de las opciones válidas.\n"
 
-#: ../src/main.c:562
+#: ../src/main.c:568
 #, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr "%s.  Por favor use --help para ver la lista de opciones válidas.\n"
@@ -1596,13 +1703,13 @@ msgstr "Nivel de registro desconocido '%s'"
 msgid "Unknown log domain '%s'"
 msgstr "Dominio de registro desconocido '%s'"
 
-#: ../src/named-manager/nm-named-manager.c:343
+#: ../src/named-manager/nm-named-manager.c:350
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr ""
 "NOTA: el 'resolver' de nombres de libc puede que no soporte más de 3 "
 "servidores de nombres."
 
-#: ../src/named-manager/nm-named-manager.c:345
+#: ../src/named-manager/nm-named-manager.c:352
 msgid "The nameservers listed below may not be recognized."
 msgstr "Puede que los servidores de nombres listados abajo no se reconozcan."
 
@@ -1611,45 +1718,6 @@ msgstr "Puede que los servidores de nombres listados abajo no se reconozcan."
 msgid "Auto %s"
 msgstr "Auto %ss"
 
-#: ../system-settings/plugins/ifcfg-rh/reader.c:3256
+#: ../system-settings/plugins/ifcfg-rh/reader.c:3275
 msgid "System"
 msgstr "Sistema"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:1
-msgid "Connection sharing via a protected WiFi network"
-msgstr "Compartir conexión a través de una red WIFI protegida"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:2
-msgid "Connection sharing via an open WiFi network"
-msgstr "Compartir conexión a través de una red WIFI abierta"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:3
-msgid "Modify persistent system hostname"
-msgstr "Modificar nombre de host de sistema persistente"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:4
-msgid "Modify system connections"
-msgstr "Modificar conexiones de sistema"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:5
-msgid "System policy prevents modification of system settings"
-msgstr "Política de sistema evita modificación de configuración de sistema"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:6
-msgid "System policy prevents modification of the persistent system hostname"
-msgstr ""
-"Política de sistema evita modificación de nombre de host de sistema "
-"persistente"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:7
-msgid "System policy prevents sharing connections via a protected WiFi network"
-msgstr ""
-"Política de sistema evita compartir conexiones a través de una red WIFI "
-"protegida"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:8
-msgid "System policy prevents sharing connections via an open WiFi network"
-msgstr ""
-"Política de sistema evita compartir conexiones a través de una red WIFI "
-"abierta"
-
