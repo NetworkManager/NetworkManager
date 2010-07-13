@@ -111,8 +111,6 @@ NMState nm_manager_get_state (NMManager *manager);
 
 GSList *nm_manager_get_connections    (NMManager *manager, NMConnectionScope scope);
 
-gboolean nm_manager_auto_user_connections_allowed (NMManager *manager);
-
 NMConnection * nm_manager_get_connection_by_object_path (NMManager *manager,
                                                          NMConnectionScope scope,
                                                          const char *path);
