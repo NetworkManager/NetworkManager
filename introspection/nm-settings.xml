@@ -43,54 +43,5 @@
     </signal>
 
   </interface>
-
-  <interface name="org.freedesktop.NetworkManagerSettings.Secrets">
-    <tp:docstring>
-        Secrets have a separate interface so that they can be locked down via
-        D-Bus policy configuration.
-    </tp:docstring>
-
-    <method name="GetSecretsForConnection">
-      <tp:docstring>
-        Get the secrets for the requested connection.  If the connection is
-        provided by the settings service, it should save the updated secrets
-        if they are changed by the user.  If the connection is not provided
-        by the settings service, the new secrets will be saved by the settings
-        service that provides the connection.
-      </tp:docstring>
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_get_secrets_for_connection"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
-      <arg name="service_name" type="s" direction="in">
-        <tp:docstring>
-          The D-Bus service name of the settings service that provides this connection.
-        </tp:docstring>
-      </arg>
-      <arg name="connection" type="o" direction="in">
-        <tp:docstring>
-          Object path of the connection.
-        </tp:docstring>
-      </arg>
-      <arg name="setting_name" type="s" direction="in">
-        <tp:docstring>
-          Name of the setting for which secrets are requested.
-        </tp:docstring>
-      </arg>
-      <arg name="hints" type="as" direction="in">
-        <tp:docstring>
-          Array of strings of key names in the Setting for which NM thinks
-          a secrets may be required.
-        </tp:docstring>
-      </arg>
-
-      <arg name="secrets" type="a{sa{sv}}" direction="out" tp:type="String_String_Variant_Map_Map">
-        <tp:docstring>
-          Nested settings maps containing secrets.  Each setting MUST contain at
-          least the 'name' field, containing the name of the setting, and one or
-          more secrets.
-        </tp:docstring>
-      </arg>
-    </method>
-
-  </interface>
 </node>
 

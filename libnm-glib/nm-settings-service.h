@@ -58,21 +58,13 @@ typedef struct {
 	                        NMSettingsAddConnectionFunc callback,
 	                        gpointer user_data);
 
-	void (*get_secrets_for_connection) (NMSettingsService *self,
-	                                    const char *settings_service,
-	                                    const char *connection_path,
-	                                    const char *setting_name,
-	                                    const char **hints,
-	                                    DBusGMethodInvocation *context,
-	                                    NMSettingsGetSecretsForConnectionFunc callback,
-	                                    gpointer user_data);
-
 	/* Padding for future expansion */
 	void (*_reserved1) (void);
 	void (*_reserved2) (void);
 	void (*_reserved3) (void);
 	void (*_reserved4) (void);
 	void (*_reserved5) (void);
+	void (*_reserved6) (void);
 } NMSettingsServiceClass;
 
 GType nm_settings_service_get_type (void);
