@@ -139,7 +139,6 @@ global:
 	nm_settings_interface_error_get_type;
 	nm_settings_interface_error_quark;
 	nm_settings_interface_get_connection_by_path;
-	nm_settings_interface_get_secrets_for_connection;
 	nm_settings_interface_get_type;
 	nm_settings_interface_list_connections;
 	nm_settings_service_export;
