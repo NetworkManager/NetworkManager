@@ -760,6 +760,11 @@ get_active_ap (NMDeviceWifi *self,
 	GSList *iter;
 	int i = 0;
 	gboolean ap_debug = getenv ("NM_ACTIVE_AP_DEBUG") ? TRUE : FALSE;
+	NMAccessPoint *match_nofreq = NULL;
+	gboolean found_a_band = FALSE;
+	gboolean found_bg_band = FALSE;
+	NM80211Mode devmode;
+	guint32 devfreq;
 
 	nm_device_wifi_get_bssid (self, &bssid);
 	if (G_UNLIKELY (ap_debug)) {
@@ -781,6 +786,9 @@ get_active_ap (NMDeviceWifi *self,
 		          ssid ? "'" : "");
 	}
 
+	devmode = nm_device_wifi_get_mode (self);
+	devfreq = nm_device_wifi_get_frequency (self);
+
 	/* When matching hidden APs, do a second pass that ignores the SSID check,
 	 * because NM might not yet know the SSID of the hidden AP in the scan list
 	 * and therefore it won't get matched the first time around.
@@ -794,8 +802,8 @@ get_active_ap (NMDeviceWifi *self,
 			NMAccessPoint *ap = NM_AP (iter->data);
 			const struct ether_addr	*ap_bssid = nm_ap_get_address (ap);
 			const GByteArray *ap_ssid = nm_ap_get_ssid (ap);
-			NM80211Mode devmode, apmode;
-			guint32 devfreq, apfreq;
+			NM80211Mode apmode;
+			guint32 apfreq;
 
 			if G_UNLIKELY (ap_debug) {
 				nm_debug ("    AP: %s%s%s  %02x:%02x:%02x:%02x:%02x:%02x",
@@ -825,7 +833,6 @@ get_active_ap (NMDeviceWifi *self,
 				continue;
 			}
 
-			devmode = nm_device_wifi_get_mode (self);
 			apmode = nm_ap_get_mode (ap);
 			if (devmode != apmode) {
 				if G_UNLIKELY (ap_debug) {
@@ -835,13 +842,20 @@ get_active_ap (NMDeviceWifi *self,
 				continue;
 			}
 
-			devfreq = nm_device_wifi_get_frequency (self);
 			apfreq = nm_ap_get_freq (ap);
 			if (devfreq != apfreq) {
 				if G_UNLIKELY (ap_debug) {
 					nm_debug ("      frequency mismatch (device %u, ap %u)",
 					          devfreq, apfreq);
 				}
+
+				if (match_nofreq == NULL)
+					match_nofreq = ap;
+
+				if (apfreq > 4000)
+					found_a_band = TRUE;
+				else if (apfreq > 2000)
+					found_bg_band = TRUE;
 				continue;
 			}
 
@@ -852,7 +866,35 @@ get_active_ap (NMDeviceWifi *self,
 		}
 	}
 
-	if G_UNLIKELY (ap_debug)
+	/* Some proprietary drivers (wl.o) report tuned frequency (like when
+	 * scanning) instead of the associated AP's frequency.  This is a great
+	 * example of how WEXT is underspecified.  We use frequency to find the
+	 * active AP in the scan list because some configurations use the same
+	 * SSID/BSSID on the 2GHz and 5GHz bands simultaneously, and we need to
+	 * make sure we get the right AP in the right band.  This configuration
+	 * is uncommon though, and the frequency check penalizes closed drivers we
+	 * can't fix.  Because we're not total dicks, ignore the frequency condition
+	 * if the associated BSSID/SSID exists only in one band since that's most
+	 * likely the AP we want.
+	 */
+	if (match_nofreq && (found_a_band != found_bg_band)) {
+		const struct ether_addr	*ap_bssid = nm_ap_get_address (match_nofreq);
+		const GByteArray *ap_ssid = nm_ap_get_ssid (match_nofreq);
+
+		if (G_UNLIKELY (ap_debug)) {
+			nm_debug ("      matched %s%s%s  %02x:%02x:%02x:%02x:%02x:%02x",
+				      ap_ssid ? "'" : "",
+				      ap_ssid ? nm_utils_escape_ssid (ap_ssid->data, ap_ssid->len) : "(none)",
+				      ap_ssid ? "'" : "",
+				      ap_bssid->ether_addr_octet[0], ap_bssid->ether_addr_octet[1],
+				      ap_bssid->ether_addr_octet[2], ap_bssid->ether_addr_octet[3],
+				      ap_bssid->ether_addr_octet[4], ap_bssid->ether_addr_octet[5]);
+		}
+
+		return match_nofreq;
+	}
+
+	if (G_UNLIKELY (ap_debug))
 		nm_debug ("  No matching AP found.");
 	return NULL;
 }
