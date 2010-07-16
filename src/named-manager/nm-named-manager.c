@@ -98,6 +98,8 @@ typedef struct {
 	GPtrArray *nameservers;
 	const char *domain;
 	GPtrArray *searches;
+	const char *nis_domain;
+	GPtrArray *nis_servers;
 } NMResolvConfData;
 
 static void
@@ -148,6 +150,23 @@ merge_one_ip4_config (NMResolvConfData *rc, NMIP4Config *src)
 	num = nm_ip4_config_get_num_searches (src);
 	for (i = 0; i < num; i++)
 		add_string_item (rc->searches, nm_ip4_config_get_search (src, i));
+
+	/* NIS stuff */
+	num = nm_ip4_config_get_num_nis_servers (src);
+	for (i = 0; i < num; i++) {
+		struct in_addr addr;
+		char buf[INET_ADDRSTRLEN];
+
+		addr.s_addr = nm_ip4_config_get_nis_server (src, i);
+		if (inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN) > 0)
+			add_string_item (rc->nis_servers, buf);
+	}
+
+	if (nm_ip4_config_get_nis_domain (src)) {
+		/* FIXME: handle multiple domains */
+		if (!rc->nis_domain)
+			rc->nis_domain = nm_ip4_config_get_nis_domain (src);
+	}
 }
 
 static void
@@ -239,6 +258,8 @@ static gboolean
 dispatch_netconfig (const char *domain,
                     char **searches,
                     char **nameservers,
+                    const char *nis_domain,
+                    char **nis_servers,
                     const char *iface,
                     GError **error)
 {
@@ -280,6 +301,15 @@ dispatch_netconfig (const char *domain,
 	if (nameservers) {
 		str = g_strjoinv (" ", nameservers);
 		write_to_netconfig (fd, "DNSSERVERS", str);
+		g_free (str);
+	}
+
+	if (nis_domain)
+		write_to_netconfig (fd, "NISDOMAIN", nis_domain);
+
+	if (nis_servers) {
+		str = g_strjoinv (" ", nis_servers);
+		write_to_netconfig (fd, "NISSERVERS", str);
 		g_free (str);
 	}
 
@@ -502,8 +532,10 @@ rewrite_resolv_conf (NMNamedManager *mgr, const char *iface, GError **error)
 	NMResolvConfData rc;
 	GSList *iter;
 	const char *domain = NULL;
+	const char *nis_domain = NULL;
 	char **searches = NULL;
 	char **nameservers = NULL;
+	char **nis_servers = NULL;
 	int num, i, len;
 	gboolean success = FALSE;
 
@@ -515,6 +547,7 @@ rewrite_resolv_conf (NMNamedManager *mgr, const char *iface, GError **error)
 	rc.nameservers = g_ptr_array_new ();
 	rc.domain = NULL;
 	rc.searches = g_ptr_array_new ();
+	rc.nis_servers = g_ptr_array_new ();
 
 	if (priv->ip4_vpn_config)
 		merge_one_ip4_config (&rc, priv->ip4_vpn_config);
@@ -569,13 +602,24 @@ rewrite_resolv_conf (NMNamedManager *mgr, const char *iface, GError **error)
 	} else
 		g_ptr_array_free (rc.nameservers, TRUE);
 
+	if (rc.nis_servers->len) {
+		g_ptr_array_add (rc.nis_servers, NULL);
+		nis_servers = (char **) g_ptr_array_free (rc.nis_servers, FALSE);
+	} else
+		g_ptr_array_free (rc.nis_servers, TRUE);
+
+	nis_domain = rc.nis_domain;
+
 #ifdef RESOLVCONF_PATH
 	success = dispatch_resolvconf (domain, searches, nameservers, iface, error);
 #endif
 
 #ifdef TARGET_SUSE
-	if (success == FALSE)
-		success = dispatch_netconfig (domain, searches, nameservers, iface, error);
+	if (success == FALSE) {
+		success = dispatch_netconfig (domain, searches, nameservers,
+		                              nis_domain, nis_servers,
+		                              iface, error);
+	}
 #endif
 
 	if (success == FALSE)
@@ -588,6 +632,8 @@ rewrite_resolv_conf (NMNamedManager *mgr, const char *iface, GError **error)
 		g_strfreev (searches);
 	if (nameservers)
 		g_strfreev (nameservers);
+	if (nis_servers)
+		g_strfreev (nis_servers);
 
 	return success;
 }
