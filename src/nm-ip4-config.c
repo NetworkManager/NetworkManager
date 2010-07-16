@@ -56,6 +56,9 @@ typedef struct {
 
 	GArray *wins;
 
+	GArray *nis;
+	char * nis_domain;
+
 	GSList *routes;
 
 	gboolean never_default;
@@ -488,6 +491,70 @@ nm_ip4_config_set_never_default (NMIP4Config *config, gboolean never_default)
 	NM_IP4_CONFIG_GET_PRIVATE (config)->never_default = never_default;
 }
 
+void nm_ip4_config_add_nis_server (NMIP4Config *config, guint32 nis)
+{
+	NMIP4ConfigPrivate *priv;
+	int i;
+
+	g_return_if_fail (NM_IS_IP4_CONFIG (config));
+	g_return_if_fail (nis > 0);
+
+	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	for (i = 0; i < priv->nis->len; i++) {
+		guint32 s = g_array_index (priv->nis, guint32, i);
+
+		/* No dupes */
+		g_return_if_fail (nis != s);
+	}
+
+	g_array_append_val (priv->nis, nis);
+}
+
+guint32 nm_ip4_config_get_nis_server (NMIP4Config *config, guint i)
+{
+	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), 0);
+
+	return g_array_index (NM_IP4_CONFIG_GET_PRIVATE (config)->nis, guint32, i);
+}
+
+guint32 nm_ip4_config_get_num_nis_servers (NMIP4Config *config)
+{
+	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), 0);
+
+	return NM_IP4_CONFIG_GET_PRIVATE (config)->nis->len;
+}
+
+void nm_ip4_config_reset_nis_servers (NMIP4Config *config)
+{
+	NMIP4ConfigPrivate *priv;
+
+	g_return_if_fail (NM_IS_IP4_CONFIG (config));
+
+	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	if (priv->nis->len)
+		g_array_remove_range (priv->nis, 0, priv->nis->len);
+}
+
+void
+nm_ip4_config_set_nis_domain (NMIP4Config *config, const char *domain)
+{
+	NMIP4ConfigPrivate *priv;
+
+	g_return_if_fail (NM_IS_IP4_CONFIG (config));
+
+	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	g_free (priv->nis_domain);
+	priv->nis_domain = g_strdup (domain);
+}
+
+const char *
+nm_ip4_config_get_nis_domain (NMIP4Config *config)
+{
+	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), 0);
+
+	return NM_IP4_CONFIG_GET_PRIVATE (config)->nis_domain;
+}
+
 /* libnl convenience/conversion functions */
 
 static int ip4_addr_to_rtnl_local (guint32 ip4_address, struct rtnl_addr *addr)
@@ -700,6 +767,15 @@ nm_ip4_config_diff (NMIP4Config *a, NMIP4Config *b)
 	    || !addr_array_compare (b_priv->wins, a_priv->wins))
 		flags |= NM_IP4_COMPARE_FLAG_WINS_SERVERS;
 
+	if (   (a_priv->nis->len != b_priv->nis->len)
+	    || !addr_array_compare (a_priv->nis, b_priv->nis)
+	    || !addr_array_compare (b_priv->nis, a_priv->nis))
+		flags |= NM_IP4_COMPARE_FLAG_NIS_SERVERS;
+
+	if (   (a_priv->nis_domain || b_priv->nis_domain)
+		&& (g_strcmp0 (a_priv->nis_domain, b_priv->nis_domain) != 0))
+		flags |= NM_IP4_COMPARE_FLAG_NIS_DOMAIN;
+
 	if (   !route_slist_compare (a_priv->routes, b_priv->routes)
 	    || !route_slist_compare (b_priv->routes, a_priv->routes))
 		flags |= NM_IP4_COMPARE_FLAG_ROUTES;
@@ -732,6 +808,7 @@ nm_ip4_config_init (NMIP4Config *config)
 	priv->wins = g_array_new (FALSE, TRUE, sizeof (guint32));
 	priv->domains = g_ptr_array_sized_new (3);
 	priv->searches = g_ptr_array_sized_new (3);
+	priv->nis = g_array_new (FALSE, TRUE, sizeof (guint32));
 }
 
 static void
@@ -745,6 +822,8 @@ finalize (GObject *object)
 	g_array_free (priv->nameservers, TRUE);
 	g_ptr_array_free (priv->domains, TRUE);
 	g_ptr_array_free (priv->searches, TRUE);
+	g_array_free (priv->nis, TRUE);
+	g_free (priv->nis_domain);
 
 	G_OBJECT_CLASS (nm_ip4_config_parent_class)->finalize (object);
 }
