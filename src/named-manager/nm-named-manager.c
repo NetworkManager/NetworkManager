@@ -322,6 +322,10 @@ dispatch_netconfig (const char *domain,
 	ret = waitpid (pid, NULL, 0);
 	if (ret < 0 && errno == EINTR)
 		goto again;
+	else if (ret < 0 && errno == ECHILD) {
+		/* When the netconfig exist, the errno is ECHILD, it should return TRUE */
+		return TRUE;
+	}
 
 	return ret > 0;
 }
