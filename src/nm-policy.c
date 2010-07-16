@@ -731,7 +731,7 @@ auto_activate_device (gpointer user_data)
 	if (nm_device_get_act_request (data->device))
 		goto out;
 
-	connections = nm_manager_get_connections (policy->manager, NM_CONNECTION_SCOPE_SYSTEM);
+	connections = nm_manager_get_connections (policy->manager);
 
 	/* Remove connections that are in the invalid list. */
 	iter = connections;
@@ -822,7 +822,7 @@ sleeping_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 
 	/* Clear the invalid flag on all connections so they'll get retried on wakeup */
 	if (sleeping || !enabled) {
-		connections = nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_SYSTEM);
+		connections = nm_manager_get_connections (manager);
 		for (iter = connections; iter; iter = g_slist_next (iter))
 			g_object_set_data (G_OBJECT (iter->data), INVALID_TAG, NULL);
 		g_slist_free (connections);
@@ -1036,7 +1036,6 @@ schedule_activate_all (NMPolicy *policy)
 
 static void
 connections_added (NMManager *manager,
-                   NMConnectionScope scope,
                    gpointer user_data)
 {
 	schedule_activate_all ((NMPolicy *) user_data);
@@ -1045,7 +1044,6 @@ connections_added (NMManager *manager,
 static void
 connection_added (NMManager *manager,
                   NMConnection *connection,
-                  NMConnectionScope scope,
                   gpointer user_data)
 {
 	schedule_activate_all ((NMPolicy *) user_data);
@@ -1054,7 +1052,6 @@ connection_added (NMManager *manager,
 static void
 connection_updated (NMManager *manager,
                     NMConnection *connection,
-                    NMConnectionScope scope,
                     gpointer user_data)
 {
 	/* Clear the invalid tag on the connection if it got updated. */
@@ -1066,7 +1063,6 @@ connection_updated (NMManager *manager,
 static void
 connection_removed (NMManager *manager,
                     NMConnection *connection,
-                    NMConnectionScope scope,
                     gpointer user_data)
 {
 	NMSettingConnection *s_con;

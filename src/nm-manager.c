@@ -572,9 +572,7 @@ emit_removed (gpointer key, gpointer value, gpointer user_data)
 	NMManager *manager = NM_MANAGER (user_data);
 	NMConnection *connection = NM_CONNECTION (value);
 
-	g_signal_emit (manager, signals[CONNECTION_REMOVED], 0,
-	               connection,
-	               nm_connection_get_scope (connection));
+	g_signal_emit (manager, signals[CONNECTION_REMOVED], 0, connection);
 }
 
 static PendingActivation *
@@ -755,9 +753,7 @@ remove_connection (NMManager *manager,
 	 */
 	g_object_ref (connection);
 	g_hash_table_remove (hash, nm_connection_get_path (connection));
-	g_signal_emit (manager, signals[CONNECTION_REMOVED], 0,
-	               connection,
-	               nm_connection_get_scope (connection));
+	g_signal_emit (manager, signals[CONNECTION_REMOVED], 0, connection);
 	g_object_unref (connection);
 
 	bluez_manager_resync_devices (manager);
@@ -797,8 +793,7 @@ system_connection_updated_cb (NMSettingsConnectionInterface *connection,
 		return;
 	}
 
-	g_signal_emit (manager, signals[CONNECTION_UPDATED], 0,
-	               existing, NM_CONNECTION_SCOPE_SYSTEM);
+	g_signal_emit (manager, signals[CONNECTION_UPDATED], 0, existing);
 
 	bluez_manager_resync_devices (manager);
 }
@@ -1056,7 +1051,7 @@ manager_hidden_ap_found (NMDeviceInterface *device,
 
 	/* Look for this AP's BSSID in the seen-bssids list of a connection,
 	 * and if a match is found, copy over the SSID */
-	connections = nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_SYSTEM);
+	connections = nm_manager_get_connections (manager);
 
 	for (iter = connections; iter && !done; iter = g_slist_next (iter)) {
 		NMConnection *connection = NM_CONNECTION (iter->data);
@@ -1515,7 +1510,7 @@ bluez_manager_find_connection (NMManager *manager,
 	NMConnection *found = NULL;
 	GSList *connections, *l;
 
-	connections = nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_SYSTEM);
+	connections = nm_manager_get_connections (manager);
 
 	for (l = connections; l != NULL; l = l->next) {
 		NMConnection *candidate = NM_CONNECTION (l->data);
@@ -1967,8 +1962,6 @@ provider_get_secrets (NMSecretsProviderInterface *provider,
 	}
 
 	/* Build up the new secrets request */
-	g_assert (nm_connection_get_scope (connection) ==
-			NM_CONNECTION_SCOPE_SYSTEM);
 	info = system_get_secrets (self, provider, connection, setting_name,
 							   request_new, caller_id, hint1, hint2);
 
@@ -2139,9 +2132,7 @@ check_pending_ready (NMManager *self, PendingActivation *pending)
 
 	/* Ok, we're authorized */
 
-	connection = nm_manager_get_connection_by_object_path (self,
-	                                                       NM_CONNECTION_SCOPE_SYSTEM,
-	                                                       pending->connection_path);
+	connection = nm_manager_get_connection_by_object_path (self, pending->connection_path);
 	if (!connection) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
@@ -2859,8 +2850,7 @@ connections_to_slist (gpointer key, gpointer value, gpointer user_data)
  * unref the connections in the list and destroy the list.
  */
 GSList *
-nm_manager_get_connections (NMManager *manager,
-                            NMConnectionScope scope)
+nm_manager_get_connections (NMManager *manager)
 {
 	NMManagerPrivate *priv;
 	GSList *list = NULL;
@@ -2868,16 +2858,12 @@ nm_manager_get_connections (NMManager *manager,
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
 
 	priv = NM_MANAGER_GET_PRIVATE (manager);
-	if (scope == NM_CONNECTION_SCOPE_SYSTEM)
-		g_hash_table_foreach (priv->system_connections, connections_to_slist, &list);
-	else
-		nm_log_err (LOGD_CORE, "unknown NMConnectionScope %d", scope);
+	g_hash_table_foreach (priv->system_connections, connections_to_slist, &list);
 	return list;
 }
 
 NMConnection *
 nm_manager_get_connection_by_object_path (NMManager *manager,
-                                          NMConnectionScope scope,
                                           const char *path)
 {
 	NMManagerPrivate *priv;
@@ -2887,10 +2873,7 @@ nm_manager_get_connection_by_object_path (NMManager *manager,
 	g_return_val_if_fail (path != NULL, NULL);
 
 	priv = NM_MANAGER_GET_PRIVATE (manager);
-	if (scope == NM_CONNECTION_SCOPE_SYSTEM)
-		connection = (NMConnection *) g_hash_table_lookup (priv->system_connections, path);
-	else
-		nm_log_err (LOGD_CORE, "unknown NMConnectionScope %d", scope);
+	connection = (NMConnection *) g_hash_table_lookup (priv->system_connections, path);
 	return connection;
 }
 
@@ -3474,8 +3457,8 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMManagerClass, connections_added),
 		              NULL, NULL,
-		              g_cclosure_marshal_VOID__UINT,
-		              G_TYPE_NONE, 1, G_TYPE_UINT);
+		              g_cclosure_marshal_VOID__VOID,
+		              G_TYPE_NONE, 0);
 
 	signals[CONNECTION_ADDED] =
 		g_signal_new ("connection-added",
@@ -3483,8 +3466,8 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMManagerClass, connection_added),
 		              NULL, NULL,
-		              _nm_marshal_VOID__OBJECT_UINT,
-		              G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_UINT);
+		              g_cclosure_marshal_VOID__OBJECT,
+		              G_TYPE_NONE, 1, G_TYPE_OBJECT);
 
 	signals[CONNECTION_UPDATED] =
 		g_signal_new ("connection-updated",
@@ -3492,8 +3475,8 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMManagerClass, connection_updated),
 		              NULL, NULL,
-		              _nm_marshal_VOID__OBJECT_UINT,
-		              G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_UINT);
+		              g_cclosure_marshal_VOID__OBJECT,
+		              G_TYPE_NONE, 1, G_TYPE_OBJECT);
 
 	signals[CONNECTION_REMOVED] =
 		g_signal_new ("connection-removed",
@@ -3501,8 +3484,8 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMManagerClass, connection_removed),
 		              NULL, NULL,
-		              _nm_marshal_VOID__OBJECT_UINT,
-		              G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_UINT);
+		              g_cclosure_marshal_VOID__OBJECT,
+		              G_TYPE_NONE, 1, G_TYPE_OBJECT);
 
 	signals[CHECK_PERMISSIONS] =
 		g_signal_new ("check-permissions",

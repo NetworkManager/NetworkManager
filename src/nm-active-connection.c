@@ -39,25 +39,3 @@ nm_active_connection_install_type_info (GObjectClass *klass)
 									 &dbus_glib_nm_active_connection_object_info);
 }
 
-void
-nm_active_connection_scope_to_value (NMConnection *connection, GValue *value)
-{
-	if (!connection) {
-		g_value_set_string (value, "");
-		return;
-	}
-
-	switch (nm_connection_get_scope (connection)) {
-	case NM_CONNECTION_SCOPE_SYSTEM:
-		g_value_set_string (value, NM_DBUS_SERVICE_SYSTEM_SETTINGS);
-		break;
-	case NM_CONNECTION_SCOPE_USER:
-		g_value_set_string (value, NM_DBUS_SERVICE_USER_SETTINGS);
-		break;
-	default:
-		nm_log_err (LOGD_CORE, "unknown connection scope!");
-		break;
-	}
-}
-
-

@@ -60,19 +60,16 @@ typedef struct {
 	void (*state_changed) (NMManager *manager, guint state);
 	void (*properties_changed) (NMManager *manager, GHashTable *properties);
 
-	void (*connections_added) (NMManager *manager, NMConnectionScope scope);
+	void (*connections_added) (NMManager *manager);
 
 	void (*connection_added) (NMManager *manager,
-				  NMConnection *connection,
-				  NMConnectionScope scope);
+				  NMConnection *connection);
 
 	void (*connection_updated) (NMManager *manager,
-				  NMConnection *connection,
-				  NMConnectionScope scope);
+				  NMConnection *connection);
 
 	void (*connection_removed) (NMManager *manager,
-				    NMConnection *connection,
-				    NMConnectionScope scope);
+				    NMConnection *connection);
 } NMManagerClass;
 
 GType nm_manager_get_type (void);
@@ -109,10 +106,9 @@ NMState nm_manager_get_state (NMManager *manager);
 
 /* Connections */
 
-GSList *nm_manager_get_connections    (NMManager *manager, NMConnectionScope scope);
+GSList *nm_manager_get_connections    (NMManager *manager);
 
 NMConnection * nm_manager_get_connection_by_object_path (NMManager *manager,
-                                                         NMConnectionScope scope,
                                                          const char *path);
 
 GPtrArray * nm_manager_get_active_connections_by_connection (NMManager *manager,

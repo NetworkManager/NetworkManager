@@ -257,7 +257,8 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_SERVICE_NAME:
-		nm_active_connection_scope_to_value (priv->connection, value);
+		/* TODO Remove this propery. */
+		g_value_set_string (value, NM_DBUS_SERVICE_SYSTEM_SETTINGS);
 		break;
 	case PROP_CONNECTION:
 		g_value_set_boxed (value, nm_connection_get_path (priv->connection));

@@ -37,6 +37,4 @@ char *nm_active_connection_get_next_object_path (void);
 
 void nm_active_connection_install_type_info (GObjectClass *klass);
 
-void nm_active_connection_scope_to_value (NMConnection *connection, GValue *value);
-
 #endif /* NM_ACTIVE_CONNECTION_H */

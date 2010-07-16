@@ -3295,10 +3295,8 @@ dispose (GObject *object)
 	    NMSettingIP4Config *s_ip4;
 		const char *method = NULL;
 
-		/* Only system connections can be left up */
 		connection = nm_act_request_get_connection (priv->act_request);
-		if (   connection
-		    && (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_SYSTEM)) {
+		if (connection) {
 
 			/* Only static or DHCP IPv4 connections can be left up.
 			 * All IPv6 connections can be left up, so we don't have
