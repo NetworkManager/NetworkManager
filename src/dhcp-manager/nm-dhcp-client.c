@@ -891,6 +891,27 @@ ip4_options_to_config (NMDHCPClient *self)
 			nm_ip4_config_set_mtu (ip4_config, int_mtu);
 	}
 
+	str = g_hash_table_lookup (priv->options, "new_nis_domain");
+	if (str) {
+		nm_log_info (LOGD_DHCP4, "  NIS domain '%s'", str);
+		nm_ip4_config_set_nis_domain (ip4_config, str);
+	}
+
+	str = g_hash_table_lookup (priv->options, "new_nis_servers");
+	if (str) {
+		char **searches = g_strsplit (str, " ", 0);
+		char **s;
+
+		for (s = searches; *s; s++) {
+			if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
+				nm_ip4_config_add_nis_server (ip4_config, tmp_addr.s_addr);
+				nm_log_info (LOGD_DHCP4, "  nis '%s'", *s);
+			} else
+				nm_log_warn (LOGD_DHCP4, "ignoring invalid NIS server '%s'", *s);
+		}
+		g_strfreev (searches);
+	}
+
 	return ip4_config;
 
 error:
