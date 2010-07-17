@@ -277,13 +277,8 @@ nmc_init (NmCli *nmc)
 	nmc->timeout = 10;
 
 	nmc->system_settings = NULL;
-	nmc->user_settings = NULL;
-
 	nmc->system_settings_running = FALSE;
-	nmc->user_settings_running = FALSE;
-
 	nmc->system_connections = NULL;
-	nmc->user_connections = NULL;
 
 	nmc->should_wait = FALSE;
 	nmc->nowait_flag = TRUE;
@@ -304,10 +299,7 @@ nmc_cleanup (NmCli *nmc)
 	g_string_free (nmc->return_text, TRUE);
 
 	if (nmc->system_settings) g_object_unref (nmc->system_settings);
-	if (nmc->user_settings) g_object_unref (nmc->user_settings);
-
 	g_slist_free (nmc->system_connections);
-	g_slist_free (nmc->user_connections);
 
 	g_free (nmc->required_fields);
 	if (nmc->print_fields.indices)

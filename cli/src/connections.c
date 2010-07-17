@@ -60,30 +60,28 @@ static NmcOutputField nmc_fields_con_status[] = {
 	{"NAME",          N_("NAME"),         25, NULL, 0},  /* 0 */
 	{"UUID",          N_("UUID"),         38, NULL, 0},  /* 1 */
 	{"DEVICES",       N_("DEVICES"),      10, NULL, 0},  /* 2 */
-	{"SCOPE",         N_("SCOPE"),         8, NULL, 0},  /* 3 */
-	{"DEFAULT",       N_("DEFAULT"),       8, NULL, 0},  /* 4 */
-	{"DBUS-SERVICE",  N_("DBUS-SERVICE"), 45, NULL, 0},  /* 5 */
-	{"SPEC-OBJECT",   N_("SPEC-OBJECT"),  10, NULL, 0},  /* 6 */
-	{"VPN",           N_("VPN"),           5, NULL, 0},  /* 7 */
+	{"DEFAULT",       N_("DEFAULT"),       8, NULL, 0},  /* 3 */
+	{"DBUS-SERVICE",  N_("DBUS-SERVICE"), 45, NULL, 0},  /* 4 */
+	{"SPEC-OBJECT",   N_("SPEC-OBJECT"),  10, NULL, 0},  /* 5 */
+	{"VPN",           N_("VPN"),           5, NULL, 0},  /* 6 */
 	{NULL,            NULL,                0, NULL, 0}
 };
-#define NMC_FIELDS_CON_STATUS_ALL     "NAME,UUID,DEVICES,SCOPE,DEFAULT,VPN,DBUS-SERVICE,SPEC-OBJECT"
-#define NMC_FIELDS_CON_STATUS_COMMON  "NAME,UUID,DEVICES,SCOPE,DEFAULT,VPN"
+#define NMC_FIELDS_CON_STATUS_ALL     "NAME,UUID,DEVICES,DEFAULT,VPN,DBUS-SERVICE,SPEC-OBJECT"
+#define NMC_FIELDS_CON_STATUS_COMMON  "NAME,UUID,DEVICES,DEFAULT,VPN"
 
 /* Available fields for 'con list' */
 static NmcOutputField nmc_fields_con_list[] = {
 	{"NAME",            N_("NAME"),           25, NULL, 0},  /* 0 */
 	{"UUID",            N_("UUID"),           38, NULL, 0},  /* 1 */
 	{"TYPE",            N_("TYPE"),           17, NULL, 0},  /* 2 */
-	{"SCOPE",           N_("SCOPE"),           8, NULL, 0},  /* 3 */
-	{"TIMESTAMP",       N_("TIMESTAMP"),      12, NULL, 0},  /* 4 */
-	{"TIMESTAMP-REAL",  N_("TIMESTAMP-REAL"), 34, NULL, 0},  /* 5 */
-	{"AUTOCONNECT",     N_("AUTOCONNECT"),    13, NULL, 0},  /* 6 */
-	{"READONLY",        N_("READONLY"),       10, NULL, 0},  /* 7 */
+	{"TIMESTAMP",       N_("TIMESTAMP"),      12, NULL, 0},  /* 3 */
+	{"TIMESTAMP-REAL",  N_("TIMESTAMP-REAL"), 34, NULL, 0},  /* 4 */
+	{"AUTOCONNECT",     N_("AUTOCONNECT"),    13, NULL, 0},  /* 5 */
+	{"READONLY",        N_("READONLY"),       10, NULL, 0},  /* 6 */
 	{NULL,              NULL,                  0, NULL, 0}
 };
-#define NMC_FIELDS_CON_LIST_ALL     "NAME,UUID,TYPE,SCOPE,TIMESTAMP,TIMESTAMP-REAL,AUTOCONNECT,READONLY"
-#define NMC_FIELDS_CON_LIST_COMMON  "NAME,UUID,TYPE,SCOPE,TIMESTAMP-REAL"
+#define NMC_FIELDS_CON_LIST_ALL     "NAME,UUID,TYPE,TIMESTAMP,TIMESTAMP-REAL,AUTOCONNECT,READONLY"
+#define NMC_FIELDS_CON_LIST_COMMON  "NAME,UUID,TYPE,TIMESTAMP-REAL"
 
 
 /* Helper macro to define fields */
@@ -157,7 +155,7 @@ usage (void)
 	fprintf (stderr,
 	 	 _("Usage: nmcli con { COMMAND | help }\n"
 		 "  COMMAND := { list | status | up | down }\n\n"
-		 "  list [id <id> | uuid <id> | system | user]\n"
+		 "  list [id <id> | uuid <id>]\n"
 		 "  status\n"
 		 "  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--timeout <timeout>]\n"
 		 "  down id <id> | uuid <id>\n"));
@@ -379,11 +377,10 @@ show_connection (NMConnection *data, gpointer user_data)
 		nmc->allowed_fields[0].value = nm_setting_connection_get_id (s_con);
 		nmc->allowed_fields[1].value = nm_setting_connection_get_uuid (s_con);
 		nmc->allowed_fields[2].value = nm_setting_connection_get_connection_type (s_con);
-		nmc->allowed_fields[3].value = nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_SYSTEM ? _("system") : _("user");
-		nmc->allowed_fields[4].value = timestamp_str;
-		nmc->allowed_fields[5].value = timestamp ? timestamp_real_str : _("never");
-		nmc->allowed_fields[6].value = nm_setting_connection_get_autoconnect (s_con) ? _("yes") : _("no");
-		nmc->allowed_fields[7].value = nm_setting_connection_get_read_only (s_con) ? _("yes") : _("no");
+		nmc->allowed_fields[3].value = timestamp_str;
+		nmc->allowed_fields[4].value = timestamp ? timestamp_real_str : _("never");
+		nmc->allowed_fields[5].value = nm_setting_connection_get_autoconnect (s_con) ? _("yes") : _("no");
+		nmc->allowed_fields[6].value = nm_setting_connection_get_read_only (s_con) ? _("yes") : _("no");
 
 		nmc->print_fields.flags &= ~NMC_PF_FLAG_MAIN_HEADER_ADD & ~NMC_PF_FLAG_MAIN_HEADER_ONLY & ~NMC_PF_FLAG_FIELD_NAMES; /* Clear header flags */
 		print_fields (nmc->print_fields, nmc->allowed_fields);
@@ -454,22 +451,15 @@ do_connections_list (NmCli *nmc, int argc, char **argv)
 			goto error;
 		valid_param_specified = TRUE;
 
-		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
-		nmc->print_fields.header_name = _("System connections");
+		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 		print_fields (nmc->print_fields, nmc->allowed_fields);
 		g_slist_foreach (nmc->system_connections, (GFunc) show_connection, nmc);
-
-		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
-		nmc->print_fields.header_name = _("User connections");
-		print_fields (nmc->print_fields, nmc->allowed_fields);
-		g_slist_foreach (nmc->user_connections, (GFunc) show_connection, nmc);
 	}
 	else {
 		while (argc > 0) {
 			if (strcmp (*argv, "id") == 0 || strcmp (*argv, "uuid") == 0) {
 				const char *selector = *argv;
-				NMConnection *con1;
-				NMConnection *con2;
+				NMConnection *con;
 
 				if (next_arg (&argc, &argv) != 0) {
 					g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
@@ -480,40 +470,14 @@ do_connections_list (NmCli *nmc, int argc, char **argv)
 				if (!nmc->mode_specified)
 					nmc->multiline_output = TRUE;  /* multiline mode is default for 'con list id|uuid' */
 
-				con1 = find_connection (nmc->system_connections, selector, *argv);
-				con2 = find_connection (nmc->user_connections, selector, *argv);
-				if (con1) nmc_connection_detail (con1, nmc);
-				if (con2) nmc_connection_detail (con2, nmc);
-				if (!con1 && !con2) {
+				con = find_connection (nmc->system_connections, selector, *argv);
+				if (con) {
+					nmc_connection_detail (con, nmc);
+				}
+				else {
 					g_string_printf (nmc->return_text, _("Error: %s - no such connection."), *argv);
 					nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 				}
-				break;
-			}
-			else if (strcmp (*argv, "system") == 0) {
-				if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error2))
-					goto error;
-				if (error1)
-					goto error;
-				valid_param_specified = TRUE;
-
-				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
-				nmc->print_fields.header_name = _("System connections");
-				print_fields (nmc->print_fields, nmc->allowed_fields);
-				g_slist_foreach (nmc->system_connections, (GFunc) show_connection, nmc);
-				break;
-			}
-			else if (strcmp (*argv, "user") == 0) {
-				if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error2))
-					goto error;
-				if (error1)
-					goto error;
-				valid_param_specified = TRUE;
-
-				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
-				nmc->print_fields.header_name = _("User connections");
-				print_fields (nmc->print_fields, nmc->allowed_fields);
-				g_slist_foreach (nmc->user_connections, (GFunc) show_connection, nmc);
 				break;
 			}
 			else {
@@ -549,29 +513,19 @@ error:
 	return nmc->return_value;
 }
 
-typedef struct {
-	NmCli *nmc;
-	NMConnectionScope scope;
-} StatusInfo;
-
 static void
 show_active_connection (gpointer data, gpointer user_data)
 {
 	NMActiveConnection *active = NM_ACTIVE_CONNECTION (data);
-	StatusInfo *info = (StatusInfo *) user_data;
+	NmCli *nmc = (NmCli *) user_data;
 	GSList *con_list, *iter;
 	const char *active_path;
-	NMConnectionScope active_service_scope;
 	NMSettingConnection *s_con;
 	const GPtrArray *devices;
 	GString *dev_str;
 	int i;
 
 	active_path = nm_active_connection_get_connection (active);
-	active_service_scope = nm_active_connection_get_scope (active);
-
-	if (active_service_scope != info->scope)
-		return;
 
 	/* Get devices of the active connection */
 	dev_str = g_string_new (NULL);
@@ -585,7 +539,7 @@ show_active_connection (gpointer data, gpointer user_data)
 	if (dev_str->len > 0)
 		g_string_truncate (dev_str, dev_str->len - 1);  /* Cut off last ',' */
 
-	con_list = (info->scope == NM_CONNECTION_SCOPE_SYSTEM) ? info->nmc->system_connections : info->nmc->user_connections;
+	con_list = nmc->system_connections; 
 	for (iter = con_list; iter; iter = g_slist_next (iter)) {
 		NMConnection *connection = (NMConnection *) iter->data;
 		const char *con_path = nm_connection_get_path (connection);
@@ -596,17 +550,16 @@ show_active_connection (gpointer data, gpointer user_data)
 			g_assert (s_con != NULL);
 
 			/* Obtain field values */
-			info->nmc->allowed_fields[0].value = nm_setting_connection_get_id (s_con);
-			info->nmc->allowed_fields[1].value = nm_setting_connection_get_uuid (s_con);
-			info->nmc->allowed_fields[2].value = dev_str->str;
-			info->nmc->allowed_fields[3].value = active_service_scope == NM_CONNECTION_SCOPE_SYSTEM ? _("system") : _("user");
-			info->nmc->allowed_fields[4].value = nm_active_connection_get_default (active) ? _("yes") : _("no");
-			info->nmc->allowed_fields[5].value = nm_active_connection_get_service_name (active);
-			info->nmc->allowed_fields[6].value = nm_active_connection_get_specific_object (active);
-			info->nmc->allowed_fields[7].value = NM_IS_VPN_CONNECTION (active) ? _("yes") : _("no");
+			nmc->allowed_fields[0].value = nm_setting_connection_get_id (s_con);
+			nmc->allowed_fields[1].value = nm_setting_connection_get_uuid (s_con);
+			nmc->allowed_fields[2].value = dev_str->str;
+			nmc->allowed_fields[3].value = nm_active_connection_get_default (active) ? _("yes") : _("no");
+			nmc->allowed_fields[4].value = nm_active_connection_get_service_name (active);
+			nmc->allowed_fields[5].value = nm_active_connection_get_specific_object (active);
+			nmc->allowed_fields[6].value = NM_IS_VPN_CONNECTION (active) ? _("yes") : _("no");
 
-			info->nmc->print_fields.flags &= ~NMC_PF_FLAG_MAIN_HEADER_ADD & ~NMC_PF_FLAG_MAIN_HEADER_ONLY & ~NMC_PF_FLAG_FIELD_NAMES; /* Clear header flags */
-			print_fields (info->nmc->print_fields, info->nmc->allowed_fields);
+			nmc->print_fields.flags &= ~NMC_PF_FLAG_MAIN_HEADER_ADD & ~NMC_PF_FLAG_MAIN_HEADER_ONLY & ~NMC_PF_FLAG_FIELD_NAMES; /* Clear header flags */
+			print_fields (nmc->print_fields, nmc->allowed_fields);
 			break;
 		}
 	}
@@ -619,7 +572,6 @@ do_connections_status (NmCli *nmc, int argc, char **argv)
 {
 	const GPtrArray *active_cons;
 	GError *error = NULL;
-	StatusInfo *info;
 	char *fields_str;
 	char *fields_all =    NMC_FIELDS_CON_STATUS_ALL;
 	char *fields_common = NMC_FIELDS_CON_STATUS_COMMON;
@@ -659,15 +611,8 @@ do_connections_status (NmCli *nmc, int argc, char **argv)
 	nmc->print_fields.header_name = _("Active connections");
 	print_fields (nmc->print_fields, nmc->allowed_fields);
 
-	if (active_cons && active_cons->len) {
-		info = g_malloc0 (sizeof (StatusInfo));
-		info->nmc = nmc;
-		info->scope = NM_CONNECTION_SCOPE_SYSTEM;
-		g_ptr_array_foreach ((GPtrArray *) active_cons, show_active_connection, (gpointer) info);
-		info->scope = NM_CONNECTION_SCOPE_USER;
-		g_ptr_array_foreach ((GPtrArray *) active_cons, show_active_connection, (gpointer) info);
-		g_free (info);
-	}
+	if (active_cons && active_cons->len)
+		g_ptr_array_foreach ((GPtrArray *) active_cons, show_active_connection, (gpointer) nmc);
 
 error:
 
@@ -1312,7 +1257,6 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	gboolean device_found;
 	NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
-	gboolean is_system;
 	const char *con_path;
 	const char *con_type;
 	const char *iface = NULL;
@@ -1337,8 +1281,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 				goto error;
 			}
 
-			if ((connection = find_connection (nmc->system_connections, selector, *argv)) == NULL)
-				connection = find_connection (nmc->user_connections, selector, *argv);
+			connection = find_connection (nmc->system_connections, selector, *argv);
 
 			if (!connection) {
 				g_string_printf (nmc->return_text, _("Error: Unknown connection: %s."), *argv);
@@ -1398,7 +1341,6 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	if (!nmc->get_client (nmc))
 		goto error;
 
-	is_system = (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_SYSTEM) ? TRUE : FALSE;
 	con_path = nm_connection_get_path (connection);
 
 	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
@@ -1421,7 +1363,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	nmc->nowait_flag = !wait;
 	nmc->should_wait = TRUE;
 	nm_client_activate_connection (nmc->client,
-	                               is_system ? NM_DBUS_SERVICE_SYSTEM_SETTINGS : NM_DBUS_SERVICE_USER_SETTINGS,
+	                               NM_DBUS_SERVICE_SYSTEM_SETTINGS,
 	                               con_path,
 	                               device,
 	                               spec_object,
@@ -1442,7 +1384,6 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 	const GPtrArray *active_cons;
 	const char *con_path;
 	const char *active_path;
-	NMConnectionScope active_service_scope, con_scope;
 	gboolean id_specified = FALSE;
 	gboolean wait = TRUE;
 	int i;
@@ -1458,8 +1399,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 				goto error;
 			}
 
-			if ((connection = find_connection (nmc->system_connections, selector, *argv)) == NULL)
-				connection = find_connection (nmc->user_connections, selector, *argv);
+			connection = find_connection (nmc->system_connections, selector, *argv);
 
 			if (!connection) {
 				g_string_printf (nmc->return_text, _("Error: Unknown connection: %s."), *argv);
@@ -1489,19 +1429,20 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 		goto error;
 
 	con_path = nm_connection_get_path (connection);
-	con_scope = nm_connection_get_scope (connection);
 
 	active_cons = nm_client_get_active_connections (nmc->client);
 	for (i = 0; active_cons && (i < active_cons->len); i++) {
 		NMActiveConnection *candidate = g_ptr_array_index (active_cons, i);
 
 		active_path = nm_active_connection_get_connection (candidate);
-		active_service_scope = nm_active_connection_get_scope (candidate);
-		if (!strcmp (active_path, con_path) && active_service_scope == con_scope) {
+		if (!strcmp (active_path, con_path)) {
 			active = candidate;
 			break;
 		}
 	}
+
+	/* TODO: fail gracefully if we are using an old N-M with user settings
+	 * support */
 
 	if (active)
 		nm_client_deactivate_connection (nmc->client, active);
@@ -1520,23 +1461,9 @@ static void
 get_connections_cb (NMSettingsInterface *settings, gpointer user_data)
 {
 	ArgsInfo *args = (ArgsInfo *) user_data;
-	static gboolean system_cb_called = FALSE;
-	static gboolean user_cb_called = FALSE;
 	GError *error = NULL;
 
-	if (NM_IS_REMOTE_SETTINGS_SYSTEM (settings)) {
-		system_cb_called = TRUE;
-		args->nmc->system_connections = nm_settings_interface_list_connections (settings);
-	}
-	else {
-		user_cb_called = TRUE;
-		args->nmc->user_connections = nm_settings_interface_list_connections (settings);
-	}
-
-	/* return and wait for the callback of the second settings is called */
-	if (   (args->nmc->system_settings_running && !system_cb_called)
-	    || (args->nmc->user_settings_running && !user_cb_called))
-		return;
+	args->nmc->system_connections = nm_settings_interface_list_connections (settings);
 
 	if (args->argc == 0) {
 		if (!nmc_terse_option_check (args->nmc->print_output, args->nmc->required_fields, &error))
@@ -1612,31 +1539,19 @@ do_connections (NmCli *nmc, int argc, char **argv)
 
 	}
 
-	/* get user settings */
-	if (!(nmc->user_settings = nm_remote_settings_new (bus, NM_CONNECTION_SCOPE_USER))) {
-		g_string_printf (nmc->return_text, _("Error: Could not get user settings."));
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-		return nmc->return_value;
-	}
-
-	/* find out whether setting services are running */
+	/* find out whether settings service is running */
 	g_object_get (nmc->system_settings, NM_REMOTE_SETTINGS_SERVICE_RUNNING, &nmc->system_settings_running, NULL);
-	g_object_get (nmc->user_settings, NM_REMOTE_SETTINGS_SERVICE_RUNNING, &nmc->user_settings_running, NULL);
 
-	if (!nmc->system_settings_running && !nmc->user_settings_running) {
-		g_string_printf (nmc->return_text, _("Error: Can't obtain connections: settings services are not running."));
+	if (!nmc->system_settings_running) {
+		g_string_printf (nmc->return_text, _("Error: Can't obtain connections: settings service is not running."));
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		return nmc->return_value;
 	}
 
 	/* connect to signal "connections-read" - emitted when connections are fetched and ready */
-	if (nmc->system_settings_running)
-		g_signal_connect (nmc->system_settings, NM_SETTINGS_INTERFACE_CONNECTIONS_READ,
-		                  G_CALLBACK (get_connections_cb), &args_info);
+	g_signal_connect (nmc->system_settings, NM_SETTINGS_INTERFACE_CONNECTIONS_READ,
+	                  G_CALLBACK (get_connections_cb), &args_info);
 
-	if (nmc->user_settings_running)
-		g_signal_connect (nmc->user_settings, NM_SETTINGS_INTERFACE_CONNECTIONS_READ,
-		                  G_CALLBACK (get_connections_cb), &args_info);
 
 	dbus_g_connection_unref (bus);
 
