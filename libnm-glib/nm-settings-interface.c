@@ -17,7 +17,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2010 Red Hat, Inc.
  */
 
 #include "nm-settings-interface.h"
@@ -62,6 +62,8 @@ nm_settings_interface_error_get_type (void)
 			ENUM_ENTRY (NM_SETTINGS_INTERFACE_ERROR_SECRETS_REQUEST_CANCELED, "SecretsRequestCanceled"),
 			/* The request could not be completed because permission was denied. */
 			ENUM_ENTRY (NM_SETTINGS_INTERFACE_ERROR_PERMISSION_DENIED, "PermissionDenied"),
+			/* The requested setting does not existing in this connection. */
+			ENUM_ENTRY (NM_SETTINGS_INTERFACE_ERROR_INVALID_SETTING, "InvalidSetting"),
 			{ 0, 0, 0 },
 		};
 		etype = g_enum_register_static ("NMSettingsInterfaceError", values);
