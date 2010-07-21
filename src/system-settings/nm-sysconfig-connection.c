@@ -209,7 +209,7 @@ get_secrets (NMSettingsConnectionInterface *connection,
 	setting = nm_connection_get_setting_by_name (priv->secrets, setting_name);
 	if (!setting) {
 		error = g_error_new (NM_SETTINGS_INTERFACE_ERROR,
-		                     NM_SETTINGS_INTERFACE_ERROR_INVALID_CONNECTION,
+		                     NM_SETTINGS_INTERFACE_ERROR_INVALID_SETTING,
 		                     "%s.%d - Connection didn't have requested setting '%s'.",
 		                     __FILE__, __LINE__, setting_name);
 		(*callback) (connection, NULL, error, user_data);
