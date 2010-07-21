@@ -164,7 +164,7 @@ get_secrets_cb (DBusGProxy *proxy, GHashTable *secrets, GError *error, gpointer 
 	RemoteCall *call = user_data;
 	NMSettingsConnectionInterfaceGetSecretsFunc func = (NMSettingsConnectionInterfaceGetSecretsFunc) call->callback;
 
-	(*func)(NM_SETTINGS_CONNECTION_INTERFACE (call->self), secrets, error, call->user_data);
+	(*func)(NM_SETTINGS_CONNECTION_INTERFACE (call->self), error ? NULL : secrets, error, call->user_data);
 	remote_call_complete (call->self, call);
 }
 
