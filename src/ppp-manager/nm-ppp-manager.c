@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2008 - 2010 Red Hat, Inc.
  */
 
 #include <sys/types.h>
@@ -883,7 +883,8 @@ nm_ppp_manager_start (NMPPPManager *manager,
 {
 	NMPPPManagerPrivate *priv;
 	NMConnection *connection;
-	NMSettingPPP *ppp_setting;
+	NMSettingPPP *s_ppp;
+	gboolean s_ppp_created = FALSE;
 	NMSettingPPPOE *pppoe_setting;
 	NMCmdLine *ppp_cmd;
 	char *cmd_str;
@@ -893,25 +894,35 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	g_return_val_if_fail (NM_IS_PPP_MANAGER (manager), FALSE);
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
 
+	priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
+
+	priv->pid = 0;
+
 	/* Make sure /dev/ppp exists (bgo #533064) */
 	if (stat ("/dev/ppp", &st) || !S_ISCHR (st.st_mode))
 		ignored = system ("/sbin/modprobe ppp_generic");
 
 	connection = nm_act_request_get_connection (req);
-	ppp_setting = NM_SETTING_PPP (nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP));
-	g_return_val_if_fail (ppp_setting != NULL, FALSE);
+	g_assert (connection);
+
+	s_ppp = (NMSettingPPP *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP);
+	if (!s_ppp) {
+		/* If the PPP settings are all default we may not have a PPP setting yet,
+		 * so just make a default one here.
+		 */
+		s_ppp = NM_SETTING_PPP (nm_setting_ppp_new ());
+		s_ppp_created = TRUE;
+	}
 	
 	pppoe_setting = (NMSettingPPPOE *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPPOE);
 	if (pppoe_setting)
-		pppoe_fill_defaults (ppp_setting);
+		pppoe_fill_defaults (s_ppp);
 
-	ppp_cmd = create_pppd_cmd_line (manager, ppp_setting, pppoe_setting, ppp_name, err);
+	ppp_cmd = create_pppd_cmd_line (manager, s_ppp, pppoe_setting, ppp_name, err);
 	if (!ppp_cmd)
-		return FALSE;
+		goto out;
 
 	g_ptr_array_add (ppp_cmd->array, NULL);
-
-	priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
 
 	nm_log_info (LOGD_PPP, "starting PPP connection");
 
@@ -934,6 +945,9 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	priv->act_req = g_object_ref (req);
 
  out:
+	if (s_ppp_created)
+		g_object_unref (s_ppp);
+
 	if (ppp_cmd)
 		nm_cmd_line_destroy (ppp_cmd);
 
