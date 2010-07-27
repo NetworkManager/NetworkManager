@@ -7,9 +7,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: mr\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-05-06 14:31+0530\n"
-"PO-Revision-Date: 2010-05-10 10:40+0530\n"
+"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?product=NetworkManager&component=general\n"
+"POT-Creation-Date: 2010-06-28 08:52+0000\n"
+"PO-Revision-Date: 2010-07-26 18:24+0530\n"
 "Last-Translator: Sandeep Shedmake <sshedmak@redhat.com>\n"
 "Language-Team: Marathi <fedora-trans-mr@redhat.com>\n"
 "MIME-Version: 1.0\n"
@@ -141,19 +141,19 @@ msgstr "कधिच नाही"
 #: ../cli/src/connections.c:602 ../cli/src/connections.c:605
 #: ../cli/src/devices.c:388 ../cli/src/devices.c:513 ../cli/src/devices.c:539
 #: ../cli/src/devices.c:540 ../cli/src/devices.c:541 ../cli/src/devices.c:542
-#: ../cli/src/devices.c:543 ../cli/src/settings.c:504
-#: ../cli/src/settings.c:544 ../cli/src/settings.c:643
-#: ../cli/src/settings.c:912 ../cli/src/settings.c:913
-#: ../cli/src/settings.c:915 ../cli/src/settings.c:917
-#: ../cli/src/settings.c:1042 ../cli/src/settings.c:1043
-#: ../cli/src/settings.c:1044 ../cli/src/settings.c:1123
-#: ../cli/src/settings.c:1124 ../cli/src/settings.c:1125
-#: ../cli/src/settings.c:1126 ../cli/src/settings.c:1127
-#: ../cli/src/settings.c:1128 ../cli/src/settings.c:1129
-#: ../cli/src/settings.c:1130 ../cli/src/settings.c:1131
-#: ../cli/src/settings.c:1132 ../cli/src/settings.c:1133
-#: ../cli/src/settings.c:1134 ../cli/src/settings.c:1135
-#: ../cli/src/settings.c:1210
+#: ../cli/src/devices.c:543 ../cli/src/settings.c:508
+#: ../cli/src/settings.c:551 ../cli/src/settings.c:652
+#: ../cli/src/settings.c:926 ../cli/src/settings.c:927
+#: ../cli/src/settings.c:929 ../cli/src/settings.c:931
+#: ../cli/src/settings.c:1056 ../cli/src/settings.c:1057
+#: ../cli/src/settings.c:1058 ../cli/src/settings.c:1137
+#: ../cli/src/settings.c:1138 ../cli/src/settings.c:1139
+#: ../cli/src/settings.c:1140 ../cli/src/settings.c:1141
+#: ../cli/src/settings.c:1142 ../cli/src/settings.c:1143
+#: ../cli/src/settings.c:1144 ../cli/src/settings.c:1145
+#: ../cli/src/settings.c:1146 ../cli/src/settings.c:1147
+#: ../cli/src/settings.c:1148 ../cli/src/settings.c:1149
+#: ../cli/src/settings.c:1224
 msgid "yes"
 msgstr "होय"
 
@@ -161,19 +161,19 @@ msgstr "होय"
 #: ../cli/src/connections.c:602 ../cli/src/connections.c:605
 #: ../cli/src/devices.c:388 ../cli/src/devices.c:513 ../cli/src/devices.c:539
 #: ../cli/src/devices.c:540 ../cli/src/devices.c:541 ../cli/src/devices.c:542
-#: ../cli/src/devices.c:543 ../cli/src/settings.c:504
-#: ../cli/src/settings.c:506 ../cli/src/settings.c:544
-#: ../cli/src/settings.c:643 ../cli/src/settings.c:912
-#: ../cli/src/settings.c:913 ../cli/src/settings.c:915
-#: ../cli/src/settings.c:917 ../cli/src/settings.c:1042
-#: ../cli/src/settings.c:1043 ../cli/src/settings.c:1044
-#: ../cli/src/settings.c:1123 ../cli/src/settings.c:1124
-#: ../cli/src/settings.c:1125 ../cli/src/settings.c:1126
-#: ../cli/src/settings.c:1127 ../cli/src/settings.c:1128
-#: ../cli/src/settings.c:1129 ../cli/src/settings.c:1130
-#: ../cli/src/settings.c:1131 ../cli/src/settings.c:1132
-#: ../cli/src/settings.c:1133 ../cli/src/settings.c:1134
-#: ../cli/src/settings.c:1135 ../cli/src/settings.c:1210
+#: ../cli/src/devices.c:543 ../cli/src/settings.c:508
+#: ../cli/src/settings.c:510 ../cli/src/settings.c:551
+#: ../cli/src/settings.c:652 ../cli/src/settings.c:926
+#: ../cli/src/settings.c:927 ../cli/src/settings.c:929
+#: ../cli/src/settings.c:931 ../cli/src/settings.c:1056
+#: ../cli/src/settings.c:1057 ../cli/src/settings.c:1058
+#: ../cli/src/settings.c:1137 ../cli/src/settings.c:1138
+#: ../cli/src/settings.c:1139 ../cli/src/settings.c:1140
+#: ../cli/src/settings.c:1141 ../cli/src/settings.c:1142
+#: ../cli/src/settings.c:1143 ../cli/src/settings.c:1144
+#: ../cli/src/settings.c:1145 ../cli/src/settings.c:1146
+#: ../cli/src/settings.c:1147 ../cli/src/settings.c:1148
+#: ../cli/src/settings.c:1149 ../cli/src/settings.c:1224
 msgid "no"
 msgstr "नाही"
 
@@ -262,7 +262,7 @@ msgstr "सक्रिय केले"
 #: ../cli/src/connections.c:1102 ../cli/src/connections.c:1125
 #: ../cli/src/connections.c:1158 ../cli/src/devices.c:224
 #: ../cli/src/devices.c:514 ../cli/src/network-manager.c:92
-#: ../cli/src/network-manager.c:145 ../cli/src/settings.c:469
+#: ../cli/src/network-manager.c:145 ../cli/src/settings.c:473
 msgid "unknown"
 msgstr "अपरिचीत"
 
@@ -1063,78 +1063,79 @@ msgstr "त्रुटी: NetworkManager सह जोडणी करण्�
 msgid "Success"
 msgstr "यश"
 
-#: ../cli/src/settings.c:407
+#: ../cli/src/settings.c:411
 #, c-format
 msgid "%d (hex-ascii-key)"
 msgstr "%d (hex-ascii-key)"
 
-#: ../cli/src/settings.c:409
+#: ../cli/src/settings.c:413
 #, c-format
 msgid "%d (104/128-bit passphrase)"
 msgstr "%d (104/128-बीट पासफ्रेज)"
 
-#: ../cli/src/settings.c:412
+#: ../cli/src/settings.c:416
 #, c-format
 msgid "%d (unknown)"
 msgstr "%d (अपरिचीत)"
 
-#: ../cli/src/settings.c:438
+#: ../cli/src/settings.c:442
 msgid "0 (unknown)"
 msgstr "0 (अपरिचीत)"
 
-#: ../cli/src/settings.c:444
+#: ../cli/src/settings.c:448
 msgid "any, "
 msgstr "कुठलेही, "
 
-#: ../cli/src/settings.c:446
+#: ../cli/src/settings.c:450
 msgid "900 MHz, "
 msgstr "900 MHz, "
 
-#: ../cli/src/settings.c:448
+#: ../cli/src/settings.c:452
 msgid "1800 MHz, "
 msgstr "1800 MHz, "
 
-#: ../cli/src/settings.c:450
+#: ../cli/src/settings.c:454
 msgid "1900 MHz, "
 msgstr "1900 MHz, "
 
-#: ../cli/src/settings.c:452
+#: ../cli/src/settings.c:456
 msgid "850 MHz, "
 msgstr "850 MHz, "
 
-#: ../cli/src/settings.c:454
+#: ../cli/src/settings.c:458
 msgid "WCDMA 3GPP UMTS 2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 2100 MHz, "
 
-#: ../cli/src/settings.c:456
+#: ../cli/src/settings.c:460
 msgid "WCDMA 3GPP UMTS 1800 MHz, "
 msgstr "WCDMA 3GPP UMTS 1800 MHz, "
 
-#: ../cli/src/settings.c:458
+#: ../cli/src/settings.c:462
 msgid "WCDMA 3GPP UMTS 1700/2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700/2100 MHz, "
 
-#: ../cli/src/settings.c:460
+#: ../cli/src/settings.c:464
 msgid "WCDMA 3GPP UMTS 800 MHz, "
 msgstr "WCDMA 3GPP UMTS 800 MHz, "
 
-#: ../cli/src/settings.c:462
+#: ../cli/src/settings.c:466
 msgid "WCDMA 3GPP UMTS 850 MHz, "
 msgstr "WCDMA 3GPP UMTS 850 MHz, "
 
-#: ../cli/src/settings.c:464
+#: ../cli/src/settings.c:468
 msgid "WCDMA 3GPP UMTS 900 MHz, "
 msgstr "WCDMA 3GPP UMTS 900 MHz, "
 
-#: ../cli/src/settings.c:466
+#: ../cli/src/settings.c:470
 msgid "WCDMA 3GPP UMTS 1700 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700 MHz, "
 
-#: ../cli/src/settings.c:546 ../cli/src/settings.c:708
+#: ../cli/src/settings.c:554 ../cli/src/settings.c:721
 msgid "auto"
 msgstr "स्वयं"
 
-#: ../cli/src/settings.c:704 ../cli/src/settings.c:707 ../cli/src/utils.c:172
+#: ../cli/src/settings.c:716 ../cli/src/settings.c:719
+#: ../cli/src/settings.c:720 ../cli/src/utils.c:172
 msgid "not set"
 msgstr "सेट केले नाही"
 
@@ -1497,6 +1498,90 @@ msgstr "एनक्रिप्टेड किला PEM फाइलवर �
 msgid "Could not allocate memory for PEM file data."
 msgstr "PEM फाइल डाटाकरीता मेमरीचे वाटप करणे अशक्य."
 
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:1
+msgid "Connection sharing via a protected WiFi network"
+msgstr "सुरक्षीत WiFi नेटवर्क द्वारे जोडणीचे शेअरींग करा"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:2
+msgid "Connection sharing via an open WiFi network"
+msgstr "ओपन WiFi नेटवर्क द्वारे कनेक्शन शेअरींग करा"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:3
+msgid "Modify persistent system hostname"
+msgstr "पर्सिस्टंट प्रणाली यजमाननाव संपादीत करा"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:4
+msgid "Modify system connections"
+msgstr "प्रणाली जुळवणी संपादीत करा"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:5
+msgid "System policy prevents modification of system settings"
+msgstr "प्रणाली करार, प्रणाली संयोजना संपादीत करण्यापासून रोखतो"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:6
+msgid "System policy prevents modification of the persistent system hostname"
+msgstr "प्रणाली करार पर्सिस्टंट प्रणाली यजमाननावाचे संपादन रोखत आहे"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:7
+msgid "System policy prevents sharing connections via a protected WiFi network"
+msgstr "प्रणाली करार सुरक्षीत WiFi नेटवर्क द्वारे जोडणीचे शेअरींग रोखत आहे"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:8
+msgid "System policy prevents sharing connections via an open WiFi network"
+msgstr "प्रणाली करार ओपन WiFi नेटवर्क द्वारे जोडणीचे शेअरींग रोखत आहे"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:1
+msgid "Allow control of network connections"
+msgstr "नेटवर्क जोडणींचे नियंत्रण स्वीकारा"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:2
+msgid "Allow use of user-specific connections"
+msgstr "वापरकर्ता-निर्देशीत जोडणींचा वापर स्वीकारा"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:3
+msgid "Enable or disable WiFi devices"
+msgstr "WiFi साधने सुरू किंवा बंद करा"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:4
+msgid "Enable or disable mobile broadband devices"
+msgstr "मोबाईल ब्रॉडबँड साधने सुरू किंवा बंद करा"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:5
+msgid "Enable or disable system networking"
+msgstr "प्रणाली नेटवर्किंग सुरू किंवा बंद करा"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:6
+msgid ""
+"Put NetworkManager to sleep or wake it up (should only be used by system "
+"power management)"
+msgstr ""
+"NetworkManager ला स्लीप किंवा वेकअप स्तरात न्या (फक्त प्रणाली पावर मॅनेजमेंटनेच याचा "
+"वापर करावा)"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:7
+msgid "System policy prevents control of network connections"
+msgstr "प्रणाली करार नेटवर्क जोडणीचे नियंत्रण रोखते"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:8
+msgid "System policy prevents enabling or disabling WiFi devices"
+msgstr "प्रणाली करार WiFi साधणांना सुरू किंवा बंद होण्यापासून रोखते"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:9
+msgid "System policy prevents enabling or disabling mobile broadband devices"
+msgstr "प्रणाली करार मोबाईल ब्रॉडबँड साधणांना सुरू किंवा बंद होण्यापासून रोखते"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:10
+msgid "System policy prevents enabling or disabling system networking"
+msgstr "प्रणाली करार प्रणाली नेटवर्किंगसा सुरू किंवा बंद होण्यापासून रोखते"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:11
+msgid "System policy prevents putting NetworkManager to sleep or waking it up"
+msgstr "प्रणाली करार NetworkManager ला स्लीप किंवा वेकअप मध्ये जाण्यापासून रोखते"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:12
+msgid "System policy prevents use of user-specific connections"
+msgstr "प्रणाली करार वापरकर्ता-निर्देशीत जोडणींचे वापर रोखते"
+
 #: ../src/nm-netlink-monitor.c:100 ../src/nm-netlink-monitor.c:231
 #: ../src/nm-netlink-monitor.c:653
 #, c-format
@@ -1542,7 +1627,7 @@ msgstr "दुवा कॅशे अद्ययावत करतेवेळ
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr "अवैध पर्याय.  वैध पर्यायची यादी पहाण्याकरीता कृपया --help वापरा.\n"
 
-#: ../src/main.c:562
+#: ../src/main.c:568
 #, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr "%s.  वैध पर्यायची सूची पहाण्याकरीता कृपया --help वापरा.\n"
@@ -1587,11 +1672,11 @@ msgstr "अपरिचीत लॉग स्तर '%s'"
 msgid "Unknown log domain '%s'"
 msgstr "अपरिचीत लॉग डोमेन '%s'"
 
-#: ../src/named-manager/nm-named-manager.c:343
+#: ../src/named-manager/nm-named-manager.c:350
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "NOTE: libc रिजॉलव्हर 3 पेक्षा जास्त नेमसर्व्हर्स् करीता समर्थन पुरवू शकणार नाही."
 
-#: ../src/named-manager/nm-named-manager.c:345
+#: ../src/named-manager/nm-named-manager.c:352
 msgid "The nameservers listed below may not be recognized."
 msgstr "खालिल यादीतील नेमसर्व्हर्स् अनोळखी राहतील."
 
@@ -1600,39 +1685,7 @@ msgstr "खालिल यादीतील नेमसर्व्हर्�
 msgid "Auto %s"
 msgstr "स्वयं %s"
 
-#: ../system-settings/plugins/ifcfg-rh/reader.c:3256
+#: ../system-settings/plugins/ifcfg-rh/reader.c:3275
 msgid "System"
 msgstr "प्रणाली"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:1
-msgid "Connection sharing via a protected WiFi network"
-msgstr "सुरक्षीत WiFi नेटवर्क द्वारे जोडणीचे शेअरींग करा"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:2
-msgid "Connection sharing via an open WiFi network"
-msgstr "ओपन WiFi नेटवर्क द्वारे कनेक्शन शेअरींग करा"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:3
-msgid "Modify persistent system hostname"
-msgstr "पर्सिस्टंट प्रणाली यजमाननाव संपादीत करा"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:4
-msgid "Modify system connections"
-msgstr "प्रणाली जुळवणी संपादीत करा"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:5
-msgid "System policy prevents modification of system settings"
-msgstr "प्रणाली करार, प्रणाली संयोजना संपादीत करण्यापासून रोखतो"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:6
-msgid "System policy prevents modification of the persistent system hostname"
-msgstr "प्रणाली करार पर्सिस्टंट प्रणाली यजमाननावाचे संपादन रोखत आहे"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:7
-msgid "System policy prevents sharing connections via a protected WiFi network"
-msgstr "प्रणाली करार सुरक्षीत WiFi नेटवर्क द्वारे जोडणीचे शेअरींग रोखत आहे"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:8
-msgid "System policy prevents sharing connections via an open WiFi network"
-msgstr "प्रणाली करार ओपन WiFi नेटवर्क द्वारे जोडणीचे शेअरींग रोखत आहे"
 
