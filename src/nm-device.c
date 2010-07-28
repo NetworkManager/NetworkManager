@@ -1439,22 +1439,6 @@ dhcp_state_changed (NMDHCPClient *client,
 		} else if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED)
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
 		break;
-	case DHC_STOP:
-	case DHC_STOP6:
-	case DHC_EXPIRE:
-	case DHC_EXPIRE6:
-		if (dev_state == NM_DEVICE_STATE_ACTIVATED) {
-			if (ipv6)
-				nm_dhcp6_config_reset (priv->dhcp6_config);
-			else
-				nm_dhcp4_config_reset (priv->dhcp4_config);
-
-			/* dhclient quit and can't get/renew a lease; so kill the connection */
-			nm_device_state_changed (device,
-			                         NM_DEVICE_STATE_FAILED,
-			                         NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
-		}
-		break;
 	default:
 		break;
 	}
