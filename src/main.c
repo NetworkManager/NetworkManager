@@ -528,8 +528,30 @@ main (int argc, char *argv[])
 	} else {
 		gboolean parsed = FALSE;
 
-		/* Try NetworkManager.conf first */
-		if (g_file_test (NM_DEFAULT_SYSTEM_CONF_FILE, G_FILE_TEST_EXISTS)) {
+		/* Even though we prefer NetworkManager.conf, we need to check the
+		 * old nm-system-settings.conf first to preserve compat with older
+		 * setups.  In package managed systems dropping a NetworkManager.conf
+		 * onto the system would make NM use it instead of nm-system-settings.conf,
+		 * changing behavior during an upgrade.  We don't want that.
+		 */
+
+		/* Try deprecated nm-system-settings.conf first */
+		if (g_file_test (NM_OLD_SYSTEM_CONF_FILE, G_FILE_TEST_EXISTS)) {
+			config = g_strdup (NM_OLD_SYSTEM_CONF_FILE);
+			parsed = parse_config_file (config, &conf_plugins, &dhcp, &cfg_log_level, &cfg_log_domains, &error);
+			if (!parsed) {
+				fprintf (stderr, "Default config file %s invalid: (%d) %s\n",
+				         config,
+				         error ? error->code : -1,
+				         (error && error->message) ? error->message : "unknown");
+				g_free (config);
+				config = NULL;
+				g_clear_error (&error);
+			}
+		}
+
+		/* Try the preferred NetworkManager.conf last */
+		if (!parsed && g_file_test (NM_DEFAULT_SYSTEM_CONF_FILE, G_FILE_TEST_EXISTS)) {
 			config = g_strdup (NM_DEFAULT_SYSTEM_CONF_FILE);
 			parsed = parse_config_file (config, &conf_plugins, &dhcp, &cfg_log_level, &cfg_log_domains, &error);
 			if (!parsed) {
@@ -540,26 +562,9 @@ main (int argc, char *argv[])
 				g_free (config);
 				config = NULL;
 				g_clear_error (&error);
-				/* Not a hard failure */
-			}
-		}
-
-		/* Try old nm-system-settings.conf next */
-		if (!parsed) {
-			config = g_strdup (NM_OLD_SYSTEM_CONF_FILE);
-			if (!parse_config_file (config, &conf_plugins, &dhcp, &cfg_log_level, &cfg_log_domains, &error)) {
-				fprintf (stderr, "Default config file %s invalid: (%d) %s\n",
-				         config,
-				         error ? error->code : -1,
-				         (error && error->message) ? error->message : "unknown");
-				g_free (config);
-				config = NULL;
-				g_clear_error (&error);
-				/* Not a hard failure */
 			}
 		}
 	}
-
 	/* Logging setup */
 	if (!nm_logging_setup (log_level ? log_level : cfg_log_level,
 	                       log_domains ? log_domains : cfg_log_domains,
@@ -628,6 +633,9 @@ main (int argc, char *argv[])
 
 	nm_log_info (LOGD_CORE, "NetworkManager (version " NM_DIST_VERSION ") is starting...");
 	success = FALSE;
+
+	if (config)
+		nm_log_info (LOGD_CORE, "Read config file %s", config);
 
 	main_loop = g_main_loop_new (NULL, FALSE);
 

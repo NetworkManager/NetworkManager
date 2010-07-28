@@ -6607,7 +6607,7 @@ test_write_wifi_open (void)
 	ASSERT (tmp != NULL,
 	        "wifi-open-write-reread", "failed to read ESSID key from %s", testfile);
 
-	g_message (tmp);
+	g_message ("%s", tmp);
 	ASSERT (strncmp (tmp, "\"\"", 2) != 0,
 	        "wifi-open-write-reread", "unexpected ESSID double-quote in %s", testfile);
 

@@ -1439,22 +1439,6 @@ dhcp_state_changed (NMDHCPClient *client,
 		} else if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED)
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
 		break;
-	case DHC_STOP:
-	case DHC_STOP6:
-	case DHC_EXPIRE:
-	case DHC_EXPIRE6:
-		if (dev_state == NM_DEVICE_STATE_ACTIVATED) {
-			if (ipv6)
-				nm_dhcp6_config_reset (priv->dhcp6_config);
-			else
-				nm_dhcp4_config_reset (priv->dhcp4_config);
-
-			/* dhclient quit and can't get/renew a lease; so kill the connection */
-			nm_device_state_changed (device,
-			                         NM_DEVICE_STATE_FAILED,
-			                         NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
-		}
-		break;
 	default:
 		break;
 	}
@@ -1672,6 +1656,13 @@ real_act_stage3_ip6_config_start (NMDevice *self, NMDeviceStateReason *reason)
 		}
 		nm_ip6_manager_begin_addrconf (priv->ip6_manager, nm_device_get_ip_ifindex (self));
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
+	} else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_DHCP)) {
+		/* Router advertisements shouldn't be used in pure DHCP mode */
+		if (priv->ip6_accept_ra_path)
+			nm_utils_do_sysctl (priv->ip6_accept_ra_path, "0\n");
+
+		priv->dhcp6_mode = IP6_DHCP_OPT_MANAGED;
+		ret = dhcp6_start (self, connection, priv->dhcp6_mode, reason);
 	} else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
 		/* reset the saved RA value when ipv6 is ignored */
 		if (priv->ip6_accept_ra_path) {
@@ -2125,7 +2116,8 @@ real_act_stage4_get_ip6_config (NMDevice *self,
 			*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
 			goto out;
 		}
-	}
+	} else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_DHCP))
+		g_assert (priv->dhcp6_client);  /* sanity check */
 
 	/* Autoconf might have triggered DHCPv6 too */
 	if (priv->dhcp6_client) {

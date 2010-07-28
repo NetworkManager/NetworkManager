@@ -49,7 +49,7 @@
     <_description>Allow use of user-specific connections</_description>
     <_message>System policy prevents use of user-specific connections</_message>
     <defaults>
-      <allow_inactive>no</allow_inactive>
+      <allow_inactive>yes</allow_inactive>
       <allow_active>yes</allow_active>
     </defaults>
   </action>

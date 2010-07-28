@@ -3,6 +3,7 @@ EXTRA_DIST = \
 	add-system-connection.py \
 	vpn.py \
 	list-connections.py \
-	show-bssids.py
+	show-bssids.py \
+	disconnect-device.py
 
 
