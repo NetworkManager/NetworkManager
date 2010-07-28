@@ -2593,6 +2593,11 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 	}
 
 out:
+	/* Signal scanning state changes */
+	if (   task->new_state == NM_SUPPLICANT_INTERFACE_CON_STATE_SCANNING
+	    || task->old_state == NM_SUPPLICANT_INTERFACE_CON_STATE_SCANNING)
+		g_object_notify (G_OBJECT (self), "scanning");
+
 	finish_supplicant_task (task, FALSE);
 	return FALSE;
 }
