@@ -22,7 +22,6 @@ object.  dbus-glib generates the same bound function names for D-Bus the methods
     <method name="ActivateConnection">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_activate_connection"/>
       <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
-      <arg name="service_name" type="s" direction="in"/>
       <arg name="connection" type="o" direction="in"/>
       <arg name="device" type="o" direction="in"/>
       <arg name="specific_object" type="o" direction="in"/>

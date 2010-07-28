@@ -61,7 +61,6 @@
 
 static gboolean impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err);
 static void impl_manager_activate_connection (NMManager *manager,
-                                              const char *service_name,
                                               const char *connection_path,
                                               const char *device_path,
                                               const char *specific_object_path,
@@ -261,7 +260,6 @@ typedef enum
 	NM_MANAGER_ERROR_UNKNOWN_CONNECTION = 0,
 	NM_MANAGER_ERROR_UNKNOWN_DEVICE,
 	NM_MANAGER_ERROR_UNMANAGED_DEVICE,
-	NM_MANAGER_ERROR_INVALID_SERVICE,
 	NM_MANAGER_ERROR_SYSTEM_CONNECTION,
 	NM_MANAGER_ERROR_PERMISSION_DENIED,
 	NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
@@ -297,10 +295,6 @@ nm_manager_error_get_type (void)
 			ENUM_ENTRY (NM_MANAGER_ERROR_UNKNOWN_DEVICE, "UnknownDevice"),
 			/* Unmanaged device. */
 			ENUM_ENTRY (NM_MANAGER_ERROR_UNMANAGED_DEVICE, "UnmanagedDevice"),
-			/* Invalid settings service (not a recognized system or user
-			 * settings service name)
-			 */
-			ENUM_ENTRY (NM_MANAGER_ERROR_INVALID_SERVICE, "InvalidService"),
 			/* Connection was superceded by a system connection. */
 			ENUM_ENTRY (NM_MANAGER_ERROR_SYSTEM_CONNECTION, "SystemConnection"),
 			/* User does not have the permission to activate this connection. */
@@ -2172,7 +2166,6 @@ activation_auth_done (PendingActivation *pending, GError *error)
 
 static void
 impl_manager_activate_connection (NMManager *self,
-                                  const char *service_name,
                                   const char *connection_path,
                                   const char *device_path,
                                   const char *specific_object_path,
@@ -2180,20 +2173,6 @@ impl_manager_activate_connection (NMManager *self,
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	PendingActivation *pending;
-	GError *error = NULL;
-
-	// TODO user settings services are gone, so service_name is no longer
-	// meaningful. Remove the parameter and this check.
-	if (strcmp (service_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS)) {
-		error = g_error_new_literal (NM_MANAGER_ERROR,
-		                             NM_MANAGER_ERROR_INVALID_SERVICE,
-		                             "Invalid settings service name");
-		dbus_g_method_return_error (context, error);
-		nm_log_warn (LOGD_CORE, "connection %s:%s failed to activate: (%d) %s",
-		             service_name, connection_path, error->code, error->message);
-		g_error_free (error);
-		return;
-	}
 
 	/* Need to check the caller's permissions and stuff before we can
 	 * activate the connection.

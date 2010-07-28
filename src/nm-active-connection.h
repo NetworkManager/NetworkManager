@@ -24,7 +24,6 @@
 #include <glib-object.h>
 #include "nm-connection.h"
 
-#define NM_ACTIVE_CONNECTION_SERVICE_NAME "service-name"
 #define NM_ACTIVE_CONNECTION_CONNECTION "connection"
 #define NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT "specific-object"
 #define NM_ACTIVE_CONNECTION_DEVICES "devices"

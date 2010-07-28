@@ -2,9 +2,6 @@
 
 <node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
   <interface name="org.freedesktop.NetworkManager.Connection.Active">
-    <property name="ServiceName" type="s" access="read">
-      <tp:docstring>The D-Bus service name providing this connection.</tp:docstring>
-    </property>
     <property name="Connection" type="o" access="read">
       <tp:docstring>The path of the connection.</tp:docstring>
     </property>

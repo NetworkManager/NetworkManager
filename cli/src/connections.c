@@ -1361,7 +1361,6 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	nmc->nowait_flag = !wait;
 	nmc->should_wait = TRUE;
 	nm_client_activate_connection (nmc->client,
-	                               NM_DBUS_SERVICE_SYSTEM_SETTINGS,
 	                               con_path,
 	                               device,
 	                               spec_object,

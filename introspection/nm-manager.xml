@@ -27,11 +27,6 @@
       <tp:docstring>
         Activate a connection using the supplied device.
       </tp:docstring>
-      <arg name="service_name" type="s" direction="in">
-        <tp:docstring>
-          The D-Bus service name of the settings service that provides this connection.
-        </tp:docstring>
-      </arg>
       <arg name="connection" type="o" direction="in">
         <tp:docstring>
           The connection to activate the devices with.
@@ -62,7 +57,6 @@
       <tp:possible-errors>
         <tp:error name="org.freedesktop.NetworkManager.Error.UnknownConnection"/>
         <tp:error name="org.freedesktop.NetworkManager.Error.UnknownDevice"/>
-        <tp:error name="org.freedesktop.NetworkManager.Error.InvalidService"/>
         <tp:error name="org.freedesktop.NetworkManager.Error.ConnectionActivating">
           <tp:docstring>Another connection is already activating or the same connection is already active.  FIXME: check if the error name is correct.  FIXME: split into 2 errors?</tp:docstring>
         </tp:error>

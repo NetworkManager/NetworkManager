@@ -977,7 +977,6 @@ activate_cb (DBusGProxy *proxy,
 /**
  * nm_client_activate_connection:
  * @client: a #NMClient
- * @service_name: the connection's service name
  * @connection_path: the connection's DBus path
  * @device: the #NMDevice
  * @specific_object: the device specific object (currently used only for
@@ -989,7 +988,6 @@ activate_cb (DBusGProxy *proxy,
  **/
 void
 nm_client_activate_connection (NMClient *client,
-					  const char *service_name,
 					  const char *connection_path,
 					  NMDevice *device,
 					  const char *specific_object,
@@ -1001,7 +999,6 @@ nm_client_activate_connection (NMClient *client,
 
 	g_return_if_fail (NM_IS_CLIENT (client));
 	g_return_if_fail (NM_IS_DEVICE (device));
-	g_return_if_fail (service_name != NULL);
 	g_return_if_fail (connection_path != NULL);
 
 	/* NULL specific object must be translated into "/" because D-Bus does
@@ -1015,7 +1012,6 @@ nm_client_activate_connection (NMClient *client,
 	info->user_data = user_data;
 
 	org_freedesktop_NetworkManager_activate_connection_async (NM_CLIENT_GET_PRIVATE (client)->client_proxy,
-											    service_name,
 											    connection_path,
 											    nm_object_get_path (NM_OBJECT (device)),
 											    internal_so,

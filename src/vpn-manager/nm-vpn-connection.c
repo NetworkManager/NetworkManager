@@ -97,7 +97,6 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 enum {
 	PROP_0,
-	PROP_SERVICE_NAME,
 	PROP_CONNECTION,
 	PROP_SPECIFIC_OBJECT,
 	PROP_DEVICES,
@@ -1044,10 +1043,6 @@ get_property (GObject *object, guint prop_id,
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_SERVICE_NAME:
-		/* TODO remove this property */
-		g_value_set_string (value, NM_DBUS_SERVICE_SYSTEM_SETTINGS);
-		break;
 	case PROP_CONNECTION:
 		g_value_set_boxed (value, nm_connection_get_path (priv->connection));
 		break;
@@ -1095,13 +1090,6 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 	object_class->finalize = finalize;
 
 	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_SERVICE_NAME,
-		 g_param_spec_string (NM_ACTIVE_CONNECTION_SERVICE_NAME,
-							  "Service name",
-							  "Service name",
-							  NULL,
-							  G_PARAM_READABLE));
 	g_object_class_install_property
 		(object_class, PROP_CONNECTION,
 		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_CONNECTION,
