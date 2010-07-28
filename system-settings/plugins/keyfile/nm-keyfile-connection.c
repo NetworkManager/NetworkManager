@@ -78,22 +78,21 @@ update (NMSettingsConnectionInterface *connection,
 	NMKeyfileConnectionPrivate *priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (connection);
 	char *filename = NULL;
 	GError *error = NULL;
-	gboolean success;
 
-	success = write_connection (NM_CONNECTION (connection), KEYFILE_DIR, 0, 0, &filename, &error);
-	if (success && filename && strcmp (priv->filename, filename)) {
+	if (!write_connection (NM_CONNECTION (connection), KEYFILE_DIR, 0, 0, &filename, &error)) {
+		callback (connection, error, user_data);
+		g_clear_error (&error);
+		return FALSE;
+	}
+
+	if (g_strcmp0 (priv->filename, filename)) {
 		/* Update the filename if it changed */
 		g_free (priv->filename);
 		priv->filename = filename;
-		success = parent_settings_connection_iface->update (connection, callback, user_data);
-	} else {
-		callback (connection, error, user_data);
-		if (error)
-			g_error_free (error);
+	} else
 		g_free (filename);
-	}
 
-	return success;
+	return parent_settings_connection_iface->update (connection, callback, user_data);
 }
 
 static gboolean 
