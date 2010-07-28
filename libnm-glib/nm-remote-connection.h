@@ -57,7 +57,6 @@ typedef struct {
 GType nm_remote_connection_get_type (void);
 
 NMRemoteConnection *nm_remote_connection_new (DBusGConnection *bus,
-                                              NMConnectionScope scope,
                                               const char *path);
 G_END_DECLS
 

@@ -39,7 +39,6 @@ G_BEGIN_DECLS
 #define NM_REMOTE_SETTINGS_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_REMOTE_SETTINGS, NMRemoteSettingsClass))
 
 #define NM_REMOTE_SETTINGS_BUS "bus"
-#define NM_REMOTE_SETTINGS_SCOPE "scope"
 #define NM_REMOTE_SETTINGS_SERVICE_RUNNING "service-running"
 
 typedef struct {
@@ -60,7 +59,7 @@ typedef struct {
 
 GType nm_remote_settings_get_type (void);
 
-NMRemoteSettings *nm_remote_settings_new (DBusGConnection *bus, NMConnectionScope scope);
+NMRemoteSettings *nm_remote_settings_new (DBusGConnection *bus);
 
 G_END_DECLS
 

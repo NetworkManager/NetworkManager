@@ -247,19 +247,15 @@ settings_connection_interface_init (NMSettingsConnectionInterface *iface)
 
 /**
  * nm_exported_connection_new:
- * @scope: the Connection scope (either user or system)
  *
  * Creates a new object representing the remote connection.
  *
  * Returns: the new exported connection object on success, or %NULL on failure
  **/
 NMExportedConnection *
-nm_exported_connection_new (NMConnectionScope scope)
+nm_exported_connection_new ()
 {
-	g_return_val_if_fail (scope != NM_CONNECTION_SCOPE_UNKNOWN, NULL);
-
 	return (NMExportedConnection *) g_object_new (NM_TYPE_EXPORTED_CONNECTION,
-	                                              NM_CONNECTION_SCOPE, scope,
 	                                              NULL);
 }
 

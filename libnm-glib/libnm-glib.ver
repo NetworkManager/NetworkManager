@@ -20,8 +20,6 @@ global:
 	nm_active_connection_get_default;
 	nm_active_connection_get_default6;
 	nm_active_connection_get_devices;
-	nm_active_connection_get_scope;
-	nm_active_connection_get_service_name;
 	nm_active_connection_get_specific_object;
 	nm_active_connection_get_state;
 	nm_active_connection_get_type;

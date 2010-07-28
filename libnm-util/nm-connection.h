@@ -39,23 +39,6 @@ G_BEGIN_DECLS
 #define NM_IS_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_CONNECTION))
 #define NM_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_CONNECTION, NMConnectionClass))
 
-/**
- * NMConnectionScope:
- * @NM_CONNECTION_SCOPE_UNKNOWN: scope not known or not yet set
- * @NM_CONNECTION_SCOPE_SYSTEM: connection is provided by the system settings
- *   service
- * @NM_CONNECTION_SCOPE_USER: connection is provided by a user settings service
- *
- * Connection scope indicated what settings service, if any, provides the
- * connection.
- *
- **/
-typedef enum {
-	NM_CONNECTION_SCOPE_UNKNOWN = 0,
-	NM_CONNECTION_SCOPE_SYSTEM,
-	NM_CONNECTION_SCOPE_USER
-} NMConnectionScope;
-
 
 /**
  * NMConnectionError:
@@ -79,7 +62,6 @@ GType nm_connection_error_get_type (void);
 #define NM_CONNECTION_ERROR nm_connection_error_quark ()
 GQuark nm_connection_error_quark (void);
 
-#define NM_CONNECTION_SCOPE "scope"
 #define NM_CONNECTION_PATH "path"
 
 /**
@@ -138,11 +120,6 @@ gboolean      nm_connection_update_secrets (NMConnection *connection,
                                             const char *setting_name,
                                             GHashTable *secrets,
                                             GError **error);
-
-void             nm_connection_set_scope (NMConnection *connection,
-                                                 NMConnectionScope scope);
-
-NMConnectionScope nm_connection_get_scope (NMConnection *connection);
 
 void             nm_connection_set_path (NMConnection *connection,
                                          const char *path);

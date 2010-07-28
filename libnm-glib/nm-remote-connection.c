@@ -206,9 +206,8 @@ replace_settings (NMRemoteConnection *self, GHashTable *new_settings)
 	GError *error = NULL;
 
 	if (!nm_connection_replace_settings (NM_CONNECTION (self), new_settings, &error)) {
-		g_warning ("%s: error updating %s connection %s settings: (%d) %s",
+		g_warning ("%s: error updating connection %s settings: (%d) %s",
 		           __func__,
-		           (nm_connection_get_scope (NM_CONNECTION (self)) == NM_CONNECTION_SCOPE_USER) ? "user" : "system",
 		           nm_connection_get_path (NM_CONNECTION (self)),
 		           error ? error->code : -1,
 		           (error && error->message) ? error->message : "(unknown)");
@@ -233,9 +232,8 @@ get_settings_cb (DBusGProxy *proxy,
 	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
 
 	if (error) {
-		g_warning ("%s: error getting %s connection %s settings: (%d) %s",
+		g_warning ("%s: error getting connection %s settings: (%d) %s",
 		           __func__,
-		           (nm_connection_get_scope (NM_CONNECTION (self)) == NM_CONNECTION_SCOPE_USER) ? "user" : "system",
 		           nm_connection_get_path (NM_CONNECTION (self)),
 		           error ? error->code : -1,
 		           (error && error->message) ? error->message : "(unknown)");
@@ -276,9 +274,7 @@ settings_connection_interface_init (NMSettingsConnectionInterface *klass)
 /**
  * nm_remote_connection_new:
  * @bus: a valid and connected D-Bus connection
- * @scope: the Connection scope (either user or system)
  * @path: the D-Bus path of the connection as exported by the settings service
- *  indicated by @scope
  *
  * Creates a new object representing the remote connection.
  *
@@ -286,7 +282,6 @@ settings_connection_interface_init (NMSettingsConnectionInterface *klass)
  **/
 NMRemoteConnection *
 nm_remote_connection_new (DBusGConnection *bus,
-                          NMConnectionScope scope,
                           const char *path)
 {
 	g_return_val_if_fail (bus != NULL, NULL);
@@ -294,7 +289,6 @@ nm_remote_connection_new (DBusGConnection *bus,
 
 	return (NMRemoteConnection *) g_object_new (NM_TYPE_REMOTE_CONNECTION,
 	                                            NM_REMOTE_CONNECTION_BUS, bus,
-	                                            NM_CONNECTION_SCOPE, scope,
 	                                            NM_CONNECTION_PATH, path,
 	                                            NULL);
 }
@@ -306,7 +300,6 @@ constructor (GType type,
 {
 	GObject *object;
 	NMRemoteConnectionPrivate *priv;
-	const char *service = NM_DBUS_SERVICE_USER_SETTINGS;
 
 	object = G_OBJECT_CLASS (nm_remote_connection_parent_class)->constructor (type, n_construct_params, construct_params);
 	if (!object)
@@ -316,18 +309,15 @@ constructor (GType type,
 	g_assert (priv->bus);
 	g_assert (nm_connection_get_path (NM_CONNECTION (object)));
 
-	if (nm_connection_get_scope (NM_CONNECTION (object)) == NM_CONNECTION_SCOPE_SYSTEM)
-		service = NM_DBUS_SERVICE_SYSTEM_SETTINGS;
-
 	priv->proxy = dbus_g_proxy_new_for_name (priv->bus,
-	                                         service,
+	                                         NM_DBUS_SERVICE_SYSTEM_SETTINGS,
 	                                         nm_connection_get_path (NM_CONNECTION (object)),
 	                                         NM_DBUS_IFACE_SETTINGS_CONNECTION);
 	g_assert (priv->proxy);
 	dbus_g_proxy_set_default_timeout (priv->proxy, G_MAXINT);
 
 	priv->secrets_proxy = dbus_g_proxy_new_for_name (priv->bus,
-	                                                 service,
+	                                                 NM_DBUS_SERVICE_SYSTEM_SETTINGS,
 	                                                 nm_connection_get_path (NM_CONNECTION (object)),
 	                                                 NM_DBUS_IFACE_SETTINGS_CONNECTION_SECRETS);
 	g_assert (priv->secrets_proxy);

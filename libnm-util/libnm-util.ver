@@ -10,7 +10,6 @@ global:
 	nm_connection_error_quark;
 	nm_connection_for_each_setting_value;
 	nm_connection_get_path;
-	nm_connection_get_scope;
 	nm_connection_get_setting;
 	nm_connection_get_setting_by_name;
 	nm_connection_get_type;
@@ -22,7 +21,6 @@ global:
 	nm_connection_remove_setting;
 	nm_connection_replace_settings;
 	nm_connection_set_path;
-	nm_connection_set_scope;
 	nm_connection_to_hash;
 	nm_connection_update_secrets;
 	nm_connection_verify;

@@ -49,7 +49,6 @@ G_DEFINE_TYPE_EXTENDED (NMSettingsService, nm_settings_service, G_TYPE_OBJECT, G
 
 typedef struct {
 	DBusGConnection *bus;
-	NMConnectionScope scope;
 	gboolean exported;
 
 	gboolean disposed;
@@ -58,7 +57,6 @@ typedef struct {
 enum {
 	PROP_0,
 	PROP_BUS,
-	PROP_SCOPE,
 
 	LAST_PROP
 };
@@ -236,7 +234,6 @@ nm_settings_service_export_connection (NMSettingsService *self,
 
 	path = g_strdup_printf ("%s/%u", NM_DBUS_PATH_SETTINGS, ec_counter++);
 	nm_connection_set_path (NM_CONNECTION (connection), path);
-	nm_connection_set_scope (NM_CONNECTION (connection), priv->scope);
 
 	dbus_g_connection_register_g_object (priv->bus, path, G_OBJECT (connection));
 	g_free (path);
@@ -264,9 +261,6 @@ constructor (GType type,
 	GObject *object;
 
 	object = G_OBJECT_CLASS (nm_settings_service_parent_class)->constructor (type, n_construct_params, construct_params);
-	if (object) {
-		g_assert (NM_SETTINGS_SERVICE_GET_PRIVATE (object)->scope != NM_CONNECTION_SCOPE_UNKNOWN);
-	}
 	return object;
 }
 
@@ -289,10 +283,6 @@ set_property (GObject *object, guint prop_id,
 		if (bus)
 			priv->bus = dbus_g_connection_ref (bus);
 		break;
-	case PROP_SCOPE:
-		/* Construct only */
-		priv->scope = g_value_get_uint (value);
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -308,9 +298,6 @@ get_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_BUS:
 		g_value_set_boxed (value, priv->bus);
-		break;
-	case PROP_SCOPE:
-		g_value_set_uint (value, priv->scope);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -356,17 +343,4 @@ nm_settings_service_class_init (NMSettingsServiceClass *class)
 	                                                     "Bus",
 	                                                     DBUS_TYPE_G_CONNECTION,
 	                                                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-	/**
-	 * NMSettingsService:scope:
-	 *
-	 * The capabilities of the device.
-	 **/
-	g_object_class_install_property (object_class, PROP_SCOPE,
-	                                 g_param_spec_uint (NM_SETTINGS_SERVICE_SCOPE,
-	                                                    "Scope",
-	                                                    "Scope",
-	                                                    NM_CONNECTION_SCOPE_SYSTEM,
-	                                                    NM_CONNECTION_SCOPE_USER,
-	                                                    NM_CONNECTION_SCOPE_USER,
-	                                                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 }

@@ -40,7 +40,6 @@ G_DEFINE_TYPE_EXTENDED (NMRemoteSettings, nm_remote_settings, G_TYPE_OBJECT, 0,
 
 typedef struct {
 	DBusGConnection *bus;
-	NMConnectionScope scope;
 
 	DBusGProxy *proxy;
 	GHashTable *connections;
@@ -57,7 +56,6 @@ typedef struct {
 enum {
 	PROP_0,
 	PROP_BUS,
-	PROP_SCOPE,
 	PROP_SERVICE_RUNNING,
 
 	LAST_PROP
@@ -137,7 +135,7 @@ new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
 	NMRemoteConnection *connection;
 
-	connection = nm_remote_connection_new (priv->bus, priv->scope, path);
+	connection = nm_remote_connection_new (priv->bus, path);
 	if (connection) {
 		g_signal_connect (connection, "removed",
 		                  G_CALLBACK (connection_removed_cb),
@@ -162,13 +160,11 @@ fetch_connections_done (DBusGProxy *proxy,
                         gpointer user_data)
 {
 	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
-	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);	
 	int i;
 
 	if (error) {
-		g_warning ("%s: error fetching %s connections: (%d) %s.",
+		g_warning ("%s: error fetching connections: (%d) %s.",
 		           __func__,
-		           priv->scope == NM_CONNECTION_SCOPE_USER ? "user" : "system",
 		           error->code,
 		           error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
@@ -296,10 +292,7 @@ name_owner_changed (DBusGProxy *proxy,
 {
 	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
-	const char *sname = NM_DBUS_SERVICE_USER_SETTINGS;
-
-	if (priv->scope == NM_CONNECTION_SCOPE_SYSTEM)
-		sname = NM_DBUS_SERVICE_SYSTEM_SETTINGS;
+	const char *sname = NM_DBUS_SERVICE_SYSTEM_SETTINGS;
 
 	if (!strcmp (name, sname)) {
 		if (priv->fetch_id)
@@ -330,21 +323,18 @@ settings_interface_init (NMSettingsInterface *iface)
 /**
  * nm_remote_settings_new:
  * @bus: a valid and connected D-Bus connection
- * @scope: the settings service scope (either user or system)
  *
  * Creates a new object representing the remote settings service.
  *
  * Returns: the new remote settings object on success, or %NULL on failure
  **/
 NMRemoteSettings *
-nm_remote_settings_new (DBusGConnection *bus, NMConnectionScope scope)
+nm_remote_settings_new (DBusGConnection *bus)
 {
 	g_return_val_if_fail (bus != NULL, NULL);
-	g_return_val_if_fail (scope != NM_CONNECTION_SCOPE_UNKNOWN, NULL);
 
 	return (NMRemoteSettings *) g_object_new (NM_TYPE_REMOTE_SETTINGS,
 	                                          NM_REMOTE_SETTINGS_BUS, bus,
-	                                          NM_REMOTE_SETTINGS_SCOPE, scope,
 	                                          NULL);
 }
 
@@ -364,7 +354,6 @@ constructor (GType type,
 {
 	GObject *object;
 	NMRemoteSettingsPrivate *priv;
-	const char *service = NM_DBUS_SERVICE_USER_SETTINGS;
 	GError *error = NULL;
 
 	object = G_OBJECT_CLASS (nm_remote_settings_parent_class)->constructor (type, n_construct_params, construct_params);
@@ -392,12 +381,8 @@ constructor (GType type,
 	                             G_CALLBACK (name_owner_changed),
 	                             object, NULL);
 
-	/* Settings service proxy */
-	if (priv->scope == NM_CONNECTION_SCOPE_SYSTEM)
-		service = NM_DBUS_SERVICE_SYSTEM_SETTINGS;
-
 	if (!dbus_g_proxy_call (priv->dbus_proxy, "NameHasOwner", &error,
-	                        G_TYPE_STRING, service,
+	                        G_TYPE_STRING, NM_DBUS_SERVICE_SYSTEM_SETTINGS,
 	                        G_TYPE_INVALID,
 	                        G_TYPE_BOOLEAN, &priv->service_running,
 	                        G_TYPE_INVALID)) {
@@ -410,7 +395,7 @@ constructor (GType type,
 	}
 
 	priv->proxy = dbus_g_proxy_new_for_name (priv->bus,
-	                                         service,
+	                                         NM_DBUS_SERVICE_SYSTEM_SETTINGS,
 	                                         NM_DBUS_PATH_SETTINGS,
 	                                         NM_DBUS_IFACE_SETTINGS);
 	g_assert (priv->proxy);
@@ -466,9 +451,6 @@ set_property (GObject *object, guint prop_id,
 		/* Construct only */
 		priv->bus = dbus_g_connection_ref ((DBusGConnection *) g_value_get_boxed (value));
 		break;
-	case PROP_SCOPE:
-		priv->scope = (NMConnectionScope) g_value_get_uint (value);
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -484,9 +466,6 @@ get_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_BUS:
 		g_value_set_boxed (value, priv->bus);
-		break;
-	case PROP_SCOPE:
-		g_value_set_uint (value, priv->scope);
 		break;
 	case PROP_SERVICE_RUNNING:
 		g_value_set_boolean (value, priv->service_running);
@@ -518,16 +497,6 @@ nm_remote_settings_class_init (NMRemoteSettingsClass *class)
 		                     "DBusGConnection",
 		                     DBUS_TYPE_G_CONNECTION,
 		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-
-	g_object_class_install_property
-		(object_class, PROP_SCOPE,
-		 g_param_spec_uint (NM_REMOTE_SETTINGS_SCOPE,
-		                    "Scope",
-		                    "NMConnection scope",
-		                    NM_CONNECTION_SCOPE_UNKNOWN,
-		                    NM_CONNECTION_SCOPE_USER,
-		                    NM_CONNECTION_SCOPE_USER,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property
 		(object_class, PROP_SERVICE_RUNNING,

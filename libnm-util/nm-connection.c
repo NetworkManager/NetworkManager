@@ -65,12 +65,6 @@
  * parameters (MTU, SSID, APN, channel, rate, etc) and IP-level parameters
  * (addresses, routes, addressing methods, etc).
  *
- * Most connections also have a %NMConnectionScope; a connection will be
- * provided over D-Bus either by the user settings service
- * (org.freedesktop.NetworkManagerUserSettings) running in an active user
- * session, or by the system-wide system settings service
- * (org.freedesktop.NetworkManagerSystemSettings) which provides  connections
- * for all users.
  */
 
 /**
@@ -112,9 +106,6 @@ nm_connection_error_get_type (void)
 typedef struct {
 	GHashTable *settings;
 
-	/* Type of the connection (system or user) */
-	NMConnectionScope scope;
-
 	/* D-Bus path of the connection, if any */
 	char *path;
 } NMConnectionPrivate;
@@ -125,7 +116,6 @@ G_DEFINE_TYPE (NMConnection, nm_connection, G_TYPE_OBJECT)
 
 enum {
 	PROP_0,
-	PROP_SCOPE,
 	PROP_PATH,
 
 	LAST_PROP
@@ -901,43 +891,6 @@ nm_connection_dump (NMConnection *connection)
 }
 
 /**
- * nm_connection_set_scope:
- * @connection: the #NMConnection
- * @scope: the scope of the connection
- *
- * Sets the scope of the connection.  This property is not serialized, and is
- * only for the reference of the caller.  A connection may have no scope
- * (internal, temporary connections), "system" scope (provided by the system
- * settings service), or "user" scope, provided by a user settings service.  The
- * creator of the #NMConnection object is responsible for setting the
- * connection's scope if needed.  Sets the #NMConnection:scope property.
- **/
-void
-nm_connection_set_scope (NMConnection *connection, NMConnectionScope scope)
-{
-	g_return_if_fail (NM_IS_CONNECTION (connection));
-
-	NM_CONNECTION_GET_PRIVATE (connection)->scope = scope;
-}
-
-/**
- * nm_connection_get_scope:
- * @connection: the #NMConnection
- *
- * Returns the connection scope.
- *
- * Returns: the scope of the connection, previously set by a call to
- * nm_connection_set_scope().
- **/
-NMConnectionScope
-nm_connection_get_scope (NMConnection *connection)
-{
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), NM_CONNECTION_SCOPE_UNKNOWN);
-
-	return NM_CONNECTION_GET_PRIVATE (connection)->scope;
-}
-
-/**
  * nm_connection_set_path:
  * @connection: the #NMConnection
  * @path: the D-Bus path of the connection as given by the settings service
@@ -1055,7 +1008,6 @@ nm_connection_duplicate (NMConnection *connection)
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	dup = nm_connection_new ();
-	nm_connection_set_scope (dup, nm_connection_get_scope (connection));
 	nm_connection_set_path (dup, nm_connection_get_path (connection));
 	g_hash_table_foreach (NM_CONNECTION_GET_PRIVATE (connection)->settings, duplicate_cb, dup);
 
@@ -1092,9 +1044,6 @@ set_property (GObject *object, guint prop_id,
 	NMConnection *connection = NM_CONNECTION (object);
 
 	switch (prop_id) {
-	case PROP_SCOPE:
-		nm_connection_set_scope (connection, g_value_get_uint (value));
-		break;
 	case PROP_PATH:
 		nm_connection_set_path (connection, g_value_get_string (value));
 		break;
@@ -1111,9 +1060,6 @@ get_property (GObject *object, guint prop_id,
 	NMConnection *connection = NM_CONNECTION (object);
 
 	switch (prop_id) {
-	case PROP_SCOPE:
-		g_value_set_uint (value, nm_connection_get_scope (connection));
-		break;
 	case PROP_PATH:
 		g_value_set_string (value, nm_connection_get_path (connection));
 		break;
@@ -1136,23 +1082,6 @@ nm_connection_class_init (NMConnectionClass *klass)
 	object_class->finalize = finalize;
 
 	/* Properties */
-
-	/**
-	 * NMConnection:scope:
-	 *
-	 * The connection's scope, used only by the calling process as a record
-	 * of which settings service the connection is provided by.  One of the
-	 * NM_CONNECTION_SCOPE_* defines.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_SCOPE,
-		 g_param_spec_uint (NM_CONNECTION_SCOPE,
-						    "Scope",
-						    "Scope",
-						    NM_CONNECTION_SCOPE_UNKNOWN,
-						    NM_CONNECTION_SCOPE_USER,
-						    NM_CONNECTION_SCOPE_UNKNOWN,
-						    G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMConnection:path:

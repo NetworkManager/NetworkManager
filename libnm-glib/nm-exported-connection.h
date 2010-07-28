@@ -68,7 +68,7 @@ typedef struct {
 
 GType nm_exported_connection_get_type (void);
 
-NMExportedConnection *nm_exported_connection_new (NMConnectionScope scope);
+NMExportedConnection *nm_exported_connection_new (void);
 
 G_END_DECLS
 

@@ -240,7 +240,6 @@ nm_remote_settings_system_new (DBusGConnection *bus)
 
 	return (NMRemoteSettingsSystem *) g_object_new (NM_TYPE_REMOTE_SETTINGS_SYSTEM,
 	                                                NM_REMOTE_SETTINGS_BUS, bus,
-	                                                NM_REMOTE_SETTINGS_SCOPE, NM_CONNECTION_SCOPE_SYSTEM,
 	                                                NULL);
 }
 

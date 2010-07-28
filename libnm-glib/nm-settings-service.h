@@ -37,7 +37,6 @@ G_BEGIN_DECLS
 #define NM_SETTINGS_SERVICE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SETTINGS_SERVICE, NMSettingsServiceClass))
 
 #define NM_SETTINGS_SERVICE_BUS "bus"
-#define NM_SETTINGS_SERVICE_SCOPE "scope"
 
 typedef struct {
 	GObject parent;

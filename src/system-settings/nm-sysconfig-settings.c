@@ -1312,10 +1312,8 @@ nm_sysconfig_settings_new (const char *config_file,
 	NMSysconfigSettings *self;
 	NMSysconfigSettingsPrivate *priv;
 
-	/* TODO remove the scope parameter. */
 	self = g_object_new (NM_TYPE_SYSCONFIG_SETTINGS,
 	                     NM_SETTINGS_SERVICE_BUS, bus,
-	                     NM_SETTINGS_SERVICE_SCOPE, NM_CONNECTION_SCOPE_SYSTEM,
 	                     NULL);
 	if (!self)
 		return NULL;
