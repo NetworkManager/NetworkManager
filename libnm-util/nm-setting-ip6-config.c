@@ -471,7 +471,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			             NM_SETTING_IP6_CONFIG_ADDRESSES);
 			return FALSE;
 		}
-	} else if (!strcmp (priv->method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
+	} else if (   !strcmp (priv->method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)
+	           || !strcmp (priv->method, NM_SETTING_IP6_CONFIG_METHOD_DHCP)) {
 		/* nothing to do */
 	} else {
 		g_set_error (error,
@@ -612,30 +613,34 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * NMSettingIP6Config:method:
 	 *
 	 * IPv6 configuration method.  If 'auto' is specified then the appropriate
-	 * automatic method (DHCP, PPP, router advertisement, etc) is used for the
-	 * interface and most other properties can be left unset.  If 'link-local'
-	 * is specified, then an IPv6 link-local address will be assigned to the
-	 * interface.  If 'manual' is specified, static IP addressing is used and
-	 * at least one IP address must be given in the 'addresses' property.  If
-	 * 'ignored' is specified, IPv6 configuration is not done. This property
-	 * must be set.  NOTE: the 'shared' method are not yet supported.
+	 * automatic method (DHCP, PPP, advertisement, etc) is used for the
+	 * interface and most other properties can be left unset.  To force the use
+	 * of DHCP only, specify 'dhcp'; this  method is only valid for ethernet-
+	 * based hardware.  If 'link-local' is specified, then an IPv6 link-local
+	 * address will be assigned to the interface.  If 'manual' is specified,
+	 * static IP addressing is used and at least one IP address must be given
+	 * in the 'addresses' property.  If 'ignored' is specified, IPv6
+	 * configuration is not done. This property must be set.  NOTE: the 'shared'
+	 * method are not yet supported.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_METHOD,
 		 g_param_spec_string (NM_SETTING_IP6_CONFIG_METHOD,
 						      "Method",
 						      "IPv6 configuration method.  If 'auto' is specified "
-						      "then the appropriate automatic method (DHCP, PPP, "
-						      "router advertisement, etc) is used for the "
-						      "interface and most other properties can be left "
-						      "unset.  If 'link-local' is specified, then an "
-						      "IPv6 link-local address will be assigned to the "
-						      "interface.  If 'manual' is specified, static IP "
-						      "addressing is used and at least one IP address "
-						      "must be given in the 'addresses' property.  If "
-						      "'ignored' is specified, IPv6 configuration is not "
-						      "done. This property must be set.  NOTE: the "
-						      "'shared' method are not yet supported.",
+						      "then the appropriate automatic method (PPP, router "
+						      "advertisement, etc) is used for the device and "
+						      "most other properties can be left unset.  To force "
+						      "the use of DHCP only, specify 'dhcp'; this method "
+						      "is only valid for ethernet-based hardware.  If "
+						      "'link-local' is specified, then an IPv6 link-local "
+						      "address will be assigned to the interface.  If "
+						      "'manual' is specified, static IP addressing is "
+						      "used and at least one IP address must be given in "
+						      " the 'addresses' property.  If 'ignored' is "
+						      "specified, IPv6 configuration is not done. This "
+						      "property must be set.  NOTE: the 'shared' method"
+						      "is not yet supported.",
 						      NULL,
 						      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
@@ -761,26 +766,26 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	/**
 	 * NMSettingIP6Config:ignore-auto-routes:
 	 *
-	 * When the method is set to 'auto' and this property is set to TRUE,
-	 * automatically configured routes are ignored and only routes specified
-	 * in #NMSettingIP6Config:routes, if any, are used.
+	 * When the method is set to 'auto' or 'dhcp' and this property is set to
+	 * TRUE, automatically configured routes are ignored and only routes
+	 * specified in #NMSettingIP6Config:routes, if any, are used.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_IGNORE_AUTO_ROUTES,
 		 g_param_spec_boolean (NM_SETTING_IP6_CONFIG_IGNORE_AUTO_ROUTES,
 						   "Ignore automatic routes",
-						   "When the method is set to 'auto' and this property "
-						   "is set to TRUE, automatically configured routes are "
-						   "ignored and only routes specified in the 'routes' "
-						   "property, if any, are used.",
+						   "When the method is set to 'auto' or 'dhcp' and this "
+						   "property is set to TRUE, automatically configured "
+						   "routes are ignored and only routes specified in the "
+						   "'routes' property, if any, are used.",
 						   FALSE,
 						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
 	 * NMSettingIP6Config:ignore-auto-dns:
 	 *
-	 * When the method is set to 'auto' and this property is set to TRUE,
-	 * automatically configured nameservers and search domains are ignored
+	 * When the method is set to 'auto' or 'dhcp' and this property is set to
+	 * TRUE, automatically configured nameservers and search domains are ignored
 	 * and only nameservers and search domains specified in
 	 * #NMSettingIP6Config:dns and #NMSettingIP6Config:dns-search, if any, are
 	 * used.
@@ -789,11 +794,11 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 		(object_class, PROP_IGNORE_AUTO_DNS,
 		 g_param_spec_boolean (NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS,
 						   "Ignore DHCPv6/RDNSS DNS",
-						   "When the method is set to 'auto' and this property "
-						   "is set to TRUE, automatically configured nameservers "
-						   "and search domains are ignored and only nameservers "
-						   "and search domains specified in 'dns' and 'dns-search' "
-						   "properties, if any, are used.",
+						   "When the method is set to 'auto' or 'dhcp' and this "
+						   "property is set to TRUE, automatically configured "
+						   "nameservers and search domains are ignored and only "
+						   "nameservers and search domains specified in the 'dns' "
+						   "and 'dns-search' properties, if any, are used.",
 						   FALSE,
 						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
