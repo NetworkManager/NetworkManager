@@ -102,6 +102,7 @@ typedef struct _NmCli {
 	GSList *user_connections;                         /* List of user connections */
 
 	gboolean should_wait;                             /* Indication that nmcli should not end yet */
+	gboolean nowait_flag;                             /* '--nowait' option; used for passing to callbacks */
 	NMCPrintOutput print_output;                      /* Output mode */
 	gboolean multiline_output;                        /* Multiline output instead of default tabular */
 	gboolean mode_specified;                          /* Whether tabular/multiline mode was specified via '--mode' option */
