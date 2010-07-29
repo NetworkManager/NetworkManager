@@ -3002,7 +3002,6 @@ nm_manager_get (const char *config_file,
 		g_object_unref (singleton);
 		return NULL;
 	}
-	nm_settings_service_export (NM_SETTINGS_SERVICE (priv->sys_settings));
 
 	priv->config_file = g_strdup (config_file);
 

@@ -27,7 +27,6 @@
 #define __NM_SYSCONFIG_SETTINGS_H__
 
 #include <nm-connection.h>
-#include <nm-settings-service.h>
 
 #include "nm-sysconfig-connection.h"
 #include "nm-system-config-interface.h"
@@ -40,14 +39,15 @@
 #define NM_IS_SYSCONFIG_SETTINGS_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_SYSCONFIG_SETTINGS))
 #define NM_SYSCONFIG_SETTINGS_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SYSCONFIG_SETTINGS, NMSysconfigSettingsClass))
 
+#define NM_SYSCONFIG_SETTINGS_BUS "bus"
 #define NM_SYSCONFIG_SETTINGS_UNMANAGED_SPECS "unmanaged-specs"
 
 typedef struct {
-	NMSettingsService parent_instance;
+	GObject parent_instance;
 } NMSysconfigSettings;
 
 typedef struct {
-	NMSettingsServiceClass parent_class;
+	GObjectClass parent_class;
 
 	/* Signals */
 	void (*properties_changed) (NMSysconfigSettings *self, GHashTable *properties);

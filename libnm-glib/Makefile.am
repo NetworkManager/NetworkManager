@@ -12,7 +12,6 @@ BUILT_SOURCES = \
 	nm-device-bt-bindings.h \
 	nm-exported-connection-glue.h \
 	nm-exported-connection-bindings.h \
-	nm-settings-glue.h \
 	nm-settings-bindings.h \
 	nm-settings-system-bindings.h \
 	nm-vpn-connection-bindings.h \
@@ -84,8 +83,7 @@ libnminclude_HEADERS = \
 	nm-remote-settings.h \
 	nm-remote-settings-system.h \
 	nm-settings-connection-interface.h \
-	nm-exported-connection.h \
-	nm-settings-service.h
+	nm-exported-connection.h
 
 libnm_glib_la_SOURCES = \
 	nm-object.c \
@@ -119,8 +117,7 @@ libnm_glib_la_SOURCES = \
 	nm-remote-settings.c \
 	nm-remote-settings-system.c \
 	nm-settings-connection-interface.c \
-	nm-exported-connection.c \
-	nm-settings-service.c
+	nm-exported-connection.c
 
 libnm_glib_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
@@ -165,9 +162,6 @@ nm-device-bt-bindings.h: $(top_srcdir)/introspection/nm-device-bt.xml
 
 nm-access-point-bindings.h: $(top_srcdir)/introspection/nm-access-point.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_access_point --mode=glib-client --output=$@ $<
-
-nm-settings-glue.h: $(top_srcdir)/introspection/nm-settings.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_settings --mode=glib-server --output=$@ $<
 
 nm-settings-bindings.h: $(top_srcdir)/introspection/nm-settings.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_settings --mode=glib-client --output=$@ $<
