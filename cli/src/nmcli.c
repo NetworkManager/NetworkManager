@@ -286,6 +286,7 @@ nmc_init (NmCli *nmc)
 	nmc->user_connections = NULL;
 
 	nmc->should_wait = FALSE;
+	nmc->nowait_flag = TRUE;
 	nmc->print_output = NMC_PRINT_NORMAL;
 	nmc->multiline_output = FALSE;
 	nmc->mode_specified = FALSE;

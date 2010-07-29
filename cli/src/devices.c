@@ -929,7 +929,7 @@ disconnect_device_cb (NMDevice *device, GError *error, gpointer user_data)
 		state = nm_device_get_state (device);
 		printf (_("Device state: %d (%s)\n"), state, device_state_to_string (state));
 
-		if (!nmc->should_wait || state == NM_DEVICE_STATE_DISCONNECTED) {
+		if (nmc->nowait_flag || state == NM_DEVICE_STATE_DISCONNECTED) {
 			/* Don't want to wait or device already disconnected */
 			quit ();
 		} else {
@@ -1015,7 +1015,10 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	nmc->should_wait = wait;
+	/* Use nowait_flag instead of should_wait because exitting has to be postponed till disconnect_device_cb()
+	 * is called, giving NM time to check our permissions */
+	nmc->nowait_flag = !wait;
+	nmc->should_wait = TRUE;
 	nm_device_disconnect (device, disconnect_device_cb, nmc);
 
 error:

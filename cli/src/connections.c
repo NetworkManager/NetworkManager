@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <errno.h>
 #include <signal.h>
 #include <netinet/ether.h>
@@ -1288,7 +1289,7 @@ activate_connection_cb (gpointer user_data, const char *path, GError *error)
 		printf (_("Active connection state: %s\n"), active_connection_state_to_string (state));
 		printf (_("Active connection path: %s\n"), orig_path);
 
-		if (!orig_nmc->should_wait || state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
+		if (orig_nmc->nowait_flag || state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
 			/* don't want to wait or already activated */
 			quit ();
 		} else {
@@ -1415,7 +1416,10 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	nmc->should_wait = wait;
+	/* Use nowait_flag instead of should_wait because exitting has to be postponed till active_connection_state_cb()
+	 * is called, giving NM time to check our permissions */
+	nmc->nowait_flag = !wait;
+	nmc->should_wait = TRUE;
 	nm_client_activate_connection (nmc->client,
 	                               is_system ? NM_DBUS_SERVICE_SYSTEM_SETTINGS : NM_DBUS_SERVICE_USER_SETTINGS,
 	                               con_path,
@@ -1504,6 +1508,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 	else {
 		fprintf (stderr, _("Warning: Connection not active\n"));
 	}
+	sleep (1);  /* Don't quit immediatelly and give NM time to check our permissions */
 
 error:
 	nmc->should_wait = FALSE;
