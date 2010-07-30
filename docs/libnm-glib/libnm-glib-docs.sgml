@@ -34,7 +34,6 @@
     <xi:include href="xml/nm-settings-connection-interface.xml"/>
     <xi:include href="xml/nm-settings-interface.xml"/>
     <xi:include href="xml/nm-settings-service.xml"/>
-    <xi:include href="xml/nm-settings-system-interface.xml"/>
     <xi:include href="xml/nm-types.xml"/>
     <xi:include href="xml/nm-vpn-connection.xml"/>
     <xi:include href="xml/nm-vpn-plugin.xml"/>

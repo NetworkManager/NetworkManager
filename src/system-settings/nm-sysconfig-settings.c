@@ -34,7 +34,6 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include <nm-settings-interface.h>
-#include <nm-settings-system-interface.h>
 
 #include <nm-setting-8021x.h>
 #include <nm-setting-bluetooth.h>
@@ -96,7 +95,6 @@ static void impl_settings_get_permissions (NMSysconfigSettings *self,
                                            DBusGMethodInvocation *context);
 
 #include "nm-settings-glue.h"
-#include "nm-settings-system-glue.h"
 
 static void unmanaged_specs_changed (NMSystemConfigInterface *config, gpointer user_data);
 
@@ -117,15 +115,11 @@ typedef struct {
 	GSList *unmanaged_specs;
 } NMSysconfigSettingsPrivate;
 
-static void settings_system_interface_init (NMSettingsSystemInterface *klass);
-
 static void settings_interface_init (NMSettingsInterface *klass);
 
 G_DEFINE_TYPE_WITH_CODE (NMSysconfigSettings, nm_sysconfig_settings, G_TYPE_OBJECT,
                          G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_INTERFACE,
-                                                settings_interface_init)
-                         G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_SYSTEM_INTERFACE,
-                                                settings_system_interface_init))
+                                                settings_interface_init))
 
 #define NM_SYSCONFIG_SETTINGS_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SYSCONFIG_SETTINGS, NMSysconfigSettingsPrivate))
 
@@ -391,7 +385,7 @@ hostname_changed (NMSystemConfigInterface *config,
                   GParamSpec *pspec,
                   gpointer user_data)
 {
-	g_object_notify (G_OBJECT (user_data), NM_SETTINGS_SYSTEM_INTERFACE_HOSTNAME);
+	g_object_notify (G_OBJECT (user_data), NM_SETTINGS_INTERFACE_HOSTNAME);
 }
 
 static void
@@ -613,7 +607,7 @@ typedef struct {
 
 	char *hostname;
 
-	NMSettingsSystemPermissions permissions;
+	NMSettingsPermissions permissions;
 	guint32 permissions_calls;
 } PolkitCall;
 
@@ -946,14 +940,14 @@ pk_authority_changed_cb (GObject *object, gpointer user_data)
 {
 	/* Let clients know they should re-check their authorization */
 	g_signal_emit_by_name (NM_SYSCONFIG_SETTINGS (user_data),
-                           NM_SETTINGS_SYSTEM_INTERFACE_CHECK_PERMISSIONS);
+	                       NM_SETTINGS_INTERFACE_CHECK_PERMISSIONS);
 }
 
 typedef struct {
 	PolkitCall *pk_call;
 	const char *pk_action;
 	GCancellable *cancellable;
-	NMSettingsSystemPermissions permission;
+	NMSettingsPermissions permission;
 	gboolean disposed;
 } PermissionsCall;
 
@@ -1025,14 +1019,14 @@ static void
 start_permission_check (NMSysconfigSettings *self,
                         PolkitCall *pk_call,
                         const char *pk_action,
-                        NMSettingsSystemPermissions permission)
+                        NMSettingsPermissions permission)
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 	PermissionsCall *call;
 
 	g_return_if_fail (pk_call != NULL);
 	g_return_if_fail (pk_action != NULL);
-	g_return_if_fail (permission != NM_SETTINGS_SYSTEM_PERMISSION_NONE);
+	g_return_if_fail (permission != NM_SETTINGS_PERMISSION_NONE);
 
 	call = g_malloc0 (sizeof (PermissionsCall));
 	call->pk_call = pk_call;
@@ -1068,32 +1062,32 @@ impl_settings_get_permissions (NMSysconfigSettings *self,
 	if (get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS)) {
 		start_permission_check (self, call,
 		                        NM_SYSCONFIG_POLICY_ACTION_CONNECTION_MODIFY,
-		                        NM_SETTINGS_SYSTEM_PERMISSION_CONNECTION_MODIFY);
+		                        NM_SETTINGS_PERMISSION_CONNECTION_MODIFY);
 	}
 
 	/* Only check for hostname-modify if one of our plugins supports it. */
 	if (get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME)) {
 		start_permission_check (self, call,
 		                        NM_SYSCONFIG_POLICY_ACTION_HOSTNAME_MODIFY,
-		                        NM_SETTINGS_SYSTEM_PERMISSION_HOSTNAME_MODIFY);
+		                        NM_SETTINGS_PERMISSION_HOSTNAME_MODIFY);
 	}
 
 	// FIXME: hook these into plugin permissions like the modify permissions */
 	start_permission_check (self, call,
 	                        NM_SYSCONFIG_POLICY_ACTION_WIFI_SHARE_OPEN,
-	                        NM_SETTINGS_SYSTEM_PERMISSION_WIFI_SHARE_OPEN);
+	                        NM_SETTINGS_PERMISSION_WIFI_SHARE_OPEN);
 	start_permission_check (self, call,
 	                        NM_SYSCONFIG_POLICY_ACTION_WIFI_SHARE_PROTECTED,
-	                        NM_SETTINGS_SYSTEM_PERMISSION_WIFI_SHARE_PROTECTED);
+	                        NM_SETTINGS_PERMISSION_WIFI_SHARE_PROTECTED);
 }
 
 static gboolean
-get_permissions (NMSettingsSystemInterface *settings,
-                 NMSettingsSystemGetPermissionsFunc callback,
+get_permissions (NMSettingsInterface *settings,
+                 NMSettingsGetPermissionsFunc callback,
                  gpointer user_data)
 {
 	NMSysconfigSettings *self = NM_SYSCONFIG_SETTINGS (settings);
-	NMSettingsSystemPermissions permissions = NM_SETTINGS_SYSTEM_PERMISSION_NONE;
+	NMSettingsPermissions permissions = NM_SETTINGS_PERMISSION_NONE;
 
 	/* Local caller (ie, NM) gets full permissions by default because it doesn't
 	 * need authorization.  However, permissions are still subject to plugin's
@@ -1103,15 +1097,15 @@ get_permissions (NMSettingsSystemInterface *settings,
 
 	/* Only check for connection-modify if one of our plugins supports it. */
 	if (get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS))
-		permissions |= NM_SETTINGS_SYSTEM_PERMISSION_CONNECTION_MODIFY;
+		permissions |= NM_SETTINGS_PERMISSION_CONNECTION_MODIFY;
 
 	/* Only check for hostname-modify if one of our plugins supports it. */
 	if (get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME))
-		permissions |= NM_SETTINGS_SYSTEM_PERMISSION_HOSTNAME_MODIFY;
+		permissions |= NM_SETTINGS_PERMISSION_HOSTNAME_MODIFY;
 
 	// FIXME: hook these into plugin permissions like the modify permissions */
-	permissions |= NM_SETTINGS_SYSTEM_PERMISSION_WIFI_SHARE_OPEN;
-	permissions |= NM_SETTINGS_SYSTEM_PERMISSION_WIFI_SHARE_PROTECTED;
+	permissions |= NM_SETTINGS_PERMISSION_WIFI_SHARE_OPEN;
+	permissions |= NM_SETTINGS_PERMISSION_WIFI_SHARE_PROTECTED;
 
 	callback (settings, permissions, NULL, user_data);
 	return TRUE;
@@ -1536,20 +1530,12 @@ finalize (GObject *object)
 }
 
 static void
-settings_system_interface_init (NMSettingsSystemInterface *iface)
-{
-	iface->get_permissions = get_permissions;
-
-	dbus_g_object_type_install_info (G_TYPE_FROM_INTERFACE (iface),
-	                                 &dbus_glib_nm_settings_system_object_info);
-}
-
-static void
 settings_interface_init (NMSettingsInterface *iface)
 {
 	iface->add_connection = settings_interface_add_connection;
 	iface->list_connections = list_connections;	
 	iface->get_connection_by_path = get_connection_by_path;
+	iface->get_permissions = get_permissions;
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_INTERFACE (iface),
 	                                 &dbus_glib_nm_settings_object_info);
@@ -1595,14 +1581,14 @@ get_property (GObject *object, guint prop_id,
 			copy = g_slist_append (copy, g_strdup (iter->data));
 		g_value_take_boxed (value, copy);
 		break;
-	case NM_SETTINGS_SYSTEM_INTERFACE_PROP_HOSTNAME:
+	case NM_SETTINGS_INTERFACE_PROP_HOSTNAME:
 		g_value_take_string (value, nm_sysconfig_settings_get_hostname (self));
 
 		/* Don't ever pass NULL through D-Bus */
 		if (!g_value_get_string (value))
 			g_value_set_static_string (value, "");
 		break;
-	case NM_SETTINGS_SYSTEM_INTERFACE_PROP_CAN_MODIFY:
+	case NM_SETTINGS_INTERFACE_PROP_CAN_MODIFY:
 		g_value_set_boolean (value, !!get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS));
 		break;
 	default:
@@ -1649,12 +1635,12 @@ nm_sysconfig_settings_class_init (NMSysconfigSettingsClass *class)
 							 G_PARAM_READABLE));
 
 	g_object_class_override_property (object_class,
-									  NM_SETTINGS_SYSTEM_INTERFACE_PROP_HOSTNAME,
-									  NM_SETTINGS_SYSTEM_INTERFACE_HOSTNAME);
+									  NM_SETTINGS_INTERFACE_PROP_HOSTNAME,
+									  NM_SETTINGS_INTERFACE_HOSTNAME);
 
 	g_object_class_override_property (object_class,
-									  NM_SETTINGS_SYSTEM_INTERFACE_PROP_CAN_MODIFY,
-									  NM_SETTINGS_SYSTEM_INTERFACE_CAN_MODIFY);
+									  NM_SETTINGS_INTERFACE_PROP_CAN_MODIFY,
+									  NM_SETTINGS_INTERFACE_CAN_MODIFY);
 
 	/* signals */
 	signals[PROPERTIES_CHANGED] = 
@@ -1667,7 +1653,7 @@ nm_sysconfig_settings_class_init (NMSysconfigSettingsClass *class)
 	                              G_TYPE_NONE, 1, DBUS_TYPE_G_MAP_OF_VARIANT);
 
 	dbus_g_error_domain_register (NM_SYSCONFIG_SETTINGS_ERROR,
-	                              NM_DBUS_IFACE_SETTINGS_SYSTEM,
+	                              NM_DBUS_IFACE_SETTINGS,
 	                              NM_TYPE_SYSCONFIG_SETTINGS_ERROR);
 
 	dbus_g_error_domain_register (NM_SETTINGS_INTERFACE_ERROR,

@@ -53,7 +53,6 @@
 #include "nm-sysconfig-settings.h"
 #include "nm-secrets-provider-interface.h"
 #include "nm-settings-interface.h"
-#include "nm-settings-system-interface.h"
 #include "nm-manager-auth.h"
 
 #define NM_AUTOIP_DBUS_SERVICE "org.freedesktop.nm_avahi_autoipd"
@@ -3014,7 +3013,7 @@ nm_manager_get (const char *config_file,
 
 	g_signal_connect (priv->sys_settings, "notify::" NM_SYSCONFIG_SETTINGS_UNMANAGED_SPECS,
 	                  G_CALLBACK (system_unmanaged_devices_changed_cb), singleton);
-	g_signal_connect (priv->sys_settings, "notify::" NM_SETTINGS_SYSTEM_INTERFACE_HOSTNAME,
+	g_signal_connect (priv->sys_settings, "notify::" NM_SETTINGS_INTERFACE_HOSTNAME,
 	                  G_CALLBACK (system_hostname_changed_cb), singleton);
 	g_signal_connect (priv->sys_settings, "new-connection",
 	                  G_CALLBACK (system_new_connection_cb), singleton);

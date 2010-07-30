@@ -51,7 +51,6 @@ IGNORE_HFILES= \
 	nm-ip6-config-bindings.h \
 	nm-settings-bindings.h \
 	nm-settings-glue.h \
-	nm-settings-system-bindings.h \
 	nm-vpn-connection-bindings.h \
 	nm-vpn-plugin-glue.h
 

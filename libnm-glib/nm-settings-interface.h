@@ -47,19 +47,48 @@ GQuark nm_settings_interface_error_quark (void);
 GType nm_settings_interface_error_get_type (void);
 
 
+typedef enum {
+	NM_SETTINGS_PERMISSION_NONE = 0x0,
+	NM_SETTINGS_PERMISSION_CONNECTION_MODIFY = 0x1,
+	NM_SETTINGS_PERMISSION_WIFI_SHARE_PROTECTED = 0x2,
+	NM_SETTINGS_PERMISSION_WIFI_SHARE_OPEN = 0x4,
+	NM_SETTINGS_PERMISSION_HOSTNAME_MODIFY = 0x8
+} NMSettingsPermissions;
+
+
 #define NM_TYPE_SETTINGS_INTERFACE               (nm_settings_interface_get_type ())
 #define NM_SETTINGS_INTERFACE(obj)               (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTINGS_INTERFACE, NMSettingsInterface))
 #define NM_IS_SETTINGS_INTERFACE(obj)            (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_SETTINGS_INTERFACE))
 #define NM_SETTINGS_INTERFACE_GET_INTERFACE(obj) (G_TYPE_INSTANCE_GET_INTERFACE ((obj), NM_TYPE_SETTINGS_INTERFACE, NMSettingsInterface))
 
-#define NM_SETTINGS_INTERFACE_NEW_CONNECTION   "new-connection"
-#define NM_SETTINGS_INTERFACE_CONNECTIONS_READ "connections-read"
+#define NM_SETTINGS_INTERFACE_NEW_CONNECTION    "new-connection"
+#define NM_SETTINGS_INTERFACE_CONNECTIONS_READ  "connections-read"
+#define NM_SETTINGS_INTERFACE_CHECK_PERMISSIONS "check-permissions"
+
+#define NM_SETTINGS_INTERFACE_HOSTNAME          "hostname"
+#define NM_SETTINGS_INTERFACE_CAN_MODIFY        "can-modify"
+
+typedef enum {
+	NM_SETTINGS_INTERFACE_PROP_FIRST = 0x1000,
+
+	NM_SETTINGS_INTERFACE_PROP_HOSTNAME = NM_SETTINGS_INTERFACE_PROP_FIRST,
+	NM_SETTINGS_INTERFACE_PROP_CAN_MODIFY
+} NMSettingsInterfaceProp;
 
 typedef struct _NMSettingsInterface NMSettingsInterface;
 
 typedef void (*NMSettingsAddConnectionFunc) (NMSettingsInterface *settings,
                                              GError *error,
                                              gpointer user_data);
+
+typedef void (*NMSettingsSaveHostnameFunc) (NMSettingsInterface *settings,
+                                            GError *error,
+                                            gpointer user_data);
+
+typedef void (*NMSettingsGetPermissionsFunc) (NMSettingsInterface *settings,
+                                              NMSettingsPermissions permissions,
+                                              GError *error,
+                                              gpointer user_data);
 
 struct _NMSettingsInterface {
 	GTypeInterface g_iface;
@@ -75,12 +104,23 @@ struct _NMSettingsInterface {
 	                            NMConnection *connection,
 	                            NMSettingsAddConnectionFunc callback,
 	                            gpointer user_data);
+	
+	gboolean (*save_hostname) (NMSettingsInterface *settings,
+	                           const char *hostname,
+	                           NMSettingsSaveHostnameFunc callback,
+	                           gpointer user_data);
+
+	gboolean (*get_permissions) (NMSettingsInterface *settings,
+	                             NMSettingsGetPermissionsFunc callback,
+	                             gpointer user_data);
 
 	/* Signals */
 	void (*new_connection) (NMSettingsInterface *settings,
 	                        NMSettingsConnectionInterface *connection);
 
 	void (*connections_read) (NMSettingsInterface *settings);
+
+	void (*check_permissions) (NMSettingsInterface *settings);
 
 	/* Padding for future expansion */
 	void (*_reserved1) (void);
@@ -103,6 +143,15 @@ gboolean nm_settings_interface_add_connection (NMSettingsInterface *settings,
                                                NMConnection *connection,
                                                NMSettingsAddConnectionFunc callback,
                                                gpointer user_data);
+
+gboolean nm_settings_interface_save_hostname (NMSettingsInterface *settings,
+                                              const char *hostname,
+                                              NMSettingsSaveHostnameFunc callback,
+                                              gpointer user_data);
+
+gboolean nm_settings_interface_get_permissions (NMSettingsInterface *settings,
+                                                NMSettingsGetPermissionsFunc callback,
+                                                gpointer user_data);
 
 G_END_DECLS
 
