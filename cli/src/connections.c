@@ -45,7 +45,6 @@
 #include <nm-device-bt.h>
 //#include <nm-device-olpc-mesh.h>
 #include <nm-remote-settings.h>
-#include <nm-remote-settings-system.h>
 #include <nm-settings-interface.h>
 #include <nm-settings-connection-interface.h>
 #include <nm-vpn-connection.h>
@@ -1529,7 +1528,7 @@ do_connections (NmCli *nmc, int argc, char **argv)
 	}
 
 	/* get system settings */
-	if (!(nmc->system_settings = nm_remote_settings_system_new (bus))) {
+	if (!(nmc->system_settings = nm_remote_settings_new (bus))) {
 		g_string_printf (nmc->return_text, _("Error: Could not get system settings."));
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		return nmc->return_value;

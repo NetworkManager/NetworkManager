@@ -81,7 +81,6 @@ libnminclude_HEADERS = \
 	nm-settings-interface.h \
 	nm-settings-system-interface.h \
 	nm-remote-settings.h \
-	nm-remote-settings-system.h \
 	nm-settings-connection-interface.h \
 	nm-exported-connection.h
 
@@ -115,7 +114,6 @@ libnm_glib_la_SOURCES = \
 	nm-settings-interface.c \
 	nm-settings-system-interface.c \
 	nm-remote-settings.c \
-	nm-remote-settings-system.c \
 	nm-settings-connection-interface.c \
 	nm-exported-connection.c
 
