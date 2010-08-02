@@ -4,16 +4,17 @@
 #
 # Amanpreet Singh Alam <aalam@redhat.com>, 2004.
 # Amanpreet Singh Alam <amanpreetalam@yahoo.com>, 2005.
-# A S Alam <aalam@users.sf.net>, 2007.
+# A S Alam <aalam@users.sf.net>, 2007, 2010.
 # Jaswinder Singh <jsingh@redhat.com>, 2010.
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager.HEAD\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-05-06 14:31+0530\n"
-"PO-Revision-Date: 2010-05-07 10:40+0530\n"
-"Last-Translator: Jaswinder Singh <jsingh@redhat.com>\n"
-"Language-Team: Punjabi/Panjabi <kde-i18n-doc@kde.org>\n"
+"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug."
+"cgi?product=NetworkManager&component=general\n"
+"POT-Creation-Date: 2010-06-28 08:52+0000\n"
+"PO-Revision-Date: 2010-08-01 17:05+0530\n"
+"Last-Translator: A S Alam <aalam@users.sf.net>\n"
+"Language-Team: Punjabi/Panjabi <punjabi-users@lists.sf.net>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -144,19 +145,19 @@ msgstr "ਕਦੇ ਨਹੀਂ"
 #: ../cli/src/connections.c:602 ../cli/src/connections.c:605
 #: ../cli/src/devices.c:388 ../cli/src/devices.c:513 ../cli/src/devices.c:539
 #: ../cli/src/devices.c:540 ../cli/src/devices.c:541 ../cli/src/devices.c:542
-#: ../cli/src/devices.c:543 ../cli/src/settings.c:504
-#: ../cli/src/settings.c:544 ../cli/src/settings.c:643
-#: ../cli/src/settings.c:912 ../cli/src/settings.c:913
-#: ../cli/src/settings.c:915 ../cli/src/settings.c:917
-#: ../cli/src/settings.c:1042 ../cli/src/settings.c:1043
-#: ../cli/src/settings.c:1044 ../cli/src/settings.c:1123
-#: ../cli/src/settings.c:1124 ../cli/src/settings.c:1125
-#: ../cli/src/settings.c:1126 ../cli/src/settings.c:1127
-#: ../cli/src/settings.c:1128 ../cli/src/settings.c:1129
-#: ../cli/src/settings.c:1130 ../cli/src/settings.c:1131
-#: ../cli/src/settings.c:1132 ../cli/src/settings.c:1133
-#: ../cli/src/settings.c:1134 ../cli/src/settings.c:1135
-#: ../cli/src/settings.c:1210
+#: ../cli/src/devices.c:543 ../cli/src/settings.c:508
+#: ../cli/src/settings.c:551 ../cli/src/settings.c:652
+#: ../cli/src/settings.c:926 ../cli/src/settings.c:927
+#: ../cli/src/settings.c:929 ../cli/src/settings.c:931
+#: ../cli/src/settings.c:1056 ../cli/src/settings.c:1057
+#: ../cli/src/settings.c:1058 ../cli/src/settings.c:1137
+#: ../cli/src/settings.c:1138 ../cli/src/settings.c:1139
+#: ../cli/src/settings.c:1140 ../cli/src/settings.c:1141
+#: ../cli/src/settings.c:1142 ../cli/src/settings.c:1143
+#: ../cli/src/settings.c:1144 ../cli/src/settings.c:1145
+#: ../cli/src/settings.c:1146 ../cli/src/settings.c:1147
+#: ../cli/src/settings.c:1148 ../cli/src/settings.c:1149
+#: ../cli/src/settings.c:1224
 msgid "yes"
 msgstr "ਹਾਂ"
 
@@ -164,19 +165,19 @@ msgstr "ਹਾਂ"
 #: ../cli/src/connections.c:602 ../cli/src/connections.c:605
 #: ../cli/src/devices.c:388 ../cli/src/devices.c:513 ../cli/src/devices.c:539
 #: ../cli/src/devices.c:540 ../cli/src/devices.c:541 ../cli/src/devices.c:542
-#: ../cli/src/devices.c:543 ../cli/src/settings.c:504
-#: ../cli/src/settings.c:506 ../cli/src/settings.c:544
-#: ../cli/src/settings.c:643 ../cli/src/settings.c:912
-#: ../cli/src/settings.c:913 ../cli/src/settings.c:915
-#: ../cli/src/settings.c:917 ../cli/src/settings.c:1042
-#: ../cli/src/settings.c:1043 ../cli/src/settings.c:1044
-#: ../cli/src/settings.c:1123 ../cli/src/settings.c:1124
-#: ../cli/src/settings.c:1125 ../cli/src/settings.c:1126
-#: ../cli/src/settings.c:1127 ../cli/src/settings.c:1128
-#: ../cli/src/settings.c:1129 ../cli/src/settings.c:1130
-#: ../cli/src/settings.c:1131 ../cli/src/settings.c:1132
-#: ../cli/src/settings.c:1133 ../cli/src/settings.c:1134
-#: ../cli/src/settings.c:1135 ../cli/src/settings.c:1210
+#: ../cli/src/devices.c:543 ../cli/src/settings.c:508
+#: ../cli/src/settings.c:510 ../cli/src/settings.c:551
+#: ../cli/src/settings.c:652 ../cli/src/settings.c:926
+#: ../cli/src/settings.c:927 ../cli/src/settings.c:929
+#: ../cli/src/settings.c:931 ../cli/src/settings.c:1056
+#: ../cli/src/settings.c:1057 ../cli/src/settings.c:1058
+#: ../cli/src/settings.c:1137 ../cli/src/settings.c:1138
+#: ../cli/src/settings.c:1139 ../cli/src/settings.c:1140
+#: ../cli/src/settings.c:1141 ../cli/src/settings.c:1142
+#: ../cli/src/settings.c:1143 ../cli/src/settings.c:1144
+#: ../cli/src/settings.c:1145 ../cli/src/settings.c:1146
+#: ../cli/src/settings.c:1147 ../cli/src/settings.c:1148
+#: ../cli/src/settings.c:1149 ../cli/src/settings.c:1224
 msgid "no"
 msgstr "ਨਹੀਂ"
 
@@ -218,17 +219,17 @@ msgstr "ਗਲਤੀ: ਕੋਈ ਢੁੱਕਵਾਂ ਪੈਰਾਮੀਟਰ �
 #: ../cli/src/devices.c:1192 ../cli/src/network-manager.c:274
 #, c-format
 msgid "Error: %s."
-msgstr "ਗਲਤੀ: %s."
+msgstr "ਗਲਤੀ: %s"
 
 #: ../cli/src/connections.c:649
 #, c-format
 msgid "Error: 'con status': %s"
-msgstr "Error: 'con status': %s"
+msgstr "ਗਲਤੀ: 'con status': %s"
 
 #: ../cli/src/connections.c:651
 #, c-format
 msgid "Error: 'con status': %s; allowed fields: %s"
-msgstr "Error: 'con status': %s; allowed fields: %s"
+msgstr "ਗਲਤੀ: 'con status': %s; allowed fields: %s"
 
 #: ../cli/src/connections.c:658
 msgid "Active connections"
@@ -247,7 +248,7 @@ msgstr "ਕੋਈ ਚਾਲੂ ਕੁਨੈਕਸ਼ਨ ਜਾਂ ਜੰਤਰ �
 #: ../cli/src/connections.c:1084
 #, c-format
 msgid "device '%s' not compatible with connection '%s'"
-msgstr "device '%s' not compatible with connection '%s'"
+msgstr "ਜੰਤਰ '%s' ਕੁਨੈਕਸ਼ਨ '%s' ਨਾਲ ਅਨੁਕੂਲ ਨਹੀਂ ਹੈ"
 
 #: ../cli/src/connections.c:1086
 #, c-format
@@ -265,7 +266,7 @@ msgstr "ਚਾਲੂ ਕੀਤਾ"
 #: ../cli/src/connections.c:1102 ../cli/src/connections.c:1125
 #: ../cli/src/connections.c:1158 ../cli/src/devices.c:224
 #: ../cli/src/devices.c:514 ../cli/src/network-manager.c:92
-#: ../cli/src/network-manager.c:145 ../cli/src/settings.c:469
+#: ../cli/src/network-manager.c:145 ../cli/src/settings.c:473
 msgid "unknown"
 msgstr "ਅਣਜਾਣ"
 
@@ -358,7 +359,7 @@ msgstr "ਕੁਨੈਕਸ਼ਨ ਚਾਲੂ ਕੀਤਾ\n"
 #: ../cli/src/connections.c:1176
 #, c-format
 msgid "Error: Connection activation failed."
-msgstr "ਗਲਤ: ਕੁਨੈਕਸ਼ਨ ਚਾਲੂ ਕਰਨ ਲਈ ਫੇਲ੍ਹ ਹੈ।"
+msgstr "ਗਲਤੀ: ਕੁਨੈਕਸ਼ਨ ਚਾਲੂ ਕਰਨ ਲਈ ਫੇਲ੍ਹ ਹੈ।"
 
 #: ../cli/src/connections.c:1195
 #, c-format
@@ -454,7 +455,7 @@ msgstr "ਗਲਤੀ: ਕੁਨੈਕਸ਼ਨ ਨਹੀਂ ਲਿਆ ਜਾ ਸ
 #. 9
 #: ../cli/src/devices.c:60 ../cli/src/devices.c:86 ../cli/src/devices.c:162
 msgid "DEVICE"
-msgstr "DEVICE"
+msgstr "ਜੰਤਰ"
 
 #. 1
 #. 4
@@ -462,21 +463,21 @@ msgstr "DEVICE"
 #: ../cli/src/devices.c:62 ../cli/src/devices.c:90
 #: ../cli/src/network-manager.c:36
 msgid "STATE"
-msgstr "STATE"
+msgstr "ਹਾਲਤ"
 
 #: ../cli/src/devices.c:71
 msgid "GENERAL"
-msgstr "GENERAL"
+msgstr "ਆਮ"
 
 #. 0
 #: ../cli/src/devices.c:72
 msgid "CAPABILITIES"
-msgstr "CAPABILITIES"
+msgstr "ਸਮਰੱਥਾ"
 
 #. 1
 #: ../cli/src/devices.c:73
 msgid "WIFI-PROPERTIES"
-msgstr "WIFI-PROPERTIES"
+msgstr "ਵਾਈਫਾਈ-ਵਿਸ਼ੇਸ਼ਤਾ"
 
 #. 2
 #: ../cli/src/devices.c:74
@@ -486,12 +487,12 @@ msgstr "AP"
 #. 3
 #: ../cli/src/devices.c:75
 msgid "WIRED-PROPERTIES"
-msgstr "WIRED-PROPERTIES"
+msgstr "ਤਾਰ-ਵਿਸ਼ੇਸ਼ਤਾ"
 
 #. 4
 #: ../cli/src/devices.c:76
 msgid "IP4-SETTINGS"
-msgstr "IP4-SETTINGS"
+msgstr "IP4-ਸੈਟਿੰਗ"
 
 #. 5
 #: ../cli/src/devices.c:77
@@ -501,7 +502,7 @@ msgstr "IP4-DNS"
 #. 2
 #: ../cli/src/devices.c:88
 msgid "DRIVER"
-msgstr "DRIVER"
+msgstr "ਡਰਾਇਵਰ"
 
 #. 3
 #: ../cli/src/devices.c:89
@@ -511,17 +512,17 @@ msgstr "HWADDR"
 #. 0
 #: ../cli/src/devices.c:99
 msgid "CARRIER-DETECT"
-msgstr "CARRIER-DETECT"
+msgstr "ਕੈਰੀਅਰ-ਖੋਜ"
 
 #. 1
 #: ../cli/src/devices.c:100
 msgid "SPEED"
-msgstr "SPEED"
+msgstr "ਸਪੀਡ"
 
 #. 0
 #: ../cli/src/devices.c:109
 msgid "CARRIER"
-msgstr "CARRIER"
+msgstr "ਕੈਰੀਅਰ"
 
 #. 0
 #: ../cli/src/devices.c:119
@@ -551,17 +552,17 @@ msgstr "CCMP"
 #. 0
 #: ../cli/src/devices.c:132
 msgid "ADDRESS"
-msgstr "ADDRESS"
+msgstr "ਐਡਰੈੱਸ"
 
 #. 1
 #: ../cli/src/devices.c:133
 msgid "PREFIX"
-msgstr "PREFIX"
+msgstr "ਪ੍ਰੀ-ਫਿਕਸ"
 
 #. 2
 #: ../cli/src/devices.c:134
 msgid "GATEWAY"
-msgstr "GATEWAY"
+msgstr "ਗੇਟਵੇ"
 
 #. 0
 #: ../cli/src/devices.c:143
@@ -581,27 +582,27 @@ msgstr "BSSID"
 #. 2
 #: ../cli/src/devices.c:155
 msgid "MODE"
-msgstr "MODE"
+msgstr "ਮੋਡ"
 
 #. 3
 #: ../cli/src/devices.c:156
 msgid "FREQ"
-msgstr "FREQ"
+msgstr "ਫਰੀਕਿਊਂਸੀ"
 
 #. 4
 #: ../cli/src/devices.c:157
 msgid "RATE"
-msgstr "RATE"
+msgstr "ਰੇਟ"
 
 #. 5
 #: ../cli/src/devices.c:158
 msgid "SIGNAL"
-msgstr "SIGNAL"
+msgstr "ਸਿਗਨਲ"
 
 #. 6
 #: ../cli/src/devices.c:159
 msgid "SECURITY"
-msgstr "SECURITY"
+msgstr "ਸੁਰੱਖਿਆ"
 
 #. 7
 #: ../cli/src/devices.c:160
@@ -616,7 +617,7 @@ msgstr "RSN-FLAGS"
 #. 10
 #: ../cli/src/devices.c:163
 msgid "ACTIVE"
-msgstr "ACTIVE"
+msgstr "ਚਾਲੂ"
 
 #: ../cli/src/devices.c:186
 #, c-format
@@ -647,7 +648,7 @@ msgstr "ਬਿਨ-ਪਰਬੰਧ"
 
 #: ../cli/src/devices.c:208
 msgid "unavailable"
-msgstr "ਅਣ-ਉਪਲੱਬਧ"
+msgstr "ਨਾ-ਉਪਲੱਬਧ"
 
 #: ../cli/src/devices.c:210 ../cli/src/network-manager.c:89
 msgid "disconnected"
@@ -718,11 +719,11 @@ msgstr "WPA2 "
 
 #: ../cli/src/devices.c:371
 msgid "Enterprise "
-msgstr "Enterprise "
+msgstr "ਇੰਟਰਪ੍ਰਾਈਜ਼ "
 
 #: ../cli/src/devices.c:380
 msgid "Ad-Hoc"
-msgstr "Ad-Hoc"
+msgstr "ਐਡ-ਹਾਕ"
 
 #: ../cli/src/devices.c:380
 msgid "Infrastructure"
@@ -731,12 +732,12 @@ msgstr "ਇੰਫਰਾਸਟੱਕਚਰ"
 #: ../cli/src/devices.c:442
 #, c-format
 msgid "Error: 'dev list': %s"
-msgstr "Error: 'dev list': %s"
+msgstr "ਗਲਤੀ: 'dev list': %s"
 
 #: ../cli/src/devices.c:444
 #, c-format
 msgid "Error: 'dev list': %s; allowed fields: %s"
-msgstr "Error: 'dev list': %s; allowed fields: %s"
+msgstr "ਗਲਤੀ: 'dev list': %s; ਮਨਜ਼ੂਰ ਖੇਤਰ: %s"
 
 #: ../cli/src/devices.c:453
 msgid "Device details"
@@ -768,12 +769,12 @@ msgstr "ਬੰਦ"
 #: ../cli/src/devices.c:710
 #, c-format
 msgid "Error: 'dev status': %s"
-msgstr "Error: 'dev status': %s"
+msgstr "ਗਲਤੀ: 'dev status': %s"
 
 #: ../cli/src/devices.c:712
 #, c-format
 msgid "Error: 'dev status': %s; allowed fields: %s"
-msgstr "Error: 'dev status': %s; allowed fields: %s"
+msgstr "ਗਲਤੀ: 'dev status': %s; ਮਨਜ਼ੂਰ ਖੇਤਰ: %s"
 
 #: ../cli/src/devices.c:719
 msgid "Status of devices"
@@ -812,12 +813,12 @@ msgstr "ਗਲਤੀ: iface ਦੇਣ ਲਈ ਫੇਲ੍ਹ ਹੈ।"
 #: ../cli/src/devices.c:1011
 #, c-format
 msgid "Error: 'dev wifi': %s"
-msgstr "Error: 'dev wifi': %s"
+msgstr "ਗਲਤੀ: 'dev wifi': %s"
 
 #: ../cli/src/devices.c:1013
 #, c-format
 msgid "Error: 'dev wifi': %s; allowed fields: %s"
-msgstr "Error: 'dev wifi': %s; allowed fields: %s"
+msgstr "ਗਲਤੀ: 'dev wifi': %s; ਮਨਜ਼ੂਰ ਖੇਤਰ: %s"
 
 #: ../cli/src/devices.c:1020
 msgid "WiFi scan list"
@@ -845,22 +846,22 @@ msgstr "ਗਲਤੀ: 'dev' ਕਮਾਂਡ '%s' ਢੁੱਕਵੀਂ ਨਹੀ
 
 #: ../cli/src/network-manager.c:35
 msgid "RUNNING"
-msgstr "RUNNING"
+msgstr "ਚੱਲ ਰਿਹਾ ਹੈ"
 
 #. 1
 #: ../cli/src/network-manager.c:37
 msgid "WIFI-HARDWARE"
-msgstr "WIFI-HARDWARE"
+msgstr "ਵਾਈਫਾਈ ਹਾਰਡਵੇਅਰ"
 
 #. 2
 #: ../cli/src/network-manager.c:38
 msgid "WIFI"
-msgstr "WIFI"
+msgstr "ਵਾਈਫਾਈ"
 
 #. 3
 #: ../cli/src/network-manager.c:39
 msgid "WWAN-HARDWARE"
-msgstr "WWAN-HARDWARE"
+msgstr "WWAN-ਹਾਰਡਵੇਅਰ"
 
 #. 4
 #: ../cli/src/network-manager.c:40
@@ -903,12 +904,12 @@ msgstr "ਕੁਨੈਕਟ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ"
 #: ../cli/src/network-manager.c:125
 #, c-format
 msgid "Error: 'nm status': %s"
-msgstr "Error: 'nm status': %s"
+msgstr "ਗਲਤੀ: 'nm status': %s"
 
 #: ../cli/src/network-manager.c:127
 #, c-format
 msgid "Error: 'nm status': %s; allowed fields: %s"
-msgstr "Error: 'nm status': %s; allowed fields: %s"
+msgstr "ਗਲਤੀ: 'nm status': %s; ਮਨਜ਼ੂਰ ਖੇਤਰ: %s"
 
 #: ../cli/src/network-manager.c:134
 msgid "NetworkManager status"
@@ -938,11 +939,11 @@ msgstr "ਨਹੀਂ ਚੱਲ ਰਿਹਾ ਹੈ"
 #: ../cli/src/network-manager.c:201 ../cli/src/network-manager.c:233
 #, c-format
 msgid "Error: '--fields' value '%s' is not valid here; allowed fields: %s"
-msgstr "Error: '--fields' value '%s' is not valid here; allowed fields: %s"
+msgstr "ਗਲਤੀ: '--fields' value '%s' is not valid here; allowed fields: %s"
 
 #: ../cli/src/network-manager.c:209
 msgid "WiFi enabled"
-msgstr "WiFi enabled"
+msgstr "ਵਾਈਫਾਈ ਚਾਲੂ ਹੈ"
 
 #: ../cli/src/network-manager.c:220
 #, c-format
@@ -951,7 +952,7 @@ msgstr "ਗਲਤੀ: ਅਢੁੱਕਵਾਂ 'wifi' ਪੈਰਾਮੀਟਰ: 
 
 #: ../cli/src/network-manager.c:241
 msgid "WWAN enabled"
-msgstr "WWAN enabled"
+msgstr "WWAN ਚਾਲੂ ਹੈ"
 
 #: ../cli/src/network-manager.c:252
 #, c-format
@@ -1005,27 +1006,27 @@ msgstr ""
 #: ../cli/src/nmcli.c:113
 #, c-format
 msgid "Error: Object '%s' is unknown, try 'nmcli help'."
-msgstr "Error: Object '%s' is unknown, try 'nmcli help'."
+msgstr "ਗਲਤੀ: ਆਬਜੈਕਟ '%s' ਅਣਜਾਣ ਹੈ, 'nmcli help' ਵਰਤੋਂ।"
 
 #: ../cli/src/nmcli.c:143
 #, c-format
 msgid "Error: Option '--terse' is specified the second time."
-msgstr "Error: Option '--terse' is specified the second time."
+msgstr "ਗਲਤੀ: ਚੋਣ '--terse' ਦੂਜੀ ਵਾਰ ਦਿੱਤੀ ਗਈ।"
 
 #: ../cli/src/nmcli.c:148
 #, c-format
 msgid "Error: Option '--terse' is mutually exclusive with '--pretty'."
-msgstr "Error: Option '--terse' is mutually exclusive with '--pretty'."
+msgstr "ਗਲਤੀ: Option '--terse' is mutually exclusive with '--pretty'."
 
 #: ../cli/src/nmcli.c:156
 #, c-format
 msgid "Error: Option '--pretty' is specified the second time."
-msgstr "Error: Option '--pretty' is specified the second time."
+msgstr "ਗਲਤੀ: Option '--pretty' is specified the second time."
 
 #: ../cli/src/nmcli.c:161
 #, c-format
 msgid "Error: Option '--pretty' is mutually exclusive with '--terse'."
-msgstr "Error: Option '--pretty' is mutually exclusive with '--terse'."
+msgstr "ਗਲਤੀ: Option '--pretty' is mutually exclusive with '--terse'."
 
 #: ../cli/src/nmcli.c:171 ../cli/src/nmcli.c:187
 #, c-format
@@ -1035,12 +1036,12 @@ msgstr "ਗਲਤੀ: '%s' ਚੋਣ ਲਈ ਆਰਗੂਮੈਂਟ ਮੌਜ�
 #: ../cli/src/nmcli.c:180 ../cli/src/nmcli.c:196
 #, c-format
 msgid "Error: '%s' is not valid argument for '%s' option."
-msgstr "Error: '%s' is not valid argument for '%s' option."
+msgstr "ਗਲਤੀ: '%s' is not valid argument for '%s' option."
 
 #: ../cli/src/nmcli.c:203
 #, c-format
 msgid "Error: fields for '%s' options are missing."
-msgstr "Error: fields for '%s' options are missing."
+msgstr "ਗਲਤੀ: fields for '%s' options are missing."
 
 #: ../cli/src/nmcli.c:209
 #, c-format
@@ -1066,78 +1067,79 @@ msgstr "ਗਲਤੀ: ਨੈੱਟਵਰਕਮੈਨੇਜਰ ਨਾਲ ਕੁ�
 msgid "Success"
 msgstr "ਸਫ਼ਲ"
 
-#: ../cli/src/settings.c:407
+#: ../cli/src/settings.c:411
 #, c-format
 msgid "%d (hex-ascii-key)"
 msgstr "%d (hex-ascii-key)"
 
-#: ../cli/src/settings.c:409
+#: ../cli/src/settings.c:413
 #, c-format
 msgid "%d (104/128-bit passphrase)"
-msgstr "%d (104/128-bit ਗੁਪਤਕੋਡ)"
+msgstr "%d (104/128-bit ਗੁਪਤ-ਕੋਡ)"
 
-#: ../cli/src/settings.c:412
+#: ../cli/src/settings.c:416
 #, c-format
 msgid "%d (unknown)"
 msgstr "%d (ਅਣਜਾਣ)"
 
-#: ../cli/src/settings.c:438
+#: ../cli/src/settings.c:442
 msgid "0 (unknown)"
 msgstr "0 (ਅਣਜਾਣ)"
 
-#: ../cli/src/settings.c:444
+#: ../cli/src/settings.c:448
 msgid "any, "
 msgstr "ਕੋਈ ਵੀ, "
 
-#: ../cli/src/settings.c:446
+#: ../cli/src/settings.c:450
 msgid "900 MHz, "
 msgstr "900 MHz, "
 
-#: ../cli/src/settings.c:448
+#: ../cli/src/settings.c:452
 msgid "1800 MHz, "
 msgstr "1800 MHz, "
 
-#: ../cli/src/settings.c:450
+#: ../cli/src/settings.c:454
 msgid "1900 MHz, "
 msgstr "1900 MHz, "
 
-#: ../cli/src/settings.c:452
+#: ../cli/src/settings.c:456
 msgid "850 MHz, "
 msgstr "850 MHz, "
 
-#: ../cli/src/settings.c:454
+#: ../cli/src/settings.c:458
 msgid "WCDMA 3GPP UMTS 2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 2100 MHz, "
 
-#: ../cli/src/settings.c:456
+#: ../cli/src/settings.c:460
 msgid "WCDMA 3GPP UMTS 1800 MHz, "
 msgstr "WCDMA 3GPP UMTS 1800 MHz, "
 
-#: ../cli/src/settings.c:458
+#: ../cli/src/settings.c:462
 msgid "WCDMA 3GPP UMTS 1700/2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700/2100 MHz, "
 
-#: ../cli/src/settings.c:460
+#: ../cli/src/settings.c:464
 msgid "WCDMA 3GPP UMTS 800 MHz, "
 msgstr "WCDMA 3GPP UMTS 800 MHz, "
 
-#: ../cli/src/settings.c:462
+#: ../cli/src/settings.c:466
 msgid "WCDMA 3GPP UMTS 850 MHz, "
 msgstr "WCDMA 3GPP UMTS 850 MHz, "
 
-#: ../cli/src/settings.c:464
+#: ../cli/src/settings.c:468
 msgid "WCDMA 3GPP UMTS 900 MHz, "
 msgstr "WCDMA 3GPP UMTS 900 MHz, "
 
-#: ../cli/src/settings.c:466
+#: ../cli/src/settings.c:470
 msgid "WCDMA 3GPP UMTS 1700 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700 MHz, "
 
-#: ../cli/src/settings.c:546 ../cli/src/settings.c:708
+#: ../cli/src/settings.c:554 ../cli/src/settings.c:721
 msgid "auto"
 msgstr "ਆਟੋ"
 
-#: ../cli/src/settings.c:704 ../cli/src/settings.c:707 ../cli/src/utils.c:172
+#: ../cli/src/settings.c:716 ../cli/src/settings.c:719
+#: ../cli/src/settings.c:720 ../cli/src/utils.c:172
 msgid "not set"
 msgstr "ਸੈੱਟ ਨਹੀਂ ਹੈ"
 
@@ -1440,7 +1442,7 @@ msgstr "ਇੰਕ੍ਰਿਪਸ਼ਨ ਪਰਸੰਗ ਸ਼ੁਰੂ ਕਰਨ
 #: ../libnm-util/crypto_nss.c:396
 #, c-format
 msgid "Failed to encrypt: %d."
-msgstr "ਇੰਕ੍ਰਿਪਟ ਕਰਨ ਲਈ ਫੇਲ੍ਹ: %d."
+msgstr "ਇੰਕ੍ਰਿਪਟ ਕਰਨ ਲਈ ਫੇਲ੍ਹ: %d"
 
 #: ../libnm-util/crypto_nss.c:404
 #, c-format
@@ -1500,6 +1502,94 @@ msgstr "PEM ਫਾਇਲ ਵਾਸਤੇ ਇੰਕ੍ਰਿਪਟ ਕੀਤੀ �
 msgid "Could not allocate memory for PEM file data."
 msgstr "PEM ਫਾਇਲ ਡਾਟੇ ਲਈ ਮੈਮੋਰੀ ਜਾਰੀ ਨਹੀਂ ਕੀਤੀ ਜਾ ਸਕੀ"
 
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:1
+msgid "Connection sharing via a protected WiFi network"
+msgstr "ਸੁਰੱਖਿਅਤ ਵਾਈ-ਫਾਈ ਨੈੱਟਵਰਕ ਰਾਹੀਂ ਕੁਨੈਕਸ਼ਨ ਸਾਂਝਾ ਕਰੋ"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:2
+msgid "Connection sharing via an open WiFi network"
+msgstr "ਓਪਨ ਵਾਈ-ਫਾਈ ਨੈੱਟਵਰਕ ਰਾਹੀਂ ਕੁਨੈਕਸ਼ਨ ਸਾਂਝਾ ਕਰੋ"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:3
+msgid "Modify persistent system hostname"
+msgstr "ਸਥਿਰ ਸਿਸਟਮ ਹੋਸਟ-ਨਾਂ ਸੋਧ"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:4
+msgid "Modify system connections"
+msgstr "ਸਿਸਟਮ ਕੁਨੈਸ਼ਨ ਸੋਧ"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:5
+msgid "System policy prevents modification of system settings"
+msgstr "ਸਿਸਟਮ ਪਾਲਸੀ ਸਿਸਟਮ ਸੈਟਿੰਗ ਲਈ ਸੋਧ ਤੋਂ ਰੋਕਦੀ ਹੈ"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:6
+msgid "System policy prevents modification of the persistent system hostname"
+msgstr "ਸਿਸਟਮ ਪਾਲਸੀ ਸਥਿਰ ਸਿਸਟਮ ਹੋਸਟ-ਨਾਂ ਲਈ ਸੋਧਾਂ ਤੋਂ ਰੋਕਦੀ ਹੈ"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:7
+msgid "System policy prevents sharing connections via a protected WiFi network"
+msgstr "ਸਿਸਟਮ ਪਾਲਸੀ ਕੁਨੈਕਸ਼ਨ ਨੂੰ ਸੁਰੱਖਿਅਤ ਵਾਈ-ਫਾਈ ਨੈੱਟਵਰਕ ਰਾਹੀਂ ਸਾਂਝਾ ਕਰਨ ਤੋਂ ਰੋਕਦੀ ਹੈ"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:8
+msgid "System policy prevents sharing connections via an open WiFi network"
+msgstr "ਸਿਸਟਮ ਪਾਲਸੀ ਕੁਨੈਕਸ਼ਨ ਨੂੰ ਓਪਨ ਵਾਈ-ਫਾਈ ਨੈੱਟਵਰਕ ਰਾਹੀਂ ਸਾਂਝਾ ਕਰਨ ਤੋਂ ਰੋਕਦੀ ਹੈ"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:1
+msgid "Allow control of network connections"
+msgstr "ਨੈੱਟਵਰਕ ਕੁਨੈਕਸ਼ਨਾਂ ਲਈ ਕੰਟਰੋਲ ਮਨਜ਼ੂਰ"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:2
+msgid "Allow use of user-specific connections"
+msgstr "ਖਾਸ ਯੂਜ਼ਰ ਕੁਨੈਕਸ਼ਨਾਂ ਦੀ ਵਰਤੋਂ ਮਨਜ਼ੂਰ"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:3
+msgid "Enable or disable WiFi devices"
+msgstr "ਵਾਈ-ਫਾਈ ਜੰਤਰ ਚਾਲੂ ਜਾਂ ਬੰਦ ਕਰੋ"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:4
+msgid "Enable or disable mobile broadband devices"
+msgstr "ਮੋਬਾਇਲ ਬਰਾਡਬੈਂਡ ਜੰਤਰ ਚਾਲੂ ਜਾਂ ਬੰਦ"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:5
+msgid "Enable or disable system networking"
+msgstr "ਸਿਸਟਮ ਨੈੱਟਵਰਕਿੰਗ ਚਾਲੂ ਜਾਂ ਬੰਦ"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:6
+msgid ""
+"Put NetworkManager to sleep or wake it up (should only be used by system "
+"power management)"
+msgstr ""
+"ਨੈੱਟਵਰਕਮੈਨਜੇਰ ਨੂੰ ਸਲੀਪ ਕਰੋ ਜਾਂ ਵੇਕ ਅੱਪ ਕਰੋ (ਕੇਵਲ ਸਿਸਟਮ ਪਾਵਰ ਮੈਨਜੇਮੈਂਟ ਰਾਹੀਂ ਵਰਤਿਆ "
+"ਜਾਣਾ ਚਾਹੀਦਾ ਹੈ)"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:7
+#| msgid "System policy prevents modification of system settings"
+msgid "System policy prevents control of network connections"
+msgstr "ਸਿਸਟਮ ਪਾਲਸੀ ਨੈੱਟਵਰਕ ਕੁਨੈਕਸ਼ਨ ਕੰਟਰੋਲ ਕਰਨ ਤੋਂ ਸੋਧ ਤੋਂ ਰੋਕਦੀ ਹੈ"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:8
+#| msgid "System policy prevents sharing connections via an open WiFi network"
+msgid "System policy prevents enabling or disabling WiFi devices"
+msgstr "ਸਿਸਟਮ ਪਾਲਸੀ ਵਾਈ-ਫਾਈ ਜੰਤਰ ਚਾਲੂ ਜਾਂ ਬੰਦ ਕਰਨੋਂ ਰੋਕਦੀ ਹੈ"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:9
+msgid "System policy prevents enabling or disabling mobile broadband devices"
+msgstr "ਸਿਸਟਮ ਪਾਲਸੀ ਮੋਬਾਇਲ ਬਰਾਡਬੈਂਡ ਜੰਤਰ ਚਾਲੂ ਜਾਂ ਬੰਦ ਕਰਨ ਤੋਂ ਰੋਕਦੀ ਹੈ"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:10
+#| msgid "System policy prevents modification of system settings"
+msgid "System policy prevents enabling or disabling system networking"
+msgstr "ਸਿਸਟਮ ਪਾਲਸੀ ਸਿਸਟਮ ਨੈੱਟਵਰਕਿੰਗ ਚਾਲੂ ਜਾਂ ਬੰਦ ਕਰਨ ਤੋਂ ਰੋਕਦੀ ਹੈ"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:11
+msgid "System policy prevents putting NetworkManager to sleep or waking it up"
+msgstr "ਸਿਸਟਮ ਪਾਲਸੀ ਨੈੱਟਵਰਕਮੈਨੇਜਰ ਨੂੰ ਸਲੀਪ ਜਾਂ ਵੇਕਅੱਪ ਕਰਨ ਤੋਂ ਰੋਕਦੀ ਹੈ"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:12
+#| msgid "System policy prevents modification of system settings"
+msgid "System policy prevents use of user-specific connections"
+msgstr "ਸਿਸਟਮ ਪਾਲਸੀ ਖਾਸ-ਯੂਜ਼ਰ ਕੁਨੈਕਸ਼ਨ ਵਰਤੋਂ ਤੋਂ ਰੋਕਦੀ ਹੈ"
+
 #: ../src/nm-netlink-monitor.c:100 ../src/nm-netlink-monitor.c:231
 #: ../src/nm-netlink-monitor.c:653
 #, c-format
@@ -1518,7 +1608,7 @@ msgstr "ਲਿੰਕ ਹਾਲਤ ਦੀ ਨਿਗਰਾਨੀ ਲਈ ਨੈੱ�
 #: ../src/nm-netlink-monitor.c:265
 #, c-format
 msgid "unable to enable netlink handle credential passing: %s"
-msgstr "netlink ਹੈੱਡਲ ਕਰੀਡੈਂਸ਼ਲ ਪਾਸਿੰਗ ਯੋਯਗ ਕਰਨ ਲਈ ਅਸਮਰੱਥ: %s"
+msgstr "netlink ਹੈੱਡਲ ਸਨਦ ਪਾਸ ਕਰਨ ਲਈ ਅਸਮਰੱਥ: %s"
 
 #: ../src/nm-netlink-monitor.c:291 ../src/nm-netlink-monitor.c:353
 #, c-format
@@ -1533,7 +1623,7 @@ msgstr "ਲਿੰਕ ਹਾਲਤ ਦੀ ਨਿਗਰਾਨੀ ਲਈ ਨੈੱ�
 #: ../src/nm-netlink-monitor.c:502
 #, c-format
 msgid "unable to join netlink group: %s"
-msgstr "netlink ਗਰੁੱਪ ਜੁਆਇੰਨ ਕਰਨ ਲਈ ਅਣਸਮਰੱਥ:: %s"
+msgstr "netlink ਗਰੁੱਪ ਜੁਆਇੰਨ ਕਰਨ ਲਈ ਅਸਮਰੱਥ:: %s"
 
 #: ../src/nm-netlink-monitor.c:629 ../src/nm-netlink-monitor.c:642
 #, c-format
@@ -1545,7 +1635,7 @@ msgstr "ਲਿੰਕ ਕੈਸ਼ ਅੱਪਡੇਟ ਕਰਨ ਦੌਰਾਨ �
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr "ਗਲਤ ਚੋਣ। ਢੁੱਕਵੀਆਂ ਚੋਣਾਂ ਵੇਖਣ ਲਈ --help ਵਰਤੋਂ ਜੀ।\n"
 
-#: ../src/main.c:562
+#: ../src/main.c:568
 #, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr "%s। ਢੁੱਕਵੀਆਂ ਚੋਣਾਂ ਦੀ ਲਿਸਟ ਵੇਖਣ ਲਈ --help ਵਰਤੋਂ ਜੀ।\n"
@@ -1590,11 +1680,11 @@ msgstr "ਅਣਜਾਣ ਲਾਗ ਲੈਵਲ '%s'"
 msgid "Unknown log domain '%s'"
 msgstr "ਅਣਜਾਣ ਲਾਗ ਡੋਮੇਨ '%s'"
 
-#: ../src/named-manager/nm-named-manager.c:343
+#: ../src/named-manager/nm-named-manager.c:350
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "ਨੋਟ: libc ਰਿਜ਼ੋਲਵਰ ੩ ਤੋਂ ਵੱਧ ਨੇਮ-ਸਰਵਰ ਲਈ ਸਹਾਇਕ ਨਹੀਂ ਹੋ ਸਕਦਾ ਹੈ।"
 
-#: ../src/named-manager/nm-named-manager.c:345
+#: ../src/named-manager/nm-named-manager.c:352
 msgid "The nameservers listed below may not be recognized."
 msgstr "ਹੇਠਾਂ ਦਿੱਤੇ ਨੇਮ-ਸਰਵਰ ਪਛਾਣੇ ਨਹੀਂ ਜਾ ਸਕਦੇ।"
 
@@ -1603,41 +1693,9 @@ msgstr "ਹੇਠਾਂ ਦਿੱਤੇ ਨੇਮ-ਸਰਵਰ ਪਛਾਣੇ �
 msgid "Auto %s"
 msgstr "ਆਟੋ %s"
 
-#: ../system-settings/plugins/ifcfg-rh/reader.c:3256
+#: ../system-settings/plugins/ifcfg-rh/reader.c:3275
 msgid "System"
-msgstr "IPL ਲੀਨਕਸ (Linux) ਸਿਸਟਮ।"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:1
-msgid "Connection sharing via a protected WiFi network"
-msgstr "ਸੁਰੱਖਿਅਤ ਵਾਈ-ਫਾਈ ਨੈੱਟਵਰਕ ਰਾਹੀਂ ਕੁਨੈਕਸ਼ਨ ਸਾਂਝਾ ਕਰੋ"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:2
-msgid "Connection sharing via an open WiFi network"
-msgstr "ਓਪਨ ਵਾਈ-ਫਾਈ ਨੈੱਟਵਰਕ ਰਾਹੀਂ ਕੁਨੈਕਸ਼ਨ ਸਾਂਝਾ ਕਰੋ"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:3
-msgid "Modify persistent system hostname"
-msgstr "ਸਥਿਰ ਸਿਸਟਮ ਹੋਸਟ-ਨਾਂ ਸੋਧ"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:4
-msgid "Modify system connections"
-msgstr "ਸਿਸਟਮ ਕੁਨੈਸ਼ਨ ਸੋਧ"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:5
-msgid "System policy prevents modification of system settings"
-msgstr "ਸਿਸਟਮ ਪਾਲਸੀ ਸਿਸਟਮ ਸੈਟਿੰਗ ਲਈ ਸੋਧ ਤੋਂ ਰੋਕਦੀ ਹੈ"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:6
-msgid "System policy prevents modification of the persistent system hostname"
-msgstr "ਸਿਸਟਮ ਪਾਲਸੀ ਸਥਿਰ ਸਿਸਟਮ ਹੋਸਟ-ਨਾਂ ਲਈ ਸੋਧਾਂ ਤੋਂ ਰੋਕਦੀ ਹੈ"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:7
-msgid "System policy prevents sharing connections via a protected WiFi network"
-msgstr "ਸਿਸਟਮ ਪਾਲਸੀ ਕੁਨੈਕਸ਼ਨ ਨੂੰ ਸੁਰੱਖਿਅਤ ਵਾਈ-ਫਾਈ ਨੈੱਟਵਰਕ ਰਾਹੀਂ ਸਾਂਝਾ ਕਰਨ ਤੋਂ ਰੋਕਦੀ ਹੈ"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:8
-msgid "System policy prevents sharing connections via an open WiFi network"
-msgstr "ਸਿਸਟਮ ਪਾਲਸੀ ਕੁਨੈਕਸ਼ਨ ਨੂੰ ਓਪਨ ਵਾਈ-ਫਾਈ ਨੈੱਟਵਰਕ ਰਾਹੀਂ ਸਾਂਝਾ ਕਰਨ ਤੋਂ ਰੋਕਦੀ ਹੈ"
+msgstr "ਸਿਸਟਮ।"
 
 #~ msgid "Type"
 #~ msgstr "ਕਿਸਮ"
