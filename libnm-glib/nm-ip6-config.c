@@ -162,9 +162,9 @@ nm_ip6_config_get_addresses (NMIP6Config *config)
 		return priv->addresses;
 
 	if (!_nm_object_get_property (NM_OBJECT (config),
-	                             "org.freedesktop.DBus.Properties",
-	                             "Addresses",
-	                             &value)) {
+	                              NM_DBUS_INTERFACE_IP6_CONFIG,
+	                              "Addresses",
+	                              &value)) {
 		return NULL;
 	}
 
