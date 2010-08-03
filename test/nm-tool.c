@@ -643,8 +643,7 @@ get_connections_for_service (DBusGConnection *bus,
                                 G_TYPE_INVALID,
                                 DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH, &paths,
                                 G_TYPE_INVALID)) {
-		g_warning ("error: failed to read connections from %s:\n    %s",
-		           service, error ? error->message : "(unknown)");
+		/* No connections or settings service may not be running */
 		g_clear_error (&error);
 		goto out;
 	}
