@@ -41,6 +41,7 @@
 
 #define TYPE_ETHERNET "Ethernet"
 #define TYPE_WIRELESS "Wireless"
+#define TYPE_BRIDGE   "Bridge"
 
 GQuark ifcfg_plugin_error_quark (void);
 
