@@ -150,46 +150,46 @@ NetworkManager_SOURCES = \
 		nm-rfkill.h
 
 nm-access-point-glue.h: $(top_srcdir)/introspection/nm-access-point.xml
-	dbus-binding-tool --prefix=nm_access_point --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_access_point --mode=glib-server --output=$@ $<
 
 nm-manager-glue.h: $(top_srcdir)/introspection/nm-manager.xml
-	dbus-binding-tool --prefix=nm_manager --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_manager --mode=glib-server --output=$@ $<
 
 nm-device-interface-glue.h: $(top_srcdir)/introspection/nm-device.xml
-	dbus-binding-tool --prefix=nm_device_interface --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_interface --mode=glib-server --output=$@ $<
 
 nm-device-ethernet-glue.h: $(top_srcdir)/introspection/nm-device-ethernet.xml
-	dbus-binding-tool --prefix=nm_device_ethernet --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_ethernet --mode=glib-server --output=$@ $<
 
 nm-device-wifi-glue.h: $(top_srcdir)/introspection/nm-device-wifi.xml
-	dbus-binding-tool --prefix=nm_device_wifi --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_wifi --mode=glib-server --output=$@ $<
 
 nm-device-bt-glue.h: $(top_srcdir)/introspection/nm-device-bt.xml
-	dbus-binding-tool --prefix=nm_device_bt --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_bt --mode=glib-server --output=$@ $<
 
 nm-device-olpc-mesh-glue.h: $(top_srcdir)/introspection/nm-device-olpc-mesh.xml
-	dbus-binding-tool --prefix=nm_device_olpc_mesh --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_olpc_mesh --mode=glib-server --output=$@ $<
 
 nm-ip4-config-glue.h: $(top_srcdir)/introspection/nm-ip4-config.xml
-	dbus-binding-tool --prefix=nm_ip4_config --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_ip4_config --mode=glib-server --output=$@ $<
 
 nm-ip6-config-glue.h: $(top_srcdir)/introspection/nm-ip6-config.xml
-	dbus-binding-tool --prefix=nm_ip6_config --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_ip6_config --mode=glib-server --output=$@ $<
 
 nm-active-connection-glue.h: $(top_srcdir)/introspection/nm-active-connection.xml
-	dbus-binding-tool --prefix=nm_active_connection --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_active_connection --mode=glib-server --output=$@ $<
 
 nm-dhcp4-config-glue.h: $(top_srcdir)/introspection/nm-dhcp4-config.xml
-	dbus-binding-tool --prefix=nm_dhcp4_config --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_dhcp4_config --mode=glib-server --output=$@ $<
 
 nm-dhcp6-config-glue.h: $(top_srcdir)/introspection/nm-dhcp6-config.xml
-	dbus-binding-tool --prefix=nm_dhcp6_config --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_dhcp6_config --mode=glib-server --output=$@ $<
 
 nm-device-cdma-glue.h: $(top_srcdir)/introspection/nm-device-cdma.xml
-	dbus-binding-tool --prefix=nm_device_cdma --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_cdma --mode=glib-server --output=$@ $<
 
 nm-device-gsm-glue.h: $(top_srcdir)/introspection/nm-device-gsm.xml
-	dbus-binding-tool --prefix=nm_device_gsm --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_gsm --mode=glib-server --output=$@ $<
 
 BUILT_SOURCES = \
 	nm-access-point-glue.h \

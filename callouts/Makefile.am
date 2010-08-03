@@ -60,7 +60,7 @@ nm_dispatcher_action_LDADD = \
 	$(GLIB_LIBS)
 
 nm-dispatcher-glue.h: nm-dispatcher.xml
-	dbus-binding-tool --prefix=nm_dispatcher --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_dispatcher --mode=glib-server --output=$@ $<
 
 udevrulesdir = $(UDEV_BASE_DIR)/rules.d
 udevrules_DATA = 77-nm-olpc-mesh.rules
