@@ -290,6 +290,13 @@ global:
 	nm_setting_wired_get_mac_address;
 	nm_setting_wired_get_cloned_mac_address;
 	nm_setting_wired_get_mtu;
+	nm_setting_wired_get_num_s390_options;
+	nm_setting_wired_get_s390_nettype;
+	nm_setting_wired_get_s390_option;
+	nm_setting_wired_get_s390_option_by_key;
+	nm_setting_wired_add_s390_option;
+	nm_setting_wired_get_s390_subchannels;
+	nm_setting_wired_remove_s390_option;
 	nm_setting_wireless_ap_security_compatible;
 	nm_setting_wireless_error_get_type;
 	nm_setting_wireless_error_quark;

@@ -2941,6 +2941,7 @@ make_wired_setting (shvarFile *ifcfg,
 	char *value = NULL;
 	int mtu;
 	GByteArray *mac = NULL;
+	char *nettype;
 
 	s_wired = NM_SETTING_WIRED (nm_setting_wired_new ());
 
@@ -2968,15 +2969,98 @@ make_wired_setting (shvarFile *ifcfg,
 			}
 
 			g_byte_array_free (mac, TRUE);
-		} else if (!nm_controlled) {
-			/* If NM_CONTROLLED=no but there wasn't a MAC address, notify
-			 * the user that the device cannot be unmanaged.
-			 */
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: NM_CONTROLLED was false but HWADDR was missing; device will be managed");
 		}
 	} else {
 		g_object_unref (s_wired);
-		s_wired = NULL;
+		return NULL;
+	}
+
+	value = svGetValue (ifcfg, "SUBCHANNELS", FALSE);
+	if (value) {
+		const char *p = value;
+		gboolean success = TRUE;
+		char **chans = NULL;
+
+		/* basic sanity checks */
+		while (*p) {
+			if (!isxdigit (*p) && (*p != ',') && (*p != '.')) {
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid SUBCHANNELS '%s'", value);
+				success = FALSE;
+				break;
+			}
+			p++;
+		}
+
+		if (success) {
+			guint32 num_chans;
+
+			chans = g_strsplit_set (value, ",", 0);
+			num_chans = g_strv_length (chans);
+			if (num_chans < 2 || num_chans > 3) {
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid SUBCHANNELS '%s' (%d channels, 2 or 3 expected)",
+				             value, g_strv_length (chans));
+			} else {
+				GPtrArray *array = g_ptr_array_sized_new (num_chans);
+
+				g_ptr_array_add (array, chans[0]);
+				g_ptr_array_add (array, chans[1]);
+				if (num_chans == 3)
+					g_ptr_array_add (array, chans[2]);
+
+				g_object_set (s_wired, NM_SETTING_WIRED_S390_SUBCHANNELS, array, NULL);
+				g_ptr_array_free (array, TRUE);
+
+				/* set the unmanaged spec too */
+				if (!nm_controlled && !*unmanaged)
+					*unmanaged = g_strdup_printf ("s390-subchannels:%s", value);
+			}
+			g_strfreev (chans);
+		}
+		g_free (value);
+	}
+
+	value = svGetValue (ifcfg, "PORTNAME", FALSE);
+	if (value && strlen (value)) {
+		nm_setting_wired_add_s390_option (s_wired, "portname", value);
+	}
+	g_free (value);
+
+	nettype = svGetValue (ifcfg, "NETTYPE", FALSE);
+	if (nettype && strlen (nettype)) {
+		if (!strcmp (nettype, "qeth") || !strcmp (nettype, "lcs") || !strcmp (nettype, "ctc"))
+			g_object_set (s_wired, NM_SETTING_WIRED_S390_NETTYPE, nettype, NULL);
+		else
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: unknown s390 NETTYPE '%s'", nettype);
+	}
+
+	value = svGetValue (ifcfg, "OPTIONS", FALSE);
+	if (value && strlen (value)) {
+		char **options, **iter;
+
+		iter = options = g_strsplit_set (value, " ", 0);
+		while (iter && *iter) {
+			char *equals = strchr (*iter, '=');
+			gboolean valid = FALSE;
+
+			if (equals) {
+				*equals = '\0';
+				valid = nm_setting_wired_add_s390_option (s_wired, *iter, equals + 1);
+			}
+			if (!valid)
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid s390 OPTION '%s'", *iter);
+			iter++;
+		}
+		g_strfreev (options);
+	}
+	g_free (value);
+
+	g_free (nettype);
+
+	if (!nm_controlled && !*unmanaged) {
+		/* If NM_CONTROLLED=no but there wasn't a MAC address or z/VM
+		 * subchannels, notify the user that the device cannot be unmanaged.
+		 */
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: NM_CONTROLLED was false but HWADDR or SUBCHANNELS was missing; device will be managed");
 	}
 
 	mac = NULL;

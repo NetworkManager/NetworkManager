@@ -842,7 +842,10 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	NMSettingWired *s_wired;
 	const GByteArray *device_mac, *cloned_mac;
 	char *tmp;
-	guint32 mtu;
+	const char *nettype, *portname, *s390_key, *s390_val;
+	guint32 mtu, num_opts, i;
+	const GPtrArray *s390_subchannels;
+	GString *str;
 
 	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
 	if (!s_wired) {
@@ -851,6 +854,7 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		return FALSE;
 	}
 
+	svSetValue (ifcfg, "HWADDR", NULL, FALSE);
 	device_mac = nm_setting_wired_get_mac_address (s_wired);
 	if (device_mac) {
 		tmp = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
@@ -875,6 +879,53 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		tmp = g_strdup_printf ("%u", mtu);
 		svSetValue (ifcfg, "MTU", tmp, FALSE);
 		g_free (tmp);
+	}
+
+	svSetValue (ifcfg, "SUBCHANNELS", NULL, FALSE);
+	s390_subchannels = nm_setting_wired_get_s390_subchannels (s_wired);
+	if (s390_subchannels) {
+	    if (s390_subchannels->len == 2) {
+			tmp = g_strdup_printf ("%s,%s",
+				                   (const char *) g_ptr_array_index (s390_subchannels, 0),
+				                   (const char *) g_ptr_array_index (s390_subchannels, 1));
+	    } else if (s390_subchannels->len == 3) {
+			tmp = g_strdup_printf ("%s,%s,%s",
+				                   (const char *) g_ptr_array_index (s390_subchannels, 0),
+				                   (const char *) g_ptr_array_index (s390_subchannels, 1),
+				                   (const char *) g_ptr_array_index (s390_subchannels, 2));
+		}
+		svSetValue (ifcfg, "SUBCHANNELS", tmp, FALSE);
+		g_free (tmp);
+	}
+
+	svSetValue (ifcfg, "NETTYPE", NULL, FALSE);
+	nettype = nm_setting_wired_get_s390_nettype (s_wired);
+	if (nettype)
+		svSetValue (ifcfg, "NETTYPE", nettype, FALSE);
+
+	svSetValue (ifcfg, "PORTNAME", NULL, FALSE);
+	portname = nm_setting_wired_get_s390_option_by_key (s_wired, "portname");
+	if (portname)
+		svSetValue (ifcfg, "PORTNAME", portname, FALSE);
+
+	svSetValue (ifcfg, "OPTIONS", NULL, FALSE);
+	num_opts = nm_setting_wired_get_num_s390_options (s_wired);
+	if (s390_subchannels && num_opts) {
+		str = g_string_sized_new (30);
+		for (i = 0; i < num_opts; i++) {
+			nm_setting_wired_get_s390_option (s_wired, i, &s390_key, &s390_val);
+
+			/* portname is handled separately */
+			if (!strcmp (s390_key, "portname"))
+				continue;
+
+			if (str->len)
+				g_string_append_c (str, ' ');
+			g_string_append_printf (str, "%s=%s", s390_key, s390_val);
+		}
+		if (str->len)
+			svSetValue (ifcfg, "OPTIONS", str->str, FALSE);
+		g_string_free (str, TRUE);
 	}
 
 	svSetValue (ifcfg, "TYPE", TYPE_ETHERNET, FALSE);

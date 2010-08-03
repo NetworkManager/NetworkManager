@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2010 Red Hat, Inc.
  * Copyright (C) 2008 Novell, Inc.
  */
 
@@ -107,6 +107,12 @@ struct _NMSystemConfigInterface {
 	 *
 	 * Method: mac    Data: device MAC address formatted with leading zeros and
 	 *                      lowercase letters, like 00:0a:0b:0c:0d:0e
+	 *
+	 * Method: s390-subchannels  Data: string of 2 or 3 s390 subchannels
+	 *                                 separated by commas (,) that identify the
+	 *                                 device, like "0.0.09a0,0.0.09a1,0.0.09a2".
+	 *                                 The string may contain only the following
+	 *                                 characters: [a-fA-F0-9,.]
 	 */
 	GSList * (*get_unmanaged_specs) (NMSystemConfigInterface *config);
 
