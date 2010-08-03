@@ -216,9 +216,9 @@ nm_dhcp6_config_get_options (NMDHCP6Config *config)
 		return priv->options;
 
 	if (!_nm_object_get_property (NM_OBJECT (config),
-	                             "org.freedesktop.DBus.Properties",
-	                             "Options",
-	                             &value))
+	                              NM_DBUS_INTERFACE_DHCP6_CONFIG,
+	                              "Options",
+	                              &value))
 		goto out;
 
 	demarshal_dhcp6_options (NM_OBJECT (config), NULL, &value, &priv->options);	
