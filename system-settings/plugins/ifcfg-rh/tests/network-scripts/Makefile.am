@@ -65,7 +65,10 @@ EXTRA_DIST = \
 	keys-test-wifi-wep-40-ascii \
 	ifcfg-test-wifi-wep-104-ascii \
 	keys-test-wifi-wep-104-ascii \
-	ifcfg-test-wired-qeth-static
+	ifcfg-test-wired-qeth-static \
+	ifcfg-test-bridge-main \
+	ifcfg-test-bridge-component \
+	ifcfg-test-vlan-interface
 
 check-local:
 	@for f in $(EXTRA_DIST); do \
