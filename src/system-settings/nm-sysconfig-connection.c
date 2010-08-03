@@ -21,6 +21,7 @@
 
 #include <NetworkManager.h>
 #include <dbus/dbus-glib-lowlevel.h>
+#include <nm-setting-connection.h>
 
 #include "nm-sysconfig-connection.h"
 #include "nm-system-config-error.h"
@@ -30,10 +31,28 @@
 #include "nm-polkit-helpers.h"
 #include "nm-logging.h"
 
+static gboolean impl_sysconfig_connection_get_settings (NMSysconfigConnection *connection,
+                                                        GHashTable **settings,
+                                                        GError **error);
+
+static void impl_sysconfig_connection_update (NMSysconfigConnection *connection,
+                                              GHashTable *new_settings,
+                                              DBusGMethodInvocation *context);
+
+static void impl_sysconfig_connection_delete (NMSysconfigConnection *connection,
+                                              DBusGMethodInvocation *context);
+
+static void impl_sysconfig_connection_get_secrets (NMSysconfigConnection *connection,
+                                                   const gchar *setting_name,
+                                                   const gchar **hints,
+                                                   gboolean request_new,
+                                                   DBusGMethodInvocation *context);
+
+#include "nm-sysconfig-connection-glue.h"
 
 static void settings_connection_interface_init (NMSettingsConnectionInterface *klass);
 
-G_DEFINE_TYPE_EXTENDED (NMSysconfigConnection, nm_sysconfig_connection, NM_TYPE_EXPORTED_CONNECTION, 0,
+G_DEFINE_TYPE_EXTENDED (NMSysconfigConnection, nm_sysconfig_connection, NM_TYPE_CONNECTION, 0,
                         G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_CONNECTION_INTERFACE,
                                                settings_connection_interface_init))
 
@@ -48,6 +67,27 @@ typedef struct {
 } NMSysconfigConnectionPrivate;
 
 /**************************************************************/
+
+static GHashTable *
+get_settings (NMSysconfigConnection *self, GError **error)
+{
+	NMConnection *no_secrets;
+	GHashTable *settings;
+
+	/* Secrets should *never* be returned by the GetSettings method, they
+	 * get returned by the GetSecrets method which can be better
+	 * protected against leakage of secrets to unprivileged callers.
+	 */
+	no_secrets = nm_connection_duplicate (NM_CONNECTION (self));
+	g_assert (no_secrets);
+	nm_connection_clear_secrets (no_secrets);
+	settings = nm_connection_to_hash (no_secrets);
+	g_assert (settings);
+	g_object_unref (no_secrets);
+
+	return settings;
+}
+
 
 static void
 ignore_cb (NMSettingsConnectionInterface *connection,
@@ -101,6 +141,30 @@ nm_sysconfig_connection_update (NMSysconfigConnection *self,
 }
 
 /**************************************************************/
+
+static gboolean
+update (NMSettingsConnectionInterface *connection,
+	    NMSettingsConnectionInterfaceUpdateFunc callback,
+	    gpointer user_data)
+{
+	g_object_ref (connection);
+	nm_settings_connection_interface_emit_updated (connection);
+	callback (connection, NULL, user_data);
+	g_object_unref (connection);
+	return TRUE;
+}
+
+static gboolean
+do_delete (NMSettingsConnectionInterface *connection,
+	       NMSettingsConnectionInterfaceDeleteFunc callback,
+	       gpointer user_data)
+{
+	g_object_ref (connection);
+	g_signal_emit_by_name (connection, "removed");
+	callback (connection, NULL, user_data);
+	g_object_unref (connection);
+	return TRUE;
+}
 
 static GValue *
 string_to_gvalue (const char *str)
@@ -231,6 +295,134 @@ get_secrets (NMSettingsConnectionInterface *connection,
 	callback (connection, settings, NULL, user_data);
 	g_hash_table_destroy (settings);
 	return TRUE;
+}
+
+/**************************************************************/
+
+static gboolean
+check_writable (NMConnection *connection, GError **error)
+{
+	NMSettingConnection *s_con;
+
+	g_return_val_if_fail (connection != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection,
+	                                                           NM_TYPE_SETTING_CONNECTION);
+	if (!s_con) {
+		g_set_error_literal (error,
+		                     NM_SETTINGS_INTERFACE_ERROR,
+		                     NM_SETTINGS_INTERFACE_ERROR_INVALID_CONNECTION,
+		                     "Connection did not have required 'connection' setting");
+		return FALSE;
+	}
+
+	/* If the connection is read-only, that has to be changed at the source of
+	 * the problem (ex a system settings plugin that can't write connections out)
+	 * instead of over D-Bus.
+	 */
+	if (nm_setting_connection_get_read_only (s_con)) {
+		g_set_error_literal (error,
+		                     NM_SETTINGS_INTERFACE_ERROR,
+		                     NM_SETTINGS_INTERFACE_ERROR_READ_ONLY_CONNECTION,
+		                     "Connection is read-only");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
+impl_sysconfig_connection_get_settings (NMSysconfigConnection *self,
+                                        GHashTable **settings,
+                                        GError **error)
+{
+	/* Must always be implemented */
+	g_assert (NM_SYSCONFIG_CONNECTION_GET_CLASS (self)->get_settings);
+	*settings = NM_SYSCONFIG_CONNECTION_GET_CLASS (self)->get_settings (self, error);
+	return *settings ? TRUE : FALSE;
+}
+
+static void
+impl_sysconfig_connection_update (NMSysconfigConnection *self,
+                                  GHashTable *new_settings,
+                                  DBusGMethodInvocation *context)
+{
+	NMConnection *tmp;
+	GError *error = NULL;
+
+	/* If the connection is read-only, that has to be changed at the source of
+	 * the problem (ex a system settings plugin that can't write connections out)
+	 * instead of over D-Bus.
+	 */
+	if (!check_writable (NM_CONNECTION (self), &error)) {
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	/* Check if the settings are valid first */
+	tmp = nm_connection_new_from_hash (new_settings, &error);
+	if (!tmp) {
+		g_assert (error);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+	g_object_unref (tmp);
+
+	if (NM_SYSCONFIG_CONNECTION_GET_CLASS (self)->update)
+		NM_SYSCONFIG_CONNECTION_GET_CLASS (self)->update (self, new_settings, context);
+	else {
+		error = g_error_new (NM_SETTINGS_INTERFACE_ERROR,
+		                     NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
+		                     "%s: %s:%d update() unimplemented", __func__, __FILE__, __LINE__);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+	}
+}
+
+static void
+impl_sysconfig_connection_delete (NMSysconfigConnection *self,
+                                  DBusGMethodInvocation *context)
+{
+	GError *error = NULL;
+
+	if (!check_writable (NM_CONNECTION (self), &error)) {
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	if (NM_SYSCONFIG_CONNECTION_GET_CLASS (self)->delete)
+		NM_SYSCONFIG_CONNECTION_GET_CLASS (self)->delete (self, context);
+	else {
+		error = g_error_new (NM_SETTINGS_INTERFACE_ERROR,
+		                     NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
+		                     "%s: %s:%d delete() unimplemented", __func__, __FILE__, __LINE__);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+	}
+}
+
+static void
+impl_sysconfig_connection_get_secrets (NMSysconfigConnection *self,
+                                       const gchar *setting_name,
+                                       const gchar **hints,
+                                       gboolean request_new,
+                                       DBusGMethodInvocation *context)
+{
+	GError *error = NULL;
+
+	if (NM_SYSCONFIG_CONNECTION_GET_CLASS (self)->get_secrets)
+		NM_SYSCONFIG_CONNECTION_GET_CLASS (self)->get_secrets (self, setting_name, hints, request_new, context);
+	else {
+		error = g_error_new (NM_SETTINGS_INTERFACE_ERROR,
+		                     NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
+		                     "%s: %s:%d get_secrets() unimplemented", __func__, __FILE__, __LINE__);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+	}
 }
 
 /**************************************************************/
@@ -379,11 +571,10 @@ out:
 }
 
 static void
-dbus_update (NMExportedConnection *exported,
+dbus_update (NMSysconfigConnection *self,
              GHashTable *new_settings,
              DBusGMethodInvocation *context)
 {
-	NMSysconfigConnection *self = NM_SYSCONFIG_CONNECTION (exported);
 	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
 	PolkitCall *call;
 	NMConnection *tmp;
@@ -482,10 +673,9 @@ out:
 }
 
 static void
-dbus_delete (NMExportedConnection *exported,
+dbus_delete (NMSysconfigConnection *self,
              DBusGMethodInvocation *context)
 {
-	NMSysconfigConnection *self = NM_SYSCONFIG_CONNECTION (exported);
 	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
 	PolkitCall *call;
 
@@ -577,7 +767,7 @@ out:
 }
 
 static void
-dbus_get_secrets (NMExportedConnection *exported,
+dbus_get_secrets (NMSysconfigConnection *exported,
                   const gchar *setting_name,
                   const gchar **hints,
                   gboolean request_new,
@@ -605,6 +795,8 @@ dbus_get_secrets (NMExportedConnection *exported,
 static void
 settings_connection_interface_init (NMSettingsConnectionInterface *iface)
 {
+	iface->update = update;
+	iface->delete = do_delete;
 	iface->get_secrets = get_secrets;
 }
 
@@ -646,13 +838,17 @@ static void
 nm_sysconfig_connection_class_init (NMSysconfigConnectionClass *class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (class);
-	NMExportedConnectionClass *ec_class = NM_EXPORTED_CONNECTION_CLASS (class);
 
 	g_type_class_add_private (class, sizeof (NMSysconfigConnectionPrivate));
 
 	/* Virtual methods */
 	object_class->dispose = dispose;
-	ec_class->update = dbus_update;
-	ec_class->delete = dbus_delete;
-	ec_class->get_secrets = dbus_get_secrets;
+	class->get_settings = get_settings;
+	class->update = dbus_update;
+	class->delete = dbus_delete;
+	class->get_secrets = dbus_get_secrets;
+
+	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (class),
+	                                 &dbus_glib_nm_sysconfig_connection_object_info);
+
 }

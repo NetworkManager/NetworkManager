@@ -10,8 +10,7 @@ BUILT_SOURCES = \
 	nm-device-ethernet-bindings.h \
 	nm-device-wifi-bindings.h \
 	nm-device-bt-bindings.h \
-	nm-exported-connection-glue.h \
-	nm-exported-connection-bindings.h \
+	nm-sysconfig-connection-bindings.h \
 	nm-settings-bindings.h \
 	nm-vpn-connection-bindings.h \
 	nm-vpn-plugin-glue.h \
@@ -79,8 +78,7 @@ libnminclude_HEADERS = \
 	nm-remote-connection.h \
 	nm-settings-interface.h \
 	nm-remote-settings.h \
-	nm-settings-connection-interface.h \
-	nm-exported-connection.h
+	nm-settings-connection-interface.h
 
 libnm_glib_la_SOURCES = \
 	nm-object.c \
@@ -111,8 +109,7 @@ libnm_glib_la_SOURCES = \
 	nm-remote-connection-private.h \
 	nm-settings-interface.c \
 	nm-remote-settings.c \
-	nm-settings-connection-interface.c \
-	nm-exported-connection.c
+	nm-settings-connection-interface.c
 
 libnm_glib_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
@@ -161,11 +158,8 @@ nm-access-point-bindings.h: $(top_srcdir)/introspection/nm-access-point.xml
 nm-settings-bindings.h: $(top_srcdir)/introspection/nm-settings.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_settings --mode=glib-client --output=$@ $<
 
-nm-exported-connection-glue.h: $(top_srcdir)/introspection/nm-exported-connection.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_exported_connection --mode=glib-server --output=$@ $<
-
-nm-exported-connection-bindings.h: $(top_srcdir)/introspection/nm-exported-connection.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_exported_connection --mode=glib-client --output=$@ $<
+nm-sysconfig-connection-bindings.h: $(top_srcdir)/introspection/nm-sysconfig-connection.xml
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_sysconfig_connection --mode=glib-client --output=$@ $<
 
 nm-vpn-connection-bindings.h: $(top_srcdir)/introspection/nm-vpn-connection.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_vpn_connection --mode=glib-client --output=$@ $<

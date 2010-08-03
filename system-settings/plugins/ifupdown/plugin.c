@@ -458,7 +458,7 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 		for (cl_iter = con_list; cl_iter; cl_iter = g_list_next (cl_iter)) {
 			g_signal_emit_by_name (self,
 			                       NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED,
-			                       NM_EXPORTED_CONNECTION (cl_iter->data));
+			                       NM_SYSCONFIG_CONNECTION (cl_iter->data));
 		}
 		g_list_free (con_list);
 	}

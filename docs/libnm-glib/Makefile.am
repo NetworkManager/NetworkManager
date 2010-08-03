@@ -45,8 +45,7 @@ IGNORE_HFILES= \
 	nm-device-wifi-bindings.h \
 	nm-dhcp4-config-bindings.h \
 	nm-dhcp6-config-bindings.h \
-	nm-exported-connection-bindings.h \
-	nm-exported-connection-glue.h \
+	nm-sysconfig-connection-glue.h \
 	nm-ip4-config-bindings.h \
 	nm-ip6-config-bindings.h \
 	nm-settings-bindings.h \

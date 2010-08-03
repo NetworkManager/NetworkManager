@@ -58,7 +58,7 @@ nm_ifupdown_connection_new (if_block *block)
 }
 
 static void
-get_secrets (NMExportedConnection *exported,
+get_secrets (NMSysconfigConnection *exported,
              const gchar *setting_name,
              const gchar **hints,
              gboolean request_new,
@@ -81,7 +81,7 @@ get_secrets (NMExportedConnection *exported,
 		return;
 	}
 
-	NM_EXPORTED_CONNECTION_CLASS (nm_ifupdown_connection_parent_class)->get_secrets (exported, setting_name, hints, request_new, context);
+	NM_SYSCONFIG_CONNECTION_CLASS (nm_ifupdown_connection_parent_class)->get_secrets (exported, setting_name, hints, request_new, context);
 }
 
 static void
@@ -165,7 +165,7 @@ static void
 nm_ifupdown_connection_class_init (NMIfupdownConnectionClass *ifupdown_connection_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (ifupdown_connection_class);
-	NMExportedConnectionClass *connection_class = NM_EXPORTED_CONNECTION_CLASS (ifupdown_connection_class);
+	NMSysconfigConnectionClass *connection_class = NM_SYSCONFIG_CONNECTION_CLASS (ifupdown_connection_class);
 
 	g_type_class_add_private (ifupdown_connection_class, sizeof (NMIfupdownConnectionPrivate));
 

@@ -22,7 +22,7 @@
 #define NM_SYSCONFIG_CONNECTION_H
 
 #include <nm-connection.h>
-#include <nm-exported-connection.h>
+#include <dbus/dbus-glib.h>
 
 G_BEGIN_DECLS
 
@@ -34,11 +34,27 @@ G_BEGIN_DECLS
 #define NM_SYSCONFIG_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SYSCONFIG_CONNECTION, NMSysconfigConnectionClass))
 
 typedef struct {
-	NMExportedConnection parent;
+	NMConnection parent;
 } NMSysconfigConnection;
 
 typedef struct {
-	NMExportedConnectionClass parent;
+	NMConnectionClass parent;
+
+	GHashTable * (*get_settings) (NMSysconfigConnection *self,
+	                              GError **error);
+
+	void (*update) (NMSysconfigConnection *self,
+	                GHashTable *new_settings,
+	                DBusGMethodInvocation *context);
+
+	void (*delete) (NMSysconfigConnection *self,
+	                DBusGMethodInvocation *context);
+
+	void (*get_secrets) (NMSysconfigConnection *self,
+	                     const gchar *setting_name,
+	                     const gchar **hints,
+	                     gboolean request_new,
+	                     DBusGMethodInvocation *context);
 } NMSysconfigConnectionClass;
 
 GType nm_sysconfig_connection_get_type (void);

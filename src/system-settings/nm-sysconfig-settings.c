@@ -183,7 +183,7 @@ list_connections (NMSettingsInterface *settings)
 
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, &key, NULL))
-		list = g_slist_prepend (list, NM_EXPORTED_CONNECTION (key));
+		list = g_slist_prepend (list, NM_SYSCONFIG_CONNECTION (key));
 	return g_slist_reverse (list);
 }
 
@@ -207,13 +207,13 @@ impl_settings_list_connections (NMSysconfigSettings *self,
 static NMSettingsConnectionInterface *
 get_connection_by_path (NMSettingsInterface *settings, const char *path)
 {
-	NMExportedConnection *connection = NULL;
+	NMSysconfigConnection *connection = NULL;
 	GSList *list = NULL, *iter;
 
 	list = list_connections (settings);
 	for (iter = list; iter; iter = g_slist_next (iter)) {
 		if (!strcmp (nm_connection_get_path (NM_CONNECTION (iter->data)), path)) {
-			connection = NM_EXPORTED_CONNECTION (iter->data);
+			connection = NM_SYSCONFIG_CONNECTION (iter->data);
 			break;
 		}
 	}

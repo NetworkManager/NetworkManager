@@ -9,7 +9,8 @@ INCLUDES = -I${top_srcdir} \
 noinst_LTLIBRARIES = libsystem-settings.la
 
 BUILT_SOURCES = \
-	nm-settings-glue.h
+	nm-settings-glue.h \
+	nm-sysconfig-connection-glue.h
 
 libsystem_settings_la_SOURCES = \
 	nm-sysconfig-settings.c \
@@ -56,6 +57,9 @@ libsystem_settings_la_LDFLAGS = -rdynamic
 
 nm-settings-glue.h: $(top_srcdir)/introspection/nm-settings.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_settings --mode=glib-server --output=$@ $<
+
+nm-sysconfig-connection-glue.h: $(top_srcdir)/introspection/nm-sysconfig-connection.xml
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_sysconfig_connection --mode=glib-server --output=$@ $<
 
 CLEANFILES = \
 	$(BUILT_SOURCES)

@@ -29,7 +29,7 @@
 #include "nm-remote-connection.h"
 #include "nm-remote-connection-private.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-exported-connection-bindings.h"
+#include "nm-sysconfig-connection-bindings.h"
 #include "nm-settings-connection-interface.h"
 
 #define NM_REMOTE_CONNECTION_BUS "bus"
