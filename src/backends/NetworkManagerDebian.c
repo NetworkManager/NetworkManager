@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /* NetworkManager -- Network link manager
  *
  * Matthew Garrett <mjg59@srcf.ucam.org>
@@ -44,7 +45,11 @@
  */
 void nm_system_enable_loopback (void)
 {
-	nm_spawn_process ("/sbin/ifup lo");
+	/* ifupdown isn't always installed (bgo #625427) */
+	if (g_file_test ("/sbin/ifup", G_FILE_TEST_EXISTS))
+		nm_spawn_process ("/sbin/ifup lo");
+	else
+		nm_generic_enable_loopback ();
 }
 
 /*
