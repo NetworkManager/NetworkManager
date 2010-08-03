@@ -14,7 +14,7 @@ libppp_manager_la_SOURCES = \
 	nm-ppp-status.h
 
 nm-ppp-manager-glue.h: $(top_srcdir)/introspection/nm-ppp-manager.xml
-	dbus-binding-tool --prefix=nm_ppp_manager --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_ppp_manager --mode=glib-server --output=$@ $<
 
 built_sources = nm-ppp-manager-glue.h
 

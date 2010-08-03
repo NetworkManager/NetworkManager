@@ -27,7 +27,7 @@ libmodem_manager_la_LIBADD = \
 	$(DBUS_LIBS)
 
 nm-serial-device-glue.h: $(top_srcdir)/introspection/nm-device-serial.xml
-	dbus-binding-tool --prefix=nm_serial_device --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_serial_device --mode=glib-server --output=$@ $<
 
 BUILT_SOURCES = \
 	nm-serial-device-glue.h
