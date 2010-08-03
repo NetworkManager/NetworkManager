@@ -29,13 +29,9 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-remote-settings.h"
 #include "nm-settings-bindings.h"
-#include "nm-settings-interface.h"
 #include "nm-remote-connection-private.h"
 
-static void settings_interface_init (NMSettingsInterface *class);
-
-G_DEFINE_TYPE_EXTENDED (NMRemoteSettings, nm_remote_settings, G_TYPE_OBJECT, 0,
-                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_INTERFACE, settings_interface_init))
+G_DEFINE_TYPE (NMRemoteSettings, nm_remote_settings, G_TYPE_OBJECT)
 
 #define NM_REMOTE_SETTINGS_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_REMOTE_SETTINGS, NMRemoteSettingsPrivate))
 
@@ -64,13 +60,39 @@ enum {
 	PROP_0,
 	PROP_BUS,
 	PROP_SERVICE_RUNNING,
+	PROP_HOSTNAME,
+	PROP_CAN_MODIFY,
 
 	LAST_PROP
 };
 
-static NMSettingsConnectionInterface *
-get_connection_by_path (NMSettingsInterface *settings, const char *path)
+/* Signals */
+enum {
+	NEW_CONNECTION,
+	CONNECTIONS_READ,
+	CHECK_PERMISSIONS,
+
+	LAST_SIGNAL
+};
+static guint signals[LAST_SIGNAL] = { 0 };
+
+/**
+ * nm_remote_settings_get_connection_by_path:
+ * @settings: the %NMRemoteSettings
+ * @path: the D-Bus object path of the remote connection
+ *
+ * Returns the %NMRemoteConnection representing the connection at @path.
+ *
+ * Returns: the remote connection object on success, or NULL if the object was
+ *  not known
+ **/
+NMRemoteConnection *
+nm_remote_settings_get_connection_by_path (NMRemoteSettings *settings, const char *path)
 {
+	g_return_val_if_fail (settings != NULL, NULL);
+	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), NULL);
+	g_return_val_if_fail (path != NULL, NULL);
+
 	return g_hash_table_lookup (NM_REMOTE_SETTINGS_GET_PRIVATE (settings)->connections, path);
 }
 
@@ -121,7 +143,7 @@ connection_init_result_cb (NMRemoteConnection *remote,
 		/* Finally, let users know of the new connection now that it has all
 		 * its settings and is valid.
 		 */
-		g_signal_emit_by_name (self, "new-connection", remote);
+		g_signal_emit (self, signals[NEW_CONNECTION], 0, remote);
 		break;
 	case NM_REMOTE_CONNECTION_INIT_RESULT_ERROR:
 	default:
@@ -132,7 +154,7 @@ connection_init_result_cb (NMRemoteConnection *remote,
 
 	/* Let listeners know that all connections have been found */
 	if (!g_hash_table_size (priv->pending))
-		g_signal_emit_by_name (self, NM_SETTINGS_INTERFACE_CONNECTIONS_READ);
+		g_signal_emit (self, signals[CONNECTIONS_READ], 0);
 }
 
 static void
@@ -180,7 +202,7 @@ fetch_connections_done (DBusGProxy *proxy,
 
 	/* Let listeners know we are done getting connections */
 	if (connections->len == 0) {
-		g_signal_emit_by_name (self, NM_SETTINGS_INTERFACE_CONNECTIONS_READ);
+		g_signal_emit (self, signals[CONNECTIONS_READ], 0);
 		return;
 	}
 
@@ -207,13 +229,25 @@ fetch_connections (gpointer user_data)
 	return FALSE;
 }
 
-static GSList *
-list_connections (NMSettingsInterface *settings)
+/**
+ * nm_remote_settings_list_connections:
+ * @settings: the %NMRemoteSettings
+ *
+ * Returns: all connections in the remote settings service, represented as
+ * %NMRemoteConnection instances
+ **/
+GSList *
+nm_remote_settings_list_connections (NMRemoteSettings *settings)
 {
-	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
+	NMRemoteSettingsPrivate *priv;
 	GSList *list = NULL;
 	GHashTableIter iter;
 	gpointer value;
+
+	g_return_val_if_fail (settings != NULL, NULL);
+	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), NULL);
+
+	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, &value))
@@ -223,8 +257,8 @@ list_connections (NMSettingsInterface *settings)
 }
 
 typedef struct {
-	NMSettingsInterface *self;
-	NMSettingsAddConnectionFunc callback;
+	NMRemoteSettings *self;
+	NMRemoteSettingsAddConnectionFunc callback;
 	gpointer callback_data;
 } AddConnectionInfo;
 
@@ -238,18 +272,37 @@ add_connection_done (DBusGProxy *proxy,
 	info->callback (info->self, error, info->callback_data);
 	g_free (info);
 }
-
-static gboolean
-add_connection (NMSettingsInterface *settings,
-	            NMConnection *connection,
-	            NMSettingsAddConnectionFunc callback,
-	            gpointer user_data)
+/**
+ * nm_remote_settings_add_connection:
+ * @settings: the %NMRemoteSettings
+ * @connection: the connection to add. Note that this object's settings will be
+ *   added, not the object itself
+ * @callback: callback to be called when the add operation completes
+ * @user_data: caller-specific data passed to @callback
+ *
+ * Requests that the remote settings service add the given settings to a new
+ * connection.
+ *
+ * Returns: TRUE if the request was successful, FALSE if it failed
+ **/
+gboolean
+nm_remote_settings_add_connection (NMRemoteSettings *settings,
+                                   NMConnection *connection,
+                                   NMRemoteSettingsAddConnectionFunc callback,
+                                   gpointer user_data)
 {
-	NMRemoteSettings *self = NM_REMOTE_SETTINGS (settings);
-	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
+	NMRemoteSettingsPrivate *priv;
 	AddConnectionInfo *info;
 	GHashTable *new_settings;
 
+	g_return_val_if_fail (settings != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
+	g_return_val_if_fail (connection != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (callback != NULL, FALSE);
+
+	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
+	
 	info = g_malloc0 (sizeof (AddConnectionInfo));
 	info->self = settings;
 	info->callback = callback;
@@ -291,8 +344,8 @@ remove_connections (gpointer user_data)
 }
 
 typedef struct {
-	NMSettingsInterface *settings;
-	NMSettingsSaveHostnameFunc callback;
+	NMRemoteSettings *settings;
+	NMRemoteSettingsSaveHostnameFunc callback;
 	gpointer callback_data;
 } SaveHostnameInfo;
 
@@ -309,15 +362,34 @@ save_hostname_cb (DBusGProxy *proxy,
 	g_clear_error (&error);
 }
 
-static gboolean
-save_hostname (NMSettingsInterface *settings,
-               const char *hostname,
-               NMSettingsSaveHostnameFunc callback,
-               gpointer user_data)
+/**
+ * nm_remote_settings_save_hostname:
+ * @settings: the %NMRemoteSettings
+ * @hostname: the new persistent hostname to set, or NULL to clear any existing
+ *  persistent hostname
+ * @callback: callback to be called when the hostname operation completes
+ * @user_data: caller-specific data passed to @callback
+ *
+ * Requests that the machine's persistent hostname be set to the specified value
+ * or cleared.
+ *
+ * Returns: TRUE if the request was successful, FALSE if it failed
+ **/
+gboolean
+nm_remote_settings_save_hostname (NMRemoteSettings *settings,
+                                  const char *hostname,
+                                  NMRemoteSettingsSaveHostnameFunc callback,
+                                  gpointer user_data)
 {
-	NMRemoteSettings *self = NM_REMOTE_SETTINGS (settings);
-	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
+	NMRemoteSettingsPrivate *priv;
 	SaveHostnameInfo *info;
+
+	g_return_val_if_fail (settings != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
+	g_return_val_if_fail (hostname != NULL, FALSE);
+	g_return_val_if_fail (callback != NULL, FALSE);
+	
+	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
 	info = g_malloc0 (sizeof (SaveHostnameInfo));
 	info->settings = settings;
@@ -334,8 +406,8 @@ save_hostname (NMSettingsInterface *settings,
 }
 
 typedef struct {
-	NMSettingsInterface *settings;
-	NMSettingsGetPermissionsFunc callback;
+	NMRemoteSettings *settings;
+	NMRemoteSettingsGetPermissionsFunc callback;
 	gpointer callback_data;
 } GetPermissionsInfo;
 
@@ -359,13 +431,30 @@ get_permissions_cb  (DBusGProxy *proxy,
 	g_clear_error (&error);
 }
 
-static gboolean
-get_permissions (NMSettingsInterface *settings,
-                 NMSettingsGetPermissionsFunc callback,
-                 gpointer user_data)
+/**
+ * nm_remote_settings_get_permissions:
+ * @settings: the %NMRemoteSettings
+ * @callback: callback to be called when the permissions operation completes
+ * @user_data: caller-specific data passed to @callback
+ *
+ * Requests an indication of the operations the caller is permitted to perform
+ * including those that may require authorization.
+ *
+ * Returns: TRUE if the request was successful, FALSE if it failed
+ **/
+gboolean
+nm_remote_settings_get_permissions (NMRemoteSettings *settings,
+                                    NMRemoteSettingsGetPermissionsFunc callback,
+                                    gpointer user_data)
 {
-	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
+	NMRemoteSettingsPrivate *priv;
 	GetPermissionsInfo *info;
+
+	g_return_val_if_fail (settings != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
+	g_return_val_if_fail (callback != NULL, FALSE);
+	
+	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
 	/* Skip D-Bus if we already have permissions */
 	if (priv->have_permissions) {
@@ -421,7 +510,7 @@ check_permissions_cb (DBusGProxy *proxy, gpointer user_data)
 
 	/* Permissions need to be re-fetched */
 	priv->have_permissions = FALSE;
-	g_signal_emit_by_name (self, NM_SETTINGS_INTERFACE_CHECK_PERMISSIONS);
+	g_signal_emit (self, signals[CHECK_PERMISSIONS], 0);
 }
 
 static void
@@ -441,12 +530,12 @@ properties_changed_cb (DBusGProxy *proxy,
 		if (!strcmp ((const char *) key, "Hostname")) {
 			g_free (priv->hostname);
 			priv->hostname = g_value_dup_string (value);
-			g_object_notify (G_OBJECT (self), NM_SETTINGS_INTERFACE_HOSTNAME);
+			g_object_notify (G_OBJECT (self), NM_REMOTE_SETTINGS_HOSTNAME);
 		}
 
 		if (!strcmp ((const char *) key, "CanModify")) {
 			priv->can_modify = g_value_get_boolean (value);
-			g_object_notify (G_OBJECT (self), NM_SETTINGS_INTERFACE_CAN_MODIFY);
+			g_object_notify (G_OBJECT (self), NM_REMOTE_SETTINGS_CAN_MODIFY);
 		}
 	}
 }
@@ -481,17 +570,6 @@ get_all_cb  (DBusGProxy *proxy,
 }
 
 /****************************************************************/
-
-static void
-settings_interface_init (NMSettingsInterface *iface)
-{
-	/* interface implementation */
-	iface->list_connections = list_connections;
-	iface->get_connection_by_path = get_connection_by_path;
-	iface->add_connection = add_connection;
-	iface->save_hostname = save_hostname;
-	iface->get_permissions = get_permissions;
-}
 
 /**
  * nm_remote_settings_new:
@@ -682,10 +760,10 @@ get_property (GObject *object, guint prop_id,
 	case PROP_SERVICE_RUNNING:
 		g_value_set_boolean (value, priv->service_running);
 		break;
-	case NM_SETTINGS_INTERFACE_PROP_HOSTNAME:
+	case PROP_HOSTNAME:
 		g_value_set_string (value, priv->hostname);
 		break;
-	case NM_SETTINGS_INTERFACE_PROP_CAN_MODIFY:
+	case PROP_CAN_MODIFY:
 		g_value_set_boolean (value, priv->can_modify);
 		break;
 	default:
@@ -724,13 +802,48 @@ nm_remote_settings_class_init (NMRemoteSettingsClass *class)
 		                       FALSE,
 		                       G_PARAM_READABLE));
 
-	g_object_class_override_property (object_class,
-	                                  NM_SETTINGS_INTERFACE_PROP_HOSTNAME,
-	                                  NM_SETTINGS_INTERFACE_HOSTNAME);
+	g_object_class_install_property
+		(object_class, PROP_HOSTNAME,
+		 g_param_spec_string (NM_REMOTE_SETTINGS_HOSTNAME,
+		                      "Hostname",
+		                      "Persistent hostname",
+		                      NULL,
+		                      G_PARAM_READABLE));
 
-	g_object_class_override_property (object_class,
-	                                  NM_SETTINGS_INTERFACE_PROP_CAN_MODIFY,
-	                                  NM_SETTINGS_INTERFACE_CAN_MODIFY);
+	g_object_class_install_property
+		(object_class, PROP_CAN_MODIFY,
+		 g_param_spec_boolean (NM_REMOTE_SETTINGS_CAN_MODIFY,
+		                       "CanModify",
+		                       "Can modify anything (hostname, connections, etc)",
+		                       FALSE,
+		                       G_PARAM_READABLE));
 
+	/* Signals */
+	signals[NEW_CONNECTION] = 
+	                g_signal_new (NM_REMOTE_SETTINGS_NEW_CONNECTION,
+	                              G_OBJECT_CLASS_TYPE (object_class),
+	                              G_SIGNAL_RUN_FIRST,
+	                              G_STRUCT_OFFSET (NMRemoteSettingsClass, new_connection),
+	                              NULL, NULL,
+	                              g_cclosure_marshal_VOID__OBJECT,
+	                              G_TYPE_NONE, 1, G_TYPE_OBJECT);
+
+	signals[CONNECTIONS_READ] = 
+	                g_signal_new (NM_REMOTE_SETTINGS_CONNECTIONS_READ,
+	                              G_OBJECT_CLASS_TYPE (object_class),
+	                              G_SIGNAL_RUN_FIRST,
+	                              G_STRUCT_OFFSET (NMRemoteSettingsClass, connections_read),
+	                              NULL, NULL,
+	                              g_cclosure_marshal_VOID__VOID,
+	                              G_TYPE_NONE, 0);
+
+	signals[CHECK_PERMISSIONS] = 
+	                g_signal_new (NM_REMOTE_SETTINGS_CHECK_PERMISSIONS,
+	                              G_OBJECT_CLASS_TYPE (object_class),
+	                              G_SIGNAL_RUN_FIRST,
+	                              G_STRUCT_OFFSET (NMRemoteSettingsClass, check_permissions),
+	                              NULL, NULL,
+	                              g_cclosure_marshal_VOID__VOID,
+	                              G_TYPE_NONE, 0);
 }
 

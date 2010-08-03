@@ -35,7 +35,6 @@
 #include <nm-client.h>
 #include <nm-setting-connection.h>
 #include <nm-remote-settings.h>
-#include <nm-settings-interface.h>
 #include <nm-settings-connection-interface.h>
 
 #include "nmcli.h"

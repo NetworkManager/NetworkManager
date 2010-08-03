@@ -51,8 +51,8 @@
 #include "nm-bluez-manager.h"
 #include "nm-bluez-common.h"
 #include "nm-sysconfig-settings.h"
+#include "nm-sysconfig-connection.h"
 #include "nm-secrets-provider-interface.h"
-#include "nm-settings-interface.h"
 #include "nm-manager-auth.h"
 
 #define NM_AUTOIP_DBUS_SERVICE "org.freedesktop.nm_avahi_autoipd"
@@ -838,7 +838,7 @@ system_query_connections (NMManager *manager)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	GSList *system_connections, *iter;
 
-	system_connections = nm_settings_interface_list_connections (NM_SETTINGS_INTERFACE (priv->sys_settings));
+	system_connections = nm_sysconfig_settings_list_connections (priv->sys_settings);
 	for (iter = system_connections; iter; iter = g_slist_next (iter))
 		system_internal_new_connection (manager, NM_SETTINGS_CONNECTION_INTERFACE (iter->data));
 	g_slist_free (system_connections);
@@ -1862,13 +1862,13 @@ system_get_secrets_idle_cb (gpointer user_data)
 {
 	GetSecretsInfo *info = user_data;
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (info->manager);
-	NMSettingsConnectionInterface *connection;
+	NMSysconfigConnection *connection;
 	GError *error = NULL;
 	const char *hints[3] = { NULL, NULL, NULL };
 
 	info->idle_id = 0;
 
-	connection = nm_settings_interface_get_connection_by_path (NM_SETTINGS_INTERFACE (priv->sys_settings), 
+	connection = nm_sysconfig_settings_get_connection_by_path (priv->sys_settings, 
 	                                                           info->connection_path);
 	if (!connection) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
@@ -1886,7 +1886,7 @@ system_get_secrets_idle_cb (gpointer user_data)
 
 	hints[0] = info->hint1;
 	hints[1] = info->hint2;
-	nm_settings_connection_interface_get_secrets (connection,
+	nm_settings_connection_interface_get_secrets (NM_SETTINGS_CONNECTION_INTERFACE (connection),
 	                                              info->setting_name,
 	                                              hints,
 	                                              info->request_new,
@@ -3013,7 +3013,7 @@ nm_manager_get (const char *config_file,
 
 	g_signal_connect (priv->sys_settings, "notify::" NM_SYSCONFIG_SETTINGS_UNMANAGED_SPECS,
 	                  G_CALLBACK (system_unmanaged_devices_changed_cb), singleton);
-	g_signal_connect (priv->sys_settings, "notify::" NM_SETTINGS_INTERFACE_HOSTNAME,
+	g_signal_connect (priv->sys_settings, "notify::" NM_SYSCONFIG_SETTINGS_HOSTNAME,
 	                  G_CALLBACK (system_hostname_changed_cb), singleton);
 	g_signal_connect (priv->sys_settings, "new-connection",
 	                  G_CALLBACK (system_new_connection_cb), singleton);

@@ -27,7 +27,6 @@
 #include "nm-system-config-error.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-settings-connection-interface.h"
-#include "nm-settings-interface.h"
 #include "nm-polkit-helpers.h"
 #include "nm-logging.h"
 
@@ -261,8 +260,8 @@ get_secrets (NMSettingsConnectionInterface *connection,
 	 * nm_sysconfig_connection_update().
 	 */
 	if (!priv->secrets) {
-		error = g_error_new (NM_SETTINGS_INTERFACE_ERROR,
-		                     NM_SETTINGS_INTERFACE_ERROR_INVALID_CONNECTION,
+		error = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
+		                     NM_SYSCONFIG_SETTINGS_ERROR_INVALID_CONNECTION,
 		                     "%s.%d - Internal error; secrets cache invalid.",
 		                     __FILE__, __LINE__);
 		(*callback) (connection, NULL, error, user_data);
@@ -272,8 +271,8 @@ get_secrets (NMSettingsConnectionInterface *connection,
 
 	setting = nm_connection_get_setting_by_name (priv->secrets, setting_name);
 	if (!setting) {
-		error = g_error_new (NM_SETTINGS_INTERFACE_ERROR,
-		                     NM_SETTINGS_INTERFACE_ERROR_INVALID_SETTING,
+		error = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
+		                     NM_SYSCONFIG_SETTINGS_ERROR_INVALID_SETTING,
 		                     "%s.%d - Connection didn't have requested setting '%s'.",
 		                     __FILE__, __LINE__, setting_name);
 		(*callback) (connection, NULL, error, user_data);
@@ -311,8 +310,8 @@ check_writable (NMConnection *connection, GError **error)
 	                                                           NM_TYPE_SETTING_CONNECTION);
 	if (!s_con) {
 		g_set_error_literal (error,
-		                     NM_SETTINGS_INTERFACE_ERROR,
-		                     NM_SETTINGS_INTERFACE_ERROR_INVALID_CONNECTION,
+		                     NM_SYSCONFIG_SETTINGS_ERROR,
+		                     NM_SYSCONFIG_SETTINGS_ERROR_INVALID_CONNECTION,
 		                     "Connection did not have required 'connection' setting");
 		return FALSE;
 	}
@@ -323,8 +322,8 @@ check_writable (NMConnection *connection, GError **error)
 	 */
 	if (nm_setting_connection_get_read_only (s_con)) {
 		g_set_error_literal (error,
-		                     NM_SETTINGS_INTERFACE_ERROR,
-		                     NM_SETTINGS_INTERFACE_ERROR_READ_ONLY_CONNECTION,
+		                     NM_SYSCONFIG_SETTINGS_ERROR,
+		                     NM_SYSCONFIG_SETTINGS_ERROR_READ_ONLY_CONNECTION,
 		                     "Connection is read-only");
 		return FALSE;
 	}
@@ -374,8 +373,8 @@ impl_sysconfig_connection_update (NMSysconfigConnection *self,
 	if (NM_SYSCONFIG_CONNECTION_GET_CLASS (self)->update)
 		NM_SYSCONFIG_CONNECTION_GET_CLASS (self)->update (self, new_settings, context);
 	else {
-		error = g_error_new (NM_SETTINGS_INTERFACE_ERROR,
-		                     NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
+		error = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
+		                     NM_SYSCONFIG_SETTINGS_ERROR_INTERNAL_ERROR,
 		                     "%s: %s:%d update() unimplemented", __func__, __FILE__, __LINE__);
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
@@ -397,8 +396,8 @@ impl_sysconfig_connection_delete (NMSysconfigConnection *self,
 	if (NM_SYSCONFIG_CONNECTION_GET_CLASS (self)->delete)
 		NM_SYSCONFIG_CONNECTION_GET_CLASS (self)->delete (self, context);
 	else {
-		error = g_error_new (NM_SETTINGS_INTERFACE_ERROR,
-		                     NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
+		error = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
+		                     NM_SYSCONFIG_SETTINGS_ERROR_INTERNAL_ERROR,
 		                     "%s: %s:%d delete() unimplemented", __func__, __FILE__, __LINE__);
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
@@ -417,8 +416,8 @@ impl_sysconfig_connection_get_secrets (NMSysconfigConnection *self,
 	if (NM_SYSCONFIG_CONNECTION_GET_CLASS (self)->get_secrets)
 		NM_SYSCONFIG_CONNECTION_GET_CLASS (self)->get_secrets (self, setting_name, hints, request_new, context);
 	else {
-		error = g_error_new (NM_SETTINGS_INTERFACE_ERROR,
-		                     NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
+		error = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
+		                     NM_SYSCONFIG_SETTINGS_ERROR_INTERNAL_ERROR,
 		                     "%s: %s:%d get_secrets() unimplemented", __func__, __FILE__, __LINE__);
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);

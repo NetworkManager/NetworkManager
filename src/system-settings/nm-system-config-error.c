@@ -42,6 +42,22 @@ nm_sysconfig_settings_error_get_type (void)
 	if (etype == 0) {
 		static const GEnumValue values[] = {
 			ENUM_ENTRY (NM_SYSCONFIG_SETTINGS_ERROR_GENERAL, "GeneralError"),
+
+			/* The connection was invalid. */
+			ENUM_ENTRY (NM_SYSCONFIG_SETTINGS_ERROR_INVALID_CONNECTION, "InvalidConnection"),
+			/* The connection is read-only; modifications are not allowed. */
+			ENUM_ENTRY (NM_SYSCONFIG_SETTINGS_ERROR_READ_ONLY_CONNECTION, "ReadOnlyConnection"),
+			/* A bug in the settings service caused the error. */
+			ENUM_ENTRY (NM_SYSCONFIG_SETTINGS_ERROR_INTERNAL_ERROR, "InternalError"),
+			/* Retrieval or request of secrets failed. */
+			ENUM_ENTRY (NM_SYSCONFIG_SETTINGS_ERROR_SECRETS_UNAVAILABLE, "SecretsUnavailable"),
+			/* The request for secrets was canceled. */
+			ENUM_ENTRY (NM_SYSCONFIG_SETTINGS_ERROR_SECRETS_REQUEST_CANCELED, "SecretsRequestCanceled"),
+			/* The request could not be completed because permission was denied. */
+			ENUM_ENTRY (NM_SYSCONFIG_SETTINGS_ERROR_PERMISSION_DENIED, "PermissionDenied"),
+			/* The requested setting does not existing in this connection. */
+			ENUM_ENTRY (NM_SYSCONFIG_SETTINGS_ERROR_INVALID_SETTING, "InvalidSetting"),
+
 			ENUM_ENTRY (NM_SYSCONFIG_SETTINGS_ERROR_NOT_PRIVILEGED, "NotPrivileged"),
 			ENUM_ENTRY (NM_SYSCONFIG_SETTINGS_ERROR_ADD_NOT_SUPPORTED, "AddNotSupported"),
 			ENUM_ENTRY (NM_SYSCONFIG_SETTINGS_ERROR_UPDATE_NOT_SUPPORTED, "UpdateNotSupported"),

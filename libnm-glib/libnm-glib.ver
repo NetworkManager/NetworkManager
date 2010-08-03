@@ -118,6 +118,11 @@ global:
 	nm_object_get_type;
 	nm_remote_connection_get_type;
 	nm_remote_connection_new;
+	nm_remote_settings_add_connection;
+	nm_remote_settings_get_connection_by_path;
+	nm_remote_settings_list_connections;
+	nm_remote_settings_get_permissions;
+	nm_remote_settings_save_hostname;
 	nm_remote_settings_get_type;
 	nm_remote_settings_new;
 	nm_serial_device_get_bytes_received;
@@ -128,14 +133,6 @@ global:
 	nm_settings_connection_interface_get_secrets;
 	nm_settings_connection_interface_get_type;
 	nm_settings_connection_interface_update;
-	nm_settings_interface_add_connection;
-	nm_settings_interface_error_get_type;
-	nm_settings_interface_error_quark;
-	nm_settings_interface_get_connection_by_path;
-	nm_settings_interface_get_type;
-	nm_settings_interface_list_connections;
-	nm_settings_interface_get_permissions;
-	nm_settings_interface_save_hostname;
 	nm_settings_error_quark;
 	nm_settings_get_type;
 	nm_settings_list_connections;

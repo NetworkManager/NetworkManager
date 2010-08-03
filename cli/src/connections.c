@@ -45,7 +45,6 @@
 #include <nm-device-bt.h>
 //#include <nm-device-olpc-mesh.h>
 #include <nm-remote-settings.h>
-#include <nm-settings-interface.h>
 #include <nm-settings-connection-interface.h>
 #include <nm-vpn-connection.h>
 
@@ -141,7 +140,7 @@ static gboolean find_device_for_connection (NmCli *nmc, NMConnection *connection
 static const char *active_connection_state_to_string (NMActiveConnectionState state);
 static void active_connection_state_cb (NMActiveConnection *active, GParamSpec *pspec, gpointer user_data);
 static void activate_connection_cb (gpointer user_data, const char *path, GError *error);
-static void get_connections_cb (NMSettingsInterface *settings, gpointer user_data);
+static void get_connections_cb (NMRemoteSettings *settings, gpointer user_data);
 static NMCResultCode do_connections_list (NmCli *nmc, int argc, char **argv);
 static NMCResultCode do_connections_status (NmCli *nmc, int argc, char **argv);
 static NMCResultCode do_connection_up (NmCli *nmc, int argc, char **argv);
@@ -1454,12 +1453,12 @@ error:
 
 /* callback called when connections are obtained from the settings service */
 static void
-get_connections_cb (NMSettingsInterface *settings, gpointer user_data)
+get_connections_cb (NMRemoteSettings *settings, gpointer user_data)
 {
 	ArgsInfo *args = (ArgsInfo *) user_data;
 	GError *error = NULL;
 
-	args->nmc->system_connections = nm_settings_interface_list_connections (settings);
+	args->nmc->system_connections = nm_remote_settings_list_connections (settings);
 
 	if (args->argc == 0) {
 		if (!nmc_terse_option_check (args->nmc->print_output, args->nmc->required_fields, &error))
@@ -1545,7 +1544,7 @@ do_connections (NmCli *nmc, int argc, char **argv)
 	}
 
 	/* connect to signal "connections-read" - emitted when connections are fetched and ready */
-	g_signal_connect (nmc->system_settings, NM_SETTINGS_INTERFACE_CONNECTIONS_READ,
+	g_signal_connect (nmc->system_settings, NM_REMOTE_SETTINGS_CONNECTIONS_READ,
 	                  G_CALLBACK (get_connections_cb), &args_info);
 
 

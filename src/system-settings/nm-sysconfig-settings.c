@@ -33,7 +33,6 @@
 #include <nm-connection.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
-#include <nm-settings-interface.h>
 
 #include <nm-setting-8021x.h>
 #include <nm-setting-bluetooth.h>
@@ -115,16 +114,14 @@ typedef struct {
 	GSList *unmanaged_specs;
 } NMSysconfigSettingsPrivate;
 
-static void settings_interface_init (NMSettingsInterface *klass);
-
-G_DEFINE_TYPE_WITH_CODE (NMSysconfigSettings, nm_sysconfig_settings, G_TYPE_OBJECT,
-                         G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_INTERFACE,
-                                                settings_interface_init))
+G_DEFINE_TYPE (NMSysconfigSettings, nm_sysconfig_settings, G_TYPE_OBJECT)
 
 #define NM_SYSCONFIG_SETTINGS_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SYSCONFIG_SETTINGS, NMSysconfigSettingsPrivate))
 
 enum {
 	PROPERTIES_CHANGED,
+	NEW_CONNECTION,
+	CHECK_PERMISSIONS,
 
 	LAST_SIGNAL
 };
@@ -135,6 +132,8 @@ enum {
 	PROP_0,
 	PROP_BUS,
 	PROP_UNMANAGED_SPECS,
+	PROP_HOSTNAME,
+	PROP_CAN_MODIFY,
 
 	LAST_PROP
 };
@@ -171,15 +170,20 @@ load_connections (NMSysconfigSettings *self)
 	unmanaged_specs_changed (NULL, self);
 }
 
-static GSList *
-list_connections (NMSettingsInterface *settings)
+GSList *
+nm_sysconfig_settings_list_connections (NMSysconfigSettings *settings)
 {
-	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (settings);
+	NMSysconfigSettingsPrivate *priv;
 	GHashTableIter iter;
 	gpointer key;
 	GSList *list = NULL;
 
-	load_connections (NM_SYSCONFIG_SETTINGS (settings));
+	g_return_val_if_fail (settings != NULL, NULL);
+	g_return_val_if_fail (NM_IS_SYSCONFIG_SETTINGS (settings), NULL);
+	
+	priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (settings);
+
+	load_connections (settings);
 
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, &key, NULL))
@@ -194,7 +198,7 @@ impl_settings_list_connections (NMSysconfigSettings *self,
 {
 	GSList *list = NULL, *iter;
 
-	list = list_connections (NM_SETTINGS_INTERFACE (self));
+	list = nm_sysconfig_settings_list_connections (self);
 	*connections = g_ptr_array_sized_new (g_slist_length (list) + 1);
 	for (iter = list; iter; iter = g_slist_next (iter)) {
 		g_ptr_array_add (*connections,
@@ -204,13 +208,17 @@ impl_settings_list_connections (NMSysconfigSettings *self,
 	return TRUE;
 }
 
-static NMSettingsConnectionInterface *
-get_connection_by_path (NMSettingsInterface *settings, const char *path)
+NMSysconfigConnection *
+nm_sysconfig_settings_get_connection_by_path (NMSysconfigSettings *settings, const char *path)
 {
 	NMSysconfigConnection *connection = NULL;
 	GSList *list = NULL, *iter;
 
-	list = list_connections (settings);
+	g_return_val_if_fail (settings != NULL, NULL);
+	g_return_val_if_fail (NM_IS_SYSCONFIG_SETTINGS (settings), NULL);
+	g_return_val_if_fail (path != NULL, NULL);
+
+	list = nm_sysconfig_settings_list_connections (settings);
 	for (iter = list; iter; iter = g_slist_next (iter)) {
 		if (!strcmp (nm_connection_get_path (NM_CONNECTION (iter->data)), path)) {
 			connection = NM_SYSCONFIG_CONNECTION (iter->data);
@@ -219,7 +227,7 @@ get_connection_by_path (NMSettingsInterface *settings, const char *path)
 	}
 	g_slist_free (list);
 
-	return (NMSettingsConnectionInterface *) connection;
+	return connection;
 }
 
 static void
@@ -385,7 +393,7 @@ hostname_changed (NMSystemConfigInterface *config,
                   GParamSpec *pspec,
                   gpointer user_data)
 {
-	g_object_notify (G_OBJECT (user_data), NM_SETTINGS_INTERFACE_HOSTNAME);
+	g_object_notify (G_OBJECT (user_data), NM_SYSCONFIG_SETTINGS_HOSTNAME);
 }
 
 static void
@@ -574,7 +582,7 @@ claim_connection (NMSysconfigSettings *self,
 
 	if (do_export) {
 		export_connection (self, connection);
-		g_signal_emit_by_name (self, NM_SETTINGS_INTERFACE_NEW_CONNECTION, connection);
+		g_signal_emit (self, signals[NEW_CONNECTION], 0, connection);
 	}
 }
 
@@ -602,7 +610,6 @@ typedef struct {
 	gboolean disposed;
 
 	NMConnection *connection;
-	NMSettingsAddConnectionFunc callback;
 	gpointer callback_data;
 
 	char *hostname;
@@ -617,8 +624,6 @@ static PolkitCall *
 polkit_call_new (NMSysconfigSettings *self,
                  DBusGMethodInvocation *context,
                  NMConnection *connection,
-                 NMSettingsAddConnectionFunc callback,
-                 gpointer callback_data,
                  const char *hostname)
 {
 	PolkitCall *call;
@@ -633,10 +638,6 @@ polkit_call_new (NMSysconfigSettings *self,
 	call->context = context;
 	if (connection)
 		call->connection = g_object_ref (connection);
-	if (callback) {
-		call->callback = callback;
-		call->callback_data = callback_data;
-	}
 	if (hostname)
 		call->hostname = g_strdup (hostname);
 
@@ -720,7 +721,7 @@ pk_add_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	                                                         &error);
 	/* Some random error happened */
 	if (error) {
-		call->callback (NM_SETTINGS_INTERFACE (self), error, call->callback_data);
+		dbus_g_method_return_error (call->context, error);
 		goto out;
 	}
 
@@ -729,12 +730,12 @@ pk_add_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 		error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
 		                             NM_SYSCONFIG_SETTINGS_ERROR_NOT_PRIVILEGED,
 		                             "Insufficient privileges.");
-		call->callback (NM_SETTINGS_INTERFACE (self), error, call->callback_data);
+		dbus_g_method_return_error (call->context, error);
 		goto out;
 	}
 
 	if (add_new_connection (self, call->connection, &add_error))
-		call->callback (NM_SETTINGS_INTERFACE (self), NULL, call->callback_data);
+		dbus_g_method_return (call->context);
 	else {
 		error = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
 		                     NM_SYSCONFIG_SETTINGS_ERROR_ADD_FAILED,
@@ -742,7 +743,7 @@ pk_add_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 		                     add_error ? add_error->code : -1,
 		                     (add_error && add_error->message) ? add_error->message : "(unknown)");
 		g_error_free (add_error);
-		call->callback (NM_SETTINGS_INTERFACE (self), error, call->callback_data);
+		dbus_g_method_return_error (call->context, error);
 	}
 
 out:
@@ -753,27 +754,34 @@ out:
 }
 
 static void
-internal_add_connection (NMSysconfigSettings *self,
-                         NMConnection *connection,
-                         DBusGMethodInvocation *context, /* Only present for D-Bus calls */
-                         NMSettingsAddConnectionFunc callback,
-                         gpointer user_data)
+impl_settings_add_connection (NMSysconfigSettings *self,
+                              GHashTable *settings,
+                              DBusGMethodInvocation *context)
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 	PolkitCall *call;
+	NMConnection *connection;
 	GError *error = NULL;
+
+	connection = nm_connection_new_from_hash (settings, &error);
+	if (!connection) {
+		g_assert (error);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
 
 	/* Do any of the plugins support adding? */
 	if (!get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS)) {
 		error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
 		                             NM_SYSCONFIG_SETTINGS_ERROR_ADD_NOT_SUPPORTED,
 		                             "None of the registered plugins support add.");
-		callback (NM_SETTINGS_INTERFACE (self), error, user_data);
+		dbus_g_method_return_error (context, error);
 		g_error_free (error);
 		return;
 	}
 
-	call = polkit_call_new (self, context, connection, callback, user_data, NULL);
+	call = polkit_call_new (self, context, connection, NULL);
 	g_assert (call);
 	polkit_authority_check_authorization (priv->authority,
 	                                      call->subject,
@@ -784,52 +792,8 @@ internal_add_connection (NMSysconfigSettings *self,
 	                                      pk_add_cb,
 	                                      call);
 	priv->pk_calls = g_slist_append (priv->pk_calls, call);
-}
 
-static void
-dbus_add_connection_cb (NMSettingsInterface *settings,
-                        GError *error,
-                        gpointer user_data)
-{
-	DBusGMethodInvocation *context = user_data;
-
-	if (error)
-		dbus_g_method_return_error (context, error);
-	else
-		dbus_g_method_return (context);
-}
-
-static void
-impl_settings_add_connection (NMSysconfigSettings *self,
-                              GHashTable *settings,
-                              DBusGMethodInvocation *context)
-{
-	NMConnection *tmp;
-	GError *error = NULL;
-
-	/* Check if the settings are valid first */
-	tmp = nm_connection_new_from_hash (settings, &error);
-	if (!tmp) {
-		g_assert (error);
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-		return;
-	}
-
-	internal_add_connection (self, tmp, context, dbus_add_connection_cb, context);
-
-	g_object_unref (tmp);
-}
-
-static gboolean
-settings_interface_add_connection (NMSettingsInterface *settings,
-                                   NMConnection *connection,
-                                   NMSettingsAddConnectionFunc callback,
-                                   gpointer user_data)
-{
-	NMSysconfigSettings *self = NM_SYSCONFIG_SETTINGS (settings);
-	internal_add_connection (self, connection, NULL, callback, user_data);
-	return TRUE;
+	g_object_unref (connection);
 }
 
 static void
@@ -922,7 +886,7 @@ impl_settings_save_hostname (NMSysconfigSettings *self,
 		return;
 	}
 
-	call = polkit_call_new (self, context, NULL, NULL, NULL, hostname);
+	call = polkit_call_new (self, context, NULL, hostname);
 	g_assert (call);
 	polkit_authority_check_authorization (priv->authority,
 	                                      call->subject,
@@ -939,8 +903,7 @@ static void
 pk_authority_changed_cb (GObject *object, gpointer user_data)
 {
 	/* Let clients know they should re-check their authorization */
-	g_signal_emit_by_name (NM_SYSCONFIG_SETTINGS (user_data),
-	                       NM_SETTINGS_INTERFACE_CHECK_PERMISSIONS);
+	g_signal_emit (NM_SYSCONFIG_SETTINGS (user_data), signals[CHECK_PERMISSIONS], 0);
 }
 
 typedef struct {
@@ -1053,7 +1016,7 @@ impl_settings_get_permissions (NMSysconfigSettings *self,
 {
 	PolkitCall *call;
 
-	call = polkit_call_new (self, context, NULL, NULL, NULL, FALSE);
+	call = polkit_call_new (self, context, NULL, FALSE);
 	g_assert (call);
 
 	/* Start checks for the various permissions */
@@ -1079,36 +1042,6 @@ impl_settings_get_permissions (NMSysconfigSettings *self,
 	start_permission_check (self, call,
 	                        NM_SYSCONFIG_POLICY_ACTION_WIFI_SHARE_PROTECTED,
 	                        NM_SETTINGS_PERMISSION_WIFI_SHARE_PROTECTED);
-}
-
-static gboolean
-get_permissions (NMSettingsInterface *settings,
-                 NMSettingsGetPermissionsFunc callback,
-                 gpointer user_data)
-{
-	NMSysconfigSettings *self = NM_SYSCONFIG_SETTINGS (settings);
-	NMSettingsPermissions permissions = NM_SETTINGS_PERMISSION_NONE;
-
-	/* Local caller (ie, NM) gets full permissions by default because it doesn't
-	 * need authorization.  However, permissions are still subject to plugin's
-	 * restrictions.  i.e. if no plugins support connection-modify, then even
-	 * the local caller won't get that permission.
-	 */
-
-	/* Only check for connection-modify if one of our plugins supports it. */
-	if (get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS))
-		permissions |= NM_SETTINGS_PERMISSION_CONNECTION_MODIFY;
-
-	/* Only check for hostname-modify if one of our plugins supports it. */
-	if (get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME))
-		permissions |= NM_SETTINGS_PERMISSION_HOSTNAME_MODIFY;
-
-	// FIXME: hook these into plugin permissions like the modify permissions */
-	permissions |= NM_SETTINGS_PERMISSION_WIFI_SHARE_OPEN;
-	permissions |= NM_SETTINGS_PERMISSION_WIFI_SHARE_PROTECTED;
-
-	callback (settings, permissions, NULL, user_data);
-	return TRUE;
 }
 
 static gboolean
@@ -1530,19 +1463,6 @@ finalize (GObject *object)
 }
 
 static void
-settings_interface_init (NMSettingsInterface *iface)
-{
-	iface->add_connection = settings_interface_add_connection;
-	iface->list_connections = list_connections;	
-	iface->get_connection_by_path = get_connection_by_path;
-	iface->get_permissions = get_permissions;
-
-	dbus_g_object_type_install_info (G_TYPE_FROM_INTERFACE (iface),
-	                                 &dbus_glib_nm_settings_object_info);
-
-}
-
-static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
@@ -1581,14 +1501,14 @@ get_property (GObject *object, guint prop_id,
 			copy = g_slist_append (copy, g_strdup (iter->data));
 		g_value_take_boxed (value, copy);
 		break;
-	case NM_SETTINGS_INTERFACE_PROP_HOSTNAME:
+	case PROP_HOSTNAME:
 		g_value_take_string (value, nm_sysconfig_settings_get_hostname (self));
 
 		/* Don't ever pass NULL through D-Bus */
 		if (!g_value_get_string (value))
 			g_value_set_static_string (value, "");
 		break;
-	case NM_SETTINGS_INTERFACE_PROP_CAN_MODIFY:
+	case PROP_CAN_MODIFY:
 		g_value_set_boolean (value, !!get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS));
 		break;
 	default:
@@ -1634,13 +1554,21 @@ nm_sysconfig_settings_class_init (NMSysconfigSettingsClass *class)
 							 DBUS_TYPE_G_LIST_OF_STRING,
 							 G_PARAM_READABLE));
 
-	g_object_class_override_property (object_class,
-									  NM_SETTINGS_INTERFACE_PROP_HOSTNAME,
-									  NM_SETTINGS_INTERFACE_HOSTNAME);
+	g_object_class_install_property
+		(object_class, PROP_HOSTNAME,
+		 g_param_spec_string (NM_SYSCONFIG_SETTINGS_HOSTNAME,
+		                      "Hostname",
+		                      "Persistent hostname",
+		                      NULL,
+		                      G_PARAM_READABLE));
 
-	g_object_class_override_property (object_class,
-									  NM_SETTINGS_INTERFACE_PROP_CAN_MODIFY,
-									  NM_SETTINGS_INTERFACE_CAN_MODIFY);
+	g_object_class_install_property
+		(object_class, PROP_CAN_MODIFY,
+		 g_param_spec_boolean (NM_SYSCONFIG_SETTINGS_CAN_MODIFY,
+		                       "CanModify",
+		                       "Can modify anything (hostname, connections, etc)",
+		                       FALSE,
+		                       G_PARAM_READABLE));
 
 	/* signals */
 	signals[PROPERTIES_CHANGED] = 
@@ -1651,14 +1579,27 @@ nm_sysconfig_settings_class_init (NMSysconfigSettingsClass *class)
 	                              NULL, NULL,
 	                              g_cclosure_marshal_VOID__BOXED,
 	                              G_TYPE_NONE, 1, DBUS_TYPE_G_MAP_OF_VARIANT);
+	signals[NEW_CONNECTION] = 
+	                g_signal_new (NM_SYSCONFIG_SETTINGS_NEW_CONNECTION,
+	                              G_OBJECT_CLASS_TYPE (object_class),
+	                              G_SIGNAL_RUN_FIRST,
+	                              0,
+	                              NULL, NULL,
+	                              g_cclosure_marshal_VOID__OBJECT,
+	                              G_TYPE_NONE, 1, G_TYPE_OBJECT);
+
+	signals[CHECK_PERMISSIONS] = 
+	                g_signal_new (NM_SYSCONFIG_SETTINGS_CHECK_PERMISSIONS,
+	                              G_OBJECT_CLASS_TYPE (object_class),
+	                              G_SIGNAL_RUN_FIRST,
+	                              0,
+	                              NULL, NULL,
+	                              g_cclosure_marshal_VOID__VOID,
+	                              G_TYPE_NONE, 0);
 
 	dbus_g_error_domain_register (NM_SYSCONFIG_SETTINGS_ERROR,
 	                              NM_DBUS_IFACE_SETTINGS,
 	                              NM_TYPE_SYSCONFIG_SETTINGS_ERROR);
-
-	dbus_g_error_domain_register (NM_SETTINGS_INTERFACE_ERROR,
-	                              NM_DBUS_IFACE_SETTINGS,
-	                              NM_TYPE_SETTINGS_INTERFACE_ERROR);
 
 	/* And register all the settings errors with D-Bus */
 	dbus_g_error_domain_register (NM_CONNECTION_ERROR, NULL, NM_TYPE_CONNECTION_ERROR);
@@ -1678,6 +1619,10 @@ nm_sysconfig_settings_class_init (NMSysconfigSettingsClass *class)
 	dbus_g_error_domain_register (NM_SETTING_WIRELESS_SECURITY_ERROR, NULL, NM_TYPE_SETTING_WIRELESS_SECURITY_ERROR);
 	dbus_g_error_domain_register (NM_SETTING_WIRELESS_ERROR, NULL, NM_TYPE_SETTING_WIRELESS_ERROR);
 	dbus_g_error_domain_register (NM_SETTING_ERROR, NULL, NM_TYPE_SETTING_ERROR);
+
+	dbus_g_object_type_install_info (NM_TYPE_SYSCONFIG_SETTINGS,
+	                                 &dbus_glib_nm_settings_object_info);
+
 }
 
 static void
