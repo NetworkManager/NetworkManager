@@ -3192,7 +3192,7 @@ connection_from_file (const char *filename,
                       char **keyfile,
                       char **routefile,
                       char **route6file,
-                      GError **error,
+                      GError **out_error,
                       gboolean *ignore_error)
 {
 	NMConnection *connection = NULL;
@@ -3202,6 +3202,7 @@ connection_from_file (const char *filename,
 	const char *ifcfg_name = NULL;
 	gboolean nm_controlled = TRUE;
 	gboolean ip6_used = FALSE;
+	GError *error = NULL;
 
 	g_return_val_if_fail (filename != NULL, NULL);
 	g_return_val_if_fail (unmanaged != NULL, NULL);
@@ -3222,14 +3223,14 @@ connection_from_file (const char *filename,
 
 	ifcfg_name = utils_get_ifcfg_name (filename, TRUE);
 	if (!ifcfg_name) {
-		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		g_set_error (out_error, ifcfg_plugin_error_quark (), 0,
 		             "Ignoring connection '%s' because it's not an ifcfg file.", filename);
 		return NULL;
 	}
 
 	parsed = svNewFile (filename);
 	if (!parsed) {
-		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		g_set_error (out_error, ifcfg_plugin_error_quark (), 0,
 		             "Couldn't parse file '%s'", filename);
 		return NULL;
 	}
@@ -3243,14 +3244,15 @@ connection_from_file (const char *filename,
 		 */
 		device = svGetValue (parsed, "DEVICE", FALSE);
 		if (!device) {
-			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			g_set_error (&error, ifcfg_plugin_error_quark (), 0,
 			             "File '%s' had neither TYPE nor DEVICE keys.", filename);
 			goto done;
 		}
 
 		if (!strcmp (device, "lo")) {
-			*ignore_error = TRUE;
-			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			if (ignore_error)
+				*ignore_error = TRUE;
+			g_set_error (&error, ifcfg_plugin_error_quark (), 0,
 			             "Ignoring loopback device config.");
 			g_free (device);
 			goto done;
@@ -3302,14 +3304,14 @@ connection_from_file (const char *filename,
 
 	/* Construct the connection */
 	if (!strcasecmp (type, TYPE_ETHERNET))
-		connection = wired_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, error);
+		connection = wired_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, &error);
 	else if (!strcasecmp (type, TYPE_WIRELESS))
-		connection = wireless_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, error);
+		connection = wireless_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, &error);
 	else if (!strcasecmp (type, TYPE_BRIDGE)) {
-		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		g_set_error (&error, ifcfg_plugin_error_quark (), 0,
 		             "Bridge connections are not yet supported");
 	} else {
-		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		g_set_error (&error, ifcfg_plugin_error_quark (), 0,
 		             "Unknown connection type '%s'", type);
 	}
 
@@ -3324,8 +3326,8 @@ connection_from_file (const char *filename,
 	if (!connection || *unmanaged)
 		goto done;
 
-	s_ip6 = make_ip6_setting (parsed, network_file, iscsiadm_path, error);
-	if (*error) {
+	s_ip6 = make_ip6_setting (parsed, network_file, iscsiadm_path, &error);
+	if (error) {
 		g_object_unref (connection);
 		connection = NULL;
 		goto done;
@@ -3338,8 +3340,8 @@ connection_from_file (const char *filename,
 			ip6_used = TRUE;
 	}
 
-	s_ip4 = make_ip4_setting (parsed, network_file, iscsiadm_path, ip6_used, error);
-	if (*error) {
+	s_ip4 = make_ip4_setting (parsed, network_file, iscsiadm_path, ip6_used, &error);
+	if (error) {
 		g_object_unref (connection);
 		connection = NULL;
 		goto done;
@@ -3361,7 +3363,7 @@ connection_from_file (const char *filename,
 		g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_READ_ONLY, TRUE, NULL);
 	}
 
-	if (!nm_connection_verify (connection, error)) {
+	if (!nm_connection_verify (connection, &error)) {
 		g_object_unref (connection);
 		connection = NULL;
 	}
@@ -3372,6 +3374,10 @@ connection_from_file (const char *filename,
 
 done:
 	svCloseFile (parsed);
+	if (error && out_error)
+		*out_error = error;
+	else
+		g_clear_error (&error);
 	return connection;
 }
 
