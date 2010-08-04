@@ -39,11 +39,11 @@ G_BEGIN_DECLS
 #define NM_IFUPDOWN_CONNECTION_IFBLOCK "ifblock"
 
 typedef struct {
-	NMExportedConnection parent;
+	NMSysconfigConnection parent;
 } NMIfupdownConnection;
 
 typedef struct {
-	NMExportedConnectionClass parent;
+	NMSysconfigConnectionClass parent;
 } NMIfupdownConnectionClass;
 
 GType nm_ifupdown_connection_get_type (void);
