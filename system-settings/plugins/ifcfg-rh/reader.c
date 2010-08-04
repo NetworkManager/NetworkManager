@@ -3203,6 +3203,7 @@ connection_from_file (const char *filename,
 	gboolean nm_controlled = TRUE;
 	gboolean ip6_used = FALSE;
 	GError *error = NULL;
+	gboolean ignore_connection = FALSE;
 
 	g_return_val_if_fail (filename != NULL, NULL);
 	g_return_val_if_fail (unmanaged != NULL, NULL);
@@ -3292,6 +3293,7 @@ connection_from_file (const char *filename,
 	if (tmp) {
 		g_free (tmp);
 		nm_controlled = FALSE;
+		ignore_connection = TRUE;
 	}
 
 	if (nm_controlled) {
@@ -3299,6 +3301,7 @@ connection_from_file (const char *filename,
 		if (tmp) {
 			g_free (tmp);
 			nm_controlled = FALSE;
+			ignore_connection = TRUE;
 		}
 	}
 
@@ -3323,8 +3326,13 @@ connection_from_file (const char *filename,
 	g_free (type);
 
 	/* Don't bother reading the connection fully if it's unmanaged */
-	if (!connection || *unmanaged)
+	if (!connection || *unmanaged || ignore_connection) {
+		if (connection && ignore_connection) {
+			g_object_unref (connection);
+			connection = NULL;
+		}
 		goto done;
+	}
 
 	s_ip6 = make_ip6_setting (parsed, network_file, iscsiadm_path, &error);
 	if (error) {
