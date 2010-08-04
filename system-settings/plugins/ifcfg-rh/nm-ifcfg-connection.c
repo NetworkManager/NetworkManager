@@ -178,6 +178,25 @@ update (NMSettingsConnectionInterface *connection,
 {
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (connection);
 	GError *error = NULL;
+	NMConnection *reread;
+	char *unmanaged = NULL, *keyfile = NULL, *routefile = NULL, *route6file = NULL;
+
+	/* To ensure we don't rewrite files that are only changed from other
+	 * processes on-disk, read the existing connection back in and only rewrite
+	 * it if it's really changed.
+	 */
+	reread = connection_from_file (priv->filename, NULL, NULL, NULL,
+	                               &unmanaged, &keyfile, &routefile, &route6file,
+	                               NULL, NULL);
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+
+	if (reread && nm_connection_compare (NM_CONNECTION (connection),
+	                                     reread,
+	                                     NM_SETTING_COMPARE_FLAG_EXACT))
+		goto out;
 
 	if (!writer_update_connection (NM_CONNECTION (connection),
 	                               IFCFG_DIR,
@@ -189,6 +208,9 @@ update (NMSettingsConnectionInterface *connection,
 		return FALSE;
 	}
 
+out:
+	if (reread)
+		g_object_unref (reread);
 	return parent_settings_connection_iface->update (connection, callback, user_data);
 }
 
