@@ -201,6 +201,17 @@ read_connections (SCPluginIfcfg *plugin)
 
 /* Monitoring */
 
+/* Callback for nm_sysconfig_connection_replace_and_commit. Report any errors
+ * encountered when commiting connection settings updates. */
+static void
+commit_cb (NMSettingsConnectionInterface *connection, GError *error, gpointer unused) 
+{
+	if (error) {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error updating: %s",
+	             	 (error && error->message) ? error->message : "(unknown)");
+	}
+}
+
 static void
 connection_changed_handler (SCPluginIfcfg *plugin,
                             const char *path,
@@ -261,14 +272,9 @@ connection_changed_handler (SCPluginIfcfg *plugin,
 			g_signal_emit_by_name (plugin, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, connection);
 		}
 
-		if (!nm_sysconfig_connection_update (NM_SYSCONFIG_CONNECTION (connection),
-		                                     NM_CONNECTION (new),
-		                                     TRUE,
-		                                     &error)) {
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error updating: %s",
-			             (error && error->message) ? error->message : "(unknown)");
-			g_clear_error (&error);
-		}
+		nm_sysconfig_connection_replace_and_commit (NM_SYSCONFIG_CONNECTION (connection),
+		                                            NM_CONNECTION (new),
+		                                            commit_cb, NULL);
 
 		/* Update unmanaged status */
 		g_object_set (connection, "unmanaged", new_unmanaged, NULL);

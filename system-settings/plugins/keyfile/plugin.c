@@ -125,24 +125,26 @@ find_by_uuid (gpointer key, gpointer data, gpointer user_data)
 }
 
 static void
-update_connection_settings (NMKeyfileConnection *orig,
-                            NMKeyfileConnection *new)
-{
-	GError *error = NULL;
-
-	if (!nm_sysconfig_connection_update (NM_SYSCONFIG_CONNECTION (orig),
-	                                     NM_CONNECTION (new),
-	                                     TRUE,
-	                                     &error)) {
+update_connection_settings_commit_cb (NMSettingsConnectionInterface *orig, GError *error, gpointer user_data) {
+	if (error) {
 		g_warning ("%s: '%s' / '%s' invalid: %d",
-		           __func__,
-		           error ? g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)) : "(none)",
-		           (error && error->message) ? error->message : "(none)",
-		           error ? error->code : -1);
+		       	   __func__,
+		       	   error ? g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)) : "(none)",
+		       	   (error && error->message) ? error->message : "(none)",
+		       	   error ? error->code : -1);
 		g_clear_error (&error);
 
 		g_signal_emit_by_name (orig, "removed");
 	}
+}
+
+static void
+update_connection_settings (NMKeyfileConnection *orig,
+                            NMKeyfileConnection *new)
+{
+	nm_sysconfig_connection_replace_and_commit (NM_SYSCONFIG_CONNECTION (orig),
+	                                            NM_CONNECTION (new),
+	                                            update_connection_settings_commit_cb, NULL);
 }
 
 /* Monitoring */

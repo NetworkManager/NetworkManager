@@ -147,7 +147,7 @@ constructor (GType type,
 		return NULL;
 	}
 	
-	nm_sysconfig_connection_update (NM_SYSCONFIG_CONNECTION (object), tmp, FALSE, NULL);
+	nm_sysconfig_connection_replace_settings (NM_SYSCONFIG_CONNECTION (object), tmp, NULL);
 	g_object_unref (tmp);
 
 	/* if for some reason the connection didn't have a UUID, add one */

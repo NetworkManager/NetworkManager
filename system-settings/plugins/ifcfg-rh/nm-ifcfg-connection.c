@@ -133,7 +133,7 @@ nm_ifcfg_connection_new (const char *filename,
 	}
 
 	/* Update our settings with what was read from the file */
-	nm_sysconfig_connection_update (NM_SYSCONFIG_CONNECTION (object), tmp, FALSE, NULL);
+	nm_sysconfig_connection_replace_settings (NM_SYSCONFIG_CONNECTION (object), tmp, NULL);
 	g_object_unref (tmp);
 
 	priv = NM_IFCFG_CONNECTION_GET_PRIVATE (object);

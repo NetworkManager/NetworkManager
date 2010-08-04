@@ -71,7 +71,8 @@ EXPORT(nm_inotify_helper_add_watch)
 EXPORT(nm_inotify_helper_remove_watch)
 
 EXPORT(nm_sysconfig_connection_get_type)
-EXPORT(nm_sysconfig_connection_update)
+EXPORT(nm_sysconfig_connection_replace_settings)
+EXPORT(nm_sysconfig_connection_replace_and_commit)
 /* END LINKER CRACKROCK */
 
 static void claim_connection (NMSysconfigSettings *self,

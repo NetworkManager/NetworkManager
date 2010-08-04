@@ -67,18 +67,12 @@ typedef struct {
 
 /**************************************************************/
 
-static void
-ignore_cb (NMSettingsConnectionInterface *connection,
-           GError *error,
-           gpointer user_data)
-{
-}
-
+/* Update the settings of this connection to match that of 'new', taking care to
+ * make a private copy of secrets. */
 gboolean
-nm_sysconfig_connection_update (NMSysconfigConnection *self,
-                                NMConnection *new,
-                                gboolean signal_update,
-                                GError **error)
+nm_sysconfig_connection_replace_settings (NMSysconfigConnection *self,
+                                          NMConnection *new,
+                                          GError **error)
 {
 	NMSysconfigConnectionPrivate *priv;
 	GHashTable *new_settings;
@@ -91,12 +85,6 @@ nm_sysconfig_connection_update (NMSysconfigConnection *self,
 
 	priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
 
-	/* Do nothing if there's nothing to update */
-	if (nm_connection_compare (NM_CONNECTION (self),
-	                           NM_CONNECTION (new),
-	                           NM_SETTING_COMPARE_FLAG_EXACT))
-		return TRUE;
-
 	new_settings = nm_connection_to_hash (new);
 	g_assert (new_settings);
 	if (nm_connection_replace_settings (NM_CONNECTION (self), new_settings, error)) {
@@ -107,15 +95,55 @@ nm_sysconfig_connection_update (NMSysconfigConnection *self,
 			g_object_unref (priv->secrets);
 		priv->secrets = nm_connection_duplicate (NM_CONNECTION (self));
 
-		if (signal_update) {
-			nm_settings_connection_interface_update (NM_SETTINGS_CONNECTION_INTERFACE (self),
-			                                         ignore_cb,
-			                                         NULL);
-		}
 		success = TRUE;
 	}
 	g_hash_table_destroy (new_settings);
 	return success;
+}
+
+static void
+ignore_cb (NMSettingsConnectionInterface *connection,
+           GError *error,
+           gpointer user_data)
+{
+}
+
+/* Replaces the settings in this connection with those in 'new'. If any changes
+ * are made, commits them to permanent storage and to any other subsystems
+ * watching this connection. Before returning, 'callback' is run with the given
+ * 'user_data' along with any errors encountered.
+ */
+void
+nm_sysconfig_connection_replace_and_commit (NMSysconfigConnection *self,
+                                            NMConnection *new,
+                                            NMSettingsConnectionInterfaceUpdateFunc callback,
+                                            gpointer user_data)
+{
+	GError *error = NULL;
+
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_SYSCONFIG_CONNECTION (self));
+	g_return_if_fail (new != NULL);
+	g_return_if_fail (NM_IS_CONNECTION (new));
+
+	if (!callback)
+		callback = ignore_cb;
+
+	/* Do nothing if there's nothing to update */
+	if (nm_connection_compare (NM_CONNECTION (self),
+	                           NM_CONNECTION (new),
+	                           NM_SETTING_COMPARE_FLAG_EXACT)) {
+	    callback (NM_SETTINGS_CONNECTION_INTERFACE (self), NULL, user_data);
+	    return;
+	}
+
+	if (nm_sysconfig_connection_replace_settings (self, new, &error)) {
+		nm_settings_connection_interface_update (NM_SETTINGS_CONNECTION_INTERFACE (self),
+		                                         callback, user_data);
+	} else {
+		callback (NM_SETTINGS_CONNECTION_INTERFACE (self), error, user_data);
+		g_clear_error (&error);
+	}
 }
 
 /**************************************************************/
@@ -236,7 +264,7 @@ get_secrets (NMSettingsConnectionInterface *connection,
 	/* Use priv->secrets to work around the fact that nm_connection_clear_secrets()
 	 * will clear secrets on this object's settings.  priv->secrets should be
 	 * a complete copy of this object and kept in sync by
-	 * nm_sysconfig_connection_update().
+	 * nm_sysconfig_connection_replace_settings().
 	 */
 	if (!priv->secrets) {
 		error = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
@@ -452,22 +480,11 @@ pk_update_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 		goto out;
 	}
 
-	/* Update our settings internally so the update() call will save the new
-	 * ones.  We don't let nm_sysconfig_connection_update() handle the update
-	 * signal since we need our own callback after the update is done.
-	 */
-	if (!nm_sysconfig_connection_update (self, call->connection, FALSE, &error)) {
-		/* Shouldn't really happen since we've already validated the settings */
-		dbus_g_method_return_error (call->context, error);
-		g_error_free (error);
-		polkit_call_free (call);
-		goto out;
-	}
-
-	/* Caller is authenticated, now we can finally try to commit the update */
-	nm_settings_connection_interface_update (NM_SETTINGS_CONNECTION_INTERFACE (self),
-	                                         con_update_cb,
-	                                         call);
+	/* Update and commit our settings. */
+	nm_sysconfig_connection_replace_and_commit (self, 
+	                                            call->connection,
+	                                            con_update_cb,
+	                                            call);
 
 out:
 	g_object_unref (pk_result);
