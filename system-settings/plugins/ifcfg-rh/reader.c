@@ -3288,18 +3288,16 @@ connection_from_file (const char *filename,
 	/* Ignore BRIDGE= and VLAN= connections for now too (rh #619863) */
 	tmp = svGetValue (parsed, "BRIDGE", FALSE);
 	if (tmp) {
-		g_set_error (error, ifcfg_plugin_error_quark (), 0,
-		             "Bridge component connections are not yet supported");
 		g_free (tmp);
-		goto done;
+		nm_controlled = FALSE;
 	}
 
-	tmp = svGetValue (parsed, "VLAN", FALSE);
-	if (tmp) {
-		g_set_error (error, ifcfg_plugin_error_quark (), 0,
-		             "VLAN connections are not yet supported");
-		g_free (tmp);
-		goto done;
+	if (nm_controlled) {
+		tmp = svGetValue (parsed, "VLAN", FALSE);
+		if (tmp) {
+			g_free (tmp);
+			nm_controlled = FALSE;
+		}
 	}
 
 	/* Construct the connection */
