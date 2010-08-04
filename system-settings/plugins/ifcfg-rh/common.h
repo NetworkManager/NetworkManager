@@ -43,6 +43,7 @@
 #define TYPE_WIRELESS "Wireless"
 #define TYPE_BRIDGE   "Bridge"
 
+#define IFCFG_PLUGIN_ERROR (ifcfg_plugin_error_quark ())
 GQuark ifcfg_plugin_error_quark (void);
 
 
