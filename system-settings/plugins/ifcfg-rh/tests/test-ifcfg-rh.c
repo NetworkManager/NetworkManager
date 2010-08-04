@@ -9332,8 +9332,12 @@ test_read_bridge_component (void)
 	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
-	ASSERT (connection == NULL,
-	        "bridge-component-read", "unexpected success reading %s", TEST_IFCFG_BRIDGE_COMPONENT);
+	ASSERT (connection != NULL,
+	        "bridge-component-read", "unexpected failure reading %s", TEST_IFCFG_BRIDGE_COMPONENT);
+	ASSERT (unmanaged != NULL,
+	        "bridge-component-read", "unexpected managed device reading %s", TEST_IFCFG_BRIDGE_COMPONENT);
+	ASSERT (strcmp (unmanaged, "mac:00:22:15:59:62:97") == 0,
+	        "bridge-component-read", "expected unmanaged device reading %s", TEST_IFCFG_BRIDGE_COMPONENT);
 }
 
 #define TEST_IFCFG_VLAN_INTERFACE TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-interface"
@@ -9359,8 +9363,14 @@ test_read_vlan_interface (void)
 	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
-	ASSERT (connection == NULL,
-	        "vlan-interface-read", "unexpected success reading %s", TEST_IFCFG_VLAN_INTERFACE);
+	ASSERT (connection != NULL,
+	        "vlan-interface-read", "unexpected failure reading %s", TEST_IFCFG_VLAN_INTERFACE);
+	ASSERT (unmanaged != NULL,
+	        "vlan-interface-read", "unexpected managed device reading %s", TEST_IFCFG_VLAN_INTERFACE);
+	ASSERT (strcmp (unmanaged, "mac:00:22:15:59:62:97") == 0,
+	        "vlan-interface-read", "expected unmanaged device reading %s", TEST_IFCFG_VLAN_INTERFACE);
+
+	g_object_unref (connection);
 }
 
 #define TEST_IFCFG_WIFI_OPEN_SSID_BAD_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-bad-hex"
