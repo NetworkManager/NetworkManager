@@ -1265,10 +1265,10 @@ check_one_route (struct nl_object *object, void *user_data)
 	}
 
 	err = rtnl_route_del (nm_netlink_get_default_handle (), route, 0);
-	if (err < 0) {
+	if (err < 0 && (err != -ERANGE)) {
 		nm_log_err (LOGD_DEVICE,
 		            "(%s): error %d returned from rtnl_route_del(): %s",
-		            data->iface, err, nl_geterror());
+		            data->iface, err, nl_geterror ());
 	}
 }
 
