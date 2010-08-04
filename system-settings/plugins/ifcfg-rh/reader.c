@@ -3325,7 +3325,10 @@ connection_from_file (const char *filename,
 
 	g_free (type);
 
-	/* Don't bother reading the connection fully if it's unmanaged */
+	/* Don't bother reading the connection fully if it's unmanaged.  As a
+	 * special-case, BRIDGE= and VLAN= connections are completely ignored so
+	 * that ifup gets an error when it tries to ask NM about them.
+	 */
 	if (!connection || *unmanaged || ignore_connection) {
 		if (connection && ignore_connection) {
 			g_object_unref (connection);
