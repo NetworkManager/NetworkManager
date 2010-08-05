@@ -32,7 +32,13 @@
 #include "nm-ifupdown-connection.h"
 #include "parser.h"
 
-G_DEFINE_TYPE (NMIfupdownConnection, nm_ifupdown_connection, NM_TYPE_SYSCONFIG_CONNECTION)
+static NMSettingsConnectionInterface *parent_settings_connection_iface;
+
+static void settings_connection_interface_init (NMSettingsConnectionInterface *klass);
+
+G_DEFINE_TYPE_EXTENDED (NMIfupdownConnection, nm_ifupdown_connection, NM_TYPE_SYSCONFIG_CONNECTION, 0, 
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_CONNECTION_INTERFACE,
+                                               settings_connection_interface_init))
 
 #define NM_IFUPDOWN_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IFUPDOWN_CONNECTION, NMIfupdownConnectionPrivate))
 
@@ -57,12 +63,13 @@ nm_ifupdown_connection_new (if_block *block)
 										 NULL);
 }
 
-static void
-get_secrets (NMSysconfigConnection *exported,
+static gboolean
+get_secrets (NMSettingsConnectionInterface *connection,
              const gchar *setting_name,
              const gchar **hints,
              gboolean request_new,
-             DBusGMethodInvocation *context)
+             NMSettingsConnectionInterfaceGetSecretsFunc callback,
+             gpointer user_data)
 {
 	GError *error = NULL;
 
@@ -76,12 +83,24 @@ get_secrets (NMSysconfigConnection *exported,
 		             "%s.%d - security setting name not supported '%s'.",
 		             __FILE__, __LINE__, setting_name);
 		PLUGIN_PRINT ("SCPlugin-Ifupdown", "%s", error->message);
-		dbus_g_method_return_error (context, error);
+		callback (connection, NULL, error, user_data);
 		g_error_free (error);
-		return;
+		return FALSE;
 	}
 
-	NM_SYSCONFIG_CONNECTION_CLASS (nm_ifupdown_connection_parent_class)->get_secrets (exported, setting_name, hints, request_new, context);
+	return parent_settings_connection_iface->get_secrets (connection,
+	                                                      setting_name,
+	                                                      hints,
+	                                                      request_new,
+	                                                      callback,
+	                                                      user_data);
+}
+
+static void
+settings_connection_interface_init (NMSettingsConnectionInterface *iface)
+{
+	parent_settings_connection_iface = g_type_interface_peek_parent (iface);
+	iface->get_secrets = get_secrets;
 }
 
 static void
@@ -165,7 +184,6 @@ static void
 nm_ifupdown_connection_class_init (NMIfupdownConnectionClass *ifupdown_connection_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (ifupdown_connection_class);
-	NMSysconfigConnectionClass *connection_class = NM_SYSCONFIG_CONNECTION_CLASS (ifupdown_connection_class);
 
 	g_type_class_add_private (ifupdown_connection_class, sizeof (NMIfupdownConnectionPrivate));
 
@@ -173,8 +191,6 @@ nm_ifupdown_connection_class_init (NMIfupdownConnectionClass *ifupdown_connectio
 	object_class->constructor  = constructor;
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
-
-	connection_class->get_secrets = get_secrets;
 
 	/* Properties */
 	g_object_class_install_property
