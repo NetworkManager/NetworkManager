@@ -76,8 +76,7 @@ libnminclude_HEADERS = \
 	nm-ip6-config.h \
 	nm-dhcp6-config.h \
 	nm-remote-connection.h \
-	nm-remote-settings.h \
-	nm-settings-connection-interface.h
+	nm-remote-settings.h
 
 libnm_glib_la_SOURCES = \
 	nm-object.c \
@@ -106,8 +105,7 @@ libnm_glib_la_SOURCES = \
 	nm-dhcp6-config.c \
 	nm-remote-connection.c \
 	nm-remote-connection-private.h \
-	nm-remote-settings.c \
-	nm-settings-connection-interface.c
+	nm-remote-settings.c
 
 libnm_glib_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \

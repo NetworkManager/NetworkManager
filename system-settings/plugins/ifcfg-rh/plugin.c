@@ -204,7 +204,7 @@ read_connections (SCPluginIfcfg *plugin)
 /* Callback for nm_sysconfig_connection_replace_and_commit. Report any errors
  * encountered when commiting connection settings updates. */
 static void
-commit_cb (NMSettingsConnectionInterface *connection, GError *error, gpointer unused) 
+commit_cb (NMSysconfigConnection *connection, GError *error, gpointer unused) 
 {
 	if (error) {
 		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error updating: %s",

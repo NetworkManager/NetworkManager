@@ -73,7 +73,7 @@ interface_init (gpointer g_iface)
 				  NULL, NULL,
 				  g_cclosure_marshal_VOID__OBJECT,
 				  G_TYPE_NONE, 1,
-				  NM_TYPE_SETTINGS_CONNECTION_INTERFACE);
+				  NM_TYPE_SYSCONFIG_CONNECTION);
 
 	g_signal_new (NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED,
 				  iface_type,

@@ -30,14 +30,10 @@
 #include "nm-remote-connection-private.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-sysconfig-connection-bindings.h"
-#include "nm-settings-connection-interface.h"
 
 #define NM_REMOTE_CONNECTION_BUS "bus"
 
-static void settings_connection_interface_init (NMSettingsConnectionInterface *klass);
-
-G_DEFINE_TYPE_EXTENDED (NMRemoteConnection, nm_remote_connection, NM_TYPE_CONNECTION, 0,
-                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_CONNECTION_INTERFACE, settings_connection_interface_init))
+G_DEFINE_TYPE (NMRemoteConnection, nm_remote_connection, NM_TYPE_CONNECTION)
 
 enum {
 	PROP_0,
@@ -46,6 +42,14 @@ enum {
 
 	LAST_PROP
 };
+
+enum {
+	UPDATED,
+	REMOVED,
+
+	LAST_SIGNAL
+};
+static guint signals[LAST_SIGNAL] = { 0 };
 
 
 typedef struct {
@@ -88,21 +92,35 @@ static void
 update_cb (DBusGProxy *proxy, GError *error, gpointer user_data)
 {
 	RemoteCall *call = user_data;
-	NMSettingsConnectionInterfaceUpdateFunc func = (NMSettingsConnectionInterfaceUpdateFunc) call->callback;
+	NMRemoteConnectionCommitFunc func = (NMRemoteConnectionCommitFunc) call->callback;
 
-	(*func)(NM_SETTINGS_CONNECTION_INTERFACE (call->self), error, call->user_data);
+	(*func)(call->self, error, call->user_data);
 	remote_call_complete (call->self, call);
 }
 
-static gboolean
-update (NMSettingsConnectionInterface *connection,
-        NMSettingsConnectionInterfaceUpdateFunc callback,
-        gpointer user_data)
+/**
+ * nm_remote_connection_commit_changes:
+ * @connection: the #NMRemoteConnection
+ * @callback: a function to be called when the commit completes
+ * @user_data: caller-specific data to be passed to @callback
+ *
+ * Save any local changes to the settings and properties of this connection and
+ * save them in the settings service.
+ **/
+void
+nm_remote_connection_commit_changes (NMRemoteConnection *self,
+                                     NMRemoteConnectionCommitFunc callback,
+                                     gpointer user_data)
 {
-	NMRemoteConnection *self = NM_REMOTE_CONNECTION (connection);
-	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
+	NMRemoteConnectionPrivate *priv;
 	GHashTable *settings = NULL;
 	RemoteCall *call;
+
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_REMOTE_CONNECTION (self));
+	g_return_if_fail (callback != NULL);
+
+	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
 
 	call = g_malloc0 (sizeof (RemoteCall));
 	call->self = self;
@@ -120,28 +138,39 @@ update (NMSettingsConnectionInterface *connection,
 	priv->calls = g_slist_append (priv->calls, call);
 
 	g_hash_table_destroy (settings);
-
-	return TRUE;
 }
 
 static void
 delete_cb (DBusGProxy *proxy, GError *error, gpointer user_data)
 {
 	RemoteCall *call = user_data;
-	NMSettingsConnectionInterfaceDeleteFunc func = (NMSettingsConnectionInterfaceDeleteFunc) call->callback;
+	NMRemoteConnectionDeleteFunc func = (NMRemoteConnectionDeleteFunc) call->callback;
 
-	(*func)(NM_SETTINGS_CONNECTION_INTERFACE (call->self), error, call->user_data);
+	(*func)(call->self, error, call->user_data);
 	remote_call_complete (call->self, call);
 }
 
-static gboolean
-do_delete (NMSettingsConnectionInterface *connection,
-           NMSettingsConnectionInterfaceDeleteFunc callback,
-           gpointer user_data)
+/**
+ * nm_remote_connection_delete:
+ * @connection: the #NMRemoteConnection
+ * @callback: a function to be called when the delete completes
+ * @user_data: caller-specific data to be passed to @callback
+ *
+ * Delete the connection.
+ **/
+void
+nm_remote_connection_delete (NMRemoteConnection *self,
+                             NMRemoteConnectionDeleteFunc callback,
+                             gpointer user_data)
 {
-	NMRemoteConnection *self = NM_REMOTE_CONNECTION (connection);
-	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
+	NMRemoteConnectionPrivate *priv;
 	RemoteCall *call;
+
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_REMOTE_CONNECTION (self));
+	g_return_if_fail (callback != NULL);
+
+	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
 
 	call = g_malloc0 (sizeof (RemoteCall));
 	call->self = self;
@@ -154,31 +183,46 @@ do_delete (NMSettingsConnectionInterface *connection,
 	                                                                             call);
 	g_assert (call->call);
 	priv->calls = g_slist_append (priv->calls, call);
-
-	return TRUE;
 }
 
 static void
 get_secrets_cb (DBusGProxy *proxy, GHashTable *secrets, GError *error, gpointer user_data)
 {
 	RemoteCall *call = user_data;
-	NMSettingsConnectionInterfaceGetSecretsFunc func = (NMSettingsConnectionInterfaceGetSecretsFunc) call->callback;
+	NMRemoteConnectionGetSecretsFunc func = (NMRemoteConnectionGetSecretsFunc) call->callback;
 
-	(*func)(NM_SETTINGS_CONNECTION_INTERFACE (call->self), error ? NULL : secrets, error, call->user_data);
+	(*func)(call->self, error ? NULL : secrets, error, call->user_data);
 	remote_call_complete (call->self, call);
 }
 
-static gboolean
-get_secrets (NMSettingsConnectionInterface *connection,
-             const char *setting_name,
-             const char **hints,
-             gboolean request_new,
-             NMSettingsConnectionInterfaceGetSecretsFunc callback,
-             gpointer user_data)
+/**
+ * nm_remote_connection_get_secrets:
+ * @connection: the #NMRemoteConnection
+ * @setting_name: the #NMSetting object name to get secrets for
+ * @hints: #NMSetting key names to get secrets for (optional)
+ * @request_new: hint that new secrets (instead of cached or stored secrets) 
+ *  should be returned
+ * @callback: a function to be called when the update completes
+ * @user_data: caller-specific data to be passed to @callback
+ *
+ * Request the connection's secrets.
+ **/
+void
+nm_remote_connection_get_secrets (NMRemoteConnection *self,
+                                  const char *setting_name,
+                                  const char **hints,
+                                  gboolean request_new,
+                                  NMRemoteConnectionGetSecretsFunc callback,
+                                  gpointer user_data)
 {
-	NMRemoteConnection *self = NM_REMOTE_CONNECTION (connection);
-	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
+	NMRemoteConnectionPrivate *priv;
 	RemoteCall *call;
+
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_REMOTE_CONNECTION (self));
+	g_return_if_fail (callback != NULL);
+
+	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
 
 	call = g_malloc0 (sizeof (RemoteCall));
 	call->self = self;
@@ -194,8 +238,6 @@ get_secrets (NMSettingsConnectionInterface *connection,
 	                                                                                          call);
 	g_assert (call->call);
 	priv->calls = g_slist_append (priv->calls, call);
-
-	return TRUE;
 }
 
 /****************************************************************/
@@ -218,7 +260,7 @@ replace_settings (NMRemoteConnection *self, GHashTable *new_settings)
 	/* Emit update irregardless to let listeners figure out what to do with
 	 * the connection; whether to delete / ignore it or not.
 	 */
-	nm_settings_connection_interface_emit_updated (NM_SETTINGS_CONNECTION_INTERFACE (self));
+	g_signal_emit (self, signals[UPDATED], 0, new_settings);
 	return TRUE;
 }
 
@@ -257,19 +299,10 @@ updated_cb (DBusGProxy *proxy, GHashTable *settings, gpointer user_data)
 static void
 removed_cb (DBusGProxy *proxy, gpointer user_data)
 {
-	g_signal_emit_by_name (G_OBJECT (user_data), "removed");
+	g_signal_emit (G_OBJECT (user_data), signals[REMOVED], 0);
 }
 
 /****************************************************************/
-
-static void
-settings_connection_interface_init (NMSettingsConnectionInterface *klass)
-{
-	/* interface implementation */
-	klass->update = update;
-	klass->delete = do_delete;
-	klass->get_secrets = get_secrets;
-}
 
 /**
  * nm_remote_connection_new:
@@ -425,5 +458,24 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 		                    NM_REMOTE_CONNECTION_INIT_RESULT_ERROR,
 		                    NM_REMOTE_CONNECTION_INIT_RESULT_UNKNOWN,
 		                    G_PARAM_READABLE));
-}
 
+	/* Signals */
+	signals[UPDATED] = 
+		g_signal_new (NM_REMOTE_CONNECTION_UPDATED,
+		              G_TYPE_FROM_CLASS (remote_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMRemoteConnectionClass, updated),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__BOXED,
+		              G_TYPE_NONE, 1, DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT);
+
+	signals[REMOVED] = 
+		g_signal_new (NM_REMOTE_CONNECTION_REMOVED,
+		              G_TYPE_FROM_CLASS (remote_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMRemoteConnectionClass, removed),
+	 	              NULL, NULL,
+		              g_cclosure_marshal_VOID__VOID,
+		              G_TYPE_NONE, 0);
+
+}

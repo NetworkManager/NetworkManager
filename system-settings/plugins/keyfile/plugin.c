@@ -125,7 +125,7 @@ find_by_uuid (gpointer key, gpointer data, gpointer user_data)
 }
 
 static void
-update_connection_settings_commit_cb (NMSettingsConnectionInterface *orig, GError *error, gpointer user_data) {
+update_connection_settings_commit_cb (NMSysconfigConnection *orig, GError *error, gpointer user_data) {
 	if (error) {
 		g_warning ("%s: '%s' / '%s' invalid: %d",
 		       	   __func__,

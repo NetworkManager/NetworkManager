@@ -76,7 +76,7 @@ EXPORT(nm_sysconfig_connection_replace_and_commit)
 /* END LINKER CRACKROCK */
 
 static void claim_connection (NMSysconfigSettings *self,
-                              NMSettingsConnectionInterface *connection,
+                              NMSysconfigConnection *connection,
                               gboolean do_export);
 
 static gboolean impl_settings_list_connections (NMSysconfigSettings *self,
@@ -160,7 +160,7 @@ load_connections (NMSysconfigSettings *self)
 		// priority plugin.
 
 		for (elt = plugin_connections; elt; elt = g_slist_next (elt))
-			claim_connection (self, NM_SETTINGS_CONNECTION_INTERFACE (elt->data), TRUE);
+			claim_connection (self, NM_SYSCONFIG_CONNECTION (elt->data), TRUE);
 
 		g_slist_free (plugin_connections);
 	}
@@ -342,7 +342,7 @@ nm_sysconfig_settings_get_hostname (NMSysconfigSettings *self)
 
 static void
 plugin_connection_added (NMSystemConfigInterface *config,
-                         NMSettingsConnectionInterface *connection,
+                         NMSysconfigConnection *connection,
                          gpointer user_data)
 {
 	claim_connection (NM_SYSCONFIG_SETTINGS (user_data), connection, TRUE);
@@ -531,7 +531,7 @@ load_plugins (NMSysconfigSettings *self, const char *plugins, GError **error)
 }
 
 static void
-connection_removed (NMSettingsConnectionInterface *connection,
+connection_removed (NMSysconfigConnection *connection,
                     gpointer user_data)
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (user_data);
@@ -541,14 +541,14 @@ connection_removed (NMSettingsConnectionInterface *connection,
 
 static void
 export_connection (NMSysconfigSettings *self,
-                   NMSettingsConnectionInterface *connection)
+                   NMSysconfigConnection *connection)
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 	static guint32 ec_counter = 0;
 	char *path;
 
 	g_return_if_fail (connection != NULL);
-	g_return_if_fail (NM_IS_SETTINGS_CONNECTION_INTERFACE (connection));
+	g_return_if_fail (NM_IS_SYSCONFIG_CONNECTION (connection));
 	g_return_if_fail (priv->bus != NULL);
 
 	/* Don't allow exporting twice */
@@ -563,13 +563,13 @@ export_connection (NMSysconfigSettings *self,
 
 static void
 claim_connection (NMSysconfigSettings *self,
-                  NMSettingsConnectionInterface *connection,
+                  NMSysconfigConnection *connection,
                   gboolean do_export)
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 
 	g_return_if_fail (NM_IS_SYSCONFIG_SETTINGS (self));
-	g_return_if_fail (NM_IS_SETTINGS_CONNECTION_INTERFACE (connection));
+	g_return_if_fail (NM_IS_SYSCONFIG_CONNECTION (connection));
 
 	if (g_hash_table_lookup (priv->connections, connection))
 		/* A plugin is lying to us. */
@@ -577,7 +577,7 @@ claim_connection (NMSysconfigSettings *self,
 
 	g_hash_table_insert (priv->connections, g_object_ref (connection), GINT_TO_POINTER (1));
 	g_signal_connect (connection,
-	                  NM_SETTINGS_CONNECTION_INTERFACE_REMOVED,
+	                  NM_SYSCONFIG_CONNECTION_REMOVED,
 	                  G_CALLBACK (connection_removed),
 	                  self);
 
@@ -589,16 +589,13 @@ claim_connection (NMSysconfigSettings *self,
 
 static void
 remove_connection (NMSysconfigSettings *self,
-                   NMSettingsConnectionInterface *connection,
+                   NMSysconfigConnection *connection,
                    gboolean do_signal)
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 
-	g_return_if_fail (NM_IS_SYSCONFIG_SETTINGS (self));
-	g_return_if_fail (NM_IS_SETTINGS_CONNECTION_INTERFACE (connection));
-
 	if (g_hash_table_lookup (priv->connections, connection)) {
-		g_signal_emit_by_name (G_OBJECT (connection), NM_SETTINGS_CONNECTION_INTERFACE_REMOVED);
+		g_signal_emit_by_name (G_OBJECT (connection), NM_SYSCONFIG_CONNECTION_REMOVED);
 		g_hash_table_remove (priv->connections, connection);
 	}
 }
@@ -1234,7 +1231,7 @@ cleanup:
 }
 
 static void
-delete_cb (NMSettingsConnectionInterface *connection, GError *error, gpointer user_data)
+delete_cb (NMSysconfigConnection *connection, GError *error, gpointer user_data)
 {
 }
 
@@ -1256,11 +1253,11 @@ default_wired_try_update (NMDefaultWiredConnection *wired,
 	id = nm_setting_connection_get_id (s_con);
 	g_assert (id);
 
-	remove_connection (self, NM_SETTINGS_CONNECTION_INTERFACE (wired), FALSE);
+	remove_connection (self, NM_SYSCONFIG_CONNECTION (wired), FALSE);
 	if (add_new_connection (self, NM_CONNECTION (wired), &error)) {
-		nm_settings_connection_interface_delete (NM_SETTINGS_CONNECTION_INTERFACE (wired),
-		                                         delete_cb,
-		                                         NULL);
+		nm_sysconfig_connection_delete (NM_SYSCONFIG_CONNECTION (wired),
+		                                delete_cb,
+		                                NULL);
 
 		g_object_set_data (G_OBJECT (nm_default_wired_connection_get_device (wired)),
 		                   DEFAULT_WIRED_TAG,
@@ -1278,7 +1275,7 @@ default_wired_try_update (NMDefaultWiredConnection *wired,
 	 * but add it back to the system settings service. Connection is already
 	 * exported on the bus, don't export it again, thus do_export == FALSE.
 	 */
-	claim_connection (self, NM_SETTINGS_CONNECTION_INTERFACE (wired), FALSE);
+	claim_connection (self, NM_SYSCONFIG_CONNECTION (wired), FALSE);
 	return TRUE;
 }
 
@@ -1329,7 +1326,7 @@ nm_sysconfig_settings_device_added (NMSysconfigSettings *self, NMDevice *device)
 
 	g_signal_connect (wired, "try-update", (GCallback) default_wired_try_update, self);
 	g_signal_connect (wired, "deleted", (GCallback) default_wired_deleted, self);
-	claim_connection (self, NM_SETTINGS_CONNECTION_INTERFACE (wired), TRUE);
+	claim_connection (self, NM_SYSCONFIG_CONNECTION (wired), TRUE);
 	g_object_unref (wired);
 
 	g_object_set_data (G_OBJECT (device), DEFAULT_WIRED_TAG, wired);
@@ -1348,7 +1345,7 @@ nm_sysconfig_settings_device_removed (NMSysconfigSettings *self, NMDevice *devic
 
 	connection = (NMDefaultWiredConnection *) g_object_get_data (G_OBJECT (device), DEFAULT_WIRED_TAG);
 	if (connection)
-		remove_connection (self, NM_SETTINGS_CONNECTION_INTERFACE (connection), TRUE);
+		remove_connection (self, NM_SYSCONFIG_CONNECTION (connection), TRUE);
 }
 
 static void

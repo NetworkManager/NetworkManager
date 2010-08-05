@@ -26,7 +26,6 @@
 #include "nm-sysconfig-connection.h"
 #include "nm-system-config-error.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-settings-connection-interface.h"
 #include "nm-polkit-helpers.h"
 #include "nm-logging.h"
 
@@ -49,15 +48,19 @@ static void impl_sysconfig_connection_get_secrets (NMSysconfigConnection *connec
 
 #include "nm-sysconfig-connection-glue.h"
 
-static void settings_connection_interface_init (NMSettingsConnectionInterface *klass);
-
-G_DEFINE_TYPE_EXTENDED (NMSysconfigConnection, nm_sysconfig_connection, NM_TYPE_CONNECTION, 0,
-                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_CONNECTION_INTERFACE,
-                                               settings_connection_interface_init))
+G_DEFINE_TYPE (NMSysconfigConnection, nm_sysconfig_connection, NM_TYPE_CONNECTION)
 
 #define NM_SYSCONFIG_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
                                                 NM_TYPE_SYSCONFIG_CONNECTION, \
                                                 NMSysconfigConnectionPrivate))
+
+enum {
+	UPDATED,
+	REMOVED,
+
+	LAST_SIGNAL
+};
+static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
 	PolkitAuthority *authority;
@@ -102,7 +105,7 @@ nm_sysconfig_connection_replace_settings (NMSysconfigConnection *self,
 }
 
 static void
-ignore_cb (NMSettingsConnectionInterface *connection,
+ignore_cb (NMSysconfigConnection *connection,
            GError *error,
            gpointer user_data)
 {
@@ -116,7 +119,7 @@ ignore_cb (NMSettingsConnectionInterface *connection,
 void
 nm_sysconfig_connection_replace_and_commit (NMSysconfigConnection *self,
                                             NMConnection *new,
-                                            NMSettingsConnectionInterfaceUpdateFunc callback,
+                                            NMSysconfigConnectionCommitFunc callback,
                                             gpointer user_data)
 {
 	GError *error = NULL;
@@ -133,43 +136,127 @@ nm_sysconfig_connection_replace_and_commit (NMSysconfigConnection *self,
 	if (nm_connection_compare (NM_CONNECTION (self),
 	                           NM_CONNECTION (new),
 	                           NM_SETTING_COMPARE_FLAG_EXACT)) {
-	    callback (NM_SETTINGS_CONNECTION_INTERFACE (self), NULL, user_data);
+	    callback (self, NULL, user_data);
 	    return;
 	}
 
 	if (nm_sysconfig_connection_replace_settings (self, new, &error)) {
-		nm_settings_connection_interface_update (NM_SETTINGS_CONNECTION_INTERFACE (self),
-		                                         callback, user_data);
+		nm_sysconfig_connection_commit_changes (self, callback, user_data);
 	} else {
-		callback (NM_SETTINGS_CONNECTION_INTERFACE (self), error, user_data);
+		callback (self, error, user_data);
 		g_clear_error (&error);
+	}
+}
+
+void
+nm_sysconfig_connection_commit_changes (NMSysconfigConnection *connection,
+                                        NMSysconfigConnectionCommitFunc callback,
+                                        gpointer user_data)
+{
+	g_return_if_fail (connection != NULL);
+	g_return_if_fail (NM_IS_SYSCONFIG_CONNECTION (connection));
+	g_return_if_fail (callback != NULL);
+
+	if (NM_SYSCONFIG_CONNECTION_GET_CLASS (connection)->commit_changes) {
+		NM_SYSCONFIG_CONNECTION_GET_CLASS (connection)->commit_changes (connection,
+		                                                                callback,
+		                                                                user_data);
+	} else {
+		GError *error = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
+		                             NM_SYSCONFIG_SETTINGS_ERROR_INTERNAL_ERROR,
+		                             "%s: %s:%d commit_changes() unimplemented", __func__, __FILE__, __LINE__);
+		callback (connection, error, user_data);
+		g_error_free (error);
+	}
+}
+
+void
+nm_sysconfig_connection_delete (NMSysconfigConnection *connection,
+                                NMSysconfigConnectionDeleteFunc callback,
+                                gpointer user_data)
+{
+	g_return_if_fail (connection != NULL);
+	g_return_if_fail (NM_IS_SYSCONFIG_CONNECTION (connection));
+	g_return_if_fail (callback != NULL);
+
+	if (NM_SYSCONFIG_CONNECTION_GET_CLASS (connection)->delete) {
+		NM_SYSCONFIG_CONNECTION_GET_CLASS (connection)->delete (connection,
+		                                                        callback,
+		                                                        user_data);
+	} else {
+		GError *error = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
+		                             NM_SYSCONFIG_SETTINGS_ERROR_INTERNAL_ERROR,
+		                             "%s: %s:%d delete() unimplemented", __func__, __FILE__, __LINE__);
+		callback (connection, error, user_data);
+		g_error_free (error);
+	}
+}
+
+void
+nm_sysconfig_connection_get_secrets (NMSysconfigConnection *connection,
+                                     const char *setting_name,
+                                     const char **hints,
+                                     gboolean request_new,
+                                     NMSysconfigConnectionGetSecretsFunc callback,
+                                     gpointer user_data)
+{
+	g_return_if_fail (connection != NULL);
+	g_return_if_fail (NM_IS_SYSCONFIG_CONNECTION (connection));
+	g_return_if_fail (callback != NULL);
+
+	if (NM_SYSCONFIG_CONNECTION_GET_CLASS (connection)->get_secrets) {
+		NM_SYSCONFIG_CONNECTION_GET_CLASS (connection)->get_secrets (connection,
+		                                                             setting_name,
+		                                                             hints,
+		                                                             request_new,
+		                                                             callback,
+		                                                             user_data);
+	} else {
+		GError *error = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
+		                             NM_SYSCONFIG_SETTINGS_ERROR_INTERNAL_ERROR,
+		                             "%s: %s:%d get_secrets() unimplemented", __func__, __FILE__, __LINE__);
+		callback (connection, NULL, error, user_data);
+		g_error_free (error);
 	}
 }
 
 /**************************************************************/
 
-static gboolean
-update (NMSettingsConnectionInterface *connection,
-	    NMSettingsConnectionInterfaceUpdateFunc callback,
-	    gpointer user_data)
+static void
+emit_updated (NMSysconfigConnection *connection)
 {
-	g_object_ref (connection);
-	nm_settings_connection_interface_emit_updated (connection);
-	callback (connection, NULL, user_data);
-	g_object_unref (connection);
-	return TRUE;
+	NMConnection *tmp;
+	GHashTable *settings;
+
+	tmp = nm_connection_duplicate (NM_CONNECTION (connection));
+	nm_connection_clear_secrets (tmp);
+	settings = nm_connection_to_hash (tmp);
+	g_object_unref (tmp);
+
+	g_signal_emit (connection, signals[UPDATED], 0, settings);
+	g_hash_table_destroy (settings);
 }
 
-static gboolean
-do_delete (NMSettingsConnectionInterface *connection,
-	       NMSettingsConnectionInterfaceDeleteFunc callback,
+static void
+commit_changes (NMSysconfigConnection *connection,
+                NMSysconfigConnectionCommitFunc callback,
+                gpointer user_data)
+{
+	g_object_ref (connection);
+	emit_updated (connection);
+	callback (connection, NULL, user_data);
+	g_object_unref (connection);
+}
+
+static void
+do_delete (NMSysconfigConnection *connection,
+	       NMSysconfigConnectionDeleteFunc callback,
 	       gpointer user_data)
 {
 	g_object_ref (connection);
-	g_signal_emit_by_name (connection, "removed");
+	g_signal_emit (connection, signals[REMOVED], 0);
 	callback (connection, NULL, user_data);
 	g_object_unref (connection);
-	return TRUE;
 }
 
 static GValue *
@@ -246,16 +333,15 @@ destroy_gvalue (gpointer data)
 	g_slice_free (GValue, value);
 }
 
-static gboolean
-get_secrets (NMSettingsConnectionInterface *connection,
+static void
+get_secrets (NMSysconfigConnection *connection,
 	         const char *setting_name,
              const char **hints,
              gboolean request_new,
-             NMSettingsConnectionInterfaceGetSecretsFunc callback,
+             NMSysconfigConnectionGetSecretsFunc callback,
              gpointer user_data)
 {
-	NMSysconfigConnection *self = NM_SYSCONFIG_CONNECTION (connection);
-	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
+	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (connection);
 	GHashTable *settings = NULL;
 	GHashTable *secrets = NULL;
 	NMSetting *setting;
@@ -273,7 +359,7 @@ get_secrets (NMSettingsConnectionInterface *connection,
 		                     __FILE__, __LINE__);
 		(*callback) (connection, NULL, error, user_data);
 		g_error_free (error);
-		return TRUE;
+		return;
 	}
 
 	setting = nm_connection_get_setting_by_name (priv->secrets, setting_name);
@@ -284,7 +370,7 @@ get_secrets (NMSettingsConnectionInterface *connection,
 		                     __FILE__, __LINE__, setting_name);
 		(*callback) (connection, NULL, error, user_data);
 		g_error_free (error);
-		return TRUE;
+		return;
 	}
 
 	/* Returned secrets are a{sa{sv}}; this is the outer a{s...} hash that
@@ -300,7 +386,6 @@ get_secrets (NMSettingsConnectionInterface *connection,
 	g_hash_table_insert (settings, g_strdup (setting_name), secrets);
 	callback (connection, settings, NULL, user_data);
 	g_hash_table_destroy (settings);
-	return TRUE;
 }
 
 /**************************************************************/
@@ -420,7 +505,7 @@ polkit_call_free (PolkitCall *call)
 }
 
 static void
-con_update_cb (NMSettingsConnectionInterface *connection,
+con_update_cb (NMSysconfigConnection *connection,
                GError *error,
                gpointer user_data)
 {
@@ -533,7 +618,7 @@ impl_sysconfig_connection_update (NMSysconfigConnection *self,
 }
 
 static void
-con_delete_cb (NMSettingsConnectionInterface *connection,
+con_delete_cb (NMSysconfigConnection *connection,
                GError *error,
                gpointer user_data)
 {
@@ -594,9 +679,7 @@ pk_delete_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	}
 
 	/* Caller is authenticated, now we can finally try to delete */
-	nm_settings_connection_interface_delete (NM_SETTINGS_CONNECTION_INTERFACE (self),
-	                                         con_delete_cb,
-	                                         call);
+	nm_sysconfig_connection_delete (self, con_delete_cb, call);
 
 out:
 	g_object_unref (pk_result);
@@ -630,7 +713,7 @@ impl_sysconfig_connection_delete (NMSysconfigConnection *self,
 }
 
 static void
-con_secrets_cb (NMSettingsConnectionInterface *connection,
+con_secrets_cb (NMSysconfigConnection *connection,
                 GHashTable *secrets,
                 GError *error,
                 gpointer user_data)
@@ -692,12 +775,12 @@ pk_secrets_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	}
 
 	/* Caller is authenticated, now we can finally try to update */
-	nm_settings_connection_interface_get_secrets (NM_SETTINGS_CONNECTION_INTERFACE (self),
-	                                              call->setting_name,
-	                                              (const char **) call->hints,
-	                                              call->request_new,
-	                                              con_secrets_cb,
-	                                              call);
+	nm_sysconfig_connection_get_secrets (self,
+	                                     call->setting_name,
+	                                     (const char **) call->hints,
+	                                     call->request_new,
+	                                     con_secrets_cb,
+	                                     call);
 
 out:
 	g_object_unref (pk_result);
@@ -727,14 +810,6 @@ impl_sysconfig_connection_get_secrets (NMSysconfigConnection *self,
 }
 
 /**************************************************************/
-
-static void
-settings_connection_interface_init (NMSettingsConnectionInterface *iface)
-{
-	iface->update = update;
-	iface->delete = do_delete;
-	iface->get_secrets = get_secrets;
-}
 
 static void
 nm_sysconfig_connection_init (NMSysconfigConnection *self)
@@ -779,6 +854,28 @@ nm_sysconfig_connection_class_init (NMSysconfigConnectionClass *class)
 
 	/* Virtual methods */
 	object_class->dispose = dispose;
+	class->commit_changes = commit_changes;
+	class->delete = do_delete;
+	class->get_secrets = get_secrets;
+
+	/* Signals */
+	signals[UPDATED] = 
+		g_signal_new (NM_SYSCONFIG_CONNECTION_UPDATED,
+		              G_TYPE_FROM_CLASS (class),
+		              G_SIGNAL_RUN_FIRST,
+		              0,
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__BOXED,
+		              G_TYPE_NONE, 1, DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT);
+
+	signals[REMOVED] = 
+		g_signal_new (NM_SYSCONFIG_CONNECTION_REMOVED,
+		              G_TYPE_FROM_CLASS (class),
+		              G_SIGNAL_RUN_FIRST,
+		              0,
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__VOID,
+		              G_TYPE_NONE, 0);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (class),
 	                                 &dbus_glib_nm_sysconfig_connection_object_info);

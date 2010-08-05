@@ -45,7 +45,6 @@
 #include <nm-device-bt.h>
 //#include <nm-device-olpc-mesh.h>
 #include <nm-remote-settings.h>
-#include <nm-settings-connection-interface.h>
 #include <nm-vpn-connection.h>
 
 #include "utils.h"

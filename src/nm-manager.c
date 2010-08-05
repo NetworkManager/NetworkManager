@@ -757,13 +757,13 @@ remove_connection (NMManager *manager,
 /*******************************************************************/
 
 static void
-system_connection_updated_cb (NMSettingsConnectionInterface *connection,
+system_connection_updated_cb (NMSysconfigConnection *connection,
                               gpointer unused,
                               NMManager *manager)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	const char *path;
-	NMSettingsConnectionInterface *existing;
+	NMSysconfigConnection *existing;
 	GError *error = NULL;
 
 	path = nm_connection_get_path (NM_CONNECTION (connection));
@@ -792,7 +792,7 @@ system_connection_updated_cb (NMSettingsConnectionInterface *connection,
 }
 
 static void
-system_connection_removed_cb (NMSettingsConnectionInterface *connection,
+system_connection_removed_cb (NMSysconfigConnection *connection,
                               NMManager *manager)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
@@ -807,16 +807,16 @@ system_connection_removed_cb (NMSettingsConnectionInterface *connection,
 
 static void
 system_internal_new_connection (NMManager *manager,
-                                NMSettingsConnectionInterface *connection)
+                                NMSysconfigConnection *connection)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	const char *path;
 
 	g_return_if_fail (connection != NULL);
 
-	g_signal_connect (connection, NM_SETTINGS_CONNECTION_INTERFACE_UPDATED,
+	g_signal_connect (connection, NM_SYSCONFIG_CONNECTION_UPDATED,
 	                  G_CALLBACK (system_connection_updated_cb), manager);
-	g_signal_connect (connection, NM_SETTINGS_CONNECTION_INTERFACE_REMOVED,
+	g_signal_connect (connection, NM_SYSCONFIG_CONNECTION_REMOVED,
 	                  G_CALLBACK (system_connection_removed_cb), manager);
 
 	path = nm_connection_get_path (NM_CONNECTION (connection));
@@ -826,7 +826,7 @@ system_internal_new_connection (NMManager *manager,
 
 static void
 system_new_connection_cb (NMSysconfigSettings *settings,
-                          NMSettingsConnectionInterface *connection,
+                          NMSysconfigConnection *connection,
                           NMManager *manager)
 {
 	system_internal_new_connection (manager, connection);
@@ -840,7 +840,7 @@ system_query_connections (NMManager *manager)
 
 	system_connections = nm_sysconfig_settings_list_connections (priv->sys_settings);
 	for (iter = system_connections; iter; iter = g_slist_next (iter))
-		system_internal_new_connection (manager, NM_SETTINGS_CONNECTION_INTERFACE (iter->data));
+		system_internal_new_connection (manager, NM_SYSCONFIG_CONNECTION (iter->data));
 	g_slist_free (system_connections);
 }
 
@@ -1838,7 +1838,7 @@ provider_cancel_secrets (NMSecretsProviderInterface *provider, gpointer user_dat
 }
 
 static void
-system_get_secrets_reply_cb (NMSettingsConnectionInterface *connection,
+system_get_secrets_reply_cb (NMSysconfigConnection *connection,
                              GHashTable *secrets,
                              GError *error,
                              gpointer user_data)
@@ -1886,12 +1886,12 @@ system_get_secrets_idle_cb (gpointer user_data)
 
 	hints[0] = info->hint1;
 	hints[1] = info->hint2;
-	nm_settings_connection_interface_get_secrets (NM_SETTINGS_CONNECTION_INTERFACE (connection),
-	                                              info->setting_name,
-	                                              hints,
-	                                              info->request_new,
-	                                              system_get_secrets_reply_cb,
-	                                              info);
+	nm_sysconfig_connection_get_secrets (connection,
+	                                     info->setting_name,
+	                                     hints,
+	                                     info->request_new,
+	                                     system_get_secrets_reply_cb,
+	                                     info);
 	return FALSE;
 }
 

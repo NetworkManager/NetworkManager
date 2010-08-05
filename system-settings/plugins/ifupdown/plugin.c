@@ -177,7 +177,7 @@ sc_plugin_ifupdown_class_init (SCPluginIfupdownClass *req_class)
 }
 
 static void
-ignore_cb (NMSettingsConnectionInterface *connection,
+ignore_cb (NMSysconfigConnection *connection,
            GError *error,
            gpointer user_data)
 {
@@ -227,9 +227,9 @@ bind_device_to_connection (SCPluginIfupdown *self,
 	}
 	g_byte_array_free (mac_address, TRUE);
 
-	nm_settings_connection_interface_update (NM_SETTINGS_CONNECTION_INTERFACE (exported),
-	                                         ignore_cb,
-	                                         NULL);
+	nm_sysconfig_connection_commit_changes (NM_SYSCONFIG_CONNECTION (exported),
+	                                        ignore_cb,
+	                                        NULL);
 }    
 
 static void
@@ -366,9 +366,9 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 			/* Remove any connection for this block that was previously found */
 			exported = g_hash_table_lookup (priv->iface_connections, block->name);
 			if (exported) {
-				nm_settings_connection_interface_delete (NM_SETTINGS_CONNECTION_INTERFACE (exported),
-				                                         ignore_cb,
-				                                         NULL);
+				nm_sysconfig_connection_delete (NM_SYSCONFIG_CONNECTION (exported),
+				                                ignore_cb,
+				                                NULL);
 				g_hash_table_remove (priv->iface_connections, block->name);
 			}
 
@@ -397,9 +397,9 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 		setting = NM_SETTING (nm_connection_get_setting (NM_CONNECTION (exported), NM_TYPE_SETTING_CONNECTION));
 		g_object_set (setting, NM_SETTING_CONNECTION_AUTOCONNECT, TRUE, NULL);
 
-		nm_settings_connection_interface_update (NM_SETTINGS_CONNECTION_INTERFACE (exported),
-		                                         ignore_cb,
-		                                         NULL);
+		nm_sysconfig_connection_commit_changes (NM_SYSCONFIG_CONNECTION (exported),
+		                                        ignore_cb,
+		                                        NULL);
 
 		PLUGIN_PRINT("SCPlugin-Ifupdown", "autoconnect");
 	}

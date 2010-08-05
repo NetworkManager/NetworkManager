@@ -22,7 +22,6 @@
 #define NM_SYSCONFIG_CONNECTION_H
 
 #include <nm-connection.h>
-#include <nm-settings-connection-interface.h>
 #include <dbus/dbus-glib.h>
 
 G_BEGIN_DECLS
@@ -34,15 +33,54 @@ G_BEGIN_DECLS
 #define NM_IS_SYSCONFIG_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_SYSCONFIG_CONNECTION))
 #define NM_SYSCONFIG_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SYSCONFIG_CONNECTION, NMSysconfigConnectionClass))
 
-typedef struct {
-	NMConnection parent;
-} NMSysconfigConnection;
+#define NM_SYSCONFIG_CONNECTION_UPDATED               "updated"
+#define NM_SYSCONFIG_CONNECTION_REMOVED               "removed"
 
-typedef struct {
+typedef struct _NMSysconfigConnection NMSysconfigConnection;
+
+typedef struct _NMSysconfigConnectionClass NMSysconfigConnectionClass;
+
+typedef void (*NMSysconfigConnectionCommitFunc) (NMSysconfigConnection *connection,
+                                                 GError *error,
+                                                 gpointer user_data);
+
+typedef void (*NMSysconfigConnectionDeleteFunc) (NMSysconfigConnection *connection,
+                                                 GError *error,
+                                                 gpointer user_data);
+
+typedef void (*NMSysconfigConnectionGetSecretsFunc) (NMSysconfigConnection *connection,
+                                                     GHashTable *secrets,
+                                                     GError *error,
+                                                     gpointer user_data);
+
+struct _NMSysconfigConnection {
+	NMConnection parent;
+};
+
+struct _NMSysconfigConnectionClass {
 	NMConnectionClass parent;
-} NMSysconfigConnectionClass;
+
+	void (*commit_changes) (NMSysconfigConnection *connection,
+	                        NMSysconfigConnectionCommitFunc callback,
+	                        gpointer user_data);
+
+	void (*delete) (NMSysconfigConnection *connection,
+	                NMSysconfigConnectionDeleteFunc callback,
+	                gpointer user_data);
+
+	void (*get_secrets) (NMSysconfigConnection *connection,
+	                     const char *setting_name,
+	                     const char **hints,
+	                     gboolean request_new,
+	                     NMSysconfigConnectionGetSecretsFunc callback,
+	                     gpointer user_data);
+};
 
 GType nm_sysconfig_connection_get_type (void);
+
+void nm_sysconfig_connection_commit_changes (NMSysconfigConnection *connection,
+                                             NMSysconfigConnectionCommitFunc callback,
+                                             gpointer user_data);
 
 gboolean nm_sysconfig_connection_replace_settings (NMSysconfigConnection *self,
                                                    NMConnection *new_settings,
@@ -50,9 +88,19 @@ gboolean nm_sysconfig_connection_replace_settings (NMSysconfigConnection *self,
 
 void nm_sysconfig_connection_replace_and_commit (NMSysconfigConnection *self,
                                                  NMConnection *new_settings,
-                                                 NMSettingsConnectionInterfaceUpdateFunc callback,
+                                                 NMSysconfigConnectionCommitFunc callback,
                                                  gpointer user_data);
 
+void nm_sysconfig_connection_delete (NMSysconfigConnection *connection,
+                                     NMSysconfigConnectionDeleteFunc callback,
+                                     gpointer user_data);
+
+void nm_sysconfig_connection_get_secrets (NMSysconfigConnection *connection,
+                                          const char *setting_name,
+                                          const char **hints,
+                                          gboolean request_new,
+                                          NMSysconfigConnectionGetSecretsFunc callback,
+                                          gpointer user_data);
 
 G_END_DECLS
 

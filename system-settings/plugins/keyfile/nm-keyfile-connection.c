@@ -24,20 +24,13 @@
 #include <NetworkManager.h>
 #include <nm-setting-connection.h>
 #include <nm-utils.h>
-#include <nm-settings-connection-interface.h>
 
 #include "nm-dbus-glib-types.h"
 #include "nm-keyfile-connection.h"
 #include "reader.h"
 #include "writer.h"
 
-static NMSettingsConnectionInterface *parent_settings_connection_iface;
-
-static void settings_connection_interface_init (NMSettingsConnectionInterface *klass);
-
-G_DEFINE_TYPE_EXTENDED (NMKeyfileConnection, nm_keyfile_connection, NM_TYPE_SYSCONFIG_CONNECTION, 0,
-                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_CONNECTION_INTERFACE,
-                                               settings_connection_interface_init))
+G_DEFINE_TYPE (NMKeyfileConnection, nm_keyfile_connection, NM_TYPE_SYSCONFIG_CONNECTION)
 
 #define NM_KEYFILE_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_KEYFILE_CONNECTION, NMKeyfileConnectionPrivate))
 
@@ -70,10 +63,10 @@ nm_keyfile_connection_get_filename (NMKeyfileConnection *self)
 	return NM_KEYFILE_CONNECTION_GET_PRIVATE (self)->filename;
 }
 
-static gboolean
-update (NMSettingsConnectionInterface *connection,
-	    NMSettingsConnectionInterfaceUpdateFunc callback,
-	    gpointer user_data)
+static void
+commit_changes (NMSysconfigConnection *connection,
+                NMSysconfigConnectionCommitFunc callback,
+                gpointer user_data)
 {
 	NMKeyfileConnectionPrivate *priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (connection);
 	char *filename = NULL;
@@ -82,7 +75,7 @@ update (NMSettingsConnectionInterface *connection,
 	if (!write_connection (NM_CONNECTION (connection), KEYFILE_DIR, 0, 0, &filename, &error)) {
 		callback (connection, error, user_data);
 		g_clear_error (&error);
-		return FALSE;
+		return;
 	}
 
 	if (g_strcmp0 (priv->filename, filename)) {
@@ -92,30 +85,26 @@ update (NMSettingsConnectionInterface *connection,
 	} else
 		g_free (filename);
 
-	return parent_settings_connection_iface->update (connection, callback, user_data);
+	NM_SYSCONFIG_CONNECTION_CLASS (nm_keyfile_connection_parent_class)->commit_changes (connection,
+	                                                                                    callback,
+	                                                                                    user_data);
 }
 
-static gboolean 
-do_delete (NMSettingsConnectionInterface *connection,
-	       NMSettingsConnectionInterfaceDeleteFunc callback,
-	       gpointer user_data)
+static void 
+do_delete (NMSysconfigConnection *connection,
+           NMSysconfigConnectionDeleteFunc callback,
+           gpointer user_data)
 {
 	NMKeyfileConnectionPrivate *priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (connection);
 
 	g_unlink (priv->filename);
 
-	return parent_settings_connection_iface->delete (connection, callback, user_data);
+	NM_SYSCONFIG_CONNECTION_CLASS (nm_keyfile_connection_parent_class)->delete (connection,
+	                                                                            callback,
+	                                                                            user_data);
 }
 
 /* GObject */
-
-static void
-settings_connection_interface_init (NMSettingsConnectionInterface *iface)
-{
-	parent_settings_connection_iface = g_type_interface_peek_parent (iface);
-	iface->update = update;
-	iface->delete = do_delete;
-}
 
 static void
 nm_keyfile_connection_init (NMKeyfileConnection *connection)
@@ -221,6 +210,7 @@ static void
 nm_keyfile_connection_class_init (NMKeyfileConnectionClass *keyfile_connection_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (keyfile_connection_class);
+	NMSysconfigConnectionClass *sysconfig_class = NM_SYSCONFIG_CONNECTION_CLASS (keyfile_connection_class);
 
 	g_type_class_add_private (keyfile_connection_class, sizeof (NMKeyfileConnectionPrivate));
 
@@ -229,6 +219,8 @@ nm_keyfile_connection_class_init (NMKeyfileConnectionClass *keyfile_connection_c
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
+	sysconfig_class->commit_changes = commit_changes;
+	sysconfig_class->delete = do_delete;
 
 	/* Properties */
 	g_object_class_install_property

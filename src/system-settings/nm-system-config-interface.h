@@ -25,7 +25,7 @@
 #include <glib.h>
 #include <glib-object.h>
 #include <nm-connection.h>
-#include <nm-settings-connection-interface.h>
+#include <nm-sysconfig-connection.h>
 
 G_BEGIN_DECLS
 
@@ -90,9 +90,9 @@ struct _NMSystemConfigInterface {
 	/* Called when the plugin is loaded to initialize it */
 	void     (*init) (NMSystemConfigInterface *config);
 
-	/* Returns a GSList of objects that implement NMSettingsConnectionInterface
-	 * that represent connections the plugin knows about.  The returned list
-	 * is freed by the system settings service.
+	/* Returns a GSList of NMSysconfigConnection objects that represent
+	 * connections the plugin knows about.  The returned list is freed by the
+	 * system settings service.
 	 */
 	GSList * (*get_connections) (NMSystemConfigInterface *config);
 
@@ -127,7 +127,7 @@ struct _NMSystemConfigInterface {
 
 	/* Emitted when a new connection has been found by the plugin */
 	void (*connection_added)   (NMSystemConfigInterface *config,
-	                            NMSettingsConnectionInterface *connection);
+	                            NMSysconfigConnection *connection);
 
 	/* Emitted when the list of unmanaged device specifications changes */
 	void (*unmanaged_specs_changed) (NMSystemConfigInterface *config);

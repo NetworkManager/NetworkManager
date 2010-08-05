@@ -116,6 +116,9 @@ global:
 	nm_object_get_connection;
 	nm_object_get_path;
 	nm_object_get_type;
+	nm_remote_connection_delete;
+	nm_remote_connection_get_secrets;
+	nm_remote_connection_commit_changes;
 	nm_remote_connection_get_type;
 	nm_remote_connection_new;
 	nm_remote_settings_add_connection;
@@ -128,11 +131,6 @@ global:
 	nm_serial_device_get_bytes_received;
 	nm_serial_device_get_bytes_sent;
 	nm_serial_device_get_type;
-	nm_settings_connection_interface_delete;
-	nm_settings_connection_interface_emit_updated;
-	nm_settings_connection_interface_get_secrets;
-	nm_settings_connection_interface_get_type;
-	nm_settings_connection_interface_update;
 	nm_settings_error_quark;
 	nm_settings_get_type;
 	nm_settings_list_connections;

@@ -31,15 +31,8 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-marshal.h"
 #include "nm-default-wired-connection.h"
-#include "nm-settings-connection-interface.h"
 
-static NMSettingsConnectionInterface *parent_settings_connection_iface;
-
-static void settings_connection_interface_init (NMSettingsConnectionInterface *iface);
-
-G_DEFINE_TYPE_EXTENDED (NMDefaultWiredConnection, nm_default_wired_connection, NM_TYPE_SYSCONFIG_CONNECTION, 0,
-                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_CONNECTION_INTERFACE,
-                                               settings_connection_interface_init))
+G_DEFINE_TYPE (NMDefaultWiredConnection, nm_default_wired_connection, NM_TYPE_SYSCONFIG_CONNECTION)
 
 #define NM_DEFAULT_WIRED_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEFAULT_WIRED_CONNECTION, NMDefaultWiredConnectionPrivate))
 
@@ -91,10 +84,10 @@ nm_default_wired_connection_get_device (NMDefaultWiredConnection *wired)
 	return NM_DEFAULT_WIRED_CONNECTION_GET_PRIVATE (wired)->device;
 }
 
-static gboolean
-update (NMSettingsConnectionInterface *connection,
-	    NMSettingsConnectionInterfaceUpdateFunc callback,
-	    gpointer user_data)
+static void
+commit_changes (NMSysconfigConnection *connection,
+                NMSysconfigConnectionCommitFunc callback,
+                gpointer user_data)
 {
 	NMDefaultWiredConnection *self = NM_DEFAULT_WIRED_CONNECTION (connection);
 
@@ -105,30 +98,23 @@ update (NMSettingsConnectionInterface *connection,
 	g_signal_emit (self, signals[TRY_UPDATE], 0);
 	callback (connection, NULL, user_data);
 	g_object_unref (connection);
-	return TRUE;
 }
 
-static gboolean 
-do_delete (NMSettingsConnectionInterface *connection,
-	       NMSettingsConnectionInterfaceDeleteFunc callback,
+static void 
+do_delete (NMSysconfigConnection *connection,
+	       NMSysconfigConnectionDeleteFunc callback,
 	       gpointer user_data)
 {
 	NMDefaultWiredConnection *self = NM_DEFAULT_WIRED_CONNECTION (connection);
 	NMDefaultWiredConnectionPrivate *priv = NM_DEFAULT_WIRED_CONNECTION_GET_PRIVATE (connection);
 
 	g_signal_emit (self, signals[DELETED], 0, priv->mac);
-	return parent_settings_connection_iface->delete (connection, callback, user_data);
+	NM_SYSCONFIG_CONNECTION_CLASS (nm_default_wired_connection_parent_class)->delete (connection,
+	                                                                                  callback,
+	                                                                                  user_data);
 }
 
 /****************************************************************/
-
-static void
-settings_connection_interface_init (NMSettingsConnectionInterface *iface)
-{
-	parent_settings_connection_iface = g_type_interface_peek_parent (iface);
-	iface->update = update;
-	iface->delete = do_delete;
-}
 
 static void
 nm_default_wired_connection_init (NMDefaultWiredConnection *self)
@@ -250,6 +236,7 @@ static void
 nm_default_wired_connection_class_init (NMDefaultWiredConnectionClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSysconfigConnectionClass *sysconfig_class = NM_SYSCONFIG_CONNECTION_CLASS (klass);
 
 	g_type_class_add_private (klass, sizeof (NMDefaultWiredConnectionPrivate));
 
@@ -258,6 +245,8 @@ nm_default_wired_connection_class_init (NMDefaultWiredConnectionClass *klass)
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize = finalize;
+	sysconfig_class->commit_changes = commit_changes;
+	sysconfig_class->delete = do_delete;
 
 	/* Properties */
 	g_object_class_install_property

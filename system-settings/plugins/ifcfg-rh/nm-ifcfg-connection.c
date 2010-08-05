@@ -33,7 +33,6 @@
 #include <nm-setting-pppoe.h>
 #include <nm-setting-wireless-security.h>
 #include <nm-setting-8021x.h>
-#include <nm-settings-connection-interface.h>
 
 #include "common.h"
 #include "nm-ifcfg-connection.h"
@@ -41,13 +40,7 @@
 #include "writer.h"
 #include "nm-inotify-helper.h"
 
-static NMSettingsConnectionInterface *parent_settings_connection_iface;
-
-static void settings_connection_interface_init (NMSettingsConnectionInterface *klass);
-
-G_DEFINE_TYPE_EXTENDED (NMIfcfgConnection, nm_ifcfg_connection, NM_TYPE_SYSCONFIG_CONNECTION, 0,
-                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_CONNECTION_INTERFACE,
-                                               settings_connection_interface_init))
+G_DEFINE_TYPE (NMIfcfgConnection, nm_ifcfg_connection, NM_TYPE_SYSCONFIG_CONNECTION)
 
 #define NM_IFCFG_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IFCFG_CONNECTION, NMIfcfgConnectionPrivate))
 
@@ -171,10 +164,10 @@ nm_ifcfg_connection_get_unmanaged_spec (NMIfcfgConnection *self)
 	return NM_IFCFG_CONNECTION_GET_PRIVATE (self)->unmanaged;
 }
 
-static gboolean
-update (NMSettingsConnectionInterface *connection,
-	    NMSettingsConnectionInterfaceUpdateFunc callback,
-	    gpointer user_data)
+static void
+commit_changes (NMSysconfigConnection *connection,
+                NMSysconfigConnectionCommitFunc callback,
+	            gpointer user_data)
 {
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (connection);
 	GError *error = NULL;
@@ -205,18 +198,18 @@ update (NMSettingsConnectionInterface *connection,
 	                               &error)) {
 		callback (connection, error, user_data);
 		g_error_free (error);
-		return FALSE;
+		return;
 	}
 
 out:
 	if (reread)
 		g_object_unref (reread);
-	return parent_settings_connection_iface->update (connection, callback, user_data);
+	NM_SYSCONFIG_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->commit_changes (connection, callback, user_data);
 }
 
-static gboolean 
-do_delete (NMSettingsConnectionInterface *connection,
-	       NMSettingsConnectionInterfaceDeleteFunc callback,
+static void 
+do_delete (NMSysconfigConnection *connection,
+	       NMSysconfigConnectionDeleteFunc callback,
 	       gpointer user_data)
 {
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (connection);
@@ -230,18 +223,10 @@ do_delete (NMSettingsConnectionInterface *connection,
 	if (priv->route6file)
 		g_unlink (priv->route6file);
 
-	return parent_settings_connection_iface->delete (connection, callback, user_data);
+	NM_SYSCONFIG_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->delete (connection, callback, user_data);
 }
 
 /* GObject */
-
-static void
-settings_connection_interface_init (NMSettingsConnectionInterface *iface)
-{
-	parent_settings_connection_iface = g_type_interface_peek_parent (iface);
-	iface->update = update;
-	iface->delete = do_delete;
-}
 
 static void
 nm_ifcfg_connection_init (NMIfcfgConnection *connection)
@@ -331,6 +316,7 @@ static void
 nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (ifcfg_connection_class);
+	NMSysconfigConnectionClass *sysconfig_class = NM_SYSCONFIG_CONNECTION_CLASS (ifcfg_connection_class);
 
 	g_type_class_add_private (ifcfg_connection_class, sizeof (NMIfcfgConnectionPrivate));
 
@@ -338,6 +324,8 @@ nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
+	sysconfig_class->delete = do_delete;
+	sysconfig_class->commit_changes = commit_changes;
 
 	/* Properties */
 	g_object_class_install_property
