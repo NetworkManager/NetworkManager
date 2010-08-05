@@ -265,8 +265,13 @@ get_client_type (const char *client, GError **error)
 	const char *dhclient_path = NULL;
 	const char *dhcpcd_path = NULL;
 
-	dhclient_path = nm_dhcp_dhclient_get_path (DHCLIENT_PATH);
-	dhcpcd_path = nm_dhcp_dhcpcd_get_path (DHCPCD_PATH);
+	/* If a client was disabled at build-time, its *_PATH define will be
+	 * an empty string.
+	 */
+	if (DHCLIENT_PATH && strlen (DHCLIENT_PATH))
+		dhclient_path = nm_dhcp_dhclient_get_path (DHCLIENT_PATH);
+	if (DHCPCD_PATH && strlen (DHCPCD_PATH))
+		dhcpcd_path = nm_dhcp_dhcpcd_get_path (DHCPCD_PATH);
 
 	if (!client) {
 		if (dhclient_path)
