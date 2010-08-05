@@ -39,22 +39,6 @@ typedef struct {
 
 typedef struct {
 	NMConnectionClass parent;
-
-	GHashTable * (*get_settings) (NMSysconfigConnection *self,
-	                              GError **error);
-
-	void (*update) (NMSysconfigConnection *self,
-	                GHashTable *new_settings,
-	                DBusGMethodInvocation *context);
-
-	void (*delete) (NMSysconfigConnection *self,
-	                DBusGMethodInvocation *context);
-
-	void (*get_secrets) (NMSysconfigConnection *self,
-	                     const gchar *setting_name,
-	                     const gchar **hints,
-	                     gboolean request_new,
-	                     DBusGMethodInvocation *context);
 } NMSysconfigConnectionClass;
 
 GType nm_sysconfig_connection_get_type (void);
