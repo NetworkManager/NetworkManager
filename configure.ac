@@ -344,10 +344,10 @@ case "${with_dhcpcd}" in
 		AC_MSG_CHECKING(for dhcpcd)
 		# We fully work with upstream dhcpcd-4
 		for path in /sbin /usr/sbin /usr/pkg/sbin /usr/local/sbin; do
-			test -x "${path}/dhclient" || continue
+			test -x "${path}/dhcpcd" || continue
 			case `"$path/dhcpcd" --version 2>/dev/null` in
 				"dhcpcd "[123]*);;
-				"dhcpcd "*) DHCP_CLIENT_PATH="$path/dhcpcd"; break;;
+				"dhcpcd "*) DHCPCD_PATH="$path/dhcpcd"; break;;
 			esac
 		done
 		if test -n "${DHCPCD_PATH}"; then
@@ -364,7 +364,7 @@ if test -z "$DHCPCD_PATH" -a -z "$DHCLIENT_PATH"; then
 	# in most distros, so use it.
 	AC_MSG_WARN([Could not find a suitable DHCP client])
 	DHCLIENT_PATH=/sbin/dhclient
-	AC_MSG_WARN([Falling back to ISC dhclient, ${DHCP_CLIENT_PATH}])
+	AC_MSG_WARN([Falling back to ISC dhclient, ${DHCLIENT_PATH}])
 fi
 AC_SUBST(DHCLIENT_PATH)
 AC_SUBST(DHCPCD_PATH)
