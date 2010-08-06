@@ -709,7 +709,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	 * communcation with z/VM or s390 host.  Like #NMSettingWired:mac-address
 	 * for non-z/VM devices, this property can be used to ensure this connection
 	 * only applies to the network device that uses these subchannels.  The
-	 * list should contain exactly 3 strings, and each string may only only be
+	 * list should contain exactly 3 strings, and each string may only be
 	 * composed of hexadecimal characters and the period (.) character.
 	 **/
 	g_object_class_install_property
@@ -723,7 +723,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 		                       "to ensure this connection only applies to the "
 		                       "network device that uses these subchannels. The "
 		                       "list should contain exactly 3 strings, and each "
-		                       "string may only only be composed of hexadecimal "
+		                       "string may only be composed of hexadecimal "
 		                       "characters and the period (.) character.",
 		                       DBUS_TYPE_G_ARRAY_OF_STRING,
 		                       G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
