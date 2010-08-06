@@ -48,7 +48,6 @@ typedef enum {
 #define NM_IS_SYSCONFIG_SETTINGS_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_SYSCONFIG_SETTINGS))
 #define NM_SYSCONFIG_SETTINGS_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SYSCONFIG_SETTINGS, NMSysconfigSettingsClass))
 
-#define NM_SYSCONFIG_SETTINGS_BUS             "bus"
 #define NM_SYSCONFIG_SETTINGS_UNMANAGED_SPECS "unmanaged-specs"
 #define NM_SYSCONFIG_SETTINGS_HOSTNAME        "hostname"
 #define NM_SYSCONFIG_SETTINGS_CAN_MODIFY      "can-modify"
@@ -71,7 +70,6 @@ GType nm_sysconfig_settings_get_type (void);
 
 NMSysconfigSettings *nm_sysconfig_settings_new (const char *config_file,
                                                 const char *plugins,
-                                                DBusGConnection *bus,
                                                 GError **error);
 
 /* Returns a list of NMSysconfigConnections */

@@ -2983,7 +2983,6 @@ nm_manager_get (const char *config_file,
 {
 	static NMManager *singleton = NULL;
 	NMManagerPrivate *priv;
-	DBusGConnection *bus;
 
 	if (singleton)
 		return g_object_ref (singleton);
@@ -2993,10 +2992,7 @@ nm_manager_get (const char *config_file,
 
 	priv = NM_MANAGER_GET_PRIVATE (singleton);
 
-	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
-	g_assert (bus);
-
-	priv->sys_settings = nm_sysconfig_settings_new (config_file, plugins, bus, error);
+	priv->sys_settings = nm_sysconfig_settings_new (config_file, plugins, error);
 	if (!priv->sys_settings) {
 		g_object_unref (singleton);
 		return NULL;

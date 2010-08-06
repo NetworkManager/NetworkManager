@@ -58,6 +58,7 @@
 #include "nm-system-config-error.h"
 #include "nm-default-wired-connection.h"
 #include "nm-logging.h"
+#include "nm-dbus-manager.h"
 
 #define CONFIG_KEY_NO_AUTO_DEFAULT "no-auto-default"
 
@@ -131,7 +132,6 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 enum {
 	PROP_0,
-	PROP_BUS,
 	PROP_UNMANAGED_SPECS,
 	PROP_HOSTNAME,
 	PROP_CAN_MODIFY,
@@ -540,16 +540,14 @@ connection_removed (NMSysconfigConnection *connection,
 }
 
 static void
-export_connection (NMSysconfigSettings *self,
-                   NMSysconfigConnection *connection)
+export_connection (NMSysconfigConnection *connection)
 {
-	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+	DBusGConnection *bus;
 	static guint32 ec_counter = 0;
 	char *path;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (NM_IS_SYSCONFIG_CONNECTION (connection));
-	g_return_if_fail (priv->bus != NULL);
 
 	/* Don't allow exporting twice */
 	g_return_if_fail (nm_connection_get_path (NM_CONNECTION (connection)) == NULL);
@@ -557,7 +555,8 @@ export_connection (NMSysconfigSettings *self,
 	path = g_strdup_printf ("%s/%u", NM_DBUS_PATH_SETTINGS, ec_counter++);
 	nm_connection_set_path (NM_CONNECTION (connection), path);
 
-	dbus_g_connection_register_g_object (priv->bus, path, G_OBJECT (connection));
+	bus = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
+	dbus_g_connection_register_g_object (bus, path, G_OBJECT (connection));
 	g_free (path);
 }
 
@@ -582,7 +581,7 @@ claim_connection (NMSysconfigSettings *self,
 	                  self);
 
 	if (do_export) {
-		export_connection (self, connection);
+		export_connection (connection);
 		g_signal_emit (self, signals[NEW_CONNECTION], 0, connection);
 	}
 }
@@ -1352,18 +1351,18 @@ static void
 export_sysconfig (NMSysconfigSettings *self)
 {
 	NMSysconfigSettingsPrivate *priv;
+	DBusGConnection *bus;
 
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_SYSCONFIG_SETTINGS (self));
 
 	priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 
-	g_return_if_fail (priv->bus != NULL);
-
 	/* Don't allow exporting twice */
 	g_return_if_fail (priv->exported == FALSE);
 
-	dbus_g_connection_register_g_object (priv->bus,
+	bus = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
+	dbus_g_connection_register_g_object (bus,
 	                                     NM_DBUS_PATH_SETTINGS,
 	                                     G_OBJECT (self));
 	priv->exported = TRUE;
@@ -1372,14 +1371,12 @@ export_sysconfig (NMSysconfigSettings *self)
 NMSysconfigSettings *
 nm_sysconfig_settings_new (const char *config_file,
                            const char *plugins,
-                           DBusGConnection *bus,
                            GError **error)
 {
 	NMSysconfigSettings *self;
 	NMSysconfigSettingsPrivate *priv;
 
 	self = g_object_new (NM_TYPE_SYSCONFIG_SETTINGS,
-	                     NM_SYSCONFIG_SETTINGS_BUS, bus,
 	                     NULL);
 	if (!self)
 		return NULL;
@@ -1436,9 +1433,6 @@ dispose (GObject *object)
 	g_slist_free (priv->permissions_calls);
 	priv->permissions_calls = NULL;
 
-	if (priv->bus)
-		dbus_g_connection_unref (priv->bus);
-
 	G_OBJECT_CLASS (nm_sysconfig_settings_parent_class)->dispose (object);
 }
 
@@ -1461,38 +1455,14 @@ finalize (GObject *object)
 }
 
 static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (object);
-	DBusGConnection *bus;
-
-	switch (prop_id) {
-	case PROP_BUS:
-		/* Construct only */
-		bus = g_value_get_boxed (value);
-		if (bus)
-			priv->bus = dbus_g_connection_ref (bus);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
 get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
 	NMSysconfigSettings *self = NM_SYSCONFIG_SETTINGS (object);
-	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 	const GSList *specs, *iter;
 	GSList *copy = NULL;
 
 	switch (prop_id) {
-	case PROP_BUS:
-		g_value_set_boxed (value, priv->bus);
-		break;
 	case PROP_UNMANAGED_SPECS:
 		specs = nm_sysconfig_settings_get_unmanaged_specs (self);
 		for (iter = specs; iter; iter = g_slist_next (iter))
@@ -1524,25 +1494,11 @@ nm_sysconfig_settings_class_init (NMSysconfigSettingsClass *class)
 
 	/* virtual methods */
 	object_class->notify = notify;
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
 	/* properties */
-
-	/**
-	 * NMSysconfigSettings:bus:
-	 *
-	 * The %DBusGConnection which this object is exported on
-	 **/
-	g_object_class_install_property 
-		(object_class, PROP_BUS,
-	     g_param_spec_boxed (NM_SYSCONFIG_SETTINGS_BUS,
-	                         "Bus",
-	                         "Bus",
-	                         DBUS_TYPE_G_CONNECTION,
-	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property
 		(object_class, PROP_UNMANAGED_SPECS,
