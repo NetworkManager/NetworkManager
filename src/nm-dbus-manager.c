@@ -339,24 +339,6 @@ nm_dbus_manager_start_service (NMDBusManager *self)
 		return FALSE;
 	}
 
-	if (!dbus_g_proxy_call (priv->proxy, "RequestName", &err,
-							G_TYPE_STRING, NM_DBUS_SERVICE_SYSTEM_SETTINGS,
-							G_TYPE_UINT, DBUS_NAME_FLAG_DO_NOT_QUEUE,
-							G_TYPE_INVALID,
-							G_TYPE_UINT, &result,
-							G_TYPE_INVALID)) {
-		nm_log_warn (LOGD_CORE, "Could not acquire the NetworkManagerSystemSettings service.\n"
-		             "  Message: '%s'", err->message);
-		g_error_free (err);
-		return FALSE;
-	}
-
-	if (result != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
-		nm_log_warn (LOGD_CORE, "Could not acquire the NetworkManagerSystemSettings service "
-		             "as it is already taken.");
-		return FALSE;
-	}
-
 	priv->started = TRUE;
 	return priv->started;
 }

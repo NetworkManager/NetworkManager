@@ -406,13 +406,6 @@ nm_utils_call_dispatcher (const char *action,
 
 		connection_props = value_hash_create ();
 
-		/* Backwards compatibility for the days of user settings services:
-		 * Claim that this connection is from the system settings service.
-		 */
-		value_hash_add_str (connection_props,
-		                    NMD_CONNECTION_PROPS_SERVICE_NAME,
-		                    NM_DBUS_SERVICE_SYSTEM_SETTINGS);
-
 		/* path */
 		value_hash_add_object_path (connection_props,
 									NMD_CONNECTION_PROPS_PATH,

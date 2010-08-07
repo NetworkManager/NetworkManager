@@ -485,7 +485,7 @@ name_owner_changed (DBusGProxy *proxy,
 {
 	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
-	const char *sname = NM_DBUS_SERVICE_SYSTEM_SETTINGS;
+	const char *sname = NM_DBUS_SERVICE;
 
 	if (!strcmp (name, sname)) {
 		if (priv->fetch_id)
@@ -633,7 +633,7 @@ constructor (GType type,
 	                             object, NULL);
 
 	if (!dbus_g_proxy_call (priv->dbus_proxy, "NameHasOwner", &error,
-	                        G_TYPE_STRING, NM_DBUS_SERVICE_SYSTEM_SETTINGS,
+	                        G_TYPE_STRING, NM_DBUS_SERVICE,
 	                        G_TYPE_INVALID,
 	                        G_TYPE_BOOLEAN, &priv->service_running,
 	                        G_TYPE_INVALID)) {
@@ -646,7 +646,7 @@ constructor (GType type,
 	}
 
 	priv->proxy = dbus_g_proxy_new_for_name (priv->bus,
-	                                         NM_DBUS_SERVICE_SYSTEM_SETTINGS,
+	                                         NM_DBUS_SERVICE,
 	                                         NM_DBUS_PATH_SETTINGS,
 	                                         NM_DBUS_IFACE_SETTINGS);
 	g_assert (priv->proxy);
@@ -665,7 +665,7 @@ constructor (GType type,
 
 	/* D-Bus properties proxy */
 	priv->props_proxy = dbus_g_proxy_new_for_name (priv->bus,
-	                                               NM_DBUS_SERVICE_SYSTEM_SETTINGS,
+	                                               NM_DBUS_SERVICE,
 	                                               NM_DBUS_PATH_SETTINGS,
 	                                               "org.freedesktop.DBus.Properties");
 	g_assert (priv->props_proxy);

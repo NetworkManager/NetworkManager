@@ -568,7 +568,7 @@ get_one_connection (DBusGConnection *bus,
 	g_return_if_fail (path != NULL);
 	g_return_if_fail (table != NULL);
 
-	proxy = dbus_g_proxy_new_for_name (bus, NM_DBUS_SERVICE_SYSTEM_SETTINGS,
+	proxy = dbus_g_proxy_new_for_name (bus, NM_DBUS_SERVICE,
 	                                   path, NM_DBUS_IFACE_SETTINGS_CONNECTION);
 	if (!proxy)
 		return;
@@ -619,7 +619,7 @@ get_all_connections (void)
 	}
 
 	proxy = dbus_g_proxy_new_for_name (bus,
-	                                   NM_DBUS_SERVICE_SYSTEM_SETTINGS,
+	                                   NM_DBUS_SERVICE,
 	                                   NM_DBUS_PATH_SETTINGS,
 	                                   NM_DBUS_IFACE_SETTINGS);
 	if (!proxy) {

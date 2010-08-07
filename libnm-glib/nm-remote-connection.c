@@ -343,14 +343,14 @@ constructor (GType type,
 	g_assert (nm_connection_get_path (NM_CONNECTION (object)));
 
 	priv->proxy = dbus_g_proxy_new_for_name (priv->bus,
-	                                         NM_DBUS_SERVICE_SYSTEM_SETTINGS,
+	                                         NM_DBUS_SERVICE,
 	                                         nm_connection_get_path (NM_CONNECTION (object)),
 	                                         NM_DBUS_IFACE_SETTINGS_CONNECTION);
 	g_assert (priv->proxy);
 	dbus_g_proxy_set_default_timeout (priv->proxy, G_MAXINT);
 
 	priv->secrets_proxy = dbus_g_proxy_new_for_name (priv->bus,
-	                                                 NM_DBUS_SERVICE_SYSTEM_SETTINGS,
+	                                                 NM_DBUS_SERVICE,
 	                                                 nm_connection_get_path (NM_CONNECTION (object)),
 	                                                 NM_DBUS_IFACE_SETTINGS_CONNECTION_SECRETS);
 	g_assert (priv->secrets_proxy);
