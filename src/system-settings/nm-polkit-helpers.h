@@ -24,9 +24,9 @@
 
 #include <polkit/polkit.h>
 
-#define NM_SYSCONFIG_POLICY_ACTION_CONNECTION_MODIFY    "org.freedesktop.network-manager-settings.system.modify"
-#define NM_SYSCONFIG_POLICY_ACTION_WIFI_SHARE_PROTECTED "org.freedesktop.network-manager-settings.system.wifi.share.protected"
-#define NM_SYSCONFIG_POLICY_ACTION_WIFI_SHARE_OPEN      "org.freedesktop.network-manager-settings.system.wifi.share.open"
-#define NM_SYSCONFIG_POLICY_ACTION_HOSTNAME_MODIFY      "org.freedesktop.network-manager-settings.system.hostname.modify"
+#define NM_SYSCONFIG_POLICY_ACTION_CONNECTION_MODIFY "org.freedesktop.NetworkManager.settings.modify"
+#define NM_SYSCONFIG_POLICY_ACTION_WIFI_SHARE_PROTECTED "org.freedesktop.NetworkManager.settings.wifi.share.protected"
+#define NM_SYSCONFIG_POLICY_ACTION_WIFI_SHARE_OPEN      "org.freedesktop.NetworkManager.settings.wifi.share.open"
+#define NM_SYSCONFIG_POLICY_ACTION_HOSTNAME_MODIFY      "org.freedesktop.NetworkManager.settings.hostname.modify"
 
 #endif /* NM_POLKIT_HELPERS_H */

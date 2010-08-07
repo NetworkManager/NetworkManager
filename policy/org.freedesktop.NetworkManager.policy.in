@@ -54,5 +54,41 @@
     </defaults>
   </action>
 
+  <action id="org.freedesktop.NetworkManager.settings.modify">
+    <_description>Modify system connections</_description>
+    <_message>System policy prevents modification of system settings</_message>
+    <defaults>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.freedesktop.NetworkManager.settings.hostname.modify">
+    <_description>Modify persistent system hostname</_description>
+    <_message>System policy prevents modification of the persistent system hostname</_message>
+    <defaults>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.freedesktop.NetworkManager.settings.wifi.share.protected">
+    <_description>Connection sharing via a protected WiFi network</_description>
+    <_message>System policy prevents sharing connections via a protected WiFi network</_message>
+    <defaults>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.freedesktop.NetworkManager.settings.wifi.share.open">
+    <_description>Connection sharing via an open WiFi network</_description>
+    <_message>System policy prevents sharing connections via an open WiFi network</_message>
+    <defaults>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
+
 </policyconfig>
 

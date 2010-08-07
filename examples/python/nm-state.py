@@ -54,7 +54,7 @@ for a in active:
     # can find the user-readable name of the connection.
     con_path = prop_iface.Get("org.freedesktop.NetworkManager.ActiveConnection", "Connection")
     service_proxy = bus.get_object("org.freedesktop.NetworkManager", con_path)
-    con_iface = dbus.Interface(service_proxy, "org.freedesktop.NetworkManagerSettings.Connection")
+    con_iface = dbus.Interface(service_proxy, "org.freedesktop.NetworkManager.Settings.Connection")
     con_details = con_iface.GetSettings()
     con_name = con_details['connection']['id']
 

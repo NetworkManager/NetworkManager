@@ -41,8 +41,8 @@ con = dbus.Dictionary({
 
 bus = dbus.SystemBus()
 
-proxy = bus.get_object("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManagerSettings")
-settings = dbus.Interface(proxy, "org.freedesktop.NetworkManagerSettings")
+proxy = bus.get_object("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager/Settings")
+settings = dbus.Interface(proxy, "org.freedesktop.NetworkManager.Settings")
 
 settings.AddConnection(con)
 

@@ -223,9 +223,9 @@ fetch_connections (gpointer user_data)
 
 	priv->fetch_id = 0;
 
-	org_freedesktop_NetworkManagerSettings_list_connections_async (priv->proxy,
-	                                                               fetch_connections_done,
-	                                                               self);
+	org_freedesktop_NetworkManager_Settings_list_connections_async (priv->proxy,
+	                                                                fetch_connections_done,
+	                                                                self);
 	return FALSE;
 }
 
@@ -309,10 +309,10 @@ nm_remote_settings_add_connection (NMRemoteSettings *settings,
 	info->callback_data = user_data;
 
 	new_settings = nm_connection_to_hash (connection);
-	org_freedesktop_NetworkManagerSettings_add_connection_async (priv->proxy,
-	                                                             new_settings,
-	                                                             add_connection_done,
-	                                                             info);
+	org_freedesktop_NetworkManager_Settings_add_connection_async (priv->proxy,
+	                                                              new_settings,
+	                                                              add_connection_done,
+	                                                              info);
 	g_hash_table_destroy (new_settings);
 	return TRUE;
 }

@@ -73,21 +73,21 @@ def connection_to_string(config):
 def print_connections():
     # Ask the settings service for the list of connections it provides
     service_name = "org.freedesktop.NetworkManager"
-    proxy = bus.get_object(service_name, "/org/freedesktop/NetworkManagerSettings")
-    settings = dbus.Interface(proxy, "org.freedesktop.NetworkManagerSettings")
+    proxy = bus.get_object(service_name, "/org/freedesktop/NetworkManager/Settings")
+    settings = dbus.Interface(proxy, "org.freedesktop.NetworkManager.Settings")
     connection_paths = settings.ListConnections()
 
     # List each connection's name, UUID, and type
     for path in connection_paths:
         con_proxy = bus.get_object(service_name, path)
-        connection = dbus.Interface(con_proxy, "org.freedesktop.NetworkManagerSettings.Connection")
+        connection = dbus.Interface(con_proxy, "org.freedesktop.NetworkManager.Settings.Connection")
         config = connection.GetSettings()
 
         # Now get secrets too; we grab the secrets for each type of connection
         # (since there isn't a "get all secrets" call because most of the time
         # you only need 'wifi' secrets or '802.1x' secrets, not everything) and
         # merge that into the configuration data
-        connection_secrets = dbus.Interface(con_proxy, "org.freedesktop.NetworkManagerSettings.Connection.Secrets")
+        connection_secrets = dbus.Interface(con_proxy, "org.freedesktop.NetworkManager.Settings.Connection.Secrets")
         merge_secrets(connection_secrets, config, '802-11-wireless')
         merge_secrets(connection_secrets, config, '802-11-wireless-security')
         merge_secrets(connection_secrets, config, '802-1x')

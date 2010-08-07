@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
-  <interface name="org.freedesktop.NetworkManagerSettings">
+  <interface name="org.freedesktop.NetworkManager.Settings">
     <tp:docstring>
-      The NetworkManagerSettings interface is provided by the service which provides connections to NetworkManager.
+      The Settings interface allows clients to view and administrate the connections stored and used by NetworkManager.
     </tp:docstring>
 
     <method name="ListConnections">

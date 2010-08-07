@@ -45,12 +45,12 @@
 #define NM_DBUS_INTERFACE_DHCP6_CONFIG      NM_DBUS_INTERFACE ".DHCP6Config"
 
 
-#define NM_DBUS_IFACE_SETTINGS            "org.freedesktop.NetworkManagerSettings"
-#define NM_DBUS_PATH_SETTINGS             "/org/freedesktop/NetworkManagerSettings"
+#define NM_DBUS_IFACE_SETTINGS            "org.freedesktop.NetworkManager.Settings"
+#define NM_DBUS_PATH_SETTINGS             "/org/freedesktop/NetworkManager/Settings"
 
-#define NM_DBUS_IFACE_SETTINGS_CONNECTION "org.freedesktop.NetworkManagerSettings.Connection"
-#define NM_DBUS_PATH_SETTINGS_CONNECTION  "/org/freedesktop/NetworkManagerSettings/Connection"
-#define NM_DBUS_IFACE_SETTINGS_CONNECTION_SECRETS "org.freedesktop.NetworkManagerSettings.Connection.Secrets"
+#define NM_DBUS_IFACE_SETTINGS_CONNECTION "org.freedesktop.NetworkManager.Settings.Connection"
+#define NM_DBUS_PATH_SETTINGS_CONNECTION  "/org/freedesktop/NetworkManager/Settings/Connection"
+#define NM_DBUS_IFACE_SETTINGS_CONNECTION_SECRETS "org.freedesktop.NetworkManager.Settings.Connection.Secrets"
 
 
 /*

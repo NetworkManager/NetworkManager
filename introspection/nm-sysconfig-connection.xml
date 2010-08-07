@@ -2,7 +2,7 @@
 
 <node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
 
-    <interface name="org.freedesktop.NetworkManagerSettings.Connection">
+    <interface name="org.freedesktop.NetworkManager.Settings.Connection">
         <tp:docstring>
             Represents a single network connection configuration.
         </tp:docstring>
@@ -59,7 +59,7 @@
 
     </interface>
 
-    <interface name="org.freedesktop.NetworkManagerSettings.Connection.Secrets">
+    <interface name="org.freedesktop.NetworkManager.Settings.Connection.Secrets">
         <tp:docstring>
             Secrets have a separate interface so that they can be locked down.
         </tp:docstring>

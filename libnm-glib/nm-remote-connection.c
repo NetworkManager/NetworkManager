@@ -130,10 +130,10 @@ nm_remote_connection_commit_changes (NMRemoteConnection *self,
 
 	settings = nm_connection_to_hash (NM_CONNECTION (self));
 
-	call->call = org_freedesktop_NetworkManagerSettings_Connection_update_async (priv->proxy,
-	                                                                             settings,
-	                                                                             update_cb,
-	                                                                             call);
+	call->call = org_freedesktop_NetworkManager_Settings_Connection_update_async (priv->proxy,
+	                                                                              settings,
+	                                                                              update_cb,
+	                                                                              call);
 	g_assert (call->call);
 	priv->calls = g_slist_append (priv->calls, call);
 
@@ -178,9 +178,9 @@ nm_remote_connection_delete (NMRemoteConnection *self,
 	call->user_data = user_data;
 	call->proxy = priv->proxy;
 
-	call->call = org_freedesktop_NetworkManagerSettings_Connection_delete_async (priv->proxy,
-	                                                                             delete_cb,
-	                                                                             call);
+	call->call = org_freedesktop_NetworkManager_Settings_Connection_delete_async (priv->proxy,
+	                                                                              delete_cb,
+	                                                                              call);
 	g_assert (call->call);
 	priv->calls = g_slist_append (priv->calls, call);
 }
@@ -230,12 +230,12 @@ nm_remote_connection_get_secrets (NMRemoteConnection *self,
 	call->user_data = user_data;
 	call->proxy = priv->secrets_proxy;
 
-	call->call = org_freedesktop_NetworkManagerSettings_Connection_Secrets_get_secrets_async (priv->secrets_proxy,
-	                                                                                          setting_name,
-	                                                                                          hints,
-	                                                                                          request_new,
-	                                                                                          get_secrets_cb,
-	                                                                                          call);
+	call->call = org_freedesktop_NetworkManager_Settings_Connection_Secrets_get_secrets_async (priv->secrets_proxy,
+	                                                                                           setting_name,
+	                                                                                           hints,
+	                                                                                           request_new,
+	                                                                                           get_secrets_cb,
+	                                                                                           call);
 	g_assert (call->call);
 	priv->calls = g_slist_append (priv->calls, call);
 }
@@ -362,9 +362,9 @@ constructor (GType type,
 	dbus_g_proxy_add_signal (priv->proxy, "Removed", G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->proxy, "Removed", G_CALLBACK (removed_cb), object, NULL);
 
-	org_freedesktop_NetworkManagerSettings_Connection_get_settings_async (priv->proxy,
-	                                                                      get_settings_cb,
-	                                                                      object);
+	org_freedesktop_NetworkManager_Settings_Connection_get_settings_async (priv->proxy,
+	                                                                       get_settings_cb,
+	                                                                       object);
 	return object;
 }
 
