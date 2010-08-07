@@ -37,7 +37,7 @@ DBusGMainLoop(set_as_default=True)
 
 def get_connections():
     bus = dbus.SystemBus()
-    proxy = bus.get_object('org.freedesktop.NetworkManagerUserSettings', '/org/freedesktop/NetworkManagerSettings')
+    proxy = bus.get_object('org.freedesktop.NetworkManagerSystemSettings', '/org/freedesktop/NetworkManagerSettings')
     iface = dbus.Interface(proxy, dbus_interface='org.freedesktop.NetworkManagerSettings')
     return iface.ListConnections()
 
@@ -45,7 +45,7 @@ def get_connections():
 def get_connection_by_uuid(uuid):
     bus = dbus.SystemBus()
     for c in get_connections():
-        proxy = bus.get_object('org.freedesktop.NetworkManagerUserSettings', c)
+        proxy = bus.get_object('org.freedesktop.NetworkManagerSystemSettings', c)
         iface = dbus.Interface(proxy, dbus_interface='org.freedesktop.NetworkManagerSettings.Connection')
         settings = iface.GetSettings()
         if settings['connection']['uuid'] == uuid:
@@ -57,7 +57,7 @@ def get_connection_by_uuid(uuid):
 def list_uuids():
     bus = dbus.SystemBus()
     for c in get_connections():
-        proxy = bus.get_object('org.freedesktop.NetworkManagerUserSettings', c)
+        proxy = bus.get_object('org.freedesktop.NetworkManagerSystemSettings', c)
         iface = dbus.Interface(proxy, dbus_interface='org.freedesktop.NetworkManagerSettings.Connection')
         settings = iface.GetSettings()
         conn = settings['connection']
@@ -76,7 +76,7 @@ def get_active_connection_path(uuid):
         iface = dbus.Interface(proxy, dbus_interface='org.freedesktop.DBus.Properties')
         path = iface.Get('org.freedesktop.NetworkManager.Connection.Active', 'Connection')
 
-        proxy = bus.get_object('org.freedesktop.NetworkManagerUserSettings', path)
+        proxy = bus.get_object('org.freedesktop.NetworkManagerSystemSettings', path)
         iface = dbus.Interface(proxy, dbus_interface='org.freedesktop.NetworkManagerSettings.Connection')
         settings = iface.GetSettings()
 
@@ -112,7 +112,7 @@ def activate_connection(connection_path, device_path):
     bus = dbus.SystemBus()
     proxy = bus.get_object('org.freedesktop.NetworkManager', '/org/freedesktop/NetworkManager')
     iface = dbus.Interface(proxy, dbus_interface='org.freedesktop.NetworkManager')
-    iface.ActivateConnection('org.freedesktop.NetworkManagerUserSettings',
+    iface.ActivateConnection('org.freedesktop.NetworkManagerSystemSettings',
                              connection_path,
                              device_path, 
                              "/",

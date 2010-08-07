@@ -70,13 +70,12 @@ def connection_to_string(config):
     print ""
 
 
-def print_one_services_connections(service_name, desc):
+def print_connections():
     # Ask the settings service for the list of connections it provides
+    service_name = "org.freedesktop.NetworkManager"
     proxy = bus.get_object(service_name, "/org/freedesktop/NetworkManagerSettings")
     settings = dbus.Interface(proxy, "org.freedesktop.NetworkManagerSettings")
     connection_paths = settings.ListConnections()
-
-    print "%s connections --------------------------------------------\n" % desc
 
     # List each connection's name, UUID, and type
     for path in connection_paths:
@@ -106,7 +105,5 @@ def print_one_services_connections(service_name, desc):
 
     print ""
 
-# Print out connection information for all connections
-print_one_services_connections("org.freedesktop.NetworkManagerSystemSettings", "System")
-print_one_services_connections("org.freedesktop.NetworkManagerUserSettings", "User")
+print_connections()
 
