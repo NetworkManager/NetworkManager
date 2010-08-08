@@ -209,6 +209,12 @@ nm_logging_domains_to_string (void)
 	return g_string_free (str, FALSE);
 }
 
+gboolean
+nm_logging_level_enabled (guint32 level)
+{
+	return !!(log_level & level);
+}
+
 void _nm_log (const char *loc,
               const char *func,
               guint32 domain,
