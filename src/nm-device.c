@@ -1237,7 +1237,7 @@ static gboolean
 aipd_exec (NMDevice *self, GError **error)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	char *argv[5];
+	char *argv[6], *cmdline;
 	gboolean success = FALSE;
 	const char **aipd_binary = NULL;
 	static const char *aipd_paths[] = {
@@ -1245,6 +1245,7 @@ aipd_exec (NMDevice *self, GError **error)
 		"/usr/local/sbin/avahi-autoipd",
 		NULL
 	};
+	int i = 0;
 
 	aipd_cleanup (self);
 
@@ -1261,11 +1262,17 @@ aipd_exec (NMDevice *self, GError **error)
 		return FALSE;
 	}
 
-	argv[0] = (char *) (*aipd_binary);
-	argv[1] = "--script";
-	argv[2] = LIBEXECDIR "/nm-avahi-autoipd.action";
-	argv[3] = (char *) nm_device_get_ip_iface (self);
-	argv[4] = NULL;
+	argv[i++] = (char *) (*aipd_binary);
+	argv[i++] = "--script";
+	argv[i++] = LIBEXECDIR "/nm-avahi-autoipd.action";
+	if (nm_logging_level_enabled (LOGL_DEBUG))
+		argv[i++] = "--debug";
+	argv[i++] = (char *) nm_device_get_ip_iface (self);
+	argv[i++] = NULL;
+
+	cmdline = g_strjoinv (" ", argv);
+	nm_log_dbg(LOGD_AUTOIP4, "running: %s", cmdline);
+	g_free (cmdline);
 
 	success = g_spawn_async ("/", argv, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
 	                         &aipd_child_setup, NULL, &(priv->aipd_pid), error);
