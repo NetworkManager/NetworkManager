@@ -153,6 +153,8 @@ int main (int argc, char **argv)
 	test_ignored ("ignored-orig", "ifcfg-FooBar" ORIG_TAG, TRUE);
 	test_ignored ("ignored-rej", "ifcfg-FooBar" REJ_TAG, TRUE);
 	test_ignored ("ignored-rpmnew", "ifcfg-FooBar" RPMNEW_TAG, TRUE);
+	test_ignored ("ignored-augnew", "ifcfg-FooBar" AUGNEW_TAG, TRUE);
+	test_ignored ("ignored-augtmp", "ifcfg-FooBar" AUGTMP_TAG, TRUE);
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);
