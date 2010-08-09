@@ -3183,6 +3183,12 @@ is_wireless_device (const char *iface)
 	return is_wireless;
 }
 
+enum {
+	IGNORE_REASON_NONE = 0x00,
+	IGNORE_REASON_BRIDGE = 0x01,
+	IGNORE_REASON_VLAN = 0x02,
+};
+
 NMConnection *
 connection_from_file (const char *filename,
                       const char *network_file,  /* for unit tests only */
@@ -3203,7 +3209,7 @@ connection_from_file (const char *filename,
 	gboolean nm_controlled = TRUE;
 	gboolean ip6_used = FALSE;
 	GError *error = NULL;
-	gboolean ignore_connection = FALSE;
+	guint32 ignore_reason = IGNORE_REASON_NONE;
 
 	g_return_val_if_fail (filename != NULL, NULL);
 	g_return_val_if_fail (unmanaged != NULL, NULL);
@@ -3293,7 +3299,7 @@ connection_from_file (const char *filename,
 	if (tmp) {
 		g_free (tmp);
 		nm_controlled = FALSE;
-		ignore_connection = TRUE;
+		ignore_reason = IGNORE_REASON_BRIDGE;
 	}
 
 	if (nm_controlled) {
@@ -3301,7 +3307,7 @@ connection_from_file (const char *filename,
 		if (tmp) {
 			g_free (tmp);
 			nm_controlled = FALSE;
-			ignore_connection = TRUE;
+			ignore_reason = IGNORE_REASON_VLAN;
 		}
 	}
 
@@ -3325,14 +3331,22 @@ connection_from_file (const char *filename,
 
 	g_free (type);
 
-	/* Don't bother reading the connection fully if it's unmanaged.  As a
-	 * special-case, BRIDGE= and VLAN= connections are completely ignored so
-	 * that ifup gets an error when it tries to ask NM about them.
-	 */
-	if (!connection || *unmanaged || ignore_connection) {
-		if (connection && ignore_connection) {
-			g_object_unref (connection);
-			connection = NULL;
+	/* Don't bother reading the connection fully if it's unmanaged or ignored */
+	if (!connection || *unmanaged || ignore_reason) {
+		if (connection && !*unmanaged) {
+			/* However,BRIDGE and VLAN connections that don't have HWADDR won't
+			 * be unmanaged because the unmanaged state is keyed off HWADDR.
+			 * They willl still be tagged 'ignore' from code that checks BRIDGE
+			 * and VLAN above.  Since they aren't marked unmanaged, kill them
+			 * completely.
+			 */
+			if (ignore_reason) {
+				g_object_unref (connection);
+				connection = NULL;
+				g_set_error (&error, IFCFG_PLUGIN_ERROR, 0,
+				             "%s connections are not yet supported",
+				             ignore_reason == IGNORE_REASON_BRIDGE ? "Bridge" : "VLAN");
+			}
 		}
 		goto done;
 	}
