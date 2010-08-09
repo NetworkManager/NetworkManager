@@ -375,6 +375,24 @@ test_hosts_named46_non127 (void)
 
 /*******************************************/
 
+static const char *named46_non127_long_before = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	localhost.localdomain localhost\n"
+	"::1	localhost6.localdomain6	localhost6\n"
+	"192.168.1.2 comet.space	comet\n"
+	"3001:abba::3234 comet.space	comet\n"
+	"\n"
+	"127.0.0.1	lcmd.us.intellitxt.com\n";
+
+static void
+test_hosts_named46_non127_long (void)
+{
+	test_generic (named46_non127_long_before, NULL, "comet.space", "192.168.1.2", "3001:abba::3234", FALSE);
+}
+
+/*******************************************/
+
 static const char *named46_non127_other4_before = \
 	"# Do not remove the following line, or various programs\n"
 	"# that require network functionality will fail.\n"
@@ -400,6 +418,35 @@ static void
 test_hosts_named46_non127_other4 (void)
 {
 	test_generic (named46_non127_other4_before, named46_non127_other4_after, "comet", "192.168.1.2", "3001:abba::3234", FALSE);
+}
+
+/*******************************************/
+
+static const char *named46_non127_other4_long_before = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	localhost.localdomain localhost\n"
+	"::1	localhost6.localdomain6	localhost6\n"
+	"192.168.1.3	comet.space\n"
+	"3001:abba::3234	comet.space\n"
+	"\n"
+	"127.0.0.1	lcmd.us.intellitxt.com\n";
+
+static const char *named46_non127_other4_long_after = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"192.168.1.2	comet.space	comet	# Added by NetworkManager\n"
+	"127.0.0.1	localhost.localdomain	localhost\n"
+	"::1	localhost6.localdomain6	localhost6\n"
+	"192.168.1.3	comet.space\n"
+	"3001:abba::3234	comet.space\n"
+	"\n"
+	"127.0.0.1	lcmd.us.intellitxt.com\n";
+
+static void
+test_hosts_named46_non127_other4_long (void)
+{
+	test_generic (named46_non127_other4_long_before, named46_non127_other4_long_after, "comet.space", "192.168.1.2", "3001:abba::3234", FALSE);
 }
 
 /*******************************************/
@@ -433,6 +480,35 @@ test_hosts_named46_non127_other6 (void)
 
 /*******************************************/
 
+static const char *named46_non127_other6_long_before = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	localhost.localdomain localhost\n"
+	"::1	localhost6.localdomain6	localhost6\n"
+	"192.168.1.2	comet.space\n"
+	"3001:abba::9675	comet.space\n"
+	"\n"
+	"127.0.0.1	lcmd.us.intellitxt.com\n";
+
+static const char *named46_non127_other6_long_after = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"3001:abba::3234	comet.space	comet	# Added by NetworkManager\n"
+	"127.0.0.1	localhost.localdomain	localhost\n"
+	"::1	localhost6.localdomain6	localhost6\n"
+	"192.168.1.2	comet.space\n"
+	"3001:abba::9675	comet.space\n"
+	"\n"
+	"127.0.0.1	lcmd.us.intellitxt.com\n";
+
+static void
+test_hosts_named46_non127_other6_long (void)
+{
+	test_generic (named46_non127_other6_long_before, named46_non127_other6_long_after, "comet.space", "192.168.1.2", "3001:abba::3234", FALSE);
+}
+
+/*******************************************/
+
 static const char *unnamed46_non127_before = \
 	"# Do not remove the following line, or various programs\n"
 	"# that require network functionality will fail.\n"
@@ -455,6 +531,32 @@ static void
 test_hosts_unnamed46_non127 (void)
 {
 	test_generic (unnamed46_non127_before, unnamed46_non127_after, "comet", "192.168.1.2", "3001:abba::3234", FALSE);
+}
+
+/*******************************************/
+
+static const char *unnamed46_non127_long_before = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	localhost.localdomain localhost\n"
+	"::1	localhost6.localdomain6	localhost6\n"
+	"\n"
+	"127.0.0.1	lcmd.us.intellitxt.com\n";
+
+static const char *unnamed46_non127_long_after = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"192.168.1.2	comet.space	comet	# Added by NetworkManager\n"
+	"3001:abba::3234	comet.space	comet	# Added by NetworkManager\n"
+	"127.0.0.1	localhost.localdomain	localhost\n"
+	"::1	localhost6.localdomain6	localhost6\n"
+	"\n"
+	"127.0.0.1	lcmd.us.intellitxt.com\n";
+
+static void
+test_hosts_unnamed46_non127_long (void)
+{
+	test_generic (unnamed46_non127_long_before, unnamed46_non127_long_after, "comet.space", "192.168.1.2", "3001:abba::3234", FALSE);
 }
 
 /*******************************************/
@@ -592,10 +694,14 @@ int main (int argc, char **argv)
 	g_test_suite_add (suite, TESTCASE (test_hosts_named4_non127_more, NULL));
 	g_test_suite_add (suite, TESTCASE (test_hosts_named6_non127_more, NULL));
 	g_test_suite_add (suite, TESTCASE (test_hosts_named46_non127, NULL));
+	g_test_suite_add (suite, TESTCASE (test_hosts_named46_non127_long, NULL));
 	g_test_suite_add (suite, TESTCASE (test_hosts_named46_non127_other4, NULL));
+	g_test_suite_add (suite, TESTCASE (test_hosts_named46_non127_other4_long, NULL));
 	g_test_suite_add (suite, TESTCASE (test_hosts_named46_non127_other6, NULL));
+	g_test_suite_add (suite, TESTCASE (test_hosts_named46_non127_other6_long, NULL));
 	g_test_suite_add (suite, TESTCASE (test_hosts_named46_non127_wrong, NULL));
 	g_test_suite_add (suite, TESTCASE (test_hosts_unnamed46_non127, NULL));
+	g_test_suite_add (suite, TESTCASE (test_hosts_unnamed46_non127_long, NULL));
 	g_test_suite_add (suite, TESTCASE (test_hosts_named_no_localhost, NULL));
 	g_test_suite_add (suite, TESTCASE (test_hosts_no_localhost, NULL));
 	g_test_suite_add (suite, TESTCASE (test_hosts_named_last, NULL));

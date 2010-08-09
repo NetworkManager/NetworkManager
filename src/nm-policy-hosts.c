@@ -133,6 +133,7 @@ nm_policy_get_etc_hosts (const char **lines,
 	gboolean hostname6_is_fallback;
 	gboolean host4_before = FALSE;
 	gboolean host6_before = FALSE;
+	char *short_hostname = NULL;
 
 	g_return_val_if_fail (lines != NULL, FALSE);
 	g_return_val_if_fail (hostname != NULL, FALSE);
@@ -206,6 +207,24 @@ nm_policy_get_etc_hosts (const char **lines,
 		return NULL;
 	}
 
+	/* Find the short hostname, like 'foo' from 'foo.bar.baz'; we want to
+	 * make sure that the entries we add for this host also include the short
+	 * hostname too so that if the resolver does not answer queries for the
+	 * machine's actual hostname/domain, that stuff like 'ping foo' still works.
+	 */
+	if (!hostname4_is_fallback || !hostname6_is_fallback) {
+		char *dot;
+
+		short_hostname = g_strdup (hostname);
+		dot = strchr (short_hostname, '.');
+		if (dot && *(dot+1))
+			*dot = '\0';
+		else {
+			g_free (short_hostname);
+			short_hostname = NULL;
+		}
+	}
+
 	/* Construct the new hosts file; replace any 127.0.0.1/::1 entry that is
 	 * at the beginning of the file or right after initial comments and contains
 	 * the string 'localhost' (for IPv4) or 'localhost6' (for IPv6).  If there
@@ -229,21 +248,35 @@ nm_policy_get_etc_hosts (const char **lines,
 			 */
 
 			/* Add the address mappings first so they take precedence */
-			if (!hostname4_is_fallback && ip4_addr && !found_user_host4)
-				g_string_append_printf (contents, "%s\t%s\t%s\n", ip4_addr, hostname, ADDED_TAG);
-			if (!hostname6_is_fallback && ip6_addr && !found_user_host6)
-				g_string_append_printf (contents, "%s\t%s\t%s\n", ip6_addr, hostname, ADDED_TAG);
+			if (!hostname4_is_fallback && ip4_addr && !found_user_host4) {
+				g_string_append_printf (contents, "%s\t%s", ip4_addr, hostname);
+				if (short_hostname)
+					g_string_append_printf (contents, "\t%s", short_hostname);
+				g_string_append_printf (contents, "\t%s\n", ADDED_TAG);
+			}
+			if (!hostname6_is_fallback && ip6_addr && !found_user_host6) {
+				g_string_append_printf (contents, "%s\t%s", ip6_addr, hostname);
+				if (short_hostname)
+					g_string_append_printf (contents, "\t%s", short_hostname);
+				g_string_append_printf (contents, "\t%s\n", ADDED_TAG);
+			}
 
 			/* IPv4 localhost line */
 			g_string_append (contents, "127.0.0.1");
-			if (!hostname4_is_fallback && !ip4_addr && !found_user_host4)
+			if (!hostname4_is_fallback && !ip4_addr && !found_user_host4) {
 				g_string_append_printf (contents, "\t%s", hostname);
+				if (short_hostname)
+					g_string_append_printf (contents, "\t%s", short_hostname);
+			}
 			g_string_append_printf (contents, "\t%s\tlocalhost\n", fallback_hostname4);
 
 			/* IPv6 localhost line */
 			g_string_append (contents, "::1");
-			if (!hostname6_is_fallback && !hostname4_is_fallback && !ip6_addr && !found_user_host6)
+			if (!hostname6_is_fallback && !hostname4_is_fallback && !ip6_addr && !found_user_host6) {
 				g_string_append_printf (contents, "\t%s", hostname);
+				if (short_hostname)
+					g_string_append_printf (contents, "\t%s", short_hostname);
+			}
 			g_string_append_printf (contents, "\t%s\tlocalhost6\n", fallback_hostname6);
 
 			added = TRUE;
@@ -277,15 +310,24 @@ nm_policy_get_etc_hosts (const char **lines,
 		g_string_append (contents, "# that require network functionality will fail.\n");
 
 		/* Add the address mappings first so they take precedence */
-		if (!hostname4_is_fallback && ip4_addr)
-			g_string_append_printf (contents, "%s\t%s\t%s\n", ip4_addr, hostname, ADDED_TAG);
-		if (!hostname6_is_fallback && ip6_addr)
-			g_string_append_printf (contents, "%s\t%s\t%s\n", ip6_addr, hostname, ADDED_TAG);
+		if (!hostname4_is_fallback && ip4_addr) {
+			g_string_append_printf (contents, "%s\t%s", ip4_addr, hostname);
+			if (short_hostname)
+				g_string_append_printf (contents, "\t%s", short_hostname);
+			g_string_append_printf (contents, "\t%s\n", ADDED_TAG);
+		}
+		if (!hostname6_is_fallback && ip6_addr) {
+			g_string_append_printf (contents, "%s\t%s", ip6_addr, hostname);
+			if (short_hostname)
+				g_string_append_printf (contents, "\t%s", short_hostname);
+			g_string_append_printf (contents, "\t%s\n", ADDED_TAG);
+		}
 
 		g_string_append_printf (contents, "127.0.0.1\t%s\tlocalhost\n", fallback_hostname4);
 		g_string_append_printf (contents, "::1\t%s\tlocalhost6\n", fallback_hostname6);
 	}
 
+	g_free (short_hostname);
 	return contents;
 }
 
