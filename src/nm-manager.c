@@ -1399,6 +1399,7 @@ system_internal_new_connection (NMManager *manager,
 	path = nm_connection_get_path (NM_CONNECTION (connection));
 	g_hash_table_insert (priv->system_connections, g_strdup (path),
 	                     g_object_ref (connection));
+	g_signal_emit (manager, signals[CONNECTION_ADDED], 0, connection, NM_CONNECTION_SCOPE_SYSTEM);
 }
 
 static void
