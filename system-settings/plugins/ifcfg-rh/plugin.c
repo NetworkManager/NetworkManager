@@ -164,7 +164,7 @@ read_one_connection (SCPluginIfcfg *plugin, const char *filename)
 			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    error: %s",
 			              (error && error->message) ? error->message : "(unknown)");
 		}
-		g_error_free (error);
+		g_clear_error (&error);
 	}
 
 	return connection;
@@ -334,25 +334,25 @@ dir_changed (GFileMonitor *monitor,
 	g_free (path);
 
 	connection = g_hash_table_lookup (priv->connections, name);
-	if (!connection) {
-		do_new = TRUE;
-	} else {
-		switch (event_type) {
-		case G_FILE_MONITOR_EVENT_DELETED:
-			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "removed %s.", name);
-			do_remove = TRUE;
-			break;
-		case G_FILE_MONITOR_EVENT_CREATED:
-		case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
-			/* Update */
+	switch (event_type) {
+	case G_FILE_MONITOR_EVENT_DELETED:
+		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "removed %s.", name);
+		if (connection)
+			handle_connection_remove_or_new (plugin, name, connection, TRUE, FALSE);
+		break;
+	case G_FILE_MONITOR_EVENT_CREATED:
+	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
+		/* Update */
+		if (!connection)
+			do_new = TRUE;
+		else
 			connection_changed_handler (plugin, name, connection, &do_remove, &do_new);
-			break;
-		default:
-			break;
-		}
-	}
 
-	handle_connection_remove_or_new (plugin, name, connection, do_remove, do_new);
+		handle_connection_remove_or_new (plugin, name, connection, do_remove, do_new);
+		break;
+	default:
+		break;
+	}
 
 	g_free (name);
 }
