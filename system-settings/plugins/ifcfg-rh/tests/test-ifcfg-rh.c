@@ -9332,8 +9332,17 @@ test_read_bridge_component (void)
 	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
-	ASSERT (connection == NULL,
-	        "bridge-component-read", "unexpected success reading %s", TEST_IFCFG_BRIDGE_COMPONENT);
+	ASSERT (connection != NULL,
+	        "bridge-component-read", "unexpected failure reading %s", TEST_IFCFG_BRIDGE_COMPONENT);
+
+	ASSERT (unmanaged != NULL,
+	        "bridge-component-read", "missing unmanaged spec from %s", TEST_IFCFG_BRIDGE_COMPONENT);
+
+	ASSERT (g_strcmp0 (unmanaged, "mac:00:22:15:59:62:97") == 0,
+	        "bridge-component-read", "unexpected unmanaged spec from %s", TEST_IFCFG_BRIDGE_COMPONENT);
+
+	g_object_unref (connection);
+	g_free (unmanaged);
 }
 
 #define TEST_IFCFG_VLAN_INTERFACE TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-interface"
