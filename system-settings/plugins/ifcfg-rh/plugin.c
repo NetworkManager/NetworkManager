@@ -544,7 +544,7 @@ impl_ifcfgrh_get_ifcfg_details (SCPluginIfcfg *plugin,
 	}
 
 	connection = g_hash_table_lookup (priv->connections, in_ifcfg);
-	if (!connection) {
+	if (!connection || nm_ifcfg_connection_get_unmanaged_spec (connection)) {
 		g_set_error (error,
 		             NM_SETTINGS_INTERFACE_ERROR,
 		             NM_SETTINGS_INTERFACE_ERROR_INVALID_CONNECTION,
