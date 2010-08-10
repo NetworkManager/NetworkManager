@@ -166,12 +166,26 @@ fetch_connections_done (DBusGProxy *proxy,
 	int i;
 
 	if (error) {
-		g_warning ("%s: error fetching %s connections: (%d) %s.",
-		           __func__,
-		           priv->scope == NM_CONNECTION_SCOPE_USER ? "user" : "system",
-		           error->code,
-		           error->message ? error->message : "(unknown)");
+		gboolean is_spawn_error = FALSE;
+
+		/* Don't warn if the user settings service wasn't running since that's
+		 * just annoying when running headless.
+		 */
+		if (   g_error_matches (error, DBUS_GERROR, DBUS_GERROR_SERVICE_UNKNOWN)
+		    || g_error_matches (error, DBUS_GERROR, DBUS_GERROR_NAME_HAS_NO_OWNER))
+			is_spawn_error = TRUE;
+
+		if (!is_spawn_error || priv->scope == NM_CONNECTION_SCOPE_SYSTEM) {
+			g_warning ("%s: error fetching %s connections: (%d) %s.",
+				       __func__,
+				       priv->scope == NM_CONNECTION_SCOPE_USER ? "user" : "system",
+				       error->code,
+				       error->message ? error->message : "(unknown)");
+		}
 		g_clear_error (&error);
+
+		/* We tried to read connections and failed */
+		g_signal_emit_by_name (self, NM_SETTINGS_INTERFACE_CONNECTIONS_READ);
 		return;
 	}
 
