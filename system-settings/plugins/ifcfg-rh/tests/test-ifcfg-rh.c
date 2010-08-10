@@ -2319,6 +2319,111 @@ test_read_wired_ipv6_only (void)
 	g_object_unref (connection);
 }
 
+#define TEST_IFCFG_WIRED_DHCP6_ONLY TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp6-only"
+
+static void
+test_read_wired_dhcp6_only (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const char *expected_id = "System test-wired-dhcp6-only";
+	const char *method;
+
+	connection = connection_from_file (TEST_IFCFG_WIRED_DHCP6_ONLY,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "wired-dhcp6-only-read", "failed to read %s: %s", TEST_IFCFG_WIRED_DHCP6_ONLY, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wired-dhcp6-only-verify", "failed to verify %s: %s", TEST_IFCFG_WIRED_DHCP6_ONLY, error->message);
+
+	ASSERT (unmanaged == FALSE,
+	        "wired-dhcp6-only-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_DHCP6_ONLY);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "wired-dhcp6-only-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_DHCP6_ONLY,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "wired-dhcp6-only-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_DHCP6_ONLY,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_id) == 0,
+	        "wired-dhcp6-only-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_DHCP6_ONLY,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+	/* ===== WIRED SETTING ===== */
+
+	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	ASSERT (s_wired != NULL,
+	        "wired-dhcp6-only-verify-wired", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_DHCP6_ONLY,
+	        NM_SETTING_WIRED_SETTING_NAME);
+
+	/* ===== IPv4 SETTING ===== */
+
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	ASSERT (s_ip4 != NULL,
+	        "wired-dhcp6-only-verify-ip4", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_DHCP6_ONLY,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+
+	method = nm_setting_ip4_config_get_method (s_ip4);
+	ASSERT (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0,
+	        "wired-dhcp6-only-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_DHCP6_ONLY,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_METHOD);
+
+	/* ===== IPv6 SETTING ===== */
+
+	s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG));
+	ASSERT (s_ip6 != NULL,
+	        "wired-dhcp6-only-verify-ip6", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_DHCP6_ONLY,
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip6_config_get_method (s_ip6);
+	ASSERT (strcmp (tmp, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0,
+	        "wired-dhcp6-only-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_DHCP6_ONLY,
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP6_CONFIG_METHOD);
+
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+	g_object_unref (connection);
+}
+
 #define TEST_IFCFG_ONBOOT_NO TEST_IFCFG_DIR"/network-scripts/ifcfg-test-onboot-no"
 
 static void
@@ -9411,6 +9516,7 @@ int main (int argc, char **argv)
 	test_read_wired_static_routes_legacy ();
 	test_read_wired_ipv6_manual ();
 	test_read_wired_ipv6_only ();
+	test_read_wired_dhcp6_only ();
 	test_read_onboot_no ();
 	test_read_wired_8021x_peap_mschapv2 ();
 	test_read_wifi_open ();
