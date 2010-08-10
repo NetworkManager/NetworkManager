@@ -25,6 +25,9 @@
 
 #include <string.h>
 #include <ctype.h>
+#include "nm-utils.h"
+#include "nm-dbus-glib-types.h"
+#include "nm-param-spec-specialized.h"
 #include "nm-setting-connection.h"
 
 /**
@@ -85,6 +88,7 @@ typedef struct {
 	char *id;
 	char *uuid;
 	char *type;
+	GSList *permissions;
 	gboolean autoconnect;
 	guint64 timestamp;
 	gboolean read_only;
@@ -95,6 +99,7 @@ enum {
 	PROP_ID,
 	PROP_UUID,
 	PROP_TYPE,
+	PROP_PERMISSIONS,
 	PROP_AUTOCONNECT,
 	PROP_TIMESTAMP,
 	PROP_READ_ONLY,
@@ -160,6 +165,42 @@ nm_setting_connection_get_connection_type (NMSettingConnection *setting)
 	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), NULL);
 
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->type;
+}
+
+
+/**
+ * nm_setting_connection_get_num_permissions:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns the number of entires in the #NMSettingConnection:permissions
+ * property of this setting.
+ *
+ * Returns: the number of permissions entires
+ */
+guint32
+nm_setting_connection_get_num_permissions (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), 0);
+
+	return g_slist_length (NM_SETTING_CONNECTION_GET_PRIVATE (setting)->permissions);
+}
+
+/**
+ * nm_setting_connection_get_permission_entry:
+ * @setting: the #NMSettingConnection
+ * @index: the zero-based index of the permissions entry
+ *
+ * Retrieve one of the entries of the #NMSettingConnection:permissions property
+ * of this setting.
+ *
+ * Returns: the entry at the specified index
+ */
+const char *
+nm_setting_connection_get_permission_entry (NMSettingConnection *setting, guint32 i)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), NULL);
+
+	return (const char *) g_slist_nth_data (NM_SETTING_CONNECTION_GET_PRIVATE (setting)->permissions, i);
 }
 
 /**
@@ -235,6 +276,49 @@ validate_uuid (const char *uuid)
 	return TRUE;
 }
 
+/* Check that every entry in the given permissions array is of proper form.
+ * Report a descriptive error if it's not. */
+static gboolean
+validate_permissions (GSList *permissions, GError **error)
+{
+	GSList *iter;
+	for (iter = permissions; iter; iter = iter->next) {
+		char *entry = (char *) iter->data;
+		char *usr_start = NULL;
+		char *ext_start = NULL;
+		int prefix_len;
+
+		if (g_str_has_prefix (entry, NM_SETTINGS_CONNECTION_PERMISSION_PREFIX_USER)) {
+			prefix_len = strlen (NM_SETTINGS_CONNECTION_PERMISSION_PREFIX_USER);
+		} else if (g_str_has_prefix (entry, NM_SETTINGS_CONNECTION_PERMISSION_PREFIX_GROUP)) {
+			prefix_len = strlen (NM_SETTINGS_CONNECTION_PERMISSION_PREFIX_GROUP);
+		} else {
+			g_set_error (error, 
+			             NM_SETTING_CONNECTION_ERROR,
+			             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+			             "permissions: entry '%s': invalid prefix", entry);
+			return FALSE;
+		}
+
+		usr_start = entry + prefix_len;
+
+		ext_start = strchr(usr_start, ':');
+		if (!ext_start) {
+			g_set_error (error,
+			             NM_SETTING_CONNECTION_ERROR,
+			             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+			             "permissions: entry '%s': two few ':'s", entry);
+			return FALSE;
+		}
+		ext_start++;
+
+		/* We don't (yet) care about what comes afterwards. */
+
+	}
+
+	return TRUE;
+}
+
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
@@ -291,6 +375,14 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
+	if (priv->permissions) {
+		GError *perm_error = NULL;
+		if (!validate_permissions (priv->permissions, &perm_error)) {
+			g_propagate_error (error, perm_error);
+			return FALSE;
+		}
+	}
+
 	return TRUE;
 }
 
@@ -308,6 +400,7 @@ finalize (GObject *object)
 	g_free (priv->id);
 	g_free (priv->uuid);
 	g_free (priv->type);
+	nm_utils_slist_free (priv->permissions, g_free);
 
 	G_OBJECT_CLASS (nm_setting_connection_parent_class)->finalize (object);
 }
@@ -330,6 +423,10 @@ set_property (GObject *object, guint prop_id,
 	case PROP_TYPE:
 		g_free (priv->type);
 		priv->type = g_value_dup_string (value);
+		break;
+	case PROP_PERMISSIONS:
+		nm_utils_slist_free (priv->permissions, g_free);
+		priv->permissions = g_value_dup_boxed (value);
 		break;
 	case PROP_AUTOCONNECT:
 		priv->autoconnect = g_value_get_boolean (value);
@@ -361,6 +458,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_TYPE:
 		g_value_set_string (value, nm_setting_connection_get_connection_type (setting));
+		break;
+	case PROP_PERMISSIONS:
+		g_value_set_boxed (value, NM_SETTING_CONNECTION_GET_PRIVATE (setting)->permissions);
 		break;
 	case PROP_AUTOCONNECT:
 		g_value_set_boolean (value, nm_setting_connection_get_autoconnect (setting));
@@ -463,6 +563,37 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 						  "setting type (ie, 'vpn' or 'bridge', etc).",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
+	 * NMSettingConnection:permissions:
+	 * 
+	 * An array of strings defining what access a given user has to this
+	 * connection.  If this is NULL or empty, all users are allowed to access
+	 * this connection.  Otherwise, each entry in this array specifies a user or
+	 * unix group, and a user is allowed to access this connection if and only
+	 * if they are in this list or if they are included in at least one of any
+	 * listed unix groups . Each entry is of the form "user:<user-name>:<junk>
+	 * or "group:<group-name>:<junk>. Any <junk> present must be ignored; it is
+	 * reserved for future versions of NM.
+	 */
+	g_object_class_install_property
+		(object_class, PROP_PERMISSIONS,
+		 _nm_param_spec_specialized (NM_SETTING_CONNECTION_PERMISSIONS,
+		                  "Permissions",
+		                  "An array of strings defining what access a given "
+		                  "user has to this connection.  If this is NULL or "
+		                  "empty, all users are allowed to access this "
+		                  "connection.  Otherwise, each entry in this array "
+		                  "specifies a user or unix group, and a user is "
+		                  "allowed to access this connection if and only if "
+		                  "they are in this list or if they are included in at "
+		                  "least one of any listed unix groups. Each entry is "
+		                  "of the form \"user:<user-name>:<junk>\" or "
+		                  "\"group:<group-name>:<junk>\". Any <junk> present "
+		                  "must be ignored; it is reserved for future versions "
+		                  "of NM.",
+		                  DBUS_TYPE_G_LIST_OF_STRING,
+		                  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
 	 * NMSettingConnection:autoconnect:

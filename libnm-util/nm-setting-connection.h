@@ -74,6 +74,10 @@ GQuark nm_setting_connection_error_quark (void);
 #define NM_SETTING_CONNECTION_AUTOCONNECT "autoconnect"
 #define NM_SETTING_CONNECTION_TIMESTAMP   "timestamp"
 #define NM_SETTING_CONNECTION_READ_ONLY   "read-only"
+#define NM_SETTING_CONNECTION_PERMISSIONS "permissions"
+
+#define NM_SETTINGS_CONNECTION_PERMISSION_PREFIX_USER  "user:"
+#define NM_SETTINGS_CONNECTION_PERMISSION_PREFIX_GROUP "group:"
 
 /**
  * NMSettingConnection:
@@ -97,13 +101,15 @@ typedef struct {
 
 GType nm_setting_connection_get_type (void);
 
-NMSetting * nm_setting_connection_new                 (void);
-const char *nm_setting_connection_get_id              (NMSettingConnection *setting);
-const char *nm_setting_connection_get_uuid            (NMSettingConnection *setting);
-const char *nm_setting_connection_get_connection_type (NMSettingConnection *setting);
-gboolean    nm_setting_connection_get_autoconnect     (NMSettingConnection *setting);
-guint64     nm_setting_connection_get_timestamp       (NMSettingConnection *setting);
-gboolean    nm_setting_connection_get_read_only       (NMSettingConnection *setting);
+NMSetting * nm_setting_connection_new                  (void);
+const char *nm_setting_connection_get_id               (NMSettingConnection *setting);
+const char *nm_setting_connection_get_uuid             (NMSettingConnection *setting);
+const char *nm_setting_connection_get_connection_type  (NMSettingConnection *setting);
+gboolean    nm_setting_connection_get_autoconnect      (NMSettingConnection *setting);
+guint64     nm_setting_connection_get_timestamp        (NMSettingConnection *setting);
+gboolean    nm_setting_connection_get_read_only        (NMSettingConnection *setting);
+guint32     nm_setting_connection_get_num_permissions  (NMSettingConnection *setting);
+const char *nm_setting_connection_get_permission_entry (NMSettingConnection *setting, guint32 index);
 
 G_END_DECLS
 
