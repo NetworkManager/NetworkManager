@@ -398,11 +398,13 @@ nm_device_interface_connection_match_config (NMDeviceInterface *device,
 }
 
 gboolean
-nm_device_interface_can_assume_connection (NMDeviceInterface *device)
+nm_device_interface_can_assume_connections (NMDeviceInterface *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), FALSE);
 
-	return !!NM_DEVICE_INTERFACE_GET_INTERFACE (device)->connection_match_config;
+	if (NM_DEVICE_INTERFACE_GET_INTERFACE (device)->can_assume_connections)
+		return NM_DEVICE_INTERFACE_GET_INTERFACE (device)->can_assume_connections (device);
+	return FALSE;
 }
 
 void
