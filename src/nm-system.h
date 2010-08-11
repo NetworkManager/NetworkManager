@@ -66,6 +66,16 @@ gboolean		nm_system_apply_ip4_config              (const char *iface,
                                                          int priority,
                                                          NMIP4ConfigCompareFlags flags);
 
+int             nm_system_set_ip6_route                 (int ifindex,
+                                                         const struct in6_addr *ip6_dest,
+                                                         guint32 ip6_prefix,
+                                                         const struct in6_addr *ip6_gateway,
+                                                         guint32 metric,
+                                                         int mss,
+                                                         int protocol,
+                                                         int table,
+                                                         struct rtnl_route **out_route);
+
 gboolean		nm_system_apply_ip6_config              (const char *iface,
                                                          NMIP6Config *config,
                                                          int priority,

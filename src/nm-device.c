@@ -1579,6 +1579,8 @@ dhcp6_start (NMDevice *self,
 	NMSettingConnection *s_con;
 	const char *uuid;
 	const char *ip_iface;
+	const struct in6_addr dest = { { { 0xFF,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } } };
+	int err;
 
 	if (!connection) {
 		NMActRequest *req;
@@ -1598,6 +1600,18 @@ dhcp6_start (NMDevice *self,
 	if (priv->dhcp6_config)
 		g_object_unref (priv->dhcp6_config);
 	priv->dhcp6_config = nm_dhcp6_config_new ();
+
+	/* DHCPv6 communicates with the DHCPv6 server via two multicast addresses,
+	 * ff02::1:2 (link-scope) and ff05::1:3 (site-scope).  Make sure we have
+	 * a multicast route (ff00::/8) for client <-> server communication.
+	 */
+	err = nm_system_set_ip6_route (priv->ip_iface ? priv->ip_ifindex : priv->ifindex,
+	                               &dest, 8, NULL, 256, 0, RTPROT_BOOT, RT_TABLE_LOCAL, NULL);
+	if (err) {
+		nm_log_err (LOGD_DEVICE | LOGD_IP6,
+		            "(%s): failed to add IPv6 multicast route: %s",
+		            priv->ip_iface ? priv->ip_iface : priv->iface, nl_geterror ());
+	}
 
 	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 	g_assert (s_con);
