@@ -3375,7 +3375,8 @@ finalize (GObject *object)
 	NMDevice *self = NM_DEVICE (object);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	g_object_unref (priv->dhcp_manager);
+	if (priv->dhcp_manager)
+		g_object_unref (priv->dhcp_manager);
 
 	g_free (priv->udi);
 	g_free (priv->iface);
