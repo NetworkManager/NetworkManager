@@ -237,6 +237,14 @@ else
 fi
 AC_SUBST(UDEV_BASE_DIR)
 
+# systemd
+AC_ARG_WITH([systemdsystemunitdir],
+ AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files]),
+ [],
+ [with_systemdsystemunitdir=$($PKG_CONFIG --variable=systemdsystemunitdir systemd)])
+AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])
+AM_CONDITIONAL(HAVE_SYSTEMD, [test -n "$with_systemdsystemunitdir"])
+
 PKG_CHECK_MODULES(LIBNL, libnl-1 >= 1.0-pre8)
 AC_SUBST(LIBNL_CFLAGS)
 AC_SUBST(LIBNL_LIBS)
@@ -528,6 +536,7 @@ man/nm-online.1
 man/nmcli.1
 po/Makefile.in
 policy/Makefile
+data/Makefile
 docs/Makefile
 docs/libnm-glib/Makefile
 docs/libnm-util/Makefile
@@ -553,6 +562,12 @@ if test -n "${DHCPCD_PATH}"; then
 	echo dhcpcd support: ${DHCPCD_PATH}
 else
 	echo dhcpcd support: no
+fi
+
+if test -n "${with_systemdsystemunitdir}"; then
+	echo systemd support: ${with_systemdsystemunitdir}
+else
+	echo systemd support: no
 fi
 
 echo
