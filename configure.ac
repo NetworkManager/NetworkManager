@@ -319,21 +319,30 @@ AC_SUBST(PPPD_PLUGIN_DIR)
 AC_ARG_WITH([dhclient], AS_HELP_STRING([--with-dhclient=yes|no|path], [Enable dhclient 4.x support]))
 # If a full path is given, use that and do not test if it works or not.
 case "${with_dhclient}" in
+	# NM only works with ISC dhclient - other derivatives don't have
+	# the same userland.  dhclient 4.x is required for IPv6 support;
+	# with older versions NM won't be able to use DHCPv6.
+
 	/*)
 		DHCLIENT_PATH="${with_dhclient}"
+		DHCLIENT_VERSION=4
+		if test -x "${with_dhclient}"; then
+			case `"${with_dhclient}" --version 2>&1` in
+				"isc-dhclient-4"*) DHCLIENT_VERSION=4; break;;
+				"isc-dhclient-V3"*) DHCLIENT_VERSION=3; break;;
+			esac
+		fi
 		AC_MSG_NOTICE(using dhclient at ${DHCLIENT_PATH})
 		;;
 	no)	AC_MSG_NOTICE(dhclient support disabled)
 		;;
 	*)
 		AC_MSG_CHECKING(for dhclient)
-		# NM only works with ISC dhclient - other derivatives don't have
-		# the same userland.  NM also requires dhclient 4.x since older
-		# versions do not have IPv6 support.
 		for path in /sbin /usr/sbin /usr/pkg/sbin /usr/local/sbin; do
 			test -x "${path}/dhclient" || continue
 			case `"$path/dhclient" --version 2>&1` in
-				"isc-dhclient-4"*) DHCLIENT_PATH="$path/dhclient"; break;;
+				"isc-dhclient-4"*) DHCLIENT_PATH="$path/dhclient"; DHCLIENT_VERSION=4; break;;
+				"isc-dhclient-V3"*) DHCLIENT_PATH="$path/dhclient"; DHCLIENT_VERSION=3; break;;
 			esac
 		done
 		if test -n "${DHCLIENT_PATH}"; then
@@ -554,6 +563,7 @@ echo
 
 if test -n "${DHCLIENT_PATH}"; then
 	echo ISC dhclient support: ${DHCLIENT_PATH}
+	echo ISC dhclient version: ${DHCLIENT_VERSION}
 else
 	echo ISC dhclient support: no
 fi
