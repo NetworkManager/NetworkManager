@@ -55,6 +55,8 @@
 #define G_UDEV_API_IS_SUBJECT_TO_CHANGE
 #include <gudev/gudev.h>
 
+#define ENI_INTERFACES_FILE "/etc/network/interfaces"
+
 #define IFUPDOWN_PLUGIN_NAME "ifupdown"
 #define IFUPDOWN_PLUGIN_INFO "(C) 2008 Canonical Ltd.  To report bugs please use the NetworkManager mailing list."
 #define IFUPDOWN_SYSTEM_HOSTNAME_FILE "/etc/hostname"
@@ -355,7 +357,7 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 	update_system_hostname (inotify_helper, NULL, NULL, config);
 
 	/* Read in all the interfaces */
-	ifparser_init ();
+	ifparser_init (ENI_INTERFACES_FILE);
 	block = ifparser_getfirst ();
 	while (block) {
 		if(!strcmp ("auto", block->type) || !strcmp ("allow-hotplug", block->type))

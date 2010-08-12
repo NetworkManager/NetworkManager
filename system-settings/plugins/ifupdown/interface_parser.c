@@ -75,19 +75,19 @@ void add_data(const char *key,const char *data)
 
 #define SPACE_OR_TAB(string,ret) {ret = strchr(string,' ');ret=(ret == NULL?strchr(string,'\t'):ret);}
 
-void ifparser_init(void)
+void ifparser_init (const char *eni_file)
 {
-	FILE *inp = fopen(ENI_INTERFACES_FILE, "r");
+	FILE *inp = fopen (eni_file, "r");
 	int ret = 0;
 	char *line;
 	char *space;
 	char rline[255];
 
-	if (inp == NULL)
-	{
-		nm_warning ("Error: Can't open %s\n", ENI_INTERFACES_FILE);
+	if (inp == NULL) {
+		nm_warning ("Error: Can't open %s\n", eni_file);
 		return;
 	}
+
 	first = last = NULL;
 	while(1)
 	{

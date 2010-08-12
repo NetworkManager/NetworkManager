@@ -26,8 +26,6 @@
 
 #include "config.h"
 
-#define ENI_INTERFACES_FILE "/etc/network/interfaces"
-
 typedef struct _if_data
 {
 	char *key;
@@ -43,7 +41,7 @@ typedef struct _if_block
 	struct _if_block *next;
 } if_block;
 
-void ifparser_init(void);
+void ifparser_init(const char *eni_file);
 void ifparser_destroy(void);
 
 if_block *ifparser_getif(const char* iface);
