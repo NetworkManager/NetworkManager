@@ -29,6 +29,7 @@ libdhcp_manager_la_CPPFLAGS = \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
 	-DLOCALSTATEDIR=\"$(localstatedir)\" \
 	-DDHCLIENT_PATH=\"$(DHCLIENT_PATH)\" \
+	-DDHCLIENT_V$(DHCLIENT_VERSION) \
 	-DDHCPCD_PATH=\"$(DHCPCD_PATH)\"
 
 libdhcp_manager_la_LIBADD = \

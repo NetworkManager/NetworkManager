@@ -45,7 +45,11 @@ G_DEFINE_TYPE (NMDHCPDhclient, nm_dhcp_dhclient, NM_TYPE_DHCP_CLIENT)
 #define NM_DHCP_DHCLIENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_DHCLIENT, NMDHCPDhclientPrivate))
 
 #if defined(TARGET_DEBIAN) || defined(TARGET_SUSE) || defined(TARGET_MANDRIVA)
+#if defined(DHCLIENT_V3)
+#define NM_DHCLIENT_LEASE_DIR			LOCALSTATEDIR "/lib/dhcp3"
+#else
 #define NM_DHCLIENT_LEASE_DIR           LOCALSTATEDIR "/lib/dhcp"
+#endif
 #else
 #define NM_DHCLIENT_LEASE_DIR           LOCALSTATEDIR "/lib/dhclient"
 #endif
@@ -437,7 +441,11 @@ create_dhclient_config (const char *iface,
 #if defined(TARGET_SUSE)
 	orig = g_strdup (SYSCONFDIR "/dhclient.conf");
 #elif defined(TARGET_DEBIAN) || defined(TARGET_GENTOO)
+#if defined(DHCLIENT_V3)
+	orig = g_strdup (SYSCONFDIR "/dhcp3/dhclient.conf");
+#else
 	orig = g_strdup (SYSCONFDIR "/dhcp/dhclient.conf");
+#endif
 #else
 	orig = g_strdup_printf (SYSCONFDIR "/dhclient-%s.conf", iface);
 #endif
@@ -499,11 +507,19 @@ dhclient_start (NMDHCPClient *client,
 	guint log_domain;
 
 	g_return_val_if_fail (priv->pid_file == NULL, -1);
-	g_return_val_if_fail (ip_opt != NULL, -1);
 
 	iface = nm_dhcp_client_get_iface (client);
 	uuid = nm_dhcp_client_get_uuid (client);
 	ipv6 = nm_dhcp_client_get_ipv6 (client);
+
+#if defined(DHCLIENT_V3)
+	if (ipv6) {
+		nm_log_warn (log_domain, "(%s): ISC dhcp3 does not support IPv6", iface);
+		return -1;
+	}
+#else
+	g_return_val_if_fail (ip_opt != NULL, -1);
+#endif
 
 	log_domain = ipv6 ? LOGD_DHCP6 : LOGD_DHCP4;
 
@@ -536,10 +552,11 @@ dhclient_start (NMDHCPClient *client,
 
 	g_ptr_array_add (argv, (gpointer) "-d");
 
+#if !defined(DHCLIENT_V3)
 	g_ptr_array_add (argv, (gpointer) ip_opt);
-
 	if (mode_opt)
 		g_ptr_array_add (argv, (gpointer) mode_opt);
+#endif
 
 	g_ptr_array_add (argv, (gpointer) "-sf");	/* Set script file */
 	g_ptr_array_add (argv, (gpointer) ACTION_SCRIPT_PATH );
