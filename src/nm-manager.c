@@ -19,6 +19,8 @@
  * Copyright (C) 2007 - 2010 Red Hat, Inc.
  */
 
+#include <config.h>
+
 #include <netinet/ether.h>
 #include <string.h>
 #include <dbus/dbus-glib-lowlevel.h>
@@ -55,6 +57,11 @@
 #include "nm-settings-interface.h"
 #include "nm-settings-system-interface.h"
 #include "nm-manager-auth.h"
+
+/* Fix for polkit 0.97 and later */
+#if !HAVE_POLKIT_AUTHORITY_GET_SYNC
+#define polkit_authority_get_sync polkit_authority_get
+#endif
 
 #define NM_AUTOIP_DBUS_SERVICE "org.freedesktop.nm_avahi_autoipd"
 #define NM_AUTOIP_DBUS_IFACE   "org.freedesktop.nm_avahi_autoipd"
@@ -4278,7 +4285,7 @@ nm_manager_init (NMManager *manager)
 	} else
 		nm_log_warn (LOGD_AUTOIP4, "could not initialize avahi-autoipd D-Bus proxy");
 
-	priv->authority = polkit_authority_get ();
+	priv->authority = polkit_authority_get_sync ();
 	if (priv->authority) {
 		priv->auth_changed_id = g_signal_connect (priv->authority,
 		                                          "changed",

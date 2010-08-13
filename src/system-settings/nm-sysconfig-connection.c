@@ -613,7 +613,7 @@ nm_sysconfig_connection_init (NMSysconfigConnection *self)
 {
 	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
 
-	priv->authority = polkit_authority_get ();
+	priv->authority = polkit_authority_get_sync ();
 	if (!priv->authority) {
 		nm_log_err (LOGD_SYS_SET, "%s: error creating PolicyKit authority");
 	}

@@ -1508,7 +1508,7 @@ nm_sysconfig_settings_init (NMSysconfigSettings *self)
 
 	priv->connections = g_hash_table_new_full (g_direct_hash, g_direct_equal, g_object_unref, NULL);
 
-	priv->authority = polkit_authority_get ();
+	priv->authority = polkit_authority_get_sync ();
 	if (priv->authority) {
 		priv->auth_changed_id = g_signal_connect (priv->authority,
 		                                          "changed",
