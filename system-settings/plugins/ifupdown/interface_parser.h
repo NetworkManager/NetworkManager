@@ -41,7 +41,7 @@ typedef struct _if_block
 	struct _if_block *next;
 } if_block;
 
-void ifparser_init(const char *eni_file);
+void ifparser_init(const char *eni_file, int quiet);
 void ifparser_destroy(void);
 
 if_block *ifparser_getif(const char* iface);

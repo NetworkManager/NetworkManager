@@ -357,7 +357,7 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 	update_system_hostname (inotify_helper, NULL, NULL, config);
 
 	/* Read in all the interfaces */
-	ifparser_init (ENI_INTERFACES_FILE);
+	ifparser_init (ENI_INTERFACES_FILE, 0);
 	block = ifparser_getfirst ();
 	while (block) {
 		if(!strcmp ("auto", block->type) || !strcmp ("allow-hotplug", block->type))
