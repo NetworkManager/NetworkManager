@@ -1,3 +1,4 @@
+SUBDIRS=. tests
 
 INCLUDES = \
 	-I$(top_srcdir)/src/system-settings \

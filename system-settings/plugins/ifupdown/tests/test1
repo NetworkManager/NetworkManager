@@ -1,0 +1,6 @@
+# case 1: line before 1st block (must be ignored)
+address 10.250.2.3
+
+auto eth0
+iface eth0 inet dhcp
+
