@@ -90,7 +90,7 @@ static char *join_values_with_spaces(char *dst, char **src)
 	return(dst);
 }
 
-void ifparser_init (const char *eni_file)
+void ifparser_init (const char *eni_file, int quiet)
 {
 	FILE *inp = fopen (eni_file, "r");
 	char line[255];
@@ -99,7 +99,8 @@ void ifparser_init (const char *eni_file)
 	int offs = 0;
 
 	if (inp == NULL) {
-		nm_warning ("Error: Can't open %s\n", eni_file);
+		if (!quiet)
+			g_warning ("Error: Can't open %s\n", eni_file);
 		return;
 	}
 
@@ -119,8 +120,10 @@ void ifparser_init (const char *eni_file)
 		len = strlen(line);
 		// skip over-long lines
 		if (!feof(inp) && len > 0 &&  line[len-1] != '\n') {
-			if (!skip_long_line)
-				g_message ("Error: Skipping over-long-line '%s...'\n", line);
+			if (!skip_long_line) {
+				if (!quiet)
+					g_message ("Error: Skipping over-long-line '%s...'\n", line);
+			}
 			skip_long_line = 1;
 			continue;
 		}
@@ -158,8 +161,10 @@ void ifparser_init (const char *eni_file)
 			continue;
 
 		if (toknum < 2) {
-			g_message ("Error: Can't parse interface line '%s'\n",
-					join_values_with_spaces(value, token));
+			if (!quiet) {
+				g_message ("Error: Can't parse interface line '%s'\n",
+						join_values_with_spaces(value, token));
+			}
 			skip_to_block = 1;
 			continue;
 		}
@@ -170,8 +175,10 @@ void ifparser_init (const char *eni_file)
 		// iface stanza takes at least 3 parameters
 		if (strcmp(token[0], "iface") == 0) {
 			if (toknum < 4) {
-				g_message ("Error: Can't parse iface line '%s'\n",
-						join_values_with_spaces(value, token));
+				if (!quiet) {
+					g_message ("Error: Can't parse iface line '%s'\n",
+							join_values_with_spaces(value, token));
+				}
 				continue;
 			}
 			add_block(token[0], token[1]);
@@ -199,10 +206,12 @@ void ifparser_init (const char *eni_file)
 			skip_to_block = 0;
 		}
 		else {
-			if (skip_to_block)
-				g_message ("Error: ignoring out-of-block data '%s'\n",
-						join_values_with_spaces(value, token));
-			else
+			if (skip_to_block) {
+				if (!quiet) {
+					g_message ("Error: ignoring out-of-block data '%s'\n",
+							join_values_with_spaces(value, token));
+				}
+			} else
 				add_data(token[0], join_values_with_spaces(value, token + 1));
 		}
 	}

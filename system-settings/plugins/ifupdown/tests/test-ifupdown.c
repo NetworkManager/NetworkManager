@@ -189,7 +189,7 @@ init_ifparser_with_file (const char *path, const char *file)
 	char *tmp;
 
 	tmp = g_strdup_printf ("%s/%s", path, file);
-	ifparser_init (tmp);
+	ifparser_init (tmp, 1);
 	g_free (tmp);
 }
 
