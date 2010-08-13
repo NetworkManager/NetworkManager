@@ -190,6 +190,18 @@ if_block *ifparser_getfirst(void)
 	return first;
 }
 
+int ifparser_get_num_blocks(void)
+{
+	int i = 0;
+	if_block *iter = first;
+
+	while (iter) {
+		i++;
+		iter = iter->next;
+	}
+	return i;
+}
+
 if_block *ifparser_getif(const char* iface)
 {
 	if_block *curr = first;
@@ -212,4 +224,16 @@ const char *ifparser_getkey(if_block* iface, const char *key)
 		curr = curr->next;
 	}
 	return NULL;
+}
+
+int ifparser_get_num_info(if_block* iface)
+{
+	int i = 0;
+	if_data *iter = iface->info;
+
+	while (iter) {
+		i++;
+		iter = iter->next;
+	}
+	return i;
 }

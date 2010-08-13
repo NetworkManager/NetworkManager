@@ -1,0 +1,2 @@
+# case 16: last line that is not followed by LF (added with 'echo -n "mapping eth0" >> /e/n/i')
+mapping eth0

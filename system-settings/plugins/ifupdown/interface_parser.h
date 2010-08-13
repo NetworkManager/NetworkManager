@@ -47,6 +47,8 @@ void ifparser_destroy(void);
 if_block *ifparser_getif(const char* iface);
 if_block *ifparser_getfirst(void);
 const char *ifparser_getkey(if_block* iface, const char *key);
+int ifparser_get_num_blocks(void);
+int ifparser_get_num_info(if_block* iface);
 
 void add_block(const char *type, const char* name);
 void add_data(const char *key,const char *data);

@@ -507,6 +507,7 @@ tools/Makefile
 system-settings/Makefile
 system-settings/plugins/Makefile
 system-settings/plugins/ifupdown/Makefile
+system-settings/plugins/ifupdown/tests/Makefile
 system-settings/plugins/ifcfg-rh/Makefile
 system-settings/plugins/ifcfg-rh/tests/Makefile
 system-settings/plugins/ifcfg-rh/tests/network-scripts/Makefile

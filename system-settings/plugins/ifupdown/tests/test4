@@ -1,0 +1,3 @@
+# case 4: 'allow-auto' is synonymous to 'auto'
+allow-auto eth0
+
