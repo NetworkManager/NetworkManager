@@ -23,6 +23,7 @@
 
 #include <nm-connection.h>
 #include <dbus/dbus-glib.h>
+#include "nm-session-info.h"
 
 G_BEGIN_DECLS
 
@@ -35,6 +36,8 @@ G_BEGIN_DECLS
 
 #define NM_SYSCONFIG_CONNECTION_UPDATED               "updated"
 #define NM_SYSCONFIG_CONNECTION_REMOVED               "removed"
+#define NM_SYSCONFIG_CONNECTION_PURGED                "purged"
+#define NM_SYSCONFIG_CONNECTION_UNHIDDEN              "unhidden"
 
 typedef struct _NMSysconfigConnection NMSysconfigConnection;
 
@@ -101,6 +104,14 @@ void nm_sysconfig_connection_get_secrets (NMSysconfigConnection *connection,
                                           gboolean request_new,
                                           NMSysconfigConnectionGetSecretsFunc callback,
                                           gpointer user_data);
+
+gboolean nm_sysconfig_connection_is_visible (NMSysconfigConnection *connection);
+
+gboolean nm_sysconfig_connection_is_accessible_by_session (NMSysconfigConnection *connection,
+                                                           NMSessionInfo *session);
+
+GSList * nm_sysconfig_connection_get_session_access_list (NMSysconfigConnection *connection);
+
 
 G_END_DECLS
 

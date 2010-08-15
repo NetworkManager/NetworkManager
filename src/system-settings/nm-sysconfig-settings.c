@@ -112,7 +112,8 @@ typedef struct {
 
 	GSList *plugins;
 	gboolean connections_loaded;
-	GHashTable *connections;
+	GHashTable *visible_connections;
+	GHashTable *all_connections;
 	GSList *unmanaged_specs;
 } NMSysconfigSettingsPrivate;
 
@@ -186,7 +187,7 @@ nm_sysconfig_settings_list_connections (NMSysconfigSettings *settings)
 
 	load_connections (settings);
 
-	g_hash_table_iter_init (&iter, priv->connections);
+	g_hash_table_iter_init (&iter, priv->visible_connections);
 	while (g_hash_table_iter_next (&iter, &key, NULL))
 		list = g_slist_prepend (list, NM_SYSCONFIG_CONNECTION (key));
 	return g_slist_reverse (list);
@@ -536,28 +537,28 @@ connection_removed (NMSysconfigConnection *connection,
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (user_data);
 
-	g_hash_table_remove (priv->connections, connection);
+	g_hash_table_remove (priv->visible_connections, connection);
 }
 
 static void
-export_connection (NMSysconfigConnection *connection)
+connection_unhidden (NMSysconfigConnection *connection,
+                     gpointer user_data)
 {
-	DBusGConnection *bus;
-	static guint32 ec_counter = 0;
-	char *path;
+	NMSysconfigSettings *settings = user_data;
+	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (settings);
 
-	g_return_if_fail (connection != NULL);
-	g_return_if_fail (NM_IS_SYSCONFIG_CONNECTION (connection));
+	g_hash_table_insert (priv->visible_connections,
+	                     connection, GINT_TO_POINTER (1));
+	g_signal_emit (settings, signals[NEW_CONNECTION], 0, connection);
+}
 
-	/* Don't allow exporting twice */
-	g_return_if_fail (nm_connection_get_path (NM_CONNECTION (connection)) == NULL);
+static void
+connection_purged (NMSysconfigConnection *connection,
+                   gpointer user_data)
+{
+	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (user_data);
 
-	path = g_strdup_printf ("%s/%u", NM_DBUS_PATH_SETTINGS, ec_counter++);
-	nm_connection_set_path (NM_CONNECTION (connection), path);
-
-	bus = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
-	dbus_g_connection_register_g_object (bus, path, G_OBJECT (connection));
-	g_free (path);
+	g_hash_table_remove (priv->all_connections, connection);
 }
 
 static void
@@ -570,22 +571,33 @@ claim_connection (NMSysconfigSettings *self,
 	g_return_if_fail (NM_IS_SYSCONFIG_SETTINGS (self));
 	g_return_if_fail (NM_IS_SYSCONFIG_CONNECTION (connection));
 
-	if (g_hash_table_lookup (priv->connections, connection))
+	if (g_hash_table_lookup (priv->all_connections, connection))
 		/* A plugin is lying to us. */
 		return;
 
-	g_hash_table_insert (priv->connections, g_object_ref (connection), GINT_TO_POINTER (1));
+	g_hash_table_insert (priv->all_connections, g_object_ref (connection), GINT_TO_POINTER (1));
 	g_signal_connect (connection,
 	                  NM_SYSCONFIG_CONNECTION_REMOVED,
 	                  G_CALLBACK (connection_removed),
 	                  self);
+	g_signal_connect (connection,
+	                  NM_SYSCONFIG_CONNECTION_PURGED,
+	                  G_CALLBACK (connection_purged),
+	                  self);
+	g_signal_connect (connection,
+	                  NM_SYSCONFIG_CONNECTION_UNHIDDEN,
+	                  G_CALLBACK (connection_unhidden),
+	                  self);
 
-	if (do_export) {
-		export_connection (connection);
+	if (nm_sysconfig_connection_is_visible (connection)) {
+		g_hash_table_insert (priv->visible_connections, connection, GINT_TO_POINTER (1));
 		g_signal_emit (self, signals[NEW_CONNECTION], 0, connection);
 	}
 }
 
+// TODO it seems that this is only ever used to remove a
+// NMDefaultWiredConnection, and it probably needs to stay that way. So this
+// *needs* a better name!
 static void
 remove_connection (NMSysconfigSettings *self,
                    NMSysconfigConnection *connection,
@@ -593,9 +605,14 @@ remove_connection (NMSysconfigSettings *self,
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 
-	if (g_hash_table_lookup (priv->connections, connection)) {
+	if (g_hash_table_lookup (priv->visible_connections, connection)) {
 		g_signal_emit_by_name (G_OBJECT (connection), NM_SYSCONFIG_CONNECTION_REMOVED);
-		g_hash_table_remove (priv->connections, connection);
+		g_hash_table_remove (priv->visible_connections, connection);
+	}
+
+	if (g_hash_table_lookup (priv->all_connections, connection)) {
+		g_signal_emit_by_name (G_OBJECT (connection), NM_SYSCONFIG_CONNECTION_PURGED);
+		g_hash_table_remove (priv->all_connections, connection);
 	}
 }
 
@@ -1056,7 +1073,7 @@ have_connection_for_device (NMSysconfigSettings *self, GByteArray *mac)
 	g_return_val_if_fail (mac != NULL, FALSE);
 
 	/* Find a wired connection locked to the given MAC address, if any */
-	g_hash_table_iter_init (&iter, priv->connections);
+	g_hash_table_iter_init (&iter, priv->visible_connections);
 	while (g_hash_table_iter_next (&iter, &key, NULL)) {
 		NMConnection *connection = NM_CONNECTION (key);
 		const char *connection_type;
@@ -1442,7 +1459,8 @@ finalize (GObject *object)
 	NMSysconfigSettings *self = NM_SYSCONFIG_SETTINGS (object);
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 
-	g_hash_table_destroy (priv->connections);
+	g_hash_table_destroy (priv->visible_connections);
+	g_hash_table_destroy (priv->all_connections);
 
 	clear_unmanaged_specs (self);
 
@@ -1584,7 +1602,8 @@ nm_sysconfig_settings_init (NMSysconfigSettings *self)
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 
-	priv->connections = g_hash_table_new_full (g_direct_hash, g_direct_equal, g_object_unref, NULL);
+	priv->visible_connections = g_hash_table_new (g_direct_hash, g_direct_equal);
+	priv->all_connections = g_hash_table_new_full (g_direct_hash, g_direct_equal, g_object_unref, NULL);
 
 	priv->authority = polkit_authority_get ();
 	if (priv->authority) {

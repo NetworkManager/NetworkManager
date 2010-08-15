@@ -33,6 +33,7 @@
                 Get the settings maps describing this object.
             </tp:docstring>
             <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_sysconfig_connection_get_settings"/>
+          <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
             <arg name="settings" type="a{sa{sv}}" direction="out" tp:type="String_String_Variant_Map_Map">
                 <tp:docstring>
                     The nested settings maps describing this object.
@@ -53,7 +54,13 @@
 
         <signal name="Removed">
             <tp:docstring>
-                Emitted when this connection has been deleted/removed.  After receipt of this signal, the object no longer exists.
+                Emitted when this connection is no longer available.  This happens when the connection is deleted or if it is no longer accessable by any of the system's logged in users.  After receipt of this signal, the object no longer exists.
+            </tp:docstring>
+        </signal>
+
+        <signal name="CheckPermissions">
+            <tp:docstring>
+                Emitted when a client's permission to access this connection may have changed.  Generally, clients should re-test their ability to access this connecton whenever this signal is emmited.
             </tp:docstring>
         </signal>
 
