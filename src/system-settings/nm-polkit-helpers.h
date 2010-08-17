@@ -25,14 +25,23 @@
 #include <config.h>
 #include <polkit/polkit.h>
 
-/* Fix for polkit 0.97 and later */
-#if !HAVE_POLKIT_AUTHORITY_GET_SYNC
-#define polkit_authority_get_sync polkit_authority_get
-#endif
-
 #define NM_SYSCONFIG_POLICY_ACTION_CONNECTION_MODIFY    "org.freedesktop.network-manager-settings.system.modify"
 #define NM_SYSCONFIG_POLICY_ACTION_WIFI_SHARE_PROTECTED "org.freedesktop.network-manager-settings.system.wifi.share.protected"
 #define NM_SYSCONFIG_POLICY_ACTION_WIFI_SHARE_OPEN      "org.freedesktop.network-manager-settings.system.wifi.share.open"
 #define NM_SYSCONFIG_POLICY_ACTION_HOSTNAME_MODIFY      "org.freedesktop.network-manager-settings.system.hostname.modify"
+
+/* Fix for polkit 0.97 and later */
+#if !HAVE_POLKIT_AUTHORITY_GET_SYNC
+static inline PolkitAuthority *
+polkit_authority_get_sync (GCancellable *cancellable, GError **error)
+{
+	PolkitAuthority *authority;
+
+	authority = polkit_authority_get ();
+	if (!authority)
+		g_set_error (error, 0, 0, "failed to get the PolicyKit authority");
+	return authority;
+}
+#endif
 
 #endif /* NM_POLKIT_HELPERS_H */

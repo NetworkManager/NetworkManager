@@ -58,11 +58,6 @@
 #include "nm-settings-system-interface.h"
 #include "nm-manager-auth.h"
 
-/* Fix for polkit 0.97 and later */
-#if !HAVE_POLKIT_AUTHORITY_GET_SYNC
-#define polkit_authority_get_sync polkit_authority_get
-#endif
-
 #define NM_AUTOIP_DBUS_SERVICE "org.freedesktop.nm_avahi_autoipd"
 #define NM_AUTOIP_DBUS_IFACE   "org.freedesktop.nm_avahi_autoipd"
 
@@ -149,6 +144,20 @@ static GSList * remove_one_device (NMManager *manager,
                                    gboolean quitting);
 
 static NMDevice *nm_manager_get_device_by_udi (NMManager *manager, const char *udi);
+
+/* Fix for polkit 0.97 and later */
+#if !HAVE_POLKIT_AUTHORITY_GET_SYNC
+static inline PolkitAuthority *
+polkit_authority_get_sync (GCancellable *cancellable, GError **error)
+{
+	PolkitAuthority *authority;
+
+	authority = polkit_authority_get ();
+	if (!authority)
+		g_set_error (error, 0, 0, "failed to get the PolicyKit authority");
+	return authority;
+}
+#endif
 
 #define SSD_POKE_INTERVAL 120
 #define ORIGDEV_TAG "originating-device"
@@ -4203,6 +4212,7 @@ nm_manager_init (NMManager *manager)
 	DBusGConnection *g_connection;
 	guint id, i;
 	GFile *file;
+	GError *error = NULL;
 
 	/* Initialize rfkill structures and states */
 	memset (priv->radio_states, 0, sizeof (priv->radio_states));
@@ -4285,14 +4295,18 @@ nm_manager_init (NMManager *manager)
 	} else
 		nm_log_warn (LOGD_AUTOIP4, "could not initialize avahi-autoipd D-Bus proxy");
 
-	priv->authority = polkit_authority_get_sync ();
+	priv->authority = polkit_authority_get_sync (NULL, &error);
 	if (priv->authority) {
 		priv->auth_changed_id = g_signal_connect (priv->authority,
 		                                          "changed",
 		                                          G_CALLBACK (pk_authority_changed_cb),
 		                                          manager);
-	} else
-		nm_log_warn (LOGD_CORE, "failed to create PolicyKit authority.");
+	} else {
+		nm_log_warn (LOGD_CORE, "failed to create PolicyKit authority: (%d) %s",
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
+	}
 
 	/* Monitor the firmware directory */
 	if (strlen (KERNEL_FIRMWARE_DIR)) {

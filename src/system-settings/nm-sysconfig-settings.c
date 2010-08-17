@@ -1505,16 +1505,21 @@ static void
 nm_sysconfig_settings_init (NMSysconfigSettings *self)
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+	GError *error = NULL;
 
 	priv->connections = g_hash_table_new_full (g_direct_hash, g_direct_equal, g_object_unref, NULL);
 
-	priv->authority = polkit_authority_get_sync ();
+	priv->authority = polkit_authority_get_sync (NULL, &error);
 	if (priv->authority) {
 		priv->auth_changed_id = g_signal_connect (priv->authority,
 		                                          "changed",
 		                                          G_CALLBACK (pk_authority_changed_cb),
 		                                          self);
-	} else
-		nm_log_warn (LOGD_SYS_SET, "failed to create PolicyKit authority.");
+	} else {
+		nm_log_warn (LOGD_SYS_SET, "failed to create PolicyKit authority: (%d) %s",
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
+	}
 }
 
