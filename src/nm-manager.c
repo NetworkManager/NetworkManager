@@ -2810,7 +2810,7 @@ nm_manager_activate_connection (NMManager *manager,
 	NMDevice *device = NULL;
 	NMSettingConnection *s_con;
 	NMVPNConnection *vpn_connection;
-	const char *path;
+	const char *path = NULL;
 
 	g_return_val_if_fail (manager != NULL, NULL);
 	g_return_val_if_fail (connection != NULL, NULL);
@@ -2867,11 +2867,13 @@ nm_manager_activate_connection (NMManager *manager,
 		                                                     req,
 		                                                     device,
 		                                                     error);
-		g_signal_connect (vpn_connection, "manager-get-secrets",
-		                  G_CALLBACK (provider_get_secrets), manager);
-		g_signal_connect (vpn_connection, "manager-cancel-secrets",
-		                  G_CALLBACK (provider_cancel_secrets), manager);
-		path = nm_vpn_connection_get_active_connection_path (vpn_connection);
+		if (vpn_connection) {
+			g_signal_connect (vpn_connection, "manager-get-secrets",
+			                  G_CALLBACK (provider_get_secrets), manager);
+			g_signal_connect (vpn_connection, "manager-cancel-secrets",
+			                  G_CALLBACK (provider_cancel_secrets), manager);
+			path = nm_vpn_connection_get_active_connection_path (vpn_connection);
+		}
 		g_object_unref (vpn_manager);
 	} else {
 		NMDeviceState state;
