@@ -1220,6 +1220,7 @@ nm_policy_destroy (NMPolicy *policy)
 
 	g_signal_handler_disconnect (policy->vpn_manager, policy->vpn_activated_id);
 	g_signal_handler_disconnect (policy->vpn_manager, policy->vpn_deactivated_id);
+	g_object_unref (policy->vpn_manager);
 
 	for (iter = policy->signal_ids; iter; iter = g_slist_next (iter))
 		g_signal_handler_disconnect (policy->manager, (gulong) iter->data);
