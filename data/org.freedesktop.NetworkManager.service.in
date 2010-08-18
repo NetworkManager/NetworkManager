@@ -8,4 +8,4 @@
 Name=org.freedesktop.NetworkManager
 Exec=/bin/false
 User=root
-SystemdService=NetworkManager-by-dbus.service
+SystemdService=dbus-org.freedesktop.NetworkManager.service

@@ -9,4 +9,4 @@ ExecStart=@sbindir@/NetworkManager --no-daemon
 
 [Install]
 WantedBy=network.target multi-user.target
-Alias=NetworkManager-by-dbus
+Alias=dbus-org.freedesktop.NetworkManager.service
