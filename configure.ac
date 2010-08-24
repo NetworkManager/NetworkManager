@@ -393,6 +393,7 @@ if test -z "$DHCPCD_PATH" -a -z "$DHCLIENT_PATH"; then
 	AC_MSG_WARN([Falling back to ISC dhclient, ${DHCLIENT_PATH}])
 fi
 AC_SUBST(DHCLIENT_PATH)
+AC_SUBST(DHCLIENT_VERSION)
 AC_SUBST(DHCPCD_PATH)
 
 # resolvconf support
