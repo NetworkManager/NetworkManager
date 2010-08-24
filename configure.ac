@@ -512,6 +512,8 @@ system-settings/Makefile
 system-settings/plugins/Makefile
 system-settings/plugins/ifupdown/Makefile
 system-settings/plugins/ifupdown/tests/Makefile
+system-settings/plugins/ifnet/Makefile
+system-settings/plugins/ifnet/tests/Makefile
 system-settings/plugins/ifcfg-rh/Makefile
 system-settings/plugins/ifcfg-rh/tests/Makefile
 system-settings/plugins/ifcfg-rh/tests/network-scripts/Makefile
