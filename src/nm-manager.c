@@ -3969,6 +3969,159 @@ firmware_dir_changed (GFileMonitor *monitor,
 	}
 }
 
+#define PERM_DENIED_ERROR "org.freedesktop.NetworkManager.PermissionDenied"
+
+static void
+prop_set_auth_done_cb (NMAuthChain *chain,
+                       GError *error,
+                       DBusGMethodInvocation *context,
+                       gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	DBusGConnection *bus;
+	DBusConnection *dbus_connection;
+	NMAuthCallResult result;
+	DBusMessage *reply, *request;
+	const char *permission, *prop;
+	gboolean set_enabled = TRUE;
+
+	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+
+	request = nm_auth_chain_get_data (chain, "message");
+	permission = nm_auth_chain_get_data (chain, "permission");
+	prop = nm_auth_chain_get_data (chain, "prop");
+	set_enabled = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "enabled"));
+
+	if (error) {
+		reply = dbus_message_new_error (request, PERM_DENIED_ERROR,
+		                                "Not authorized to perform this operation");
+	} else {
+		/* Caller has had a chance to obtain authorization, so we only need to
+		 * check for 'yes' here.
+		 */
+		result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, permission));
+		if (result != NM_AUTH_CALL_RESULT_YES) {
+			reply = dbus_message_new_error (request, PERM_DENIED_ERROR,
+				                            "Not authorized to perform this operation");
+		} else {
+			g_object_set (self, prop, set_enabled, NULL);
+			reply = dbus_message_new_method_return (request);
+		}
+	}
+
+	if (reply) {
+		bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
+		g_assert (bus);
+		dbus_connection = dbus_g_connection_get_connection (bus);
+		g_assert (dbus_connection);
+
+		dbus_connection_send (dbus_connection, reply, NULL);
+		dbus_message_unref (reply);
+	}
+	nm_auth_chain_unref (chain);
+}
+
+static DBusHandlerResult
+prop_filter (DBusConnection *connection,
+             DBusMessage *message,
+             void *user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	DBusMessageIter iter;
+	DBusMessageIter sub;
+	const char *propiface = NULL;
+	const char *propname = NULL;
+	const char *sender = NULL;
+	const char *glib_propname = NULL, *permission = NULL;
+	DBusError dbus_error;
+	gulong uid = G_MAXULONG;
+	DBusMessage *reply = NULL;
+	gboolean set_enabled = FALSE;
+	NMAuthChain *chain;
+
+	/* The sole purpose of this function is to validate property accesses
+	 * on the NMManager object since dbus-glib doesn't yet give us this
+	 * functionality.
+	 */
+
+	if (!dbus_message_is_method_call (message, DBUS_INTERFACE_PROPERTIES, "Set"))
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	dbus_message_iter_init (message, &iter);
+
+	/* Get the D-Bus interface of the property to set */
+	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING)
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	dbus_message_iter_get_basic (&iter, &propiface);
+	if (!propiface || strcmp (propiface, NM_DBUS_INTERFACE))
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	dbus_message_iter_next (&iter);
+
+	/* Get the property name that's going to be set */
+	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING)
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	dbus_message_iter_get_basic (&iter, &propname);
+	dbus_message_iter_next (&iter);
+
+	if (!strcmp (propname, "WirelessEnabled")) {
+		glib_propname = NM_MANAGER_WIRELESS_ENABLED;
+		permission = NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI;
+	} else if (!strcmp (propname, "WwanEnabled")) {
+		glib_propname = NM_MANAGER_WWAN_ENABLED;
+		permission = NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN;
+	} else
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	/* Get the new value for the property */
+	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_VARIANT)
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	dbus_message_iter_recurse (&iter, &sub);
+	if (dbus_message_iter_get_arg_type (&sub) != DBUS_TYPE_BOOLEAN)
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	dbus_message_iter_get_basic (&sub, &set_enabled);
+
+	sender = dbus_message_get_sender (message);
+	if (!sender) {
+		reply = dbus_message_new_error (message, PERM_DENIED_ERROR,
+		                                "Could not determine D-Bus requestor");
+		goto out;
+	}
+
+	dbus_error_init (&dbus_error);
+	uid = dbus_bus_get_unix_user (connection, sender, &dbus_error);
+	if (dbus_error_is_set (&dbus_error)) {
+		reply = dbus_message_new_error (message, PERM_DENIED_ERROR,
+		                                "Could not determine the user ID of the requestor");
+		dbus_error_free (&dbus_error);
+		goto out;
+	}
+
+	if (uid > 0) {
+		/* Otherwise validate the user request */
+		chain = nm_auth_chain_new_raw_message (priv->authority, message, prop_set_auth_done_cb, self);
+		g_assert (chain);
+		priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+		nm_auth_chain_set_data (chain, "prop", g_strdup (glib_propname), g_free);
+		nm_auth_chain_set_data (chain, "permission", g_strdup (permission), g_free);
+		nm_auth_chain_set_data (chain, "enabled", GUINT_TO_POINTER (set_enabled), NULL);
+		nm_auth_chain_set_data (chain, "message", dbus_message_ref (message), (GDestroyNotify) dbus_message_unref);
+		nm_auth_chain_add_call (chain, permission, TRUE);
+	} else {
+		/* Yay for root */
+		g_object_set (self, glib_propname, set_enabled, NULL);
+		reply = dbus_message_new_method_return (message);
+	}
+
+out:
+	if (reply) {
+		dbus_connection_send (connection, reply, NULL);
+		dbus_message_unref (reply);
+	}
+	return DBUS_HANDLER_RESULT_HANDLED;
+}
+
 NMManager *
 nm_manager_get (const char *config_file,
                 const char *plugins,
@@ -3981,6 +4134,7 @@ nm_manager_get (const char *config_file,
 	static NMManager *singleton = NULL;
 	NMManagerPrivate *priv;
 	DBusGConnection *bus;
+	DBusConnection *dbus_connection;
 
 	if (singleton)
 		return g_object_ref (singleton);
@@ -3992,6 +4146,14 @@ nm_manager_get (const char *config_file,
 
 	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
 	g_assert (bus);
+	dbus_connection = dbus_g_connection_get_connection (bus);
+	g_assert (dbus_connection);
+
+	if (!dbus_connection_add_filter (dbus_connection, prop_filter, singleton, NULL)) {
+		nm_log_err (LOGD_CORE, "failed to register DBus connection filter");
+		g_object_unref (singleton);
+		return NULL;
+    }
 
 	priv->sys_settings = nm_sysconfig_settings_new (config_file, plugins, bus, error);
 	if (!priv->sys_settings) {
@@ -4060,6 +4222,8 @@ dispose (GObject *object)
 	NMManager *manager = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	GSList *iter;
+	DBusGConnection *bus;
+	DBusConnection *dbus_connection;
 
 	if (priv->disposed) {
 		G_OBJECT_CLASS (nm_manager_parent_class)->dispose (object);
@@ -4119,7 +4283,14 @@ dispose (GObject *object)
 	}
 	g_object_unref (priv->modem_manager);
 
+	/* Unregister property filter */
+	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
+	g_assert (bus);
+	dbus_connection = dbus_g_connection_get_connection (bus);
+	g_assert (dbus_connection);
+	dbus_connection_remove_filter (dbus_connection, prop_filter, manager);
 	g_object_unref (priv->dbus_mgr);
+
 	if (priv->bluez_mgr)
 		g_object_unref (priv->bluez_mgr);
 
