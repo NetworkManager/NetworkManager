@@ -194,23 +194,34 @@ monitor_file_changes (const char *filename,
 	return monitor;
 }
 
+/* Callback for nm_sysconfig_connection_replace_and_commit. Report any errors
+ * encountered when commiting connection settings updates. */
+static void
+commit_cb (NMSysconfigConnection *connection, GError *error, gpointer unused) 
+{
+	if (error) {
+		PLUGIN_WARN (IFNET_PLUGIN_NAME, "    error updating: %s",
+	             	 (error && error->message) ? error->message : "(unknown)");
+	} else {
+		NMSettingConnection *s_con;
+
+		s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (connection),
+		                                                           NM_TYPE_SETTING_CONNECTION);
+		g_assert (s_con);
+		PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Connection %s updated",
+		              nm_setting_connection_get_id (s_con));
+	}
+}
+
 static void
 update_old_connection (gchar * conn_name,
 		       NMIfnetConnection * old_conn,
 		       NMIfnetConnection * new_conn,
 		       SCPluginIfnetPrivate * priv)
 {
-	GError **error = NULL;
-
-	if (!nm_sysconfig_connection_update (NM_SYSCONFIG_CONNECTION (old_conn),
-					     NM_CONNECTION (new_conn), TRUE,
-					     error)) {
-		PLUGIN_WARN (IFNET_PLUGIN_NAME, "error updating: %s",
-			     (error
-			      && (*error)) ? (*error)->message : "(unknown)");
-	} else
-		PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Connection %s updated",
-			      conn_name);
+	nm_sysconfig_connection_replace_and_commit (NM_SYSCONFIG_CONNECTION (old_conn),
+	                                            NM_CONNECTION (new_conn),
+	                                            commit_cb, NULL);
 	g_object_unref (new_conn);
 }
 
@@ -302,8 +313,7 @@ reload_connections (gpointer config)
 					PLUGIN_PRINT (IFNET_PLUGIN_NAME,
 						      "Auto refreshing %s",
 						      conn_name);
-					g_signal_emit_by_name (old,
-							       NM_SETTINGS_CONNECTION_INTERFACE_REMOVED);
+					g_signal_emit_by_name (old, "removed");
 					g_hash_table_remove
 					    (priv->config_connections,
 					     conn_name);
@@ -334,8 +344,7 @@ reload_connections (gpointer config)
 	g_hash_table_iter_init (&iter, priv->config_connections);
 	while (g_hash_table_iter_next (&iter, &key, &value)) {
 		if (!g_hash_table_lookup (new_conn_names, key)) {
-			g_signal_emit_by_name (value,
-					       NM_SETTINGS_CONNECTION_INTERFACE_REMOVED);
+			g_signal_emit_by_name (value, "removed");
 			g_hash_table_remove (priv->config_connections, key);
 		}
 	}
@@ -423,7 +432,7 @@ SCPluginIfnet_init (NMSystemConfigInterface * config)
 				g_signal_emit_by_name
 				    (self,
 				     NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED,
-				     NM_EXPORTED_CONNECTION (value));
+				     NM_CONNECTION (value));
 		}
 	}
 	/* Read hostname */

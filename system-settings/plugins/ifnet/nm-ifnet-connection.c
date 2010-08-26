@@ -34,18 +34,8 @@
 #include "wpa_parser.h"
 #include "plugin.h"
 
-static NMSettingsConnectionInterface *parent_settings_connection_iface;
+G_DEFINE_TYPE (NMIfnetConnection, nm_ifnet_connection, NM_TYPE_SYSCONFIG_CONNECTION)
 
-static void settings_connection_interface_init (NMSettingsConnectionInterface *
-						klass);
-
-G_DEFINE_TYPE_EXTENDED (NMIfnetConnection, nm_ifnet_connection,
-			NM_TYPE_SYSCONFIG_CONNECTION, 0,
-			G_IMPLEMENT_INTERFACE
-			(NM_TYPE_SETTINGS_CONNECTION_INTERFACE,
-			 settings_connection_interface_init))
-//    G_DEFINE_TYPE(NMIfnetConnection, nm_ifnet_connection,
-//            NM_TYPE_SYSCONFIG_CONNECTION)
 #define NM_IFNET_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IFNET_CONNECTION, NMIfnetConnectionPrivate))
 enum {
 	PROP_ZERO,
@@ -84,8 +74,7 @@ nm_ifnet_connection_new (gchar * conn_name)
 		g_object_unref (tmp);
 		return NULL;
 	}
-	nm_sysconfig_connection_update (NM_SYSCONFIG_CONNECTION (object), tmp,
-					FALSE, NULL);
+	nm_sysconfig_connection_replace_settings (NM_SYSCONFIG_CONNECTION (object), tmp, NULL);
 	g_object_unref (tmp);
 	return NM_IFNET_CONNECTION (object);
 }
@@ -95,50 +84,49 @@ nm_ifnet_connection_init (NMIfnetConnection * connection)
 {
 }
 
-static gboolean
-update (NMSettingsConnectionInterface * connection,
-	NMSettingsConnectionInterfaceUpdateFunc callback, gpointer user_data)
+static void
+commit_changes (NMSysconfigConnection *connection,
+                NMSysconfigConnectionCommitFunc callback,
+	            gpointer user_data)
 {
 	GError *error = NULL;
 	gchar *new_conn_name = NULL;
-	gboolean result;
-	NMIfnetConnectionPrivate *priv =
-	    NM_IFNET_CONNECTION_GET_PRIVATE (connection);
+	NMIfnetConnectionPrivate *priv = NM_IFNET_CONNECTION_GET_PRIVATE (connection);
+
 	g_signal_emit (connection, signals[IFNET_CANCEL_MONITORS], 0);
-	if (!ifnet_update_parsers_by_connection
-	    (NM_CONNECTION (connection), priv->conn_name, &new_conn_name,
-	     CONF_NET_FILE, WPA_SUPPLICANT_CONF, &error)) {
+	if (!ifnet_update_parsers_by_connection (NM_CONNECTION (connection),
+	                                         priv->conn_name,
+	                                         &new_conn_name,
+	                                         CONF_NET_FILE,
+	                                         WPA_SUPPLICANT_CONF,
+	                                         &error)) {
 		if (new_conn_name)
 			g_free (new_conn_name);
-		PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Failed to update %s",
-			      priv->conn_name);
+		PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Failed to update %s", priv->conn_name);
 		reload_parsers ();
 		callback (connection, error, user_data);
 		g_error_free (error);
 		g_signal_emit (connection, signals[IFNET_SETUP_MONITORS], 0);
-		return FALSE;
+		return;
 	}
 
 	g_free (priv->conn_name);
 	priv->conn_name = new_conn_name;
-	result =
-	    parent_settings_connection_iface->update (connection, callback,
-						      user_data);
-	if (result)
-		PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Successfully updated %s",
-			      priv->conn_name);
+
+	NM_SYSCONFIG_CONNECTION_CLASS (nm_ifnet_connection_parent_class)->commit_changes (connection, callback, user_data);
+	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Successfully updated %s", priv->conn_name);
+
 	g_signal_emit (connection, signals[IFNET_SETUP_MONITORS], 0);
-	return result;
 }
 
-static gboolean
-do_delete (NMSettingsConnectionInterface * connection,
-	   NMSettingsConnectionInterfaceDeleteFunc callback, gpointer user_data)
+static void 
+do_delete (NMSysconfigConnection *connection,
+	       NMSysconfigConnectionDeleteFunc callback,
+	       gpointer user_data)
 {
 	GError *error = NULL;
-	gboolean result;
-	NMIfnetConnectionPrivate *priv =
-	    NM_IFNET_CONNECTION_GET_PRIVATE (connection);
+	NMIfnetConnectionPrivate *priv = NM_IFNET_CONNECTION_GET_PRIVATE (connection);
+
 	g_signal_emit (connection, signals[IFNET_CANCEL_MONITORS], 0);
 	if (!ifnet_delete_connection_in_parsers
 	    (priv->conn_name, CONF_NET_FILE, WPA_SUPPLICANT_CONF)) {
@@ -148,24 +136,14 @@ do_delete (NMSettingsConnectionInterface * connection,
 		callback (connection, error, user_data);
 		g_error_free (error);
 		g_signal_emit (connection, signals[IFNET_SETUP_MONITORS], 0);
-		return FALSE;
+		return;
 	}
-	result =
-	    parent_settings_connection_iface->delete (connection, callback,
-						      user_data);
-	if (result)
-		PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Successfully deleted %s",
-			      priv->conn_name);
-	g_signal_emit (connection, signals[IFNET_SETUP_MONITORS], 0);
-	return result;
-}
 
-static void
-settings_connection_interface_init (NMSettingsConnectionInterface * iface)
-{
-	parent_settings_connection_iface = g_type_interface_peek_parent (iface);
-	iface->update = update;
-	iface->delete = do_delete;
+	NM_SYSCONFIG_CONNECTION_CLASS (nm_ifnet_connection_parent_class)->delete (connection, callback, user_data);
+
+	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Successfully deleted %s",
+		      priv->conn_name);
+	g_signal_emit (connection, signals[IFNET_SETUP_MONITORS], 0);
 }
 
 static void
@@ -222,6 +200,7 @@ static void
 nm_ifnet_connection_class_init (NMIfnetConnectionClass * ifnet_connection_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (ifnet_connection_class);
+	NMSysconfigConnectionClass *sysconfig_class = NM_SYSCONFIG_CONNECTION_CLASS (ifnet_connection_class);
 
 	g_type_class_add_private (ifnet_connection_class,
 				  sizeof (NMIfnetConnectionPrivate));
@@ -229,6 +208,8 @@ nm_ifnet_connection_class_init (NMIfnetConnectionClass * ifnet_connection_class)
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize = finalize;
+	sysconfig_class->delete = do_delete;
+	sysconfig_class->commit_changes = commit_changes;
 
 	/* Properties */
 	g_object_class_install_property
