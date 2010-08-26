@@ -1215,27 +1215,6 @@ nm_sysconfig_settings_device_removed (NMSysconfigSettings *self, NMDevice *devic
 		remove_connection (self, NM_SYSCONFIG_CONNECTION (connection), TRUE);
 }
 
-static void
-export_sysconfig (NMSysconfigSettings *self)
-{
-	NMSysconfigSettingsPrivate *priv;
-	DBusGConnection *bus;
-
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (NM_IS_SYSCONFIG_SETTINGS (self));
-
-	priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
-
-	/* Don't allow exporting twice */
-	g_return_if_fail (priv->exported == FALSE);
-
-	bus = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
-	dbus_g_connection_register_g_object (bus,
-	                                     NM_DBUS_PATH_SETTINGS,
-	                                     G_OBJECT (self));
-	priv->exported = TRUE;
-}
-
 NMSysconfigSettings *
 nm_sysconfig_settings_new (const char *config_file,
                            const char *plugins,
@@ -1243,6 +1222,8 @@ nm_sysconfig_settings_new (const char *config_file,
 {
 	NMSysconfigSettings *self;
 	NMSysconfigSettingsPrivate *priv;
+	NMDBusManager *dbus_mgr;
+	DBusGConnection *bus;
 
 	self = g_object_new (NM_TYPE_SYSCONFIG_SETTINGS,
 	                     NULL);
@@ -1262,7 +1243,10 @@ nm_sysconfig_settings_new (const char *config_file,
 		unmanaged_specs_changed (NULL, self);
 	}
 
-	export_sysconfig (self);
+	dbus_mgr = nm_dbus_manager_get ();
+	bus = nm_dbus_manager_get_connection (dbus_mgr);
+	dbus_g_connection_register_g_object (bus, NM_DBUS_PATH_SETTINGS, G_OBJECT (self));
+	g_object_unref (dbus_mgr);
 
 	return self;
 }
