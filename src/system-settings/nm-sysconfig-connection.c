@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * (C) Copyright 2008 Novell, Inc.
- * (C) Copyright 2008 - 2009 Red Hat, Inc.
+ * (C) Copyright 2008 - 2010 Red Hat, Inc.
  */
 
 #include <NetworkManager.h>
@@ -1004,10 +1004,14 @@ nm_sysconfig_connection_init (NMSysconfigConnection *self)
 	NMSessionManager *session_manager;
 	static guint32 dbus_counter = 0;
 	char *dbus_path;
+	GError *error = NULL;
 
-	priv->authority = polkit_authority_get ();
+	priv->authority = polkit_authority_get_sync (NULL, NULL);
 	if (!priv->authority) {
-		nm_log_err (LOGD_SYS_SET, "%s:error creating PolicyKit authority");
+		nm_log_warn (LOGD_SYS_SET, "failed to create PolicyKit authority: (%d) %s",
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
 	}
 
 	dbus_path = g_strdup_printf ("%s/%u", NM_DBUS_PATH_SETTINGS, dbus_counter++);

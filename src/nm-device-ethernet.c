@@ -785,6 +785,39 @@ real_is_available (NMDevice *dev)
 	return TRUE;
 }
 
+static gboolean
+match_subchans (NMDeviceEthernet *self, NMSettingWired *s_wired, gboolean *try_mac)
+{
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+	const GPtrArray *subchans;
+	int i;
+
+	*try_mac = TRUE;
+
+	subchans = nm_setting_wired_get_s390_subchannels (s_wired);
+	if (!subchans)
+		return TRUE;
+
+	/* connection requires subchannels but the device has none */
+	if (!priv->subchannels)
+		return FALSE;
+
+	/* Make sure each subchannel in the connection is a subchannel of this device */
+	for (i = 0; i < subchans->len; i++) {
+		const char *candidate = g_ptr_array_index (subchans, i);
+
+		if (   (priv->subchan1 && !strcmp (priv->subchan1, candidate))
+		    || (priv->subchan2 && !strcmp (priv->subchan2, candidate))
+		    || (priv->subchan3 && !strcmp (priv->subchan3, candidate)))
+			continue;
+
+		return FALSE;  /* a subchannel was not found */
+	}
+
+	*try_mac = FALSE;
+	return TRUE;
+}
+
 static NMConnection *
 real_get_best_auto_connection (NMDevice *dev,
                                GSList *connections,
@@ -820,9 +853,13 @@ real_get_best_auto_connection (NMDevice *dev,
 
 		if (s_wired) {
 			const GByteArray *mac;
+			gboolean try_mac = TRUE;
+
+			if (!match_subchans (self, s_wired, &try_mac))
+				continue;
 
 			mac = nm_setting_wired_get_mac_address (s_wired);
-			if (mac && memcmp (mac->data, &priv->perm_hw_addr, ETH_ALEN))
+			if (try_mac && mac && memcmp (mac->data, &priv->perm_hw_addr, ETH_ALEN))
 				continue;
 		}
 
@@ -1700,41 +1737,6 @@ real_deactivate_quickly (NMDevice *device)
 
 	/* Reset MAC address back to permanent address */
 	_set_hw_addr (self, priv->perm_hw_addr, "reset");
-}
-
-static gboolean
-match_subchans (NMDeviceEthernet *self, NMSettingWired *s_wired, gboolean *try_mac)
-{
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-	const GPtrArray *subchans;
-	int i;
-
-	*try_mac = TRUE;
-
-	subchans = nm_setting_wired_get_s390_subchannels (s_wired);
-	if (!subchans)
-		return TRUE;
-
-	/* connection requires subchannels but the device has none */
-	if (!priv->subchannels)
-		return FALSE;
-
-	/* Make sure each subchannel in the connection is a subchannel of this device */
-	for (i = 0; i < subchans->len; i++) {
-		const char *candidate = g_ptr_array_index (subchans, i);
-		gboolean found = FALSE;
-
-		if (   (priv->subchan1 && !strcmp (priv->subchan1, candidate))
-		    || (priv->subchan2 && !strcmp (priv->subchan2, candidate))
-		    || (priv->subchan3 && !strcmp (priv->subchan3, candidate)))
-			found = TRUE;
-
-		if (!found)
-			return FALSE;
-	}
-
-	*try_mac = FALSE;
-	return TRUE;
 }
 
 static gboolean

@@ -20,4 +20,5 @@ src/logging/nm-logging.c
 src/named-manager/nm-named-manager.c
 src/system-settings/nm-default-wired-connection.c
 system-settings/plugins/ifcfg-rh/reader.c
+system-settings/plugins/ifnet/connection_parser.c
 

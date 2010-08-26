@@ -19,6 +19,8 @@
  * Copyright (C) 2007 - 2010 Red Hat, Inc.
  */
 
+#include <config.h>
+
 #include <netinet/ether.h>
 #include <string.h>
 #include <dbus/dbus-glib-lowlevel.h>
@@ -133,10 +135,23 @@ static NMDevice *find_device_by_iface (NMManager *self, const gchar *iface);
 static GSList * remove_one_device (NMManager *manager,
                                    GSList *list,
                                    NMDevice *device,
-                                   gboolean quitting,
-                                   gboolean force_unmanage);
+                                   gboolean quitting);
 
 static NMDevice *nm_manager_get_device_by_udi (NMManager *manager, const char *udi);
+
+/* Fix for polkit 0.97 and later */
+#if !HAVE_POLKIT_AUTHORITY_GET_SYNC
+static inline PolkitAuthority *
+polkit_authority_get_sync (GCancellable *cancellable, GError **error)
+{
+	PolkitAuthority *authority;
+
+	authority = polkit_authority_get ();
+	if (!authority)
+		g_set_error (error, 0, 0, "failed to get the PolicyKit authority");
+	return authority;
+}
+#endif
 
 #define SSD_POKE_INTERVAL 120
 #define ORIGDEV_TAG "originating-device"
@@ -350,8 +365,7 @@ modem_added (NMModemManager *modem_manager,
 		priv->devices = remove_one_device (NM_MANAGER (user_data),
 		                                   priv->devices,
 		                                   replace_device,
-		                                   FALSE,
-		                                   TRUE);
+		                                   FALSE);
 	}
 
 	/* Give Bluetooth DUN devices first chance to claim the modem */
@@ -450,20 +464,22 @@ static GSList *
 remove_one_device (NMManager *manager,
                    GSList *list,
                    NMDevice *device,
-                   gboolean quitting,
-                   gboolean force_unmanage)
+                   gboolean quitting)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
 	if (nm_device_get_managed (device)) {
-		gboolean unmanage = !quitting;
+		/* When quitting, we want to leave up interfaces & connections
+		 * that can be taken over again (ie, "assumed") when NM restarts
+		 * so that '/etc/init.d/NetworkManager restart' will not distrupt
+		 * networking for interfaces that support connection assumption.
+		 * All other devices get unmanaged when NM quits so that their
+		 * connections get torn down and the interface is deactivated.
+		 */
 
-		/* Don't unmanage active assume-connection-capable devices at shutdown */
-		if (   nm_device_interface_can_assume_connection (NM_DEVICE_INTERFACE (device))
-		    && nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED)
-			unmanage = FALSE;
-
-		if (unmanage || force_unmanage)
+		if (   !nm_device_interface_can_assume_connections (NM_DEVICE_INTERFACE (device))
+		    || (nm_device_get_state (device) != NM_DEVICE_STATE_ACTIVATED)
+		    || !quitting)
 			nm_device_set_managed (device, FALSE, NM_DEVICE_STATE_REASON_REMOVED);
 	}
 
@@ -497,7 +513,7 @@ modem_removed (NMModemManager *modem_manager,
 	/* Otherwise remove the standalone modem */
 	found = nm_manager_get_device_by_udi (self, nm_modem_get_path (modem));
 	if (found)
-		priv->devices = remove_one_device (self, priv->devices, found, FALSE, TRUE);
+		priv->devices = remove_one_device (self, priv->devices, found, FALSE);
 }
 
 static void
@@ -822,6 +838,7 @@ system_internal_new_connection (NMManager *manager,
 	path = nm_connection_get_path (NM_CONNECTION (connection));
 	g_hash_table_insert (priv->system_connections, g_strdup (path),
 	                     g_object_ref (connection));
+	g_signal_emit (manager, signals[CONNECTION_ADDED], 0, connection);
 }
 
 static void
@@ -1414,7 +1431,7 @@ add_device (NMManager *self, NMDevice *device)
 	/* Check if we should assume the device's active connection by matching its
 	 * config with an existing system connection.
 	 */
-	if (nm_device_interface_can_assume_connection (NM_DEVICE_INTERFACE (device))) {
+	if (nm_device_interface_can_assume_connections (NM_DEVICE_INTERFACE (device))) {
 		GSList *connections = NULL;
 
 		g_hash_table_iter_init (&iter, priv->system_connections);
@@ -1572,7 +1589,7 @@ bluez_manager_resync_devices (NMManager *self)
 		priv->devices = keep;
 
 		while (g_slist_length (gone))
-			gone = remove_one_device (self, gone, NM_DEVICE (gone->data), FALSE, TRUE);
+			gone = remove_one_device (self, gone, NM_DEVICE (gone->data), FALSE);
 	} else {
 		g_slist_free (keep);
 		g_slist_free (gone);
@@ -1641,7 +1658,7 @@ bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
 		NMDevice *device = NM_DEVICE (iter->data);
 
 		if (!strcmp (nm_device_get_udi (device), object_path)) {
-			priv->devices = remove_one_device (self, priv->devices, device, FALSE, TRUE);
+			priv->devices = remove_one_device (self, priv->devices, device, FALSE);
 			break;
 		}
 	}
@@ -1710,7 +1727,7 @@ udev_device_removed_cb (NMUdevManager *manager,
 	ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
 	device = find_device_by_ifindex (self, ifindex);
 	if (device)
-		priv->devices = remove_one_device (self, priv->devices, device, FALSE, TRUE);
+		priv->devices = remove_one_device (self, priv->devices, device, FALSE);
 }
 
 static void
@@ -2015,7 +2032,7 @@ nm_manager_activate_connection (NMManager *manager,
 	NMDevice *device = NULL;
 	NMSettingConnection *s_con;
 	NMVPNConnection *vpn_connection;
-	const char *path;
+	const char *path = NULL;
 
 	g_return_val_if_fail (manager != NULL, NULL);
 	g_return_val_if_fail (connection != NULL, NULL);
@@ -2072,11 +2089,13 @@ nm_manager_activate_connection (NMManager *manager,
 		                                                     req,
 		                                                     device,
 		                                                     error);
-		g_signal_connect (vpn_connection, "manager-get-secrets",
-		                  G_CALLBACK (provider_get_secrets), manager);
-		g_signal_connect (vpn_connection, "manager-cancel-secrets",
-		                  G_CALLBACK (provider_cancel_secrets), manager);
-		path = nm_vpn_connection_get_active_connection_path (vpn_connection);
+		if (vpn_connection) {
+			g_signal_connect (vpn_connection, "manager-get-secrets",
+			                  G_CALLBACK (provider_get_secrets), manager);
+			g_signal_connect (vpn_connection, "manager-cancel-secrets",
+			                  G_CALLBACK (provider_cancel_secrets), manager);
+			path = nm_vpn_connection_get_active_connection_path (vpn_connection);
+		}
 		g_object_unref (vpn_manager);
 	} else {
 		NMDeviceState state;
@@ -2972,6 +2991,159 @@ firmware_dir_changed (GFileMonitor *monitor,
 	}
 }
 
+#define PERM_DENIED_ERROR "org.freedesktop.NetworkManager.PermissionDenied"
+
+static void
+prop_set_auth_done_cb (NMAuthChain *chain,
+                       GError *error,
+                       DBusGMethodInvocation *context,
+                       gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	DBusGConnection *bus;
+	DBusConnection *dbus_connection;
+	NMAuthCallResult result;
+	DBusMessage *reply, *request;
+	const char *permission, *prop;
+	gboolean set_enabled = TRUE;
+
+	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+
+	request = nm_auth_chain_get_data (chain, "message");
+	permission = nm_auth_chain_get_data (chain, "permission");
+	prop = nm_auth_chain_get_data (chain, "prop");
+	set_enabled = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "enabled"));
+
+	if (error) {
+		reply = dbus_message_new_error (request, PERM_DENIED_ERROR,
+		                                "Not authorized to perform this operation");
+	} else {
+		/* Caller has had a chance to obtain authorization, so we only need to
+		 * check for 'yes' here.
+		 */
+		result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, permission));
+		if (result != NM_AUTH_CALL_RESULT_YES) {
+			reply = dbus_message_new_error (request, PERM_DENIED_ERROR,
+				                            "Not authorized to perform this operation");
+		} else {
+			g_object_set (self, prop, set_enabled, NULL);
+			reply = dbus_message_new_method_return (request);
+		}
+	}
+
+	if (reply) {
+		bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
+		g_assert (bus);
+		dbus_connection = dbus_g_connection_get_connection (bus);
+		g_assert (dbus_connection);
+
+		dbus_connection_send (dbus_connection, reply, NULL);
+		dbus_message_unref (reply);
+	}
+	nm_auth_chain_unref (chain);
+}
+
+static DBusHandlerResult
+prop_filter (DBusConnection *connection,
+             DBusMessage *message,
+             void *user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	DBusMessageIter iter;
+	DBusMessageIter sub;
+	const char *propiface = NULL;
+	const char *propname = NULL;
+	const char *sender = NULL;
+	const char *glib_propname = NULL, *permission = NULL;
+	DBusError dbus_error;
+	gulong uid = G_MAXULONG;
+	DBusMessage *reply = NULL;
+	gboolean set_enabled = FALSE;
+	NMAuthChain *chain;
+
+	/* The sole purpose of this function is to validate property accesses
+	 * on the NMManager object since dbus-glib doesn't yet give us this
+	 * functionality.
+	 */
+
+	if (!dbus_message_is_method_call (message, DBUS_INTERFACE_PROPERTIES, "Set"))
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	dbus_message_iter_init (message, &iter);
+
+	/* Get the D-Bus interface of the property to set */
+	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING)
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	dbus_message_iter_get_basic (&iter, &propiface);
+	if (!propiface || strcmp (propiface, NM_DBUS_INTERFACE))
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	dbus_message_iter_next (&iter);
+
+	/* Get the property name that's going to be set */
+	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING)
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	dbus_message_iter_get_basic (&iter, &propname);
+	dbus_message_iter_next (&iter);
+
+	if (!strcmp (propname, "WirelessEnabled")) {
+		glib_propname = NM_MANAGER_WIRELESS_ENABLED;
+		permission = NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI;
+	} else if (!strcmp (propname, "WwanEnabled")) {
+		glib_propname = NM_MANAGER_WWAN_ENABLED;
+		permission = NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN;
+	} else
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	/* Get the new value for the property */
+	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_VARIANT)
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	dbus_message_iter_recurse (&iter, &sub);
+	if (dbus_message_iter_get_arg_type (&sub) != DBUS_TYPE_BOOLEAN)
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	dbus_message_iter_get_basic (&sub, &set_enabled);
+
+	sender = dbus_message_get_sender (message);
+	if (!sender) {
+		reply = dbus_message_new_error (message, PERM_DENIED_ERROR,
+		                                "Could not determine D-Bus requestor");
+		goto out;
+	}
+
+	dbus_error_init (&dbus_error);
+	uid = dbus_bus_get_unix_user (connection, sender, &dbus_error);
+	if (dbus_error_is_set (&dbus_error)) {
+		reply = dbus_message_new_error (message, PERM_DENIED_ERROR,
+		                                "Could not determine the user ID of the requestor");
+		dbus_error_free (&dbus_error);
+		goto out;
+	}
+
+	if (uid > 0) {
+		/* Otherwise validate the user request */
+		chain = nm_auth_chain_new_raw_message (priv->authority, message, prop_set_auth_done_cb, self);
+		g_assert (chain);
+		priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+		nm_auth_chain_set_data (chain, "prop", g_strdup (glib_propname), g_free);
+		nm_auth_chain_set_data (chain, "permission", g_strdup (permission), g_free);
+		nm_auth_chain_set_data (chain, "enabled", GUINT_TO_POINTER (set_enabled), NULL);
+		nm_auth_chain_set_data (chain, "message", dbus_message_ref (message), (GDestroyNotify) dbus_message_unref);
+		nm_auth_chain_add_call (chain, permission, TRUE);
+	} else {
+		/* Yay for root */
+		g_object_set (self, glib_propname, set_enabled, NULL);
+		reply = dbus_message_new_method_return (message);
+	}
+
+out:
+	if (reply) {
+		dbus_connection_send (connection, reply, NULL);
+		dbus_message_unref (reply);
+	}
+	return DBUS_HANDLER_RESULT_HANDLED;
+}
+
 NMManager *
 nm_manager_get (const char *config_file,
                 const char *plugins,
@@ -2983,6 +3155,8 @@ nm_manager_get (const char *config_file,
 {
 	static NMManager *singleton = NULL;
 	NMManagerPrivate *priv;
+	DBusGConnection *bus;
+	DBusConnection *dbus_connection;
 
 	if (singleton)
 		return g_object_ref (singleton);
@@ -2991,6 +3165,17 @@ nm_manager_get (const char *config_file,
 	g_assert (singleton);
 
 	priv = NM_MANAGER_GET_PRIVATE (singleton);
+
+	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
+	g_assert (bus);
+	dbus_connection = dbus_g_connection_get_connection (bus);
+	g_assert (dbus_connection);
+
+	if (!dbus_connection_add_filter (dbus_connection, prop_filter, singleton, NULL)) {
+		nm_log_err (LOGD_CORE, "failed to register DBus connection filter");
+		g_object_unref (singleton);
+		return NULL;
+    }
 
 	priv->sys_settings = nm_sysconfig_settings_new (config_file, plugins, error);
 	if (!priv->sys_settings) {
@@ -3052,6 +3237,8 @@ dispose (GObject *object)
 {
 	NMManager *manager = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	DBusGConnection *bus;
+	DBusConnection *dbus_connection;
 
 	if (priv->disposed) {
 		G_OBJECT_CLASS (nm_manager_parent_class)->dispose (object);
@@ -3070,8 +3257,7 @@ dispose (GObject *object)
 		priv->devices = remove_one_device (manager,
 		                                   priv->devices,
 		                                   NM_DEVICE (priv->devices->data),
-		                                   TRUE,
-		                                   FALSE);
+		                                   TRUE);
 	}
 
 	g_hash_table_foreach (priv->system_connections, emit_removed, manager);
@@ -3103,7 +3289,14 @@ dispose (GObject *object)
 	}
 	g_object_unref (priv->modem_manager);
 
+	/* Unregister property filter */
+	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
+	g_assert (bus);
+	dbus_connection = dbus_g_connection_get_connection (bus);
+	g_assert (dbus_connection);
+	dbus_connection_remove_filter (dbus_connection, prop_filter, manager);
 	g_object_unref (priv->dbus_mgr);
+
 	if (priv->bluez_mgr)
 		g_object_unref (priv->bluez_mgr);
 
@@ -3198,6 +3391,7 @@ nm_manager_init (NMManager *manager)
 	DBusGConnection *g_connection;
 	guint id, i;
 	GFile *file;
+	GError *error = NULL;
 
 	/* Initialize rfkill structures and states */
 	memset (priv->radio_states, 0, sizeof (priv->radio_states));
@@ -3275,14 +3469,18 @@ nm_manager_init (NMManager *manager)
 	} else
 		nm_log_warn (LOGD_AUTOIP4, "could not initialize avahi-autoipd D-Bus proxy");
 
-	priv->authority = polkit_authority_get ();
+	priv->authority = polkit_authority_get_sync (NULL, &error);
 	if (priv->authority) {
 		priv->auth_changed_id = g_signal_connect (priv->authority,
 		                                          "changed",
 		                                          G_CALLBACK (pk_authority_changed_cb),
 		                                          manager);
-	} else
-		nm_log_warn (LOGD_CORE, "failed to create PolicyKit authority.");
+	} else {
+		nm_log_warn (LOGD_CORE, "failed to create PolicyKit authority: (%d) %s",
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
+	}
 
 	/* Monitor the firmware directory */
 	if (strlen (KERNEL_FIRMWARE_DIR)) {

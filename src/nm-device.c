@@ -159,6 +159,7 @@ static void nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason
 static gboolean device_disconnect (NMDeviceInterface *device, GError **error);
 static gboolean spec_match_list (NMDeviceInterface *device, const GSList *specs);
 static NMConnection *connection_match_config (NMDeviceInterface *device, const GSList *connections);
+static gboolean can_assume_connections (NMDeviceInterface *device);
 
 static void nm_device_activate_schedule_stage5_ip_config_commit (NMDevice *self, int family);
 
@@ -196,6 +197,7 @@ device_interface_init (NMDeviceInterface *device_interface_class)
 	device_interface_class->disconnect = device_disconnect;
 	device_interface_class->spec_match_list = spec_match_list;
 	device_interface_class->connection_match_config = connection_match_config;
+	device_interface_class->can_assume_connections = can_assume_connections;
 }
 
 
@@ -1237,7 +1239,7 @@ static gboolean
 aipd_exec (NMDevice *self, GError **error)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	char *argv[5];
+	char *argv[6], *cmdline;
 	gboolean success = FALSE;
 	const char **aipd_binary = NULL;
 	static const char *aipd_paths[] = {
@@ -1245,6 +1247,7 @@ aipd_exec (NMDevice *self, GError **error)
 		"/usr/local/sbin/avahi-autoipd",
 		NULL
 	};
+	int i = 0;
 
 	aipd_cleanup (self);
 
@@ -1261,11 +1264,17 @@ aipd_exec (NMDevice *self, GError **error)
 		return FALSE;
 	}
 
-	argv[0] = (char *) (*aipd_binary);
-	argv[1] = "--script";
-	argv[2] = LIBEXECDIR "/nm-avahi-autoipd.action";
-	argv[3] = (char *) nm_device_get_ip_iface (self);
-	argv[4] = NULL;
+	argv[i++] = (char *) (*aipd_binary);
+	argv[i++] = "--script";
+	argv[i++] = LIBEXECDIR "/nm-avahi-autoipd.action";
+	if (nm_logging_level_enabled (LOGL_DEBUG))
+		argv[i++] = "--debug";
+	argv[i++] = (char *) nm_device_get_ip_iface (self);
+	argv[i++] = NULL;
+
+	cmdline = g_strjoinv (" ", argv);
+	nm_log_dbg(LOGD_AUTOIP4, "running: %s", cmdline);
+	g_free (cmdline);
 
 	success = g_spawn_async ("/", argv, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
 	                         &aipd_child_setup, NULL, &(priv->aipd_pid), error);
@@ -1572,6 +1581,8 @@ dhcp6_start (NMDevice *self,
 	NMSettingConnection *s_con;
 	const char *uuid;
 	const char *ip_iface;
+	const struct in6_addr dest = { { { 0xFF,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } } };
+	int err;
 
 	if (!connection) {
 		NMActRequest *req;
@@ -1591,6 +1602,18 @@ dhcp6_start (NMDevice *self,
 	if (priv->dhcp6_config)
 		g_object_unref (priv->dhcp6_config);
 	priv->dhcp6_config = nm_dhcp6_config_new ();
+
+	/* DHCPv6 communicates with the DHCPv6 server via two multicast addresses,
+	 * ff02::1:2 (link-scope) and ff05::1:3 (site-scope).  Make sure we have
+	 * a multicast route (ff00::/8) for client <-> server communication.
+	 */
+	err = nm_system_set_ip6_route (priv->ip_iface ? priv->ip_ifindex : priv->ifindex,
+	                               &dest, 8, NULL, 256, 0, RTPROT_BOOT, RT_TABLE_LOCAL, NULL);
+	if (err) {
+		nm_log_err (LOGD_DEVICE | LOGD_IP6,
+		            "(%s): failed to add IPv6 multicast route: %s",
+		            priv->ip_iface ? priv->ip_iface : priv->iface, nl_geterror ());
+	}
 
 	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 	g_assert (s_con);
@@ -3289,7 +3312,7 @@ dispose (GObject *object)
 	/* Don't down can-assume-connection capable devices that are activated with
 	 * a connection that can be assumed.
 	 */
-	if (   nm_device_interface_can_assume_connection (NM_DEVICE_INTERFACE (self))
+	if (   nm_device_interface_can_assume_connections (NM_DEVICE_INTERFACE (self))
 	    && (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED)) {
 		NMConnection *connection;
 	    NMSettingIP4Config *s_ip4;
@@ -3352,7 +3375,8 @@ finalize (GObject *object)
 	NMDevice *self = NM_DEVICE (object);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	g_object_unref (priv->dhcp_manager);
+	if (priv->dhcp_manager)
+		g_object_unref (priv->dhcp_manager);
 
 	g_free (priv->udi);
 	g_free (priv->iface);
@@ -3842,6 +3866,14 @@ connection_match_config (NMDeviceInterface *device, const GSList *connections)
 	if (NM_DEVICE_GET_CLASS (device)->connection_match_config)
 		return NM_DEVICE_GET_CLASS (device)->connection_match_config (NM_DEVICE (device), connections);
 	return NULL;
+}
+
+static gboolean
+can_assume_connections (NMDeviceInterface *device)
+{
+	g_return_val_if_fail (device != NULL, FALSE);
+
+	return !!NM_DEVICE_GET_CLASS (device)->connection_match_config;
 }
 
 void

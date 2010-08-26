@@ -1,0 +1,12 @@
+[Unit]
+Description=Network Manager
+After=syslog.target
+
+[Service]
+Type=dbus
+BusName=org.freedesktop.NetworkManager
+ExecStart=@sbindir@/NetworkManager --no-daemon
+
+[Install]
+WantedBy=network.target multi-user.target
+Alias=dbus-org.freedesktop.NetworkManager.service

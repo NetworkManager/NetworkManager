@@ -319,12 +319,8 @@ nm_permission_result_to_client (const char *nm)
 }
 
 static void
-get_permissions_reply (DBusGProxy *proxy,
-                       GHashTable *permissions,
-                       GError *error,
-                       gpointer user_data)
+update_permissions (NMClient *self, GHashTable *permissions)
 {
-	NMClient *self = NM_CLIENT (user_data);
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
 	GHashTableIter iter;
 	gpointer key, value;
@@ -332,13 +328,11 @@ get_permissions_reply (DBusGProxy *proxy,
 	NMClientPermissionResult perm_result;
 	GList *keys, *keys_iter;
 
-	priv->perm_call = NULL;
-
 	/* get list of old permissions for change notification */
 	keys = g_hash_table_get_keys (priv->permissions);
 	g_hash_table_remove_all (priv->permissions);
 
-	if (!error) {
+	if (permissions) {
 		/* Process new permissions */
 		g_hash_table_iter_init (&iter, permissions);
 		while (g_hash_table_iter_next (&iter, &key, &value)) {
@@ -377,12 +371,31 @@ get_permissions_reply (DBusGProxy *proxy,
 	g_list_free (keys);
 }
 
-static DBusGProxyCall *
-get_permissions (NMClient *self)
+static void
+get_permissions_sync (NMClient *self)
 {
-	return org_freedesktop_NetworkManager_get_permissions_async (NM_CLIENT_GET_PRIVATE (self)->client_proxy,
-	                                                             get_permissions_reply,
-	                                                             self);
+	gboolean success;
+	GHashTable *permissions = NULL;
+
+	success = dbus_g_proxy_call_with_timeout (NM_CLIENT_GET_PRIVATE (self)->client_proxy,
+	                                          "GetPermissions", 3000, NULL,
+	                                          G_TYPE_INVALID,
+	                                          DBUS_TYPE_G_MAP_OF_STRING, &permissions, G_TYPE_INVALID);
+	update_permissions (self, success ? permissions : NULL);
+	if (permissions)
+		g_hash_table_destroy (permissions);
+}
+
+static void
+get_permissions_reply (DBusGProxy *proxy,
+                       GHashTable *permissions,
+                       GError *error,
+                       gpointer user_data)
+{
+	NMClient *self = NM_CLIENT (user_data);
+
+	NM_CLIENT_GET_PRIVATE (self)->perm_call = NULL;
+	update_permissions (NM_CLIENT (user_data), error ? NULL : permissions);
 }
 
 static void
@@ -391,8 +404,11 @@ client_recheck_permissions (DBusGProxy *proxy, gpointer user_data)
 	NMClient *self = NM_CLIENT (user_data);
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
 
-	if (!priv->perm_call)
-		priv->perm_call = get_permissions (self);
+	if (!priv->perm_call) {
+		priv->perm_call = org_freedesktop_NetworkManager_get_permissions_async (NM_CLIENT_GET_PRIVATE (self)->client_proxy,
+	                                                                            get_permissions_reply,
+	                                                                            self);
+	}
 }
 
 static GObject*
@@ -442,7 +458,7 @@ constructor (GType type,
 	                             G_CALLBACK (client_recheck_permissions),
 	                             object,
 	                             NULL);
-	priv->perm_call = get_permissions (NM_CLIENT (object));
+	get_permissions_sync (NM_CLIENT (object));
 
 	priv->bus_proxy = dbus_g_proxy_new_for_name (connection,
 										"org.freedesktop.DBus",

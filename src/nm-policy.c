@@ -138,7 +138,8 @@ get_best_ip4_device (NMManager *manager, NMActRequest **out_req)
 			continue;
 
 		/* 'never-default' devices can't ever be the default */
-		if (s_ip4 && nm_setting_ip4_config_get_never_default (s_ip4))
+		if (   (s_ip4 && nm_setting_ip4_config_get_never_default (s_ip4))
+		    || nm_ip4_config_get_never_default (ip4_config))
 			continue;
 
 		prio = nm_device_get_priority (dev);
@@ -482,6 +483,13 @@ update_ip4_routing_and_dns (NMPolicy *policy, gboolean force_update)
 		/* If it's marked 'never-default', don't make it default */
 		vpn_connection = nm_vpn_connection_get_connection (candidate);
 		g_assert (vpn_connection);
+
+		/* Check the active IP4 config from the VPN service daemon */
+		ip4_config = nm_vpn_connection_get_ip4_config (candidate);
+		if (ip4_config && nm_ip4_config_get_never_default (ip4_config))
+			can_default = FALSE;
+
+		/* Check the user's preference from the NMConnection */
 		s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (vpn_connection, NM_TYPE_SETTING_IP4_CONFIG);
 		if (s_ip4 && nm_setting_ip4_config_get_never_default (s_ip4))
 			can_default = FALSE;
@@ -493,7 +501,6 @@ update_ip4_routing_and_dns (NMPolicy *policy, gboolean force_update)
 
 			ip_iface = nm_vpn_connection_get_ip_iface (candidate);
 			connection = nm_vpn_connection_get_connection (candidate);
-			ip4_config = nm_vpn_connection_get_ip4_config (candidate);
 			addr = nm_ip4_config_get_address (ip4_config, 0);
 
 			parent = nm_vpn_connection_get_parent_device (candidate);
@@ -1205,6 +1212,7 @@ nm_policy_destroy (NMPolicy *policy)
 
 	g_signal_handler_disconnect (policy->vpn_manager, policy->vpn_activated_id);
 	g_signal_handler_disconnect (policy->vpn_manager, policy->vpn_deactivated_id);
+	g_object_unref (policy->vpn_manager);
 
 	for (iter = policy->signal_ids; iter; iter = g_slist_next (iter))
 		g_signal_handler_disconnect (policy->manager, (gulong) iter->data);

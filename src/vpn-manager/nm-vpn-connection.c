@@ -381,6 +381,9 @@ print_vpn_config (NMIP4Config *config,
 		             ip_address_to_string (nm_ip4_route_get_next_hop (route)));
 	}
 
+	nm_log_info (LOGD_VPN, "Forbid Default Route: %s",
+	             nm_ip4_config_get_never_default (config) ? "yes" : "no");
+
 	num = nm_ip4_config_get_num_nameservers (config);
 	for (i = 0; i < num; i++) {
 		nm_log_info (LOGD_VPN, "Internal IP4 DNS: %s",
@@ -525,6 +528,10 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 
 		g_slist_free (routes);
 	}
+
+	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_NEVER_DEFAULT);
+	if (val && G_VALUE_HOLDS_BOOLEAN (val))
+		nm_ip4_config_set_never_default (config, g_value_get_boolean (val));
 
 	print_vpn_config (config, priv->ip4_internal_gw, priv->ip_iface, priv->banner);
 

@@ -1,0 +1,5 @@
+iface pppoe inet manual
+# case 11: wrapped line (without leading space on the wrapped part, wrap within a multi-word value)
+	pre-up /sbin/ifconfig \
+eth0 up
+

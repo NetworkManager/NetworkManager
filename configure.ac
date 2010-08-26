@@ -203,6 +203,12 @@ dnl
 AC_CHECK_LIB([dl], [dladdr], LIBDL="-ldl", LIBDL="")
 AC_SUBST(LIBDL)
 
+dnl
+dnl Checks for new dbus-glib property access function
+dnl
+AC_CHECK_LIB([dbus-glib-1], [dbus_glib_global_set_disable_legacy_property_access], ac_have_dg_prop="1", ac_have_dg_prop="0")
+AC_DEFINE_UNQUOTED(HAVE_DBUS_GLIB_DISABLE_LEGACY_PROP_ACCESS, $ac_have_dg_prop, [Define if you have a dbus-glib with dbus_glib_global_set_disable_legacy_property_access()])
+
 PKG_CHECK_MODULES(DBUS, dbus-1 >= 1.1 dbus-glib-1 >= 0.75)
 AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)
@@ -231,6 +237,14 @@ else
 fi
 AC_SUBST(UDEV_BASE_DIR)
 
+# systemd
+AC_ARG_WITH([systemdsystemunitdir],
+ AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files]),
+ [],
+ [with_systemdsystemunitdir=$($PKG_CONFIG --variable=systemdsystemunitdir systemd)])
+AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])
+AM_CONDITIONAL(HAVE_SYSTEMD, [test -n "$with_systemdsystemunitdir"])
+
 PKG_CHECK_MODULES(LIBNL, libnl-1 >= 1.0-pre8)
 AC_SUBST(LIBNL_CFLAGS)
 AC_SUBST(LIBNL_LIBS)
@@ -241,8 +255,11 @@ AC_SUBST(UUID_CFLAGS)
 AC_SUBST(UUID_LIBS)
 
 PKG_CHECK_MODULES(POLKIT, polkit-gobject-1)
-
 AC_SUBST(POLKIT_CFLAGS)
+
+# Check for polkit_authority_get_sync()
+AC_CHECK_LIB([polkit-gobject-1], [polkit_authority_get_sync], ac_have_pk_auth_get_sync="1", ac_have_pk_auth_get_sync="0")
+AC_DEFINE_UNQUOTED(HAVE_POLKIT_AUTHORITY_GET_SYNC, $ac_have_pk_auth_get_sync, [Define if you have a polkit with polkit_authority_get_sync()])
 
 AC_ARG_WITH(crypto, AS_HELP_STRING([--with-crypto=nss | gnutls], [Cryptography library to use for certificate and key operations]),ac_crypto=$withval, ac_crypto=nss)
 
@@ -305,21 +322,30 @@ AC_SUBST(PPPD_PLUGIN_DIR)
 AC_ARG_WITH([dhclient], AS_HELP_STRING([--with-dhclient=yes|no|path], [Enable dhclient 4.x support]))
 # If a full path is given, use that and do not test if it works or not.
 case "${with_dhclient}" in
+	# NM only works with ISC dhclient - other derivatives don't have
+	# the same userland.  dhclient 4.x is required for IPv6 support;
+	# with older versions NM won't be able to use DHCPv6.
+
 	/*)
 		DHCLIENT_PATH="${with_dhclient}"
+		DHCLIENT_VERSION=4
+		if test -x "${with_dhclient}"; then
+			case `"${with_dhclient}" --version 2>&1` in
+				"isc-dhclient-4"*) DHCLIENT_VERSION=4; break;;
+				"isc-dhclient-V3"*) DHCLIENT_VERSION=3; break;;
+			esac
+		fi
 		AC_MSG_NOTICE(using dhclient at ${DHCLIENT_PATH})
 		;;
 	no)	AC_MSG_NOTICE(dhclient support disabled)
 		;;
 	*)
 		AC_MSG_CHECKING(for dhclient)
-		# NM only works with ISC dhclient - other derivatives don't have
-		# the same userland.  NM also requires dhclient 4.x since older
-		# versions do not have IPv6 support.
 		for path in /sbin /usr/sbin /usr/pkg/sbin /usr/local/sbin; do
 			test -x "${path}/dhclient" || continue
 			case `"$path/dhclient" --version 2>&1` in
-				"isc-dhclient-4"*) DHCLIENT_PATH="$path/dhclient"; break;;
+				"isc-dhclient-4"*) DHCLIENT_PATH="$path/dhclient"; DHCLIENT_VERSION=4; break;;
+				"isc-dhclient-V3"*) DHCLIENT_PATH="$path/dhclient"; DHCLIENT_VERSION=3; break;;
 			esac
 		done
 		if test -n "${DHCLIENT_PATH}"; then
@@ -367,6 +393,7 @@ if test -z "$DHCPCD_PATH" -a -z "$DHCLIENT_PATH"; then
 	AC_MSG_WARN([Falling back to ISC dhclient, ${DHCLIENT_PATH}])
 fi
 AC_SUBST(DHCLIENT_PATH)
+AC_SUBST(DHCLIENT_VERSION)
 AC_SUBST(DHCPCD_PATH)
 
 # resolvconf support
@@ -484,6 +511,9 @@ tools/Makefile
 system-settings/Makefile
 system-settings/plugins/Makefile
 system-settings/plugins/ifupdown/Makefile
+system-settings/plugins/ifupdown/tests/Makefile
+system-settings/plugins/ifnet/Makefile
+system-settings/plugins/ifnet/tests/Makefile
 system-settings/plugins/ifcfg-rh/Makefile
 system-settings/plugins/ifcfg-rh/tests/Makefile
 system-settings/plugins/ifcfg-rh/tests/network-scripts/Makefile
@@ -522,6 +552,7 @@ man/nm-online.1
 man/nmcli.1
 po/Makefile.in
 policy/Makefile
+data/Makefile
 docs/Makefile
 docs/libnm-glib/Makefile
 docs/libnm-util/Makefile
@@ -539,6 +570,7 @@ echo
 
 if test -n "${DHCLIENT_PATH}"; then
 	echo ISC dhclient support: ${DHCLIENT_PATH}
+	echo ISC dhclient version: ${DHCLIENT_VERSION}
 else
 	echo ISC dhclient support: no
 fi
@@ -547,6 +579,12 @@ if test -n "${DHCPCD_PATH}"; then
 	echo dhcpcd support: ${DHCPCD_PATH}
 else
 	echo dhcpcd support: no
+fi
+
+if test -n "${with_systemdsystemunitdir}"; then
+	echo systemd support: ${with_systemdsystemunitdir}
+else
+	echo systemd support: no
 fi
 
 echo

@@ -162,7 +162,7 @@ get_unix_user_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data
 	guint user_id;
 	struct passwd *pw_info = NULL;
 	int ngroups;
-	guint group_ids_size;
+	guint group_ids_size = 0;
 	gid_t *group_ids = NULL;
 	GSList *group_names = NULL;
 	NMSessionInfo *session = NULL;
@@ -196,7 +196,7 @@ get_unix_user_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data
 	// Get the list of group IDs
 	// FIXME what happens if the group list changes in the window between the
 	// two getgrouplist calls?
-	group_ids_size = ngroups * sizeof(gid_t);
+	group_ids_size = ngroups * sizeof (gid_t);
 	group_ids = g_slice_alloc (group_ids_size);
 	if (getgrouplist (pw_info->pw_name, pw_info->pw_gid, group_ids, &ngroups) == -1) {
 	    error = g_error_new (NM_SESSION_MANAGER_ERROR,

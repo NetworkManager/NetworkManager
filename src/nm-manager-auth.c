@@ -73,16 +73,17 @@ default_call_func (NMAuthChain *chain,
 		nm_auth_chain_set_data (chain, permission, GUINT_TO_POINTER (result), NULL);
 }
 
-NMAuthChain *
-nm_auth_chain_new (PolkitAuthority *authority,
-                   DBusGMethodInvocation *context,
-                   DBusGProxy *proxy,
-                   NMAuthChainResultFunc done_func,
-                   gpointer user_data)
+static NMAuthChain *
+_auth_chain_new (PolkitAuthority *authority,
+                 DBusGMethodInvocation *context,
+                 DBusGProxy *proxy,
+                 DBusMessage *message,
+                 NMAuthChainResultFunc done_func,
+                 gpointer user_data)
 {
 	NMAuthChain *self;
 
-	g_return_val_if_fail (context || proxy, NULL);
+	g_return_val_if_fail (context || proxy || message, NULL);
 
 	self = g_malloc0 (sizeof (NMAuthChain));
 	self->refcount = 1;
@@ -97,6 +98,8 @@ nm_auth_chain_new (PolkitAuthority *authority,
 		self->owner = g_strdup (dbus_g_proxy_get_bus_name (proxy));
 	else if (context)
 		self->owner = dbus_g_method_get_sender (context);
+	else if (message)
+		self->owner = g_strdup (dbus_message_get_sender (message));
 
 	if (!self->owner) {
 		/* Need an owner */
@@ -106,6 +109,25 @@ nm_auth_chain_new (PolkitAuthority *authority,
 	}
 
 	return self;
+}
+
+NMAuthChain *
+nm_auth_chain_new (PolkitAuthority *authority,
+                   DBusGMethodInvocation *context,
+                   DBusGProxy *proxy,
+                   NMAuthChainResultFunc done_func,
+                   gpointer user_data)
+{
+	return _auth_chain_new (authority, context, proxy, NULL, done_func, user_data);
+}
+
+NMAuthChain *
+nm_auth_chain_new_raw_message (PolkitAuthority *authority,
+                               DBusMessage *message,
+                               NMAuthChainResultFunc done_func,
+                               gpointer user_data)
+{
+	return _auth_chain_new (authority, NULL, NULL, message, done_func, user_data);
 }
 
 gpointer

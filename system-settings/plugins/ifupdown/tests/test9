@@ -1,0 +1,10 @@
+iface eth0 inet static
+# case 9: wrapped lines inside a block (to be on the safe side)
+	address \
+		10.250.2.3
+	netmask \
+		255.255.255.192
+
+	broadcast 10.250.2.63
+	gateway 10.250.2.50
+

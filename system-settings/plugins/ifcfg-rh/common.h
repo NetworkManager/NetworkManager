@@ -33,6 +33,8 @@
 #define ORIG_TAG ".orig"
 #define REJ_TAG ".rej"
 #define RPMNEW_TAG ".rpmnew"
+#define AUGNEW_TAG ".augnew"
+#define AUGTMP_TAG ".augtmp"
 
 #define IFCFG_DIR SYSCONFDIR"/sysconfig/network-scripts"
 

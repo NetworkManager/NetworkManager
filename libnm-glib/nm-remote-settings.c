@@ -192,11 +192,18 @@ fetch_connections_done (DBusGProxy *proxy,
 	int i;
 
 	if (error) {
-		g_warning ("%s: error fetching connections: (%d) %s.",
-		           __func__,
-		           error->code,
-		           error->message ? error->message : "(unknown)");
+		/* Ignore settings service spawn errors */
+		if (   !g_error_matches (error, DBUS_GERROR, DBUS_GERROR_SERVICE_UNKNOWN)
+		    && !g_error_matches (error, DBUS_GERROR, DBUS_GERROR_NAME_HAS_NO_OWNER)) {
+			g_warning ("%s: error fetching connections: (%d) %s.",
+			           __func__,
+				       error->code,
+				       error->message ? error->message : "(unknown)");
+		}
 		g_clear_error (&error);
+
+		/* We tried to read connections and failed */
+		g_signal_emit (self, signals[CONNECTIONS_READ], 0);
 		return;
 	}
 

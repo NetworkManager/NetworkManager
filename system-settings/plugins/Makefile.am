@@ -15,3 +15,7 @@ endif
 if TARGET_DEBIAN
 SUBDIRS+=ifupdown
 endif
+
+if TARGET_GENTOO
+SUBDIRS+=ifnet
+endif

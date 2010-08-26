@@ -35,6 +35,8 @@
 #define NM_IS_VPN_SERVICE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_VPN_SERVICE))
 #define NM_VPN_SERVICE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_VPN_SERVICE, NMVPNServiceClass))
 
+#define VPN_CONNECTION_GROUP "VPN Connection"
+
 typedef struct {
 	GObject parent;
 } NMVPNService;
@@ -45,9 +47,13 @@ typedef struct {
 
 GType nm_vpn_service_get_type (void);
 
-NMVPNService * nm_vpn_service_new (const char *service_name);
+NMVPNService * nm_vpn_service_new (const char *namefile, GError **error);
 
-const char * nm_vpn_service_get_name (NMVPNService *service);
+/* Returns the VPN service's D-Bus service name */
+const char *nm_vpn_service_get_dbus_service (NMVPNService *service);
+
+/* Returns the path of the VPN service's .name file */
+const char *nm_vpn_service_get_name_file (NMVPNService *service);
 
 NMVPNConnection * nm_vpn_service_activate (NMVPNService *service,
                                            NMConnection *connection,
@@ -56,5 +62,9 @@ NMVPNConnection * nm_vpn_service_activate (NMVPNService *service,
                                            GError **error);
 
 GSList * nm_vpn_service_get_active_connections (NMVPNService *service);
+
+void nm_vpn_service_connections_stop (NMVPNService *service,
+                                      gboolean fail,
+                                      NMVPNConnectionStateReason reason);
 
 #endif  /* NM_VPN_VPN_SERVICE_H */

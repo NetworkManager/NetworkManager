@@ -160,7 +160,9 @@ utils_should_ignore_file (const char *filename, gboolean only_ifcfg)
 	    && !check_suffix (base, TILDE_TAG)
 	    && !check_suffix (base, ORIG_TAG)
 	    && !check_suffix (base, REJ_TAG)
-	    && !check_suffix (base, RPMNEW_TAG))
+	    && !check_suffix (base, RPMNEW_TAG)
+	    && !check_suffix (base, AUGNEW_TAG)
+	    && !check_suffix (base, AUGTMP_TAG))
 		ignore = FALSE;
 
 	g_free (base);
