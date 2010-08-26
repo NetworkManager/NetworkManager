@@ -1344,6 +1344,7 @@ handle_dhcp_lease_change (NMDevice *device, gboolean ipv6)
 			nm_dhcp_client_foreach_option (priv->dhcp6_client,
 			                               dhcp6_add_option_cb,
 			                               priv->dhcp6_config);
+			nm_utils_call_dispatcher ("dhcp6-change", connection, device, NULL);
 		} else {
 			nm_log_warn (LOGD_DHCP6, "(%s): failed to update IPv6 config in response to DHCP event.",
 			             nm_device_get_ip_iface (device));
@@ -1368,6 +1369,7 @@ handle_dhcp_lease_change (NMDevice *device, gboolean ipv6)
 			nm_dhcp_client_foreach_option (priv->dhcp4_client,
 			                               dhcp4_add_option_cb,
 			                               priv->dhcp4_config);
+			nm_utils_call_dispatcher ("dhcp4-change", connection, device, NULL);
 		} else {
 			nm_log_warn (LOGD_DHCP6, "(%s): failed to update IPv4 config in response to DHCP event.",
 			             nm_device_get_ip_iface (device));
