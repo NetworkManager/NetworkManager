@@ -822,43 +822,33 @@ system_connection_removed_cb (NMSysconfigConnection *connection,
 }
 
 static void
-system_internal_new_connection (NMManager *manager,
-                                NMSysconfigConnection *connection)
+_new_connection (NMSysconfigSettings *settings,
+                 NMSysconfigConnection *connection,
+                 gpointer user_data)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	const char *path;
 
 	g_return_if_fail (connection != NULL);
 
 	g_signal_connect (connection, NM_SYSCONFIG_CONNECTION_UPDATED,
-	                  G_CALLBACK (system_connection_updated_cb), manager);
+	                  G_CALLBACK (system_connection_updated_cb), self);
 	g_signal_connect (connection, NM_SYSCONFIG_CONNECTION_REMOVED,
-	                  G_CALLBACK (system_connection_removed_cb), manager);
+	                  G_CALLBACK (system_connection_removed_cb), self);
 
 	path = nm_connection_get_path (NM_CONNECTION (connection));
 	g_hash_table_insert (priv->system_connections, g_strdup (path),
 	                     g_object_ref (connection));
-	g_signal_emit (manager, signals[CONNECTION_ADDED], 0, connection);
+	g_signal_emit (self, signals[CONNECTION_ADDED], 0, connection);
 }
 
 static void
 system_new_connection_cb (NMSysconfigSettings *settings,
                           NMSysconfigConnection *connection,
-                          NMManager *manager)
+                          NMManager *self)
 {
-	system_internal_new_connection (manager, connection);
-}
-
-static void
-system_query_connections (NMManager *manager)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	GSList *system_connections, *iter;
-
-	system_connections = nm_sysconfig_settings_list_connections (priv->sys_settings);
-	for (iter = system_connections; iter; iter = g_slist_next (iter))
-		system_internal_new_connection (manager, NM_SYSCONFIG_CONNECTION (iter->data));
-	g_slist_free (system_connections);
+	_new_connection (settings, connection, self);
 }
 
 static void
@@ -2932,7 +2922,11 @@ nm_manager_start (NMManager *self)
 
 	system_unmanaged_devices_changed_cb (priv->sys_settings, NULL, self);
 	system_hostname_changed_cb (priv->sys_settings, NULL, self);
-	system_query_connections (self);
+
+	/* Get all connections */
+	nm_sysconfig_settings_for_each_connection (NM_MANAGER_GET_PRIVATE (self)->sys_settings,
+	                                           _new_connection,
+	                                           self);
 
 	nm_udev_manager_query_devices (priv->udev_mgr);
 	bluez_manager_resync_devices (self);

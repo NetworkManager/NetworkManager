@@ -168,25 +168,26 @@ load_connections (NMSysconfigSettings *self)
 	unmanaged_specs_changed (NULL, self);
 }
 
-GSList *
-nm_sysconfig_settings_list_connections (NMSysconfigSettings *settings)
+void
+nm_sysconfig_settings_for_each_connection (NMSysconfigSettings *self,
+                                           NMSysconfigSettingsForEachFunc for_each_func,
+                                           gpointer user_data)
 {
 	NMSysconfigSettingsPrivate *priv;
 	GHashTableIter iter;
 	gpointer key;
-	GSList *list = NULL;
 
-	g_return_val_if_fail (settings != NULL, NULL);
-	g_return_val_if_fail (NM_IS_SYSCONFIG_SETTINGS (settings), NULL);
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_SYSCONFIG_SETTINGS (self));
+	g_return_if_fail (for_each_func != NULL);
 	
-	priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (settings);
+	priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 
-	load_connections (settings);
+	load_connections (self);
 
 	g_hash_table_iter_init (&iter, priv->visible_connections);
 	while (g_hash_table_iter_next (&iter, &key, NULL))
-		list = g_slist_prepend (list, NM_SYSCONFIG_CONNECTION (key));
-	return g_slist_reverse (list);
+		for_each_func (self, NM_SYSCONFIG_CONNECTION (key), user_data);
 }
 
 static gboolean
@@ -194,38 +195,40 @@ impl_settings_list_connections (NMSysconfigSettings *self,
                                 GPtrArray **connections,
                                 GError **error)
 {
-	GSList *list = NULL, *iter;
+	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+	GHashTableIter iter;
+	gpointer key;
 
-	list = nm_sysconfig_settings_list_connections (self);
-	*connections = g_ptr_array_sized_new (g_slist_length (list) + 1);
-	for (iter = list; iter; iter = g_slist_next (iter)) {
-		g_ptr_array_add (*connections,
-		                 g_strdup (nm_connection_get_path (NM_CONNECTION (iter->data))));
-	}
-	g_slist_free (list);
+	load_connections (self);
+
+	*connections = g_ptr_array_sized_new (g_hash_table_size (priv->visible_connections) + 1);
+	g_hash_table_iter_init (&iter, priv->visible_connections);
+	while (g_hash_table_iter_next (&iter, &key, NULL))
+		g_ptr_array_add (*connections, g_strdup (nm_connection_get_path (NM_CONNECTION (key))));
 	return TRUE;
 }
 
 NMSysconfigConnection *
-nm_sysconfig_settings_get_connection_by_path (NMSysconfigSettings *settings, const char *path)
+nm_sysconfig_settings_get_connection_by_path (NMSysconfigSettings *self, const char *path)
 {
-	NMSysconfigConnection *connection = NULL;
-	GSList *list = NULL, *iter;
+	NMSysconfigSettingsPrivate *priv;
+	GHashTableIter iter;
+	gpointer key;
 
-	g_return_val_if_fail (settings != NULL, NULL);
-	g_return_val_if_fail (NM_IS_SYSCONFIG_SETTINGS (settings), NULL);
+	g_return_val_if_fail (self != NULL, NULL);
+	g_return_val_if_fail (NM_IS_SYSCONFIG_SETTINGS (self), NULL);
 	g_return_val_if_fail (path != NULL, NULL);
 
-	list = nm_sysconfig_settings_list_connections (settings);
-	for (iter = list; iter; iter = g_slist_next (iter)) {
-		if (!strcmp (nm_connection_get_path (NM_CONNECTION (iter->data)), path)) {
-			connection = NM_SYSCONFIG_CONNECTION (iter->data);
-			break;
-		}
-	}
-	g_slist_free (list);
+	priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 
-	return connection;
+	load_connections (self);
+
+	g_hash_table_iter_init (&iter, priv->visible_connections);
+	while (g_hash_table_iter_next (&iter, &key, NULL)) {
+		if (!strcmp (nm_connection_get_path (NM_CONNECTION (key)), path))
+			return NM_SYSCONFIG_CONNECTION (key);
+	}
+	return NULL;
 }
 
 static void

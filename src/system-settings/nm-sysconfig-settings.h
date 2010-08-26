@@ -62,7 +62,14 @@ NMSysconfigSettings *nm_sysconfig_settings_new (const char *config_file,
                                                 const char *plugins,
                                                 GError **error);
 
-/* Returns a list of NMSysconfigConnections */
+typedef void (*NMSysconfigSettingsForEachFunc) (NMSysconfigSettings *settings,
+                                                NMSysconfigConnection *connection,
+                                                gpointer user_data);
+
+void nm_sysconfig_settings_for_each_connection (NMSysconfigSettings *settings,
+                                                NMSysconfigSettingsForEachFunc for_each_func,
+                                                gpointer user_data);
+
 GSList * nm_sysconfig_settings_list_connections (NMSysconfigSettings *settings);
 
 NMSysconfigConnection * nm_sysconfig_settings_get_connection_by_path (NMSysconfigSettings *settings,
