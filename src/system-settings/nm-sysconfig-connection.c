@@ -31,6 +31,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-polkit-helpers.h"
 #include "nm-logging.h"
+#include "nm-manager-auth.h"
 
 static void impl_sysconfig_connection_get_settings (NMSysconfigConnection *connection,
                                                     DBusGMethodInvocation *context);
@@ -717,13 +718,13 @@ auth_get_session_cb (NMSessionInfo *session,
 		g_free (sender);
 
 		polkit_authority_check_authorization (priv->authority,
-	                                      	  info->subject,
-	                                      	  NM_SYSCONFIG_POLICY_ACTION_CONNECTION_MODIFY,
-	                                      	  NULL,
-	                                      	  POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION,
-	                                      	  info->cancellable,
-	                                      	  auth_pk_cb,
-	                                      	  info);
+		                                      info->subject,
+		                                      NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY,
+		                                      NULL,
+		                                      POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION,
+		                                      info->cancellable,
+		                                      auth_pk_cb,
+		                                      info);
 	}
 
 }

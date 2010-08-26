@@ -31,15 +31,6 @@
 
 G_BEGIN_DECLS
 
-// FIXME this is temporary, permissions format to be improved
-typedef enum {
-	NM_SETTINGS_PERMISSION_NONE = 0x0,
-	NM_SETTINGS_PERMISSION_CONNECTION_MODIFY = 0x1,
-	NM_SETTINGS_PERMISSION_WIFI_SHARE_PROTECTED = 0x2,
-	NM_SETTINGS_PERMISSION_WIFI_SHARE_OPEN = 0x4,
-	NM_SETTINGS_PERMISSION_HOSTNAME_MODIFY = 0x8
-} NMSettingsPermissions;
-
 #define NM_TYPE_REMOTE_SETTINGS            (nm_remote_settings_get_type ())
 #define NM_REMOTE_SETTINGS(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_REMOTE_SETTINGS, NMRemoteSettings))
 #define NM_REMOTE_SETTINGS_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_REMOTE_SETTINGS, NMRemoteSettingsClass))
@@ -54,7 +45,6 @@ typedef enum {
 
 #define NM_REMOTE_SETTINGS_NEW_CONNECTION    "new-connection"
 #define NM_REMOTE_SETTINGS_CONNECTIONS_READ  "connections-read"
-#define NM_REMOTE_SETTINGS_CHECK_PERMISSIONS "check-permissions"
 
 typedef struct _NMRemoteSettings NMRemoteSettings;
 typedef struct _NMRemoteSettingsClass NMRemoteSettingsClass;
@@ -67,11 +57,6 @@ typedef void (*NMRemoteSettingsAddConnectionFunc) (NMRemoteSettings *settings,
 typedef void (*NMRemoteSettingsSaveHostnameFunc) (NMRemoteSettings *settings,
                                                   GError *error,
                                                   gpointer user_data);
-
-typedef void (*NMRemoteSettingsGetPermissionsFunc) (NMRemoteSettings *settings,
-                                                    NMSettingsPermissions permissions,
-                                                    GError *error,
-                                                    gpointer user_data);
 
 
 struct _NMRemoteSettings {
@@ -86,8 +71,6 @@ struct _NMRemoteSettingsClass {
 	                        NMRemoteConnection *connection);
 
 	void (*connections_read) (NMRemoteSettings *settings);
-
-	void (*check_permissions) (NMRemoteSettings *settings);
 
 	/* Padding for future expansion */
 	void (*_reserved1) (void);
@@ -116,10 +99,6 @@ gboolean nm_remote_settings_save_hostname (NMRemoteSettings *settings,
                                            const char *hostname,
                                            NMRemoteSettingsSaveHostnameFunc callback,
                                            gpointer user_data);
-
-gboolean nm_remote_settings_get_permissions (NMRemoteSettings *settings,
-                                             NMRemoteSettingsGetPermissionsFunc callback,
-                                             gpointer user_data);
 
 G_END_DECLS
 

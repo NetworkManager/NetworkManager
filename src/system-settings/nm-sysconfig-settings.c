@@ -59,6 +59,7 @@
 #include "nm-default-wired-connection.h"
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
+#include "nm-manager-auth.h"
 
 #define CONFIG_KEY_NO_AUTO_DEFAULT "no-auto-default"
 
@@ -92,9 +93,6 @@ static void impl_settings_save_hostname (NMSysconfigSettings *self,
                                          const char *hostname,
                                          DBusGMethodInvocation *context);
 
-static void impl_settings_get_permissions (NMSysconfigSettings *self,
-                                           DBusGMethodInvocation *context);
-
 #include "nm-settings-glue.h"
 
 static void unmanaged_specs_changed (NMSystemConfigInterface *config, gpointer user_data);
@@ -108,7 +106,6 @@ typedef struct {
 	char *config_file;
 
 	GSList *pk_calls;
-	GSList *permissions_calls;
 
 	GSList *plugins;
 	gboolean connections_loaded;
@@ -124,7 +121,6 @@ G_DEFINE_TYPE (NMSysconfigSettings, nm_sysconfig_settings, G_TYPE_OBJECT)
 enum {
 	PROPERTIES_CHANGED,
 	NEW_CONNECTION,
-	CHECK_PERMISSIONS,
 
 	LAST_SIGNAL
 };
@@ -627,9 +623,6 @@ typedef struct {
 	gpointer callback_data;
 
 	char *hostname;
-
-	NMSettingsPermissions permissions;
-	guint32 permissions_calls;
 } PolkitCall;
 
 #include "nm-dbus-manager.h"
@@ -799,7 +792,7 @@ impl_settings_add_connection (NMSysconfigSettings *self,
 	g_assert (call);
 	polkit_authority_check_authorization (priv->authority,
 	                                      call->subject,
-	                                      NM_SYSCONFIG_POLICY_ACTION_CONNECTION_MODIFY,
+	                                      NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY,
 	                                      NULL,
 	                                      POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION,
 	                                      call->cancellable,
@@ -904,158 +897,13 @@ impl_settings_save_hostname (NMSysconfigSettings *self,
 	g_assert (call);
 	polkit_authority_check_authorization (priv->authority,
 	                                      call->subject,
-	                                      NM_SYSCONFIG_POLICY_ACTION_HOSTNAME_MODIFY,
+	                                      NM_AUTH_PERMISSION_SETTINGS_HOSTNAME_MODIFY,
 	                                      NULL,
 	                                      POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION,
 	                                      call->cancellable,
 	                                      pk_hostname_cb,
 	                                      call);
 	priv->pk_calls = g_slist_append (priv->pk_calls, call);
-}
-
-static void
-pk_authority_changed_cb (GObject *object, gpointer user_data)
-{
-	/* Let clients know they should re-check their authorization */
-	g_signal_emit (NM_SYSCONFIG_SETTINGS (user_data), signals[CHECK_PERMISSIONS], 0);
-}
-
-typedef struct {
-	PolkitCall *pk_call;
-	const char *pk_action;
-	GCancellable *cancellable;
-	NMSettingsPermissions permission;
-	gboolean disposed;
-} PermissionsCall;
-
-static void
-permission_call_done (GObject *object, GAsyncResult *result, gpointer user_data)
-{
-	PermissionsCall *call = user_data;
-	PolkitCall *pk_call = call->pk_call;
-	NMSysconfigSettings *self = pk_call->self;
-	NMSysconfigSettingsPrivate *priv;
-	PolkitAuthorizationResult *pk_result;
-	GError *error = NULL;
-
-	/* If NMSysconfigSettings is gone, just skip to the end */
-	if (call->disposed)
-		goto done;
-
-	priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
-
-	priv->permissions_calls = g_slist_remove (priv->permissions_calls, call);
-
-	pk_result = polkit_authority_check_authorization_finish (priv->authority,
-	                                                         result,
-	                                                         &error);
-	/* Some random error happened */
-	if (error) {
-		nm_log_err (LOGD_SYS_SET, "error checking '%s' permission: (%d) %s",
-		            __FILE__, __LINE__, __func__,
-		            call->pk_action,
-		            error ? error->code : -1,
-		            error && error->message ? error->message : "(unknown)");
-		if (error)
-			g_error_free (error);
-	} else {
-		/* If the caller is authorized, or the caller could authorize via a
-		 * challenge, then authorization is possible.  Otherwise, caller is out of
-		 * luck.
-		 */
-		if (   polkit_authorization_result_get_is_authorized (pk_result)
-		    || polkit_authorization_result_get_is_challenge (pk_result))
-		    pk_call->permissions |= call->permission;
-	}
-
-	g_object_unref (pk_result);
-
-done:
-	pk_call->permissions_calls--;
-	if (pk_call->permissions_calls == 0) {
-		if (call->disposed) {
-			error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
-			                             NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
-			                             "Request was canceled.");
-			dbus_g_method_return_error (pk_call->context, error);
-			g_error_free (error);
-		} else {
-			/* All the permissions calls are done, return the full permissions
-			 * bitfield back to the user.
-			 */
-			dbus_g_method_return (pk_call->context, pk_call->permissions);
-		}
-
-		polkit_call_free (pk_call);
-	}
-	memset (call, 0, sizeof (PermissionsCall));
-	g_free (call);
-}
-
-static void
-start_permission_check (NMSysconfigSettings *self,
-                        PolkitCall *pk_call,
-                        const char *pk_action,
-                        NMSettingsPermissions permission)
-{
-	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
-	PermissionsCall *call;
-
-	g_return_if_fail (pk_call != NULL);
-	g_return_if_fail (pk_action != NULL);
-	g_return_if_fail (permission != NM_SETTINGS_PERMISSION_NONE);
-
-	call = g_malloc0 (sizeof (PermissionsCall));
-	call->pk_call = pk_call;
-	call->pk_action = pk_action;
-	call->permission = permission;
-	call->cancellable = g_cancellable_new ();
-
-	pk_call->permissions_calls++;
-
-	polkit_authority_check_authorization (priv->authority,
-	                                      pk_call->subject,
-	                                      pk_action,
-	                                      NULL,
-	                                      0,
-	                                      call->cancellable,
-	                                      permission_call_done,
-	                                      call);
-	priv->permissions_calls = g_slist_append (priv->permissions_calls, call);
-}
-
-static void
-impl_settings_get_permissions (NMSysconfigSettings *self,
-                               DBusGMethodInvocation *context)
-{
-	PolkitCall *call;
-
-	call = polkit_call_new (self, context, NULL, FALSE);
-	g_assert (call);
-
-	/* Start checks for the various permissions */
-
-	/* Only check for connection-modify if one of our plugins supports it. */
-	if (get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS)) {
-		start_permission_check (self, call,
-		                        NM_SYSCONFIG_POLICY_ACTION_CONNECTION_MODIFY,
-		                        NM_SETTINGS_PERMISSION_CONNECTION_MODIFY);
-	}
-
-	/* Only check for hostname-modify if one of our plugins supports it. */
-	if (get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME)) {
-		start_permission_check (self, call,
-		                        NM_SYSCONFIG_POLICY_ACTION_HOSTNAME_MODIFY,
-		                        NM_SETTINGS_PERMISSION_HOSTNAME_MODIFY);
-	}
-
-	// FIXME: hook these into plugin permissions like the modify permissions */
-	start_permission_check (self, call,
-	                        NM_SYSCONFIG_POLICY_ACTION_WIFI_SHARE_OPEN,
-	                        NM_SETTINGS_PERMISSION_WIFI_SHARE_OPEN);
-	start_permission_check (self, call,
-	                        NM_SYSCONFIG_POLICY_ACTION_WIFI_SHARE_PROTECTED,
-	                        NM_SETTINGS_PERMISSION_WIFI_SHARE_PROTECTED);
 }
 
 static gboolean
@@ -1440,16 +1288,6 @@ dispose (GObject *object)
 	g_slist_free (priv->pk_calls);
 	priv->pk_calls = NULL;
 
-	/* Cancel PolicyKit permissions requests */
-	for (iter = priv->permissions_calls; iter; iter = g_slist_next (iter)) {
-		PermissionsCall *call = iter->data;
-
-		call->disposed = TRUE;
-		g_cancellable_cancel (call->cancellable);
-	}
-	g_slist_free (priv->permissions_calls);
-	priv->permissions_calls = NULL;
-
 	G_OBJECT_CLASS (nm_sysconfig_settings_parent_class)->dispose (object);
 }
 
@@ -1560,15 +1398,6 @@ nm_sysconfig_settings_class_init (NMSysconfigSettingsClass *class)
 	                              g_cclosure_marshal_VOID__OBJECT,
 	                              G_TYPE_NONE, 1, G_TYPE_OBJECT);
 
-	signals[CHECK_PERMISSIONS] = 
-	                g_signal_new (NM_SYSCONFIG_SETTINGS_CHECK_PERMISSIONS,
-	                              G_OBJECT_CLASS_TYPE (object_class),
-	                              G_SIGNAL_RUN_FIRST,
-	                              0,
-	                              NULL, NULL,
-	                              g_cclosure_marshal_VOID__VOID,
-	                              G_TYPE_NONE, 0);
-
 	dbus_g_error_domain_register (NM_SYSCONFIG_SETTINGS_ERROR,
 	                              NM_DBUS_IFACE_SETTINGS,
 	                              NM_TYPE_SYSCONFIG_SETTINGS_ERROR);
@@ -1607,12 +1436,7 @@ nm_sysconfig_settings_init (NMSysconfigSettings *self)
 	priv->all_connections = g_hash_table_new_full (g_direct_hash, g_direct_equal, g_object_unref, NULL);
 
 	priv->authority = polkit_authority_get_sync (NULL, &error);
-	if (priv->authority) {
-		priv->auth_changed_id = g_signal_connect (priv->authority,
-		                                          "changed",
-		                                          G_CALLBACK (pk_authority_changed_cb),
-		                                          self);
-	} else {
+	if (!priv->authority) {
 		nm_log_warn (LOGD_SYS_SET, "failed to create PolicyKit authority: (%d) %s",
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");

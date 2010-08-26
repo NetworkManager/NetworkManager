@@ -290,9 +290,15 @@ register_for_property_changed (NMClient *client)
 	                                     property_changed_info);
 }
 
-#define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK "org.freedesktop.NetworkManager.enable-disable-network"
-#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI    "org.freedesktop.NetworkManager.enable-disable-wifi"
-#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN    "org.freedesktop.NetworkManager.enable-disable-wwan"
+#define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK     "org.freedesktop.NetworkManager.enable-disable-network"
+#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI        "org.freedesktop.NetworkManager.enable-disable-wifi"
+#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN        "org.freedesktop.NetworkManager.enable-disable-wwan"
+#define NM_AUTH_PERMISSION_SLEEP_WAKE                 "org.freedesktop.NetworkManager.sleep-wake"
+#define NM_AUTH_PERMISSION_NETWORK_CONTROL            "org.freedesktop.NetworkManager.network-control"
+#define NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED       "org.freedesktop.NetworkManager.wifi.share.protected"
+#define NM_AUTH_PERMISSION_WIFI_SHARE_OPEN            "org.freedesktop.NetworkManager.wifi.share.open"
+#define NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY "org.freedesktop.NetworkManager.settings.modify"
+#define NM_AUTH_PERMISSION_SETTINGS_HOSTNAME_MODIFY   "org.freedesktop.NetworkManager.settings.hostname.modify"
 
 static NMClientPermission
 nm_permission_to_client (const char *nm)
@@ -303,6 +309,19 @@ nm_permission_to_client (const char *nm)
 		return NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIFI;
 	else if (!strcmp (nm, NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN))
 		return NM_CLIENT_PERMISSION_ENABLE_DISABLE_WWAN;
+	else if (!strcmp (nm, NM_AUTH_PERMISSION_SLEEP_WAKE))
+		return NM_CLIENT_PERMISSION_SLEEP_WAKE;
+	else if (!strcmp (nm, NM_AUTH_PERMISSION_NETWORK_CONTROL))
+		return NM_CLIENT_PERMISSION_NETWORK_CONTROL;
+	else if (!strcmp (nm, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED))
+		return NM_CLIENT_PERMISSION_WIFI_SHARE_PROTECTED;
+	else if (!strcmp (nm, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN))
+		return NM_CLIENT_PERMISSION_WIFI_SHARE_OPEN;
+	else if (!strcmp (nm, NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY))
+		return NM_CLIENT_PERMISSION_SETTINGS_CONNECTION_MODIFY;
+	else if (!strcmp (nm, NM_AUTH_PERMISSION_SETTINGS_HOSTNAME_MODIFY))
+		return NM_CLIENT_PERMISSION_SETTINGS_HOSTNAME_MODIFY;
+
 	return NM_CLIENT_PERMISSION_NONE;
 }
 
@@ -461,9 +480,9 @@ constructor (GType type,
 	get_permissions_sync (NM_CLIENT (object));
 
 	priv->bus_proxy = dbus_g_proxy_new_for_name (connection,
-										"org.freedesktop.DBus",
-										"/org/freedesktop/DBus",
-										"org.freedesktop.DBus");
+	                                             DBUS_SERVICE_DBUS,
+	                                             DBUS_PATH_DBUS,
+	                                             DBUS_INTERFACE_DBUS);
 
 	dbus_g_proxy_add_signal (priv->bus_proxy, "NameOwnerChanged",
 						G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,

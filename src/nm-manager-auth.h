@@ -27,11 +27,15 @@
 
 #include "nm-dbus-manager.h"
 
-#define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK "org.freedesktop.NetworkManager.enable-disable-network"
-#define NM_AUTH_PERMISSION_SLEEP_WAKE             "org.freedesktop.NetworkManager.sleep-wake"
-#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI    "org.freedesktop.NetworkManager.enable-disable-wifi"
-#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN    "org.freedesktop.NetworkManager.enable-disable-wwan"
-#define NM_AUTH_PERMISSION_NETWORK_CONTROL        "org.freedesktop.NetworkManager.network-control"
+#define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK     "org.freedesktop.NetworkManager.enable-disable-network"
+#define NM_AUTH_PERMISSION_SLEEP_WAKE                 "org.freedesktop.NetworkManager.sleep-wake"
+#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI        "org.freedesktop.NetworkManager.enable-disable-wifi"
+#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN        "org.freedesktop.NetworkManager.enable-disable-wwan"
+#define NM_AUTH_PERMISSION_NETWORK_CONTROL            "org.freedesktop.NetworkManager.network-control"
+#define NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED       "org.freedesktop.NetworkManager.wifi.share.protected"
+#define NM_AUTH_PERMISSION_WIFI_SHARE_OPEN            "org.freedesktop.NetworkManager.wifi.share.open"
+#define NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY "org.freedesktop.NetworkManager.settings.modify"
+#define NM_AUTH_PERMISSION_SETTINGS_HOSTNAME_MODIFY   "org.freedesktop.NetworkManager.settings.hostname.modify"
 
 
 typedef struct NMAuthChain NMAuthChain;

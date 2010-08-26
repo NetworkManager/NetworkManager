@@ -44,8 +44,6 @@ typedef struct {
 	gboolean service_running;
 	
 	DBusGProxy *props_proxy;
-	NMSettingsPermissions permissions;
-	gboolean have_permissions;
 	char *hostname;
 	gboolean can_modify;
 
@@ -70,7 +68,6 @@ enum {
 enum {
 	NEW_CONNECTION,
 	CONNECTIONS_READ,
-	CHECK_PERMISSIONS,
 
 	LAST_SIGNAL
 };
@@ -412,77 +409,6 @@ nm_remote_settings_save_hostname (NMRemoteSettings *settings,
 	return TRUE;
 }
 
-typedef struct {
-	NMRemoteSettings *settings;
-	NMRemoteSettingsGetPermissionsFunc callback;
-	gpointer callback_data;
-} GetPermissionsInfo;
-
-static void
-get_permissions_cb  (DBusGProxy *proxy,
-                     DBusGProxyCall *call,
-                     gpointer user_data)
-{
-	GetPermissionsInfo *info = user_data;
-	NMRemoteSettings *self = NM_REMOTE_SETTINGS (info->settings);
-	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
-	NMSettingsPermissions permissions = NM_SETTINGS_PERMISSION_NONE;
-	GError *error = NULL;
-
-	dbus_g_proxy_end_call (proxy, call, &error,
-	                       G_TYPE_UINT, &permissions,
-	                       G_TYPE_INVALID);
-	priv->permissions = permissions;
-	priv->have_permissions = !error;
-	info->callback (info->settings, permissions, error, info->callback_data);
-	g_clear_error (&error);
-}
-
-/**
- * nm_remote_settings_get_permissions:
- * @settings: the %NMRemoteSettings
- * @callback: callback to be called when the permissions operation completes
- * @user_data: caller-specific data passed to @callback
- *
- * Requests an indication of the operations the caller is permitted to perform
- * including those that may require authorization.
- *
- * Returns: TRUE if the request was successful, FALSE if it failed
- **/
-gboolean
-nm_remote_settings_get_permissions (NMRemoteSettings *settings,
-                                    NMRemoteSettingsGetPermissionsFunc callback,
-                                    gpointer user_data)
-{
-	NMRemoteSettingsPrivate *priv;
-	GetPermissionsInfo *info;
-
-	g_return_val_if_fail (settings != NULL, FALSE);
-	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
-	g_return_val_if_fail (callback != NULL, FALSE);
-	
-	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
-
-	/* Skip D-Bus if we already have permissions */
-	if (priv->have_permissions) {
-		callback (settings, priv->permissions, NULL, user_data);
-		return TRUE;
-	}
-
-	/* Otherwise fetch them from NM */
-	info = g_malloc0 (sizeof (GetPermissionsInfo));
-	info->settings = settings;
-	info->callback = callback;
-	info->callback_data = user_data;
-
-	dbus_g_proxy_begin_call (priv->proxy, "GetPermissions",
-	                         get_permissions_cb,
-	                         info,
-	                         g_free,
-	                         G_TYPE_INVALID);
-	return TRUE;
-}
-
 static void
 name_owner_changed (DBusGProxy *proxy,
                     const char *name,
@@ -507,17 +433,6 @@ name_owner_changed (DBusGProxy *proxy,
 		}
 		g_object_notify (G_OBJECT (self), NM_REMOTE_SETTINGS_SERVICE_RUNNING);
 	}
-}
-
-static void
-check_permissions_cb (DBusGProxy *proxy, gpointer user_data)
-{
-	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
-	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
-
-	/* Permissions need to be re-fetched */
-	priv->have_permissions = FALSE;
-	g_signal_emit (self, signals[CHECK_PERMISSIONS], 0);
 }
 
 static void
@@ -690,13 +605,6 @@ constructor (GType type,
 	                             object,
 	                             NULL);
 
-	/* Monitor for permissions changes */
-	dbus_g_proxy_add_signal (priv->proxy, "CheckPermissions", G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->proxy, "CheckPermissions",
-	                             G_CALLBACK (check_permissions_cb),
-	                             object,
-	                             NULL);
-
 	/* Get properties */
 	dbus_g_proxy_begin_call (priv->props_proxy, "GetAll",
 	                         get_all_cb,
@@ -840,15 +748,6 @@ nm_remote_settings_class_init (NMRemoteSettingsClass *class)
 	                              G_OBJECT_CLASS_TYPE (object_class),
 	                              G_SIGNAL_RUN_FIRST,
 	                              G_STRUCT_OFFSET (NMRemoteSettingsClass, connections_read),
-	                              NULL, NULL,
-	                              g_cclosure_marshal_VOID__VOID,
-	                              G_TYPE_NONE, 0);
-
-	signals[CHECK_PERMISSIONS] = 
-	                g_signal_new (NM_REMOTE_SETTINGS_CHECK_PERMISSIONS,
-	                              G_OBJECT_CLASS_TYPE (object_class),
-	                              G_SIGNAL_RUN_FIRST,
-	                              G_STRUCT_OFFSET (NMRemoteSettingsClass, check_permissions),
 	                              NULL, NULL,
 	                              g_cclosure_marshal_VOID__VOID,
 	                              G_TYPE_NONE, 0);

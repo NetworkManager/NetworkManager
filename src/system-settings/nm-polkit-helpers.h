@@ -25,11 +25,6 @@
 #include <config.h>
 #include <polkit/polkit.h>
 
-#define NM_SYSCONFIG_POLICY_ACTION_CONNECTION_MODIFY "org.freedesktop.NetworkManager.settings.modify"
-#define NM_SYSCONFIG_POLICY_ACTION_WIFI_SHARE_PROTECTED "org.freedesktop.NetworkManager.settings.wifi.share.protected"
-#define NM_SYSCONFIG_POLICY_ACTION_WIFI_SHARE_OPEN      "org.freedesktop.NetworkManager.settings.wifi.share.open"
-#define NM_SYSCONFIG_POLICY_ACTION_HOSTNAME_MODIFY      "org.freedesktop.NetworkManager.settings.hostname.modify"
-
 /* Fix for polkit 0.97 and later */
 #if !HAVE_POLKIT_AUTHORITY_GET_SYNC
 static inline PolkitAuthority *
