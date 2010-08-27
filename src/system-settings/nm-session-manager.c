@@ -730,8 +730,10 @@ dispose (GObject *object)
 }
 
 static void
-nm_session_manager_class_init (NMSessionManagerClass *manager_class) {
+nm_session_manager_class_init (NMSessionManagerClass *manager_class)
+{
 	GObjectClass *g_class = G_OBJECT_CLASS (manager_class);
+
 	g_type_class_add_private (g_class, sizeof(NMSessionManagerPrivate));	
 	g_class->dispose = dispose;
 
