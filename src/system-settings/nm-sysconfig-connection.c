@@ -239,21 +239,16 @@ nm_sysconfig_connection_is_visible (NMSysconfigConnection *connection)
 	return NM_SYSCONFIG_CONNECTION_GET_PRIVATE (connection)->visible;
 }
 
-static void
-prepend_slist (gpointer key, gpointer value, gpointer user_data)
-{
-	GSList **sessions = (GSList **) user_data;
-
-	*sessions = g_slist_prepend (*sessions, value);
-}
-
 GSList *
-nm_sysconfig_connection_get_session_access_list (NMSysconfigConnection *connection)
+nm_sysconfig_connection_get_session_access_list (NMSysconfigConnection *self)
 {
-	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (connection);
+	GHashTableIter iter;
+	gpointer value;
 	GSList *sessions = NULL;
 
-	g_hash_table_foreach (priv->access_list, prepend_slist, &sessions);
+	g_hash_table_iter_init (&iter, NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self)->access_list);
+	while (g_hash_table_iter_next (&iter, NULL, &value))
+		sessions = g_slist_prepend (sessions, value);
 	return sessions;
 }
 
