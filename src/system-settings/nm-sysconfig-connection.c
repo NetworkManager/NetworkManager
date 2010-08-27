@@ -204,31 +204,33 @@ session_added_cb (NMSessionManager *mananager,
 
 /* Our permissions property may have been changed. Update the access list. */
 static void
-update_access_list (NMSysconfigConnection *connection)
+update_access_list (NMSysconfigConnection *self)
 {
-	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (connection);
-	NMSessionManager *session_manager = nm_session_manager_get();
-	GSList *sessions = nm_session_manager_get_sessions (session_manager);
-	GSList *iter;
+	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
+	NMSessionManager *session_manager = nm_session_manager_get ();
+	GSList *sessions, *iter;
 
 	if (!priv->access_list)
 		return;
 
 	g_hash_table_remove_all (priv->access_list);
+	sessions = nm_session_manager_get_sessions (session_manager);
 	for (iter = sessions; iter != NULL; iter = iter->next) {
-		NMSessionInfo *session = (NMSessionInfo *) iter->data;
-		if (session_allowed (connection, iter->data)) {
+		NMSessionInfo *session = NM_SESSION_INFO (iter->data);
+
+		if (session_allowed (self, session)) {
 			g_object_ref (session);
 			g_signal_connect (session, NM_SESSION_INFO_REMOVED,
-		                  	  G_CALLBACK(session_removed_cb), connection);
+			                  G_CALLBACK (session_removed_cb), self);
 			g_hash_table_insert (priv->access_list, nm_session_info_get_id (session), session);
 		}
 	}
+	g_slist_free (sessions);
 
 	if (g_hash_table_size (priv->access_list) == 0) {
-		set_visibility (connection, FALSE);
+		set_visibility (self, FALSE);
 	} else {
-		g_signal_emit (connection, signals[CHECK_PERMISSIONS], 0);
+		g_signal_emit (self, signals[CHECK_PERMISSIONS], 0);
 	}
 }
 
