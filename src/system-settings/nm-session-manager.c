@@ -267,7 +267,8 @@ pending_session_start (NMSessionManager *self, char *session_id)
 }
 
 static PendingSessionInfo *
-pending_session_find (NMSessionManager *self, char *session_id) {
+pending_session_find (NMSessionManager *self, char *session_id)
+{
 	GHashTable *pending_sessions = NM_SESSION_MANAGER_GET_PRIVATE (self)->pending_sessions;
 	return g_hash_table_lookup (pending_sessions, session_id);
 }
