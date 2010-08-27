@@ -1017,21 +1017,14 @@ nm_sysconfig_connection_init (NMSysconfigConnection *self)
 }
 
 static void
-access_list_dispose (gpointer key, gpointer value, gpointer user_data)
-{
-	NMSysconfigConnection *connection = (NMSysconfigConnection *) user_data;
-	NMSessionInfo *session = (NMSessionInfo *) value;
-
-	g_signal_handlers_disconnect_by_func (session, session_removed_cb, connection);
-}
-
-static void
 dispose (GObject *object)
 {
 	NMSysconfigConnection *self = NM_SYSCONFIG_CONNECTION (object);
 	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
 	NMSessionManager *session_manager = nm_session_manager_get ();
 	GSList *iter;
+	GHashTableIter hiter;
+	gpointer value;
 
 	if (priv->secrets)
 		g_object_unref (priv->secrets);
@@ -1048,8 +1041,11 @@ dispose (GObject *object)
 
 	set_visibility (self, FALSE);
 	g_signal_handlers_disconnect_by_func (session_manager, session_added_cb, self);
-	g_hash_table_foreach (priv->access_list, access_list_dispose, self);
-	g_hash_table_unref (priv->access_list);
+
+	g_hash_table_iter_init (&hiter, priv->access_list);
+	while (g_hash_table_iter_next (&hiter, NULL, &value))
+		g_signal_handlers_disconnect_by_func (NM_SESSION_INFO (value), session_removed_cb, self);
+	g_hash_table_destroy (priv->access_list);
 	priv->access_list = NULL;
 
 	G_OBJECT_CLASS (nm_sysconfig_connection_parent_class)->dispose (object);
