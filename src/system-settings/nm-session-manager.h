@@ -58,7 +58,7 @@ typedef void (*NMSessionFunc) (NMSessionInfo *session,
 
 NMSessionManager * nm_session_manager_get                   (void);
 
-gboolean           nm_session_manager_is_initalized         (NMSessionManager *manager);
+gboolean           nm_session_manager_is_initialized        (NMSessionManager *manager);
 
 GSList           * nm_session_manager_get_sessions          (NMSessionManager *manager);
 

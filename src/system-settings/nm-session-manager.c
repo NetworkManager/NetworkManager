@@ -25,13 +25,15 @@
 #include <nm-dbus-glib-types.h>
 #include "nm-dbus-manager.h"
 #include "nm-session-manager.h"
+#include "nm-logging.h"
 
 G_DEFINE_TYPE (NMSessionManager, nm_session_manager, G_TYPE_OBJECT);
 
 /* NMSessionManager data */
 typedef struct {
 	gboolean disposed;
-	gboolean initalized;
+	gboolean initialized;
+	guint init_sessions_left;
 
 	/* The master table of NMSessionInfo instances, keyed by session id. */
 	GHashTable *sessions;
@@ -603,56 +605,56 @@ nm_session_manager_get_session_of_caller (NMSessionManager *manager,
 /**** Initialization & disposal **********************************************/
 
 gboolean
-nm_session_manager_is_initalized (NMSessionManager *self)
+nm_session_manager_is_initialized (NMSessionManager *self)
 {
 	g_return_val_if_fail (NM_IS_SESSION_MANAGER (self), FALSE);
 
-	return NM_SESSION_MANAGER_GET_PRIVATE (self)->initalized;
+	return NM_SESSION_MANAGER_GET_PRIVATE (self)->initialized;
 }
-
-typedef struct {
-	NMSessionManager *manager;
-	guint sessions_left;
-} InitInfo;
 
 /* Callback run for sessions loaded during initialization. Emits the
  * "initialized" signal when all sessions are loaded. */
 static void
 init_session_load_cb (NMSessionInfo *session, GError *error, gpointer user_data)
 {
-	InitInfo *info = (InitInfo *) user_data;
-	info->sessions_left--;
+	NMSessionManager *self = NM_SESSION_MANAGER (user_data);
+	NMSessionManagerPrivate *priv = NM_SESSION_MANAGER_GET_PRIVATE (self);
 
-	if (info->sessions_left == 0) {
-		NM_SESSION_MANAGER_GET_PRIVATE (info->manager)->initalized = TRUE;
-		g_signal_emit (info->manager, signals[INIT_DONE], 0);
-		g_slice_free (InitInfo, info);
+	priv->init_sessions_left--;
+	if (priv->init_sessions_left == 0) {
+		priv->initialized = TRUE;
+		g_signal_emit (self, signals[INIT_DONE], 0);
 	}
 }
 
 static void
 ck_get_sessions_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 {
-	NMSessionManager *manager = NM_SESSION_MANAGER (user_data);
+	NMSessionManager *self = NM_SESSION_MANAGER (user_data);
+	NMSessionManagerPrivate *priv = NM_SESSION_MANAGER_GET_PRIVATE (self);
 	GPtrArray *session_ids;
-	InitInfo *info;
 	int i;
+
+	g_assert (priv->initialized == FALSE);
 	
 	if (!dbus_g_proxy_end_call (proxy, call_id, NULL,
 	                            DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH, &session_ids,
 	                            G_TYPE_INVALID)) {
-	    g_warning ("NMSessionManager: error getting sessions list!");
+	    nm_log_err (LOGD_SYS_SET, "failed to get initial ConsoleKit session list");
 	    return;
 	}
 
-	info = g_slice_new (InitInfo);
-	info->manager = manager;
-	info->sessions_left = session_ids->len;
-
-	for (i = 0; i < session_ids->len; i++) {
-		char *session_id = g_ptr_array_index (session_ids, i);
-		nm_session_manager_get_session (manager, session_id, init_session_load_cb, info);
-		g_free (session_id);
+	priv->init_sessions_left = session_ids->len;
+	if (priv->init_sessions_left > 0) {
+		for (i = 0; i < session_ids->len; i++) {
+			char *session_id = g_ptr_array_index (session_ids, i);
+			nm_session_manager_get_session (self, session_id, init_session_load_cb, self);
+			g_free (session_id);
+		}
+	} else {
+		/* Make sure we send the init-done signal if there aren't any sessions */
+		priv->initialized = TRUE;
+		g_signal_emit (self, signals[INIT_DONE], 0);
 	}
 	g_ptr_array_free (session_ids, TRUE);
 }
@@ -666,7 +668,7 @@ nm_session_manager_init (NMSessionManager *self)
 	DBusConnection *connection = dbus_g_connection_get_connection (g_connection);
 
 	priv->disposed = FALSE;
-	priv->initalized = FALSE;
+	priv->initialized = FALSE;
 	priv->sessions = g_hash_table_new_full (g_str_hash, g_str_equal, 
 	                                        NULL, g_object_unref);
 	priv->pending_sessions = g_hash_table_new_full (g_str_hash, g_str_equal, 
