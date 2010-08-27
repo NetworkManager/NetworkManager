@@ -74,60 +74,62 @@ nm_session_info_is_default_session (NMSessionInfo *self)
 }
 
 static void
-set_property (GObject *object, 
+set_property (GObject *object,
               guint property_id,
               const GValue *value,
-              GParamSpec *pspec) {
-    NMSessionInfoPrivate *priv = NM_SESSION_INFO_GET_PRIVATE (object);
+              GParamSpec *pspec)
+{
+	NMSessionInfoPrivate *priv = NM_SESSION_INFO_GET_PRIVATE (object);
 
-    switch (property_id) {
-    	case PROP_ID:
-    		g_free (priv->id);
-    		priv->id = g_value_dup_string (value);
-    		break;
-    	case PROP_USER:
-    		g_free (priv->user);
-    		priv->user = g_value_dup_string (value);
-    		break;
-    	case PROP_GROUPS:
-    		nm_utils_slist_free (priv->groups, g_free);
-    		priv->groups = g_value_dup_boxed (value);
-    		break;
-    	case PROP_IS_DEFAULT:
-    		priv->is_default = g_value_get_boolean (value);
-    		break;
+	switch (property_id) {
+	case PROP_ID:
+		g_free (priv->id);
+		priv->id = g_value_dup_string (value);
+		break;
+	case PROP_USER:
+		g_free (priv->user);
+		priv->user = g_value_dup_string (value);
+		break;
+	case PROP_GROUPS:
+		nm_utils_slist_free (priv->groups, g_free);
+		priv->groups = g_value_dup_boxed (value);
+		break;
+	case PROP_IS_DEFAULT:
+		priv->is_default = g_value_get_boolean (value);
+		break;
 
-    	default:
-    		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-    		break;
-    }
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+		break;
+	}
 }
 
 static void
-get_property (GObject *object, 
+get_property (GObject *object,
               guint property_id,
               GValue *value,
-              GParamSpec *pspec) {
+              GParamSpec *pspec)
+{
 	NMSessionInfoPrivate *priv = NM_SESSION_INFO_GET_PRIVATE (object);
 
-    switch (property_id) {
-    	case PROP_ID:
-    		g_value_set_string (value, priv->id);
-    		break;
-    	case PROP_USER:
-    		g_value_set_string (value, priv->user);
-    		break;
-    	case PROP_GROUPS:
-    		g_value_set_boxed (value, priv->groups);
-    		break;
-    	case PROP_IS_DEFAULT:
-    		g_value_set_boolean (value, priv->is_default);
-    		break;
+	switch (property_id) {
+	case PROP_ID:
+		g_value_set_string (value, priv->id);
+		break;
+	case PROP_USER:
+		g_value_set_string (value, priv->user);
+		break;
+	case PROP_GROUPS:
+		g_value_set_boxed (value, priv->groups);
+		break;
+	case PROP_IS_DEFAULT:
+		g_value_set_boolean (value, priv->is_default);
+		break;
 
-    	default:
-    		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-    		break;
-    }
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+		break;
+	}
 }
 
 static void

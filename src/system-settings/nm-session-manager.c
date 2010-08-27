@@ -490,8 +490,8 @@ dbus_name_has_owner_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer use
 	if (!dbus_g_proxy_end_call (proxy, call_id, NULL,
 	                            G_TYPE_BOOLEAN, &has_owner, G_TYPE_INVALID)
 	        || !has_owner) {
-	    pending_caller_abort (info, NULL);
-	    return;
+		pending_caller_abort (info, NULL);
+		return;
 	}
 
 	info->current_call = NULL;
@@ -511,7 +511,7 @@ ck_get_session_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_dat
 	                            G_TYPE_STRING, &(info->session_id),
 	                            G_TYPE_INVALID)) {
 		pending_caller_abort (info, NULL);
-	    return;
+		return;
 	}
 
 	// Finally, ensure that the calling process is still there, so we are sure
@@ -536,7 +536,7 @@ dbus_get_pid_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 	if (!dbus_g_proxy_end_call (proxy, call_id, NULL,
 	                            G_TYPE_UINT, &pid, G_TYPE_INVALID)) {
 		pending_caller_abort (info, NULL);
-	    return;
+		return;
 	}
 
 	info->current_call = dbus_g_proxy_begin_call (priv->ck_manager,
@@ -642,8 +642,8 @@ ck_get_sessions_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_da
 	if (!dbus_g_proxy_end_call (proxy, call_id, NULL,
 	                            DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH, &session_ids,
 	                            G_TYPE_INVALID)) {
-	    nm_log_err (LOGD_SYS_SET, "failed to get initial ConsoleKit session list");
-	    return;
+		nm_log_err (LOGD_SYS_SET, "failed to get initial ConsoleKit session list");
+		return;
 	}
 
 	priv->init_sessions_left = session_ids->len;
