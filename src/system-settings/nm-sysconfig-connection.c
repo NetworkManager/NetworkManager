@@ -210,9 +210,6 @@ update_access_list (NMSysconfigConnection *self)
 	NMSessionManager *session_manager = nm_session_manager_get ();
 	GSList *sessions, *iter;
 
-	if (!priv->access_list)
-		return;
-
 	g_hash_table_remove_all (priv->access_list);
 	sessions = nm_session_manager_get_sessions (session_manager);
 	for (iter = sessions; iter != NULL; iter = iter->next) {
@@ -256,9 +253,7 @@ nm_sysconfig_connection_get_session_access_list (NMSysconfigConnection *connecti
 	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (connection);
 	GSList *sessions = NULL;
 
-	if (priv->access_list)
-		g_hash_table_foreach (priv->access_list, prepend_slist, &sessions);
-
+	g_hash_table_foreach (priv->access_list, prepend_slist, &sessions);
 	return sessions;
 }
 
@@ -271,9 +266,6 @@ nm_sysconfig_connection_is_accessible_by_session (NMSysconfigConnection *connect
 
 	g_return_val_if_fail (NM_IS_SYSCONFIG_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (NM_IS_SESSION_INFO (session), FALSE);
-
-	if (!priv->access_list)
-		return FALSE;
 
 	stored_session = g_hash_table_lookup (priv->access_list,
 	                                      nm_session_info_get_id (session));
