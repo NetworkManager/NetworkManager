@@ -61,6 +61,8 @@
 #define NM_AUTOIP_DBUS_SERVICE "org.freedesktop.nm_avahi_autoipd"
 #define NM_AUTOIP_DBUS_IFACE   "org.freedesktop.nm_avahi_autoipd"
 
+#define UPOWER_DBUS_SERVICE "org.freedesktop.UPower"
+
 static gboolean impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err);
 static void impl_manager_activate_connection (NMManager *manager,
                                               const char *service_name,
@@ -231,6 +233,7 @@ typedef struct {
 	guint modem_removed_id;
 
 	DBusGProxy *aipd_proxy;
+	DBusGProxy *upower_proxy;
 
 	PolkitAuthority *authority;
 	guint auth_changed_id;
@@ -3354,6 +3357,9 @@ _internal_sleep (NMManager *self, gboolean do_sleep)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
+	if (priv->sleeping == do_sleep)
+		return;
+
 	nm_log_info (LOGD_SUSPEND, "%s requested (sleeping: %s  enabled: %s)",
 	             do_sleep ? "sleep" : "wake",
 	             priv->sleeping ? "yes" : "no",
@@ -3382,7 +3388,7 @@ sleep_auth_done_cb (NMAuthChain *chain,
 
 	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_SLEEP_WAKE));
 	if (error) {
-		nm_log_dbg (LOGD_CORE, "Sleep/wake request failed: %s", error->message);
+		nm_log_dbg (LOGD_SUSPEND, "Sleep/wake request failed: %s", error->message);
 		ret_error = g_error_new (NM_MANAGER_ERROR,
 		                         NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                         "Sleep/wake request failed: %s",
@@ -3454,6 +3460,20 @@ impl_manager_sleep (NMManager *self,
 
 	nm_auth_chain_set_data (chain, "sleep", GUINT_TO_POINTER (do_sleep), NULL);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SLEEP_WAKE, TRUE);
+}
+
+static void
+upower_sleeping_cb (DBusGProxy *proxy, gpointer user_data)
+{
+	nm_log_dbg (LOGD_SUSPEND, "Received UPower sleeping signal");
+	_internal_sleep (NM_MANAGER (user_data), TRUE);
+}
+
+static void
+upower_resuming_cb (DBusGProxy *proxy, gpointer user_data)
+{
+	nm_log_dbg (LOGD_SUSPEND, "Received UPower resuming signal");
+	_internal_sleep (NM_MANAGER (user_data), FALSE);
 }
 
 static void
@@ -4294,6 +4314,9 @@ dispose (GObject *object)
 	if (priv->bluez_mgr)
 		g_object_unref (priv->bluez_mgr);
 
+	if (priv->upower_proxy)
+		g_object_unref (priv->upower_proxy);
+
 	if (priv->fw_monitor) {
 		if (priv->fw_monitor_id)
 			g_signal_handler_disconnect (priv->fw_monitor, priv->fw_monitor_id);
@@ -4467,6 +4490,24 @@ nm_manager_init (NMManager *manager)
 		                             NULL);
 	} else
 		nm_log_warn (LOGD_AUTOIP4, "could not initialize avahi-autoipd D-Bus proxy");
+
+	/* upower sleep/wake handling */
+	priv->upower_proxy = dbus_g_proxy_new_for_name (g_connection,
+	                                                UPOWER_DBUS_SERVICE,
+	                                                "/org/freedesktop/UPower",
+	                                                "org.freedesktop.UPower");
+	if (priv->upower_proxy) {
+		dbus_g_proxy_add_signal (priv->upower_proxy, "Sleeping", G_TYPE_INVALID);
+		dbus_g_proxy_connect_signal (priv->upower_proxy, "Sleeping",
+		                             G_CALLBACK (upower_sleeping_cb),
+		                             manager, NULL);
+
+		dbus_g_proxy_add_signal (priv->upower_proxy, "Resuming", G_TYPE_INVALID);
+		dbus_g_proxy_connect_signal (priv->upower_proxy, "Resuming",
+		                             G_CALLBACK (upower_resuming_cb),
+		                             manager, NULL);
+	} else
+		nm_log_warn (LOGD_SUSPEND, "could not initialize UPower D-Bus proxy");
 
 	priv->authority = polkit_authority_get_sync (NULL, &error);
 	if (priv->authority) {
