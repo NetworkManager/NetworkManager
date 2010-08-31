@@ -4314,6 +4314,9 @@ dispose (GObject *object)
 	if (priv->bluez_mgr)
 		g_object_unref (priv->bluez_mgr);
 
+	if (priv->aipd_proxy)
+		g_object_unref (priv->aipd_proxy);
+
 	if (priv->upower_proxy)
 		g_object_unref (priv->upower_proxy);
 
