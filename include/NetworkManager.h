@@ -16,7 +16,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2004 - 2008 Red Hat, Inc.
+ * (C) Copyright 2004 - 2010 Red Hat, Inc.
  */
 
 #ifndef NETWORK_MANAGER_H
@@ -246,7 +246,7 @@ typedef enum {
 	/* Device is now managed */
 	NM_DEVICE_STATE_REASON_NOW_MANAGED = 2,
 
-	/* Device is now managed unmanaged */
+	/* Device is now unmanaged */
 	NM_DEVICE_STATE_REASON_NOW_UNMANAGED = 3,
 
 	/* The device could not be readied for configuration */
