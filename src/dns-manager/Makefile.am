@@ -4,17 +4,17 @@ INCLUDES = \
 	-I${top_srcdir}/src \
 	-I${top_srcdir}/include
 
-noinst_LTLIBRARIES = libnamed-manager.la
+noinst_LTLIBRARIES = libdns-manager.la
 
-libnamed_manager_la_SOURCES = nm-named-manager.h nm-named-manager.c
+libdns_manager_la_SOURCES = nm-dns-manager.h nm-dns-manager.c
 
-libnamed_manager_la_CPPFLAGS = \
+libdns_manager_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	-DNM_PKGDATADIR=\"$(pkgdatadir)\" \
 	-DNM_LOCALSTATEDIR=\"$(localstatedir)\"
 
-libnamed_manager_la_LIBADD = \
+libdns_manager_la_LIBADD = \
 	$(top_builddir)/src/logging/libnm-logging.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS)

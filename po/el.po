@@ -1763,13 +1763,13 @@ msgstr "Άγνωστο επίπεδο καταγραφής '%s'"
 msgid "Unknown log domain '%s'"
 msgstr "Άγνωστος τομέας καταγραφής '%s'"
 
-#: ../src/named-manager/nm-named-manager.c:384
+#: ../src/dns-manager/nm-dns-manager.c:384
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr ""
 "ΣΗΜΕΙΩΣΗ: Ο libc resolver μπορεί να μην υποστηρίζει περισσότερους από 3 "
 "εξυπηρετητές ονομάτων."
 
-#: ../src/named-manager/nm-named-manager.c:386
+#: ../src/dns-manager/nm-dns-manager.c:386
 msgid "The nameservers listed below may not be recognized."
 msgstr "Οι κάτωθι εξυπηρετητές ονομάτων ίσως να μην αναγνωρίζονται."
 

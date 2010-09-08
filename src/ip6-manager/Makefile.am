@@ -4,8 +4,7 @@ INCLUDES = \
 	-I${top_builddir}/marshallers \
 	-I${top_srcdir}/libnm-util \
 	-I${top_srcdir}/src/logging \
-	-I${top_srcdir}/src \
-	-I${top_srcdir}/src/named-manager
+	-I${top_srcdir}/src
 
 noinst_LTLIBRARIES = libip6-manager.la
 

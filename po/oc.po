@@ -51,11 +51,11 @@ msgstr ""
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr ""
 
-#: ../src/named-manager/nm-named-manager.c:117
+#: ../src/dns-manager/nm-dns-manager.c:117
 msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
 msgstr ""
 
-#: ../src/named-manager/nm-named-manager.c:119
+#: ../src/dns-manager/nm-dns-manager.c:119
 msgid "The nameservers listed below may not be recognized."
 msgstr ""
 

@@ -5,7 +5,7 @@ INCLUDES = \
 	-I${top_srcdir}/src/logging \
 	-I${top_srcdir}/src \
 	-I${top_builddir}/marshallers \
-	-I${top_srcdir}/src/named-manager \
+	-I${top_srcdir}/src/dns-manager \
 	-DVPN_NAME_FILES_DIR=\""$(sysconfdir)/NetworkManager/VPN"\"
 
 

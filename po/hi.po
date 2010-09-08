@@ -1683,11 +1683,11 @@ msgstr "अज्ञात लॉग स्तर '%s'"
 msgid "Unknown log domain '%s'"
 msgstr "अज्ञात लॉग डोमेन '%s'"
 
-#: ../src/named-manager/nm-named-manager.c:343
+#: ../src/dns-manager/nm-dns-manager.c:343
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "नोट: libc समाधानकर्ता 3 नेमसर्वर से अधिक का समर्थन नहीं कर सकता है."
 
-#: ../src/named-manager/nm-named-manager.c:345
+#: ../src/dns-manager/nm-dns-manager.c:345
 msgid "The nameservers listed below may not be recognized."
 msgstr "नीचे सूची में दिया गया नेमसर्वर पहचाना नहीं जा सकता है."
 

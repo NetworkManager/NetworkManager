@@ -1724,11 +1724,11 @@ msgstr "Nivel de rexistro «%s» descoñecido"
 msgid "Unknown log domain '%s'"
 msgstr "Dominio de rexistro «%s» descoñecido"
 
-#: ../src/named-manager/nm-named-manager.c:384
+#: ../src/dns-manager/nm-dns-manager.c:384
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "NOTE: o importador libc non permite máis de 3 nomes de servidores."
 
-#: ../src/named-manager/nm-named-manager.c:386
+#: ../src/dns-manager/nm-dns-manager.c:386
 msgid "The nameservers listed below may not be recognized."
 msgstr "Os nomes de servidores listados a seguir poden non ser recoñecidos"
 

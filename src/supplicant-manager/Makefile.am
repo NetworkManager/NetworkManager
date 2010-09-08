@@ -5,8 +5,7 @@ INCLUDES = \
 	-I${top_srcdir}/src/logging \
 	-I${top_srcdir}/include \
 	-I${top_srcdir}/libnm-util \
-	-I${top_builddir}/marshallers \
-	-I${top_srcdir}/src/named-manager
+	-I${top_builddir}/marshallers
 
 noinst_LTLIBRARIES = libsupplicant-manager.la
 

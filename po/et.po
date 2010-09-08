@@ -76,11 +76,11 @@ msgstr ""
 "# Liidetud allikast %s\n"
 "\n"
 
-#: ../src/named-manager/nm-named-manager.c:240
+#: ../src/dns-manager/nm-dns-manager.c:240
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "MÄRKUS: libc lahendaja ei pruugi toetada rohkem kui 3 nimeserverit."
 
-#: ../src/named-manager/nm-named-manager.c:242
+#: ../src/dns-manager/nm-dns-manager.c:242
 msgid "The nameservers listed below may not be recognized."
 msgstr "Järgneva nimistu nimeservereid ei tuntud ära."
 

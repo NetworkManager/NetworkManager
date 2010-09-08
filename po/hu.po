@@ -436,11 +436,11 @@ msgstr "nem lehet kapcsolódni a netlinkhez: %s"
 msgid "unable to join netlink group: %s"
 msgstr "nem lehet csatlakozni a netlink csoporthoz: %s"
 
-#: ../src/named-manager/nm-named-manager.c:315
+#: ../src/dns-manager/nm-dns-manager.c:315
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "MEGJEGYZÉS: a libc feloldó nem támogat háromnál több névkiszolgálót."
 
-#: ../src/named-manager/nm-named-manager.c:317
+#: ../src/dns-manager/nm-dns-manager.c:317
 msgid "The nameservers listed below may not be recognized."
 msgstr "Az alább felsorolt névkiszolgálók lehet, hogy nem kerülnek felismerésre."
 
