@@ -1681,11 +1681,11 @@ msgstr "తెలియని లాగ్ స్థాయి '%s'"
 msgid "Unknown log domain '%s'"
 msgstr "తెలియని లాగ్ డొమైన్ '%s'"
 
-#: ../src/named-manager/nm-named-manager.c:350
+#: ../src/dns-manager/nm-dns-manager.c:350
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "గమనిక: libc రిజాల్వర్ 3 నామపు సేవికలకన్నా యెక్కువ వాటికి మద్దతివ్వలేదు."
 
-#: ../src/named-manager/nm-named-manager.c:352
+#: ../src/dns-manager/nm-dns-manager.c:352
 msgid "The nameservers listed below may not be recognized."
 msgstr "క్రిందన జాబితాచేసివున్న నామపుసేవికలు గుర్తించబడక పోవచ్చును."
 

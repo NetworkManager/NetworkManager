@@ -489,7 +489,7 @@ src/Makefile
 src/tests/Makefile
 marshallers/Makefile
 src/logging/Makefile
-src/named-manager/Makefile
+src/dns-manager/Makefile
 src/vpn-manager/Makefile
 src/dhcp-manager/Makefile
 src/ip6-manager/Makefile

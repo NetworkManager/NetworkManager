@@ -446,11 +446,11 @@ msgstr "z netlink se ni mogoče povezati: %s"
 msgid "unable to join netlink group: %s"
 msgstr "skupini netlink se ni mogoče pridružiti: %s"
 
-#: ../src/named-manager/nm-named-manager.c:315
+#: ../src/dns-manager/nm-dns-manager.c:315
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "OPOMBA: libc razreševalnik morda ne podpira več kot 3 imenske strežnike."
 
-#: ../src/named-manager/nm-named-manager.c:317
+#: ../src/dns-manager/nm-dns-manager.c:317
 msgid "The nameservers listed below may not be recognized."
 msgstr "Imenski strežniki našteti spodaj morda ne bodo prepoznani."
 

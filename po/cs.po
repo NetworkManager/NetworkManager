@@ -1335,12 +1335,12 @@ msgstr "Neznámá úroveň evidence „%s“"
 msgid "Unknown log domain '%s'"
 msgstr "Neznámá doména evidence „%s“"
 
-#: ../src/named-manager/nm-named-manager.c:314
+#: ../src/dns-manager/nm-dns-manager.c:314
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr ""
 "Poznámka: překladač adres z libc nemůže podporovat více než 3 jmenné servery."
 
-#: ../src/named-manager/nm-named-manager.c:316
+#: ../src/dns-manager/nm-dns-manager.c:316
 msgid "The nameservers listed below may not be recognized."
 msgstr "Jmenné servery uvedené v následujícím seznamu nelze rozpoznat."
 

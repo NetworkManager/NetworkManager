@@ -1563,11 +1563,11 @@ msgstr "nie można połączyć się z netlink: %s"
 msgid "unable to join netlink group: %s"
 msgstr "nie można dołączyć do grupy netlink: %s"
 
-#: ../src/named-manager/nm-named-manager.c:315
+#: ../src/dns-manager/nm-dns-manager.c:315
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "UWAGA: obsługa nazw libc nie obsługuje więcej niż 3 serwery nazw."
 
-#: ../src/named-manager/nm-named-manager.c:317
+#: ../src/dns-manager/nm-dns-manager.c:317
 msgid "The nameservers listed below may not be recognized."
 msgstr "Poniższe serwery nazw nie mogą nie zostać rozpoznane."
 

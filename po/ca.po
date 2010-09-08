@@ -335,13 +335,13 @@ msgstr ""
 "# Fusionat des de %s\n"
 "\n"
 
-#: ../src/named-manager/nm-named-manager.c:256
+#: ../src/dns-manager/nm-dns-manager.c:256
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr ""
 "NOTA: pot ser que el sistema de resolució de la libc no funcioni amb més de "
 "3 servidors de noms."
 
-#: ../src/named-manager/nm-named-manager.c:258
+#: ../src/dns-manager/nm-dns-manager.c:258
 msgid "The nameservers listed below may not be recognized."
 msgstr "Pot ser que no es reconeguin els servidors de noms llistats més avall."
 

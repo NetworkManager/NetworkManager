@@ -87,13 +87,13 @@ msgstr ""
 "# Samengevoegd vanuit %s\n"
 "\n"
 
-#: ../src/named-manager/nm-named-manager.c:256
+#: ../src/dns-manager/nm-dns-manager.c:256
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr ""
 "Merk op: de resolver van libc ondersteunt mogelijkerwijs niet meer dan 3 "
 "nameservers."
 
-#: ../src/named-manager/nm-named-manager.c:258
+#: ../src/dns-manager/nm-dns-manager.c:258
 msgid "The nameservers listed below may not be recognized."
 msgstr "De naamservers hieronder worden mogelijk niet herkend."
 
