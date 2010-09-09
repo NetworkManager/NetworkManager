@@ -549,7 +549,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 		priv->gw_route = nm_system_add_ip4_vpn_gateway_route (priv->parent_dev, config);
 
 		/* Add the VPN to DNS */
-		dns_mgr = nm_dns_manager_get ();
+		dns_mgr = nm_dns_manager_get (NULL);
 		nm_dns_manager_add_ip4_config (dns_mgr, priv->ip_iface, config, NM_DNS_IP_CONFIG_TYPE_VPN);
 		g_object_unref (dns_mgr);
 
@@ -902,7 +902,7 @@ vpn_cleanup (NMVPNConnection *connection)
 		NMDnsManager *dns_mgr;
 
 		/* Remove attributes of the VPN's IP4 Config */
-		dns_mgr = nm_dns_manager_get ();
+		dns_mgr = nm_dns_manager_get (NULL);
 		nm_dns_manager_remove_ip4_config (dns_mgr, priv->ip_iface, priv->ip4_config);
 		g_object_unref (dns_mgr);
 

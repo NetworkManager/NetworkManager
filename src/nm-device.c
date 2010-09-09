@@ -3038,7 +3038,7 @@ nm_device_set_ip4_config (NMDevice *self,
 	if (diff == NM_IP4_COMPARE_FLAG_NONE)
 		return TRUE;
 
-	dns_mgr = nm_dns_manager_get ();
+	dns_mgr = nm_dns_manager_get (NULL);
 	if (old_config) {
 		/* Remove any previous IP4 Config from the DNS manager */
 		nm_dns_manager_remove_ip4_config (dns_mgr, ip_iface, old_config);
@@ -3141,7 +3141,7 @@ nm_device_set_ip6_config (NMDevice *self,
 	if (diff == NM_IP6_COMPARE_FLAG_NONE)
 		return TRUE;
 
-	dns_mgr = nm_dns_manager_get ();
+	dns_mgr = nm_dns_manager_get (NULL);
 	if (old_config) {
 		/* Remove any previous IP6 Config from the DNS manager */
 		nm_dns_manager_remove_ip6_config (dns_mgr, ip_iface, old_config);
