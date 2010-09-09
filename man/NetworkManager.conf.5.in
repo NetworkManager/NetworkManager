@@ -44,12 +44,13 @@ Description of sections and available keys follows:
 This section is the only mandatory section of the configuration file.
 .TP
 .B plugins=\fIplugin1\fP,\fIplugin2\fP, ...
-List plugin names separated by ','. Plugins are used to read/write system-wide
-connection. When more plugins are specified, the connections are read from all
-listed plugins. When writing connections, the plugins will be asked to save the
-connection in the order listed here. If the first plugin cannot write out that
-connection type, or can't write out any connections, the next plugin is tried.
-If none of the plugins can save the connection, the error is returned to the user.
+List system settings plugin names separated by ','. These plugins are used to
+read/write system-wide connection. When more plugins are specified, the
+connections are read from all listed plugins. When writing connections, the
+plugins will be asked to save the connection in the order listed here. If the
+first plugin cannot write out that connection type, or can't write out any
+connections, the next plugin is tried. If none of the plugins can save the
+connection, the error is returned to the user.
 .P
 .RS
 .B "Available plugins:"
@@ -87,6 +88,27 @@ This key sets up what DHCP client NetworkManager will use. Presently
 \fIdhclient\fP and \fIdhcpcd\fP are supported. The client configured here should
 be available on your system too. If this key is missing, available DHCP clients
 are looked for in this order: dhclient, dhcpcd.
+.TP
+.B dns=\fIplugin1\fP,\fIplugin2\fP, ...
+List DNS plugin names separated by ','. DNS plugins are used to provide local
+caching nameserver functionality (which speeds up DNS queries) and to push
+DNS data to applications that use it.
+.P
+.RS
+.B "Available plugins:"
+.br
+.TP
+.I dnsmasq
+this plugin uses dnsmasq to provide local caching nameserver functionality.
+.TP
+.I bind
+this plugin uses the ISC BIND program to provide local caching nameserver
+functionality.
+.TP
+.I chromium
+this plugin provides DNS information to the Chromium web browser.  It does not
+provide local caching nameserver functionality.
+.RE
 .SS [keyfile]
 This section contains keyfile-specific options and thus only has effect when using \fIkeyfile\fP plugin.
 .TP

@@ -300,6 +300,7 @@ static gboolean
 parse_config_file (const char *filename,
                    char **plugins,
                    char **dhcp_client,
+                   char ***dns_plugins,
                    char **log_level,
                    char **log_domains,
                    GError **error)
@@ -322,6 +323,7 @@ parse_config_file (const char *filename,
 		return FALSE;
 
 	*dhcp_client = g_key_file_get_value (config, "main", "dhcp", NULL);
+	*dns_plugins = g_key_file_get_string_list (config, "main", "dns", NULL, NULL);
 
 	*log_level = g_key_file_get_value (config, "logging", "level", NULL);
 	*log_domains = g_key_file_get_value (config, "logging", "domains", NULL);
@@ -442,6 +444,7 @@ main (int argc, char *argv[])
 	char *pidfile = NULL, *state_file = NULL, *dhcp = NULL;
 	char *config = NULL, *plugins = NULL, *conf_plugins = NULL;
 	char *log_level = NULL, *log_domains = NULL;
+	char **dns = NULL;
 	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE;
 	gboolean success;
 	NMPolicy *policy = NULL;
@@ -515,7 +518,7 @@ main (int argc, char *argv[])
 
 	/* Parse the config file */
 	if (config) {
-		if (!parse_config_file (config, &conf_plugins, &dhcp, &cfg_log_level, &cfg_log_domains, &error)) {
+		if (!parse_config_file (config, &conf_plugins, &dhcp, &dns, &cfg_log_level, &cfg_log_domains, &error)) {
 			fprintf (stderr, "Config file %s invalid: (%d) %s\n",
 			         config,
 			         error ? error->code : -1,
@@ -535,7 +538,7 @@ main (int argc, char *argv[])
 		/* Try deprecated nm-system-settings.conf first */
 		if (g_file_test (NM_OLD_SYSTEM_CONF_FILE, G_FILE_TEST_EXISTS)) {
 			config = g_strdup (NM_OLD_SYSTEM_CONF_FILE);
-			parsed = parse_config_file (config, &conf_plugins, &dhcp, &cfg_log_level, &cfg_log_domains, &error);
+			parsed = parse_config_file (config, &conf_plugins, &dhcp, &dns, &cfg_log_level, &cfg_log_domains, &error);
 			if (!parsed) {
 				fprintf (stderr, "Default config file %s invalid: (%d) %s\n",
 				         config,
@@ -550,7 +553,7 @@ main (int argc, char *argv[])
 		/* Try the preferred NetworkManager.conf last */
 		if (!parsed && g_file_test (NM_DEFAULT_SYSTEM_CONF_FILE, G_FILE_TEST_EXISTS)) {
 			config = g_strdup (NM_DEFAULT_SYSTEM_CONF_FILE);
-			parsed = parse_config_file (config, &conf_plugins, &dhcp, &cfg_log_level, &cfg_log_domains, &error);
+			parsed = parse_config_file (config, &conf_plugins, &dhcp, &dns, &cfg_log_level, &cfg_log_domains, &error);
 			if (!parsed) {
 				fprintf (stderr, "Default config file %s invalid: (%d) %s\n",
 				         config,
@@ -663,7 +666,7 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	dns_mgr = nm_dns_manager_get ();
+	dns_mgr = nm_dns_manager_get ((const char **) dns);
 	if (!dns_mgr) {
 		nm_log_err (LOGD_CORE, "failed to start the DNS manager.");
 		goto done;
@@ -756,6 +759,7 @@ done:
 	g_free (config);
 	g_free (plugins);
 	g_free (dhcp);
+	g_strfreev (dns);
 	g_free (log_level);
 	g_free (log_domains);
 	g_free (cfg_log_level);

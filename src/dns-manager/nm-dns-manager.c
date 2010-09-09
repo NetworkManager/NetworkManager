@@ -59,7 +59,6 @@ G_DEFINE_TYPE(NMDnsManager, nm_dns_manager, G_TYPE_OBJECT)
                                        NM_TYPE_DNS_MANAGER, \
                                        NMDnsManagerPrivate))
 
-
 struct NMDnsManagerPrivate {
 	NMIP4Config *ip4_vpn_config;
 	NMIP4Config *ip4_device_config;
@@ -68,6 +67,8 @@ struct NMDnsManagerPrivate {
 	GSList *configs;
 	char *hostname;
 
+	GSList *plugins;
+
 	/* This is a hack because SUSE's netconfig always wants changes
 	 * associated with a network interface, but sometimes a change isn't
 	 * associated with a network interface (like hostnames).
@@ -75,31 +76,6 @@ struct NMDnsManagerPrivate {
 	char *last_iface;
 };
 
-
-NMDnsManager *
-nm_dns_manager_get (void)
-{
-	static NMDnsManager * singleton = NULL;
-
-	if (!singleton)
-		singleton = NM_DNS_MANAGER (g_object_new (NM_TYPE_DNS_MANAGER, NULL));
-	else
-		g_object_ref (singleton);
-
-	g_assert (singleton);
-	return singleton;
-}
-
-
-GQuark
-nm_dns_manager_error_quark (void)
-{
-	static GQuark quark = 0;
-	if (!quark)
-		quark = g_quark_from_static_string ("nm_dns_manager_error");
-
-	return quark;
-}
 
 typedef struct {
 	GPtrArray *nameservers;
@@ -852,6 +828,83 @@ nm_dns_manager_set_hostname (NMDnsManager *mgr,
 	}
 }
 
+static GObject *
+nm_dns_dnsmasq_new (void)
+{
+	return NULL;
+}
+
+static GObject *
+nm_dns_bind_new (void)
+{
+	return NULL;
+}
+
+static GObject *
+nm_dns_chromium_new (void)
+{
+	return NULL;
+}
+
+static void
+load_plugins (NMDnsManager *self, const char **plugins)
+{
+	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	GObject *plugin;
+	const char **iter;
+
+	if (plugins && *plugins) {
+		/* Create each configured plugin */
+		for (iter = plugins; iter && *iter; iter++) {
+			if (!strcasecmp (*iter, "dnsmasq"))
+				plugin = nm_dns_dnsmasq_new ();
+			else if (!strcasecmp (*iter, "bind"))
+				plugin = nm_dns_bind_new ();
+			else if (!strcasecmp (*iter, "chromium"))
+				plugin = nm_dns_chromium_new ();
+			else {
+				nm_log_warn (LOGD_DNS, "Unknown DNS plugin '%s'", *iter);
+			}
+
+			if (plugin)
+				priv->plugins = g_slist_append (priv->plugins, plugin);
+		}
+	} else {
+		/* Create default plugins */
+
+		/* Chromium support */
+		plugin = nm_dns_chromium_new ();
+		g_assert (plugin);
+		priv->plugins = g_slist_append (priv->plugins, plugin);
+	}
+}
+
+/******************************************************************/
+
+NMDnsManager *
+nm_dns_manager_get (const char **plugins)
+{
+	static NMDnsManager * singleton = NULL;
+
+	if (!singleton) {
+		singleton = NM_DNS_MANAGER (g_object_new (NM_TYPE_DNS_MANAGER, NULL));
+		g_assert (singleton);
+		load_plugins (singleton, plugins);
+	} else
+		g_object_ref (singleton);
+
+	return singleton;
+}
+
+GQuark
+nm_dns_manager_error_quark (void)
+{
+	static GQuark quark = 0;
+	if (!quark)
+		quark = g_quark_from_static_string ("nm_dns_manager_error");
+
+	return quark;
+}
 
 static void
 nm_dns_manager_init (NMDnsManager *mgr)
@@ -867,6 +920,9 @@ nm_dns_manager_finalize (GObject *object)
 	g_slist_free (priv->configs);
 	g_free (priv->hostname);
 	g_free (priv->last_iface);
+
+	g_slist_foreach (priv->plugins, (GFunc) g_object_unref, NULL);
+	g_slist_free (priv->plugins);
 
 	G_OBJECT_CLASS (nm_dns_manager_parent_class)->finalize (object);
 }
