@@ -43,6 +43,8 @@
 #include "nm-system.h"
 #include "NetworkManagerUtils.h"
 
+#include "nm-dns-dnsmasq.h"
+
 #ifdef HAVE_SELINUX
 #include <selinux/selinux.h>
 #endif
@@ -829,12 +831,6 @@ nm_dns_manager_set_hostname (NMDnsManager *mgr,
 }
 
 static GObject *
-nm_dns_dnsmasq_new (void)
-{
-	return NULL;
-}
-
-static GObject *
 nm_dns_bind_new (void)
 {
 	return NULL;
@@ -850,18 +846,18 @@ static void
 load_plugins (NMDnsManager *self, const char **plugins)
 {
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
-	GObject *plugin;
+	NMDnsPlugin *plugin;
 	const char **iter;
 
 	if (plugins && *plugins) {
 		/* Create each configured plugin */
 		for (iter = plugins; iter && *iter; iter++) {
 			if (!strcasecmp (*iter, "dnsmasq"))
-				plugin = nm_dns_dnsmasq_new ();
+				plugin = NM_DNS_PLUGIN (nm_dns_dnsmasq_new ());
 			else if (!strcasecmp (*iter, "bind"))
-				plugin = nm_dns_bind_new ();
+				plugin = NM_DNS_PLUGIN (nm_dns_bind_new ());
 			else if (!strcasecmp (*iter, "chromium"))
-				plugin = nm_dns_chromium_new ();
+				plugin = NM_DNS_PLUGIN (nm_dns_chromium_new ());
 			else {
 				nm_log_warn (LOGD_DNS, "Unknown DNS plugin '%s'", *iter);
 			}
@@ -873,7 +869,7 @@ load_plugins (NMDnsManager *self, const char **plugins)
 		/* Create default plugins */
 
 		/* Chromium support */
-		plugin = nm_dns_chromium_new ();
+		plugin = NM_DNS_PLUGIN (nm_dns_chromium_new ());
 		g_assert (plugin);
 		priv->plugins = g_slist_append (priv->plugins, plugin);
 	}
