@@ -41,82 +41,10 @@ G_DEFINE_TYPE (NMDnsDnsmasq, nm_dns_dnsmasq, NM_TYPE_DNS_PLUGIN)
 #define CONFFILE LOCALSTATEDIR "/run/nm-dns-dnsmasq.conf"
 
 typedef struct {
-	int pid;
+	guint32 foo;
 } NMDnsDnsmasqPrivate;
 
 /*******************************************/
-
-#if 0
-static NMCmdLine *
-create_dm_cmd_line (const char *iface,
-                    const char *pidfile,
-                    GError **error)
-{
-	const char *dm_binary;
-	GString *conf;
-	NMIP4Address *tmp;
-	struct in_addr addr;
-	char buf[INET_ADDRSTRLEN + 15];
-	char localaddr[INET_ADDRSTRLEN + 1];
-	int i;
-
-	dm_binary = nm_find_dnsmasq ();
-	if (!dm_binary) {
-		nm_log_warn (LOGD_DNS, "could not find dnsmasq binary.");
-		return NULL;
-	}
-
-	/* Create dnsmasq command line */
-	cmd = nm_cmd_line_new ();
-	nm_cmd_line_add_string (cmd, dm_binary);
-
-	if (getenv ("NM_DNSMASQ_DEBUG"))
-		nm_cmd_line_add_string (cmd, "--log-queries");
-
-	/* dnsmasq may read from it's default config file location, which if that
-	 * location is a valid config file, it will combine with the options here
-	 * and cause undesirable side-effects.  Like sending bogus IP addresses
-	 * as the gateway or whatever.  So give dnsmasq a bogus config file
-	 * location to avoid screwing up the configuration we're passing to it.
-	 */
-	memset (buf, 0, sizeof (buf));
-	strcpy (buf, "/tmp/");
-	for (i = 5; i < 15; i++)
-		buf[i] = (char) (g_random_int_range ((guint32) 'a', (guint32) 'z') & 0xFF);
-	strcat (buf, ".conf");
-
-	nm_cmd_line_add_string (cmd, "--conf-file");
-	nm_cmd_line_add_string (cmd, buf);
-
-	nm_cmd_line_add_string (cmd, "--no-hosts");
-	nm_cmd_line_add_string (cmd, "--keep-in-foreground");
-	nm_cmd_line_add_string (cmd, "--bind-interfaces");
-	nm_cmd_line_add_string (cmd, "--except-interface=lo");
-	nm_cmd_line_add_string (cmd, "--clear-on-reload");
-
-	/* Use strict order since in the case of VPN connections, the VPN's
-	 * nameservers will be first in resolv.conf, and those need to be tried
-	 * first by dnsmasq to successfully resolve names from the VPN.
-	 */
-	nm_cmd_line_add_string (cmd, "--strict-order");
-
-	s = g_string_new ("--listen-address=");
-	addr.s_addr = nm_ip4_address_get_address (tmp);
-	if (!inet_ntop (AF_INET, &addr, &localaddr[0], INET_ADDRSTRLEN)) {
-		nm_log_warn (LOGD_SHARING, "error converting IP4 address 0x%X",
-		             ntohl (addr.s_addr));
-		goto error;
-	}
-	g_string_append (s, localaddr);
-	nm_cmd_line_add_string (cmd, s->str);
-	g_string_free (s, TRUE);
-	return cmd;
-
-error:
-	nm_cmd_line_destroy (cmd);
-	return NULL;
-}
-#endif
 
 static inline const char *
 find_dnsmasq (void)
@@ -234,12 +162,19 @@ update (NMDnsPlugin *plugin,
         const char *hostname)
 {
 	NMDnsDnsmasq *self = NM_DNS_DNSMASQ (plugin);
-	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE (self);
 	GString *conf;
 	GSList *iter;
 	const char *argv[10];
 	GError *error = NULL;
 	int ignored;
+	GPid pid = 0;
+
+	/* Kill the old dnsmasq; there doesn't appear to be a way to get dnsmasq
+	 * to reread the config file using SIGHUP or similar.  This is a small race
+	 * here when restarting dnsmasq when DNS requests could go to the upstream
+	 * servers instead of to dnsmasq.
+	 */
+	nm_dns_plugin_child_kill (plugin);
 
 	/* Build up the new dnsmasq config file */
 	conf = g_string_sized_new (150);
@@ -285,17 +220,18 @@ update (NMDnsPlugin *plugin,
 	argv[0] = find_dnsmasq ();
 	argv[1] = "--no-resolv";  /* Use only commandline */
 	argv[2] = "--keep-in-foreground";
-	argv[3] = "--pid-file=" PIDFILE;
-	argv[4] = "--listen-address=127.0.0.1"; /* Should work for both 4 and 6 */
-	argv[5] = "--conf-file=" CONFFILE;
-	argv[6] = NULL;
+	argv[3] = "--bind-interfaces";
+	argv[4] = "--pid-file=" PIDFILE;
+	argv[5] = "--listen-address=127.0.0.1"; /* Should work for both 4 and 6 */
+	argv[6] = "--conf-file=" CONFFILE;
+	argv[7] = NULL;
 
 	/* And finally spawn dnsmasq */
-	priv->pid = nm_dns_plugin_child_spawn (NM_DNS_PLUGIN (self), argv, PIDFILE, "bin/dnsmasq");
+	pid = nm_dns_plugin_child_spawn (NM_DNS_PLUGIN (self), argv, PIDFILE, "bin/dnsmasq");
 
 out:
 	g_string_free (conf, TRUE);
-	return priv->pid ? TRUE : FALSE;
+	return pid ? TRUE : FALSE;
 }
 
 /****************************************************************/
@@ -322,7 +258,6 @@ static void
 child_quit (NMDnsPlugin *plugin, gint status)
 {
 	NMDnsDnsmasq *self = NM_DNS_DNSMASQ (plugin);
-	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE (self);
 	gboolean failed = TRUE;
 	int err;
 
@@ -341,12 +276,10 @@ child_quit (NMDnsPlugin *plugin, gint status)
 	} else {
 		nm_log_warn (LOGD_DNS, "dnsmasq died from an unknown cause");
 	}
+	unlink (CONFFILE);
 
 	if (failed)
 		g_signal_emit_by_name (self, NM_DNS_PLUGIN_FAILED);
-
-	priv->pid = 0;
-	unlink (CONFFILE);
 }
 
 /****************************************************************/
@@ -358,9 +291,15 @@ init (NMDnsPlugin *plugin)
 }
 
 static gboolean
-is_exclusive (NMDnsPlugin *plugin)
+is_caching (NMDnsPlugin *plugin)
 {
 	return TRUE;
+}
+
+static const char *
+get_name (NMDnsPlugin *plugin)
+{
+	return "dnsmasq";
 }
 
 /****************************************************************/
@@ -377,15 +316,27 @@ nm_dns_dnsmasq_init (NMDnsDnsmasq *self)
 }
 
 static void
+dispose (GObject *object)
+{
+	unlink (CONFFILE);
+
+	G_OBJECT_CLASS (nm_dns_dnsmasq_parent_class)->dispose (object);
+}
+
+static void
 nm_dns_dnsmasq_class_init (NMDnsDnsmasqClass *dns_class)
 {
 	NMDnsPluginClass *plugin_class = NM_DNS_PLUGIN_CLASS (dns_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (dns_class);
 
 	g_type_class_add_private (dns_class, sizeof (NMDnsDnsmasqPrivate));
 
+	object_class->dispose = dispose;
+
 	plugin_class->init = init;
 	plugin_class->child_quit = child_quit;
-	plugin_class->is_exclusive = is_exclusive;
+	plugin_class->is_caching = is_caching;
 	plugin_class->update = update;
+	plugin_class->get_name = get_name;
 }
 

@@ -59,7 +59,10 @@ typedef struct {
 	 * caching nameserver that listens on localhost and would block any
 	 * other local caching nameserver from operating.
 	 */
-	gboolean (*is_exclusive) (NMDnsPlugin *self);
+	gboolean (*is_caching) (NMDnsPlugin *self);
+
+	/* Subclasses should override this and return their plugin name */
+	const char *(*get_name) (NMDnsPlugin *self);
 
 	/* Signals */
 
@@ -80,7 +83,9 @@ typedef struct {
 
 GType nm_dns_plugin_get_type (void);
 
-gboolean nm_dns_plugin_is_exclusive (NMDnsPlugin *self);
+gboolean nm_dns_plugin_is_caching (NMDnsPlugin *self);
+
+const char *nm_dns_plugin_get_name (NMDnsPlugin *self);
 
 gboolean nm_dns_plugin_update (NMDnsPlugin *self,
                                const GSList *vpn_configs,
