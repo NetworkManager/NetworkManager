@@ -66,15 +66,22 @@ nm_dns_plugin_update (NMDnsPlugin *self,
 }
 
 static gboolean
-is_exclusive (NMDnsPlugin *self)
+is_caching (NMDnsPlugin *self)
 {
 	return FALSE;
 }
 
 gboolean
-nm_dns_plugin_is_exclusive (NMDnsPlugin *self)
+nm_dns_plugin_is_caching (NMDnsPlugin *self)
 {
-	return NM_DNS_PLUGIN_GET_CLASS (self)->is_exclusive (self);
+	return NM_DNS_PLUGIN_GET_CLASS (self)->is_caching (self);
+}
+
+const char *
+nm_dns_plugin_get_name (NMDnsPlugin *self)
+{
+	g_assert (NM_DNS_PLUGIN_GET_CLASS (self)->get_name);
+	return NM_DNS_PLUGIN_GET_CLASS (self)->get_name (self);
 }
 
 /********************************************/
@@ -158,9 +165,9 @@ nm_dns_plugin_child_spawn (NMDnsPlugin *self,
 		priv->pidfile = g_strdup (pidfile);
 	}
 
-	nm_log_info (LOGD_DNS, "Starting %s...", priv->progname);
+	nm_log_info (LOGD_DNS, "DNS: starting %s...", priv->progname);
 	cmdline = g_strjoinv (" ", (char **) argv);
-	nm_log_dbg (LOGD_DNS, "Command line: %s", cmdline);
+	nm_log_dbg (LOGD_DNS, "DNS: command line: %s", cmdline);
 	g_free (cmdline);
 
 	priv->pid = 0;
@@ -287,7 +294,7 @@ nm_dns_plugin_class_init (NMDnsPluginClass *plugin_class)
 	/* virtual methods */
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
-	plugin_class->is_exclusive = is_exclusive;
+	plugin_class->is_caching = is_caching;
 
 	/* signals */
 	signals[FAILED] =
