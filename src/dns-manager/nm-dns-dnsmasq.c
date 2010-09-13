@@ -103,7 +103,30 @@ add_ip4_config (GString *str, NMIP4Config *ip4, gboolean split)
 		}
 	}
 
+	/* If no searches or domains, just add the namservers */
+	if (n == 0) {
+		n = nm_ip4_config_get_num_nameservers (ip4);
+		for (i = 0; i < n; i++) {
+			memset (&buf[0], 0, sizeof (buf));
+			addr.s_addr = nm_ip4_config_get_nameserver (ip4, i);
+			if (inet_ntop (AF_INET, &addr, buf, sizeof (buf)))
+				g_string_append_printf (str, "server=%s\n", buf);
+		}
+	}
+
 	return TRUE;
+}
+
+static gboolean
+ip6_addr_to_string (const struct in6_addr *addr, char *buf, size_t buflen)
+{
+	memset (buf, 0, buflen);
+
+	/* inet_ntop is probably supposed to do this for us, but it doesn't */
+	if (IN6_IS_ADDR_V4MAPPED (addr))
+		return !!inet_ntop (AF_INET, &(addr->s6_addr32[3]), buf, buflen);
+
+	return !!inet_ntop (AF_INET6, addr, buf, buflen);
 }
 
 static gboolean
@@ -118,16 +141,8 @@ add_ip6_config (GString *str, NMIP6Config *ip6, gboolean split)
 	 * the first nameserver here.
 	 */
 	addr = nm_ip6_config_get_nameserver (ip6, 0);
-	memset (&buf[0], 0, sizeof (buf));
-
-	/* inet_ntop is probably supposed to do this for us, but it doesn't */
-	if (IN6_IS_ADDR_V4MAPPED (addr)) {
-		if (!inet_ntop (AF_INET, &(addr->s6_addr32[3]), buf, sizeof (buf)))
-			return FALSE;
-	} else {
-		if (!inet_ntop (AF_INET6, addr, buf, sizeof (buf)))
-			return FALSE;
-	}
+	if (!ip6_addr_to_string (addr, &buf[0], sizeof (buf)))
+		return FALSE;
 
 	/* searches are preferred over domains */
 	n = nm_ip6_config_get_num_searches (ip6);
@@ -148,6 +163,16 @@ add_ip6_config (GString *str, NMIP6Config *ip6, gboolean split)
 					                split ? nm_ip6_config_get_domain (ip6, i) : "",
 					                split ? "/" : "",
 					                buf);
+		}
+	}
+
+	/* If no searches or domains, just add the namservers */
+	if (n == 0) {
+		n = nm_ip6_config_get_num_nameservers (ip6);
+		for (i = 0; i < n; i++) {
+			addr = nm_ip6_config_get_nameserver (ip6, i);
+			if (ip6_addr_to_string (addr, &buf[0], sizeof (buf)))
+				g_string_append_printf (str, "server=%s\n", buf);
 		}
 	}
 
@@ -220,11 +245,12 @@ update (NMDnsPlugin *plugin,
 	argv[0] = find_dnsmasq ();
 	argv[1] = "--no-resolv";  /* Use only commandline */
 	argv[2] = "--keep-in-foreground";
-	argv[3] = "--bind-interfaces";
-	argv[4] = "--pid-file=" PIDFILE;
-	argv[5] = "--listen-address=127.0.0.1"; /* Should work for both 4 and 6 */
-	argv[6] = "--conf-file=" CONFFILE;
-	argv[7] = NULL;
+	argv[3] = "--strict-order";
+	argv[4] = "--bind-interfaces";
+	argv[5] = "--pid-file=" PIDFILE;
+	argv[6] = "--listen-address=127.0.0.1"; /* Should work for both 4 and 6 */
+	argv[7] = "--conf-file=" CONFFILE;
+	argv[8] = NULL;
 
 	/* And finally spawn dnsmasq */
 	pid = nm_dns_plugin_child_spawn (NM_DNS_PLUGIN (self), argv, PIDFILE, "bin/dnsmasq");
