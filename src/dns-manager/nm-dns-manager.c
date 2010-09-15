@@ -43,6 +43,7 @@
 #include "nm-system.h"
 #include "NetworkManagerUtils.h"
 
+#include "nm-dns-plugin.h"
 #include "nm-dns-dnsmasq.h"
 
 #ifdef HAVE_SELINUX
@@ -52,8 +53,6 @@
 #ifndef RESOLV_CONF
 #define RESOLV_CONF "/etc/resolv.conf"
 #endif
-
-#define ADDR_BUF_LEN 50
 
 G_DEFINE_TYPE(NMDnsManager, nm_dns_manager, G_TYPE_OBJECT)
 
@@ -68,6 +67,14 @@ struct NMDnsManagerPrivate {
 	NMIP6Config *ip6_device_config;
 	GSList *configs;
 	char *hostname;
+
+	/* poor man's hash; we assume that the IP4 config object won't change
+	 * after it's given to us, which is (at this time) a fair assumption. So
+	 * we track the order of the currently applied IP configs and if they
+	 * haven't changed we don't need to rewrite resolv.conf.
+	 */
+	#define HLEN 6
+	gpointer hash[HLEN];
 
 	GSList *plugins;
 
@@ -525,6 +532,37 @@ out:
 	return *error ? FALSE : TRUE;
 }
 
+static void
+compute_hash (NMDnsManager *self, gpointer *hash)
+{
+	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	gpointer check[HLEN];
+	GSList *iter;
+	int i = 0;
+
+	memset (check, 0, sizeof (check));
+
+	if (priv->ip4_vpn_config)
+		check[i++] = priv->ip4_vpn_config;
+	if (priv->ip4_device_config)
+		check[i++] = priv->ip4_device_config;
+
+	if (priv->ip6_vpn_config)
+		check[i++] = priv->ip6_vpn_config;
+	if (priv->ip6_device_config)
+		check[i++] = priv->ip6_device_config;
+
+	/* Add two more "other" configs if any exist */
+	for (iter = priv->configs; iter && i < HLEN; iter = g_slist_next (iter)) {
+		if (   (iter->data != priv->ip4_vpn_config)
+		    && (iter->data != priv->ip4_device_config)
+		    && (iter->data != priv->ip6_vpn_config)
+		    && (iter->data != priv->ip6_device_config))
+			check[i++] = iter->data;
+	}
+	memcpy (hash, check, sizeof (check));
+}
+
 static gboolean
 update_dns (NMDnsManager *self,
             const char *iface,
@@ -551,6 +589,9 @@ update_dns (NMDnsManager *self,
 		g_free (priv->last_iface);
 		priv->last_iface = g_strdup (iface);
 	}
+
+	/* Update hash with config we're applying */
+	compute_hash (self, priv->hash);
 
 	rc.nameservers = g_ptr_array_new ();
 	rc.domain = NULL;
@@ -734,6 +775,23 @@ plugin_failed (NMDnsPlugin *plugin, gpointer user_data)
 	}
 }
 
+static gboolean
+config_changed (NMDnsManager *self)
+{
+	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	gpointer check[HLEN];
+
+	/* We only store HLEN configs; so if there are actually more than that,
+	 * we have to assume that the config has changed.
+	 */
+	if (g_slist_length (priv->configs) > HLEN)
+		return TRUE;
+
+	/* Otherwise return TRUE if the configuration has changed */
+	compute_hash (self, check);
+	return memcmp (check, priv->hash, sizeof (check)) ? TRUE : FALSE;
+}
+
 gboolean
 nm_dns_manager_add_ip4_config (NMDnsManager *mgr,
                                const char *iface,
@@ -763,6 +821,9 @@ nm_dns_manager_add_ip4_config (NMDnsManager *mgr,
 	/* Don't allow the same zone added twice */
 	if (!g_slist_find (priv->configs, config))
 		priv->configs = g_slist_append (priv->configs, g_object_ref (config));
+
+	if (!config_changed (mgr))
+		return TRUE;
 
 	if (!update_dns (mgr, iface, FALSE, &error)) {
 		nm_log_warn (LOGD_DNS, "could not commit DNS changes: (%d) %s",
@@ -800,6 +861,9 @@ nm_dns_manager_remove_ip4_config (NMDnsManager *mgr,
 		priv->ip4_device_config = NULL;
 
 	g_object_unref (config);
+
+	if (config_changed (mgr))
+		return TRUE;
 
 	if (!update_dns (mgr, iface, FALSE, &error)) {
 		nm_log_warn (LOGD_DNS, "could not commit DNS changes: (%d) %s",
@@ -843,6 +907,9 @@ nm_dns_manager_add_ip6_config (NMDnsManager *mgr,
 	if (!g_slist_find (priv->configs, config))
 		priv->configs = g_slist_append (priv->configs, g_object_ref (config));
 
+	if (config_changed (mgr))
+		return TRUE;
+
 	if (!update_dns (mgr, iface, FALSE, &error)) {
 		nm_log_warn (LOGD_DNS, "could not commit DNS changes: (%d) %s",
 		             error ? error->code : -1,
@@ -879,6 +946,9 @@ nm_dns_manager_remove_ip6_config (NMDnsManager *mgr,
 		priv->ip6_device_config = NULL;
 
 	g_object_unref (config);	
+
+	if (config_changed (mgr))
+		return TRUE;
 
 	if (!update_dns (mgr, iface, FALSE, &error)) {
 		nm_log_warn (LOGD_DNS, "could not commit DNS changes: (%d) %s",
