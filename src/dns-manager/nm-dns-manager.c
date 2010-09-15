@@ -1002,12 +1002,6 @@ nm_dns_bind_new (void)
 	return NULL;
 }
 
-static GObject *
-nm_dns_chromium_new (void)
-{
-	return NULL;
-}
-
 static void
 load_plugins (NMDnsManager *self, const char **plugins)
 {
@@ -1023,8 +1017,6 @@ load_plugins (NMDnsManager *self, const char **plugins)
 				plugin = NM_DNS_PLUGIN (nm_dns_dnsmasq_new ());
 			else if (!strcasecmp (*iter, "bind"))
 				plugin = NM_DNS_PLUGIN (nm_dns_bind_new ());
-			else if (!strcasecmp (*iter, "chromium"))
-				plugin = NM_DNS_PLUGIN (nm_dns_chromium_new ());
 			else {
 				nm_log_warn (LOGD_DNS, "Unknown DNS plugin '%s'", *iter);\
 				continue;
@@ -1052,13 +1044,6 @@ load_plugins (NMDnsManager *self, const char **plugins)
 		}
 	} else {
 		/* Create default plugins */
-
-		/* Chromium support */
-#if 0
-		plugin = NM_DNS_PLUGIN (nm_dns_chromium_new ());
-		g_assert (plugin);
-		priv->plugins = g_slist_append (priv->plugins, plugin);
-#endif
 	}
 }
 
