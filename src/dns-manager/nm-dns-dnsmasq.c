@@ -71,40 +71,41 @@ add_ip4_config (GString *str, NMIP4Config *ip4, gboolean split)
 	char buf[INET_ADDRSTRLEN + 1];
 	struct in_addr addr;
 	int n, i;
+	gboolean added = FALSE;
 
-	/* FIXME: it appears that dnsmasq can only handle one nameserver
-	 * per domain (at the manpage seems to indicate that) so only use
-	 * the first nameserver here.
-	 */
-	addr.s_addr = nm_ip4_config_get_nameserver (ip4, 0);
-	memset (&buf[0], 0, sizeof (buf));
-	if (!inet_ntop (AF_INET, &addr, buf, sizeof (buf)))
-		return FALSE;
+	if (split) {
+		/* FIXME: it appears that dnsmasq can only handle one nameserver
+		 * per domain (at the manpage seems to indicate that) so only use
+		 * the first nameserver here.
+		 */
+		addr.s_addr = nm_ip4_config_get_nameserver (ip4, 0);
+		memset (&buf[0], 0, sizeof (buf));
+		if (!inet_ntop (AF_INET, &addr, buf, sizeof (buf)))
+			return FALSE;
 
-	/* searches are preferred over domains */
-	n = nm_ip4_config_get_num_searches (ip4);
-	for (i = 0; i < n; i++) {
-		g_string_append_printf (str, "server=%s%s%s%s\n",
-					            split ? "/" : "",
-		                        split ? nm_ip4_config_get_search (ip4, i) : "",
-					            split ? "/" : "",
-		                        buf);
-	}
-
-	if (n == 0) {
-		/* If not searches, use any domains */
-		n = nm_ip4_config_get_num_domains (ip4);
+		/* searches are preferred over domains */
+		n = nm_ip4_config_get_num_searches (ip4);
 		for (i = 0; i < n; i++) {
-			g_string_append_printf (str, "server=%s%s%s%s\n",
-					                split ? "/" : "",
-					                split ? nm_ip4_config_get_domain (ip4, i) : "",
-					                split ? "/" : "",
-					                buf);
+			g_string_append_printf (str, "server=/%s/%s\n",
+				                    nm_ip4_config_get_search (ip4, i),
+				                    buf);
+			added = TRUE;
+		}
+
+		if (n == 0) {
+			/* If not searches, use any domains */
+			n = nm_ip4_config_get_num_domains (ip4);
+			for (i = 0; i < n; i++) {
+				g_string_append_printf (str, "server=/%s/%s\n",
+							            nm_ip4_config_get_domain (ip4, i),
+							            buf);
+				added = TRUE;
+			}
 		}
 	}
 
 	/* If no searches or domains, just add the namservers */
-	if (n == 0) {
+	if (!added) {
 		n = nm_ip4_config_get_num_nameservers (ip4);
 		for (i = 0; i < n; i++) {
 			memset (&buf[0], 0, sizeof (buf));
@@ -135,39 +136,40 @@ add_ip6_config (GString *str, NMIP6Config *ip6, gboolean split)
 	char buf[INET6_ADDRSTRLEN + 1];
 	const struct in6_addr *addr;
 	int n, i;
+	gboolean added = FALSE;
 
-	/* FIXME: it appears that dnsmasq can only handle one nameserver
-	 * per domain (at the manpage seems to indicate that) so only use
-	 * the first nameserver here.
-	 */
-	addr = nm_ip6_config_get_nameserver (ip6, 0);
-	if (!ip6_addr_to_string (addr, &buf[0], sizeof (buf)))
-		return FALSE;
+	if (split) {
+		/* FIXME: it appears that dnsmasq can only handle one nameserver
+		 * per domain (at the manpage seems to indicate that) so only use
+		 * the first nameserver here.
+		 */
+		addr = nm_ip6_config_get_nameserver (ip6, 0);
+		if (!ip6_addr_to_string (addr, &buf[0], sizeof (buf)))
+			return FALSE;
 
-	/* searches are preferred over domains */
-	n = nm_ip6_config_get_num_searches (ip6);
-	for (i = 0; i < n; i++) {
-		g_string_append_printf (str, "server=%s%s%s%s\n",
-		                        split ? "/" : "",
-		                        split ? nm_ip6_config_get_search (ip6, i) : "",
-		                        split ? "/" : "",
-		                        buf);
-	}
-
-	if (n == 0) {
-		/* If not searches, use any domains */
-		n = nm_ip6_config_get_num_domains (ip6);
+		/* searches are preferred over domains */
+		n = nm_ip6_config_get_num_searches (ip6);
 		for (i = 0; i < n; i++) {
-			g_string_append_printf (str, "server=%s%s%s%s\n",
-					                split ? "/" : "",
-					                split ? nm_ip6_config_get_domain (ip6, i) : "",
-					                split ? "/" : "",
-					                buf);
+			g_string_append_printf (str, "server=/%s/%s\n",
+				                    nm_ip6_config_get_search (ip6, i),
+				                    buf);
+			added = TRUE;
+		}
+
+		if (n == 0) {
+			/* If not searches, use any domains */
+			n = nm_ip6_config_get_num_domains (ip6);
+			for (i = 0; i < n; i++) {
+				g_string_append_printf (str, "server=/%s/%s\n",
+							            nm_ip6_config_get_domain (ip6, i),
+							            buf);
+				added = TRUE;
+			}
 		}
 	}
 
 	/* If no searches or domains, just add the namservers */
-	if (n == 0) {
+	if (!added) {
 		n = nm_ip6_config_get_num_nameservers (ip6);
 		for (i = 0; i < n; i++) {
 			addr = nm_ip6_config_get_nameserver (ip6, i);
