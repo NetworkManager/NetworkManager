@@ -36,11 +36,10 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <netinet/ether.h>
-#include <nm-settings-interface.h>
 
 #include "nm-dbus-glib-types.h"
 #include "writer.h"
-#include "reader.h"
+#include "common.h"
 
 static gboolean
 write_array_of_uint (GKeyFile *file,
@@ -667,18 +666,14 @@ write_connection (NMConnection *connection,
 
 	g_file_set_contents (path, data, len, error);
 	if (chown (path, owner_uid, owner_grp) < 0) {
-		g_set_error (error,
-		             NM_SETTINGS_INTERFACE_ERROR,
-		             NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
+		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
 		             "%s.%d: error chowning '%s': %d", __FILE__, __LINE__,
 		             path, errno);
 		unlink (path);
 	} else {
 		err = chmod (path, S_IRUSR | S_IWUSR);
 		if (err) {
-			g_set_error (error,
-			             NM_SETTINGS_INTERFACE_ERROR,
-			             NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
+			g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
 			             "%s.%d: error setting permissions on '%s': %d", __FILE__,
 			             __LINE__, path, errno);
 			unlink (path);

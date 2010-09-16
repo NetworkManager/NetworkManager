@@ -31,6 +31,7 @@
 #include "nm-keyfile-connection.h"
 #include "reader.h"
 #include "writer.h"
+#include "common.h"
 
 static NMSettingsConnectionInterface *parent_settings_connection_iface;
 

@@ -4,7 +4,7 @@ INCLUDES = \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_srcdir)/libnm-glib \
-	-I$(top_srcdir)/system-settings/plugins/keyfile/io
+	-I$(top_srcdir)/system-settings/plugins/keyfile
 
 noinst_PROGRAMS = test-keyfile
 
@@ -18,7 +18,7 @@ test_keyfile_CPPFLAGS = \
 	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/keyfiles\"
 
 test_keyfile_LDADD = \
-	$(top_builddir)/system-settings/plugins/keyfile/io/libkeyfile-io.la \
+	$(top_builddir)/system-settings/plugins/keyfile/libkeyfile-io.la \
 	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(DBUS_LIBS)
