@@ -85,7 +85,7 @@ test_read_valid_wired_connection (void)
 	NMIP6Address *ip6_addr;
 	NMIP6Route *ip6_route;
 
-	connection = connection_from_file (TEST_WIRED_FILE);
+	connection = connection_from_file (TEST_WIRED_FILE, NULL);
 	ASSERT (connection != NULL,
 			"connection-read", "failed to read %s", TEST_WIRED_FILE);
 
@@ -587,7 +587,7 @@ test_write_wired_connection (void)
 	const char *address2_gw = "1.2.1.1";
 	const char *route1 = "10.10.10.2";
 	const char *route1_nh = "10.10.10.1";
-	const char *route2 = "0.0.0.0";
+	const char *route2 = "1.1.1.1";
 	const char *route2_nh = "1.2.1.1";
 	const char *dns6_1 = "1::cafe";
 	const char *dns6_2 = "2::cafe";
@@ -595,7 +595,7 @@ test_write_wired_connection (void)
 	const char *address6_2 = "dcba::beef";
 	const char *route6_1 = "1:2:3:4:5:6:7:8";
 	const char *route6_1_nh = "8:7:6:5:4:3:2:1";
-	const char *route6_2 = "::";
+	const char *route6_2 = "2001::1000";
 	const char *route6_2_nh = "2001::1111";
 	guint64 timestamp = 0x12345678L;
 
@@ -704,7 +704,7 @@ test_write_wired_connection (void)
 			"connection-write", "didn't get keyfile name back after writing connection");
 
 	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = connection_from_file (testfile);
+	reread = connection_from_file (testfile, NULL);
 	ASSERT (reread != NULL, "connection-write", "failed to re-read test connection");
 
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
@@ -737,7 +737,7 @@ test_read_ip6_wired_connection (void)
 	const char *expected6_gw1 = "abcd:1234:ffff::cdd1";
 	NMIP6Address *ip6_addr;
 
-	connection = connection_from_file (TEST_WIRED_IP6_FILE);
+	connection = connection_from_file (TEST_WIRED_IP6_FILE, NULL);
 	ASSERT (connection != NULL,
 			"connection-read", "failed to read %s", TEST_WIRED_IP6_FILE);
 
@@ -964,7 +964,7 @@ test_write_ip6_wired_connection (void)
 			"connection-write", "didn't get keyfile name back after writing connection");
 
 	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = connection_from_file (testfile);
+	reread = connection_from_file (testfile, NULL);
 	ASSERT (reread != NULL, "connection-write", "failed to re-read test connection");
 
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
@@ -993,7 +993,7 @@ test_read_wired_mac_case (void)
 	const char *expected_id = "Test Wired Connection MAC Case";
 	const char *expected_uuid = "4e80a56d-c99f-4aad-a6dd-b449bc398c57";
 
-	connection = connection_from_file (TEST_WIRED_MAC_CASE_FILE);
+	connection = connection_from_file (TEST_WIRED_MAC_CASE_FILE, NULL);
 	ASSERT (connection != NULL,
 			"connection-read", "failed to read %s", TEST_WIRED_MAC_CASE_FILE);
 
@@ -1079,7 +1079,7 @@ test_read_valid_wireless_connection (void)
 	const guint64 expected_timestamp = 1226604314;
 	guint64 timestamp;
 
-	connection = connection_from_file (TEST_WIRELESS_FILE);
+	connection = connection_from_file (TEST_WIRELESS_FILE, NULL);
 	ASSERT (connection != NULL,
 			"connection-read", "failed to read %s", TEST_WIRELESS_FILE);
 
@@ -1282,7 +1282,7 @@ test_write_wireless_connection (void)
 			"connection-write", "didn't get keyfile name back after writing connection");
 
 	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = connection_from_file (testfile);
+	reread = connection_from_file (testfile, NULL);
 	ASSERT (reread != NULL, "connection-write", "failed to re-read test connection");
 
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
@@ -1317,7 +1317,7 @@ test_read_bt_dun_connection (void)
 	const char *expected_username = "ISP@CINGULARGPRS.COM";
 	const char *expected_password = "CINGULAR1";
 
-	connection = connection_from_file (TEST_BT_DUN_FILE);
+	connection = connection_from_file (TEST_BT_DUN_FILE, NULL);
 	ASSERT (connection != NULL,
 			"connection-read", "failed to read %s", TEST_BT_DUN_FILE);
 
@@ -1567,7 +1567,7 @@ test_write_bt_dun_connection (void)
 			"connection-write", "didn't get keyfile name back after writing connection");
 
 	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = connection_from_file (testfile);
+	reread = connection_from_file (testfile, NULL);
 	ASSERT (reread != NULL, "connection-write", "failed to re-read test connection");
 
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
@@ -1601,7 +1601,7 @@ test_read_gsm_connection (void)
 	const char *expected_network_id = "24005";
 	const char *expected_pin = "2345";
 
-	connection = connection_from_file (TEST_GSM_FILE);
+	connection = connection_from_file (TEST_GSM_FILE, NULL);
 	ASSERT (connection != NULL,
 			"connection-read", "failed to read %s", TEST_GSM_FILE);
 
@@ -1829,7 +1829,7 @@ test_write_gsm_connection (void)
 			"connection-write", "didn't get keyfile name back after writing connection");
 
 	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = connection_from_file (testfile);
+	reread = connection_from_file (testfile, NULL);
 	ASSERT (reread != NULL, "connection-write", "failed to re-read test connection");
 
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,

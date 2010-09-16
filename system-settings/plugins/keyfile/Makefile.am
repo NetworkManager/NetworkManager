@@ -23,7 +23,8 @@ libnm_settings_plugin_keyfile_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DG_DISABLE_DEPRECATED \
-	-DKEYFILE_DIR=\""$(keyfiledir)"\"
+	-DKEYFILE_DIR=\""$(keyfiledir)"\" \
+	-DKEYFILE_PLUGIN_NAME=\""keyfile"\"
 
 libnm_settings_plugin_keyfile_la_LDFLAGS = -module -avoid-version
 libnm_settings_plugin_keyfile_la_LIBADD = \
