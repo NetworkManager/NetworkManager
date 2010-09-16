@@ -45,6 +45,7 @@
 
 #include "nm-dns-plugin.h"
 #include "nm-dns-dnsmasq.h"
+#include "nm-dns-bind.h"
 
 #ifdef HAVE_SELINUX
 #include <selinux/selinux.h>
@@ -994,12 +995,6 @@ nm_dns_manager_set_hostname (NMDnsManager *mgr,
 		             error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
 	}
-}
-
-static GObject *
-nm_dns_bind_new (void)
-{
-	return NULL;
 }
 
 static void
