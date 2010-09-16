@@ -1590,11 +1590,11 @@ msgstr "অজ্ঞাত লগ স্তৰ '%s'"
 msgid "Unknown log domain '%s'"
 msgstr "অজ্ঞাত লগ ডোমেইন '%s'"
 
-#: ../src/named-manager/nm-named-manager.c:343
+#: ../src/dns-manager/nm-dns-manager.c:343
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "মন কৰিব: libc resolver ৰ দ্বাৰা ৩ তকৈ অধিক নামৰ সেৱক সমৰ্থিত ন'হ'বও পাৰে  ।"
 
-#: ../src/named-manager/nm-named-manager.c:345
+#: ../src/dns-manager/nm-dns-manager.c:345
 msgid "The nameservers listed below may not be recognized."
 msgstr "নিম্নলিখিত নাম-সেৱকসমূহ চিনাক্ত ন'হ'বও পাৰে  ।"
 

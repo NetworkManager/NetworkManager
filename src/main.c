@@ -41,7 +41,7 @@
 #include "nm-manager.h"
 #include "nm-policy.h"
 #include "nm-system.h"
-#include "nm-named-manager.h"
+#include "nm-dns-manager.h"
 #include "nm-dbus-manager.h"
 #include "nm-supplicant-manager.h"
 #include "nm-dhcp-manager.h"
@@ -446,7 +446,7 @@ main (int argc, char *argv[])
 	gboolean success;
 	NMPolicy *policy = NULL;
 	NMVPNManager *vpn_manager = NULL;
-	NMNamedManager *named_mgr = NULL;
+	NMDnsManager *dns_mgr = NULL;
 	NMDBusManager *dbus_mgr = NULL;
 	NMSupplicantManager *sup_mgr = NULL;
 	NMDHCPManager *dhcp_mgr = NULL;
@@ -663,9 +663,9 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	named_mgr = nm_named_manager_get ();
-	if (!named_mgr) {
-		nm_log_err (LOGD_CORE, "failed to start the named manager.");
+	dns_mgr = nm_dns_manager_get ();
+	if (!dns_mgr) {
+		nm_log_err (LOGD_CORE, "failed to start the DNS manager.");
 		goto done;
 	}
 
@@ -733,8 +733,8 @@ done:
 	if (vpn_manager)
 		g_object_unref (vpn_manager);
 
-	if (named_mgr)
-		g_object_unref (named_mgr);
+	if (dns_mgr)
+		g_object_unref (dns_mgr);
 
 	if (dhcp_mgr)
 		g_object_unref (dhcp_mgr);

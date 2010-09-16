@@ -1,6 +1,6 @@
 SUBDIRS= \
 	logging \
-	named-manager \
+	dns-manager \
 	vpn-manager \
 	dhcp-manager \
 	ip6-manager \
@@ -18,7 +18,7 @@ INCLUDES = -I${top_srcdir}                   \
            -I${top_srcdir}/include           \
            -I${top_builddir}/marshallers   \
            -I${top_srcdir}/src/logging \
-           -I${top_srcdir}/src/named-manager \
+           -I${top_srcdir}/src/dns-manager \
            -I${top_srcdir}/src/vpn-manager   \
            -I${top_srcdir}/src/dhcp-manager  \
            -I${top_srcdir}/src/ip6-manager  \
@@ -228,7 +228,7 @@ NetworkManager_CPPFLAGS = \
 NetworkManager_LDADD = \
 	$(top_builddir)/marshallers/libmarshallers.la \
 	./logging/libnm-logging.la \
-	./named-manager/libnamed-manager.la \
+	./dns-manager/libdns-manager.la \
 	./vpn-manager/libvpn-manager.la \
 	./dhcp-manager/libdhcp-manager.la \
 	./ip6-manager/libip6-manager.la \

@@ -1594,11 +1594,11 @@ msgstr "தெரியாத பதிவு நிலை '%s'"
 msgid "Unknown log domain '%s'"
 msgstr "தெரியாத பதிவு டொமைன் '%s'"
 
-#: ../src/named-manager/nm-named-manager.c:343
+#: ../src/dns-manager/nm-dns-manager.c:343
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "குறிப்பு: இந்த libc மறுதீர்வாளர் 3 பெயர்சேவையர்களுக்கு மேல் துணைபுரியவதில்லை."
 
-#: ../src/named-manager/nm-named-manager.c:345
+#: ../src/dns-manager/nm-dns-manager.c:345
 msgid "The nameservers listed below may not be recognized."
 msgstr "கீழே பட்டியலிட்டப்படுள்ள பெயர்சேவையகங்கள் கண்டுபிடிக்கப்படவில்லை."
 

@@ -1586,11 +1586,11 @@ msgstr "അപരിചതമായ ലോഗ് ലവല്‍ '%s'"
 msgid "Unknown log domain '%s'"
 msgstr "അപരിചിതമായ ലോഗ് ഡൊമെയിന്‍ '%s'"
 
-#: ../src/named-manager/nm-named-manager.c:343
+#: ../src/dns-manager/nm-dns-manager.c:343
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "കുറിപ്പു്: libc റിസോള്‍വര്‍ 3 നെയിംസര്‍വറുകളില്‍ കൂടതല്‍ പിന്തുണയ്ക്കുന്നതല്ല."
 
-#: ../src/named-manager/nm-named-manager.c:345
+#: ../src/dns-manager/nm-dns-manager.c:345
 msgid "The nameservers listed below may not be recognized."
 msgstr "താഴെ പറഞ്ഞിരിക്കുന്ന നെയിംസര്‍വറുകള്‍ തിരിച്ചറിയപ്പെടുന്നവയല്ല."
 

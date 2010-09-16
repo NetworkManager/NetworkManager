@@ -17,7 +17,7 @@ src/main.c
 src/dhcp-manager/nm-dhcp-dhclient.c
 src/dhcp-manager/nm-dhcp-manager.c
 src/logging/nm-logging.c
-src/named-manager/nm-named-manager.c
+src/dns-manager/nm-dns-manager.c
 src/system-settings/nm-default-wired-connection.c
 system-settings/plugins/ifcfg-rh/reader.c
 system-settings/plugins/ifnet/connection_parser.c

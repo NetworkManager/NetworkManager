@@ -1611,13 +1611,13 @@ msgstr "Niveau de journalisation inconnu '%s'"
 msgid "Unknown log domain '%s'"
 msgstr "Domaine de journalisation inconnu '%s'"
 
-#: ../src/named-manager/nm-named-manager.c:343
+#: ../src/dns-manager/nm-dns-manager.c:343
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr ""
 "NOTE : il se peut que le solveur libc ne prenne pas en charge plus de 3 "
 "serveurs de noms."
 
-#: ../src/named-manager/nm-named-manager.c:345
+#: ../src/dns-manager/nm-dns-manager.c:345
 msgid "The nameservers listed below may not be recognized."
 msgstr "Les serveurs de noms listés ci-dessous peuvent ne pas être reconnus."
 

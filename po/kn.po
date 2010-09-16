@@ -1690,13 +1690,13 @@ msgstr "ಗೊತ್ತಿರದ ದಾಖಲೆ ಮಟ್ಟ '%s'"
 msgid "Unknown log domain '%s'"
 msgstr "ಗೊತ್ತಿರದ ದಾಖಲೆ ಡೊಮೈನ್ '%s'"
 
-#: ../src/named-manager/nm-named-manager.c:350
+#: ../src/dns-manager/nm-dns-manager.c:350
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr ""
 "ಸೂಚನೆ: libc ಪರಿಹಾರಕವು(ರಿಸಾಲ್ವರ್) ೩ ನಾಮಪರಿಚಾರಕಗಳಿಗಿಂತ ಹೆಚ್ಚಿನವುಗಳನ್ನು "
 "ಬೆಂಬಲಿಸುವುದಿಲ್ಲ."
 
-#: ../src/named-manager/nm-named-manager.c:352
+#: ../src/dns-manager/nm-dns-manager.c:352
 msgid "The nameservers listed below may not be recognized."
 msgstr "ಈ ಕೆಳಗೆ ಸೂಚಿಸಲಾದ ನಾಮಪರಿಚಾರಕಗಳನ್ನು ಗುರುತಿಸಲಾಗಿಲ್ಲ."
 

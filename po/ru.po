@@ -1594,13 +1594,13 @@ msgstr "Неизвестный уровень журналирования «%s�
 msgid "Unknown log domain '%s'"
 msgstr "Неизвестный домен журналирования «%s»"
 
-#: ../src/named-manager/nm-named-manager.c:343
+#: ../src/dns-manager/nm-dns-manager.c:343
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr ""
 "ВНИМАНИЕ: преобразователь имён glibc не поддерживает более трёх серверов "
 "имён."
 
-#: ../src/named-manager/nm-named-manager.c:345
+#: ../src/dns-manager/nm-dns-manager.c:345
 msgid "The nameservers listed below may not be recognized."
 msgstr "Нижеперечисленные сервера могут быть пропущены."
 

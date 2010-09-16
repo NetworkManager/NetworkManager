@@ -251,11 +251,13 @@ name_owner_changed_cb (NMDBusManager *dbus_mgr,
 	gboolean old_owner_good = (old_owner && strlen (old_owner));
 	gboolean new_owner_good = (new_owner && strlen (new_owner));
 
-	/* Can't handle the signal if its not from the supplicant service */
+	/* Can't handle the signal if its not from the Bluez */
 	if (strcmp (BLUEZ_SERVICE, name))
 		return;
 
-	if (old_owner_good && !new_owner_good)
+	if (!old_owner_good && new_owner_good)
+		query_default_adapter (self);
+	else if (old_owner_good && !new_owner_good)
 		remove_all_devices (self, TRUE);
 }
 

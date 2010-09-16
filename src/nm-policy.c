@@ -39,7 +39,7 @@
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-connection.h"
 #include "nm-system.h"
-#include "nm-named-manager.h"
+#include "nm-dns-manager.h"
 #include "nm-vpn-manager.h"
 #include "nm-policy-hosts.h"
 #include "nm-policy-hostname.h"
@@ -236,14 +236,14 @@ _set_hostname (NMPolicy *policy,
 	char ip6_addr[INET6_ADDRSTRLEN + 1];
 
 	if (change_hostname) {
-		NMNamedManager *named_mgr;
+		NMDnsManager *dns_mgr;
 
 		g_free (policy->cur_hostname);
 		policy->cur_hostname = g_strdup (new_hostname);
 
-		named_mgr = nm_named_manager_get ();
-		nm_named_manager_set_hostname (named_mgr, policy->cur_hostname);
-		g_object_unref (named_mgr);
+		dns_mgr = nm_dns_manager_get ();
+		nm_dns_manager_set_hostname (dns_mgr, policy->cur_hostname);
+		g_object_unref (dns_mgr);
 	}
 
 	/* Get the default IPv4 and IPv6 addresses so we can assign
@@ -453,10 +453,10 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 static void
 update_ip4_routing_and_dns (NMPolicy *policy, gboolean force_update)
 {
-	NMNamedIPConfigType dns_type = NM_NAMED_IP_CONFIG_TYPE_BEST_DEVICE;
+	NMDnsIPConfigType dns_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
 	NMDevice *best = NULL;
 	NMActRequest *best_req = NULL;
-	NMNamedManager *named_mgr;
+	NMDnsManager *dns_mgr;
 	GSList *devices = NULL, *iter, *vpns;
 	NMIP4Config *ip4_config = NULL;
 	NMIP4Address *addr;
@@ -513,7 +513,7 @@ update_ip4_routing_and_dns (NMPolicy *policy, gboolean force_update)
 			                                         nm_device_get_ip_iface (parent),
 			                                         nm_ip4_config_get_mss (parent_ip4));
 
-			dns_type = NM_NAMED_IP_CONFIG_TYPE_VPN;
+			dns_type = NM_DNS_IP_CONFIG_TYPE_VPN;
 		}
 		g_object_unref (candidate);
 	}
@@ -529,7 +529,7 @@ update_ip4_routing_and_dns (NMPolicy *policy, gboolean force_update)
 
 		nm_system_replace_default_ip4_route (ip_iface, nm_ip4_address_get_gateway (addr), nm_ip4_config_get_mss (ip4_config));
 
-		dns_type = NM_NAMED_IP_CONFIG_TYPE_BEST_DEVICE;
+		dns_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
 	}
 
 	if (!ip_iface || !ip4_config) {
@@ -553,9 +553,9 @@ update_ip4_routing_and_dns (NMPolicy *policy, gboolean force_update)
 			nm_act_request_set_default (req, FALSE);
 	}
 
-	named_mgr = nm_named_manager_get ();
-	nm_named_manager_add_ip4_config (named_mgr, ip_iface, ip4_config, dns_type);
-	g_object_unref (named_mgr);
+	dns_mgr = nm_dns_manager_get ();
+	nm_dns_manager_add_ip4_config (dns_mgr, ip_iface, ip4_config, dns_type);
+	g_object_unref (dns_mgr);
 
 	/* Now set new default active connection _after_ updating DNS info, so that
 	 * if the connection is shared dnsmasq picks up the right stuff.
@@ -580,10 +580,10 @@ out:
 static void
 update_ip6_routing_and_dns (NMPolicy *policy, gboolean force_update)
 {
-	NMNamedIPConfigType dns_type = NM_NAMED_IP_CONFIG_TYPE_BEST_DEVICE;
+	NMDnsIPConfigType dns_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
 	NMDevice *best = NULL;
 	NMActRequest *best_req = NULL;
-	NMNamedManager *named_mgr;
+	NMDnsManager *dns_mgr;
 	GSList *devices = NULL, *iter;
 #if NOT_YET
 	GSList *vpns;
@@ -638,7 +638,7 @@ update_ip6_routing_and_dns (NMPolicy *policy, gboolean force_update)
 			                                         nm_device_get_ip_iface (parent),
 			                                         nm_ip6_config_get_mss (parent_ip4));
 
-			dns_type = NM_NAMED_IP_CONFIG_TYPE_VPN;
+			dns_type = NM_DNS_IP_CONFIG_TYPE_VPN;
 		}
 		g_object_unref (candidate);
 	}
@@ -655,7 +655,7 @@ update_ip6_routing_and_dns (NMPolicy *policy, gboolean force_update)
 
 		nm_system_replace_default_ip6_route (ip_iface, nm_ip6_address_get_gateway (addr));
 
-		dns_type = NM_NAMED_IP_CONFIG_TYPE_BEST_DEVICE;
+		dns_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
 	}
 
 	if (!ip_iface || !ip6_config) {
@@ -679,9 +679,9 @@ update_ip6_routing_and_dns (NMPolicy *policy, gboolean force_update)
 			nm_act_request_set_default6 (req, FALSE);
 	}
 
-	named_mgr = nm_named_manager_get ();
-	nm_named_manager_add_ip6_config (named_mgr, ip_iface, ip6_config, dns_type);
-	g_object_unref (named_mgr);
+	dns_mgr = nm_dns_manager_get ();
+	nm_dns_manager_add_ip6_config (dns_mgr, ip_iface, ip6_config, dns_type);
+	g_object_unref (dns_mgr);
 
 	/* Now set new default active connection _after_ updating DNS info, so that
 	 * if the connection is shared dnsmasq picks up the right stuff.

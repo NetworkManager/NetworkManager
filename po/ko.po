@@ -1590,11 +1590,11 @@ msgstr "알려지지 않은 로그 수준 '%s'"
 msgid "Unknown log domain '%s'"
 msgstr "알려지지 않은 로그 영역 '%s'"
 
-#: ../src/named-manager/nm-named-manager.c:343
+#: ../src/dns-manager/nm-dns-manager.c:343
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "주의: libc 주소 검색은 3개를 초과하는 네임서버를 지원하지 않을 수 있습니다."
 
-#: ../src/named-manager/nm-named-manager.c:345
+#: ../src/dns-manager/nm-dns-manager.c:345
 msgid "The nameservers listed below may not be recognized."
 msgstr "아래 열거된 네임서버를 인식하지 못할 수 있습니다."
 

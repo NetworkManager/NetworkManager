@@ -44,7 +44,7 @@
 #include "nm-properties-changed-signal.h"
 #include "nm-dbus-glib-types.h"
 #include "NetworkManagerUtils.h"
-#include "nm-named-manager.h"
+#include "nm-dns-manager.h"
 #include "nm-netlink-monitor.h"
 #include "nm-glib-compat.h"
 
@@ -542,15 +542,15 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	nm_system_device_set_up_down_with_iface (priv->ip_iface, TRUE, NULL);
 
 	if (nm_system_apply_ip4_config (priv->ip_iface, config, 0, NM_IP4_COMPARE_FLAG_ALL)) {
-		NMNamedManager *named_mgr;
+		NMDnsManager *dns_mgr;
 
 		/* Add any explicit route to the VPN gateway through the parent device */
 		priv->gw_route = nm_system_add_ip4_vpn_gateway_route (priv->parent_dev, config);
 
 		/* Add the VPN to DNS */
-		named_mgr = nm_named_manager_get ();
-		nm_named_manager_add_ip4_config (named_mgr, priv->ip_iface, config, NM_NAMED_IP_CONFIG_TYPE_VPN);
-		g_object_unref (named_mgr);
+		dns_mgr = nm_dns_manager_get ();
+		nm_dns_manager_add_ip4_config (dns_mgr, priv->ip_iface, config, NM_DNS_IP_CONFIG_TYPE_VPN);
+		g_object_unref (dns_mgr);
 
 		priv->ip4_config = config;
 
@@ -898,12 +898,12 @@ vpn_cleanup (NMVPNConnection *connection)
 
 	if (priv->ip4_config) {
 		NMIP4Config *parent_config;
-		NMNamedManager *named_mgr;
+		NMDnsManager *dns_mgr;
 
 		/* Remove attributes of the VPN's IP4 Config */
-		named_mgr = nm_named_manager_get ();
-		nm_named_manager_remove_ip4_config (named_mgr, priv->ip_iface, priv->ip4_config);
-		g_object_unref (named_mgr);
+		dns_mgr = nm_dns_manager_get ();
+		nm_dns_manager_remove_ip4_config (dns_mgr, priv->ip_iface, priv->ip4_config);
+		g_object_unref (dns_mgr);
 
 		/* Remove any previously added VPN gateway host route */
 		if (priv->gw_route)

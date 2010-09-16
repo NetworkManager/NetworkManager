@@ -1849,11 +1849,11 @@ msgstr "Okänd loggnivå \"%s\""
 msgid "Unknown log domain '%s'"
 msgstr "Okänd loggdomän \"%s\""
 
-#: ../src/named-manager/nm-named-manager.c:384
+#: ../src/dns-manager/nm-dns-manager.c:384
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "OBSERVERA: uppslag via glibc kanske inte har stöd för fler än 3 namnservrar."
 
-#: ../src/named-manager/nm-named-manager.c:386
+#: ../src/dns-manager/nm-dns-manager.c:386
 msgid "The nameservers listed below may not be recognized."
 msgstr "Namnservrarna listade nedan kanske inte kommer att kännas igen."
 

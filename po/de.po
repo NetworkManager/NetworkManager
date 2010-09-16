@@ -1341,13 +1341,13 @@ msgstr "Unbekannte Protokollstufe »%s«"
 msgid "Unknown log domain '%s'"
 msgstr "Unbekannte Protokolldomäne »%s«"
 
-#: ../src/named-manager/nm-named-manager.c:343
+#: ../src/dns-manager/nm-dns-manager.c:343
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr ""
 "HINWEIS: Der libc-resolver unterstützt eventuell nicht mehr als drei "
 "Nameserver."
 
-#: ../src/named-manager/nm-named-manager.c:345
+#: ../src/dns-manager/nm-dns-manager.c:345
 msgid "The nameservers listed below may not be recognized."
 msgstr "Die nachfolgend gelisteten Nameserver werden eventuell nicht erkannt."
 

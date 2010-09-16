@@ -1300,11 +1300,11 @@ msgstr "ezin da netlink-ekin konektatu: %s"
 msgid "unable to join netlink group: %s"
 msgstr "ezin da netlink taldearekin elkartu: %s"
 
-#: ../src/named-manager/nm-named-manager.c:315
+#: ../src/dns-manager/nm-dns-manager.c:315
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "OHARRA: libc-en ebaztaileak ez du 3 izen-zerbitzari baino gehiago onartzen."
 
-#: ../src/named-manager/nm-named-manager.c:317
+#: ../src/dns-manager/nm-dns-manager.c:317
 msgid "The nameservers listed below may not be recognized."
 msgstr "Azpian zerrendatutako izen-zenbitzariak ez dira ezagutuko."
 

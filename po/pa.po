@@ -1680,11 +1680,11 @@ msgstr "ਅਣਜਾਣ ਲਾਗ ਲੈਵਲ '%s'"
 msgid "Unknown log domain '%s'"
 msgstr "ਅਣਜਾਣ ਲਾਗ ਡੋਮੇਨ '%s'"
 
-#: ../src/named-manager/nm-named-manager.c:350
+#: ../src/dns-manager/nm-dns-manager.c:350
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "ਨੋਟ: libc ਰਿਜ਼ੋਲਵਰ ੩ ਤੋਂ ਵੱਧ ਨੇਮ-ਸਰਵਰ ਲਈ ਸਹਾਇਕ ਨਹੀਂ ਹੋ ਸਕਦਾ ਹੈ।"
 
-#: ../src/named-manager/nm-named-manager.c:352
+#: ../src/dns-manager/nm-dns-manager.c:352
 msgid "The nameservers listed below may not be recognized."
 msgstr "ਹੇਠਾਂ ਦਿੱਤੇ ਨੇਮ-ਸਰਵਰ ਪਛਾਣੇ ਨਹੀਂ ਜਾ ਸਕਦੇ।"
 

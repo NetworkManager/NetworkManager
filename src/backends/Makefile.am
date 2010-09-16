@@ -3,8 +3,6 @@ INCLUDES = \
 	-I${top_srcdir}/src/logging \
 	-I${top_srcdir}/include \
 	-I${top_srcdir}/src \
-	-I${top_srcdir}/src/vpn-manager \
-	-I${top_srcdir}/src/named-manager \
 	-I${top_srcdir}/libnm-util
 
 noinst_LTLIBRARIES = libnmbackend.la

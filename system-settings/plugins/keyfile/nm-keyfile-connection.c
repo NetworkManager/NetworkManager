@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2008 - 2010 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -25,6 +25,7 @@
 #include <nm-setting-connection.h>
 #include <nm-utils.h>
 
+#include "nm-system-config-interface.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-keyfile-connection.h"
 #include "reader.h"
@@ -46,13 +47,55 @@ enum {
 };
 
 NMKeyfileConnection *
-nm_keyfile_connection_new (const char *filename)
+nm_keyfile_connection_new (const char *filename, GError **error)
 {
+	GObject *object;
+	NMKeyfileConnectionPrivate *priv;
+	NMSettingConnection *s_con;
+	NMConnection *tmp;
+
 	g_return_val_if_fail (filename != NULL, NULL);
 
-	return (NMKeyfileConnection *) g_object_new (NM_TYPE_KEYFILE_CONNECTION,
-	                                             NM_KEYFILE_CONNECTION_FILENAME, filename,
-	                                             NULL);
+	tmp = connection_from_file (filename, error);
+	if (!tmp)
+		return NULL;
+
+	object = (GObject *) g_object_new (NM_TYPE_KEYFILE_CONNECTION,
+	                                   NM_KEYFILE_CONNECTION_FILENAME, filename,
+	                                   NULL);
+	if (!object) {
+		g_object_unref (tmp);
+		return NULL;
+	}
+
+	priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (object);
+	g_assert (priv->filename);
+
+	/* Update our settings with what was read from the file */
+	nm_sysconfig_connection_replace_settings (NM_SYSCONFIG_CONNECTION (object), tmp, NULL);
+	g_object_unref (tmp);
+
+	/* if for some reason the connection didn't have a UUID, add one */
+	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (object), NM_TYPE_SETTING_CONNECTION);
+	if (s_con && !nm_setting_connection_get_uuid (s_con)) {
+		GError *write_error = NULL;
+		char *uuid;
+
+		uuid = nm_utils_uuid_generate ();
+		g_object_set (s_con, NM_SETTING_CONNECTION_UUID, uuid, NULL);
+		g_free (uuid);
+
+		if (!write_connection (NM_CONNECTION (object), KEYFILE_DIR, 0, 0, NULL, &write_error)) {
+			PLUGIN_WARN (KEYFILE_PLUGIN_NAME,
+			             "Couldn't update connection %s with a UUID: (%d) %s",
+			             nm_setting_connection_get_id (s_con),
+			             write_error ? write_error->code : -1,
+			             (write_error && write_error->message) ? write_error->message : "(unknown)");
+			g_propagate_error (error, write_error);
+		}
+	}
+
+	return NM_KEYFILE_CONNECTION (object);
 }
 
 const char *
@@ -111,56 +154,6 @@ nm_keyfile_connection_init (NMKeyfileConnection *connection)
 {
 }
 
-static GObject *
-constructor (GType type,
-		   guint n_construct_params,
-		   GObjectConstructParam *construct_params)
-{
-	GObject *object;
-	NMKeyfileConnectionPrivate *priv;
-	NMSettingConnection *s_con;
-	NMConnection *tmp;
-
-	object = G_OBJECT_CLASS (nm_keyfile_connection_parent_class)->constructor (type, n_construct_params, construct_params);
-
-	if (!object)
-		return NULL;
-
-	priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (object);
-
-	g_assert (priv->filename);
-
-	tmp = connection_from_file (priv->filename);
-	if (!tmp) {
-		g_object_unref (object);
-		return NULL;
-	}
-	
-	nm_sysconfig_connection_replace_settings (NM_SYSCONFIG_CONNECTION (object), tmp, NULL);
-	g_object_unref (tmp);
-
-	/* if for some reason the connection didn't have a UUID, add one */
-	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (object), NM_TYPE_SETTING_CONNECTION);
-	if (s_con && !nm_setting_connection_get_uuid (s_con)) {
-		GError *error = NULL;
-		char *uuid;
-
-		uuid = nm_utils_uuid_generate ();
-		g_object_set (s_con, NM_SETTING_CONNECTION_UUID, uuid, NULL);
-		g_free (uuid);
-
-		if (!write_connection (NM_CONNECTION (object), KEYFILE_DIR, 0, 0, NULL, &error)) {
-			g_warning ("Couldn't update connection %s with a UUID: (%d) %s",
-			           nm_setting_connection_get_id (s_con),
-			           error ? error->code : 0,
-			           (error && error->message) ? error->message : "unknown");
-			g_error_free (error);
-		}
-	}
-
-	return object;
-}
-
 static void
 finalize (GObject *object)
 {
@@ -215,7 +208,6 @@ nm_keyfile_connection_class_init (NMKeyfileConnectionClass *keyfile_connection_c
 	g_type_class_add_private (keyfile_connection_class, sizeof (NMKeyfileConnectionPrivate));
 
 	/* Virtual methods */
-	object_class->constructor  = constructor;
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;

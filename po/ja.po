@@ -1590,11 +1590,11 @@ msgstr "不明なログインレベル '%s'"
 msgid "Unknown log domain '%s'"
 msgstr "不明なログドメイン '%s'"
 
-#: ../src/named-manager/nm-named-manager.c:343
+#: ../src/dns-manager/nm-dns-manager.c:343
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "注記: libc リゾルバは ３つ以上のネームサーバーをサポートできません。"
 
-#: ../src/named-manager/nm-named-manager.c:345
+#: ../src/dns-manager/nm-dns-manager.c:345
 msgid "The nameservers listed below may not be recognized."
 msgstr "以下の一覧にあるネームサーバーは認識されないかも知れません。"
 

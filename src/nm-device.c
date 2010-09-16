@@ -42,7 +42,7 @@
 #include "nm-system.h"
 #include "nm-dhcp-manager.h"
 #include "nm-dbus-manager.h"
-#include "nm-named-manager.h"
+#include "nm-dns-manager.h"
 #include "nm-utils.h"
 #include "nm-logging.h"
 #include "nm-netlink-monitor.h"
@@ -1344,6 +1344,7 @@ handle_dhcp_lease_change (NMDevice *device, gboolean ipv6)
 			nm_dhcp_client_foreach_option (priv->dhcp6_client,
 			                               dhcp6_add_option_cb,
 			                               priv->dhcp6_config);
+			nm_utils_call_dispatcher ("dhcp6-change", connection, device, NULL);
 		} else {
 			nm_log_warn (LOGD_DHCP6, "(%s): failed to update IPv6 config in response to DHCP event.",
 			             nm_device_get_ip_iface (device));
@@ -1368,6 +1369,7 @@ handle_dhcp_lease_change (NMDevice *device, gboolean ipv6)
 			nm_dhcp_client_foreach_option (priv->dhcp4_client,
 			                               dhcp4_add_option_cb,
 			                               priv->dhcp4_config);
+			nm_utils_call_dispatcher ("dhcp4-change", connection, device, NULL);
 		} else {
 			nm_log_warn (LOGD_DHCP6, "(%s): failed to update IPv4 config in response to DHCP event.",
 			             nm_device_get_ip_iface (device));
@@ -3019,7 +3021,7 @@ nm_device_set_ip4_config (NMDevice *self,
 	NMIP4Config *old_config = NULL;
 	gboolean success = TRUE;
 	NMIP4ConfigCompareFlags diff = NM_IP4_COMPARE_FLAG_ALL;
-	NMNamedManager *named_mgr;
+	NMDnsManager *dns_mgr;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 	g_return_val_if_fail (reason != NULL, FALSE);
@@ -3036,10 +3038,10 @@ nm_device_set_ip4_config (NMDevice *self,
 	if (diff == NM_IP4_COMPARE_FLAG_NONE)
 		return TRUE;
 
-	named_mgr = nm_named_manager_get ();
+	dns_mgr = nm_dns_manager_get ();
 	if (old_config) {
-		/* Remove any previous IP4 Config from the named manager */
-		nm_named_manager_remove_ip4_config (named_mgr, ip_iface, old_config);
+		/* Remove any previous IP4 Config from the DNS manager */
+		nm_dns_manager_remove_ip4_config (dns_mgr, ip_iface, old_config);
 		g_object_unref (old_config);
 		priv->ip4_config = NULL;
 	}
@@ -3058,13 +3060,13 @@ nm_device_set_ip4_config (NMDevice *self,
 			if (!nm_ip4_config_get_dbus_path (new_config))
 				nm_ip4_config_export (new_config);
 
-			/* Add the DNS information to the named manager */
-			nm_named_manager_add_ip4_config (named_mgr, ip_iface, new_config, NM_NAMED_IP_CONFIG_TYPE_DEFAULT);
+			/* Add the DNS information to the DNS manager */
+			nm_dns_manager_add_ip4_config (dns_mgr, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
 
 			nm_device_update_ip4_address (self);
 		}
 	}
-	g_object_unref (named_mgr);
+	g_object_unref (dns_mgr);
 
 	g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_IP4_CONFIG);
 
@@ -3122,7 +3124,7 @@ nm_device_set_ip6_config (NMDevice *self,
 	NMIP6Config *old_config = NULL;
 	gboolean success = TRUE;
 	NMIP6ConfigCompareFlags diff = NM_IP6_COMPARE_FLAG_ALL;
-	NMNamedManager *named_mgr;
+	NMDnsManager *dns_mgr;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 	g_return_val_if_fail (reason != NULL, FALSE);
@@ -3139,10 +3141,10 @@ nm_device_set_ip6_config (NMDevice *self,
 	if (diff == NM_IP6_COMPARE_FLAG_NONE)
 		return TRUE;
 
-	named_mgr = nm_named_manager_get ();
+	dns_mgr = nm_dns_manager_get ();
 	if (old_config) {
-		/* Remove any previous IP6 Config from the named manager */
-		nm_named_manager_remove_ip6_config (named_mgr, ip_iface, old_config);
+		/* Remove any previous IP6 Config from the DNS manager */
+		nm_dns_manager_remove_ip6_config (dns_mgr, ip_iface, old_config);
 		g_object_unref (old_config);
 		priv->ip6_config = NULL;
 	}
@@ -3161,11 +3163,11 @@ nm_device_set_ip6_config (NMDevice *self,
 			if (!nm_ip6_config_get_dbus_path (new_config))
 				nm_ip6_config_export (new_config);
 
-			/* Add the DNS information to the named manager */
-			nm_named_manager_add_ip6_config (named_mgr, ip_iface, new_config, NM_NAMED_IP_CONFIG_TYPE_DEFAULT);
+			/* Add the DNS information to the DNS manager */
+			nm_dns_manager_add_ip6_config (dns_mgr, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
 		}
 	}
-	g_object_unref (named_mgr);
+	g_object_unref (dns_mgr);
 
 	g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_IP6_CONFIG);
 
