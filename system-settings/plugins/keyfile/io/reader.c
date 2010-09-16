@@ -40,6 +40,7 @@
 #include <arpa/inet.h>
 #include <netinet/ether.h>
 #include <string.h>
+#include <nm-settings-interface.h>
 
 #include "nm-dbus-glib-types.h"
 #include "reader.h"
@@ -986,108 +987,126 @@ read_vpn_secrets (GKeyFile *file, NMSettingVPN *s_vpn)
 }
 
 NMConnection *
-connection_from_file (const char *filename)
+connection_from_file (const char *filename, GError **error)
 {
 	GKeyFile *key_file;
 	struct stat statbuf;
 	gboolean bad_owner, bad_permissions;
 	NMConnection *connection = NULL;
-	GError *err = NULL;
+	NMSettingConnection *s_con;
+	NMSettingBluetooth *s_bt;
+	NMSetting *setting;
+	gchar **groups;
+	gsize length;
+	int i;
+	gboolean vpn_secrets = FALSE;
+	const char *ctype, *tmp;
+	GError *verify_error = NULL;
 
-	if (stat (filename, &statbuf) != 0 || !S_ISREG (statbuf.st_mode))
+	if (stat (filename, &statbuf) != 0 || !S_ISREG (statbuf.st_mode)) {
+		g_set_error_literal (error,
+		                     NM_SETTINGS_INTERFACE_ERROR,
+		                     NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
+		                     "File did not exist or was not a regular file");
 		return NULL;
+	}
 
 	bad_owner = getuid () != statbuf.st_uid;
 	bad_permissions = statbuf.st_mode & 0077;
 
 	if (bad_owner || bad_permissions) {
-		g_warning ("Ignoring insecure configuration file '%s'", filename);
+		g_set_error (error,
+		             NM_SETTINGS_INTERFACE_ERROR,
+		             NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
+		             "File permissions (%o) or owner (%d) were insecure",
+		             statbuf.st_mode, statbuf.st_uid);
 		return NULL;
 	}
 
 	key_file = g_key_file_new ();
-	if (g_key_file_load_from_file (key_file, filename, G_KEY_FILE_NONE, &err)) {
-		NMSettingConnection *s_con;
-		NMSettingBluetooth *s_bt;
-		NMSetting *setting;
-		gchar **groups;
-		gsize length;
-		int i;
-		gboolean vpn_secrets = FALSE;
-		const char *ctype, *tmp;
+	if (!g_key_file_load_from_file (key_file, filename, G_KEY_FILE_NONE, error))
+		goto out;
 
-		connection = nm_connection_new ();
+	connection = nm_connection_new ();
 
-		groups = g_key_file_get_groups (key_file, &length);
-		for (i = 0; i < length; i++) {
-			/* Only read out secrets when needed */
-			if (!strcmp (groups[i], VPN_SECRETS_GROUP)) {
-				vpn_secrets = TRUE;
-				continue;
-			}
-
-			setting = read_setting (key_file, groups[i]);
-			if (setting)
-				nm_connection_add_setting (connection, setting);
+	groups = g_key_file_get_groups (key_file, &length);
+	for (i = 0; i < length; i++) {
+		/* Only read out secrets when needed */
+		if (!strcmp (groups[i], VPN_SECRETS_GROUP)) {
+			vpn_secrets = TRUE;
+			continue;
 		}
 
-		/* Make sure that we have the base device type setting even if
-		 * the keyfile didn't include it, which can happen when the base
-		 * device type setting is all default values (like ethernet).
-		 */
-		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
-		if (s_con) {
-			ctype = nm_setting_connection_get_connection_type (s_con);
-			setting = nm_connection_get_setting_by_name (connection, ctype);
-			if (ctype) {
-				gboolean add_serial = FALSE;
-				NMSetting *new_setting = NULL;
-
-				if (!setting && !strcmp (ctype, NM_SETTING_WIRED_SETTING_NAME))
-					new_setting = nm_setting_wired_new ();
-				else if (!strcmp (ctype, NM_SETTING_BLUETOOTH_SETTING_NAME)) {
-					s_bt = (NMSettingBluetooth *) nm_connection_get_setting (connection, NM_TYPE_SETTING_BLUETOOTH);
-					if (s_bt) {
-						tmp = nm_setting_bluetooth_get_connection_type (s_bt);
-						if (tmp && !strcmp (tmp, NM_SETTING_BLUETOOTH_TYPE_DUN))
-							add_serial = TRUE;
-					}
-				} else if (!strcmp (ctype, NM_SETTING_GSM_SETTING_NAME))
-					add_serial = TRUE;
-				else if (!strcmp (ctype, NM_SETTING_CDMA_SETTING_NAME))
-					add_serial = TRUE;
-
-				/* Bluetooth DUN, GSM, and CDMA connections require a serial setting */
-				if (add_serial && !nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL))
-					new_setting = nm_setting_serial_new ();
-
-				if (new_setting)
-					nm_connection_add_setting (connection, new_setting);
-			}
-		}
-
-		/* Serial connections require a PPP setting too */
-		if (nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL)) {
-			if (!nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP))
-				nm_connection_add_setting (connection, nm_setting_ppp_new ());
-		}
-
-		/* Handle vpn secrets after the 'vpn' setting was read */
-		if (vpn_secrets) {
-			NMSettingVPN *s_vpn;
-
-			s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
-			if (s_vpn)
-				read_vpn_secrets (key_file, s_vpn);
-		}
-
-		g_strfreev (groups);
-	} else {
-		g_warning ("Error parsing file '%s': %s", filename, err->message);
-		g_error_free (err);
+		setting = read_setting (key_file, groups[i]);
+		if (setting)
+			nm_connection_add_setting (connection, setting);
 	}
 
-	g_key_file_free (key_file);
+	/* Make sure that we have the base device type setting even if
+	 * the keyfile didn't include it, which can happen when the base
+	 * device type setting is all default values (like ethernet).
+	 */
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	if (s_con) {
+		ctype = nm_setting_connection_get_connection_type (s_con);
+		setting = nm_connection_get_setting_by_name (connection, ctype);
+		if (ctype) {
+			gboolean add_serial = FALSE;
+			NMSetting *new_setting = NULL;
 
+			if (!setting && !strcmp (ctype, NM_SETTING_WIRED_SETTING_NAME))
+				new_setting = nm_setting_wired_new ();
+			else if (!strcmp (ctype, NM_SETTING_BLUETOOTH_SETTING_NAME)) {
+				s_bt = (NMSettingBluetooth *) nm_connection_get_setting (connection, NM_TYPE_SETTING_BLUETOOTH);
+				if (s_bt) {
+					tmp = nm_setting_bluetooth_get_connection_type (s_bt);
+					if (tmp && !strcmp (tmp, NM_SETTING_BLUETOOTH_TYPE_DUN))
+						add_serial = TRUE;
+				}
+			} else if (!strcmp (ctype, NM_SETTING_GSM_SETTING_NAME))
+				add_serial = TRUE;
+			else if (!strcmp (ctype, NM_SETTING_CDMA_SETTING_NAME))
+				add_serial = TRUE;
+
+			/* Bluetooth DUN, GSM, and CDMA connections require a serial setting */
+			if (add_serial && !nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL))
+				new_setting = nm_setting_serial_new ();
+
+			if (new_setting)
+				nm_connection_add_setting (connection, new_setting);
+		}
+	}
+
+	/* Serial connections require a PPP setting too */
+	if (nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL)) {
+		if (!nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP))
+			nm_connection_add_setting (connection, nm_setting_ppp_new ());
+	}
+
+	/* Handle vpn secrets after the 'vpn' setting was read */
+	if (vpn_secrets) {
+		NMSettingVPN *s_vpn;
+
+		s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
+		if (s_vpn)
+			read_vpn_secrets (key_file, s_vpn);
+	}
+
+	g_strfreev (groups);
+
+	/* Verify the connection */
+	if (!nm_connection_verify (connection, &verify_error)) {
+		g_set_error (error,
+			         NM_SETTINGS_INTERFACE_ERROR,
+			         NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
+			         "invalid or missing connection property '%s'",
+			         (verify_error && verify_error->message) ? verify_error->message : "(unknown)");
+		g_clear_error (&verify_error);
+		g_object_unref (connection);
+		connection = NULL;
+	}
+
+out:
+	g_key_file_free (key_file);
 	return connection;
 }

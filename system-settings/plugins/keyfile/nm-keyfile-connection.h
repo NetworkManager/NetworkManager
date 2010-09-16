@@ -45,7 +45,7 @@ typedef struct {
 
 GType nm_keyfile_connection_get_type (void);
 
-NMKeyfileConnection *nm_keyfile_connection_new (const char *filename);
+NMKeyfileConnection *nm_keyfile_connection_new (const char *filename, GError **error);
 
 const char *nm_keyfile_connection_get_filename (NMKeyfileConnection *self);
 
