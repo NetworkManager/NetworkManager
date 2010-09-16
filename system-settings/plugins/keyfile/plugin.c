@@ -38,9 +38,7 @@
 #include "nm-system-config-interface.h"
 #include "nm-keyfile-connection.h"
 #include "writer.h"
-
-#define KEYFILE_PLUGIN_NAME "keyfile"
-#define KEYFILE_PLUGIN_INFO "(c) 2007 - 2010 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list."
+#include "common.h"
 
 #define CONF_FILE SYSCONFDIR "/NetworkManager/NetworkManager.conf"
 #define OLD_CONF_FILE SYSCONFDIR "/NetworkManager/nm-system-settings.conf"

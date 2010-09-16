@@ -40,10 +40,10 @@
 #include <arpa/inet.h>
 #include <netinet/ether.h>
 #include <string.h>
-#include <nm-settings-interface.h>
 
 #include "nm-dbus-glib-types.h"
 #include "reader.h"
+#include "common.h"
 
 static gboolean
 read_array_of_uint (GKeyFile *file,
@@ -1004,9 +1004,7 @@ connection_from_file (const char *filename, GError **error)
 	GError *verify_error = NULL;
 
 	if (stat (filename, &statbuf) != 0 || !S_ISREG (statbuf.st_mode)) {
-		g_set_error_literal (error,
-		                     NM_SETTINGS_INTERFACE_ERROR,
-		                     NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
+		g_set_error_literal (error, KEYFILE_PLUGIN_ERROR, 0,
 		                     "File did not exist or was not a regular file");
 		return NULL;
 	}
@@ -1015,9 +1013,7 @@ connection_from_file (const char *filename, GError **error)
 	bad_permissions = statbuf.st_mode & 0077;
 
 	if (bad_owner || bad_permissions) {
-		g_set_error (error,
-		             NM_SETTINGS_INTERFACE_ERROR,
-		             NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
+		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
 		             "File permissions (%o) or owner (%d) were insecure",
 		             statbuf.st_mode, statbuf.st_uid);
 		return NULL;
@@ -1096,9 +1092,7 @@ connection_from_file (const char *filename, GError **error)
 
 	/* Verify the connection */
 	if (!nm_connection_verify (connection, &verify_error)) {
-		g_set_error (error,
-			         NM_SETTINGS_INTERFACE_ERROR,
-			         NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
+		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
 			         "invalid or missing connection property '%s'",
 			         (verify_error && verify_error->message) ? verify_error->message : "(unknown)");
 		g_clear_error (&verify_error);
