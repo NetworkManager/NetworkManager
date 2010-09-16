@@ -2,7 +2,7 @@
 .\"
 .\" Copyright (C) 2010 Red Hat, Inc.
 .\"
-.TH "NetworkManager.conf" "5" "1 February 2010" ""
+.TH "NetworkManager.conf" "5" "16 September 2010" ""
 .SH NAME
 NetworkManager.conf \- NetworkManager configuration file
 .SH SYNOPSIS
@@ -87,6 +87,23 @@ This key sets up what DHCP client NetworkManager will use. Presently
 \fIdhclient\fP and \fIdhcpcd\fP are supported. The client configured here should
 be available on your system too. If this key is missing, available DHCP clients
 are looked for in this order: dhclient, dhcpcd.
+.TP
+.B no-auto-default=\fI<hwaddr>\fP,\fI<hwaddr>\fP,...
+Set devices for which NetworkManager shouldn't create default wired connection
+(Auto eth0). NetworkManager creates a default wired connection for any wired
+device that is managed and doesn't have a connection configured. List a device
+in this option to inhibit creating the default connection for the device.
+.br
+When the default wired connection is deleted or saved to a new persistent connection
+by a plugin, the MAC address of the wired device is automatically added to this list
+to prevent creating the default connection for that device again.
+Devices are specified by their MAC addresses, in lowercase. Multiple
+entries are separated by commas.
+.br
+Example:
+.nf
+no-auto-default=00:22:68:5c:5d:c4,00:1e:65:ff:aa:ee
+.fi
 .SS [keyfile]
 This section contains keyfile-specific options and thus only has effect when using \fIkeyfile\fP plugin.
 .TP
