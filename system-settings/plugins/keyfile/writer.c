@@ -36,6 +36,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <netinet/ether.h>
+#include <ctype.h>
 
 #include "nm-dbus-glib-types.h"
 #include "writer.h"
@@ -453,6 +454,49 @@ write_hash_of_string (GKeyFile *file,
 	g_hash_table_foreach (hash, write_hash_of_string_helper, &info);
 }
 
+static void
+ssid_writer (GKeyFile *file,
+             NMSetting *setting,
+             const char *key,
+             const GValue *value)
+{
+	GByteArray *array;
+	const char *setting_name = nm_setting_get_name (setting);
+	gboolean new_format = TRUE;
+	int i, *tmp_array;
+	char *ssid;
+
+	g_return_if_fail (G_VALUE_HOLDS (value, DBUS_TYPE_G_UCHAR_ARRAY));
+
+	array = (GByteArray *) g_value_get_boxed (value);
+	if (!array || !array->len)
+		return;
+
+	/* Check whether each byte is printable.  If not, we have to use an
+	 * integer list, otherwise we can just use a string.
+	 */
+	for (i = 0; i < array->len; i++) {
+		char c = array->data[i] & 0xFF;
+		if (!isprint (c)) {
+			new_format = FALSE;
+			break;
+		}
+	}
+
+	if (new_format) {
+		ssid = g_malloc0 (array->len + 1);
+		memcpy (ssid, array->data, array->len);
+		g_key_file_set_string (file, setting_name, key, ssid);
+		g_free (ssid);
+	} else {
+		tmp_array = g_new (gint, array->len);
+		for (i = 0; i < array->len; i++)
+			tmp_array[i] = (int) array->data[i];
+		g_key_file_set_integer_list (file, setting_name, key, tmp_array, array->len);
+		g_free (tmp_array);
+	}
+}
+
 typedef struct {
 	const char *setting_name;
 	const char *key;
@@ -502,6 +546,9 @@ static KeyWriter key_writers[] = {
 	{ NM_SETTING_BLUETOOTH_SETTING_NAME,
 	  NM_SETTING_BLUETOOTH_BDADDR,
 	  mac_address_writer },
+	{ NM_SETTING_WIRELESS_SETTING_NAME,
+	  NM_SETTING_WIRELESS_SSID,
+	  ssid_writer },
 	{ NULL, NULL, NULL }
 };
 
