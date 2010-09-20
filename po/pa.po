@@ -11,8 +11,8 @@ msgstr ""
 "Project-Id-Version: NetworkManager.HEAD\n"
 "Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug."
 "cgi?product=NetworkManager&component=general\n"
-"POT-Creation-Date: 2010-09-08 03:25+0000\n"
-"PO-Revision-Date: 2010-09-08 18:45+0530\n"
+"POT-Creation-Date: 2010-09-18 03:25+0000\n"
+"PO-Revision-Date: 2010-09-19 08:09+0530\n"
 "Last-Translator: A S Alam <aalam@users.sf.net>\n"
 "Language-Team: Punjabi/Panjabi <punjabi-users@lists.sf.net>\n"
 "MIME-Version: 1.0\n"
@@ -216,7 +216,7 @@ msgid "Error: no valid parameter specified."
 msgstr "ਗਲਤੀ: ਕੋਈ ਢੁੱਕਵਾਂ ਪੈਰਾਮੀਟਰ ਨਹੀਂ ਦਿੱਤਾ।"
 
 #: ../cli/src/connections.c:544 ../cli/src/connections.c:1577
-#: ../cli/src/devices.c:1293 ../cli/src/network-manager.c:274
+#: ../cli/src/devices.c:1293 ../cli/src/network-manager.c:359
 #, c-format
 msgid "Error: %s."
 msgstr "ਗਲਤੀ: %s"
@@ -265,8 +265,8 @@ msgstr "ਚਾਲੂ ਕੀਤਾ"
 
 #: ../cli/src/connections.c:1103 ../cli/src/connections.c:1126
 #: ../cli/src/connections.c:1159 ../cli/src/devices.c:246
-#: ../cli/src/devices.c:558 ../cli/src/network-manager.c:92
-#: ../cli/src/network-manager.c:145 ../cli/src/settings.c:473
+#: ../cli/src/devices.c:558 ../cli/src/network-manager.c:94
+#: ../cli/src/network-manager.c:149 ../cli/src/settings.c:473
 msgid "unknown"
 msgstr "ਅਣਜਾਣ"
 
@@ -501,13 +501,11 @@ msgstr "IP4-DNS"
 
 #. 6
 #: ../cli/src/devices.c:79
-#| msgid "IP4-SETTINGS"
 msgid "IP6-SETTINGS"
 msgstr "IP6-ਸੈਟਿੰਗ"
 
 #. 7
 #: ../cli/src/devices.c:80
-#| msgid "IP4-DNS"
 msgid "IP6-DNS"
 msgstr "IP6-DNS"
 
@@ -662,7 +660,7 @@ msgstr "ਬਿਨ-ਪਰਬੰਧ"
 msgid "unavailable"
 msgstr "ਨਾ-ਉਪਲੱਬਧ"
 
-#: ../cli/src/devices.c:232 ../cli/src/network-manager.c:89
+#: ../cli/src/devices.c:232 ../cli/src/network-manager.c:91
 msgid "disconnected"
 msgstr "ਡਿਸ-ਕੁਨੈਕਟ ਕੀਤਾ"
 
@@ -682,7 +680,7 @@ msgstr "ਕੁਨੈਕਟ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ (ਪਰਮਾ
 msgid "connecting (getting IP configuration)"
 msgstr "ਕੁਨੈਕਟ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ (IP ਸੰਰਚਨਾ ਲਈ ਜਾ ਰਹੀ ਹੈ)"
 
-#: ../cli/src/devices.c:242 ../cli/src/network-manager.c:87
+#: ../cli/src/devices.c:242 ../cli/src/network-manager.c:89
 msgid "connected"
 msgstr "ਕੁਨੈਕਟ ਹੋਇਆ"
 
@@ -863,116 +861,176 @@ msgstr "ਚੱਲ ਰਿਹਾ ਹੈ"
 
 #. 1
 #: ../cli/src/network-manager.c:37
-msgid "WIFI-HARDWARE"
-msgstr "ਵਾਈਫਾਈ ਹਾਰਡਵੇਅਰ"
+msgid "NET-ENABLED"
+msgstr "NET-ENABLED"
 
 #. 2
 #: ../cli/src/network-manager.c:38
-msgid "WIFI"
-msgstr "ਵਾਈਫਾਈ"
+msgid "WIFI-HARDWARE"
+msgstr "ਵਾਈਫਾਈ ਹਾਰਡਵੇਅਰ"
 
 #. 3
 #: ../cli/src/network-manager.c:39
-msgid "WWAN-HARDWARE"
-msgstr "WWAN-ਹਾਰਡਵੇਅਰ"
+msgid "WIFI"
+msgstr "ਵਾਈਫਾਈ"
 
 #. 4
 #: ../cli/src/network-manager.c:40
+msgid "WWAN-HARDWARE"
+msgstr "WWAN-ਹਾਰਡਵੇਅਰ"
+
+#. 5
+#: ../cli/src/network-manager.c:41
 msgid "WWAN"
 msgstr "WWAN"
 
-#: ../cli/src/network-manager.c:62
+#: ../cli/src/network-manager.c:64
 #, c-format
+#| msgid ""
+#| "Usage: nmcli nm { COMMAND | help }\n"
+#| "\n"
+#| "  COMMAND := { status | sleep | wakeup | wifi | wwan }\n"
+#| "\n"
+#| "  status\n"
+#| "  sleep\n"
+#| "  wakeup\n"
+#| "  wifi [on|off]\n"
+#| "  wwan [on|off]\n"
+#| "\n"
 msgid ""
 "Usage: nmcli nm { COMMAND | help }\n"
 "\n"
-"  COMMAND := { status | sleep | wakeup | wifi | wwan }\n"
+"  COMMAND := { status | enable | sleep | wifi | wwan }\n"
 "\n"
 "  status\n"
-"  sleep\n"
-"  wakeup\n"
+"  enable [true|false]\n"
+"  sleep [true|false]\n"
 "  wifi [on|off]\n"
 "  wwan [on|off]\n"
 "\n"
 msgstr ""
 "ਵਰਤੋਂ: nmcli nm { COMMAND | help }\n"
 "\n"
-"  COMMAND := { status | sleep | wakeup | wifi | wwan }\n"
+"  COMMAND := { status | enable | sleep | wifi | wwan }\n"
 "\n"
 "  status\n"
-"  sleep\n"
-"  wakeup\n"
+"  enable [true|false]\n"
+"  sleep [true|false]\n"
 "  wifi [on|off]\n"
 "  wwan [on|off]\n"
 "\n"
 
-#: ../cli/src/network-manager.c:83
+#: ../cli/src/network-manager.c:85
 msgid "asleep"
 msgstr "asleep"
 
-#: ../cli/src/network-manager.c:85
+#: ../cli/src/network-manager.c:87
 msgid "connecting"
 msgstr "ਕੁਨੈਕਟ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ"
 
-#: ../cli/src/network-manager.c:125
+#: ../cli/src/network-manager.c:128
 #, c-format
 msgid "Error: 'nm status': %s"
 msgstr "ਗਲਤੀ: 'nm status': %s"
 
-#: ../cli/src/network-manager.c:127
+#: ../cli/src/network-manager.c:130
 #, c-format
 msgid "Error: 'nm status': %s; allowed fields: %s"
 msgstr "ਗਲਤੀ: 'nm status': %s; ਮਨਜ਼ੂਰ ਖੇਤਰ: %s"
 
-#: ../cli/src/network-manager.c:134
+#: ../cli/src/network-manager.c:137
 msgid "NetworkManager status"
 msgstr "ਨੈੱਟਵਰਕਮੈਨੇਜਰ ਹਾਲਤ"
 
 #. Print header
-#: ../cli/src/network-manager.c:140 ../cli/src/network-manager.c:141
-#: ../cli/src/network-manager.c:142 ../cli/src/network-manager.c:143
-#: ../cli/src/network-manager.c:211 ../cli/src/network-manager.c:243
+#: ../cli/src/network-manager.c:144 ../cli/src/network-manager.c:145
+#: ../cli/src/network-manager.c:146 ../cli/src/network-manager.c:147
+#: ../cli/src/network-manager.c:154 ../cli/src/network-manager.c:247
+#: ../cli/src/network-manager.c:296 ../cli/src/network-manager.c:328
 msgid "enabled"
 msgstr "ਚਾਲੂ ਹੈ"
 
-#: ../cli/src/network-manager.c:140 ../cli/src/network-manager.c:141
-#: ../cli/src/network-manager.c:142 ../cli/src/network-manager.c:143
-#: ../cli/src/network-manager.c:211 ../cli/src/network-manager.c:243
+#: ../cli/src/network-manager.c:144 ../cli/src/network-manager.c:145
+#: ../cli/src/network-manager.c:146 ../cli/src/network-manager.c:147
+#: ../cli/src/network-manager.c:154 ../cli/src/network-manager.c:247
+#: ../cli/src/network-manager.c:296 ../cli/src/network-manager.c:328
 msgid "disabled"
 msgstr "ਬੰਦ ਹੈ"
 
-#: ../cli/src/network-manager.c:148
+#: ../cli/src/network-manager.c:152
 msgid "running"
 msgstr "ਚੱਲ ਰਿਹਾ ਹੈ"
 
-#: ../cli/src/network-manager.c:148
+#: ../cli/src/network-manager.c:152
 msgid "not running"
 msgstr "ਨਹੀਂ ਚੱਲ ਰਿਹਾ ਹੈ"
 
-#: ../cli/src/network-manager.c:201 ../cli/src/network-manager.c:233
+#: ../cli/src/network-manager.c:175
+#, c-format
+#| msgid "Error: could not connect to D-Bus."
+msgid "Error: Couldn't connect to system bus: %s"
+msgstr "ਗਲਤੀ: ਡੀ-ਬੱਸ ਨਾਲ ਕੁਨੈਕਟ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ: %s"
+
+#: ../cli/src/network-manager.c:186
+#, c-format
+#| msgid "Error: could not connect to D-Bus."
+msgid "Error: Couldn't create D-Bus object proxy."
+msgstr "ਗਲਤੀ: ਡੀ-ਬੱਸ ਆਬਜੈਕਟ ਪਰਾਕਸੀ ਨਹੀਂ ਬਣਾਇਆ ਜਾ ਸਕਿਆ।"
+
+#: ../cli/src/network-manager.c:192
+#, c-format
+#| msgid "Error: 'con list': %s"
+msgid "Error in sleep: %s"
+msgstr "ਸਲੀਪ 'ਚ ਗਲਤੀ: %s"
+
+#: ../cli/src/network-manager.c:237 ../cli/src/network-manager.c:286
+#: ../cli/src/network-manager.c:318
 #, c-format
 msgid "Error: '--fields' value '%s' is not valid here; allowed fields: %s"
 msgstr "ਗਲਤੀ: '--fields' value '%s' is not valid here; allowed fields: %s"
 
-#: ../cli/src/network-manager.c:209
+#: ../cli/src/network-manager.c:245
+#| msgid "WiFi enabled"
+msgid "Networking enabled"
+msgstr "ਨੈਟਵਰਕਿੰਗ ਚਾਲੂ ਹੈ"
+
+#: ../cli/src/network-manager.c:256
+#, c-format
+#| msgid "Error: invalid 'wwan' parameter: '%s'."
+msgid "Error: invalid 'enable' parameter: '%s'; use 'true' or 'false'."
+msgstr "ਗਲਤ: ਗਲਤ 'enable' ਪੈਰਾਮੀਟਰ: '%s'; 'true' ਜਾਂ 'false' ਵਰਤੋਂ।"
+
+#: ../cli/src/network-manager.c:265
+#, c-format
+#| msgid "Error: Could not connect to NetworkManager."
+msgid "Error: Sleeping status is not exported by NetworkManager."
+msgstr "ਗਲਤੀ: ਨੈੱਟਵਰਕਮੈਨੇਜਰ ਵਲੋਂ ਸਲੀਪ (sleep) ਹਾਲਤ ਐਕਸਪੋਰਟ ਨਹੀਂ ਕੀਤੀ ਜਾ ਸਕਦੀ।"
+
+#: ../cli/src/network-manager.c:273
+#, c-format
+#| msgid "Error: invalid 'wifi' parameter: '%s'."
+msgid "Error: invalid 'sleep' parameter: '%s'; use 'true' or 'false'."
+msgstr "ਗਲਤੀ: ਗਲਤ 'sleep' ਪੈਰਾਮੀਟਰ: '%s'; 'true' ਜਾਂ 'false' ਵਰਤੋਂ।"
+
+#: ../cli/src/network-manager.c:294
 msgid "WiFi enabled"
 msgstr "ਵਾਈਫਾਈ ਚਾਲੂ ਹੈ"
 
-#: ../cli/src/network-manager.c:220
+#: ../cli/src/network-manager.c:305
 #, c-format
 msgid "Error: invalid 'wifi' parameter: '%s'."
 msgstr "ਗਲਤੀ: ਅਢੁੱਕਵਾਂ 'wifi' ਪੈਰਾਮੀਟਰ: '%s'."
 
-#: ../cli/src/network-manager.c:241
+#: ../cli/src/network-manager.c:326
 msgid "WWAN enabled"
 msgstr "WWAN ਚਾਲੂ ਹੈ"
 
-#: ../cli/src/network-manager.c:252
+#: ../cli/src/network-manager.c:337
 #, c-format
 msgid "Error: invalid 'wwan' parameter: '%s'."
 msgstr "ਗਲਤੀ: ਅਢੁੱਕਵਾਂ 'wwan' ਪੈਰਾਮੀਟਰ: '%s'."
 
-#: ../cli/src/network-manager.c:263
+#: ../cli/src/network-manager.c:348
 #, c-format
 msgid "Error: 'nm' command '%s' is not valid."
 msgstr "ਗਲਤੀ: 'nm' ਕਮਾਂਡ '%s' ਢੁੱਕਵੀਂ ਨਹੀਂ ਹੈ।"
