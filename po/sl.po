@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager master\n"
 "Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?product=NetworkManager&component=general\n"
-"POT-Creation-Date: 2010-09-16 03:25+0000\n"
-"PO-Revision-Date: 2010-09-16 18:17+0100\n"
+"POT-Creation-Date: 2010-09-18 15:24+0000\n"
+"PO-Revision-Date: 2010-09-18 20:27+0100\n"
 "Last-Translator: Matej Urbančič <mateju@svn.gnome.org>\n"
 "Language-Team: Slovenian GNOME Translation Team <gnome-si@googlegroups.com>\n"
 "MIME-Version: 1.0\n"
@@ -279,7 +279,7 @@ msgstr "Napaka: ni podanega veljavnega parametra."
 #: ../cli/src/connections.c:544
 #: ../cli/src/connections.c:1577
 #: ../cli/src/devices.c:1293
-#: ../cli/src/network-manager.c:274
+#: ../cli/src/network-manager.c:359
 #, c-format
 msgid "Error: %s."
 msgstr "Napaka: %s."
@@ -331,8 +331,8 @@ msgstr "začeto"
 #: ../cli/src/connections.c:1159
 #: ../cli/src/devices.c:246
 #: ../cli/src/devices.c:558
-#: ../cli/src/network-manager.c:92
-#: ../cli/src/network-manager.c:145
+#: ../cli/src/network-manager.c:94
+#: ../cli/src/network-manager.c:149
 #: ../cli/src/settings.c:473
 msgid "unknown"
 msgstr "neznano"
@@ -740,7 +740,7 @@ msgid "unavailable"
 msgstr "ni razpoložljivo"
 
 #: ../cli/src/devices.c:232
-#: ../cli/src/network-manager.c:89
+#: ../cli/src/network-manager.c:91
 msgid "disconnected"
 msgstr "povezava je prekinjena"
 
@@ -761,7 +761,7 @@ msgid "connecting (getting IP configuration)"
 msgstr "povezovanje (pridobivanje nastavitev IP)"
 
 #: ../cli/src/devices.c:242
-#: ../cli/src/network-manager.c:87
+#: ../cli/src/network-manager.c:89
 msgid "connected"
 msgstr "povezano"
 
@@ -946,123 +946,167 @@ msgstr "V TEKU"
 
 #. 1
 #: ../cli/src/network-manager.c:37
-msgid "WIFI-HARDWARE"
-msgstr "WIFI-STROJNA OPREMA"
+msgid "NET-ENABLED"
+msgstr "NET-OMOGOČENO"
 
 #. 2
 #: ../cli/src/network-manager.c:38
-msgid "WIFI"
-msgstr "WIFI"
+msgid "WIFI-HARDWARE"
+msgstr "WIFI-STROJNA OPREMA"
 
 #. 3
 #: ../cli/src/network-manager.c:39
-msgid "WWAN-HARDWARE"
-msgstr "WWAN-STROJNA OPREMA"
+msgid "WIFI"
+msgstr "WIFI"
 
 #. 4
 #: ../cli/src/network-manager.c:40
+msgid "WWAN-HARDWARE"
+msgstr "WWAN-STROJNA OPREMA"
+
+#. 5
+#: ../cli/src/network-manager.c:41
 msgid "WWAN"
 msgstr "WWAN"
 
-#: ../cli/src/network-manager.c:62
+#: ../cli/src/network-manager.c:64
 #, c-format
 msgid ""
 "Usage: nmcli nm { COMMAND | help }\n"
 "\n"
-"  COMMAND := { status | sleep | wakeup | wifi | wwan }\n"
+"  COMMAND := { status | enable | sleep | wifi | wwan }\n"
 "\n"
 "  status\n"
-"  sleep\n"
-"  wakeup\n"
+"  enable [true|false]\n"
+"  sleep [true|false]\n"
 "  wifi [on|off]\n"
 "  wwan [on|off]\n"
 "\n"
 msgstr ""
 "Uporaba: nmcli nm { UKAZ | help }\n"
 "\n"
-"UKAZ := { status | sleep | wakeup | wifi | wwan }\n"
+"  UKAZ := { status | enable | sleep | wifi | wwan }\n"
 "\n"
-"status\n"
-"sleep\n"
-"wakeup\n"
-"wifi [on|off]\n"
-"wwan [on|off]\n"
+"  status\n"
+"  enable [true|false]\n"
+"  sleep [true|false]\n"
+"  wifi [on|off]\n"
+"  wwan [on|off]\n"
 "\n"
 
-#: ../cli/src/network-manager.c:83
+#: ../cli/src/network-manager.c:85
 msgid "asleep"
 msgstr "v mirovanju"
 
-#: ../cli/src/network-manager.c:85
+#: ../cli/src/network-manager.c:87
 msgid "connecting"
 msgstr "povezovanje"
 
-#: ../cli/src/network-manager.c:125
+#: ../cli/src/network-manager.c:128
 #, c-format
 msgid "Error: 'nm status': %s"
 msgstr "Napaka: 'nm status': %s"
 
-#: ../cli/src/network-manager.c:127
+#: ../cli/src/network-manager.c:130
 #, c-format
 msgid "Error: 'nm status': %s; allowed fields: %s"
 msgstr "Napaka: 'nm status': %s; dovoljena polja: %s"
 
-#: ../cli/src/network-manager.c:134
+#: ../cli/src/network-manager.c:137
 msgid "NetworkManager status"
 msgstr "Stanje NetworkManager"
 
 #. Print header
-#: ../cli/src/network-manager.c:140
-#: ../cli/src/network-manager.c:141
-#: ../cli/src/network-manager.c:142
-#: ../cli/src/network-manager.c:143
-#: ../cli/src/network-manager.c:211
-#: ../cli/src/network-manager.c:243
+#: ../cli/src/network-manager.c:144
+#: ../cli/src/network-manager.c:145
+#: ../cli/src/network-manager.c:146
+#: ../cli/src/network-manager.c:147
+#: ../cli/src/network-manager.c:154
+#: ../cli/src/network-manager.c:247
+#: ../cli/src/network-manager.c:296
+#: ../cli/src/network-manager.c:328
 msgid "enabled"
 msgstr "omogočeno"
 
-#: ../cli/src/network-manager.c:140
-#: ../cli/src/network-manager.c:141
-#: ../cli/src/network-manager.c:142
-#: ../cli/src/network-manager.c:143
-#: ../cli/src/network-manager.c:211
-#: ../cli/src/network-manager.c:243
+#: ../cli/src/network-manager.c:144
+#: ../cli/src/network-manager.c:145
+#: ../cli/src/network-manager.c:146
+#: ../cli/src/network-manager.c:147
+#: ../cli/src/network-manager.c:154
+#: ../cli/src/network-manager.c:247
+#: ../cli/src/network-manager.c:296
+#: ../cli/src/network-manager.c:328
 msgid "disabled"
 msgstr "onemogočeno"
 
-#: ../cli/src/network-manager.c:148
+#: ../cli/src/network-manager.c:152
 msgid "running"
 msgstr "v teku"
 
-#: ../cli/src/network-manager.c:148
+#: ../cli/src/network-manager.c:152
 msgid "not running"
 msgstr "ni v teku"
 
-#: ../cli/src/network-manager.c:201
-#: ../cli/src/network-manager.c:233
+#: ../cli/src/network-manager.c:175
+#, c-format
+msgid "Error: Couldn't connect to system bus: %s"
+msgstr "Napaka: ni se mogoče povezati s sistemskim vodilom: %s"
+
+#: ../cli/src/network-manager.c:186
+#, c-format
+msgid "Error: Couldn't create D-Bus object proxy."
+msgstr "Napaka: ni mogoče ustvariti posredniškega predmeta vodila D-Bus."
+
+#: ../cli/src/network-manager.c:192
+#, c-format
+msgid "Error in sleep: %s"
+msgstr "Napaka v mirovanju: %s"
+
+#: ../cli/src/network-manager.c:237
+#: ../cli/src/network-manager.c:286
+#: ../cli/src/network-manager.c:318
 #, c-format
 msgid "Error: '--fields' value '%s' is not valid here; allowed fields: %s"
 msgstr "Napaka: vrednost '--fields' '%s' ni veljavna, dovoljena polja: %s"
 
-#: ../cli/src/network-manager.c:209
+#: ../cli/src/network-manager.c:245
+msgid "Networking enabled"
+msgstr "Omrežje je omogočeno"
+
+#: ../cli/src/network-manager.c:256
+#, c-format
+msgid "Error: invalid 'enable' parameter: '%s'; use 'true' or 'false'."
+msgstr "Napaka: neveljaven parameter 'enable': '%s'; uporabite 'true' ali 'false'."
+
+#: ../cli/src/network-manager.c:265
+#, c-format
+msgid "Error: Sleeping status is not exported by NetworkManager."
+msgstr "Napaka: stanje v mirovanju ni izvoženo s programom NetworkManager."
+
+#: ../cli/src/network-manager.c:273
+#, c-format
+msgid "Error: invalid 'sleep' parameter: '%s'; use 'true' or 'false'."
+msgstr "Napaka: neveljaven parameter 'sleep': '%s'; uporabite 'true' ali 'false'."
+
+#: ../cli/src/network-manager.c:294
 msgid "WiFi enabled"
 msgstr "WiFi je omogočen"
 
-#: ../cli/src/network-manager.c:220
+#: ../cli/src/network-manager.c:305
 #, c-format
 msgid "Error: invalid 'wifi' parameter: '%s'."
 msgstr "Napaka: neveljaven 'wifi' parameter: '%s'."
 
-#: ../cli/src/network-manager.c:241
+#: ../cli/src/network-manager.c:326
 msgid "WWAN enabled"
 msgstr "WWAN je omogočen"
 
-#: ../cli/src/network-manager.c:252
+#: ../cli/src/network-manager.c:337
 #, c-format
 msgid "Error: invalid 'wwan' parameter: '%s'."
 msgstr "Napaka: neveljaven 'wwan' parameter: '%s'."
 
-#: ../cli/src/network-manager.c:263
+#: ../cli/src/network-manager.c:348
 #, c-format
 msgid "Error: 'nm' command '%s' is not valid."
 msgstr "Napaka: ukaz 'nm' '%s' ni veljaven"
@@ -1627,7 +1671,6 @@ msgid "Modify persistent system hostname"
 msgstr "Spremeni trajno sistemsko ime gostitelja"
 
 #: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:4
-#| msgid "No active connections!"
 msgid "Modify system connections"
 msgstr "Spremeni sistemske povezave"
 
@@ -1708,9 +1751,6 @@ msgstr "med čakanjem na podatke na vtiču je prišlo do napake"
 
 #: ../src/nm-netlink-monitor.c:254
 #, c-format
-#| msgid ""
-#| "unable to bind to netlink socket for monitoring wired ethernet devices - %"
-#| "s"
 msgid "unable to connect to netlink for monitoring link status: %s"
 msgstr "ni se mogoče povezati z netlink za nadziranje stanja povezave: %s"
 
@@ -1722,15 +1762,11 @@ msgstr "ni mogoče omogočiti ročnika netlink overjanje:% s"
 #: ../src/nm-netlink-monitor.c:291
 #: ../src/nm-netlink-monitor.c:353
 #, c-format
-#| msgid ""
-#| "unable to create netlink socket for monitoring wired ethernet devices - %s"
 msgid "unable to allocate netlink handle for monitoring link status: %s"
 msgstr "ni mogoče dodeliti ročice netlink za nadziranje stanja povezave: %s"
 
 #: ../src/nm-netlink-monitor.c:376
 #, c-format
-#| msgid ""
-#| "unable to create netlink socket for monitoring wired ethernet devices - %s"
 msgid "unable to allocate netlink link cache for monitoring link status: %s"
 msgstr "ni mogoče dodeliti predpomnilnika netlink povezav za nadziranje stanja povezave: %s"
 
@@ -1745,12 +1781,12 @@ msgstr "skupini netlink se ni mogoče pridružiti: %s"
 msgid "error updating link cache: %s"
 msgstr "napaka med posodabljanjem predpomnilnika povezave: %s"
 
-#: ../src/main.c:498
+#: ../src/main.c:499
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr "Neveljavna možnost. Uporabite --help za seznam veljavnih možnosti.\n"
 
-#: ../src/main.c:569
+#: ../src/main.c:570
 #, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr "%s. Uporabite --help za prikaz seznam veljavnih možnosti.\n"
@@ -1795,11 +1831,11 @@ msgstr "Neznana raven beleženja '%s'"
 msgid "Unknown log domain '%s'"
 msgstr "Neznana domena beleženja '%s'"
 
-#: ../src/named-manager/nm-named-manager.c:384
+#: ../src/dns-manager/nm-dns-manager.c:384
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "OPOMBA: razreševalnik libc morda ne podpira več kot 3 imenskih strežnikov."
 
-#: ../src/named-manager/nm-named-manager.c:386
+#: ../src/dns-manager/nm-dns-manager.c:386
 msgid "The nameservers listed below may not be recognized."
 msgstr "Navedeni imenski strežniki morda ne bodo prepoznani."
 
@@ -1809,7 +1845,7 @@ msgid "Auto %s"
 msgstr "Samodejno %s"
 
 #: ../system-settings/plugins/ifcfg-rh/reader.c:3412
-#| msgid "Open System"
+#: ../system-settings/plugins/ifnet/connection_parser.c:49
 msgid "System"
 msgstr "Sistem"
 
