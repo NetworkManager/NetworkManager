@@ -253,7 +253,6 @@ dispatch_netconfig (const char *domain,
                     char **nameservers,
                     const char *nis_domain,
                     char **nis_servers,
-                    gboolean caching,
                     const char *iface,
                     GError **error)
 {
@@ -281,8 +280,6 @@ dispatch_netconfig (const char *domain,
 		str = g_strjoinv (" ", searches);
 
 		if (domain) {
-			char *tmp;
-
 			tmp = g_strconcat (domain, " ", str, NULL);
 			g_free (str);
 			str = tmp;
@@ -293,14 +290,9 @@ dispatch_netconfig (const char *domain,
 	}
 
 	if (nameservers) {
-		tmp = g_strjoinv (" ", nameservers);
-		if (caching)
-			str = g_strdup_printf ("127.0.0.1 %s", tmp);
-		else
-			str = g_strdup (tmp);
+		str = g_strjoinv (" ", nameservers);
 		write_to_netconfig (fd, "DNSSERVERS", str);
 		g_free (str);
-		g_free (tmp);
 	}
 
 	if (nis_domain)
@@ -335,7 +327,6 @@ static gboolean
 write_resolv_conf (FILE *f, const char *domain,
                    char **searches,
                    char **nameservers,
-                   gboolean caching,
                    GError **error)
 {
 	char *domain_str = NULL;
@@ -367,14 +358,11 @@ write_resolv_conf (FILE *f, const char *domain,
 
 	str = g_string_new ("");
 
-	if (caching)
-		g_string_append_printf (str, "nameserver 127.0.0.1\n");
-
 	if (nameservers) {
 		int num = g_strv_length (nameservers);
 
 		for (i = 0; i < num; i++) {
-			if (i == 3 && !caching) {
+			if (i == 3) {
 				g_string_append (str, "# ");
 				g_string_append (str, _("NOTE: the libc resolver may not support more than 3 nameservers."));
 				g_string_append (str, "\n# ");
@@ -408,7 +396,6 @@ static gboolean
 dispatch_resolvconf (const char *domain,
                      char **searches,
                      char **nameservers,
-                     gboolean caching,
                      const char *iface,
                      GError **error)
 {
@@ -430,7 +417,7 @@ dispatch_resolvconf (const char *domain,
 			             RESOLVCONF_PATH,
 			             g_strerror (errno));
 		else {
-			retval = write_resolv_conf (f, domain, searches, nameservers, caching, error);
+			retval = write_resolv_conf (f, domain, searches, nameservers, error);
 			retval &= (pclose (f) == 0);
 		}
 	} else {
@@ -450,7 +437,6 @@ static gboolean
 update_resolv_conf (const char *domain,
                     char **searches,
                     char **nameservers,
-                    gboolean caching,
                     const char *iface,
                     GError **error)
 {
@@ -498,7 +484,7 @@ update_resolv_conf (const char *domain,
 		strcpy (tmp_resolv_conf_realpath, RESOLV_CONF);
 	}
 
-	write_resolv_conf (f, domain, searches, nameservers, caching, error);
+	write_resolv_conf (f, domain, searches, nameservers, error);
 
 	if (fclose (f) < 0) {
 		if (*error == NULL) {
@@ -728,20 +714,31 @@ update_dns (NMDnsManager *self,
 	g_slist_free (dev_configs);
 	g_slist_free (other_configs);
 
+	/* If caching was successful, we only send 127.0.0.1 to /etc/resolv.conf
+	 * to ensure that the glibc resolver doesn't try to round-robin nameservers,
+	 * but only uses the local caching nameserver.
+	 */
+	if (caching) {
+		if (nameservers)
+			g_strfreev (nameservers);
+		nameservers = g_new0 (char*, 2);
+		nameservers[0] = g_strdup ("127.0.0.1");
+	}
+
 #ifdef RESOLVCONF_PATH
-	success = dispatch_resolvconf (domain, searches, nameservers, caching, iface, error);
+	success = dispatch_resolvconf (domain, searches, nameservers, iface, error);
 #endif
 
 #ifdef TARGET_SUSE
 	if (success == FALSE) {
 		success = dispatch_netconfig (domain, searches, nameservers,
 		                              nis_domain, nis_servers,
-		                              caching, iface, error);
+		                              iface, error);
 	}
 #endif
 
 	if (success == FALSE)
-		success = update_resolv_conf (domain, searches, nameservers, caching, iface, error);
+		success = update_resolv_conf (domain, searches, nameservers, iface, error);
 
 	if (success)
 		nm_system_update_dns ();
