@@ -349,7 +349,6 @@ update (NMDnsPlugin *plugin,
 	g_string_append (conf,
 		"options {\n"
 		"    directory \"" LOCALSTATEDIR "/named\";\n"
-		"    query-source address * port 53;\n"
 		"    forward only;\n"
 		"    recursion yes;\n"
 		"    listen-on-v6 { ::1; };\n"
