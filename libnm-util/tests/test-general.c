@@ -283,8 +283,8 @@ test_setting_gsm_apn_bad_chars (void)
 	ASSERT (nm_setting_verify (NM_SETTING (s_gsm), NULL, NULL) == FALSE,
 	        "gsm-apn-bad-chars", "unexpectedly valid GSM setting");
 
-	/* 21-character long */
-	g_object_set (s_gsm, NM_SETTING_GSM_APN, "abcdefghijklmnopqrstu", NULL);
+	/* 65-character long */
+	g_object_set (s_gsm, NM_SETTING_GSM_APN, "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijkl1", NULL);
 	ASSERT (nm_setting_verify (NM_SETTING (s_gsm), NULL, NULL) == FALSE,
 	        "gsm-apn-bad-chars", "unexpectedly valid GSM setting");
 }
