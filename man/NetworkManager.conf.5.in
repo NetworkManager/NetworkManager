@@ -117,10 +117,6 @@ DNS data to applications that use it.
 .TP
 .I dnsmasq
 this plugin uses dnsmasq to provide local caching nameserver functionality.
-.TP
-.I bind
-this plugin uses the ISC BIND program to provide local caching nameserver
-functionality.
 .RE
 .SS [keyfile]
 This section contains keyfile-specific options and thus only has effect when using \fIkeyfile\fP plugin.

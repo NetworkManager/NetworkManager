@@ -1007,9 +1007,10 @@ load_plugins (NMDnsManager *self, const char **plugins)
 		for (iter = plugins; iter && *iter; iter++) {
 			if (!strcasecmp (*iter, "dnsmasq"))
 				plugin = NM_DNS_PLUGIN (nm_dns_dnsmasq_new ());
-			else if (!strcasecmp (*iter, "bind"))
+			else if (!strcasecmp (*iter, "bind")) {
 				plugin = NM_DNS_PLUGIN (nm_dns_bind_new ());
-			else {
+				nm_log_warn (LOGD_DNS, "The BIND plugin is experimental!");
+			} else {
 				nm_log_warn (LOGD_DNS, "Unknown DNS plugin '%s'", *iter);\
 				continue;
 			}
