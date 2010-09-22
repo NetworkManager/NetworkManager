@@ -235,7 +235,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		guint32 apn_len = strlen (priv->apn);
 		guint32 i;
 
-		if (apn_len < 1 || apn_len > 20) {
+		if (apn_len < 1 || apn_len > 64) {
 			g_set_error (error,
 			             NM_SETTING_GSM_ERROR,
 			             NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
