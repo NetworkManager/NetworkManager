@@ -6,13 +6,20 @@ INCLUDES = \
 
 noinst_LTLIBRARIES = libdns-manager.la
 
-libdns_manager_la_SOURCES = nm-dns-manager.h nm-dns-manager.c
+libdns_manager_la_SOURCES = \
+	nm-dns-manager.h \
+	nm-dns-manager.c \
+	nm-dns-plugin.h \
+	nm-dns-plugin.c \
+	nm-dns-dnsmasq.h \
+	nm-dns-dnsmasq.c \
+	nm-dns-bind.h \
+	nm-dns-bind.c
 
 libdns_manager_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
-	-DNM_PKGDATADIR=\"$(pkgdatadir)\" \
-	-DNM_LOCALSTATEDIR=\"$(localstatedir)\"
+	-DLOCALSTATEDIR=\"$(localstatedir)\"
 
 libdns_manager_la_LIBADD = \
 	$(top_builddir)/src/logging/libnm-logging.la \

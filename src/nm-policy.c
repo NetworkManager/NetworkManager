@@ -241,7 +241,7 @@ _set_hostname (NMPolicy *policy,
 		g_free (policy->cur_hostname);
 		policy->cur_hostname = g_strdup (new_hostname);
 
-		dns_mgr = nm_dns_manager_get ();
+		dns_mgr = nm_dns_manager_get (NULL);
 		nm_dns_manager_set_hostname (dns_mgr, policy->cur_hostname);
 		g_object_unref (dns_mgr);
 	}
@@ -553,7 +553,7 @@ update_ip4_routing_and_dns (NMPolicy *policy, gboolean force_update)
 			nm_act_request_set_default (req, FALSE);
 	}
 
-	dns_mgr = nm_dns_manager_get ();
+	dns_mgr = nm_dns_manager_get (NULL);
 	nm_dns_manager_add_ip4_config (dns_mgr, ip_iface, ip4_config, dns_type);
 	g_object_unref (dns_mgr);
 
@@ -679,7 +679,7 @@ update_ip6_routing_and_dns (NMPolicy *policy, gboolean force_update)
 			nm_act_request_set_default6 (req, FALSE);
 	}
 
-	dns_mgr = nm_dns_manager_get ();
+	dns_mgr = nm_dns_manager_get (NULL);
 	nm_dns_manager_add_ip6_config (dns_mgr, ip_iface, ip6_config, dns_type);
 	g_object_unref (dns_mgr);
 

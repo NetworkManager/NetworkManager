@@ -67,7 +67,7 @@ typedef struct {
 
 GType nm_dns_manager_get_type (void);
 
-NMDnsManager * nm_dns_manager_get (void);
+NMDnsManager * nm_dns_manager_get (const char **plugins);
 
 gboolean nm_dns_manager_add_ip4_config (NMDnsManager *mgr,
                                         const char *iface,
