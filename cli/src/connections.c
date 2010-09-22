@@ -65,9 +65,10 @@ static NmcOutputField nmc_fields_con_status[] = {
 	{"DBUS-SERVICE",  N_("DBUS-SERVICE"), 45, NULL, 0},  /* 5 */
 	{"SPEC-OBJECT",   N_("SPEC-OBJECT"),  10, NULL, 0},  /* 6 */
 	{"VPN",           N_("VPN"),           5, NULL, 0},  /* 7 */
+	{"DBUS-PATH",     N_("DBUS-PATH"),    51, NULL, 0},  /* 8 */
 	{NULL,            NULL,                0, NULL, 0}
 };
-#define NMC_FIELDS_CON_STATUS_ALL     "NAME,UUID,DEVICES,SCOPE,DEFAULT,VPN,DBUS-SERVICE,SPEC-OBJECT"
+#define NMC_FIELDS_CON_STATUS_ALL     "NAME,UUID,DEVICES,SCOPE,DEFAULT,VPN,DBUS-SERVICE,DBUS-PATH,SPEC-OBJECT"
 #define NMC_FIELDS_CON_STATUS_COMMON  "NAME,UUID,DEVICES,SCOPE,DEFAULT,VPN"
 
 /* Available fields for 'con list' */
@@ -607,6 +608,7 @@ show_active_connection (gpointer data, gpointer user_data)
 			info->nmc->allowed_fields[5].value = nm_active_connection_get_service_name (active);
 			info->nmc->allowed_fields[6].value = nm_active_connection_get_specific_object (active);
 			info->nmc->allowed_fields[7].value = NM_IS_VPN_CONNECTION (active) ? _("yes") : _("no");
+			info->nmc->allowed_fields[8].value = nm_object_get_path (NM_OBJECT (active));
 
 			info->nmc->print_fields.flags &= ~NMC_PF_FLAG_MAIN_HEADER_ADD & ~NMC_PF_FLAG_MAIN_HEADER_ONLY & ~NMC_PF_FLAG_FIELD_NAMES; /* Clear header flags */
 			print_fields (info->nmc->print_fields, info->nmc->allowed_fields);
