@@ -565,6 +565,12 @@ update_system_hostname(NMInotifyHelper *inotify_helper,
 
 	priv->hostname = g_strstrip(hostname_file);
 
+	/* We shouldn't return a zero-length hostname, but NULL */
+	if (priv->hostname && !strlen (priv->hostname)) {
+		g_free (priv->hostname);
+		priv->hostname = NULL;
+	}
+
 	g_object_notify (G_OBJECT (config), NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
 }
 
