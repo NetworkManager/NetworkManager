@@ -711,6 +711,8 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	gboolean success, added;
 	GString *phase1, *phase2;
 	const GByteArray *array;
+	gboolean peap = FALSE;
+	guint32 i, num_eap;
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
 	g_return_val_if_fail (setting != NULL, FALSE);
@@ -732,6 +734,28 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	}
 
 	ADD_STRING_LIST_VAL (setting, 802_1x, eap_method, eap_methods, "eap", TRUE, FALSE);
+
+	/* Check for PEAP + GTC */
+	num_eap = nm_setting_802_1x_get_num_eap_methods (setting);
+	for (i = 0; i < num_eap; i++) {
+		const char *method = nm_setting_802_1x_get_eap_method (setting, i);
+
+		if (method && (strcasecmp (method, "peap") == 0)) {
+			peap = TRUE;
+			break;
+		}
+	}
+
+	/* When using PEAP-GTC, we're likely using Cisco kit, so we want to turn
+	 * on PMKSA caching so that roaming between access points actually works
+	 * without a full reauth (which requires a new token code).  We may want
+	 * to extend this to all PEAP phase2 methods at some point.
+	 */
+	value = nm_setting_802_1x_get_phase2_auth (setting);
+	if (peap && value && (strcasecmp (value, "gtc") == 0)) {
+		if (!nm_supplicant_config_add_option (self, "proactive_key_caching", "1", -1, FALSE))
+			return FALSE;
+	}
 
 	/* Drop the fragment size a bit for better compatibility */
 	if (!nm_supplicant_config_add_option (self, "fragment_size", "1300", -1, FALSE))
