@@ -259,6 +259,7 @@ get_plugin (NMSysconfigSettings *self, guint32 capability)
 	return NULL;
 }
 
+/* Returns an allocated string which the caller owns and must eventually free */
 char *
 nm_sysconfig_settings_get_hostname (NMSysconfigSettings *self)
 {
@@ -281,7 +282,7 @@ nm_sysconfig_settings_get_hostname (NMSysconfigSettings *self)
 		}
 	}
 
-	return hostname;
+	return NULL;
 }
 
 static void
