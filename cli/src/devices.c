@@ -58,12 +58,13 @@
 
 /* Available fields for 'dev status' */
 static NmcOutputField nmc_fields_dev_status[] = {
-	{"DEVICE",  N_("DEVICE"),    10, NULL, 0},  /* 0 */
-	{"TYPE",    N_("TYPE"),      17, NULL, 0},  /* 1 */
-	{"STATE",   N_("STATE"),     12, NULL, 0},  /* 2 */
-	{NULL,      NULL,             0, NULL, 0}
+	{"DEVICE",    N_("DEVICE"),      10, NULL, 0},  /* 0 */
+	{"TYPE",      N_("TYPE"),        17, NULL, 0},  /* 1 */
+	{"STATE",     N_("STATE"),       13, NULL, 0},  /* 2 */
+	{"DBUS-PATH", N_("DBUS-PATH"),   43, NULL, 0},  /* 3 */
+	{NULL,        NULL,               0, NULL, 0}
 };
-#define NMC_FIELDS_DEV_STATUS_ALL     "DEVICE,TYPE,STATE"
+#define NMC_FIELDS_DEV_STATUS_ALL     "DEVICE,TYPE,STATE,DBUS-PATH"
 #define NMC_FIELDS_DEV_STATUS_COMMON  "DEVICE,TYPE,STATE"
 
 
@@ -763,6 +764,7 @@ show_device_status (NMDevice *device, NmCli *nmc)
 	nmc->allowed_fields[0].value = nm_device_get_iface (device);
 	nmc->allowed_fields[1].value = get_device_type (device);
 	nmc->allowed_fields[2].value = device_state_to_string (nm_device_get_state (device));
+	nmc->allowed_fields[3].value = nm_object_get_path (NM_OBJECT (device));
 
 	nmc->print_fields.flags &= ~NMC_PF_FLAG_MAIN_HEADER_ADD & ~NMC_PF_FLAG_MAIN_HEADER_ONLY & ~NMC_PF_FLAG_FIELD_NAMES; /* Clear header flags */
 	print_fields (nmc->print_fields, nmc->allowed_fields);
