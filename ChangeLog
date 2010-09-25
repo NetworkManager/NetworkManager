@@ -1317,7 +1317,7 @@
 2008-09-30  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerPolicy.c
-		- (lookup_thread_worker): don't store the idle handler ID becuase the
+		- (lookup_thread_worker): don't store the idle handler ID because the
 			idle handler could have already run and freed the LookupThread
 			structure
 
@@ -8391,7 +8391,7 @@
 			internally; clients should provide a setting that applies to
 			the device with 'autoconnect: True'.  Problem was that these
 			internally auto-created connections don't have a proxy or service
-			name becuase they weren't created by a settings daemon, and therefore
+			name because they weren't created by a settings daemon, and therefore
 			clients have no idea what to do with them.
 
 2007-10-03  Dan Williams  <dcbw@redhat.com>
@@ -9794,7 +9794,7 @@
 	* libnm-glib/nm-settings.c
 	  libnm-glib/nm-settings.h
 		- make the dbus path a property of the object, and autogenerate it.
-		It can't be composed of the 'id' field becuase that's not available
+		It can't be composed of the 'id' field because that's not available
 		yet during the GObject creation in nm_connection_settings_init()
 
 2007-08-29  Dan Williams  <dcbw@redhat.com>

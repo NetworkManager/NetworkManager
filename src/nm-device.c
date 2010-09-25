@@ -3767,7 +3767,7 @@ nm_device_state_changed (NMDevice *device,
 	case NM_DEVICE_STATE_UNAVAILABLE:
 		/* If the device can activate now (ie, it's got a carrier, the supplicant
 		 * is active, or whatever) schedule a delayed transition to DISCONNECTED
-		 * to get things rolling.  The device can't transition immediately becuase
+		 * to get things rolling.  The device can't transition immediately because
 		 * we can't change states again from the state handler for a variety of
 		 * reasons.
 		 */
@@ -3788,7 +3788,7 @@ nm_device_state_changed (NMDevice *device,
 	case NM_DEVICE_STATE_FAILED:
 		nm_log_warn (LOGD_DEVICE, "Activation (%s) failed.", nm_device_get_iface (device));
 		/* Schedule the transition to DISCONNECTED.  The device can't transition
-		 * immediately becuase we can't change states again from the state
+		 * immediately because we can't change states again from the state
 		 * handler for a variety of reasons.
 		 */
 		priv->failed_to_disconnected_id = g_idle_add (failed_to_disconnected, device);
