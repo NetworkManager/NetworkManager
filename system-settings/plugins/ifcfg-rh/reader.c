@@ -1877,7 +1877,7 @@ parse_wpa_psk (shvarFile *ifcfg,
 	char *psk = NULL, *p, *hashed = NULL;
 	gboolean quoted = FALSE;
 
-	/* Passphrase must be between 10 and 66 characters in length becuase WPA
+	/* Passphrase must be between 10 and 66 characters in length because WPA
 	 * hex keys are exactly 64 characters (no quoting), and WPA passphrases
 	 * are between 8 and 63 characters (inclusive), plus optional quoting if
 	 * the passphrase contains spaces.

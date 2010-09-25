@@ -390,7 +390,7 @@ merge_dhclient_config (const char *iface,
 			}
 
 			/* If the client ID is just hex digits and : then don't use quotes,
-			 * becuase dhclient expects either a quoted ASCII string, or a byte
+			 * because dhclient expects either a quoted ASCII string, or a byte
 			 * array formated as hex octets separated by :
 			 */
 			if (is_octets)

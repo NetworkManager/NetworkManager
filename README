@@ -66,11 +66,11 @@ those drivers that are shipped with the upstream Linux kernel, because only
 those drivers can be easily fixed and debugged.  ndiswrapper, vendor binary
 drivers, or other out-of-tree drivers may or may not work well with
 NetworkManager, precisely because they have not been vetted and improved by the
-open-source community, and becuase problems in these drivers usually cannot
+open-source community, and because problems in these drivers usually cannot
 be fixed.
 
 Sometimes, command-line tools like 'iwconfig' will work, but NetworkManager will
-fail.  This is again often due to buggy drivers, becuase these drivers simply
+fail.  This is again often due to buggy drivers, because these drivers simply
 aren't expecting the dynamic requests that NetworkManager and wpa_supplicant
 make.  Driver bugs should be filed in the bug tracker of the distribution being
 run, since often distributions customize their kernel and drivers.
