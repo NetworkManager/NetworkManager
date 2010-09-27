@@ -89,7 +89,7 @@ This key sets up what DHCP client NetworkManager will use. Presently
 be available on your system too. If this key is missing, available DHCP clients
 are looked for in this order: dhclient, dhcpcd.
 .TP
-.B no-auto-default=\fI<hwaddr>\fP,\fI<hwaddr>\fP,...
+.B no-auto-default=\fI<hwaddr>\fP,\fI<hwaddr>\fP,... | \fI*\fP
 Set devices for which NetworkManager shouldn't create default wired connection
 (Auto eth0). NetworkManager creates a default wired connection for any wired
 device that is managed and doesn't have a connection configured. List a device
@@ -99,11 +99,13 @@ When the default wired connection is deleted or saved to a new persistent connec
 by a plugin, the MAC address of the wired device is automatically added to this list
 to prevent creating the default connection for that device again.
 Devices are specified by their MAC addresses, in lowercase. Multiple
-entries are separated by commas.
+entries are separated by commas. You can use the glob character \fI*\fP instead
+of listing addresses to specify all devices.
 .br
-Example:
+Examples:
 .nf
 no-auto-default=00:22:68:5c:5d:c4,00:1e:65:ff:aa:ee
+no-auto-default=*
 .fi
 .TP
 .B dns=\fIplugin1\fP,\fIplugin2\fP, ...
