@@ -274,6 +274,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 enum {
 	PROP_0,
+	PROP_VERSION,
 	PROP_STATE,
 	PROP_NETWORKING_ENABLED,
 	PROP_WIRELESS_ENABLED,
@@ -4398,6 +4399,9 @@ get_property (GObject *object, guint prop_id,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
 	switch (prop_id) {
+	case PROP_VERSION:
+		g_value_set_string (value, VERSION);
+		break;
 	case PROP_STATE:
 		nm_manager_update_state (self);
 		g_value_set_uint (value, priv->state);
@@ -4587,6 +4591,14 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	object_class->dispose = dispose;
 
 	/* properties */
+	g_object_class_install_property
+		(object_class, PROP_VERSION,
+		 g_param_spec_string (NM_MANAGER_VERSION,
+		                      "Version",
+		                      "NetworkManager version",
+		                      NULL,
+		                      G_PARAM_READABLE));
+
 	g_object_class_install_property
 		(object_class, PROP_STATE,
 		 g_param_spec_uint (NM_MANAGER_STATE,
