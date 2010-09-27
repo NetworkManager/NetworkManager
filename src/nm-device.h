@@ -73,6 +73,7 @@ typedef struct {
 
 	void        (* update_hw_address) (NMDevice *self);
 	void        (* update_permanent_hw_address) (NMDevice *self);
+	void        (* update_initial_hw_address) (NMDevice *self);
 
 	guint32		(* get_type_capabilities)	(NMDevice *self);
 	guint32		(* get_generic_capabilities)	(NMDevice *self);
