@@ -107,8 +107,9 @@ typedef struct Supplicant {
 typedef struct {
 	gboolean            disposed;
 
-	guint8              hw_addr[ETH_ALEN];      /* Currently set MAC address */
-	guint8              perm_hw_addr[ETH_ALEN]; /* Currently set MAC address */
+	guint8              hw_addr[ETH_ALEN];         /* Currently set MAC address */
+	guint8              perm_hw_addr[ETH_ALEN];    /* Permanent MAC address */
+	guint8              initial_hw_addr[ETH_ALEN]; /* Initial MAC address (as seen when NM starts) */
 	gboolean            carrier;
 
 	NMNetlinkMonitor *  monitor;
@@ -737,6 +738,33 @@ real_update_permanent_hw_address (NMDevice *dev)
 	}
 
 	close (fd);
+}
+
+static void
+real_update_initial_hw_address (NMDevice *dev)
+{
+	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (dev);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+	char *mac_str = NULL;
+	guint8 *addr = priv->initial_hw_addr;
+	guint8 zero[ETH_ALEN] = {0,0,0,0,0,0};
+
+	/* This sets initial MAC address from current MAC address. It should only
+	 * be called from NMDevice constructor() to really get the initial address.
+	 */
+	if (!memcmp (&priv->hw_addr, &zero, ETH_ALEN))
+		real_update_hw_address (dev);
+
+	if (memcmp (&priv->initial_hw_addr, &priv->hw_addr, ETH_ALEN))
+		memcpy (&priv->initial_hw_addr, &priv->hw_addr, ETH_ALEN);
+
+	mac_str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
+	                           addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
+
+	nm_log_dbg (LOGD_DEVICE | LOGD_ETHER, "(%s): read initial MAC address %s",
+	            nm_device_get_iface (dev), mac_str);
+
+	g_free (mac_str);
 }
 
 static guint32
@@ -1735,8 +1763,8 @@ real_deactivate_quickly (NMDevice *device)
 
 	supplicant_interface_release (self);
 
-	/* Reset MAC address back to permanent address */
-	_set_hw_addr (self, priv->perm_hw_addr, "reset");
+	/* Reset MAC address back to initial address */
+	_set_hw_addr (self, priv->initial_hw_addr, "reset");
 }
 
 static gboolean
@@ -2110,6 +2138,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->can_interrupt_activation = real_can_interrupt_activation;
 	parent_class->update_hw_address = real_update_hw_address;
 	parent_class->update_permanent_hw_address = real_update_permanent_hw_address;
+	parent_class->update_initial_hw_address = real_update_initial_hw_address;
 	parent_class->get_best_auto_connection = real_get_best_auto_connection;
 	parent_class->is_available = real_is_available;
 	parent_class->connection_secrets_updated = real_connection_secrets_updated;

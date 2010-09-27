@@ -200,6 +200,12 @@
       </tp:docstring>
     </property>
 
+    <property name="Version" type="s" access="read">
+      <tp:docstring>
+        NetworkManager version.
+      </tp:docstring>
+    </property>
+
     <property name="State" type="u" access="read" tp:type="NM_STATE">
       <tp:docstring>
         The overall state of the NetworkManager daemon.

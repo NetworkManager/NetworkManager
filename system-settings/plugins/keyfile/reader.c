@@ -40,10 +40,11 @@
 #include <arpa/inet.h>
 #include <netinet/ether.h>
 #include <string.h>
-#include <nm-system-config-error.h>
+#include <ctype.h>
 
 #include "nm-dbus-glib-types.h"
 #include "reader.h"
+#include "common.h"
 
 static gboolean
 read_array_of_uint (GKeyFile *file,
@@ -731,6 +732,68 @@ read_hash_of_string (GKeyFile *file, NMSetting *setting, const char *key)
 	g_strfreev (keys);
 }
 
+static void
+ssid_parser (NMSetting *setting, const char *key, GKeyFile *keyfile)
+{
+	const char *setting_name = nm_setting_get_name (setting);
+	GByteArray *array = NULL;
+	char *p, *tmp_string;
+	gint *tmp_list;
+	gsize length;
+	int i;
+
+	/* New format: just a string.  We try parsing the new format if there are
+	 * no ';' in the string or it's not just numbers.
+	 */
+	p = tmp_string = g_key_file_get_string (keyfile, setting_name, key, NULL);
+	if (tmp_string) {
+		gboolean new_format = FALSE;
+
+		if (strchr (p, ';') == NULL)
+			new_format = TRUE;
+		else {
+			new_format = TRUE;
+			while (p && *p) {
+				if (!isdigit (*p++)) {
+					new_format = FALSE;
+					break;
+				}
+			}
+		}
+
+		if (new_format) {
+			array = g_byte_array_sized_new (strlen (tmp_string));
+			g_byte_array_append (array, (guint8 *) tmp_string, strlen (tmp_string));
+			goto done;
+		}
+	}
+	g_free (tmp_string);
+
+	/* Old format; list of ints */
+	tmp_list = g_key_file_get_integer_list (keyfile, setting_name, key, &length, NULL);
+	array = g_byte_array_sized_new (length);
+	for (i = 0; i < length; i++) {
+		int val = tmp_list[i];
+		unsigned char v = (unsigned char) (val & 0xFF);
+
+		if (val < 0 || val > 255) {
+			g_warning ("%s: %s / %s ignoring invalid byte element '%d' (not "
+			           " between 0 and 255 inclusive)", __func__, setting_name,
+			           key, val);
+		} else
+			g_byte_array_append (array, (const unsigned char *) &v, sizeof (v));
+	}
+	g_free (tmp_list);
+
+done:
+	if (array->len)
+		g_object_set (setting, key, array, NULL);
+	else {
+		g_warning ("%s: ignoring invalid SSID for %s / %s",
+		           __func__, setting_name, key);
+	}
+	g_byte_array_free (array, TRUE);
+}
 
 typedef struct {
 	const char *setting_name;
@@ -739,7 +802,7 @@ typedef struct {
 	void (*parser) (NMSetting *setting, const char *key, GKeyFile *keyfile);
 } KeyParser;
 
-/* A table of keys that require further parsing/conversion becuase they are
+/* A table of keys that require further parsing/conversion because they are
  * stored in a format that can't be automatically read using the key's type.
  * i.e. IPv4 addresses, which are stored in NetworkManager as guint32, but are
  * stored in keyfiles as strings, eg "10.1.1.2" or IPv6 addresses stored 
@@ -794,6 +857,10 @@ static KeyParser key_parsers[] = {
 	  NM_SETTING_BLUETOOTH_BDADDR,
 	  TRUE,
 	  mac_address_parser },
+	{ NM_SETTING_WIRELESS_SETTING_NAME,
+	  NM_SETTING_WIRELESS_SSID,
+	  TRUE,
+	  ssid_parser },
 	{ NULL, NULL, FALSE }
 };
 
@@ -1004,9 +1071,7 @@ connection_from_file (const char *filename, GError **error)
 	GError *verify_error = NULL;
 
 	if (stat (filename, &statbuf) != 0 || !S_ISREG (statbuf.st_mode)) {
-		g_set_error_literal (error,
-		                     NM_SYSCONFIG_SETTINGS_ERROR,
-		                     NM_SYSCONFIG_SETTINGS_ERROR_INTERNAL_ERROR,
+		g_set_error_literal (error, KEYFILE_PLUGIN_ERROR, 0,
 		                     "File did not exist or was not a regular file");
 		return NULL;
 	}
@@ -1015,9 +1080,7 @@ connection_from_file (const char *filename, GError **error)
 	bad_permissions = statbuf.st_mode & 0077;
 
 	if (bad_owner || bad_permissions) {
-		g_set_error (error,
-		             NM_SYSCONFIG_SETTINGS_ERROR,
-		             NM_SYSCONFIG_SETTINGS_ERROR_INTERNAL_ERROR,
+		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
 		             "File permissions (%o) or owner (%d) were insecure",
 		             statbuf.st_mode, statbuf.st_uid);
 		return NULL;
@@ -1096,9 +1159,7 @@ connection_from_file (const char *filename, GError **error)
 
 	/* Verify the connection */
 	if (!nm_connection_verify (connection, &verify_error)) {
-		g_set_error (error,
-			         NM_SYSCONFIG_SETTINGS_ERROR,
-			         NM_SYSCONFIG_SETTINGS_ERROR_INTERNAL_ERROR,
+		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
 			         "invalid or missing connection property '%s'",
 			         (verify_error && verify_error->message) ? verify_error->message : "(unknown)");
 		g_clear_error (&verify_error);

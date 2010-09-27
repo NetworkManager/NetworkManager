@@ -231,12 +231,30 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->apn && (strlen (priv->apn) < 1 || strchr (priv->apn, '"'))) {
-		g_set_error (error,
-		             NM_SETTING_GSM_ERROR,
-		             NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_GSM_APN);
-		return FALSE;
+	if (priv->apn) {
+		guint32 apn_len = strlen (priv->apn);
+		guint32 i;
+
+		if (apn_len < 1 || apn_len > 64) {
+			g_set_error (error,
+			             NM_SETTING_GSM_ERROR,
+			             NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
+			             NM_SETTING_GSM_APN);
+			return FALSE;
+		}
+
+		/* APNs roughly follow the same rules as DNS domain names.  Allowed
+		 * characters are a-z, 0-9, . and -.  GSM 03.60 Section 14.9.
+		 */
+		for (i = 0; i < apn_len; i++) {
+			if (!isalnum (priv->apn[i]) && (priv->apn[i] != '.') && (priv->apn[i] != '-')) {
+				g_set_error (error,
+				             NM_SETTING_GSM_ERROR,
+				             NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
+				             NM_SETTING_GSM_APN);
+				return FALSE;
+			}
+		}
 	}
 
 	if (priv->username && !strlen (priv->username)) {
@@ -342,11 +360,11 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_APN:
 		g_free (priv->apn);
-		priv->apn = g_value_dup_string (value);
+		priv->apn = g_strstrip (g_value_dup_string (value));
 		break;
 	case PROP_NETWORK_ID:
 		g_free (priv->network_id);
-		priv->network_id = g_value_dup_string (value);
+		priv->network_id = g_strstrip (g_value_dup_string (value));
 		break;
 	case PROP_NETWORK_TYPE:
 		priv->network_type = g_value_get_int (value);
@@ -503,6 +521,8 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 	 * the user will be billed for their network usage and whether the user has
 	 * access to the Internet or just a provider-specific walled-garden, so it
 	 * is important to use the correct APN for the user's mobile broadband plan.
+	 * The APN may only be composed of the characters a-z, 0-9, ., and - per
+	 * GSM 03.60 Section 14.9.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_APN,
@@ -515,7 +535,8 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 						  "user has access to the Internet or just a provider-"
 						  "specific walled-garden, so it is important to use "
 						  "the correct APN for the user's mobile broadband "
-						  "plan.",
+						  "plan.  The APN may only be composed of the characters "
+						  "a-z, 0-9, ., and - per GSM 03.60 Section 14.9.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 

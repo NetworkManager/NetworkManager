@@ -60,9 +60,10 @@ static NmcOutputField nmc_fields_con_status[] = {
 	{"DEFAULT",       N_("DEFAULT"),       8, NULL, 0},  /* 3 */
 	{"SPEC-OBJECT",   N_("SPEC-OBJECT"),  10, NULL, 0},  /* 4 */
 	{"VPN",           N_("VPN"),           5, NULL, 0},  /* 5 */
+	{"DBUS-PATH",     N_("DBUS-PATH"),    51, NULL, 0},  /* 6 */
 	{NULL,            NULL,                0, NULL, 0}
 };
-#define NMC_FIELDS_CON_STATUS_ALL     "NAME,UUID,DEVICES,DEFAULT,VPN,SPEC-OBJECT"
+#define NMC_FIELDS_CON_STATUS_ALL     "NAME,UUID,DEVICES,DEFAULT,VPN,DBUS-PATH,SPEC-OBJECT"
 #define NMC_FIELDS_CON_STATUS_COMMON  "NAME,UUID,DEVICES,DEFAULT,VPN"
 
 /* Available fields for 'con list' */
@@ -74,9 +75,10 @@ static NmcOutputField nmc_fields_con_list[] = {
 	{"TIMESTAMP-REAL",  N_("TIMESTAMP-REAL"), 34, NULL, 0},  /* 4 */
 	{"AUTOCONNECT",     N_("AUTOCONNECT"),    13, NULL, 0},  /* 5 */
 	{"READONLY",        N_("READONLY"),       10, NULL, 0},  /* 6 */
+	{"DBUS-PATH",       N_("DBUS-PATH"),      42, NULL, 0},  /* 7 */
 	{NULL,              NULL,                  0, NULL, 0}
 };
-#define NMC_FIELDS_CON_LIST_ALL     "NAME,UUID,TYPE,TIMESTAMP,TIMESTAMP-REAL,AUTOCONNECT,READONLY"
+#define NMC_FIELDS_CON_LIST_ALL     "NAME,UUID,TYPE,TIMESTAMP,TIMESTAMP-REAL,AUTOCONNECT,READONLY,DBUS-PATH"
 #define NMC_FIELDS_CON_LIST_COMMON  "NAME,UUID,TYPE,TIMESTAMP-REAL"
 
 
@@ -370,6 +372,7 @@ show_connection (NMConnection *data, gpointer user_data)
 		timestamp = nm_setting_connection_get_timestamp (s_con);
 		timestamp_str = g_strdup_printf ("%" G_GUINT64_FORMAT, timestamp);
 		strftime (timestamp_real_str, sizeof (timestamp_real_str), "%c", localtime ((time_t *) &timestamp));
+
 		nmc->allowed_fields[0].value = nm_setting_connection_get_id (s_con);
 		nmc->allowed_fields[1].value = nm_setting_connection_get_uuid (s_con);
 		nmc->allowed_fields[2].value = nm_setting_connection_get_connection_type (s_con);
@@ -377,6 +380,7 @@ show_connection (NMConnection *data, gpointer user_data)
 		nmc->allowed_fields[4].value = timestamp ? timestamp_real_str : _("never");
 		nmc->allowed_fields[5].value = nm_setting_connection_get_autoconnect (s_con) ? _("yes") : _("no");
 		nmc->allowed_fields[6].value = nm_setting_connection_get_read_only (s_con) ? _("yes") : _("no");
+		nmc->allowed_fields[7].value = nm_connection_get_path (connection);
 
 		nmc->print_fields.flags &= ~NMC_PF_FLAG_MAIN_HEADER_ADD & ~NMC_PF_FLAG_MAIN_HEADER_ONLY & ~NMC_PF_FLAG_FIELD_NAMES; /* Clear header flags */
 		print_fields (nmc->print_fields, nmc->allowed_fields);
@@ -552,6 +556,7 @@ show_active_connection (gpointer data, gpointer user_data)
 			nmc->allowed_fields[3].value = nm_active_connection_get_default (active) ? _("yes") : _("no");
 			nmc->allowed_fields[4].value = nm_active_connection_get_specific_object (active);
 			nmc->allowed_fields[5].value = NM_IS_VPN_CONNECTION (active) ? _("yes") : _("no");
+			nmc->allowed_fields[6].value = nm_object_get_path (NM_OBJECT (active));
 
 			nmc->print_fields.flags &= ~NMC_PF_FLAG_MAIN_HEADER_ADD & ~NMC_PF_FLAG_MAIN_HEADER_ONLY & ~NMC_PF_FLAG_FIELD_NAMES; /* Clear header flags */
 			print_fields (nmc->print_fields, nmc->allowed_fields);

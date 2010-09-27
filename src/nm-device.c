@@ -288,6 +288,9 @@ constructor (GType type,
 	if (NM_DEVICE_GET_CLASS (dev)->update_permanent_hw_address)
 		NM_DEVICE_GET_CLASS (dev)->update_permanent_hw_address (dev);
 
+	if (NM_DEVICE_GET_CLASS (dev)->update_initial_hw_address)
+		NM_DEVICE_GET_CLASS (dev)->update_initial_hw_address (dev);
+
 	priv->dhcp_manager = nm_dhcp_manager_get ();
 
 	update_accept_ra_save (dev);
@@ -3038,7 +3041,7 @@ nm_device_set_ip4_config (NMDevice *self,
 	if (diff == NM_IP4_COMPARE_FLAG_NONE)
 		return TRUE;
 
-	dns_mgr = nm_dns_manager_get ();
+	dns_mgr = nm_dns_manager_get (NULL);
 	if (old_config) {
 		/* Remove any previous IP4 Config from the DNS manager */
 		nm_dns_manager_remove_ip4_config (dns_mgr, ip_iface, old_config);
@@ -3141,7 +3144,7 @@ nm_device_set_ip6_config (NMDevice *self,
 	if (diff == NM_IP6_COMPARE_FLAG_NONE)
 		return TRUE;
 
-	dns_mgr = nm_dns_manager_get ();
+	dns_mgr = nm_dns_manager_get (NULL);
 	if (old_config) {
 		/* Remove any previous IP6 Config from the DNS manager */
 		nm_dns_manager_remove_ip6_config (dns_mgr, ip_iface, old_config);
@@ -3765,7 +3768,7 @@ nm_device_state_changed (NMDevice *device,
 	case NM_DEVICE_STATE_UNAVAILABLE:
 		/* If the device can activate now (ie, it's got a carrier, the supplicant
 		 * is active, or whatever) schedule a delayed transition to DISCONNECTED
-		 * to get things rolling.  The device can't transition immediately becuase
+		 * to get things rolling.  The device can't transition immediately because
 		 * we can't change states again from the state handler for a variety of
 		 * reasons.
 		 */
@@ -3786,7 +3789,7 @@ nm_device_state_changed (NMDevice *device,
 	case NM_DEVICE_STATE_FAILED:
 		nm_log_warn (LOGD_DEVICE, "Activation (%s) failed.", nm_device_get_iface (device));
 		/* Schedule the transition to DISCONNECTED.  The device can't transition
-		 * immediately becuase we can't change states again from the state
+		 * immediately because we can't change states again from the state
 		 * handler for a variety of reasons.
 		 */
 		priv->failed_to_disconnected_id = g_idle_add (failed_to_disconnected, device);

@@ -1165,7 +1165,7 @@ nm_device_update_description (NMDevice *device)
 	 * vendor and device ID information off it.
 	 */
 
-	/* Ref the device again becuase we have to unref it each iteration,
+	/* Ref the device again because we have to unref it each iteration,
 	 * as g_udev_device_get_parent() returns a ref-ed object.
 	 */
 	tmpdev = g_object_ref (udev_device);

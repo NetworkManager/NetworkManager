@@ -30,6 +30,7 @@
 #include "nm-keyfile-connection.h"
 #include "reader.h"
 #include "writer.h"
+#include "common.h"
 
 G_DEFINE_TYPE (NMKeyfileConnection, nm_keyfile_connection, NM_TYPE_SYSCONFIG_CONNECTION)
 
