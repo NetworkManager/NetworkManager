@@ -146,8 +146,9 @@ typedef struct Supplicant {
 struct _NMDeviceWifiPrivate {
 	gboolean          disposed;
 
-	guint8            hw_addr[ETH_ALEN];      /* Currently set MAC address */
-	guint8            perm_hw_addr[ETH_ALEN]; /* Permanent MAC address */
+	guint8            hw_addr[ETH_ALEN];         /* Currently set MAC address */
+	guint8            perm_hw_addr[ETH_ALEN];    /* Permanent MAC address */
+	guint8            initial_hw_addr[ETH_ALEN]; /* Initial MAC address (as seen when NM starts) */
 
 	/* Legacy rfkill for ipw2x00; will be fixed with 2.6.33 kernel */
 	char *            ipw_rfkill_path;
@@ -1250,7 +1251,8 @@ real_deactivate_quickly (NMDevice *dev)
 		g_object_unref (orig_ap);
 	}
 
-	_set_hw_addr (self, priv->perm_hw_addr, "reset");
+	/* Reset MAC address back to initial address */
+	_set_hw_addr (self, priv->initial_hw_addr, "reset");
 }
 
 static void
@@ -3106,6 +3108,32 @@ real_update_permanent_hw_address (NMDevice *dev)
 	close (fd);
 }
 
+static void
+real_update_initial_hw_address (NMDevice *dev)
+{
+	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	char *mac_str = NULL;
+	guint8 *addr = priv->initial_hw_addr;
+	guint8 zero[ETH_ALEN] = {0,0,0,0,0,0};
+
+	/* This sets initial MAC address from current MAC address. It should only
+	 * be called from NMDevice constructor() to really get the initial address.
+	 */
+	if (!memcmp (&priv->hw_addr, &zero, ETH_ALEN))
+		real_update_hw_address (dev);
+
+	if (memcmp (&priv->initial_hw_addr, &priv->hw_addr, ETH_ALEN))
+		memcpy (&priv->initial_hw_addr, &priv->hw_addr, ETH_ALEN);
+
+	mac_str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
+	                           addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
+
+	nm_log_dbg (LOGD_DEVICE | LOGD_ETHER, "(%s): read initial MAC address %s",
+	            nm_device_get_iface (dev), mac_str);
+
+	g_free (mac_str);
+}
 
 static NMActStageReturn
 real_act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
@@ -3935,6 +3963,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->take_down = real_take_down;
 	parent_class->update_hw_address = real_update_hw_address;
 	parent_class->update_permanent_hw_address = real_update_permanent_hw_address;
+	parent_class->update_initial_hw_address = real_update_initial_hw_address;
 	parent_class->get_best_auto_connection = real_get_best_auto_connection;
 	parent_class->is_available = real_is_available;
 	parent_class->connection_secrets_updated = real_connection_secrets_updated;
