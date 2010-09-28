@@ -123,6 +123,7 @@ static const struct Opt opt_table[] = {
 	{ "engine_id",          TYPE_BYTES,   0, 0, FALSE,  NULL },
 	{ "key_id",             TYPE_BYTES,   0, 0, FALSE,  NULL },
 	{ "fragment_size",      TYPE_INT,     1, 2000, FALSE,  NULL },
+	{ "proactive_key_caching", TYPE_INT,  0, 1, FALSE,  NULL },
 };
 
 
