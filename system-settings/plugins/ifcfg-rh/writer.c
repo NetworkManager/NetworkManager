@@ -1021,6 +1021,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	guint32 i, num;
 	GString *searches;
 	gboolean success = FALSE;
+	gboolean fake_ip4 = FALSE;
 	const char *method = NULL;
 
 	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
@@ -1058,15 +1059,19 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		return TRUE;
 	}
 
-	value = nm_setting_ip4_config_get_method (s_ip4);
-	g_assert (value);
-	if (!strcmp (value, NM_SETTING_IP4_CONFIG_METHOD_AUTO))
+	/* Temporarily create fake IP4 setting if missing; method set to DHCP above */
+	if (!s_ip4) {
+		s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+		fake_ip4 = TRUE;
+	}
+
+	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO))
 		svSetValue (ifcfg, "BOOTPROTO", "dhcp", FALSE);
-	else if (!strcmp (value, NM_SETTING_IP4_CONFIG_METHOD_MANUAL))
+	else if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL))
 		svSetValue (ifcfg, "BOOTPROTO", "none", FALSE);
-	else if (!strcmp (value, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
+	else if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
 		svSetValue (ifcfg, "BOOTPROTO", "autoip", FALSE);
-	else if (!strcmp (value, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
+	else if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
 		svSetValue (ifcfg, "BOOTPROTO", "shared", FALSE);
 
 	num = nm_setting_ip4_config_get_num_addresses (s_ip4);
@@ -1156,7 +1161,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	svSetValue (ifcfg, "PEERROUTES", NULL, FALSE);
 	svSetValue (ifcfg, "DHCP_HOSTNAME", NULL, FALSE);
 	svSetValue (ifcfg, "DHCP_CLIENT_ID", NULL, FALSE);
-	if (!strcmp (value, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
+	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
 		svSetValue (ifcfg, "PEERDNS",
 		            nm_setting_ip4_config_get_ignore_auto_dns (s_ip4) ? "no" : "yes",
 		            FALSE);
@@ -1264,6 +1269,9 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	success = TRUE;
 
 out:
+	if (fake_ip4)
+		g_object_unref (s_ip4);
+
 	return success;
 }
 
