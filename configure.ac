@@ -560,6 +560,7 @@ docs/libnm-util/Makefile
 NetworkManager.pc
 examples/Makefile
 examples/python/Makefile
+examples/C/Makefile
 ])
 AC_OUTPUT
 
