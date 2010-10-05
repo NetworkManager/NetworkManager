@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2006 - 2008 Red Hat, Inc.
+ * Copyright (C) 2006 - 2010 Red Hat, Inc.
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
@@ -139,6 +139,8 @@ const char *nm_supplicant_interface_state_to_string (guint32 state);
 const char *nm_supplicant_interface_connection_state_to_string (guint32 state);
 
 gboolean nm_supplicant_interface_get_scanning (NMSupplicantInterface *self);
+
+const char *nm_supplicant_interface_get_ifname (NMSupplicantInterface *self);
 
 G_END_DECLS
 

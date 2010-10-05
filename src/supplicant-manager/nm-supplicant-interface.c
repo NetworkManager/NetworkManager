@@ -1119,6 +1119,14 @@ nm_supplicant_interface_connection_state_to_string (guint32 state)
 	return "unknown";
 }
 
+const char *
+nm_supplicant_interface_get_ifname (NMSupplicantInterface *self)
+{
+	g_return_val_if_fail (self != NULL, FALSE);
+
+	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->dev;
+}
+
 /*******************************************************************/
 
 NMSupplicantInterface *

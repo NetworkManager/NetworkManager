@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2006 - 2008 Red Hat, Inc.
+ * Copyright (C) 2006 - 2010 Red Hat, Inc.
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
@@ -35,7 +35,7 @@
 typedef struct {
 	NMDBusManager *	dbus_mgr;
 	guint32         state;
-	GSList *        ifaces;
+	GHashTable *    ifaces;
 	gboolean        dispose_has_run;
 	guint			poke_id;
 } NMSupplicantManagerPrivate;
@@ -124,6 +124,8 @@ nm_supplicant_manager_init (NMSupplicantManager * self)
 	priv->state = NM_SUPPLICANT_MANAGER_STATE_DOWN;
 	priv->dbus_mgr = nm_dbus_manager_get ();
 	priv->poke_id = 0;
+
+	priv->ifaces = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
 
 	running = nm_supplicant_manager_startup (self);
 
@@ -265,33 +267,23 @@ nm_supplicant_manager_startup (NMSupplicantManager * self)
 
 NMSupplicantInterface *
 nm_supplicant_manager_get_iface (NMSupplicantManager * self,
-								 const char *ifname,
-								 gboolean is_wireless)
+                                 const char *ifname,
+                                 gboolean is_wireless)
 {
 	NMSupplicantManagerPrivate *priv;
 	NMSupplicantInterface * iface = NULL;
-	GSList * elt;
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_MANAGER (self), NULL);
 	g_return_val_if_fail (ifname != NULL, NULL);
 
 	priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
 
-	/* Ensure we don't already have this interface */
-	for (elt = priv->ifaces; elt; elt = g_slist_next (elt)) {
-		NMSupplicantInterface * if_tmp = (NMSupplicantInterface *) elt->data;
-
-		if (!strcmp (ifname, nm_supplicant_interface_get_device (if_tmp))) {
-			iface = if_tmp;
-			break;
-		}
-	}
-
+	iface = g_hash_table_lookup (priv->ifaces, ifname);
 	if (!iface) {
 		nm_log_dbg (LOGD_SUPPLICANT, "(%s): creating new supplicant interface", ifname);
 		iface = nm_supplicant_interface_new (self, ifname, is_wireless);
 		if (iface)
-			priv->ifaces = g_slist_append (priv->ifaces, iface);
+			g_hash_table_insert (priv->ifaces, g_strdup (ifname), iface);
 	} else {
 		nm_log_dbg (LOGD_SUPPLICANT, "(%s): returning existing supplicant interface", ifname);
 	}
@@ -300,30 +292,20 @@ nm_supplicant_manager_get_iface (NMSupplicantManager * self,
 }
 
 void
-nm_supplicant_manager_release_iface (NMSupplicantManager * self,
-                                     NMSupplicantInterface * iface)
+nm_supplicant_manager_release_iface (NMSupplicantManager *self,
+                                     NMSupplicantInterface *iface)
 {
 	NMSupplicantManagerPrivate *priv;
-	GSList * elt;
+	const char *ifname;
 
 	g_return_if_fail (NM_IS_SUPPLICANT_MANAGER (self));
 	g_return_if_fail (NM_IS_SUPPLICANT_INTERFACE (iface));
 
 	priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
 
-	for (elt = priv->ifaces; elt; elt = g_slist_next (elt)) {
-		NMSupplicantInterface * if_tmp = (NMSupplicantInterface *) elt->data;
-
-		if (if_tmp == iface) {
-			/* Remove the iface from the supplicant manager's list and
-			 * dereference to match additional reference in get_iface.
-			 */
-			priv->ifaces = g_slist_remove_link (priv->ifaces, elt);
-			g_slist_free_1 (elt);
-			g_object_unref (iface);
-			break;
-		}
-	}
+	ifname = nm_supplicant_interface_get_ifname (iface);
+	g_assert (ifname);
+	g_hash_table_remove (priv->ifaces, ifname);
 }
 
 const char *
