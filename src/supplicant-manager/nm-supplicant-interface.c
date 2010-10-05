@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2006 - 2010 Red Hat, Inc.
+ * Copyright (C) 2006 - 2008 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -47,10 +47,25 @@ G_DEFINE_TYPE (NMSupplicantInterface, nm_supplicant_interface, G_TYPE_OBJECT)
                                                  NM_TYPE_SUPPLICANT_INTERFACE, \
                                                  NMSupplicantInterfacePrivate))
 
+static void nm_supplicant_interface_set_property (GObject *      object,
+                                                  guint          prop_id,
+                                                  const GValue * value,
+                                                  GParamSpec *   pspec);
+
+static void nm_supplicant_interface_get_property (GObject *      object,
+                                                  guint          prop_id,
+                                                  GValue *       value,
+                                                  GParamSpec *   pspec);
+
 static void nm_supplicant_interface_start (NMSupplicantInterface *self);
 
 static void nm_supplicant_interface_add_to_supplicant (NMSupplicantInterface *self,
                                                        gboolean get_only);
+
+static void nm_supplicant_interface_smgr_state_changed (NMSupplicantManager *smgr,
+                                                        guint32 new_state,
+                                                        guint32 old_state,
+                                                        gpointer user_data);
 
 static void nm_supplicant_interface_set_state (NMSupplicantInterface *self,
                                                guint32 new_state);
@@ -67,12 +82,14 @@ enum {
 	CONNECTION_ERROR,  /* an error occurred during a connection request */
 	LAST_SIGNAL
 };
-static guint signals[LAST_SIGNAL] = { 0 };
+static guint nm_supplicant_interface_signals[LAST_SIGNAL] = { 0 };
 
 
 /* Properties */
 enum {
 	PROP_0 = 0,
+	PROP_SUPPLICANT_MANAGER,
+	PROP_DEVICE,
 	PROP_STATE,
 	PROP_CONNECTION_STATE,
 	PROP_SCANNING,
@@ -104,7 +121,7 @@ typedef struct
 
 	NMSupplicantConfig *  cfg;
 
-	gboolean              disposed;
+	gboolean              dispose_has_run;
 } NMSupplicantInterfacePrivate;
 
 static gboolean
@@ -186,6 +203,103 @@ nm_supplicant_info_destroy (gpointer user_data)
 	}
 }
 
+
+NMSupplicantInterface *
+nm_supplicant_interface_new (NMSupplicantManager * smgr, const char *ifname, gboolean is_wireless)
+{
+	NMSupplicantInterface * iface;
+
+	g_return_val_if_fail (NM_IS_SUPPLICANT_MANAGER (smgr), NULL);
+	g_return_val_if_fail (ifname != NULL, NULL);
+
+	iface = g_object_new (NM_TYPE_SUPPLICANT_INTERFACE,
+	                      "supplicant-manager", smgr,
+	                      "device", ifname,
+	                      NULL);
+	if (iface) {
+		NM_SUPPLICANT_INTERFACE_GET_PRIVATE (iface)->is_wireless = is_wireless;
+		nm_supplicant_interface_start (iface);
+	}
+
+	return iface;
+}
+
+static void
+nm_supplicant_interface_init (NMSupplicantInterface * self)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	priv->state = NM_SUPPLICANT_INTERFACE_STATE_INIT;
+	priv->con_state = NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED;
+	priv->assoc_pcalls = nm_call_store_new ();
+	priv->other_pcalls = nm_call_store_new ();
+
+	priv->dispose_has_run = FALSE;
+
+	priv->dbus_mgr = nm_dbus_manager_get ();
+}
+
+
+static void
+nm_supplicant_interface_set_property (GObject *      object,
+                                      guint          prop_id,
+                                      const GValue * value,
+                                      GParamSpec *   pspec)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (object);
+	gulong id;
+
+	switch (prop_id) {
+		case PROP_SUPPLICANT_MANAGER:
+			priv->smgr = NM_SUPPLICANT_MANAGER (g_value_get_object (value));
+			g_object_ref (G_OBJECT (priv->smgr));
+			
+			id = g_signal_connect (priv->smgr,
+			                       "state",
+			                       G_CALLBACK (nm_supplicant_interface_smgr_state_changed),
+			                       object);
+			priv->smgr_state_sig_handler = id;
+			break;
+		case PROP_DEVICE:
+			/* Construct-only */
+			priv->dev = g_strdup (g_value_get_string (value));
+			break;
+		default:
+			G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+			break;
+	}
+}
+
+static void
+nm_supplicant_interface_get_property (GObject *     object,
+                                      guint         prop_id,
+                                      GValue *      value,
+                                      GParamSpec *  pspec)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (object);
+
+	switch (prop_id) {
+		case PROP_SUPPLICANT_MANAGER:
+			g_value_set_object (value, G_OBJECT (priv->smgr));
+			break;
+		case PROP_DEVICE:
+			g_value_set_string (value, priv->dev);
+			break;
+		case PROP_STATE:
+			g_value_set_uint (value, priv->state);
+			break;
+		case PROP_CONNECTION_STATE:
+			g_value_set_uint (value, priv->con_state);
+			break;
+		case PROP_SCANNING:
+			g_value_set_boolean (value, priv->scanning);
+			break;
+		default:
+			G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+			break;
+	}
+}
+
 static void
 try_remove_iface (DBusGConnection *g_connection,
                   const char *path)
@@ -209,6 +323,175 @@ try_remove_iface (DBusGConnection *g_connection,
 }
 
 static void
+nm_supplicant_interface_dispose (GObject *object)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (object);
+	guint32 sm_state;
+
+	if (priv->dispose_has_run) {
+		G_OBJECT_CLASS (nm_supplicant_interface_parent_class)->dispose (object);
+		return;
+	}
+
+	priv->dispose_has_run = TRUE;
+
+	/* Ask wpa_supplicant to remove this interface */
+	sm_state = nm_supplicant_manager_get_state (priv->smgr);
+	if (sm_state == NM_SUPPLICANT_MANAGER_STATE_IDLE) {
+		if (priv->object_path) {
+			try_remove_iface (nm_dbus_manager_get_connection (priv->dbus_mgr),
+			                  priv->object_path);
+		}
+	}
+
+	if (priv->iface_proxy)
+		g_object_unref (priv->iface_proxy);
+
+	if (priv->net_proxy)
+		g_object_unref (priv->net_proxy);
+
+	if (priv->scan_results_timeout)
+		g_source_remove (priv->scan_results_timeout);
+
+	if (priv->smgr) {
+		g_signal_handler_disconnect (priv->smgr,
+		                             priv->smgr_state_sig_handler);
+		g_object_unref (priv->smgr);
+	}
+
+	g_free (priv->dev);
+
+	/* Cancel pending calls before unrefing the dbus manager */
+	cancel_all_callbacks (priv->other_pcalls);
+	nm_call_store_destroy (priv->other_pcalls);
+
+	cancel_all_callbacks (priv->assoc_pcalls);
+	nm_call_store_destroy (priv->assoc_pcalls);
+
+	if (priv->dbus_mgr)
+		g_object_unref (priv->dbus_mgr);
+
+	if (priv->cfg)
+		g_object_unref (priv->cfg);
+
+	g_free (priv->object_path);
+
+	/* Chain up to the parent class */
+	G_OBJECT_CLASS (nm_supplicant_interface_parent_class)->dispose (object);
+}
+
+static void
+nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
+	g_type_class_add_private (object_class, sizeof (NMSupplicantInterfacePrivate));
+
+	object_class->dispose = nm_supplicant_interface_dispose;
+	object_class->set_property = nm_supplicant_interface_set_property;
+	object_class->get_property = nm_supplicant_interface_get_property;
+
+	/* Properties */
+	g_object_class_install_property (object_class,
+	                                 PROP_SUPPLICANT_MANAGER,
+	                                 g_param_spec_object ("supplicant-manager",
+	                                                      "Supplicant Manager",
+	                                                      "Supplicant manager to which this interface belongs",
+	                                                      NM_TYPE_SUPPLICANT_MANAGER,
+	                                                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+  
+	g_object_class_install_property (object_class,
+	                                 PROP_DEVICE,
+	                                 g_param_spec_string ("device",
+	                                                      "Device",
+	                                                      "Device which this interface represents to the supplicant",
+	                                                      NULL,
+	                                                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property (object_class,
+	                                 PROP_STATE,
+	                                 g_param_spec_uint ("state",
+	                                                    "State",
+	                                                    "State of the supplicant interface; INIT, READY, or DOWN",
+	                                                    NM_SUPPLICANT_INTERFACE_STATE_INIT,
+	                                                    NM_SUPPLICANT_INTERFACE_STATE_LAST - 1,
+	                                                    NM_SUPPLICANT_INTERFACE_STATE_INIT,
+	                                                    G_PARAM_READABLE));
+
+	g_object_class_install_property (object_class,
+	                                 PROP_SCANNING,
+	                                 g_param_spec_boolean ("scanning",
+	                                                    "Scanning",
+	                                                    "Scanning",
+	                                                    FALSE,
+	                                                    G_PARAM_READABLE));
+
+	/* Signals */
+	nm_supplicant_interface_signals[STATE] =
+		g_signal_new ("state",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_LAST,
+		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, state),
+		              NULL, NULL,
+		              _nm_marshal_VOID__UINT_UINT,
+		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
+
+	nm_supplicant_interface_signals[REMOVED] =
+		g_signal_new ("removed",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_LAST,
+		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, removed),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__VOID,
+		              G_TYPE_NONE, 0);
+
+	nm_supplicant_interface_signals[SCANNED_AP] =
+		g_signal_new ("scanned-ap",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_LAST,
+		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, scanned_ap),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__POINTER,
+		              G_TYPE_NONE, 1, G_TYPE_POINTER);
+
+	nm_supplicant_interface_signals[SCAN_REQ_RESULT] =
+		g_signal_new ("scan-req-result",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_LAST,
+		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, scan_req_result),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__BOOLEAN,
+		              G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
+
+	nm_supplicant_interface_signals[SCAN_RESULTS] =
+		g_signal_new ("scan-results",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_LAST,
+		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, scan_results),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__UINT,
+		              G_TYPE_NONE, 1, G_TYPE_UINT);
+
+	nm_supplicant_interface_signals[CONNECTION_STATE] =
+		g_signal_new ("connection-state",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_LAST,
+		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, connection_state),
+		              NULL, NULL,
+		              _nm_marshal_VOID__UINT_UINT,
+		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
+
+	nm_supplicant_interface_signals[CONNECTION_ERROR] =
+		g_signal_new ("connection-error",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_LAST,
+		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, connection_error),
+		              NULL, NULL,
+		              _nm_marshal_VOID__STRING_STRING,
+		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
+}
+
+static void
 emit_error_helper (NMSupplicantInterface *self,
 				   GError *err)
 {
@@ -217,7 +500,11 @@ emit_error_helper (NMSupplicantInterface *self,
 	if (err->domain == DBUS_GERROR && err->code == DBUS_GERROR_REMOTE_EXCEPTION)
 		name = dbus_g_error_get_name (err);
 
-	g_signal_emit (self, signals[CONNECTION_ERROR], 0, name, err->message);
+	g_signal_emit (self,
+	               nm_supplicant_interface_signals[CONNECTION_ERROR],
+	               0,
+	               name,
+	               err->message);
 }
 
 static void
@@ -236,7 +523,11 @@ bssid_properties_cb  (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_
 		}
 		g_error_free (err);
 	} else {
-		g_signal_emit (info->interface, signals[SCANNED_AP], 0, hash);
+		g_signal_emit (info->interface,
+		               nm_supplicant_interface_signals[SCANNED_AP],
+		               0,
+		               hash);
+
 		g_hash_table_destroy (hash);
 	}
 }
@@ -280,7 +571,10 @@ scan_results_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 		NMSupplicantInfo *info = (NMSupplicantInfo *) user_data;
 
 		/* Notify listeners of the result of the scan */
-		g_signal_emit (info->interface, signals[SCAN_RESULTS], 0, array->len);
+		g_signal_emit (info->interface,
+		               nm_supplicant_interface_signals[SCAN_RESULTS],
+		               0,
+		               array->len);
 
 		/* Fire off a "properties" call for each returned BSSID */
 		for (i = 0; i < array->len; i++) {
@@ -380,8 +674,13 @@ wpas_iface_handle_state_change (DBusGProxy *proxy,
 	enum_new_state = wpas_state_string_to_enum (str_new_state);
 	old_state = priv->con_state;
 	priv->con_state = enum_new_state;
-	if (priv->con_state != old_state)
-		g_signal_emit (user_data, signals[CONNECTION_STATE], 0, priv->con_state, old_state);
+	if (priv->con_state != old_state) {
+		g_signal_emit (user_data,
+		               nm_supplicant_interface_signals[CONNECTION_STATE],
+		               0,
+		               priv->con_state,
+		               old_state);
+	}
 }
 
 
@@ -668,14 +967,18 @@ nm_supplicant_interface_set_state (NMSupplicantInterface * self,
 	}
 
 	priv->state = new_state;
-	g_signal_emit (self, signals[STATE], 0, priv->state, old_state);
+	g_signal_emit (self,
+	               nm_supplicant_interface_signals[STATE],
+	               0,
+	               priv->state,
+	               old_state);
 }
 
 static void
-smgr_state_changed (NMSupplicantManager *smgr,
-                    guint32 new_state,
-                    guint32 old_state,
-                    gpointer user_data)
+nm_supplicant_interface_smgr_state_changed (NMSupplicantManager * smgr,
+                                            guint32 new_state,
+                                            guint32 old_state,
+                                            gpointer user_data)
 {
 	NMSupplicantInterface * self = NM_SUPPLICANT_INTERFACE (user_data);
 
@@ -891,7 +1194,9 @@ call_set_blobs (NMSupplicantInfo *info, GHashTable *orig_blobs)
 		const char *msg = "Not enough memory to create blob table.";
 
 		nm_log_warn (LOGD_SUPPLICANT, "%s", msg);
-		g_signal_emit (info->interface, signals[CONNECTION_ERROR], 0, "SendBlobError", msg);
+		g_signal_emit (info->interface,
+		               nm_supplicant_interface_signals[CONNECTION_ERROR],
+		               0, "SendBlobError", msg);
 		return;
 	}
 
@@ -1034,7 +1339,10 @@ scan_request_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 	} 
 
 	/* Notify listeners of the result of the scan */
-	g_signal_emit (info->interface, signals[SCAN_REQ_RESULT], 0, !!success);
+	g_signal_emit (info->interface,
+	               nm_supplicant_interface_signals[SCAN_REQ_RESULT],
+	               0,
+	               success ? TRUE : FALSE);
 }
 
 gboolean
@@ -1117,235 +1425,5 @@ nm_supplicant_interface_connection_state_to_string (guint32 state)
 		break;
 	}
 	return "unknown";
-}
-
-/*******************************************************************/
-
-NMSupplicantInterface *
-nm_supplicant_interface_new (NMSupplicantManager *smgr,
-                             const char *ifname,
-                             gboolean is_wireless)
-{
-	NMSupplicantInterface *self;
-	NMSupplicantInterfacePrivate *priv;
-	guint id;
-
-	g_return_val_if_fail (NM_IS_SUPPLICANT_MANAGER (smgr), NULL);
-	g_return_val_if_fail (ifname != NULL, NULL);
-
-	self = g_object_new (NM_TYPE_SUPPLICANT_INTERFACE, NULL);
-	if (self) {
-		priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-		priv->smgr = g_object_ref (smgr);
-		id = g_signal_connect (priv->smgr,
-		                       "state",
-		                       G_CALLBACK (smgr_state_changed),
-		                       self);
-		priv->smgr_state_sig_handler = id;
-
-		priv->dev = g_strdup (ifname);
-		priv->is_wireless = is_wireless;
-		nm_supplicant_interface_start (self);
-	}
-
-	return self;
-}
-
-static void
-nm_supplicant_interface_init (NMSupplicantInterface * self)
-{
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	priv->state = NM_SUPPLICANT_INTERFACE_STATE_INIT;
-	priv->con_state = NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED;
-	priv->assoc_pcalls = nm_call_store_new ();
-	priv->other_pcalls = nm_call_store_new ();
-	priv->dbus_mgr = nm_dbus_manager_get ();
-}
-
-static void
-set_property (GObject *object,
-              guint prop_id,
-              const GValue *value,
-              GParamSpec *pspec)
-{
-	switch (prop_id) {
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-get_property (GObject *object,
-              guint prop_id,
-              GValue *value,
-              GParamSpec *pspec)
-{
-	switch (prop_id) {
-	case PROP_STATE:
-		g_value_set_uint (value, NM_SUPPLICANT_INTERFACE_GET_PRIVATE (object)->state);
-		break;
-	case PROP_CONNECTION_STATE:
-		g_value_set_uint (value, NM_SUPPLICANT_INTERFACE_GET_PRIVATE (object)->con_state);
-		break;
-	case PROP_SCANNING:
-		g_value_set_boolean (value, NM_SUPPLICANT_INTERFACE_GET_PRIVATE (object)->scanning);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-dispose (GObject *object)
-{
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (object);
-	guint32 sm_state;
-
-	if (priv->disposed) {
-		G_OBJECT_CLASS (nm_supplicant_interface_parent_class)->dispose (object);
-		return;
-	}
-	priv->disposed = TRUE;
-
-	/* Ask wpa_supplicant to remove this interface */
-	sm_state = nm_supplicant_manager_get_state (priv->smgr);
-	if (sm_state == NM_SUPPLICANT_MANAGER_STATE_IDLE) {
-		if (priv->object_path) {
-			try_remove_iface (nm_dbus_manager_get_connection (priv->dbus_mgr),
-			                  priv->object_path);
-		}
-	}
-
-	if (priv->iface_proxy)
-		g_object_unref (priv->iface_proxy);
-
-	if (priv->net_proxy)
-		g_object_unref (priv->net_proxy);
-
-	if (priv->scan_results_timeout)
-		g_source_remove (priv->scan_results_timeout);
-
-	if (priv->smgr) {
-		g_signal_handler_disconnect (priv->smgr,
-		                             priv->smgr_state_sig_handler);
-		g_object_unref (priv->smgr);
-	}
-
-	g_free (priv->dev);
-
-	/* Cancel pending calls before unrefing the dbus manager */
-	cancel_all_callbacks (priv->other_pcalls);
-	nm_call_store_destroy (priv->other_pcalls);
-
-	cancel_all_callbacks (priv->assoc_pcalls);
-	nm_call_store_destroy (priv->assoc_pcalls);
-
-	if (priv->dbus_mgr)
-		g_object_unref (priv->dbus_mgr);
-
-	if (priv->cfg)
-		g_object_unref (priv->cfg);
-
-	g_free (priv->object_path);
-
-	/* Chain up to the parent class */
-	G_OBJECT_CLASS (nm_supplicant_interface_parent_class)->dispose (object);
-}
-
-static void
-nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
-{
-	GObjectClass *object_class = G_OBJECT_CLASS (klass);
-
-	g_type_class_add_private (object_class, sizeof (NMSupplicantInterfacePrivate));
-
-	object_class->dispose = dispose;
-	object_class->set_property = set_property;
-	object_class->get_property = get_property;
-
-	/* Properties */
-	g_object_class_install_property (object_class, PROP_STATE,
-		g_param_spec_uint ("state",
-		                   "State",
-		                   "State of the supplicant interface; INIT, READY, or DOWN",
-		                   NM_SUPPLICANT_INTERFACE_STATE_INIT,
-		                   NM_SUPPLICANT_INTERFACE_STATE_LAST - 1,
-		                   NM_SUPPLICANT_INTERFACE_STATE_INIT,
-		                   G_PARAM_READABLE));
-
-	g_object_class_install_property (object_class, PROP_SCANNING,
-		g_param_spec_boolean ("scanning",
-		                      "Scanning",
-		                      "Scanning",
-		                      FALSE,
-		                      G_PARAM_READABLE));
-
-	/* Signals */
-	signals[STATE] =
-		g_signal_new ("state",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
-		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, state),
-		              NULL, NULL,
-		              _nm_marshal_VOID__UINT_UINT,
-		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
-
-	signals[REMOVED] =
-		g_signal_new ("removed",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
-		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, removed),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__VOID,
-		              G_TYPE_NONE, 0);
-
-	signals[SCANNED_AP] =
-		g_signal_new ("scanned-ap",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
-		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, scanned_ap),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__POINTER,
-		              G_TYPE_NONE, 1, G_TYPE_POINTER);
-
-	signals[SCAN_REQ_RESULT] =
-		g_signal_new ("scan-req-result",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
-		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, scan_req_result),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__BOOLEAN,
-		              G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
-
-	signals[SCAN_RESULTS] =
-		g_signal_new ("scan-results",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
-		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, scan_results),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__UINT,
-		              G_TYPE_NONE, 1, G_TYPE_UINT);
-
-	signals[CONNECTION_STATE] =
-		g_signal_new ("connection-state",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
-		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, connection_state),
-		              NULL, NULL,
-		              _nm_marshal_VOID__UINT_UINT,
-		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
-
-	signals[CONNECTION_ERROR] =
-		g_signal_new ("connection-error",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
-		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, connection_error),
-		              NULL, NULL,
-		              _nm_marshal_VOID__STRING_STRING,
-		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
 }
 
