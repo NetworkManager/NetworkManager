@@ -163,6 +163,7 @@ constructor (GType type,
 		      NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
 		      NM_SETTING_CONNECTION_UUID, uuid,
 		      NM_SETTING_CONNECTION_READ_ONLY, priv->read_only,
+		      NM_SETTING_CONNECTION_TIMESTAMP, time (NULL),
 		      NULL);
 
 	g_free (id);
