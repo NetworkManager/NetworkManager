@@ -113,17 +113,14 @@ typedef enum {
 #define NM_WIFI_ERROR (nm_wifi_error_quark ())
 #define NM_TYPE_WIFI_ERROR (nm_wifi_error_get_type ()) 
 
+#define SUP_SIG_ID_LEN 5
+
 typedef struct Supplicant {
 	NMSupplicantManager *mgr;
 	NMSupplicantInterface *iface;
 
-	/* signal handler ids */
+	guint sig_ids[SUP_SIG_ID_LEN];
 	guint iface_error_id;
-	guint iface_state_id;
-	guint iface_scanned_ap_id;
-	guint iface_scan_request_result_id;
-	guint iface_scan_results_id;
-	guint iface_notify_scanning_id;
 
 	/* Timeouts and idles */
 	guint iface_con_error_cb_id;
@@ -631,7 +628,7 @@ static gboolean
 supplicant_interface_acquire (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	guint id;
+	guint id, i = 0;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 	/* interface already acquired? */
@@ -646,35 +643,37 @@ supplicant_interface_acquire (NMDeviceWifi *self)
 		return FALSE;
 	}
 
+	memset (priv->supplicant.sig_ids, 0, sizeof (priv->supplicant.sig_ids));
+
 	id = g_signal_connect (priv->supplicant.iface,
 	                       "state",
 	                       G_CALLBACK (supplicant_iface_state_cb),
 	                       self);
-	priv->supplicant.iface_state_id = id;
+	priv->supplicant.sig_ids[i++] = id;
 
 	id = g_signal_connect (priv->supplicant.iface,
 	                       "scanned-ap",
 	                       G_CALLBACK (supplicant_iface_scanned_ap_cb),
 	                       self);
-	priv->supplicant.iface_scanned_ap_id = id;
+	priv->supplicant.sig_ids[i++] = id;
 
 	id = g_signal_connect (priv->supplicant.iface,
 	                       "scan-req-result",
 	                       G_CALLBACK (supplicant_iface_scan_request_result_cb),
 	                       self);
-	priv->supplicant.iface_scan_request_result_id = id;
+	priv->supplicant.sig_ids[i++] = id;
 
 	id = g_signal_connect (priv->supplicant.iface,
 	                       "scan-results",
 	                       G_CALLBACK (supplicant_iface_scan_results_cb),
 	                       self);
-	priv->supplicant.iface_scan_results_id = id;
+	priv->supplicant.sig_ids[i++] = id;
 
 	id = g_signal_connect (priv->supplicant.iface,
 	                       "notify::scanning",
 	                       G_CALLBACK (supplicant_iface_notify_scanning_cb),
 	                       self);
-	priv->supplicant.iface_notify_scanning_id = id;
+	priv->supplicant.sig_ids[i++] = id;
 
 	return TRUE;
 }
@@ -702,6 +701,7 @@ static void
 supplicant_interface_release (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv;
+	guint i;
 
 	g_return_if_fail (self != NULL);
 
@@ -716,30 +716,12 @@ supplicant_interface_release (NMDeviceWifi *self)
 
 	remove_supplicant_interface_error_handler (self);
 
-	if (priv->supplicant.iface_state_id > 0) {
-		g_signal_handler_disconnect (priv->supplicant.iface, priv->supplicant.iface_state_id);
-		priv->supplicant.iface_state_id = 0;
+	/* Clear supplicant interface signal handlers */
+	for (i = 0; i < SUP_SIG_ID_LEN; i++) {
+		if (priv->supplicant.sig_ids[i] > 0)
+			g_signal_handler_disconnect (priv->supplicant.iface, priv->supplicant.sig_ids[i]);
 	}
-
-	if (priv->supplicant.iface_scanned_ap_id > 0) {
-		g_signal_handler_disconnect (priv->supplicant.iface, priv->supplicant.iface_scanned_ap_id);
-		priv->supplicant.iface_scanned_ap_id = 0;
-	}
-
-	if (priv->supplicant.iface_scan_request_result_id > 0) {
-		g_signal_handler_disconnect (priv->supplicant.iface, priv->supplicant.iface_scan_request_result_id);
-		priv->supplicant.iface_scan_request_result_id = 0;
-	}
-
-	if (priv->supplicant.iface_scan_results_id > 0) {
-		g_signal_handler_disconnect (priv->supplicant.iface, priv->supplicant.iface_scan_results_id);
-		priv->supplicant.iface_scan_results_id = 0;
-	}
-
-	if (priv->supplicant.iface_notify_scanning_id > 0) {
-		g_signal_handler_disconnect (priv->supplicant.iface, priv->supplicant.iface_notify_scanning_id);
-		priv->supplicant.iface_notify_scanning_id = 0;
-	}
+	memset (priv->supplicant.sig_ids, 0, sizeof (priv->supplicant.sig_ids));
 
 	if (priv->supplicant.iface) {
 		/* Tell the supplicant to disconnect from the current AP */
