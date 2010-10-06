@@ -512,6 +512,8 @@ dhclient_start (NMDHCPClient *client,
 	uuid = nm_dhcp_client_get_uuid (client);
 	ipv6 = nm_dhcp_client_get_ipv6 (client);
 
+	log_domain = ipv6 ? LOGD_DHCP6 : LOGD_DHCP4;
+
 #if defined(DHCLIENT_V3)
 	if (ipv6) {
 		nm_log_warn (log_domain, "(%s): ISC dhcp3 does not support IPv6", iface);
@@ -520,8 +522,6 @@ dhclient_start (NMDHCPClient *client,
 #else
 	g_return_val_if_fail (ip_opt != NULL, -1);
 #endif
-
-	log_domain = ipv6 ? LOGD_DHCP6 : LOGD_DHCP4;
 
 	priv->pid_file = g_strdup_printf (LOCALSTATEDIR "/run/dhclient%s-%s.pid",
 	                                  ipv6 ? "6" : "",
