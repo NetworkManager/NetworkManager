@@ -1,6 +1,6 @@
-SUBDIRS = libnm-glib libnm-util
-
 if WITH_DOCS
+
+SUBDIRS = libnm-glib libnm-util
 
 INCLUDES = \
 	-I$(top_srcdir)/include \
