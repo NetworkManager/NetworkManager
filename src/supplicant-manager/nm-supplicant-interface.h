@@ -26,45 +26,23 @@
 #include <dbus/dbus.h>
 #include "nm-supplicant-types.h"
 
-G_BEGIN_DECLS
-
 /*
  * Supplicant interface states
- *   The states are linear, ie INIT -> READY -> DOWN and state may only be
- *   changed in one direction.  If an interface reaches the DOWN state, it
- *   cannot be re-initialized; it must be torn down and a new one created.
- *
- * INIT:  interface has been created, but cannot be used yet; it is waiting
- *             for pending requests of the supplicant to complete.
- * READY: interface is ready for use
- * DOWN:  interface has been removed or has otherwise been made invalid; it
- *             must be torn down.
- *
- * Note: LAST is an invalid state and only used for boundary checking.
+ *   A mix of wpa_supplicant interface states and internal states.
  */
 enum {
 	NM_SUPPLICANT_INTERFACE_STATE_INIT = 0,
-	NM_SUPPLICANT_INTERFACE_STATE_STARTING,
 	NM_SUPPLICANT_INTERFACE_STATE_READY,
+	NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED,
+	NM_SUPPLICANT_INTERFACE_STATE_INACTIVE,
+	NM_SUPPLICANT_INTERFACE_STATE_SCANNING,
+	NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATING,
+	NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATED,
+	NM_SUPPLICANT_INTERFACE_STATE_4WAY_HANDSHAKE,
+	NM_SUPPLICANT_INTERFACE_STATE_GROUP_HANDSHAKE,
+	NM_SUPPLICANT_INTERFACE_STATE_COMPLETED,
 	NM_SUPPLICANT_INTERFACE_STATE_DOWN,
 	NM_SUPPLICANT_INTERFACE_STATE_LAST
-};
-
-
-/*
- * Supplicant interface connection states
- *   The wpa_supplicant state for the connection.
- */
-enum {
-	NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED = 0,
-	NM_SUPPLICANT_INTERFACE_CON_STATE_INACTIVE,
-	NM_SUPPLICANT_INTERFACE_CON_STATE_SCANNING,
-	NM_SUPPLICANT_INTERFACE_CON_STATE_ASSOCIATING,
-	NM_SUPPLICANT_INTERFACE_CON_STATE_ASSOCIATED,
-	NM_SUPPLICANT_INTERFACE_CON_STATE_4WAY_HANDSHAKE,
-	NM_SUPPLICANT_INTERFACE_CON_STATE_GROUP_HANDSHAKE,
-	NM_SUPPLICANT_INTERFACE_CON_STATE_COMPLETED,
-	NM_SUPPLICANT_INTERFACE_CON_STATE_LAST
 };
 
 #define NM_TYPE_SUPPLICANT_INTERFACE            (nm_supplicant_interface_get_type ())
@@ -103,11 +81,6 @@ typedef struct {
 	void (*scan_results)     (NMSupplicantInterface * iface,
 	                          guint num_bssids);
 
-	/* link state of the device's connection */
-	void (*connection_state) (NMSupplicantInterface * iface,
-	                          guint32 new_state,
-	                          guint32 old_state);
-
 	/* an error occurred during a connection request */
 	void (*connection_error) (NMSupplicantInterface * iface,
 	                          const char * name,
@@ -128,20 +101,16 @@ void nm_supplicant_interface_disconnect (NMSupplicantInterface * iface);
 
 const char * nm_supplicant_interface_get_device (NMSupplicantInterface * iface);
 
+const char *nm_supplicant_interface_get_object_path (NMSupplicantInterface * iface);
+
 gboolean nm_supplicant_interface_request_scan (NMSupplicantInterface * self);
 
 guint32 nm_supplicant_interface_get_state (NMSupplicantInterface * self);
 
-guint32 nm_supplicant_interface_get_connection_state (NMSupplicantInterface * self);
-
 const char *nm_supplicant_interface_state_to_string (guint32 state);
-
-const char *nm_supplicant_interface_connection_state_to_string (guint32 state);
 
 gboolean nm_supplicant_interface_get_scanning (NMSupplicantInterface *self);
 
 const char *nm_supplicant_interface_get_ifname (NMSupplicantInterface *self);
-
-G_END_DECLS
 
 #endif	/* NM_SUPPLICANT_INTERFACE_H */

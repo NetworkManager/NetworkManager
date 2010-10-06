@@ -47,15 +47,6 @@ G_DEFINE_TYPE (NMSupplicantInterface, nm_supplicant_interface, G_TYPE_OBJECT)
                                                  NM_TYPE_SUPPLICANT_INTERFACE, \
                                                  NMSupplicantInterfacePrivate))
 
-static void nm_supplicant_interface_start (NMSupplicantInterface *self);
-
-static void nm_supplicant_interface_add_to_supplicant (NMSupplicantInterface *self,
-                                                       gboolean get_only);
-
-static void nm_supplicant_interface_set_state (NMSupplicantInterface *self,
-                                               guint32 new_state);
-
-
 /* Signals */
 enum {
 	STATE,             /* change in the interface's state */
@@ -63,7 +54,6 @@ enum {
 	SCANNED_AP,        /* interface saw a new access point from a scan */
 	SCAN_REQ_RESULT,   /* result of a wireless scan request */
 	SCAN_RESULTS,      /* scan results returned from supplicant */
-	CONNECTION_STATE,  /* link state of the device's connection */
 	CONNECTION_ERROR,  /* an error occurred during a connection request */
 	LAST_SIGNAL
 };
@@ -74,16 +64,14 @@ static guint signals[LAST_SIGNAL] = { 0 };
 enum {
 	PROP_0 = 0,
 	PROP_STATE,
-	PROP_CONNECTION_STATE,
 	PROP_SCANNING,
 	LAST_PROP
 };
 
 
-typedef struct
-{
+typedef struct {
 	NMSupplicantManager * smgr;
-	gulong                smgr_state_sig_handler;
+	gulong                smgr_running_id;
 	NMDBusManager *       dbus_mgr;
 	char *                dev;
 	gboolean              is_wireless;
@@ -93,9 +81,9 @@ typedef struct
 	NMCallStore *         assoc_pcalls;
 	NMCallStore *         other_pcalls;
 
-	guint32               con_state;
 	gboolean              scanning;
 
+	DBusGProxy *          wpas_proxy;
 	DBusGProxy *          iface_proxy;
 	DBusGProxy *          net_proxy;
 
@@ -184,28 +172,6 @@ nm_supplicant_info_destroy (gpointer user_data)
 		memset (info, 0, sizeof (NMSupplicantInfo));
 		g_slice_free (NMSupplicantInfo, info);
 	}
-}
-
-static void
-try_remove_iface (DBusGConnection *g_connection,
-                  const char *path)
-{
-	DBusGProxy *proxy;
-
-	g_return_if_fail (g_connection != NULL);
-	g_return_if_fail (path != NULL);
-
-	proxy = dbus_g_proxy_new_for_name (g_connection,
-	                                   WPAS_DBUS_SERVICE,
-	                                   WPAS_DBUS_PATH,
-	                                   WPAS_DBUS_INTERFACE);
-	if (!proxy)
-		return;
-
-	dbus_g_proxy_call_no_reply (proxy, "removeInterface", 
-	                            DBUS_TYPE_G_OBJECT_PATH, path,
-	                            G_TYPE_INVALID);
-	g_object_unref (proxy);
 }
 
 static void
@@ -344,50 +310,80 @@ wpas_iface_query_scan_results (DBusGProxy *proxy, gpointer user_data)
 }
 
 static guint32
-wpas_state_string_to_enum (const char * str_state)
+wpas_state_string_to_enum (const char *str_state)
 {
-	guint32 enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED;
+	guint32 enum_state = NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED;
 
 	if (!strcmp (str_state, "DISCONNECTED"))
-		enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED;
+		enum_state = NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED;
 	else if (!strcmp (str_state, "INACTIVE"))
-		enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_INACTIVE;
+		enum_state = NM_SUPPLICANT_INTERFACE_STATE_INACTIVE;
 	else if (!strcmp (str_state, "SCANNING"))
-		enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_SCANNING;
+		enum_state = NM_SUPPLICANT_INTERFACE_STATE_SCANNING;
 	else if (!strcmp (str_state, "ASSOCIATING"))
-		enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_ASSOCIATING;
+		enum_state = NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATING;
 	else if (!strcmp (str_state, "ASSOCIATED"))
-		enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_ASSOCIATED;
+		enum_state = NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATED;
 	else if (!strcmp (str_state, "4WAY_HANDSHAKE"))
-		enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_4WAY_HANDSHAKE;
+		enum_state = NM_SUPPLICANT_INTERFACE_STATE_4WAY_HANDSHAKE;
 	else if (!strcmp (str_state, "GROUP_HANDSHAKE"))
-		enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_GROUP_HANDSHAKE;
+		enum_state = NM_SUPPLICANT_INTERFACE_STATE_GROUP_HANDSHAKE;
 	else if (!strcmp (str_state, "COMPLETED"))
-		enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_COMPLETED;
+		enum_state = NM_SUPPLICANT_INTERFACE_STATE_COMPLETED;
 
 	return enum_state;
 }
 
+static void
+set_state (NMSupplicantInterface *self, guint32 new_state)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	guint32 old_state = priv->state;
+
+	g_return_if_fail (new_state < NM_SUPPLICANT_INTERFACE_STATE_LAST);
+
+	if (new_state == priv->state)
+		return;
+
+	/* DOWN is a terminal state */
+	g_return_if_fail (priv->state != NM_SUPPLICANT_INTERFACE_STATE_DOWN);
+
+	/* Cannot regress to READY or INIT from higher states */
+	if (priv->state <= NM_SUPPLICANT_INTERFACE_STATE_READY)
+		g_return_if_fail (new_state > priv->state);
+
+	if (new_state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
+		/* Cancel all pending calls when going down */
+		cancel_all_callbacks (priv->other_pcalls);
+		cancel_all_callbacks (priv->assoc_pcalls);
+
+		/* Disconnect supplicant manager state listeners since we're done */
+		if (priv->smgr_running_id) {
+			g_signal_handler_disconnect (priv->smgr, priv->smgr_running_id);
+			priv->smgr_running_id = 0;
+		}
+	}
+
+	priv->state = new_state;
+	g_signal_emit (self, signals[STATE], 0, priv->state, old_state);
+}
+
+/* Supplicant state signal handler */
 static void
 wpas_iface_handle_state_change (DBusGProxy *proxy,
                                 const char *str_new_state,
                                 const char *str_old_state,
                                 gpointer user_data)
 {
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (user_data);
-	guint32 old_state, enum_new_state;
-
-	enum_new_state = wpas_state_string_to_enum (str_new_state);
-	old_state = priv->con_state;
-	priv->con_state = enum_new_state;
-	if (priv->con_state != old_state)
-		g_signal_emit (user_data, signals[CONNECTION_STATE], 0, priv->con_state, old_state);
+	set_state (NM_SUPPLICANT_INTERFACE (user_data),
+	           wpas_state_string_to_enum (str_new_state));
 }
 
-
+/* Explicit state request reply handler */
 static void
 iface_state_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 {
+	NMSupplicantInfo *info = (NMSupplicantInfo *) user_data;
 	GError *err = NULL;
 	char *state_str = NULL;
 
@@ -397,12 +393,8 @@ iface_state_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 		nm_log_warn (LOGD_SUPPLICANT, "could not get interface state: %s.", err->message);
 		g_error_free (err);
 	} else {
-		NMSupplicantInfo *info = (NMSupplicantInfo *) user_data;
-		NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (info->interface);
-
-		priv->con_state = wpas_state_string_to_enum (state_str);
+		set_state (info->interface, wpas_state_string_to_enum (state_str));
 		g_free (state_str);
-		nm_supplicant_interface_set_state (info->interface, NM_SUPPLICANT_INTERFACE_STATE_READY);
 	}
 }
 
@@ -479,224 +471,180 @@ nm_supplicant_interface_get_scanning (NMSupplicantInterface *self)
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 	if (priv->scanning)
 		return TRUE;
-	if (priv->con_state == NM_SUPPLICANT_INTERFACE_CON_STATE_SCANNING)
+	if (priv->state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING)
 		return TRUE;
 	return FALSE;
 }
 
 static void
-nm_supplicant_interface_add_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
+interface_add_done (NMSupplicantInterface *self, char *path)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	nm_log_dbg (LOGD_SUPPLICANT, "(%s): interface added to supplicant", priv->dev);
+
+	priv->object_path = path;
+
+	priv->iface_proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (priv->dbus_mgr),
+	                                               WPAS_DBUS_SERVICE,
+	                                               path,
+	                                               WPAS_DBUS_IFACE_INTERFACE);
+
+	dbus_g_object_register_marshaller (_nm_marshal_VOID__STRING_STRING,
+	                                   G_TYPE_NONE,
+	                                   G_TYPE_STRING, G_TYPE_STRING,
+	                                   G_TYPE_INVALID);
+	dbus_g_proxy_add_signal (priv->iface_proxy, "StateChange", G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->iface_proxy, "StateChange",
+	                             G_CALLBACK (wpas_iface_handle_state_change),
+	                             self,
+	                             NULL);
+
+	dbus_g_proxy_add_signal (priv->iface_proxy, "ScanResultsAvailable", G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->iface_proxy, "ScanResultsAvailable",
+	                             G_CALLBACK (wpas_iface_query_scan_results),
+	                             self,
+	                             NULL);
+
+	dbus_g_proxy_add_signal (priv->iface_proxy, "Scanning", G_TYPE_BOOLEAN, G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->iface_proxy, "Scanning",
+	                             G_CALLBACK (wpas_iface_handle_scanning),
+	                             self,
+	                             NULL);
+
+	/* Interface added to the supplicant; get its initial state. */
+	wpas_iface_get_state (self);
+	wpas_iface_get_scanning (self);
+
+	set_state (self, NM_SUPPLICANT_INTERFACE_STATE_READY);
+}
+
+static void
+interface_get_cb (DBusGProxy *proxy,
+                  DBusGProxyCall *call_id,
+                  gpointer user_data)
 {
 	NMSupplicantInfo *info = (NMSupplicantInfo *) user_data;
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (info->interface);
-	GError *err = NULL;
+	GError *error = NULL;
 	char *path = NULL;
 
-	if (!dbus_g_proxy_end_call (proxy, call_id, &err,
-	                            DBUS_TYPE_G_OBJECT_PATH, &path,
-	                            G_TYPE_INVALID)) {
-
-		if (dbus_g_error_has_name (err, WPAS_ERROR_INVALID_IFACE)) {
-			/* Interface not added, try to add it */
-			nm_supplicant_interface_add_to_supplicant (info->interface, FALSE);
-		} else if (dbus_g_error_has_name (err, WPAS_ERROR_EXISTS_ERROR)) {
-			/* Interface already added, just try to get the interface */
-			nm_supplicant_interface_add_to_supplicant (info->interface, TRUE);
-		} else {
-			nm_log_err (LOGD_SUPPLICANT, "(%s): error getting interface: %s",
-			            priv->dev, err->message);
-		}
-
-		g_error_free (err);
+	if (dbus_g_proxy_end_call (proxy, call_id, &error,
+	                           DBUS_TYPE_G_OBJECT_PATH, &path,
+	                           G_TYPE_INVALID)) {
+		interface_add_done (info->interface, path);
 	} else {
-		nm_log_dbg (LOGD_SUPPLICANT, "(%s): interface added to supplicant", priv->dev);
-
-		priv->object_path = path;
-
-		priv->iface_proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (priv->dbus_mgr),
-		                                               WPAS_DBUS_SERVICE,
-		                                               path,
-		                                               WPAS_DBUS_IFACE_INTERFACE);
-
-		dbus_g_proxy_add_signal (priv->iface_proxy, "ScanResultsAvailable", G_TYPE_INVALID);
-
-		dbus_g_object_register_marshaller (_nm_marshal_VOID__STRING_STRING,
-		                                   G_TYPE_NONE,
-		                                   G_TYPE_STRING, G_TYPE_STRING,
-		                                   G_TYPE_INVALID);
-
-		dbus_g_proxy_add_signal (priv->iface_proxy, "StateChange", G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INVALID);
-
-		dbus_g_proxy_connect_signal (priv->iface_proxy, "ScanResultsAvailable",
-		                             G_CALLBACK (wpas_iface_query_scan_results),
-		                             info->interface,
-		                             NULL);
-
-		dbus_g_proxy_connect_signal (priv->iface_proxy, "StateChange",
-		                             G_CALLBACK (wpas_iface_handle_state_change),
-		                             info->interface,
-		                             NULL);
-
-		dbus_g_proxy_add_signal (priv->iface_proxy, "Scanning", G_TYPE_BOOLEAN, G_TYPE_INVALID);
-
-		dbus_g_proxy_connect_signal (priv->iface_proxy, "Scanning",
-		                             G_CALLBACK (wpas_iface_handle_scanning),
-		                             info->interface,
-		                             NULL);
-
-		/* Interface added to the supplicant; get its initial state. */
-		wpas_iface_get_state (info->interface);
-		wpas_iface_get_scanning (info->interface);
+		nm_log_err (LOGD_SUPPLICANT, "(%s): error adding interface: %s",
+		            priv->dev, error->message);
+		g_clear_error (&error);
 	}
 }
 
 static void
-nm_supplicant_interface_add_to_supplicant (NMSupplicantInterface * self,
-                                           gboolean get_only)
+interface_get (NMSupplicantInterface *self)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 	NMSupplicantInfo *info;
-	DBusGProxy *proxy;
 	DBusGProxyCall *call;
 
-	proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (priv->dbus_mgr),
-	                                   WPAS_DBUS_SERVICE,
-	                                   WPAS_DBUS_PATH,
-	                                   WPAS_DBUS_INTERFACE);
-	info = nm_supplicant_info_new (self, proxy, priv->other_pcalls);
-
-	if (get_only) {
-		call = dbus_g_proxy_begin_call (proxy, "getInterface",
-		                                nm_supplicant_interface_add_cb,
-		                                info,
-		                                nm_supplicant_info_destroy,
-		                                G_TYPE_STRING, priv->dev,
-		                                G_TYPE_INVALID);
-	} else {
-		GHashTable *hash = g_hash_table_new (g_str_hash, g_str_equal);
-		GValue *driver;
-
-		driver = g_new0 (GValue, 1);
-		g_value_init (driver, G_TYPE_STRING);
-		g_value_set_string (driver, priv->is_wireless ? "wext" : "wired");
-		g_hash_table_insert (hash, "driver", driver);
-
-		call = dbus_g_proxy_begin_call (proxy, "addInterface",
-		                                nm_supplicant_interface_add_cb,
-		                                info,
-		                                nm_supplicant_info_destroy,
-		                                G_TYPE_STRING, priv->dev,
-		                                DBUS_TYPE_G_MAP_OF_VARIANT, hash,
-		                                G_TYPE_INVALID);
-
-		g_value_unset (driver);
-		g_free (driver);
-		g_hash_table_destroy (hash);
-	}
-
-	g_object_unref (proxy);
-
+	info = nm_supplicant_info_new (self, priv->wpas_proxy, priv->other_pcalls);
+	call = dbus_g_proxy_begin_call (priv->wpas_proxy, "getInterface",
+	                                interface_get_cb,
+	                                info,
+	                                nm_supplicant_info_destroy,
+	                                G_TYPE_STRING, priv->dev,
+	                                G_TYPE_INVALID);
 	nm_supplicant_info_set_call (info, call);
 }
 
 static void
-nm_supplicant_interface_start (NMSupplicantInterface * self)
+interface_add_cb (DBusGProxy *proxy,
+                  DBusGProxyCall *call_id,
+                  gpointer user_data)
+{
+	NMSupplicantInfo *info = (NMSupplicantInfo *) user_data;
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (info->interface);
+	GError *error = NULL;
+	char *path = NULL;
+
+	if (dbus_g_proxy_end_call (proxy, call_id, &error,
+	                           DBUS_TYPE_G_OBJECT_PATH, &path,
+	                           G_TYPE_INVALID)) {
+		interface_add_done (info->interface, path);
+	} else {
+		if (dbus_g_error_has_name (error, WPAS_ERROR_EXISTS_ERROR)) {
+			/* Interface already added, just get its object path */
+			interface_get (info->interface);
+		} else {
+			nm_log_err (LOGD_SUPPLICANT, "(%s): error adding interface: %s",
+			            priv->dev, error->message);
+		}
+		g_clear_error (&error);
+	}
+}
+
+static void
+interface_add (NMSupplicantInterface * self, gboolean is_wireless)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	guint32          state;
+	DBusGProxyCall *call;
+	NMSupplicantInfo *info;
+	GHashTable *hash;
+	GValue *driver;
 
 	/* Can only start the interface from INIT state */
 	g_return_if_fail (priv->state == NM_SUPPLICANT_INTERFACE_STATE_INIT);
 
 	nm_log_dbg (LOGD_SUPPLICANT, "(%s): adding interface to supplicant", priv->dev);
 
-	state = nm_supplicant_manager_get_state (priv->smgr);
-	if (state == NM_SUPPLICANT_MANAGER_STATE_IDLE) {
-		nm_supplicant_interface_set_state (self, NM_SUPPLICANT_INTERFACE_STATE_STARTING);
-		nm_supplicant_interface_add_to_supplicant (self, FALSE);
-	} else if (state == NM_SUPPLICANT_MANAGER_STATE_DOWN) {
-		/* Don't do anything; wait for signal from supplicant manager
-		 * that its state has changed.
+	/* Try to add the interface to the supplicant.  If the supplicant isn't
+	 * running, this will start it via D-Bus activation and return the response
+	 * when the supplicant has started.
+	 */
+
+	info = nm_supplicant_info_new (self, priv->wpas_proxy, priv->other_pcalls);
+
+	driver = g_new0 (GValue, 1);
+	g_value_init (driver, G_TYPE_STRING);
+	g_value_set_string (driver, is_wireless ? "wext" : "wired");
+
+	hash = g_hash_table_new (g_str_hash, g_str_equal);
+	g_hash_table_insert (hash, "driver", driver);
+
+	call = dbus_g_proxy_begin_call (priv->wpas_proxy, "addInterface",
+	                                interface_add_cb,
+	                                info,
+	                                nm_supplicant_info_destroy,
+	                                G_TYPE_STRING, priv->dev,
+	                                DBUS_TYPE_G_MAP_OF_VARIANT, hash,
+	                                G_TYPE_INVALID);
+
+	g_hash_table_destroy (hash);
+	g_value_unset (driver);
+	g_free (driver);
+
+	nm_supplicant_info_set_call (info, call);
+}
+
+static void
+smgr_running_cb (NMSupplicantManager *smgr,
+                 GParamSpec *pspec,
+                 gpointer user_data)
+{
+	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (user_data);
+
+	if (nm_supplicant_manager_running (smgr)) {
+		/* This can happen if the supplicant couldn't be activated but
+		 * for some reason was started after the activation failure.
 		 */
-	} else
-		nm_log_warn (LOGD_SUPPLICANT, "Unknown supplicant manager state!");
-}
-
-static void
-nm_supplicant_interface_handle_supplicant_manager_idle_state (NMSupplicantInterface * self)
-{
-	switch (NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->state) {
-		case NM_SUPPLICANT_INTERFACE_STATE_INIT:
-			/* Move to STARTING state when supplicant is ready */
-			nm_supplicant_interface_start (self);
-			break;
-		case NM_SUPPLICANT_INTERFACE_STATE_STARTING:
-			/* Don't do anything here, though we should never hit this */
-			break;
-		case NM_SUPPLICANT_INTERFACE_STATE_READY:
-			/* Don't do anything here, though we should never hit this */
-			break;
-		case NM_SUPPLICANT_INTERFACE_STATE_DOWN:
-			/* Don't do anything here; interface can't get out of DOWN state */
-			break;
-		default:
-			nm_log_warn (LOGD_SUPPLICANT, "Unknown supplicant interface state!");
-			break;
+		if (priv->state == NM_SUPPLICANT_INTERFACE_STATE_INIT)
+			interface_add (self, priv->is_wireless);
+	} else {
+		/* The supplicant stopped; so we must tear down the interface */
+		set_state (self, NM_SUPPLICANT_INTERFACE_STATE_DOWN);
 	}
 }
-
-
-static void
-nm_supplicant_interface_set_state (NMSupplicantInterface * self,
-                                   guint32 new_state)
-{
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	guint32 old_state;
-
-	g_return_if_fail (new_state < NM_SUPPLICANT_INTERFACE_STATE_LAST);
-
-	if (new_state == priv->state)
-		return;
-
-	old_state = priv->state;
-	if (new_state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
-		/* If the interface is transitioning to DOWN and there's are
-		 * in-progress pending calls, cancel them.
-		 */
-		cancel_all_callbacks (priv->other_pcalls);
-		cancel_all_callbacks (priv->assoc_pcalls);
-	}
-
-	priv->state = new_state;
-	g_signal_emit (self, signals[STATE], 0, priv->state, old_state);
-}
-
-static void
-smgr_state_changed (NMSupplicantManager *smgr,
-                    guint32 new_state,
-                    guint32 old_state,
-                    gpointer user_data)
-{
-	NMSupplicantInterface * self = NM_SUPPLICANT_INTERFACE (user_data);
-
-	switch (new_state) {
-		case NM_SUPPLICANT_MANAGER_STATE_DOWN:
-			/* The supplicant went away, likely the connection to it is also
-			 * gone.  Therefore, this interface must move to the DOWN state
-			 * and be disposed of.
-			 */
-			nm_supplicant_interface_set_state (self, NM_SUPPLICANT_INTERFACE_STATE_DOWN);
-			break;
-		case NM_SUPPLICANT_MANAGER_STATE_IDLE:
-			/* Handle the supplicant now being available. */
-			nm_supplicant_interface_handle_supplicant_manager_idle_state (self);
-			break;
-		default:
-			nm_log_warn (LOGD_SUPPLICANT, "Unknown supplicant manager state!");
-			break;
-	}
-}
-
 
 static void
 remove_network_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
@@ -742,16 +690,13 @@ nm_supplicant_interface_disconnect (NMSupplicantInterface * self)
 	if (!priv->iface_proxy)
 		return;
 
-	/* Don't try to disconnect if the supplicant interface is already
-	 * disconnected.
-	 */
-	if (priv->con_state == NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED
-	    || priv->con_state == NM_SUPPLICANT_INTERFACE_CON_STATE_INACTIVE) {
+	/* Don't try to disconnect if the supplicant interface is already disconnected */
+	if (   priv->state == NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED
+	    || priv->state == NM_SUPPLICANT_INTERFACE_STATE_INACTIVE) {
 		if (priv->net_proxy) {
 			g_object_unref (priv->net_proxy);
 			priv->net_proxy = NULL;
 		}
-
 		return;
 	}
 
@@ -1011,14 +956,6 @@ nm_supplicant_interface_set_config (NMSupplicantInterface * self,
 	return call != NULL;
 }
 
-const char *
-nm_supplicant_interface_get_device (NMSupplicantInterface * self)
-{
-	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), NULL);
-
-	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->dev;
-}
-
 static void
 scan_request_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 {
@@ -1067,24 +1004,30 @@ nm_supplicant_interface_get_state (NMSupplicantInterface * self)
 	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->state;
 }
 
-guint32
-nm_supplicant_interface_get_connection_state (NMSupplicantInterface * self)
-{
-	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED);
-
-	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->con_state;
-}
-
 const char *
 nm_supplicant_interface_state_to_string (guint32 state)
 {
 	switch (state) {
 	case NM_SUPPLICANT_INTERFACE_STATE_INIT:
 		return "init";
-	case NM_SUPPLICANT_INTERFACE_STATE_STARTING:
-		return "starting";
 	case NM_SUPPLICANT_INTERFACE_STATE_READY:
 		return "ready";
+	case NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED:
+		return "disconnected";
+	case NM_SUPPLICANT_INTERFACE_STATE_INACTIVE:
+		return "inactive";
+	case NM_SUPPLICANT_INTERFACE_STATE_SCANNING:
+		return "scanning";
+	case NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATING:
+		return "associating";
+	case NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATED:
+		return "associated";
+	case NM_SUPPLICANT_INTERFACE_STATE_4WAY_HANDSHAKE:
+		return "4-way handshake";
+	case NM_SUPPLICANT_INTERFACE_STATE_GROUP_HANDSHAKE:
+		return "group handshake";
+	case NM_SUPPLICANT_INTERFACE_STATE_COMPLETED:
+		return "completed";
 	case NM_SUPPLICANT_INTERFACE_STATE_DOWN:
 		return "down";
 	default:
@@ -1094,35 +1037,28 @@ nm_supplicant_interface_state_to_string (guint32 state)
 }
 
 const char *
-nm_supplicant_interface_connection_state_to_string (guint32 state)
+nm_supplicant_interface_get_device (NMSupplicantInterface * self)
 {
-	switch (state) {
-	case NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED:
-		return "disconnected";
-	case NM_SUPPLICANT_INTERFACE_CON_STATE_INACTIVE:
-		return "inactive";
-	case NM_SUPPLICANT_INTERFACE_CON_STATE_SCANNING:
-		return "scanning";
-	case NM_SUPPLICANT_INTERFACE_CON_STATE_ASSOCIATING:
-		return "associating";
-	case NM_SUPPLICANT_INTERFACE_CON_STATE_ASSOCIATED:
-		return "associated";
-	case NM_SUPPLICANT_INTERFACE_CON_STATE_4WAY_HANDSHAKE:
-		return "4-way handshake";
-	case NM_SUPPLICANT_INTERFACE_CON_STATE_GROUP_HANDSHAKE:
-		return "group handshake";
-	case NM_SUPPLICANT_INTERFACE_CON_STATE_COMPLETED:
-		return "completed";
-	default:
-		break;
-	}
-	return "unknown";
+	g_return_val_if_fail (self != NULL, NULL);
+	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), NULL);
+
+	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->dev;
+}
+
+const char *
+nm_supplicant_interface_get_object_path (NMSupplicantInterface *self)
+{
+	g_return_val_if_fail (self != NULL, NULL);
+	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), NULL);
+
+	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->object_path;
 }
 
 const char *
 nm_supplicant_interface_get_ifname (NMSupplicantInterface *self)
 {
 	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), FALSE);
 
 	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->dev;
 }
@@ -1147,14 +1083,15 @@ nm_supplicant_interface_new (NMSupplicantManager *smgr,
 
 		priv->smgr = g_object_ref (smgr);
 		id = g_signal_connect (priv->smgr,
-		                       "state",
-		                       G_CALLBACK (smgr_state_changed),
+		                       "notify::" NM_SUPPLICANT_MANAGER_RUNNING,
+		                       G_CALLBACK (smgr_running_cb),
 		                       self);
-		priv->smgr_state_sig_handler = id;
+		priv->smgr_running_id = id;
 
 		priv->dev = g_strdup (ifname);
 		priv->is_wireless = is_wireless;
-		nm_supplicant_interface_start (self);
+
+		interface_add (self, priv->is_wireless);
 	}
 
 	return self;
@@ -1164,12 +1101,18 @@ static void
 nm_supplicant_interface_init (NMSupplicantInterface * self)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	DBusGConnection *bus;
 
 	priv->state = NM_SUPPLICANT_INTERFACE_STATE_INIT;
-	priv->con_state = NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED;
 	priv->assoc_pcalls = nm_call_store_new ();
 	priv->other_pcalls = nm_call_store_new ();
 	priv->dbus_mgr = nm_dbus_manager_get ();
+
+	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
+	priv->wpas_proxy = dbus_g_proxy_new_for_name (bus,
+	                                              WPAS_DBUS_SERVICE,
+	                                              WPAS_DBUS_PATH,
+	                                              WPAS_DBUS_INTERFACE);
 }
 
 static void
@@ -1195,9 +1138,6 @@ get_property (GObject *object,
 	case PROP_STATE:
 		g_value_set_uint (value, NM_SUPPLICANT_INTERFACE_GET_PRIVATE (object)->state);
 		break;
-	case PROP_CONNECTION_STATE:
-		g_value_set_uint (value, NM_SUPPLICANT_INTERFACE_GET_PRIVATE (object)->con_state);
-		break;
 	case PROP_SCANNING:
 		g_value_set_boolean (value, NM_SUPPLICANT_INTERFACE_GET_PRIVATE (object)->scanning);
 		break;
@@ -1211,7 +1151,6 @@ static void
 dispose (GObject *object)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (object);
-	guint32 sm_state;
 
 	if (priv->disposed) {
 		G_OBJECT_CLASS (nm_supplicant_interface_parent_class)->dispose (object);
@@ -1219,27 +1158,21 @@ dispose (GObject *object)
 	}
 	priv->disposed = TRUE;
 
-	/* Ask wpa_supplicant to remove this interface */
-	sm_state = nm_supplicant_manager_get_state (priv->smgr);
-	if (sm_state == NM_SUPPLICANT_MANAGER_STATE_IDLE) {
-		if (priv->object_path) {
-			try_remove_iface (nm_dbus_manager_get_connection (priv->dbus_mgr),
-			                  priv->object_path);
-		}
-	}
-
 	if (priv->iface_proxy)
 		g_object_unref (priv->iface_proxy);
 
 	if (priv->net_proxy)
 		g_object_unref (priv->net_proxy);
 
+	if (priv->wpas_proxy)
+		g_object_unref (priv->wpas_proxy);
+
 	if (priv->scan_results_timeout)
 		g_source_remove (priv->scan_results_timeout);
 
 	if (priv->smgr) {
-		g_signal_handler_disconnect (priv->smgr,
-		                             priv->smgr_state_sig_handler);
+		if (priv->smgr_running_id)
+			g_signal_handler_disconnect (priv->smgr, priv->smgr_running_id);
 		g_object_unref (priv->smgr);
 	}
 
@@ -1337,15 +1270,6 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 		              NULL, NULL,
 		              g_cclosure_marshal_VOID__UINT,
 		              G_TYPE_NONE, 1, G_TYPE_UINT);
-
-	signals[CONNECTION_STATE] =
-		g_signal_new ("connection-state",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
-		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, connection_state),
-		              NULL, NULL,
-		              _nm_marshal_VOID__UINT_UINT,
-		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 
 	signals[CONNECTION_ERROR] =
 		g_signal_new ("connection-error",

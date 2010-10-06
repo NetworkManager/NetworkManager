@@ -26,19 +26,7 @@
 #include "nm-supplicant-manager.h"
 #include "nm-supplicant-interface.h"
 #include "nm-dbus-manager.h"
-#include "nm-marshal.h"
 #include "nm-logging.h"
-#include "nm-glib-compat.h"
-
-#define SUPPLICANT_POKE_INTERVAL 120
-
-typedef struct {
-	NMDBusManager *	dbus_mgr;
-	guint32         state;
-	GHashTable *    ifaces;
-	gboolean        disposed;
-	guint           poke_id;
-} NMSupplicantManagerPrivate;
 
 #define NM_SUPPLICANT_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
                                               NM_TYPE_SUPPLICANT_MANAGER, \
@@ -46,84 +34,26 @@ typedef struct {
 
 G_DEFINE_TYPE (NMSupplicantManager, nm_supplicant_manager, G_TYPE_OBJECT)
 
-/* Signals */
+/* Properties */
 enum {
-	STATE,       /* change in the manager's state */
-	LAST_SIGNAL
+	PROP_0 = 0,
+	PROP_RUNNING,
+	LAST_PROP
 };
-static guint signals[LAST_SIGNAL] = { 0 };
+
+typedef struct {
+	NMDBusManager * dbus_mgr;
+	guint           name_owner_id;
+	DBusGProxy *    proxy;
+	gboolean        running;
+	GHashTable *    ifaces;
+	gboolean        disposed;
+} NMSupplicantManagerPrivate;
 
 /********************************************************************/
 
-static gboolean
-poke_supplicant_cb (gpointer user_data)
-{
-	NMSupplicantManager *self = NM_SUPPLICANT_MANAGER (user_data);
-	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
-	DBusGConnection *g_connection;
-	DBusGProxy *proxy;
-	const char *tmp = "ignoreme";
-
-	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
-	proxy = dbus_g_proxy_new_for_name (g_connection,
-	                                   WPAS_DBUS_SERVICE,
-	                                   WPAS_DBUS_PATH,
-	                                   WPAS_DBUS_INTERFACE);
-	if (!proxy) {
-		nm_log_warn (LOGD_SUPPLICANT, "Error: could not init wpa_supplicant proxy");
-		goto out;
-	}
-
-	nm_log_info (LOGD_SUPPLICANT, "Trying to start the supplicant...");
-	dbus_g_proxy_call_no_reply (proxy, "getInterface", G_TYPE_STRING, tmp, G_TYPE_INVALID);
-	g_object_unref (proxy);
-
-out:
-	/* Reschedule the poke */	
-	priv->poke_id = g_timeout_add_seconds (SUPPLICANT_POKE_INTERVAL,
-	                               poke_supplicant_cb,
-	                               (gpointer) self);
-
-	return FALSE;
-}
-
-guint32
-nm_supplicant_manager_get_state (NMSupplicantManager * self)
-{
-	g_return_val_if_fail (NM_IS_SUPPLICANT_MANAGER (self), FALSE);
-
-	return NM_SUPPLICANT_MANAGER_GET_PRIVATE (self)->state;
-}
-
-static void
-set_state (NMSupplicantManager *self, guint32 new_state)
-{
-	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
-	guint32 old_state;
-
-	if (new_state != priv->state) {
-		old_state = priv->state;
-		priv->state = new_state;
-		g_signal_emit (self, signals[STATE], 0, priv->state, old_state);
-	}
-}
-
-static gboolean
-startup (NMSupplicantManager * self)
-{
-	gboolean running;
-
-	/* FIXME: convert to pending call */
-	running = nm_dbus_manager_name_has_owner (NM_SUPPLICANT_MANAGER_GET_PRIVATE (self)->dbus_mgr,
-	                                          WPAS_DBUS_SERVICE);
-	if (running)
-		set_state (self, NM_SUPPLICANT_MANAGER_STATE_IDLE);
-
-	return running;
-}
-
 NMSupplicantInterface *
-nm_supplicant_manager_get_iface (NMSupplicantManager * self,
+nm_supplicant_manager_iface_get (NMSupplicantManager * self,
                                  const char *ifname,
                                  gboolean is_wireless)
 {
@@ -149,34 +79,37 @@ nm_supplicant_manager_get_iface (NMSupplicantManager * self,
 }
 
 void
-nm_supplicant_manager_release_iface (NMSupplicantManager *self,
+nm_supplicant_manager_iface_release (NMSupplicantManager *self,
                                      NMSupplicantInterface *iface)
 {
 	NMSupplicantManagerPrivate *priv;
-	const char *ifname;
+	const char *ifname, *op;
 
 	g_return_if_fail (NM_IS_SUPPLICANT_MANAGER (self));
 	g_return_if_fail (NM_IS_SUPPLICANT_INTERFACE (iface));
 
 	priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
 
+	/* Ask wpa_supplicant to remove this interface */
+	op = nm_supplicant_interface_get_object_path (iface);
+	if (priv->running && priv->proxy && op) {
+		dbus_g_proxy_call_no_reply (priv->proxy, "removeInterface", 
+			                        DBUS_TYPE_G_OBJECT_PATH, op,
+			                        G_TYPE_INVALID);
+	}
+
 	ifname = nm_supplicant_interface_get_ifname (iface);
 	g_assert (ifname);
 	g_hash_table_remove (priv->ifaces, ifname);
 }
 
-const char *
-nm_supplicant_manager_state_to_string (guint32 state)
+gboolean
+nm_supplicant_manager_running (NMSupplicantManager *self)
 {
-	switch (state) {
-	case NM_SUPPLICANT_MANAGER_STATE_DOWN:
-		return "down";
-	case NM_SUPPLICANT_MANAGER_STATE_IDLE:
-		return "idle";
-	default:
-		break;
-	}
-	return "unknown";
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_SUPPLICANT_MANAGER (self), FALSE);
+
+	return NM_SUPPLICANT_MANAGER_GET_PRIVATE (self)->running;
 }
 
 static void
@@ -186,34 +119,23 @@ name_owner_changed (NMDBusManager *dbus_mgr,
                     const char *new_owner,
                     gpointer user_data)
 {
-	NMSupplicantManager * self = (NMSupplicantManager *) user_data;
+	NMSupplicantManager *self = NM_SUPPLICANT_MANAGER (user_data);
 	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
 	gboolean old_owner_good = (old_owner && strlen (old_owner));
 	gboolean new_owner_good = (new_owner && strlen (new_owner));
 
-	/* Can't handle the signal if its not from the supplicant service */
+	/* We only care about the supplicant here */
 	if (strcmp (WPAS_DBUS_SERVICE, name) != 0)
 		return;
 
 	if (!old_owner_good && new_owner_good) {
-		gboolean running;
-
-		running = startup (self);
-
-		if (running && priv->poke_id) {
-			g_source_remove (priv->poke_id);
-			priv->poke_id = 0;
-		}
+		nm_log_info (LOGD_SUPPLICANT, "wpa_supplicant started");
+		priv->running = TRUE;
+		g_object_notify (G_OBJECT (self), NM_SUPPLICANT_MANAGER_RUNNING);
 	} else if (old_owner_good && !new_owner_good) {
-		set_state (self, NM_SUPPLICANT_MANAGER_STATE_DOWN);
-
-		if (priv->poke_id)
-			g_source_remove (priv->poke_id);
-
-		/* Poke the supplicant so that it gets activated by dbus system bus
-		 * activation.
-		 */
-		priv->poke_id = g_idle_add (poke_supplicant_cb, (gpointer) self);
+		nm_log_info (LOGD_SUPPLICANT, "wpa_supplicant stopped");
+		priv->running = FALSE;
+		g_object_notify (G_OBJECT (self), NM_SUPPLICANT_MANAGER_RUNNING);
 	}
 }
 
@@ -237,24 +159,40 @@ static void
 nm_supplicant_manager_init (NMSupplicantManager * self)
 {
 	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
-	gboolean running;
+	DBusGConnection *bus;
 
-	priv->state = NM_SUPPLICANT_MANAGER_STATE_DOWN;
 	priv->dbus_mgr = nm_dbus_manager_get ();
-	priv->poke_id = 0;
+	priv->name_owner_id = g_signal_connect (priv->dbus_mgr,
+	                                        "name-owner-changed",
+	                                        G_CALLBACK (name_owner_changed),
+	                                        self);
+	priv->running = nm_dbus_manager_name_has_owner (priv->dbus_mgr, WPAS_DBUS_SERVICE);
+
+	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
+	priv->proxy = dbus_g_proxy_new_for_name (bus,
+	                                         WPAS_DBUS_SERVICE,
+	                                         WPAS_DBUS_PATH,
+	                                         WPAS_DBUS_INTERFACE);
 
 	priv->ifaces = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
+}
 
-	running = startup (self);
+static void
+set_property (GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
+{
+	G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+}
 
-	g_signal_connect (priv->dbus_mgr,
-	                  "name-owner-changed",
-	                  G_CALLBACK (name_owner_changed),
-	                  self);
-
-	if (!running) {
-		/* Try to activate the supplicant */
-		priv->poke_id = g_idle_add (poke_supplicant_cb, (gpointer) self);
+static void
+get_property (GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
+{
+	switch (prop_id) {
+	case PROP_RUNNING:
+		g_value_set_boolean (value, NM_SUPPLICANT_MANAGER_GET_PRIVATE (object)->running);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
 	}
 }
 
@@ -263,22 +201,22 @@ dispose (GObject *object)
 {
 	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (object);
 
-	if (priv->disposed) {
-		G_OBJECT_CLASS (nm_supplicant_manager_parent_class)->dispose (object);
-		return;
-	}
+	if (priv->disposed)
+		goto out;
 	priv->disposed = TRUE;
 
-	if (priv->poke_id) {
-		g_source_remove (priv->poke_id);
-		priv->poke_id = 0;
-	}
-
 	if (priv->dbus_mgr) {
+		if (priv->name_owner_id)
+			g_signal_handler_disconnect (priv->dbus_mgr, priv->name_owner_id);
 		g_object_unref (G_OBJECT (priv->dbus_mgr));
-		priv->dbus_mgr = NULL;
 	}
 
+	g_hash_table_destroy (priv->ifaces);
+
+	if (priv->proxy)
+		g_object_unref (priv->proxy);
+
+out:
 	/* Chain up to the parent class */
 	G_OBJECT_CLASS (nm_supplicant_manager_parent_class)->dispose (object);
 }
@@ -286,19 +224,19 @@ dispose (GObject *object)
 static void
 nm_supplicant_manager_class_init (NMSupplicantManagerClass *klass)
 {
-	GObjectClass * object_class = G_OBJECT_CLASS (klass);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
 	g_type_class_add_private (object_class, sizeof (NMSupplicantManagerPrivate));
 
+	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 
-	/* Signals */
-	signals[STATE] = g_signal_new ("state",
-	                               G_OBJECT_CLASS_TYPE (object_class),
-	                               G_SIGNAL_RUN_LAST,
-	                               G_STRUCT_OFFSET (NMSupplicantManagerClass, state),
-	                               NULL, NULL,
-	                               _nm_marshal_VOID__UINT_UINT,
-	                               G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
+	g_object_class_install_property (object_class, PROP_RUNNING,
+		g_param_spec_boolean (NM_SUPPLICANT_MANAGER_RUNNING,
+		                      "Running",
+		                      "Running",
+		                      FALSE,
+		                      G_PARAM_READABLE));
 }
 
