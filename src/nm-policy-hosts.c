@@ -143,7 +143,9 @@ ip6_addr_matches (const char *str, const char *ip6_addr)
 static char *
 get_custom_hostnames (const char *line,
                       const char *hostname,
-                      const char *old_hostname)
+                      const char *old_hostname,
+                      const char *short_hostname,
+                      const char *fallback_hostname)
 {
 	char **items = NULL, **iter;
 	guint start = 0;
@@ -172,6 +174,10 @@ get_custom_hostnames (const char *line,
 		if (hostname && !strcmp (*iter, hostname))
 			continue;
 		if (old_hostname && !strcmp (*iter, old_hostname))
+			continue;
+		if (short_hostname && !strcmp (*iter, short_hostname))
+			continue;
+		if (fallback_hostname && !strcmp (*iter, fallback_hostname))
 			continue;
 		if (!strcmp (*iter, "localhost"))
 			continue;
@@ -236,6 +242,24 @@ nm_policy_get_etc_hosts (const char **lines,
 	hostname4_is_fallback = !strcmp (hostname, fallback_hostname4);
 	hostname6_is_fallback = !strcmp (hostname, fallback_hostname6);
 
+	/* Find the short hostname, like 'foo' from 'foo.bar.baz'; we want to
+	 * make sure that the entries we add for this host also include the short
+	 * hostname too so that if the resolver does not answer queries for the
+	 * machine's actual hostname/domain, that stuff like 'ping foo' still works.
+	 */
+	if (!hostname4_is_fallback || !hostname6_is_fallback) {
+		char *dot;
+
+		short_hostname = g_strdup (hostname);
+		dot = strchr (short_hostname, '.');
+		if (dot && *(dot+1))
+			*dot = '\0';
+		else {
+			g_free (short_hostname);
+			short_hostname = NULL;
+		}
+	}
+
 	/* We need the following in /etc/hosts:
 	 *
 	 * 1) current hostname mapped to current IPv4 addresses if IPv4 is active
@@ -299,7 +323,7 @@ nm_policy_get_etc_hosts (const char **lines,
 		if (is_local_mapping (*line, FALSE, "localhost")) {
 			/* a 127.0.0.1 line containing 'localhost' */
 			found_localhost4 = TRUE;
-			custom4 = get_custom_hostnames (*line, hostname, old_hostname);
+			custom4 = get_custom_hostnames (*line, hostname, old_hostname, short_hostname, fallback_hostname4);
 			if (!ip4_addr) {
 				/* If there's no IP-specific mapping for the current hostname
 				 * but that hostname is present on in the local mapping line,
@@ -313,7 +337,7 @@ nm_policy_get_etc_hosts (const char **lines,
 		} else if (is_local_mapping (*line, TRUE, "localhost6")) {
 			/* a ::1 line containing 'localhost6' */
 			found_localhost6 = TRUE;
-			custom6 = get_custom_hostnames (*line, hostname, old_hostname);
+			custom6 = get_custom_hostnames (*line, hostname, old_hostname, short_hostname, fallback_hostname6);
 			if (!ip6_addr) {
 				/* If there's no IP-specific mapping for the current hostname
 				 * but that hostname is present on in the local mapping line,
@@ -340,24 +364,6 @@ nm_policy_get_etc_hosts (const char **lines,
 	if (!contents) {
 		g_set_error_literal (error, 0, 0, "not enough memory");
 		goto out;
-	}
-
-	/* Find the short hostname, like 'foo' from 'foo.bar.baz'; we want to
-	 * make sure that the entries we add for this host also include the short
-	 * hostname too so that if the resolver does not answer queries for the
-	 * machine's actual hostname/domain, that stuff like 'ping foo' still works.
-	 */
-	if (!hostname4_is_fallback || !hostname6_is_fallback) {
-		char *dot;
-
-		short_hostname = g_strdup (hostname);
-		dot = strchr (short_hostname, '.');
-		if (dot && *(dot+1))
-			*dot = '\0';
-		else {
-			g_free (short_hostname);
-			short_hostname = NULL;
-		}
 	}
 
 	/* Construct the new hosts file; replace any 127.0.0.1/::1 entry that is
