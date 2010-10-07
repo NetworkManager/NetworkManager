@@ -64,6 +64,21 @@ is_local_mapping (const char *str, gboolean ip6, const char *hostname)
 }
 
 static gboolean
+is_ip4_addr (const char *str)
+{
+	struct in_addr found;
+	char buf[INET_ADDRSTRLEN + 2];
+	const char *p = str;
+	guint32 i = 0;
+
+	memset (buf, 0, sizeof (buf));
+	while (*p && !isblank (*p) && (i < sizeof (buf)))
+		buf[i++] = *p++;
+
+	return inet_pton (AF_INET, buf, &found) == 1 ? TRUE : FALSE;
+}
+
+static gboolean
 ip4_addr_matches (const char *str, const char *ip4_addr)
 {
 	struct in_addr found, given;
@@ -83,6 +98,21 @@ ip4_addr_matches (const char *str, const char *ip4_addr)
 		return FALSE;
 
 	return memcmp (&found, &given, sizeof (found)) == 0;
+}
+
+static gboolean
+is_ip6_addr (const char *str)
+{
+	struct in6_addr found;
+	char buf[INET6_ADDRSTRLEN + 2];
+	const char *p = str;
+	guint32 i = 0;
+
+	memset (buf, 0, sizeof (buf));
+	while (*p && !isblank (*p) && (i < sizeof (buf)))
+		buf[i++] = *p++;
+
+	return inet_pton (AF_INET6, buf, &found) == 1 ? TRUE : FALSE;
 }
 
 static gboolean
@@ -176,7 +206,14 @@ nm_policy_get_etc_hosts (const char **lines,
 					found_user_host4 = TRUE;
 					host4_before = TRUE;  /* Ignore if user added mapping manually */
 				}
+			} else if (!ip4_addr && strstr (*line, ADDED_TAG)) {
+				/* If this is a stale NM-added IPv4 entry we need to remove it,
+				 * so make sure we update /etc/hosts.
+				 */
+				if (is_ip4_addr (*line))
+					found_host4 = FALSE;
 			}
+
 			if (ip6_addr && ip6_addr_matches (*line, ip6_addr)) {
 				found_host6 = TRUE;
 				if (strstr (*line, ADDED_TAG)) {
@@ -186,6 +223,12 @@ nm_policy_get_etc_hosts (const char **lines,
 					found_user_host6 = TRUE;
 					host6_before = TRUE;  /* Ignore if user added mapping manually */
 				}
+			} else if (!ip6_addr && strstr (*line, ADDED_TAG)) {
+				/* If this is a stale NM-added IPv6 entry we need to remove it,
+				 * so make sure we update /etc/hosts.
+				 */
+				if (is_ip6_addr (*line))
+					found_host6 = FALSE;
 			}
 		}
 
