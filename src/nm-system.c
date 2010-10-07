@@ -1254,11 +1254,11 @@ dump_route (struct rtnl_route *route)
 	memset (buf4, 0, sizeof (buf4));
 	nl = rtnl_route_get_dst (route);
 	if (nl) {
-		if (rtnl_route_get_family (route) == AF_INET) {
+		if (nl_addr_get_family (nl) == AF_INET) {
 			addr4 = nl_addr_get_binary_addr (nl);
 			if (addr4)
 				inet_ntop (AF_INET, addr4, &buf4[0], sizeof (buf4));
-		} else if (rtnl_route_get_family (route) == AF_INET6) {
+		} else if (nl_addr_get_family (nl) == AF_INET6) {
 			addr6 = nl_addr_get_binary_addr (nl);
 			if (addr6)
 				inet_ntop (AF_INET6, addr6, &buf6[0], sizeof (buf6));
