@@ -930,8 +930,7 @@ typedef struct GetSettingsInfo {
 	NMManager *manager;
 	NMConnection *connection;
 	DBusGProxy *proxy;
-	DBusGProxyCall *call;
-	GSList **calls;
+	guint32 *calls;
 } GetSettingsInfo;
 
 static void
@@ -943,10 +942,9 @@ free_get_settings_info (gpointer data)
 	 * send out the connections-added signal.
 	 */
 	if (info->calls) {
-		*(info->calls) = g_slist_remove (*(info->calls), info->call);
-		if (g_slist_length (*(info->calls)) == 0) {
-			g_slist_free (*(info->calls));
-			g_slice_free (GSList, (gpointer) info->calls);
+		(*info->calls)--;
+		if (*info->calls == 0) {
+			g_slice_free (guint32, (gpointer) info->calls);
 			g_signal_emit (info->manager, signals[CONNECTIONS_ADDED], 0, NM_CONNECTION_SCOPE_USER);
 
 			/* Update the Bluetooth connections for all the new connections */
@@ -1117,20 +1115,18 @@ user_connection_updated_cb (DBusGProxy *proxy,
 }
 
 static void
-user_internal_new_connection_cb (DBusGProxy *proxy,
+user_internal_new_connection_cb (NMManager *manager,
                                  const char *path,
-                                 NMManager *manager,
-                                 GSList **calls)
+                                 guint32 *counter)
 {
-	struct GetSettingsInfo *info;
+	GetSettingsInfo *info;
 	DBusGProxy *con_proxy;
 	DBusGConnection *g_connection;
-	DBusGProxyCall *call;
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
 	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
 	con_proxy = dbus_g_proxy_new_for_name (g_connection,
-	                                       dbus_g_proxy_get_bus_name (proxy),
+	                                       NM_DBUS_SERVICE_USER_SETTINGS,
 	                                       path,
 	                                       NM_DBUS_IFACE_SETTINGS_CONNECTION);
 	if (!con_proxy) {
@@ -1154,16 +1150,16 @@ user_internal_new_connection_cb (DBusGProxy *proxy,
 
 	info = g_slice_new0 (GetSettingsInfo);
 	info->manager = g_object_ref (manager);
-	info->calls = calls;
-	call = dbus_g_proxy_begin_call (con_proxy, "GetSettings",
-	                                user_connection_get_settings_cb,
-	                                info,
-	                                free_get_settings_info,
-	                                G_TYPE_INVALID);
-	info->call = call;
 	info->proxy = con_proxy;
-	if (info->calls)
-		*(info->calls) = g_slist_prepend (*(info->calls), call);
+	if (counter) {
+		info->calls = counter;
+		(*info->calls)++;
+	}
+	dbus_g_proxy_begin_call (con_proxy, "GetSettings",
+	                         user_connection_get_settings_cb,
+	                         info,
+	                         free_get_settings_info,
+	                         G_TYPE_INVALID);
 }
 
 static void
@@ -1174,7 +1170,7 @@ user_list_connections_cb  (DBusGProxy *proxy,
 	NMManager *manager = NM_MANAGER (user_data);
 	GError *err = NULL;
 	GPtrArray *ops;
-	GSList **calls = NULL;
+	guint32 *counter = NULL;
 	int i;
 
 	if (!dbus_g_proxy_end_call (proxy, call_id, &err,
@@ -1182,26 +1178,21 @@ user_list_connections_cb  (DBusGProxy *proxy,
 	                            G_TYPE_INVALID)) {
 		nm_log_warn (LOGD_USER_SET, "couldn't retrieve connections: %s",
 		             err && err->message ? err->message : "(unknown)");
-		g_error_free (err);
-		goto out;
+		g_clear_error (&err);
+		return;
 	}
 
 	/* Keep track of all calls made here; don't want to emit connection-added for
 	 * each one, but emit connections-added when they are all done.
 	 */
-	calls = g_slice_new0 (GSList *);
-
+	counter = g_slice_new0 (guint32);
 	for (i = 0; i < ops->len; i++) {
 		char *op = g_ptr_array_index (ops, i);
 
-		user_internal_new_connection_cb (proxy, op, manager, calls);
+		user_internal_new_connection_cb (manager, op, counter);
 		g_free (op);
 	}
-
 	g_ptr_array_free (ops, TRUE);
-
-out:
-	return;
 }
 
 static void
@@ -1219,7 +1210,7 @@ user_proxy_destroyed_cb (DBusGProxy *proxy, NMManager *self)
 static void
 user_new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
 {
-	user_internal_new_connection_cb (proxy, path, NM_MANAGER (user_data), NULL);
+	user_internal_new_connection_cb (NM_MANAGER (user_data), path, NULL);
 }
 
 static gboolean
