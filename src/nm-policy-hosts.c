@@ -28,6 +28,9 @@
 #include "nm-policy-hosts.h"
 #include "nm-logging.h"
 
+#define IP4_LH "127.0.0.1"
+#define IP6_LH "::1"
+
 gboolean
 nm_policy_hosts_find_token (const char *line, const char *token)
 {
@@ -56,7 +59,7 @@ nm_policy_hosts_find_token (const char *line, const char *token)
 static gboolean
 is_local_mapping (const char *str, gboolean ip6, const char *hostname)
 {
-	const char *addr = ip6 ? "::1" : "127.0.0.1";
+	const char *addr = ip6 ? IP6_LH : IP4_LH;
 	const char *fallback = ip6 ? "localhost6" : "localhost";
 
 	return (   !strncmp (str, addr, strlen (addr))
@@ -137,12 +140,71 @@ ip6_addr_matches (const char *str, const char *ip6_addr)
 	return memcmp (&found, &given, sizeof (found)) == 0;
 }
 
+static char *
+get_custom_hostnames (const char *line,
+                      const char *hostname,
+                      const char *old_hostname)
+{
+	char **items = NULL, **iter;
+	guint start = 0;
+	GString *str = NULL;
+	char *custom = NULL;
+
+	g_return_val_if_fail (line != NULL, NULL);
+
+	if (!strncmp (line, IP4_LH, strlen (IP4_LH)))
+		start = strlen (IP4_LH);
+	else if (!strncmp (line, IP6_LH, strlen (IP6_LH)))
+		start = strlen (IP6_LH);
+
+	g_return_val_if_fail (start > 0, NULL);
+
+	/* Split the line into tokens */
+	items = g_strsplit_set (line + start, " \t", -1);
+	if (!items)
+		return NULL;
+
+	str = g_string_sized_new (50);
+	/* Ignore current & old hostnames, and localhost-anything */
+	for (iter = items; iter && *iter; iter++) {
+		if (*iter[0] == '\0')
+			continue;
+		if (hostname && !strcmp (*iter, hostname))
+			continue;
+		if (old_hostname && !strcmp (*iter, old_hostname))
+			continue;
+		if (!strcmp (*iter, "localhost"))
+			continue;
+		if (!strcmp (*iter, "localhost6"))
+			continue;
+		if (!strcmp (*iter, "localhost.localdomain"))
+			continue;
+		if (!strcmp (*iter, "localhost4.localdomain4"))
+			continue;
+		if (!strcmp (*iter, "localhost6.localdomain6"))
+			continue;
+
+		/* Found a custom hostname */
+		g_string_append_c (str, '\t');
+		g_string_append (str, *iter);
+	}
+
+	if (str->len)
+		custom = g_string_free (str, FALSE);
+	else
+		g_string_free (str, TRUE);
+
+	g_strfreev (items);
+	return custom;
+}
+
 #define ADDED_TAG "# Added by NetworkManager"
 
 GString *
 nm_policy_get_etc_hosts (const char **lines,
                          gsize existing_len,
                          const char *hostname,
+                         const char *old_hostname,
                          const char *fallback_hostname4,
                          const char *fallback_hostname6,
                          const char *ip4_addr,
@@ -163,7 +225,10 @@ nm_policy_get_etc_hosts (const char **lines,
 	gboolean hostname6_is_fallback;
 	gboolean host4_before = FALSE;
 	gboolean host6_before = FALSE;
+	gboolean no_stale = TRUE;
 	char *short_hostname = NULL;
+	char *custom4 = NULL;
+	char *custom6 = NULL;
 
 	g_return_val_if_fail (lines != NULL, FALSE);
 	g_return_val_if_fail (hostname != NULL, FALSE);
@@ -181,21 +246,20 @@ nm_policy_get_etc_hosts (const char **lines,
 	 * If all these things exist we don't need to bother updating the file.
 	 */
 
-	if (!ip4_addr) {
-		found_host4 = TRUE;
+	if (!ip4_addr)
 		host4_before = TRUE;
-	}
-	if (!ip6_addr) {
-		found_host6 = TRUE;
+	if (!ip6_addr)
 		host6_before = TRUE;
-	}
 
 	/* Look for the four cases from above */
 	for (line = lines; lines && *line; line++) {
-		if (!strlen (*line) || (*line[0] == '#'))
+		gboolean found_hostname = FALSE;
+
+		if ((*line[0] == '\0') || (*line[0] == '#'))
 			continue;
 
-		if (nm_policy_hosts_find_token (*line, hostname)) {
+		found_hostname = nm_policy_hosts_find_token (*line, hostname);
+		if (found_hostname) {
 			/* Found the current hostname on this line */
 			if (ip4_addr && ip4_addr_matches (*line, ip4_addr)) {
 				found_host4 = TRUE;
@@ -211,7 +275,7 @@ nm_policy_get_etc_hosts (const char **lines,
 				 * so make sure we update /etc/hosts.
 				 */
 				if (is_ip4_addr (*line))
-					found_host4 = FALSE;
+					no_stale = FALSE;
 			}
 
 			if (ip6_addr && ip6_addr_matches (*line, ip6_addr)) {
@@ -228,26 +292,54 @@ nm_policy_get_etc_hosts (const char **lines,
 				 * so make sure we update /etc/hosts.
 				 */
 				if (is_ip6_addr (*line))
-					found_host6 = FALSE;
+					no_stale = FALSE;
 			}
 		}
 
 		if (is_local_mapping (*line, FALSE, "localhost")) {
 			/* a 127.0.0.1 line containing 'localhost' */
 			found_localhost4 = TRUE;
+			custom4 = get_custom_hostnames (*line, hostname, old_hostname);
+			if (!ip4_addr) {
+				/* If there's no IP-specific mapping for the current hostname
+				 * but that hostname is present on in the local mapping line,
+				 * we've found our IPv4 hostname mapping.  If the hostname is
+				 * the fallback *IPv6* hostname it's not going to show up in
+				 * the IPv4 local mapping though, so fake it.
+				 */
+				if (hostname6_is_fallback || found_hostname)
+					found_host4 = TRUE;
+			}
 		} else if (is_local_mapping (*line, TRUE, "localhost6")) {
 			/* a ::1 line containing 'localhost6' */
 			found_localhost6 = TRUE;
+			custom6 = get_custom_hostnames (*line, hostname, old_hostname);
+			if (!ip6_addr) {
+				/* If there's no IP-specific mapping for the current hostname
+				 * but that hostname is present on in the local mapping line,
+				 * we've found our IPv6 hostname mapping.  If the hostname is
+				 * the fallback *IPv4* hostname it's not going to show up in
+				 * the IPv6 local mapping though, so fake it.
+				 */
+				if (hostname4_is_fallback || found_hostname)
+					found_host6 = TRUE;
+			}
 		}
 
-		if (found_localhost4 && found_host4 && found_localhost6 && found_host6 && host4_before && host6_before)
-			return NULL;  /* No update required */
+		if (   found_localhost4
+		    && found_host4
+		    && found_localhost6
+		    && found_host6
+		    && host4_before
+		    && host6_before
+		    && no_stale)
+			goto out;  /* No update required */
 	}
 
 	contents = g_string_sized_new (existing_len ? existing_len + 100 : 200);
 	if (!contents) {
 		g_set_error_literal (error, 0, 0, "not enough memory");
-		return NULL;
+		goto out;
 	}
 
 	/* Find the short hostname, like 'foo' from 'foo.bar.baz'; we want to
@@ -277,8 +369,6 @@ nm_policy_get_etc_hosts (const char **lines,
 	 * 'localhost6'.
 	 */
 	for (line = lines, initial_comments = TRUE; lines && *line; line++) {
-		gboolean add_line = TRUE;
-
 		/* This is the first line after the initial comments */
 		if (strlen (*line) && initial_comments && (*line[0] != '#')) {
 			initial_comments = FALSE;
@@ -311,7 +401,10 @@ nm_policy_get_etc_hosts (const char **lines,
 				if (short_hostname)
 					g_string_append_printf (contents, "\t%s", short_hostname);
 			}
-			g_string_append_printf (contents, "\t%s\tlocalhost\n", fallback_hostname4);
+			g_string_append_printf (contents, "\t%s\tlocalhost", fallback_hostname4);
+			if (custom4)
+				g_string_append (contents, custom4);
+			g_string_append_c (contents, '\n');
 
 			/* IPv6 localhost line */
 			g_string_append (contents, "::1");
@@ -320,26 +413,23 @@ nm_policy_get_etc_hosts (const char **lines,
 				if (short_hostname)
 					g_string_append_printf (contents, "\t%s", short_hostname);
 			}
-			g_string_append_printf (contents, "\t%s\tlocalhost6\n", fallback_hostname6);
+			g_string_append_printf (contents, "\t%s\tlocalhost6", fallback_hostname6);
+			if (custom6)
+				g_string_append (contents, custom6);
+			g_string_append_c (contents, '\n');
 
 			added = TRUE;
 		}
 
 		/* Don't add the original line if it is a localhost mapping */
-		if (is_local_mapping (*line, FALSE, "localhost"))
-			add_line = FALSE;
-		else if (is_local_mapping (*line, FALSE, fallback_hostname4))
-			add_line = FALSE;
-		else if (is_local_mapping (*line, FALSE, hostname))
-			add_line = FALSE;
-		else if (is_local_mapping (*line, TRUE, "localhost6"))
-			add_line = FALSE;
-		else if (is_local_mapping (*line, TRUE, fallback_hostname6))
-			add_line = FALSE;
-		else if (is_local_mapping (*line, TRUE, hostname))
-			add_line = FALSE;
+		if (   !is_local_mapping (*line, FALSE, "localhost")
+		    && !is_local_mapping (*line, FALSE, fallback_hostname4)
+		    && !is_local_mapping (*line, FALSE, hostname)
+		    && !is_local_mapping (*line, TRUE, "localhost6")
+		    && !is_local_mapping (*line, TRUE, fallback_hostname6)
+		    && !is_local_mapping (*line, TRUE, hostname)
+			&& !strstr (*line, ADDED_TAG)) {
 
-		if (add_line && !strstr (*line, ADDED_TAG)) {
 			g_string_append (contents, *line);
 			/* Only append the new line if this isn't the last line in the file */
 			if (*(line+1))
@@ -370,12 +460,16 @@ nm_policy_get_etc_hosts (const char **lines,
 		g_string_append_printf (contents, "::1\t%s\tlocalhost6\n", fallback_hostname6);
 	}
 
+out:
+	g_free (custom4);
+	g_free (custom6);
 	g_free (short_hostname);
 	return contents;
 }
 
 gboolean
 nm_policy_hosts_update_etc_hosts (const char *hostname,
+                                  const char *old_hostname,
                                   const char *fallback_hostname4,
                                   const char *fallback_hostname6,
                                   const char *ip4_addr,
@@ -405,6 +499,7 @@ nm_policy_hosts_update_etc_hosts (const char *hostname,
 	new_contents = nm_policy_get_etc_hosts ((const char **) lines,
 	                                        contents_len,
 	                                        hostname,
+	                                        old_hostname,
 	                                        fallback_hostname4,
 	                                        fallback_hostname6,
 	                                        ip4_addr,

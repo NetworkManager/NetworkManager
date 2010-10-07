@@ -217,7 +217,7 @@ nm_policy_set_system_hostname (const char *new_hostname,
 	char old_hostname[HOST_NAME_MAX + 1];
 	int ret = 0;
 	const char *name;
-	gboolean set_hostname = TRUE, changed = FALSE;
+	gboolean set_hostname = TRUE, changed = FALSE, old_valid = TRUE;
 
 	if (new_hostname)
 		g_warn_if_fail (strlen (new_hostname));
@@ -230,11 +230,15 @@ nm_policy_set_system_hostname (const char *new_hostname,
 	if (ret != 0) {
 		nm_log_warn (LOGD_DNS, "couldn't get the system hostname: (%d) %s",
 		             errno, strerror (errno));
+		old_valid = FALSE;
 	} else {
 		/* Don't set the hostname if it isn't actually changing */
 		if (   (new_hostname && !strcmp (old_hostname, new_hostname))
 		    || (!new_hostname && !strcmp (old_hostname, FALLBACK_HOSTNAME4)))
 			set_hostname = FALSE;
+
+		if (old_hostname[0] == '\0')
+			old_valid = FALSE;
 	}
 
 	if (set_hostname) {
@@ -255,6 +259,7 @@ nm_policy_set_system_hostname (const char *new_hostname,
 	 * /etc/hosts at all.
 	 */
 	if (!nm_policy_hosts_update_etc_hosts (name,
+	                                       old_valid ? old_hostname : NULL,
 	                                       FALLBACK_HOSTNAME4,
 	                                       FALLBACK_HOSTNAME6,
 	                                       ip4_addr,
