@@ -572,7 +572,7 @@ update_dns (NMDnsManager *self,
 
 	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
-	if (iface) {
+	if (iface && (iface != priv->last_iface)) {
 		g_free (priv->last_iface);
 		priv->last_iface = g_strdup (iface);
 	}
