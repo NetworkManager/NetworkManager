@@ -731,6 +731,70 @@ test_hosts_custom46_mixed (void)
 
 /*******************************************/
 
+static const char *stale4_removed_before = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"1.2.3.4	comet	# Added by NetworkManager\n"
+	"127.0.0.1	localhost.localdomain localhost\n"
+	"::1	comet	localhost6.localdomain6	localhost6\n";
+
+static const char *stale4_removed_after = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	comet	localhost.localdomain	localhost\n"
+	"::1	comet	localhost6.localdomain6	localhost6\n";
+
+static void
+test_hosts_stale4_removed (void)
+{
+	test_generic (stale4_removed_before, stale4_removed_after, "comet", NULL, NULL, FALSE);
+}
+
+/*******************************************/
+
+static const char *stale6_removed_before = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"3001:abba::3234	comet	# Added by NetworkManager\n"
+	"127.0.0.1	comet	localhost.localdomain localhost\n"
+	"::1	localhost6.localdomain6	localhost6\n";
+
+static const char *stale6_removed_after = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	comet	localhost.localdomain	localhost\n"
+	"::1	comet	localhost6.localdomain6	localhost6\n";
+
+static void
+test_hosts_stale6_removed (void)
+{
+	test_generic (stale6_removed_before, stale6_removed_after, "comet", NULL, NULL, FALSE);
+}
+
+/*******************************************/
+
+static const char *stale46_removed_before = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"1.2.3.4	comet	# Added by NetworkManager\n"
+	"3001:abba::3234	comet	# Added by NetworkManager\n"
+	"127.0.0.1	localhost.localdomain localhost\n"
+	"::1	localhost6.localdomain6	localhost6\n";
+
+static const char *stale46_removed_after = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	comet	localhost.localdomain	localhost\n"
+	"::1	comet	localhost6.localdomain6	localhost6\n";
+
+static void
+test_hosts_stale46_removed (void)
+{
+	test_generic (stale46_removed_before, stale46_removed_after, "comet", NULL, NULL, FALSE);
+}
+
+/*******************************************/
+
 typedef struct {
 	const char *line;
 	const char *token;
@@ -816,6 +880,9 @@ int main (int argc, char **argv)
 	g_test_suite_add (suite, TESTCASE (test_hosts_custom6, NULL));
 	g_test_suite_add (suite, TESTCASE (test_hosts_custom46, NULL));
 	g_test_suite_add (suite, TESTCASE (test_hosts_custom46_mixed, NULL));
+	g_test_suite_add (suite, TESTCASE (test_hosts_stale4_removed, NULL));
+	g_test_suite_add (suite, TESTCASE (test_hosts_stale6_removed, NULL));
+	g_test_suite_add (suite, TESTCASE (test_hosts_stale46_removed, NULL));
 
 	return g_test_run ();
 }
