@@ -53,6 +53,10 @@ if TARGET_PARDUS
 libnmbackend_la_SOURCES += NetworkManagerPardus.c
 endif
 
+if TARGET_LINEXA
+libnmbackend_la_SOURCES += NetworkManagerLinexa.c
+endif
+
 libnmbackend_la_LIBADD += \
 	$(top_builddir)/src/logging/libnm-logging.la \
 	$(DBUS_LIBS) \
