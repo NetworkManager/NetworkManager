@@ -18,6 +18,7 @@
  * Copyright (C) 2004 - 2010 Red Hat, Inc.
  */
 
+#include <config.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>

@@ -19,6 +19,7 @@
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
+#include <config.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>

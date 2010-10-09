@@ -17,6 +17,7 @@
  *
  */
 
+#include <config.h>
 #include <glib.h>
 #include <string.h>
 #include <sys/types.h>
