@@ -18,6 +18,7 @@
  * Copyright (C) 2008 - 2010 Red Hat, Inc.
  */
 
+#include <config.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
