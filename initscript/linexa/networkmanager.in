@@ -1,0 +1,59 @@
+#!/bin/bash
+# Start the networkmanager daemon
+#
+# Author: Elias <elias@linexa.de>
+# [2010-08-20]
+
+# Information about the daemon
+title="networkmanager"           # No spaces allowed in here
+start_after="dbus" 						# dependencies for start-up
+stop_after="xinetd"                     # dependencies for stop
+runlevel="2"                         # start/stop in this runlevel
+sequence="25"                        # "checkinstall networkmanager enable"
+                                     # will create links to:
+                                     #   /etc/rc.d/rc${runlevel}.d/S${sequence}${title}
+                                     #   /etc/rc.d/rc${runlevel}.d/S$((100 - ${sequence}))${title}
+                   
+# check whether daemon is running
+# returns 0 if running, >0 if not
+check() {
+  [ -f /var/run/NetworkManager.pid ]
+}
+
+# start procedure
+start() {
+  if check ; then
+    warning "${title} is already running. Type 'service restart ${title}'" # Issue a warning
+  else
+    /usr/sbin/NetworkManager &
+    evaluate_retval "Starting ${title}. "     # Print [  done  ] or [ failed ] depending on outcome
+  fi
+}
+
+# stop procedure
+stop() {
+  if check ; then # daemon is running
+    kill $(cat /var/run/NetworkManager.pid)
+    evaluate_retval "Stopping ${title}."     # Print [  done  ] or [ failed ] depending on outcome
+  else # daemon not running
+    warning "${title} is not running." # Issue a warning
+  fi
+}
+
+# restart procedure
+restart() {
+  stop
+  sleep 1
+  start
+}
+
+# reload action
+reload() {
+  if check ; then # daemon is running
+    kill -HUP $(cat /var/run/NetworkManager.pid) &>/dev/null
+    evaluate_retval "Reloading ${title}."    # Print [  done  ] or [ failed ] depending on outcome
+  else # daemon not running
+    warning "${title} is not running." # Issue a warning
+  fi
+}
+

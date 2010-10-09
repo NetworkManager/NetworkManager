@@ -23,3 +23,6 @@ endif
 if TARGET_MANDRIVA
 SUBDIRS += Mandriva
 endif
+if TARGET_LINEXA
+SUBDIRS += linexa
+endif

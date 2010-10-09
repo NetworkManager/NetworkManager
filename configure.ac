@@ -84,7 +84,7 @@ dnl Make sha1.c happy on big endian systems
 dnl
 AC_C_BIGENDIAN
 
-AC_ARG_WITH(distro, AS_HELP_STRING([--with-distro=DISTRO], [Specify the Linux distribution to target: One of redhat, suse, gentoo, debian, arch, slackware, paldo, mandriva or pardus]))
+AC_ARG_WITH(distro, AS_HELP_STRING([--with-distro=DISTRO], [Specify the Linux distribution to target: One of redhat, suse, gentoo, debian, arch, slackware, paldo, mandriva, pardus or linexa]))
 if test "z$with_distro" = "z"; then
 	AC_CHECK_FILE(/etc/redhat-release,with_distro="redhat")
 	AC_CHECK_FILE(/etc/SuSE-release,with_distro="suse")
@@ -96,6 +96,7 @@ if test "z$with_distro" = "z"; then
 	AC_CHECK_FILE(/etc/frugalware-release,with_distro="frugalware")
 	AC_CHECK_FILE(/etc/mandriva-release,with_distro="mandriva")
 	AC_CHECK_FILE(/etc/pardus-release,with_distro="pardus")
+	AC_CHECK_FILE(/etc/linexa-release,with_distro="linexa")
 	if test "z$with_distro" = "z"; then
 		with_distro=`lsb_release -is`
 	fi
@@ -107,7 +108,7 @@ if test "z$with_distro" = "z"; then
 	exit 1
 else
 	case $with_distro in
-		redhat|suse|gentoo|debian|slackware|arch|paldo|frugalware|mandriva|pardus) ;;
+		redhat|suse|gentoo|debian|slackware|arch|paldo|frugalware|mandriva|pardus|linexa) ;;
 		*)
 			echo "Your distribution (${with_distro}) is not yet supported!  (patches welcome)"
 			exit 1
@@ -163,6 +164,11 @@ fi
 AM_CONDITIONAL(TARGET_PARDUS, test x"$with_distro" = xpardus)
 if test x"$with_distro" = xpardus; then
   AC_DEFINE(TARGET_PARDUS, 1, [Define if you have Pardus])
+fi
+
+AM_CONDITIONAL(TARGET_LINEXA, test x"$with_distro" = xlinexa)
+if test x"$with_distro" = xlinexa; then
+  AC_DEFINE(TARGET_LINEXA, 1, [Define if you have linexa])
 fi
 
 dnl
@@ -543,6 +549,8 @@ initscript/paldo/Makefile
 initscript/paldo/NetworkManager
 initscript/Mandriva/Makefile
 initscript/Mandriva/networkmanager
+initscript/linexa/Makefile
+initscript/linexa/networkmanager
 introspection/Makefile
 man/Makefile
 man/NetworkManager.8
