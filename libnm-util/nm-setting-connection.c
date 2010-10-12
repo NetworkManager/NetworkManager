@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2010 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -29,6 +29,8 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-param-spec-specialized.h"
 #include "nm-setting-connection.h"
+
+#define NM_SETTINGS_CONNECTION_PERMISSION_PREFIX_USER  "user:"
 
 /**
  * SECTION:nm-setting-connection
@@ -186,7 +188,7 @@ nm_setting_connection_get_num_permissions (NMSettingConnection *setting)
 }
 
 /**
- * nm_setting_connection_get_permission_entry:
+ * nm_setting_connection_get_permission:
  * @setting: the #NMSettingConnection
  * @index: the zero-based index of the permissions entry
  *
@@ -196,11 +198,17 @@ nm_setting_connection_get_num_permissions (NMSettingConnection *setting)
  * Returns: the entry at the specified index
  */
 const char *
-nm_setting_connection_get_permission_entry (NMSettingConnection *setting, guint32 i)
+nm_setting_connection_get_permission (NMSettingConnection *setting, guint32 i)
 {
+	NMSettingConnectionPrivate *priv;
+
 	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), NULL);
 
-	return (const char *) g_slist_nth_data (NM_SETTING_CONNECTION_GET_PRIVATE (setting)->permissions, i);
+	priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
+
+	g_return_val_if_fail (i < g_slist_length (priv->permissions), NULL);
+
+	return (const char *) g_slist_nth_data (priv->permissions, i);
 }
 
 /**
@@ -282,38 +290,23 @@ static gboolean
 validate_permissions (GSList *permissions, GError **error)
 {
 	GSList *iter;
+
 	for (iter = permissions; iter; iter = iter->next) {
-		char *entry = (char *) iter->data;
-		char *usr_start = NULL;
-		char *ext_start = NULL;
-		int prefix_len;
+		const char *entry = iter->data;
+		const char *usr_start = NULL;
 
-		if (g_str_has_prefix (entry, NM_SETTINGS_CONNECTION_PERMISSION_PREFIX_USER)) {
-			prefix_len = strlen (NM_SETTINGS_CONNECTION_PERMISSION_PREFIX_USER);
-		} else if (g_str_has_prefix (entry, NM_SETTINGS_CONNECTION_PERMISSION_PREFIX_GROUP)) {
-			prefix_len = strlen (NM_SETTINGS_CONNECTION_PERMISSION_PREFIX_GROUP);
-		} else {
-			g_set_error (error, 
-			             NM_SETTING_CONNECTION_ERROR,
-			             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
-			             "permissions: entry '%s': invalid prefix", entry);
-			return FALSE;
-		}
+		if (!g_str_has_prefix (entry, NM_SETTINGS_CONNECTION_PERMISSION_PREFIX_USER))
+			continue;
 
-		usr_start = entry + prefix_len;
-
-		ext_start = strchr(usr_start, ':');
-		if (!ext_start) {
+		usr_start = entry + strlen (NM_SETTINGS_CONNECTION_PERMISSION_PREFIX_USER);
+		if (!strchr (usr_start, ':')) {
 			g_set_error (error,
 			             NM_SETTING_CONNECTION_ERROR,
 			             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
-			             "permissions: entry '%s': two few ':'s", entry);
+			             "permissions: entry '%s': two few ':' characters", entry);
 			return FALSE;
 		}
-		ext_start++;
-
 		/* We don't (yet) care about what comes afterwards. */
-
 	}
 
 	return TRUE;
@@ -376,11 +369,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	}
 
 	if (priv->permissions) {
-		GError *perm_error = NULL;
-		if (!validate_permissions (priv->permissions, &perm_error)) {
-			g_propagate_error (error, perm_error);
+		if (!validate_permissions (priv->permissions, error))
 			return FALSE;
-		}
 	}
 
 	return TRUE;
@@ -569,12 +559,16 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * 
 	 * An array of strings defining what access a given user has to this
 	 * connection.  If this is NULL or empty, all users are allowed to access
-	 * this connection.  Otherwise, each entry in this array specifies a user or
-	 * unix group, and a user is allowed to access this connection if and only
-	 * if they are in this list or if they are included in at least one of any
-	 * listed unix groups . Each entry is of the form "user:<user-name>:<junk>
-	 * or "group:<group-name>:<junk>. Any <junk> present must be ignored; it is
-	 * reserved for future versions of NM.
+	 * this connection.  Otherwise a user is allowed to access this connection
+	 * if and only if they are in this list. Each entry is of the form
+	 * "[type]:[id]:[reserved]", for example:
+	 *
+	 *    user:dcbw:blah
+	 *
+	 * At this time only the 'user' [type] is allowed.  Any other values are
+	 * ignored and reserved for future use.  [id] is the username that this
+	 * permission refers to.  Any [reserved] information present must be
+	 * ignored and is reserved for future use.
 	 */
 	g_object_class_install_property
 		(object_class, PROP_PERMISSIONS,
@@ -583,15 +577,16 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                  "An array of strings defining what access a given "
 		                  "user has to this connection.  If this is NULL or "
 		                  "empty, all users are allowed to access this "
-		                  "connection.  Otherwise, each entry in this array "
-		                  "specifies a user or unix group, and a user is "
-		                  "allowed to access this connection if and only if "
-		                  "they are in this list or if they are included in at "
-		                  "least one of any listed unix groups. Each entry is "
-		                  "of the form \"user:<user-name>:<junk>\" or "
-		                  "\"group:<group-name>:<junk>\". Any <junk> present "
-		                  "must be ignored; it is reserved for future versions "
-		                  "of NM.",
+		                  "connection.  Otherwise a user is allowed to access "
+		                  "this connection if and only if they are in this "
+		                  "array. Each entry is of the form "
+		                  "\"[type]:[id]:[reserved]\", for example: "
+		                  "\"user:dcbw:blah\"  At this time only the 'user' "
+		                  "[type] is allowed.  Any other values are ignored and "
+		                  "reserved for future use.  [id] is the username that "
+		                  "this permission refers to.  Any [reserved] "
+		                  "information (if present) must be ignored and is "
+		                  "reserved for future use.",
 		                  DBUS_TYPE_G_LIST_OF_STRING,
 		                  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 

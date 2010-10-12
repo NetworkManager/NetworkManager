@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2010 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -76,9 +76,6 @@ GQuark nm_setting_connection_error_quark (void);
 #define NM_SETTING_CONNECTION_READ_ONLY   "read-only"
 #define NM_SETTING_CONNECTION_PERMISSIONS "permissions"
 
-#define NM_SETTINGS_CONNECTION_PERMISSION_PREFIX_USER  "user:"
-#define NM_SETTINGS_CONNECTION_PERMISSION_PREFIX_GROUP "group:"
-
 /**
  * NMSettingConnection:
  *
@@ -109,7 +106,9 @@ gboolean    nm_setting_connection_get_autoconnect      (NMSettingConnection *set
 guint64     nm_setting_connection_get_timestamp        (NMSettingConnection *setting);
 gboolean    nm_setting_connection_get_read_only        (NMSettingConnection *setting);
 guint32     nm_setting_connection_get_num_permissions  (NMSettingConnection *setting);
-const char *nm_setting_connection_get_permission_entry (NMSettingConnection *setting, guint32 index);
+const char *nm_setting_connection_get_permission       (NMSettingConnection *setting, guint32 index);
+
+/* FIXME: need add/remove calls for permissions */
 
 G_END_DECLS
 
