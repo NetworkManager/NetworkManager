@@ -318,29 +318,27 @@ wpas_iface_query_scan_results (DBusGProxy *proxy, gpointer user_data)
 	}
 }
 
-static guint32
+static int
 wpas_state_string_to_enum (const char *str_state)
 {
-	guint32 enum_state = NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED;
-
 	if (!strcmp (str_state, "DISCONNECTED"))
-		enum_state = NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED;
+		return NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED;
 	else if (!strcmp (str_state, "INACTIVE"))
-		enum_state = NM_SUPPLICANT_INTERFACE_STATE_INACTIVE;
+		return NM_SUPPLICANT_INTERFACE_STATE_INACTIVE;
 	else if (!strcmp (str_state, "SCANNING"))
-		enum_state = NM_SUPPLICANT_INTERFACE_STATE_SCANNING;
+		return NM_SUPPLICANT_INTERFACE_STATE_SCANNING;
 	else if (!strcmp (str_state, "ASSOCIATING"))
-		enum_state = NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATING;
+		return NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATING;
 	else if (!strcmp (str_state, "ASSOCIATED"))
-		enum_state = NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATED;
+		return NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATED;
 	else if (!strcmp (str_state, "4WAY_HANDSHAKE"))
-		enum_state = NM_SUPPLICANT_INTERFACE_STATE_4WAY_HANDSHAKE;
+		return NM_SUPPLICANT_INTERFACE_STATE_4WAY_HANDSHAKE;
 	else if (!strcmp (str_state, "GROUP_HANDSHAKE"))
-		enum_state = NM_SUPPLICANT_INTERFACE_STATE_GROUP_HANDSHAKE;
+		return NM_SUPPLICANT_INTERFACE_STATE_GROUP_HANDSHAKE;
 	else if (!strcmp (str_state, "COMPLETED"))
-		enum_state = NM_SUPPLICANT_INTERFACE_STATE_COMPLETED;
+		return NM_SUPPLICANT_INTERFACE_STATE_COMPLETED;
 
-	return enum_state;
+	return -1;
 }
 
 static void
@@ -401,8 +399,11 @@ wpas_iface_handle_state_change (DBusGProxy *proxy,
                                 const char *str_old_state,
                                 gpointer user_data)
 {
-	set_state (NM_SUPPLICANT_INTERFACE (user_data),
-	           wpas_state_string_to_enum (str_new_state));
+	int enum_state = wpas_state_string_to_enum (str_new_state);
+
+	g_return_if_fail (enum_state > 0);
+
+	set_state (NM_SUPPLICANT_INTERFACE (user_data), (guint32) enum_state);
 }
 
 /* Explicit state request reply handler */
@@ -412,6 +413,7 @@ iface_state_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 	NMSupplicantInfo *info = (NMSupplicantInfo *) user_data;
 	GError *err = NULL;
 	char *state_str = NULL;
+	int enum_state;
 
 	if (!dbus_g_proxy_end_call (proxy, call_id, &err,
 	                            G_TYPE_STRING, &state_str,
@@ -419,7 +421,11 @@ iface_state_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 		nm_log_warn (LOGD_SUPPLICANT, "could not get interface state: %s.", err->message);
 		g_error_free (err);
 	} else {
-		set_state (info->interface, wpas_state_string_to_enum (state_str));
+		enum_state = wpas_state_string_to_enum (state_str);
+		g_warn_if_fail (enum_state > 0);
+
+		if (enum_state > 0)
+			set_state (info->interface, (guint32) enum_state);
 		g_free (state_str);
 	}
 }
