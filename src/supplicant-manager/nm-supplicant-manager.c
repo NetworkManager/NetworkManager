@@ -88,7 +88,12 @@ nm_supplicant_manager_iface_release (NMSupplicantManager *self,
 	g_return_if_fail (NM_IS_SUPPLICANT_MANAGER (self));
 	g_return_if_fail (NM_IS_SUPPLICANT_INTERFACE (iface));
 
+	ifname = nm_supplicant_interface_get_ifname (iface);
+	g_assert (ifname);
+
 	priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
+
+	g_return_if_fail (g_hash_table_lookup (priv->ifaces, ifname) == iface);
 
 	/* Ask wpa_supplicant to remove this interface */
 	op = nm_supplicant_interface_get_object_path (iface);
@@ -98,8 +103,6 @@ nm_supplicant_manager_iface_release (NMSupplicantManager *self,
 			                        G_TYPE_INVALID);
 	}
 
-	ifname = nm_supplicant_interface_get_ifname (iface);
-	g_assert (ifname);
 	g_hash_table_remove (priv->ifaces, ifname);
 }
 
