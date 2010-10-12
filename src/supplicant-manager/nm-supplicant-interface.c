@@ -40,8 +40,17 @@
 #define WPAS_ERROR_EXISTS_ERROR     WPAS_DBUS_INTERFACE ".ExistsError"
 
 
-G_DEFINE_TYPE (NMSupplicantInterface, nm_supplicant_interface, G_TYPE_OBJECT)
+static void wpas_iface_handle_state_change (DBusGProxy *proxy,
+                                            const char *str_new_state,
+                                            const char *str_old_state,
+                                            gpointer user_data);
 
+static void wpas_iface_handle_scanning (DBusGProxy *proxy,
+                                        gboolean scanning,
+                                        gpointer user_data);
+
+
+G_DEFINE_TYPE (NMSupplicantInterface, nm_supplicant_interface, G_TYPE_OBJECT)
 
 #define NM_SUPPLICANT_INTERFACE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
                                                  NM_TYPE_SUPPLICANT_INTERFACE, \
@@ -362,6 +371,23 @@ set_state (NMSupplicantInterface *self, guint32 new_state)
 			g_signal_handler_disconnect (priv->smgr, priv->smgr_running_id);
 			priv->smgr_running_id = 0;
 		}
+
+		if (priv->iface_proxy) {
+			dbus_g_proxy_disconnect_signal (priv->iface_proxy,
+			                                "StateChange",
+			                                G_CALLBACK (wpas_iface_handle_state_change),
+			                                self);
+
+			dbus_g_proxy_disconnect_signal (priv->iface_proxy,
+			                                "ScanResultsAvailable",
+			                                G_CALLBACK (wpas_iface_query_scan_results),
+			                                self);
+
+			dbus_g_proxy_disconnect_signal (priv->iface_proxy,
+			                                "Scanning",
+			                                G_CALLBACK (wpas_iface_handle_scanning),
+			                                self);
+		}
 	}
 
 	priv->state = new_state;
@@ -584,7 +610,7 @@ interface_add_cb (DBusGProxy *proxy,
 }
 
 static void
-interface_add (NMSupplicantInterface * self, gboolean is_wireless)
+interface_add (NMSupplicantInterface *self, gboolean is_wireless)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 	DBusGProxyCall *call;
@@ -596,6 +622,9 @@ interface_add (NMSupplicantInterface * self, gboolean is_wireless)
 	g_return_if_fail (priv->state == NM_SUPPLICANT_INTERFACE_STATE_INIT);
 
 	nm_log_dbg (LOGD_SUPPLICANT, "(%s): adding interface to supplicant", priv->dev);
+
+	/* Move to starting to prevent double-calls of interface_add() */
+	set_state (self, NM_SUPPLICANT_INTERFACE_STATE_STARTING);
 
 	/* Try to add the interface to the supplicant.  If the supplicant isn't
 	 * running, this will start it via D-Bus activation and return the response
@@ -1010,6 +1039,8 @@ nm_supplicant_interface_state_to_string (guint32 state)
 	switch (state) {
 	case NM_SUPPLICANT_INTERFACE_STATE_INIT:
 		return "init";
+	case NM_SUPPLICANT_INTERFACE_STATE_STARTING:
+		return "starting";
 	case NM_SUPPLICANT_INTERFACE_STATE_READY:
 		return "ready";
 	case NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED:
@@ -1158,6 +1189,13 @@ dispose (GObject *object)
 	}
 	priv->disposed = TRUE;
 
+	/* Cancel pending calls before unrefing the dbus manager */
+	cancel_all_callbacks (priv->other_pcalls);
+	nm_call_store_destroy (priv->other_pcalls);
+
+	cancel_all_callbacks (priv->assoc_pcalls);
+	nm_call_store_destroy (priv->assoc_pcalls);
+
 	if (priv->iface_proxy)
 		g_object_unref (priv->iface_proxy);
 
@@ -1177,13 +1215,6 @@ dispose (GObject *object)
 	}
 
 	g_free (priv->dev);
-
-	/* Cancel pending calls before unrefing the dbus manager */
-	cancel_all_callbacks (priv->other_pcalls);
-	nm_call_store_destroy (priv->other_pcalls);
-
-	cancel_all_callbacks (priv->assoc_pcalls);
-	nm_call_store_destroy (priv->assoc_pcalls);
 
 	if (priv->dbus_mgr)
 		g_object_unref (priv->dbus_mgr);
@@ -1212,7 +1243,7 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 	g_object_class_install_property (object_class, PROP_STATE,
 		g_param_spec_uint ("state",
 		                   "State",
-		                   "State of the supplicant interface; INIT, READY, or DOWN",
+		                   "State of the supplicant interface",
 		                   NM_SUPPLICANT_INTERFACE_STATE_INIT,
 		                   NM_SUPPLICANT_INTERFACE_STATE_LAST - 1,
 		                   NM_SUPPLICANT_INTERFACE_STATE_INIT,
