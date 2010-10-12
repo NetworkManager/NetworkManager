@@ -37,7 +37,7 @@ G_DEFINE_TYPE (NMSupplicantManager, nm_supplicant_manager, G_TYPE_OBJECT)
 /* Properties */
 enum {
 	PROP_0 = 0,
-	PROP_RUNNING,
+	PROP_AVAILABLE,
 	LAST_PROP
 };
 
@@ -47,10 +47,18 @@ typedef struct {
 	DBusGProxy *    proxy;
 	gboolean        running;
 	GHashTable *    ifaces;
+	guint           die_count_reset_id;
+	guint           die_count;
 	gboolean        disposed;
 } NMSupplicantManagerPrivate;
 
 /********************************************************************/
+
+static inline gboolean
+die_count_exceeded (guint32 count)
+{
+	return count > 2;
+}
 
 NMSupplicantInterface *
 nm_supplicant_manager_iface_get (NMSupplicantManager * self,
@@ -58,7 +66,8 @@ nm_supplicant_manager_iface_get (NMSupplicantManager * self,
                                  gboolean is_wireless)
 {
 	NMSupplicantManagerPrivate *priv;
-	NMSupplicantInterface * iface = NULL;
+	NMSupplicantInterface *iface = NULL;
+	gboolean start_now;
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_MANAGER (self), NULL);
 	g_return_val_if_fail (ifname != NULL, NULL);
@@ -67,8 +76,15 @@ nm_supplicant_manager_iface_get (NMSupplicantManager * self,
 
 	iface = g_hash_table_lookup (priv->ifaces, ifname);
 	if (!iface) {
+		/* If we're making the supplicant take a time out for a bit, don't
+		 * let the supplicant interface start immediately, just let it hang
+		 * around in INIT state until we're ready to talk to the supplicant
+		 * again.
+		 */
+		start_now = !die_count_exceeded (priv->die_count);
+
 		nm_log_dbg (LOGD_SUPPLICANT, "(%s): creating new supplicant interface", ifname);
-		iface = nm_supplicant_interface_new (self, ifname, is_wireless);
+		iface = nm_supplicant_interface_new (self, ifname, is_wireless, start_now);
 		if (iface)
 			g_hash_table_insert (priv->ifaces, g_strdup (ifname), iface);
 	} else {
@@ -107,12 +123,49 @@ nm_supplicant_manager_iface_release (NMSupplicantManager *self,
 }
 
 gboolean
-nm_supplicant_manager_running (NMSupplicantManager *self)
+nm_supplicant_manager_available (NMSupplicantManager *self)
 {
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_SUPPLICANT_MANAGER (self), FALSE);
 
+	if (die_count_exceeded (NM_SUPPLICANT_MANAGER_GET_PRIVATE (self)->die_count))
+		return FALSE;
 	return NM_SUPPLICANT_MANAGER_GET_PRIVATE (self)->running;
+}
+
+static void
+set_running (NMSupplicantManager *self, gboolean now_running)
+{
+	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
+	gboolean old_available = nm_supplicant_manager_available (self);
+
+	priv->running = now_running;
+	if (old_available != nm_supplicant_manager_available (self))
+		g_object_notify (G_OBJECT (self), NM_SUPPLICANT_MANAGER_AVAILABLE);
+}
+
+static void
+set_die_count (NMSupplicantManager *self, guint new_die_count)
+{
+	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
+	gboolean old_available = nm_supplicant_manager_available (self);
+
+	priv->die_count = new_die_count;
+	if (old_available != nm_supplicant_manager_available (self))
+		g_object_notify (G_OBJECT (self), NM_SUPPLICANT_MANAGER_AVAILABLE);
+}
+
+static gboolean
+wpas_die_count_reset_cb (gpointer user_data)
+{
+	NMSupplicantManager *self = NM_SUPPLICANT_MANAGER (user_data);
+	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
+
+	/* Reset the die count back to zero, which allows use of the supplicant again */
+	priv->die_count_reset_id = 0;
+	set_die_count (self, 0);
+	nm_log_info (LOGD_SUPPLICANT, "wpa_supplicant die count reset");
+	return FALSE;
 }
 
 static void
@@ -133,12 +186,27 @@ name_owner_changed (NMDBusManager *dbus_mgr,
 
 	if (!old_owner_good && new_owner_good) {
 		nm_log_info (LOGD_SUPPLICANT, "wpa_supplicant started");
-		priv->running = TRUE;
-		g_object_notify (G_OBJECT (self), NM_SUPPLICANT_MANAGER_RUNNING);
+		set_running (self, TRUE);
 	} else if (old_owner_good && !new_owner_good) {
 		nm_log_info (LOGD_SUPPLICANT, "wpa_supplicant stopped");
-		priv->running = FALSE;
-		g_object_notify (G_OBJECT (self), NM_SUPPLICANT_MANAGER_RUNNING);
+
+		/* Reschedule the die count reset timeout.  Every time the supplicant
+		 * dies we wait 10 seconds before resetting the counter.  If the
+		 * supplicant died more than twice before the timer is reset, then
+		 * we don't try to talk to the supplicant for a while.
+		 */
+		if (priv->die_count_reset_id)
+			g_source_remove (priv->die_count_reset_id);
+		priv->die_count_reset_id = g_timeout_add_seconds (10, wpas_die_count_reset_cb, self);
+		set_die_count (self, priv->die_count + 1);
+
+		if (die_count_exceeded (priv->die_count)) {
+			nm_log_info (LOGD_SUPPLICANT,
+			             "wpa_supplicant die count %d; ignoring for 10 seconds",
+			             priv->die_count);
+		}
+
+		set_running (self, FALSE);
 	}
 }
 
@@ -190,8 +258,8 @@ static void
 get_property (GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
 	switch (prop_id) {
-	case PROP_RUNNING:
-		g_value_set_boolean (value, NM_SUPPLICANT_MANAGER_GET_PRIVATE (object)->running);
+	case PROP_AVAILABLE:
+		g_value_set_boolean (value, nm_supplicant_manager_available (NM_SUPPLICANT_MANAGER (object)));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -207,6 +275,9 @@ dispose (GObject *object)
 	if (priv->disposed)
 		goto out;
 	priv->disposed = TRUE;
+
+	if (priv->die_count_reset_id)
+		g_source_remove (priv->die_count_reset_id);
 
 	if (priv->dbus_mgr) {
 		if (priv->name_owner_id)
@@ -235,10 +306,10 @@ nm_supplicant_manager_class_init (NMSupplicantManagerClass *klass)
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 
-	g_object_class_install_property (object_class, PROP_RUNNING,
-		g_param_spec_boolean (NM_SUPPLICANT_MANAGER_RUNNING,
-		                      "Running",
-		                      "Running",
+	g_object_class_install_property (object_class, PROP_AVAILABLE,
+		g_param_spec_boolean (NM_SUPPLICANT_MANAGER_AVAILABLE,
+		                      "Available",
+		                      "Available",
 		                      FALSE,
 		                      G_PARAM_READABLE));
 }

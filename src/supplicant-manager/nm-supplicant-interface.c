@@ -80,7 +80,7 @@ enum {
 
 typedef struct {
 	NMSupplicantManager * smgr;
-	gulong                smgr_running_id;
+	gulong                smgr_avail_id;
 	NMDBusManager *       dbus_mgr;
 	char *                dev;
 	gboolean              is_wireless;
@@ -365,9 +365,9 @@ set_state (NMSupplicantInterface *self, guint32 new_state)
 		cancel_all_callbacks (priv->assoc_pcalls);
 
 		/* Disconnect supplicant manager state listeners since we're done */
-		if (priv->smgr_running_id) {
-			g_signal_handler_disconnect (priv->smgr, priv->smgr_running_id);
-			priv->smgr_running_id = 0;
+		if (priv->smgr_avail_id) {
+			g_signal_handler_disconnect (priv->smgr, priv->smgr_avail_id);
+			priv->smgr_avail_id = 0;
 		}
 
 		if (priv->iface_proxy) {
@@ -662,14 +662,14 @@ interface_add (NMSupplicantInterface *self, gboolean is_wireless)
 }
 
 static void
-smgr_running_cb (NMSupplicantManager *smgr,
-                 GParamSpec *pspec,
-                 gpointer user_data)
+smgr_avail_cb (NMSupplicantManager *smgr,
+               GParamSpec *pspec,
+               gpointer user_data)
 {
 	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (user_data);
 
-	if (nm_supplicant_manager_running (smgr)) {
+	if (nm_supplicant_manager_available (smgr)) {
 		/* This can happen if the supplicant couldn't be activated but
 		 * for some reason was started after the activation failure.
 		 */
@@ -1105,7 +1105,8 @@ nm_supplicant_interface_get_ifname (NMSupplicantInterface *self)
 NMSupplicantInterface *
 nm_supplicant_interface_new (NMSupplicantManager *smgr,
                              const char *ifname,
-                             gboolean is_wireless)
+                             gboolean is_wireless,
+                             gboolean start_now)
 {
 	NMSupplicantInterface *self;
 	NMSupplicantInterfacePrivate *priv;
@@ -1120,15 +1121,16 @@ nm_supplicant_interface_new (NMSupplicantManager *smgr,
 
 		priv->smgr = g_object_ref (smgr);
 		id = g_signal_connect (priv->smgr,
-		                       "notify::" NM_SUPPLICANT_MANAGER_RUNNING,
-		                       G_CALLBACK (smgr_running_cb),
+		                       "notify::" NM_SUPPLICANT_MANAGER_AVAILABLE,
+		                       G_CALLBACK (smgr_avail_cb),
 		                       self);
-		priv->smgr_running_id = id;
+		priv->smgr_avail_id = id;
 
 		priv->dev = g_strdup (ifname);
 		priv->is_wireless = is_wireless;
 
-		interface_add (self, priv->is_wireless);
+		if (start_now)
+			interface_add (self, priv->is_wireless);
 	}
 
 	return self;
@@ -1215,8 +1217,8 @@ dispose (GObject *object)
 		g_source_remove (priv->scan_results_timeout);
 
 	if (priv->smgr) {
-		if (priv->smgr_running_id)
-			g_signal_handler_disconnect (priv->smgr, priv->smgr_running_id);
+		if (priv->smgr_avail_id)
+			g_signal_handler_disconnect (priv->smgr, priv->smgr_avail_id);
 		g_object_unref (priv->smgr);
 	}
 

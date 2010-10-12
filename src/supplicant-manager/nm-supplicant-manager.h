@@ -40,7 +40,7 @@ G_BEGIN_DECLS
 #define NM_IS_SUPPLICANT_MANAGER_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_SUPPLICANT_MANAGER))
 #define NM_SUPPLICANT_MANAGER_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SUPPLICANT_MANAGER, NMSupplicantManagerClass))
 
-#define NM_SUPPLICANT_MANAGER_RUNNING "running"
+#define NM_SUPPLICANT_MANAGER_AVAILABLE "available"
 
 struct _NMSupplicantManager
 {
@@ -63,6 +63,6 @@ NMSupplicantInterface *nm_supplicant_manager_iface_get (NMSupplicantManager *mgr
 void nm_supplicant_manager_iface_release (NMSupplicantManager *mgr,
                                           NMSupplicantInterface *iface);
 
-gboolean nm_supplicant_manager_running (NMSupplicantManager *mgr);
+gboolean nm_supplicant_manager_available (NMSupplicantManager *mgr);
 
 #endif /* NM_SUPPLICANT_MANAGER_H */
