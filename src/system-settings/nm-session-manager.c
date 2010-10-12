@@ -164,13 +164,8 @@ get_unix_user_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data
 	NMSessionManagerPrivate *priv = NM_SESSION_MANAGER_GET_PRIVATE (pending->manager);
 	guint user_id;
 	struct passwd *pw_info = NULL;
-	int ngroups;
-	guint group_ids_size = 0;
-	gid_t *group_ids = NULL;
-	GSList *group_names = NULL;
 	NMSessionInfo *session = NULL;
 	GError *error = NULL;
-	int i;
 
 	if (!dbus_g_proxy_end_call (proxy, call_id, NULL, 
 	                            G_TYPE_UINT, &user_id, G_TYPE_NONE)) {
@@ -190,34 +185,9 @@ get_unix_user_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data
 	    goto out;
 	}
 
-	// Figure out how many groups the user is in
-	group_ids = g_slice_alloc (0);
-	ngroups = 0;
-	getgrouplist (pw_info->pw_name, pw_info->pw_gid, group_ids, &ngroups);
-	g_slice_free1 (0, group_ids);
-
-	// Get the list of group IDs
-	// FIXME what happens if the group list changes in the window between the
-	// two getgrouplist calls?
-	group_ids_size = ngroups * sizeof (gid_t);
-	group_ids = g_slice_alloc (group_ids_size);
-	if (getgrouplist (pw_info->pw_name, pw_info->pw_gid, group_ids, &ngroups) == -1) {
-	    error = g_error_new (NM_SESSION_MANAGER_ERROR,
-	                         NM_SESSION_MANAGER_ERROR_INFO_GATHERING_FAILED,
-	                         "session %s: failed to get groups for user %s", 
-	                         pending->session_id, pw_info->pw_name);
-	    goto out;
-	}
-
-	for (i = 0; i < ngroups; i++) {
-		struct group *gr_info = getgrgid (group_ids[i]);
-		group_names = g_slist_prepend (group_names, g_strdup (gr_info->gr_name));
-	}
-
 	session = g_object_new (NM_TYPE_SESSION_INFO, 
 	                        NM_SESSION_INFO_ID, pending->session_id,
 	                        NM_SESSION_INFO_UNIX_USER, pw_info->pw_name,
-	                        NM_SESSION_INFO_UNIX_GROUPS, group_names,
 	                        NULL);
 	g_assert (session);
 
@@ -225,11 +195,6 @@ get_unix_user_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data
 	g_signal_emit (pending->manager, signals[ADDED], 0, session);
 
 out:
-	if (group_names)
-		nm_utils_slist_free (group_names, g_free);
-	if (group_ids)
-		g_slice_free1 (group_ids_size, group_ids);
-
 	pending_session_finish (pending, session, error);
 
 	g_clear_error (&error);

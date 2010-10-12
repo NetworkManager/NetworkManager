@@ -87,7 +87,6 @@ session_allowed (NMSysconfigConnection *connection,
 	NMSettingConnection *setting_connection = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (connection), NM_TYPE_SETTING_CONNECTION);
 	GSList *permissions_entries;
 	char *session_user;
-	GSList *session_groups;
 	GSList *p_iter;
 	gboolean allowed = FALSE;
 
@@ -106,7 +105,6 @@ session_allowed (NMSysconfigConnection *connection,
 	}
 
 	session_user = nm_session_info_get_unix_user (session);
-	session_groups = nm_session_info_get_unix_groups (session);
 
 	for (p_iter = permissions_entries; p_iter != NULL; p_iter = p_iter->next) {
 		char **p_comps = g_strsplit ((char *)p_iter->data, ":", 3);
@@ -118,19 +116,7 @@ session_allowed (NMSysconfigConnection *connection,
 				allowed = TRUE;
 				goto out;
 			}
-		} 
-		else if (g_str_equal (type, "group")) {
-			GSList *g_iter;
-
-			for (g_iter = session_groups; g_iter != NULL; g_iter = g_iter->next ) {
-				char *group_name = (char *) g_iter->data;
-				if (g_str_equal (group_name, name)) {
-					allowed = TRUE;
-					goto out;
-				}
-			}
-		} 
-		else {
+		} else {
 			nm_log_err (LOGD_SYS_SET, 
 					    "connection %s: failed to parse permissions entry '%s'",
 			            nm_setting_connection_get_id (setting_connection),

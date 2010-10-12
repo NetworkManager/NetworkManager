@@ -27,7 +27,6 @@ G_DEFINE_TYPE (NMSessionInfo, nm_session_info, G_TYPE_OBJECT);
 typedef struct {
 	char *id;
 	char *user;
-	GSList *groups;
 	gboolean is_default;
 } NMSessionInfoPrivate;
 
@@ -37,7 +36,6 @@ enum {
 	PROP_0,
 	PROP_ID,
 	PROP_USER,
-	PROP_GROUPS,
 	PROP_IS_DEFAULT
 };
 
@@ -55,14 +53,6 @@ nm_session_info_get_unix_user (NMSessionInfo *self)
 	g_return_val_if_fail (NM_IS_SESSION_INFO (self), NULL);
 
 	return NM_SESSION_INFO_GET_PRIVATE (self)->user;
-}
-
-GSList * 
-nm_session_info_get_unix_groups (NMSessionInfo *self)
-{
-	g_return_val_if_fail (NM_IS_SESSION_INFO (self), NULL);
-
-	return NM_SESSION_INFO_GET_PRIVATE (self)->groups;
 }
 
 gboolean
@@ -90,10 +80,6 @@ set_property (GObject *object,
 		g_free (priv->user);
 		priv->user = g_value_dup_string (value);
 		break;
-	case PROP_GROUPS:
-		nm_utils_slist_free (priv->groups, g_free);
-		priv->groups = g_value_dup_boxed (value);
-		break;
 	case PROP_IS_DEFAULT:
 		priv->is_default = g_value_get_boolean (value);
 		break;
@@ -118,9 +104,6 @@ get_property (GObject *object,
 		break;
 	case PROP_USER:
 		g_value_set_string (value, priv->user);
-		break;
-	case PROP_GROUPS:
-		g_value_set_boxed (value, priv->groups);
 		break;
 	case PROP_IS_DEFAULT:
 		g_value_set_boolean (value, priv->is_default);
@@ -149,11 +132,6 @@ dispose (GObject *object)
 	if (priv->user) {
 		g_free (priv->user);
 		priv->user = NULL;
-	}
-
-	if (priv->groups) {
-		nm_utils_slist_free (priv->groups, g_free);
-		priv->groups = NULL;
 	}
 
 	G_OBJECT_CLASS (nm_session_info_parent_class)->dispose (object);		
@@ -188,18 +166,6 @@ nm_session_info_class_init (NMSessionInfoClass *info_class) {
 		 	 NULL,
 		 	 G_PARAM_READABLE | G_PARAM_CONSTRUCT_ONLY));
 
-	g_object_class_install_property
-		(g_class, PROP_GROUPS,
-		 g_param_spec_boxed (
-		 	 NM_SESSION_INFO_UNIX_GROUPS,
-		 	 "UnixGroups",
-		 	 "List of strings representing the groups that this session's user "
-		 	 "belonged to at login time. This represents our best guess as to "
-		 	 "what groups the session's processes belong to. If this is the "
-		 	 "default session, this is NULL.",
-		 	 DBUS_TYPE_G_LIST_OF_STRING,
-		 	 G_PARAM_READABLE | G_PARAM_CONSTRUCT_ONLY));
-	
 	g_object_class_install_property
 		(g_class, PROP_IS_DEFAULT,
 		 g_param_spec_boolean (

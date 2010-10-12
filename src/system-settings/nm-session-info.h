@@ -34,7 +34,6 @@ G_BEGIN_DECLS
 
 #define NM_SESSION_INFO_ID          "session-id"
 #define NM_SESSION_INFO_UNIX_USER   "unix-user"
-#define NM_SESSION_INFO_UNIX_GROUPS "unix-groups"
 #define NM_SESSION_INFO_IS_DEFAULT  "is-default"
 
 #define NM_SESSION_INFO_REMOVED     "removed"
@@ -53,7 +52,6 @@ GType nm_session_info_get_type (void);
 
 char   * nm_session_info_get_id             (NMSessionInfo *self);
 char   * nm_session_info_get_unix_user      (NMSessionInfo *self);
-GSList * nm_session_info_get_unix_groups    (NMSessionInfo *self);
 gboolean nm_session_info_is_default_session (NMSessionInfo *self);
 
 G_END_DECLS
