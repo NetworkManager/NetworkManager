@@ -2472,6 +2472,7 @@ _internal_sleep (NMManager *self, gboolean do_sleep)
 	g_object_notify (G_OBJECT (self), NM_MANAGER_SLEEPING);
 }
 
+#if 0
 static void
 sleep_auth_done_cb (NMAuthChain *chain,
                     GError *error,
@@ -2510,6 +2511,7 @@ sleep_auth_done_cb (NMAuthChain *chain,
 
 	nm_auth_chain_unref (chain);
 }
+#endif
 
 static void
 impl_manager_sleep (NMManager *self,
@@ -2517,10 +2519,12 @@ impl_manager_sleep (NMManager *self,
                     DBusGMethodInvocation *context)
 {
 	NMManagerPrivate *priv;
-	NMAuthChain *chain;
 	GError *error = NULL;
+#if 0
+	NMAuthChain *chain;
 	gulong sender_uid = G_MAXULONG;
 	const char *error_desc = NULL;
+#endif
 
 	g_return_if_fail (NM_IS_MANAGER (self));
 
@@ -2535,6 +2539,19 @@ impl_manager_sleep (NMManager *self,
 		return;
 	}
 
+	/* Unconditionally allow the request.  Previously it was polkit protected
+	 * but unfortunately that doesn't work for short-lived processes like
+	 * pm-utils.  It uses dbus-send without --print-reply, which quits
+	 * immediately after sending the request, and NM is unable to obtain the
+	 * sender's UID as dbus-send has already dropped off the bus.  Thus NM
+	 * fails the request.  Instead, don't validate the request, but rely on
+	 * D-Bus permissions to restrict the call to root.
+	 */
+	_internal_sleep (self, do_sleep);
+	dbus_g_method_return (context);
+	return;
+
+#if 0
 	if (!nm_auth_get_caller_uid (context, priv->dbus_mgr, &sender_uid, &error_desc)) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
@@ -2560,6 +2577,7 @@ impl_manager_sleep (NMManager *self,
 
 	nm_auth_chain_set_data (chain, "sleep", GUINT_TO_POINTER (do_sleep), NULL);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SLEEP_WAKE, TRUE);
+#endif
 }
 
 static void

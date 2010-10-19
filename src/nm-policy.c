@@ -19,6 +19,7 @@
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
+#include <config.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
@@ -1225,6 +1226,15 @@ nm_policy_destroy (NMPolicy *policy)
 		g_free (data);
 	}
 	g_slist_free (policy->dev_signal_ids);
+
+	/* Rewrite /etc/hosts on exit to ensure we don't leave stale IP addresses
+	 * lying around.  FIXME: this will take out a valid IP address of an
+	 * ethernet device we're leaving active (ie, a connection we can "assume"
+	 * when NM starts again).
+	 */
+	policy->default_device4 = NULL;
+	policy->default_device6 = NULL;
+	update_system_hostname (policy, NULL, NULL);
 
 	g_free (policy->orig_hostname);
 	g_free (policy->cur_hostname);

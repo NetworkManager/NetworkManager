@@ -26,6 +26,8 @@
 #define FALLBACK_HOSTNAME4 "localhost.localdomain"
 #define FALLBACK_HOSTNAME6 "localhost6.localdomain6"
 
+#define DEBUG 0
+
 static void
 test_generic (const char *before,
               const char *after,
@@ -43,6 +45,7 @@ test_generic (const char *before,
 	newc = nm_policy_get_etc_hosts ((const char **) lines,
 	                                strlen (before),
 	                                hostname,
+	                                NULL,
 	                                FALLBACK_HOSTNAME4,
 	                                FALLBACK_HOSTNAME6,
 	                                ip4_addr,
@@ -56,11 +59,11 @@ test_generic (const char *before,
 		g_clear_error (&error);
 	} else if (after == NULL) {
 		/* No change to /etc/hosts required */
-#if 0
+#if DEBUG
 		if (newc != NULL) {
 			g_message ("\n- NEW ---------------------------------\n"
 			           "%s"
-			           "- EXPECTED NONE -------------------------\n",
+			           "+ EXPECTED NONE +++++++++++++++++++++++++\n",
 			           newc->str);
 		}
 #endif
@@ -70,10 +73,10 @@ test_generic (const char *before,
 		g_assert (newc != NULL);
 		g_assert (error == NULL);
 
-#if 0
+#if DEBUG
 		g_message ("\n- NEW ---------------------------------\n"
 		           "%s"
-		           "- EXPECTED ------------------------------\n"
+		           "+ EXPECTED ++++++++++++++++++++++++++++++\n"
 		           "%s"
 		           "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n",
 		           newc->str, after);
@@ -167,10 +170,17 @@ static const char *named_generic_before = \
 	"::1		localhost6.localdomain6 localhost6\n"
 	"127.0.0.1	lcmd.us.intellitxt.com\n";
 
+static const char *named_generic_after = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	playboy	localhost.localdomain	localhost\n"
+	"::1	playboy	localhost6.localdomain6	localhost6\n"
+	"127.0.0.1	lcmd.us.intellitxt.com\n";
+
 static void
 test_hosts_named_generic (void)
 {
-	test_generic (named_generic_before, NULL, "playboy", NULL, NULL, FALSE);
+	test_generic (named_generic_before, named_generic_after, "playboy", NULL, NULL, FALSE);
 }
 
 /*******************************************/
@@ -609,24 +619,178 @@ static const char *long_before = \
 	"127.0.0.1	ad.doubleclick.net\n"
 	"127.0.0.1	oascentral.movietickets.com\n"
 	"127.0.0.1	view.atdmt.com\n"
-	"127.0.0.1	ads.chumcity.com\n"
-	"127.0.0.1	ads.as4x.tmcs.net\n"
-	"127.0.0.1	n4403ad.doubleclick.net\n"
-	"127.0.0.1	www.assoc-amazon.com\n"
-	"127.0.0.1	s25.sitemeter.com\n"
-	"127.0.0.1	adlog.com.com\n"
-	"127.0.0.1	ahs.laptopmag.com\n"
-	"127.0.0.1	altfarm.mediaplex.com\n"
-	"127.0.0.1	ads.addynamix.com\n"
-	"127.0.0.1	srx.main.ebayrtm.com\n"
-	"127.0.0.1	cdn5.tribalfusion.com\n"
-	"127.0.0.1	a.tribalfusion.com\n";
+	"127.0.0.1	ads.chumcity.com\n";
 
+static const char *long_after = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	comet	localhost.localdomain	localhost\n"
+	"::1	comet	localhost6.localdomain6	localhost6\n"
+	"\n"
+	"127.0.0.1	lcmd.us.intellitxt.com\n"
+	"127.0.0.1	adserver.adtech.de\n"
+	"127.0.0.1	a.as-us.falkag.net\n"
+	"127.0.0.1	a.as-eu.falkag.net\n"
+	"127.0.0.1	ads.doubleclick.com\n"
+	"\n"
+	"# random comment\n"
+	"127.0.0.1	m1.2mdn.net\n"
+	"127.0.0.1	ds.serving-sys.com\n"
+	"127.0.0.1	pagead2.googlesyndication.com\n"
+	"127.0.0.1	ad.doubleclick.com\n"
+	"127.0.0.1	ad.doubleclick.net\n"
+	"127.0.0.1	oascentral.movietickets.com\n"
+	"127.0.0.1	view.atdmt.com\n"
+	"127.0.0.1	ads.chumcity.com\n";
 
 static void
 test_hosts_long (void)
 {
-	test_generic (long_before, NULL, "comet", NULL, NULL, FALSE);
+	test_generic (long_before, long_after, "comet", NULL, NULL, FALSE);
+}
+
+/*******************************************/
+
+static const char *custom4_before = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	localhost.localdomain localhost pintglass\n"
+	"::1	localhost6.localdomain6	localhost6\n";
+
+static const char *custom4_after = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	comet	localhost.localdomain	localhost	pintglass\n"
+	"::1	comet	localhost6.localdomain6	localhost6\n";
+
+static void
+test_hosts_custom4 (void)
+{
+	test_generic (custom4_before, custom4_after, "comet", NULL, NULL, FALSE);
+}
+
+/*******************************************/
+
+static const char *custom6_before = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	localhost.localdomain localhost\n"
+	"::1	localhost6.localdomain6	localhost6	pintglass\n";
+
+static const char *custom6_after = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	comet	localhost.localdomain	localhost\n"
+	"::1	comet	localhost6.localdomain6	localhost6	pintglass\n";
+
+static void
+test_hosts_custom6 (void)
+{
+	test_generic (custom6_before, custom6_after, "comet", NULL, NULL, FALSE);
+}
+
+/*******************************************/
+
+static const char *custom46_before = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	localhost.localdomain localhost shotglass\n"
+	"::1	localhost6.localdomain6	localhost6 pintglass\n";
+
+static const char *custom46_after = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	comet	localhost.localdomain	localhost	shotglass\n"
+	"::1	comet	localhost6.localdomain6	localhost6	pintglass\n";
+
+static void
+test_hosts_custom46 (void)
+{
+	test_generic (custom46_before, custom46_after, "comet", NULL, NULL, FALSE);
+}
+
+/*******************************************/
+
+static const char *custom46_mixed_before = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	localhost.localdomain localhost shotglass\n"
+	"::1	localhost6.localdomain6	localhost6 pintglass\n";
+
+static const char *custom46_mixed_after = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	comet	localhost.localdomain	localhost	shotglass\n"
+	"::1	comet	localhost6.localdomain6	localhost6	pintglass\n";
+
+static void
+test_hosts_custom46_mixed (void)
+{
+	test_generic (custom46_mixed_before, custom46_mixed_after, "comet", NULL, NULL, FALSE);
+}
+
+/*******************************************/
+
+static const char *stale4_removed_before = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"1.2.3.4	comet	# Added by NetworkManager\n"
+	"127.0.0.1	localhost.localdomain localhost\n"
+	"::1	comet	localhost6.localdomain6	localhost6\n";
+
+static const char *stale4_removed_after = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	comet	localhost.localdomain	localhost\n"
+	"::1	comet	localhost6.localdomain6	localhost6\n";
+
+static void
+test_hosts_stale4_removed (void)
+{
+	test_generic (stale4_removed_before, stale4_removed_after, "comet", NULL, NULL, FALSE);
+}
+
+/*******************************************/
+
+static const char *stale6_removed_before = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"3001:abba::3234	comet	# Added by NetworkManager\n"
+	"127.0.0.1	comet	localhost.localdomain localhost\n"
+	"::1	localhost6.localdomain6	localhost6\n";
+
+static const char *stale6_removed_after = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	comet	localhost.localdomain	localhost\n"
+	"::1	comet	localhost6.localdomain6	localhost6\n";
+
+static void
+test_hosts_stale6_removed (void)
+{
+	test_generic (stale6_removed_before, stale6_removed_after, "comet", NULL, NULL, FALSE);
+}
+
+/*******************************************/
+
+static const char *stale46_removed_before = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"1.2.3.4	comet	# Added by NetworkManager\n"
+	"3001:abba::3234	comet	# Added by NetworkManager\n"
+	"127.0.0.1	localhost.localdomain localhost\n"
+	"::1	localhost6.localdomain6	localhost6\n";
+
+static const char *stale46_removed_after = \
+	"# Do not remove the following line, or various programs\n"
+	"# that require network functionality will fail.\n"
+	"127.0.0.1	comet	localhost.localdomain	localhost\n"
+	"::1	comet	localhost6.localdomain6	localhost6\n";
+
+static void
+test_hosts_stale46_removed (void)
+{
+	test_generic (stale46_removed_before, stale46_removed_after, "comet", NULL, NULL, FALSE);
 }
 
 /*******************************************/
@@ -712,6 +876,13 @@ int main (int argc, char **argv)
 	g_test_suite_add (suite, TESTCASE (test_hosts_no_host4, NULL));
 	g_test_suite_add (suite, TESTCASE (test_hosts_no_host6, NULL));
 	g_test_suite_add (suite, TESTCASE (test_hosts_long, NULL));
+	g_test_suite_add (suite, TESTCASE (test_hosts_custom4, NULL));
+	g_test_suite_add (suite, TESTCASE (test_hosts_custom6, NULL));
+	g_test_suite_add (suite, TESTCASE (test_hosts_custom46, NULL));
+	g_test_suite_add (suite, TESTCASE (test_hosts_custom46_mixed, NULL));
+	g_test_suite_add (suite, TESTCASE (test_hosts_stale4_removed, NULL));
+	g_test_suite_add (suite, TESTCASE (test_hosts_stale6_removed, NULL));
+	g_test_suite_add (suite, TESTCASE (test_hosts_stale46_removed, NULL));
 
 	return g_test_run ();
 }

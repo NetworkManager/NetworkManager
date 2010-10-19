@@ -17,6 +17,7 @@
  *
  */
 
+#include <config.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -106,7 +107,7 @@ kill_existing (const char *progname, const char *pidfile, const char *kill_match
 		goto out;
 
 	if (strstr (cmdline_contents, kill_match)) {
-		if (kill (pid, 0)) {
+		if (kill (pid, 0) == 0) {
 			nm_log_dbg (LOGD_DNS, "Killing stale %s child process %ld", progname, pid);
 			kill (pid, SIGKILL);
 		}

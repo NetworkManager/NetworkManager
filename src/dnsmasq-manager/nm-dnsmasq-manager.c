@@ -18,6 +18,7 @@
  * Copyright (C) 2008 - 2010 Red Hat, Inc.
  */
 
+#include <config.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
@@ -385,7 +386,7 @@ kill_existing_for_iface (const char *iface, const char *pidfile)
 		goto out;
 
 	if (strstr (cmdline_contents, "bin/dnsmasq")) {
-		if (kill (pid, 0)) {
+		if (kill (pid, 0) == 0) {
 			nm_log_dbg (LOGD_SHARING, "Killing stale dnsmasq process %ld", pid);
 			kill (pid, SIGKILL);
 		}
