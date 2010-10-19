@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2010 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -86,6 +86,7 @@ typedef struct {
 	char *uuid;
 	char *type;
 	gboolean autoconnect;
+	gint autoconnect_retries;
 	guint64 timestamp;
 	gboolean read_only;
 } NMSettingConnectionPrivate;
@@ -96,6 +97,7 @@ enum {
 	PROP_UUID,
 	PROP_TYPE,
 	PROP_AUTOCONNECT,
+	PROP_AUTOCONNECT_RETRIES,
 	PROP_TIMESTAMP,
 	PROP_READ_ONLY,
 
@@ -176,6 +178,22 @@ nm_setting_connection_get_autoconnect (NMSettingConnection *setting)
 	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), FALSE);
 
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->autoconnect;
+}
+
+/**
+ * nm_setting_connection_get_autoconnect_retries:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns the #NMSettingConnection:autoconnect-retries property of the connection.
+ *
+ * Returns: the connection's number of autoconnect retries
+ **/
+gint
+nm_setting_connection_get_autoconnect_retries (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), 0);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->autoconnect_retries;
 }
 
 /**
@@ -334,6 +352,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_AUTOCONNECT:
 		priv->autoconnect = g_value_get_boolean (value);
 		break;
+	case PROP_AUTOCONNECT_RETRIES:
+		priv->autoconnect_retries = g_value_get_int (value);
+		break;
 	case PROP_TIMESTAMP:
 		priv->timestamp = g_value_get_uint64 (value);
 		break;
@@ -364,6 +385,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_AUTOCONNECT:
 		g_value_set_boolean (value, nm_setting_connection_get_autoconnect (setting));
+		break;
+	case PROP_AUTOCONNECT_RETRIES:
+		g_value_set_int (value, nm_setting_connection_get_autoconnect_retries (setting));
 		break;
 	case PROP_TIMESTAMP:
 		g_value_set_uint64 (value, nm_setting_connection_get_timestamp (setting));
@@ -469,18 +493,38 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 *
 	 * Whether or not the connection should be automatically connected by
 	 * NetworkManager when the resources for the connection are available.
-	 * %TRUE to automatically activate the connection, %FALSE to require manual
-	 * intervention to activate the connection.  Defaults to %TRUE.
+	 * %TRUE to automatically activate the connection. It makes autoconnect-retries
+	 * attempts at most in addition to the initial try.  %FALSE to require
+	 * manual intervention to activate the connection.  Defaults to %TRUE.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_AUTOCONNECT,
 		 g_param_spec_boolean (NM_SETTING_CONNECTION_AUTOCONNECT,
 						   "Autoconnect",
 						   "If TRUE, NetworkManager will activate this connection "
-						   "when its network resources are available.  If FALSE, "
-						   "the connection must be manually activated by the user "
-						   "or some other mechanism.",
+						   "when its network resources are available.  It makes "
+						   "autoconnect-retries attempts at most when the initial "
+						   "activation was not successful.  If FALSE, the connection "
+						   "must be manually activated by the user or some other "
+						   "mechanism.",
 						   TRUE,
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+	/**
+	 * NMSettingConnection:autoconnect-retries:
+	 *
+	 * How many retries should be made by NetworkManager to automatically
+	 * connect, when the initial attempt was not successful.
+	 * Special value is: -1: infinite.  Defaults to 0.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_AUTOCONNECT_RETRIES,
+		 g_param_spec_int (NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES,
+						   "Autoconnect-Retries",
+						   "How many retries should be made by NetworkManager to "
+						   "automatically connect, when the initial attempt was not "
+						   "successful.  Special value is -1 meaning infinite. "
+						   "Defaults to 0.",
+						   -1, G_MAXINT, 0,
 						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**

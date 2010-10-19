@@ -113,6 +113,7 @@ global:
 	nm_setting_connection_get_uuid;
 	nm_setting_connection_get_connection_type;
 	nm_setting_connection_get_autoconnect;
+	nm_setting_connection_get_autoconnect_retries;
 	nm_setting_connection_get_timestamp;
 	nm_setting_connection_get_read_only;
 	nm_setting_duplicate;
