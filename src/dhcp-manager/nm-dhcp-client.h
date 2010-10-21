@@ -76,15 +76,6 @@ typedef struct {
 
 	/* Methods */
 
-	/* Given the options table, extract any classless routes, add them to
-	 * the IP4 config and return TRUE if any existed.  If a gateway was sent
-	 * as a classless route return that in out_gwaddr.
-	 */
-	gboolean (*ip4_process_classless_routes) (NMDHCPClient *self,
-	                                          GHashTable *options,
-	                                          NMIP4Config *ip4_config,
-	                                          guint32 *out_gwaddr);
-
 	GPid (*ip4_start)                        (NMDHCPClient *self,
 	                                          NMSettingIP4Config *s_ip4,
 	                                          guint8 *anycast_addr,
