@@ -20,6 +20,7 @@
 
 #include "nm-manager-auth.h"
 #include "nm-logging.h"
+#include "nm-dbus-manager.h"
 
 #include <dbus/dbus-glib-lowlevel.h>
 #include <string.h>
@@ -325,8 +326,13 @@ nm_auth_get_caller_uid (DBusGMethodInvocation *context,
 	DBusError dbus_error;
 
 	g_return_val_if_fail (context != NULL, FALSE);
-	g_return_val_if_fail (dbus_mgr != NULL, FALSE);
 	g_return_val_if_fail (out_uid != NULL, FALSE);
+
+	if (!dbus_mgr) {
+		dbus_mgr = nm_dbus_manager_get ();
+		g_assert (dbus_mgr);
+	} else
+		g_object_ref (dbus_mgr);
 
 	*out_uid = G_MAXULONG;
 
@@ -356,6 +362,7 @@ nm_auth_get_caller_uid (DBusGMethodInvocation *context,
 		success = TRUE;
 
 out:
+	g_object_unref (dbus_mgr);
 	g_free (sender);
 	return success;
 }
