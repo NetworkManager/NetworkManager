@@ -25,11 +25,7 @@ libsystem_settings_la_SOURCES = \
 	nm-sysconfig-connection.c \
 	nm-sysconfig-connection.h \
 	nm-default-wired-connection.c \
-	nm-default-wired-connection.h \
-	nm-session-info.c \
-	nm-session-info.h \
-	nm-session-manager.c \
-	nm-session-manager.h
+	nm-default-wired-connection.h
 
 libsystem_settings_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
