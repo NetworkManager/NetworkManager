@@ -29,9 +29,7 @@ libsystem_settings_la_SOURCES = \
 	nm-session-info.c \
 	nm-session-info.h \
 	nm-session-manager.c \
-	nm-session-manager.h \
-	nm-session-monitor.c \
-	nm-session-monitor.h
+	nm-session-manager.h
 
 libsystem_settings_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \

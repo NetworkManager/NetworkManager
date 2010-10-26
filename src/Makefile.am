@@ -147,7 +147,9 @@ NetworkManager_SOURCES = \
 		nm-dhcp4-config.h \
 		nm-dhcp6-config.c \
 		nm-dhcp6-config.h \
-		nm-rfkill.h
+		nm-rfkill.h \
+		nm-session-monitor.c \
+		nm-session-monitor.h
 
 nm-access-point-glue.h: $(top_srcdir)/introspection/nm-access-point.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_access_point --mode=glib-server --output=$@ $<

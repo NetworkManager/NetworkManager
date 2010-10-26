@@ -26,7 +26,6 @@
 #include <sys/stat.h>
 #include <gio/gio.h>
 #include "nm-logging.h"
-#include "nm-system-config-error.h"
 
 #include "nm-session-monitor.h"
 
@@ -67,6 +66,50 @@ G_DEFINE_TYPE (NMSessionMonitor, nm_session_monitor, G_TYPE_OBJECT);
 
 /********************************************************************/
 
+#define NM_SESSION_MONITOR_ERROR         (nm_session_monitor_error_quark ())
+GQuark nm_session_monitor_error_quark    (void) G_GNUC_CONST;
+GType  nm_session_monitor_error_get_type (void) G_GNUC_CONST;
+
+typedef enum {
+	NM_SESSION_MONITOR_ERROR_IO_ERROR = 0,
+	NM_SESSION_MONITOR_ERROR_MALFORMED_DATABASE,
+	NM_SESSION_MONITOR_ERROR_UNKNOWN_USER,
+} NMSessionMonitorError;
+
+GQuark
+nm_session_monitor_error_quark (void)
+{
+	static GQuark ret = 0;
+
+	if (G_UNLIKELY (ret == 0))
+		ret = g_quark_from_static_string ("nm-session-monitor-error");
+	return ret;
+}
+
+#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
+
+GType
+nm_session_monitor_error_get_type (void)
+{
+	static GType etype = 0;
+
+	if (etype == 0) {
+		static const GEnumValue values[] = {
+			/* Some I/O operation on the CK database failed */
+			ENUM_ENTRY (NM_SESSION_MONITOR_ERROR_IO_ERROR, "IOError"),
+			/* Error parsing the CK database */
+			ENUM_ENTRY (NM_SESSION_MONITOR_ERROR_MALFORMED_DATABASE, "MalformedDatabase"),
+			/* Username or UID could could not be found */
+			ENUM_ENTRY (NM_SESSION_MONITOR_ERROR_UNKNOWN_USER, "UnknownUser"),
+			{ 0, 0, 0 }
+		};
+
+		etype = g_enum_register_static ("NMSessionMonitorError", values);
+	}
+	return etype;
+}
+/********************************************************************/
+
 typedef struct {
 	char *user;
 	uid_t uid;
@@ -90,8 +133,8 @@ check_key (GKeyFile *keyfile, const char *group, const char *key, GError **error
 
 	if (!error) {
 		g_set_error (error,
-			         NM_SYSCONFIG_SETTINGS_ERROR,
-			         NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
+			         NM_SESSION_MONITOR_ERROR,
+			         NM_SESSION_MONITOR_ERROR_MALFORMED_DATABASE,
 			         "ConsoleKit database " CKDB_PATH " group '%s' had no '%s' key",
 			         group, key);
 	}
@@ -128,8 +171,8 @@ session_new (GKeyFile *keyfile, const char *group, GError **error)
 	pw = getpwuid (s->uid);
 	if (!pw) {
 		g_set_error (error,
-			         NM_SYSCONFIG_SETTINGS_ERROR,
-			         NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
+			         NM_SESSION_MONITOR_ERROR,
+			         NM_SESSION_MONITOR_ERROR_UNKNOWN_USER,
 			         "Could not get username for UID %d",
 			         s->uid);
 		goto error;
@@ -169,8 +212,8 @@ reload_database (NMSessionMonitor *self, GError **error)
 
 	if (stat (CKDB_PATH, &statbuf) != 0) {
 		g_set_error (error,
-		             NM_SYSCONFIG_SETTINGS_ERROR,
-		             NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
+		             NM_SESSION_MONITOR_ERROR,
+		             NM_SESSION_MONITOR_ERROR_IO_ERROR,
 		             "Error statting file " CKDB_PATH ": %s",
 		             strerror (errno));
 		goto error;
@@ -184,8 +227,8 @@ reload_database (NMSessionMonitor *self, GError **error)
 	groups = g_key_file_get_groups (self->database, &len);
 	if (!groups) {
 		g_set_error_literal (error,
-		                     NM_SYSCONFIG_SETTINGS_ERROR,
-		                     NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
+		                     NM_SESSION_MONITOR_ERROR,
+		                     NM_SESSION_MONITOR_ERROR_IO_ERROR,
 		                     "Could not load groups from " CKDB_PATH "");
 		goto error;
 	}
@@ -221,8 +264,8 @@ ensure_database (NMSessionMonitor *self, GError **error)
 
 		if (stat (CKDB_PATH, &statbuf) != 0) {
 			g_set_error (error,
-			             NM_SYSCONFIG_SETTINGS_ERROR,
-			             NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
+			             NM_SESSION_MONITOR_ERROR,
+			             NM_SESSION_MONITOR_ERROR_IO_ERROR,
 			             "Error statting file " CKDB_PATH " to check timestamp: %s",
 			             strerror (errno));
 			goto out;
@@ -364,8 +407,8 @@ nm_session_monitor_user_has_session (NMSessionMonitor *monitor,
 	s = g_hash_table_lookup (monitor->sessions_by_user, (gpointer) username);
 	if (!s) {
 		g_set_error (error,
-		             NM_SYSCONFIG_SETTINGS_ERROR,
-		             NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
+		             NM_SESSION_MONITOR_ERROR,
+		             NM_SESSION_MONITOR_ERROR_UNKNOWN_USER,
 		             "No session found for user '%s'",
 		             username);
 		return FALSE;
@@ -398,8 +441,8 @@ nm_session_monitor_uid_has_session (NMSessionMonitor *monitor,
 	s = g_hash_table_lookup (monitor->sessions_by_uid, GUINT_TO_POINTER (uid));
 	if (!s) {
 		g_set_error (error,
-		             NM_SYSCONFIG_SETTINGS_ERROR,
-		             NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
+		             NM_SESSION_MONITOR_ERROR,
+		             NM_SESSION_MONITOR_ERROR_UNKNOWN_USER,
 		             "No session found for uid %d",
 		             uid);
 		return FALSE;
@@ -432,8 +475,8 @@ nm_session_monitor_user_active (NMSessionMonitor *monitor,
 	s = g_hash_table_lookup (monitor->sessions_by_user, (gpointer) username);
 	if (!s) {
 		g_set_error (error,
-		             NM_SYSCONFIG_SETTINGS_ERROR,
-		             NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
+		             NM_SESSION_MONITOR_ERROR,
+		             NM_SESSION_MONITOR_ERROR_UNKNOWN_USER,
 		             "No session found for user '%s'",
 		             username);
 		return FALSE;
@@ -466,8 +509,8 @@ nm_session_monitor_uid_active (NMSessionMonitor *monitor,
 	s = g_hash_table_lookup (monitor->sessions_by_uid, GUINT_TO_POINTER (uid));
 	if (!s) {
 		g_set_error (error,
-		             NM_SYSCONFIG_SETTINGS_ERROR,
-		             NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
+		             NM_SESSION_MONITOR_ERROR,
+		             NM_SESSION_MONITOR_ERROR_UNKNOWN_USER,
 		             "No session found for uid '%d'",
 		             uid);
 		return FALSE;
