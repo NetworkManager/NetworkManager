@@ -76,7 +76,9 @@ typedef struct {
 	GSList *pending_auths; /* List of PendingAuth structs*/
 	NMConnection *secrets;
 	gboolean visible; /* Is this connection is visible by some session? */
+
 	NMSessionMonitor *session_monitor;
+	guint session_changed_id;
 } NMSysconfigConnectionPrivate;
 
 /**************************************************************/
@@ -234,6 +236,12 @@ nm_sysconfig_connection_recheck_visibility (NMSysconfigConnection *self)
 	}
 
 	set_visible (self, FALSE);
+}
+
+static void
+session_changed_cb (NMSessionMonitor *self, gpointer user_data)
+{
+	nm_sysconfig_connection_recheck_visibility (NM_SYSCONFIG_CONNECTION (user_data));
 }
 
 /**************************************************************/
@@ -957,6 +965,10 @@ nm_sysconfig_connection_init (NMSysconfigConnection *self)
 	priv->visible = FALSE;
 
 	priv->session_monitor = nm_session_monitor_get ();
+	priv->session_changed_id = g_signal_connect (priv->session_monitor,
+	                                             NM_SESSION_MONITOR_CHANGED,
+	                                             G_CALLBACK (session_changed_cb),
+	                                             self);
 }
 
 static void

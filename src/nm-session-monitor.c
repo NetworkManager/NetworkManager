@@ -369,7 +369,7 @@ nm_session_monitor_class_init (NMSessionMonitorClass *klass)
 	 *
 	 * Emitted when something changes.
 	 */
-	signals[CHANGED] = g_signal_new ("changed",
+	signals[CHANGED] = g_signal_new (NM_SESSION_MONITOR_CHANGED,
 	                                 NM_TYPE_SESSION_MONITOR,
 	                                 G_SIGNAL_RUN_LAST,
 	                                 G_STRUCT_OFFSET (NMSessionMonitorClass, changed),

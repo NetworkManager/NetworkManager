@@ -32,6 +32,8 @@ G_BEGIN_DECLS
 #define NM_IS_SESSION_MONITOR(o)        (G_TYPE_CHECK_INSTANCE_TYPE ((o), NM_TYPE_SESSION_MONITOR))
 #define NM_IS_SESSION_MONITOR_CLASS(k)  (G_TYPE_CHECK_CLASS_TYPE ((k), NM_TYPE_SESSION_MONITOR))
 
+#define NM_SESSION_MONITOR_CHANGED "changed"
+
 typedef struct _NMSessionMonitor         NMSessionMonitor;
 typedef struct _NMSessionMonitorClass    NMSessionMonitorClass;
 

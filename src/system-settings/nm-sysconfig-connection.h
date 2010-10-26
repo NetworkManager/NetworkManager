@@ -36,7 +36,6 @@ G_BEGIN_DECLS
 
 #define NM_SYSCONFIG_CONNECTION_UPDATED "updated"
 #define NM_SYSCONFIG_CONNECTION_REMOVED "removed"
-#define NM_SYSCONFIG_CONNECTION_PURGED  "purged"
 #define NM_SYSCONFIG_CONNECTION_VISIBLE "visible"
 
 typedef struct _NMSysconfigConnection NMSysconfigConnection;
