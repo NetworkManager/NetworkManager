@@ -150,6 +150,7 @@ session_new (GKeyFile *keyfile, const char *group, GError **error)
 	s = g_new0 (Session, 1);
 	g_assert (s);
 
+	s->uid = G_MAXUINT; /* paranoia */
 	if (!check_key (keyfile, group, "uid", error))
 		return FALSE;
 	s->uid = (uid_t) g_key_file_get_integer (keyfile, group, "uid", error);
@@ -397,6 +398,7 @@ nm_session_monitor_get (void)
 gboolean
 nm_session_monitor_user_has_session (NMSessionMonitor *monitor,
                                      const char *username,
+                                     uid_t *out_uid,
                                      GError **error)
 {
 	Session *s;
@@ -414,6 +416,8 @@ nm_session_monitor_user_has_session (NMSessionMonitor *monitor,
 		return FALSE;
 	}
 
+	if (out_uid)
+		*out_uid = s->uid;
 	return TRUE;
 }
 
@@ -431,6 +435,7 @@ nm_session_monitor_user_has_session (NMSessionMonitor *monitor,
 gboolean
 nm_session_monitor_uid_has_session (NMSessionMonitor *monitor,
                                     uid_t uid,
+                                    const char **out_user,
                                     GError **error)
 {
 	Session *s;
@@ -448,6 +453,8 @@ nm_session_monitor_uid_has_session (NMSessionMonitor *monitor,
 		return FALSE;
 	}
 
+	if (out_user)
+		*out_user = s->user;
 	return TRUE;
 }
 

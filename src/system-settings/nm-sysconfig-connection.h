@@ -16,6 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * (C) Copyright 2008 Novell, Inc.
+ * (C) Copyright 2008 - 2010 Red Hat, Inc.
  */
 
 #ifndef NM_SYSCONFIG_CONNECTION_H
@@ -23,7 +24,6 @@
 
 #include <nm-connection.h>
 #include <dbus/dbus-glib.h>
-#include "nm-session-info.h"
 
 G_BEGIN_DECLS
 
@@ -34,10 +34,10 @@ G_BEGIN_DECLS
 #define NM_IS_SYSCONFIG_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_SYSCONFIG_CONNECTION))
 #define NM_SYSCONFIG_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SYSCONFIG_CONNECTION, NMSysconfigConnectionClass))
 
-#define NM_SYSCONFIG_CONNECTION_UPDATED               "updated"
-#define NM_SYSCONFIG_CONNECTION_REMOVED               "removed"
-#define NM_SYSCONFIG_CONNECTION_PURGED                "purged"
-#define NM_SYSCONFIG_CONNECTION_UNHIDDEN              "unhidden"
+#define NM_SYSCONFIG_CONNECTION_UPDATED "updated"
+#define NM_SYSCONFIG_CONNECTION_REMOVED "removed"
+#define NM_SYSCONFIG_CONNECTION_PURGED  "purged"
+#define NM_SYSCONFIG_CONNECTION_VISIBLE "visible"
 
 typedef struct _NMSysconfigConnection NMSysconfigConnection;
 
@@ -105,13 +105,9 @@ void nm_sysconfig_connection_get_secrets (NMSysconfigConnection *connection,
                                           NMSysconfigConnectionGetSecretsFunc callback,
                                           gpointer user_data);
 
-gboolean nm_sysconfig_connection_is_visible (NMSysconfigConnection *connection);
+gboolean nm_sysconfig_connection_is_visible (NMSysconfigConnection *self);
 
-gboolean nm_sysconfig_connection_is_accessible_by_session (NMSysconfigConnection *connection,
-                                                           NMSessionInfo *session);
-
-GSList * nm_sysconfig_connection_get_session_access_list (NMSysconfigConnection *connection);
-
+void nm_sysconfig_connection_recheck_visibility (NMSysconfigConnection *self);
 
 G_END_DECLS
 

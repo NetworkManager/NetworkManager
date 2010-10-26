@@ -40,10 +40,12 @@ NMSessionMonitor *nm_session_monitor_get          (void);
 
 gboolean          nm_session_monitor_user_has_session (NMSessionMonitor *monitor,
                                                        const char *username,
+                                                       uid_t *out_uid,
                                                        GError **error);
 
 gboolean          nm_session_monitor_uid_has_session  (NMSessionMonitor *monitor,
                                                        uid_t uid,
+                                                       const char **out_user,
                                                        GError **error);
 
 gboolean          nm_session_monitor_user_active      (NMSessionMonitor *monitor,

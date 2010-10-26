@@ -19,13 +19,15 @@
  * (C) Copyright 2008 - 2010 Red Hat, Inc.
  */
 
+#include <string.h>
+
 #include <NetworkManager.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include <nm-setting-connection.h>
 #include <nm-utils.h>
 
 #include "nm-sysconfig-connection.h"
-#include "nm-session-manager.h"
+#include "nm-session-monitor.h"
 #include "nm-dbus-manager.h"
 #include "nm-system-config-error.h"
 #include "nm-dbus-glib-types.h"
@@ -58,11 +60,15 @@ G_DEFINE_TYPE (NMSysconfigConnection, nm_sysconfig_connection, NM_TYPE_CONNECTIO
                                                 NMSysconfigConnectionPrivate))
 
 enum {
+	PROP_0 = 0,
+	PROP_VISIBLE,
+};
+
+enum {
 	UPDATED,
 	CHECK_PERMISSIONS,
 	REMOVED,
 	PURGED,
-	UNHIDDEN,
 
 	LAST_SIGNAL
 };
@@ -73,188 +79,164 @@ typedef struct {
 	GSList *pending_auths; /* List of PendingAuth structs*/
 	NMConnection *secrets;
 	gboolean visible; /* Is this connection is visible by some session? */
-	GHashTable *access_list; /* Sessions that may access this connection. */
+	NMSessionMonitor *session_monitor;
 } NMSysconfigConnectionPrivate;
 
 /**************************************************************/
 
-/* Returns true iff the given session should be permitted to access this
- * connection. Used to update the access list */
+#define USER_TAG "user:"
+
+/* Extract the username from the permission string and dump to a buffer */
 static gboolean
-session_allowed (NMSysconfigConnection *connection,
-                 NMSessionInfo *session)
+perm_to_user (const char *perm, char *out_user, gsize out_user_size)
 {
-	NMSettingConnection *setting_connection = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (connection), NM_TYPE_SETTING_CONNECTION);
-	GSList *permissions_entries;
-	char *session_user;
-	GSList *p_iter;
-	gboolean allowed = FALSE;
+	const char *end;
+	gsize userlen;
 
-	g_object_get (setting_connection, NM_SETTING_CONNECTION_PERMISSIONS, &permissions_entries, NULL);
+	g_return_val_if_fail (perm != NULL, FALSE);
+	g_return_val_if_fail (out_user != NULL, FALSE);
 
-	/* If permissions list is empty, the connection is world-accessible. */
-	if (permissions_entries == NULL) {
-		allowed = TRUE;
-		goto out;
+	if (!g_str_has_prefix (perm, USER_TAG))
+		return FALSE;
+	perm += strlen (USER_TAG);
+
+	/* Look for trailing ':' */
+	end = strchr (perm, ':');
+	if (!end)
+		end = perm + strlen (perm);
+
+	userlen = end - perm;
+	if (userlen > (out_user_size + 1))
+		return FALSE;
+	memcpy (out_user, perm, userlen);
+	out_user[userlen] = '\0';
+	return TRUE;
+}
+
+static gboolean
+uid_in_acl (NMConnection *self,
+            NMSessionMonitor *smon,
+            const uid_t uid,
+            GError **error)
+{
+	NMSettingConnection *s_con;
+	guint32 num, i;
+	const char *user = NULL;
+	GError *local = NULL;
+
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (smon != NULL, FALSE);
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (self, NM_TYPE_SETTING_CONNECTION));
+	g_assert (s_con);
+
+	/* Reject the request if the request comes from no session at all */
+	if (nm_session_monitor_uid_has_session (smon, uid, &user, &local)) {
+		g_set_error (error,
+		             NM_SYSCONFIG_SETTINGS_ERROR,
+		             NM_SYSCONFIG_SETTINGS_ERROR_PERMISSION_DENIED,
+		             "No session found for uid %d (%s)",
+		             uid,
+		             local && local->message ? local->message : "unknown");
+		g_clear_error (&local);
+		return FALSE;
 	}
 
-	/* The "default session" can only access world-accessible connections. */
-	if (nm_session_info_is_default_session (session)) {
-		allowed = FALSE;
-		goto out;
+	if (!user) {
+		g_set_error (error,
+		             NM_SYSCONFIG_SETTINGS_ERROR,
+		             NM_SYSCONFIG_SETTINGS_ERROR_PERMISSION_DENIED,
+		             "Could not determine username for uid %d",
+		             uid);
+		return FALSE;
 	}
 
-	session_user = nm_session_info_get_unix_user (session);
+	/* Match the username returned by the session check to a user in the ACL */
+	num = nm_setting_connection_get_num_permissions (s_con);
+	if (num == 0)
+		return TRUE;  /* visible to all */
 
-	for (p_iter = permissions_entries; p_iter != NULL; p_iter = p_iter->next) {
-		char **p_comps = g_strsplit ((char *)p_iter->data, ":", 3);
-		char *type = p_comps[0];
-		char *name = p_comps[1];
+	for (i = 0; i < num; i++) {
+		const char *perm;
+		char buf[75];
 
-		if (g_str_equal (type, "user")) {
-			if (g_str_equal (session_user, name)) {
-				allowed = TRUE;
-				goto out;
+		perm = nm_setting_connection_get_permission (s_con, i);
+		g_assert (perm);
+		if (perm_to_user (perm, buf, sizeof (buf))) {
+			if (strcmp (buf, user) == 0) {
+				/* Yay, permitted */
+				return TRUE;
 			}
-		} else {
-			nm_log_err (LOGD_SYS_SET, 
-					    "connection %s: failed to parse permissions entry '%s'",
-			            nm_setting_connection_get_id (setting_connection),
-			            (char *) p_iter->data);
 		}
 	}
 
-out:
-	nm_utils_slist_free (permissions_entries, g_free);
-	return allowed;
-}
-
-static void
-set_visibility (NMSysconfigConnection *self, gboolean new_visibility)
-{
-	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
-	DBusGConnection *connection = nm_dbus_manager_get_connection (nm_dbus_manager_get());
-	const char *dbus_path = nm_connection_get_path (NM_CONNECTION (self));
-
-	if (new_visibility && !priv->visible) {
-		priv->visible = TRUE;
-
-		dbus_g_connection_register_g_object (connection, dbus_path, G_OBJECT (self));
-		g_signal_emit (self, signals[UNHIDDEN], 0);
-	}
-	else
-	if (!new_visibility && priv->visible) {
-		priv->visible = FALSE;
-
-		g_signal_emit (self, signals[REMOVED], 0);
-		dbus_g_connection_unregister_g_object (connection, G_OBJECT (self));
-	}
-}
-
-/* One of the sessions on our access list has been removed. */
-static void
-session_removed_cb (NMSessionInfo *removed_session,
-                    gpointer user_data)
-{
-	NMSysconfigConnection *connection = NM_SYSCONFIG_CONNECTION (user_data);
-	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (connection);
-	char *removed_session_id = nm_session_info_get_id (removed_session);
-
-	g_hash_table_remove (priv->access_list, removed_session_id);
-
-	if (g_hash_table_size (priv->access_list) == 0) {
-		set_visibility (connection, FALSE);
-	} else {
-		g_signal_emit (connection, signals[CHECK_PERMISSIONS], 0);
-	}
-}
-
-/* The session manager reports that a new session has been added. */
-static void
-session_added_cb (NMSessionManager *mananager, 
-                  NMSessionInfo *session,
-                  gpointer user_data)
-{
-	NMSysconfigConnection *connection = NM_SYSCONFIG_CONNECTION (user_data);
-	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (connection);
-
-	if (session_allowed (connection, session)) {
-		g_object_ref (session);
-		g_signal_connect (session, NM_SESSION_INFO_REMOVED,
-		                  G_CALLBACK(session_removed_cb), connection);
-		g_hash_table_insert (priv->access_list, nm_session_info_get_id (session), session);
-		g_signal_emit (connection, signals[CHECK_PERMISSIONS], 0);
-		set_visibility (connection, TRUE);
-	}
-}
-
-/* Our permissions property may have been changed. Update the access list. */
-static void
-update_access_list (NMSysconfigConnection *self)
-{
-	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
-	NMSessionManager *session_manager = nm_session_manager_get ();
-	GSList *sessions, *iter;
-
-	g_hash_table_remove_all (priv->access_list);
-	sessions = nm_session_manager_get_sessions (session_manager);
-	for (iter = sessions; iter != NULL; iter = iter->next) {
-		NMSessionInfo *session = NM_SESSION_INFO (iter->data);
-
-		if (session_allowed (self, session)) {
-			g_object_ref (session);
-			g_signal_connect (session, NM_SESSION_INFO_REMOVED,
-			                  G_CALLBACK (session_removed_cb), self);
-			g_hash_table_insert (priv->access_list, nm_session_info_get_id (session), session);
-		}
-	}
-	g_slist_free (sessions);
-
-	if (g_hash_table_size (priv->access_list) == 0) {
-		set_visibility (self, FALSE);
-	} else {
-		g_signal_emit (self, signals[CHECK_PERMISSIONS], 0);
-	}
-}
-
-gboolean
-nm_sysconfig_connection_is_visible (NMSysconfigConnection *connection)
-{
-	g_return_val_if_fail (NM_SYSCONFIG_CONNECTION (connection), FALSE);
-
-	return NM_SYSCONFIG_CONNECTION_GET_PRIVATE (connection)->visible;
-}
-
-GSList *
-nm_sysconfig_connection_get_session_access_list (NMSysconfigConnection *self)
-{
-	GHashTableIter iter;
-	gpointer value;
-	GSList *sessions = NULL;
-
-	g_hash_table_iter_init (&iter, NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self)->access_list);
-	while (g_hash_table_iter_next (&iter, NULL, &value))
-		sessions = g_slist_prepend (sessions, value);
-	return sessions;
-}
-
-gboolean
-nm_sysconfig_connection_is_accessible_by_session (NMSysconfigConnection *connection,
-                                                  NMSessionInfo *session)
-{
-	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (connection);
-	NMSessionInfo *stored_session = NULL;
-
-	g_return_val_if_fail (NM_IS_SYSCONFIG_CONNECTION (connection), FALSE);
-	g_return_val_if_fail (NM_IS_SESSION_INFO (session), FALSE);
-
-	stored_session = g_hash_table_lookup (priv->access_list,
-	                                      nm_session_info_get_id (session));
-
-	if (stored_session == session)
-		return TRUE;
-
+	g_set_error (error,
+	             NM_SYSCONFIG_SETTINGS_ERROR,
+	             NM_SYSCONFIG_SETTINGS_ERROR_PERMISSION_DENIED,
+	             "uid %d has no permission to perform this operation",
+	             uid);
 	return FALSE;
+}
+
+/**************************************************************/
+
+static void
+set_visible (NMSysconfigConnection *self, gboolean new_visible)
+{
+	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
+
+	if (new_visible == priv->visible)
+		return;
+	priv->visible = new_visible;
+	g_object_notify (G_OBJECT (self), NM_SYSCONFIG_CONNECTION_VISIBLE);
+}
+
+gboolean
+nm_sysconfig_connection_is_visible (NMSysconfigConnection *self)
+{
+	g_return_val_if_fail (NM_SYSCONFIG_CONNECTION (self), FALSE);
+
+	return NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self)->visible;
+}
+
+void
+nm_sysconfig_connection_recheck_visibility (NMSysconfigConnection *self)
+{
+	NMSysconfigConnectionPrivate *priv;
+	NMSettingConnection *s_con;
+	guint32 num, i;
+
+	g_return_if_fail (NM_SYSCONFIG_CONNECTION (self));
+
+	priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (NM_CONNECTION (self),
+	                                                          NM_TYPE_SETTING_CONNECTION));
+	g_assert (s_con);
+
+	/* Check every user in the ACL for a session */
+	num = nm_setting_connection_get_num_permissions (s_con);
+	if (num == 0) {
+		/* Visible to all */
+		set_visible (self, TRUE);
+		return;
+	}
+
+	for (i = 0; i < num; i++) {
+		const char *perm;
+		char buf[75];
+
+		perm = nm_setting_connection_get_permission (s_con, i);
+		g_assert (perm);
+		if (perm_to_user (perm, buf, sizeof (buf))) {
+			if (nm_session_monitor_user_has_session (priv->session_monitor, buf, NULL, NULL)) {
+				set_visible (self, TRUE);
+				return;
+			}
+		}
+	}
+
+	set_visible (self, FALSE);
 }
 
 /**************************************************************/
@@ -287,8 +269,7 @@ nm_sysconfig_connection_replace_settings (NMSysconfigConnection *self,
 			g_object_unref (priv->secrets);
 		priv->secrets = nm_connection_duplicate (NM_CONNECTION (self));
 
-		update_access_list (self);
-
+		nm_sysconfig_connection_recheck_visibility (self);
 		success = TRUE;
 	}
 	g_hash_table_destroy (new_settings);
@@ -445,7 +426,7 @@ do_delete (NMSysconfigConnection *connection,
 	       gpointer user_data)
 {
 	g_object_ref (connection);
-	set_visibility (connection, FALSE);
+	set_visible (connection, FALSE);
 	g_signal_emit (connection, signals[PURGED], 0);
 	callback (connection, NULL, user_data);
 	g_object_unref (connection);
@@ -590,9 +571,7 @@ typedef void (*AuthCallback) (NMSysconfigConnection *connection,
 typedef struct {
 	NMSysconfigConnection *self;
 	DBusGMethodInvocation *context;
-	PolkitSubject *subject;
 	GCancellable *cancellable;
-	gboolean check_modify;
 	gboolean disposed;
 
 	AuthCallback callback;
@@ -607,11 +586,8 @@ auth_finish (PendingAuth *info, GError *error)
 
 	info->callback (info->self, info->context, error, info->callback_data);
 
-	if (info->subject)
-		g_object_unref (info->subject);
-	if (info->cancellable)
-		g_object_unref (info->cancellable);
-
+	g_object_unref (info->cancellable);
+	memset (info, 0, sizeof (PendingAuth));
 	g_slice_free (PendingAuth, info);
 }
 
@@ -620,88 +596,36 @@ auth_pk_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 {
 	PendingAuth *info = user_data;
 	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (info->self);
-	PolkitAuthorizationResult *pk_result;
+	PolkitAuthorizationResult *pk_result = NULL;
 	GError *error = NULL;
 
 	if (info->disposed) {
 		error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
 		                             NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
 		                             "Request was canceled.");
-		auth_finish (info, error);
-		g_error_free (error);
-		return;
+		goto out;
 	}
 
 	pk_result = polkit_authority_check_authorization_finish (priv->authority,
 	                                                         result,
 	                                                         &error);
-
-	if (error) {
-		auth_finish (info, error);
-		g_error_free (error);
-		return;
-	}
+	if (error)
+		goto out;
 
 	if (!polkit_authorization_result_get_is_authorized (pk_result)) {
 		error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
 		                             NM_SYSCONFIG_SETTINGS_ERROR_NOT_PRIVILEGED,
 		                             "Insufficient privileges.");
-		auth_finish (info, error);
-		g_error_free (error);
 		goto out;
 	}
 
-	auth_finish (info, NULL);
-
 out:
-	g_object_unref (pk_result);
-}
+	auth_finish (info, error);
 
-static void
-auth_get_session_cb (NMSessionInfo *session,
-                     GError *session_error,
-                     gpointer user_data)
-{
-	PendingAuth *info = user_data;
-	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (info->self);
-	GError *error = NULL;
-	
-	if (info->disposed || !session) {
-		error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
-		                             NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
-		                             "Request was canceled.");
-		auth_finish (info, error);
+	if (error)
 		g_error_free (error);
-		return;
-	}
-
-	if (!nm_sysconfig_connection_is_accessible_by_session (info->self, session)) {
-		error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
-		                             NM_SYSCONFIG_SETTINGS_ERROR_PERMISSION_DENIED,
-		                             "Caller's session is not authorized to access connection.");
-		auth_finish (info, error);
-		g_error_free (error);
-		return;
-	}
-
-	if (!info->check_modify) {
-		auth_finish (info, NULL);
-	} else {
-		char *sender = dbus_g_method_get_sender (info->context);
-		info->subject = polkit_system_bus_name_new (sender);
-		info->cancellable = g_cancellable_new();
-		g_free (sender);
-
-		polkit_authority_check_authorization (priv->authority,
-		                                      info->subject,
-		                                      NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY,
-		                                      NULL,
-		                                      POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION,
-		                                      info->cancellable,
-		                                      auth_pk_cb,
-		                                      info);
-	}
-
+	if (pk_result)
+		g_object_unref (pk_result);
 }
 
 static void
@@ -712,22 +636,63 @@ auth_start (NMSysconfigConnection *self,
             gpointer callback_data)
 {
 	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
-	PendingAuth *info = g_slice_new (PendingAuth);
+	PendingAuth *info;
+	gulong sender_uid = G_MAXULONG;
+	GError *error = NULL;
+	char *sender;
+	const char *error_desc = NULL;
+	PolkitSubject *subject;
+
+	/* Get the caller's UID */
+	if (!nm_auth_get_caller_uid (context,  NULL, &sender_uid, &error_desc)) {
+		error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
+		                             NM_SYSCONFIG_SETTINGS_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		goto error;
+	}
+
+	/* Make sure the UID can view this connection */
+	if (0 != sender_uid) {
+		if (!uid_in_acl (NM_CONNECTION (self), priv->session_monitor, sender_uid, &error)) {
+			g_assert (error);
+			goto error;
+		}
+	}
+
+	if (!check_modify) {
+		callback (self, context, NULL, callback_data);
+		return;
+	}
+
+	info = g_slice_new (PendingAuth);
 	info->self = self;
 	info->context = context;
-	info->subject = NULL;
 	info->cancellable = NULL;
-	info->check_modify = check_modify;
 	info->disposed = FALSE;
 	info->callback_data = callback_data;
+	info->cancellable = g_cancellable_new();
+
+	sender = dbus_g_method_get_sender (info->context);
+	subject = polkit_system_bus_name_new (sender);
+	g_free (sender);
 
 	priv->pending_auths = g_slist_prepend (priv->pending_auths, info);
 
-	nm_session_manager_get_session_of_caller (nm_session_manager_get(),
-	                                          context,
-	                                          auth_get_session_cb,
-	                                          info);
+	/* Kick off the PolicyKit request */
+	polkit_authority_check_authorization (priv->authority,
+	                                      subject,
+	                                      NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY,
+	                                      NULL,
+	                                      POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION,
+	                                      info->cancellable,
+	                                      auth_pk_cb,
+	                                      info);
+	g_object_unref (subject);
+	return;
 
+error:
+	callback (self, context, error, callback_data);
+	g_error_free (error);
 }
 
 /**** DBus method handlers ************************************/
@@ -977,7 +942,6 @@ static void
 nm_sysconfig_connection_init (NMSysconfigConnection *self)
 {
 	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
-	NMSessionManager *session_manager;
 	static guint32 dbus_counter = 0;
 	char *dbus_path;
 	GError *error = NULL;
@@ -995,11 +959,7 @@ nm_sysconfig_connection_init (NMSysconfigConnection *self)
 	g_free (dbus_path);
 	priv->visible = FALSE;
 
-	priv->access_list = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
-	session_manager = nm_session_manager_get();
-	g_signal_connect (session_manager, NM_SESSION_MANAGER_SESSION_ADDED,
-	                  G_CALLBACK (session_added_cb), self);
-
+	priv->session_monitor = nm_session_monitor_get ();
 }
 
 static void
@@ -1007,10 +967,7 @@ dispose (GObject *object)
 {
 	NMSysconfigConnection *self = NM_SYSCONFIG_CONNECTION (object);
 	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
-	NMSessionManager *session_manager = nm_session_manager_get ();
 	GSList *iter;
-	GHashTableIter hiter;
-	gpointer value;
 
 	if (priv->secrets)
 		g_object_unref (priv->secrets);
@@ -1025,16 +982,32 @@ dispose (GObject *object)
 	g_slist_free (priv->pending_auths);
 	priv->pending_auths = NULL;
 
-	set_visibility (self, FALSE);
-	g_signal_handlers_disconnect_by_func (session_manager, session_added_cb, self);
+	set_visible (self, FALSE);
 
-	g_hash_table_iter_init (&hiter, priv->access_list);
-	while (g_hash_table_iter_next (&hiter, NULL, &value))
-		g_signal_handlers_disconnect_by_func (NM_SESSION_INFO (value), session_removed_cb, self);
-	g_hash_table_destroy (priv->access_list);
-	priv->access_list = NULL;
+	g_object_unref (priv->session_monitor);
 
 	G_OBJECT_CLASS (nm_sysconfig_connection_parent_class)->dispose (object);
+}
+
+static void
+get_property (GObject *object, guint prop_id,
+			  GValue *value, GParamSpec *pspec)
+{
+	switch (prop_id) {
+	case PROP_VISIBLE:
+		g_value_set_boolean (value, NM_SYSCONFIG_CONNECTION_GET_PRIVATE (object)->visible);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+			  const GValue *value, GParamSpec *pspec)
+{
+	G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 }
 
 static void
@@ -1046,9 +1019,21 @@ nm_sysconfig_connection_class_init (NMSysconfigConnectionClass *class)
 
 	/* Virtual methods */
 	object_class->dispose = dispose;
+	object_class->get_property = get_property;
+	object_class->set_property = set_property;
+
 	class->commit_changes = commit_changes;
 	class->delete = do_delete;
 	class->get_secrets = get_secrets;
+
+	/* Properties */
+	g_object_class_install_property
+		(object_class, PROP_VISIBLE,
+		 g_param_spec_boolean (NM_SYSCONFIG_CONNECTION_VISIBLE,
+		                       "Visible",
+		                       "Visible",
+		                       FALSE,
+		                       G_PARAM_READABLE));
 
 	/* Signals */
 	signals[UPDATED] = 
@@ -1071,15 +1056,6 @@ nm_sysconfig_connection_class_init (NMSysconfigConnectionClass *class)
 
 	signals[PURGED] = 
 		g_signal_new (NM_SYSCONFIG_CONNECTION_PURGED,
-		              G_TYPE_FROM_CLASS (class),
-		              G_SIGNAL_RUN_FIRST,
-		              0,
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__VOID,
-		              G_TYPE_NONE, 0);
-
-	signals[UNHIDDEN] = 
-		g_signal_new (NM_SYSCONFIG_CONNECTION_UNHIDDEN,
 		              G_TYPE_FROM_CLASS (class),
 		              G_SIGNAL_RUN_FIRST,
 		              0,

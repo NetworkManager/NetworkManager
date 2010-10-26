@@ -60,6 +60,7 @@
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
 #include "nm-manager-auth.h"
+#include "nm-session-monitor.h"
 
 #define CONFIG_KEY_NO_AUTO_DEFAULT "no-auto-default"
 
@@ -100,6 +101,9 @@ static void unmanaged_specs_changed (NMSystemConfigInterface *config, gpointer u
 typedef struct {
 	DBusGConnection *bus;
 	gboolean exported;
+
+	NMSessionMonitor *session_monitor;
+	guint session_monitor_id;
 
 	PolkitAuthority *authority;
 	guint auth_changed_id;
@@ -532,24 +536,26 @@ load_plugins (NMSysconfigSettings *self, const char *plugins, GError **error)
 }
 
 static void
+session_monitor_changed_cb (NMSessionMonitor *monitor, gpointer user_data)
+{
+	NMSysconfigSettings *self = NM_SYSCONFIG_SETTINGS (user_data);
+	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+	GHashTableIter iter;
+	gpointer data;
+
+	/* Update visibility on all connections */
+	g_hash_table_iter_init (&iter, priv->all_connections);
+	while (g_hash_table_iter_next (&iter, NULL, &data)) {
+	}
+}
+
+static void
 connection_removed (NMSysconfigConnection *connection,
                     gpointer user_data)
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (user_data);
 
 	g_hash_table_remove (priv->visible_connections, connection);
-}
-
-static void
-connection_unhidden (NMSysconfigConnection *connection,
-                     gpointer user_data)
-{
-	NMSysconfigSettings *settings = user_data;
-	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (settings);
-
-	g_hash_table_insert (priv->visible_connections,
-	                     connection, GINT_TO_POINTER (1));
-	g_signal_emit (settings, signals[NEW_CONNECTION], 0, connection);
 }
 
 static void
@@ -583,10 +589,6 @@ claim_connection (NMSysconfigSettings *self,
 	g_signal_connect (connection,
 	                  NM_SYSCONFIG_CONNECTION_PURGED,
 	                  G_CALLBACK (connection_purged),
-	                  self);
-	g_signal_connect (connection,
-	                  NM_SYSCONFIG_CONNECTION_UNHIDDEN,
-	                  G_CALLBACK (connection_unhidden),
 	                  self);
 
 	if (nm_sysconfig_connection_is_visible (connection)) {
@@ -1287,6 +1289,12 @@ dispose (GObject *object)
 	g_slist_free (priv->pk_calls);
 	priv->pk_calls = NULL;
 
+	if (priv->session_monitor) {
+		g_signal_handler_disconnect (priv->session_monitor, priv->session_monitor_id);
+		g_object_unref (priv->session_monitor);
+		priv->session_monitor = NULL;
+	}
+
 	G_OBJECT_CLASS (nm_sysconfig_settings_parent_class)->dispose (object);
 }
 
@@ -1441,5 +1449,12 @@ nm_sysconfig_settings_init (NMSysconfigSettings *self)
 		             error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
 	}
+
+	priv->session_monitor = nm_session_monitor_get ();
+	g_assert (priv->session_monitor);
+	priv->session_monitor_id = g_signal_connect (priv->session_monitor,
+	                                             "changed",
+	                                             G_CALLBACK (session_monitor_changed_cb),
+	                                             self);
 }
 
