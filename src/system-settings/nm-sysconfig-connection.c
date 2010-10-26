@@ -66,9 +66,7 @@ enum {
 
 enum {
 	UPDATED,
-	CHECK_PERMISSIONS,
 	REMOVED,
-
 	LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0 };

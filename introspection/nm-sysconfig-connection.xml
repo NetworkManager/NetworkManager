@@ -43,11 +43,14 @@
 
         <signal name="Updated">
             <tp:docstring>
-                Emitted when some settings changed.
+                Emitted when some settings changed.  Updates do include
+                connection permission changes, so clients should check whether
+                they still have permission to access the connection after
+                receiving this signal.
             </tp:docstring>
             <arg name="settings" type="a{sa{sv}}" tp:type="String_String_Variant_Map_Map">
                 <tp:docstring>
-                    Contains complete connection setting parameters, including changes.
+                    Contains complete connection setting parameters, including  changes.
                 </tp:docstring>
             </arg>
         </signal>
@@ -55,12 +58,6 @@
         <signal name="Removed">
             <tp:docstring>
                 Emitted when this connection is no longer available.  This happens when the connection is deleted or if it is no longer accessable by any of the system's logged in users.  After receipt of this signal, the object no longer exists.
-            </tp:docstring>
-        </signal>
-
-        <signal name="CheckPermissions">
-            <tp:docstring>
-                Emitted when a client's permission to access this connection may have changed.  Generally, clients should re-test their ability to access this connecton whenever this signal is emmited.
             </tp:docstring>
         </signal>
 
