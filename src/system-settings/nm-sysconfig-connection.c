@@ -68,7 +68,6 @@ enum {
 	UPDATED,
 	CHECK_PERMISSIONS,
 	REMOVED,
-	PURGED,
 
 	LAST_SIGNAL
 };
@@ -427,7 +426,7 @@ do_delete (NMSysconfigConnection *connection,
 {
 	g_object_ref (connection);
 	set_visible (connection, FALSE);
-	g_signal_emit (connection, signals[PURGED], 0);
+	g_signal_emit (connection, signals[REMOVED], 0);
 	callback (connection, NULL, user_data);
 	g_object_unref (connection);
 }
@@ -1047,15 +1046,6 @@ nm_sysconfig_connection_class_init (NMSysconfigConnectionClass *class)
 
 	signals[REMOVED] = 
 		g_signal_new (NM_SYSCONFIG_CONNECTION_REMOVED,
-		              G_TYPE_FROM_CLASS (class),
-		              G_SIGNAL_RUN_FIRST,
-		              0,
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__VOID,
-		              G_TYPE_NONE, 0);
-
-	signals[PURGED] = 
-		g_signal_new (NM_SYSCONFIG_CONNECTION_PURGED,
 		              G_TYPE_FROM_CLASS (class),
 		              G_SIGNAL_RUN_FIRST,
 		              0,
