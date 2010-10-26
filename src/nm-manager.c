@@ -2891,7 +2891,7 @@ nm_manager_activate_connection (NMManager *manager,
 		if (state < NM_DEVICE_STATE_DISCONNECTED) {
 			g_set_error (error,
 			             NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNMANAGED_DEVICE,
-			             "%s", "Device not managed by NetworkManager");
+			             "%s", "Device not managed by NetworkManager or unavailable");
 			return NULL;
 		}
 
