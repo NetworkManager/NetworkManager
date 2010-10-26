@@ -260,6 +260,10 @@ ensure_database (NMSessionMonitor *self, GError **error)
 {
 	gboolean ret = FALSE;
 
+#if NO_CONSOLEKIT
+	return TRUE;
+#endif
+
 	if (self->database != NULL) {
 		struct stat statbuf;
 
@@ -304,6 +308,10 @@ nm_session_monitor_init (NMSessionMonitor *self)
 {
 	GError *error = NULL;
 	GFile *file;
+
+#if NO_CONSOLEKIT
+	return;
+#endif
 
 	/* Sessions-by-user is responsible for destroying the Session objects */
 	self->sessions_by_user = g_hash_table_new_full (g_str_hash, g_str_equal,
@@ -384,6 +392,50 @@ nm_session_monitor_get (void)
 
 /* ---------------------------------------------------------------------------------------------------- */
 
+#if NO_CONSOLEKIT
+static gboolean
+uid_to_user (uid_t uid, const char **out_user, GError **error)
+{
+	struct passwd *pw;
+
+	pw = getpwuid (uid);
+	if (!pw) {
+		g_set_error (error,
+			         NM_SESSION_MONITOR_ERROR,
+			         NM_SESSION_MONITOR_ERROR_UNKNOWN_USER,
+			         "Could not get username for UID %d",
+			         uid);
+		return FALSE;
+	}
+
+	/* Ugly, but hey, use ConsoleKit */
+	if (out_user)
+		*out_user = pw->pw_name;
+	return TRUE;
+}
+
+static gboolean
+user_to_uid (const char *user, uid_t *out_uid, GError **error)
+{
+	struct passwd *pw;
+
+	pw = getpwnam (user);
+	if (!pw) {
+		g_set_error (error,
+			         NM_SESSION_MONITOR_ERROR,
+			         NM_SESSION_MONITOR_ERROR_UNKNOWN_USER,
+			         "Could not get UID for username '%s'",
+			         user);
+		return FALSE;
+	}
+
+	/* Ugly, but hey, use ConsoleKit */
+	if (out_uid)
+		*out_uid = pw->pw_uid;
+	return TRUE;
+}
+#endif
+
 /**
  * nm_session_monitor_user_has_session:
  * @monitor: A #NMSessionMonitor.
@@ -402,6 +454,12 @@ nm_session_monitor_user_has_session (NMSessionMonitor *monitor,
                                      GError **error)
 {
 	Session *s;
+
+#if NO_CONSOLEKIT
+	if (!user_to_uid (username, out_uid, error))
+		return FALSE;
+	return TRUE;
+#endif
 
 	if (!ensure_database (monitor, error))
 		return FALSE;
@@ -440,6 +498,12 @@ nm_session_monitor_uid_has_session (NMSessionMonitor *monitor,
 {
 	Session *s;
 
+#if NO_CONSOLEKIT
+	if (!uid_to_user (uid, out_user, error))
+		return FALSE;
+	return TRUE;
+#endif
+
 	if (!ensure_database (monitor, error))
 		return FALSE;
 
@@ -476,6 +540,10 @@ nm_session_monitor_user_active (NMSessionMonitor *monitor,
 {
 	Session *s;
 
+#if NO_CONSOLEKIT
+	return TRUE;
+#endif
+
 	if (!ensure_database (monitor, error))
 		return FALSE;
 
@@ -509,6 +577,10 @@ nm_session_monitor_uid_active (NMSessionMonitor *monitor,
                                GError **error)
 {
 	Session *s;
+
+#if NO_CONSOLEKIT
+	return TRUE;
+#endif
 
 	if (!ensure_database (monitor, error))
 		return FALSE;

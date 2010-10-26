@@ -253,6 +253,19 @@ if test "x$with_systemdsystemunitdir" != xno; then
 fi
 AM_CONDITIONAL(HAVE_SYSTEMD, [test -n "$with_systemdsystemunitdir" -a "x$with_systemdsystemunitdir" != xno ])
 
+dnl
+dnl Disable ConsoleKit support
+dnl
+AC_ARG_WITH(ck, AS_HELP_STRING([--without-ck], [Build NetworkManager without ConsoleKit session tracking support]))
+AM_CONDITIONAL(WITH_CONSOLEKIT, test x"$with_ck" != xno)
+no_ck=0
+if test x"$with_ck" = x"no"; then
+	no_ck="1"
+else
+	with_ck="yes"
+fi
+AC_DEFINE_UNQUOTED(NO_CONSOLEKIT, $no_ck, [Define to disable use of ConsoleKit])
+
 PKG_CHECK_MODULES(LIBNL, libnl-1 >= 1.0-pre8)
 AC_SUBST(LIBNL_CFLAGS)
 AC_SUBST(LIBNL_LIBS)
@@ -595,6 +608,12 @@ if test -n "${with_systemdsystemunitdir}"; then
 	echo systemd support: ${with_systemdsystemunitdir}
 else
 	echo systemd support: no
+fi
+
+if test -n "${with_ck}"; then
+	echo ConsoleKit support: ${with_ck}
+else
+	echo ConsoleKit support: no
 fi
 
 echo
