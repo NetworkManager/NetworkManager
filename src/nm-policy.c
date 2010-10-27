@@ -51,7 +51,7 @@ struct NMPolicy {
 	GSList *pending_activation_checks;
 	GSList *manager_ids;
 	GSList *settings_ids;
-	GSList *dev_signal_ids;
+	GSList *dev_ids;
 
 	NMVPNManager *vpn_manager;
 	gulong vpn_activated_id;
@@ -948,53 +948,32 @@ wireless_networks_changed (NMDeviceWifi *device, NMAccessPoint *ap, gpointer use
 typedef struct {
 	gulong id;
 	NMDevice *device;
-} DeviceSignalID;
+} DeviceSignalId;
 
-static GSList *
-add_device_signal_id (GSList *list, gulong id, NMDevice *device)
+static void
+_connect_device_signal (NMPolicy *policy, NMDevice *device, const char *name, gpointer callback)
 {
-	DeviceSignalID *data;
+	DeviceSignalId *data;
 
-	data = g_malloc0 (sizeof (DeviceSignalID));
-	if (!data)
-		return list;
-
-	data->id = id;
+	data = g_slice_new0 (DeviceSignalId);
+	g_assert (data);
+	data->id = g_signal_connect (device, name, callback, policy);
 	data->device = device;
-	return g_slist_append (list, data);
+	policy->dev_ids = g_slist_prepend (policy->dev_ids, data);
 }
 
 static void
 device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
-	gulong id;
 
-	id = g_signal_connect (device, "state-changed",
-	                       G_CALLBACK (device_state_changed),
-	                       policy);
-	policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
-
-	id = g_signal_connect (device, "notify::" NM_DEVICE_INTERFACE_IP4_CONFIG,
-	                       G_CALLBACK (device_ip_config_changed),
-	                       policy);
-	policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
-
-	id = g_signal_connect (device, "notify::" NM_DEVICE_INTERFACE_IP6_CONFIG,
-	                       G_CALLBACK (device_ip_config_changed),
-	                       policy);
-	policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
+	_connect_device_signal (policy, device, "state-changed", device_state_changed);
+	_connect_device_signal (policy, device, "notify::" NM_DEVICE_INTERFACE_IP4_CONFIG, device_ip_config_changed);
+	_connect_device_signal (policy, device, "notify::" NM_DEVICE_INTERFACE_IP6_CONFIG, device_ip_config_changed);
 
 	if (NM_IS_DEVICE_WIFI (device)) {
-		id = g_signal_connect (device, "access-point-added",
-		                       G_CALLBACK (wireless_networks_changed),
-		                       policy);
-		policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
-
-		id = g_signal_connect (device, "access-point-removed",
-		                       G_CALLBACK (wireless_networks_changed),
-		                       policy);
-		policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
+		_connect_device_signal (policy, device, "access-point-added", wireless_networks_changed);
+		_connect_device_signal (policy, device, "access-point-removed", wireless_networks_changed);
 	}
 }
 
@@ -1020,15 +999,15 @@ device_removed (NMManager *manager, NMDevice *device, gpointer user_data)
 	}
 
 	/* Clear any signal handlers for this device */
-	iter = policy->dev_signal_ids;
+	iter = policy->dev_ids;
 	while (iter) {
-		DeviceSignalID *data = (DeviceSignalID *) iter->data;
+		DeviceSignalId *data = iter->data;
 		GSList *next = g_slist_next (iter);
 
 		if (data->device == device) {
 			g_signal_handler_disconnect (data->device, data->id);
-			g_free (data);
-			policy->dev_signal_ids = g_slist_delete_link (policy->dev_signal_ids, iter);
+			g_slice_free (DeviceSignalId, data);
+			policy->dev_ids = g_slist_delete_link (policy->dev_ids, iter);
 		}
 		iter = next;
 	}
@@ -1220,13 +1199,13 @@ nm_policy_destroy (NMPolicy *policy)
 		g_signal_handler_disconnect (policy->settings, GPOINTER_TO_UINT (iter->data));
 	g_slist_free (policy->settings_ids);
 
-	for (iter = policy->dev_signal_ids; iter; iter = g_slist_next (iter)) {
-		DeviceSignalID *data = (DeviceSignalID *) iter->data;
+	for (iter = policy->dev_ids; iter; iter = g_slist_next (iter)) {
+		DeviceSignalId *data = iter->data;
 
 		g_signal_handler_disconnect (data->device, data->id);
-		g_free (data);
+		g_slice_free (DeviceSignalId, data);
 	}
-	g_slist_free (policy->dev_signal_ids);
+	g_slist_free (policy->dev_ids);
 
 	/* Rewrite /etc/hosts on exit to ensure we don't leave stale IP addresses
 	 * lying around.  FIXME: this will take out a valid IP address of an
