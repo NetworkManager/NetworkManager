@@ -598,7 +598,9 @@ connection_updated (NMSysconfigConnection *connection, gpointer user_data)
 }
 
 static void
-connection_visibility_changed (NMSysconfigConnection *connection, gpointer user_data)
+connection_visibility_changed (NMSysconfigConnection *connection,
+                               GParamSpec *pspec,
+                               gpointer user_data)
 {
 	g_signal_emit (NM_SYSCONFIG_SETTINGS (user_data),
 	               signals[CONNECTION_VISIBILITY_CHANGED],
