@@ -99,8 +99,8 @@ static void impl_settings_save_hostname (NMSysconfigSettings *self,
 static void unmanaged_specs_changed (NMSystemConfigInterface *config, gpointer user_data);
 
 typedef struct {
+	NMDBusManager *dbus_mgr;
 	DBusGConnection *bus;
-	gboolean exported;
 
 	PolkitAuthority *authority;
 	guint auth_changed_id;
@@ -1308,8 +1308,6 @@ nm_sysconfig_settings_new (const char *config_file,
 {
 	NMSysconfigSettings *self;
 	NMSysconfigSettingsPrivate *priv;
-	NMDBusManager *dbus_mgr;
-	DBusGConnection *bus;
 
 	self = g_object_new (NM_TYPE_SYSCONFIG_SETTINGS,
 	                     NULL);
@@ -1319,6 +1317,8 @@ nm_sysconfig_settings_new (const char *config_file,
 	priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 
 	priv->config_file = g_strdup (config_file);
+	priv->dbus_mgr = nm_dbus_manager_get ();
+	priv->bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
 
 	if (plugins) {
 		/* Load the plugins; fail if a plugin is not found. */
@@ -1329,11 +1329,7 @@ nm_sysconfig_settings_new (const char *config_file,
 		unmanaged_specs_changed (NULL, self);
 	}
 
-	dbus_mgr = nm_dbus_manager_get ();
-	bus = nm_dbus_manager_get_connection (dbus_mgr);
-	dbus_g_connection_register_g_object (bus, NM_DBUS_PATH_SETTINGS, G_OBJECT (self));
-	g_object_unref (dbus_mgr);
-
+	dbus_g_connection_register_g_object (priv->bus, NM_DBUS_PATH_SETTINGS, G_OBJECT (self));
 	return self;
 }
 
@@ -1358,6 +1354,8 @@ dispose (GObject *object)
 	}
 	g_slist_free (priv->pk_calls);
 	priv->pk_calls = NULL;
+
+	g_object_unref (priv->dbus_mgr);
 
 	G_OBJECT_CLASS (nm_sysconfig_settings_parent_class)->dispose (object);
 }
