@@ -248,14 +248,14 @@ GSList *
 nm_sysconfig_settings_get_connections (NMSysconfigSettings *self)
 {
 	GHashTableIter iter;
-	gpointer key = NULL;
+	gpointer data = NULL;
 	GSList *list = NULL;
 
 	g_return_val_if_fail (NM_IS_SYSCONFIG_SETTINGS (self), NULL);
 
 	g_hash_table_iter_init (&iter, NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self)->connections);
-	while (g_hash_table_iter_next (&iter, key, NULL))
-		list = g_slist_insert_sorted (list, key, connection_sort);
+	while (g_hash_table_iter_next (&iter, NULL, &data))
+		list = g_slist_insert_sorted (list, data, connection_sort);
 	return g_slist_reverse (list);
 }
 
