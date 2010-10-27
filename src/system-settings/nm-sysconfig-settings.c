@@ -126,6 +126,7 @@ enum {
 	CONNECTION_VISIBILITY_CHANGED,
 	CONNECTIONS_LOADED,
 
+	NEW_CONNECTION, /* exported, not used internally */
 	LAST_SIGNAL
 };
 
@@ -667,8 +668,13 @@ claim_connection (NMSysconfigSettings *self,
 	 * we suppress it, then send the connections-loaded signal after we're all
 	 * done to minimize processing.
 	 */
-	if (priv->connections_loaded)
+	if (priv->connections_loaded) {
+		/* Internal added signal */
 		g_signal_emit (self, signals[CONNECTION_ADDED], 0, connection);
+
+		/* Exported D-Bus signal */
+		g_signal_emit (self, signals[NEW_CONNECTION], 0, connection);
+	}
 }
 
 // TODO it seems that this is only ever used to remove a
@@ -1500,6 +1506,13 @@ nm_sysconfig_settings_class_init (NMSysconfigSettingsClass *class)
 	                              G_STRUCT_OFFSET (NMSysconfigSettingsClass, connections_loaded),
 	                              NULL, NULL,
 	                              g_cclosure_marshal_VOID__VOID,
+	                              G_TYPE_NONE, 0);
+
+	signals[NEW_CONNECTION] = 
+	                g_signal_new ("new-connection",
+	                              G_OBJECT_CLASS_TYPE (object_class),
+	                              G_SIGNAL_RUN_FIRST, 0, NULL, NULL,
+	                              g_cclosure_marshal_VOID__OBJECT,
 	                              G_TYPE_NONE, 0);
 
 	dbus_g_error_domain_register (NM_SYSCONFIG_SETTINGS_ERROR,
