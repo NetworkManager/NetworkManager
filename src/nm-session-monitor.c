@@ -144,6 +144,7 @@ check_key (GKeyFile *keyfile, const char *group, const char *key, GError **error
 static Session *
 session_new (GKeyFile *keyfile, const char *group, GError **error)
 {
+	GError *local = NULL;
 	Session *s;
 	struct passwd *pw;
 
@@ -151,27 +152,27 @@ session_new (GKeyFile *keyfile, const char *group, GError **error)
 	g_assert (s);
 
 	s->uid = G_MAXUINT; /* paranoia */
-	if (!check_key (keyfile, group, "uid", error))
-		return FALSE;
-	s->uid = (uid_t) g_key_file_get_integer (keyfile, group, "uid", error);
-	if (error)
+	if (!check_key (keyfile, group, "uid", &local))
+		goto error;
+	s->uid = (uid_t) g_key_file_get_integer (keyfile, group, "uid", &local);
+	if (local)
 		goto error;
 
-	if (!check_key (keyfile, group, "is_active", error))
-		return FALSE;
-	s->active = g_key_file_get_boolean (keyfile, group, "is_active", error);
-	if (error)
+	if (!check_key (keyfile, group, "is_active", &local))
+		goto error;
+	s->active = g_key_file_get_boolean (keyfile, group, "is_active", &local);
+	if (local)
 		goto error;
 
-	if (!check_key (keyfile, group, "is_local", error))
-		return FALSE;
-	s->local = g_key_file_get_boolean (keyfile, group, "is_local", error);
-	if (error)
+	if (!check_key (keyfile, group, "is_local", &local))
+		goto error;
+	s->local = g_key_file_get_boolean (keyfile, group, "is_local", &local);
+	if (local)
 		goto error;
 
 	pw = getpwuid (s->uid);
 	if (!pw) {
-		g_set_error (error,
+		g_set_error (&local,
 			         NM_SESSION_MONITOR_ERROR,
 			         NM_SESSION_MONITOR_ERROR_UNKNOWN_USER,
 			         "Could not get username for UID %d",
@@ -184,6 +185,7 @@ session_new (GKeyFile *keyfile, const char *group, GError **error)
 
 error:
 	session_free (s);
+	g_propagate_error (error, local);
 	return NULL;
 }
 
