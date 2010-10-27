@@ -15,22 +15,22 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2008 Red Hat, Inc.
+ * Copyright (C) 2004 - 2010 Red Hat, Inc.
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
 #ifndef NETWORK_MANAGER_POLICY_H
 #define NETWORK_MANAGER_POLICY_H
 
-#include "NetworkManager.h"
 #include "nm-manager.h"
 #include "nm-vpn-manager.h"
-#include "nm-device.h"
-#include "nm-activation-request.h"
+#include "nm-sysconfig-settings.h"
 
 typedef struct NMPolicy NMPolicy;
 
-NMPolicy *nm_policy_new (NMManager *manager, NMVPNManager *vpn_manager);
+NMPolicy *nm_policy_new (NMManager *manager,
+                         NMVPNManager *vpn_manager,
+                         NMSysconfigSettings *settings);
 void nm_policy_destroy (NMPolicy *policy);
 
 #endif /* NETWORK_MANAGER_POLICY_H */

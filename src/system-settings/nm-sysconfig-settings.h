@@ -43,7 +43,11 @@
 #define NM_SYSCONFIG_SETTINGS_HOSTNAME        "hostname"
 #define NM_SYSCONFIG_SETTINGS_CAN_MODIFY      "can-modify"
 
-#define NM_SYSCONFIG_SETTINGS_NEW_CONNECTION    "new-connection"
+#define NM_SYSCONFIG_SETTINGS_CONNECTION_ADDED   "connection-added"
+#define NM_SYSCONFIG_SETTINGS_CONNECTION_UPDATED "connection-updated"
+#define NM_SYSCONFIG_SETTINGS_CONNECTION_REMOVED "connection-removed"
+#define NM_SYSCONFIG_SETTINGS_CONNECTION_VISIBILITY_CHANGED "connection-visibility-changed"
+#define NM_SYSCONFIG_SETTINGS_CONNECTIONS_LOADED "connections-loaded"
 
 typedef struct {
 	GObject parent_instance;
@@ -54,6 +58,16 @@ typedef struct {
 
 	/* Signals */
 	void (*properties_changed) (NMSysconfigSettings *self, GHashTable *properties);
+
+	void (*connection_added)   (NMSysconfigSettings *self, NMConnection *connection);
+
+	void (*connection_updated) (NMSysconfigSettings *self, NMConnection *connection);
+
+	void (*connection_removed) (NMSysconfigSettings *self, NMConnection *connection);
+
+	void (*connection_visibility_changed) (NMSysconfigSettings *self, NMConnection *connection);
+
+	void (*connections_loaded) (NMSysconfigSettings *self);
 } NMSysconfigSettingsClass;
 
 GType nm_sysconfig_settings_get_type (void);
@@ -70,10 +84,13 @@ void nm_sysconfig_settings_for_each_connection (NMSysconfigSettings *settings,
                                                 NMSysconfigSettingsForEachFunc for_each_func,
                                                 gpointer user_data);
 
-GSList * nm_sysconfig_settings_list_connections (NMSysconfigSettings *settings);
+/* Returns a list of NMSysconfigConnections.  Caller must free the list with
+ * g_slist_free().
+ */
+GSList *nm_sysconfig_settings_get_connections (NMSysconfigSettings *settings);
 
-NMSysconfigConnection * nm_sysconfig_settings_get_connection_by_path (NMSysconfigSettings *settings,
-                                                                      const char *path);
+NMSysconfigConnection *nm_sysconfig_settings_get_connection_by_path (NMSysconfigSettings *settings,
+                                                                     const char *path);
 
 const GSList *nm_sysconfig_settings_get_unmanaged_specs (NMSysconfigSettings *self);
 

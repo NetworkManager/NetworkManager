@@ -200,8 +200,7 @@ typedef struct {
 	NMUdevManager *udev_mgr;
 	NMBluezManager *bluez_mgr;
 
-	GHashTable *system_connections;
-	NMSysconfigSettings *sys_settings;
+	NMSysconfigSettings *settings;
 	char *hostname;
 
 	GSList *secrets_calls;
@@ -244,10 +243,6 @@ enum {
 	STATE_CHANGED,
 	STATE_CHANGE,  /* DEPRECATED */
 	PROPERTIES_CHANGED,
-	CONNECTIONS_ADDED,
-	CONNECTION_ADDED,
-	CONNECTION_UPDATED,
-	CONNECTION_REMOVED,
 	CHECK_PERMISSIONS,
 	USER_PERMISSIONS_CHANGED,
 
@@ -490,7 +485,7 @@ remove_one_device (NMManager *manager,
 
 	g_signal_handlers_disconnect_by_func (device, manager_device_state_changed, manager);
 
-	nm_sysconfig_settings_device_removed (priv->sys_settings, device);
+	nm_sysconfig_settings_device_removed (priv->settings, device);
 	g_signal_emit (manager, signals[DEVICE_REMOVED], 0, device);
 	g_object_unref (device);
 
@@ -578,15 +573,6 @@ nm_manager_get_state (NMManager *manager)
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NM_STATE_UNKNOWN);
 
 	return NM_MANAGER_GET_PRIVATE (manager)->state;
-}
-
-static void
-emit_removed (gpointer key, gpointer value, gpointer user_data)
-{
-	NMManager *manager = NM_MANAGER (user_data);
-	NMConnection *connection = NM_CONNECTION (value);
-
-	g_signal_emit (manager, signals[CONNECTION_REMOVED], 0, connection);
 }
 
 static PendingActivation *
@@ -756,104 +742,16 @@ get_active_connections (NMManager *manager, NMConnection *filter)
 	return active;
 }
 
-static void
-remove_connection (NMManager *manager,
-                   NMConnection *connection,
-                   GHashTable *hash)
-{
-	/* Destroys the connection, then associated DBusGProxy due to the
-	 * weak reference notify function placed on the connection when it
-	 * was created.
-	 */
-	g_object_ref (connection);
-	g_hash_table_remove (hash, nm_connection_get_path (connection));
-	g_signal_emit (manager, signals[CONNECTION_REMOVED], 0, connection);
-	g_object_unref (connection);
-
-	bluez_manager_resync_devices (manager);
-}
-
 /*******************************************************************/
-/* System settings stuff via NMSysconfigSettings                   */
+/* Settings stuff via NMSysconfigSettings                          */
 /*******************************************************************/
 
 static void
-system_connection_updated_cb (NMSysconfigConnection *connection,
-                              gpointer unused,
-                              NMManager *manager)
+connections_changed (NMSysconfigSettings *settings,
+                     NMSysconfigConnection *connection,
+                     NMManager *manager)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	const char *path;
-	NMSysconfigConnection *existing;
-	GError *error = NULL;
-
-	path = nm_connection_get_path (NM_CONNECTION (connection));
-
-	existing = g_hash_table_lookup (priv->system_connections, path);
-	if (!existing)
-		return;
-	if (existing != connection) {
-		nm_log_warn (LOGD_SYS_SET, "existing connection didn't matched updated.");
-		return;
-	}
-
-	if (!nm_connection_verify (NM_CONNECTION (existing), &error)) {
-		/* Updated connection invalid, remove existing connection */
-		nm_log_warn (LOGD_SYS_SET, "invalid connection: '%s' / '%s' invalid: %d",
-		             g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)),
-		             error->message, error->code);
-		g_error_free (error);
-		remove_connection (manager, NM_CONNECTION (existing), priv->system_connections);
-		return;
-	}
-
-	g_signal_emit (manager, signals[CONNECTION_UPDATED], 0, existing);
-
 	bluez_manager_resync_devices (manager);
-}
-
-static void
-system_connection_removed_cb (NMSysconfigConnection *connection,
-                              NMManager *manager)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	const char *path;
-
-	path = nm_connection_get_path (NM_CONNECTION (connection));
-
-	connection = g_hash_table_lookup (priv->system_connections, path);
-	if (connection)
-		remove_connection (manager, NM_CONNECTION (connection), priv->system_connections);
-}
-
-static void
-_new_connection (NMSysconfigSettings *settings,
-                 NMSysconfigConnection *connection,
-                 gpointer user_data)
-{
-	NMManager *self = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	const char *path;
-
-	g_return_if_fail (connection != NULL);
-
-	g_signal_connect (connection, NM_SYSCONFIG_CONNECTION_UPDATED,
-	                  G_CALLBACK (system_connection_updated_cb), self);
-	g_signal_connect (connection, NM_SYSCONFIG_CONNECTION_REMOVED,
-	                  G_CALLBACK (system_connection_removed_cb), self);
-
-	path = nm_connection_get_path (NM_CONNECTION (connection));
-	g_hash_table_insert (priv->system_connections, g_strdup (path),
-	                     g_object_ref (connection));
-	g_signal_emit (self, signals[CONNECTION_ADDED], 0, connection);
-}
-
-static void
-system_new_connection_cb (NMSysconfigSettings *settings,
-                          NMSysconfigConnection *connection,
-                          NMManager *self)
-{
-	_new_connection (settings, connection, self);
 }
 
 static void
@@ -1031,6 +929,7 @@ manager_hidden_ap_found (NMDeviceInterface *device,
                          gpointer user_data)
 {
 	NMManager *manager = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	const struct ether_addr *ap_addr;
 	const GByteArray *ap_ssid;
 	GSList *iter;
@@ -1046,7 +945,7 @@ manager_hidden_ap_found (NMDeviceInterface *device,
 
 	/* Look for this AP's BSSID in the seen-bssids list of a connection,
 	 * and if a match is found, copy over the SSID */
-	connections = nm_manager_get_connections (manager);
+	connections = nm_sysconfig_settings_get_connections (priv->settings);
 
 	for (iter = connections; iter && !done; iter = g_slist_next (iter)) {
 		NMConnection *connection = NM_CONNECTION (iter->data);
@@ -1353,8 +1252,6 @@ add_device (NMManager *self, NMDevice *device)
 	static guint32 devcount = 0;
 	const GSList *unmanaged_specs;
 	NMConnection *existing = NULL;
-	GHashTableIter iter;
-	gpointer value;
 	gboolean managed = FALSE, enabled = FALSE;
 
 	iface = nm_device_get_ip_iface (device);
@@ -1433,9 +1330,7 @@ add_device (NMManager *self, NMDevice *device)
 	if (nm_device_interface_can_assume_connections (NM_DEVICE_INTERFACE (device))) {
 		GSList *connections = NULL;
 
-		g_hash_table_iter_init (&iter, priv->system_connections);
-		while (g_hash_table_iter_next (&iter, NULL, &value))
-			connections = g_slist_append (connections, value);
+		connections = nm_sysconfig_settings_get_connections (priv->settings);
 		existing = nm_device_interface_connection_match_config (NM_DEVICE_INTERFACE (device),
 		                                                        (const GSList *) connections);
 		g_slist_free (connections);
@@ -1451,7 +1346,7 @@ add_device (NMManager *self, NMDevice *device)
 	}
 
 	/* Start the device if it's supposed to be managed */
-	unmanaged_specs = nm_sysconfig_settings_get_unmanaged_specs (priv->sys_settings);
+	unmanaged_specs = nm_sysconfig_settings_get_unmanaged_specs (priv->settings);
 	if (   !manager_sleeping (self)
 	    && !nm_device_interface_spec_match_list (NM_DEVICE_INTERFACE (device), unmanaged_specs)) {
 		nm_device_set_managed (device,
@@ -1461,7 +1356,7 @@ add_device (NMManager *self, NMDevice *device)
 		managed = TRUE;
 	}
 
-	nm_sysconfig_settings_device_added (priv->sys_settings, device);
+	nm_sysconfig_settings_device_added (priv->settings, device);
 	g_signal_emit (self, signals[DEVICE_ADDED], 0, device);
 
 	/* If the device has a connection it can assume, do that now */
@@ -1516,10 +1411,11 @@ bluez_manager_find_connection (NMManager *manager,
                                const char *bdaddr,
                                guint32 capabilities)
 {
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	NMConnection *found = NULL;
 	GSList *connections, *l;
 
-	connections = nm_manager_get_connections (manager);
+	connections = nm_sysconfig_settings_get_connections (priv->settings);
 
 	for (l = connections; l != NULL; l = l->next) {
 		NMConnection *candidate = NM_CONNECTION (l->data);
@@ -1884,7 +1780,7 @@ system_get_secrets_idle_cb (gpointer user_data)
 
 	info->idle_id = 0;
 
-	connection = nm_sysconfig_settings_get_connection_by_path (priv->sys_settings, 
+	connection = nm_sysconfig_settings_get_connection_by_path (priv->settings, 
 	                                                           info->connection_path);
 	if (!connection) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
@@ -2137,13 +2033,15 @@ nm_manager_activate_connection (NMManager *manager,
 static void
 check_pending_ready (NMManager *self, PendingActivation *pending)
 {
-	NMConnection *connection;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMSysconfigConnection *connection;
 	const char *path = NULL;
 	GError *error = NULL;
 
 	/* Ok, we're authorized */
 
-	connection = nm_manager_get_connection_by_object_path (self, pending->connection_path);
+	connection = nm_sysconfig_settings_get_connection_by_path (priv->settings,
+	                                                           pending->connection_path);
 	if (!connection) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
@@ -2152,7 +2050,7 @@ check_pending_ready (NMManager *self, PendingActivation *pending)
 	}
 
 	path = nm_manager_activate_connection (self,
-	                                       connection,
+	                                       NM_CONNECTION (connection),
 	                                       pending->specific_object_path,
 	                                       pending->device_path,
 	                                       TRUE,
@@ -2388,7 +2286,7 @@ do_sleep_wake (NMManager *self)
 	} else {
 		nm_log_info (LOGD_SUSPEND, "waking up and re-enabling...");
 
-		unmanaged_specs = nm_sysconfig_settings_get_unmanaged_specs (priv->sys_settings);
+		unmanaged_specs = nm_sysconfig_settings_get_unmanaged_specs (priv->settings);
 
 		/* Ensure rfkill state is up-to-date since we don't respond to state
 		 * changes during sleep.
@@ -2847,73 +2745,6 @@ impl_manager_set_logging (NMManager *manager,
 	return FALSE;
 }
 
-/* Connections */
-
-static int
-connection_sort (gconstpointer pa, gconstpointer pb)
-{
-	NMConnection *a = NM_CONNECTION (pa);
-	NMSettingConnection *con_a;
-	NMConnection *b = NM_CONNECTION (pb);
-	NMSettingConnection *con_b;
-
-	con_a = (NMSettingConnection *) nm_connection_get_setting (a, NM_TYPE_SETTING_CONNECTION);
-	g_assert (con_a);
-	con_b = (NMSettingConnection *) nm_connection_get_setting (b, NM_TYPE_SETTING_CONNECTION);
-	g_assert (con_b);
-
-	if (nm_setting_connection_get_autoconnect (con_a) != nm_setting_connection_get_autoconnect (con_b)) {
-		if (nm_setting_connection_get_autoconnect (con_a))
-			return -1;
-		return 1;
-	}
-
-	if (nm_setting_connection_get_timestamp (con_a) > nm_setting_connection_get_timestamp (con_b))
-		return -1;
-	else if (nm_setting_connection_get_timestamp (con_a) == nm_setting_connection_get_timestamp (con_b))
-		return 0;
-	return 1;
-}
-
-static void
-connections_to_slist (gpointer key, gpointer value, gpointer user_data)
-{
-	GSList **list = (GSList **) user_data;
-
-	*list = g_slist_insert_sorted (*list, g_object_ref (value), connection_sort);
-}
-
-/* Returns a GSList of referenced NMConnection objects, caller must
- * unref the connections in the list and destroy the list.
- */
-GSList *
-nm_manager_get_connections (NMManager *manager)
-{
-	NMManagerPrivate *priv;
-	GSList *list = NULL;
-
-	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
-
-	priv = NM_MANAGER_GET_PRIVATE (manager);
-	g_hash_table_foreach (priv->system_connections, connections_to_slist, &list);
-	return list;
-}
-
-NMConnection *
-nm_manager_get_connection_by_object_path (NMManager *manager,
-                                          const char *path)
-{
-	NMManagerPrivate *priv;
-	NMConnection *connection = NULL;
-
-	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
-	g_return_val_if_fail (path != NULL, NULL);
-
-	priv = NM_MANAGER_GET_PRIVATE (manager);
-	connection = (NMConnection *) g_hash_table_lookup (priv->system_connections, path);
-	return connection;
-}
-
 GPtrArray *
 nm_manager_get_active_connections_by_connection (NMManager *manager,
                                                  NMConnection *connection)
@@ -2951,13 +2782,8 @@ nm_manager_start (NMManager *self)
 	nm_log_info (LOGD_CORE, "Networking is %s by state file",
 	             priv->net_enabled ? "enabled" : "disabled");
 
-	system_unmanaged_devices_changed_cb (priv->sys_settings, NULL, self);
-	system_hostname_changed_cb (priv->sys_settings, NULL, self);
-
-	/* Get all connections */
-	nm_sysconfig_settings_for_each_connection (NM_MANAGER_GET_PRIVATE (self)->sys_settings,
-	                                           _new_connection,
-	                                           self);
+	system_unmanaged_devices_changed_cb (priv->settings, NULL, self);
+	system_hostname_changed_cb (priv->settings, NULL, self);
 
 	nm_udev_manager_query_devices (priv->udev_mgr);
 	bluez_manager_resync_devices (self);
@@ -3178,7 +3004,8 @@ out:
 }
 
 NMManager *
-nm_manager_get (const char *config_file,
+nm_manager_get (NMSysconfigSettings *settings,
+                const char *config_file,
                 const char *plugins,
                 const char *state_file,
                 gboolean initial_net_enabled,
@@ -3193,6 +3020,8 @@ nm_manager_get (const char *config_file,
 
 	if (singleton)
 		return g_object_ref (singleton);
+
+	g_assert (settings);
 
 	singleton = (NMManager *) g_object_new (NM_TYPE_MANAGER, NULL);
 	g_assert (singleton);
@@ -3210,14 +3039,9 @@ nm_manager_get (const char *config_file,
 		return NULL;
     }
 
-	priv->sys_settings = nm_sysconfig_settings_new (config_file, plugins, error);
-	if (!priv->sys_settings) {
-		g_object_unref (singleton);
-		return NULL;
-	}
+	priv->settings = settings;
 
 	priv->config_file = g_strdup (config_file);
-
 	priv->state_file = g_strdup (state_file);
 
 	priv->net_enabled = initial_net_enabled;
@@ -3225,12 +3049,18 @@ nm_manager_get (const char *config_file,
 	priv->radio_states[RFKILL_TYPE_WLAN].user_enabled = initial_wifi_enabled;
 	priv->radio_states[RFKILL_TYPE_WWAN].user_enabled = initial_wwan_enabled;
 
-	g_signal_connect (priv->sys_settings, "notify::" NM_SYSCONFIG_SETTINGS_UNMANAGED_SPECS,
+	g_signal_connect (priv->settings, "notify::" NM_SYSCONFIG_SETTINGS_UNMANAGED_SPECS,
 	                  G_CALLBACK (system_unmanaged_devices_changed_cb), singleton);
-	g_signal_connect (priv->sys_settings, "notify::" NM_SYSCONFIG_SETTINGS_HOSTNAME,
+	g_signal_connect (priv->settings, "notify::" NM_SYSCONFIG_SETTINGS_HOSTNAME,
 	                  G_CALLBACK (system_hostname_changed_cb), singleton);
-	g_signal_connect (priv->sys_settings, "new-connection",
-	                  G_CALLBACK (system_new_connection_cb), singleton);
+	g_signal_connect (priv->settings, NM_SYSCONFIG_SETTINGS_CONNECTION_ADDED,
+	                  G_CALLBACK (connections_changed), singleton);
+	g_signal_connect (priv->settings, NM_SYSCONFIG_SETTINGS_CONNECTION_UPDATED,
+	                  G_CALLBACK (connections_changed), singleton);
+	g_signal_connect (priv->settings, NM_SYSCONFIG_SETTINGS_CONNECTION_REMOVED,
+	                  G_CALLBACK (connections_changed), singleton);
+	g_signal_connect (priv->settings, NM_SYSCONFIG_SETTINGS_CONNECTION_VISIBILITY_CHANGED,
+	                  G_CALLBACK (connections_changed), singleton);
 
 	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (priv->dbus_mgr),
 	                                     NM_DBUS_PATH,
@@ -3293,18 +3123,10 @@ dispose (GObject *object)
 		                                   TRUE);
 	}
 
-	g_hash_table_foreach (priv->system_connections, emit_removed, manager);
-	g_hash_table_remove_all (priv->system_connections);
-	g_hash_table_destroy (priv->system_connections);
-	priv->system_connections = NULL;
-
 	g_free (priv->hostname);
 	g_free (priv->config_file);
 
-	if (priv->sys_settings) {
-		g_object_unref (priv->sys_settings);
-		priv->sys_settings = NULL;
-	}
+	g_object_unref (priv->settings);
 
 	if (priv->vpn_manager_id) {
 		g_source_remove (priv->vpn_manager_id);
@@ -3505,11 +3327,6 @@ nm_manager_init (NMManager *manager)
 	priv->state = NM_STATE_DISCONNECTED;
 
 	priv->dbus_mgr = nm_dbus_manager_get ();
-
-	priv->system_connections = g_hash_table_new_full (g_str_hash,
-	                                                  g_str_equal,
-	                                                  g_free,
-	                                                  g_object_unref);
 
 	priv->modem_manager = nm_modem_manager_get ();
 	priv->modem_added_id = g_signal_connect (priv->modem_manager, "modem-added",
@@ -3723,42 +3540,6 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	signals[PROPERTIES_CHANGED] =
 		nm_properties_changed_signal_new (object_class,
 		                                  G_STRUCT_OFFSET (NMManagerClass, properties_changed));
-
-	signals[CONNECTIONS_ADDED] =
-		g_signal_new ("connections-added",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMManagerClass, connections_added),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__VOID,
-		              G_TYPE_NONE, 0);
-
-	signals[CONNECTION_ADDED] =
-		g_signal_new ("connection-added",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMManagerClass, connection_added),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__OBJECT,
-		              G_TYPE_NONE, 1, G_TYPE_OBJECT);
-
-	signals[CONNECTION_UPDATED] =
-		g_signal_new ("connection-updated",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMManagerClass, connection_updated),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__OBJECT,
-		              G_TYPE_NONE, 1, G_TYPE_OBJECT);
-
-	signals[CONNECTION_REMOVED] =
-		g_signal_new ("connection-removed",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMManagerClass, connection_removed),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__OBJECT,
-		              G_TYPE_NONE, 1, G_TYPE_OBJECT);
 
 	signals[CHECK_PERMISSIONS] =
 		g_signal_new ("check-permissions",

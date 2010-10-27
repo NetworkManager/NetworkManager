@@ -56,6 +56,8 @@ struct NMPolicy {
 	gulong vpn_activated_id;
 	gulong vpn_deactivated_id;
 
+	NMSysconfigSettings *settings;
+
 	NMDevice *default_device4;
 	NMDevice *default_device6;
 
@@ -739,7 +741,7 @@ auto_activate_device (gpointer user_data)
 	if (nm_device_get_act_request (data->device))
 		goto out;
 
-	connections = nm_manager_get_connections (policy->manager);
+	connections = nm_sysconfig_settings_get_connections (policy->settings);
 
 	/* Remove connections that are in the invalid list. */
 	iter = connections;
@@ -822,6 +824,7 @@ hostname_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 static void
 sleeping_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 {
+	NMPolicy *policy = user_data;
 	gboolean sleeping = FALSE, enabled = FALSE;
 	GSList *connections, *iter;
 
@@ -830,7 +833,7 @@ sleeping_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 
 	/* Clear the invalid flag on all connections so they'll get retried on wakeup */
 	if (sleeping || !enabled) {
-		connections = nm_manager_get_connections (manager);
+		connections = nm_sysconfig_settings_get_connections (policy->settings);
 		for (iter = connections; iter; iter = g_slist_next (iter))
 			g_object_set_data (G_OBJECT (iter->data), INVALID_TAG, NULL);
 		g_slist_free (connections);
@@ -1043,14 +1046,7 @@ schedule_activate_all (NMPolicy *policy)
 }
 
 static void
-connections_added (NMManager *manager,
-                   gpointer user_data)
-{
-	schedule_activate_all ((NMPolicy *) user_data);
-}
-
-static void
-connection_added (NMManager *manager,
+connection_added (NMSysconfigSettings *settings,
                   NMConnection *connection,
                   gpointer user_data)
 {
@@ -1058,7 +1054,7 @@ connection_added (NMManager *manager,
 }
 
 static void
-connection_updated (NMManager *manager,
+connection_updated (NMSysconfigSettings *settings,
                     NMConnection *connection,
                     gpointer user_data)
 {
@@ -1069,21 +1065,18 @@ connection_updated (NMManager *manager,
 }
 
 static void
-connection_removed (NMManager *manager,
-                    NMConnection *connection,
-                    gpointer user_data)
+_deactivate_if_active (NMManager *manager, NMConnection *connection)
 {
 	NMSettingConnection *s_con;
 	GPtrArray *list;
 	int i;
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-	if (!s_con)
-		return;
-
 	list = nm_manager_get_active_connections_by_connection (manager, connection);
 	if (!list)
 		return;
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	g_assert (s_con);
 
 	for (i = 0; i < list->len; i++) {
 		char *path = g_ptr_array_index (list, i);
@@ -1100,13 +1093,32 @@ connection_removed (NMManager *manager,
 }
 
 static void
-manager_user_permissions_changed (NMManager *manager, NMPolicy *policy)
+connection_removed (NMSysconfigSettings *settings,
+                    NMConnection *connection,
+                    gpointer user_data)
 {
-	schedule_activate_all (policy);
+	NMPolicy *policy = user_data;
+
+	_deactivate_if_active (policy->manager, connection);
+}
+
+static void
+connection_visibility_changed (NMSysconfigSettings *settings,
+                               NMSysconfigConnection *connection,
+                               gpointer user_data)
+{
+	NMPolicy *policy = user_data;
+
+	if (nm_sysconfig_connection_is_visible (connection))
+		schedule_activate_all (policy);
+	else
+		_deactivate_if_active (policy->manager, NM_CONNECTION (connection));
 }
 
 NMPolicy *
-nm_policy_new (NMManager *manager, NMVPNManager *vpn_manager)
+nm_policy_new (NMManager *manager,
+               NMVPNManager *vpn_manager,
+               NMSysconfigSettings *settings)
 {
 	NMPolicy *policy;
 	static gboolean initialized = FALSE;
@@ -1160,28 +1172,25 @@ nm_policy_new (NMManager *manager, NMVPNManager *vpn_manager)
 	                       G_CALLBACK (device_removed), policy);
 	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
 
-	/* Large batch of connections added, manager doesn't want us to
-	 * process each one individually.
-	 */
-	id = g_signal_connect (manager, "connections-added",
-	                       G_CALLBACK (connections_added), policy);
-	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
-
-	/* Single connection added */
-	id = g_signal_connect (manager, "connection-added",
+	/* Listen for events related to connections */
+	id = g_signal_connect (policy->settings, NM_SYSCONFIG_SETTINGS_CONNECTIONS_LOADED,
 	                       G_CALLBACK (connection_added), policy);
 	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
 
-	id = g_signal_connect (manager, "connection-updated",
+	id = g_signal_connect (policy->settings, NM_SYSCONFIG_SETTINGS_CONNECTION_ADDED,
+	                       G_CALLBACK (connection_added), policy);
+	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
+
+	id = g_signal_connect (policy->settings, NM_SYSCONFIG_SETTINGS_CONNECTION_UPDATED,
 	                       G_CALLBACK (connection_updated), policy);
 	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
 
-	id = g_signal_connect (manager, "connection-removed",
+	id = g_signal_connect (policy->settings, NM_SYSCONFIG_SETTINGS_CONNECTION_REMOVED,
 	                       G_CALLBACK (connection_removed), policy);
 	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
 
-	id = g_signal_connect (manager, "user-permissions-changed",
-	                       G_CALLBACK (manager_user_permissions_changed), policy);
+	id = g_signal_connect (policy->settings, NM_SYSCONFIG_SETTINGS_CONNECTION_VISIBILITY_CHANGED,
+	                       G_CALLBACK (connection_visibility_changed), policy);
 	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
 
 	return policy;
@@ -1226,6 +1235,8 @@ nm_policy_destroy (NMPolicy *policy)
 		g_free (data);
 	}
 	g_slist_free (policy->dev_signal_ids);
+
+	g_object_unref (policy->settings);
 
 	/* Rewrite /etc/hosts on exit to ensure we don't leave stale IP addresses
 	 * lying around.  FIXME: this will take out a valid IP address of an
