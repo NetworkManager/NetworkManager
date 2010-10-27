@@ -1130,6 +1130,7 @@ nm_policy_new (NMManager *manager,
 
 	policy = g_malloc0 (sizeof (NMPolicy));
 	policy->manager = g_object_ref (manager);
+	policy->settings = g_object_ref (settings);
 	policy->update_state_id = 0;
 
 	/* Grab hostname on startup and use that if nothing provides one */
@@ -1236,8 +1237,6 @@ nm_policy_destroy (NMPolicy *policy)
 	}
 	g_slist_free (policy->dev_signal_ids);
 
-	g_object_unref (policy->settings);
-
 	/* Rewrite /etc/hosts on exit to ensure we don't leave stale IP addresses
 	 * lying around.  FIXME: this will take out a valid IP address of an
 	 * ethernet device we're leaving active (ie, a connection we can "assume"
@@ -1250,6 +1249,7 @@ nm_policy_destroy (NMPolicy *policy)
 	g_free (policy->orig_hostname);
 	g_free (policy->cur_hostname);
 
+	g_object_unref (policy->settings);
 	g_object_unref (policy->manager);
 	g_free (policy);
 }
