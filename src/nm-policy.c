@@ -49,7 +49,8 @@ struct NMPolicy {
 	NMManager *manager;
 	guint update_state_id;
 	GSList *pending_activation_checks;
-	GSList *signal_ids;
+	GSList *manager_ids;
+	GSList *settings_ids;
 	GSList *dev_signal_ids;
 
 	NMVPNManager *vpn_manager;
@@ -1115,6 +1116,24 @@ connection_visibility_changed (NMSysconfigSettings *settings,
 		_deactivate_if_active (policy->manager, NM_CONNECTION (connection));
 }
 
+static void
+_connect_manager_signal (NMPolicy *policy, const char *name, gpointer callback)
+{
+	guint id;
+
+	id = g_signal_connect (policy->manager, name, callback, policy);
+	policy->manager_ids = g_slist_prepend (policy->manager_ids, GUINT_TO_POINTER (id));
+}
+
+static void
+_connect_settings_signal (NMPolicy *policy, const char *name, gpointer callback)
+{
+	guint id;
+
+	id = g_signal_connect (policy->settings, name, callback, policy);
+	policy->settings_ids = g_slist_prepend (policy->settings_ids, GUINT_TO_POINTER (id));
+}
+
 NMPolicy *
 nm_policy_new (NMManager *manager,
                NMVPNManager *vpn_manager,
@@ -1149,51 +1168,19 @@ nm_policy_new (NMManager *manager,
 	                       G_CALLBACK (vpn_connection_deactivated), policy);
 	policy->vpn_deactivated_id = id;
 
-	id = g_signal_connect (manager, "state-changed",
-	                       G_CALLBACK (global_state_changed), policy);
-	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
+	_connect_manager_signal (policy, "state-changed", global_state_changed);
+	_connect_manager_signal (policy, "notify::" NM_MANAGER_HOSTNAME, hostname_changed);
+	_connect_manager_signal (policy, "notify::" NM_MANAGER_SLEEPING, sleeping_changed);
+	_connect_manager_signal (policy, "notify::" NM_MANAGER_NETWORKING_ENABLED, sleeping_changed);
+	_connect_manager_signal (policy, "device-added", device_added);
+	_connect_manager_signal (policy, "device-removed", device_removed);
 
-	id = g_signal_connect (manager, "notify::" NM_MANAGER_HOSTNAME,
-	                       G_CALLBACK (hostname_changed), policy);
-	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
-
-	id = g_signal_connect (manager, "notify::" NM_MANAGER_SLEEPING,
-	                       G_CALLBACK (sleeping_changed), policy);
-	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
-
-	id = g_signal_connect (manager, "notify::" NM_MANAGER_NETWORKING_ENABLED,
-	                       G_CALLBACK (sleeping_changed), policy);
-	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
-
-	id = g_signal_connect (manager, "device-added",
-	                       G_CALLBACK (device_added), policy);
-	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
-
-	id = g_signal_connect (manager, "device-removed",
-	                       G_CALLBACK (device_removed), policy);
-	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
-
-	/* Listen for events related to connections */
-	id = g_signal_connect (policy->settings, NM_SYSCONFIG_SETTINGS_CONNECTIONS_LOADED,
-	                       G_CALLBACK (connection_added), policy);
-	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
-
-	id = g_signal_connect (policy->settings, NM_SYSCONFIG_SETTINGS_CONNECTION_ADDED,
-	                       G_CALLBACK (connection_added), policy);
-	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
-
-	id = g_signal_connect (policy->settings, NM_SYSCONFIG_SETTINGS_CONNECTION_UPDATED,
-	                       G_CALLBACK (connection_updated), policy);
-	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
-
-	id = g_signal_connect (policy->settings, NM_SYSCONFIG_SETTINGS_CONNECTION_REMOVED,
-	                       G_CALLBACK (connection_removed), policy);
-	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
-
-	id = g_signal_connect (policy->settings, NM_SYSCONFIG_SETTINGS_CONNECTION_VISIBILITY_CHANGED,
-	                       G_CALLBACK (connection_visibility_changed), policy);
-	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
-
+	_connect_settings_signal (policy, NM_SYSCONFIG_SETTINGS_CONNECTIONS_LOADED, connection_added);
+	_connect_settings_signal (policy, NM_SYSCONFIG_SETTINGS_CONNECTION_ADDED, connection_added);
+	_connect_settings_signal (policy, NM_SYSCONFIG_SETTINGS_CONNECTION_UPDATED, connection_updated);
+	_connect_settings_signal (policy, NM_SYSCONFIG_SETTINGS_CONNECTION_REMOVED, connection_removed);
+	_connect_settings_signal (policy, NM_SYSCONFIG_SETTINGS_CONNECTION_VISIBILITY_CHANGED,
+	                          connection_visibility_changed);
 	return policy;
 }
 
@@ -1225,9 +1212,13 @@ nm_policy_destroy (NMPolicy *policy)
 	g_signal_handler_disconnect (policy->vpn_manager, policy->vpn_deactivated_id);
 	g_object_unref (policy->vpn_manager);
 
-	for (iter = policy->signal_ids; iter; iter = g_slist_next (iter))
-		g_signal_handler_disconnect (policy->manager, (gulong) iter->data);
-	g_slist_free (policy->signal_ids);
+	for (iter = policy->manager_ids; iter; iter = g_slist_next (iter))
+		g_signal_handler_disconnect (policy->manager, GPOINTER_TO_UINT (iter->data));
+	g_slist_free (policy->manager_ids);
+
+	for (iter = policy->settings_ids; iter; iter = g_slist_next (iter))
+		g_signal_handler_disconnect (policy->settings, GPOINTER_TO_UINT (iter->data));
+	g_slist_free (policy->settings_ids);
 
 	for (iter = policy->dev_signal_ids; iter; iter = g_slist_next (iter)) {
 		DeviceSignalID *data = (DeviceSignalID *) iter->data;
