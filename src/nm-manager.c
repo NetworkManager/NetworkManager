@@ -3039,7 +3039,7 @@ nm_manager_get (NMSysconfigSettings *settings,
 		return NULL;
     }
 
-	priv->settings = settings;
+	priv->settings = g_object_ref (settings);
 
 	priv->config_file = g_strdup (config_file);
 	priv->state_file = g_strdup (state_file);
