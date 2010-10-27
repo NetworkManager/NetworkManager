@@ -204,14 +204,14 @@ impl_settings_list_connections (NMSysconfigSettings *self,
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 	GHashTableIter iter;
-	gpointer data;
+	gpointer key;
 
 	load_connections (self);
 
 	*connections = g_ptr_array_sized_new (g_hash_table_size (priv->connections) + 1);
 	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, NULL, &data))
-		g_ptr_array_add (*connections, g_strdup (nm_connection_get_path (NM_CONNECTION (data))));
+	while (g_hash_table_iter_next (&iter, &key, NULL))
+		g_ptr_array_add (*connections, g_strdup ((const char *) key));
 	return TRUE;
 }
 
