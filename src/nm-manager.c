@@ -52,7 +52,7 @@
 #include "nm-hostname-provider.h"
 #include "nm-bluez-manager.h"
 #include "nm-bluez-common.h"
-#include "nm-sysconfig-settings.h"
+#include "nm-settings.h"
 #include "nm-sysconfig-connection.h"
 #include "nm-secrets-provider-interface.h"
 #include "nm-manager-auth.h"
@@ -200,7 +200,7 @@ typedef struct {
 	NMUdevManager *udev_mgr;
 	NMBluezManager *bluez_mgr;
 
-	NMSysconfigSettings *settings;
+	NMSettings *settings;
 	char *hostname;
 
 	GSList *secrets_calls;
@@ -485,7 +485,7 @@ remove_one_device (NMManager *manager,
 
 	g_signal_handlers_disconnect_by_func (device, manager_device_state_changed, manager);
 
-	nm_sysconfig_settings_device_removed (priv->settings, device);
+	nm_settings_device_removed (priv->settings, device);
 	g_signal_emit (manager, signals[DEVICE_REMOVED], 0, device);
 	g_object_unref (device);
 
@@ -743,11 +743,11 @@ get_active_connections (NMManager *manager, NMConnection *filter)
 }
 
 /*******************************************************************/
-/* Settings stuff via NMSysconfigSettings                          */
+/* Settings stuff via NMSettings                                   */
 /*******************************************************************/
 
 static void
-connections_changed (NMSysconfigSettings *settings,
+connections_changed (NMSettings *settings,
                      NMSysconfigConnection *connection,
                      NMManager *manager)
 {
@@ -755,15 +755,15 @@ connections_changed (NMSysconfigSettings *settings,
 }
 
 static void
-system_unmanaged_devices_changed_cb (NMSysconfigSettings *sys_settings,
+system_unmanaged_devices_changed_cb (NMSettings *settings,
                                      GParamSpec *pspec,
                                      gpointer user_data)
 {
-	NMManager *manager = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	const GSList *unmanaged_specs, *iter;
 
-	unmanaged_specs = nm_sysconfig_settings_get_unmanaged_specs (sys_settings);
+	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *device = NM_DEVICE (iter->data);
 		gboolean managed;
@@ -772,30 +772,28 @@ system_unmanaged_devices_changed_cb (NMSysconfigSettings *sys_settings,
 		nm_device_set_managed (device,
 		                       managed,
 		                       managed ? NM_DEVICE_STATE_REASON_NOW_MANAGED :
-		                                   NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
+		                                 NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
 	}
 }
 
 static void
-system_hostname_changed_cb (NMSysconfigSettings *sys_settings,
+system_hostname_changed_cb (NMSettings *settings,
                             GParamSpec *pspec,
                             gpointer user_data)
 {
-	NMManager *manager = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	char *hostname;
 
-	hostname = nm_sysconfig_settings_get_hostname (sys_settings);
-
+	hostname = nm_settings_get_hostname (priv->settings);
 	if (!hostname && !priv->hostname)
 		return;
-
 	if (hostname && priv->hostname && !strcmp (hostname, priv->hostname))
 		return;
 
 	g_free (priv->hostname);
 	priv->hostname = (hostname && strlen (hostname)) ? g_strdup (hostname) : NULL;
-	g_object_notify (G_OBJECT (manager), NM_MANAGER_HOSTNAME);
+	g_object_notify (G_OBJECT (self), NM_MANAGER_HOSTNAME);
 
 	g_free (hostname);
 }
@@ -945,7 +943,7 @@ manager_hidden_ap_found (NMDeviceInterface *device,
 
 	/* Look for this AP's BSSID in the seen-bssids list of a connection,
 	 * and if a match is found, copy over the SSID */
-	connections = nm_sysconfig_settings_get_connections (priv->settings);
+	connections = nm_settings_get_connections (priv->settings);
 
 	for (iter = connections; iter && !done; iter = g_slist_next (iter)) {
 		NMConnection *connection = NM_CONNECTION (iter->data);
@@ -1330,7 +1328,7 @@ add_device (NMManager *self, NMDevice *device)
 	if (nm_device_interface_can_assume_connections (NM_DEVICE_INTERFACE (device))) {
 		GSList *connections = NULL;
 
-		connections = nm_sysconfig_settings_get_connections (priv->settings);
+		connections = nm_settings_get_connections (priv->settings);
 		existing = nm_device_interface_connection_match_config (NM_DEVICE_INTERFACE (device),
 		                                                        (const GSList *) connections);
 		g_slist_free (connections);
@@ -1346,7 +1344,7 @@ add_device (NMManager *self, NMDevice *device)
 	}
 
 	/* Start the device if it's supposed to be managed */
-	unmanaged_specs = nm_sysconfig_settings_get_unmanaged_specs (priv->settings);
+	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
 	if (   !manager_sleeping (self)
 	    && !nm_device_interface_spec_match_list (NM_DEVICE_INTERFACE (device), unmanaged_specs)) {
 		nm_device_set_managed (device,
@@ -1356,7 +1354,7 @@ add_device (NMManager *self, NMDevice *device)
 		managed = TRUE;
 	}
 
-	nm_sysconfig_settings_device_added (priv->settings, device);
+	nm_settings_device_added (priv->settings, device);
 	g_signal_emit (self, signals[DEVICE_ADDED], 0, device);
 
 	/* If the device has a connection it can assume, do that now */
@@ -1415,7 +1413,7 @@ bluez_manager_find_connection (NMManager *manager,
 	NMConnection *found = NULL;
 	GSList *connections, *l;
 
-	connections = nm_sysconfig_settings_get_connections (priv->settings);
+	connections = nm_settings_get_connections (priv->settings);
 
 	for (l = connections; l != NULL; l = l->next) {
 		NMConnection *candidate = NM_CONNECTION (l->data);
@@ -1780,8 +1778,7 @@ system_get_secrets_idle_cb (gpointer user_data)
 
 	info->idle_id = 0;
 
-	connection = nm_sysconfig_settings_get_connection_by_path (priv->settings, 
-	                                                           info->connection_path);
+	connection = nm_settings_get_connection_by_path (priv->settings, info->connection_path);
 	if (!connection) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
@@ -2040,8 +2037,7 @@ check_pending_ready (NMManager *self, PendingActivation *pending)
 
 	/* Ok, we're authorized */
 
-	connection = nm_sysconfig_settings_get_connection_by_path (priv->settings,
-	                                                           pending->connection_path);
+	connection = nm_settings_get_connection_by_path (priv->settings, pending->connection_path);
 	if (!connection) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
@@ -2286,7 +2282,7 @@ do_sleep_wake (NMManager *self)
 	} else {
 		nm_log_info (LOGD_SUSPEND, "waking up and re-enabling...");
 
-		unmanaged_specs = nm_sysconfig_settings_get_unmanaged_specs (priv->settings);
+		unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
 
 		/* Ensure rfkill state is up-to-date since we don't respond to state
 		 * changes during sleep.
@@ -3004,7 +3000,7 @@ out:
 }
 
 NMManager *
-nm_manager_get (NMSysconfigSettings *settings,
+nm_manager_get (NMSettings *settings,
                 const char *config_file,
                 const char *plugins,
                 const char *state_file,
@@ -3049,22 +3045,20 @@ nm_manager_get (NMSysconfigSettings *settings,
 	priv->radio_states[RFKILL_TYPE_WLAN].user_enabled = initial_wifi_enabled;
 	priv->radio_states[RFKILL_TYPE_WWAN].user_enabled = initial_wwan_enabled;
 
-	g_signal_connect (priv->settings, "notify::" NM_SYSCONFIG_SETTINGS_UNMANAGED_SPECS,
+	g_signal_connect (priv->settings, "notify::" NM_SETTINGS_UNMANAGED_SPECS,
 	                  G_CALLBACK (system_unmanaged_devices_changed_cb), singleton);
-	g_signal_connect (priv->settings, "notify::" NM_SYSCONFIG_SETTINGS_HOSTNAME,
+	g_signal_connect (priv->settings, "notify::" NM_SETTINGS_HOSTNAME,
 	                  G_CALLBACK (system_hostname_changed_cb), singleton);
-	g_signal_connect (priv->settings, NM_SYSCONFIG_SETTINGS_CONNECTION_ADDED,
+	g_signal_connect (priv->settings, NM_SETTINGS_CONNECTION_ADDED,
 	                  G_CALLBACK (connections_changed), singleton);
-	g_signal_connect (priv->settings, NM_SYSCONFIG_SETTINGS_CONNECTION_UPDATED,
+	g_signal_connect (priv->settings, NM_SETTINGS_CONNECTION_UPDATED,
 	                  G_CALLBACK (connections_changed), singleton);
-	g_signal_connect (priv->settings, NM_SYSCONFIG_SETTINGS_CONNECTION_REMOVED,
+	g_signal_connect (priv->settings, NM_SETTINGS_CONNECTION_REMOVED,
 	                  G_CALLBACK (connections_changed), singleton);
-	g_signal_connect (priv->settings, NM_SYSCONFIG_SETTINGS_CONNECTION_VISIBILITY_CHANGED,
+	g_signal_connect (priv->settings, NM_SETTINGS_CONNECTION_VISIBILITY_CHANGED,
 	                  G_CALLBACK (connections_changed), singleton);
 
-	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (priv->dbus_mgr),
-	                                     NM_DBUS_PATH,
-	                                     G_OBJECT (singleton));
+	dbus_g_connection_register_g_object (bus, NM_DBUS_PATH, G_OBJECT (singleton));
 
 	priv->udev_mgr = nm_udev_manager_new ();
 	g_signal_connect (priv->udev_mgr,

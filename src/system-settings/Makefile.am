@@ -13,8 +13,8 @@ BUILT_SOURCES = \
 	nm-sysconfig-connection-glue.h
 
 libsystem_settings_la_SOURCES = \
-	nm-sysconfig-settings.c \
-	nm-sysconfig-settings.h \
+	nm-settings.c \
+	nm-settings.h \
 	nm-inotify-helper.c \
 	nm-inotify-helper.h \
 	nm-polkit-helpers.h \

@@ -453,7 +453,7 @@ main (int argc, char *argv[])
 	NMDBusManager *dbus_mgr = NULL;
 	NMSupplicantManager *sup_mgr = NULL;
 	NMDHCPManager *dhcp_mgr = NULL;
-	NMSysconfigSettings *settings = NULL;
+	NMSettings *settings = NULL;
 	GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
 	char *cfg_log_level = NULL, *cfg_log_domains = NULL;
@@ -673,7 +673,7 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	settings = nm_sysconfig_settings_new (config, plugins, &error);
+	settings = nm_settings_new (config, plugins, &error);
 	if (!settings) {
 		nm_log_err (LOGD_CORE, "failed to initialize settings storage.");
 		goto done;

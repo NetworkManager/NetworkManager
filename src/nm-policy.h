@@ -19,18 +19,18 @@
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
-#ifndef NETWORK_MANAGER_POLICY_H
-#define NETWORK_MANAGER_POLICY_H
+#ifndef NM_POLICY_H
+#define NM_POLICY_H
 
 #include "nm-manager.h"
 #include "nm-vpn-manager.h"
-#include "nm-sysconfig-settings.h"
+#include "nm-settings.h"
 
 typedef struct NMPolicy NMPolicy;
 
 NMPolicy *nm_policy_new (NMManager *manager,
                          NMVPNManager *vpn_manager,
-                         NMSysconfigSettings *settings);
+                         NMSettings *settings);
 void nm_policy_destroy (NMPolicy *policy);
 
-#endif /* NETWORK_MANAGER_POLICY_H */
+#endif /* NM_POLICY_H */

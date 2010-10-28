@@ -57,7 +57,7 @@ struct NMPolicy {
 	gulong vpn_activated_id;
 	gulong vpn_deactivated_id;
 
-	NMSysconfigSettings *settings;
+	NMSettings *settings;
 
 	NMDevice *default_device4;
 	NMDevice *default_device6;
@@ -742,7 +742,7 @@ auto_activate_device (gpointer user_data)
 	if (nm_device_get_act_request (data->device))
 		goto out;
 
-	connections = nm_sysconfig_settings_get_connections (policy->settings);
+	connections = nm_settings_get_connections (policy->settings);
 
 	/* Remove connections that are in the invalid list. */
 	iter = connections;
@@ -834,7 +834,7 @@ sleeping_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 
 	/* Clear the invalid flag on all connections so they'll get retried on wakeup */
 	if (sleeping || !enabled) {
-		connections = nm_sysconfig_settings_get_connections (policy->settings);
+		connections = nm_settings_get_connections (policy->settings);
 		for (iter = connections; iter; iter = g_slist_next (iter))
 			g_object_set_data (G_OBJECT (iter->data), INVALID_TAG, NULL);
 		g_slist_free (connections);
@@ -1026,7 +1026,7 @@ schedule_activate_all (NMPolicy *policy)
 }
 
 static void
-connection_added (NMSysconfigSettings *settings,
+connection_added (NMSettings *settings,
                   NMConnection *connection,
                   gpointer user_data)
 {
@@ -1034,7 +1034,7 @@ connection_added (NMSysconfigSettings *settings,
 }
 
 static void
-connection_updated (NMSysconfigSettings *settings,
+connection_updated (NMSettings *settings,
                     NMConnection *connection,
                     gpointer user_data)
 {
@@ -1073,7 +1073,7 @@ _deactivate_if_active (NMManager *manager, NMConnection *connection)
 }
 
 static void
-connection_removed (NMSysconfigSettings *settings,
+connection_removed (NMSettings *settings,
                     NMConnection *connection,
                     gpointer user_data)
 {
@@ -1083,7 +1083,7 @@ connection_removed (NMSysconfigSettings *settings,
 }
 
 static void
-connection_visibility_changed (NMSysconfigSettings *settings,
+connection_visibility_changed (NMSettings *settings,
                                NMSysconfigConnection *connection,
                                gpointer user_data)
 {
@@ -1116,7 +1116,7 @@ _connect_settings_signal (NMPolicy *policy, const char *name, gpointer callback)
 NMPolicy *
 nm_policy_new (NMManager *manager,
                NMVPNManager *vpn_manager,
-               NMSysconfigSettings *settings)
+               NMSettings *settings)
 {
 	NMPolicy *policy;
 	static gboolean initialized = FALSE;
@@ -1154,11 +1154,11 @@ nm_policy_new (NMManager *manager,
 	_connect_manager_signal (policy, "device-added", device_added);
 	_connect_manager_signal (policy, "device-removed", device_removed);
 
-	_connect_settings_signal (policy, NM_SYSCONFIG_SETTINGS_CONNECTIONS_LOADED, connection_added);
-	_connect_settings_signal (policy, NM_SYSCONFIG_SETTINGS_CONNECTION_ADDED, connection_added);
-	_connect_settings_signal (policy, NM_SYSCONFIG_SETTINGS_CONNECTION_UPDATED, connection_updated);
-	_connect_settings_signal (policy, NM_SYSCONFIG_SETTINGS_CONNECTION_REMOVED, connection_removed);
-	_connect_settings_signal (policy, NM_SYSCONFIG_SETTINGS_CONNECTION_VISIBILITY_CHANGED,
+	_connect_settings_signal (policy, NM_SETTINGS_CONNECTIONS_LOADED, connection_added);
+	_connect_settings_signal (policy, NM_SETTINGS_CONNECTION_ADDED, connection_added);
+	_connect_settings_signal (policy, NM_SETTINGS_CONNECTION_UPDATED, connection_updated);
+	_connect_settings_signal (policy, NM_SETTINGS_CONNECTION_REMOVED, connection_removed);
+	_connect_settings_signal (policy, NM_SETTINGS_CONNECTION_VISIBILITY_CHANGED,
 	                          connection_visibility_changed);
 	return policy;
 }

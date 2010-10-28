@@ -27,7 +27,7 @@
 #include <dbus/dbus-glib.h>
 #include "nm-device.h"
 #include "nm-device-interface.h"
-#include "nm-sysconfig-settings.h"
+#include "nm-settings.h"
 
 #define NM_TYPE_MANAGER            (nm_manager_get_type ())
 #define NM_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MANAGER, NMManager))
@@ -65,7 +65,7 @@ typedef struct {
 
 GType nm_manager_get_type (void);
 
-NMManager *nm_manager_get (NMSysconfigSettings *settings,
+NMManager *nm_manager_get (NMSettings *settings,
                            const char *config_file,
                            const char *plugins,
                            const char *state_file,
