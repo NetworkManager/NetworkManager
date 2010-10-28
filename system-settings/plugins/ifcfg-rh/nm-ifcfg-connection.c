@@ -59,7 +59,6 @@ typedef struct {
 	char *route6file;
 	int route6file_wd;
 
-	char *udi;
 	char *unmanaged;
 } NMIfcfgConnectionPrivate;
 
@@ -67,7 +66,6 @@ enum {
 	PROP_0,
 	PROP_FILENAME,
 	PROP_UNMANAGED,
-	PROP_UDI,
 
 	LAST_PROP
 };
@@ -239,8 +237,6 @@ finalize (GObject *object)
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (object);
 	NMInotifyHelper *ih;
 
-	g_free (priv->udi);
-
 	nm_connection_clear_secrets (NM_CONNECTION (object));
 
 	ih = nm_inotify_helper_get ();
@@ -280,10 +276,6 @@ set_property (GObject *object, guint prop_id,
 	case PROP_UNMANAGED:
 		priv->unmanaged = g_value_dup_string (value);
 		break;
-	case PROP_UDI:
-		/* Construct only */
-		priv->udi = g_value_dup_string (value);
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -302,9 +294,6 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_UNMANAGED:
 		g_value_set_string (value, priv->unmanaged);
-		break;
-	case PROP_UDI:
-		g_value_set_string (value, priv->udi);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -343,14 +332,6 @@ nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 						  "Unmanaged",
 						  NULL,
 						  G_PARAM_READWRITE));
-
-	g_object_class_install_property
-		(object_class, PROP_UDI,
-		 g_param_spec_string (NM_IFCFG_CONNECTION_UDI,
-						  "UDI",
-						  "UDI",
-						  NULL,
-						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	signals[IFCFG_CHANGED] =
 		g_signal_new ("ifcfg-changed",

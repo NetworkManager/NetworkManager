@@ -35,7 +35,6 @@ G_BEGIN_DECLS
 
 #define NM_IFCFG_CONNECTION_FILENAME  "filename"
 #define NM_IFCFG_CONNECTION_UNMANAGED "unmanaged"
-#define NM_IFCFG_CONNECTION_UDI       "udi"
 
 typedef struct {
 	NMSysconfigConnection parent;
