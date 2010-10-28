@@ -6,13 +6,13 @@ INCLUDES = -I${top_srcdir} \
            -I${top_srcdir}/src \
            -I${top_builddir}/marshallers
 
-noinst_LTLIBRARIES = libsystem-settings.la
+noinst_LTLIBRARIES = libsettings.la
 
 BUILT_SOURCES = \
 	nm-settings-glue.h \
 	nm-sysconfig-connection-glue.h
 
-libsystem_settings_la_SOURCES = \
+libsettings_la_SOURCES = \
 	nm-settings.c \
 	nm-settings.h \
 	nm-inotify-helper.c \
@@ -27,7 +27,7 @@ libsystem_settings_la_SOURCES = \
 	nm-default-wired-connection.c \
 	nm-default-wired-connection.h
 
-libsystem_settings_la_CPPFLAGS = \
+libsettings_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(GMODULE_CFLAGS) \
@@ -42,7 +42,7 @@ libsystem_settings_la_CPPFLAGS = \
 	-DGNOMELOCALEDIR=\"$(datadir)/locale\" \
 	-DPLUGINDIR=\"$(pkglibdir)\"
 
-libsystem_settings_la_LIBADD = \
+libsettings_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(top_builddir)/marshallers/libmarshallers.la \
@@ -52,7 +52,7 @@ libsystem_settings_la_LIBADD = \
 	$(GMODULE_LIBS) \
 	$(POLKIT_LIBS)
 
-libsystem_settings_la_LDFLAGS = -rdynamic
+libsettings_la_LDFLAGS = -rdynamic
 
 
 nm-settings-glue.h: $(top_srcdir)/introspection/nm-settings.xml

@@ -330,7 +330,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 
 	/* Hostname precedence order:
 	 *
-	 * 1) a configured hostname (from system-settings)
+	 * 1) a configured hostname (from settings)
 	 * 2) automatic hostname from the default device's config (DHCP, VPN, etc)
 	 * 3) the original hostname when NM started
 	 * 4) reverse-DNS of the best device's IPv4 address

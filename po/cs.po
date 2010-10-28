@@ -1344,7 +1344,7 @@ msgstr ""
 msgid "The nameservers listed below may not be recognized."
 msgstr "Jmenné servery uvedené v následujícím seznamu nelze rozpoznat."
 
-#: ../src/system-settings/nm-default-wired-connection.c:157
+#: ../src/settings/nm-default-wired-connection.c:157
 #, c-format
 msgid "Auto %s"
 msgstr "%s (automaticky)"

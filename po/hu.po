@@ -1780,7 +1780,7 @@ msgstr "MEGJEGYZÉS: a libc feloldó nem támogat háromnál több névkiszolgá
 msgid "The nameservers listed below may not be recognized."
 msgstr "Az alább felsorolt névkiszolgálók lehet, hogy nem kerülnek felismerésre."
 
-#: ../src/system-settings/nm-default-wired-connection.c:157
+#: ../src/settings/nm-default-wired-connection.c:157
 #, c-format
 msgid "Auto %s"
 msgstr "Automatikus %s"

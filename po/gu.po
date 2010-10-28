@@ -1596,7 +1596,7 @@ msgstr "નોંધ: libc સુધારનાર એ ૩ નામ સર્�
 msgid "The nameservers listed below may not be recognized."
 msgstr "નીચે યાદી થયેલ નામસર્વરો એ ઓળખી શકાતા નથી."
 
-#: ../src/system-settings/nm-default-wired-connection.c:157
+#: ../src/settings/nm-default-wired-connection.c:157
 #, c-format
 msgid "Auto %s"
 msgstr "%s સ્વયં કરો"

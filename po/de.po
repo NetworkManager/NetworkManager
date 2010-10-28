@@ -1809,7 +1809,7 @@ msgstr ""
 msgid "The nameservers listed below may not be recognized."
 msgstr "Die nachfolgend gelisteten Nameserver werden eventuell nicht erkannt."
 
-#: ../src/system-settings/nm-default-wired-connection.c:157
+#: ../src/settings/nm-default-wired-connection.c:157
 #, c-format
 msgid "Auto %s"
 msgstr "Auto %s"

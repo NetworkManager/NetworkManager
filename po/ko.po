@@ -1598,7 +1598,7 @@ msgstr "주의: libc 주소 검색은 3개를 초과하는 네임서버를 지�
 msgid "The nameservers listed below may not be recognized."
 msgstr "아래 열거된 네임서버를 인식하지 못할 수 있습니다."
 
-#: ../src/system-settings/nm-default-wired-connection.c:157
+#: ../src/settings/nm-default-wired-connection.c:157
 #, c-format
 msgid "Auto %s"
 msgstr "자동 %s"

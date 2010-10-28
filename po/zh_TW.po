@@ -1599,7 +1599,7 @@ msgstr "注意：libc 解析器不支援 3 個以上的名稱伺服器。"
 msgid "The nameservers listed below may not be recognized."
 msgstr "下面列出的名稱伺服器可能不會被辨識。"
 
-#: ../src/system-settings/nm-default-wired-connection.c:157
+#: ../src/settings/nm-default-wired-connection.c:157
 #, c-format
 msgid "Auto %s"
 msgstr "自動 %s"

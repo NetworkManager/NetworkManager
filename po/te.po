@@ -1689,7 +1689,7 @@ msgstr "గమనిక: libc రిజాల్వర్ 3 నామపు స�
 msgid "The nameservers listed below may not be recognized."
 msgstr "క్రిందన జాబితాచేసివున్న నామపుసేవికలు గుర్తించబడక పోవచ్చును."
 
-#: ../src/system-settings/nm-default-wired-connection.c:157
+#: ../src/settings/nm-default-wired-connection.c:157
 #, c-format
 msgid "Auto %s"
 msgstr "స్వయంచాలక %s"

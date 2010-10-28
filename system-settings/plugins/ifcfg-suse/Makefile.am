@@ -10,7 +10,7 @@ libnm_settings_plugin_ifcfg_suse_la_CPPFLAGS = \
 	$(GMODULE_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	-DG_DISABLE_DEPRECATED \
-	-I${top_srcdir}/src/system-settings \
+	-I${top_srcdir}/src/settings \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_srcdir)/libnm-glib \

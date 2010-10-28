@@ -1755,7 +1755,7 @@ msgstr "ਨੋਟ: libc ਰਿਜ਼ੋਲਵਰ ੩ ਤੋਂ ਵੱਧ ਨੇ�
 msgid "The nameservers listed below may not be recognized."
 msgstr "ਹੇਠਾਂ ਦਿੱਤੇ ਨੇਮ-ਸਰਵਰ ਪਛਾਣੇ ਨਹੀਂ ਜਾ ਸਕਦੇ।"
 
-#: ../src/system-settings/nm-default-wired-connection.c:157
+#: ../src/settings/nm-default-wired-connection.c:157
 #, c-format
 msgid "Auto %s"
 msgstr "ਆਟੋ %s"
