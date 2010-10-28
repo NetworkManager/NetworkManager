@@ -28,7 +28,7 @@
 #include <nm-setting-wireless-security.h>
 #include <nm-sysconfig-connection.h>
 #include <nm-system-config-interface.h>
-#include <nm-system-config-error.h>
+#include <nm-settings-error.h>
 #include "nm-ifupdown-connection.h"
 #include "parser.h"
 
@@ -72,8 +72,8 @@ get_secrets (NMSysconfigConnection *connection,
 	/* FIXME: Only wifi secrets are supported for now */
 	if (strcmp (setting_name, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME)) {
 		g_set_error (&error,
-		             NM_SYSCONFIG_SETTINGS_ERROR,
-		             NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
+		             NM_SETTINGS_ERROR,
+		             NM_SETTINGS_ERROR_GENERAL,
 		             "%s.%d - security setting name not supported '%s'.",
 		             __FILE__, __LINE__, setting_name);
 		PLUGIN_PRINT ("SCPlugin-Ifupdown", "%s", error->message);

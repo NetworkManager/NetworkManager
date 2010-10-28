@@ -29,7 +29,7 @@
 #include "nm-sysconfig-connection.h"
 #include "nm-session-monitor.h"
 #include "nm-dbus-manager.h"
-#include "nm-system-config-error.h"
+#include "nm-settings-error.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-polkit-helpers.h"
 #include "nm-logging.h"
@@ -132,8 +132,8 @@ uid_in_acl (NMConnection *self,
 	/* Reject the request if the request comes from no session at all */
 	if (nm_session_monitor_uid_has_session (smon, uid, &user, &local)) {
 		g_set_error (error,
-		             NM_SYSCONFIG_SETTINGS_ERROR,
-		             NM_SYSCONFIG_SETTINGS_ERROR_PERMISSION_DENIED,
+		             NM_SETTINGS_ERROR,
+		             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		             "No session found for uid %d (%s)",
 		             uid,
 		             local && local->message ? local->message : "unknown");
@@ -143,8 +143,8 @@ uid_in_acl (NMConnection *self,
 
 	if (!user) {
 		g_set_error (error,
-		             NM_SYSCONFIG_SETTINGS_ERROR,
-		             NM_SYSCONFIG_SETTINGS_ERROR_PERMISSION_DENIED,
+		             NM_SETTINGS_ERROR,
+		             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		             "Could not determine username for uid %d",
 		             uid);
 		return FALSE;
@@ -170,8 +170,8 @@ uid_in_acl (NMConnection *self,
 	}
 
 	g_set_error (error,
-	             NM_SYSCONFIG_SETTINGS_ERROR,
-	             NM_SYSCONFIG_SETTINGS_ERROR_PERMISSION_DENIED,
+	             NM_SETTINGS_ERROR,
+	             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 	             "uid %d has no permission to perform this operation",
 	             uid);
 	return FALSE;
@@ -339,8 +339,8 @@ nm_sysconfig_connection_commit_changes (NMSysconfigConnection *connection,
 		                                                                callback,
 		                                                                user_data);
 	} else {
-		GError *error = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
-		                             NM_SYSCONFIG_SETTINGS_ERROR_INTERNAL_ERROR,
+		GError *error = g_error_new (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_INTERNAL_ERROR,
 		                             "%s: %s:%d commit_changes() unimplemented", __func__, __FILE__, __LINE__);
 		callback (connection, error, user_data);
 		g_error_free (error);
@@ -361,8 +361,8 @@ nm_sysconfig_connection_delete (NMSysconfigConnection *connection,
 		                                                        callback,
 		                                                        user_data);
 	} else {
-		GError *error = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
-		                             NM_SYSCONFIG_SETTINGS_ERROR_INTERNAL_ERROR,
+		GError *error = g_error_new (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_INTERNAL_ERROR,
 		                             "%s: %s:%d delete() unimplemented", __func__, __FILE__, __LINE__);
 		callback (connection, error, user_data);
 		g_error_free (error);
@@ -389,8 +389,8 @@ nm_sysconfig_connection_get_secrets (NMSysconfigConnection *connection,
 		                                                             callback,
 		                                                             user_data);
 	} else {
-		GError *error = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
-		                             NM_SYSCONFIG_SETTINGS_ERROR_INTERNAL_ERROR,
+		GError *error = g_error_new (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_INTERNAL_ERROR,
 		                             "%s: %s:%d get_secrets() unimplemented", __func__, __FILE__, __LINE__);
 		callback (connection, NULL, error, user_data);
 		g_error_free (error);
@@ -531,8 +531,8 @@ get_secrets (NMSysconfigConnection *connection,
 	 * nm_sysconfig_connection_replace_settings().
 	 */
 	if (!priv->secrets) {
-		error = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
-		                     NM_SYSCONFIG_SETTINGS_ERROR_INVALID_CONNECTION,
+		error = g_error_new (NM_SETTINGS_ERROR,
+		                     NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		                     "%s.%d - Internal error; secrets cache invalid.",
 		                     __FILE__, __LINE__);
 		(*callback) (connection, NULL, error, user_data);
@@ -542,8 +542,8 @@ get_secrets (NMSysconfigConnection *connection,
 
 	setting = nm_connection_get_setting_by_name (priv->secrets, setting_name);
 	if (!setting) {
-		error = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
-		                     NM_SYSCONFIG_SETTINGS_ERROR_INVALID_SETTING,
+		error = g_error_new (NM_SETTINGS_ERROR,
+		                     NM_SETTINGS_ERROR_INVALID_SETTING,
 		                     "%s.%d - Connection didn't have requested setting '%s'.",
 		                     __FILE__, __LINE__, setting_name);
 		(*callback) (connection, NULL, error, user_data);
@@ -605,8 +605,8 @@ auth_pk_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	GError *error = NULL;
 
 	if (info->disposed) {
-		error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
-		                             NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_GENERAL,
 		                             "Request was canceled.");
 		goto out;
 	}
@@ -618,8 +618,8 @@ auth_pk_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 		goto out;
 
 	if (!polkit_authorization_result_get_is_authorized (pk_result)) {
-		error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
-		                             NM_SYSCONFIG_SETTINGS_ERROR_NOT_PRIVILEGED,
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_NOT_PRIVILEGED,
 		                             "Insufficient privileges.");
 		goto out;
 	}
@@ -650,8 +650,8 @@ auth_start (NMSysconfigConnection *self,
 
 	/* Get the caller's UID */
 	if (!nm_auth_get_caller_uid (context,  NULL, &sender_uid, &error_desc)) {
-		error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
-		                             NM_SYSCONFIG_SETTINGS_ERROR_PERMISSION_DENIED,
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                             error_desc);
 		goto error;
 	}
@@ -714,8 +714,8 @@ check_writable (NMConnection *connection, GError **error)
 	                                                           NM_TYPE_SETTING_CONNECTION);
 	if (!s_con) {
 		g_set_error_literal (error,
-		                     NM_SYSCONFIG_SETTINGS_ERROR,
-		                     NM_SYSCONFIG_SETTINGS_ERROR_INVALID_CONNECTION,
+		                     NM_SETTINGS_ERROR,
+		                     NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		                     "Connection did not have required 'connection' setting");
 		return FALSE;
 	}
@@ -726,8 +726,8 @@ check_writable (NMConnection *connection, GError **error)
 	 */
 	if (nm_setting_connection_get_read_only (s_con)) {
 		g_set_error_literal (error,
-		                     NM_SYSCONFIG_SETTINGS_ERROR,
-		                     NM_SYSCONFIG_SETTINGS_ERROR_READ_ONLY_CONNECTION,
+		                     NM_SETTINGS_ERROR,
+		                     NM_SETTINGS_ERROR_READ_ONLY_CONNECTION,
 		                     "Connection is read-only");
 		return FALSE;
 	}

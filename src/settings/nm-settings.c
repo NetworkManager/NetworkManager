@@ -55,7 +55,7 @@
 #include "nm-settings.h"
 #include "nm-sysconfig-connection.h"
 #include "nm-polkit-helpers.h"
-#include "nm-system-config-error.h"
+#include "nm-settings-error.h"
 #include "nm-default-wired-connection.h"
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
@@ -794,8 +794,8 @@ pk_add_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 
 	/* If NMSettings is already gone, do nothing */
 	if (call->disposed) {
-		error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
-		                             NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_GENERAL,
 		                             "Request was canceled.");
 		dbus_g_method_return_error (call->context, error);
 		g_error_free (error);
@@ -818,8 +818,8 @@ pk_add_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 
 	/* Caller didn't successfully authenticate */
 	if (!polkit_authorization_result_get_is_authorized (pk_result)) {
-		error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
-		                             NM_SYSCONFIG_SETTINGS_ERROR_NOT_PRIVILEGED,
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_NOT_PRIVILEGED,
 		                             "Insufficient privileges.");
 		dbus_g_method_return_error (call->context, error);
 		goto out;
@@ -828,8 +828,8 @@ pk_add_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	if (add_new_connection (self, call->connection, &add_error))
 		dbus_g_method_return (call->context);
 	else {
-		error = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
-		                     NM_SYSCONFIG_SETTINGS_ERROR_ADD_FAILED,
+		error = g_error_new (NM_SETTINGS_ERROR,
+		                     NM_SETTINGS_ERROR_ADD_FAILED,
 		                     "Saving connection failed: (%d) %s",
 		                     add_error ? add_error->code : -1,
 		                     (add_error && add_error->message) ? add_error->message : "(unknown)");
@@ -864,8 +864,8 @@ impl_settings_add_connection (NMSettings *self,
 
 	/* Do any of the plugins support adding? */
 	if (!get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS)) {
-		error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
-		                             NM_SYSCONFIG_SETTINGS_ERROR_ADD_NOT_SUPPORTED,
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_ADD_NOT_SUPPORTED,
 		                             "None of the registered plugins support add.");
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
@@ -900,8 +900,8 @@ pk_hostname_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 
 	/* If our NMSysconfigConnection is already gone, do nothing */
 	if (call->disposed) {
-		error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
-		                             NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_GENERAL,
 		                             "Request was canceled.");
 		dbus_g_method_return_error (call->context, error);
 		g_error_free (error);
@@ -924,8 +924,8 @@ pk_hostname_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 
 	/* Caller didn't successfully authenticate */
 	if (!polkit_authorization_result_get_is_authorized (pk_result)) {
-		error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
-		                             NM_SYSCONFIG_SETTINGS_ERROR_NOT_PRIVILEGED,
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_NOT_PRIVILEGED,
 		                             "Insufficient privileges.");
 		dbus_g_method_return_error (call->context, error);
 		goto out;
@@ -945,8 +945,8 @@ pk_hostname_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	if (success) {
 		dbus_g_method_return (call->context);
 	} else {
-		error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
-		                             NM_SYSCONFIG_SETTINGS_ERROR_SAVE_HOSTNAME_FAILED,
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_SAVE_HOSTNAME_FAILED,
 		                             "Saving the hostname failed.");
 		dbus_g_method_return_error (call->context, error);
 	}
@@ -969,8 +969,8 @@ impl_settings_save_hostname (NMSettings *self,
 
 	/* Do any of the plugins support setting the hostname? */
 	if (!get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME)) {
-		error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
-		                             NM_SYSCONFIG_SETTINGS_ERROR_SAVE_HOSTNAME_NOT_SUPPORTED,
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_SAVE_HOSTNAME_NOT_SUPPORTED,
 		                             "None of the registered plugins support setting the hostname.");
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
@@ -1516,9 +1516,9 @@ nm_settings_class_init (NMSettingsClass *class)
 	                              g_cclosure_marshal_VOID__OBJECT,
 	                              G_TYPE_NONE, 0);
 
-	dbus_g_error_domain_register (NM_SYSCONFIG_SETTINGS_ERROR,
+	dbus_g_error_domain_register (NM_SETTINGS_ERROR,
 	                              NM_DBUS_IFACE_SETTINGS,
-	                              NM_TYPE_SYSCONFIG_SETTINGS_ERROR);
+	                              NM_TYPE_SETTINGS_ERROR);
 
 	/* And register all the settings errors with D-Bus */
 	dbus_g_error_domain_register (NM_CONNECTION_ERROR, NULL, NM_TYPE_CONNECTION_ERROR);

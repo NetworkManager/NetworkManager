@@ -39,7 +39,6 @@
 #include <ctype.h>
 
 #include "nm-dbus-glib-types.h"
-#include "nm-system-config-error.h"
 #include "writer.h"
 #include "common.h"
 
