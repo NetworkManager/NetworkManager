@@ -26,7 +26,7 @@
 #include <nm-setting-wireless-security.h>
 #include <nm-sysconfig-connection.h>
 #include <nm-system-config-interface.h>
-#include <nm-system-config-error.h>
+#include <nm-settings-error.h>
 #include "nm-ifnet-connection.h"
 #include "connection_parser.h"
 #include "net_parser.h"
