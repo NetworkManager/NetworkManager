@@ -219,8 +219,10 @@ remove_connection (SCPluginIfcfg *self, NMIfcfgConnection *connection)
 	managed = !!nm_ifcfg_connection_get_unmanaged_spec (connection);
 	path = nm_ifcfg_connection_get_path (connection);
 
+	g_object_ref (connection);
 	g_hash_table_remove (priv->connections, path);
 	g_signal_emit_by_name (connection, NM_SYSCONFIG_CONNECTION_REMOVED);
+	g_object_unref (connection);
 
 	/* Emit unmanaged changes _after_ removing the connection */
 	if (managed == FALSE)
