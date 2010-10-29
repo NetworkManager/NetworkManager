@@ -50,7 +50,7 @@ get_prefix (void)
 }
 
 static void
-update_connection_id (NMConnection * connection, gchar * conn_name)
+update_connection_id (NMConnection *connection, const char *conn_name)
 {
 	gchar *idstr = NULL;
 	gchar *uuid_base = NULL;
@@ -73,30 +73,37 @@ update_connection_id (NMConnection * connection, gchar * conn_name)
 	g_free (idstr);
 }
 
-static gboolean
-eap_simple_reader (const char *eap_method,
-		   gchar * ssid,
-		   NMSetting8021x * s_8021x, gboolean phase2, GError ** error);
+static gboolean eap_simple_reader (const char *eap_method,
+                                   const char *ssid,
+                                   NMSetting8021x *s_8021x,
+                                   gboolean phase2,
+                                   GError **error);
+
 static gboolean eap_tls_reader (const char *eap_method,
-				gchar * ssid,
-				NMSetting8021x * s_8021x,
-				gboolean phase2, GError ** error);
+                                const char *ssid,
+                                NMSetting8021x *s_8021x,
+                                gboolean phase2,
+                                GError **error);
 
 static gboolean eap_peap_reader (const char *eap_method,
-				 gchar * ssid,
-				 NMSetting8021x * s_8021x,
-				 gboolean phase2, GError ** error);
+                                 const char *ssid,
+                                 NMSetting8021x *s_8021x,
+                                 gboolean phase2,
+                                 GError **error);
 
 static gboolean eap_ttls_reader (const char *eap_method,
-				 gchar * ssid,
-				 NMSetting8021x * s_8021x,
-				 gboolean phase2, GError ** error);
+                                 const char *ssid,
+                                 NMSetting8021x *s_8021x,
+                                 gboolean phase2,
+                                 GError **error);
 
 typedef struct {
 	const char *method;
-	 gboolean (*reader) (const char *eap_method, gchar * ssid,
-			     NMSetting8021x * s_8021x,
-			     gboolean phase2, GError ** error);
+	 gboolean (*reader) (const char *eap_method,
+	                     const char *ssid,
+	                     NMSetting8021x *s_8021x,
+	                     gboolean phase2,
+	                     GError **error);
 	gboolean wifi_phase2_only;
 } EAPReader;
 
@@ -116,10 +123,12 @@ static EAPReader eap_readers[] = {
 /* reading identity and password */
 static gboolean
 eap_simple_reader (const char *eap_method,
-		   gchar * ssid,
-		   NMSetting8021x * s_8021x, gboolean phase2, GError ** error)
+                   const char *ssid,
+                   NMSetting8021x *s_8021x,
+                   gboolean phase2,
+                   GError **error)
 {
-	char *value;
+	const char *value;
 
 	/* identity */
 	value = wpa_get_value (ssid, "identity");
@@ -147,17 +156,18 @@ eap_simple_reader (const char *eap_method,
 
 static gboolean
 eap_tls_reader (const char *eap_method,
-		gchar * ssid,
-		NMSetting8021x * s_8021x, gboolean phase2, GError ** error)
+                const char *ssid,
+                NMSetting8021x *s_8021x,
+                gboolean phase2,
+                GError **error)
 {
-	char *value;
-	char *ca_cert = NULL;
-	char *client_cert = NULL;
-	char *privkey = NULL;
-	char *privkey_password = NULL;
+	const char *value;
+	const char *ca_cert = NULL;
+	const char *client_cert = NULL;
+	const char *privkey = NULL;
+	const char *privkey_password = NULL;
 	gboolean success = FALSE;
-	NMSetting8021xCKFormat privkey_format =
-	    NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
+	NMSetting8021xCKFormat privkey_format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
 
 	/* identity */
 	value = wpa_get_value (ssid, "identity");
@@ -275,14 +285,15 @@ eap_tls_reader (const char *eap_method,
 
 static gboolean
 eap_peap_reader (const char *eap_method,
-		 gchar * ssid,
-		 NMSetting8021x * s_8021x, gboolean phase2, GError ** error)
+                 const char *ssid,
+                 NMSetting8021x *s_8021x,
+                 gboolean phase2,
+                 GError **error)
 {
-	char *ca_cert = NULL;
-	char *inner_auth = NULL;
-	char *peapver = NULL;
-	char *lower;
-	char **list = NULL, **iter;
+	const char *ca_cert = NULL;
+	const char *inner_auth = NULL;
+	const char *peapver = NULL;
+	char **list = NULL, **iter, *lower;
 	gboolean success = FALSE;
 
 	ca_cert = wpa_get_value (ssid, "ca_cert");
@@ -375,15 +386,16 @@ eap_peap_reader (const char *eap_method,
 
 static gboolean
 eap_ttls_reader (const char *eap_method,
-		 gchar * ssid,
-		 NMSetting8021x * s_8021x, gboolean phase2, GError ** error)
+                 const char *ssid,
+                 NMSetting8021x *s_8021x,
+                 gboolean phase2,
+                 GError **error)
 {
 	gboolean success = FALSE;
-	char *anon_ident = NULL;
-	char *ca_cert = NULL;
-	char *tmp;
-	char **list = NULL, **iter;
-	char *inner_auth = NULL;
+	const char *anon_ident = NULL;
+	const char *ca_cert = NULL;
+	const char *tmp;
+	char **list = NULL, **iter, *inner_auth = NULL;
 
 	/* ca cert */
 	ca_cert = wpa_get_value (ssid, "ca_cert");
@@ -464,37 +476,35 @@ eap_ttls_reader (const char *eap_method,
 /* type is already decided by net_parser, this function is just used to
  * doing tansformation*/
 static const gchar *
-guess_connection_type (gchar * conn_name)
+guess_connection_type (const char *conn_name)
 {
 	const gchar *type = ifnet_get_data (conn_name, "type");
-	const gchar *name = conn_name;
 	const gchar *ret_type = NULL;
 
-	if (name && !strcmp ("ppp", type))
+	if (!g_strcmp0 (type, "ppp"))
 		ret_type = NM_SETTING_PPPOE_SETTING_NAME;
 
-	if (name && !strcmp ("wireless", type))
+	if (!g_strcmp0 (type, "wireless"))
 		ret_type = NM_SETTING_WIRELESS_SETTING_NAME;
 
 	if (!ret_type)
 		ret_type = NM_SETTING_WIRED_SETTING_NAME;
 
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME,
-		      "guessed connection type (%s) = %s", name, ret_type);
+		      "guessed connection type (%s) = %s", conn_name, ret_type);
 	return ret_type;
 }
 
 /* Reading mac address for setting connection option.
  * Unmanaged device mac address is required by NetworkManager*/
 static gboolean
-read_mac_address (gchar * conn_name, GByteArray ** array, GError ** error)
+read_mac_address (const char *conn_name, GByteArray **array, GError **error)
 {
-	gchar *value = ifnet_get_data (conn_name, "mac");
+	const char *value = ifnet_get_data (conn_name, "mac");
 	struct ether_addr *mac;
 
-	if (!value || !strlen (value)) {
+	if (!value || !strlen (value))
 		return TRUE;
-	}
 
 	mac = ether_aton (value);
 	if (!mac) {
@@ -504,18 +514,18 @@ read_mac_address (gchar * conn_name, GByteArray ** array, GError ** error)
 	}
 
 	*array = g_byte_array_sized_new (ETH_ALEN);
-	g_byte_array_append (*array, (guint8 *) mac->ether_addr_octet,
-			     ETH_ALEN);
+	g_byte_array_append (*array, (guint8 *) mac->ether_addr_octet, ETH_ALEN);
 	return TRUE;
 }
 
 static void
-make_wired_connection_setting (NMConnection * connection, gchar * conn_name,
-			       GError ** error)
+make_wired_connection_setting (NMConnection *connection,
+                               const char *conn_name,
+                               GError **error)
 {
 	GByteArray *mac = NULL;
 	NMSettingWired *s_wired = NULL;
-	gchar *value = NULL;
+	const char *value = NULL;
 
 	s_wired = NM_SETTING_WIRED (nm_setting_wired_new ());
 
@@ -552,12 +562,14 @@ make_wired_connection_setting (NMConnection * connection, gchar * conn_name,
 /* add NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, 
  * NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID in future*/
 static void
-make_ip4_setting (NMConnection * connection, gchar * conn_name, GError ** error)
+make_ip4_setting (NMConnection *connection,
+                  const char *conn_name,
+                  GError **error)
 {
 
 	NMSettingIP4Config *ip4_setting =
 	    NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new ());
-	gchar *value;
+	const char *value;
 	gboolean is_static_block = is_static_ip4 (conn_name);
 	ip_block *iblock = NULL;
 
@@ -618,10 +630,9 @@ make_ip4_setting (NMConnection * connection, gchar * conn_name, GError ** error)
 
 		}
 		g_object_set (ip4_setting,
-			      NM_SETTING_IP4_CONFIG_METHOD,
-			      NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
-			      NM_SETTING_IP4_CONFIG_NEVER_DEFAULT,
-			      !has_default_ip4_route (conn_name), NULL);
+		              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+		              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, !has_default_ip4_route (conn_name),
+		              NULL);
 	}
 
 	/* add dhcp hostname and client id */
@@ -651,13 +662,14 @@ make_ip4_setting (NMConnection * connection, gchar * conn_name, GError ** error)
 	set_ip4_dns_servers (ip4_setting, conn_name);
 
 	/* DNS searches */
-	value = (gchar *) ifnet_get_data (conn_name, "dns_search");
+	value = ifnet_get_data (conn_name, "dns_search");
 	if (value) {
+		char *stripped = g_strdup (value);
 		char **searches = NULL;
 
-		strip_string (value, '"');
+		strip_string (stripped, '"');
 
-		searches = g_strsplit (value, " ", 0);
+		searches = g_strsplit (stripped, " ", 0);
 		if (searches) {
 			char **item;
 
@@ -678,7 +690,8 @@ make_ip4_setting (NMConnection * connection, gchar * conn_name, GError ** error)
 	iblock = convert_ip4_routes_block (conn_name);
 	while (iblock) {
 		ip_block *current_iblock = iblock;
-		gchar *metric_str;
+		const char *metric_str;
+		char *stripped;
 		long int metric;
 		NMIP4Route *route = nm_ip4_route_new ();
 
@@ -693,10 +706,12 @@ make_ip4_setting (NMConnection * connection, gchar * conn_name, GError ** error)
 		} else {
 			metric_str = ifnet_get_global_data ("metric");
 			if (metric_str) {
+				stripped = g_strdup (metric_str);
+				strip_string (stripped, '"');
 				metric = strtol (metric_str, NULL, 10);
 				nm_ip4_route_set_metric (route,
 							 (guint32) metric);
-				g_free (metric_str);
+				g_free (stripped);
 			}
 		}
 
@@ -718,7 +733,9 @@ make_ip4_setting (NMConnection * connection, gchar * conn_name, GError ** error)
 }
 
 static void
-make_ip6_setting (NMConnection * connection, gchar * conn_name, GError ** error)
+make_ip6_setting (NMConnection *connection,
+                  const char *conn_name,
+                  GError **error)
 {
 	NMSettingIP6Config *s_ip6 = NULL;
 	gboolean is_static_block = is_static_ip6 (conn_name);
@@ -726,7 +743,7 @@ make_ip6_setting (NMConnection * connection, gchar * conn_name, GError ** error)
 	// used to disable IPv6
 	gboolean ipv6_enabled = FALSE;
 	gchar *method = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
-	gchar *value;
+	const char *value;
 	ip6_block *iblock;
 	gboolean never_default = !has_default_ip6_route (conn_name);
 
@@ -816,7 +833,8 @@ make_ip6_setting (NMConnection * connection, gchar * conn_name, GError ** error)
 	/* Add all IPv6 routes */
 	while (iblock) {
 		ip6_block *current_iblock = iblock;
-		gchar *metric_str;
+		const char *metric_str;
+		char *stripped;
 		long int metric = 1;
 		NMIP6Route *route = nm_ip6_route_new ();
 
@@ -831,10 +849,12 @@ make_ip6_setting (NMConnection * connection, gchar * conn_name, GError ** error)
 		} else {
 			metric_str = ifnet_get_global_data ("metric");
 			if (metric_str) {
+				stripped = g_strdup (metric_str);
+				strip_string (stripped, '"');
 				metric = strtol (metric_str, NULL, 10);
 				nm_ip6_route_set_metric (route,
 							 (guint32) metric);
-				g_free (metric_str);
+				g_free (stripped);
 			} else
 				nm_ip6_route_set_metric (route, (guint32) 1);
 		}
@@ -862,16 +882,17 @@ make_ip6_setting (NMConnection * connection, gchar * conn_name, GError ** error)
 }
 
 static NMSetting *
-make_wireless_connection_setting (gchar * conn_name,
-				  NMSetting8021x ** s_8021x, GError ** error)
+make_wireless_connection_setting (const char *conn_name,
+                                  NMSetting8021x **s_8021x,
+                                  GError **error)
 {
 	GByteArray *array, *mac = NULL;
 	NMSettingWireless *wireless_setting = NULL;
 	gboolean adhoc = FALSE;
-	gchar *value;
-	gchar *type;
+	const char *value;
+	const char *type;
 
-	/* PPP over WIFI is not supported */
+	/* PPP over WIFI is not supported yet */
 	g_return_val_if_fail (conn_name != NULL
 			      && strcmp (ifnet_get_data (conn_name, "type"),
 					 "ppp") != 0, NULL);
@@ -899,8 +920,8 @@ make_wireless_connection_setting (gchar * conn_name,
 	/* handle ssid (hex and ascii) */
 	if (conn_name) {
 		gsize ssid_len = 0, value_len = strlen (conn_name);
-		char *p = conn_name, *tmp;
-		char buf[33];
+		const char *p;
+		char *tmp, *converted = NULL;
 
 		ssid_len = value_len;
 		if ((value_len > 2) && (g_str_has_prefix (conn_name, "0x"))) {
@@ -923,11 +944,11 @@ make_wireless_connection_setting (gchar * conn_name,
 				goto error;
 
 			}
-			tmp = utils_hexstr2bin (conn_name + 2, value_len - 2);
+			tmp = utils_hexstr2bin (p, value_len - 2);
 			ssid_len = (value_len - 2) / 2;
-			memcpy (buf, tmp, ssid_len);
+			converted = g_malloc0 (ssid_len + 1);
+			memcpy (converted, tmp, ssid_len);
 			g_free (tmp);
-			p = &buf[0];
 		}
 
 		if (ssid_len > 32 || ssid_len == 0) {
@@ -937,10 +958,10 @@ make_wireless_connection_setting (gchar * conn_name,
 			goto error;
 		}
 		array = g_byte_array_sized_new (ssid_len);
-		g_byte_array_append (array, (const guint8 *) p, ssid_len);
-		g_object_set (wireless_setting, NM_SETTING_WIRELESS_SSID, array,
-			      NULL);
+		g_byte_array_append (array, (const guint8 *) (converted ? converted : conn_name), ssid_len);
+		g_object_set (wireless_setting, NM_SETTING_WIRELESS_SSID, array, NULL);
 		g_byte_array_free (array, TRUE);
+		g_free (converted);
 	} else {
 		g_set_error (error, ifnet_plugin_error_quark (), 0,
 			     "Missing SSID");
@@ -1010,10 +1031,10 @@ make_wireless_connection_setting (gchar * conn_name,
 }
 
 static NMSettingWirelessSecurity *
-make_leap_setting (gchar * ssid, GError ** error)
+make_leap_setting (const char *ssid, GError **error)
 {
 	NMSettingWirelessSecurity *wsec;
-	char *value;
+	const char *value;
 
 	wsec =
 	    NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
@@ -1052,31 +1073,34 @@ make_leap_setting (gchar * ssid, GError ** error)
 }
 
 static gboolean
-add_one_wep_key (gchar * ssid, gchar * key, int key_idx,
-		 NMSettingWirelessSecurity * s_wsec, GError ** error)
+add_one_wep_key (const char *ssid,
+                 const char *key,
+                 int key_idx,
+                 NMSettingWirelessSecurity *s_wsec,
+                 GError **error)
 {
-	gchar *value;
+	const char *value;
+	char *converted = NULL;
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (ssid != NULL, FALSE);
 	g_return_val_if_fail (key != NULL, FALSE);
 	g_return_val_if_fail (key_idx >= 0 && key_idx <= 3, FALSE);
 	g_return_val_if_fail (s_wsec != NULL, FALSE);
+
 	value = wpa_get_value (ssid, key);
 	if (!value)
 		return TRUE;
-	key = NULL;
+
 	/* Validate keys */
 	if (strlen (value) == 10 || strlen (value) == 26) {
 		/* Hexadecimal WEP key */
-		char *p = value;
-
-		if (!is_hex (p)) {
+		if (!is_hex (value)) {
 			g_set_error (error, ifnet_plugin_error_quark (),
 				     0, "Invalid hexadecimal WEP key.");
 			goto out;
 		}
-		key = g_strdup (value);
+		converted = g_strdup (value);
 	} else if (value[0] == '"'
 		   && (strlen (value) == 7 || strlen (value) == 15)) {
 		/* ASCII passphrase */
@@ -1091,7 +1115,7 @@ add_one_wep_key (gchar * ssid, gchar * key, int key_idx,
 
 		}
 
-		key = utils_bin2hexstr (tmp, strlen (tmp), strlen (tmp) * 2);
+		converted = utils_bin2hexstr (tmp, strlen (tmp), strlen (tmp) * 2);
 		g_free (tmp);
 	} else {
 		g_set_error (error, ifnet_plugin_error_quark (), 0,
@@ -1099,19 +1123,20 @@ add_one_wep_key (gchar * ssid, gchar * key, int key_idx,
 		goto out;
 	}
 
-	if (key) {
-		nm_setting_wireless_security_set_wep_key (s_wsec, key_idx, key);
-		g_free (key);
+	if (converted) {
+		nm_setting_wireless_security_set_wep_key (s_wsec, key_idx, converted);
+		g_free (converted);
 		success = TRUE;
 	}
 
-      out:
+out:
 	return success;
-
 }
 
 static gboolean
-add_wep_keys (gchar * ssid, NMSettingWirelessSecurity * s_wsec, GError ** error)
+add_wep_keys (const char *ssid,
+              NMSettingWirelessSecurity *s_wsec,
+              GError **error)
 {
 	if (!add_one_wep_key (ssid, "wep_key0", 0, s_wsec, error))
 		return FALSE;
@@ -1126,11 +1151,10 @@ add_wep_keys (gchar * ssid, NMSettingWirelessSecurity * s_wsec, GError ** error)
 }
 
 static NMSettingWirelessSecurity *
-make_wep_setting (gchar * ssid, GError ** error)
+make_wep_setting (const char *ssid, GError **error)
 {
-	gchar *auth_alg;
+	const char *auth_alg, *value;
 	int default_key_idx = 0;
-	gchar *value;
 	NMSettingWirelessSecurity *s_wireless_sec;
 
 	s_wireless_sec =
@@ -1226,9 +1250,10 @@ make_wep_setting (gchar * ssid, GError ** error)
 }
 
 static char *
-parse_wpa_psk (gchar * psk, GError ** error)
+parse_wpa_psk (const char *psk, GError **error)
 {
-	gchar *p, *hashed = NULL;
+	const char *p = psk;
+	char *hashed = NULL;
 	gboolean quoted = FALSE;
 
 	if (!psk) {
@@ -1243,12 +1268,11 @@ parse_wpa_psk (gchar * psk, GError ** error)
 	 * the passphrase contains spaces.
 	 */
 
-	p = psk;
-	if (p[0] == '"' && psk[strlen (psk) - 1] == '"')
+	if (psk[0] == '"' && psk[strlen (psk) - 1] == '"')
 		quoted = TRUE;
 	if (!quoted && (strlen (psk) == 64)) {
 		/* Verify the hex PSK; 64 digits */
-		if (!is_hex (p)) {
+		if (!is_hex (psk)) {
 			g_set_error (error, ifnet_plugin_error_quark (),
 				     0,
 				     "Invalid WPA_PSK (contains non-hexadecimal characters)");
@@ -1256,17 +1280,21 @@ parse_wpa_psk (gchar * psk, GError ** error)
 		}
 		hashed = g_strdup (psk);
 	} else {
-		strip_string (p, '"');
+		char *stripped = g_strdup (psk);
+
+		strip_string (stripped, '"');
 
 		/* Length check */
 		if (strlen (p) < 8 || strlen (p) > 63) {
 			g_set_error (error, ifnet_plugin_error_quark (), 0,
 				     "Invalid WPA_PSK (passphrases must be between "
 				     "8 and 63 characters long (inclusive))");
+			g_free (stripped);
 			goto out;
 		}
 
-		hashed = g_strdup (p);
+		hashed = g_strdup (stripped);
+		g_free (stripped);
 	}
 
 	if (!hashed) {
@@ -1275,24 +1303,25 @@ parse_wpa_psk (gchar * psk, GError ** error)
 		goto out;
 	}
 
-      out:
+out:
 	return hashed;
 }
 
 static gboolean
-fill_wpa_ciphers (gchar * ssid,
-		  NMSettingWirelessSecurity * wsec,
-		  gboolean group, gboolean adhoc)
+fill_wpa_ciphers (const char *ssid,
+                  NMSettingWirelessSecurity *wsec,
+                  gboolean group,
+                  gboolean adhoc)
 {
-	char *value = NULL, *p;
+	const char *value;
 	char **list = NULL, **iter;
 	int i = 0;
 
-	p = value = wpa_get_value (ssid, group ? "group" : "pairwise");
+	value = wpa_get_value (ssid, group ? "group" : "pairwise");
 	if (!value)
 		return TRUE;
 
-	list = g_strsplit_set (p, " ", 0);
+	list = g_strsplit_set (value, " ", 0);
 	for (iter = list; iter && *iter; iter++, i++) {
 		/* Ad-Hoc configurations cannot have pairwise ciphers, and can only
 		 * have one group cipher.  Ignore any additional group ciphers and
@@ -1344,10 +1373,13 @@ fill_wpa_ciphers (gchar * ssid,
 }
 
 static NMSetting8021x *
-fill_8021x (gchar * ssid, gchar * key_mgmt, gboolean wifi, GError ** error)
+fill_8021x (const char *ssid,
+            const char *key_mgmt,
+            gboolean wifi,
+            GError **error)
 {
 	NMSetting8021x *s_8021x;
-	char *value;
+	const char *value;
 	char **list, **iter;
 
 	value = wpa_get_value (ssid, "eap");
@@ -1420,10 +1452,13 @@ fill_8021x (gchar * ssid, gchar * key_mgmt, gboolean wifi, GError ** error)
 }
 
 static NMSettingWirelessSecurity *
-make_wpa_setting (gchar * ssid, NMSetting8021x ** s_8021x, GError ** error)
+make_wpa_setting (const char *ssid,
+                  NMSetting8021x **s_8021x,
+                  GError **error)
 {
 	NMSettingWirelessSecurity *wsec;
-	char *value, *lower;
+	const char *value;
+	char *lower;
 	gboolean adhoc = FALSE;
 
 	if (!exist_ssid (ssid)) {
@@ -1462,7 +1497,7 @@ make_wpa_setting (gchar * ssid, NMSetting8021x ** s_8021x, GError ** error)
 	}
 
 	if (!strcmp (value, "WPA-PSK")) {
-		gchar *psk = parse_wpa_psk (wpa_get_value (ssid, "psk"), error);
+		char *psk = parse_wpa_psk (wpa_get_value (ssid, "psk"), error);
 
 		if (!psk)
 			goto error;
@@ -1506,14 +1541,14 @@ make_wpa_setting (gchar * ssid, NMSetting8021x ** s_8021x, GError ** error)
 }
 
 static NMSettingWirelessSecurity *
-make_wireless_security_setting (gchar *
-				conn_name,
-				NMSetting8021x ** s_8021x, GError ** error)
+make_wireless_security_setting (const char *conn_name,
+                                NMSetting8021x **s_8021x,
+                                GError ** error)
 {
 	NMSettingWirelessSecurity *wsec = NULL;
-	gchar *ssid;
+	const char *ssid;
 	gboolean adhoc = FALSE;
-	gchar *value;
+	const char *value;
 
 	g_return_val_if_fail (conn_name != NULL
 			      && strcmp (ifnet_get_data (conn_name, "type"),
@@ -1557,12 +1592,13 @@ make_wireless_security_setting (gchar *
 
 /* Currently only support username and password */
 static void
-make_pppoe_connection_setting (NMConnection * connection,
-			       gchar * conn_name, GError ** error)
+make_pppoe_connection_setting (NMConnection *connection,
+                               const char *conn_name,
+                               GError **error)
 {
 	NMSettingPPPOE *s_pppoe;
 	NMSettingPPP *s_ppp;
-	gchar *value;
+	const char *value;
 
 	s_pppoe = NM_SETTING_PPPOE (nm_setting_pppoe_new ());
 
@@ -1590,7 +1626,7 @@ make_pppoe_connection_setting (NMConnection * connection,
 }
 
 NMConnection *
-ifnet_update_connection_from_config_block (gchar * conn_name, GError ** error)
+ifnet_update_connection_from_config_block (const char *conn_name, GError **error)
 {
 	const gchar *type = NULL;
 	NMConnection *connection = NULL;
@@ -1598,7 +1634,7 @@ ifnet_update_connection_from_config_block (gchar * conn_name, GError ** error)
 	NMSetting8021x *s_8021x = NULL;
 	NMSettingWirelessSecurity *wsec = NULL;
 	gboolean auto_conn = TRUE;
-	gchar *value = NULL;
+	const char *value = NULL;
 	gboolean success = FALSE;
 
 	connection = nm_connection_new ();
@@ -1642,14 +1678,11 @@ ifnet_update_connection_from_config_block (gchar * conn_name, GError ** error)
 		}
 	} else if (!strcmp (NM_SETTING_WIRELESS_SETTING_NAME, type)) {
 		/* wireless setting */
-		NMSetting *wireless_setting =
-		    make_wireless_connection_setting (conn_name,
-						      &s_8021x,
-						      error);
+		NMSetting *wireless_setting;
 
-		if (!wireless_setting) {
+		wireless_setting = make_wireless_connection_setting (conn_name, &s_8021x, error);
+		if (!wireless_setting)
 			goto error;
-		}
 		nm_connection_add_setting (connection, wireless_setting);
 
 		if (error && *error) {
@@ -1659,8 +1692,7 @@ ifnet_update_connection_from_config_block (gchar * conn_name, GError ** error)
 		}
 
 		/* wireless security setting */
-		wsec =
-		    make_wireless_security_setting (conn_name, &s_8021x, error);
+		wsec = make_wireless_security_setting (conn_name, &s_8021x, error);
 		if (wsec) {
 			nm_connection_add_setting (connection,
 						   NM_SETTING (wsec));
@@ -1698,12 +1730,12 @@ ifnet_update_connection_from_config_block (gchar * conn_name, GError ** error)
 	if (error && *error)
 		PLUGIN_WARN (IFNET_PLUGIN_NAME,
 			     "Found error: %s", (*error)->message);
-	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Connection verified %s:%d", conn_name,
-		      success);
+	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Connection verified %s:%d", conn_name, success);
 	if (!success)
 		goto error;
 	return connection;
-      error:
+
+error:
 	g_object_unref (setting);
 	g_object_unref (connection);
 	return NULL;
@@ -1795,10 +1827,11 @@ static const ObjectType phase2_p12_type = {
 };
 
 static gboolean
-write_object (NMSetting8021x * s_8021x,
-	      gchar * conn_name,
-	      const GByteArray * override_data,
-	      const ObjectType * objtype, GError ** error)
+write_object (NMSetting8021x *s_8021x,
+              const char *conn_name,
+              const GByteArray *override_data,
+              const ObjectType *objtype,
+              GError **error)
 {
 	NMSetting8021xCKScheme scheme;
 	const char *path = NULL;
@@ -1844,8 +1877,10 @@ write_object (NMSetting8021x * s_8021x,
 }
 
 static gboolean
-write_8021x_certs (NMSetting8021x * s_8021x,
-		   gboolean phase2, gchar * conn_name, GError ** error)
+write_8021x_certs (NMSetting8021x *s_8021x,
+                   gboolean phase2,
+                   const char *conn_name,
+                   GError **error)
 {
 	char *password = NULL;
 	const ObjectType *otype = NULL;
@@ -1948,8 +1983,10 @@ write_8021x_certs (NMSetting8021x * s_8021x,
 }
 
 static gboolean
-write_8021x_setting (NMConnection * connection,
-		     gchar * conn_name, gboolean wired, GError ** error)
+write_8021x_setting (NMConnection *connection,
+                     const char *conn_name,
+                     gboolean wired,
+                     GError **error)
 {
 	NMSetting8021x *s_8021x;
 	const char *value;
@@ -2192,20 +2229,24 @@ write_wireless_security_setting (NMConnection * connection,
 
 /* remove old ssid and add new one*/
 static void
-update_wireless_ssid (NMConnection * connection, gchar * conn_name,
-		      gchar * ssid, gboolean hex)
+update_wireless_ssid (NMConnection *connection,
+                      const char *conn_name,
+                      const char *ssid,
+                      gboolean hex)
 {
 	ifnet_delete_network (conn_name);
-	ifnet_add_connection (ssid, "wireless");
-
 	wpa_delete_security (conn_name);
+
+	ifnet_add_connection (ssid, "wireless");
 	wpa_add_security (ssid);
 }
 
 static gboolean
-write_wireless_setting (NMConnection * connection,
-			gchar ** conn_name_ptr, gboolean * no_8021x,
-			GError ** error)
+write_wireless_setting (NMConnection *connection,
+                        const char *conn_name,
+                        gboolean *no_8021x,
+                        const char **out_new_name,
+                        GError **error)
 {
 	NMSettingWireless *s_wireless;
 	const GByteArray *ssid, *mac, *bssid;
@@ -2214,11 +2255,8 @@ write_wireless_setting (NMConnection * connection,
 	guint32 mtu, i;
 	gboolean adhoc = FALSE, hex_ssid = FALSE;
 	gchar *ssid_str, *tmp;
-	gchar *conn_name = *conn_name_ptr;
 
-	s_wireless =
-	    (NMSettingWireless *) nm_connection_get_setting (connection,
-							     NM_TYPE_SETTING_WIRELESS);
+	s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
 	if (!s_wireless) {
 		g_set_error (error, ifnet_plugin_error_quark (), 0,
 			     "Missing '%s' setting",
@@ -2258,10 +2296,8 @@ write_wireless_setting (NMConnection * connection,
 		g_string_append (str, "0x");
 		for (i = 0; i < ssid->len; i++)
 			g_string_append_printf (str, "%02X", ssid->data[i]);
-		update_wireless_ssid (connection, conn_name, str->str,
-				      hex_ssid);
-		ssid_str = g_strdup (str->str);
-		g_string_free (str, TRUE);
+		update_wireless_ssid (connection, conn_name, str->str, hex_ssid);
+		ssid_str = g_string_free (str, FALSE);
 	} else {
 		/* Printable SSIDs get quoted */
 		memset (buf, 0, sizeof (buf));
@@ -2321,14 +2357,17 @@ write_wireless_setting (NMConnection * connection,
 			return FALSE;
 	} else
 		wpa_delete_security (ssid_str);
-	*conn_name_ptr = ifnet_get_data (ssid_str, "name");
+
+	if (out_new_name)
+		*out_new_name = ifnet_get_data (ssid_str, "name");
 	g_free (ssid_str);
 	return TRUE;
 }
 
 static gboolean
-write_wired_setting (NMConnection * connection, gchar * conn_name,
-		     GError ** error)
+write_wired_setting (NMConnection *connection,
+                     const char *conn_name,
+                     GError **error)
 {
 	NMSettingWired *s_wired;
 	const GByteArray *mac;
@@ -2370,7 +2409,7 @@ write_wired_setting (NMConnection * connection, gchar * conn_name,
 }
 
 static void
-write_connection_setting (NMSettingConnection * s_con, gchar * conn_name)
+write_connection_setting (NMSettingConnection *s_con, const char *conn_name)
 {
 	ifnet_set_data (conn_name, "auto",
 			nm_setting_connection_get_autoconnect (s_con) ? "true" :
@@ -2378,8 +2417,7 @@ write_connection_setting (NMSettingConnection * s_con, gchar * conn_name)
 }
 
 static gboolean
-write_ip4_setting (NMConnection * connection, gchar * conn_name,
-		   GError ** error)
+write_ip4_setting (NMConnection *connection, const char *conn_name, GError **error)
 {
 	NMSettingIP4Config *s_ip4;
 	const char *value;
@@ -2537,8 +2575,7 @@ write_ip4_setting (NMConnection * connection, gchar * conn_name,
 }
 
 static gboolean
-write_route6_file (NMSettingIP6Config * s_ip6, gchar * conn_name,
-		   GError ** error)
+write_route6_file (NMSettingIP6Config *s_ip6, const char *conn_name, GError **error)
 {
 	char dest[INET6_ADDRSTRLEN + 1];
 	char next_hop[INET6_ADDRSTRLEN + 1];
@@ -2547,7 +2584,7 @@ write_route6_file (NMSettingIP6Config * s_ip6, gchar * conn_name,
 	guint32 prefix;
 	guint32 i, num;
 	GString *routes_string;
-	gchar *old_routes;
+	const char *old_routes;
 
 	g_return_val_if_fail (s_ip6 != NULL, FALSE);
 	num = nm_setting_ip6_config_get_num_routes (s_ip6);
@@ -2585,8 +2622,7 @@ write_route6_file (NMSettingIP6Config * s_ip6, gchar * conn_name,
 }
 
 static gboolean
-write_ip6_setting (NMConnection * connection, gchar * conn_name,
-		   GError ** error)
+write_ip6_setting (NMConnection *connection, const char *conn_name, GError **error)
 {
 	NMSettingIP6Config *s_ip6;
 	const char *value;
@@ -2616,7 +2652,7 @@ write_ip6_setting (NMConnection * connection, gchar * conn_name,
 		/* nothing to do now */
 	} else {
 		// if (!strcmp(value, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
-		gchar *config = ifnet_get_data (conn_name, "config");
+		const char *config = ifnet_get_data (conn_name, "config");
 		gchar *tmp;
 
 		if (!config)
@@ -2635,7 +2671,7 @@ write_ip6_setting (NMConnection * connection, gchar * conn_name,
 	ifnet_set_data (conn_name, "enable_ipv6", "true");
 
 	if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
-		gchar *config = ifnet_get_data (conn_name, "config");
+		const char *config = ifnet_get_data (conn_name, "config");
 		gchar *tmp;
 		GString *ip_str;
 
@@ -2667,7 +2703,7 @@ write_ip6_setting (NMConnection * connection, gchar * conn_name,
 	/* DNS Servers */
 	num = nm_setting_ip6_config_get_num_dns (s_ip6);
 	if (num > 0) {
-		gchar *dns_servers = ifnet_get_data (conn_name, "dns_servers");
+		const char *dns_servers = ifnet_get_data (conn_name, "dns_servers");
 		gchar *tmp;
 		GString *dns_string = g_string_new (NULL);
 
@@ -2691,7 +2727,7 @@ write_ip6_setting (NMConnection * connection, gchar * conn_name,
 		/* DNS Searches */
 		num = nm_setting_ip6_config_get_num_dns_searches (s_ip6);
 	if (num > 0) {
-		char *ip4_domains;
+		const char *ip4_domains;
 
 		ip4_domains = ifnet_get_data (conn_name, "dns_search");
 		if (!ip4_domains)
@@ -2719,7 +2755,7 @@ write_ip6_setting (NMConnection * connection, gchar * conn_name,
 }
 
 static gboolean
-write_pppoe_setting (gchar * conn_name, NMSettingPPPOE * s_pppoe)
+write_pppoe_setting (const char *conn_name, NMSettingPPPOE * s_pppoe)
 {
 	const gchar *value;
 
@@ -2738,11 +2774,12 @@ write_pppoe_setting (gchar * conn_name, NMSettingPPPOE * s_pppoe)
 }
 
 gboolean
-ifnet_update_parsers_by_connection (NMConnection * connection,
-				    gchar * conn_name,
-				    gchar ** nm_conn_name,
-				    gchar * config_file,
-				    gchar * wpa_file, GError ** error)
+ifnet_update_parsers_by_connection (NMConnection *connection,
+                                    const char *conn_name,
+                                    const char *config_file,
+                                    const char *wpa_file,
+                                    const char **out_new_name,
+                                    GError **error)
 {
 	NMSettingConnection *s_con;
 	NMSettingIP6Config *s_ip6;
@@ -2750,6 +2787,7 @@ ifnet_update_parsers_by_connection (NMConnection * connection,
 	const char *type;
 	gboolean no_8021x = FALSE;
 	gboolean wired = FALSE, pppoe = TRUE;
+	const char *new_name = NULL;
 
 	s_con =
 	    NM_SETTING_CONNECTION (nm_connection_get_setting
@@ -2776,16 +2814,14 @@ ifnet_update_parsers_by_connection (NMConnection * connection,
 		no_8021x = TRUE;
 	} else if (!strcmp (type, NM_SETTING_WIRELESS_SETTING_NAME)) {
 		/* Writing wireless setting */
-		if (!write_wireless_setting
-		    (connection, &conn_name, &no_8021x, error))
+		if (!write_wireless_setting (connection, conn_name, &no_8021x, &new_name, error))
 			goto out;
 	} else if (!strcmp (type, NM_SETTING_PPPOE_SETTING_NAME)) {
+		NMSettingPPPOE *s_pppoe;
+
 		/* Writing pppoe setting */
-		if (!
-		    (write_pppoe_setting
-		     (conn_name,
-		      NM_SETTING_PPPOE (nm_connection_get_setting
-					(connection, NM_TYPE_SETTING_PPPOE)))))
+		s_pppoe = NM_SETTING_PPPOE (nm_connection_get_setting (connection, NM_TYPE_SETTING_PPPOE));
+		if (!write_pppoe_setting (conn_name, s_pppoe))
 			goto out;
 		pppoe = TRUE;
 		wired = TRUE;
@@ -2795,6 +2831,12 @@ ifnet_update_parsers_by_connection (NMConnection * connection,
 			     "Can't write connection type '%s'", type);
 		goto out;
 	}
+
+	/* connection name may have been updated; use it when writing out
+	 * the rest of the settings.
+	 */
+	if (new_name)
+		conn_name = new_name;
 
 	//FIXME wired connection doesn't support 8021x now
 	if (!no_8021x) {
@@ -2806,9 +2848,7 @@ ifnet_update_parsers_by_connection (NMConnection * connection,
 	if (!write_ip4_setting (connection, conn_name, error))
 		goto out;
 
-	s_ip6 =
-	    (NMSettingIP6Config *) nm_connection_get_setting (connection,
-							      NM_TYPE_SETTING_IP6_CONFIG);
+	s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
 	if (s_ip6) {
 		/* IPv6 Setting */
 		if (!write_ip6_setting (connection, conn_name, error))
@@ -2821,19 +2861,21 @@ ifnet_update_parsers_by_connection (NMConnection * connection,
 	/* connection id will be displayed in nm-applet */
 	update_connection_id (connection, conn_name);
 
-	if (nm_conn_name)
-		*nm_conn_name = g_strdup (conn_name);
 	success = ifnet_flush_to_file (config_file);
 	if (success)
 		wpa_flush_to_file (wpa_file);
 
-      out:
+	if (out_new_name)
+		*out_new_name = new_name;
+
+out:
 	return success;
 }
 
 gboolean
-ifnet_delete_connection_in_parsers (gchar * conn_name,
-				    gchar * config_file, gchar * wpa_file)
+ifnet_delete_connection_in_parsers (const char *conn_name,
+                                    const char *config_file,
+                                    const char *wpa_file)
 {
 	gboolean result = FALSE;
 
@@ -2933,30 +2975,20 @@ get_wireless_name (NMConnection * connection)
 
 gboolean
 ifnet_add_new_connection (NMConnection * connection,
-			  gchar * config_file, gchar * wpa_file,
-			  GError ** error)
+                          const char *config_file,
+                          const char *wpa_file,
+                          GError **error)
 {
 	NMSettingConnection *s_con;
 	gboolean success = FALSE;
 	const char *type;
 	gchar *new_type, *new_name = NULL;
 
-	s_con =
-	    NM_SETTING_CONNECTION (nm_connection_get_setting
-				   (connection, NM_TYPE_SETTING_CONNECTION));
-	if (!s_con) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
-			     "Missing '%s' setting",
-			     NM_SETTING_CONNECTION_SETTING_NAME);
-		return FALSE;
-	}
-
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	g_assert (s_con);
 	type = nm_setting_connection_get_connection_type (s_con);
-	if (!type) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
-			     "Missing connection type!");
-		goto out;
-	}
+	g_assert (type);
+
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Adding %s connection", type);
 
 	/* get name and type
@@ -2982,15 +3014,19 @@ ifnet_add_new_connection (NMConnection * connection,
 		goto out;
 	}
 
-	if (ifnet_add_connection (new_name, new_type))
-		success =
-		    ifnet_update_parsers_by_connection (connection, new_name,
-							NULL, config_file,
-							wpa_file, error);
+	if (ifnet_add_connection (new_name, new_type)) {
+		success = ifnet_update_parsers_by_connection (connection,
+		                                              new_name,
+		                                              config_file,
+		                                              wpa_file,
+		                                              NULL,
+		                                              error);
+	}
+
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Added new connection: %s, result: %s",
 		      new_name, success ? "success" : "fail");
 
-      out:
+out:
 	if (new_name)
 		g_free (new_name);
 	return success;

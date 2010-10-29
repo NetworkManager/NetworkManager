@@ -90,18 +90,16 @@ commit_changes (NMSysconfigConnection *connection,
 	            gpointer user_data)
 {
 	GError *error = NULL;
-	gchar *new_conn_name = NULL;
 	NMIfnetConnectionPrivate *priv = NM_IFNET_CONNECTION_GET_PRIVATE (connection);
+	const char *new_name = NULL;
 
 	g_signal_emit (connection, signals[IFNET_CANCEL_MONITORS], 0);
 	if (!ifnet_update_parsers_by_connection (NM_CONNECTION (connection),
 	                                         priv->conn_name,
-	                                         &new_conn_name,
 	                                         CONF_NET_FILE,
 	                                         WPA_SUPPLICANT_CONF,
+	                                         &new_name,
 	                                         &error)) {
-		if (new_conn_name)
-			g_free (new_conn_name);
 		PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Failed to update %s", priv->conn_name);
 		reload_parsers ();
 		callback (connection, error, user_data);
@@ -111,7 +109,7 @@ commit_changes (NMSysconfigConnection *connection,
 	}
 
 	g_free (priv->conn_name);
-	priv->conn_name = new_conn_name;
+	priv->conn_name = g_strdup (new_name);
 
 	NM_SYSCONFIG_CONNECTION_CLASS (nm_ifnet_connection_parent_class)->commit_changes (connection, callback, user_data);
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Successfully updated %s", priv->conn_name);

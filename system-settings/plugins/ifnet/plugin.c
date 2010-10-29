@@ -126,20 +126,11 @@ write_system_hostname (NMSystemConfigInterface * config,
 static gboolean
 is_managed_plugin ()
 {
-	gchar *result = NULL;
+	const char *result = NULL;
 
-	result =
-	    ifnet_get_global_setting (IFNET_KEY_FILE_GROUP,
-				      IFNET_KEY_FILE_KEY_MANAGED);
-	if (result) {
-		if (is_true (result)) {
-			g_free (result);
-			return TRUE;
-		} else {
-			g_free (result);
-			return FALSE;
-		}
-	}
+	result = ifnet_get_global_setting (IFNET_KEY_FILE_GROUP, IFNET_KEY_FILE_KEY_MANAGED);
+	if (result)
+		return is_true (result);
 	return IFNET_MANAGE_WELL_KNOWN_DEFAULT;
 }
 
@@ -300,10 +291,9 @@ reload_connections (gpointer config)
 				  G_CALLBACK (cancel_monitors), config);
 		old = g_hash_table_lookup (priv->config_connections, conn_name);
 		if (old && exported) {
-			gchar *auto_refresh =
-			    ifnet_get_global_setting (IFNET_KEY_FILE_GROUP,
-						      "auto_refresh");
+			const char *auto_refresh;
 
+			auto_refresh = ifnet_get_global_setting (IFNET_KEY_FILE_GROUP, "auto_refresh");
 			if (auto_refresh && is_true (auto_refresh)) {
 				if (!nm_connection_compare (NM_CONNECTION (old),
 							    NM_CONNECTION
@@ -354,8 +344,9 @@ reload_connections (gpointer config)
 }
 
 static gboolean
-add_connection (NMSystemConfigInterface * config,
-		NMConnection * connection, GError ** error)
+add_connection (NMSystemConfigInterface *config,
+                NMConnection *connection,
+                GError **error)
 {
 	gboolean result;
 

@@ -35,7 +35,7 @@ static GHashTable *wsec_global_table = NULL;
 static gboolean wpa_parser_data_changed = FALSE;
 
 static long
-wpa_get_long (GHashTable * table, gchar * key)
+wpa_get_long (GHashTable *table, const char *key)
 {
 	return atol (g_hash_table_lookup (table, key));
 }
@@ -57,14 +57,15 @@ destroy_security (GHashTable * network)
 }
 
 static GHashTable *
-add_security (GHashTable * security)
+add_security (GHashTable *security)
 {
 	GHashTable *oldsecurity;
-	gchar *ssid = g_hash_table_lookup (security, "ssid"), *ssid_key;
-	gchar *value;
+	const char *ssid, *value;
+	char *ssid_key;
 	gboolean is_hex_ssid;
 
 	/* Every security information should have a ssid */
+	ssid = g_hash_table_lookup (security, "ssid");
 	if (!ssid) {
 		destroy_security (security);
 		return NULL;
@@ -181,7 +182,7 @@ add_keys_from_net ()
 	while (iter) {
 		gchar *conn_name = iter->data;
 		GHashTable *table;
-		gchar *key_str;
+		const char *key_str;
 
 		if ((key_str = ifnet_get_data (conn_name, "key")) == NULL) {
 			iter = g_list_next (iter);
@@ -247,7 +248,7 @@ add_global_data (gchar * line)
 }
 
 void
-wpa_parser_init (gchar * wpa_supplicant_conf)
+wpa_parser_init (const char *wpa_supplicant_conf)
 {
 	GIOChannel *channel = NULL;
 	gchar *line;
@@ -315,8 +316,8 @@ wpa_parser_init (gchar * wpa_supplicant_conf)
 	add_keys_from_net ();
 }
 
-gchar *
-wpa_get_value (gchar * ssid, gchar * key)
+const char *
+wpa_get_value (const char *ssid, const char *key)
 {
 	GHashTable *target = g_hash_table_lookup (wsec_table, ssid);
 
@@ -326,13 +327,13 @@ wpa_get_value (gchar * ssid, gchar * key)
 }
 
 gboolean
-exist_ssid (gchar * ssid)
+exist_ssid (const char *ssid)
 {
 	return g_hash_table_lookup (wsec_table, ssid) != NULL;
 }
 
 GHashTable *
-_get_hash_table (gchar * ssid)
+_get_hash_table (const char *ssid)
 {
 	return g_hash_table_lookup (wsec_table, ssid);
 }
@@ -355,7 +356,7 @@ need_quote (gchar * key)
 }
 
 gboolean
-wpa_flush_to_file (gchar * config_file)
+wpa_flush_to_file (const char *config_file)
 {
 	GIOChannel *channel;
 	GError **error = NULL;
@@ -446,7 +447,7 @@ wpa_flush_to_file (gchar * config_file)
 
 /* If value is NULL, this method will delete old key value pair */
 void
-wpa_set_data (gchar * ssid, gchar * key, gchar * value)
+wpa_set_data (const char *ssid, const char *key, const char *value)
 {
 	gpointer orig_key = NULL, orig_value = NULL;
 	GHashTable *security = g_hash_table_lookup (wsec_table, ssid);
@@ -474,13 +475,13 @@ wpa_set_data (gchar * ssid, gchar * key, gchar * value)
 }
 
 gboolean
-wpa_has_security (gchar * ssid)
+wpa_has_security (const char *ssid)
 {
 	return g_hash_table_lookup (wsec_table, ssid) != NULL;
 }
 
 gboolean
-wpa_add_security (gchar * ssid)
+wpa_add_security (const char *ssid)
 {
 	if (wpa_has_security (ssid))
 		return FALSE;
@@ -508,7 +509,7 @@ wpa_add_security (gchar * ssid)
 }
 
 gboolean
-wpa_delete_security (gchar * ssid)
+wpa_delete_security (const char *ssid)
 {
 	gpointer orig_key, orig_value;
 

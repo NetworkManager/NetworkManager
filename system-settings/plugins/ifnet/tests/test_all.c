@@ -202,7 +202,7 @@ test_convert_ipv4_routes_block ()
 static void
 test_wpa_parser ()
 {
-	gchar *value;
+	const char *value;
 
 	ASSERT (exist_ssid ("example"), "get wsec",
 		"ssid myxjtu2 is not found");
@@ -273,23 +273,31 @@ test_update_connection ()
 {
 	GError **error = NULL;
 	NMConnection *connection;
+	gboolean success;
 
 	connection = ifnet_update_connection_from_config_block ("eth0", error);
 	ASSERT (connection != NULL, "get connection",
 		"get connection failed: %s",
 		error == NULL ? "None" : (*error)->message);
-	ASSERT (ifnet_update_parsers_by_connection
-		(connection, "eth0", NULL, "net.generate",
-		 "wpa_supplicant.conf.generate", error), "update connection",
-		"update connection failed %s", "eth0");
-	connection =
-	    ifnet_update_connection_from_config_block ("0xab3ace", error);
+
+	success = ifnet_update_parsers_by_connection (connection, "eth0",
+	                                              "net.generate",
+	                                              "wpa_supplicant.conf.generate",
+	                                              NULL,
+	                                              error);
+	ASSERT (success, "update connection", "update connection failed %s", "eth0");
+
+	connection = ifnet_update_connection_from_config_block ("0xab3ace", error);
 	ASSERT (connection != NULL, "get connection",
 		"get connection failed: %s",
 		error == NULL ? "None" : (*error)->message);
-	ASSERT (ifnet_update_parsers_by_connection
-		(connection, "0xab3ace", NULL, "net.generate",
-		 "wpa_supplicant.conf.generate", error), "update connection",
+
+	success = ifnet_update_parsers_by_connection (connection, "0xab3ace",
+	                                              "net.generate",
+	                                              "wpa_supplicant.conf.generate",
+	                                              NULL,
+	                                              error);
+	ASSERT (success, "update connection",
 		"update connection failed %s", "0xab3ace");
 }
 
