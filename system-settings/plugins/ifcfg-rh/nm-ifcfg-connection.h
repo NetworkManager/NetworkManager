@@ -33,7 +33,6 @@ G_BEGIN_DECLS
 #define NM_IS_IFCFG_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_IFCFG_CONNECTION))
 #define NM_IFCFG_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_IFCFG_CONNECTION, NMIfcfgConnectionClass))
 
-#define NM_IFCFG_CONNECTION_FILENAME  "filename"
 #define NM_IFCFG_CONNECTION_UNMANAGED "unmanaged"
 
 typedef struct {
@@ -47,10 +46,11 @@ typedef struct {
 GType nm_ifcfg_connection_get_type (void);
 
 NMIfcfgConnection *nm_ifcfg_connection_new (const char *filename,
+                                            NMConnection *source,
                                             GError **error,
                                             gboolean *ignore_error);
 
-const char *nm_ifcfg_connection_get_filename (NMIfcfgConnection *self);
+const char *nm_ifcfg_connection_get_path (NMIfcfgConnection *self);
 
 const char *nm_ifcfg_connection_get_unmanaged_spec (NMIfcfgConnection *self);
 

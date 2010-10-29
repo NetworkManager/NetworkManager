@@ -67,13 +67,49 @@ typedef struct {
 	gboolean disposed;
 } SCPluginKeyfilePrivate;
 
+static NMSysconfigConnection *
+_internal_new_connection (SCPluginKeyfile *self,
+                          const char *full_path,
+                          NMConnection *source,
+                          const char **out_cid,
+                          GError **error)
+{
+	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (self);
+	NMSettingConnection *s_con;
+	const char *cid, *uuid;
+	NMKeyfileConnection *connection;
+
+	g_return_val_if_fail (full_path != NULL, NULL);
+
+	connection = nm_keyfile_connection_new (full_path, source, error);
+	if (!connection)
+		return NULL;
+
+	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (connection),
+	                                                           NM_TYPE_SETTING_CONNECTION);
+	g_assert (s_con);
+
+	cid = nm_setting_connection_get_id (s_con);
+	g_assert (cid);
+	uuid = nm_setting_connection_get_uuid (s_con);
+	g_assert (uuid);
+
+	g_hash_table_insert (priv->hash,
+	                     (gpointer) nm_keyfile_connection_get_path (connection),
+	                     connection);
+
+	if (out_cid)
+		*out_cid = cid;
+	return NM_SYSCONFIG_CONNECTION (connection);
+}
+
 static void
 read_connections (NMSystemConfigInterface *config)
 {
-	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (config);
+	SCPluginKeyfile *self = SC_PLUGIN_KEYFILE (config);
 	GDir *dir;
 	GError *error = NULL;
-	const char *item;
+	const char *item, *cid;
 
 	dir = g_dir_open (KEYFILE_DIR, 0, &error);
 	if (!dir) {
@@ -86,62 +122,28 @@ read_connections (NMSystemConfigInterface *config)
 	}
 
 	while ((item = g_dir_read_name (dir))) {
-		NMKeyfileConnection *connection;
+		NMSysconfigConnection *connection;
 		char *full_path;
 
 		full_path = g_build_filename (KEYFILE_DIR, item, NULL);
 		PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "parsing %s ... ", item);
-		connection = nm_keyfile_connection_new (full_path, &error);
+
+		connection = _internal_new_connection (self, full_path, NULL, &cid, &error);
 		if (connection) {
-			NMSettingConnection *s_con;
-			const char *cid;
-
-			s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (connection), NM_TYPE_SETTING_CONNECTION);
-			g_assert (s_con);
-
-			cid = nm_setting_connection_get_id (s_con);
-			g_assert (cid);
-
-			g_hash_table_insert (priv->hash,
-			                     (gpointer) nm_keyfile_connection_get_filename (connection),
-			                     connection);
-
 			PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "    read connection '%s'", cid);
 		} else {
 			PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "    error: %s",
 				          (error && error->message) ? error->message : "(unknown)");
-			g_clear_error (&error);
 		}
+		g_clear_error (&error);
 		g_free (full_path);
 	}
 	g_dir_close (dir);
 }
 
-typedef struct {
-	const char *uuid;
-	NMKeyfileConnection *found;
-} FindByUUIDInfo;
-
 static void
-find_by_uuid (gpointer key, gpointer data, gpointer user_data)
+update_connection_settings_commit_cb (NMSysconfigConnection *orig, GError *error, gpointer user_data)
 {
-	NMKeyfileConnection *keyfile = NM_KEYFILE_CONNECTION (data);
-	FindByUUIDInfo *info = user_data;
-	NMSettingConnection *s_con;
-	const char *uuid;
-
-	if (info->found)
-		return;
-
-	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (keyfile), NM_TYPE_SETTING_CONNECTION);
-
-	uuid = s_con ? nm_setting_connection_get_uuid (s_con) : NULL;
-	if (uuid && !strcmp (info->uuid, uuid))
-		info->found = keyfile;
-}
-
-static void
-update_connection_settings_commit_cb (NMSysconfigConnection *orig, GError *error, gpointer user_data) {
 	if (error) {
 		g_warning ("%s: '%s' / '%s' invalid: %d",
 		       	   __func__,
@@ -180,6 +182,28 @@ remove_connection (SCPluginKeyfile *self,
 	g_object_unref (connection);
 }
 
+static NMKeyfileConnection *
+find_by_uuid (SCPluginKeyfile *self, const char *uuid)
+{
+	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (self);
+	GHashTableIter iter;
+	gpointer data = NULL;
+
+	g_return_val_if_fail (uuid != NULL, NULL);
+
+	g_hash_table_iter_init (&iter, priv->hash);
+	while (g_hash_table_iter_next (&iter, NULL, &data)) {
+		NMConnection *candidate = NM_CONNECTION (data);
+		NMSettingConnection *s_con;
+
+		s_con = (NMSettingConnection *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_CONNECTION);
+		g_assert (s_con);
+		if (strcmp (uuid, nm_setting_connection_get_uuid (s_con)) == 0)
+			return NM_KEYFILE_CONNECTION (candidate);
+	}
+	return NULL;
+}
+
 static void
 dir_changed (GFileMonitor *monitor,
              GFile *file,
@@ -188,30 +212,31 @@ dir_changed (GFileMonitor *monitor,
              gpointer user_data)
 {
 	NMSystemConfigInterface *config = NM_SYSTEM_CONFIG_INTERFACE (user_data);
-	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (config);
-	char *name;
+	SCPluginKeyfile *self = SC_PLUGIN_KEYFILE (config);
+	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (self);
+	char *full_path;
 	NMKeyfileConnection *connection;
 	GError *error = NULL;
 
-	name = g_file_get_path (file);
-	connection = g_hash_table_lookup (priv->hash, name);
+	full_path = g_file_get_path (file);
+	connection = g_hash_table_lookup (priv->hash, full_path);
 
 	switch (event_type) {
 	case G_FILE_MONITOR_EVENT_DELETED:
 		if (connection) {
-			PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "removed %s.", name);
-			remove_connection (SC_PLUGIN_KEYFILE (config), connection, name);
+			PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "removed %s.", full_path);
+			remove_connection (SC_PLUGIN_KEYFILE (config), connection, full_path);
 		}
 		break;
 	case G_FILE_MONITOR_EVENT_CREATED:
 	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
-		PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "updating %s", name);
+		PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "updating %s", full_path);
 
 		if (connection) {
 			/* Update */
 			NMKeyfileConnection *tmp;
 
-			tmp = nm_keyfile_connection_new (name, &error);
+			tmp = nm_keyfile_connection_new (full_path, NULL, &error);
 			if (tmp) {
 				update_connection_settings (connection, tmp);
 				g_object_unref (tmp);
@@ -220,40 +245,33 @@ dir_changed (GFileMonitor *monitor,
 				PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "    error: %s",
 						      (error && error->message) ? error->message : "(unknown)");
 				g_clear_error (&error);
-				remove_connection (SC_PLUGIN_KEYFILE (config), connection, name);
+				remove_connection (SC_PLUGIN_KEYFILE (config), connection, full_path);
 			}
 		} else {
 			/* New */
-			connection = nm_keyfile_connection_new (name, &error);
+			connection = nm_keyfile_connection_new (full_path, NULL, &error);
 			if (connection) {
-				NMSettingConnection *s_con;
-				const char *connection_uuid;
 				NMKeyfileConnection *found = NULL;
+				NMSettingConnection *s_con;
 
 				/* Connection renames will show up as different files but with
 				 * the same UUID.  Try to find the original connection.
 				 */
 				s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (connection), NM_TYPE_SETTING_CONNECTION);
-				connection_uuid = s_con ? nm_setting_connection_get_uuid (s_con) : NULL;
-
-				if (connection_uuid) {
-					FindByUUIDInfo info = { .found = NULL, .uuid = connection_uuid };
-
-					g_hash_table_foreach (priv->hash, find_by_uuid, &info);
-					found = info.found;
-				}
+				g_assert (s_con);
 
 				/* A connection rename is treated just like an update except
 				 * there's a bit more housekeeping with the hash table.
 				 */
+				found = find_by_uuid (self, nm_setting_connection_get_uuid (s_con));
 				if (found) {
-					const char *old_filename = nm_keyfile_connection_get_filename (connection);
+					const char *old_path = nm_keyfile_connection_get_path (connection);
 
 					/* Removing from the hash table should drop the last reference,
 					 * but of course we want to keep the connection around.
 					 */
 					g_object_ref (found);
-					g_hash_table_remove (priv->hash, old_filename);
+					g_hash_table_remove (priv->hash, old_path);
 
 					/* Updating settings should update the NMKeyfileConnection's
 					 * filename property too.
@@ -262,14 +280,14 @@ dir_changed (GFileMonitor *monitor,
 
 					/* Re-insert the connection back into the hash with the new filename */
 					g_hash_table_insert (priv->hash,
-					                     (gpointer) nm_keyfile_connection_get_filename (found),
+					                     (gpointer) nm_keyfile_connection_get_path (found),
 					                     found);
 
 					/* Get rid of the temporary connection */
 					g_object_unref (connection);
 				} else {
 					g_hash_table_insert (priv->hash,
-					                     (gpointer) nm_keyfile_connection_get_filename (connection),
+					                     (gpointer) nm_keyfile_connection_get_path (connection),
 					                     connection);
 					g_signal_emit_by_name (config, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, connection);
 				}
@@ -284,7 +302,7 @@ dir_changed (GFileMonitor *monitor,
 		break;
 	}
 
-	g_free (name);
+	g_free (full_path);
 }
 
 static void
@@ -352,38 +370,42 @@ setup_monitoring (NMSystemConfigInterface *config)
 	}
 }
 
-static void
-hash_to_slist (gpointer key, gpointer value, gpointer user_data)
-{
-	GSList **list = (GSList **) user_data;
-
-	*list = g_slist_prepend (*list, value);
-}
-
 /* Plugin */
 
 static GSList *
 get_connections (NMSystemConfigInterface *config)
 {
 	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (config);
-	GSList *connections = NULL;
+	GHashTableIter iter;
+	gpointer data = NULL;
+	GSList *list = NULL;
 
 	if (!priv->hash) {
 		setup_monitoring (config);
 		read_connections (config);
 	}
 
-	g_hash_table_foreach (priv->hash, hash_to_slist, &connections);
-
-	return connections;
+	g_hash_table_iter_init (&iter, priv->hash);
+	while (g_hash_table_iter_next (&iter, NULL, &data))
+		list = g_slist_prepend (list, data);
+	return list;
 }
 
-static gboolean
+static NMSysconfigConnection *
 add_connection (NMSystemConfigInterface *config,
                 NMConnection *connection,
                 GError **error)
 {
-	return write_connection (connection, KEYFILE_DIR, 0, 0, NULL, error);
+	SCPluginKeyfile *self = SC_PLUGIN_KEYFILE (config);
+	NMSysconfigConnection *added = NULL;
+	char *path = NULL;
+
+	/* Write it out first, then add the connection to our internal list */
+	if (write_connection (connection, KEYFILE_DIR, 0, 0, &path, error)) {
+		added = _internal_new_connection (self, path, connection, NULL, error);
+		g_free (path);
+	}
+	return added;
 }
 
 static GSList *

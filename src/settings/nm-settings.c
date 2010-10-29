@@ -129,7 +129,6 @@ enum {
 	NEW_CONNECTION, /* exported, not used internally */
 	LAST_SIGNAL
 };
-
 static guint signals[LAST_SIGNAL] = { 0 };
 
 enum {
@@ -575,16 +574,45 @@ load_plugins (NMSettings *self, const char *plugins, GError **error)
 	return success;
 }
 
+#define REMOVED_ID_TAG "removed-id-tag"
+#define UPDATED_ID_TAG "updated-id-tag"
+#define VISIBLE_ID_TAG "visible-id-tag"
+
 static void
-connection_removed (NMSysconfigConnection *connection, gpointer user_data)
+connection_removed (NMSysconfigConnection *obj, gpointer user_data)
 {
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (user_data);
+	GObject *connection = G_OBJECT (obj);
+	guint id;
+
 	g_object_ref (connection);
 
-	g_hash_table_remove (NM_SETTINGS_GET_PRIVATE (user_data)->connections, connection);
+	/* Disconnect signal handlers, as plugins might still keep references
+	 * to the connection (and thus the signal handlers would still be live)
+	 * even after NMSettings has dropped all its references.
+	 */
+
+	id = GPOINTER_TO_UINT (g_object_get_data (connection, REMOVED_ID_TAG));
+	if (id)
+		g_signal_handler_disconnect (connection, id);
+
+	id = GPOINTER_TO_UINT (g_object_get_data (connection, UPDATED_ID_TAG));
+	if (id)
+		g_signal_handler_disconnect (connection, id);
+
+	id = GPOINTER_TO_UINT (g_object_get_data (connection, VISIBLE_ID_TAG));
+	if (id)
+		g_signal_handler_disconnect (connection, id);
+
+	/* Unregister the connection with D-Bus and forget about it */
+	dbus_g_connection_unregister_g_object (priv->bus, connection);
+	g_hash_table_remove (NM_SETTINGS_GET_PRIVATE (user_data)->connections,
+	                     (gpointer) nm_connection_get_path (NM_CONNECTION (connection)));
 	g_signal_emit (NM_SETTINGS (user_data),
 	               signals[CONNECTION_REMOVED],
 	               0,
 	               connection);
+
 	g_object_unref (connection);
 }
 
@@ -619,6 +647,7 @@ claim_connection (NMSettings *self,
 	GHashTableIter iter;
 	gpointer data;
 	char *path;
+	guint id;
 
 	g_return_if_fail (NM_IS_SYSCONFIG_CONNECTION (connection));
 
@@ -640,19 +669,20 @@ claim_connection (NMSettings *self,
 	/* Ensure it's initial visibility is up-to-date */
 	nm_sysconfig_connection_recheck_visibility (connection);
 
-	g_signal_connect (connection,
-	                  NM_SYSCONFIG_CONNECTION_REMOVED,
-	                  G_CALLBACK (connection_removed),
-	                  self);
+	id = g_signal_connect (connection, NM_SYSCONFIG_CONNECTION_REMOVED,
+	                       G_CALLBACK (connection_removed),
+	                       self);
+	g_object_set_data (G_OBJECT (connection), REMOVED_ID_TAG, GUINT_TO_POINTER (id));
 
-	g_signal_connect (connection,
-	                  NM_SYSCONFIG_CONNECTION_UPDATED,
-	                  G_CALLBACK (connection_updated),
-	                  self);
+	id = g_signal_connect (connection, NM_SYSCONFIG_CONNECTION_UPDATED,
+	                       G_CALLBACK (connection_updated),
+	                       self);
+	g_object_set_data (G_OBJECT (connection), UPDATED_ID_TAG, GUINT_TO_POINTER (id));
 
-	g_signal_connect (connection, "notify::" NM_SYSCONFIG_CONNECTION_VISIBLE,
-	                  G_CALLBACK (connection_visibility_changed),
-	                  self);
+	id = g_signal_connect (connection, "notify::" NM_SYSCONFIG_CONNECTION_VISIBLE,
+	                       G_CALLBACK (connection_visibility_changed),
+	                       self);
+	g_object_set_data (G_OBJECT (connection), VISIBLE_ID_TAG, GUINT_TO_POINTER (id));
 
 	/* Export the connection over D-Bus */
 	g_warn_if_fail (nm_connection_get_path (NM_CONNECTION (connection)) == NULL);
@@ -750,7 +780,7 @@ polkit_call_free (PolkitCall *call)
 	g_free (call);
 }
 
-static gboolean
+static NMSysconfigConnection *
 add_new_connection (NMSettings *self,
                     NMConnection *connection,
                     GError **error)
@@ -758,29 +788,28 @@ add_new_connection (NMSettings *self,
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GError *tmp_error = NULL, *last_error = NULL;
 	GSList *iter;
-	gboolean success = FALSE;
+	NMSysconfigConnection *added = NULL;
 
-	/* Here's how it works:
-	   1) plugin writes a connection.
-	   2) plugin notices that a new connection is available for reading.
-	   3) plugin reads the new connection (the one it wrote in 1) and emits 'connection-added' signal.
-	   4) NMSettings receives the signal and adds it to it's connection list.
-	*/
-
-	for (iter = priv->plugins; iter && !success; iter = iter->next) {
-		success = nm_system_config_interface_add_connection (NM_SYSTEM_CONFIG_INTERFACE (iter->data),
-		                                                     connection,
-		                                                     &tmp_error);
+	/* 1) plugin writes the NMConnection to disk
+	 * 2) plugin creates a new NMSysconfigConnection subclass with the settings
+	 *     from the NMConnection and returns it to the settings service
+	 * 3) settings service exports the new NMSysconfigConnection subclass
+	 * 4) plugin notices that something on the filesystem has changed
+	 * 5) plugin reads the changes and ignores them because they will
+	 *     contain the same data as the connection it already knows about
+	 */
+	for (iter = priv->plugins; iter && !added; iter = g_slist_next (iter)) {
+		added = nm_system_config_interface_add_connection (NM_SYSTEM_CONFIG_INTERFACE (iter->data),
+		                                                   connection,
+		                                                   &tmp_error);
 		g_clear_error (&last_error);
-		if (!success) {
-			last_error = tmp_error;
-			tmp_error = NULL;
-		}
+		if (!added)
+			g_propagate_error (&last_error, tmp_error);
 	}
 
-	if (!success)
-		*error = last_error;
-	return success;
+	if (!added)
+		g_propagate_error (error, last_error);
+	return added;
 }
 
 static void
@@ -791,6 +820,7 @@ pk_add_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	NMSettingsPrivate *priv;
 	PolkitAuthorizationResult *pk_result;
 	GError *error = NULL, *add_error = NULL;
+	NMSysconfigConnection *added_connection;
 
 	/* If NMSettings is already gone, do nothing */
 	if (call->disposed) {
@@ -825,8 +855,9 @@ pk_add_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 		goto out;
 	}
 
-	if (add_new_connection (self, call->connection, &add_error))
-		dbus_g_method_return (call->context);
+	added_connection = add_new_connection (self, call->connection, &add_error);
+	if (added_connection)
+		dbus_g_method_return (call->context, added_connection);
 	else {
 		error = g_error_new (NM_SETTINGS_ERROR,
 		                     NM_SETTINGS_ERROR_ADD_FAILED,
@@ -1201,6 +1232,7 @@ default_wired_try_update (NMDefaultWiredConnection *wired,
 	GError *error = NULL;
 	NMSettingConnection *s_con;
 	const char *id;
+	NMSysconfigConnection *added;
 
 	/* Try to move this default wired conneciton to a plugin so that it has
 	 * persistent storage.
@@ -1213,7 +1245,8 @@ default_wired_try_update (NMDefaultWiredConnection *wired,
 	g_assert (id);
 
 	remove_default_wired_connection (self, NM_SYSCONFIG_CONNECTION (wired), FALSE);
-	if (add_new_connection (self, NM_CONNECTION (wired), &error)) {
+	added = add_new_connection (self, NM_CONNECTION (wired), &error);
+	if (added) {
 		nm_sysconfig_connection_delete (NM_SYSCONFIG_CONNECTION (wired),
 		                                delete_cb,
 		                                NULL);
@@ -1229,6 +1262,7 @@ default_wired_try_update (NMDefaultWiredConnection *wired,
 	             id,
 	             error ? error->code : -1,
 	             (error && error->message) ? error->message : "(unknown)");
+	g_clear_error (&error);
 
 	/* If there was an error, don't destroy the default wired connection,
 	 * but add it back to the system settings service. Connection is already

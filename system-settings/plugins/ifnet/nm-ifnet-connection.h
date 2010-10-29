@@ -26,14 +26,15 @@
 #include "net_parser.h"
 
 G_BEGIN_DECLS
+
 #define NM_TYPE_IFNET_CONNECTION            (nm_ifnet_connection_get_type ())
 #define NM_IFNET_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_IFNET_CONNECTION, NMIfnetConnection))
 #define NM_IFNET_CONNECTION_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_IFNET_CONNECTION, NMIfnetConnectionClass))
 #define NM_IS_IFNET_CONNECTION(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_IFNET_CONNECTION))
 #define NM_IS_IFNET_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_IFNET_CONNECTION))
 #define NM_IFNET_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_IFNET_CONNECTION, NMIfnetConnectionClass))
-#define NM_IFNET_CONNECTION_CONN_NAME "connection_name"
-    typedef struct {
+
+typedef struct {
 	NMSysconfigConnection parent;
 } NMIfnetConnection;
 
@@ -43,7 +44,8 @@ typedef struct {
 
 GType nm_ifnet_connection_get_type (void);
 
-NMIfnetConnection *nm_ifnet_connection_new (gchar * conn_name);
+NMIfnetConnection *nm_ifnet_connection_new (const char *conn_name,
+                                            NMConnection *source);
 
 G_END_DECLS
 #endif				/* NM_IFNET_CONNECTION_H */

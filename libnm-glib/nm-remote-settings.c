@@ -154,12 +154,12 @@ connection_init_result_cb (NMRemoteConnection *remote,
 		g_signal_emit (self, signals[CONNECTIONS_READ], 0);
 }
 
-static void
+static NMRemoteConnection *
 new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
 {
 	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
-	NMRemoteConnection *connection;
+	NMRemoteConnection *connection = NULL;
 
 	connection = nm_remote_connection_new (priv->bus, path);
 	if (connection) {
@@ -177,6 +177,7 @@ new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
 		 */
 		g_hash_table_insert (priv->pending, g_strdup (path), connection);
 	}
+	return connection;
 }
 
 static void
@@ -205,17 +206,17 @@ fetch_connections_done (DBusGProxy *proxy,
 	}
 
 	/* Let listeners know we are done getting connections */
-	if (connections->len == 0) {
+	if (connections->len == 0)
 		g_signal_emit (self, signals[CONNECTIONS_READ], 0);
-		return;
+	else {
+		for (i = 0; i < connections->len; i++) {
+			char *path = g_ptr_array_index (connections, i);
+
+			new_connection_cb (proxy, path, user_data);
+			g_free (path);
+		}
 	}
 
-	for (i = 0; connections && (i < connections->len); i++) {
-		char *path = g_ptr_array_index (connections, i);
-
-		new_connection_cb (proxy, path, user_data);
-		g_free (path);
-	}
 	g_ptr_array_free (connections, TRUE);
 }
 
@@ -268,13 +269,19 @@ typedef struct {
 
 static void
 add_connection_done (DBusGProxy *proxy,
+                     char *path,
                      GError *error,
                      gpointer user_data)
 {
 	AddConnectionInfo *info = user_data;
+	NMRemoteConnection *connection;
 
-	info->callback (info->self, error, info->callback_data);
+	connection = new_connection_cb (proxy, path, info->self);
+	g_assert (connection);
+	info->callback (info->self, connection, error, info->callback_data);
+
 	g_free (info);
+	g_free (path);
 }
 /**
  * nm_remote_settings_add_connection:

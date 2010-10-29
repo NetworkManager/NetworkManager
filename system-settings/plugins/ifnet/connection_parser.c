@@ -2973,8 +2973,8 @@ get_wireless_name (NMConnection * connection)
 	return result;
 }
 
-gboolean
-ifnet_add_new_connection (NMConnection * connection,
+char *
+ifnet_add_new_connection (NMConnection *connection,
                           const char *config_file,
                           const char *wpa_file,
                           GError **error)
@@ -3024,10 +3024,10 @@ ifnet_add_new_connection (NMConnection * connection,
 	}
 
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Added new connection: %s, result: %s",
-		      new_name, success ? "success" : "fail");
+	              new_name, success ? "success" : "fail");
 
 out:
-	if (new_name)
+	if (!success)
 		g_free (new_name);
-	return success;
+	return success ? new_name : NULL;
 }

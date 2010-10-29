@@ -117,11 +117,13 @@ struct _NMSystemConfigInterface {
 	GSList * (*get_unmanaged_specs) (NMSystemConfigInterface *config);
 
 	/*
-	 * Add a new connection.
+	 * Save the given connection to backing storage, and return a new
+	 * NMSysconfigConnection subclass that contains the same settings as the
+	 * original connection.
 	 */
-	gboolean (*add_connection) (NMSystemConfigInterface *config,
-	                            NMConnection *connection,
-	                            GError **error);
+	NMSysconfigConnection * (*add_connection) (NMSystemConfigInterface *config,
+	                                           NMConnection *connection,
+	                                           GError **error);
 
 	/* Signals */
 
@@ -142,9 +144,9 @@ GSList *nm_system_config_interface_get_connections (NMSystemConfigInterface *con
 
 GSList *nm_system_config_interface_get_unmanaged_specs (NMSystemConfigInterface *config);
 
-gboolean nm_system_config_interface_add_connection (NMSystemConfigInterface *config,
-                                                    NMConnection *connection,
-                                                    GError **error);
+NMSysconfigConnection *nm_system_config_interface_add_connection (NMSystemConfigInterface *config,
+                                                                  NMConnection *connection,
+                                                                  GError **error);
 
 G_END_DECLS
 

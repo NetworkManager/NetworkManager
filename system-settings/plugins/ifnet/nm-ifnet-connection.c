@@ -57,25 +57,32 @@ typedef struct {
 } NMIfnetConnectionPrivate;
 
 NMIfnetConnection *
-nm_ifnet_connection_new (gchar * conn_name)
+nm_ifnet_connection_new (const char *conn_name, NMConnection *source)
 {
 	NMConnection *tmp;
 	GObject *object;
 	GError **error = NULL;
 
 	g_return_val_if_fail (conn_name != NULL, NULL);
-	tmp = ifnet_update_connection_from_config_block (conn_name, error);
-	if (!tmp)
-		return NULL;
-	object = (GObject *) g_object_new (NM_TYPE_IFNET_CONNECTION,
-					   NM_IFNET_CONNECTION_CONN_NAME,
-					   conn_name, NULL);
+
+	if (source)
+		tmp = g_object_ref (source);
+	else {
+		tmp = ifnet_update_connection_from_config_block (conn_name, error);
+		if (!tmp)
+			return NULL;
+	}
+
+	object = (GObject *) g_object_new (NM_TYPE_IFNET_CONNECTION, NULL);
 	if (!object) {
 		g_object_unref (tmp);
 		return NULL;
 	}
+
+	NM_IFNET_CONNECTION_GET_PRIVATE (object)->conn_name = g_strdup (conn_name);
 	nm_sysconfig_connection_replace_settings (NM_SYSCONFIG_CONNECTION (object), tmp, NULL);
 	g_object_unref (tmp);
+
 	return NM_IFNET_CONNECTION (object);
 }
 
@@ -145,44 +152,6 @@ do_delete (NMSysconfigConnection *connection,
 }
 
 static void
-set_property (GObject * object, guint prop_id,
-	      const GValue * value, GParamSpec * pspec)
-{
-	NMIfnetConnectionPrivate *priv =
-	    NM_IFNET_CONNECTION_GET_PRIVATE (object);
-	g_return_if_fail (priv);
-
-	switch (prop_id) {
-	case PROP_CONN_NAME:
-		if (priv->conn_name)
-			g_free (priv->conn_name);
-		priv->conn_name = g_strdup (g_value_get_pointer (value));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-get_property (GObject * object, guint prop_id,
-	      GValue * value, GParamSpec * pspec)
-{
-	NMIfnetConnectionPrivate *priv =
-	    NM_IFNET_CONNECTION_GET_PRIVATE (object);
-	g_return_if_fail (priv);
-
-	switch (prop_id) {
-	case PROP_CONN_NAME:
-		g_value_set_pointer (value, priv->conn_name);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
 finalize (GObject * object)
 {
 	NMIfnetConnectionPrivate *priv =
@@ -203,19 +172,10 @@ nm_ifnet_connection_class_init (NMIfnetConnectionClass * ifnet_connection_class)
 	g_type_class_add_private (ifnet_connection_class,
 				  sizeof (NMIfnetConnectionPrivate));
 
-	object_class->set_property = set_property;
-	object_class->get_property = get_property;
 	object_class->finalize = finalize;
 	sysconfig_class->delete = do_delete;
 	sysconfig_class->commit_changes = commit_changes;
 
-	/* Properties */
-	g_object_class_install_property
-	    (object_class, PROP_CONN_NAME,
-	     g_param_spec_pointer (NM_IFNET_CONNECTION_CONN_NAME,
-				   "config_block",
-				   "",
-				   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 	signals[IFNET_SETUP_MONITORS] =
 	    g_signal_new ("ifnet_setup_monitors",
 			  G_OBJECT_CLASS_TYPE (object_class), G_SIGNAL_RUN_LAST,

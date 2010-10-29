@@ -51,6 +51,7 @@ typedef struct _NMRemoteSettingsClass NMRemoteSettingsClass;
 
 
 typedef void (*NMRemoteSettingsAddConnectionFunc) (NMRemoteSettings *settings,
+                                                   NMRemoteConnection *connection,
                                                    GError *error,
                                                    gpointer user_data);
 

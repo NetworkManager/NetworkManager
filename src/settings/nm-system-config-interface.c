@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2010 Red Hat, Inc.
  * Copyright (C) 2008 Novell, Inc.
  */
 
@@ -146,18 +146,16 @@ nm_system_config_interface_get_unmanaged_specs (NMSystemConfigInterface *config)
 	return NULL;
 }
 
-gboolean
+NMSysconfigConnection *
 nm_system_config_interface_add_connection (NMSystemConfigInterface *config,
                                            NMConnection *connection,
                                            GError **error)
 {
-	gboolean success = FALSE;
-
 	g_return_val_if_fail (config != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
 	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->add_connection)
-		success = NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->add_connection (config, connection, error);
+		return NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->add_connection (config, connection, error);
 
-	return success;
+	return NULL;
 }

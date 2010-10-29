@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 - 2009 Red Hat, Inc.
+ * Copyright (C) 2008 - 2010 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -47,7 +47,7 @@ G_DEFINE_TYPE (NMIfcfgConnection, nm_ifcfg_connection, NM_TYPE_SYSCONFIG_CONNECT
 typedef struct {
 	gulong ih_event_id;
 
-	char *filename;
+	char *path;
 	int file_wd;
 
 	char *keyfile;
@@ -64,9 +64,7 @@ typedef struct {
 
 enum {
 	PROP_0,
-	PROP_FILENAME,
 	PROP_UNMANAGED,
-
 	LAST_PROP
 };
 
@@ -87,7 +85,10 @@ files_changed_cb (NMInotifyHelper *ih,
 	NMIfcfgConnection *self = NM_IFCFG_CONNECTION (user_data);
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (self);
 
-	if ((evt->wd != priv->file_wd) && (evt->wd != priv->keyfile_wd) && (evt->wd != priv->routefile_wd) && (evt->wd != priv->route6file_wd))
+	if (   (evt->wd != priv->file_wd)
+	    && (evt->wd != priv->keyfile_wd)
+	    && (evt->wd != priv->routefile_wd)
+	    && (evt->wd != priv->route6file_wd))
 		return;
 
 	/* push the event up to the plugin */
@@ -95,7 +96,8 @@ files_changed_cb (NMInotifyHelper *ih,
 }
 
 NMIfcfgConnection *
-nm_ifcfg_connection_new (const char *filename,
+nm_ifcfg_connection_new (const char *full_path,
+                         NMConnection *source,
                          GError **error,
                          gboolean *ignore_error)
 {
@@ -108,14 +110,24 @@ nm_ifcfg_connection_new (const char *filename,
 	char *route6file = NULL;
 	NMInotifyHelper *ih;
 
-	g_return_val_if_fail (filename != NULL, NULL);
+	g_return_val_if_fail (full_path != NULL, NULL);
 
-	tmp = connection_from_file (filename, NULL, NULL, NULL, &unmanaged, &keyfile, &routefile, &route6file, error, ignore_error);
-	if (!tmp)
-		return NULL;
+	/* If we're given a connection already, prefer that instead of re-reading */
+	if (source)
+		tmp = g_object_ref (source);
+	else {
+		tmp = connection_from_file (full_path, NULL, NULL, NULL,
+		                            &unmanaged,
+		                            &keyfile,
+		                            &routefile,
+		                            &route6file,
+		                            error,
+		                            ignore_error);
+		if (!tmp)
+			return NULL;
+	}
 
 	object = (GObject *) g_object_new (NM_TYPE_IFCFG_CONNECTION,
-	                                   NM_IFCFG_CONNECTION_FILENAME, filename,
 	                                   NM_IFCFG_CONNECTION_UNMANAGED, unmanaged,
 	                                   NULL);
 	if (!object) {
@@ -128,11 +140,12 @@ nm_ifcfg_connection_new (const char *filename,
 	g_object_unref (tmp);
 
 	priv = NM_IFCFG_CONNECTION_GET_PRIVATE (object);
+	priv->path = g_strdup (full_path);
 
 	ih = nm_inotify_helper_get ();
 	priv->ih_event_id = g_signal_connect (ih, "event", G_CALLBACK (files_changed_cb), object);
 
-	priv->file_wd = nm_inotify_helper_add_watch (ih, filename);
+	priv->file_wd = nm_inotify_helper_add_watch (ih, full_path);
 
 	priv->keyfile = keyfile;
 	priv->keyfile_wd = nm_inotify_helper_add_watch (ih, keyfile);
@@ -147,11 +160,11 @@ nm_ifcfg_connection_new (const char *filename,
 }
 
 const char *
-nm_ifcfg_connection_get_filename (NMIfcfgConnection *self)
+nm_ifcfg_connection_get_path (NMIfcfgConnection *self)
 {
 	g_return_val_if_fail (NM_IS_IFCFG_CONNECTION (self), NULL);
 
-	return NM_IFCFG_CONNECTION_GET_PRIVATE (self)->filename;
+	return NM_IFCFG_CONNECTION_GET_PRIVATE (self)->path;
 }
 
 const char *
@@ -176,7 +189,7 @@ commit_changes (NMSysconfigConnection *connection,
 	 * processes on-disk, read the existing connection back in and only rewrite
 	 * it if it's really changed.
 	 */
-	reread = connection_from_file (priv->filename, NULL, NULL, NULL,
+	reread = connection_from_file (priv->path, NULL, NULL, NULL,
 	                               &unmanaged, &keyfile, &routefile, &route6file,
 	                               NULL, NULL);
 	g_free (unmanaged);
@@ -191,7 +204,7 @@ commit_changes (NMSysconfigConnection *connection,
 
 	if (!writer_update_connection (NM_CONNECTION (connection),
 	                               IFCFG_DIR,
-	                               priv->filename,
+	                               priv->path,
 	                               priv->keyfile,
 	                               &error)) {
 		callback (connection, error, user_data);
@@ -212,7 +225,7 @@ do_delete (NMSysconfigConnection *connection,
 {
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (connection);
 
-	g_unlink (priv->filename);
+	g_unlink (priv->path);
 	if (priv->keyfile)
 		g_unlink (priv->keyfile);
 	if (priv->routefile)
@@ -243,7 +256,7 @@ finalize (GObject *object)
 
 	g_signal_handler_disconnect (ih, priv->ih_event_id);
 
-	g_free (priv->filename);
+	g_free (priv->path);
 	if (priv->file_wd >= 0)
 		nm_inotify_helper_remove_watch (ih, priv->file_wd);
 
@@ -269,10 +282,6 @@ set_property (GObject *object, guint prop_id,
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_FILENAME:
-		/* Construct only */
-		priv->filename = g_value_dup_string (value);
-		break;
 	case PROP_UNMANAGED:
 		priv->unmanaged = g_value_dup_string (value);
 		break;
@@ -289,9 +298,6 @@ get_property (GObject *object, guint prop_id,
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_FILENAME:
-		g_value_set_string (value, priv->filename);
-		break;
 	case PROP_UNMANAGED:
 		g_value_set_string (value, priv->unmanaged);
 		break;
@@ -317,14 +323,6 @@ nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 	sysconfig_class->commit_changes = commit_changes;
 
 	/* Properties */
-	g_object_class_install_property
-		(object_class, PROP_FILENAME,
-		 g_param_spec_string (NM_IFCFG_CONNECTION_FILENAME,
-						  "FileName",
-						  "File name",
-						  NULL,
-						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-
 	g_object_class_install_property
 		(object_class, PROP_UNMANAGED,
 		 g_param_spec_string (NM_IFCFG_CONNECTION_UNMANAGED,

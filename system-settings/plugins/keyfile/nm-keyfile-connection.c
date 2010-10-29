@@ -37,40 +37,38 @@ G_DEFINE_TYPE (NMKeyfileConnection, nm_keyfile_connection, NM_TYPE_SYSCONFIG_CON
 #define NM_KEYFILE_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_KEYFILE_CONNECTION, NMKeyfileConnectionPrivate))
 
 typedef struct {
-	char *filename;
+	char *path;
 } NMKeyfileConnectionPrivate;
 
-enum {
-	PROP_0,
-	PROP_FILENAME,
-
-	LAST_PROP
-};
-
 NMKeyfileConnection *
-nm_keyfile_connection_new (const char *filename, GError **error)
+nm_keyfile_connection_new (const char *full_path,
+                           NMConnection *source,
+                           GError **error)
 {
 	GObject *object;
 	NMKeyfileConnectionPrivate *priv;
 	NMSettingConnection *s_con;
 	NMConnection *tmp;
 
-	g_return_val_if_fail (filename != NULL, NULL);
+	g_return_val_if_fail (full_path != NULL, NULL);
 
-	tmp = connection_from_file (filename, error);
-	if (!tmp)
-		return NULL;
+	/* If we're given a connection already, prefer that instead of re-reading */
+	if (source)
+		tmp = g_object_ref (source);
+	else {
+		tmp = connection_from_file (full_path, error);
+		if (!tmp)
+			return NULL;
+	}
 
-	object = (GObject *) g_object_new (NM_TYPE_KEYFILE_CONNECTION,
-	                                   NM_KEYFILE_CONNECTION_FILENAME, filename,
-	                                   NULL);
+	object = (GObject *) g_object_new (NM_TYPE_KEYFILE_CONNECTION, NULL);
 	if (!object) {
 		g_object_unref (tmp);
 		return NULL;
 	}
 
 	priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (object);
-	g_assert (priv->filename);
+	priv->path = g_strdup (full_path);
 
 	/* Update our settings with what was read from the file */
 	nm_sysconfig_connection_replace_settings (NM_SYSCONFIG_CONNECTION (object), tmp, NULL);
@@ -100,11 +98,11 @@ nm_keyfile_connection_new (const char *filename, GError **error)
 }
 
 const char *
-nm_keyfile_connection_get_filename (NMKeyfileConnection *self)
+nm_keyfile_connection_get_path (NMKeyfileConnection *self)
 {
 	g_return_val_if_fail (NM_IS_KEYFILE_CONNECTION (self), NULL);
 
-	return NM_KEYFILE_CONNECTION_GET_PRIVATE (self)->filename;
+	return NM_KEYFILE_CONNECTION_GET_PRIVATE (self)->path;
 }
 
 static void
@@ -113,21 +111,21 @@ commit_changes (NMSysconfigConnection *connection,
                 gpointer user_data)
 {
 	NMKeyfileConnectionPrivate *priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (connection);
-	char *filename = NULL;
+	char *path = NULL;
 	GError *error = NULL;
 
-	if (!write_connection (NM_CONNECTION (connection), KEYFILE_DIR, 0, 0, &filename, &error)) {
+	if (!write_connection (NM_CONNECTION (connection), KEYFILE_DIR, 0, 0, &path, &error)) {
 		callback (connection, error, user_data);
 		g_clear_error (&error);
 		return;
 	}
 
-	if (g_strcmp0 (priv->filename, filename)) {
+	if (g_strcmp0 (priv->path, path)) {
 		/* Update the filename if it changed */
-		g_free (priv->filename);
-		priv->filename = filename;
+		g_free (priv->path);
+		priv->path = path;
 	} else
-		g_free (filename);
+		g_free (path);
 
 	NM_SYSCONFIG_CONNECTION_CLASS (nm_keyfile_connection_parent_class)->commit_changes (connection,
 	                                                                                    callback,
@@ -141,7 +139,7 @@ do_delete (NMSysconfigConnection *connection,
 {
 	NMKeyfileConnectionPrivate *priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (connection);
 
-	g_unlink (priv->filename);
+	g_unlink (priv->path);
 
 	NM_SYSCONFIG_CONNECTION_CLASS (nm_keyfile_connection_parent_class)->delete (connection,
 	                                                                            callback,
@@ -162,42 +160,9 @@ finalize (GObject *object)
 
 	nm_connection_clear_secrets (NM_CONNECTION (object));
 
-	g_free (priv->filename);
+	g_free (priv->path);
 
 	G_OBJECT_CLASS (nm_keyfile_connection_parent_class)->finalize (object);
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-		    const GValue *value, GParamSpec *pspec)
-{
-	NMKeyfileConnectionPrivate *priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_FILENAME:
-		/* Construct only */
-		priv->filename = g_value_dup_string (value);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-get_property (GObject *object, guint prop_id,
-		    GValue *value, GParamSpec *pspec)
-{
-	NMKeyfileConnectionPrivate *priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_FILENAME:
-		g_value_set_string (value, priv->filename);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
 }
 
 static void
@@ -209,18 +174,7 @@ nm_keyfile_connection_class_init (NMKeyfileConnectionClass *keyfile_connection_c
 	g_type_class_add_private (keyfile_connection_class, sizeof (NMKeyfileConnectionPrivate));
 
 	/* Virtual methods */
-	object_class->set_property = set_property;
-	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 	sysconfig_class->commit_changes = commit_changes;
 	sysconfig_class->delete = do_delete;
-
-	/* Properties */
-	g_object_class_install_property
-		(object_class, PROP_FILENAME,
-		 g_param_spec_string (NM_KEYFILE_CONNECTION_FILENAME,
-						  "FileName",
-						  "File name",
-						  NULL,
-						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 }

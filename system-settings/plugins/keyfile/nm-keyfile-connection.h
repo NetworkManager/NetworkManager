@@ -33,8 +33,6 @@ G_BEGIN_DECLS
 #define NM_IS_KEYFILE_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_KEYFILE_CONNECTION))
 #define NM_KEYFILE_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_KEYFILE_CONNECTION, NMKeyfileConnectionClass))
 
-#define NM_KEYFILE_CONNECTION_FILENAME  "filename"
-
 typedef struct {
 	NMSysconfigConnection parent;
 } NMKeyfileConnection;
@@ -45,9 +43,11 @@ typedef struct {
 
 GType nm_keyfile_connection_get_type (void);
 
-NMKeyfileConnection *nm_keyfile_connection_new (const char *filename, GError **error);
+NMKeyfileConnection *nm_keyfile_connection_new (const char *filename,
+                                                NMConnection *source,
+                                                GError **error);
 
-const char *nm_keyfile_connection_get_filename (NMKeyfileConnection *self);
+const char *nm_keyfile_connection_get_path (NMKeyfileConnection *self);
 
 G_END_DECLS
 

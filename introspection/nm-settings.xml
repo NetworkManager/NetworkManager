@@ -29,6 +29,11 @@
           Connection settings and properties.
         </tp:docstring>
       </arg>
+      <arg name="path" type="o" direction="out">
+        <tp:docstring>
+          Object path of the new connection that was just added.
+        </tp:docstring>
+      </arg>
     </method>
 
     <method name="SaveHostname">

@@ -39,8 +39,8 @@ gboolean ifnet_delete_connection_in_parsers (const char *conn_name,
                                              const char *config_file,
                                              const char *wpa_file);
 
-gboolean ifnet_add_new_connection (NMConnection *connection,
-                                   const char *config_file,
-                                   const char *wpa_file,
-                                   GError ** error);
+char * ifnet_add_new_connection (NMConnection *connection,
+                                 const char *config_file,
+                                 const char *wpa_file,
+                                 GError ** error);
 #endif
