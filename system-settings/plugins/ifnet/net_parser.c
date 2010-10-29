@@ -404,17 +404,18 @@ ifnet_get_global_data (const gchar * key)
 
 // Return names of legal connections
 GList *
-ifnet_get_connection_names ()
+ifnet_get_connection_names (void)
 {
 	GList *names = g_hash_table_get_keys (conn_table);
 	GList *result = NULL;
 
 	while (names) {
 		if (!ignore_connection_name (names->data))
-			result = g_list_append (result, names->data);
+			result = g_list_prepend (result, names->data);
 		names = names->next;
 	}
-	return result;
+	g_list_free (names);
+	return g_list_reverse (result);
 }
 
 /* format IP and route for writing */
