@@ -63,15 +63,12 @@ typedef struct {
 	gpointer user_data;
 } FileMonitorInfo;
 
-static void system_config_interface_init (NMSystemConfigInterface *
-					  system_config_interface_class);
+static void system_config_interface_init (NMSystemConfigInterface *class);
 
-static void
- reload_connections (gpointer config);
+static void reload_connections (gpointer config);
 
 G_DEFINE_TYPE_EXTENDED (SCPluginIfnet, sc_plugin_ifnet, G_TYPE_OBJECT, 0,
-			G_IMPLEMENT_INTERFACE (NM_TYPE_SYSTEM_CONFIG_INTERFACE,
-					       system_config_interface_init))
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_SYSTEM_CONFIG_INTERFACE, system_config_interface_init))
 #define SC_PLUGIN_IFNET_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), SC_TYPE_PLUGIN_IFNET, SCPluginIfnetPrivate))
 /*
 static void
@@ -433,7 +430,7 @@ SCPluginIfnet_init (NMSystemConfigInterface * config)
 }
 
 static GSList *
-SCPluginIfnet_get_connections (NMSystemConfigInterface * config)
+get_connections (NMSystemConfigInterface * config)
 {
 	SCPluginIfnetPrivate *priv = SC_PLUGIN_IFNET_GET_PRIVATE (config);
 	GSList *connections = NULL;
@@ -459,15 +456,12 @@ SCPluginIfnet_get_connections (NMSystemConfigInterface * config)
 }
 
 static void
-system_config_interface_init (NMSystemConfigInterface *
-			      system_config_interface_class)
+system_config_interface_init (NMSystemConfigInterface *class)
 {
-	system_config_interface_class->init = SCPluginIfnet_init;
-	system_config_interface_class->get_connections =
-	    SCPluginIfnet_get_connections;
-	system_config_interface_class->get_unmanaged_specs =
-	    get_unmanaged_specs;
-	system_config_interface_class->add_connection = add_connection;
+	class->init = SCPluginIfnet_init;
+	class->get_connections = get_connections;
+	class->get_unmanaged_specs = get_unmanaged_specs;
+	class->add_connection = add_connection;
 }
 
 static void
