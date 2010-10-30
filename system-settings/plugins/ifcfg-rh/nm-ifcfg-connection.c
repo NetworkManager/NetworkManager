@@ -130,14 +130,15 @@ nm_ifcfg_connection_new (const char *full_path,
 	object = (GObject *) g_object_new (NM_TYPE_IFCFG_CONNECTION,
 	                                   NM_IFCFG_CONNECTION_UNMANAGED, unmanaged,
 	                                   NULL);
-	if (!object) {
-		g_object_unref (tmp);
-		return NULL;
-	}
+	if (!object)
+		goto out;
 
 	/* Update our settings with what was read from the file */
-	nm_sysconfig_connection_replace_settings (NM_SYSCONFIG_CONNECTION (object), tmp, NULL);
-	g_object_unref (tmp);
+	if (!nm_sysconfig_connection_replace_settings (NM_SYSCONFIG_CONNECTION (object), tmp, error)) {
+		g_object_unref (object);
+		object = NULL;
+		goto out;
+	}
 
 	priv = NM_IFCFG_CONNECTION_GET_PRIVATE (object);
 	priv->path = g_strdup (full_path);
@@ -156,7 +157,9 @@ nm_ifcfg_connection_new (const char *full_path,
 	priv->route6file = route6file;
 	priv->route6file_wd = nm_inotify_helper_add_watch (ih, route6file);
 
-	return NM_IFCFG_CONNECTION (object);
+out:
+	g_object_unref (tmp);
+	return (NMIfcfgConnection *) object;
 }
 
 const char *
@@ -254,7 +257,8 @@ finalize (GObject *object)
 
 	ih = nm_inotify_helper_get ();
 
-	g_signal_handler_disconnect (ih, priv->ih_event_id);
+	if (priv->ih_event_id)
+		g_signal_handler_disconnect (ih, priv->ih_event_id);
 
 	g_free (priv->path);
 	if (priv->file_wd >= 0)
