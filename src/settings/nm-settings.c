@@ -792,7 +792,6 @@ add_new_connection (NMSettings *self,
                     GError **error)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	GError *add_error = NULL;
 	GSList *iter;
 	NMSysconfigConnection *added = NULL;
 
@@ -806,6 +805,7 @@ add_new_connection (NMSettings *self,
 	 */
 	for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
 		NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (iter->data);
+		GError *add_error = NULL;
 
 		g_clear_error (error);
 		added = nm_system_config_interface_add_connection (plugin, connection, &add_error);
