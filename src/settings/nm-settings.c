@@ -792,7 +792,7 @@ add_new_connection (NMSettings *self,
                     GError **error)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	GError *tmp_error = NULL, *last_error = NULL;
+	GError *add_error = NULL;
 	GSList *iter;
 	NMSysconfigConnection *added = NULL;
 
@@ -804,18 +804,18 @@ add_new_connection (NMSettings *self,
 	 * 5) plugin reads the changes and ignores them because they will
 	 *     contain the same data as the connection it already knows about
 	 */
-	for (iter = priv->plugins; iter && !added; iter = g_slist_next (iter)) {
-		added = nm_system_config_interface_add_connection (NM_SYSTEM_CONFIG_INTERFACE (iter->data),
-		                                                   connection,
-		                                                   &tmp_error);
-		g_clear_error (&last_error);
-		if (!added)
-			g_propagate_error (&last_error, tmp_error);
-	}
+	for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
+		NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (iter->data);
 
-	if (!added)
-		g_propagate_error (error, last_error);
-	return added;
+		g_clear_error (error);
+		added = nm_system_config_interface_add_connection (plugin, connection, &add_error);
+		if (added) {
+			claim_connection (self, added, TRUE);
+			return added;
+		}
+		g_propagate_error (error, add_error);
+	}
+	return NULL;
 }
 
 static void
@@ -826,7 +826,7 @@ pk_add_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	NMSettingsPrivate *priv;
 	PolkitAuthorizationResult *pk_result;
 	GError *error = NULL, *add_error = NULL;
-	NMSysconfigConnection *added_connection;
+	NMSysconfigConnection *added;
 
 	/* If NMSettings is already gone, do nothing */
 	if (call->disposed) {
@@ -861,9 +861,9 @@ pk_add_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 		goto out;
 	}
 
-	added_connection = add_new_connection (self, call->connection, &add_error);
-	if (added_connection)
-		dbus_g_method_return (call->context, added_connection);
+	added = add_new_connection (self, call->connection, &add_error);
+	if (added)
+		dbus_g_method_return (call->context, nm_connection_get_path (NM_CONNECTION (added)));
 	else {
 		error = g_error_new (NM_SETTINGS_ERROR,
 		                     NM_SETTINGS_ERROR_ADD_FAILED,
