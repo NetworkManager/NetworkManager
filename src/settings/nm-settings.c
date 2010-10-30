@@ -608,6 +608,8 @@ connection_removed (NMSysconfigConnection *obj, gpointer user_data)
 	dbus_g_connection_unregister_g_object (priv->bus, connection);
 	g_hash_table_remove (NM_SETTINGS_GET_PRIVATE (user_data)->connections,
 	                     (gpointer) nm_connection_get_path (NM_CONNECTION (connection)));
+
+	/* Re-emit for listeners like NMPolicy */
 	g_signal_emit (NM_SETTINGS (user_data),
 	               signals[CONNECTION_REMOVED],
 	               0,
@@ -617,8 +619,11 @@ connection_removed (NMSysconfigConnection *obj, gpointer user_data)
 }
 
 static void
-connection_updated (NMSysconfigConnection *connection, gpointer user_data)
+connection_updated (NMSysconfigConnection *connection,
+                    GHashTable *settings,
+                    gpointer user_data)
 {
+	/* Re-emit for listeners like NMPolicy */
 	g_signal_emit (NM_SETTINGS (user_data),
 	               signals[CONNECTION_UPDATED],
 	               0,
@@ -630,6 +635,7 @@ connection_visibility_changed (NMSysconfigConnection *connection,
                                GParamSpec *pspec,
                                gpointer user_data)
 {
+	/* Re-emit for listeners like NMPolicy */
 	g_signal_emit (NM_SETTINGS (user_data),
 	               signals[CONNECTION_VISIBILITY_CHANGED],
 	               0,
