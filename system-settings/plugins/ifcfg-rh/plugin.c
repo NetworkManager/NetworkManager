@@ -445,8 +445,7 @@ add_connection (NMSystemConfigInterface *config,
 		added = _internal_new_connection (self, path, connection, error);
 		g_free (path);
 	}
-	return NM_SYSCONFIG_CONNECTION (added);
-
+	return (NMSysconfigConnection *) added;
 }
 
 #define SC_NETWORK_FILE SYSCONFDIR"/sysconfig/network"
