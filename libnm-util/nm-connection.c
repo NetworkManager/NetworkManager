@@ -29,6 +29,7 @@
 #include "nm-connection.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
+#include "nm-dbus-glib-types.h"
 
 #include "nm-setting-8021x.h"
 #include "nm-setting-bluetooth.h"
@@ -456,6 +457,32 @@ nm_connection_get_setting_by_name (NMConnection *connection, const char *name)
 	return type ? nm_connection_get_setting (connection, type) : NULL;
 }
 
+static gboolean
+validate_permissions_type (GHashTable *hash, GError **error)
+{
+	GHashTable *s_con;
+	GValue *permissions;
+
+	/* Ensure the connection::permissions item (if present) is the correct
+	 * type, otherwise the g_object_set() will throw a warning and ignore the
+	 * error, leaving us with no permissions.
+	 */
+	s_con = g_hash_table_lookup (hash, NM_SETTING_CONNECTION_SETTING_NAME);
+	if (s_con) {
+		permissions = g_hash_table_lookup (s_con, NM_SETTING_CONNECTION_PERMISSIONS);
+		if (permissions) {
+			if (!G_VALUE_HOLDS (permissions, DBUS_TYPE_G_LIST_OF_STRING)) {
+				g_set_error_literal (error,
+				                     NM_SETTING_ERROR,
+				                     NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
+				                     "Wrong permissions property type; should be a list of strings.");
+				return FALSE;
+			}
+		}
+	}
+	return TRUE;
+}
+
 /**
  * nm_connection_replace_settings:
  * @connection: a #NMConnection
@@ -475,6 +502,9 @@ nm_connection_replace_settings (NMConnection *connection,
 	g_return_val_if_fail (new_settings != NULL, FALSE);
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
+
+	if (!validate_permissions_type (new_settings, error))
+		return FALSE;
 
 	g_hash_table_remove_all (NM_CONNECTION_GET_PRIVATE (connection)->settings);
 	g_hash_table_foreach (new_settings, parse_one_setting, connection);
@@ -973,6 +1003,9 @@ nm_connection_new_from_hash (GHashTable *hash, GError **error)
 	NMConnection *connection;
 
 	g_return_val_if_fail (hash != NULL, NULL);
+
+	if (!validate_permissions_type (hash, error))
+		return FALSE;
 
 	connection = nm_connection_new ();
 	g_hash_table_foreach (hash, parse_one_setting, connection);
