@@ -62,17 +62,18 @@ nm_keyfile_connection_new (const char *full_path,
 	}
 
 	object = (GObject *) g_object_new (NM_TYPE_KEYFILE_CONNECTION, NULL);
-	if (!object) {
-		g_object_unref (tmp);
-		return NULL;
-	}
+	if (!object)
+		goto out;
 
 	priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (object);
 	priv->path = g_strdup (full_path);
 
 	/* Update our settings with what was read from the file */
-	nm_sysconfig_connection_replace_settings (NM_SYSCONFIG_CONNECTION (object), tmp, NULL);
-	g_object_unref (tmp);
+	if (!nm_sysconfig_connection_replace_settings (NM_SYSCONFIG_CONNECTION (object), tmp, error)) {
+		g_object_unref (object);
+		object = NULL;
+		goto out;
+	}
 
 	/* if for some reason the connection didn't have a UUID, add one */
 	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (object), NM_TYPE_SETTING_CONNECTION);
@@ -94,7 +95,9 @@ nm_keyfile_connection_new (const char *full_path,
 		}
 	}
 
-	return NM_KEYFILE_CONNECTION (object);
+out:
+	g_object_unref (tmp);
+	return (NMKeyfileConnection *) object;
 }
 
 const char *
