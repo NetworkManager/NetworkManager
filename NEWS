@@ -1,4 +1,23 @@
 ==============================================
+NetworkManager-0.8.2
+Overview of changes since NetworkManager-0.8.1
+==============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Native local caching nameserver support using dnsmasq
+* Automatically detect addition and removal of new VPN plugins
+* Support for handling suspend/resume signals from UPower
+* Ensure users are allowed to enable/disable WiFi and networking
+* Ensure WiFi enable state is perserved across reboot and suspend
+* Better handling of /etc/hosts and preservation of custom hostnames
+* Support for the systemd session management service
+* Better handling of 'keyfile' system connection errors
+* Support for S390 network devices
+* and much more...
+
+
+==============================================
 NetworkManager-0.7.0
 Overview of changes since NetworkManager-0.6.6
 ==============================================
