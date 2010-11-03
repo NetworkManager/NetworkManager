@@ -67,6 +67,7 @@ struct NMPolicy {
 
 #define INVALID_TAG "invalid"
 #define RETRIES_TAG "autoconnect-retries"
+#define RETRIES_DEFAULT	4
 
 static const char *
 get_connection_id (NMConnection *connection)
@@ -716,16 +717,15 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 }
 
 static void
-reset_auto_connection_retries (NMConnection *connection)
+set_connection_auto_retries (NMConnection *connection, guint retries)
 {
-	NMSettingConnection *s_con;
-	int retries;
+	g_object_set_data (G_OBJECT (connection), RETRIES_TAG, GUINT_TO_POINTER (retries));
+}
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-	g_assert (s_con);
-
-	retries = nm_setting_connection_get_autoconnect_retries (s_con);
-	g_object_set_data (G_OBJECT (connection), RETRIES_TAG, GINT_TO_POINTER (retries));
+static guint32
+get_connection_auto_retries (NMConnection *connection)
+{
+	return GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), RETRIES_TAG));
 }
 
 typedef struct {
@@ -765,17 +765,17 @@ auto_activate_device (gpointer user_data)
 		GSList *next = g_slist_next (iter);
 
 		if (g_object_get_data (G_OBJECT (iter_connection), INVALID_TAG)) {
-			int retries = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (iter_connection), RETRIES_TAG));
+			guint retries = get_connection_auto_retries (iter_connection);
+
 			if (retries == 0) {
 				connections = g_slist_remove_link (connections, iter);
 				g_object_unref (iter_connection);
 				g_slist_free (iter);
-			} else if (retries > 0) {
-				g_object_set_data (G_OBJECT (iter_connection), RETRIES_TAG, GINT_TO_POINTER (retries-1));
-			}
+			} else if (retries > 0)
+				set_connection_auto_retries (iter_connection, retries - 1);
 		} else {
 			/* Set the initial # of retries for auto-connection */
-			reset_auto_connection_retries (iter_connection);
+			set_connection_auto_retries (iter_connection, RETRIES_DEFAULT);
 		}
 
 		iter = next;
@@ -925,7 +925,7 @@ device_state_changed (NMDevice *device,
 		 */
 		if (connection && IS_ACTIVATING_STATE (old_state)) {
 			g_object_set_data (G_OBJECT (connection), INVALID_TAG, GUINT_TO_POINTER (TRUE));
-			if (GPOINTER_TO_INT (g_object_get_data (G_OBJECT (connection), RETRIES_TAG)) == 0)
+			if (get_connection_auto_retries (connection) == 0)
 				nm_log_info (LOGD_DEVICE, "Marking connection '%s' invalid.", get_connection_id (connection));
 			nm_connection_clear_secrets (connection);
 		}
@@ -937,7 +937,7 @@ device_state_changed (NMDevice *device,
 			g_object_set_data (G_OBJECT (connection), INVALID_TAG, NULL);
 
 			/* Reset RETRIES_TAG to number from the setting */
-			reset_auto_connection_retries (connection);
+			set_connection_auto_retries (connection, RETRIES_DEFAULT);
 
 			/* And clear secrets so they will always be requested from the
 			 * settings service when the next connection is made.
