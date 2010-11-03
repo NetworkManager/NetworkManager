@@ -1,6 +1,6 @@
 AC_PREREQ(2.52)
 
-AC_INIT(NetworkManager, 0.8.1.999, dcbw@redhat.com, NetworkManager)
+AC_INIT(NetworkManager, 0.8.2, dcbw@redhat.com, NetworkManager)
 AM_INIT_AUTOMAKE([1.9 subdir-objects tar-ustar no-dist-gzip dist-bzip2])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([no])])
 AM_MAINTAINER_MODE
