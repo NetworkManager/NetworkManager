@@ -344,6 +344,7 @@ set_property (GObject *object, guint prop_id,
 {
 	NMSettingGsmPrivate *priv = NM_SETTING_GSM_GET_PRIVATE (object);
 	const char *str;
+	char *tmp;
 
 	switch (prop_id) {
 	case PROP_NUMBER:
@@ -360,11 +361,17 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_APN:
 		g_free (priv->apn);
-		priv->apn = g_strstrip (g_value_dup_string (value));
+		priv->apn = NULL;
+		tmp = g_value_dup_string (value);
+		if (tmp)
+			priv->apn = g_strstrip (tmp);
 		break;
 	case PROP_NETWORK_ID:
 		g_free (priv->network_id);
-		priv->network_id = g_strstrip (g_value_dup_string (value));
+		priv->network_id = NULL;
+		tmp = g_value_dup_string (value);
+		if (tmp)
+			priv->network_id = g_strstrip (tmp);
 		break;
 	case PROP_NETWORK_TYPE:
 		priv->network_type = g_value_get_int (value);
