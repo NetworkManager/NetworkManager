@@ -84,7 +84,7 @@ dnl Make sha1.c happy on big endian systems
 dnl
 AC_C_BIGENDIAN
 
-AC_ARG_WITH(distro, AS_HELP_STRING([--with-distro=DISTRO], [Specify the Linux distribution to target: One of redhat, suse, gentoo, debian, arch, slackware, paldo, mandriva, pardus or linexa]))
+AC_ARG_WITH(distro, AS_HELP_STRING([--with-distro=DISTRO], [Specify the Linux distribution to target: One of redhat, suse, gentoo, debian, arch, slackware, paldo, mandriva, pardus, linexa or exherbo]))
 if test "z$with_distro" = "z"; then
 	AC_CHECK_FILE(/etc/redhat-release,with_distro="redhat")
 	AC_CHECK_FILE(/etc/SuSE-release,with_distro="suse")
@@ -97,6 +97,7 @@ if test "z$with_distro" = "z"; then
 	AC_CHECK_FILE(/etc/mandriva-release,with_distro="mandriva")
 	AC_CHECK_FILE(/etc/pardus-release,with_distro="pardus")
 	AC_CHECK_FILE(/etc/linexa-release,with_distro="linexa")
+	AC_CHECK_FILE(/etc/exherbo-release,with_distro="exherbo")
 	if test "z$with_distro" = "z"; then
 		with_distro=`lsb_release -is`
 	fi
@@ -108,7 +109,7 @@ if test "z$with_distro" = "z"; then
 	exit 1
 else
 	case $with_distro in
-		redhat|suse|gentoo|debian|slackware|arch|paldo|frugalware|mandriva|pardus|linexa) ;;
+		redhat|suse|gentoo|debian|slackware|arch|paldo|frugalware|mandriva|pardus|linexa|exherbo) ;;
 		*)
 			echo "Your distribution (${with_distro}) is not yet supported!  (patches welcome)"
 			exit 1
@@ -169,6 +170,11 @@ fi
 AM_CONDITIONAL(TARGET_LINEXA, test x"$with_distro" = xlinexa)
 if test x"$with_distro" = xlinexa; then
   AC_DEFINE(TARGET_LINEXA, 1, [Define if you have linexa])
+fi
+
+AM_CONDITIONAL(TARGET_EXHERBO, test x"$with_distro" = xexherbo)
+if test x"$with_distro" = xexherbo; then
+  AC_DEFINE(TARGET_EXHERBO, 1, [Define if you have Exherbo])
 fi
 
 dnl

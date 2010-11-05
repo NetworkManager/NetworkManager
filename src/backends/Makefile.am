@@ -57,6 +57,10 @@ if TARGET_LINEXA
 libnmbackend_la_SOURCES += NetworkManagerLinexa.c
 endif
 
+if TARGET_EXHERBO
+libnmbackend_la_SOURCES += NetworkManagerExherbo.c
+endif
+
 libnmbackend_la_LIBADD += \
 	$(top_builddir)/src/logging/libnm-logging.la \
 	$(DBUS_LIBS) \
