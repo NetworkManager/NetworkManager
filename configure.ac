@@ -281,6 +281,8 @@ with_nss=no
 with_gnutls=no
 if test x"$ac_crypto" = xnss; then
   PKG_CHECK_MODULES(NSS, [nss >= 3.11])
+  AC_SUBST(NSS_CFLAGS)
+  AC_SUBST(NSS_LIBS)
   AC_DEFINE(HAVE_NSS, 1, [Define if you have NSS])
   with_nss=yes
 elif test x"$ac_crypto" = xgnutls; then
@@ -297,7 +299,7 @@ elif test x"$ac_crypto" = xgnutls; then
     with_gnutls=yes
   fi
 else
-  AC_MSG_ERROR([Please choose either 'nss' or 'gnutls' for certificate and key operations])
+  AC_MSG_ERROR([Please choose either 'nss' or 'gnutls' for certificate and crypto operations])
 fi
 AM_CONDITIONAL(WITH_NSS, test x"$with_nss" != xno)
 AM_CONDITIONAL(WITH_GNUTLS, test x"$with_gnutls" != xno)
