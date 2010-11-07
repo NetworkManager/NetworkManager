@@ -281,6 +281,18 @@ with_nss=no
 with_gnutls=no
 if test x"$ac_crypto" = xnss; then
   PKG_CHECK_MODULES(NSS, [nss >= 3.11])
+
+  # Work around a pkg-config bug (fdo #29801) where exists != usable
+  AC_PATH_PROG(PKGCONFIG_PATH, pkg-config, no)
+  if test x"$PKGCONFIG_PATH" = xno; then
+    AC_MSG_ERROR([pkgconfig required but not found])
+  else
+    `$PKGCONFIG_PATH --cflags --libs nss`
+    if test x"$?" != "x0"; then
+      AC_MSG_ERROR([No usable NSS found])
+    fi
+  fi
+
   AC_SUBST(NSS_CFLAGS)
   AC_SUBST(NSS_LIBS)
   AC_DEFINE(HAVE_NSS, 1, [Define if you have NSS])
