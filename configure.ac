@@ -287,7 +287,7 @@ if test x"$ac_crypto" = xnss; then
   if test x"$PKGCONFIG_PATH" = xno; then
     AC_MSG_ERROR([pkgconfig required but not found])
   else
-    `$PKGCONFIG_PATH --cflags --libs nss`
+    FOO=`$PKGCONFIG_PATH --cflags --libs nss`
     if test x"$?" != "x0"; then
       AC_MSG_ERROR([No usable NSS found])
     fi
