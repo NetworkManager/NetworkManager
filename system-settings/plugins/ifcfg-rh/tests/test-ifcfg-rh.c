@@ -29,8 +29,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include <dbus/dbus-glib.h>
-
 #include <nm-utils.h>
 #include <nm-setting-connection.h>
 #include <nm-setting-wired.h>
@@ -9490,11 +9488,9 @@ test_read_vlan_interface (void)
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
-	DBusGConnection *bus;
 	char *base;
 
 	g_type_init ();
-	bus = dbus_g_bus_get (DBUS_BUS_SESSION, NULL);
 
 	if (!nm_utils_init (&error))
 		FAIL ("nm-utils-init", "failed to initialize libnm-util: %s", error->message);
