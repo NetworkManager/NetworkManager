@@ -10,9 +10,9 @@ AM_CPPFLAGS = \
 	-DNM_RUN_DIR=\"$(rundir)\" \
 	-DDATADIR=\"$(datadir)\"
 
-bin_PROGRAMS = nm-tool
+bin_PROGRAMS = nm-tool nm-online
 
-noinst_PROGRAMS = nm-online libnm-glib-test
+noinst_PROGRAMS = libnm-glib-test
 
 nm_tool_SOURCES = nm-tool.c
 nm_tool_LDADD = \
