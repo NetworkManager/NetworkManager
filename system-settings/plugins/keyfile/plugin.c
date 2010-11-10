@@ -203,15 +203,18 @@ dir_changed (GFileMonitor *monitor,
 		break;
 	case G_FILE_MONITOR_EVENT_CREATED:
 	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
-		PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "updating %s", name);
-
 		if (connection) {
 			/* Update */
 			NMKeyfileConnection *tmp;
 
 			tmp = nm_keyfile_connection_new (name, &error);
 			if (tmp) {
-				update_connection_settings (connection, tmp);
+				if (!nm_connection_compare (NM_CONNECTION (connection),
+				                            NM_CONNECTION (tmp),
+				                            NM_SETTING_COMPARE_FLAG_EXACT)) {
+					PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "updating %s", name);
+					update_connection_settings (connection, tmp);
+				}
 				g_object_unref (tmp);
 			} else {
 				/* Error; remove the connection */
@@ -221,6 +224,8 @@ dir_changed (GFileMonitor *monitor,
 				remove_connection (SC_PLUGIN_KEYFILE (config), connection, name);
 			}
 		} else {
+			PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "updating %s", name);
+
 			/* New */
 			connection = nm_keyfile_connection_new (name, &error);
 			if (connection) {
