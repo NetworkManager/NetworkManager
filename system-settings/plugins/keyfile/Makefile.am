@@ -16,6 +16,8 @@ libkeyfile_io_la_SOURCES = \
 	writer.c \
 	writer.h \
 	errors.c \
+	utils.c \
+	utils.h \
 	common.h
 
 libkeyfile_io_la_CPPFLAGS = \
