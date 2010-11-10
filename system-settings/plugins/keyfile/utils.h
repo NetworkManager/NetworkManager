@@ -15,26 +15,16 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2008 - 2010 Red Hat, Inc.
+ * (C) Copyright 2010 Red Hat, Inc.
  */
 
-#ifndef __COMMON_H__
-#define __COMMON_H__
+#ifndef _UTILS_H_
+#define _UTILS_H_
 
 #include <glib.h>
+#include "common.h"
 
-#define SWP_TAG ".swp"
-#define SWPX_TAG ".swpx"
+gboolean utils_should_ignore_file (const char *filename);
 
-#define KEYFILE_PLUGIN_NAME "keyfile"
-#define KEYFILE_PLUGIN_INFO "(c) 2007 - 2010 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list."
-
-#define KEYFILE_DIR SYSCONFDIR "/NetworkManager/system-connections"
-
-#define VPN_SECRETS_GROUP "vpn-secrets"
-
-#define KEYFILE_PLUGIN_ERROR (keyfile_plugin_error_quark ())
-GQuark keyfile_plugin_error_quark (void);
-
-#endif  /* __COMMON_H__ */
+#endif  /* _UTILS_H_ */
 

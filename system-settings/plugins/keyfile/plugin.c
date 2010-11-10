@@ -39,6 +39,7 @@
 #include "nm-keyfile-connection.h"
 #include "writer.h"
 #include "common.h"
+#include "utils.h"
 
 #define CONF_FILE SYSCONFDIR "/NetworkManager/NetworkManager.conf"
 #define OLD_CONF_FILE SYSCONFDIR "/NetworkManager/nm-system-settings.conf"
@@ -88,6 +89,9 @@ read_connections (NMSystemConfigInterface *config)
 	while ((item = g_dir_read_name (dir))) {
 		NMKeyfileConnection *connection;
 		char *full_path;
+
+		if (utils_should_ignore_file (item))
+			continue;
 
 		full_path = g_build_filename (KEYFILE_DIR, item, NULL);
 		PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "parsing %s ... ", item);
@@ -192,6 +196,11 @@ dir_changed (GFileMonitor *monitor,
 	GError *error = NULL;
 
 	name = g_file_get_path (file);
+	if (utils_should_ignore_file (name)) {
+		g_free (name);
+		return;
+	}
+
 	connection = g_hash_table_lookup (priv->hash, name);
 
 	switch (event_type) {
