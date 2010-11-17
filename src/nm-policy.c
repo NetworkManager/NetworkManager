@@ -767,11 +767,9 @@ auto_activate_device (gpointer user_data)
 		if (g_object_get_data (G_OBJECT (iter_connection), INVALID_TAG)) {
 			guint retries = get_connection_auto_retries (iter_connection);
 
-			if (retries == 0) {
-				connections = g_slist_remove_link (connections, iter);
-				g_object_unref (iter_connection);
-				g_slist_free (iter);
-			} else if (retries > 0)
+			if (retries == 0)
+				connections = g_slist_remove (connections, iter_connection);
+			else if (retries > 0)
 				set_connection_auto_retries (iter_connection, retries - 1);
 		} else {
 			/* Set the initial # of retries for auto-connection */
@@ -802,7 +800,6 @@ auto_activate_device (gpointer user_data)
 		}
 	}
 
-	g_slist_foreach (connections, (GFunc) g_object_unref, NULL);
 	g_slist_free (connections);
 
  out:

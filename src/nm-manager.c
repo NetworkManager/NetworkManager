@@ -992,32 +992,27 @@ manager_hidden_ap_found (NMDeviceInterface *device,
 
 		s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
 		if (!s_wireless)
-			goto next;
+			continue;
 
 		num_bssids = nm_setting_wireless_get_num_seen_bssids (s_wireless);
 		if (num_bssids < 1)
-			goto next;
+			continue;
 
 		ssid = nm_setting_wireless_get_ssid (s_wireless);
 		g_assert (ssid);
 
-		for (i = 0; i < num_bssids; i++) {
+		for (i = 0; i < num_bssids && !done; i++) {
 			const char *seen_bssid = nm_setting_wireless_get_seen_bssid (s_wireless, i);
 			struct ether_addr seen_addr;
 
-			if (!ether_aton_r (seen_bssid, &seen_addr))
-				continue;
-
-			if (memcmp (ap_addr, &seen_addr, sizeof (struct ether_addr)))
-				continue;
-
-			/* Copy the SSID from the connection to the AP */
-			nm_ap_set_ssid (ap, ssid);
-			done = TRUE;
+			if (ether_aton_r (seen_bssid, &seen_addr)) {
+				if (memcmp (ap_addr, &seen_addr, sizeof (struct ether_addr))) {
+					/* Copy the SSID from the connection to the AP */
+					nm_ap_set_ssid (ap, ssid);
+					done = TRUE;
+				}
+			}
 		}
-
-next:
-		g_object_unref (connection);
 	}
 	g_slist_free (connections);
 }

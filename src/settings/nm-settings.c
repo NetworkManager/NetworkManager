@@ -240,8 +240,8 @@ connection_sort (gconstpointer pa, gconstpointer pb)
 	return 1;
 }
 
-/* Returns a GSList of referenced NMConnection objects, caller must
- * unref the connections in the list and destroy the list.
+/* Returns a list of NMSysconfigConnections.  Caller must free the list with
+ * g_slist_free().
  */
 GSList *
 nm_settings_get_connections (NMSettings *self)
@@ -255,7 +255,7 @@ nm_settings_get_connections (NMSettings *self)
 	g_hash_table_iter_init (&iter, NM_SETTINGS_GET_PRIVATE (self)->connections);
 	while (g_hash_table_iter_next (&iter, NULL, &data))
 		list = g_slist_insert_sorted (list, data, connection_sort);
-	return g_slist_reverse (list);
+	return list;
 }
 
 NMSysconfigConnection *
