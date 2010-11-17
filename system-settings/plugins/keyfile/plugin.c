@@ -39,6 +39,7 @@
 #include "nm-keyfile-connection.h"
 #include "writer.h"
 #include "common.h"
+#include "utils.h"
 
 #define CONF_FILE SYSCONFDIR "/NetworkManager/NetworkManager.conf"
 #define OLD_CONF_FILE SYSCONFDIR "/NetworkManager/nm-system-settings.conf"
@@ -124,6 +125,9 @@ read_connections (NMSystemConfigInterface *config)
 	while ((item = g_dir_read_name (dir))) {
 		NMSysconfigConnection *connection;
 		char *full_path;
+
+		if (utils_should_ignore_file (item))
+			continue;
 
 		full_path = g_build_filename (KEYFILE_DIR, item, NULL);
 		PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "parsing %s ... ", item);
@@ -219,6 +223,11 @@ dir_changed (GFileMonitor *monitor,
 	GError *error = NULL;
 
 	full_path = g_file_get_path (file);
+	if (utils_should_ignore_file (full_path)) {
+		g_free (full_path);
+		return;
+	}
+
 	connection = g_hash_table_lookup (priv->hash, full_path);
 
 	switch (event_type) {
@@ -230,15 +239,18 @@ dir_changed (GFileMonitor *monitor,
 		break;
 	case G_FILE_MONITOR_EVENT_CREATED:
 	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
-		PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "updating %s", full_path);
-
 		if (connection) {
 			/* Update */
 			NMKeyfileConnection *tmp;
 
 			tmp = nm_keyfile_connection_new (full_path, NULL, &error);
 			if (tmp) {
-				update_connection_settings (connection, tmp);
+				if (!nm_connection_compare (NM_CONNECTION (connection),
+				                            NM_CONNECTION (tmp),
+				                            NM_SETTING_COMPARE_FLAG_EXACT)) {
+					PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "updating %s", name);
+					update_connection_settings (connection, tmp);
+				}
 				g_object_unref (tmp);
 			} else {
 				/* Error; remove the connection */
@@ -248,6 +260,8 @@ dir_changed (GFileMonitor *monitor,
 				remove_connection (SC_PLUGIN_KEYFILE (config), connection, full_path);
 			}
 		} else {
+			PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "updating %s", name);
+
 			/* New */
 			connection = nm_keyfile_connection_new (full_path, NULL, &error);
 			if (connection) {

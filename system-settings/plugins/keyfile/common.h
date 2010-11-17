@@ -23,6 +23,9 @@
 
 #include <glib.h>
 
+#define SWP_TAG ".swp"
+#define SWPX_TAG ".swpx"
+
 #define KEYFILE_PLUGIN_NAME "keyfile"
 #define KEYFILE_PLUGIN_INFO "(c) 2007 - 2010 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list."
 

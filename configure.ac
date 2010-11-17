@@ -1,6 +1,6 @@
 AC_PREREQ(2.52)
 
-AC_INIT(NetworkManager, 0.8.1, dcbw@redhat.com, NetworkManager)
+AC_INIT(NetworkManager, 0.8.990, dcbw@redhat.com, NetworkManager)
 AM_INIT_AUTOMAKE([1.9 subdir-objects tar-ustar no-dist-gzip dist-bzip2])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([no])])
 AM_MAINTAINER_MODE
@@ -84,7 +84,7 @@ dnl Make sha1.c happy on big endian systems
 dnl
 AC_C_BIGENDIAN
 
-AC_ARG_WITH(distro, AS_HELP_STRING([--with-distro=DISTRO], [Specify the Linux distribution to target: One of redhat, suse, gentoo, debian, arch, slackware, paldo, mandriva, pardus or linexa]))
+AC_ARG_WITH(distro, AS_HELP_STRING([--with-distro=DISTRO], [Specify the Linux distribution to target: One of redhat, suse, gentoo, debian, arch, slackware, paldo, mandriva, pardus, linexa or exherbo]))
 if test "z$with_distro" = "z"; then
 	AC_CHECK_FILE(/etc/redhat-release,with_distro="redhat")
 	AC_CHECK_FILE(/etc/SuSE-release,with_distro="suse")
@@ -97,6 +97,7 @@ if test "z$with_distro" = "z"; then
 	AC_CHECK_FILE(/etc/mandriva-release,with_distro="mandriva")
 	AC_CHECK_FILE(/etc/pardus-release,with_distro="pardus")
 	AC_CHECK_FILE(/etc/linexa-release,with_distro="linexa")
+	AC_CHECK_FILE(/etc/exherbo-release,with_distro="exherbo")
 	if test "z$with_distro" = "z"; then
 		with_distro=`lsb_release -is`
 	fi
@@ -108,7 +109,7 @@ if test "z$with_distro" = "z"; then
 	exit 1
 else
 	case $with_distro in
-		redhat|suse|gentoo|debian|slackware|arch|paldo|frugalware|mandriva|pardus|linexa) ;;
+		redhat|suse|gentoo|debian|slackware|arch|paldo|frugalware|mandriva|pardus|linexa|exherbo) ;;
 		*)
 			echo "Your distribution (${with_distro}) is not yet supported!  (patches welcome)"
 			exit 1
@@ -169,6 +170,11 @@ fi
 AM_CONDITIONAL(TARGET_LINEXA, test x"$with_distro" = xlinexa)
 if test x"$with_distro" = xlinexa; then
   AC_DEFINE(TARGET_LINEXA, 1, [Define if you have linexa])
+fi
+
+AM_CONDITIONAL(TARGET_EXHERBO, test x"$with_distro" = xexherbo)
+if test x"$with_distro" = xexherbo; then
+  AC_DEFINE(TARGET_EXHERBO, 1, [Define if you have Exherbo])
 fi
 
 dnl
@@ -288,6 +294,20 @@ with_nss=no
 with_gnutls=no
 if test x"$ac_crypto" = xnss; then
   PKG_CHECK_MODULES(NSS, [nss >= 3.11])
+
+  # Work around a pkg-config bug (fdo #29801) where exists != usable
+  AC_PATH_PROG(PKGCONFIG_PATH, pkg-config, no)
+  if test x"$PKGCONFIG_PATH" = xno; then
+    AC_MSG_ERROR([pkgconfig required but not found])
+  else
+    FOO=`$PKGCONFIG_PATH --cflags --libs nss`
+    if test x"$?" != "x0"; then
+      AC_MSG_ERROR([No usable NSS found])
+    fi
+  fi
+
+  AC_SUBST(NSS_CFLAGS)
+  AC_SUBST(NSS_LIBS)
   AC_DEFINE(HAVE_NSS, 1, [Define if you have NSS])
   with_nss=yes
 elif test x"$ac_crypto" = xgnutls; then
@@ -304,7 +324,7 @@ elif test x"$ac_crypto" = xgnutls; then
     with_gnutls=yes
   fi
 else
-  AC_MSG_ERROR([Please choose either 'nss' or 'gnutls' for certificate and key operations])
+  AC_MSG_ERROR([Please choose either 'nss' or 'gnutls' for certificate and crypto operations])
 fi
 AM_CONDITIONAL(WITH_NSS, test x"$with_nss" != xno)
 AM_CONDITIONAL(WITH_GNUTLS, test x"$with_gnutls" != xno)

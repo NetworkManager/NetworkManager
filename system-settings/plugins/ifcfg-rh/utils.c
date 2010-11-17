@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2008 - 2009 Red Hat, Inc.
+ * (C) Copyright 2008 - 2010 Red Hat, Inc.
  */
 
 #include <glib.h>
@@ -115,6 +115,27 @@ utils_hexstr2bin (const char *hex, size_t len)
 
 /* End from hostap */
 
+/*
+ * Check ';[a-fA-F0-9]{8}' file suffix used for temporary files by rpm when
+ * installing packages.
+ *
+ * Implementation taken from upstart.
+ */
+static gboolean
+check_rpm_temp_suffix (const char *path)
+{
+	const char *ptr;
+
+	g_return_val_if_fail (path != NULL, FALSE);
+
+	/* Matches *;[a-fA-F0-9]{8}; used by rpm */
+	ptr = strrchr (path, ';');
+	if (ptr && (strspn (ptr + 1, "abcdefABCDEF0123456789") == 8)
+	    && (! ptr[9]))
+		return TRUE;
+	return FALSE;
+}
+
 static gboolean
 check_suffix (const char *base, const char *tag)
 {
@@ -162,7 +183,8 @@ utils_should_ignore_file (const char *filename, gboolean only_ifcfg)
 	    && !check_suffix (base, REJ_TAG)
 	    && !check_suffix (base, RPMNEW_TAG)
 	    && !check_suffix (base, AUGNEW_TAG)
-	    && !check_suffix (base, AUGTMP_TAG))
+	    && !check_suffix (base, AUGTMP_TAG)
+	    && !check_rpm_temp_suffix (base))
 		ignore = FALSE;
 
 	g_free (base);

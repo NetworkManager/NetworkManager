@@ -16,6 +16,8 @@ libkeyfile_io_la_SOURCES = \
 	writer.c \
 	writer.h \
 	errors.c \
+	utils.c \
+	utils.h \
 	common.h
 
 libkeyfile_io_la_CPPFLAGS = \
@@ -48,6 +50,8 @@ libnm_settings_plugin_keyfile_la_LIBADD = \
 	$(GMODULE_LIBS) \
 	$(DBUS_LIBS) \
 	$(GIO_LIBS)
+
+keyfiledir=$(sysconfdir)/NetworkManager/system-connections
 
 install-data-hook:
 	$(mkinstalldirs) -m 0755 $(DESTDIR)$(keyfiledir)

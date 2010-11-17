@@ -27,8 +27,6 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
-#include <dbus/dbus-glib.h>
-
 #include <nm-utils.h>
 #include <nm-setting-connection.h>
 #include <nm-setting-wired.h>
@@ -1989,11 +1987,9 @@ test_write_gsm_connection (void)
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
-	DBusGConnection *bus;
 	char *base;
 
 	g_type_init ();
-	bus = dbus_g_bus_get (DBUS_BUS_SESSION, NULL);
 
 	if (!nm_utils_init (&error))
 		FAIL ("nm-utils-init", "failed to initialize libnm-util: %s", error->message);
@@ -2022,7 +2018,6 @@ int main (int argc, char **argv)
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);
 	g_free (base);
-	dbus_g_connection_unref (bus);
 	return 0;
 }
 

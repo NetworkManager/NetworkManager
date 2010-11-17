@@ -228,6 +228,8 @@ typedef struct {
 	guint fw_monitor_id;
 	guint fw_changed_id;
 
+	guint timestamp_update_id;
+
 	gboolean disposed;
 } NMManagerPrivate;
 
@@ -436,6 +438,45 @@ nm_manager_update_state (NMManager *manager)
 }
 
 static void
+ignore_cb (NMSettingsConnectionInterface *connection, GError *error, gpointer user_data)
+{
+}
+
+static void
+update_active_connection_timestamp (NMManager *manager, NMDevice *device)
+{
+	NMActRequest *req;
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingsConnectionInterface *connection_interface;
+	NMManagerPrivate *priv;
+
+	g_return_if_fail (NM_IS_DEVICE (device));
+
+	priv = NM_MANAGER_GET_PRIVATE (manager);
+	req = nm_device_get_act_request (device);
+	if (!req)
+		return;
+
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+
+	if (nm_connection_get_scope (connection) != NM_CONNECTION_SCOPE_SYSTEM)
+		return;
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (NM_CONNECTION (connection), NM_TYPE_SETTING_CONNECTION));
+	g_assert (s_con);
+	g_object_set (s_con, NM_SETTING_CONNECTION_TIMESTAMP, (guint64) time (NULL), NULL);
+
+	if (nm_setting_connection_get_read_only (s_con))
+		return;
+
+	connection_interface = nm_settings_interface_get_connection_by_path (NM_SETTINGS_INTERFACE (priv->sys_settings),
+	                                                                     nm_connection_get_path (connection));
+	nm_settings_connection_interface_update (connection_interface, ignore_cb, NULL);
+}
+
+static void
 manager_device_state_changed (NMDevice *device,
                               NMDeviceState new_state,
                               NMDeviceState old_state,
@@ -457,6 +498,9 @@ manager_device_state_changed (NMDevice *device,
 	}
 
 	nm_manager_update_state (manager);
+
+	if (new_state == NM_DEVICE_STATE_ACTIVATED)
+		update_active_connection_timestamp (manager, device);
 }
 
 /* Removes a device from a device list; returns the start of the new device list */
@@ -2005,7 +2049,7 @@ nm_manager_activate_connection (NMManager *manager,
 		if (state < NM_DEVICE_STATE_DISCONNECTED) {
 			g_set_error (error,
 			             NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNMANAGED_DEVICE,
-			             "%s", "Device not managed by NetworkManager");
+			             "%s", "Device not managed by NetworkManager or unavailable");
 			return NULL;
 		}
 
@@ -3166,6 +3210,11 @@ dispose (GObject *object)
 		g_object_unref (priv->fw_monitor);
 	}
 
+	if (priv->timestamp_update_id) {
+		g_source_remove (priv->timestamp_update_id);
+		priv->timestamp_update_id = 0;
+	}
+
 	G_OBJECT_CLASS (nm_manager_parent_class)->dispose (object);
 }
 
@@ -3276,6 +3325,28 @@ get_property (GObject *object, guint prop_id,
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
 	}
+}
+
+static gboolean
+periodic_update_active_connection_timestamps (gpointer user_data)
+{
+	NMManager *manager = NM_MANAGER (user_data);
+	GPtrArray *active;
+	int i;
+
+	active = get_active_connections (manager, NULL);
+
+	for (i = 0; i < active->len; i++) {
+		const char *active_path = g_ptr_array_index (active, i);
+		NMActRequest *req;
+		NMDevice *device = NULL;
+
+		req = nm_manager_get_act_request_by_path (manager, active_path, &device);
+		if (device && nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED)
+			update_active_connection_timestamp (manager, device);
+	}
+
+	return TRUE;
 }
 
 static void
@@ -3406,6 +3477,9 @@ nm_manager_init (NMManager *manager)
 		nm_log_warn (LOGD_CORE, "failed to monitor kernel firmware directory '%s'.",
 		             KERNEL_FIRMWARE_DIR);
 	}
+
+	/* Update timestamps in active connections */
+	priv->timestamp_update_id = g_timeout_add_seconds (300, (GSourceFunc) periodic_update_active_connection_timestamps, manager);
 }
 
 static void

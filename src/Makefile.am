@@ -277,8 +277,10 @@ EXTRA_DIST = \
 	$(NetworkManager_DATA)
 
 rundir=$(localstatedir)/run/NetworkManager
+statedir=$(localstatedir)/lib/NetworkManager
 install-data-hook:
 	$(mkinstalldirs) -m 0700 $(DESTDIR)$(rundir)
+	$(mkinstalldirs) -m 0700 $(DESTDIR)$(statedir)
 
 CLEANFILES = $(BUILT_SOURCES)
 
