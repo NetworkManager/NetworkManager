@@ -165,6 +165,15 @@ nm_auth_chain_set_data (NMAuthChain *self,
 	}
 }
 
+NMAuthCallResult
+nm_auth_chain_get_result (NMAuthChain *self, const char *permission)
+{
+	g_return_val_if_fail (self != NULL, NM_AUTH_CALL_RESULT_UNKNOWN);
+	g_return_val_if_fail (permission != NULL, NM_AUTH_CALL_RESULT_UNKNOWN);
+
+	return GPOINTER_TO_UINT (nm_auth_chain_get_data (self, permission));
+}
+
 static void
 nm_auth_chain_check_done (NMAuthChain *self)
 {

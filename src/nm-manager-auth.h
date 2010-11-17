@@ -76,6 +76,9 @@ void nm_auth_chain_set_data (NMAuthChain *chain,
                              gpointer data,
                              GDestroyNotify data_destroy);
 
+NMAuthCallResult nm_auth_chain_get_result (NMAuthChain *chain,
+                                           const char *permission);
+
 gboolean nm_auth_chain_add_call (NMAuthChain *chain,
                                  const char *permission,
                                  gboolean allow_interaction);
