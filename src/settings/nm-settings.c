@@ -107,6 +107,7 @@ typedef struct {
 	char *config_file;
 
 	GSList *pk_calls;
+	GSList *auths;
 
 	GSList *plugins;
 	gboolean connections_loaded;
@@ -926,74 +927,67 @@ impl_settings_add_connection (NMSettings *self,
 }
 
 static void
-pk_hostname_cb (GObject *object, GAsyncResult *result, gpointer user_data)
+pk_hostname_cb (NMAuthChain *chain,
+                GError *chain_error,
+                DBusGMethodInvocation *context,
+                gpointer user_data)
 {
-	PolkitCall *call = user_data;
-	NMSettings *self = call->self;
-	NMSettingsPrivate *priv;
-	PolkitAuthorizationResult *pk_result;
+	NMSettings *self = NM_SETTINGS (user_data);
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	NMAuthCallResult result;
+	gboolean success = FALSE;
 	GError *error = NULL;
 	GSList *iter;
-	gboolean success = FALSE;
+	const char *hostname;
+
+	priv->auths = g_slist_remove (priv->auths, chain);
 
 	/* If our NMSysconfigConnection is already gone, do nothing */
-	if (call->disposed) {
-		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_GENERAL,
-		                             "Request was canceled.");
-		dbus_g_method_return_error (call->context, error);
-		g_error_free (error);
-		polkit_call_free (call);
-		return;
+	if (chain_error) {
+		error = g_error_new (NM_SETTINGS_ERROR,
+		                     NM_SETTINGS_ERROR_GENERAL,
+		                     "Error checking authorization: %s",
+		                     chain_error->message ? chain_error->message : "(unknown)");
+		goto done;
 	}
 
-	priv = NM_SETTINGS_GET_PRIVATE (self);
-
-	priv->pk_calls = g_slist_remove (priv->pk_calls, call);
-
-	pk_result = polkit_authority_check_authorization_finish (priv->authority,
-	                                                         result,
-	                                                         &error);
-	/* Some random error happened */
-	if (error) {
-		dbus_g_method_return_error (call->context, error);
-		goto out;
-	}
+	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_SETTINGS_HOSTNAME_MODIFY);
 
 	/* Caller didn't successfully authenticate */
-	if (!polkit_authorization_result_get_is_authorized (pk_result)) {
+	if (   result != NM_AUTH_CALL_RESULT_YES
+	    && result != NM_AUTH_CALL_RESULT_AUTH) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_NOT_PRIVILEGED,
 		                             "Insufficient privileges.");
-		dbus_g_method_return_error (call->context, error);
-		goto out;
+		goto done;
 	}
 
 	/* Set the hostname in all plugins */
+	hostname = nm_auth_chain_get_data (chain, "hostname");
 	for (iter = priv->plugins; iter; iter = iter->next) {
 		NMSystemConfigInterfaceCapabilities caps = NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE;
 
 		g_object_get (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES, &caps, NULL);
 		if (caps & NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME) {
-			g_object_set (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME, call->hostname, NULL);
+			g_object_set (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME, hostname, NULL);
 			success = TRUE;
 		}
 	}
 
-	if (success) {
-		dbus_g_method_return (call->context);
-	} else {
+	if (!success) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_SAVE_HOSTNAME_FAILED,
 		                             "Saving the hostname failed.");
-		dbus_g_method_return_error (call->context, error);
 	}
 
-out:
+done:
+	if (error)
+		dbus_g_method_return_error (context, error);
+	else
+		dbus_g_method_return (context);
+
 	g_clear_error (&error);
-	polkit_call_free (call);
-	if (pk_result)
-		g_object_unref (pk_result);
+	nm_auth_chain_unref (chain);
 }
 
 static void
@@ -1002,7 +996,7 @@ impl_settings_save_hostname (NMSettings *self,
                              DBusGMethodInvocation *context)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	PolkitCall *call;
+	NMAuthChain *chain;
 	GError *error = NULL;
 
 	/* Do any of the plugins support setting the hostname? */
@@ -1015,17 +1009,12 @@ impl_settings_save_hostname (NMSettings *self,
 		return;
 	}
 
-	call = polkit_call_new (self, context, NULL, hostname);
-	g_assert (call);
-	polkit_authority_check_authorization (priv->authority,
-	                                      call->subject,
-	                                      NM_AUTH_PERMISSION_SETTINGS_HOSTNAME_MODIFY,
-	                                      NULL,
-	                                      POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION,
-	                                      call->cancellable,
-	                                      pk_hostname_cb,
-	                                      call);
-	priv->pk_calls = g_slist_append (priv->pk_calls, call);
+	/* Otherwise validate the user request */
+	chain = nm_auth_chain_new (priv->authority, context, NULL, pk_hostname_cb, self);
+	g_assert (chain);
+	priv->auths = g_slist_append (priv->auths, chain);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_HOSTNAME_MODIFY, TRUE);
+	nm_auth_chain_set_data (chain, "hostname", g_strdup (hostname), g_free);
 }
 
 static gboolean
@@ -1402,6 +1391,10 @@ dispose (GObject *object)
 	}
 	g_slist_free (priv->pk_calls);
 	priv->pk_calls = NULL;
+
+	for (iter = priv->auths; iter; iter = g_slist_next (iter))
+		nm_auth_chain_unref ((NMAuthChain *) iter->data);
+	g_slist_free (priv->auths);
 
 	g_object_unref (priv->dbus_mgr);
 
