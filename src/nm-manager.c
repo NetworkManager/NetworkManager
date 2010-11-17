@@ -1192,34 +1192,32 @@ deactivate_disconnect_check_error (GError *auth_error,
 
 static void
 disconnect_net_auth_done_cb (NMAuthChain *chain,
-                             GError *error,
+                             GError *auth_error,
                              DBusGMethodInvocation *context,
                              gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GError *ret_error = NULL;
+	GError *error = NULL;
 	NMAuthCallResult result;
 	NMDevice *device;
 
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
 
 	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL));
-	ret_error = deactivate_disconnect_check_error (error, result, "Disconnect");
-	if (ret_error) {
-		dbus_g_method_return_error (context, ret_error);
-		g_error_free (ret_error);
-		goto done;
+	error = deactivate_disconnect_check_error (auth_error, result, "Disconnect");
+	if (!error) {
+		device = nm_auth_chain_get_data (chain, "device");
+		if (!nm_device_interface_disconnect (NM_DEVICE_INTERFACE (device), &error))
+			g_assert (error);
 	}
 
-	device = nm_auth_chain_get_data (chain, "device");
-	if (!nm_device_interface_disconnect (NM_DEVICE_INTERFACE (device), &ret_error)) {
-		dbus_g_method_return_error (context, ret_error);
-		g_clear_error (&ret_error);
-	} else
+	if (error)
+		dbus_g_method_return_error (context, error);
+	else
 		dbus_g_method_return (context);
 
-done:
+	g_clear_error (&error);
 	nm_auth_chain_unref (chain);
 }
 
