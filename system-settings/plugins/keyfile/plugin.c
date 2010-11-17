@@ -248,7 +248,7 @@ dir_changed (GFileMonitor *monitor,
 				if (!nm_connection_compare (NM_CONNECTION (connection),
 				                            NM_CONNECTION (tmp),
 				                            NM_SETTING_COMPARE_FLAG_EXACT)) {
-					PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "updating %s", name);
+					PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "updating %s", full_path);
 					update_connection_settings (connection, tmp);
 				}
 				g_object_unref (tmp);
@@ -260,7 +260,7 @@ dir_changed (GFileMonitor *monitor,
 				remove_connection (SC_PLUGIN_KEYFILE (config), connection, full_path);
 			}
 		} else {
-			PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "updating %s", name);
+			PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "updating %s", full_path);
 
 			/* New */
 			connection = nm_keyfile_connection_new (full_path, NULL, &error);

@@ -272,7 +272,7 @@ connection_new_or_changed (SCPluginIfcfg *self,
 	/* Successfully read connection changes */
 
 	/* When the connections are the same, nothing is done */
-	if (nm_connection_compare (NM_CONNECTION (connection),
+	if (nm_connection_compare (NM_CONNECTION (existing),
 	                           NM_CONNECTION (new),
 	                           NM_SETTING_COMPARE_FLAG_EXACT)) {
 		g_object_unref (new);
@@ -281,7 +281,7 @@ connection_new_or_changed (SCPluginIfcfg *self,
 
 	PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "updating %s", path);
 
-	old_unmanaged = nm_ifcfg_connection_get_unmanaged_spec (NM_IFCFG_CONNECTION (connection));
+	old_unmanaged = nm_ifcfg_connection_get_unmanaged_spec (NM_IFCFG_CONNECTION (existing));
 	new_unmanaged = nm_ifcfg_connection_get_unmanaged_spec (NM_IFCFG_CONNECTION (new));
 
 	if (new_unmanaged) {

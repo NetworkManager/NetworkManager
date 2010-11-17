@@ -438,7 +438,7 @@ nm_manager_update_state (NMManager *manager)
 }
 
 static void
-ignore_cb (NMSettingsConnectionInterface *connection, GError *error, gpointer user_data)
+ignore_cb (NMSysconfigConnection *connection, GError *error, gpointer user_data)
 {
 }
 
@@ -448,7 +448,6 @@ update_active_connection_timestamp (NMManager *manager, NMDevice *device)
 	NMActRequest *req;
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	NMSettingsConnectionInterface *connection_interface;
 	NMManagerPrivate *priv;
 
 	g_return_if_fail (NM_IS_DEVICE (device));
@@ -461,19 +460,14 @@ update_active_connection_timestamp (NMManager *manager, NMDevice *device)
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
 
-	if (nm_connection_get_scope (connection) != NM_CONNECTION_SCOPE_SYSTEM)
-		return;
-
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (NM_CONNECTION (connection), NM_TYPE_SETTING_CONNECTION));
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_con);
 	g_object_set (s_con, NM_SETTING_CONNECTION_TIMESTAMP, (guint64) time (NULL), NULL);
 
 	if (nm_setting_connection_get_read_only (s_con))
 		return;
 
-	connection_interface = nm_settings_interface_get_connection_by_path (NM_SETTINGS_INTERFACE (priv->sys_settings),
-	                                                                     nm_connection_get_path (connection));
-	nm_settings_connection_interface_update (connection_interface, ignore_cb, NULL);
+	nm_sysconfig_connection_commit_changes (NM_SYSCONFIG_CONNECTION (connection), ignore_cb, NULL);
 }
 
 static void
