@@ -884,8 +884,7 @@ pk_hostname_cb (NMAuthChain *chain,
 	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_SETTINGS_HOSTNAME_MODIFY);
 
 	/* Caller didn't successfully authenticate */
-	if (   result != NM_AUTH_CALL_RESULT_YES
-	    && result != NM_AUTH_CALL_RESULT_AUTH) {
+	if (result != NM_AUTH_CALL_RESULT_YES) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_NOT_PRIVILEGED,
 		                             "Insufficient privileges.");
