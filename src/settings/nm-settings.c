@@ -656,6 +656,7 @@ claim_connection (NMSettings *self,
 	guint id;
 
 	g_return_if_fail (NM_IS_SYSCONFIG_CONNECTION (connection));
+	g_return_if_fail (nm_connection_get_path (NM_CONNECTION (connection)) == NULL);
 
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, &data)) {
