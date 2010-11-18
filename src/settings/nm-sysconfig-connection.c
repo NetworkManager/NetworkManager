@@ -704,7 +704,7 @@ get_settings_auth_cb (NMSysconfigConnection *self,
 	dbus_g_method_return (context, settings);
 	
 	g_object_unref (no_secrets);
-	g_object_unref (settings);
+	g_hash_table_destroy (settings);
 }
 
 static void
