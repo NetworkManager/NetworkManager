@@ -128,6 +128,8 @@ real_ip4_start (NMDHCPClient *client,
 
 	g_ptr_array_add (argv, (gpointer) "-L");	/* Disable built-in IPv4LL since we use avahi-autoipd */
 
+	g_ptr_array_add (argv, (gpointer) "-G");	/* Let NM handle routing */
+
 	g_ptr_array_add (argv, (gpointer) "-c");	/* Set script file */
 	g_ptr_array_add (argv, (gpointer) ACTION_SCRIPT_PATH );
 
