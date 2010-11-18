@@ -73,7 +73,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
 	PolkitAuthority *authority;
-	GSList *pending_auths; /* List of PendingAuth structs*/
+	GSList *pending_auths; /* List of pending authentication requests */
 	NMConnection *secrets;
 	gboolean visible; /* Is this connection is visible by some session? */
 
@@ -508,64 +508,44 @@ typedef void (*AuthCallback) (NMSysconfigConnection *connection,
 	                          GError *error,
 	                          gpointer data);
 
-typedef struct {
-	NMSysconfigConnection *self;
-	DBusGMethodInvocation *context;
-	GCancellable *cancellable;
-	gboolean disposed;
-
+static void
+pk_auth_cb (NMAuthChain *chain,
+            GError *chain_error,
+            DBusGMethodInvocation *context,
+            gpointer user_data)
+{
+	NMSysconfigConnection *self = NM_SYSCONFIG_CONNECTION (user_data);
+	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
+	GError *error = NULL;
+	NMAuthCallResult result;
 	AuthCallback callback;
 	gpointer callback_data;
-} PendingAuth;
 
-static void
-auth_finish (PendingAuth *info, GError *error)
-{
-	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (info->self);
-	priv->pending_auths = g_slist_remove (priv->pending_auths, info);
+	priv->pending_auths = g_slist_remove (priv->pending_auths, chain);
 
-	info->callback (info->self, info->context, error, info->callback_data);
+	/* If our NMSysconfigConnection is already gone, do nothing */
+	if (chain_error) {
+		error = g_error_new (NM_SETTINGS_ERROR,
+		                     NM_SETTINGS_ERROR_GENERAL,
+		                     "Error checking authorization: %s",
+		                     chain_error->message ? chain_error->message : "(unknown)");
+	} else {
+		result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY);
 
-	g_object_unref (info->cancellable);
-	memset (info, 0, sizeof (PendingAuth));
-	g_slice_free (PendingAuth, info);
-}
-
-static void
-auth_pk_cb (GObject *object, GAsyncResult *result, gpointer user_data)
-{
-	PendingAuth *info = user_data;
-	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (info->self);
-	PolkitAuthorizationResult *pk_result = NULL;
-	GError *error = NULL;
-
-	if (info->disposed) {
-		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_GENERAL,
-		                             "Request was canceled.");
-		goto out;
+		/* Caller didn't successfully authenticate */
+		if (result != NM_AUTH_CALL_RESULT_YES) {
+			error = g_error_new_literal (NM_SETTINGS_ERROR,
+				                         NM_SETTINGS_ERROR_NOT_PRIVILEGED,
+				                         "Insufficient privileges.");
+		}
 	}
 
-	pk_result = polkit_authority_check_authorization_finish (priv->authority,
-	                                                         result,
-	                                                         &error);
-	if (error)
-		goto out;
+	callback = nm_auth_chain_get_data (chain, "callback");
+	callback_data = nm_auth_chain_get_data (chain, "callback-data");
+	callback (self, context, error, callback_data);
 
-	if (!polkit_authorization_result_get_is_authorized (pk_result)) {
-		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_NOT_PRIVILEGED,
-		                             "Insufficient privileges.");
-		goto out;
-	}
-
-out:
-	auth_finish (info, error);
-
-	if (error)
-		g_error_free (error);
-	if (pk_result)
-		g_object_unref (pk_result);
+	g_clear_error (&error);
+	nm_auth_chain_unref (chain);
 }
 
 static void
@@ -576,12 +556,10 @@ auth_start (NMSysconfigConnection *self,
             gpointer callback_data)
 {
 	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
-	PendingAuth *info;
+	NMAuthChain *chain;
 	gulong sender_uid = G_MAXULONG;
 	GError *error = NULL;
-	char *sender;
 	char *error_desc = NULL;
-	PolkitSubject *subject;
 
 	/* Get the caller's UID */
 	if (!nm_auth_get_caller_uid (context,  NULL, &sender_uid, &error_desc)) {
@@ -606,35 +584,18 @@ auth_start (NMSysconfigConnection *self,
 		}
 	}
 
-	if (!check_modify) {
+	if (check_modify) {
+		chain = nm_auth_chain_new (priv->authority, context, NULL, pk_auth_cb, self);
+		g_assert (chain);
+		priv->pending_auths = g_slist_append (priv->pending_auths, chain);
+		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY, TRUE);
+		nm_auth_chain_set_data (chain, "callback", callback, NULL);
+		nm_auth_chain_set_data (chain, "callback-data", callback_data, NULL);
+	} else {
+		/* Don't need polkit auth, automatic success */
 		callback (self, context, NULL, callback_data);
-		return;
 	}
 
-	info = g_slice_new (PendingAuth);
-	info->self = self;
-	info->context = context;
-	info->cancellable = NULL;
-	info->disposed = FALSE;
-	info->callback_data = callback_data;
-	info->cancellable = g_cancellable_new();
-
-	sender = dbus_g_method_get_sender (info->context);
-	subject = polkit_system_bus_name_new (sender);
-	g_free (sender);
-
-	priv->pending_auths = g_slist_prepend (priv->pending_auths, info);
-
-	/* Kick off the PolicyKit request */
-	polkit_authority_check_authorization (priv->authority,
-	                                      subject,
-	                                      NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY,
-	                                      NULL,
-	                                      POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION,
-	                                      info->cancellable,
-	                                      auth_pk_cb,
-	                                      info);
-	g_object_unref (subject);
 	return;
 
 error:
@@ -924,12 +885,8 @@ dispose (GObject *object)
 		g_object_unref (priv->secrets);
 
 	/* Cancel PolicyKit requests */
-	for (iter = priv->pending_auths; iter; iter = g_slist_next (iter)) {
-		PendingAuth *call = iter->data;
-
-		call->disposed = TRUE;
-		g_cancellable_cancel (call->cancellable);
-	}
+	for (iter = priv->pending_auths; iter; iter = g_slist_next (iter))
+		nm_auth_chain_unref ((NMAuthChain *) iter->data);
 	g_slist_free (priv->pending_auths);
 	priv->pending_auths = NULL;
 
