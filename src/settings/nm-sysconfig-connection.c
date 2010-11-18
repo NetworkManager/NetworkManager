@@ -129,7 +129,7 @@ uid_in_acl (NMConnection *self,
 	g_assert (s_con);
 
 	/* Reject the request if the request comes from no session at all */
-	if (nm_session_monitor_uid_has_session (smon, uid, &user, &local)) {
+	if (!nm_session_monitor_uid_has_session (smon, uid, &user, &local)) {
 		g_set_error (error,
 		             NM_SETTINGS_ERROR,
 		             NM_SETTINGS_ERROR_PERMISSION_DENIED,
