@@ -327,7 +327,7 @@ gboolean
 nm_auth_get_caller_uid (DBusGMethodInvocation *context,
                         NMDBusManager *dbus_mgr,
                         gulong *out_uid,
-                        const char **out_error_desc)
+                        char **out_error_desc)
 {
 	DBusConnection *connection;
 	char *sender = NULL;
@@ -348,14 +348,14 @@ nm_auth_get_caller_uid (DBusGMethodInvocation *context,
 	sender = dbus_g_method_get_sender (context);
 	if (!sender) {
 		if (out_error_desc)
-			*out_error_desc = "Could not determine D-Bus requestor";
+			*out_error_desc = g_strdup ("Could not determine D-Bus requestor");
 		goto out;
 	}
 
 	connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
 	if (!connection) {
 		if (out_error_desc)
-			*out_error_desc = "Could not get the D-Bus system bus";
+			*out_error_desc = g_strdup ("Could not get the D-Bus system bus");
 		goto out;
 	}
 
@@ -364,7 +364,7 @@ nm_auth_get_caller_uid (DBusGMethodInvocation *context,
 	*out_uid = dbus_bus_get_unix_user (connection, sender, &dbus_error);
 	if (dbus_error_is_set (&dbus_error)) {
 		if (out_error_desc)
-			*out_error_desc = "Could not determine the user ID of the requestor";
+			*out_error_desc = g_strdup_printf ("Could not determine the user ID of the requestor");
 		dbus_error_free (&dbus_error);
 		*out_uid = G_MAXULONG;
 	} else

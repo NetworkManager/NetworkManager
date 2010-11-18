@@ -808,7 +808,7 @@ pk_add_cb (NMAuthChain *chain,
 	NMConnection *connection;
 	NMSysconfigConnection *added;
 	gulong caller_uid = G_MAXULONG;
-	const char *error_desc = NULL;
+	char *error_desc = NULL;
 
 	priv->auths = g_slist_remove (priv->auths, chain);
 
@@ -839,6 +839,7 @@ pk_add_cb (NMAuthChain *chain,
 		                     NM_SETTINGS_ERROR_NOT_PRIVILEGED,
 		                     "Unable to determine UID of request: %s.",
 		                     error_desc ? error_desc : "(unknown)");
+		g_free (error_desc);
 		goto done;
 	}
 

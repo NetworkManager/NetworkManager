@@ -89,7 +89,7 @@ void nm_auth_chain_unref (NMAuthChain *chain);
 gboolean nm_auth_get_caller_uid (DBusGMethodInvocation *context,
                                  NMDBusManager *dbus_mgr,
                                  gulong *out_uid,
-                                 const char **out_error_desc);
+                                 char **out_error_desc);
 
 #endif /* NM_MANAGER_AUTH_H */
 

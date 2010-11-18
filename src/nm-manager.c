@@ -685,7 +685,7 @@ static void
 pending_activation_check_authorized (PendingActivation *pending,
                                      NMDBusManager *dbus_mgr)
 {
-	const char *error_desc = NULL;
+	char *error_desc = NULL;
 	gulong sender_uid = G_MAXULONG;
 	GError *error;
 
@@ -701,6 +701,7 @@ pending_activation_check_authorized (PendingActivation *pending,
 		                             error_desc);
 		pending->callback (pending, error);
 		g_error_free (error);
+		g_free (error_desc);
 		return;
 	}
 
@@ -1225,7 +1226,7 @@ manager_device_disconnect_request (NMDevice *device,
 	NMActRequest *req;
 	GError *error = NULL;
 	gulong sender_uid = G_MAXULONG;
-	const char *error_desc = NULL;
+	char *error_desc = NULL;
 
 	req = nm_device_get_act_request (device);
 	if (!req) {
@@ -1249,6 +1250,7 @@ manager_device_disconnect_request (NMDevice *device,
 		                             error_desc);
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
+		g_free (error_desc);
 		return;
 	}
 
@@ -2225,7 +2227,7 @@ impl_manager_deactivate_connection (NMManager *self,
 	GSList *iter;
 	NMAuthChain *chain;
 	gulong sender_uid = G_MAXULONG;
-	const char *error_desc = NULL;
+	char *error_desc = NULL;
 
 	/* Check for device connections first */
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
@@ -2267,6 +2269,7 @@ impl_manager_deactivate_connection (NMManager *self,
 		                             error_desc);
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
+		g_free (error_desc);
 		return;
 	}
 
@@ -2599,7 +2602,7 @@ impl_manager_enable (NMManager *self,
 	NMAuthChain *chain;
 	GError *error = NULL;
 	gulong sender_uid = G_MAXULONG;
-	const char *error_desc = NULL;
+	char *error_desc = NULL;
 
 	g_return_if_fail (NM_IS_MANAGER (self));
 
@@ -2620,6 +2623,7 @@ impl_manager_enable (NMManager *self,
 		                             error_desc);
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
+		g_free (error_desc);
 		return;
 	}
 

@@ -629,7 +629,7 @@ auth_start (NMSysconfigConnection *self,
 	gulong sender_uid = G_MAXULONG;
 	GError *error = NULL;
 	char *sender;
-	const char *error_desc = NULL;
+	char *error_desc = NULL;
 	PolkitSubject *subject;
 
 	/* Get the caller's UID */
@@ -637,6 +637,7 @@ auth_start (NMSysconfigConnection *self,
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                             error_desc);
+		g_free (error);
 		goto error;
 	}
 
