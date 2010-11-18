@@ -211,6 +211,80 @@ nm_setting_connection_get_permission (NMSettingConnection *setting, guint32 i)
 	return (const char *) g_slist_nth_data (priv->permissions, i);
 }
 
+#define USER_TAG "user:"
+
+/* Extract the username from the permission string and dump to a buffer */
+static gboolean
+perm_to_user (const char *perm, char *out_user, gsize out_user_size)
+{
+	const char *end;
+	gsize userlen;
+
+	g_return_val_if_fail (perm != NULL, FALSE);
+	g_return_val_if_fail (out_user != NULL, FALSE);
+
+	if (!g_str_has_prefix (perm, USER_TAG))
+		return FALSE;
+	perm += strlen (USER_TAG);
+
+	/* Look for trailing ':' */
+	end = strchr (perm, ':');
+	if (!end)
+		end = perm + strlen (perm);
+
+	userlen = end - perm;
+	if (userlen > (out_user_size + 1))
+		return FALSE;
+	memcpy (out_user, perm, userlen);
+	out_user[userlen] = '\0';
+	return TRUE;
+}
+
+/**
+ * nm_setting_connection_permissions_user_allowed:
+ * @setting: the #NMSettingConnection
+ * @uname: the user name to check permissions for
+ *
+ * Checks whether the given username is allowed to view/access this connection.
+ *
+ * Returns: %TRUE if the requested user is allowed to view this connection,
+ * %FALSE if the given user is not allowed to view this connection
+ */
+gboolean
+nm_setting_connection_permissions_user_allowed (NMSettingConnection *setting,
+                                                const char *uname)
+{
+	NMSettingConnectionPrivate *priv;
+	guint32 num, i;
+
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), FALSE);
+	g_return_val_if_fail (uname != NULL, FALSE);
+	g_return_val_if_fail (*uname != '\0', FALSE);
+
+	priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
+
+	/* Match the username returned by the session check to a user in the ACL */
+	num = nm_setting_connection_get_num_permissions (setting);
+	if (num == 0)
+		return TRUE;  /* visible to all */
+
+	for (i = 0; i < num; i++) {
+		const char *perm;
+		char buf[75];
+
+		perm = nm_setting_connection_get_permission (setting, i);
+		g_assert (perm);
+		if (perm_to_user (perm, buf, sizeof (buf))) {
+			if (strcmp (buf, uname) == 0) {
+				/* Yay, permitted */
+				return TRUE;
+			}
+		}
+	}
+
+	return FALSE;
+}
+
 /**
  * nm_setting_connection_get_autoconnect:
  * @setting: the #NMSettingConnection

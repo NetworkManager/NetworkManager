@@ -151,23 +151,8 @@ uid_in_acl (NMConnection *self,
 	}
 
 	/* Match the username returned by the session check to a user in the ACL */
-	num = nm_setting_connection_get_num_permissions (s_con);
-	if (num == 0)
-		return TRUE;  /* visible to all */
-
-	for (i = 0; i < num; i++) {
-		const char *perm;
-		char buf[75];
-
-		perm = nm_setting_connection_get_permission (s_con, i);
-		g_assert (perm);
-		if (perm_to_user (perm, buf, sizeof (buf))) {
-			if (strcmp (buf, user) == 0) {
-				/* Yay, permitted */
-				return TRUE;
-			}
-		}
-	}
+	if (nm_setting_connection_permissions_user_allowed (s_con, user))
+		return TRUE;
 
 	g_set_error (error,
 	             NM_SETTINGS_ERROR,
