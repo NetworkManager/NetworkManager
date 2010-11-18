@@ -119,7 +119,6 @@ uid_in_acl (NMConnection *self,
             GError **error)
 {
 	NMSettingConnection *s_con;
-	guint32 num, i;
 	const char *user = NULL;
 	GError *local = NULL;
 
