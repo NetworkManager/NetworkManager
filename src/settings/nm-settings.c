@@ -107,6 +107,7 @@ typedef struct {
 	guint auth_changed_id;
 	char *config_file;
 
+	NMSessionMonitor *session_monitor;
 	GSList *auths;
 
 	GSList *plugins;
@@ -766,35 +767,6 @@ add_new_connection (NMSettings *self,
 	return NULL;
 }
 
-static char *
-get_user_name (gulong uid)
-{
-	struct passwd pwd;
-	struct passwd *result;
-	char *buf, *uname = NULL;
-	size_t bufsize;
-	int s;
-
-	bufsize = sysconf (_SC_GETPW_R_SIZE_MAX);
-	if (bufsize == -1)
-	   bufsize = 16384; /* adequate fallback */
-
-	buf = g_malloc0 (bufsize);
-	g_assert (buf);
-
-	s = getpwuid_r (uid, &pwd, buf, bufsize, &result);
-	if (result)
-		uname = g_strdup (pwd.pw_name);
-	else if (s == 0) {
-		nm_log_dbg (LOGD_SYS_SET, "Lookup failed for UID %lu: not found", uid);
-	} else {
-		nm_log_dbg (LOGD_SYS_SET, "Lookup failed for UID %lu: %d", uid, s);
-	}
-
-	g_free (buf);
-	return uname;
-}
-
 static void
 pk_add_cb (NMAuthChain *chain,
            GError *chain_error,
@@ -849,29 +821,11 @@ pk_add_cb (NMAuthChain *chain,
 	 * or that the permissions is empty (ie, visible by everyone).
 	 */
 	if (0 != caller_uid) {
-		NMSettingConnection *s_con;
-		char *uname;
-		gboolean allowed;
-
-		uname = get_user_name (caller_uid);
-		if (!uname) {
-			error = g_error_new (NM_SETTINGS_ERROR,
-				                 NM_SETTINGS_ERROR_NOT_PRIVILEGED,
-				                 "Unable to determine username for UID %lu.",
-				                 caller_uid);
-			goto done;
-		}
-
-		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-		g_assert (s_con);
-
-		allowed = nm_setting_connection_permissions_user_allowed (s_con, uname);
-		g_free (uname);
-
-		if (allowed == FALSE) {
+		if (!nm_auth_uid_in_acl (connection, priv->session_monitor, caller_uid, &error_desc)) {
 			error = g_error_new_literal (NM_SETTINGS_ERROR,
-				                         NM_SETTINGS_ERROR_NOT_PRIVILEGED,
-				                         "Cannot add an inaccessible connection.");
+			                             NM_SETTINGS_ERROR_NOT_PRIVILEGED,
+			                             error_desc);
+			g_free (error_desc);
 			goto done;
 		}
 
@@ -1378,6 +1332,25 @@ nm_settings_new (const char *config_file,
 }
 
 static void
+nm_settings_init (NMSettings *self)
+{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	GError *error = NULL;
+
+	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
+
+	priv->authority = polkit_authority_get_sync (NULL, &error);
+	if (!priv->authority) {
+		nm_log_warn (LOGD_SYS_SET, "failed to create PolicyKit authority: (%d) %s",
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
+	}
+
+	priv->session_monitor = nm_session_monitor_get ();
+}
+
+static void
 dispose (GObject *object)
 {
 	NMSettings *self = NM_SETTINGS (object);
@@ -1394,6 +1367,8 @@ dispose (GObject *object)
 	g_slist_free (priv->auths);
 
 	g_object_unref (priv->dbus_mgr);
+
+	g_object_unref (priv->session_monitor);
 
 	G_OBJECT_CLASS (nm_settings_parent_class)->dispose (object);
 }
@@ -1572,22 +1547,5 @@ nm_settings_class_init (NMSettingsClass *class)
 
 	dbus_g_object_type_install_info (NM_TYPE_SETTINGS, &dbus_glib_nm_settings_object_info);
 
-}
-
-static void
-nm_settings_init (NMSettings *self)
-{
-	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	GError *error = NULL;
-
-	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
-
-	priv->authority = polkit_authority_get_sync (NULL, &error);
-	if (!priv->authority) {
-		nm_log_warn (LOGD_SYS_SET, "failed to create PolicyKit authority: (%d) %s",
-		             error ? error->code : -1,
-		             error && error->message ? error->message : "(unknown)");
-		g_clear_error (&error);
-	}
 }
 

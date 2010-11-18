@@ -112,55 +112,6 @@ perm_to_user (const char *perm, char *out_user, gsize out_user_size)
 	return TRUE;
 }
 
-static gboolean
-uid_in_acl (NMConnection *self,
-            NMSessionMonitor *smon,
-            const uid_t uid,
-            GError **error)
-{
-	NMSettingConnection *s_con;
-	const char *user = NULL;
-	GError *local = NULL;
-
-	g_return_val_if_fail (self != NULL, FALSE);
-	g_return_val_if_fail (smon != NULL, FALSE);
-
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (self, NM_TYPE_SETTING_CONNECTION));
-	g_assert (s_con);
-
-	/* Reject the request if the request comes from no session at all */
-	if (!nm_session_monitor_uid_has_session (smon, uid, &user, &local)) {
-		g_set_error (error,
-		             NM_SETTINGS_ERROR,
-		             NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		             "No session found for uid %d (%s)",
-		             uid,
-		             local && local->message ? local->message : "unknown");
-		g_clear_error (&local);
-		return FALSE;
-	}
-
-	if (!user) {
-		g_set_error (error,
-		             NM_SETTINGS_ERROR,
-		             NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		             "Could not determine username for uid %d",
-		             uid);
-		return FALSE;
-	}
-
-	/* Match the username returned by the session check to a user in the ACL */
-	if (nm_setting_connection_permissions_user_allowed (s_con, user))
-		return TRUE;
-
-	g_set_error (error,
-	             NM_SETTINGS_ERROR,
-	             NM_SETTINGS_ERROR_PERMISSION_DENIED,
-	             "uid %d has no permission to perform this operation",
-	             uid);
-	return FALSE;
-}
-
 /**************************************************************/
 
 static void
@@ -643,8 +594,14 @@ auth_start (NMSysconfigConnection *self,
 
 	/* Make sure the UID can view this connection */
 	if (0 != sender_uid) {
-		if (!uid_in_acl (NM_CONNECTION (self), priv->session_monitor, sender_uid, &error)) {
-			g_assert (error);
+		if (!nm_auth_uid_in_acl (NM_CONNECTION (self),
+		                         priv->session_monitor,
+		                         sender_uid,
+		                         &error_desc)) {
+			error = g_error_new_literal (NM_SETTINGS_ERROR,
+				                         NM_SETTINGS_ERROR_PERMISSION_DENIED,
+				                         error_desc);
+			g_free (error_desc);
 			goto error;
 		}
 	}
