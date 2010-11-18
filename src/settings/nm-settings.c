@@ -789,7 +789,7 @@ pk_add_cb (NMAuthChain *chain,
 		goto done;
 	}
 
-	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_SETTINGS_HOSTNAME_MODIFY);
+	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY);
 
 	/* Caller didn't successfully authenticate */
 	if (result != NM_AUTH_CALL_RESULT_YES) {
