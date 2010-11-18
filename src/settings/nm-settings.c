@@ -784,7 +784,6 @@ pk_add_cb (NMAuthChain *chain,
 
 	priv->auths = g_slist_remove (priv->auths, chain);
 
-	/* If our NMSysconfigConnection is already gone, do nothing */
 	if (chain_error) {
 		error = g_error_new (NM_SETTINGS_ERROR,
 		                     NM_SETTINGS_ERROR_GENERAL,
