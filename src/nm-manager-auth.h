@@ -25,7 +25,9 @@
 #include <glib.h>
 #include <dbus/dbus-glib.h>
 
+#include <nm-connection.h>
 #include "nm-dbus-manager.h"
+#include "nm-session-monitor.h"
 
 #define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK     "org.freedesktop.NetworkManager.enable-disable-network"
 #define NM_AUTH_PERMISSION_SLEEP_WAKE                 "org.freedesktop.NetworkManager.sleep-wake"
@@ -90,6 +92,12 @@ gboolean nm_auth_get_caller_uid (DBusGMethodInvocation *context,
                                  NMDBusManager *dbus_mgr,
                                  gulong *out_uid,
                                  char **out_error_desc);
+
+/* Caller must free returned error description */
+gboolean nm_auth_uid_in_acl (NMConnection *connection,
+                             NMSessionMonitor *smon,
+                             gulong uid,
+                             char **out_error_desc);
 
 #endif /* NM_MANAGER_AUTH_H */
 

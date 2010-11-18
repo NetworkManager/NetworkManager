@@ -18,12 +18,13 @@
  * Copyright (C) 2010 Red Hat, Inc.
  */
 
+#include <string.h>
+#include <dbus/dbus-glib-lowlevel.h>
+
+#include <nm-setting-connection.h>
 #include "nm-manager-auth.h"
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
-
-#include <dbus/dbus-glib-lowlevel.h>
-#include <string.h>
 
 struct NMAuthChain {
 	guint32 refcount;
@@ -375,3 +376,46 @@ out:
 	g_free (sender);
 	return success;
 }
+
+gboolean
+nm_auth_uid_in_acl (NMConnection *connection,
+                    NMSessionMonitor *smon,
+                    gulong uid,
+                    char **out_error_desc)
+{
+	NMSettingConnection *s_con;
+	const char *user = NULL;
+	GError *local = NULL;
+
+	g_return_val_if_fail (connection != NULL, FALSE);
+	g_return_val_if_fail (smon != NULL, FALSE);
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	g_assert (s_con);
+
+	/* Reject the request if the request comes from no session at all */
+	if (!nm_session_monitor_uid_has_session (smon, uid, &user, &local)) {
+		if (out_error_desc) {
+			*out_error_desc = g_strdup_printf ("No session found for uid %lu (%s)",
+			                                   uid,
+			                                   local && local->message ? local->message : "unknown");
+		}
+		return FALSE;
+	}
+
+	if (!user) {
+		if (out_error_desc)
+			*out_error_desc = g_strdup_printf ("Could not determine username for uid %lu", uid);
+		return FALSE;
+	}
+
+	/* Match the username returned by the session check to a user in the ACL */
+	if (!nm_setting_connection_permissions_user_allowed (s_con, user)) {
+		if (out_error_desc)
+			*out_error_desc = g_strdup_printf ("uid %lu has no permission to perform this operation", uid);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
