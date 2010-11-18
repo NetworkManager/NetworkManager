@@ -37,7 +37,7 @@
 #define WPAS_DBUS_IFACE_BSSID       WPAS_DBUS_INTERFACE ".BSSID"
 #define WPAS_DBUS_IFACE_NETWORK	    WPAS_DBUS_INTERFACE ".Network"
 #define WPAS_ERROR_INVALID_IFACE    WPAS_DBUS_INTERFACE ".InvalidInterface"
-#define WPAS_ERROR_EXISTS_ERROR     WPAS_DBUS_INTERFACE ".ExistsError"
+#define WPAS_ERROR_EXISTS_ERROR     WPAS_DBUS_INTERFACE ".InterfaceExists"
 
 
 static void wpas_iface_handle_state_change (DBusGProxy *proxy,
@@ -580,7 +580,7 @@ interface_get (NMSupplicantInterface *self)
 	DBusGProxyCall *call;
 
 	info = nm_supplicant_info_new (self, priv->wpas_proxy, priv->other_pcalls);
-	call = dbus_g_proxy_begin_call (priv->wpas_proxy, "getInterface",
+	call = dbus_g_proxy_begin_call (priv->wpas_proxy, "GetInterface",
 	                                interface_get_cb,
 	                                info,
 	                                nm_supplicant_info_destroy,
@@ -622,7 +622,7 @@ interface_add (NMSupplicantInterface *self, gboolean is_wireless)
 	DBusGProxyCall *call;
 	NMSupplicantInfo *info;
 	GHashTable *hash;
-	GValue *driver;
+	GValue *driver, *ifname;
 
 	/* Can only start the interface from INIT state */
 	g_return_if_fail (priv->state == NM_SUPPLICANT_INTERFACE_STATE_INIT);
@@ -639,24 +639,30 @@ interface_add (NMSupplicantInterface *self, gboolean is_wireless)
 
 	info = nm_supplicant_info_new (self, priv->wpas_proxy, priv->other_pcalls);
 
+	hash = g_hash_table_new (g_str_hash, g_str_equal);
+
 	driver = g_new0 (GValue, 1);
 	g_value_init (driver, G_TYPE_STRING);
-	g_value_set_string (driver, is_wireless ? "wext" : "wired");
+	g_value_set_string (driver, is_wireless ? "nl80211,wext" : "wired");
+	g_hash_table_insert (hash, "Driver", driver);
 
-	hash = g_hash_table_new (g_str_hash, g_str_equal);
-	g_hash_table_insert (hash, "driver", driver);
+	ifname = g_new0 (GValue, 1);
+	g_value_init (ifname, G_TYPE_STRING);
+	g_value_set_string (ifname, priv->dev);
+	g_hash_table_insert (hash, "Ifname", ifname);
 
-	call = dbus_g_proxy_begin_call (priv->wpas_proxy, "addInterface",
+	call = dbus_g_proxy_begin_call (priv->wpas_proxy, "CreateInterface",
 	                                interface_add_cb,
 	                                info,
 	                                nm_supplicant_info_destroy,
-	                                G_TYPE_STRING, priv->dev,
 	                                DBUS_TYPE_G_MAP_OF_VARIANT, hash,
 	                                G_TYPE_INVALID);
 
 	g_hash_table_destroy (hash);
 	g_value_unset (driver);
 	g_free (driver);
+	g_value_unset (ifname);
+	g_free (ifname);
 
 	nm_supplicant_info_set_call (info, call);
 }
