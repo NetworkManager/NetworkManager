@@ -28,6 +28,7 @@
 #include <gmodule.h>
 #include <net/ethernet.h>
 #include <netinet/ether.h>
+#include <pwd.h>
 
 #include <NetworkManager.h>
 #include <nm-connection.h>
@@ -765,6 +766,35 @@ add_new_connection (NMSettings *self,
 	return NULL;
 }
 
+static char *
+get_user_name (gulong uid)
+{
+	struct passwd pwd;
+	struct passwd *result;
+	char *buf, *uname = NULL;
+	size_t bufsize;
+	int s;
+
+	bufsize = sysconf (_SC_GETPW_R_SIZE_MAX);
+	if (bufsize == -1)
+	   bufsize = 16384; /* adequate fallback */
+
+	buf = g_malloc0 (bufsize);
+	g_assert (buf);
+
+	s = getpwuid_r (uid, &pwd, buf, bufsize, &result);
+	if (result)
+		uname = g_strdup (pwd.pw_name);
+	else if (s == 0) {
+		nm_log_dbg (LOGD_SYS_SET, "Lookup failed for UID %lu: not found", uid);
+	} else {
+		nm_log_dbg (LOGD_SYS_SET, "Lookup failed for UID %lu: %d", uid, s);
+	}
+
+	g_free (buf);
+	return uname;
+}
+
 static void
 pk_add_cb (NMAuthChain *chain,
            GError *chain_error,
@@ -777,6 +807,8 @@ pk_add_cb (NMAuthChain *chain,
 	GError *error = NULL, *add_error = NULL;
 	NMConnection *connection;
 	NMSysconfigConnection *added;
+	gulong caller_uid = G_MAXULONG;
+	const char *error_desc = NULL;
 
 	priv->auths = g_slist_remove (priv->auths, chain);
 
@@ -799,7 +831,52 @@ pk_add_cb (NMAuthChain *chain,
 		goto done;
 	}
 
+	/* If the caller isn't root, make sure the connection can be viewed by
+	 * the user that's adding it.
+	 */
+	if (!nm_auth_get_caller_uid (context, priv->dbus_mgr, &caller_uid, &error_desc)) {
+		error = g_error_new (NM_SETTINGS_ERROR,
+		                     NM_SETTINGS_ERROR_NOT_PRIVILEGED,
+		                     "Unable to determine UID of request: %s.",
+		                     error_desc ? error_desc : "(unknown)");
+		goto done;
+	}
+
 	connection = nm_auth_chain_get_data (chain, "connection");
+
+	/* Ensure the caller's username exists in the connection's permissions,
+	 * or that the permissions is empty (ie, visible by everyone).
+	 */
+	if (0 != caller_uid) {
+		NMSettingConnection *s_con;
+		char *uname;
+		gboolean allowed;
+
+		uname = get_user_name (caller_uid);
+		if (!uname) {
+			error = g_error_new (NM_SETTINGS_ERROR,
+				                 NM_SETTINGS_ERROR_NOT_PRIVILEGED,
+				                 "Unable to determine username for UID %lu.",
+				                 caller_uid);
+			goto done;
+		}
+
+		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+		g_assert (s_con);
+
+		allowed = nm_setting_connection_permissions_user_allowed (s_con, uname);
+		g_free (uname);
+
+		if (allowed == FALSE) {
+			error = g_error_new_literal (NM_SETTINGS_ERROR,
+				                         NM_SETTINGS_ERROR_NOT_PRIVILEGED,
+				                         "Cannot add an inaccessible connection.");
+			goto done;
+		}
+
+		/* Caller is allowed to add this connection */
+	}
+
 	added = add_new_connection (self, connection, &add_error);
 	if (added)
 		dbus_g_method_return (context, nm_connection_get_path (NM_CONNECTION (added)));
