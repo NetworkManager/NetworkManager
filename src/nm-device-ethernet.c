@@ -308,7 +308,7 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 	const char *iface;
 	GUdevClient *client;
 	GUdevDevice *dev;
-	GUdevDevice *parent;
+	GUdevDevice *parent = NULL;
 	const char *parent_path, *item, *driver;
 	const char *subsystems[] = { "net", NULL };
 	GDir *dir;
