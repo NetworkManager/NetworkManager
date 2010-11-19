@@ -156,11 +156,15 @@ stop_process (GPid pid, const char *iface)
 
 		if (ret == -1) {
 			/* Child already exited */
-			if (errno == ECHILD)
+			if (errno == ECHILD) {
+				/* Was it really our child and it exited? */
+				if (kill (pid, 0) < 0 && errno == ESRCH)
+					break;
+			} else {
+				/* Took too long; shoot it in the head */
+				i = 0;
 				break;
-			/* Took too long; shoot it in the head */
-			i = 0;
-			break;
+			}
 		}
 		g_usleep (G_USEC_PER_SEC / 5);
 	}
