@@ -110,10 +110,6 @@ void				nm_ap_set_user_created	(NMAccessPoint *ap, gboolean user_created);
 GSList *			nm_ap_get_user_addresses	(const NMAccessPoint *ap);
 void				nm_ap_set_user_addresses (NMAccessPoint *ap, GSList *list);
 
-guint32				nm_ap_add_security_from_ie (guint32 flags,
-                                                const guint8 *wpa_ie,
-                                                guint32 length);
-
 gboolean			nm_ap_check_compatible (NMAccessPoint *self,
                                             NMConnection *connection);
 
