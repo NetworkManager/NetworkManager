@@ -53,6 +53,12 @@ enum {
 #define NM_IS_SUPPLICANT_INTERFACE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_SUPPLICANT_INTERFACE))
 #define NM_SUPPLICANT_INTERFACE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SUPPLICANT_INTERFACE, NMSupplicantInterfaceClass))
 
+#define NM_SUPPLICANT_INTERFACE_STATE            "state"
+#define NM_SUPPLICANT_INTERFACE_REMOVED          "removed"
+#define NM_SUPPLICANT_INTERFACE_NEW_BSS          "new-bss"
+#define NM_SUPPLICANT_INTERFACE_SCAN_DONE        "scan-done"
+#define NM_SUPPLICANT_INTERFACE_CONNECTION_ERROR "connection-error"
+
 struct _NMSupplicantInterface {
 	GObject parent;
 };
@@ -70,17 +76,13 @@ typedef struct {
 	/* interface was removed by the supplicant */
 	void (*removed)          (NMSupplicantInterface * iface);
 
-	/* interface saw a new access point from a scan */
-	void (*scanned_ap)       (NMSupplicantInterface * iface,
-	                          DBusMessage * message);
+	/* interface saw a new BSS */
+	void (*new_bss)          (NMSupplicantInterface *iface,
+	                          GHashTable *props);
 
-	/* result of a wireless scan request */
-	void (*scan_req_result)  (NMSupplicantInterface * iface,
+	/* wireless scan is done */
+	void (*scan_done)        (NMSupplicantInterface *iface,
 	                          gboolean success);
-
-	/* scan results returned from supplicant */
-	void (*scan_results)     (NMSupplicantInterface * iface,
-	                          guint num_bssids);
 
 	/* an error occurred during a connection request */
 	void (*connection_error) (NMSupplicantInterface * iface,

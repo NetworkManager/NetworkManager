@@ -188,17 +188,13 @@ static void supplicant_iface_state_cb (NMSupplicantInterface *iface,
                                        guint32 old_state,
                                        gpointer user_data);
 
-static void supplicant_iface_scanned_ap_cb (NMSupplicantInterface * iface,
-                                            GHashTable *properties,
-                                            NMDeviceWifi * self);
+static void supplicant_iface_new_bss_cb (NMSupplicantInterface * iface,
+                                         GHashTable *properties,
+                                         NMDeviceWifi * self);
 
-static void supplicant_iface_scan_request_result_cb (NMSupplicantInterface * iface,
-                                                     gboolean success,
-                                                     NMDeviceWifi * self);
-
-static void supplicant_iface_scan_results_cb (NMSupplicantInterface * iface,
-                                              guint32 num_bssids,
-                                              NMDeviceWifi * self);
+static void supplicant_iface_scan_done_cb (NMSupplicantInterface * iface,
+                                           gboolean success,
+                                           NMDeviceWifi * self);
 
 static void supplicant_iface_notify_scanning_cb (NMSupplicantInterface * iface,
                                                  GParamSpec * pspec,
@@ -646,26 +642,20 @@ supplicant_interface_acquire (NMDeviceWifi *self)
 	memset (priv->supplicant.sig_ids, 0, sizeof (priv->supplicant.sig_ids));
 
 	id = g_signal_connect (priv->supplicant.iface,
-	                       "state",
+	                       NM_SUPPLICANT_INTERFACE_STATE,
 	                       G_CALLBACK (supplicant_iface_state_cb),
 	                       self);
 	priv->supplicant.sig_ids[i++] = id;
 
 	id = g_signal_connect (priv->supplicant.iface,
-	                       "scanned-ap",
-	                       G_CALLBACK (supplicant_iface_scanned_ap_cb),
+	                       NM_SUPPLICANT_INTERFACE_NEW_BSS,
+	                       G_CALLBACK (supplicant_iface_new_bss_cb),
 	                       self);
 	priv->supplicant.sig_ids[i++] = id;
 
 	id = g_signal_connect (priv->supplicant.iface,
-	                       "scan-req-result",
-	                       G_CALLBACK (supplicant_iface_scan_request_result_cb),
-	                       self);
-	priv->supplicant.sig_ids[i++] = id;
-
-	id = g_signal_connect (priv->supplicant.iface,
-	                       "scan-results",
-	                       G_CALLBACK (supplicant_iface_scan_results_cb),
+	                       NM_SUPPLICANT_INTERFACE_SCAN_DONE,
+	                       G_CALLBACK (supplicant_iface_scan_done_cb),
 	                       self);
 	priv->supplicant.sig_ids[i++] = id;
 
@@ -1910,28 +1900,19 @@ cancel_pending_scan (NMDeviceWifi *self)
 	}
 }
 
-
 static void
-supplicant_iface_scan_request_result_cb (NMSupplicantInterface *iface,
-                                         gboolean success,
-                                         NMDeviceWifi *self)
+supplicant_iface_scan_done_cb (NMSupplicantInterface *iface,
+                               gboolean success,
+                               NMDeviceWifi *self)
 {
-	nm_log_dbg (LOGD_WIFI_SCAN, "(%s): scan request %s",
+	nm_log_dbg (LOGD_WIFI_SCAN, "(%s): scan %s",
 	            nm_device_get_iface (NM_DEVICE (self)),
 	            success ? "successful" : "failed");
 
 	if (check_scanning_allowed (self))
 		schedule_scan (self, TRUE);
-}
 
-static void
-supplicant_iface_scan_results_cb (NMSupplicantInterface *iface,
-                                  guint32 num_results,
-                                  NMDeviceWifi *self)
-{
-	nm_log_dbg (LOGD_WIFI_SCAN, "(%s): scan results available (%d APs found)",
-	            nm_device_get_iface (NM_DEVICE (self)),
-	            num_results);
+#if 0
 	if (num_results == 0) {
 		/* ensure that old APs get culled, which otherwise only
 		 * happens when there are actual scan results to process.
@@ -1939,6 +1920,7 @@ supplicant_iface_scan_results_cb (NMSupplicantInterface *iface,
 		cull_scan_list (self);
 		nm_device_wifi_ap_list_print (self);
 	}
+#endif
 }
 
 static gboolean
@@ -2197,9 +2179,9 @@ set_ap_strength_from_properties (NMDeviceWifi *self,
 }
 
 static void
-supplicant_iface_scanned_ap_cb (NMSupplicantInterface *iface,
-                                GHashTable *properties,
-                                NMDeviceWifi *self)
+supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
+                             GHashTable *properties,
+                             NMDeviceWifi *self)
 {
 	NMDeviceState state;
 	NMAccessPoint *ap;
@@ -3075,7 +3057,7 @@ real_act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 
 	/* Hook up error signal handler to capture association errors */
 	id = g_signal_connect (priv->supplicant.iface,
-	                       "connection-error",
+	                       NM_SUPPLICANT_INTERFACE_CONNECTION_ERROR,
 	                       G_CALLBACK (supplicant_iface_connection_error_cb),
 	                       self);
 	priv->supplicant.iface_error_id = id;
