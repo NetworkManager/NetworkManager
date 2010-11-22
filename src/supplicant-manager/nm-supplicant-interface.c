@@ -889,8 +889,8 @@ set_ap_scan_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 	nm_log_info (LOGD_SUPPLICANT, "Config: set interface ap_scan to %d",
 	             nm_supplicant_config_get_ap_scan (priv->cfg));
 
-	info = nm_supplicant_info_new (info->interface, proxy, info->store);
-	call = dbus_g_proxy_begin_call (proxy, "addNetwork",
+	info = nm_supplicant_info_new (info->interface, priv->iface_proxy, info->store);
+	call = dbus_g_proxy_begin_call (priv->iface_proxy, "AddNetwork",
 	                                add_network_cb,
 	                                info,
 	                                nm_supplicant_info_destroy,
@@ -922,12 +922,14 @@ nm_supplicant_interface_set_config (NMSupplicantInterface * self,
 
 	g_object_ref (priv->cfg);
 
-	info = nm_supplicant_info_new (self, priv->iface_proxy, priv->other_pcalls);
+	info = nm_supplicant_info_new (self, priv->props_proxy, priv->other_pcalls);
 	ap_scan = nm_supplicant_config_get_ap_scan (priv->cfg);
-	call = dbus_g_proxy_begin_call (priv->iface_proxy, "setAPScan",
+	call = dbus_g_proxy_begin_call (priv->props_proxy, "Set",
 	                                set_ap_scan_cb,
 	                                info,
 	                                nm_supplicant_info_destroy,
+	                                G_TYPE_STRING, WPAS_DBUS_IFACE_INTERFACE,
+	                                G_TYPE_STRING, "ApScan",
 	                                G_TYPE_UINT, ap_scan,
 	                                G_TYPE_INVALID);
 	nm_supplicant_info_set_call (info, call);
