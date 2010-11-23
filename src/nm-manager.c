@@ -2426,6 +2426,14 @@ udev_device_removed_cb (NMUdevManager *manager,
 
 	ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
 	device = find_device_by_ifindex (self, ifindex);
+	if (!device) {
+		/* On removal we won't always be able to read properties anymore, as
+		 * they may have already been removed from sysfs.  Instead, we just
+		 * have to fall back to the device's interface name.
+		 */
+		device = find_device_by_iface (self, g_udev_device_get_name (udev_device));
+	}
+
 	if (device)
 		priv->devices = remove_one_device (self, priv->devices, device, FALSE);
 }
