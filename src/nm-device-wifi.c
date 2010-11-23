@@ -2140,44 +2140,6 @@ cull_scan_list (NMDeviceWifi *self)
 	            removed, total);
 }
 
-#define SET_QUALITY_MEMBER(qual_item, lc_member, uc_member) \
-	if (lc_member != -1) { \
-		qual_item.lc_member = lc_member; \
-		qual_item.updated |= IW_QUAL_##uc_member##_UPDATED; \
-	} else { \
-		qual_item.updated |= IW_QUAL_##uc_member##_INVALID; \
-	}
-
-static void
-set_ap_strength_from_properties (NMDeviceWifi *self,
-                                 NMAccessPoint *ap,
-                                 GHashTable *properties)
-{
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	int qual, level, noise;
-	struct iw_quality quality;
-	GValue *value;
-	gint8 strength;
-
-	value = (GValue *) g_hash_table_lookup (properties, "quality");
-	qual = value ? g_value_get_int (value) : -1;
-
-	value = (GValue *) g_hash_table_lookup (properties, "level");
-	level = value ? g_value_get_int (value) : -1;
-
-	value = (GValue *) g_hash_table_lookup (properties, "noise");
-	noise = value ? g_value_get_int (value) : -1;
-
-	/* Calculate and set the AP's signal quality */
-	memset (&quality, 0, sizeof (struct iw_quality));
-	SET_QUALITY_MEMBER (quality, qual, QUAL);
-	SET_QUALITY_MEMBER (quality, level, LEVEL);
-	SET_QUALITY_MEMBER (quality, noise, NOISE);
-
-	strength = wireless_qual_to_percent (&quality, &priv->max_qual);
-	nm_ap_set_strength (ap, strength);
-}
-
 static void
 supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
                              GHashTable *properties,
@@ -2197,8 +2159,6 @@ supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
 
 	ap = nm_ap_new_from_properties (properties);
 	if (ap) {
-		set_ap_strength_from_properties (self, ap, properties);
-
 		nm_ap_print_self (ap, "AP: ");
 
 		/* Add the AP to the device's AP list */

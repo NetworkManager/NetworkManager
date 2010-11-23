@@ -22,6 +22,7 @@
 #include "wireless-helper.h"
 
 #include <string.h>
+#include <stdlib.h>
 
 #include "nm-wifi-ap.h"
 #include "NetworkManagerUtils.h"
@@ -495,6 +496,19 @@ foreach_property_cb (gpointer key, gpointer value, gpointer user_data)
 
 		if (!strcmp (key, "Frequency"))
 			nm_ap_set_freq (ap, val);
+	} else if (G_VALUE_HOLDS_INT (variant)) {
+		gint val = g_value_get_int (variant);
+
+		if (!strcmp (key, "Signal")) {
+			if (val < 0) {
+				/* Rough conversion: best = -40, worst = -100 */
+				val = abs (CLAMP (val, -100, -40) + 40);
+				val = 100 - (int) ((100.0 * (double) val) / 60.0);
+			} else
+				val /= 100;
+
+			nm_ap_set_strength (ap, val);
+		}
 	} else if (G_VALUE_HOLDS_STRING (variant)) {
 		const char *val = g_value_get_string (variant);
 
