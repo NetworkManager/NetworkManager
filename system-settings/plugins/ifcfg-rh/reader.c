@@ -683,12 +683,7 @@ read_one_ip4_route (shvarFile *ifcfg,
 	/* Next hop */
 	if (!read_ip4_address (ifcfg, gw_tag, &tmp, error))
 		goto out;
-	if (!tmp) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-		             "Missing or invalid IP4 gateway address '%d'",
-		             tmp);
-		goto out;
-	}
+	/* No need to check tmp, because we don't make distinction between missing GATEWAY IP and 0.0.0.0 */
 	nm_ip4_route_set_next_hop (route, tmp);
 
 	/* Prefix */
