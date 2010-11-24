@@ -1356,6 +1356,12 @@ user_proxy_init (NMManager *self)
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (priv->user_proxy == NULL);
 
+	/* Don't try to initialize the user settings proxy if the user
+	 * settings service doesn't actually exist.
+	 */
+	if (!nm_dbus_manager_name_has_owner (priv->dbus_mgr, NM_DBUS_SERVICE_USER_SETTINGS))
+		return;
+
 	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
 	priv->user_proxy = dbus_g_proxy_new_for_name_owner (bus,
 	                                                    NM_DBUS_SERVICE_USER_SETTINGS,
@@ -3975,8 +3981,7 @@ nm_manager_start (NMManager *self)
 	 * they will be queried when the user settings service shows up on the
 	 * bus in nm_manager_name_owner_changed().
 	 */
-	if (nm_dbus_manager_name_has_owner (priv->dbus_mgr, NM_DBUS_SERVICE_USER_SETTINGS))
-		user_proxy_init (self);
+	user_proxy_init (self);
 
 	nm_udev_manager_query_devices (priv->udev_mgr);
 	bluez_manager_resync_devices (self);
