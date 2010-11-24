@@ -583,6 +583,7 @@ update_dns (NMDnsManager *self,
 	rc.nameservers = g_ptr_array_new ();
 	rc.domain = NULL;
 	rc.searches = g_ptr_array_new ();
+	rc.nis_domain = NULL;
 	rc.nis_servers = g_ptr_array_new ();
 
 	if (priv->ip4_vpn_config)
