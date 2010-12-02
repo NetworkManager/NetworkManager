@@ -43,16 +43,11 @@
 
         <signal name="Updated">
             <tp:docstring>
-                Emitted when some settings changed.  Updates do include
-                connection permission changes, so clients should check whether
-                they still have permission to access the connection after
-                receiving this signal.
+                Emitted when any settings or permissions change.  When handling
+                this signal, clients should re-read the connection using the
+                GetSettings method to get the changes and to ensure the client
+                still has permission to access the connection.
             </tp:docstring>
-            <arg name="settings" type="a{sa{sv}}" tp:type="String_String_Variant_Map_Map">
-                <tp:docstring>
-                    Contains complete connection setting parameters, including  changes.
-                </tp:docstring>
-            </arg>
         </signal>
 
         <signal name="Removed">

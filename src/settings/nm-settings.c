@@ -621,9 +621,7 @@ connection_removed (NMSysconfigConnection *obj, gpointer user_data)
 }
 
 static void
-connection_updated (NMSysconfigConnection *connection,
-                    GHashTable *settings,
-                    gpointer user_data)
+connection_updated (NMSysconfigConnection *connection, gpointer user_data)
 {
 	/* Re-emit for listeners like NMPolicy */
 	g_signal_emit (NM_SETTINGS (user_data),

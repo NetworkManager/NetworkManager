@@ -335,27 +335,12 @@ nm_sysconfig_connection_get_secrets (NMSysconfigConnection *connection,
 /**************************************************************/
 
 static void
-emit_updated (NMSysconfigConnection *connection)
-{
-	NMConnection *tmp;
-	GHashTable *settings;
-
-	tmp = nm_connection_duplicate (NM_CONNECTION (connection));
-	nm_connection_clear_secrets (tmp);
-	settings = nm_connection_to_hash (tmp);
-	g_object_unref (tmp);
-
-	g_signal_emit (connection, signals[UPDATED], 0, settings);
-	g_hash_table_destroy (settings);
-}
-
-static void
 commit_changes (NMSysconfigConnection *connection,
                 NMSysconfigConnectionCommitFunc callback,
                 gpointer user_data)
 {
 	g_object_ref (connection);
-	emit_updated (connection);
+	g_signal_emit (connection, signals[UPDATED], 0);
 	callback (connection, NULL, user_data);
 	g_object_unref (connection);
 }
@@ -950,8 +935,8 @@ nm_sysconfig_connection_class_init (NMSysconfigConnectionClass *class)
 		              G_SIGNAL_RUN_FIRST,
 		              0,
 		              NULL, NULL,
-		              g_cclosure_marshal_VOID__BOXED,
-		              G_TYPE_NONE, 1, DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT);
+		              g_cclosure_marshal_VOID__VOID,
+		              G_TYPE_NONE, 0);
 
 	signals[REMOVED] = 
 		g_signal_new (NM_SYSCONFIG_CONNECTION_REMOVED,
