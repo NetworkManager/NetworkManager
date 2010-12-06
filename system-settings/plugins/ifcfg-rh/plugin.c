@@ -147,7 +147,6 @@ read_one_connection (SCPluginIfcfg *plugin, const char *filename)
 		if (nm_ifcfg_connection_get_unmanaged_spec (connection)) {
 			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Ignoring connection '%s' and its "
 			              "device due to NM_CONTROLLED/BRIDGE/VLAN.", cid);
-			g_signal_emit_by_name (plugin, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
 		} else {
 			/* Wait for the connection to become unmanaged once it knows the
 			 * UDI of it's device, if/when the device gets plugged in.
@@ -314,7 +313,9 @@ handle_connection_remove_or_new (SCPluginIfcfg *plugin,
 	if (do_new) {
 		connection = read_one_connection (plugin, path);
 		if (connection) {
-			if (!nm_ifcfg_connection_get_unmanaged_spec (connection))
+			if (nm_ifcfg_connection_get_unmanaged_spec (connection))
+				g_signal_emit_by_name (plugin, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
+			else
 				g_signal_emit_by_name (plugin, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, connection);
 		}
 	}
