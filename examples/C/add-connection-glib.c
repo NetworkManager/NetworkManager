@@ -38,7 +38,8 @@
 #define DBUS_TYPE_G_MAP_OF_VARIANT          (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE))
 #define DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT   (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, DBUS_TYPE_G_MAP_OF_VARIANT))
 
-void add_connection (DBusGProxy *proxy, const char *con_name)
+static void
+add_connection (DBusGProxy *proxy, const char *con_name)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
