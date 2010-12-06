@@ -48,13 +48,20 @@ print_connection (DBusGConnection *bus, const char *service, const char *path)
 	GHashTable *hash = NULL;
 	NMConnection *connection = NULL;
 
-	/* Create a D-Bus proxy; NM_DBUS_* defined in NetworkManager.h */
+	/* This function asks the Settings Service that provides this network
+	 * configuration for the details of that configuration.
+	 */
+
+	/* Create the D-Bus proxy for the Settings Service so we can ask it for the
+	 * connection configuration details.
+	 */
 	proxy = dbus_g_proxy_new_for_name (bus,
 	                                   service,
 	                                   path,
 	                                   NM_DBUS_IFACE_SETTINGS_CONNECTION);
 	g_assert (proxy);
 
+	/* Request the all the configuration of the Connection */
 	if (!dbus_g_proxy_call (proxy, "GetSettings", &error,
 	                        G_TYPE_INVALID,
 	                        DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, &hash,
@@ -65,6 +72,9 @@ print_connection (DBusGConnection *bus, const char *service, const char *path)
 		goto out;
 	}
 
+	/* Using the raw configuration, create an NMConnection object for it.  This
+	 * step also verifies that the data we got from the settings service is
+	 * valid. */
 	connection = nm_connection_new_from_hash (hash, &error);
 	if (!connection) {
 		g_warning ("Received invalid connection data: %s", error->message);
@@ -72,6 +82,7 @@ print_connection (DBusGConnection *bus, const char *service, const char *path)
 		goto out;
 	}
 
+	/* And finally dump all the configuration to stdout */
 	g_message ("%s => %s", service, path);
 	nm_connection_dump (connection);
 
@@ -92,7 +103,13 @@ get_active_connection_details (DBusGConnection *bus, const char *obj_path)
 	GError *error = NULL;
 	const char *path = NULL, *service = NULL;
 
-	/* Create a D-Bus proxy; NM_DBUS_* defined in NetworkManager.h */
+	/* This function gets the backing Connection object that describes the
+	 * network configuration that the ActiveConnection object is actually using.
+	 * The ActiveConnection object contains the mapping between the configuration
+	 * and the actual network interfaces that are using that configuration.
+	 */
+
+	/* Create a D-Bus object proxy for the active connection object's properties */
 	props_proxy = dbus_g_proxy_new_for_name (bus,
 	                                         NM_DBUS_SERVICE,
 	                                         obj_path,
@@ -149,6 +166,7 @@ get_active_connection_details (DBusGConnection *bus, const char *obj_path)
 		goto out;
 	}
 
+	/* Print out the actual connection details */
 	print_connection (bus, service, path);
 
 out:
@@ -165,7 +183,7 @@ get_active_connections (DBusGConnection *bus, DBusGProxy *proxy)
 	GPtrArray *paths = NULL;
 	int i;
 
-	/* Call AddConnection with the hash as argument */
+	/* Get the ActiveConnections property from the NM Manager object */
 	if (!dbus_g_proxy_call (proxy, "Get", &error,
 	                        G_TYPE_STRING, NM_DBUS_INTERFACE,
 	                        G_TYPE_STRING, "ActiveConnections",
@@ -177,20 +195,24 @@ get_active_connections (DBusGConnection *bus, DBusGProxy *proxy)
 		return;
 	}
 
+	/* Make sure the ActiveConnections property is the type we expect it to be */
 	if (!G_VALUE_HOLDS (&value, DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH)) {
 		g_warning ("Unexpected type returned getting ActiveConnections: %s",
 		           G_VALUE_TYPE_NAME (&value));
 		goto out;
 	}
 
+	/* Extract the active connections array from the GValue */
 	paths = g_value_get_boxed (&value);
 	if (!paths) {
 		g_warning ("Could not retrieve active connections property");
 		goto out;
 	}
 
+	/* And print out the details of each active connection */
 	for (i = 0; i < paths->len; i++)
 		get_active_connection_details (bus, g_ptr_array_index (paths, i));
+	g_ptr_array_free (paths, TRUE);
 
 out:
 	g_value_unset (&value);
@@ -208,7 +230,9 @@ int main (int argc, char *argv[])
 	/* Get system bus */
 	bus = dbus_g_bus_get (DBUS_BUS_SYSTEM, NULL);
 
-	/* Create a D-Bus proxy; NM_DBUS_* defined in NetworkManager.h */
+	/* Create a D-Bus proxy to get the object properties from the NM Manager
+	 * object.  NM_DBUS_* defines are from NetworkManager.h.
+	 */
 	props_proxy = dbus_g_proxy_new_for_name (bus,
 	                                         NM_DBUS_SERVICE,
 	                                         NM_DBUS_PATH,
