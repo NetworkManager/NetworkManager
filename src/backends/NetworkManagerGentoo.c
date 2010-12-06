@@ -30,11 +30,21 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <gio/gio.h>
 
 #include "NetworkManagerGeneric.h"
 #include "nm-system.h"
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
+
+#define BUFFER_SIZE 512
+
+static void openrc_start_lo_if_necessary() 
+{
+	/* No need to run net.lo if it is already running */
+        if (nm_spawn_process ("/etc/init.d/net.lo status") != 0)
+                nm_spawn_process ("/etc/init.d/net.lo start");
+}
 
 /*
  * nm_system_enable_loopback
@@ -44,9 +54,42 @@
  */
 void nm_system_enable_loopback (void)
 {
-  /* No need to run net.lo if it is already running */
-	if (nm_spawn_process ("/etc/init.d/net.lo status") != 0)
-		nm_spawn_process("/etc/init.d/net.lo start");
+	GFile *file; 
+	GFileInputStream *in;
+	gchar buffer[BUFFER_SIZE];
+	gchar *comm, *readed, *tmp;
+	gssize r;
+
+	file = g_file_new_for_path ("/proc/1/comm");
+	in = g_file_read (file, NULL, NULL);
+
+	/* If anything goes wrong trying to open /proc/1/comm,
+	   we will assume OpenRC. */
+	if (!in) {
+		openrc_start_lo_if_necessary ();
+		return;
+	}
+
+	comm = g_strdup("");
+	while ((r = g_input_stream_read (G_INPUT_STREAM(in), buffer, BUFFER_SIZE, NULL, NULL)) > 0) {
+		readed = g_strndup (buffer, r);
+		tmp = g_strconcat (comm, readed, NULL);
+		g_free (comm);
+		g_free (readed);
+		comm = tmp;
+	}
+
+	if (g_strstr_len (comm, -1, "systemd")) {
+		/* We use the generic loopback enabler if using systemd. */
+		nm_log_info (LOGD_CORE, "NetworkManager is running with systemd...");
+		nm_generic_enable_loopback ();
+	} else {
+		/* OpenRC otherwise. */
+		nm_log_info (LOGD_CORE, "NetworkManager is running with OpenRC...");
+		openrc_start_lo_if_necessary();
+	}
+
+	g_free (comm);
 }
 
 /*
