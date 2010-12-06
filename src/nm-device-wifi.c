@@ -3477,12 +3477,11 @@ real_set_enabled (NMDeviceInterface *device, gboolean enabled)
 		/* Wait for some drivers like ipw3945 to come back to life */
 		success = wireless_get_range (self, &range, NULL);
 
-		/* iface should be NULL here, but handle it anyway if it's not */
-		g_warn_if_fail (priv->supplicant.iface == NULL);
+		/* Re-initialize the supplicant interface and wait for it to be ready */
 		if (priv->supplicant.iface)
 			supplicant_interface_release (self);
-
 		supplicant_interface_acquire (self);
+
 		nm_log_dbg (LOGD_WIFI, "(%s): enable waiting on supplicant state",
 		            nm_device_get_iface (NM_DEVICE (device)));
 	} else {
