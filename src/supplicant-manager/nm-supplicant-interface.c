@@ -287,8 +287,8 @@ set_state (NMSupplicantInterface *self, guint32 new_state)
 	/* DOWN is a terminal state */
 	g_return_if_fail (priv->state != NM_SUPPLICANT_INTERFACE_STATE_DOWN);
 
-	/* Cannot regress to READY or INIT from higher states */
-	if (priv->state <= NM_SUPPLICANT_INTERFACE_STATE_READY)
+	/* Cannot regress to READY, STARTING, or INIT from higher states */
+	if (priv->state >= NM_SUPPLICANT_INTERFACE_STATE_READY)
 		g_return_if_fail (new_state > priv->state);
 
 	if (new_state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
@@ -504,9 +504,10 @@ interface_get_cb (DBusGProxy *proxy,
 	                           G_TYPE_INVALID)) {
 		interface_add_done (info->interface, path);
 	} else {
-		nm_log_err (LOGD_SUPPLICANT, "(%s): error adding interface: %s",
+		nm_log_err (LOGD_SUPPLICANT, "(%s): error getting interface: %s",
 		            priv->dev, error->message);
 		g_clear_error (&error);
+		set_state (info->interface, NM_SUPPLICANT_INTERFACE_STATE_DOWN);
 	}
 }
 
@@ -545,9 +546,19 @@ interface_add_cb (DBusGProxy *proxy,
 		if (dbus_g_error_has_name (error, WPAS_ERROR_EXISTS_ERROR)) {
 			/* Interface already added, just get its object path */
 			interface_get (info->interface);
+		} else if (   g_error_matches (error, DBUS_GERROR, DBUS_GERROR_SERVICE_UNKNOWN)
+		           || dbus_g_error_has_name (error, DBUS_ERROR_SPAWN_SERVICE_NOT_FOUND)) {
+			/* Supplicant wasn't running and could be launched via service
+			 * activation.  Wait for it to start by moving back to the INIT
+			 * state.
+			 */
+			nm_log_dbg (LOGD_SUPPLICANT, "(%s): failed to activate supplicant: %s",
+			            priv->dev, error->message);
+			set_state (info->interface, NM_SUPPLICANT_INTERFACE_STATE_INIT);
 		} else {
 			nm_log_err (LOGD_SUPPLICANT, "(%s): error adding interface: %s",
 			            priv->dev, error->message);
+			set_state (info->interface, NM_SUPPLICANT_INTERFACE_STATE_DOWN);
 		}
 		g_clear_error (&error);
 	}
