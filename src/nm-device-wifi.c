@@ -175,9 +175,6 @@ static void schedule_scan (NMDeviceWifi *self, gboolean backoff);
 
 static void cancel_pending_scan (NMDeviceWifi *self);
 
-static int wireless_qual_to_percent (const struct iw_quality *qual,
-                                     const struct iw_quality *max_qual);
-
 static void cleanup_association_attempt (NMDeviceWifi * self,
                                          gboolean disconnect);
 
@@ -293,6 +290,107 @@ ipw_rfkill_state_work (gpointer user_data)
 
 	return TRUE;
 }
+
+/*
+ * wireless_qual_to_percent
+ *
+ * Convert an iw_quality structure from SIOCGIWSTATS into a magical signal
+ * strength percentage.
+ *
+ */
+static int
+wireless_qual_to_percent (const struct iw_quality *qual,
+                          const struct iw_quality *max_qual)
+{
+	int percent = -1;
+	int level_percent = -1;
+
+	g_return_val_if_fail (qual != NULL, -1);
+	g_return_val_if_fail (max_qual != NULL, -1);
+
+	nm_log_dbg (LOGD_WIFI,
+	            "QL: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X, updated: 0x%X  ** MAX: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X, updated: 0x%X",
+	            (__s8) qual->qual, qual->qual, qual->qual,
+	            (__s8) qual->level, qual->level, qual->level,
+	            (__s8) qual->noise, qual->noise, qual->noise,
+	            qual->updated,
+	            (__s8) max_qual->qual, max_qual->qual, max_qual->qual,
+	            (__s8) max_qual->level, max_qual->level, max_qual->level,
+	            (__s8) max_qual->noise, max_qual->noise, max_qual->noise,
+	            max_qual->updated);
+
+	/* Try using the card's idea of the signal quality first as long as it tells us what the max quality is.
+	 * Drivers that fill in quality values MUST treat them as percentages, ie the "Link Quality" MUST be 
+	 * bounded by 0 and max_qual->qual, and MUST change in a linear fashion.  Within those bounds, drivers
+	 * are free to use whatever they want to calculate "Link Quality".
+	 */
+	if ((max_qual->qual != 0) && !(max_qual->updated & IW_QUAL_QUAL_INVALID) && !(qual->updated & IW_QUAL_QUAL_INVALID))
+		percent = (int)(100 * ((double)qual->qual / (double)max_qual->qual));
+
+	/* If the driver doesn't specify a complete and valid quality, we have two options:
+	 *
+	 * 1) dBm: driver must specify max_qual->level = 0, and have valid values for
+	 *        qual->level and (qual->noise OR max_qual->noise)
+	 * 2) raw RSSI: driver must specify max_qual->level > 0, and have valid values for
+	 *        qual->level and max_qual->level
+	 *
+	 * This is the WEXT spec.  If this interpretation is wrong, I'll fix it.  Otherwise,
+	 * If drivers don't conform to it, they are wrong and need to be fixed.
+	 */
+
+	if (    (max_qual->level == 0) && !(max_qual->updated & IW_QUAL_LEVEL_INVALID)          /* Valid max_qual->level == 0 */
+		&& !(qual->updated & IW_QUAL_LEVEL_INVALID)                                     /* Must have valid qual->level */
+		&& (    ((max_qual->noise > 0) && !(max_qual->updated & IW_QUAL_NOISE_INVALID)) /* Must have valid max_qual->noise */
+			|| ((qual->noise > 0) && !(qual->updated & IW_QUAL_NOISE_INVALID)))     /*    OR valid qual->noise */
+	   ) {
+		/* Absolute power values (dBm) */
+
+		/* Reasonable fallbacks for dumb drivers that don't specify either level. */
+		#define FALLBACK_NOISE_FLOOR_DBM  -90
+		#define FALLBACK_SIGNAL_MAX_DBM   -20
+		int max_level = FALLBACK_SIGNAL_MAX_DBM;
+		int noise = FALLBACK_NOISE_FLOOR_DBM;
+		int level = qual->level - 0x100;
+
+		level = CLAMP (level, FALLBACK_NOISE_FLOOR_DBM, FALLBACK_SIGNAL_MAX_DBM);
+
+		if ((qual->noise > 0) && !(qual->updated & IW_QUAL_NOISE_INVALID))
+			noise = qual->noise - 0x100;
+		else if ((max_qual->noise > 0) && !(max_qual->updated & IW_QUAL_NOISE_INVALID))
+			noise = max_qual->noise - 0x100;
+		noise = CLAMP (noise, FALLBACK_NOISE_FLOOR_DBM, FALLBACK_SIGNAL_MAX_DBM);
+
+		/* A sort of signal-to-noise ratio calculation */
+		level_percent = (int)(100 - 70 *(
+		                                ((double)max_level - (double)level) /
+		                                ((double)max_level - (double)noise)));
+		nm_log_dbg (LOGD_WIFI, "QL1: level_percent is %d.  max_level %d, level %d, noise_floor %d.",
+		            level_percent, max_level, level, noise);
+	} else if (   (max_qual->level != 0)
+	           && !(max_qual->updated & IW_QUAL_LEVEL_INVALID) /* Valid max_qual->level as upper bound */
+	           && !(qual->updated & IW_QUAL_LEVEL_INVALID)) {
+		/* Relative power values (RSSI) */
+
+		int level = qual->level;
+
+		/* Signal level is relavtive (0 -> max_qual->level) */
+		level = CLAMP (level, 0, max_qual->level);
+		level_percent = (int)(100 * ((double)level / (double)max_qual->level));
+		nm_log_dbg (LOGD_WIFI, "QL2: level_percent is %d.  max_level %d, level %d.",
+		            level_percent, max_qual->level, level);
+	} else if (percent == -1) {
+		nm_log_dbg (LOGD_WIFI, "QL: Could not get quality %% value from driver.  Driver is probably buggy.");
+	}
+
+	/* If the quality percent was 0 or doesn't exist, then try to use signal levels instead */
+	if ((percent < 1) && (level_percent >= 0))
+		percent = level_percent;
+
+	nm_log_dbg (LOGD_WIFI, "QL: Final quality percent is %d (%d).",
+	            percent, CLAMP (percent, 0, 100));
+	return (CLAMP (percent, 0, 100));
+}
+
 
 /*
  * nm_device_wifi_update_signal_strength
@@ -1489,107 +1587,6 @@ nm_device_wifi_get_frequency (NMDeviceWifi *self)
 	close (fd);
 	return freq;
 }
-
-/*
- * wireless_stats_to_percent
- *
- * Convert an iw_stats structure from a scan or the card into
- * a magical signal strength percentage.
- *
- */
-static int
-wireless_qual_to_percent (const struct iw_quality *qual,
-                          const struct iw_quality *max_qual)
-{
-	int percent = -1;
-	int level_percent = -1;
-
-	g_return_val_if_fail (qual != NULL, -1);
-	g_return_val_if_fail (max_qual != NULL, -1);
-
-	nm_log_dbg (LOGD_WIFI,
-	            "QL: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X, updated: 0x%X  ** MAX: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X, updated: 0x%X",
-	            (__s8) qual->qual, qual->qual, qual->qual,
-	            (__s8) qual->level, qual->level, qual->level,
-	            (__s8) qual->noise, qual->noise, qual->noise,
-	            qual->updated,
-	            (__s8) max_qual->qual, max_qual->qual, max_qual->qual,
-	            (__s8) max_qual->level, max_qual->level, max_qual->level,
-	            (__s8) max_qual->noise, max_qual->noise, max_qual->noise,
-	            max_qual->updated);
-
-	/* Try using the card's idea of the signal quality first as long as it tells us what the max quality is.
-	 * Drivers that fill in quality values MUST treat them as percentages, ie the "Link Quality" MUST be 
-	 * bounded by 0 and max_qual->qual, and MUST change in a linear fashion.  Within those bounds, drivers
-	 * are free to use whatever they want to calculate "Link Quality".
-	 */
-	if ((max_qual->qual != 0) && !(max_qual->updated & IW_QUAL_QUAL_INVALID) && !(qual->updated & IW_QUAL_QUAL_INVALID))
-		percent = (int)(100 * ((double)qual->qual / (double)max_qual->qual));
-
-	/* If the driver doesn't specify a complete and valid quality, we have two options:
-	 *
-	 * 1) dBm: driver must specify max_qual->level = 0, and have valid values for
-	 *        qual->level and (qual->noise OR max_qual->noise)
-	 * 2) raw RSSI: driver must specify max_qual->level > 0, and have valid values for
-	 *        qual->level and max_qual->level
-	 *
-	 * This is the WEXT spec.  If this interpretation is wrong, I'll fix it.  Otherwise,
-	 * If drivers don't conform to it, they are wrong and need to be fixed.
-	 */
-
-	if (    (max_qual->level == 0) && !(max_qual->updated & IW_QUAL_LEVEL_INVALID)          /* Valid max_qual->level == 0 */
-		&& !(qual->updated & IW_QUAL_LEVEL_INVALID)                                     /* Must have valid qual->level */
-		&& (    ((max_qual->noise > 0) && !(max_qual->updated & IW_QUAL_NOISE_INVALID)) /* Must have valid max_qual->noise */
-			|| ((qual->noise > 0) && !(qual->updated & IW_QUAL_NOISE_INVALID)))     /*    OR valid qual->noise */
-	   ) {
-		/* Absolute power values (dBm) */
-
-		/* Reasonable fallbacks for dumb drivers that don't specify either level. */
-		#define FALLBACK_NOISE_FLOOR_DBM  -90
-		#define FALLBACK_SIGNAL_MAX_DBM   -20
-		int max_level = FALLBACK_SIGNAL_MAX_DBM;
-		int noise = FALLBACK_NOISE_FLOOR_DBM;
-		int level = qual->level - 0x100;
-
-		level = CLAMP (level, FALLBACK_NOISE_FLOOR_DBM, FALLBACK_SIGNAL_MAX_DBM);
-
-		if ((qual->noise > 0) && !(qual->updated & IW_QUAL_NOISE_INVALID))
-			noise = qual->noise - 0x100;
-		else if ((max_qual->noise > 0) && !(max_qual->updated & IW_QUAL_NOISE_INVALID))
-			noise = max_qual->noise - 0x100;
-		noise = CLAMP (noise, FALLBACK_NOISE_FLOOR_DBM, FALLBACK_SIGNAL_MAX_DBM);
-
-		/* A sort of signal-to-noise ratio calculation */
-		level_percent = (int)(100 - 70 *(
-		                                ((double)max_level - (double)level) /
-		                                ((double)max_level - (double)noise)));
-		nm_log_dbg (LOGD_WIFI, "QL1: level_percent is %d.  max_level %d, level %d, noise_floor %d.",
-		            level_percent, max_level, level, noise);
-	} else if (   (max_qual->level != 0)
-	           && !(max_qual->updated & IW_QUAL_LEVEL_INVALID) /* Valid max_qual->level as upper bound */
-	           && !(qual->updated & IW_QUAL_LEVEL_INVALID)) {
-		/* Relative power values (RSSI) */
-
-		int level = qual->level;
-
-		/* Signal level is relavtive (0 -> max_qual->level) */
-		level = CLAMP (level, 0, max_qual->level);
-		level_percent = (int)(100 * ((double)level / (double)max_qual->level));
-		nm_log_dbg (LOGD_WIFI, "QL2: level_percent is %d.  max_level %d, level %d.",
-		            level_percent, max_qual->level, level);
-	} else if (percent == -1) {
-		nm_log_dbg (LOGD_WIFI, "QL: Could not get quality %% value from driver.  Driver is probably buggy.");
-	}
-
-	/* If the quality percent was 0 or doesn't exist, then try to use signal levels instead */
-	if ((percent < 1) && (level_percent >= 0))
-		percent = level_percent;
-
-	nm_log_dbg (LOGD_WIFI, "QL: Final quality percent is %d (%d).",
-	            percent, CLAMP (percent, 0, 100));
-	return (CLAMP (percent, 0, 100));
-}
-
 
 /*
  * nm_device_wifi_get_ssid
