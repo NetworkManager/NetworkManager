@@ -368,6 +368,7 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 			/* Remove any connection for this block that was previously found */
 			exported = g_hash_table_lookup (priv->iface_connections, block->name);
 			if (exported) {
+				PLUGIN_PRINT("SCPlugin-Ifupdown", "deleting %s from iface_connections", block->name);
 				nm_settings_connection_interface_delete (NM_SETTINGS_CONNECTION_INTERFACE (exported),
 				                                         ignore_cb,
 				                                         NULL);
@@ -377,11 +378,14 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 			/* add the new connection */
 			exported = nm_ifupdown_connection_new (block);
 			if (exported) {
+				PLUGIN_PRINT("SCPlugin-Ifupdown", "adding %s to iface_connections", block->name);
 				g_hash_table_insert (priv->iface_connections, block->name, exported);
-				g_hash_table_insert (priv->well_known_interfaces, block->name, "known");
 			}
+			PLUGIN_PRINT("SCPlugin-Ifupdown", "adding iface %s to well_known_interfaces", block->name);
+			g_hash_table_insert (priv->well_known_interfaces, block->name, "known");
 		} else if (!strcmp ("mapping", block->type)) {
 			g_hash_table_insert (priv->well_known_interfaces, block->name, "known");
+			PLUGIN_PRINT("SCPlugin-Ifupdown", "adding mapping %s to well_known_interfaces", block->name);
 		}
 		block = block->next;
 	}
