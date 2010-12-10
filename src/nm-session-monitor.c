@@ -323,7 +323,7 @@ nm_session_monitor_init (NMSessionMonitor *self)
 
 	error = NULL;
 	if (!ensure_database (self, &error)) {
-		nm_log_err (LOGD_SYS_SET, "Error loading " CKDB_PATH ": %s", error->message);
+		nm_log_err (LOGD_CORE, "Error loading " CKDB_PATH ": %s", error->message);
 		g_error_free (error);
 	}
 
@@ -332,7 +332,7 @@ nm_session_monitor_init (NMSessionMonitor *self)
 	self->database_monitor = g_file_monitor_file (file, G_FILE_MONITOR_NONE, NULL, &error);
 	g_object_unref (file);
 	if (self->database_monitor == NULL) {
-		nm_log_err (LOGD_SYS_SET, "Error monitoring " CKDB_PATH ": %s", error->message);
+		nm_log_err (LOGD_CORE, "Error monitoring " CKDB_PATH ": %s", error->message);
 		g_error_free (error);
 	} else {
 		g_signal_connect (self->database_monitor,

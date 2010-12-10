@@ -123,14 +123,14 @@ init_inotify (NMInotifyHelper *self)
 
 	priv->ifd = inotify_init ();
 	if (priv->ifd == -1) {
-		nm_log_warn (LOGD_SYS_SET, "couldn't initialize inotify");
+		nm_log_warn (LOGD_SETTINGS, "couldn't initialize inotify");
 		return FALSE;
 	}
 
 	/* Watch the inotify descriptor for file/directory change events */
 	channel = g_io_channel_unix_new (priv->ifd);
 	if (!channel) {
-		nm_log_warn (LOGD_SYS_SET, "couldn't create new GIOChannel");
+		nm_log_warn (LOGD_SETTINGS, "couldn't create new GIOChannel");
 		close (priv->ifd);
 		priv->ifd = -1;
 		return FALSE;

@@ -471,7 +471,7 @@ add_plugin (NMSettings *self, NMSystemConfigInterface *plugin)
 	g_signal_connect (plugin, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED,
 	                  G_CALLBACK (unmanaged_specs_changed), self);
 
-	nm_log_info (LOGD_SYS_SET, "Loaded plugin %s: %s", pname, pinfo);
+	nm_log_info (LOGD_SETTINGS, "Loaded plugin %s: %s", pname, pinfo);
 	g_free (pname);
 	g_free (pinfo);
 }
@@ -666,7 +666,7 @@ claim_connection (NMSettings *self,
 	}
 
 	if (!nm_connection_verify (NM_CONNECTION (connection), &error)) {
-		nm_log_warn (LOGD_SYS_SET, "plugin provided invalid connection: '%s' / '%s' invalid: %d",
+		nm_log_warn (LOGD_SETTINGS, "plugin provided invalid connection: '%s' / '%s' invalid: %d",
 		             g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)),
 		             error->message, error->code);
 		g_error_free (error);
@@ -1043,7 +1043,7 @@ is_mac_auto_wired_blacklisted (NMSettings *self, const GByteArray *mac)
 
 	config = g_key_file_new ();
 	if (!config) {
-		nm_log_warn (LOGD_SYS_SET, "not enough memory to load config file.");
+		nm_log_warn (LOGD_SETTINGS, "not enough memory to load config file.");
 		return FALSE;
 	}
 
@@ -1208,11 +1208,11 @@ default_wired_try_update (NMDefaultWiredConnection *wired,
 		g_object_set_data (G_OBJECT (nm_default_wired_connection_get_device (wired)),
 		                   DEFAULT_WIRED_TAG,
 		                   NULL);
-		nm_log_info (LOGD_SYS_SET, "Saved default wired connection '%s' to persistent storage", id);
+		nm_log_info (LOGD_SETTINGS, "Saved default wired connection '%s' to persistent storage", id);
 		return FALSE;
 	}
 
-	nm_log_warn (LOGD_SYS_SET, "couldn't save default wired connection '%s': %d / %s",
+	nm_log_warn (LOGD_SETTINGS, "couldn't save default wired connection '%s': %d / %s",
 	             id,
 	             error ? error->code : -1,
 	             (error && error->message) ? error->message : "(unknown)");
@@ -1268,7 +1268,7 @@ nm_settings_device_added (NMSettings *self, NMDevice *device)
 	id = nm_setting_connection_get_id (s_con);
 	g_assert (id);
 
-	nm_log_info (LOGD_SYS_SET, "Added default wired connection '%s' for %s",
+	nm_log_info (LOGD_SETTINGS, "Added default wired connection '%s' for %s",
 	             id, nm_device_get_udi (device));
 
 	g_signal_connect (wired, "try-update", (GCallback) default_wired_try_update, self);
@@ -1338,7 +1338,7 @@ nm_settings_init (NMSettings *self)
 
 	priv->authority = polkit_authority_get_sync (NULL, &error);
 	if (!priv->authority) {
-		nm_log_warn (LOGD_SYS_SET, "failed to create PolicyKit authority: (%d) %s",
+		nm_log_warn (LOGD_SETTINGS, "failed to create PolicyKit authority: (%d) %s",
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);

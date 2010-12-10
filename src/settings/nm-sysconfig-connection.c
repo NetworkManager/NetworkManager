@@ -841,7 +841,7 @@ nm_sysconfig_connection_init (NMSysconfigConnection *self)
 
 	priv->authority = polkit_authority_get_sync (NULL, NULL);
 	if (!priv->authority) {
-		nm_log_warn (LOGD_SYS_SET, "failed to create PolicyKit authority: (%d) %s",
+		nm_log_warn (LOGD_SETTINGS, "failed to create PolicyKit authority: (%d) %s",
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
