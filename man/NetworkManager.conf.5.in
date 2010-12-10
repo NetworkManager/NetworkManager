@@ -161,7 +161,7 @@ warning messages.
 The following log domains are available: [NONE, HW, RKILL, ETHER, WIFI, BT, MB,
 DHCP4, DHCP6, PPP, WIFI_SCAN, IP4, IP6, AUTOIP4, DNS, VPN, SHARING, SUPPLICANT,
 USER_SET, SETTINGS, SUSPEND, CORE, DEVICE, OLPC].  When "NONE" is given by itself,
-logging is disabled.  MB = Mobile Broadband, USER_SET = user settings operations
+logging is disabled.  MB = Mobile Broadband, AGENTS = secret agents operations
 and communication, SETTINGS = settings/config service operations, OLPC = OLPC
 Mesh device operations, CORE = core daemon operations, DEVICE = activation and
 general interface operations.

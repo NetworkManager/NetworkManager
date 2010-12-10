@@ -45,7 +45,7 @@ enum {
 	LOGD_VPN        = 0x00004000,
 	LOGD_SHARING    = 0x00008000, /* Connection sharing/dnsmasq */
 	LOGD_SUPPLICANT = 0x00010000, /* WiFi and 802.1x */
-	LOGD_USER_SET   = 0x00020000, /* User settings */
+	LOGD_AGENTS     = 0x00020000, /* Secret agents */
 	LOGD_SETTINGS   = 0x00040000, /* Settings */
 	LOGD_SUSPEND    = 0x00080000, /* Suspend/Resume */
 	LOGD_CORE       = 0x00100000, /* Core daemon and policy stuff */
