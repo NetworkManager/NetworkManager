@@ -400,6 +400,7 @@ nm_auth_uid_in_acl (NMConnection *connection,
 			                                   uid,
 			                                   local && local->message ? local->message : "unknown");
 		}
+		g_clear_error (&local);
 		return FALSE;
 	}
 
