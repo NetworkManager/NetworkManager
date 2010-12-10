@@ -234,7 +234,7 @@ nm_supplicant_manager_init (NMSupplicantManager * self)
 
 	priv->dbus_mgr = nm_dbus_manager_get ();
 	priv->name_owner_id = g_signal_connect (priv->dbus_mgr,
-	                                        "name-owner-changed",
+	                                        NM_DBUS_MANAGER_NAME_OWNER_CHANGED,
 	                                        G_CALLBACK (name_owner_changed),
 	                                        self);
 	priv->running = nm_dbus_manager_name_has_owner (priv->dbus_mgr, WPAS_DBUS_SERVICE);

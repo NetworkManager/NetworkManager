@@ -105,7 +105,7 @@ nm_dbus_manager_class_init (NMDBusManagerClass *klass)
 	object_class->dispose = nm_dbus_manager_dispose;
 
 	signals[DBUS_CONNECTION_CHANGED] =
-		g_signal_new ("dbus-connection-changed",
+		g_signal_new (NM_DBUS_MANAGER_DBUS_CONNECTION_CHANGED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMDBusManagerClass, dbus_connection_changed),
@@ -113,7 +113,7 @@ nm_dbus_manager_class_init (NMDBusManagerClass *klass)
 		              G_TYPE_NONE, 1, G_TYPE_POINTER);
 
 	signals[NAME_OWNER_CHANGED] =
-		g_signal_new ("name-owner-changed",
+		g_signal_new (NM_DBUS_MANAGER_NAME_OWNER_CHANGED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMDBusManagerClass, name_owner_changed),

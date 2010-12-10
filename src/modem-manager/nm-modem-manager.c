@@ -371,7 +371,7 @@ nm_modem_manager_init (NMModemManager *self)
 	priv->modems = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
 	priv->dbus_mgr = nm_dbus_manager_get ();
 
-	g_signal_connect (priv->dbus_mgr, "name-owner-changed",
+	g_signal_connect (priv->dbus_mgr, NM_DBUS_MANAGER_NAME_OWNER_CHANGED,
 					  G_CALLBACK (nm_modem_manager_name_owner_changed),
 					  self);
 

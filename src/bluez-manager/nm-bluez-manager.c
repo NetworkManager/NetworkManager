@@ -317,12 +317,12 @@ nm_bluez_manager_init (NMBluezManager *self)
 	g_assert (priv->dbus_mgr);
 
 	g_signal_connect (priv->dbus_mgr,
-	                  "name-owner-changed",
+	                  NM_DBUS_MANAGER_NAME_OWNER_CHANGED,
 	                  G_CALLBACK (name_owner_changed_cb),
 	                  self);
 
 	g_signal_connect (priv->dbus_mgr,
-	                  "dbus-connection-changed",
+	                  NM_DBUS_MANAGER_DBUS_CONNECTION_CHANGED,
 	                  G_CALLBACK (dbus_connection_changed_cb),
 	                  self);
 
