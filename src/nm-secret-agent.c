@@ -37,12 +37,44 @@ typedef struct {
 
 	char *owner;
 	char *identifier;
+	uid_t owner_uid;
 } NMSecretAgentPrivate;
 
 /*************************************************************/
 
+const char *
+nm_secret_agent_get_dbus_owner (NMSecretAgent *agent)
+{
+	g_return_val_if_fail (agent != NULL, NULL);
+	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), NULL);
+
+	return NM_SECRET_AGENT_GET_PRIVATE (agent)->owner;
+}
+
+const char *
+nm_secret_agent_get_identifier (NMSecretAgent *agent)
+{
+	g_return_val_if_fail (agent != NULL, NULL);
+	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), NULL);
+
+	return NM_SECRET_AGENT_GET_PRIVATE (agent)->identifier;
+}
+
+uid_t
+nm_secret_agent_get_owner_uid  (NMSecretAgent *agent)
+{
+	g_return_val_if_fail (agent != NULL, G_MAXUINT);
+	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), G_MAXUINT);
+
+	return NM_SECRET_AGENT_GET_PRIVATE (agent)->owner_uid;
+}
+
+/*************************************************************/
+
 NMSecretAgent *
-nm_secret_agent_new (const char *owner, const char *identifier)
+nm_secret_agent_new (const char *owner,
+                     const char *identifier,
+                     uid_t owner_uid)
 {
 	NMSecretAgent *self;
 	NMSecretAgentPrivate *priv;
@@ -56,6 +88,7 @@ nm_secret_agent_new (const char *owner, const char *identifier)
 
 		priv->owner = g_strdup (owner);
 		priv->identifier = g_strdup (identifier);
+		priv->owner_uid = owner_uid;
 	}
 
 	return self;

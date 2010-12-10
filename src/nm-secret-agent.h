@@ -41,6 +41,14 @@ typedef struct {
 
 GType nm_secret_agent_get_type (void);
 
-NMSecretAgent *nm_secret_agent_new (const char *owner, const char *identifier);
+NMSecretAgent *nm_secret_agent_new (const char *owner,
+                                    const char *identifier,
+                                    uid_t owner_uid);
+
+const char *nm_secret_agent_get_dbus_owner (NMSecretAgent *agent);
+
+const char *nm_secret_agent_get_identifier (NMSecretAgent *agent);
+
+uid_t       nm_secret_agent_get_owner_uid  (NMSecretAgent *agent);
 
 #endif /* NM_SECRET_AGENT_H */

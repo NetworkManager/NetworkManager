@@ -27,6 +27,7 @@
 #include <dbus/dbus-glib-lowlevel.h>
 
 #include "NetworkManager.h"
+#include "nm-logging.h"
 #include "nm-agent-manager.h"
 #include "nm-secret-agent.h"
 #include "nm-manager-auth.h"
@@ -127,6 +128,11 @@ remove_agent (NMAgentManager *self, const char *owner)
 		return FALSE;
 
 	/* FIXME: signal agent removal */
+
+	nm_log_dbg (LOGD_AGENTS, "(%s/%s) agent unregistered for UID %ld",
+	            nm_secret_agent_get_dbus_owner (agent),
+	            nm_secret_agent_get_identifier (agent),
+	            nm_secret_agent_get_owner_uid (agent));
 
 	g_hash_table_remove (priv->agents, owner);
 	return TRUE;
@@ -233,7 +239,7 @@ impl_agent_manager_register (NMAgentManager *self,
 		goto done;
 
 	/* Success, add the new agent */
-	agent = nm_secret_agent_new (sender, identifier);
+	agent = nm_secret_agent_new (sender, identifier, sender_uid);
 	if (!agent) {
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 		                             NM_AGENT_MANAGER_ERROR_INTERNAL_ERROR,
@@ -242,6 +248,10 @@ impl_agent_manager_register (NMAgentManager *self,
 	}
 
 	g_hash_table_insert (priv->agents, g_strdup (sender), agent);
+	nm_log_dbg (LOGD_AGENTS, "(%s/%s) agent registered for UID %ld",
+	            nm_secret_agent_get_dbus_owner (agent),
+	            nm_secret_agent_get_identifier (agent),
+	            nm_secret_agent_get_owner_uid (agent));
 	dbus_g_method_return (context);
 
 done:
