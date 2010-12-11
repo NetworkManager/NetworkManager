@@ -415,6 +415,7 @@ iface_get_props_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_da
 	                           DBUS_TYPE_G_MAP_OF_VARIANT, &props,
 	                           G_TYPE_INVALID)) {
 		wpas_iface_properties_changed (NULL, props, info->interface);
+		g_hash_table_destroy (props);
 	} else {
 		nm_log_warn (LOGD_SUPPLICANT, "could not get interface properties: %s.",
 		             error && error->message ? error->message : "(unknown)");
