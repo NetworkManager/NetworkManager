@@ -289,7 +289,7 @@ set_state (NMSupplicantInterface *self, guint32 new_state)
 
 	/* Cannot regress to READY, STARTING, or INIT from higher states */
 	if (priv->state >= NM_SUPPLICANT_INTERFACE_STATE_READY)
-		g_return_if_fail (new_state > priv->state);
+		g_return_if_fail (new_state > NM_SUPPLICANT_INTERFACE_STATE_READY);
 
 	if (new_state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
 		/* Cancel all pending calls when going down */
