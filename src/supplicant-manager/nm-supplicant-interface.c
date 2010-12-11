@@ -640,26 +640,24 @@ smgr_avail_cb (NMSupplicantManager *smgr,
 static void
 remove_network_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 {
-	GError *err = NULL;
-	guint tmp;
+	GError *error = NULL;
 
-	if (!dbus_g_proxy_end_call (proxy, call_id, &err, G_TYPE_UINT, &tmp, G_TYPE_INVALID)) {
+	if (!dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID)) {
 		nm_log_dbg (LOGD_SUPPLICANT, "Couldn't remove network from supplicant interface: %s.",
-		            err->message);
-		g_error_free (err);
+		             error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
 	}
 }
 
 static void
 disconnect_cb  (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 {
-	GError *err = NULL;
-	guint tmp;
+	GError *error = NULL;
 
-	if (!dbus_g_proxy_end_call (proxy, call_id, &err, G_TYPE_UINT, &tmp, G_TYPE_INVALID)) {
+	if (!dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID)) {
 		nm_log_warn (LOGD_SUPPLICANT, "Couldn't disconnect supplicant interface: %s.",
-		             err->message);
-		g_error_free (err);
+		             error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
 	}
 }
 
