@@ -306,6 +306,7 @@ parse_config_file (const char *filename,
                    GError **error)
 {
 	GKeyFile *config;
+	gboolean success = FALSE;
 
 	config = g_key_file_new ();
 	if (!config) {
@@ -316,11 +317,11 @@ parse_config_file (const char *filename,
 
 	g_key_file_set_list_separator (config, ',');
 	if (!g_key_file_load_from_file (config, filename, G_KEY_FILE_NONE, error))
-		return FALSE;
+		goto out;
 
 	*plugins = g_key_file_get_value (config, "main", "plugins", error);
 	if (*error)
-		return FALSE;
+		goto out;
 
 	*dhcp_client = g_key_file_get_value (config, "main", "dhcp", NULL);
 	*dns_plugins = g_key_file_get_string_list (config, "main", "dns", NULL, NULL);
@@ -328,8 +329,11 @@ parse_config_file (const char *filename,
 	*log_level = g_key_file_get_value (config, "logging", "level", NULL);
 	*log_domains = g_key_file_get_value (config, "logging", "domains", NULL);
 
+	success = TRUE;
+
+out:
 	g_key_file_free (config);
-	return TRUE;
+	return success;
 }
 
 static gboolean
