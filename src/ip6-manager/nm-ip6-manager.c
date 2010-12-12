@@ -575,7 +575,7 @@ struct nd_opt_rdnss {
 	uint16_t nd_opt_rdnss_reserved1;
 	uint32_t nd_opt_rdnss_lifetime;
 	/* followed by one or more IPv6 addresses */
-};
+} __attribute__ ((packed));
 
 static NMIP6Device *
 process_nduseropt (NMIP6Manager *manager, struct nl_msg *msg)
