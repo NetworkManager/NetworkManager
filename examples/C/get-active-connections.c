@@ -238,7 +238,7 @@ int main (int argc, char *argv[])
 	                                         DBUS_INTERFACE_PROPERTIES);
 	g_assert (props_proxy);
 
-	/* Add a connection */
+	/* Get active connections */
 	get_active_connections (bus, props_proxy);
 
 	g_object_unref (props_proxy);
