@@ -57,37 +57,12 @@ nm_ifupdown_connection_new (if_block *block)
 										 NULL);
 }
 
-static void
-get_secrets (NMSysconfigConnection *connection,
-             const gchar *setting_name,
-             const gchar **hints,
-             gboolean request_new,
-             NMSysconfigConnectionGetSecretsFunc callback,
-             gpointer user_data)
+static gboolean
+supports_secrets (NMSysconfigConnection *connection, const char *setting_name)
 {
-	GError *error = NULL;
+	PLUGIN_PRINT ("SCPlugin-Ifupdown", "supports_secrets() for setting_name: '%s'", setting_name);
 
-	PLUGIN_PRINT ("SCPlugin-Ifupdown", "get_secrets() for setting_name:'%s'", setting_name);
-
-	/* FIXME: Only wifi secrets are supported for now */
-	if (strcmp (setting_name, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME)) {
-		g_set_error (&error,
-		             NM_SETTINGS_ERROR,
-		             NM_SETTINGS_ERROR_GENERAL,
-		             "%s.%d - security setting name not supported '%s'.",
-		             __FILE__, __LINE__, setting_name);
-		PLUGIN_PRINT ("SCPlugin-Ifupdown", "%s", error->message);
-		callback (connection, NULL, error, user_data);
-		g_error_free (error);
-		return;
-	}
-
-	NM_SYSCONFIG_CONNECTION_CLASS (nm_ifupdown_connection_parent_class)->get_secrets (connection,
-	                                                                                  setting_name,
-	                                                                                  hints,
-	                                                                                  request_new,
-	                                                                                  callback,
-	                                                                                  user_data);
+	return (strcmp (setting_name, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0);
 }
 
 static void
@@ -180,7 +155,7 @@ nm_ifupdown_connection_class_init (NMIfupdownConnectionClass *ifupdown_connectio
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 
-	connection_class->get_secrets = get_secrets;
+	connection_class->supports_secrets = supports_secrets;
 
 	/* Properties */
 	g_object_class_install_property

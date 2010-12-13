@@ -50,11 +50,6 @@ typedef void (*NMSysconfigConnectionDeleteFunc) (NMSysconfigConnection *connecti
                                                  GError *error,
                                                  gpointer user_data);
 
-typedef void (*NMSysconfigConnectionGetSecretsFunc) (NMSysconfigConnection *connection,
-                                                     GHashTable *secrets,
-                                                     GError *error,
-                                                     gpointer user_data);
-
 struct _NMSysconfigConnection {
 	NMConnection parent;
 };
@@ -70,12 +65,8 @@ struct _NMSysconfigConnectionClass {
 	                NMSysconfigConnectionDeleteFunc callback,
 	                gpointer user_data);
 
-	void (*get_secrets) (NMSysconfigConnection *connection,
-	                     const char *setting_name,
-	                     const char **hints,
-	                     gboolean request_new,
-	                     NMSysconfigConnectionGetSecretsFunc callback,
-	                     gpointer user_data);
+	gboolean (*supports_secrets) (NMSysconfigConnection *connection,
+	                              const char *setting_name);
 };
 
 GType nm_sysconfig_connection_get_type (void);
@@ -97,12 +88,11 @@ void nm_sysconfig_connection_delete (NMSysconfigConnection *connection,
                                      NMSysconfigConnectionDeleteFunc callback,
                                      gpointer user_data);
 
-void nm_sysconfig_connection_get_secrets (NMSysconfigConnection *connection,
-                                          const char *setting_name,
-                                          const char **hints,
-                                          gboolean request_new,
-                                          NMSysconfigConnectionGetSecretsFunc callback,
-                                          gpointer user_data);
+GHashTable *nm_sysconfig_connection_get_secrets (NMSysconfigConnection *connection,
+                                                 const char *setting_name,
+                                                 const char **hints,
+                                                 gboolean request_new,
+                                                 GError **error);
 
 gboolean nm_sysconfig_connection_is_visible (NMSysconfigConnection *self);
 

@@ -304,36 +304,6 @@ nm_sysconfig_connection_delete (NMSysconfigConnection *connection,
 	}
 }
 
-void
-nm_sysconfig_connection_get_secrets (NMSysconfigConnection *connection,
-                                     const char *setting_name,
-                                     const char **hints,
-                                     gboolean request_new,
-                                     NMSysconfigConnectionGetSecretsFunc callback,
-                                     gpointer user_data)
-{
-	g_return_if_fail (connection != NULL);
-	g_return_if_fail (NM_IS_SYSCONFIG_CONNECTION (connection));
-	g_return_if_fail (callback != NULL);
-
-	if (NM_SYSCONFIG_CONNECTION_GET_CLASS (connection)->get_secrets) {
-		NM_SYSCONFIG_CONNECTION_GET_CLASS (connection)->get_secrets (connection,
-		                                                             setting_name,
-		                                                             hints,
-		                                                             request_new,
-		                                                             callback,
-		                                                             user_data);
-	} else {
-		GError *error = g_error_new (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_INTERNAL_ERROR,
-		                             "%s: %s:%d get_secrets() unimplemented", __func__, __FILE__, __LINE__);
-		callback (connection, NULL, error, user_data);
-		g_error_free (error);
-	}
-}
-
-/**************************************************************/
-
 static void
 commit_changes (NMSysconfigConnection *connection,
                 NMSysconfigConnectionCommitFunc callback,
@@ -355,6 +325,15 @@ do_delete (NMSysconfigConnection *connection,
 	g_signal_emit (connection, signals[REMOVED], 0);
 	callback (connection, NULL, user_data);
 	g_object_unref (connection);
+}
+
+/**************************************************************/
+
+static gboolean
+supports_secrets (NMSysconfigConnection *connection, const char *setting_name)
+{
+	/* All secrets supported */
+	return TRUE;
 }
 
 static GValue *
@@ -411,7 +390,7 @@ add_secrets (NMSetting *setting,
 		if (tmp)
 			g_hash_table_insert (secrets, g_strdup (key), string_to_gvalue (tmp));
 	} else if (G_VALUE_HOLDS (value, DBUS_TYPE_G_MAP_OF_STRING)) {
-		/* Flatten the string hash by pulling its keys/values out */
+		/* Flatten the string hash by pulling its keys/values out; for VPN secrets */
 		g_hash_table_foreach (g_value_get_boxed (value), copy_one_secret, secrets);
 	} else if (G_VALUE_TYPE (value) == DBUS_TYPE_G_UCHAR_ARRAY) {
 		GByteArray *array;
@@ -431,19 +410,17 @@ destroy_gvalue (gpointer data)
 	g_slice_free (GValue, value);
 }
 
-static void
-get_secrets (NMSysconfigConnection *connection,
-	         const char *setting_name,
-             const char **hints,
-             gboolean request_new,
-             NMSysconfigConnectionGetSecretsFunc callback,
-             gpointer user_data)
+GHashTable *
+nm_sysconfig_connection_get_secrets (NMSysconfigConnection *connection,
+                                     const char *setting_name,
+                                     const char **hints,
+                                     gboolean request_new,
+                                     GError **error)
 {
 	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (connection);
 	GHashTable *settings = NULL;
 	GHashTable *secrets = NULL;
 	NMSetting *setting;
-	GError *error = NULL;
 
 	/* Use priv->secrets to work around the fact that nm_connection_clear_secrets()
 	 * will clear secrets on this object's settings.  priv->secrets should be
@@ -451,24 +428,18 @@ get_secrets (NMSysconfigConnection *connection,
 	 * nm_sysconfig_connection_replace_settings().
 	 */
 	if (!priv->secrets) {
-		error = g_error_new (NM_SETTINGS_ERROR,
-		                     NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		                     "%s.%d - Internal error; secrets cache invalid.",
-		                     __FILE__, __LINE__);
-		(*callback) (connection, NULL, error, user_data);
-		g_error_free (error);
-		return;
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		             "%s.%d - Internal error; secrets cache invalid.",
+		             __FILE__, __LINE__);
+		return NULL;
 	}
 
 	setting = nm_connection_get_setting_by_name (priv->secrets, setting_name);
 	if (!setting) {
-		error = g_error_new (NM_SETTINGS_ERROR,
-		                     NM_SETTINGS_ERROR_INVALID_SETTING,
-		                     "%s.%d - Connection didn't have requested setting '%s'.",
-		                     __FILE__, __LINE__, setting_name);
-		(*callback) (connection, NULL, error, user_data);
-		g_error_free (error);
-		return;
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_SETTING,
+		             "%s.%d - Connection didn't have requested setting '%s'.",
+		             __FILE__, __LINE__, setting_name);
+		return NULL;
 	}
 
 	/* Returned secrets are a{sa{sv}}; this is the outer a{s...} hash that
@@ -482,8 +453,8 @@ get_secrets (NMSysconfigConnection *connection,
 	nm_setting_enumerate_values (setting, add_secrets, secrets);
 
 	g_hash_table_insert (settings, g_strdup (setting_name), secrets);
-	callback (connection, settings, NULL, user_data);
-	g_hash_table_destroy (settings);
+
+	return secrets;
 }
 
 /**** User authorization **************************************/
@@ -775,38 +746,32 @@ typedef struct {
 } GetSecretsInfo;
 
 static void
-con_secrets_cb (NMSysconfigConnection *connection,
-                GHashTable *secrets,
-                GError *error,
-                gpointer user_data)
-{
-	DBusGMethodInvocation *context = user_data;
-
-	if (error)
-		dbus_g_method_return_error (context, error);
-	else
-		dbus_g_method_return (context, secrets);
-}
-
-static void
 secrets_auth_cb (NMSysconfigConnection *self, 
 	             DBusGMethodInvocation *context,
 	             GError *error,
 	             gpointer data)
 {
 	GetSecretsInfo *info = data;
+	GHashTable *secrets;
+	GError *local = NULL;
 
 	if (error) {
 		dbus_g_method_return_error (context, error);
 		goto out;
 	}
 
-	nm_sysconfig_connection_get_secrets (self,
-	                                     info->setting_name,
-	                                     (const char **) info->hints,
-	                                     info->request_new,
-	                                     con_secrets_cb,
-	                                     context);
+	secrets = nm_sysconfig_connection_get_secrets (self,
+	                                               info->setting_name,
+	                                               (const char **) info->hints,
+	                                               info->request_new,
+	                                               &error);
+	if (secrets) {
+		dbus_g_method_return (context, secrets);
+		g_hash_table_destroy (secrets);
+	} else {
+		dbus_g_method_return_error (context, local);
+		g_clear_error (&local);
+	}
 
 out:
 	g_free (info->setting_name);
@@ -917,7 +882,7 @@ nm_sysconfig_connection_class_init (NMSysconfigConnectionClass *class)
 
 	class->commit_changes = commit_changes;
 	class->delete = do_delete;
-	class->get_secrets = get_secrets;
+	class->supports_secrets = supports_secrets;
 
 	/* Properties */
 	g_object_class_install_property
