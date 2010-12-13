@@ -212,7 +212,6 @@ get_active_connections (DBusGConnection *bus, DBusGProxy *proxy)
 	/* And print out the details of each active connection */
 	for (i = 0; i < paths->len; i++)
 		get_active_connection_details (bus, g_ptr_array_index (paths, i));
-	g_ptr_array_free (paths, TRUE);
 
 out:
 	g_value_unset (&value);
