@@ -413,7 +413,7 @@ destroy_gvalue (gpointer data)
 GHashTable *
 nm_sysconfig_connection_get_secrets (NMSysconfigConnection *connection,
                                      const char *setting_name,
-                                     const char **hints,
+                                     const char *hint,
                                      gboolean request_new,
                                      GError **error)
 {
@@ -741,7 +741,7 @@ impl_sysconfig_connection_delete (NMSysconfigConnection *self,
 
 typedef struct {
 	char *setting_name;
-	char **hints;
+	char *hint;
 	gboolean request_new;
 } GetSecretsInfo;
 
@@ -762,7 +762,7 @@ secrets_auth_cb (NMSysconfigConnection *self,
 
 	secrets = nm_sysconfig_connection_get_secrets (self,
 	                                               info->setting_name,
-	                                               (const char **) info->hints,
+	                                               info->hint,
 	                                               info->request_new,
 	                                               &error);
 	if (secrets) {
@@ -775,7 +775,7 @@ secrets_auth_cb (NMSysconfigConnection *self,
 
 out:
 	g_free (info->setting_name);
-	g_strfreev (info->hints);
+	g_free (info->hint);
 	g_slice_free (GetSecretsInfo, info);
 }
 
@@ -788,7 +788,7 @@ impl_sysconfig_connection_get_secrets (NMSysconfigConnection *self,
 {
 	GetSecretsInfo *info = g_slice_new (GetSecretsInfo);
 	info->setting_name = g_strdup (setting_name);
-	info->hints = g_strdupv ((char **) hints);
+	info->hint = (hints && hints[0]) ? g_strdup (hints[0]) : NULL;
 	info->request_new = request_new;
 
 	auth_start (self, context, TRUE, secrets_auth_cb, info);

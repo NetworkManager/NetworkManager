@@ -90,7 +90,7 @@ void nm_sysconfig_connection_delete (NMSysconfigConnection *connection,
 
 GHashTable *nm_sysconfig_connection_get_secrets (NMSysconfigConnection *connection,
                                                  const char *setting_name,
-                                                 const char **hints,
+                                                 const char *hint,
                                                  gboolean request_new,
                                                  GError **error);
 
