@@ -84,11 +84,6 @@ typedef struct {
 	                                             GSList *connections,
 	                                             char **specific_object);
 
-	void        (* connection_secrets_updated) (NMDevice *self,
-	                                            NMConnection *connection,
-	                                            GSList *updated_settings,
-	                                            RequestSecretsCaller caller);
-
 	gboolean    (* check_connection_compatible) (NMDevice *self,
 	                                             NMConnection *connection,
 	                                             GError **error);

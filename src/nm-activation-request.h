@@ -25,7 +25,7 @@
 #include <glib-object.h>
 #include "nm-connection.h"
 #include "nm-active-connection.h"
-#include "nm-secrets-provider-interface.h"
+#include "nm-agent-manager.h"
 
 #define NM_TYPE_ACT_REQUEST            (nm_act_request_get_type ())
 #define NM_ACT_REQUEST(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_ACT_REQUEST, NMActRequest))
@@ -42,15 +42,6 @@ typedef struct {
 	GObjectClass parent;
 
 	/* Signals */
-	void (*secrets_updated)        (NMActRequest *req,
-	                                NMConnection *connection,
-	                                GSList *updated_settings,
-	                                RequestSecretsCaller caller);
-	void (*secrets_failed)         (NMActRequest *req,
-	                                NMConnection *connection,
-	                                const char *setting,
-	                                RequestSecretsCaller caller);
-
 	void (*properties_changed) (NMActRequest *req, GHashTable *properties);
 } NMActRequestClass;
 
@@ -58,6 +49,7 @@ GType nm_act_request_get_type (void);
 
 NMActRequest *nm_act_request_new          (NMConnection *connection,
                                            const char *specific_object,
+                                           NMAgentManager *agent_mgr,
                                            gboolean user_requested,
                                            gboolean assumed,
                                            gpointer *device);  /* An NMDevice */
@@ -92,12 +84,23 @@ GObject *     nm_act_request_get_device (NMActRequest *req);
 
 gboolean      nm_act_request_get_assumed (NMActRequest *req);
 
-gboolean nm_act_request_get_secrets    (NMActRequest *req,
-                                        const char *setting_name,
-                                        gboolean request_new,
-                                        RequestSecretsCaller caller,
-                                        const char *hint1,
-                                        const char *hint2);
+/* Secrets handling */
+
+typedef void (*NMActRequestSecretsFunc) (NMActRequest *req,
+                                         guint32 call_id,
+                                         NMConnection *connection,
+                                         GError *error,
+                                         gpointer user_data);
+
+guint32 nm_act_request_get_secrets    (NMActRequest *req,
+                                       NMConnection *connection, /* NULL == use activation request's connection */
+                                       const char *setting_name,
+                                       gboolean request_new,
+                                       const char *hint,
+                                       NMActRequestSecretsFunc callback,
+                                       gpointer callback_data);
+
+void nm_act_request_cancel_secrets (NMActRequest *req, guint32 call_id);
 
 #endif /* NM_ACTIVATION_REQUEST_H */
 

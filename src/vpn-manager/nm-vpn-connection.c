@@ -50,11 +50,7 @@
 
 #include "nm-vpn-connection-glue.h"
 
-static void secrets_provider_interface_init (NMSecretsProviderInterface *sp_interface_class);
-
-G_DEFINE_TYPE_EXTENDED (NMVPNConnection, nm_vpn_connection, G_TYPE_OBJECT, 0,
-                        G_IMPLEMENT_INTERFACE (NM_TYPE_SECRETS_PROVIDER_INTERFACE,
-                                               secrets_provider_interface_init))
+G_DEFINE_TYPE (NMVPNConnection, nm_vpn_connection, G_TYPE_OBJECT)
 
 typedef struct {
 	gboolean disposed;
@@ -63,6 +59,7 @@ typedef struct {
 
 	NMActRequest *act_request;
 	char *ac_path;
+	guint32 secrets_id;
 
 	NMDevice *parent_dev;
 	gulong device_monitor;
@@ -784,6 +781,7 @@ nm_vpn_connection_disconnect (NMVPNConnection *connection,
 
 /******************************************************************************/
 
+#if 0
 static gboolean
 secrets_update_setting (NMSecretsProviderInterface *interface,
                         const char *setting_name,
@@ -807,32 +805,38 @@ secrets_update_setting (NMSecretsProviderInterface *interface,
 	}
 	return TRUE;
 }
+#endif
 
 static void
-secrets_result (NMSecretsProviderInterface *interface,
-	            const char *setting_name,
-	            RequestSecretsCaller caller,
-	            const GSList *updated,
-	            GError *error)
+cancel_get_secrets (NMVPNConnection *self)
 {
-	NMVPNConnection *self = NM_VPN_CONNECTION (interface);
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
-	g_return_if_fail (priv->connection != NULL);
-	g_return_if_fail (caller == SECRETS_CALLER_VPN);
+	if (priv->secrets_id) {
+		nm_act_request_cancel_secrets (priv->act_request, priv->secrets_id);
+		priv->secrets_id = 0;
+	}
+}
+
+static void
+vpn_secrets_cb (NMActRequest *req,
+                guint32 call_id,
+                NMConnection *connection,
+                GError *error,
+                gpointer user_data)
+{
+	NMVPNConnection *self = NM_VPN_CONNECTION (user_data);
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+
+	g_return_if_fail (req == priv->act_request);
+	g_return_if_fail (call_id == priv->secrets_id);
+
+	priv->secrets_id = 0;
 
 	if (error)
 		nm_vpn_connection_fail (self, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
 	else
 		really_activate (self);
-}
-
-static void
-secrets_provider_interface_init (NMSecretsProviderInterface *sp_interface_class)
-{
-	/* interface implementation */
-	sp_interface_class->update_setting = secrets_update_setting;
-	sp_interface_class->result = secrets_result;
 }
 
 static void
@@ -858,14 +862,14 @@ connection_need_secrets_cb  (DBusGProxy *proxy,
 		return;
 	}
 
-	/* Get the secrets the VPN plugin wants */
-	if (!nm_secrets_provider_interface_get_secrets (NM_SECRETS_PROVIDER_INTERFACE (self),
-                                                    priv->connection,
-                                                    setting_name,
-                                                    FALSE,
-                                                    SECRETS_CALLER_VPN,
-                                                    NULL,
-                                                    NULL))
+	priv->secrets_id = nm_act_request_get_secrets (priv->act_request,
+	                                               priv->connection,
+	                                               setting_name,
+	                                               FALSE,
+	                                               NULL,
+	                                               vpn_secrets_cb,
+	                                               self);
+	if (!priv->secrets_id)
 		nm_vpn_connection_fail (self, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
 }
 
@@ -944,17 +948,17 @@ vpn_cleanup (NMVPNConnection *connection)
 }
 
 static void
-connection_state_changed (NMVPNConnection *connection,
+connection_state_changed (NMVPNConnection *self,
                           NMVPNConnectionState state,
                           NMVPNConnectionStateReason reason)
 {
-	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
-	nm_secrets_provider_interface_cancel_get_secrets (NM_SECRETS_PROVIDER_INTERFACE (priv->act_request));
+	cancel_get_secrets (self);
 
 	switch (state) {
 	case NM_VPN_CONNECTION_STATE_NEED_AUTH:
-		call_need_secrets (connection);
+		call_need_secrets (self);
 		break;
 	case NM_VPN_CONNECTION_STATE_DISCONNECTED:
 	case NM_VPN_CONNECTION_STATE_FAILED:
@@ -970,7 +974,7 @@ connection_state_changed (NMVPNConnection *connection,
 			g_object_unref (priv->proxy);
 			priv->proxy = NULL;
 		}
-		vpn_cleanup (connection);
+		vpn_cleanup (self);
 		break;
 	default:
 		break;
@@ -1024,6 +1028,9 @@ dispose (GObject *object)
 
 	if (priv->proxy)
 		g_object_unref (priv->proxy);
+
+	if (priv->secrets_id)
+		nm_act_request_cancel_secrets (priv->act_request, priv->secrets_id);
 
 	g_object_unref (priv->act_request);
 	g_object_unref (priv->connection);

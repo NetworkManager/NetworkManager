@@ -883,67 +883,6 @@ real_get_best_auto_connection (NMDevice *dev,
 	return NULL;
 }
 
-static void
-real_connection_secrets_updated (NMDevice *dev,
-                                 NMConnection *connection,
-                                 GSList *updated_settings,
-                                 RequestSecretsCaller caller)
-{
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (dev);
-	NMActRequest *req;
-	gboolean valid = FALSE;
-	GSList *iter;
-
-	g_return_if_fail (IS_ACTIVATING_STATE (nm_device_get_state (dev)));
-
-	/* PPPoE? */
-	if (caller == SECRETS_CALLER_PPP) {
-		NMSettingPPPOE *s_pppoe;
-
-		g_assert (priv->ppp_manager);
-
-		s_pppoe = (NMSettingPPPOE *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPPOE);
-		if (!s_pppoe) {
-			nm_ppp_manager_update_secrets (priv->ppp_manager,
-			                               nm_device_get_iface (dev),
-			                               NULL,
-			                               NULL,
-			                               "missing PPPoE setting; no secrets could be found.");
-		} else {
-			const char *pppoe_username = nm_setting_pppoe_get_username (s_pppoe);
-			const char *pppoe_password = nm_setting_pppoe_get_password (s_pppoe);
-
-			nm_ppp_manager_update_secrets (priv->ppp_manager,
-			                               nm_device_get_iface (dev),
-			                               pppoe_username ? pppoe_username : "",
-			                               pppoe_password ? pppoe_password : "",
-			                               NULL);
-		}
-		return;
-	}
-
-	/* Only caller could be ourselves for 802.1x */
-	g_return_if_fail (caller == SECRETS_CALLER_ETHERNET);
-	g_return_if_fail (nm_device_get_state (dev) == NM_DEVICE_STATE_NEED_AUTH);
-
-	for (iter = updated_settings; iter; iter = g_slist_next (iter)) {
-		const char *setting_name = (const char *) iter->data;
-
-		if (!strcmp (setting_name, NM_SETTING_802_1X_SETTING_NAME)) {
-			valid = TRUE;
-		} else {
-			nm_log_warn (LOGD_DEVICE, "Ignoring updated secrets for setting '%s'.",
-			             setting_name);
-		}
-	}
-
-	req = nm_device_get_act_request (dev);
-	g_assert (req);
-
-	g_return_if_fail (nm_act_request_get_connection (req) == connection);
-	nm_device_activate_schedule_stage1_device_prepare (dev);
-}
-
 /* FIXME: Move it to nm-device.c and then get rid of all foo_device_get_setting() all around.
    It's here now to keep the patch short. */
 static NMSetting *
@@ -1019,6 +958,28 @@ supplicant_interface_release (NMDeviceEthernet *self)
 	}
 }
 
+static void
+wired_secrets_cb (NMActRequest *req,
+                  guint32 call_id,
+                  NMConnection *connection,
+                  GError *error,
+                  gpointer user_data)
+{
+	NMDevice *dev = NM_DEVICE (user_data);
+
+	g_return_if_fail (req == nm_device_get_act_request (dev));
+	g_return_if_fail (nm_device_get_state (dev) == NM_DEVICE_STATE_NEED_AUTH);
+	g_return_if_fail (nm_act_request_get_connection (req) == connection);
+
+	if (error) {
+		nm_log_warn (LOGD_ETHER, "%s", error->message);
+		nm_device_state_changed (dev,
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_NO_SECRETS);
+	} else
+		nm_device_activate_schedule_stage1_device_prepare (dev);
+}
+
 static gboolean
 link_timeout_cb (gpointer user_data)
 {
@@ -1060,11 +1021,12 @@ link_timeout_cb (gpointer user_data)
 
 	nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
 	nm_act_request_get_secrets (req,
+	                            NULL,
 	                            setting_name,
 	                            TRUE,
-	                            SECRETS_CALLER_ETHERNET,
 	                            NULL,
-	                            NULL);
+	                            wired_secrets_cb,
+	                            self);
 
 	return FALSE;
 
@@ -1249,11 +1211,12 @@ handle_auth_or_fail (NMDeviceEthernet *self,
 		 */
 		get_new = new_secrets ? TRUE : (tries ? TRUE : FALSE);
 		nm_act_request_get_secrets (req,
+		                            NULL,
 		                            setting_name,
 		                            get_new,
-		                            SECRETS_CALLER_ETHERNET,
 		                            NULL,
-		                            NULL);
+		                            wired_secrets_cb,
+		                            self);
 
 		g_object_set_data (G_OBJECT (connection), WIRED_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
 	} else {
@@ -1969,7 +1932,6 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->update_initial_hw_address = real_update_initial_hw_address;
 	parent_class->get_best_auto_connection = real_get_best_auto_connection;
 	parent_class->is_available = real_is_available;
-	parent_class->connection_secrets_updated = real_connection_secrets_updated;
 	parent_class->check_connection_compatible = real_check_connection_compatible;
 
 	parent_class->act_stage1_prepare = real_act_stage1_prepare;

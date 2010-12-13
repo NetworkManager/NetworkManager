@@ -2849,31 +2849,6 @@ check_connection_compatible (NMDeviceInterface *dev_iface,
 	return TRUE;
 }
 
-static void
-connection_secrets_updated_cb (NMActRequest *req,
-                               NMConnection *connection,
-                               GSList *updated_settings,
-                               RequestSecretsCaller caller,
-                               gpointer user_data)
-{
-	NMDevice *self = NM_DEVICE (user_data);
-
-	if (NM_DEVICE_GET_CLASS (self)->connection_secrets_updated)
-		NM_DEVICE_GET_CLASS (self)->connection_secrets_updated (self, connection, updated_settings, caller);
-}
-
-static void
-connection_secrets_failed_cb (NMActRequest *req,
-                              NMConnection *connection,
-                              const char *setting_name,
-                              RequestSecretsCaller caller,
-                              gpointer user_data)
-{
-	NMDevice *self = NM_DEVICE (user_data);
-
-	nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NO_SECRETS);
-}
-
 static gboolean
 device_activation_precheck (NMDevice *self, NMConnection *connection, GError **error)
 {
@@ -2916,14 +2891,6 @@ nm_device_activate (NMDeviceInterface *device,
 	}
 
 	priv->act_request = g_object_ref (req);
-	priv->secrets_updated_id = g_signal_connect (req,
-										"connection-secrets-updated",
-										G_CALLBACK (connection_secrets_updated_cb),
-										device);
-	priv->secrets_failed_id = g_signal_connect (req,
-									    "connection-secrets-failed",
-									    G_CALLBACK (connection_secrets_failed_cb),
-									    device);
 
 	if (!nm_act_request_get_assumed (req)) {
 		/* HACK: update the state a bit early to avoid a race between the 

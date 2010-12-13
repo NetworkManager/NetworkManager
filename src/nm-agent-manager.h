@@ -24,6 +24,8 @@
 #include <glib.h>
 #include <glib-object.h>
 
+#include <nm-connection.h>
+
 #include "nm-dbus-manager.h"
 #include "nm-session-monitor.h"
 
@@ -44,7 +46,27 @@ typedef struct {
 
 GType nm_agent_manager_get_type (void);
 
-NMAgentManager *nm_agent_manager_new (NMDBusManager *dbus_mgr,
-                                      NMSessionMonitor *session_monitor);
+NMAgentManager *nm_agent_manager_new (NMDBusManager *dbus_mgr);
+
+typedef void (*NMAgentSecretsResultFunc) (NMAgentManager *manager,
+                                          guint32 call_id,
+                                          NMConnection *connection,
+                                          GError *error,
+                                          gpointer user_data,
+                                          gpointer user_data2,
+                                          gpointer user_data3);
+
+guint32 nm_agent_manager_get_secrets (NMAgentManager *manager,
+                                      NMConnection *connection,
+                                      const char *setting_name,
+                                      gboolean get_new,
+                                      const char *hint,
+                                      NMAgentSecretsResultFunc callback,
+                                      gpointer callback_data,
+                                      gpointer other_data2,
+                                      gpointer other_data3);
+
+void nm_agent_manager_cancel_secrets (NMAgentManager *manager,
+                                      guint32 request_id);
 
 #endif /* NM_AGENT_MANAGER_H */

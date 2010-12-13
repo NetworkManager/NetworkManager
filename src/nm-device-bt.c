@@ -46,6 +46,8 @@ G_DEFINE_TYPE (NMDeviceBt, nm_device_bt, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_BT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_BT, NMDeviceBtPrivate))
 
+static gboolean modem_stage1 (NMDeviceBt *self, NMModem *modem, NMDeviceStateReason *reason);
+
 typedef struct {
 	char *bdaddr;
 	char *name;
@@ -291,22 +293,30 @@ ppp_failed (NMModem *modem, NMDeviceStateReason reason, gpointer user_data)
 }
 
 static void
-modem_need_auth (NMModem *modem,
-	             const char *setting_name,
-	             gboolean retry,
-	             RequestSecretsCaller caller,
-	             const char *hint1,
-	             const char *hint2,
-	             gpointer user_data)
+modem_auth_requested (NMModem *modem, gpointer user_data)
 {
-	NMDeviceBt *self = NM_DEVICE_BT (user_data);
-	NMActRequest *req;
+	nm_device_state_changed (NM_DEVICE (user_data),
+	                         NM_DEVICE_STATE_NEED_AUTH,
+	                         NM_DEVICE_STATE_REASON_NONE);
+}
 
-	req = nm_device_get_act_request (NM_DEVICE (self));
-	g_assert (req);
+static void
+modem_auth_result (NMModem *modem, GError *error, gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (user_data);
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
+	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
-	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
-	nm_act_request_get_secrets (req, setting_name, retry, caller, hint1, hint2);
+	if (error) {
+		nm_device_state_changed (device,
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_NO_SECRETS);
+	} else {
+		/* Otherwise, on success for GSM/CDMA secrets we need to schedule modem stage1 again */
+		g_return_if_fail (nm_device_get_state (device) == NM_DEVICE_STATE_NEED_AUTH);
+		if (!modem_stage1 (NM_DEVICE_BT (device), priv->modem, &reason))
+			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
+	}
 }
 
 static void
@@ -412,41 +422,6 @@ modem_stage1 (NMDeviceBt *self, NMModem *modem, NMDeviceStateReason *reason)
 	return FALSE;
 }
 
-static void
-real_connection_secrets_updated (NMDevice *device,
-                                 NMConnection *connection,
-                                 GSList *updated_settings,
-                                 RequestSecretsCaller caller)
-{
-	NMDeviceBt *self = NM_DEVICE_BT (device);
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
-	NMActRequest *req;
-	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
-
-	g_return_if_fail (IS_ACTIVATING_STATE (nm_device_get_state (device)));
-
-	req = nm_device_get_act_request (device);
-	g_assert (req);
-
-	if (!nm_modem_connection_secrets_updated (priv->modem,
-                                              req,
-                                              connection,
-                                              updated_settings,
-                                              caller)) {
-		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NO_SECRETS);
-		return;
-	}
-
-	/* PPP handles stuff itself... */
-	if (caller == SECRETS_CALLER_PPP)
-		return;
-
-	/* Otherwise, on success for GSM/CDMA secrets we need to schedule modem stage1 again */
-	g_return_if_fail (nm_device_get_state (device) == NM_DEVICE_STATE_NEED_AUTH);
-	if (!modem_stage1 (self, priv->modem, &reason))
-		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED, reason);
-}
-
 /*****************************************************************************/
 
 gboolean
@@ -511,7 +486,8 @@ nm_device_bt_modem_added (NMDeviceBt *self,
 	g_signal_connect (modem, NM_MODEM_PPP_FAILED, G_CALLBACK (ppp_failed), self);
 	g_signal_connect (modem, NM_MODEM_PREPARE_RESULT, G_CALLBACK (modem_prepare_result), self);
 	g_signal_connect (modem, NM_MODEM_IP4_CONFIG_RESULT, G_CALLBACK (modem_ip4_config_result), self);
-	g_signal_connect (modem, NM_MODEM_NEED_AUTH, G_CALLBACK (modem_need_auth), self);
+	g_signal_connect (modem, NM_MODEM_AUTH_REQUESTED, G_CALLBACK (modem_auth_requested), self);
+	g_signal_connect (modem, NM_MODEM_AUTH_RESULT, G_CALLBACK (modem_auth_result), self);
 
 	/* Kick off the modem connection */
 	if (!modem_stage1 (self, modem, &reason))
@@ -1019,7 +995,6 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 
 	device_class->get_best_auto_connection = real_get_best_auto_connection;
 	device_class->get_generic_capabilities = real_get_generic_capabilities;
-	device_class->connection_secrets_updated = real_connection_secrets_updated;
 	device_class->deactivate_quickly = real_deactivate_quickly;
 	device_class->act_stage2_config = real_act_stage2_config;
 	device_class->act_stage3_ip4_config_start = real_act_stage3_ip4_config_start;

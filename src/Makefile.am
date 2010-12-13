@@ -116,8 +116,6 @@ NetworkManager_SOURCES = \
 		nm-ip4-config.h \
 		nm-ip6-config.c \
 		nm-ip6-config.h \
-		nm-secrets-provider-interface.c \
-		nm-secrets-provider-interface.h \
 		nm-active-connection.h \
 		nm-active-connection.c \
 		main.c \

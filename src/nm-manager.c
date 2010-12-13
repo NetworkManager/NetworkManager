@@ -54,8 +54,8 @@
 #include "nm-bluez-common.h"
 #include "nm-settings.h"
 #include "nm-sysconfig-connection.h"
-#include "nm-secrets-provider-interface.h"
 #include "nm-manager-auth.h"
+#include "nm-agent-manager.h"
 
 #define NM_AUTOIP_DBUS_SERVICE "org.freedesktop.nm_avahi_autoipd"
 #define NM_AUTOIP_DBUS_IFACE   "org.freedesktop.nm_avahi_autoipd"
@@ -202,8 +202,7 @@ typedef struct {
 
 	NMSettings *settings;
 	char *hostname;
-
-	GSList *secrets_calls;
+	NMAgentManager *agent_mgr;
 
 	RadioState radio_states[RFKILL_TYPE_MAX];
 	gboolean sleeping;
@@ -1718,194 +1717,6 @@ nm_manager_get_act_request_by_path (NMManager *manager,
 	return NULL;
 }
 
-typedef struct GetSecretsInfo {
-	NMManager *manager;
-	NMSecretsProviderInterface *provider;
-
-	char *setting_name;
-	RequestSecretsCaller caller;
-	gboolean request_new;
-
-	/* User connection bits */
-	DBusGProxy *proxy;
-	DBusGProxyCall *call;
-
-	/* System connection bits */
-	guint32 idle_id;
-	char *hint1;
-	char *hint2;
-	char *connection_path;
-} GetSecretsInfo;
-
-static void
-free_get_secrets_info (gpointer data)
-{
-	GetSecretsInfo *info = data;
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (info->manager);
-
-	g_object_weak_unref (G_OBJECT (info->provider), (GWeakNotify) free_get_secrets_info, info);
-
-	priv->secrets_calls = g_slist_remove (priv->secrets_calls, info);
-
-	if (info->proxy) {
-		if (info->call)
-			dbus_g_proxy_cancel_call (info->proxy, info->call);
-		g_object_unref (info->proxy);
-	}
-
-	if (info->idle_id)
-		g_source_remove (info->idle_id);
-
-	g_free (info->hint1);
-	g_free (info->hint2);
-	g_free (info->setting_name);
-	g_free (info->connection_path);
-	memset (info, 0, sizeof (GetSecretsInfo));
-	g_free (info);
-}
-
-static void
-provider_cancel_secrets (NMSecretsProviderInterface *provider, gpointer user_data)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (user_data);
-	GSList *iter;
-
-	for (iter = priv->secrets_calls; iter; iter = g_slist_next (iter)) {
-		GetSecretsInfo *candidate = iter->data;
-
-		if (candidate->provider == provider) {
-			free_get_secrets_info (candidate);
-			break;
-		}
-	}
-}
-
-static void
-system_get_secrets_reply_cb (NMSysconfigConnection *connection,
-                             GHashTable *secrets,
-                             GError *error,
-                             gpointer user_data)
-{
-	GetSecretsInfo *info = user_data;
-	GObject *provider;
-
-	provider = g_object_ref (info->provider);
-
-	nm_secrets_provider_interface_get_secrets_result (info->provider,
-	                                                  info->setting_name,
-	                                                  info->caller,
-	                                                  error ? NULL : secrets,
-	                                                  error);
-	free_get_secrets_info (info);
-	g_object_unref (provider);
-}
-
-static gboolean
-system_get_secrets_idle_cb (gpointer user_data)
-{
-	GetSecretsInfo *info = user_data;
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (info->manager);
-	NMSysconfigConnection *connection;
-	GError *error = NULL;
-	const char *hints[3] = { NULL, NULL, NULL };
-
-	info->idle_id = 0;
-
-	connection = nm_settings_get_connection_by_path (priv->settings, info->connection_path);
-	if (!connection) {
-		error = g_error_new_literal (NM_MANAGER_ERROR,
-		                             NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
-		                             "unknown connection (not exported by system settings)");
-		nm_secrets_provider_interface_get_secrets_result (info->provider,
-		                                                  info->setting_name,
-		                                                  info->caller,
-		                                                  NULL,
-		                                                  error);
-		g_error_free (error);
-		free_get_secrets_info (info);
-		return FALSE;
-	}
-
-	hints[0] = info->hint1;
-	hints[1] = info->hint2;
-	nm_sysconfig_connection_get_secrets (connection,
-	                                     info->setting_name,
-	                                     hints,
-	                                     info->request_new,
-	                                     system_get_secrets_reply_cb,
-	                                     info);
-	return FALSE;
-}
-
-static GetSecretsInfo *
-system_get_secrets (NMManager *self,
-                    NMSecretsProviderInterface *provider,
-                    NMConnection *connection,
-                    const char *setting_name,
-                    gboolean request_new,
-                    RequestSecretsCaller caller_id,
-                    const char *hint1,
-                    const char *hint2)
-{
-	GetSecretsInfo *info;
-
-	info = g_malloc0 (sizeof (GetSecretsInfo));
-	info->manager = self;
-	info->provider = provider;
-	info->caller = caller_id;
-	info->setting_name = g_strdup (setting_name);
-	info->hint1 = hint1 ? g_strdup (hint1) : NULL;
-	info->hint2 = hint2 ? g_strdup (hint2) : NULL;
-	info->connection_path = g_strdup (nm_connection_get_path (connection));
-	info->request_new = request_new;
-
-	g_object_weak_ref (G_OBJECT (provider), (GWeakNotify) free_get_secrets_info, info);
-
-	info->idle_id = g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
-	                                 system_get_secrets_idle_cb,
-	                                 info,
-	                                 NULL);
-	return info;
-}
-
-static gboolean
-provider_get_secrets (NMSecretsProviderInterface *provider,
-                      NMConnection *connection,
-                      const char *setting_name,
-                      gboolean request_new,
-                      RequestSecretsCaller caller_id,
-                      const char *hint1,
-                      const char *hint2,
-                      gpointer user_data)
-{
-	NMManager *self = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GetSecretsInfo *info = NULL;
-	GSList *iter;
-
-	g_return_val_if_fail (connection != NULL, FALSE);
-	g_return_val_if_fail (setting_name != NULL, FALSE);
-
-	/* Tear down any pending secrets requests for this secrets provider */
-	for (iter = priv->secrets_calls; iter; iter = g_slist_next (iter)) {
-		GetSecretsInfo *candidate = iter->data;
-
-		if (provider == candidate->provider) {
-			free_get_secrets_info (candidate);
-			break;
-		}
-	}
-
-	/* Build up the new secrets request */
-	info = system_get_secrets (self, provider, connection, setting_name,
-							   request_new, caller_id, hint1, hint2);
-
-	if (info)
-		priv->secrets_calls = g_slist_append (priv->secrets_calls, info);
-
-	return !!info;
-}
-
 static const char *
 internal_activate_device (NMManager *manager,
                           NMDevice *device,
@@ -1936,9 +1747,12 @@ internal_activate_device (NMManager *manager,
 		                         NM_DEVICE_STATE_REASON_NONE);
 	}
 
-	req = nm_act_request_new (connection, specific_object, user_requested, assumed, (gpointer) device);
-	g_signal_connect (req, "manager-get-secrets", G_CALLBACK (provider_get_secrets), manager);
-	g_signal_connect (req, "manager-cancel-secrets", G_CALLBACK (provider_cancel_secrets), manager);
+	req = nm_act_request_new (connection,
+	                          specific_object,
+	                          NM_MANAGER_GET_PRIVATE (manager)->agent_mgr,
+	                          user_requested,
+	                          assumed,
+	                          (gpointer) device);
 	success = nm_device_interface_activate (dev_iface, req, error);
 	g_object_unref (req);
 
@@ -1970,15 +1784,15 @@ nm_manager_activate_connection (NMManager *manager,
 	g_assert (s_con);
 
 	if (!strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_VPN_SETTING_NAME)) {
-		NMActRequest *req = NULL;
+		NMActRequest *parent_req = NULL;
 		NMVPNManager *vpn_manager;
 
 		/* VPN connection */
 
 		if (specific_object) {
 			/* Find the specifc connection the client requested we use */
-			req = nm_manager_get_act_request_by_path (manager, specific_object, &device);
-			if (!req) {
+			parent_req = nm_manager_get_act_request_by_path (manager, specific_object, &device);
+			if (!parent_req) {
 				g_set_error (error,
 				             NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
 				             "%s", "Base connection for VPN connection not active.");
@@ -1995,13 +1809,13 @@ nm_manager_activate_connection (NMManager *manager,
 				candidate_req = nm_device_get_act_request (candidate);
 				if (candidate_req && nm_act_request_get_default (candidate_req)) {
 					device = candidate;
-					req = candidate_req;
+					parent_req = candidate_req;
 					break;
 				}
 			}
 		}
 
-		if (!device || !req) {
+		if (!device || !parent_req) {
 			g_set_error (error,
 			             NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
 			             "%s", "Could not find source connection, or the source connection had no active device.");
@@ -2011,16 +1825,11 @@ nm_manager_activate_connection (NMManager *manager,
 		vpn_manager = nm_vpn_manager_get ();
 		vpn_connection = nm_vpn_manager_activate_connection (vpn_manager,
 		                                                     connection,
-		                                                     req,
+		                                                     parent_req,
 		                                                     device,
 		                                                     error);
-		if (vpn_connection) {
-			g_signal_connect (vpn_connection, "manager-get-secrets",
-			                  G_CALLBACK (provider_get_secrets), manager);
-			g_signal_connect (vpn_connection, "manager-cancel-secrets",
-			                  G_CALLBACK (provider_cancel_secrets), manager);
+		if (vpn_connection)
 			path = nm_vpn_connection_get_active_connection_path (vpn_connection);
-		}
 		g_object_unref (vpn_manager);
 	} else {
 		NMDeviceState state;
@@ -3072,6 +2881,8 @@ nm_manager_get (NMSettings *settings,
 
 	priv->settings = g_object_ref (settings);
 
+	priv->agent_mgr = nm_agent_manager_new (priv->dbus_mgr);
+
 	priv->config_file = g_strdup (config_file);
 	priv->state_file = g_strdup (state_file);
 
@@ -3142,9 +2953,6 @@ dispose (GObject *object)
 	g_slist_free (priv->auth_chains);
 	g_object_unref (priv->authority);
 
-	while (g_slist_length (priv->secrets_calls))
-		free_get_secrets_info ((GetSecretsInfo *) priv->secrets_calls->data);
-
 	while (g_slist_length (priv->devices)) {
 		priv->devices = remove_one_device (manager,
 		                                   priv->devices,
@@ -3156,6 +2964,8 @@ dispose (GObject *object)
 	g_free (priv->config_file);
 
 	g_object_unref (priv->settings);
+
+	g_object_unref (priv->agent_mgr);
 
 	if (priv->vpn_manager_id) {
 		g_source_remove (priv->vpn_manager_id);

@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2008 Red Hat, Inc.
+ * Copyright (C) 2005 - 2010 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -27,7 +27,6 @@
 #include "NetworkManagerVPN.h"
 #include "nm-device.h"
 #include "nm-activation-request.h"
-#include "nm-secrets-provider-interface.h"
 
 #define NM_TYPE_VPN_CONNECTION            (nm_vpn_connection_get_type ())
 #define NM_VPN_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VPN_CONNECTION, NMVPNConnection))

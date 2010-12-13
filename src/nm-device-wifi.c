@@ -2245,6 +2245,27 @@ cleanup_association_attempt (NMDeviceWifi *self, gboolean disconnect)
 		nm_supplicant_interface_disconnect (priv->supplicant.iface);
 }
 
+static void
+wifi_secrets_cb (NMActRequest *req,
+                 guint32 call_id,
+                 NMConnection *connection,
+                 GError *error,
+                 gpointer user_data)
+{
+	NMDevice *dev = NM_DEVICE (user_data);
+
+	g_return_if_fail (req == nm_device_get_act_request (dev));
+	g_return_if_fail (nm_device_get_state (dev) == NM_DEVICE_STATE_NEED_AUTH);
+	g_return_if_fail (nm_act_request_get_connection (req) == connection);
+
+	if (error) {
+		nm_log_warn (LOGD_WIFI, "%s", error->message);
+		nm_device_state_changed (dev,
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_NO_SECRETS);
+	} else
+		nm_device_activate_schedule_stage1_device_prepare (dev);
+}
 
 static void
 remove_link_timeout (NMDeviceWifi *self)
@@ -2340,11 +2361,12 @@ link_timeout_cb (gpointer user_data)
 		cleanup_association_attempt (self, TRUE);
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
 		nm_act_request_get_secrets (req,
+		                            NULL,
 		                            setting_name,
 		                            TRUE,
-		                            SECRETS_CALLER_WIFI,
 		                            NULL,
-		                            NULL);
+		                            wifi_secrets_cb,
+		                            self);
 
 		return FALSE;
 	}
@@ -2586,11 +2608,12 @@ handle_auth_or_fail (NMDeviceWifi *self,
 		 */
 		get_new = new_secrets ? TRUE : (tries ? TRUE : FALSE);
 		nm_act_request_get_secrets (req,
+		                            NULL,
 		                            setting_name,
 		                            get_new,
-		                            SECRETS_CALLER_WIFI,
 		                            NULL,
-		                            NULL);
+		                            wifi_secrets_cb,
+		                            self);
 
 		g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
 	} else {
@@ -2964,42 +2987,6 @@ real_act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 done:
 	set_current_ap (self, ap);
 	return NM_ACT_STAGE_RETURN_SUCCESS;
-}
-
-
-static void
-real_connection_secrets_updated (NMDevice *dev,
-                                 NMConnection *connection,
-                                 GSList *updated_settings,
-                                 RequestSecretsCaller caller)
-{
-	NMActRequest *req;
-	gboolean valid = FALSE;
-	GSList *iter;
-
-	g_return_if_fail (caller == SECRETS_CALLER_WIFI);
-
-	if (nm_device_get_state (dev) != NM_DEVICE_STATE_NEED_AUTH)
-		return;
-
-	for (iter = updated_settings; iter; iter = g_slist_next (iter)) {
-		const char *setting_name = (const char *) iter->data;
-
-		if (   !strcmp (setting_name, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME)
-		    || !strcmp (setting_name, NM_SETTING_802_1X_SETTING_NAME)) {
-			valid = TRUE;
-		} else {
-			nm_log_warn (LOGD_DEVICE, "Ignoring updated secrets for setting '%s'.",
-			             setting_name);
-		}
-	}
-
-	req = nm_device_get_act_request (dev);
-	g_assert (req);
-
-	g_return_if_fail (nm_act_request_get_connection (req) == connection);
-
-	nm_device_activate_schedule_stage1_device_prepare (dev);
 }
 
 static NMActStageReturn
@@ -3712,7 +3699,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->update_initial_hw_address = real_update_initial_hw_address;
 	parent_class->get_best_auto_connection = real_get_best_auto_connection;
 	parent_class->is_available = real_is_available;
-	parent_class->connection_secrets_updated = real_connection_secrets_updated;
 	parent_class->check_connection_compatible = real_check_connection_compatible;
 
 	parent_class->act_stage1_prepare = real_act_stage1_prepare;

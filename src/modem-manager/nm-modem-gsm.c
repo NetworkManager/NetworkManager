@@ -177,12 +177,10 @@ ask_for_pin (NMModemGsm *self, gboolean always_ask)
 	if (!always_ask)
 		tries = priv->pin_tries++;
 
-	g_signal_emit_by_name (self, NM_MODEM_NEED_AUTH,
-	                       NM_SETTING_GSM_SETTING_NAME,
-	                       (tries || always_ask) ? TRUE : FALSE,
-	                       SECRETS_CALLER_MOBILE_BROADBAND,
-	                       NM_SETTING_GSM_PIN,
-	                       NULL);
+	nm_modem_get_secrets (NM_MODEM (self),
+	                      NM_SETTING_GSM_SETTING_NAME,
+	                      (tries || always_ask) ? TRUE : FALSE,
+	                      NM_SETTING_GSM_PIN);
 }
 
 static void

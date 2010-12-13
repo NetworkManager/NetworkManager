@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 Red Hat, Inc.
+ * Copyright (C) 2009 - 2010 Red Hat, Inc.
  * Copyright (C) 2009 Novell, Inc.
  */
 
@@ -46,7 +46,8 @@ G_BEGIN_DECLS
 #define NM_MODEM_PPP_FAILED        "ppp-failed"
 #define NM_MODEM_PREPARE_RESULT    "prepare-result"
 #define NM_MODEM_IP4_CONFIG_RESULT "ip4-config-result"
-#define NM_MODEM_NEED_AUTH         "need-auth"
+#define NM_MODEM_AUTH_REQUESTED    "auth-requested"
+#define NM_MODEM_AUTH_RESULT       "auth-result"
 
 typedef struct {
 	GObject parent;
@@ -85,12 +86,8 @@ typedef struct {
 	void (*prepare_result)    (NMModem *self, gboolean success, NMDeviceStateReason reason);
 	void (*ip4_config_result) (NMModem *self, const char *iface, NMIP4Config *config, GError *error);
 
-	void (*need_auth)  (NMModem *self,
-	                    const char *setting_name,
-	                    gboolean retry,
-	                    RequestSecretsCaller caller,
-	                    const char *hint1,
-	                    const char *hint2);
+	void (*auth_requested)    (NMModem *self);
+	void (*auth_result)       (NMModem *self, GError *error);
 } NMModemClass;
 
 GType nm_modem_get_type (void);
@@ -129,6 +126,11 @@ NMActStageReturn nm_modem_stage4_get_ip4_config (NMModem *modem,
                                                  NMIP4Config **config,
                                                  NMDeviceStateReason *reason);
 
+gboolean nm_modem_get_secrets (NMModem *modem,
+                               const char *setting_name,
+                               gboolean request_new,
+                               const char *hint);
+
 void nm_modem_deactivate_quickly (NMModem *modem, NMDevice *device);
 
 void nm_modem_device_state_changed (NMModem *modem,
@@ -139,12 +141,6 @@ void nm_modem_device_state_changed (NMModem *modem,
 gboolean nm_modem_hw_is_up (NMModem *modem, NMDevice *device);
 
 gboolean nm_modem_hw_bring_up (NMModem *modem, NMDevice *device, gboolean *no_firmware);
-
-gboolean nm_modem_connection_secrets_updated (NMModem *modem,
-                                              NMActRequest *req,
-                                              NMConnection *connection,
-                                              GSList *updated_settings,
-                                              RequestSecretsCaller caller);
 
 const DBusGObjectInfo *nm_modem_get_serial_dbus_info (void);
 

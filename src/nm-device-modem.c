@@ -107,22 +107,27 @@ modem_prepare_result (NMModem *modem,
 }
 
 static void
-modem_need_auth (NMModem *modem,
-	             const char *setting_name,
-	             gboolean retry,
-	             RequestSecretsCaller caller,
-	             const char *hint1,
-	             const char *hint2,
-	             gpointer user_data)
+modem_auth_requested (NMModem *modem, gpointer user_data)
 {
-	NMDeviceModem *self = NM_DEVICE_MODEM (user_data);
-	NMActRequest *req;
+	nm_device_state_changed (NM_DEVICE (user_data),
+	                         NM_DEVICE_STATE_NEED_AUTH,
+	                         NM_DEVICE_STATE_REASON_NONE);
+}
 
-	req = nm_device_get_act_request (NM_DEVICE (self));
-	g_assert (req);
+static void
+modem_auth_result (NMModem *modem, GError *error, gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (user_data);
 
-	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
-	nm_act_request_get_secrets (req, setting_name, retry, caller, hint1, hint2);
+	if (error) {
+		nm_device_state_changed (device,
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_NO_SECRETS);
+	} else {
+		/* Otherwise, on success for modem secrets we need to schedule stage1 again */
+		g_return_if_fail (nm_device_get_state (device) == NM_DEVICE_STATE_NEED_AUTH);
+		nm_device_activate_schedule_stage1_device_prepare (device);
+	}
 }
 
 static void
@@ -203,38 +208,6 @@ real_get_best_auto_connection (NMDevice *device,
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
 
 	return nm_modem_get_best_auto_connection (priv->modem, connections, specific_object);
-}
-
-static void
-real_connection_secrets_updated (NMDevice *device,
-								 NMConnection *connection,
-								 GSList *updated_settings,
-								 RequestSecretsCaller caller)
-{
-	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
-	NMActRequest *req;
-
-	g_return_if_fail (IS_ACTIVATING_STATE (nm_device_get_state (device)));
-
-	req = nm_device_get_act_request (device);
-	g_assert (req);
-
-	if (!nm_modem_connection_secrets_updated (priv->modem,
-                                              req,
-                                              connection,
-                                              updated_settings,
-                                              caller)) {
-		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NO_SECRETS);
-		return;
-	}
-
-	/* PPP handles stuff itself... */
-	if (caller == SECRETS_CALLER_PPP)
-		return;
-
-	/* Otherwise, on success for modem secrets we need to schedule stage1 again */
-	g_return_if_fail (nm_device_get_state (device) == NM_DEVICE_STATE_NEED_AUTH);
-	nm_device_activate_schedule_stage1_device_prepare (device);
 }
 
 static gboolean
@@ -365,7 +338,8 @@ set_modem (NMDeviceModem *self, NMModem *modem)
 	g_signal_connect (modem, NM_MODEM_PPP_FAILED, G_CALLBACK (ppp_failed), self);
 	g_signal_connect (modem, NM_MODEM_PREPARE_RESULT, G_CALLBACK (modem_prepare_result), self);
 	g_signal_connect (modem, NM_MODEM_IP4_CONFIG_RESULT, G_CALLBACK (modem_ip4_config_result), self);
-	g_signal_connect (modem, NM_MODEM_NEED_AUTH, G_CALLBACK (modem_need_auth), self);
+	g_signal_connect (modem, NM_MODEM_AUTH_REQUESTED, G_CALLBACK (modem_auth_requested), self);
+	g_signal_connect (modem, NM_MODEM_AUTH_RESULT, G_CALLBACK (modem_auth_result), self);
 	g_signal_connect (modem, "notify::" NM_MODEM_ENABLED, G_CALLBACK (modem_enabled_cb), self);
 }
 
@@ -426,7 +400,6 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 
 	device_class->get_generic_capabilities = real_get_generic_capabilities;
 	device_class->get_best_auto_connection = real_get_best_auto_connection;
-	device_class->connection_secrets_updated = real_connection_secrets_updated;
 	device_class->check_connection_compatible = real_check_connection_compatible;
 	device_class->hw_is_up = real_hw_is_up;
 	device_class->hw_bring_up = real_hw_bring_up;
