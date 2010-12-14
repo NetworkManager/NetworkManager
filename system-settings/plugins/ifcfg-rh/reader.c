@@ -1895,11 +1895,8 @@ parse_wpa_psk (shvarFile *ifcfg,
 	if (!psk)
 		psk = svGetValue (ifcfg, "WPA_PSK", TRUE);
 
-	if (!psk) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-		             "Missing WPA_PSK for WPA-PSK key management");
+	if (!psk)
 		return NULL;
-	}
 
 	p = psk;
 
@@ -2516,10 +2513,10 @@ make_wpa_setting (shvarFile *ifcfg,
 
 	if (!strcmp (value, "WPA-PSK")) {
 		psk = parse_wpa_psk (ifcfg, file, ssid, error);
-		if (!psk)
-			goto error;
-		g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_PSK, psk, NULL);
-		g_free (psk);
+		if (psk) {
+			g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_PSK, psk, NULL);
+			g_free (psk);
+		}
 
 		if (adhoc)
 			g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-none", NULL);
