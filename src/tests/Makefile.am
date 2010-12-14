@@ -39,6 +39,12 @@ test_policy_hosts_LDADD = \
 	$(top_builddir)/src/libtest-policy-hosts.la \
 	$(GLIB_LIBS)
 
+####### secret agent interface test #######
+
+EXTRA_DIST = test-secret-agent.py
+
+###########################################
+
 if WITH_TESTS
 
 check-local: test-dhcp-options test-policy-hosts
