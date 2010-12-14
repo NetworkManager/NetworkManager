@@ -23,6 +23,11 @@
 
 #include <glib.h>
 #include <glib-object.h>
+#include <dbus/dbus-glib.h>
+#include <dbus/dbus-glib-lowlevel.h>
+
+#include <nm-connection.h>
+#include "nm-dbus-manager.h"
 
 #define NM_TYPE_SECRET_AGENT            (nm_secret_agent_get_type ())
 #define NM_SECRET_AGENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SECRET_AGENT, NMSecretAgent))
@@ -41,14 +46,30 @@ typedef struct {
 
 GType nm_secret_agent_get_type (void);
 
-NMSecretAgent *nm_secret_agent_new (const char *owner,
+NMSecretAgent *nm_secret_agent_new (NMDBusManager *dbus_mgr,
+                                    const char *owner,
                                     const char *identifier,
                                     uid_t owner_uid);
+
+const char *nm_secret_agent_get_description (NMSecretAgent *agent);
 
 const char *nm_secret_agent_get_dbus_owner (NMSecretAgent *agent);
 
 const char *nm_secret_agent_get_identifier (NMSecretAgent *agent);
 
 uid_t       nm_secret_agent_get_owner_uid  (NMSecretAgent *agent);
+
+guint32     nm_secret_agent_get_hash       (NMSecretAgent *agent);
+
+gpointer    nm_secret_agent_get_secrets    (NMSecretAgent *agent,
+                                            NMConnection *connection,
+                                            const char *setting_name,
+                                            const char *hint,
+                                            gboolean request_new,
+                                            DBusGProxyCallNotify done_callback,
+                                            gpointer done_callback_data);
+
+void        nm_secret_agent_cancel_secrets (NMSecretAgent *agent,
+                                            gpointer call_id);
 
 #endif /* NM_SECRET_AGENT_H */

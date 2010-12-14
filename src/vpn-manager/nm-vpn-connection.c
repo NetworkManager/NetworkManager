@@ -781,32 +781,6 @@ nm_vpn_connection_disconnect (NMVPNConnection *connection,
 
 /******************************************************************************/
 
-#if 0
-static gboolean
-secrets_update_setting (NMSecretsProviderInterface *interface,
-                        const char *setting_name,
-                        GHashTable *new)
-{
-	NMVPNConnection *self = NM_VPN_CONNECTION (interface);
-	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
-	GError *error = NULL;
-
-	g_return_val_if_fail (priv->connection != NULL, FALSE);
-
-	if (strcmp (setting_name, NM_SETTING_VPN_SETTING_NAME))
-		return FALSE;
-
-	if (!nm_connection_update_secrets (priv->connection, NM_SETTING_VPN_SETTING_NAME, new, &error)) {
-		nm_log_warn (LOGD_VPN, "Failed to update VPN secrets: %d %s",
-		             error ? error->code : -1,
-		             error && error->message ? error->message : "(none)");
-		g_clear_error (&error);
-		return FALSE;
-	}
-	return TRUE;
-}
-#endif
-
 static void
 cancel_get_secrets (NMVPNConnection *self)
 {

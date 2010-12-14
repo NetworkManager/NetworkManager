@@ -92,63 +92,6 @@ enum {
 
 /*******************************************************************/
 
-#if 0
-static gboolean
-secrets_update_setting (NMSecretsProviderInterface *interface,
-                        const char *setting_name,
-                        GHashTable *new)
-{
-	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (interface);
-	NMSetting *setting = NULL;
-	GError *error = NULL;
-	GType type;
-
-	g_return_val_if_fail (priv->connection != NULL, FALSE);
-
-	/* Check whether a complete & valid NMSetting object was returned.  If
-	 * yes, replace the setting object in the connection.  If not, just try
-	 * updating the secrets.
-	 */
-	type = nm_connection_lookup_setting_type (setting_name);
-	if (type == 0)
-		return FALSE;
-
-	setting = nm_setting_new_from_hash (type, new);
-	if (setting) {
-		NMSetting *s_8021x = NULL;
-		GSList *all_settings = NULL;
-
-		/* The wireless-security setting might need the 802.1x setting in
-		 * the all_settings argument of the verify function. Ugh.
-		 */
-		s_8021x = nm_connection_get_setting (priv->connection, NM_TYPE_SETTING_802_1X);
-		if (s_8021x)
-			all_settings = g_slist_append (all_settings, s_8021x);
-
-		if (!nm_setting_verify (setting, all_settings, NULL)) {
-			/* Just try updating secrets */
-			g_object_unref (setting);
-			setting = NULL;
-		}
-
-		g_slist_free (all_settings);
-	}
-
-	if (setting)
-		nm_connection_add_setting (priv->connection, setting);
-	else {
-		if (!nm_connection_update_secrets (priv->connection, setting_name, new, &error)) {
-			nm_log_warn (LOGD_DEVICE, "Failed to update connection secrets: %d %s",
-			             error ? error->code : -1,
-			             error && error->message ? error->message : "(none)");
-			g_clear_error (&error);
-		}
-	}
-
-	return TRUE;
-}
-#endif
-
 static void
 get_secrets_cb (NMAgentManager *manager,
                 guint32 call_id,
