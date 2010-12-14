@@ -192,6 +192,7 @@ validate_identifier (const char *identifier, GError **error)
 				                 "Identifier contains two '.' characters in sequence");
 			return FALSE;
 		}
+		p++;
 	}
 
 	return TRUE;
