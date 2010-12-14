@@ -41,7 +41,7 @@ test_policy_hosts_LDADD = \
 
 if WITH_TESTS
 
-check-local: test-dhcp-options
+check-local: test-dhcp-options test-policy-hosts
 	$(abs_builddir)/test-dhcp-options
 	$(abs_builddir)/test-policy-hosts
 
