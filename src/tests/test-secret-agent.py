@@ -59,9 +59,15 @@ def main():
     mainloop = gobject.MainLoop()
 
     gobject.idle_add(register, proxy)
-    gobject.timeout_add_seconds(10, unregister, proxy, mainloop)
     print "Running test secret agent" 
-    mainloop.run()
+
+    try:
+        mainloop.run()
+    except KeyboardInterrupt, e:
+        pass
+
+    print "Unregistering..."
+    unregister(proxy, mainloop);
 
 if __name__ == '__main__':
     main()
