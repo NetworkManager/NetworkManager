@@ -18,7 +18,8 @@ BUILT_SOURCES = \
 	nm-ip4-config-bindings.h \
 	nm-dhcp4-config-bindings.h \
 	nm-ip6-config-bindings.h \
-	nm-dhcp6-config-bindings.h
+	nm-dhcp6-config-bindings.h \
+	nm-secret-agent-glue.h
 
 #####################################################
 # Deprecated original libnm_glib bits
@@ -76,7 +77,8 @@ libnminclude_HEADERS = \
 	nm-ip6-config.h \
 	nm-dhcp6-config.h \
 	nm-remote-connection.h \
-	nm-remote-settings.h
+	nm-remote-settings.h \
+	nm-secret-agent.h
 
 libnm_glib_la_SOURCES = \
 	nm-object.c \
@@ -105,7 +107,8 @@ libnm_glib_la_SOURCES = \
 	nm-dhcp6-config.c \
 	nm-remote-connection.c \
 	nm-remote-connection-private.h \
-	nm-remote-settings.c
+	nm-remote-settings.c \
+	nm-secret-agent.c
 
 libnm_glib_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
@@ -177,6 +180,9 @@ nm-ip6-config-bindings.h: $(top_srcdir)/introspection/nm-ip6-config.xml
 
 nm-dhcp6-config-bindings.h: $(top_srcdir)/introspection/nm-dhcp6-config.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_dhcp6_config --mode=glib-client --output=$@ $<
+
+nm-secret-agent-glue.h: $(top_srcdir)/introspection/nm-secret-agent.xml
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_secret_agent --mode=glib-server --output=$@ $<
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libnm-glib.pc libnm-glib-vpn.pc
