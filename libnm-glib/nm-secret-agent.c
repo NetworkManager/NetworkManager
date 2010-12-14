@@ -462,6 +462,7 @@ validate_identifier (const char *identifier)
 			return FALSE;
 		if ((*p == '.') && (*(p + 1) == '.'))
 			return FALSE;
+		p++;
 	}
 
 	return TRUE;
