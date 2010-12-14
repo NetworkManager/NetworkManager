@@ -588,14 +588,17 @@ dispose (GObject *object)
 }
 
 static void
-nm_agent_manager_class_init (NMAgentManagerClass *config_class)
+nm_agent_manager_class_init (NMAgentManagerClass *agent_manager_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (agent_manager_class);
 
-	g_type_class_add_private (config_class, sizeof (NMAgentManagerPrivate));
+	g_type_class_add_private (agent_manager_class, sizeof (NMAgentManagerPrivate));
 
 	/* virtual methods */
 	object_class->dispose = dispose;
+
+	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (agent_manager_class),
+	                                 &dbus_glib_nm_agent_manager_object_info);
 
 	dbus_g_error_domain_register (NM_AGENT_MANAGER_ERROR,
 	                              NM_DBUS_INTERFACE_AGENT_MANAGER,
