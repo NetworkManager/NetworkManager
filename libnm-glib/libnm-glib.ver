@@ -95,6 +95,10 @@ global:
 	nm_dhcp4_config_get_options;
 	nm_dhcp4_config_get_type;
 	nm_dhcp4_config_new;
+	nm_dhcp6_config_get_one_option;
+	nm_dhcp6_config_get_options;
+	nm_dhcp6_config_get_type;
+	nm_dhcp6_config_new;
 	nm_exported_connection_export;
 	nm_exported_connection_get_type;
 	nm_exported_connection_new;
