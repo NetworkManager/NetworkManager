@@ -285,7 +285,7 @@ set_rdnss_timeout (NMIP6Device *device)
 				nm_log_dbg (LOGD_IP6, "(%s): removing expired RA-provided nameserver %s",
 				            device->iface, buf);
 			}
-			g_array_remove_index_fast (device->rdnss_servers, i--);
+			g_array_remove_index (device->rdnss_servers, i--);
 			continue;
 		}
 
@@ -577,19 +577,106 @@ struct nd_opt_rdnss {
 	/* followed by one or more IPv6 addresses */
 } __attribute__ ((packed));
 
+static gboolean
+process_nduseropt_rdnss (NMIP6Device *device, struct nd_opt_hdr *opt)
+{
+	size_t opt_len;
+	struct nd_opt_rdnss *rdnss_opt;
+	time_t now = time (NULL);
+	struct in6_addr *addr;
+	GArray *new_servers;
+	NMIP6RDNSS server, *cur_server;
+	gboolean changed = FALSE;
+	guint i;
+
+	opt_len = opt->nd_opt_len;
+
+	if (opt_len < 3 || (opt_len & 1) == 0)
+		return FALSE;
+
+	rdnss_opt = (struct nd_opt_rdnss *) opt;
+
+	new_servers = g_array_new (FALSE, FALSE, sizeof (NMIP6RDNSS));
+
+	/* Pad the DNS server expiry somewhat to give a bit of slack in cases
+	 * where one RA gets lost or something (which can happen on unreliable
+	 * links like WiFi where certain types of frames are not retransmitted).
+	 * Note that 0 has special meaning and is therefore not adjusted.
+	 */
+	server.expires = ntohl (rdnss_opt->nd_opt_rdnss_lifetime);
+	if (server.expires > 0)
+		server.expires += now + 10;
+
+	for (addr = (struct in6_addr *) (rdnss_opt + 1); opt_len >= 2; addr++, opt_len -= 2) {
+		char buf[INET6_ADDRSTRLEN + 1];
+
+		if (!inet_ntop (AF_INET6, addr, buf, sizeof (buf)))
+			strcpy(buf, "[invalid]");
+
+		for (i = 0; i < device->rdnss_servers->len; i++) {
+			cur_server = &(g_array_index (device->rdnss_servers, NMIP6RDNSS, i));
+
+			if (!IN6_ARE_ADDR_EQUAL (addr, &cur_server->addr))
+				continue;
+
+			cur_server->expires = server.expires;
+
+			if (server.expires > 0) {
+				nm_log_dbg (LOGD_IP6, "(%s): refreshing RA-provided nameserver %s (expires in %d seconds)",
+				            device->iface, buf,
+				            server.expires - now);
+				break;
+			}
+
+			nm_log_dbg (LOGD_IP6, "(%s): removing RA-provided nameserver %s on router request",
+			            device->iface, buf);
+
+			g_array_remove_index (device->rdnss_servers, i);
+			changed = TRUE;
+			break;
+		}
+
+		if (server.expires == 0)
+			continue;
+		if (i < device->rdnss_servers->len)
+			continue;
+
+		nm_log_dbg (LOGD_IP6, "(%s): found RA-provided nameserver %s (expires in %d seconds)",
+		            device->iface, buf, server.expires - now);
+
+		server.addr = *addr;
+		g_array_append_val (new_servers, server);
+	}
+
+	/* New servers must be added in the order they are listed in the
+	 * RA option and before any existing servers.
+	 *
+	 * Note: This is the place to remove servers if we want to cap the
+	 *       number of resolvers. The RFC states that the one to expire
+	 *       first of the existing servers should be removed.
+	 */
+	if (new_servers->len) {
+		g_array_prepend_vals (device->rdnss_servers,
+		                      new_servers->data, new_servers->len);
+		changed = TRUE;
+	}
+
+	g_array_free (new_servers, TRUE);
+
+	/* Timeouts may have changed even if IPs didn't */
+	set_rdnss_timeout (device);
+
+	return changed;
+}
+
 static NMIP6Device *
 process_nduseropt (NMIP6Manager *manager, struct nl_msg *msg)
 {
 	NMIP6Device *device;
 	struct nduseroptmsg *ndmsg;
 	struct nd_opt_hdr *opt;
-	guint opts_len, i;
-	time_t now = time (NULL);
-	struct nd_opt_rdnss *rdnss_opt;
-	struct in6_addr *addr;
-	GArray *servers;
-	NMIP6RDNSS server, *sa, *sb;
-	gboolean changed;
+	guint opts_len;
+	gboolean changed = FALSE;
 
 	nm_log_dbg (LOGD_IP6, "processing netlink nduseropt message");
 
@@ -608,8 +695,6 @@ process_nduseropt (NMIP6Manager *manager, struct nl_msg *msg)
 		return NULL;
 	}
 
-	servers = g_array_new (FALSE, FALSE, sizeof (NMIP6RDNSS));
-
 	opt = (struct nd_opt_hdr *) (ndmsg + 1);
 	opts_len = ndmsg->nduseropt_opts_len;
 
@@ -619,65 +704,15 @@ process_nduseropt (NMIP6Manager *manager, struct nl_msg *msg)
 		if (nd_opt_len == 0 || opts_len < (nd_opt_len << 3))
 			break;
 
-		if (opt->nd_opt_type != ND_OPT_RDNSS)
-			goto next;
-
-		if (nd_opt_len < 3 || (nd_opt_len & 1) == 0)
-			goto next;
-
-		rdnss_opt = (struct nd_opt_rdnss *) opt;
-
-		/* Pad the DNS server expiry somewhat to give a bit of slack in cases
-		 * where one RA gets lost or something (which can happen on unreliable
-		 * links like wifi where certain types of frames are not retransmitted).
-		 */
-		server.expires = now + ntohl (rdnss_opt->nd_opt_rdnss_lifetime) + 10;
-
-		for (addr = (struct in6_addr *) (rdnss_opt + 1); nd_opt_len >= 2; addr++, nd_opt_len -= 2) {
-			char buf[INET6_ADDRSTRLEN + 1];
-
-			if (inet_ntop (AF_INET6, addr, buf, sizeof (buf))) {
-				nm_log_dbg (LOGD_IP6, "(%s): found RA-provided nameserver %s (expires in %d seconds)",
-				            device->iface, buf,
-				            ntohl (rdnss_opt->nd_opt_rdnss_lifetime));
-			}
-
-			server.addr = *addr;
-			g_array_append_val (servers, server);
+		switch (opt->nd_opt_type) {
+		case ND_OPT_RDNSS:
+			changed = process_nduseropt_rdnss (device, opt);
+			break;
 		}
 
-	next:
 		opts_len -= opt->nd_opt_len << 3;
 		opt = (struct nd_opt_hdr *) ((uint8_t *) opt + (opt->nd_opt_len << 3));
 	}
-
-	/* See if anything (other than expiration time) changed */
-	if (servers->len != device->rdnss_servers->len)
-		changed = TRUE;
-	else {
-		for (i = 0; i < servers->len; i++) {
-			sa = &(g_array_index (servers, NMIP6RDNSS, i));
-			sb = &(g_array_index (device->rdnss_servers, NMIP6RDNSS, i));
-			if (IN6_ARE_ADDR_EQUAL (&sa->addr, &sb->addr) == FALSE) {
-				changed = TRUE;
-				break;
-			}
-		}
-		changed = FALSE;
-	}
-
-	if (changed) {
-		nm_log_dbg (LOGD_IP6, "(%s): RA-provided nameservers changed", device->iface);
-	}
-
-	/* Always copy in new servers (even if unchanged) to get their updated
-	 * expiration times.
-	 */
-	g_array_free (device->rdnss_servers, TRUE);
-	device->rdnss_servers = servers;
-
-	/* Timeouts may have changed even if IPs didn't */
-	set_rdnss_timeout (device);
 
 	if (changed)
 		return device;
