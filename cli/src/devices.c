@@ -184,9 +184,10 @@ static NmcOutputField nmc_fields_dev_wifi_list[] = {
 	{"RSN-FLAGS",  N_("RSN-FLAGS"),   25, NULL, 0},  /* 9 */
 	{"DEVICE",     N_("DEVICE"),      10, NULL, 0},  /* 10 */
 	{"ACTIVE",     N_("ACTIVE"),       8, NULL, 0},  /* 11 */
+	{"DBUS-PATH",  N_("DBUS-PATH"),   46, NULL, 0},  /* 12 */
 	{NULL,         NULL,               0, NULL, 0}
 };
-#define NMC_FIELDS_DEV_WIFI_LIST_ALL           "SSID,BSSID,MODE,FREQ,RATE,SIGNAL,SECURITY,WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE"
+#define NMC_FIELDS_DEV_WIFI_LIST_ALL           "SSID,BSSID,MODE,FREQ,RATE,SIGNAL,SECURITY,WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,DBUS-PATH"
 #define NMC_FIELDS_DEV_WIFI_LIST_COMMON        "SSID,BSSID,MODE,FREQ,RATE,SIGNAL,SECURITY,ACTIVE"
 #define NMC_FIELDS_DEV_WIFI_LIST_FOR_DEV_LIST  "NAME,"NMC_FIELDS_DEV_WIFI_LIST_COMMON
 
@@ -431,6 +432,7 @@ detail_access_point (gpointer data, gpointer user_data)
 	info->nmc->allowed_fields[9].value = rsn_flags_str;
 	info->nmc->allowed_fields[10].value = info->device;
 	info->nmc->allowed_fields[11].value = active ? _("yes") : _("no");
+	info->nmc->allowed_fields[12].value = nm_object_get_path (NM_OBJECT (ap));
 
 	info->nmc->print_fields.flags &= ~NMC_PF_FLAG_MAIN_HEADER_ADD & ~NMC_PF_FLAG_MAIN_HEADER_ONLY & ~NMC_PF_FLAG_FIELD_NAMES; /* Clear header flags */
 	print_fields (info->nmc->print_fields, info->nmc->allowed_fields);
