@@ -30,7 +30,6 @@
 
 #include "nm-logging.h"
 #include "nm-policy-hostname.h"
-#include "nm-policy-hosts.h"
 
 /************************************************************************/
 
@@ -206,23 +205,16 @@ hostname_thread_is_dead (HostnameThread *ht)
 /************************************************************************/
 
 #define FALLBACK_HOSTNAME4 "localhost.localdomain"
-#define FALLBACK_HOSTNAME6 "localhost6.localdomain6"
 
 gboolean
-nm_policy_set_system_hostname (const char *new_hostname,
-                               const char *ip4_addr,
-                               const char *ip6_addr,
-                               const char *msg)
+nm_policy_set_system_hostname (const char *new_hostname, const char *msg)
 {
 	char old_hostname[HOST_NAME_MAX + 1];
-	int ret = 0;
 	const char *name;
-	gboolean set_hostname = TRUE, changed = FALSE, old_valid = TRUE;
+	int ret;
 
 	if (new_hostname)
 		g_warn_if_fail (strlen (new_hostname));
-
-	name = (new_hostname && strlen (new_hostname)) ? new_hostname : FALLBACK_HOSTNAME4;
 
 	old_hostname[HOST_NAME_MAX] = '\0';
 	errno = 0;
@@ -230,50 +222,22 @@ nm_policy_set_system_hostname (const char *new_hostname,
 	if (ret != 0) {
 		nm_log_warn (LOGD_DNS, "couldn't get the system hostname: (%d) %s",
 		             errno, strerror (errno));
-		old_valid = FALSE;
 	} else {
 		/* Don't set the hostname if it isn't actually changing */
 		if (   (new_hostname && !strcmp (old_hostname, new_hostname))
 		    || (!new_hostname && !strcmp (old_hostname, FALLBACK_HOSTNAME4)))
-			set_hostname = FALSE;
-
-		if (old_hostname[0] == '\0')
-			old_valid = FALSE;
-	}
-
-	if (set_hostname) {
-		nm_log_info (LOGD_DNS, "Setting system hostname to '%s' (%s)", name, msg);
-		ret = sethostname (name, strlen (name));
-		if (ret != 0) {
-			nm_log_warn (LOGD_DNS, "couldn't set the system hostname to '%s': (%d) %s",
-			             name, errno, strerror (errno));
 			return FALSE;
-		}
 	}
 
-	/* But even if the hostname isn't changing, always try updating /etc/hosts
-	 * just in case the hostname changed while NM wasn't running; we need to
-	 * make sure that /etc/hosts has valid mappings for '127.0.0.1' and the
-	 * current system hostname.  If those exist,
-	 * nm_policy_hosts_update_etc_hosts() will just return and won't touch
-	 * /etc/hosts at all.
-	 */
-	if (!nm_policy_hosts_update_etc_hosts (name,
-	                                       old_valid ? old_hostname : NULL,
-	                                       FALLBACK_HOSTNAME4,
-	                                       FALLBACK_HOSTNAME6,
-	                                       ip4_addr,
-	                                       ip6_addr,
-	                                       &changed)) {
-		/* error updating /etc/hosts; fallback to localhost.localdomain */
-		nm_log_info (LOGD_DNS, "Setting system hostname to '" FALLBACK_HOSTNAME4 "' (error updating /etc/hosts)");
-		ret = sethostname (FALLBACK_HOSTNAME4, strlen (FALLBACK_HOSTNAME4));
-		if (ret != 0) {
-			nm_log_warn (LOGD_DNS, "couldn't set the fallback system hostname (%s): (%d) %s",
-			             FALLBACK_HOSTNAME4, errno, strerror (errno));
-		}
+	name = (new_hostname && strlen (new_hostname)) ? new_hostname : FALLBACK_HOSTNAME4;
+
+	nm_log_info (LOGD_DNS, "Setting system hostname to '%s' (%s)", name, msg);
+	ret = sethostname (name, strlen (name));
+	if (ret != 0) {
+		nm_log_warn (LOGD_DNS, "couldn't set the system hostname to '%s': (%d) %s",
+		             name, errno, strerror (errno));
 	}
 
-	return changed;
+	return (ret == 0);
 }
 

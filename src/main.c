@@ -49,6 +49,7 @@
 #include "nm-netlink-monitor.h"
 #include "nm-vpn-manager.h"
 #include "nm-logging.h"
+#include "nm-policy-hosts.h"
 
 #if !defined(NM_DIST_VERSION)
 # define NM_DIST_VERSION VERSION
@@ -712,6 +713,9 @@ main (int argc, char *argv[])
 		nm_log_err (LOGD_CORE, "failed to start the dbus service.");
 		goto done;
 	}
+
+	/* Clean leftover "# Added by NetworkManager" entries from /etc/hosts */
+	nm_policy_hosts_clean_etc_hosts ();
 
 	nm_manager_start (manager);
 
