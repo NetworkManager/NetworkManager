@@ -518,6 +518,7 @@ src/logging/Makefile
 src/dns-manager/Makefile
 src/vpn-manager/Makefile
 src/dhcp-manager/Makefile
+src/dhcp-manager/tests/Makefile
 src/ip6-manager/Makefile
 src/supplicant-manager/Makefile
 src/supplicant-manager/tests/Makefile
