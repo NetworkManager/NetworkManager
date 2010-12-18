@@ -39,6 +39,7 @@
 #include "nm-dhcp-dhclient.h"
 #include "nm-utils.h"
 #include "nm-logging.h"
+#include "nm-dhcp-dhclient-utils.h"
 
 G_DEFINE_TYPE (NMDHCPDhclient, nm_dhcp_dhclient, NM_TYPE_DHCP_CLIENT)
 
@@ -302,12 +303,6 @@ out:
 }
 
 
-#define DHCP_CLIENT_ID_TAG "send dhcp-client-identifier"
-#define DHCP_CLIENT_ID_FORMAT DHCP_CLIENT_ID_TAG " \"%s\"; # added by NetworkManager"
-#define DHCP_CLIENT_ID_FORMAT_OCTETS DHCP_CLIENT_ID_TAG " %s; # added by NetworkManager"
-
-#define DHCP_HOSTNAME_TAG "send host-name"
-#define DHCP_HOSTNAME_FORMAT DHCP_HOSTNAME_TAG " \"%s\"; # added by NetworkManager"
 
 static gboolean
 merge_dhclient_config (const char *iface,
@@ -318,105 +313,27 @@ merge_dhclient_config (const char *iface,
                        const char *orig_path,
                        GError **error)
 {
-	GString *new_contents;
-	char *orig_contents = NULL;
+	char *orig = NULL, *new;
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (iface != NULL, FALSE);
 	g_return_val_if_fail (conf_file != NULL, FALSE);
 
-	new_contents = g_string_new (_("# Created by NetworkManager\n"));
-
 	if (g_file_test (orig_path, G_FILE_TEST_EXISTS)) {
 		GError *read_error = NULL;
 
-		if (!g_file_get_contents (orig_path, &orig_contents, NULL, &read_error)) {
+		if (!g_file_get_contents (orig_path, &orig, NULL, &read_error)) {
 			nm_log_warn (LOGD_DHCP, "(%s): error reading dhclient configuration %s: %s",
 			             iface, orig_path, read_error->message);
 			g_error_free (read_error);
 		}
 	}
 
-	/* Add existing options, if any, but ignore stuff NM will replace. */
-	if (orig_contents) {
-		char **lines = NULL, **line;
+	new = nm_dhcp_dhclient_create_config (iface, s_ip4, anycast_addr, hostname, orig_path, orig);
+	g_assert (new);
+	success = g_file_set_contents (conf_file, new, -1, error);
+	g_free (new);
 
-		g_string_append_printf (new_contents, _("# Merged from %s\n\n"), orig_path);
-
-		lines = g_strsplit_set (orig_contents, "\n\r", 0);
-		for (line = lines; lines && *line; line++) {
-			gboolean ignore = FALSE;
-
-			if (!strlen (g_strstrip (*line)))
-				continue;
-
-			if (   s_ip4
-			    && nm_setting_ip4_config_get_dhcp_client_id (s_ip4)
-			    && !strncmp (*line, DHCP_CLIENT_ID_TAG, strlen (DHCP_CLIENT_ID_TAG)))
-				ignore = TRUE;
-
-			if (   s_ip4
-			    && hostname
-			    && !strncmp (*line, DHCP_HOSTNAME_TAG, strlen (DHCP_HOSTNAME_TAG)))
-				ignore = TRUE;
-
-			if (!ignore) {
-				g_string_append (new_contents, *line);
-				g_string_append_c (new_contents, '\n');
-			}
-		}
-
-		if (lines)
-			g_strfreev (lines);
-		g_free (orig_contents);
-	} else
-		g_string_append_c (new_contents, '\n');
-
-	/* Add NM options from connection */
-	if (s_ip4) {
-		const char *tmp;
-
-		tmp = nm_setting_ip4_config_get_dhcp_client_id (s_ip4);
-		if (tmp) {
-			gboolean is_octets = TRUE;
-			const char *p = tmp;
-
-			while (*p) {
-				if (!isxdigit (*p) && (*p != ':')) {
-					is_octets = FALSE;
-					break;
-				}
-				p++;
-			}
-
-			/* If the client ID is just hex digits and : then don't use quotes,
-			 * because dhclient expects either a quoted ASCII string, or a byte
-			 * array formated as hex octets separated by :
-			 */
-			if (is_octets)
-				g_string_append_printf (new_contents, DHCP_CLIENT_ID_FORMAT_OCTETS "\n", tmp);
-			else
-				g_string_append_printf (new_contents, DHCP_CLIENT_ID_FORMAT "\n", tmp);
-		}
-
-		if (hostname)
-			g_string_append_printf (new_contents, DHCP_HOSTNAME_FORMAT "\n", hostname);
-	}
-
-	if (anycast_addr) {
-		g_string_append_printf (new_contents, "interface \"%s\" {\n"
-		                        " initial-interval 1; \n"
-		                        " anycast-mac ethernet %02x:%02x:%02x:%02x:%02x:%02x;\n"
-		                        "}\n",
-		                        iface,
-		                        anycast_addr[0], anycast_addr[1],
-		                        anycast_addr[2], anycast_addr[3],
-		                        anycast_addr[4], anycast_addr[5]);
-	}
-
-	success = g_file_set_contents (conf_file, new_contents->str, -1, error);
-
-	g_string_free (new_contents, TRUE);
 	return success;
 }
 
