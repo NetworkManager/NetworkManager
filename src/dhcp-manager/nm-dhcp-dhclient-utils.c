@@ -179,12 +179,15 @@ nm_dhcp_dhclient_create_config (const char *interface,
 	                 "option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n");
 	g_string_append (new_contents,
 	                 "option ms-classless-static-routes code 249 = array of unsigned integer 8;\n");
+	/* Web Proxy Auto-Discovery option (bgo #368423) */
+	g_string_append (new_contents, "option wpad code 252 = string;\n");
 
 	g_string_append_c (new_contents, '\n');
 
 	/* Everything we want to request from the DHCP server */
 	add_also_request (alsoreq, "rfc3442-classless-static-routes");
 	add_also_request (alsoreq, "ms-classless-static-routes");
+	add_also_request (alsoreq, "wpad");
 	add_also_request (alsoreq, "ntp-servers");
 
 	/* And add it to the dhclient configuration */

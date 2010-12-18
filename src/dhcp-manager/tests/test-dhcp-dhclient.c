@@ -68,9 +68,11 @@ static const char *orig_missing_expected = \
 	"\n"
 	"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
 	"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
+	"option wpad code 252 = string;\n"
 	"\n"
 	"also request rfc3442-classless-static-routes;\n"
 	"also request ms-classless-static-routes;\n"
+	"also request wpad;\n"
 	"also request ntp-servers;\n"
 	"\n";
 
@@ -97,9 +99,11 @@ static const char *override_client_id_expected = \
 	"\n"
 	"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
 	"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
+	"option wpad code 252 = string;\n"
 	"\n"
 	"also request rfc3442-classless-static-routes;\n"
 	"also request ms-classless-static-routes;\n"
+	"also request wpad;\n"
 	"also request ntp-servers;\n"
 	"\n";
 
@@ -126,9 +130,11 @@ static const char *override_hostname_expected = \
 	"\n"
 	"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
 	"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
+	"option wpad code 252 = string;\n"
 	"\n"
 	"also request rfc3442-classless-static-routes;\n"
 	"also request ms-classless-static-routes;\n"
+	"also request wpad;\n"
 	"also request ntp-servers;\n"
 	"\n";
 
@@ -155,11 +161,13 @@ static const char *existing_alsoreq_expected = \
 	"\n"
 	"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
 	"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
+	"option wpad code 252 = string;\n"
 	"\n"
 	"also request something;\n"
 	"also request another-thing;\n"
 	"also request rfc3442-classless-static-routes;\n"
 	"also request ms-classless-static-routes;\n"
+	"also request wpad;\n"
 	"also request ntp-servers;\n"
 	"\n";
 
