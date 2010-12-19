@@ -183,6 +183,43 @@ test_existing_alsoreq (void)
 
 /*******************************************/
 
+static const char *existing_multiline_alsoreq_orig = \
+	"also request something another-thing yet-another-thing\n"
+	"    foobar baz blah;\n"
+	;
+
+static const char *existing_multiline_alsoreq_expected = \
+	"# Created by NetworkManager\n"
+	"# Merged from /path/to/dhclient.conf\n"
+	"\n"
+	"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
+	"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
+	"option wpad code 252 = string;\n"
+	"\n"
+	"also request something;\n"
+	"also request another-thing;\n"
+	"also request yet-another-thing;\n"
+	"also request foobar;\n"
+	"also request baz;\n"
+	"also request blah;\n"
+	"also request rfc3442-classless-static-routes;\n"
+	"also request ms-classless-static-routes;\n"
+	"also request wpad;\n"
+	"also request ntp-servers;\n"
+	"\n";
+
+static void
+test_existing_multiline_alsoreq (void)
+{
+	test_config (existing_multiline_alsoreq_orig, existing_multiline_alsoreq_expected,
+	             NULL,
+	             NULL,
+	             "eth0",
+	             NULL);
+}
+
+/*******************************************/
+
 #if GLIB_CHECK_VERSION(2,25,12)
 typedef GTestFixtureFunc TCFunc;
 #else
@@ -205,6 +242,7 @@ int main (int argc, char **argv)
 	g_test_suite_add (suite, TESTCASE (test_override_client_id, NULL));
 	g_test_suite_add (suite, TESTCASE (test_override_hostname, NULL));
 	g_test_suite_add (suite, TESTCASE (test_existing_alsoreq, NULL));
+	g_test_suite_add (suite, TESTCASE (test_existing_multiline_alsoreq, NULL));
 
 	return g_test_run ();
 }
