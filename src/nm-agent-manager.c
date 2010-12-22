@@ -351,6 +351,8 @@ struct _Request {
 
 	guint32 idle_id;
 
+	GHashTable *settings_secrets;
+
 	NMAgentSecretsResultFunc callback;
 	gpointer callback_data;
 	gpointer other_data2;
@@ -405,11 +407,59 @@ request_free (Request *req)
 	g_object_unref (req->connection);
 	g_free (req->setting_name);
 	g_free (req->hint);
+	if (req->settings_secrets)
+		g_hash_table_unref (req->settings_secrets);
 	memset (req, 0, sizeof (Request));
 	g_free (req);
 }
 
 static void request_next (Request *req);
+
+static void
+destroy_gvalue (gpointer data)
+{
+	GValue *value = (GValue *) data;
+
+	g_value_unset (value);
+	g_slice_free (GValue, value);
+}
+
+static void
+merge_secrets (GHashTable *src, GHashTable *dest)
+{
+	GHashTableIter iter;
+	gpointer key, data;
+
+	g_hash_table_iter_init (&iter, src);
+	while (g_hash_table_iter_next (&iter, &key, &data)) {
+		const char *setting_name = key;
+		GHashTable *dstsetting;
+		GHashTableIter subiter;
+		gpointer subkey, subval;
+
+		/* Find the corresponding setting in the merged secrets hash, or create
+		 * it if it doesn't exist.
+		 */
+		dstsetting = g_hash_table_lookup (dest, setting_name);
+		if (!dstsetting) {
+			dstsetting = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) destroy_gvalue);
+			g_hash_table_insert (dest, (gpointer) setting_name, dstsetting);
+		}
+
+		/* And copy in each secret from src */
+		g_hash_table_iter_init (&subiter, (GHashTable *) data);
+		while (g_hash_table_iter_next (&subiter, &subkey, &subval)) {
+			const char *keyname = subkey;
+			GValue *srcval = subval, *dstval;
+
+			dstval = g_slice_new0 (GValue);
+			g_value_init (dstval, G_VALUE_TYPE (srcval));
+			g_value_copy (srcval, dstval);
+
+			g_hash_table_insert (dstsetting, (gpointer) keyname, dstval);
+		}
+	}
+}
 
 static void
 request_secrets_done_cb (DBusGProxy *proxy,
@@ -459,8 +509,23 @@ request_secrets_done_cb (DBusGProxy *proxy,
 			    nm_secret_agent_get_description (agent),
 			    req, req->setting_name);
 
-	/* Success! */
-	req->complete_callback (req, secrets, NULL, req->complete_callback_data);
+	/* Success! If we got some secrets from the settings service, merge those
+	 * with the ones from the secret agent.
+	 */
+	if (req->settings_secrets) {
+		GHashTable *merged;
+
+		merged = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) g_hash_table_unref);
+
+		/* Copy agent secrets first, then overwrite with settings secrets */
+		merge_secrets (secrets, merged);
+		merge_secrets (req->settings_secrets, merged);
+
+		req->complete_callback (req, merged, NULL, req->complete_callback_data);
+		g_hash_table_destroy (merged);
+	} else
+		req->complete_callback (req, secrets, NULL, req->complete_callback_data);
+
 	g_hash_table_destroy (secrets);
 }
 
@@ -506,7 +571,7 @@ static gboolean
 request_start_secrets (gpointer user_data)
 {
 	Request *req = user_data;
-	GHashTable *secrets;
+	GHashTable *secrets, *setting_secrets = NULL;
 	GError *error = NULL;
 
 	req->idle_id = 0;
@@ -516,9 +581,36 @@ request_start_secrets (gpointer user_data)
 	                                               req->hint,
 	                                               req->request_new,
 	                                               &error);
-	if (secrets && g_hash_table_size (secrets)) {
-		/* The connection already had secrets, no need to get any */
-		req->complete_callback (req, secrets, NULL, req->complete_callback_data);
+	if (secrets)
+		setting_secrets = g_hash_table_lookup (secrets, req->setting_name);
+
+	if (setting_secrets && g_hash_table_size (setting_secrets)) {
+		NMConnection *tmp;
+
+		/* The connection already had secrets; check if any more are required.
+		 * If no more are required, we're done.  If secrets are still needed,
+		 * ask a secret agent for more.  This allows admins to provide generic
+		 * secrets but allow additional user-specific ones as well.
+		 */
+		tmp = nm_connection_duplicate (req->connection);
+		g_assert (tmp);
+
+		if (!nm_connection_update_secrets (tmp, req->setting_name, secrets, &error)) {
+			req->complete_callback (req, NULL, error, req->complete_callback_data);
+			g_clear_error (&error);
+		} else {
+			/* Do we have everything we need? */
+			/* FIXME: handle second check for VPN connections */
+			if (nm_connection_need_secrets (tmp, NULL) == NULL) {
+				/* Got everything, we're done */
+				req->complete_callback (req, secrets, NULL, req->complete_callback_data);
+			} else {
+				/* We don't, so ask some agents for additional secrets */
+				req->settings_secrets = g_hash_table_ref (secrets);
+				request_next (req);
+			}
+		}
+		g_object_unref (tmp);
 	} else if (error) {
 		/* Errors from the system settings are hard errors; we don't go on
 		 * to ask agents for secrets if the settings service failed.
@@ -534,7 +626,7 @@ request_start_secrets (gpointer user_data)
 	}
 
 	if (secrets)
-		g_hash_table_destroy (secrets);
+		g_hash_table_unref (secrets);
 
 	return FALSE;
 }
