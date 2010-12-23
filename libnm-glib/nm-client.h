@@ -84,6 +84,9 @@ typedef struct {
 	/* Signals */
 	void (*device_added) (NMClient *client, NMDevice *device);
 	void (*device_removed) (NMClient *client, NMDevice *device);
+	void (*permission_changed) (NMClient *client,
+	                            NMClientPermission permission,
+	                            NMClientPermissionResult result);
 
 	/* Padding for future expansion */
 	void (*_reserved1) (void);
