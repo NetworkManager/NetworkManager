@@ -756,27 +756,35 @@ auto_activate_device (gpointer user_data)
 	if (nm_device_get_act_request (data->device))
 		goto out;
 
-	connections = nm_settings_get_connections (policy->settings);
+	iter = connections = nm_settings_get_connections (policy->settings);
 
-	/* Remove connections that have INVALID_TAG and shouldn't be retried any more. */
-	iter = connections;
+	/* Remove connections that shouldn't be auto-activated */
 	while (iter) {
-		NMConnection *iter_connection = NM_CONNECTION (iter->data);
-		GSList *next = g_slist_next (iter);
+		NMConnection *candidate = NM_CONNECTION (iter->data);
+		gboolean ignore = FALSE;
 
-		if (g_object_get_data (G_OBJECT (iter_connection), INVALID_TAG)) {
-			guint retries = get_connection_auto_retries (iter_connection);
+		/* Ignore connecitons that were tried too many times */
+		if (g_object_get_data (G_OBJECT (candidate), INVALID_TAG)) {
+			guint retries = get_connection_auto_retries (candidate);
 
 			if (retries == 0)
-				connections = g_slist_remove (connections, iter_connection);
+				ignore = TRUE;
 			else if (retries > 0)
-				set_connection_auto_retries (iter_connection, retries - 1);
+				set_connection_auto_retries (candidate, retries - 1);
 		} else {
 			/* Set the initial # of retries for auto-connection */
-			set_connection_auto_retries (iter_connection, RETRIES_DEFAULT);
+			set_connection_auto_retries (candidate, RETRIES_DEFAULT);
 		}
 
-		iter = next;
+		/* Ignore connections that aren't visible to any logged-in users */
+		if (ignore == FALSE) {
+			if (!nm_sysconfig_connection_is_visible (NM_SYSCONFIG_CONNECTION (candidate)))
+				ignore = TRUE;
+		}
+
+		iter = g_slist_next (iter);
+		if (ignore)
+			connections = g_slist_remove (connections, candidate);
 	}
 
 	best_connection = nm_device_get_best_auto_connection (data->device, connections, &specific_object);
