@@ -242,44 +242,36 @@ nm_remote_connection_get_secrets (NMRemoteConnection *self,
 
 /****************************************************************/
 
-static gboolean
+static void
 replace_settings (NMRemoteConnection *self, GHashTable *new_settings)
 {
 	GError *error = NULL;
 
-	if (!nm_connection_replace_settings (NM_CONNECTION (self), new_settings, &error)) {
+	if (nm_connection_replace_settings (NM_CONNECTION (self), new_settings, &error))
+		g_signal_emit (self, signals[UPDATED], 0, new_settings);
+	else {
 		g_warning ("%s: error updating connection %s settings: (%d) %s",
 		           __func__,
 		           nm_connection_get_path (NM_CONNECTION (self)),
 		           error ? error->code : -1,
 		           (error && error->message) ? error->message : "(unknown)");
 		g_clear_error (&error);
-		return FALSE;
-	}
 
-	/* Emit update irregardless to let listeners figure out what to do with
-	 * the connection; whether to delete / ignore it or not.
-	 */
-	g_signal_emit (self, signals[UPDATED], 0, new_settings);
-	return TRUE;
+		g_signal_emit (self, signals[REMOVED], 0);
+	}
 }
 
 static void
-get_settings_cb (DBusGProxy *proxy,
-                 GHashTable *new_settings,
-                 GError *error,
-                 gpointer user_data)
+init_get_settings_cb (DBusGProxy *proxy,
+                      GHashTable *new_settings,
+                      GError *error,
+                      gpointer user_data)
 {
 	NMRemoteConnection *self = user_data;
 	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
 
 	if (error) {
-		g_warning ("%s: error getting connection %s settings: (%d) %s",
-		           __func__,
-		           nm_connection_get_path (NM_CONNECTION (self)),
-		           error ? error->code : -1,
-		           (error && error->message) ? error->message : "(unknown)");
-		g_error_free (error);
+		/* Connection doesn't exist, or isn't visible to this user */
 		priv->init_result = NM_REMOTE_CONNECTION_INIT_RESULT_ERROR;
 		g_object_notify (G_OBJECT (self), NM_REMOTE_CONNECTION_INIT_RESULT);
 	} else {
@@ -291,9 +283,34 @@ get_settings_cb (DBusGProxy *proxy,
 }
 
 static void
-updated_cb (DBusGProxy *proxy, GHashTable *settings, gpointer user_data)
+updated_get_settings_cb (DBusGProxy *proxy,
+                         GHashTable *new_settings,
+                         GError *error,
+                         gpointer user_data)
 {
-	replace_settings (NM_REMOTE_CONNECTION (user_data), settings);
+	NMRemoteConnection *self = user_data;
+
+	if (error) {
+		/* The connection no longer exists, or is no longer visible to this
+		 * user; we must remove it.
+		 */
+		g_signal_emit (self, signals[REMOVED], 0);
+	} else {
+		replace_settings (self, new_settings);
+		g_hash_table_destroy (new_settings);
+	}
+}
+
+static void
+updated_cb (DBusGProxy *proxy, gpointer user_data)
+{
+	NMRemoteConnection *self = NM_REMOTE_CONNECTION (user_data);
+	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
+
+	/* The connection got updated; request the replacement settings */
+	org_freedesktop_NetworkManager_Settings_Connection_get_settings_async (priv->proxy,
+	                                                                       updated_get_settings_cb,
+	                                                                       self);
 }
 
 static void
@@ -356,14 +373,14 @@ constructor (GType type,
 	g_assert (priv->secrets_proxy);
 	dbus_g_proxy_set_default_timeout (priv->secrets_proxy, G_MAXINT);
 
-	dbus_g_proxy_add_signal (priv->proxy, "Updated", DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, G_TYPE_INVALID);
+	dbus_g_proxy_add_signal (priv->proxy, "Updated", G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->proxy, "Updated", G_CALLBACK (updated_cb), object, NULL);
 
 	dbus_g_proxy_add_signal (priv->proxy, "Removed", G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->proxy, "Removed", G_CALLBACK (removed_cb), object, NULL);
 
 	org_freedesktop_NetworkManager_Settings_Connection_get_settings_async (priv->proxy,
-	                                                                       get_settings_cb,
+	                                                                       init_get_settings_cb,
 	                                                                       object);
 	return object;
 }
