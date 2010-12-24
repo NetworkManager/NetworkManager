@@ -107,11 +107,11 @@ NMDevice *nm_client_get_device_by_path    (NMClient *client, const char *object_
 typedef void (*NMClientActivateDeviceFn) (gpointer user_data, const char *object_path, GError *error);
 
 void nm_client_activate_connection (NMClient *client,
-						  const char *connection_path,
-						  NMDevice *device,
-						  const char *specific_object,
-						  NMClientActivateDeviceFn callback,
-						  gpointer user_data);
+                                    const char *connection_path,
+                                    NMDevice *device,
+                                    const char *specific_object,
+                                    NMClientActivateDeviceFn callback,
+                                    gpointer user_data);
 
 void nm_client_deactivate_connection (NMClient *client, NMActiveConnection *active);
 
