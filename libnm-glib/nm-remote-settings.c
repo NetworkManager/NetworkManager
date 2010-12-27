@@ -42,6 +42,9 @@ typedef struct {
 	GHashTable *connections;
 	GHashTable *pending;  /* Connections we don't have settings for yet */
 	gboolean service_running;
+
+	/* AddConnectionInfo objects that are waiting for the connection to become initialized */
+	GSList *add_list;
 	
 	DBusGProxy *props_proxy;
 	char *hostname;
@@ -73,6 +76,89 @@ enum {
 };
 static guint signals[LAST_SIGNAL] = { 0 };
 
+/**********************************************************************/
+
+/**
+ * nm_remote_settings_error_quark:
+ *
+ * Registers an error quark for #NMRemoteSettings if necessary.
+ *
+ * Returns: the error quark used for #NMRemoteSettings errors.
+ **/
+GQuark
+nm_remote_settings_error_quark (void)
+{
+	static GQuark quark;
+
+	if (G_UNLIKELY (!quark))
+		quark = g_quark_from_static_string ("nm-remote-settings-error-quark");
+	return quark;
+}
+
+/* This should really be standard. */
+#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
+
+GType
+nm_remote_settings_error_get_type (void)
+{
+	static GType etype = 0;
+
+	if (etype == 0) {
+		static const GEnumValue values[] = {
+			ENUM_ENTRY (NM_REMOTE_SETTINGS_ERROR_UNKNOWN, "UnknownError"),
+			ENUM_ENTRY (NM_REMOTE_SETTINGS_ERROR_CONNECTION_REMOVED, "ConnectionRemoved"),
+			ENUM_ENTRY (NM_REMOTE_SETTINGS_ERROR_CONNECTION_UNAVAILABLE, "ConnectionUnavailable"),
+			{ 0, 0, 0 }
+		};
+		etype = g_enum_register_static ("NMRemoteSettingsError", values);
+	}
+	return etype;
+}
+
+/**********************************************************************/
+
+typedef struct {
+	NMRemoteSettings *self;
+	NMRemoteSettingsAddConnectionFunc callback;
+	gpointer callback_data;
+	NMRemoteConnection *connection;
+} AddConnectionInfo;
+
+static AddConnectionInfo *
+add_connection_info_find (NMRemoteSettings *self, NMRemoteConnection *connection)
+{
+	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
+	GSList *iter;
+
+	for (iter = priv->add_list; iter; iter = g_slist_next (iter)) {
+		AddConnectionInfo *info = iter->data;
+
+		if (info->connection == connection)
+			return info;
+	}
+
+	return NULL;
+}
+
+static void
+add_connection_info_dispose (NMRemoteSettings *self, AddConnectionInfo *info)
+{
+	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
+
+	priv->add_list = g_slist_remove (priv->add_list, info);
+
+	g_free (info);
+}
+
+static void
+add_connection_info_complete (NMRemoteSettings *self,
+                              AddConnectionInfo *info,
+                              GError *error)
+{
+	info->callback (info->self, error ? NULL : info->connection, error, info->callback_data);
+	add_connection_info_dispose (self, info);
+}
+
 /**
  * nm_remote_settings_get_connection_by_path:
  * @settings: the %NMRemoteSettings
@@ -98,7 +184,19 @@ connection_removed_cb (NMRemoteConnection *remote, gpointer user_data)
 {
 	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
+	AddConnectionInfo *addinfo;
+	GError *add_error;
 	const char *path;
+
+	/* Might have been removed while it was waiting to be initialized */
+	addinfo = add_connection_info_find (self, remote);
+	if (addinfo) {
+		add_error = g_error_new_literal (NM_REMOTE_SETTINGS_ERROR,
+		                                 NM_REMOTE_SETTINGS_ERROR_CONNECTION_REMOVED,
+		                                 "Connection removed before it was initialized");
+		add_connection_info_complete (self, addinfo, add_error);
+		g_error_free (add_error);
+	}
 
 	path = nm_connection_get_path (NM_CONNECTION (remote));
 	g_hash_table_remove (priv->connections, path);
@@ -113,7 +211,9 @@ connection_init_result_cb (NMRemoteConnection *remote,
 	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
 	guint32 init_result = NM_REMOTE_CONNECTION_INIT_RESULT_UNKNOWN;
+	AddConnectionInfo *addinfo;
 	const char *path;
+	GError *add_error = NULL;
 
 	/* Disconnect from the init-result signal just to be safe */
 	g_signal_handlers_disconnect_matched (remote,
@@ -130,6 +230,8 @@ connection_init_result_cb (NMRemoteConnection *remote,
 	              NM_REMOTE_CONNECTION_INIT_RESULT, &init_result,
 	              NULL);
 
+	addinfo = add_connection_info_find (self, remote);
+
 	switch (init_result) {
 	case NM_REMOTE_CONNECTION_INIT_RESULT_SUCCESS:
 		/* ref it when adding to ->connections, since removing it from ->pending
@@ -137,12 +239,26 @@ connection_init_result_cb (NMRemoteConnection *remote,
 		 */
 		g_hash_table_insert (priv->connections, g_strdup (path), g_object_ref (remote));
 
+		/* If there's a pending AddConnection request, complete that here before
+		 * signaling new-connection.
+		 */
+		add_connection_info_complete (self, addinfo, NULL);
+
 		/* Finally, let users know of the new connection now that it has all
 		 * its settings and is valid.
 		 */
 		g_signal_emit (self, signals[NEW_CONNECTION], 0, remote);
 		break;
 	case NM_REMOTE_CONNECTION_INIT_RESULT_ERROR:
+		/* Complete pending AddConnection callbacks */
+		if (addinfo) {
+			add_error = g_error_new_literal (NM_REMOTE_SETTINGS_ERROR,
+			                                 NM_REMOTE_SETTINGS_ERROR_CONNECTION_UNAVAILABLE,
+			                                 "Connection not visible or not available");
+			add_connection_info_complete (self, addinfo, add_error);
+			g_error_free (add_error);
+		}
+		break;
 	default:
 		break;
 	}
@@ -161,6 +277,15 @@ new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
 	NMRemoteConnection *connection = NULL;
 
+	/* Make double-sure we don't already have it */
+	connection = g_hash_table_lookup (priv->pending, path);
+	if (connection)
+		return connection;
+	connection = g_hash_table_lookup (priv->connections, path);
+	if (connection)
+		return connection;
+
+	/* Create a new connection object for it */
 	connection = nm_remote_connection_new (priv->bus, path);
 	if (connection) {
 		g_signal_connect (connection, "removed",
@@ -261,12 +386,6 @@ nm_remote_settings_list_connections (NMRemoteSettings *settings)
 	return list;
 }
 
-typedef struct {
-	NMRemoteSettings *self;
-	NMRemoteSettingsAddConnectionFunc callback;
-	gpointer callback_data;
-} AddConnectionInfo;
-
 static void
 add_connection_done (DBusGProxy *proxy,
                      char *path,
@@ -274,13 +393,12 @@ add_connection_done (DBusGProxy *proxy,
                      gpointer user_data)
 {
 	AddConnectionInfo *info = user_data;
-	NMRemoteConnection *connection;
 
-	connection = new_connection_cb (proxy, path, info->self);
-	g_assert (connection);
-	info->callback (info->self, connection, error, info->callback_data);
+	info->connection = new_connection_cb (proxy, path, info->self);
+	g_assert (info->connection);
 
-	g_free (info);
+	/* Wait until this connection is fully initialized before calling the callback */
+
 	g_free (path);
 }
 /**
@@ -325,14 +443,15 @@ nm_remote_settings_add_connection (NMRemoteSettings *settings,
 	                                                              add_connection_done,
 	                                                              info);
 	g_hash_table_destroy (new_settings);
+
+	priv->add_list = g_slist_append (priv->add_list, info);
+
 	return TRUE;
 }
 
-static gboolean
-remove_connections (gpointer user_data)
+static void
+clear_one_hash (GHashTable *table)
 {
-	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
-	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
 	GHashTableIter iter;
 	gpointer value;
 	GSList *list = NULL, *list_iter;
@@ -342,7 +461,7 @@ remove_connections (gpointer user_data)
 	 * that explicitly removes the the connection from the hash table somewhere
 	 * else.
 	 */
-	g_hash_table_iter_init (&iter, priv->connections);
+	g_hash_table_iter_init (&iter, table);
 	while (g_hash_table_iter_next (&iter, NULL, &value))
 		list = g_slist_prepend (list, NM_REMOTE_CONNECTION (value));
 
@@ -350,7 +469,17 @@ remove_connections (gpointer user_data)
 		g_signal_emit_by_name (NM_REMOTE_CONNECTION (list_iter->data), "removed");
 	g_slist_free (list);
 
-	g_hash_table_remove_all (priv->connections);
+	g_hash_table_remove_all (table);
+}
+
+static gboolean
+remove_connections (gpointer user_data)
+{
+	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
+	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
+
+	clear_one_hash (priv->pending);
+	clear_one_hash (priv->connections);
 	return FALSE;
 }
 
@@ -626,7 +755,8 @@ constructor (GType type,
 static void
 dispose (GObject *object)
 {
-	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (object);
+	NMRemoteSettings *self = NM_REMOTE_SETTINGS (object);
+	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
 
 	if (priv->disposed)
 		return;
@@ -635,6 +765,9 @@ dispose (GObject *object)
 
 	if (priv->fetch_id)
 		g_source_remove (priv->fetch_id);
+
+	while (g_slist_length (priv->add_list))
+		add_connection_info_dispose (self, (AddConnectionInfo *) priv->add_list->data);
 
 	if (priv->connections)
 		g_hash_table_destroy (priv->connections);

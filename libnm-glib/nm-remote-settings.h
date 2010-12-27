@@ -38,6 +38,30 @@ G_BEGIN_DECLS
 #define NM_IS_REMOTE_SETTINGS_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_REMOTE_SETTINGS))
 #define NM_REMOTE_SETTINGS_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_REMOTE_SETTINGS, NMRemoteSettingsClass))
 
+/**
+ * NMRemoteSettingsError:
+ * @NM_REMOTE_SETTINGS_ERROR_UNKNOWN: unknown or unclassified error
+ * @NM_REMOTE_SETTINGS_ERROR_CONNECTION_REMOVED: the #NMRemoteConnection object
+ *   was removed before it was completely initialized
+ * @NM_REMOTE_SETTINGS_ERROR_CONNECTION_UNAVAILABLE: the #NMRemoteConnection object
+ *   is not visible or otherwise unreadable
+ *
+ * Describes errors that may result from operations involving a #NMRemoteSettings.
+ *
+ **/
+typedef enum {
+	NM_REMOTE_SETTINGS_ERROR_UNKNOWN = 0,
+	NM_REMOTE_SETTINGS_ERROR_CONNECTION_REMOVED,
+	NM_REMOTE_SETTINGS_ERROR_CONNECTION_UNAVAILABLE,
+} NMRemoteSettingsError;
+
+#define NM_TYPE_REMOTE_SETTINGS_ERROR (nm_remote_settings_error_get_type ()) 
+GType nm_remote_settings_error_get_type (void);
+
+#define NM_REMOTE_SETTINGS_ERROR nm_remote_settings_error_quark ()
+GQuark nm_remote_settings_error_quark (void);
+
+
 #define NM_REMOTE_SETTINGS_BUS             "bus"
 #define NM_REMOTE_SETTINGS_SERVICE_RUNNING "service-running"
 #define NM_REMOTE_SETTINGS_HOSTNAME        "hostname"
