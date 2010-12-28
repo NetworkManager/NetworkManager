@@ -547,6 +547,7 @@ libnm-util/tests/certs/Makefile
 libnm-glib/libnm-glib.pc
 libnm-glib/libnm-glib-vpn.pc
 libnm-glib/Makefile
+libnm-glib/tests/Makefile
 callouts/Makefile
 tools/Makefile
 system-settings/Makefile

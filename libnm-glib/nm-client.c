@@ -817,7 +817,11 @@ nm_client_new (void)
 	DBusGConnection *connection;
 	GError *err = NULL;
 
+#ifdef LIBNM_GLIB_TEST
+	connection = dbus_g_bus_get (DBUS_BUS_SESSION, &err);
+#else
 	connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &err);
+#endif
 	if (!connection) {
 		g_warning ("Couldn't connect to system bus: %s", err->message);
 		g_error_free (err);

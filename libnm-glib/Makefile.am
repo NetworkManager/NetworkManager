@@ -1,3 +1,5 @@
+SUBDIRS=. tests
+
 INCLUDES = \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/libnm-util \
@@ -135,6 +137,30 @@ libnm_glib_vpn_la_LIBADD = $(top_builddir)/libnm-util/libnm-util.la $(GLIB_LIBS)
 libnm_glib_vpn_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm-glib-vpn.ver \
 	-version-info "1:0:0"
 
+#####################################################
+# Test libnm-glib stuff
+#####################################################
+
+noinst_LTLIBRARIES = libnm-glib-test.la
+
+libnm_glib_test_la_CFLAGS = \
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS) \
+	$(GUDEV_CFLAGS) \
+	-DLIBNM_GLIB_TEST
+
+libnm_glib_test_la_SOURCES = \
+	$(libnminclude_HEADERS) \
+	$(libnm_glib_la_SOURCES)
+
+libnm_glib_test_la_LIBADD = \
+	$(top_builddir)/libnm-util/libnm-util.la \
+	$(top_builddir)/marshallers/libmarshallers.la \
+	$(GLIB_LIBS) \
+	$(DBUS_LIBS) \
+	$(GUDEV_LIBS)
+
+#####################################################
 
 nm-client-bindings.h: $(top_srcdir)/introspection/nm-manager-client.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_client --mode=glib-client --output=$@ $<
