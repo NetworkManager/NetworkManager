@@ -394,10 +394,13 @@ add_connection_done (DBusGProxy *proxy,
 {
 	AddConnectionInfo *info = user_data;
 
-	info->connection = new_connection_cb (proxy, path, info->self);
-	g_assert (info->connection);
-
-	/* Wait until this connection is fully initialized before calling the callback */
+	if (error) {
+		add_connection_info_complete (info->self, info, error);
+	} else {
+		info->connection = new_connection_cb (proxy, path, info->self);
+		g_assert (info->connection);
+		/* Wait until this connection is fully initialized before calling the callback */
+	}
 
 	g_free (path);
 }
