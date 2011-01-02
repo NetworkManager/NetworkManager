@@ -876,6 +876,12 @@ modem_properties_changed (DBusGProxy *proxy,
 		priv->mm_enabled = g_value_get_boolean (value);
 		g_object_notify (G_OBJECT (self), NM_MODEM_ENABLED);
 	}
+
+	value = g_hash_table_lookup (props, "IpMethod");
+	if (value && G_VALUE_HOLDS_UINT (value)) {
+		priv->ip_method = g_value_get_uint (value);
+		g_object_notify (G_OBJECT (self), NM_MODEM_IP_METHOD);
+	}
 }
 
 /*****************************************************************************/
