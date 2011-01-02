@@ -330,6 +330,7 @@ register_for_property_changed (NMClient *client)
 #define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK "org.freedesktop.NetworkManager.enable-disable-network"
 #define NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI    "org.freedesktop.NetworkManager.enable-disable-wifi"
 #define NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN    "org.freedesktop.NetworkManager.enable-disable-wwan"
+#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX   "org.freedesktop.NetworkManager.enable-disable-wimax"
 #define NM_AUTH_PERMISSION_USE_USER_CONNECTIONS   "org.freedesktop.NetworkManager.use-user-connections"
 
 static NMClientPermission
@@ -341,6 +342,8 @@ nm_permission_to_client (const char *nm)
 		return NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIFI;
 	else if (!strcmp (nm, NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN))
 		return NM_CLIENT_PERMISSION_ENABLE_DISABLE_WWAN;
+	else if (!strcmp (nm, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX))
+		return NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIMAX;
 	else if (!strcmp (nm, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS))
 		return NM_CLIENT_PERMISSION_USE_USER_CONNECTIONS;
 	return NM_CLIENT_PERMISSION_NONE;

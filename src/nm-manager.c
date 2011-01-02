@@ -2119,8 +2119,8 @@ add_device (NMManager *self, NMDevice *device)
 		*/
 	} else if (NM_IS_WIMAX_DEVICE (device)) {
 		nm_manager_rfkill_update (self, RFKILL_TYPE_WIMAX);
-		nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (device),
-										 priv->radio_states[RFKILL_TYPE_WIMAX].enabled);
+		enabled = radio_enabled_for_type (self, RFKILL_TYPE_WIMAX);
+		nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (device), enabled);
 	}
 
 	type_desc = nm_device_get_type_desc (device);
@@ -3782,6 +3782,7 @@ get_permissions_done_cb (NMAuthChain *chain,
 		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_SLEEP_WAKE);
 		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI);
 		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN);
+		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX);
 		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS);
 		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_NETWORK_CONTROL);
 		dbus_g_method_return (context, results);
@@ -3809,6 +3810,7 @@ impl_manager_get_permissions (NMManager *self,
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SLEEP_WAKE, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, FALSE);
 }
@@ -4157,6 +4159,9 @@ prop_filter (DBusConnection *connection,
 	} else if (!strcmp (propname, "WwanEnabled")) {
 		glib_propname = NM_MANAGER_WWAN_ENABLED;
 		permission = NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN;
+	} else if (!strcmp (propname, "WimaxEnabled")) {
+		glib_propname = NM_MANAGER_WIMAX_ENABLED;
+		permission = NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX;
 	} else
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
@@ -4467,9 +4472,9 @@ set_property (GObject *object, guint prop_id,
 		                            g_value_get_boolean (value));
 		break;
 	case PROP_WIMAX_ENABLED:
-		manager_set_radio_enabled (NM_MANAGER (object),
-		                           &priv->radio_states[RFKILL_TYPE_WIMAX],
-		                           g_value_get_boolean (value));
+		manager_radio_user_toggled (NM_MANAGER (object),
+		                            &priv->radio_states[RFKILL_TYPE_WIMAX],
+		                            g_value_get_boolean (value));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -4508,7 +4513,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, priv->radio_states[RFKILL_TYPE_WWAN].hw_enabled);
 		break;
 	case PROP_WIMAX_ENABLED:
-		g_value_set_boolean (value, priv->radio_states[RFKILL_TYPE_WIMAX].enabled);
+		g_value_set_boolean (value, radio_enabled_for_type (self, RFKILL_TYPE_WIMAX));
 		break;
 	case PROP_WIMAX_HARDWARE_ENABLED:
 		g_value_set_boolean (value, priv->radio_states[RFKILL_TYPE_WIMAX].hw_enabled);
