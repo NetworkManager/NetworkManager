@@ -4364,10 +4364,11 @@ dispose (GObject *object)
 
 	/* Unregister property filter */
 	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
-	g_assert (bus);
-	dbus_connection = dbus_g_connection_get_connection (bus);
-	g_assert (dbus_connection);
-	dbus_connection_remove_filter (dbus_connection, prop_filter, manager);
+	if (bus) {
+		dbus_connection = dbus_g_connection_get_connection (bus);
+		g_assert (dbus_connection);
+		dbus_connection_remove_filter (dbus_connection, prop_filter, manager);
+	}
 	g_object_unref (priv->dbus_mgr);
 
 	if (priv->bluez_mgr)
