@@ -76,11 +76,11 @@ msgstr ""
 "# Flettet fra %s\n"
 "\n"
 
-#: ../src/named-manager/nm-named-manager.c:256
+#: ../src/dns-manager/nm-dns-manager.c:256
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "MERK: libc navneoppslag støtter ikke flere enn 3 navnetjenere."
 
-#: ../src/named-manager/nm-named-manager.c:258
+#: ../src/dns-manager/nm-dns-manager.c:258
 msgid "The nameservers listed below may not be recognized."
 msgstr "Navnetjenere listet under vil kanskje ikke bli gjenkjent."
 

@@ -31,15 +31,16 @@
 #include <nm-setting-wired.h>
 #include <nm-setting-wireless.h>
 #include <nm-setting-ip4-config.h>
+#include <nm-setting-bluetooth.h>
 #include <nm-utils.h>
 #include <string.h>
 #include <arpa/inet.h>
 #include <netinet/ether.h>
-#include <nm-settings-interface.h>
+#include <ctype.h>
 
 #include "nm-dbus-glib-types.h"
 #include "writer.h"
-#include "reader.h"
+#include "common.h"
 
 static gboolean
 write_array_of_uint (GKeyFile *file,
@@ -453,13 +454,56 @@ write_hash_of_string (GKeyFile *file,
 	g_hash_table_foreach (hash, write_hash_of_string_helper, &info);
 }
 
+static void
+ssid_writer (GKeyFile *file,
+             NMSetting *setting,
+             const char *key,
+             const GValue *value)
+{
+	GByteArray *array;
+	const char *setting_name = nm_setting_get_name (setting);
+	gboolean new_format = TRUE;
+	int i, *tmp_array;
+	char *ssid;
+
+	g_return_if_fail (G_VALUE_HOLDS (value, DBUS_TYPE_G_UCHAR_ARRAY));
+
+	array = (GByteArray *) g_value_get_boxed (value);
+	if (!array || !array->len)
+		return;
+
+	/* Check whether each byte is printable.  If not, we have to use an
+	 * integer list, otherwise we can just use a string.
+	 */
+	for (i = 0; i < array->len; i++) {
+		char c = array->data[i] & 0xFF;
+		if (!isprint (c)) {
+			new_format = FALSE;
+			break;
+		}
+	}
+
+	if (new_format) {
+		ssid = g_malloc0 (array->len + 1);
+		memcpy (ssid, array->data, array->len);
+		g_key_file_set_string (file, setting_name, key, ssid);
+		g_free (ssid);
+	} else {
+		tmp_array = g_new (gint, array->len);
+		for (i = 0; i < array->len; i++)
+			tmp_array[i] = (int) array->data[i];
+		g_key_file_set_integer_list (file, setting_name, key, tmp_array, array->len);
+		g_free (tmp_array);
+	}
+}
+
 typedef struct {
 	const char *setting_name;
 	const char *key;
 	void (*writer) (GKeyFile *keyfile, NMSetting *setting, const char *key, const GValue *value);
 } KeyWriter;
 
-/* A table of keys that require further parsing/conversion becuase they are
+/* A table of keys that require further parsing/conversion because they are
  * stored in a format that can't be automatically read using the key's type.
  * i.e. IPv4 addresses, which are stored in NetworkManager as guint32, but are
  * stored in keyfiles as strings, eg "10.1.1.2" or IPv6 addresses stored 
@@ -487,12 +531,24 @@ static KeyWriter key_writers[] = {
 	{ NM_SETTING_WIRED_SETTING_NAME,
 	  NM_SETTING_WIRED_MAC_ADDRESS,
 	  mac_address_writer },
+	{ NM_SETTING_WIRED_SETTING_NAME,
+	  NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
+	  mac_address_writer },
 	{ NM_SETTING_WIRELESS_SETTING_NAME,
 	  NM_SETTING_WIRELESS_MAC_ADDRESS,
 	  mac_address_writer },
 	{ NM_SETTING_WIRELESS_SETTING_NAME,
+	  NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS,
+	  mac_address_writer },
+	{ NM_SETTING_WIRELESS_SETTING_NAME,
 	  NM_SETTING_WIRELESS_BSSID,
 	  mac_address_writer },
+	{ NM_SETTING_BLUETOOTH_SETTING_NAME,
+	  NM_SETTING_BLUETOOTH_BDADDR,
+	  mac_address_writer },
+	{ NM_SETTING_WIRELESS_SETTING_NAME,
+	  NM_SETTING_WIRELESS_SSID,
+	  ssid_writer },
 	{ NULL, NULL, NULL }
 };
 
@@ -505,10 +561,9 @@ write_setting_value (NMSetting *setting,
 {
 	GKeyFile *file = (GKeyFile *) user_data;
 	const char *setting_name;
-	GType type;
+	GType type = G_VALUE_TYPE (value);
 	KeyWriter *writer = &key_writers[0];
-
-	type = G_VALUE_TYPE (value);
+	GParamSpec *pspec;
 
 	/* Setting name gets picked up from the keyfile's section name instead */
 	if (!strcmp (key, NM_SETTING_NAME))
@@ -520,6 +575,15 @@ write_setting_value (NMSetting *setting,
 		return;
 
 	setting_name = nm_setting_get_name (setting);
+
+	/* If the value is the default value, remove the item from the keyfile */
+	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), key);
+	if (pspec) {
+		if (g_param_value_defaults (pspec, (GValue *) value)) {
+			g_key_file_remove_key (file, setting_name, key, NULL);
+			return;
+		}
+	}
 
 	/* Look through the list of handlers for non-standard format key values */
 	while (writer->setting_name) {
@@ -649,18 +713,14 @@ write_connection (NMConnection *connection,
 
 	g_file_set_contents (path, data, len, error);
 	if (chown (path, owner_uid, owner_grp) < 0) {
-		g_set_error (error,
-		             NM_SETTINGS_INTERFACE_ERROR,
-		             NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
+		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
 		             "%s.%d: error chowning '%s': %d", __FILE__, __LINE__,
 		             path, errno);
 		unlink (path);
 	} else {
 		err = chmod (path, S_IRUSR | S_IWUSR);
 		if (err) {
-			g_set_error (error,
-			             NM_SETTINGS_INTERFACE_ERROR,
-			             NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
+			g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
 			             "%s.%d: error setting permissions on '%s': %d", __FILE__,
 			             __LINE__, path, errno);
 			unlink (path);

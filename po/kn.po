@@ -7,11 +7,12 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager.po.master.kn\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-05-06 14:31+0530\n"
-"PO-Revision-Date: 2010-05-07 10:54+0530\n"
+"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug."
+"cgi?product=NetworkManager&component=general\n"
+"POT-Creation-Date: 2010-06-28 08:52+0000\n"
+"PO-Revision-Date: 2010-07-26 12:55+0530\n"
 "Last-Translator: Shankar Prasad <svenkate@redhat.com>\n"
-"Language-Team: kn-IN <>\n"
+"Language-Team: kn_IN <kde-i18n-doc@kde.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -141,19 +142,19 @@ msgstr "ಎಂದಿಗೂ ಬೇಡ"
 #: ../cli/src/connections.c:602 ../cli/src/connections.c:605
 #: ../cli/src/devices.c:388 ../cli/src/devices.c:513 ../cli/src/devices.c:539
 #: ../cli/src/devices.c:540 ../cli/src/devices.c:541 ../cli/src/devices.c:542
-#: ../cli/src/devices.c:543 ../cli/src/settings.c:504
-#: ../cli/src/settings.c:544 ../cli/src/settings.c:643
-#: ../cli/src/settings.c:912 ../cli/src/settings.c:913
-#: ../cli/src/settings.c:915 ../cli/src/settings.c:917
-#: ../cli/src/settings.c:1042 ../cli/src/settings.c:1043
-#: ../cli/src/settings.c:1044 ../cli/src/settings.c:1123
-#: ../cli/src/settings.c:1124 ../cli/src/settings.c:1125
-#: ../cli/src/settings.c:1126 ../cli/src/settings.c:1127
-#: ../cli/src/settings.c:1128 ../cli/src/settings.c:1129
-#: ../cli/src/settings.c:1130 ../cli/src/settings.c:1131
-#: ../cli/src/settings.c:1132 ../cli/src/settings.c:1133
-#: ../cli/src/settings.c:1134 ../cli/src/settings.c:1135
-#: ../cli/src/settings.c:1210
+#: ../cli/src/devices.c:543 ../cli/src/settings.c:508
+#: ../cli/src/settings.c:551 ../cli/src/settings.c:652
+#: ../cli/src/settings.c:926 ../cli/src/settings.c:927
+#: ../cli/src/settings.c:929 ../cli/src/settings.c:931
+#: ../cli/src/settings.c:1056 ../cli/src/settings.c:1057
+#: ../cli/src/settings.c:1058 ../cli/src/settings.c:1137
+#: ../cli/src/settings.c:1138 ../cli/src/settings.c:1139
+#: ../cli/src/settings.c:1140 ../cli/src/settings.c:1141
+#: ../cli/src/settings.c:1142 ../cli/src/settings.c:1143
+#: ../cli/src/settings.c:1144 ../cli/src/settings.c:1145
+#: ../cli/src/settings.c:1146 ../cli/src/settings.c:1147
+#: ../cli/src/settings.c:1148 ../cli/src/settings.c:1149
+#: ../cli/src/settings.c:1224
 msgid "yes"
 msgstr "ಹೌದು"
 
@@ -161,19 +162,19 @@ msgstr "ಹೌದು"
 #: ../cli/src/connections.c:602 ../cli/src/connections.c:605
 #: ../cli/src/devices.c:388 ../cli/src/devices.c:513 ../cli/src/devices.c:539
 #: ../cli/src/devices.c:540 ../cli/src/devices.c:541 ../cli/src/devices.c:542
-#: ../cli/src/devices.c:543 ../cli/src/settings.c:504
-#: ../cli/src/settings.c:506 ../cli/src/settings.c:544
-#: ../cli/src/settings.c:643 ../cli/src/settings.c:912
-#: ../cli/src/settings.c:913 ../cli/src/settings.c:915
-#: ../cli/src/settings.c:917 ../cli/src/settings.c:1042
-#: ../cli/src/settings.c:1043 ../cli/src/settings.c:1044
-#: ../cli/src/settings.c:1123 ../cli/src/settings.c:1124
-#: ../cli/src/settings.c:1125 ../cli/src/settings.c:1126
-#: ../cli/src/settings.c:1127 ../cli/src/settings.c:1128
-#: ../cli/src/settings.c:1129 ../cli/src/settings.c:1130
-#: ../cli/src/settings.c:1131 ../cli/src/settings.c:1132
-#: ../cli/src/settings.c:1133 ../cli/src/settings.c:1134
-#: ../cli/src/settings.c:1135 ../cli/src/settings.c:1210
+#: ../cli/src/devices.c:543 ../cli/src/settings.c:508
+#: ../cli/src/settings.c:510 ../cli/src/settings.c:551
+#: ../cli/src/settings.c:652 ../cli/src/settings.c:926
+#: ../cli/src/settings.c:927 ../cli/src/settings.c:929
+#: ../cli/src/settings.c:931 ../cli/src/settings.c:1056
+#: ../cli/src/settings.c:1057 ../cli/src/settings.c:1058
+#: ../cli/src/settings.c:1137 ../cli/src/settings.c:1138
+#: ../cli/src/settings.c:1139 ../cli/src/settings.c:1140
+#: ../cli/src/settings.c:1141 ../cli/src/settings.c:1142
+#: ../cli/src/settings.c:1143 ../cli/src/settings.c:1144
+#: ../cli/src/settings.c:1145 ../cli/src/settings.c:1146
+#: ../cli/src/settings.c:1147 ../cli/src/settings.c:1148
+#: ../cli/src/settings.c:1149 ../cli/src/settings.c:1224
 msgid "no"
 msgstr "ಇಲ್ಲ"
 
@@ -262,7 +263,7 @@ msgstr "ಸಕ್ರಿಯಗೊಂಡಿದೆ"
 #: ../cli/src/connections.c:1102 ../cli/src/connections.c:1125
 #: ../cli/src/connections.c:1158 ../cli/src/devices.c:224
 #: ../cli/src/devices.c:514 ../cli/src/network-manager.c:92
-#: ../cli/src/network-manager.c:145 ../cli/src/settings.c:469
+#: ../cli/src/network-manager.c:145 ../cli/src/settings.c:473
 msgid "unknown"
 msgstr "ಗೊತ್ತಿಲ್ಲದ"
 
@@ -1063,78 +1064,79 @@ msgstr "ದೋಷ: NetworkManager ನೊಂದಿಗೆ ಸಂಪರ್ಕಸಾ
 msgid "Success"
 msgstr "ಯಶಸ್ವಿಯಾಗಿದೆ"
 
-#: ../cli/src/settings.c:407
+#: ../cli/src/settings.c:411
 #, c-format
 msgid "%d (hex-ascii-key)"
 msgstr "%d (hex-ascii-key)"
 
-#: ../cli/src/settings.c:409
+#: ../cli/src/settings.c:413
 #, c-format
 msgid "%d (104/128-bit passphrase)"
 msgstr "%d (104/128-ಬಿಟ್‌ ಗುಪ್ತವಾಕ್ಯಾಂಶ)"
 
-#: ../cli/src/settings.c:412
+#: ../cli/src/settings.c:416
 #, c-format
 msgid "%d (unknown)"
 msgstr "%d (ಅಜ್ಞಾತ)"
 
-#: ../cli/src/settings.c:438
+#: ../cli/src/settings.c:442
 msgid "0 (unknown)"
 msgstr "0 (ಗೊತ್ತಿರದ)"
 
-#: ../cli/src/settings.c:444
+#: ../cli/src/settings.c:448
 msgid "any, "
 msgstr "ಯಾವುದಾದರೂ, "
 
-#: ../cli/src/settings.c:446
+#: ../cli/src/settings.c:450
 msgid "900 MHz, "
 msgstr "900 MHz, "
 
-#: ../cli/src/settings.c:448
+#: ../cli/src/settings.c:452
 msgid "1800 MHz, "
 msgstr "1800 MHz, "
 
-#: ../cli/src/settings.c:450
+#: ../cli/src/settings.c:454
 msgid "1900 MHz, "
 msgstr "1900 MHz, "
 
-#: ../cli/src/settings.c:452
+#: ../cli/src/settings.c:456
 msgid "850 MHz, "
 msgstr "850 MHz, "
 
-#: ../cli/src/settings.c:454
+#: ../cli/src/settings.c:458
 msgid "WCDMA 3GPP UMTS 2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 2100 MHz, "
 
-#: ../cli/src/settings.c:456
+#: ../cli/src/settings.c:460
 msgid "WCDMA 3GPP UMTS 1800 MHz, "
 msgstr "WCDMA 3GPP UMTS 1800 MHz, "
 
-#: ../cli/src/settings.c:458
+#: ../cli/src/settings.c:462
 msgid "WCDMA 3GPP UMTS 1700/2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700/2100 MHz, "
 
-#: ../cli/src/settings.c:460
+#: ../cli/src/settings.c:464
 msgid "WCDMA 3GPP UMTS 800 MHz, "
 msgstr "WCDMA 3GPP UMTS 800 MHz, "
 
-#: ../cli/src/settings.c:462
+#: ../cli/src/settings.c:466
 msgid "WCDMA 3GPP UMTS 850 MHz, "
 msgstr "WCDMA 3GPP UMTS 850 MHz, "
 
-#: ../cli/src/settings.c:464
+#: ../cli/src/settings.c:468
 msgid "WCDMA 3GPP UMTS 900 MHz, "
 msgstr "WCDMA 3GPP UMTS 900 MHz, "
 
-#: ../cli/src/settings.c:466
+#: ../cli/src/settings.c:470
 msgid "WCDMA 3GPP UMTS 1700 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700 MHz, "
 
-#: ../cli/src/settings.c:546 ../cli/src/settings.c:708
+#: ../cli/src/settings.c:554 ../cli/src/settings.c:721
 msgid "auto"
 msgstr "ಸ್ವಯಂಚಾಲಿತ"
 
-#: ../cli/src/settings.c:704 ../cli/src/settings.c:707 ../cli/src/utils.c:172
+#: ../cli/src/settings.c:716 ../cli/src/settings.c:719
+#: ../cli/src/settings.c:720 ../cli/src/utils.c:172
 msgid "not set"
 msgstr "ಹೊಂದಿಸಲಾಗಿಲ್ಲ"
 
@@ -1157,8 +1159,8 @@ msgstr "'--terse' ಎಂಬ ಆಯ್ಕೆಗೆ '--fields' ಅನ್ನು ಸ
 #, c-format
 msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
 msgstr ""
-"'--terse' ಎಂಬ ಆಯ್ಕೆಗೆ ನಿಶ್ಚಿತವಾದ '--fields' ಆಯ್ಕೆಯ ಮೌಲ್ಯದ ಅಗತ್ಯವಿರುತ್ತದೆಯೆ ಹೊರತು, '%s' "
-"ಎಂಬುದಲ್ಲ"
+"'--terse' ಎಂಬ ಆಯ್ಕೆಗೆ ನಿಶ್ಚಿತವಾದ '--fields' ಆಯ್ಕೆಯ ಮೌಲ್ಯದ ಅಗತ್ಯವಿರುತ್ತದೆಯೆ ಹೊರತು, '%"
+"s' ಎಂಬುದಲ್ಲ"
 
 #: ../libnm-util/crypto.c:120
 #, c-format
@@ -1501,6 +1503,97 @@ msgstr "ಗೂಢಲಿಪೀಕರಿಸಲಾದ ಕೀಲಿಯನ್ನು P
 msgid "Could not allocate memory for PEM file data."
 msgstr "PEM ಕಡತ ದತ್ತಾಂಶಕ್ಕಾಗಿ ಮೆಮೊರಿಯನ್ನು ನಿಯೋಜಿಸಲು ಸಾಧ್ಯವಾಗಿಲ್ಲ."
 
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:1
+msgid "Connection sharing via a protected WiFi network"
+msgstr "ಒಂದು ಸಂರಕ್ಷಿತವಾದ WiFi ಜಾಲಬಂಧದ ಮೂಲಕ ಸಂಪರ್ಕ ಸಾಧಿಸುವಿಕೆ"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:2
+msgid "Connection sharing via an open WiFi network"
+msgstr "ಒಂದು ಮುಕ್ತವಾದ WiFi ಜಾಲಬಂಧದ ಮೂಲಕ ಸಂಪರ್ಕ ಸಾಧಿಸುವಿಕೆ"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:3
+msgid "Modify persistent system hostname"
+msgstr "ಸ್ಥಿರ ವ್ಯವಸ್ಥೆಯ ಆತಿಥೇಯ ಹೆಸರನ್ನು ಮಾರ್ಪಡಿಸಿ"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:4
+msgid "Modify system connections"
+msgstr "ವ್ಯವಸ್ಥೆಯ ಸಂಪರ್ಕಗಳನ್ನು ಮಾರ್ಪಡಿಸು"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:5
+msgid "System policy prevents modification of system settings"
+msgstr "ವ್ಯವಸ್ಥೆಯ ಸಂಪರ್ಕಗಳನ್ನು ಮಾರ್ಪಡಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ ನಿಯಮಗಳು ತಡೆಯುತ್ತಿವೆ"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:6
+msgid "System policy prevents modification of the persistent system hostname"
+msgstr "ಸ್ಥಿರ ವ್ಯವಸ್ಥೆಯ ಆತಿಥೇಯ ಹೆಸರನ್ನು ಮಾರ್ಪಡಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ ನಿಯಮಗಳು ತಡೆಯುತ್ತವೆ"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:7
+msgid "System policy prevents sharing connections via a protected WiFi network"
+msgstr "ಒಂದು ಸಂರಕ್ಷಿತವಾದ WiFi ಜಾಲಬಂಧದ ಮೂಲಕ ಸಂಪರ್ಕ ಸಾಧಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ ನಿಯಮಗಳು ತಡೆಯುತ್ತವೆ"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:8
+msgid "System policy prevents sharing connections via an open WiFi network"
+msgstr "ಒಂದು ಮುಕ್ತವಾದ WiFi ಜಾಲಬಂಧದ ಮೂಲಕ ಸಂಪರ್ಕ ಸಾಧಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ ನಿಯಮಗಳು ತಡೆಯುತ್ತವೆ"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:1
+msgid "Allow control of network connections"
+msgstr "ಜಾಲಬಂಧ ಸಂಪರ್ಕಗಳನ್ನು ನಿಯಂತ್ರಿಸುವುದನ್ನು ಅನುಮತಿಸಿ"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:2
+msgid "Allow use of user-specific connections"
+msgstr "ಬಳಕೆದಾರ-ನಿಶ್ಚಿತ ಸಂಪರ್ಕಗಳನ್ನು  ಬಳಸುವುದನ್ನು ಅನುಮತಿಸು"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:3
+msgid "Enable or disable WiFi devices"
+msgstr "WiFi ಸಾಧನಗಳನ್ನು ಶಕ್ತಗೊಳಿಸಿ ಅಥವ ಅಶಕ್ತಗೊಳಿಸಿ"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:4
+msgid "Enable or disable mobile broadband devices"
+msgstr "ಮೊಬೈಲ್ ಬ್ರಾಡ್‌ಬ್ಯಾಂಡ್ ಸಾಧನಗಳನ್ನು ಶಕ್ತಗೊಳಿಸಿ ಅಥವ ಅಶಕ್ತಗೊಳಿಸಿ"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:5
+msgid "Enable or disable system networking"
+msgstr "ವ್ಯವಸ್ಥೆಯ ಜಾಲಬಂಧವನ್ನು ಶಕ್ತಗೊಳಿಸಿ ಅಥವ ಅಶಕ್ತಗೊಳಿಸಿ"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:6
+msgid ""
+"Put NetworkManager to sleep or wake it up (should only be used by system "
+"power management)"
+msgstr ""
+"NetworkManager ಅನ್ನು ನಿದ್ರಾಸ್ಥಿತಿಗೆ ಅಥವ ಎಚ್ಚರಸ್ಥಿತಿಗೆ ಕಳುಹಿಸಿ (ಇದನ್ನು ಕೇವಲ ವ್ಯವಸ್ಥೆಯ "
+"ವಿದ್ಯುಚ್ಛಕ್ತಿ ನಿರ್ವಹಣೆಯಿಂದ ಮಾತ್ರ ಬಳಸಬೇಕು)"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:7
+#| msgid "System policy prevents modification of system settings"
+msgid "System policy prevents control of network connections"
+msgstr "ಜಾಲಬಂಧ ಸಂಪರ್ಕಗಳನ್ನು ನಿಯಂತ್ರಿಸುವುದನ್ನು ವ್ಯವಸ್ಥೆಯ ನಿಯಮಗಳು ತಡೆಯುತ್ತಿವೆ"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:8
+#| msgid "System policy prevents sharing connections via an open WiFi network"
+msgid "System policy prevents enabling or disabling WiFi devices"
+msgstr "WiFi ಸಾಧನವನ್ನು ಶಕ್ತ ಅಥವ ಅಶಕ್ತಗೊಳಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ ನಿಯಮಗಳು ತಡೆಯುತ್ತಿವೆ"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:9
+msgid "System policy prevents enabling or disabling mobile broadband devices"
+msgstr ""
+"ಮೊಬೈಲ್ ಬ್ರಾಡ್‌ಬ್ಯಾಂಡ್ ಸಾಧನಗಳನ್ನು ಶಕ್ತ ಅಥವ ಅಶಕ್ತಗೊಳಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ ನಿಯಮಗಳು ತಡೆಯುತ್ತಿವೆ"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:10
+#| msgid "System policy prevents modification of system settings"
+msgid "System policy prevents enabling or disabling system networking"
+msgstr "ವ್ಯವಸ್ಥೆಯ ಜಾಲಬಂಧವನ್ನು ಶಕ್ತ ಅಥವ ಅಶಕ್ತಗೊಳಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ ಪಾಲಿಸಿಯು ತಡೆಯುತ್ತಿದೆ"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:11
+msgid "System policy prevents putting NetworkManager to sleep or waking it up"
+msgstr ""
+"NetworkManager ಅನ್ನು ನಿದ್ರಾಸ್ಥಿತಿಗೆ ಅಥವ ಎಚ್ಚರಸ್ಥಿತಿಗೆ ಕಳುಹಿಸುವುದನ್ನು ವ್ಯವಸ್ಥೆಯ ನಿಯಮವು "
+"ತಡೆಯುತ್ತಿದೆ"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:12
+#| msgid "System policy prevents modification of system settings"
+msgid "System policy prevents use of user-specific connections"
+msgstr "ಬಳಕೆದಾರ-ನಿಶ್ಚಿತ ಸಂಪರ್ಕಗಳನ್ನು ಬಳಸುವುದಂತೆ ವ್ಯವಸ್ಥೆಯ ನಿಯಮವು ತಡೆಯುತ್ತಿದೆ"
+
 #: ../src/nm-netlink-monitor.c:100 ../src/nm-netlink-monitor.c:231
 #: ../src/nm-netlink-monitor.c:653
 #, c-format
@@ -1552,7 +1645,7 @@ msgstr "ಕೊಂಡಿ ಕ್ಯಾಶೆಯನ್ನು ಅಪ್‌ಡೇಟ�
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr "ಅಮಾನ್ಯವಾದ ಆಯ್ಕೆ.  ಮಾನ್ಯವಾದ ಆಯ್ಕೆಗಳಿಗಾಗಿ ದಯವಿಟ್ಟು --help ಅನ್ನು ನೋಡಿ.\n"
 
-#: ../src/main.c:562
+#: ../src/main.c:568
 #, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr "%s.  ಮಾನ್ಯವಾದ ಆಯ್ಕೆಗಳಿಗಾಗಿ ದಯವಿಟ್ಟು --help ಅನ್ನು ನೋಡಿ.\n"
@@ -1597,13 +1690,13 @@ msgstr "ಗೊತ್ತಿರದ ದಾಖಲೆ ಮಟ್ಟ '%s'"
 msgid "Unknown log domain '%s'"
 msgstr "ಗೊತ್ತಿರದ ದಾಖಲೆ ಡೊಮೈನ್ '%s'"
 
-#: ../src/named-manager/nm-named-manager.c:343
+#: ../src/dns-manager/nm-dns-manager.c:350
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr ""
 "ಸೂಚನೆ: libc ಪರಿಹಾರಕವು(ರಿಸಾಲ್ವರ್) ೩ ನಾಮಪರಿಚಾರಕಗಳಿಗಿಂತ ಹೆಚ್ಚಿನವುಗಳನ್ನು "
 "ಬೆಂಬಲಿಸುವುದಿಲ್ಲ."
 
-#: ../src/named-manager/nm-named-manager.c:345
+#: ../src/dns-manager/nm-dns-manager.c:352
 msgid "The nameservers listed below may not be recognized."
 msgstr "ಈ ಕೆಳಗೆ ಸೂಚಿಸಲಾದ ನಾಮಪರಿಚಾರಕಗಳನ್ನು ಗುರುತಿಸಲಾಗಿಲ್ಲ."
 
@@ -1612,41 +1705,9 @@ msgstr "ಈ ಕೆಳಗೆ ಸೂಚಿಸಲಾದ ನಾಮಪರಿಚಾರ
 msgid "Auto %s"
 msgstr "ಸ್ವಯಂ %s"
 
-#: ../system-settings/plugins/ifcfg-rh/reader.c:3256
+#: ../system-settings/plugins/ifcfg-rh/reader.c:3275
 msgid "System"
 msgstr "ವ್ಯವಸ್ಥೆ"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:1
-msgid "Connection sharing via a protected WiFi network"
-msgstr "ಒಂದು ಸಂರಕ್ಷಿತವಾದ WiFi ಜಾಲಬಂಧದ ಮೂಲಕ ಸಂಪರ್ಕ ಸಾಧಿಸುವಿಕೆ"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:2
-msgid "Connection sharing via an open WiFi network"
-msgstr "ಒಂದು ಮುಕ್ತವಾದ WiFi ಜಾಲಬಂಧದ ಮೂಲಕ ಸಂಪರ್ಕ ಸಾಧಿಸುವಿಕೆ"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:3
-msgid "Modify persistent system hostname"
-msgstr "ಸ್ಥಿರ ವ್ಯವಸ್ಥೆಯ ಆತಿಥೇಯ ಹೆಸರನ್ನು ಮಾರ್ಪಡಿಸಿ"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:4
-msgid "Modify system connections"
-msgstr "ವ್ಯವಸ್ಥೆಯ ಸಂಪರ್ಕಗಳನ್ನು ಮಾರ್ಪಡಿಸು"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:5
-msgid "System policy prevents modification of system settings"
-msgstr "ವ್ಯವಸ್ಥೆಯ ಸಂಪರ್ಕಗಳನ್ನು ಮಾರ್ಪಡಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ ನಿಯಮಗಳು ತಡೆಯುತ್ತಿವೆ"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:6
-msgid "System policy prevents modification of the persistent system hostname"
-msgstr "ಸ್ಥಿರ ವ್ಯವಸ್ಥೆಯ ಆತಿಥೇಯ ಹೆಸರನ್ನು ಮಾರ್ಪಡಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ ನಿಯಮಗಳು ತಡೆಯುತ್ತವೆ"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:7
-msgid "System policy prevents sharing connections via a protected WiFi network"
-msgstr "ಒಂದು ಸಂರಕ್ಷಿತವಾದ WiFi ಜಾಲಬಂಧದ ಮೂಲಕ ಸಂಪರ್ಕ ಸಾಧಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ ನಿಯಮಗಳು ತಡೆಯುತ್ತವೆ"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:8
-msgid "System policy prevents sharing connections via an open WiFi network"
-msgstr "ಒಂದು ಮುಕ್ತವಾದ WiFi ಜಾಲಬಂಧದ ಮೂಲಕ ಸಂಪರ್ಕ ಸಾಧಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ ನಿಯಮಗಳು ತಡೆಯುತ್ತವೆ"
 
 #~ msgid "Type"
 #~ msgstr "ಬಗೆ"

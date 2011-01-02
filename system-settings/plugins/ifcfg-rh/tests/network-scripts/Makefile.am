@@ -4,6 +4,7 @@ EXTRA_DIST = \
 	ifcfg-test-wired-static \
 	ifcfg-test-wired-static-bootproto \
 	ifcfg-test-wired-dhcp \
+	ifcfg-test-wired-dhcp6-only \
 	ifcfg-test-wired-global-gateway \
 	network-test-wired-global-gateway \
 	ifcfg-test-wired-never-default \
@@ -60,7 +61,15 @@ EXTRA_DIST = \
 	ifcfg-test-wired-static-no-prefix-24 \
 	ifcfg-test-wired-ipv6-only \
 	ifcfg-test-wifi-wep-passphrase \
-	keys-test-wifi-wep-passphrase
+	keys-test-wifi-wep-passphrase \
+	ifcfg-test-wifi-wep-40-ascii \
+	keys-test-wifi-wep-40-ascii \
+	ifcfg-test-wifi-wep-104-ascii \
+	keys-test-wifi-wep-104-ascii \
+	ifcfg-test-wired-qeth-static \
+	ifcfg-test-bridge-main \
+	ifcfg-test-bridge-component \
+	ifcfg-test-vlan-interface
 
 check-local:
 	@for f in $(EXTRA_DIST); do \

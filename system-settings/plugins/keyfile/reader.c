@@ -32,12 +32,19 @@
 #include <nm-setting-connection.h>
 #include <nm-setting-wired.h>
 #include <nm-setting-wireless.h>
+#include <nm-setting-bluetooth.h>
+#include <nm-setting-serial.h>
+#include <nm-setting-gsm.h>
+#include <nm-setting-cdma.h>
+#include <nm-setting-ppp.h>
 #include <arpa/inet.h>
 #include <netinet/ether.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "nm-dbus-glib-types.h"
 #include "reader.h"
+#include "common.h"
 
 static gboolean
 read_array_of_uint (GKeyFile *file,
@@ -725,6 +732,68 @@ read_hash_of_string (GKeyFile *file, NMSetting *setting, const char *key)
 	g_strfreev (keys);
 }
 
+static void
+ssid_parser (NMSetting *setting, const char *key, GKeyFile *keyfile)
+{
+	const char *setting_name = nm_setting_get_name (setting);
+	GByteArray *array = NULL;
+	char *p, *tmp_string;
+	gint *tmp_list;
+	gsize length;
+	int i;
+
+	/* New format: just a string.  We try parsing the new format if there are
+	 * no ';' in the string or it's not just numbers.
+	 */
+	p = tmp_string = g_key_file_get_string (keyfile, setting_name, key, NULL);
+	if (tmp_string) {
+		gboolean new_format = FALSE;
+
+		if (strchr (p, ';') == NULL)
+			new_format = TRUE;
+		else {
+			new_format = TRUE;
+			while (p && *p) {
+				if (!isdigit (*p++)) {
+					new_format = FALSE;
+					break;
+				}
+			}
+		}
+
+		if (new_format) {
+			array = g_byte_array_sized_new (strlen (tmp_string));
+			g_byte_array_append (array, (guint8 *) tmp_string, strlen (tmp_string));
+			goto done;
+		}
+	}
+	g_free (tmp_string);
+
+	/* Old format; list of ints */
+	tmp_list = g_key_file_get_integer_list (keyfile, setting_name, key, &length, NULL);
+	array = g_byte_array_sized_new (length);
+	for (i = 0; i < length; i++) {
+		int val = tmp_list[i];
+		unsigned char v = (unsigned char) (val & 0xFF);
+
+		if (val < 0 || val > 255) {
+			g_warning ("%s: %s / %s ignoring invalid byte element '%d' (not "
+			           " between 0 and 255 inclusive)", __func__, setting_name,
+			           key, val);
+		} else
+			g_byte_array_append (array, (const unsigned char *) &v, sizeof (v));
+	}
+	g_free (tmp_list);
+
+done:
+	if (array->len)
+		g_object_set (setting, key, array, NULL);
+	else {
+		g_warning ("%s: ignoring invalid SSID for %s / %s",
+		           __func__, setting_name, key);
+	}
+	g_byte_array_free (array, TRUE);
+}
 
 typedef struct {
 	const char *setting_name;
@@ -733,7 +802,7 @@ typedef struct {
 	void (*parser) (NMSetting *setting, const char *key, GKeyFile *keyfile);
 } KeyParser;
 
-/* A table of keys that require further parsing/conversion becuase they are
+/* A table of keys that require further parsing/conversion because they are
  * stored in a format that can't be automatically read using the key's type.
  * i.e. IPv4 addresses, which are stored in NetworkManager as guint32, but are
  * stored in keyfiles as strings, eg "10.1.1.2" or IPv6 addresses stored 
@@ -768,14 +837,30 @@ static KeyParser key_parsers[] = {
 	  NM_SETTING_WIRED_MAC_ADDRESS,
 	  TRUE,
 	  mac_address_parser },
+	{ NM_SETTING_WIRED_SETTING_NAME,
+	  NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
+	  TRUE,
+	  mac_address_parser },
 	{ NM_SETTING_WIRELESS_SETTING_NAME,
 	  NM_SETTING_WIRELESS_MAC_ADDRESS,
+	  TRUE,
+	  mac_address_parser },
+	{ NM_SETTING_WIRELESS_SETTING_NAME,
+	  NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS,
 	  TRUE,
 	  mac_address_parser },
 	{ NM_SETTING_WIRELESS_SETTING_NAME,
 	  NM_SETTING_WIRELESS_BSSID,
 	  TRUE,
 	  mac_address_parser },
+	{ NM_SETTING_BLUETOOTH_SETTING_NAME,
+	  NM_SETTING_BLUETOOTH_BDADDR,
+	  TRUE,
+	  mac_address_parser },
+	{ NM_SETTING_WIRELESS_SETTING_NAME,
+	  NM_SETTING_WIRELESS_SSID,
+	  TRUE,
+	  ssid_parser },
 	{ NULL, NULL, FALSE }
 };
 
@@ -969,65 +1054,120 @@ read_vpn_secrets (GKeyFile *file, NMSettingVPN *s_vpn)
 }
 
 NMConnection *
-connection_from_file (const char *filename)
+connection_from_file (const char *filename, GError **error)
 {
 	GKeyFile *key_file;
 	struct stat statbuf;
 	gboolean bad_owner, bad_permissions;
 	NMConnection *connection = NULL;
-	GError *err = NULL;
+	NMSettingConnection *s_con;
+	NMSettingBluetooth *s_bt;
+	NMSetting *setting;
+	gchar **groups;
+	gsize length;
+	int i;
+	gboolean vpn_secrets = FALSE;
+	const char *ctype, *tmp;
+	GError *verify_error = NULL;
 
-	if (stat (filename, &statbuf) != 0 || !S_ISREG (statbuf.st_mode))
+	if (stat (filename, &statbuf) != 0 || !S_ISREG (statbuf.st_mode)) {
+		g_set_error_literal (error, KEYFILE_PLUGIN_ERROR, 0,
+		                     "File did not exist or was not a regular file");
 		return NULL;
+	}
 
 	bad_owner = getuid () != statbuf.st_uid;
 	bad_permissions = statbuf.st_mode & 0077;
 
 	if (bad_owner || bad_permissions) {
-		g_warning ("Ignoring insecure configuration file '%s'", filename);
+		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
+		             "File permissions (%o) or owner (%d) were insecure",
+		             statbuf.st_mode, statbuf.st_uid);
 		return NULL;
 	}
 
 	key_file = g_key_file_new ();
-	if (g_key_file_load_from_file (key_file, filename, G_KEY_FILE_NONE, &err)) {
-		gchar **groups;
-		gsize length;
-		int i;
-		gboolean vpn_secrets = FALSE;
+	if (!g_key_file_load_from_file (key_file, filename, G_KEY_FILE_NONE, error))
+		goto out;
 
-		connection = nm_connection_new ();
+	connection = nm_connection_new ();
 
-		groups = g_key_file_get_groups (key_file, &length);
-		for (i = 0; i < length; i++) {
-			NMSetting *setting;
-
-			/* Only read out secrets when needed */
-			if (!strcmp (groups[i], VPN_SECRETS_GROUP)) {
-				vpn_secrets = TRUE;
-				continue;
-			}
-
-			setting = read_setting (key_file, groups[i]);
-			if (setting)
-				nm_connection_add_setting (connection, setting);
+	groups = g_key_file_get_groups (key_file, &length);
+	for (i = 0; i < length; i++) {
+		/* Only read out secrets when needed */
+		if (!strcmp (groups[i], VPN_SECRETS_GROUP)) {
+			vpn_secrets = TRUE;
+			continue;
 		}
 
-		/* Handle vpn secrets after the 'vpn' setting was read */
-		if (vpn_secrets) {
-			NMSettingVPN *s_vpn;
-
-			s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
-			if (s_vpn)
-				read_vpn_secrets (key_file, s_vpn);
-		}
-
-		g_strfreev (groups);
-	} else {
-		g_warning ("Error parsing file '%s': %s", filename, err->message);
-		g_error_free (err);
+		setting = read_setting (key_file, groups[i]);
+		if (setting)
+			nm_connection_add_setting (connection, setting);
 	}
 
-	g_key_file_free (key_file);
+	/* Make sure that we have the base device type setting even if
+	 * the keyfile didn't include it, which can happen when the base
+	 * device type setting is all default values (like ethernet).
+	 */
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	if (s_con) {
+		ctype = nm_setting_connection_get_connection_type (s_con);
+		setting = nm_connection_get_setting_by_name (connection, ctype);
+		if (ctype) {
+			gboolean add_serial = FALSE;
+			NMSetting *new_setting = NULL;
 
+			if (!setting && !strcmp (ctype, NM_SETTING_WIRED_SETTING_NAME))
+				new_setting = nm_setting_wired_new ();
+			else if (!strcmp (ctype, NM_SETTING_BLUETOOTH_SETTING_NAME)) {
+				s_bt = (NMSettingBluetooth *) nm_connection_get_setting (connection, NM_TYPE_SETTING_BLUETOOTH);
+				if (s_bt) {
+					tmp = nm_setting_bluetooth_get_connection_type (s_bt);
+					if (tmp && !strcmp (tmp, NM_SETTING_BLUETOOTH_TYPE_DUN))
+						add_serial = TRUE;
+				}
+			} else if (!strcmp (ctype, NM_SETTING_GSM_SETTING_NAME))
+				add_serial = TRUE;
+			else if (!strcmp (ctype, NM_SETTING_CDMA_SETTING_NAME))
+				add_serial = TRUE;
+
+			/* Bluetooth DUN, GSM, and CDMA connections require a serial setting */
+			if (add_serial && !nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL))
+				new_setting = nm_setting_serial_new ();
+
+			if (new_setting)
+				nm_connection_add_setting (connection, new_setting);
+		}
+	}
+
+	/* Serial connections require a PPP setting too */
+	if (nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL)) {
+		if (!nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP))
+			nm_connection_add_setting (connection, nm_setting_ppp_new ());
+	}
+
+	/* Handle vpn secrets after the 'vpn' setting was read */
+	if (vpn_secrets) {
+		NMSettingVPN *s_vpn;
+
+		s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
+		if (s_vpn)
+			read_vpn_secrets (key_file, s_vpn);
+	}
+
+	g_strfreev (groups);
+
+	/* Verify the connection */
+	if (!nm_connection_verify (connection, &verify_error)) {
+		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
+			         "invalid or missing connection property '%s'",
+			         (verify_error && verify_error->message) ? verify_error->message : "(unknown)");
+		g_clear_error (&verify_error);
+		g_object_unref (connection);
+		connection = NULL;
+	}
+
+out:
+	g_key_file_free (key_file);
 	return connection;
 }

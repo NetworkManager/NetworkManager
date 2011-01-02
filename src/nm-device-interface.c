@@ -19,6 +19,8 @@
  * Copyright (C) 2007 - 2010 Red Hat, Inc.
  */
 
+#include <dbus/dbus-glib.h>
+
 #include "nm-marshal.h"
 #include "nm-setting-connection.h"
 #include "nm-device-interface.h"
@@ -26,8 +28,8 @@
 #include "nm-properties-changed-signal.h"
 #include "nm-rfkill.h"
 
-static gboolean impl_device_disconnect (NMDeviceInterface *device,
-                                        GError **error);
+static void impl_device_disconnect (NMDeviceInterface *device,
+                                    DBusGMethodInvocation *context);
 
 #include "nm-device-interface-glue.h"
 
@@ -88,7 +90,15 @@ nm_device_interface_init (gpointer g_iface)
 							  "Interface",
 							  "Interface",
 							  NULL,
-							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_interface_install_property
+		(g_iface,
+		 g_param_spec_string (NM_DEVICE_INTERFACE_IP_IFACE,
+		                      "IP Interface",
+		                      "IP Interface",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_interface_install_property
 		(g_iface,
@@ -170,6 +180,13 @@ nm_device_interface_init (gpointer g_iface)
 	                                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_interface_install_property
+		(g_iface, g_param_spec_boolean (NM_DEVICE_INTERFACE_FIRMWARE_MISSING,
+	                                   "FirmwareMissing",
+	                                   "Firmware missing",
+	                                   FALSE,
+	                                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_interface_install_property
 		(g_iface,
 		 g_param_spec_string (NM_DEVICE_INTERFACE_TYPE_DESC,
 							  "Type Description",
@@ -203,6 +220,13 @@ nm_device_interface_init (gpointer g_iface)
 				  _nm_marshal_VOID__UINT_UINT_UINT,
 				  G_TYPE_NONE, 3,
 				  G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
+
+	g_signal_new (NM_DEVICE_INTERFACE_DISCONNECT_REQUEST,
+	              iface_type,
+	              G_SIGNAL_RUN_FIRST,
+	              0, NULL, NULL,
+	              g_cclosure_marshal_VOID__POINTER,
+	              G_TYPE_NONE, 1, G_TYPE_POINTER);
 
 	dbus_g_object_type_install_info (iface_type,
 									 &dbus_glib_nm_device_interface_object_info);
@@ -327,11 +351,11 @@ nm_device_interface_disconnect (NMDeviceInterface *device,
 	return success;
 }
 
-static gboolean
+static void
 impl_device_disconnect (NMDeviceInterface *device,
-                        GError **error)
+                        DBusGMethodInvocation *context)
 {
-	return nm_device_interface_disconnect (device, error);
+	g_signal_emit_by_name (device, NM_DEVICE_INTERFACE_DISCONNECT_REQUEST, context);
 }
 
 void
@@ -374,11 +398,13 @@ nm_device_interface_connection_match_config (NMDeviceInterface *device,
 }
 
 gboolean
-nm_device_interface_can_assume_connection (NMDeviceInterface *device)
+nm_device_interface_can_assume_connections (NMDeviceInterface *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), FALSE);
 
-	return !!NM_DEVICE_INTERFACE_GET_INTERFACE (device)->connection_match_config;
+	if (NM_DEVICE_INTERFACE_GET_INTERFACE (device)->can_assume_connections)
+		return NM_DEVICE_INTERFACE_GET_INTERFACE (device)->can_assume_connections (device);
+	return FALSE;
 }
 
 void

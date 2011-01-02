@@ -53,7 +53,6 @@ lib_LTLIBRARIES = libnm-glib.la libnm-glib-vpn.la
 libnm_glib_la_CFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
-	$(GCONF_CFLAGS) \
 	$(GUDEV_CFLAGS)
 
 libnmincludedir = $(includedir)/libnm-glib
@@ -133,11 +132,10 @@ libnm_glib_la_LIBADD = \
 	$(builddir)/libdeprecated-nm-glib.la \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS) \
-	$(GCONF_LIBS) \
 	$(GUDEV_LIBS)
 
 libnm_glib_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm-glib.ver \
-	-version-info "4:2:2"
+	-version-info "6:2:4"
 
 noinst_PROGRAMS = libnm-glib-test
 
@@ -154,58 +152,58 @@ libnm_glib_vpn_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm-glib-vpn.ver \
 
 
 nm-client-bindings.h: $(top_srcdir)/introspection/nm-manager-client.xml
-	dbus-binding-tool --prefix=nm_client --mode=glib-client --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_client --mode=glib-client --output=$@ $<
 
 nm-device-bindings.h: $(top_srcdir)/introspection/nm-device.xml
-	dbus-binding-tool --prefix=nm_device --mode=glib-client --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device --mode=glib-client --output=$@ $<
 
 nm-device-ethernet-bindings.h: $(top_srcdir)/introspection/nm-device-ethernet.xml
-	dbus-binding-tool --prefix=nm_device_ethernet --mode=glib-client --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_ethernet --mode=glib-client --output=$@ $<
 
 nm-device-wifi-bindings.h: $(top_srcdir)/introspection/nm-device-wifi.xml
-	dbus-binding-tool --prefix=nm_device_wifi --mode=glib-client --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_wifi --mode=glib-client --output=$@ $<
 
 nm-device-bt-bindings.h: $(top_srcdir)/introspection/nm-device-bt.xml
-	dbus-binding-tool --prefix=nm_device_bt --mode=glib-client --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_bt --mode=glib-client --output=$@ $<
 
 nm-access-point-bindings.h: $(top_srcdir)/introspection/nm-access-point.xml
-	dbus-binding-tool --prefix=nm_access_point --mode=glib-client --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_access_point --mode=glib-client --output=$@ $<
 
 nm-settings-glue.h: $(top_srcdir)/introspection/nm-settings.xml
-	dbus-binding-tool --prefix=nm_settings --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_settings --mode=glib-server --output=$@ $<
 
 nm-settings-bindings.h: $(top_srcdir)/introspection/nm-settings.xml
-	dbus-binding-tool --prefix=nm_settings --mode=glib-client --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_settings --mode=glib-client --output=$@ $<
 
 nm-settings-system-bindings.h: $(top_srcdir)/introspection/nm-settings-system.xml
-	dbus-binding-tool --prefix=nm_settings_system --mode=glib-client --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_settings_system --mode=glib-client --output=$@ $<
 
 nm-exported-connection-glue.h: $(top_srcdir)/introspection/nm-exported-connection.xml
-	dbus-binding-tool --prefix=nm_exported_connection --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_exported_connection --mode=glib-server --output=$@ $<
 
 nm-exported-connection-bindings.h: $(top_srcdir)/introspection/nm-exported-connection.xml
-	dbus-binding-tool --prefix=nm_exported_connection --mode=glib-client --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_exported_connection --mode=glib-client --output=$@ $<
 
 nm-vpn-connection-bindings.h: $(top_srcdir)/introspection/nm-vpn-connection.xml
-	dbus-binding-tool --prefix=nm_vpn_connection --mode=glib-client --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_vpn_connection --mode=glib-client --output=$@ $<
 
 nm-vpn-plugin-glue.h: $(top_srcdir)/introspection/nm-vpn-plugin.xml
-	dbus-binding-tool --prefix=nm_vpn_plugin --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_vpn_plugin --mode=glib-server --output=$@ $<
 
 nm-active-connection-bindings.h: $(top_srcdir)/introspection/nm-active-connection.xml
-	dbus-binding-tool --prefix=nm_active_connection --mode=glib-client --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_active_connection --mode=glib-client --output=$@ $<
 
 nm-ip4-config-bindings.h: $(top_srcdir)/introspection/nm-ip4-config.xml
-	dbus-binding-tool --prefix=nm_ip4_config --mode=glib-client --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_ip4_config --mode=glib-client --output=$@ $<
 
 nm-dhcp4-config-bindings.h: $(top_srcdir)/introspection/nm-dhcp4-config.xml
-	dbus-binding-tool --prefix=nm_dhcp4_config --mode=glib-client --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_dhcp4_config --mode=glib-client --output=$@ $<
 
 nm-ip6-config-bindings.h: $(top_srcdir)/introspection/nm-ip6-config.xml
-	dbus-binding-tool --prefix=nm_ip6_config --mode=glib-client --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_ip6_config --mode=glib-client --output=$@ $<
 
 nm-dhcp6-config-bindings.h: $(top_srcdir)/introspection/nm-dhcp6-config.xml
-	dbus-binding-tool --prefix=nm_dhcp6_config --mode=glib-client --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_dhcp6_config --mode=glib-client --output=$@ $<
 
 nm-wimax-device-bindings.h: $(top_srcdir)/introspection/nm-wimax-device.xml
 	dbus-binding-tool --prefix=nm_wimax_device --mode=glib-client --output=$@ $<

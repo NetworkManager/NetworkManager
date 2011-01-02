@@ -3,7 +3,10 @@ EXTRA_DIST = \
 	Test_GSM_Connection \
 	Test_Wireless_Connection \
 	Test_Wired_Connection_MAC_Case \
-	Test_Wired_Connection_IP6
+	Test_Wired_Connection_IP6 \
+	ATT_Data_Connect_BT \
+	ATT_Data_Connect_Plain \
+	Test_String_SSID
 
 check-local:
 	@for f in $(EXTRA_DIST); do \

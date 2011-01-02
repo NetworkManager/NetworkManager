@@ -99,6 +99,15 @@ void          nm_ip4_config_set_mss             (NMIP4Config *config, guint32 ms
 gboolean      nm_ip4_config_get_never_default   (NMIP4Config *config);
 void          nm_ip4_config_set_never_default   (NMIP4Config *config, gboolean never_default);
 
+void          nm_ip4_config_add_nis_server      (NMIP4Config *config, guint32 nis);
+guint32       nm_ip4_config_get_nis_server      (NMIP4Config *config, guint i);
+guint32       nm_ip4_config_get_num_nis_servers (NMIP4Config *config);
+void          nm_ip4_config_reset_nis_servers   (NMIP4Config *config);
+
+void          nm_ip4_config_set_nis_domain      (NMIP4Config *config, const char *domain);
+const char *  nm_ip4_config_get_nis_domain      (NMIP4Config *config);
+
+
 /* Flags for nm_ip4_config_to_rtnl_addr() */
 #define NM_RTNL_ADDR_NONE		0x0000
 #define NM_RTNL_ADDR_ADDR		0x0001
@@ -122,6 +131,8 @@ typedef enum {
 	NM_IP4_COMPARE_FLAG_MTU         = 0x00000040,
 	NM_IP4_COMPARE_FLAG_MSS         = 0x00000080,
 	NM_IP4_COMPARE_FLAG_WINS_SERVERS= 0x00000100,
+	NM_IP4_COMPARE_FLAG_NIS_SERVERS = 0x00000200,
+	NM_IP4_COMPARE_FLAG_NIS_DOMAIN  = 0x00000400,
 	NM_IP4_COMPARE_FLAG_ALL         = 0xFFFFFFFF   /* match everything */
 } NMIP4ConfigCompareFlags;
 

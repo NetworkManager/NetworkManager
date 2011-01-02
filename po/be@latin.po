@@ -55,11 +55,11 @@ msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr ""
 "Niapravilnaja opcyja. Kab pahladzieć śpis mahčymych opcyj, užyj --help.\n"
 
-#: ../src/named-manager/nm-named-manager.c:218
+#: ../src/dns-manager/nm-dns-manager.c:218
 msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
 msgstr "UVAHA: resolver glibc nie padtrymlivaje bolš za 3 servery nazvaŭ."
 
-#: ../src/named-manager/nm-named-manager.c:220
+#: ../src/dns-manager/nm-dns-manager.c:220
 msgid "The nameservers listed below may not be recognized."
 msgstr "Niemahčyma paznać nastupnyja servery nazvaŭ."
 

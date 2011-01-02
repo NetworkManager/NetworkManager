@@ -34,8 +34,11 @@ global:
 	nm_client_get_device_by_path;
 	nm_client_get_devices;
 	nm_client_get_manager_running;
+	nm_client_get_permission_result;
 	nm_client_get_state;
 	nm_client_get_type;
+	nm_client_networking_get_enabled;
+	nm_client_networking_set_enabled;
 	nm_client_new;
 	nm_client_sleep;
 	nm_client_wireless_get_enabled;
@@ -63,12 +66,14 @@ global:
 	nm_device_bt_get_type;
 	nm_device_ethernet_get_carrier;
 	nm_device_ethernet_get_hw_address;
+	nm_device_ethernet_get_permanent_hw_address;
 	nm_device_ethernet_get_speed;
 	nm_device_ethernet_get_type;
 	nm_device_ethernet_new;
 	nm_device_get_capabilities;
 	nm_device_get_dhcp4_config;
 	nm_device_get_driver;
+	nm_device_get_firmware_missing;
 	nm_device_get_iface;
 	nm_device_get_ip4_config;
 	nm_device_get_ip6_config;
@@ -85,6 +90,7 @@ global:
 	nm_device_wifi_get_bitrate;
 	nm_device_wifi_get_capabilities;
 	nm_device_wifi_get_hw_address;
+	nm_device_wifi_get_permanent_hw_address;
 	nm_device_wifi_get_mode;
 	nm_device_wifi_get_type;
 	nm_device_wifi_new;
@@ -92,6 +98,10 @@ global:
 	nm_dhcp4_config_get_options;
 	nm_dhcp4_config_get_type;
 	nm_dhcp4_config_new;
+	nm_dhcp6_config_get_one_option;
+	nm_dhcp6_config_get_options;
+	nm_dhcp6_config_get_type;
+	nm_dhcp6_config_new;
 	nm_exported_connection_export;
 	nm_exported_connection_get_type;
 	nm_exported_connection_new;

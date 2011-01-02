@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2010 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -112,15 +112,6 @@ nm_setting_pppoe_get_password (NMSettingPPPOE *setting)
 	return NM_SETTING_PPPOE_GET_PRIVATE (setting)->password;
 }
 
-static gint
-find_setting_by_name (gconstpointer a, gconstpointer b)
-{
-	NMSetting *setting = NM_SETTING (a);
-	const char *str = (const char *) b;
-
-	return strcmp (nm_setting_get_name (setting), str);
-}
-
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
@@ -145,14 +136,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		             NM_SETTING_PPPOE_ERROR,
 		             NM_SETTING_PPPOE_ERROR_INVALID_PROPERTY,
 		             NM_SETTING_PPPOE_SERVICE);
-		return FALSE;
-	}
-
-	if (!g_slist_find_custom (all_settings, NM_SETTING_PPP_SETTING_NAME, find_setting_by_name)) {
-		g_set_error (error,
-		             NM_SETTING_PPPOE_ERROR,
-		             NM_SETTING_PPPOE_ERROR_MISSING_PPP_SETTING,
-		             NULL);
 		return FALSE;
 	}
 

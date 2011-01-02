@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2008 - 2009 Red Hat, Inc.
+ * (C) Copyright 2008 - 2010 Red Hat, Inc.
  */
 
 #ifndef __COMMON_H__
@@ -33,15 +33,19 @@
 #define ORIG_TAG ".orig"
 #define REJ_TAG ".rej"
 #define RPMNEW_TAG ".rpmnew"
+#define AUGNEW_TAG ".augnew"
+#define AUGTMP_TAG ".augtmp"
 
 #define IFCFG_DIR SYSCONFDIR"/sysconfig/network-scripts"
 
 #define IFCFG_PLUGIN_NAME "ifcfg-rh"
-#define IFCFG_PLUGIN_INFO "(c) 2007 - 2008 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list."
+#define IFCFG_PLUGIN_INFO "(c) 2007 - 2010 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list."
 
 #define TYPE_ETHERNET "Ethernet"
 #define TYPE_WIRELESS "Wireless"
+#define TYPE_BRIDGE   "Bridge"
 
+#define IFCFG_PLUGIN_ERROR (ifcfg_plugin_error_quark ())
 GQuark ifcfg_plugin_error_quark (void);
 
 

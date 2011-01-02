@@ -294,7 +294,15 @@ global:
 	nm_setting_wired_get_duplex;
 	nm_setting_wired_get_auto_negotiate;
 	nm_setting_wired_get_mac_address;
+	nm_setting_wired_get_cloned_mac_address;
 	nm_setting_wired_get_mtu;
+	nm_setting_wired_get_num_s390_options;
+	nm_setting_wired_get_s390_nettype;
+	nm_setting_wired_get_s390_option;
+	nm_setting_wired_get_s390_option_by_key;
+	nm_setting_wired_add_s390_option;
+	nm_setting_wired_get_s390_subchannels;
+	nm_setting_wired_remove_s390_option;
 	nm_setting_wireless_ap_security_compatible;
 	nm_setting_wireless_error_get_type;
 	nm_setting_wireless_error_quark;
@@ -308,6 +316,7 @@ global:
 	nm_setting_wireless_get_rate;
 	nm_setting_wireless_get_tx_power;
 	nm_setting_wireless_get_mac_address;
+	nm_setting_wireless_get_cloned_mac_address;
 	nm_setting_wireless_get_mtu;
 	nm_setting_wireless_get_security;
 	nm_setting_wireless_add_seen_bssid;
@@ -371,6 +380,10 @@ global:
 	nm_utils_ssid_to_utf8;
 	nm_utils_uuid_generate;
 	nm_utils_uuid_generate_from_string;
+	nm_utils_wifi_freq_to_channel;
+	nm_utils_wifi_channel_to_freq;
+	nm_utils_wifi_find_next_channel;
+	nm_utils_wifi_is_channel_valid;
 	nm_ip4_address_compare;
 	nm_ip4_address_dup;
 	nm_ip4_address_get_address;

@@ -1,0 +1,5 @@
+iface pppoe inet manual
+# case 12: wrapped line, splitting a word (must be joined again)
+	up ifup ppp0\
+=dsl
+

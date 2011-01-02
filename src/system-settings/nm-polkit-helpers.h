@@ -16,17 +16,32 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * (C) Copyright 2008 Novell, Inc.
- * (C) Copyright 2008 Red Hat, Inc.
+ * (C) Copyright 2008 - 2010 Red Hat, Inc.
  */
 
 #ifndef NM_POLKIT_HELPERS_H
 #define NM_POLKIT_HELPERS_H
 
+#include <config.h>
 #include <polkit/polkit.h>
 
 #define NM_SYSCONFIG_POLICY_ACTION_CONNECTION_MODIFY    "org.freedesktop.network-manager-settings.system.modify"
 #define NM_SYSCONFIG_POLICY_ACTION_WIFI_SHARE_PROTECTED "org.freedesktop.network-manager-settings.system.wifi.share.protected"
 #define NM_SYSCONFIG_POLICY_ACTION_WIFI_SHARE_OPEN      "org.freedesktop.network-manager-settings.system.wifi.share.open"
 #define NM_SYSCONFIG_POLICY_ACTION_HOSTNAME_MODIFY      "org.freedesktop.network-manager-settings.system.hostname.modify"
+
+/* Fix for polkit 0.97 and later */
+#if !HAVE_POLKIT_AUTHORITY_GET_SYNC
+static inline PolkitAuthority *
+polkit_authority_get_sync (GCancellable *cancellable, GError **error)
+{
+	PolkitAuthority *authority;
+
+	authority = polkit_authority_get ();
+	if (!authority)
+		g_set_error (error, 0, 0, "failed to get the PolicyKit authority");
+	return authority;
+}
+#endif
 
 #endif /* NM_POLKIT_HELPERS_H */

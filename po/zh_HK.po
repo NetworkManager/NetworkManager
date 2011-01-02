@@ -44,11 +44,11 @@ msgstr ""
 "# Merged from %s\n"
 "\n"
 
-#: ../src/named-manager/nm-named-manager.c:257
+#: ../src/dns-manager/nm-dns-manager.c:257
 msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
 msgstr "注意：glibc 解析器不支援 3 個以上的名稱伺服器。"
 
-#: ../src/named-manager/nm-named-manager.c:259
+#: ../src/dns-manager/nm-dns-manager.c:259
 msgid "The nameservers listed below may not be recognized."
 msgstr "下面列出的名稱伺服器可能不會被辨識。"
 

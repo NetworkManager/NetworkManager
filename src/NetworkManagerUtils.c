@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
@@ -484,6 +485,101 @@ nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr)
 	}
 
 	g_free (hwaddr_match);
+	return FALSE;
+}
+
+#define BUFSIZE 10
+
+static gboolean
+parse_subchannels (const char *subchannels, guint32 *a, guint32 *b, guint32 *c)
+{
+	long unsigned int tmp;
+	char buf[BUFSIZE + 1];
+	const char *p = subchannels;
+	int i = 0;
+	char *pa = NULL, *pb = NULL, *pc = NULL;
+
+	g_return_val_if_fail (subchannels != NULL, FALSE);
+	g_return_val_if_fail (a != NULL, FALSE);
+	g_return_val_if_fail (*a == 0, FALSE);
+	g_return_val_if_fail (b != NULL, FALSE);
+	g_return_val_if_fail (*b == 0, FALSE);
+	g_return_val_if_fail (c != NULL, FALSE);
+	g_return_val_if_fail (*c == 0, FALSE);
+
+	/* sanity check */
+	if (!isxdigit (subchannels[0]))
+		return FALSE;
+
+	/* Get the first channel */
+	while (*p && (*p != ',')) {
+		if (!isxdigit (*p) && (*p != '.'))
+			return FALSE;  /* Invalid chars */
+		if (i >= BUFSIZE)
+			return FALSE;  /* Too long to be a subchannel */
+		buf[i++] = *p++;
+	}
+	buf[i] = '\0';
+
+	/* and grab each of its elements, there should be 3 */
+	pa = &buf[0];
+	pb = strchr (buf, '.');
+	if (pb)
+		pc = strchr (pb + 1, '.');
+	if (!pa || !pb || !pc)
+		return FALSE;
+
+	/* Split the string */
+	*pb++ = '\0';
+	*pc++ = '\0';
+
+	errno = 0;
+	tmp = strtoul (pa, NULL, 16);
+	if (errno)
+		return FALSE;
+	*a = (guint32) tmp;
+
+	errno = 0;
+	tmp = strtoul (pb, NULL, 16);
+	if (errno)
+		return FALSE;
+	*b = (guint32) tmp;
+
+	errno = 0;
+	tmp = strtoul (pc, NULL, 16);
+	if (errno)
+		return FALSE;
+	*c = (guint32) tmp;
+
+	return TRUE;
+}
+
+#define SUBCHAN_TAG "s390-subchannels:"
+
+gboolean
+nm_match_spec_s390_subchannels (const GSList *specs, const char *subchannels)
+{
+	const GSList *iter;
+	guint32 a = 0, b = 0, c = 0;
+	guint32 spec_a = 0, spec_b = 0, spec_c = 0;
+
+	g_return_val_if_fail (subchannels != NULL, FALSE);
+
+	if (!parse_subchannels (subchannels, &a, &b, &c))
+		return FALSE;
+
+	for (iter = specs; iter; iter = g_slist_next (iter)) {
+		const char *spec = iter->data;
+
+		if (!strncmp (spec, SUBCHAN_TAG, strlen (SUBCHAN_TAG))) {
+			spec += strlen (SUBCHAN_TAG);
+			if (parse_subchannels (spec, &spec_a, &spec_b, &spec_c)) {
+				if (a == spec_a && b == spec_b && c == spec_c)
+					return TRUE;
+			}
+		}
+	}
+
 	return FALSE;
 }
 

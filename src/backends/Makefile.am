@@ -3,8 +3,6 @@ INCLUDES = \
 	-I${top_srcdir}/src/logging \
 	-I${top_srcdir}/include \
 	-I${top_srcdir}/src \
-	-I${top_srcdir}/src/vpn-manager \
-	-I${top_srcdir}/src/named-manager \
 	-I${top_srcdir}/libnm-util
 
 noinst_LTLIBRARIES = libnmbackend.la
@@ -53,6 +51,14 @@ endif
 
 if TARGET_PARDUS
 libnmbackend_la_SOURCES += NetworkManagerPardus.c
+endif
+
+if TARGET_LINEXA
+libnmbackend_la_SOURCES += NetworkManagerLinexa.c
+endif
+
+if TARGET_EXHERBO
+libnmbackend_la_SOURCES += NetworkManagerExherbo.c
 endif
 
 libnmbackend_la_LIBADD += \

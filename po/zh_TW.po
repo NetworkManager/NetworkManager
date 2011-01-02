@@ -1591,11 +1591,11 @@ msgstr "不明日誌層級「%s」"
 msgid "Unknown log domain '%s'"
 msgstr "不明日誌網域「%s」"
 
-#: ../src/named-manager/nm-named-manager.c:343
+#: ../src/dns-manager/nm-dns-manager.c:343
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "注意：libc 解析器不支援 3 個以上的名稱伺服器。"
 
-#: ../src/named-manager/nm-named-manager.c:345
+#: ../src/dns-manager/nm-dns-manager.c:345
 msgid "The nameservers listed below may not be recognized."
 msgstr "下面列出的名稱伺服器可能不會被辨識。"
 

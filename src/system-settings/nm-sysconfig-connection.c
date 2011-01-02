@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * (C) Copyright 2008 Novell, Inc.
- * (C) Copyright 2008 - 2009 Red Hat, Inc.
+ * (C) Copyright 2008 - 2010 Red Hat, Inc.
  */
 
 #include <NetworkManager.h>
@@ -209,7 +209,7 @@ get_secrets (NMSettingsConnectionInterface *connection,
 	setting = nm_connection_get_setting_by_name (priv->secrets, setting_name);
 	if (!setting) {
 		error = g_error_new (NM_SETTINGS_INTERFACE_ERROR,
-		                     NM_SETTINGS_INTERFACE_ERROR_INVALID_CONNECTION,
+		                     NM_SETTINGS_INTERFACE_ERROR_INVALID_SETTING,
 		                     "%s.%d - Connection didn't have requested setting '%s'.",
 		                     __FILE__, __LINE__, setting_name);
 		(*callback) (connection, NULL, error, user_data);
@@ -612,10 +612,14 @@ static void
 nm_sysconfig_connection_init (NMSysconfigConnection *self)
 {
 	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
+	GError *error = NULL;
 
-	priv->authority = polkit_authority_get ();
+	priv->authority = polkit_authority_get_sync (NULL, NULL);
 	if (!priv->authority) {
-		nm_log_err (LOGD_SYS_SET, "%s: error creating PolicyKit authority");
+		nm_log_warn (LOGD_SYS_SET, "failed to create PolicyKit authority: (%d) %s",
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
 	}
 }
 

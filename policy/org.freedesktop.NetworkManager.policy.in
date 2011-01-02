@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1.0/policyconfig.dtd">
+
+<policyconfig>
+
+  <vendor>NetworkManager</vendor>
+  <vendor_url>http://www.gnome.org/projects/NetworkManager</vendor_url>
+  <icon_name>nm-icon</icon_name>
+
+  <action id="org.freedesktop.NetworkManager.enable-disable-network">
+    <_description>Enable or disable system networking</_description>
+    <_message>System policy prevents enabling or disabling system networking</_message>
+    <defaults>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.freedesktop.NetworkManager.sleep-wake">
+    <_description>Put NetworkManager to sleep or wake it up (should only be used by system power management)</_description>
+    <_message>System policy prevents putting NetworkManager to sleep or waking it up</_message>
+    <defaults>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>no</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.freedesktop.NetworkManager.enable-disable-wifi">
+    <_description>Enable or disable WiFi devices</_description>
+    <_message>System policy prevents enabling or disabling WiFi devices</_message>
+    <defaults>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.freedesktop.NetworkManager.enable-disable-wwan">
+    <_description>Enable or disable mobile broadband devices</_description>
+    <_message>System policy prevents enabling or disabling mobile broadband devices</_message>
+    <defaults>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.freedesktop.NetworkManager.use-user-connections">
+    <_description>Allow use of user-specific connections</_description>
+    <_message>System policy prevents use of user-specific connections</_message>
+    <defaults>
+      <allow_inactive>yes</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.freedesktop.NetworkManager.network-control">
+    <_description>Allow control of network connections</_description>
+    <_message>System policy prevents control of network connections</_message>
+    <defaults>
+      <allow_inactive>yes</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
+
+</policyconfig>
+

@@ -54,7 +54,7 @@ libsystem_settings_la_LIBADD = \
 libsystem_settings_la_LDFLAGS = -rdynamic
 
 nm-settings-system-glue.h: $(top_srcdir)/introspection/nm-settings-system.xml
-	dbus-binding-tool --prefix=nm_settings_system --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_settings_system --mode=glib-server --output=$@ $<
 
 CLEANFILES = \
 	$(BUILT_SOURCES)

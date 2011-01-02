@@ -93,12 +93,14 @@ libnm-util/tests/test-need-secrets
 libnm-util/tests/test-setting-8021x
 src/tests/test-dhcp-options
 src/tests/test-policy-hosts
+src/dhcp-manager/tests/test-dhcp-dhclient
 
 system-settings/plugins/keyfile/tests/test-keyfile
 system-settings/plugins/ifcfg-rh/tests/test-ifcfg-rh
 system-settings/plugins/ifcfg-rh/tests/test-ifcfg-rh-utils
 system-settings/plugins/ifcfg-rh/tests/network-scripts/Test_Write_*
 system-settings/plugins/ifcfg-rh/tests/network-scripts/*-Test_Write_*
+system-settings/plugins/ifupdown/tests/test-ifupdown
 
 m4/gtk-doc.m4
 m4/intltool.m4
@@ -106,5 +108,9 @@ m4/libtool.m4
 m4/lt*.m4
 
 policy/org.freedesktop.network-manager-settings.system.policy
+policy/org.freedesktop.NetworkManager.policy
+
+data/NetworkManager.service
+data/org.freedesktop.NetworkManager.service
 
 cli/src/nmcli

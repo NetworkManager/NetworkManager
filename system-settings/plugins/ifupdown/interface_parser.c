@@ -73,85 +73,147 @@ void add_data(const char *key,const char *data)
 	//printf("added data '%s' with key '%s'\n",data,key);
 }
 
-#define SPACE_OR_TAB(string,ret) {ret = strchr(string,' ');ret=(ret == NULL?strchr(string,'\t'):ret);}
-
-void ifparser_init(void)
+// join values in src with spaces into dst;  dst needs to be large enough
+static char *join_values_with_spaces(char *dst, char **src)
 {
-	FILE *inp = fopen(ENI_INTERFACES_FILE, "r");
-	int ret = 0;
-	char *line;
-	char *space;
-	char rline[255];
+	if (dst != NULL) {
+		*dst = '\0';
+		if (src != NULL && *src != NULL) {
+			strcat(dst, *src);
 
-	if (inp == NULL)
-	{
-		nm_warning ("Error: Can't open %s\n", ENI_INTERFACES_FILE);
+			for (src++; *src != NULL; src++) {
+				strcat(dst, " ");
+				strcat(dst, *src);
+			}
+		}
+	}
+	return(dst);
+}
+
+void ifparser_init (const char *eni_file, int quiet)
+{
+	FILE *inp = fopen (eni_file, "r");
+	char line[255];
+	int skip_to_block = 1;
+	int skip_long_line = 0;
+	int offs = 0;
+
+	if (inp == NULL) {
+		if (!quiet)
+			g_warning ("Error: Can't open %s\n", eni_file);
 		return;
 	}
-	first = last = NULL;
-	while(1)
-	{
-		line = space = NULL;
-		ret = fscanf(inp,"%255[^\n]\n",rline);
-		if (ret == EOF)
-			break;
-		// If the line did not match, skip it
-		if (ret == 0) {
-			char *ignored;
 
-			ignored = fgets(rline, 255, inp);
+	first = last = NULL;
+	while (!feof(inp))
+	{
+		char *token[128];	// 255 chars can only be split into 127 tokens
+		char value[255];	// large enough to join previously split tokens
+		char *safeptr;
+		int toknum;
+		int len = 0;
+
+		char *ptr = fgets(line+offs, 255-offs, inp);
+		if (ptr == NULL)
+			break;
+
+		len = strlen(line);
+		// skip over-long lines
+		if (!feof(inp) && len > 0 &&  line[len-1] != '\n') {
+			if (!skip_long_line) {
+				if (!quiet)
+					g_message ("Error: Skipping over-long-line '%s...'\n", line);
+			}
+			skip_long_line = 1;
 			continue;
 		}
 
-		line = rline;
-		while(line[0] == ' ')
-			line++;
-		if (line[0]=='#' || line[0]=='\0')
+		// trailing '\n' found: remove it & reset offset to 0
+		if (len > 0 && line[len-1] == '\n') {
+			line[--len] = '\0';
+			offs = 0;
+		}
+
+		// if we're in long_line_skip mode, terminate it for real next line
+		if (skip_long_line) {
+			if (len == 0 || line[len-1] != '\\')
+				skip_long_line = 0;
+			continue;
+		}
+
+		// unwrap wrapped lines
+		if (len > 0 && line[len-1] == '\\') {
+			offs = len - 1;
+			continue;
+		}
+
+		//printf(">>%s<<\n", line);
+
+#define SPACES	" \t"
+		// tokenize input;
+		for (toknum = 0, token[toknum] = strtok_r(line, SPACES, &safeptr);
+		     token[toknum] != NULL;
+		     toknum++, token[toknum] = strtok_r(NULL, SPACES, &safeptr))
+			;
+
+		// ignore comments and empty lines
+		if (toknum == 0 || *token[0]=='#')
 			continue;
 
-		SPACE_OR_TAB(line,space)
-			if (space == NULL)
-			{
-				nm_warning ("Error: Can't parse interface line '%s'\n",line);
-				continue;
+		if (toknum < 2) {
+			if (!quiet) {
+				g_message ("Error: Can't parse interface line '%s'\n",
+						join_values_with_spaces(value, token));
 			}
-		space[0] = '\0';
+			skip_to_block = 1;
+			continue;
+		}
 
 		// There are four different stanzas:
 		// iface, mapping, auto and allow-*. Create a block for each of them.
-		if (strcmp(line,"iface")==0)
-		{
-			char *space2 = strchr(space+1,' ');
-			if (space2 == NULL)
-			{
-				nm_warning ("Error: Can't parse iface line '%s'\n",space+1);
+
+		// iface stanza takes at least 3 parameters
+		if (strcmp(token[0], "iface") == 0) {
+			if (toknum < 4) {
+				if (!quiet) {
+					g_message ("Error: Can't parse iface line '%s'\n",
+							join_values_with_spaces(value, token));
+				}
 				continue;
 			}
-			space2[0]='\0';
-			add_block(line,space+1);
-
-			if (space2[1]!='\0')
-			{
-				space = strchr(space2+1,' ');
-				if (space == NULL)
-				{
-					nm_warning ("Error: Can't parse data '%s'\n",space2+1);
-					continue;
-				}
-				space[0] = '\0';
-				add_data(space2+1,space+1);
-			}
+			add_block(token[0], token[1]);
+			skip_to_block = 0;
+			add_data(token[2], join_values_with_spaces(value, token + 3));
 		}
-		else if (strcmp(line,"auto")==0)
-			add_block(line,space+1);
-		else if (strcmp(line,"mapping")==0)
-			add_block(line,space+1);
-		else if (strncmp(line,"allow-",6)==0)
-			add_block(line,space+1);
-		else
-			add_data(line,space+1);
-
-		//printf("line: '%s' ret=%d\n",rline,ret);
+		// auto and allow-auto stanzas are equivalent,
+		// both can take multiple interfaces as parameters: add one block for each
+		else if (strcmp(token[0], "auto") == 0 ||
+			 strcmp(token[0], "allow-auto") == 0) {
+			int i;
+			for (i = 1; i < toknum; i++)
+				add_block("auto", token[i]);
+			skip_to_block = 0;
+		}
+		else if (strcmp(token[0], "mapping") == 0) {
+			add_block(token[0], join_values_with_spaces(value, token + 1));
+			skip_to_block = 0;
+		}
+		// allow-* can take multiple interfaces as parameters: add one block for each
+		else if (strncmp(token[0],"allow-",6) == 0) {
+			int i;
+			for (i = 1; i < toknum; i++)
+				add_block(token[0], token[i]);
+			skip_to_block = 0;
+		}
+		else {
+			if (skip_to_block) {
+				if (!quiet) {
+					g_message ("Error: ignoring out-of-block data '%s'\n",
+							join_values_with_spaces(value, token));
+				}
+			} else
+				add_data(token[0], join_values_with_spaces(value, token + 1));
+		}
 	}
 	fclose(inp);
 }
@@ -190,6 +252,18 @@ if_block *ifparser_getfirst(void)
 	return first;
 }
 
+int ifparser_get_num_blocks(void)
+{
+	int i = 0;
+	if_block *iter = first;
+
+	while (iter) {
+		i++;
+		iter = iter->next;
+	}
+	return i;
+}
+
 if_block *ifparser_getif(const char* iface)
 {
 	if_block *curr = first;
@@ -212,4 +286,16 @@ const char *ifparser_getkey(if_block* iface, const char *key)
 		curr = curr->next;
 	}
 	return NULL;
+}
+
+int ifparser_get_num_info(if_block* iface)
+{
+	int i = 0;
+	if_data *iter = iface->info;
+
+	while (iter) {
+		i++;
+		iter = iter->next;
+	}
+	return i;
 }

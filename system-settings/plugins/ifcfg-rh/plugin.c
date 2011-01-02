@@ -146,8 +146,7 @@ read_one_connection (SCPluginIfcfg *plugin, const char *filename)
 
 		if (nm_ifcfg_connection_get_unmanaged_spec (connection)) {
 			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Ignoring connection '%s' and its "
-			              "device because NM_CONTROLLED was false.", cid);
-			g_signal_emit_by_name (plugin, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
+			              "device due to NM_CONTROLLED/BRIDGE/VLAN.", cid);
 		} else {
 			/* Wait for the connection to become unmanaged once it knows the
 			 * UDI of it's device, if/when the device gets plugged in.
@@ -164,7 +163,7 @@ read_one_connection (SCPluginIfcfg *plugin, const char *filename)
 			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    error: %s",
 			              (error && error->message) ? error->message : "(unknown)");
 		}
-		g_error_free (error);
+		g_clear_error (&error);
 	}
 
 	return connection;
@@ -218,8 +217,6 @@ connection_changed_handler (SCPluginIfcfg *plugin,
 	g_return_if_fail (do_remove != NULL);
 	g_return_if_fail (do_new != NULL);
 
-	PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "updating %s", path);
-
 	new = (NMIfcfgConnection *) nm_ifcfg_connection_new (path, &error, &ignore_error);
 	if (!new) {
 		/* errors reading connection; remove it */
@@ -234,7 +231,18 @@ connection_changed_handler (SCPluginIfcfg *plugin,
 		return;
 	}
 
+
 	/* Successfully read connection changes */
+
+	/* When the connections are the same, nothing is done */
+	if (nm_connection_compare (NM_CONNECTION (connection),
+	                           NM_CONNECTION (new),
+	                           NM_SETTING_COMPARE_FLAG_EXACT)) {
+		g_object_unref (new);
+		return;
+	}
+
+	PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "updating %s", path);
 
 	old_unmanaged = nm_ifcfg_connection_get_unmanaged_spec (NM_IFCFG_CONNECTION (connection));
 	new_unmanaged = nm_ifcfg_connection_get_unmanaged_spec (NM_IFCFG_CONNECTION (new));
@@ -305,7 +313,9 @@ handle_connection_remove_or_new (SCPluginIfcfg *plugin,
 	if (do_new) {
 		connection = read_one_connection (plugin, path);
 		if (connection) {
-			if (!nm_ifcfg_connection_get_unmanaged_spec (connection))
+			if (nm_ifcfg_connection_get_unmanaged_spec (connection))
+				g_signal_emit_by_name (plugin, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
+			else
 				g_signal_emit_by_name (plugin, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, connection);
 		}
 	}
@@ -334,25 +344,25 @@ dir_changed (GFileMonitor *monitor,
 	g_free (path);
 
 	connection = g_hash_table_lookup (priv->connections, name);
-	if (!connection) {
-		do_new = TRUE;
-	} else {
-		switch (event_type) {
-		case G_FILE_MONITOR_EVENT_DELETED:
-			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "removed %s.", name);
-			do_remove = TRUE;
-			break;
-		case G_FILE_MONITOR_EVENT_CREATED:
-		case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
-			/* Update */
+	switch (event_type) {
+	case G_FILE_MONITOR_EVENT_DELETED:
+		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "removed %s.", name);
+		if (connection)
+			handle_connection_remove_or_new (plugin, name, connection, TRUE, FALSE);
+		break;
+	case G_FILE_MONITOR_EVENT_CREATED:
+	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
+		/* Update */
+		if (!connection)
+			do_new = TRUE;
+		else
 			connection_changed_handler (plugin, name, connection, &do_remove, &do_new);
-			break;
-		default:
-			break;
-		}
-	}
 
-	handle_connection_remove_or_new (plugin, name, connection, do_remove, do_new);
+		handle_connection_remove_or_new (plugin, name, connection, do_remove, do_new);
+		break;
+	default:
+		break;
+	}
 
 	g_free (name);
 }
@@ -544,7 +554,7 @@ impl_ifcfgrh_get_ifcfg_details (SCPluginIfcfg *plugin,
 	}
 
 	connection = g_hash_table_lookup (priv->connections, in_ifcfg);
-	if (!connection) {
+	if (!connection || nm_ifcfg_connection_get_unmanaged_spec (connection)) {
 		g_set_error (error,
 		             NM_SETTINGS_INTERFACE_ERROR,
 		             NM_SETTINGS_INTERFACE_ERROR_INVALID_CONNECTION,

@@ -1602,11 +1602,11 @@ msgstr "Livello log '%s' sconosciuto"
 msgid "Unknown log domain '%s'"
 msgstr "Dominio log '%s' sconosciuto"
 
-#: ../src/named-manager/nm-named-manager.c:343
+#: ../src/dns-manager/nm-dns-manager.c:343
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "NOTA: il risolutore libc non supporta più di 3 server di nomi."
 
-#: ../src/named-manager/nm-named-manager.c:345
+#: ../src/dns-manager/nm-dns-manager.c:345
 msgid "The nameservers listed below may not be recognized."
 msgstr "I server di nomi elencati sotto non possono essere riconosciuti."
 

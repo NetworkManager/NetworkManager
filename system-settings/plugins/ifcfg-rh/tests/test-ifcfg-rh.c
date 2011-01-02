@@ -29,8 +29,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include <dbus/dbus-glib.h>
-
 #include <nm-utils.h>
 #include <nm-setting-connection.h>
 #include <nm-setting-wired.h>
@@ -2319,6 +2317,111 @@ test_read_wired_ipv6_only (void)
 	g_object_unref (connection);
 }
 
+#define TEST_IFCFG_WIRED_DHCP6_ONLY TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp6-only"
+
+static void
+test_read_wired_dhcp6_only (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const char *expected_id = "System test-wired-dhcp6-only";
+	const char *method;
+
+	connection = connection_from_file (TEST_IFCFG_WIRED_DHCP6_ONLY,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "wired-dhcp6-only-read", "failed to read %s: %s", TEST_IFCFG_WIRED_DHCP6_ONLY, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wired-dhcp6-only-verify", "failed to verify %s: %s", TEST_IFCFG_WIRED_DHCP6_ONLY, error->message);
+
+	ASSERT (unmanaged == FALSE,
+	        "wired-dhcp6-only-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_DHCP6_ONLY);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "wired-dhcp6-only-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_DHCP6_ONLY,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "wired-dhcp6-only-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_DHCP6_ONLY,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_id) == 0,
+	        "wired-dhcp6-only-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_DHCP6_ONLY,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+	/* ===== WIRED SETTING ===== */
+
+	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	ASSERT (s_wired != NULL,
+	        "wired-dhcp6-only-verify-wired", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_DHCP6_ONLY,
+	        NM_SETTING_WIRED_SETTING_NAME);
+
+	/* ===== IPv4 SETTING ===== */
+
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	ASSERT (s_ip4 != NULL,
+	        "wired-dhcp6-only-verify-ip4", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_DHCP6_ONLY,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+
+	method = nm_setting_ip4_config_get_method (s_ip4);
+	ASSERT (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0,
+	        "wired-dhcp6-only-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_DHCP6_ONLY,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_METHOD);
+
+	/* ===== IPv6 SETTING ===== */
+
+	s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG));
+	ASSERT (s_ip6 != NULL,
+	        "wired-dhcp6-only-verify-ip6", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_DHCP6_ONLY,
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip6_config_get_method (s_ip6);
+	ASSERT (strcmp (tmp, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0,
+	        "wired-dhcp6-only-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_DHCP6_ONLY,
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP6_CONFIG_METHOD);
+
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+	g_object_unref (connection);
+}
+
 #define TEST_IFCFG_ONBOOT_NO TEST_IFCFG_DIR"/network-scripts/ifcfg-test-onboot-no"
 
 static void
@@ -3674,6 +3777,272 @@ test_read_wifi_wep_passphrase (void)
 	ASSERT (tmp == NULL,
 	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: unexpected %s / %s key",
 	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
+
+	g_object_unref (connection);
+}
+
+#define TEST_IFCFG_WIFI_WEP_40_ASCII TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wep-40-ascii"
+
+static void
+test_read_wifi_wep_40_ascii (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wireless;
+	NMSettingWirelessSecurity *s_wsec;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const char *expected_wep_key0 = "Lorem";
+	NMWepKeyType key_type;
+
+	connection = connection_from_file (TEST_IFCFG_WIFI_WEP_40_ASCII,
+	                                   NULL,
+	                                   TYPE_WIRELESS,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "wifi-wep-40-ascii-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WEP_40_ASCII, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wifi-wep-40-ascii-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_WEP_40_ASCII, error->message);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "wifi-wep-40-ascii-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WEP_40_ASCII,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ===== WIRELESS SETTING ===== */
+
+	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	ASSERT (s_wireless != NULL,
+	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WEP_40_ASCII,
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+
+	/* Security */
+	tmp = nm_setting_wireless_get_security (s_wireless);
+	ASSERT (tmp != NULL,
+	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_40_ASCII,
+	        NM_SETTING_WIRELESS_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SEC);
+	ASSERT (strcmp (tmp, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0,
+	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WEP_40_ASCII,
+	        NM_SETTING_WIRELESS_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SEC);
+
+	/* ===== WIRELESS SECURITY SETTING ===== */
+
+	s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY));
+	ASSERT (s_wsec != NULL,
+	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WEP_40_ASCII,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+
+	/* Key management */
+	ASSERT (strcmp (nm_setting_wireless_security_get_key_mgmt (s_wsec), "none") == 0,
+	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_40_ASCII,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+
+	/* WEP key index */
+	ASSERT (nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec) == 0,
+	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WEP_40_ASCII,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX);
+
+	/* WEP key type */
+	key_type = nm_setting_wireless_security_get_wep_key_type (s_wsec);
+	ASSERT (key_type == NM_WEP_KEY_TYPE_UNKNOWN || key_type == NM_WEP_KEY_TYPE_KEY,
+	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: unexpected WEP key type %d",
+	        TEST_IFCFG_WIFI_WEP_40_ASCII,
+	        key_type);
+
+	/* WEP key index 0 */
+	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 0);
+	ASSERT (tmp != NULL,
+	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_40_ASCII,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+	ASSERT (strcmp (tmp, expected_wep_key0) == 0,
+	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WEP_40_ASCII,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+
+	/* WEP key index 1 */
+	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 1);
+	ASSERT (tmp == NULL,
+	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: unexpected %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_40_ASCII,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY1);
+
+	/* WEP key index 2 */
+	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 2);
+	ASSERT (tmp == NULL,
+	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: unexpected %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_40_ASCII,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY2);
+
+	/* WEP key index 3 */
+	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 3);
+	ASSERT (tmp == NULL,
+	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: unexpected %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_40_ASCII,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
+
+	g_object_unref (connection);
+}
+
+#define TEST_IFCFG_WIFI_WEP_104_ASCII TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wep-104-ascii"
+
+static void
+test_read_wifi_wep_104_ascii (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wireless;
+	NMSettingWirelessSecurity *s_wsec;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const char *expected_wep_key0 = "LoremIpsumSit";
+	NMWepKeyType key_type;
+
+	connection = connection_from_file (TEST_IFCFG_WIFI_WEP_104_ASCII,
+	                                   NULL,
+	                                   TYPE_WIRELESS,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "wifi-wep-104-ascii-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WEP_104_ASCII, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wifi-wep-104-ascii-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_WEP_104_ASCII, error->message);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "wifi-wep-104-ascii-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WEP_104_ASCII,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ===== WIRELESS SETTING ===== */
+
+	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	ASSERT (s_wireless != NULL,
+	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WEP_104_ASCII,
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+
+	/* Security */
+	tmp = nm_setting_wireless_get_security (s_wireless);
+	ASSERT (tmp != NULL,
+	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_104_ASCII,
+	        NM_SETTING_WIRELESS_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SEC);
+	ASSERT (strcmp (tmp, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0,
+	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WEP_104_ASCII,
+	        NM_SETTING_WIRELESS_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SEC);
+
+	/* ===== WIRELESS SECURITY SETTING ===== */
+
+	s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY));
+	ASSERT (s_wsec != NULL,
+	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WEP_104_ASCII,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+
+	/* Key management */
+	ASSERT (strcmp (nm_setting_wireless_security_get_key_mgmt (s_wsec), "none") == 0,
+	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_104_ASCII,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+
+	/* WEP key index */
+	ASSERT (nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec) == 0,
+	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WEP_104_ASCII,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX);
+
+	/* WEP key type */
+	key_type = nm_setting_wireless_security_get_wep_key_type (s_wsec);
+	ASSERT (key_type == NM_WEP_KEY_TYPE_UNKNOWN || key_type == NM_WEP_KEY_TYPE_KEY,
+	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: unexpected WEP key type %d",
+	        TEST_IFCFG_WIFI_WEP_104_ASCII,
+	        key_type);
+
+	/* WEP key index 0 */
+	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 0);
+	ASSERT (tmp != NULL,
+	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_104_ASCII,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+	ASSERT (strcmp (tmp, expected_wep_key0) == 0,
+	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WEP_104_ASCII,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+
+	/* WEP key index 1 */
+	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 1);
+	ASSERT (tmp == NULL,
+	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: unexpected %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_104_ASCII,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY1);
+
+	/* WEP key index 2 */
+	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 2);
+	ASSERT (tmp == NULL,
+	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: unexpected %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_104_ASCII,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY2);
+
+	/* WEP key index 3 */
+	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 3);
+	ASSERT (tmp == NULL,
+	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: unexpected %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_104_ASCII,
 	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
 
@@ -5080,6 +5449,178 @@ test_read_wifi_wep_eap_ttls_chap (void)
 	g_object_unref (connection);
 }
 
+#define TEST_IFCFG_WIRED_QETH_STATIC TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-qeth-static"
+
+static void
+test_read_wired_qeth_static (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const char *expected_id = "System test-wired-qeth-static";
+	const GByteArray *array;
+	const char *expected_channel0 = "0.0.0600";
+	const char *expected_channel1 = "0.0.0601";
+	const char *expected_channel2 = "0.0.0602";
+	const GPtrArray *subchannels;
+
+	connection = connection_from_file (TEST_IFCFG_WIRED_QETH_STATIC,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "wired-qeth-static-read", "failed to read %s: %s", TEST_IFCFG_WIRED_QETH_STATIC, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wired-qeth-static-verify", "failed to verify %s: %s", TEST_IFCFG_WIRED_QETH_STATIC, error->message);
+
+	ASSERT (unmanaged == FALSE,
+	        "wired-qeth-static-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_QETH_STATIC);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "wired-qeth-static-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_QETH_STATIC,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "wired-qeth-static-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_QETH_STATIC,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_id) == 0,
+	        "wired-qeth-static-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_QETH_STATIC,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+	/* ===== WIRED SETTING ===== */
+
+	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	ASSERT (s_wired != NULL,
+	        "wired-qeth-static-verify-wired", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_QETH_STATIC,
+	        NM_SETTING_WIRED_SETTING_NAME);
+
+	/* MAC address */
+	array = nm_setting_wired_get_mac_address (s_wired);
+	ASSERT (array == NULL,
+	        "wired-qeth-static-verify-wired", "failed to verify %s: unexpected %s / %s key",
+	        TEST_IFCFG_WIRED_QETH_STATIC,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_MAC_ADDRESS);
+
+	/* Subchannels */
+	subchannels = nm_setting_wired_get_s390_subchannels (s_wired);
+	ASSERT (subchannels != NULL,
+	        "wired-qeth-static-verify-wired", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_QETH_STATIC,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_S390_SUBCHANNELS);
+	ASSERT (subchannels->len == 3,
+	        "wired-qeth-static-verify-wired", "failed to verify %s: invalid %s / %s key (not 3 elements)",
+	        TEST_IFCFG_WIRED_QETH_STATIC,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_S390_SUBCHANNELS);
+
+	tmp = (const char *) g_ptr_array_index (subchannels, 0);
+	ASSERT (strcmp (tmp, expected_channel0) == 0,
+	        "wired-qeth-static-verify-wired", "failed to verify %s: unexpected subchannel #0",
+	        TEST_IFCFG_WIRED_QETH_STATIC);
+
+	tmp = (const char *) g_ptr_array_index (subchannels, 1);
+	ASSERT (strcmp (tmp, expected_channel1) == 0,
+	        "wired-qeth-static-verify-wired", "failed to verify %s: unexpected subchannel #1",
+	        TEST_IFCFG_WIRED_QETH_STATIC);
+
+	tmp = (const char *) g_ptr_array_index (subchannels, 2);
+	ASSERT (strcmp (tmp, expected_channel2) == 0,
+	        "wired-qeth-static-verify-wired", "failed to verify %s: unexpected subchannel #2",
+	        TEST_IFCFG_WIRED_QETH_STATIC);
+
+	/* Nettype */
+	tmp = nm_setting_wired_get_s390_nettype (s_wired);
+	ASSERT (tmp != NULL,
+	        "wired-qeth-static-verify-wired", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_QETH_STATIC,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_S390_NETTYPE);
+	ASSERT (strcmp (tmp, "qeth") == 0,
+	        "wired-qeth-static-verify-wired", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_QETH_STATIC,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_S390_NETTYPE);
+
+	/* port name */
+	tmp = nm_setting_wired_get_s390_option_by_key (s_wired, "portname");
+	ASSERT (tmp != NULL,
+	        "wired-qeth-static-verify-wired", "failed to verify %s: missing %s s390 option 'portname'",
+	        TEST_IFCFG_WIRED_QETH_STATIC,
+	        NM_SETTING_WIRED_SETTING_NAME);
+	ASSERT (strcmp (tmp, "OSAPORT") == 0,
+	        "wired-qeth-static-verify-wired", "failed to verify %s: unexpected %s s390 option 'portname' value",
+	        TEST_IFCFG_WIRED_QETH_STATIC,
+	        NM_SETTING_WIRED_SETTING_NAME);
+
+	/* port number */
+	tmp = nm_setting_wired_get_s390_option_by_key (s_wired, "portno");
+	ASSERT (tmp != NULL,
+	        "wired-qeth-static-verify-wired", "failed to verify %s: missing %s s390 option 'portno'",
+	        TEST_IFCFG_WIRED_QETH_STATIC,
+	        NM_SETTING_WIRED_SETTING_NAME);
+	ASSERT (strcmp (tmp, "0") == 0,
+	        "wired-qeth-static-verify-wired", "failed to verify %s: unexpected %s s390 option 'portno' value",
+	        TEST_IFCFG_WIRED_QETH_STATIC,
+	        NM_SETTING_WIRED_SETTING_NAME);
+
+	/* layer */
+	tmp = nm_setting_wired_get_s390_option_by_key (s_wired, "layer2");
+	ASSERT (tmp != NULL,
+	        "wired-qeth-static-verify-wired", "failed to verify %s: missing %s s390 option 'layer2'",
+	        TEST_IFCFG_WIRED_QETH_STATIC,
+	        NM_SETTING_WIRED_SETTING_NAME);
+	ASSERT (strcmp (tmp, "1") == 0,
+	        "wired-qeth-static-verify-wired", "failed to verify %s: unexpected %s s390 option 'layer2' value",
+	        TEST_IFCFG_WIRED_QETH_STATIC,
+	        NM_SETTING_WIRED_SETTING_NAME);
+
+	/* ===== IPv4 SETTING ===== */
+
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	ASSERT (s_ip4 != NULL,
+	        "wired-qeth-static-verify-ip4", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_QETH_STATIC,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0,
+	        "wired-qeth-static-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_QETH_STATIC,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_METHOD);
+
+	g_object_unref (connection);
+}
+
 static void
 test_write_wired_static (void)
 {
@@ -6063,6 +6604,8 @@ test_write_wifi_open (void)
 	guint32 channel = 9, mtu = 1345;
 	GByteArray *mac;
 	const unsigned char mac_data[] = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
+	shvarFile *ifcfg;
+	char *tmp;
 
 	connection = nm_connection_new ();
 	ASSERT (connection != NULL,
@@ -6157,6 +6700,22 @@ test_write_wifi_open (void)
 	                               &route6file,
 	                               &error,
 	                               &ignore_error);
+
+	/* Now make sure that the ESSID item isn't double-quoted (rh #606518) */
+	ifcfg = svNewFile (testfile);
+	ASSERT (ifcfg != NULL,
+	        "wifi-open-write-reread", "failed to load %s as shvarfile", testfile);
+
+	tmp = svGetValue (ifcfg, "ESSID", TRUE);
+	ASSERT (tmp != NULL,
+	        "wifi-open-write-reread", "failed to read ESSID key from %s", testfile);
+
+	g_message ("%s", tmp);
+	ASSERT (strncmp (tmp, "\"\"", 2) != 0,
+	        "wifi-open-write-reread", "unexpected ESSID double-quote in %s", testfile);
+
+	svCloseFile (ifcfg);
+
 	unlink (testfile);
 
 	ASSERT (reread != NULL,
@@ -6745,6 +7304,308 @@ test_write_wifi_wep_passphrase (void)
 
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
 	        "wifi-wep-passphrase-write", "written and re-read connection weren't the same.");
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
+test_write_wifi_wep_40_ascii (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	char *uuid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GByteArray *ssid;
+	const unsigned char ssid_data[] = "blahblah40";
+	struct stat statbuf;
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "wifi-wep-40-ascii-write", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "wifi-wep-40-ascii-write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wifi WEP 40 ASCII",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wifi setting */
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	ASSERT (s_wifi != NULL,
+	        "wifi-wep-40-ascii-write", "failed to allocate new %s setting",
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	ssid = g_byte_array_sized_new (sizeof (ssid_data));
+	g_byte_array_append (ssid, ssid_data, sizeof (ssid_data));
+
+	g_object_set (s_wifi,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NM_SETTING_WIRELESS_MODE, "infrastructure",
+	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	              NULL);
+
+	g_byte_array_free (ssid, TRUE);
+
+	/* Wireless security setting */
+	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+	ASSERT (s_wsec != NULL,
+			"wifi-wep-40-ascii-write", "failed to allocate new %s setting",
+			NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+
+	g_object_set (s_wsec,
+	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none",
+	              NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, 2,
+	              NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "shared",
+	              NULL);
+	nm_setting_wireless_security_set_wep_key (s_wsec, 0, "lorem");
+	nm_setting_wireless_security_set_wep_key (s_wsec, 1, "ipsum");
+	nm_setting_wireless_security_set_wep_key (s_wsec, 2, "dolor");
+	nm_setting_wireless_security_set_wep_key (s_wsec, 3, "donec");
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+			"wifi-wep-40-ascii-write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	ASSERT (s_ip6 != NULL,
+	        "wifi-wep-40-ascii-write", "failed to allocate new %s setting",
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "wifi-wep-40-ascii-write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == TRUE,
+	        "wifi-wep-40-ascii-write", "failed to write connection to disk: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (testfile != NULL,
+	        "wifi-wep-40-ascii-write", "didn't get ifcfg file path back after writing connection");
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_WIRELESS,
+	                               NULL,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &routefile,
+	                               &route6file,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	ASSERT (keyfile != NULL,
+	        "wifi-wep-40-ascii-write-reread", "expected keyfile for '%s'", testfile);
+
+	ASSERT (stat (keyfile, &statbuf) == 0,
+	        "wifi-wep-40-ascii-write-reread", "couldn't stat() '%s'", keyfile);
+	ASSERT (S_ISREG (statbuf.st_mode),
+	        "wifi-wep-40-ascii-write-reread", "keyfile '%s' wasn't a normal file", keyfile);
+	ASSERT ((statbuf.st_mode & 0077) == 0,
+	        "wifi-wep-40-ascii-write-reread", "keyfile '%s' wasn't readable only by its owner", keyfile);
+
+	unlink (keyfile);
+
+	ASSERT (reread != NULL,
+	        "wifi-wep-40-ascii-write-reread", "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_verify (reread, &error),
+	        "wifi-wep-40-ascii-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+	        "wifi-wep-40-ascii-write", "written and re-read connection weren't the same.");
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
+test_write_wifi_wep_104_ascii (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	char *uuid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GByteArray *ssid;
+	const unsigned char ssid_data[] = "blahblah104";
+	struct stat statbuf;
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "wifi-wep-104-ascii-write", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "wifi-wep-104-ascii-write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wifi WEP 104 ASCII",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wifi setting */
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	ASSERT (s_wifi != NULL,
+	        "wifi-wep-104-ascii-write", "failed to allocate new %s setting",
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	ssid = g_byte_array_sized_new (sizeof (ssid_data));
+	g_byte_array_append (ssid, ssid_data, sizeof (ssid_data));
+
+	g_object_set (s_wifi,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NM_SETTING_WIRELESS_MODE, "infrastructure",
+	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	              NULL);
+
+	g_byte_array_free (ssid, TRUE);
+
+	/* Wireless security setting */
+	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+	ASSERT (s_wsec != NULL,
+			"wifi-wep-104-ascii-write", "failed to allocate new %s setting",
+			NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+
+	g_object_set (s_wsec,
+	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none",
+	              NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, 0,
+	              NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open",
+	              NULL);
+	nm_setting_wireless_security_set_wep_key (s_wsec, 0, "LoremIpsumSit");
+	nm_setting_wireless_security_set_wep_key (s_wsec, 1, "AlfaBetaGamma");
+	nm_setting_wireless_security_set_wep_key (s_wsec, 2, "WEP-104 ASCII");
+	nm_setting_wireless_security_set_wep_key (s_wsec, 3, "thisismyascii");
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+			"wifi-wep-104-ascii-write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	ASSERT (s_ip6 != NULL,
+	        "wifi-wep-104-ascii-write", "failed to allocate new %s setting",
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "wifi-wep-104-ascii-write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == TRUE,
+	        "wifi-wep-104-ascii-write", "failed to write connection to disk: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (testfile != NULL,
+	        "wifi-wep-104-ascii-write", "didn't get ifcfg file path back after writing connection");
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_WIRELESS,
+	                               NULL,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &routefile,
+	                               &route6file,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	ASSERT (keyfile != NULL,
+	        "wifi-wep-104-ascii-write-reread", "expected keyfile for '%s'", testfile);
+
+	ASSERT (stat (keyfile, &statbuf) == 0,
+	        "wifi-wep-104-ascii-write-reread", "couldn't stat() '%s'", keyfile);
+	ASSERT (S_ISREG (statbuf.st_mode),
+	        "wifi-wep-104-ascii-write-reread", "keyfile '%s' wasn't a normal file", keyfile);
+	ASSERT ((statbuf.st_mode & 0077) == 0,
+	        "wifi-wep-104-ascii-write-reread", "keyfile '%s' wasn't readable only by its owner", keyfile);
+
+	unlink (keyfile);
+
+	ASSERT (reread != NULL,
+	        "wifi-wep-104-ascii-write-reread", "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_verify (reread, &error),
+	        "wifi-wep-104-ascii-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+	        "wifi-wep-104-ascii-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -8129,6 +8990,140 @@ test_read_ibft_malformed (const char *name, const char *iscsiadm_path)
 }
 
 static void
+test_write_wired_qeth_dhcp (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	char *uuid;
+	GPtrArray *subchans;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "wired-qeth-dhcp-write", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "wired-qeth-dhcp-write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wired qeth Static",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	ASSERT (s_wired != NULL,
+	        "wired-qeth-dhcp-write", "failed to allocate new %s setting",
+	        NM_SETTING_WIRED_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	subchans = g_ptr_array_sized_new (3);
+	g_ptr_array_add (subchans, "0.0.600");
+	g_ptr_array_add (subchans, "0.0.601");
+	g_ptr_array_add (subchans, "0.0.602");
+	g_object_set (s_wired,
+	              NM_SETTING_WIRED_S390_SUBCHANNELS, subchans,
+	              NM_SETTING_WIRED_S390_NETTYPE, "qeth",
+	              NULL);
+	g_ptr_array_free (subchans, TRUE);
+
+	nm_setting_wired_add_s390_option (s_wired, "portname", "FOOBAR");
+	nm_setting_wired_add_s390_option (s_wired, "portno", "1");
+	nm_setting_wired_add_s390_option (s_wired, "layer2", "0");
+	nm_setting_wired_add_s390_option (s_wired, "protocol", "blahbalh");
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+			"wired-qeth-dhcp-write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4,
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NULL);
+
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	ASSERT (s_ip6 != NULL,
+			"wired-qeth-dhcp-write", "failed to allocate new %s setting",
+			NM_SETTING_IP6_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6,
+	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NULL);
+
+	/* Verify */
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "wired-qeth-dhcp-write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == TRUE,
+	        "wired-qeth-dhcp-write", "failed to write connection to disk: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (testfile != NULL,
+	        "wired-qeth-dhcp-write", "didn't get ifcfg file path back after writing connection");
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_ETHERNET,
+	                               NULL,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &routefile,
+	                               &route6file,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	ASSERT (reread != NULL,
+	        "wired-qeth-dhcp-write-reread", "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_verify (reread, &error),
+	        "wired-qeth-dhcp-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+	        "wired-qeth-dhcp-write", "written and re-read connection weren't the same.");
+
+	if (route6file)
+		unlink (route6file);
+
+	g_free (testfile);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
 test_write_wired_pppoe (void)
 {
 	NMConnection *connection;
@@ -8390,6 +9385,96 @@ test_write_mobile_broadband (gboolean gsm)
 	g_object_unref (connection);
 }
 
+#define TEST_IFCFG_BRIDGE_MAIN TEST_IFCFG_DIR"/network-scripts/ifcfg-test-bridge-main"
+
+static void
+test_read_bridge_main (void)
+{
+	NMConnection *connection;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+
+	connection = connection_from_file (TEST_IFCFG_BRIDGE_MAIN,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection == NULL,
+	        "bridge-main-read", "unexpected success reading %s", TEST_IFCFG_BRIDGE_MAIN);
+}
+
+#define TEST_IFCFG_BRIDGE_COMPONENT TEST_IFCFG_DIR"/network-scripts/ifcfg-test-bridge-component"
+
+static void
+test_read_bridge_component (void)
+{
+	NMConnection *connection;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+
+	connection = connection_from_file (TEST_IFCFG_BRIDGE_COMPONENT,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "bridge-component-read", "unexpected failure reading %s", TEST_IFCFG_BRIDGE_COMPONENT);
+
+	ASSERT (unmanaged != NULL,
+	        "bridge-component-read", "missing unmanaged spec from %s", TEST_IFCFG_BRIDGE_COMPONENT);
+
+	ASSERT (g_strcmp0 (unmanaged, "mac:00:22:15:59:62:97") == 0,
+	        "bridge-component-read", "unexpected unmanaged spec from %s", TEST_IFCFG_BRIDGE_COMPONENT);
+
+	g_object_unref (connection);
+	g_free (unmanaged);
+}
+
+#define TEST_IFCFG_VLAN_INTERFACE TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-interface"
+
+static void
+test_read_vlan_interface (void)
+{
+	NMConnection *connection;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+
+	connection = connection_from_file (TEST_IFCFG_VLAN_INTERFACE,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection == NULL,
+	        "vlan-interface-read", "unexpected success reading %s", TEST_IFCFG_VLAN_INTERFACE);
+}
+
 #define TEST_IFCFG_WIFI_OPEN_SSID_BAD_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-bad-hex"
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_QUOTED TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-quoted"
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-hex"
@@ -8403,11 +9488,9 @@ test_write_mobile_broadband (gboolean gsm)
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
-	DBusGConnection *bus;
 	char *base;
 
 	g_type_init ();
-	bus = dbus_g_bus_get (DBUS_BUS_SESSION, NULL);
 
 	if (!nm_utils_init (&error))
 		FAIL ("nm-utils-init", "failed to initialize libnm-util: %s", error->message);
@@ -8429,6 +9512,7 @@ int main (int argc, char **argv)
 	test_read_wired_static_routes_legacy ();
 	test_read_wired_ipv6_manual ();
 	test_read_wired_ipv6_only ();
+	test_read_wired_dhcp6_only ();
 	test_read_onboot_no ();
 	test_read_wired_8021x_peap_mschapv2 ();
 	test_read_wifi_open ();
@@ -8441,6 +9525,8 @@ int main (int argc, char **argv)
 	test_read_wifi_wep ();
 	test_read_wifi_wep_adhoc ();
 	test_read_wifi_wep_passphrase ();
+	test_read_wifi_wep_40_ascii ();
+	test_read_wifi_wep_104_ascii ();
 	test_read_wifi_leap ();
 	test_read_wifi_wpa_psk ();
 	test_read_wifi_wpa_psk_unquoted ();
@@ -8450,6 +9536,7 @@ int main (int argc, char **argv)
 	test_read_wifi_wpa_eap_tls ();
 	test_read_wifi_wpa_eap_ttls_tls ();
 	test_read_wifi_wep_eap_ttls_chap ();
+	test_read_wired_qeth_static ();
 
 	test_write_wired_static ();
 	test_write_wired_static_ip6_only ();
@@ -8462,6 +9549,8 @@ int main (int argc, char **argv)
 	test_write_wifi_wep ();
 	test_write_wifi_wep_adhoc ();
 	test_write_wifi_wep_passphrase ();
+	test_write_wifi_wep_40_ascii ();
+	test_write_wifi_wep_104_ascii ();
 	test_write_wifi_leap ();
 	test_write_wifi_wpa_psk ("Test Write Wifi WPA PSK",
 	                         "wifi-wpa-psk-write",
@@ -8497,6 +9586,7 @@ int main (int argc, char **argv)
 	test_write_wifi_wpa_eap_tls ();
 	test_write_wifi_wpa_eap_ttls_tls ();
 	test_write_wifi_wpa_eap_ttls_mschapv2 ();
+	test_write_wired_qeth_dhcp ();
 
 	/* iSCSI / ibft */
 	test_read_ibft_dhcp ();
@@ -8513,6 +9603,9 @@ int main (int argc, char **argv)
 	test_write_vpn ();
 	test_write_mobile_broadband (TRUE);
 	test_write_mobile_broadband (FALSE);
+	test_read_bridge_main ();
+	test_read_bridge_component ();
+	test_read_vlan_interface ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);

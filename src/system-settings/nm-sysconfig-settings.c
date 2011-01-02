@@ -259,6 +259,7 @@ get_plugin (NMSysconfigSettings *self, guint32 capability)
 	return NULL;
 }
 
+/* Returns an allocated string which the caller owns and must eventually free */
 char *
 nm_sysconfig_settings_get_hostname (NMSysconfigSettings *self)
 {
@@ -281,7 +282,7 @@ nm_sysconfig_settings_get_hostname (NMSysconfigSettings *self)
 		}
 	}
 
-	return hostname;
+	return NULL;
 }
 
 static void
@@ -414,7 +415,7 @@ load_plugins (NMSysconfigSettings *self, const char *plugins, GError **error)
 	for (iter = plist; *iter; iter++) {
 		GModule *plugin;
 		char *full_name, *path;
-		const char *pname = *iter;
+		const char *pname = g_strstrip (*iter);
 		GObject *obj;
 		GObject * (*factory_func) (void);
 
@@ -1077,6 +1078,11 @@ is_mac_auto_wired_blacklisted (NMSysconfigSettings *self, const GByteArray *mac)
 	for (iter = list; iter && *iter; iter++) {
 		struct ether_addr *candidate;
 
+		if (strcmp(g_strstrip(*iter), "*") == 0) {
+			found = TRUE;
+			break;
+		}
+
 		candidate = ether_aton (*iter);
 		if (candidate && !memcmp (mac->data, candidate->ether_addr_octet, ETH_ALEN)) {
 			found = TRUE;
@@ -1136,13 +1142,19 @@ default_wired_deleted (NMDefaultWiredConnection *wired,
 	g_key_file_load_from_file (config, priv->config_file, G_KEY_FILE_KEEP_COMMENTS, NULL);
 
 	list = g_key_file_get_string_list (config, "main", CONFIG_KEY_NO_AUTO_DEFAULT, &len, NULL);
-	/* Traverse entire list to get count of # items */
 	for (iter = list; iter && *iter; iter++) {
 		struct ether_addr *candidate;
 
-		candidate = ether_aton (*iter);
-		if (candidate && !memcmp (mac->data, candidate->ether_addr_octet, ETH_ALEN))
+		if (strcmp(g_strstrip(*iter), "*") == 0) {
 			found = TRUE;
+			break;
+		}
+
+		candidate = ether_aton (*iter);
+		if (candidate && !memcmp (mac->data, candidate->ether_addr_octet, ETH_ALEN)) {
+			found = TRUE;
+			break;
+		}
 	}
 
 	/* Add this device's MAC to the list */
@@ -1505,16 +1517,21 @@ static void
 nm_sysconfig_settings_init (NMSysconfigSettings *self)
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+	GError *error = NULL;
 
 	priv->connections = g_hash_table_new_full (g_direct_hash, g_direct_equal, g_object_unref, NULL);
 
-	priv->authority = polkit_authority_get ();
+	priv->authority = polkit_authority_get_sync (NULL, &error);
 	if (priv->authority) {
 		priv->auth_changed_id = g_signal_connect (priv->authority,
 		                                          "changed",
 		                                          G_CALLBACK (pk_authority_changed_cb),
 		                                          self);
-	} else
-		nm_log_warn (LOGD_SYS_SET, "failed to create PolicyKit authority.");
+	} else {
+		nm_log_warn (LOGD_SYS_SET, "failed to create PolicyKit authority: (%d) %s",
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
+	}
 }
 

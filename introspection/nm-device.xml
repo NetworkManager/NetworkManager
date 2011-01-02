@@ -9,7 +9,15 @@
     </property>
     <property name="Interface" type="s" access="read">
       <tp:docstring>
-        The network interface offered by the device.
+        The name of the device's control (and often data) interface.
+      </tp:docstring>
+    </property>
+    <property name="IpInterface" type="s" access="read">
+      <tp:docstring>
+        The name of the device's data interface when available.  This property
+        may not refer to the actual data interface until the device has
+        successfully established a data connection, indicated by the device's
+        State becoming ACTIVATED.
       </tp:docstring>
     </property>
     <property name="Driver" type="s" access="read">
@@ -52,6 +60,12 @@
         Whether or not this device is managed by NetworkManager.
       </tp:docstring>
     </property>
+    <property name="FirmwareMissing" type="b" access="read">
+      <tp:docstring>
+        If TRUE, indicates the device is likely missing firmware necessary for
+        its operation.
+      </tp:docstring>
+    </property>
     <property name="DeviceType" type="u" access="read" tp:type="NM_DEVICE_TYPE">
       <tp:docstring>
         The general type of the network device; ie Ethernet, WiFi, etc.
@@ -59,10 +73,11 @@
     </property>
 
     <method name="Disconnect">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_disconnect"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <tp:docstring>
         Disconnects a device and prevents the device from automatically activating further connections without user intervention.
       </tp:docstring>
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_disconnect"/>
     </method>
 
     <signal name="StateChanged">

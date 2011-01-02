@@ -22,7 +22,7 @@
 .\"
 .\" Copyright (C) 2010 Red Hat, Inc.
 .\"
-.TH NMCLI "1" "14 April 2010"
+.TH NMCLI "1" "22 September 2010"
 
 .SH NAME
 nmcli \- command-line tool for controlling NetworkManager
@@ -131,7 +131,7 @@ NetworkManager
 .br
 Use this object to inquire and change state of NetworkManager.
 .TP
-.SS \fICOMMAND\fP := { status | sleep | wakeup | wifi | wwan }
+.SS \fICOMMAND\fP := { status | enable | sleep | wifi | wwan }
 .sp
 .RS
 .TP
@@ -145,28 +145,31 @@ command is provided to \fInm\fP object.
 No simple reference.
 .fi
 .TP
-.B sleep
+.B enable [true|false]
 .br
-Put NetworkManager to sleeping mode.  Thus all interfaces that NetworkManager
-manages are deactivated.
+Get networking-enabled status or enable/disable networking by NetworkManager.
+All interfaces managed by NetworkManager are deactivated when networking has
+been disabled.
 .br
 .nf
 \fBReference to D-Bus:\fP
 interface: org.freedesktop.NetworkManager
-method:    Sleep
-arguments: TRUE
+method:    Enable
+arguments: TRUE or FALSE
 .fi
 .TP
-.B wakeup
+.B sleep [true|false]
 .br
-Awake NetworkManager from sleep.  When NetworkManager is awaken, devices are
-available to be activated.
+Get sleep status or put to sleep/awake NetworkManager.  All interfaces managed by NetworkManager
+are deactivated when it falls asleep.  This command is not meant for user to enable/disable
+networking, use \fIenable\fP for that.  D-Bus \fISleep\fP method is designed
+to put NetworkManager to sleep or awake for suspending/resuming computer.
 .br
 .nf
 \fBReference to D-Bus:\fP
 interface: org.freedesktop.NetworkManager
 method:    Sleep
-arguments: FALSE
+arguments: TRUE or FALSE
 .fi
 .TP
 .B wifi [on|off]
@@ -312,10 +315,54 @@ No simple reference.
 .fi
 .RE
 
+.SH ENVIRONMENT VARIABLES
+\fInmcli\fP's behavior is affected by the following environment variables.
+.IP "LC_ALL" 13
+If set to a non-empty string value, override the values of all the other
+internationalization variables.
+.IP "LC_MESSAGES" 13
+Determines the locale to be used for internationalised messages.
+.IP "LANG" 13
+Provides a default value for the internationalization variables that are unset
+or null.
+
+.RE
+Notes about localization:
+.br
+Be aware that \fInmcli\fP is localized and that's why the output depends on 
+your environment. It's important to realize that especially when you parse the
+output.
+.br
+Call \fInmcli\fP as \fBLC_ALL=C nmcli\fP to be sure the locale is
+set to "C" while executing in a script.
+
+\fBLC_ALL\fP, \fBLC_MESSAGES\fP, \fBLANG\fP variables specify the LC_MESSAGES
+locale category (in that order), which determines the language that \fInmcli\fP
+uses for messages.  The "C" locale is used if none of these variables are set,
+and this locale uses English messages.
+
+.SH EXIT STATUS
+\fInmcli\fP exits with status 0 if it succeeds, a value greater than 0 is returned if errors occur.
+.IP "0" 4
+Success - indicates the operation succeeded
+.IP "1" 4
+Unknown or unspecified error
+.IP "2" 4
+Invalid user input, wrong \fInmcli\fP invocation
+.IP "3" 4
+Timeout expired (see commands with \fI\-\-timeout\fP option)
+.IP "4" 4
+Connection activation failed
+.IP "5" 4
+Connection deactivation failed
+.IP "6" 4
+Disconnecting device failed
+
 .SH BUGS
 There are probably some.  If you find a bug, please report to
 https://bugzilla.gnome.org/ \- product \fINetworkManager\fP.
 
 .SH SEE ALSO
 .BR nm\-tool (1),
+.BR nm\-online (1),
 .BR NetworkManager(8).

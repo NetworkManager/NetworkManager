@@ -5,7 +5,7 @@ INCLUDES = \
 	-I${top_srcdir}/src/logging \
 	-I${top_srcdir}/src \
 	-I${top_builddir}/marshallers \
-	-I${top_srcdir}/src/named-manager \
+	-I${top_srcdir}/src/dns-manager \
 	-DVPN_NAME_FILES_DIR=\""$(sysconfdir)/NetworkManager/VPN"\"
 
 
@@ -32,10 +32,10 @@ libvpn_manager_la_LIBADD = \
 	$(GLIB_LIBS)
 
 nm-vpn-connection-glue.h: $(top_srcdir)/introspection/nm-vpn-connection.xml
-	dbus-binding-tool --prefix=nm_vpn_connection --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_vpn_connection --mode=glib-server --output=$@ $<
 
 nm-vpn-plugin-bindings.h: $(top_srcdir)/introspection/nm-vpn-plugin.xml
-	dbus-binding-tool --prefix=nm_vpn_plugin --mode=glib-client --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_vpn_plugin --mode=glib-client --output=$@ $<
 
 
 BUILT_SOURCES = \

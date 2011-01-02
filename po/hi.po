@@ -5,12 +5,12 @@
 # Rajesh Ranjan <rranjan@redhat.com>, 2010.
 msgid ""
 msgstr ""
-"Project-Id-Version: NetworkManager.master\n"
-"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?product=NetworkManager&component=general\n"
-"POT-Creation-Date: 2010-05-06 14:31+0530\n"
-"PO-Revision-Date: 2010-05-07 15:23+0530\n"
+"Project-Id-Version: hi\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2010-07-20 12:39+0530\n"
+"PO-Revision-Date: 2010-07-26 13:05+0530\n"
 "Last-Translator: Rajesh Ranjan <rranjan@redhat.com>\n"
-"Language-Team: Hindi <Red Hat>\n"
+"Language-Team: Hindi <fedora-trans-hi@redhat.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -498,6 +498,16 @@ msgstr "IP4-SETTINGS"
 #: ../cli/src/devices.c:77
 msgid "IP4-DNS"
 msgstr "IP4-DNS"
+
+#. 6
+#: ../cli/src/devices.c:79
+msgid "IP6-SETTINGS"
+msgstr "IP6-SETTINGS"
+
+#. 7
+#: ../cli/src/devices.c:80
+msgid "IP6-DNS"
+msgstr "IP6-DNS"
 
 #. 2
 #: ../cli/src/devices.c:88
@@ -1501,6 +1511,88 @@ msgstr "गोपित कुंजी को PEM फाइल में लि
 msgid "Could not allocate memory for PEM file data."
 msgstr "PEM फाइल आँकड़ा के लिए स्मृति नहीं आबंटित कर सका."
 
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:1
+msgid "Connection sharing via a protected WiFi network"
+msgstr "किसी संरक्षित WiFi संजाल के द्वारा कनेक्शन साझा"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:2
+msgid "Connection sharing via an open WiFi network"
+msgstr "किसी खुले WiFi संजाल के द्वारा कनेक्शन साझा"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:3
+msgid "Modify persistent system hostname"
+msgstr "स्थिर सिस्टम होस्टनेम को सुधारें"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:4
+msgid "Modify system connections"
+msgstr "सिस्टम कनेक्शन सुधारें"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:5
+msgid "System policy prevents modification of system settings"
+msgstr "सिस्टम नीति सिस्टम सेटिंग के रूपांतरण को रोकता है."
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:6
+msgid "System policy prevents modification of the persistent system hostname"
+msgstr "सिस्टम नीति स्थिर सिस्टम होस्टनेम के रूपांतरण को रोकता है."
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:7
+msgid "System policy prevents sharing connections via a protected WiFi network"
+msgstr "किसी संरक्षित WiFi संजाल के द्वारा साझा कनेक्शन को सिस्टम नीति रोकता है"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:8
+msgid "System policy prevents sharing connections via an open WiFi network"
+msgstr "किसी खुले WiFi संजाल के द्वारा साझा कनेक्शन को सिस्टम नीति रोकता है"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:1
+msgid "Allow control of network connections"
+msgstr "संजाल कनेक्शन के नियंत्रण स्वीकार करें"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:2
+msgid "Allow use of user-specific connections"
+msgstr "उपयोक्ता विशिष्ट कनेक्शन के उपयोग की स्वीकृति दें"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:3
+msgid "Enable or disable WiFi devices"
+msgstr "WiFi युक्तियाँ सक्रिय या निष्क्रिय करें"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:4
+msgid "Enable or disable mobile broadband devices"
+msgstr "मोबाइल ब्राडबैंड युक्तियाँ सक्रिय या निष्क्रिय करें"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:5
+msgid "Enable or disable system networking"
+msgstr "तंत्र संजालन सक्रिय या निष्क्रिय करें"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:6
+msgid ""
+"Put NetworkManager to sleep or wake it up (should only be used by system "
+"power management)"
+msgstr " NetworkManager को स्लीप स्थिति या वेकअप स्थिति में रखें (केवल सिस्टम पावर मैनेजमेंट के द्वारा प्रयोग किया जाएगा)"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:7
+msgid "System policy prevents control of network connections"
+msgstr "सिस्टम कनेक्शन के नियंत्रण को सिस्टम नीति रोकता है"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:8
+msgid "System policy prevents enabling or disabling WiFi devices"
+msgstr "WiFi युक्ति के सक्रियण या निष्क्रियण को तंत्र नीति रोकता है"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:9
+msgid "System policy prevents enabling or disabling mobile broadband devices"
+msgstr "मोबाइल ब्रॉडबैंड युक्ति के सक्रियण या निष्क्रियण को तंत्र नीति रोकता है"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:10
+msgid "System policy prevents enabling or disabling system networking"
+msgstr "तंत्र संजालन के युक्ति के सक्रियण या निष्क्रियण को तंत्र नीति रोकता है"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:11
+msgid "System policy prevents putting NetworkManager to sleep or waking it up"
+msgstr "NetworkManager को स्लीप या वेकअप स्थिति में लाने के लिए नेटवर्कमैनेजर रोकता है"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:12
+msgid "System policy prevents use of user-specific connections"
+msgstr "सिस्टम नीति उपयोक्ता विशेष कनेक्शन के उपयोग को रोकता है"
+
 #: ../src/nm-netlink-monitor.c:100 ../src/nm-netlink-monitor.c:231
 #: ../src/nm-netlink-monitor.c:653
 #, c-format
@@ -1591,11 +1683,11 @@ msgstr "अज्ञात लॉग स्तर '%s'"
 msgid "Unknown log domain '%s'"
 msgstr "अज्ञात लॉग डोमेन '%s'"
 
-#: ../src/named-manager/nm-named-manager.c:343
+#: ../src/dns-manager/nm-dns-manager.c:343
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "नोट: libc समाधानकर्ता 3 नेमसर्वर से अधिक का समर्थन नहीं कर सकता है."
 
-#: ../src/named-manager/nm-named-manager.c:345
+#: ../src/dns-manager/nm-dns-manager.c:345
 msgid "The nameservers listed below may not be recognized."
 msgstr "नीचे सूची में दिया गया नेमसर्वर पहचाना नहीं जा सकता है."
 
@@ -1607,36 +1699,4 @@ msgstr "स्वतः %s"
 #: ../system-settings/plugins/ifcfg-rh/reader.c:3256
 msgid "System"
 msgstr "तंत्र"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:1
-msgid "Connection sharing via a protected WiFi network"
-msgstr "किसी संरक्षित WiFi संजाल के द्वारा कनेक्शन साझा"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:2
-msgid "Connection sharing via an open WiFi network"
-msgstr "किसी खुले WiFi संजाल के द्वारा कनेक्शन साझा"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:3
-msgid "Modify persistent system hostname"
-msgstr "स्थिर सिस्टम होस्टनेम को सुधारें"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:4
-msgid "Modify system connections"
-msgstr "सिस्टम कनेक्शन सुधारें"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:5
-msgid "System policy prevents modification of system settings"
-msgstr "सिस्टम नीति सिस्टम सेटिंग के रूपांतरण को रोकता है."
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:6
-msgid "System policy prevents modification of the persistent system hostname"
-msgstr "सिस्टम नीति स्थिर सिस्टम होस्टनेम के रूपांतरण को रोकता है."
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:7
-msgid "System policy prevents sharing connections via a protected WiFi network"
-msgstr "किसी संरक्षित WiFi संजाल के द्वारा साझा कनेक्शन को सिस्टम नीति रोकता है"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:8
-msgid "System policy prevents sharing connections via an open WiFi network"
-msgstr "किसी खुले WiFi संजाल के द्वारा साझा कनेक्शन को सिस्टम नीति रोकता है"
 

@@ -17,6 +17,8 @@
  *
  */
 
+#include <config.h>
+#include <ctype.h>
 #include <glib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -154,11 +156,15 @@ stop_process (GPid pid, const char *iface)
 
 		if (ret == -1) {
 			/* Child already exited */
-			if (errno == ECHILD)
+			if (errno == ECHILD) {
+				/* Was it really our child and it exited? */
+				if (kill (pid, 0) < 0 && errno == ESRCH)
+					break;
+			} else {
+				/* Took too long; shoot it in the head */
+				i = 0;
 				break;
-			/* Took too long; shoot it in the head */
-			i = 0;
-			break;
+			}
 		}
 		g_usleep (G_USEC_PER_SEC / 5);
 	}
@@ -293,7 +299,8 @@ start_monitor (NMDHCPClient *self)
 gboolean
 nm_dhcp_client_start_ip4 (NMDHCPClient *self,
                           NMSettingIP4Config *s_ip4,
-                          guint8 *dhcp_anycast_addr)
+                          guint8 *dhcp_anycast_addr,
+                          const char *hostname)
 {
 	NMDHCPClientPrivate *priv;
 
@@ -308,7 +315,7 @@ nm_dhcp_client_start_ip4 (NMDHCPClient *self,
 	nm_log_info (LOGD_DHCP, "Activation (%s) Beginning DHCPv4 transaction (timeout in %d seconds)",
 	             priv->iface, priv->timeout);
 
-	priv->pid = NM_DHCP_CLIENT_GET_CLASS (self)->ip4_start (self, s_ip4, dhcp_anycast_addr);
+	priv->pid = NM_DHCP_CLIENT_GET_CLASS (self)->ip4_start (self, s_ip4, dhcp_anycast_addr, hostname);
 	if (priv->pid)
 		start_monitor (self);
 
@@ -319,6 +326,7 @@ gboolean
 nm_dhcp_client_start_ip6 (NMDHCPClient *self,
                           NMSettingIP6Config *s_ip6,
                           guint8 *dhcp_anycast_addr,
+                          const char *hostname,
                           gboolean info_only)
 {
 	NMDHCPClientPrivate *priv;
@@ -336,7 +344,7 @@ nm_dhcp_client_start_ip6 (NMDHCPClient *self,
 	nm_log_info (LOGD_DHCP, "Activation (%s) Beginning DHCPv6 transaction (timeout in %d seconds)",
 	             priv->iface, priv->timeout);
 
-	priv->pid = NM_DHCP_CLIENT_GET_CLASS (self)->ip6_start (self, s_ip6, dhcp_anycast_addr, info_only);
+	priv->pid = NM_DHCP_CLIENT_GET_CLASS (self)->ip6_start (self, s_ip6, dhcp_anycast_addr, hostname, info_only);
 	if (priv->pid > 0)
 		start_monitor (self);
 
@@ -644,6 +652,243 @@ nm_dhcp_client_foreach_option (NMDHCPClient *self,
 
 /********************************************/
 
+static gboolean
+ip4_process_dhcpcd_rfc3442_routes (const char *str,
+                                   NMIP4Config *ip4_config,
+                                   guint32 *gwaddr)
+{
+	char **routes, **r;
+	gboolean have_routes = FALSE;
+
+	routes = g_strsplit (str, " ", 0);
+	if (g_strv_length (routes) == 0)
+		goto out;
+
+	if ((g_strv_length (routes) % 2) != 0) {
+		nm_log_warn (LOGD_DHCP4, "  classless static routes provided, but invalid");
+		goto out;
+	}
+
+	for (r = routes; *r; r += 2) {
+		char *slash;
+		NMIP4Route *route;
+		int rt_cidr = 32;
+		struct in_addr rt_addr;
+		struct in_addr rt_route;
+
+		slash = strchr(*r, '/');
+		if (slash) {
+			*slash = '\0';
+			errno = 0;
+			rt_cidr = strtol (slash + 1, NULL, 10);
+			if ((errno == EINVAL) || (errno == ERANGE)) {
+				nm_log_warn (LOGD_DHCP4, "DHCP provided invalid classless static route cidr: '%s'", slash + 1);
+				continue;
+			}
+		}
+		if (inet_pton (AF_INET, *r, &rt_addr) <= 0) {
+			nm_log_warn (LOGD_DHCP4, "DHCP provided invalid classless static route address: '%s'", *r);
+			continue;
+		}
+		if (inet_pton (AF_INET, *(r + 1), &rt_route) <= 0) {
+			nm_log_warn (LOGD_DHCP4, "DHCP provided invalid classless static route gateway: '%s'", *(r + 1));
+			continue;
+		}
+
+		have_routes = TRUE;
+		if (rt_cidr == 0 && rt_addr.s_addr == 0) {
+			/* FIXME: how to handle multiple routers? */
+			*gwaddr = rt_route.s_addr;
+		} else {
+			route = nm_ip4_route_new ();
+			nm_ip4_route_set_dest (route, (guint32) rt_addr.s_addr);
+			nm_ip4_route_set_prefix (route, rt_cidr);
+			nm_ip4_route_set_next_hop (route, (guint32) rt_route.s_addr);
+
+			nm_ip4_config_take_route (ip4_config, route);
+			nm_log_info (LOGD_DHCP4, "  classless static route %s/%d gw %s", *r, rt_cidr, *(r + 1));
+		}
+	}
+
+out:
+	g_strfreev (routes);
+	return have_routes;
+}
+
+static const char **
+process_dhclient_rfc3442_route (const char **octets, NMIP4Route **out_route)
+{
+	const char **o = octets;
+	int addr_len = 0, i = 0;
+	long int tmp;
+	NMIP4Route *route;
+	char *next_hop;
+	struct in_addr tmp_addr;
+
+	if (!*o)
+		return o; /* no prefix */
+
+	tmp = strtol (*o, NULL, 10);
+	if (tmp < 0 || tmp > 32)  /* 32 == max IP4 prefix length */
+		return o;
+
+	route = nm_ip4_route_new ();
+	nm_ip4_route_set_prefix (route, (guint32) tmp);
+	o++;
+
+	if (tmp > 0)
+		addr_len = ((tmp - 1) / 8) + 1;
+
+	/* ensure there's at least the address + next hop left */
+	if (g_strv_length ((char **) o) < addr_len + 4)
+		goto error;
+
+	if (tmp) {
+		const char *addr[4] = { "0", "0", "0", "0" };
+		char *str_addr;
+
+		for (i = 0; i < addr_len; i++)
+			addr[i] = *o++;
+
+		str_addr = g_strjoin (".", addr[0], addr[1], addr[2], addr[3], NULL);
+		if (inet_pton (AF_INET, str_addr, &tmp_addr) <= 0) {
+			g_free (str_addr);
+			goto error;
+		}
+		tmp_addr.s_addr &= nm_utils_ip4_prefix_to_netmask ((guint32) tmp);
+		nm_ip4_route_set_dest (route, tmp_addr.s_addr);
+	}
+
+	/* Handle next hop */
+	next_hop = g_strjoin (".", o[0], o[1], o[2], o[3], NULL);
+	if (inet_pton (AF_INET, next_hop, &tmp_addr) <= 0) {
+		g_free (next_hop);
+		goto error;
+	}
+	nm_ip4_route_set_next_hop (route, tmp_addr.s_addr);
+	g_free (next_hop);
+
+	*out_route = route;
+	return o + 4; /* advance to past the next hop */
+
+error:
+	nm_ip4_route_unref (route);
+	return o;
+}
+
+static gboolean
+ip4_process_dhclient_rfc3442_routes (const char *str,
+                                     NMIP4Config *ip4_config,
+                                     guint32 *gwaddr)
+{
+	char **octets, **o;
+	gboolean have_routes = FALSE;
+	NMIP4Route *route = NULL;
+
+	o = octets = g_strsplit_set (str, " .", 0);
+	if (g_strv_length (octets) < 5) {
+		nm_log_warn (LOGD_DHCP4, "ignoring invalid classless static routes '%s'", str);
+		goto out;
+	}
+
+	while (*o) {
+		route = NULL;
+		o = (char **) process_dhclient_rfc3442_route ((const char **) o, &route);
+		if (!route) {
+			nm_log_warn (LOGD_DHCP4, "ignoring invalid classless static routes");
+			break;
+		}
+
+		have_routes = TRUE;
+		if (nm_ip4_route_get_prefix (route) == 0) {
+			/* gateway passed as classless static route */
+			*gwaddr = nm_ip4_route_get_next_hop (route);
+			nm_ip4_route_unref (route);
+		} else {
+			char addr[INET_ADDRSTRLEN + 1];
+			char nh[INET_ADDRSTRLEN + 1];
+			struct in_addr tmp;
+
+			/* normal route */
+			nm_ip4_config_take_route (ip4_config, route);
+
+			tmp.s_addr = nm_ip4_route_get_dest (route);
+			inet_ntop (AF_INET, &tmp, addr, sizeof (addr));
+			tmp.s_addr = nm_ip4_route_get_next_hop (route);
+			inet_ntop (AF_INET, &tmp, nh, sizeof (nh));
+			nm_log_info (LOGD_DHCP4, "  classless static route %s/%d gw %s",
+			             addr, nm_ip4_route_get_prefix (route), nh);
+		}
+	}
+
+out:
+	g_strfreev (octets);
+	return have_routes;
+}
+
+static gboolean
+ip4_process_classless_routes (GHashTable *options,
+                              NMIP4Config *ip4_config,
+                              guint32 *gwaddr)
+{
+	const char *str, *p;
+
+	g_return_val_if_fail (options != NULL, FALSE);
+	g_return_val_if_fail (ip4_config != NULL, FALSE);
+
+	*gwaddr = 0;
+
+	/* dhcpd/dhclient in Fedora has support for rfc3442 implemented using a
+	 * slightly different format:
+	 *
+	 * option classless-static-routes = array of (destination-descriptor ip-address);
+	 *
+	 * which results in:
+	 *
+	 * 0 192.168.0.113 25.129.210.177.132 192.168.0.113 7.2 10.34.255.6
+	 *
+	 * dhcpcd supports classless static routes natively and uses this same
+	 * option identifier with the following format:
+	 *
+	 * 192.168.10.0/24 192.168.1.1 10.0.0.0/8 10.17.66.41
+	 */
+	str = g_hash_table_lookup (options, "new_classless_static_routes");
+
+	/* dhclient doesn't have actual support for rfc3442 classless static routes
+	 * upstream.  Thus, people resort to defining the option in dhclient.conf
+	 * and using arbitrary formats like so:
+	 *
+	 * option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;
+	 *
+	 * See https://lists.isc.org/pipermail/dhcp-users/2008-December/007629.html
+	 */
+	if (!str)
+		str = g_hash_table_lookup (options, "new_rfc3442_classless_static_routes");
+
+	/* Microsoft version; same as rfc3442 but with a different option # (249) */
+	if (!str)
+		str = g_hash_table_lookup (options, "new_ms_classless_static_routes");
+
+	if (!str || !strlen (str))
+		return FALSE;
+
+	p = str;
+	while (*p) {
+		if (!isdigit (*p) && (*p != ' ') && (*p != '.') && (*p != '/')) {
+			nm_log_warn (LOGD_DHCP4, "ignoring invalid classless static routes '%s'", str);
+			return FALSE;
+		}
+		p++;
+	};
+
+	if (strchr (str, '/')) {
+		/* dhcpcd format */
+		return ip4_process_dhcpcd_rfc3442_routes (str, ip4_config, gwaddr);
+	}
+
+	return ip4_process_dhclient_rfc3442_routes (str, ip4_config, gwaddr);
+}
+
 static void
 process_classful_routes (GHashTable *options, NMIP4Config *ip4_config)
 {
@@ -744,7 +989,6 @@ ip4_options_to_config (NMDHCPClient *self)
 	NMIP4Address *addr = NULL;
 	char *str = NULL;
 	guint32 gwaddr = 0, prefix = 0;
-	gboolean have_classless = FALSE;
 
 	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
@@ -785,17 +1029,8 @@ ip4_options_to_config (NMDHCPClient *self)
 	/* Routes: if the server returns classless static routes, we MUST ignore
 	 * the 'static_routes' option.
 	 */
-	if (NM_DHCP_CLIENT_GET_CLASS (self)->ip4_process_classless_routes) {
-		have_classless = NM_DHCP_CLIENT_GET_CLASS (self)->ip4_process_classless_routes (self,
-		                                                                                priv->options,
-		                                                                                ip4_config,
-		                                                                                &gwaddr);
-	}
-
-	if (!have_classless) {
-		gwaddr = 0;  /* Ensure client code doesn't lie */
+	if (!ip4_process_classless_routes (priv->options, ip4_config, &gwaddr))
 		process_classful_routes (priv->options, ip4_config);
-	}
 
 	if (gwaddr) {
 		char buf[INET_ADDRSTRLEN + 1];
@@ -889,6 +1124,27 @@ ip4_options_to_config (NMDHCPClient *self)
 
 		if (int_mtu > 576)
 			nm_ip4_config_set_mtu (ip4_config, int_mtu);
+	}
+
+	str = g_hash_table_lookup (priv->options, "new_nis_domain");
+	if (str) {
+		nm_log_info (LOGD_DHCP4, "  NIS domain '%s'", str);
+		nm_ip4_config_set_nis_domain (ip4_config, str);
+	}
+
+	str = g_hash_table_lookup (priv->options, "new_nis_servers");
+	if (str) {
+		char **searches = g_strsplit (str, " ", 0);
+		char **s;
+
+		for (s = searches; *s; s++) {
+			if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
+				nm_ip4_config_add_nis_server (ip4_config, tmp_addr.s_addr);
+				nm_log_info (LOGD_DHCP4, "  nis '%s'", *s);
+			} else
+				nm_log_warn (LOGD_DHCP4, "ignoring invalid NIS server '%s'", *s);
+		}
+		g_strfreev (searches);
 	}
 
 	return ip4_config;

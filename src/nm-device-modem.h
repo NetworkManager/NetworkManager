@@ -36,6 +36,8 @@
 
 #define NM_DEVICE_MODEM_MODEM "modem"
 
+#define NM_DEVICE_MODEM_ENABLE_CHANGED "enable-changed"
+
 typedef struct {
 	NMDevice parent;
 } NMDeviceModem;

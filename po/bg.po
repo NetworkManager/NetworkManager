@@ -2,68 +2,1837 @@
 # Copyright (C) 2005, 2007, 2008 Free Software Foundation, Inc.
 # This file is distributed under the same license as the NetworkManager package.
 # Alexander Shopov <ash@contact.bg>, 2005, 2007, 2008.
+# Damyan Ivanov <dam+gnome@ktnx.net>, 2010.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager trunk\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-08-02 08:52+0300\n"
-"PO-Revision-Date: 2008-08-01 07:30+0300\n"
-"Last-Translator: Alexander Shopov <ash@contact.bg>\n"
+"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
+"product=NetworkManager&component=general\n"
+"POT-Creation-Date: 2010-09-20 15:25+0000\n"
+"PO-Revision-Date: 2010-09-29 23:55+0300\n"
+"Last-Translator: Damyan Ivanov <dam+gnome@ktnx.net>\n"
 "Language-Team: Bulgarian <dict@fsa-bg.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 
-#: ../src/nm-netlink-monitor.c:193 ../src/nm-netlink-monitor.c:471
+#: ../cli/src/connections.c:60 ../cli/src/connections.c:75
+#: ../cli/src/devices.c:88 ../cli/src/devices.c:101 ../cli/src/devices.c:111
+#: ../cli/src/devices.c:121 ../cli/src/devices.c:134 ../cli/src/devices.c:145
+#: ../cli/src/devices.c:156 ../cli/src/devices.c:165 ../cli/src/devices.c:174
+msgid "NAME"
+msgstr "ИМЕ"
+
+#. 0
+#: ../cli/src/connections.c:61 ../cli/src/connections.c:76
+msgid "UUID"
+msgstr "УНИВЕРСАЛЕН ИДЕНТИФИКАТОР"
+
+#. 1
+#: ../cli/src/connections.c:62
+msgid "DEVICES"
+msgstr "УСТРОЙСТВА"
+
+#. 2
+#: ../cli/src/connections.c:63 ../cli/src/connections.c:78
+msgid "SCOPE"
+msgstr "ОБСЕГ"
+
+#. 3
+#: ../cli/src/connections.c:64
+msgid "DEFAULT"
+msgstr "ПОДРАЗ."
+
+#. 4
+#: ../cli/src/connections.c:65
+msgid "DBUS-SERVICE"
+msgstr "УСЛУГА-DBUS"
+
+#. 5
+#: ../cli/src/connections.c:66
+msgid "SPEC-OBJECT"
+msgstr "СПЕЦИФИКАЦ."
+
+#. 6
+#: ../cli/src/connections.c:67
+msgid "VPN"
+msgstr "ВЧМ"
+
+#. 1
+#. 0
+#. 1
+#: ../cli/src/connections.c:77 ../cli/src/devices.c:62 ../cli/src/devices.c:90
+msgid "TYPE"
+msgstr "ВИД"
+
+# Заглавие за датата и часа, когато последно е използвана връзката.
+# Използва се вътрешният формат (секунди от фиксирана дата през 1700г).
+#. 3
+#: ../cli/src/connections.c:79
+msgid "TIMESTAMP"
+msgstr "ПОСЛ. АКТ."
+
+# Заглавие за датата и часа, когато последно е използвана връзката.
+# Използва се локализиран формат за дата и час.
+#. 4
+#: ../cli/src/connections.c:80
+msgid "TIMESTAMP-REAL"
+msgstr "ПОСЛЕДНО АКТИВНА"
+
+#. 5
+#: ../cli/src/connections.c:81
+msgid "AUTOCONNECT"
+msgstr "АВТОМАТИЧНА"
+
+#. 6
+#: ../cli/src/connections.c:82
+msgid "READONLY"
+msgstr "САМО ЧЕТ."
+
+#. 7
+#: ../cli/src/connections.c:83
+msgid "DBUS-PATH"
+msgstr "ПЪТ-DBUS"
+
+#: ../cli/src/connections.c:159
+#, c-format
+msgid ""
+"Usage: nmcli con { COMMAND | help }\n"
+"  COMMAND := { list | status | up | down }\n"
+"\n"
+"  list [id <id> | uuid <id> | system | user]\n"
+"  status\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--timeout "
+"<timeout>]\n"
+"  down id <id> | uuid <id>\n"
+msgstr ""
+"Употреба: nmcli con { КОМАНДА | help }\n"
+"  КОМАНДА := { list | status | up | down }\n"
+"\n"
+"  list [id <ид> | uuid <ид> | system | user]\n"
+"  status\n"
+"  up id <ид> | uuid <ид> [iface <интерфейс>] [ap <хардуерен адрес>] [--"
+"nowait] [--timeout <изчакване>]\n"
+"  down id <ид> | uuid <ид>\n"
+
+#: ../cli/src/connections.c:199 ../cli/src/connections.c:540
+#, c-format
+msgid "Error: 'con list': %s"
+msgstr "Грешка при „con list“ – %s"
+
+#: ../cli/src/connections.c:201 ../cli/src/connections.c:542
+#, c-format
+msgid "Error: 'con list': %s; allowed fields: %s"
+msgstr "Грешка при „con list“ – %s; допустимите полета са %s"
+
+#: ../cli/src/connections.c:209
+#| msgid "Connection Established"
+msgid "Connection details"
+msgstr "Информация за връзката"
+
+#: ../cli/src/connections.c:384 ../cli/src/connections.c:605
+msgid "system"
+msgstr "система"
+
+#: ../cli/src/connections.c:384 ../cli/src/connections.c:605
+msgid "user"
+msgstr "потреб."
+
+#: ../cli/src/connections.c:386
+msgid "never"
+msgstr "никога"
+
+#. "CAPABILITIES"
+#. Print header
+#. "WIFI-PROPERTIES"
+#: ../cli/src/connections.c:387 ../cli/src/connections.c:388
+#: ../cli/src/connections.c:606 ../cli/src/connections.c:609
+#: ../cli/src/devices.c:432 ../cli/src/devices.c:557 ../cli/src/devices.c:583
+#: ../cli/src/devices.c:584 ../cli/src/devices.c:585 ../cli/src/devices.c:586
+#: ../cli/src/devices.c:587 ../cli/src/settings.c:508
+#: ../cli/src/settings.c:551 ../cli/src/settings.c:652
+#: ../cli/src/settings.c:926 ../cli/src/settings.c:927
+#: ../cli/src/settings.c:929 ../cli/src/settings.c:931
+#: ../cli/src/settings.c:1056 ../cli/src/settings.c:1057
+#: ../cli/src/settings.c:1058 ../cli/src/settings.c:1137
+#: ../cli/src/settings.c:1138 ../cli/src/settings.c:1139
+#: ../cli/src/settings.c:1140 ../cli/src/settings.c:1141
+#: ../cli/src/settings.c:1142 ../cli/src/settings.c:1143
+#: ../cli/src/settings.c:1144 ../cli/src/settings.c:1145
+#: ../cli/src/settings.c:1146 ../cli/src/settings.c:1147
+#: ../cli/src/settings.c:1148 ../cli/src/settings.c:1149
+#: ../cli/src/settings.c:1224
+msgid "yes"
+msgstr "да"
+
+#: ../cli/src/connections.c:387 ../cli/src/connections.c:388
+#: ../cli/src/connections.c:606 ../cli/src/connections.c:609
+#: ../cli/src/devices.c:432 ../cli/src/devices.c:557 ../cli/src/devices.c:583
+#: ../cli/src/devices.c:584 ../cli/src/devices.c:585 ../cli/src/devices.c:586
+#: ../cli/src/devices.c:587 ../cli/src/settings.c:508
+#: ../cli/src/settings.c:510 ../cli/src/settings.c:551
+#: ../cli/src/settings.c:652 ../cli/src/settings.c:926
+#: ../cli/src/settings.c:927 ../cli/src/settings.c:929
+#: ../cli/src/settings.c:931 ../cli/src/settings.c:1056
+#: ../cli/src/settings.c:1057 ../cli/src/settings.c:1058
+#: ../cli/src/settings.c:1137 ../cli/src/settings.c:1138
+#: ../cli/src/settings.c:1139 ../cli/src/settings.c:1140
+#: ../cli/src/settings.c:1141 ../cli/src/settings.c:1142
+#: ../cli/src/settings.c:1143 ../cli/src/settings.c:1144
+#: ../cli/src/settings.c:1145 ../cli/src/settings.c:1146
+#: ../cli/src/settings.c:1147 ../cli/src/settings.c:1148
+#: ../cli/src/settings.c:1149 ../cli/src/settings.c:1224
+#| msgid "none"
+msgid "no"
+msgstr "не"
+
+#: ../cli/src/connections.c:461 ../cli/src/connections.c:504
+#| msgid "No active connections!"
+msgid "System connections"
+msgstr "Системни връзки"
+
+#: ../cli/src/connections.c:466 ../cli/src/connections.c:517
+#| msgid "VPN Connections"
+msgid "User connections"
+msgstr "Потребителски връзки"
+
+#: ../cli/src/connections.c:478 ../cli/src/connections.c:1338
+#: ../cli/src/connections.c:1354 ../cli/src/connections.c:1363
+#: ../cli/src/connections.c:1374 ../cli/src/connections.c:1459
+#: ../cli/src/devices.c:962 ../cli/src/devices.c:972 ../cli/src/devices.c:1074
+#: ../cli/src/devices.c:1081
+#, c-format
+msgid "Error: %s argument is missing."
+msgstr "Липсва аргумент за „%s“."
+
+#: ../cli/src/connections.c:491
+#, c-format
+msgid "Error: %s - no such connection."
+msgstr "Няма връзка „%s“."
+
+#: ../cli/src/connections.c:523 ../cli/src/connections.c:1387
+#: ../cli/src/connections.c:1477 ../cli/src/devices.c:785
+#: ../cli/src/devices.c:852 ../cli/src/devices.c:986 ../cli/src/devices.c:1087
+#, c-format
+msgid "Unknown parameter: %s\n"
+msgstr "Непознат параметър „%s“\n"
+
+#: ../cli/src/connections.c:532
+#, c-format
+msgid "Error: no valid parameter specified."
+msgstr "Няма указани параметри."
+
+#: ../cli/src/connections.c:547 ../cli/src/connections.c:1580
+#: ../cli/src/devices.c:1293 ../cli/src/network-manager.c:359
+#, c-format
+msgid "Error: %s."
+msgstr "Грешка – %s."
+
+#: ../cli/src/connections.c:653
+#, c-format
+msgid "Error: 'con status': %s"
+msgstr "Грешка при „con status“ – %s"
+
+#: ../cli/src/connections.c:655
+#, c-format
+msgid "Error: 'con status': %s; allowed fields: %s"
+msgstr "Грешка при „con status“ – %s. Допустимите полета са %s"
+
+#: ../cli/src/connections.c:662
+#| msgid "No active connections!"
+msgid "Active connections"
+msgstr "Активни връзки"
+
+#: ../cli/src/connections.c:1030
+#, c-format
+#| msgid "No active connections!"
+msgid "no active connection on device '%s'"
+msgstr "няма активна връзка, използваща устройството „%s“"
+
+#: ../cli/src/connections.c:1038
+#, c-format
+#| msgid "No active connections!"
+msgid "no active connection or device"
+msgstr "няма активна връзка или устройство"
+
+#: ../cli/src/connections.c:1088
+#, c-format
+msgid "device '%s' not compatible with connection '%s'"
+msgstr "устройството „%s“ не е съвместимо с връзката „%s“"
+
+#: ../cli/src/connections.c:1090
+#, c-format
+#| msgid "Error retrieving VPN connection '%s'"
+msgid "no device found for connection '%s'"
+msgstr "не е открито устройство за връзката „%s“"
+
+#: ../cli/src/connections.c:1101
+msgid "activating"
+msgstr "включване"
+
+#: ../cli/src/connections.c:1103
+msgid "activated"
+msgstr "включена"
+
+#: ../cli/src/connections.c:1106 ../cli/src/connections.c:1129
+#: ../cli/src/connections.c:1162 ../cli/src/devices.c:246
+#: ../cli/src/devices.c:558 ../cli/src/network-manager.c:94
+#: ../cli/src/network-manager.c:149 ../cli/src/settings.c:473
+#| msgid "(unknown)"
+msgid "unknown"
+msgstr "неизвестно"
+
+#: ../cli/src/connections.c:1115
+#| msgid "VPN connecting to '%s'"
+msgid "VPN connecting (prepare)"
+msgstr "Свързване към ВЧМ (подготовка)"
+
+#: ../cli/src/connections.c:1117
+msgid "VPN connecting (need authentication)"
+msgstr "Свързване към ВЧМ (нужна е идентификация)"
+
+#: ../cli/src/connections.c:1119
+#| msgid "VPN Connections"
+msgid "VPN connecting"
+msgstr "Свързване към ВЧМ"
+
+#: ../cli/src/connections.c:1121
+msgid "VPN connecting (getting IP configuration)"
+msgstr "Свързване към ВЧМ (получаване на настройките за IP)"
+
+#: ../cli/src/connections.c:1123
+#| msgid "Disconnected"
+msgid "VPN connected"
+msgstr "Свързан към ВЧМ"
+
+#: ../cli/src/connections.c:1125
+#| msgid "VPN Connect Failure"
+msgid "VPN connection failed"
+msgstr "Неуспешно свързване към ВЧМ"
+
+#: ../cli/src/connections.c:1127
+#| msgid "Disconnected"
+msgid "VPN disconnected"
+msgstr "Връзката към ВЧМ е прекъсната"
+
+#: ../cli/src/connections.c:1138
+#| msgid "(unknown)"
+msgid "unknown reason"
+msgstr "неизвестна причина"
+
+#: ../cli/src/connections.c:1140
+msgid "none"
+msgstr "липсва"
+
+#: ../cli/src/connections.c:1142
+#| msgid "The network connection has been disconnected."
+msgid "the user was disconnected"
+msgstr "потребителят е изключен"
+
+#: ../cli/src/connections.c:1144
+#| msgid "The network connection has been disconnected."
+msgid "the base network connection was interrupted"
+msgstr "основната връзка към мрежата е прекъсната"
+
+#: ../cli/src/connections.c:1146
+msgid "the VPN service stopped unexpectedly"
+msgstr "услугата за ВЧМ спря неочаквано"
+
+#: ../cli/src/connections.c:1148
+msgid "the VPN service returned invalid configuration"
+msgstr "услугата за ВЧМ предостави неправилни настройки"
+
+#: ../cli/src/connections.c:1150
+msgid "the connection attempt timed out"
+msgstr "времето за свързване изтече"
+
+#: ../cli/src/connections.c:1152
+msgid "the VPN service did not start in time"
+msgstr "услугата за ВЧМ не успя да тръгне в определеното време"
+
+#: ../cli/src/connections.c:1154
+msgid "the VPN service failed to start"
+msgstr "услугата за ВЧМ не успя да тръгне"
+
+#: ../cli/src/connections.c:1156
+msgid "no valid VPN secrets"
+msgstr "няма правилни пароли за ВЧМ"
+
+#: ../cli/src/connections.c:1158
+msgid "invalid VPN secrets"
+msgstr "неправилни пароли за ВЧМ"
+
+#: ../cli/src/connections.c:1160
+msgid "the connection was removed"
+msgstr "връзката е премахната"
+
+#: ../cli/src/connections.c:1174
+#, c-format
+msgid "state: %s\n"
+msgstr "състояние: %s\n"
+
+#: ../cli/src/connections.c:1177 ../cli/src/connections.c:1203
+#, c-format
+#| msgid "Connection Established"
+msgid "Connection activated\n"
+msgstr "Връзката е активирана\n"
+
+#: ../cli/src/connections.c:1180
+#, c-format
+#| msgid "Connection to the wired network failed."
+msgid "Error: Connection activation failed."
+msgstr "Грешка при активиране на връзката."
+
+#: ../cli/src/connections.c:1199
+#, c-format
+msgid "state: %s (%d)\n"
+msgstr "състояние: %s (%d)\n"
+
+#: ../cli/src/connections.c:1209
+#, c-format
+msgid "Error: Connection activation failed: %s."
+msgstr "Грешка при активиране на връзката: %s."
+
+#: ../cli/src/connections.c:1226 ../cli/src/devices.c:909
+#, c-format
+msgid "Error: Timeout %d sec expired."
+msgstr "Просрочено е времето от %d сек."
+
+#: ../cli/src/connections.c:1269
+#, c-format
+msgid "Error: Connection activation failed: %s"
+msgstr "Грешка при активиране на връзката: %s"
+
+#: ../cli/src/connections.c:1283
+#, c-format
+#| msgid "Error retrieving VPN connection '%s'"
+msgid "Error: Obtaining active connection for '%s' failed."
+msgstr "Грешка при получаване на активната връзка за „%s“."
+
+#: ../cli/src/connections.c:1292
+#, c-format
+#| msgid "No active connections!"
+msgid "Active connection state: %s\n"
+msgstr "Състояние на активната връзка: %s\n"
+
+#: ../cli/src/connections.c:1293
+#, c-format
+#| msgid "No active connections!"
+msgid "Active connection path: %s\n"
+msgstr "Път на активната връзка: %s\n"
+
+#: ../cli/src/connections.c:1347 ../cli/src/connections.c:1468
+#, c-format
+#| msgid "Error retrieving VPN connection '%s'"
+msgid "Error: Unknown connection: %s."
+msgstr "Непозната връзка „%s“."
+
+#: ../cli/src/connections.c:1382 ../cli/src/devices.c:980
+#, c-format
+msgid "Error: timeout value '%s' is not valid."
+msgstr "Ограничението на времето „%s“ не е правилно."
+
+#: ../cli/src/connections.c:1395 ../cli/src/connections.c:1485
+#, c-format
+msgid "Error: id or uuid has to be specified."
+msgstr ""
+"Указването на идентификатор или универсален идентификатор (uuid) е "
+"задължително."
+
+#: ../cli/src/connections.c:1415
+#, c-format
+msgid "Error: No suitable device found: %s."
+msgstr "Не е намерено подходящо устройство – %s."
+
+#: ../cli/src/connections.c:1417
+#, c-format
+msgid "Error: No suitable device found."
+msgstr "Не е намерено подходящо устройство."
+
+#: ../cli/src/connections.c:1512
+#, c-format
+#| msgid "Connection Information"
+msgid "Warning: Connection not active\n"
+msgstr "Предупреждение: Връзката не е активна\n"
+
+#: ../cli/src/connections.c:1569
+#, c-format
+msgid "Error: 'con' command '%s' is not valid."
+msgstr "„con“ не поддържа команда „%s“."
+
+#: ../cli/src/connections.c:1605
+#, c-format
+msgid "Error: could not connect to D-Bus."
+msgstr "Грешка при свързване с D-Bus."
+
+#: ../cli/src/connections.c:1612
+#, c-format
+msgid "Error: Could not get system settings."
+msgstr "Грешка при получаване на системните настройки."
+
+#: ../cli/src/connections.c:1620
+#, c-format
+msgid "Error: Could not get user settings."
+msgstr "Грешка при получаване на потребителските настройки."
+
+#: ../cli/src/connections.c:1630
+#, c-format
+msgid "Error: Can't obtain connections: settings services are not running."
+msgstr ""
+"Грешка при получаване на списъка с връзки – услугите за настройки не са "
+"налични."
+
+#. 0
+#. 9
+#: ../cli/src/devices.c:61 ../cli/src/devices.c:89 ../cli/src/devices.c:184
+msgid "DEVICE"
+msgstr "УСТРОЙСТВО"
+
+#. 1
+#. 4
+#. 0
+#: ../cli/src/devices.c:63 ../cli/src/devices.c:93
+#: ../cli/src/network-manager.c:36
+msgid "STATE"
+msgstr "СЪСТОЯНИЕ"
+
+#: ../cli/src/devices.c:72
+msgid "GENERAL"
+msgstr "ОБЩИ"
+
+#. 0
+#: ../cli/src/devices.c:73
+msgid "CAPABILITIES"
+msgstr "ВЪЗМОЖНОСТИ"
+
+#. 1
+#: ../cli/src/devices.c:74
+msgid "WIFI-PROPERTIES"
+msgstr "БЕЗЖИЧНИ-ХАРАКТЕРИСТИКИ"
+
+#. 2
+#: ../cli/src/devices.c:75
+#| msgid "PEAP"
+msgid "AP"
+msgstr "ТД"
+
+#. 3
+#: ../cli/src/devices.c:76
+msgid "WIRED-PROPERTIES"
+msgstr "ЖИЧНИ-ХАРАКТЕРИСТИКИ"
+
+#. 4
+#: ../cli/src/devices.c:77
+msgid "IP4-SETTINGS"
+msgstr "ПАРАМЕТРИ-IP4"
+
+#. 5
+#: ../cli/src/devices.c:78
+msgid "IP4-DNS"
+msgstr "IP4-DNS"
+
+#. 6
+#: ../cli/src/devices.c:79
+msgid "IP6-SETTINGS"
+msgstr "ПАРАМЕТРИ-IP6"
+
+#. 7
+#: ../cli/src/devices.c:80
+msgid "IP6-DNS"
+msgstr "IP6-DNS"
+
+#. 2
+#: ../cli/src/devices.c:91
+msgid "DRIVER"
+msgstr "ДРАЙВЕР"
+
+#. 3
+#: ../cli/src/devices.c:92
+msgid "HWADDR"
+msgstr "ХАРДУЕРЕН-АДРЕС"
+
+#. 0
+#: ../cli/src/devices.c:102
+msgid "CARRIER-DETECT"
+msgstr "СИГНАЛ-ОТКР."
+
+#. 1
+#: ../cli/src/devices.c:103
+msgid "SPEED"
+msgstr "СКОРОСТ"
+
+#. 0
+#: ../cli/src/devices.c:112
+msgid "CARRIER"
+msgstr "СИГНАЛ"
+
+#. 0
+#: ../cli/src/devices.c:122
+msgid "WEP"
+msgstr "WEP"
+
+#. 1
+#: ../cli/src/devices.c:123
+msgid "WPA"
+msgstr "WPA"
+
+#. 2
+#: ../cli/src/devices.c:124
+#| msgid "WPA2 TKIP"
+msgid "WPA2"
+msgstr "WPA2"
+
+#. 3
+#: ../cli/src/devices.c:125
+msgid "TKIP"
+msgstr "TKIP"
+
+#. 4
+#: ../cli/src/devices.c:126
+#| msgid "AES-CCMP"
+msgid "CCMP"
+msgstr "CCMP"
+
+#. 0
+#: ../cli/src/devices.c:135 ../cli/src/devices.c:146
+msgid "ADDRESS"
+msgstr "АДРЕС"
+
+#. 1
+#: ../cli/src/devices.c:136 ../cli/src/devices.c:147
+msgid "PREFIX"
+msgstr "ПРЕФИКС"
+
+#. 2
+#: ../cli/src/devices.c:137 ../cli/src/devices.c:148
+msgid "GATEWAY"
+msgstr "ШЛЮЗ"
+
+#. 0
+#: ../cli/src/devices.c:157 ../cli/src/devices.c:166
+msgid "DNS"
+msgstr "DNS"
+
+#. 0
+#: ../cli/src/devices.c:175
+msgid "SSID"
+msgstr "SSID"
+
+#. 1
+#: ../cli/src/devices.c:176
+msgid "BSSID"
+msgstr "BSSID"
+
+#. 2
+#: ../cli/src/devices.c:177
+msgid "MODE"
+msgstr "РЕЖИМ"
+
+#. 3
+#: ../cli/src/devices.c:178
+msgid "FREQ"
+msgstr "ЧЕСТОТА"
+
+#. 4
+#: ../cli/src/devices.c:179
+msgid "RATE"
+msgstr "СКОРОСТ-ПРЕДАВАНЕ"
+
+#. 5
+#: ../cli/src/devices.c:180
+msgid "SIGNAL"
+msgstr "СИГНАЛ"
+
+#. 6
+#: ../cli/src/devices.c:181
+msgid "SECURITY"
+msgstr "СИГУРНОСТ"
+
+#. 7
+#: ../cli/src/devices.c:182
+msgid "WPA-FLAGS"
+msgstr "ФЛАГОВЕ-WPA"
+
+#. 8
+#: ../cli/src/devices.c:183
+msgid "RSN-FLAGS"
+msgstr "ФЛАГОВЕ-RSN"
+
+#. 10
+#: ../cli/src/devices.c:185
+msgid "ACTIVE"
+msgstr "АКТИВНА"
+
+#: ../cli/src/devices.c:208
+#, c-format
+msgid ""
+"Usage: nmcli dev { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | list | disconnect | wifi }\n"
+"\n"
+"  status\n"
+"  list [iface <iface>]\n"
+"  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
+"  wifi [list [iface <iface>] [hwaddr <hwaddr>]]\n"
+"\n"
+msgstr ""
+"Употреба: nmcli dev { КОМАНДА | help }\n"
+"\n"
+"  КОМАНДА := { status | list | disconnect | wifi }\n"
+"\n"
+"  status\n"
+"  list [ iface <интерфейс>]\n"
+"  disconnect iface <интерфейс> [--nowait] [--timeout <време>]\n"
+"  wifi [list [iface <интерфейс>] [hwaddr <хардуерен адрес>]]\n"
+"\n"
+
+#: ../cli/src/devices.c:228
+msgid "unmanaged"
+msgstr "не се управлява"
+
+#: ../cli/src/devices.c:230
+msgid "unavailable"
+msgstr "не е налично"
+
+# става дума за устройство
+# или за общото състояние на N-M
+#: ../cli/src/devices.c:232 ../cli/src/network-manager.c:91
+#| msgid "Disconnected"
+msgid "disconnected"
+msgstr "без връзка"
+
+#: ../cli/src/devices.c:234
+msgid "connecting (prepare)"
+msgstr "свързване (подготовка)"
+
+#: ../cli/src/devices.c:236
+#| msgid "Connection Information"
+msgid "connecting (configuring)"
+msgstr "свързване (настройка)"
+
+#: ../cli/src/devices.c:238
+msgid "connecting (need authentication)"
+msgstr "свързване (нужна е идентификация)"
+
+#: ../cli/src/devices.c:240
+#| msgid "Connection Information"
+msgid "connecting (getting IP configuration)"
+msgstr "свързване (получаване на настройките за IP)"
+
+# става дума и за конкретно устройство,
+# и за NM като цяло
+#: ../cli/src/devices.c:242 ../cli/src/network-manager.c:89
+#| msgid "Disconnected"
+msgid "connected"
+msgstr "има връзка"
+
+#: ../cli/src/devices.c:244
+#| msgid "Connection Established"
+msgid "connection failed"
+msgstr "неуспешно свързване"
+
+# вид устройство (жично, безжично, телефон, bluetooth) или вид мрежа (инфраструктура, ad-hoc)
+#: ../cli/src/devices.c:267 ../cli/src/devices.c:424
+msgid "Unknown"
+msgstr "Непознат"
+
+# низът се използва когато дадена безжична мрежа няма флагове от рода на pair_ccmp, pair_wpe140 и т.н.
+#: ../cli/src/devices.c:299
+#| msgid "none"
+msgid "(none)"
+msgstr "(без)"
+
+#: ../cli/src/devices.c:324
+#, c-format
+msgid "%s: error converting IP4 address 0x%X"
+msgstr "%s: грешка при преобразуване на адрес IP4 0x%X"
+
+#: ../cli/src/devices.c:393
+#, c-format
+msgid "%u MHz"
+msgstr "%u МХц"
+
+#: ../cli/src/devices.c:394
+#, c-format
+#| msgid "%d Mb/s"
+msgid "%u MB/s"
+msgstr "%u МБ/с"
+
+#: ../cli/src/devices.c:403
+msgid "Encrypted: "
+msgstr "Шифроване: "
+
+#: ../cli/src/devices.c:408
+msgid "WEP "
+msgstr "WEP"
+
+#: ../cli/src/devices.c:410
+#| msgid "WPA TKIP"
+msgid "WPA "
+msgstr "WPA"
+
+#: ../cli/src/devices.c:412
+#| msgid "WPA2 TKIP"
+msgid "WPA2 "
+msgstr "WPA2"
+
+#: ../cli/src/devices.c:415
+#| msgid "WPA Enterprise"
+msgid "Enterprise "
+msgstr "Индустр."
+
+# Режима на мрежата
+#: ../cli/src/devices.c:424
+msgid "Ad-Hoc"
+msgstr "Специален"
+
+# Режима на мрежата
+#: ../cli/src/devices.c:424
+msgid "Infrastructure"
+msgstr "Инфраструктурен"
+
+#: ../cli/src/devices.c:486
+#, c-format
+msgid "Error: 'dev list': %s"
+msgstr "Грешка при „dev list“ – %s"
+
+#: ../cli/src/devices.c:488
+#, c-format
+msgid "Error: 'dev list': %s; allowed fields: %s"
+msgstr "Грешка при „dev list“ – %s; допустимите полета са %s"
+
+#: ../cli/src/devices.c:497
+msgid "Device details"
+msgstr "Информация за устройството"
+
+# или е драйвер,
+# или е грешка при прекъсване на връзката
+#: ../cli/src/devices.c:527 ../cli/src/devices.c:925
+msgid "(unknown)"
+msgstr "(няма информация)"
+
+# хардуерен адрес
+#: ../cli/src/devices.c:528
+#| msgid "(unknown)"
+msgid "unknown)"
+msgstr "(няма информация)"
+
+#: ../cli/src/devices.c:554
+#, c-format
+#| msgid "%d Mb/s"
+msgid "%u Mb/s"
+msgstr "%u Мб/с"
+
+# дадено устройство има сигнал по жицата
+#. Print header
+#. "WIRED-PROPERTIES"
+#: ../cli/src/devices.c:627
+#| msgid "None"
+msgid "on"
+msgstr "свързано"
+
+#: ../cli/src/devices.c:627
+msgid "off"
+msgstr "без връзка"
+
+#: ../cli/src/devices.c:808
+#, c-format
+msgid "Error: 'dev status': %s"
+msgstr "Грешка при „dev status“ – %s"
+
+#: ../cli/src/devices.c:810
+#, c-format
+msgid "Error: 'dev status': %s; allowed fields: %s"
+msgstr "Грешка при „dev status“ – %s; допустимите полета са %s"
+
+#: ../cli/src/devices.c:817
+msgid "Status of devices"
+msgstr "Състояние на устройствата"
+
+#: ../cli/src/devices.c:845
+#, c-format
+msgid "Error: '%s' argument is missing."
+msgstr "Липсва аргумент за „%s“."
+
+#: ../cli/src/devices.c:874 ../cli/src/devices.c:1013
+#: ../cli/src/devices.c:1136
+#, c-format
+msgid "Error: Device '%s' not found."
+msgstr "Устройството „%s“ не е намерено."
+
+#: ../cli/src/devices.c:897
+#, c-format
+msgid "Success: Device '%s' successfully disconnected."
+msgstr "Връзката на устройството „%s“ е прекъсната."
+
+#: ../cli/src/devices.c:922
+#, c-format
+msgid "Error: Device '%s' (%s) disconnecting failed: %s"
+msgstr "Грешка при прекъсване на връзката на устройството „%s“ (%s) – %s"
+
+#: ../cli/src/devices.c:930
+#, c-format
+msgid "Device state: %d (%s)\n"
+msgstr "Състояние на устройството: %d (%s)\n"
+
+#: ../cli/src/devices.c:994
+#, c-format
+msgid "Error: iface has to be specified."
+msgstr "Указването на „iface“ е задължително."
+
+#: ../cli/src/devices.c:1112
+#, c-format
+msgid "Error: 'dev wifi': %s"
+msgstr "Грешка при „dev wifi“ – %s"
+
+#: ../cli/src/devices.c:1114
+#, c-format
+msgid "Error: 'dev wifi': %s; allowed fields: %s"
+msgstr "Грешка при „dev wifi“ – %s; допустимите полета са %s"
+
+#: ../cli/src/devices.c:1121
+msgid "WiFi scan list"
+msgstr "Открити безжични мрежи"
+
+#: ../cli/src/devices.c:1156 ../cli/src/devices.c:1210
+#, c-format
+msgid "Error: Access point with hwaddr '%s' not found."
+msgstr "Не е открита точка за достъп с хардуерен адрес „%s“."
+
+#: ../cli/src/devices.c:1173
+#, c-format
+msgid "Error: Device '%s' is not a WiFi device."
+msgstr "„%s“ не е устройство за безжична мрежа."
+
+#: ../cli/src/devices.c:1237
+#, c-format
+msgid "Error: 'dev wifi' command '%s' is not valid."
+msgstr "„%s“ не е правилна команда за „dev wifi“."
+
+#: ../cli/src/devices.c:1284
+#, c-format
+msgid "Error: 'dev' command '%s' is not valid."
+msgstr "„%s“ не е правилна команда за „dev“."
+
+#: ../cli/src/network-manager.c:35
+msgid "RUNNING"
+msgstr "ВКЛЮЧЕН"
+
+#. 1
+#: ../cli/src/network-manager.c:37
+msgid "NET-ENABLED"
+msgstr "МРЕЖА-ВКЛЮЧ"
+
+#. 2
+#: ../cli/src/network-manager.c:38
+msgid "WIFI-HARDWARE"
+msgstr "БЕЗЖ. ХАРДУЕР"
+
+#. 3
+#: ../cli/src/network-manager.c:39
+msgid "WIFI"
+msgstr "БЕЗЖ.МРЕЖА"
+
+#. 4
+#: ../cli/src/network-manager.c:40
+msgid "WWAN-HARDWARE"
+msgstr "МОБ. ХАРДУЕР"
+
+#. 5
+#: ../cli/src/network-manager.c:41
+msgid "WWAN"
+msgstr "МОБ. МРЕЖА"
+
+#: ../cli/src/network-manager.c:64
+#, c-format
+msgid ""
+"Usage: nmcli nm { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | enable | sleep | wifi | wwan }\n"
+"\n"
+"  status\n"
+"  enable [true|false]\n"
+"  sleep [true|false]\n"
+"  wifi [on|off]\n"
+"  wwan [on|off]\n"
+"\n"
+msgstr ""
+"Употреба: nmcli nm { КОМАНДА | help }\n"
+"\n"
+"  КОМАНДА := { status | enable | sleep | wifi | wwan }\n"
+"\n"
+"  status\n"
+"  enable [true|false]\n"
+"  sleep [true|false]\n"
+"  wifi [on|off]\n"
+"  wwan [on|off]\n"
+"\n"
+
+#: ../cli/src/network-manager.c:85
+msgid "asleep"
+msgstr "спящ"
+
+#: ../cli/src/network-manager.c:87
+#| msgid "C_onnect"
+msgid "connecting"
+msgstr "свързване"
+
+#: ../cli/src/network-manager.c:128
+#, c-format
+msgid "Error: 'nm status': %s"
+msgstr "Грешка при „nm status“ – %s"
+
+#: ../cli/src/network-manager.c:130
+#, c-format
+msgid "Error: 'nm status': %s; allowed fields: %s"
+msgstr "Грешка при „nm status“ – %s; допустимите полета са %s"
+
+#: ../cli/src/network-manager.c:137
+#| msgid "NetworkManager Applet"
+msgid "NetworkManager status"
+msgstr "Състояние на NetworkManager"
+
+#. Print header
+#: ../cli/src/network-manager.c:144 ../cli/src/network-manager.c:145
+#: ../cli/src/network-manager.c:146 ../cli/src/network-manager.c:147
+#: ../cli/src/network-manager.c:154 ../cli/src/network-manager.c:247
+#: ../cli/src/network-manager.c:296 ../cli/src/network-manager.c:328
+msgid "enabled"
+msgstr "включено"
+
+#: ../cli/src/network-manager.c:144 ../cli/src/network-manager.c:145
+#: ../cli/src/network-manager.c:146 ../cli/src/network-manager.c:147
+#: ../cli/src/network-manager.c:154 ../cli/src/network-manager.c:247
+#: ../cli/src/network-manager.c:296 ../cli/src/network-manager.c:328
+msgid "disabled"
+msgstr "изключено"
+
+#: ../cli/src/network-manager.c:152
+msgid "running"
+msgstr "включен"
+
+#: ../cli/src/network-manager.c:152
+msgid "not running"
+msgstr "изключен"
+
+#: ../cli/src/network-manager.c:175
+#, c-format
+msgid "Error: Couldn't connect to system bus: %s"
+msgstr "Грешка при свързване към системната шина – %s"
+
+#: ../cli/src/network-manager.c:186
+#, c-format
+msgid "Error: Couldn't create D-Bus object proxy."
+msgstr "Грешка при създаване на обект-посредник за D-Bus."
+
+#: ../cli/src/network-manager.c:192
+#, c-format
+msgid "Error in sleep: %s"
+msgstr "Грешка при приспиване – %s"
+
+#: ../cli/src/network-manager.c:237 ../cli/src/network-manager.c:286
+#: ../cli/src/network-manager.c:318
+#, c-format
+msgid "Error: '--fields' value '%s' is not valid here; allowed fields: %s"
+msgstr "Стойността „%s“ за „--fields“ не е правилна; допустимите полета са %s"
+
+#: ../cli/src/network-manager.c:245
+#| msgid "Networking disabled"
+msgid "Networking enabled"
+msgstr "Мрежата е включена"
+
+#: ../cli/src/network-manager.c:256
+#, c-format
+msgid "Error: invalid 'enable' parameter: '%s'; use 'true' or 'false'."
+msgstr ""
+"Недопустим аргумент на „enable“ – „%s“. Използвайте „true“ или „false“."
+
+#: ../cli/src/network-manager.c:265
+#, c-format
+msgid "Error: Sleeping status is not exported by NetworkManager."
+msgstr "NetworkManager не предоставя информация за приспиването."
+
+#: ../cli/src/network-manager.c:273
+#, c-format
+msgid "Error: invalid 'sleep' parameter: '%s'; use 'true' or 'false'."
+msgstr ""
+"„%s“ не е правилен параметър за „sleep“. Използвайте „true“ или „false“."
+
+#: ../cli/src/network-manager.c:294
+msgid "WiFi enabled"
+msgstr "Безжичната мрежа е включена"
+
+#: ../cli/src/network-manager.c:305
+#, c-format
+msgid "Error: invalid 'wifi' parameter: '%s'."
+msgstr "„%s“ не е правилен параметър за „wifi“."
+
+#: ../cli/src/network-manager.c:326
+msgid "WWAN enabled"
+msgstr "Мобилната мрежа е включена"
+
+#: ../cli/src/network-manager.c:337
+#, c-format
+msgid "Error: invalid 'wwan' parameter: '%s'."
+msgstr "„%s“ не е правилен параметър за „wwan“."
+
+#: ../cli/src/network-manager.c:348
+#, c-format
+msgid "Error: 'nm' command '%s' is not valid."
+msgstr "„%s“ не е правилна команда за „nm“."
+
+#: ../cli/src/nmcli.c:69
+#, c-format
+msgid ""
+"Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
+"\n"
+"OPTIONS\n"
+"  -t[erse]                                   terse output\n"
+"  -p[retty]                                  pretty output\n"
+"  -m[ode] tabular|multiline                  output mode\n"
+"  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
+"  -e[scape] yes|no                           escape columns separators in "
+"values\n"
+"  -v[ersion]                                 show program version\n"
+"  -h[elp]                                    print this help\n"
+"\n"
+"OBJECT\n"
+"  nm          NetworkManager status\n"
+"  con         NetworkManager connections\n"
+"  dev         devices managed by NetworkManager\n"
+"\n"
+msgstr ""
+"Употреба: %s [ОПЦИИ] ОБЕКТ { КОМАНДА | help }\n"
+"\n"
+"ОПЦИИ\n"
+"  -t[erse]                                   сбит изход\n"
+"  -p[retty]                                  красив изход\n"
+"  -m[ode] tabular|multiline                  режим на изхода\n"
+"  -f[ields] <поле1,поле2,…>|all|common       извеждани полета\n"
+"  -е[scape] yes|no                           кодиране на разделителите между "
+"колоните в стойностите\n"
+"  -v[ersion]                                 показване на версията на "
+"програмата\n"
+"  -h[elp]                                    показване на тази помощна "
+"информация\n"
+"\n"
+"OBJECT\n"
+"  nm          състояние на NetworkManager\n"
+"  con         връзки на NetworkManager\n"
+"  dev         устройства, управлявани от NetworkManager\n"
+"\n"
+
+#: ../cli/src/nmcli.c:113
+#, c-format
+msgid "Error: Object '%s' is unknown, try 'nmcli help'."
+msgstr "Обектът „%s“ е непознат. Опитайте с „nmcli help“."
+
+#: ../cli/src/nmcli.c:143
+#, c-format
+msgid "Error: Option '--terse' is specified the second time."
+msgstr "Опцията „--terse“ е указана втори път."
+
+#: ../cli/src/nmcli.c:148
+#, c-format
+msgid "Error: Option '--terse' is mutually exclusive with '--pretty'."
+msgstr "Опцията „--terse“ е несъвместима с „--pretty“."
+
+#: ../cli/src/nmcli.c:156
+#, c-format
+msgid "Error: Option '--pretty' is specified the second time."
+msgstr "Опцията „--pretty“ е указана втори път."
+
+#: ../cli/src/nmcli.c:161
+#, c-format
+msgid "Error: Option '--pretty' is mutually exclusive with '--terse'."
+msgstr "Опцията „--pretty“ е несъвместима с „--terse“."
+
+#: ../cli/src/nmcli.c:171 ../cli/src/nmcli.c:187
+#, c-format
+msgid "Error: missing argument for '%s' option."
+msgstr "Липсва аргумент на опцията „%s“."
+
+#: ../cli/src/nmcli.c:180 ../cli/src/nmcli.c:196
+#, c-format
+msgid "Error: '%s' is not valid argument for '%s' option."
+msgstr "„%s“ не е правилен аргумент за опцията „%s“."
+
+#: ../cli/src/nmcli.c:203
+#, c-format
+msgid "Error: fields for '%s' options are missing."
+msgstr "Липсват полета за опциите „%s“."
+
+#: ../cli/src/nmcli.c:209
+#, c-format
+msgid "nmcli tool, version %s\n"
+msgstr "nmcli, версия %s\n"
+
+#: ../cli/src/nmcli.c:215
+#, c-format
+msgid "Error: Option '%s' is unknown, try 'nmcli -help'."
+msgstr "Опцията „%s“ е непозната. Опитайте с „nmcli -help“."
+
+#: ../cli/src/nmcli.c:234
+#, c-format
+msgid "Caught signal %d, shutting down..."
+msgstr "Получен е сигнал %d, спиране…"
+
+#: ../cli/src/nmcli.c:259
+#, c-format
+msgid "Error: Could not connect to NetworkManager."
+msgstr "Грешка при свързване с NetworkManager."
+
+#: ../cli/src/nmcli.c:275
+msgid "Success"
+msgstr "Успех"
+
+#: ../cli/src/settings.c:411
+#, c-format
+msgid "%d (hex-ascii-key)"
+msgstr "%d (ключ в шестнайсетичен запис)"
+
+#: ../cli/src/settings.c:413
+#, c-format
+#| msgid "WEP 128-bit Passphrase"
+msgid "%d (104/128-bit passphrase)"
+msgstr "%d (104/128 битова парола)"
+
+#: ../cli/src/settings.c:416
+#, c-format
+#| msgid "(unknown)"
+msgid "%d (unknown)"
+msgstr "%d (неизвестен)"
+
+#: ../cli/src/settings.c:442
+#| msgid "(unknown)"
+msgid "0 (unknown)"
+msgstr "0 (неизвестно)"
+
+#: ../cli/src/settings.c:448
+msgid "any, "
+msgstr "всяка, "
+
+#: ../cli/src/settings.c:450
+msgid "900 MHz, "
+msgstr "900 МХц, "
+
+#: ../cli/src/settings.c:452
+msgid "1800 MHz, "
+msgstr "1800 МХц, "
+
+#: ../cli/src/settings.c:454
+msgid "1900 MHz, "
+msgstr "1900 МХц, "
+
+#: ../cli/src/settings.c:456
+msgid "850 MHz, "
+msgstr "850 МХц, "
+
+#: ../cli/src/settings.c:458
+msgid "WCDMA 3GPP UMTS 2100 MHz, "
+msgstr "WCDMA 3GPP UMTS 2100 МХц, "
+
+#: ../cli/src/settings.c:460
+msgid "WCDMA 3GPP UMTS 1800 MHz, "
+msgstr "WCDMA 3GPP UMTS 1800 МХц, "
+
+#: ../cli/src/settings.c:462
+msgid "WCDMA 3GPP UMTS 1700/2100 MHz, "
+msgstr "WCDMA 3GPP UMTS 1700/2100 МХц, "
+
+#: ../cli/src/settings.c:464
+msgid "WCDMA 3GPP UMTS 800 MHz, "
+msgstr "WCDMA 3GPP UMTS 800 МХц, "
+
+#: ../cli/src/settings.c:466
+msgid "WCDMA 3GPP UMTS 850 MHz, "
+msgstr "WCDMA 3GPP UMTS 850 МХц, "
+
+#: ../cli/src/settings.c:468
+msgid "WCDMA 3GPP UMTS 900 MHz, "
+msgstr "WCDMA 3GPP UMTS 900 МХц, "
+
+#: ../cli/src/settings.c:470
+msgid "WCDMA 3GPP UMTS 1700 MHz, "
+msgstr "WCDMA 3GPP UMTS 1700 МХц, "
+
+#: ../cli/src/settings.c:554 ../cli/src/settings.c:721
+msgid "auto"
+msgstr "автоматично"
+
+#: ../cli/src/settings.c:716 ../cli/src/settings.c:719
+#: ../cli/src/settings.c:720 ../cli/src/utils.c:172
+msgid "not set"
+msgstr "не е зададено"
+
+#: ../cli/src/utils.c:124
+#, c-format
+msgid "field '%s' has to be alone"
+msgstr "полето „%s“ трябва да е единствено"
+
+#: ../cli/src/utils.c:127
+#, c-format
+msgid "invalid field '%s'"
+msgstr "грешно поле „%s“"
+
+#: ../cli/src/utils.c:146
+#, c-format
+msgid "Option '--terse' requires specifying '--fields'"
+msgstr "Опцията „--terse“ изисква указването на „--fields“"
+
+#: ../cli/src/utils.c:150
+#, c-format
+msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
+msgstr "Опцията „--terse“ изисква конкретни стойности за „--fields“, а не „%s“"
+
+#: ../libnm-util/crypto.c:120
+#, c-format
+msgid "PEM key file had no end tag '%s'."
+msgstr "Крайният етикет „%s“ липсва в сертификат във формат PEM."
+
+#: ../libnm-util/crypto.c:130
+#, c-format
+msgid "Doesn't look like a PEM private key file."
+msgstr "Това не изглежда да е сертификат във формат PEM с частен ключ."
+
+#: ../libnm-util/crypto.c:138
+#, c-format
+msgid "Not enough memory to store PEM file data."
+msgstr ""
+"Няма достатъчно памет за запазването на данните от сертификата във формат "
+"PEM."
+
+#: ../libnm-util/crypto.c:154
+#, c-format
+msgid "Malformed PEM file: Proc-Type was not first tag."
+msgstr ""
+"Неправилен сертификат във формат PEM – първият етикет не е „Proc-Type“."
+
+#: ../libnm-util/crypto.c:162
+#, c-format
+msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
+msgstr ""
+"Неправилен сертификат във формат PEM: непознат етикет „Proc-Type“ — „%s“."
+
+#: ../libnm-util/crypto.c:172
+#, c-format
+msgid "Malformed PEM file: DEK-Info was not the second tag."
+msgstr "Неправилен сертификат във формат PEM – вторият етикет не е „DEK-Info“."
+
+#: ../libnm-util/crypto.c:183
+#, c-format
+msgid "Malformed PEM file: no IV found in DEK-Info tag."
+msgstr ""
+"Неправилен сертификат във формат PEM – в етикета „DEK-Info“ липсва начален "
+"вектор."
+
+#: ../libnm-util/crypto.c:190
+#, c-format
+msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
+msgstr ""
+"Неправилен сертификат във формат PEM – неправилен начален вектор в етикета "
+"„DEK-Info“."
+
+#: ../libnm-util/crypto.c:203
+#, c-format
+msgid "Malformed PEM file: unknown private key cipher '%s'."
+msgstr ""
+"Неправилен сертификат във формат PEM – непознат шифър „%s“ за частния ключ."
+
+#: ../libnm-util/crypto.c:222
+#, c-format
+msgid "Could not decode private key."
+msgstr "Грешка при декодиране на частния ключ."
+
+#: ../libnm-util/crypto.c:267
+#, c-format
+msgid "PEM certificate '%s' had no end tag '%s'."
+msgstr "Крайният етикет „%2$s“ липсва в сертификата във формат PEM — „%1$s“."
+
+#: ../libnm-util/crypto.c:277
+#, c-format
+msgid "Failed to decode certificate."
+msgstr "Грешка при декодиране на сертификата."
+
+#: ../libnm-util/crypto.c:286
+#, c-format
+msgid "Not enough memory to store certificate data."
+msgstr "Няма достатъчно памет за съхраняване на данните от сертификата."
+
+#: ../libnm-util/crypto.c:294
+#, c-format
+#| msgid "Not enough memory to store PEM file data."
+msgid "Not enough memory to store file data."
+msgstr "Няма достатъчно памет за съхраняване на данните от файла."
+
+#: ../libnm-util/crypto.c:324
+#, c-format
+msgid "IV must be an even number of bytes in length."
+msgstr "Началният вектор трябва да е с размер четен брой байта."
+
+#: ../libnm-util/crypto.c:333
+#, c-format
+msgid "Not enough memory to store the IV."
+msgstr "Няма достатъчно памет за съхраняване на началния вектор."
+
+#: ../libnm-util/crypto.c:344
+#, c-format
+msgid "IV contains non-hexadecimal digits."
+msgstr "Началният вектор съдържа низ, който не е шестнайсетично число."
+
+#: ../libnm-util/crypto.c:382 ../libnm-util/crypto_gnutls.c:148
+#: ../libnm-util/crypto_gnutls.c:266 ../libnm-util/crypto_nss.c:171
+#: ../libnm-util/crypto_nss.c:336
+#, c-format
+msgid "Private key cipher '%s' was unknown."
+msgstr "Шифърът за частен ключ „%s“ е непознат."
+
+#: ../libnm-util/crypto.c:391
+#, c-format
+#| msgid "Not enough memory to store decrypted private key."
+msgid "Not enough memory to decrypt private key."
+msgstr "Няма достатъчно памет за разшифроване на частния ключ."
+
+#: ../libnm-util/crypto.c:511
+#, c-format
+#| msgid "Failed to decrypt the private key: %d."
+msgid "Unable to determine private key type."
+msgstr "Видът на частния ключ не може да се определи."
+
+#: ../libnm-util/crypto.c:530
+#, c-format
+msgid "Not enough memory to store decrypted private key."
+msgstr "Няма достатъчно памет за съхраняване на разшифрования частен ключ."
+
+#: ../libnm-util/crypto_gnutls.c:49
+#| msgid "Failed to initialize the decryption context."
+msgid "Failed to initialize the crypto engine."
+msgstr "Грешка при инициализиране на модула за шифроване."
+
+#: ../libnm-util/crypto_gnutls.c:93
+#, c-format
+msgid "Failed to initialize the MD5 engine: %s / %s."
+msgstr "Грешка при инициализиране на модула за MD5 – %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:156
+#, c-format
+msgid "Invalid IV length (must be at least %zd)."
+msgstr "Неправилен начален вектор (трябва да е поне %zd)."
+
+#: ../libnm-util/crypto_gnutls.c:165 ../libnm-util/crypto_nss.c:188
+#, c-format
+msgid "Not enough memory for decrypted key buffer."
+msgstr "Няма достатъчно памет за буфера за разшифрования ключ."
+
+#: ../libnm-util/crypto_gnutls.c:173
+#, c-format
+msgid "Failed to initialize the decryption cipher context: %s / %s."
+msgstr "Грешка при инициализиране на контекста за разшифроване – %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:182
+#, c-format
+msgid "Failed to set symmetric key for decryption: %s / %s."
+msgstr "Грешка при задаване на симетричния ключ за разшифроване – %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:191
+#, c-format
+msgid "Failed to set IV for decryption: %s / %s."
+msgstr "Грешка при задаване на началния вектор за разшифроване – %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:200
+#, c-format
+msgid "Failed to decrypt the private key: %s / %s."
+msgstr "Грешка при разшифроване на частния ключ – %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:210 ../libnm-util/crypto_nss.c:267
+#, c-format
+#| msgid "Failed to decrypt the private key: %d."
+msgid "Failed to decrypt the private key: unexpected padding length."
+msgstr ""
+"Грешка при разшифроване на частния ключ – неочаквана дължина на "
+"подравняването."
+
+#: ../libnm-util/crypto_gnutls.c:221 ../libnm-util/crypto_nss.c:278
+#, c-format
+#| msgid "Failed to decrypt the private key: %d."
+msgid "Failed to decrypt the private key."
+msgstr "Грешка при разшифроване на частния ключ."
+
+#: ../libnm-util/crypto_gnutls.c:286 ../libnm-util/crypto_nss.c:356
+#, c-format
+msgid "Could not allocate memory for encrypting."
+msgstr "Няма достатъчно памет за буфер при шифроване."
+
+#: ../libnm-util/crypto_gnutls.c:294
+#, c-format
+#| msgid "Failed to initialize the decryption cipher context: %s / %s."
+msgid "Failed to initialize the encryption cipher context: %s / %s."
+msgstr "Грешка при инициализиране на контекста за шифроване – %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:303
+#, c-format
+#| msgid "Failed to set symmetric key for decryption: %s / %s."
+msgid "Failed to set symmetric key for encryption: %s / %s."
+msgstr "Грешка при задаване на симетричния ключ за шифроване – %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:313
+#, c-format
+#| msgid "Failed to set IV for decryption: %s / %s."
+msgid "Failed to set IV for encryption: %s / %s."
+msgstr "Грешка при задаване на началния вектор за шифроване – %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:322
+#, c-format
+#| msgid "Failed to decrypt the private key: %s / %s."
+msgid "Failed to encrypt the data: %s / %s."
+msgstr "Грешка при шифроване на данните – %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:362
+#, c-format
+msgid "Error initializing certificate data: %s"
+msgstr "Грешка при инициализиране на данните от сертификата – %s"
+
+#: ../libnm-util/crypto_gnutls.c:384
+#, c-format
+msgid "Couldn't decode certificate: %s"
+msgstr "Грешка при декодиране на сертификата – %s"
+
+#: ../libnm-util/crypto_gnutls.c:408
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %s"
+msgstr "Грешка при инициализиране на модула за декодиране на PKCS#12 – %s"
+
+#: ../libnm-util/crypto_gnutls.c:421
+#, c-format
+#| msgid "Couldn't decode certificate: %s"
+msgid "Couldn't decode PKCS#12 file: %s"
+msgstr "Грешка при декодиране на файла PKCS#12 – %s"
+
+#: ../libnm-util/crypto_gnutls.c:433
+#, c-format
+#| msgid "Couldn't decode certificate: %s"
+msgid "Couldn't verify PKCS#12 file: %s"
+msgstr "Грешка при проверка на файла PKCS#12 – %s"
+
+#: ../libnm-util/crypto_nss.c:56
+#, c-format
+#| msgid "Failed to initialize the MD5 engine: %s / %s."
+msgid "Failed to initialize the crypto engine: %d."
+msgstr "Грешка при инициализиране на модула за шифроване – %d."
+
+#: ../libnm-util/crypto_nss.c:111
+#, c-format
+msgid "Failed to initialize the MD5 context: %d."
+msgstr "Грешка при инициализиране на контекста за MD5 – %d."
+
+#: ../libnm-util/crypto_nss.c:179
+#, c-format
+msgid "Invalid IV length (must be at least %d)."
+msgstr "Неправилна дължина на началния вектор (трябва да е поне %d)."
+
+#: ../libnm-util/crypto_nss.c:196
+#, c-format
+msgid "Failed to initialize the decryption cipher slot."
+msgstr "Грешка при инициализиране на буфер за шифъра за разшифроване."
+
+#: ../libnm-util/crypto_nss.c:206
+#, c-format
+msgid "Failed to set symmetric key for decryption."
+msgstr "Грешка при задаване на симетричния ключ за разшифроване."
+
+#: ../libnm-util/crypto_nss.c:216
+#, c-format
+msgid "Failed to set IV for decryption."
+msgstr "Грешка при задаване на началния вектор за разшифроване."
+
+#: ../libnm-util/crypto_nss.c:224
+#, c-format
+msgid "Failed to initialize the decryption context."
+msgstr "Грешка при инициализиране на контекста за разшифроване."
+
+#: ../libnm-util/crypto_nss.c:237
+#, c-format
+msgid "Failed to decrypt the private key: %d."
+msgstr "Грешка при разшифроване на частния ключ – %d."
+
+#: ../libnm-util/crypto_nss.c:245
+#, c-format
+#| msgid "Failed to decrypt the private key: %d."
+msgid "Failed to decrypt the private key: decrypted data too large."
+msgstr ""
+"Грешка при разшифроване на частния ключ – твърде много разшифровани данни."
+
+#: ../libnm-util/crypto_nss.c:256
+#, c-format
+msgid "Failed to finalize decryption of the private key: %d."
+msgstr "Грешка при завършване на разшифроването на частния ключ – %d."
+
+#: ../libnm-util/crypto_nss.c:364
+#, c-format
+#| msgid "Failed to initialize the decryption cipher slot."
+msgid "Failed to initialize the encryption cipher slot."
+msgstr "Грешка при инициализиране на буфер за шифъра за шифроване."
+
+#: ../libnm-util/crypto_nss.c:372
+#, c-format
+#| msgid "Failed to set symmetric key for decryption."
+msgid "Failed to set symmetric key for encryption."
+msgstr "Грешка при задаване на симетричния ключ за шифроване."
+
+#: ../libnm-util/crypto_nss.c:380
+#, c-format
+#| msgid "Failed to set IV for decryption."
+msgid "Failed to set IV for encryption."
+msgstr "Грешка при задаване на началния вектор за шифроване."
+
+#: ../libnm-util/crypto_nss.c:388
+#, c-format
+#| msgid "Failed to initialize the decryption context."
+msgid "Failed to initialize the encryption context."
+msgstr "Грешка при инициализиране на контекста за шифроване."
+
+#: ../libnm-util/crypto_nss.c:396
+#, c-format
+#| msgid "Failed to decrypt the private key: %d."
+msgid "Failed to encrypt: %d."
+msgstr "Грешка при шифроване – %d."
+
+#: ../libnm-util/crypto_nss.c:404
+#, c-format
+msgid "Unexpected amount of data after encrypting."
+msgstr "Неочакван обем данни след шифроване."
+
+#: ../libnm-util/crypto_nss.c:447
+#, c-format
+msgid "Couldn't decode certificate: %d"
+msgstr "Грешка при декодиране на сертификата – %d"
+
+#: ../libnm-util/crypto_nss.c:482
+#, c-format
+msgid "Couldn't convert password to UCS2: %d"
+msgstr "Грешка при преобразуване на паролата в UCS2 – %d"
+
+#: ../libnm-util/crypto_nss.c:510
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %d"
+msgstr "Грешка при инициализиране на модула за декодиране на PKCS#12 – %d"
+
+#: ../libnm-util/crypto_nss.c:519
+#, c-format
+#| msgid "Couldn't decode certificate: %d"
+msgid "Couldn't decode PKCS#12 file: %d"
+msgstr "Грешка при декодиране на файла с PKCS#12 – %d"
+
+#: ../libnm-util/crypto_nss.c:528
+#, c-format
+#| msgid "Couldn't decode certificate: %d"
+msgid "Couldn't verify PKCS#12 file: %d"
+msgstr "Грешка при проверка на файла с PKCS#12 – %d"
+
+#: ../libnm-util/crypto_nss.c:557
+#| msgid "Could not decode private key."
+msgid "Could not generate random data."
+msgstr "Грешка при генериране на случайни числа."
+
+#: ../libnm-util/nm-utils.c:1975
+#, c-format
+#| msgid "Not enough memory to create private key decryption key."
+msgid "Not enough memory to make encryption key."
+msgstr "Няма достатъчно памет за създаването на ключ за шифроване."
+
+#: ../libnm-util/nm-utils.c:2085
+#| msgid "Not enough memory to store PEM file data."
+msgid "Could not allocate memory for PEM file creation."
+msgstr "Няма достатъчно памет за създаването на файл във формат PEM."
+
+#: ../libnm-util/nm-utils.c:2097
+#, c-format
+msgid "Could not allocate memory for writing IV to PEM file."
+msgstr ""
+"Няма достатъчно памет за записването на началния вектор във файл във формат "
+"PEM."
+
+#: ../libnm-util/nm-utils.c:2109
+#, c-format
+msgid "Could not allocate memory for writing encrypted key to PEM file."
+msgstr ""
+"Няма достатъчно памет за записване на ключа за шифроване във файл във формат "
+"PEM."
+
+#: ../libnm-util/nm-utils.c:2128
+#, c-format
+#| msgid "Not enough memory to store PEM file data."
+msgid "Could not allocate memory for PEM file data."
+msgstr "Няма достатъчно памет за данните за файла във формат PEM."
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:1
+msgid "Connection sharing via a protected WiFi network"
+msgstr "Споделяне на връзката през защитена безжична мрежа"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:2
+msgid "Connection sharing via an open WiFi network"
+msgstr "Споделяне на връзката през отворена безжична мрежа"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:3
+msgid "Modify persistent system hostname"
+msgstr "Промяна на името на хоста"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:4
+#| msgid "No active connections!"
+msgid "Modify system connections"
+msgstr "Промяна на системни връзки"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:5
+msgid "System policy prevents modification of system settings"
+msgstr "Политиката на системата не позволява промяна на системните настройки"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:6
+msgid "System policy prevents modification of the persistent system hostname"
+msgstr "Политиката на системата не позволява промяна на името на хоста"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:7
+msgid "System policy prevents sharing connections via a protected WiFi network"
+msgstr ""
+"Политиката на системата не позволява споделяне на връзки през защитена "
+"безжична мрежа"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:8
+msgid "System policy prevents sharing connections via an open WiFi network"
+msgstr ""
+"Политиката на системата не позволява споделяне на връзки през отворена "
+"безжична мрежа"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:1
+#| msgid "No network connection"
+msgid "Allow control of network connections"
+msgstr "Разрешаване на управлението на мрежовите връзки"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:2
+msgid "Allow use of user-specific connections"
+msgstr "Разрешаване на използването на потребителски връзки"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:3
+msgid "Enable or disable WiFi devices"
+msgstr "Включване и изключване на устройства за безжични мрежи"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:4
+msgid "Enable or disable mobile broadband devices"
+msgstr "Включване и изключване на устройства за достъп до мобилни мрежи"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:5
+#| msgid "Enable _Networking"
+msgid "Enable or disable system networking"
+msgstr "Включване и изключване на мрежата на системно ниво"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:6
+msgid ""
+"Put NetworkManager to sleep or wake it up (should only be used by system "
+"power management)"
+msgstr ""
+"Приспиване и събуждане на NetworkManager (за целите на модула за управление "
+"на захранването на системата)"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:7
+msgid "System policy prevents control of network connections"
+msgstr "Политиката на системата не позволява управляване на мрежовите връзки"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:8
+msgid "System policy prevents enabling or disabling WiFi devices"
+msgstr ""
+"Политиката на системата не позволява включване и изключване на устройства за "
+"безжични мрежи"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:9
+msgid "System policy prevents enabling or disabling mobile broadband devices"
+msgstr ""
+"Политиката на системата не позволява включване и изключване на устройства за "
+"мобилни мрежи"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:10
+msgid "System policy prevents enabling or disabling system networking"
+msgstr ""
+"Политиката на системата не позволява включване и изключване на мрежата на "
+"системно ниво"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:11
+msgid "System policy prevents putting NetworkManager to sleep or waking it up"
+msgstr ""
+"Политиката на системата не позволява приспиване и събуждане на NetworkManager"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:12
+msgid "System policy prevents use of user-specific connections"
+msgstr ""
+"Политиката на системата не позволява използване на потребителски връзки"
+
+#: ../src/nm-netlink-monitor.c:100 ../src/nm-netlink-monitor.c:231
+#: ../src/nm-netlink-monitor.c:653
 #, c-format
 msgid "error processing netlink message: %s"
-msgstr "грешка при обработката на следното съобщение от мрежовия слой: %s"
+msgstr "грешка при обработката на съобщение от мрежовия слой – %s"
 
-#: ../src/nm-netlink-monitor.c:250
-#, c-format
-msgid "unable to allocate netlink handle for monitoring link status: %s"
-msgstr ""
-"не може да се зададе модул в мрежовия слой за наблюдение на състоянието на "
-"връзката — %s"
-
-#: ../src/nm-netlink-monitor.c:260
-#, c-format
-msgid "unable to connect to netlink for monitoring link status: %s"
-msgstr ""
-"не може да се осъществи връзка с мрежовия слой за наблюдение на състоянието "
-"на връзката — %s"
-
-#: ../src/nm-netlink-monitor.c:268
-#, c-format
-msgid "unable to join netlink group for monitoring link status: %s"
-msgstr ""
-"не може да се осъществи присъединяване към групата на мрежовия слой за "
-"наблюдение на състоянието на връзката — %s"
-
-#: ../src/nm-netlink-monitor.c:276
-#, c-format
-msgid "unable to allocate netlink link cache for monitoring link status: %s"
-msgstr ""
-"не може да се зададе временна памет в мрежовия слой за наблюдение на "
-"състоянието на връзката — %s"
-
-#: ../src/nm-netlink-monitor.c:494
-#, c-format
+#: ../src/nm-netlink-monitor.c:214
 msgid "error occurred while waiting for data on socket"
 msgstr "грешка при изчакване за данни през гнездо"
 
-#: ../src/NetworkManager.c:250
+#: ../src/nm-netlink-monitor.c:254
+#, c-format
+msgid "unable to connect to netlink for monitoring link status: %s"
+msgstr ""
+"грешка при свързване с мрежовия слой за наблюдение на състоянието на "
+"връзката — %s"
+
+#: ../src/nm-netlink-monitor.c:265
+#, c-format
+#| msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgid "unable to enable netlink handle credential passing: %s"
+msgstr ""
+"грешка при включване на предаването на удостоверения в модула на мрежовия "
+"слой — %s"
+
+#: ../src/nm-netlink-monitor.c:291 ../src/nm-netlink-monitor.c:353
+#, c-format
+msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgstr ""
+"грешка при задаване на модул в мрежовия слой за наблюдение на състоянието на "
+"връзката — %s"
+
+#: ../src/nm-netlink-monitor.c:376
+#, c-format
+msgid "unable to allocate netlink link cache for monitoring link status: %s"
+msgstr ""
+"грешка при заделяне на временна памет в мрежовия слой за наблюдение на "
+"състоянието на връзката — %s"
+
+#: ../src/nm-netlink-monitor.c:502
+#, c-format
+#| msgid "unable to join netlink group for monitoring link status: %s"
+msgid "unable to join netlink group: %s"
+msgstr "грешка при присъединяване към групата на мрежовия слой — %s"
+
+#: ../src/nm-netlink-monitor.c:629 ../src/nm-netlink-monitor.c:642
+#, c-format
+#| msgid "error processing netlink message: %s"
+msgid "error updating link cache: %s"
+msgstr "грешка при обновяване на информацията за връзките – %s"
+
+#: ../src/main.c:499
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr "Неправилна опция. Ползвайте --help, за да видите списъка с опции.\n"
 
-#: ../src/dhcp-manager/nm-dhcp-dhclient.c:87
+#: ../src/main.c:570
+#, c-format
+#| msgid "Invalid option.  Please use --help to see a list of valid options.\n"
+msgid "%s.  Please use --help to see a list of valid options.\n"
+msgstr "%s. Ползвайте --help, за да видите списъка с опции.\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:328
 msgid "# Created by NetworkManager\n"
 msgstr "# Създаден от NetworkManager\n"
 
-#: ../src/dhcp-manager/nm-dhcp-dhclient.c:93
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:344
 #, c-format
 msgid ""
 "# Merged from %s\n"
@@ -72,204 +1841,52 @@ msgstr ""
 "# Слят от %s\n"
 "\n"
 
-#: ../src/named-manager/nm-named-manager.c:117
-msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
-msgstr "БЕЛЕЖКА: стандартно glibc поддържа максимум 3 сървъра за имена."
+#: ../src/dhcp-manager/nm-dhcp-manager.c:284
+msgid "no usable DHCP client could be found."
+msgstr "не е намерен подходящ клиент за DHCP."
 
-#: ../src/named-manager/nm-named-manager.c:119
+#: ../src/dhcp-manager/nm-dhcp-manager.c:293
+msgid "'dhclient' could be found."
+msgstr "Не е намерен „dhclient“."
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:303
+msgid "'dhcpcd' could be found."
+msgstr "Не е намерен „dhcpcd“."
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:311
+#, c-format
+msgid "unsupported DHCP client '%s'"
+msgstr "Клиентът за DHCP „%s“ не се поддържа"
+
+#: ../src/logging/nm-logging.c:146
+#, c-format
+msgid "Unknown log level '%s'"
+msgstr "Непознат праг за съобщенията в журнала „%s“"
+
+#: ../src/logging/nm-logging.c:171
+#, c-format
+msgid "Unknown log domain '%s'"
+msgstr "Непознат домейн за съобщенията в журнала „%s“"
+
+#: ../src/dns-manager/nm-dns-manager.c:384
+#| msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
+msgid "NOTE: the libc resolver may not support more than 3 nameservers."
+msgstr "ЗАБЕЛЕЖКА: libc може да не поддържа повече от 3 сървъра за имена."
+
+#: ../src/dns-manager/nm-dns-manager.c:386
 msgid "The nameservers listed below may not be recognized."
-msgstr "Сървърите за имена отдолу могат да не бъдат разпознати."
+msgstr "Долните сървъри за имена може да не бъдат разпознати."
 
-#: ../system-settings/src/main.c:365
+#: ../src/system-settings/nm-default-wired-connection.c:157
 #, c-format
 msgid "Auto %s"
 msgstr "Автоматично %s"
 
-#: ../libnm-util/crypto.c:125
-#, c-format
-msgid "PEM key file had no end tag '%s'."
-msgstr "Крайният етикет „%s“ липсва в сертификат във формат PEM."
-
-#: ../libnm-util/crypto.c:135
-#, c-format
-msgid "Doesn't look like a PEM private key file."
-msgstr "Това не изглежда да е сертификат във формат PEM с частен ключ."
-
-#: ../libnm-util/crypto.c:143
-#, c-format
-msgid "Not enough memory to store PEM file data."
-msgstr ""
-"Няма достатъчно памет за запазването на данните от сертификата във формат "
-"PEM."
-
-#: ../libnm-util/crypto.c:159
-#, c-format
-msgid "Malformed PEM file: Proc-Type was not first tag."
-msgstr ""
-"Неправилен сертификат във формат PEM: първият етикет не беше „Proc-Type“."
-
-#: ../libnm-util/crypto.c:167
-#, c-format
-msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
-msgstr ""
-"Неправилен сертификат във формат PEM: непознат етикет „Proc-Type“ — „%s“."
-
-#: ../libnm-util/crypto.c:177
-#, c-format
-msgid "Malformed PEM file: DEK-Info was not the second tag."
-msgstr ""
-"Неправилен сертификат във формат PEM: вторият етикет не беше „DEK-Info“."
-
-#: ../libnm-util/crypto.c:188
-#, c-format
-msgid "Malformed PEM file: no IV found in DEK-Info tag."
-msgstr ""
-"Неправилен сертификат във формат PEM: липсва първоначален вектор в етикета "
-"„DEK-Info“."
-
-#: ../libnm-util/crypto.c:195
-#, c-format
-msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
-msgstr ""
-"Неправилен сертификат във формат PEM: неправилен първоначален вектор в "
-"етикета „DEK-Info“."
-
-#: ../libnm-util/crypto.c:208
-#, c-format
-msgid "Malformed PEM file: unknown private key cipher '%s'."
-msgstr ""
-"Неправилен сертификат във формат PEM: непознат шифър за частен ключ „%s“."
-
-#: ../libnm-util/crypto.c:227
-#, c-format
-msgid "Could not decode private key."
-msgstr "Частният ключ не може да бъде декодиран."
-
-#: ../libnm-util/crypto.c:271
-#, c-format
-msgid "PEM certificate '%s' had no end tag '%s'."
-msgstr "Крайният етикет „1$%s“ липсва в сертификата във формат PEM — „2$%s“."
-
-#: ../libnm-util/crypto.c:281
-#, c-format
-msgid "Failed to decode certificate."
-msgstr "Сертификатът не може да бъде декодиран."
-
-#: ../libnm-util/crypto.c:290 ../libnm-util/crypto.c:298
-#, c-format
-msgid "Not enough memory to store certificate data."
-msgstr "Няма памет за запазването на данните от сертификат."
-
-#: ../libnm-util/crypto.c:328
-#, c-format
-msgid "IV must be an even number of bytes in length."
-msgstr "Началният вектор трябва да е четен брой байта на дължина."
-
-#: ../libnm-util/crypto.c:337
-#, c-format
-msgid "Not enough memory to store the IV."
-msgstr "Няма достатъчно памет за запазването на началния вектор."
-
-#: ../libnm-util/crypto.c:348
-#, c-format
-msgid "IV contains non-hexadecimal digits."
-msgstr "Началният вектор съдържа низ, който не е шестнайсетично число."
-
-#: ../libnm-util/crypto.c:386 ../libnm-util/crypto_gnutls.c:126
-#: ../libnm-util/crypto_nss.c:136
-#, c-format
-msgid "Private key cipher '%s' was unknown."
-msgstr "Шифърът за частен ключ „%s“ е непознат."
-
-#: ../libnm-util/crypto.c:395
-#, c-format
-msgid "Not enough memory to create private key decryption key."
-msgstr "Няма достатъчно памет за създаването на частен ключ за дешифриране."
-
-#: ../libnm-util/crypto.c:513
-#, c-format
-msgid "Not enough memory to store decrypted private key."
-msgstr "Няма достатъчно памет за запазването на частен ключ за дешифриране."
-
-#: ../libnm-util/crypto_gnutls.c:73
-#, c-format
-msgid "Failed to initialize the MD5 engine: %s / %s."
-msgstr "Модулът за MD5 не може да бъде инициализиран: %s / %s."
-
-#: ../libnm-util/crypto_gnutls.c:135 ../libnm-util/crypto_nss.c:145
-#, c-format
-msgid "Not enough memory for decrypted key buffer."
-msgstr "Няма достатъчно памет за буфера за дешифриране."
-
-#: ../libnm-util/crypto_gnutls.c:143
-#, c-format
-msgid "Failed to initialize the decryption cipher context: %s / %s."
-msgstr "Контекстът за дешифриране не може да бъде инициализиран: %s / %s."
-
-#: ../libnm-util/crypto_gnutls.c:152
-#, c-format
-msgid "Failed to set symmetric key for decryption: %s / %s."
-msgstr "Симетричният ключ за дешифриране не може да бъде зададен: %s / %s."
-
-#: ../libnm-util/crypto_gnutls.c:161
-#, c-format
-msgid "Failed to set IV for decryption: %s / %s."
-msgstr "Началният вектор за дешифриране не може да бъде зададен: %s / %s."
-
-#: ../libnm-util/crypto_gnutls.c:170
-#, c-format
-msgid "Failed to decrypt the private key: %s / %s."
-msgstr "Частният ключ не може да бъде дешифриран: %s / %s."
-
-#: ../libnm-util/crypto_gnutls.c:208
-#, c-format
-msgid "Error initializing certificate data: %s"
-msgstr "Грешка при инициализиране на данните от сертификата: %s"
-
-#: ../libnm-util/crypto_gnutls.c:220
-#, c-format
-msgid "Couldn't decode certificate: %s"
-msgstr "Сертификатът не може да бъде декодиран: %s"
-
-#: ../libnm-util/crypto_nss.c:78
-#, c-format
-msgid "Failed to initialize the MD5 context: %d."
-msgstr "Контекстът за MD5 не може да бъде инициализиран: %d."
-
-#: ../libnm-util/crypto_nss.c:153
-#, c-format
-msgid "Failed to initialize the decryption cipher slot."
-msgstr "Буферът за шифъра за дешифриране не може да бъде инициализиран."
-
-#: ../libnm-util/crypto_nss.c:163
-#, c-format
-msgid "Failed to set symmetric key for decryption."
-msgstr "Симетричният ключ за дешифриране не може да бъде зададен."
-
-#: ../libnm-util/crypto_nss.c:173
-#, c-format
-msgid "Failed to set IV for decryption."
-msgstr "Началният вектор за дешифриране не може да бъде зададен."
-
-#: ../libnm-util/crypto_nss.c:181
-#, c-format
-msgid "Failed to initialize the decryption context."
-msgstr "Контекстът за дешифриране не може да бъде инициализиран."
-
-#: ../libnm-util/crypto_nss.c:194
-#, c-format
-msgid "Failed to decrypt the private key: %d."
-msgstr "Частният ключ не може да бъде дешифриран: %d."
-
-#: ../libnm-util/crypto_nss.c:206
-#, c-format
-msgid "Failed to finalize decryption of the private key: %d."
-msgstr "Дешифрирането на частния ключ не може да приключи: %d."
-
-#: ../libnm-util/crypto_nss.c:250
-#, c-format
-msgid "Couldn't decode certificate: %d"
-msgstr "Сертификатът не може да бъде дешифриран: %d"
+#: ../system-settings/plugins/ifcfg-rh/reader.c:3412
+#: ../system-settings/plugins/ifnet/connection_parser.c:49
+#| msgid "Open System"
+msgid "System"
+msgstr "Системна"
 
 #~ msgid "Passphrase for wireless network %s"
 #~ msgstr "Парола за безжичната мрежа %s"
@@ -277,32 +1894,17 @@ msgstr "Сертификатът не може да бъде дешифрира�
 #~ msgid "Connection to the wireless network '%s' failed."
 #~ msgstr "Неуспешно свързване към безжичната мрежа „%s“."
 
-#~ msgid "Connection to the wired network failed."
-#~ msgstr "Неуспешно свързване към кабелната мрежа."
-
 #~ msgid "Error displaying connection information:"
 #~ msgstr "Грешка при показване на информацията за връзката:"
 
 #~ msgid "Could not find some required resources (the glade file)!"
 #~ msgstr "Някои ресурси не бяха открити (файлът на glade)!"
 
-#~ msgid "No active connections!"
-#~ msgstr "Няма действащи връзки!"
-
-#~ msgid "%d Mb/s"
-#~ msgstr "%d Mb/s"
-
 #~ msgid "Wired Ethernet (%s)"
 #~ msgstr "Кабелен Етернет (%s)"
 
 #~ msgid "Wireless Ethernet (%s)"
 #~ msgstr "Безжичен Етернет (%s)"
-
-#~ msgid "Unknown"
-#~ msgstr "неопределима"
-
-#~ msgid "NetworkManager Applet"
-#~ msgstr "Аплетът NetworkManager"
 
 #~ msgid ""
 #~ "Copyright © 2004-2006 Red Hat, Inc.\n"
@@ -351,9 +1953,6 @@ msgstr "Сертификатът не може да бъде дешифрира�
 #~ "Връзката към ВЧМ „%s“ се провали поради грешка при стартиране на "
 #~ "програмата за ВЧМ."
 
-#~ msgid "VPN Connect Failure"
-#~ msgstr "Грешка при свързване към ВЧМ"
-
 #~ msgid "Could not start the VPN connection '%s' due to a connection error."
 #~ msgstr "Връзката към ВЧМ „%s“ се провали поради грешка при свързването."
 
@@ -386,9 +1985,6 @@ msgstr "Сертификатът не може да бъде дешифрира�
 #~ msgid "The network device \"%s (%s)\" does not support link detection."
 #~ msgstr "Мрежовото устройство „%s (%s)“ не поддържа засичане на връзка."
 
-#~ msgid "(unknown)"
-#~ msgstr "(не се знае)"
-
 #~ msgid "Preparing device %s for the wired network..."
 #~ msgstr "Подготвяне на устройството „%s“ за кабелната мрежа…"
 
@@ -419,12 +2015,6 @@ msgstr "Сертификатът не може да бъде дешифрира�
 #~ msgid "NetworkManager is not running"
 #~ msgstr "NetworkManager не е включен"
 
-#~ msgid "Networking disabled"
-#~ msgstr "Мрежата е изключена"
-
-#~ msgid "No network connection"
-#~ msgstr "Няма връзка към мрежа"
-
 #~ msgid "Wired network connection"
 #~ msgstr "Връзка към кабелна мрежа"
 
@@ -436,9 +2026,6 @@ msgstr "Сертификатът не може да бъде дешифрира�
 
 #~ msgid "VPN connection to '%s'"
 #~ msgstr "Връзка по ВЧМ към „%s“"
-
-#~ msgid "VPN connecting to '%s'"
-#~ msgstr "Свързване по ВЧМ към „%s“"
 
 #~ msgid "_Connect to Other Wireless Network..."
 #~ msgstr "_Свързване към други безжични мрежи…"
@@ -470,9 +2057,6 @@ msgstr "Сертификатът не може да бъде дешифрира�
 #~ msgid "NetworkManager is not running..."
 #~ msgstr "NetworkManager не е включен…"
 
-#~ msgid "Enable _Networking"
-#~ msgstr "_Включване на мрежата"
-
 #~ msgid "Enable _Wireless"
 #~ msgstr "Включване на _безжичната мрежа"
 
@@ -492,38 +2076,20 @@ msgstr "Сертификатът не може да бъде дешифрира�
 #~ "Аплетът NetworkManager не може да открие необходим ресурс. Програмата не "
 #~ "може да продължи работа.\n"
 
-#~ msgid "Open System"
-#~ msgstr "Открита система"
-
 #~ msgid "Shared Key"
 #~ msgstr "Споделен ключ"
 
 #~ msgid "Automatic (Default)"
 #~ msgstr "Автоматично (по подразбиране)"
 
-#~ msgid "AES-CCMP"
-#~ msgstr "AES-CCMP"
-
-#~ msgid "TKIP"
-#~ msgstr "TKIP"
-
 #~ msgid "Dynamic WEP"
 #~ msgstr "Динамичен WEP"
-
-#~ msgid "None"
-#~ msgstr "Без"
 
 #~ msgid "WEP 64/128-bit ASCII"
 #~ msgstr "40/128-битов ключ за WEP в ASCII"
 
 #~ msgid "WEP 64/128-bit Hex"
 #~ msgstr "40/128-битов шестнадесетичен ключ за WEP"
-
-#~ msgid "WEP 128-bit Passphrase"
-#~ msgstr "128 битова парола WEP"
-
-#~ msgid "PEAP"
-#~ msgstr "PEAP"
 
 #~ msgid "TLS"
 #~ msgstr "TLS"
@@ -533,9 +2099,6 @@ msgstr "Сертификатът не може да бъде дешифрира�
 
 #~ msgid "WPA2 Enterprise"
 #~ msgstr "WPA2 Enterprise"
-
-#~ msgid "WPA Enterprise"
-#~ msgstr "WPA Enterprise"
 
 #~ msgid "WPA2 Personal"
 #~ msgstr "WPA2 Personal"
@@ -683,14 +2246,8 @@ msgstr "Сертификатът не може да бъде дешифрира�
 #~ msgid "CA Certificate File:"
 #~ msgstr "Файл със сертификатите на сертифициращите организации:"
 
-#~ msgid "C_onnect"
-#~ msgstr "_Свързване"
-
 #~ msgid "Client Certificate File:"
 #~ msgstr "Файл с клиентските сертификати:"
-
-#~ msgid "Connection Information"
-#~ msgstr "Информация за връзката"
 
 #~ msgid "Default Route:"
 #~ msgstr "Маршрут по подразбиране:"
@@ -842,9 +2399,6 @@ msgstr "Сертификатът не може да бъде дешифрира�
 #~ "софтуер за връзка към ВЧМ от вида „%1$s“. Свържете се със системния "
 #~ "администратор."
 
-#~ msgid "Error retrieving VPN connection '%s'"
-#~ msgstr "Грешка при получаване на информация за връзката към ВЧМ „%s“"
-
 #~ msgid ""
 #~ "Could not find the UI files for VPN connection type '%s'. Contact your "
 #~ "system administrator."
@@ -897,17 +2451,11 @@ msgstr "Сертификатът не може да бъде дешифрира�
 #~ msgid "Manage Virtual Private Network Connections"
 #~ msgstr "Управление на връзките към ВЧМ"
 
-#~ msgid "VPN Connections"
-#~ msgstr "Връзки към ВЧМ"
-
 #~ msgid "40-bit WEP"
 #~ msgstr "40-битов WEP"
 
 #~ msgid "104-bit WEP"
 #~ msgstr "104-битов WEP"
-
-#~ msgid "WPA TKIP"
-#~ msgstr "WPA TKIP"
 
 #~ msgid "WPA CCMP"
 #~ msgstr "WPA CCMP"
@@ -915,17 +2463,11 @@ msgstr "Сертификатът не може да бъде дешифрира�
 #~ msgid "WPA Automatic"
 #~ msgstr "Автоматичен WPA"
 
-#~ msgid "WPA2 TKIP"
-#~ msgstr "WPA2 TKIP"
-
 #~ msgid "WPA2 CCMP"
 #~ msgstr "WPA2 CCMP"
 
 #~ msgid "WPA2 Automatic"
 #~ msgstr "Автоматичен WPA2"
-
-#~ msgid "none"
-#~ msgstr "липсва"
 
 #~ msgid "operation took too long"
 #~ msgstr "операцията продължи прекалено дълго"
@@ -948,15 +2490,6 @@ msgstr "Сертификатът не може да бъде дешифрира�
 
 #~ msgid "You are now connected to the wired network."
 #~ msgstr "Свързани сте към кабелната мрежа."
-
-#~ msgid "Connection Established"
-#~ msgstr "Връзката е осъществена"
-
-#~ msgid "Disconnected"
-#~ msgstr "Без връзка"
-
-#~ msgid "The network connection has been disconnected."
-#~ msgstr "Връзката към мрежата е прекъсната."
 
 #~ msgid "LEAP"
 #~ msgstr "LEAP"

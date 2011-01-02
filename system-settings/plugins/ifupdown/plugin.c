@@ -55,6 +55,8 @@
 #define G_UDEV_API_IS_SUBJECT_TO_CHANGE
 #include <gudev/gudev.h>
 
+#define ENI_INTERFACES_FILE "/etc/network/interfaces"
+
 #define IFUPDOWN_PLUGIN_NAME "ifupdown"
 #define IFUPDOWN_PLUGIN_INFO "(C) 2008 Canonical Ltd.  To report bugs please use the NetworkManager mailing list."
 #define IFUPDOWN_SYSTEM_HOSTNAME_FILE "/etc/hostname"
@@ -355,17 +357,60 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 	update_system_hostname (inotify_helper, NULL, NULL, config);
 
 	/* Read in all the interfaces */
-	ifparser_init ();
+	ifparser_init (ENI_INTERFACES_FILE, 0);
 	block = ifparser_getfirst ();
 	while (block) {
 		if(!strcmp ("auto", block->type) || !strcmp ("allow-hotplug", block->type))
 			g_hash_table_insert (auto_ifaces, block->name, GUINT_TO_POINTER (1));
-		else if (!strcmp ("iface", block->type) && strcmp ("lo", block->name)) {
+		else if (!strcmp ("iface", block->type)) {
 			NMIfupdownConnection *exported;
+
+			/* Bridge configuration */
+			if(!strncmp ("br", block->name, 2)) {
+				/* Try to find bridge ports */
+				const char *ports = ifparser_getkey (block, "bridge_ports");
+				if (ports) {
+					int i;
+					int state = 0;
+					char **port_ifaces;
+
+					PLUGIN_PRINT("SCPlugin-Ifupdown", "found bridge ports %s for %s", ports, block->name);
+
+					port_ifaces = g_strsplit_set (ports, " \t", -1);
+					for (i = 0; i < g_strv_length (port_ifaces); i++) {
+						char *token = port_ifaces[i];
+						/* Skip crazy stuff like regex or all */
+						if (!strcmp ("all", token)) {
+							continue;
+						}
+						/* Small SM to skip everything inside regex */
+						if (!strcmp ("regex", token)) {
+							state++;
+							continue;
+						}
+						if (!strcmp ("noregex", token)) {
+							state--;
+							continue;
+						}
+						if (state == 0 && strlen (token) > 0) {
+							PLUGIN_PRINT("SCPlugin-Ifupdown", "adding bridge port %s to well_known_interfaces", token);
+							g_hash_table_insert (priv->well_known_interfaces, g_strdup (token), "known");
+						}
+					}
+					g_strfreev (port_ifaces);
+				}
+				goto next;
+			}
+
+			/* Skip loopback configuration */
+			if(!strcmp ("lo", block->name)) {
+				goto next;
+			}
 
 			/* Remove any connection for this block that was previously found */
 			exported = g_hash_table_lookup (priv->iface_connections, block->name);
 			if (exported) {
+				PLUGIN_PRINT("SCPlugin-Ifupdown", "deleting %s from iface_connections", block->name);
 				nm_settings_connection_interface_delete (NM_SETTINGS_CONNECTION_INTERFACE (exported),
 				                                         ignore_cb,
 				                                         NULL);
@@ -375,12 +420,16 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 			/* add the new connection */
 			exported = nm_ifupdown_connection_new (block);
 			if (exported) {
+				PLUGIN_PRINT("SCPlugin-Ifupdown", "adding %s to iface_connections", block->name);
 				g_hash_table_insert (priv->iface_connections, block->name, exported);
-				g_hash_table_insert (priv->well_known_interfaces, block->name, "known");
 			}
+			PLUGIN_PRINT("SCPlugin-Ifupdown", "adding iface %s to well_known_interfaces", block->name);
+			g_hash_table_insert (priv->well_known_interfaces, block->name, "known");
 		} else if (!strcmp ("mapping", block->type)) {
 			g_hash_table_insert (priv->well_known_interfaces, block->name, "known");
+			PLUGIN_PRINT("SCPlugin-Ifupdown", "adding mapping %s to well_known_interfaces", block->name);
 		}
+	next:
 		block = block->next;
 	}
 
@@ -562,6 +611,12 @@ update_system_hostname(NMInotifyHelper *inotify_helper,
 		g_free(priv->hostname);
 
 	priv->hostname = g_strstrip(hostname_file);
+
+	/* We shouldn't return a zero-length hostname, but NULL */
+	if (priv->hostname && !strlen (priv->hostname)) {
+		g_free (priv->hostname);
+		priv->hostname = NULL;
+	}
 
 	g_object_notify (G_OBJECT (config), NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
 }

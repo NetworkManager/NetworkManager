@@ -39,15 +39,18 @@
 #include "nm-dhcp-dhclient.h"
 #include "nm-utils.h"
 #include "nm-logging.h"
+#include "nm-dhcp-dhclient-utils.h"
 
 G_DEFINE_TYPE (NMDHCPDhclient, nm_dhcp_dhclient, NM_TYPE_DHCP_CLIENT)
 
 #define NM_DHCP_DHCLIENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_DHCLIENT, NMDHCPDhclientPrivate))
 
-#if defined(TARGET_DEBIAN)
-#define NM_DHCLIENT_LEASE_DIR           LOCALSTATEDIR "/lib/dhcp3"
-#elif defined(TARGET_SUSE) || defined(TARGET_MANDRIVA)
+#if defined(TARGET_DEBIAN) || defined(TARGET_SUSE) || defined(TARGET_MANDRIVA)
+#if defined(DHCLIENT_V3)
+#define NM_DHCLIENT_LEASE_DIR			LOCALSTATEDIR "/lib/dhcp3"
+#else
 #define NM_DHCLIENT_LEASE_DIR           LOCALSTATEDIR "/lib/dhcp"
+#endif
 #else
 #define NM_DHCLIENT_LEASE_DIR           LOCALSTATEDIR "/lib/dhclient"
 #endif
@@ -300,121 +303,37 @@ out:
 }
 
 
-#define DHCP_CLIENT_ID_TAG "send dhcp-client-identifier"
-#define DHCP_CLIENT_ID_FORMAT DHCP_CLIENT_ID_TAG " \"%s\"; # added by NetworkManager"
-#define DHCP_CLIENT_ID_FORMAT_OCTETS DHCP_CLIENT_ID_TAG " %s; # added by NetworkManager"
-
-#define DHCP_HOSTNAME_TAG "send host-name"
-#define DHCP_HOSTNAME_FORMAT DHCP_HOSTNAME_TAG " \"%s\"; # added by NetworkManager"
 
 static gboolean
 merge_dhclient_config (const char *iface,
                        const char *conf_file,
                        NMSettingIP4Config *s_ip4,
                        guint8 *anycast_addr,
+                       const char *hostname,
                        const char *orig_path,
                        GError **error)
 {
-	GString *new_contents;
-	char *orig_contents = NULL;
+	char *orig = NULL, *new;
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (iface != NULL, FALSE);
 	g_return_val_if_fail (conf_file != NULL, FALSE);
 
-	new_contents = g_string_new (_("# Created by NetworkManager\n"));
-
 	if (g_file_test (orig_path, G_FILE_TEST_EXISTS)) {
 		GError *read_error = NULL;
 
-		if (!g_file_get_contents (orig_path, &orig_contents, NULL, &read_error)) {
+		if (!g_file_get_contents (orig_path, &orig, NULL, &read_error)) {
 			nm_log_warn (LOGD_DHCP, "(%s): error reading dhclient configuration %s: %s",
 			             iface, orig_path, read_error->message);
 			g_error_free (read_error);
 		}
 	}
 
-	/* Add existing options, if any, but ignore stuff NM will replace. */
-	if (orig_contents) {
-		char **lines = NULL, **line;
+	new = nm_dhcp_dhclient_create_config (iface, s_ip4, anycast_addr, hostname, orig_path, orig);
+	g_assert (new);
+	success = g_file_set_contents (conf_file, new, -1, error);
+	g_free (new);
 
-		g_string_append_printf (new_contents, _("# Merged from %s\n\n"), orig_path);
-
-		lines = g_strsplit_set (orig_contents, "\n\r", 0);
-		for (line = lines; lines && *line; line++) {
-			gboolean ignore = FALSE;
-
-			if (!strlen (g_strstrip (*line)))
-				continue;
-
-			if (   s_ip4
-			    && nm_setting_ip4_config_get_dhcp_client_id (s_ip4)
-			    && !strncmp (*line, DHCP_CLIENT_ID_TAG, strlen (DHCP_CLIENT_ID_TAG)))
-				ignore = TRUE;
-
-			if (   s_ip4
-			    && nm_setting_ip4_config_get_dhcp_hostname (s_ip4)
-			    && !strncmp (*line, DHCP_HOSTNAME_TAG, strlen (DHCP_HOSTNAME_TAG)))
-				ignore = TRUE;
-
-			if (!ignore) {
-				g_string_append (new_contents, *line);
-				g_string_append_c (new_contents, '\n');
-			}
-		}
-
-		if (lines)
-			g_strfreev (lines);
-		g_free (orig_contents);
-	} else
-		g_string_append_c (new_contents, '\n');
-
-	/* Add NM options from connection */
-	if (s_ip4) {
-		const char *tmp;
-
-		tmp = nm_setting_ip4_config_get_dhcp_client_id (s_ip4);
-		if (tmp) {
-			gboolean is_octets = TRUE;
-			const char *p = tmp;
-
-			while (*p) {
-				if (!isxdigit (*p) && (*p != ':')) {
-					is_octets = FALSE;
-					break;
-				}
-				p++;
-			}
-
-			/* If the client ID is just hex digits and : then don't use quotes,
-			 * becuase dhclient expects either a quoted ASCII string, or a byte
-			 * array formated as hex octets separated by :
-			 */
-			if (is_octets)
-				g_string_append_printf (new_contents, DHCP_CLIENT_ID_FORMAT_OCTETS "\n", tmp);
-			else
-				g_string_append_printf (new_contents, DHCP_CLIENT_ID_FORMAT "\n", tmp);
-		}
-
-		tmp = nm_setting_ip4_config_get_dhcp_hostname (s_ip4);
-		if (tmp)
-			g_string_append_printf (new_contents, DHCP_HOSTNAME_FORMAT "\n", tmp);
-	}
-
-	if (anycast_addr) {
-		g_string_append_printf (new_contents, "interface \"%s\" {\n"
-		                        " initial-interval 1; \n"
-		                        " anycast-mac ethernet %02x:%02x:%02x:%02x:%02x:%02x;\n"
-		                        "}\n",
-		                        iface,
-		                        anycast_addr[0], anycast_addr[1],
-		                        anycast_addr[2], anycast_addr[3],
-		                        anycast_addr[4], anycast_addr[5]);
-	}
-
-	success = g_file_set_contents (conf_file, new_contents->str, -1, error);
-
-	g_string_free (new_contents, TRUE);
 	return success;
 }
 
@@ -427,7 +346,8 @@ merge_dhclient_config (const char *iface,
 static char *
 create_dhclient_config (const char *iface,
                         NMSettingIP4Config *s_ip4,
-                        guint8 *dhcp_anycast_addr)
+                        guint8 *dhcp_anycast_addr,
+                        const char *hostname)
 {
 	char *orig = NULL, *tmp, *conf_file = NULL;
 	GError *error = NULL;
@@ -437,10 +357,12 @@ create_dhclient_config (const char *iface,
 
 #if defined(TARGET_SUSE)
 	orig = g_strdup (SYSCONFDIR "/dhclient.conf");
-#elif defined(TARGET_DEBIAN)
+#elif defined(TARGET_DEBIAN) || defined(TARGET_GENTOO)
+#if defined(DHCLIENT_V3)
 	orig = g_strdup (SYSCONFDIR "/dhcp3/dhclient.conf");
-#elif defined(TARGET_GENTOO)
+#else
 	orig = g_strdup (SYSCONFDIR "/dhcp/dhclient.conf");
+#endif
 #else
 	orig = g_strdup_printf (SYSCONFDIR "/dhclient-%s.conf", iface);
 #endif
@@ -450,12 +372,24 @@ create_dhclient_config (const char *iface,
 		return FALSE;
 	}
 
+#if !defined(TARGET_SUSE) && !defined(TARGET_DEBIAN) && !defined(TARGET_GENTOO)
+	/* Try /etc/dhcp/ too (rh #607759) */
+	if (!g_file_test (orig, G_FILE_TEST_EXISTS)) {
+		g_free (orig);
+		orig = g_strdup_printf (SYSCONFDIR "/dhcp/dhclient-%s.conf", iface);
+		if (!orig) {
+			nm_log_warn (LOGD_DHCP, "(%s): not enough memory for dhclient options.", iface);
+			return FALSE;
+		}
+	}
+#endif
+
 	tmp = g_strdup_printf ("nm-dhclient-%s.conf", iface);
 	conf_file = g_build_filename ("/var", "run", tmp, NULL);
 	g_free (tmp);
 
 	error = NULL;
-	success = merge_dhclient_config (iface, conf_file, s_ip4, dhcp_anycast_addr, orig, &error);
+	success = merge_dhclient_config (iface, conf_file, s_ip4, dhcp_anycast_addr, hostname, orig, &error);
 	if (!success) {
 		nm_log_warn (LOGD_DHCP, "(%s): error creating dhclient configuration: %s",
 		             iface, error->message);
@@ -490,13 +424,21 @@ dhclient_start (NMDHCPClient *client,
 	guint log_domain;
 
 	g_return_val_if_fail (priv->pid_file == NULL, -1);
-	g_return_val_if_fail (ip_opt != NULL, -1);
 
 	iface = nm_dhcp_client_get_iface (client);
 	uuid = nm_dhcp_client_get_uuid (client);
 	ipv6 = nm_dhcp_client_get_ipv6 (client);
 
 	log_domain = ipv6 ? LOGD_DHCP6 : LOGD_DHCP4;
+
+#if defined(DHCLIENT_V3)
+	if (ipv6) {
+		nm_log_warn (log_domain, "(%s): ISC dhcp3 does not support IPv6", iface);
+		return -1;
+	}
+#else
+	g_return_val_if_fail (ip_opt != NULL, -1);
+#endif
 
 	priv->pid_file = g_strdup_printf (LOCALSTATEDIR "/run/dhclient%s-%s.pid",
 	                                  ipv6 ? "6" : "",
@@ -527,10 +469,11 @@ dhclient_start (NMDHCPClient *client,
 
 	g_ptr_array_add (argv, (gpointer) "-d");
 
+#if !defined(DHCLIENT_V3)
 	g_ptr_array_add (argv, (gpointer) ip_opt);
-
 	if (mode_opt)
 		g_ptr_array_add (argv, (gpointer) mode_opt);
+#endif
 
 	g_ptr_array_add (argv, (gpointer) "-sf");	/* Set script file */
 	g_ptr_array_add (argv, (gpointer) ACTION_SCRIPT_PATH );
@@ -568,14 +511,15 @@ dhclient_start (NMDHCPClient *client,
 static GPid
 real_ip4_start (NMDHCPClient *client,
                 NMSettingIP4Config *s_ip4,
-                guint8 *dhcp_anycast_addr)
+                guint8 *dhcp_anycast_addr,
+                const char *hostname)
 {
 	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
 	const char *iface;
 
 	iface = nm_dhcp_client_get_iface (client);
 
-	priv->conf_file = create_dhclient_config (iface, s_ip4, dhcp_anycast_addr);
+	priv->conf_file = create_dhclient_config (iface, s_ip4, dhcp_anycast_addr, hostname);
 	if (!priv->conf_file) {
 		nm_log_warn (LOGD_DHCP4, "(%s): error creating dhclient configuration file.", iface);
 		return -1;
@@ -588,6 +532,7 @@ static GPid
 real_ip6_start (NMDHCPClient *client,
                 NMSettingIP6Config *s_ip6,
                 guint8 *dhcp_anycast_addr,
+                const char *hostname,
                 gboolean info_only)
 {
 	return dhclient_start (client, "-6", info_only ? "-S" : "-N");
@@ -605,136 +550,6 @@ real_stop (NMDHCPClient *client)
 		remove (priv->conf_file);
 	if (priv->pid_file)
 		remove (priv->pid_file);
-}
-
-static const char **
-process_rfc3442_route (const char **octets, NMIP4Route **out_route)
-{
-	const char **o = octets;
-	int addr_len = 0, i = 0;
-	long int tmp;
-	NMIP4Route *route;
-	char *next_hop;
-	struct in_addr tmp_addr;
-
-	if (!*o)
-		return o; /* no prefix */
-
-	tmp = strtol (*o, NULL, 10);
-	if (tmp < 0 || tmp > 32)  /* 32 == max IP4 prefix length */
-		return o;
-
-	route = nm_ip4_route_new ();
-	nm_ip4_route_set_prefix (route, (guint32) tmp);
-	o++;
-
-	if (tmp > 0)
-		addr_len = ((tmp - 1) / 8) + 1;
-
-	/* ensure there's at least the address + next hop left */
-	if (g_strv_length ((char **) o) < addr_len + 4)
-		goto error;
-
-	if (tmp) {
-		const char *addr[4] = { "0", "0", "0", "0" };
-		char *str_addr;
-
-		for (i = 0; i < addr_len; i++)
-			addr[i] = *o++;
-
-		str_addr = g_strjoin (".", addr[0], addr[1], addr[2], addr[3], NULL);
-		if (inet_pton (AF_INET, str_addr, &tmp_addr) <= 0) {
-			g_free (str_addr);
-			goto error;
-		}
-		tmp_addr.s_addr &= nm_utils_ip4_prefix_to_netmask ((guint32) tmp);
-		nm_ip4_route_set_dest (route, tmp_addr.s_addr);
-	}
-
-	/* Handle next hop */
-	next_hop = g_strjoin (".", o[0], o[1], o[2], o[3], NULL);
-	if (inet_pton (AF_INET, next_hop, &tmp_addr) <= 0) {
-		g_free (next_hop);
-		goto error;
-	}
-	nm_ip4_route_set_next_hop (route, tmp_addr.s_addr);
-	g_free (next_hop);
-
-	*out_route = route;
-	return o + 4; /* advance to past the next hop */
-
-error:
-	nm_ip4_route_unref (route);
-	return o;
-}
-
-static gboolean
-real_ip4_process_classless_routes (NMDHCPClient *client,
-                                   GHashTable *options,
-                                   NMIP4Config *ip4_config,
-                                   guint32 *gwaddr)
-{
-	const char *str;
-	char **octets, **o;
-	gboolean have_routes = FALSE;
-	NMIP4Route *route = NULL;
-
-	/* dhclient doesn't have actual support for rfc3442 classless static routes
-	 * upstream.  Thus, people resort to defining the option in dhclient.conf
-	 * and using arbitrary formats like so:
-	 *
-	 * option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;
-	 *
-	 * See https://lists.isc.org/pipermail/dhcp-users/2008-December/007629.html
-	 */
-
-	str = g_hash_table_lookup (options, "new_rfc3442_classless_static_routes");
-	/* Microsoft version; same as rfc3442 but with a different option # (249) */
-	if (!str)
-		str = g_hash_table_lookup (options, "new_ms_classless_static_routes");
-
-	if (!str || !strlen (str))
-		return FALSE;
-
-	o = octets = g_strsplit (str, " ", 0);
-	if (g_strv_length (octets) < 5) {
-		nm_log_warn (LOGD_DHCP4, "ignoring invalid classless static routes '%s'", str);
-		goto out;
-	}
-
-	while (*o) {
-		route = NULL;
-		o = (char **) process_rfc3442_route ((const char **) o, &route);
-		if (!route) {
-			nm_log_warn (LOGD_DHCP4, "ignoring invalid classless static routes");
-			break;
-		}
-
-		have_routes = TRUE;
-		if (nm_ip4_route_get_prefix (route) == 0) {
-			/* gateway passed as classless static route */
-			*gwaddr = nm_ip4_route_get_next_hop (route);
-			nm_ip4_route_unref (route);
-		} else {
-			char addr[INET_ADDRSTRLEN + 1];
-			char nh[INET_ADDRSTRLEN + 1];
-			struct in_addr tmp;
-
-			/* normal route */
-			nm_ip4_config_take_route (ip4_config, route);
-
-			tmp.s_addr = nm_ip4_route_get_dest (route);
-			inet_ntop (AF_INET, &tmp, addr, sizeof (addr));
-			tmp.s_addr = nm_ip4_route_get_next_hop (route);
-			inet_ntop (AF_INET, &tmp, nh, sizeof (nh));
-			nm_log_info (LOGD_DHCP4, "  classless static route %s/%d gw %s",
-			             addr, nm_ip4_route_get_prefix (route), nh);
-		}
-	}
-
-out:
-	g_strfreev (octets);
-	return have_routes;
 }
 
 /***************************************************/
@@ -773,6 +588,5 @@ nm_dhcp_dhclient_class_init (NMDHCPDhclientClass *dhclient_class)
 	client_class->ip4_start = real_ip4_start;
 	client_class->ip6_start = real_ip6_start;
 	client_class->stop = real_stop;
-	client_class->ip4_process_classless_routes = real_ip4_process_classless_routes;
 }
 

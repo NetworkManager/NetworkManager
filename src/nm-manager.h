@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2010 Red Hat, Inc.
  */
 
 #ifndef NM_MANAGER_H
@@ -34,6 +34,17 @@
 #define NM_IS_MANAGER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_MANAGER))
 #define NM_IS_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_MANAGER))
 #define NM_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_MANAGER, NMManagerClass))
+
+#define NM_MANAGER_VERSION "version"
+#define NM_MANAGER_STATE "state"
+#define NM_MANAGER_NETWORKING_ENABLED "networking-enabled"
+#define NM_MANAGER_WIRELESS_ENABLED "wireless-enabled"
+#define NM_MANAGER_WIRELESS_HARDWARE_ENABLED "wireless-hardware-enabled"
+#define NM_MANAGER_WWAN_ENABLED "wwan-enabled"
+#define NM_MANAGER_WWAN_HARDWARE_ENABLED "wwan-hardware-enabled"
+#define NM_MANAGER_WIMAX_ENABLED "wimax-enabled"
+#define NM_MANAGER_WIMAX_HARDWARE_ENABLED "wimax-hardware-enabled"
+#define NM_MANAGER_ACTIVE_CONNECTIONS "active-connections"
 
 /* Not exported */
 #define NM_MANAGER_HOSTNAME "hostname"
@@ -103,6 +114,8 @@ NMState nm_manager_get_state (NMManager *manager);
 /* Connections */
 
 GSList *nm_manager_get_connections    (NMManager *manager, NMConnectionScope scope);
+
+gboolean nm_manager_auto_user_connections_allowed (NMManager *manager);
 
 NMConnection * nm_manager_get_connection_by_object_path (NMManager *manager,
                                                          NMConnectionScope scope,

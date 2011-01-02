@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2010 Red Hat, Inc.
  */
 
 #ifndef NM_DEVICE_INTERFACE_H
@@ -45,27 +45,32 @@ typedef enum
 #define NM_DEVICE_INTERFACE_ERROR (nm_device_interface_error_quark ())
 #define NM_TYPE_DEVICE_INTERFACE_ERROR (nm_device_interface_error_get_type ()) 
 
-#define NM_DEVICE_INTERFACE_UDI          "udi"
-#define NM_DEVICE_INTERFACE_IFACE        "interface"
-#define NM_DEVICE_INTERFACE_DRIVER       "driver"
-#define NM_DEVICE_INTERFACE_CAPABILITIES "capabilities"
-#define NM_DEVICE_INTERFACE_IP4_ADDRESS  "ip4-address"
-#define NM_DEVICE_INTERFACE_IP4_CONFIG   "ip4-config"
-#define NM_DEVICE_INTERFACE_DHCP4_CONFIG "dhcp4-config"
-#define NM_DEVICE_INTERFACE_IP6_CONFIG   "ip6-config"
-#define NM_DEVICE_INTERFACE_DHCP6_CONFIG "dhcp6-config"
-#define NM_DEVICE_INTERFACE_STATE        "state"
-#define NM_DEVICE_INTERFACE_DEVICE_TYPE  "device-type" /* ugh */
-#define NM_DEVICE_INTERFACE_MANAGED      "managed"
-#define NM_DEVICE_INTERFACE_TYPE_DESC    "type-desc"    /* Internal only */
-#define NM_DEVICE_INTERFACE_RFKILL_TYPE  "rfkill-type"  /* Internal only */
-#define NM_DEVICE_INTERFACE_IFINDEX      "ifindex"      /* Internal only */
+#define NM_DEVICE_INTERFACE_DISCONNECT_REQUEST "disconnect-request"
+
+#define NM_DEVICE_INTERFACE_UDI              "udi"
+#define NM_DEVICE_INTERFACE_IFACE            "interface"
+#define NM_DEVICE_INTERFACE_IP_IFACE         "ip-interface"
+#define NM_DEVICE_INTERFACE_DRIVER           "driver"
+#define NM_DEVICE_INTERFACE_CAPABILITIES     "capabilities"
+#define NM_DEVICE_INTERFACE_IP4_ADDRESS      "ip4-address"
+#define NM_DEVICE_INTERFACE_IP4_CONFIG       "ip4-config"
+#define NM_DEVICE_INTERFACE_DHCP4_CONFIG     "dhcp4-config"
+#define NM_DEVICE_INTERFACE_IP6_CONFIG       "ip6-config"
+#define NM_DEVICE_INTERFACE_DHCP6_CONFIG     "dhcp6-config"
+#define NM_DEVICE_INTERFACE_STATE            "state"
+#define NM_DEVICE_INTERFACE_DEVICE_TYPE      "device-type" /* ugh */
+#define NM_DEVICE_INTERFACE_MANAGED          "managed"
+#define NM_DEVICE_INTERFACE_FIRMWARE_MISSING "firmware-missing"
+#define NM_DEVICE_INTERFACE_TYPE_DESC        "type-desc"    /* Internal only */
+#define NM_DEVICE_INTERFACE_RFKILL_TYPE      "rfkill-type"  /* Internal only */
+#define NM_DEVICE_INTERFACE_IFINDEX          "ifindex"      /* Internal only */
 
 typedef enum {
 	NM_DEVICE_INTERFACE_PROP_FIRST = 0x1000,
 
 	NM_DEVICE_INTERFACE_PROP_UDI = NM_DEVICE_INTERFACE_PROP_FIRST,
 	NM_DEVICE_INTERFACE_PROP_IFACE,
+	NM_DEVICE_INTERFACE_PROP_IP_IFACE,
 	NM_DEVICE_INTERFACE_PROP_DRIVER,
 	NM_DEVICE_INTERFACE_PROP_CAPABILITIES,
 	NM_DEVICE_INTERFACE_PROP_IP4_ADDRESS,
@@ -76,6 +81,7 @@ typedef enum {
 	NM_DEVICE_INTERFACE_PROP_STATE,
 	NM_DEVICE_INTERFACE_PROP_DEVICE_TYPE,
 	NM_DEVICE_INTERFACE_PROP_MANAGED,
+	NM_DEVICE_INTERFACE_PROP_FIRMWARE_MISSING,
 	NM_DEVICE_INTERFACE_PROP_TYPE_DESC,
 	NM_DEVICE_INTERFACE_PROP_RFKILL_TYPE,
 	NM_DEVICE_INTERFACE_PROP_IFINDEX,
@@ -102,6 +108,8 @@ struct _NMDeviceInterface {
 	gboolean (*spec_match_list) (NMDeviceInterface *device, const GSList *specs);
 
 	NMConnection * (*connection_match_config) (NMDeviceInterface *device, const GSList *specs);
+
+	gboolean (*can_assume_connections) (NMDeviceInterface *device);
 
 	void (*set_enabled) (NMDeviceInterface *device, gboolean enabled);
 
@@ -139,7 +147,7 @@ gboolean nm_device_interface_spec_match_list (NMDeviceInterface *device,
 NMConnection * nm_device_interface_connection_match_config (NMDeviceInterface *device,
                                                             const GSList *connections);
 
-gboolean nm_device_interface_can_assume_connection (NMDeviceInterface *device);
+gboolean nm_device_interface_can_assume_connections (NMDeviceInterface *device);
 
 gboolean nm_device_interface_get_enabled (NMDeviceInterface *device);
 

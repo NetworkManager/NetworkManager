@@ -153,7 +153,7 @@ int main (int argc, char *argv[])
 	g_option_context_free (opt_ctx);
 
 	if (!success) {
-		g_error ("Invalid option.  Please use --help to see a list of valid options.");
+		g_warning ("Invalid option.  Please use --help to see a list of valid options.");
 		return 2;
 	}
 	
@@ -162,7 +162,7 @@ int main (int argc, char *argv[])
 	else
 		timeout.value = 30;
 	if (timeout.value < 0 || timeout.value > 3600)  {
-		g_error ("Invalid option.  Please use --help to see a list of valid options.");
+		g_warning ("Invalid option.  Please use --help to see a list of valid options.");
 		return 2;
 	}
 

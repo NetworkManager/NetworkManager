@@ -1,6 +1,9 @@
 polkit_policydir = $(datadir)/polkit-1/actions
 
-dist_polkit_policy_in_files = org.freedesktop.network-manager-settings.system.policy.in
+dist_polkit_policy_in_files = \
+	org.freedesktop.network-manager-settings.system.policy.in \
+	org.freedesktop.NetworkManager.policy.in
+
 dist_polkit_policy_DATA = $(dist_polkit_policy_in_files:.policy.in=.policy)
 
 @INTLTOOL_POLICY_RULE@

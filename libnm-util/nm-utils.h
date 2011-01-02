@@ -215,4 +215,9 @@ GByteArray *nm_utils_rsa_key_encrypt (const GByteArray *data,
 
 G_END_DECLS
 
+guint32 nm_utils_wifi_freq_to_channel (guint32 freq);
+guint32 nm_utils_wifi_channel_to_freq (guint32 channel, const char *band);
+guint32 nm_utils_wifi_find_next_channel (guint32 channel, int direction, char *band);
+gboolean nm_utils_wifi_is_channel_valid (guint32 channel, const char *band);
+
 #endif /* NM_UTILS_H */

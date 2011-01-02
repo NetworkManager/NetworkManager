@@ -1,0 +1,3 @@
+# case 15: trailing space (must be ignored)
+iface bnep0 inet static 
+

@@ -1,7 +1,7 @@
 SUBDIRS=. tests
 
 nm-ifcfg-rh-glue.h: nm-ifcfg-rh.xml
-	dbus-binding-tool --prefix=nm_ifcfg_rh --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_ifcfg_rh --mode=glib-server --output=$@ $<
 
 BUILT_SOURCES = \
 	nm-ifcfg-rh-glue.h

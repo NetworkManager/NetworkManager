@@ -308,11 +308,11 @@ msgstr ""
 "# Yhdistetty tiedostosta %s\n"
 "\n"
 
-#: ../src/named-manager/nm-named-manager.c:256
+#: ../src/dns-manager/nm-dns-manager.c:256
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "HUOMAUTUS: libc-nimenselvennys ei ehkä tue kuin kolmea nimipalvelinta."
 
-#: ../src/named-manager/nm-named-manager.c:258
+#: ../src/dns-manager/nm-dns-manager.c:258
 msgid "The nameservers listed below may not be recognized."
 msgstr "Alla olevaa nimipalvelinluetteloa ei voitu tunnistaa."
 

@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2008 Red Hat, Inc.
+ * Copyright (C) 2005 - 2010 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -72,6 +72,8 @@ typedef struct {
 	void            (*take_down)     (NMDevice *self);
 
 	void        (* update_hw_address) (NMDevice *self);
+	void        (* update_permanent_hw_address) (NMDevice *self);
+	void        (* update_initial_hw_address) (NMDevice *self);
 
 	guint32		(* get_type_capabilities)	(NMDevice *self);
 	guint32		(* get_generic_capabilities)	(NMDevice *self);

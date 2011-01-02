@@ -19,10 +19,7 @@
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
-
+#include <config.h>
 #include <glib.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
@@ -44,7 +41,7 @@
 #include "nm-manager.h"
 #include "nm-policy.h"
 #include "nm-system.h"
-#include "nm-named-manager.h"
+#include "nm-dns-manager.h"
 #include "nm-dbus-manager.h"
 #include "nm-supplicant-manager.h"
 #include "nm-dhcp-manager.h"
@@ -52,6 +49,7 @@
 #include "nm-netlink-monitor.h"
 #include "nm-vpn-manager.h"
 #include "nm-logging.h"
+#include "nm-policy-hosts.h"
 
 #if !defined(NM_DIST_VERSION)
 # define NM_DIST_VERSION VERSION
@@ -303,11 +301,13 @@ static gboolean
 parse_config_file (const char *filename,
                    char **plugins,
                    char **dhcp_client,
+                   char ***dns_plugins,
                    char **log_level,
                    char **log_domains,
                    GError **error)
 {
 	GKeyFile *config;
+	gboolean success = FALSE;
 
 	config = g_key_file_new ();
 	if (!config) {
@@ -318,19 +318,23 @@ parse_config_file (const char *filename,
 
 	g_key_file_set_list_separator (config, ',');
 	if (!g_key_file_load_from_file (config, filename, G_KEY_FILE_NONE, error))
-		return FALSE;
+		goto out;
 
 	*plugins = g_key_file_get_value (config, "main", "plugins", error);
 	if (*error)
-		return FALSE;
+		goto out;
 
 	*dhcp_client = g_key_file_get_value (config, "main", "dhcp", NULL);
+	*dns_plugins = g_key_file_get_string_list (config, "main", "dns", NULL, NULL);
 
 	*log_level = g_key_file_get_value (config, "logging", "level", NULL);
 	*log_domains = g_key_file_get_value (config, "logging", "domains", NULL);
 
+	success = TRUE;
+
+out:
 	g_key_file_free (config);
-	return TRUE;
+	return success;
 }
 
 static gboolean
@@ -456,11 +460,12 @@ main (int argc, char *argv[])
 	char *pidfile = NULL, *state_file = NULL, *dhcp = NULL;
 	char *config = NULL, *plugins = NULL, *conf_plugins = NULL;
 	char *log_level = NULL, *log_domains = NULL;
+	char **dns = NULL;
 	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE, wimax_enabled = TRUE;
 	gboolean success;
 	NMPolicy *policy = NULL;
 	NMVPNManager *vpn_manager = NULL;
-	NMNamedManager *named_mgr = NULL;
+	NMDnsManager *dns_mgr = NULL;
 	NMDBusManager *dbus_mgr = NULL;
 	NMSupplicantManager *sup_mgr = NULL;
 	NMDHCPManager *dhcp_mgr = NULL;
@@ -529,7 +534,7 @@ main (int argc, char *argv[])
 
 	/* Parse the config file */
 	if (config) {
-		if (!parse_config_file (config, &conf_plugins, &dhcp, &cfg_log_level, &cfg_log_domains, &error)) {
+		if (!parse_config_file (config, &conf_plugins, &dhcp, &dns, &cfg_log_level, &cfg_log_domains, &error)) {
 			fprintf (stderr, "Config file %s invalid: (%d) %s\n",
 			         config,
 			         error ? error->code : -1,
@@ -539,10 +544,17 @@ main (int argc, char *argv[])
 	} else {
 		gboolean parsed = FALSE;
 
-		/* Try NetworkManager.conf first */
-		if (g_file_test (NM_DEFAULT_SYSTEM_CONF_FILE, G_FILE_TEST_EXISTS)) {
-			config = g_strdup (NM_DEFAULT_SYSTEM_CONF_FILE);
-			parsed = parse_config_file (config, &conf_plugins, &dhcp, &cfg_log_level, &cfg_log_domains, &error);
+		/* Even though we prefer NetworkManager.conf, we need to check the
+		 * old nm-system-settings.conf first to preserve compat with older
+		 * setups.  In package managed systems dropping a NetworkManager.conf
+		 * onto the system would make NM use it instead of nm-system-settings.conf,
+		 * changing behavior during an upgrade.  We don't want that.
+		 */
+
+		/* Try deprecated nm-system-settings.conf first */
+		if (g_file_test (NM_OLD_SYSTEM_CONF_FILE, G_FILE_TEST_EXISTS)) {
+			config = g_strdup (NM_OLD_SYSTEM_CONF_FILE);
+			parsed = parse_config_file (config, &conf_plugins, &dhcp, &dns, &cfg_log_level, &cfg_log_domains, &error);
 			if (!parsed) {
 				fprintf (stderr, "Default config file %s invalid: (%d) %s\n",
 				         config,
@@ -551,14 +563,14 @@ main (int argc, char *argv[])
 				g_free (config);
 				config = NULL;
 				g_clear_error (&error);
-				/* Not a hard failure */
 			}
 		}
 
-		/* Try old nm-system-settings.conf next */
-		if (!parsed) {
-			config = g_strdup (NM_OLD_SYSTEM_CONF_FILE);
-			if (!parse_config_file (config, &conf_plugins, &dhcp, &cfg_log_level, &cfg_log_domains, &error)) {
+		/* Try the preferred NetworkManager.conf last */
+		if (!parsed && g_file_test (NM_DEFAULT_SYSTEM_CONF_FILE, G_FILE_TEST_EXISTS)) {
+			config = g_strdup (NM_DEFAULT_SYSTEM_CONF_FILE);
+			parsed = parse_config_file (config, &conf_plugins, &dhcp, &dns, &cfg_log_level, &cfg_log_domains, &error);
+			if (!parsed) {
 				fprintf (stderr, "Default config file %s invalid: (%d) %s\n",
 				         config,
 				         error ? error->code : -1,
@@ -566,11 +578,9 @@ main (int argc, char *argv[])
 				g_free (config);
 				config = NULL;
 				g_clear_error (&error);
-				/* Not a hard failure */
 			}
 		}
 	}
-
 	/* Logging setup */
 	if (!nm_logging_setup (log_level ? log_level : cfg_log_level,
 	                       log_domains ? log_domains : cfg_log_domains,
@@ -633,12 +643,26 @@ main (int argc, char *argv[])
 		g_thread_init (NULL);
 	dbus_g_thread_init ();
 
+#ifndef HAVE_DBUS_GLIB_DISABLE_LEGACY_PROP_ACCESS
+#error HAVE_DBUS_GLIB_DISABLE_LEGACY_PROP_ACCESS not defined
+#endif
+
+#if HAVE_DBUS_GLIB_DISABLE_LEGACY_PROP_ACCESS
+	/* Ensure that non-exported properties don't leak out, and that the
+	 * introspection 'access' permissions are respected.
+	 */
+	dbus_glib_global_set_disable_legacy_property_access ();
+#endif
+
 	setup_signals ();
 
 	nm_logging_start (become_daemon);
 
 	nm_log_info (LOGD_CORE, "NetworkManager (version " NM_DIST_VERSION ") is starting...");
 	success = FALSE;
+
+	if (config)
+		nm_log_info (LOGD_CORE, "Read config file %s", config);
 
 	main_loop = g_main_loop_new (NULL, FALSE);
 
@@ -658,9 +682,9 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	named_mgr = nm_named_manager_get ();
-	if (!named_mgr) {
-		nm_log_err (LOGD_CORE, "failed to start the named manager.");
+	dns_mgr = nm_dns_manager_get ((const char **) dns);
+	if (!dns_mgr) {
+		nm_log_err (LOGD_CORE, "failed to start the DNS manager.");
 		goto done;
 	}
 
@@ -706,6 +730,9 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
+	/* Clean leftover "# Added by NetworkManager" entries from /etc/hosts */
+	nm_policy_hosts_clean_etc_hosts ();
+
 	nm_manager_start (manager);
 
 	/* Bring up the loopback interface. */
@@ -729,8 +756,8 @@ done:
 	if (vpn_manager)
 		g_object_unref (vpn_manager);
 
-	if (named_mgr)
-		g_object_unref (named_mgr);
+	if (dns_mgr)
+		g_object_unref (dns_mgr);
 
 	if (dhcp_mgr)
 		g_object_unref (dhcp_mgr);
@@ -752,6 +779,7 @@ done:
 	g_free (config);
 	g_free (plugins);
 	g_free (dhcp);
+	g_strfreev (dns);
 	g_free (log_level);
 	g_free (log_domains);
 	g_free (cfg_log_level);

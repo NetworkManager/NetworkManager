@@ -83,4 +83,7 @@ void nm_vpn_manager_add_active_connections (NMVPNManager *manager,
 
 GSList *nm_vpn_manager_get_active_connections (NMVPNManager *manager);
 
+NMConnection *nm_vpn_manager_get_connection_for_active (NMVPNManager *manager,
+                                                        const char *active_path);
+
 #endif /* NM_VPN_VPN_MANAGER_H */

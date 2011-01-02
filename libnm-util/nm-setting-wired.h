@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2010 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -57,7 +57,11 @@ GQuark nm_setting_wired_error_quark (void);
 #define NM_SETTING_WIRED_DUPLEX "duplex"
 #define NM_SETTING_WIRED_AUTO_NEGOTIATE "auto-negotiate"
 #define NM_SETTING_WIRED_MAC_ADDRESS "mac-address"
+#define NM_SETTING_WIRED_CLONED_MAC_ADDRESS "cloned-mac-address"
 #define NM_SETTING_WIRED_MTU "mtu"
+#define NM_SETTING_WIRED_S390_SUBCHANNELS "s390-subchannels"
+#define NM_SETTING_WIRED_S390_NETTYPE "s390-nettype"
+#define NM_SETTING_WIRED_S390_OPTIONS "s390-options"
 
 typedef struct {
 	NMSetting parent;
@@ -75,13 +79,30 @@ typedef struct {
 
 GType nm_setting_wired_get_type (void);
 
-NMSetting        *nm_setting_wired_new                (void);
-const char       *nm_setting_wired_get_port           (NMSettingWired *setting);
-guint32           nm_setting_wired_get_speed          (NMSettingWired *setting);
-const char       *nm_setting_wired_get_duplex         (NMSettingWired *setting);
-gboolean          nm_setting_wired_get_auto_negotiate (NMSettingWired *setting);
-const GByteArray *nm_setting_wired_get_mac_address    (NMSettingWired *setting);
-guint32           nm_setting_wired_get_mtu            (NMSettingWired *setting);
+NMSetting *       nm_setting_wired_new                  (void);
+const char *      nm_setting_wired_get_port             (NMSettingWired *setting);
+guint32           nm_setting_wired_get_speed            (NMSettingWired *setting);
+const char *      nm_setting_wired_get_duplex           (NMSettingWired *setting);
+gboolean          nm_setting_wired_get_auto_negotiate   (NMSettingWired *setting);
+const GByteArray *nm_setting_wired_get_mac_address      (NMSettingWired *setting);
+const GByteArray *nm_setting_wired_get_cloned_mac_address (NMSettingWired *setting);
+guint32           nm_setting_wired_get_mtu              (NMSettingWired *setting);
+
+const GPtrArray * nm_setting_wired_get_s390_subchannels (NMSettingWired *setting);
+const char *      nm_setting_wired_get_s390_nettype     (NMSettingWired *setting);
+
+guint32           nm_setting_wired_get_num_s390_options (NMSettingWired *setting);
+gboolean          nm_setting_wired_get_s390_option      (NMSettingWired *setting,
+                                                         guint32 idx,
+                                                         const char **out_key,
+                                                         const char **out_value);
+const char *      nm_setting_wired_get_s390_option_by_key (NMSettingWired *setting,
+                                                           const char *key);
+gboolean          nm_setting_wired_add_s390_option      (NMSettingWired *setting,
+                                                         const char *key,
+                                                         const char *item);
+gboolean          nm_setting_wired_remove_s390_option   (NMSettingWired *setting,
+                                                         const char *key);
 
 G_END_DECLS
 

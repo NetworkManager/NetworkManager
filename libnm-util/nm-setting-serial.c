@@ -149,10 +149,10 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	/* Serial connections require a PPP setting */
 	if (all_settings && 
 	    !g_slist_find_custom (all_settings, NM_SETTING_PPP_SETTING_NAME, find_setting_by_name)) {
-		g_set_error (error,
-		             NM_SETTING_SERIAL_ERROR,
-		             NM_SETTING_SERIAL_ERROR_MISSING_PPP_SETTING,
-		             NULL);
+		g_set_error_literal (error,
+		                     NM_SETTING_SERIAL_ERROR,
+		                     NM_SETTING_SERIAL_ERROR_MISSING_PPP_SETTING,
+		                     "Missing required PPP setting");
 		return FALSE;
 	}
 

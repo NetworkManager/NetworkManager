@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2010 Red Hat, Inc.
  */
 
 #include <dbus/dbus-glib.h>
@@ -58,6 +58,11 @@ typedef struct {
 	GPtrArray *devices;
 	GPtrArray *active_connections;
 
+	DBusGProxyCall *perm_call;
+	GHashTable *permissions;
+
+	gboolean have_networking_enabled;
+	gboolean networking_enabled;
 	gboolean wireless_enabled;
 	gboolean wireless_hw_enabled;
 
@@ -72,6 +77,7 @@ enum {
 	PROP_0,
 	PROP_STATE,
 	PROP_MANAGER_RUNNING,
+	PROP_NETWORKING_ENABLED,
 	PROP_WIRELESS_ENABLED,
 	PROP_WIRELESS_HARDWARE_ENABLED,
 	PROP_WWAN_ENABLED,
@@ -86,6 +92,7 @@ enum {
 enum {
 	DEVICE_ADDED,
 	DEVICE_REMOVED,
+	PERMISSION_CHANGED,
 
 	LAST_SIGNAL
 };
@@ -102,11 +109,30 @@ static void client_device_added_proxy (DBusGProxy *proxy, char *path, gpointer u
 static void client_device_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data);
 
 static void
+handle_net_enabled_changed (GObject *object,
+                            GParamSpec *pspec,
+                            GValue *value,
+                            gpointer user_data)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
+
+	/* Update the cache flag when it changes */
+	priv->have_networking_enabled = TRUE;
+}
+
+static void
 nm_client_init (NMClient *client)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
 
 	priv->state = NM_STATE_UNKNOWN;
+
+	priv->permissions = g_hash_table_new (g_direct_hash, g_direct_equal);
+
+	g_signal_connect (client,
+	                  "notify::" NM_CLIENT_NETWORKING_ENABLED,
+	                  G_CALLBACK (handle_net_enabled_changed),
+	                  client);
 }
 
 static void
@@ -285,6 +311,7 @@ register_for_property_changed (NMClient *client)
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
 	const NMPropertiesChangedInfo property_changed_info[] = {
 		{ NM_CLIENT_STATE,                     _nm_object_demarshal_generic,  &priv->state },
+		{ NM_CLIENT_NETWORKING_ENABLED,        _nm_object_demarshal_generic,  &priv->networking_enabled },
 		{ NM_CLIENT_WIRELESS_ENABLED,          _nm_object_demarshal_generic,  &priv->wireless_enabled },
 		{ NM_CLIENT_WIRELESS_HARDWARE_ENABLED, _nm_object_demarshal_generic,  &priv->wireless_hw_enabled },
 		{ NM_CLIENT_WWAN_ENABLED,              _nm_object_demarshal_generic,  &priv->wwan_enabled },
@@ -298,6 +325,130 @@ register_for_property_changed (NMClient *client)
 	_nm_object_handle_properties_changed (NM_OBJECT (client),
 	                                     priv->client_proxy,
 	                                     property_changed_info);
+}
+
+#define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK "org.freedesktop.NetworkManager.enable-disable-network"
+#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI    "org.freedesktop.NetworkManager.enable-disable-wifi"
+#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN    "org.freedesktop.NetworkManager.enable-disable-wwan"
+#define NM_AUTH_PERMISSION_USE_USER_CONNECTIONS   "org.freedesktop.NetworkManager.use-user-connections"
+
+static NMClientPermission
+nm_permission_to_client (const char *nm)
+{
+	if (!strcmp (nm, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK))
+		return NM_CLIENT_PERMISSION_ENABLE_DISABLE_NETWORK;
+	else if (!strcmp (nm, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI))
+		return NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIFI;
+	else if (!strcmp (nm, NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN))
+		return NM_CLIENT_PERMISSION_ENABLE_DISABLE_WWAN;
+	else if (!strcmp (nm, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS))
+		return NM_CLIENT_PERMISSION_USE_USER_CONNECTIONS;
+	return NM_CLIENT_PERMISSION_NONE;
+}
+
+static NMClientPermissionResult
+nm_permission_result_to_client (const char *nm)
+{
+	if (!strcmp (nm, "yes"))
+		return NM_CLIENT_PERMISSION_RESULT_YES;
+	else if (!strcmp (nm, "no"))
+		return NM_CLIENT_PERMISSION_RESULT_NO;
+	else if (!strcmp (nm, "auth"))
+		return NM_CLIENT_PERMISSION_RESULT_AUTH;
+	return NM_CLIENT_PERMISSION_RESULT_UNKNOWN;
+}
+
+static void
+update_permissions (NMClient *self, GHashTable *permissions)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+	GHashTableIter iter;
+	gpointer key, value;
+	NMClientPermission perm;
+	NMClientPermissionResult perm_result;
+	GList *keys, *keys_iter;
+
+	/* get list of old permissions for change notification */
+	keys = g_hash_table_get_keys (priv->permissions);
+	g_hash_table_remove_all (priv->permissions);
+
+	if (permissions) {
+		/* Process new permissions */
+		g_hash_table_iter_init (&iter, permissions);
+		while (g_hash_table_iter_next (&iter, &key, &value)) {
+			perm = nm_permission_to_client ((const char *) key);
+			perm_result = nm_permission_result_to_client ((const char *) value);
+			if (perm) {
+				g_hash_table_insert (priv->permissions,
+				                     GUINT_TO_POINTER (perm),
+				                     GUINT_TO_POINTER (perm_result));
+
+				/* Remove this permission from the list of previous permissions
+				 * we'll be sending NM_CLIENT_PERMISSION_RESULT_UNKNOWN for
+				 * in the change signal since it is still a known permission.
+				 */
+				keys = g_list_remove (keys, GUINT_TO_POINTER (perm));
+			}
+		}
+	}
+
+	/* Signal changes in all updated permissions */
+	g_hash_table_iter_init (&iter, priv->permissions);
+	while (g_hash_table_iter_next (&iter, &key, &value)) {
+		g_signal_emit (self, signals[PERMISSION_CHANGED], 0,
+		               GPOINTER_TO_UINT (key),
+		               GPOINTER_TO_UINT (value));
+	}
+
+	/* And signal changes in all permissions that used to be valid but for
+	 * some reason weren't received in the last request (if any).
+	 */
+	for (keys_iter = keys; keys_iter; keys_iter = g_list_next (keys_iter)) {
+		g_signal_emit (self, signals[PERMISSION_CHANGED], 0,
+		               GPOINTER_TO_UINT (keys_iter->data),
+		               NM_CLIENT_PERMISSION_RESULT_UNKNOWN);
+	}
+	g_list_free (keys);
+}
+
+static void
+get_permissions_sync (NMClient *self)
+{
+	gboolean success;
+	GHashTable *permissions = NULL;
+
+	success = dbus_g_proxy_call_with_timeout (NM_CLIENT_GET_PRIVATE (self)->client_proxy,
+	                                          "GetPermissions", 3000, NULL,
+	                                          G_TYPE_INVALID,
+	                                          DBUS_TYPE_G_MAP_OF_STRING, &permissions, G_TYPE_INVALID);
+	update_permissions (self, success ? permissions : NULL);
+	if (permissions)
+		g_hash_table_destroy (permissions);
+}
+
+static void
+get_permissions_reply (DBusGProxy *proxy,
+                       GHashTable *permissions,
+                       GError *error,
+                       gpointer user_data)
+{
+	NMClient *self = NM_CLIENT (user_data);
+
+	NM_CLIENT_GET_PRIVATE (self)->perm_call = NULL;
+	update_permissions (NM_CLIENT (user_data), error ? NULL : permissions);
+}
+
+static void
+client_recheck_permissions (DBusGProxy *proxy, gpointer user_data)
+{
+	NMClient *self = NM_CLIENT (user_data);
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+
+	if (!priv->perm_call) {
+		priv->perm_call = org_freedesktop_NetworkManager_get_permissions_async (NM_CLIENT_GET_PRIVATE (self)->client_proxy,
+	                                                                            get_permissions_reply,
+	                                                                            self);
+	}
 }
 
 static GObject*
@@ -339,6 +490,15 @@ constructor (GType type,
 						    G_CALLBACK (client_device_removed_proxy),
 						    object,
 						    NULL);
+
+	/* Permissions */
+	dbus_g_proxy_add_signal (priv->client_proxy, "CheckPermissions", G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->client_proxy,
+	                             "CheckPermissions",
+	                             G_CALLBACK (client_recheck_permissions),
+	                             object,
+	                             NULL);
+	get_permissions_sync (NM_CLIENT (object));
 
 	priv->bus_proxy = dbus_g_proxy_new_for_name (connection,
 										"org.freedesktop.DBus",
@@ -398,11 +558,16 @@ dispose (GObject *object)
 		return;
 	}
 
+	if (priv->perm_call)
+		dbus_g_proxy_cancel_call (priv->client_proxy, priv->perm_call);
+
 	g_object_unref (priv->client_proxy);
 	g_object_unref (priv->bus_proxy);
 
 	free_object_array (&priv->devices);
 	free_object_array (&priv->active_connections);
+
+	g_hash_table_destroy (priv->permissions);
 
 	G_OBJECT_CLASS (nm_client_parent_class)->dispose (object);
 }
@@ -479,6 +644,9 @@ get_property (GObject *object,
 	case PROP_MANAGER_RUNNING:
 		g_value_set_boolean (value, priv->manager_running);
 		break;
+	case PROP_NETWORKING_ENABLED:
+		g_value_set_boolean (value, priv->networking_enabled);
+		break;
 	case PROP_WIRELESS_ENABLED:
 		g_value_set_boolean (value, priv->wireless_enabled);
 		break;
@@ -546,6 +714,19 @@ nm_client_class_init (NMClientClass *client_class)
 						       "Whether NetworkManager is running",
 						       FALSE,
 						       G_PARAM_READABLE));
+
+	/**
+	 * NMClient::networking-enabled:
+	 *
+	 * Whether networking is enabled.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_NETWORKING_ENABLED,
+		 g_param_spec_boolean (NM_CLIENT_NETWORKING_ENABLED,
+						   "NetworkingEnabled",
+						   "Is networking enabled",
+						   TRUE,
+						   G_PARAM_READABLE));
 
 	/**
 	 * NMClient::wireless-enabled:
@@ -673,6 +854,22 @@ nm_client_class_init (NMClientClass *client_class)
 					  g_cclosure_marshal_VOID__OBJECT,
 					  G_TYPE_NONE, 1,
 					  G_TYPE_OBJECT);
+
+	/**
+	 * NMClient::permission-changed:
+	 * @widget: the client that received the signal
+	 * @permission: a permission from #NMClientPermission
+	 * @result: the permission's result, one of #NMClientPermissionResult
+	 *
+	 * Notifies that a permission has changed
+	 **/
+	signals[PERMISSION_CHANGED] =
+		g_signal_new ("permission-changed",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  0, NULL, NULL,
+					  _nm_marshal_VOID__UINT_UINT,
+					  G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 }
 
 /**
@@ -1184,24 +1381,67 @@ nm_client_get_state (NMClient *client)
 }
 
 /**
- * nm_client_sleep:
+ * nm_client_networking_get_enabled:
  * @client: a #NMClient
- * @sleep: %TRUE to put the daemon to sleep
  *
- * Enables or disables networking. When the daemon is put to sleep, it'll deactivate and disable
- * all the active devices.
+ * Whether networking is enabled or disabled.
+ *
+ * Returns: %TRUE if networking is disabled, %FALSE if networking is enabled
+ **/
+gboolean
+nm_client_networking_get_enabled (NMClient *client)
+{
+	NMClientPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+
+	priv = NM_CLIENT_GET_PRIVATE (client);
+	if (!priv->have_networking_enabled) {
+		priv = NM_CLIENT_GET_PRIVATE (client);
+		if (!priv->networking_enabled) {
+			priv->networking_enabled = _nm_object_get_boolean_property (NM_OBJECT (client),
+			                                                            NM_DBUS_INTERFACE,
+			                                                            "NetworkingEnabled");
+			priv->have_networking_enabled = TRUE;
+		}
+	}
+
+	return priv->networking_enabled;
+}
+
+/**
+ * nm_client_networking_set_enabled:
+ * @client: a #NMClient
+ * @enabled: %TRUE to set networking enabled, %FALSE to set networking disabled
+ *
+ * Enables or disables networking.  When networking is disabled, all controlled
+ * interfaces are disconnected and deactivated.  When networking is enabled,
+ * all controlled interfaces are available for activation.
  **/
 void
-nm_client_sleep (NMClient *client, gboolean sleep)
+nm_client_networking_set_enabled (NMClient *client, gboolean enable)
 {
 	GError *err = NULL;
 
 	g_return_if_fail (NM_IS_CLIENT (client));
 
-	if (!org_freedesktop_NetworkManager_sleep (NM_CLIENT_GET_PRIVATE (client)->client_proxy, sleep, &err)) {
-		g_warning ("Error in sleep: %s", err->message);
+	if (!org_freedesktop_NetworkManager_enable (NM_CLIENT_GET_PRIVATE (client)->client_proxy, enable, &err)) {
+		g_warning ("Error enabling/disabling networking: %s", err->message);
 		g_error_free (err);
 	}
+}
+
+/**
+ * nm_client_sleep:
+ * @client: a #NMClient
+ * @sleep: %TRUE to put the daemon to sleep
+ *
+ * Deprecated; use nm_client_networking_set_enabled() instead.
+ **/
+void
+nm_client_sleep (NMClient *client, gboolean sleep)
+{
+	nm_client_networking_set_enabled (client, !sleep);
 }
 
 /**
@@ -1218,5 +1458,27 @@ nm_client_get_manager_running (NMClient *client)
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
 	return NM_CLIENT_GET_PRIVATE (client)->manager_running;
+}
+
+/**
+ * nm_client_get_permission_result:
+ * @client: a #NMClient
+ * @permission: the permission for which to return the result, one of #NMClientPermission
+ *
+ * Requests the result of a specific permission, which indicates whether the
+ * client can or cannot perform the action the permission represents
+ *
+ * Returns: the permission's result, one of #NMClientPermissionResult
+ **/
+NMClientPermissionResult
+nm_client_get_permission_result (NMClient *client, NMClientPermission permission)
+{
+	gpointer result;
+
+	g_return_val_if_fail (NM_IS_CLIENT (client), NM_CLIENT_PERMISSION_RESULT_UNKNOWN);
+
+	result = g_hash_table_lookup (NM_CLIENT_GET_PRIVATE (client)->permissions,
+	                              GUINT_TO_POINTER (permission));
+	return GPOINTER_TO_UINT (result);
 }
 

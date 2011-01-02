@@ -57,11 +57,11 @@ msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr ""
 "Tùy chọn không hợp lệ. Hãy sử dụng tùy chọn trợ giúp « --help » để xem một danh sách các tùy chọn hợp lệ.\n"
 
-#: ../src/named-manager/nm-named-manager.c:218
+#: ../src/dns-manager/nm-dns-manager.c:218
 msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
 msgstr "GHI CHÚ : hàm giải quyết glibc chỉ hỗ trợ đến 3 máy phục vụ tên."
 
-#: ../src/named-manager/nm-named-manager.c:220
+#: ../src/dns-manager/nm-dns-manager.c:220
 msgid "The nameservers listed below may not be recognized."
 msgstr "Những máy phục vụ tên được liệt kê dưới đây có lẽ không nhận ra được."
 

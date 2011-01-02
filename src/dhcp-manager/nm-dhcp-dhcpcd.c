@@ -88,14 +88,15 @@ dhcpcd_child_setup (gpointer user_data G_GNUC_UNUSED)
 static GPid
 real_ip4_start (NMDHCPClient *client,
                 NMSettingIP4Config *s_ip4,
-                guint8 *dhcp_anycast_addr)
+                guint8 *dhcp_anycast_addr,
+                const char *hostname)
 {
 	NMDHCPDhcpcdPrivate *priv = NM_DHCP_DHCPCD_GET_PRIVATE (client);
 	GPtrArray *argv = NULL;
 	GPid pid = -1;
 	GError *error = NULL;
 	char *pid_contents = NULL, *binary_name, *cmd_str;
-	const char *iface, *uuid, *hostname;
+	const char *iface, *uuid;
 
 	g_return_val_if_fail (priv->pid_file == NULL, -1);
 
@@ -127,10 +128,11 @@ real_ip4_start (NMDHCPClient *client,
 
 	g_ptr_array_add (argv, (gpointer) "-L");	/* Disable built-in IPv4LL since we use avahi-autoipd */
 
+	g_ptr_array_add (argv, (gpointer) "-G");	/* Let NM handle routing */
+
 	g_ptr_array_add (argv, (gpointer) "-c");	/* Set script file */
 	g_ptr_array_add (argv, (gpointer) ACTION_SCRIPT_PATH );
 
-	hostname = nm_setting_ip4_config_get_dhcp_hostname (s_ip4);
 	if (hostname && strlen (hostname)) {
 		g_ptr_array_add (argv, (gpointer) "-h");	/* Send hostname to DHCP server */
 		g_ptr_array_add (argv, (gpointer) hostname );
@@ -160,6 +162,7 @@ static GPid
 real_ip6_start (NMDHCPClient *client,
                 NMSettingIP6Config *s_ip6,
                 guint8 *dhcp_anycast_addr,
+                const char *hostname,
                 gboolean info_only)
 {
 	nm_log_warn (LOGD_DHCP6, "the dhcpcd backend does not support IPv6.");
@@ -176,83 +179,6 @@ real_stop (NMDHCPClient *client)
 
 	if (priv->pid_file)
 		remove (priv->pid_file);
-}
-
-static gboolean
-real_ip4_process_classless_routes (NMDHCPClient *client,
-                                   GHashTable *options,
-                                   NMIP4Config *ip4_config,
-                                   guint32 *gwaddr)
-{
-	const char *str;
-	char **routes, **r;
-	gboolean have_routes = FALSE;
-
-	/* Classless static routes over-ride any static routes and routers
-	 * provided. We should also check for MS classless static routes as
-	 * they implemented the draft RFC using their own code.
-	 */
-	str = g_hash_table_lookup (options, "new_classless_static_routes");
-	if (!str)
-		str = g_hash_table_lookup (options, "new_ms_classless_static_routes");
-
-	if (!str || !strlen (str))
-		return FALSE;
-
-	routes = g_strsplit (str, " ", 0);
-	if (g_strv_length (routes) == 0)
-		goto out;
-
-	if ((g_strv_length (routes) % 2) != 0) {
-		nm_log_warn (LOGD_DHCP4, "  classless static routes provided, but invalid");
-		goto out;
-	}
-
-	for (r = routes; *r; r += 2) {
-		char *slash;
-		NMIP4Route *route;
-		int rt_cidr = 32;
-		struct in_addr rt_addr;
-		struct in_addr rt_route;
-
-		slash = strchr(*r, '/');
-		if (slash) {
-			*slash = '\0';
-			errno = 0;
-			rt_cidr = strtol (slash + 1, NULL, 10);
-			if ((errno == EINVAL) || (errno == ERANGE)) {
-				nm_log_warn (LOGD_DHCP4, "DHCP provided invalid classless static route cidr: '%s'", slash + 1);
-				continue;
-			}
-		}
-		if (inet_pton (AF_INET, *r, &rt_addr) <= 0) {
-			nm_log_warn (LOGD_DHCP4, "DHCP provided invalid classless static route address: '%s'", *r);
-			continue;
-		}
-		if (inet_pton (AF_INET, *(r + 1), &rt_route) <= 0) {
-			nm_log_warn (LOGD_DHCP4, "DHCP provided invalid classless static route gateway: '%s'", *(r + 1));
-			continue;
-		}
-
-		have_routes = TRUE;
-		if (rt_cidr == 0 && rt_addr.s_addr == 0) {
-			/* FIXME: how to handle multiple routers? */
-			*gwaddr = rt_addr.s_addr;
-		} else {
-			route = nm_ip4_route_new ();
-			nm_ip4_route_set_dest (route, (guint32) rt_addr.s_addr);
-			nm_ip4_route_set_prefix (route, rt_cidr);
-			nm_ip4_route_set_next_hop (route, (guint32) rt_route.s_addr);
-
-
-			nm_ip4_config_take_route (ip4_config, route);
-			nm_log_info (LOGD_DHCP4, "  classless static route %s/%d gw %s", *r, rt_cidr, *(r + 1));
-		}
-	}
-
-out:
-	g_strfreev (routes);
-	return have_routes;
 }
 
 /***************************************************/
@@ -289,6 +215,5 @@ nm_dhcp_dhcpcd_class_init (NMDHCPDhcpcdClass *dhcpcd_class)
 	client_class->ip4_start = real_ip4_start;
 	client_class->ip6_start = real_ip6_start;
 	client_class->stop = real_stop;
-	client_class->ip4_process_classless_routes = real_ip4_process_classless_routes;
 }
 

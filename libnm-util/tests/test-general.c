@@ -28,6 +28,7 @@
 
 #include "nm-setting-connection.h"
 #include "nm-setting-vpn.h"
+#include "nm-setting-gsm.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-dbus-glib-types.h"
 
@@ -222,6 +223,72 @@ test_setting_ip6_config_old_address_array (void)
 	g_object_unref (s_ip6);
 }
 
+static void
+test_setting_gsm_apn_spaces (void)
+{
+	NMSettingGsm *s_gsm;
+	const char *tmp;
+
+	s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
+	ASSERT (s_gsm != NULL,
+	        "gsm-apn-spaces",
+	        "error creating GSM setting");
+
+	/* Trailing space */
+	g_object_set (s_gsm, NM_SETTING_GSM_APN, "foobar ", NULL);
+	tmp = nm_setting_gsm_get_apn (s_gsm);
+	ASSERT (tmp != NULL,
+	        "gsm-apn-spaces", "empty APN");
+	ASSERT (strcmp (tmp, "foobar") == 0,
+	        "gsm-apn-spaces", "unexpected APN");
+
+	/* Leading space */
+	g_object_set (s_gsm, NM_SETTING_GSM_APN, " foobar", NULL);
+	tmp = nm_setting_gsm_get_apn (s_gsm);
+	ASSERT (tmp != NULL,
+	        "gsm-apn-spaces", "empty APN");
+	ASSERT (strcmp (tmp, "foobar") == 0,
+	        "gsm-apn-spaces", "unexpected APN");
+}
+
+static void
+test_setting_gsm_apn_bad_chars (void)
+{
+	NMSettingGsm *s_gsm;
+
+	s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
+	ASSERT (s_gsm != NULL,
+	        "gsm-apn-bad-chars",
+	        "error creating GSM setting");
+
+	g_object_set (s_gsm, NM_SETTING_GSM_NUMBER, "*99#", NULL);
+
+	/* Make sure a valid APN works */
+	g_object_set (s_gsm, NM_SETTING_GSM_APN, "foobar123.-baz", NULL);
+	ASSERT (nm_setting_verify (NM_SETTING (s_gsm), NULL, NULL) == TRUE,
+	        "gsm-apn-bad-chars", "unexpectedly invalid GSM setting");
+
+	/* Random invalid chars */
+	g_object_set (s_gsm, NM_SETTING_GSM_APN, "@#%$@#%@#%", NULL);
+	ASSERT (nm_setting_verify (NM_SETTING (s_gsm), NULL, NULL) == FALSE,
+	        "gsm-apn-bad-chars", "unexpectedly valid GSM setting");
+
+	/* Spaces */
+	g_object_set (s_gsm, NM_SETTING_GSM_APN, "foobar baz", NULL);
+	ASSERT (nm_setting_verify (NM_SETTING (s_gsm), NULL, NULL) == FALSE,
+	        "gsm-apn-bad-chars", "unexpectedly valid GSM setting");
+
+	/* 0 characters long */
+	g_object_set (s_gsm, NM_SETTING_GSM_APN, "", NULL);
+	ASSERT (nm_setting_verify (NM_SETTING (s_gsm), NULL, NULL) == FALSE,
+	        "gsm-apn-bad-chars", "unexpectedly valid GSM setting");
+
+	/* 65-character long */
+	g_object_set (s_gsm, NM_SETTING_GSM_APN, "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijkl1", NULL);
+	ASSERT (nm_setting_verify (NM_SETTING (s_gsm), NULL, NULL) == FALSE,
+	        "gsm-apn-bad-chars", "unexpectedly valid GSM setting");
+}
+
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
@@ -237,6 +304,8 @@ int main (int argc, char **argv)
 	/* The tests */
 	test_setting_vpn_items ();
 	test_setting_ip6_config_old_address_array ();
+	test_setting_gsm_apn_spaces ();
+	test_setting_gsm_apn_bad_chars ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);

@@ -18,6 +18,7 @@
  * Copyright (C) 2008 - 2010 Red Hat, Inc.
  */
 
+#include <config.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
@@ -251,8 +252,9 @@ create_dm_cmd_line (const char *iface,
 	GString *s;
 	NMIP4Address *tmp;
 	struct in_addr addr;
-	char buf[INET_ADDRSTRLEN + 1];
+	char buf[INET_ADDRSTRLEN + 15];
 	char localaddr[INET_ADDRSTRLEN + 1];
+	int i;
 
 	dm_binary = nm_find_dnsmasq ();
 	if (!dm_binary) {
@@ -272,6 +274,21 @@ create_dm_cmd_line (const char *iface,
 		nm_cmd_line_add_string (cmd, "--log-dhcp");
 		nm_cmd_line_add_string (cmd, "--log-queries");
 	}
+
+	/* dnsmasq may read from it's default config file location, which if that
+	 * location is a valid config file, it will combine with the options here
+	 * and cause undesirable side-effects.  Like sending bogus IP addresses
+	 * as the gateway or whatever.  So give dnsmasq a bogus config file
+	 * location to avoid screwing up the configuration we're passing to it.
+	 */
+	memset (buf, 0, sizeof (buf));
+	strcpy (buf, "/tmp/");
+	for (i = 5; i < 15; i++)
+		buf[i] = (char) (g_random_int_range ((guint32) 'a', (guint32) 'z') & 0xFF);
+	strcat (buf, ".conf");
+
+	nm_cmd_line_add_string (cmd, "--conf-file");
+	nm_cmd_line_add_string (cmd, buf);
 
 	nm_cmd_line_add_string (cmd, "--no-hosts");
 	nm_cmd_line_add_string (cmd, "--keep-in-foreground");
@@ -369,7 +386,7 @@ kill_existing_for_iface (const char *iface, const char *pidfile)
 		goto out;
 
 	if (strstr (cmdline_contents, "bin/dnsmasq")) {
-		if (kill (pid, 0)) {
+		if (kill (pid, 0) == 0) {
 			nm_log_dbg (LOGD_SHARING, "Killing stale dnsmasq process %ld", pid);
 			kill (pid, SIGKILL);
 		}

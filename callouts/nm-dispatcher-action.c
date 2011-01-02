@@ -489,6 +489,10 @@ nm_dispatcher_action (Handler *h,
 	if (!d->persist)
 		d->quit_timeout = g_timeout_add_seconds (10, quit_timeout_cb, NULL);
 
+	/* Hostname changes don't require a device nor contain a connection */
+	if (!strcmp (action, "hostname"))
+		goto dispatch;
+
 	connection = nm_connection_new_from_hash (connection_hash, error);
 	if (connection) {
 		NMSettingConnection *s_con;
@@ -505,10 +509,6 @@ nm_dispatcher_action (Handler *h,
 		g_error_free (*error);
 		*error = NULL;
 	}
-
-	/* Hostname changes don't require a device */
-	if (!strcmp (action, "hostname"))
-		goto dispatch;
 
 	/* interface name */
 	value = g_hash_table_lookup (device_props, NMD_DEVICE_PROPS_INTERFACE);

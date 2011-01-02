@@ -15,13 +15,14 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2008 Red Hat, Inc.
+ * Copyright (C) 2004 - 2010 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
 #include "wireless-helper.h"
 
 #include <string.h>
+#include <stdlib.h>
 
 #include "nm-wifi-ap.h"
 #include "NetworkManagerUtils.h"
@@ -153,6 +154,8 @@ set_property (GObject *object, guint prop_id,
 	case PROP_STRENGTH:
 		nm_ap_set_strength (ap, g_value_get_char (value));
 		break;
+	case PROP_HW_ADDRESS:
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -242,7 +245,7 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 							NM_802_11_AP_FLAGS_NONE,
 							NM_802_11_AP_FLAGS_PRIVACY,
 							NM_802_11_AP_FLAGS_NONE,
-							G_PARAM_READWRITE));
+							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property
 		(object_class, PROP_WPA_FLAGS,
@@ -252,7 +255,7 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 							NM_802_11_AP_SEC_NONE,
 							all_sec_flags,
 							NM_802_11_AP_SEC_NONE,
-							G_PARAM_READWRITE));
+							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property
 		(object_class, PROP_RSN_FLAGS,
@@ -262,7 +265,7 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 							NM_802_11_AP_SEC_NONE,
 							all_sec_flags,
 							NM_802_11_AP_SEC_NONE,
-							G_PARAM_READWRITE));
+							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property
 		(object_class, PROP_SSID,
@@ -270,7 +273,7 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 	                         "SSID",
 	                         "SSID",
 	                         DBUS_TYPE_G_UCHAR_ARRAY,
-	                         G_PARAM_READWRITE));
+	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property
 		(object_class, PROP_FREQUENCY,
@@ -278,7 +281,7 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 							"Frequency",
 							"Frequency",
 							0, 10000, 0,
-							G_PARAM_READWRITE));
+							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,
@@ -286,7 +289,7 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 							  "MAC Address",
 							  "Hardware MAC address",
 							  NULL,
-							  G_PARAM_READABLE));
+							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 	
 	g_object_class_install_property
 		(object_class, PROP_MODE,
@@ -294,7 +297,7 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 						   "Mode",
 						   "Mode",
 						   NM_802_11_MODE_ADHOC, NM_802_11_MODE_INFRA, NM_802_11_MODE_INFRA,
-						   G_PARAM_READWRITE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property
 		(object_class, PROP_MAX_BITRATE,
@@ -302,7 +305,7 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 							"Max Bitrate",
 							"Max Bitrate",
 							0, G_MAXUINT16, 0,
-							G_PARAM_READWRITE));
+							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property
 		(object_class, PROP_STRENGTH,
@@ -310,7 +313,7 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 							"Strength",
 							"Strength",
 							G_MININT8, G_MAXINT8, 0,
-							G_PARAM_READWRITE));
+							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	/* Signals */
 	signals[PROPERTIES_CHANGED] = 
@@ -367,10 +370,69 @@ NMAccessPoint *nm_ap_new (void)
 	return (NMAccessPoint *) object;
 }
 
+static guint32
+pair_to_flags (const char *str)
+{
+	g_return_val_if_fail (str != NULL, NM_802_11_AP_SEC_NONE);
 
-#define IEEE80211_CAP_ESS       0x0001
-#define IEEE80211_CAP_IBSS      0x0002
-#define IEEE80211_CAP_PRIVACY   0x0010
+	if (strcmp (str, "wep40") == 0)
+		return NM_802_11_AP_SEC_PAIR_WEP40;
+	if (strcmp (str, "wep104") == 0)
+		return NM_802_11_AP_SEC_PAIR_WEP104;
+	if (strcmp (str, "tkip") == 0)
+		return NM_802_11_AP_SEC_PAIR_TKIP;
+	if (strcmp (str, "ccmp") == 0)
+		return NM_802_11_AP_SEC_PAIR_CCMP;
+	return NM_802_11_AP_SEC_NONE;
+}
+
+static guint32
+group_to_flags (const char *str)
+{
+	g_return_val_if_fail (str != NULL, NM_802_11_AP_SEC_NONE);
+
+	if (strcmp (str, "wep40") == 0)
+		return NM_802_11_AP_SEC_GROUP_WEP40;
+	if (strcmp (str, "wep104") == 0)
+		return NM_802_11_AP_SEC_GROUP_WEP104;
+	if (strcmp (str, "tkip") == 0)
+		return NM_802_11_AP_SEC_GROUP_TKIP;
+	if (strcmp (str, "ccmp") == 0)
+		return NM_802_11_AP_SEC_GROUP_CCMP;
+	return NM_802_11_AP_SEC_NONE;
+}
+
+static guint32
+security_from_dict (GHashTable *security)
+{
+	GValue *value;
+	guint32 flags = NM_802_11_AP_SEC_NONE;
+	const char **items, **iter;
+
+	value = g_hash_table_lookup (security, "KeyMgmt");
+	if (value) {
+		items = g_value_get_boxed (value);
+		for (iter = items; iter && *iter; iter++) {
+			if (strcmp (*iter, "wpa-psk") == 0)
+				flags |= NM_802_11_AP_SEC_KEY_MGMT_PSK;
+			else if (strcmp (*iter, "wpa-eap") == 0)
+				flags |= NM_802_11_AP_SEC_KEY_MGMT_802_1X;
+		}
+	}
+
+	value = g_hash_table_lookup (security, "Pairwise");
+	if (value) {
+		items = g_value_get_boxed (value);
+		for (iter = items; iter && *iter; iter++)
+			flags |= pair_to_flags (*iter);
+	}
+
+	value = g_hash_table_lookup (security, "Group");
+	if (value)
+		flags |= group_to_flags (g_value_get_string (value));
+
+	return flags;
+}
 
 static void
 foreach_property_cb (gpointer key, gpointer value, gpointer user_data)
@@ -381,9 +443,9 @@ foreach_property_cb (gpointer key, gpointer value, gpointer user_data)
 	if (G_VALUE_HOLDS_BOXED (variant)) {
 		GArray *array = g_value_get_boxed (variant);
 
-		if (!strcmp (key, "ssid")) {
+		if (!strcmp (key, "SSID")) {
 			guint32 len = MIN (IW_ESSID_MAX_SIZE, array->len);
-			GByteArray * ssid;
+			GByteArray *ssid;
 
 			/* Stupid ieee80211 layer uses <hidden> */
 			if (((len == 8) || (len == 9))
@@ -397,7 +459,7 @@ foreach_property_cb (gpointer key, gpointer value, gpointer user_data)
 			g_byte_array_append (ssid, (const guint8 *) array->data, len);
 			nm_ap_set_ssid (ap, ssid);
 			g_byte_array_free (ssid, TRUE);
-		} else if (!strcmp (key, "bssid")) {
+		} else if (!strcmp (key, "BSSID")) {
 			struct ether_addr addr;
 
 			if (array->len != ETH_ALEN)
@@ -405,50 +467,68 @@ foreach_property_cb (gpointer key, gpointer value, gpointer user_data)
 			memset (&addr, 0, sizeof (struct ether_addr));
 			memcpy (&addr, array->data, ETH_ALEN);
 			nm_ap_set_address (ap, &addr);
-		} else if (!strcmp (key, "wpaie")) {
-			guint8 * ie = (guint8 *) array->data;
+		} else if (!strcmp (key, "Rates")) {
+			guint32 maxrate = 0;
+			int i;
+
+			/* Find the max AP rate */
+			for (i = 0; i < array->len; i++) {
+				guint32 r = g_array_index (array, guint32, i);
+
+				if (r > maxrate) {
+					maxrate = r;
+					nm_ap_set_max_bitrate (ap, r / 1000);
+				}
+			}
+		} else if (!strcmp (key, "WPA")) {
 			guint32 flags = nm_ap_get_wpa_flags (ap);
 
-			if (array->len <= 0 || array->len > WPA_MAX_IE_LEN)
-				return;
-			flags = nm_ap_add_security_from_ie (flags, ie, array->len);
+			flags |= security_from_dict (g_value_get_boxed (variant));
 			nm_ap_set_wpa_flags (ap, flags);
-		} else if (!strcmp (key, "rsnie")) {
-			guint8 * ie = (guint8 *) array->data;
+		} else if (!strcmp (key, "RSN")) {
 			guint32 flags = nm_ap_get_rsn_flags (ap);
 
-			if (array->len <= 0 || array->len > WPA_MAX_IE_LEN)
-				return;
-			flags = nm_ap_add_security_from_ie (flags, ie, array->len);
+			flags |= security_from_dict (g_value_get_boxed (variant));
 			nm_ap_set_rsn_flags (ap, flags);
-		}
-	} else if (G_VALUE_HOLDS_INT (variant)) {
-		gint32 int_val = g_value_get_int (variant);
-
-		if (!strcmp (key, "frequency")) {
-			nm_ap_set_freq (ap, (guint32) int_val);
-		} else if (!strcmp (key, "maxrate")) {
-			/* Supplicant reports as b/s, we use Kb/s internally */
-			nm_ap_set_max_bitrate (ap, int_val / 1000);
 		}
 	} else if (G_VALUE_HOLDS_UINT (variant)) {
 		guint32 val = g_value_get_uint (variant);
 
-		if (!strcmp (key, "capabilities")) {
-			if (val & IEEE80211_CAP_ESS) {
-				nm_ap_set_mode (ap, NM_802_11_MODE_INFRA);
-			} else if (val & IEEE80211_CAP_IBSS) {
-				nm_ap_set_mode (ap, NM_802_11_MODE_ADHOC);
-			}
+		if (!strcmp (key, "Frequency"))
+			nm_ap_set_freq (ap, val);
+	} else if (G_VALUE_HOLDS_INT (variant)) {
+		gint val = g_value_get_int (variant);
 
-			if (val & IEEE80211_CAP_PRIVACY) {
+		if (!strcmp (key, "Signal")) {
+			if (val < 0) {
+				/* Rough conversion: best = -40, worst = -100 */
+				val = abs (CLAMP (val, -100, -40) + 40);
+				val = 100 - (int) ((100.0 * (double) val) / 60.0);
+			} else
+				val /= 100;
+
+			nm_ap_set_strength (ap, val);
+		}
+	} else if (G_VALUE_HOLDS_STRING (variant)) {
+		const char *val = g_value_get_string (variant);
+
+		if (val && !strcmp (key, "Mode")) {
+			if (strcmp (val, "infrastructure") == 0)
+				nm_ap_set_mode (ap, NM_802_11_MODE_INFRA);
+			else if (strcmp (val, "ad-hoc") == 0)
+				nm_ap_set_mode (ap, NM_802_11_MODE_ADHOC);
+		}
+	} else if (G_VALUE_HOLDS_BOOLEAN (variant)) {
+		gboolean val = g_value_get_boolean (variant);
+
+		if (strcmp (key, "Privacy") == 0) {
+			if (val) {
 				guint32 flags = nm_ap_get_flags (ap);
 				nm_ap_set_flags (ap, flags | NM_802_11_AP_FLAGS_PRIVACY);
 			}
 		}
 	}
 }
-
 
 NMAccessPoint *
 nm_ap_new_from_properties (GHashTable *properties)
@@ -604,7 +684,7 @@ nm_ap_new_fake_from_connection (NMConnection *connection)
 	channel = nm_setting_wireless_get_channel (s_wireless);
 
 	if (band && channel) {
-		guint32 freq = channel_to_freq (channel, band);
+		guint32 freq = nm_utils_wifi_channel_to_freq (channel, band);
 
 		if (freq == 0)
 			goto error;
@@ -1168,45 +1248,6 @@ void nm_ap_set_user_addresses (NMAccessPoint *ap, GSList *list)
 }
 
 
-guint32
-nm_ap_add_security_from_ie (guint32 flags,
-                            const guint8 *wpa_ie,
-                            guint32 length)
-{
-	wpa_ie_data * cap_data;
-
-	if (!(cap_data = wpa_parse_wpa_ie (wpa_ie, length)))
-		return NM_802_11_AP_SEC_NONE;
-
-	/* Pairwise cipher flags */
-	if (cap_data->pairwise_cipher & IW_AUTH_CIPHER_WEP40)
-		flags |= NM_802_11_AP_SEC_PAIR_WEP40;
-	if (cap_data->pairwise_cipher & IW_AUTH_CIPHER_WEP104)
-		flags |= NM_802_11_AP_SEC_PAIR_WEP104;
-	if (cap_data->pairwise_cipher & IW_AUTH_CIPHER_TKIP)
-		flags |= NM_802_11_AP_SEC_PAIR_TKIP;
-	if (cap_data->pairwise_cipher & IW_AUTH_CIPHER_CCMP)
-		flags |= NM_802_11_AP_SEC_PAIR_CCMP;
-
-	/* Group cipher flags */
-	if (cap_data->group_cipher & IW_AUTH_CIPHER_WEP40)
-		flags |= NM_802_11_AP_SEC_GROUP_WEP40;
-	if (cap_data->group_cipher & IW_AUTH_CIPHER_WEP104)
-		flags |= NM_802_11_AP_SEC_GROUP_WEP104;
-	if (cap_data->group_cipher & IW_AUTH_CIPHER_TKIP)
-		flags |= NM_802_11_AP_SEC_GROUP_TKIP;
-	if (cap_data->group_cipher & IW_AUTH_CIPHER_CCMP)
-		flags |= NM_802_11_AP_SEC_GROUP_CCMP;
-
-	if (cap_data->key_mgmt & IW_AUTH_KEY_MGMT_802_1X)
-		flags |= NM_802_11_AP_SEC_KEY_MGMT_802_1X;
-	if (cap_data->key_mgmt & IW_AUTH_KEY_MGMT_PSK)
-		flags |= NM_802_11_AP_SEC_KEY_MGMT_PSK;
-
-	g_slice_free (wpa_ie_data, cap_data);
-	return flags;
-}
-
 gboolean
 nm_ap_check_compatible (NMAccessPoint *self,
                         NMConnection *connection)
@@ -1256,21 +1297,21 @@ nm_ap_check_compatible (NMAccessPoint *self,
 
 	channel = nm_setting_wireless_get_channel (s_wireless);
 	if (channel) {
-		guint32 ap_chan = freq_to_channel (priv->freq);
+		guint32 ap_chan = nm_utils_wifi_freq_to_channel (priv->freq);
 
 		if (channel != ap_chan)
 			return FALSE;
 	}
 
 	s_wireless_sec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection,
-															    NM_TYPE_SETTING_WIRELESS_SECURITY);
+	                                                                          NM_TYPE_SETTING_WIRELESS_SECURITY);
 
 	return nm_setting_wireless_ap_security_compatible (s_wireless,
-											 s_wireless_sec,
-											 nm_ap_get_flags (self),
-											 nm_ap_get_wpa_flags (self),
-											 nm_ap_get_rsn_flags (self),
-											 nm_ap_get_mode (self));
+	                                                   s_wireless_sec,
+	                                                   nm_ap_get_flags (self),
+	                                                   nm_ap_get_wpa_flags (self),
+	                                                   nm_ap_get_rsn_flags (self),
+	                                                   nm_ap_get_mode (self));
 }
 
 static gboolean
@@ -1362,116 +1403,5 @@ nm_ap_match_in_list (NMAccessPoint *find_ap,
 	}
 
 	return NULL;
-}
-
-
-struct cf_pair {
-	guint32 chan;
-	guint32 freq;
-};
-
-static struct cf_pair a_table[] = {
-	/* A band */
-	{  7, 5035 },
-	{  8, 5040 },
-	{  9, 5045 },
-	{ 11, 5055 },
-	{ 12, 5060 },
-	{ 16, 5080 },
-	{ 34, 5170 },
-	{ 36, 5180 },
-	{ 38, 5190 },
-	{ 40, 5200 },
-	{ 42, 5210 },
-	{ 44, 5220 },
-	{ 46, 5230 },
-	{ 48, 5240 },
-	{ 50, 5250 },
-	{ 52, 5260 },
-	{ 56, 5280 },
-	{ 58, 5290 },
-	{ 60, 5300 },
-	{ 64, 5320 },
-	{ 100, 5500 },
-	{ 104, 5520 },
-	{ 108, 5540 },
-	{ 112, 5560 },
-	{ 116, 5580 },
-	{ 120, 5600 },
-	{ 124, 5620 },
-	{ 128, 5640 },
-	{ 132, 5660 },
-	{ 136, 5680 },
-	{ 140, 5700 },
-	{ 149, 5745 },
-	{ 152, 5760 },
-	{ 153, 5765 },
-	{ 157, 5785 },
-	{ 160, 5800 },
-	{ 161, 5805 },
-	{ 165, 5825 },
-	{ 183, 4915 },
-	{ 184, 4920 },
-	{ 185, 4925 },
-	{ 187, 4935 },
-	{ 188, 4945 },
-	{ 192, 4960 },
-	{ 196, 4980 },
-	{ 0, -1 }
-};
-
-static struct cf_pair bg_table[] = {
-	/* B/G band */
-	{ 1, 2412 },
-	{ 2, 2417 },
-	{ 3, 2422 },
-	{ 4, 2427 },
-	{ 5, 2432 },
-	{ 6, 2437 },
-	{ 7, 2442 },
-	{ 8, 2447 },
-	{ 9, 2452 },
-	{ 10, 2457 },
-	{ 11, 2462 },
-	{ 12, 2467 },
-	{ 13, 2472 },
-	{ 14, 2484 },
-	{ 0, -1 }
-};
-
-guint32
-freq_to_channel (guint32 freq)
-{
-	int i = 0;
-
-	if (freq > 4900) {
-		while (a_table[i].chan && (a_table[i].freq != freq))
-			i++;
-		return a_table[i].chan;
-	} else {
-		while (bg_table[i].chan && (bg_table[i].freq != freq))
-			i++;
-		return bg_table[i].chan;
-	}
-
-	return 0;
-}
-
-guint32
-channel_to_freq (guint32 channel, const char *band)
-{
-	int i = 0;
-
-	if (!strcmp (band, "a")) {
-		while (a_table[i].chan && (a_table[i].chan != channel))
-			i++;
-		return a_table[i].freq;
-	} else if (!strcmp (band, "bg")) {
-		while (bg_table[i].chan && (bg_table[i].chan != channel))
-			i++;
-		return bg_table[i].freq;
-	}
-
-	return 0;
 }
 

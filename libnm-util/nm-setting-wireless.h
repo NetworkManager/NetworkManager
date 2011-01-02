@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2010 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -63,6 +63,7 @@ GQuark nm_setting_wireless_error_quark (void);
 #define NM_SETTING_WIRELESS_RATE        "rate"
 #define NM_SETTING_WIRELESS_TX_POWER    "tx-power"
 #define NM_SETTING_WIRELESS_MAC_ADDRESS "mac-address"
+#define NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS "cloned-mac-address"
 #define NM_SETTING_WIRELESS_MTU         "mtu"
 #define NM_SETTING_WIRELESS_SEEN_BSSIDS "seen-bssids"
 #define NM_SETTING_WIRELESS_SEC         "security"
@@ -93,6 +94,7 @@ const GByteArray *nm_setting_wireless_get_bssid              (NMSettingWireless 
 guint32           nm_setting_wireless_get_rate               (NMSettingWireless *setting);
 guint32           nm_setting_wireless_get_tx_power           (NMSettingWireless *setting);
 const GByteArray *nm_setting_wireless_get_mac_address        (NMSettingWireless *setting);
+const GByteArray *nm_setting_wireless_get_cloned_mac_address (NMSettingWireless *setting);
 guint32           nm_setting_wireless_get_mtu                (NMSettingWireless *setting);
 const char       *nm_setting_wireless_get_security           (NMSettingWireless *setting);
 

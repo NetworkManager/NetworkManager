@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2008 Red Hat, Inc.
+ * Copyright (C) 2005 - 2010 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -43,6 +43,7 @@ G_BEGIN_DECLS
 
 
 #define NM_DEVICE_WIFI_HW_ADDRESS          "hw-address"
+#define NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS "perm-hw-address"
 #define NM_DEVICE_WIFI_MODE                "mode"
 #define NM_DEVICE_WIFI_BITRATE             "bitrate"
 #define NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT "active-access-point"
@@ -85,18 +86,15 @@ NMDevice *nm_device_wifi_new (const char *udi,
                               const char *iface,
                               const char *driver);
 
-void nm_device_wifi_get_address (NMDeviceWifi *dev,
-								   struct ether_addr *addr);
+void nm_device_wifi_get_address (NMDeviceWifi *dev, struct ether_addr *addr);
 
-void			nm_device_wifi_get_bssid (NMDeviceWifi *dev,
-                                                    struct ether_addr *bssid);
+void nm_device_wifi_get_bssid (NMDeviceWifi *dev, struct ether_addr *bssid);
 
-const GByteArray *	nm_device_wifi_get_ssid (NMDeviceWifi *self);
+const GByteArray * nm_device_wifi_get_ssid (NMDeviceWifi *self);
 
-gboolean		nm_device_wifi_set_mode (NMDeviceWifi *self,
-										 const NM80211Mode mode);
+gboolean nm_device_wifi_set_mode (NMDeviceWifi *self, const NM80211Mode mode);
 
-NM80211Mode	nm_device_wifi_get_mode (NMDeviceWifi *self);
+NM80211Mode nm_device_wifi_get_mode (NMDeviceWifi *self);
 
 NMAccessPoint * nm_device_wifi_get_activation_ap (NMDeviceWifi *self);
 

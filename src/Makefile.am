@@ -1,6 +1,6 @@
 SUBDIRS= \
 	logging \
-	named-manager \
+	dns-manager \
 	vpn-manager \
 	dhcp-manager \
 	ip6-manager \
@@ -19,7 +19,7 @@ INCLUDES = -I${top_srcdir}                   \
            -I${top_srcdir}/include           \
            -I${top_builddir}/marshallers   \
            -I${top_srcdir}/src/logging \
-           -I${top_srcdir}/src/named-manager \
+           -I${top_srcdir}/src/dns-manager \
            -I${top_srcdir}/src/vpn-manager   \
            -I${top_srcdir}/src/dhcp-manager  \
            -I${top_srcdir}/src/ip6-manager  \
@@ -135,6 +135,8 @@ NetworkManager_SOURCES = \
 		nm-system.h \
 		nm-manager.c \
 		nm-manager.h \
+		nm-manager-auth.c \
+		nm-manager-auth.h \
 		nm-netlink-monitor.c \
 		nm-netlink-monitor.h \
 		nm-activation-request.c \
@@ -150,46 +152,46 @@ NetworkManager_SOURCES = \
 		nm-rfkill.h
 
 nm-access-point-glue.h: $(top_srcdir)/introspection/nm-access-point.xml
-	dbus-binding-tool --prefix=nm_access_point --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_access_point --mode=glib-server --output=$@ $<
 
 nm-manager-glue.h: $(top_srcdir)/introspection/nm-manager.xml
-	dbus-binding-tool --prefix=nm_manager --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_manager --mode=glib-server --output=$@ $<
 
 nm-device-interface-glue.h: $(top_srcdir)/introspection/nm-device.xml
-	dbus-binding-tool --prefix=nm_device_interface --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_interface --mode=glib-server --output=$@ $<
 
 nm-device-ethernet-glue.h: $(top_srcdir)/introspection/nm-device-ethernet.xml
-	dbus-binding-tool --prefix=nm_device_ethernet --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_ethernet --mode=glib-server --output=$@ $<
 
 nm-device-wifi-glue.h: $(top_srcdir)/introspection/nm-device-wifi.xml
-	dbus-binding-tool --prefix=nm_device_wifi --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_wifi --mode=glib-server --output=$@ $<
 
 nm-device-bt-glue.h: $(top_srcdir)/introspection/nm-device-bt.xml
-	dbus-binding-tool --prefix=nm_device_bt --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_bt --mode=glib-server --output=$@ $<
 
 nm-device-olpc-mesh-glue.h: $(top_srcdir)/introspection/nm-device-olpc-mesh.xml
-	dbus-binding-tool --prefix=nm_device_olpc_mesh --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_olpc_mesh --mode=glib-server --output=$@ $<
 
 nm-ip4-config-glue.h: $(top_srcdir)/introspection/nm-ip4-config.xml
-	dbus-binding-tool --prefix=nm_ip4_config --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_ip4_config --mode=glib-server --output=$@ $<
 
 nm-ip6-config-glue.h: $(top_srcdir)/introspection/nm-ip6-config.xml
-	dbus-binding-tool --prefix=nm_ip6_config --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_ip6_config --mode=glib-server --output=$@ $<
 
 nm-active-connection-glue.h: $(top_srcdir)/introspection/nm-active-connection.xml
-	dbus-binding-tool --prefix=nm_active_connection --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_active_connection --mode=glib-server --output=$@ $<
 
 nm-dhcp4-config-glue.h: $(top_srcdir)/introspection/nm-dhcp4-config.xml
-	dbus-binding-tool --prefix=nm_dhcp4_config --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_dhcp4_config --mode=glib-server --output=$@ $<
 
 nm-dhcp6-config-glue.h: $(top_srcdir)/introspection/nm-dhcp6-config.xml
-	dbus-binding-tool --prefix=nm_dhcp6_config --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_dhcp6_config --mode=glib-server --output=$@ $<
 
 nm-device-cdma-glue.h: $(top_srcdir)/introspection/nm-device-cdma.xml
-	dbus-binding-tool --prefix=nm_device_cdma --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_cdma --mode=glib-server --output=$@ $<
 
 nm-device-gsm-glue.h: $(top_srcdir)/introspection/nm-device-gsm.xml
-	dbus-binding-tool --prefix=nm_device_gsm --mode=glib-server --output=$@ $<
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_gsm --mode=glib-server --output=$@ $<
 
 BUILT_SOURCES = \
 	nm-access-point-glue.h \
@@ -214,6 +216,7 @@ NetworkManager_CPPFLAGS = \
 	$(LIBNL_CFLAGS) \
 	$(GMODULE_CFLAGS) \
 	$(WIMAX_CFLAGS) \
+	$(POLKIT_CFLAGS) \
 	-DG_DISABLE_DEPRECATED \
 	-DBINDIR=\"$(bindir)\" \
 	-DSBINDIR=\"$(sbindir)\" \
@@ -228,7 +231,7 @@ NetworkManager_CPPFLAGS = \
 NetworkManager_LDADD = \
 	$(top_builddir)/marshallers/libmarshallers.la \
 	./logging/libnm-logging.la \
-	./named-manager/libnamed-manager.la \
+	./dns-manager/libdns-manager.la \
 	./vpn-manager/libvpn-manager.la \
 	./dhcp-manager/libdhcp-manager.la \
 	./ip6-manager/libip6-manager.la \
@@ -246,6 +249,7 @@ NetworkManager_LDADD = \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS) \
 	$(GMODULE_LIBS) \
+	$(POLKIT_LIBS) \
 	$(LIBM) \
 	$(LIBDL)
 
@@ -275,8 +279,10 @@ EXTRA_DIST = \
 	$(NetworkManager_DATA)
 
 rundir=$(localstatedir)/run/NetworkManager
+statedir=$(localstatedir)/lib/NetworkManager
 install-data-hook:
 	$(mkinstalldirs) -m 0700 $(DESTDIR)$(rundir)
+	$(mkinstalldirs) -m 0700 $(DESTDIR)$(statedir)
 
 CLEANFILES = $(BUILT_SOURCES)
 
