@@ -42,7 +42,8 @@ static guint32 log_domains = \
 	LOGD_HW | LOGD_RFKILL | LOGD_ETHER | LOGD_WIFI | LOGD_BT | LOGD_MB | \
 	LOGD_DHCP4 | LOGD_DHCP6 | LOGD_PPP | LOGD_IP4 | LOGD_IP6 | LOGD_AUTOIP4 | \
 	LOGD_DNS | LOGD_VPN | LOGD_SHARING | LOGD_SUPPLICANT | LOGD_USER_SET | \
-	LOGD_SYS_SET | LOGD_SUSPEND | LOGD_CORE | LOGD_DEVICE | LOGD_OLPC_MESH;
+	LOGD_SYS_SET | LOGD_SUSPEND | LOGD_CORE | LOGD_DEVICE | LOGD_OLPC_MESH | \
+	LOGD_WIMAX;
 
 typedef struct {
 	guint32 num;
@@ -82,6 +83,7 @@ static const LogDesc domain_descs[] = {
 	{ LOGD_CORE,      "CORE" },
 	{ LOGD_DEVICE,    "DEVICE" },
 	{ LOGD_OLPC_MESH, "OLPC" },
+	{ LOGD_WIMAX,     "WIMAX" },
 	{ 0, NULL }
 };
 
