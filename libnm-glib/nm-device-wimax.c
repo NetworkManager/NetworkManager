@@ -518,6 +518,19 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	/* properties */
 
 	/**
+	 * NMDeviceWimax:hw-address:
+	 *
+	 * The hardware (MAC) address of the device.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_HW_ADDRESS,
+		 g_param_spec_string (NM_DEVICE_WIMAX_HW_ADDRESS,
+		                      "MAC Address",
+		                      "Hardware MAC address",
+		                      NULL,
+		                      G_PARAM_READABLE));
+
+	/**
 	 * NMDeviceWimax:active-nsp:
 	 *
 	 * The active #NMWimaxNsp of the device.
