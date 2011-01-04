@@ -36,7 +36,7 @@ typedef struct {
 	DBusGProxy *proxy;
 
 	char *name;
-	guint8 signal_quality;
+	guint32 signal_quality;
 	NMWimaxNspNetworkType network_type;
 } NMWimaxNspPrivate;
 
@@ -106,7 +106,7 @@ nm_wimax_nsp_get_name (NMWimaxNsp *nsp)
  *
  * Returns: the signal quality
  **/
-guint8
+guint32
 nm_wimax_nsp_get_signal_quality (NMWimaxNsp *nsp)
 {
 	NMWimaxNspPrivate *priv;
@@ -140,7 +140,7 @@ nm_wimax_nsp_get_network_type (NMWimaxNsp *nsp)
 
 	priv = NM_WIMAX_NSP_GET_PRIVATE (nsp);
 	if (!priv->network_type) {
-		priv->network_type = _nm_object_get_byte_property (NM_OBJECT (nsp),
+		priv->network_type = _nm_object_get_uint_property (NM_OBJECT (nsp),
 		                                                   NM_DBUS_INTERFACE_WIMAX_NSP,
 		                                                   DBUS_PROP_NETWORK_TYPE);
 	}
@@ -282,11 +282,11 @@ nm_wimax_nsp_class_init (NMWimaxNspClass *nsp_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SIGNAL_QUALITY,
-		 g_param_spec_uchar (NM_WIMAX_NSP_SIGNAL_QUALITY,
-							 "Signal Quality",
-							 "Signal Quality",
-							 0, G_MAXUINT8, 0,
-							 G_PARAM_READABLE));
+		 g_param_spec_uint (NM_WIMAX_NSP_SIGNAL_QUALITY,
+		                    "Signal Quality",
+		                    "Signal Quality",
+		                    0, 100, 0,
+		                    G_PARAM_READABLE));
 
 	/**
 	 * NMWimaxNsp:network-type:

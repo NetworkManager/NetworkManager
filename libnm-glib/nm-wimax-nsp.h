@@ -17,6 +17,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
+ * Copyright (C) 2011 Red Hat, Inc.
  * Copyright (C) 2009 Novell, Inc.
  */
 
@@ -69,7 +70,7 @@ GType nm_wimax_nsp_get_type (void);
 GObject *nm_wimax_nsp_new (DBusGConnection *connection, const char *path);
 
 const char           * nm_wimax_nsp_get_name           (NMWimaxNsp *nsp);
-guint8                 nm_wimax_nsp_get_signal_quality (NMWimaxNsp *nsp);
+guint32                nm_wimax_nsp_get_signal_quality (NMWimaxNsp *nsp);
 NMWimaxNspNetworkType  nm_wimax_nsp_get_network_type   (NMWimaxNsp *nsp);
 
 G_END_DECLS

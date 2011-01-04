@@ -231,13 +231,13 @@ nm_wimax_nsp_class_init (NMWimaxNspClass *klass)
 
 	g_object_class_install_property
 		(object_class, PROP_NETWORK_TYPE,
-		 g_param_spec_uchar (NM_WIMAX_NSP_NETWORK_TYPE,
-							 "NetworkType",
-							 "NetworkType",
-							 NM_WIMAX_NSP_NETWORK_TYPE_UNKNOWN,
-							 NM_WIMAX_NSP_NETWORK_TYPE_ROAMING_PARTNER,
-							 NM_WIMAX_NSP_NETWORK_TYPE_UNKNOWN,
-							 G_PARAM_READWRITE));
+		 g_param_spec_uint (NM_WIMAX_NSP_NETWORK_TYPE,
+		                    "NetworkType",
+		                    "NetworkType",
+		                    NM_WIMAX_NSP_NETWORK_TYPE_UNKNOWN,
+		                    NM_WIMAX_NSP_NETWORK_TYPE_ROAMING_PARTNER,
+		                    NM_WIMAX_NSP_NETWORK_TYPE_UNKNOWN,
+		                    G_PARAM_READWRITE));
 
 	/* Signals */
 	signals[PROPERTIES_CHANGED] = 
