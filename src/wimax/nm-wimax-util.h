@@ -21,17 +21,18 @@
 #ifndef NM_WIMAX_UTIL_H
 #define NM_WIMAX_UTIL_H
 
+#include <glib.h>
+
 #include <WiMaxType.h>
 #include <WiMaxError.h>
 #include "nm-wimax-types.h"
 
-void nm_wimax_util_error (WIMAX_API_DEVICE_ID *device_id,
-			  const char *message,
-			  WIMAX_API_RET result);
+void nm_wimax_util_sdk_ref (void);
+
+gboolean nm_wimax_util_sdk_is_initialized (void);
+
+void nm_wimax_util_sdk_unref (void);
 
 NMWimaxNspNetworkType nm_wimax_util_convert_network_type (WIMAX_API_NETWORK_TYPE wimax_network_type);
-int nm_wimax_util_cinr_to_percentage (int cinr);
-
-const char *nm_wimax_util_device_status_to_str (WIMAX_API_DEVICE_STATUS status);
 
 #endif	/* NM_WIMAX_UTIL_H */

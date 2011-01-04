@@ -1,5 +1,6 @@
 INCLUDES = \
 	-I${top_srcdir}/src \
+	-I${top_srcdir}/src/logging \
 	-I${top_srcdir}/include \
 	-I${top_srcdir}/libnm-util \
 	-I${top_builddir}/marshallers
@@ -7,15 +8,15 @@ INCLUDES = \
 noinst_LTLIBRARIES = libwimax.la
 
 libwimax_la_SOURCES = \
-	nm-wimax-device.c \
-	nm-wimax-device.h \
-	nm-wimax-manager.c \
-	nm-wimax-manager.h \
+	nm-device-wimax.c \
+	nm-device-wimax.h \
 	nm-wimax-nsp.c \
 	nm-wimax-nsp.h \
 	nm-wimax-types.h \
 	nm-wimax-util.c \
-	nm-wimax-util.h
+	nm-wimax-util.h \
+	iwmxsdk.c \
+	iwmxsdk.h
 
 libwimax_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
@@ -29,11 +30,11 @@ libwimax_la_LIBADD = \
 nm-wimax-nsp-glue.h: $(top_srcdir)/introspection/nm-wimax-nsp.xml
 	dbus-binding-tool --prefix=nm_wimax_nsp --mode=glib-server --output=$@ $<
 
-nm-wimax-device-glue.h: $(top_srcdir)/introspection/nm-wimax-device.xml
-	dbus-binding-tool --prefix=nm_wimax_device --mode=glib-server --output=$@ $<
+nm-device-wimax-glue.h: $(top_srcdir)/introspection/nm-device-wimax.xml
+	dbus-binding-tool --prefix=nm_device_wimax --mode=glib-server --output=$@ $<
 
 BUILT_SOURCES = \
 	nm-wimax-nsp-glue.h \
-	nm-wimax-device-glue.h
+	nm-device-wimax-glue.h
 
 CLEANFILES = $(BUILT_SOURCES)

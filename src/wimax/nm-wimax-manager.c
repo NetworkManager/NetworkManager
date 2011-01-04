@@ -15,120 +15,81 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 Novell, Inc.
+ * Copyright (C) 2009 - 2010 Red Hat, Inc.
  */
 
-#include <stdio.h>
-#include <net/if.h>
-#include <WiMaxAPI.h>
-
 #include "nm-wimax-manager.h"
-#include "nm-wimax-device.h"
-#include "nm-wimax-util.h"
+#include "nm-logging.h"
+#include "iwmxsdk.h"
+
+G_DEFINE_TYPE (NMWimaxManager, nm_wimax_manager, G_TYPE_OBJECT)
+
+#define NM_WIMAX_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
+                                         NM_TYPE_WIMAX_MANAGER, \
+                                         NMWimaxManagerPrivate))
 
 typedef struct {
-	WIMAX_API_DEVICE_ID device_id;
-	int refs;
-} NMWimaxManager;
+	gboolean disposed;
 
-static NMWimaxManager *global_wimax_manager = NULL;
+	gboolean sdk_initialized;
+} NMWimaxManagerPrivate;
 
-static NMWimaxManager *
+/***************************************************/
+
+/*************************************************************/
+
+NMWimaxManager *
 nm_wimax_manager_get (void)
 {
-	WIMAX_API_RET result;
+	static NMWimaxManager *singleton = NULL;
 
-	if (!global_wimax_manager) {
-		global_wimax_manager = g_new (NMWimaxManager, 1);
-		global_wimax_manager->refs = 1;
+	if (!singleton)
+		singleton = NM_WIMAX_MANAGER (g_object_new (NM_TYPE_WIMAX_MANAGER, NULL));
+	else
+		g_object_ref (singleton);
 
-		g_debug ("Opening WiMAX API");
-		global_wimax_manager->device_id.structureSize = sizeof (NMWimaxManager);
-		global_wimax_manager->device_id.privilege = WIMAX_API_PRIVILEGE_READ_WRITE;
-		result = WiMaxAPIOpen (&global_wimax_manager->device_id);
-		if (result != WIMAX_API_RET_SUCCESS) {
-			nm_wimax_util_error (&global_wimax_manager->device_id, "Could not initialize WiMax", result);
-			g_free (global_wimax_manager);
-			global_wimax_manager = NULL;
-		}
-	} else
-		global_wimax_manager->refs++;
-
-	return global_wimax_manager;
+	g_assert (singleton);
+	return singleton;
 }
 
 static void
-nm_wimax_manager_unref (NMWimaxManager *manager)
+nm_wimax_manager_init (NMWimaxManager *self)
 {
-	if (--manager->refs == 0) {
-		g_debug ("Closing WiMAX API");
-		WiMaxAPIClose (&manager->device_id);
-		g_free (manager);
-		global_wimax_manager = NULL;
+	NMWimaxManagerPrivate *priv = NM_WIMAX_MANAGER_GET_PRIVATE (self);
+	int ret;
+
+	ret = iwmx_sdk_api_init();
+	if (ret != 0) {
+		nm_log_warn (LOGD_WIMAX, "Failed to initialize WiMAX: %d", ret);
+		return;
 	}
+
+	priv->sdk_initialized = TRUE;
 }
 
-static gboolean
-wimax_device_matches (WIMAX_API_HW_DEVICE_ID *hw_id,
-					  const char *ifname)
+static void
+dispose (GObject *object)
 {
-	const char *device_name;
-	char *s;
-	char hw_ifname[16];
+	NMWimaxManagerPrivate *priv = NM_WIMAX_MANAGER_GET_PRIVATE (object);
 
-	if (!hw_id)
-		return FALSE;
+	if (!priv->disposed) {
+		priv->disposed = TRUE;
 
-	device_name = (const char *) hw_id->deviceName;
-	if (!device_name)
-		return FALSE;
+		if (priv->sdk_initialized)
+			iwmx_sdk_api_exit ();
+	}
 
-	s = g_strrstr (device_name, "if:");
-	if (s == NULL || sscanf (s, "if:%15[^ \f\n\r\t\v]", hw_ifname) != 1)
-		return FALSE;
-
-	if (g_strcmp0 (ifname, hw_ifname))
-		return FALSE;
-
-	return TRUE;
+	G_OBJECT_CLASS (nm_wimax_manager_parent_class)->dispose (object);
 }
 
-NMDevice *
-nm_wimax_manager_create_device (const char *path,
-								const char *ifname,
-								const char *driver)
+static void
+nm_wimax_manager_class_init (NMWimaxManagerClass *wimax_class)
 {
-	NMWimaxManager *manager;
-	WIMAX_API_HW_DEVICE_ID device_id_list[5];
-	NMDevice *device = NULL;
-    guint32 device_id_list_size = 5;
-	WIMAX_API_RET result;
+	GObjectClass *object_class = G_OBJECT_CLASS (wimax_class);
 
-	g_return_val_if_fail (path != NULL, NULL);
-	g_return_val_if_fail (ifname != NULL, NULL);
-	g_return_val_if_fail (driver != NULL, NULL);
+	g_type_class_add_private (wimax_class, sizeof (NMWimaxManagerPrivate));
 
-	manager = nm_wimax_manager_get ();
-	if (!manager)
-		return NULL;
-
-	result = GetListDevice (&manager->device_id, device_id_list, &device_id_list_size);
-	if (result == WIMAX_API_RET_SUCCESS) {
-		int i;
-
-		for (i = 0; i < device_id_list_size; i++) {
-			if (wimax_device_matches (&device_id_list[i], ifname)) {
-				device = nm_wimax_device_new (path, ifname, driver, device_id_list[0].deviceIndex);
-				break;
-			}
-		}
-	} else
-		nm_wimax_util_error (&manager->device_id, "Could not get WiMax device list", result);
-
-	if (device)
-		g_object_weak_ref (G_OBJECT (device), (GWeakNotify) nm_wimax_manager_unref, manager);
-	else
-		nm_wimax_manager_unref (manager);
-
-	return device;
+	/* virtual methods */
+	object_class->dispose = dispose;
 }
+

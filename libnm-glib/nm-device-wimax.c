@@ -17,26 +17,27 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
+ * Copyright (C) 2011 Red Hat, Inc.
  * Copyright (C) 2009 Novell, Inc.
  */
 
 #include <string.h>
 
-#include "nm-wimax-device.h"
+#include "nm-device-wimax.h"
 #include "nm-object-private.h"
 #include "nm-object-cache.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-types-private.h"
 
-#include "nm-wimax-device-bindings.h"
+#include "nm-device-wimax-bindings.h"
 
-G_DEFINE_TYPE (NMWimaxDevice, nm_wimax_device, NM_TYPE_DEVICE)
+G_DEFINE_TYPE (NMDeviceWimax, nm_device_wimax, NM_TYPE_DEVICE)
 
-#define NM_WIMAX_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_WIMAX_DEVICE, NMWimaxDevicePrivate))
+#define NM_DEVICE_WIMAX_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_WIMAX, NMDeviceWimaxPrivate))
 
 static gboolean demarshal_active_nsp (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field);
 
-void _nm_wimax_device_set_wireless_enabled (NMWimaxDevice *wimax, gboolean enabled);
+void _nm_device_wimax_set_wireless_enabled (NMDeviceWimax *wimax, gboolean enabled);
 
 typedef struct {
 	gboolean disposed;
@@ -46,7 +47,7 @@ typedef struct {
 	NMWimaxNsp *active_nsp;
 	gboolean null_active_nsp;
 	GPtrArray *nsps;
-} NMWimaxDevicePrivate;
+} NMDeviceWimaxPrivate;
 
 enum {
 	PROP_0,
@@ -69,46 +70,46 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 /**
- * nm_wimax_device_new:
+ * nm_device_wimax_new:
  * @connection: the #DBusGConnection
  * @path: the DBus object path of the wimax
  *
- * Creates a new #NMWimaxDevice.
+ * Creates a new #NMDeviceWimax.
  *
  * Returns: a new wimax
  **/
 GObject *
-nm_wimax_device_new (DBusGConnection *connection, const char *path)
+nm_device_wimax_new (DBusGConnection *connection, const char *path)
 {
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (path != NULL, NULL);
 
-	return g_object_new (NM_TYPE_WIMAX_DEVICE,
+	return g_object_new (NM_TYPE_DEVICE_WIMAX,
 	                     NM_OBJECT_DBUS_CONNECTION, connection,
 	                     NM_OBJECT_DBUS_PATH, path,
 	                     NULL);
 }
 
 /**
- * nm_wimax_device_get_hw_address:
- * @device: a #NMWimaxDevice
+ * nm_device_wimax_get_hw_address:
+ * @device: a #NMDeviceWimax
  *
- * Gets the hardware (MAC) address of the #NMWimaxDevice
+ * Gets the hardware (MAC) address of the #NMDeviceWimax
  *
  * Returns: the hardware address. This is the internal string used by the
  * device, and must not be modified.
  **/
 const char *
-nm_wimax_device_get_hw_address (NMWimaxDevice *wimax)
+nm_device_wimax_get_hw_address (NMDeviceWimax *wimax)
 {
-	NMWimaxDevicePrivate *priv;
+	NMDeviceWimaxPrivate *priv;
 
-	g_return_val_if_fail (NM_IS_WIMAX_DEVICE (wimax), NULL);
+	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (wimax), NULL);
 
-	priv = NM_WIMAX_DEVICE_GET_PRIVATE (wimax);
+	priv = NM_DEVICE_WIMAX_GET_PRIVATE (wimax);
 	if (!priv->hw_address) {
 		priv->hw_address = _nm_object_get_string_property (NM_OBJECT (wimax),
-														   NM_DBUS_INTERFACE_WIMAX_DEVICE,
+														   NM_DBUS_INTERFACE_DEVICE_WIMAX,
 														   DBUS_PROP_HW_ADDRESS);
 	}
 
@@ -116,22 +117,22 @@ nm_wimax_device_get_hw_address (NMWimaxDevice *wimax)
 }
 
 /**
- * nm_wimax_device_get_active_nsp:
- * @wimax: a #NMWimaxDevice
+ * nm_device_wimax_get_active_nsp:
+ * @wimax: a #NMDeviceWimax
  *
  * Gets the active #NMWimaxNsp.
  *
  * Returns: the access point or %NULL if none is active
  **/
 NMWimaxNsp *
-nm_wimax_device_get_active_nsp (NMWimaxDevice *wimax)
+nm_device_wimax_get_active_nsp (NMDeviceWimax *wimax)
 {
-	NMWimaxDevicePrivate *priv;
+	NMDeviceWimaxPrivate *priv;
 	NMDeviceState state;
 	char *path;
 	GValue value = { 0, };
 
-	g_return_val_if_fail (NM_IS_WIMAX_DEVICE (wimax), NULL);
+	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (wimax), NULL);
 
 	state = nm_device_get_state (NM_DEVICE (wimax));
 	switch (state) {
@@ -146,14 +147,14 @@ nm_wimax_device_get_active_nsp (NMWimaxDevice *wimax)
 		break;
 	}
 
-	priv = NM_WIMAX_DEVICE_GET_PRIVATE (wimax);
+	priv = NM_DEVICE_WIMAX_GET_PRIVATE (wimax);
 	if (priv->active_nsp)
 		return priv->active_nsp;
 	if (priv->null_active_nsp)
 		return NULL;
 
 	path = _nm_object_get_object_path_property (NM_OBJECT (wimax),
-												NM_DBUS_INTERFACE_WIMAX_DEVICE,
+												NM_DBUS_INTERFACE_DEVICE_WIMAX,
 												DBUS_PROP_ACTIVE_NSP);
 	if (path) {
 		g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
@@ -166,26 +167,26 @@ nm_wimax_device_get_active_nsp (NMWimaxDevice *wimax)
 }
 
 /**
- * nm_wimax_device_get_nsps:
- * @wimax: a #NMWimaxDevice
+ * nm_device_wimax_get_nsps:
+ * @wimax: a #NMDeviceWimax
  *
- * Gets all the scanned NSPs of the #NMWimaxDevice.
+ * Gets all the scanned NSPs of the #NMDeviceWimax.
  *
  * Returns: a #GPtrArray containing all the scanned #NMWimaxNsp<!-- -->s.
  * The returned array is owned by the client and should not be modified.
  **/
 const GPtrArray *
-nm_wimax_device_get_nsps (NMWimaxDevice *wimax)
+nm_device_wimax_get_nsps (NMDeviceWimax *wimax)
 {
-	NMWimaxDevicePrivate *priv;
+	NMDeviceWimaxPrivate *priv;
 	DBusGConnection *connection;
 	GValue value = { 0, };
 	GError *error = NULL;
 	GPtrArray *temp;
 
-	g_return_val_if_fail (NM_IS_WIMAX_DEVICE (wimax), NULL);
+	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (wimax), NULL);
 
-	priv = NM_WIMAX_DEVICE_GET_PRIVATE (wimax);
+	priv = NM_DEVICE_WIMAX_GET_PRIVATE (wimax);
 	if (priv->nsps)
 		return handle_ptr_array_return (priv->nsps);
 
@@ -205,8 +206,8 @@ nm_wimax_device_get_nsps (NMWimaxDevice *wimax)
 }
 
 /**
- * nm_wimax_device_get_nsp_by_path:
- * @wimax: a #NMWimaxDevice
+ * nm_device_wimax_get_nsp_by_path:
+ * @wimax: a #NMDeviceWimax
  * @path: the object path of the NSP
  *
  * Gets a #NMWimaxNsp by path.
@@ -214,17 +215,17 @@ nm_wimax_device_get_nsps (NMWimaxDevice *wimax)
  * Returns: the access point or %NULL if none is found.
  **/
 NMWimaxNsp *
-nm_wimax_device_get_nsp_by_path (NMWimaxDevice *wimax,
+nm_device_wimax_get_nsp_by_path (NMDeviceWimax *wimax,
 								 const char *path)
 {
 	const GPtrArray *nsps;
 	int i;
 	NMWimaxNsp *nsp = NULL;
 
-	g_return_val_if_fail (NM_IS_WIMAX_DEVICE (wimax), NULL);
+	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (wimax), NULL);
 	g_return_val_if_fail (path != NULL, NULL);
 
-	nsps = nm_wimax_device_get_nsps (wimax);
+	nsps = nm_device_wimax_get_nsps (wimax);
 	if (!nsps)
 		return NULL;
 
@@ -242,17 +243,17 @@ nm_wimax_device_get_nsp_by_path (NMWimaxDevice *wimax,
 static void
 nsp_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 {
-	NMWimaxDevice *self = NM_WIMAX_DEVICE (user_data);
-	NMWimaxDevicePrivate *priv;
+	NMDeviceWimax *self = NM_DEVICE_WIMAX (user_data);
+	NMDeviceWimaxPrivate *priv;
 	GObject *nsp;
 
 	g_return_if_fail (self != NULL);
 
-	nsp = G_OBJECT (nm_wimax_device_get_nsp_by_path (self, path));
+	nsp = G_OBJECT (nm_device_wimax_get_nsp_by_path (self, path));
 	if (!nsp) {
 		DBusGConnection *connection = nm_object_get_connection (NM_OBJECT (self));
 
-		priv = NM_WIMAX_DEVICE_GET_PRIVATE (self);
+		priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 		nsp = G_OBJECT (_nm_object_cache_get (path));
 		if (nsp) {
 			g_ptr_array_add (priv->nsps, g_object_ref (nsp));
@@ -270,20 +271,20 @@ nsp_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 static void
 nsp_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 {
-	NMWimaxDevice *self = NM_WIMAX_DEVICE (user_data);
-	NMWimaxDevicePrivate *priv = NM_WIMAX_DEVICE_GET_PRIVATE (self);
+	NMDeviceWimax *self = NM_DEVICE_WIMAX (user_data);
+	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 	NMWimaxNsp *nsp;
 
 	g_return_if_fail (self != NULL);
 
-	nsp = nm_wimax_device_get_nsp_by_path (self, path);
+	nsp = nm_device_wimax_get_nsp_by_path (self, path);
 	if (nsp) {
 		if (nsp == priv->active_nsp) {
 			g_object_unref (priv->active_nsp);
 			priv->active_nsp = NULL;
 			priv->null_active_nsp = FALSE;
 
-			_nm_object_queue_notify (NM_OBJECT (self), NM_WIMAX_DEVICE_ACTIVE_NSP);
+			_nm_object_queue_notify (NM_OBJECT (self), NM_DEVICE_WIMAX_ACTIVE_NSP);
 		}
 
 		g_signal_emit (self, signals[NSP_REMOVED], 0, nsp);
@@ -293,13 +294,13 @@ nsp_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 }
 
 static void
-clean_up_nsps (NMWimaxDevice *self, gboolean notify)
+clean_up_nsps (NMDeviceWimax *self, gboolean notify)
 {
-	NMWimaxDevicePrivate *priv;
+	NMDeviceWimaxPrivate *priv;
 
-	g_return_if_fail (NM_IS_WIMAX_DEVICE (self));
+	g_return_if_fail (NM_IS_DEVICE_WIMAX (self));
 
-	priv = NM_WIMAX_DEVICE_GET_PRIVATE (self);
+	priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 
 	if (priv->active_nsp) {
 		g_object_unref (priv->active_nsp);
@@ -323,7 +324,7 @@ clean_up_nsps (NMWimaxDevice *self, gboolean notify)
 /**************************************************************/
 
 static void
-nm_wimax_device_init (NMWimaxDevice *wimax)
+nm_device_wimax_init (NMDeviceWimax *wimax)
 {
 }
 
@@ -333,14 +334,14 @@ get_property (GObject *object,
               GValue *value,
               GParamSpec *pspec)
 {
-	NMWimaxDevice *self = NM_WIMAX_DEVICE (object);
+	NMDeviceWimax *self = NM_DEVICE_WIMAX (object);
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
-		g_value_set_string (value, nm_wimax_device_get_hw_address (self));
+		g_value_set_string (value, nm_device_wimax_get_hw_address (self));
 		break;
 	case PROP_ACTIVE_NSP:
-		g_value_set_object (value, nm_wimax_device_get_active_nsp (self));
+		g_value_set_object (value, nm_device_wimax_get_active_nsp (self));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -351,8 +352,8 @@ get_property (GObject *object,
 static void
 state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 {
-	NMWimaxDevice *self = NM_WIMAX_DEVICE (device);
-	NMWimaxDevicePrivate *priv = NM_WIMAX_DEVICE_GET_PRIVATE (self);
+	NMDeviceWimax *self = NM_DEVICE_WIMAX (device);
+	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 
 	switch (nm_device_get_state (device)) {
 	case NM_DEVICE_STATE_UNKNOWN:
@@ -365,7 +366,7 @@ state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 			priv->active_nsp = NULL;
 			priv->null_active_nsp = FALSE;
 		}
-		_nm_object_queue_notify (NM_OBJECT (device), NM_WIMAX_DEVICE_ACTIVE_NSP);
+		_nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_WIMAX_ACTIVE_NSP);
 		break;
 	default:
 		break;
@@ -375,7 +376,7 @@ state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 static gboolean
 demarshal_active_nsp (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
 {
-	NMWimaxDevicePrivate *priv = NM_WIMAX_DEVICE_GET_PRIVATE (object);
+	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (object);
 	const char *path;
 	NMWimaxNsp *nsp = NULL;
 	DBusGConnection *connection;
@@ -408,17 +409,17 @@ demarshal_active_nsp (NMObject *object, GParamSpec *pspec, GValue *value, gpoint
 	if (nsp)
 		priv->active_nsp = nsp;
 
-	_nm_object_queue_notify (object, NM_WIMAX_DEVICE_ACTIVE_NSP);
+	_nm_object_queue_notify (object, NM_DEVICE_WIMAX_ACTIVE_NSP);
 	return TRUE;
 }
 
 static void
-register_for_property_changed (NMWimaxDevice *wimax)
+register_for_property_changed (NMDeviceWimax *wimax)
 {
-	NMWimaxDevicePrivate *priv = NM_WIMAX_DEVICE_GET_PRIVATE (wimax);
+	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (wimax);
 	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_WIMAX_DEVICE_HW_ADDRESS, _nm_object_demarshal_generic, &priv->hw_address },
-		{ NM_WIMAX_DEVICE_ACTIVE_NSP, demarshal_active_nsp, &priv->active_nsp },
+		{ NM_DEVICE_WIMAX_HW_ADDRESS, _nm_object_demarshal_generic, &priv->hw_address },
+		{ NM_DEVICE_WIMAX_ACTIVE_NSP, demarshal_active_nsp, &priv->active_nsp },
 		{ NULL },
 	};
 
@@ -433,20 +434,20 @@ constructor (GType type,
 		   GObjectConstructParam *construct_params)
 {
 	GObject *object;
-	NMWimaxDevicePrivate *priv;
+	NMDeviceWimaxPrivate *priv;
 
-	object = G_OBJECT_CLASS (nm_wimax_device_parent_class)->constructor (type,
+	object = G_OBJECT_CLASS (nm_device_wimax_parent_class)->constructor (type,
 																		 n_construct_params,
 																		 construct_params);
 	if (!object)
 		return NULL;
 
-	priv = NM_WIMAX_DEVICE_GET_PRIVATE (object);
+	priv = NM_DEVICE_WIMAX_GET_PRIVATE (object);
 
 	priv->proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (object)),
 											 NM_DBUS_SERVICE,
 											 nm_object_get_path (NM_OBJECT (object)),
-											 NM_DBUS_INTERFACE_WIMAX_DEVICE);
+											 NM_DBUS_INTERFACE_DEVICE_WIMAX);
 
 	dbus_g_proxy_add_signal (priv->proxy, "NspAdded",
 	                         DBUS_TYPE_G_OBJECT_PATH,
@@ -462,7 +463,7 @@ constructor (GType type,
 								 G_CALLBACK (nsp_removed_proxy),
 								 object, NULL);
 
-	register_for_property_changed (NM_WIMAX_DEVICE (object));
+	register_for_property_changed (NM_DEVICE_WIMAX (object));
 
 	g_signal_connect (object,
 	                  "notify::" NM_DEVICE_STATE,
@@ -475,38 +476,38 @@ constructor (GType type,
 static void
 dispose (GObject *object)
 {
-	NMWimaxDevicePrivate *priv = NM_WIMAX_DEVICE_GET_PRIVATE (object);
+	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (object);
 
 	if (priv->disposed) {
-		G_OBJECT_CLASS (nm_wimax_device_parent_class)->dispose (object);
+		G_OBJECT_CLASS (nm_device_wimax_parent_class)->dispose (object);
 		return;
 	}
 
 	priv->disposed = TRUE;
 
-	clean_up_nsps (NM_WIMAX_DEVICE (object), FALSE);
+	clean_up_nsps (NM_DEVICE_WIMAX (object), FALSE);
 	g_object_unref (priv->proxy);
 
-	G_OBJECT_CLASS (nm_wimax_device_parent_class)->dispose (object);
+	G_OBJECT_CLASS (nm_device_wimax_parent_class)->dispose (object);
 }
 
 static void
 finalize (GObject *object)
 {
-	NMWimaxDevicePrivate *priv = NM_WIMAX_DEVICE_GET_PRIVATE (object);
+	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (object);
 
 	if (priv->hw_address)
 		g_free (priv->hw_address);
 
-	G_OBJECT_CLASS (nm_wimax_device_parent_class)->finalize (object);
+	G_OBJECT_CLASS (nm_device_wimax_parent_class)->finalize (object);
 }
 
 static void
-nm_wimax_device_class_init (NMWimaxDeviceClass *wimax_class)
+nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (wimax_class);
 
-	g_type_class_add_private (wimax_class, sizeof (NMWimaxDevicePrivate));
+	g_type_class_add_private (wimax_class, sizeof (NMDeviceWimaxPrivate));
 
 	/* virtual methods */
 	object_class->constructor = constructor;
@@ -517,13 +518,13 @@ nm_wimax_device_class_init (NMWimaxDeviceClass *wimax_class)
 	/* properties */
 
 	/**
-	 * NMWimaxDevice:active-nsp:
+	 * NMDeviceWimax:active-nsp:
 	 *
 	 * The active #NMWimaxNsp of the device.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ACTIVE_NSP,
-		 g_param_spec_object (NM_WIMAX_DEVICE_ACTIVE_NSP,
+		 g_param_spec_object (NM_DEVICE_WIMAX_ACTIVE_NSP,
 							  "Active NSP",
 							  "Active NSP",
 							  NM_TYPE_WIMAX_NSP,
@@ -532,7 +533,7 @@ nm_wimax_device_class_init (NMWimaxDeviceClass *wimax_class)
 	/* signals */
 
 	/**
-	 * NMWimaxDevice::nsp-added:
+	 * NMDeviceWimax::nsp-added:
 	 * @self: the wimax device that received the signal
 	 * @nsp: the new NSP
 	 *
@@ -542,14 +543,14 @@ nm_wimax_device_class_init (NMWimaxDeviceClass *wimax_class)
 		g_signal_new ("nsp-added",
 				    G_OBJECT_CLASS_TYPE (object_class),
 				    G_SIGNAL_RUN_FIRST,
-				    G_STRUCT_OFFSET (NMWimaxDeviceClass, nsp_added),
+				    G_STRUCT_OFFSET (NMDeviceWimaxClass, nsp_added),
 				    NULL, NULL,
 				    g_cclosure_marshal_VOID__OBJECT,
 				    G_TYPE_NONE, 1,
 				    G_TYPE_OBJECT);
 
 	/**
-	 * NMWimaxDevice::nsp-removed:
+	 * NMDeviceWimax::nsp-removed:
 	 * @self: the wimax device that received the signal
 	 * @nsp: the removed NSP
 	 *
@@ -559,7 +560,7 @@ nm_wimax_device_class_init (NMWimaxDeviceClass *wimax_class)
 		g_signal_new ("nsp-removed",
 				    G_OBJECT_CLASS_TYPE (object_class),
 				    G_SIGNAL_RUN_FIRST,
-				    G_STRUCT_OFFSET (NMWimaxDeviceClass, nsp_removed),
+				    G_STRUCT_OFFSET (NMDeviceWimaxClass, nsp_removed),
 				    NULL, NULL,
 				    g_cclosure_marshal_VOID__OBJECT,
 				    G_TYPE_NONE, 1,

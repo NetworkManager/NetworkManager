@@ -11,6 +11,7 @@ EXTRA_DIST = \
 	nm-device-cdma.xml \
 	nm-device-gsm.xml \
 	nm-device-serial.xml \
+	nm-device-wimax.xml \
 	nm-device.xml \
 	nm-ip4-config.xml \
 	nm-ip6-config.xml \
@@ -25,6 +26,5 @@ EXTRA_DIST = \
 	nm-active-connection.xml \
 	nm-dhcp4-config.xml \
 	nm-dhcp6-config.xml \
-	nm-wimax-device.xml \
 	nm-wimax-nsp.xml
 

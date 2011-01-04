@@ -21,21 +21,41 @@
 #include <WiMaxAPI.h>
 #include "nm-wimax-util.h"
 #include "nm-utils.h"
+#include "iwmxsdk.h"
+#include "nm-logging.h"
+
+static guint sdk_refcount = 0;
 
 void
-nm_wimax_util_error (WIMAX_API_DEVICE_ID *device_id,
-					 const char *message,
-					 WIMAX_API_RET result)
+nm_wimax_util_sdk_ref (void)
 {
-	char *warning_msg;
-    char str[MAX_SIZE_OF_STRING_BUFFER];
-    guint32 str_len = MAX_SIZE_OF_STRING_BUFFER;
+	int ret = 0;
 
-    GetErrorString (device_id, result, str, &str_len);
-    warning_msg = g_strconcat (message, ": %s (%d)", NULL);
-    g_warning (warning_msg, str, result);
-    g_free (warning_msg);
-}			  
+	if (sdk_refcount == 0) {
+		ret = iwmx_sdk_api_init ();
+		if (ret != 0) {
+			nm_log_warn (LOGD_WIMAX, "Failed to initialize WiMAX: %d", ret);
+			return;
+		}
+	}
+	sdk_refcount++;
+}
+
+gboolean
+nm_wimax_util_sdk_is_initialized (void)
+{
+	return sdk_refcount > 0;
+}
+
+void
+nm_wimax_util_sdk_unref (void)
+{
+	g_return_if_fail (sdk_refcount > 0);
+
+	sdk_refcount--;
+	if (sdk_refcount == 0)
+		iwmx_sdk_api_exit ();
+}
 
 NMWimaxNspNetworkType
 nm_wimax_util_convert_network_type (WIMAX_API_NETWORK_TYPE wimax_network_type)
@@ -60,56 +80,3 @@ nm_wimax_util_convert_network_type (WIMAX_API_NETWORK_TYPE wimax_network_type)
 	return type;
 }
 
-/* cinr_to_percentage() and the comment is borrowed from connman */
-
-/*
- * FIXME: pulled it it out of some hole
- *
- * the cinr to percentage computation comes from the L3/L4 doc
- *
- * But some other places (L4 code) have a more complex, seemingly
- * logarithmical computation.
- *
- * Oh well...
- *
- */
-
-int
-nm_wimax_util_cinr_to_percentage (int cinr)
-{
-	int strength;
-
-	if (cinr <= -5)
-		strength = 0;
-	else if (cinr >= 25)
-		strength = 100;
-	else	/* Calc percentage on the value from -5 to 25 */
-		strength = ((100UL * (cinr - -5)) / (25 - -5));
-
-	return strength;
-}
-
-const char *
-nm_wimax_util_device_status_to_str (WIMAX_API_DEVICE_STATUS status)
-{
-	switch (status) {
-	case WIMAX_API_DEVICE_STATUS_UnInitialized:
-		return "Device is uninitialized";
-	case WIMAX_API_DEVICE_STATUS_RF_OFF_HW_SW:
-		return "Device RF Off(both H/W and S/W)";
-	case WIMAX_API_DEVICE_STATUS_RF_OFF_HW:
-		return "Device RF Off(via H/W switch)";
-	case WIMAX_API_DEVICE_STATUS_RF_OFF_SW:
-		return "Device RF Off(via S/W switch)";
-	case WIMAX_API_DEVICE_STATUS_Ready:
-		return "Device is ready";
-	case WIMAX_API_DEVICE_STATUS_Scanning:
-		return "Device is scanning";
-	case WIMAX_API_DEVICE_STATUS_Connecting:
-		return "Connection in progress";
-	case WIMAX_API_DEVICE_STATUS_Data_Connected:
-		return "Layer 2 connected";
-	}
-
-	return "Unknown device state";
-}

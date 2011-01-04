@@ -167,12 +167,12 @@ global:
 	nm_vpn_connection_get_type;
 	nm_vpn_connection_get_vpn_state;
 	nm_vpn_connection_new;
-	nm_wimax_device_get_hw_address;
-	nm_wimax_device_get_active_nsp;
-	nm_wimax_device_get_nsp_by_path;
-	nm_wimax_device_get_nsps;
-	nm_wimax_device_get_type;
-	nm_wimax_device_new;
+	nm_device_wimax_get_hw_address;
+	nm_device_wimax_get_active_nsp;
+	nm_device_wimax_get_nsp_by_path;
+	nm_device_wimax_get_nsps;
+	nm_device_wimax_get_type;
+	nm_device_wimax_new;
 	nm_wimax_nsp_get_name;
 	nm_wimax_nsp_get_network_type;
 	nm_wimax_nsp_get_signal_quality;

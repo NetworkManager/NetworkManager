@@ -10,6 +10,7 @@ BUILT_SOURCES = \
 	nm-device-ethernet-bindings.h \
 	nm-device-wifi-bindings.h \
 	nm-device-bt-bindings.h \
+	nm-device-wimax-bindings.h \
 	nm-exported-connection-glue.h \
 	nm-exported-connection-bindings.h \
 	nm-settings-glue.h \
@@ -21,8 +22,7 @@ BUILT_SOURCES = \
 	nm-ip4-config-bindings.h \
 	nm-dhcp4-config-bindings.h \
 	nm-ip6-config-bindings.h \
-	nm-dhcp6-config-bindings.h \
-	nm-wimax-device-bindings.h
+	nm-dhcp6-config-bindings.h
 
 #####################################################
 # Deprecated original libnm_glib bits
@@ -86,7 +86,7 @@ libnminclude_HEADERS = \
 	nm-settings-connection-interface.h \
 	nm-exported-connection.h \
 	nm-settings-service.h \
-	nm-wimax-device.h \
+	nm-device-wimax.h \
 	nm-wimax-nsp.h
 
 libnm_glib_la_SOURCES = \
@@ -123,7 +123,7 @@ libnm_glib_la_SOURCES = \
 	nm-settings-connection-interface.c \
 	nm-exported-connection.c \
 	nm-settings-service.c \
-	nm-wimax-device.c \
+	nm-device-wimax.c \
 	nm-wimax-nsp.c
 
 libnm_glib_la_LIBADD = \
@@ -205,8 +205,8 @@ nm-ip6-config-bindings.h: $(top_srcdir)/introspection/nm-ip6-config.xml
 nm-dhcp6-config-bindings.h: $(top_srcdir)/introspection/nm-dhcp6-config.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_dhcp6_config --mode=glib-client --output=$@ $<
 
-nm-wimax-device-bindings.h: $(top_srcdir)/introspection/nm-wimax-device.xml
-	dbus-binding-tool --prefix=nm_wimax_device --mode=glib-client --output=$@ $<
+nm-device-wimax-bindings.h: $(top_srcdir)/introspection/nm-device-wimax.xml
+	dbus-binding-tool --prefix=nm_device_wimax --mode=glib-client --output=$@ $<
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libnm-glib.pc libnm-glib-vpn.pc
