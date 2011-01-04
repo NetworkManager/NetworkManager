@@ -139,7 +139,7 @@ set_property (GObject *object, guint prop_id,
 {
 	NMWimaxNspPrivate *priv = GET_PRIVATE (object);
 	guint32 quality;
-	guchar network_type;
+	guint network_type;
 
 	switch (prop_id) {
 	case PROP_NAME:
@@ -154,7 +154,7 @@ set_property (GObject *object, guint prop_id,
 		}
 		break;
 	case PROP_NETWORK_TYPE:
-		network_type = g_value_get_uchar (value);
+		network_type = g_value_get_uint (value);
 		if (network_type != priv->network_type) {
 			priv->network_type = network_type;
 			g_object_notify (object, NM_WIMAX_NSP_NETWORK_TYPE);
@@ -180,7 +180,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, nm_wimax_nsp_get_signal_quality (self));
 		break;
 	case PROP_NETWORK_TYPE:
-		g_value_set_uchar (value, nm_wimax_nsp_get_network_type (self));
+		g_value_set_uint (value, nm_wimax_nsp_get_network_type (self));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
