@@ -114,10 +114,11 @@ nm_wimax_nsp_get_signal_quality (NMWimaxNsp *nsp)
 	g_return_val_if_fail (NM_IS_WIMAX_NSP (nsp), 0);
 
 	priv = NM_WIMAX_NSP_GET_PRIVATE (nsp);
-	if (!priv->signal_quality)
-		priv->signal_quality = _nm_object_get_byte_property (NM_OBJECT (nsp),
-															 NM_DBUS_INTERFACE_WIMAX_NSP,
-															 DBUS_PROP_SIGNAL_QUALITY);
+	if (!priv->signal_quality) {
+		priv->signal_quality = _nm_object_get_uint_property (NM_OBJECT (nsp),
+		                                                     NM_DBUS_INTERFACE_WIMAX_NSP,
+		                                                     DBUS_PROP_SIGNAL_QUALITY);
+	}
 
 	return priv->signal_quality;
 }
@@ -138,10 +139,11 @@ nm_wimax_nsp_get_network_type (NMWimaxNsp *nsp)
 	g_return_val_if_fail (NM_IS_WIMAX_NSP (nsp), NM_WIMAX_NSP_NETWORK_TYPE_UNKNOWN);
 
 	priv = NM_WIMAX_NSP_GET_PRIVATE (nsp);
-	if (!priv->network_type)
-		priv->network_type = _nm_object_get_uint_property (NM_OBJECT (nsp),
-														   NM_DBUS_INTERFACE_WIMAX_NSP,
-														   DBUS_PROP_NETWORK_TYPE);
+	if (!priv->network_type) {
+		priv->network_type = _nm_object_get_byte_property (NM_OBJECT (nsp),
+		                                                   NM_DBUS_INTERFACE_WIMAX_NSP,
+		                                                   DBUS_PROP_NETWORK_TYPE);
+	}
 
 	return priv->network_type;
 }
@@ -263,7 +265,7 @@ nm_wimax_nsp_class_init (NMWimaxNspClass *nsp_class)
 	/**
 	 * NMWimaxNsp:name:
 	 *
-	 * The name of the wimax NSP.
+	 * The name of the WiMAX NSP.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NAME,
@@ -276,7 +278,7 @@ nm_wimax_nsp_class_init (NMWimaxNspClass *nsp_class)
 	/**
 	 * NMWimaxNsp:signal-quality:
 	 *
-	 * The signal quality of the wimax NSP.
+	 * The signal quality of the WiMAX NSP.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SIGNAL_QUALITY,
@@ -289,7 +291,7 @@ nm_wimax_nsp_class_init (NMWimaxNspClass *nsp_class)
 	/**
 	 * NMWimaxNsp:network-type:
 	 *
-	 * The network type of the wimax NSP.
+	 * The network type of the WiMAX NSP.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NETWORK_TYPE,
