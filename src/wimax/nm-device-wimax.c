@@ -259,7 +259,6 @@ update_availability (NMDeviceWimax *self, gboolean old_available)
 	gboolean new_available, changed = FALSE;
 
 	new_available = nm_device_is_available (device);
-nm_log_dbg (LOGD_WIMAX, "old_avail %d, new_avail %d", old_available, new_available);
 	if (new_available == old_available)
 		return FALSE;
 
@@ -292,22 +291,28 @@ real_set_enabled (NMDeviceInterface *device, gboolean enabled)
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 	gboolean old_available;
 	int ret;
+	const char *iface;
 
-nm_log_dbg (LOGD_WIMAX, "setting wimax enabled %d (was %d)", enabled, priv->enabled);
+	iface = nm_device_get_iface (NM_DEVICE (self));
+
+	nm_log_dbg (LOGD_WIMAX, "(%s): setting radio enabled %d -> %d",
+	            iface, priv->enabled, enabled);
 	if (priv->enabled == enabled)
 		return;
 
 	old_available = nm_device_is_available (NM_DEVICE (device));
 	priv->enabled = enabled;
-nm_log_dbg (LOGD_WIMAX, "wimax enabled changed to %d", priv->enabled);
+
+	nm_log_dbg (LOGD_WIMAX, "(%s): radio now %s",
+	            iface, priv->enabled ? "enabled" : "disabled");
 
 	/* Set the WiMAX device RF state to the current user-specified enabled state */
 	if (priv->sdk) {
 		ret = iwmx_sdk_rf_state_set (priv->sdk,
 		                             enabled ? WIMAX_API_RF_ON : WIMAX_API_RF_OFF);
 		if (ret < 0 && ret != -EINPROGRESS) {
-			nm_log_warn (LOGD_WIMAX, "failed to %s WiMAX radio",
-			             priv->enabled ? "enable" : "disable");
+			nm_log_warn (LOGD_WIMAX, "(%s): failed to %s radio",
+			             iface, priv->enabled ? "enable" : "disable");
 		}
 	}
 
@@ -355,10 +360,13 @@ real_update_hw_address (NMDevice *dev)
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 	struct ifreq req;
 	int fd;
+	const char *iface;
+
+	iface = nm_device_get_iface (dev);
 
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
-		nm_log_warn (LOGD_HW, "couldn't open control socket.");
+		nm_log_warn (LOGD_HW, "(%s): couldn't open control socket.", iface);
 		return;
 	}
 
@@ -368,8 +376,8 @@ real_update_hw_address (NMDevice *dev)
 	errno = 0;
 	if (ioctl (fd, SIOCGIFHWADDR, &req) < 0) {
 		nm_log_err (LOGD_HW | LOGD_WIMAX,
-		            "(%s) failed to read hardware address (error %d)",
-		            nm_device_get_iface (dev), errno);
+		            "(%s): failed to read hardware address (error %d)",
+		            iface, errno);
 	} else {
 		memcpy (&priv->hw_addr, &req.ifr_hwaddr.sa_data, ETH_ALEN);
 		g_object_notify (G_OBJECT (self), NM_DEVICE_WIMAX_HW_ADDRESS);
@@ -588,7 +596,8 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	priv->connect_failed = FALSE;
 	ret = iwmx_sdk_connect (priv->sdk, nsp);
 	if (ret < 0 && ret != -EINPROGRESS) {
-		nm_log_err (LOGD_WIMAX, "Failed to connect to NSP '%s'", nsp);
+		nm_log_err (LOGD_WIMAX, "(%s): failed to connect to NSP '%s'",
+		            nm_device_get_iface (device), nsp);
 		*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
@@ -600,24 +609,30 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 }
 
 static void
-force_disconnect (struct wmxsdk *sdk)
+force_disconnect (NMDeviceWimax *self, struct wmxsdk *sdk)
 {
 	WIMAX_API_DEVICE_STATUS status;
 	int ret;
+	const char *iface;
 
 	g_return_if_fail (sdk != NULL);
 
+	iface = nm_device_get_iface (NM_DEVICE (self));
+
 	status = iwmxsdk_status_get (sdk);
 	if ((int) status < 0) {
-		nm_log_err (LOGD_WIMAX, "Failed to read WiMAX device status: %d", status);
+		nm_log_err (LOGD_WIMAX, "(%s): failed to read WiMAX device status: %d",
+		            iface, status);
 		return;
 	}
 
 	if (   status == WIMAX_API_DEVICE_STATUS_Connecting
 	    || status == WIMAX_API_DEVICE_STATUS_Data_Connected) {
+		nm_log_dbg (LOGD_WIMAX, "(%s): requesting disconnect", iface);
 		ret = iwmx_sdk_disconnect (sdk);
 		if (ret < 0 && ret != -EINPROGRESS) {
-			nm_log_err (LOGD_WIMAX, "Failed to disconnect WiMAX device: %d", ret);
+			nm_log_err (LOGD_WIMAX, "(%s): failed to disconnect WiMAX device: %d",
+			            iface, ret);
 		}
 	}
 }
@@ -638,7 +653,7 @@ real_deactivate_quickly (NMDevice *device)
 		/* Read explicit status here just to make sure we have the most
 		 * up-to-date status and to ensure we disconnect if needed.
 		 */
-		force_disconnect (priv->sdk);
+		force_disconnect (self, priv->sdk);
 	}
 }
 
@@ -690,7 +705,7 @@ wmx_state_change_cb (struct wmxsdk *wmxsdk,
 	case WIMAX_API_DEVICE_STATUS_Data_Connected:
 		/* If for some reason we're initially connected, force a disconnect here */
 		if (state < NM_DEVICE_STATE_DISCONNECTED)
-			force_disconnect (wmxsdk);
+			force_disconnect (self, wmxsdk);
 		/* Fall through */
 	case WIMAX_API_DEVICE_STATUS_Ready:
 	case WIMAX_API_DEVICE_STATUS_Scanning:
