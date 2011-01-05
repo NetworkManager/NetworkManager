@@ -918,7 +918,7 @@ error_scan:
  */
 static int iwmx_sdk_setup(struct wmxsdk *wmxsdk)
 {
-	int result;
+	int result, status;
 
 	WIMAX_API_RET r;
 
@@ -1002,9 +1002,18 @@ static int iwmx_sdk_setup(struct wmxsdk *wmxsdk)
 		goto error_subscribe_disconnect;
 	}
 
-	wmxsdk->status = iwmx_sdk_get_device_status(wmxsdk);
-	if ((int) wmxsdk->status < 0)
-		wmxsdk->status = WIMAX_API_DEVICE_STATUS_UnInitialized;
+	status = iwmx_sdk_get_device_status(wmxsdk);
+	if ((int) status < 0)
+		status = WIMAX_API_DEVICE_STATUS_UnInitialized;
+
+	g_mutex_lock(wmxsdk->status_mutex);
+	wmxsdk->status = status;
+	g_mutex_unlock(wmxsdk->status_mutex);
+
+	_schedule_state_change(wmxsdk,
+	                       status,
+	                       WIMAX_API_DEVICE_STATUS_UnInitialized,
+	                       WIMAX_API_STATUS_REASON_Normal);
 
 	return 0;
 
