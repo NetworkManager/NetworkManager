@@ -39,9 +39,7 @@
 #include "iwmxsdk.h"
 
 static WIMAX_API_DEVICE_ID g_api;
-
-static int iwmx_sdk_setup(struct wmxsdk *wmxsdk);
-static void iwmx_sdk_remove(struct wmxsdk *wmxsdk);
+static GStaticMutex add_remove_mutex = G_STATIC_MUTEX_INIT;
 
 /* Misc utilities */
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof(a[0]))
@@ -1285,9 +1283,10 @@ static void iwmx_sdk_addremove_cb(WIMAX_API_DEVICE_ID *devid,
 	WIMAX_API_RET r;
 	WIMAX_API_HW_DEVICE_ID device_id_list[5];
 	UINT32 device_id_list_size = ARRAY_SIZE(device_id_list);
-
 	char errstr[512];
 	UINT32 errstr_size = sizeof(errstr);
+
+	g_static_mutex_lock(&add_remove_mutex);
 
 	nm_log_dbg(LOGD_WIMAX, "cb: handle %u index #%u is %d", devid->sdkHandle,
 	           devid->deviceIndex, presence);
@@ -1296,22 +1295,24 @@ static void iwmx_sdk_addremove_cb(WIMAX_API_DEVICE_ID *devid,
 	if (r != WIMAX_API_RET_SUCCESS) {
 		GetErrorString(devid, r, errstr, &errstr_size);
 		nm_log_err(LOGD_WIMAX, "wmxsdk: Cannot obtain list of devices: %d (%s)", r, errstr);
-		return;
+		goto out;
 	}
 
 	if (device_id_list_size == 0) {
 		nm_log_dbg(LOGD_WIMAX, "No WiMAX devices reported");
-	} else
+	} else {
 		for (cnt = 0; cnt < device_id_list_size; cnt++) {
 			WIMAX_API_HW_DEVICE_ID *dev =
 				device_id_list + cnt;
 			nm_log_dbg(LOGD_WIMAX, "#%u index #%u device %s", cnt,
 			           dev->deviceIndex, dev->deviceName);
 		}
+	}
+
 	if (device_id_list_size < devid->deviceIndex) {
 		nm_log_err(LOGD_WIMAX, "wmxsdk: changed device (%u) not in the list? (%u items)",
 		           devid->deviceIndex, device_id_list_size);
-		return;
+		goto out;
 	}
 
 	if (presence) {
@@ -1322,6 +1323,9 @@ static void iwmx_sdk_addremove_cb(WIMAX_API_DEVICE_ID *devid,
 	} else {
 		iwmx_sdk_dev_rm(devid->deviceIndex);
 	}
+
+out:
+	g_static_mutex_unlock(&add_remove_mutex);
 }
 
 /*
