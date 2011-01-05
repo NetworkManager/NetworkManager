@@ -618,6 +618,9 @@ wmx_state_change_cb (struct wmxsdk *wmxsdk,
 	gboolean old_available = FALSE;
 	const char *nsp_name = NULL;
 
+	if (new_status == old_status)
+		return;
+
 	iface = nm_device_get_iface (NM_DEVICE (self));
 	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
 	old_available = nm_device_is_available (NM_DEVICE (self));
@@ -848,9 +851,10 @@ static gboolean
 sdk_action_defer_cb (gpointer user_data)
 {
 	NMDeviceWimax *self = NM_DEVICE_WIMAX (user_data);
+	gboolean old_available = nm_device_is_available (NM_DEVICE (self));
 
 	NM_DEVICE_WIMAX_GET_PRIVATE (self)->sdk_action_defer_id = 0;
-	update_availability (self, FALSE);
+	update_availability (self, old_available);
 	return FALSE;
 }
 
