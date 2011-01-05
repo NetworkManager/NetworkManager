@@ -738,9 +738,10 @@ link_timeout_cb (gpointer user_data)
 
 	priv->link_timeout_id = 0;
 
+	nm_log_dbg (LOGD_WIMAX, "(%s): link timed out", nm_device_get_iface (NM_DEVICE (self)));
 	nm_device_state_changed (NM_DEVICE (self),
-		                     NM_DEVICE_STATE_FAILED,
-		                     NM_DEVICE_STATE_REASON_CARRIER);
+	                         NM_DEVICE_STATE_FAILED,
+	                         NM_DEVICE_STATE_REASON_CARRIER);
 
 	return FALSE;
 }
@@ -771,9 +772,16 @@ wmx_media_status_cb (struct wmxsdk *wmxsdk,
 	case WIMAX_API_MEDIA_STATUS_LINK_UP:
 		break;
 	case WIMAX_API_MEDIA_STATUS_LINK_DOWN:
+		nm_log_dbg (LOGD_WIMAX, "(%s): starting link timeout", iface);
 		priv->link_timeout_id = g_timeout_add (15, link_timeout_cb, self);
 		break;
 	case WIMAX_API_MEDIA_STATUS_LINK_RENEW:
+		nm_log_dbg (LOGD_WIMAX, "(%s): renewing DHCP lease", iface);
+		if (!nm_device_dhcp4_renew (NM_DEVICE (self), TRUE)) {
+			nm_device_state_changed (NM_DEVICE (self),
+			                         NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_DHCP_FAILED);
+		}
 		break;
 	default:
 		nm_log_err (LOGD_WIMAX, "(%s): unhandled media status %d", iface, new_status);
