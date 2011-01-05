@@ -674,7 +674,7 @@ wmx_state_change_cb (struct wmxsdk *wmxsdk,
 			return;
 		}
 
-		if (priv->connect_failed || new_status < WIMAX_API_DEVICE_STATUS_Connecting) {
+		if (priv->connect_failed) {
 			/* Connection attempt failed */
 			nm_log_info (LOGD_WIMAX, "(%s): connection to '%s' failed: (%d) %s",
 			             iface, nsp_name, reason, iwmx_sdk_reason_to_str (reason));
@@ -686,15 +686,17 @@ wmx_state_change_cb (struct wmxsdk *wmxsdk,
 	}
 
 	/* Handle disconnection */
-	if (   old_status == WIMAX_API_DEVICE_STATUS_Data_Connected
-	    && new_status < WIMAX_API_DEVICE_STATUS_Connecting) {
+	if (state == NM_DEVICE_STATE_ACTIVATED) {
+		if (   old_status == WIMAX_API_DEVICE_STATUS_Data_Connected
+			&& new_status < WIMAX_API_DEVICE_STATUS_Connecting) {
 
-		nm_log_info (LOGD_WIMAX, "(%s): disconnected from '%s': (%d) %s",
-		             iface, nsp_name, reason, iwmx_sdk_reason_to_str (reason));
+			nm_log_info (LOGD_WIMAX, "(%s): disconnected from '%s': (%d) %s",
+				         iface, nsp_name, reason, iwmx_sdk_reason_to_str (reason));
 
-		nm_device_state_changed (NM_DEVICE (self),
-		                         NM_DEVICE_STATE_FAILED,
-		                         NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+			nm_device_state_changed (NM_DEVICE (self),
+				                     NM_DEVICE_STATE_FAILED,
+				                     NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+		}
 	}
 }
 
