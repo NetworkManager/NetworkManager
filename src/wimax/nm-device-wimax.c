@@ -878,6 +878,7 @@ wmx_scan_result_cb (struct wmxsdk *wmxsdk,
 		WIMAX_API_NSP_INFO_EX *sdk_nsp = &nsps[i];
 		const char *nsp_name = (const char *) sdk_nsp->NSPName;
 		NMWimaxNspNetworkType net_type;
+		guint signalq;
 		NMWimaxNsp *nsp;
 		gboolean new_nsp;
 
@@ -889,10 +890,12 @@ wmx_scan_result_cb (struct wmxsdk *wmxsdk,
 		}
 
 		net_type = nm_wimax_util_convert_network_type (sdk_nsp->networkType);
-		g_object_set (nsp,
-					  NM_WIMAX_NSP_SIGNAL_QUALITY, sdk_nsp->linkQuality,
-					  NM_WIMAX_NSP_NETWORK_TYPE, net_type,
-					  NULL);
+		if (net_type != nm_wimax_nsp_get_network_type (nsp))
+			g_object_set (nsp, NM_WIMAX_NSP_NETWORK_TYPE, net_type, NULL);
+
+		signalq = sdk_nsp->linkQuality;
+		if (signalq != nm_wimax_nsp_get_signal_quality (nsp))
+			g_object_set (nsp, NM_WIMAX_NSP_SIGNAL_QUALITY, signalq, NULL);
 
 		nm_log_dbg (LOGD_WIMAX, "(%s): WiMAX NSP '%s' quality %d%% type %d",
 			        iface, nsp_name, sdk_nsp->linkQuality, net_type);
@@ -938,16 +941,20 @@ connected_poll_cb (gpointer user_data)
 	sdk_nsp = iwmx_sdk_get_connected_network (priv->sdk);
 	if (sdk_nsp) {
 		const char *nsp_name = (const char *) sdk_nsp->NSPName;
-		NMWimaxNspNetworkType net_type;
 		NMWimaxNsp *nsp;
 
 		nsp = get_nsp_by_name (self, nsp_name);
 		if (nsp) {
+			NMWimaxNspNetworkType net_type;
+			guint signalq;
+
 			net_type = nm_wimax_util_convert_network_type (sdk_nsp->networkType);
-			g_object_set (nsp,
-						  NM_WIMAX_NSP_SIGNAL_QUALITY, sdk_nsp->linkQuality,
-						  NM_WIMAX_NSP_NETWORK_TYPE, net_type,
-						  NULL);
+			if (net_type != nm_wimax_nsp_get_network_type (nsp))
+				g_object_set (nsp, NM_WIMAX_NSP_NETWORK_TYPE, net_type, NULL);
+
+			signalq = sdk_nsp->linkQuality;
+			if (signalq != nm_wimax_nsp_get_signal_quality (nsp))
+				g_object_set (nsp, NM_WIMAX_NSP_SIGNAL_QUALITY, signalq, NULL);
 
 			nm_log_dbg (LOGD_WIMAX, "(%s): WiMAX NSP '%s' quality %d%% type %d",
 					    nm_device_get_iface (NM_DEVICE (self)),
