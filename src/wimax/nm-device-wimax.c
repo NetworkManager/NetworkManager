@@ -759,7 +759,7 @@ wmx_media_status_cb (struct wmxsdk *wmxsdk,
 	iface = nm_device_get_iface (NM_DEVICE (self));
 	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
 
-	nm_log_dbg (LOGD_WIMAX, "(%s): media status change to %d",
+	nm_log_dbg (LOGD_WIMAX, "(%s): media status change to %s",
 	            iface, iwmx_sdk_media_status_to_str (new_status));
 
 	/* We only care about media events while activated */
