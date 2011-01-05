@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2010 Red Hat, Inc.
+ * Copyright (C) 2010 - 2011 Red Hat, Inc.
  * Copyright (C) 2009 Novell, Inc.
  */
 
@@ -89,6 +89,7 @@ typedef struct {
 	guint sdk_action_defer_id;
 
 	guint link_timeout_id;
+	guint poll_id;
 
 	GSList *nsp_list;
 	NMWimaxNsp *current_nsp;
@@ -523,6 +524,17 @@ clear_link_timeout (NMDeviceWimax *self)
 	}
 }
 
+static void
+clear_connected_poll (NMDeviceWimax *self)
+{
+	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
+
+	if (priv->poll_id) {
+		g_source_remove (priv->poll_id);
+		priv->poll_id = 0;
+	}
+}
+
 static NMActStageReturn
 real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 {
@@ -613,12 +625,14 @@ force_disconnect (struct wmxsdk *sdk)
 static void
 real_deactivate_quickly (NMDevice *device)
 {
-	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (device);
+	NMDeviceWimax *self = NM_DEVICE_WIMAX (device);
+	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 
-	clear_activation_timeout (NM_DEVICE_WIMAX (device));
-	clear_link_timeout (NM_DEVICE_WIMAX (device));
+	clear_activation_timeout (self);
+	clear_link_timeout (self);
+	clear_connected_poll (self);
 
-	set_current_nsp (NM_DEVICE_WIMAX (device), NULL);
+	set_current_nsp (self, NULL);
 
 	if (priv->sdk) {
 		/* Read explicit status here just to make sure we have the most
@@ -913,6 +927,38 @@ wmx_removed_cb (struct wmxsdk *wmxsdk, void *user_data)
 
 /*************************************************************************/
 
+static gboolean
+connected_poll_cb (gpointer user_data)
+{
+	NMDeviceWimax *self = NM_DEVICE_WIMAX (user_data);
+	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
+	WIMAX_API_CONNECTED_NSP_INFO_EX *sdk_nsp;
+
+	g_return_val_if_fail (priv->sdk != NULL, FALSE);
+	sdk_nsp = iwmx_sdk_get_connected_network (priv->sdk);
+	if (sdk_nsp) {
+		const char *nsp_name = (const char *) sdk_nsp->NSPName;
+		NMWimaxNspNetworkType net_type;
+		NMWimaxNsp *nsp;
+
+		nsp = get_nsp_by_name (self, nsp_name);
+		if (nsp) {
+			net_type = nm_wimax_util_convert_network_type (sdk_nsp->networkType);
+			g_object_set (nsp,
+						  NM_WIMAX_NSP_SIGNAL_QUALITY, sdk_nsp->linkQuality,
+						  NM_WIMAX_NSP_NETWORK_TYPE, net_type,
+						  NULL);
+
+			nm_log_dbg (LOGD_WIMAX, "(%s): WiMAX NSP '%s' quality %d%% type %d",
+					    nm_device_get_iface (NM_DEVICE (self)),
+					    nsp_name, sdk_nsp->linkQuality, net_type);
+		}
+		free (sdk_nsp);
+	}
+
+	return TRUE; /* reschedule */
+}
+
 static void
 device_state_changed (NMDevice *device,
                       NMDeviceState new_state,
@@ -936,8 +982,14 @@ device_state_changed (NMDevice *device,
 	if (new_state == NM_DEVICE_STATE_FAILED || new_state <= NM_DEVICE_STATE_DISCONNECTED)
 		clear_activation_timeout (self);
 
-	if (new_state != NM_DEVICE_STATE_ACTIVATED)
+	if (new_state == NM_DEVICE_STATE_ACTIVATED) {
+		/* poll link quality and BSID */
+		clear_connected_poll (self);
+		priv->poll_id = g_timeout_add_seconds (10, connected_poll_cb, self);
+	} else {
 		clear_link_timeout (self);
+		clear_connected_poll (self);
+	}
 }
 
 /*************************************************************************/
@@ -1078,6 +1130,7 @@ dispose (GObject *object)
 
 	clear_activation_timeout (self);
 	clear_link_timeout (self);
+	clear_connected_poll (self);
 
 	if (priv->sdk_action_defer_id)
 		g_source_remove (priv->sdk_action_defer_id);
