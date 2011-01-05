@@ -24,6 +24,7 @@
 
 #include <wimax/WiMaxType.h>
 #include <wimax/WiMaxTypesEx.h>
+#include <wimax/WiMaxAPIEx.h>
 
 struct wmxsdk;
 
@@ -33,6 +34,10 @@ typedef void (*WimaxStateChangeFunc) (struct wmxsdk *wmxsdk,
                                       WIMAX_API_DEVICE_STATUS new_status,
                                       WIMAX_API_DEVICE_STATUS old_status,
                                       WIMAX_API_STATUS_REASON reason,
+                                      void *user_data);
+
+typedef void (*WimaxMediaStatusFunc) (struct wmxsdk *wmxsdk,
+                                      WIMAX_API_MEDIA_STATUS media_status,
                                       void *user_data);
 
 typedef void (*WimaxConnectResultFunc) (struct wmxsdk *wmxsdk,
@@ -52,6 +57,7 @@ struct wmxsdk {
 	WIMAX_API_DEVICE_ID device_id;
 
 	WimaxStateChangeFunc state_change_cb;
+	WimaxMediaStatusFunc media_status_cb;
 	WimaxConnectResultFunc connect_result_cb;
 	WimaxScanResultFunc scan_result_cb;
 	WimaxRemovedFunc removed_cb;
@@ -60,6 +66,7 @@ struct wmxsdk {
 	GStaticMutex network_mutex;
 
 	WIMAX_API_DEVICE_STATUS status;
+	WIMAX_API_MEDIA_STATUS media_status;
 	GMutex *status_mutex;
 
 	GMutex *connect_mutex;
@@ -79,6 +86,7 @@ void iwmx_sdk_new_callback_unregister(WimaxNewWmxsdkFunc callback, void *user_da
 
 void iwmx_sdk_set_callbacks(struct wmxsdk *wmxsdk,
                             WimaxStateChangeFunc state_change_cb,
+                            WimaxMediaStatusFunc media_status_func,
                             WimaxConnectResultFunc connect_result_cb,
                             WimaxScanResultFunc scan_result_cb,
                             WimaxRemovedFunc removed_cb,
@@ -90,6 +98,7 @@ int iwmx_sdk_disconnect(struct wmxsdk *wmxsdk);
 WIMAX_API_CONNECTED_NSP_INFO_EX *iwmx_sdk_get_connected_network(struct wmxsdk *wmxsdk);
 const char *iwmx_sdk_dev_status_to_str(WIMAX_API_DEVICE_STATUS status);
 const char *iwmx_sdk_reason_to_str(WIMAX_API_STATUS_REASON reason);
+const char *iwmx_sdk_media_status_to_str(WIMAX_API_MEDIA_STATUS status);
 int iwmx_sdk_rf_state_set(struct wmxsdk *wmxsdk, WIMAX_API_RF_STATE rf_state);
 int iwmx_sdk_get_networks(struct wmxsdk *wmxsdk);
 int iwmx_sdk_api_init(void);

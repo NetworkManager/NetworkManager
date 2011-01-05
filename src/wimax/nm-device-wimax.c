@@ -701,6 +701,38 @@ wmx_state_change_cb (struct wmxsdk *wmxsdk,
 }
 
 static void
+wmx_media_status_cb (struct wmxsdk *wmxsdk,
+                     WIMAX_API_MEDIA_STATUS new_status,
+                     void *user_data)
+{
+	NMDeviceWimax *self = NM_DEVICE_WIMAX (user_data);
+	NMDeviceState state;
+	const char *iface;
+
+	iface = nm_device_get_iface (NM_DEVICE (self));
+	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
+
+	nm_log_dbg (LOGD_WIMAX, "(%s): media status change to %d",
+	            iface, iwmx_sdk_media_status_to_str (new_status));
+
+	/* We only care about media events while activated */
+	if (state != NM_DEVICE_STATE_ACTIVATED)
+		return;
+
+	switch (new_status) {
+	case WIMAX_API_MEDIA_STATUS_LINK_UP:
+		break;
+	case WIMAX_API_MEDIA_STATUS_LINK_DOWN:
+		break;
+	case WIMAX_API_MEDIA_STATUS_LINK_RENEW:
+		break;
+	default:
+		nm_log_err (LOGD_WIMAX, "(%s): unhandled media status %d", iface, new_status);
+		break;
+	}
+}
+
+static void
 wmx_connect_result_cb (struct wmxsdk *wmxsdk,
                        WIMAX_API_NETWORK_CONNECTION_RESP result,
                        void *user_data)
@@ -810,7 +842,7 @@ wmx_removed_cb (struct wmxsdk *wmxsdk, void *user_data)
 
 	if (priv->sdk) {
 		/* Clear callbacks just in case we don't hold the last reference */
-		iwmx_sdk_set_callbacks (priv->sdk, NULL, NULL, NULL, NULL, NULL);
+		iwmx_sdk_set_callbacks (priv->sdk, NULL, NULL, NULL, NULL, NULL, NULL);
 
 		wmxsdk_unref (priv->sdk);
 		priv->sdk = NULL;
@@ -871,6 +903,7 @@ wmx_new_sdk_cb (struct wmxsdk *sdk, void *user_data)
 		priv->sdk = wmxsdk_ref (sdk);
 		iwmx_sdk_set_callbacks(priv->sdk,
 		                       wmx_state_change_cb,
+		                       wmx_media_status_cb,
 		                       wmx_connect_result_cb,
 		                       wmx_scan_result_cb,
 		                       wmx_removed_cb,
@@ -987,7 +1020,7 @@ dispose (GObject *object)
 		g_source_remove (priv->sdk_action_defer_id);
 
 	if (priv->sdk) {
-		iwmx_sdk_set_callbacks (priv->sdk, NULL, NULL, NULL, NULL, NULL);
+		iwmx_sdk_set_callbacks (priv->sdk, NULL, NULL, NULL, NULL, NULL, NULL);
 		wmxsdk_unref (priv->sdk);
 	}
 

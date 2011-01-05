@@ -211,6 +211,45 @@ _schedule_state_change(struct wmxsdk *wmxsdk,
 
 typedef struct {
 	struct wmxsdk *wmxsdk;
+	WIMAX_API_MEDIA_STATUS media_status;
+} MediaStatusInfo;
+
+static gboolean
+media_status_change_handler(gpointer user_data)
+{
+	MediaStatusInfo *info = user_data;
+
+	if (info->wmxsdk->media_status_cb) {
+		info->wmxsdk->media_status_cb(info->wmxsdk,
+		                              info->media_status,
+		                              info->wmxsdk->callback_data);
+	}
+	wmxsdk_unref(info->wmxsdk);
+	memset(info, 0, sizeof(*info));
+	free(info);
+	return FALSE;
+}
+
+static void
+_schedule_media_status_change(struct wmxsdk *wmxsdk,
+                              WIMAX_API_MEDIA_STATUS media_status)
+{
+	MediaStatusInfo *info;
+
+	info = malloc(sizeof (*info));
+	if (!info)
+		return;
+
+	memset(info, 0, sizeof(*info));
+	info->wmxsdk = wmxsdk;
+	info->media_status = media_status;
+
+	wmxsdk_ref(wmxsdk);
+	g_idle_add(media_status_change_handler, info);
+}
+
+typedef struct {
+	struct wmxsdk *wmxsdk;
 	WIMAX_API_NETWORK_CONNECTION_RESP result;
 } ConnectResultInfo;
 
@@ -400,6 +439,19 @@ const char *iwmx_sdk_reason_to_str(WIMAX_API_STATUS_REASON reason)
 	}
 }
 
+const char *iwmx_sdk_media_status_to_str(WIMAX_API_MEDIA_STATUS status)
+{
+	switch (status) {
+	case WIMAX_API_MEDIA_STATUS_LINK_UP:
+		return "link-up";
+	case WIMAX_API_MEDIA_STATUS_LINK_DOWN:
+		return "link-down";
+	case WIMAX_API_MEDIA_STATUS_LINK_RENEW:
+		return "link-renew";
+	default:
+		return "unknown";
+	}
+}
 
 /*
  * Get the device's status from the device
@@ -810,6 +862,24 @@ error_get_status:
 	return result;
 }
 
+static void __iwmx_sdk_media_status_update_cb (WIMAX_API_DEVICE_ID_P device_id,
+					WIMAX_API_MEDIA_STATUS mediaStatus)
+{
+	struct wmxsdk *wmxsdk = deviceid_to_wmxsdk(device_id);
+
+	/* Ignore redundant LINK_UP events */
+	if (   mediaStatus == WIMAX_API_MEDIA_STATUS_LINK_UP
+	    && wmxsdk->media_status == WIMAX_API_MEDIA_STATUS_LINK_UP)
+	    return;
+
+	wmxsdk->media_status = mediaStatus;
+
+	nm_log_dbg(LOGD_WIMAX, "wmxsdk: media status change to (%d) %s",
+	           mediaStatus, iwmx_sdk_media_status_to_str (mediaStatus));
+
+	_schedule_media_status_change(wmxsdk, mediaStatus);
+}
+
 /*
  * Callback for state change messages
  *
@@ -1002,6 +1072,13 @@ static int iwmx_sdk_setup(struct wmxsdk *wmxsdk)
 		goto error_subscribe_disconnect;
 	}
 
+	r = SubscribeMediaStatusUpdate(&wmxsdk->device_id, __iwmx_sdk_media_status_update_cb);
+	if (r != WIMAX_API_RET_SUCCESS) {
+		GetErrorString(&wmxsdk->device_id, r, errstr, &errstr_size);
+		nm_log_err(LOGD_WIMAX, "wmxsdk: Cannot subscribe to media status events: %d (%s)", r, errstr);
+		goto error_subscribe_media_status;
+	}
+
 	status = iwmx_sdk_get_device_status(wmxsdk);
 	if ((int) status < 0)
 		status = WIMAX_API_DEVICE_STATUS_UnInitialized;
@@ -1017,6 +1094,8 @@ static int iwmx_sdk_setup(struct wmxsdk *wmxsdk)
 
 	return 0;
 
+	UnsubscribeMediaStatusUpdate(&wmxsdk->device_id);
+error_subscribe_media_status:
 	UnsubscribeDisconnectToNetwork(&wmxsdk->device_id);
 error_subscribe_disconnect:
 	UnsubscribeConnectToNetwork(&wmxsdk->device_id);
@@ -1043,6 +1122,7 @@ error_wimaxdeviceopen:
  */
 static void iwmx_sdk_remove(struct wmxsdk *wmxsdk)
 {
+	UnsubscribeMediaStatusUpdate(&wmxsdk->device_id);
 	UnsubscribeDisconnectToNetwork(&wmxsdk->device_id);
 	UnsubscribeConnectToNetwork(&wmxsdk->device_id);
 	UnsubscribeNetworkSearchEx(&wmxsdk->device_id);
@@ -1054,12 +1134,14 @@ static void iwmx_sdk_remove(struct wmxsdk *wmxsdk)
 
 void iwmx_sdk_set_callbacks(struct wmxsdk *wmxsdk,
                             WimaxStateChangeFunc state_change_cb,
+                            WimaxMediaStatusFunc media_status_cb,
                             WimaxConnectResultFunc connect_result_cb,
                             WimaxScanResultFunc scan_result_cb,
                             WimaxRemovedFunc removed_cb,
                             void *user_data)
 {
 	wmxsdk->state_change_cb = state_change_cb;
+	wmxsdk->media_status_cb = media_status_cb;
 	wmxsdk->connect_result_cb = connect_result_cb;
 	wmxsdk->scan_result_cb = scan_result_cb;
 	wmxsdk->removed_cb = removed_cb;
