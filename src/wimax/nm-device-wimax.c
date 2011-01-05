@@ -88,6 +88,8 @@ typedef struct {
 
 	guint sdk_action_defer_id;
 
+	guint link_timeout_id;
+
 	GSList *nsp_list;
 	NMWimaxNsp *current_nsp;
 } NMDeviceWimaxPrivate;
@@ -510,6 +512,17 @@ clear_activation_timeout (NMDeviceWimax *self)
 	priv->connect_failed = FALSE;
 }
 
+static void
+clear_link_timeout (NMDeviceWimax *self)
+{
+	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
+
+	if (priv->link_timeout_id) {
+		g_source_remove (priv->link_timeout_id);
+		priv->link_timeout_id = 0;
+	}
+}
+
 static NMActStageReturn
 real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 {
@@ -517,6 +530,8 @@ real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	NMActRequest *req;
 	GSList *iter;
 	const char *path;
+
+	clear_link_timeout (NM_DEVICE_WIMAX (device));
 
 	req = nm_device_get_act_request (device);
 	if (!req)
@@ -580,6 +595,7 @@ real_deactivate_quickly (NMDevice *device)
 	int ret;
 
 	clear_activation_timeout (NM_DEVICE_WIMAX (device));
+	clear_link_timeout (NM_DEVICE_WIMAX (device));
 
 	set_current_nsp (NM_DEVICE_WIMAX (device), NULL);
 
@@ -700,12 +716,28 @@ wmx_state_change_cb (struct wmxsdk *wmxsdk,
 	}
 }
 
+static gboolean
+link_timeout_cb (gpointer user_data)
+{
+	NMDeviceWimax *self = NM_DEVICE_WIMAX (user_data);
+	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
+
+	priv->link_timeout_id = 0;
+
+	nm_device_state_changed (NM_DEVICE (self),
+		                     NM_DEVICE_STATE_FAILED,
+		                     NM_DEVICE_STATE_REASON_CARRIER);
+
+	return FALSE;
+}
+
 static void
 wmx_media_status_cb (struct wmxsdk *wmxsdk,
                      WIMAX_API_MEDIA_STATUS new_status,
                      void *user_data)
 {
 	NMDeviceWimax *self = NM_DEVICE_WIMAX (user_data);
+	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 	NMDeviceState state;
 	const char *iface;
 
@@ -719,10 +751,13 @@ wmx_media_status_cb (struct wmxsdk *wmxsdk,
 	if (state != NM_DEVICE_STATE_ACTIVATED)
 		return;
 
+	clear_link_timeout (self);
+
 	switch (new_status) {
 	case WIMAX_API_MEDIA_STATUS_LINK_UP:
 		break;
 	case WIMAX_API_MEDIA_STATUS_LINK_DOWN:
+		priv->link_timeout_id = g_timeout_add (15, link_timeout_cb, self);
 		break;
 	case WIMAX_API_MEDIA_STATUS_LINK_RENEW:
 		break;
@@ -869,6 +904,7 @@ device_state_changed (NMDevice *device,
 	if (new_state < NM_DEVICE_STATE_DISCONNECTED)
 		remove_all_nsps (self);
 
+	/* Request initial NSP list */
 	if (   new_state == NM_DEVICE_STATE_DISCONNECTED
 	    && old_state < NM_DEVICE_STATE_DISCONNECTED) {
 		if (priv->sdk)
@@ -877,6 +913,9 @@ device_state_changed (NMDevice *device,
 
 	if (new_state == NM_DEVICE_STATE_FAILED || new_state <= NM_DEVICE_STATE_DISCONNECTED)
 		clear_activation_timeout (self);
+
+	if (new_state != NM_DEVICE_STATE_ACTIVATED)
+		clear_link_timeout (self);
 }
 
 /*************************************************************************/
@@ -1015,6 +1054,7 @@ dispose (GObject *object)
 	priv->disposed = TRUE;
 
 	clear_activation_timeout (self);
+	clear_link_timeout (self);
 
 	if (priv->sdk_action_defer_id)
 		g_source_remove (priv->sdk_action_defer_id);
