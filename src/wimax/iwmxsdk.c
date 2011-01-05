@@ -873,6 +873,27 @@ error_get_status:
 	return result;
 }
 
+/*
+ * Turn fast reconnect capability on/off
+ *
+ * This function tells wimaxd to turn fast reconnect on or off.
+ */
+int iwmx_sdk_set_fast_reconnect_enabled(struct wmxsdk *wmxsdk, int enabled)
+{
+	WIMAX_API_RET r;
+	char errstr[512];
+	UINT32 errstr_size = sizeof(errstr);
+
+	r = SetFastReconnectCapabilityStatus(&wmxsdk->device_id, !!enabled);
+	if (r != WIMAX_API_RET_SUCCESS) {
+		GetErrorString(&wmxsdk->device_id, r, errstr, &errstr_size);
+		nm_log_err(LOGD_WIMAX, "wmxsdk: Cannot set fast reconnect to %d: %d (%s)",
+		           enabled, r, errstr);
+		return -EIO;
+	}
+	return 0;
+}
+
 static void __iwmx_sdk_media_status_update_cb (WIMAX_API_DEVICE_ID_P device_id,
 					WIMAX_API_MEDIA_STATUS mediaStatus)
 {

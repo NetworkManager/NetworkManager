@@ -969,6 +969,7 @@ wmx_new_sdk_cb (struct wmxsdk *sdk, void *user_data)
 		                       wmx_scan_result_cb,
 		                       wmx_removed_cb,
 		                       self);
+		iwmx_sdk_set_fast_reconnect_enabled (priv->sdk, 0);
 
 		if (!priv->sdk_action_defer_id)
 			priv->sdk_action_defer_id = g_idle_add (sdk_action_defer_cb, self);

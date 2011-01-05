@@ -95,6 +95,7 @@ void iwmx_sdk_set_callbacks(struct wmxsdk *wmxsdk,
 WIMAX_API_DEVICE_STATUS iwmxsdk_status_get(struct wmxsdk *wmxsdk);
 int iwmx_sdk_connect(struct wmxsdk *wmxsdk, const char *nsp_name);
 int iwmx_sdk_disconnect(struct wmxsdk *wmxsdk);
+int iwmx_sdk_set_fast_reconnect_enabled(struct wmxsdk *wmxsdk, int enabled);
 WIMAX_API_CONNECTED_NSP_INFO_EX *iwmx_sdk_get_connected_network(struct wmxsdk *wmxsdk);
 const char *iwmx_sdk_dev_status_to_str(WIMAX_API_DEVICE_STATUS status);
 const char *iwmx_sdk_reason_to_str(WIMAX_API_STATUS_REASON reason);
