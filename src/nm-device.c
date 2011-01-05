@@ -1478,15 +1478,62 @@ dhcp_timeout (NMDHCPClient *client, gpointer user_data)
 }
 
 static NMActStageReturn
+dhcp4_start (NMDevice *self,
+             NMConnection *connection,
+             NMSettingIP4Config *s_ip4,
+             NMDeviceStateReason *reason)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMSettingConnection *s_con;
+	guint8 *anycast = NULL;
+
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	g_assert (s_con);
+
+	/* Begin a DHCP transaction on the interface */
+
+	if (priv->dhcp_anycast_address)
+		anycast = priv->dhcp_anycast_address->data;
+
+	/* Clear old exported DHCP options */
+	if (priv->dhcp4_config)
+		g_object_unref (priv->dhcp4_config);
+	priv->dhcp4_config = nm_dhcp4_config_new ();
+
+	g_warn_if_fail (priv->dhcp4_client == NULL);
+	priv->dhcp4_client = nm_dhcp_manager_start_ip4 (priv->dhcp_manager,
+	                                                nm_device_get_ip_iface (self),
+	                                                nm_setting_connection_get_uuid (s_con),
+	                                                s_ip4,
+	                                                priv->dhcp_timeout,
+	                                                anycast);
+	if (!priv->dhcp4_client) {
+		*reason = NM_DEVICE_STATE_REASON_DHCP_START_FAILED;
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
+
+	priv->dhcp4_state_sigid = g_signal_connect (priv->dhcp4_client,
+	                                            "state-changed",
+	                                            G_CALLBACK (dhcp_state_changed),
+	                                            self);
+	priv->dhcp4_timeout_sigid = g_signal_connect (priv->dhcp4_client,
+	                                              "timeout",
+	                                              G_CALLBACK (dhcp_timeout),
+	                                              self);
+
+	/* DHCP devices will be notified by the DHCP manager when stuff happens */
+	return NM_ACT_STAGE_RETURN_POSTPONE;
+}
+
+static NMActStageReturn
 real_act_stage3_ip4_config_start (NMDevice *self, NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
-	NMSettingConnection *s_con;
 	NMSettingIP4Config *s_ip4;
 	NMActRequest *req;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
-	const char *ip_iface, *method = NULL, *uuid;
+	const char *ip_iface, *method = NULL;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
@@ -1499,9 +1546,6 @@ real_act_stage3_ip4_config_start (NMDevice *self, NMDeviceStateReason *reason)
 
 	req = nm_device_get_act_request (self);
 	connection = nm_act_request_get_connection (req);
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
-	g_assert (s_con);
-	uuid = nm_setting_connection_get_uuid (s_con);
 
 	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
 
@@ -1510,42 +1554,7 @@ real_act_stage3_ip4_config_start (NMDevice *self, NMDeviceStateReason *reason)
 		method = nm_setting_ip4_config_get_method (s_ip4);
 
 	if (!s_ip4 || !method || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
-		guint8 *anycast = NULL;
-
-		/* Begin a DHCP transaction on the interface */
-
-		if (priv->dhcp_anycast_address)
-			anycast = priv->dhcp_anycast_address->data;
-
-		/* Clear old exported DHCP options */
-		if (priv->dhcp4_config)
-			g_object_unref (priv->dhcp4_config);
-		priv->dhcp4_config = nm_dhcp4_config_new ();
-
-		priv->dhcp4_client = nm_dhcp_manager_start_ip4 (priv->dhcp_manager,
-		                                                ip_iface,
-		                                                uuid,
-		                                                s_ip4,
-		                                                priv->dhcp_timeout,
-		                                                anycast);
-		if (priv->dhcp4_client) {
-			priv->dhcp4_state_sigid = g_signal_connect (priv->dhcp4_client,
-			                                            "state-changed",
-			                                            G_CALLBACK (dhcp_state_changed),
-			                                            self);
-			priv->dhcp4_timeout_sigid = g_signal_connect (priv->dhcp4_client,
-			                                              "timeout",
-			                                              G_CALLBACK (dhcp_timeout),
-			                                              self);
-
-			/* DHCP devices will be notified by the DHCP manager when
-			 * stuff happens.	
-			 */
-			ret = NM_ACT_STAGE_RETURN_POSTPONE;
-		} else {
-			*reason = NM_DEVICE_STATE_REASON_DHCP_START_FAILED;
-			ret = NM_ACT_STAGE_RETURN_FAILURE;
-		}
+		ret = dhcp4_start (self, connection, s_ip4, reason);
 	} else if (s_ip4 && !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)) {
 		GError *error = NULL;
 		const char *iface = nm_device_get_iface (self);
