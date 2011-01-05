@@ -160,6 +160,19 @@ void iwmx_sdk_new_callback_unregister(WimaxNewWmxsdkFunc callback, void *user_da
 	g_static_mutex_unlock (&new_callbacks_mutex);
 }
 
+static void iwmx_sdk_call_new_callbacks(struct wmxsdk *wmxsdk)
+{
+	GSList *iter;
+
+	g_static_mutex_lock (&new_callbacks_mutex);
+	for (iter = new_callbacks; iter; iter = g_slist_next (iter)) {
+		NewSdkCallback *cb = iter->data;
+
+		cb->callback (wmxsdk, cb->user_data);
+	}
+	g_static_mutex_unlock (&new_callbacks_mutex);
+}
+
 /****************************************************************/
 
 typedef struct {
@@ -1237,6 +1250,9 @@ static void iwmx_sdk_dev_add(unsigned idx, unsigned api_idx, const char *name)
 	}
 
 	g_iwmx_sdk_devs[idx] = wmxsdk;
+
+	/* Notify listeners of new devices */
+	iwmx_sdk_call_new_callbacks (wmxsdk);
 	return;
 
 error_setup:
