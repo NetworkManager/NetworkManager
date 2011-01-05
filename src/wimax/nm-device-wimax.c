@@ -566,8 +566,8 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
-	/* FIXME: Is 60 seconds good estimation? I have no idea */
-	priv->activation_timeout_id = g_timeout_add_seconds (60, activation_timed_out, device);
+	/* FIXME: Is 40 seconds good estimation? I have no idea */
+	priv->activation_timeout_id = g_timeout_add_seconds (40, activation_timed_out, device);
 
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
