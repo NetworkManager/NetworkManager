@@ -661,6 +661,7 @@ int iwmx_sdk_connect(struct wmxsdk *wmxsdk, const char *nsp_name)
 	char errstr[512];
 	UINT32 errstr_size = sizeof(errstr);
 	WIMAX_API_DEVICE_STATUS dev_status;
+	char sdk_name[MAX_SIZE_OF_NSP_NAME];
 
 	g_mutex_lock(wmxsdk->connect_mutex);
 	/* Guess what the current radio state is; if it is ON
@@ -696,8 +697,15 @@ int iwmx_sdk_connect(struct wmxsdk *wmxsdk, const char *nsp_name)
 		g_assert(1);
 	}
 
+	/* The SDK treats the network name as wchar_t* while the contents are
+	 * actually just UTF-8...  WTF?  Hand it a full buffer to work around
+	 * boundary cases where the NSP name contains an odd # of characters.
+	 */
+	memset(sdk_name, 0, sizeof (sdk_name));
+	memcpy(sdk_name, nsp_name, strlen (nsp_name));
+
 	/* Ok, do the connection, wait for a callback */
-	r = CmdConnectToNetwork(&wmxsdk->device_id, (void *) nsp_name, 0, 0);
+	r = CmdConnectToNetwork(&wmxsdk->device_id, &sdk_name[0], 0, 0);
 	if (r != WIMAX_API_RET_SUCCESS) {
 		GetErrorString(&wmxsdk->device_id, r, errstr, &errstr_size);
 		nm_log_err(LOGD_WIMAX, "wmxsdk: Cannot connect to network %s: %d (%s) - device is in state '%s'",
