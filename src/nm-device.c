@@ -184,8 +184,8 @@ static NMActStageReturn dhcp6_start (NMDevice *self,
                                      NMDeviceStateReason *reason);
 
 static void addrconf6_cleanup (NMDevice *self);
-static void dhcp6_cleanup (NMDevice *self, gboolean stop, gboolean release);
-static void dhcp4_cleanup (NMDevice *self, gboolean stop, gboolean release);
+static void dhcp6_cleanup (NMDevice *self, gboolean stop);
+static void dhcp4_cleanup (NMDevice *self, gboolean stop);
 
 
 static void
@@ -1467,7 +1467,7 @@ dhcp_timeout (NMDHCPClient *client, gpointer user_data)
 	if (!nm_device_get_act_request (device))
 		return;
 
-	nm_dhcp_client_stop (client, FALSE);
+	nm_dhcp_client_stop (client);
 
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG) {
 		if (nm_dhcp_client_get_ipv6 (client))
@@ -1480,16 +1480,17 @@ dhcp_timeout (NMDHCPClient *client, gpointer user_data)
 static NMActStageReturn
 dhcp4_start (NMDevice *self,
              NMConnection *connection,
+             NMSettingIP4Config *s_ip4,
              NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMSettingConnection *s_con;
-	NMSettingIP4Config *s_ip4;
 	guint8 *anycast = NULL;
 
 	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 	g_assert (s_con);
-	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+
+	/* Begin a DHCP transaction on the interface */
 
 	if (priv->dhcp_anycast_address)
 		anycast = priv->dhcp_anycast_address->data;
@@ -1499,7 +1500,6 @@ dhcp4_start (NMDevice *self,
 		g_object_unref (priv->dhcp4_config);
 	priv->dhcp4_config = nm_dhcp4_config_new ();
 
-	/* Begin DHCP on the interface */
 	g_warn_if_fail (priv->dhcp4_client == NULL);
 	priv->dhcp4_client = nm_dhcp_manager_start_ip4 (priv->dhcp_manager,
 	                                                nm_device_get_ip_iface (self),
@@ -1523,31 +1523,6 @@ dhcp4_start (NMDevice *self,
 
 	/* DHCP devices will be notified by the DHCP manager when stuff happens */
 	return NM_ACT_STAGE_RETURN_POSTPONE;
-}
-
-gboolean
-nm_device_dhcp4_renew (NMDevice *self, gboolean release)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMActStageReturn ret;
-	NMDeviceStateReason reason;
-	NMActRequest *req;
-	NMConnection *connection;
-
-	g_return_val_if_fail (priv->dhcp4_client != NULL, FALSE);
-
-	/* Terminate old DHCP instance and release the old lease */
-	dhcp4_cleanup (self, TRUE, TRUE);
-
-	req = nm_device_get_act_request (self);
-	g_assert (req);
-	connection = nm_act_request_get_connection (req);
-	g_assert (connection);
-
-	/* Start DHCP again on the interface */
-	ret = dhcp4_start (self, connection, &reason);
-
-	return (ret != NM_ACT_STAGE_RETURN_FAILURE);
 }
 
 static NMActStageReturn
@@ -1579,7 +1554,7 @@ real_act_stage3_ip4_config_start (NMDevice *self, NMDeviceStateReason *reason)
 		method = nm_setting_ip4_config_get_method (s_ip4);
 
 	if (!s_ip4 || !method || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
-		ret = dhcp4_start (self, connection, reason);
+		ret = dhcp4_start (self, connection, s_ip4, reason);
 	} else if (s_ip4 && !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)) {
 		GError *error = NULL;
 		const char *iface = nm_device_get_iface (self);
@@ -2700,7 +2675,7 @@ delayed_transitions_clear (NMDevice *self)
 }
 
 static void
-dhcp4_cleanup (NMDevice *self, gboolean stop, gboolean release)
+dhcp4_cleanup (NMDevice *self, gboolean stop)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
@@ -2723,7 +2698,7 @@ dhcp4_cleanup (NMDevice *self, gboolean stop, gboolean release)
 		}
 
 		if (stop)
-			nm_dhcp_client_stop (priv->dhcp4_client, release);
+			nm_dhcp_client_stop (priv->dhcp4_client);
 
 		g_object_unref (priv->dhcp4_client);
 		priv->dhcp4_client = NULL;
@@ -2731,7 +2706,7 @@ dhcp4_cleanup (NMDevice *self, gboolean stop, gboolean release)
 }
 
 static void
-dhcp6_cleanup (NMDevice *self, gboolean stop, gboolean release)
+dhcp6_cleanup (NMDevice *self, gboolean stop)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
@@ -2755,7 +2730,7 @@ dhcp6_cleanup (NMDevice *self, gboolean stop, gboolean release)
 		}
 
 		if (stop)
-			nm_dhcp_client_stop (priv->dhcp6_client, release);
+			nm_dhcp_client_stop (priv->dhcp6_client);
 
 		g_object_unref (priv->dhcp6_client);
 		priv->dhcp6_client = NULL;
@@ -2804,8 +2779,8 @@ nm_device_deactivate_quickly (NMDevice *self)
 	/* Clear any delayed transitions */
 	delayed_transitions_clear (self);
 
-	dhcp4_cleanup (self, TRUE, FALSE);
-	dhcp6_cleanup (self, TRUE, FALSE);
+	dhcp4_cleanup (self, TRUE);
+	dhcp6_cleanup (self, TRUE);
 	addrconf6_cleanup (self);
 	dnsmasq_cleanup (self);
 	aipd_cleanup (self);
@@ -3382,8 +3357,8 @@ dispose (GObject *object)
 	delayed_transitions_clear (self);
 
 	/* Clean up and stop DHCP */
-	dhcp4_cleanup (self, take_down, FALSE);
-	dhcp6_cleanup (self, take_down, FALSE);
+	dhcp4_cleanup (self, take_down);
+	dhcp6_cleanup (self, take_down);
 	addrconf6_cleanup (self);
 	dnsmasq_cleanup (self);
 

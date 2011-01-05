@@ -588,32 +588,11 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 }
 
 static void
-force_disconnect (struct wmxsdk *sdk)
-{
-	WIMAX_API_DEVICE_STATUS status;
-	int ret;
-
-	g_return_if_fail (sdk != NULL);
-
-	status = iwmxsdk_status_get (sdk);
-	if ((int) status < 0) {
-		nm_log_err (LOGD_WIMAX, "Failed to read WiMAX device status: %d", status);
-		return;
-	}
-
-	if (   status == WIMAX_API_DEVICE_STATUS_Connecting
-	    || status == WIMAX_API_DEVICE_STATUS_Data_Connected) {
-		ret = iwmx_sdk_disconnect (sdk);
-		if (ret < 0 && ret != -EINPROGRESS) {
-			nm_log_err (LOGD_WIMAX, "Failed to disconnect WiMAX device: %d", ret);
-		}
-	}
-}
-
-static void
 real_deactivate_quickly (NMDevice *device)
 {
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (device);
+	WIMAX_API_DEVICE_STATUS status;
+	int ret;
 
 	clear_activation_timeout (NM_DEVICE_WIMAX (device));
 	clear_link_timeout (NM_DEVICE_WIMAX (device));
@@ -624,7 +603,18 @@ real_deactivate_quickly (NMDevice *device)
 		/* Read explicit status here just to make sure we have the most
 		 * up-to-date status and to ensure we disconnect if needed.
 		 */
-		force_disconnect (priv->sdk);
+		status = iwmxsdk_status_get (priv->sdk);
+		if ((int) status < 0) {
+			nm_log_err (LOGD_WIMAX, "Failed to read WiMAX device status: %d", status);
+		} else {
+			if (   status == WIMAX_API_DEVICE_STATUS_Connecting
+				|| status == WIMAX_API_DEVICE_STATUS_Data_Connected) {
+				ret = iwmx_sdk_disconnect (priv->sdk);
+				if (ret < 0 && ret != -EINPROGRESS) {
+					nm_log_err (LOGD_WIMAX, "Failed to disconnect WiMAX device: %d", ret);
+				}
+			}
+		}
 	}
 }
 
@@ -672,14 +662,10 @@ wmx_state_change_cb (struct wmxsdk *wmxsdk,
 				return;
 		}
 		break;
-	case WIMAX_API_DEVICE_STATUS_Connecting:
-	case WIMAX_API_DEVICE_STATUS_Data_Connected:
-		/* If for some reason we're initially connected, force a disconnect here */
-		if (state < NM_DEVICE_STATE_DISCONNECTED)
-			force_disconnect (wmxsdk);
-		/* Fall through */
 	case WIMAX_API_DEVICE_STATUS_Ready:
 	case WIMAX_API_DEVICE_STATUS_Scanning:
+	case WIMAX_API_DEVICE_STATUS_Connecting:
+	case WIMAX_API_DEVICE_STATUS_Data_Connected:
 		if (priv->wimaxd_enabled == FALSE) {
 			priv->wimaxd_enabled = TRUE;
 			if (update_availability (self, old_available))

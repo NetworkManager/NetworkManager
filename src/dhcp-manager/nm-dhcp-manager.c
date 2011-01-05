@@ -429,7 +429,7 @@ client_start (NMDHCPManager *self,
 	/* Kill any old client instance */
 	client = get_client_for_iface (self, iface, ipv6);
 	if (client) {
-		nm_dhcp_client_stop (client, FALSE);
+		nm_dhcp_client_stop (client);
 		remove_client (self, client);
 	}
 

@@ -411,15 +411,15 @@ dhclient_child_setup (gpointer user_data G_GNUC_UNUSED)
 
 static GPid
 dhclient_start (NMDHCPClient *client,
-                const char *mode_opt,
-                gboolean release)
+                const char *ip_opt,
+                const char *mode_opt)
 {
 	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
 	GPtrArray *argv = NULL;
 	GPid pid = -1;
 	GError *error = NULL;
 	const char *iface, *uuid;
-	char *binary_name, *cmd_str, *pid_file = NULL;
+	char *binary_name, *cmd_str;
 	gboolean ipv6;
 	guint log_domain;
 
@@ -436,33 +436,28 @@ dhclient_start (NMDHCPClient *client,
 		nm_log_warn (log_domain, "(%s): ISC dhcp3 does not support IPv6", iface);
 		return -1;
 	}
+#else
+	g_return_val_if_fail (ip_opt != NULL, -1);
 #endif
+
+	priv->pid_file = g_strdup_printf (LOCALSTATEDIR "/run/dhclient%s-%s.pid",
+	                                  ipv6 ? "6" : "",
+	                                  iface);
+	if (!priv->pid_file) {
+		nm_log_warn (log_domain, "(%s): not enough memory for dhcpcd options.", iface);
+		return -1;
+	}
 
 	if (!g_file_test (priv->path, G_FILE_TEST_EXISTS)) {
 		nm_log_warn (log_domain, "%s does not exist.", priv->path);
 		return -1;
 	}
 
-	pid_file = g_strdup_printf (LOCALSTATEDIR "/run/dhclient%s-%s.pid",
-		                        ipv6 ? "6" : "",
-		                        iface);
-	if (!pid_file) {
-		nm_log_warn (log_domain, "(%s): not enough memory for dhcpcd options.", iface);
-		return -1;
-	}
-
 	/* Kill any existing dhclient from the pidfile */
 	binary_name = g_path_get_basename (priv->path);
-	nm_dhcp_client_stop_existing (pid_file, binary_name);
+	nm_dhcp_client_stop_existing (priv->pid_file, binary_name);
 	g_free (binary_name);
 
-	if (release) {
-		/* release doesn't use the pidfile after killing an old client */
-		g_free (pid_file);
-		pid_file = NULL;
-	}
-
-	g_free (priv->lease_file);
 	priv->lease_file = get_leasefile_for_iface (iface, uuid, ipv6);
 	if (!priv->lease_file) {
 		nm_log_warn (log_domain, "(%s): not enough memory for dhclient options.", iface);
@@ -474,26 +469,17 @@ dhclient_start (NMDHCPClient *client,
 
 	g_ptr_array_add (argv, (gpointer) "-d");
 
-	if (release)
-		g_ptr_array_add (argv, (gpointer) "-r");
-
 #if !defined(DHCLIENT_V3)
-	if (ipv6) {
-		g_ptr_array_add (argv, (gpointer) "-6");
-		if (mode_opt)
-			g_ptr_array_add (argv, (gpointer) mode_opt);
-	} else {
-		g_ptr_array_add (argv, (gpointer) "-4");
-	}
+	g_ptr_array_add (argv, (gpointer) ip_opt);
+	if (mode_opt)
+		g_ptr_array_add (argv, (gpointer) mode_opt);
 #endif
 
 	g_ptr_array_add (argv, (gpointer) "-sf");	/* Set script file */
 	g_ptr_array_add (argv, (gpointer) ACTION_SCRIPT_PATH );
 
-	if (pid_file) {
-		g_ptr_array_add (argv, (gpointer) "-pf");	/* Set pid file */
-		g_ptr_array_add (argv, (gpointer) pid_file);
-	}
+	g_ptr_array_add (argv, (gpointer) "-pf");	/* Set pid file */
+	g_ptr_array_add (argv, (gpointer) priv->pid_file);
 
 	g_ptr_array_add (argv, (gpointer) "-lf");	/* Set lease file */
 	g_ptr_array_add (argv, (gpointer) priv->lease_file);
@@ -515,10 +501,8 @@ dhclient_start (NMDHCPClient *client,
 		nm_log_warn (log_domain, "dhclient failed to start: '%s'", error->message);
 		g_error_free (error);
 		pid = -1;
-	} else {
+	} else
 		nm_log_info (log_domain, "dhclient started with pid %d", pid);
-		priv->pid_file = pid_file;
-	}
 
 	g_ptr_array_free (argv, TRUE);
 	return pid;
@@ -541,7 +525,7 @@ real_ip4_start (NMDHCPClient *client,
 		return -1;
 	}
 
-	return dhclient_start (client, NULL, FALSE);
+	return dhclient_start (client, "-4", NULL);
 }
 
 static GPid
@@ -551,34 +535,21 @@ real_ip6_start (NMDHCPClient *client,
                 const char *hostname,
                 gboolean info_only)
 {
-	return dhclient_start (client, info_only ? "-S" : "-N", FALSE);
+	return dhclient_start (client, "-6", info_only ? "-S" : "-N");
 }
 
 static void
-real_stop (NMDHCPClient *client, gboolean release)
+real_stop (NMDHCPClient *client)
 {
 	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
 
 	/* Chain up to parent */
-	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhclient_parent_class)->stop (client, release);
+	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhclient_parent_class)->stop (client);
 
 	if (priv->conf_file)
 		remove (priv->conf_file);
-	if (priv->pid_file) {
+	if (priv->pid_file)
 		remove (priv->pid_file);
-		g_free (priv->pid_file);
-		priv->pid_file = NULL;
-	}
-
-	if (release) {
-		GPid rpid;
-
-		rpid = dhclient_start (client, NULL, TRUE);
-		if (rpid > 0) {
-			/* Wait a few seconds for the release to happen */
-			nm_dhcp_client_stop_pid (rpid, nm_dhcp_client_get_iface (client), 5);
-		}
-	}
 }
 
 /***************************************************/
