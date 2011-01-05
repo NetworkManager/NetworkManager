@@ -302,7 +302,7 @@ nm_log_dbg (LOGD_WIMAX, "wimax enabled changed to %d", priv->enabled);
 	if (priv->sdk) {
 		ret = iwmx_sdk_rf_state_set (priv->sdk,
 		                             enabled ? WIMAX_API_RF_ON : WIMAX_API_RF_OFF);
-		if (ret != -EINPROGRESS) {
+		if (ret < 0 && ret != -EINPROGRESS) {
 			nm_log_warn (LOGD_WIMAX, "failed to %s WiMAX radio",
 			             priv->enabled ? "enable" : "disable");
 		}
@@ -560,7 +560,7 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 
 	priv->connect_failed = FALSE;
 	ret = iwmx_sdk_connect (priv->sdk, nsp);
-	if (ret != 0) {
+	if (ret < 0 && ret != -EINPROGRESS) {
 		nm_log_err (LOGD_WIMAX, "Failed to connect to NSP '%s'", nsp);
 		*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
 		return NM_ACT_STAGE_RETURN_FAILURE;
@@ -594,7 +594,7 @@ real_deactivate_quickly (NMDevice *device)
 			if (   status == WIMAX_API_DEVICE_STATUS_Connecting
 				|| status == WIMAX_API_DEVICE_STATUS_Data_Connected) {
 				ret = iwmx_sdk_disconnect (priv->sdk);
-				if (ret < 0) {
+				if (ret < 0 && ret != -EINPROGRESS) {
 					nm_log_err (LOGD_WIMAX, "Failed to disconnect WiMAX device: %d", ret);
 				}
 			}
