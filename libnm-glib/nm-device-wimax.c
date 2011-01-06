@@ -47,18 +47,34 @@ typedef struct {
 	NMWimaxNsp *active_nsp;
 	gboolean null_active_nsp;
 	GPtrArray *nsps;
+
+	guint center_freq;
+	gint rssi;
+	gint cinr;
+	gint tx_power;
+	char *bsid;
 } NMDeviceWimaxPrivate;
 
 enum {
 	PROP_0,
 	PROP_HW_ADDRESS,
 	PROP_ACTIVE_NSP,
+	PROP_CENTER_FREQ,
+	PROP_RSSI,
+	PROP_CINR,
+	PROP_TX_POWER,
+	PROP_BSID,
 
 	LAST_PROP
 };
 
-#define DBUS_PROP_HW_ADDRESS "HwAddress"
-#define DBUS_PROP_ACTIVE_NSP "ActiveNsp"
+#define DBUS_PROP_HW_ADDRESS       "HwAddress"
+#define DBUS_PROP_ACTIVE_NSP       "ActiveNsp"
+#define DBUS_PROP_CENTER_FREQUENCY "CenterFrequency"
+#define DBUS_PROP_RSSI             "Rssi"
+#define DBUS_PROP_CINR             "Cinr"
+#define DBUS_PROP_TX_POWER         "TxPower"
+#define DBUS_PROP_BSID             "Bsid"
 
 enum {
 	NSP_ADDED,
@@ -321,6 +337,135 @@ clean_up_nsps (NMDeviceWimax *self, gboolean notify)
 	}
 }
 
+/**
+ * nm_device_wimax_get_center_frequency:
+ * @device: a #NMDeviceWimax
+ *
+ * Gets the center frequency (in KHz) of the radio channel the device is using
+ * to communicate with the network when connected.  Has no meaning when the
+ * device is not connected.
+ *
+ * Returns: the center frequency in KHz, or 0
+ **/
+guint
+nm_device_wimax_get_center_frequency (NMDeviceWimax *wimax)
+{
+	NMDeviceWimaxPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (wimax), 0);
+
+	priv = NM_DEVICE_WIMAX_GET_PRIVATE (wimax);
+	if (!priv->center_freq) {
+		priv->center_freq = _nm_object_get_uint_property (NM_OBJECT (wimax),
+		                                                  NM_DBUS_INTERFACE_DEVICE_WIMAX,
+		                                                  DBUS_PROP_CENTER_FREQUENCY);
+	}
+	return priv->center_freq;
+}
+
+/**
+ * nm_device_wimax_get_rssi:
+ * @device: a #NMDeviceWimax
+ *
+ * Gets the RSSI of the current radio link in dBm.  This value indicates how
+ * strong the raw received RF signal from the base station is, but does not
+ * indicate the overall quality of the radio link.  Has no meaning when the
+ * device is not connected.
+ *
+ * Returns: the RSSI in dBm, or 0
+ **/
+gint
+nm_device_wimax_get_rssi (NMDeviceWimax *wimax)
+{
+	NMDeviceWimaxPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (wimax), 0);
+
+	priv = NM_DEVICE_WIMAX_GET_PRIVATE (wimax);
+	if (!priv->rssi) {
+		priv->rssi = _nm_object_get_int_property (NM_OBJECT (wimax),
+		                                          NM_DBUS_INTERFACE_DEVICE_WIMAX,
+		                                          DBUS_PROP_RSSI);
+	}
+	return priv->rssi;
+}
+
+/**
+ * nm_device_wimax_get_cinr:
+ * @device: a #NMDeviceWimax
+ *
+ * Gets the CINR (Carrier to Interference + Noise Ratio) of the current radio
+ * link in dB.  CINR is a more accurate measure of radio link quality.  Has no
+ * meaning when the device is not connected.
+ *
+ * Returns: the CINR in dB, or 0
+ **/
+gint
+nm_device_wimax_get_cinr (NMDeviceWimax *wimax)
+{
+	NMDeviceWimaxPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (wimax), 0);
+
+	priv = NM_DEVICE_WIMAX_GET_PRIVATE (wimax);
+	if (!priv->cinr) {
+		priv->cinr = _nm_object_get_int_property (NM_OBJECT (wimax),
+		                                          NM_DBUS_INTERFACE_DEVICE_WIMAX,
+		                                          DBUS_PROP_CINR);
+	}
+	return priv->cinr;
+}
+
+/**
+ * nm_device_wimax_get_tx_power:
+ * @device: a #NMDeviceWimax
+ *
+ * Average power of the last burst transmitted by the device, in units of
+ * 0.5 dBm.  i.e. a TxPower of -11 represents an actual device TX power of
+ * -5.5 dBm.  Has no meaning when the device is not connected.
+ *
+ * Returns: the TX power in dBm, or 0
+ **/
+gint
+nm_device_wimax_get_tx_power (NMDeviceWimax *wimax)
+{
+	NMDeviceWimaxPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (wimax), 0);
+
+	priv = NM_DEVICE_WIMAX_GET_PRIVATE (wimax);
+	if (!priv->tx_power) {
+		priv->tx_power = _nm_object_get_int_property (NM_OBJECT (wimax),
+		                                              NM_DBUS_INTERFACE_DEVICE_WIMAX,
+		                                              DBUS_PROP_TX_POWER);
+	}
+	return priv->tx_power;
+}
+
+/**
+ * nm_device_wimax_get_bsid:
+ * @device: a #NMDeviceWimax
+ *
+ * Gets the ID of the serving Base Station when the device is connected.
+ *
+ * Returns: the ID of the serving Base Station, or NULL
+ **/
+const char *
+nm_device_wimax_get_bsid (NMDeviceWimax *wimax)
+{
+	NMDeviceWimaxPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (wimax), NULL);
+
+	priv = NM_DEVICE_WIMAX_GET_PRIVATE (wimax);
+	if (!priv->bsid) {
+		priv->bsid = _nm_object_get_string_property (NM_OBJECT (wimax),
+		                                             NM_DBUS_INTERFACE_DEVICE_WIMAX,
+		                                             DBUS_PROP_BSID);
+	}
+	return priv->bsid;
+}
+
 /**************************************************************/
 
 static void
@@ -343,9 +488,56 @@ get_property (GObject *object,
 	case PROP_ACTIVE_NSP:
 		g_value_set_object (value, nm_device_wimax_get_active_nsp (self));
 		break;
+	case PROP_CENTER_FREQ:
+		g_value_set_uint (value, nm_device_wimax_get_center_frequency (self));
+		break;
+	case PROP_RSSI:
+		g_value_set_int (value, nm_device_wimax_get_rssi (self));
+		break;
+	case PROP_CINR:
+		g_value_set_int (value, nm_device_wimax_get_cinr (self));
+		break;
+	case PROP_TX_POWER:
+		g_value_set_int (value, nm_device_wimax_get_tx_power (self));
+		break;
+	case PROP_BSID:
+		g_value_set_string (value, nm_device_wimax_get_bsid (self));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
+	}
+}
+
+static void
+clear_link_status (NMDeviceWimax *self)
+{
+	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
+
+	if (priv->center_freq) {
+		priv->center_freq = 0;
+		_nm_object_queue_notify (NM_OBJECT (self), NM_DEVICE_WIMAX_CENTER_FREQUENCY);
+	}
+
+	if (priv->rssi) {
+		priv->rssi = 0;
+		_nm_object_queue_notify (NM_OBJECT (self), NM_DEVICE_WIMAX_RSSI);
+	}
+
+	if (priv->cinr) {
+		priv->cinr = 0;
+		_nm_object_queue_notify (NM_OBJECT (self), NM_DEVICE_WIMAX_CINR);
+	}
+
+	if (priv->tx_power) {
+		priv->tx_power = 0;
+		_nm_object_queue_notify (NM_OBJECT (self), NM_DEVICE_WIMAX_TX_POWER);
+	}
+
+	if (priv->bsid) {
+		g_free (priv->bsid);
+		priv->bsid = NULL;
+		_nm_object_queue_notify (NM_OBJECT (self), NM_DEVICE_WIMAX_BSID);
 	}
 }
 
@@ -354,8 +546,10 @@ state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 {
 	NMDeviceWimax *self = NM_DEVICE_WIMAX (device);
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
+	NMDeviceState state;
 
-	switch (nm_device_get_state (device)) {
+	state = nm_device_get_state (device);
+	switch (state) {
 	case NM_DEVICE_STATE_UNKNOWN:
 	case NM_DEVICE_STATE_UNMANAGED:
 	case NM_DEVICE_STATE_UNAVAILABLE:
@@ -367,6 +561,13 @@ state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 			priv->null_active_nsp = FALSE;
 		}
 		_nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_WIMAX_ACTIVE_NSP);
+		clear_link_status (self);
+		break;
+	case NM_DEVICE_STATE_PREPARE:
+	case NM_DEVICE_STATE_CONFIG:
+	case NM_DEVICE_STATE_NEED_AUTH:
+	case NM_DEVICE_STATE_IP_CONFIG:
+		clear_link_status (self);
 		break;
 	default:
 		break;
@@ -420,6 +621,11 @@ register_for_property_changed (NMDeviceWimax *wimax)
 	const NMPropertiesChangedInfo property_changed_info[] = {
 		{ NM_DEVICE_WIMAX_HW_ADDRESS, _nm_object_demarshal_generic, &priv->hw_address },
 		{ NM_DEVICE_WIMAX_ACTIVE_NSP, demarshal_active_nsp, &priv->active_nsp },
+		{ NM_DEVICE_WIMAX_CENTER_FREQUENCY, _nm_object_demarshal_generic, &priv->center_freq },
+		{ NM_DEVICE_WIMAX_RSSI, _nm_object_demarshal_generic, &priv->rssi },
+		{ NM_DEVICE_WIMAX_CINR, _nm_object_demarshal_generic, &priv->cinr },
+		{ NM_DEVICE_WIMAX_TX_POWER, _nm_object_demarshal_generic, &priv->tx_power },
+		{ NM_DEVICE_WIMAX_BSID, _nm_object_demarshal_generic, &priv->bsid },
 		{ NULL },
 	};
 
@@ -485,21 +691,13 @@ dispose (GObject *object)
 
 	priv->disposed = TRUE;
 
+	g_free (priv->hw_address);
+	g_free (priv->bsid);
+
 	clean_up_nsps (NM_DEVICE_WIMAX (object), FALSE);
 	g_object_unref (priv->proxy);
 
 	G_OBJECT_CLASS (nm_device_wimax_parent_class)->dispose (object);
-}
-
-static void
-finalize (GObject *object)
-{
-	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (object);
-
-	if (priv->hw_address)
-		g_free (priv->hw_address);
-
-	G_OBJECT_CLASS (nm_device_wimax_parent_class)->finalize (object);
 }
 
 static void
@@ -513,7 +711,6 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	object_class->constructor = constructor;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
-	object_class->finalize = finalize;
 
 	/* properties */
 
@@ -542,6 +739,81 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 							  "Active NSP",
 							  NM_TYPE_WIMAX_NSP,
 							  G_PARAM_READABLE));
+
+	/**
+	 * NMDeviceWimax:center-frequency:
+	 *
+	 * The center frequency (in KHz) of the radio channel the device is using to
+	 * communicate with the network when connected.  Has no meaning when the
+	 * device is not connected.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_CENTER_FREQ,
+		 g_param_spec_uint (NM_DEVICE_WIMAX_CENTER_FREQUENCY,
+		                    "Center frequency",
+		                    "Center frequency",
+		                    0, G_MAXUINT, 0,
+		                    G_PARAM_READABLE));
+
+	/**
+	 * NMDeviceWimax:rssi:
+	 *
+	 * RSSI of the current radio link in dBm.  This value indicates how strong
+	 * the raw received RF signal from the base station is, but does not
+	 * indicate the overall quality of the radio link.  Has no meaning when the
+	 * device is not connected.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_RSSI,
+		 g_param_spec_int (NM_DEVICE_WIMAX_RSSI,
+		                   "RSSI",
+		                   "RSSI",
+		                   G_MININT, G_MAXINT, 0,
+		                   G_PARAM_READABLE));
+
+	/**
+	 * NMDeviceWimax:cinr:
+	 *
+	 * CINR (Carrier to Interference + Noise Ratio) of the current radio link
+	 * in dB.  CINR is a more accurate measure of radio link quality.  Has no
+	 * meaning when the device is not connected.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_CINR,
+		 g_param_spec_int (NM_DEVICE_WIMAX_CINR,
+		                   "CINR",
+		                   "CINR",
+		                   G_MININT, G_MAXINT, 0,
+		                   G_PARAM_READABLE));
+
+	/**
+	 * NMDeviceWimax:tx-power:
+	 *
+	 * Average power of the last burst transmitted by the device, in units of
+	 * 0.5 dBm.  i.e. a TxPower of -11 represents an actual device TX power of
+	 * -5.5 dBm.  Has no meaning when the device is not connected.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_TX_POWER,
+		 g_param_spec_int (NM_DEVICE_WIMAX_TX_POWER,
+		                   "TX Power",
+		                   "TX Power",
+		                   G_MININT, G_MAXINT, 0,
+		                   G_PARAM_READABLE));
+
+	/**
+	 * NMDeviceWimax:bsid:
+	 *
+	 * The ID of the serving base station as received from the network.  Has
+	 * no meaning when the device is not connected.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_BSID,
+		 g_param_spec_string (NM_DEVICE_WIMAX_BSID,
+		                      "BSID",
+		                      "BSID",
+		                      NULL,
+		                      G_PARAM_READABLE));
 
 	/* signals */
 

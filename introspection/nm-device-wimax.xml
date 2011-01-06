@@ -20,6 +20,46 @@
       </tp:docstring>
     </property>
 
+    <property name="CenterFrequency" type="u" access="read">
+      <tp:docstring>
+        Center frequency (in KHz) of the radio channel the device is using to
+        communicate with the network when connected.  Has no meaning when the
+        device is not connected.
+      </tp:docstring>
+    </property>
+
+    <property name="Rssi" type="i" access="read">
+      <tp:docstring>
+        RSSI of the current radio link in dBm.  This value indicates how strong
+        the raw received RF signal from the base station is, but does not
+        indicate the overall quality of the radio link.  Has no meaning when the
+        device is not connected.
+      </tp:docstring>
+    </property>
+
+    <property name="Cinr" type="i" access="read">
+      <tp:docstring>
+        CINR (Carrier to Interference + Noise Ratio) of the current radio link
+        in dB.  CINR is a more accurate measure of radio link quality.  Has no
+        meaning when the device is not connected.
+      </tp:docstring>
+    </property>
+
+    <property name="TxPower" type="i" access="read">
+      <tp:docstring>
+        Average power of the last burst transmitted by the device, in units of
+        0.5 dBm.  i.e. a TxPower of -11 represents an actual device TX power of
+        -5.5 dBm.  Has no meaning when the device is not connected.
+      </tp:docstring>
+    </property>
+
+    <property name="Bsid" type="s" access="read">
+      <tp:docstring>
+        The ID of the serving base station as received from the network.  Has
+        no meaning when the device is not connected.
+      </tp:docstring>
+    </property>
+
     <property name="ActiveNsp" type="o" access="read">
       <tp:docstring>
         Object path of the NSP currently used by the WiMax device.

@@ -551,6 +551,42 @@ WIMAX_API_CONNECTED_NSP_INFO_EX *iwmx_sdk_get_connected_network(struct wmxsdk *w
 }
 
 /*
+ * Asks the WiMAX API to report current link statistics.
+ *
+ * Returns NULL on error.
+ *
+ */
+WIMAX_API_LINK_STATUS_INFO_EX *iwmx_sdk_get_link_status_info(struct wmxsdk *wmxsdk)
+{
+	WIMAX_API_LINK_STATUS_INFO_EX *stats = NULL;
+	WIMAX_API_RET r;
+	char errstr[512];
+	UINT32 errstr_size = sizeof(errstr);
+
+	/* Only report if connected */
+	if (iwmxsdk_status_get(wmxsdk) < WIMAX_API_DEVICE_STATUS_Connecting) {
+		nm_log_err(LOGD_WIMAX, "wmxsdk: cannot get link status info unless connected");
+		return NULL;
+	}
+
+	stats = malloc(sizeof (*stats));
+	if (!stats) {
+		nm_log_err(LOGD_WIMAX, "wmxsdk: cannot allocate links status info");
+		return NULL;
+	}
+
+	r = GetLinkStatusEx(&wmxsdk->device_id, stats);
+	if (r != WIMAX_API_RET_SUCCESS) {
+		GetErrorString(&wmxsdk->device_id, r, errstr, &errstr_size);
+		nm_log_err(LOGD_WIMAX, "wmxsdk: Cannot get link status info: %d (%s)", r, errstr);
+		free (stats);
+		stats = NULL;
+	}
+
+	return stats;
+}
+
+/*
  * Callback for a RF State command
  *
  * Called by the WiMAX API when a command sent to change the RF state

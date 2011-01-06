@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2010 Red Hat, Inc.
+ * Copyright (C) 2010 - 2011 Red Hat, Inc.
  * Copyright (C) 2009 Novell, Inc.
  */
 
@@ -35,8 +35,13 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_WIMAX_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_DEVICE_WIMAX))
 #define NM_DEVICE_WIMAX_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DEVICE_WIMAX, NMDeviceWimaxClass))
 
-#define NM_DEVICE_WIMAX_HW_ADDRESS "hw-address"
-#define NM_DEVICE_WIMAX_ACTIVE_NSP "active-nsp"
+#define NM_DEVICE_WIMAX_HW_ADDRESS       "hw-address"
+#define NM_DEVICE_WIMAX_ACTIVE_NSP       "active-nsp"
+#define NM_DEVICE_WIMAX_CENTER_FREQUENCY "center-frequency"
+#define NM_DEVICE_WIMAX_RSSI             "rssi"
+#define NM_DEVICE_WIMAX_CINR             "cinr"
+#define NM_DEVICE_WIMAX_TX_POWER         "tx-power"
+#define NM_DEVICE_WIMAX_BSID             "bsid"
 
 typedef struct {
 	NMDevice parent;
@@ -61,6 +66,16 @@ void        nm_device_wimax_get_hw_address (NMDeviceWimax *self,
 											struct ether_addr *addr);
 
 NMWimaxNsp *nm_device_wimax_get_active_nsp (NMDeviceWimax *self);
+
+guint       nm_device_wimax_get_center_frequency (NMDeviceWimax *self);
+
+gint        nm_device_wimax_get_rssi       (NMDeviceWimax *self);
+
+gint        nm_device_wimax_get_cinr       (NMDeviceWimax *self);
+
+gint        nm_device_wimax_get_tx_power   (NMDeviceWimax *self);
+
+const char *nm_device_wimax_get_bsid       (NMDeviceWimax *self);
 
 G_END_DECLS
 

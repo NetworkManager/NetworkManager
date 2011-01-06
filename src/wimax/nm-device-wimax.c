@@ -56,6 +56,11 @@ enum {
 	PROP_0,
 	PROP_HW_ADDRESS,
 	PROP_ACTIVE_NSP,
+	PROP_CENTER_FREQ,
+	PROP_RSSI,
+	PROP_CINR,
+	PROP_TX_POWER,
+	PROP_BSID,
 
 	LAST_PROP
 };
@@ -93,6 +98,13 @@ typedef struct {
 
 	GSList *nsp_list;
 	NMWimaxNsp *current_nsp;
+
+	/* interesting stuff when connected */
+	guint center_freq;
+	gint rssi;
+	gint cinr;
+	gint tx_power;
+	char *bsid;
 } NMDeviceWimaxPrivate;
 
 /***********************************************************/
@@ -151,6 +163,46 @@ nm_device_wimax_get_hw_address (NMDeviceWimax *self, struct ether_addr *addr)
 
 	priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 	memcpy (addr, &(priv->hw_addr), sizeof (struct ether_addr));
+}
+
+guint32
+nm_device_wimax_get_center_frequency (NMDeviceWimax *self)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), 0);
+
+	return NM_DEVICE_WIMAX_GET_PRIVATE (self)->center_freq;
+}
+
+gint
+nm_device_wimax_get_rssi (NMDeviceWimax *self)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), 0);
+
+	return NM_DEVICE_WIMAX_GET_PRIVATE (self)->rssi;
+}
+
+gint
+nm_device_wimax_get_cinr (NMDeviceWimax *self)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), 0);
+
+	return NM_DEVICE_WIMAX_GET_PRIVATE (self)->cinr;
+}
+
+gint
+nm_device_wimax_get_tx_power (NMDeviceWimax *self)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), 0);
+
+	return NM_DEVICE_WIMAX_GET_PRIVATE (self)->tx_power;
+}
+
+const char *
+nm_device_wimax_get_bsid (NMDeviceWimax *self)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), NULL);
+
+	return NM_DEVICE_WIMAX_GET_PRIVATE (self)->bsid;
 }
 
 static gboolean
@@ -945,14 +997,92 @@ wmx_removed_cb (struct wmxsdk *wmxsdk, void *user_data)
 
 /*************************************************************************/
 
+static inline gint
+sdk_rssi_to_dbm (guint raw_rssi)
+{
+	/* Values range from 0x00 to 0x53, where -123dBm is encoded as 0x00 and
+	 * -40dBm encoded as 0x53 in 1dB increments.
+	 */
+	return raw_rssi - 123;
+}
+
+static inline gint
+sdk_cinr_to_db (guint raw_cinr)
+{
+	/* Values range from 0x00 to 0x3F, where -10dB is encoded as 0x00 and
+	 * 53dB encoded as 0x3F in 1dB increments.
+	 */
+	return raw_cinr - 10;
+}
+
+static inline gint
+sdk_tx_pow_to_dbm (guint raw_tx_pow)
+{
+	/* Values range from 0x00 to 0xFF, where -84dBm is encoded as 0x00 and
+	 * 43.5dBm is encoded as 0xFF in 0.5dB increments.  Normalize so that
+	 * 0 dBm == 0.
+	 */
+	return (int) (((double) raw_tx_pow / 2.0) - 84) * 2;
+}
+
+static void
+set_link_status (NMDeviceWimax *self, WIMAX_API_LINK_STATUS_INFO_EX *link_status)
+{
+	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
+	guint center_freq = 0;
+	gint conv_rssi = 0, conv_cinr = 0, conv_tx_pow = 0;
+	char *new_bsid = NULL;
+
+	if (link_status) {
+		center_freq = link_status->centerFrequency;
+		conv_rssi = sdk_rssi_to_dbm (link_status->RSSI);
+		conv_cinr = sdk_cinr_to_db (link_status->CINR);
+		conv_tx_pow = sdk_tx_pow_to_dbm (link_status->txPWR);
+		new_bsid = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
+		                            link_status->bsId[0], link_status->bsId[1],
+		                            link_status->bsId[2], link_status->bsId[3],
+		                            link_status->bsId[4], link_status->bsId[5]);
+	}
+
+	if (priv->center_freq != center_freq) {
+		priv->center_freq = center_freq;
+		g_object_notify (G_OBJECT (self), NM_DEVICE_WIMAX_CENTER_FREQUENCY);
+	}
+
+	if (priv->rssi != conv_rssi) {
+		priv->rssi = conv_rssi;
+		g_object_notify (G_OBJECT (self), NM_DEVICE_WIMAX_RSSI);
+	}
+
+	if (priv->cinr != conv_cinr) {
+		priv->cinr = conv_cinr;
+		g_object_notify (G_OBJECT (self), NM_DEVICE_WIMAX_CINR);
+	}
+
+	if (priv->tx_power != conv_tx_pow) {
+		priv->tx_power = conv_tx_pow;
+		g_object_notify (G_OBJECT (self), NM_DEVICE_WIMAX_TX_POWER);
+	}
+
+	if (g_strcmp0 (priv->bsid, new_bsid) != 0) {
+		g_free (priv->bsid);
+		priv->bsid = new_bsid;
+		g_object_notify (G_OBJECT (self), NM_DEVICE_WIMAX_BSID);
+	} else
+		g_free (new_bsid);
+}
+
 static gboolean
 connected_poll_cb (gpointer user_data)
 {
 	NMDeviceWimax *self = NM_DEVICE_WIMAX (user_data);
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 	WIMAX_API_CONNECTED_NSP_INFO_EX *sdk_nsp;
+	WIMAX_API_LINK_STATUS_INFO_EX *link_status;
 
 	g_return_val_if_fail (priv->sdk != NULL, FALSE);
+
+	/* Get details of the connected NSP */
 	sdk_nsp = iwmx_sdk_get_connected_network (priv->sdk);
 	if (sdk_nsp) {
 		const char *nsp_name = (const char *) sdk_nsp->NSPName;
@@ -976,6 +1106,13 @@ connected_poll_cb (gpointer user_data)
 					    nsp_name, sdk_nsp->linkQuality, net_type);
 		}
 		free (sdk_nsp);
+	}
+
+	/* Get details of the current radio link */
+	link_status = iwmx_sdk_get_link_status_info (priv->sdk);
+	if (link_status) {
+		set_link_status (self, link_status);
+		free (link_status);
 	}
 
 	return TRUE; /* reschedule */
@@ -1008,9 +1145,11 @@ device_state_changed (NMDevice *device,
 		/* poll link quality and BSID */
 		clear_connected_poll (self);
 		priv->poll_id = g_timeout_add_seconds (10, connected_poll_cb, self);
+		connected_poll_cb (self);
 	} else {
 		clear_link_timeout (self);
 		clear_connected_poll (self);
+		set_link_status (self, NULL);
 	}
 }
 
@@ -1133,6 +1272,21 @@ get_property (GObject *object, guint prop_id,
 		else
 			g_value_set_boxed (value, "/");
 		break;
+	case PROP_CENTER_FREQ:
+		g_value_set_uint (value, priv->center_freq);
+		break;
+	case PROP_RSSI:
+		g_value_set_int (value, priv->rssi);
+		break;
+	case PROP_CINR:
+		g_value_set_int (value, priv->cinr);
+		break;
+	case PROP_TX_POWER:
+		g_value_set_int (value, priv->tx_power);
+		break;
+	case PROP_BSID:
+		g_value_set_string (value, priv->bsid);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1161,6 +1315,8 @@ dispose (GObject *object)
 		iwmx_sdk_set_callbacks (priv->sdk, NULL, NULL, NULL, NULL, NULL, NULL);
 		wmxsdk_unref (priv->sdk);
 	}
+
+	g_free (priv->bsid);
 
 	set_current_nsp (self, NULL);
 
@@ -1215,6 +1371,46 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *klass)
 		                    "Currently active NSP",
 		                    DBUS_TYPE_G_OBJECT_PATH,
 		                    G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_CENTER_FREQ,
+		 g_param_spec_uint (NM_DEVICE_WIMAX_CENTER_FREQUENCY,
+		                    "Center frequency",
+		                    "Center frequency",
+		                    0, G_MAXUINT, 0,
+		                    G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_RSSI,
+		 g_param_spec_int (NM_DEVICE_WIMAX_RSSI,
+		                   "RSSI",
+		                   "RSSI",
+		                   G_MININT, G_MAXINT, 0,
+		                   G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_CINR,
+		 g_param_spec_int (NM_DEVICE_WIMAX_CINR,
+		                   "CINR",
+		                   "CINR",
+		                   G_MININT, G_MAXINT, 0,
+		                   G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_TX_POWER,
+		 g_param_spec_int (NM_DEVICE_WIMAX_TX_POWER,
+		                   "TX Power",
+		                   "TX Power",
+		                   G_MININT, G_MAXINT, 0,
+		                   G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_BSID,
+		 g_param_spec_string (NM_DEVICE_WIMAX_BSID,
+		                      "BSID",
+		                      "BSID",
+		                      NULL,
+		                      G_PARAM_READABLE));
 
 	/* Signals */
 	signals[NSP_ADDED] =

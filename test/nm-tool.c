@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /* nm-tool - information tool for NetworkManager
  *
  * Dan Williams <dcbw@redhat.com>
@@ -16,10 +17,11 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2005 - 2010 Red Hat, Inc.
+ * (C) Copyright 2005 - 2011 Red Hat, Inc.
  * (C) Copyright 2007 Novell, Inc.
  */
 
+#include <config.h>
 #include <glib.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
@@ -473,13 +475,58 @@ detail_device (gpointer data, gpointer user_data)
 			print_string ("  Carrier", "off");
 #if WITH_WIMAX
 	} else if (NM_IS_DEVICE_WIMAX (device)) {
+		NMDeviceWimax *wimax = NM_DEVICE_WIMAX (device);
 		NMWimaxNsp *active_nsp = NULL;
 		const char *active_name = NULL;
 		const GPtrArray *nsps;
 
 		if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
-			active_nsp = nm_device_wimax_get_active_nsp (NM_DEVICE_WIMAX (device));
+			guint tmp_uint;
+			gint tmp_int;
+			const char *tmp_str;
+
+			active_nsp = nm_device_wimax_get_active_nsp (wimax);
 			active_name = active_nsp ? nm_wimax_nsp_get_name (active_nsp) : NULL;
+
+			printf ("\n  Link Status\n");
+
+			tmp_uint = nm_device_wimax_get_center_frequency (wimax);
+			if (tmp_uint)
+				tmp = g_strdup_printf ("%'.1f MHz", (double) tmp_uint / 1000.0);
+			else
+				tmp = g_strdup ("(unknown)");
+			print_string ("  Center Freq.", tmp);
+			g_free (tmp);
+
+			tmp_int = nm_device_wimax_get_rssi (wimax);
+			if (tmp_int)
+				tmp = g_strdup_printf ("%d dBm", tmp_int);
+			else
+				tmp = g_strdup ("(unknown)");
+			print_string ("  RSSI", tmp);
+			g_free (tmp);
+
+			tmp_int = nm_device_wimax_get_cinr (wimax);
+			if (tmp_int)
+				tmp = g_strdup_printf ("%d dB", tmp_int);
+			else
+				tmp = g_strdup ("(unknown)");
+			print_string ("  CINR", tmp);
+			g_free (tmp);
+
+			tmp_int = nm_device_wimax_get_tx_power (wimax);
+			if (tmp_int)
+				tmp = g_strdup_printf ("%'.2f dBm", (float) tmp_int / 2.0);
+			else
+				tmp = g_strdup ("(unknown)");
+			print_string ("  TX Power", tmp);
+			g_free (tmp);
+
+			tmp_str = nm_device_wimax_get_bsid (wimax);
+			if (tmp_str)
+				print_string ("  BSID", tmp_str);
+			else
+				print_string ("  BSID", "(unknown)");
 		}
 
 		printf ("\n  WiMAX NSPs %s\n", active_nsp ? "(* current NSP)" : "");

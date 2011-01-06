@@ -36,8 +36,13 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_WIMAX_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_DEVICE_WIMAX))
 #define NM_DEVICE_WIMAX_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_WIMAX, NMDeviceWimaxClass))
 
-#define NM_DEVICE_WIMAX_HW_ADDRESS "hw-address"
-#define NM_DEVICE_WIMAX_ACTIVE_NSP "active-nsp"
+#define NM_DEVICE_WIMAX_HW_ADDRESS       "hw-address"
+#define NM_DEVICE_WIMAX_ACTIVE_NSP       "active-nsp"
+#define NM_DEVICE_WIMAX_CENTER_FREQUENCY "center-frequency"
+#define NM_DEVICE_WIMAX_RSSI             "rssi"
+#define NM_DEVICE_WIMAX_CINR             "cinr"
+#define NM_DEVICE_WIMAX_TX_POWER         "tx-power"
+#define NM_DEVICE_WIMAX_BSID             "bsid"
 
 typedef struct {
 	NMDevice parent;
@@ -62,6 +67,12 @@ NMWimaxNsp      *nm_device_wimax_get_nsp_by_path (NMDeviceWimax *wimax,
 												  const char *path);
 
 const GPtrArray *nm_device_wimax_get_nsps        (NMDeviceWimax *wimax);
+
+guint            nm_device_wimax_get_center_frequency (NMDeviceWimax *self);
+gint             nm_device_wimax_get_rssi        (NMDeviceWimax *self);
+gint             nm_device_wimax_get_cinr        (NMDeviceWimax *self);
+gint             nm_device_wimax_get_tx_power    (NMDeviceWimax *self);
+const char *     nm_device_wimax_get_bsid        (NMDeviceWimax *self);
 
 G_END_DECLS
 
