@@ -271,7 +271,7 @@ AC_SUBST(UUID_LIBS)
 AC_ARG_ENABLE(wimax, AC_HELP_STRING([--enable-wimax], [enable WiMAX support]),
                      [enable_wimax=${enableval}], [enable_wimax=yes])
 if (test "${enable_wimax}" = "yes"); then
-	PKG_CHECK_MODULES(IWMX_SDK, libiWmxSdk-0, dummy=yes,
+	PKG_CHECK_MODULES(IWMX_SDK, libiWmxSdk-0 >= 1.5.1, dummy=yes,
 				AC_MSG_ERROR(Intel WiMAX SDK is required))
 	AC_SUBST(IWMX_SDK_CFLAGS)
 	AC_SUBST(IWMX_SDK_LIBS)
