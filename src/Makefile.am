@@ -234,6 +234,12 @@ NetworkManager_CPPFLAGS = \
 	-DNMLOCALEDIR=\"$(datadir)/locale\" \
 	-DARP_DEBUG
 
+
+WIMAX_LIBS=
+if WITH_WIMAX
+WIMAX_LIBS = ./wimax/libwimax.la
+endif
+
 NetworkManager_LDADD = \
 	$(top_builddir)/marshallers/libmarshallers.la \
 	./logging/libnm-logging.la \
@@ -246,6 +252,7 @@ NetworkManager_LDADD = \
 	./ppp-manager/libppp-manager.la \
 	./modem-manager/libmodem-manager.la \
 	./bluez-manager/libbluez-manager.la \
+	$(WIMAX_LIBS) \
 	./system-settings/libsystem-settings.la \
 	./backends/libnmbackend.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
@@ -257,10 +264,6 @@ NetworkManager_LDADD = \
 	$(POLKIT_LIBS) \
 	$(LIBM) \
 	$(LIBDL)
-
-if WITH_WIMAX
-NetworkManager_LDADD += ./wimax/libwimax.la
-endif
 
 NetworkManager_LDFLAGS = -rdynamic
 
