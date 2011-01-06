@@ -36,7 +36,9 @@
 #include "nm-device-wifi.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-modem.h"
+#if WITH_WIMAX
 #include "nm-device-wimax.h"
+#endif
 #include "nm-dbus-manager.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-connection.h"
@@ -933,11 +935,13 @@ wireless_networks_changed (NMDeviceWifi *device, NMAccessPoint *ap, gpointer use
 	schedule_activate_check ((NMPolicy *) user_data, NM_DEVICE (device), 0);
 }
 
+#if WITH_WIMAX
 static void
 nsps_changed (NMDeviceWimax *device, NMWimaxNsp *nsp, gpointer user_data)
 {
 	schedule_activate_check ((NMPolicy *) user_data, NM_DEVICE (device), 0);
 }
+#endif
 
 typedef struct {
 	gulong id;
@@ -989,6 +993,7 @@ device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 		                       G_CALLBACK (wireless_networks_changed),
 		                       policy);
 		policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
+#if WITH_WIMAX
 	} else if (NM_IS_DEVICE_WIMAX (device)) {
 		id = g_signal_connect (device, "nsp-added",
 		                       G_CALLBACK (nsps_changed),
@@ -999,6 +1004,7 @@ device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 		                       G_CALLBACK (nsps_changed),
 		                       policy);
 		policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
+#endif
 	}
 }
 

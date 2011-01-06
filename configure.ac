@@ -268,7 +268,16 @@ PKG_CHECK_MODULES(UUID, uuid)
 AC_SUBST(UUID_CFLAGS)
 AC_SUBST(UUID_LIBS)
 
-PKG_CHECK_MODULES(WIMAX, libiWmxSdk-0)
+AC_ARG_ENABLE(wimax, AC_HELP_STRING([--enable-wimax], [enable WiMAX support]),
+                     [enable_wimax=${enableval}], [enable_wimax=yes])
+if (test "${enable_wimax}" = "yes"); then
+	PKG_CHECK_MODULES(IWMX_SDK, libiWmxSdk-0, dummy=yes,
+				AC_MSG_ERROR(Intel WiMAX SDK is required))
+	AC_SUBST(IWMX_SDK_CFLAGS)
+	AC_SUBST(IWMX_SDK_LIBS)
+	AC_DEFINE(WITH_WIMAX, 1, [Define if you have WiMAX support])
+fi
+AM_CONDITIONAL(WITH_WIMAX, test "${enable_wimax}" = "yes")
 
 PKG_CHECK_MODULES(POLKIT, polkit-gobject-1)
 AC_SUBST(POLKIT_CFLAGS)
@@ -619,6 +628,12 @@ if test -n "${with_systemdsystemunitdir}"; then
 	echo systemd support: ${with_systemdsystemunitdir}
 else
 	echo systemd support: no
+fi
+
+if test "${enable_wimax}" = "yes"; then
+	echo WiMAX support: yes
+else
+	echo WiMAX support: no
 fi
 
 echo

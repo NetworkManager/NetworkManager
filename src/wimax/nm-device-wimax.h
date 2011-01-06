@@ -23,7 +23,6 @@
 #define NM_DEVICE_WIMAX_H
 
 #include <net/ethernet.h>
-#include <WiMaxType.h>
 #include "nm-device.h"
 #include "nm-wimax-nsp.h"
 

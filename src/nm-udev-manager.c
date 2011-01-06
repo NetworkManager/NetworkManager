@@ -15,9 +15,10 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 - 2010 Red Hat, Inc.
+ * Copyright (C) 2009 - 2011 Red Hat, Inc.
  */
 
+#include <config.h>
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
@@ -38,7 +39,9 @@
 #include "nm-device-wifi.h"
 #include "nm-device-olpc-mesh.h"
 #include "nm-device-ethernet.h"
+#if WITH_WIMAX
 #include "nm-device-wimax.h"
+#endif
 
 typedef struct {
 	GUdevClient *client;
@@ -397,9 +400,11 @@ device_creator (NMUdevManager *manager,
 		device = (GObject *) nm_device_olpc_mesh_new (path, ifname, driver);
 	else if (is_wireless (udev_device))
 		device = (GObject *) nm_device_wifi_new (path, ifname, driver);
-	else if (is_wimax (driver))
+	else if (is_wimax (driver)) {
+#if WITH_WIMAX
 		device = (GObject *) nm_device_wimax_new (path, ifname, driver);
-	else
+#endif
+	} else
 		device = (GObject *) nm_device_ethernet_new (path, ifname, driver);
 
 out:

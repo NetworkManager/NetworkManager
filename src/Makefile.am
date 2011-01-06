@@ -10,28 +10,35 @@ SUBDIRS= \
 	dnsmasq-manager \
 	modem-manager \
 	bluez-manager \
-	wimax \
-	system-settings \
-	. \
-	tests
+	system-settings
 
-INCLUDES = -I${top_srcdir}                   \
-           -I${top_srcdir}/include           \
-           -I${top_builddir}/marshallers   \
+if WITH_WIMAX
+SUBDIRS += wimax
+endif
+
+SUBDIRS += . tests
+
+INCLUDES = -I${top_srcdir} \
+           -I${top_srcdir}/include \
+           -I${top_builddir}/marshallers \
            -I${top_srcdir}/src/logging \
            -I${top_srcdir}/src/dns-manager \
-           -I${top_srcdir}/src/vpn-manager   \
-           -I${top_srcdir}/src/dhcp-manager  \
-           -I${top_srcdir}/src/ip6-manager  \
-           -I${top_srcdir}/src/supplicant-manager  \
-           -I${top_srcdir}/src/dnsmasq-manager  \
-           -I${top_srcdir}/src/modem-manager  \
+           -I${top_srcdir}/src/vpn-manager \
+           -I${top_srcdir}/src/dhcp-manager \
+           -I${top_srcdir}/src/ip6-manager \
+           -I${top_srcdir}/src/supplicant-manager \
+           -I${top_srcdir}/src/dnsmasq-manager \
+           -I${top_srcdir}/src/modem-manager \
            -I$(top_srcdir)/src/bluez-manager \
-           -I$(top_srcdir)/src/wimax \
            -I$(top_srcdir)/src/system-settings \
            -I${top_srcdir}/libnm-util \
-           -I${top_srcdir}/libnm-glib \
            -I${top_srcdir}/callouts
+
+if WITH_WIMAX
+INCLUDES += -I$(top_srcdir)/src/wimax
+endif
+
+INCLUDES += -I${top_srcdir}/libnm-glib
 
 ###########################################
 # Test libraries
@@ -215,7 +222,6 @@ NetworkManager_CPPFLAGS = \
 	$(GUDEV_CFLAGS) \
 	$(LIBNL_CFLAGS) \
 	$(GMODULE_CFLAGS) \
-	$(WIMAX_CFLAGS) \
 	$(POLKIT_CFLAGS) \
 	-DG_DISABLE_DEPRECATED \
 	-DBINDIR=\"$(bindir)\" \
@@ -240,7 +246,6 @@ NetworkManager_LDADD = \
 	./ppp-manager/libppp-manager.la \
 	./modem-manager/libmodem-manager.la \
 	./bluez-manager/libbluez-manager.la \
-	./wimax/libwimax.la \
 	./system-settings/libsystem-settings.la \
 	./backends/libnmbackend.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
@@ -252,6 +257,10 @@ NetworkManager_LDADD = \
 	$(POLKIT_LIBS) \
 	$(LIBM) \
 	$(LIBDL)
+
+if WITH_WIMAX
+NetworkManager_LDADD += ./wimax/libwimax.la
+endif
 
 NetworkManager_LDFLAGS = -rdynamic
 

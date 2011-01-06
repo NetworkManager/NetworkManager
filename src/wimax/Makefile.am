@@ -20,11 +20,11 @@ libwimax_la_SOURCES = \
 
 libwimax_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
-	$(WIMAX_CFLAGS)
+	$(IWMX_SDK_CFLAGS)
 
 libwimax_la_LIBADD = \
 	$(DBUS_LIBS) \
-	$(WIMAX_LIBS) \
+	$(IWMX_SDK_LIBS) \
 	$(top_builddir)/marshallers/libmarshallers.la
 
 nm-wimax-nsp-glue.h: $(top_srcdir)/introspection/nm-wimax-nsp.xml

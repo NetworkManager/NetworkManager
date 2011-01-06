@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2009 Novell, Inc.
- * Copyright (C) 2007 - 2010 Red Hat, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -38,7 +38,9 @@
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
 #include "nm-device-olpc-mesh.h"
+#if WITH_WIMAX
 #include "nm-device-wimax.h"
+#endif
 #include "nm-device-cdma.h"
 #include "nm-device-gsm.h"
 #include "nm-system.h"
@@ -2117,10 +2119,12 @@ add_device (NMManager *self, NMDevice *device)
 		nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (device),
 		                                 priv->radio_states[RFKILL_TYPE_WWAN].enabled);
 		*/
+#if WITH_WIMAX
 	} else if (NM_IS_DEVICE_WIMAX (device)) {
 		nm_manager_rfkill_update (self, RFKILL_TYPE_WIMAX);
 		enabled = radio_enabled_for_type (self, RFKILL_TYPE_WIMAX);
 		nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (device), enabled);
+#endif
 	}
 
 	type_desc = nm_device_get_type_desc (device);
