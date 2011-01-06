@@ -237,7 +237,7 @@ NetworkManager_CPPFLAGS = \
 
 WIMAX_LIBS=
 if WITH_WIMAX
-WIMAX_LIBS = ./wimax/libwimax.la
+WIMAX_LIBS += ./wimax/libwimax.la
 endif
 
 NetworkManager_LDADD = \
