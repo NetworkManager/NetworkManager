@@ -38,8 +38,10 @@
 #include <nm-setting-cdma.h>
 #include <nm-setting-bluetooth.h>
 #include <nm-setting-olpc-mesh.h>
+#include <nm-setting-wimax.h>
 #include <nm-device-ethernet.h>
 #include <nm-device-wifi.h>
+#include <nm-device-wimax.h>
 #include <nm-gsm-device.h>
 #include <nm-cdma-device.h>
 #include <nm-device-bt.h>
@@ -108,6 +110,7 @@ static NmcOutputField nmc_fields_settings_names[] = {
 	SETTING_FIELD (NM_SETTING_BLUETOOTH_SETTING_NAME, 0),             /* 12 */
 	SETTING_FIELD (NM_SETTING_OLPC_MESH_SETTING_NAME, 0),             /* 13 */
 	SETTING_FIELD (NM_SETTING_VPN_SETTING_NAME, 0),                   /* 14 */
+	SETTING_FIELD (NM_SETTING_WIMAX_SETTING_NAME, 0),                 /* 15 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTINGS_NAMES_ALL    NM_SETTING_CONNECTION_SETTING_NAME","\
@@ -124,7 +127,8 @@ static NmcOutputField nmc_fields_settings_names[] = {
                                          NM_SETTING_CDMA_SETTING_NAME","\
                                          NM_SETTING_BLUETOOTH_SETTING_NAME","\
                                          NM_SETTING_OLPC_MESH_SETTING_NAME","\
-                                         NM_SETTING_VPN_SETTING_NAME
+                                         NM_SETTING_VPN_SETTING_NAME","\
+                                         NM_SETTING_WIMAX_SETTING_NAME
 
 
 typedef struct {
@@ -143,7 +147,7 @@ static void quit (void);
 static void show_connection (NMConnection *data, gpointer user_data);
 static NMConnection *find_connection (GSList *list, const char *filter_type, const char *filter_val);
 static gboolean find_device_for_connection (NmCli *nmc, NMConnection *connection, const char *iface, const char *ap,
-                                            NMDevice **device, const char **spec_object, GError **error);
+                                            const char *nsp, NMDevice **device, const char **spec_object, GError **error);
 static const char *active_connection_state_to_string (NMActiveConnectionState state);
 static void active_connection_state_cb (NMActiveConnection *active, GParamSpec *pspec, gpointer user_data);
 static void activate_connection_cb (gpointer user_data, const char *path, GError *error);
@@ -161,7 +165,7 @@ usage (void)
 		 "  COMMAND := { list | status | up | down }\n\n"
 		 "  list [id <id> | uuid <id> | system | user]\n"
 		 "  status\n"
-		 "  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--timeout <timeout>]\n"
+		 "  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [nsp <name>] [--nowait] [--timeout <timeout>]\n"
 		 "  down id <id> | uuid <id>\n"));
 }
 
@@ -350,6 +354,15 @@ nmc_connection_detail (NMConnection *connection, NmCli *nmc)
 			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
 			if (setting) {
 				setting_vpn_details (setting, nmc);
+				was_output = TRUE;
+				continue;
+			}
+		}
+
+		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[15].name)) {
+			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_WIMAX);
+			if (setting) {
+				setting_wimax_details (setting, nmc);
 				was_output = TRUE;
 				continue;
 			}
@@ -886,6 +899,51 @@ check_olpc_mesh_compatible (NMDeviceOlpcMesh *device, NMConnection *connection, 
 #endif
 
 static gboolean
+check_wimax_compatible (NMDeviceWimax *device, NMConnection *connection, GError **error)
+{
+	NMSettingConnection *s_con;
+	NMSettingWimax *s_wimax;
+	const GByteArray *mac;
+	const char *device_mac_str;
+	struct ether_addr *device_mac = NULL;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	g_assert (s_con);
+
+	if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_WIMAX_SETTING_NAME)) {
+		g_set_error (error, 0, 0,
+		             "The connection was not a WiMAX connection.");
+		return FALSE;
+	}
+
+	s_wimax = NM_SETTING_WIMAX (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIMAX));
+	if (!s_wimax) {
+		g_set_error (error, 0, 0,
+		             "The connection was not a valid WiMAX connection.");
+		return FALSE;
+	}
+
+	device_mac_str = nm_device_wimax_get_hw_address (device);
+	if (device_mac_str)
+		device_mac = ether_aton (device_mac_str);
+	if (!device_mac) {
+		g_set_error (error, 0, 0, "Invalid device MAC address.");
+		return FALSE;
+	}
+
+	mac = nm_setting_wimax_get_mac_address (s_wimax);
+	if (mac && memcmp (mac->data, device_mac->ether_addr_octet, ETH_ALEN)) {
+		g_set_error (error, 0, 0,
+	        	     "The connection's MAC address did not match this device.");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
 nm_device_is_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
@@ -899,6 +957,8 @@ nm_device_is_connection_compatible (NMDevice *device, NMConnection *connection, 
 		return check_bt_compatible (NM_DEVICE_BT (device), connection, error);
 //	else if (NM_IS_DEVICE_OLPC_MESH (device))
 //		return check_olpc_mesh_compatible (NM_DEVICE_OLPC_MESH (device), connection, error);
+	else if (NM_IS_DEVICE_WIMAX (device))
+		return check_wimax_compatible (NM_DEVICE_WIMAX (device), connection, error);
 
 	g_set_error (error, 0, 0, "unhandled device type '%s'", G_OBJECT_TYPE_NAME (device));
 	return FALSE;
@@ -989,13 +1049,20 @@ get_default_active_connection (NmCli *nmc, NMDevice **device)
  * IN:  connection:  connection to activate
  *      iface:       device interface name to use (optional)
  *      ap:          access point to use (optional; valid just for 802-11-wireless)
+ *      nsp:         Network Service Provider to use (option; valid only for wimax)
  * OUT: device:      found device
  *      spec_object: specific_object path of NMAccessPoint
  * RETURNS: TRUE when a device is found, FALSE otherwise.
  */
 static gboolean
-find_device_for_connection (NmCli *nmc, NMConnection *connection, const char *iface, const char *ap,
-                            NMDevice **device, const char **spec_object, GError **error)
+find_device_for_connection (NmCli *nmc,
+                            NMConnection *connection,
+                            const char *iface,
+                            const char *ap,
+                            const char *nsp,
+                            NMDevice **device,
+                            const char **spec_object,
+                            GError **error)
 {
 	NMSettingConnection *s_con;
 	const char *con_type;
@@ -1081,6 +1148,25 @@ find_device_for_connection (NmCli *nmc, NMConnection *connection, const char *if
 					}
 				}
 				g_free (hwaddr_up);
+			}
+
+			if (   found_device
+			    && nsp
+			    && !strcmp (con_type, NM_SETTING_WIMAX_SETTING_NAME)
+			    && NM_IS_DEVICE_WIMAX (dev)) {
+				const GPtrArray *nsps = nm_device_wimax_get_nsps (NM_DEVICE_WIMAX (dev));
+				found_device = NULL;  /* Mark as not found; set to the device again later, only if NSP matches */
+
+				for (j = 0; nsps && (j < nsps->len); j++) {
+					NMWimaxNsp *candidate_nsp = g_ptr_array_index (nsps, j);
+					const char *candidate_name = nm_wimax_nsp_get_name (candidate_nsp);
+
+					if (!strcmp (nsp, candidate_name)) {
+						found_device = dev;
+						*spec_object = nm_object_get_path (NM_OBJECT (candidate_nsp));
+						break;
+					}
+				}
 			}
 		}
 
@@ -1324,6 +1410,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	const char *con_type;
 	const char *iface = NULL;
 	const char *ap = NULL;
+	const char *nsp = NULL;
 	gboolean id_specified = FALSE;
 	gboolean wait = TRUE;
 	GError *error = NULL;
@@ -1371,6 +1458,15 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 
 			ap = *argv;
 		}
+		else if (strcmp (*argv, "nsp") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+
+			nsp = *argv;
+		}
 		else if (strcmp (*argv, "--nowait") == 0) {
 			wait = FALSE;
 		} else if (strcmp (*argv, "--timeout") == 0) {
@@ -1412,7 +1508,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	g_assert (s_con);
 	con_type = nm_setting_connection_get_connection_type (s_con);
 
-	device_found = find_device_for_connection (nmc, connection, iface, ap, &device, &spec_object, &error);
+	device_found = find_device_for_connection (nmc, connection, iface, ap, nsp, &device, &spec_object, &error);
 
 	if (!device_found) {
 		if (error)

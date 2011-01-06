@@ -39,13 +39,16 @@ static NmcOutputField nmc_fields_nm_status[] = {
 	{"WIFI",           N_("WIFI"),            10, NULL, 0},  /* 4 */
 	{"WWAN-HARDWARE",  N_("WWAN-HARDWARE"),   15, NULL, 0},  /* 5 */
 	{"WWAN",           N_("WWAN"),            10, NULL, 0},  /* 6 */
-	{NULL,             NULL,                   0, NULL, 0}
+	{"WIMAX-HARDWARE", N_("WIMAX-HARDWARE"),  15, NULL, 0},  /* 7 */
+	{"WIMAX",          N_("WIMAX"),           10, NULL, 0},  /* 8 */
+	{NULL,             NULL,                  0, NULL, 0}
 };
-#define NMC_FIELDS_NM_STATUS_ALL     "RUNNING,STATE,NET-ENABLED,WIFI-HARDWARE,WIFI,WWAN-HARDWARE,WWAN"
+#define NMC_FIELDS_NM_STATUS_ALL     "RUNNING,STATE,NET-ENABLED,WIFI-HARDWARE,WIFI,WWAN-HARDWARE,WWAN,WIMAX-HARDWARE,WIMAX"
 #define NMC_FIELDS_NM_STATUS_COMMON  "RUNNING,STATE,WIFI-HARDWARE,WIFI,WWAN-HARDWARE,WWAN"
 #define NMC_FIELDS_NM_NET_ENABLED    "NET-ENABLED"
 #define NMC_FIELDS_NM_WIFI           "WIFI"
 #define NMC_FIELDS_NM_WWAN           "WWAN"
+#define NMC_FIELDS_NM_WIMAX          "WIMAX"
 
 
 extern GMainLoop *loop;
@@ -62,12 +65,13 @@ usage (void)
 {
 	fprintf (stderr,
 	 	 _("Usage: nmcli nm { COMMAND | help }\n\n"
-		 "  COMMAND := { status | enable | sleep | wifi | wwan }\n\n"
+		 "  COMMAND := { status | enable | sleep | wifi | wwan | wimax }\n\n"
 		 "  status\n"
 		 "  enable [true|false]\n"
 		 "  sleep [true|false]\n"
 		 "  wifi [on|off]\n"
-		 "  wwan [on|off]\n\n"));
+		 "  wwan [on|off]\n"
+		 "  wimax [on|off]\n\n"));
 }
 
 /* quit main loop */
@@ -103,6 +107,7 @@ show_nm_status (NmCli *nmc)
 	NMState state;
 	const char *wireless_hw_enabled_str, *wireless_enabled_str;
 	const char *wwan_hw_enabled_str, *wwan_enabled_str;
+	const char *wimax_hw_enabled_str, *wimax_enabled_str;
 	GError *error = NULL;
 	const char *fields_str;
 	const char *fields_all =    NMC_FIELDS_NM_STATUS_ALL;
@@ -145,8 +150,10 @@ show_nm_status (NmCli *nmc)
 		wireless_enabled_str = nm_client_wireless_get_enabled (nmc->client) ? _("enabled") : _("disabled");
 		wwan_hw_enabled_str = nm_client_wwan_hardware_get_enabled (nmc->client) ? _("enabled") : _("disabled");
 		wwan_enabled_str = nm_client_wwan_get_enabled (nmc->client) ? _("enabled") : _("disabled");
+		wimax_hw_enabled_str = nm_client_wimax_hardware_get_enabled (nmc->client) ? _("enabled") : _("disabled");
+		wimax_enabled_str = nm_client_wimax_get_enabled (nmc->client) ? _("enabled") : _("disabled");
 	} else {
-		wireless_hw_enabled_str = wireless_enabled_str = wwan_hw_enabled_str = wwan_enabled_str = _("unknown");
+		wireless_hw_enabled_str = wireless_enabled_str = wwan_hw_enabled_str = wwan_enabled_str = wimax_hw_enabled_str = wimax_enabled_str = _("unknown");
 	}
 
 	nmc->allowed_fields[0].value = nm_running ? _("running") : _("not running");
@@ -156,6 +163,8 @@ show_nm_status (NmCli *nmc)
 	nmc->allowed_fields[4].value = wireless_enabled_str;
 	nmc->allowed_fields[5].value = wwan_hw_enabled_str;
 	nmc->allowed_fields[6].value = wwan_enabled_str;
+	nmc->allowed_fields[7].value = wimax_hw_enabled_str;
+	nmc->allowed_fields[8].value = wimax_enabled_str;
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
@@ -208,6 +217,7 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 	gboolean enable_net;
 	gboolean enable_wifi;
 	gboolean enable_wwan;
+	gboolean enable_wimax;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -339,6 +349,38 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 					goto end;
 				}
 				nm_client_wwan_set_enabled (nmc->client, enable_wwan);
+			}
+		}
+		else if (matches (*argv, "wimax") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
+					goto opt_error;
+				/* no argument, show current WiMAX state */
+				if (nmc->required_fields && strcasecmp (nmc->required_fields, "WIMAX")) {
+					g_string_printf (nmc->return_text, _("Error: '--fields' value '%s' is not valid here; allowed fields: %s"),
+					                 nmc->required_fields, NMC_FIELDS_NM_WIMAX);
+					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+					goto end;
+				}
+				nmc->allowed_fields = nmc_fields_nm_status;
+				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_NM_WIMAX, nmc->allowed_fields, NULL);
+				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
+				nmc->print_fields.header_name = _("WiMAX enabled");
+				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+				nmc->allowed_fields[8].value = nm_client_wimax_get_enabled (nmc->client) ? _("enabled") : _("disabled");
+				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag;
+				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+			} else {
+				if (!strcmp (*argv, "on"))
+					enable_wimax = TRUE;
+				else if (!strcmp (*argv, "off"))
+					enable_wimax = FALSE;
+				else {
+					g_string_printf (nmc->return_text, _("Error: invalid 'wimax' parameter: '%s'."), *argv);
+					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+					goto end;
+				}
+				nm_client_wimax_set_enabled (nmc->client, enable_wimax);
 			}
 		}
 		else if (strcmp (*argv, "help") == 0) {
