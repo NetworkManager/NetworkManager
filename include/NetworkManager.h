@@ -152,7 +152,7 @@ typedef enum {
  * NMBluetoothCapabilities:
  * @NM_BT_CAPABILITY_NONE: device has no usable capabilities
  * @NM_BT_CAPABILITY_DUN: device provides Dial-Up Networking capability
- * @NM_BT_CAPABILITY_PAN: device provides Personal Area Networking capability
+ * @NM_BT_CAPABILITY_NAP: device provides Network Access Point capability
  *
  * #NMBluetoothCapabilities values indicate the usable capabilities of a
  * Bluetooth device.
