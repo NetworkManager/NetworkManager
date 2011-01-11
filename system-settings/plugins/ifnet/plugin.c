@@ -40,7 +40,7 @@
 #include "connection_parser.h"
 
 #define IFNET_PLUGIN_NAME_PRINT "ifnet"
-#define IFNET_PLUGIN_INFO "(C) 1999-2010 Gentoo Foundation, Inc. To report bugs please use bugs.gentoo.org with [networkmanager] or [dagger] prefix."
+#define IFNET_PLUGIN_INFO "(C) 1999-2010 Gentoo Foundation, Inc. To report bugs please use bugs.gentoo.org with [networkmanager] or [qiaomuf] prefix."
 #define IFNET_SYSTEM_HOSTNAME_FILE "/etc/conf.d/hostname"
 #define IFNET_MANAGE_WELL_KNOWN_DEFAULT TRUE
 #define IFNET_KEY_FILE_KEY_MANAGED "managed"

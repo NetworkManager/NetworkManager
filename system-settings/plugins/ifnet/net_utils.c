@@ -19,7 +19,6 @@
  * Copyright (C) 1999-2010 Gentoo Foundation, Inc.
  */
 
-#include <config.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -194,6 +193,32 @@ ifnet_plugin_error_quark (void)
 	return error_quark;
 }
 
+static char *
+find_default_gateway_str (char *str)
+{
+	char *tmp;
+
+	if ((tmp = strstr (str, "default via ")) != NULL) {
+		return tmp + strlen ("default via ");
+	} else if ((tmp = strstr (str, "default gw ")) != NULL) {
+		return tmp + strlen ("default gw ");
+	}
+	return NULL;
+}
+
+static char *
+find_gateway_str (char *str)
+{
+	char *tmp;
+
+	if ((tmp = strstr (str, "via ")) != NULL) {
+		return tmp + strlen ("via ");
+	} else if ((tmp = strstr (str, "gw ")) != NULL) {
+		return tmp + strlen ("gw ");
+	}
+	return NULL;
+}
+
 gboolean
 reload_parsers ()
 {
@@ -362,11 +387,10 @@ has_default_route (gchar * conn_name, gboolean (*check_fn) (gchar *))
 	if (!tmp)
 		return FALSE;
 	routes = g_strdup (tmp);
-	tmp = strstr (routes, "default via ");
+	tmp = find_default_gateway_str (routes);
 	if (!tmp) {
 		goto error;
 	}
-	tmp += strlen ("default via ");
 	g_strstrip (tmp);
 	if ((end = strstr (tmp, "\"")) != NULL)
 		*end = '\0';
@@ -483,8 +507,13 @@ get_ip4_gateway (gchar * gateway)
 
 	if (!gateway)
 		return 0;
-	tmp = strstr (gateway, "via ");
-	tmp = g_strdup (tmp + strlen ("via "));
+	tmp = find_gateway_str (gateway);
+	if (!tmp) {
+		PLUGIN_WARN (IFNET_PLUGIN_NAME,
+			     "Couldn't obtain gateway in \"%s\"", gateway);
+		return 0;
+	}
+	tmp = g_strdup (tmp);
 	strip_string (tmp, ' ');
 	strip_string (tmp, '"');
 	if ((split = strstr (tmp, "\"")) != NULL)
@@ -509,8 +538,13 @@ get_ip6_next_hop (gchar * next_hop)
 
 	if (!next_hop)
 		return 0;
-	tmp = strstr (next_hop, "via ");
-	tmp = g_strdup (tmp + strlen ("via "));
+	tmp = find_gateway_str (next_hop);
+	if (!tmp) {
+		PLUGIN_WARN (IFNET_PLUGIN_NAME,
+			     "Couldn't obtain next_hop in \"%s\"", next_hop);
+		return 0;
+	}
+	tmp = g_strdup (tmp);
 	strip_string (tmp, ' ');
 	strip_string (tmp, '"');
 	g_strstrip (tmp);
@@ -671,8 +705,8 @@ convert_ip4_routes_block (gchar * conn_name)
 	length = g_strv_length (ipset);
 	for (i = 0; i < length; i++) {
 		ip = ipset[i];
-		if (strstr (ip, "default via ") || strstr (ip, "::")
-		    || !strstr (ip, "via"))
+		if (find_default_gateway_str (ip) || strstr (ip, "::")
+		    || !find_gateway_str (ip))
 			continue;
 		ip = strip_string (ip, '"');
 		iblock = create_ip4_block (ip);
@@ -712,9 +746,7 @@ convert_ip6_routes_block (gchar * conn_name)
 		ip = strip_string (ip, '"');
 		if (ip[0] == '\0')
 			continue;
-		printf ("ip:%s\n", ip);
-		if ((tmp_addr = strstr (ip, "default via ")) != NULL) {
-			tmp_addr += strlen ("default via ");
+		if ((tmp_addr = find_default_gateway_str (ip)) != NULL) {
 			if (!is_ip6_address (tmp_addr))
 				continue;
 			else {
@@ -855,7 +887,7 @@ is_managed (gchar * conn_name)
 void
 get_dhcp_hostname_and_client_id (char **hostname, char **client_id)
 {
-	gchar *dhcp_client = ifnet_get_global_setting ("main", "dhcp");
+	gchar *dhcp_client = NULL;
 	const gchar *dhcpcd_conf = "/etc/dhcpcd.conf";
 	const gchar *dhclient_conf = "/etc/dhcp/dhclient.conf";
 	gchar *line = NULL, *tmp = NULL, *contents = NULL;
@@ -864,6 +896,7 @@ get_dhcp_hostname_and_client_id (char **hostname, char **client_id)
 
 	*hostname = NULL;
 	*client_id = NULL;
+	dhcp_client = ifnet_get_global_setting ("main", "dhcp");
 	if (dhcp_client) {
 		if (!strcmp (dhcp_client, "dhclient"))
 			g_file_get_contents (dhclient_conf, &contents, NULL,
@@ -871,6 +904,7 @@ get_dhcp_hostname_and_client_id (char **hostname, char **client_id)
 		else if (!strcmp (dhcp_client, "dhcpcd"))
 			g_file_get_contents (dhcpcd_conf, &contents, NULL,
 					     NULL);
+		g_free (dhcp_client);
 	} else {
 		if (g_file_test (dhclient_conf, G_FILE_TEST_IS_REGULAR))
 			g_file_get_contents (dhclient_conf, &contents, NULL,

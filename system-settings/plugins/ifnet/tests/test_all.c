@@ -58,17 +58,22 @@ test_read_hostname ()
 		"get hostname",
 		"hostname is not correctly read, read:%s, expected: gentoo",
 		hostname);
+	g_free (hostname);
 }
 
 static void
 test_write_hostname ()
 {
 	gchar *hostname = read_hostname ("hostname");
+	gchar *tmp;
 
 	write_hostname ("gentoo-nm", "hostname");
-	ASSERT (strcmp (read_hostname ("hostname"), "gentoo-nm") == 0,
+	tmp = read_hostname ("hostname");
+	ASSERT (strcmp (tmp, "gentoo-nm") == 0,
 		"write hostname", "write hostname error");
 	write_hostname (hostname, "hostname");
+	g_free (tmp);
+	g_free (hostname);
 }
 
 static void
@@ -85,14 +90,13 @@ test_is_static ()
 static void
 test_has_default_route ()
 {
-	ASSERT (has_default_ip4_route ("eth0"), "has default route",
-		"eth0 should have a default ipv4 route");
-	ASSERT (has_default_ip6_route ("eth4"), "has default route",
-		"eth4 should have a default ipv6 route");
-
+	ASSERT (has_default_ip4_route ("eth0"),
+		"has default route", "eth0 should have a default ipv4 route");
+	ASSERT (has_default_ip6_route ("eth4"),
+		"has default route", "eth4 should have a default ipv6 route");
 	ASSERT (!has_default_ip4_route ("eth5")
-		&& !has_default_ip6_route ("eth5"), "has default route",
-		"eth5 shouldn't have a default route");
+		&& !has_default_ip6_route ("eth5"),
+		"has default route", "eth5 shouldn't have a default route");
 }
 
 static void
@@ -138,8 +142,8 @@ check_ip_block (ip_block * iblock, gchar * ip, gchar * netmask, gchar * gateway)
 	str = malloc (INET_ADDRSTRLEN);
 	tmp_ip4_addr.s_addr = iblock->ip;
 	inet_ntop (AF_INET, &tmp_ip4_addr, str, INET_ADDRSTRLEN);
-	ASSERT (strcmp (ip, str) == 0, "check ip", "ip expected:%s, find:%s",
-		ip, str);
+	ASSERT (strcmp (ip, str) == 0, "check ip",
+		"ip expected:%s, find:%s", ip, str);
 	tmp_ip4_addr.s_addr = iblock->netmask;
 	inet_ntop (AF_INET, &tmp_ip4_addr, str, INET_ADDRSTRLEN);
 	ASSERT (strcmp (netmask, str) == 0, "check netmask",
@@ -170,8 +174,8 @@ test_convert_ipv4_config_block ()
 	destroy_ip_block (iblock);
 	iblock = convert_ip4_config_block ("eth2");
 	ASSERT (iblock != NULL
-		&& iblock->next == NULL, "convert error IPv4 address",
-		"should only get one address");
+		&& iblock->next == NULL,
+		"convert error IPv4 address", "should only get one address");
 	check_ip_block (iblock, "192.168.4.121", "255.255.255.0", "0.0.0.0");
 	destroy_ip_block (iblock);
 	iblock = convert_ip4_config_block ("eth3");
@@ -182,7 +186,6 @@ test_convert_ipv4_config_block ()
 	ASSERT (iblock != NULL, "convert config_block",
 		"convert error configuration");
 	destroy_ip_block (iblock);
-
 }
 
 static void
@@ -209,10 +212,13 @@ test_wpa_parser ()
 	ASSERT (exist_ssid ("static-wep-test"), "exist_ssid",
 		"ssid static-wep-test is not found");
 	value = wpa_get_value ("static-wep-test", "key_mgmt");
-	ASSERT (value && strcmp (value, "NONE") == 0, "get wpa data",
+	ASSERT (value
+		&& strcmp (value, "NONE") == 0, "get wpa data",
 		"key_mgmt of static-wep-test should be NONE, find %s", value);
 	value = wpa_get_value ("static-wep-test", "wep_key0");
-	ASSERT (value && strcmp (value, "\"abcde\"") == 0, "get wpa data",
+	ASSERT (value
+		&& strcmp (value, "\"abcde\"") == 0,
+		"get wpa data",
 		"wep_key0 of static-wep-test should be abcde, find %s", value);
 	ASSERT (exist_ssid ("leap-example"), "get wsec",
 		"ssid leap-example is not found");
@@ -228,8 +234,9 @@ test_strip_string ()
 	result = strip_string (result, '(');
 	result = strip_string (result, ')');
 	result = strip_string (result, '"');
-	ASSERT (strcmp (result, "default via     202.117.16.1") == 0,
-		"strip_string", "string isn't stripped, result is: %s", result);
+	ASSERT (strcmp (result, "default via     202.117.16.1") ==
+		0, "strip_string",
+		"string isn't stripped, result is: %s", result);
 	g_free (result_b);
 }
 
@@ -265,7 +272,6 @@ test_new_connection ()
 		"new connection failed: %s", error
 		&& (*error) ? (*error)->message : "NONE");
 	g_object_unref (connection);
-
 }
 
 static void
@@ -280,8 +286,9 @@ test_update_connection ()
 		error == NULL ? "None" : (*error)->message);
 	ASSERT (ifnet_update_parsers_by_connection
 		(connection, "eth0", NULL, "net.generate",
-		 "wpa_supplicant.conf.generate", error), "update connection",
-		"update connection failed %s", "eth0");
+		 "wpa_supplicant.conf.generate", error),
+		"update connection", "update connection failed %s", "eth0");
+	g_object_unref (connection);
 	connection =
 	    ifnet_update_connection_from_config_block ("0xab3ace", error);
 	ASSERT (connection != NULL, "get connection",
@@ -289,8 +296,9 @@ test_update_connection ()
 		error == NULL ? "None" : (*error)->message);
 	ASSERT (ifnet_update_parsers_by_connection
 		(connection, "0xab3ace", NULL, "net.generate",
-		 "wpa_supplicant.conf.generate", error), "update connection",
-		"update connection failed %s", "0xab3ace");
+		 "wpa_supplicant.conf.generate", error),
+		"update connection", "update connection failed %s", "0xab3ace");
+	g_object_unref (connection);
 }
 
 static void
@@ -301,14 +309,17 @@ test_add_connection ()
 
 	connection = ifnet_update_connection_from_config_block ("eth0", error);
 	ASSERT (ifnet_add_new_connection
-		(connection, "net.generate", "wpa_supplicant.conf.generate",
-		 error), "add connection", "add connection failed: %s", "eth0");
+		(connection, "net.generate",
+		 "wpa_supplicant.conf.generate", error),
+		"add connection", "add connection failed: %s", "eth0");
+	g_object_unref (connection);
 	connection =
 	    ifnet_update_connection_from_config_block ("myxjtu2", error);
 	ASSERT (ifnet_add_new_connection
-		(connection, "net.generate", "wpa_supplicant.conf.generate",
-		 error), "add connection", "add connection failed: %s",
-		"myxjtu2");
+		(connection, "net.generate",
+		 "wpa_supplicant.conf.generate", error),
+		"add connection", "add connection failed: %s", "myxjtu2");
+	g_object_unref (connection);
 }
 
 static void
@@ -322,16 +333,20 @@ test_delete_connection ()
 		"get connection failed: %s",
 		error == NULL ? "None" : (*error)->message);
 	ASSERT (ifnet_delete_connection_in_parsers
-		("eth7", "net.generate", "wpa_supplicant.conf.generate"),
+		("eth7", "net.generate",
+		 "wpa_supplicant.conf.generate"),
 		"delete connection", "delete connection failed: %s", "eth7");
+	g_object_unref (connection);
 	connection =
 	    ifnet_update_connection_from_config_block ("qiaomuf", error);
 	ASSERT (connection != NULL, "get connection",
 		"get connection failed: %s",
 		error == NULL ? "None" : (*error)->message);
 	ASSERT (ifnet_delete_connection_in_parsers
-		("qiaomuf", "net.generate", "wpa_supplicant.conf.generate"),
+		("qiaomuf", "net.generate",
+		 "wpa_supplicant.conf.generate"),
 		"delete connection", "delete connection failed: %s", "qiaomuf");
+	g_object_unref (connection);
 }
 
 static void
@@ -369,10 +384,8 @@ main (void)
 	wpa_parser_destroy ();
 	ifnet_init ("net");
 	wpa_parser_init ("wpa_supplicant.conf");
-	printf("Initialization complete\n");
-
+	printf ("Initialization complete\n");
 	run_all (TRUE);
-
 	ifnet_destroy ();
 	wpa_parser_destroy ();
 	return 0;

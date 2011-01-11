@@ -21,11 +21,10 @@ libnm_settings_plugin_ifnet_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(GUDEV_CFLAGS) \
 	-DG_DISABLE_DEPRECATED \
-	-DSYSCONFDIR=\"$(sysconfdir)\"\
-	-g
-
+	-DSYSCONFDIR=\"$(sysconfdir)\"
 
 libnm_settings_plugin_ifnet_la_LDFLAGS = -module -avoid-version
+
 libnm_settings_plugin_ifnet_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(top_builddir)/libnm-glib/libnm-glib.la \
@@ -50,12 +49,9 @@ lib_ifnet_io_la_CPPFLAGS = \
 		           $(DBUS_CFLAGS) \
 		           -DG_DISABLE_DEPRECATED \
 		           -DSYSCONFDIR=\"$(sysconfdir)\" \
-		           -DSBINDIR=\"$(sbindir)\"\
-			   -g
+		           -DSBINDIR=\"$(sbindir)\"
 
 lib_ifnet_io_la_LIBADD = \
 			 $(top_builddir)/libnm-util/libnm-util.la \
 			 $(GLIB_LIBS)\
 			 $(GIO_LIBS)
-
-
