@@ -1162,6 +1162,7 @@ make_ip4_setting (shvarFile *ifcfg,
 		if (!g_ascii_strcasecmp (value, "bootp") || !g_ascii_strcasecmp (value, "dhcp"))
 			method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 		else if (!g_ascii_strcasecmp (value, "ibft")) {
+			g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default, NULL);
 			/* iSCSI Boot Firmware Table: need to read values from the iSCSI 
 			 * firmware for this device and create the IP4 setting using those.
 			 */
