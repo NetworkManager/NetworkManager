@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2009 Novell, Inc.
- * Copyright (C) 2007 - 2010 Red Hat, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -68,6 +68,12 @@ static void impl_manager_activate_connection (NMManager *manager,
                                               const char *device_path,
                                               const char *specific_object_path,
                                               DBusGMethodInvocation *context);
+
+static void impl_manager_add_and_activate_connection (NMManager *manager,
+                                                      GHashTable *settings,
+                                                      const char *device_path,
+                                                      const char *specific_object_path,
+                                                      DBusGMethodInvocation *context);
 
 static void impl_manager_deactivate_connection (NMManager *manager,
                                                 const char *connection_path,
@@ -170,9 +176,8 @@ struct PendingActivation {
 	PendingActivationFunc callback;
 	NMAuthChain *chain;
 
-	gboolean authorized;
-
 	char *connection_path;
+	NMConnection *connection;
 	char *specific_object_path;
 	char *device_path;
 };
@@ -270,8 +275,10 @@ enum {
 	LAST_PROP
 };
 
-typedef enum
-{
+
+/************************************************************************/
+
+typedef enum {
 	NM_MANAGER_ERROR_UNKNOWN_CONNECTION = 0,
 	NM_MANAGER_ERROR_UNKNOWN_DEVICE,
 	NM_MANAGER_ERROR_UNMANAGED_DEVICE,
@@ -325,6 +332,32 @@ nm_manager_error_get_type (void)
 		etype = g_enum_register_static ("NMManagerError", values);
 	}
 	return etype;
+}
+
+/************************************************************************/
+
+static NMDevice *
+nm_manager_get_device_by_udi (NMManager *manager, const char *udi)
+{
+	GSList *iter;
+
+	for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
+		if (!strcmp (nm_device_get_udi (NM_DEVICE (iter->data)), udi))
+			return NM_DEVICE (iter->data);
+	}
+	return NULL;
+}
+
+static NMDevice *
+nm_manager_get_device_by_path (NMManager *manager, const char *path)
+{
+	GSList *iter;
+
+	for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
+		if (!strcmp (nm_device_get_path (NM_DEVICE (iter->data)), path))
+			return NM_DEVICE (iter->data);
+	}
+	return NULL;
 }
 
 static gboolean
@@ -618,16 +651,52 @@ pending_activation_new (NMManager *manager,
                         DBusGMethodInvocation *context,
                         const char *device_path,
                         const char *connection_path,
+                        GHashTable *settings,
                         const char *specific_object_path,
-                        PendingActivationFunc callback)
+                        PendingActivationFunc callback,
+                        GError **error)
 {
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	PendingActivation *pending;
+	NMDevice *device;
+	NMConnection *connection = NULL;
+	GSList *all_connections = NULL;
+	gboolean success;
 
 	g_return_val_if_fail (manager != NULL, NULL);
 	g_return_val_if_fail (authority != NULL, NULL);
 	g_return_val_if_fail (context != NULL, NULL);
 	g_return_val_if_fail (device_path != NULL, NULL);
 	g_return_val_if_fail (connection_path != NULL, NULL);
+
+	/* Create the partial connection from the given settings */
+	if (settings) {
+		device = nm_manager_get_device_by_path (manager, device_path);
+		if (!device) {
+			g_set_error_literal (error,
+				                 NM_MANAGER_ERROR,
+				                 NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+				                 "Device not found");
+			return NULL;
+		}
+
+		connection = nm_connection_new ();
+		nm_connection_replace_settings (connection, settings, NULL);
+
+		/* Let each device subclass complete the connection */
+		all_connections = nm_settings_get_connections (priv->settings);
+		success = nm_device_complete_connection (device,
+		                                         connection,
+		                                         specific_object_path,
+		                                         all_connections,
+		                                         error);
+		g_slist_free (all_connections);
+
+		if (success == FALSE) {
+			g_object_unref (connection);
+			return NULL;
+		}
+	}
 
 	pending = g_slice_new0 (PendingActivation);
 	pending->manager = manager;
@@ -637,6 +706,7 @@ pending_activation_new (NMManager *manager,
 
 	pending->device_path = g_strdup (device_path);
 	pending->connection_path = g_strdup (connection_path);
+	pending->connection = connection;
 
 	/* "/" is special-cased to NULL to get through D-Bus */
 	if (specific_object_path && strcmp (specific_object_path, "/"))
@@ -731,14 +801,22 @@ pending_activation_destroy (PendingActivation *pending,
 {
 	g_return_if_fail (pending != NULL);
 
+	if (error)
+		dbus_g_method_return_error (pending->context, error);
+	else if (ac_path) {
+		if (pending->connection) {
+			dbus_g_method_return (pending->context,
+			                      pending->connection_path,
+			                      ac_path);
+		} else
+			dbus_g_method_return (pending->context, ac_path);
+	}
+
 	g_free (pending->connection_path);
 	g_free (pending->specific_object_path);
 	g_free (pending->device_path);
-
-	if (error)
-		dbus_g_method_return_error (pending->context, error);
-	else if (ac_path)
-		dbus_g_method_return (pending->context, ac_path);
+	if (pending->connection)
+		g_object_unref (pending->connection);
 
 	if (pending->chain)
 		nm_auth_chain_unref (pending->chain);
@@ -839,30 +917,6 @@ system_hostname_changed_cb (NMSettings *settings,
 /*******************************************************************/
 /* General NMManager stuff                                         */
 /*******************************************************************/
-
-static NMDevice *
-nm_manager_get_device_by_udi (NMManager *manager, const char *udi)
-{
-	GSList *iter;
-
-	for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
-		if (!strcmp (nm_device_get_udi (NM_DEVICE (iter->data)), udi))
-			return NM_DEVICE (iter->data);
-	}
-	return NULL;
-}
-
-static NMDevice *
-nm_manager_get_device_by_path (NMManager *manager, const char *path)
-{
-	GSList *iter;
-
-	for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
-		if (!strcmp (nm_device_get_path (NM_DEVICE (iter->data)), path))
-			return NM_DEVICE (iter->data);
-	}
-	return NULL;
-}
 
 /* Store value into key-file; supported types: boolean, int, string */
 static gboolean
@@ -1870,7 +1924,7 @@ nm_manager_activate_connection (NMManager *manager,
  * it.
  */
 static void
-check_pending_ready (NMManager *self, PendingActivation *pending)
+pending_activate (NMManager *self, PendingActivation *pending)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMSysconfigConnection *connection;
@@ -1907,14 +1961,10 @@ out:
 static void
 activation_auth_done (PendingActivation *pending, GError *error)
 {
-	if (error) {
+	if (error)
 		pending_activation_destroy (pending, error, NULL);
-		return;
-	} else {
-		pending->authorized = TRUE;
-
-		check_pending_ready (pending->manager, pending);
-	}
+	else
+		pending_activate (pending->manager, pending);
 }
 
 static void
@@ -1926,6 +1976,7 @@ impl_manager_activate_connection (NMManager *self,
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	PendingActivation *pending;
+	GError *error = NULL;
 
 	/* Need to check the caller's permissions and stuff before we can
 	 * activate the connection.
@@ -1935,10 +1986,86 @@ impl_manager_activate_connection (NMManager *self,
 	                                  context,
 	                                  device_path,
 	                                  connection_path,
+	                                  NULL,
 	                                  specific_object_path,
-	                                  activation_auth_done);
+	                                  activation_auth_done,
+	                                  &error);
+	if (pending)
+		pending_activation_check_authorized (pending, priv->dbus_mgr);
+	else {
+		g_assert (error);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+	}
+}
 
-	pending_activation_check_authorized (pending, priv->dbus_mgr);
+static void
+activation_add_done (NMSettings *self,
+                     NMSysconfigConnection *connection,
+                     GError *error,
+                     DBusGMethodInvocation *context,
+                     gpointer user_data)
+{
+	PendingActivation *pending = user_data;
+
+	if (error)
+		pending_activation_destroy (pending, error, NULL);
+	else {
+		/* Save the new connection's D-Bus path */
+		pending->connection_path = g_strdup (nm_connection_get_path (NM_CONNECTION (connection)));
+
+		/* And activate it */
+		pending_activate (pending->manager, pending);
+	}
+}
+
+static void
+add_and_activate_auth_done (PendingActivation *pending, GError *error)
+{
+	if (error)
+		pending_activation_destroy (pending, error, NULL);
+	else {
+		NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (pending->manager);
+
+		/* Basic sender auth checks performed; try to add the connection */
+		nm_settings_add_connection (priv->settings,
+                                    pending->connection,
+                                    pending->context,
+                                    activation_add_done,
+                                    pending);
+	}
+}
+
+static void
+impl_manager_add_and_activate_connection (NMManager *self,
+                                          GHashTable *settings,
+                                          const char *device_path,
+                                          const char *specific_object_path,
+                                          DBusGMethodInvocation *context)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	PendingActivation *pending;
+	GError *error = NULL;
+
+	/* Need to check the caller's permissions and stuff before we can
+	 * activate the connection.
+	 */
+	pending = pending_activation_new (self,
+	                                  priv->authority,
+	                                  context,
+	                                  device_path,
+	                                  NULL,
+	                                  settings,
+	                                  specific_object_path,
+	                                  add_and_activate_auth_done,
+	                                  &error);
+	if (pending)
+		pending_activation_check_authorized (pending, priv->dbus_mgr);
+	else {
+		g_assert (error);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+	}
 }
 
 gboolean

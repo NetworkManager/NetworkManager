@@ -35,7 +35,10 @@ INCLUDES = -I${top_srcdir}                   \
 # Test libraries
 ###########################################
 
-noinst_LTLIBRARIES = libtest-dhcp.la libtest-policy-hosts.la
+noinst_LTLIBRARIES = \
+	libtest-dhcp.la \
+	libtest-policy-hosts.la \
+	libtest-wifi-ap-utils.la
 
 ###########################################
 # DHCP test library
@@ -77,6 +80,22 @@ libtest_policy_hosts_la_LIBADD = \
 
 
 ###########################################
+# Wifi ap utils
+###########################################
+
+libtest_wifi_ap_utils_la_SOURCES = \
+	nm-wifi-ap-utils.c \
+	nm-wifi-ap-utils.h
+
+libtest_wifi_ap_utils_la_CPPFLAGS = \
+	$(GLIB_CFLAGS)
+
+libtest_wifi_ap_utils_la_LIBADD = \
+	${top_builddir}/libnm-util/libnm-util.la \
+	$(GLIB_LIBS)
+
+
+###########################################
 # NetworkManager
 ###########################################
 
@@ -106,6 +125,8 @@ NetworkManager_SOURCES = \
 		nm-device-gsm.h \
 		nm-wifi-ap.c \
 		nm-wifi-ap.h \
+		nm-wifi-ap-utils.c \
+		nm-wifi-ap-utils.h \
 		nm-dbus-manager.h \
 		nm-dbus-manager.c \
 		nm-udev-manager.c \

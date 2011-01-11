@@ -67,6 +67,11 @@ typedef struct {
 	                                            NMConnection *connection,
 	                                            GError **error);
 
+	gboolean (*complete_connection)            (NMModem *modem,
+	                                            NMConnection *connection,
+	                                            const GSList *existing_connections,
+	                                            GError **error);
+
 	NMConnection * (*get_best_auto_connection) (NMModem *modem,
 	                                            GSList *connections,
 	                                            char **specific_object);
@@ -106,6 +111,11 @@ NMConnection *nm_modem_get_best_auto_connection (NMModem *self,
 gboolean nm_modem_check_connection_compatible (NMModem *self,
                                                NMConnection *connection,
                                                GError **error);
+
+gboolean nm_modem_complete_connection (NMModem *self,
+                                       NMConnection *connection,
+                                       const GSList *existing_connections,
+                                       GError **error);
 
 NMActStageReturn nm_modem_act_stage1_prepare (NMModem *modem,
                                               NMActRequest *req,

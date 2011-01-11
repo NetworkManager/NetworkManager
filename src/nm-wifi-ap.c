@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include "nm-wifi-ap.h"
+#include "nm-wifi-ap-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-logging.h"
@@ -1273,6 +1274,27 @@ nm_ap_check_compatible (NMAccessPoint *self,
 	                                                   nm_ap_get_wpa_flags (self),
 	                                                   nm_ap_get_rsn_flags (self),
 	                                                   nm_ap_get_mode (self));
+}
+
+gboolean
+nm_ap_complete_connection (NMAccessPoint *self,
+                           NMConnection *connection,
+                           gboolean lock_bssid,
+                           GError **error)
+{
+	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (self);
+
+	g_return_val_if_fail (connection != NULL, FALSE);
+
+	return nm_ap_utils_complete_connection (priv->ssid,
+	                                        priv->address.ether_addr_octet,
+	                                        priv->mode,
+	                                        priv->flags,
+	                                        priv->wpa_flags,
+	                                        priv->rsn_flags,
+	                                        connection,
+	                                        lock_bssid,
+	                                        error);
 }
 
 static gboolean

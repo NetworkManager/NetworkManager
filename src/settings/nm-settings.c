@@ -776,9 +776,11 @@ pk_add_cb (NMAuthChain *chain,
 	NMAuthCallResult result;
 	GError *error = NULL, *add_error = NULL;
 	NMConnection *connection;
-	NMSysconfigConnection *added;
+	NMSysconfigConnection *added = NULL;
 	gulong caller_uid = G_MAXULONG;
 	char *error_desc = NULL;
+	NMSettingsAddCallback callback;
+	gpointer callback_data;
 
 	priv->auths = g_slist_remove (priv->auths, chain);
 
@@ -830,9 +832,7 @@ pk_add_cb (NMAuthChain *chain,
 	}
 
 	added = add_new_connection (self, connection, &add_error);
-	if (added)
-		dbus_g_method_return (context, nm_connection_get_path (NM_CONNECTION (added)));
-	else {
+	if (!added) {
 		error = g_error_new (NM_SETTINGS_ERROR,
 		                     NM_SETTINGS_ERROR_ADD_FAILED,
 		                     "Saving connection failed: (%d) %s",
@@ -842,37 +842,45 @@ pk_add_cb (NMAuthChain *chain,
 	}
 
 done:
-	if (error)
-		dbus_g_method_return_error (context, error);
+	callback = nm_auth_chain_get_data (chain, "callback");
+	callback_data = nm_auth_chain_get_data (chain, "callback-data");
+
+	callback (self, added, error, context, callback_data);
 
 	g_clear_error (&error);
 	nm_auth_chain_unref (chain);
 }
 
 static void
-impl_settings_add_connection (NMSettings *self,
-                              GHashTable *settings,
-                              DBusGMethodInvocation *context)
+add_cb (NMSettings *self,
+        NMSysconfigConnection *connection,
+        GError *error,
+        DBusGMethodInvocation *context,
+        gpointer user_data)
+{
+	if (error)
+		dbus_g_method_return_error (context, error);
+	else
+		dbus_g_method_return (context, nm_connection_get_path (NM_CONNECTION (connection)));
+}
+
+void
+nm_settings_add_connection (NMSettings *self,
+                            NMConnection *connection,
+                            DBusGMethodInvocation *context,
+                            NMSettingsAddCallback callback,
+                            gpointer user_data)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	NMAuthChain *chain;
-	NMConnection *connection;
-	GError *error = NULL;
-
-	connection = nm_connection_new_from_hash (settings, &error);
-	if (!connection) {
-		g_assert (error);
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-		return;
-	}
+	GError *error;
 
 	/* Do any of the plugins support adding? */
 	if (!get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_ADD_NOT_SUPPORTED,
 		                             "None of the registered plugins support add.");
-		dbus_g_method_return_error (context, error);
+		callback (self, NULL, error, context, user_data);
 		g_error_free (error);
 		return;
 	}
@@ -882,7 +890,28 @@ impl_settings_add_connection (NMSettings *self,
 	g_assert (chain);
 	priv->auths = g_slist_append (priv->auths, chain);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY, TRUE);
-	nm_auth_chain_set_data (chain, "connection", connection, g_object_unref);
+	nm_auth_chain_set_data (chain, "connection", g_object_ref (connection), g_object_unref);
+	nm_auth_chain_set_data (chain, "callback", callback, NULL);
+	nm_auth_chain_set_data (chain, "callback-data", user_data, NULL);
+}
+
+static void
+impl_settings_add_connection (NMSettings *self,
+                              GHashTable *settings,
+                              DBusGMethodInvocation *context)
+{
+	NMConnection *connection;
+	GError *error = NULL;
+
+	connection = nm_connection_new_from_hash (settings, &error);
+	if (connection) {
+		nm_settings_add_connection (self, connection, context, add_cb, NULL);
+		g_object_unref (connection);
+	} else {
+		g_assert (error);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+	}
 }
 
 static void

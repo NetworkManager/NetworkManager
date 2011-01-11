@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2010 Red Hat, Inc.
+ * Copyright (C) 2005 - 2011 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -1625,6 +1625,67 @@ real_check_connection_compatible (NMDevice *device,
 }
 
 static gboolean
+real_complete_connection (NMDevice *device,
+                          NMConnection *connection,
+                          const char *specific_object,
+                          const GSList *existing_connections,
+                          GError **error)
+{
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
+	NMSettingWired *s_wired;
+	NMSettingPPPOE *s_pppoe;
+	const GByteArray *setting_mac;
+
+	s_pppoe = (NMSettingPPPOE *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPPOE);
+
+	/* We can't telepathically figure out the service name or username, so if
+	 * those weren't given, we can't complete the connection.
+	 */
+	if (s_pppoe && !nm_setting_verify (NM_SETTING (s_pppoe), NULL, error))
+		return FALSE;
+
+	/* Default to an ethernet-only connection, but if a PPPoE setting was given
+	 * then PPPoE should be our connection type.
+	 */
+	nm_device_complete_generic (connection,
+	                            s_pppoe ? NM_SETTING_PPPOE_SETTING_NAME : NM_SETTING_CONNECTION_SETTING_NAME,
+	                            existing_connections,
+	                            s_pppoe ? _("PPPoE connection %d") : _("Wired connection %d"),
+	                            NULL);
+
+	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
+	if (!s_wired) {
+		s_wired = (NMSettingWired *) nm_setting_wired_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_wired));
+	}
+
+	setting_mac = nm_setting_wired_get_mac_address (s_wired);
+	if (setting_mac) {
+		/* Make sure the setting MAC (if any) matches the device's permanent MAC */
+		if (memcmp (setting_mac->data, priv->perm_hw_addr, ETH_ALEN)) {
+			g_set_error_literal (error,
+			                     NM_SETTING_WIRED_ERROR,
+			                     NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
+			                     NM_SETTING_WIRED_MAC_ADDRESS);
+			return FALSE;
+		}
+	} else {
+		GByteArray *mac;
+		const guint8 null_mac[ETH_ALEN] = { 0, 0, 0, 0, 0, 0 };
+
+		/* Lock the connection to this device by default */
+		if (memcmp (priv->perm_hw_addr, null_mac, ETH_ALEN)) {
+			mac = g_byte_array_sized_new (ETH_ALEN);
+			g_byte_array_append (mac, priv->perm_hw_addr, ETH_ALEN);
+			g_object_set (G_OBJECT (s_wired), NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
+			g_byte_array_free (mac, TRUE);
+		}
+	}
+
+	return TRUE;
+}
+
+static gboolean
 spec_match_list (NMDevice *device, const GSList *specs)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
@@ -1933,6 +1994,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->get_best_auto_connection = real_get_best_auto_connection;
 	parent_class->is_available = real_is_available;
 	parent_class->check_connection_compatible = real_check_connection_compatible;
+	parent_class->complete_connection = real_complete_connection;
 
 	parent_class->act_stage1_prepare = real_act_stage1_prepare;
 	parent_class->act_stage2_config = real_act_stage2_config;

@@ -221,6 +221,18 @@ real_check_connection_compatible (NMDevice *device,
 }
 
 static gboolean
+real_complete_connection (NMDevice *device,
+                          NMConnection *connection,
+                          const char *specific_object,
+                          const GSList *existing_connections,
+                          GError **error)
+{
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
+
+	return nm_modem_complete_connection (priv->modem, connection, existing_connections, error);
+}
+
+static gboolean
 real_hw_is_up (NMDevice *device)
 {
 	return nm_modem_hw_is_up (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem, device);
@@ -401,6 +413,7 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	device_class->get_generic_capabilities = real_get_generic_capabilities;
 	device_class->get_best_auto_connection = real_get_best_auto_connection;
 	device_class->check_connection_compatible = real_check_connection_compatible;
+	device_class->complete_connection = real_complete_connection;
 	device_class->hw_is_up = real_hw_is_up;
 	device_class->hw_bring_up = real_hw_bring_up;
 	device_class->deactivate_quickly = real_deactivate_quickly;

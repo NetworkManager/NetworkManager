@@ -94,6 +94,7 @@ libnm-util/tests/test-setting-8021x
 libnm-glib/tests/test-remote-settings-client
 src/tests/test-dhcp-options
 src/tests/test-policy-hosts
+src/tests/test-wifi-ap-utils
 
 system-settings/plugins/keyfile/tests/test-keyfile
 system-settings/plugins/ifcfg-rh/tests/test-ifcfg-rh

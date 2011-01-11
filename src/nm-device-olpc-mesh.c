@@ -19,7 +19,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2005 - 2010 Red Hat, Inc.
+ * (C) Copyright 2005 - 2011 Red Hat, Inc.
  * (C) Copyright 2008 Collabora Ltd.
  * (C) Copyright 2009 One Laptop per Child
  */
@@ -381,6 +381,50 @@ real_check_connection_compatible (NMDevice *device,
 	return TRUE;
 }
 
+#define DEFAULT_SSID "olpc-mesh"
+
+static gboolean
+real_complete_connection (NMDevice *device,
+                          NMConnection *connection,
+                          const char *specific_object,
+                          const GSList *existing_connections,
+                          GError **error)
+{
+	NMSettingOlpcMesh *s_mesh;
+	GByteArray *tmp;
+
+	s_mesh = (NMSettingOlpcMesh *) nm_connection_get_setting (connection, NM_TYPE_SETTING_OLPC_MESH);
+	if (!s_mesh) {
+		s_mesh = (NMSettingOlpcMesh *) nm_setting_olpc_mesh_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_mesh));
+	}
+
+	if (!nm_setting_olpc_mesh_get_ssid (s_mesh)) {
+		tmp = g_byte_array_sized_new (strlen (DEFAULT_SSID));
+		g_byte_array_append (tmp, (const guint8 *) DEFAULT_SSID, strlen (DEFAULT_SSID));
+		g_object_set (G_OBJECT (s_mesh), NM_SETTING_OLPC_MESH_SSID, tmp, NULL);
+		g_byte_array_free (tmp, TRUE);
+	}
+
+	if (!nm_setting_olpc_mesh_get_dhcp_anycast_address (s_mesh)) {
+		const guint8 anycast[ETH_ALEN] = { 0xC0, 0x27, 0xC0, 0x27, 0xC0, 0x27 };
+
+		tmp = g_byte_array_sized_new (ETH_ALEN);
+		g_byte_array_append (tmp, anycast, sizeof (anycast));
+		g_object_set (G_OBJECT (s_mesh), NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS, tmp, NULL);
+		g_byte_array_free (tmp, TRUE);
+
+	}
+
+	nm_device_complete_generic (connection,
+	                            NM_SETTING_OLPC_MESH_SETTING_NAME,
+	                            existing_connections,
+	                            _("Mesh %d"),
+	                            NULL);
+
+	return TRUE;
+}
+
 /*
  * nm_device_olpc_mesh_get_address
  *
@@ -722,6 +766,7 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 	parent_class->take_down = real_take_down;
 	parent_class->update_hw_address = real_update_hw_address;
 	parent_class->check_connection_compatible = real_check_connection_compatible;
+	parent_class->complete_connection = real_complete_connection;
 
 	parent_class->act_stage1_prepare = real_act_stage1_prepare;
 	parent_class->act_stage2_config = real_act_stage2_config;

@@ -84,6 +84,18 @@ void nm_settings_for_each_connection (NMSettings *settings,
                                       NMSettingsForEachFunc for_each_func,
                                       gpointer user_data);
 
+typedef void (*NMSettingsAddCallback) (NMSettings *settings,
+                                       NMSysconfigConnection *connection,
+                                       GError *error,
+                                       DBusGMethodInvocation *context,
+                                       gpointer user_data);
+
+void nm_settings_add_connection (NMSettings *self,
+                                 NMConnection *connection,
+                                 DBusGMethodInvocation *context,
+                                 NMSettingsAddCallback callback,
+                                 gpointer user_data);
+
 /* Returns a list of NMSysconfigConnections.  Caller must free the list with
  * g_slist_free().
  */

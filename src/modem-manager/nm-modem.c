@@ -619,6 +619,17 @@ nm_modem_check_connection_compatible (NMModem *self,
 	return FALSE;
 }
 
+gboolean
+nm_modem_complete_connection (NMModem *self,
+                              NMConnection *connection,
+                              const GSList *existing_connections,
+                              GError **error)
+{
+	if (NM_MODEM_GET_CLASS (self)->complete_connection)
+		return NM_MODEM_GET_CLASS (self)->complete_connection (self, connection, existing_connections, error);
+	return FALSE;
+}
+
 static void
 real_deactivate_quickly (NMModem *self, NMDevice *device)
 {
