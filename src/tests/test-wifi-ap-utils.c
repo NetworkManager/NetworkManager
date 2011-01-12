@@ -503,67 +503,150 @@ test_ap_wpa_eap_connection_base (const char *key_mgmt,
 	success = complete_connection ("blahblah", bssid, NM_802_11_MODE_INFRA,
 	                               flags, wpa_flags, rsn_flags,
 	                               FALSE, src, &error);
-	if (!wpa_flags && !rsn_flags) {
-		if (!flags) {
-			/* Failure expected */
-			COMPARE (src, NULL, success, error, NM_SETTING_WIRELESS_SECURITY_ERROR, NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY);
-		} else if (flags & NM_802_11_AP_FLAGS_PRIVACY) {
-			COMPARE (src, NULL, success, error, error_domain, error_code);
-		}
-	} else
-		g_assert_not_reached ();
+	/* Failure expected */
+	COMPARE (src, NULL, success, error, error_domain, error_code);
 
 	g_object_unref (src);
 }
 
-static void
-test_open_ap_wpa_eap_connection_1 (void)
+enum {
+	IDX_NONE = 0,
+	IDX_OPEN,
+	IDX_PRIV,
+	IDX_WPA_PSK,
+	IDX_RSN_PSK,
+	IDX_WPA_8021X,
+	IDX_RSN_8021X
+};
+
+static guint32
+flags_for_idx (guint32 idx)
 {
-	test_ap_wpa_eap_connection_base (NULL, NULL,
-	                                 NM_802_11_AP_FLAGS_NONE,
-	                                 NM_802_11_AP_SEC_NONE,
-	                                 NM_802_11_AP_SEC_NONE,
-	                                 FALSE, 0, 0);
+	if (idx == IDX_OPEN)
+		return NM_802_11_AP_FLAGS_NONE;
+	else if (idx == IDX_PRIV || idx == IDX_WPA_PSK || idx == IDX_RSN_PSK
+	         || idx == IDX_WPA_8021X || idx == IDX_RSN_8021X)
+		return NM_802_11_AP_FLAGS_PRIVACY;
+	else
+		g_assert_not_reached ();
+}
+
+static guint32
+wpa_flags_for_idx (guint32 idx)
+{
+	if (idx == IDX_OPEN || idx == IDX_PRIV || idx == IDX_RSN_PSK || idx == IDX_RSN_8021X)
+		return NM_802_11_AP_SEC_NONE;
+	else if (idx == IDX_WPA_PSK)
+		return NM_802_11_AP_SEC_PAIR_TKIP | NM_802_11_AP_SEC_GROUP_TKIP | NM_802_11_AP_SEC_KEY_MGMT_PSK;
+	else if (idx == IDX_WPA_8021X)
+		return NM_802_11_AP_SEC_PAIR_TKIP | NM_802_11_AP_SEC_GROUP_TKIP | NM_802_11_AP_SEC_KEY_MGMT_802_1X;
+	else
+		g_assert_not_reached ();
+}
+
+static guint32
+rsn_flags_for_idx (guint32 idx)
+{
+	if (idx == IDX_OPEN || idx == IDX_PRIV || idx == IDX_WPA_PSK || idx == IDX_WPA_8021X)
+		return NM_802_11_AP_SEC_NONE;
+	else if (idx == IDX_RSN_PSK)
+		return NM_802_11_AP_SEC_PAIR_CCMP | NM_802_11_AP_SEC_GROUP_CCMP | NM_802_11_AP_SEC_KEY_MGMT_PSK;
+	else if (idx == IDX_RSN_8021X)
+		return NM_802_11_AP_SEC_PAIR_CCMP | NM_802_11_AP_SEC_GROUP_CCMP | NM_802_11_AP_SEC_KEY_MGMT_802_1X;
+	else
+		g_assert_not_reached ();
+}
+
+static guint32
+error_domain_for_idx (guint32 idx, guint num)
+{
+	if (idx == IDX_OPEN)
+		return NM_SETTING_WIRELESS_SECURITY_ERROR;
+	else if (idx == IDX_PRIV) {
+		if (num <= 3)
+			return NM_SETTING_802_1X_ERROR;
+		else
+			return NM_SETTING_WIRELESS_SECURITY_ERROR;
+	} else if (idx == IDX_WPA_PSK)
+		return NM_SETTING_WIRELESS_SECURITY_ERROR;
+	else
+		g_assert_not_reached ();
+}
+
+static guint32
+error_code_for_idx (guint32 idx, guint num)
+{
+	if (idx == IDX_OPEN)
+		return NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY;
+	else if (idx == IDX_PRIV) {
+		if (num <= 3)
+			return NM_SETTING_802_1X_ERROR_MISSING_PROPERTY;
+		else
+			return NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY;
+	} else if (idx == IDX_WPA_PSK) {
+		return NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY;
+	} else
+		g_assert_not_reached ();
 }
 
 static void
-test_open_ap_wpa_eap_connection_2 (void)
+test_ap_wpa_eap_connection_1 (guint32 idx)
 {
 	test_ap_wpa_eap_connection_base (NULL, NULL,
-	                                 NM_802_11_AP_FLAGS_NONE,
-	                                 NM_802_11_AP_SEC_NONE,
-	                                 NM_802_11_AP_SEC_NONE,
-	                                 TRUE, 0, 0);
+	                                 flags_for_idx (idx),
+	                                 wpa_flags_for_idx (idx),
+	                                 rsn_flags_for_idx (idx),
+	                                 FALSE,
+	                                 error_domain_for_idx (idx, 1),
+	                                 error_code_for_idx (idx, 1));
 }
 
 static void
-test_open_ap_wpa_eap_connection_3 (void)
+test_ap_wpa_eap_connection_2 (guint idx)
+{
+	test_ap_wpa_eap_connection_base (NULL, NULL,
+	                                 flags_for_idx (idx),
+	                                 wpa_flags_for_idx (idx),
+	                                 rsn_flags_for_idx (idx),
+	                                 TRUE,
+	                                 error_domain_for_idx (idx, 2),
+	                                 error_code_for_idx (idx, 2));
+}
+
+static void
+test_ap_wpa_eap_connection_3 (guint idx)
 {
 	test_ap_wpa_eap_connection_base (NULL, "open",
-	                                 NM_802_11_AP_FLAGS_NONE,
-	                                 NM_802_11_AP_SEC_NONE,
-	                                 NM_802_11_AP_SEC_NONE,
-	                                 FALSE, 0, 0);
+	                                 flags_for_idx (idx),
+	                                 wpa_flags_for_idx (idx),
+	                                 rsn_flags_for_idx (idx),
+	                                 FALSE,
+	                                 error_domain_for_idx (idx, 3),
+	                                 error_code_for_idx (idx, 3));
 }
 
 static void
-test_open_ap_wpa_eap_connection_4 (void)
+test_ap_wpa_eap_connection_4 (guint idx)
 {
 	test_ap_wpa_eap_connection_base (NULL, "shared",
-	                                 NM_802_11_AP_FLAGS_NONE,
-	                                 NM_802_11_AP_SEC_NONE,
-	                                 NM_802_11_AP_SEC_NONE,
-	                                 FALSE, 0, 0);
+	                                 flags_for_idx (idx),
+	                                 wpa_flags_for_idx (idx),
+	                                 rsn_flags_for_idx (idx),
+	                                 FALSE,
+	                                 error_domain_for_idx (idx, 4),
+	                                 error_code_for_idx (idx, 4));
 }
 
 static void
-test_open_ap_wpa_eap_connection_5 (void)
+test_ap_wpa_eap_connection_5 (guint idx)
 {
 	test_ap_wpa_eap_connection_base ("wpa-eap", "open",
-	                                 NM_802_11_AP_FLAGS_NONE,
-	                                 NM_802_11_AP_SEC_NONE,
-	                                 NM_802_11_AP_SEC_NONE,
-	                                 FALSE, 0, 0);
+	                                 flags_for_idx (idx),
+	                                 wpa_flags_for_idx (idx),
+	                                 rsn_flags_for_idx (idx),
+	                                 FALSE,
+	                                 error_domain_for_idx (idx, 5),
+	                                 error_code_for_idx (idx, 5));
 }
 
 /*******************************************/
@@ -845,68 +928,6 @@ test_priv_ap_wpa_psk_connection_5 (void)
 
 /*******************************************/
 
-static void
-test_priv_ap_wpa_eap_connection_1 (void)
-{
-	test_ap_wpa_eap_connection_base (NULL, NULL,
-	                                 NM_802_11_AP_FLAGS_PRIVACY,
-	                                 NM_802_11_AP_SEC_NONE,
-	                                 NM_802_11_AP_SEC_NONE,
-	                                 FALSE,
-	                                 NM_SETTING_802_1X_ERROR,
-	                                 NM_SETTING_802_1X_ERROR_MISSING_PROPERTY);
-}
-
-static void
-test_priv_ap_wpa_eap_connection_2 (void)
-{
-	test_ap_wpa_eap_connection_base (NULL, NULL,
-	                                 NM_802_11_AP_FLAGS_PRIVACY,
-	                                 NM_802_11_AP_SEC_NONE,
-	                                 NM_802_11_AP_SEC_NONE,
-	                                 TRUE,
-	                                 NM_SETTING_802_1X_ERROR,
-	                                 NM_SETTING_802_1X_ERROR_MISSING_PROPERTY);
-}
-
-static void
-test_priv_ap_wpa_eap_connection_3 (void)
-{
-	test_ap_wpa_eap_connection_base (NULL, "open",
-	                                 NM_802_11_AP_FLAGS_PRIVACY,
-	                                 NM_802_11_AP_SEC_NONE,
-	                                 NM_802_11_AP_SEC_NONE,
-	                                 FALSE,
-	                                 NM_SETTING_802_1X_ERROR,
-	                                 NM_SETTING_802_1X_ERROR_MISSING_PROPERTY);
-}
-
-static void
-test_priv_ap_wpa_eap_connection_4 (void)
-{
-	test_ap_wpa_eap_connection_base (NULL, "shared",
-	                                 NM_802_11_AP_FLAGS_PRIVACY,
-	                                 NM_802_11_AP_SEC_NONE,
-	                                 NM_802_11_AP_SEC_NONE,
-	                                 FALSE,
-	                                 NM_SETTING_WIRELESS_SECURITY_ERROR,
-	                                 NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY);
-}
-
-static void
-test_priv_ap_wpa_eap_connection_5 (void)
-{
-	test_ap_wpa_eap_connection_base ("wpa-eap", "open",
-	                                 NM_802_11_AP_FLAGS_PRIVACY,
-	                                 NM_802_11_AP_SEC_NONE,
-	                                 NM_802_11_AP_SEC_NONE,
-	                                 FALSE,
-	                                 NM_SETTING_WIRELESS_SECURITY_ERROR,
-	                                 NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY);
-}
-
-/*******************************************/
-
 #define WPA_PSK_CAPS (NM_802_11_AP_SEC_PAIR_TKIP | NM_802_11_AP_SEC_KEY_MGMT_PSK)
 
 static void
@@ -1149,11 +1170,11 @@ int main (int argc, char **argv)
 	g_test_suite_add (suite, TESTCASE (test_open_ap_wpa_psk_connection_4, NULL));
 	g_test_suite_add (suite, TESTCASE (test_open_ap_wpa_psk_connection_5, NULL));
 
-	g_test_suite_add (suite, TESTCASE (test_open_ap_wpa_eap_connection_1, NULL));
-	g_test_suite_add (suite, TESTCASE (test_open_ap_wpa_eap_connection_2, NULL));
-	g_test_suite_add (suite, TESTCASE (test_open_ap_wpa_eap_connection_3, NULL));
-	g_test_suite_add (suite, TESTCASE (test_open_ap_wpa_eap_connection_4, NULL));
-	g_test_suite_add (suite, TESTCASE (test_open_ap_wpa_eap_connection_5, NULL));
+	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_1, IDX_OPEN));
+	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_2, IDX_OPEN));
+	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_3, IDX_OPEN));
+	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_4, IDX_OPEN));
+	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_5, IDX_OPEN));
 
 	/* WEP AP tests */
 	g_test_suite_add (suite, TESTCASE (test_priv_ap_empty_connection, NULL));
@@ -1170,11 +1191,11 @@ int main (int argc, char **argv)
 	g_test_suite_add (suite, TESTCASE (test_priv_ap_wpa_psk_connection_4, NULL));
 	g_test_suite_add (suite, TESTCASE (test_priv_ap_wpa_psk_connection_5, NULL));
 
-	g_test_suite_add (suite, TESTCASE (test_priv_ap_wpa_eap_connection_1, NULL));
-	g_test_suite_add (suite, TESTCASE (test_priv_ap_wpa_eap_connection_2, NULL));
-	g_test_suite_add (suite, TESTCASE (test_priv_ap_wpa_eap_connection_3, NULL));
-	g_test_suite_add (suite, TESTCASE (test_priv_ap_wpa_eap_connection_4, NULL));
-	g_test_suite_add (suite, TESTCASE (test_priv_ap_wpa_eap_connection_5, NULL));
+	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_1, IDX_PRIV));
+	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_2, IDX_PRIV));
+	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_3, IDX_PRIV));
+	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_4, IDX_PRIV));
+	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_5, IDX_PRIV));
 
 	/* WPA-PSK tests */
 	g_test_suite_add (suite, TESTCASE (test_wpa_ap_empty_connection, NULL));
@@ -1188,6 +1209,12 @@ int main (int argc, char **argv)
 	g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_3, NULL));
 	g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_4, NULL));
 	g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_5, NULL));
+
+	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_1, IDX_WPA_PSK));
+	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_2, IDX_WPA_PSK));
+	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_3, IDX_WPA_PSK));
+	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_4, IDX_WPA_PSK));
+	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_5, IDX_WPA_PSK));
 
 	return g_test_run ();
 }
