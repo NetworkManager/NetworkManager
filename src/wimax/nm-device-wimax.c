@@ -114,6 +114,7 @@ typedef enum
 	NM_WIMAX_ERROR_CONNECTION_NOT_WIMAX = 0,
 	NM_WIMAX_ERROR_CONNECTION_INVALID,
 	NM_WIMAX_ERROR_CONNECTION_INCOMPATIBLE,
+	NM_WIMAX_ERROR_NSP_NOT_FOUND,
 } NMWimaxError;
 
 #define NM_WIMAX_ERROR (nm_wimax_error_quark ())
@@ -144,6 +145,8 @@ nm_wimax_error_get_type (void)
 			ENUM_ENTRY (NM_WIMAX_ERROR_CONNECTION_INVALID, "ConnectionInvalid"),
 			/* Connection does not apply to this device. */
 			ENUM_ENTRY (NM_WIMAX_ERROR_CONNECTION_INCOMPATIBLE, "ConnectionIncompatible"),
+			/* NSP not found in the scan list. */
+			ENUM_ENTRY (NM_WIMAX_ERROR_NSP_NOT_FOUND, "NspNotFound"),
 			{ 0, 0, 0 }
 		};
 		etype = g_enum_register_static ("NMWimaxError", values);
@@ -474,6 +477,117 @@ real_check_connection_compatible (NMDevice *device,
 					 NM_WIMAX_ERROR, NM_WIMAX_ERROR_CONNECTION_INCOMPATIBLE,
 					 "The connection's MAC address did not match this device.");
 		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
+real_complete_connection (NMDevice *device,
+                          NMConnection *connection,
+                          const char *specific_object,
+                          const GSList *existing_connections,
+                          GError **error)
+{
+	NMDeviceWimax *self = NM_DEVICE_WIMAX (device);
+	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
+	NMSettingWimax *s_wimax;
+	const GByteArray *setting_mac;
+	char *format;
+	const char *nsp_name = NULL;
+	NMWimaxNsp *nsp = NULL;
+	GSList *iter;
+
+	s_wimax = (NMSettingWimax *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIMAX);
+
+	if (!specific_object) {
+		/* If not given a specific object, we need at minimum an NSP name */
+		if (!s_wimax) {
+			g_set_error_literal (error,
+			                     NM_WIMAX_ERROR,
+			                     NM_WIMAX_ERROR_CONNECTION_INVALID,
+			                     "A 'wimax' setting is required if no NSP path was given.");
+			return FALSE;
+		}
+
+		nsp_name = nm_setting_wimax_get_network_name (s_wimax);
+		if (!nsp_name || !strlen (nsp_name)) {
+			g_set_error_literal (error,
+			                     NM_WIMAX_ERROR,
+			                     NM_WIMAX_ERROR_CONNECTION_INVALID,
+			                     "A 'wimax' setting with a valid network name is required if no NSP path was given.");
+			return FALSE;
+		}
+
+		/* Find a compatible NSP in the list */
+		nsp = get_nsp_by_name (self, nsp_name);
+
+		/* If we still don't have an NSP, then the WiMAX settings needs to be
+		 * fully specified by the client.  Might not be able to find the NSP
+		 * if the scan didn't find the NSP yet.
+		 */
+		if (!nsp) {
+			if (!nm_setting_verify (NM_SETTING (s_wimax), NULL, error))
+				return FALSE;
+		}
+	} else {
+		/* Find a compatible NSP in the list */
+		for (iter = priv->nsp_list; iter; iter = g_slist_next (iter)) {
+			if (!strcmp (specific_object, nm_wimax_nsp_get_dbus_path (NM_WIMAX_NSP (iter->data)))) {
+				nsp = NM_WIMAX_NSP (iter->data);
+				break;
+			}
+		}
+
+		if (!nsp) {
+			g_set_error (error,
+			             NM_WIMAX_ERROR,
+			             NM_WIMAX_ERROR_NSP_NOT_FOUND,
+			             "The NSP %s was not in the scan list.",
+			             specific_object);
+			return FALSE;
+		}
+
+		nsp_name = nm_wimax_nsp_get_name (nsp);
+	}
+
+	/* Add a WiMAX setting if one doesn't exist */
+	if (!s_wimax) {
+		s_wimax = (NMSettingWimax *) nm_setting_wimax_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_wimax));
+	}
+
+	g_assert (nsp_name);
+	format = g_strdup_printf ("%s %%d", nsp_name);
+	nm_device_complete_generic (connection,
+	                            NM_SETTING_WIMAX_SETTING_NAME,
+	                            existing_connections,
+	                            format,
+	                            nsp_name);
+	g_free (format);
+	g_object_set (G_OBJECT (s_wimax), NM_SETTING_WIMAX_NETWORK_NAME, nsp_name, NULL);
+
+	setting_mac = nm_setting_wimax_get_mac_address (s_wimax);
+	if (setting_mac) {
+		/* Make sure the setting MAC (if any) matches the device's permanent MAC */
+		if (memcmp (setting_mac->data, &priv->hw_addr.ether_addr_octet, ETH_ALEN)) {
+			g_set_error (error,
+				         NM_SETTING_WIMAX_ERROR,
+				         NM_SETTING_WIMAX_ERROR_INVALID_PROPERTY,
+				         NM_SETTING_WIMAX_MAC_ADDRESS);
+			return FALSE;
+		}
+	} else {
+		GByteArray *mac;
+		const guint8 null_mac[ETH_ALEN] = { 0, 0, 0, 0, 0, 0 };
+
+		/* Lock the connection to this device by default */
+		if (memcmp (&priv->hw_addr.ether_addr_octet, null_mac, ETH_ALEN)) {
+			mac = g_byte_array_sized_new (ETH_ALEN);
+			g_byte_array_append (mac, priv->hw_addr.ether_addr_octet, ETH_ALEN);
+			g_object_set (G_OBJECT (s_wimax), NM_SETTING_WIMAX_MAC_ADDRESS, mac, NULL);
+			g_byte_array_free (mac, TRUE);
+		}
 	}
 
 	return TRUE;
@@ -1349,6 +1463,7 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *klass)
 	device_class->hw_take_down = real_hw_take_down;
 	device_class->update_hw_address = real_update_hw_address;
 	device_class->check_connection_compatible = real_check_connection_compatible;
+	device_class->complete_connection = real_complete_connection;
 	device_class->get_best_auto_connection = real_get_best_auto_connection;
 	device_class->get_generic_capabilities = real_get_generic_capabilities;
 	device_class->is_available = real_is_available;
