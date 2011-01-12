@@ -93,22 +93,122 @@ complete_connection (const char *ssid,
 	return success;
 }
 
+typedef struct {
+	const char *key;
+	const char *str;
+	guint32     uint;
+} KeyData;
+
+static void
+set_items (NMSetting *setting, const KeyData *items)
+{
+	const KeyData *item;
+	GParamSpec *pspec;
+
+	for (item = items; item && item->key; item++) {
+		g_assert (item->key);
+		pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), item->key);
+		g_assert (pspec);
+
+		if (pspec->value_type == G_TYPE_STRING) {
+			g_assert (item->uint == 0);
+			if (item->str)
+				g_object_set (G_OBJECT (setting), item->key, item->str, NULL);
+		} else if (pspec->value_type == G_TYPE_UINT) {
+			g_assert (item->str == NULL);
+			g_object_set (G_OBJECT (setting), item->key, item->uint, NULL);
+		} else if (pspec->value_type == G_TYPE_INT) {
+			gint foo = (gint) item->uint;
+
+			g_assert (item->str == NULL);
+			g_object_set (G_OBJECT (setting), item->key, foo, NULL);
+		} else if (pspec->value_type == G_TYPE_BOOLEAN) {
+			gboolean foo = !! (item->uint);
+
+			g_assert (item->str == NULL);
+			g_object_set (G_OBJECT (setting), item->key, foo, NULL);
+		} else {
+			/* Special types, check based on property name */
+			if (!strcmp (item->key, NM_SETTING_WIRELESS_SECURITY_PROTO))
+				nm_setting_wireless_security_add_proto (NM_SETTING_WIRELESS_SECURITY (setting), item->str);
+			else if (!strcmp (item->key, NM_SETTING_WIRELESS_SECURITY_PAIRWISE))
+				nm_setting_wireless_security_add_pairwise (NM_SETTING_WIRELESS_SECURITY (setting), item->str);
+			else if (!strcmp (item->key, NM_SETTING_WIRELESS_SECURITY_GROUP))
+				nm_setting_wireless_security_add_group (NM_SETTING_WIRELESS_SECURITY (setting), item->str);
+			else if (!strcmp (item->key, NM_SETTING_802_1X_EAP))
+				nm_setting_802_1x_add_eap_method (NM_SETTING_802_1X (setting), item->str);
+		}
+	}
+}
+
+static NMSettingWireless *
+fill_wifi_empty (NMConnection *connection)
+{
+	NMSettingWireless *s_wifi;
+
+	s_wifi = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
+	if (!s_wifi) {
+		s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+	}
+	return s_wifi;
+}
+
+#if 0
+static NMSettingWireless *
+fill_wifi (NMConnection *connection, const KeyData items[])
+{
+	NMSettingWireless *s_wifi;
+
+	s_wifi = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
+	if (!s_wifi) {
+		s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+	}
+
+	set_items (NM_SETTING (s_wifi), items);
+	return s_wifi;
+}
+#endif
+
+static NMSettingWirelessSecurity *
+fill_wsec (NMConnection *connection, const KeyData items[])
+{
+	NMSettingWirelessSecurity *s_wsec;
+
+	s_wsec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
+	if (!s_wsec) {
+		s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+	}
+
+	set_items (NM_SETTING (s_wsec), items);
+	return s_wsec;
+}
+
+static NMSetting8021x *
+fill_8021x (NMConnection *connection, const KeyData items[])
+{
+	NMSetting8021x *s_8021x;
+
+	s_8021x = (NMSetting8021x *) nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X);
+	if (!s_8021x) {
+		s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_8021x));
+	}
+
+	set_items (NM_SETTING (s_8021x), items);
+	return s_8021x;
+}
+
 static NMConnection *
-create_expected (const char *ssid,
-                 const guint8 *bssid,
-                 NM80211Mode mode,
-                 gboolean add_security,
-                 gboolean add_8021x,
-                 const char *key_mgmt,
-                 const char *auth_alg,
-                 NMSettingWireless **out_s_wifi,
-                 NMSettingWirelessSecurity **out_s_wsec,
-                 NMSetting8021x **out_s_8021x)
+create_basic (const char *ssid,
+              const guint8 *bssid,
+              NM80211Mode mode,
+              gboolean set_security)
 {
 	NMConnection *connection;
 	NMSettingWireless *s_wifi = NULL;
-	NMSettingWirelessSecurity *s_wsec = NULL;
-	NMSetting8021x *s_8021x = NULL;
 	GByteArray *tmp;
 
 	connection = nm_connection_new ();
@@ -137,158 +237,10 @@ create_expected (const char *ssid,
 	else
 		g_assert_not_reached ();
 
-	if (add_security) {
-		s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
-		nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+	if (set_security)
+		g_object_set (G_OBJECT (s_wifi), NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NULL);
 
-		g_object_set (G_OBJECT (s_wifi),
-		              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-		              NULL);
-		if (key_mgmt)
-			g_object_set (G_OBJECT (s_wsec), NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, key_mgmt, NULL);
-		if (auth_alg)
-			g_object_set (G_OBJECT (s_wsec), NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, auth_alg, NULL);
-
-		if (add_8021x) {
-			s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
-			nm_connection_add_setting (connection, NM_SETTING (s_8021x));
-		}
-	}
-
-	if (out_s_wifi)
-		*out_s_wifi = s_wifi;
-	if (out_s_wsec)
-		*out_s_wsec = s_wsec;
-	if (out_s_8021x)
-		*out_s_8021x = s_8021x;
 	return connection;
-}
-
-static NMSettingWireless *
-get_wifi_setting (NMConnection *connection, gboolean add_if_absent)
-{
-	NMSettingWireless *s_wifi;
-
-	s_wifi = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
-	if (add_if_absent) {
-		if (!s_wifi) {
-			s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
-			nm_connection_add_setting (connection, NM_SETTING (s_wifi));
-		}
-		g_object_set (G_OBJECT (s_wifi),
-			          NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-			          NULL);
-	}
-	return s_wifi;
-}
-
-static void
-fill_wep (NMConnection *connection,
-          const char *key0,
-          guint32 tx_keyidx,
-          const char *auth_alg,
-          gboolean set_s_wifi)
-{
-	NMSettingWireless *s_wifi;
-	NMSettingWirelessSecurity *s_wsec;
-
-	s_wifi = get_wifi_setting (connection, set_s_wifi);
-
-	s_wsec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
-	if (!s_wsec) {
-		s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
-		nm_connection_add_setting (connection, NM_SETTING (s_wsec));
-	}
-
-	if (key0) {
-		g_object_set (G_OBJECT (s_wsec),
-		              NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, key0,
-		              NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, tx_keyidx,
-		              NULL);
-	}
-
-	if (auth_alg)
-		g_object_set (G_OBJECT (s_wsec), NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, auth_alg, NULL);
-}
-
-static void
-fill_leap (NMConnection *connection,
-           const char *leap_username,
-           gboolean set_auth_alg,
-           gboolean set_key_mgmt,
-           gboolean set_s_wifi)
-{
-	NMSettingWireless *s_wifi;
-	NMSettingWirelessSecurity *s_wsec;
-
-	s_wifi = get_wifi_setting (connection, set_s_wifi);
-
-	s_wsec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
-	if (!s_wsec) {
-		s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
-		nm_connection_add_setting (connection, NM_SETTING (s_wsec));
-	}
-
-	if (leap_username)
-		g_object_set (G_OBJECT (s_wsec), NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, leap_username, NULL);
-
-	if (set_auth_alg)
-		g_object_set (G_OBJECT (s_wsec), NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "leap", NULL);
-
-	if (set_key_mgmt)
-		g_object_set (G_OBJECT (s_wsec), NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", NULL);
-}
-
-static void
-fill_wpa_psk (NMConnection *connection,
-              const char *key_mgmt,
-              const char *psk,
-              const char *auth_alg,
-              gboolean set_s_wifi)
-{
-	NMSettingWireless *s_wifi;
-	NMSettingWirelessSecurity *s_wsec;
-
-	s_wifi = get_wifi_setting (connection, set_s_wifi);
-
-	s_wsec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
-	if (!s_wsec) {
-		s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
-		nm_connection_add_setting (connection, NM_SETTING (s_wsec));
-	}
-
-	if (key_mgmt)
-		g_object_set (G_OBJECT (s_wsec), NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, key_mgmt, NULL);
-	if (psk)
-		g_object_set (G_OBJECT (s_wsec), NM_SETTING_WIRELESS_SECURITY_PSK, psk, NULL);
-	if (auth_alg)
-		g_object_set (G_OBJECT (s_wsec), NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, auth_alg, NULL);
-}
-
-static void
-fill_8021x (NMConnection *connection,
-            NMSetting8021x *s_8021x,
-            const char *key_mgmt,
-            const char *auth_alg,
-            gboolean set_s_wifi)
-{
-	NMSettingWireless *s_wifi;
-	NMSettingWirelessSecurity *s_wsec;
-
-	s_wifi = get_wifi_setting (connection, set_s_wifi);
-
-	s_wsec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
-	if (!s_wsec) {
-		s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
-		nm_connection_add_setting (connection, NM_SETTING (s_wsec));
-	}
-
-	if (key_mgmt)
-		g_object_set (G_OBJECT (s_wsec), NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, key_mgmt, NULL);
-	if (auth_alg)
-		g_object_set (G_OBJECT (s_wsec), NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, auth_alg, NULL);
-
-	nm_connection_add_setting (connection, NM_SETTING (s_8021x));
 }
 
 /*******************************************/
@@ -308,8 +260,7 @@ test_lock_bssid (void)
 	                               NM_WIFI_DEVICE_CAP_NONE, NM_WIFI_DEVICE_CAP_NONE,
 	                               TRUE,
 	                               src, &error);
-
-	expected = create_expected (ssid, bssid, NM_802_11_MODE_INFRA, FALSE, FALSE, NULL, NULL, NULL, NULL, NULL);
+	expected = create_basic (ssid, bssid, NM_802_11_MODE_INFRA, FALSE);
 	COMPARE (src, expected, success, error, 0, 0);
 
 	g_object_unref (src);
@@ -333,8 +284,7 @@ test_open_ap_empty_connection (void)
 	                               NM_WIFI_DEVICE_CAP_NONE, NM_WIFI_DEVICE_CAP_NONE,
 	                               FALSE,
 	                               src, &error);
-
-	expected = create_expected (ssid, NULL, NM_802_11_MODE_INFRA, FALSE, FALSE, NULL, NULL, NULL, NULL, NULL);
+	expected = create_basic (ssid, NULL, NM_802_11_MODE_INFRA, FALSE);
 	COMPARE (src, expected, success, error, 0, 0);
 
 	g_object_unref (src);
@@ -344,20 +294,18 @@ test_open_ap_empty_connection (void)
 /*******************************************/
 
 static void
-test_open_ap_leap_connection_1 (gboolean fill_wifi)
+test_open_ap_leap_connection_1 (gboolean add_wifi)
 {
 	NMConnection *src;
-	NMSettingWireless *s_wifi;
-	NMSettingWirelessSecurity *s_wsec;
 	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const KeyData src_wsec[] = { { NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, "Bill Smith", 0 }, { NULL } };
 	gboolean success;
 	GError *error = NULL;
 
 	src = nm_connection_new ();
-	s_wifi = get_wifi_setting (src, fill_wifi);
-	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
-	g_object_set (G_OBJECT (s_wsec), NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, "Bill Smith", NULL);
-	nm_connection_add_setting (src, NM_SETTING (s_wsec));
+	if (add_wifi)
+		fill_wifi_empty (src);
+	fill_wsec (src, src_wsec);
 
 	success = complete_connection ("blahblah", bssid,
 	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_NONE,
@@ -376,17 +324,14 @@ static void
 test_open_ap_leap_connection_2 (void)
 {
 	NMConnection *src;
-	NMSettingWireless *s_wifi;
-	NMSettingWirelessSecurity *s_wsec;
 	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const KeyData src_wsec[] = { { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0 }, { NULL } };
 	gboolean success;
 	GError *error = NULL;
 
 	src = nm_connection_new ();
-	s_wifi = get_wifi_setting (src, TRUE);
-	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
-	g_object_set (G_OBJECT (s_wsec), NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", NULL);
-	nm_connection_add_setting (src, NM_SETTING (s_wsec));
+	fill_wifi_empty (src);
+	fill_wsec (src, src_wsec);
 
 	success = complete_connection ("blahblah", bssid,
 	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_NONE,
@@ -402,15 +347,22 @@ test_open_ap_leap_connection_2 (void)
 /*******************************************/
 
 static void
-test_open_ap_wep_connection (gboolean fill_wifi)
+test_open_ap_wep_connection (gboolean add_wifi)
 {
 	NMConnection *src;
 	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const KeyData src_wsec[] = {
+	    { NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, "11111111111111111111111111", 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, NULL, 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0 },
+	    { NULL } };
 	gboolean success;
 	GError *error = NULL;
 
 	src = nm_connection_new ();
-	fill_wep (src, "11111111111111111111111111", 0, "open", fill_wifi);
+	if (add_wifi)
+		fill_wifi_empty (src);
+	fill_wsec (src, src_wsec);
 	success = complete_connection ("blahblah", bssid,
 	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_NONE,
 	                               NM_WIFI_DEVICE_CAP_NONE, NM_WIFI_DEVICE_CAP_NONE,
@@ -430,15 +382,22 @@ test_ap_wpa_psk_connection_base (const char *key_mgmt,
                                  guint32 flags,
                                  guint32 wpa_flags,
                                  guint32 rsn_flags,
-                                 gboolean fill_wifi)
+                                 gboolean add_wifi)
 {
 	NMConnection *src;
 	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const KeyData src_wsec[] = {
+	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, key_mgmt, 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, auth_alg, 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_PSK, "asdfasdfasdfasdfasdfafs", 0 },
+	    { NULL } };
 	gboolean success;
 	GError *error = NULL;
 
 	src = nm_connection_new ();
-	fill_wpa_psk (src, key_mgmt, "asdfasdfasdfasdfasdfafs", auth_alg, fill_wifi);
+	if (add_wifi)
+		fill_wifi_empty (src);
+	fill_wsec (src, src_wsec);
 	success = complete_connection ("blahblah", bssid, NM_802_11_MODE_INFRA,
 	                               flags, wpa_flags, rsn_flags,
 	                               FALSE, src, &error);
@@ -506,21 +465,26 @@ test_ap_wpa_eap_connection_base (const char *key_mgmt,
                                  guint32 flags,
                                  guint32 wpa_flags,
                                  guint32 rsn_flags,
-                                 gboolean fill_wifi,
+                                 gboolean add_wifi,
                                  guint error_domain,
                                  guint error_code)
 {
 	NMConnection *src;
-	NMSetting8021x *s_8021x;
 	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const KeyData src_empty[] = { { NULL } };
+	const KeyData src_wsec[] = {
+	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, key_mgmt, 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, auth_alg, 0 },
+	    { NULL } };
 	gboolean success;
 	GError *error = NULL;
-	const char *ssid = "blahblah";
 
 	src = nm_connection_new ();
-	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
-	fill_8021x (src, s_8021x, key_mgmt, auth_alg, fill_wifi);
-	success = complete_connection (ssid, bssid, NM_802_11_MODE_INFRA,
+	if (add_wifi)
+		fill_wifi_empty (src);
+	fill_wsec (src, src_wsec);
+	fill_8021x (src, src_empty);
+	success = complete_connection ("blahblah", bssid, NM_802_11_MODE_INFRA,
 	                               flags, wpa_flags, rsn_flags,
 	                               FALSE, src, &error);
 	if (!wpa_flags && !rsn_flags) {
@@ -592,9 +556,11 @@ static void
 test_priv_ap_empty_connection (void)
 {
 	NMConnection *src, *expected;
-	NMSettingWirelessSecurity *s_wsec;
 	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
 	const char *ssid = "blahblah";
+	const KeyData exp_wsec[] = {
+	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none", 0 },
+	    { NULL } };
 	gboolean success;
 	GError *error = NULL;
 
@@ -606,7 +572,8 @@ test_priv_ap_empty_connection (void)
 	                               src, &error);
 
 	/* Static WEP connection expected */
-	expected = create_expected (ssid, NULL, NM_802_11_MODE_INFRA, TRUE, FALSE, "none", NULL, NULL, &s_wsec, NULL);
+	expected = create_basic (ssid, NULL, NM_802_11_MODE_INFRA, TRUE);
+	fill_wsec (expected, exp_wsec);
 	COMPARE (src, expected, success, error, 0, 0);
 
 	g_object_unref (src);
@@ -616,18 +583,28 @@ test_priv_ap_empty_connection (void)
 /*******************************************/
 
 static void
-test_priv_ap_leap_connection_1 (gboolean fill_wifi)
+test_priv_ap_leap_connection_1 (gboolean add_wifi)
 {
 	NMConnection *src, *expected;
-	NMSettingWirelessSecurity *s_wsec;
 	const char *ssid = "blahblah";
 	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
 	const char *leap_username = "Bill Smith";
+	const KeyData src_wsec[] = {
+	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, leap_username, 0 },
+	    { NULL } };
+	const KeyData exp_wsec[] = {
+	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "leap", 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, leap_username, 0 },
+	    { NULL } };
 	gboolean success;
 	GError *error = NULL;
 
 	src = nm_connection_new ();
-	fill_leap (src, leap_username, TRUE, FALSE, TRUE);
+	if (add_wifi)
+		fill_wifi_empty (src);
+	fill_wsec (src, src_wsec);
 	success = complete_connection (ssid, bssid,
 	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_PRIVACY,
 	                               NM_WIFI_DEVICE_CAP_NONE, NM_WIFI_DEVICE_CAP_NONE,
@@ -637,10 +614,8 @@ test_priv_ap_leap_connection_1 (gboolean fill_wifi)
 	 * there's no way to determine from the AP's beacon whether it's static WEP,
 	 * dynamic WEP, or LEAP.
 	 */
-	s_wsec = NULL;
-	expected = create_expected (ssid, NULL, NM_802_11_MODE_INFRA, TRUE, FALSE, "ieee8021x", "leap", NULL, &s_wsec, NULL);
-	g_assert (s_wsec);
-	g_object_set (G_OBJECT (s_wsec), NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, leap_username, NULL);
+	expected = create_basic (ssid, NULL, NM_802_11_MODE_INFRA, TRUE);
+	fill_wsec (expected, exp_wsec);
 	COMPARE (src, expected, success, error, 0, 0);
 
 	g_object_unref (src);
@@ -653,11 +628,16 @@ test_priv_ap_leap_connection_2 (void)
 {
 	NMConnection *src;
 	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const KeyData src_wsec[] = {
+	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "leap", 0 },
+	    { NULL } };
 	gboolean success;
 	GError *error = NULL;
 
 	src = nm_connection_new ();
-	fill_leap (src, NULL, TRUE, TRUE, TRUE);
+	fill_wifi_empty (src);
+	fill_wsec (src, src_wsec);
 	success = complete_connection ("blahblah", bssid,
 	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_PRIVACY,
 	                               NM_WIFI_DEVICE_CAP_NONE, NM_WIFI_DEVICE_CAP_NONE,
@@ -677,19 +657,30 @@ test_priv_ap_dynamic_wep_1 (void)
 	NMConnection *src, *expected;
 	const char *ssid = "blahblah";
 	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
-	NMSettingWirelessSecurity *s_wsec;
-	NMSetting8021x *s_8021x;
+	const KeyData src_wsec[] = {
+	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0 },
+	    { NULL } };
+	const KeyData both_8021x[] = {
+	    { NM_SETTING_802_1X_EAP, "peap", 0 },
+	    { NM_SETTING_802_1X_IDENTITY, "Bill Smith", 0 },
+	    { NM_SETTING_802_1X_PHASE2_AUTH, "mschapv2", 0 },
+	    { NULL } };
+	const KeyData exp_wsec[] = {
+	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_PAIRWISE, "wep40", 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_PAIRWISE, "wep104", 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_GROUP, "wep40", 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_GROUP, "wep104", 0 },
+	    { NULL } };
 	gboolean success;
 	GError *error = NULL;
 
 	src = nm_connection_new ();
-	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
-	nm_setting_802_1x_add_eap_method (s_8021x, "peap");
-	g_object_set (G_OBJECT (s_8021x),
-	              NM_SETTING_802_1X_IDENTITY, "Bill Smith",
-	              NM_SETTING_802_1X_PHASE2_AUTH, "mschapv2",
-	              NULL);
-	fill_8021x (src, s_8021x, "ieee8021x", "open", TRUE);
+	fill_wifi_empty (src);
+	fill_wsec (src, src_wsec);
+	fill_8021x (src, both_8021x);
 	success = complete_connection (ssid, bssid,
 	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_PRIVACY,
 	                               NM_WIFI_DEVICE_CAP_NONE, NM_WIFI_DEVICE_CAP_NONE,
@@ -697,18 +688,9 @@ test_priv_ap_dynamic_wep_1 (void)
 	                               src, &error);
 
 	/* We expect a completed Dynamic WEP connection */
-	s_8021x = NULL;
-	expected = create_expected (ssid, NULL, NM_802_11_MODE_INFRA, TRUE, TRUE, "ieee8021x", "open", NULL, &s_wsec, &s_8021x);
-	nm_setting_wireless_security_add_pairwise (s_wsec, "wep40");
-	nm_setting_wireless_security_add_pairwise (s_wsec, "wep104");
-	nm_setting_wireless_security_add_group (s_wsec, "wep40");
-	nm_setting_wireless_security_add_group (s_wsec, "wep104");
-	nm_setting_802_1x_add_eap_method (s_8021x, "peap");
-	g_object_set (G_OBJECT (s_8021x),
-	              NM_SETTING_802_1X_IDENTITY, "Bill Smith",
-	              NM_SETTING_802_1X_PHASE2_AUTH, "mschapv2",
-	              NULL);
-
+	expected = create_basic (ssid, NULL, NM_802_11_MODE_INFRA, TRUE);
+	fill_wsec (expected, exp_wsec);
+	fill_8021x (expected, both_8021x);
 	COMPARE (src, expected, success, error, 0, 0);
 
 	g_object_unref (src);
@@ -722,19 +704,29 @@ test_priv_ap_dynamic_wep_2 (void)
 	NMConnection *src, *expected;
 	const char *ssid = "blahblah";
 	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
-	NMSettingWirelessSecurity *s_wsec;
-	NMSetting8021x *s_8021x;
+	const KeyData src_wsec[] = {
+	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0 },
+	    { NULL } };
+	const KeyData both_8021x[] = {
+	    { NM_SETTING_802_1X_EAP, "peap", 0 },
+	    { NM_SETTING_802_1X_IDENTITY, "Bill Smith", 0 },
+	    { NM_SETTING_802_1X_PHASE2_AUTH, "mschapv2", 0 },
+	    { NULL } };
+	const KeyData exp_wsec[] = {
+	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_PAIRWISE, "wep40", 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_PAIRWISE, "wep104", 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_GROUP, "wep40", 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_GROUP, "wep104", 0 },
+	    { NULL } };
 	gboolean success;
 	GError *error = NULL;
 
 	src = nm_connection_new ();
-	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
-	nm_setting_802_1x_add_eap_method (s_8021x, "peap");
-	g_object_set (G_OBJECT (s_8021x),
-	              NM_SETTING_802_1X_IDENTITY, "Bill Smith",
-	              NM_SETTING_802_1X_PHASE2_AUTH, "mschapv2",
-	              NULL);
-	fill_8021x (src, s_8021x, NULL, "open", TRUE);
+	fill_wifi_empty (src);
+	fill_wsec (src, src_wsec);
+	fill_8021x (src, both_8021x);
 	success = complete_connection (ssid, bssid,
 	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_PRIVACY,
 	                               NM_WIFI_DEVICE_CAP_NONE, NM_WIFI_DEVICE_CAP_NONE,
@@ -742,18 +734,9 @@ test_priv_ap_dynamic_wep_2 (void)
 	                               src, &error);
 
 	/* We expect a completed Dynamic WEP connection */
-	s_8021x = NULL;
-	expected = create_expected (ssid, NULL, NM_802_11_MODE_INFRA, TRUE, TRUE, "ieee8021x", "open", NULL, &s_wsec, &s_8021x);
-	nm_setting_wireless_security_add_pairwise (s_wsec, "wep40");
-	nm_setting_wireless_security_add_pairwise (s_wsec, "wep104");
-	nm_setting_wireless_security_add_group (s_wsec, "wep40");
-	nm_setting_wireless_security_add_group (s_wsec, "wep104");
-	nm_setting_802_1x_add_eap_method (s_8021x, "peap");
-	g_object_set (G_OBJECT (s_8021x),
-	              NM_SETTING_802_1X_IDENTITY, "Bill Smith",
-	              NM_SETTING_802_1X_PHASE2_AUTH, "mschapv2",
-	              NULL);
-
+	expected = create_basic (ssid, NULL, NM_802_11_MODE_INFRA, TRUE);
+	fill_wsec (expected, exp_wsec);
+	fill_8021x (expected, both_8021x);
 	COMPARE (src, expected, success, error, 0, 0);
 
 	g_object_unref (src);
@@ -766,18 +749,21 @@ test_priv_ap_dynamic_wep_3 (void)
 {
 	NMConnection *src;
 	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
-	NMSetting8021x *s_8021x;
+	const KeyData src_wsec[] = {
+	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "shared", 0 },
+	    { NULL } };
+	const KeyData src_8021x[] = {
+	    { NM_SETTING_802_1X_EAP, "peap", 0 },
+	    { NM_SETTING_802_1X_IDENTITY, "Bill Smith", 0 },
+	    { NM_SETTING_802_1X_PHASE2_AUTH, "mschapv2", 0 },
+	    { NULL } };
 	gboolean success;
 	GError *error = NULL;
 
 	src = nm_connection_new ();
-	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
-	nm_setting_802_1x_add_eap_method (s_8021x, "peap");
-	g_object_set (G_OBJECT (s_8021x),
-	              NM_SETTING_802_1X_IDENTITY, "Bill Smith",
-	              NM_SETTING_802_1X_PHASE2_AUTH, "mschapv2",
-	              NULL);
-	fill_8021x (src, s_8021x, "ieee8021x", "shared", TRUE);
+	fill_wifi_empty (src);
+	fill_wsec (src, src_wsec);
+	fill_8021x (src, src_8021x);
 	success = complete_connection ("blahblah", bssid,
 	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_PRIVACY,
 	                               NM_WIFI_DEVICE_CAP_NONE, NM_WIFI_DEVICE_CAP_NONE,
