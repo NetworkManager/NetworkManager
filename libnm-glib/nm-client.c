@@ -990,7 +990,8 @@ nm_client_get_device_by_path (NMClient *client, const char *object_path)
 }
 
 typedef struct {
-	NMClientActivateDeviceFn fn;
+	NMClientActivateDeviceFn act_fn;
+	NMClientAddActivateFn add_act_fn;
 	gpointer user_data;
 } ActivateDeviceInfo;
 
@@ -1002,8 +1003,8 @@ activate_cb (DBusGProxy *proxy,
 {
 	ActivateDeviceInfo *info = (ActivateDeviceInfo *) user_data;
 
-	if (info->fn)
-		info->fn (info->user_data, path, error);
+	if (info->act_fn)
+		info->act_fn (info->user_data, path, error);
 	else if (error)
 		nm_warning ("Device activation failed: (%d) %s", error->code, error->message);
 
@@ -1044,7 +1045,7 @@ nm_client_activate_connection (NMClient *client,
 		internal_so = "/";
 
 	info = g_slice_new (ActivateDeviceInfo);
-	info->fn = callback;
+	info->act_fn = callback;
 	info->user_data = user_data;
 
 	org_freedesktop_NetworkManager_activate_connection_async (NM_CLIENT_GET_PRIVATE (client)->client_proxy,
@@ -1053,6 +1054,75 @@ nm_client_activate_connection (NMClient *client,
 											    internal_so,
 											    activate_cb,
 											    info);
+}
+
+static void
+add_activate_cb (DBusGProxy *proxy,
+                 char *connection_path,
+                 char *active_path,
+                 GError *error,
+                 gpointer user_data)
+{
+	ActivateDeviceInfo *info = (ActivateDeviceInfo *) user_data;
+
+	if (info->add_act_fn)
+		info->add_act_fn (info->user_data, connection_path, active_path, error);
+	else if (error)
+		nm_warning ("Connection add and activate failed: (%d) %s", error->code, error->message);
+
+	g_slice_free (ActivateDeviceInfo, info);
+}
+
+/**
+ * nm_client_add_and_activate_connection:
+ * @client: a #NMClient
+ * @partial: an #NMConnection to add; the connection may be partially filled
+ *   and will be completed by NetworkManager using the given @device and
+ *   @specific_object before being added
+ * @device: the #NMDevice
+ * @specific_object: the object path of a connection-type-specific object this
+ *   activation should use.  This parameter is currently ignored for wired and
+ *   mobile broadband connections, and the value of NULL should be used (ie, no
+ *   specific object).  For WiFi connections, pass the object path of a specific
+ *   AP from the card's scan list, which will be used to complete the details of
+ *   the newly added connection.
+ * @callback: the function to call when the call is done
+ * @user_data: user data to pass to the callback function
+ *
+ * Adds a new connection using the given details (if any) as a template
+ * (automatically filling in missing settings with the capabilities of the
+ * given device and specific object), then activate the new connection.
+ * Cannot be used for VPN connections at this time.
+ **/
+void
+nm_client_add_and_activate_connection (NMClient *client,
+                                       NMConnection *partial,
+                                       NMDevice *device,
+                                       const char *specific_object,
+                                       NMClientAddActivateFn callback,
+                                       gpointer user_data)
+{
+	ActivateDeviceInfo *info;
+	GHashTable *hash = NULL;
+
+	g_return_if_fail (NM_IS_CLIENT (client));
+	g_return_if_fail (NM_IS_DEVICE (device));
+
+	info = g_slice_new (ActivateDeviceInfo);
+	info->add_act_fn = callback;
+	info->user_data = user_data;
+
+	if (partial)
+		hash = nm_connection_to_hash (partial);
+	else
+		hash = g_hash_table_new (g_str_hash, g_str_equal);
+	org_freedesktop_NetworkManager_add_and_activate_connection_async (NM_CLIENT_GET_PRIVATE (client)->client_proxy,
+	                                                                  hash,
+	                                                                  nm_object_get_path (NM_OBJECT (device)),
+	                                                                  specific_object ? specific_object : "/",
+	                                                                  add_activate_cb,
+	                                                                  info);
+	g_hash_table_unref (hash);
 }
 
 /**

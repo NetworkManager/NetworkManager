@@ -104,7 +104,9 @@ NMClient *nm_client_new (void);
 const GPtrArray *nm_client_get_devices    (NMClient *client);
 NMDevice *nm_client_get_device_by_path    (NMClient *client, const char *object_path);
 
-typedef void (*NMClientActivateDeviceFn) (gpointer user_data, const char *object_path, GError *error);
+typedef void (*NMClientActivateDeviceFn) (gpointer user_data,
+                                          const char *object_path,
+                                          GError *error);
 
 void nm_client_activate_connection (NMClient *client,
                                     const char *connection_path,
@@ -112,6 +114,18 @@ void nm_client_activate_connection (NMClient *client,
                                     const char *specific_object,
                                     NMClientActivateDeviceFn callback,
                                     gpointer user_data);
+
+typedef void (*NMClientAddActivateFn) (gpointer user_data,
+                                       const char *connection_path,
+                                       const char *active_path,
+                                       GError *error);
+
+void nm_client_add_and_activate_connection (NMClient *client,
+                                            NMConnection *partial,
+                                            NMDevice *device,
+                                            const char *specific_object,
+                                            NMClientAddActivateFn callback,
+                                            gpointer user_data);
 
 void nm_client_deactivate_connection (NMClient *client, NMActiveConnection *active);
 
