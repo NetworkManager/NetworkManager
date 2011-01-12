@@ -32,6 +32,7 @@
 #include "nm-gsm-device.h"
 #include "nm-cdma-device.h"
 #include "nm-device-bt.h"
+#include "nm-device-wimax.h"
 #include "nm-device.h"
 #include "nm-device-private.h"
 #include "nm-object-private.h"
@@ -477,6 +478,20 @@ nm_device_class_init (NMDeviceClass *device_class)
 						  G_PARAM_READABLE));
 
 	/**
+	 * NMDevice:ip-interface:
+	 *
+	 * The IP interface of the device which should be used for all IP-related
+	 * operations like addressing and routing.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_IP_INTERFACE,
+		 g_param_spec_string (NM_DEVICE_IP_INTERFACE,
+						  "IP Interface",
+						  "IP Interface name",
+						  NULL,
+						  G_PARAM_READABLE));
+
+	/**
 	 * NMDevice:udi:
 	 *
 	 * The Unique Device Identifier of the device.
@@ -709,6 +724,9 @@ nm_device_new (DBusGConnection *connection, const char *path)
 		break;
 	case NM_DEVICE_TYPE_BT:
 		dtype = NM_TYPE_DEVICE_BT;
+		break;
+	case NM_DEVICE_TYPE_WIMAX:
+		dtype = NM_TYPE_DEVICE_WIMAX;
 		break;
 	default:
 		g_warning ("Unknown device type %d", g_value_get_uint (&value));

@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?product=NetworkManager&component=general\n"
-"POT-Creation-Date: 2010-08-10 03:25+0000\n"
-"PO-Revision-Date: 2010-08-12 01:57+0100\n"
+"POT-Creation-Date: 2010-09-20 15:25+0000\n"
+"PO-Revision-Date: 2010-12-29 12:23+0100\n"
 "Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "MIME-Version: 1.0\n"
@@ -98,7 +98,12 @@ msgstr "AUTOCONNECT"
 msgid "READONLY"
 msgstr "SKRIVSKYDDAD"
 
-#: ../cli/src/connections.c:158
+#. 7
+#: ../cli/src/connections.c:83
+msgid "DBUS-PATH"
+msgstr "DBUS-SÖKVÄG"
+
+#: ../cli/src/connections.c:159
 #, c-format
 msgid ""
 "Usage: nmcli con { COMMAND | help }\n"
@@ -117,45 +122,43 @@ msgstr ""
 "  up id <id> | uuid <id> [iface <gränssnitt>] [ap <hwaddr>] [--nowait] [--timeout <tidsgräns>]\n"
 "  down id <id> | uuid <id>\n"
 
-#: ../cli/src/connections.c:198
-#: ../cli/src/connections.c:537
+#: ../cli/src/connections.c:199
+#: ../cli/src/connections.c:540
 #, c-format
 msgid "Error: 'con list': %s"
 msgstr "Fel: \"con list\": %s"
 
-#: ../cli/src/connections.c:200
-#: ../cli/src/connections.c:539
+#: ../cli/src/connections.c:201
+#: ../cli/src/connections.c:542
 #, c-format
 msgid "Error: 'con list': %s; allowed fields: %s"
 msgstr "Fel: \"con list\": %s; tillåtna fält: %s"
 
-#: ../cli/src/connections.c:208
-#| msgid "Connections"
+#: ../cli/src/connections.c:209
 msgid "Connection details"
 msgstr "Anslutningsdetaljer"
 
-#: ../cli/src/connections.c:382
-#: ../cli/src/connections.c:602
-#| msgid "System"
+#: ../cli/src/connections.c:384
+#: ../cli/src/connections.c:605
 msgid "system"
 msgstr "system"
 
-#: ../cli/src/connections.c:382
-#: ../cli/src/connections.c:602
+#: ../cli/src/connections.c:384
+#: ../cli/src/connections.c:605
 msgid "user"
 msgstr "användare"
 
-#: ../cli/src/connections.c:384
+#: ../cli/src/connections.c:386
 msgid "never"
 msgstr "aldrig"
 
 #. "CAPABILITIES"
 #. Print header
 #. "WIFI-PROPERTIES"
-#: ../cli/src/connections.c:385
-#: ../cli/src/connections.c:386
-#: ../cli/src/connections.c:603
+#: ../cli/src/connections.c:387
+#: ../cli/src/connections.c:388
 #: ../cli/src/connections.c:606
+#: ../cli/src/connections.c:609
 #: ../cli/src/devices.c:432
 #: ../cli/src/devices.c:557
 #: ../cli/src/devices.c:583
@@ -190,10 +193,10 @@ msgstr "aldrig"
 msgid "yes"
 msgstr "ja"
 
-#: ../cli/src/connections.c:385
-#: ../cli/src/connections.c:386
-#: ../cli/src/connections.c:603
+#: ../cli/src/connections.c:387
+#: ../cli/src/connections.c:388
 #: ../cli/src/connections.c:606
+#: ../cli/src/connections.c:609
 #: ../cli/src/devices.c:432
 #: ../cli/src/devices.c:557
 #: ../cli/src/devices.c:583
@@ -229,23 +232,22 @@ msgstr "ja"
 msgid "no"
 msgstr "nej"
 
-#: ../cli/src/connections.c:458
-#: ../cli/src/connections.c:501
-#| msgid "System connections:\n"
+#: ../cli/src/connections.c:461
+#: ../cli/src/connections.c:504
 msgid "System connections"
 msgstr "systemanslutningar"
 
-#: ../cli/src/connections.c:463
-#: ../cli/src/connections.c:514
+#: ../cli/src/connections.c:466
+#: ../cli/src/connections.c:517
 msgid "User connections"
 msgstr "Användaranslutningar"
 
-#: ../cli/src/connections.c:475
-#: ../cli/src/connections.c:1335
-#: ../cli/src/connections.c:1351
-#: ../cli/src/connections.c:1360
-#: ../cli/src/connections.c:1371
-#: ../cli/src/connections.c:1456
+#: ../cli/src/connections.c:478
+#: ../cli/src/connections.c:1338
+#: ../cli/src/connections.c:1354
+#: ../cli/src/connections.c:1363
+#: ../cli/src/connections.c:1374
+#: ../cli/src/connections.c:1459
 #: ../cli/src/devices.c:962
 #: ../cli/src/devices.c:972
 #: ../cli/src/devices.c:1074
@@ -254,14 +256,14 @@ msgstr "Användaranslutningar"
 msgid "Error: %s argument is missing."
 msgstr "Fel: %s-argument saknas."
 
-#: ../cli/src/connections.c:488
+#: ../cli/src/connections.c:491
 #, c-format
 msgid "Error: %s - no such connection."
 msgstr "Fel: %s - ingen sådan anslutning."
 
-#: ../cli/src/connections.c:520
-#: ../cli/src/connections.c:1384
-#: ../cli/src/connections.c:1474
+#: ../cli/src/connections.c:523
+#: ../cli/src/connections.c:1387
+#: ../cli/src/connections.c:1477
 #: ../cli/src/devices.c:785
 #: ../cli/src/devices.c:852
 #: ../cli/src/devices.c:986
@@ -270,255 +272,254 @@ msgstr "Fel: %s - ingen sådan anslutning."
 msgid "Unknown parameter: %s\n"
 msgstr "Okänd parameter: %s\n"
 
-#: ../cli/src/connections.c:529
+#: ../cli/src/connections.c:532
 #, c-format
 msgid "Error: no valid parameter specified."
 msgstr "Fel: ingen giltig parameter angiven."
 
-#: ../cli/src/connections.c:544
-#: ../cli/src/connections.c:1577
+#: ../cli/src/connections.c:547
+#: ../cli/src/connections.c:1580
 #: ../cli/src/devices.c:1293
-#: ../cli/src/network-manager.c:274
+#: ../cli/src/network-manager.c:359
 #, c-format
 msgid "Error: %s."
 msgstr "Fel: %s."
 
-#: ../cli/src/connections.c:650
+#: ../cli/src/connections.c:653
 #, c-format
 msgid "Error: 'con status': %s"
 msgstr "Fel: \"con status\": %s"
 
-#: ../cli/src/connections.c:652
+#: ../cli/src/connections.c:655
 #, c-format
 msgid "Error: 'con status': %s; allowed fields: %s"
 msgstr "Fel: \"con status\": %s; tillåtna fält: %s"
 
-#: ../cli/src/connections.c:659
+#: ../cli/src/connections.c:662
 msgid "Active connections"
 msgstr "Aktiva anslutningar"
 
-#: ../cli/src/connections.c:1027
+#: ../cli/src/connections.c:1030
 #, c-format
 msgid "no active connection on device '%s'"
 msgstr "ingen aktiv anslutning på enheten \"%s\""
 
-#: ../cli/src/connections.c:1035
+#: ../cli/src/connections.c:1038
 #, c-format
 msgid "no active connection or device"
 msgstr "ingen aktiv anslutning eller enhet"
 
-#: ../cli/src/connections.c:1085
+#: ../cli/src/connections.c:1088
 #, c-format
 msgid "device '%s' not compatible with connection '%s'"
 msgstr "enheten \"%s\" är inte kompatibel med anslutningen \"%s\""
 
-#: ../cli/src/connections.c:1087
+#: ../cli/src/connections.c:1090
 #, c-format
-#| msgid "no active connection on device '%s'"
 msgid "no device found for connection '%s'"
 msgstr "ingen enhet hittades för anslutningen \"%s\""
 
-#: ../cli/src/connections.c:1098
+#: ../cli/src/connections.c:1101
 msgid "activating"
 msgstr "aktiverar"
 
-#: ../cli/src/connections.c:1100
+#: ../cli/src/connections.c:1103
 msgid "activated"
 msgstr "aktiverad"
 
-#: ../cli/src/connections.c:1103
-#: ../cli/src/connections.c:1126
-#: ../cli/src/connections.c:1159
+#: ../cli/src/connections.c:1106
+#: ../cli/src/connections.c:1129
+#: ../cli/src/connections.c:1162
 #: ../cli/src/devices.c:246
 #: ../cli/src/devices.c:558
-#: ../cli/src/network-manager.c:92
-#: ../cli/src/network-manager.c:145
+#: ../cli/src/network-manager.c:94
+#: ../cli/src/network-manager.c:149
 #: ../cli/src/settings.c:473
 msgid "unknown"
 msgstr "okänt"
 
-#: ../cli/src/connections.c:1112
+#: ../cli/src/connections.c:1115
 msgid "VPN connecting (prepare)"
 msgstr "VPN ansluter (förbereder)"
 
-#: ../cli/src/connections.c:1114
+#: ../cli/src/connections.c:1117
 msgid "VPN connecting (need authentication)"
 msgstr "VPN ansluter (behöver autentisering)"
 
-#: ../cli/src/connections.c:1116
+#: ../cli/src/connections.c:1119
 msgid "VPN connecting"
 msgstr "VPN ansluter"
 
-#: ../cli/src/connections.c:1118
+#: ../cli/src/connections.c:1121
 msgid "VPN connecting (getting IP configuration)"
 msgstr "VPN ansluter (hämtar IP-konfiguration)"
 
-#: ../cli/src/connections.c:1120
+#: ../cli/src/connections.c:1123
 msgid "VPN connected"
 msgstr "VPN ansluten"
 
-#: ../cli/src/connections.c:1122
+#: ../cli/src/connections.c:1125
 msgid "VPN connection failed"
 msgstr "VPN-anslutning misslyckades"
 
-#: ../cli/src/connections.c:1124
+#: ../cli/src/connections.c:1127
 msgid "VPN disconnected"
 msgstr "VPN frånkopplad"
 
-#: ../cli/src/connections.c:1135
+#: ../cli/src/connections.c:1138
 msgid "unknown reason"
 msgstr "okänd anledning"
 
-#: ../cli/src/connections.c:1137
+#: ../cli/src/connections.c:1140
 msgid "none"
 msgstr "ingen"
 
-#: ../cli/src/connections.c:1139
+#: ../cli/src/connections.c:1142
 msgid "the user was disconnected"
 msgstr "användaren kopplades från"
 
-#: ../cli/src/connections.c:1141
+#: ../cli/src/connections.c:1144
 msgid "the base network connection was interrupted"
 msgstr "basnätverksanslutningen avbröts"
 
-#: ../cli/src/connections.c:1143
+#: ../cli/src/connections.c:1146
 msgid "the VPN service stopped unexpectedly"
 msgstr "VPN-tjänsten stoppades oväntat"
 
-#: ../cli/src/connections.c:1145
+#: ../cli/src/connections.c:1148
 msgid "the VPN service returned invalid configuration"
 msgstr "VPN-tjänsten returnerade en ogiltig konfiguration"
 
-#: ../cli/src/connections.c:1147
+#: ../cli/src/connections.c:1150
 msgid "the connection attempt timed out"
 msgstr "anslutningsförsöket översteg tidsgränsen"
 
-#: ../cli/src/connections.c:1149
+#: ../cli/src/connections.c:1152
 msgid "the VPN service did not start in time"
 msgstr "VPN-tjänsten startade inte i tid"
 
-#: ../cli/src/connections.c:1151
+#: ../cli/src/connections.c:1154
 msgid "the VPN service failed to start"
 msgstr "VPN-tjänsten misslyckades med att starta"
 
-#: ../cli/src/connections.c:1153
+#: ../cli/src/connections.c:1156
 msgid "no valid VPN secrets"
 msgstr "inga giltiga VPN-hemligheter"
 
-#: ../cli/src/connections.c:1155
+#: ../cli/src/connections.c:1158
 msgid "invalid VPN secrets"
 msgstr "ogiltiga VPN-hemligheter"
 
-#: ../cli/src/connections.c:1157
+#: ../cli/src/connections.c:1160
 msgid "the connection was removed"
 msgstr "anslutningen togs bort"
 
-#: ../cli/src/connections.c:1171
+#: ../cli/src/connections.c:1174
 #, c-format
 msgid "state: %s\n"
 msgstr "tillstånd: %s\n"
 
-#: ../cli/src/connections.c:1174
-#: ../cli/src/connections.c:1200
+#: ../cli/src/connections.c:1177
+#: ../cli/src/connections.c:1203
 #, c-format
 msgid "Connection activated\n"
 msgstr "Anslutning aktiverad\n"
 
-#: ../cli/src/connections.c:1177
+#: ../cli/src/connections.c:1180
 #, c-format
 msgid "Error: Connection activation failed."
 msgstr "Fel: Aktivering av anslutning misslyckades."
 
-#: ../cli/src/connections.c:1196
+#: ../cli/src/connections.c:1199
 #, c-format
 msgid "state: %s (%d)\n"
 msgstr "tillstånd: %s (%d)\n"
 
-#: ../cli/src/connections.c:1206
+#: ../cli/src/connections.c:1209
 #, c-format
 msgid "Error: Connection activation failed: %s."
 msgstr "Fel: Aktivering av anslutning misslyckades: %s."
 
-#: ../cli/src/connections.c:1223
+#: ../cli/src/connections.c:1226
 #: ../cli/src/devices.c:909
 #, c-format
 msgid "Error: Timeout %d sec expired."
 msgstr "Fel: Tidsgränsen %d sekunder gick ut."
 
-#: ../cli/src/connections.c:1266
+#: ../cli/src/connections.c:1269
 #, c-format
 msgid "Error: Connection activation failed: %s"
 msgstr "Fel: Aktivering av anslutning misslyckades: %s"
 
-#: ../cli/src/connections.c:1280
+#: ../cli/src/connections.c:1283
 #, c-format
 msgid "Error: Obtaining active connection for '%s' failed."
 msgstr "Fel: Hämtning av aktiv anslutning för \"%s\" misslyckades."
 
-#: ../cli/src/connections.c:1289
+#: ../cli/src/connections.c:1292
 #, c-format
 msgid "Active connection state: %s\n"
 msgstr "Tillstånd för aktiv anslutning: %s\n"
 
-#: ../cli/src/connections.c:1290
+#: ../cli/src/connections.c:1293
 #, c-format
 msgid "Active connection path: %s\n"
 msgstr "Sökväg för aktiv anslutning: %s\n"
 
-#: ../cli/src/connections.c:1344
-#: ../cli/src/connections.c:1465
+#: ../cli/src/connections.c:1347
+#: ../cli/src/connections.c:1468
 #, c-format
 msgid "Error: Unknown connection: %s."
 msgstr "Fel: Okänd anslutning: %s."
 
-#: ../cli/src/connections.c:1379
+#: ../cli/src/connections.c:1382
 #: ../cli/src/devices.c:980
 #, c-format
 msgid "Error: timeout value '%s' is not valid."
 msgstr "Fel: värdet \"%s\" för tidsgränsen är inte giltigt."
 
-#: ../cli/src/connections.c:1392
-#: ../cli/src/connections.c:1482
+#: ../cli/src/connections.c:1395
+#: ../cli/src/connections.c:1485
 #, c-format
 msgid "Error: id or uuid has to be specified."
 msgstr "Fel: id eller uuid måste anges."
 
-#: ../cli/src/connections.c:1412
+#: ../cli/src/connections.c:1415
 #, c-format
 msgid "Error: No suitable device found: %s."
 msgstr "Fel: Ingen lämplig enhet hittades: %s."
 
-#: ../cli/src/connections.c:1414
+#: ../cli/src/connections.c:1417
 #, c-format
 msgid "Error: No suitable device found."
 msgstr "Fel: Ingen lämplig enhet hittades."
 
-#: ../cli/src/connections.c:1509
+#: ../cli/src/connections.c:1512
 #, c-format
 msgid "Warning: Connection not active\n"
 msgstr "Varning: Anslutningen är inte aktiv\n"
 
-#: ../cli/src/connections.c:1566
+#: ../cli/src/connections.c:1569
 #, c-format
 msgid "Error: 'con' command '%s' is not valid."
 msgstr "Fel: \"con\"-kommandot \"%s\" är inte giltigt."
 
-#: ../cli/src/connections.c:1602
+#: ../cli/src/connections.c:1605
 #, c-format
 msgid "Error: could not connect to D-Bus."
 msgstr "Fel: kunde inte ansluta till D-Bus."
 
-#: ../cli/src/connections.c:1609
+#: ../cli/src/connections.c:1612
 #, c-format
 msgid "Error: Could not get system settings."
 msgstr "Fel: Kunde inte få systeminställningar."
 
-#: ../cli/src/connections.c:1617
+#: ../cli/src/connections.c:1620
 #, c-format
 msgid "Error: Could not get user settings."
 msgstr "Fel: Kunde inte få användarinställningar."
 
-#: ../cli/src/connections.c:1627
+#: ../cli/src/connections.c:1630
 #, c-format
 msgid "Error: Can't obtain connections: settings services are not running."
 msgstr "Fel: Kan inte få anslutningar: inställningstjänster är inte igång."
@@ -556,7 +557,6 @@ msgstr "WIFI-EGENSKAPER"
 
 #. 2
 #: ../cli/src/devices.c:75
-#| msgid "PEAP"
 msgid "AP"
 msgstr "AP"
 
@@ -572,7 +572,6 @@ msgstr "IP4-INSTÄLLNINGAR"
 
 #. 5
 #: ../cli/src/devices.c:78
-#| msgid "DNS"
 msgid "IP4-DNS"
 msgstr "IP4-DNS"
 
@@ -583,7 +582,6 @@ msgstr "IP6-INSTÄLLNINGAR"
 
 #. 7
 #: ../cli/src/devices.c:80
-#| msgid "DNS"
 msgid "IP6-DNS"
 msgstr "IP6-DNS"
 
@@ -614,19 +612,16 @@ msgstr "BÄRARE"
 
 #. 0
 #: ../cli/src/devices.c:122
-#| msgid " WEP"
 msgid "WEP"
 msgstr "WEP"
 
 #. 1
 #: ../cli/src/devices.c:123
-#| msgid " WPA"
 msgid "WPA"
 msgstr "WPA"
 
 #. 2
 #: ../cli/src/devices.c:124
-#| msgid " WPA2"
 msgid "WPA2"
 msgstr "WPA2"
 
@@ -637,7 +632,6 @@ msgstr "TKIP"
 
 #. 4
 #: ../cli/src/devices.c:126
-#| msgid "AES-CCMP"
 msgid "CCMP"
 msgstr "CCMP"
 
@@ -667,13 +661,11 @@ msgstr "DNS"
 
 #. 0
 #: ../cli/src/devices.c:175
-#| msgid "SSID:"
 msgid "SSID"
 msgstr "SSID"
 
 #. 1
 #: ../cli/src/devices.c:176
-#| msgid "BSSID:"
 msgid "BSSID"
 msgstr "BSSID"
 
@@ -719,16 +711,6 @@ msgstr "AKTIV"
 
 #: ../cli/src/devices.c:208
 #, c-format
-#| msgid ""
-#| "Usage: nmcli dev { COMMAND | help }\n"
-#| "\n"
-#| "  COMMAND := { status | list | disconnect | wifi }\n"
-#| "\n"
-#| "  status\n"
-#| "  list [iface <iface>]\n"
-#| "  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
-#| "  wifi [list [iface <iface>] | apinfo iface <iface> hwaddr <hwaddr>]\n"
-#| "\n"
 msgid ""
 "Usage: nmcli dev { COMMAND | help }\n"
 "\n"
@@ -759,7 +741,7 @@ msgid "unavailable"
 msgstr "otillgänglig"
 
 #: ../cli/src/devices.c:232
-#: ../cli/src/network-manager.c:89
+#: ../cli/src/network-manager.c:91
 msgid "disconnected"
 msgstr "frånkopplad"
 
@@ -780,7 +762,7 @@ msgid "connecting (getting IP configuration)"
 msgstr "ansluter (hämtar IP-konfiguration)"
 
 #: ../cli/src/devices.c:242
-#: ../cli/src/network-manager.c:87
+#: ../cli/src/network-manager.c:89
 msgid "connected"
 msgstr "ansluten"
 
@@ -813,27 +795,22 @@ msgid "%u MB/s"
 msgstr "%u MB/s"
 
 #: ../cli/src/devices.c:403
-#| msgid ", Encrypted: "
 msgid "Encrypted: "
 msgstr "Krypterad: "
 
 #: ../cli/src/devices.c:408
-#| msgid " WEP"
 msgid "WEP "
 msgstr "WEP "
 
 #: ../cli/src/devices.c:410
-#| msgid " WPA"
 msgid "WPA "
 msgstr "WPA "
 
 #: ../cli/src/devices.c:412
-#| msgid " WPA2"
 msgid "WPA2 "
 msgstr "WPA2 "
 
 #: ../cli/src/devices.c:415
-#| msgid " Enterprise"
 msgid "Enterprise "
 msgstr "Företag"
 
@@ -852,12 +829,10 @@ msgstr "Fel: \"dev list\": %s"
 
 #: ../cli/src/devices.c:488
 #, c-format
-#| msgid "Error: Device '%s' (%s) disconnecting failed: %s"
 msgid "Error: 'dev list': %s; allowed fields: %s"
 msgstr "Fel: \"dev list\": %s; tillåtna fält: %s"
 
 #: ../cli/src/devices.c:497
-#| msgid "Devices"
 msgid "Device details"
 msgstr "Enhetsdetaljer"
 
@@ -867,7 +842,6 @@ msgid "(unknown)"
 msgstr "(okänt)"
 
 #: ../cli/src/devices.c:528
-#| msgid "(unknown)"
 msgid "unknown)"
 msgstr "okänt)"
 
@@ -934,7 +908,6 @@ msgstr "Fel: gränssnitt (iface) måste anges."
 
 #: ../cli/src/devices.c:1112
 #, c-format
-#| msgid "Error: 'dev wifi' command '%s' is not valid."
 msgid "Error: 'dev wifi': %s"
 msgstr "Fel: \"dev wifi\": %s"
 
@@ -974,147 +947,191 @@ msgstr "KÖR"
 
 #. 1
 #: ../cli/src/network-manager.c:37
-msgid "WIFI-HARDWARE"
-msgstr "WIFI-MASKINVARA"
+msgid "NET-ENABLED"
+msgstr "NÄT-AKTIVERAT"
 
 #. 2
 #: ../cli/src/network-manager.c:38
-msgid "WIFI"
-msgstr "WIFI"
+msgid "WIFI-HARDWARE"
+msgstr "WIFI-MASKINVARA"
 
 #. 3
 #: ../cli/src/network-manager.c:39
-msgid "WWAN-HARDWARE"
-msgstr "WWAN-MASKINVARA"
+msgid "WIFI"
+msgstr "WIFI"
 
 #. 4
 #: ../cli/src/network-manager.c:40
-#| msgid "NM WWAN:"
+msgid "WWAN-HARDWARE"
+msgstr "WWAN-MASKINVARA"
+
+#. 5
+#: ../cli/src/network-manager.c:41
 msgid "WWAN"
 msgstr "WWAN"
 
-#: ../cli/src/network-manager.c:62
+#: ../cli/src/network-manager.c:64
 #, c-format
+#| msgid ""
+#| "Usage: nmcli nm { COMMAND | help }\n"
+#| "\n"
+#| "  COMMAND := { status | sleep | wakeup | wifi | wwan }\n"
+#| "\n"
+#| "  status\n"
+#| "  sleep\n"
+#| "  wakeup\n"
+#| "  wifi [on|off]\n"
+#| "  wwan [on|off]\n"
+#| "\n"
 msgid ""
 "Usage: nmcli nm { COMMAND | help }\n"
 "\n"
-"  COMMAND := { status | sleep | wakeup | wifi | wwan }\n"
+"  COMMAND := { status | enable | sleep | wifi | wwan }\n"
 "\n"
 "  status\n"
-"  sleep\n"
-"  wakeup\n"
+"  enable [true|false]\n"
+"  sleep [true|false]\n"
 "  wifi [on|off]\n"
 "  wwan [on|off]\n"
 "\n"
 msgstr ""
 "Användning: nmcli nm { KOMMANDO | help }\n"
 "\n"
-"  KOMMANDO := { status | sleep | wakeup | wifi | wwan }\n"
+"  KOMMANDO := { status | enable | sleep | wifi | wwan }\n"
 "\n"
 "  status\n"
-"  sleep\n"
-"  wakeup\n"
+"  enable [true|false]\n"
+"  sleep [true|false]\n"
 "  wifi [on|off]\n"
 "  wwan [on|off]\n"
 "\n"
 
-#: ../cli/src/network-manager.c:83
+#: ../cli/src/network-manager.c:85
 msgid "asleep"
 msgstr "sover"
 
-#: ../cli/src/network-manager.c:85
+#: ../cli/src/network-manager.c:87
 msgid "connecting"
 msgstr "ansluter"
 
-#: ../cli/src/network-manager.c:125
+#: ../cli/src/network-manager.c:128
 #, c-format
 msgid "Error: 'nm status': %s"
 msgstr "Fel: \"nm status\": %s"
 
-#: ../cli/src/network-manager.c:127
+#: ../cli/src/network-manager.c:130
 #, c-format
 msgid "Error: 'nm status': %s; allowed fields: %s"
 msgstr "Fel: \"nm status\": %s; tillåtna fält: %s"
 
-#: ../cli/src/network-manager.c:134
+#: ../cli/src/network-manager.c:137
 msgid "NetworkManager status"
 msgstr "Status för Nätverkshanterare"
 
 #. Print header
-#: ../cli/src/network-manager.c:140
-#: ../cli/src/network-manager.c:141
-#: ../cli/src/network-manager.c:142
-#: ../cli/src/network-manager.c:143
-#: ../cli/src/network-manager.c:211
-#: ../cli/src/network-manager.c:243
+#: ../cli/src/network-manager.c:144
+#: ../cli/src/network-manager.c:145
+#: ../cli/src/network-manager.c:146
+#: ../cli/src/network-manager.c:147
+#: ../cli/src/network-manager.c:154
+#: ../cli/src/network-manager.c:247
+#: ../cli/src/network-manager.c:296
+#: ../cli/src/network-manager.c:328
 msgid "enabled"
 msgstr "aktiverad"
 
-#: ../cli/src/network-manager.c:140
-#: ../cli/src/network-manager.c:141
-#: ../cli/src/network-manager.c:142
-#: ../cli/src/network-manager.c:143
-#: ../cli/src/network-manager.c:211
-#: ../cli/src/network-manager.c:243
+#: ../cli/src/network-manager.c:144
+#: ../cli/src/network-manager.c:145
+#: ../cli/src/network-manager.c:146
+#: ../cli/src/network-manager.c:147
+#: ../cli/src/network-manager.c:154
+#: ../cli/src/network-manager.c:247
+#: ../cli/src/network-manager.c:296
+#: ../cli/src/network-manager.c:328
 msgid "disabled"
 msgstr "inaktiverad"
 
-#: ../cli/src/network-manager.c:148
+#: ../cli/src/network-manager.c:152
 msgid "running"
 msgstr "kör"
 
-#: ../cli/src/network-manager.c:148
+#: ../cli/src/network-manager.c:152
 msgid "not running"
 msgstr "kör inte"
 
-#: ../cli/src/network-manager.c:201
-#: ../cli/src/network-manager.c:233
+#: ../cli/src/network-manager.c:175
 #, c-format
-#| msgid "Error: timeout value '%s' is not valid."
+#| msgid "Error: could not connect to D-Bus."
+msgid "Error: Couldn't connect to system bus: %s"
+msgstr "Fel: kunde inte ansluta till systembussen: %s"
+
+#: ../cli/src/network-manager.c:186
+#, c-format
+#| msgid "Error: could not connect to D-Bus."
+msgid "Error: Couldn't create D-Bus object proxy."
+msgstr "Fel: Kunde inte skapa proxy för D-Bus-objekt."
+
+#: ../cli/src/network-manager.c:192
+#, c-format
+#| msgid "Error: 'con list': %s"
+msgid "Error in sleep: %s"
+msgstr "Fel i sömn: %s"
+
+#: ../cli/src/network-manager.c:237
+#: ../cli/src/network-manager.c:286
+#: ../cli/src/network-manager.c:318
+#, c-format
 msgid "Error: '--fields' value '%s' is not valid here; allowed fields: %s"
 msgstr "Fel: värdet \"%s\" för \"--fields\" är inte giltigt här; tillåtna fält: %s"
 
-#: ../cli/src/network-manager.c:209
-#| msgid "enabled"
+#: ../cli/src/network-manager.c:245
+#| msgid "WiFi enabled"
+msgid "Networking enabled"
+msgstr "Nätverk aktiverat"
+
+#: ../cli/src/network-manager.c:256
+#, c-format
+#| msgid "Error: invalid 'wwan' parameter: '%s'."
+msgid "Error: invalid 'enable' parameter: '%s'; use 'true' or 'false'."
+msgstr "Fel: ogiltig \"enable\"-parameter: \"%s\"; använd \"true\" eller \"false\"."
+
+#: ../cli/src/network-manager.c:265
+#, c-format
+#| msgid "Error: Could not connect to NetworkManager."
+msgid "Error: Sleeping status is not exported by NetworkManager."
+msgstr "Fel: Sömnstatus exporteras inte av Nätverkshanterare."
+
+#: ../cli/src/network-manager.c:273
+#, c-format
+#| msgid "Error: invalid 'wifi' parameter: '%s'."
+msgid "Error: invalid 'sleep' parameter: '%s'; use 'true' or 'false'."
+msgstr "Fel: ogiltig \"sleep\"-parameter: \"%s\"; använd \"true\" eller \"false\"."
+
+#: ../cli/src/network-manager.c:294
 msgid "WiFi enabled"
 msgstr "WiFi aktiverat"
 
-#: ../cli/src/network-manager.c:220
+#: ../cli/src/network-manager.c:305
 #, c-format
 msgid "Error: invalid 'wifi' parameter: '%s'."
 msgstr "Fel: ogiltig \"wifi\"-parameter: \"%s\"."
 
-#: ../cli/src/network-manager.c:241
-#| msgid "enabled"
+#: ../cli/src/network-manager.c:326
 msgid "WWAN enabled"
 msgstr "WWAN aktiverat"
 
-#: ../cli/src/network-manager.c:252
+#: ../cli/src/network-manager.c:337
 #, c-format
 msgid "Error: invalid 'wwan' parameter: '%s'."
 msgstr "Fel: ogiltig \"wwan\"-parameter: \"%s\"."
 
-#: ../cli/src/network-manager.c:263
+#: ../cli/src/network-manager.c:348
 #, c-format
 msgid "Error: 'nm' command '%s' is not valid."
 msgstr "Fel: \"nm\"-kommandot \"%s\" är inte giltigt."
 
 #: ../cli/src/nmcli.c:69
 #, c-format
-#| msgid ""
-#| "Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
-#| "\n"
-#| "OPTIONS\n"
-#| "  -t[erse]    terse output\n"
-#| "  -p[retty]   pretty output\n"
-#| "  -v[ersion]  show program version\n"
-#| "  -h[elp]     print this help\n"
-#| "\n"
-#| "OBJECT\n"
-#| "  nm          NetworkManager status\n"
-#| "  con         NetworkManager connections\n"
-#| "  dev         devices managed by NetworkManager\n"
-#| "\n"
 msgid ""
 "Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
 "\n"
@@ -1152,7 +1169,6 @@ msgstr ""
 
 #: ../cli/src/nmcli.c:113
 #, c-format
-#| msgid "Object '%s' is unknown, try 'nmcli help'."
 msgid "Error: Object '%s' is unknown, try 'nmcli help'."
 msgstr "Fel: Objektet \"%s\" är okänt, prova \"nmcli help\"."
 
@@ -1179,20 +1195,17 @@ msgstr "Fel: Flaggan \"--pretty\" är ömsesidigt uteslutande med \"--terse\"."
 #: ../cli/src/nmcli.c:171
 #: ../cli/src/nmcli.c:187
 #, c-format
-#| msgid "Error: %s argument is missing."
 msgid "Error: missing argument for '%s' option."
 msgstr "Fel: argument för flaggan \"%s\" saknas."
 
 #: ../cli/src/nmcli.c:180
 #: ../cli/src/nmcli.c:196
 #, c-format
-#| msgid "Error: '%s' argument is missing."
 msgid "Error: '%s' is not valid argument for '%s' option."
 msgstr "Fel: \"%s\" är inte ett giltigt argument för flaggan \"%s\"."
 
 #: ../cli/src/nmcli.c:203
 #, c-format
-#| msgid "Error: '%s' argument is missing."
 msgid "Error: fields for '%s' options are missing."
 msgstr "Fel: fält för \"%s\"-flaggor saknas."
 
@@ -1203,7 +1216,6 @@ msgstr "nmcli-verktyg, version %s\n"
 
 #: ../cli/src/nmcli.c:215
 #, c-format
-#| msgid "Option '%s' is unknown, try 'nmcli -help'."
 msgid "Error: Option '%s' is unknown, try 'nmcli -help'."
 msgstr "Fel: Flaggan \"%s\" är okänd, prova \"nmcli -help\"."
 
@@ -1228,18 +1240,15 @@ msgstr "%d (hex-ascii-nyckel)"
 
 #: ../cli/src/settings.c:413
 #, c-format
-#| msgid "WEP 128-bit Passphrase"
 msgid "%d (104/128-bit passphrase)"
 msgstr "%d (104/128-bitars lösenfras)"
 
 #: ../cli/src/settings.c:416
 #, c-format
-#| msgid "(unknown)"
 msgid "%d (unknown)"
 msgstr "%d (okänt)"
 
 #: ../cli/src/settings.c:442
-#| msgid "(unknown)"
 msgid "0 (unknown)"
 msgstr "0 (okänt)"
 
@@ -1701,7 +1710,6 @@ msgid "System policy prevents sharing connections via an open WiFi network"
 msgstr "Systemets policy förhindrar delning av anslutningar via ett öppet trådlöst nätverk"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.h:1
-#| msgid "Wired network connection"
 msgid "Allow control of network connections"
 msgstr "Tillåt kontroll av nätverksanslutningar"
 
@@ -1718,7 +1726,6 @@ msgid "Enable or disable mobile broadband devices"
 msgstr "Aktivera eller inaktivera mobila bredbandsenheter"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.h:5
-#| msgid "Enable _Networking"
 msgid "Enable or disable system networking"
 msgstr "Aktivera eller inaktivera systemnätverk"
 
@@ -1727,12 +1734,10 @@ msgid "Put NetworkManager to sleep or wake it up (should only be used by system 
 msgstr "Försätt Nätverkshanterare i vänteläge eller återställ efter det (bör endast användas av systemets strömhantering)"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.h:7
-#| msgid "System policy prevents modification of system settings"
 msgid "System policy prevents control of network connections"
 msgstr "Systemets policy förhindrar kontroll av nätverksanslutningar"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.h:8
-#| msgid "System policy prevents sharing connections via an open WiFi network"
 msgid "System policy prevents enabling or disabling WiFi devices"
 msgstr "Systemets policy förhindrar aktivering eller inaktivering av WiFi-enheter"
 
@@ -1741,7 +1746,6 @@ msgid "System policy prevents enabling or disabling mobile broadband devices"
 msgstr "Systemets policy förhindrar aktivering eller inaktivering av mobila bredbandsenheter"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.h:10
-#| msgid "System policy prevents modification of system settings"
 msgid "System policy prevents enabling or disabling system networking"
 msgstr "Systemets policy förhindrar aktivering eller inaktivering av systemnätverk"
 
@@ -1750,7 +1754,6 @@ msgid "System policy prevents putting NetworkManager to sleep or waking it up"
 msgstr "Systemets policy förhindrar att Nätverkshanterare försätts i vänteläge eller återställs efter det"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.h:12
-#| msgid "System policy prevents modification of system settings"
 msgid "System policy prevents use of user-specific connections"
 msgstr "Systemets policy förhindrar användning av användarspecifika anslutningar"
 
@@ -1772,7 +1775,6 @@ msgstr "kan inte ansluta till netlink för övervakning av länkstatus: %s"
 
 #: ../src/nm-netlink-monitor.c:265
 #, c-format
-#| msgid "unable to allocate netlink handle: %s"
 msgid "unable to enable netlink handle credential passing: %s"
 msgstr "kunde inte aktivera behörighetshantering för netlink-handtag: %s"
 
@@ -1798,22 +1800,21 @@ msgstr "kan inte gå med i netlink-grupp: %s"
 msgid "error updating link cache: %s"
 msgstr "fel vid uppdatering av länkcache: %s"
 
-#: ../src/main.c:502
+#: ../src/main.c:499
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr "Ogiltig flagga.  Använd --help för att se en lista över giltiga flaggor.\n"
 
-#: ../src/main.c:573
+#: ../src/main.c:570
 #, c-format
-#| msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr "%s.  Använd --help för att se en lista över giltiga flaggor.\n"
 
-#: ../src/dhcp-manager/nm-dhcp-dhclient.c:324
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:328
 msgid "# Created by NetworkManager\n"
 msgstr "# Skapad av Nätverkshanterare\n"
 
-#: ../src/dhcp-manager/nm-dhcp-dhclient.c:340
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:344
 #, c-format
 msgid ""
 "# Merged from %s\n"
@@ -1863,6 +1864,7 @@ msgid "Auto %s"
 msgstr "Automatisk %s"
 
 #: ../system-settings/plugins/ifcfg-rh/reader.c:3412
+#: ../system-settings/plugins/ifnet/connection_parser.c:49
 msgid "System"
 msgstr "System"
 

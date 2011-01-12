@@ -38,6 +38,9 @@
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
 #include "nm-device-olpc-mesh.h"
+#if WITH_WIMAX
+#include "nm-device-wimax.h"
+#endif
 #include "nm-device-cdma.h"
 #include "nm-device-gsm.h"
 #include "nm-system.h"
@@ -266,6 +269,8 @@ enum {
 	PROP_WIRELESS_HARDWARE_ENABLED,
 	PROP_WWAN_ENABLED,
 	PROP_WWAN_HARDWARE_ENABLED,
+	PROP_WIMAX_ENABLED,
+	PROP_WIMAX_HARDWARE_ENABLED,
 	PROP_ACTIVE_CONNECTIONS,
 
 	/* Not exported */
@@ -1390,6 +1395,12 @@ add_device (NMManager *self, NMDevice *device)
 		nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (device),
 		                                 priv->radio_states[RFKILL_TYPE_WWAN].enabled);
 		*/
+#if WITH_WIMAX
+	} else if (NM_IS_DEVICE_WIMAX (device)) {
+		nm_manager_rfkill_update (self, RFKILL_TYPE_WIMAX);
+		enabled = radio_enabled_for_type (self, RFKILL_TYPE_WIMAX);
+		nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (device), enabled);
+#endif
 	}
 
 	type_desc = nm_device_get_type_desc (device);
@@ -1705,6 +1716,14 @@ udev_device_removed_cb (NMUdevManager *manager,
 
 	ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
 	device = find_device_by_ifindex (self, ifindex);
+	if (!device) {
+		/* On removal we won't always be able to read properties anymore, as
+		 * they may have already been removed from sysfs.  Instead, we just
+		 * have to fall back to the device's interface name.
+		 */
+		device = find_device_by_iface (self, g_udev_device_get_name (udev_device));
+	}
+
 	if (device)
 		priv->devices = remove_one_device (self, priv->devices, device, FALSE);
 }
@@ -2633,6 +2652,7 @@ get_permissions_done_cb (NMAuthChain *chain,
 		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_SLEEP_WAKE);
 		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI);
 		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN);
+		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX);
 		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_NETWORK_CONTROL);
 		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED);
 		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN);
@@ -2663,6 +2683,7 @@ impl_manager_get_permissions (NMManager *self,
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SLEEP_WAKE, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN, FALSE);
@@ -2919,6 +2940,9 @@ prop_filter (DBusConnection *connection,
 	} else if (!strcmp (propname, "WwanEnabled")) {
 		glib_propname = NM_MANAGER_WWAN_ENABLED;
 		permission = NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN;
+	} else if (!strcmp (propname, "WimaxEnabled")) {
+		glib_propname = NM_MANAGER_WIMAX_ENABLED;
+		permission = NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX;
 	} else
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
@@ -2978,6 +3002,7 @@ nm_manager_get (NMSettings *settings,
                 gboolean initial_net_enabled,
                 gboolean initial_wifi_enabled,
                 gboolean initial_wwan_enabled,
+                gboolean initial_wimax_enabled,
                 GError **error)
 {
 	static NMManager *singleton = NULL;
@@ -3017,6 +3042,7 @@ nm_manager_get (NMSettings *settings,
 
 	priv->radio_states[RFKILL_TYPE_WLAN].user_enabled = initial_wifi_enabled;
 	priv->radio_states[RFKILL_TYPE_WWAN].user_enabled = initial_wwan_enabled;
+	priv->radio_states[RFKILL_TYPE_WIMAX].user_enabled = initial_wimax_enabled;
 
 	g_signal_connect (priv->settings, "notify::" NM_SETTINGS_UNMANAGED_SPECS,
 	                  G_CALLBACK (system_unmanaged_devices_changed_cb), singleton);
@@ -3112,10 +3138,11 @@ dispose (GObject *object)
 
 	/* Unregister property filter */
 	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
-	g_assert (bus);
-	dbus_connection = dbus_g_connection_get_connection (bus);
-	g_assert (dbus_connection);
-	dbus_connection_remove_filter (dbus_connection, prop_filter, manager);
+	if (bus) {
+		dbus_connection = dbus_g_connection_get_connection (bus);
+		g_assert (dbus_connection);
+		dbus_connection_remove_filter (dbus_connection, prop_filter, manager);
+	}
 	g_object_unref (priv->dbus_mgr);
 
 	if (priv->bluez_mgr)
@@ -3204,6 +3231,11 @@ set_property (GObject *object, guint prop_id,
 		                            &priv->radio_states[RFKILL_TYPE_WWAN],
 		                            g_value_get_boolean (value));
 		break;
+	case PROP_WIMAX_ENABLED:
+		manager_radio_user_toggled (NM_MANAGER (object),
+		                            &priv->radio_states[RFKILL_TYPE_WIMAX],
+		                            g_value_get_boolean (value));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -3239,6 +3271,12 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_WWAN_HARDWARE_ENABLED:
 		g_value_set_boolean (value, priv->radio_states[RFKILL_TYPE_WWAN].hw_enabled);
+		break;
+	case PROP_WIMAX_ENABLED:
+		g_value_set_boolean (value, radio_enabled_for_type (self, RFKILL_TYPE_WIMAX));
+		break;
+	case PROP_WIMAX_HARDWARE_ENABLED:
+		g_value_set_boolean (value, priv->radio_states[RFKILL_TYPE_WIMAX].hw_enabled);
 		break;
 	case PROP_ACTIVE_CONNECTIONS:
 		g_value_take_boxed (value, get_active_connections (self, NULL));
@@ -3307,8 +3345,8 @@ nm_manager_init (NMManager *manager)
 
 	priv->radio_states[RFKILL_TYPE_WIMAX].user_enabled = TRUE;
 	priv->radio_states[RFKILL_TYPE_WIMAX].key = "WiMAXEnabled";
-	priv->radio_states[RFKILL_TYPE_WIMAX].prop = NULL;
-	priv->radio_states[RFKILL_TYPE_WIMAX].hw_prop = NULL;
+	priv->radio_states[RFKILL_TYPE_WIMAX].prop = NM_MANAGER_WIMAX_ENABLED;
+	priv->radio_states[RFKILL_TYPE_WIMAX].hw_prop = NM_MANAGER_WIMAX_HARDWARE_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WIMAX].desc = "WiMAX";
 	priv->radio_states[RFKILL_TYPE_WIMAX].other_enabled_func = NULL;
 	priv->radio_states[RFKILL_TYPE_WIMAX].rtype = RFKILL_TYPE_WIMAX;
@@ -3476,6 +3514,22 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		 g_param_spec_boolean (NM_MANAGER_WWAN_HARDWARE_ENABLED,
 		                       "WwanHardwareEnabled",
 		                       "Whether WWAN is disabled by a hardware switch or not",
+		                       TRUE,
+		                       G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_WIMAX_ENABLED,
+		 g_param_spec_boolean (NM_MANAGER_WIMAX_ENABLED,
+		                       "WimaxEnabled",
+		                       "Is WiMAX enabled",
+		                       TRUE,
+		                       G_PARAM_READWRITE));
+
+	g_object_class_install_property
+		(object_class, PROP_WIMAX_HARDWARE_ENABLED,
+		 g_param_spec_boolean (NM_MANAGER_WIMAX_HARDWARE_ENABLED,
+		                       "WimaxHardwareEnabled",
+		                       "Whether WiMAX is disabled by a hardware switch or not",
 		                       TRUE,
 		                       G_PARAM_READABLE));
 

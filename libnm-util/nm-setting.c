@@ -620,6 +620,8 @@ nm_setting_to_string (NMSetting *setting)
 		is_serializable = prop_spec->flags & NM_SETTING_PARAM_SERIALIZE;
 		is_default = g_param_value_defaults (prop_spec, &value);
 
+		g_value_unset (&value);
+
 		if (is_serializable || is_default) {
 			g_string_append (string, " (");
 

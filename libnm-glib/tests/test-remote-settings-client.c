@@ -34,8 +34,6 @@
 
 #include "nm-remote-settings.h"
 
-#define SERVICE_FILE "test-remote-settings-service.py"
-
 static GPid spid = 0;
 static NMRemoteSettings *settings = NULL;
 
@@ -209,11 +207,13 @@ typedef void (*TCFunc)(void);
 int main (int argc, char **argv)
 {
 	GTestSuite *suite;
-    char *service_argv[3] = { SERVICEDIR "/" SERVICE_FILE, SERVICE_FILE, NULL };
+    char *service_argv[3] = { NULL, NULL, NULL };
 	int ret;
 	GError *error = NULL;
 	DBusGConnection *bus;
 	int i = 100;
+
+	g_assert (argc == 3);
 
 	g_type_init ();
 	
@@ -225,8 +225,9 @@ int main (int argc, char **argv)
 		g_assert (error == NULL);
 	}
 
-	if (!g_spawn_async (SERVICEDIR, service_argv, NULL, 0, NULL, NULL, &spid, &error)) {
-		g_warning ("Error spawning " SERVICE_FILE ": %s", error->message);
+	service_argv[0] = g_strdup_printf ("%s/%s", argv[1], argv[2]);
+	if (!g_spawn_async (argv[1], service_argv, NULL, 0, NULL, NULL, &spid, &error)) {
+		g_warning ("Error spawning %s: %s", argv[2], error->message);
 		g_assert (error == NULL);
 	}
 

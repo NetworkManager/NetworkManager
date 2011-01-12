@@ -1,0 +1,1766 @@
+# Esperanto translation for NetworkManager
+# Copyright (c) 2010 Rosetta Contributors and Canonical Ltd 2010
+# This file is distributed under the same license as the network-manager package.
+#
+# Patrick (Petriko) OUDEJANS < >, 2010.
+# Aisano < >, 2010.
+# Kim RIBEIRO < >, 2010.
+# Serge LEBLANC < >, 2010.
+# Kristjan SCHMIDT <kristjan.schmidt@googlemail.com>, 2010.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: network-manager\n"
+"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
+"product=NetworkManager&component=general\n"
+"POT-Creation-Date: 2010-12-10 15:25+0000\n"
+"PO-Revision-Date: 2010-12-11 10:32+0100\n"
+"Last-Translator: Kristjan SCHMIDT <kristjan.schmidt@googlemail.com>\n"
+"Language-Team: Esperanto <ubuntu-l10n-eo@lists.launchpad.net>\n"
+"Language: eo\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"X-Launchpad-Export-Date: 2010-12-10 16:56+0000\n"
+"X-Generator: Launchpad (build Unknown)\n"
+
+#: ../cli/src/connections.c:60 ../cli/src/connections.c:76
+#: ../cli/src/devices.c:89 ../cli/src/devices.c:102 ../cli/src/devices.c:112
+#: ../cli/src/devices.c:122 ../cli/src/devices.c:135 ../cli/src/devices.c:146
+#: ../cli/src/devices.c:157 ../cli/src/devices.c:166 ../cli/src/devices.c:175
+msgid "NAME"
+msgstr "NOMO"
+
+#. 0
+#: ../cli/src/connections.c:61 ../cli/src/connections.c:77
+msgid "UUID"
+msgstr "UUID"
+
+#. 1
+#: ../cli/src/connections.c:62
+msgid "DEVICES"
+msgstr "APARATOJ"
+
+#. 2
+#: ../cli/src/connections.c:63 ../cli/src/connections.c:79
+msgid "SCOPE"
+msgstr "AMPLEKSO"
+
+#. 3
+#: ../cli/src/connections.c:64
+msgid "DEFAULT"
+msgstr "DEFAŬLTA"
+
+#. 4
+#: ../cli/src/connections.c:65
+msgid "DBUS-SERVICE"
+msgstr "DBUS-SERVO"
+
+#. 5
+#: ../cli/src/connections.c:66
+msgid "SPEC-OBJECT"
+msgstr "SPEC-OBJEKTO"
+
+#. 6
+#: ../cli/src/connections.c:67
+msgid "VPN"
+msgstr "VPN"
+
+#. 7
+#. 2
+#: ../cli/src/connections.c:68 ../cli/src/connections.c:84
+#: ../cli/src/devices.c:64
+msgid "DBUS-PATH"
+msgstr "DBUS-VOJO"
+
+#. 1
+#. 0
+#. 1
+#: ../cli/src/connections.c:78 ../cli/src/devices.c:62 ../cli/src/devices.c:91
+msgid "TYPE"
+msgstr "SPECO"
+
+#. 3
+#: ../cli/src/connections.c:80
+msgid "TIMESTAMP"
+msgstr "TEMPINDIKO"
+
+#. 4
+#: ../cli/src/connections.c:81
+msgid "TIMESTAMP-REAL"
+msgstr "REALA-TEMPINDIKO"
+
+#. 5
+#: ../cli/src/connections.c:82
+msgid "AUTOCONNECT"
+msgstr "AŬTOMATA-KONEKTO"
+
+#. 6
+#: ../cli/src/connections.c:83
+msgid "READONLY"
+msgstr "NUR-LEGI"
+
+#: ../cli/src/connections.c:160
+#, c-format
+msgid ""
+"Usage: nmcli con { COMMAND | help }\n"
+"  COMMAND := { list | status | up | down }\n"
+"\n"
+"  list [id <id> | uuid <id> | system | user]\n"
+"  status\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--timeout "
+"<timeout>]\n"
+"  down id <id> | uuid <id>\n"
+msgstr ""
+"Uzo: nmcli con { KOMANDO | help }\n"
+"  KOMANDO := { list | status | up | down }\n"
+"\n"
+"  list [id <id> | uuid <id> | system | user]\n"
+"  status\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--timeout "
+"<timeout>]\n"
+"  down id <id> | uuid <id>\n"
+
+#: ../cli/src/connections.c:200 ../cli/src/connections.c:541
+#, c-format
+msgid "Error: 'con list': %s"
+msgstr "Eraro: 'con list': %s"
+
+#: ../cli/src/connections.c:202 ../cli/src/connections.c:543
+#, c-format
+msgid "Error: 'con list': %s; allowed fields: %s"
+msgstr "Eraro: 'con list': %s; permesataj kampoj: %s"
+
+#: ../cli/src/connections.c:210
+msgid "Connection details"
+msgstr "Konektodetaloj"
+
+#: ../cli/src/connections.c:385 ../cli/src/connections.c:606
+msgid "system"
+msgstr "sistemo"
+
+#: ../cli/src/connections.c:385 ../cli/src/connections.c:606
+msgid "user"
+msgstr "uzanto"
+
+#: ../cli/src/connections.c:387
+msgid "never"
+msgstr "neniam"
+
+#. "CAPABILITIES"
+#. Print header
+#. "WIFI-PROPERTIES"
+#: ../cli/src/connections.c:388 ../cli/src/connections.c:389
+#: ../cli/src/connections.c:607 ../cli/src/connections.c:610
+#: ../cli/src/devices.c:433 ../cli/src/devices.c:558 ../cli/src/devices.c:584
+#: ../cli/src/devices.c:585 ../cli/src/devices.c:586 ../cli/src/devices.c:587
+#: ../cli/src/devices.c:588 ../cli/src/settings.c:508
+#: ../cli/src/settings.c:551 ../cli/src/settings.c:652
+#: ../cli/src/settings.c:926 ../cli/src/settings.c:927
+#: ../cli/src/settings.c:929 ../cli/src/settings.c:931
+#: ../cli/src/settings.c:1056 ../cli/src/settings.c:1057
+#: ../cli/src/settings.c:1058 ../cli/src/settings.c:1137
+#: ../cli/src/settings.c:1138 ../cli/src/settings.c:1139
+#: ../cli/src/settings.c:1140 ../cli/src/settings.c:1141
+#: ../cli/src/settings.c:1142 ../cli/src/settings.c:1143
+#: ../cli/src/settings.c:1144 ../cli/src/settings.c:1145
+#: ../cli/src/settings.c:1146 ../cli/src/settings.c:1147
+#: ../cli/src/settings.c:1148 ../cli/src/settings.c:1149
+#: ../cli/src/settings.c:1224
+msgid "yes"
+msgstr "jes"
+
+#: ../cli/src/connections.c:388 ../cli/src/connections.c:389
+#: ../cli/src/connections.c:607 ../cli/src/connections.c:610
+#: ../cli/src/devices.c:433 ../cli/src/devices.c:558 ../cli/src/devices.c:584
+#: ../cli/src/devices.c:585 ../cli/src/devices.c:586 ../cli/src/devices.c:587
+#: ../cli/src/devices.c:588 ../cli/src/settings.c:508
+#: ../cli/src/settings.c:510 ../cli/src/settings.c:551
+#: ../cli/src/settings.c:652 ../cli/src/settings.c:926
+#: ../cli/src/settings.c:927 ../cli/src/settings.c:929
+#: ../cli/src/settings.c:931 ../cli/src/settings.c:1056
+#: ../cli/src/settings.c:1057 ../cli/src/settings.c:1058
+#: ../cli/src/settings.c:1137 ../cli/src/settings.c:1138
+#: ../cli/src/settings.c:1139 ../cli/src/settings.c:1140
+#: ../cli/src/settings.c:1141 ../cli/src/settings.c:1142
+#: ../cli/src/settings.c:1143 ../cli/src/settings.c:1144
+#: ../cli/src/settings.c:1145 ../cli/src/settings.c:1146
+#: ../cli/src/settings.c:1147 ../cli/src/settings.c:1148
+#: ../cli/src/settings.c:1149 ../cli/src/settings.c:1224
+msgid "no"
+msgstr "ne"
+
+#: ../cli/src/connections.c:462 ../cli/src/connections.c:505
+msgid "System connections"
+msgstr "Sistemkonektoj"
+
+#: ../cli/src/connections.c:467 ../cli/src/connections.c:518
+msgid "User connections"
+msgstr "Uzanto-konektoj"
+
+#: ../cli/src/connections.c:479 ../cli/src/connections.c:1342
+#: ../cli/src/connections.c:1358 ../cli/src/connections.c:1367
+#: ../cli/src/connections.c:1378 ../cli/src/connections.c:1463
+#: ../cli/src/devices.c:964 ../cli/src/devices.c:974 ../cli/src/devices.c:1076
+#: ../cli/src/devices.c:1083
+#, c-format
+msgid "Error: %s argument is missing."
+msgstr "Eraro: argumento %s mankas."
+
+#: ../cli/src/connections.c:492
+#, c-format
+msgid "Error: %s - no such connection."
+msgstr "Eraro: %s - neniu tia konekto"
+
+#: ../cli/src/connections.c:524 ../cli/src/connections.c:1391
+#: ../cli/src/connections.c:1481 ../cli/src/devices.c:787
+#: ../cli/src/devices.c:854 ../cli/src/devices.c:988 ../cli/src/devices.c:1089
+#, c-format
+msgid "Unknown parameter: %s\n"
+msgstr "Nekonata parametro: %s\n"
+
+#: ../cli/src/connections.c:533
+#, c-format
+msgid "Error: no valid parameter specified."
+msgstr "Eraro: neniu valida parametro difinita."
+
+#: ../cli/src/connections.c:548 ../cli/src/connections.c:1584
+#: ../cli/src/devices.c:1295 ../cli/src/network-manager.c:359
+#, c-format
+msgid "Error: %s."
+msgstr "Eraro: %s."
+
+#: ../cli/src/connections.c:655
+#, c-format
+msgid "Error: 'con status': %s"
+msgstr "Eraro: 'con status': %s"
+
+#: ../cli/src/connections.c:657
+#, c-format
+msgid "Error: 'con status': %s; allowed fields: %s"
+msgstr "Eraro: 'con status': %s; permesataj kampoj: %s"
+
+#: ../cli/src/connections.c:664
+msgid "Active connections"
+msgstr "Aktivaj konektoj"
+
+#: ../cli/src/connections.c:1034
+#, c-format
+msgid "no active connection on device '%s'"
+msgstr "neniu aktiva konekto sur aparato '%s'"
+
+#: ../cli/src/connections.c:1042
+#, c-format
+msgid "no active connection or device"
+msgstr "neniu aktiva konekto aŭ aparato"
+
+#: ../cli/src/connections.c:1092
+#, c-format
+msgid "device '%s' not compatible with connection '%s'"
+msgstr "aparato '%s' ne kongruas kun konekto '%s'"
+
+#: ../cli/src/connections.c:1094
+#, c-format
+msgid "no device found for connection '%s'"
+msgstr "neniu aparato trovita por konekto '%s'"
+
+#: ../cli/src/connections.c:1105
+msgid "activating"
+msgstr "enŝaltas"
+
+#: ../cli/src/connections.c:1107
+msgid "activated"
+msgstr "enŝaltite"
+
+#: ../cli/src/connections.c:1110 ../cli/src/connections.c:1133
+#: ../cli/src/connections.c:1166 ../cli/src/devices.c:247
+#: ../cli/src/devices.c:559 ../cli/src/network-manager.c:94
+#: ../cli/src/network-manager.c:149 ../cli/src/settings.c:473
+msgid "unknown"
+msgstr "nekonate"
+
+#: ../cli/src/connections.c:1119
+msgid "VPN connecting (prepare)"
+msgstr "VPN konektas (preparo)"
+
+#: ../cli/src/connections.c:1121
+msgid "VPN connecting (need authentication)"
+msgstr "VPN konektas (bezonas aŭtentigon)"
+
+#: ../cli/src/connections.c:1123
+msgid "VPN connecting"
+msgstr "VPN konektas"
+
+#: ../cli/src/connections.c:1125
+msgid "VPN connecting (getting IP configuration)"
+msgstr "VPN konektas (akiras IP-agordaron)"
+
+#: ../cli/src/connections.c:1127
+msgid "VPN connected"
+msgstr "VPN konektita"
+
+#: ../cli/src/connections.c:1129
+msgid "VPN connection failed"
+msgstr "VPN-konekto fiaskis"
+
+#: ../cli/src/connections.c:1131
+msgid "VPN disconnected"
+msgstr "VPN malkonektis"
+
+#: ../cli/src/connections.c:1142
+msgid "unknown reason"
+msgstr "nekonata kialo"
+
+#: ../cli/src/connections.c:1144
+msgid "none"
+msgstr "nenio"
+
+#: ../cli/src/connections.c:1146
+msgid "the user was disconnected"
+msgstr "la uzanto estis malkonektita"
+
+#: ../cli/src/connections.c:1148
+msgid "the base network connection was interrupted"
+msgstr "la baza retkonekto estis interrompita"
+
+#: ../cli/src/connections.c:1150
+msgid "the VPN service stopped unexpectedly"
+msgstr "la VPN-servo neatendite ĉesis"
+
+#: ../cli/src/connections.c:1152
+msgid "the VPN service returned invalid configuration"
+msgstr "la VPN-servo revenigis nevalidan agordaron"
+
+#: ../cli/src/connections.c:1154
+msgid "the connection attempt timed out"
+msgstr "la konektoprovo eltempiĝis"
+
+#: ../cli/src/connections.c:1156
+msgid "the VPN service did not start in time"
+msgstr "la VPN-servo ne startis ĝustatempe"
+
+#: ../cli/src/connections.c:1158
+msgid "the VPN service failed to start"
+msgstr "la VPN-servo fiaskis starti"
+
+#: ../cli/src/connections.c:1160
+msgid "no valid VPN secrets"
+msgstr "neniu valida VPN-sekreto"
+
+#: ../cli/src/connections.c:1162
+msgid "invalid VPN secrets"
+msgstr "nevalidaj VPN-sekretoj"
+
+#: ../cli/src/connections.c:1164
+msgid "the connection was removed"
+msgstr "la konekto estis forigita"
+
+#: ../cli/src/connections.c:1178
+#, c-format
+msgid "state: %s\n"
+msgstr "stato: %s\n"
+
+#: ../cli/src/connections.c:1181 ../cli/src/connections.c:1207
+#, c-format
+msgid "Connection activated\n"
+msgstr "Konekto enŝaltita\n"
+
+#: ../cli/src/connections.c:1184
+#, c-format
+msgid "Error: Connection activation failed."
+msgstr "Eraro: Enŝalto de konekto fiaskis."
+
+#: ../cli/src/connections.c:1203
+#, c-format
+msgid "state: %s (%d)\n"
+msgstr "stato: %s (%d)\n"
+
+#: ../cli/src/connections.c:1213
+#, c-format
+msgid "Error: Connection activation failed: %s."
+msgstr "Eraro: Enŝalto de konekto fiaskis: %s."
+
+#: ../cli/src/connections.c:1230 ../cli/src/devices.c:911
+#, c-format
+msgid "Error: Timeout %d sec expired."
+msgstr "Eraro: Eltempiĝo finiĝis %d sek."
+
+#: ../cli/src/connections.c:1273
+#, c-format
+msgid "Error: Connection activation failed: %s"
+msgstr "Eraro: Enŝalto de konekto fiaskis: %s"
+
+#: ../cli/src/connections.c:1287
+#, c-format
+msgid "Error: Obtaining active connection for '%s' failed."
+msgstr "Eraro: Akiro de aktiva konekto por '%s' fiaskis."
+
+#: ../cli/src/connections.c:1296
+#, c-format
+msgid "Active connection state: %s\n"
+msgstr "Stato de aktiva konekto: %s\n"
+
+#: ../cli/src/connections.c:1297
+#, c-format
+msgid "Active connection path: %s\n"
+msgstr "Vojo de aktiva konekto: %s\n"
+
+#: ../cli/src/connections.c:1351 ../cli/src/connections.c:1472
+#, c-format
+msgid "Error: Unknown connection: %s."
+msgstr "Eraro: Nekonata konekto: %s."
+
+#: ../cli/src/connections.c:1386 ../cli/src/devices.c:982
+#, c-format
+msgid "Error: timeout value '%s' is not valid."
+msgstr "Eraro: eltempiĝa valoro '%s' ne validas."
+
+#: ../cli/src/connections.c:1399 ../cli/src/connections.c:1489
+#, c-format
+msgid "Error: id or uuid has to be specified."
+msgstr "Eraro: id aŭ uuid devas esti specifata."
+
+#: ../cli/src/connections.c:1419
+#, c-format
+msgid "Error: No suitable device found: %s."
+msgstr "Eraro: Trovis neniun taŭgan aparaton: %s."
+
+#: ../cli/src/connections.c:1421
+#, c-format
+msgid "Error: No suitable device found."
+msgstr "Eraro: Trovis neniun taŭgan aparaton."
+
+#: ../cli/src/connections.c:1516
+#, c-format
+msgid "Warning: Connection not active\n"
+msgstr "Atenton: Konekto ne aktivas\n"
+
+#: ../cli/src/connections.c:1573
+#, c-format
+msgid "Error: 'con' command '%s' is not valid."
+msgstr "Eraro: 'con'-komando '%s' ne validas."
+
+#: ../cli/src/connections.c:1609
+#, c-format
+msgid "Error: could not connect to D-Bus."
+msgstr "Eraro: ne povis konekti al D-Bus."
+
+#: ../cli/src/connections.c:1616
+#, c-format
+msgid "Error: Could not get system settings."
+msgstr "Eraro: Ne povis akiri sistemajn agordojn."
+
+#: ../cli/src/connections.c:1624
+#, c-format
+msgid "Error: Could not get user settings."
+msgstr "Eraro: Ne povis akiri uzanto-agordojn."
+
+#: ../cli/src/connections.c:1634
+#, c-format
+msgid "Error: Can't obtain connections: settings services are not running."
+msgstr "Eraro: Ne povas obteni konektojn: agordo-servoj ne aktivas."
+
+#. 0
+#. 9
+#: ../cli/src/devices.c:61 ../cli/src/devices.c:90 ../cli/src/devices.c:185
+msgid "DEVICE"
+msgstr "APARATO"
+
+#. 1
+#. 4
+#. 0
+#: ../cli/src/devices.c:63 ../cli/src/devices.c:94
+#: ../cli/src/network-manager.c:36
+msgid "STATE"
+msgstr "STATO"
+
+#: ../cli/src/devices.c:73
+msgid "GENERAL"
+msgstr "ĜENERALA"
+
+#. 0
+#: ../cli/src/devices.c:74
+msgid "CAPABILITIES"
+msgstr "KAPABLOJ"
+
+#. 1
+#: ../cli/src/devices.c:75
+msgid "WIFI-PROPERTIES"
+msgstr "WIFI-ECOJ"
+
+#. 2
+#: ../cli/src/devices.c:76
+msgid "AP"
+msgstr "AP"
+
+#. 3
+#: ../cli/src/devices.c:77
+msgid "WIRED-PROPERTIES"
+msgstr "DRATA-ECOJ"
+
+#. 4
+#: ../cli/src/devices.c:78
+msgid "IP4-SETTINGS"
+msgstr "IP4-AGORDOJ"
+
+#. 5
+#: ../cli/src/devices.c:79
+msgid "IP4-DNS"
+msgstr "IP4-DNS"
+
+#. 6
+#: ../cli/src/devices.c:80
+msgid "IP6-SETTINGS"
+msgstr "IP6-AGORDOJ"
+
+#. 7
+#: ../cli/src/devices.c:81
+msgid "IP6-DNS"
+msgstr "IP6-DNS"
+
+#. 2
+#: ../cli/src/devices.c:92
+msgid "DRIVER"
+msgstr "PELILO"
+
+#. 3
+#: ../cli/src/devices.c:93
+msgid "HWADDR"
+msgstr "APARATADRESO"
+
+#. 0
+#: ../cli/src/devices.c:103
+msgid "CARRIER-DETECT"
+msgstr "PORTANTO-REKONO"
+
+#. 1
+#: ../cli/src/devices.c:104
+msgid "SPEED"
+msgstr "RAPIDO"
+
+#. 0
+#: ../cli/src/devices.c:113
+msgid "CARRIER"
+msgstr "PORTANTO"
+
+#. 0
+#: ../cli/src/devices.c:123
+msgid "WEP"
+msgstr "WEP"
+
+#. 1
+#: ../cli/src/devices.c:124
+msgid "WPA"
+msgstr "WPA"
+
+#. 2
+#: ../cli/src/devices.c:125
+msgid "WPA2"
+msgstr "WPA2"
+
+#. 3
+#: ../cli/src/devices.c:126
+msgid "TKIP"
+msgstr "TKIP"
+
+#. 4
+#: ../cli/src/devices.c:127
+msgid "CCMP"
+msgstr "CCMP"
+
+#. 0
+#: ../cli/src/devices.c:136 ../cli/src/devices.c:147
+msgid "ADDRESS"
+msgstr "ADRESO"
+
+#. 1
+#: ../cli/src/devices.c:137 ../cli/src/devices.c:148
+msgid "PREFIX"
+msgstr "PREFIKSO"
+
+#. 2
+#: ../cli/src/devices.c:138 ../cli/src/devices.c:149
+msgid "GATEWAY"
+msgstr "KLUZO"
+
+#. 0
+#: ../cli/src/devices.c:158 ../cli/src/devices.c:167
+msgid "DNS"
+msgstr "DNS"
+
+#. 0
+#: ../cli/src/devices.c:176
+msgid "SSID"
+msgstr "SSID"
+
+#. 1
+#: ../cli/src/devices.c:177
+msgid "BSSID"
+msgstr "BSSID"
+
+#. 2
+#: ../cli/src/devices.c:178
+msgid "MODE"
+msgstr "REĜIMO"
+
+#. 3
+#: ../cli/src/devices.c:179
+msgid "FREQ"
+msgstr "FREKV"
+
+#. 4
+#: ../cli/src/devices.c:180
+msgid "RATE"
+msgstr "TRANSMETRAPIDO"
+
+#. 5
+#: ../cli/src/devices.c:181
+msgid "SIGNAL"
+msgstr "SIGNALO"
+
+#. 6
+#: ../cli/src/devices.c:182
+msgid "SECURITY"
+msgstr "SEKURECO"
+
+#. 7
+#: ../cli/src/devices.c:183
+msgid "WPA-FLAGS"
+msgstr "WPA-FLAGOJ"
+
+#. 8
+#: ../cli/src/devices.c:184
+msgid "RSN-FLAGS"
+msgstr "RSN-FLAGOJ"
+
+#. 10
+#: ../cli/src/devices.c:186
+msgid "ACTIVE"
+msgstr "AKTIVA"
+
+#: ../cli/src/devices.c:209
+#, c-format
+msgid ""
+"Usage: nmcli dev { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | list | disconnect | wifi }\n"
+"\n"
+"  status\n"
+"  list [iface <iface>]\n"
+"  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
+"  wifi [list [iface <iface>] [hwaddr <hwaddr>]]\n"
+"\n"
+msgstr ""
+"Usage: nmcli dev { KOMANDO | help }\n"
+"\n"
+"  KOMANDO := { status | list | disconnect | wifi }\n"
+"\n"
+"  status\n"
+"  list [iface <iface>]\n"
+"  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
+"  wifi [list [iface <iface>] [hwaddr <hwaddr>]]\n"
+"\n"
+
+#: ../cli/src/devices.c:229
+msgid "unmanaged"
+msgstr "nemastrumata"
+
+#: ../cli/src/devices.c:231
+msgid "unavailable"
+msgstr "neatingebla"
+
+#: ../cli/src/devices.c:233 ../cli/src/network-manager.c:91
+msgid "disconnected"
+msgstr "nekonektite"
+
+#: ../cli/src/devices.c:235
+msgid "connecting (prepare)"
+msgstr "konektas (preparo)"
+
+#: ../cli/src/devices.c:237
+msgid "connecting (configuring)"
+msgstr "konektas (agordado)"
+
+#: ../cli/src/devices.c:239
+msgid "connecting (need authentication)"
+msgstr "konektas (bezonas aŭtentigon)"
+
+#: ../cli/src/devices.c:241
+msgid "connecting (getting IP configuration)"
+msgstr "konektas (akiras IP-agordaron)"
+
+#: ../cli/src/devices.c:243 ../cli/src/network-manager.c:89
+msgid "connected"
+msgstr "konektita"
+
+#: ../cli/src/devices.c:245
+msgid "connection failed"
+msgstr "konekto fiaskis"
+
+#: ../cli/src/devices.c:268 ../cli/src/devices.c:425
+msgid "Unknown"
+msgstr "Nekonata"
+
+#: ../cli/src/devices.c:300
+msgid "(none)"
+msgstr "(nenio)"
+
+#: ../cli/src/devices.c:325
+#, c-format
+msgid "%s: error converting IP4 address 0x%X"
+msgstr "%s: eraro dum konverto de IP4-adreso 0x%X"
+
+#: ../cli/src/devices.c:394
+#, c-format
+msgid "%u MHz"
+msgstr "%u MHz"
+
+#: ../cli/src/devices.c:395
+#, c-format
+msgid "%u MB/s"
+msgstr "%u MB/s"
+
+#: ../cli/src/devices.c:404
+msgid "Encrypted: "
+msgstr "Ĉifrita: "
+
+#: ../cli/src/devices.c:409
+msgid "WEP "
+msgstr "WEP "
+
+#: ../cli/src/devices.c:411
+msgid "WPA "
+msgstr "WPA "
+
+#: ../cli/src/devices.c:413
+msgid "WPA2 "
+msgstr "WPA2 "
+
+#: ../cli/src/devices.c:416
+msgid "Enterprise "
+msgstr "Entrepreno "
+
+#: ../cli/src/devices.c:425
+msgid "Ad-Hoc"
+msgstr "Laŭcela"
+
+#: ../cli/src/devices.c:425
+msgid "Infrastructure"
+msgstr "Infrastrukturo"
+
+#: ../cli/src/devices.c:487
+#, c-format
+msgid "Error: 'dev list': %s"
+msgstr "Eraro: 'dev list': %s"
+
+#: ../cli/src/devices.c:489
+#, c-format
+msgid "Error: 'dev list': %s; allowed fields: %s"
+msgstr "Eraro: 'dev list': %s; permesataj kampoj: %s"
+
+#: ../cli/src/devices.c:498
+msgid "Device details"
+msgstr "Detaloj de aparato"
+
+#: ../cli/src/devices.c:528 ../cli/src/devices.c:927
+msgid "(unknown)"
+msgstr "(nekonata)"
+
+#: ../cli/src/devices.c:529
+msgid "unknown)"
+msgstr "nekonata)"
+
+#: ../cli/src/devices.c:555
+#, c-format
+msgid "%u Mb/s"
+msgstr "%u Mb/s"
+
+#. Print header
+#. "WIRED-PROPERTIES"
+#: ../cli/src/devices.c:628
+msgid "on"
+msgstr "enŝaltite"
+
+#: ../cli/src/devices.c:628
+msgid "off"
+msgstr "elŝaltite"
+
+#: ../cli/src/devices.c:810
+#, c-format
+msgid "Error: 'dev status': %s"
+msgstr "Eraro: 'dev status': %s"
+
+#: ../cli/src/devices.c:812
+#, c-format
+msgid "Error: 'dev status': %s; allowed fields: %s"
+msgstr "Eraro: 'dev status': %s; permesataj kampoj: %s"
+
+#: ../cli/src/devices.c:819
+msgid "Status of devices"
+msgstr "Stato de aparatoj"
+
+#: ../cli/src/devices.c:847
+#, c-format
+msgid "Error: '%s' argument is missing."
+msgstr "Eraro: argumento '%s' mankas."
+
+#: ../cli/src/devices.c:876 ../cli/src/devices.c:1015
+#: ../cli/src/devices.c:1138
+#, c-format
+msgid "Error: Device '%s' not found."
+msgstr "Eraro: Aparato '%s' ne trovita."
+
+#: ../cli/src/devices.c:899
+#, c-format
+msgid "Success: Device '%s' successfully disconnected."
+msgstr "Sukceso: Aparato '%s' sukcese malkonektiĝis."
+
+#: ../cli/src/devices.c:924
+#, c-format
+msgid "Error: Device '%s' (%s) disconnecting failed: %s"
+msgstr "Eraro: Aparato '%s' (%s) eraro dum malkonektiĝo: %s"
+
+#: ../cli/src/devices.c:932
+#, c-format
+msgid "Device state: %d (%s)\n"
+msgstr "Stato de aparato: %d (%s)\n"
+
+#: ../cli/src/devices.c:996
+#, c-format
+msgid "Error: iface has to be specified."
+msgstr "Eraro: 'iface' devas esti specifata."
+
+#: ../cli/src/devices.c:1114
+#, c-format
+msgid "Error: 'dev wifi': %s"
+msgstr "Eraro: 'dev wifi': %s"
+
+#: ../cli/src/devices.c:1116
+#, c-format
+msgid "Error: 'dev wifi': %s; allowed fields: %s"
+msgstr "Eraro: 'dev wifi': %s; permesataj kampoj: %s"
+
+#: ../cli/src/devices.c:1123
+msgid "WiFi scan list"
+msgstr "WiFi-skanlisto"
+
+#: ../cli/src/devices.c:1158 ../cli/src/devices.c:1212
+#, c-format
+msgid "Error: Access point with hwaddr '%s' not found."
+msgstr "Eraro: Retkaptejo kun 'hwaddr' '%s' ne trovita"
+
+#: ../cli/src/devices.c:1175
+#, c-format
+msgid "Error: Device '%s' is not a WiFi device."
+msgstr "Eraro: Aparato '%s' ne estas WiFi-aparato."
+
+#: ../cli/src/devices.c:1239
+#, c-format
+msgid "Error: 'dev wifi' command '%s' is not valid."
+msgstr "Eraro: 'dev wifi'-komando '%s' ne validas."
+
+#: ../cli/src/devices.c:1286
+#, c-format
+msgid "Error: 'dev' command '%s' is not valid."
+msgstr "Eraro: 'dev'-komando '%s' ne validas."
+
+#: ../cli/src/network-manager.c:35
+msgid "RUNNING"
+msgstr "AKTIVA"
+
+#. 1
+#: ../cli/src/network-manager.c:37
+msgid "NET-ENABLED"
+msgstr "RET-ENŜALTITE"
+
+#. 2
+#: ../cli/src/network-manager.c:38
+msgid "WIFI-HARDWARE"
+msgstr "WIFI-APARATARO"
+
+#. 3
+#: ../cli/src/network-manager.c:39
+msgid "WIFI"
+msgstr "WIFI"
+
+#. 4
+#: ../cli/src/network-manager.c:40
+msgid "WWAN-HARDWARE"
+msgstr "WWAN-APARATARO"
+
+#. 5
+#: ../cli/src/network-manager.c:41
+msgid "WWAN"
+msgstr "WWAN"
+
+#: ../cli/src/network-manager.c:64
+#, c-format
+msgid ""
+"Usage: nmcli nm { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | enable | sleep | wifi | wwan }\n"
+"\n"
+"  status\n"
+"  enable [true|false]\n"
+"  sleep [true|false]\n"
+"  wifi [on|off]\n"
+"  wwan [on|off]\n"
+"\n"
+msgstr ""
+"Uzo: nmcli nm { KOMANDO | help }\n"
+"\n"
+"  KOMANDO := { status | enable | sleep | wifi | wwan }\n"
+"\n"
+"  status\n"
+"  enable [true|false]\n"
+"  sleep [true|false]\n"
+"  wifi [on|off]\n"
+"  wwan [on|off]\n"
+"\n"
+
+#: ../cli/src/network-manager.c:85
+msgid "asleep"
+msgstr "dormas"
+
+#: ../cli/src/network-manager.c:87
+msgid "connecting"
+msgstr "konektas"
+
+#: ../cli/src/network-manager.c:128
+#, c-format
+msgid "Error: 'nm status': %s"
+msgstr "Eraro: 'nm status': %s"
+
+#: ../cli/src/network-manager.c:130
+#, c-format
+msgid "Error: 'nm status': %s; allowed fields: %s"
+msgstr "Eraro: 'nm status': %s; permesataj kampoj: %s"
+
+#: ../cli/src/network-manager.c:137
+msgid "NetworkManager status"
+msgstr "Stato de NetworkManager"
+
+#. Print header
+#: ../cli/src/network-manager.c:144 ../cli/src/network-manager.c:145
+#: ../cli/src/network-manager.c:146 ../cli/src/network-manager.c:147
+#: ../cli/src/network-manager.c:154 ../cli/src/network-manager.c:247
+#: ../cli/src/network-manager.c:296 ../cli/src/network-manager.c:328
+msgid "enabled"
+msgstr "enŝaltita"
+
+#: ../cli/src/network-manager.c:144 ../cli/src/network-manager.c:145
+#: ../cli/src/network-manager.c:146 ../cli/src/network-manager.c:147
+#: ../cli/src/network-manager.c:154 ../cli/src/network-manager.c:247
+#: ../cli/src/network-manager.c:296 ../cli/src/network-manager.c:328
+msgid "disabled"
+msgstr "elŝaltite"
+
+#: ../cli/src/network-manager.c:152
+msgid "running"
+msgstr "aktiva"
+
+#: ../cli/src/network-manager.c:152
+msgid "not running"
+msgstr "neaktiva"
+
+#: ../cli/src/network-manager.c:175
+#, c-format
+msgid "Error: Couldn't connect to system bus: %s"
+msgstr "Eraro: Ne povis konekti al sistem-buso: %s."
+
+#: ../cli/src/network-manager.c:186
+#, c-format
+msgid "Error: Couldn't create D-Bus object proxy."
+msgstr "Eraro: Ne povis krei D-busan objekt-prokurservilon."
+
+#: ../cli/src/network-manager.c:192
+#, c-format
+msgid "Error in sleep: %s"
+msgstr "Eraro dum dormo: %s"
+
+#: ../cli/src/network-manager.c:237 ../cli/src/network-manager.c:286
+#: ../cli/src/network-manager.c:318
+#, c-format
+msgid "Error: '--fields' value '%s' is not valid here; allowed fields: %s"
+msgstr "Eraro: valoro '--fields' '%s' ne validas tie ĉi; permesataj kampoj: %s"
+
+#: ../cli/src/network-manager.c:245
+msgid "Networking enabled"
+msgstr "Retkonektado enŝaltita"
+
+#: ../cli/src/network-manager.c:256
+#, c-format
+msgid "Error: invalid 'enable' parameter: '%s'; use 'true' or 'false'."
+msgstr "Eraro: nevalida 'enŝalt'-parametro: '%s'; uzu 'true' aŭ 'false'."
+
+#: ../cli/src/network-manager.c:265
+#, c-format
+msgid "Error: Sleeping status is not exported by NetworkManager."
+msgstr "Eraro: Dorm-stato ne estas elportite de NetworkManager."
+
+#: ../cli/src/network-manager.c:273
+#, c-format
+msgid "Error: invalid 'sleep' parameter: '%s'; use 'true' or 'false'."
+msgstr "Eraro: nevalida 'dorm'-parametro: '%s'; uzu 'true' aŭ 'false'."
+
+#: ../cli/src/network-manager.c:294
+msgid "WiFi enabled"
+msgstr "WiFi enŝaltita"
+
+#: ../cli/src/network-manager.c:305
+#, c-format
+msgid "Error: invalid 'wifi' parameter: '%s'."
+msgstr "Eraro: nevalida 'wifi'-parametro: '%s'."
+
+#: ../cli/src/network-manager.c:326
+msgid "WWAN enabled"
+msgstr "WWAN enŝaltita"
+
+#: ../cli/src/network-manager.c:337
+#, c-format
+msgid "Error: invalid 'wwan' parameter: '%s'."
+msgstr "Eraro: nevalida 'wwan'-parametro: '%s'."
+
+#: ../cli/src/network-manager.c:348
+#, c-format
+msgid "Error: 'nm' command '%s' is not valid."
+msgstr "Eraro: 'nm'-komando '%s' ne validas."
+
+#: ../cli/src/nmcli.c:69
+#, c-format
+msgid ""
+"Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
+"\n"
+"OPTIONS\n"
+"  -t[erse]                                   terse output\n"
+"  -p[retty]                                  pretty output\n"
+"  -m[ode] tabular|multiline                  output mode\n"
+"  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
+"  -e[scape] yes|no                           escape columns separators in "
+"values\n"
+"  -v[ersion]                                 show program version\n"
+"  -h[elp]                                    print this help\n"
+"\n"
+"OBJECT\n"
+"  nm          NetworkManager status\n"
+"  con         NetworkManager connections\n"
+"  dev         devices managed by NetworkManager\n"
+"\n"
+msgstr ""
+"Uzo: %s [OPCIOJ] OBJEKTO { KOMANDO | help }\n"
+"\n"
+"OPCIOJ\n"
+"  -t[erse]                                  konciza eligo\n"
+"  -p[retty]                                 bela eligo\n"
+"  -m[ode]                                   tabular|multiline eliga reĝimo\n"
+"  -f[ields] <field1,field2,...>|all|common  specifigi eligo-kampojn\n"
+"  -e[scape] yes|no                          eskapaj kolumno-separoj en "
+"valoroj\n"
+"  -v[ersion]                                montri programversion\n"
+"  -h[elp]                                   printi tiun ĉi help-paĝon\n"
+"\n"
+"OBJEKTO\n"
+"  nm   stato de NetworkManager\n"
+"  con  konektoj de NetworkManager\n"
+"  dev  aparatoj mastrumataj de NetworkManager\n"
+"\n"
+
+#: ../cli/src/nmcli.c:113
+#, c-format
+msgid "Error: Object '%s' is unknown, try 'nmcli help'."
+msgstr "Eraro: Objekto '%s' estas nekonata, provu: 'nmcli help'."
+
+#: ../cli/src/nmcli.c:143
+#, c-format
+msgid "Error: Option '--terse' is specified the second time."
+msgstr "Eraro: Opcio '--terse' specifiĝis duan fojon."
+
+#: ../cli/src/nmcli.c:148
+#, c-format
+msgid "Error: Option '--terse' is mutually exclusive with '--pretty'."
+msgstr "Eraro: Opcioj '--terse' kaj '--pretty' ekskludas unu la alian."
+
+#: ../cli/src/nmcli.c:156
+#, c-format
+msgid "Error: Option '--pretty' is specified the second time."
+msgstr "Eraro: Opcio '--pretty' specifiĝis duan fojon."
+
+#: ../cli/src/nmcli.c:161
+#, c-format
+msgid "Error: Option '--pretty' is mutually exclusive with '--terse'."
+msgstr "Eraro: Opcioj '--pretty' kaj '--terse' ekskludas unu la alian."
+
+#: ../cli/src/nmcli.c:171 ../cli/src/nmcli.c:187
+#, c-format
+msgid "Error: missing argument for '%s' option."
+msgstr "Eraro: mankas argumento por elektindaĵo '%s'."
+
+#: ../cli/src/nmcli.c:180 ../cli/src/nmcli.c:196
+#, c-format
+msgid "Error: '%s' is not valid argument for '%s' option."
+msgstr "Eraro: '%s' ne estas valida argumento por elektindaĵo '%s'."
+
+#: ../cli/src/nmcli.c:203
+#, c-format
+msgid "Error: fields for '%s' options are missing."
+msgstr "Eraro: kampoj por elektindaĵoj '%s' mankas."
+
+#: ../cli/src/nmcli.c:209
+#, c-format
+msgid "nmcli tool, version %s\n"
+msgstr "ilo 'nmcli', versio %s\n"
+
+#: ../cli/src/nmcli.c:215
+#, c-format
+msgid "Error: Option '%s' is unknown, try 'nmcli -help'."
+msgstr "Eraro: Opcio '%s' estas nekonata, provu: 'nmcli -help'."
+
+#: ../cli/src/nmcli.c:234
+#, c-format
+msgid "Caught signal %d, shutting down..."
+msgstr "Ricevis signalon '%d', elŝaltas..."
+
+#: ../cli/src/nmcli.c:259
+#, c-format
+msgid "Error: Could not connect to NetworkManager."
+msgstr "Eraro: Ne eblis konekti al NetworkManager"
+
+#: ../cli/src/nmcli.c:275
+msgid "Success"
+msgstr "Sukceso"
+
+#: ../cli/src/settings.c:411
+#, c-format
+msgid "%d (hex-ascii-key)"
+msgstr "%d (heks-ascii-ŝlosilo)"
+
+#: ../cli/src/settings.c:413
+#, c-format
+msgid "%d (104/128-bit passphrase)"
+msgstr "%d (104/128-bita pasvorto)"
+
+#: ../cli/src/settings.c:416
+#, c-format
+msgid "%d (unknown)"
+msgstr "%d (nekonata)"
+
+#: ../cli/src/settings.c:442
+msgid "0 (unknown)"
+msgstr "0 (nekonata)"
+
+#: ../cli/src/settings.c:448
+msgid "any, "
+msgstr "ajna, "
+
+#: ../cli/src/settings.c:450
+msgid "900 MHz, "
+msgstr "900 MHz, "
+
+#: ../cli/src/settings.c:452
+msgid "1800 MHz, "
+msgstr "1800 MHz, "
+
+#: ../cli/src/settings.c:454
+msgid "1900 MHz, "
+msgstr "1900 MHz, "
+
+#: ../cli/src/settings.c:456
+msgid "850 MHz, "
+msgstr "850 MHz, "
+
+#: ../cli/src/settings.c:458
+msgid "WCDMA 3GPP UMTS 2100 MHz, "
+msgstr "WCDMA 3GPP UMTS 2100 MHz, "
+
+#: ../cli/src/settings.c:460
+msgid "WCDMA 3GPP UMTS 1800 MHz, "
+msgstr "WCDMA 3GPP UMTS 1800 MHz, "
+
+#: ../cli/src/settings.c:462
+msgid "WCDMA 3GPP UMTS 1700/2100 MHz, "
+msgstr "WCDMA 3GPP UMTS 1700/2100 MHz, "
+
+#: ../cli/src/settings.c:464
+msgid "WCDMA 3GPP UMTS 800 MHz, "
+msgstr "WCDMA 3GPP UMTS 800 MHz, "
+
+#: ../cli/src/settings.c:466
+msgid "WCDMA 3GPP UMTS 850 MHz, "
+msgstr "WCDMA 3GPP UMTS 850 MHz, "
+
+#: ../cli/src/settings.c:468
+msgid "WCDMA 3GPP UMTS 900 MHz, "
+msgstr "WCDMA 3GPP UMTS 900 MHz, "
+
+#: ../cli/src/settings.c:470
+msgid "WCDMA 3GPP UMTS 1700 MHz, "
+msgstr "WCDMA 3GPP UMTS 1700 MHz, "
+
+#: ../cli/src/settings.c:554 ../cli/src/settings.c:721
+msgid "auto"
+msgstr "aŭto"
+
+#: ../cli/src/settings.c:716 ../cli/src/settings.c:719
+#: ../cli/src/settings.c:720 ../cli/src/utils.c:172
+msgid "not set"
+msgstr "neagordita"
+
+#: ../cli/src/utils.c:124
+#, c-format
+msgid "field '%s' has to be alone"
+msgstr "kampo '%s' devas esti sola"
+
+#: ../cli/src/utils.c:127
+#, c-format
+msgid "invalid field '%s'"
+msgstr "nevalida kampo '%s'"
+
+#: ../cli/src/utils.c:146
+#, c-format
+msgid "Option '--terse' requires specifying '--fields'"
+msgstr "Elektindaĵo '--terse' postulas specifigon de '--fields'"
+
+#: ../cli/src/utils.c:150
+#, c-format
+msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
+msgstr ""
+"Elektindaĵo '--terse' postulas specifajn elektindajn valorojn de '--fields', "
+"ne '%s'"
+
+#: ../libnm-util/crypto.c:121
+#, c-format
+msgid "PEM key file had no end tag '%s'."
+msgstr "PEM-ŝlosil-dosiero ne havis finan etikedon '%s'."
+
+#: ../libnm-util/crypto.c:131
+#, c-format
+msgid "Doesn't look like a PEM private key file."
+msgstr "Tio ĉi ne aspektas kiel privat-ŝlosila PEM-dosiero."
+
+#: ../libnm-util/crypto.c:139
+#, c-format
+msgid "Not enough memory to store PEM file data."
+msgstr "Malsufiĉas memoro por stori datenojn de PEM-dosiero."
+
+#: ../libnm-util/crypto.c:155
+#, c-format
+msgid "Malformed PEM file: Proc-Type was not first tag."
+msgstr "Misforma PEM-dosiero: 'Proc-Type' ne estas la unua etikedo."
+
+#: ../libnm-util/crypto.c:163
+#, c-format
+msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
+msgstr "Misforma PEM-dosiero: nekonata Proc-Type-etikedo \"%s\"."
+
+#: ../libnm-util/crypto.c:173
+#, c-format
+msgid "Malformed PEM file: DEK-Info was not the second tag."
+msgstr "Misforma PEM-dosiero: 'DEK-Info' ne estas la dua etikedo."
+
+#: ../libnm-util/crypto.c:184
+#, c-format
+msgid "Malformed PEM file: no IV found in DEK-Info tag."
+msgstr "Misforma PEM-dosiero: mi ne trovis IV en la etikedo \"DEK-Info\"."
+
+#: ../libnm-util/crypto.c:191
+#, c-format
+msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
+msgstr ""
+"Misforma PEM-dosiero: nevalida struktturo de IV en la etikedo \"DEK-Info\"."
+
+#: ../libnm-util/crypto.c:204
+#, c-format
+msgid "Malformed PEM file: unknown private key cipher '%s'."
+msgstr "Misforma PEM-dosiero: nekonata privat-ŝlosila ĉifro \"%s\"."
+
+#: ../libnm-util/crypto.c:223
+#, c-format
+msgid "Could not decode private key."
+msgstr "Ne eblis malĉifri la privatan ŝlosilon."
+
+#: ../libnm-util/crypto.c:268
+#, c-format
+msgid "PEM certificate '%s' had no end tag '%s'."
+msgstr "La PEM-certigilo \"%s\" ne havas finan etikedon \"%s\"."
+
+#: ../libnm-util/crypto.c:278
+#, c-format
+msgid "Failed to decode certificate."
+msgstr "Malsuksesis malĉifri la certigilon."
+
+#: ../libnm-util/crypto.c:287
+#, c-format
+msgid "Not enough memory to store certificate data."
+msgstr "Malsufiĉas memoro por stori la datenojn de la certigilo."
+
+#: ../libnm-util/crypto.c:295
+#, c-format
+msgid "Not enough memory to store file data."
+msgstr "Malsufiĉas memoro por stori la datenojn de la dosiero."
+
+#: ../libnm-util/crypto.c:325
+#, c-format
+msgid "IV must be an even number of bytes in length."
+msgstr "IV nepre amkplesu paran nombron da bajtoj."
+
+#: ../libnm-util/crypto.c:334
+#, c-format
+msgid "Not enough memory to store the IV."
+msgstr "Malsufiĉas memoro por stori la IV-on."
+
+#: ../libnm-util/crypto.c:345
+#, c-format
+msgid "IV contains non-hexadecimal digits."
+msgstr "IV enhavas nedeksesumajn ciferojn"
+
+#: ../libnm-util/crypto.c:383 ../libnm-util/crypto_gnutls.c:148
+#: ../libnm-util/crypto_gnutls.c:266 ../libnm-util/crypto_nss.c:171
+#: ../libnm-util/crypto_nss.c:336
+#, c-format
+msgid "Private key cipher '%s' was unknown."
+msgstr "Privata Cipher-ŝlosilo '%s' estas nekonata."
+
+#: ../libnm-util/crypto.c:392
+#, c-format
+msgid "Not enough memory to decrypt private key."
+msgstr "Nesufiĉa memoro por malĉifri privatan ŝlosilon."
+
+#: ../libnm-util/crypto.c:512
+#, c-format
+msgid "Unable to determine private key type."
+msgstr "Ne eblas determini la tipon de la privata ŝlosilo."
+
+#: ../libnm-util/crypto.c:531
+#, c-format
+msgid "Not enough memory to store decrypted private key."
+msgstr "Nesufiĉa memoro por gardi privatan ŝlosilon malĉifritan."
+
+#: ../libnm-util/crypto_gnutls.c:49
+msgid "Failed to initialize the crypto engine."
+msgstr "Pretigo de la kriptografia maŝino fiaskis."
+
+#: ../libnm-util/crypto_gnutls.c:93
+#, c-format
+msgid "Failed to initialize the MD5 engine: %s / %s."
+msgstr "Pretigo de la MD5-maŝino fiaskis: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:156
+#, c-format
+msgid "Invalid IV length (must be at least %zd)."
+msgstr "Nevalida amplekso por IV (devas esti almenaŭ %zd)."
+
+#: ../libnm-util/crypto_gnutls.c:165 ../libnm-util/crypto_nss.c:188
+#, c-format
+msgid "Not enough memory for decrypted key buffer."
+msgstr "Nesufiĉa memoro por bufro de la malĉifrita ŝlosilo."
+
+#: ../libnm-util/crypto_gnutls.c:173
+#, c-format
+msgid "Failed to initialize the decryption cipher context: %s / %s."
+msgstr "Fiaskis pravalorizi la malĉifran Cipher-kuntekston: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:182
+#, c-format
+msgid "Failed to set symmetric key for decryption: %s / %s."
+msgstr "Fiaskis agordi simetrian ŝlosilon por malĉifro: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:191
+#, c-format
+msgid "Failed to set IV for decryption: %s / %s."
+msgstr "Fiaskis agordi IV por malĉifro: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:200
+#, c-format
+msgid "Failed to decrypt the private key: %s / %s."
+msgstr "Fiaskis malĉifri la privatan ŝlosilon: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:210 ../libnm-util/crypto_nss.c:267
+#, c-format
+msgid "Failed to decrypt the private key: unexpected padding length."
+msgstr "Fiaskis malĉifri la privatan ŝlosilon: neatendita ŝtopada longo."
+
+#: ../libnm-util/crypto_gnutls.c:221 ../libnm-util/crypto_nss.c:278
+#, c-format
+msgid "Failed to decrypt the private key."
+msgstr "Fiaskis malĉifri la privatan ŝlosilon."
+
+#: ../libnm-util/crypto_gnutls.c:286 ../libnm-util/crypto_nss.c:356
+#, c-format
+msgid "Could not allocate memory for encrypting."
+msgstr "Ne eblis rezervi memoron por ĉifrado."
+
+#: ../libnm-util/crypto_gnutls.c:294
+#, c-format
+msgid "Failed to initialize the encryption cipher context: %s / %s."
+msgstr "Fiaskis valorizi la ĉifradan kuntekston: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:303
+#, c-format
+msgid "Failed to set symmetric key for encryption: %s / %s."
+msgstr "Fiaskis agordi simetrian ŝlosilon por ĉifrado: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:313
+#, c-format
+msgid "Failed to set IV for encryption: %s / %s."
+msgstr "Fiaskis agordi IV por ĉifrado: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:322
+#, c-format
+msgid "Failed to encrypt the data: %s / %s."
+msgstr "Ĉifrado de datumoj malsukcesis: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:362
+#, c-format
+msgid "Error initializing certificate data: %s"
+msgstr "Eraro dum pravalorizo de atestilaj datumoj: %s"
+
+#: ../libnm-util/crypto_gnutls.c:384
+#, c-format
+msgid "Couldn't decode certificate: %s"
+msgstr "Ne povis malkodi certigilon: %s"
+
+#: ../libnm-util/crypto_gnutls.c:408
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %s"
+msgstr "Ne povis pravalorizi PKCS#12-malkodilon: %s"
+
+#: ../libnm-util/crypto_gnutls.c:421
+#, c-format
+msgid "Couldn't decode PKCS#12 file: %s"
+msgstr "Ne eblis dekodi PKCS#12-dosieron: %s"
+
+#: ../libnm-util/crypto_gnutls.c:433
+#, c-format
+msgid "Couldn't verify PKCS#12 file: %s"
+msgstr "No povis kontroli PKCS#12-dosieron: %s"
+
+#: ../libnm-util/crypto_nss.c:56
+#, c-format
+msgid "Failed to initialize the crypto engine: %d."
+msgstr "Pravalorigo de la kriptografia maŝino fiaskis: %d."
+
+#: ../libnm-util/crypto_nss.c:111
+#, c-format
+msgid "Failed to initialize the MD5 context: %d."
+msgstr "Fiaskis pravalorizi la MD5-kuntekston: %d."
+
+#: ../libnm-util/crypto_nss.c:179
+#, c-format
+msgid "Invalid IV length (must be at least %d)."
+msgstr "Nevalida IV-longo (devas esti almenaŭ %d)."
+
+#: ../libnm-util/crypto_nss.c:196
+#, c-format
+msgid "Failed to initialize the decryption cipher slot."
+msgstr "Fiaskis pravalorizi la malĉifran Cipher-foldon."
+
+#: ../libnm-util/crypto_nss.c:206
+#, c-format
+msgid "Failed to set symmetric key for decryption."
+msgstr "Fiaskis agordi simetrian ŝlosilon por malĉifrado."
+
+#: ../libnm-util/crypto_nss.c:216
+#, c-format
+msgid "Failed to set IV for decryption."
+msgstr "Fiaskis agordi IV por malĉifrado."
+
+#: ../libnm-util/crypto_nss.c:224
+#, c-format
+msgid "Failed to initialize the decryption context."
+msgstr "Fiaskis pravalorizi la malĉifran kuntekston."
+
+#: ../libnm-util/crypto_nss.c:237
+#, c-format
+msgid "Failed to decrypt the private key: %d."
+msgstr "Fiaskis malĉifri la privatan ŝlosilon: %d."
+
+#: ../libnm-util/crypto_nss.c:245
+#, c-format
+msgid "Failed to decrypt the private key: decrypted data too large."
+msgstr "Fiaskis malĉifri la privatan ŝlosilon: malĉifritaj datumoj tro longas."
+
+#: ../libnm-util/crypto_nss.c:256
+#, c-format
+msgid "Failed to finalize decryption of the private key: %d."
+msgstr "Fiaskis fini malĉifradon de la privata ŝlosilo: %d."
+
+#: ../libnm-util/crypto_nss.c:364
+#, c-format
+msgid "Failed to initialize the encryption cipher slot."
+msgstr "Fiaskis pravalorizi la ĉifran Cipher-foldon."
+
+#: ../libnm-util/crypto_nss.c:372
+#, c-format
+msgid "Failed to set symmetric key for encryption."
+msgstr "Fiaskis agordi simetrian ŝlosilon por ĉifrado."
+
+#: ../libnm-util/crypto_nss.c:380
+#, c-format
+msgid "Failed to set IV for encryption."
+msgstr "Fiaskis agordi IV por ĉifrado."
+
+#: ../libnm-util/crypto_nss.c:388
+#, c-format
+msgid "Failed to initialize the encryption context."
+msgstr "Fiaskis pravalorizi la ĉifradan kuntekston."
+
+#: ../libnm-util/crypto_nss.c:396
+#, c-format
+msgid "Failed to encrypt: %d."
+msgstr "Fiaskis ĉifri: %d."
+
+#: ../libnm-util/crypto_nss.c:404
+#, c-format
+msgid "Unexpected amount of data after encrypting."
+msgstr "Neatendita nombro da datumoj post ĉifrado."
+
+#: ../libnm-util/crypto_nss.c:447
+#, c-format
+msgid "Couldn't decode certificate: %d"
+msgstr "Ne povis malkodigi atestilon: %d"
+
+#: ../libnm-util/crypto_nss.c:482
+#, c-format
+msgid "Couldn't convert password to UCS2: %d"
+msgstr "Ne povis konverti pasvorton al UCS2: %d"
+
+#: ../libnm-util/crypto_nss.c:510
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %d"
+msgstr "Ne povis pravalorizi PKCS#12-malkodilon: %d"
+
+#: ../libnm-util/crypto_nss.c:519
+#, c-format
+msgid "Couldn't decode PKCS#12 file: %d"
+msgstr "Ne povis malkodigi PKCS#12-dosieron: %d"
+
+#: ../libnm-util/crypto_nss.c:528
+#, c-format
+msgid "Couldn't verify PKCS#12 file: %d"
+msgstr "Ne povis kontroli PKCS#12-dosieron: %d"
+
+#: ../libnm-util/crypto_nss.c:557
+msgid "Could not generate random data."
+msgstr "Ne povis generi hazardajn datumojn."
+
+#: ../libnm-util/nm-utils.c:1975
+#, c-format
+msgid "Not enough memory to make encryption key."
+msgstr "Nesufiĉa memoro por fari ĉifran ŝlosilon."
+
+#: ../libnm-util/nm-utils.c:2085
+msgid "Could not allocate memory for PEM file creation."
+msgstr "Ne povis atribui memoron por kreo de PEM-dosiero."
+
+#: ../libnm-util/nm-utils.c:2097
+#, c-format
+msgid "Could not allocate memory for writing IV to PEM file."
+msgstr "Ne povis atribui memoron por konservi IV en PEM-dosieron."
+
+#: ../libnm-util/nm-utils.c:2109
+#, c-format
+msgid "Could not allocate memory for writing encrypted key to PEM file."
+msgstr ""
+"Ne povis atribui memoron por konservi ĉifritan ŝlosilon en PEM-dosieron."
+
+#: ../libnm-util/nm-utils.c:2128
+#, c-format
+msgid "Could not allocate memory for PEM file data."
+msgstr "Ne povis atribui memoron por datumoj de PEM-dosiero."
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:1
+msgid "Connection sharing via a protected WiFi network"
+msgstr "Kundivido de konektoj per protektita WiFi-reto"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:2
+msgid "Connection sharing via an open WiFi network"
+msgstr "Kundivido de konektoj per malferma WiFi-reto"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:3
+msgid "Modify persistent system hostname"
+msgstr "Modifi permanentan sisteman gastigan nomon"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:4
+msgid "Modify system connections"
+msgstr "Modifi sistemajn konektojn"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:5
+msgid "System policy prevents modification of system settings"
+msgstr "Sistempolico preventas modifadon de sistemagordoj"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:6
+msgid "System policy prevents modification of the persistent system hostname"
+msgstr "Sistempolico preventas modifadon de la konstanta sistem-gastnomo"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:7
+msgid "System policy prevents sharing connections via a protected WiFi network"
+msgstr "Sistempolico preventas kundividon de konektoj per protektita WiFi-reto"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:8
+msgid "System policy prevents sharing connections via an open WiFi network"
+msgstr "Sistempolitiko preventas kundividon de konektoj per malferma WiFi-reto"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:1
+msgid "Allow control of network connections"
+msgstr "Permesi kontrolon de retkonektoj"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:2
+msgid "Allow use of user-specific connections"
+msgstr "Permesi uzon de specifaj konektoj por uzantoj"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:3
+msgid "Enable or disable WiFi devices"
+msgstr "Enŝalti aŭ elŝalti WiFi-aparatojn"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:4
+msgid "Enable or disable mobile broadband devices"
+msgstr "Enŝalti aŭ elŝalti poŝtelefonajn larĝkapacitajn aparatojn"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:5
+msgid "Enable or disable system networking"
+msgstr "Enŝalti aŭ elŝalti sistemretkonektadon"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:6
+msgid ""
+"Put NetworkManager to sleep or wake it up (should only be used by system "
+"power management)"
+msgstr ""
+"Dormigi aŭ veki NetworkManager (estu uzata nur de sistema energimastumado)"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:7
+msgid "System policy prevents control of network connections"
+msgstr "Sistempolitiko preventas kontrolon de retkonektoj"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:8
+msgid "System policy prevents enabling or disabling WiFi devices"
+msgstr "Sistempolitiko preventas enŝalton aŭ malŝalton de WiFi-aparatoj"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:9
+msgid "System policy prevents enabling or disabling mobile broadband devices"
+msgstr ""
+"Sistempolitiko preventas enŝalton aŭ malŝalton de poŝtelefonaj larĝkapacitaj "
+"aparatoj"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:10
+msgid "System policy prevents enabling or disabling system networking"
+msgstr "Sistempolitiko preventas enŝalton aŭ malŝalton de sistema retkonektado"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:11
+msgid "System policy prevents putting NetworkManager to sleep or waking it up"
+msgstr "Sistempolitiko preventas dormigi aŭ veki NetworkManager"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:12
+msgid "System policy prevents use of user-specific connections"
+msgstr "Sistempolitiko preventas uzon de uzant-specifaj konektoj"
+
+#: ../src/nm-netlink-monitor.c:100 ../src/nm-netlink-monitor.c:231
+#: ../src/nm-netlink-monitor.c:653
+#, c-format
+msgid "error processing netlink message: %s"
+msgstr "eraro dum traktado de netlink-mesaĝo: %s"
+
+#: ../src/nm-netlink-monitor.c:214
+msgid "error occurred while waiting for data on socket"
+msgstr "okazis eraro dum atendado je datumoj sur kontaktoskatolo"
+
+#: ../src/nm-netlink-monitor.c:254
+#, c-format
+msgid "unable to connect to netlink for monitoring link status: %s"
+msgstr "ne eblas konekti al netlink por kontroli ligilan staton: %s"
+
+#: ../src/nm-netlink-monitor.c:265
+#, c-format
+msgid "unable to enable netlink handle credential passing: %s"
+msgstr "ne povis aktivigi la netlink-tenilan legitimaĵo-pasadon: %s"
+
+#: ../src/nm-netlink-monitor.c:291 ../src/nm-netlink-monitor.c:353
+#, c-format
+msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgstr "ne povis atribui retligiltenilon por kontroli ligilstaton: %s"
+
+#: ../src/nm-netlink-monitor.c:376
+#, c-format
+msgid "unable to allocate netlink link cache for monitoring link status: %s"
+msgstr ""
+"ne povis atribui ligilan kaŝmemoron de netlink por kontroli ligilstaton: %s"
+
+#: ../src/nm-netlink-monitor.c:502
+#, c-format
+msgid "unable to join netlink group: %s"
+msgstr "ne eblas membriĝi al retligila grupo: %s"
+
+#: ../src/nm-netlink-monitor.c:629 ../src/nm-netlink-monitor.c:642
+#, c-format
+msgid "error updating link cache: %s"
+msgstr "eraro dum ĝisdatigo de ligila kaŝmemoro: %s"
+
+#: ../src/main.c:502
+#, c-format
+msgid "Invalid option.  Please use --help to see a list of valid options.\n"
+msgstr ""
+"Nevalida elektindaĵo. Bonvolu uzi --help por vidi liston da validaj "
+"elektindaĵoj.\n"
+
+#: ../src/main.c:573
+#, c-format
+msgid "%s.  Please use --help to see a list of valid options.\n"
+msgstr "%s. Bovolu uzi --help por vidi liston da validaj elektindaĵoj.\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:328
+msgid "# Created by NetworkManager\n"
+msgstr "# Kreita de NetworkManager\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:344
+#, c-format
+msgid ""
+"# Merged from %s\n"
+"\n"
+msgstr ""
+"# Kunfandita el %s\n"
+"\n"
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:284
+msgid "no usable DHCP client could be found."
+msgstr "neniu uzebla DHCP-kliento estis trovebla"
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:293
+msgid "'dhclient' could be found."
+msgstr "'dhclient' povis esti trovita."
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:303
+msgid "'dhcpcd' could be found."
+msgstr "'dhcpcd' povis esti trovita."
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:311
+#, c-format
+msgid "unsupported DHCP client '%s'"
+msgstr "nesubtenata DHCP-kliento '%s'"
+
+#: ../src/logging/nm-logging.c:146
+#, c-format
+msgid "Unknown log level '%s'"
+msgstr "Nekonata protokolnivelo '%s'"
+
+#: ../src/logging/nm-logging.c:171
+#, c-format
+msgid "Unknown log domain '%s'"
+msgstr "Nekonata protokola regiono '%s'"
+
+#: ../src/dns-manager/nm-dns-manager.c:367
+msgid "NOTE: the libc resolver may not support more than 3 nameservers."
+msgstr "NOTO: la libc-solvilo eble ne povus subteni pli ol 3 nomservilojn."
+
+#: ../src/dns-manager/nm-dns-manager.c:369
+msgid "The nameservers listed below may not be recognized."
+msgstr "La sube ligstigitaj nomserviloj eble ne estos rekonataj."
+
+#: ../src/system-settings/nm-default-wired-connection.c:157
+#, c-format
+msgid "Auto %s"
+msgstr "Aŭto %s"
+
+#: ../system-settings/plugins/ifcfg-rh/reader.c:3408
+#: ../system-settings/plugins/ifnet/connection_parser.c:49
+msgid "System"
+msgstr "Sistemo"

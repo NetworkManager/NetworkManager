@@ -43,6 +43,8 @@
 #define NM_MANAGER_WIRELESS_HARDWARE_ENABLED "wireless-hardware-enabled"
 #define NM_MANAGER_WWAN_ENABLED "wwan-enabled"
 #define NM_MANAGER_WWAN_HARDWARE_ENABLED "wwan-hardware-enabled"
+#define NM_MANAGER_WIMAX_ENABLED "wimax-enabled"
+#define NM_MANAGER_WIMAX_HARDWARE_ENABLED "wimax-hardware-enabled"
 #define NM_MANAGER_ACTIVE_CONNECTIONS "active-connections"
 
 /* Not exported */
@@ -72,6 +74,7 @@ NMManager *nm_manager_get (NMSettings *settings,
                            gboolean initial_net_enabled,
                            gboolean initial_wifi_enabled,
                            gboolean initial_wwan_enabled,
+						   gboolean initial_wimax_enabled,
                            GError **error);
 
 void nm_manager_start (NMManager *manager);

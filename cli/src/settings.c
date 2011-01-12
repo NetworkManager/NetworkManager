@@ -402,6 +402,18 @@ static NmcOutputField nmc_fields_setting_vpn[] = {
                                        NM_SETTING_VPN_SECRETS
 #define NMC_FIELDS_SETTING_VPN_COMMON  NMC_FIELDS_SETTING_VPN_ALL
 
+/* Available fields for NM_SETTING_WIMAX_SETTING_NAME */
+static NmcOutputField nmc_fields_setting_wimax[] = {
+	SETTING_FIELD ("name", 6),                                         /* 0 */
+	SETTING_FIELD (NM_SETTING_WIMAX_MAC_ADDRESS, 19),                  /* 1 */
+	SETTING_FIELD (NM_SETTING_WIMAX_NETWORK_NAME, 40),                 /* 2 */
+	{NULL, NULL, 0, NULL, 0}
+};
+#define NMC_FIELDS_SETTING_WIMAX_ALL     "name"","\
+                                         NM_SETTING_WIMAX_MAC_ADDRESS","\
+                                         NM_SETTING_WIMAX_NETWORK_NAME
+#define NMC_FIELDS_SETTING_WIMAX_COMMON  NMC_FIELDS_SETTING_WIMAX_ALL
+
 
 static char *
 wep_key_type_to_string (NMWepKeyType type)
@@ -1377,6 +1389,40 @@ setting_vpn_details (NMSetting *setting, NmCli *nmc)
 
 	g_string_free (data_item_str, TRUE);
 	g_string_free (secret_str, TRUE);
+
+	return TRUE;
+}
+
+gboolean
+setting_wimax_details (NMSetting *setting, NmCli *nmc)
+{
+	NMSettingWimax *s_wimax;
+	const GByteArray *mac;
+	char *device_mac_str = NULL;
+	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
+	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
+	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
+
+	g_return_val_if_fail (NM_IS_SETTING_WIMAX (setting), FALSE);
+	s_wimax = (NMSettingWimax *) setting;
+
+	nmc->allowed_fields = nmc_fields_setting_wimax;
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_WIMAX_ALL, nmc->allowed_fields, NULL);
+	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
+	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
+
+	mac = nm_setting_wimax_get_mac_address (s_wimax);
+	if (mac)
+		device_mac_str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X", mac->data[0], mac->data[1], mac->data[2], mac->data[3], mac->data[4], mac->data[5]);
+
+	nmc->allowed_fields[0].value = NM_SETTING_WIMAX_SETTING_NAME;
+	nmc->allowed_fields[1].value = device_mac_str;
+	nmc->allowed_fields[2].value = nm_setting_wimax_get_network_name (s_wimax);
+
+	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
+	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+
+	g_free (device_mac_str);
 
 	return TRUE;
 }

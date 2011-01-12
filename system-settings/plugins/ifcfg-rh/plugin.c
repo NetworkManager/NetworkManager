@@ -149,7 +149,6 @@ _internal_new_connection (SCPluginIfcfg *self,
 	if (nm_ifcfg_connection_get_unmanaged_spec (connection)) {
 		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Ignoring connection '%s' and its "
 		              "device due to NM_CONTROLLED/BRIDGE/VLAN.", cid);
-		g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
 	} else {
 		/* Wait for the connection to become unmanaged once it knows the
 		 * hardware IDs of its device, if/when the device gets plugged in.
@@ -245,9 +244,13 @@ connection_new_or_changed (SCPluginIfcfg *self,
 	if (!existing) {
 		/* Completely new connection */
 		new = _internal_new_connection (self, path, NULL, NULL);
-		if (new && !nm_ifcfg_connection_get_unmanaged_spec (new)) {
-			/* Only managed connections are announced to the settings service */
-			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, new);
+		if (new) {
+			if (nm_ifcfg_connection_get_unmanaged_spec (new)) {
+				g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
+			} else {
+				/* Only managed connections are announced to the settings service */
+				g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, new);
+			}
 		}
 		return;
 	}

@@ -166,9 +166,6 @@ static void schedule_scan (NMDeviceWifi *self, gboolean backoff);
 
 static void cancel_pending_scan (NMDeviceWifi *self);
 
-static int wireless_qual_to_percent (const struct iw_quality *qual,
-                                     const struct iw_quality *max_qual);
-
 static void cleanup_association_attempt (NMDeviceWifi * self,
                                          gboolean disconnect);
 
@@ -179,17 +176,13 @@ static void supplicant_iface_state_cb (NMSupplicantInterface *iface,
                                        guint32 old_state,
                                        gpointer user_data);
 
-static void supplicant_iface_scanned_ap_cb (NMSupplicantInterface * iface,
-                                            GHashTable *properties,
-                                            NMDeviceWifi * self);
+static void supplicant_iface_new_bss_cb (NMSupplicantInterface * iface,
+                                         GHashTable *properties,
+                                         NMDeviceWifi * self);
 
-static void supplicant_iface_scan_request_result_cb (NMSupplicantInterface * iface,
-                                                     gboolean success,
-                                                     NMDeviceWifi * self);
-
-static void supplicant_iface_scan_results_cb (NMSupplicantInterface * iface,
-                                              guint32 num_bssids,
-                                              NMDeviceWifi * self);
+static void supplicant_iface_scan_done_cb (NMSupplicantInterface * iface,
+                                           gboolean success,
+                                           NMDeviceWifi * self);
 
 static void supplicant_iface_notify_scanning_cb (NMSupplicantInterface * iface,
                                                  GParamSpec * pspec,
@@ -306,6 +299,107 @@ ipw_rfkill_state_work (gpointer user_data)
 }
 
 /*****************************************************************/
+
+/*
+ * wireless_qual_to_percent
+ *
+ * Convert an iw_quality structure from SIOCGIWSTATS into a magical signal
+ * strength percentage.
+ *
+ */
+static int
+wireless_qual_to_percent (const struct iw_quality *qual,
+                          const struct iw_quality *max_qual)
+{
+	int percent = -1;
+	int level_percent = -1;
+
+	g_return_val_if_fail (qual != NULL, -1);
+	g_return_val_if_fail (max_qual != NULL, -1);
+
+	nm_log_dbg (LOGD_WIFI,
+	            "QL: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X, updated: 0x%X  ** MAX: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X, updated: 0x%X",
+	            (__s8) qual->qual, qual->qual, qual->qual,
+	            (__s8) qual->level, qual->level, qual->level,
+	            (__s8) qual->noise, qual->noise, qual->noise,
+	            qual->updated,
+	            (__s8) max_qual->qual, max_qual->qual, max_qual->qual,
+	            (__s8) max_qual->level, max_qual->level, max_qual->level,
+	            (__s8) max_qual->noise, max_qual->noise, max_qual->noise,
+	            max_qual->updated);
+
+	/* Try using the card's idea of the signal quality first as long as it tells us what the max quality is.
+	 * Drivers that fill in quality values MUST treat them as percentages, ie the "Link Quality" MUST be 
+	 * bounded by 0 and max_qual->qual, and MUST change in a linear fashion.  Within those bounds, drivers
+	 * are free to use whatever they want to calculate "Link Quality".
+	 */
+	if ((max_qual->qual != 0) && !(max_qual->updated & IW_QUAL_QUAL_INVALID) && !(qual->updated & IW_QUAL_QUAL_INVALID))
+		percent = (int)(100 * ((double)qual->qual / (double)max_qual->qual));
+
+	/* If the driver doesn't specify a complete and valid quality, we have two options:
+	 *
+	 * 1) dBm: driver must specify max_qual->level = 0, and have valid values for
+	 *        qual->level and (qual->noise OR max_qual->noise)
+	 * 2) raw RSSI: driver must specify max_qual->level > 0, and have valid values for
+	 *        qual->level and max_qual->level
+	 *
+	 * This is the WEXT spec.  If this interpretation is wrong, I'll fix it.  Otherwise,
+	 * If drivers don't conform to it, they are wrong and need to be fixed.
+	 */
+
+	if (    (max_qual->level == 0) && !(max_qual->updated & IW_QUAL_LEVEL_INVALID)          /* Valid max_qual->level == 0 */
+		&& !(qual->updated & IW_QUAL_LEVEL_INVALID)                                     /* Must have valid qual->level */
+		&& (    ((max_qual->noise > 0) && !(max_qual->updated & IW_QUAL_NOISE_INVALID)) /* Must have valid max_qual->noise */
+			|| ((qual->noise > 0) && !(qual->updated & IW_QUAL_NOISE_INVALID)))     /*    OR valid qual->noise */
+	   ) {
+		/* Absolute power values (dBm) */
+
+		/* Reasonable fallbacks for dumb drivers that don't specify either level. */
+		#define FALLBACK_NOISE_FLOOR_DBM  -90
+		#define FALLBACK_SIGNAL_MAX_DBM   -20
+		int max_level = FALLBACK_SIGNAL_MAX_DBM;
+		int noise = FALLBACK_NOISE_FLOOR_DBM;
+		int level = qual->level - 0x100;
+
+		level = CLAMP (level, FALLBACK_NOISE_FLOOR_DBM, FALLBACK_SIGNAL_MAX_DBM);
+
+		if ((qual->noise > 0) && !(qual->updated & IW_QUAL_NOISE_INVALID))
+			noise = qual->noise - 0x100;
+		else if ((max_qual->noise > 0) && !(max_qual->updated & IW_QUAL_NOISE_INVALID))
+			noise = max_qual->noise - 0x100;
+		noise = CLAMP (noise, FALLBACK_NOISE_FLOOR_DBM, FALLBACK_SIGNAL_MAX_DBM);
+
+		/* A sort of signal-to-noise ratio calculation */
+		level_percent = (int)(100 - 70 *(
+		                                ((double)max_level - (double)level) /
+		                                ((double)max_level - (double)noise)));
+		nm_log_dbg (LOGD_WIFI, "QL1: level_percent is %d.  max_level %d, level %d, noise_floor %d.",
+		            level_percent, max_level, level, noise);
+	} else if (   (max_qual->level != 0)
+	           && !(max_qual->updated & IW_QUAL_LEVEL_INVALID) /* Valid max_qual->level as upper bound */
+	           && !(qual->updated & IW_QUAL_LEVEL_INVALID)) {
+		/* Relative power values (RSSI) */
+
+		int level = qual->level;
+
+		/* Signal level is relavtive (0 -> max_qual->level) */
+		level = CLAMP (level, 0, max_qual->level);
+		level_percent = (int)(100 * ((double)level / (double)max_qual->level));
+		nm_log_dbg (LOGD_WIFI, "QL2: level_percent is %d.  max_level %d, level %d.",
+		            level_percent, max_qual->level, level);
+	} else if (percent == -1) {
+		nm_log_dbg (LOGD_WIFI, "QL: Could not get quality %% value from driver.  Driver is probably buggy.");
+	}
+
+	/* If the quality percent was 0 or doesn't exist, then try to use signal levels instead */
+	if ((percent < 1) && (level_percent >= 0))
+		percent = level_percent;
+
+	nm_log_dbg (LOGD_WIFI, "QL: Final quality percent is %d (%d).",
+	            percent, CLAMP (percent, 0, 100));
+	return (CLAMP (percent, 0, 100));
+}
+
 
 /*
  * nm_device_wifi_update_signal_strength
@@ -655,26 +749,20 @@ supplicant_interface_acquire (NMDeviceWifi *self)
 	memset (priv->supplicant.sig_ids, 0, sizeof (priv->supplicant.sig_ids));
 
 	id = g_signal_connect (priv->supplicant.iface,
-	                       "state",
+	                       NM_SUPPLICANT_INTERFACE_STATE,
 	                       G_CALLBACK (supplicant_iface_state_cb),
 	                       self);
 	priv->supplicant.sig_ids[i++] = id;
 
 	id = g_signal_connect (priv->supplicant.iface,
-	                       "scanned-ap",
-	                       G_CALLBACK (supplicant_iface_scanned_ap_cb),
+	                       NM_SUPPLICANT_INTERFACE_NEW_BSS,
+	                       G_CALLBACK (supplicant_iface_new_bss_cb),
 	                       self);
 	priv->supplicant.sig_ids[i++] = id;
 
 	id = g_signal_connect (priv->supplicant.iface,
-	                       "scan-req-result",
-	                       G_CALLBACK (supplicant_iface_scan_request_result_cb),
-	                       self);
-	priv->supplicant.sig_ids[i++] = id;
-
-	id = g_signal_connect (priv->supplicant.iface,
-	                       "scan-results",
-	                       G_CALLBACK (supplicant_iface_scan_results_cb),
+	                       NM_SUPPLICANT_INTERFACE_SCAN_DONE,
+	                       G_CALLBACK (supplicant_iface_scan_done_cb),
 	                       self);
 	priv->supplicant.sig_ids[i++] = id;
 
@@ -1692,107 +1780,6 @@ nm_device_wifi_get_frequency (NMDeviceWifi *self)
 }
 
 /*
- * wireless_stats_to_percent
- *
- * Convert an iw_stats structure from a scan or the card into
- * a magical signal strength percentage.
- *
- */
-static int
-wireless_qual_to_percent (const struct iw_quality *qual,
-                          const struct iw_quality *max_qual)
-{
-	int percent = -1;
-	int level_percent = -1;
-
-	g_return_val_if_fail (qual != NULL, -1);
-	g_return_val_if_fail (max_qual != NULL, -1);
-
-	nm_log_dbg (LOGD_WIFI,
-	            "QL: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X, updated: 0x%X  ** MAX: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X, updated: 0x%X",
-	            (__s8) qual->qual, qual->qual, qual->qual,
-	            (__s8) qual->level, qual->level, qual->level,
-	            (__s8) qual->noise, qual->noise, qual->noise,
-	            qual->updated,
-	            (__s8) max_qual->qual, max_qual->qual, max_qual->qual,
-	            (__s8) max_qual->level, max_qual->level, max_qual->level,
-	            (__s8) max_qual->noise, max_qual->noise, max_qual->noise,
-	            max_qual->updated);
-
-	/* Try using the card's idea of the signal quality first as long as it tells us what the max quality is.
-	 * Drivers that fill in quality values MUST treat them as percentages, ie the "Link Quality" MUST be 
-	 * bounded by 0 and max_qual->qual, and MUST change in a linear fashion.  Within those bounds, drivers
-	 * are free to use whatever they want to calculate "Link Quality".
-	 */
-	if ((max_qual->qual != 0) && !(max_qual->updated & IW_QUAL_QUAL_INVALID) && !(qual->updated & IW_QUAL_QUAL_INVALID))
-		percent = (int)(100 * ((double)qual->qual / (double)max_qual->qual));
-
-	/* If the driver doesn't specify a complete and valid quality, we have two options:
-	 *
-	 * 1) dBm: driver must specify max_qual->level = 0, and have valid values for
-	 *        qual->level and (qual->noise OR max_qual->noise)
-	 * 2) raw RSSI: driver must specify max_qual->level > 0, and have valid values for
-	 *        qual->level and max_qual->level
-	 *
-	 * This is the WEXT spec.  If this interpretation is wrong, I'll fix it.  Otherwise,
-	 * If drivers don't conform to it, they are wrong and need to be fixed.
-	 */
-
-	if (    (max_qual->level == 0) && !(max_qual->updated & IW_QUAL_LEVEL_INVALID)          /* Valid max_qual->level == 0 */
-		&& !(qual->updated & IW_QUAL_LEVEL_INVALID)                                     /* Must have valid qual->level */
-		&& (    ((max_qual->noise > 0) && !(max_qual->updated & IW_QUAL_NOISE_INVALID)) /* Must have valid max_qual->noise */
-			|| ((qual->noise > 0) && !(qual->updated & IW_QUAL_NOISE_INVALID)))     /*    OR valid qual->noise */
-	   ) {
-		/* Absolute power values (dBm) */
-
-		/* Reasonable fallbacks for dumb drivers that don't specify either level. */
-		#define FALLBACK_NOISE_FLOOR_DBM  -90
-		#define FALLBACK_SIGNAL_MAX_DBM   -20
-		int max_level = FALLBACK_SIGNAL_MAX_DBM;
-		int noise = FALLBACK_NOISE_FLOOR_DBM;
-		int level = qual->level - 0x100;
-
-		level = CLAMP (level, FALLBACK_NOISE_FLOOR_DBM, FALLBACK_SIGNAL_MAX_DBM);
-
-		if ((qual->noise > 0) && !(qual->updated & IW_QUAL_NOISE_INVALID))
-			noise = qual->noise - 0x100;
-		else if ((max_qual->noise > 0) && !(max_qual->updated & IW_QUAL_NOISE_INVALID))
-			noise = max_qual->noise - 0x100;
-		noise = CLAMP (noise, FALLBACK_NOISE_FLOOR_DBM, FALLBACK_SIGNAL_MAX_DBM);
-
-		/* A sort of signal-to-noise ratio calculation */
-		level_percent = (int)(100 - 70 *(
-		                                ((double)max_level - (double)level) /
-		                                ((double)max_level - (double)noise)));
-		nm_log_dbg (LOGD_WIFI, "QL1: level_percent is %d.  max_level %d, level %d, noise_floor %d.",
-		            level_percent, max_level, level, noise);
-	} else if (   (max_qual->level != 0)
-	           && !(max_qual->updated & IW_QUAL_LEVEL_INVALID) /* Valid max_qual->level as upper bound */
-	           && !(qual->updated & IW_QUAL_LEVEL_INVALID)) {
-		/* Relative power values (RSSI) */
-
-		int level = qual->level;
-
-		/* Signal level is relavtive (0 -> max_qual->level) */
-		level = CLAMP (level, 0, max_qual->level);
-		level_percent = (int)(100 * ((double)level / (double)max_qual->level));
-		nm_log_dbg (LOGD_WIFI, "QL2: level_percent is %d.  max_level %d, level %d.",
-		            level_percent, max_qual->level, level);
-	} else if (percent == -1) {
-		nm_log_dbg (LOGD_WIFI, "QL: Could not get quality %% value from driver.  Driver is probably buggy.");
-	}
-
-	/* If the quality percent was 0 or doesn't exist, then try to use signal levels instead */
-	if ((percent < 1) && (level_percent >= 0))
-		percent = level_percent;
-
-	nm_log_dbg (LOGD_WIFI, "QL: Final quality percent is %d (%d).",
-	            percent, CLAMP (percent, 0, 100));
-	return (CLAMP (percent, 0, 100));
-}
-
-
-/*
  * nm_device_wifi_get_ssid
  *
  * If a device is wireless, return the ssid that it is attempting
@@ -2101,28 +2088,19 @@ cancel_pending_scan (NMDeviceWifi *self)
 	}
 }
 
-
 static void
-supplicant_iface_scan_request_result_cb (NMSupplicantInterface *iface,
-                                         gboolean success,
-                                         NMDeviceWifi *self)
+supplicant_iface_scan_done_cb (NMSupplicantInterface *iface,
+                               gboolean success,
+                               NMDeviceWifi *self)
 {
-	nm_log_dbg (LOGD_WIFI_SCAN, "(%s): scan request %s",
+	nm_log_dbg (LOGD_WIFI_SCAN, "(%s): scan %s",
 	            nm_device_get_iface (NM_DEVICE (self)),
 	            success ? "successful" : "failed");
 
 	if (check_scanning_allowed (self))
 		schedule_scan (self, TRUE);
-}
 
-static void
-supplicant_iface_scan_results_cb (NMSupplicantInterface *iface,
-                                  guint32 num_results,
-                                  NMDeviceWifi *self)
-{
-	nm_log_dbg (LOGD_WIFI_SCAN, "(%s): scan results available (%d APs found)",
-	            nm_device_get_iface (NM_DEVICE (self)),
-	            num_results);
+#if 0
 	if (num_results == 0) {
 		/* ensure that old APs get culled, which otherwise only
 		 * happens when there are actual scan results to process.
@@ -2130,6 +2108,7 @@ supplicant_iface_scan_results_cb (NMSupplicantInterface *iface,
 		cull_scan_list (self);
 		nm_device_wifi_ap_list_print (self);
 	}
+#endif
 }
 
 static gboolean
@@ -2349,48 +2328,10 @@ cull_scan_list (NMDeviceWifi *self)
 	            removed, total);
 }
 
-#define SET_QUALITY_MEMBER(qual_item, lc_member, uc_member) \
-	if (lc_member != -1) { \
-		qual_item.lc_member = lc_member; \
-		qual_item.updated |= IW_QUAL_##uc_member##_UPDATED; \
-	} else { \
-		qual_item.updated |= IW_QUAL_##uc_member##_INVALID; \
-	}
-
 static void
-set_ap_strength_from_properties (NMDeviceWifi *self,
-                                 NMAccessPoint *ap,
-                                 GHashTable *properties)
-{
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	int qual, level, noise;
-	struct iw_quality quality;
-	GValue *value;
-	gint8 strength;
-
-	value = (GValue *) g_hash_table_lookup (properties, "quality");
-	qual = value ? g_value_get_int (value) : -1;
-
-	value = (GValue *) g_hash_table_lookup (properties, "level");
-	level = value ? g_value_get_int (value) : -1;
-
-	value = (GValue *) g_hash_table_lookup (properties, "noise");
-	noise = value ? g_value_get_int (value) : -1;
-
-	/* Calculate and set the AP's signal quality */
-	memset (&quality, 0, sizeof (struct iw_quality));
-	SET_QUALITY_MEMBER (quality, qual, QUAL);
-	SET_QUALITY_MEMBER (quality, level, LEVEL);
-	SET_QUALITY_MEMBER (quality, noise, NOISE);
-
-	strength = wireless_qual_to_percent (&quality, &priv->max_qual);
-	nm_ap_set_strength (ap, strength);
-}
-
-static void
-supplicant_iface_scanned_ap_cb (NMSupplicantInterface *iface,
-                                GHashTable *properties,
-                                NMDeviceWifi *self)
+supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
+                             GHashTable *properties,
+                             NMDeviceWifi *self)
 {
 	NMDeviceState state;
 	NMAccessPoint *ap;
@@ -2406,8 +2347,6 @@ supplicant_iface_scanned_ap_cb (NMSupplicantInterface *iface,
 
 	ap = nm_ap_new_from_properties (properties);
 	if (ap) {
-		set_ap_strength_from_properties (self, ap, properties);
-
 		nm_ap_print_self (ap, "AP: ");
 
 		/* Add the AP to the device's AP list */
@@ -3253,7 +3192,7 @@ real_act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 
 	/* Hook up error signal handler to capture association errors */
 	id = g_signal_connect (priv->supplicant.iface,
-	                       "connection-error",
+	                       NM_SUPPLICANT_INTERFACE_CONNECTION_ERROR,
 	                       G_CALLBACK (supplicant_iface_connection_error_cb),
 	                       self);
 	priv->supplicant.iface_error_id = id;
@@ -3701,12 +3640,11 @@ real_set_enabled (NMDeviceInterface *device, gboolean enabled)
 		/* Wait for some drivers like ipw3945 to come back to life */
 		success = wireless_get_range (self, &range, NULL);
 
-		/* iface should be NULL here, but handle it anyway if it's not */
-		g_warn_if_fail (priv->supplicant.iface == NULL);
+		/* Re-initialize the supplicant interface and wait for it to be ready */
 		if (priv->supplicant.iface)
 			supplicant_interface_release (self);
-
 		supplicant_interface_acquire (self);
+
 		nm_log_dbg (LOGD_WIFI, "(%s): enable waiting on supplicant state",
 		            nm_device_get_iface (NM_DEVICE (device)));
 	} else {

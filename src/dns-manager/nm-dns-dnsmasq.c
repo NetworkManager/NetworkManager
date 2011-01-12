@@ -33,6 +33,7 @@
 #include "nm-logging.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
+#include "nm-dns-utils.h"
 
 G_DEFINE_TYPE (NMDnsDnsmasq, nm_dns_dnsmasq, NM_TYPE_DNS_PLUGIN)
 
@@ -75,9 +76,11 @@ add_ip4_config (GString *str, NMIP4Config *ip4, gboolean split)
 	gboolean added = FALSE;
 
 	if (split) {
+		char **domains, **iter;
+
 		/* FIXME: it appears that dnsmasq can only handle one nameserver
-		 * per domain (at the manpage seems to indicate that) so only use
-		 * the first nameserver here.
+		 * per domain (and the manpage says this too) so only use the first
+		 * nameserver here.
 		 */
 		addr.s_addr = nm_ip4_config_get_nameserver (ip4, 0);
 		memset (&buf[0], 0, sizeof (buf));
@@ -102,6 +105,17 @@ add_ip4_config (GString *str, NMIP4Config *ip4, gboolean split)
 							            buf);
 				added = TRUE;
 			}
+		}
+
+		/* Ensure reverse-DNS works by directing queries for in-addr.arpa
+		 * domains to the split domain's nameserver.
+		 */
+		domains = nm_dns_utils_get_ip4_rdns_domains (ip4);
+		if (domains) {
+			for (iter = domains; iter && *iter; iter++)
+				g_string_append_printf (str, "server=/%s/%s\n", *iter, buf);
+			g_strfreev (domains);
+			added = TRUE;
 		}
 	}
 
@@ -216,7 +230,7 @@ update (NMDnsPlugin *plugin,
 	}
 
 	/* Now add interface configs without split DNS */
-	for (iter = (GSList *) dev_configs; iter;iter = g_slist_next (iter)) {
+	for (iter = (GSList *) dev_configs; iter; iter = g_slist_next (iter)) {
 		if (NM_IS_IP4_CONFIG (iter->data))
 			add_ip4_config (conf, NM_IP4_CONFIG (iter->data), FALSE);
 		else if (NM_IS_IP6_CONFIG (iter->data))
@@ -224,7 +238,7 @@ update (NMDnsPlugin *plugin,
 	}
 
 	/* And any other random configs */
-	for (iter = (GSList *) other_configs; iter;iter = g_slist_next (iter)) {
+	for (iter = (GSList *) other_configs; iter; iter = g_slist_next (iter)) {
 		if (NM_IS_IP4_CONFIG (iter->data))
 			add_ip4_config (conf, NM_IP4_CONFIG (iter->data), FALSE);
 		else if (NM_IS_IP6_CONFIG (iter->data))

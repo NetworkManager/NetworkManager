@@ -11,7 +11,6 @@ test_remote_settings_client_SOURCES = \
 	test-remote-settings-client.c
 
 test_remote_settings_client_CPPFLAGS = \
-	-DSERVICEDIR=\"$(builddir)\" \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS)
 
@@ -23,12 +22,14 @@ test_remote_settings_client_LDADD = \
 
 ###########################################
 
-EXTRA_DIST = test-remote-settings-service.py
+TEST_RSS_BIN = test-remote-settings-service.py
+
+EXTRA_DIST = $(TEST_RSS_BIN)
 
 if WITH_TESTS
 
 check-local: test-remote-settings-client
-	$(abs_builddir)/test-remote-settings-client
+	$(abs_builddir)/test-remote-settings-client $(abs_srcdir) $(TEST_RSS_BIN)
 
 endif
 

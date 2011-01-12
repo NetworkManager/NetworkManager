@@ -13,6 +13,7 @@ BUILT_SOURCES = \
 	nm-device-wifi-bindings.h \
 	nm-device-bt-bindings.h \
 	nm-sysconfig-connection-bindings.h \
+	nm-device-wimax-bindings.h \
 	nm-settings-bindings.h \
 	nm-vpn-connection-bindings.h \
 	nm-vpn-plugin-glue.h \
@@ -55,7 +56,6 @@ lib_LTLIBRARIES = libnm-glib.la libnm-glib-vpn.la
 libnm_glib_la_CFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
-	$(GCONF_CFLAGS) \
 	$(GUDEV_CFLAGS)
 
 libnmincludedir = $(includedir)/libnm-glib
@@ -83,7 +83,9 @@ libnminclude_HEADERS = \
 	nm-dhcp6-config.h \
 	nm-remote-connection.h \
 	nm-remote-settings.h \
-	nm-secret-agent.h
+	nm-secret-agent.h \
+	nm-device-wimax.h \
+	nm-wimax-nsp.h
 
 libnm_glib_la_SOURCES = \
 	nm-object.c \
@@ -113,7 +115,9 @@ libnm_glib_la_SOURCES = \
 	nm-remote-connection.c \
 	nm-remote-connection-private.h \
 	nm-remote-settings.c \
-	nm-secret-agent.c
+	nm-secret-agent.c \
+	nm-device-wimax.c \
+	nm-wimax-nsp.c
 
 libnm_glib_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
@@ -121,7 +125,6 @@ libnm_glib_la_LIBADD = \
 	$(builddir)/libdeprecated-nm-glib.la \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS) \
-	$(GCONF_LIBS) \
 	$(GUDEV_LIBS)
 
 libnm_glib_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm-glib.ver \
@@ -210,6 +213,9 @@ nm-dhcp6-config-bindings.h: $(top_srcdir)/introspection/nm-dhcp6-config.xml
 
 nm-secret-agent-glue.h: $(top_srcdir)/introspection/nm-secret-agent.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_secret_agent --mode=glib-server --output=$@ $<
+
+nm-device-wimax-bindings.h: $(top_srcdir)/introspection/nm-device-wimax.xml
+	dbus-binding-tool --prefix=nm_device_wimax --mode=glib-client --output=$@ $<
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libnm-glib.pc libnm-glib-vpn.pc

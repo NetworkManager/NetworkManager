@@ -45,6 +45,15 @@
     </defaults>
   </action>
 
+  <action id="org.freedesktop.NetworkManager.enable-disable-wimax">
+    <_description>Enable or disable WiMAX mobile broadband devices</_description>
+    <_message>System policy prevents enabling or disabling WiMAX mobile broadband devices</_message>
+    <defaults>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
+
   <action id="org.freedesktop.NetworkManager.network-control">
     <_description>Allow control of network connections</_description>
     <_message>System policy prevents control of network connections</_message>

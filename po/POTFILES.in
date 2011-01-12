@@ -15,9 +15,15 @@ policy/org.freedesktop.NetworkManager.policy.in
 src/nm-netlink-monitor.c
 src/main.c
 src/dhcp-manager/nm-dhcp-dhclient.c
+src/dhcp-manager/nm-dhcp-dhclient-utils.c
 src/dhcp-manager/nm-dhcp-manager.c
-src/logging/nm-logging.c
 src/dns-manager/nm-dns-manager.c
+src/logging/nm-logging.c
+src/modem-manager/nm-modem-cdma.c
+src/modem-manager/nm-modem-gsm.c
+src/nm-device-bt.c
+src/nm-device-ethernet.c
+src/nm-device-olpc-mesh.c
 src/settings/nm-default-wired-connection.c
 system-settings/plugins/ifcfg-rh/reader.c
 system-settings/plugins/ifnet/connection_parser.c

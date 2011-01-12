@@ -59,6 +59,12 @@ docs/generate-settings-spec
 docs/settings-spec.html
 docs/spec.html
 
+examples/C/add-connection-glib
+examples/C/get-active-connections
+examples/C/get-ap-info-libnm-glib
+examples/C/list-connections-dbus
+examples/C/list-connections-libnm-glib
+
 callouts/nm-dhcp-client.action
 callouts/nm-avahi-autoipd.action
 callouts/nm-dispatcher.action
@@ -95,6 +101,7 @@ libnm-glib/tests/test-remote-settings-client
 src/tests/test-dhcp-options
 src/tests/test-policy-hosts
 src/tests/test-wifi-ap-utils
+src/dhcp-manager/tests/test-dhcp-dhclient
 
 system-settings/plugins/keyfile/tests/test-keyfile
 system-settings/plugins/ifcfg-rh/tests/test-ifcfg-rh
@@ -102,6 +109,7 @@ system-settings/plugins/ifcfg-rh/tests/test-ifcfg-rh-utils
 system-settings/plugins/ifcfg-rh/tests/network-scripts/Test_Write_*
 system-settings/plugins/ifcfg-rh/tests/network-scripts/*-Test_Write_*
 system-settings/plugins/ifupdown/tests/test-ifupdown
+system-settings/plugins/ifnet/tests/check_ifnet
 
 m4/gtk-doc.m4
 m4/intltool.m4

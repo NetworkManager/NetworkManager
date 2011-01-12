@@ -26,9 +26,9 @@
 #include "nm-supplicant-types.h"
 #include "nm-device.h"
 
-#define WPAS_DBUS_SERVICE	"fi.epitest.hostap.WPASupplicant"
-#define WPAS_DBUS_PATH		"/fi/epitest/hostap/WPASupplicant"
-#define WPAS_DBUS_INTERFACE	"fi.epitest.hostap.WPASupplicant"
+#define WPAS_DBUS_SERVICE	"fi.w1.wpa_supplicant1"
+#define WPAS_DBUS_PATH		"/fi/w1/wpa_supplicant1"
+#define WPAS_DBUS_INTERFACE	"fi.w1.wpa_supplicant1"
 
 
 G_BEGIN_DECLS

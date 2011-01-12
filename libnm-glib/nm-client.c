@@ -68,6 +68,9 @@ typedef struct {
 
 	gboolean wwan_enabled;
 	gboolean wwan_hw_enabled;
+
+	gboolean wimax_enabled;
+	gboolean wimax_hw_enabled;
 } NMClientPrivate;
 
 enum {
@@ -79,6 +82,8 @@ enum {
 	PROP_WIRELESS_HARDWARE_ENABLED,
 	PROP_WWAN_ENABLED,
 	PROP_WWAN_HARDWARE_ENABLED,
+	PROP_WIMAX_ENABLED,
+	PROP_WIMAX_HARDWARE_ENABLED,
 	PROP_ACTIVE_CONNECTIONS,
 
 	LAST_PROP
@@ -214,6 +219,36 @@ update_wwan_status (NMClient *client, gboolean notify)
 	}
 }
 
+static void
+update_wimax_status (NMClient *client, gboolean notify)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
+	gboolean val;
+
+	val = _nm_object_get_boolean_property (NM_OBJECT (client),
+	                                       NM_DBUS_INTERFACE,
+	                                       "WimaxHardwareEnabled");
+	if (val != priv->wimax_hw_enabled) {
+		priv->wimax_hw_enabled = val;
+		if (notify)
+			_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_WIMAX_HARDWARE_ENABLED);
+	}
+
+	if (priv->wimax_hw_enabled == FALSE)
+		val = FALSE;
+	else {
+		val = _nm_object_get_boolean_property (NM_OBJECT (client),
+		                                       NM_DBUS_INTERFACE,
+		                                       "WimaxEnabled");
+	}
+
+	if (val != priv->wimax_enabled) {
+		priv->wimax_enabled = val;
+		if (notify)
+			_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_WIMAX_ENABLED);
+	}
+}
+
 static GObject *
 new_active_connection (DBusGConnection *connection, const char *path)
 {
@@ -281,6 +316,8 @@ register_for_property_changed (NMClient *client)
 		{ NM_CLIENT_WIRELESS_HARDWARE_ENABLED, _nm_object_demarshal_generic,  &priv->wireless_hw_enabled },
 		{ NM_CLIENT_WWAN_ENABLED,              _nm_object_demarshal_generic,  &priv->wwan_enabled },
 		{ NM_CLIENT_WWAN_HARDWARE_ENABLED,     _nm_object_demarshal_generic,  &priv->wwan_hw_enabled },
+		{ NM_CLIENT_WIMAX_ENABLED,             _nm_object_demarshal_generic,  &priv->wimax_enabled },
+		{ NM_CLIENT_WIMAX_HARDWARE_ENABLED,    _nm_object_demarshal_generic,  &priv->wimax_hw_enabled },
 		{ NM_CLIENT_ACTIVE_CONNECTIONS,        demarshal_active_connections, &priv->active_connections },
 		{ NULL },
 	};
@@ -293,6 +330,7 @@ register_for_property_changed (NMClient *client)
 #define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK     "org.freedesktop.NetworkManager.enable-disable-network"
 #define NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI        "org.freedesktop.NetworkManager.enable-disable-wifi"
 #define NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN        "org.freedesktop.NetworkManager.enable-disable-wwan"
+#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX       "org.freedesktop.NetworkManager.enable-disable-wimax"
 #define NM_AUTH_PERMISSION_SLEEP_WAKE                 "org.freedesktop.NetworkManager.sleep-wake"
 #define NM_AUTH_PERMISSION_NETWORK_CONTROL            "org.freedesktop.NetworkManager.network-control"
 #define NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED       "org.freedesktop.NetworkManager.wifi.share.protected"
@@ -309,6 +347,8 @@ nm_permission_to_client (const char *nm)
 		return NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIFI;
 	else if (!strcmp (nm, NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN))
 		return NM_CLIENT_PERMISSION_ENABLE_DISABLE_WWAN;
+	else if (!strcmp (nm, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX))
+		return NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIMAX;
 	else if (!strcmp (nm, NM_AUTH_PERMISSION_SLEEP_WAKE))
 		return NM_CLIENT_PERMISSION_SLEEP_WAKE;
 	else if (!strcmp (nm, NM_AUTH_PERMISSION_NETWORK_CONTROL))
@@ -505,6 +545,7 @@ constructor (GType type,
 	if (priv->manager_running) {
 		update_wireless_status (NM_CLIENT (object), FALSE);
 		update_wwan_status (NM_CLIENT (object), FALSE);
+		update_wimax_status (NM_CLIENT (object), FALSE);
 		nm_client_get_state (NM_CLIENT (object));
 	}
 
@@ -586,6 +627,20 @@ set_property (GObject *object, guint prop_id,
 			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WWAN_HARDWARE_ENABLED);
 		}
 		break;
+	case PROP_WIMAX_ENABLED:
+		b = g_value_get_boolean (value);
+		if (priv->wimax_enabled != b) {
+			priv->wimax_enabled = b;
+			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WIMAX_ENABLED);
+		}
+		break;
+	case PROP_WIMAX_HARDWARE_ENABLED:
+		b = g_value_get_boolean (value);
+		if (priv->wimax_hw_enabled != b) {
+			priv->wimax_hw_enabled = b;
+			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WIMAX_HARDWARE_ENABLED);
+		}
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -622,6 +677,12 @@ get_property (GObject *object,
 		break;
 	case PROP_WWAN_HARDWARE_ENABLED:
 		g_value_set_boolean (value, priv->wwan_hw_enabled);
+		break;
+	case PROP_WIMAX_ENABLED:
+		g_value_set_boolean (value, priv->wimax_enabled);
+		break;
+	case PROP_WIMAX_HARDWARE_ENABLED:
+		g_value_set_boolean (value, priv->wimax_hw_enabled);
 		break;
 	case PROP_ACTIVE_CONNECTIONS:
 		g_value_set_boxed (value, nm_client_get_active_connections (self));
@@ -735,6 +796,32 @@ nm_client_class_init (NMClientClass *client_class)
 		 g_param_spec_boolean (NM_CLIENT_WWAN_HARDWARE_ENABLED,
 		                       "WwanHardwareEnabled",
 		                       "Is WWAN hardware enabled",
+		                       TRUE,
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	/**
+	 * NMClient::wimax-enabled:
+	 *
+	 * Whether WiMAX functionality is enabled.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_WIMAX_ENABLED,
+		 g_param_spec_boolean (NM_CLIENT_WIMAX_ENABLED,
+		                       "WimaxEnabled",
+		                       "Is WiMAX enabled",
+		                       TRUE,
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+
+	/**
+	 * NMClient::wimax-hardware-enabled:
+	 *
+	 * Whether the WiMAX hardware is enabled.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_WIMAX_HARDWARE_ENABLED,
+		 g_param_spec_boolean (NM_CLIENT_WIMAX_HARDWARE_ENABLED,
+		                       "WimaxHardwareEnabled",
+		                       "Is WiMAX hardware enabled",
 		                       TRUE,
 		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
@@ -869,10 +956,13 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 		priv->wireless_hw_enabled = FALSE;
 		priv->wwan_enabled = FALSE;
 		priv->wwan_hw_enabled = FALSE;
+		priv->wimax_enabled = FALSE;
+		priv->wimax_hw_enabled = FALSE;
 	} else {
 		_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
 		update_wireless_status (client, TRUE);
 		update_wwan_status (client, TRUE);
+		update_wimax_status (client, TRUE);
 	}
 }
 
@@ -1296,6 +1386,61 @@ nm_client_wwan_hardware_get_enabled (NMClient *client)
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
 	return NM_CLIENT_GET_PRIVATE (client)->wwan_hw_enabled;
+}
+
+/**
+ * nm_client_wimax_get_enabled:
+ * @client: a #NMClient
+ *
+ * Determines whether WiMAX is enabled.
+ *
+ * Returns: %TRUE if WiMAX is enabled
+ **/
+gboolean
+nm_client_wimax_get_enabled (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+
+	return NM_CLIENT_GET_PRIVATE (client)->wimax_enabled;
+}
+
+/**
+ * nm_client_wimax_set_enabled:
+ * @client: a #NMClient
+ * @enabled: %TRUE to enable WiMAX
+ *
+ * Enables or disables WiMAX devices.
+ **/
+void
+nm_client_wimax_set_enabled (NMClient *client, gboolean enabled)
+{
+	GValue value = {0,};
+
+	g_return_if_fail (NM_IS_CLIENT (client));
+
+	g_value_init (&value, G_TYPE_BOOLEAN);
+	g_value_set_boolean (&value, enabled);
+
+	_nm_object_set_property (NM_OBJECT (client),
+	                         NM_DBUS_INTERFACE,
+	                         "WimaxEnabled",
+	                         &value);
+}
+
+/**
+ * nm_client_wimax_hardware_get_enabled:
+ * @client: a #NMClient
+ *
+ * Determines whether the WiMAX hardware is enabled.
+ *
+ * Returns: %TRUE if the WiMAX hardware is enabled
+ **/
+gboolean
+nm_client_wimax_hardware_get_enabled (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+
+	return NM_CLIENT_GET_PRIVATE (client)->wimax_hw_enabled;
 }
 
 /**

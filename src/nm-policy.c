@@ -36,13 +36,15 @@
 #include "nm-device-wifi.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-modem.h"
+#if WITH_WIMAX
+#include "nm-device-wimax.h"
+#endif
 #include "nm-dbus-manager.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-connection.h"
 #include "nm-system.h"
 #include "nm-dns-manager.h"
 #include "nm-vpn-manager.h"
-#include "nm-policy-hosts.h"
 #include "nm-policy-hostname.h"
 
 struct NMPolicy {
@@ -238,9 +240,6 @@ _set_hostname (NMPolicy *policy,
                const char *new_hostname,
                const char *msg)
 {
-	char ip4_addr[INET_ADDRSTRLEN + 1];
-	char ip6_addr[INET6_ADDRSTRLEN + 1];
-
 	if (change_hostname) {
 		NMDnsManager *dns_mgr;
 
@@ -252,43 +251,7 @@ _set_hostname (NMPolicy *policy,
 		g_object_unref (dns_mgr);
 	}
 
-	/* Get the default IPv4 and IPv6 addresses so we can assign
-	 * the hostname to them in /etc/hosts.
-	 */
-	memset (ip4_addr, 0, sizeof (ip4_addr));
-	if (policy->default_device4) {
-		NMIP4Config *config = NULL;
-		NMIP4Address *addr = NULL;
-
-		config = nm_device_get_ip4_config (policy->default_device4);
-		if (config)
-			addr = nm_ip4_config_get_address (config, 0);
-
-		if (addr) {
-			struct in_addr tmp;
-
-			tmp.s_addr = nm_ip4_address_get_address (addr);
-			inet_ntop (AF_INET, &tmp, ip4_addr, sizeof (ip4_addr));
-		}
-	}
-
-	memset (ip6_addr, 0, sizeof (ip6_addr));
-	if (policy->default_device6) {
-		NMIP6Config *config = NULL;
-		NMIP6Address *addr = NULL;
-
-		config = nm_device_get_ip6_config (policy->default_device6);
-		if (config)
-			addr = nm_ip6_config_get_address (config, 0);
-
-		if (addr)
-			inet_ntop (AF_INET6, nm_ip6_address_get_address (addr), ip6_addr, sizeof (ip6_addr));
-	}
-
-	if (nm_policy_set_system_hostname (policy->cur_hostname,
-	                                   strlen (ip4_addr) ? ip4_addr : NULL,
-	                                   strlen (ip6_addr) ? ip6_addr : NULL,
-	                                   msg))
+	if (nm_policy_set_system_hostname (policy->cur_hostname, msg))
 		nm_utils_call_dispatcher ("hostname", NULL, NULL, NULL);
 }
 
@@ -977,6 +940,14 @@ wireless_networks_changed (NMDeviceWifi *device, NMAccessPoint *ap, gpointer use
 	schedule_activate_check ((NMPolicy *) user_data, NM_DEVICE (device), 0);
 }
 
+#if WITH_WIMAX
+static void
+nsps_changed (NMDeviceWimax *device, NMWimaxNsp *nsp, gpointer user_data)
+{
+	schedule_activate_check ((NMPolicy *) user_data, NM_DEVICE (device), 0);
+}
+#endif
+
 typedef struct {
 	gulong id;
 	NMDevice *device;
@@ -1006,6 +977,11 @@ device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 	if (NM_IS_DEVICE_WIFI (device)) {
 		_connect_device_signal (policy, device, "access-point-added", wireless_networks_changed);
 		_connect_device_signal (policy, device, "access-point-removed", wireless_networks_changed);
+#if WITH_WIMAX
+	} else if (NM_IS_DEVICE_WIMAX (device)) {
+		_connect_device_signal (policy, device, "nsp-added", nsps_changed);
+		_connect_device_signal (policy, device, "nsp-removed", nsps_changed);
+#endif
 	}
 }
 
@@ -1238,15 +1214,6 @@ nm_policy_destroy (NMPolicy *policy)
 		g_slice_free (DeviceSignalId, data);
 	}
 	g_slist_free (policy->dev_ids);
-
-	/* Rewrite /etc/hosts on exit to ensure we don't leave stale IP addresses
-	 * lying around.  FIXME: this will take out a valid IP address of an
-	 * ethernet device we're leaving active (ie, a connection we can "assume"
-	 * when NM starts again).
-	 */
-	policy->default_device4 = NULL;
-	policy->default_device6 = NULL;
-	update_system_hostname (policy, NULL, NULL);
 
 	g_free (policy->orig_hostname);
 	g_free (policy->cur_hostname);

@@ -128,6 +128,8 @@ real_ip4_start (NMDHCPClient *client,
 
 	g_ptr_array_add (argv, (gpointer) "-L");	/* Disable built-in IPv4LL since we use avahi-autoipd */
 
+	g_ptr_array_add (argv, (gpointer) "-G");	/* Let NM handle routing */
+
 	g_ptr_array_add (argv, (gpointer) "-c");	/* Set script file */
 	g_ptr_array_add (argv, (gpointer) ACTION_SCRIPT_PATH );
 
@@ -168,15 +170,17 @@ real_ip6_start (NMDHCPClient *client,
 }
 
 static void
-real_stop (NMDHCPClient *client)
+real_stop (NMDHCPClient *client, gboolean release)
 {
 	NMDHCPDhcpcdPrivate *priv = NM_DHCP_DHCPCD_GET_PRIVATE (client);
 
 	/* Chain up to parent */
-	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhcpcd_parent_class)->stop (client);
+	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhcpcd_parent_class)->stop (client, release);
 
 	if (priv->pid_file)
 		remove (priv->pid_file);
+
+	/* FIXME: implement release... */
 }
 
 /***************************************************/

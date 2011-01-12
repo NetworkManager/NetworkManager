@@ -48,6 +48,8 @@ G_BEGIN_DECLS
 #define NM_CLIENT_WIRELESS_HARDWARE_ENABLED "wireless-hardware-enabled"
 #define NM_CLIENT_WWAN_ENABLED "wwan-enabled"
 #define NM_CLIENT_WWAN_HARDWARE_ENABLED "wwan-hardware-enabled"
+#define NM_CLIENT_WIMAX_ENABLED "wimax-enabled"
+#define NM_CLIENT_WIMAX_HARDWARE_ENABLED "wimax-hardware-enabled"
 #define NM_CLIENT_ACTIVE_CONNECTIONS "active-connections"
 
 /* Permissions */
@@ -62,8 +64,9 @@ typedef enum {
 	NM_CLIENT_PERMISSION_WIFI_SHARE_OPEN = 7,
 	NM_CLIENT_PERMISSION_SETTINGS_CONNECTION_MODIFY = 8,
 	NM_CLIENT_PERMISSION_SETTINGS_HOSTNAME_MODIFY = 9,
+	NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIMAX = 10,
 
-	NM_CLIENT_PERMISSION_LAST = NM_CLIENT_PERMISSION_SETTINGS_HOSTNAME_MODIFY
+	NM_CLIENT_PERMISSION_LAST = NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIMAX
 } NMClientPermission;
 
 typedef enum {
@@ -139,6 +142,10 @@ gboolean  nm_client_wireless_hardware_get_enabled (NMClient *client);
 gboolean  nm_client_wwan_get_enabled (NMClient *client);
 void      nm_client_wwan_set_enabled (NMClient *client, gboolean enabled);
 gboolean  nm_client_wwan_hardware_get_enabled (NMClient *client);
+
+gboolean  nm_client_wimax_get_enabled (NMClient *client);
+void      nm_client_wimax_set_enabled (NMClient *client, gboolean enabled);
+gboolean  nm_client_wimax_hardware_get_enabled (NMClient *client);
 
 NMState   nm_client_get_state            (NMClient *client);
 gboolean  nm_client_get_manager_running  (NMClient *client);

@@ -1,6 +1,6 @@
 AC_PREREQ(2.52)
 
-AC_INIT(NetworkManager, 0.8.990, dcbw@redhat.com, NetworkManager)
+AC_INIT(NetworkManager, 0.8.991, dcbw@redhat.com, NetworkManager)
 AM_INIT_AUTOMAKE([1.9 subdir-objects tar-ustar no-dist-gzip dist-bzip2])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([no])])
 AM_MAINTAINER_MODE
@@ -30,7 +30,7 @@ AC_SUBST([ACLOCAL_AMFLAGS])
 
 dnl maintainer mode stuff
 if test $USE_MAINTAINER_MODE = yes; then
-	DISABLE_DEPRECATED="-DG_DISABLE_DEPRECATED -DGCONF_DISABLE_DEPRECATED"
+	DISABLE_DEPRECATED="-DG_DISABLE_DEPRECATED"
 else
 	DISABLE_DEPRECATED=""
 fi
@@ -280,6 +280,17 @@ NM_LIBNL_CHECK
 PKG_CHECK_MODULES(UUID, uuid)
 AC_SUBST(UUID_CFLAGS)
 AC_SUBST(UUID_LIBS)
+
+AC_ARG_ENABLE(wimax, AC_HELP_STRING([--enable-wimax], [enable WiMAX support]),
+                     [enable_wimax=${enableval}], [enable_wimax=yes])
+if (test "${enable_wimax}" = "yes"); then
+	PKG_CHECK_MODULES(IWMX_SDK, libiWmxSdk-0 >= 1.5.1, dummy=yes,
+				AC_MSG_ERROR(Intel WiMAX SDK is required))
+	AC_SUBST(IWMX_SDK_CFLAGS)
+	AC_SUBST(IWMX_SDK_LIBS)
+	AC_DEFINE(WITH_WIMAX, 1, [Define if you have WiMAX support])
+fi
+AM_CONDITIONAL(WITH_WIMAX, test "${enable_wimax}" = "yes")
 
 PKG_CHECK_MODULES(POLKIT, polkit-gobject-1)
 AC_SUBST(POLKIT_CFLAGS)
@@ -531,6 +542,7 @@ src/logging/Makefile
 src/dns-manager/Makefile
 src/vpn-manager/Makefile
 src/dhcp-manager/Makefile
+src/dhcp-manager/tests/Makefile
 src/ip6-manager/Makefile
 src/supplicant-manager/Makefile
 src/supplicant-manager/tests/Makefile
@@ -539,6 +551,7 @@ src/dnsmasq-manager/Makefile
 src/modem-manager/Makefile
 src/bluez-manager/Makefile
 src/settings/Makefile
+src/wimax/Makefile
 src/backends/Makefile
 libnm-util/libnm-util.pc
 libnm-util/Makefile
@@ -635,6 +648,12 @@ if test -n "${with_ck}"; then
 	echo ConsoleKit support: ${with_ck}
 else
 	echo ConsoleKit support: no
+fi
+
+if test "${enable_wimax}" = "yes"; then
+	echo WiMAX support: yes
+else
+	echo WiMAX support: no
 fi
 
 echo

@@ -23,6 +23,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <netinet/ether.h>
 #include <string.h>
 
 #include <gmodule.h>
@@ -442,8 +443,23 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 			udis = g_strsplit (str, ";", -1);
 			g_free (str);
 
-			for (i = 0; udis[i] != NULL; i++)
-				specs = g_slist_append (specs, udis[i]);
+			for (i = 0; udis[i] != NULL; i++) {
+				/* Verify unmanaged specification and add it to the list */
+				if (strlen (udis[i]) > 4 && !strncmp (udis[i], "mac:", 4) && ether_aton (udis[i] + 4)) {
+					char *p = udis[i];
+
+					/* To accept uppercase MACs in configuration file, we have to convert values to lowercase here.
+					 * Unmanaged MACs in specs are always in lowercase. */
+					while (*p) {
+				                *p = g_ascii_tolower (*p);
+				                p++;
+				        }
+					specs = g_slist_append (specs, udis[i]);
+				} else {
+					g_warning ("Error in file '%s': invalid unmanaged-devices entry: '%s'", priv->conf_file, udis[i]);
+					g_free (udis[i]);
+				}
+			}
 
 			g_free (udis); /* Yes, g_free, not g_strfreev because we need the strings in the list */
 		}

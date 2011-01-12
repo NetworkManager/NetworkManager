@@ -49,6 +49,7 @@
 #include "nm-netlink-monitor.h"
 #include "nm-vpn-manager.h"
 #include "nm-logging.h"
+#include "nm-policy-hosts.h"
 
 #if !defined(NM_DIST_VERSION)
 # define NM_DIST_VERSION VERSION
@@ -306,6 +307,7 @@ parse_config_file (const char *filename,
                    GError **error)
 {
 	GKeyFile *config;
+	gboolean success = FALSE;
 
 	config = g_key_file_new ();
 	if (!config) {
@@ -316,11 +318,11 @@ parse_config_file (const char *filename,
 
 	g_key_file_set_list_separator (config, ',');
 	if (!g_key_file_load_from_file (config, filename, G_KEY_FILE_NONE, error))
-		return FALSE;
+		goto out;
 
 	*plugins = g_key_file_get_value (config, "main", "plugins", error);
 	if (*error)
-		return FALSE;
+		goto out;
 
 	*dhcp_client = g_key_file_get_value (config, "main", "dhcp", NULL);
 	*dns_plugins = g_key_file_get_string_list (config, "main", "dns", NULL, NULL);
@@ -328,8 +330,11 @@ parse_config_file (const char *filename,
 	*log_level = g_key_file_get_value (config, "logging", "level", NULL);
 	*log_domains = g_key_file_get_value (config, "logging", "domains", NULL);
 
+	success = TRUE;
+
+out:
 	g_key_file_free (config);
-	return TRUE;
+	return success;
 }
 
 static gboolean
@@ -337,15 +342,17 @@ parse_state_file (const char *filename,
                   gboolean *net_enabled,
                   gboolean *wifi_enabled,
                   gboolean *wwan_enabled,
+				  gboolean *wimax_enabled,
                   GError **error)
 {
 	GKeyFile *state_file;
 	GError *tmp_error = NULL;
-	gboolean wifi, net, wwan;
+	gboolean wifi, net, wwan, wimax;
 
 	g_return_val_if_fail (net_enabled != NULL, FALSE);
 	g_return_val_if_fail (wifi_enabled != NULL, FALSE);
 	g_return_val_if_fail (wwan_enabled != NULL, FALSE);
+	g_return_val_if_fail (wimax_enabled != NULL, FALSE);
 
 	state_file = g_key_file_new ();
 	if (!state_file) {
@@ -384,6 +391,7 @@ parse_state_file (const char *filename,
 			g_key_file_set_boolean (state_file, "main", "NetworkingEnabled", *net_enabled);
 			g_key_file_set_boolean (state_file, "main", "WirelessEnabled", *wifi_enabled);
 			g_key_file_set_boolean (state_file, "main", "WWANEnabled", *wwan_enabled);
+			g_key_file_set_boolean (state_file, "main", "WimaxEnabled", *wimax_enabled);
 
 			data = g_key_file_to_data (state_file, &len, NULL);
 			if (data)
@@ -426,6 +434,14 @@ parse_state_file (const char *filename,
 		*wwan_enabled = wwan;
 	g_clear_error (&tmp_error);
 
+	wimax = g_key_file_get_boolean (state_file, "main", "WimaxEnabled", &tmp_error);
+	if (tmp_error) {
+		g_clear_error (error);
+		g_set_error_literal (error, tmp_error->domain, tmp_error->code, tmp_error->message);
+	} else
+		*wimax_enabled = wimax;
+	g_clear_error (&tmp_error);
+
 	g_key_file_free (state_file);
 
 	return TRUE;
@@ -445,7 +461,7 @@ main (int argc, char *argv[])
 	char *config = NULL, *plugins = NULL, *conf_plugins = NULL;
 	char *log_level = NULL, *log_domains = NULL;
 	char **dns = NULL;
-	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE;
+	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE, wimax_enabled = TRUE;
 	gboolean success;
 	NMPolicy *policy = NULL;
 	NMVPNManager *vpn_manager = NULL;
@@ -581,7 +597,7 @@ main (int argc, char *argv[])
 	g_free (conf_plugins);
 
 	/* Parse the state file */
-	if (!parse_state_file (state_file, &net_enabled, &wifi_enabled, &wwan_enabled, &error)) {
+	if (!parse_state_file (state_file, &net_enabled, &wifi_enabled, &wwan_enabled, &wimax_enabled, &error)) {
 		fprintf (stderr, "State file %s parsing failed: (%d) %s\n",
 		         state_file,
 		         error ? error->code : -1,
@@ -686,6 +702,7 @@ main (int argc, char *argv[])
 	                          net_enabled,
 	                          wifi_enabled,
 	                          wwan_enabled,
+							  wimax_enabled,
 	                          &error);
 	if (manager == NULL) {
 		nm_log_err (LOGD_CORE, "failed to initialize the network manager: %s",
@@ -720,6 +737,9 @@ main (int argc, char *argv[])
 		nm_log_err (LOGD_CORE, "failed to start the dbus service.");
 		goto done;
 	}
+
+	/* Clean leftover "# Added by NetworkManager" entries from /etc/hosts */
+	nm_policy_hosts_clean_etc_hosts ();
 
 	nm_manager_start (manager);
 

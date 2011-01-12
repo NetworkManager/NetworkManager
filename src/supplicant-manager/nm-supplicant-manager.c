@@ -114,7 +114,7 @@ nm_supplicant_manager_iface_release (NMSupplicantManager *self,
 	/* Ask wpa_supplicant to remove this interface */
 	op = nm_supplicant_interface_get_object_path (iface);
 	if (priv->running && priv->proxy && op) {
-		dbus_g_proxy_call_no_reply (priv->proxy, "removeInterface", 
+		dbus_g_proxy_call_no_reply (priv->proxy, "RemoveInterface",
 			                        DBUS_TYPE_G_OBJECT_PATH, op,
 			                        G_TYPE_INVALID);
 	}

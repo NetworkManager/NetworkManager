@@ -69,6 +69,8 @@ object.  dbus-glib generates the same bound function names for D-Bus the methods
     <property name="WirelessHardwareEnabled" type="b" access="read"/>
     <property name="WwanEnabled" type="b" access="readwrite"/>
     <property name="WwanHardwareEnabled" type="b" access="read"/>
+    <property name="WimaxEnabled" type="b" access="readwrite"/>
+    <property name="WimaxHardwareEnabled" type="b" access="read"/>
     <property name="ActiveConnections" type="ao" access="read"/>
     <property name="Version" type="s" access="read"/>
     <property name="State" type="u" access="read"/>

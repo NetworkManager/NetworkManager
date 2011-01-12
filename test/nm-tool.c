@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /* nm-tool - information tool for NetworkManager
  *
  * Dan Williams <dcbw@redhat.com>
@@ -16,10 +17,11 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2005 - 2010 Red Hat, Inc.
+ * (C) Copyright 2005 - 2011 Red Hat, Inc.
  * (C) Copyright 2007 Novell, Inc.
  */
 
+#include <config.h>
 #include <glib.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
@@ -38,6 +40,9 @@
 #include <nm-gsm-device.h>
 #include <nm-cdma-device.h>
 #include <nm-device-bt.h>
+#if WITH_WIMAX
+#include <nm-device-wimax.h>
+#endif
 #include <nm-utils.h>
 #include <nm-setting-ip4-config.h>
 #include <nm-setting-ip6-config.h>
@@ -192,6 +197,48 @@ detail_access_point (gpointer data, gpointer user_data)
 	g_free (tmp);
 }
 
+#if WITH_WIMAX
+static const char *
+wimax_network_type_to_str (NMWimaxNspNetworkType type)
+{
+	switch (type) {
+	case NM_WIMAX_NSP_NETWORK_TYPE_HOME:
+		return "Home";
+	case NM_WIMAX_NSP_NETWORK_TYPE_PARTNER:
+		return "Partner";
+	case NM_WIMAX_NSP_NETWORK_TYPE_ROAMING_PARTNER:
+		return "Roaming";
+	default:
+		return "Unknown";
+	}
+}
+
+static void
+detail_nsp (gpointer data, gpointer user_data)
+{
+	NMWimaxNsp *nsp = NM_WIMAX_NSP (data);
+	const char *active_name = (const char *) user_data;
+	const char *name;
+	char *label;
+	char *data_str;
+	gboolean active = FALSE;
+
+	name = nm_wimax_nsp_get_name (nsp);
+
+	if (active_name)
+		active = g_strcmp0 (active_name, name) == 0;
+
+	label = g_strdup_printf ("  %s%s", active ? "*" : "", name);
+	data_str = g_strdup_printf ("%d%% (%s)",
+				    nm_wimax_nsp_get_signal_quality (nsp),
+				    wimax_network_type_to_str (nm_wimax_nsp_get_network_type (nsp)));
+
+	print_string (label, data_str);
+	g_free (label);
+	g_free (data_str);
+}
+#endif
+
 static gchar *
 ip4_address_as_string (guint32 ip)
 {
@@ -329,6 +376,10 @@ detail_device (gpointer data, gpointer user_data)
 		print_string ("Type", "Mobile Broadband (CDMA)");
 	else if (NM_IS_DEVICE_BT (device))
 		print_string ("Type", "Bluetooth");
+#if WITH_WIMAX
+	else if (NM_IS_DEVICE_WIMAX (device))
+		print_string ("Type", "WiMAX");
+#endif
 
 	print_string ("Driver", nm_device_get_driver (device) ? nm_device_get_driver (device) : "(unknown)");
 
@@ -344,6 +395,10 @@ detail_device (gpointer data, gpointer user_data)
 		tmp = g_strdup (nm_device_ethernet_get_hw_address (NM_DEVICE_ETHERNET (device)));
 	else if (NM_IS_DEVICE_WIFI (device))
 		tmp = g_strdup (nm_device_wifi_get_hw_address (NM_DEVICE_WIFI (device)));
+#if WITH_WIMAX
+	else if (NM_IS_DEVICE_WIMAX (device))
+		tmp = g_strdup (nm_device_wimax_get_hw_address (NM_DEVICE_WIMAX (device)));
+#endif
 
 	if (tmp) {
 		print_string ("HW Address", tmp);
@@ -409,6 +464,68 @@ detail_device (gpointer data, gpointer user_data)
 			print_string ("  Carrier", "on");
 		else
 			print_string ("  Carrier", "off");
+#if WITH_WIMAX
+	} else if (NM_IS_DEVICE_WIMAX (device)) {
+		NMDeviceWimax *wimax = NM_DEVICE_WIMAX (device);
+		NMWimaxNsp *active_nsp = NULL;
+		const char *active_name = NULL;
+		const GPtrArray *nsps;
+
+		if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
+			guint tmp_uint;
+			gint tmp_int;
+			const char *tmp_str;
+
+			active_nsp = nm_device_wimax_get_active_nsp (wimax);
+			active_name = active_nsp ? nm_wimax_nsp_get_name (active_nsp) : NULL;
+
+			printf ("\n  Link Status\n");
+
+			tmp_uint = nm_device_wimax_get_center_frequency (wimax);
+			if (tmp_uint)
+				tmp = g_strdup_printf ("%'.1f MHz", (double) tmp_uint / 1000.0);
+			else
+				tmp = g_strdup ("(unknown)");
+			print_string ("  Center Freq.", tmp);
+			g_free (tmp);
+
+			tmp_int = nm_device_wimax_get_rssi (wimax);
+			if (tmp_int)
+				tmp = g_strdup_printf ("%d dBm", tmp_int);
+			else
+				tmp = g_strdup ("(unknown)");
+			print_string ("  RSSI", tmp);
+			g_free (tmp);
+
+			tmp_int = nm_device_wimax_get_cinr (wimax);
+			if (tmp_int)
+				tmp = g_strdup_printf ("%d dB", tmp_int);
+			else
+				tmp = g_strdup ("(unknown)");
+			print_string ("  CINR", tmp);
+			g_free (tmp);
+
+			tmp_int = nm_device_wimax_get_tx_power (wimax);
+			if (tmp_int)
+				tmp = g_strdup_printf ("%'.2f dBm", (float) tmp_int / 2.0);
+			else
+				tmp = g_strdup ("(unknown)");
+			print_string ("  TX Power", tmp);
+			g_free (tmp);
+
+			tmp_str = nm_device_wimax_get_bsid (wimax);
+			if (tmp_str)
+				print_string ("  BSID", tmp_str);
+			else
+				print_string ("  BSID", "(unknown)");
+		}
+
+		printf ("\n  WiMAX NSPs %s\n", active_nsp ? "(* current NSP)" : "");
+
+		nsps = nm_device_wimax_get_nsps (NM_DEVICE_WIMAX (device));
+		if (nsps && nsps->len)
+			g_ptr_array_foreach ((GPtrArray *) nsps, detail_nsp, (gpointer) active_name);
+#endif
 	}
 
 	/* IP Setup info */

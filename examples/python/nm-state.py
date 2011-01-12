@@ -47,12 +47,12 @@ active = manager_prop_iface.Get("org.freedesktop.NetworkManager", "ActiveConnect
 for a in active:
     ac_proxy = bus.get_object("org.freedesktop.NetworkManager", a)
     prop_iface = dbus.Interface(ac_proxy, "org.freedesktop.DBus.Properties")
-    state = prop_iface.Get("org.freedesktop.NetworkManager.ActiveConnection", "State")
+    state = prop_iface.Get("org.freedesktop.NetworkManager.Connection.Active", "State")
 
     # Connections in NM are a collection of settings that describe everything
     # needed to connect to a specific network.  Lets get those details so we
     # can find the user-readable name of the connection.
-    con_path = prop_iface.Get("org.freedesktop.NetworkManager.ActiveConnection", "Connection")
+    con_path = prop_iface.Get("org.freedesktop.NetworkManager.Connection.Active", "Connection")
     service_proxy = bus.get_object("org.freedesktop.NetworkManager", con_path)
     con_iface = dbus.Interface(service_proxy, "org.freedesktop.NetworkManager.Settings.Connection")
     con_details = con_iface.GetSettings()

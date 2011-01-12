@@ -39,6 +39,7 @@
 #include "nm-dhcp-dhclient.h"
 #include "nm-utils.h"
 #include "nm-logging.h"
+#include "nm-dhcp-dhclient-utils.h"
 
 G_DEFINE_TYPE (NMDHCPDhclient, nm_dhcp_dhclient, NM_TYPE_DHCP_CLIENT)
 
@@ -302,12 +303,6 @@ out:
 }
 
 
-#define DHCP_CLIENT_ID_TAG "send dhcp-client-identifier"
-#define DHCP_CLIENT_ID_FORMAT DHCP_CLIENT_ID_TAG " \"%s\"; # added by NetworkManager"
-#define DHCP_CLIENT_ID_FORMAT_OCTETS DHCP_CLIENT_ID_TAG " %s; # added by NetworkManager"
-
-#define DHCP_HOSTNAME_TAG "send host-name"
-#define DHCP_HOSTNAME_FORMAT DHCP_HOSTNAME_TAG " \"%s\"; # added by NetworkManager"
 
 static gboolean
 merge_dhclient_config (const char *iface,
@@ -318,105 +313,27 @@ merge_dhclient_config (const char *iface,
                        const char *orig_path,
                        GError **error)
 {
-	GString *new_contents;
-	char *orig_contents = NULL;
+	char *orig = NULL, *new;
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (iface != NULL, FALSE);
 	g_return_val_if_fail (conf_file != NULL, FALSE);
 
-	new_contents = g_string_new (_("# Created by NetworkManager\n"));
-
 	if (g_file_test (orig_path, G_FILE_TEST_EXISTS)) {
 		GError *read_error = NULL;
 
-		if (!g_file_get_contents (orig_path, &orig_contents, NULL, &read_error)) {
+		if (!g_file_get_contents (orig_path, &orig, NULL, &read_error)) {
 			nm_log_warn (LOGD_DHCP, "(%s): error reading dhclient configuration %s: %s",
 			             iface, orig_path, read_error->message);
 			g_error_free (read_error);
 		}
 	}
 
-	/* Add existing options, if any, but ignore stuff NM will replace. */
-	if (orig_contents) {
-		char **lines = NULL, **line;
+	new = nm_dhcp_dhclient_create_config (iface, s_ip4, anycast_addr, hostname, orig_path, orig);
+	g_assert (new);
+	success = g_file_set_contents (conf_file, new, -1, error);
+	g_free (new);
 
-		g_string_append_printf (new_contents, _("# Merged from %s\n\n"), orig_path);
-
-		lines = g_strsplit_set (orig_contents, "\n\r", 0);
-		for (line = lines; lines && *line; line++) {
-			gboolean ignore = FALSE;
-
-			if (!strlen (g_strstrip (*line)))
-				continue;
-
-			if (   s_ip4
-			    && nm_setting_ip4_config_get_dhcp_client_id (s_ip4)
-			    && !strncmp (*line, DHCP_CLIENT_ID_TAG, strlen (DHCP_CLIENT_ID_TAG)))
-				ignore = TRUE;
-
-			if (   s_ip4
-			    && hostname
-			    && !strncmp (*line, DHCP_HOSTNAME_TAG, strlen (DHCP_HOSTNAME_TAG)))
-				ignore = TRUE;
-
-			if (!ignore) {
-				g_string_append (new_contents, *line);
-				g_string_append_c (new_contents, '\n');
-			}
-		}
-
-		if (lines)
-			g_strfreev (lines);
-		g_free (orig_contents);
-	} else
-		g_string_append_c (new_contents, '\n');
-
-	/* Add NM options from connection */
-	if (s_ip4) {
-		const char *tmp;
-
-		tmp = nm_setting_ip4_config_get_dhcp_client_id (s_ip4);
-		if (tmp) {
-			gboolean is_octets = TRUE;
-			const char *p = tmp;
-
-			while (*p) {
-				if (!isxdigit (*p) && (*p != ':')) {
-					is_octets = FALSE;
-					break;
-				}
-				p++;
-			}
-
-			/* If the client ID is just hex digits and : then don't use quotes,
-			 * because dhclient expects either a quoted ASCII string, or a byte
-			 * array formated as hex octets separated by :
-			 */
-			if (is_octets)
-				g_string_append_printf (new_contents, DHCP_CLIENT_ID_FORMAT_OCTETS "\n", tmp);
-			else
-				g_string_append_printf (new_contents, DHCP_CLIENT_ID_FORMAT "\n", tmp);
-		}
-
-		if (hostname)
-			g_string_append_printf (new_contents, DHCP_HOSTNAME_FORMAT "\n", hostname);
-	}
-
-	if (anycast_addr) {
-		g_string_append_printf (new_contents, "interface \"%s\" {\n"
-		                        " initial-interval 1; \n"
-		                        " anycast-mac ethernet %02x:%02x:%02x:%02x:%02x:%02x;\n"
-		                        "}\n",
-		                        iface,
-		                        anycast_addr[0], anycast_addr[1],
-		                        anycast_addr[2], anycast_addr[3],
-		                        anycast_addr[4], anycast_addr[5]);
-	}
-
-	success = g_file_set_contents (conf_file, new_contents->str, -1, error);
-
-	g_string_free (new_contents, TRUE);
 	return success;
 }
 
@@ -494,15 +411,15 @@ dhclient_child_setup (gpointer user_data G_GNUC_UNUSED)
 
 static GPid
 dhclient_start (NMDHCPClient *client,
-                const char *ip_opt,
-                const char *mode_opt)
+                const char *mode_opt,
+                gboolean release)
 {
 	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
 	GPtrArray *argv = NULL;
 	GPid pid = -1;
 	GError *error = NULL;
 	const char *iface, *uuid;
-	char *binary_name, *cmd_str;
+	char *binary_name, *cmd_str, *pid_file = NULL;
 	gboolean ipv6;
 	guint log_domain;
 
@@ -519,28 +436,33 @@ dhclient_start (NMDHCPClient *client,
 		nm_log_warn (log_domain, "(%s): ISC dhcp3 does not support IPv6", iface);
 		return -1;
 	}
-#else
-	g_return_val_if_fail (ip_opt != NULL, -1);
 #endif
-
-	priv->pid_file = g_strdup_printf (LOCALSTATEDIR "/run/dhclient%s-%s.pid",
-	                                  ipv6 ? "6" : "",
-	                                  iface);
-	if (!priv->pid_file) {
-		nm_log_warn (log_domain, "(%s): not enough memory for dhcpcd options.", iface);
-		return -1;
-	}
 
 	if (!g_file_test (priv->path, G_FILE_TEST_EXISTS)) {
 		nm_log_warn (log_domain, "%s does not exist.", priv->path);
 		return -1;
 	}
 
+	pid_file = g_strdup_printf (LOCALSTATEDIR "/run/dhclient%s-%s.pid",
+		                        ipv6 ? "6" : "",
+		                        iface);
+	if (!pid_file) {
+		nm_log_warn (log_domain, "(%s): not enough memory for dhcpcd options.", iface);
+		return -1;
+	}
+
 	/* Kill any existing dhclient from the pidfile */
 	binary_name = g_path_get_basename (priv->path);
-	nm_dhcp_client_stop_existing (priv->pid_file, binary_name);
+	nm_dhcp_client_stop_existing (pid_file, binary_name);
 	g_free (binary_name);
 
+	if (release) {
+		/* release doesn't use the pidfile after killing an old client */
+		g_free (pid_file);
+		pid_file = NULL;
+	}
+
+	g_free (priv->lease_file);
 	priv->lease_file = get_leasefile_for_iface (iface, uuid, ipv6);
 	if (!priv->lease_file) {
 		nm_log_warn (log_domain, "(%s): not enough memory for dhclient options.", iface);
@@ -552,17 +474,26 @@ dhclient_start (NMDHCPClient *client,
 
 	g_ptr_array_add (argv, (gpointer) "-d");
 
+	if (release)
+		g_ptr_array_add (argv, (gpointer) "-r");
+
 #if !defined(DHCLIENT_V3)
-	g_ptr_array_add (argv, (gpointer) ip_opt);
-	if (mode_opt)
-		g_ptr_array_add (argv, (gpointer) mode_opt);
+	if (ipv6) {
+		g_ptr_array_add (argv, (gpointer) "-6");
+		if (mode_opt)
+			g_ptr_array_add (argv, (gpointer) mode_opt);
+	} else {
+		g_ptr_array_add (argv, (gpointer) "-4");
+	}
 #endif
 
 	g_ptr_array_add (argv, (gpointer) "-sf");	/* Set script file */
 	g_ptr_array_add (argv, (gpointer) ACTION_SCRIPT_PATH );
 
-	g_ptr_array_add (argv, (gpointer) "-pf");	/* Set pid file */
-	g_ptr_array_add (argv, (gpointer) priv->pid_file);
+	if (pid_file) {
+		g_ptr_array_add (argv, (gpointer) "-pf");	/* Set pid file */
+		g_ptr_array_add (argv, (gpointer) pid_file);
+	}
 
 	g_ptr_array_add (argv, (gpointer) "-lf");	/* Set lease file */
 	g_ptr_array_add (argv, (gpointer) priv->lease_file);
@@ -584,8 +515,10 @@ dhclient_start (NMDHCPClient *client,
 		nm_log_warn (log_domain, "dhclient failed to start: '%s'", error->message);
 		g_error_free (error);
 		pid = -1;
-	} else
+	} else {
 		nm_log_info (log_domain, "dhclient started with pid %d", pid);
+		priv->pid_file = pid_file;
+	}
 
 	g_ptr_array_free (argv, TRUE);
 	return pid;
@@ -608,7 +541,7 @@ real_ip4_start (NMDHCPClient *client,
 		return -1;
 	}
 
-	return dhclient_start (client, "-4", NULL);
+	return dhclient_start (client, NULL, FALSE);
 }
 
 static GPid
@@ -618,21 +551,34 @@ real_ip6_start (NMDHCPClient *client,
                 const char *hostname,
                 gboolean info_only)
 {
-	return dhclient_start (client, "-6", info_only ? "-S" : "-N");
+	return dhclient_start (client, info_only ? "-S" : "-N", FALSE);
 }
 
 static void
-real_stop (NMDHCPClient *client)
+real_stop (NMDHCPClient *client, gboolean release)
 {
 	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
 
 	/* Chain up to parent */
-	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhclient_parent_class)->stop (client);
+	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhclient_parent_class)->stop (client, release);
 
 	if (priv->conf_file)
 		remove (priv->conf_file);
-	if (priv->pid_file)
+	if (priv->pid_file) {
 		remove (priv->pid_file);
+		g_free (priv->pid_file);
+		priv->pid_file = NULL;
+	}
+
+	if (release) {
+		GPid rpid;
+
+		rpid = dhclient_start (client, NULL, TRUE);
+		if (rpid > 0) {
+			/* Wait a few seconds for the release to happen */
+			nm_dhcp_client_stop_pid (rpid, nm_dhcp_client_get_iface (client), 5);
+		}
+	}
 }
 
 /***************************************************/

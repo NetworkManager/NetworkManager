@@ -24,6 +24,7 @@ libnm_util_include_HEADERS = 		\
 	nm-setting-gsm.h		\
 	nm-setting-cdma.h		\
 	nm-setting-olpc-mesh.h		\
+	nm-setting-wimax.h		\
 	nm-setting-wired.h		\
 	nm-setting-wireless.h		\
 	nm-setting-wireless-security.h	\
@@ -48,6 +49,7 @@ libnm_util_la_SOURCES=			\
 	nm-setting-gsm.c		\
 	nm-setting-cdma.c		\
 	nm-setting-olpc-mesh.c		\
+	nm-setting-wimax.c		\
 	nm-setting-wired.c		\
 	nm-setting-wireless.c		\
 	nm-setting-wireless-security.c	\

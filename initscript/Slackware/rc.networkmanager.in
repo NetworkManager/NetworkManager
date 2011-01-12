@@ -27,11 +27,6 @@ nm_start()
     return
 	fi
   
-	if [ "`pgrep hald`" = "" ]; then
-	 echo "HAL must be running to start NetworkManager"
-	 return
-	fi
- 
   # Just in case the pidfile is still there, we may need to nuke it.
   if [ -e "$PIDFILE" ]; then
     rm -f $PIDFILE
@@ -67,6 +62,7 @@ nm_stop()
 nm_restart()
 {
   nm_stop
+  sleep 2
   nm_start
 }
 

@@ -683,12 +683,7 @@ read_one_ip4_route (shvarFile *ifcfg,
 	/* Next hop */
 	if (!read_ip4_address (ifcfg, gw_tag, &tmp, error))
 		goto out;
-	if (!tmp) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-		             "Missing or invalid IP4 gateway address '%d'",
-		             tmp);
-		goto out;
-	}
+	/* No need to check tmp, because we don't make distinction between missing GATEWAY IP and 0.0.0.0 */
 	nm_ip4_route_set_next_hop (route, tmp);
 
 	/* Prefix */
@@ -1167,6 +1162,7 @@ make_ip4_setting (shvarFile *ifcfg,
 		if (!g_ascii_strcasecmp (value, "bootp") || !g_ascii_strcasecmp (value, "dhcp"))
 			method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 		else if (!g_ascii_strcasecmp (value, "ibft")) {
+			g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default, NULL);
 			/* iSCSI Boot Firmware Table: need to read values from the iSCSI 
 			 * firmware for this device and create the IP4 setting using those.
 			 */

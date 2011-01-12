@@ -243,6 +243,18 @@
       </tp:docstring>
     </property>
 
+    <property name="WimaxEnabled" type="b" access="readwrite">
+      <tp:docstring>
+        Indicates if WiMAX devices are currently enabled or not.
+      </tp:docstring>
+    </property>
+
+    <property name="WimaxHardwareEnabled" type="b" access="read">
+      <tp:docstring>
+        Indicates if the WiMAX hardware is currently enabled, i.e. the state of the RF kill switch.
+      </tp:docstring>
+    </property>
+
     <property name="ActiveConnections" type="ao" access="read">
       <tp:docstring>
         List of active connection object paths.

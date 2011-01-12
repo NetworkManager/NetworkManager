@@ -24,10 +24,7 @@
 
 #include <glib.h>
 
-gboolean nm_policy_set_system_hostname (const char *new_hostname,
-                                        const char *ip4_addr,
-                                        const char *ip6_addr,
-                                        const char *msg);
+gboolean nm_policy_set_system_hostname (const char *new_hostname, const char *msg);
 
 
 typedef struct HostnameThread HostnameThread;

@@ -136,10 +136,10 @@ watch_cleanup (NMDHCPClient *self)
 	}
 }
 
-static void
-stop_process (GPid pid, const char *iface)
+void
+nm_dhcp_client_stop_pid (GPid pid, const char *iface, guint timeout_secs)
 {
-	int i = 15; /* 3 seconds */
+	int i = (timeout_secs ? timeout_secs : 3) * 5;  /* default 3 seconds */
 
 	g_return_if_fail (pid > 0);
 
@@ -156,11 +156,15 @@ stop_process (GPid pid, const char *iface)
 
 		if (ret == -1) {
 			/* Child already exited */
-			if (errno == ECHILD)
+			if (errno == ECHILD) {
+				/* Was it really our child and it exited? */
+				if (kill (pid, 0) < 0 && errno == ESRCH)
+					break;
+			} else {
+				/* Took too long; shoot it in the head */
+				i = 0;
 				break;
-			/* Took too long; shoot it in the head */
-			i = 0;
-			break;
+			}
 		}
 		g_usleep (G_USEC_PER_SEC / 5);
 	}
@@ -179,7 +183,7 @@ stop_process (GPid pid, const char *iface)
 }
 
 static void
-real_stop (NMDHCPClient *self)
+real_stop (NMDHCPClient *self, gboolean release)
 {
 	NMDHCPClientPrivate *priv;
 
@@ -192,7 +196,7 @@ real_stop (NMDHCPClient *self)
 	/* Clean up the watch handler since we're explicitly killing the daemon */
 	watch_cleanup (self);
 
-	stop_process (priv->pid, priv->iface);
+	nm_dhcp_client_stop_pid (priv->pid, priv->iface, 0);
 
 	priv->info_only = FALSE;
 }
@@ -372,7 +376,7 @@ nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name)
 				exe = proc_contents;
 
 			if (!strcmp (exe, binary_name))
-				stop_process ((GPid) tmp, NULL);
+				nm_dhcp_client_stop_pid ((GPid) tmp, NULL, 0);
 		}
 	}
 
@@ -383,7 +387,7 @@ nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name)
 }
 
 void
-nm_dhcp_client_stop (NMDHCPClient *self)
+nm_dhcp_client_stop (NMDHCPClient *self, gboolean release)
 {
 	NMDHCPClientPrivate *priv;
 
@@ -394,7 +398,7 @@ nm_dhcp_client_stop (NMDHCPClient *self)
 
 	/* Kill the DHCP client */
 	if (!priv->dead) {
-		NM_DHCP_CLIENT_GET_CLASS (self)->stop (self);
+		NM_DHCP_CLIENT_GET_CLASS (self)->stop (self, release);
 		priv->dead = TRUE;
 
 		nm_log_info (LOGD_DHCP, "(%s): canceled DHCP transaction, DHCP client pid %d",
