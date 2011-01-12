@@ -636,14 +636,13 @@ nm_ap_utils_complete_connection (const GByteArray *ap_ssid,
 	}
 
 	/* WPA/RSN */
-	g_assert (ap_wpa_flags != NM_802_11_AP_SEC_NONE);
-	g_assert (ap_rsn_flags != NM_802_11_AP_SEC_NONE);
+	g_assert (ap_wpa_flags || ap_rsn_flags);
 
-	if (leap_username) {
+	if ((key_mgmt && !strcmp (key_mgmt, "ieee8021x")) || leap_username) {
 		g_set_error_literal (error,
 		                     NM_SETTING_WIRELESS_SECURITY_ERROR,
 		                     NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
-		                     "WPA incompatible with non-EAP (original) LEAP");
+		                     "WPA incompatible with non-EAP (original) LEAP or Dynamic WEP");
 		return FALSE;
 	}
 

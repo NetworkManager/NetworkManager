@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include "nm-wifi-ap-utils.h"
+#include "nm-dbus-glib-types.h"
 
 #include "nm-setting-connection.h"
 #include "nm-setting-wireless.h"
@@ -104,6 +105,7 @@ set_items (NMSetting *setting, const KeyData *items)
 {
 	const KeyData *item;
 	GParamSpec *pspec;
+	GByteArray *tmp;
 
 	for (item = items; item && item->key; item++) {
 		g_assert (item->key);
@@ -127,6 +129,12 @@ set_items (NMSetting *setting, const KeyData *items)
 
 			g_assert (item->str == NULL);
 			g_object_set (G_OBJECT (setting), item->key, foo, NULL);
+		} else if (pspec->value_type == DBUS_TYPE_G_UCHAR_ARRAY) {
+			g_assert (item->str);
+			tmp = g_byte_array_sized_new (strlen (item->str));
+			g_byte_array_append (tmp, (const guint8 *) item->str, strlen (item->str));
+			g_object_set (G_OBJECT (setting), item->key, tmp, NULL);
+			g_byte_array_free (tmp, TRUE);
 		} else {
 			/* Special types, check based on property name */
 			if (!strcmp (item->key, NM_SETTING_WIRELESS_SECURITY_PROTO))
@@ -154,7 +162,6 @@ fill_wifi_empty (NMConnection *connection)
 	return s_wifi;
 }
 
-#if 0
 static NMSettingWireless *
 fill_wifi (NMConnection *connection, const KeyData items[])
 {
@@ -169,7 +176,6 @@ fill_wifi (NMConnection *connection, const KeyData items[])
 	set_items (NM_SETTING (s_wifi), items);
 	return s_wifi;
 }
-#endif
 
 static NMSettingWirelessSecurity *
 fill_wsec (NMConnection *connection, const KeyData items[])
@@ -257,7 +263,7 @@ test_lock_bssid (void)
 	src = nm_connection_new ();
 	success = complete_connection (ssid, bssid,
 	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_NONE,
-	                               NM_WIFI_DEVICE_CAP_NONE, NM_WIFI_DEVICE_CAP_NONE,
+	                               NM_802_11_AP_SEC_NONE, NM_802_11_AP_SEC_NONE,
 	                               TRUE,
 	                               src, &error);
 	expected = create_basic (ssid, bssid, NM_802_11_MODE_INFRA, FALSE);
@@ -281,7 +287,7 @@ test_open_ap_empty_connection (void)
 	src = nm_connection_new ();
 	success = complete_connection (ssid, bssid,
 	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_NONE,
-	                               NM_WIFI_DEVICE_CAP_NONE, NM_WIFI_DEVICE_CAP_NONE,
+	                               NM_802_11_AP_SEC_NONE, NM_802_11_AP_SEC_NONE,
 	                               FALSE,
 	                               src, &error);
 	expected = create_basic (ssid, NULL, NM_802_11_MODE_INFRA, FALSE);
@@ -309,7 +315,7 @@ test_open_ap_leap_connection_1 (gboolean add_wifi)
 
 	success = complete_connection ("blahblah", bssid,
 	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_NONE,
-	                               NM_WIFI_DEVICE_CAP_NONE, NM_WIFI_DEVICE_CAP_NONE,
+	                               NM_802_11_AP_SEC_NONE, NM_802_11_AP_SEC_NONE,
 	                               FALSE,
 	                               src, &error);
 	/* We expect failure */
@@ -335,7 +341,7 @@ test_open_ap_leap_connection_2 (void)
 
 	success = complete_connection ("blahblah", bssid,
 	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_NONE,
-	                               NM_WIFI_DEVICE_CAP_NONE, NM_WIFI_DEVICE_CAP_NONE,
+	                               NM_802_11_AP_SEC_NONE, NM_802_11_AP_SEC_NONE,
 	                               FALSE,
 	                               src, &error);
 	/* We expect failure */
@@ -365,7 +371,7 @@ test_open_ap_wep_connection (gboolean add_wifi)
 	fill_wsec (src, src_wsec);
 	success = complete_connection ("blahblah", bssid,
 	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_NONE,
-	                               NM_WIFI_DEVICE_CAP_NONE, NM_WIFI_DEVICE_CAP_NONE,
+	                               NM_802_11_AP_SEC_NONE, NM_802_11_AP_SEC_NONE,
 	                               FALSE,
 	                               src, &error);
 	/* We expect failure */
@@ -382,11 +388,18 @@ test_ap_wpa_psk_connection_base (const char *key_mgmt,
                                  guint32 flags,
                                  guint32 wpa_flags,
                                  guint32 rsn_flags,
-                                 gboolean add_wifi)
+                                 gboolean add_wifi,
+                                 NMConnection *expected)
 {
 	NMConnection *src;
+	const char *ssid = "blahblah";
 	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
-	const KeyData src_wsec[] = {
+	const KeyData exp_wifi[] = {
+		{ NM_SETTING_WIRELESS_SSID, ssid, 0 },
+		{ NM_SETTING_WIRELESS_MODE, "infrastructure", 0 },
+		{ NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, 0 },
+		{ NULL } };
+	const KeyData both_wsec[] = {
 	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, key_mgmt, 0 },
 	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, auth_alg, 0 },
 	    { NM_SETTING_WIRELESS_SECURITY_PSK, "asdfasdfasdfasdfasdfafs", 0 },
@@ -397,12 +410,15 @@ test_ap_wpa_psk_connection_base (const char *key_mgmt,
 	src = nm_connection_new ();
 	if (add_wifi)
 		fill_wifi_empty (src);
-	fill_wsec (src, src_wsec);
-	success = complete_connection ("blahblah", bssid, NM_802_11_MODE_INFRA,
+	fill_wsec (src, both_wsec);
+	success = complete_connection (ssid, bssid, NM_802_11_MODE_INFRA,
 	                               flags, wpa_flags, rsn_flags,
 	                               FALSE, src, &error);
-	/* We expect failure */
-	COMPARE (src, NULL, success, error, NM_SETTING_WIRELESS_SECURITY_ERROR, NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY);
+	if (expected) {
+		fill_wifi (expected, exp_wifi);
+		fill_wsec (expected, both_wsec);
+	}
+	COMPARE (src, expected, success, error, NM_SETTING_WIRELESS_SECURITY_ERROR, NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY);
 
 	g_object_unref (src);
 }
@@ -414,7 +430,7 @@ test_open_ap_wpa_psk_connection_1 (void)
 	                                 NM_802_11_AP_FLAGS_NONE,
 	                                 NM_802_11_AP_SEC_NONE,
 	                                 NM_802_11_AP_SEC_NONE,
-	                                 FALSE);
+	                                 FALSE, NULL);
 }
 
 static void
@@ -424,7 +440,7 @@ test_open_ap_wpa_psk_connection_2 (void)
 	                                 NM_802_11_AP_FLAGS_NONE,
 	                                 NM_802_11_AP_SEC_NONE,
 	                                 NM_802_11_AP_SEC_NONE,
-	                                 FALSE);
+	                                 FALSE, NULL);
 }
 
 static void
@@ -434,7 +450,7 @@ test_open_ap_wpa_psk_connection_3 (void)
 	                                 NM_802_11_AP_FLAGS_NONE,
 	                                 NM_802_11_AP_SEC_NONE,
 	                                 NM_802_11_AP_SEC_NONE,
-	                                 FALSE);
+	                                 FALSE, NULL);
 }
 
 static void
@@ -444,7 +460,7 @@ test_open_ap_wpa_psk_connection_4 (void)
 	                                 NM_802_11_AP_FLAGS_NONE,
 	                                 NM_802_11_AP_SEC_NONE,
 	                                 NM_802_11_AP_SEC_NONE,
-	                                 FALSE);
+	                                 FALSE, NULL);
 }
 
 static void
@@ -454,7 +470,7 @@ test_open_ap_wpa_psk_connection_5 (void)
 	                                 NM_802_11_AP_FLAGS_NONE,
 	                                 NM_802_11_AP_SEC_NONE,
 	                                 NM_802_11_AP_SEC_NONE,
-	                                 FALSE);
+	                                 FALSE, NULL);
 }
 
 /*******************************************/
@@ -567,7 +583,7 @@ test_priv_ap_empty_connection (void)
 	src = nm_connection_new ();
 	success = complete_connection (ssid, bssid,
 	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_PRIVACY,
-	                               NM_WIFI_DEVICE_CAP_NONE, NM_WIFI_DEVICE_CAP_NONE,
+	                               NM_802_11_AP_SEC_NONE, NM_802_11_AP_SEC_NONE,
 	                               FALSE,
 	                               src, &error);
 
@@ -607,7 +623,7 @@ test_priv_ap_leap_connection_1 (gboolean add_wifi)
 	fill_wsec (src, src_wsec);
 	success = complete_connection (ssid, bssid,
 	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_PRIVACY,
-	                               NM_WIFI_DEVICE_CAP_NONE, NM_WIFI_DEVICE_CAP_NONE,
+	                               NM_802_11_AP_SEC_NONE, NM_802_11_AP_SEC_NONE,
 	                               FALSE,
 	                               src, &error);
 	/* We expect success here; since LEAP APs just set the 'privacy' flag
@@ -640,7 +656,7 @@ test_priv_ap_leap_connection_2 (void)
 	fill_wsec (src, src_wsec);
 	success = complete_connection ("blahblah", bssid,
 	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_PRIVACY,
-	                               NM_WIFI_DEVICE_CAP_NONE, NM_WIFI_DEVICE_CAP_NONE,
+	                               NM_802_11_AP_SEC_NONE, NM_802_11_AP_SEC_NONE,
 	                               FALSE,
 	                               src, &error);
 	/* We expect failure here, we need a LEAP username */
@@ -683,7 +699,7 @@ test_priv_ap_dynamic_wep_1 (void)
 	fill_8021x (src, both_8021x);
 	success = complete_connection (ssid, bssid,
 	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_PRIVACY,
-	                               NM_WIFI_DEVICE_CAP_NONE, NM_WIFI_DEVICE_CAP_NONE,
+	                               NM_802_11_AP_SEC_NONE, NM_802_11_AP_SEC_NONE,
 	                               FALSE,
 	                               src, &error);
 
@@ -729,7 +745,7 @@ test_priv_ap_dynamic_wep_2 (void)
 	fill_8021x (src, both_8021x);
 	success = complete_connection (ssid, bssid,
 	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_PRIVACY,
-	                               NM_WIFI_DEVICE_CAP_NONE, NM_WIFI_DEVICE_CAP_NONE,
+	                               NM_802_11_AP_SEC_NONE, NM_802_11_AP_SEC_NONE,
 	                               FALSE,
 	                               src, &error);
 
@@ -766,7 +782,7 @@ test_priv_ap_dynamic_wep_3 (void)
 	fill_8021x (src, src_8021x);
 	success = complete_connection ("blahblah", bssid,
 	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_PRIVACY,
-	                               NM_WIFI_DEVICE_CAP_NONE, NM_WIFI_DEVICE_CAP_NONE,
+	                               NM_802_11_AP_SEC_NONE, NM_802_11_AP_SEC_NONE,
 	                               FALSE,
 	                               src, &error);
 	/* Expect failure; shared is not compatible with dynamic WEP */
@@ -784,7 +800,7 @@ test_priv_ap_wpa_psk_connection_1 (void)
 	                                 NM_802_11_AP_FLAGS_PRIVACY,
 	                                 NM_802_11_AP_SEC_NONE,
 	                                 NM_802_11_AP_SEC_NONE,
-	                                 FALSE);
+	                                 FALSE, NULL);
 }
 
 static void
@@ -794,7 +810,7 @@ test_priv_ap_wpa_psk_connection_2 (void)
 	                                 NM_802_11_AP_FLAGS_PRIVACY,
 	                                 NM_802_11_AP_SEC_NONE,
 	                                 NM_802_11_AP_SEC_NONE,
-	                                 TRUE);
+	                                 TRUE, NULL);
 }
 
 static void
@@ -804,7 +820,7 @@ test_priv_ap_wpa_psk_connection_3 (void)
 	                                 NM_802_11_AP_FLAGS_PRIVACY,
 	                                 NM_802_11_AP_SEC_NONE,
 	                                 NM_802_11_AP_SEC_NONE,
-	                                 FALSE);
+	                                 FALSE, NULL);
 }
 
 static void
@@ -814,7 +830,7 @@ test_priv_ap_wpa_psk_connection_4 (void)
 	                                 NM_802_11_AP_FLAGS_PRIVACY,
 	                                 NM_802_11_AP_SEC_NONE,
 	                                 NM_802_11_AP_SEC_NONE,
-	                                 FALSE);
+	                                 FALSE, NULL);
 }
 
 static void
@@ -824,7 +840,7 @@ test_priv_ap_wpa_psk_connection_5 (void)
 	                                 NM_802_11_AP_FLAGS_PRIVACY,
 	                                 NM_802_11_AP_SEC_NONE,
 	                                 NM_802_11_AP_SEC_NONE,
-	                                 FALSE);
+	                                 FALSE, NULL);
 }
 
 /*******************************************/
@@ -891,6 +907,212 @@ test_priv_ap_wpa_eap_connection_5 (void)
 
 /*******************************************/
 
+#define WPA_PSK_CAPS (NM_802_11_AP_SEC_PAIR_TKIP | NM_802_11_AP_SEC_KEY_MGMT_PSK)
+
+static void
+test_wpa_ap_empty_connection (void)
+{
+	NMConnection *src, *expected;
+	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const char *ssid = "blahblah";
+	const KeyData exp_wsec[] = {
+	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk", 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0 },
+	    { NULL } };
+	gboolean success;
+	GError *error = NULL;
+
+	src = nm_connection_new ();
+	success = complete_connection (ssid, bssid,
+	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_PRIVACY,
+	                               WPA_PSK_CAPS, NM_802_11_AP_SEC_NONE,
+	                               FALSE,
+	                               src, &error);
+
+	/* Static WEP connection expected */
+	expected = create_basic (ssid, NULL, NM_802_11_MODE_INFRA, TRUE);
+	fill_wsec (expected, exp_wsec);
+	COMPARE (src, expected, success, error, 0, 0);
+
+	g_object_unref (src);
+	g_object_unref (expected);
+}
+
+/*******************************************/
+
+static void
+test_wpa_ap_leap_connection_1 (void)
+{
+	NMConnection *src;
+	const char *ssid = "blahblah";
+	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const char *leap_username = "Bill Smith";
+	const KeyData src_wsec[] = {
+	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, leap_username, 0 },
+	    { NULL } };
+	gboolean success;
+	GError *error = NULL;
+
+	src = nm_connection_new ();
+	fill_wifi_empty (src);
+	fill_wsec (src, src_wsec);
+	success = complete_connection (ssid, bssid,
+	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_PRIVACY,
+	                               WPA_PSK_CAPS, NM_802_11_AP_SEC_NONE,
+	                               FALSE,
+	                               src, &error);
+	/* Expect failure here; WPA APs don't support old-school LEAP */
+	COMPARE (src, NULL, success, error, NM_SETTING_WIRELESS_SECURITY_ERROR, NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY);
+
+	g_object_unref (src);
+}
+
+/*******************************************/
+
+static void
+test_wpa_ap_leap_connection_2 (void)
+{
+	NMConnection *src;
+	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const KeyData src_wsec[] = {
+	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "leap", 0 },
+	    { NULL } };
+	gboolean success;
+	GError *error = NULL;
+
+	src = nm_connection_new ();
+	fill_wifi_empty (src);
+	fill_wsec (src, src_wsec);
+	success = complete_connection ("blahblah", bssid,
+	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_PRIVACY,
+	                               WPA_PSK_CAPS, NM_802_11_AP_SEC_NONE,
+	                               FALSE,
+	                               src, &error);
+	/* We expect failure here, we need a LEAP username */
+	COMPARE (src, NULL, success, error, NM_SETTING_WIRELESS_SECURITY_ERROR, NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY);
+
+	g_object_unref (src);
+}
+
+/*******************************************/
+
+static void
+test_wpa_ap_dynamic_wep_connection (void)
+{
+	NMConnection *src;
+	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const KeyData src_wsec[] = {
+	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0 },
+	    { NULL } };
+	gboolean success;
+	GError *error = NULL;
+
+	src = nm_connection_new ();
+	fill_wifi_empty (src);
+	fill_wsec (src, src_wsec);
+	success = complete_connection ("blahblah", bssid,
+	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_PRIVACY,
+	                               WPA_PSK_CAPS, NM_802_11_AP_SEC_NONE,
+	                               FALSE,
+	                               src, &error);
+	/* We expect failure here since Dynamic WEP is incompatible with WPA */
+	COMPARE (src, NULL, success, error, NM_SETTING_WIRELESS_SECURITY_ERROR, NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY);
+
+	g_object_unref (src);
+}
+
+/*******************************************/
+
+static void
+test_wpa_ap_wpa_psk_connection_1 (void)
+{
+	NMConnection *expected;
+	const KeyData exp_wsec[] = {
+	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk", 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0 },
+	    { NULL } };
+
+	expected = nm_connection_new ();
+	fill_wsec (expected, exp_wsec);
+	test_ap_wpa_psk_connection_base (NULL, NULL,
+	                                 NM_802_11_AP_FLAGS_PRIVACY,
+	                                 WPA_PSK_CAPS,
+	                                 NM_802_11_AP_SEC_NONE,
+	                                 FALSE, expected);
+	g_object_unref (expected);
+}
+
+static void
+test_wpa_ap_wpa_psk_connection_2 (void)
+{
+	NMConnection *expected;
+	const KeyData exp_wsec[] = {
+	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk", 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0 },
+	    { NULL } };
+
+	expected = nm_connection_new ();
+	fill_wsec (expected, exp_wsec);
+	test_ap_wpa_psk_connection_base (NULL, NULL,
+	                                 NM_802_11_AP_FLAGS_PRIVACY,
+	                                 NM_802_11_AP_SEC_NONE,
+	                                 NM_802_11_AP_SEC_NONE,
+	                                 TRUE, NULL);
+	g_object_unref (expected);
+}
+
+static void
+test_wpa_ap_wpa_psk_connection_3 (void)
+{
+	NMConnection *expected;
+	const KeyData exp_wsec[] = {
+	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk", 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0 },
+	    { NULL } };
+
+	expected = nm_connection_new ();
+	fill_wsec (expected, exp_wsec);
+	test_ap_wpa_psk_connection_base (NULL, "open",
+	                                 NM_802_11_AP_FLAGS_PRIVACY,
+	                                 NM_802_11_AP_SEC_NONE,
+	                                 NM_802_11_AP_SEC_NONE,
+	                                 FALSE, NULL);
+	g_object_unref (expected);
+}
+
+static void
+test_wpa_ap_wpa_psk_connection_4 (void)
+{
+	test_ap_wpa_psk_connection_base (NULL, "shared",
+	                                 NM_802_11_AP_FLAGS_PRIVACY,
+	                                 NM_802_11_AP_SEC_NONE,
+	                                 NM_802_11_AP_SEC_NONE,
+	                                 FALSE, NULL);
+}
+
+static void
+test_wpa_ap_wpa_psk_connection_5 (void)
+{
+	NMConnection *expected;
+	const KeyData exp_wsec[] = {
+	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk", 0 },
+	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0 },
+	    { NULL } };
+
+	expected = nm_connection_new ();
+	fill_wsec (expected, exp_wsec);
+	test_ap_wpa_psk_connection_base ("wpa-psk", "open",
+	                                 NM_802_11_AP_FLAGS_PRIVACY,
+	                                 NM_802_11_AP_SEC_NONE,
+	                                 NM_802_11_AP_SEC_NONE,
+	                                 FALSE, NULL);
+	g_object_unref (expected);
+}
+
+/*******************************************/
+
 #if GLIB_CHECK_VERSION(2,25,12)
 typedef GTestFixtureFunc TCFunc;
 #else
@@ -953,6 +1175,19 @@ int main (int argc, char **argv)
 	g_test_suite_add (suite, TESTCASE (test_priv_ap_wpa_eap_connection_3, NULL));
 	g_test_suite_add (suite, TESTCASE (test_priv_ap_wpa_eap_connection_4, NULL));
 	g_test_suite_add (suite, TESTCASE (test_priv_ap_wpa_eap_connection_5, NULL));
+
+	/* WPA-PSK tests */
+	g_test_suite_add (suite, TESTCASE (test_wpa_ap_empty_connection, NULL));
+	g_test_suite_add (suite, TESTCASE (test_wpa_ap_leap_connection_1, NULL));
+	g_test_suite_add (suite, TESTCASE (test_wpa_ap_leap_connection_2, NULL));
+
+	g_test_suite_add (suite, TESTCASE (test_wpa_ap_dynamic_wep_connection, NULL));
+
+	g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_1, NULL));
+	g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_2, NULL));
+	g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_3, NULL));
+	g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_4, NULL));
+	g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_5, NULL));
 
 	return g_test_run ();
 }

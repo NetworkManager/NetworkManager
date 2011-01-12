@@ -48,7 +48,8 @@ test_wifi_ap_utils_SOURCES = \
 	test-wifi-ap-utils.c
 
 test_wifi_ap_utils_CPPFLAGS = \
-	$(GLIB_CFLAGS)
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS)
 
 test_wifi_ap_utils_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
