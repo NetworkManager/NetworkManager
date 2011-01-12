@@ -476,7 +476,7 @@ nm_ap_utils_complete_connection (const GByteArray *ap_ssid,
 	NMSettingWirelessSecurity *s_wsec;
 	NMSetting8021x *s_8021x;
 	const GByteArray *ssid;
-	const char *mode, *key_mgmt, *leap_username;
+	const char *mode, *key_mgmt, *auth_alg, *leap_username;
 	gboolean adhoc = FALSE;
 
 	s_wifi = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
@@ -568,6 +568,7 @@ nm_ap_utils_complete_connection (const GByteArray *ap_ssid,
 	}
 
 	key_mgmt = nm_setting_wireless_security_get_key_mgmt (s_wsec);
+	auth_alg = nm_setting_wireless_security_get_auth_alg (s_wsec);
 	leap_username = nm_setting_wireless_security_get_leap_username (s_wsec);
 
 	/* Ad-Hoc checks */
@@ -638,11 +639,21 @@ nm_ap_utils_complete_connection (const GByteArray *ap_ssid,
 	/* WPA/RSN */
 	g_assert (ap_wpa_flags || ap_rsn_flags);
 
+	/* Ensure key management is valid for WPA */
 	if ((key_mgmt && !strcmp (key_mgmt, "ieee8021x")) || leap_username) {
 		g_set_error_literal (error,
 		                     NM_SETTING_WIRELESS_SECURITY_ERROR,
 		                     NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
 		                     "WPA incompatible with non-EAP (original) LEAP or Dynamic WEP");
+		return FALSE;
+	}
+
+	/* 'shared' auth incompatible with any type of WPA */
+	if (auth_alg && strcmp (auth_alg, "open")) {
+		g_set_error_literal (error,
+		                     NM_SETTING_WIRELESS_SECURITY_ERROR,
+		                     NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+		                     "WPA incompatible with Shared Key authentication");
 		return FALSE;
 	}
 
@@ -654,7 +665,6 @@ nm_ap_utils_complete_connection (const GByteArray *ap_ssid,
 
 	if (!adhoc && !verify_wpa_eap (s_wsec, s_8021x, ap_wpa_flags, ap_rsn_flags, error))
 		return FALSE;
-
 
 	if (adhoc) {
 		g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-none", NULL);
