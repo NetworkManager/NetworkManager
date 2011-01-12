@@ -23,11 +23,14 @@ BUILT_SOURCES = \
 	nm-dhcp6-config-bindings.h \
 	nm-secret-agent-glue.h
 
+
+noinst_LTLIBRARIES = \
+	libdeprecated-nm-glib.la \
+	libnm-glib-test.la
+
 #####################################################
 # Deprecated original libnm_glib bits
 #####################################################
-
-noinst_LTLIBRARIES = libdeprecated-nm-glib.la
 
 libdeprecated_nm_glib_la_SOURCES = \
 	libnm_glib.h \
@@ -140,8 +143,6 @@ libnm_glib_vpn_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm-glib-vpn.ver \
 #####################################################
 # Test libnm-glib stuff
 #####################################################
-
-noinst_LTLIBRARIES = libnm-glib-test.la
 
 libnm_glib_test_la_CFLAGS = \
 	$(GLIB_CFLAGS) \
