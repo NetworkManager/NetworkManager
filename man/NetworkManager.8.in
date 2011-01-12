@@ -52,8 +52,10 @@ A VPN connection has been deactivated.
 .TP
 .I "hostname"
 The system hostname has been updated.  Use gethostname(2) to retrieve it.
+.TP
 .I "dhcp4\-change"
 The DHCPv4 lease has changed (renewed, rebound, etc).
+.TP
 .I "dhcp6\-change"
 The DHCPv6 lease has changed (renewed, rebound, etc).
 .SH OPTIONS
