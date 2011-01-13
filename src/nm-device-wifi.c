@@ -1385,8 +1385,6 @@ real_complete_connection (NMDevice *device,
 	NMAccessPoint *ap = NULL;
 	const GByteArray *ssid = NULL;
 	GSList *iter;
-	char buf[33];
-	int buf_len;
 
 	s_wifi = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
 	s_wsec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
@@ -1461,10 +1459,7 @@ real_complete_connection (NMDevice *device,
 	}
 
 	g_assert (ssid);
-	memset (buf, 0, sizeof (buf));
-	buf_len = MIN (ssid->len, sizeof (buf) - 1);
-	memcpy (buf, ssid->data, buf_len);
-	str_ssid = nm_utils_ssid_to_utf8 (buf, buf_len);
+	str_ssid = nm_utils_ssid_to_utf8 ((const char *) ssid, ssid->len);
 	format = g_strdup_printf ("%s %%d", str_ssid);
 
 	nm_device_complete_generic (connection,
