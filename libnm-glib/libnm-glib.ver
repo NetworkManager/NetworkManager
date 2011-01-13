@@ -27,6 +27,7 @@ global:
 	nm_cdma_device_get_type;
 	nm_cdma_device_new;
 	nm_client_activate_connection;
+	nm_client_add_and_activate_connection;
 	nm_client_deactivate_connection;
 	nm_client_get_active_connections;
 	nm_client_get_device_by_path;
@@ -147,6 +148,7 @@ global:
 	nm_remote_settings_get_type;
 	nm_remote_settings_new;
 	nm_secret_agent_delete_secrets;
+	nm_secret_agent_error_quark;
 	nm_secret_agent_get_secrets;
 	nm_secret_agent_get_type;
 	nm_secret_agent_new;
