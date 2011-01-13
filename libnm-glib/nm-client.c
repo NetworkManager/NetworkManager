@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2010 Red Hat, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
 #include <dbus/dbus-glib.h>
@@ -1080,6 +1080,7 @@ nm_client_get_device_by_path (NMClient *client, const char *object_path)
 }
 
 typedef struct {
+	NMClient *client;
 	NMClientActivateDeviceFn act_fn;
 	NMClientAddActivateFn add_act_fn;
 	gpointer user_data;
@@ -1094,7 +1095,7 @@ activate_cb (DBusGProxy *proxy,
 	ActivateDeviceInfo *info = (ActivateDeviceInfo *) user_data;
 
 	if (info->act_fn)
-		info->act_fn (info->user_data, path, error);
+		info->act_fn (info->client, path, error, info->user_data);
 	else if (error)
 		nm_warning ("Device activation failed: (%d) %s", error->code, error->message);
 
@@ -1122,28 +1123,22 @@ nm_client_activate_connection (NMClient *client,
 					  gpointer user_data)
 {
 	ActivateDeviceInfo *info;
-	char *internal_so = (char *) specific_object;
 
 	g_return_if_fail (NM_IS_CLIENT (client));
 	g_return_if_fail (NM_IS_DEVICE (device));
 	g_return_if_fail (connection_path != NULL);
 
-	/* NULL specific object must be translated into "/" because D-Bus does
-	 * not have any idea of NULL object paths.
-	 */
-	if (internal_so == NULL)
-		internal_so = "/";
-
 	info = g_slice_new (ActivateDeviceInfo);
 	info->act_fn = callback;
 	info->user_data = user_data;
+	info->client = client;
 
 	org_freedesktop_NetworkManager_activate_connection_async (NM_CLIENT_GET_PRIVATE (client)->client_proxy,
-											    connection_path,
-											    nm_object_get_path (NM_OBJECT (device)),
-											    internal_so,
-											    activate_cb,
-											    info);
+	                                                          connection_path,
+	                                                          nm_object_get_path (NM_OBJECT (device)),
+	                                                          specific_object ? specific_object : "/",
+	                                                          activate_cb,
+	                                                          info);
 }
 
 static void
@@ -1156,7 +1151,7 @@ add_activate_cb (DBusGProxy *proxy,
 	ActivateDeviceInfo *info = (ActivateDeviceInfo *) user_data;
 
 	if (info->add_act_fn)
-		info->add_act_fn (info->user_data, connection_path, active_path, error);
+		info->add_act_fn (info->client, connection_path, active_path, error, info->user_data);
 	else if (error)
 		nm_warning ("Connection add and activate failed: (%d) %s", error->code, error->message);
 
@@ -1201,6 +1196,7 @@ nm_client_add_and_activate_connection (NMClient *client,
 	info = g_slice_new (ActivateDeviceInfo);
 	info->add_act_fn = callback;
 	info->user_data = user_data;
+	info->client = client;
 
 	if (partial)
 		hash = nm_connection_to_hash (partial);

@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2010 Red Hat, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
 #ifndef NM_CLIENT_H
@@ -107,9 +107,10 @@ NMClient *nm_client_new (void);
 const GPtrArray *nm_client_get_devices    (NMClient *client);
 NMDevice *nm_client_get_device_by_path    (NMClient *client, const char *object_path);
 
-typedef void (*NMClientActivateDeviceFn) (gpointer user_data,
+typedef void (*NMClientActivateDeviceFn) (NMClient *client,
                                           const char *object_path,
-                                          GError *error);
+                                          GError *error,
+                                          gpointer user_data);
 
 void nm_client_activate_connection (NMClient *client,
                                     const char *connection_path,
@@ -118,10 +119,11 @@ void nm_client_activate_connection (NMClient *client,
                                     NMClientActivateDeviceFn callback,
                                     gpointer user_data);
 
-typedef void (*NMClientAddActivateFn) (gpointer user_data,
+typedef void (*NMClientAddActivateFn) (NMClient *client,
                                        const char *connection_path,
                                        const char *active_path,
-                                       GError *error);
+                                       GError *error,
+                                       gpointer user_data);
 
 void nm_client_add_and_activate_connection (NMClient *client,
                                             NMConnection *partial,

@@ -144,7 +144,7 @@ static gboolean find_device_for_connection (NmCli *nmc, NMConnection *connection
                                             const char *nsp, NMDevice **device, const char **spec_object, GError **error);
 static const char *active_connection_state_to_string (NMActiveConnectionState state);
 static void active_connection_state_cb (NMActiveConnection *active, GParamSpec *pspec, gpointer user_data);
-static void activate_connection_cb (gpointer user_data, const char *path, GError *error);
+static void activate_connection_cb (NMClient *client, const char *path, GError *error, gpointer user_data);
 static void get_connections_cb (NMRemoteSettings *settings, gpointer user_data);
 static NMCResultCode do_connections_list (NmCli *nmc, int argc, char **argv);
 static NMCResultCode do_connections_status (NmCli *nmc, int argc, char **argv);
@@ -1267,11 +1267,11 @@ foo_active_connections_changed_cb (NMClient *client,
 	/* Call again activate_connection_cb with dummy arguments;
 	 * the correct ones are taken from its first call.
 	 */
-	activate_connection_cb (NULL, NULL, NULL);
+	activate_connection_cb (NULL, NULL, NULL, NULL);
 }
 
 static void
-activate_connection_cb (gpointer user_data, const char *path, GError *error)
+activate_connection_cb (NMClient *client, const char *path, GError *error, gpointer user_data)
 {
 	NmCli *nmc = (NmCli *) user_data;
 	NMActiveConnection *active;
