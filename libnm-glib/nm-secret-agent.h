@@ -21,8 +21,6 @@
 #ifndef NM_SECRET_AGENT_H
 #define NM_SECRET_AGENT_H
 
-#include <dbus/dbus-glib.h>
-#include <dbus/dbus-glib-lowlevel.h>
 #include <nm-connection.h>
 
 G_BEGIN_DECLS
@@ -58,6 +56,22 @@ typedef struct {
 	GObject parent;
 } NMSecretAgent;
 
+typedef void (*NMSecretAgentGetSecretsFunc) (NMSecretAgent *agent,
+                                             NMConnection *connection,
+                                             GHashTable *secrets,
+                                             GError *error,
+                                             gpointer user_data);
+
+typedef void (*NMSecretAgentSaveSecretsFunc) (NMSecretAgent *agent,
+                                              NMConnection *connection,
+                                              GError *error,
+                                              gpointer user_data);
+
+typedef void (*NMSecretAgentDeleteSecretsFunc) (NMSecretAgent *agent,
+                                                NMConnection *connection,
+                                                GError *error,
+                                                gpointer user_data);
+
 typedef struct {
 	GObjectClass parent;
 
@@ -65,8 +79,8 @@ typedef struct {
 
 	/* Called when the subclass should retrieve and return secrets.  Subclass
 	 * must copy or reference any arguments it may require after returning from
-	 * this method, as the arguments will freed (except for 'agent' and
-	 * 'context' of course).
+	 * this method, as the arguments will freed (except for 'agent', 'callback',
+	 * and 'callback_data' of course).
 	 */
 	void (*get_secrets) (NMSecretAgent *agent,
 	                     NMConnection *connection,
@@ -74,27 +88,32 @@ typedef struct {
 	                     const char *setting_name,
 	                     const char **hints,
 	                     gboolean request_new,
-	                     DBusGMethodInvocation *context);
+	                     NMSecretAgentGetSecretsFunc callback,
+	                     gpointer callback_data);
 
 	/* Called when the subclass should save the secrets contained in the
 	 * connection to backing storage.  Subclass must copy or reference any
 	 * arguments it may require after returning from this method, as the
-	 * arguments will freed (except for 'agent' and 'context' of course).
+	 * arguments will freed (except for 'agent', 'callback', and 'callback_data'
+	 * of course).
 	 */
 	void (*save_secrets) (NMSecretAgent *agent,
 	                      NMConnection *connection,
 	                      const char *connection_path,
-	                      DBusGMethodInvocation *context);
+	                      NMSecretAgentSaveSecretsFunc callback,
+	                      gpointer callback_data);
 
 	/* Called when the subclass should delete the secrets contained in the
 	 * connection from backing storage.  Subclass must copy or reference any
 	 * arguments it may require after returning from this method, as the
-	 * arguments will freed (except for 'agent' and 'context' of course).
+	 * arguments will freed (except for 'agent', 'callback', and 'callback_data'
+	 * of course).
 	 */
 	void (*delete_secrets) (NMSecretAgent *agent,
 	                        NMConnection *connection,
 	                        const char *connection_path,
-	                        DBusGMethodInvocation *context);
+	                        NMSecretAgentDeleteSecretsFunc callback,
+	                        gpointer callback_data);
 
 	/* Signals */
 	void (*registration_result) (NMSecretAgent *agent, GError *error);
@@ -115,6 +134,24 @@ NMSecretAgent *nm_secret_agent_new (const char *identifier);
 gboolean nm_secret_agent_register (NMSecretAgent *self);
 
 gboolean nm_secret_agent_unregister (NMSecretAgent *self);
+
+void nm_secret_agent_get_secrets (NMSecretAgent *self,
+                                  NMConnection *connection,
+                                  const char *setting_name,
+                                  const char **hints,
+                                  gboolean request_new,
+                                  NMSecretAgentGetSecretsFunc callback,
+                                  gpointer callback_data);
+
+void nm_secret_agent_save_secrets (NMSecretAgent *self,
+                                   NMConnection *connection,
+                                   NMSecretAgentSaveSecretsFunc callback,
+                                   gpointer callback_data);
+
+void nm_secret_agent_delete_secrets (NMSecretAgent *self,
+                                     NMConnection *connection,
+                                     NMSecretAgentDeleteSecretsFunc callback,
+                                     gpointer callback_data);
 
 G_END_DECLS
 

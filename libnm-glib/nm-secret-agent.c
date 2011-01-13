@@ -263,6 +263,21 @@ out:
 }
 
 static void
+get_secrets_cb (NMSecretAgent *self,
+                NMConnection *connection,
+                GHashTable *secrets,
+                GError *error,
+                gpointer user_data)
+{
+	DBusGMethodInvocation *context = user_data;
+
+	if (error)
+		dbus_g_method_return_error (context, error);
+	else
+		dbus_g_method_return (context, secrets);
+}
+
+static void
 impl_secret_agent_get_secrets (NMSecretAgent *self,
                                GHashTable *connection_hash,
                                const char *connection_path,
@@ -288,8 +303,23 @@ impl_secret_agent_get_secrets (NMSecretAgent *self,
 	                                               setting_name,
 	                                               hints,
 	                                               request_new,
+	                                               get_secrets_cb,
 	                                               context);
 	g_object_unref (connection);
+}
+
+static void
+save_secrets_cb (NMSecretAgent *self,
+                 NMConnection *connection,
+                 GError *error,
+                 gpointer user_data)
+{
+	DBusGMethodInvocation *context = user_data;
+
+	if (error)
+		dbus_g_method_return_error (context, error);
+	else
+		dbus_g_method_return (context);
 }
 
 static void
@@ -312,8 +342,23 @@ impl_secret_agent_save_secrets (NMSecretAgent *self,
 	NM_SECRET_AGENT_GET_CLASS (self)->save_secrets (self,
 	                                                connection,
 	                                                connection_path,
+	                                                save_secrets_cb,
 	                                                context);
 	g_object_unref (connection);
+}
+
+static void
+delete_secrets_cb (NMSecretAgent *self,
+                   NMConnection *connection,
+                   GError *error,
+                   gpointer user_data)
+{
+	DBusGMethodInvocation *context = user_data;
+
+	if (error)
+		dbus_g_method_return_error (context, error);
+	else
+		dbus_g_method_return (context);
 }
 
 static void
@@ -336,6 +381,7 @@ impl_secret_agent_delete_secrets (NMSecretAgent *self,
 	NM_SECRET_AGENT_GET_CLASS (self)->delete_secrets (self,
 	                                                  connection,
 	                                                  connection_path,
+	                                                  delete_secrets_cb,
 	                                                  context);
 	g_object_unref (connection);
 }
@@ -442,6 +488,72 @@ nm_secret_agent_unregister (NMSecretAgent *self)
 	dbus_g_proxy_call_no_reply (priv->manager_proxy, "Unregister", G_TYPE_INVALID);
 
 	return TRUE;
+}
+
+void
+nm_secret_agent_get_secrets (NMSecretAgent *self,
+                             NMConnection *connection,
+                             const char *setting_name,
+                             const char **hints,
+                             gboolean request_new,
+                             NMSecretAgentGetSecretsFunc callback,
+                             gpointer callback_data)
+{
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_SECRET_AGENT (self));
+	g_return_if_fail (connection != NULL);
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+	g_return_if_fail (nm_connection_get_path (connection));
+	g_return_if_fail (setting_name != NULL);
+	g_return_if_fail (strlen (setting_name) > 0);
+	g_return_if_fail (callback != NULL);
+
+	NM_SECRET_AGENT_GET_CLASS (self)->get_secrets (self,
+	                                               connection,
+	                                               nm_connection_get_path (connection),
+	                                               setting_name,
+	                                               hints,
+	                                               request_new,
+	                                               callback,
+	                                               callback_data);
+}
+
+void
+nm_secret_agent_save_secrets (NMSecretAgent *self,
+                              NMConnection *connection,
+                              NMSecretAgentSaveSecretsFunc callback,
+                              gpointer callback_data)
+{
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_SECRET_AGENT (self));
+	g_return_if_fail (connection != NULL);
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+	g_return_if_fail (nm_connection_get_path (connection));
+
+	NM_SECRET_AGENT_GET_CLASS (self)->save_secrets (self,
+	                                                connection,
+	                                                nm_connection_get_path (connection),
+	                                                callback,
+	                                                callback_data);
+}
+
+void
+nm_secret_agent_delete_secrets (NMSecretAgent *self,
+                                NMConnection *connection,
+                                NMSecretAgentDeleteSecretsFunc callback,
+                                gpointer callback_data)
+{
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_SECRET_AGENT (self));
+	g_return_if_fail (connection != NULL);
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+	g_return_if_fail (nm_connection_get_path (connection));
+
+	NM_SECRET_AGENT_GET_CLASS (self)->delete_secrets (self,
+	                                                  connection,
+	                                                  nm_connection_get_path (connection),
+	                                                  callback,
+	                                                  callback_data);
 }
 
 /**************************************************************/
