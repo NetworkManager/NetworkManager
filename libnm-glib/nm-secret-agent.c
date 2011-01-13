@@ -114,6 +114,8 @@ nm_secret_agent_error_get_type (void)
 			ENUM_ENTRY (NM_SECRET_AGENT_ERROR_USER_CANCELED, "UserCanceled"),
 			/* The request was canceled, but not by the user */
 			ENUM_ENTRY (NM_SECRET_AGENT_ERROR_AGENT_CANCELED, "AgentCanceled"),
+			/* Some internal error prevented returning secrets */
+			ENUM_ENTRY (NM_SECRET_AGENT_ERROR_INTERNAL_ERROR, "InternalError"),
 			{ 0, 0, 0 }
 		};
 		etype = g_enum_register_static ("NMSecretAgentError", values);
