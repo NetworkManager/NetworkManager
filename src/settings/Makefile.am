@@ -1,7 +1,6 @@
 INCLUDES = -I${top_srcdir} \
            -I${top_srcdir}/include \
            -I${top_srcdir}/libnm-util \
-           -I${top_srcdir}/libnm-glib \
            -I${top_srcdir}/src/logging \
            -I${top_srcdir}/src \
            -I${top_builddir}/marshallers
@@ -44,16 +43,15 @@ libsettings_la_CPPFLAGS = \
 
 libsettings_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(top_builddir)/marshallers/libmarshallers.la \
 	$(top_builddir)/src/logging/libnm-logging.la \
+	$(top_builddir)/system-settings/plugins/keyfile/libnm-settings-plugin-keyfile.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
 	$(GMODULE_LIBS) \
 	$(POLKIT_LIBS)
 
 libsettings_la_LDFLAGS = -rdynamic
-
 
 nm-settings-glue.h: $(top_srcdir)/introspection/nm-settings.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_settings --mode=glib-server --output=$@ $<

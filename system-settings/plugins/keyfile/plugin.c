@@ -662,8 +662,8 @@ system_config_interface_init (NMSystemConfigInterface *system_config_interface_c
 	system_config_interface_class->get_unmanaged_specs = get_unmanaged_specs;
 }
 
-G_MODULE_EXPORT GObject *
-nm_system_config_factory (void)
+GObject *
+nm_settings_keyfile_plugin_new (void)
 {
 	static SCPluginKeyfile *singleton = NULL;
 

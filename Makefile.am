@@ -1,12 +1,12 @@
 SUBDIRS = \
 	marshallers \
+	include \
 	libnm-util \
 	libnm-glib \
-	src \
-	include \
 	introspection \
-	callouts \
 	system-settings \
+	src \
+	callouts \
 	cli \
 	tools \
 	policy \

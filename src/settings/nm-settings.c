@@ -62,6 +62,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-manager-auth.h"
 #include "nm-session-monitor.h"
+#include "system-settings/plugins/keyfile/plugin.h"
 
 #define CONFIG_KEY_NO_AUTO_DEFAULT "no-auto-default"
 
@@ -519,6 +520,10 @@ load_plugins (NMSettings *self, const char *plugins, GError **error)
 		const char *pname = g_strstrip (*iter);
 		GObject *obj;
 		GObject * (*factory_func) (void);
+
+		/* keyfile plugin built in now */
+		if (!strcmp (pname, "keyfile"))
+			continue;
 
 		/* ifcfg-fedora was renamed ifcfg-rh; handle old configs here */
 		if (!strcmp (pname, "ifcfg-fedora"))
@@ -1328,11 +1333,12 @@ nm_settings_device_removed (NMSettings *self, NMDevice *device)
 
 NMSettings *
 nm_settings_new (const char *config_file,
-                           const char *plugins,
-                           GError **error)
+                 const char *plugins,
+                 GError **error)
 {
 	NMSettings *self;
 	NMSettingsPrivate *priv;
+	GObject *keyfile_plugin;
 
 	self = g_object_new (NM_TYPE_SETTINGS, NULL);
 	if (!self)
@@ -1352,6 +1358,11 @@ nm_settings_new (const char *config_file,
 		}
 		unmanaged_specs_changed (NULL, self);
 	}
+
+	/* Add the keyfile plugin last */
+	keyfile_plugin = nm_settings_keyfile_plugin_new ();
+	g_assert (keyfile_plugin);
+	add_plugin (self, NM_SYSTEM_CONFIG_INTERFACE (keyfile_plugin));
 
 	dbus_g_connection_register_g_object (priv->bus, NM_DBUS_PATH_SETTINGS, G_OBJECT (self));
 	return self;
