@@ -25,6 +25,7 @@
 #include <string.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
+#include <glib/gi18n.h>
 
 #include "nm-glib-compat.h"
 #include "nm-manager.h"
@@ -59,6 +60,7 @@
 #include "nm-sysconfig-connection.h"
 #include "nm-manager-auth.h"
 #include "nm-agent-manager.h"
+#include "NetworkManagerUtils.h"
 
 #define NM_AUTOIP_DBUS_SERVICE "org.freedesktop.nm_avahi_autoipd"
 #define NM_AUTOIP_DBUS_IFACE   "org.freedesktop.nm_avahi_autoipd"
@@ -292,6 +294,7 @@ typedef enum {
 	NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
 	NM_MANAGER_ERROR_ALREADY_ASLEEP_OR_AWAKE,
 	NM_MANAGER_ERROR_ALREADY_ENABLED_OR_DISABLED,
+	NM_MANAGER_ERROR_UNSUPPORTED_CONNECTION_TYPE,
 } NMManagerError;
 
 #define NM_MANAGER_ERROR (nm_manager_error_quark ())
@@ -332,6 +335,8 @@ nm_manager_error_get_type (void)
 			ENUM_ENTRY (NM_MANAGER_ERROR_ALREADY_ASLEEP_OR_AWAKE, "AlreadyAsleepOrAwake"),
 			/* The manager is already in the requested enabled/disabled state */
 			ENUM_ENTRY (NM_MANAGER_ERROR_ALREADY_ENABLED_OR_DISABLED, "AlreadyEnabledOrDisabled"),
+			/* The requested operation is unsupported for this type of connection */
+			ENUM_ENTRY (NM_MANAGER_ERROR_UNSUPPORTED_CONNECTION_TYPE, "UnsupportedConnectionType"),
 			{ 0, 0, 0 },
 		};
 		etype = g_enum_register_static ("NMManagerError", values);
@@ -650,6 +655,45 @@ nm_manager_get_state (NMManager *manager)
 	return NM_MANAGER_GET_PRIVATE (manager)->state;
 }
 
+static gboolean
+might_be_vpn (NMConnection *connection)
+{
+	NMSettingConnection *s_con;
+	const char *ctype = NULL;
+
+	if (nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN))
+		return TRUE;
+
+	/* Make sure it's not a VPN, which we can't autocomplete yet */
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	if (s_con)
+		ctype = nm_setting_connection_get_connection_type (s_con);
+
+	return (g_strcmp0 (ctype, NM_SETTING_VPN_SETTING_NAME) == 0);
+}
+
+static gboolean
+try_complete_vpn (NMConnection *connection, GSList *existing, GError **error)
+{
+	g_assert (might_be_vpn (connection) == TRUE);
+
+	if (!nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN)) {
+		g_set_error_literal (error,
+			                 NM_MANAGER_ERROR,
+			                 NM_MANAGER_ERROR_UNSUPPORTED_CONNECTION_TYPE,
+			                 "VPN connections require a 'vpn' setting");
+		return FALSE;
+	}
+
+	nm_utils_complete_generic (connection,
+	                           NM_SETTING_VPN_SETTING_NAME,
+	                           existing,
+	                           _("VPN connection %d"),
+	                           NULL);
+	
+	return TRUE;
+}
+
 static PendingActivation *
 pending_activation_new (NMManager *manager,
                         PolkitAuthority *authority,
@@ -688,13 +732,19 @@ pending_activation_new (NMManager *manager,
 		connection = nm_connection_new ();
 		nm_connection_replace_settings (connection, settings, NULL);
 
-		/* Let each device subclass complete the connection */
 		all_connections = nm_settings_get_connections (priv->settings);
-		success = nm_device_complete_connection (device,
-		                                         connection,
-		                                         specific_object_path,
-		                                         all_connections,
-		                                         error);
+
+		if (might_be_vpn (connection)) {
+			/* Try to fill the VPN's connection setting and name at least */
+			success = try_complete_vpn (connection, all_connections, error);
+		} else {
+			/* Let each device subclass complete the connection */
+			success = nm_device_complete_connection (device,
+			                                         connection,
+			                                         specific_object_path,
+			                                         all_connections,
+			                                         error);
+		}
 		g_slist_free (all_connections);
 
 		if (success == FALSE) {
