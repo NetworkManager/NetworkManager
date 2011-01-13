@@ -1462,11 +1462,11 @@ real_complete_connection (NMDevice *device,
 	str_ssid = nm_utils_ssid_to_utf8 ((const char *) ssid, ssid->len);
 	format = g_strdup_printf ("%s %%d", str_ssid);
 
-	nm_device_complete_generic (connection,
-	                            NM_SETTING_WIRELESS_SETTING_NAME,
-	                            existing_connections,
-	                            format,
-	                            str_ssid);
+	nm_utils_complete_generic (connection,
+	                           NM_SETTING_WIRELESS_SETTING_NAME,
+	                           existing_connections,
+	                           format,
+	                           str_ssid);
 	g_free (str_ssid);
 	g_free (format);
 

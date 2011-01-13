@@ -416,11 +416,11 @@ real_complete_connection (NMDevice *device,
 
 	}
 
-	nm_device_complete_generic (connection,
-	                            NM_SETTING_OLPC_MESH_SETTING_NAME,
-	                            existing_connections,
-	                            _("Mesh %d"),
-	                            NULL);
+	nm_utils_complete_generic (connection,
+	                           NM_SETTING_OLPC_MESH_SETTING_NAME,
+	                           existing_connections,
+	                           _("Mesh %d"),
+	                           NULL);
 
 	return TRUE;
 }

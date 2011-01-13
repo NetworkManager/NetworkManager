@@ -305,11 +305,11 @@ real_complete_connection (NMModem *modem,
 		nm_connection_add_setting (connection, NM_SETTING (s_ppp));
 	}
 
-	nm_device_complete_generic (connection,
-	                            NM_SETTING_CDMA_SETTING_NAME,
-	                            existing_connections,
-	                            _("CDMA connection %d"),
-	                            NULL);
+	nm_utils_complete_generic (connection,
+	                           NM_SETTING_CDMA_SETTING_NAME,
+	                           existing_connections,
+	                           _("CDMA connection %d"),
+	                           NULL);
 
 	return TRUE;
 }

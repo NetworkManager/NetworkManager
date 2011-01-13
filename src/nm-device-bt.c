@@ -373,11 +373,11 @@ real_complete_connection (NMDevice *device,
 		return FALSE;
 	}
 
-	nm_device_complete_generic (connection,
-	                            NM_SETTING_BLUETOOTH_SETTING_NAME,
-	                            existing_connections,
-	                            format,
-	                            preferred);
+	nm_utils_complete_generic (connection,
+	                           NM_SETTING_BLUETOOTH_SETTING_NAME,
+	                           existing_connections,
+	                           format,
+	                           preferred);
 
 	setting_bdaddr = nm_setting_bluetooth_get_bdaddr (s_bt);
 	if (setting_bdaddr) {

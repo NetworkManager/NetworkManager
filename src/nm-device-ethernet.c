@@ -1647,11 +1647,11 @@ real_complete_connection (NMDevice *device,
 	/* Default to an ethernet-only connection, but if a PPPoE setting was given
 	 * then PPPoE should be our connection type.
 	 */
-	nm_device_complete_generic (connection,
-	                            s_pppoe ? NM_SETTING_PPPOE_SETTING_NAME : NM_SETTING_CONNECTION_SETTING_NAME,
-	                            existing_connections,
-	                            s_pppoe ? _("PPPoE connection %d") : _("Wired connection %d"),
-	                            NULL);
+	nm_utils_complete_generic (connection,
+	                           s_pppoe ? NM_SETTING_PPPOE_SETTING_NAME : NM_SETTING_CONNECTION_SETTING_NAME,
+	                           existing_connections,
+	                           s_pppoe ? _("PPPoE connection %d") : _("Wired connection %d"),
+	                           NULL);
 
 	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
 	if (!s_wired) {

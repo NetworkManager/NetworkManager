@@ -508,11 +508,11 @@ real_complete_connection (NMModem *modem,
 		nm_connection_add_setting (connection, NM_SETTING (s_ppp));
 	}
 
-	nm_device_complete_generic (connection,
-	                            NM_SETTING_GSM_SETTING_NAME,
-	                            existing_connections,
-	                            _("GSM connection %d"),
-	                            NULL);
+	nm_utils_complete_generic (connection,
+	                           NM_SETTING_GSM_SETTING_NAME,
+	                           existing_connections,
+	                           _("GSM connection %d"),
+	                           NULL);
 
 	return TRUE;
 }
