@@ -155,6 +155,8 @@ add_connection_info_complete (NMRemoteSettings *self,
                               AddConnectionInfo *info,
                               GError *error)
 {
+	g_return_if_fail (info != NULL);
+
 	info->callback (info->self, error ? NULL : info->connection, error, info->callback_data);
 	add_connection_info_dispose (self, info);
 }
@@ -242,7 +244,8 @@ connection_init_result_cb (NMRemoteConnection *remote,
 		/* If there's a pending AddConnection request, complete that here before
 		 * signaling new-connection.
 		 */
-		add_connection_info_complete (self, addinfo, NULL);
+		if (addinfo)
+			add_connection_info_complete (self, addinfo, NULL);
 
 		/* Finally, let users know of the new connection now that it has all
 		 * its settings and is valid.
