@@ -754,7 +754,7 @@ nm_secret_agent_class_init (NMSecretAgentClass *class)
 						      "Identifier",
 						      "Identifier",
 						      NULL,
-						      G_PARAM_READABLE | G_PARAM_CONSTRUCT_ONLY));
+						      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	/**
 	 * NMSecretAgent::registration-result:
@@ -765,7 +765,7 @@ nm_secret_agent_class_init (NMSecretAgentClass *class)
 	 * request was successful.
 	 **/
 	signals[REGISTRATION_RESULT] =
-		g_signal_new (REGISTRATION_RESULT,
+		g_signal_new (NM_SECRET_AGENT_REGISTRATION_RESULT,
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
 					  0, NULL, NULL,
