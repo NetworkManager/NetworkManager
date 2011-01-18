@@ -1054,7 +1054,7 @@ read_vpn_secrets (GKeyFile *file, NMSettingVPN *s_vpn)
 }
 
 NMConnection *
-connection_from_file (const char *filename, GError **error)
+nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 {
 	GKeyFile *key_file;
 	struct stat statbuf;

@@ -56,7 +56,7 @@ nm_keyfile_connection_new (const char *full_path,
 	if (source)
 		tmp = g_object_ref (source);
 	else {
-		tmp = connection_from_file (full_path, error);
+		tmp = nm_keyfile_plugin_connection_from_file (full_path, error);
 		if (!tmp)
 			return NULL;
 	}
