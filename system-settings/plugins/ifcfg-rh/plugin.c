@@ -343,24 +343,24 @@ dir_changed (GFileMonitor *monitor,
 	/* Given any ifcfg, keys, or routes file, get the ifcfg file path */
 	name = utils_get_ifcfg_path (path);
 	g_free (path);
-
-	connection = g_hash_table_lookup (priv->connections, name);
-	switch (event_type) {
-	case G_FILE_MONITOR_EVENT_DELETED:
-		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "removed %s.", name);
-		if (connection)
-			remove_connection (plugin, connection);
-		break;
-	case G_FILE_MONITOR_EVENT_CREATED:
-	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
-		/* Update or new */
-		connection_new_or_changed (plugin, name, connection);
-		break;
-	default:
-		break;
+	if (name) {
+		connection = g_hash_table_lookup (priv->connections, name);
+		switch (event_type) {
+		case G_FILE_MONITOR_EVENT_DELETED:
+			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "removed %s.", name);
+			if (connection)
+				remove_connection (plugin, connection);
+			break;
+		case G_FILE_MONITOR_EVENT_CREATED:
+		case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
+			/* Update or new */
+			connection_new_or_changed (plugin, name, connection);
+			break;
+		default:
+			break;
+		}
+		g_free (name);
 	}
-
-	g_free (name);
 }
 
 static void
