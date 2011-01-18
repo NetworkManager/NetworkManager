@@ -40,6 +40,11 @@ typedef enum {
 	NM_SECRET_AGENT_ERROR_NO_SECRETS,
 } NMSecretAgentError;
 
+enum {
+	NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE = 0x0,
+	NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION = 0x1,
+	NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW = 0x2
+};
 
 #define NM_TYPE_SECRET_AGENT            (nm_secret_agent_get_type ())
 #define NM_SECRET_AGENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SECRET_AGENT, NMSecretAgent))
@@ -89,7 +94,7 @@ typedef struct {
 	                     const char *connection_path,
 	                     const char *setting_name,
 	                     const char **hints,
-	                     gboolean request_new,
+	                     guint32 flags,
 	                     NMSecretAgentGetSecretsFunc callback,
 	                     gpointer callback_data);
 
@@ -148,7 +153,7 @@ void nm_secret_agent_get_secrets (NMSecretAgent *self,
                                   NMConnection *connection,
                                   const char *setting_name,
                                   const char **hints,
-                                  gboolean request_new,
+                                  guint32 flags,
                                   NMSecretAgentGetSecretsFunc callback,
                                   gpointer callback_data);
 

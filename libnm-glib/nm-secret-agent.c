@@ -15,7 +15,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 Red Hat, Inc.
+ * (C) Copyright 2010 - 2011 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -33,7 +33,7 @@ static void impl_secret_agent_get_secrets (NMSecretAgent *self,
                                            const char *connection_path,
                                            const char *setting_name,
                                            const char **hints,
-                                           gboolean request_new,
+                                           guint32 flags,
                                            DBusGMethodInvocation *context);
 
 static void impl_secret_agent_cancel_get_secrets (NMSecretAgent *self,
@@ -295,7 +295,7 @@ impl_secret_agent_get_secrets (NMSecretAgent *self,
                                const char *connection_path,
                                const char *setting_name,
                                const char **hints,
-                               gboolean request_new,
+                               guint32 flags,
                                DBusGMethodInvocation *context)
 {
 	GError *error = NULL;
@@ -313,7 +313,7 @@ impl_secret_agent_get_secrets (NMSecretAgent *self,
 	                                               connection_path,
 	                                               setting_name,
 	                                               hints,
-	                                               request_new,
+	                                               flags,
 	                                               get_secrets_cb,
 	                                               context);
 	g_object_unref (connection);
@@ -522,7 +522,7 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
                              NMConnection *connection,
                              const char *setting_name,
                              const char **hints,
-                             gboolean request_new,
+                             guint32 flags,
                              NMSecretAgentGetSecretsFunc callback,
                              gpointer callback_data)
 {
@@ -540,7 +540,7 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
 	                                               nm_connection_get_path (connection),
 	                                               setting_name,
 	                                               hints,
-	                                               request_new,
+	                                               flags,
 	                                               callback,
 	                                               callback_data);
 }
