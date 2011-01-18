@@ -2488,7 +2488,7 @@ link_timeout_cb (gpointer user_data)
 		nm_act_request_get_secrets (req,
 		                            NULL,
 		                            setting_name,
-		                            TRUE,
+		                            NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW,
 		                            NULL,
 		                            wifi_secrets_cb,
 		                            self);
@@ -2726,16 +2726,18 @@ handle_auth_or_fail (NMDeviceWifi *self,
 	nm_connection_clear_secrets (connection);
 	setting_name = nm_connection_need_secrets (connection, NULL);
 	if (setting_name) {
-		gboolean get_new;
+		guint32 flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
 		/* If the caller doesn't necessarily want completely new secrets,
 		 * only ask for new secrets after the first failure.
 		 */
-		get_new = new_secrets ? TRUE : (tries ? TRUE : FALSE);
+		if (new_secrets || tries)
+			flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
+
 		nm_act_request_get_secrets (req,
 		                            NULL,
 		                            setting_name,
-		                            get_new,
+		                            flags,
 		                            NULL,
 		                            wifi_secrets_cb,
 		                            self);

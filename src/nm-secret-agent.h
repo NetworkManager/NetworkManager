@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2010 Red Hat, Inc.
+ * Copyright (C) 2010 - 2011 Red Hat, Inc.
  */
 
 #ifndef NM_SECRET_AGENT_H
@@ -28,6 +28,15 @@
 
 #include <nm-connection.h>
 #include "nm-dbus-manager.h"
+
+/* NOTE: these values should match the NM_SECRET_AGENT_GET_SECRETS_FLAGS in
+ * the nm-secret-agent.xml introspection file.
+ */
+enum {
+	NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE = 0x0,
+	NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION = 0x1,
+	NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW = 0x2
+};
 
 #define NM_TYPE_SECRET_AGENT            (nm_secret_agent_get_type ())
 #define NM_SECRET_AGENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SECRET_AGENT, NMSecretAgent))
@@ -71,7 +80,7 @@ gconstpointer nm_secret_agent_get_secrets  (NMSecretAgent *agent,
                                             NMConnection *connection,
                                             const char *setting_name,
                                             const char *hint,
-                                            gboolean request_new,
+                                            guint32 flags,
                                             NMSecretAgentCallback callback,
                                             gpointer callback_data);
 

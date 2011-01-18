@@ -172,7 +172,7 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
                              NMConnection *connection,
                              const char *setting_name,
                              const char *hint,
-                             gboolean get_new,
+                             guint32 flags,
                              NMSecretAgentCallback callback,
                              gpointer callback_data)
 {
@@ -200,7 +200,7 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
 	                                                DBUS_TYPE_G_OBJECT_PATH, nm_connection_get_path (connection),
 	                                                G_TYPE_STRING, setting_name,
 	                                                G_TYPE_STRV, hints,
-	                                                G_TYPE_BOOLEAN, get_new,
+	                                                G_TYPE_UINT, flags,
 	                                                G_TYPE_INVALID);
 	g_hash_table_insert (priv->requests, r->call, r);
 

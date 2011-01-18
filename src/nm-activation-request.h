@@ -95,7 +95,7 @@ typedef void (*NMActRequestSecretsFunc) (NMActRequest *req,
 guint32 nm_act_request_get_secrets    (NMActRequest *req,
                                        NMConnection *connection, /* NULL == use activation request's connection */
                                        const char *setting_name,
-                                       gboolean request_new,
+                                       guint32 flags,
                                        const char *hint,
                                        NMActRequestSecretsFunc callback,
                                        gpointer callback_data);

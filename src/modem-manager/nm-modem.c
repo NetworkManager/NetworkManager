@@ -516,13 +516,16 @@ nm_modem_get_secrets (NMModem *self,
                       const char *hint)
 {
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
+	guint32 flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
 	cancel_get_secrets (self);
 
+	if (request_new)
+		flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
 	priv->secrets_id = nm_act_request_get_secrets (priv->act_request,
 	                                               NULL,
 	                                               setting_name,
-	                                               request_new,
+	                                               flags,
 	                                               hint,
 	                                               modem_secrets_cb,
 	                                               self);
@@ -552,6 +555,7 @@ nm_modem_act_stage1_prepare (NMModem *self,
 	NMActStageReturn ret;
 	GPtrArray *hints = NULL;
 	const char *setting_name = NULL;
+	guint32 flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
 	if (priv->act_request)
 		g_object_unref (priv->act_request);
@@ -563,10 +567,13 @@ nm_modem_act_stage1_prepare (NMModem *self,
 	                                                     &setting_name,
 	                                                     reason);
 	if ((ret == NM_ACT_STAGE_RETURN_POSTPONE) && setting_name) {
+		if (priv->secrets_tries++)
+			flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
+
 		priv->secrets_id = nm_act_request_get_secrets (req,
 		                                               NULL,
 		                                               setting_name,
-		                                               priv->secrets_tries++ ? TRUE : FALSE,
+		                                               flags,
 		                                               hints ? g_ptr_array_index (hints, 0) : NULL,
 		                                               modem_secrets_cb,
 		                                               self);

@@ -839,7 +839,7 @@ connection_need_secrets_cb  (DBusGProxy *proxy,
 	priv->secrets_id = nm_act_request_get_secrets (priv->act_request,
 	                                               priv->connection,
 	                                               setting_name,
-	                                               FALSE,
+	                                               NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION,
 	                                               NULL,
 	                                               vpn_secrets_cb,
 	                                               self);

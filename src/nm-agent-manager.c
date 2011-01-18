@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2010 Red Hat, Inc.
+ * Copyright (C) 2010 - 2011 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -331,7 +331,7 @@ struct _Request {
 
 	NMConnection *connection;
 	char *setting_name;
-	gboolean request_new;
+	guint32 flags;
 	char *hint;
 
 	/* Current agent being asked for secrets */
@@ -365,7 +365,7 @@ struct _Request {
 static Request *
 request_new (NMConnection *connection,
              const char *setting_name,
-             gboolean get_new,
+             guint32 flags,
              const char *hint,
              NMAgentSecretsResultFunc callback,
              gpointer callback_data,
@@ -381,7 +381,7 @@ request_new (NMConnection *connection,
 	req->reqid = next_id++;
 	req->connection = g_object_ref (connection);
 	req->setting_name = g_strdup (setting_name);
-	req->request_new = get_new;
+	req->flags = flags;
 	req->hint = g_strdup (hint);
 	req->callback = callback;
 	req->callback_data = callback_data;
@@ -547,7 +547,7 @@ request_next (Request *req)
 	                                                    req->connection,
 	                                                    req->setting_name,
 	                                                    req->hint,
-	                                                    req->request_new,
+	                                                    req->flags,
 	                                                    request_secrets_done_cb,
 	                                                    req);
 	if (req->current_call_id == NULL) {
@@ -570,7 +570,7 @@ request_start_secrets (gpointer user_data)
 	secrets = nm_sysconfig_connection_get_secrets (NM_SYSCONFIG_CONNECTION (req->connection),
 	                                               req->setting_name,
 	                                               req->hint,
-	                                               req->request_new,
+	                                               req->flags ? TRUE : FALSE,
 	                                               &error);
 	if (secrets)
 		setting_secrets = g_hash_table_lookup (secrets, req->setting_name);
@@ -773,7 +773,7 @@ guint32
 nm_agent_manager_get_secrets (NMAgentManager *self,
                               NMConnection *connection,
                               const char *setting_name,
-                              gboolean get_new,
+                              guint32 flags,
                               const char *hint,
                               NMAgentSecretsResultFunc callback,
                               gpointer callback_data,
@@ -797,7 +797,7 @@ nm_agent_manager_get_secrets (NMAgentManager *self,
 
 	req = request_new (connection,
 	                   setting_name,
-	                   get_new,
+	                   flags,
 	                   hint,
 	                   callback,
 	                   callback_data,

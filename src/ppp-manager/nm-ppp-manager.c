@@ -442,6 +442,7 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 	guint32 tries;
 	GPtrArray *hints = NULL;
 	GError *error = NULL;
+	guint32 flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
 	connection = nm_act_request_get_connection (priv->act_req);
 
@@ -461,15 +462,18 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 		return;
 	}
 
-	tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), PPP_MANAGER_SECRET_TRIES));
-	/* Only ask for completely new secrets after retrying them once; some PPP
-	 * servers (T-Mobile USA) appear to ask a few times when they actually don't
-	 * even care what you pass back.
+	/* Only ask for completely new secrets after retrying them once; some devices
+	 * appear to ask a few times when they actually don't even care what you
+	 * pass back.
 	 */
+	tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), PPP_MANAGER_SECRET_TRIES));
+	if (tries > 1)
+		flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
+
 	priv->secrets_id = nm_act_request_get_secrets (priv->act_req,
 	                                               NULL,
 	                                               setting_name,
-	                                               tries > 1 ? TRUE : FALSE,
+	                                               flags,
 	                                               hints ? g_ptr_array_index (hints, 0) : NULL,
 	                                               ppp_secrets_cb,
 	                                               manager);

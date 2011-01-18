@@ -27,7 +27,7 @@
 #include <nm-connection.h>
 
 #include "nm-dbus-manager.h"
-#include "nm-session-monitor.h"
+#include "nm-secret-agent.h"
 
 #define NM_TYPE_AGENT_MANAGER            (nm_agent_manager_get_type ())
 #define NM_AGENT_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_AGENT_MANAGER, NMAgentManager))
@@ -59,7 +59,7 @@ typedef void (*NMAgentSecretsResultFunc) (NMAgentManager *manager,
 guint32 nm_agent_manager_get_secrets (NMAgentManager *manager,
                                       NMConnection *connection,
                                       const char *setting_name,
-                                      gboolean get_new,
+                                      guint32 flags,
                                       const char *hint,
                                       NMAgentSecretsResultFunc callback,
                                       gpointer callback_data,
