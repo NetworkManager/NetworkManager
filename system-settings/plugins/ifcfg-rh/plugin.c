@@ -181,7 +181,8 @@ read_connections (SCPluginIfcfg *plugin)
 				continue;
 
 			full_path = g_build_filename (IFCFG_DIR, item, NULL);
-			_internal_new_connection (plugin, full_path, NULL, NULL);
+			if (utils_get_ifcfg_name (full_path, TRUE))
+				_internal_new_connection (plugin, full_path, NULL, NULL);
 			g_free (full_path);
 		}
 
