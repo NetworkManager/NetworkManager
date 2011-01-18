@@ -45,7 +45,46 @@ typedef struct {
 
 	NMDBusManager *dbus_mgr;
 	DBusGProxy *proxy;
+
+	GHashTable *requests;
 } NMSecretAgentPrivate;
+
+/*************************************************************/
+
+typedef struct {
+	NMSecretAgent *agent;
+	DBusGProxyCall *call;
+	char *path;
+	char *setting_name;
+	NMSecretAgentCallback callback;
+	gpointer callback_data;
+} Request;
+
+static Request *
+request_new (NMSecretAgent *agent,
+             const char *path,
+             const char *setting_name,
+             NMSecretAgentCallback callback,
+             gpointer callback_data)
+{
+	Request *r;
+
+	r = g_slice_new0 (Request);
+	r->agent = agent;
+	r->path = g_strdup (path);
+	r->setting_name = g_strdup (setting_name);
+	r->callback = callback;
+	r->callback_data = callback_data;
+	return r;
+}
+
+static void
+request_free (Request *r)
+{
+	g_free (r->path);
+	g_free (r->setting_name);
+	g_slice_free (Request, r);
+}
 
 /*************************************************************/
 
@@ -106,19 +145,41 @@ nm_secret_agent_get_hash  (NMSecretAgent *agent)
 
 /*************************************************************/
 
-gpointer
+static void
+secrets_callback (DBusGProxy *proxy,
+                  DBusGProxyCall *call,
+                  void *user_data)
+{
+	Request *r = user_data;
+	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (r->agent);
+	GError *error = NULL;
+	GHashTable *secrets = NULL;
+
+	g_return_if_fail (call == r->call);
+
+	dbus_g_proxy_end_call (proxy, call, &error,
+	                       DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, &secrets,
+	                       G_TYPE_INVALID);
+	r->callback (r->agent, r, secrets, error, r->callback_data);
+	if (secrets)
+		g_hash_table_unref (secrets);
+	g_clear_error (&error);
+	g_hash_table_remove (priv->requests, call);
+}
+
+gconstpointer
 nm_secret_agent_get_secrets (NMSecretAgent *self,
                              NMConnection *connection,
                              const char *setting_name,
                              const char *hint,
-                             gboolean request_new,
-                             DBusGProxyCallNotify done_callback,
-                             gpointer done_callback_data)
+                             gboolean get_new,
+                             NMSecretAgentCallback callback,
+                             gpointer callback_data)
 {
 	NMSecretAgentPrivate *priv;
-	DBusGProxyCall *call;
 	GHashTable *hash;
 	const char *hints[2] = { hint, NULL };
+	Request *r;
 
 	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (connection != NULL, NULL);
@@ -127,29 +188,46 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
 	priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 
 	hash = nm_connection_to_hash (connection);
-	call = dbus_g_proxy_begin_call_with_timeout (priv->proxy,
-	                                             "GetSecrets",
-	                                             done_callback,
-	                                             done_callback_data,
-	                                             NULL,
-	                                             120000, /* 120 seconds */
-	                                             DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, hash,
-	                                             DBUS_TYPE_G_OBJECT_PATH, nm_connection_get_path (connection),
-	                                             G_TYPE_STRING, setting_name,
-	                                             G_TYPE_STRV, hints,
-	                                             G_TYPE_BOOLEAN, request_new,
-	                                             G_TYPE_INVALID);
-	g_hash_table_destroy (hash);
 
-	return call;
+	r = request_new (self, nm_connection_get_path (connection), setting_name, callback, callback_data);
+	r->call = dbus_g_proxy_begin_call_with_timeout (priv->proxy,
+	                                                "GetSecrets",
+	                                                secrets_callback,
+	                                                r,
+	                                                NULL,
+	                                                120000, /* 120 seconds */
+	                                                DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, hash,
+	                                                DBUS_TYPE_G_OBJECT_PATH, nm_connection_get_path (connection),
+	                                                G_TYPE_STRING, setting_name,
+	                                                G_TYPE_STRV, hints,
+	                                                G_TYPE_BOOLEAN, get_new,
+	                                                G_TYPE_INVALID);
+	g_hash_table_insert (priv->requests, r->call, r);
+
+	g_hash_table_destroy (hash);
+	return r->call;
 }
 
 void
-nm_secret_agent_cancel_secrets (NMSecretAgent *self, gpointer call_id)
+nm_secret_agent_cancel_secrets (NMSecretAgent *self, gconstpointer call)
 {
-	g_return_if_fail (self != NULL);
+	NMSecretAgentPrivate *priv;
+	Request *r;
 
-	dbus_g_proxy_cancel_call (NM_SECRET_AGENT_GET_PRIVATE (self)->proxy, call_id);
+	g_return_if_fail (self != NULL);
+	priv = NM_SECRET_AGENT_GET_PRIVATE (self);
+
+	r = g_hash_table_lookup (priv->requests, call);
+	g_return_if_fail (r != NULL);
+
+	dbus_g_proxy_cancel_call (NM_SECRET_AGENT_GET_PRIVATE (self)->proxy, (gpointer) call);
+
+	dbus_g_proxy_call_no_reply (priv->proxy,
+	                            "CancelGetSecrets",
+	                            G_TYPE_STRING, r->path,
+	                            G_TYPE_STRING, r->setting_name,
+	                            G_TYPE_INVALID);
+	g_hash_table_remove (priv->requests, call);
 }
 
 /*************************************************************/
@@ -162,15 +240,14 @@ nm_secret_agent_new (NMDBusManager *dbus_mgr,
 {
 	NMSecretAgent *self;
 	NMSecretAgentPrivate *priv;
+	DBusGConnection *bus;
+	char *hash_str;
 
 	g_return_val_if_fail (owner != NULL, NULL);
 	g_return_val_if_fail (identifier != NULL, NULL);
 
 	self = (NMSecretAgent *) g_object_new (NM_TYPE_SECRET_AGENT, NULL);
 	if (self) {
-		DBusGConnection *bus;
-		char *hash_str;
-
 		priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 
 		priv->owner = g_strdup (owner);
@@ -196,6 +273,10 @@ nm_secret_agent_new (NMDBusManager *dbus_mgr,
 static void
 nm_secret_agent_init (NMSecretAgent *self)
 {
+	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
+
+	priv->requests = g_hash_table_new_full (g_direct_hash, g_direct_equal,
+	                                        NULL, (GDestroyNotify) request_free);
 }
 
 static void
@@ -203,16 +284,17 @@ dispose (GObject *object)
 {
 	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (object);
 
-	if (priv->disposed)
-		return;
-	priv->disposed = TRUE;
+	if (!priv->disposed) {
+		priv->disposed = TRUE;
 
-	g_free (priv->description);
-	g_free (priv->owner);
-	g_free (priv->identifier);
+		g_free (priv->description);
+		g_free (priv->owner);
+		g_free (priv->identifier);
 
-	g_object_unref (priv->proxy);
-	g_object_unref (priv->dbus_mgr);
+		g_hash_table_destroy (priv->requests);
+		g_object_unref (priv->proxy);
+		g_object_unref (priv->dbus_mgr);
+	}
 
 	G_OBJECT_CLASS (nm_secret_agent_parent_class)->dispose (object);
 }

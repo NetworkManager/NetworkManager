@@ -61,15 +61,21 @@ uid_t       nm_secret_agent_get_owner_uid  (NMSecretAgent *agent);
 
 guint32     nm_secret_agent_get_hash       (NMSecretAgent *agent);
 
-gpointer    nm_secret_agent_get_secrets    (NMSecretAgent *agent,
+typedef void (*NMSecretAgentCallback) (NMSecretAgent *agent,
+                                       gconstpointer call,
+                                       GHashTable *secrets,
+                                       GError *error,
+                                       gpointer user_data);
+
+gconstpointer nm_secret_agent_get_secrets  (NMSecretAgent *agent,
                                             NMConnection *connection,
                                             const char *setting_name,
                                             const char *hint,
                                             gboolean request_new,
-                                            DBusGProxyCallNotify done_callback,
-                                            gpointer done_callback_data);
+                                            NMSecretAgentCallback callback,
+                                            gpointer callback_data);
 
 void        nm_secret_agent_cancel_secrets (NMSecretAgent *agent,
-                                            gpointer call_id);
+                                            gconstpointer call_id);
 
 #endif /* NM_SECRET_AGENT_H */

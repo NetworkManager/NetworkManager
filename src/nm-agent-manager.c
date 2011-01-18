@@ -336,7 +336,7 @@ struct _Request {
 
 	/* Current agent being asked for secrets */
 	NMSecretAgent *current;
-	gpointer current_call_id;
+	gconstpointer current_call_id;
 
 	/* Stores the sorted list of NMSecretAgents which will be
 	 * asked for secrets.
@@ -462,25 +462,21 @@ merge_secrets (GHashTable *src, GHashTable *dest)
 }
 
 static void
-request_secrets_done_cb (DBusGProxy *proxy,
-                         DBusGProxyCall *call_id,
-                         void *user_data)
+request_secrets_done_cb (NMSecretAgent *agent,
+                         gconstpointer call_id,
+                         GHashTable *secrets,
+                         GError *error,
+                         gpointer user_data)
 {
 	Request *req = user_data;
-	GError *error = NULL;
-	GHashTable *secrets = NULL;
-	GHashTable *setting_secrets;
-	NMSecretAgent *agent = NM_SECRET_AGENT (req->current);
+	GHashTable *setting_secrets, *merged;
 
-	if (call_id != req->current_call_id)
-		return;
+	g_return_if_fail (call_id == req->current_call_id);
 
 	req->current = NULL;
 	req->current_call_id = NULL;
 
-	if (!dbus_g_proxy_end_call (proxy, call_id, &error,
-	                            DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, &secrets,
-	                            G_TYPE_INVALID)) {
+	if (error) {
 		nm_log_dbg (LOGD_AGENTS, "(%s) agent failed secrets request %p/%s: (%d) %s",
 				    nm_secret_agent_get_description (agent),
 				    req, req->setting_name,
@@ -498,7 +494,6 @@ request_secrets_done_cb (DBusGProxy *proxy,
 		nm_log_dbg (LOGD_AGENTS, "(%s) agent returned no secrets for request %p/%s",
 				    nm_secret_agent_get_description (agent),
 				    req, req->setting_name);
-		g_hash_table_destroy (secrets);
 
 		/* Try the next agent */
 		request_next (req);
@@ -513,8 +508,6 @@ request_secrets_done_cb (DBusGProxy *proxy,
 	 * with the ones from the secret agent.
 	 */
 	if (req->settings_secrets) {
-		GHashTable *merged;
-
 		merged = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) g_hash_table_unref);
 
 		/* Copy agent secrets first, then overwrite with settings secrets */
@@ -525,8 +518,6 @@ request_secrets_done_cb (DBusGProxy *proxy,
 		g_hash_table_destroy (merged);
 	} else
 		req->complete_callback (req, secrets, NULL, req->complete_callback_data);
-
-	g_hash_table_destroy (secrets);
 }
 
 static void
