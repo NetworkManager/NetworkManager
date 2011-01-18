@@ -15,7 +15,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 Red Hat, Inc.
+ * (C) Copyright 2010 - 2011 Red Hat, Inc.
  */
 
 #ifndef NM_SECRET_AGENT_H
@@ -80,7 +80,9 @@ typedef struct {
 	/* Called when the subclass should retrieve and return secrets.  Subclass
 	 * must copy or reference any arguments it may require after returning from
 	 * this method, as the arguments will freed (except for 'agent', 'callback',
-	 * and 'callback_data' of course).
+	 * and 'callback_data' of course).  If the request is canceled, the callback
+	 * should still be called, but with the NM_SECRET_AGENT_ERROR_AGENT_CANCELED
+	 * error.
 	 */
 	void (*get_secrets) (NMSecretAgent *agent,
 	                     NMConnection *connection,
@@ -90,6 +92,13 @@ typedef struct {
 	                     gboolean request_new,
 	                     NMSecretAgentGetSecretsFunc callback,
 	                     gpointer callback_data);
+
+	/* Called when the subclass should cancel an outstanding request to
+	 * get secrets for a given connection.
+	 */
+	void (*cancel_get_secrets) (NMSecretAgent *agent,
+	                            const char *connection_path,
+	                            const char *setting_name);
 
 	/* Called when the subclass should save the secrets contained in the
 	 * connection to backing storage.  Subclass must copy or reference any

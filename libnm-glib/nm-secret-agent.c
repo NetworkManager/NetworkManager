@@ -36,6 +36,11 @@ static void impl_secret_agent_get_secrets (NMSecretAgent *self,
                                            gboolean request_new,
                                            DBusGMethodInvocation *context);
 
+static void impl_secret_agent_cancel_get_secrets (NMSecretAgent *self,
+                                                  const char *connection_path,
+                                                  const char *setting_name,
+                                                  DBusGMethodInvocation *context);
+
 static void impl_secret_agent_save_secrets (NMSecretAgent *self,
                                             GHashTable *connection_hash,
                                             const char *connection_path,
@@ -166,10 +171,12 @@ name_owner_changed (DBusGProxy *proxy,
 	}
 }
 
-static NMConnection *
+static gboolean
 verify_request (NMSecretAgent *self,
                 DBusGMethodInvocation *context,
                 GHashTable *connection_hash,
+                const char *connection_path,
+                NMConnection **out_connection,
                 GError **error)
 {
 	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
@@ -181,8 +188,7 @@ verify_request (NMSecretAgent *self,
 	uid_t sender_uid = G_MAXUINT;
 	GError *local = NULL;
 
-	g_return_val_if_fail (context != NULL, NULL);
-	g_return_val_if_fail (connection_hash != NULL, NULL);
+	g_return_val_if_fail (context != NULL, FALSE);
 
 	/* Verify the sender's UID is 0, and that the sender is the same as
 	 * NetworkManager's bus name owner.
@@ -245,21 +251,27 @@ verify_request (NMSecretAgent *self,
 	}
 
 	/* And make sure the connection is actually valid */
-	connection = nm_connection_new_from_hash (connection_hash, &local);
-	if (!connection) {
-		g_set_error (error,
-		             NM_SECRET_AGENT_ERROR,
-		             NM_SECRET_AGENT_ERROR_INVALID_CONNECTION,
-		             "Invalid connection: (%d) %s",
-		             local ? local->code : -1,
-		             (local && local->message) ? local->message : "(unknown)");
-		g_clear_error (&local);
+	if (connection_hash) {
+		connection = nm_connection_new_from_hash (connection_hash, &local);
+		if (connection && connection_path) {
+			nm_connection_set_path (connection, connection_path);
+		} else {
+			g_set_error (error,
+				         NM_SECRET_AGENT_ERROR,
+				         NM_SECRET_AGENT_ERROR_INVALID_CONNECTION,
+				         "Invalid connection: (%d) %s",
+				         local ? local->code : -1,
+				         (local && local->message) ? local->message : "(unknown)");
+			g_clear_error (&local);
+		}
 	}
 
-
 out:
+	if (out_connection)
+		*out_connection = connection;
 	g_free (sender);
-	return connection;
+
+	return !!connection;
 }
 
 static void
@@ -287,11 +299,10 @@ impl_secret_agent_get_secrets (NMSecretAgent *self,
                                DBusGMethodInvocation *context)
 {
 	GError *error = NULL;
-	NMConnection *connection;
+	NMConnection *connection = NULL;
 
 	/* Make sure the request comes from NetworkManager and is valid */
-	connection = verify_request (self, context, connection_hash, &error);
-	if (!connection) {
+	if (!verify_request (self, context, connection_hash, connection_path, &connection, &error)) {
 		dbus_g_method_return_error (context, error);
 		g_clear_error (&error);
 		return;
@@ -306,6 +317,24 @@ impl_secret_agent_get_secrets (NMSecretAgent *self,
 	                                               get_secrets_cb,
 	                                               context);
 	g_object_unref (connection);
+}
+
+static void
+impl_secret_agent_cancel_get_secrets (NMSecretAgent *self,
+                                      const char *connection_path,
+                                      const char *setting_name,
+                                      DBusGMethodInvocation *context)
+{
+	GError *error = NULL;
+
+	/* Make sure the request comes from NetworkManager and is valid */
+	if (!verify_request (self, context, NULL, NULL, NULL, &error)) {
+		dbus_g_method_return_error (context, error);
+		g_clear_error (&error);
+	} else {
+		NM_SECRET_AGENT_GET_CLASS (self)->cancel_get_secrets (self, connection_path, setting_name);
+		dbus_g_method_return (context);
+	}
 }
 
 static void
@@ -329,11 +358,10 @@ impl_secret_agent_save_secrets (NMSecretAgent *self,
                                 DBusGMethodInvocation *context)
 {
 	GError *error = NULL;
-	NMConnection *connection;
+	NMConnection *connection = NULL;
 
 	/* Make sure the request comes from NetworkManager and is valid */
-	connection = verify_request (self, context, connection_hash, &error);
-	if (!connection) {
+	if (!verify_request (self, context, connection_hash, connection_path, &connection, &error)) {
 		dbus_g_method_return_error (context, error);
 		g_clear_error (&error);
 		return;
@@ -368,11 +396,10 @@ impl_secret_agent_delete_secrets (NMSecretAgent *self,
                                   DBusGMethodInvocation *context)
 {
 	GError *error = NULL;
-	NMConnection *connection;
+	NMConnection *connection = NULL;
 
 	/* Make sure the request comes from NetworkManager and is valid */
-	connection = verify_request (self, context, connection_hash, &error);
-	if (!connection) {
+	if (!verify_request (self, context, connection_hash, connection_path, &connection, &error)) {
 		dbus_g_method_return_error (context, error);
 		g_clear_error (&error);
 		return;
