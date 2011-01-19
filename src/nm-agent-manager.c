@@ -712,9 +712,6 @@ request_remove_agent (Request *req, NMSecretAgent *agent)
 	g_return_if_fail (req != NULL);
 	g_return_if_fail (agent != NULL);
 
-	if (!g_slist_find (req->pending, agent))
-		return;
-
 	/* If this agent is being asked right now, cancel the request */
 	if (agent == req->current) {
 		nm_secret_agent_cancel_secrets (req->current, req->current_call_id);
