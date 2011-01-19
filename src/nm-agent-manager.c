@@ -567,6 +567,9 @@ request_start_secrets (gpointer user_data)
 
 	req->idle_id = 0;
 
+	nm_log_dbg (LOGD_AGENTS, "(%p/%s) getting secrets from system settings",
+			    req, req->setting_name);
+
 	secrets = nm_sysconfig_connection_get_secrets (NM_SYSCONFIG_CONNECTION (req->connection),
 	                                               req->setting_name,
 	                                               req->hint,
@@ -593,9 +596,15 @@ request_start_secrets (gpointer user_data)
 			/* Do we have everything we need? */
 			/* FIXME: handle second check for VPN connections */
 			if (nm_connection_need_secrets (tmp, NULL) == NULL) {
+				nm_log_dbg (LOGD_AGENTS, "(%p/%s) system settings secrets sufficient",
+						    req, req->setting_name);
+
 				/* Got everything, we're done */
 				req->complete_callback (req, secrets, NULL, req->complete_callback_data);
 			} else {
+				nm_log_dbg (LOGD_AGENTS, "(%p/%s) system settings secrets insufficient, asking agents",
+						    req, req->setting_name);
+
 				/* We don't, so ask some agents for additional secrets */
 				req->settings_secrets = g_hash_table_ref (secrets);
 				request_next (req);
@@ -603,6 +612,9 @@ request_start_secrets (gpointer user_data)
 		}
 		g_object_unref (tmp);
 	} else if (error) {
+		nm_log_dbg (LOGD_AGENTS, "(%p/%s) system settings returned error: (%d) %s",
+				    req, req->setting_name, error->code, error->message);
+
 		/* Errors from the system settings are hard errors; we don't go on
 		 * to ask agents for secrets if the settings service failed.
 		 */
