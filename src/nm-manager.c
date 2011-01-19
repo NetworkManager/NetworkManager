@@ -716,7 +716,6 @@ pending_activation_new (NMManager *manager,
 	g_return_val_if_fail (authority != NULL, NULL);
 	g_return_val_if_fail (context != NULL, NULL);
 	g_return_val_if_fail (device_path != NULL, NULL);
-	g_return_val_if_fail (connection_path != NULL, NULL);
 
 	/* Create the partial connection from the given settings */
 	if (settings) {
