@@ -1231,6 +1231,15 @@ real_deactivate_quickly (NMDevice *dev)
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMAccessPoint *orig_ap = nm_device_wifi_get_activation_ap (self);
+	NMActRequest *req;
+	NMConnection *connection;
+
+	req = nm_device_get_act_request (dev);
+	if (req) {
+		connection = nm_act_request_get_connection (req);
+		/* Clear wireless secrets tries when deactivating */
+		g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, NULL);
+	}
 
 	cleanup_association_attempt (self, TRUE);
 
