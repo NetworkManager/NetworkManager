@@ -54,6 +54,7 @@ enum {
 #define NM_SECRET_AGENT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SECRET_AGENT, NMSecretAgentClass))
 
 #define NM_SECRET_AGENT_IDENTIFIER          "identifier"
+#define NM_SECRET_AGENT_AUTO_REGISTER       "auto-register"
 
 #define NM_SECRET_AGENT_REGISTRATION_RESULT "registration-result"
 
@@ -142,8 +143,6 @@ typedef struct {
 } NMSecretAgentClass;
 
 GType nm_secret_agent_get_type (void);
-
-NMSecretAgent *nm_secret_agent_new (const char *identifier);
 
 gboolean nm_secret_agent_register (NMSecretAgent *self);
 

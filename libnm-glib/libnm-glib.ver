@@ -151,7 +151,6 @@ global:
 	nm_secret_agent_error_quark;
 	nm_secret_agent_get_secrets;
 	nm_secret_agent_get_type;
-	nm_secret_agent_new;
 	nm_secret_agent_register;
 	nm_secret_agent_save_secrets;
 	nm_secret_agent_unregister;

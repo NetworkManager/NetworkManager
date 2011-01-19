@@ -53,11 +53,13 @@ static void impl_secret_agent_delete_secrets (NMSecretAgent *self,
 
 #include "nm-secret-agent-glue.h"
 
-G_DEFINE_TYPE (NMSecretAgent, nm_secret_agent, G_TYPE_OBJECT)
+G_DEFINE_ABSTRACT_TYPE (NMSecretAgent, nm_secret_agent, G_TYPE_OBJECT)
 
 #define NM_SECRET_AGENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
                                         NM_TYPE_SECRET_AGENT, \
                                         NMSecretAgentPrivate))
+
+static gboolean auto_register_cb (gpointer user_data);
 
 typedef struct {
 	gboolean registered;
@@ -70,6 +72,9 @@ typedef struct {
 	char *nm_owner;
 
 	char *identifier;
+	gboolean auto_register;
+	gboolean suppress_auto;
+	gboolean auto_register_id;
 
 	gboolean disposed;
 } NMSecretAgentPrivate;
@@ -77,6 +82,7 @@ typedef struct {
 enum {
 	PROP_0,
 	PROP_IDENTIFIER,
+	PROP_AUTO_REGISTER,
 
 	LAST_PROP
 };
@@ -156,6 +162,17 @@ get_nm_owner (NMSecretAgent *self)
 }
 
 static void
+_internal_unregister (NMSecretAgent *self)
+{
+	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
+
+	if (priv->registered) {
+		dbus_g_connection_unregister_g_object (priv->bus, G_OBJECT (self));
+		priv->registered = FALSE;
+	}
+}
+
+static void
 name_owner_changed (DBusGProxy *proxy,
                     const char *name,
                     const char *old_owner,
@@ -164,10 +181,24 @@ name_owner_changed (DBusGProxy *proxy,
 {
 	NMSecretAgent *self = NM_SECRET_AGENT (user_data);
 	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
+	gboolean old_owner_good = (old_owner && strlen (old_owner));
+	gboolean new_owner_good = (new_owner && strlen (new_owner));
 
 	if (strcmp (name, NM_DBUS_SERVICE) == 0) {
 		g_free (priv->nm_owner);
 		priv->nm_owner = g_strdup (new_owner);
+
+		if (!old_owner_good && new_owner_good) {
+			/* NM appeared */
+			auto_register_cb (self);
+		} else if (old_owner_good && !new_owner_good) {
+			/* NM disappeared */
+			_internal_unregister (self);
+		} else if (old_owner_good && new_owner_good && strcmp (old_owner, new_owner)) {
+			/* Hmm, NM magically restarted */
+			_internal_unregister (self);
+			auto_register_cb (self);
+		}
 	}
 }
 
@@ -430,7 +461,7 @@ reg_request_cb (DBusGProxy *proxy,
 		priv->registered = TRUE;
 	else {
 		/* If registration failed we shouldn't expose ourselves on the bus */
-		dbus_g_connection_unregister_g_object (priv->bus, G_OBJECT (self));
+		_internal_unregister (self);
 	}
 
 	g_signal_emit (self, signals[REGISTRATION_RESULT], 0, error);
@@ -472,6 +503,8 @@ nm_secret_agent_register (NMSecretAgent *self)
 	g_return_val_if_fail (class->save_secrets != NULL, FALSE);
 	g_return_val_if_fail (class->delete_secrets != NULL, FALSE);
 
+	priv->suppress_auto = FALSE;
+
 	/* Export our secret agent interface before registering with the manager */
 	dbus_g_connection_register_g_object (priv->bus,
 	                                     NM_DBUS_PATH_SECRET_AGENT,
@@ -482,7 +515,7 @@ nm_secret_agent_register (NMSecretAgent *self)
 	                                                       reg_request_cb,
 	                                                       self,
 	                                                       NULL,
-	                                                       G_USEC_PER_SEC * 5,
+	                                                       5000,
 	                                                       G_TYPE_STRING, priv->identifier,
 	                                                       G_TYPE_INVALID);
 
@@ -514,8 +547,25 @@ nm_secret_agent_unregister (NMSecretAgent *self)
 
 	dbus_g_proxy_call_no_reply (priv->manager_proxy, "Unregister", G_TYPE_INVALID);
 
+	_internal_unregister (self);
+	priv->suppress_auto = TRUE;
+
 	return TRUE;
 }
+
+static gboolean
+auto_register_cb (gpointer user_data)
+{
+	NMSecretAgent *self = NM_SECRET_AGENT (user_data);
+	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
+
+	priv->auto_register_id = 0;
+	if (priv->auto_register && !priv->suppress_auto && (priv->reg_call == NULL))
+		nm_secret_agent_register (self);
+	return FALSE;
+}
+
+/**************************************************************/
 
 void
 nm_secret_agent_get_secrets (NMSecretAgent *self,
@@ -653,6 +703,8 @@ nm_secret_agent_init (NMSecretAgent *self)
 		g_warning ("Couldn't create NM agent manager proxy.");
 		return;
 	}
+
+	priv->auto_register_id = g_idle_add (auto_register_cb, self);
 }
 
 static void
@@ -666,6 +718,9 @@ get_property (GObject *object,
 	switch (prop_id) {
 	case PROP_IDENTIFIER:
 		g_value_set_string (value, priv->identifier);
+		break;
+	case PROP_AUTO_REGISTER:
+		g_value_set_boolean (value, priv->auto_register);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -691,6 +746,9 @@ set_property (GObject *object,
 		g_free (priv->identifier);
 		priv->identifier = g_strdup (identifier);
 		break;
+	case PROP_AUTO_REGISTER:
+		priv->auto_register = g_value_get_boolean (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -708,6 +766,9 @@ dispose (GObject *object)
 
 		if (priv->registered)
 			nm_secret_agent_unregister (self);
+
+		if (priv->auto_register_id)
+			g_source_remove (priv->auto_register_id);
 
 		g_free (priv->identifier);
 		g_free (priv->nm_owner);
@@ -755,6 +816,25 @@ nm_secret_agent_class_init (NMSecretAgentClass *class)
 						      "Identifier",
 						      NULL,
 						      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	/**
+	 * NMSecretAgent:auto-register:
+	 *
+	 * If TRUE, the agent will attempt to automatically register itself after
+	 * it is created (via an idle handler) and to re-register itself if
+	 * NetworkManager restarts.  If FALSE, the agent does not automatically
+	 * register with NetworkManager, and nm_secret_agent_register() must be
+	 * called.  If 'auto-register' is TRUE, calling nm_secret_agent_unregister()
+	 * will suppress auto-registration until nm_secret_agent_register() is
+	 * called, which re-enables auto-registration.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_AUTO_REGISTER,
+		 g_param_spec_boolean (NM_SECRET_AGENT_AUTO_REGISTER,
+						       "Auto Register",
+						       "Auto Register",
+						       TRUE,
+						       G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSecretAgent::registration-result:
