@@ -474,8 +474,42 @@ constructor (GType type,
 }
 
 static void
+clear_secrets_tries (NMDevice *device)
+{
+	NMActRequest *req;
+	NMConnection *connection;
+
+	req = nm_device_get_act_request (device);
+	if (req) {
+		connection = nm_act_request_get_connection (req);
+		/* Clear wired secrets tries on success, failure, or when deactivating */
+		g_object_set_data (G_OBJECT (connection), WIRED_SECRETS_TRIES, NULL);
+	}
+}
+
+static void
+device_state_changed (NMDevice *device,
+                      NMDeviceState new_state,
+                      NMDeviceState old_state,
+                      NMDeviceStateReason reason,
+                      gpointer user_data)
+{
+
+	switch (new_state) {
+	case NM_DEVICE_STATE_ACTIVATED:
+	case NM_DEVICE_STATE_FAILED:
+	case NM_DEVICE_STATE_DISCONNECTED:
+		clear_secrets_tries (device);
+		break;
+	default:
+		break;
+	}
+}
+
+static void
 nm_device_ethernet_init (NMDeviceEthernet * self)
 {
+	g_signal_connect (self, "state-changed", G_CALLBACK (device_state_changed), NULL);
 }
 
 static gboolean
@@ -1584,6 +1618,9 @@ real_deactivate_quickly (NMDevice *device)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+
+	/* Clear wired secrets tries when deactivating */
+	clear_secrets_tries (device);
 
 	if (priv->pending_ip4_config) {
 		g_object_unref (priv->pending_ip4_config);
