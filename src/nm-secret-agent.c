@@ -160,7 +160,7 @@ secrets_callback (DBusGProxy *proxy,
 	dbus_g_proxy_end_call (proxy, call, &error,
 	                       DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, &secrets,
 	                       G_TYPE_INVALID);
-	r->callback (r->agent, r, secrets, error, r->callback_data);
+	r->callback (r->agent, r->call, secrets, error, r->callback_data);
 	if (secrets)
 		g_hash_table_unref (secrets);
 	g_clear_error (&error);
