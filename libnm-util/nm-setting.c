@@ -483,11 +483,6 @@ nm_setting_need_secrets (NMSetting *setting)
 	return secrets;
 }
 
-typedef struct {
-	NMSetting *setting;
-	GError **error;
-} UpdateSecretsInfo;
-
 static gboolean
 update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **error)
 {
@@ -528,17 +523,6 @@ update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **
 	return success;
 }
 
-static void
-update_one_cb (gpointer key, gpointer val, gpointer user_data)
-{
-	UpdateSecretsInfo *info = user_data;
-	const char *secret_key = (const char *) key;
-	GValue *secret_value = (GValue *) val;
-
-	if (*(info->error) == NULL)
-		NM_SETTING_GET_CLASS (info->setting)->update_one_secret (info->setting, secret_key, secret_value, info->error);
-}
-
 /**
  * nm_setting_update_secrets:
  * @setting: the #NMSetting
@@ -555,8 +539,9 @@ update_one_cb (gpointer key, gpointer val, gpointer user_data)
 gboolean
 nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets, GError **error)
 {
-	UpdateSecretsInfo *info;
-	gboolean success;
+	GHashTableIter iter;
+	gpointer key, data;
+	GError *tmp_error = NULL;
 
 	g_return_val_if_fail (setting != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
@@ -564,14 +549,16 @@ nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets, GError **err
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
 
-	info = g_malloc0 (sizeof (UpdateSecretsInfo));
-	info->setting = setting;
-	info->error = error;
-	g_hash_table_foreach (secrets, update_one_cb, info);
-	success = *(info->error) ? FALSE : TRUE;
-	g_free (info);
+	g_hash_table_iter_init (&iter, secrets);
+	while (g_hash_table_iter_next (&iter, &key, &data) && !tmp_error) {
+		const char *secret_key = (const char *) key;
+		GValue *secret_value = (GValue *) data;
 
-	return success;
+		NM_SETTING_GET_CLASS (setting)->update_one_secret (setting, secret_key, secret_value, &tmp_error);
+	}
+	g_propagate_error (error, tmp_error);
+
+	return !!tmp_error;
 }
 
 /**
