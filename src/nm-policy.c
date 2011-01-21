@@ -1042,6 +1042,13 @@ connection_added (NMSettings *settings,
 }
 
 static void
+connections_loaded (NMSettings *settings,
+					gpointer user_data)
+{
+	schedule_activate_all ((NMPolicy *) user_data);
+}
+
+static void
 connection_updated (NMSettings *settings,
                     NMConnection *connection,
                     gpointer user_data)
@@ -1162,12 +1169,14 @@ nm_policy_new (NMManager *manager,
 	_connect_manager_signal (policy, "device-added", device_added);
 	_connect_manager_signal (policy, "device-removed", device_removed);
 
-	_connect_settings_signal (policy, NM_SETTINGS_CONNECTIONS_LOADED, connection_added);
+	_connect_settings_signal (policy, NM_SETTINGS_CONNECTIONS_LOADED, connections_loaded);
 	_connect_settings_signal (policy, NM_SETTINGS_CONNECTION_ADDED, connection_added);
 	_connect_settings_signal (policy, NM_SETTINGS_CONNECTION_UPDATED, connection_updated);
 	_connect_settings_signal (policy, NM_SETTINGS_CONNECTION_REMOVED, connection_removed);
 	_connect_settings_signal (policy, NM_SETTINGS_CONNECTION_VISIBILITY_CHANGED,
 	                          connection_visibility_changed);
+
+	initialized = TRUE;
 	return policy;
 }
 
