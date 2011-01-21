@@ -170,6 +170,7 @@ global:
 	nm_setting_ip4_config_get_dhcp_send_hostname;
 	nm_setting_ip4_config_get_never_default;
 	nm_setting_ip4_config_get_may_fail;
+	nm_ip6_address_get_type;
 	nm_ip6_address_new;
 	nm_ip6_address_dup;
 	nm_ip6_address_ref;
@@ -181,6 +182,7 @@ global:
 	nm_ip6_address_set_gateway;
 	nm_ip6_address_get_prefix;
 	nm_ip6_address_set_prefix;
+	nm_ip6_route_get_type;
 	nm_ip6_route_new;
 	nm_ip6_route_dup;
 	nm_ip6_route_ref;
@@ -388,8 +390,9 @@ global:
 	nm_ip4_address_compare;
 	nm_ip4_address_dup;
 	nm_ip4_address_get_address;
-	nm_ip4_address_get_prefix;
 	nm_ip4_address_get_gateway;
+	nm_ip4_address_get_prefix;
+	nm_ip4_address_get_type;
 	nm_ip4_address_new;
 	nm_ip4_address_ref;
 	nm_ip4_address_set_address;
@@ -402,6 +405,7 @@ global:
 	nm_ip4_route_get_prefix;
 	nm_ip4_route_get_next_hop;
 	nm_ip4_route_get_metric;
+	nm_ip4_route_get_type;
 	nm_ip4_route_new;
 	nm_ip4_route_ref;
 	nm_ip4_route_unref;

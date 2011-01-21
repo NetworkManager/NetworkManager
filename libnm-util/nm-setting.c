@@ -112,7 +112,7 @@ destroy_gvalue (gpointer data)
  * name to a GValue describing that property, suitable for marshalling over
  * D-Bus or serializing.  The mapping is string:GValue.
  * 
- * Returns: a new #GHashTable describing the setting's properties
+ * Returns: (transfer full) (element-type utf8 GObject.Value): a new #GHashTable describing the setting's properties
  **/
 GHashTable *
 nm_setting_to_hash (NMSetting *setting)
@@ -254,7 +254,7 @@ duplicate_setting (NMSetting *setting,
  *
  * Duplicates a #NMSetting.
  *
- * Returns: a new #NMSetting containing the same properties and values as the
+ * Returns: (transfer full): a new #NMSetting containing the same properties and values as the
  * source #NMSetting
  **/
 NMSetting *
@@ -390,7 +390,7 @@ nm_setting_compare (NMSetting *a,
 /**
  * nm_setting_enumerate_values:
  * @setting: the #NMSetting
- * @func: user-supplied function called for each property of the setting
+ * @func: (scope call): user-supplied function called for each property of the setting
  * @user_data: user data passed to @func at each invocation
  *
  * Iterates over each property of the #NMSetting object, calling the supplied
@@ -465,7 +465,7 @@ nm_setting_clear_secrets (NMSetting *setting)
  * guide to what secrets may be required, because in some circumstances, there
  * is no way to conclusively determine exactly which secrets are needed.
  *
- * Returns: a #GPtrArray containing the property names of secrets of the
+ * Returns: (transfer full) (element-type utf8): a #GPtrArray containing the property names of secrets of the
  * #NMSetting which may be required; the caller owns the array
  * and must free the each array element with g_free(), as well as the array
  * itself with g_ptr_array_free()

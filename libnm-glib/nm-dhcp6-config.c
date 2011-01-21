@@ -203,7 +203,7 @@ nm_dhcp6_config_new (DBusGConnection *connection, const char *object_path)
  *
  * Gets all the options contained in the configuration.
  *
- * Returns: the #GHashTable containing strings for keys and values.
+ * Returns: (transfer none) (element-type utf8 GObject.Value): the #GHashTable containing strings for keys and values.
  * This is the internal copy used by the configuration, and must not be modified.
  **/
 GHashTable *

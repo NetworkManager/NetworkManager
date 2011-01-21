@@ -350,7 +350,7 @@ nm_connection_lookup_setting_type_by_quark (GQuark error_quark)
  *
  * Create a new #NMSetting object of the desired type, given a setting name.
  *
- * Returns: the new setting object, or NULL if the setting name was unknown
+ * Returns: (transfer full): the new setting object, or NULL if the setting name was unknown
  **/
 NMSetting *
 nm_connection_create_setting (const char *name)
@@ -384,7 +384,7 @@ parse_one_setting (gpointer key, gpointer value, gpointer user_data)
 /**
  * nm_connection_add_setting:
  * @connection: a #NMConnection
- * @setting: the #NMSetting to add to the connection object
+ * @setting: (transfer full): the #NMSetting to add to the connection object
  *
  * Adds a #NMSetting to the connection, replacing any previous #NMSetting of the
  * same name which has previously been added to the #NMConnection.  The
@@ -426,7 +426,7 @@ nm_connection_remove_setting (NMConnection *connection, GType setting_type)
  * Gets the #NMSetting with the given #GType, if one has been previously added
  * to the #NMConnection.
  *
- * Returns: the #NMSetting, or NULL if no setting of that type was previously
+ * Returns: (transfer none): the #NMSetting, or NULL if no setting of that type was previously
  * added to the #NMConnection
  **/
 NMSetting *
@@ -447,7 +447,7 @@ nm_connection_get_setting (NMConnection *connection, GType setting_type)
  * Gets the #NMSetting with the given name, if one has been previously added
  * the the #NMConnection.
  *
- * Returns: the #NMSetting, or NULL if no setting with that name was previously
+ * Returns: (transfer none): the #NMSetting, or NULL if no setting with that name was previously
  * added to the #NMConnection
  **/
 NMSetting *
@@ -493,7 +493,7 @@ validate_permissions_type (GHashTable *hash, GError **error)
 /**
  * nm_connection_replace_settings:
  * @connection: a #NMConnection
- * @new_settings: a #GHashTable of settings
+ * @new_settings: (element-type utf8 GLib.HashTable): a #GHashTable of settings
  * @error: location to store error, or %NULL
  *
  * Returns: %TRUE if the settings were valid and added to the connection, %FALSE
@@ -651,7 +651,7 @@ nm_connection_verify (NMConnection *connection, GError **error)
  * nm_connection_update_secrets:
  * @connection: the #NMConnection
  * @setting_name: the setting object name to which the secrets apply
- * @secrets: a #GHashTable mapping string:#GValue of setting property names and
+ * @secrets: (element-type utf8 GObject.Value): a #GHashTable mapping string:#GValue of setting property names and
  * secrets
  * @error: location to store error, or %NULL
  *
@@ -826,9 +826,10 @@ add_one_setting_to_hash (gpointer key, gpointer data, gpointer user_data)
  * are #GHashTables mapping string:GValue, each of which represents the
  * properties of the #NMSetting object.
  *
- * Returns: a new #GHashTable describing the connection, its settings, and
- * each setting's properties.  The caller owns the hash table and must unref
- * the hash table with g_hash_table_unref() when it is no longer needed.
+ * Returns: (transfer full) (element-type utf8 GLib.HashTable): a new 
+ * #GHashTable describing the connection, its settings, and each setting's
+ * properties.  The caller owns the hash table and must unref the hash table
+ * with g_hash_table_unref() when it is no longer needed.
  **/
 GHashTable *
 nm_connection_to_hash (NMConnection *connection)
@@ -869,7 +870,7 @@ for_each_setting (gpointer key, gpointer value, gpointer user_data)
 /**
  * nm_connection_for_each_setting_value:
  * @connection: the #NMConnection
- * @func: user-supplied function called for each setting's property
+ * @func: (scope call): user-supplied function called for each setting's property
  * @user_data: user data passed to @func at each invocation
  *
  * Iterates over the properties of each #NMSetting object in the #NMConnection,
@@ -994,7 +995,8 @@ nm_connection_new (void)
 
 /**
  * nm_connection_new_from_hash:
- * @hash: the #GHashTable describing the connection
+ * @hash: (element-type utf8 GLib.HashTable): the #GHashTable describing
+ * the connection
  * @error: on unsuccessful return, an error
  *
  * Creates a new #NMConnection from a hash table describing the connection.  See
@@ -1037,7 +1039,7 @@ duplicate_cb (gpointer key, gpointer value, gpointer user_data)
  *
  * Duplicates a #NMConnection.
  *
- * Returns: a new #NMConnection containing the same settings and properties
+ * Returns: (transfer full): a new #NMConnection containing the same settings and properties
  * as the source #NMConnection
  **/
 NMConnection *

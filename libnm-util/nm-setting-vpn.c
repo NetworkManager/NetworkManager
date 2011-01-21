@@ -158,9 +158,17 @@ nm_setting_vpn_remove_data_item (NMSettingVPN *setting, const char *key)
 	g_hash_table_remove (NM_SETTING_VPN_GET_PRIVATE (setting)->data, key);
 }
 
+/**
+ * nm_setting_vpn_foreach_data_item:
+ * @setting: a #NMSettingVPN
+ * @func: (scope call): an user provided function
+ * @user_data:
+ *
+ * Iterates all data items stored in this setting
+ */
 void
 nm_setting_vpn_foreach_data_item (NMSettingVPN *setting,
-                                  VPNIterFunc func,
+                                  NMVPNIterFunc func,
                                   gpointer user_data)
 {
 	g_return_if_fail (NM_IS_SETTING_VPN (setting));
@@ -200,9 +208,17 @@ nm_setting_vpn_remove_secret (NMSettingVPN *setting, const char *key)
 	g_hash_table_remove (NM_SETTING_VPN_GET_PRIVATE (setting)->secrets, key);
 }
 
+/**
+ * nm_setting_vpn_foreach_secret:
+ * @setting: a #NMSettingVPN
+ * @func: (scope call): an user provided function
+ * @user_data:
+ *
+ * Iterates all secrets stored in this setting.
+ */
 void
 nm_setting_vpn_foreach_secret (NMSettingVPN *setting,
-                               VPNIterFunc func,
+                               NMVPNIterFunc func,
                                gpointer user_data)
 {
 	g_return_if_fail (NM_IS_SETTING_VPN (setting));

@@ -52,7 +52,7 @@ nm_ssid_get_type (void)
 	static GType our_type = 0;
 
 	if (our_type == 0)
-		our_type = g_boxed_type_register_static (g_intern_static_string ("nm-ssid"),
+		our_type = g_boxed_type_register_static (g_intern_static_string ("NMSsid"),
 		                                         (GBoxedCopyFunc) nm_ssid_copy,
 		                                         (GBoxedFreeFunc) nm_ssid_free);
 	return our_type;
@@ -105,7 +105,7 @@ nm_uint_array_get_type (void)
 	static GType our_type = 0;
 
 	if (our_type == 0)
-		our_type = g_boxed_type_register_static (g_intern_static_string ("nm-uint-array"),
+		our_type = g_boxed_type_register_static (g_intern_static_string ("NMUintArray"),
 		                                         (GBoxedCopyFunc) nm_uint_array_copy,
 		                                         (GBoxedFreeFunc) nm_uint_array_free);
 	return our_type;
@@ -163,7 +163,7 @@ nm_string_array_get_type (void)
 	static GType our_type = 0;
 
 	if (our_type == 0)
-		our_type = g_boxed_type_register_static (g_intern_static_string ("nm-string-array"),
+		our_type = g_boxed_type_register_static (g_intern_static_string ("NMStringArray"),
 		                                         (GBoxedCopyFunc) nm_string_array_copy,
 		                                         (GBoxedFreeFunc) nm_string_array_free);
 	return our_type;
@@ -224,7 +224,7 @@ nm_object_array_get_type (void)
 	static GType our_type = 0;
 
 	if (our_type == 0)
-		our_type = g_boxed_type_register_static (g_intern_static_string ("nm-object-array"),
+		our_type = g_boxed_type_register_static (g_intern_static_string ("NMObjectArray"),
 		                                         (GBoxedCopyFunc) nm_object_array_copy,
 		                                         (GBoxedFreeFunc) nm_object_array_free);
 	return our_type;
@@ -306,7 +306,7 @@ nm_ip6_address_object_array_get_type (void)
 	static GType our_type = 0;
 
 	if (our_type == 0)
-		our_type = g_boxed_type_register_static (g_intern_static_string ("nm-ip6-address-object-array"),
+		our_type = g_boxed_type_register_static (g_intern_static_string ("NMIP6AddressObjectArray"),
 		                                         (GBoxedCopyFunc) nm_ip6_address_object_array_copy,
 		                                         (GBoxedFreeFunc) nm_ip6_address_object_array_free);
 	return our_type;
@@ -348,7 +348,7 @@ nm_ip6_address_array_get_type (void)
 	static GType our_type = 0;
 
 	if (our_type == 0)
-		our_type = g_boxed_type_register_static (g_intern_static_string ("nm-ip6-address-array"),
+		our_type = g_boxed_type_register_static (g_intern_static_string ("NMIP6AddressArray"),
 		                                         (GBoxedCopyFunc) nm_ip6_address_array_copy,
 		                                         (GBoxedFreeFunc) nm_ip6_address_array_free);
 	return our_type;
@@ -415,7 +415,7 @@ nm_ip6_route_object_array_get_type (void)
 	static GType our_type = 0;
 
 	if (our_type == 0)
-		our_type = g_boxed_type_register_static (g_intern_static_string ("nm-ip6-route-object-array"),
+		our_type = g_boxed_type_register_static (g_intern_static_string ("NMIP6RouteObjectArray"),
 		                                         (GBoxedCopyFunc) nm_ip6_route_object_array_copy,
 		                                         (GBoxedFreeFunc) nm_ip6_route_object_array_free);
 	return our_type;

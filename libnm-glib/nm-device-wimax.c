@@ -108,12 +108,12 @@ nm_device_wimax_new (DBusGConnection *connection, const char *path)
 
 /**
  * nm_device_wimax_get_hw_address:
- * @device: a #NMDeviceWimax
+ * @wimax: a #NMDeviceWimax
  *
  * Gets the hardware (MAC) address of the #NMDeviceWimax
  *
  * Returns: the hardware address. This is the internal string used by the
- * device, and must not be modified.
+ *          device, and must not be modified.
  **/
 const char *
 nm_device_wimax_get_hw_address (NMDeviceWimax *wimax)
@@ -138,7 +138,7 @@ nm_device_wimax_get_hw_address (NMDeviceWimax *wimax)
  *
  * Gets the active #NMWimaxNsp.
  *
- * Returns: the access point or %NULL if none is active
+ * Returns: (transfer full): the access point or %NULL if none is active
  **/
 NMWimaxNsp *
 nm_device_wimax_get_active_nsp (NMDeviceWimax *wimax)
@@ -188,7 +188,8 @@ nm_device_wimax_get_active_nsp (NMDeviceWimax *wimax)
  *
  * Gets all the scanned NSPs of the #NMDeviceWimax.
  *
- * Returns: a #GPtrArray containing all the scanned #NMWimaxNsp<!-- -->s.
+ * Returns: (element-type NMClient.WimaxNsp): a #GPtrArray containing
+ *          all the scanned #NMWimaxNsp<!-- -->s.
  * The returned array is owned by the client and should not be modified.
  **/
 const GPtrArray *
@@ -228,7 +229,7 @@ nm_device_wimax_get_nsps (NMDeviceWimax *wimax)
  *
  * Gets a #NMWimaxNsp by path.
  *
- * Returns: the access point or %NULL if none is found.
+ * Returns: (transfer none): the access point or %NULL if none is found.
  **/
 NMWimaxNsp *
 nm_device_wimax_get_nsp_by_path (NMDeviceWimax *wimax,
@@ -339,7 +340,7 @@ clean_up_nsps (NMDeviceWimax *self, gboolean notify)
 
 /**
  * nm_device_wimax_get_center_frequency:
- * @device: a #NMDeviceWimax
+ * @self: a #NMDeviceWimax
  *
  * Gets the center frequency (in KHz) of the radio channel the device is using
  * to communicate with the network when connected.  Has no meaning when the
@@ -348,15 +349,15 @@ clean_up_nsps (NMDeviceWimax *self, gboolean notify)
  * Returns: the center frequency in KHz, or 0
  **/
 guint
-nm_device_wimax_get_center_frequency (NMDeviceWimax *wimax)
+nm_device_wimax_get_center_frequency (NMDeviceWimax *self)
 {
 	NMDeviceWimaxPrivate *priv;
 
-	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (wimax), 0);
+	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), 0);
 
-	priv = NM_DEVICE_WIMAX_GET_PRIVATE (wimax);
+	priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 	if (!priv->center_freq) {
-		priv->center_freq = _nm_object_get_uint_property (NM_OBJECT (wimax),
+		priv->center_freq = _nm_object_get_uint_property (NM_OBJECT (self),
 		                                                  NM_DBUS_INTERFACE_DEVICE_WIMAX,
 		                                                  DBUS_PROP_CENTER_FREQUENCY);
 	}
@@ -365,7 +366,7 @@ nm_device_wimax_get_center_frequency (NMDeviceWimax *wimax)
 
 /**
  * nm_device_wimax_get_rssi:
- * @device: a #NMDeviceWimax
+ * @self: a #NMDeviceWimax
  *
  * Gets the RSSI of the current radio link in dBm.  This value indicates how
  * strong the raw received RF signal from the base station is, but does not
@@ -375,15 +376,15 @@ nm_device_wimax_get_center_frequency (NMDeviceWimax *wimax)
  * Returns: the RSSI in dBm, or 0
  **/
 gint
-nm_device_wimax_get_rssi (NMDeviceWimax *wimax)
+nm_device_wimax_get_rssi (NMDeviceWimax *self)
 {
 	NMDeviceWimaxPrivate *priv;
 
-	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (wimax), 0);
+	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), 0);
 
-	priv = NM_DEVICE_WIMAX_GET_PRIVATE (wimax);
+	priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 	if (!priv->rssi) {
-		priv->rssi = _nm_object_get_int_property (NM_OBJECT (wimax),
+		priv->rssi = _nm_object_get_int_property (NM_OBJECT (self),
 		                                          NM_DBUS_INTERFACE_DEVICE_WIMAX,
 		                                          DBUS_PROP_RSSI);
 	}
@@ -392,7 +393,7 @@ nm_device_wimax_get_rssi (NMDeviceWimax *wimax)
 
 /**
  * nm_device_wimax_get_cinr:
- * @device: a #NMDeviceWimax
+ * @self: a #NMDeviceWimax
  *
  * Gets the CINR (Carrier to Interference + Noise Ratio) of the current radio
  * link in dB.  CINR is a more accurate measure of radio link quality.  Has no
@@ -401,15 +402,15 @@ nm_device_wimax_get_rssi (NMDeviceWimax *wimax)
  * Returns: the CINR in dB, or 0
  **/
 gint
-nm_device_wimax_get_cinr (NMDeviceWimax *wimax)
+nm_device_wimax_get_cinr (NMDeviceWimax *self)
 {
 	NMDeviceWimaxPrivate *priv;
 
-	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (wimax), 0);
+	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), 0);
 
-	priv = NM_DEVICE_WIMAX_GET_PRIVATE (wimax);
+	priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 	if (!priv->cinr) {
-		priv->cinr = _nm_object_get_int_property (NM_OBJECT (wimax),
+		priv->cinr = _nm_object_get_int_property (NM_OBJECT (self),
 		                                          NM_DBUS_INTERFACE_DEVICE_WIMAX,
 		                                          DBUS_PROP_CINR);
 	}
@@ -418,7 +419,7 @@ nm_device_wimax_get_cinr (NMDeviceWimax *wimax)
 
 /**
  * nm_device_wimax_get_tx_power:
- * @device: a #NMDeviceWimax
+ * @self: a #NMDeviceWimax
  *
  * Average power of the last burst transmitted by the device, in units of
  * 0.5 dBm.  i.e. a TxPower of -11 represents an actual device TX power of
@@ -427,15 +428,15 @@ nm_device_wimax_get_cinr (NMDeviceWimax *wimax)
  * Returns: the TX power in dBm, or 0
  **/
 gint
-nm_device_wimax_get_tx_power (NMDeviceWimax *wimax)
+nm_device_wimax_get_tx_power (NMDeviceWimax *self)
 {
 	NMDeviceWimaxPrivate *priv;
 
-	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (wimax), 0);
+	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), 0);
 
-	priv = NM_DEVICE_WIMAX_GET_PRIVATE (wimax);
+	priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 	if (!priv->tx_power) {
-		priv->tx_power = _nm_object_get_int_property (NM_OBJECT (wimax),
+		priv->tx_power = _nm_object_get_int_property (NM_OBJECT (self),
 		                                              NM_DBUS_INTERFACE_DEVICE_WIMAX,
 		                                              DBUS_PROP_TX_POWER);
 	}
@@ -444,22 +445,22 @@ nm_device_wimax_get_tx_power (NMDeviceWimax *wimax)
 
 /**
  * nm_device_wimax_get_bsid:
- * @device: a #NMDeviceWimax
+ * @self: a #NMDeviceWimax
  *
  * Gets the ID of the serving Base Station when the device is connected.
  *
  * Returns: the ID of the serving Base Station, or NULL
  **/
 const char *
-nm_device_wimax_get_bsid (NMDeviceWimax *wimax)
+nm_device_wimax_get_bsid (NMDeviceWimax *self)
 {
 	NMDeviceWimaxPrivate *priv;
 
-	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (wimax), NULL);
+	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), NULL);
 
-	priv = NM_DEVICE_WIMAX_GET_PRIVATE (wimax);
+	priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 	if (!priv->bsid) {
-		priv->bsid = _nm_object_get_string_property (NM_OBJECT (wimax),
+		priv->bsid = _nm_object_get_string_property (NM_OBJECT (self),
 		                                             NM_DBUS_INTERFACE_DEVICE_WIMAX,
 		                                             DBUS_PROP_BSID);
 	}

@@ -337,8 +337,8 @@ nm_ip4_config_new (DBusGConnection *connection, const char *object_path)
  *
  * Gets the IP4 addresses (containing the address, prefix, and gateway).
  *
- * Returns: the #GSList containing #NMSettingIP4Address<!-- -->es. This is the internal copy
- * used by the configuration and must not be modified.
+ * Returns: (element-type NetworkManager.IP4Address): the #GSList containing #NMIP4Address<!-- -->es.
+ * This is the internal copy used by the configuration and must not be modified.
  **/
 const GSList *
 nm_ip4_config_get_addresses (NMIP4Config *config)
@@ -366,7 +366,7 @@ nm_ip4_config_get_addresses (NMIP4Config *config)
 }
 
 /**
- * nm_ip4_config_get_hostname:
+ * nm_ip4_config_get_hostname: (skip):
  * @config: a #NMIP4Config
  *
  * DEPRECATED.  Don't use.
@@ -385,7 +385,7 @@ nm_ip4_config_get_hostname (NMIP4Config *config)
  *
  * Gets the domain name servers (DNS).
  *
- * Returns: the #GArray containing %guint32<!-- -->s. This is the internal copy used by the
+ * Returns: (element-type guint32): the #GArray containing %guint32<!-- -->s. This is the internal copy used by the
  * configuration and must not be modified.
  **/
 const GArray *
@@ -421,7 +421,7 @@ nm_ip4_config_get_nameservers (NMIP4Config *config)
  *
  * Gets the domain names.
  *
- * Returns: the #GPtrArray containing domains as strings. This is the 
+ * Returns: (element-type utf8): the #GPtrArray containing domains as strings. This is the 
  * internal copy used by the configuration, and must not be modified.
  **/
 const GPtrArray *
@@ -460,8 +460,8 @@ nm_ip4_config_get_domains (NMIP4Config *config)
  *
  * Gets the Windows Internet Name Service servers (WINS).
  *
- * Returns: the #GArray containing %guint32<!-- -->s. This is the internal copy used by the
- * configuration and must not be modified.
+ * Returns: (element-type guint32): the #GArray containing %guint32<!-- -->s.
+ * This is the internal copy used by the configuration and must not be modified.
  **/
 const GArray *
 nm_ip4_config_get_wins_servers (NMIP4Config *config)
@@ -496,8 +496,9 @@ nm_ip4_config_get_wins_servers (NMIP4Config *config)
  *
  * Gets the routes.
  *
- * Returns: the #GSList containing #NMSettingIP4Route<!-- -->s. This is the 
- * internal copy used by the configuration, and must not be modified.
+ * Returns: (element-type NetworkManager.IP4Route): the #GSList containing
+ * #NMIP4Route<!-- -->s. This is the internal copy used by the configuration,
+ * and must not be modified.
  **/
 const GSList *
 nm_ip4_config_get_routes (NMIP4Config *config)

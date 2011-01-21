@@ -71,7 +71,9 @@ typedef struct {
 	void (*_reserved4) (void);
 } NMSettingVPNClass;
 
-typedef void (*VPNIterFunc) (const char *key, const char *value, gpointer user_data);
+typedef void (*NMVPNIterFunc) (const char *key, const char *value, gpointer user_data);
+/* For backward compatibility */
+typedef NMVPNIterFunc VPNIterFunc;
 
 GType nm_setting_vpn_get_type (void);
 
@@ -87,7 +89,7 @@ const char *      nm_setting_vpn_get_data_item     (NMSettingVPN *setting,
 void              nm_setting_vpn_remove_data_item  (NMSettingVPN *setting,
                                                     const char *key);
 void              nm_setting_vpn_foreach_data_item (NMSettingVPN *setting,
-                                                    VPNIterFunc func,
+                                                    NMVPNIterFunc func,
                                                     gpointer user_data);
 
 void              nm_setting_vpn_add_secret        (NMSettingVPN *setting,
@@ -98,7 +100,7 @@ const char *      nm_setting_vpn_get_secret        (NMSettingVPN *setting,
 void              nm_setting_vpn_remove_secret     (NMSettingVPN *setting,
                                                     const char *key);
 void              nm_setting_vpn_foreach_secret    (NMSettingVPN *setting,
-                                                    VPNIterFunc func,
+                                                    NMVPNIterFunc func,
                                                     gpointer user_data);
 
 G_END_DECLS

@@ -101,7 +101,7 @@ update_cb (DBusGProxy *proxy, GError *error, gpointer user_data)
 /**
  * nm_remote_connection_commit_changes:
  * @connection: the #NMRemoteConnection
- * @callback: a function to be called when the commit completes
+ * @callback: (scope async): a function to be called when the commit completes
  * @user_data: caller-specific data to be passed to @callback
  *
  * Save any local changes to the settings and properties of this connection and
@@ -153,7 +153,7 @@ delete_cb (DBusGProxy *proxy, GError *error, gpointer user_data)
 /**
  * nm_remote_connection_delete:
  * @connection: the #NMRemoteConnection
- * @callback: a function to be called when the delete completes
+ * @callback: (scope async): a function to be called when the delete completes
  * @user_data: caller-specific data to be passed to @callback
  *
  * Delete the connection.
@@ -202,7 +202,7 @@ get_secrets_cb (DBusGProxy *proxy, GHashTable *secrets, GError *error, gpointer 
  * @hints: #NMSetting key names to get secrets for (optional)
  * @request_new: hint that new secrets (instead of cached or stored secrets) 
  *  should be returned
- * @callback: a function to be called when the update completes
+ * @callback: (scope async): a function to be called when the update completes
  * @user_data: caller-specific data to be passed to @callback
  *
  * Request the connection's secrets.
@@ -483,8 +483,8 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMRemoteConnectionClass, updated),
 		              NULL, NULL,
-		              g_cclosure_marshal_VOID__BOXED,
-		              G_TYPE_NONE, 1, DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT);
+		              g_cclosure_marshal_VOID__VOID,
+		              G_TYPE_NONE, 0);
 
 	signals[REMOVED] = 
 		g_signal_new (NM_REMOTE_CONNECTION_REMOVED,
@@ -494,5 +494,4 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 	 	              NULL, NULL,
 		              g_cclosure_marshal_VOID__VOID,
 		              G_TYPE_NONE, 0);
-
 }

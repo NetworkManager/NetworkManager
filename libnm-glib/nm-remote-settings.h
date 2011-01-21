@@ -115,7 +115,7 @@ GSList * nm_remote_settings_list_connections (NMRemoteSettings *settings);
 NMRemoteConnection * nm_remote_settings_get_connection_by_path (NMRemoteSettings *settings,
                                                                 const char *path);
 
-gboolean nm_remote_settings_add_connection (NMRemoteSettings *self,
+gboolean nm_remote_settings_add_connection (NMRemoteSettings *settings,
                                             NMConnection *connection,
                                             NMRemoteSettingsAddConnectionFunc callback,
                                             gpointer user_data);

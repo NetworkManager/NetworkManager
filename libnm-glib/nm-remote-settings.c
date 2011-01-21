@@ -168,7 +168,7 @@ add_connection_info_complete (NMRemoteSettings *self,
  *
  * Returns the %NMRemoteConnection representing the connection at @path.
  *
- * Returns: the remote connection object on success, or NULL if the object was
+ * Returns: (transfer none): the remote connection object on success, or NULL if the object was
  *  not known
  **/
 NMRemoteConnection *
@@ -366,7 +366,7 @@ fetch_connections (gpointer user_data)
  * nm_remote_settings_list_connections:
  * @settings: the %NMRemoteSettings
  *
- * Returns: all connections in the remote settings service, represented as
+ * Returns: (transfer container) (element-type NMClient.RemoteConnection): all connections in the remote settings service, represented as
  * %NMRemoteConnection instances
  **/
 GSList *
@@ -407,12 +407,13 @@ add_connection_done (DBusGProxy *proxy,
 
 	g_free (path);
 }
+
 /**
  * nm_remote_settings_add_connection:
  * @settings: the %NMRemoteSettings
  * @connection: the connection to add. Note that this object's settings will be
  *   added, not the object itself
- * @callback: callback to be called when the add operation completes
+ * @callback: (scope async): callback to be called when the add operation completes
  * @user_data: caller-specific data passed to @callback
  *
  * Requests that the remote settings service add the given settings to a new
@@ -513,7 +514,7 @@ save_hostname_cb (DBusGProxy *proxy,
  * @settings: the %NMRemoteSettings
  * @hostname: the new persistent hostname to set, or NULL to clear any existing
  *  persistent hostname
- * @callback: callback to be called when the hostname operation completes
+ * @callback: (scope async): callback to be called when the hostname operation completes
  * @user_data: caller-specific data passed to @callback
  *
  * Requests that the machine's persistent hostname be set to the specified value
@@ -637,7 +638,7 @@ get_all_cb  (DBusGProxy *proxy,
 
 /**
  * nm_remote_settings_new:
- * @bus: a valid and connected D-Bus connection
+ * @bus: (allow-none): a valid and connected D-Bus connection
  *
  * Creates a new object representing the remote settings service.
  *
@@ -646,7 +647,8 @@ get_all_cb  (DBusGProxy *proxy,
 NMRemoteSettings *
 nm_remote_settings_new (DBusGConnection *bus)
 {
-	g_return_val_if_fail (bus != NULL, NULL);
+	if (bus == NULL)
+		bus = dbus_g_bus_get (DBUS_BUS_SYSTEM, NULL);
 
 	return (NMRemoteSettings *) g_object_new (NM_TYPE_REMOTE_SETTINGS,
 	                                          NM_REMOTE_SETTINGS_BUS, bus,

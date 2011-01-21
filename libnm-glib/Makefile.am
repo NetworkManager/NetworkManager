@@ -47,6 +47,9 @@ libdeprecated_nm_glib_la_LIBADD = \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS)
 
+libdeprecateddir = $(includedir)/libnm-glib
+libdeprecated_HEADERS = libnm_glib.h
+
 #####################################################
 # Real libnm-glib stuff
 #####################################################
@@ -59,9 +62,9 @@ libnm_glib_la_CFLAGS = \
 	$(GUDEV_CFLAGS)
 
 libnmincludedir = $(includedir)/libnm-glib
+libnmvpndir = $(includedir)/libnm-glib
 
 libnminclude_HEADERS = \
-	libnm_glib.h \
 	nm-object.h \
 	nm-client.h \
 	nm-device.h \
@@ -74,8 +77,6 @@ libnminclude_HEADERS = \
 	nm-cdma-device.h \
 	nm-serial-device.h \
 	nm-vpn-connection.h \
-	nm-vpn-plugin.h \
-	nm-vpn-plugin-ui-interface.h \
 	nm-types.h \
 	nm-active-connection.h \
 	nm-dhcp4-config.h \
@@ -87,14 +88,15 @@ libnminclude_HEADERS = \
 	nm-device-wimax.h \
 	nm-wimax-nsp.h
 
-libnm_glib_la_SOURCES = \
+libnmvpn_HEADERS = \
+	nm-vpn-plugin.h \
+	nm-vpn-plugin-ui-interface.h
+
+libnm_glib_la_csources = \
 	nm-object.c \
-	nm-object-private.h \
 	nm-client.c \
 	nm-dbus-utils.c \
-	nm-dbus-utils.h \
 	nm-device.c \
-	nm-device-private.h \
 	nm-device-ethernet.c \
 	nm-device-wifi.c \
 	nm-device-bt.c \
@@ -105,19 +107,28 @@ libnm_glib_la_SOURCES = \
 	nm-serial-device.c \
 	nm-vpn-connection.c \
 	nm-types.c \
-	nm-types-private.h \
 	nm-object-cache.c \
-	nm-object-cache.h \
 	nm-active-connection.c \
 	nm-dhcp4-config.c \
 	nm-ip6-config.c \
 	nm-dhcp6-config.c \
 	nm-remote-connection.c \
-	nm-remote-connection-private.h \
 	nm-remote-settings.c \
 	nm-secret-agent.c \
 	nm-device-wimax.c \
 	nm-wimax-nsp.c
+
+libnm_glib_la_private_headers = \
+	nm-object-private.h \
+	nm-dbus-utils.h \
+	nm-device-private.h \
+	nm-types-private.h \
+	nm-object-cache.h \
+	nm-remote-connection-private.h
+
+libnm_glib_la_SOURCES = \
+	$(libnm_glib_la_csources) \
+	$(libnm_glib_la_private_headers)
 
 libnm_glib_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
@@ -128,7 +139,7 @@ libnm_glib_la_LIBADD = \
 	$(GUDEV_LIBS)
 
 libnm_glib_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm-glib.ver \
-	-version-info "6:2:4"
+	-version-info "7:0:5"
 
 noinst_PROGRAMS = libnm-glib-test
 
@@ -225,3 +236,28 @@ DISTCLEANFILES = libnm-glib.pc libnm-glib.pc
 EXTRA_DIST = libnm-glib.pc.in libnm-glib-vpn.pc.in libnm-glib.ver libnm-glib-vpn.ver
 
 CLEANFILES = $(BUILT_SOURCES)
+
+-include $(INTROSPECTION_MAKEFILE)
+INTROSPECTION_GIRS =
+INTROSPECTION_COMPILER_ARGS = --includedir=$(top_builddir)/libnm-util
+
+if HAVE_INTROSPECTION
+introspection_sources = $(libnminclude_HEADERS) $(libnm_glib_la_csources)
+
+NMClient-1.0.gir: libnm-glib.la
+NMClient_1_0_gir_INCLUDES = GObject-2.0 DBusGLib-1.0
+NMClient_1_0_gir_PACKAGES = gobject-2.0 dbus-glib-1 gudev-1.0
+NMClient_1_0_gir_CFLAGS = $(INCLUDES)
+NMClient_1_0_gir_LIBS = libnm-glib.la
+NMClient_1_0_gir_FILES = $(introspection_sources)
+NMClient_1_0_gir_SCANNERFLAGS = --warn-all --identifier-prefix=NM --symbol-prefix=nm_ --include-uninstalled=$(top_builddir)/libnm-util/NetworkManager-1.0.gir
+INTROSPECTION_GIRS += NMClient-1.0.gir
+
+girdir = $(datadir)/gir-1.0
+gir_DATA = $(INTROSPECTION_GIRS)
+
+typelibdir = $(libdir)/girepository-1.0
+typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
+
+CLEANFILES += $(gir_DATA) $(typelib_DATA)
+endif

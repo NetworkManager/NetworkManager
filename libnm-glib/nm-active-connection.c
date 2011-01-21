@@ -149,7 +149,7 @@ nm_active_connection_get_specific_object (NMActiveConnection *connection)
  *
  * Gets the #NMDevice<!-- -->s used for the active connections.
  *
- * Returns: the #GPtrArray containing #NMDevice<!-- -->s.
+ * Returns: (element-type NMClient.Device): the #GPtrArray containing #NMDevice<!-- -->s.
  * This is the internal copy used by the connection, and must not be modified.
  **/
 const GPtrArray *
@@ -301,7 +301,7 @@ get_property (GObject *object,
 
 	switch (prop_id) {
 	case PROP_CONNECTION:
-		g_value_set_boxed (value, nm_active_connection_get_connection (self));
+		g_value_set_string (value, nm_active_connection_get_connection (self));
 		break;
 	case PROP_SPECIFIC_OBJECT:
 		g_value_set_boxed (value, nm_active_connection_get_specific_object (self));

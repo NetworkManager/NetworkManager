@@ -241,6 +241,8 @@ PKG_CHECK_MODULES(GIO, gio-2.0)
 AC_SUBST(GIO_CFLAGS)
 AC_SUBST(GIO_LIBS)
 
+GOBJECT_INTROSPECTION_CHECK([0.9.6])
+
 AC_ARG_WITH(udev-dir, AS_HELP_STRING([--with-udev-dir=DIR], [where the udev base directory is]))
 if test -n "$with_udev_dir" ; then
 	UDEV_BASE_DIR="$with_udev_dir"

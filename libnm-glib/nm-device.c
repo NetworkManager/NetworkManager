@@ -934,7 +934,7 @@ nm_device_get_firmware_missing (NMDevice *device)
  *
  * Gets the current #NMIP4Config associated with the #NMDevice.
  *
- * Returns: the #NMIP4Config or %NULL if the device is not activated.
+ * Returns: (transfer none): the #NMIP4Config or %NULL if the device is not activated.
  **/
 NMIP4Config *
 nm_device_get_ip4_config (NMDevice *device)
@@ -968,7 +968,7 @@ nm_device_get_ip4_config (NMDevice *device)
  *
  * Gets the current #NMDHCP4Config associated with the #NMDevice.
  *
- * Returns: the #NMDHCPConfig or %NULL if the device is not activated or not
+ * Returns: (transfer none): the #NMDHCPConfig or %NULL if the device is not activated or not
  * using DHCP.
  **/
 NMDHCP4Config *
@@ -1003,7 +1003,7 @@ nm_device_get_dhcp4_config (NMDevice *device)
  *
  * Gets the current #NMIP6Config associated with the #NMDevice.
  *
- * Returns: the #NMIP6Config or %NULL if the device is not activated.
+ * Returns: (transfer none): the #NMIP6Config or %NULL if the device is not activated.
  **/
 NMIP6Config *
 nm_device_get_ip6_config (NMDevice *device)
@@ -1037,7 +1037,7 @@ nm_device_get_ip6_config (NMDevice *device)
  *
  * Gets the current #NMDHCP6Config associated with the #NMDevice.
  *
- * Returns: the #NMDHCPConfig or %NULL if the device is not activated or not
+ * Returns: (transfer none): the #NMDHCPConfig or %NULL if the device is not activated or not
  * using DHCP.
  **/
 NMDHCP6Config *
@@ -1317,7 +1317,7 @@ deactivate_cb (DBusGProxy *proxy,
 /**
  * nm_device_disconnect:
  * @device: a #NMDevice
- * @callback: callback to be called when disconnect operation completes
+ * @callback: (scope async): callback to be called when disconnect operation completes
  * @user_data: caller-specific data passed to @callback
  *
  * Disconnects the device if currently connected, and prevents the device from

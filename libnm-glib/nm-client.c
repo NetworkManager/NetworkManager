@@ -664,7 +664,7 @@ get_property (GObject *object,
 		g_value_set_boolean (value, priv->manager_running);
 		break;
 	case PROP_NETWORKING_ENABLED:
-		g_value_set_boolean (value, priv->networking_enabled);
+		g_value_set_boolean (value, nm_client_networking_get_enabled (self));
 		break;
 	case PROP_WIRELESS_ENABLED:
 		g_value_set_boolean (value, priv->wireless_enabled);
@@ -829,6 +829,7 @@ nm_client_class_init (NMClientClass *client_class)
 	 * NMClient::active-connections:
 	 *
 	 * The active connections.
+	 * Type: GPtrArray<NMClient.ActiveConnection>
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ACTIVE_CONNECTIONS,
@@ -843,7 +844,7 @@ nm_client_class_init (NMClientClass *client_class)
 	/**
 	 * NMClient::device-added:
 	 * @client: the client that received the signal
-	 * @device: the new device
+	 * @device: (type NMClient.Device): the new device
 	 *
 	 * Notifies that a #NMDevice is added.
 	 **/
@@ -860,7 +861,7 @@ nm_client_class_init (NMClientClass *client_class)
 	/**
 	 * NMClient::device-removed:
 	 * @widget: the client that received the signal
-	 * @device: the removed device
+	 * @device: (type NMClient.Device): the removed device
 	 *
 	 * Notifies that a #NMDevice is removed.
 	 **/
@@ -1012,7 +1013,7 @@ client_device_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
  *
  * Gets all the detected devices.
  *
- * Returns: a #GPtrArray containing all the #NMDevice<!-- -->s.
+ * Returns: (transfer none) (element-type NMClient.Device): a #GPtrArray containing all the #NMDevice<!-- -->s.
  * The returned array is owned by the client and should not be modified.
  **/
 const GPtrArray *
@@ -1052,7 +1053,7 @@ nm_client_get_devices (NMClient *client)
  *
  * Gets a #NMDevice from a #NMClient.
  *
- * Returns: the #NMDevice for the given @object_path or %NULL if none is found.
+ * Returns: (transfer none): the #NMDevice for the given @object_path or %NULL if none is found.
  **/
 NMDevice *
 nm_client_get_device_by_path (NMClient *client, const char *object_path)
@@ -1109,7 +1110,7 @@ activate_cb (DBusGProxy *proxy,
  * @device: the #NMDevice
  * @specific_object: the device specific object (currently used only for
  * activating wireless devices and should be the #NMAccessPoint<!-- -->'s path.
- * @callback: the function to call when the call is done
+ * @callback: (scope async): the function to call when the call is done
  * @user_data: user data to pass to the callback function
  *
  * Activates a connection with the given #NMDevice.
@@ -1165,14 +1166,14 @@ add_activate_cb (DBusGProxy *proxy,
  *   and will be completed by NetworkManager using the given @device and
  *   @specific_object before being added
  * @device: the #NMDevice
- * @specific_object: the object path of a connection-type-specific object this
- *   activation should use.  This parameter is currently ignored for wired and
- *   mobile broadband connections, and the value of NULL should be used (ie, no
- *   specific object).  For WiFi connections, pass the object path of a specific
- *   AP from the card's scan list, which will be used to complete the details of
- *   the newly added connection.
- * @callback: the function to call when the call is done
- * @user_data: user data to pass to the callback function
+ * @specific_object: (allow-none): the object path of a connection-type-specific
+ *   object this activation should use. This parameter is currently ignored for
+ *   wired and mobile broadband connections, and the value of NULL should be used
+ *   (ie, no specific object).  For WiFi connections, pass the object path of a
+ *   specific AP from the card's scan list, which will be used to complete the
+ *   details of the newly added connection.
+ * @callback: (scope async): the function to call when the call is done
+ * @user_data: (closure): user data to pass to the callback function
  *
  * Adds a new connection using the given details (if any) as a template
  * (automatically filling in missing settings with the capabilities of the
@@ -1243,7 +1244,8 @@ nm_client_deactivate_connection (NMClient *client, NMActiveConnection *active)
  *
  * Gets the active connections.
  *
- * Returns: a #GPtrArray containing all the active #NMActiveConnection<!-- -->s.
+ * Returns: (transfer none) (element-type NMClient.ActiveConnection): a #GPtrArray
+*  containing all the active #NMActiveConnection<!-- -->s.
  * The returned array is owned by the client and should not be modified.
  **/
 const GPtrArray * 

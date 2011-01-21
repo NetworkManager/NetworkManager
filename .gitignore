@@ -3,6 +3,8 @@
 *.lo
 *.la
 *.bz2
+*.gir
+*.typelib
 Makefile
 Makefile.in*
 configure
