@@ -35,8 +35,16 @@
 
 char *nm_active_connection_get_next_object_path (void);
 
-void nm_active_connection_install_type_info (GObjectClass *klass);
-
 void nm_active_connection_scope_to_value (NMConnection *connection, GValue *value);
+
+void nm_active_connection_install_properties (GObjectClass *object_class,
+                                              guint prop_service_name,
+                                              guint prop_connection,
+                                              guint prop_specific_object,
+                                              guint prop_devices,
+                                              guint prop_state,
+                                              guint prop_default,
+                                              guint prop_default6,
+                                              guint prop_vpn);
 
 #endif /* NM_ACTIVE_CONNECTION_H */
