@@ -52,7 +52,7 @@
 
 static void secrets_provider_interface_init (NMSecretsProviderInterface *sp_interface_class);
 
-G_DEFINE_TYPE_EXTENDED (NMVPNConnection, nm_vpn_connection, G_TYPE_OBJECT, 0,
+G_DEFINE_TYPE_EXTENDED (NMVPNConnection, nm_vpn_connection, NM_TYPE_VPN_CONNECTION_BASE, 0,
                         G_IMPLEMENT_INTERFACE (NM_TYPE_SECRETS_PROVIDER_INTERFACE,
                                                secrets_provider_interface_init))
 
@@ -62,15 +62,10 @@ typedef struct {
 	NMConnection *connection;
 
 	NMActRequest *act_request;
-	char *ac_path;
 
 	NMDevice *parent_dev;
 	gulong device_monitor;
 	gulong device_ip4;
-
-	gboolean is_default;
-	gboolean is_default6;
-	NMActiveConnectionState state;
 
 	NMVPNConnectionState vpn_state;
 	NMVPNConnectionStateReason failure_reason;
@@ -97,14 +92,6 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 enum {
 	PROP_0,
-	PROP_SERVICE_NAME,
-	PROP_CONNECTION,
-	PROP_SPECIFIC_OBJECT,
-	PROP_DEVICES,
-	PROP_STATE,
-	PROP_DEFAULT,
-	PROP_DEFAULT6,
-	PROP_VPN,
 	PROP_VPN_STATE,
 	PROP_BANNER,
 
@@ -117,7 +104,6 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
                                  NMVPNConnectionStateReason reason)
 {
 	NMVPNConnectionPrivate *priv;
-	NMActiveConnectionState new_ac_state;
 	NMVPNConnectionState old_vpn_state;
 	char *ip_iface;
 
@@ -131,31 +117,13 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 	old_vpn_state = priv->vpn_state;
 	priv->vpn_state = vpn_state;
 
+	/* Update active connection base class state */
+	nm_vpn_connection_base_set_state (NM_VPN_CONNECTION_BASE (connection), vpn_state);
+
 	/* Save ip_iface since when the VPN goes down it may get freed
 	 * before we're done with it.
 	 */
 	ip_iface = g_strdup (priv->ip_iface);
-
-	/* Set the NMActiveConnection state based on VPN state */
-	switch (vpn_state) {
-	case NM_VPN_CONNECTION_STATE_PREPARE:
-	case NM_VPN_CONNECTION_STATE_NEED_AUTH:
-	case NM_VPN_CONNECTION_STATE_CONNECT:
-	case NM_VPN_CONNECTION_STATE_IP_CONFIG_GET:
-		new_ac_state = NM_ACTIVE_CONNECTION_STATE_ACTIVATING;
-		break;
-	case NM_VPN_CONNECTION_STATE_ACTIVATED:
-		new_ac_state = NM_ACTIVE_CONNECTION_STATE_ACTIVATED;
-		break;
-	default:
-		new_ac_state = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
-		break;
-	}
-
-	if (new_ac_state != priv->state) {
-		priv->state = new_ac_state;
-		g_object_notify (G_OBJECT (connection), NM_ACTIVE_CONNECTION_STATE);
-	}
 
 	/* The connection gets destroyed by the VPN manager when it enters the
 	 * disconnected/failed state, but we need to keep it around for a bit
@@ -259,6 +227,9 @@ nm_vpn_connection_new (NMConnection *connection,
 	priv->device_ip4 = g_signal_connect (parent_device, "notify::" NM_DEVICE_INTERFACE_IP4_CONFIG,
 	                                     G_CALLBACK (device_ip4_config_changed),
 	                                     self);
+
+	nm_vpn_connection_base_export (NM_VPN_CONNECTION_BASE (self), connection);
+
 	return self;
 }
 
@@ -688,7 +659,7 @@ nm_vpn_connection_get_active_connection_path (NMVPNConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), NULL);
 
-	return NM_VPN_CONNECTION_GET_PRIVATE (connection)->ac_path;
+	return nm_vpn_connection_base_get_ac_path (NM_VPN_CONNECTION_BASE (connection));
 }
 
 const char *
@@ -979,20 +950,9 @@ connection_state_changed (NMVPNConnection *connection,
 }
 
 static void
-nm_vpn_connection_init (NMVPNConnection *connection)
+nm_vpn_connection_init (NMVPNConnection *self)
 {
-	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
-	NMDBusManager *dbus_mgr;
-
-	priv->state = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
-	priv->vpn_state = NM_VPN_CONNECTION_STATE_PREPARE;
-	priv->ac_path = nm_active_connection_get_next_object_path ();
-
-	dbus_mgr = nm_dbus_manager_get ();
-	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (dbus_mgr),
-								  priv->ac_path,
-								  G_OBJECT (connection));
-	g_object_unref (dbus_mgr);
+	NM_VPN_CONNECTION_GET_PRIVATE (self)->vpn_state = NM_VPN_CONNECTION_STATE_PREPARE;
 }
 
 static void
@@ -1039,7 +999,6 @@ finalize (GObject *object)
 
 	g_free (priv->banner);
 	g_free (priv->ip_iface);
-	g_free (priv->ac_path);
 
 	G_OBJECT_CLASS (nm_vpn_connection_parent_class)->finalize (object);
 }
@@ -1051,30 +1010,6 @@ get_property (GObject *object, guint prop_id,
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_SERVICE_NAME:
-		nm_active_connection_scope_to_value (priv->connection, value);
-		break;
-	case PROP_CONNECTION:
-		g_value_set_boxed (value, nm_connection_get_path (priv->connection));
-		break;
-	case PROP_SPECIFIC_OBJECT:
-		g_value_set_boxed (value, nm_act_request_get_active_connection_path (priv->act_request));
-		break;
-	case PROP_DEVICES:
-		g_value_take_boxed (value, g_ptr_array_new ());
-		break;
-	case PROP_STATE:
-		g_value_set_uint (value, priv->state);
-		break;
-	case PROP_DEFAULT:
-		g_value_set_boolean (value, priv->is_default);
-		break;
-	case PROP_DEFAULT6:
-		g_value_set_boolean (value, priv->is_default6);
-		break;
-	case PROP_VPN:
-		g_value_set_boolean (value, TRUE);
-		break;
 	case PROP_VPN_STATE:
 		g_value_set_uint (value, priv->vpn_state);
 		break;
@@ -1101,82 +1036,21 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 	object_class->finalize = finalize;
 
 	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_SERVICE_NAME,
-		 g_param_spec_string (NM_ACTIVE_CONNECTION_SERVICE_NAME,
-							  "Service name",
-							  "Service name",
-							  NULL,
-							  G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_CONNECTION,
-		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_CONNECTION,
-							  "Connection",
-							  "Connection",
-							  DBUS_TYPE_G_OBJECT_PATH,
-							  G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_SPECIFIC_OBJECT,
-		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT,
-							  "Specific object",
-							  "Specific object",
-							  DBUS_TYPE_G_OBJECT_PATH,
-							  G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_DEVICES,
-		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_DEVICES,
-							  "Devices",
-							  "Devices",
-							  DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
-							  G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_STATE,
-		 g_param_spec_uint (NM_ACTIVE_CONNECTION_STATE,
-							  "State",
-							  "State",
-							  NM_ACTIVE_CONNECTION_STATE_UNKNOWN,
-							  NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
-							  NM_ACTIVE_CONNECTION_STATE_UNKNOWN,
-							  G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_DEFAULT,
-		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_DEFAULT,
-							   "Default",
-							   "Is the default IPv4 active connection",
-							   FALSE,
-							   G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_DEFAULT6,
-		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_DEFAULT6,
-							   "Default6",
-							   "Is the default IPv6 active connection",
-							   FALSE,
-							   G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_VPN,
-		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_VPN,
-							   "VPN",
-							   "Is a VPN connection",
-							   TRUE,
-							   G_PARAM_READABLE));
+	g_object_class_install_property (object_class, PROP_VPN_STATE,
+		g_param_spec_uint (NM_VPN_CONNECTION_VPN_STATE,
+		                   "VpnState",
+		                   "Current VPN state",
+		                   NM_VPN_CONNECTION_STATE_UNKNOWN,
+		                   NM_VPN_CONNECTION_STATE_DISCONNECTED,
+		                   NM_VPN_CONNECTION_STATE_UNKNOWN,
+		                   G_PARAM_READABLE));
 
-	g_object_class_install_property
-		(object_class, PROP_VPN_STATE,
-		 g_param_spec_uint (NM_VPN_CONNECTION_VPN_STATE,
-						"VpnState",
-						"Current VPN state",
-						NM_VPN_CONNECTION_STATE_UNKNOWN,
-						NM_VPN_CONNECTION_STATE_DISCONNECTED,
-						NM_VPN_CONNECTION_STATE_UNKNOWN,
-						G_PARAM_READABLE));
-
-	g_object_class_install_property
-		(object_class, PROP_BANNER,
-		 g_param_spec_string (NM_VPN_CONNECTION_BANNER,
-						  "Banner",
-						  "Login Banner",
-						  NULL,
-						  G_PARAM_READABLE));
+	g_object_class_install_property (object_class, PROP_BANNER,
+		g_param_spec_string (NM_VPN_CONNECTION_BANNER,
+		                     "Banner",
+		                     "Login Banner",
+		                     NULL,
+		                     G_PARAM_READABLE));
 
 	/* signals */
 	signals[VPN_STATE_CHANGED] =

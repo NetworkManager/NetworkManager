@@ -35,6 +35,7 @@
 #include "nm-properties-changed-signal.h"
 #include "nm-active-connection.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-active-connection-glue.h"
 
 
 static void secrets_provider_interface_init (NMSecretsProviderInterface *sp_interface_class);
@@ -304,64 +305,15 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 	object_class->finalize = finalize;
 
 	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_SERVICE_NAME,
-		 g_param_spec_string (NM_ACTIVE_CONNECTION_SERVICE_NAME,
-							  "Service name",
-							  "Service name",
-							  NULL,
-							  G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_CONNECTION,
-		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_CONNECTION,
-							  "Connection",
-							  "Connection",
-							  DBUS_TYPE_G_OBJECT_PATH,
-							  G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_SPECIFIC_OBJECT,
-		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT,
-							  "Specific object",
-							  "Specific object",
-							  DBUS_TYPE_G_OBJECT_PATH,
-							  G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_DEVICES,
-		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_DEVICES,
-							  "Devices",
-							  "Devices",
-							  DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
-							  G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_STATE,
-		 g_param_spec_uint (NM_ACTIVE_CONNECTION_STATE,
-							  "State",
-							  "State",
-							  NM_ACTIVE_CONNECTION_STATE_UNKNOWN,
-							  NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
-							  NM_ACTIVE_CONNECTION_STATE_UNKNOWN,
-							  G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_DEFAULT,
-		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_DEFAULT,
-							   "Default",
-							   "Is the default IPv4 active connection",
-							   FALSE,
-							   G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_DEFAULT6,
-		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_DEFAULT6,
-							   "Default6",
-							   "Is the default IPv6 active connection",
-							   FALSE,
-							   G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_VPN,
-		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_VPN,
-							   "VPN",
-							   "Is a VPN connection",
-							   FALSE,
-							   G_PARAM_READABLE));
+    nm_active_connection_install_properties (object_class,
+                                             PROP_SERVICE_NAME,
+                                             PROP_CONNECTION,
+                                             PROP_SPECIFIC_OBJECT,
+                                             PROP_DEVICES,
+                                             PROP_STATE,
+                                             PROP_DEFAULT,
+                                             PROP_DEFAULT6,
+                                             PROP_VPN);
 
 	/* Signals */
 	signals[CONNECTION_SECRETS_UPDATED] =
@@ -386,9 +338,10 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 
 	signals[PROPERTIES_CHANGED] = 
 		nm_properties_changed_signal_new (object_class,
-								    G_STRUCT_OFFSET (NMActRequestClass, properties_changed));
+		                                  G_STRUCT_OFFSET (NMActRequestClass, properties_changed));
 
-	nm_active_connection_install_type_info (object_class);
+	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (req_class),
+	                                 &dbus_glib_nm_active_connection_object_info);
 }
 
 static gboolean
