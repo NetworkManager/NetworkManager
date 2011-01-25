@@ -888,7 +888,7 @@ error:
 static NMIP6Address *
 parse_full_ip6_address (const char *addr_str, GError **error)
 {
-	NMIP6Address *addr;
+	NMIP6Address *addr = NULL;
 	char **list;
 	char *ip_tag, *prefix_tag;
 	struct in6_addr tmp = IN6ADDR_ANY_INIT;

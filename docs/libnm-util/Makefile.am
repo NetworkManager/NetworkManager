@@ -60,5 +60,9 @@ GTKDOC_LIBS = $(top_builddir)/libnm-util/libnm-util.la
 # include common portion ...
 include $(top_srcdir)/gtk-doc.make
 
-CLEANFILES += libnm-util-sections.txt
+CLEANFILES += \
+	libnm-util-sections.txt \
+	html/* \
+	tmpl/* \
+	xml/*
 

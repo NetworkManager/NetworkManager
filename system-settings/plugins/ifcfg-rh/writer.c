@@ -884,6 +884,7 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	svSetValue (ifcfg, "SUBCHANNELS", NULL, FALSE);
 	s390_subchannels = nm_setting_wired_get_s390_subchannels (s_wired);
 	if (s390_subchannels) {
+		tmp = NULL;
 	    if (s390_subchannels->len == 2) {
 			tmp = g_strdup_printf ("%s,%s",
 				                   (const char *) g_ptr_array_index (s390_subchannels, 0),

@@ -3354,7 +3354,7 @@ dispose (GObject *object)
 	if (   nm_device_interface_can_assume_connections (NM_DEVICE_INTERFACE (self))
 	    && (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED)) {
 		NMConnection *connection;
-	    NMSettingIP4Config *s_ip4;
+	    NMSettingIP4Config *s_ip4 = NULL;
 		const char *method = NULL;
 
 		connection = nm_act_request_get_connection (priv->act_request);
@@ -3365,9 +3365,8 @@ dispose (GObject *object)
 			 * to check that.
 			 */
 			s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
-			g_assert (s_ip4);
-
-			method = nm_setting_ip4_config_get_method (s_ip4);
+			if (s_ip4)
+				method = nm_setting_ip4_config_get_method (s_ip4);
 			if (   !method
 			    || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)
 			    || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL))

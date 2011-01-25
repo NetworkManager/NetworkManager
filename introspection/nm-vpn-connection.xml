@@ -1,35 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
-  <interface name="org.freedesktop.NetworkManager.Connection.Active">
-    <property name="Connection" type="o" access="read">
-      <tp:docstring>The path of the connection.</tp:docstring>
-    </property>
-    <property name="SpecificObject" type="o" access="read">
-      <tp:docstring>A specific object associated with the active connection.</tp:docstring>
-    </property>
-    <property name="Devices" type="ao" access="read">
-      <tp:docstring>Array of object paths representing devices which are part of this active connection.</tp:docstring>
-    </property>
-    <property name="State" type="u" access="read" tp:type="NM_ACTIVE_CONNECTION_STATE">
-      <tp:docstring>The state of this active connection.</tp:docstring>
-    </property>
-    <property name="Default" type="b" access="read">
-      <tp:docstring>Whether this active connection is the default connection, i.e. whether it currently owns the default route.</tp:docstring>
-    </property>
-    <property name="Vpn" type="b" access="read">
-      <tp:docstring>Whether this active connection is also a VPN connection.</tp:docstring>
-    </property>
-
-    <signal name="PropertiesChanged">
-        <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
-            <tp:docstring>
-                A dictionary mapping property names to variant boxed values
-            </tp:docstring>
-        </arg>
-    </signal>
-  </interface>
-
   <interface name="org.freedesktop.NetworkManager.VPN.Connection">
     <tp:docstring>
       Represents an active connection to a Virtual Private Network.
