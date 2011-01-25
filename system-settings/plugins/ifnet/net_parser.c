@@ -37,6 +37,9 @@ static GList *functions_list;
 /* Used to decide whether to write changes to file*/
 static gboolean net_parser_data_changed = FALSE;
 
+static void
+destroy_connection_config (GHashTable * conn);
+
 static GHashTable *
 add_new_connection_config (const gchar * type, const gchar * name)
 {
@@ -58,8 +61,10 @@ add_new_connection_config (const gchar * type, const gchar * name)
 }
 
 gboolean
-ifnet_add_connection (gchar * name, gchar * type)
+ifnet_add_network (gchar * name, gchar * type)
 {
+	if (ifnet_has_network (name))
+		return TRUE;
 	if (add_new_connection_config (type, name)) {
 		PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Adding network for %s", name);
 		net_parser_data_changed = TRUE;
@@ -69,9 +74,25 @@ ifnet_add_connection (gchar * name, gchar * type)
 }
 
 gboolean
-ifnet_has_connection (gchar * conn_name)
+ifnet_has_network (gchar * conn_name)
 {
 	return g_hash_table_lookup (conn_table, conn_name) != NULL;
+}
+
+gboolean
+ifnet_delete_network (gchar * conn_name)
+{
+	GHashTable *network = NULL;
+
+	g_return_val_if_fail (conn_table != NULL && conn_name != NULL, FALSE);
+	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Deleting network for %s", conn_name);
+	network = g_hash_table_lookup (conn_table, conn_name);
+	if (!network)
+		return FALSE;
+	g_hash_table_remove (conn_table, conn_name);
+	destroy_connection_config (network);
+	net_parser_data_changed = TRUE;
+	return TRUE;
 }
 
 static GHashTable *
@@ -377,21 +398,31 @@ ifnet_set_data (gchar * conn_name, gchar * key, gchar * value)
 {
 	gpointer orin_key = NULL, orin_value = NULL;
 	GHashTable *conn = g_hash_table_lookup (conn_table, conn_name);
+	gchar *new_value = NULL;
 
 	if (!conn) {
 		PLUGIN_WARN (IFNET_PLUGIN_NAME,
 			     "%s does not exsit!", conn_name);
 		return;
 	}
+	if (value){
+		new_value = g_strdup (value);
+		strip_string (new_value, '"');
+	}
 	/* Remove existing key value pair */
 	if (g_hash_table_lookup_extended (conn, key, &orin_key, &orin_value)) {
+		if (new_value && !strcmp (orin_value, new_value)){
+			g_free (new_value);
+			return;
+		}
 		g_hash_table_remove (conn, orin_key);
 		g_free (orin_key);
 		g_free (orin_value);
-	}
-	if (value)
-		g_hash_table_insert (conn, g_strdup (key),
-				     strip_string (g_strdup (value), '"'));
+	/* old key/value doesn't exist but new value is NULL  */
+	} else if (!value)
+		return;
+	if (new_value)
+		g_hash_table_insert (conn, g_strdup (key), new_value);
 	net_parser_data_changed = TRUE;
 }
 
@@ -467,7 +498,7 @@ ifnet_flush_to_file (gchar * config_file)
 	gboolean result = FALSE;
 
 	if (!net_parser_data_changed)
-		return FALSE;
+		return TRUE;
 	if (!conn_table || !global_settings_table)
 		return FALSE;
 
@@ -581,22 +612,6 @@ ifnet_flush_to_file (gchar * config_file)
 	g_io_channel_shutdown (channel, FALSE, NULL);
 	g_io_channel_unref (channel);
 	return result;
-}
-
-gboolean
-ifnet_delete_network (gchar * conn_name)
-{
-	GHashTable *network = NULL;
-
-	g_return_val_if_fail (conn_table != NULL && conn_name != NULL, FALSE);
-	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Deleting network for %s", conn_name);
-	network = g_hash_table_lookup (conn_table, conn_name);
-	if (!network)
-		return FALSE;
-	g_hash_table_remove (conn_table, conn_name);
-	destroy_connection_config (network);
-	net_parser_data_changed = TRUE;
-	return TRUE;
 }
 
 void

@@ -278,6 +278,10 @@ is_static_ip4 (gchar * conn_name)
 
 	if (!data)
 		return FALSE;
+	if (!strcmp (data, "shared"))
+		return FALSE;
+	if (!strcmp (data, "autoip"))
+		return FALSE;
 	dhcp6 = strstr (data, "dhcp6");
 	if (dhcp6) {
 		gchar *dhcp4;
@@ -942,8 +946,8 @@ get_dhcp_hostname_and_client_id (char **hostname, char **client_id)
 		else if ((tmp = strstr (line, "send host-name")) != NULL) {
 			tmp += strlen ("send host-name");
 			g_strstrip (tmp);
-			strip_string (tmp, '"');
 			strip_string (tmp, ';');
+			strip_string (tmp, '"');
 			if (tmp[0] != '\0')
 				*hostname = g_strdup (tmp);
 			else

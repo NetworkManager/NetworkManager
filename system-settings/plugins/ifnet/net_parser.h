@@ -36,11 +36,11 @@ GList *ifnet_get_connection_names (void);
 gchar *ifnet_get_data (gchar * conn_name, const gchar * key);
 gchar *ifnet_get_global_data (const gchar * key);
 gchar *ifnet_get_global_setting (gchar * group, gchar * key);
-gboolean ifnet_has_connection (gchar * conn_name);
+gboolean ifnet_has_network (gchar * conn_name);
 
 /* Writer functions */
 gboolean ifnet_flush_to_file (gchar * config_file);
 void ifnet_set_data (gchar * conn_name, gchar * key, gchar * value);
-gboolean ifnet_add_connection (gchar * name, gchar * type);
+gboolean ifnet_add_network (gchar * name, gchar * type);
 gboolean ifnet_delete_network (gchar * conn_name);
 #endif

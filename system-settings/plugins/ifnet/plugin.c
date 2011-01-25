@@ -91,8 +91,6 @@ update_system_hostname (gpointer config)
 {
 	SCPluginIfnetPrivate *priv = SC_PLUGIN_IFNET_GET_PRIVATE (config);
 
-	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Updating hostname");
-
 	if (priv->hostname)
 		g_free (priv->hostname);
 	priv->hostname = read_hostname (IFNET_SYSTEM_HOSTNAME_FILE);
@@ -184,8 +182,6 @@ monitor_file_changes (const char *filename,
 				   info);
 		g_signal_connect (monitor, "changed", G_CALLBACK (file_changed),
 				  info);
-		PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Monitoring %s", filename);
-
 	} else
 		PLUGIN_WARN (IFNET_PLUGIN_NAME,
 			     "Monitoring %s failed, error: %s", filename,

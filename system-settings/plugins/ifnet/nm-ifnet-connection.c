@@ -71,12 +71,14 @@ nm_ifnet_connection_new (gchar * conn_name)
 {
 	NMConnection *tmp;
 	GObject *object;
-	GError **error = NULL;
+	GError *error = NULL;
 
 	g_return_val_if_fail (conn_name != NULL, NULL);
-	tmp = ifnet_update_connection_from_config_block (conn_name, error);
-	if (!tmp)
+	tmp = ifnet_update_connection_from_config_block (conn_name, &error);
+	if (!tmp){
+		g_error_free (error);
 		return NULL;
+	}
 	object = (GObject *) g_object_new (NM_TYPE_IFNET_CONNECTION,
 					   NM_IFNET_CONNECTION_CONN_NAME,
 					   conn_name, NULL);

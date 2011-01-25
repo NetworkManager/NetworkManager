@@ -123,7 +123,7 @@ add_key_value (GHashTable * network, gchar * line)
 	g_strstrip (key_value[0]);
 	g_strstrip (key_value[1]);
 
-	/* Reserve quotes for psk, wep_key, ssid 
+	/* Reserve quotes for psk, wep_key, ssid
 	 * Quotes will determine whether they are hex format */
 	if (strcmp (key_value[0], "psk") != 0
 	    && !g_str_has_prefix (key_value[0], "wep_key")
@@ -161,7 +161,7 @@ add_one_wep_key (GHashTable * table, int key_num, gchar * one_wep_key)
 	}
 }
 
-/* Reading wep security information from /etc/conf.d/net. 
+/* Reading wep security information from /etc/conf.d/net.
  * This should not be used in futre, use wpa_supplicant instead. */
 static void
 add_keys_from_net ()
@@ -366,7 +366,7 @@ wpa_flush_to_file (gchar * config_file)
 	gboolean result = FALSE;
 
 	if (!wpa_parser_data_changed)
-		return FALSE;
+		return TRUE;
 	if (!wsec_table || !wsec_global_table)
 		return FALSE;
 
@@ -450,26 +450,32 @@ wpa_set_data (gchar * ssid, gchar * key, gchar * value)
 {
 	gpointer orig_key = NULL, orig_value = NULL;
 	GHashTable *security = g_hash_table_lookup (wsec_table, ssid);
+	gchar *new_value = NULL;
 
 	g_return_if_fail (security != NULL);
 
+	if (value){
+		new_value = g_strdup(value);
+		if (strcmp (key, "ssid") != 0 && strcmp (key, "psk") != 0
+			&& !g_str_has_prefix (key, "wep_key"))
+			strip_string (new_value, '"');
+	}
 	/* Remove old key value pairs */
 	if (g_hash_table_lookup_extended
 	    (security, key, &orig_key, &orig_value)) {
+		if (new_value && !strcmp(orig_value, new_value)){
+			g_free (new_value);
+			return;
+		}
 		g_hash_table_remove (security, orig_key);
 		g_free (orig_key);
 		g_free (orig_value);
-	}
+	} else if (!value)
+		return;
 
 	/* Add new key value */
-	if (value) {
-		gchar *new_value = g_strdup (value);
-
-		if (strcmp (key, "ssid") != 0 && strcmp (key, "psk") != 0
-		    && !g_str_has_prefix (key, "wep_key"))
-			strip_string (new_value, '"');
+	if (new_value)
 		g_hash_table_insert (security, g_strdup (key), new_value);
-	}
 	wpa_parser_data_changed = TRUE;
 }
 
@@ -483,7 +489,7 @@ gboolean
 wpa_add_security (gchar * ssid)
 {
 	if (wpa_has_security (ssid))
-		return FALSE;
+		return TRUE;
 	else {
 		GHashTable *security =
 		    g_hash_table_new (g_str_hash, g_str_equal);
