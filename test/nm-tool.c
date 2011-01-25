@@ -724,7 +724,7 @@ get_all_connections (void)
 {
 	GError *error = NULL;
 	DBusGConnection *bus;
-	DBusGProxy *proxy;
+	DBusGProxy *proxy = NULL;
 	GPtrArray *paths = NULL;
 	int i;
 	gboolean sucess = FALSE;

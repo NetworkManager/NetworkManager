@@ -207,7 +207,7 @@ static gboolean
 reload_database (NMSessionMonitor *self, GError **error)
 {
 	struct stat statbuf;
-	char **groups;
+	char **groups = NULL;
 	gsize len = 0, i;
 	Session *s;
 
