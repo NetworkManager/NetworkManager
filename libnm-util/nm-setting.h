@@ -124,7 +124,25 @@ typedef void (*NMSettingValueIterFn) (NMSetting *setting,
 
 GType nm_setting_get_type (void);
 
-GHashTable *nm_setting_to_hash       (NMSetting *setting);
+/**
+ * NMSettingHashFlags:
+ * @NM_SETTING_HASH_FLAG_ALL: hash all properties (including secrets)
+ * @NM_SETTING_HASH_FLAG_NO_SECRETS: do not include secrets
+ * @NM_SETTING_HASH_FLAG_ONLY_SECRETS: only hash secrets
+ *
+ * These flags determine which properties are added to the resulting hash
+ * when calling nm_setting_to_hash().
+ *
+ **/
+typedef enum {
+	NM_SETTING_HASH_FLAG_ALL = 0x00000000,
+	NM_SETTING_HASH_FLAG_NO_SECRETS = 0x00000001,
+	NM_SETTING_HASH_FLAG_ONLY_SECRETS = 0x00000002,
+} NMSettingHashFlags;
+
+GHashTable *nm_setting_to_hash       (NMSetting *setting,
+                                      NMSettingHashFlags flags);
+
 NMSetting  *nm_setting_new_from_hash (GType setting_type,
                                       GHashTable *hash);
 

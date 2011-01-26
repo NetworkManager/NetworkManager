@@ -1200,7 +1200,7 @@ nm_client_add_and_activate_connection (NMClient *client,
 	info->client = client;
 
 	if (partial)
-		hash = nm_connection_to_hash (partial);
+		hash = nm_connection_to_hash (partial, NM_SETTING_HASH_FLAG_ALL);
 	else
 		hash = g_hash_table_new (g_str_hash, g_str_equal);
 	org_freedesktop_NetworkManager_add_and_activate_connection_async (NM_CLIENT_GET_PRIVATE (client)->client_proxy,

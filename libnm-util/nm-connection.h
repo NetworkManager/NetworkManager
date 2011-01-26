@@ -130,7 +130,9 @@ void          nm_connection_for_each_setting_value (NMConnection *connection,
 										  NMSettingValueIterFn func,
 										  gpointer user_data);
 
-GHashTable   *nm_connection_to_hash       (NMConnection *connection);
+GHashTable   *nm_connection_to_hash       (NMConnection *connection,
+                                           NMSettingHashFlags flags);
+
 void          nm_connection_dump          (NMConnection *connection);
 
 NMSetting    *nm_connection_create_setting (const char *name);

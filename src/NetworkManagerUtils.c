@@ -405,7 +405,7 @@ nm_utils_call_dispatcher (const char *action,
 	}
 
 	if (connection) {
-		connection_hash = nm_connection_to_hash (connection);
+		connection_hash = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_NO_SECRETS);
 
 		connection_props = value_hash_create ();
 

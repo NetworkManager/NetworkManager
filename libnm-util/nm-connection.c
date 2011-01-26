@@ -798,26 +798,10 @@ nm_connection_clear_secrets (NMConnection *connection)
 	g_hash_table_foreach (priv->settings, clear_setting_secrets, NULL);
 }
 
-static void
-add_one_setting_to_hash (gpointer key, gpointer data, gpointer user_data)
-{
-	NMSetting *setting = (NMSetting *) data;
-	GHashTable *connection_hash = (GHashTable *) user_data;
-	GHashTable *setting_hash;
-
-	g_return_if_fail (setting != NULL);
-	g_return_if_fail (connection_hash != NULL);
-
-	setting_hash = nm_setting_to_hash (setting);
-	if (setting_hash)
-		g_hash_table_insert (connection_hash,
-							 g_strdup (nm_setting_get_name (setting)),
-							 setting_hash);
-}
-
 /**
  * nm_connection_to_hash:
  * @connection: the #NMConnection
+ * @flags: hash flags, e.g. %NM_SETTING_HASH_FLAG_ALL
  *
  * Converts the #NMConnection into a #GHashTable describing the connection,
  * suitable for marshalling over D-Bus or serializing.  The hash table mapping
@@ -832,26 +816,39 @@ add_one_setting_to_hash (gpointer key, gpointer data, gpointer user_data)
  * with g_hash_table_unref() when it is no longer needed.
  **/
 GHashTable *
-nm_connection_to_hash (NMConnection *connection)
+nm_connection_to_hash (NMConnection *connection, NMSettingHashFlags flags)
 {
 	NMConnectionPrivate *priv;
-	GHashTable *connection_hash;
+	GHashTableIter iter;
+	gpointer key, data;
+	GHashTable *ret, *setting_hash;
 
+	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	connection_hash = g_hash_table_new_full (g_str_hash, g_str_equal,
-									 g_free, (GDestroyNotify) g_hash_table_destroy);
+	ret = g_hash_table_new_full (g_str_hash, g_str_equal,
+	                             g_free, (GDestroyNotify) g_hash_table_destroy);
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
-	g_hash_table_foreach (priv->settings, add_one_setting_to_hash, connection_hash);
 
-	/* Don't send empty hashes */
-	if (g_hash_table_size (connection_hash) < 1) {
-		g_hash_table_destroy (connection_hash);
-		connection_hash = NULL;
+	/* Add each setting's hash to the main hash */
+	g_hash_table_iter_init (&iter, priv->settings);
+	while (g_hash_table_iter_next (&iter, &key, &data)) {
+		const char *setting_name = key;
+		NMSetting *setting = NM_SETTING (data);
+
+		setting_hash = nm_setting_to_hash (setting, flags);
+		if (setting_hash)
+			g_hash_table_insert (ret, g_strdup (setting_name), setting_hash);
 	}
 
-	return connection_hash;
+	/* Don't send empty hashes */
+	if (g_hash_table_size (ret) < 1) {
+		g_hash_table_destroy (ret);
+		ret = NULL;
+	}
+
+	return ret;
 }
 
 typedef struct ForEachValueInfo {

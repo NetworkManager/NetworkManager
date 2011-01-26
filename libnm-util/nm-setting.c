@@ -107,6 +107,7 @@ destroy_gvalue (gpointer data)
 /**
  * nm_setting_to_hash:
  * @setting: the #NMSetting
+ * @flags: hash flags, e.g. %NM_SETTING_HASH_FLAG_ALL
  *
  * Converts the #NMSetting into a #GHashTable mapping each setting property
  * name to a GValue describing that property, suitable for marshalling over
@@ -115,13 +116,14 @@ destroy_gvalue (gpointer data)
  * Returns: (transfer full) (element-type utf8 GObject.Value): a new #GHashTable describing the setting's properties
  **/
 GHashTable *
-nm_setting_to_hash (NMSetting *setting)
+nm_setting_to_hash (NMSetting *setting, NMSettingHashFlags flags)
 {
 	GHashTable *hash;
 	GParamSpec **property_specs;
 	guint n_property_specs;
 	guint i;
 
+	g_return_val_if_fail (setting != NULL, NULL);
 	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
 
 	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (setting), &n_property_specs);
@@ -132,29 +134,35 @@ nm_setting_to_hash (NMSetting *setting)
 	}
 
 	hash = g_hash_table_new_full (g_str_hash, g_str_equal,
-							(GDestroyNotify) g_free,
-							destroy_gvalue);
+	                              (GDestroyNotify) g_free, destroy_gvalue);
 
 	for (i = 0; i < n_property_specs; i++) {
 		GParamSpec *prop_spec = property_specs[i];
+		GValue *value;
 
-		if (prop_spec->flags & NM_SETTING_PARAM_SERIALIZE) {
-			GValue *value;
+		if (!(prop_spec->flags & NM_SETTING_PARAM_SERIALIZE))
+			continue;
 
-			value = g_slice_new0 (GValue);
-			g_value_init (value, prop_spec->value_type);
-			g_object_get_property (G_OBJECT (setting), prop_spec->name, value);
+		if (   (flags & NM_SETTING_HASH_FLAG_NO_SECRETS)
+		    && (prop_spec->flags & NM_SETTING_PARAM_SECRET))
+			continue;
 
-			/* Don't serialize values with default values */
-			if (!g_param_value_defaults (prop_spec, value))
-				g_hash_table_insert (hash, g_strdup (prop_spec->name), value);
-			else
-				destroy_gvalue (value);
-		}
+		if (   (flags & NM_SETTING_HASH_FLAG_ONLY_SECRETS)
+		    && !(prop_spec->flags & NM_SETTING_PARAM_SECRET))
+			continue;
+
+		value = g_slice_new0 (GValue);
+		g_value_init (value, prop_spec->value_type);
+		g_object_get_property (G_OBJECT (setting), prop_spec->name, value);
+
+		/* Don't serialize values with default values */
+		if (!g_param_value_defaults (prop_spec, value))
+			g_hash_table_insert (hash, g_strdup (prop_spec->name), value);
+		else
+			destroy_gvalue (value);
 	}
 
 	g_free (property_specs);
-
 	return hash;
 }
 

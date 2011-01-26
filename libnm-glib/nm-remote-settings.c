@@ -444,7 +444,7 @@ nm_remote_settings_add_connection (NMRemoteSettings *settings,
 	info->callback = callback;
 	info->callback_data = user_data;
 
-	new_settings = nm_connection_to_hash (connection);
+	new_settings = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
 	org_freedesktop_NetworkManager_Settings_add_connection_async (priv->proxy,
 	                                                              new_settings,
 	                                                              add_connection_done,

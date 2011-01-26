@@ -125,7 +125,7 @@ nm_remote_connection_commit_changes (NMRemoteConnection *self,
 	call->callback = (GFunc) callback;
 	call->user_data = user_data;
 
-	settings = nm_connection_to_hash (NM_CONNECTION (self));
+	settings = nm_connection_to_hash (NM_CONNECTION (self), NM_SETTING_HASH_FLAG_ALL);
 
 	call->call = org_freedesktop_NetworkManager_Settings_Connection_update_async (priv->proxy,
 	                                                                              settings,

@@ -196,7 +196,7 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 
 	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
-	new_settings = nm_connection_to_hash (new);
+	new_settings = nm_connection_to_hash (new, NM_SETTING_HASH_FLAG_ALL);
 	g_assert (new_settings);
 	if (nm_connection_replace_settings (NM_CONNECTION (self), new_settings, error)) {
 		/* Copy the connection to keep its secrets around even if NM
@@ -605,28 +605,20 @@ get_settings_auth_cb (NMSettingsConnection *self,
 	                  GError *error,
 	                  gpointer data)
 {
-	NMConnection *no_secrets;
-	GHashTable *settings;
-
-	if (error) {
+	if (error)
 		dbus_g_method_return_error (context, error);
-		return;
+	else {
+		GHashTable *settings;
+
+		/* Secrets should *never* be returned by the GetSettings method, they
+		 * get returned by the GetSecrets method which can be better
+		 * protected against leakage of secrets to unprivileged callers.
+		 */
+		settings = nm_connection_to_hash (NM_CONNECTION (self), NM_SETTING_HASH_FLAG_NO_SECRETS);
+		g_assert (settings);
+		dbus_g_method_return (context, settings);
+		g_hash_table_destroy (settings);
 	}
-
-	/* Secrets should *never* be returned by the GetSettings method, they
-	 * get returned by the GetSecrets method which can be better
-	 * protected against leakage of secrets to unprivileged callers.
-	 */
-	no_secrets = nm_connection_duplicate (NM_CONNECTION (self));
-	g_assert (no_secrets);
-	nm_connection_clear_secrets (no_secrets);
-	settings = nm_connection_to_hash (no_secrets);
-	g_assert (settings);
-
-	dbus_g_method_return (context, settings);
-	
-	g_object_unref (no_secrets);
-	g_hash_table_destroy (settings);
 }
 
 static void

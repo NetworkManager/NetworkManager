@@ -29,6 +29,7 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-vpn.h"
 #include "nm-setting-gsm.h"
+#include "nm-setting-wireless-security.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-dbus-glib-types.h"
 
@@ -289,6 +290,100 @@ test_setting_gsm_apn_bad_chars (void)
 	        "gsm-apn-bad-chars", "unexpectedly valid GSM setting");
 }
 
+static NMSettingWirelessSecurity *
+make_test_wsec_setting (const char *detail)
+{
+	NMSettingWirelessSecurity *s_wsec;
+
+	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+	ASSERT (s_wsec != NULL, detail, "error creating setting");
+
+	g_object_set (s_wsec,
+	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk",
+	              NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, "foobarbaz",
+	              NM_SETTING_WIRELESS_SECURITY_PSK, "random psk",
+	              NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, "aaaaaaaaaa",
+	              NULL);
+
+	return s_wsec;
+}
+
+static void
+test_setting_to_hash_all (void)
+{
+	NMSettingWirelessSecurity *s_wsec;
+	GHashTable *hash;
+
+	s_wsec = make_test_wsec_setting ("setting-to-hash-all");
+
+	hash = nm_setting_to_hash (NM_SETTING (s_wsec), NM_SETTING_HASH_FLAG_ALL);
+
+	/* Make sure all keys are there */
+	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT),
+	        "setting-to-hash-all", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME),
+	        "setting-to-hash-all", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
+	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_PSK),
+	        "setting-to-hash-all", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_PSK);
+	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0),
+	        "setting-to-hash-all", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+
+	g_hash_table_destroy (hash);
+	g_object_unref (s_wsec);
+}
+
+static void
+test_setting_to_hash_no_secrets (void)
+{
+	NMSettingWirelessSecurity *s_wsec;
+	GHashTable *hash;
+
+	s_wsec = make_test_wsec_setting ("setting-to-hash-no-secrets");
+
+	hash = nm_setting_to_hash (NM_SETTING (s_wsec), NM_SETTING_HASH_FLAG_NO_SECRETS);
+
+	/* Make sure non-secret keys are there */
+	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT),
+	        "setting-to-hash-no-secrets", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME),
+	        "setting-to-hash-no-secrets", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
+
+	/* Make sure secrets are not there */
+	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_PSK) == NULL,
+	        "setting-to-hash-no-secrets", "unexpectedly present " NM_SETTING_WIRELESS_SECURITY_PSK);
+	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0) == NULL,
+	        "setting-to-hash-no-secrets", "unexpectedly present " NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+
+	g_hash_table_destroy (hash);
+	g_object_unref (s_wsec);
+}
+
+static void
+test_setting_to_hash_only_secrets (void)
+{
+	NMSettingWirelessSecurity *s_wsec;
+	GHashTable *hash;
+
+	s_wsec = make_test_wsec_setting ("setting-to-hash-only-secrets");
+
+	hash = nm_setting_to_hash (NM_SETTING (s_wsec), NM_SETTING_HASH_FLAG_ONLY_SECRETS);
+
+	/* Make sure non-secret keys are there */
+	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT) == NULL,
+	        "setting-to-hash-only-secrets", "unexpectedly present " NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME) == NULL,
+	        "setting-to-hash-only-secrets", "unexpectedly present " NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
+
+	/* Make sure secrets are not there */
+	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_PSK),
+	        "setting-to-hash-only-secrets", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_PSK);
+	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0),
+	        "setting-to-hash-only-secrets", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+
+	g_hash_table_destroy (hash);
+	g_object_unref (s_wsec);
+}
+
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
@@ -306,6 +401,9 @@ int main (int argc, char **argv)
 	test_setting_ip6_config_old_address_array ();
 	test_setting_gsm_apn_spaces ();
 	test_setting_gsm_apn_bad_chars ();
+	test_setting_to_hash_all ();
+	test_setting_to_hash_no_secrets ();
+	test_setting_to_hash_only_secrets ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);
