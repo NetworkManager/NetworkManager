@@ -12,7 +12,7 @@ BUILT_SOURCES = \
 	nm-device-ethernet-bindings.h \
 	nm-device-wifi-bindings.h \
 	nm-device-bt-bindings.h \
-	nm-sysconfig-connection-bindings.h \
+	nm-settings-connection-bindings.h \
 	nm-device-wimax-bindings.h \
 	nm-settings-bindings.h \
 	nm-vpn-connection-bindings.h \
@@ -198,8 +198,8 @@ nm-access-point-bindings.h: $(top_srcdir)/introspection/nm-access-point.xml
 nm-settings-bindings.h: $(top_srcdir)/introspection/nm-settings.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_settings --mode=glib-client --output=$@ $<
 
-nm-sysconfig-connection-bindings.h: $(top_srcdir)/introspection/nm-sysconfig-connection.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_sysconfig_connection --mode=glib-client --output=$@ $<
+nm-settings-connection-bindings.h: $(top_srcdir)/introspection/nm-settings-connection.xml
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_settings_connection --mode=glib-client --output=$@ $<
 
 nm-vpn-connection-bindings.h: $(top_srcdir)/introspection/nm-vpn-connection.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_vpn_connection --mode=glib-client --output=$@ $<

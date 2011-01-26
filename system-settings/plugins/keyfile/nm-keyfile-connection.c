@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2008 - 2010 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -32,7 +32,7 @@
 #include "writer.h"
 #include "common.h"
 
-G_DEFINE_TYPE (NMKeyfileConnection, nm_keyfile_connection, NM_TYPE_SYSCONFIG_CONNECTION)
+G_DEFINE_TYPE (NMKeyfileConnection, nm_keyfile_connection, NM_TYPE_SETTINGS_CONNECTION)
 
 #define NM_KEYFILE_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_KEYFILE_CONNECTION, NMKeyfileConnectionPrivate))
 
@@ -69,7 +69,7 @@ nm_keyfile_connection_new (const char *full_path,
 	priv->path = g_strdup (full_path);
 
 	/* Update our settings with what was read from the file */
-	if (!nm_sysconfig_connection_replace_settings (NM_SYSCONFIG_CONNECTION (object), tmp, error)) {
+	if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object), tmp, error)) {
 		g_object_unref (object);
 		object = NULL;
 		goto out;
@@ -109,8 +109,8 @@ nm_keyfile_connection_get_path (NMKeyfileConnection *self)
 }
 
 static void
-commit_changes (NMSysconfigConnection *connection,
-                NMSysconfigConnectionCommitFunc callback,
+commit_changes (NMSettingsConnection *connection,
+                NMSettingsConnectionCommitFunc callback,
                 gpointer user_data)
 {
 	NMKeyfileConnectionPrivate *priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (connection);
@@ -130,23 +130,23 @@ commit_changes (NMSysconfigConnection *connection,
 	} else
 		g_free (path);
 
-	NM_SYSCONFIG_CONNECTION_CLASS (nm_keyfile_connection_parent_class)->commit_changes (connection,
-	                                                                                    callback,
-	                                                                                    user_data);
+	NM_SETTINGS_CONNECTION_CLASS (nm_keyfile_connection_parent_class)->commit_changes (connection,
+	                                                                                   callback,
+	                                                                                   user_data);
 }
 
 static void 
-do_delete (NMSysconfigConnection *connection,
-           NMSysconfigConnectionDeleteFunc callback,
+do_delete (NMSettingsConnection *connection,
+           NMSettingsConnectionDeleteFunc callback,
            gpointer user_data)
 {
 	NMKeyfileConnectionPrivate *priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (connection);
 
 	g_unlink (priv->path);
 
-	NM_SYSCONFIG_CONNECTION_CLASS (nm_keyfile_connection_parent_class)->delete (connection,
-	                                                                            callback,
-	                                                                            user_data);
+	NM_SETTINGS_CONNECTION_CLASS (nm_keyfile_connection_parent_class)->delete (connection,
+	                                                                           callback,
+	                                                                           user_data);
 }
 
 /* GObject */
@@ -172,12 +172,12 @@ static void
 nm_keyfile_connection_class_init (NMKeyfileConnectionClass *keyfile_connection_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (keyfile_connection_class);
-	NMSysconfigConnectionClass *sysconfig_class = NM_SYSCONFIG_CONNECTION_CLASS (keyfile_connection_class);
+	NMSettingsConnectionClass *settings_class = NM_SETTINGS_CONNECTION_CLASS (keyfile_connection_class);
 
 	g_type_class_add_private (keyfile_connection_class, sizeof (NMKeyfileConnectionPrivate));
 
 	/* Virtual methods */
 	object_class->finalize     = finalize;
-	sysconfig_class->commit_changes = commit_changes;
-	sysconfig_class->delete = do_delete;
+	settings_class->commit_changes = commit_changes;
+	settings_class->delete = do_delete;
 }

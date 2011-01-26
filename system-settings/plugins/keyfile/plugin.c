@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2008 - 2010 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -69,7 +69,7 @@ typedef struct {
 	gboolean disposed;
 } SCPluginKeyfilePrivate;
 
-static NMSysconfigConnection *
+static NMSettingsConnection *
 _internal_new_connection (SCPluginKeyfile *self,
                           const char *full_path,
                           NMConnection *source,
@@ -102,7 +102,7 @@ _internal_new_connection (SCPluginKeyfile *self,
 
 	if (out_cid)
 		*out_cid = cid;
-	return NM_SYSCONFIG_CONNECTION (connection);
+	return NM_SETTINGS_CONNECTION (connection);
 }
 
 static void
@@ -124,7 +124,7 @@ read_connections (NMSystemConfigInterface *config)
 	}
 
 	while ((item = g_dir_read_name (dir))) {
-		NMSysconfigConnection *connection;
+		NMSettingsConnection *connection;
 		char *full_path;
 
 		if (utils_should_ignore_file (item))
@@ -147,7 +147,7 @@ read_connections (NMSystemConfigInterface *config)
 }
 
 static void
-update_connection_settings_commit_cb (NMSysconfigConnection *orig, GError *error, gpointer user_data)
+update_connection_settings_commit_cb (NMSettingsConnection *orig, GError *error, gpointer user_data)
 {
 	if (error) {
 		g_warning ("%s: '%s' / '%s' invalid: %d",
@@ -165,9 +165,9 @@ static void
 update_connection_settings (NMKeyfileConnection *orig,
                             NMKeyfileConnection *new)
 {
-	nm_sysconfig_connection_replace_and_commit (NM_SYSCONFIG_CONNECTION (orig),
-	                                            NM_CONNECTION (new),
-	                                            update_connection_settings_commit_cb, NULL);
+	nm_settings_connection_replace_and_commit (NM_SETTINGS_CONNECTION (orig),
+	                                           NM_CONNECTION (new),
+	                                           update_connection_settings_commit_cb, NULL);
 }
 
 /* Monitoring */
@@ -406,13 +406,13 @@ get_connections (NMSystemConfigInterface *config)
 	return list;
 }
 
-static NMSysconfigConnection *
+static NMSettingsConnection *
 add_connection (NMSystemConfigInterface *config,
                 NMConnection *connection,
                 GError **error)
 {
 	SCPluginKeyfile *self = SC_PLUGIN_KEYFILE (config);
-	NMSysconfigConnection *added = NULL;
+	NMSettingsConnection *added = NULL;
 	char *path = NULL;
 
 	/* Write it out first, then add the connection to our internal list */

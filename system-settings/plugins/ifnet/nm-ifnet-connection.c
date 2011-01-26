@@ -24,7 +24,7 @@
 #include <NetworkManager.h>
 #include <nm-utils.h>
 #include <nm-setting-wireless-security.h>
-#include <nm-sysconfig-connection.h>
+#include <nm-settings-connection.h>
 #include <nm-system-config-interface.h>
 #include <nm-settings-error.h>
 #include "nm-ifnet-connection.h"
@@ -34,7 +34,7 @@
 #include "wpa_parser.h"
 #include "plugin.h"
 
-G_DEFINE_TYPE (NMIfnetConnection, nm_ifnet_connection, NM_TYPE_SYSCONFIG_CONNECTION)
+G_DEFINE_TYPE (NMIfnetConnection, nm_ifnet_connection, NM_TYPE_SETTINGS_CONNECTION)
 
 #define NM_IFNET_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IFNET_CONNECTION, NMIfnetConnectionPrivate))
 enum {
@@ -80,7 +80,7 @@ nm_ifnet_connection_new (const char *conn_name, NMConnection *source)
 	}
 
 	NM_IFNET_CONNECTION_GET_PRIVATE (object)->conn_name = g_strdup (conn_name);
-	nm_sysconfig_connection_replace_settings (NM_SYSCONFIG_CONNECTION (object), tmp, NULL);
+	nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object), tmp, NULL);
 	g_object_unref (tmp);
 
 	return NM_IFNET_CONNECTION (object);
@@ -92,8 +92,8 @@ nm_ifnet_connection_init (NMIfnetConnection * connection)
 }
 
 static void
-commit_changes (NMSysconfigConnection *connection,
-                NMSysconfigConnectionCommitFunc callback,
+commit_changes (NMSettingsConnection *connection,
+                NMSettingsConnectionCommitFunc callback,
 	            gpointer user_data)
 {
 	GError *error = NULL;
@@ -118,15 +118,15 @@ commit_changes (NMSysconfigConnection *connection,
 	g_free (priv->conn_name);
 	priv->conn_name = g_strdup (new_name);
 
-	NM_SYSCONFIG_CONNECTION_CLASS (nm_ifnet_connection_parent_class)->commit_changes (connection, callback, user_data);
+	NM_SETTINGS_CONNECTION_CLASS (nm_ifnet_connection_parent_class)->commit_changes (connection, callback, user_data);
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Successfully updated %s", priv->conn_name);
 
 	g_signal_emit (connection, signals[IFNET_SETUP_MONITORS], 0);
 }
 
 static void 
-do_delete (NMSysconfigConnection *connection,
-	       NMSysconfigConnectionDeleteFunc callback,
+do_delete (NMSettingsConnection *connection,
+	       NMSettingsConnectionDeleteFunc callback,
 	       gpointer user_data)
 {
 	GError *error = NULL;
@@ -144,7 +144,7 @@ do_delete (NMSysconfigConnection *connection,
 		return;
 	}
 
-	NM_SYSCONFIG_CONNECTION_CLASS (nm_ifnet_connection_parent_class)->delete (connection, callback, user_data);
+	NM_SETTINGS_CONNECTION_CLASS (nm_ifnet_connection_parent_class)->delete (connection, callback, user_data);
 
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Successfully deleted %s",
 		      priv->conn_name);
@@ -167,14 +167,14 @@ static void
 nm_ifnet_connection_class_init (NMIfnetConnectionClass * ifnet_connection_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (ifnet_connection_class);
-	NMSysconfigConnectionClass *sysconfig_class = NM_SYSCONFIG_CONNECTION_CLASS (ifnet_connection_class);
+	NMSettingsConnectionClass *settings_class = NM_SETTINGS_CONNECTION_CLASS (ifnet_connection_class);
 
 	g_type_class_add_private (ifnet_connection_class,
 				  sizeof (NMIfnetConnectionPrivate));
 
 	object_class->finalize = finalize;
-	sysconfig_class->delete = do_delete;
-	sysconfig_class->commit_changes = commit_changes;
+	settings_class->delete = do_delete;
+	settings_class->commit_changes = commit_changes;
 
 	signals[IFNET_SETUP_MONITORS] =
 	    g_signal_new ("ifnet_setup_monitors",

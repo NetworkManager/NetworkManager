@@ -741,7 +741,7 @@ auto_activate_device (gpointer user_data)
 
 		/* Ignore connections that aren't visible to any logged-in users */
 		if (ignore == FALSE) {
-			if (!nm_sysconfig_connection_is_visible (NM_SYSCONFIG_CONNECTION (candidate)))
+			if (!nm_settings_connection_is_visible (NM_SETTINGS_CONNECTION (candidate)))
 				ignore = TRUE;
 		}
 
@@ -1099,12 +1099,12 @@ connection_removed (NMSettings *settings,
 
 static void
 connection_visibility_changed (NMSettings *settings,
-                               NMSysconfigConnection *connection,
+                               NMSettingsConnection *connection,
                                gpointer user_data)
 {
 	NMPolicy *policy = user_data;
 
-	if (nm_sysconfig_connection_is_visible (connection))
+	if (nm_settings_connection_is_visible (connection))
 		schedule_activate_all (policy);
 	else
 		_deactivate_if_active (policy->manager, NM_CONNECTION (connection));
@@ -1169,11 +1169,11 @@ nm_policy_new (NMManager *manager,
 	_connect_manager_signal (policy, "device-added", device_added);
 	_connect_manager_signal (policy, "device-removed", device_removed);
 
-	_connect_settings_signal (policy, NM_SETTINGS_CONNECTIONS_LOADED, connections_loaded);
-	_connect_settings_signal (policy, NM_SETTINGS_CONNECTION_ADDED, connection_added);
-	_connect_settings_signal (policy, NM_SETTINGS_CONNECTION_UPDATED, connection_updated);
-	_connect_settings_signal (policy, NM_SETTINGS_CONNECTION_REMOVED, connection_removed);
-	_connect_settings_signal (policy, NM_SETTINGS_CONNECTION_VISIBILITY_CHANGED,
+	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_CONNECTIONS_LOADED, connections_loaded);
+	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_CONNECTION_ADDED, connection_added);
+	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED, connection_updated);
+	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_CONNECTION_REMOVED, connection_removed);
+	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED,
 	                          connection_visibility_changed);
 
 	initialized = TRUE;

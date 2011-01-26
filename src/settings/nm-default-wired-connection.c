@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * (C) Copyright 2008 Novell, Inc.
- * (C) Copyright 2009 Red Hat, Inc.
+ * (C) Copyright 2009 - 2011 Red Hat, Inc.
  */
 
 #include <netinet/ether.h>
@@ -32,7 +32,7 @@
 #include "nm-marshal.h"
 #include "nm-default-wired-connection.h"
 
-G_DEFINE_TYPE (NMDefaultWiredConnection, nm_default_wired_connection, NM_TYPE_SYSCONFIG_CONNECTION)
+G_DEFINE_TYPE (NMDefaultWiredConnection, nm_default_wired_connection, NM_TYPE_SETTINGS_CONNECTION)
 
 #define NM_DEFAULT_WIRED_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEFAULT_WIRED_CONNECTION, NMDefaultWiredConnectionPrivate))
 
@@ -85,8 +85,8 @@ nm_default_wired_connection_get_device (NMDefaultWiredConnection *wired)
 }
 
 static void
-commit_changes (NMSysconfigConnection *connection,
-                NMSysconfigConnectionCommitFunc callback,
+commit_changes (NMSettingsConnection *connection,
+                NMSettingsConnectionCommitFunc callback,
                 gpointer user_data)
 {
 	NMDefaultWiredConnection *self = NM_DEFAULT_WIRED_CONNECTION (connection);
@@ -101,17 +101,17 @@ commit_changes (NMSysconfigConnection *connection,
 }
 
 static void 
-do_delete (NMSysconfigConnection *connection,
-	       NMSysconfigConnectionDeleteFunc callback,
+do_delete (NMSettingsConnection *connection,
+	       NMSettingsConnectionDeleteFunc callback,
 	       gpointer user_data)
 {
 	NMDefaultWiredConnection *self = NM_DEFAULT_WIRED_CONNECTION (connection);
 	NMDefaultWiredConnectionPrivate *priv = NM_DEFAULT_WIRED_CONNECTION_GET_PRIVATE (connection);
 
 	g_signal_emit (self, signals[DELETED], 0, priv->mac);
-	NM_SYSCONFIG_CONNECTION_CLASS (nm_default_wired_connection_parent_class)->delete (connection,
-	                                                                                  callback,
-	                                                                                  user_data);
+	NM_SETTINGS_CONNECTION_CLASS (nm_default_wired_connection_parent_class)->delete (connection,
+	                                                                                 callback,
+	                                                                                 user_data);
 }
 
 /****************************************************************/
@@ -237,7 +237,7 @@ static void
 nm_default_wired_connection_class_init (NMDefaultWiredConnectionClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
-	NMSysconfigConnectionClass *sysconfig_class = NM_SYSCONFIG_CONNECTION_CLASS (klass);
+	NMSettingsConnectionClass *settings_class = NM_SETTINGS_CONNECTION_CLASS (klass);
 
 	g_type_class_add_private (klass, sizeof (NMDefaultWiredConnectionPrivate));
 
@@ -246,8 +246,8 @@ nm_default_wired_connection_class_init (NMDefaultWiredConnectionClass *klass)
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize = finalize;
-	sysconfig_class->commit_changes = commit_changes;
-	sysconfig_class->delete = do_delete;
+	settings_class->commit_changes = commit_changes;
+	settings_class->delete = do_delete;
 
 	/* Properties */
 	g_object_class_install_property

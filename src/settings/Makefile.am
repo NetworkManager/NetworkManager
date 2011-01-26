@@ -9,7 +9,7 @@ noinst_LTLIBRARIES = libsettings.la
 
 BUILT_SOURCES = \
 	nm-settings-glue.h \
-	nm-sysconfig-connection-glue.h
+	nm-settings-connection-glue.h
 
 libsettings_la_SOURCES = \
 	nm-settings.c \
@@ -21,8 +21,8 @@ libsettings_la_SOURCES = \
 	nm-settings-error.h \
 	nm-system-config-interface.c \
 	nm-system-config-interface.h \
-	nm-sysconfig-connection.c \
-	nm-sysconfig-connection.h \
+	nm-settings-connection.c \
+	nm-settings-connection.h \
 	nm-default-wired-connection.c \
 	nm-default-wired-connection.h
 
@@ -56,8 +56,8 @@ libsettings_la_LDFLAGS = -rdynamic
 nm-settings-glue.h: $(top_srcdir)/introspection/nm-settings.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_settings --mode=glib-server --output=$@ $<
 
-nm-sysconfig-connection-glue.h: $(top_srcdir)/introspection/nm-sysconfig-connection.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_sysconfig_connection --mode=glib-server --output=$@ $<
+nm-settings-connection-glue.h: $(top_srcdir)/introspection/nm-settings-connection.xml
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_settings_connection --mode=glib-server --output=$@ $<
 
 CLEANFILES = \
 	$(BUILT_SOURCES)

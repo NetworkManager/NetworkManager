@@ -182,10 +182,10 @@ monitor_file_changes (const char *filename,
 	return monitor;
 }
 
-/* Callback for nm_sysconfig_connection_replace_and_commit. Report any errors
+/* Callback for nm_settings_connection_replace_and_commit. Report any errors
  * encountered when commiting connection settings updates. */
 static void
-commit_cb (NMSysconfigConnection *connection, GError *error, gpointer unused) 
+commit_cb (NMSettingsConnection *connection, GError *error, gpointer unused) 
 {
 	if (error) {
 		PLUGIN_WARN (IFNET_PLUGIN_NAME, "    error updating: %s",
@@ -287,7 +287,7 @@ reload_connections (gpointer config)
 					PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Auto refreshing %s", conn_name);
 
 					/* Remove and re-add to disconnect and reconnect with new settings */
-					g_signal_emit_by_name (old, NM_SYSCONFIG_CONNECTION_REMOVED);
+					g_signal_emit_by_name (old, NM_SETTINGS_CONNECTION_REMOVED);
 					g_hash_table_remove (priv->config_connections, conn_name);
 					g_hash_table_insert (priv->config_connections, g_strdup (conn_name), new);
 					if (is_managed (conn_name))
@@ -295,9 +295,9 @@ reload_connections (gpointer config)
 				}
 			} else {
 				/* Update existing connection with new settings */
-				nm_sysconfig_connection_replace_and_commit (NM_SYSCONFIG_CONNECTION (old),
-							                                NM_CONNECTION (new),
-							                                commit_cb, NULL);
+				nm_settings_connection_replace_and_commit (NM_SETTINGS_CONNECTION (old),
+				                                           NM_CONNECTION (new),
+				                                           commit_cb, NULL);
 				g_object_unref (new);
 			}
 			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
@@ -313,7 +313,7 @@ reload_connections (gpointer config)
 	g_hash_table_iter_init (&iter, priv->config_connections);
 	while (g_hash_table_iter_next (&iter, &key, &value)) {
 		if (!g_hash_table_lookup (new_conn_names, key)) {
-			g_signal_emit_by_name (value, NM_SYSCONFIG_CONNECTION_REMOVED);
+			g_signal_emit_by_name (value, NM_SETTINGS_CONNECTION_REMOVED);
 			g_hash_table_remove (priv->config_connections, key);
 		}
 	}
@@ -321,7 +321,7 @@ reload_connections (gpointer config)
 	g_list_free (conn_names);
 }
 
-static NMSysconfigConnection *
+static NMSettingsConnection *
 add_connection (NMSystemConfigInterface *config,
                 NMConnection *source,
                 GError **error)
@@ -333,7 +333,7 @@ add_connection (NMSystemConfigInterface *config,
 	if (conn_name)
 		connection = nm_ifnet_connection_new (conn_name, source);
 	reload_connections (config);
-	return connection ? NM_SYSCONFIG_CONNECTION (connection) : NULL;
+	return connection ? NM_SETTINGS_CONNECTION (connection) : NULL;
 }
 
 static void

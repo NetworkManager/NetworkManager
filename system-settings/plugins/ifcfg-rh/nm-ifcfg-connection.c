@@ -40,7 +40,7 @@
 #include "writer.h"
 #include "nm-inotify-helper.h"
 
-G_DEFINE_TYPE (NMIfcfgConnection, nm_ifcfg_connection, NM_TYPE_SYSCONFIG_CONNECTION)
+G_DEFINE_TYPE (NMIfcfgConnection, nm_ifcfg_connection, NM_TYPE_SETTINGS_CONNECTION)
 
 #define NM_IFCFG_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IFCFG_CONNECTION, NMIfcfgConnectionPrivate))
 
@@ -134,7 +134,7 @@ nm_ifcfg_connection_new (const char *full_path,
 		goto out;
 
 	/* Update our settings with what was read from the file */
-	if (!nm_sysconfig_connection_replace_settings (NM_SYSCONFIG_CONNECTION (object), tmp, error)) {
+	if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object), tmp, error)) {
 		g_object_unref (object);
 		object = NULL;
 		goto out;
@@ -179,8 +179,8 @@ nm_ifcfg_connection_get_unmanaged_spec (NMIfcfgConnection *self)
 }
 
 static void
-commit_changes (NMSysconfigConnection *connection,
-                NMSysconfigConnectionCommitFunc callback,
+commit_changes (NMSettingsConnection *connection,
+                NMSettingsConnectionCommitFunc callback,
 	            gpointer user_data)
 {
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (connection);
@@ -218,12 +218,12 @@ commit_changes (NMSysconfigConnection *connection,
 out:
 	if (reread)
 		g_object_unref (reread);
-	NM_SYSCONFIG_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->commit_changes (connection, callback, user_data);
+	NM_SETTINGS_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->commit_changes (connection, callback, user_data);
 }
 
 static void 
-do_delete (NMSysconfigConnection *connection,
-	       NMSysconfigConnectionDeleteFunc callback,
+do_delete (NMSettingsConnection *connection,
+	       NMSettingsConnectionDeleteFunc callback,
 	       gpointer user_data)
 {
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (connection);
@@ -237,7 +237,7 @@ do_delete (NMSysconfigConnection *connection,
 	if (priv->route6file)
 		g_unlink (priv->route6file);
 
-	NM_SYSCONFIG_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->delete (connection, callback, user_data);
+	NM_SETTINGS_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->delete (connection, callback, user_data);
 }
 
 /* GObject */
@@ -315,7 +315,7 @@ static void
 nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (ifcfg_connection_class);
-	NMSysconfigConnectionClass *sysconfig_class = NM_SYSCONFIG_CONNECTION_CLASS (ifcfg_connection_class);
+	NMSettingsConnectionClass *settings_class = NM_SETTINGS_CONNECTION_CLASS (ifcfg_connection_class);
 
 	g_type_class_add_private (ifcfg_connection_class, sizeof (NMIfcfgConnectionPrivate));
 
@@ -323,8 +323,8 @@ nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-	sysconfig_class->delete = do_delete;
-	sysconfig_class->commit_changes = commit_changes;
+	settings_class->delete = do_delete;
+	settings_class->commit_changes = commit_changes;
 
 	/* Properties */
 	g_object_class_install_property

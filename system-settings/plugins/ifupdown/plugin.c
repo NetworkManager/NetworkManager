@@ -179,7 +179,7 @@ sc_plugin_ifupdown_class_init (SCPluginIfupdownClass *req_class)
 }
 
 static void
-ignore_cb (NMSysconfigConnection *connection,
+ignore_cb (NMSettingsConnection *connection,
            GError *error,
            gpointer user_data)
 {
@@ -229,9 +229,7 @@ bind_device_to_connection (SCPluginIfupdown *self,
 	}
 	g_byte_array_free (mac_address, TRUE);
 
-	nm_sysconfig_connection_commit_changes (NM_SYSCONFIG_CONNECTION (exported),
-	                                        ignore_cb,
-	                                        NULL);
+	nm_settings_connection_commit_changes (NM_SETTINGS_CONNECTION (exported), ignore_cb, NULL);
 }    
 
 static void
@@ -411,9 +409,7 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 			exported = g_hash_table_lookup (priv->iface_connections, block->name);
 			if (exported) {
 				PLUGIN_PRINT("SCPlugin-Ifupdown", "deleting %s from iface_connections", block->name);
-				nm_sysconfig_connection_delete (NM_SYSCONFIG_CONNECTION (exported),
-				                                ignore_cb,
-				                                NULL);
+				nm_settings_connection_delete (NM_SETTINGS_CONNECTION (exported), ignore_cb, NULL);
 				g_hash_table_remove (priv->iface_connections, block->name);
 			}
 
@@ -446,9 +442,7 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 		setting = NM_SETTING (nm_connection_get_setting (NM_CONNECTION (exported), NM_TYPE_SETTING_CONNECTION));
 		g_object_set (setting, NM_SETTING_CONNECTION_AUTOCONNECT, TRUE, NULL);
 
-		nm_sysconfig_connection_commit_changes (NM_SYSCONFIG_CONNECTION (exported),
-		                                        ignore_cb,
-		                                        NULL);
+		nm_settings_connection_commit_changes (NM_SETTINGS_CONNECTION (exported), ignore_cb, NULL);
 
 		PLUGIN_PRINT("SCPlugin-Ifupdown", "autoconnect");
 	}
@@ -507,7 +501,7 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 		for (cl_iter = con_list; cl_iter; cl_iter = g_list_next (cl_iter)) {
 			g_signal_emit_by_name (self,
 			                       NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED,
-			                       NM_SYSCONFIG_CONNECTION (cl_iter->data));
+			                       NM_SETTINGS_CONNECTION (cl_iter->data));
 		}
 		g_list_free (con_list);
 	}

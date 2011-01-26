@@ -22,7 +22,7 @@
 #ifndef NM_IFNET_CONNECTION_H
 #define NM_IFNET_CONNECTION_H
 
-#include <nm-sysconfig-connection.h>
+#include <nm-settings-connection.h>
 #include "net_parser.h"
 
 G_BEGIN_DECLS
@@ -35,11 +35,11 @@ G_BEGIN_DECLS
 #define NM_IFNET_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_IFNET_CONNECTION, NMIfnetConnectionClass))
 
 typedef struct {
-	NMSysconfigConnection parent;
+	NMSettingsConnection parent;
 } NMIfnetConnection;
 
 typedef struct {
-	NMSysconfigConnectionClass parent;
+	NMSettingsConnectionClass parent;
 } NMIfnetConnectionClass;
 
 GType nm_ifnet_connection_get_type (void);

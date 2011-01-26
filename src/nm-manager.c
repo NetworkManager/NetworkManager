@@ -57,7 +57,7 @@
 #include "nm-bluez-manager.h"
 #include "nm-bluez-common.h"
 #include "nm-settings.h"
-#include "nm-sysconfig-connection.h"
+#include "nm-settings-connection.h"
 #include "nm-manager-auth.h"
 #include "nm-agent-manager.h"
 #include "NetworkManagerUtils.h"
@@ -480,7 +480,7 @@ nm_manager_update_state (NMManager *manager)
 }
 
 static void
-ignore_cb (NMSysconfigConnection *connection, GError *error, gpointer user_data)
+ignore_cb (NMSettingsConnection *connection, GError *error, gpointer user_data)
 {
 }
 
@@ -509,7 +509,7 @@ update_active_connection_timestamp (NMManager *manager, NMDevice *device)
 	if (nm_setting_connection_get_read_only (s_con))
 		return;
 
-	nm_sysconfig_connection_commit_changes (NM_SYSCONFIG_CONNECTION (connection), ignore_cb, NULL);
+	nm_settings_connection_commit_changes (NM_SETTINGS_CONNECTION (connection), ignore_cb, NULL);
 }
 
 static void
@@ -918,7 +918,7 @@ get_active_connections (NMManager *manager, NMConnection *filter)
 
 static void
 connections_changed (NMSettings *settings,
-                     NMSysconfigConnection *connection,
+                     NMSettingsConnection *connection,
                      NMManager *manager)
 {
 	bluez_manager_resync_devices (manager);
@@ -1995,7 +1995,7 @@ static void
 pending_activate (NMManager *self, PendingActivation *pending)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMSysconfigConnection *connection;
+	NMSettingsConnection *connection;
 	const char *path = NULL;
 	GError *error = NULL;
 
@@ -2069,7 +2069,7 @@ impl_manager_activate_connection (NMManager *self,
 
 static void
 activation_add_done (NMSettings *self,
-                     NMSysconfigConnection *connection,
+                     NMSettingsConnection *connection,
                      GError *error,
                      DBusGMethodInvocation *context,
                      gpointer user_data)
@@ -3097,13 +3097,13 @@ nm_manager_get (NMSettings *settings,
 	                  G_CALLBACK (system_unmanaged_devices_changed_cb), singleton);
 	g_signal_connect (priv->settings, "notify::" NM_SETTINGS_HOSTNAME,
 	                  G_CALLBACK (system_hostname_changed_cb), singleton);
-	g_signal_connect (priv->settings, NM_SETTINGS_CONNECTION_ADDED,
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_ADDED,
 	                  G_CALLBACK (connections_changed), singleton);
-	g_signal_connect (priv->settings, NM_SETTINGS_CONNECTION_UPDATED,
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,
 	                  G_CALLBACK (connections_changed), singleton);
-	g_signal_connect (priv->settings, NM_SETTINGS_CONNECTION_REMOVED,
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_REMOVED,
 	                  G_CALLBACK (connections_changed), singleton);
-	g_signal_connect (priv->settings, NM_SETTINGS_CONNECTION_VISIBILITY_CHANGED,
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED,
 	                  G_CALLBACK (connections_changed), singleton);
 
 	dbus_g_connection_register_g_object (bus, NM_DBUS_PATH, G_OBJECT (singleton));

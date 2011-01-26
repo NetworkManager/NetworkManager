@@ -31,7 +31,7 @@
 #include "nm-agent-manager.h"
 #include "nm-secret-agent.h"
 #include "nm-manager-auth.h"
-#include "nm-sysconfig-connection.h"
+#include "nm-settings-connection.h"
 #include "nm-dbus-glib-types.h"
 
 G_DEFINE_TYPE (NMAgentManager, nm_agent_manager, G_TYPE_OBJECT)
@@ -571,9 +571,9 @@ request_start_secrets (gpointer user_data)
 			    req, req->setting_name);
 
 	/* Grab any secrets from persistent storage */
-	secrets = nm_sysconfig_connection_get_secrets (NM_SYSCONFIG_CONNECTION (req->connection),
-	                                               req->setting_name,
-	                                               &error);
+	secrets = nm_settings_connection_get_secrets (NM_SETTINGS_CONNECTION (req->connection),
+	                                              req->setting_name,
+	                                              &error);
 	if (secrets)
 		setting_secrets = g_hash_table_lookup (secrets, req->setting_name);
 
@@ -795,7 +795,7 @@ nm_agent_manager_get_secrets (NMAgentManager *self,
 
 	g_return_val_if_fail (self != NULL, 0);
 	g_return_val_if_fail (connection != NULL, 0);
-	g_return_val_if_fail (NM_IS_SYSCONFIG_CONNECTION (connection), 0);
+	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (connection), 0);
 	g_return_val_if_fail (callback != NULL, 0);
 
 	nm_log_dbg (LOGD_SETTINGS,

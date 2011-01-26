@@ -18,7 +18,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2010 Red Hat, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -195,10 +195,10 @@ read_connections (SCPluginIfcfg *plugin)
 
 /* Monitoring */
 
-/* Callback for nm_sysconfig_connection_replace_and_commit. Report any errors
+/* Callback for nm_settings_connection_replace_and_commit. Report any errors
  * encountered when commiting connection settings updates. */
 static void
-commit_cb (NMSysconfigConnection *connection, GError *error, gpointer unused) 
+commit_cb (NMSettingsConnection *connection, GError *error, gpointer unused) 
 {
 	if (error) {
 		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error updating: %s",
@@ -221,7 +221,7 @@ remove_connection (SCPluginIfcfg *self, NMIfcfgConnection *connection)
 
 	g_object_ref (connection);
 	g_hash_table_remove (priv->connections, path);
-	g_signal_emit_by_name (connection, NM_SYSCONFIG_CONNECTION_REMOVED);
+	g_signal_emit_by_name (connection, NM_SETTINGS_CONNECTION_REMOVED);
 	g_object_unref (connection);
 
 	/* Emit unmanaged changes _after_ removing the connection */
@@ -294,7 +294,7 @@ connection_new_or_changed (SCPluginIfcfg *self,
 			 * been removed, and notify the settings service by signalling that
 			 * unmanaged specs have changed.
 			 */
-			g_signal_emit_by_name (existing, NM_SYSCONFIG_CONNECTION_REMOVED);
+			g_signal_emit_by_name (existing, NM_SETTINGS_CONNECTION_REMOVED);
 			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
 		}
 	} else {
@@ -312,9 +312,9 @@ connection_new_or_changed (SCPluginIfcfg *self,
 			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, existing);
 		}
 
-		nm_sysconfig_connection_replace_and_commit (NM_SYSCONFIG_CONNECTION (existing),
-		                                            NM_CONNECTION (new),
-		                                            commit_cb, NULL);
+		nm_settings_connection_replace_and_commit (NM_SETTINGS_CONNECTION (existing),
+		                                           NM_CONNECTION (new),
+		                                           commit_cb, NULL);
 
 		/* Update unmanaged status */
 		g_object_set (existing, NM_IFCFG_CONNECTION_UNMANAGED, new_unmanaged, NULL);
@@ -445,7 +445,7 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 	return list;
 }
 
-static NMSysconfigConnection *
+static NMSettingsConnection *
 add_connection (NMSystemConfigInterface *config,
                 NMConnection *connection,
                 GError **error)
@@ -459,7 +459,7 @@ add_connection (NMSystemConfigInterface *config,
 		added = _internal_new_connection (self, path, connection, error);
 		g_free (path);
 	}
-	return (NMSysconfigConnection *) added;
+	return (NMSettingsConnection *) added;
 }
 
 #define SC_NETWORK_FILE SYSCONFDIR"/sysconfig/network"

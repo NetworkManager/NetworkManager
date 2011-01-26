@@ -26,13 +26,13 @@
 #include <NetworkManager.h>
 #include <nm-utils.h>
 #include <nm-setting-wireless-security.h>
-#include <nm-sysconfig-connection.h>
+#include <nm-settings-connection.h>
 #include <nm-system-config-interface.h>
 #include <nm-settings-error.h>
 #include "nm-ifupdown-connection.h"
 #include "parser.h"
 
-G_DEFINE_TYPE (NMIfupdownConnection, nm_ifupdown_connection, NM_TYPE_SYSCONFIG_CONNECTION)
+G_DEFINE_TYPE (NMIfupdownConnection, nm_ifupdown_connection, NM_TYPE_SETTINGS_CONNECTION)
 
 #define NM_IFUPDOWN_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IFUPDOWN_CONNECTION, NMIfupdownConnectionPrivate))
 
@@ -58,7 +58,7 @@ nm_ifupdown_connection_new (if_block *block)
 }
 
 static gboolean
-supports_secrets (NMSysconfigConnection *connection, const char *setting_name)
+supports_secrets (NMSettingsConnection *connection, const char *setting_name)
 {
 	PLUGIN_PRINT ("SCPlugin-Ifupdown", "supports_secrets() for setting_name: '%s'", setting_name);
 
@@ -146,7 +146,7 @@ static void
 nm_ifupdown_connection_class_init (NMIfupdownConnectionClass *ifupdown_connection_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (ifupdown_connection_class);
-	NMSysconfigConnectionClass *connection_class = NM_SYSCONFIG_CONNECTION_CLASS (ifupdown_connection_class);
+	NMSettingsConnectionClass *connection_class = NM_SETTINGS_CONNECTION_CLASS (ifupdown_connection_class);
 
 	g_type_class_add_private (ifupdown_connection_class, sizeof (NMIfupdownConnectionPrivate));
 

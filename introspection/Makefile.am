@@ -18,7 +18,7 @@ EXTRA_DIST = \
 	nm-manager.xml \
 	nm-manager-client.xml \
 	nm-settings.xml \
-	nm-sysconfig-connection.xml \
+	nm-settings-connection.xml \
 	nm-vpn-plugin.xml \
 	nm-vpn-connection.xml \
 	nm-ppp-manager.xml \

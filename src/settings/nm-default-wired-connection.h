@@ -16,13 +16,13 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * (C) Copyright 2008 Novell, Inc.
- * (C) Copyright 2009 Red Hat, Inc.
+ * (C) Copyright 2009 - 2011 Red Hat, Inc.
  */
 
 #ifndef NM_DEFAULT_WIRED_CONNECTION_H
 #define NM_DEFAULT_WIRED_CONNECTION_H
 
-#include "nm-sysconfig-connection.h"
+#include "nm-settings-connection.h"
 #include "nm-device.h"
 
 G_BEGIN_DECLS
@@ -39,11 +39,11 @@ G_BEGIN_DECLS
 #define NM_DEFAULT_WIRED_CONNECTION_READ_ONLY "read-only"
 
 typedef struct {
-	NMSysconfigConnection parent;
+	NMSettingsConnection parent;
 } NMDefaultWiredConnection;
 
 typedef struct {
-	NMSysconfigConnectionClass parent;
+	NMSettingsConnectionClass parent;
 } NMDefaultWiredConnectionClass;
 
 GType nm_default_wired_connection_get_type (void);

@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2010 Red Hat, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  * Copyright (C) 2008 Novell, Inc.
  */
 
@@ -73,7 +73,7 @@ interface_init (gpointer g_iface)
 				  NULL, NULL,
 				  g_cclosure_marshal_VOID__OBJECT,
 				  G_TYPE_NONE, 1,
-				  NM_TYPE_SYSCONFIG_CONNECTION);
+				  NM_TYPE_SETTINGS_CONNECTION);
 
 	g_signal_new (NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED,
 				  iface_type,
@@ -146,7 +146,7 @@ nm_system_config_interface_get_unmanaged_specs (NMSystemConfigInterface *config)
 	return NULL;
 }
 
-NMSysconfigConnection *
+NMSettingsConnection *
 nm_system_config_interface_add_connection (NMSystemConfigInterface *config,
                                            NMConnection *connection,
                                            GError **error)

@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2010 Red Hat, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  * Copyright (C) 2008 Novell, Inc.
  */
 
@@ -25,7 +25,7 @@
 #include <glib.h>
 #include <glib-object.h>
 #include <nm-connection.h>
-#include <nm-sysconfig-connection.h>
+#include <nm-settings-connection.h>
 
 G_BEGIN_DECLS
 
@@ -90,7 +90,7 @@ struct _NMSystemConfigInterface {
 	/* Called when the plugin is loaded to initialize it */
 	void     (*init) (NMSystemConfigInterface *config);
 
-	/* Returns a GSList of NMSysconfigConnection objects that represent
+	/* Returns a GSList of NMSettingsConnection objects that represent
 	 * connections the plugin knows about.  The returned list is freed by the
 	 * system settings service.
 	 */
@@ -118,18 +118,18 @@ struct _NMSystemConfigInterface {
 
 	/*
 	 * Save the given connection to backing storage, and return a new
-	 * NMSysconfigConnection subclass that contains the same settings as the
+	 * NMSettingsConnection subclass that contains the same settings as the
 	 * original connection.
 	 */
-	NMSysconfigConnection * (*add_connection) (NMSystemConfigInterface *config,
-	                                           NMConnection *connection,
-	                                           GError **error);
+	NMSettingsConnection * (*add_connection) (NMSystemConfigInterface *config,
+	                                          NMConnection *connection,
+	                                          GError **error);
 
 	/* Signals */
 
 	/* Emitted when a new connection has been found by the plugin */
 	void (*connection_added)   (NMSystemConfigInterface *config,
-	                            NMSysconfigConnection *connection);
+	                            NMSettingsConnection *connection);
 
 	/* Emitted when the list of unmanaged device specifications changes */
 	void (*unmanaged_specs_changed) (NMSystemConfigInterface *config);
@@ -144,9 +144,9 @@ GSList *nm_system_config_interface_get_connections (NMSystemConfigInterface *con
 
 GSList *nm_system_config_interface_get_unmanaged_specs (NMSystemConfigInterface *config);
 
-NMSysconfigConnection *nm_system_config_interface_add_connection (NMSystemConfigInterface *config,
-                                                                  NMConnection *connection,
-                                                                  GError **error);
+NMSettingsConnection *nm_system_config_interface_add_connection (NMSystemConfigInterface *config,
+                                                                 NMConnection *connection,
+                                                                 GError **error);
 
 G_END_DECLS
 

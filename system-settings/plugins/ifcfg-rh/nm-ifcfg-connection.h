@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
 #ifndef NM_IFCFG_CONNECTION_H
@@ -24,7 +24,7 @@
 G_BEGIN_DECLS
 
 #include <NetworkManager.h>
-#include <nm-sysconfig-connection.h>
+#include <nm-settings-connection.h>
 
 #define NM_TYPE_IFCFG_CONNECTION            (nm_ifcfg_connection_get_type ())
 #define NM_IFCFG_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_IFCFG_CONNECTION, NMIfcfgConnection))
@@ -36,11 +36,11 @@ G_BEGIN_DECLS
 #define NM_IFCFG_CONNECTION_UNMANAGED "unmanaged"
 
 typedef struct {
-	NMSysconfigConnection parent;
+	NMSettingsConnection parent;
 } NMIfcfgConnection;
 
 typedef struct {
-	NMSysconfigConnectionClass parent;
+	NMSettingsConnectionClass parent;
 } NMIfcfgConnectionClass;
 
 GType nm_ifcfg_connection_get_type (void);

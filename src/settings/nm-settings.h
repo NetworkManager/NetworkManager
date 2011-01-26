@@ -28,7 +28,7 @@
 
 #include <nm-connection.h>
 
-#include "nm-sysconfig-connection.h"
+#include "nm-settings-connection.h"
 #include "nm-system-config-interface.h"
 #include "nm-device.h"
 
@@ -43,11 +43,11 @@
 #define NM_SETTINGS_HOSTNAME        "hostname"
 #define NM_SETTINGS_CAN_MODIFY      "can-modify"
 
-#define NM_SETTINGS_CONNECTION_ADDED              "connection-added"
-#define NM_SETTINGS_CONNECTION_UPDATED            "connection-updated"
-#define NM_SETTINGS_CONNECTION_REMOVED            "connection-removed"
-#define NM_SETTINGS_CONNECTION_VISIBILITY_CHANGED "connection-visibility-changed"
-#define NM_SETTINGS_CONNECTIONS_LOADED            "connections-loaded"
+#define NM_SETTINGS_SIGNAL_CONNECTION_ADDED              "connection-added"
+#define NM_SETTINGS_SIGNAL_CONNECTION_UPDATED            "connection-updated"
+#define NM_SETTINGS_SIGNAL_CONNECTION_REMOVED            "connection-removed"
+#define NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED "connection-visibility-changed"
+#define NM_SETTINGS_SIGNAL_CONNECTIONS_LOADED            "connections-loaded"
 
 typedef struct {
 	GObject parent_instance;
@@ -77,7 +77,7 @@ NMSettings *nm_settings_new (const char *config_file,
                              GError **error);
 
 typedef void (*NMSettingsForEachFunc) (NMSettings *settings,
-                                       NMSysconfigConnection *connection,
+                                       NMSettingsConnection *connection,
                                        gpointer user_data);
 
 void nm_settings_for_each_connection (NMSettings *settings,
@@ -85,7 +85,7 @@ void nm_settings_for_each_connection (NMSettings *settings,
                                       gpointer user_data);
 
 typedef void (*NMSettingsAddCallback) (NMSettings *settings,
-                                       NMSysconfigConnection *connection,
+                                       NMSettingsConnection *connection,
                                        GError *error,
                                        DBusGMethodInvocation *context,
                                        gpointer user_data);
@@ -96,13 +96,13 @@ void nm_settings_add_connection (NMSettings *self,
                                  NMSettingsAddCallback callback,
                                  gpointer user_data);
 
-/* Returns a list of NMSysconfigConnections.  Caller must free the list with
+/* Returns a list of NMSettingsConnections.  Caller must free the list with
  * g_slist_free().
  */
 GSList *nm_settings_get_connections (NMSettings *settings);
 
-NMSysconfigConnection *nm_settings_get_connection_by_path (NMSettings *settings,
-                                                           const char *path);
+NMSettingsConnection *nm_settings_get_connection_by_path (NMSettings *settings,
+                                                          const char *path);
 
 const GSList *nm_settings_get_unmanaged_specs (NMSettings *self);
 

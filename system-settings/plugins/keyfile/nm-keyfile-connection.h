@@ -16,13 +16,13 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
 #ifndef NM_KEYFILE_CONNECTION_H
 #define NM_KEYFILE_CONNECTION_H
 
-#include <nm-sysconfig-connection.h>
+#include <nm-settings-connection.h>
 
 G_BEGIN_DECLS
 
@@ -34,11 +34,11 @@ G_BEGIN_DECLS
 #define NM_KEYFILE_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_KEYFILE_CONNECTION, NMKeyfileConnectionClass))
 
 typedef struct {
-	NMSysconfigConnection parent;
+	NMSettingsConnection parent;
 } NMKeyfileConnection;
 
 typedef struct {
-	NMSysconfigConnectionClass parent;
+	NMSettingsConnectionClass parent;
 } NMKeyfileConnectionClass;
 
 GType nm_keyfile_connection_get_type (void);
