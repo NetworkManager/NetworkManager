@@ -36,6 +36,9 @@ G_BEGIN_DECLS
 
 #define NM_SETTINGS_CONNECTION_UPDATED "updated"
 #define NM_SETTINGS_CONNECTION_REMOVED "removed"
+#define NM_SETTINGS_CONNECTION_GET_SECRETS "get-secrets"
+#define NM_SETTINGS_CONNECTION_CANCEL_SECRETS "cancel-secrets"
+
 #define NM_SETTINGS_CONNECTION_VISIBLE "visible"
 
 typedef struct _NMSettingsConnection NMSettingsConnection;
@@ -50,6 +53,12 @@ typedef void (*NMSettingsConnectionDeleteFunc) (NMSettingsConnection *connection
                                                 GError *error,
                                                 gpointer user_data);
 
+typedef void (*NMSettingsConnectionSecretsUpdatedFunc) (NMSettingsConnection *connection,
+                                                        const char *setting_name,
+                                                        guint32 call_id,
+                                                        GError *error,
+                                                        gpointer user_data);
+
 struct _NMSettingsConnection {
 	NMConnection parent;
 };
@@ -57,6 +66,7 @@ struct _NMSettingsConnection {
 struct _NMSettingsConnectionClass {
 	NMConnectionClass parent;
 
+	/* virtual methods */
 	void (*commit_changes) (NMSettingsConnection *connection,
 	                        NMSettingsConnectionCommitFunc callback,
 	                        gpointer user_data);
@@ -67,6 +77,14 @@ struct _NMSettingsConnectionClass {
 
 	gboolean (*supports_secrets) (NMSettingsConnection *connection,
 	                              const char *setting_name);
+
+	/* signals */
+	guint32 (*get_secrets) (NMSettingsConnection *connection,
+	                        const char *setting_name,
+	                        NMSettingsConnectionSecretsUpdatedFunc callback,
+	                        gpointer callback_data);
+
+	void (*cancel_secrets) (NMSettingsConnection *connection, guint32 call_id);
 };
 
 GType nm_settings_connection_get_type (void);

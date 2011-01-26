@@ -925,6 +925,71 @@ connections_changed (NMSettings *settings,
 }
 
 static void
+secrets_result_cb (NMAgentManager *manager,
+                   guint32 call_id,
+                   NMConnection *connection,
+                   const char *setting_name,
+                   GError *error,
+                   gpointer user_data,
+                   gpointer user_data2,
+                   gpointer user_data3)
+{
+	NMSettingsConnectionSecretsUpdatedFunc callback = user_data2;
+	gpointer callback_data = user_data3;
+
+	callback (NM_SETTINGS_CONNECTION (connection), setting_name, call_id, error, callback_data);
+}
+
+static guint32
+system_connection_get_secrets_cb (NMSettingsConnection *connection,
+                                  const char *setting_name,
+                                  NMSettingsConnectionSecretsUpdatedFunc callback,
+                                  gpointer callback_data,
+                                  gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	gboolean call_id;
+
+	call_id = nm_agent_manager_get_secrets (priv->agent_mgr,
+	                                        NM_CONNECTION (connection),
+	                                        setting_name,
+	                                        NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE,
+	                                        NULL,
+	                                        secrets_result_cb,
+	                                        self,
+	                                        callback,
+	                                        callback_data);
+	return call_id;
+}
+
+static void
+system_connection_cancel_secrets_cb (NMSettingsConnection *connection,
+                                     guint32 call_id,
+                                     gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+
+	nm_agent_manager_cancel_secrets (NM_MANAGER_GET_PRIVATE (self)->agent_mgr, call_id);
+}
+
+static void
+connection_added (NMSettings *settings,
+                  NMSettingsConnection *connection,
+                  NMManager *manager)
+{
+	/* Hook up secrets request listeners */
+	g_signal_connect (connection, NM_SETTINGS_CONNECTION_GET_SECRETS,
+	                  G_CALLBACK (system_connection_get_secrets_cb),
+	                  manager);
+	g_signal_connect (connection, NM_SETTINGS_CONNECTION_CANCEL_SECRETS,
+	                  G_CALLBACK (system_connection_cancel_secrets_cb),
+	                  manager);
+
+	connections_changed (settings, connection, manager);
+}
+
+static void
 system_unmanaged_devices_changed_cb (NMSettings *settings,
                                      GParamSpec *pspec,
                                      gpointer user_data)
@@ -3098,7 +3163,7 @@ nm_manager_get (NMSettings *settings,
 	g_signal_connect (priv->settings, "notify::" NM_SETTINGS_HOSTNAME,
 	                  G_CALLBACK (system_hostname_changed_cb), singleton);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_ADDED,
-	                  G_CALLBACK (connections_changed), singleton);
+	                  G_CALLBACK (connection_added), singleton);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,
 	                  G_CALLBACK (connections_changed), singleton);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_REMOVED,

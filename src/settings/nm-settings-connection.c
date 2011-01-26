@@ -34,6 +34,7 @@
 #include "nm-polkit-helpers.h"
 #include "nm-logging.h"
 #include "nm-manager-auth.h"
+#include "nm-marshal.h"
 
 static void impl_settings_connection_get_settings (NMSettingsConnection *connection,
                                                    DBusGMethodInvocation *context);
@@ -65,15 +66,21 @@ enum {
 enum {
 	UPDATED,
 	REMOVED,
+	GET_SECRETS,
+	CANCEL_SECRETS,
 	LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
+	gboolean disposed;
+
 	PolkitAuthority *authority;
 	GSList *pending_auths; /* List of pending authentication requests */
 	NMConnection *secrets;
 	gboolean visible; /* Is this connection is visible by some session? */
+
+	GSList *reqs;  /* in-progress secrets requests */
 
 	NMSessionMonitor *session_monitor;
 	guint session_changed_id;
@@ -333,80 +340,6 @@ supports_secrets (NMSettingsConnection *connection, const char *setting_name)
 	return TRUE;
 }
 
-static GValue *
-string_to_gvalue (const char *str)
-{
-	GValue *val = g_slice_new0 (GValue);
-
-	g_value_init (val, G_TYPE_STRING);
-	g_value_set_string (val, str);
-	return val;
-}
-
-static GValue *
-byte_array_to_gvalue (const GByteArray *array)
-{
-	GValue *val;
-
-	val = g_slice_new0 (GValue);
-	g_value_init (val, DBUS_TYPE_G_UCHAR_ARRAY);
-	g_value_set_boxed (val, array);
-
-	return val;
-}
-
-static void
-copy_one_secret (gpointer key, gpointer value, gpointer user_data)
-{
-	const char *value_str = (const char *) value;
-
-	if (value_str) {
-		g_hash_table_insert ((GHashTable *) user_data,
-		                     g_strdup ((char *) key),
-		                     string_to_gvalue (value_str));
-	}
-}
-
-static void
-add_secrets (NMSetting *setting,
-             const char *key,
-             const GValue *value,
-             GParamFlags flags,
-             gpointer user_data)
-{
-	GHashTable *secrets = user_data;
-
-	if (!(flags & NM_SETTING_PARAM_SECRET))
-		return;
-
-	/* Copy secrets into the returned hash table */
-	if (G_VALUE_HOLDS_STRING (value)) {
-		const char *tmp;
-
-		tmp = g_value_get_string (value);
-		if (tmp)
-			g_hash_table_insert (secrets, g_strdup (key), string_to_gvalue (tmp));
-	} else if (G_VALUE_HOLDS (value, DBUS_TYPE_G_MAP_OF_STRING)) {
-		/* Flatten the string hash by pulling its keys/values out; for VPN secrets */
-		g_hash_table_foreach (g_value_get_boxed (value), copy_one_secret, secrets);
-	} else if (G_VALUE_TYPE (value) == DBUS_TYPE_G_UCHAR_ARRAY) {
-		GByteArray *array;
-
-		array = g_value_get_boxed (value);
-		if (array)
-			g_hash_table_insert (secrets, g_strdup (key), byte_array_to_gvalue (array));
-	}
-}
-
-static void
-destroy_gvalue (gpointer data)
-{
-	GValue *value = (GValue *) data;
-
-	g_value_unset (value);
-	g_slice_free (GValue, value);
-}
-
 /**
  * nm_settings_connection_get_secrets:
  * @connection: the #NMSettingsConnection
@@ -415,6 +348,9 @@ destroy_gvalue (gpointer data)
  *
  * Return secrets in persistent storage, if any.  Does not query any Secret
  * Agents for secrets.
+ *
+ * Returns: a hash mapping setting names to hash tables, each inner hash
+ * containing string:value mappings of secrets
  **/
 GHashTable *
 nm_settings_connection_get_secrets (NMSettingsConnection *connection,
@@ -422,8 +358,6 @@ nm_settings_connection_get_secrets (NMSettingsConnection *connection,
                                     GError **error)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
-	GHashTable *settings = NULL;
-	GHashTable *secrets = NULL;
 	NMSetting *setting;
 
 	/* Use priv->secrets to work around the fact that nm_connection_clear_secrets()
@@ -448,19 +382,7 @@ nm_settings_connection_get_secrets (NMSettingsConnection *connection,
 		return NULL;
 	}
 
-	/* Returned secrets are a{sa{sv}}; this is the outer a{s...} hash that
-	 * will contain all the individual settings hashes.
-	 */
-	settings = g_hash_table_new_full (g_str_hash, g_str_equal,
-	                                  g_free, (GDestroyNotify) g_hash_table_destroy);
-
-	/* Add the secrets from this setting to the inner secrets hash for this setting */
-	secrets = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, destroy_gvalue);
-	nm_setting_enumerate_values (setting, add_secrets, secrets);
-
-	g_hash_table_insert (settings, g_strdup (setting_name), secrets);
-
-	return secrets;
+	return nm_connection_to_hash (priv->secrets, NM_SETTING_HASH_FLAG_ONLY_SECRETS);
 }
 
 /**** User authorization **************************************/
@@ -736,31 +658,79 @@ impl_settings_connection_delete (NMSettingsConnection *self,
 	auth_start (self, context, TRUE, delete_auth_cb, NULL);
 }
 
-static void
-secrets_auth_cb (NMSettingsConnection *self, 
-                 DBusGMethodInvocation *context,
-                 GError *error,
-                 gpointer user_data)
+/**************************************************************/
+
+static gboolean
+get_secrets_accumulator (GSignalInvocationHint *ihint,
+                         GValue *return_accu,
+                         const GValue *handler_return,
+                         gpointer data)
 {
+	guint handler_call_id = g_value_get_uint (handler_return);
+
+	if (handler_call_id > 0)
+		g_value_set_uint (return_accu, handler_call_id);
+
+	/* Abort signal emission if a valid call ID got returned */
+	return handler_call_id ? FALSE : TRUE;
+}
+
+static void
+dbus_get_agent_secrets_cb (NMSettingsConnection *self,
+                           const char *setting_name,
+                           guint32 call_id,
+                           GError *error,
+                           gpointer user_data)
+{
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+	DBusGMethodInvocation *context = user_data;
+	GHashTable *hash;
+
+	priv->reqs = g_slist_remove (priv->reqs, GUINT_TO_POINTER (call_id));
+
+	/* The connection's secrets will have been updated by the agent manager,
+	 * so we want to refresh the secrets cache.
+	 */
+	if (priv->secrets)
+		g_object_unref (priv->secrets);
+	priv->secrets = nm_connection_duplicate (NM_CONNECTION (self));
+
+	if (error)
+		dbus_g_method_return_error (context, error);
+	else {
+		hash = nm_connection_to_hash (NM_CONNECTION (self), NM_SETTING_HASH_FLAG_ONLY_SECRETS);
+		dbus_g_method_return (context, hash);
+		g_hash_table_destroy (hash);
+	}
+}
+
+static void
+dbus_secrets_auth_cb (NMSettingsConnection *self, 
+                      DBusGMethodInvocation *context,
+                      GError *error,
+                      gpointer user_data)
+{
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	char *setting_name = user_data;
-	GHashTable *secrets;
+	guint32 call_id = 0;
 	GError *local = NULL;
 
-	if (error) {
+	if (error)
 		dbus_g_method_return_error (context, error);
-		goto out;
+	else {
+		g_signal_emit (self, signals[GET_SECRETS], 0, setting_name, dbus_get_agent_secrets_cb, context, &call_id);
+		if (call_id > 0) {
+			/* track the request and wait for the callback */
+			priv->reqs = g_slist_append (priv->reqs, GUINT_TO_POINTER (call_id));
+		} else {
+			local = g_error_new_literal (NM_SETTINGS_ERROR,
+			                             NM_SETTINGS_ERROR_SECRETS_UNAVAILABLE,
+			                             "No secrets were available");
+			dbus_g_method_return_error (context, local);
+			g_error_free (local);
+		}
 	}
 
-	secrets = nm_settings_connection_get_secrets (self, setting_name, &error);
-	if (secrets) {
-		dbus_g_method_return (context, secrets);
-		g_hash_table_destroy (secrets);
-	} else {
-		dbus_g_method_return_error (context, local);
-		g_clear_error (&local);
-	}
-
-out:
 	g_free (setting_name);
 }
 
@@ -769,7 +739,7 @@ impl_settings_connection_get_secrets (NMSettingsConnection *self,
                                       const gchar *setting_name,
                                       DBusGMethodInvocation *context)
 {
-	auth_start (self, context, TRUE, secrets_auth_cb, g_strdup (setting_name));
+	auth_start (self, context, TRUE, dbus_secrets_auth_cb, g_strdup (setting_name));
 }
 
 /**************************************************************/
@@ -809,6 +779,10 @@ dispose (GObject *object)
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	GSList *iter;
 
+	if (priv->disposed)
+		goto out;
+	priv->disposed = TRUE;
+
 	if (priv->secrets)
 		g_object_unref (priv->secrets);
 
@@ -818,10 +792,16 @@ dispose (GObject *object)
 	g_slist_free (priv->pending_auths);
 	priv->pending_auths = NULL;
 
+	/* Cancel in-progress secrets requests */
+	for (iter = priv->reqs; iter; iter = g_slist_next (iter))
+		g_signal_emit (self, signals[CANCEL_SECRETS], 0, GPOINTER_TO_UINT (iter->data));
+	g_slist_free (priv->reqs);
+
 	set_visible (self, FALSE);
 
 	g_object_unref (priv->session_monitor);
 
+out:
 	G_OBJECT_CLASS (nm_settings_connection_parent_class)->dispose (object);
 }
 
@@ -888,6 +868,24 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 		              0,
 		              NULL, NULL,
 		              g_cclosure_marshal_VOID__VOID,
+		              G_TYPE_NONE, 0);
+
+	/* not exported over D-Bus */
+	signals[GET_SECRETS] = 
+		g_signal_new (NM_SETTINGS_CONNECTION_GET_SECRETS,
+		              G_TYPE_FROM_CLASS (class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMSettingsConnectionClass, get_secrets),
+		              get_secrets_accumulator, NULL,
+		              _nm_marshal_UINT__STRING_POINTER_POINTER,
+		              G_TYPE_UINT, 3, G_TYPE_STRING, G_TYPE_POINTER, G_TYPE_POINTER);
+
+	signals[CANCEL_SECRETS] =
+		g_signal_new (NM_SETTINGS_CONNECTION_CANCEL_SECRETS,
+		              G_TYPE_FROM_CLASS (class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL,
+		              g_cclosure_marshal_VOID__UINT,
 		              G_TYPE_NONE, 0);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (class),
