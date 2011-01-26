@@ -594,6 +594,7 @@ static void
 really_activate (NMVPNConnection *connection)
 {
 	NMVPNConnectionPrivate *priv;
+	GHashTable *hash;
 
 	g_return_if_fail (NM_IS_VPN_CONNECTION (connection));
 	g_return_if_fail (nm_vpn_connection_get_vpn_state (connection) == NM_VPN_CONNECTION_STATE_NEED_AUTH);
@@ -610,10 +611,12 @@ really_activate (NMVPNConnection *connection)
 						    G_CALLBACK (nm_vpn_connection_ip4_config_get),
 						    connection, NULL);
 
+	hash = nm_connection_to_hash (priv->connection);
 	org_freedesktop_NetworkManager_VPN_Plugin_connect_async (priv->proxy,
-												  nm_connection_to_hash (priv->connection),
-												  nm_vpn_connection_connect_cb,
-												  connection);
+	                                                         hash,
+	                                                         nm_vpn_connection_connect_cb,
+	                                                         connection);
+	g_hash_table_destroy (hash);
 
 	nm_vpn_connection_set_vpn_state (connection,
 	                                 NM_VPN_CONNECTION_STATE_CONNECT,
