@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2009 Red Hat, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
 #ifndef __NM_REMOTE_CONNECTION_H__
@@ -38,8 +38,8 @@ G_BEGIN_DECLS
 #define NM_IS_REMOTE_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_REMOTE_CONNECTION))
 #define NM_REMOTE_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_REMOTE_CONNECTION, NMRemoteConnectionClass))
 
-#define NM_REMOTE_CONNECTION_UPDATED               "updated"
-#define NM_REMOTE_CONNECTION_REMOVED               "removed"
+#define NM_REMOTE_CONNECTION_UPDATED         "updated"
+#define NM_REMOTE_CONNECTION_REMOVED         "removed"
 
 typedef struct {
 	NMConnection parent;
@@ -91,8 +91,6 @@ void nm_remote_connection_delete (NMRemoteConnection *connection,
 
 void nm_remote_connection_get_secrets (NMRemoteConnection *connection,
                                        const char *setting_name,
-                                       const char **hints,
-                                       gboolean request_new,
                                        NMRemoteConnectionGetSecretsFunc callback,
                                        gpointer user_data);
 G_END_DECLS

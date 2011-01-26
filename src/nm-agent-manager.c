@@ -570,10 +570,9 @@ request_start_secrets (gpointer user_data)
 	nm_log_dbg (LOGD_AGENTS, "(%p/%s) getting secrets from system settings",
 			    req, req->setting_name);
 
+	/* Grab any secrets from persistent storage */
 	secrets = nm_sysconfig_connection_get_secrets (NM_SYSCONFIG_CONNECTION (req->connection),
 	                                               req->setting_name,
-	                                               req->hint,
-	                                               req->flags ? TRUE : FALSE,
 	                                               &error);
 	if (secrets)
 		setting_secrets = g_hash_table_lookup (secrets, req->setting_name);

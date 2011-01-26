@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * (C) Copyright 2008 Novell, Inc.
- * (C) Copyright 2008 - 2010 Red Hat, Inc.
+ * (C) Copyright 2008 - 2011 Red Hat, Inc.
  */
 
 #ifndef NM_SYSCONFIG_CONNECTION_H
@@ -90,8 +90,6 @@ void nm_sysconfig_connection_delete (NMSysconfigConnection *connection,
 
 GHashTable *nm_sysconfig_connection_get_secrets (NMSysconfigConnection *connection,
                                                  const char *setting_name,
-                                                 const char *hint,
-                                                 gboolean request_new,
                                                  GError **error);
 
 gboolean nm_sysconfig_connection_is_visible (NMSysconfigConnection *self);

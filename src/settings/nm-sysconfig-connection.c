@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * (C) Copyright 2008 Novell, Inc.
- * (C) Copyright 2008 - 2010 Red Hat, Inc.
+ * (C) Copyright 2008 - 2011 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -47,8 +47,6 @@ static void impl_sysconfig_connection_delete (NMSysconfigConnection *connection,
 
 static void impl_sysconfig_connection_get_secrets (NMSysconfigConnection *connection,
                                                    const gchar *setting_name,
-                                                   const gchar **hints,
-                                                   gboolean request_new,
                                                    DBusGMethodInvocation *context);
 
 #include "nm-sysconfig-connection-glue.h"
@@ -410,11 +408,18 @@ destroy_gvalue (gpointer data)
 	g_slice_free (GValue, value);
 }
 
+/**
+ * nm_sysconfig_connection_get_secrets:
+ * @connection: the #NMSysconfigConnection
+ * @setting_name: the setting to return secrets for
+ * @error: an error on return, if an error occured
+ *
+ * Return secrets in persistent storage, if any.  Does not query any Secret
+ * Agents for secrets.
+ **/
 GHashTable *
 nm_sysconfig_connection_get_secrets (NMSysconfigConnection *connection,
                                      const char *setting_name,
-                                     const char *hint,
-                                     gboolean request_new,
                                      GError **error)
 {
 	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (connection);
@@ -433,6 +438,8 @@ nm_sysconfig_connection_get_secrets (NMSysconfigConnection *connection,
 		             __FILE__, __LINE__);
 		return NULL;
 	}
+
+	/* FIXME: if setting_name is empty, return all secrets */
 
 	setting = nm_connection_get_setting_by_name (priv->secrets, setting_name);
 	if (!setting) {
@@ -739,19 +746,13 @@ impl_sysconfig_connection_delete (NMSysconfigConnection *self,
 	auth_start (self, context, TRUE, delete_auth_cb, NULL);
 }
 
-typedef struct {
-	char *setting_name;
-	char *hint;
-	gboolean request_new;
-} GetSecretsInfo;
-
 static void
 secrets_auth_cb (NMSysconfigConnection *self, 
 	             DBusGMethodInvocation *context,
 	             GError *error,
-	             gpointer data)
+	             gpointer user_data)
 {
-	GetSecretsInfo *info = data;
+	char *setting_name = user_data;
 	GHashTable *secrets;
 	GError *local = NULL;
 
@@ -760,11 +761,7 @@ secrets_auth_cb (NMSysconfigConnection *self,
 		goto out;
 	}
 
-	secrets = nm_sysconfig_connection_get_secrets (self,
-	                                               info->setting_name,
-	                                               info->hint,
-	                                               info->request_new,
-	                                               &error);
+	secrets = nm_sysconfig_connection_get_secrets (self, setting_name, &error);
 	if (secrets) {
 		dbus_g_method_return (context, secrets);
 		g_hash_table_destroy (secrets);
@@ -774,24 +771,15 @@ secrets_auth_cb (NMSysconfigConnection *self,
 	}
 
 out:
-	g_free (info->setting_name);
-	g_free (info->hint);
-	g_slice_free (GetSecretsInfo, info);
+	g_free (setting_name);
 }
 
 static void
 impl_sysconfig_connection_get_secrets (NMSysconfigConnection *self,
                                        const gchar *setting_name,
-                                       const gchar **hints,
-                                       gboolean request_new,
                                        DBusGMethodInvocation *context)
 {
-	GetSecretsInfo *info = g_slice_new (GetSecretsInfo);
-	info->setting_name = g_strdup (setting_name);
-	info->hint = (hints && hints[0]) ? g_strdup (hints[0]) : NULL;
-	info->request_new = request_new;
-
-	auth_start (self, context, TRUE, secrets_auth_cb, info);
+	auth_start (self, context, TRUE, secrets_auth_cb, g_strdup (setting_name));
 }
 
 /**************************************************************/

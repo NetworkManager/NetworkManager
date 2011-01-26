@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2010 Red Hat, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -54,7 +54,6 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
 	NMRemoteConnection *self;
-	DBusGProxy *proxy;
 	DBusGProxyCall *call;
 	GFunc callback;
 	gpointer user_data;
@@ -63,7 +62,6 @@ typedef struct {
 typedef struct {
 	DBusGConnection *bus;
 	DBusGProxy *proxy;
-	DBusGProxy *secrets_proxy;
 	GSList *calls;
 
 	NMRemoteConnectionInitResult init_result;
@@ -126,7 +124,6 @@ nm_remote_connection_commit_changes (NMRemoteConnection *self,
 	call->self = self;
 	call->callback = (GFunc) callback;
 	call->user_data = user_data;
-	call->proxy = priv->proxy;
 
 	settings = nm_connection_to_hash (NM_CONNECTION (self));
 
@@ -176,7 +173,6 @@ nm_remote_connection_delete (NMRemoteConnection *self,
 	call->self = self;
 	call->callback = (GFunc) callback;
 	call->user_data = user_data;
-	call->proxy = priv->proxy;
 
 	call->call = org_freedesktop_NetworkManager_Settings_Connection_delete_async (priv->proxy,
 	                                                                              delete_cb,
@@ -199,9 +195,6 @@ get_secrets_cb (DBusGProxy *proxy, GHashTable *secrets, GError *error, gpointer 
  * nm_remote_connection_get_secrets:
  * @connection: the #NMRemoteConnection
  * @setting_name: the #NMSetting object name to get secrets for
- * @hints: #NMSetting key names to get secrets for (optional)
- * @request_new: hint that new secrets (instead of cached or stored secrets) 
- *  should be returned
  * @callback: (scope async): a function to be called when the update completes
  * @user_data: caller-specific data to be passed to @callback
  *
@@ -210,8 +203,6 @@ get_secrets_cb (DBusGProxy *proxy, GHashTable *secrets, GError *error, gpointer 
 void
 nm_remote_connection_get_secrets (NMRemoteConnection *self,
                                   const char *setting_name,
-                                  const char **hints,
-                                  gboolean request_new,
                                   NMRemoteConnectionGetSecretsFunc callback,
                                   gpointer user_data)
 {
@@ -228,14 +219,11 @@ nm_remote_connection_get_secrets (NMRemoteConnection *self,
 	call->self = self;
 	call->callback = (GFunc) callback;
 	call->user_data = user_data;
-	call->proxy = priv->secrets_proxy;
 
-	call->call = org_freedesktop_NetworkManager_Settings_Connection_Secrets_get_secrets_async (priv->secrets_proxy,
-	                                                                                           setting_name,
-	                                                                                           hints,
-	                                                                                           request_new,
-	                                                                                           get_secrets_cb,
-	                                                                                           call);
+	call->call = org_freedesktop_NetworkManager_Settings_Connection_get_secrets_async (priv->proxy,
+	                                                                                   setting_name,
+	                                                                                   get_secrets_cb,
+	                                                                                   call);
 	g_assert (call->call);
 	priv->calls = g_slist_append (priv->calls, call);
 }
@@ -366,13 +354,6 @@ constructor (GType type,
 	g_assert (priv->proxy);
 	dbus_g_proxy_set_default_timeout (priv->proxy, G_MAXINT);
 
-	priv->secrets_proxy = dbus_g_proxy_new_for_name (priv->bus,
-	                                                 NM_DBUS_SERVICE,
-	                                                 nm_connection_get_path (NM_CONNECTION (object)),
-	                                                 NM_DBUS_IFACE_SETTINGS_CONNECTION_SECRETS);
-	g_assert (priv->secrets_proxy);
-	dbus_g_proxy_set_default_timeout (priv->secrets_proxy, G_MAXINT);
-
 	dbus_g_proxy_add_signal (priv->proxy, "Updated", G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->proxy, "Updated", G_CALLBACK (updated_cb), object, NULL);
 
@@ -437,7 +418,6 @@ dispose (GObject *object)
 			remote_call_complete (self, priv->calls->data);
 
 		g_object_unref (priv->proxy);
-		g_object_unref (priv->secrets_proxy);
 		dbus_g_connection_unref (priv->bus);
 	}
 
