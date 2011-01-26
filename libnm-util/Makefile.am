@@ -128,7 +128,7 @@ introspection_sources = $(libnm_util_include_HEADERS) $(libnm_util_la_csources) 
 NetworkManager-1.0.gir: libnm-util.la
 NetworkManager_1_0_gir_INCLUDES = GObject-2.0 DBusGLib-1.0
 NetworkManager_1_0_gir_PACKAGES = gobject-2.0 dbus-glib-1
-NetworkManager_1_0_gir_CFLAGS = $(INCLUDES)
+NetworkManager_1_0_gir_CFLAGS = $(INCLUDES) -I$(top_srcdir)/libnm-util
 NetworkManager_1_0_gir_LIBS = libnm-util.la
 NetworkManager_1_0_gir_FILES = $(introspection_sources)
 NetworkManager_1_0_gir_SCANNERFLAGS = --warn-all --identifier-prefix=NM --symbol-prefix=nm_

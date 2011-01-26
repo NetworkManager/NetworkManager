@@ -247,7 +247,7 @@ introspection_sources = $(libnminclude_HEADERS) $(libnm_glib_la_csources)
 NMClient-1.0.gir: libnm-glib.la
 NMClient_1_0_gir_INCLUDES = GObject-2.0 DBusGLib-1.0
 NMClient_1_0_gir_PACKAGES = gobject-2.0 dbus-glib-1 gudev-1.0
-NMClient_1_0_gir_CFLAGS = $(INCLUDES)
+NMClient_1_0_gir_CFLAGS = $(INCLUDES) -I$(top_srcdir)/libnm-glib -I$(top_srcdir)/libnm-util
 NMClient_1_0_gir_LIBS = libnm-glib.la
 NMClient_1_0_gir_FILES = $(introspection_sources)
 NMClient_1_0_gir_SCANNERFLAGS = --warn-all --identifier-prefix=NM --symbol-prefix=nm_ --include-uninstalled=$(top_builddir)/libnm-util/NetworkManager-1.0.gir
