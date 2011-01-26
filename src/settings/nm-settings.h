@@ -59,13 +59,13 @@ typedef struct {
 	/* Signals */
 	void (*properties_changed) (NMSettings *self, GHashTable *properties);
 
-	void (*connection_added)   (NMSettings *self, NMConnection *connection);
+	void (*connection_added)   (NMSettings *self, NMSettingsConnection *connection);
 
-	void (*connection_updated) (NMSettings *self, NMConnection *connection);
+	void (*connection_updated) (NMSettings *self, NMSettingsConnection *connection);
 
-	void (*connection_removed) (NMSettings *self, NMConnection *connection);
+	void (*connection_removed) (NMSettings *self, NMSettingsConnection *connection);
 
-	void (*connection_visibility_changed) (NMSettings *self, NMConnection *connection);
+	void (*connection_visibility_changed) (NMSettings *self, NMSettingsConnection *connection);
 
 	void (*connections_loaded) (NMSettings *self);
 } NMSettingsClass;
