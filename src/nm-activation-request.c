@@ -97,6 +97,7 @@ static void
 get_secrets_cb (NMAgentManager *manager,
                 guint32 call_id,
                 NMConnection *connection,
+                const char *setting_name,
                 GError *error,
                 gpointer user_data,
                 gpointer user_data2,

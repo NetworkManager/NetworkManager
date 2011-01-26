@@ -51,6 +51,7 @@ NMAgentManager *nm_agent_manager_new (NMDBusManager *dbus_mgr);
 typedef void (*NMAgentSecretsResultFunc) (NMAgentManager *manager,
                                           guint32 call_id,
                                           NMConnection *connection,
+                                          const char *setting_name,
                                           GError *error,
                                           gpointer user_data,
                                           gpointer user_data2,
