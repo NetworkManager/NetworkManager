@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 - 2010 Red Hat, Inc.
+ * Copyright (C) 2009 - 2011 Red Hat, Inc.
  */
 
 #include <ctype.h>
@@ -1408,6 +1408,13 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 			g_string_append_c (ip_ptr, '/');
 			g_string_append (ip_ptr, prefix);
 			g_free (prefix);
+
+			/* We only support gateway for the first IP address for now */
+			if (i == 0) {
+				ip = nm_ip6_address_get_gateway (addr);
+				inet_ntop (AF_INET6, (const void *) ip, buf, sizeof (buf));
+				svSetValue (ifcfg, "IPV6_DEFAULTGW", buf, FALSE);
+			}
 		}
 
 		svSetValue (ifcfg, "IPV6ADDR", ip_str1->str, FALSE);
@@ -1417,6 +1424,7 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	} else {
 		svSetValue (ifcfg, "IPV6ADDR", NULL, FALSE);
 		svSetValue (ifcfg, "IPV6ADDR_SECONDARIES", NULL, FALSE);
+		svSetValue (ifcfg, "IPV6_DEFAULTGW", NULL, FALSE);
 	}
 
 	/* Write out DNS - 'DNS' key is used both for IPv4 and IPv6 */

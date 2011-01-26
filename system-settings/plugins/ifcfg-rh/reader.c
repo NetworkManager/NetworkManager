@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 - 2010 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -886,11 +886,17 @@ error:
 }
 
 static NMIP6Address *
-parse_full_ip6_address (const char *addr_str, GError **error)
+parse_full_ip6_address (shvarFile *ifcfg,
+                        const char *network_file,
+                        const char *addr_str,
+                        int i,
+                        GError **error)
 {
 	NMIP6Address *addr = NULL;
 	char **list;
-	char *ip_tag, *prefix_tag;
+	char *ip_val, *prefix_val;
+	shvarFile *network_ifcfg;
+	char *value = NULL;
 	struct in6_addr tmp = IN6ADDR_ANY_INIT;
 	gboolean success = FALSE;
 
@@ -906,33 +912,58 @@ parse_full_ip6_address (const char *addr_str, GError **error)
 		goto error;
 	}
 
-	ip_tag = list[0];
-	prefix_tag = list[1];
+	ip_val = list[0];
+	prefix_val = list[1];
 
 	addr = nm_ip6_address_new ();
 	/* IP address */
-	if (ip_tag) {
-		if (!parse_ip6_address (ip_tag, &tmp, error))
+	if (ip_val) {
+		if (!parse_ip6_address (ip_val, &tmp, error))
 			goto error;
 	}
-
 	nm_ip6_address_set_address (addr, &tmp);
 
 	/* Prefix */
-	if (prefix_tag) {
+	if (prefix_val) {
 		long int prefix;
 
 		errno = 0;
-		prefix = strtol (prefix_tag, NULL, 10);
+		prefix = strtol (prefix_val, NULL, 10);
 		if (errno || prefix <= 0 || prefix > 128) {
 			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-			             "Invalid IP6 prefix '%s'", prefix_tag);
+			             "Invalid IP6 prefix '%s'", prefix_val);
 			goto error;
 		}
 		nm_ip6_address_set_prefix (addr, (guint32) prefix);
 	} else {
 		/* Missing prefix is treated as prefix of 64 */
 		nm_ip6_address_set_prefix (addr, 64);
+	}
+
+	/* Gateway */
+	tmp = in6addr_any;
+	value = svGetValue (ifcfg, "IPV6_DEFAULTGW", FALSE);
+	if (i != 0) {
+		/* We don't support gateways for IPV6ADDR_SECONDARIES yet */
+		g_free (value);
+		value = NULL;
+	}
+	if (!value) {
+		/* If no gateway in the ifcfg, try global /etc/sysconfig/network instead */
+		network_ifcfg = svNewFile (network_file);
+		if (network_ifcfg) {
+			value = svGetValue (network_ifcfg, "IPV6_DEFAULTGW", FALSE);
+			svCloseFile (network_ifcfg);
+		}
+	}
+	if (value) {
+		char *ptr;
+
+		if ((ptr = strchr (value, '%')) != NULL)
+			*ptr = '\0';  /* remove %interface prefix if present */
+		if (!parse_ip6_address (value, &tmp, error))
+			goto error;
+		nm_ip6_address_set_gateway (addr, &tmp);
 	}
 
 	success = TRUE;
@@ -944,6 +975,7 @@ error:
 	}
 
 	g_strfreev (list);
+	g_free (value);
 	return addr;
 }
 
@@ -1507,8 +1539,8 @@ make_ip6_setting (shvarFile *ifcfg,
 
 		list = g_strsplit_set (val, " ", 0);
 		g_free (val);
-		for (iter = list; iter && *iter; iter++, i++) {
-			addr = parse_full_ip6_address (*iter, error);
+		for (iter = list, i = 0; iter && *iter; iter++, i++) {
+			addr = parse_full_ip6_address (ifcfg, network_file, *iter, i, error);
 			if (!addr) {
 				g_strfreev (list);
 				goto error;
