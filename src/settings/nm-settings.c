@@ -63,6 +63,7 @@
 #include "nm-manager-auth.h"
 #include "nm-session-monitor.h"
 #include "system-settings/plugins/keyfile/plugin.h"
+#include "nm-agent-manager.h"
 
 #define CONFIG_KEY_NO_AUTO_DEFAULT "no-auto-default"
 
@@ -103,6 +104,8 @@ static void unmanaged_specs_changed (NMSystemConfigInterface *config, gpointer u
 typedef struct {
 	NMDBusManager *dbus_mgr;
 	DBusGConnection *bus;
+
+	NMAgentManager *agent_mgr;
 
 	PolkitAuthority *authority;
 	guint auth_changed_id;
@@ -1383,6 +1386,13 @@ nm_settings_init (NMSettings *self)
 	}
 
 	priv->session_monitor = nm_session_monitor_get ();
+
+	/* Hold a reference to the agent manager so it stays alive; the only
+	 * other holders are NMSettingsConnection objects which are often
+	 * transient, and we don't want the agent manager to get destroyed and
+	 * recreated often.
+	 */
+	priv->agent_mgr = nm_agent_manager_get ();
 }
 
 static void
@@ -1404,6 +1414,7 @@ dispose (GObject *object)
 	g_object_unref (priv->dbus_mgr);
 
 	g_object_unref (priv->session_monitor);
+	g_object_unref (priv->agent_mgr);
 
 	G_OBJECT_CLASS (nm_settings_parent_class)->dispose (object);
 }

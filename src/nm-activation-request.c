@@ -36,6 +36,7 @@
 #include "nm-active-connection.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-active-connection-glue.h"
+#include "nm-settings-connection.h"
 
 
 G_DEFINE_TYPE (NMActRequest, nm_act_request, G_TYPE_OBJECT)
@@ -60,7 +61,6 @@ typedef struct {
 
 	NMConnection *connection;
 
-	NMAgentManager *agent_mgr;
 	GSList *secrets_calls;
 
 	char *specific_object;
@@ -94,66 +94,28 @@ enum {
 
 /*******************************************************************/
 
+typedef struct {
+	NMActRequest *self;
+	guint32 call_id;
+	NMActRequestSecretsFunc callback;
+	gpointer callback_data;
+} GetSecretsInfo;
+
 static void
-get_secrets_cb (NMAgentManager *manager,
+get_secrets_cb (NMSettingsConnection *connection,
                 guint32 call_id,
-                NMConnection *connection,
                 const char *setting_name,
                 GError *error,
-                gpointer user_data,
-                gpointer user_data2,
-                gpointer user_data3)
+                gpointer user_data)
 {
-	NMActRequest *self = NM_ACT_REQUEST (user_data);
-	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (self);
-	NMActRequestSecretsFunc callback = user_data2;
+	GetSecretsInfo *info = user_data;
+	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (info->self);
 
-	priv->secrets_calls = g_slist_remove (priv->secrets_calls, GUINT_TO_POINTER (call_id));
+	g_return_if_fail (info->call_id == call_id);
+	priv->secrets_calls = g_slist_remove (priv->secrets_calls, info);
 
-	callback (self, call_id, connection, error, user_data3);
-}
-
-static guint32
-_internal_get_secrets (NMActRequest *self,
-                       NMConnection *connection,
-                       gboolean filter_by_uid,
-                       gulong uid,
-                       const char *setting_name,
-                       guint32 flags,
-                       const char *hint,
-                       NMActRequestSecretsFunc callback,
-                       gpointer callback_data)
-{
-	NMActRequestPrivate *priv;
-	guint32 call_id;
-
-	g_return_val_if_fail (self, 0);
-	g_return_val_if_fail (NM_IS_ACT_REQUEST (self), 0);
-
-	priv = NM_ACT_REQUEST_GET_PRIVATE (self);
-
-	/* If given a connection (ie, called from an NMVpnConnection) then
-	 * use that, otherwise use the private connection.
-	 *
-	 * FIXME: this is icky, and should go away when NMVPNConnection finally
-	 * uses NMActRequest for activation tracking instead of impersonating one
-	 * itself.
-	 */
-	call_id = nm_agent_manager_get_secrets (priv->agent_mgr,
-	                                        connection,
-	                                        filter_by_uid,
-	                                        uid,
-	                                        setting_name,
-	                                        flags,
-	                                        hint,
-	                                        get_secrets_cb,
-	                                        self,
-	                                        callback,
-	                                        callback_data);
-	if (call_id > 0)
-		priv->secrets_calls = g_slist_append (priv->secrets_calls, GUINT_TO_POINTER (call_id));
-
-	return call_id;
+	info->callback (info->self, call_id, NM_CONNECTION (connection), error, info->callback_data);
+	g_free (info);
 }
 
 guint32
@@ -164,41 +126,43 @@ nm_act_request_get_secrets (NMActRequest *self,
                             NMActRequestSecretsFunc callback,
                             gpointer callback_data)
 {
-	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (self);
+	NMActRequestPrivate *priv;
+	GetSecretsInfo *info;
+	guint32 call_id;
 
-	/* non-VPN requests use the activation request's internal connection, and
-	 * also the user-requested status and user_uid if the activation was
-	 * requested by a user.
-	 */
-	return _internal_get_secrets (self, priv->connection, priv->user_requested,
-	                              priv->user_uid, setting_name, flags, hint,
-	                              callback, callback_data);
-}
+	g_return_val_if_fail (self, 0);
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (self), 0);
 
-guint32
-nm_act_request_get_secrets_vpn (NMActRequest *self,
-                                NMConnection *connection,
-                                gboolean user_requested,
-                                gulong user_uid,
-                                const char *setting_name,
-                                guint32 flags,
-                                const char *hint,
-                                NMActRequestSecretsFunc callback,
-                                gpointer callback_data)
-{
-	g_return_val_if_fail (connection != NULL, 0);
+	priv = NM_ACT_REQUEST_GET_PRIVATE (self);
 
-	/* VPN requests use the VPN's connection, and also the VPN's user-requested
-	 * status and user_uid if the activation was requested by a user.
-	 */
-	return _internal_get_secrets (self, connection, user_requested, user_uid,
-	                              setting_name, flags, hint, callback, callback_data);
+	info = g_malloc0 (sizeof (GetSecretsInfo));
+	info->self = self;
+	info->callback = callback;
+	info->callback_data = callback_data;
+
+	call_id = nm_settings_connection_get_secrets (NM_SETTINGS_CONNECTION (priv->connection),
+	                                              priv->user_requested,
+	                                              priv->user_uid,
+	                                              setting_name,
+	                                              flags,
+	                                              hint,
+	                                              get_secrets_cb,
+	                                              info,
+	                                              NULL);
+	if (call_id > 0) {
+		info->call_id = call_id;
+		priv->secrets_calls = g_slist_append (priv->secrets_calls, info);
+	} else
+		g_free (info);
+
+	return call_id;
 }
 
 void
 nm_act_request_cancel_secrets (NMActRequest *self, guint32 call_id)
 {
 	NMActRequestPrivate *priv;
+	GSList *iter;
 
 	g_return_if_fail (self);
 	g_return_if_fail (NM_IS_ACT_REQUEST (self));
@@ -206,9 +170,18 @@ nm_act_request_cancel_secrets (NMActRequest *self, guint32 call_id)
 
 	priv = NM_ACT_REQUEST_GET_PRIVATE (self);
 
-	if (g_slist_find (priv->secrets_calls, GUINT_TO_POINTER (call_id))) {
-		priv->secrets_calls = g_slist_remove (priv->secrets_calls, GUINT_TO_POINTER (call_id));
-		nm_agent_manager_cancel_secrets (priv->agent_mgr, call_id);
+	for (iter = priv->secrets_calls; iter; iter = g_slist_next (iter)) {
+		GetSecretsInfo *info = iter->data;
+
+		/* Remove the matching info */
+		if (info->call_id == call_id) {
+			priv->secrets_calls = g_slist_remove_link (priv->secrets_calls, iter);
+			g_slist_free (iter);
+
+			nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (priv->connection), call_id);
+			g_free (info);
+			break;
+		}
 	}
 }
 
@@ -490,7 +463,6 @@ device_state_changed (NMDevice *device,
 NMActRequest *
 nm_act_request_new (NMConnection *connection,
                     const char *specific_object,
-                    NMAgentManager *agent_mgr,
                     gboolean user_requested,
                     gulong user_uid,
                     gboolean assumed,
@@ -500,7 +472,6 @@ nm_act_request_new (NMConnection *connection,
 	NMActRequestPrivate *priv;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
-	g_return_val_if_fail (NM_IS_AGENT_MANAGER (agent_mgr), NULL);
 	g_return_val_if_fail (NM_DEVICE (device), NULL);
 
 	object = g_object_new (NM_TYPE_ACT_REQUEST, NULL);
@@ -512,8 +483,6 @@ nm_act_request_new (NMConnection *connection,
 	priv->connection = g_object_ref (connection);
 	if (specific_object)
 		priv->specific_object = g_strdup (specific_object);
-
-	priv->agent_mgr = g_object_ref (agent_mgr);
 
 	priv->device = NM_DEVICE (device);
 	g_signal_connect (device, "state-changed",
@@ -595,8 +564,6 @@ dispose (GObject *object)
 	}
 	priv->disposed = TRUE;
 
-	g_assert (priv->connection);
-
 	g_signal_handlers_disconnect_by_func (G_OBJECT (priv->device),
 	                                      G_CALLBACK (device_state_changed),
 	                                      NM_ACT_REQUEST (object));
@@ -604,14 +571,17 @@ dispose (GObject *object)
 	/* Clear any share rules */
 	nm_act_request_set_shared (NM_ACT_REQUEST (object), FALSE);
 
-	g_object_unref (priv->connection);
-
+	/* Kill any in-progress secrets requests */
+	g_assert (priv->connection);
 	for (iter = priv->secrets_calls; iter; iter = g_slist_next (iter)) {
-		nm_agent_manager_cancel_secrets (priv->agent_mgr,
-		                                 GPOINTER_TO_UINT (iter->data));
+		GetSecretsInfo *info = iter->data;
+
+		nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (priv->connection), info->call_id);
+		g_free (info);
 	}
 	g_slist_free (priv->secrets_calls);
-	g_object_unref (priv->agent_mgr);
+
+	g_object_unref (priv->connection);
 
 	G_OBJECT_CLASS (nm_act_request_parent_class)->dispose (object);
 }

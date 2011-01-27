@@ -29,15 +29,6 @@
 #include <nm-connection.h>
 #include "nm-dbus-manager.h"
 
-/* NOTE: these values should match the NM_SECRET_AGENT_GET_SECRETS_FLAGS in
- * the nm-secret-agent.xml introspection file.
- */
-enum {
-	NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE = 0x0,
-	NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION = 0x1,
-	NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW = 0x2
-};
-
 #define NM_TYPE_SECRET_AGENT            (nm_secret_agent_get_type ())
 #define NM_SECRET_AGENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SECRET_AGENT, NMSecretAgent))
 #define NM_SECRET_AGENT_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SECRET_AGENT, NMSecretAgentClass))

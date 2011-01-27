@@ -47,6 +47,7 @@
 #include "nm-dns-manager.h"
 #include "nm-netlink-monitor.h"
 #include "nm-glib-compat.h"
+#include "settings/nm-settings-connection.h"
 
 #include "nm-vpn-connection-glue.h"
 
@@ -768,22 +769,22 @@ cancel_get_secrets (NMVPNConnection *self)
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
 	if (priv->secrets_id) {
-		nm_act_request_cancel_secrets (priv->act_request, priv->secrets_id);
+		nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (priv->connection), priv->secrets_id);
 		priv->secrets_id = 0;
 	}
 }
 
 static void
-vpn_secrets_cb (NMActRequest *req,
+vpn_secrets_cb (NMSettingsConnection *connection,
                 guint32 call_id,
-                NMConnection *connection,
+                const char *setting_name,
                 GError *error,
                 gpointer user_data)
 {
 	NMVPNConnection *self = NM_VPN_CONNECTION (user_data);
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
-	g_return_if_fail (req == priv->act_request);
+	g_return_if_fail (NM_CONNECTION (connection) == priv->connection);
 	g_return_if_fail (call_id == priv->secrets_id);
 
 	priv->secrets_id = 0;
@@ -802,6 +803,7 @@ connection_need_secrets_cb  (DBusGProxy *proxy,
 {
 	NMVPNConnection *self = NM_VPN_CONNECTION (user_data);
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+	GError *local = NULL;
 
 	if (error) {
 		nm_log_err (LOGD_VPN, "NeedSecrets failed: %s %s",
@@ -817,17 +819,21 @@ connection_need_secrets_cb  (DBusGProxy *proxy,
 		return;
 	}
 
-	priv->secrets_id = nm_act_request_get_secrets_vpn (priv->act_request,
-	                                                   priv->connection,
-	                                                   priv->user_requested,
-	                                                   priv->user_uid,
-	                                                   setting_name,
-	                                                   NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION,
-	                                                   NULL,
-	                                                   vpn_secrets_cb,
-	                                                   self);
-	if (!priv->secrets_id)
+	priv->secrets_id = nm_settings_connection_get_secrets (NM_SETTINGS_CONNECTION (priv->connection),
+	                                                       priv->user_requested,
+	                                                       priv->user_uid,
+	                                                       setting_name,
+	                                                       NM_ACT_REQUEST_GET_SECRETS_FLAG_ALLOW_INTERACTION,
+	                                                       NULL,
+	                                                       vpn_secrets_cb,
+	                                                       self,
+	                                                       &local);
+	if (!priv->secrets_id) {
+		if (local)
+			nm_log_err (LOGD_VPN, "failed to get secrets: (%d) %s", local->code, local->message);
 		nm_vpn_connection_fail (self, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
+		g_clear_error (&local);
+	}
 }
 
 static void

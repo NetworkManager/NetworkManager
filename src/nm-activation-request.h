@@ -25,7 +25,6 @@
 #include <glib-object.h>
 #include "nm-connection.h"
 #include "nm-active-connection.h"
-#include "nm-agent-manager.h"
 
 #define NM_TYPE_ACT_REQUEST            (nm_act_request_get_type ())
 #define NM_ACT_REQUEST(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_ACT_REQUEST, NMActRequest))
@@ -49,7 +48,6 @@ GType nm_act_request_get_type (void);
 
 NMActRequest *nm_act_request_new          (NMConnection *connection,
                                            const char *specific_object,
-                                           NMAgentManager *agent_mgr,
                                            gboolean user_requested,
                                            gulong user_uid,
                                            gboolean assumed,
@@ -93,22 +91,21 @@ typedef void (*NMActRequestSecretsFunc) (NMActRequest *req,
                                          GError *error,
                                          gpointer user_data);
 
-guint32 nm_act_request_get_secrets     (NMActRequest *req,
-                                        const char *setting_name,
-                                        guint32 flags,
-                                        const char *hint,
-                                        NMActRequestSecretsFunc callback,
-                                        gpointer callback_data);
+/* NOTE: these values should match the NM_SECRET_AGENT_GET_SECRETS_FLAGS in
+ * the nm-secret-agent.xml introspection file.
+ */
+enum {
+	NM_ACT_REQUEST_GET_SECRETS_FLAG_NONE = 0x0,
+	NM_ACT_REQUEST_GET_SECRETS_FLAG_ALLOW_INTERACTION = 0x1,
+	NM_ACT_REQUEST_GET_SECRETS_FLAG_REQUEST_NEW = 0x2
+};
 
-guint32 nm_act_request_get_secrets_vpn (NMActRequest *req,
-                                        NMConnection *connection,
-                                        gboolean user_requested,
-                                        gulong user_uid,
-                                        const char *setting_name,
-                                        guint32 flags,
-                                        const char *hint,
-                                        NMActRequestSecretsFunc callback,
-                                        gpointer callback_data);
+guint32 nm_act_request_get_secrets (NMActRequest *req,
+                                    const char *setting_name,
+                                    guint32 flags,
+                                    const char *hint,
+                                    NMActRequestSecretsFunc callback,
+                                    gpointer callback_data);
 
 void nm_act_request_cancel_secrets (NMActRequest *req, guint32 call_id);
 

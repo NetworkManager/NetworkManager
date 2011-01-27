@@ -1056,7 +1056,7 @@ link_timeout_cb (gpointer user_data)
 	nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
 	nm_act_request_get_secrets (req,
 	                            setting_name,
-	                            NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW,
+	                            NM_ACT_REQUEST_GET_SECRETS_FLAG_REQUEST_NEW,
 	                            NULL,
 	                            wired_secrets_cb,
 	                            self);
@@ -1237,13 +1237,13 @@ handle_auth_or_fail (NMDeviceEthernet *self,
 	nm_connection_clear_secrets (connection);
 	setting_name = nm_connection_need_secrets (connection, NULL);
 	if (setting_name) {
-		guint32 flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
+		guint32 flags = NM_ACT_REQUEST_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
 		/* If the caller doesn't necessarily want completely new secrets,
 		 * only ask for new secrets after the first failure.
 		 */
 		if (new_secrets || tries)
-			flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
+			flags |= NM_ACT_REQUEST_GET_SECRETS_FLAG_REQUEST_NEW;
 		nm_act_request_get_secrets (req, setting_name, flags, NULL, wired_secrets_cb, self);
 
 		g_object_set_data (G_OBJECT (connection), WIRED_SECRETS_TRIES, GUINT_TO_POINTER (++tries));

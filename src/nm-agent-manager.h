@@ -23,11 +23,7 @@
 
 #include <glib.h>
 #include <glib-object.h>
-
 #include <nm-connection.h>
-
-#include "nm-dbus-manager.h"
-#include "nm-secret-agent.h"
 
 #define NM_TYPE_AGENT_MANAGER            (nm_agent_manager_get_type ())
 #define NM_AGENT_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_AGENT_MANAGER, NMAgentManager))
@@ -46,21 +42,22 @@ typedef struct {
 
 GType nm_agent_manager_get_type (void);
 
-NMAgentManager *nm_agent_manager_new (NMDBusManager *dbus_mgr);
+NMAgentManager *nm_agent_manager_get (void);
 
 typedef void (*NMAgentSecretsResultFunc) (NMAgentManager *manager,
                                           guint32 call_id,
-                                          NMConnection *connection,
                                           const char *setting_name,
+                                          GHashTable *secrets,
                                           GError *error,
                                           gpointer user_data,
-                                          gpointer user_data2,
-                                          gpointer user_data3);
+                                          gpointer other_data2,
+                                          gpointer other_data3);
 
 guint32 nm_agent_manager_get_secrets (NMAgentManager *manager,
                                       NMConnection *connection,
                                       gboolean filter_by_uid,
                                       gulong uid,
+                                      GHashTable *existing_secrets,
                                       const char *setting_name,
                                       guint32 flags,
                                       const char *hint,

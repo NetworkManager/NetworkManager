@@ -23,7 +23,6 @@
 #define NM_SETTINGS_CONNECTION_H
 
 #include <nm-connection.h>
-#include <dbus/dbus-glib.h>
 
 G_BEGIN_DECLS
 
@@ -53,12 +52,6 @@ typedef void (*NMSettingsConnectionDeleteFunc) (NMSettingsConnection *connection
                                                 GError *error,
                                                 gpointer user_data);
 
-typedef void (*NMSettingsConnectionSecretsUpdatedFunc) (NMSettingsConnection *connection,
-                                                        const char *setting_name,
-                                                        guint32 call_id,
-                                                        GError *error,
-                                                        gpointer user_data);
-
 struct _NMSettingsConnection {
 	NMConnection parent;
 };
@@ -77,15 +70,6 @@ struct _NMSettingsConnectionClass {
 
 	gboolean (*supports_secrets) (NMSettingsConnection *connection,
 	                              const char *setting_name);
-
-	/* signals */
-	guint32 (*get_secrets) (NMSettingsConnection *connection,
-	                        const char *sender,  /* dbus bus name of requestor */
-	                        const char *setting_name,
-	                        NMSettingsConnectionSecretsUpdatedFunc callback,
-	                        gpointer callback_data);
-
-	void (*cancel_secrets) (NMSettingsConnection *connection, guint32 call_id);
 };
 
 GType nm_settings_connection_get_type (void);
@@ -107,9 +91,24 @@ void nm_settings_connection_delete (NMSettingsConnection *connection,
                                     NMSettingsConnectionDeleteFunc callback,
                                     gpointer user_data);
 
-GHashTable *nm_settings_connection_get_secrets (NMSettingsConnection *connection,
-                                                const char *setting_name,
-                                                GError **error);
+typedef void (*NMSettingsConnectionSecretsFunc) (NMSettingsConnection *connection,
+                                                 guint32 call_id,
+                                                 const char *setting_name,
+                                                 GError *error,
+                                                 gpointer user_data);
+
+guint32 nm_settings_connection_get_secrets (NMSettingsConnection *connection,
+                                            gboolean filter_by_uid,
+                                            gulong uid,
+                                            const char *setting_name,
+                                            guint32 flags,
+                                            const char *hint,
+                                            NMSettingsConnectionSecretsFunc callback,
+                                            gpointer callback_data,
+                                            GError **error);
+
+void nm_settings_connection_cancel_secrets (NMSettingsConnection *connection,
+                                            guint32 call_id);
 
 gboolean nm_settings_connection_is_visible (NMSettingsConnection *self);
 
