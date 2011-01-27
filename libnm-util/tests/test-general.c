@@ -384,6 +384,29 @@ test_setting_to_hash_only_secrets (void)
 	g_object_unref (s_wsec);
 }
 
+static void
+test_connection_to_hash_setting_name (void)
+{
+	NMConnection *connection;
+	NMSettingWirelessSecurity *s_wsec;
+	GHashTable *hash;
+
+	connection = nm_connection_new ();
+	s_wsec = make_test_wsec_setting ("connection-to-hash-setting-name");
+	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+
+	hash = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
+
+	/* Make sure the keys of the first level hash are setting names, not
+	 * the GType name of the setting objects.
+	 */
+	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) != NULL,
+	        "connection-to-hash-setting-name", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+
+	g_hash_table_destroy (hash);
+	g_object_unref (connection);
+}
+
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
@@ -404,6 +427,7 @@ int main (int argc, char **argv)
 	test_setting_to_hash_all ();
 	test_setting_to_hash_no_secrets ();
 	test_setting_to_hash_only_secrets ();
+	test_connection_to_hash_setting_name ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);

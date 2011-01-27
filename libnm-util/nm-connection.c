@@ -834,12 +834,11 @@ nm_connection_to_hash (NMConnection *connection, NMSettingHashFlags flags)
 	/* Add each setting's hash to the main hash */
 	g_hash_table_iter_init (&iter, priv->settings);
 	while (g_hash_table_iter_next (&iter, &key, &data)) {
-		const char *setting_name = key;
 		NMSetting *setting = NM_SETTING (data);
 
 		setting_hash = nm_setting_to_hash (setting, flags);
 		if (setting_hash)
-			g_hash_table_insert (ret, g_strdup (setting_name), setting_hash);
+			g_hash_table_insert (ret, g_strdup (nm_setting_get_name (setting)), setting_hash);
 	}
 
 	/* Don't send empty hashes */
