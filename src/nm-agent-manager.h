@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2010 Red Hat, Inc.
+ * Copyright (C) 2010 - 2011 Red Hat, Inc.
  */
 
 #ifndef NM_AGENT_MANAGER_H
@@ -59,6 +59,8 @@ typedef void (*NMAgentSecretsResultFunc) (NMAgentManager *manager,
 
 guint32 nm_agent_manager_get_secrets (NMAgentManager *manager,
                                       NMConnection *connection,
+                                      gboolean filter_by_uid,
+                                      gulong uid,
                                       const char *setting_name,
                                       guint32 flags,
                                       const char *hint,

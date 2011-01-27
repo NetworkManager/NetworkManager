@@ -80,6 +80,7 @@ struct _NMSettingsConnectionClass {
 
 	/* signals */
 	guint32 (*get_secrets) (NMSettingsConnection *connection,
+	                        const char *sender,  /* dbus bus name of requestor */
 	                        const char *setting_name,
 	                        NMSettingsConnectionSecretsUpdatedFunc callback,
 	                        gpointer callback_data);

@@ -330,6 +330,8 @@ struct _Request {
 	guint32 reqid;
 
 	NMConnection *connection;
+	gboolean filter_by_uid;
+	gulong uid_filter;
 	char *setting_name;
 	guint32 flags;
 	char *hint;
@@ -364,6 +366,8 @@ struct _Request {
 
 static Request *
 request_new (NMConnection *connection,
+             gboolean filter_by_uid,
+             gulong uid_filter,
              const char *setting_name,
              guint32 flags,
              const char *hint,
@@ -380,6 +384,8 @@ request_new (NMConnection *connection,
 	req = g_malloc0 (sizeof (Request));
 	req->reqid = next_id++;
 	req->connection = g_object_ref (connection);
+	req->filter_by_uid = filter_by_uid;
+	req->uid_filter = uid_filter;
 	req->setting_name = g_strdup (setting_name);
 	req->flags = flags;
 	req->hint = g_strdup (hint);
@@ -682,13 +688,22 @@ request_add_agent (Request *req,
 	agent_uid = nm_secret_agent_get_owner_uid (agent);
 	if (0 != agent_uid) {
 		if (!nm_auth_uid_in_acl (req->connection, session_monitor, agent_uid, NULL)) {
-			nm_log_dbg (LOGD_AGENTS, "(%s) agent ignored for secrets request %p/%s",
+			nm_log_dbg (LOGD_AGENTS, "(%s) agent ignored for secrets request %p/%s (not in ACL)",
 					    nm_secret_agent_get_description (agent),
 					    req, req->setting_name);
 			/* Connection not visible to this agent's user */
 			return;
 		}
 		/* Caller is allowed to add this connection */
+	}
+
+	/* If the request should filter agents by UID, do that now */
+	if (req->filter_by_uid && (agent_uid != req->uid_filter)) {
+		nm_log_dbg (LOGD_AGENTS, "(%s) agent ignored for secrets request %p/%s "
+		            "(uid %ld not required %ld)",
+				    nm_secret_agent_get_description (agent),
+				    req, req->setting_name, agent_uid, req->uid_filter);
+		return;
 	}
 
 	nm_log_dbg (LOGD_AGENTS, "(%s) agent allowed for secrets request %p/%s",
@@ -781,6 +796,8 @@ mgr_req_complete_cb (Request *req,
 guint32
 nm_agent_manager_get_secrets (NMAgentManager *self,
                               NMConnection *connection,
+                              gboolean filter_by_uid,
+                              gulong uid_filter,
                               const char *setting_name,
                               guint32 flags,
                               const char *hint,
@@ -805,6 +822,8 @@ nm_agent_manager_get_secrets (NMAgentManager *self,
 	            setting_name);
 
 	req = request_new (connection,
+	                   filter_by_uid,
+	                   uid_filter,
 	                   setting_name,
 	                   flags,
 	                   hint,

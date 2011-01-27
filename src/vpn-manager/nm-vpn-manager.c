@@ -159,6 +159,8 @@ nm_vpn_manager_activate_connection (NMVPNManager *manager,
                                     NMConnection *connection,
                                     NMActRequest *act_request,
                                     NMDevice *device,
+                                    gboolean user_requested,
+                                    gulong user_uid,
                                     GError **error)
 {
 	NMSettingVPN *vpn_setting;
@@ -205,7 +207,7 @@ nm_vpn_manager_activate_connection (NMVPNManager *manager,
 		return NULL;
 	}
 
-	vpn = nm_vpn_service_activate (service, connection, act_request, device, error);
+	vpn = nm_vpn_service_activate (service, connection, act_request, device, user_requested, user_uid, error);
 	if (vpn) {
 		g_signal_connect (vpn, "vpn-state-changed",
 		                  G_CALLBACK (connection_vpn_state_changed),

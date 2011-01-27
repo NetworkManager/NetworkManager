@@ -59,6 +59,8 @@ NMVPNConnection * nm_vpn_service_activate (NMVPNService *service,
                                            NMConnection *connection,
                                            NMActRequest *act_request,
                                            NMDevice *device,
+                                           gboolean user_requested,
+                                           gulong user_uid,
                                            GError **error);
 
 GSList * nm_vpn_service_get_active_connections (NMVPNService *service);

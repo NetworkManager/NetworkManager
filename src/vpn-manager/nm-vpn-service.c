@@ -325,6 +325,8 @@ nm_vpn_service_activate (NMVPNService *service,
                          NMConnection *connection,
                          NMActRequest *act_request,
                          NMDevice *device,
+                         gboolean user_requested,
+                         gulong user_uid,
                          GError **error)
 {
 	NMVPNConnection *vpn;
@@ -341,7 +343,7 @@ nm_vpn_service_activate (NMVPNService *service,
 
 	clear_quit_timeout (service);
 
-	vpn = nm_vpn_connection_new (connection, act_request, device);
+	vpn = nm_vpn_connection_new (connection, act_request, device, user_requested, user_uid);
 	g_signal_connect (vpn, "vpn-state-changed",
 				   G_CALLBACK (connection_vpn_state_changed),
 				   service);

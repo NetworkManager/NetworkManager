@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2010 Red Hat, Inc.
+ * Copyright (C) 2005 - 2011 Red Hat, Inc.
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
@@ -66,6 +66,7 @@ typedef struct {
 	char *specific_object;
 	NMDevice *device;
 	gboolean user_requested;
+	gulong user_uid;
 
 	NMActiveConnectionState state;
 	gboolean is_default;
@@ -112,14 +113,16 @@ get_secrets_cb (NMAgentManager *manager,
 	callback (self, call_id, connection, error, user_data3);
 }
 
-guint32
-nm_act_request_get_secrets (NMActRequest *self,
-                            NMConnection *connection,
-                            const char *setting_name,
-                            guint32 flags,
-                            const char *hint,
-                            NMActRequestSecretsFunc callback,
-                            gpointer callback_data)
+static guint32
+_internal_get_secrets (NMActRequest *self,
+                       NMConnection *connection,
+                       gboolean filter_by_uid,
+                       gulong uid,
+                       const char *setting_name,
+                       guint32 flags,
+                       const char *hint,
+                       NMActRequestSecretsFunc callback,
+                       gpointer callback_data)
 {
 	NMActRequestPrivate *priv;
 	guint32 call_id;
@@ -137,7 +140,9 @@ nm_act_request_get_secrets (NMActRequest *self,
 	 * itself.
 	 */
 	call_id = nm_agent_manager_get_secrets (priv->agent_mgr,
-	                                        connection ? connection : priv->connection,
+	                                        connection,
+	                                        filter_by_uid,
+	                                        uid,
 	                                        setting_name,
 	                                        flags,
 	                                        hint,
@@ -149,6 +154,45 @@ nm_act_request_get_secrets (NMActRequest *self,
 		priv->secrets_calls = g_slist_append (priv->secrets_calls, GUINT_TO_POINTER (call_id));
 
 	return call_id;
+}
+
+guint32
+nm_act_request_get_secrets (NMActRequest *self,
+                            const char *setting_name,
+                            guint32 flags,
+                            const char *hint,
+                            NMActRequestSecretsFunc callback,
+                            gpointer callback_data)
+{
+	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (self);
+
+	/* non-VPN requests use the activation request's internal connection, and
+	 * also the user-requested status and user_uid if the activation was
+	 * requested by a user.
+	 */
+	return _internal_get_secrets (self, priv->connection, priv->user_requested,
+	                              priv->user_uid, setting_name, flags, hint,
+	                              callback, callback_data);
+}
+
+guint32
+nm_act_request_get_secrets_vpn (NMActRequest *self,
+                                NMConnection *connection,
+                                gboolean user_requested,
+                                gulong user_uid,
+                                const char *setting_name,
+                                guint32 flags,
+                                const char *hint,
+                                NMActRequestSecretsFunc callback,
+                                gpointer callback_data)
+{
+	g_return_val_if_fail (connection != NULL, 0);
+
+	/* VPN requests use the VPN's connection, and also the VPN's user-requested
+	 * status and user_uid if the activation was requested by a user.
+	 */
+	return _internal_get_secrets (self, connection, user_requested, user_uid,
+	                              setting_name, flags, hint, callback, callback_data);
 }
 
 void
@@ -448,6 +492,7 @@ nm_act_request_new (NMConnection *connection,
                     const char *specific_object,
                     NMAgentManager *agent_mgr,
                     gboolean user_requested,
+                    gulong user_uid,
                     gboolean assumed,
                     gpointer *device)
 {
@@ -475,6 +520,7 @@ nm_act_request_new (NMConnection *connection,
 	                  G_CALLBACK (device_state_changed),
 	                  NM_ACT_REQUEST (object));
 
+	priv->user_uid = user_uid;
 	priv->user_requested = user_requested;
 	priv->assumed = assumed;
 

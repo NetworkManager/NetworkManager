@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2010 Red Hat, Inc.
+ * Copyright (C) 2005 - 2011 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -58,7 +58,9 @@ GType nm_vpn_connection_get_type (void);
 
 NMVPNConnection * nm_vpn_connection_new (NMConnection *connection,
                                          NMActRequest *act_request,
-                                         NMDevice *parent_device);
+                                         NMDevice *parent_device,
+                                         gboolean user_requested,
+                                         gulong user_uid);
 
 void                 nm_vpn_connection_activate        (NMVPNConnection *connection);
 NMConnection *       nm_vpn_connection_get_connection  (NMVPNConnection *connection);

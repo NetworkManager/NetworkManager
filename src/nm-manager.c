@@ -140,6 +140,7 @@ static const char *internal_activate_device (NMManager *manager,
                                              NMConnection *connection,
                                              const char *specific_object,
                                              gboolean user_requested,
+                                             gulong sender_uid,
                                              gboolean assumed,
                                              GError **error);
 
@@ -942,6 +943,7 @@ secrets_result_cb (NMAgentManager *manager,
 
 static guint32
 system_connection_get_secrets_cb (NMSettingsConnection *connection,
+                                  const char *sender,
                                   const char *setting_name,
                                   NMSettingsConnectionSecretsUpdatedFunc callback,
                                   gpointer callback_data,
@@ -949,17 +951,31 @@ system_connection_get_secrets_cb (NMSettingsConnection *connection,
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	gboolean call_id;
+	gboolean call_id = 0;
+	DBusError error;
+	gulong sender_uid;
 
-	call_id = nm_agent_manager_get_secrets (priv->agent_mgr,
-	                                        NM_CONNECTION (connection),
-	                                        setting_name,
-	                                        NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE,
-	                                        NULL,
-	                                        secrets_result_cb,
-	                                        self,
-	                                        callback,
-	                                        callback_data);
+	/* Get the unix user of the requestor */
+	dbus_error_init (&error);
+	sender_uid = dbus_bus_get_unix_user (nm_dbus_manager_get_dbus_connection (priv->dbus_mgr),
+	                                     sender,
+	                                     &error);
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
+	else {
+		call_id = nm_agent_manager_get_secrets (priv->agent_mgr,
+			                                    NM_CONNECTION (connection),
+			                                    TRUE,
+			                                    sender_uid,
+			                                    setting_name,
+			                                    NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE,
+			                                    NULL,
+			                                    secrets_result_cb,
+			                                    self,
+			                                    callback,
+			                                    callback_data);
+	}
+
 	return call_id;
 }
 
@@ -1576,7 +1592,7 @@ add_device (NMManager *self, NMDevice *device)
 		nm_log_dbg (LOGD_DEVICE, "(%s): will attempt to assume existing connection",
 		            nm_device_get_iface (device));
 
-		ac_path = internal_activate_device (self, device, existing, NULL, FALSE, TRUE, &error);
+		ac_path = internal_activate_device (self, device, existing, NULL, FALSE, 0, TRUE, &error);
 		if (ac_path)
 			g_object_notify (G_OBJECT (self), NM_MANAGER_ACTIVE_CONNECTIONS);
 		else {
@@ -1910,6 +1926,7 @@ internal_activate_device (NMManager *manager,
                           NMConnection *connection,
                           const char *specific_object,
                           gboolean user_requested,
+                          gulong sender_uid,
                           gboolean assumed,
                           GError **error)
 {
@@ -1938,6 +1955,7 @@ internal_activate_device (NMManager *manager,
 	                          specific_object,
 	                          NM_MANAGER_GET_PRIVATE (manager)->agent_mgr,
 	                          user_requested,
+	                          sender_uid,
 	                          assumed,
 	                          (gpointer) device);
 	success = nm_device_interface_activate (dev_iface, req, error);
@@ -1951,7 +1969,7 @@ nm_manager_activate_connection (NMManager *manager,
                                 NMConnection *connection,
                                 const char *specific_object,
                                 const char *device_path,
-                                gboolean user_requested,
+                                const char *dbus_sender,
                                 GError **error)
 {
 	NMManagerPrivate *priv;
@@ -1959,6 +1977,8 @@ nm_manager_activate_connection (NMManager *manager,
 	NMSettingConnection *s_con;
 	NMVPNConnection *vpn_connection;
 	const char *path = NULL;
+	gulong sender_uid = 0;
+	DBusError dbus_error;
 
 	g_return_val_if_fail (manager != NULL, NULL);
 	g_return_val_if_fail (connection != NULL, NULL);
@@ -1966,6 +1986,21 @@ nm_manager_activate_connection (NMManager *manager,
 	g_return_val_if_fail (*error == NULL, NULL);
 
 	priv = NM_MANAGER_GET_PRIVATE (manager);
+
+	/* Get the UID of the user that originated the request, if any */
+	if (dbus_sender) {
+		dbus_error_init (&dbus_error);
+		sender_uid = dbus_bus_get_unix_user (nm_dbus_manager_get_dbus_connection (priv->dbus_mgr),
+		                                     dbus_sender,
+		                                     &dbus_error);
+		if (dbus_error_is_set (&dbus_error)) {
+			g_set_error_literal (error,
+			                     NM_MANAGER_ERROR, NM_MANAGER_ERROR_PERMISSION_DENIED,
+			                     "Failed to get unix user for dbus sender");
+			dbus_error_free (&dbus_error);
+			return NULL;
+		}
+	}
 
 	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_con);
@@ -2014,6 +2049,8 @@ nm_manager_activate_connection (NMManager *manager,
 		                                                     connection,
 		                                                     parent_req,
 		                                                     device,
+		                                                     TRUE,
+		                                                     sender_uid,
 		                                                     error);
 		if (vpn_connection)
 			path = nm_vpn_connection_get_active_connection_path (vpn_connection);
@@ -2042,7 +2079,8 @@ nm_manager_activate_connection (NMManager *manager,
 		                                 device,
 		                                 connection,
 		                                 specific_object,
-		                                 user_requested,
+		                                 dbus_sender ? TRUE : FALSE,
+		                                 dbus_sender ? sender_uid : 0,
 		                                 FALSE,
 		                                 error);
 	}
@@ -2063,6 +2101,7 @@ pending_activate (NMManager *self, PendingActivation *pending)
 	NMSettingsConnection *connection;
 	const char *path = NULL;
 	GError *error = NULL;
+	char *sender;
 
 	/* Ok, we're authorized */
 
@@ -2074,12 +2113,16 @@ pending_activate (NMManager *self, PendingActivation *pending)
 		goto out;
 	}
 
+	sender = dbus_g_method_get_sender (pending->context);
+	g_assert (sender);
 	path = nm_manager_activate_connection (self,
 	                                       NM_CONNECTION (connection),
 	                                       pending->specific_object_path,
 	                                       pending->device_path,
-	                                       TRUE,
+	                                       sender,
 	                                       &error);
+	g_free (sender);
+
 	if (!path) {
 		nm_log_warn (LOGD_CORE, "connection %s failed to activate: (%d) %s",
 		             pending->connection_path, error->code, error->message);

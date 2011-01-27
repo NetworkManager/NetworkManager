@@ -87,7 +87,7 @@ const char * nm_manager_activate_connection (NMManager *manager,
                                              NMConnection *connection,
                                              const char *specific_object,
                                              const char *device_path,
-                                             gboolean user_requested,
+                                             const char *dbus_sender, /* NULL if automatic */
                                              GError **error);
 
 gboolean nm_manager_deactivate_connection (NMManager *manager,

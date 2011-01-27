@@ -57,6 +57,8 @@ typedef struct {
 
 	NMConnection *connection;
 
+	gboolean user_requested;
+	gulong user_uid;
 	NMActRequest *act_request;
 	guint32 secrets_id;
 
@@ -198,7 +200,9 @@ device_ip4_config_changed (NMDevice *device,
 NMVPNConnection *
 nm_vpn_connection_new (NMConnection *connection,
                        NMActRequest *act_request,
-                       NMDevice *parent_device)
+                       NMDevice *parent_device,
+                       gboolean user_requested,
+                       gulong user_uid)
 {
 	NMVPNConnection *self;
 	NMVPNConnectionPrivate *priv;
@@ -213,6 +217,8 @@ nm_vpn_connection_new (NMConnection *connection,
 
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
+	priv->user_requested = user_requested;
+	priv->user_uid = user_uid;
 	priv->connection = g_object_ref (connection);
 	priv->parent_dev = g_object_ref (parent_device);
 	priv->act_request = g_object_ref (act_request);
@@ -811,13 +817,15 @@ connection_need_secrets_cb  (DBusGProxy *proxy,
 		return;
 	}
 
-	priv->secrets_id = nm_act_request_get_secrets (priv->act_request,
-	                                               priv->connection,
-	                                               setting_name,
-	                                               NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION,
-	                                               NULL,
-	                                               vpn_secrets_cb,
-	                                               self);
+	priv->secrets_id = nm_act_request_get_secrets_vpn (priv->act_request,
+	                                                   priv->connection,
+	                                                   priv->user_requested,
+	                                                   priv->user_uid,
+	                                                   setting_name,
+	                                                   NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION,
+	                                                   NULL,
+	                                                   vpn_secrets_cb,
+	                                                   self);
 	if (!priv->secrets_id)
 		nm_vpn_connection_fail (self, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
 }

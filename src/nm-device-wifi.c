@@ -2495,7 +2495,6 @@ link_timeout_cb (gpointer user_data)
 		cleanup_association_attempt (self, TRUE);
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
 		nm_act_request_get_secrets (req,
-		                            NULL,
 		                            setting_name,
 		                            NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW,
 		                            NULL,
@@ -2742,14 +2741,7 @@ handle_auth_or_fail (NMDeviceWifi *self,
 		 */
 		if (new_secrets || tries)
 			flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
-
-		nm_act_request_get_secrets (req,
-		                            NULL,
-		                            setting_name,
-		                            flags,
-		                            NULL,
-		                            wifi_secrets_cb,
-		                            self);
+		nm_act_request_get_secrets (req, setting_name, flags, NULL, wifi_secrets_cb, self);
 
 		g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
 	} else {

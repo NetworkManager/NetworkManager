@@ -523,7 +523,6 @@ nm_modem_get_secrets (NMModem *self,
 	if (request_new)
 		flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
 	priv->secrets_id = nm_act_request_get_secrets (priv->act_request,
-	                                               NULL,
 	                                               setting_name,
 	                                               flags,
 	                                               hint,
@@ -571,7 +570,6 @@ nm_modem_act_stage1_prepare (NMModem *self,
 			flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
 
 		priv->secrets_id = nm_act_request_get_secrets (req,
-		                                               NULL,
 		                                               setting_name,
 		                                               flags,
 		                                               hints ? g_ptr_array_index (hints, 0) : NULL,

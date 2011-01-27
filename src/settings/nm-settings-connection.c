@@ -711,14 +711,22 @@ dbus_secrets_auth_cb (NMSettingsConnection *self,
                       gpointer user_data)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-	char *setting_name = user_data;
+	char *sender, *setting_name = user_data;
 	guint32 call_id = 0;
 	GError *local = NULL;
 
-	if (error)
-		dbus_g_method_return_error (context, error);
-	else {
-		g_signal_emit (self, signals[GET_SECRETS], 0, setting_name, dbus_get_agent_secrets_cb, context, &call_id);
+	sender = dbus_g_method_get_sender (context);
+	if (!sender) {
+		local = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
+		                             "Unable to get request D-Bus sender");
+	} else if (!error) {
+		g_signal_emit (self, signals[GET_SECRETS], 0,
+		               sender,
+		               setting_name,
+		               dbus_get_agent_secrets_cb,
+		               context,
+		               &call_id);
 		if (call_id > 0) {
 			/* track the request and wait for the callback */
 			priv->reqs = g_slist_append (priv->reqs, GUINT_TO_POINTER (call_id));
@@ -726,12 +734,15 @@ dbus_secrets_auth_cb (NMSettingsConnection *self,
 			local = g_error_new_literal (NM_SETTINGS_ERROR,
 			                             NM_SETTINGS_ERROR_SECRETS_UNAVAILABLE,
 			                             "No secrets were available");
-			dbus_g_method_return_error (context, local);
-			g_error_free (local);
 		}
 	}
 
+	if (error || local)
+		dbus_g_method_return_error (context, error ? error : local);
+
 	g_free (setting_name);
+	g_free (sender);
+	g_clear_error (&local);
 }
 
 static void
@@ -877,8 +888,8 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMSettingsConnectionClass, get_secrets),
 		              get_secrets_accumulator, NULL,
-		              _nm_marshal_UINT__STRING_POINTER_POINTER,
-		              G_TYPE_UINT, 3, G_TYPE_STRING, G_TYPE_POINTER, G_TYPE_POINTER);
+		              _nm_marshal_UINT__STRING_STRING_POINTER_POINTER,
+		              G_TYPE_UINT, 4, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_POINTER, G_TYPE_POINTER);
 
 	signals[CANCEL_SECRETS] =
 		g_signal_new (NM_SETTINGS_CONNECTION_CANCEL_SECRETS,

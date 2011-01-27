@@ -758,7 +758,7 @@ auto_activate_device (gpointer user_data)
 		                                     best_connection,
 		                                     specific_object,
 		                                     nm_device_get_path (data->device),
-		                                     FALSE,
+		                                     NULL,
 		                                     &error)) {
 			NMSettingConnection *s_con;
 
