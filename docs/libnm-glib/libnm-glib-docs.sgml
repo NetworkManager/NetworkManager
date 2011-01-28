@@ -22,12 +22,12 @@
     <xi:include href="xml/nm-gsm-device.xml"/>
     <xi:include href="xml/nm-cdma-device.xml"/>
     <xi:include href="xml/nm-device-bt.xml"/>
+    <xi:include href="xml/nm-device-wimax.xml"/>
     <xi:include href="xml/nm-access-point.xml"/>
     <xi:include href="xml/nm-ip4-config.xml"/>
     <xi:include href="xml/nm-ip6-config.xml"/>
     <xi:include href="xml/nm-dhcp4-config.xml"/>
     <xi:include href="xml/nm-dhcp6-config.xml"/>
-    <xi:include href="xml/nm-sysconfig-connection.xml"/>
     <xi:include href="xml/nm-object.xml"/>
     <xi:include href="xml/nm-remote-connection.xml"/>
     <xi:include href="xml/nm-remote-settings.xml"/>
