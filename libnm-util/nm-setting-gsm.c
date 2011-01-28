@@ -92,9 +92,7 @@ enum {
 	PROP_APN,
 	PROP_NETWORK_ID,
 	PROP_NETWORK_TYPE,
-	PROP_BAND,
 	PROP_PIN,
-	PROP_PUK,
 	PROP_ALLOWED_BANDS,
 	PROP_HOME_ONLY,
 
@@ -164,13 +162,6 @@ nm_setting_gsm_get_network_type (NMSettingGsm *setting)
 	return NM_SETTING_GSM_GET_PRIVATE (setting)->network_type;
 }
 
-int
-nm_setting_gsm_get_band (NMSettingGsm *setting)
-{
-	g_warning ("Tried to get deprecated property " NM_SETTING_GSM_SETTING_NAME "/" NM_SETTING_GSM_BAND);
-	return -1;
-}
-
 guint32
 nm_setting_gsm_get_allowed_bands (NMSettingGsm *setting)
 {
@@ -185,13 +176,6 @@ nm_setting_gsm_get_pin (NMSettingGsm *setting)
 	g_return_val_if_fail (NM_IS_SETTING_GSM (setting), NULL);
 
 	return NM_SETTING_GSM_GET_PRIVATE (setting)->pin;
-}
-
-const char *
-nm_setting_gsm_get_puk (NMSettingGsm *setting)
-{
-	g_warning ("Tried to get deprecated property " NM_SETTING_GSM_SETTING_NAME "/" NM_SETTING_GSM_PUK);
-	return NULL;
 }
 
 gboolean
@@ -343,7 +327,6 @@ set_property (GObject *object, guint prop_id,
 		    const GValue *value, GParamSpec *pspec)
 {
 	NMSettingGsmPrivate *priv = NM_SETTING_GSM_GET_PRIVATE (object);
-	const char *str;
 	char *tmp;
 
 	switch (prop_id) {
@@ -376,21 +359,12 @@ set_property (GObject *object, guint prop_id,
 	case PROP_NETWORK_TYPE:
 		priv->network_type = g_value_get_int (value);
 		break;
-	case PROP_BAND:
-		if (g_value_get_int (value) != -1)
-			g_warning ("Tried to set deprecated property " NM_SETTING_GSM_SETTING_NAME "/" NM_SETTING_GSM_BAND);
-		break;
 	case PROP_ALLOWED_BANDS:
 		priv->allowed_bands = g_value_get_uint (value);
 		break;
 	case PROP_PIN:
 		g_free (priv->pin);
 		priv->pin = g_value_dup_string (value);
-		break;
-	case PROP_PUK:
-		str = g_value_get_string (value);
-		if (str && strlen (str))
-			g_warning ("Tried to set deprecated property " NM_SETTING_GSM_SETTING_NAME "/" NM_SETTING_GSM_PUK);
 		break;
 	case PROP_HOME_ONLY:
 		priv->home_only = g_value_get_boolean (value);
@@ -431,14 +405,6 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PIN:
 		g_value_set_string (value, nm_setting_gsm_get_pin (setting));
-		break;
-	case PROP_PUK:
-		/* deprecated */
-		g_value_set_string (value, NULL);
-		break;
-	case PROP_BAND:
-		/* deprecated */
-		g_value_set_int (value, -1);
 		break;
 	case PROP_HOME_ONLY:
 		g_value_set_boolean (value, nm_setting_gsm_get_home_only (setting));
@@ -654,31 +620,4 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 						  "not be made.",
 						  FALSE,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
-
-	/* Deprecated properties */
-	/**
-	 * NMSettingGsm:puk:
-	 *
-	 * DEPRECATED
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_PUK,
-		 g_param_spec_string (NM_SETTING_GSM_PUK,
-						  "PUK (DEPRECATED and UNUSED)",
-						  "PUK (DEPRECATED and UNUSED)",
-						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
-
-	/**
-	 * NMSettingGsm:band:
-	 *
-	 * DEPRECATED
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_BAND,
-		 g_param_spec_int (NM_SETTING_GSM_BAND,
-		                    "Band (DEPRECATED and UNUSED)",
-		                    "Band (DEPRECATED and UNUSED)",
-		                    -1, 5, -1,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 }

@@ -63,17 +63,6 @@ GQuark nm_setting_gsm_error_quark (void);
 #define NM_SETTING_GSM_PIN           "pin"
 #define NM_SETTING_GSM_HOME_ONLY     "home-only"
 
-/* DEPRECATED & UNUSED */
-#define NM_SETTING_GSM_PUK           "puk"
-#define NM_SETTING_GSM_BAND          "band"
-
-/* DEPRECATED, use NM_SETTING_NETWORK_TYPE_* instead */
-#define NM_GSM_NETWORK_ANY              NM_SETTING_GSM_NETWORK_TYPE_ANY
-#define NM_GSM_NETWORK_UMTS_HSPA        NM_SETTING_GSM_NETWORK_TYPE_UMTS_HSPA
-#define NM_GSM_NETWORK_GPRS_EDGE        NM_SETTING_GSM_NETWORK_TYPE_GPRS_EDGE
-#define NM_GSM_NETWORK_PREFER_UMTS_HSPA NM_SETTING_GSM_NETWORK_TYPE_PREFER_UMTS_HSPA
-#define NM_GSM_NETWORK_PREFER_GPRS_EDGE NM_SETTING_GSM_NETWORK_TYPE_PREFER_GPRS_EDGE
-
 typedef enum {
 	NM_SETTING_GSM_NETWORK_TYPE_ANY = -1,
 	NM_SETTING_GSM_NETWORK_TYPE_UMTS_HSPA = 0,
@@ -125,10 +114,6 @@ int         nm_setting_gsm_get_network_type  (NMSettingGsm *setting);
 guint32     nm_setting_gsm_get_allowed_bands (NMSettingGsm *setting);
 const char *nm_setting_gsm_get_pin           (NMSettingGsm *setting);
 gboolean    nm_setting_gsm_get_home_only     (NMSettingGsm *setting);
-
-/* DEPRECATED & UNUSED */
-const char *nm_setting_gsm_get_puk           (NMSettingGsm *setting);
-int         nm_setting_gsm_get_band          (NMSettingGsm *setting);
 
 G_END_DECLS
 
