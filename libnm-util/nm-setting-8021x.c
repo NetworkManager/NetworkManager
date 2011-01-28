@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -126,7 +126,6 @@ typedef struct {
 	GByteArray *phase2_client_cert;
 	char *password;
 	char *pin;
-	char *psk;
 	GByteArray *private_key;
 	char *private_key_password;
 	GByteArray *phase2_private_key;
@@ -156,7 +155,6 @@ enum {
 	PROP_PHASE2_PRIVATE_KEY,
 	PROP_PHASE2_PRIVATE_KEY_PASSWORD,
 	PROP_PIN,
-	PROP_PSK,
 	PROP_SYSTEM_CA_CERTS,
 
 	LAST_PROP
@@ -1146,21 +1144,6 @@ nm_setting_802_1x_get_pin (NMSetting8021x *setting)
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
 
 	return NM_SETTING_802_1X_GET_PRIVATE (setting)->pin;
-}
-
-/**
- * nm_setting_802_1x_get_psk:
- * @setting: the #NMSetting8021x
- *
- * Returns: the Pre-Shared-Key used by the authentication method, if any, as
- *   specified by the #NMSetting8021x:psk property
- **/
-const char *
-nm_setting_802_1x_get_psk (NMSetting8021x *setting)
-{
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
-
-	return NM_SETTING_802_1X_GET_PRIVATE (setting)->psk;
 }
 
 /**

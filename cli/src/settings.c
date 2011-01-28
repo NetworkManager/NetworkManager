@@ -93,8 +93,7 @@ static NmcOutputField nmc_fields_setting_8021X[] = {
 	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY, 20),           /* 18 */
 	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD, 20),  /* 19 */
 	SETTING_FIELD (NM_SETTING_802_1X_PIN, 8),                           /* 20 */
-	SETTING_FIELD (NM_SETTING_802_1X_PSK, 8),                           /* 21 */
-	SETTING_FIELD (NM_SETTING_802_1X_SYSTEM_CA_CERTS, 17),              /* 22 */
+	SETTING_FIELD (NM_SETTING_802_1X_SYSTEM_CA_CERTS, 17),              /* 21 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTING_802_1X_ALL     "name"","\
@@ -118,7 +117,6 @@ static NmcOutputField nmc_fields_setting_8021X[] = {
                                           NM_SETTING_802_1X_PHASE2_PRIVATE_KEY","\
                                           NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD","\
                                           NM_SETTING_802_1X_PIN","\
-                                          NM_SETTING_802_1X_PSK","\
                                           NM_SETTING_802_1X_SYSTEM_CA_CERTS
 #define NMC_FIELDS_SETTING_802_1X_COMMON  NMC_FIELDS_SETTING_802_1X_ALL
 
@@ -660,8 +658,7 @@ setting_802_1X_details (NMSetting *setting, NmCli *nmc)
 	nmc->allowed_fields[18].value = phase2_private_key_str;
 	nmc->allowed_fields[19].value = nm_setting_802_1x_get_phase2_private_key_password (s_8021X);
 	nmc->allowed_fields[20].value = nm_setting_802_1x_get_pin (s_8021X);
-	nmc->allowed_fields[21].value = nm_setting_802_1x_get_psk (s_8021X);
-	nmc->allowed_fields[22].value = nm_setting_802_1x_get_system_ca_certs (s_8021X) ? _("yes") : _("no");
+	nmc->allowed_fields[21].value = nm_setting_802_1x_get_system_ca_certs (s_8021X) ? _("yes") : _("no");
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */

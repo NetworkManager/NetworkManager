@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2009 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -86,7 +86,6 @@ GQuark nm_setting_802_1x_error_quark (void);
 #define NM_SETTING_802_1X_PHASE2_PRIVATE_KEY "phase2-private-key"
 #define NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD "phase2-private-key-password"
 #define NM_SETTING_802_1X_PIN "pin"
-#define NM_SETTING_802_1X_PSK "psk"
 #define NM_SETTING_802_1X_SYSTEM_CA_CERTS "system-ca-certs"
 
 /* PRIVATE KEY NOTE: when setting PKCS#12 private keys directly via properties
@@ -194,8 +193,6 @@ gboolean               nm_setting_802_1x_set_phase2_client_cert          (NMSett
 const char *      nm_setting_802_1x_get_password                     (NMSetting8021x *setting);
 
 const char *      nm_setting_802_1x_get_pin                          (NMSetting8021x *setting);
-
-const char *      nm_setting_802_1x_get_psk                          (NMSetting8021x *setting);
 
 NMSetting8021xCKScheme nm_setting_802_1x_get_private_key_scheme          (NMSetting8021x *setting);
 const GByteArray *     nm_setting_802_1x_get_private_key_blob            (NMSetting8021x *setting);
