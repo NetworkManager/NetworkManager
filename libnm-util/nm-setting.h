@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -185,6 +185,31 @@ void        nm_setting_enumerate_values (NMSetting *setting,
 char       *nm_setting_to_string      (NMSetting *setting);
 
 /* Secrets */
+
+/**
+ * NMSettingSecretFlags:
+ * @NM_SETTING_SECRET_FLAG_SYTSEM_OWNED: the system is responsible for providing
+ * and storing this secret (default)
+ * @NM_SETTING_SECRET_FLAG_AGENT_OWNED: a user secret agent is responsible
+ * for providing and storing this secret; when it is required agents will be
+ * asked to retrieve it
+ * @NM_SETTING_SECRET_FLAG_NOT_SAVED: this secret should not be saved, but
+ * should be requested from the user each time it is needed
+ *
+ * These flags indicate specific behavior related to handling of a secret.  Each
+ * secret has a corresponding set of these flags which indicate how the secret
+ * is to be stored and/or requested when it is needed.
+ *
+ **/
+typedef enum {
+	NM_SETTING_SECRET_FLAG_SYSTEM_OWNED = 0x00000000,
+	NM_SETTING_SECRET_FLAG_AGENT_OWNED  = 0x00000001,
+	NM_SETTING_SECRET_FLAG_NOT_SAVED    = 0x00000002,
+
+	/* Placeholder for bounds checking */
+	NM_SETTING_SECRET_FLAG_LAST         = NM_SETTING_SECRET_FLAG_NOT_SAVED,
+} NMSettingSecretFlags;
+
 void        nm_setting_clear_secrets  (NMSetting *setting);
 GPtrArray  *nm_setting_need_secrets   (NMSetting *setting);
 gboolean    nm_setting_update_secrets (NMSetting *setting,

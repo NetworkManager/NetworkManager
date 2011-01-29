@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2010 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -73,6 +73,7 @@ typedef struct {
 	char *number; /* For dialing, duh */
 	char *username;
 	char *password;
+	NMSettingSecretFlags password_flags;
 
 	char *apn; /* NULL for dynamic */
 	char *network_id; /* for manual registration or NULL for automatic */
@@ -80,6 +81,7 @@ typedef struct {
 	guint32 allowed_bands;     /* A bitfield of NM_SETTING_GSM_BAND_* */
 
 	char *pin;
+	NMSettingSecretFlags pin_flags;
 
 	gboolean home_only;
 } NMSettingGsmPrivate;
@@ -89,10 +91,12 @@ enum {
 	PROP_NUMBER,
 	PROP_USERNAME,
 	PROP_PASSWORD,
+	PROP_PASSWORD_FLAGS,
 	PROP_APN,
 	PROP_NETWORK_ID,
 	PROP_NETWORK_TYPE,
 	PROP_PIN,
+	PROP_PIN_FLAGS,
 	PROP_ALLOWED_BANDS,
 	PROP_HOME_ONLY,
 
@@ -138,6 +142,20 @@ nm_setting_gsm_get_password (NMSettingGsm *setting)
 	return NM_SETTING_GSM_GET_PRIVATE (setting)->password;
 }
 
+/**
+ * nm_setting_gsm_get_password_flags:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: the #NMSettingSecretFlags pertaining to the #NMSettingGsm:password
+ **/
+NMSettingSecretFlags
+nm_setting_gsm_get_password_flags (NMSettingGsm *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_GSM (setting), NM_SETTING_SECRET_FLAG_SYSTEM_OWNED);
+
+	return NM_SETTING_GSM_GET_PRIVATE (setting)->password_flags;
+}
+
 const char *
 nm_setting_gsm_get_apn (NMSettingGsm *setting)
 {
@@ -176,6 +194,20 @@ nm_setting_gsm_get_pin (NMSettingGsm *setting)
 	g_return_val_if_fail (NM_IS_SETTING_GSM (setting), NULL);
 
 	return NM_SETTING_GSM_GET_PRIVATE (setting)->pin;
+}
+
+/**
+ * nm_setting_gsm_get_pin_flags:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: the #NMSettingSecretFlags pertaining to the #NMSettingGsm:pin
+ **/
+NMSettingSecretFlags
+nm_setting_gsm_get_pin_flags (NMSettingGsm *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_GSM (setting), NM_SETTING_SECRET_FLAG_SYSTEM_OWNED);
+
+	return NM_SETTING_GSM_GET_PRIVATE (setting)->pin_flags;
 }
 
 gboolean
@@ -342,6 +374,9 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->password);
 		priv->password = g_value_dup_string (value);
 		break;
+	case PROP_PASSWORD_FLAGS:
+		priv->password_flags = g_value_get_uint (value);
+		break;
 	case PROP_APN:
 		g_free (priv->apn);
 		priv->apn = NULL;
@@ -365,6 +400,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_PIN:
 		g_free (priv->pin);
 		priv->pin = g_value_dup_string (value);
+		break;
+	case PROP_PIN_FLAGS:
+		priv->pin_flags = g_value_get_uint (value);
 		break;
 	case PROP_HOME_ONLY:
 		priv->home_only = g_value_get_boolean (value);
@@ -391,6 +429,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_PASSWORD:
 		g_value_set_string (value, nm_setting_gsm_get_password (setting));
 		break;
+	case PROP_PASSWORD_FLAGS:
+		g_value_set_uint (value, nm_setting_gsm_get_password_flags (setting));
+		break;
 	case PROP_APN:
 		g_value_set_string (value, nm_setting_gsm_get_apn (setting));
 		break;
@@ -405,6 +446,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PIN:
 		g_value_set_string (value, nm_setting_gsm_get_pin (setting));
+		break;
+	case PROP_PIN_FLAGS:
+		g_value_set_uint (value, nm_setting_gsm_get_pin_flags (setting));
 		break;
 	case PROP_HOME_ONLY:
 		g_value_set_boolean (value, nm_setting_gsm_get_home_only (setting));
@@ -485,6 +529,20 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 						  "a password or accept any password.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+
+	/**
+	 * NMSettingGsm:password-flags:
+	 *
+	 * Flags indicating how to handle #NMSettingGsm:password:.
+	 **/
+	g_object_class_install_property (object_class, PROP_PASSWORD_FLAGS,
+		 g_param_spec_uint (NM_SETTING_GSM_PASSWORD_FLAGS,
+		                    "Password Flags",
+		                    "Flags indicating how to handle the GSM password.",
+		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
+		                    NM_SETTING_SECRET_FLAG_LAST,
+		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
+		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
 	 * NMSettingGsm:apn:
@@ -604,6 +662,20 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 						  "the PIN here to allow operation of the device.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+
+	/**
+	 * NMSettingGsm:pin-flags:
+	 *
+	 * Flags indicating how to handle #NMSettingGsm:pin:.
+	 **/
+	g_object_class_install_property (object_class, PROP_PIN_FLAGS,
+		 g_param_spec_uint (NM_SETTING_GSM_PIN_FLAGS,
+		                    "PIN Flags",
+		                    "Flags indicating how to handle the GSM SIM PIN.",
+		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
+		                    NM_SETTING_SECRET_FLAG_LAST,
+		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
+		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
 	 * NMSettingGsm:home-only:

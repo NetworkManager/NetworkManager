@@ -23,6 +23,8 @@
  */
 
 #include <string.h>
+#include <errno.h>
+#include <stdlib.h>
 #include <dbus/dbus-glib.h>
 #include "nm-setting-vpn.h"
 #include "nm-param-spec-specialized.h"
@@ -225,6 +227,75 @@ nm_setting_vpn_foreach_secret (NMSettingVPN *setting,
 
 	g_hash_table_foreach (NM_SETTING_VPN_GET_PRIVATE (setting)->secrets,
 	                      (GHFunc) func, user_data);
+}
+
+/**
+ * nm_setting_vpn_get_secret_flags:
+ * @setting: a #NMSettingVPN
+ * @secret_name: the secret key name to get flags for
+ * @out_flags: on success, the flags for the secret @secret_name
+ *
+ * For a given VPN secret, retrieves the #NMSettingSecretFlags describing how to
+ * handle that secret.
+ *
+ * Returns: TRUE on success (if the secret flags data item was found), FALSE if
+ * the secret flags data item was not found
+ */
+gboolean
+nm_setting_vpn_get_secret_flags (NMSettingVPN *setting,
+                                 const char *secret_name,
+                                 NMSettingSecretFlags *out_flags)
+{
+	char *flags_key;
+	unsigned long tmp;
+	gboolean success = FALSE;
+	gpointer val;
+
+	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), FALSE);
+	g_return_val_if_fail (secret_name != NULL, FALSE);
+	g_return_val_if_fail (out_flags != NULL, FALSE);
+
+	flags_key = g_strdup_printf ("%s-flags", secret_name);
+	g_assert (flags_key);
+	if (g_hash_table_lookup_extended (NM_SETTING_VPN_GET_PRIVATE (setting)->data,
+	                                  flags_key,
+	                                  NULL,
+	                                  &val)) {
+		errno = 0;
+		tmp = strtoul ((const char *) val, NULL, 10);
+		if ((errno == 0) && (tmp <= NM_SETTING_SECRET_FLAG_LAST)) {
+			success = TRUE;
+			*out_flags = (guint32) tmp;
+		}
+	}
+	g_free (flags_key);
+	return success;
+}
+
+/**
+ * nm_setting_vpn_set_secret_flags:
+ * @setting: a #NMSettingVPN
+ * @secret_name: the secret key name to set flags for
+ * @flags: the flags for the secret
+ *
+ * For a given VPN secret, sets the #NMSettingSecretFlags describing how to
+ * handle that secret.
+ */
+void
+nm_setting_vpn_set_secret_flags (NMSettingVPN *setting,
+                                 const char *secret_name,
+                                 NMSettingSecretFlags flags)
+{
+	char *key_name, *str_val;
+
+	g_return_if_fail (NM_IS_SETTING_VPN (setting));
+	g_return_if_fail (secret_name != NULL);
+
+	key_name = g_strdup_printf ("%s-flags", secret_name);
+	g_assert (key_name);
+	str_val = g_strdup_printf ("%u", flags);
+	g_assert (str_val);
+	g_hash_table_insert (NM_SETTING_VPN_GET_PRIVATE (setting)->data, key_name, str_val);
 }
 
 static gboolean

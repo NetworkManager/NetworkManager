@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -75,9 +75,12 @@ typedef enum {
 #define NM_SETTING_WIRELESS_SECURITY_WEP_KEY1 "wep-key1"
 #define NM_SETTING_WIRELESS_SECURITY_WEP_KEY2 "wep-key2"
 #define NM_SETTING_WIRELESS_SECURITY_WEP_KEY3 "wep-key3"
-#define NM_SETTING_WIRELESS_SECURITY_PSK "psk"
-#define NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD "leap-password"
+#define NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS "wep-key-flags"
 #define NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE "wep-key-type"
+#define NM_SETTING_WIRELESS_SECURITY_PSK "psk"
+#define NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS "psk-flags"
+#define NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD "leap-password"
+#define NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS "leap-password-flags"
 
 typedef struct {
 	NMSetting parent;
@@ -118,14 +121,18 @@ void        nm_setting_wireless_security_remove_group      (NMSettingWirelessSec
 void        nm_setting_wireless_security_clear_groups      (NMSettingWirelessSecurity *setting);
 
 const char *nm_setting_wireless_security_get_psk           (NMSettingWirelessSecurity *setting);
+NMSettingSecretFlags nm_setting_wireless_security_get_psk_flags (NMSettingWirelessSecurity *setting);
 
 const char *nm_setting_wireless_security_get_leap_username (NMSettingWirelessSecurity *setting);
 const char *nm_setting_wireless_security_get_leap_password (NMSettingWirelessSecurity *setting);
+NMSettingSecretFlags nm_setting_wireless_security_get_leap_password_flags (NMSettingWirelessSecurity *setting);
 
 const char *nm_setting_wireless_security_get_wep_key       (NMSettingWirelessSecurity *setting, guint32 idx);
 void        nm_setting_wireless_security_set_wep_key       (NMSettingWirelessSecurity *setting, guint32 idx, const char *key);
 guint32     nm_setting_wireless_security_get_wep_tx_keyidx (NMSettingWirelessSecurity *setting);
 const char *nm_setting_wireless_security_get_auth_alg      (NMSettingWirelessSecurity *setting);
+
+NMSettingSecretFlags nm_setting_wireless_security_get_wep_key_flags (NMSettingWirelessSecurity *setting);
 NMWepKeyType nm_setting_wireless_security_get_wep_key_type (NMSettingWirelessSecurity *setting);
 
 G_END_DECLS

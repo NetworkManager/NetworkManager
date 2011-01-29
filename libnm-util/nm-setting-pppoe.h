@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -53,9 +53,10 @@ GType nm_setting_pppoe_error_get_type (void);
 #define NM_SETTING_PPPOE_ERROR nm_setting_pppoe_error_quark ()
 GQuark nm_setting_pppoe_error_quark (void);
 
-#define NM_SETTING_PPPOE_SERVICE  "service"
-#define NM_SETTING_PPPOE_USERNAME "username"
-#define NM_SETTING_PPPOE_PASSWORD "password"
+#define NM_SETTING_PPPOE_SERVICE        "service"
+#define NM_SETTING_PPPOE_USERNAME       "username"
+#define NM_SETTING_PPPOE_PASSWORD       "password"
+#define NM_SETTING_PPPOE_PASSWORD_FLAGS "password-flags"
 
 typedef struct {
 	NMSetting parent;
@@ -77,6 +78,7 @@ NMSetting  *nm_setting_pppoe_new          (void);
 const char *nm_setting_pppoe_get_service  (NMSettingPPPOE *setting);
 const char *nm_setting_pppoe_get_username (NMSettingPPPOE *setting);
 const char *nm_setting_pppoe_get_password (NMSettingPPPOE *setting);
+NMSettingSecretFlags nm_setting_pppoe_get_password_flags (NMSettingPPPOE *setting);
 
 G_END_DECLS
 

@@ -18,7 +18,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -87,6 +87,7 @@ typedef struct {
 	char *number; /* For dialing, duh */
 	char *username;
 	char *password;
+	NMSettingSecretFlags password_flags;
 } NMSettingCdmaPrivate;
 
 enum {
@@ -94,6 +95,7 @@ enum {
 	PROP_NUMBER,
 	PROP_USERNAME,
 	PROP_PASSWORD,
+	PROP_PASSWORD_FLAGS,
 
 	LAST_PROP
 };
@@ -151,6 +153,20 @@ nm_setting_cdma_get_password (NMSettingCdma *setting)
 	g_return_val_if_fail (NM_IS_SETTING_CDMA (setting), NULL);
 
 	return NM_SETTING_CDMA_GET_PRIVATE (setting)->password;
+}
+
+/**
+ * nm_setting_cdma_get_password_flags:
+ * @setting: the #NMSettingCdma
+ *
+ * Returns: the #NMSettingSecretFlags pertaining to the #NMSettingCdma:password
+ **/
+NMSettingSecretFlags
+nm_setting_cdma_get_password_flags (NMSettingCdma *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CDMA (setting), NM_SETTING_SECRET_FLAG_SYSTEM_OWNED);
+
+	return NM_SETTING_CDMA_GET_PRIVATE (setting)->password_flags;
 }
 
 static gint
@@ -264,6 +280,9 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->password);
 		priv->password = g_value_dup_string (value);
 		break;
+	case PROP_PASSWORD_FLAGS:
+		priv->password_flags = g_value_get_uint (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -285,6 +304,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PASSWORD:
 		g_value_set_string (value, nm_setting_cdma_get_password (setting));
+		break;
+	case PROP_PASSWORD_FLAGS:
+		g_value_set_uint (value, nm_setting_cdma_get_password_flags (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -360,4 +382,18 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *setting_class)
 						  "a password or accept any password.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+
+	/**
+	 * NMSettingCdma:password-flags:
+	 *
+	 * Flags indicating how to handle #NMSettingCdma:password:.
+	 **/
+	g_object_class_install_property (object_class, PROP_PASSWORD_FLAGS,
+		 g_param_spec_uint (NM_SETTING_CDMA_PASSWORD_FLAGS,
+		                    "Password Flags",
+		                    "Flags indicating how to handle the CDMA password.",
+		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
+		                    NM_SETTING_SECRET_FLAG_LAST,
+		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
+		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 }

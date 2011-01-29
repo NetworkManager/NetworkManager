@@ -125,11 +125,15 @@ typedef struct {
 	char *phase2_ca_path;
 	GByteArray *phase2_client_cert;
 	char *password;
+	NMSettingSecretFlags password_flags;
 	char *pin;
+	NMSettingSecretFlags pin_flags;
 	GByteArray *private_key;
 	char *private_key_password;
+	NMSettingSecretFlags private_key_password_flags;
 	GByteArray *phase2_private_key;
 	char *phase2_private_key_password;
+	NMSettingSecretFlags phase2_private_key_password_flags;
 	gboolean system_ca_certs;
 } NMSetting8021xPrivate;
 
@@ -150,11 +154,15 @@ enum {
 	PROP_PHASE2_CA_PATH,
 	PROP_PHASE2_CLIENT_CERT,
 	PROP_PASSWORD,
+	PROP_PASSWORD_FLAGS,
 	PROP_PRIVATE_KEY,
 	PROP_PRIVATE_KEY_PASSWORD,
+	PROP_PRIVATE_KEY_PASSWORD_FLAGS,
 	PROP_PHASE2_PRIVATE_KEY,
 	PROP_PHASE2_PRIVATE_KEY_PASSWORD,
+	PROP_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS,
 	PROP_PIN,
+	PROP_PIN_FLAGS,
 	PROP_SYSTEM_CA_CERTS,
 
 	LAST_PROP
@@ -1132,6 +1140,20 @@ nm_setting_802_1x_get_password (NMSetting8021x *setting)
 }
 
 /**
+ * nm_setting_802_1x_get_password_flags:
+ * @setting: the #NMSetting8021x
+ *
+ * Returns: the #NMSettingSecretFlags pertaining to the #NMSetting8021x:password
+ **/
+NMSettingSecretFlags
+nm_setting_802_1x_get_password_flags (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_SECRET_FLAG_SYSTEM_OWNED);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->password_flags;
+}
+
+/**
  * nm_setting_802_1x_get_pin:
  * @setting: the #NMSetting8021x
  *
@@ -1144,6 +1166,21 @@ nm_setting_802_1x_get_pin (NMSetting8021x *setting)
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
 
 	return NM_SETTING_802_1X_GET_PRIVATE (setting)->pin;
+}
+
+/**
+ * nm_setting_802_1x_get_pin_flags:
+ * @setting: the #NMSetting8021x
+ *
+ * Returns: the #NMSettingSecretFlags pertaining to the
+ * #NMSetting8021x:pin
+ **/
+NMSettingSecretFlags
+nm_setting_802_1x_get_pin_flags (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_SECRET_FLAG_SYSTEM_OWNED);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->pin_flags;
 }
 
 /**
@@ -1173,6 +1210,10 @@ nm_setting_802_1x_get_private_key_scheme (NMSetting8021x *setting)
  * Private keys are used to authenticate the connecting client to the network
  * when EAP-TLS is used as either the "phase 1" or "phase 2" 802.1x
  * authentication method.
+ *
+ * WARNING: the private key property is not a "secret" property, and thus
+ * unencrypted private key data may be readable by unprivileged users.  Private
+ * keys should always be encrypted with a private key password.
  *
  * Returns: the private key data
  **/
@@ -1233,6 +1274,11 @@ nm_setting_802_1x_get_private_key_path (NMSetting8021x *setting)
  * Private keys are used to authenticate the connecting client to the network
  * when EAP-TLS is used as either the "phase 1" or "phase 2" 802.1x
  * authentication method.
+ *
+ * WARNING: the private key property is not a "secret" property, and thus
+ * unencrypted private key data using the BLOB scheme may be readable by
+ * unprivileged users.  Private keys should always be encrypted with a private
+ * key password to prevent unauthorized access to unencrypted private key data.
  *
  * Returns: TRUE if the operation succeeded, FALSE if it was unsuccessful
  **/
@@ -1378,6 +1424,21 @@ nm_setting_802_1x_get_private_key_password (NMSetting8021x *setting)
 }
 
 /**
+ * nm_setting_802_1x_get_private_key_password_flags:
+ * @setting: the #NMSetting8021x
+ *
+ * Returns: the #NMSettingSecretFlags pertaining to the
+ * #NMSetting8021x:private-key-password
+ **/
+NMSettingSecretFlags
+nm_setting_802_1x_get_private_key_password_flags (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_SECRET_FLAG_SYSTEM_OWNED);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->private_key_password_flags;
+}
+
+/**
  * nm_setting_802_1x_get_private_key_format:
  * @setting: the #NMSetting8021x
  *
@@ -1437,6 +1498,21 @@ nm_setting_802_1x_get_phase2_private_key_password (NMSetting8021x *setting)
 }
 
 /**
+ * nm_setting_802_1x_get_phase2_private_key_password_flags:
+ * @setting: the #NMSetting8021x
+ *
+ * Returns: the #NMSettingSecretFlags pertaining to the
+ * #NMSetting8021x:phase2-private-key-password
+ **/
+NMSettingSecretFlags
+nm_setting_802_1x_get_phase2_private_key_password_flags (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_SECRET_FLAG_SYSTEM_OWNED);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_private_key_password_flags;
+}
+
+/**
  * nm_setting_802_1x_get_phase2_private_key_scheme:
  * @setting: the #NMSetting8021x
  *
@@ -1463,6 +1539,10 @@ nm_setting_802_1x_get_phase2_private_key_scheme (NMSetting8021x *setting)
  * Private keys are used to authenticate the connecting client to the network
  * when EAP-TLS is used as either the "phase 1" or "phase 2" 802.1x
  * authentication method.
+ *
+ * WARNING: the phase2 private key property is not a "secret" property, and thus
+ * unencrypted private key data may be readable by unprivileged users.  Private
+ * keys should always be encrypted with a private key password.
  *
  * Returns: the "phase 2" private key data
  **/
@@ -1523,6 +1603,11 @@ nm_setting_802_1x_get_phase2_private_key_path (NMSetting8021x *setting)
  * Private keys are used to authenticate the connecting client to the network
  * when EAP-TLS is used as either the "phase 1" or "phase 2" 802.1x
  * authentication method.
+ *
+ * WARNING: the phase2 private key property is not a "secret" property, and thus
+ * unencrypted private key data using the BLOB scheme may be readable by
+ * unprivileged users.  Private keys should always be encrypted with a private
+ * key password to prevent unauthorized access to unencrypted private key data.
  *
  * Returns: TRUE if the operation succeeded, FALSE if it was unsuccessful
  **/
@@ -2374,6 +2459,9 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->password);
 		priv->password = g_value_dup_string (value);
 		break;
+	case PROP_PASSWORD_FLAGS:
+		priv->password_flags = g_value_get_uint (value);
+		break;
 	case PROP_PRIVATE_KEY:
 		if (priv->private_key) {
 			g_byte_array_free (priv->private_key, TRUE);
@@ -2390,6 +2478,9 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->private_key_password);
 		priv->private_key_password = g_value_dup_string (value);
 		break;
+	case PROP_PRIVATE_KEY_PASSWORD_FLAGS:
+		priv->private_key_password_flags = g_value_get_uint (value);
+		break;
 	case PROP_PHASE2_PRIVATE_KEY:
 		if (priv->phase2_private_key) {
 			g_byte_array_free (priv->phase2_private_key, TRUE);
@@ -2405,6 +2496,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_PHASE2_PRIVATE_KEY_PASSWORD:
 		g_free (priv->phase2_private_key_password);
 		priv->phase2_private_key_password = g_value_dup_string (value);
+		break;
+	case PROP_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS:
+		priv->phase2_private_key_password_flags = g_value_get_uint (value);
 		break;
 	case PROP_SYSTEM_CA_CERTS:
 		priv->system_ca_certs = g_value_get_boolean (value);
@@ -2468,17 +2562,26 @@ get_property (GObject *object, guint prop_id,
 	case PROP_PASSWORD:
 		g_value_set_string (value, priv->password);
 		break;
+	case PROP_PASSWORD_FLAGS:
+		g_value_set_uint (value, priv->password_flags);
+		break;
 	case PROP_PRIVATE_KEY:
 		g_value_set_boxed (value, priv->private_key);
 		break;
 	case PROP_PRIVATE_KEY_PASSWORD:
 		g_value_set_string (value, priv->private_key_password);
 		break;
+	case PROP_PRIVATE_KEY_PASSWORD_FLAGS:
+		g_value_set_uint (value, priv->private_key_password_flags);
+		break;
 	case PROP_PHASE2_PRIVATE_KEY:
 		g_value_set_boxed (value, priv->phase2_private_key);
 		break;
 	case PROP_PHASE2_PRIVATE_KEY_PASSWORD:
 		g_value_set_string (value, priv->phase2_private_key_password);
+		break;
+	case PROP_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS:
+		g_value_set_uint (value, priv->phase2_private_key_password_flags);
 		break;
 	case PROP_SYSTEM_CA_CERTS:
 		g_value_set_boolean (value, priv->system_ca_certs);
@@ -2843,11 +2946,31 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
 
 	/**
+	 * NMSetting8021x:password-flags:
+	 *
+	 * Flags indicating how to handle #NMSetting8021x:password:.
+	 **/
+	g_object_class_install_property (object_class, PROP_PASSWORD_FLAGS,
+		 g_param_spec_uint (NM_SETTING_802_1X_PASSWORD_FLAGS,
+		                    "Password Flags",
+		                    "Flags indicating how to handle the 802.1x password.",
+		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
+		                    NM_SETTING_SECRET_FLAG_LAST,
+		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
+		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
 	 * NMSetting8021x:private-key:
 	 *
 	 * Contains the private key if the #NMSetting8021x:eap property is set to
 	 * 'tls'.  Setting this property directly is discouraged; use the
 	 * nm_setting_802_1x_set_private_key() function instead.
+	 *
+	 * WARNING: #NMSetting8021x:private-key is not a "secret" property, and thus
+	 * unencrypted private key data using the BLOB scheme may be readable by
+	 * unprivileged users.  Private keys should always be encrypted with a
+	 * private key password to prevent unauthorized access to unencrypted
+	 * private key data.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIVATE_KEY,
@@ -2858,12 +2981,17 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 							   "'scheme'; two are currently supported: blob and "
 							   "path. When using the blob scheme and X.509 private "
 							   "keys, this property should be set to the keys's "
-							   "decrypted DER encoded data.  When using X.509 "
-							   "private keys with the path scheme, this property "
-							   "should be set to the full UTF-8 encoded path of "
-							   "the key, prefixed with the string 'file://' and "
-							   "and ending with a terminating NULL byte.  When "
-							   "using PKCS#12 format private keys and the blob "
+							   "PEM or DER encoded data; if using DER-encoded "
+							   "data the private key must be decrypted as the "
+							   "DER format is incomplete. Use of decrypted "
+							   "DER-format private keys is not recommended as it "
+							   "may allow unprivileged users access to the "
+							   "decrypted data. When using X.509 private keys "
+							   "with the path scheme, this property should be "
+							   "set to the full UTF-8 encoded path of the key, "
+							   "prefixed with the string 'file://' and ending "
+							   "with a terminating NULL byte.  When using "
+							   "PKCS#12 format private keys and the blob "
 							   "scheme, this property should be set to the "
 							   "PKCS#12 data (which is encrypted) and the "
 							   "'private-key-password' property must be set to "
@@ -2877,7 +3005,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 							   "be set to the password used to decode the PKCS#12 "
 							   "private key and certificate.",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
 	 * NMSetting8021x:private-key-password:
@@ -2901,6 +3029,21 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
 
 	/**
+	 * NMSetting8021x:private-key-password-flags:
+	 *
+	 * Flags indicating how to handle #NMSetting8021x:private-key-password:.
+	 **/
+	g_object_class_install_property (object_class, PROP_PRIVATE_KEY_PASSWORD_FLAGS,
+		 g_param_spec_uint (NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS,
+		                    "Private Key Password Flags",
+		                    "Flags indicating how to handle the 802.1x private "
+		                    "key password.",
+		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
+		                    NM_SETTING_SECRET_FLAG_LAST,
+		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
+		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
 	 * NMSetting8021x:phase2-private-key:
 	 *
 	 * Private key data used by "phase 2" inner authentication methods.
@@ -2920,12 +3063,17 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 							   "'scheme'; two are currently supported: blob and "
 							   "path. When using the blob scheme and X.509 private "
 							   "keys, this property should be set to the keys's "
-							   "decrypted DER encoded data.  When using X.509 "
-							   "private keys with the path scheme, this property "
-							   "should be set to the full UTF-8 encoded path of "
-							   "the key, prefixed with the string 'file://' and "
-							   "and ending with a terminating NULL byte.  When "
-							   "using PKCS#12 format private keys and the blob "
+							   "PEM or DER encoded data; if using DER-encoded "
+							   "data the private key must be decrypted as the "
+							   "DER format is incomplete. Use of decrypted "
+							   "DER-format private keys is not recommended as it "
+							   "may allow unprivileged users access to the "
+							   "decrypted data. When using X.509 private keys "
+							   "with the path scheme, this property should be "
+							   "set to the full UTF-8 encoded path of the key, "
+							   "prefixed with the string 'file://' and ending "
+							   "with a terminating NULL byte.  When using "
+							   "PKCS#12 format private keys and the blob "
 							   "scheme, this property should be set to the "
 							   "PKCS#12 data (which is encrypted) and the "
 							   "'private-key-password' property must be set to "
@@ -2939,7 +3087,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 							   "be set to the password used to decode the PKCS#12 "
 							   "private key and certificate.",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
 	 * NMSetting8021x:phase2-private-key-password:
@@ -2961,6 +3109,21 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 						  "if the phase2 private key is a PKCS#12 format key.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+
+	/**
+	 * NMSetting8021x:phase2-private-key-password-flags:
+	 *
+	 * Flags indicating how to handle #NMSetting8021x:phase2-private-key-password:.
+	 **/
+	g_object_class_install_property (object_class, PROP_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS,
+		 g_param_spec_uint (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS,
+		                    "Phase2 Private Key Password Flags",
+		                    "Flags indicating how to handle the 802.1x phase2 "
+		                    "private key password.",
+		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
+		                    NM_SETTING_SECRET_FLAG_LAST,
+		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
+		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
 	 * NMSetting8021x:system-ca-certs:

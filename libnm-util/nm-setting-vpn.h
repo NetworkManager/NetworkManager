@@ -103,6 +103,14 @@ void              nm_setting_vpn_foreach_secret    (NMSettingVPN *setting,
                                                     NMVPNIterFunc func,
                                                     gpointer user_data);
 
+gboolean          nm_setting_vpn_get_secret_flags  (NMSettingVPN *setting,
+                                                    const char *secret_name,
+                                                    NMSettingSecretFlags *out_flags);
+
+void              nm_setting_vpn_set_secret_flags  (NMSettingVPN *setting,
+                                                    const char *secret_name,
+                                                    NMSettingSecretFlags flags);
+
 G_END_DECLS
 
 #endif /* NM_SETTING_VPN_H */

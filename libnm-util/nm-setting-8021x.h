@@ -81,11 +81,15 @@ GQuark nm_setting_802_1x_error_quark (void);
 #define NM_SETTING_802_1X_PHASE2_CA_PATH "phase2-ca-path"
 #define NM_SETTING_802_1X_PHASE2_CLIENT_CERT "phase2-client-cert"
 #define NM_SETTING_802_1X_PASSWORD "password"
+#define NM_SETTING_802_1X_PASSWORD_FLAGS "password-flags"
 #define NM_SETTING_802_1X_PRIVATE_KEY "private-key"
 #define NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD "private-key-password"
+#define NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS "private-key-password-flags"
 #define NM_SETTING_802_1X_PHASE2_PRIVATE_KEY "phase2-private-key"
 #define NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD "phase2-private-key-password"
+#define NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS "phase2-private-key-password-flags"
 #define NM_SETTING_802_1X_PIN "pin"
+#define NM_SETTING_802_1X_PIN_FLAGS "pin-flags"
 #define NM_SETTING_802_1X_SYSTEM_CA_CERTS "system-ca-certs"
 
 /* PRIVATE KEY NOTE: when setting PKCS#12 private keys directly via properties
@@ -101,15 +105,17 @@ GQuark nm_setting_802_1x_error_quark (void);
  *
  * When setting OpenSSL-derived "traditional" format (ie S/MIME style, not
  * PKCS#8) RSA and DSA keys directly via properties with the "blob" scheme, they
- * must passed to NetworkManager completely decrypted because the OpenSSL
- * "traditional" format is non-standard and is not complete enough for all
- * crypto libraries to use.  Thus, for OpenSSL "traditional" format keys, the
- * private key password is not passed to NetworkManager (because the data is
- * already decrypted by the client), and the appropriate "client-cert" (or
- * "phase2-client-cert") property of the NMSetting8021x object must be a valid
- * client certificate.  When using the "path" scheme, just set the private-key
- * and client-cert properties to the paths to their respective objects, and
- * set the private-key password correctly.
+ * should be passed to NetworkManager in PEM format with the "DEK-Info" and
+ * "Proc-Type" tags intact, or in decrypted binary DER format (not recommended,
+ * as this may allow unprivileged users to read the decrypted private key).
+ * When decryped keys are used (again, not recommended) the private key password
+ * should not be set.  The recommended method for passing private keys to
+ * NetworkManager is via the "path" scheme with encrypted private keys, and a
+ * private key password.
+ *
+ * When using the "path" scheme, just set the private-key and client-cert
+ * properties to the paths to their respective objects, and set the private-key
+ * password correctly.
  */
 
 typedef struct {
@@ -191,8 +197,10 @@ gboolean               nm_setting_802_1x_set_phase2_client_cert          (NMSett
                                                                           GError **error);
 
 const char *      nm_setting_802_1x_get_password                     (NMSetting8021x *setting);
+NMSettingSecretFlags nm_setting_802_1x_get_password_flags            (NMSetting8021x *setting);
 
 const char *      nm_setting_802_1x_get_pin                          (NMSetting8021x *setting);
+NMSettingSecretFlags nm_setting_802_1x_get_pin_flags                 (NMSetting8021x *setting);
 
 NMSetting8021xCKScheme nm_setting_802_1x_get_private_key_scheme          (NMSetting8021x *setting);
 const GByteArray *     nm_setting_802_1x_get_private_key_blob            (NMSetting8021x *setting);
@@ -204,6 +212,7 @@ gboolean               nm_setting_802_1x_set_private_key                 (NMSett
                                                                           NMSetting8021xCKFormat *out_format,
                                                                           GError **error);
 const char *           nm_setting_802_1x_get_private_key_password        (NMSetting8021x *setting);
+NMSettingSecretFlags   nm_setting_802_1x_get_private_key_password_flags  (NMSetting8021x *setting);
 
 NMSetting8021xCKFormat nm_setting_802_1x_get_private_key_format          (NMSetting8021x *setting);
 
@@ -217,6 +226,7 @@ gboolean               nm_setting_802_1x_set_phase2_private_key          (NMSett
                                                                           NMSetting8021xCKFormat *out_format,
                                                                           GError **error);
 const char *           nm_setting_802_1x_get_phase2_private_key_password (NMSetting8021x *setting);
+NMSettingSecretFlags   nm_setting_802_1x_get_phase2_private_key_password_flags (NMSetting8021x *setting);
 
 NMSetting8021xCKFormat nm_setting_802_1x_get_phase2_private_key_format   (NMSetting8021x *setting);
 

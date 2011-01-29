@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2010 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -53,15 +53,17 @@ GType nm_setting_gsm_error_get_type (void);
 #define NM_SETTING_GSM_ERROR nm_setting_gsm_error_quark ()
 GQuark nm_setting_gsm_error_quark (void);
 
-#define NM_SETTING_GSM_NUMBER        "number"
-#define NM_SETTING_GSM_USERNAME      "username"
-#define NM_SETTING_GSM_PASSWORD      "password"
-#define NM_SETTING_GSM_APN           "apn"
-#define NM_SETTING_GSM_NETWORK_ID    "network-id"
-#define NM_SETTING_GSM_NETWORK_TYPE  "network-type"
-#define NM_SETTING_GSM_ALLOWED_BANDS "allowed-bands"
-#define NM_SETTING_GSM_PIN           "pin"
-#define NM_SETTING_GSM_HOME_ONLY     "home-only"
+#define NM_SETTING_GSM_NUMBER         "number"
+#define NM_SETTING_GSM_USERNAME       "username"
+#define NM_SETTING_GSM_PASSWORD       "password"
+#define NM_SETTING_GSM_PASSWORD_FLAGS "password-flags"
+#define NM_SETTING_GSM_APN            "apn"
+#define NM_SETTING_GSM_NETWORK_ID     "network-id"
+#define NM_SETTING_GSM_NETWORK_TYPE   "network-type"
+#define NM_SETTING_GSM_ALLOWED_BANDS  "allowed-bands"
+#define NM_SETTING_GSM_PIN            "pin"
+#define NM_SETTING_GSM_PIN_FLAGS      "pin-flags"
+#define NM_SETTING_GSM_HOME_ONLY      "home-only"
 
 typedef enum {
 	NM_SETTING_GSM_NETWORK_TYPE_ANY = -1,
@@ -114,6 +116,9 @@ int         nm_setting_gsm_get_network_type  (NMSettingGsm *setting);
 guint32     nm_setting_gsm_get_allowed_bands (NMSettingGsm *setting);
 const char *nm_setting_gsm_get_pin           (NMSettingGsm *setting);
 gboolean    nm_setting_gsm_get_home_only     (NMSettingGsm *setting);
+
+NMSettingSecretFlags nm_setting_gsm_get_pin_flags      (NMSettingGsm *setting);
+NMSettingSecretFlags nm_setting_gsm_get_password_flags (NMSettingGsm *setting);
 
 G_END_DECLS
 
