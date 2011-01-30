@@ -793,9 +793,7 @@ dbus_secrets_auth_cb (NMSettingsConnection *self,
 	guint32 call_id = 0;
 	GError *local = NULL;
 
-	if (error)
-		local = g_error_copy (error);
-	else {
+	if (!error) {
 		call_id = nm_settings_connection_get_secrets (self,
 			                                          TRUE,
 			                                          sender_uid,
@@ -811,7 +809,7 @@ dbus_secrets_auth_cb (NMSettingsConnection *self,
 		}
 	}
 
-	if (local) {
+	if (error || local) {
 		dbus_g_method_return_error (context, error ? error : local);
 		g_clear_error (&local);
 	}
