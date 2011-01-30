@@ -467,8 +467,15 @@ nm_settings_connection_cancel_secrets (NMSettingsConnection *self,
 
 typedef void (*AuthCallback) (NMSettingsConnection *connection, 
                               DBusGMethodInvocation *context,
+                              gulong sender_uid,
                               GError *error,
                               gpointer data);
+
+typedef struct {
+	AuthCallback callback;
+	gpointer callback_data;
+	gulong sender_uid;
+} PkAuthInfo;
 
 static void
 pk_auth_cb (NMAuthChain *chain,
@@ -480,8 +487,7 @@ pk_auth_cb (NMAuthChain *chain,
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	GError *error = NULL;
 	NMAuthCallResult result;
-	AuthCallback callback;
-	gpointer callback_data;
+	PkAuthInfo *info;
 
 	priv->pending_auths = g_slist_remove (priv->pending_auths, chain);
 
@@ -502,9 +508,8 @@ pk_auth_cb (NMAuthChain *chain,
 		}
 	}
 
-	callback = nm_auth_chain_get_data (chain, "callback");
-	callback_data = nm_auth_chain_get_data (chain, "callback-data");
-	callback (self, context, error, callback_data);
+	info = nm_auth_chain_get_data (chain, "pk-auth-info");
+	info->callback (self, context, info->sender_uid, error, info->callback_data);
 
 	g_clear_error (&error);
 	nm_auth_chain_unref (chain);
@@ -520,6 +525,7 @@ auth_start (NMSettingsConnection *self,
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	NMAuthChain *chain;
 	gulong sender_uid = G_MAXULONG;
+	PkAuthInfo *info;
 	GError *error = NULL;
 	char *error_desc = NULL;
 
@@ -528,7 +534,7 @@ auth_start (NMSettingsConnection *self,
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                             error_desc);
-		g_free (error);
+		g_free (error_desc);
 		goto error;
 	}
 
@@ -549,19 +555,24 @@ auth_start (NMSettingsConnection *self,
 	if (check_modify) {
 		chain = nm_auth_chain_new (priv->authority, context, NULL, pk_auth_cb, self);
 		g_assert (chain);
-		priv->pending_auths = g_slist_append (priv->pending_auths, chain);
+
+		info = g_malloc0 (sizeof (*info));
+		info->callback = callback;
+		info->callback_data = callback_data;
+		info->sender_uid = sender_uid;
+		nm_auth_chain_set_data (chain, "pk-auth-info", info, g_free);
+
 		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY, TRUE);
-		nm_auth_chain_set_data (chain, "callback", callback, NULL);
-		nm_auth_chain_set_data (chain, "callback-data", callback_data, NULL);
+		priv->pending_auths = g_slist_append (priv->pending_auths, chain);
 	} else {
 		/* Don't need polkit auth, automatic success */
-		callback (self, context, NULL, callback_data);
+		callback (self, context, sender_uid, NULL, callback_data);
 	}
 
 	return;
 
 error:
-	callback (self, context, error, callback_data);
+	callback (self, context, G_MAXULONG, error, callback_data);
 	g_error_free (error);
 }
 
@@ -602,6 +613,7 @@ check_writable (NMConnection *connection, GError **error)
 static void
 get_settings_auth_cb (NMSettingsConnection *self, 
 	                  DBusGMethodInvocation *context,
+	                  gulong sender_uid,
 	                  GError *error,
 	                  gpointer data)
 {
@@ -642,8 +654,9 @@ con_update_cb (NMSettingsConnection *connection,
 }
 
 static void
-update_auth_cb (NMSettingsConnection *self, 
+update_auth_cb (NMSettingsConnection *self,
                 DBusGMethodInvocation *context,
+                gulong sender_uid,
                 GError *error,
                 gpointer data)
 {
@@ -710,6 +723,7 @@ con_delete_cb (NMSettingsConnection *connection,
 static void
 delete_auth_cb (NMSettingsConnection *self, 
                 DBusGMethodInvocation *context,
+                gulong sender_uid,
                 GError *error,
                 gpointer data)
 {
@@ -770,65 +784,39 @@ dbus_get_agent_secrets_cb (NMSettingsConnection *self,
 static void
 dbus_secrets_auth_cb (NMSettingsConnection *self, 
                       DBusGMethodInvocation *context,
+                      gulong sender_uid,
                       GError *error,
                       gpointer user_data)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-	char *sender, *setting_name = user_data;
-	DBusError dbus_error;
-	gulong sender_uid;
+	char *setting_name = user_data;
 	guint32 call_id = 0;
 	GError *local = NULL;
 
-	if (error) {
+	if (error)
 		local = g_error_copy (error);
-		goto done;
+	else {
+		call_id = nm_settings_connection_get_secrets (self,
+			                                          TRUE,
+			                                          sender_uid,
+			                                          setting_name,
+			                                          0, /* GET_SECRETS_FLAG_NONE */
+			                                          NULL,
+			                                          dbus_get_agent_secrets_cb,
+			                                          context,
+			                                          &local);
+		if (call_id > 0) {
+			/* track the request and wait for the callback */
+			priv->reqs = g_slist_append (priv->reqs, GUINT_TO_POINTER (call_id));
+		}
 	}
 
-	sender = dbus_g_method_get_sender (context);
-	if (!sender) {
-		local = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                             "Unable to get request D-Bus sender");
-		goto done;
-	}
-
-	/* Get the unix user of the requestor */
-	dbus_error_init (&dbus_error);
-	sender_uid = dbus_bus_get_unix_user (nm_dbus_manager_get_dbus_connection (priv->dbus_mgr),
-	                                     sender,
-	                                     &dbus_error);
-	g_free (sender);
-
-	if (dbus_error_is_set (&dbus_error)) {
-		local = g_error_new (NM_SETTINGS_ERROR,
-		                     NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                     "Unable to get sender UID: %s",
-		                     dbus_error.message);
-		dbus_error_free (&dbus_error);
-		goto done;
-	}
-
-	call_id = nm_settings_connection_get_secrets (self,
-	                                              TRUE,
-	                                              sender_uid,
-	                                              setting_name,
-	                                              0, /* GET_SECRETS_FLAG_NONE */
-	                                              NULL,
-	                                              dbus_get_agent_secrets_cb,
-	                                              context,
-	                                              &local);
-	if (call_id > 0) {
-		/* track the request and wait for the callback */
-		priv->reqs = g_slist_append (priv->reqs, GUINT_TO_POINTER (call_id));
-	}
-
-done:
-	if (local)
+	if (local) {
 		dbus_g_method_return_error (context, error ? error : local);
+		g_clear_error (&local);
+	}
 
 	g_free (setting_name);
-	g_clear_error (&local);
 }
 
 static void
