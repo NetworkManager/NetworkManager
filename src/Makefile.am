@@ -175,11 +175,7 @@ NetworkManager_SOURCES = \
 		nm-dhcp6-config.h \
 		nm-rfkill.h \
 		nm-session-monitor.c \
-		nm-session-monitor.h \
-		nm-agent-manager.c \
-		nm-agent-manager.h \
-		nm-secret-agent.c \
-		nm-secret-agent.h
+		nm-session-monitor.h
 
 nm-access-point-glue.h: $(top_srcdir)/introspection/nm-access-point.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_access_point --mode=glib-server --output=$@ $<
@@ -223,9 +219,6 @@ nm-device-cdma-glue.h: $(top_srcdir)/introspection/nm-device-cdma.xml
 nm-device-gsm-glue.h: $(top_srcdir)/introspection/nm-device-gsm.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_gsm --mode=glib-server --output=$@ $<
 
-nm-agent-manager-glue.h: $(top_srcdir)/introspection/nm-agent-manager.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_agent_manager --mode=glib-server --output=$@ $<
-
 BUILT_SOURCES = \
 	nm-access-point-glue.h \
 	nm-manager-glue.h \
@@ -240,8 +233,7 @@ BUILT_SOURCES = \
 	nm-ip6-config-glue.h \
 	nm-active-connection-glue.h \
 	nm-dhcp4-config-glue.h \
-	nm-dhcp6-config-glue.h \
-	nm-agent-manager-glue.h
+	nm-dhcp6-config-glue.h
 
 NetworkManager_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
