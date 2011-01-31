@@ -268,6 +268,8 @@ global:
 	nm_setting_serial_get_parity;
 	nm_setting_serial_get_stopbits;
 	nm_setting_serial_get_send_delay;
+	nm_setting_get_secret_flags;
+	nm_setting_set_secret_flags;
 	nm_setting_to_hash;
 	nm_setting_to_string;
 	nm_setting_update_secrets;
@@ -280,14 +282,12 @@ global:
 	nm_setting_vpn_foreach_secret;
 	nm_setting_vpn_get_data_item;
 	nm_setting_vpn_get_secret;
-	nm_setting_vpn_get_secret_flags;
 	nm_setting_vpn_get_service_type;
 	nm_setting_vpn_get_type;
 	nm_setting_vpn_get_user_name;
 	nm_setting_vpn_new;
 	nm_setting_vpn_remove_data_item;
 	nm_setting_vpn_remove_secret;
-	nm_setting_vpn_set_secret_flags;
 	nm_setting_wimax_error_get_type;
 	nm_setting_wimax_error_quark;
 	nm_setting_wimax_get_type;

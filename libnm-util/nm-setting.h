@@ -84,6 +84,29 @@ GQuark nm_setting_error_quark (void);
 #define NM_SETTING_NAME "name"
 
 /**
+ * NMSettingSecretFlags:
+ * @NM_SETTING_SECRET_FLAG_SYTSEM_OWNED: the system is responsible for providing
+ * and storing this secret (default)
+ * @NM_SETTING_SECRET_FLAG_AGENT_OWNED: a user secret agent is responsible
+ * for providing and storing this secret; when it is required agents will be
+ * asked to retrieve it
+ * @NM_SETTING_SECRET_FLAG_NOT_SAVED: this secret should not be saved, but
+ * should be requested from the user each time it is needed
+ *
+ * These flags indicate specific behavior related to handling of a secret.  Each
+ * secret has a corresponding set of these flags which indicate how the secret
+ * is to be stored and/or requested when it is needed.
+ *
+ **/
+typedef enum {
+	NM_SETTING_SECRET_FLAG_SYSTEM_OWNED = 0x00000000,
+	NM_SETTING_SECRET_FLAG_AGENT_OWNED  = 0x00000001,
+	NM_SETTING_SECRET_FLAG_NOT_SAVED    = 0x00000002
+
+	/* NOTE: if adding flags, update nm-setting-private.h as well */
+} NMSettingSecretFlags;
+
+/**
  * NMSetting:
  *
  * The NMSetting struct contains only private data.
@@ -107,6 +130,16 @@ typedef struct {
 	                                  const char *key,
 	                                  GValue     *value,
 	                                  GError    **error);
+
+	gboolean    (*get_secret_flags)  (NMSetting  *setting,
+	                                  const char *secret_name,
+	                                  NMSettingSecretFlags *out_flags,
+	                                  GError **error);
+
+	gboolean    (*set_secret_flags)  (NMSetting  *setting,
+	                                  const char *secret_name,
+	                                  NMSettingSecretFlags flags,
+	                                  GError **error);
 
 	/* Padding for future expansion */
 	void (*_reserved1) (void);
@@ -185,35 +218,21 @@ void        nm_setting_enumerate_values (NMSetting *setting,
 char       *nm_setting_to_string      (NMSetting *setting);
 
 /* Secrets */
-
-/**
- * NMSettingSecretFlags:
- * @NM_SETTING_SECRET_FLAG_SYTSEM_OWNED: the system is responsible for providing
- * and storing this secret (default)
- * @NM_SETTING_SECRET_FLAG_AGENT_OWNED: a user secret agent is responsible
- * for providing and storing this secret; when it is required agents will be
- * asked to retrieve it
- * @NM_SETTING_SECRET_FLAG_NOT_SAVED: this secret should not be saved, but
- * should be requested from the user each time it is needed
- *
- * These flags indicate specific behavior related to handling of a secret.  Each
- * secret has a corresponding set of these flags which indicate how the secret
- * is to be stored and/or requested when it is needed.
- *
- **/
-typedef enum {
-	NM_SETTING_SECRET_FLAG_SYSTEM_OWNED = 0x00000000,
-	NM_SETTING_SECRET_FLAG_AGENT_OWNED  = 0x00000001,
-	NM_SETTING_SECRET_FLAG_NOT_SAVED    = 0x00000002
-
-	/* NOTE: if adding flags, update nm-setting-private.h as well */
-} NMSettingSecretFlags;
-
 void        nm_setting_clear_secrets  (NMSetting *setting);
 GPtrArray  *nm_setting_need_secrets   (NMSetting *setting);
 gboolean    nm_setting_update_secrets (NMSetting *setting,
                                        GHashTable *secrets,
                                        GError **error);
+
+gboolean    nm_setting_get_secret_flags (NMSetting *setting,
+                                         const char *secret_name,
+                                         NMSettingSecretFlags *out_flags,
+                                         GError **error);
+
+gboolean    nm_setting_set_secret_flags (NMSetting *setting,
+                                         const char *secret_name,
+                                         NMSettingSecretFlags flags,
+                                         GError **error);
 
 G_END_DECLS
 

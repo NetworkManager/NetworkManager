@@ -570,6 +570,120 @@ nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets, GError **err
 	return !!tmp_error;
 }
 
+static gboolean
+is_secret_prop (NMSetting *setting, const char *secret_name, GError **error)
+{
+	GParamSpec *pspec;
+
+	pspec = g_object_class_find_property (G_OBJECT_CLASS (setting), secret_name);
+	if (!pspec) {
+		g_set_error (error,
+		             NM_SETTING_ERROR,
+		             NM_SETTING_ERROR_PROPERTY_NOT_FOUND,
+		             "Secret %s not provided by this setting", secret_name);
+		return FALSE;
+	}
+
+	if (!(pspec->flags & NM_SETTING_PARAM_SECRET)) {
+		g_set_error (error,
+		             NM_SETTING_ERROR,
+		             NM_SETTING_ERROR_PROPERTY_NOT_SECRET,
+		             "Property %s is not a secret", secret_name);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
+get_secret_flags (NMSetting *setting,
+                  const char *secret_name,
+                  NMSettingSecretFlags *out_flags,
+                  GError **error)
+{
+	char *flags_prop;
+	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_SYSTEM_OWNED;
+
+	g_return_val_if_fail (is_secret_prop (setting, secret_name, error), FALSE);
+
+	flags_prop = g_strdup_printf ("%s-flags", secret_name);
+	g_object_get (G_OBJECT (setting), flags_prop, &flags, NULL);
+	g_free (flags_prop);
+
+	if (out_flags)
+		*out_flags = flags;
+	return TRUE;
+}
+
+/**
+ * nm_setting_get_secret_flags:
+ * @setting: the #NMSetting
+ * @secret_name: the secret key name to get flags for
+ * @out_flags: on success, the #NMSettingSecretFlags for the secret
+ * @error: location to store error, or %NULL
+ *
+ * For a given secret, retrieves the #NMSettingSecretFlags describing how to
+ * handle that secret.
+ *
+ * Returns: TRUE on success (if the given secret name was a valid property of
+ * this setting, and if that property is secret), FALSE if not
+ **/
+gboolean
+nm_setting_get_secret_flags (NMSetting *setting,
+                             const char *secret_name,
+                             NMSettingSecretFlags *out_flags,
+                             GError **error)
+{
+	g_return_val_if_fail (setting != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
+	g_return_val_if_fail (secret_name != NULL, FALSE);
+
+	return NM_SETTING_GET_CLASS (setting)->get_secret_flags (setting, secret_name, out_flags, error);
+}
+
+static gboolean
+set_secret_flags (NMSetting *setting,
+                  const char *secret_name,
+                  NMSettingSecretFlags flags,
+                  GError **error)
+{
+	char *flags_prop;
+
+	g_return_val_if_fail (is_secret_prop (setting, secret_name, error), FALSE);
+
+	flags_prop = g_strdup_printf ("%s-flags", secret_name);
+	g_object_set (G_OBJECT (setting), flags_prop, flags, NULL);
+	g_free (flags_prop);
+	return TRUE;
+}
+
+/**
+ * nm_setting_set_secret_flags:
+ * @setting: the #NMSetting
+ * @secret_name: the secret key name to set flags for
+ * @flags: the #NMSettingSecretFlags for the secret
+ * @error: location to store error, or %NULL
+ *
+ * For a given secret, retrieves the #NMSettingSecretFlags describing how to
+ * handle that secret.
+ *
+ * Returns: TRUE on success (if the given secret name was a valid property of
+ * this setting, and if that property is secret), FALSE if not
+ **/
+gboolean
+nm_setting_set_secret_flags (NMSetting *setting,
+                             const char *secret_name,
+                             NMSettingSecretFlags flags,
+                             GError **error)
+{
+	g_return_val_if_fail (setting != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
+	g_return_val_if_fail (secret_name != NULL, FALSE);
+	g_return_val_if_fail (flags & NM_SETTING_SECRET_FLAGS_ALL, FALSE);
+
+	return NM_SETTING_GET_CLASS (setting)->set_secret_flags (setting, secret_name, flags, error);
+}
+
 /**
  * nm_setting_to_string:
  * @setting: the #NMSetting
@@ -726,6 +840,8 @@ nm_setting_class_init (NMSettingClass *setting_class)
 	object_class->finalize     = finalize;
 
 	setting_class->update_one_secret = update_one_secret;
+	setting_class->get_secret_flags = get_secret_flags;
+	setting_class->set_secret_flags = set_secret_flags;
 
 	/* Properties */
 

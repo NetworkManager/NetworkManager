@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -102,14 +102,6 @@ void              nm_setting_vpn_remove_secret     (NMSettingVPN *setting,
 void              nm_setting_vpn_foreach_secret    (NMSettingVPN *setting,
                                                     NMVPNIterFunc func,
                                                     gpointer user_data);
-
-gboolean          nm_setting_vpn_get_secret_flags  (NMSettingVPN *setting,
-                                                    const char *secret_name,
-                                                    NMSettingSecretFlags *out_flags);
-
-void              nm_setting_vpn_set_secret_flags  (NMSettingVPN *setting,
-                                                    const char *secret_name,
-                                                    NMSettingSecretFlags flags);
 
 G_END_DECLS
 
