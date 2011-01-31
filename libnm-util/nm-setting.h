@@ -204,10 +204,9 @@ char       *nm_setting_to_string      (NMSetting *setting);
 typedef enum {
 	NM_SETTING_SECRET_FLAG_SYSTEM_OWNED = 0x00000000,
 	NM_SETTING_SECRET_FLAG_AGENT_OWNED  = 0x00000001,
-	NM_SETTING_SECRET_FLAG_NOT_SAVED    = 0x00000002,
+	NM_SETTING_SECRET_FLAG_NOT_SAVED    = 0x00000002
 
-	/* Placeholder for bounds checking */
-	NM_SETTING_SECRET_FLAG_LAST         = NM_SETTING_SECRET_FLAG_NOT_SAVED,
+	/* NOTE: if adding flags, update nm-setting-private.h as well */
 } NMSettingSecretFlags;
 
 void        nm_setting_clear_secrets  (NMSetting *setting);

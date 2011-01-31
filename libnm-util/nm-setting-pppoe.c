@@ -26,6 +26,7 @@
 #include <string.h>
 #include "nm-setting-pppoe.h"
 #include "nm-setting-ppp.h"
+#include "nm-setting-private.h"
 
 GQuark
 nm_setting_pppoe_error_quark (void)
@@ -304,7 +305,7 @@ nm_setting_pppoe_class_init (NMSettingPPPOEClass *setting_class)
 		                    "Password Flags",
 		                    "Flags indicating how to handle the PPPoE password.",
 		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
-		                    NM_SETTING_SECRET_FLAG_LAST,
+		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
 		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 }

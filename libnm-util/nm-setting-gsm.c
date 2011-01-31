@@ -28,6 +28,7 @@
 #include "nm-setting-gsm.h"
 #include "nm-setting-serial.h"
 #include "nm-utils.h"
+#include "nm-setting-private.h"
 
 GQuark
 nm_setting_gsm_error_quark (void)
@@ -540,7 +541,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 		                    "Password Flags",
 		                    "Flags indicating how to handle the GSM password.",
 		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
-		                    NM_SETTING_SECRET_FLAG_LAST,
+		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
 		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
@@ -673,7 +674,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 		                    "PIN Flags",
 		                    "Flags indicating how to handle the GSM SIM PIN.",
 		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
-		                    NM_SETTING_SECRET_FLAG_LAST,
+		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
 		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 

@@ -25,6 +25,7 @@
 #include "nm-setting-cdma.h"
 #include "nm-setting-serial.h"
 #include "nm-utils.h"
+#include "nm-setting-private.h"
 
 /**
  * SECTION:nm-setting-cdma
@@ -393,7 +394,7 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *setting_class)
 		                    "Password Flags",
 		                    "Flags indicating how to handle the CDMA password.",
 		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
-		                    NM_SETTING_SECRET_FLAG_LAST,
+		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
 		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 }

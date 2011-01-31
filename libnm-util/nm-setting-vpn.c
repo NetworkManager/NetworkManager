@@ -30,6 +30,7 @@
 #include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-setting-private.h"
 
 GQuark
 nm_setting_vpn_error_quark (void)
@@ -263,7 +264,7 @@ nm_setting_vpn_get_secret_flags (NMSettingVPN *setting,
 	                                  &val)) {
 		errno = 0;
 		tmp = strtoul ((const char *) val, NULL, 10);
-		if ((errno == 0) && (tmp <= NM_SETTING_SECRET_FLAG_LAST)) {
+		if ((errno == 0) && (tmp <= NM_SETTING_SECRET_FLAGS_ALL)) {
 			success = TRUE;
 			*out_flags = (guint32) tmp;
 		}
@@ -482,7 +483,7 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 	 *
 	 * D-Bus service name of the VPN plugin that this setting uses to connect
 	 * to its network.  i.e. org.freedesktop.NetworkManager.vpnc for the vpnc
- 	 * plugin.
+	 * plugin.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SERVICE_TYPE,

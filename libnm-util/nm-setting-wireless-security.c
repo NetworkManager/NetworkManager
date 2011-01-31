@@ -33,6 +33,7 @@
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-utils-private.h"
+#include "nm-setting-private.h"
 
 GQuark
 nm_setting_wireless_security_error_quark (void)
@@ -1223,7 +1224,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 		                    "WEP Key Flags",
 		                    "Flags indicating how to handle the WEP keys.",
 		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
-		                    NM_SETTING_SECRET_FLAG_LAST,
+		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
 		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
@@ -1262,7 +1263,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 		                    "PSK Flags",
 		                    "Flags indicating how to handle the WPA PSK key.",
 		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
-		                    NM_SETTING_SECRET_FLAG_LAST,
+		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
 		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
@@ -1291,7 +1292,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 		                    "LEAP Password Flags",
 		                    "Flags indicating how to handle the LEAP password.",
 		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
-		                    NM_SETTING_SECRET_FLAG_LAST,
+		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
 		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
