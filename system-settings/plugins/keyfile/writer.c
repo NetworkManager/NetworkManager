@@ -564,6 +564,7 @@ write_setting_value (NMSetting *setting,
 	GType type = G_VALUE_TYPE (value);
 	KeyWriter *writer = &key_writers[0];
 	GParamSpec *pspec;
+	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_SYSTEM_OWNED;
 
 	/* Setting name gets picked up from the keyfile's section name instead */
 	if (!strcmp (key, NM_SETTING_NAME))
@@ -584,6 +585,14 @@ write_setting_value (NMSetting *setting,
 			return;
 		}
 	}
+
+	/* Don't write secrets that are owned by user secret agents or aren't
+	 * supposed to be saved.
+	 */
+	if (   (pspec->flags & NM_SETTING_PARAM_SECRET)
+	    && nm_setting_get_secret_flags (setting, key, &flags, NULL)
+	    && !(flags & NM_SETTING_SECRET_FLAG_SYSTEM_OWNED))
+		return;
 
 	/* Look through the list of handlers for non-standard format key values */
 	while (writer->setting_name) {
