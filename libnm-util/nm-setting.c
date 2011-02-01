@@ -598,13 +598,15 @@ is_secret_prop (NMSetting *setting, const char *secret_name, GError **error)
 static gboolean
 get_secret_flags (NMSetting *setting,
                   const char *secret_name,
+                  gboolean verify_secret,
                   NMSettingSecretFlags *out_flags,
                   GError **error)
 {
 	char *flags_prop;
 	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_SYSTEM_OWNED;
 
-	g_return_val_if_fail (is_secret_prop (setting, secret_name, error), FALSE);
+	if (verify_secret)
+		g_return_val_if_fail (is_secret_prop (setting, secret_name, error), FALSE);
 
 	flags_prop = g_strdup_printf ("%s-flags", secret_name);
 	g_object_get (G_OBJECT (setting), flags_prop, &flags, NULL);
@@ -638,18 +640,20 @@ nm_setting_get_secret_flags (NMSetting *setting,
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (secret_name != NULL, FALSE);
 
-	return NM_SETTING_GET_CLASS (setting)->get_secret_flags (setting, secret_name, out_flags, error);
+	return NM_SETTING_GET_CLASS (setting)->get_secret_flags (setting, secret_name, TRUE, out_flags, error);
 }
 
 static gboolean
 set_secret_flags (NMSetting *setting,
                   const char *secret_name,
+                  gboolean verify_secret,
                   NMSettingSecretFlags flags,
                   GError **error)
 {
 	char *flags_prop;
 
-	g_return_val_if_fail (is_secret_prop (setting, secret_name, error), FALSE);
+	if (verify_secret)
+		g_return_val_if_fail (is_secret_prop (setting, secret_name, error), FALSE);
 
 	flags_prop = g_strdup_printf ("%s-flags", secret_name);
 	g_object_set (G_OBJECT (setting), flags_prop, flags, NULL);
@@ -681,7 +685,7 @@ nm_setting_set_secret_flags (NMSetting *setting,
 	g_return_val_if_fail (secret_name != NULL, FALSE);
 	g_return_val_if_fail (flags & NM_SETTING_SECRET_FLAGS_ALL, FALSE);
 
-	return NM_SETTING_GET_CLASS (setting)->set_secret_flags (setting, secret_name, flags, error);
+	return NM_SETTING_GET_CLASS (setting)->set_secret_flags (setting, secret_name, TRUE, flags, error);
 }
 
 /**

@@ -295,6 +295,7 @@ update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **
 static gboolean
 get_secret_flags (NMSetting *setting,
                   const char *secret_name,
+                  gboolean verify_secret,
                   NMSettingSecretFlags *out_flags,
                   GError **error)
 {
@@ -331,6 +332,7 @@ get_secret_flags (NMSetting *setting,
 static gboolean
 set_secret_flags (NMSetting *setting,
                   const char *secret_name,
+                  gboolean verify_secret,
                   NMSettingSecretFlags flags,
                   GError **error)
 {

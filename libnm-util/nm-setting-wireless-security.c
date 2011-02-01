@@ -828,6 +828,58 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	return TRUE;
 }
 
+static gboolean
+get_secret_flags (NMSetting *setting,
+                  const char *secret_name,
+                  gboolean verify_secret,
+                  NMSettingSecretFlags *out_flags,
+                  GError **error)
+{
+	NMSettingClass *setting_class;
+	gboolean verify_override = verify_secret;
+
+	/* There's only one 'flags' property for WEP keys, so alias all the WEP key
+	 * property names to that flags property.
+	 */
+	if (   !g_strcmp0 (secret_name, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0)
+	    || !g_strcmp0 (secret_name, NM_SETTING_WIRELESS_SECURITY_WEP_KEY1)
+	    || !g_strcmp0 (secret_name, NM_SETTING_WIRELESS_SECURITY_WEP_KEY2)
+	    || !g_strcmp0 (secret_name, NM_SETTING_WIRELESS_SECURITY_WEP_KEY3)) {
+		secret_name = "wep-key";
+		verify_override = FALSE; /* Already know it's a secret */
+	}
+
+	/* Chain up to superclass with modified key name */
+	setting_class = NM_SETTING_CLASS (nm_setting_wireless_security_parent_class);
+	return setting_class->get_secret_flags (setting, secret_name, verify_override, out_flags, error);
+}
+
+static gboolean
+set_secret_flags (NMSetting *setting,
+                  const char *secret_name,
+                  gboolean verify_secret,
+                  NMSettingSecretFlags flags,
+                  GError **error)
+{
+	NMSettingClass *setting_class;
+	gboolean verify_override = verify_secret;
+
+	/* There's only one 'flags' property for WEP keys, so alias all the WEP key
+	 * property names to that flags property.
+	 */
+	if (   !g_strcmp0 (secret_name, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0)
+	    || !g_strcmp0 (secret_name, NM_SETTING_WIRELESS_SECURITY_WEP_KEY1)
+	    || !g_strcmp0 (secret_name, NM_SETTING_WIRELESS_SECURITY_WEP_KEY2)
+	    || !g_strcmp0 (secret_name, NM_SETTING_WIRELESS_SECURITY_WEP_KEY3)) {
+		secret_name = "wep-key";
+		verify_override = FALSE; /* Already know it's a secret */
+	}
+
+	/* Chain up to superclass with modified key name */
+	setting_class = NM_SETTING_CLASS (nm_setting_wireless_security_parent_class);
+	return setting_class->set_secret_flags (setting, secret_name, verify_override, flags, error);
+}
+
 static void
 nm_setting_wireless_security_init (NMSettingWirelessSecurity *setting)
 {
@@ -1013,8 +1065,10 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	parent_class->verify         = verify;
-	parent_class->need_secrets   = need_secrets;
+	parent_class->verify           = verify;
+	parent_class->need_secrets     = need_secrets;
+	parent_class->get_secret_flags = get_secret_flags;
+	parent_class->set_secret_flags = set_secret_flags;
 
 	/* Properties */
 	/**
