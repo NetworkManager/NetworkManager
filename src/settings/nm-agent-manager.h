@@ -74,4 +74,9 @@ guint32 nm_agent_manager_save_secrets (NMAgentManager *manager,
                                        gboolean filter_by_uid,
                                        gulong uid_filter);
 
+guint32 nm_agent_manager_delete_secrets (NMAgentManager *manager,
+                                         NMConnection *connection,
+                                         gboolean filter_by_uid,
+                                         gulong uid_filter);
+
 #endif /* NM_AGENT_MANAGER_H */

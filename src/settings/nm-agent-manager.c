@@ -411,12 +411,12 @@ request_new_get (NMConnection *connection,
 }
 
 static Request *
-request_new_save (NMConnection *connection,
-                  gboolean filter_by_uid,
-                  gulong uid_filter,
-                  RequestCompleteFunc complete_callback,
-                  gpointer complete_callback_data,
-                  RequestNextFunc next_callback)
+request_new_other (NMConnection *connection,
+                   gboolean filter_by_uid,
+                   gulong uid_filter,
+                   RequestCompleteFunc complete_callback,
+                   gpointer complete_callback_data,
+                   RequestNextFunc next_callback)
 {
 	Request *req;
 
@@ -599,6 +599,17 @@ next_generic (Request *req, const char *detail)
 
 	return success;
 }
+
+static gboolean
+start_generic (gpointer user_data)
+{
+	Request *req = user_data;
+
+	req->idle_id = 0;
+	req->next_callback (req);
+	return FALSE;
+}
+
 
 /*************************************************************/
 
@@ -881,16 +892,6 @@ save_complete_cb (Request *req,
 	g_hash_table_remove (priv->requests, GUINT_TO_POINTER (req->reqid));
 }
 
-static gboolean
-save_start (gpointer user_data)
-{
-	Request *req = user_data;
-
-	req->idle_id = 0;
-	req->next_callback (req);
-	return FALSE;
-}
-
 guint32
 nm_agent_manager_save_secrets (NMAgentManager *self,
                                NMConnection *connection,
@@ -908,17 +909,111 @@ nm_agent_manager_save_secrets (NMAgentManager *self,
 	            "Saving secrets for connection %s",
 	            nm_connection_get_path (connection));
 
-	req = request_new_save (connection,
-	                        filter_by_uid,
-	                        uid_filter,
-	                        save_complete_cb,
-	                        self,
-	                        save_next_cb);
+	req = request_new_other (connection,
+	                         filter_by_uid,
+	                         uid_filter,
+	                         save_complete_cb,
+	                         self,
+	                         save_next_cb);
 	g_hash_table_insert (priv->requests, GUINT_TO_POINTER (req->reqid), req);
 
 	/* Kick off the request */
 	request_add_agents (self, req);
-	req->idle_id = g_idle_add (save_start, req);
+	req->idle_id = g_idle_add (start_generic, req);
+
+	return req->reqid;
+}
+
+/*************************************************************/
+
+static void
+delete_done_cb (NMSecretAgent *agent,
+              gconstpointer call_id,
+              GHashTable *secrets,
+              GError *error,
+              gpointer user_data)
+{
+	Request *req = user_data;
+
+	g_return_if_fail (call_id == req->current_call_id);
+
+	req->current = NULL;
+	req->current_call_id = NULL;
+
+	if (error) {
+		nm_log_dbg (LOGD_AGENTS, "(%s) agent failed delete secrets request %p/%s: (%d) %s",
+				    nm_secret_agent_get_description (agent),
+				    req, req->setting_name,
+				    error ? error->code : -1,
+				    (error && error->message) ? error->message : "(unknown)");
+	} else {
+		nm_log_dbg (LOGD_AGENTS, "(%s) agent deleted secrets for request %p/%s",
+					nm_secret_agent_get_description (agent),
+					req, req->setting_name);
+	}
+
+	/* Tell the next agent to delete secrets */
+	req->next_callback (req);
+}
+
+static void
+delete_next_cb (Request *req)
+{
+	if (!next_generic (req, "deleting"))
+		return;
+
+	req->current_call_id = nm_secret_agent_delete_secrets (NM_SECRET_AGENT (req->current),
+	                                                       req->connection,
+	                                                       delete_done_cb,
+	                                                       req);
+	if (req->current_call_id == NULL) {
+		/* Shouldn't hit this, but handle it anyway */
+		g_warn_if_fail (req->current_call_id != NULL);
+		req->current = NULL;
+		req->next_callback (req);
+	}
+}
+
+static void
+delete_complete_cb (Request *req,
+                    GHashTable *secrets,
+                    GError *error,
+                    gpointer user_data)
+{
+	NMAgentManager *self = NM_AGENT_MANAGER (user_data);
+	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
+
+	g_hash_table_remove (priv->requests, GUINT_TO_POINTER (req->reqid));
+}
+
+guint32
+nm_agent_manager_delete_secrets (NMAgentManager *self,
+                                 NMConnection *connection,
+                                 gboolean filter_by_uid,
+                                 gulong uid_filter)
+{
+	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
+	Request *req;
+
+	g_return_val_if_fail (self != NULL, 0);
+	g_return_val_if_fail (connection != NULL, 0);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), 0);
+
+	nm_log_dbg (LOGD_SETTINGS,
+	            "Deleting secrets for connection %s",
+	            nm_connection_get_path (connection));
+
+	req = request_new_other (connection,
+	                         filter_by_uid,
+	                         uid_filter,
+	                         delete_complete_cb,
+	                         self,
+	                         delete_next_cb);
+	g_hash_table_insert (priv->requests, GUINT_TO_POINTER (req->reqid), req);
+
+	/* Kick off the request */
+	request_add_agents (self, req);
+	req->idle_id = g_idle_add (start_generic, req);
 
 	return req->reqid;
 }

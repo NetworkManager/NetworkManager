@@ -83,4 +83,9 @@ gconstpointer nm_secret_agent_save_secrets (NMSecretAgent *agent,
                                             NMSecretAgentCallback callback,
                                             gpointer callback_data);
 
+gconstpointer nm_secret_agent_delete_secrets (NMSecretAgent *agent,
+                                              NMConnection *connection,
+                                              NMSecretAgentCallback callback,
+                                              gpointer callback_data);
+
 #endif /* NM_SECRET_AGENT_H */

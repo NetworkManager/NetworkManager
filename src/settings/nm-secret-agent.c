@@ -234,9 +234,9 @@ nm_secret_agent_cancel_secrets (NMSecretAgent *self, gconstpointer call)
 /*************************************************************/
 
 static void
-save_callback (DBusGProxy *proxy,
-               DBusGProxyCall *call,
-               void *user_data)
+agent_save_delete_cb (DBusGProxy *proxy,
+                      DBusGProxyCall *call,
+                      void *user_data)
 {
 	Request *r = user_data;
 	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (r->agent);
@@ -250,38 +250,71 @@ save_callback (DBusGProxy *proxy,
 	g_hash_table_remove (priv->requests, call);
 }
 
+static gpointer
+agent_new_save_delete (NMSecretAgent *self,
+                       NMConnection *connection,
+                       NMSettingHashFlags hash_flags,
+                       const char *method,
+                       NMSecretAgentCallback callback,
+                       gpointer callback_data)
+{
+	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
+	GHashTable *hash;
+	Request *r;
+	const char *cpath = nm_connection_get_path (connection);
+
+	hash = nm_connection_to_hash (connection, hash_flags);
+
+	r = request_new (self, cpath, NULL, callback, callback_data);
+	r->call = dbus_g_proxy_begin_call_with_timeout (priv->proxy,
+	                                                method,
+	                                                agent_save_delete_cb,
+	                                                r,
+	                                                NULL,
+	                                                10000, /* 10 seconds */
+	                                                DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, hash,
+	                                                DBUS_TYPE_G_OBJECT_PATH, cpath,
+	                                                G_TYPE_INVALID);
+	g_hash_table_insert (priv->requests, r->call, r);
+
+	g_hash_table_destroy (hash);
+	return r->call;
+}
+
 gconstpointer
 nm_secret_agent_save_secrets (NMSecretAgent *self,
                               NMConnection *connection,
                               NMSecretAgentCallback callback,
                               gpointer callback_data)
 {
-	NMSecretAgentPrivate *priv;
-	Request *r;
-	GHashTable *hash;
-
 	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (connection != NULL, NULL);
 
-	priv = NM_SECRET_AGENT_GET_PRIVATE (self);
-
 	/* Caller should have ensured that only agent-owned secrets exist in 'connection' */
-	hash = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
+	return agent_new_save_delete (self,
+	                              connection,
+	                              NM_SETTING_HASH_FLAG_ALL,
+	                              "SaveSecrets",
+	                              callback,
+	                              callback_data);
+}
 
-	r = request_new (self, nm_connection_get_path (connection), NULL, callback, callback_data);
-	r->call = dbus_g_proxy_begin_call_with_timeout (priv->proxy,
-	                                                "SaveSecrets",
-	                                                save_callback,
-	                                                r,
-	                                                NULL,
-	                                                10000, /* 10 seconds */
-	                                                DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, hash,
-	                                                DBUS_TYPE_G_OBJECT_PATH, nm_connection_get_path (connection),
-	                                                G_TYPE_INVALID);
-	g_hash_table_insert (priv->requests, r->call, r);
+gconstpointer
+nm_secret_agent_delete_secrets (NMSecretAgent *self,
+                                NMConnection *connection,
+                                NMSecretAgentCallback callback,
+                                gpointer callback_data)
+{
+	g_return_val_if_fail (self != NULL, NULL);
+	g_return_val_if_fail (connection != NULL, NULL);
 
-	g_hash_table_destroy (hash);
-	return r->call;
+	/* No secrets sent; agents must be smart enough to track secrets using the UUID or something */
+	return agent_new_save_delete (self,
+	                              connection,
+	                              NM_SETTING_HASH_FLAG_NO_SECRETS,
+	                              "DeleteSecrets",
+	                              callback,
+	                              callback_data);
 }
 
 /*************************************************************/

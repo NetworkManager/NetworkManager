@@ -326,8 +326,18 @@ do_delete (NMSettingsConnection *connection,
            NMSettingsConnectionDeleteFunc callback,
            gpointer user_data)
 {
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
+	NMConnection *for_agents;
+
 	g_object_ref (connection);
 	set_visible (connection, FALSE);
+
+	/* Tell agents to remove secrets for this connection */
+	for_agents = nm_connection_duplicate (NM_CONNECTION (connection));
+	nm_connection_clear_secrets (for_agents);
+	nm_agent_manager_delete_secrets (priv->agent_mgr, for_agents, FALSE, 0);
+
+	/* Signal the connection is removed and deleted */
 	g_signal_emit (connection, signals[REMOVED], 0);
 	callback (connection, NULL, user_data);
 	g_object_unref (connection);
