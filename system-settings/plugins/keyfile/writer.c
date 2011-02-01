@@ -591,7 +591,7 @@ write_setting_value (NMSetting *setting,
 	 */
 	if (   (pspec->flags & NM_SETTING_PARAM_SECRET)
 	    && nm_setting_get_secret_flags (setting, key, &flags, NULL)
-	    && !(flags & NM_SETTING_SECRET_FLAG_SYSTEM_OWNED))
+	    && (flags != NM_SETTING_SECRET_FLAG_SYSTEM_OWNED))
 		return;
 
 	/* Look through the list of handlers for non-standard format key values */
