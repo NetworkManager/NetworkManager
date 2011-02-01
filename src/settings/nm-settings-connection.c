@@ -654,26 +654,52 @@ con_update_cb (NMSettingsConnection *connection,
 }
 
 static void
+only_agent_secrets_cb (NMSetting *setting,
+                       const char *key,
+                       const GValue *value,
+                       GParamFlags flags,
+                       gpointer user_data)
+{
+	if (flags & NM_SETTING_PARAM_SECRET) {
+		NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_SYSTEM_OWNED;
+
+		/* Clear out system-owned or always-ask secrets */
+		nm_setting_get_secret_flags (setting, key, &secret_flags, NULL);
+		if (secret_flags != NM_SETTING_SECRET_FLAG_AGENT_OWNED)
+			g_object_set (G_OBJECT (setting), key, NULL, NULL);
+	}
+}
+
+static void
 update_auth_cb (NMSettingsConnection *self,
                 DBusGMethodInvocation *context,
                 gulong sender_uid,
                 GError *error,
                 gpointer data)
 {
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	NMConnection *new_settings = data;
+	NMConnection *for_agent;
 
-	if (error) {
+	if (error)
 		dbus_g_method_return_error (context, error);
-		goto out;
+	else {
+		/* Update and commit our settings. */
+		nm_settings_connection_replace_and_commit (self,
+		                                           new_settings,
+		                                           con_update_cb,
+		                                           context);
+
+		/* Dupe the connection and clear out non-agent-owned secrets so we can
+		 * send the agent-owned ones to agents to be saved.  Only send them to
+		 * agents of the same UID as the Update() request sender.
+		 */
+		for_agent = nm_connection_duplicate (NM_CONNECTION (self));
+		nm_connection_for_each_setting_value (for_agent, only_agent_secrets_cb, NULL);
+		nm_agent_manager_save_secrets (priv->agent_mgr, for_agent, TRUE, sender_uid);
+		g_object_unref (for_agent);
 	}
 
-	/* Update and commit our settings. */
-	nm_settings_connection_replace_and_commit (self, 
-	                                           new_settings,
-	                                           con_update_cb,
-	                                           context);
-
-out:
 	g_object_unref (new_settings);
 }
 
@@ -766,7 +792,12 @@ dbus_get_agent_secrets_cb (NMSettingsConnection *self,
 	priv->reqs = g_slist_remove (priv->reqs, GUINT_TO_POINTER (call_id));
 
 	/* The connection's secrets will have been updated by the agent manager,
-	 * so we want to refresh the secrets cache.
+	 * so we want to refresh the secrets cache.  Note that we will never save
+	 * new secrets to backing storage here because D-Bus initated requests will
+	 * never ask for completely new secrets from agents.  Thus system-owned
+	 * secrets should not have changed from backing storage.  We also don't
+	 * send agent-owned back out to be saved since we assume the agent that
+	 * provided the secrets saved them itself.
 	 */
 	if (priv->secrets)
 		g_object_unref (priv->secrets);

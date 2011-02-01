@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2010 Red Hat, Inc.
+ * Copyright (C) 2010 - 2011 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -146,9 +146,9 @@ nm_secret_agent_get_hash  (NMSecretAgent *agent)
 /*************************************************************/
 
 static void
-secrets_callback (DBusGProxy *proxy,
-                  DBusGProxyCall *call,
-                  void *user_data)
+get_callback (DBusGProxy *proxy,
+              DBusGProxyCall *call,
+              void *user_data)
 {
 	Request *r = user_data;
 	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (r->agent);
@@ -193,7 +193,7 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
 	r = request_new (self, nm_connection_get_path (connection), setting_name, callback, callback_data);
 	r->call = dbus_g_proxy_begin_call_with_timeout (priv->proxy,
 	                                                "GetSecrets",
-	                                                secrets_callback,
+	                                                get_callback,
 	                                                r,
 	                                                NULL,
 	                                                120000, /* 120 seconds */
@@ -229,6 +229,59 @@ nm_secret_agent_cancel_secrets (NMSecretAgent *self, gconstpointer call)
 	                            G_TYPE_STRING, r->setting_name,
 	                            G_TYPE_INVALID);
 	g_hash_table_remove (priv->requests, call);
+}
+
+/*************************************************************/
+
+static void
+save_callback (DBusGProxy *proxy,
+               DBusGProxyCall *call,
+               void *user_data)
+{
+	Request *r = user_data;
+	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (r->agent);
+	GError *error = NULL;
+
+	g_return_if_fail (call == r->call);
+
+	dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID);
+	r->callback (r->agent, r->call, NULL, error, r->callback_data);
+	g_clear_error (&error);
+	g_hash_table_remove (priv->requests, call);
+}
+
+gconstpointer
+nm_secret_agent_save_secrets (NMSecretAgent *self,
+                              NMConnection *connection,
+                              NMSecretAgentCallback callback,
+                              gpointer callback_data)
+{
+	NMSecretAgentPrivate *priv;
+	Request *r;
+	GHashTable *hash;
+
+	g_return_val_if_fail (self != NULL, NULL);
+	g_return_val_if_fail (connection != NULL, NULL);
+
+	priv = NM_SECRET_AGENT_GET_PRIVATE (self);
+
+	/* Caller should have ensured that only agent-owned secrets exist in 'connection' */
+	hash = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
+
+	r = request_new (self, nm_connection_get_path (connection), NULL, callback, callback_data);
+	r->call = dbus_g_proxy_begin_call_with_timeout (priv->proxy,
+	                                                "SaveSecrets",
+	                                                save_callback,
+	                                                r,
+	                                                NULL,
+	                                                10000, /* 10 seconds */
+	                                                DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, hash,
+	                                                DBUS_TYPE_G_OBJECT_PATH, nm_connection_get_path (connection),
+	                                                G_TYPE_INVALID);
+	g_hash_table_insert (priv->requests, r->call, r);
+
+	g_hash_table_destroy (hash);
+	return r->call;
 }
 
 /*************************************************************/

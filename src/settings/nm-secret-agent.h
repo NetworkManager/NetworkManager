@@ -63,7 +63,7 @@ guint32     nm_secret_agent_get_hash       (NMSecretAgent *agent);
 
 typedef void (*NMSecretAgentCallback) (NMSecretAgent *agent,
                                        gconstpointer call,
-                                       GHashTable *secrets,
+                                       GHashTable *new_secrets, /* NULL for save & delete */
                                        GError *error,
                                        gpointer user_data);
 
@@ -77,5 +77,10 @@ gconstpointer nm_secret_agent_get_secrets  (NMSecretAgent *agent,
 
 void        nm_secret_agent_cancel_secrets (NMSecretAgent *agent,
                                             gconstpointer call_id);
+
+gconstpointer nm_secret_agent_save_secrets (NMSecretAgent *agent,
+                                            NMConnection *connection,
+                                            NMSecretAgentCallback callback,
+                                            gpointer callback_data);
 
 #endif /* NM_SECRET_AGENT_H */

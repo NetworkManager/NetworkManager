@@ -69,4 +69,9 @@ guint32 nm_agent_manager_get_secrets (NMAgentManager *manager,
 void nm_agent_manager_cancel_secrets (NMAgentManager *manager,
                                       guint32 request_id);
 
+guint32 nm_agent_manager_save_secrets (NMAgentManager *manager,
+                                       NMConnection *connection,
+                                       gboolean filter_by_uid,
+                                       gulong uid_filter);
+
 #endif /* NM_AGENT_MANAGER_H */
