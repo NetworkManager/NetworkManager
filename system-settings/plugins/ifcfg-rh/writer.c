@@ -49,7 +49,11 @@
 	{ g_warning ("   " pname ": " fmt, ##args); }
 
 static void
-set_secret (shvarFile *ifcfg, const char *key, const char *value, gboolean verbatim)
+set_secret (shvarFile *ifcfg,
+            const char *key,
+            const char *value,
+            NMSettingSecretFlags flags,
+            gboolean verbatim)
 {
 	shvarFile *keyfile;
 	
@@ -60,10 +64,14 @@ set_secret (shvarFile *ifcfg, const char *key, const char *value, gboolean verba
 		goto error;
 	}
 
-	/* Clear the secret from the actual ifcfg */
+	/* Clear the secret from the ifcfg and the associated "keys" file */
 	svSetValue (ifcfg, key, NULL, FALSE);
+	svSetValue (keyfile, key, NULL, FALSE);
 
-	svSetValue (keyfile, key, value, verbatim);
+	/* Only write the secret if it's system owned */
+	if (flags == NM_SETTING_SECRET_FLAG_SYSTEM_OWNED)
+		svSetValue (keyfile, key, value, verbatim);
+
 	if (svWriteFile (keyfile, 0600)) {
 		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: could not update key file '%s'",
 		             keyfile->fileName);
@@ -341,6 +349,7 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 	gboolean success = FALSE, is_pkcs12 = FALSE;
 	const ObjectType *otype = NULL;
 	const GByteArray *blob = NULL;
+	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_SYSTEM_OWNED;
 
 	/* CA certificate */
 	if (phase2)
@@ -358,12 +367,14 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 				is_pkcs12 = TRUE;
 		}
 		password = nm_setting_802_1x_get_phase2_private_key_password (s_8021x);
+		flags = nm_setting_802_1x_get_phase2_private_key_password_flags (s_8021x);
 	} else {
 		if (nm_setting_802_1x_get_private_key_scheme (s_8021x) != NM_SETTING_802_1X_CK_SCHEME_UNKNOWN) {
 			if (nm_setting_802_1x_get_private_key_format (s_8021x) == NM_SETTING_802_1X_CK_FORMAT_PKCS12)
 				is_pkcs12 = TRUE;
 		}
 		password = nm_setting_802_1x_get_private_key_password (s_8021x);
+		flags = nm_setting_802_1x_get_private_key_password_flags (s_8021x);
 	}
 
 	if (is_pkcs12)
@@ -384,8 +395,10 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 		if (!enc_key)
 			goto out;
 
-		if (generated_pw)
+		if (generated_pw) {
 			password = generated_pw;
+			flags = NM_SETTING_SECRET_FLAG_SYSTEM_OWNED;
+		}
 	}
 
 	/* Save the private key */
@@ -394,9 +407,9 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 
 	/* Private key password */
 	if (phase2)
-		set_secret (ifcfg, "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD", password, FALSE);
+		set_secret (ifcfg, "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD", password, flags, FALSE);
 	else
-		set_secret (ifcfg, "IEEE_8021X_PRIVATE_KEY_PASSWORD", password, FALSE);
+		set_secret (ifcfg, "IEEE_8021X_PRIVATE_KEY_PASSWORD", password, flags, FALSE);
 
 	/* Client certificate */
 	if (is_pkcs12) {
@@ -469,7 +482,11 @@ write_8021x_setting (NMConnection *connection,
 	            nm_setting_802_1x_get_anonymous_identity (s_8021x),
 	            FALSE);
 
-	set_secret (ifcfg, "IEEE_8021X_PASSWORD", nm_setting_802_1x_get_password (s_8021x), FALSE);
+	set_secret (ifcfg,
+	            "IEEE_8021X_PASSWORD",
+	            nm_setting_802_1x_get_password (s_8021x),
+	            nm_setting_802_1x_get_password_flags (s_8021x),
+	            FALSE);
 
 	/* PEAP version */
 	value = nm_setting_802_1x_get_phase1_peapver (s_8021x);
@@ -574,6 +591,7 @@ write_wireless_security_setting (NMConnection *connection,
 			            FALSE);
 			set_secret (ifcfg, "IEEE_8021X_PASSWORD",
 			            nm_setting_wireless_security_get_leap_password (s_wsec),
+			            nm_setting_wireless_security_get_leap_password_flags (s_wsec),
 			            FALSE);
 			*no_8021x = TRUE;
 		}
@@ -581,15 +599,17 @@ write_wireless_security_setting (NMConnection *connection,
 
 	/* WEP keys */
 
+	/* Clear any default key */
+	set_secret (ifcfg, "KEY", NULL, NM_SETTING_SECRET_FLAG_SYSTEM_OWNED, FALSE);
+
 	/* Clear existing keys */
-	set_secret (ifcfg, "KEY", NULL, FALSE); /* Clear any default key */
 	for (i = 0; i < 4; i++) {
 		tmp = g_strdup_printf ("KEY_PASSPHRASE%d", i + 1);
-		set_secret (ifcfg, tmp, NULL, FALSE);
+		set_secret (ifcfg, tmp, NULL, NM_SETTING_SECRET_FLAG_SYSTEM_OWNED, FALSE);
 		g_free (tmp);
 
 		tmp = g_strdup_printf ("KEY%d", i + 1);
-		set_secret (ifcfg, tmp, NULL, FALSE);
+		set_secret (ifcfg, tmp, NULL, NM_SETTING_SECRET_FLAG_SYSTEM_OWNED, FALSE);
 		g_free (tmp);
 	}
 
@@ -624,7 +644,7 @@ write_wireless_security_setting (NMConnection *connection,
 					}
 				}
 
-				set_secret (ifcfg, tmp, key, FALSE);
+				set_secret (ifcfg, tmp, key, nm_setting_wireless_security_get_wep_key_flags (s_wsec), FALSE);
 				g_free (tmp);
 				g_free (ascii_key);
 			}
@@ -687,11 +707,15 @@ write_wireless_security_setting (NMConnection *connection,
 			g_string_append (quoted, psk);
 			g_string_append_c (quoted, '"');
 		}
-		set_secret (ifcfg, "WPA_PSK", quoted ? quoted->str : psk, TRUE);
+		set_secret (ifcfg,
+		            "WPA_PSK",
+		            quoted ? quoted->str : psk,
+		            nm_setting_wireless_security_get_psk_flags (s_wsec),
+		            TRUE);
 		if (quoted)
 			g_string_free (quoted, TRUE);
 	} else
-		set_secret (ifcfg, "WPA_PSK", NULL, FALSE);
+		set_secret (ifcfg, "WPA_PSK", NULL, NM_SETTING_SECRET_FLAG_SYSTEM_OWNED, FALSE);
 
 	return TRUE;
 }
