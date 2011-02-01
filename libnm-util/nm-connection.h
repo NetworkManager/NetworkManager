@@ -127,8 +127,8 @@ void             nm_connection_set_path (NMConnection *connection,
 const char *     nm_connection_get_path (NMConnection *connection);
 
 void          nm_connection_for_each_setting_value (NMConnection *connection,
-										  NMSettingValueIterFn func,
-										  gpointer user_data);
+                                                    NMSettingValueIterFn func,
+                                                    gpointer user_data);
 
 GHashTable   *nm_connection_to_hash       (NMConnection *connection,
                                            NMSettingHashFlags flags);

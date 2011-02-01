@@ -850,19 +850,6 @@ nm_connection_to_hash (NMConnection *connection, NMSettingHashFlags flags)
 	return ret;
 }
 
-typedef struct ForEachValueInfo {
-	NMSettingValueIterFn func;
-	gpointer user_data;
-} ForEachValueInfo;
-
-static void
-for_each_setting (gpointer key, gpointer value, gpointer user_data)
-{
-	ForEachValueInfo *info = (ForEachValueInfo *) user_data;
-
-	nm_setting_enumerate_values (NM_SETTING (value), info->func, info->user_data);
-}
-
 /**
  * nm_connection_for_each_setting_value:
  * @connection: the #NMConnection
@@ -877,25 +864,15 @@ nm_connection_for_each_setting_value (NMConnection *connection,
                                       NMSettingValueIterFn func,
                                       gpointer user_data)
 {
-	NMConnectionPrivate *priv;
-	ForEachValueInfo *info;
+	GHashTableIter iter;
+	gpointer value;
 
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 	g_return_if_fail (func != NULL);
 
-	priv = NM_CONNECTION_GET_PRIVATE (connection);
-
-	info = g_slice_new0 (ForEachValueInfo);
-	if (!info) {
-		g_warning ("Not enough memory to enumerate values.");
-		return;
-	}
-	info->func = func;
-	info->user_data = user_data;
-
-	g_hash_table_foreach (priv->settings, for_each_setting, info);
-
-	g_slice_free (ForEachValueInfo, info);
+	g_hash_table_iter_init (&iter, NM_CONNECTION_GET_PRIVATE (connection)->settings);
+	while (g_hash_table_iter_next (&iter, NULL, &value))
+		nm_setting_enumerate_values (NM_SETTING (value), func, user_data);
 }
 
 static void
