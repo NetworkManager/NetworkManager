@@ -950,7 +950,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 						   "the 'dhcp-hostname' property is empty and this "
 						   "property is TRUE, the current persistent hostname "
 						   "of the computer is sent.",
-						   FALSE,
+						   TRUE,
 						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
