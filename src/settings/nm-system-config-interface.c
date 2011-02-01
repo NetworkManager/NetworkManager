@@ -53,7 +53,8 @@ interface_init (gpointer g_iface)
 							  "Capabilities",
 							  "Plugin capabilties",
 							  NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE,
-							  NM_SYSTEM_CONFIG_INTERFACE_CAP_LAST - 1,
+							  (  NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS
+							   | NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME),
 							  NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE,
 							  G_PARAM_READABLE));
 

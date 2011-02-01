@@ -58,9 +58,11 @@ GObject * nm_system_config_factory (void);
 typedef enum {
 	NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE = 0x00000000,
 	NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS = 0x00000001,
-	NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME = 0x00000002,
+	NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME = 0x00000002
 
-	NM_SYSTEM_CONFIG_INTERFACE_CAP_LAST = NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME
+	/* When adding more capabilities, be sure to update the "Capabilities"
+	 * property max value in nm-system-config-interface.c.
+	 */
 } NMSystemConfigInterfaceCapabilities;
 
 typedef enum {
