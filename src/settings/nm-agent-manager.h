@@ -44,9 +44,12 @@ GType nm_agent_manager_get_type (void);
 
 NMAgentManager *nm_agent_manager_get (void);
 
+/* If no agent fulfilled the secrets request, agent_dbus_owner will be NULL */
 typedef void (*NMAgentSecretsResultFunc) (NMAgentManager *manager,
                                           guint32 call_id,
+                                          const char *agent_dbus_owner,
                                           const char *setting_name,
+                                          guint32 flags,
                                           GHashTable *secrets,
                                           GError *error,
                                           gpointer user_data,

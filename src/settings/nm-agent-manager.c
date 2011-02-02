@@ -322,6 +322,7 @@ done:
 
 typedef void (*RequestCompleteFunc) (Request *req,
                                      GHashTable *secrets,
+                                     const char *agent_dbus_owner,
                                      GError *error,
                                      gpointer user_data);
 typedef void (*RequestNextFunc) (Request *req);
@@ -341,9 +342,7 @@ struct _Request {
 	NMSecretAgent *current;
 	gconstpointer current_call_id;
 
-	/* Stores the sorted list of NMSecretAgents which will be
-	 * asked for secrets.
-	 */
+	/* Stores the sorted list of NMSecretAgents which will be asked for secrets */
 	GSList *pending;
 
 	/* Stores the list of NMSecretAgent hashes that we've already
@@ -584,7 +583,7 @@ next_generic (Request *req, const char *detail)
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 		                             NM_AGENT_MANAGER_ERROR_NO_SECRETS,
 		                             "No agents were available for this request.");
-		req->complete_callback (req, NULL, error, req->complete_callback_data);
+		req->complete_callback (req, NULL, NULL, error, req->complete_callback_data);
 		g_error_free (error);
 	} else {
 		/* Send a secrets request to the next agent */
@@ -622,6 +621,7 @@ get_done_cb (NMSecretAgent *agent,
 {
 	Request *req = user_data;
 	GHashTable *setting_secrets;
+	const char *agent_dbus_owner;
 
 	g_return_if_fail (call_id == req->current_call_id);
 
@@ -656,7 +656,8 @@ get_done_cb (NMSecretAgent *agent,
 			    nm_secret_agent_get_description (agent),
 			    req, req->setting_name);
 
-	req->complete_callback (req, secrets, NULL, req->complete_callback_data);
+	agent_dbus_owner = nm_secret_agent_get_dbus_owner (agent);
+	req->complete_callback (req, secrets, agent_dbus_owner, NULL, req->complete_callback_data);
 }
 
 static void
@@ -705,7 +706,7 @@ get_start (gpointer user_data)
 		g_assert (tmp);
 
 		if (!nm_connection_update_secrets (tmp, req->setting_name, req->existing_secrets, &error)) {
-			req->complete_callback (req, NULL, error, req->complete_callback_data);
+			req->complete_callback (req, NULL, NULL, error, req->complete_callback_data);
 			g_clear_error (&error);
 		} else {
 			/* Do we have everything we need? */
@@ -715,7 +716,7 @@ get_start (gpointer user_data)
 						    req, req->setting_name);
 
 				/* Got everything, we're done */
-				req->complete_callback (req, req->existing_secrets, NULL, req->complete_callback_data);
+				req->complete_callback (req, req->existing_secrets, NULL, NULL, req->complete_callback_data);
 			} else {
 				nm_log_dbg (LOGD_AGENTS, "(%p/%s) system settings secrets insufficient, asking agents",
 						    req, req->setting_name);
@@ -739,6 +740,7 @@ get_start (gpointer user_data)
 static void
 get_complete_cb (Request *req,
                  GHashTable *secrets,
+                 const char *agent_dbus_owner,
                  GError *error,
                  gpointer user_data)
 {
@@ -748,7 +750,9 @@ get_complete_cb (Request *req,
 	/* Send secrets back to the requesting object */
 	req->callback (self,
 	               req->reqid,
+	               agent_dbus_owner,
 	               req->setting_name,
+	               req->flags,
 	               error ? NULL : secrets,
 	               error,
 	               req->callback_data,
@@ -837,6 +841,7 @@ save_done_cb (NMSecretAgent *agent,
               gpointer user_data)
 {
 	Request *req = user_data;
+	const char *agent_dbus_owner;
 
 	g_return_if_fail (call_id == req->current_call_id);
 
@@ -859,7 +864,8 @@ save_done_cb (NMSecretAgent *agent,
 			    nm_secret_agent_get_description (agent),
 			    req, req->setting_name);
 
-	req->complete_callback (req, NULL, NULL, req->complete_callback_data);
+	agent_dbus_owner = nm_secret_agent_get_dbus_owner (agent);
+	req->complete_callback (req, NULL, agent_dbus_owner, NULL, req->complete_callback_data);
 }
 
 static void
@@ -883,6 +889,7 @@ save_next_cb (Request *req)
 static void
 save_complete_cb (Request *req,
                   GHashTable *secrets,
+                  const char *agent_dbus_owner,
                   GError *error,
                   gpointer user_data)
 {
@@ -977,6 +984,7 @@ delete_next_cb (Request *req)
 static void
 delete_complete_cb (Request *req,
                     GHashTable *secrets,
+                    const char *agent_dbus_owner,
                     GError *error,
                     gpointer user_data)
 {

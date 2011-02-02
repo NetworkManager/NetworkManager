@@ -352,10 +352,216 @@ supports_secrets (NMSettingsConnection *connection, const char *setting_name)
 	return TRUE;
 }
 
+/* Return TRUE to continue, FALSE to stop */
+typedef gboolean (*ForEachSecretFunc) (GHashTableIter *iter,
+                                       NMSettingSecretFlags flags,
+                                       gpointer user_data);
+
+static gboolean
+clear_system_owned_secrets (GHashTableIter *iter,
+                            NMSettingSecretFlags flags,
+                            gpointer user_data)
+{
+	if (flags == NM_SETTING_SECRET_FLAG_SYSTEM_OWNED)
+		g_hash_table_iter_remove (iter);
+	return TRUE;
+}
+
+static gboolean
+has_system_owned_secrets (GHashTableIter *iter,
+                          NMSettingSecretFlags flags,
+                          gpointer user_data)
+{
+	gboolean *has_system_owned = user_data;
+
+	if (flags == NM_SETTING_SECRET_FLAG_SYSTEM_OWNED) {
+		*has_system_owned = TRUE;
+		return FALSE;
+	}
+	return TRUE;
+}
+
+static void
+for_each_secret (NMConnection *connection,
+                 GHashTable *secrets,
+                 ForEachSecretFunc callback,
+                 gpointer callback_data)
+{
+	GHashTableIter iter;
+	const char *setting_name;
+	GHashTable *setting_hash;
+
+	/* Walk through the list of setting hashes */
+	g_hash_table_iter_init (&iter, secrets);
+	while (g_hash_table_iter_next (&iter,
+	                               (gpointer *) &setting_name,
+	                               (gpointer *) &setting_hash)) {
+		GHashTableIter setting_iter;
+		const char *secret_name;
+
+		/* Walk through the list of keys in each setting hash */
+		g_hash_table_iter_init (&setting_iter, setting_hash);
+		while (g_hash_table_iter_next (&setting_iter, (gpointer *) &secret_name, NULL)) {
+			NMSetting *setting;
+			NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_SYSTEM_OWNED;
+
+			/* Get the actual NMSetting from the connection so we can get secret flags */
+			setting = nm_connection_get_setting_by_name (connection, setting_name);
+			if (setting && nm_setting_get_secret_flags (setting, secret_name, &flags, NULL)) {
+				if (callback (&setting_iter, flags, callback_data) == FALSE)
+					return;
+			}
+		}
+	}
+}
+
+static void
+new_secrets_commit_cb (NMSettingsConnection *connection,
+                       GError *error,
+                       gpointer user_data)
+{
+	if (error) {
+		nm_log_warn (LOGD_SETTINGS, "Error saving new secrets to backing storage: (%d) %s",
+		             error->code, error->message ? error->message : "(unknown)");
+	}
+}
+
+static void
+get_secrets_done (NMSettingsConnection *self,
+                  guint32 call_id,
+                  const char *setting_name,
+                  GHashTable *secrets,
+                  GError *error,
+                  NMSettingsConnectionSecretsFunc callback,
+                  gpointer callback_data)
+{
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+	NMSettingConnection *s_con;
+	GError *local = NULL;
+	GHashTable *hash = NULL;
+
+	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (self), NM_TYPE_SETTING_CONNECTION);
+	g_assert (s_con);
+
+	if (error) {
+		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets request completed; error: (%d) %s",
+			        nm_setting_connection_get_uuid (s_con),
+			        setting_name,
+			        call_id,
+			        error->code,
+			        error->message ? error->message : "(unknown)");
+		callback (self, call_id, setting_name, error, callback_data);
+		return;
+	}
+
+	nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets request completed successfully",
+		        nm_setting_connection_get_uuid (s_con),
+		        setting_name,
+		        call_id);
+
+	/* Update the connection with our existing secrets from backing storage */
+	nm_connection_clear_secrets (NM_CONNECTION (self));
+	hash = nm_connection_to_hash (priv->secrets, NM_SETTING_HASH_FLAG_ONLY_SECRETS);
+	if (nm_connection_update_secrets (NM_CONNECTION (self), setting_name, hash, &local)) {
+		/* Update the connection with the agent's secrets; by this point if any
+		 * system-owned secrets exist in 'secrets' the agent that provided them
+		 * will have been authenticated, so those secrets can replace the existing
+		 * system secrets.
+		 */
+		if (nm_connection_update_secrets (NM_CONNECTION (self), setting_name, secrets, &local)) {
+			/* Now that all secrets are updated, copy and cache new secrets, 
+			 * then save them to backing storage.
+			 */
+			if (priv->secrets)
+				g_object_unref (priv->secrets);
+			priv->secrets = nm_connection_duplicate (NM_CONNECTION (self));
+
+			nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) saving new secrets to backing storage",
+						nm_setting_connection_get_uuid (s_con),
+						setting_name,
+						call_id);
+
+			nm_settings_connection_commit_changes (self, new_secrets_commit_cb, NULL);
+		} else {
+			nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) failed to update with agent secrets: (%d) %s",
+						nm_setting_connection_get_uuid (s_con),
+						setting_name,
+						call_id,
+				        local->code,
+				        local->message ? local->message : "(unknown)");
+		}
+	} else {
+		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) failed to update with existing secrets: (%d) %s",
+				    nm_setting_connection_get_uuid (s_con),
+				    setting_name,
+				    call_id,
+			        local->code,
+			        local->message ? local->message : "(unknown)");
+	}
+
+	callback (self, call_id, setting_name, local, callback_data);
+	g_clear_error (&local);
+	if (hash)
+		g_hash_table_destroy (hash);
+}
+
+static void
+agent_secrets_modify_auth_cb (NMAuthChain *chain,
+                              GError *error,
+                              DBusGMethodInvocation *context,
+                              gpointer user_data)
+{
+	NMSettingsConnection *self = NM_SETTINGS_CONNECTION (user_data);
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+	NMSettingConnection *s_con;
+	NMAuthCallResult result;
+	GHashTable *secrets = nm_auth_chain_get_data (chain, "secrets");
+	const char *setting_name = nm_auth_chain_get_data (chain, "setting-name");
+	guint32 call_id = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "call-id"));
+
+	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (self), NM_TYPE_SETTING_CONNECTION);
+	g_assert (s_con);
+
+	priv->pending_auths = g_slist_remove (priv->pending_auths, chain);
+
+	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY);
+
+	nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) agent MODIFY check result %d",
+		        nm_setting_connection_get_uuid (s_con),
+		        setting_name,
+		        call_id,
+		        result);
+
+	if (result == NM_AUTH_CALL_RESULT_YES) {
+		/* Agent can modify system connections; system-owned secrets it returned
+		 * replace any secrets in backing storage.
+		 */
+	} else {
+		/* Agent didn't successfully authenticate; clear system-owned secrets
+		 * from the secrets the agent returned.
+		 */
+		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) agent failed to authenticate after providing system secrets",
+			        nm_setting_connection_get_uuid (s_con),
+			        setting_name,
+			        call_id);
+		for_each_secret (NM_CONNECTION (self), secrets, clear_system_owned_secrets, NULL);
+	}
+
+	get_secrets_done (self,
+	                  call_id,
+	                  setting_name,
+	                  secrets,
+	                  error,
+	                  nm_auth_chain_get_data (chain, "callback"),
+	                  nm_auth_chain_get_data (chain, "callback_data"));
+}
+
 static void
 agent_secrets_done_cb (NMAgentManager *manager,
                        guint32 call_id,
+                       const char *agent_dbus_owner,
                        const char *setting_name,
+                       guint32 flags,
                        GHashTable *secrets,
                        GError *error,
                        gpointer user_data,
@@ -366,29 +572,100 @@ agent_secrets_done_cb (NMAgentManager *manager,
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	NMSettingsConnectionSecretsFunc callback = other_data2;
 	gpointer callback_data = other_data3;
+	NMSettingConnection *s_con;
 	GError *local = NULL;
-	GHashTable *hash;
+
+	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (self), NM_TYPE_SETTING_CONNECTION);
+	g_assert (s_con);
 
 	if (error) {
+		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets request error: (%d) %s",
+			        nm_setting_connection_get_uuid (s_con),
+			        setting_name,
+			        call_id,
+			        error->code,
+			        error->message ? error->message : "(unknown)");
+
 		callback (self, call_id, setting_name, error, callback_data);
 		return;
 	}
 
-	/* Update the connection with the agent's secrets */
-	nm_connection_clear_secrets (NM_CONNECTION (self));
-	if (nm_connection_update_secrets (NM_CONNECTION (self), setting_name, secrets, &local)) {
-		/* FIXME: if the agent's owner has "modify" permission, then agent
-		 * supplied secrets should overwrite existing secrets, and those agent
-		 * supplied secrets should get written back out to persistent storage.
-		 */
-
-		hash = nm_connection_to_hash (priv->secrets, NM_SETTING_HASH_FLAG_ONLY_SECRETS);
-		nm_connection_update_secrets (NM_CONNECTION (self), setting_name, hash, &local);
-		g_hash_table_destroy (hash);
+	if (!nm_connection_get_setting_by_name (NM_CONNECTION (self), setting_name)) {
+		local = g_error_new (NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_SETTING,
+		                     "%s.%d - Connection didn't have requested setting '%s'.",
+		                     __FILE__, __LINE__, setting_name);
+		callback (self, call_id, setting_name, local, callback_data);
+		g_clear_error (&local);
+		return;
 	}
 
-	callback (self, call_id, setting_name, local, callback_data);
-	g_clear_error (&local);
+	g_assert (secrets);
+	if (agent_dbus_owner) {
+		gboolean has_system = FALSE;
+
+		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets returned from agent %s",
+				    nm_setting_connection_get_uuid (s_con),
+				    setting_name,
+				    call_id,
+				    agent_dbus_owner);
+
+		/* If the agent returned any system-owned secrets (initial connect and no
+		 * secrets given when the connection was created, or something like that)
+		 * make sure the agent's UID has the 'modify' permission before we use or
+		 * save those system-owned secrets.  If not, discard them and use the
+		 * existing secrets, or fail the connection.
+		 */
+		for_each_secret (NM_CONNECTION (self), secrets, has_system_owned_secrets, &has_system);
+		if (has_system) {
+			if (flags == 0) {  /* ie SECRETS_FLAG_NONE */
+				/* No user interaction was allowed when requesting secrets; the
+				 * agent is being bad.  Remove system-owned secrets.
+				 */
+				for_each_secret (NM_CONNECTION (self), secrets, clear_system_owned_secrets, NULL);
+
+				nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) interaction forbidden but agent %s returned system secrets",
+							nm_setting_connection_get_uuid (s_con),
+							setting_name,
+							call_id,
+							agent_dbus_owner);
+			} else {
+				NMAuthChain *chain;
+
+				nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) agent %s returned system secrets; checking for MODIFY",
+							nm_setting_connection_get_uuid (s_con),
+							setting_name,
+							call_id,
+							agent_dbus_owner);
+
+				/* User interaction was allowed, check whether the agent's UID
+				 * has the 'modify' privilege before using the system-owned
+				 * secrets supplied by the agent.
+				 */
+				chain = nm_auth_chain_new_dbus_sender (priv->authority,
+				                                       agent_dbus_owner,
+				                                       agent_secrets_modify_auth_cb,
+				                                       self);
+				g_assert (chain);
+
+				nm_auth_chain_set_data (chain, "call-id", GUINT_TO_POINTER (call_id), NULL);
+				nm_auth_chain_set_data (chain, "setting-name", g_strdup (setting_name), g_free);
+				nm_auth_chain_set_data (chain, "secrets", g_hash_table_ref (secrets), (GDestroyNotify) g_hash_table_unref);
+				nm_auth_chain_set_data (chain, "callback", callback, NULL);
+				nm_auth_chain_set_data (chain, "callback-data", callback_data, NULL);
+
+				nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY, TRUE);
+				priv->pending_auths = g_slist_append (priv->pending_auths, chain);
+				return;
+			}
+		}
+	} else {
+		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) existing secrets returned",
+				    nm_setting_connection_get_uuid (s_con),
+				    setting_name,
+				    call_id);
+	}
+
+	get_secrets_done (self, call_id, setting_name, secrets, error, callback, callback_data);
 }
 
 /**
@@ -421,6 +698,7 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
                                     GError **error)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+	NMSettingConnection *s_con;
 	GHashTable *existing_secrets;
 	guint32 call_id = 0;
 
@@ -460,6 +738,14 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	                                        callback_data);
 	g_hash_table_unref (existing_secrets);
 
+	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (self), NM_TYPE_SETTING_CONNECTION);
+	nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets requested flags 0x%X hint '%s'",
+	            nm_setting_connection_get_uuid (s_con),
+	            setting_name,
+	            call_id,
+	            flags,
+	            hint);
+
 	return call_id;
 }
 
@@ -468,6 +754,12 @@ nm_settings_connection_cancel_secrets (NMSettingsConnection *self,
                                        guint32 call_id)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+	NMSettingConnection *s_con;
+
+	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (self), NM_TYPE_SETTING_CONNECTION);
+	nm_log_dbg (LOGD_SETTINGS, "(%s:%u) secrets canceled",
+	            nm_setting_connection_get_uuid (s_con),
+	            call_id);
 
 	priv->reqs = g_slist_remove (priv->reqs, GUINT_TO_POINTER (call_id));
 	nm_agent_manager_cancel_secrets (priv->agent_mgr, call_id);
