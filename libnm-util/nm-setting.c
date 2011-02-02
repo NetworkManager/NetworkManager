@@ -623,13 +623,9 @@ update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **
 		return FALSE;
 	}
 
-	if (!(prop_spec->flags & NM_SETTING_PARAM_SECRET)) {
-		g_set_error (error,
-		             NM_SETTING_ERROR,
-		             NM_SETTING_ERROR_PROPERTY_NOT_SECRET,
-		             "%s", key);
-		return FALSE;
-	}
+	/* Silently ignore non-secrets */
+	if (!(prop_spec->flags & NM_SETTING_PARAM_SECRET))
+		return TRUE;
 
 	if (g_value_type_compatible (G_VALUE_TYPE (value), G_PARAM_SPEC_VALUE_TYPE (prop_spec))) {
 		g_object_set_property (G_OBJECT (setting), prop_spec->name, value);
