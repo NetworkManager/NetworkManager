@@ -48,6 +48,7 @@ NMAgentManager *nm_agent_manager_get (void);
 typedef void (*NMAgentSecretsResultFunc) (NMAgentManager *manager,
                                           guint32 call_id,
                                           const char *agent_dbus_owner,
+                                          gboolean agent_has_modify,
                                           const char *setting_name,
                                           guint32 flags,
                                           GHashTable *secrets,

@@ -427,139 +427,10 @@ new_secrets_commit_cb (NMSettingsConnection *connection,
 }
 
 static void
-get_secrets_done (NMSettingsConnection *self,
-                  guint32 call_id,
-                  const char *setting_name,
-                  GHashTable *secrets,
-                  GError *error,
-                  NMSettingsConnectionSecretsFunc callback,
-                  gpointer callback_data)
-{
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-	NMSettingConnection *s_con;
-	GError *local = NULL;
-	GHashTable *hash = NULL;
-
-	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (self), NM_TYPE_SETTING_CONNECTION);
-	g_assert (s_con);
-
-	if (error) {
-		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets request completed; error: (%d) %s",
-			        nm_setting_connection_get_uuid (s_con),
-			        setting_name,
-			        call_id,
-			        error->code,
-			        error->message ? error->message : "(unknown)");
-		callback (self, call_id, setting_name, error, callback_data);
-		return;
-	}
-
-	nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets request completed successfully",
-		        nm_setting_connection_get_uuid (s_con),
-		        setting_name,
-		        call_id);
-
-	/* Update the connection with our existing secrets from backing storage */
-	nm_connection_clear_secrets (NM_CONNECTION (self));
-	hash = nm_connection_to_hash (priv->secrets, NM_SETTING_HASH_FLAG_ONLY_SECRETS);
-	if (nm_connection_update_secrets (NM_CONNECTION (self), setting_name, hash, &local)) {
-		/* Update the connection with the agent's secrets; by this point if any
-		 * system-owned secrets exist in 'secrets' the agent that provided them
-		 * will have been authenticated, so those secrets can replace the existing
-		 * system secrets.
-		 */
-		if (nm_connection_update_secrets (NM_CONNECTION (self), setting_name, secrets, &local)) {
-			/* Now that all secrets are updated, copy and cache new secrets, 
-			 * then save them to backing storage.
-			 */
-			if (priv->secrets)
-				g_object_unref (priv->secrets);
-			priv->secrets = nm_connection_duplicate (NM_CONNECTION (self));
-
-			nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) saving new secrets to backing storage",
-						nm_setting_connection_get_uuid (s_con),
-						setting_name,
-						call_id);
-
-			nm_settings_connection_commit_changes (self, new_secrets_commit_cb, NULL);
-		} else {
-			nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) failed to update with agent secrets: (%d) %s",
-						nm_setting_connection_get_uuid (s_con),
-						setting_name,
-						call_id,
-				        local->code,
-				        local->message ? local->message : "(unknown)");
-		}
-	} else {
-		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) failed to update with existing secrets: (%d) %s",
-				    nm_setting_connection_get_uuid (s_con),
-				    setting_name,
-				    call_id,
-			        local->code,
-			        local->message ? local->message : "(unknown)");
-	}
-
-	callback (self, call_id, setting_name, local, callback_data);
-	g_clear_error (&local);
-	if (hash)
-		g_hash_table_destroy (hash);
-}
-
-static void
-agent_secrets_modify_auth_cb (NMAuthChain *chain,
-                              GError *error,
-                              DBusGMethodInvocation *context,
-                              gpointer user_data)
-{
-	NMSettingsConnection *self = NM_SETTINGS_CONNECTION (user_data);
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-	NMSettingConnection *s_con;
-	NMAuthCallResult result;
-	GHashTable *secrets = nm_auth_chain_get_data (chain, "secrets");
-	const char *setting_name = nm_auth_chain_get_data (chain, "setting-name");
-	guint32 call_id = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "call-id"));
-
-	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (self), NM_TYPE_SETTING_CONNECTION);
-	g_assert (s_con);
-
-	priv->pending_auths = g_slist_remove (priv->pending_auths, chain);
-
-	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY);
-
-	nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) agent MODIFY check result %d",
-		        nm_setting_connection_get_uuid (s_con),
-		        setting_name,
-		        call_id,
-		        result);
-
-	if (result == NM_AUTH_CALL_RESULT_YES) {
-		/* Agent can modify system connections; system-owned secrets it returned
-		 * replace any secrets in backing storage.
-		 */
-	} else {
-		/* Agent didn't successfully authenticate; clear system-owned secrets
-		 * from the secrets the agent returned.
-		 */
-		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) agent failed to authenticate after providing system secrets",
-			        nm_setting_connection_get_uuid (s_con),
-			        setting_name,
-			        call_id);
-		for_each_secret (NM_CONNECTION (self), secrets, clear_system_owned_secrets, NULL);
-	}
-
-	get_secrets_done (self,
-	                  call_id,
-	                  setting_name,
-	                  secrets,
-	                  error,
-	                  nm_auth_chain_get_data (chain, "callback"),
-	                  nm_auth_chain_get_data (chain, "callback_data"));
-}
-
-static void
 agent_secrets_done_cb (NMAgentManager *manager,
                        guint32 call_id,
                        const char *agent_dbus_owner,
+                       gboolean agent_has_modify,
                        const char *setting_name,
                        guint32 flags,
                        GHashTable *secrets,
@@ -574,17 +445,18 @@ agent_secrets_done_cb (NMAgentManager *manager,
 	gpointer callback_data = other_data3;
 	NMSettingConnection *s_con;
 	GError *local = NULL;
+	GHashTable *hash;
 
 	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (self), NM_TYPE_SETTING_CONNECTION);
 	g_assert (s_con);
 
 	if (error) {
 		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets request error: (%d) %s",
-			        nm_setting_connection_get_uuid (s_con),
-			        setting_name,
-			        call_id,
-			        error->code,
-			        error->message ? error->message : "(unknown)");
+		            nm_setting_connection_get_uuid (s_con),
+		            setting_name,
+		            call_id,
+		            error->code,
+		            error->message ? error->message : "(unknown)");
 
 		callback (self, call_id, setting_name, error, callback_data);
 		return;
@@ -604,10 +476,10 @@ agent_secrets_done_cb (NMAgentManager *manager,
 		gboolean has_system = FALSE;
 
 		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets returned from agent %s",
-				    nm_setting_connection_get_uuid (s_con),
-				    setting_name,
-				    call_id,
-				    agent_dbus_owner);
+		            nm_setting_connection_get_uuid (s_con),
+		            setting_name,
+		            call_id,
+		            agent_dbus_owner);
 
 		/* If the agent returned any system-owned secrets (initial connect and no
 		 * secrets given when the connection was created, or something like that)
@@ -621,51 +493,81 @@ agent_secrets_done_cb (NMAgentManager *manager,
 				/* No user interaction was allowed when requesting secrets; the
 				 * agent is being bad.  Remove system-owned secrets.
 				 */
-				for_each_secret (NM_CONNECTION (self), secrets, clear_system_owned_secrets, NULL);
-
 				nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) interaction forbidden but agent %s returned system secrets",
-							nm_setting_connection_get_uuid (s_con),
-							setting_name,
-							call_id,
-							agent_dbus_owner);
-			} else {
-				NMAuthChain *chain;
+				            nm_setting_connection_get_uuid (s_con),
+				            setting_name,
+				            call_id,
+				            agent_dbus_owner);
 
-				nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) agent %s returned system secrets; checking for MODIFY",
-							nm_setting_connection_get_uuid (s_con),
-							setting_name,
-							call_id,
-							agent_dbus_owner);
-
-				/* User interaction was allowed, check whether the agent's UID
-				 * has the 'modify' privilege before using the system-owned
-				 * secrets supplied by the agent.
+				for_each_secret (NM_CONNECTION (self), secrets, clear_system_owned_secrets, NULL);
+			} else if (agent_has_modify == FALSE) {
+				/* Agent didn't successfully authenticate; clear system-owned secrets
+				 * from the secrets the agent returned.
 				 */
-				chain = nm_auth_chain_new_dbus_sender (priv->authority,
-				                                       agent_dbus_owner,
-				                                       agent_secrets_modify_auth_cb,
-				                                       self);
-				g_assert (chain);
+				nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) agent failed to authenticate but provided system secrets",
+				            nm_setting_connection_get_uuid (s_con),
+				            setting_name,
+				            call_id);
 
-				nm_auth_chain_set_data (chain, "call-id", GUINT_TO_POINTER (call_id), NULL);
-				nm_auth_chain_set_data (chain, "setting-name", g_strdup (setting_name), g_free);
-				nm_auth_chain_set_data (chain, "secrets", g_hash_table_ref (secrets), (GDestroyNotify) g_hash_table_unref);
-				nm_auth_chain_set_data (chain, "callback", callback, NULL);
-				nm_auth_chain_set_data (chain, "callback-data", callback_data, NULL);
-
-				nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY, TRUE);
-				priv->pending_auths = g_slist_append (priv->pending_auths, chain);
-				return;
+				for_each_secret (NM_CONNECTION (self), secrets, clear_system_owned_secrets, NULL);
 			}
 		}
 	} else {
 		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) existing secrets returned",
-				    nm_setting_connection_get_uuid (s_con),
-				    setting_name,
-				    call_id);
+		            nm_setting_connection_get_uuid (s_con),
+		            setting_name,
+		            call_id);
 	}
 
-	get_secrets_done (self, call_id, setting_name, secrets, error, callback, callback_data);
+	nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets request completed",
+	            nm_setting_connection_get_uuid (s_con),
+	            setting_name,
+	            call_id);
+
+	/* Update the connection with our existing secrets from backing storage */
+	nm_connection_clear_secrets (NM_CONNECTION (self));
+	hash = nm_connection_to_hash (priv->secrets, NM_SETTING_HASH_FLAG_ONLY_SECRETS);
+	if (nm_connection_update_secrets (NM_CONNECTION (self), setting_name, hash, &local)) {
+		/* Update the connection with the agent's secrets; by this point if any
+		 * system-owned secrets exist in 'secrets' the agent that provided them
+		 * will have been authenticated, so those secrets can replace the existing
+		 * system secrets.
+		 */
+		if (nm_connection_update_secrets (NM_CONNECTION (self), setting_name, secrets, &local)) {
+			/* Now that all secrets are updated, copy and cache new secrets, 
+			 * then save them to backing storage.
+			 */
+			if (priv->secrets)
+				g_object_unref (priv->secrets);
+			priv->secrets = nm_connection_duplicate (NM_CONNECTION (self));
+
+			nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) saving new secrets to backing storage",
+			            nm_setting_connection_get_uuid (s_con),
+			            setting_name,
+			            call_id);
+
+			nm_settings_connection_commit_changes (self, new_secrets_commit_cb, NULL);
+		} else {
+			nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) failed to update with agent secrets: (%d) %s",
+			            nm_setting_connection_get_uuid (s_con),
+			            setting_name,
+			            call_id,
+			            local->code,
+			            local->message ? local->message : "(unknown)");
+		}
+	} else {
+		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) failed to update with existing secrets: (%d) %s",
+		            nm_setting_connection_get_uuid (s_con),
+		            setting_name,
+		            call_id,
+		            local->code,
+		            local->message ? local->message : "(unknown)");
+	}
+
+	callback (self, call_id, setting_name, local, callback_data);
+	g_clear_error (&local);
+	if (hash)
+		g_hash_table_destroy (hash);
 }
 
 /**
@@ -1170,7 +1072,7 @@ nm_settings_connection_init (NMSettingsConnection *self)
 
 	priv->dbus_mgr = nm_dbus_manager_get ();
 
-	priv->authority = polkit_authority_get_sync (NULL, NULL);
+	priv->authority = polkit_authority_get_sync (NULL, &error);
 	if (!priv->authority) {
 		nm_log_warn (LOGD_SETTINGS, "failed to create PolicyKit authority: (%d) %s",
 		             error ? error->code : -1,
@@ -1222,6 +1124,7 @@ dispose (GObject *object)
 	g_object_unref (priv->session_monitor);
 	g_object_unref (priv->agent_mgr);
 	g_object_unref (priv->dbus_mgr);
+	g_object_unref (priv->authority);
 
 out:
 	G_OBJECT_CLASS (nm_settings_connection_parent_class)->dispose (object);
