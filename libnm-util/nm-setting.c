@@ -575,7 +575,7 @@ is_secret_prop (NMSetting *setting, const char *secret_name, GError **error)
 {
 	GParamSpec *pspec;
 
-	pspec = g_object_class_find_property (G_OBJECT_CLASS (setting), secret_name);
+	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), secret_name);
 	if (!pspec) {
 		g_set_error (error,
 		             NM_SETTING_ERROR,
