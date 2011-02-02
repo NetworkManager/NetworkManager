@@ -720,28 +720,39 @@ nm_connection_verify (NMConnection *connection, GError **error)
 gboolean
 nm_connection_update_secrets (NMConnection *connection,
                               const char *setting_name,
-                              GHashTable *secrets,
+                              GHashTable *all_secrets,
                               GError **error)
 {
 	NMSetting *setting;
 	gboolean success;
+	GHashTable *setting_secrets;
 
 	g_return_val_if_fail (connection != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (setting_name != NULL, FALSE);
-	g_return_val_if_fail (secrets != NULL, FALSE);
+	g_return_val_if_fail (all_secrets != NULL, FALSE);
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
 
 	setting = nm_connection_get_setting (connection, nm_connection_lookup_setting_type (setting_name));
 	if (!setting) {
-		g_set_error (error, NM_CONNECTION_ERROR,
-		             NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND,
-		             "%s", setting_name);
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND,
+		                     setting_name);
 		return FALSE;
 	}
 
-	success = nm_setting_update_secrets (setting, secrets, error);
+	setting_secrets = g_hash_table_lookup (all_secrets, setting_name);
+	if (!setting_secrets) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND,
+		                     setting_name);
+		return FALSE;
+	}
+
+	success = nm_setting_update_secrets (setting, setting_secrets, error);
 	if (success)
 		g_signal_emit (connection, signals[SECRETS_UPDATED], 0, setting_name);
 	return success;
