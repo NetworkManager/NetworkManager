@@ -559,15 +559,18 @@ nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets, GError **err
 		g_return_val_if_fail (*error == NULL, FALSE);
 
 	g_hash_table_iter_init (&iter, secrets);
-	while (g_hash_table_iter_next (&iter, &key, &data) && !tmp_error) {
+	while (g_hash_table_iter_next (&iter, &key, &data)) {
 		const char *secret_key = (const char *) key;
 		GValue *secret_value = (GValue *) data;
 
 		NM_SETTING_GET_CLASS (setting)->update_one_secret (setting, secret_key, secret_value, &tmp_error);
+		if (tmp_error) {
+			g_propagate_error (error, tmp_error);
+			break;
+		}
 	}
-	g_propagate_error (error, tmp_error);
 
-	return !!tmp_error;
+	return tmp_error ? FALSE : TRUE;
 }
 
 static gboolean
