@@ -5621,6 +5621,129 @@ test_read_wired_qeth_static (void)
 	g_object_unref (connection);
 }
 
+#define TEST_IFCFG_WIFI_WEP_NO_KEYS TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wep-no-keys"
+
+static void
+test_read_wifi_wep_no_keys (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wireless;
+	NMSettingWirelessSecurity *s_wsec;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const char *expected_id = "System foobar (test-wifi-wep-no-keys)";
+	NMWepKeyType key_type;
+
+	connection = connection_from_file (TEST_IFCFG_WIFI_WEP_NO_KEYS,
+	                                   NULL,
+	                                   TYPE_WIRELESS,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "wifi-wep-no-keys-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WEP_NO_KEYS, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wifi-wep-no-keys-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_WEP_NO_KEYS, error->message);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "wifi-wep-no-keys-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "wifi-wep-no-keys-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_id) == 0,
+	        "wifi-wep-no-keys-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+	/* UUID can't be tested if the ifcfg does not contain the UUID key, because
+	 * the UUID is generated on the full path of the ifcfg file, which can change
+	 * depending on where the tests are run.
+	 */
+
+	/* ===== WIRELESS SETTING ===== */
+
+	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	ASSERT (s_wireless != NULL,
+	        "wifi-wep-no-keys-verify-wireless", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+
+	/* Security */
+	tmp = nm_setting_wireless_get_security (s_wireless);
+	ASSERT (tmp != NULL,
+	        "wifi-wep-no-keys-verify-wireless", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
+	        NM_SETTING_WIRELESS_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SEC);
+	ASSERT (strcmp (tmp, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0,
+	        "wifi-wep-no-keys-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
+	        NM_SETTING_WIRELESS_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SEC);
+
+
+	/* ===== WIRELESS SECURITY SETTING ===== */
+
+	s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY));
+	ASSERT (s_wsec != NULL,
+	        "wifi-wep-no-keys-verify-wireless", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+
+	/* Key management */
+	ASSERT (strcmp (nm_setting_wireless_security_get_key_mgmt (s_wsec), "none") == 0,
+	        "wifi-wep-no-keys-verify-wireless", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+
+	/* WEP key index */
+	ASSERT (nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec) == 0,
+	        "wifi-wep-no-keys-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX);
+
+	/* WEP key type */
+	key_type = nm_setting_wireless_security_get_wep_key_type (s_wsec);
+	ASSERT (key_type == NM_WEP_KEY_TYPE_UNKNOWN || key_type == NM_WEP_KEY_TYPE_KEY,
+	        "wifi-wep-no-keys-verify-wireless", "failed to verify %s: unexpected WEP key type %d",
+	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
+	        key_type);
+
+	/* WEP key index 0; we don't expect it to be filled */
+	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 0);
+	ASSERT (tmp == NULL,
+	        "wifi-wep-no-keys-verify-wireless", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+
+	g_object_unref (connection);
+}
+
 static void
 test_write_wired_static (void)
 {
@@ -9537,6 +9660,7 @@ int main (int argc, char **argv)
 	test_read_wifi_wpa_eap_ttls_tls ();
 	test_read_wifi_wep_eap_ttls_chap ();
 	test_read_wired_qeth_static ();
+	test_read_wifi_wep_no_keys ();
 
 	test_write_wired_static ();
 	test_write_wired_static_ip6_only ();

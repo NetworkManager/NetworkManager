@@ -1697,6 +1697,7 @@ make_wep_setting (shvarFile *ifcfg,
 	char *value;
 	shvarFile *keys_ifcfg = NULL;
 	int default_key_idx = 0;
+	gboolean has_default_key = FALSE;
 
 	s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
 	g_object_set (s_wireless_sec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none", NULL);
@@ -1707,6 +1708,7 @@ make_wep_setting (shvarFile *ifcfg,
 
 		success = get_int (value, &default_key_idx);
 		if (success && (default_key_idx >= 1) && (default_key_idx <= 4)) {
+			has_default_key = TRUE;
 			default_key_idx--;  /* convert to [0...3] */
 			g_object_set (s_wireless_sec, NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, default_key_idx, NULL);
 		} else {
@@ -1731,21 +1733,6 @@ make_wep_setting (shvarFile *ifcfg,
 		}
 		svCloseFile (keys_ifcfg);
 		g_assert (error == NULL || *error == NULL);
-	}
-
-	/* If there's a default key, ensure that key exists */
-	if ((default_key_idx == 1) && !nm_setting_wireless_security_get_wep_key (s_wireless_sec, 1)) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-		             "Default WEP key index was 2, but no valid KEY2 exists.");
-		goto error;
-	} else if ((default_key_idx == 2) && !nm_setting_wireless_security_get_wep_key (s_wireless_sec, 2)) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-		             "Default WEP key index was 3, but no valid KEY3 exists.");
-		goto error;
-	} else if ((default_key_idx == 3) && !nm_setting_wireless_security_get_wep_key (s_wireless_sec, 3)) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-		             "Default WEP key index was 4, but no valid KEY4 exists.");
-		goto error;
 	}
 
 	value = svGetValue (ifcfg, "SECURITYMODE", FALSE);
@@ -1773,7 +1760,7 @@ make_wep_setting (shvarFile *ifcfg,
 	    && !nm_setting_wireless_security_get_wep_key (s_wireless_sec, 1)
 	    && !nm_setting_wireless_security_get_wep_key (s_wireless_sec, 2)
 	    && !nm_setting_wireless_security_get_wep_key (s_wireless_sec, 3)
-	    && !nm_setting_wireless_security_get_wep_tx_keyidx (s_wireless_sec)) {
+	    && (has_default_key == FALSE)) {
 		const char *auth_alg;
 
 		auth_alg = nm_setting_wireless_security_get_auth_alg (s_wireless_sec);

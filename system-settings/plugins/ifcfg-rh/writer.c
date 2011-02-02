@@ -850,6 +850,13 @@ write_wireless_setting (NMConnection *connection,
 		g_free (tmp);
 	}
 
+	/* Ensure DEFAULTKEY and SECURITYMODE are cleared unless there's security;
+	 * otherwise there's no way to detect WEP vs. open when WEP keys aren't
+	 * saved.
+	 */
+	svSetValue (ifcfg, "DEFAULTKEY", NULL, FALSE);
+	svSetValue (ifcfg, "SECURITYMODE", NULL, FALSE);
+
 	if (nm_setting_wireless_get_security (s_wireless)) {
 		if (!write_wireless_security_setting (connection, ifcfg, adhoc, no_8021x, error))
 			return FALSE;
