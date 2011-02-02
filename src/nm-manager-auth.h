@@ -72,6 +72,11 @@ NMAuthChain *nm_auth_chain_new_raw_message (PolkitAuthority *authority,
                                             NMAuthChainResultFunc done_func,
                                             gpointer user_data);
 
+NMAuthChain *nm_auth_chain_new_dbus_sender (PolkitAuthority *authority,
+                                            const char *dbus_sender,
+                                            NMAuthChainResultFunc done_func,
+                                            gpointer user_data);
+
 gpointer nm_auth_chain_get_data (NMAuthChain *chain, const char *tag);
 
 void nm_auth_chain_set_data (NMAuthChain *chain,
