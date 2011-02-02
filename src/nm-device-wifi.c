@@ -2711,6 +2711,7 @@ handle_auth_or_fail (NMDeviceWifi *self,
 	guint32 tries;
 	NMAccessPoint *ap;
 	NMConnection *connection;
+	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (self), NM_ACT_STAGE_RETURN_FAILURE);
 
@@ -2744,10 +2745,11 @@ handle_auth_or_fail (NMDeviceWifi *self,
 		nm_act_request_get_secrets (req, setting_name, flags, NULL, wifi_secrets_cb, self);
 
 		g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
-	} else {
+		ret = NM_ACT_STAGE_RETURN_POSTPONE;
+	} else
 		nm_log_warn (LOGD_DEVICE, "Cleared secrets, but setting didn't need any secrets.");
-	}
-	return NM_ACT_STAGE_RETURN_POSTPONE;
+
+	return ret;
 }
 
 /*
