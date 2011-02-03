@@ -1357,13 +1357,14 @@ nm_settings_new (const char *config_file,
 			g_object_unref (self);
 			return NULL;
 		}
-		unmanaged_specs_changed (NULL, self);
 	}
 
 	/* Add the keyfile plugin last */
 	keyfile_plugin = nm_settings_keyfile_plugin_new ();
 	g_assert (keyfile_plugin);
 	add_plugin (self, NM_SYSTEM_CONFIG_INTERFACE (keyfile_plugin));
+
+	unmanaged_specs_changed (NULL, self);
 
 	dbus_g_connection_register_g_object (priv->bus, NM_DBUS_PATH_SETTINGS, G_OBJECT (self));
 	return self;
