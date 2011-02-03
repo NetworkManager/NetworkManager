@@ -1847,11 +1847,6 @@ need_secrets_tls (NMSetting8021x *self,
 	const char *path = NULL;
 
 	if (phase2) {
-		if (!priv->phase2_private_key || !priv->phase2_private_key->len) {
-			g_ptr_array_add (secrets, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
-			return;
-		}
-
 		scheme = nm_setting_802_1x_get_phase2_private_key_scheme (self);
 		if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 			path = nm_setting_802_1x_get_phase2_private_key_path (self);
@@ -1866,11 +1861,6 @@ need_secrets_tls (NMSetting8021x *self,
 		if (need_private_key_password (blob, path, priv->phase2_private_key_password))
 			g_ptr_array_add (secrets, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD);
 	} else {
-		if (!priv->private_key || !priv->private_key->len) {
-			g_ptr_array_add (secrets, NM_SETTING_802_1X_PRIVATE_KEY);
-			return;
-		}
-
 		scheme = nm_setting_802_1x_get_private_key_scheme (self);
 		if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 			path = nm_setting_802_1x_get_private_key_path (self);
@@ -1907,8 +1897,23 @@ verify_tls (NMSetting8021x *self, gboolean phase2, GError **error)
 			return FALSE;
 		}
 
+		/* Private key is required for TLS */
+		if (!priv->phase2_private_key) {
+			g_set_error (error,
+			             NM_SETTING_802_1X_ERROR,
+			             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
+			             NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
+			return FALSE;
+		} else if (!priv->phase2_private_key->len) {
+			g_set_error (error,
+			             NM_SETTING_802_1X_ERROR,
+			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			             NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
+			return FALSE;
+		}
+
 		/* If the private key is PKCS#12, check that it matches the client cert */
-		if (priv->phase2_private_key && crypto_is_pkcs12_data (priv->phase2_private_key)) {
+		if (crypto_is_pkcs12_data (priv->phase2_private_key)) {
 			if (priv->phase2_private_key->len != priv->phase2_client_cert->len) {
 				g_set_error (error,
 				             NM_SETTING_802_1X_ERROR,
@@ -1942,8 +1947,23 @@ verify_tls (NMSetting8021x *self, gboolean phase2, GError **error)
 			return FALSE;
 		}
 
+		/* Private key is required for TLS */
+		if (!priv->private_key) {
+			g_set_error (error,
+			             NM_SETTING_802_1X_ERROR,
+			             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
+			             NM_SETTING_802_1X_PRIVATE_KEY);
+			return FALSE;
+		} else if (!priv->private_key->len) {
+			g_set_error (error,
+			             NM_SETTING_802_1X_ERROR,
+			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			             NM_SETTING_802_1X_PRIVATE_KEY);
+			return FALSE;
+		}
+
 		/* If the private key is PKCS#12, check that it matches the client cert */
-		if (priv->private_key && crypto_is_pkcs12_data (priv->private_key)) {
+		if (crypto_is_pkcs12_data (priv->private_key)) {
 			if (priv->private_key->len != priv->client_cert->len) {
 				g_set_error (error,
 				             NM_SETTING_802_1X_ERROR,
