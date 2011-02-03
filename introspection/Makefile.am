@@ -26,5 +26,6 @@ EXTRA_DIST = \
 	nm-dhcp4-config.xml \
 	nm-dhcp6-config.xml \
 	nm-agent-manager.xml \
-	nm-wimax-nsp.xml
+	nm-wimax-nsp.xml \
+	nm-secret-agent.xml
 
