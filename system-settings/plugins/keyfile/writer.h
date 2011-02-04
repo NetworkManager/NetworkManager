@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
 #ifndef _KEYFILE_PLUGIN_WRITER_H
@@ -26,13 +26,11 @@
 #include <glib.h>
 #include <nm-connection.h>
 
-gboolean write_connection (NMConnection *connection,
-                           const char *keyfile_dir,
-                           uid_t owner_uid,
-                           pid_t owner_grp,
-                           char **out_path,
-                           GError **error);
-
-char *writer_id_to_filename (const char *id);
+gboolean nm_keyfile_plugin_write_connection (NMConnection *connection,
+                                             const char *keyfile_dir,
+                                             uid_t owner_uid,
+                                             pid_t owner_grp,
+                                             char **out_path,
+                                             GError **error);
 
 #endif /* _KEYFILE_PLUGIN_WRITER_H */

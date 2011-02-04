@@ -75,7 +75,7 @@ check_suffix (const char *base, const char *tag)
 }
 
 gboolean
-utils_should_ignore_file (const char *filename)
+nm_keyfile_plugin_utils_should_ignore_file (const char *filename)
 {
 	char *base;
 	gboolean ignore = FALSE;

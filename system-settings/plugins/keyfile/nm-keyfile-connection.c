@@ -85,7 +85,7 @@ nm_keyfile_connection_new (const char *full_path,
 		g_object_set (s_con, NM_SETTING_CONNECTION_UUID, uuid, NULL);
 		g_free (uuid);
 
-		if (!write_connection (NM_CONNECTION (object), KEYFILE_DIR, 0, 0, NULL, &write_error)) {
+		if (!nm_keyfile_plugin_write_connection (NM_CONNECTION (object), KEYFILE_DIR, 0, 0, NULL, &write_error)) {
 			PLUGIN_WARN (KEYFILE_PLUGIN_NAME,
 			             "Couldn't update connection %s with a UUID: (%d) %s",
 			             nm_setting_connection_get_id (s_con),
@@ -117,7 +117,7 @@ commit_changes (NMSettingsConnection *connection,
 	char *path = NULL;
 	GError *error = NULL;
 
-	if (!write_connection (NM_CONNECTION (connection), KEYFILE_DIR, 0, 0, &path, &error)) {
+	if (!nm_keyfile_plugin_write_connection (NM_CONNECTION (connection), KEYFILE_DIR, 0, 0, &path, &error)) {
 		callback (connection, error, user_data);
 		g_clear_error (&error);
 		return;

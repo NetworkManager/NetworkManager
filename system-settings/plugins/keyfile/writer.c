@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2008 - 2010 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
 #include <sys/stat.h>
@@ -667,8 +667,8 @@ write_setting_value (NMSetting *setting,
 	}
 }
 
-char *
-writer_id_to_filename (const char *id)
+static char *
+_writer_id_to_filename (const char *id)
 {
 	char *filename, *f;
 	const char *i = id;
@@ -688,12 +688,12 @@ writer_id_to_filename (const char *id)
 }
 
 gboolean
-write_connection (NMConnection *connection,
-                  const char *keyfile_dir,
-                  uid_t owner_uid,
-                  pid_t owner_grp,
-                  char **out_path,
-                  GError **error)
+nm_keyfile_plugin_write_connection (NMConnection *connection,
+                                    const char *keyfile_dir,
+                                    uid_t owner_uid,
+                                    pid_t owner_grp,
+                                    char **out_path,
+                                    GError **error)
 {
 	NMSettingConnection *s_con;
 	GKeyFile *key_file;
@@ -716,7 +716,7 @@ write_connection (NMConnection *connection,
 	if (!data)
 		goto out;
 
-	filename = writer_id_to_filename (nm_setting_connection_get_id (s_con));
+	filename = _writer_id_to_filename (nm_setting_connection_get_id (s_con));
 	path = g_build_filename (keyfile_dir, filename, NULL);
 	g_free (filename);
 

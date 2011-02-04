@@ -24,7 +24,7 @@
 #include <glib.h>
 #include "common.h"
 
-gboolean utils_should_ignore_file (const char *filename);
+gboolean nm_keyfile_plugin_utils_should_ignore_file (const char *filename);
 
 #endif  /* _UTILS_H_ */
 

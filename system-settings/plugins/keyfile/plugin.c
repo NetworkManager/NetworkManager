@@ -127,7 +127,7 @@ read_connections (NMSystemConfigInterface *config)
 		NMSettingsConnection *connection;
 		char *full_path;
 
-		if (utils_should_ignore_file (item))
+		if (nm_keyfile_plugin_utils_should_ignore_file (item))
 			continue;
 
 		full_path = g_build_filename (KEYFILE_DIR, item, NULL);
@@ -224,7 +224,7 @@ dir_changed (GFileMonitor *monitor,
 	GError *error = NULL;
 
 	full_path = g_file_get_path (file);
-	if (utils_should_ignore_file (full_path)) {
+	if (nm_keyfile_plugin_utils_should_ignore_file (full_path)) {
 		g_free (full_path);
 		return;
 	}
@@ -416,7 +416,7 @@ add_connection (NMSystemConfigInterface *config,
 	char *path = NULL;
 
 	/* Write it out first, then add the connection to our internal list */
-	if (write_connection (connection, KEYFILE_DIR, 0, 0, &path, error)) {
+	if (nm_keyfile_plugin_write_connection (connection, KEYFILE_DIR, 0, 0, &path, error)) {
 		added = _internal_new_connection (self, path, connection, NULL, error);
 		g_free (path);
 	}
