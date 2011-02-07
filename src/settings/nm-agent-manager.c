@@ -742,23 +742,6 @@ get_agent_modify_auth_cb (NMAuthChain *chain,
 }
 
 static void
-has_system_secrets (NMSetting *setting,
-                    const char *key,
-                    const GValue *value,
-                    GParamFlags flags,
-                    gpointer user_data)
-{
-	NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
-	gboolean *has_system = user_data;
-
-	if (flags & NM_SETTING_PARAM_SECRET) {
-		nm_setting_get_secret_flags (setting, key, &secret_flags, NULL);
-		if (!(secret_flags & NM_SETTING_SECRET_FLAG_AGENT_OWNED))
-			*has_system = TRUE;
-	}
-}
-
-static void
 get_next_cb (Request *req)
 {
 	const char *agent_dbus_owner;
@@ -768,32 +751,27 @@ get_next_cb (Request *req)
 
 	agent_dbus_owner = nm_secret_agent_get_dbus_owner (NM_SECRET_AGENT (req->current));
 
-	if (req->flags != 0) {
-		gboolean has_system = FALSE;
+	/* If the request flags allow user interaction, and there are system secrets,
+	 * check whether the agent has the 'modify' permission before sending those
+	 * secrets to the agent.  We shouldn't leak system-owned secrets to
+	 * unprivileged users.
+	 */
+	if ((req->flags != 0) && (req->existing_secrets != NULL)) {
+		nm_log_dbg (LOGD_AGENTS, "(%p/%s) request has system secrets; checking agent %s for MODIFY",
+		            req, req->setting_name, agent_dbus_owner);
 
-		/* Interaction with the user is allowed; if there are any system secrets,
-		 * check whether the agent has the 'modify' permission before sending those
-		 * secrets to the agent.
-		 */
-		nm_connection_for_each_setting_value (req->connection, has_system_secrets, &has_system);
-		if (has_system) {
-			nm_log_dbg (LOGD_AGENTS, "(%p/%s) request has system secrets; checking agent %s for MODIFY",
-			            req, req->setting_name, agent_dbus_owner);
+		req->chain = nm_auth_chain_new_dbus_sender (req->authority,
+		                                            agent_dbus_owner,
+		                                            get_agent_modify_auth_cb,
+		                                            req);
+		g_assert (req->chain);
+		nm_auth_chain_add_call (req->chain, NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY, TRUE);
+	} else {
+		nm_log_dbg (LOGD_AGENTS, "(%p/%s) requesting user-owned secrets from agent %s",
+			        req, req->setting_name, agent_dbus_owner);
 
-			req->chain = nm_auth_chain_new_dbus_sender (req->authority,
-			                                            agent_dbus_owner,
-			                                            get_agent_modify_auth_cb,
-			                                            req);
-			g_assert (req->chain);
-			nm_auth_chain_add_call (req->chain, NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY, TRUE);
-			return;
-		}
+		get_agent_request_secrets (req, FALSE);
 	}
-
-	nm_log_dbg (LOGD_AGENTS, "(%p/%s) requesting user-owned secrets from agent %s",
-	            req, req->setting_name, agent_dbus_owner);
-
-	get_agent_request_secrets (req, FALSE);
 }
 
 static gboolean
@@ -912,6 +890,12 @@ nm_agent_manager_get_secrets (NMAgentManager *self,
 	            "Secrets requested for connection %s (%s)",
 	            nm_connection_get_path (connection),
 	            setting_name);
+
+	/* NOTE: a few things in the Request handling depend on existing_secrets
+	 * being NULL if there aren't any system-owned secrets for this connection.
+	 * This in turn depends on nm_connection_to_hash() and nm_setting_to_hash()
+	 * both returning NULL if they didn't hash anything.
+	 */
 
 	req = request_new_get (connection,
 	                       priv->authority,

@@ -187,6 +187,35 @@ session_changed_cb (NMSessionMonitor *self, gpointer user_data)
 
 /**************************************************************/
 
+static void
+only_system_secrets_cb (NMSetting *setting,
+                        const char *key,
+                        const GValue *value,
+                        GParamFlags flags,
+                        gpointer user_data)
+{
+	if (flags & NM_SETTING_PARAM_SECRET) {
+		NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
+
+		nm_setting_get_secret_flags (setting, key, &secret_flags, NULL);
+		if (secret_flags != NM_SETTING_SECRET_FLAG_NONE)
+			g_object_set (G_OBJECT (setting), key, NULL, NULL);
+	}
+}
+
+static void
+update_secrets_cache (NMSettingsConnection *self)
+{
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+
+	if (priv->secrets)
+		g_object_unref (priv->secrets);
+	priv->secrets = nm_connection_duplicate (NM_CONNECTION (self));
+
+	/* Clear out non-system-owned and not-saved secrets */
+	nm_connection_for_each_setting_value (priv->secrets, only_system_secrets_cb, NULL);
+}
+
 /* Update the settings of this connection to match that of 'new', taking care to
  * make a private copy of secrets. */
 gboolean
@@ -211,9 +240,7 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 		/* Copy the connection to keep its secrets around even if NM
 		 * calls nm_connection_clear_secrets().
 		 */
-		if (priv->secrets)
-			g_object_unref (priv->secrets);
-		priv->secrets = nm_connection_duplicate (NM_CONNECTION (self));
+		update_secrets_cache (self);
 
 		nm_settings_connection_recheck_visibility (self);
 		success = TRUE;
@@ -537,9 +564,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 			/* Now that all secrets are updated, copy and cache new secrets, 
 			 * then save them to backing storage.
 			 */
-			if (priv->secrets)
-				g_object_unref (priv->secrets);
-			priv->secrets = nm_connection_duplicate (NM_CONNECTION (self));
+			update_secrets_cache (self);
 
 			nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) saving new secrets to backing storage",
 			            nm_setting_connection_get_uuid (s_con),
@@ -616,9 +641,8 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 		return 0;
 	}
 
-	/* FIXME: if setting_name is empty, return all secrets */
-
-	if (!nm_connection_get_setting_by_name (priv->secrets, setting_name)) {
+	/* Make sure the request actually requests something we can return */
+	if (!nm_connection_get_setting_by_name (NM_CONNECTION (self), setting_name)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_SETTING,
 		             "%s.%d - Connection didn't have requested setting '%s'.",
 		             __FILE__, __LINE__, setting_name);
@@ -995,21 +1019,19 @@ dbus_get_agent_secrets_cb (NMSettingsConnection *self,
 
 	priv->reqs = g_slist_remove (priv->reqs, GUINT_TO_POINTER (call_id));
 
-	/* The connection's secrets will have been updated by the agent manager,
-	 * so we want to refresh the secrets cache.  Note that we will never save
-	 * new secrets to backing storage here because D-Bus initated requests will
-	 * never ask for completely new secrets from agents.  Thus system-owned
-	 * secrets should not have changed from backing storage.  We also don't
-	 * send agent-owned back out to be saved since we assume the agent that
-	 * provided the secrets saved them itself.
-	 */
-	if (priv->secrets)
-		g_object_unref (priv->secrets);
-	priv->secrets = nm_connection_duplicate (NM_CONNECTION (self));
-
 	if (error)
 		dbus_g_method_return_error (context, error);
 	else {
+		/* The connection's secrets will have been updated by the agent manager,
+		 * so we want to refresh the secrets cache.  Note that we will never save
+		 * new secrets to backing storage here because D-Bus initated requests will
+		 * never ask for completely new secrets from agents.  Thus system-owned
+		 * secrets should not have changed from backing storage.  We also don't
+		 * send agent-owned secrets back out to be saved since we assume the agent
+		 * that provided the secrets saved them itself.
+		 */
+		update_secrets_cache (self);
+
 		hash = nm_connection_to_hash (NM_CONNECTION (self), NM_SETTING_HASH_FLAG_ONLY_SECRETS);
 		dbus_g_method_return (context, hash);
 		g_hash_table_destroy (hash);
