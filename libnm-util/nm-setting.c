@@ -162,8 +162,14 @@ nm_setting_to_hash (NMSetting *setting, NMSettingHashFlags flags)
 		else
 			destroy_gvalue (value);
 	}
-
 	g_free (property_specs);
+
+	/* Don't return empty hashes */
+	if (g_hash_table_size (hash) < 1) {
+		g_hash_table_destroy (hash);
+		hash = NULL;
+	}
+
 	return hash;
 }
 
