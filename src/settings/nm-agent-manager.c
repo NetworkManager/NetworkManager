@@ -748,12 +748,12 @@ has_system_secrets (NMSetting *setting,
                     GParamFlags flags,
                     gpointer user_data)
 {
-	NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_SYSTEM_OWNED;
+	NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 	gboolean *has_system = user_data;
 
 	if (flags & NM_SETTING_PARAM_SECRET) {
 		nm_setting_get_secret_flags (setting, key, &secret_flags, NULL);
-		if (secret_flags == NM_SETTING_SECRET_FLAG_SYSTEM_OWNED)
+		if (!(secret_flags & NM_SETTING_SECRET_FLAG_AGENT_OWNED))
 			*has_system = TRUE;
 	}
 }

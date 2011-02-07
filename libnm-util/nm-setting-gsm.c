@@ -152,7 +152,7 @@ nm_setting_gsm_get_password (NMSettingGsm *setting)
 NMSettingSecretFlags
 nm_setting_gsm_get_password_flags (NMSettingGsm *setting)
 {
-	g_return_val_if_fail (NM_IS_SETTING_GSM (setting), NM_SETTING_SECRET_FLAG_SYSTEM_OWNED);
+	g_return_val_if_fail (NM_IS_SETTING_GSM (setting), NM_SETTING_SECRET_FLAG_NONE);
 
 	return NM_SETTING_GSM_GET_PRIVATE (setting)->password_flags;
 }
@@ -206,7 +206,7 @@ nm_setting_gsm_get_pin (NMSettingGsm *setting)
 NMSettingSecretFlags
 nm_setting_gsm_get_pin_flags (NMSettingGsm *setting)
 {
-	g_return_val_if_fail (NM_IS_SETTING_GSM (setting), NM_SETTING_SECRET_FLAG_SYSTEM_OWNED);
+	g_return_val_if_fail (NM_IS_SETTING_GSM (setting), NM_SETTING_SECRET_FLAG_NONE);
 
 	return NM_SETTING_GSM_GET_PRIVATE (setting)->pin_flags;
 }
@@ -540,9 +540,9 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 		 g_param_spec_uint (NM_SETTING_GSM_PASSWORD_FLAGS,
 		                    "Password Flags",
 		                    "Flags indicating how to handle the GSM password.",
-		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
+		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    NM_SETTING_SECRET_FLAGS_ALL,
-		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
+		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
@@ -673,9 +673,9 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 		 g_param_spec_uint (NM_SETTING_GSM_PIN_FLAGS,
 		                    "PIN Flags",
 		                    "Flags indicating how to handle the GSM SIM PIN.",
-		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
+		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    NM_SETTING_SECRET_FLAGS_ALL,
-		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
+		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	/**

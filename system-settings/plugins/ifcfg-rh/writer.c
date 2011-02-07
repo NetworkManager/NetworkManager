@@ -69,7 +69,7 @@ set_secret (shvarFile *ifcfg,
 	svSetValue (keyfile, key, NULL, FALSE);
 
 	/* Only write the secret if it's system owned */
-	if (flags == NM_SETTING_SECRET_FLAG_SYSTEM_OWNED)
+	if (flags == NM_SETTING_SECRET_FLAG_NONE)
 		svSetValue (keyfile, key, value, verbatim);
 
 	if (svWriteFile (keyfile, 0600)) {
@@ -349,7 +349,7 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 	gboolean success = FALSE, is_pkcs12 = FALSE;
 	const ObjectType *otype = NULL;
 	const GByteArray *blob = NULL;
-	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_SYSTEM_OWNED;
+	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
 
 	/* CA certificate */
 	if (phase2)
@@ -397,7 +397,7 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 
 		if (generated_pw) {
 			password = generated_pw;
-			flags = NM_SETTING_SECRET_FLAG_SYSTEM_OWNED;
+			flags = NM_SETTING_SECRET_FLAG_NONE;
 		}
 	}
 
@@ -600,16 +600,16 @@ write_wireless_security_setting (NMConnection *connection,
 	/* WEP keys */
 
 	/* Clear any default key */
-	set_secret (ifcfg, "KEY", NULL, NM_SETTING_SECRET_FLAG_SYSTEM_OWNED, FALSE);
+	set_secret (ifcfg, "KEY", NULL, NM_SETTING_SECRET_FLAG_NONE, FALSE);
 
 	/* Clear existing keys */
 	for (i = 0; i < 4; i++) {
 		tmp = g_strdup_printf ("KEY_PASSPHRASE%d", i + 1);
-		set_secret (ifcfg, tmp, NULL, NM_SETTING_SECRET_FLAG_SYSTEM_OWNED, FALSE);
+		set_secret (ifcfg, tmp, NULL, NM_SETTING_SECRET_FLAG_NONE, FALSE);
 		g_free (tmp);
 
 		tmp = g_strdup_printf ("KEY%d", i + 1);
-		set_secret (ifcfg, tmp, NULL, NM_SETTING_SECRET_FLAG_SYSTEM_OWNED, FALSE);
+		set_secret (ifcfg, tmp, NULL, NM_SETTING_SECRET_FLAG_NONE, FALSE);
 		g_free (tmp);
 	}
 
@@ -715,7 +715,7 @@ write_wireless_security_setting (NMConnection *connection,
 		if (quoted)
 			g_string_free (quoted, TRUE);
 	} else
-		set_secret (ifcfg, "WPA_PSK", NULL, NM_SETTING_SECRET_FLAG_SYSTEM_OWNED, FALSE);
+		set_secret (ifcfg, "WPA_PSK", NULL, NM_SETTING_SECRET_FLAG_NONE, FALSE);
 
 	return TRUE;
 }

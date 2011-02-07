@@ -358,11 +358,11 @@ typedef gboolean (*ForEachSecretFunc) (GHashTableIter *iter,
                                        gpointer user_data);
 
 static gboolean
-clear_system_owned_secrets (GHashTableIter *iter,
-                            NMSettingSecretFlags flags,
-                            gpointer user_data)
+clear_nonagent_secrets (GHashTableIter *iter,
+                        NMSettingSecretFlags flags,
+                        gpointer user_data)
 {
-	if (flags == NM_SETTING_SECRET_FLAG_SYSTEM_OWNED)
+	if (flags != NM_SETTING_SECRET_FLAG_AGENT_OWNED)
 		g_hash_table_iter_remove (iter);
 	return TRUE;
 }
@@ -374,7 +374,7 @@ has_system_owned_secrets (GHashTableIter *iter,
 {
 	gboolean *has_system_owned = user_data;
 
-	if (flags == NM_SETTING_SECRET_FLAG_SYSTEM_OWNED) {
+	if (!(flags & NM_SETTING_SECRET_FLAG_AGENT_OWNED)) {
 		*has_system_owned = TRUE;
 		return FALSE;
 	}
@@ -403,7 +403,7 @@ for_each_secret (NMConnection *connection,
 		g_hash_table_iter_init (&setting_iter, setting_hash);
 		while (g_hash_table_iter_next (&setting_iter, (gpointer *) &secret_name, NULL)) {
 			NMSetting *setting;
-			NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_SYSTEM_OWNED;
+			NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
 
 			/* Get the actual NMSetting from the connection so we can get secret flags */
 			setting = nm_connection_get_setting_by_name (connection, setting_name);
@@ -499,7 +499,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 				            call_id,
 				            agent_dbus_owner);
 
-				for_each_secret (NM_CONNECTION (self), secrets, clear_system_owned_secrets, NULL);
+				for_each_secret (NM_CONNECTION (self), secrets, clear_nonagent_secrets, NULL);
 			} else if (agent_has_modify == FALSE) {
 				/* Agent didn't successfully authenticate; clear system-owned secrets
 				 * from the secrets the agent returned.
@@ -509,7 +509,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 				            setting_name,
 				            call_id);
 
-				for_each_secret (NM_CONNECTION (self), secrets, clear_system_owned_secrets, NULL);
+				for_each_secret (NM_CONNECTION (self), secrets, clear_nonagent_secrets, NULL);
 			}
 		}
 	} else {
@@ -865,7 +865,7 @@ only_agent_secrets_cb (NMSetting *setting,
                        gpointer user_data)
 {
 	if (flags & NM_SETTING_PARAM_SECRET) {
-		NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_SYSTEM_OWNED;
+		NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 
 		/* Clear out system-owned or always-ask secrets */
 		nm_setting_get_secret_flags (setting, key, &secret_flags, NULL);

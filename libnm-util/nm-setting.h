@@ -85,8 +85,8 @@ GQuark nm_setting_error_quark (void);
 
 /**
  * NMSettingSecretFlags:
- * @NM_SETTING_SECRET_FLAG_SYTSEM_OWNED: the system is responsible for providing
- * and storing this secret (default)
+ * @NM_SETTING_SECRET_FLAG_NONE: the system is responsible for providing and
+ * storing this secret (default)
  * @NM_SETTING_SECRET_FLAG_AGENT_OWNED: a user secret agent is responsible
  * for providing and storing this secret; when it is required agents will be
  * asked to retrieve it
@@ -99,7 +99,7 @@ GQuark nm_setting_error_quark (void);
  *
  **/
 typedef enum {
-	NM_SETTING_SECRET_FLAG_SYSTEM_OWNED = 0x00000000,
+	NM_SETTING_SECRET_FLAG_NONE         = 0x00000000,
 	NM_SETTING_SECRET_FLAG_AGENT_OWNED  = 0x00000001,
 	NM_SETTING_SECRET_FLAG_NOT_SAVED    = 0x00000002
 

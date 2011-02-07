@@ -165,7 +165,7 @@ nm_setting_cdma_get_password (NMSettingCdma *setting)
 NMSettingSecretFlags
 nm_setting_cdma_get_password_flags (NMSettingCdma *setting)
 {
-	g_return_val_if_fail (NM_IS_SETTING_CDMA (setting), NM_SETTING_SECRET_FLAG_SYSTEM_OWNED);
+	g_return_val_if_fail (NM_IS_SETTING_CDMA (setting), NM_SETTING_SECRET_FLAG_NONE);
 
 	return NM_SETTING_CDMA_GET_PRIVATE (setting)->password_flags;
 }
@@ -393,8 +393,8 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *setting_class)
 		 g_param_spec_uint (NM_SETTING_CDMA_PASSWORD_FLAGS,
 		                    "Password Flags",
 		                    "Flags indicating how to handle the CDMA password.",
-		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
+		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    NM_SETTING_SECRET_FLAGS_ALL,
-		                    NM_SETTING_SECRET_FLAG_SYSTEM_OWNED,
+		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 }

@@ -602,7 +602,7 @@ get_secret_flags (NMSetting *setting,
                   GError **error)
 {
 	char *flags_prop;
-	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_SYSTEM_OWNED;
+	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
 
 	if (verify_secret)
 		g_return_val_if_fail (is_secret_prop (setting, secret_name, error), FALSE);
@@ -682,7 +682,7 @@ nm_setting_set_secret_flags (NMSetting *setting,
 	g_return_val_if_fail (setting != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (secret_name != NULL, FALSE);
-	g_return_val_if_fail (flags & NM_SETTING_SECRET_FLAGS_ALL, FALSE);
+	g_return_val_if_fail (flags <= NM_SETTING_SECRET_FLAGS_ALL, FALSE);
 
 	return NM_SETTING_GET_CLASS (setting)->set_secret_flags (setting, secret_name, TRUE, flags, error);
 }
