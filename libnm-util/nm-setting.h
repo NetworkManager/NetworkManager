@@ -92,6 +92,10 @@ GQuark nm_setting_error_quark (void);
  * asked to retrieve it
  * @NM_SETTING_SECRET_FLAG_NOT_SAVED: this secret should not be saved, but
  * should be requested from the user each time it is needed
+ * @NM_SETTING_SECRET_FLAG_NOT_REQUIRED: in situations where it cannot be
+ * automatically determined that the secret is required (some VPNs and PPP
+ * providers dont require all secrets) this flag indicates that the specific
+ * secret is not required
  *
  * These flags indicate specific behavior related to handling of a secret.  Each
  * secret has a corresponding set of these flags which indicate how the secret
@@ -101,7 +105,8 @@ GQuark nm_setting_error_quark (void);
 typedef enum {
 	NM_SETTING_SECRET_FLAG_NONE         = 0x00000000,
 	NM_SETTING_SECRET_FLAG_AGENT_OWNED  = 0x00000001,
-	NM_SETTING_SECRET_FLAG_NOT_SAVED    = 0x00000002
+	NM_SETTING_SECRET_FLAG_NOT_SAVED    = 0x00000002,
+	NM_SETTING_SECRET_FLAG_NOT_REQUIRED = 0x00000004
 
 	/* NOTE: if adding flags, update nm-setting-private.h as well */
 } NMSettingSecretFlags;
