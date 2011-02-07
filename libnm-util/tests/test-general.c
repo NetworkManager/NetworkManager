@@ -407,6 +407,76 @@ test_connection_to_hash_setting_name (void)
 	g_object_unref (connection);
 }
 
+#define TEST_UNAME "asdfasfasdf"
+
+static void
+test_setting_connection_permissions (void)
+{
+	NMSettingConnection *s_con;
+	gboolean success;
+	char buf[12] = { 0x61, 0x62, 0x63, 0xff, 0xfe, 0xfd, 0x23, 0x01, 0x00 };
+	const char *perm;
+	const char *expected_perm = "user:" TEST_UNAME ":";
+
+	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
+
+	/* Ensure a bad [type] is rejected */
+	success = nm_setting_connection_add_permission (s_con, "foobar", "blah", NULL);
+	ASSERT (success == FALSE,
+	        "setting-connection-add-permission", "unexpected success adding bad permission type #1");
+
+	/* Ensure a bad [type] is rejected */
+	success = nm_setting_connection_add_permission (s_con, NULL, "blah", NULL);
+	ASSERT (success == FALSE,
+	        "setting-connection-add-permission", "unexpected success adding bad permission type #2");
+
+	/* Ensure a bad [item] is rejected */
+	success = nm_setting_connection_add_permission (s_con, "user", NULL, NULL);
+	ASSERT (success == FALSE,
+	        "setting-connection-add-permission", "unexpected success adding bad permission item #1");
+
+	/* Ensure a bad [item] is rejected */
+	success = nm_setting_connection_add_permission (s_con, "user", "", NULL);
+	ASSERT (success == FALSE,
+	        "setting-connection-add-permission", "unexpected success adding bad permission item #2");
+
+	/* Ensure an [item] with ':' is rejected */
+	success = nm_setting_connection_add_permission (s_con, "user", "ad:asdf", NULL);
+	ASSERT (success == FALSE,
+	        "setting-connection-add-permission", "unexpected success adding bad permission item #3");
+
+	/* Ensure a non-UTF-8 [item] is rejected */
+	success = nm_setting_connection_add_permission (s_con, "user", buf, NULL);
+	ASSERT (success == FALSE,
+	        "setting-connection-add-permission", "unexpected success adding bad permission item #4");
+
+	/* Ensure a non-NULL [detail] is rejected */
+	success = nm_setting_connection_add_permission (s_con, "user", "dafasdf", "asdf");
+	ASSERT (success == FALSE,
+	        "setting-connection-add-permission", "unexpected success adding bad detail");
+
+	/* Ensure a valid call results in success */
+	success = nm_setting_connection_add_permission (s_con, "user", TEST_UNAME, NULL);
+	ASSERT (success == TRUE,
+	        "setting-connection-add-permission", "unexpected failure adding valid user permisson");
+
+	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 1,
+	        "setting-connection-add-permission", "unexpected failure getting number of permissions");
+
+	perm = nm_setting_connection_get_permission (s_con, 0);
+	ASSERT (perm != NULL,
+	        "setting-connection-add-permission", "unexpected failure getting added permission");
+	ASSERT (strcmp (perm, expected_perm) == 0,
+	        "setting-connection-add-permission", "retrieved permission did not match added permission");
+
+	/* Now remove that permission and ensure we have 0 permissions */
+	nm_setting_connection_remove_permission (s_con, 0);
+	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 0,
+	        "setting-connection-add-permission", "unexpected failure removing permission");
+
+	g_object_unref (s_con);
+}
+
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
@@ -428,6 +498,7 @@ int main (int argc, char **argv)
 	test_setting_to_hash_no_secrets ();
 	test_setting_to_hash_only_secrets ();
 	test_connection_to_hash_setting_name ();
+	test_setting_connection_permissions ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);

@@ -105,11 +105,17 @@ const char *nm_setting_connection_get_connection_type  (NMSettingConnection *set
 gboolean    nm_setting_connection_get_autoconnect      (NMSettingConnection *setting);
 guint64     nm_setting_connection_get_timestamp        (NMSettingConnection *setting);
 gboolean    nm_setting_connection_get_read_only        (NMSettingConnection *setting);
-guint32     nm_setting_connection_get_num_permissions  (NMSettingConnection *setting);
-const char *nm_setting_connection_get_permission       (NMSettingConnection *setting, guint32 index);
-gboolean    nm_setting_connection_permissions_user_allowed (NMSettingConnection *setting, const char *uname);
 
-/* FIXME: need add/remove calls for permissions */
+guint32     nm_setting_connection_get_num_permissions  (NMSettingConnection *setting);
+const char *nm_setting_connection_get_permission       (NMSettingConnection *setting,
+                                                        guint32 idx);
+gboolean    nm_setting_connection_permissions_user_allowed (NMSettingConnection *setting, const char *uname);
+gboolean    nm_setting_connection_add_permission       (NMSettingConnection *setting,
+                                                        const char *ptype,
+                                                        const char *pitem,
+                                                        const char *detail);
+void        nm_setting_connection_remove_permission    (NMSettingConnection *setting,
+                                                        guint32 idx);
 
 G_END_DECLS
 

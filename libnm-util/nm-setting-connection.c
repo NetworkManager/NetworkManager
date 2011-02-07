@@ -190,7 +190,7 @@ nm_setting_connection_get_num_permissions (NMSettingConnection *setting)
 /**
  * nm_setting_connection_get_permission:
  * @setting: the #NMSettingConnection
- * @index: the zero-based index of the permissions entry
+ * @idx: the zero-based index of the permissions entry
  *
  * Retrieve one of the entries of the #NMSettingConnection:permissions property
  * of this setting.
@@ -211,8 +211,6 @@ nm_setting_connection_get_permission (NMSettingConnection *setting, guint32 i)
 	return (const char *) g_slist_nth_data (priv->permissions, i);
 }
 
-#define USER_TAG "user:"
-
 /* Extract the username from the permission string and dump to a buffer */
 static gboolean
 perm_to_user (const char *perm, char *out_user, gsize out_user_size)
@@ -223,9 +221,9 @@ perm_to_user (const char *perm, char *out_user, gsize out_user_size)
 	g_return_val_if_fail (perm != NULL, FALSE);
 	g_return_val_if_fail (out_user != NULL, FALSE);
 
-	if (!g_str_has_prefix (perm, USER_TAG))
+	if (!g_str_has_prefix (perm, NM_SETTINGS_CONNECTION_PERMISSION_PREFIX_USER))
 		return FALSE;
-	perm += strlen (USER_TAG);
+	perm += strlen (NM_SETTINGS_CONNECTION_PERMISSION_PREFIX_USER);
 
 	/* Look for trailing ':' */
 	end = strchr (perm, ':');
@@ -284,6 +282,84 @@ nm_setting_connection_permissions_user_allowed (NMSettingConnection *setting,
 
 	return FALSE;
 }
+
+/**
+ * nm_setting_connection_add_permission:
+ * @setting: the #NMSettingConnection
+ * @ptype: the permission type; at this time only "user" is supported
+ * @pitem: the permission item formatted as required for @ptype
+ * @detail: unused at this time; must be %NULL
+ *
+ * Adds a permission to the connection's permission list.  At this time, only
+ * the "user" permission type is supported, and @pitem must be a username. See
+ * #NMSettingConnection:permissions: for more details.
+ *
+ * Returns: TRUE if the permission was unique and was successfully added to the
+ * list, FALSE if @ptype or @pitem was invalid or it the permission was already
+ * present in the list
+ */
+gboolean
+nm_setting_connection_add_permission (NMSettingConnection *setting,
+                                      const char *ptype,
+                                      const char *pitem,
+                                      const char *detail)
+{
+	NMSettingConnectionPrivate *priv;
+	GSList *iter;
+	char *perm;
+
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), FALSE);
+	g_return_val_if_fail (ptype, FALSE);
+	g_return_val_if_fail (strlen (ptype) > 0, FALSE);
+	g_return_val_if_fail (pitem, FALSE);
+	g_return_val_if_fail (strlen (pitem) > 0, FALSE);
+	g_return_val_if_fail (strchr (pitem, ':') == NULL, FALSE);
+	g_return_val_if_fail (g_utf8_validate (pitem, -1, NULL) == TRUE, FALSE);
+	g_return_val_if_fail (detail == NULL, FALSE);
+
+	/* Only "user" for now... */
+	g_return_val_if_fail (strcmp (ptype, "user") == 0, FALSE);
+
+	priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
+
+	perm = g_strdup_printf ("%s:%s:", ptype, pitem);
+
+	/* No dupes */
+	for (iter = priv->permissions; iter; iter = g_slist_next (iter)) {
+		if (strcmp ((const char *) iter->data, perm) == 0) {
+			g_free (perm);
+			return FALSE;
+		}
+	}
+
+	priv->permissions = g_slist_append (priv->permissions, perm);
+	return TRUE;
+}
+
+/**
+ * nm_setting_connection_remove_permission:
+ * @setting: the #NMSettingConnection
+ * @idx: the zero-based index of the permission to remove
+ *
+ * Removes the permission at index @idx from the connection.
+ */
+void
+nm_setting_connection_remove_permission (NMSettingConnection *setting,
+                                         guint32 idx)
+{
+	NMSettingConnectionPrivate *priv;
+	GSList *iter;
+
+	g_return_if_fail (NM_IS_SETTING_CONNECTION (setting));
+
+	priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
+	iter = g_slist_nth (priv->permissions, idx);
+	g_return_if_fail (iter != NULL);
+
+	g_free (iter->data);
+	priv->permissions = g_slist_delete_link (priv->permissions, iter);
+}
+
 
 /**
  * nm_setting_connection_get_autoconnect:
@@ -641,8 +717,9 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 *
 	 * At this time only the 'user' [type] is allowed.  Any other values are
 	 * ignored and reserved for future use.  [id] is the username that this
-	 * permission refers to.  Any [reserved] information present must be
-	 * ignored and is reserved for future use.
+	 * permission refers to, which may not contain the ':' character. Any
+	 * [reserved] information present must be ignored and is reserved for
+	 * future use.
 	 */
 	g_object_class_install_property
 		(object_class, PROP_PERMISSIONS,
@@ -658,9 +735,10 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                  "\"user:dcbw:blah\"  At this time only the 'user' "
 		                  "[type] is allowed.  Any other values are ignored and "
 		                  "reserved for future use.  [id] is the username that "
-		                  "this permission refers to.  Any [reserved] "
-		                  "information (if present) must be ignored and is "
-		                  "reserved for future use.",
+		                  "this permission refers to, which may not contain the "
+		                  "':' character.  Any [reserved] information (if "
+		                  "present) must be ignored and is reserved for future "
+		                  "use.",
 		                  DBUS_TYPE_G_LIST_OF_STRING,
 		                  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 

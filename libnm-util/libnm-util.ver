@@ -106,6 +106,7 @@ global:
 	nm_setting_cdma_get_password_flags;
 	nm_setting_clear_secrets;
 	nm_setting_compare;
+	nm_setting_connection_add_permission;
 	nm_setting_connection_error_get_type;
 	nm_setting_connection_error_quark;
 	nm_setting_connection_get_type;
@@ -119,6 +120,7 @@ global:
 	nm_setting_connection_get_num_permissions;
 	nm_setting_connection_get_permission;
 	nm_setting_connection_permissions_user_allowed;
+	nm_setting_connection_remove_permission;
 	nm_setting_duplicate;
 	nm_setting_enumerate_values;
 	nm_setting_error_get_type;
