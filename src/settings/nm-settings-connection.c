@@ -90,37 +90,6 @@ typedef struct {
 
 /**************************************************************/
 
-#define USER_TAG "user:"
-
-/* Extract the username from the permission string and dump to a buffer */
-static gboolean
-perm_to_user (const char *perm, char *out_user, gsize out_user_size)
-{
-	const char *end;
-	gsize userlen;
-
-	g_return_val_if_fail (perm != NULL, FALSE);
-	g_return_val_if_fail (out_user != NULL, FALSE);
-
-	if (!g_str_has_prefix (perm, USER_TAG))
-		return FALSE;
-	perm += strlen (USER_TAG);
-
-	/* Look for trailing ':' */
-	end = strchr (perm, ':');
-	if (!end)
-		end = perm + strlen (perm);
-
-	userlen = end - perm;
-	if (userlen > (out_user_size + 1))
-		return FALSE;
-	memcpy (out_user, perm, userlen);
-	out_user[userlen] = '\0';
-	return TRUE;
-}
-
-/**************************************************************/
-
 static void
 set_visible (NMSettingsConnection *self, gboolean new_visible)
 {
@@ -163,13 +132,10 @@ nm_settings_connection_recheck_visibility (NMSettingsConnection *self)
 	}
 
 	for (i = 0; i < num; i++) {
-		const char *perm;
-		char buf[75];
+		const char *puser;
 
-		perm = nm_setting_connection_get_permission (s_con, i);
-		g_assert (perm);
-		if (perm_to_user (perm, buf, sizeof (buf))) {
-			if (nm_session_monitor_user_has_session (priv->session_monitor, buf, NULL, NULL)) {
+		if (nm_setting_connection_get_permission (s_con, i, NULL, &puser, NULL)) {
+			if (nm_session_monitor_user_has_session (priv->session_monitor, puser, NULL, NULL)) {
 				set_visible (self, TRUE);
 				return;
 			}
