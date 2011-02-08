@@ -407,15 +407,38 @@ test_connection_to_hash_setting_name (void)
 	g_object_unref (connection);
 }
 
+static void
+check_permission (NMSettingConnection *s_con,
+                  guint32 idx,
+                  const char *expected_uname,
+                  const char *tag)
+{
+	gboolean success;
+	const char *ptype = NULL, *pitem = NULL, *detail = NULL;
+
+	success = nm_setting_connection_get_permission (s_con, 0, &ptype, &pitem, &detail);
+	ASSERT (success == TRUE, tag, "unexpected failure getting added permission");
+
+	/* Permission type */
+	ASSERT (ptype != NULL, tag, "unexpected failure getting permission type");
+	ASSERT (strcmp (ptype, "user") == 0, tag, "retrieved unexpected permission type");
+
+	/* Permission item */
+	ASSERT (pitem != NULL, tag, "unexpected failure getting permission item");
+	ASSERT (strcmp (pitem, expected_uname) == 0, tag, "retrieved unexpected permission item");
+
+	ASSERT (detail == NULL, tag, "unexpected success getting permission detail");
+}
+
 #define TEST_UNAME "asdfasfasdf"
 
 static void
-test_setting_connection_permissions (void)
+test_setting_connection_permissions_helpers (void)
 {
 	NMSettingConnection *s_con;
 	gboolean success;
-	char buf[12] = { 0x61, 0x62, 0x63, 0xff, 0xfe, 0xfd, 0x23, 0x01, 0x00 };
-	const char *perm;
+	char buf[9] = { 0x61, 0x62, 0x63, 0xff, 0xfe, 0xfd, 0x23, 0x01, 0x00 };
+	GSList *list = NULL;
 	const char *expected_perm = "user:" TEST_UNAME ":";
 
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
@@ -423,56 +446,159 @@ test_setting_connection_permissions (void)
 	/* Ensure a bad [type] is rejected */
 	success = nm_setting_connection_add_permission (s_con, "foobar", "blah", NULL);
 	ASSERT (success == FALSE,
-	        "setting-connection-add-permission", "unexpected success adding bad permission type #1");
+	        "setting-connection-permissions-helpers", "unexpected success adding bad permission type #1");
 
 	/* Ensure a bad [type] is rejected */
 	success = nm_setting_connection_add_permission (s_con, NULL, "blah", NULL);
 	ASSERT (success == FALSE,
-	        "setting-connection-add-permission", "unexpected success adding bad permission type #2");
+	        "setting-connection-permissions-helpers", "unexpected success adding bad permission type #2");
 
 	/* Ensure a bad [item] is rejected */
 	success = nm_setting_connection_add_permission (s_con, "user", NULL, NULL);
 	ASSERT (success == FALSE,
-	        "setting-connection-add-permission", "unexpected success adding bad permission item #1");
+	        "setting-connection-permissions-helpers", "unexpected success adding bad permission item #1");
 
 	/* Ensure a bad [item] is rejected */
 	success = nm_setting_connection_add_permission (s_con, "user", "", NULL);
 	ASSERT (success == FALSE,
-	        "setting-connection-add-permission", "unexpected success adding bad permission item #2");
+	        "setting-connection-permissions-helpers", "unexpected success adding bad permission item #2");
 
 	/* Ensure an [item] with ':' is rejected */
 	success = nm_setting_connection_add_permission (s_con, "user", "ad:asdf", NULL);
 	ASSERT (success == FALSE,
-	        "setting-connection-add-permission", "unexpected success adding bad permission item #3");
+	        "setting-connection-permissions-helpers", "unexpected success adding bad permission item #3");
 
 	/* Ensure a non-UTF-8 [item] is rejected */
 	success = nm_setting_connection_add_permission (s_con, "user", buf, NULL);
 	ASSERT (success == FALSE,
-	        "setting-connection-add-permission", "unexpected success adding bad permission item #4");
+	        "setting-connection-permissions-helpers", "unexpected success adding bad permission item #4");
 
 	/* Ensure a non-NULL [detail] is rejected */
 	success = nm_setting_connection_add_permission (s_con, "user", "dafasdf", "asdf");
 	ASSERT (success == FALSE,
-	        "setting-connection-add-permission", "unexpected success adding bad detail");
+	        "setting-connection-permissions-helpers", "unexpected success adding bad detail");
 
 	/* Ensure a valid call results in success */
 	success = nm_setting_connection_add_permission (s_con, "user", TEST_UNAME, NULL);
 	ASSERT (success == TRUE,
-	        "setting-connection-add-permission", "unexpected failure adding valid user permisson");
+	        "setting-connection-permissions-helpers", "unexpected failure adding valid user permisson");
 
 	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 1,
-	        "setting-connection-add-permission", "unexpected failure getting number of permissions");
+	        "setting-connection-permissions-helpers", "unexpected failure getting number of permissions");
 
-	perm = nm_setting_connection_get_permission (s_con, 0);
-	ASSERT (perm != NULL,
-	        "setting-connection-add-permission", "unexpected failure getting added permission");
-	ASSERT (strcmp (perm, expected_perm) == 0,
-	        "setting-connection-add-permission", "retrieved permission did not match added permission");
+	check_permission (s_con, 0, TEST_UNAME, "setting-connection-permissions-helpers");
+
+	/* Check the actual GObject property just to be paranoid */
+	g_object_get (G_OBJECT (s_con), NM_SETTING_CONNECTION_PERMISSIONS, &list, NULL);
+	ASSERT (list != NULL,
+	        "setting-connection-permissions-helpers", "unexpected failure getting permissions list");
+	ASSERT (g_slist_length (list) == 1,
+	        "setting-connection-permissions-helpers", "unexpected failure getting number of permissions in list");
+	ASSERT (strcmp (list->data, expected_perm) == 0,
+	        "setting-connection-permissions-helpers", "unexpected permission property data");
 
 	/* Now remove that permission and ensure we have 0 permissions */
 	nm_setting_connection_remove_permission (s_con, 0);
 	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 0,
-	        "setting-connection-add-permission", "unexpected failure removing permission");
+	        "setting-connection-permissions-helpers", "unexpected failure removing permission");
+
+	g_object_unref (s_con);
+}
+
+static void
+add_permission_property (NMSettingConnection *s_con,
+                         const char *ptype,
+                         const char *pitem,
+                         int pitem_len,
+                         const char *detail)
+{
+	GString *str;
+	GSList *list = NULL;
+
+	str = g_string_sized_new (50);
+	if (ptype)
+		g_string_append (str, ptype);
+	g_string_append_c (str, ':');
+
+	if (pitem) {
+		if (pitem_len >= 0)
+			g_string_append_len (str, pitem, pitem_len);
+		else
+			g_string_append (str, pitem);
+	}
+
+	g_string_append_c (str, ':');
+
+	if (detail)
+		g_string_append (str, detail);
+
+	list = g_slist_append (list, str->str);
+	g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_PERMISSIONS, list, NULL);
+
+	g_string_free (str, TRUE);
+	g_slist_free (list);
+}
+
+static void
+test_setting_connection_permissions_property (void)
+{
+	NMSettingConnection *s_con;
+	gboolean success;
+	char buf[9] = { 0x61, 0x62, 0x63, 0xff, 0xfe, 0xfd, 0x23, 0x01, 0x00 };
+
+	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
+
+	/* Ensure a bad [type] is rejected */
+	add_permission_property (s_con, "foobar", "blah", -1, NULL);
+	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 0,
+	        "setting-connection-permissions-property", "unexpected success adding bad permission type #1");
+
+	/* Ensure a bad [type] is rejected */
+	add_permission_property (s_con, NULL, "blah", -1, NULL);
+	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 0,
+	        "setting-connection-permissions-property", "unexpected success adding bad permission type #2");
+
+	/* Ensure a bad [item] is rejected */
+	add_permission_property (s_con, "user", NULL, -1, NULL);
+	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 0,
+	        "setting-connection-permissions-property", "unexpected success adding bad permission item #1");
+
+	/* Ensure a bad [item] is rejected */
+	add_permission_property (s_con, "user", "", -1, NULL);
+	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 0,
+	        "setting-connection-permissions-property", "unexpected success adding bad permission item #2");
+
+	/* Ensure an [item] with ':' in the middle is rejected */
+	add_permission_property (s_con, "user", "ad:asdf", -1, NULL);
+	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 0,
+	        "setting-connection-permissions-property", "unexpected success adding bad permission item #3");
+
+	/* Ensure an [item] with ':' at the end is rejected */
+	add_permission_property (s_con, "user", "adasdfaf:", -1, NULL);
+	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 0,
+	        "setting-connection-permissions-property", "unexpected success adding bad permission item #4");
+
+	/* Ensure a non-UTF-8 [item] is rejected */
+	add_permission_property (s_con, "user", buf, (int) sizeof (buf), NULL);
+	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 0,
+	        "setting-connection-permissions-property", "unexpected success adding bad permission item #5");
+
+	/* Ensure a non-NULL [detail] is rejected */
+	add_permission_property (s_con, "user", "dafasdf", -1, "asdf");
+	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 0,
+	        "setting-connection-permissions-property", "unexpected success adding bad detail");
+
+	/* Ensure a valid call results in success */
+	success = nm_setting_connection_add_permission (s_con, "user", TEST_UNAME, NULL);
+	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 1,
+	        "setting-connection-permissions-property", "unexpected failure adding valid user permisson");
+
+	check_permission (s_con, 0, TEST_UNAME, "setting-connection-permissions-property");
+
+	/* Now remove that permission and ensure we have 0 permissions */
+	nm_setting_connection_remove_permission (s_con, 0);
+	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 0,
+	        "setting-connection-permissions-property", "unexpected failure removing permission");
 
 	g_object_unref (s_con);
 }
@@ -498,7 +624,8 @@ int main (int argc, char **argv)
 	test_setting_to_hash_no_secrets ();
 	test_setting_to_hash_only_secrets ();
 	test_connection_to_hash_setting_name ();
-	test_setting_connection_permissions ();
+	test_setting_connection_permissions_helpers ();
+	test_setting_connection_permissions_property ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);

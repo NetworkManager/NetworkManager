@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2010 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -29,8 +29,6 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-param-spec-specialized.h"
 #include "nm-setting-connection.h"
-
-#define NM_SETTINGS_CONNECTION_PERMISSION_PREFIX_USER  "user:"
 
 /**
  * SECTION:nm-setting-connection
@@ -86,11 +84,20 @@ G_DEFINE_TYPE (NMSettingConnection, nm_setting_connection, NM_TYPE_SETTING)
 
 #define NM_SETTING_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_CONNECTION, NMSettingConnectionPrivate))
 
+typedef enum {
+	PERM_TYPE_USER = 0,
+} PermType;
+
+typedef struct {
+	guint8 ptype;
+	char *item;
+} Permission;
+
 typedef struct {
 	char *id;
 	char *uuid;
 	char *type;
-	GSList *permissions;
+	GSList *permissions; /* list of Permission structs */
 	gboolean autoconnect;
 	guint64 timestamp;
 	gboolean read_only;
@@ -108,6 +115,86 @@ enum {
 
 	LAST_PROP
 };
+
+/***********************************************************************/
+
+#define PERM_USER_PREFIX  "user:"
+
+static Permission *
+permission_new_from_str (const char *str)
+{
+	Permission *p;
+	const char *last_colon;
+	size_t ulen = 0, i;
+
+	g_return_val_if_fail (strncmp (str, PERM_USER_PREFIX, strlen (PERM_USER_PREFIX)) == 0, NULL);
+	str += strlen (PERM_USER_PREFIX);
+
+	last_colon = strrchr (str, ':');
+	if (last_colon) {
+		/* Ensure that somebody didn't pass "user::" */
+		g_return_val_if_fail (last_colon > str, NULL);
+
+		/* Make sure we don't include detail in the username */
+		ulen = (last_colon - str) + 1;
+	} else
+		ulen = strlen (str);
+
+	/* Sanity check the length of the username */
+	g_return_val_if_fail (ulen < 100, NULL);
+
+	/* Make sure there's no ':' in the username */
+	for (i = 0; i < ulen; i++)
+		g_return_val_if_fail (str[i] != ':', NULL);
+
+	/* And the username must be valid UTF-8 */
+	g_return_val_if_fail (g_utf8_validate (str, -1, NULL) == TRUE, NULL);
+
+	/* Yay, valid... create the new permission */
+	p = g_slice_new0 (Permission);
+	p->ptype = PERM_TYPE_USER;
+	if (last_colon) {
+		p->item = g_malloc (ulen + 1);
+		memcpy (p->item, str, ulen);
+		p->item[ulen] = '\0';
+	} else
+		p->item = g_strdup (str);
+
+	return p;
+}
+
+static Permission *
+permission_new (const char *uname)
+{
+	Permission *p;
+
+	g_return_val_if_fail (uname, NULL);
+	g_return_val_if_fail (uname[0] != '\0', NULL);
+	g_return_val_if_fail (strchr (uname, ':') == NULL, NULL);
+	g_return_val_if_fail (g_utf8_validate (uname, -1, NULL) == TRUE, NULL);
+
+	/* Yay, valid... create the new permission */
+	p = g_slice_new0 (Permission);
+	p->ptype = PERM_TYPE_USER;
+	p->item = g_strdup (uname);
+	return p;
+}
+
+static char *
+permission_to_string (Permission *p)
+{
+	return g_strdup_printf (PERM_USER_PREFIX "%s:", p->item);
+}
+
+static void
+permission_free (Permission *p)
+{
+	g_free (p->item);
+	memset (p, 0, sizeof (*p));
+	g_slice_free (Permission, p);
+}
+
+/***********************************************************************/
 
 /**
  * nm_setting_connection_new:
@@ -191,50 +278,40 @@ nm_setting_connection_get_num_permissions (NMSettingConnection *setting)
  * nm_setting_connection_get_permission:
  * @setting: the #NMSettingConnection
  * @idx: the zero-based index of the permissions entry
+ * @out_ptype: on return, the permission type (at this time, always "user")
+ * @out_pitem: on return, the permission item (formatted accoring to @ptype, see
+ * #NMSettingConnection:permissions for more detail
+ * @out_detail: on return, the permission detail (at this time, always NULL)
  *
  * Retrieve one of the entries of the #NMSettingConnection:permissions property
  * of this setting.
  *
- * Returns: the entry at the specified index
+ * Returns: %TRUE if a permission was returned, %FALSE if @idx was invalid
  */
-const char *
-nm_setting_connection_get_permission (NMSettingConnection *setting, guint32 i)
+gboolean
+nm_setting_connection_get_permission (NMSettingConnection *setting,
+                                      guint32 idx,
+                                      const char **out_ptype,
+                                      const char **out_pitem,
+                                      const char **out_detail)
 {
 	NMSettingConnectionPrivate *priv;
+	Permission *p;
 
-	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), NULL);
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), FALSE);
 
 	priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
 
-	g_return_val_if_fail (i < g_slist_length (priv->permissions), NULL);
+	g_return_val_if_fail (idx < g_slist_length (priv->permissions), FALSE);
 
-	return (const char *) g_slist_nth_data (priv->permissions, i);
-}
+	p = g_slist_nth_data (priv->permissions, idx);
+	if (out_ptype)
+		*out_ptype = "user";
+	if (out_pitem)
+		*out_pitem = p->item;
+	if (out_detail)
+		*out_detail = NULL;
 
-/* Extract the username from the permission string and dump to a buffer */
-static gboolean
-perm_to_user (const char *perm, char *out_user, gsize out_user_size)
-{
-	const char *end;
-	gsize userlen;
-
-	g_return_val_if_fail (perm != NULL, FALSE);
-	g_return_val_if_fail (out_user != NULL, FALSE);
-
-	if (!g_str_has_prefix (perm, NM_SETTINGS_CONNECTION_PERMISSION_PREFIX_USER))
-		return FALSE;
-	perm += strlen (NM_SETTINGS_CONNECTION_PERMISSION_PREFIX_USER);
-
-	/* Look for trailing ':' */
-	end = strchr (perm, ':');
-	if (!end)
-		end = perm + strlen (perm);
-
-	userlen = end - perm;
-	if (userlen > (out_user_size + 1))
-		return FALSE;
-	memcpy (out_user, perm, userlen);
-	out_user[userlen] = '\0';
 	return TRUE;
 }
 
@@ -253,7 +330,7 @@ nm_setting_connection_permissions_user_allowed (NMSettingConnection *setting,
                                                 const char *uname)
 {
 	NMSettingConnectionPrivate *priv;
-	guint32 num, i;
+	GSList *iter;
 
 	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), FALSE);
 	g_return_val_if_fail (uname != NULL, FALSE);
@@ -261,23 +338,16 @@ nm_setting_connection_permissions_user_allowed (NMSettingConnection *setting,
 
 	priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
 
-	/* Match the username returned by the session check to a user in the ACL */
-	num = nm_setting_connection_get_num_permissions (setting);
-	if (num == 0)
-		return TRUE;  /* visible to all */
+	/* If no permissions, visible to all */
+	if (priv->permissions == NULL)
+		return TRUE;
 
-	for (i = 0; i < num; i++) {
-		const char *perm;
-		char buf[75];
+	/* Find the username in the permissions list */
+	for (iter = priv->permissions; iter; iter = g_slist_next (iter)) {
+		Permission *p = iter->data;
 
-		perm = nm_setting_connection_get_permission (setting, i);
-		g_assert (perm);
-		if (perm_to_user (perm, buf, sizeof (buf))) {
-			if (strcmp (buf, uname) == 0) {
-				/* Yay, permitted */
-				return TRUE;
-			}
-		}
+		if (strcmp (uname, p->item) == 0)
+			return TRUE;
 	}
 
 	return FALSE;
@@ -305,16 +375,12 @@ nm_setting_connection_add_permission (NMSettingConnection *setting,
                                       const char *detail)
 {
 	NMSettingConnectionPrivate *priv;
+	Permission *p;
 	GSList *iter;
-	char *perm;
 
 	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), FALSE);
 	g_return_val_if_fail (ptype, FALSE);
 	g_return_val_if_fail (strlen (ptype) > 0, FALSE);
-	g_return_val_if_fail (pitem, FALSE);
-	g_return_val_if_fail (strlen (pitem) > 0, FALSE);
-	g_return_val_if_fail (strchr (pitem, ':') == NULL, FALSE);
-	g_return_val_if_fail (g_utf8_validate (pitem, -1, NULL) == TRUE, FALSE);
 	g_return_val_if_fail (detail == NULL, FALSE);
 
 	/* Only "user" for now... */
@@ -322,17 +388,17 @@ nm_setting_connection_add_permission (NMSettingConnection *setting,
 
 	priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
 
-	perm = g_strdup_printf ("%s:%s:", ptype, pitem);
-
 	/* No dupes */
 	for (iter = priv->permissions; iter; iter = g_slist_next (iter)) {
-		if (strcmp ((const char *) iter->data, perm) == 0) {
-			g_free (perm);
+		p = iter->data;
+		if (strcmp (pitem, p->item) == 0)
 			return FALSE;
-		}
 	}
 
-	priv->permissions = g_slist_append (priv->permissions, perm);
+	p = permission_new (pitem);
+	g_return_val_if_fail (p != NULL, FALSE);
+	priv->permissions = g_slist_append (priv->permissions, p);
+
 	return TRUE;
 }
 
@@ -356,7 +422,7 @@ nm_setting_connection_remove_permission (NMSettingConnection *setting,
 	iter = g_slist_nth (priv->permissions, idx);
 	g_return_if_fail (iter != NULL);
 
-	g_free (iter->data);
+	permission_free ((Permission *) iter->data);
 	priv->permissions = g_slist_delete_link (priv->permissions, iter);
 }
 
@@ -434,34 +500,6 @@ validate_uuid (const char *uuid)
 	return TRUE;
 }
 
-/* Check that every entry in the given permissions array is of proper form.
- * Report a descriptive error if it's not. */
-static gboolean
-validate_permissions (GSList *permissions, GError **error)
-{
-	GSList *iter;
-
-	for (iter = permissions; iter; iter = iter->next) {
-		const char *entry = iter->data;
-		const char *usr_start = NULL;
-
-		if (!g_str_has_prefix (entry, NM_SETTINGS_CONNECTION_PERMISSION_PREFIX_USER))
-			continue;
-
-		usr_start = entry + strlen (NM_SETTINGS_CONNECTION_PERMISSION_PREFIX_USER);
-		if (!strchr (usr_start, ':')) {
-			g_set_error (error,
-			             NM_SETTING_CONNECTION_ERROR,
-			             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
-			             "permissions: entry '%s': two few ':' characters", entry);
-			return FALSE;
-		}
-		/* We don't (yet) care about what comes afterwards. */
-	}
-
-	return TRUE;
-}
-
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
@@ -518,11 +556,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->permissions) {
-		if (!validate_permissions (priv->permissions, error))
-			return FALSE;
-	}
-
 	return TRUE;
 }
 
@@ -540,14 +573,30 @@ finalize (GObject *object)
 	g_free (priv->id);
 	g_free (priv->uuid);
 	g_free (priv->type);
-	nm_utils_slist_free (priv->permissions, g_free);
+	nm_utils_slist_free (priv->permissions, (GDestroyNotify) permission_free);
 
 	G_OBJECT_CLASS (nm_setting_connection_parent_class)->finalize (object);
 }
 
+static GSList *
+perm_stringlist_to_permlist (GSList *strlist)
+{
+	GSList *list = NULL, *iter;
+
+	for (iter = strlist; iter; iter = g_slist_next (iter)) {
+		Permission *p;
+
+		p = permission_new_from_str ((const char *) iter->data);
+		if (p)
+			list = g_slist_append (list, p);
+	}
+
+	return list;
+}
+
 static void
 set_property (GObject *object, guint prop_id,
-		    const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE (object);
 
@@ -565,8 +614,8 @@ set_property (GObject *object, guint prop_id,
 		priv->type = g_value_dup_string (value);
 		break;
 	case PROP_PERMISSIONS:
-		nm_utils_slist_free (priv->permissions, g_free);
-		priv->permissions = g_value_dup_boxed (value);
+		nm_utils_slist_free (priv->permissions, (GDestroyNotify) permission_free);
+		priv->permissions = perm_stringlist_to_permlist (g_value_get_boxed (value));
 		break;
 	case PROP_AUTOCONNECT:
 		priv->autoconnect = g_value_get_boolean (value);
@@ -583,11 +632,22 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
+static GSList *
+perm_permlist_to_stringlist (GSList *permlist)
+{
+	GSList *list = NULL, *iter;
+
+	for (iter = permlist; iter; iter = g_slist_next (iter))
+		list = g_slist_append (list, permission_to_string ((Permission *) iter->data));
+	return list;
+}
+
 static void
 get_property (GObject *object, guint prop_id,
-		    GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
 	NMSettingConnection *setting = NM_SETTING_CONNECTION (object);
+	NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
 
 	switch (prop_id) {
 	case PROP_ID:
@@ -600,7 +660,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, nm_setting_connection_get_connection_type (setting));
 		break;
 	case PROP_PERMISSIONS:
-		g_value_set_boxed (value, NM_SETTING_CONNECTION_GET_PRIVATE (setting)->permissions);
+		g_value_take_boxed (value, perm_permlist_to_stringlist (priv->permissions));
 		break;
 	case PROP_AUTOCONNECT:
 		g_value_set_boolean (value, nm_setting_connection_get_autoconnect (setting));
@@ -719,7 +779,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * ignored and reserved for future use.  [id] is the username that this
 	 * permission refers to, which may not contain the ':' character. Any
 	 * [reserved] information present must be ignored and is reserved for
-	 * future use.
+	 * future use.  All of [type], [id], and [reserved] must be valid UTF-8.
 	 */
 	g_object_class_install_property
 		(object_class, PROP_PERMISSIONS,
@@ -738,7 +798,8 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                  "this permission refers to, which may not contain the "
 		                  "':' character.  Any [reserved] information (if "
 		                  "present) must be ignored and is reserved for future "
-		                  "use.",
+		                  "use.  All of [type], [id], and [reserved] must be "
+		                  "valid UTF-8.",
 		                  DBUS_TYPE_G_LIST_OF_STRING,
 		                  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
