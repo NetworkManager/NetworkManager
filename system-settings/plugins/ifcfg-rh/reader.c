@@ -182,6 +182,20 @@ make_connection_setting (const char *file,
 		g_free (value);
 	}
 
+	value = svGetValue (ifcfg, "USERS", FALSE);
+	if (value) {
+		char **items, **iter;
+
+		items = g_strsplit_set (value, " ", -1);
+		for (iter = items; iter && *iter; iter++) {
+			if (strlen (*iter)) {
+				if (!nm_setting_connection_add_permission (s_con, "user", *iter, NULL))
+					PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid USERS item '%s'", *iter);
+			}
+		}
+		g_free (value);
+	}
+
 	return NM_SETTING (s_con);
 }
 

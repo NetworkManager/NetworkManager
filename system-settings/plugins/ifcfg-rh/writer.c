@@ -68,7 +68,7 @@ set_secret (shvarFile *ifcfg,
 	svSetValue (ifcfg, key, NULL, FALSE);
 	svSetValue (keyfile, key, NULL, FALSE);
 
-	/* Only write the secret if it's system owned */
+	/* Only write the secret if it's system owned and supposed to be saved */
 	if (flags == NM_SETTING_SECRET_FLAG_NONE)
 		svSetValue (keyfile, key, value, verbatim);
 
@@ -969,6 +969,8 @@ static void
 write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 {
 	char *tmp;
+	guint32 n, i;
+	GString *str;
 
 	svSetValue (ifcfg, "NAME", nm_setting_connection_get_id (s_con), FALSE);
 	svSetValue (ifcfg, "UUID", nm_setting_connection_get_uuid (s_con), FALSE);
@@ -981,6 +983,28 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 		tmp = g_strdup_printf ("%" G_GUINT64_FORMAT, nm_setting_connection_get_timestamp (s_con));
 		svSetValue (ifcfg, "LAST_CONNECT", tmp, FALSE);
 		g_free (tmp);
+	}
+
+	/* Permissions */
+	svSetValue (ifcfg, "USERS", NULL, FALSE);
+	n = nm_setting_connection_get_num_permissions (s_con);
+	if (n > 0) {
+		str = g_string_sized_new (n * 20);
+
+		for (i = 0; i < n; i++) {
+			const char *puser = NULL;
+
+			/* Items separated by space for consistency with eg
+			 * IPV6ADDR_SECONDARIES and DOMAIN.
+			 */
+			if (str->len)
+				g_string_append_c (str, ' ');
+
+			if (nm_setting_connection_get_permission (s_con, i, NULL, &puser, NULL))
+				g_string_append (str, puser);
+		}
+		svSetValue (ifcfg, "USERS", str->str, FALSE);
+		g_string_free (str, TRUE);
 	}
 }
 

@@ -70,7 +70,8 @@ EXTRA_DIST = \
 	ifcfg-test-bridge-main \
 	ifcfg-test-bridge-component \
 	ifcfg-test-vlan-interface \
-	ifcfg-test-wifi-wep-no-keys
+	ifcfg-test-wifi-wep-no-keys \
+	ifcfg-test-permissions
 
 check-local:
 	@for f in $(EXTRA_DIST); do \
