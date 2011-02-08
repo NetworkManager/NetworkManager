@@ -327,8 +327,10 @@ need_secrets (NMSetting *setting)
 		return NULL;
 
 	if (priv->username) {
-		secrets = g_ptr_array_sized_new (1);
-		g_ptr_array_add (secrets, NM_SETTING_GSM_PASSWORD);
+		if (!(priv->password_flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED)) {
+			secrets = g_ptr_array_sized_new (1);
+			g_ptr_array_add (secrets, NM_SETTING_GSM_PASSWORD);
+		}
 	}
 
 	return secrets;
