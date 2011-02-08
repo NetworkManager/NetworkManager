@@ -678,6 +678,31 @@ get_done_cb (NMSecretAgent *agent,
 }
 
 static void
+set_secrets_not_required (NMConnection *connection, GHashTable *hash)
+{
+	GHashTableIter iter, setting_iter;
+	const char *setting_name = NULL;
+	GHashTable *setting_hash = NULL;
+
+	/* Iterate through the settings hashes */
+	g_hash_table_iter_init (&iter, hash);
+	while (g_hash_table_iter_next (&iter,
+	                               (gpointer *) &setting_name,
+	                               (gpointer *) &setting_hash)) {
+		const char *key_name = NULL;
+		NMSetting *setting;
+
+		setting = nm_connection_get_setting_by_name (connection, setting_name);
+		if (setting) {
+			/* Now through each secret in the setting and mark it as not required */
+			g_hash_table_iter_init (&setting_iter, setting_hash);
+			while (g_hash_table_iter_next (&setting_iter, (gpointer *) &key_name, NULL))
+				nm_setting_set_secret_flags (setting, key_name, NM_SETTING_SECRET_FLAG_NOT_REQUIRED, NULL);
+		}
+	}
+}
+
+static void
 get_agent_request_secrets (Request *req, gboolean include_system_secrets)
 {
 	NMConnection *tmp;
@@ -686,6 +711,13 @@ get_agent_request_secrets (Request *req, gboolean include_system_secrets)
 	nm_connection_clear_secrets (tmp);
 	if (include_system_secrets)
 		nm_connection_update_secrets (tmp, req->setting_name, req->existing_secrets, NULL);
+	else {
+		/* Update secret flags in the temporary connection to indicate that
+		 * the system secrets we're not sending to the agent aren't required,
+		 * so the agent can properly validate UI controls and such.
+		 */
+		set_secrets_not_required (tmp, req->existing_secrets);
+	}
 
 	req->current_call_id = nm_secret_agent_get_secrets (NM_SECRET_AGENT (req->current),
 	                                                    tmp,
@@ -725,7 +757,6 @@ get_agent_modify_auth_cb (NMAuthChain *chain,
 		/* Try the next agent */
 		req->next_callback (req);
 	} else {
-
 		/* If the agent obtained the 'modify' permission, we send all system secrets
 		 * to it.  If it didn't, we still ask it for secrets, but we don't send
 		 * any system secrets.
