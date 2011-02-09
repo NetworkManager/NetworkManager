@@ -695,20 +695,23 @@ nm_keyfile_plugin_write_connection (NMConnection *connection,
                                     char **out_path,
                                     GError **error)
 {
-	NMSettingConnection *s_con;
 	GKeyFile *key_file;
 	char *data;
 	gsize len;
 	gboolean success = FALSE;
 	char *filename, *path;
 	int err;
+	const char *id;
 
 	if (out_path)
 		g_return_val_if_fail (*out_path == NULL, FALSE);
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-	if (!s_con)
-		return success;
+	id = nm_connection_get_id (connection);
+	if (!id) {
+		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
+		             "%s.%d: connection had no ID", __FILE__, __LINE__);
+		return FALSE;
+	}
 
 	key_file = g_key_file_new ();
 	nm_connection_for_each_setting_value (connection, write_setting_value, key_file);
@@ -716,7 +719,7 @@ nm_keyfile_plugin_write_connection (NMConnection *connection,
 	if (!data)
 		goto out;
 
-	filename = _writer_id_to_filename (nm_setting_connection_get_id (s_con));
+	filename = _writer_id_to_filename (id);
 	path = g_build_filename (keyfile_dir, filename, NULL);
 	g_free (filename);
 
