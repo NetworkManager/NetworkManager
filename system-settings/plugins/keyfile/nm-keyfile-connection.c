@@ -47,8 +47,8 @@ nm_keyfile_connection_new (const char *full_path,
 {
 	GObject *object;
 	NMKeyfileConnectionPrivate *priv;
-	NMSettingConnection *s_con;
 	NMConnection *tmp;
+	const char *uuid;
 
 	g_return_val_if_fail (full_path != NULL, NULL);
 
@@ -75,24 +75,12 @@ nm_keyfile_connection_new (const char *full_path,
 		goto out;
 	}
 
-	/* if for some reason the connection didn't have a UUID, add one */
-	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (object), NM_TYPE_SETTING_CONNECTION);
-	if (s_con && !nm_setting_connection_get_uuid (s_con)) {
-		GError *write_error = NULL;
-		char *uuid;
-
-		uuid = nm_utils_uuid_generate ();
-		g_object_set (s_con, NM_SETTING_CONNECTION_UUID, uuid, NULL);
-		g_free (uuid);
-
-		if (!nm_keyfile_plugin_write_connection (NM_CONNECTION (object), KEYFILE_DIR, 0, 0, NULL, &write_error)) {
-			PLUGIN_WARN (KEYFILE_PLUGIN_NAME,
-			             "Couldn't update connection %s with a UUID: (%d) %s",
-			             nm_setting_connection_get_id (s_con),
-			             write_error ? write_error->code : -1,
-			             (write_error && write_error->message) ? write_error->message : "(unknown)");
-			g_propagate_error (error, write_error);
-		}
+	uuid = nm_connection_get_uuid (NM_CONNECTION (object));
+	if (!uuid) {
+		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
+		             "Connection in file %s had no UUID", full_path);
+		g_object_unref (object);
+		object = NULL;
 	}
 
 out:
