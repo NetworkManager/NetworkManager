@@ -77,7 +77,6 @@ _internal_new_connection (SCPluginKeyfile *self,
                           GError **error)
 {
 	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (self);
-	NMSettingConnection *s_con;
 	const char *cid, *uuid;
 	NMKeyfileConnection *connection;
 
@@ -87,13 +86,9 @@ _internal_new_connection (SCPluginKeyfile *self,
 	if (!connection)
 		return NULL;
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (connection),
-	                                                           NM_TYPE_SETTING_CONNECTION);
-	g_assert (s_con);
-
-	cid = nm_setting_connection_get_id (s_con);
+	cid = nm_connection_get_id (NM_CONNECTION (connection));
 	g_assert (cid);
-	uuid = nm_setting_connection_get_uuid (s_con);
+	uuid = nm_connection_get_uuid (NM_CONNECTION (connection));
 	g_assert (uuid);
 
 	g_hash_table_insert (priv->hash,
@@ -199,11 +194,8 @@ find_by_uuid (SCPluginKeyfile *self, const char *uuid)
 	g_hash_table_iter_init (&iter, priv->hash);
 	while (g_hash_table_iter_next (&iter, NULL, &data)) {
 		NMConnection *candidate = NM_CONNECTION (data);
-		NMSettingConnection *s_con;
 
-		s_con = (NMSettingConnection *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_CONNECTION);
-		g_assert (s_con);
-		if (strcmp (uuid, nm_setting_connection_get_uuid (s_con)) == 0)
+		if (strcmp (uuid, nm_connection_get_uuid (candidate)) == 0)
 			return NM_KEYFILE_CONNECTION (candidate);
 	}
 	return NULL;
