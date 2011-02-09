@@ -89,8 +89,10 @@ NMConnection *nm_connection_new_from_hash (GHashTable *hash, GError **error);
 
 NMConnection *nm_connection_duplicate     (NMConnection *connection);
 
+NMSetting    *nm_connection_create_setting (const char *name);
+
 void          nm_connection_add_setting   (NMConnection *connection,
-								   NMSetting    *setting);
+                                           NMSetting    *setting);
 
 void          nm_connection_remove_setting (NMConnection *connection,
                                             GType         setting_type);
@@ -99,7 +101,7 @@ NMSetting    *nm_connection_get_setting   (NMConnection *connection,
                                            GType         setting_type);
 
 NMSetting    *nm_connection_get_setting_by_name (NMConnection *connection,
-									    const char *name);
+                                                 const char   *name);
 
 gboolean      nm_connection_replace_settings (NMConnection *connection,
                                               GHashTable *new_settings,
@@ -121,10 +123,10 @@ gboolean      nm_connection_update_secrets (NMConnection *connection,
                                             GHashTable *secrets,
                                             GError **error);
 
-void             nm_connection_set_path (NMConnection *connection,
-                                         const char *path);
+void          nm_connection_set_path      (NMConnection *connection,
+                                           const char *path);
 
-const char *     nm_connection_get_path (NMConnection *connection);
+const char *  nm_connection_get_path      (NMConnection *connection);
 
 void          nm_connection_for_each_setting_value (NMConnection *connection,
                                                     NMSettingValueIterFn func,
@@ -135,11 +137,9 @@ GHashTable   *nm_connection_to_hash       (NMConnection *connection,
 
 void          nm_connection_dump          (NMConnection *connection);
 
-NMSetting    *nm_connection_create_setting (const char *name);
+GType         nm_connection_lookup_setting_type (const char *name);
 
-GType nm_connection_lookup_setting_type (const char *name);
-
-GType nm_connection_lookup_setting_type_by_quark (GQuark error_quark);
+GType         nm_connection_lookup_setting_type_by_quark (GQuark error_quark);
 
 G_END_DECLS
 
