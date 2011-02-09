@@ -225,9 +225,9 @@ register_default_settings (void)
 	                      1);
 
 	register_one_setting (NM_SETTING_BLUETOOTH_SETTING_NAME,
-			      NM_TYPE_SETTING_BLUETOOTH,
-			      NM_SETTING_BLUETOOTH_ERROR,
-			      1);
+	                      NM_TYPE_SETTING_BLUETOOTH,
+	                      NM_SETTING_BLUETOOTH_ERROR,
+	                      1);
 
 	register_one_setting (NM_SETTING_WIMAX_SETTING_NAME,
 	                      NM_TYPE_SETTING_WIMAX,
