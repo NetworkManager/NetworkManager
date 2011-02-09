@@ -700,7 +700,6 @@ nm_keyfile_plugin_write_connection (NMConnection *connection,
 	gsize len;
 	gboolean success = FALSE;
 	char *filename, *path;
-	int err;
 	const char *id;
 
 	if (out_path)
@@ -730,8 +729,7 @@ nm_keyfile_plugin_write_connection (NMConnection *connection,
 		             path, errno);
 		unlink (path);
 	} else {
-		err = chmod (path, S_IRUSR | S_IWUSR);
-		if (err) {
+		if (chmod (path, S_IRUSR | S_IWUSR) < 0) {
 			g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
 			             "%s.%d: error setting permissions on '%s': %d", __FILE__,
 			             __LINE__, path, errno);
