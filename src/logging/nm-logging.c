@@ -235,14 +235,14 @@ void _nm_log (const char *loc,
 
 	if ((log_level & LOGL_DEBUG) && (level == LOGL_DEBUG)) {
 		g_get_current_time (&tv);
-		syslog (LOG_INFO, "<debug> [%ld.%ld] [%s] %s(): %s\n", tv.tv_sec, tv.tv_usec, loc, func, msg);
+		syslog (LOG_INFO, "<debug> [%ld.%ld] [%s] %s(): %s", tv.tv_sec, tv.tv_usec, loc, func, msg);
 	} else if ((log_level & LOGL_INFO) && (level == LOGL_INFO))
-		syslog (LOG_INFO, "<info> %s\n", msg);
+		syslog (LOG_INFO, "<info> %s", msg);
 	else if ((log_level & LOGL_WARN) && (level == LOGL_WARN))
-		syslog (LOG_WARNING, "<warn> %s\n", msg);
+		syslog (LOG_WARNING, "<warn> %s", msg);
 	else if ((log_level & LOGL_ERR) && (level == LOGL_ERR)) {
 		g_get_current_time (&tv);
-		syslog (LOG_ERR, "<error> [%ld.%ld] [%s] %s(): %s\n", tv.tv_sec, tv.tv_usec, loc, func, msg);
+		syslog (LOG_ERR, "<error> [%ld.%ld] [%s] %s(): %s", tv.tv_sec, tv.tv_usec, loc, func, msg);
 	}
 	g_free (msg);
 }
