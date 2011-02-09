@@ -160,7 +160,7 @@ from earlier levels; thus setting the log level to INFO also logs error and
 warning messages.
 .TP
 .B domains=\fI<domain1>,<domain2>, ...\fP
-The following log domains are available: [NONE, HW, RKILL, ETHER, WIFI, BT, MB,
+The following log domains are available: [NONE, HW, RFKILL, ETHER, WIFI, BT, MB,
 DHCP4, DHCP6, PPP, WIFI_SCAN, IP4, IP6, AUTOIP4, DNS, VPN, SHARING, SUPPLICANT,
 USER_SET, SYS_SET, SUSPEND, CORE, DEVICE, OLPC].  When "NONE" is given by itself,
 logging is disabled.  MB = Mobile Broadband, USER_SET = user settings operations
