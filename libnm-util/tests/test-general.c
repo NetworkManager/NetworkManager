@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 - 2010 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  *
  */
 
@@ -129,6 +129,65 @@ test_setting_vpn_items (void)
 	nm_setting_vpn_foreach_secret (s_vpn, vpn_check_empty_func, "vpn-secrets-empty");
 
 	g_object_unref (s_vpn);
+}
+
+static void
+test_setting_vpn_update_secrets (void)
+{
+	NMConnection *connection;
+	NMSettingVPN *s_vpn;
+	GHashTable *settings, *vpn, *secrets;
+	GValue val = { 0 };
+	gboolean success;
+	GError *error = NULL;
+	const char *tmp;
+	const char *key1 = "foobar";
+	const char *key2 = "blahblah";
+	const char *val1 = "value1";
+	const char *val2 = "value2";
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "vpn-update-secrets",
+	        "error creating connection");
+
+	s_vpn = (NMSettingVPN *) nm_setting_vpn_new ();
+	ASSERT (s_vpn != NULL,
+	        "vpn-update-secrets",
+	        "error creating vpn setting");
+	nm_connection_add_setting (connection, NM_SETTING (s_vpn));
+
+	settings = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) g_hash_table_destroy);
+	vpn = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) g_value_unset);
+	g_hash_table_insert (settings, NM_SETTING_VPN_SETTING_NAME, vpn);
+
+	secrets = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, NULL);
+	g_value_init (&val, DBUS_TYPE_G_MAP_OF_STRING);
+	g_value_take_boxed (&val, secrets);
+	g_hash_table_insert (vpn, NM_SETTING_VPN_SECRETS, &val);
+
+	/* Add some secrets */
+	g_hash_table_insert (secrets, (char *) key1, (char *) val1);
+	g_hash_table_insert (secrets, (char *) key2, (char *) val2);
+
+	success = nm_connection_update_secrets (connection, NM_SETTING_VPN_SETTING_NAME, settings, &error);
+	ASSERT (success == TRUE,
+	        "vpn-update-secrets", "failed to update VPN secrets: %s", error->message);
+
+	/* Read the secrets back out */
+	tmp = nm_setting_vpn_get_secret (s_vpn, key1);
+	ASSERT (tmp != NULL,
+	        "vpn-update-secrets", "unexpected failure getting key #1");
+	ASSERT (strcmp (tmp, val1) == 0,
+	        "vpn-update-secrets", "unexpected key #1 value");
+
+	tmp = nm_setting_vpn_get_secret (s_vpn, key2);
+	ASSERT (tmp != NULL,
+	        "vpn-update-secrets", "unexpected failure getting key #2");
+	ASSERT (strcmp (tmp, val2) == 0,
+	        "vpn-update-secrets", "unexpected key #2 value");
+
+	g_object_unref (connection);
 }
 
 #define OLD_DBUS_TYPE_G_IP6_ADDRESS (dbus_g_type_get_struct ("GValueArray", DBUS_TYPE_G_UCHAR_ARRAY, G_TYPE_UINT, G_TYPE_INVALID))
@@ -617,6 +676,7 @@ int main (int argc, char **argv)
 
 	/* The tests */
 	test_setting_vpn_items ();
+	test_setting_vpn_update_secrets ();
 	test_setting_ip6_config_old_address_array ();
 	test_setting_gsm_apn_spaces ();
 	test_setting_gsm_apn_bad_chars ();

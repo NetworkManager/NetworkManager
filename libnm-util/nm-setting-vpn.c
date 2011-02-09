@@ -264,32 +264,89 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 }
 
 static gboolean
-update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **error)
+update_secret_string (NMSetting *setting,
+                      const char *key,
+                      const char *value,
+                      GError **error)
 {
 	NMSettingVPNPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
-	char *str;
 
 	g_return_val_if_fail (key != NULL, FALSE);
 	g_return_val_if_fail (value != NULL, FALSE);
 
-	if (!G_VALUE_HOLDS_STRING (value)) {
-		g_set_error (error, NM_SETTING_ERROR,
-		             NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
-		             "%s", key);
-		return FALSE;
-	}
-
-	str = g_value_dup_string (value);
-	if (!str || !strlen (str)) {
+	if (!value || !strlen (value)) {
 		g_set_error (error, NM_SETTING_ERROR,
 		             NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
 		             "Secret %s was empty", key);
-		g_free (str);
 		return FALSE;
 	}
 
-	g_hash_table_insert (priv->secrets, g_strdup (key), str);
+	g_hash_table_insert (priv->secrets, g_strdup (key), g_strdup (value));
 	return TRUE;
+}
+
+static gboolean
+update_secret_hash (NMSetting *setting,
+                    GHashTable *secrets,
+                    GError **error)
+{
+	NMSettingVPNPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
+	GHashTableIter iter;
+	const char *name, *value;
+
+	g_return_val_if_fail (secrets != NULL, FALSE);
+
+	/* Make sure the items are valid */
+	g_hash_table_iter_init (&iter, secrets);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &name, (gpointer *) &value)) {
+		if (!name || !strlen (name)) {
+			g_set_error_literal (error, NM_SETTING_ERROR,
+			                     NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
+			                     "Secret name was empty");
+			return FALSE;
+		}
+
+		if (!value || !strlen (value)) {
+			g_set_error (error, NM_SETTING_ERROR,
+			             NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
+				         "Secret %s value was empty", name);
+			return FALSE;
+		}
+	}
+
+	/* Now add the items to the settings' secrets list */
+	g_hash_table_iter_init (&iter, secrets);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &name, (gpointer *) &value))
+		g_hash_table_insert (priv->secrets, g_strdup (name), g_strdup (value));
+
+	return TRUE;
+}
+
+static gboolean
+update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **error)
+{
+	gboolean success = FALSE;
+
+	g_return_val_if_fail (key != NULL, FALSE);
+	g_return_val_if_fail (value != NULL, FALSE);
+
+	if (G_VALUE_HOLDS_STRING (value)) {
+		/* Passing the string properties individually isn't correct, and won't
+		 * produce the correct result, but for some reason that's how it used
+		 * to be done.  So even though it's not correct, keep the code around
+		 * for compatibility's sake.
+		 */
+		success = update_secret_string (setting, key, g_value_get_string (value), error);
+	} else if (G_VALUE_HOLDS (value, DBUS_TYPE_G_MAP_OF_STRING)) {
+		if (strcmp (key, NM_SETTING_VPN_SECRETS) != 0) {
+			g_set_error (error, NM_SETTING_ERROR, NM_SETTING_ERROR_PROPERTY_NOT_SECRET,
+			             "Property %s not a secret property", key);
+		} else
+			success = update_secret_hash (setting, g_value_get_boxed (value), error);
+	} else
+		g_set_error_literal (error, NM_SETTING_ERROR, NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH, key);
+
+	return success;
 }
 
 static gboolean
