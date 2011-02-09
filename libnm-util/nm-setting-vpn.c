@@ -399,6 +399,13 @@ set_secret_flags (NMSetting *setting,
 	return TRUE;
 }
 
+static GPtrArray *
+need_secrets (NMSetting *setting)
+{
+	/* Assume that VPN connections need secrets since they almost always will */
+	return g_ptr_array_sized_new (1);
+}
+
 static void
 destroy_one_secret (gpointer data)
 {
@@ -517,6 +524,7 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 	parent_class->update_one_secret = update_one_secret;
 	parent_class->get_secret_flags  = get_secret_flags;
 	parent_class->set_secret_flags  = set_secret_flags;
+	parent_class->need_secrets      = need_secrets;
 
 	/* Properties */
 	/**
