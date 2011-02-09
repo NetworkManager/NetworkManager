@@ -141,6 +141,11 @@ GType         nm_connection_lookup_setting_type (const char *name);
 
 GType         nm_connection_lookup_setting_type_by_quark (GQuark error_quark);
 
+/* Helpers */
+const char *  nm_connection_get_uuid      (NMConnection *connection);
+
+const char *  nm_connection_get_id        (NMConnection *connection);
+
 G_END_DECLS
 
 #endif /* NM_CONNECTION_H */

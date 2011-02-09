@@ -9,9 +9,11 @@ global:
 	nm_connection_error_get_type;
 	nm_connection_error_quark;
 	nm_connection_for_each_setting_value;
+	nm_connection_get_id;
 	nm_connection_get_path;
 	nm_connection_get_setting;
 	nm_connection_get_setting_by_name;
+	nm_connection_get_uuid;
 	nm_connection_get_type;
 	nm_connection_lookup_setting_type;
 	nm_connection_lookup_setting_type_by_quark;

@@ -1040,6 +1040,51 @@ nm_connection_duplicate (NMConnection *connection)
 	return dup;
 }
 
+/**
+ * nm_connection_get_uuid:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return the UUID from the connections #NMSettingConnection.
+ *
+ * Returns: the UUID from the connection's 'connection' setting
+ **/
+const char *
+nm_connection_get_uuid (NMConnection *connection)
+{
+	NMSettingConnection *s_con;
+
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	g_return_val_if_fail (s_con != NULL, NULL);
+
+	return nm_setting_connection_get_uuid (s_con);
+}
+
+/**
+ * nm_connection_get_uuid:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return the UUID from the connections #NMSettingConnection.
+ *
+ * Returns: the UUID from the connection's 'connection' setting
+ **/
+const char *nm_connection_get_id (NMConnection *connection)
+{
+	NMSettingConnection *s_con;
+
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	g_return_val_if_fail (s_con != NULL, NULL);
+
+	return nm_setting_connection_get_id (s_con);
+}
+
+/*************************************************************/
+
 static void
 nm_connection_init (NMConnection *connection)
 {
