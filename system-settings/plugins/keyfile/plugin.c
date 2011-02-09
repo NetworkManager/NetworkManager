@@ -73,31 +73,21 @@ static NMSettingsConnection *
 _internal_new_connection (SCPluginKeyfile *self,
                           const char *full_path,
                           NMConnection *source,
-                          const char **out_cid,
                           GError **error)
 {
 	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (self);
-	const char *cid, *uuid;
 	NMKeyfileConnection *connection;
 
 	g_return_val_if_fail (full_path != NULL, NULL);
 
 	connection = nm_keyfile_connection_new (full_path, source, error);
-	if (!connection)
-		return NULL;
+	if (connection) {
+		g_hash_table_insert (priv->hash,
+		                     (gpointer) nm_keyfile_connection_get_path (connection),
+		                     connection);
+	}
 
-	cid = nm_connection_get_id (NM_CONNECTION (connection));
-	g_assert (cid);
-	uuid = nm_connection_get_uuid (NM_CONNECTION (connection));
-	g_assert (uuid);
-
-	g_hash_table_insert (priv->hash,
-	                     (gpointer) nm_keyfile_connection_get_path (connection),
-	                     connection);
-
-	if (out_cid)
-		*out_cid = cid;
-	return NM_SETTINGS_CONNECTION (connection);
+	return (NMSettingsConnection *) connection;
 }
 
 static void
@@ -106,7 +96,7 @@ read_connections (NMSystemConfigInterface *config)
 	SCPluginKeyfile *self = SC_PLUGIN_KEYFILE (config);
 	GDir *dir;
 	GError *error = NULL;
-	const char *item, *cid;
+	const char *item;
 
 	dir = g_dir_open (KEYFILE_DIR, 0, &error);
 	if (!dir) {
@@ -128,9 +118,10 @@ read_connections (NMSystemConfigInterface *config)
 		full_path = g_build_filename (KEYFILE_DIR, item, NULL);
 		PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "parsing %s ... ", item);
 
-		connection = _internal_new_connection (self, full_path, NULL, &cid, &error);
+		connection = _internal_new_connection (self, full_path, NULL, &error);
 		if (connection) {
-			PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "    read connection '%s'", cid);
+			PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "    read connection '%s'",
+			              nm_connection_get_id (NM_CONNECTION (connection)));
 		} else {
 			PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "    error: %s",
 				          (error && error->message) ? error->message : "(unknown)");
@@ -408,8 +399,8 @@ add_connection (NMSystemConfigInterface *config,
 	char *path = NULL;
 
 	/* Write it out first, then add the connection to our internal list */
-	if (nm_keyfile_plugin_write_connection (connection, KEYFILE_DIR, 0, 0, &path, error)) {
-		added = _internal_new_connection (self, path, connection, NULL, error);
+	if (nm_keyfile_plugin_write_connection (connection, NULL, &path, error)) {
+		added = _internal_new_connection (self, path, connection, error);
 		g_free (path);
 	}
 	return added;

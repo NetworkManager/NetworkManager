@@ -687,13 +687,14 @@ _writer_id_to_filename (const char *id)
 	return filename;
 }
 
-gboolean
-nm_keyfile_plugin_write_connection (NMConnection *connection,
-                                    const char *keyfile_dir,
-                                    uid_t owner_uid,
-                                    pid_t owner_grp,
-                                    char **out_path,
-                                    GError **error)
+static gboolean
+_internal_write_connection (NMConnection *connection,
+                            const char *keyfile_dir,
+                            uid_t owner_uid,
+                            pid_t owner_grp,
+                            const char *existing_path,
+                            char **out_path,
+                            GError **error)
 {
 	GKeyFile *key_file;
 	char *data;
@@ -722,6 +723,8 @@ nm_keyfile_plugin_write_connection (NMConnection *connection,
 	path = g_build_filename (keyfile_dir, filename, NULL);
 	g_free (filename);
 
+	/* If the file already exists */
+
 	g_file_set_contents (path, data, len, error);
 	if (chown (path, owner_uid, owner_grp) < 0) {
 		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
@@ -747,3 +750,34 @@ out:
 	g_key_file_free (key_file);
 	return success;
 }
+
+gboolean
+nm_keyfile_plugin_write_connection (NMConnection *connection,
+                                    const char *existing_path,
+                                    char **out_path,
+                                    GError **error)
+{
+	return _internal_write_connection (connection,
+	                                   KEYFILE_DIR,
+	                                   0, 0,
+	                                   existing_path,
+	                                   out_path,
+	                                   error);
+}
+
+gboolean
+nm_keyfile_plugin_write_test_connection (NMConnection *connection,
+                                         const char *keyfile_dir,
+                                         uid_t owner_uid,
+                                         pid_t owner_grp,
+                                         char **out_path,
+                                         GError **error)
+{
+	return _internal_write_connection (connection,
+	                                   keyfile_dir,
+	                                   owner_uid, owner_grp,
+	                                   NULL,
+	                                   out_path,
+	                                   error);
+}
+

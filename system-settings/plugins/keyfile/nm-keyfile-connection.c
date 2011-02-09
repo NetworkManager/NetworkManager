@@ -105,7 +105,10 @@ commit_changes (NMSettingsConnection *connection,
 	char *path = NULL;
 	GError *error = NULL;
 
-	if (!nm_keyfile_plugin_write_connection (NM_CONNECTION (connection), KEYFILE_DIR, 0, 0, &path, &error)) {
+	if (!nm_keyfile_plugin_write_connection (NM_CONNECTION (connection),
+	                                         priv->path,
+	                                         &path,
+	                                         &error)) {
 		callback (connection, error, user_data);
 		g_clear_error (&error);
 		return;

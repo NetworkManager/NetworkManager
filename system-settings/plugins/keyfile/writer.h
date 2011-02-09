@@ -27,10 +27,15 @@
 #include <nm-connection.h>
 
 gboolean nm_keyfile_plugin_write_connection (NMConnection *connection,
-                                             const char *keyfile_dir,
-                                             uid_t owner_uid,
-                                             pid_t owner_grp,
+                                             const char *existing_path,
                                              char **out_path,
                                              GError **error);
+
+gboolean nm_keyfile_plugin_write_test_connection (NMConnection *connection,
+                                                  const char *keyfile_dir,
+                                                  uid_t owner_uid,
+                                                  pid_t owner_grp,
+                                                  char **out_path,
+                                                  GError **error);
 
 #endif /* _KEYFILE_PLUGIN_WRITER_H */
