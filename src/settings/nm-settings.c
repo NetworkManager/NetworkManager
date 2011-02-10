@@ -749,6 +749,21 @@ add_new_connection (NMSettings *self,
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GSList *iter;
 	NMSettingsConnection *added = NULL;
+	GHashTableIter citer;
+	NMConnection *candidate = NULL;
+
+	/* Make sure a connection with this UUID doesn't already exist */
+	g_hash_table_iter_init (&citer, priv->connections);
+	while (g_hash_table_iter_next (&citer, NULL, (gpointer *) &candidate)) {
+		if (g_strcmp0 (nm_connection_get_uuid (connection),
+		               nm_connection_get_uuid (candidate)) == 0) {
+			g_set_error_literal (error,
+			                     NM_SETTINGS_ERROR,
+			                     NM_SETTINGS_ERROR_UUID_EXISTS,
+			                     "A connection with this UUID already exists.");
+			return NULL;
+		}
+	}
 
 	/* 1) plugin writes the NMConnection to disk
 	 * 2) plugin creates a new NMSettingsConnection subclass with the settings
@@ -881,7 +896,20 @@ nm_settings_add_connection (NMSettings *self,
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	NMAuthChain *chain;
-	GError *error;
+	GError *error = NULL, *tmp_error = NULL;
+
+	/* Connection must be valid, of course */
+	if (!nm_connection_verify (connection, &tmp_error)) {
+		error = g_error_new (NM_SETTINGS_ERROR,
+		                     NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		                     "The connection was invalid: %s",
+		                     tmp_error ? tmp_error->message : "(unknown)");
+		g_error_free (tmp_error);
+
+		callback (self, NULL, error, context, user_data);
+		g_error_free (error);
+		return;
+	}
 
 	/* Do any of the plugins support adding? */
 	if (!get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS)) {
