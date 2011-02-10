@@ -34,6 +34,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-polkit-helpers.h"
 #include "nm-manager-auth.h"
+#include "nm-setting-vpn.h"
 
 G_DEFINE_TYPE (NMAgentManager, nm_agent_manager, G_TYPE_OBJECT)
 
@@ -691,13 +692,29 @@ set_secrets_not_required (NMConnection *connection, GHashTable *hash)
 	                               (gpointer *) &setting_hash)) {
 		const char *key_name = NULL;
 		NMSetting *setting;
+		GValue *val;
 
 		setting = nm_connection_get_setting_by_name (connection, setting_name);
 		if (setting) {
 			/* Now through each secret in the setting and mark it as not required */
 			g_hash_table_iter_init (&setting_iter, setting_hash);
-			while (g_hash_table_iter_next (&setting_iter, (gpointer *) &key_name, NULL))
-				nm_setting_set_secret_flags (setting, key_name, NM_SETTING_SECRET_FLAG_NOT_REQUIRED, NULL);
+			while (g_hash_table_iter_next (&setting_iter, (gpointer *) &key_name, (gpointer *) &val)) {
+				/* For each secret, set the flag that it's not required; VPN
+				 * secrets need slightly different treatment here since the
+				 * "secrets" property is actually a hash table of secrets.
+				 */
+				if (   strcmp (setting_name, NM_SETTING_VPN_SETTING_NAME) == 0
+				    && strcmp (key_name, NM_SETTING_VPN_SECRETS) == 0
+				    && G_VALUE_HOLDS (val, DBUS_TYPE_G_MAP_OF_STRING)) {
+					GHashTableIter vpn_secret_iter;
+					const char *secret_name;
+
+					g_hash_table_iter_init (&vpn_secret_iter, g_value_get_boxed (val));
+					while (g_hash_table_iter_next (&vpn_secret_iter, (gpointer *) &secret_name, NULL))
+						nm_setting_set_secret_flags (setting, secret_name, NM_SETTING_SECRET_FLAG_NOT_REQUIRED, NULL);
+				} else
+					nm_setting_set_secret_flags (setting, key_name, NM_SETTING_SECRET_FLAG_NOT_REQUIRED, NULL);
+			}
 		}
 	}
 }
