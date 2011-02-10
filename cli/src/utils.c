@@ -330,7 +330,7 @@ nmc_is_nm_running (NmCli *nmc, GError **error)
 		g_string_printf (nmc->return_text, _("Error: Couldn't create D-Bus object proxy for org.freedesktop.DBus"));
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		if (error)
-			g_set_error (error, 0, 0, nmc->return_text->str);
+			g_set_error (error, 0, 0, "%s", nmc->return_text->str);
 		goto done;
 	}
  
