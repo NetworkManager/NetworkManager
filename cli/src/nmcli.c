@@ -16,7 +16,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 Red Hat, Inc.
+ * (C) Copyright 2010 - 2011 Red Hat, Inc.
  */
 
 /* Generated configuration file */
@@ -30,8 +30,6 @@
 
 #include <glib.h>
 #include <glib/gi18n.h>
-#include <dbus/dbus.h>
-#include <dbus/dbus-glib.h>
 #include <nm-client.h>
 #include <nm-setting-connection.h>
 #include <nm-remote-settings.h>
@@ -256,8 +254,8 @@ nmc_get_client (NmCli *nmc)
 	if (!nmc->client) {
 		nmc->client = nm_client_new ();
 		if (!nmc->client) {
-			g_string_printf (nmc->return_text, _("Error: Could not connect to NetworkManager."));
-			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+			g_critical (_("Error: Could not create NMClient object."));
+			exit (NMC_RESULT_ERROR_UNKNOWN);
 		}
 	}
 
