@@ -23,7 +23,6 @@
 
 #include <glib.h>
 #include <glib/gi18n.h>
-#include <dbus/dbus-glib-bindings.h>
 #include <nm-client.h>
 #include <nm-setting-connection.h>
 
@@ -100,54 +99,6 @@ nm_state_to_string (NMState state)
 	}
 }
 
-/* Find out whether NetworkManager is running (via D-Bus NameHasOwner), assuring
- * NetworkManager won't be autostart (by D-Bus) if not running.
- * We can't use NMClient (nm_client_get_manager_running()) here because NMClient
- * constructor calls GetPermissions of NM_DBUS_SERVICE, which would autostart
- * NetworkManger if it is configured as D-Bus launchable service. */
-static gboolean
-is_nm_running (NmCli *nmc)
-{
-	DBusGConnection *connection = NULL;
-	DBusGProxy *proxy = NULL;
-	GError *err = NULL;
-	gboolean has_owner = FALSE;
-
-	connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &err);
-	if (!connection) {
-		g_string_printf (nmc->return_text, _("Error: Couldn't connect to system bus: %s"), err->message);
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-		g_clear_error (&err);
-		goto done;
-	}
-
-	proxy = dbus_g_proxy_new_for_name (connection,
-	                                   "org.freedesktop.DBus",
-	                                   "/org/freedesktop/DBus",
-	                                   "org.freedesktop.DBus");
-	if (!proxy) {
-		g_string_printf (nmc->return_text, _("Error: Couldn't create D-Bus object proxy for org.freedesktop.DBus"));
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-		goto done;
-	}
- 
-	if (!org_freedesktop_DBus_name_has_owner (proxy, NM_DBUS_SERVICE, &has_owner, &err)) {
-		g_string_printf (nmc->return_text, _("Error: NameHasOwner request failed: %s"),
-		                 (err && err->message) ? err->message : _("(unknown)"));
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-		g_clear_error (&err);
-		goto done;
-	}
-
-done:
-	if (connection)
-		dbus_g_connection_unref (connection);
-	if (proxy)
-		g_object_unref (proxy);
-
-	return has_owner;
-}
-
 static NMCResultCode
 show_nm_status (NmCli *nmc)
 {
@@ -189,7 +140,7 @@ show_nm_status (NmCli *nmc)
 	nmc->print_fields.header_name = _("NetworkManager status");
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
 
-	nm_running = is_nm_running (nmc);
+	nm_running = nmc_is_nm_running (nmc, NULL);
 	if (nm_running) {
 		nmc->get_client (nmc); /* create NMClient */
 		state = nm_client_get_state (nmc->client);
@@ -300,7 +251,7 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 				nmc->print_fields.header_name = _("Networking enabled");
 				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
 
-				if (is_nm_running (nmc)) {
+				if (nmc_is_nm_running (nmc, NULL)) {
 					nmc->get_client (nmc); /* create NMClient */
 					nmc->allowed_fields[2].value = nm_client_networking_get_enabled (nmc->client) ? _("enabled") : _("disabled");
 				} else
@@ -355,7 +306,7 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 				nmc->print_fields.header_name = _("WiFi enabled");
 				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
 
-				if (is_nm_running (nmc)) {
+				if (nmc_is_nm_running (nmc, NULL)) {
 					nmc->get_client (nmc); /* create NMClient */
 					nmc->allowed_fields[4].value = nm_client_wireless_get_enabled (nmc->client) ? _("enabled") : _("disabled");
 				} else
@@ -393,7 +344,7 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 				nmc->print_fields.header_name = _("WWAN enabled");
 				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
 
-				if (is_nm_running (nmc)) {
+				if (nmc_is_nm_running (nmc, NULL)) {
 					nmc->get_client (nmc); /* create NMClient */
 					nmc->allowed_fields[6].value = nm_client_wwan_get_enabled (nmc->client) ? _("enabled") : _("disabled");
 				} else
@@ -431,7 +382,7 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 				nmc->print_fields.header_name = _("WiMAX enabled");
 				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
 
-				if (is_nm_running (nmc)) {
+				if (nmc_is_nm_running (nmc, NULL)) {
 					nmc->get_client (nmc); /* create NMClient */
 					nmc->allowed_fields[8].value = nm_client_wimax_get_enabled (nmc->client) ? _("enabled") : _("disabled");
 				} else

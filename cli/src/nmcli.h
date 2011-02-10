@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 Red Hat, Inc.
+ * (C) Copyright 2010 - 2011 Red Hat, Inc.
  */
 
 #ifndef NMC_NMCLI_H
@@ -47,7 +47,10 @@ typedef enum {
 	NMC_RESULT_ERROR_CON_DEACTIVATION = 5,
 
 	/* Error in device disconnect */
-	NMC_RESULT_ERROR_DEV_DISCONNECT = 6
+	NMC_RESULT_ERROR_DEV_DISCONNECT = 6,
+
+	/* NetworkManager is not running */
+	NMC_RESULT_ERROR_NM_NOT_RUNNING = 7
 } NMCResultCode;
 
 typedef enum {
