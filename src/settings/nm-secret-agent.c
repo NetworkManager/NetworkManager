@@ -187,7 +187,7 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
 
 	priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 
-	hash = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_NO_SECRETS);
+	hash = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
 
 	r = request_new (self, nm_connection_get_path (connection), setting_name, callback, callback_data);
 	r->call = dbus_g_proxy_begin_call_with_timeout (priv->proxy,
