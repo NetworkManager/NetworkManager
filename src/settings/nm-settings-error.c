@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2008 - 2010 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
 #include "nm-settings-error.h"
@@ -57,14 +57,22 @@ nm_settings_error_get_type (void)
 			ENUM_ENTRY (NM_SETTINGS_ERROR_PERMISSION_DENIED, "PermissionDenied"),
 			/* The requested setting does not existing in this connection. */
 			ENUM_ENTRY (NM_SETTINGS_ERROR_INVALID_SETTING, "InvalidSetting"),
-
+			/* The caller does not have permission to perform this operation */
 			ENUM_ENTRY (NM_SETTINGS_ERROR_NOT_PRIVILEGED, "NotPrivileged"),
+			/* No plugin supports adding new connections */
 			ENUM_ENTRY (NM_SETTINGS_ERROR_ADD_NOT_SUPPORTED, "AddNotSupported"),
+			/* The plugin providing this connection does not support updating it */
 			ENUM_ENTRY (NM_SETTINGS_ERROR_UPDATE_NOT_SUPPORTED, "UpdateNotSupported"),
+			/* The plugin providing this connection does not support deleting it */
 			ENUM_ENTRY (NM_SETTINGS_ERROR_DELETE_NOT_SUPPORTED, "DeleteNotSupported"),
+			/* Failed to add the connection */
 			ENUM_ENTRY (NM_SETTINGS_ERROR_ADD_FAILED, "AddFailed"),
+			/* No plugin supports modifying the system hostname */
 			ENUM_ENTRY (NM_SETTINGS_ERROR_SAVE_HOSTNAME_NOT_SUPPORTED, "SaveHostnameNotSupported"),
+			/* Saving the system hostname failed */
 			ENUM_ENTRY (NM_SETTINGS_ERROR_SAVE_HOSTNAME_FAILED, "SaveHostnameFailed"),
+			/* A connection with this UUID already exists */
+			ENUM_ENTRY (NM_SETTINGS_ERROR_UUID_EXISTS, "UuidExists"),
 			{ 0, 0, 0 }
 		};
 

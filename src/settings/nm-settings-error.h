@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2008 - 2010 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
 #ifndef NM_SETTINGS_ERROR_H
@@ -41,12 +41,13 @@ enum {
 	NM_SETTINGS_ERROR_ADD_FAILED,
 	NM_SETTINGS_ERROR_SAVE_HOSTNAME_NOT_SUPPORTED,
 	NM_SETTINGS_ERROR_SAVE_HOSTNAME_FAILED,
+	NM_SETTINGS_ERROR_UUID_EXISTS,
 };
 
 #define NM_SETTINGS_ERROR (nm_settings_error_quark ())
-#define NM_TYPE_SETTINGS_ERROR (nm_settings_error_get_type ())
+GQuark nm_settings_error_quark (void);
 
-GQuark nm_settings_error_quark    (void);
+#define NM_TYPE_SETTINGS_ERROR (nm_settings_error_get_type ())
 GType  nm_settings_error_get_type (void);
 
 #endif /* NM_SETTINGS_ERROR_H */
