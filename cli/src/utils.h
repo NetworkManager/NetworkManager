@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 Red Hat, Inc.
+ * (C) Copyright 2010 - 2011 Red Hat, Inc.
  */
 
 #ifndef NMC_UTILS_H
@@ -32,5 +32,6 @@ int nmc_string_screen_width (const char *start, const char *end);
 GArray *parse_output_fields (const char *fields_str, const NmcOutputField fields_array[], GError **error);
 gboolean nmc_terse_option_check (NMCPrintOutput print_output, const char *fields, GError **error);
 void print_fields (const NmcPrintFields fields, const NmcOutputField field_values[]);
+gboolean nmc_is_nm_running (NmCli *nmc, GError **error);
 
 #endif /* NMC_UTILS_H */
