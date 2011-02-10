@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2010 Red Hat, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
 #include <dbus/dbus-glib.h>
@@ -1244,7 +1244,7 @@ nm_client_get_state (NMClient *client)
  *
  * Whether networking is enabled or disabled.
  *
- * Returns: %TRUE if networking is disabled, %FALSE if networking is enabled
+ * Returns: %TRUE if networking is enabled, %FALSE if networking is disabled
  **/
 gboolean
 nm_client_networking_get_enabled (NMClient *client)
