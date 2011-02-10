@@ -1603,8 +1603,33 @@ write_connection (NMConnection *connection,
 
 		escaped = escape_id (nm_setting_connection_get_id (s_con));
 		ifcfg_name = g_strdup_printf ("%s/ifcfg-%s", ifcfg_dir, escaped);
-		ifcfg = svCreateFile (ifcfg_name);
+
+		/* If a file with this path already exists then we need another name.
+		 * Multiple connections can have the same ID (ie if two connections with
+		 * the same ID are visible to different users) but of course can't have
+		 * the same path.
+		 */
+		if (g_file_test (ifcfg_name, G_FILE_TEST_EXISTS)) {
+			guint32 idx = 0;
+
+			g_free (ifcfg_name);
+			while (idx++ < 500) {
+				ifcfg_name = g_strdup_printf ("%s/ifcfg-%s %u", ifcfg_dir, escaped, idx);
+				if (g_file_test (ifcfg_name, G_FILE_TEST_EXISTS) == FALSE)
+					break;
+				g_free (ifcfg_name);
+				ifcfg_name = NULL;
+			}
+		}
 		g_free (escaped);
+
+		if (ifcfg_name == NULL) {
+			g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0,
+			                     "Failed to find usable ifcfg file name");
+			return FALSE;
+		}
+
+		ifcfg = svCreateFile (ifcfg_name);
 	}
 
 	if (!ifcfg) {
