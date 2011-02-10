@@ -700,7 +700,7 @@ _internal_write_connection (NMConnection *connection,
 	char *data;
 	gsize len;
 	gboolean success = FALSE;
-	char *filename, *path;
+	char *filename = NULL, *path;
 	const char *id;
 
 	if (out_path)
@@ -721,9 +721,28 @@ _internal_write_connection (NMConnection *connection,
 
 	filename = _writer_id_to_filename (id);
 	path = g_build_filename (keyfile_dir, filename, NULL);
-	g_free (filename);
 
-	/* If the file already exists */
+	/* If a file with this path already exists (but isn't the existing path
+	 * of the connection) then we need another name.  Multiple connections
+	 * can have the same ID (ie if two connections with the same ID are visible
+	 * to different users) but of course can't have the same path.  Yeah,
+	 * there's a race here, but there's not a lot we can do about it, and
+	 * we shouldn't get more than one connection with the same UUID either.
+	 */
+	if (g_file_test (path, G_FILE_TEST_EXISTS) && (g_strcmp0 (path, existing_path) != 0)) {
+		/* A keyfile with this connection's ID already exists. Pick another name. */
+		g_free (path);
+
+		path = g_strdup_printf ("%s/%s-%s", keyfile_dir, filename, nm_connection_get_uuid (connection));
+		if (g_file_test (path, G_FILE_TEST_EXISTS)) {
+			/* Hmm, this is odd. Give up. */
+			g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
+				         "%s.%d: could not find suitable keyfile file name (%s already used)",
+				         __FILE__, __LINE__, path);
+			g_free (path);
+			goto out;
+		}
+	}
 
 	g_file_set_contents (path, data, len, error);
 	if (chown (path, owner_uid, owner_grp) < 0) {
@@ -738,14 +757,17 @@ _internal_write_connection (NMConnection *connection,
 			             __LINE__, path, errno);
 			unlink (path);
 		} else {
-			if (out_path)
-				*out_path = g_strdup (path);
+			if (out_path && g_strcmp0 (existing_path, path)) {
+				*out_path = path;  /* pass path out to caller */
+				path = NULL;
+			}
 			success = TRUE;
 		}
 	}
 	g_free (path);
 
 out:
+	g_free (filename);
 	g_free (data);
 	g_key_file_free (key_file);
 	return success;

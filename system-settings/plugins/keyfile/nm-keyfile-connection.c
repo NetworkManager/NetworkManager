@@ -114,12 +114,11 @@ commit_changes (NMSettingsConnection *connection,
 		return;
 	}
 
-	if (g_strcmp0 (priv->path, path)) {
-		/* Update the filename if it changed */
+	/* Update the filename if it changed */
+	if (path) {
 		g_free (priv->path);
 		priv->path = path;
-	} else
-		g_free (path);
+	}
 
 	NM_SETTINGS_CONNECTION_CLASS (nm_keyfile_connection_parent_class)->commit_changes (connection,
 	                                                                                   callback,
