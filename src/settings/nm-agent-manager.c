@@ -734,7 +734,8 @@ get_agent_request_secrets (Request *req, gboolean include_system_secrets)
 		 * the system secrets we're not sending to the agent aren't required,
 		 * so the agent can properly validate UI controls and such.
 		 */
-		set_secrets_not_required (tmp, req->existing_secrets);
+		if (req->existing_secrets)
+			set_secrets_not_required (tmp, req->existing_secrets);
 	}
 
 	req->current_call_id = nm_secret_agent_get_secrets (NM_SECRET_AGENT (req->current),
