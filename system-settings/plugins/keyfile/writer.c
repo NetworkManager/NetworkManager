@@ -415,43 +415,37 @@ mac_address_writer (GKeyFile *file,
 	g_key_file_set_string (file, setting_name, key, mac);
 }
 
-typedef struct {
-	GKeyFile *file;
-	const char *setting_name;
-} WriteStringHashInfo;
-
-static void
-write_hash_of_string_helper (gpointer key, gpointer data, gpointer user_data)
-{
-	WriteStringHashInfo *info = (WriteStringHashInfo *) user_data;
-	const char *property = (const char *) key;
-	const char *value = (const char *) data;
-
-	g_key_file_set_string (info->file,
-	                       info->setting_name,
-	                       property,
-	                       value);
-}
-
 static void
 write_hash_of_string (GKeyFile *file,
                       NMSetting *setting,
                       const char *key,
                       const GValue *value)
 {
-	GHashTable *hash = g_value_get_boxed (value);
-	WriteStringHashInfo info;
-
-	info.file = file;
+	GHashTableIter iter;
+	const char *property = NULL, *data = NULL;
+	const char *group_name = nm_setting_get_name (setting);
+	gboolean vpn_secrets = FALSE;
 
 	/* Write VPN secrets out to a different group to keep them separate */
-	if (   (G_OBJECT_TYPE (setting) == NM_TYPE_SETTING_VPN)
-	    && !strcmp (key, NM_SETTING_VPN_SECRETS)) {
-		info.setting_name = VPN_SECRETS_GROUP;
-	} else
-		info.setting_name = nm_setting_get_name (setting);
+	if (NM_IS_SETTING_VPN (setting) && !strcmp (key, NM_SETTING_VPN_SECRETS)) {
+		group_name = VPN_SECRETS_GROUP;
+		vpn_secrets = TRUE;
+	}
 
-	g_hash_table_foreach (hash, write_hash_of_string_helper, &info);
+	g_hash_table_iter_init (&iter, (GHashTable *) g_value_get_boxed (value));
+	while (g_hash_table_iter_next (&iter, (gpointer *) &property, (gpointer *) &data)) {
+		NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
+
+		/* Handle VPN secrets specially; they are nested in the property's hash;
+		 * we don't want to write them if the secret is not saved or not required.
+		 */
+		if (vpn_secrets && nm_setting_get_secret_flags (setting, property, &flags, NULL)) {
+			if (flags & (NM_SETTING_SECRET_FLAG_NOT_SAVED | NM_SETTING_SECRET_FLAG_NOT_REQUIRED))
+				continue;
+		}
+
+		g_key_file_set_string (file, group_name, property, data);
+	}
 }
 
 static void
