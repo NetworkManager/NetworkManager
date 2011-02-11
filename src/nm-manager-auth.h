@@ -39,7 +39,7 @@
 #define NM_AUTH_PERMISSION_WIFI_SHARE_OPEN            "org.freedesktop.NetworkManager.wifi.share.open"
 #define NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM     "org.freedesktop.NetworkManager.settings.modify.system"
 #define NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN        "org.freedesktop.NetworkManager.settings.modify.own"
-#define NM_AUTH_PERMISSION_SETTINGS_HOSTNAME_MODIFY   "org.freedesktop.NetworkManager.settings.hostname.modify"
+#define NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME   "org.freedesktop.NetworkManager.settings.modify.hostname"
 
 
 typedef struct NMAuthChain NMAuthChain;

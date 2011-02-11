@@ -975,7 +975,7 @@ pk_hostname_cb (NMAuthChain *chain,
 		goto done;
 	}
 
-	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_SETTINGS_HOSTNAME_MODIFY);
+	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME);
 
 	/* Caller didn't successfully authenticate */
 	if (result != NM_AUTH_CALL_RESULT_YES) {
@@ -1036,7 +1036,7 @@ impl_settings_save_hostname (NMSettings *self,
 	chain = nm_auth_chain_new (priv->authority, context, NULL, pk_hostname_cb, self);
 	g_assert (chain);
 	priv->auths = g_slist_append (priv->auths, chain);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_HOSTNAME_MODIFY, TRUE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME, TRUE);
 	nm_auth_chain_set_data (chain, "hostname", g_strdup (hostname), g_free);
 }
 

@@ -99,7 +99,7 @@
     </defaults>
   </action>
 
-  <action id="org.freedesktop.NetworkManager.settings.hostname.modify">
+  <action id="org.freedesktop.NetworkManager.settings.modify.hostname">
     <_description>Modify persistent system hostname</_description>
     <_message>System policy prevents modification of the persistent system hostname</_message>
     <defaults>
