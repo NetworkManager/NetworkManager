@@ -723,7 +723,7 @@ pk_auth_cb (NMAuthChain *chain,
 		                     "Error checking authorization: %s",
 		                     chain_error->message ? chain_error->message : "(unknown)");
 	} else {
-		result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY);
+		result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM);
 
 		/* Caller didn't successfully authenticate */
 		if (result != NM_AUTH_CALL_RESULT_YES) {
@@ -787,7 +787,7 @@ auth_start (NMSettingsConnection *self,
 		info->sender_uid = sender_uid;
 		nm_auth_chain_set_data (chain, "pk-auth-info", info, g_free);
 
-		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY, TRUE);
+		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM, TRUE);
 		priv->pending_auths = g_slist_append (priv->pending_auths, chain);
 	} else {
 		/* Don't need polkit auth, automatic success */

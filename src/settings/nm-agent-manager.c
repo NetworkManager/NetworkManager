@@ -778,7 +778,7 @@ get_agent_modify_auth_cb (NMAuthChain *chain,
 		 * to it.  If it didn't, we still ask it for secrets, but we don't send
 		 * any system secrets.
 		 */
-		result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY);
+		result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM);
 		if (result == NM_AUTH_CALL_RESULT_YES)
 			req->current_has_modify = TRUE;
 
@@ -813,7 +813,7 @@ get_next_cb (Request *req)
 		                                            get_agent_modify_auth_cb,
 		                                            req);
 		g_assert (req->chain);
-		nm_auth_chain_add_call (req->chain, NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY, TRUE);
+		nm_auth_chain_add_call (req->chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM, TRUE);
 	} else {
 		nm_log_dbg (LOGD_AGENTS, "(%p/%s) requesting user-owned secrets from agent %s",
 			        req, req->setting_name, agent_dbus_owner);

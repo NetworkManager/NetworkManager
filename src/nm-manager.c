@@ -2730,7 +2730,7 @@ get_permissions_done_cb (NMAuthChain *chain,
 		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_NETWORK_CONTROL);
 		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED);
 		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN);
-		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY);
+		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM);
 		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_SETTINGS_HOSTNAME_MODIFY);
 		dbus_g_method_return (context, results);
 		g_hash_table_destroy (results);
@@ -2761,7 +2761,7 @@ impl_manager_get_permissions (NMManager *self,
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN, FALSE);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_HOSTNAME_MODIFY, FALSE);
 }
 

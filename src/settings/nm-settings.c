@@ -815,7 +815,7 @@ pk_add_cb (NMAuthChain *chain,
 		goto done;
 	}
 
-	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY);
+	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM);
 
 	/* Caller didn't successfully authenticate */
 	if (result != NM_AUTH_CALL_RESULT_YES) {
@@ -925,7 +925,7 @@ nm_settings_add_connection (NMSettings *self,
 	chain = nm_auth_chain_new (priv->authority, context, NULL, pk_add_cb, self);
 	g_assert (chain);
 	priv->auths = g_slist_append (priv->auths, chain);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_CONNECTION_MODIFY, TRUE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM, TRUE);
 	nm_auth_chain_set_data (chain, "connection", g_object_ref (connection), g_object_unref);
 	nm_auth_chain_set_data (chain, "callback", callback, NULL);
 	nm_auth_chain_set_data (chain, "callback-data", user_data, NULL);
