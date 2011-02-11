@@ -24,6 +24,7 @@
 #include <NetworkManager.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include <nm-setting-connection.h>
+#include <nm-setting-vpn.h>
 #include <nm-utils.h>
 
 #include "nm-settings-connection.h"
@@ -163,9 +164,23 @@ only_system_secrets_cb (NMSetting *setting,
 	if (flags & NM_SETTING_PARAM_SECRET) {
 		NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 
-		nm_setting_get_secret_flags (setting, key, &secret_flags, NULL);
-		if (secret_flags != NM_SETTING_SECRET_FLAG_NONE)
-			g_object_set (G_OBJECT (setting), key, NULL, NULL);
+		/* VPNs are special; need to handle each secret separately */
+		if (NM_IS_SETTING_VPN (setting) && !strcmp (key, NM_SETTING_VPN_SECRETS)) {
+			GHashTableIter iter;
+			const char *secret_name = NULL;
+
+			g_hash_table_iter_init (&iter, (GHashTable *) g_value_get_boxed (value));
+			while (g_hash_table_iter_next (&iter, (gpointer *) &secret_name, NULL)) {
+				if (nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL)) {
+					if (secret_flags != NM_SETTING_SECRET_FLAG_NONE)
+						nm_setting_vpn_remove_secret (NM_SETTING_VPN (setting), secret_name);
+				}
+			}
+		} else {
+			nm_setting_get_secret_flags (setting, key, &secret_flags, NULL);
+			if (secret_flags != NM_SETTING_SECRET_FLAG_NONE)
+				g_object_set (G_OBJECT (setting), key, NULL, NULL);
+		}
 	}
 }
 
@@ -361,6 +376,16 @@ clear_nonagent_secrets (GHashTableIter *iter,
 }
 
 static gboolean
+clear_unsaved_secrets (GHashTableIter *iter,
+                       NMSettingSecretFlags flags,
+                       gpointer user_data)
+{
+	if (flags & (NM_SETTING_SECRET_FLAG_NOT_SAVED | NM_SETTING_SECRET_FLAG_NOT_REQUIRED))
+		g_hash_table_iter_remove (iter);
+	return TRUE;
+}
+
+static gboolean
 has_system_owned_secrets (GHashTableIter *iter,
                           NMSettingSecretFlags flags,
                           gpointer user_data)
@@ -516,6 +541,12 @@ agent_secrets_done_cb (NMAgentManager *manager,
 	            nm_setting_connection_get_uuid (s_con),
 	            setting_name,
 	            call_id);
+
+	/* If no user interaction was allowed, make sure that no "unsaved" secrets
+	 * came back.  Unsaved secrets by definition require user interaction.
+	 */
+	if (flags == 0)  /* ie SECRETS_FLAG_NONE */
+		for_each_secret (NM_CONNECTION (self), secrets, clear_unsaved_secrets, NULL);
 
 	/* Update the connection with our existing secrets from backing storage */
 	nm_connection_clear_secrets (NM_CONNECTION (self));
@@ -858,9 +889,23 @@ only_agent_secrets_cb (NMSetting *setting,
 		NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 
 		/* Clear out system-owned or always-ask secrets */
-		nm_setting_get_secret_flags (setting, key, &secret_flags, NULL);
-		if (secret_flags != NM_SETTING_SECRET_FLAG_AGENT_OWNED)
-			g_object_set (G_OBJECT (setting), key, NULL, NULL);
+		if (NM_IS_SETTING_VPN (setting) && !strcmp (key, NM_SETTING_VPN_SECRETS)) {
+			GHashTableIter iter;
+			const char *secret_name = NULL;
+
+			/* VPNs are special; need to handle each secret separately */
+			g_hash_table_iter_init (&iter, (GHashTable *) g_value_get_boxed (value));
+			while (g_hash_table_iter_next (&iter, (gpointer *) &secret_name, NULL)) {
+				if (nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL)) {
+					if (secret_flags != NM_SETTING_SECRET_FLAG_AGENT_OWNED)
+						nm_setting_vpn_remove_secret (NM_SETTING_VPN (setting), secret_name);
+				}
+			}
+		} else {
+			nm_setting_get_secret_flags (setting, key, &secret_flags, NULL);
+			if (secret_flags != NM_SETTING_SECRET_FLAG_AGENT_OWNED)
+				g_object_set (G_OBJECT (setting), key, NULL, NULL);
+		}
 	}
 }
 
