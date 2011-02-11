@@ -336,6 +336,7 @@ register_for_property_changed (NMClient *client)
 #define NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED       "org.freedesktop.NetworkManager.wifi.share.protected"
 #define NM_AUTH_PERMISSION_WIFI_SHARE_OPEN            "org.freedesktop.NetworkManager.wifi.share.open"
 #define NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM     "org.freedesktop.NetworkManager.settings.modify.system"
+#define NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN        "org.freedesktop.NetworkManager.settings.modify.own"
 #define NM_AUTH_PERMISSION_SETTINGS_HOSTNAME_MODIFY   "org.freedesktop.NetworkManager.settings.hostname.modify"
 
 static NMClientPermission
@@ -359,6 +360,8 @@ nm_permission_to_client (const char *nm)
 		return NM_CLIENT_PERMISSION_WIFI_SHARE_OPEN;
 	else if (!strcmp (nm, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM))
 		return NM_CLIENT_PERMISSION_SETTINGS_MODIFY_SYSTEM;
+	else if (!strcmp (nm, NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN))
+		return NM_CLIENT_PERMISSION_SETTINGS_MODIFY_OWN;
 	else if (!strcmp (nm, NM_AUTH_PERMISSION_SETTINGS_HOSTNAME_MODIFY))
 		return NM_CLIENT_PERMISSION_SETTINGS_HOSTNAME_MODIFY;
 
