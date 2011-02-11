@@ -795,6 +795,48 @@ get_agent_modify_auth_cb (NMAuthChain *chain,
 }
 
 static void
+check_system_secrets_cb (NMSetting *setting,
+                         const char *key,
+                         const GValue *value,
+                         GParamFlags flags,
+                         gpointer user_data)
+{
+	NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
+	gboolean *has_system = user_data;
+
+	if (!(flags & NM_SETTING_PARAM_SECRET))
+		return;
+
+	/* Clear out system-owned or always-ask secrets */
+	if (NM_IS_SETTING_VPN (setting) && !strcmp (key, NM_SETTING_VPN_SECRETS)) {
+		GHashTableIter iter;
+		const char *secret_name = NULL;
+
+		/* VPNs are special; need to handle each secret separately */
+		g_hash_table_iter_init (&iter, (GHashTable *) g_value_get_boxed (value));
+		while (g_hash_table_iter_next (&iter, (gpointer *) &secret_name, NULL)) {
+			if (nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL)) {
+				if (secret_flags == NM_SETTING_SECRET_FLAG_NONE)
+					*has_system = TRUE;
+			}
+		}
+	} else {
+		nm_setting_get_secret_flags (setting, key, &secret_flags, NULL);
+		if (secret_flags == NM_SETTING_SECRET_FLAG_NONE)
+			*has_system = TRUE;
+	}
+}
+
+static gboolean
+has_system_secrets (NMConnection *connection)
+{
+	gboolean has_system = FALSE;
+
+	nm_connection_for_each_setting_value (connection, check_system_secrets_cb, &has_system);
+	return has_system;
+}
+
+static void
 get_next_cb (Request *req)
 {
 	NMSettingConnection *s_con;
@@ -805,12 +847,13 @@ get_next_cb (Request *req)
 
 	agent_dbus_owner = nm_secret_agent_get_dbus_owner (NM_SECRET_AGENT (req->current));
 
-	/* If the request flags allow user interaction, and there are system secrets,
+	/* If the request flags allow user interaction, and there are existing
+	 * system secrets (or blank secrets that are supposed to be system-owned),
 	 * check whether the agent has the 'modify' permission before sending those
 	 * secrets to the agent.  We shouldn't leak system-owned secrets to
 	 * unprivileged users.
 	 */
-	if ((req->flags != 0) && (req->existing_secrets != NULL)) {
+	if ((req->flags != 0) && (req->existing_secrets || has_system_secrets (req->connection))) {
 		nm_log_dbg (LOGD_AGENTS, "(%p/%s) request has system secrets; checking agent %s for MODIFY",
 		            req, req->setting_name, agent_dbus_owner);
 
