@@ -696,12 +696,6 @@ typedef void (*AuthCallback) (NMSettingsConnection *connection,
                               GError *error,
                               gpointer data);
 
-typedef struct {
-	AuthCallback callback;
-	gpointer callback_data;
-	gulong sender_uid;
-} PkAuthInfo;
-
 static void
 pk_auth_cb (NMAuthChain *chain,
             GError *chain_error,
@@ -712,7 +706,10 @@ pk_auth_cb (NMAuthChain *chain,
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	GError *error = NULL;
 	NMAuthCallResult result;
-	PkAuthInfo *info;
+	const char *perm;
+	AuthCallback callback;
+	gpointer callback_data;
+	gulong sender_uid;
 
 	priv->pending_auths = g_slist_remove (priv->pending_auths, chain);
 
@@ -723,7 +720,9 @@ pk_auth_cb (NMAuthChain *chain,
 		                     "Error checking authorization: %s",
 		                     chain_error->message ? chain_error->message : "(unknown)");
 	} else {
-		result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM);
+		perm = nm_auth_chain_get_data (chain, "perm");
+		g_assert (perm);
+		result = nm_auth_chain_get_result (chain, perm);
 
 		/* Caller didn't successfully authenticate */
 		if (result != NM_AUTH_CALL_RESULT_YES) {
@@ -733,8 +732,10 @@ pk_auth_cb (NMAuthChain *chain,
 		}
 	}
 
-	info = nm_auth_chain_get_data (chain, "pk-auth-info");
-	info->callback (self, context, info->sender_uid, error, info->callback_data);
+	callback = nm_auth_chain_get_data (chain, "callback");
+	callback_data = nm_auth_chain_get_data (chain, "callback-data");
+	sender_uid = nm_auth_chain_get_data_ulong (chain, "sender-uid");
+	callback (self, context, sender_uid, error, callback_data);
 
 	g_clear_error (&error);
 	nm_auth_chain_unref (chain);
@@ -750,7 +751,6 @@ auth_start (NMSettingsConnection *self,
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	NMAuthChain *chain;
 	gulong sender_uid = G_MAXULONG;
-	PkAuthInfo *info;
 	GError *error = NULL;
 	char *error_desc = NULL;
 
@@ -778,16 +778,28 @@ auth_start (NMSettingsConnection *self,
 	}
 
 	if (check_modify) {
+		NMSettingConnection *s_con;
+		const char *perm;
+
+		/* If the caller is the only user in the connection's permissions, then
+		 * we use the 'modify.own' permission instead of 'modify.system'.  If the
+		 * request affects more than just the caller, require 'modify.system'.
+		 */
+		s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (self), NM_TYPE_SETTING_CONNECTION);
+		g_assert (s_con);
+		if (nm_setting_connection_get_num_permissions (s_con) == 1)
+			perm = NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN;
+		else
+			perm = NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM;
+
 		chain = nm_auth_chain_new (priv->authority, context, NULL, pk_auth_cb, self);
 		g_assert (chain);
+		nm_auth_chain_set_data (chain, "perm", (gpointer) perm, NULL);
+		nm_auth_chain_set_data (chain, "callback", callback, NULL);
+		nm_auth_chain_set_data (chain, "callback-data", callback_data, NULL);
+		nm_auth_chain_set_data_ulong (chain, "sender-uid", sender_uid);
 
-		info = g_malloc0 (sizeof (*info));
-		info->callback = callback;
-		info->callback_data = callback_data;
-		info->sender_uid = sender_uid;
-		nm_auth_chain_set_data (chain, "pk-auth-info", info, g_free);
-
-		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM, TRUE);
+		nm_auth_chain_add_call (chain, perm, TRUE);
 		priv->pending_auths = g_slist_append (priv->pending_auths, chain);
 	} else {
 		/* Don't need polkit auth, automatic success */

@@ -800,10 +800,9 @@ pk_add_cb (NMAuthChain *chain,
 	GError *error = NULL, *add_error = NULL;
 	NMConnection *connection;
 	NMSettingsConnection *added = NULL;
-	gulong caller_uid = G_MAXULONG;
-	char *error_desc = NULL;
 	NMSettingsAddCallback callback;
 	gpointer callback_data;
+	const char *perm;
 
 	priv->auths = g_slist_remove (priv->auths, chain);
 
@@ -815,7 +814,9 @@ pk_add_cb (NMAuthChain *chain,
 		goto done;
 	}
 
-	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM);
+	perm = nm_auth_chain_get_data (chain, "perm");
+	g_assert (perm);
+	result = nm_auth_chain_get_result (chain, perm);
 
 	/* Caller didn't successfully authenticate */
 	if (result != NM_AUTH_CALL_RESULT_YES) {
@@ -825,35 +826,8 @@ pk_add_cb (NMAuthChain *chain,
 		goto done;
 	}
 
-	/* If the caller isn't root, make sure the connection can be viewed by
-	 * the user that's adding it.
-	 */
-	if (!nm_auth_get_caller_uid (context, priv->dbus_mgr, &caller_uid, &error_desc)) {
-		error = g_error_new (NM_SETTINGS_ERROR,
-		                     NM_SETTINGS_ERROR_NOT_PRIVILEGED,
-		                     "Unable to determine UID of request: %s.",
-		                     error_desc ? error_desc : "(unknown)");
-		g_free (error_desc);
-		goto done;
-	}
-
 	connection = nm_auth_chain_get_data (chain, "connection");
-
-	/* Ensure the caller's username exists in the connection's permissions,
-	 * or that the permissions is empty (ie, visible by everyone).
-	 */
-	if (0 != caller_uid) {
-		if (!nm_auth_uid_in_acl (connection, priv->session_monitor, caller_uid, &error_desc)) {
-			error = g_error_new_literal (NM_SETTINGS_ERROR,
-			                             NM_SETTINGS_ERROR_NOT_PRIVILEGED,
-			                             error_desc);
-			g_free (error_desc);
-			goto done;
-		}
-
-		/* Caller is allowed to add this connection */
-	}
-
+	g_assert (connection);
 	added = add_new_connection (self, connection, &add_error);
 	if (!added) {
 		error = g_error_new (NM_SETTINGS_ERROR,
@@ -895,8 +869,12 @@ nm_settings_add_connection (NMSettings *self,
                             gpointer user_data)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	NMSettingConnection *s_con;
 	NMAuthChain *chain;
 	GError *error = NULL, *tmp_error = NULL;
+	gulong caller_uid = G_MAXULONG;
+	char *error_desc = NULL;
+	const char *perm;
 
 	/* Connection must be valid, of course */
 	if (!nm_connection_verify (connection, &tmp_error)) {
@@ -905,7 +883,6 @@ nm_settings_add_connection (NMSettings *self,
 		                     "The connection was invalid: %s",
 		                     tmp_error ? tmp_error->message : "(unknown)");
 		g_error_free (tmp_error);
-
 		callback (self, NULL, error, context, user_data);
 		g_error_free (error);
 		return;
@@ -921,11 +898,52 @@ nm_settings_add_connection (NMSettings *self,
 		return;
 	}
 
+	/* Get the caller's UID */
+	if (!nm_auth_get_caller_uid (context, priv->dbus_mgr, &caller_uid, &error_desc)) {
+		error = g_error_new (NM_SETTINGS_ERROR,
+		                     NM_SETTINGS_ERROR_NOT_PRIVILEGED,
+		                     "Unable to determine UID of request: %s.",
+		                     error_desc ? error_desc : "(unknown)");
+		g_free (error_desc);
+		callback (self, NULL, error, context, user_data);
+		g_error_free (error);
+		return;
+	}
+
+	/* Ensure the caller's username exists in the connection's permissions,
+	 * or that the permissions is empty (ie, visible by everyone).
+	 */
+	if (0 != caller_uid) {
+		if (!nm_auth_uid_in_acl (connection, priv->session_monitor, caller_uid, &error_desc)) {
+			error = g_error_new_literal (NM_SETTINGS_ERROR,
+			                             NM_SETTINGS_ERROR_NOT_PRIVILEGED,
+			                             error_desc);
+			g_free (error_desc);
+			callback (self, NULL, error, context, user_data);
+			g_error_free (error);
+			return;
+		}
+
+		/* Caller is allowed to add this connection */
+	}
+
+	/* If the caller is the only user in the connection's permissions, then
+	 * we use the 'modify.own' permission instead of 'modify.system'.  If the
+	 * request affects more than just the caller, require 'modify.system'.
+	 */
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	g_assert (s_con);
+	if (nm_setting_connection_get_num_permissions (s_con) == 1)
+		perm = NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN;
+	else
+		perm = NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM;
+
 	/* Otherwise validate the user request */
 	chain = nm_auth_chain_new (priv->authority, context, NULL, pk_add_cb, self);
 	g_assert (chain);
 	priv->auths = g_slist_append (priv->auths, chain);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM, TRUE);
+	nm_auth_chain_add_call (chain, perm, TRUE);
+	nm_auth_chain_set_data (chain, "perm", (gpointer) perm, NULL);
 	nm_auth_chain_set_data (chain, "connection", g_object_ref (connection), g_object_unref);
 	nm_auth_chain_set_data (chain, "callback", callback, NULL);
 	nm_auth_chain_set_data (chain, "callback-data", user_data, NULL);

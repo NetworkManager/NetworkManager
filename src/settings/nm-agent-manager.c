@@ -35,6 +35,7 @@
 #include "nm-polkit-helpers.h"
 #include "nm-manager-auth.h"
 #include "nm-setting-vpn.h"
+#include "nm-setting-connection.h"
 
 G_DEFINE_TYPE (NMAgentManager, nm_agent_manager, G_TYPE_OBJECT)
 
@@ -762,9 +763,9 @@ get_agent_modify_auth_cb (NMAuthChain *chain,
 {
 	Request *req = user_data;
 	NMAuthCallResult result;
+	const char *perm;
 
 	req->chain = NULL;
-	nm_auth_chain_unref (chain);
 
 	if (error) {
 		nm_log_dbg (LOGD_AGENTS, "(%p/%s) agent MODIFY check error: (%d) %s",
@@ -778,7 +779,9 @@ get_agent_modify_auth_cb (NMAuthChain *chain,
 		 * to it.  If it didn't, we still ask it for secrets, but we don't send
 		 * any system secrets.
 		 */
-		result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM);
+		perm = nm_auth_chain_get_data (chain, "perm");
+		g_assert (perm);
+		result = nm_auth_chain_get_result (chain, perm);
 		if (result == NM_AUTH_CALL_RESULT_YES)
 			req->current_has_modify = TRUE;
 
@@ -787,12 +790,14 @@ get_agent_modify_auth_cb (NMAuthChain *chain,
 
 		get_agent_request_secrets (req, req->current_has_modify);
 	}
+	nm_auth_chain_unref (chain);
 }
 
 static void
 get_next_cb (Request *req)
 {
-	const char *agent_dbus_owner;
+	NMSettingConnection *s_con;
+	const char *agent_dbus_owner, *perm;
 
 	if (!next_generic (req, "getting"))
 		return;
@@ -813,7 +818,20 @@ get_next_cb (Request *req)
 		                                            get_agent_modify_auth_cb,
 		                                            req);
 		g_assert (req->chain);
-		nm_auth_chain_add_call (req->chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM, TRUE);
+
+		/* If the caller is the only user in the connection's permissions, then
+		 * we use the 'modify.own' permission instead of 'modify.system'.  If the
+		 * request affects more than just the caller, require 'modify.system'.
+		 */
+		s_con = (NMSettingConnection *) nm_connection_get_setting (req->connection, NM_TYPE_SETTING_CONNECTION);
+		g_assert (s_con);
+		if (nm_setting_connection_get_num_permissions (s_con) == 1)
+			perm = NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN;
+		else
+			perm = NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM;
+		nm_auth_chain_set_data (req->chain, "perm", (gpointer) perm, NULL);
+
+		nm_auth_chain_add_call (req->chain, perm, TRUE);
 	} else {
 		nm_log_dbg (LOGD_AGENTS, "(%p/%s) requesting user-owned secrets from agent %s",
 			        req, req->setting_name, agent_dbus_owner);
