@@ -90,7 +90,8 @@ libnminclude_HEADERS = \
 
 libnmvpn_HEADERS = \
 	nm-vpn-plugin.h \
-	nm-vpn-plugin-ui-interface.h
+	nm-vpn-plugin-ui-interface.h \
+	nm-vpn-plugin-utils.h
 
 libnm_glib_la_csources = \
 	nm-object.c \
@@ -148,7 +149,10 @@ libnm_glib_test_CFLAGS = $(GLIB_CFLAGS) $(DBUS_CFLAGS)
 libnm_glib_test_LDADD = libnm-glib.la $(top_builddir)/libnm-util/libnm-util.la $(GLIB_LIBS) $(DBUS_LIBS)
 
 
-libnm_glib_vpn_la_SOURCES = nm-vpn-plugin.c nm-vpn-plugin-ui-interface.c
+libnm_glib_vpn_la_SOURCES = \
+	nm-vpn-plugin.c \
+	nm-vpn-plugin-ui-interface.c \
+	nm-vpn-plugin-utils.c
 libnm_glib_vpn_la_CFLAGS = $(GLIB_CFLAGS) $(DBUS_CFLAGS)
 libnm_glib_vpn_la_LIBADD = $(top_builddir)/libnm-util/libnm-util.la $(GLIB_LIBS) $(DBUS_LIBS)
 libnm_glib_vpn_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm-glib-vpn.ver \
