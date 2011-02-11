@@ -984,6 +984,10 @@ connection_state_changed (NMVPNConnection *self,
 	case NM_VPN_CONNECTION_STATE_NEED_AUTH:
 		get_existing_secrets (self);
 		break;
+	case NM_VPN_CONNECTION_STATE_ACTIVATED:
+		/* Secrets no longer needed now that we're connected */
+		nm_connection_clear_secrets (priv->connection);
+		break;
 	case NM_VPN_CONNECTION_STATE_DISCONNECTED:
 	case NM_VPN_CONNECTION_STATE_FAILED:
 		if (priv->proxy) {
