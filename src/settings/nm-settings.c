@@ -1629,7 +1629,7 @@ nm_settings_class_init (NMSettingsClass *class)
 	                              G_OBJECT_CLASS_TYPE (object_class),
 	                              G_SIGNAL_RUN_FIRST, 0, NULL, NULL,
 	                              g_cclosure_marshal_VOID__OBJECT,
-	                              G_TYPE_NONE, 0);
+	                              G_TYPE_NONE, 1, G_TYPE_OBJECT);
 
 	dbus_g_error_domain_register (NM_SETTINGS_ERROR,
 	                              NM_DBUS_IFACE_SETTINGS,
