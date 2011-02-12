@@ -291,7 +291,7 @@ new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
 	/* Create a new connection object for it */
 	connection = nm_remote_connection_new (priv->bus, path);
 	if (connection) {
-		g_signal_connect (connection, "removed",
+		g_signal_connect (connection, NM_REMOTE_CONNECTION_REMOVED,
 		                  G_CALLBACK (connection_removed_cb),
 		                  self);
 
@@ -473,7 +473,7 @@ clear_one_hash (GHashTable *table)
 		list = g_slist_prepend (list, NM_REMOTE_CONNECTION (value));
 
 	for (list_iter = list; list_iter; list_iter = g_slist_next (list_iter))
-		g_signal_emit_by_name (NM_REMOTE_CONNECTION (list_iter->data), "removed");
+		g_signal_emit_by_name (NM_REMOTE_CONNECTION (list_iter->data), NM_REMOTE_CONNECTION_REMOVED);
 	g_slist_free (list);
 
 	g_hash_table_remove_all (table);
