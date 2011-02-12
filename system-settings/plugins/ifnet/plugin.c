@@ -287,7 +287,7 @@ reload_connections (gpointer config)
 					PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Auto refreshing %s", conn_name);
 
 					/* Remove and re-add to disconnect and reconnect with new settings */
-					g_signal_emit_by_name (old, NM_SETTINGS_CONNECTION_REMOVED);
+					nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (old));
 					g_hash_table_remove (priv->config_connections, conn_name);
 					g_hash_table_insert (priv->config_connections, g_strdup (conn_name), new);
 					if (is_managed (conn_name))
@@ -313,7 +313,7 @@ reload_connections (gpointer config)
 	g_hash_table_iter_init (&iter, priv->config_connections);
 	while (g_hash_table_iter_next (&iter, &key, &value)) {
 		if (!g_hash_table_lookup (new_conn_names, key)) {
-			g_signal_emit_by_name (value, NM_SETTINGS_CONNECTION_REMOVED);
+			nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (value));
 			g_hash_table_remove (priv->config_connections, key);
 		}
 	}

@@ -221,7 +221,7 @@ remove_connection (SCPluginIfcfg *self, NMIfcfgConnection *connection)
 
 	g_object_ref (connection);
 	g_hash_table_remove (priv->connections, path);
-	g_signal_emit_by_name (connection, NM_SETTINGS_CONNECTION_REMOVED);
+	nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (connection));
 	g_object_unref (connection);
 
 	/* Emit unmanaged changes _after_ removing the connection */
@@ -294,7 +294,7 @@ connection_new_or_changed (SCPluginIfcfg *self,
 			 * been removed, and notify the settings service by signalling that
 			 * unmanaged specs have changed.
 			 */
-			g_signal_emit_by_name (existing, NM_SETTINGS_CONNECTION_REMOVED);
+			nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (existing));
 			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
 		}
 	} else {

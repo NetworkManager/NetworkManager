@@ -114,6 +114,8 @@ gboolean nm_settings_connection_is_visible (NMSettingsConnection *self);
 
 void nm_settings_connection_recheck_visibility (NMSettingsConnection *self);
 
+void nm_settings_connection_signal_remove (NMSettingsConnection *self);
+
 G_END_DECLS
 
 #endif /* NM_SETTINGS_CONNECTION_H */
