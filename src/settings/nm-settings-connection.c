@@ -738,10 +738,52 @@ pk_auth_cb (NMAuthChain *chain,
 	nm_auth_chain_unref (chain);
 }
 
+static gboolean
+check_user_in_acl (NMConnection *connection,
+                   DBusGMethodInvocation *context,
+                   NMDBusManager *dbus_mgr,
+                   NMSessionMonitor *session_monitor,
+                   gulong *out_sender_uid,
+                   GError **error)
+{
+	gulong sender_uid = G_MAXULONG;
+	char *error_desc = NULL;
+
+	g_return_val_if_fail (connection != NULL, FALSE);
+	g_return_val_if_fail (context != NULL, FALSE);
+	g_return_val_if_fail (session_monitor != NULL, FALSE);
+
+	/* Get the caller's UID */
+	if (!nm_auth_get_caller_uid (context, dbus_mgr, &sender_uid, &error_desc)) {
+		g_set_error_literal (error,
+		                     NM_SETTINGS_ERROR,
+		                     NM_SETTINGS_ERROR_PERMISSION_DENIED,
+		                     error_desc);
+		g_free (error_desc);
+		return FALSE;
+	}
+
+	/* Make sure the UID can view this connection */
+	if (0 != sender_uid) {
+		if (!nm_auth_uid_in_acl (connection, session_monitor, sender_uid, &error_desc)) {
+			g_set_error_literal (error,
+			                     NM_SETTINGS_ERROR,
+			                     NM_SETTINGS_ERROR_PERMISSION_DENIED,
+			                     error_desc);
+			g_free (error_desc);
+			return FALSE;
+		}
+	}
+
+	if (out_sender_uid)
+		*out_sender_uid = sender_uid;
+	return TRUE;
+}
+
 static void
 auth_start (NMSettingsConnection *self,
             DBusGMethodInvocation *context,
-            gboolean check_modify,
+            const char *check_permission,
             AuthCallback callback,
             gpointer callback_data)
 {
@@ -749,65 +791,32 @@ auth_start (NMSettingsConnection *self,
 	NMAuthChain *chain;
 	gulong sender_uid = G_MAXULONG;
 	GError *error = NULL;
-	char *error_desc = NULL;
 
-	/* Get the caller's UID */
-	if (!nm_auth_get_caller_uid (context,  NULL, &sender_uid, &error_desc)) {
-		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                             error_desc);
-		g_free (error_desc);
-		goto error;
+	if (!check_user_in_acl (NM_CONNECTION (self),
+	                        context,
+	                        priv->dbus_mgr,
+	                        priv->session_monitor,
+	                        &sender_uid,
+	                        &error)) {
+		callback (self, context, G_MAXULONG, error, callback_data);
+		g_clear_error (&error);
+		return;
 	}
 
-	/* Make sure the UID can view this connection */
-	if (0 != sender_uid) {
-		if (!nm_auth_uid_in_acl (NM_CONNECTION (self),
-		                         priv->session_monitor,
-		                         sender_uid,
-		                         &error_desc)) {
-			error = g_error_new_literal (NM_SETTINGS_ERROR,
-			                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
-			                             error_desc);
-			g_free (error_desc);
-			goto error;
-		}
-	}
-
-	if (check_modify) {
-		NMSettingConnection *s_con;
-		const char *perm;
-
-		/* If the caller is the only user in the connection's permissions, then
-		 * we use the 'modify.own' permission instead of 'modify.system'.  If the
-		 * request affects more than just the caller, require 'modify.system'.
-		 */
-		s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (self), NM_TYPE_SETTING_CONNECTION);
-		g_assert (s_con);
-		if (nm_setting_connection_get_num_permissions (s_con) == 1)
-			perm = NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN;
-		else
-			perm = NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM;
-
+	if (check_permission) {
 		chain = nm_auth_chain_new (priv->authority, context, NULL, pk_auth_cb, self);
 		g_assert (chain);
-		nm_auth_chain_set_data (chain, "perm", (gpointer) perm, NULL);
+		nm_auth_chain_set_data (chain, "perm", (gpointer) check_permission, NULL);
 		nm_auth_chain_set_data (chain, "callback", callback, NULL);
 		nm_auth_chain_set_data (chain, "callback-data", callback_data, NULL);
 		nm_auth_chain_set_data_ulong (chain, "sender-uid", sender_uid);
 
-		nm_auth_chain_add_call (chain, perm, TRUE);
+		nm_auth_chain_add_call (chain, check_permission, TRUE);
 		priv->pending_auths = g_slist_append (priv->pending_auths, chain);
 	} else {
 		/* Don't need polkit auth, automatic success */
 		callback (self, context, sender_uid, NULL, callback_data);
 	}
-
-	return;
-
-error:
-	callback (self, context, G_MAXULONG, error, callback_data);
-	g_error_free (error);
 }
 
 /**** DBus method handlers ************************************/
@@ -871,7 +880,7 @@ static void
 impl_settings_connection_get_settings (NMSettingsConnection *self,
                                        DBusGMethodInvocation *context)
 {
-	auth_start (self, context, FALSE, get_settings_auth_cb, NULL);
+	auth_start (self, context, NULL, get_settings_auth_cb, NULL);
 }
 
 static void
@@ -951,11 +960,38 @@ update_auth_cb (NMSettingsConnection *self,
 	g_object_unref (new_settings);
 }
 
+static const char *
+get_modify_permission_update (NMConnection *old, NMConnection *new)
+{
+	NMSettingConnection *s_con;
+	guint32 orig_num = 0, new_num = 0;
+
+	s_con = (NMSettingConnection *) nm_connection_get_setting (old, NM_TYPE_SETTING_CONNECTION);
+	g_assert (s_con);
+	orig_num = nm_setting_connection_get_num_permissions (s_con);
+
+	s_con = (NMSettingConnection *) nm_connection_get_setting (new, NM_TYPE_SETTING_CONNECTION);
+	g_assert (s_con);
+	new_num = nm_setting_connection_get_num_permissions (s_con);
+
+	/* If the caller is the only user in either connection's permissions, then
+	 * we use the 'modify.own' permission instead of 'modify.system'.
+	 */
+	if (orig_num == 1 && new_num == 1)
+		return NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN;
+
+	/* If the update request affects more than just the caller (ie if the old
+	 * settings were system-wide, or the new ones are), require 'modify.system'.
+	 */
+	return NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM;
+}
+
 static void
 impl_settings_connection_update (NMSettingsConnection *self,
                                  GHashTable *new_settings,
                                  DBusGMethodInvocation *context)
 {
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	NMConnection *tmp;
 	GError *error = NULL;
 
@@ -978,7 +1014,27 @@ impl_settings_connection_update (NMSettingsConnection *self,
 		return;
 	}
 
-	auth_start (self, context, TRUE, update_auth_cb, tmp);
+	/* And that the new connection settings will be visible to the user
+	 * that's sending the update request.  You can't make a connection
+	 * invisible to yourself.
+	 */
+	if (!check_user_in_acl (tmp,
+	                        context,
+	                        priv->dbus_mgr,
+	                        priv->session_monitor,
+	                        NULL,
+	                        &error)) {
+		dbus_g_method_return_error (context, error);
+		g_clear_error (&error);
+		g_object_unref (tmp);
+		return;
+	}
+
+	auth_start (self,
+	            context,
+	            get_modify_permission_update (NM_CONNECTION (self), tmp),
+	            update_auth_cb,
+	            tmp);
 }
 
 static void
@@ -1009,6 +1065,23 @@ delete_auth_cb (NMSettingsConnection *self,
 	nm_settings_connection_delete (self, con_delete_cb, context);
 }
 
+static const char *
+get_modify_permission_basic (NMSettingsConnection *connection)
+{
+	NMSettingConnection *s_con;
+
+	/* If the caller is the only user in the connection's permissions, then
+	 * we use the 'modify.own' permission instead of 'modify.system'.  If the
+	 * request affects more than just the caller, require 'modify.system'.
+	 */
+	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (connection), NM_TYPE_SETTING_CONNECTION);
+	g_assert (s_con);
+	if (nm_setting_connection_get_num_permissions (s_con) == 1)
+		return NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN;
+
+	return NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM;
+}
+
 static void
 impl_settings_connection_delete (NMSettingsConnection *self,
                                  DBusGMethodInvocation *context)
@@ -1021,7 +1094,7 @@ impl_settings_connection_delete (NMSettingsConnection *self,
 		return;
 	}
 
-	auth_start (self, context, TRUE, delete_auth_cb, NULL);
+	auth_start (self, context, get_modify_permission_basic (self), delete_auth_cb, NULL);
 }
 
 /**************************************************************/
@@ -1099,7 +1172,11 @@ impl_settings_connection_get_secrets (NMSettingsConnection *self,
                                       const gchar *setting_name,
                                       DBusGMethodInvocation *context)
 {
-	auth_start (self, context, TRUE, dbus_secrets_auth_cb, g_strdup (setting_name));
+	auth_start (self,
+	            context,
+	            get_modify_permission_basic (self),
+	            dbus_secrets_auth_cb,
+	            g_strdup (setting_name));
 }
 
 /**************************************************************/
