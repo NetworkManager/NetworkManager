@@ -143,7 +143,7 @@ update_connection_settings_commit_cb (NMSettingsConnection *orig, GError *error,
 		       	   error ? error->code : -1);
 		g_clear_error (&error);
 
-		g_signal_emit_by_name (orig, "removed");
+		g_signal_emit_by_name (orig, NM_SETTINGS_CONNECTION_REMOVED);
 	}
 }
 
@@ -169,7 +169,7 @@ remove_connection (SCPluginKeyfile *self,
 	/* Removing from the hash table should drop the last reference */
 	g_object_ref (connection);
 	g_hash_table_remove (SC_PLUGIN_KEYFILE_GET_PRIVATE (self)->hash, name);
-	g_signal_emit_by_name (connection, "removed");
+	g_signal_emit_by_name (connection, NM_SETTINGS_CONNECTION_REMOVED);
 	g_object_unref (connection);
 }
 
