@@ -136,7 +136,7 @@ permission_new_from_str (const char *str)
 		g_return_val_if_fail (last_colon > str, NULL);
 
 		/* Make sure we don't include detail in the username */
-		ulen = (last_colon - str) + 1;
+		ulen = last_colon - str;
 	} else
 		ulen = strlen (str);
 
