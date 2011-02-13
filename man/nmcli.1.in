@@ -66,16 +66,18 @@ power users who prefer the command line.
 The use cases comprise:
 .IP \(em 4
 Initscripts: ifup/ifdown can utilize NetworkManager via \fInmcli\fP instead of
-having to manage connections itself and possible interfere with NetworkManager.
+having to manage connections itself and possibly interfere with NetworkManager.
 .IP \(em 4
-Servers, headless machines: No GUI is available; then \fInmcli\fP is used to
-talk directly to NetworkManager and control only system-wide connections.
+Servers, headless machines: No GUI is available; then \fInmcli\fP can be used
+to activate/deactivate connections.  However, if a connection requires a secret
+to activate and if that secret is not stored at the system level, \fInmcli\fP
+will not be able to activate it; it is currently unable to supply the needed
+secrets to NetworkManager.
 .IP \(em 4
-User sessions: For this case, \fInmcli\fP can talk to \fInm-applet\fP to find
-user connections.  It can still talk directly to NetworkManager for manipulating
-these connections.  As \fInmcli\fP doesn't have direct access to user
-configuration data in GConf, \fInm-applet\fP handles that itself.  That may,
-for example, cause the applet to pop up keyring dialogs when secrets are needed.
+User sessions: \fInmcli\fP can be used activate/deactivate connections from the
+command line, but a full NetworkManager client (like \fInm-applet\fP) is used
+for supplying secrets not stored at the system level.  Keyring dialogs and
+password prompts may appear if this happens.
 .SS \fIOPTIONS\fP
 .TP
 .B \-t, \-\-terse
@@ -203,14 +205,12 @@ Get information about NetworkManager's connections.
 .sp
 .RS
 .TP
-.B list [id <id> | uuid <id> | system | user]
+.B list [id <id> | uuid <id>]
 .br
-List configured connections.  Without a parameter, configured connection from
-both system and user settings services are listed.  \fIsystem\fP argument filters
-only system-wide connections, \fIuser\fP prints user connections only.
-In order to get connection details, \fIid\fP with connection's name or \fIuuid\fP
-with connection's UUID shall be specified.
-When no command is given to \fIcon\fP object, the default action is 'nmcli con list'.
+List configured connections.  Without a parameter, all connections
+are listed.  In order to get connection details, \fIid\fP with connection's
+name or \fIuuid\fP with connection's UUID shall be specified.  When no command
+is given to the \fIcon\fP object, the default action is 'nmcli con list'.
 .br
 .nf
 \fBReference to D-Bus:\fP

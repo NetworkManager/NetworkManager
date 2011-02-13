@@ -51,12 +51,15 @@ struct NMPolicy {
 	NMManager *manager;
 	guint update_state_id;
 	GSList *pending_activation_checks;
-	GSList *signal_ids;
-	GSList *dev_signal_ids;
+	GSList *manager_ids;
+	GSList *settings_ids;
+	GSList *dev_ids;
 
 	NMVPNManager *vpn_manager;
 	gulong vpn_activated_id;
 	gulong vpn_deactivated_id;
+
+	NMSettings *settings;
 
 	NMDevice *default_device4;
 	NMDevice *default_device6;
@@ -292,7 +295,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 
 	/* Hostname precedence order:
 	 *
-	 * 1) a configured hostname (from system-settings)
+	 * 1) a configured hostname (from settings)
 	 * 2) automatic hostname from the default device's config (DHCP, VPN, etc)
 	 * 3) the original hostname when NM started
 	 * 4) reverse-DNS of the best device's IPv4 address
@@ -716,32 +719,35 @@ auto_activate_device (gpointer user_data)
 	if (nm_device_get_act_request (data->device))
 		goto out;
 
-	/* System connections first, then user connections */
-	connections = nm_manager_get_connections (policy->manager, NM_CONNECTION_SCOPE_SYSTEM);
-	if (nm_manager_auto_user_connections_allowed (policy->manager))
-		connections = g_slist_concat (connections, nm_manager_get_connections (policy->manager, NM_CONNECTION_SCOPE_USER));
+	iter = connections = nm_settings_get_connections (policy->settings);
 
-	/* Remove connections that have INVALID_TAG and shouldn't be retried any more. */
-	iter = connections;
+	/* Remove connections that shouldn't be auto-activated */
 	while (iter) {
-		NMConnection *iter_connection = NM_CONNECTION (iter->data);
-		GSList *next = g_slist_next (iter);
+		NMConnection *candidate = NM_CONNECTION (iter->data);
+		gboolean ignore = FALSE;
 
-		if (g_object_get_data (G_OBJECT (iter_connection), INVALID_TAG)) {
-			guint retries = get_connection_auto_retries (iter_connection);
+		/* Ignore connecitons that were tried too many times */
+		if (g_object_get_data (G_OBJECT (candidate), INVALID_TAG)) {
+			guint retries = get_connection_auto_retries (candidate);
 
-			if (retries == 0) {
-				connections = g_slist_remove_link (connections, iter);
-				g_object_unref (iter_connection);
-				g_slist_free (iter);
-			} else if (retries > 0)
-				set_connection_auto_retries (iter_connection, retries - 1);
+			if (retries == 0)
+				ignore = TRUE;
+			else if (retries > 0)
+				set_connection_auto_retries (candidate, retries - 1);
 		} else {
 			/* Set the initial # of retries for auto-connection */
-			set_connection_auto_retries (iter_connection, RETRIES_DEFAULT);
+			set_connection_auto_retries (candidate, RETRIES_DEFAULT);
 		}
 
-		iter = next;
+		/* Ignore connections that aren't visible to any logged-in users */
+		if (ignore == FALSE) {
+			if (!nm_settings_connection_is_visible (NM_SETTINGS_CONNECTION (candidate)))
+				ignore = TRUE;
+		}
+
+		iter = g_slist_next (iter);
+		if (ignore)
+			connections = g_slist_remove (connections, candidate);
 	}
 
 	best_connection = nm_device_get_best_auto_connection (data->device, connections, &specific_object);
@@ -752,7 +758,7 @@ auto_activate_device (gpointer user_data)
 		                                     best_connection,
 		                                     specific_object,
 		                                     nm_device_get_path (data->device),
-		                                     FALSE,
+		                                     NULL,
 		                                     &error)) {
 			NMSettingConnection *s_con;
 
@@ -765,7 +771,6 @@ auto_activate_device (gpointer user_data)
 		}
 	}
 
-	g_slist_foreach (connections, (GFunc) g_object_unref, NULL);
 	g_slist_free (connections);
 
  out:
@@ -811,6 +816,7 @@ hostname_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 static void
 sleeping_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 {
+	NMPolicy *policy = user_data;
 	gboolean sleeping = FALSE, enabled = FALSE;
 	GSList *connections, *iter;
 
@@ -819,8 +825,7 @@ sleeping_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 
 	/* Clear the invalid flag on all connections so they'll get retried on wakeup */
 	if (sleeping || !enabled) {
-		connections = nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_SYSTEM);
-		connections = g_slist_concat (connections, nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_USER));
+		connections = nm_settings_get_connections (policy->settings);
 		for (iter = connections; iter; iter = g_slist_next (iter))
 			g_object_set_data (G_OBJECT (iter->data), INVALID_TAG, NULL);
 		g_slist_free (connections);
@@ -946,64 +951,36 @@ nsps_changed (NMDeviceWimax *device, NMWimaxNsp *nsp, gpointer user_data)
 typedef struct {
 	gulong id;
 	NMDevice *device;
-} DeviceSignalID;
+} DeviceSignalId;
 
-static GSList *
-add_device_signal_id (GSList *list, gulong id, NMDevice *device)
+static void
+_connect_device_signal (NMPolicy *policy, NMDevice *device, const char *name, gpointer callback)
 {
-	DeviceSignalID *data;
+	DeviceSignalId *data;
 
-	data = g_malloc0 (sizeof (DeviceSignalID));
-	if (!data)
-		return list;
-
-	data->id = id;
+	data = g_slice_new0 (DeviceSignalId);
+	g_assert (data);
+	data->id = g_signal_connect (device, name, callback, policy);
 	data->device = device;
-	return g_slist_append (list, data);
+	policy->dev_ids = g_slist_prepend (policy->dev_ids, data);
 }
 
 static void
 device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
-	gulong id;
 
-	id = g_signal_connect (device, "state-changed",
-	                       G_CALLBACK (device_state_changed),
-	                       policy);
-	policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
-
-	id = g_signal_connect (device, "notify::" NM_DEVICE_INTERFACE_IP4_CONFIG,
-	                       G_CALLBACK (device_ip_config_changed),
-	                       policy);
-	policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
-
-	id = g_signal_connect (device, "notify::" NM_DEVICE_INTERFACE_IP6_CONFIG,
-	                       G_CALLBACK (device_ip_config_changed),
-	                       policy);
-	policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
+	_connect_device_signal (policy, device, "state-changed", device_state_changed);
+	_connect_device_signal (policy, device, "notify::" NM_DEVICE_INTERFACE_IP4_CONFIG, device_ip_config_changed);
+	_connect_device_signal (policy, device, "notify::" NM_DEVICE_INTERFACE_IP6_CONFIG, device_ip_config_changed);
 
 	if (NM_IS_DEVICE_WIFI (device)) {
-		id = g_signal_connect (device, "access-point-added",
-		                       G_CALLBACK (wireless_networks_changed),
-		                       policy);
-		policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
-
-		id = g_signal_connect (device, "access-point-removed",
-		                       G_CALLBACK (wireless_networks_changed),
-		                       policy);
-		policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
+		_connect_device_signal (policy, device, "access-point-added", wireless_networks_changed);
+		_connect_device_signal (policy, device, "access-point-removed", wireless_networks_changed);
 #if WITH_WIMAX
 	} else if (NM_IS_DEVICE_WIMAX (device)) {
-		id = g_signal_connect (device, "nsp-added",
-		                       G_CALLBACK (nsps_changed),
-		                       policy);
-		policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
-
-		id = g_signal_connect (device, "nsp-removed",
-		                       G_CALLBACK (nsps_changed),
-		                       policy);
-		policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
+		_connect_device_signal (policy, device, "nsp-added", nsps_changed);
+		_connect_device_signal (policy, device, "nsp-removed", nsps_changed);
 #endif
 	}
 }
@@ -1030,15 +1007,15 @@ device_removed (NMManager *manager, NMDevice *device, gpointer user_data)
 	}
 
 	/* Clear any signal handlers for this device */
-	iter = policy->dev_signal_ids;
+	iter = policy->dev_ids;
 	while (iter) {
-		DeviceSignalID *data = (DeviceSignalID *) iter->data;
+		DeviceSignalId *data = iter->data;
 		GSList *next = g_slist_next (iter);
 
 		if (data->device == device) {
 			g_signal_handler_disconnect (data->device, data->id);
-			g_free (data);
-			policy->dev_signal_ids = g_slist_delete_link (policy->dev_signal_ids, iter);
+			g_slice_free (DeviceSignalId, data);
+			policy->dev_ids = g_slist_delete_link (policy->dev_ids, iter);
 		}
 		iter = next;
 	}
@@ -1057,26 +1034,23 @@ schedule_activate_all (NMPolicy *policy)
 }
 
 static void
-connections_added (NMManager *manager,
-                   NMConnectionScope scope,
-                   gpointer user_data)
-{
-	schedule_activate_all ((NMPolicy *) user_data);
-}
-
-static void
-connection_added (NMManager *manager,
+connection_added (NMSettings *settings,
                   NMConnection *connection,
-                  NMConnectionScope scope,
                   gpointer user_data)
 {
 	schedule_activate_all ((NMPolicy *) user_data);
 }
 
 static void
-connection_updated (NMManager *manager,
+connections_loaded (NMSettings *settings,
+					gpointer user_data)
+{
+	schedule_activate_all ((NMPolicy *) user_data);
+}
+
+static void
+connection_updated (NMSettings *settings,
                     NMConnection *connection,
-                    NMConnectionScope scope,
                     gpointer user_data)
 {
 	/* Clear the invalid tag on the connection if it got updated. */
@@ -1086,22 +1060,18 @@ connection_updated (NMManager *manager,
 }
 
 static void
-connection_removed (NMManager *manager,
-                    NMConnection *connection,
-                    NMConnectionScope scope,
-                    gpointer user_data)
+_deactivate_if_active (NMManager *manager, NMConnection *connection)
 {
 	NMSettingConnection *s_con;
 	GPtrArray *list;
 	int i;
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-	if (!s_con)
-		return;
-
 	list = nm_manager_get_active_connections_by_connection (manager, connection);
 	if (!list)
 		return;
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	g_assert (s_con);
 
 	for (i = 0; i < list->len; i++) {
 		char *path = g_ptr_array_index (list, i);
@@ -1118,13 +1088,50 @@ connection_removed (NMManager *manager,
 }
 
 static void
-manager_user_permissions_changed (NMManager *manager, NMPolicy *policy)
+connection_removed (NMSettings *settings,
+                    NMConnection *connection,
+                    gpointer user_data)
 {
-	schedule_activate_all (policy);
+	NMPolicy *policy = user_data;
+
+	_deactivate_if_active (policy->manager, connection);
+}
+
+static void
+connection_visibility_changed (NMSettings *settings,
+                               NMSettingsConnection *connection,
+                               gpointer user_data)
+{
+	NMPolicy *policy = user_data;
+
+	if (nm_settings_connection_is_visible (connection))
+		schedule_activate_all (policy);
+	else
+		_deactivate_if_active (policy->manager, NM_CONNECTION (connection));
+}
+
+static void
+_connect_manager_signal (NMPolicy *policy, const char *name, gpointer callback)
+{
+	guint id;
+
+	id = g_signal_connect (policy->manager, name, callback, policy);
+	policy->manager_ids = g_slist_prepend (policy->manager_ids, GUINT_TO_POINTER (id));
+}
+
+static void
+_connect_settings_signal (NMPolicy *policy, const char *name, gpointer callback)
+{
+	guint id;
+
+	id = g_signal_connect (policy->settings, name, callback, policy);
+	policy->settings_ids = g_slist_prepend (policy->settings_ids, GUINT_TO_POINTER (id));
 }
 
 NMPolicy *
-nm_policy_new (NMManager *manager, NMVPNManager *vpn_manager)
+nm_policy_new (NMManager *manager,
+               NMVPNManager *vpn_manager,
+               NMSettings *settings)
 {
 	NMPolicy *policy;
 	static gboolean initialized = FALSE;
@@ -1136,6 +1143,7 @@ nm_policy_new (NMManager *manager, NMVPNManager *vpn_manager)
 
 	policy = g_malloc0 (sizeof (NMPolicy));
 	policy->manager = g_object_ref (manager);
+	policy->settings = g_object_ref (settings);
 	policy->update_state_id = 0;
 
 	/* Grab hostname on startup and use that if nothing provides one */
@@ -1154,54 +1162,21 @@ nm_policy_new (NMManager *manager, NMVPNManager *vpn_manager)
 	                       G_CALLBACK (vpn_connection_deactivated), policy);
 	policy->vpn_deactivated_id = id;
 
-	id = g_signal_connect (manager, "state-changed",
-	                       G_CALLBACK (global_state_changed), policy);
-	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
+	_connect_manager_signal (policy, "state-changed", global_state_changed);
+	_connect_manager_signal (policy, "notify::" NM_MANAGER_HOSTNAME, hostname_changed);
+	_connect_manager_signal (policy, "notify::" NM_MANAGER_SLEEPING, sleeping_changed);
+	_connect_manager_signal (policy, "notify::" NM_MANAGER_NETWORKING_ENABLED, sleeping_changed);
+	_connect_manager_signal (policy, "device-added", device_added);
+	_connect_manager_signal (policy, "device-removed", device_removed);
 
-	id = g_signal_connect (manager, "notify::" NM_MANAGER_HOSTNAME,
-	                       G_CALLBACK (hostname_changed), policy);
-	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
+	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_CONNECTIONS_LOADED, connections_loaded);
+	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_CONNECTION_ADDED, connection_added);
+	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED, connection_updated);
+	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_CONNECTION_REMOVED, connection_removed);
+	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED,
+	                          connection_visibility_changed);
 
-	id = g_signal_connect (manager, "notify::" NM_MANAGER_SLEEPING,
-	                       G_CALLBACK (sleeping_changed), policy);
-	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
-
-	id = g_signal_connect (manager, "notify::" NM_MANAGER_NETWORKING_ENABLED,
-	                       G_CALLBACK (sleeping_changed), policy);
-	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
-
-	id = g_signal_connect (manager, "device-added",
-	                       G_CALLBACK (device_added), policy);
-	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
-
-	id = g_signal_connect (manager, "device-removed",
-	                       G_CALLBACK (device_removed), policy);
-	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
-
-	/* Large batch of connections added, manager doesn't want us to
-	 * process each one individually.
-	 */
-	id = g_signal_connect (manager, "connections-added",
-	                       G_CALLBACK (connections_added), policy);
-	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
-
-	/* Single connection added */
-	id = g_signal_connect (manager, "connection-added",
-	                       G_CALLBACK (connection_added), policy);
-	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
-
-	id = g_signal_connect (manager, "connection-updated",
-	                       G_CALLBACK (connection_updated), policy);
-	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
-
-	id = g_signal_connect (manager, "connection-removed",
-	                       G_CALLBACK (connection_removed), policy);
-	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
-
-	id = g_signal_connect (manager, "user-permissions-changed",
-	                       G_CALLBACK (manager_user_permissions_changed), policy);
-	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
-
+	initialized = TRUE;
 	return policy;
 }
 
@@ -1233,21 +1208,26 @@ nm_policy_destroy (NMPolicy *policy)
 	g_signal_handler_disconnect (policy->vpn_manager, policy->vpn_deactivated_id);
 	g_object_unref (policy->vpn_manager);
 
-	for (iter = policy->signal_ids; iter; iter = g_slist_next (iter))
-		g_signal_handler_disconnect (policy->manager, (gulong) iter->data);
-	g_slist_free (policy->signal_ids);
+	for (iter = policy->manager_ids; iter; iter = g_slist_next (iter))
+		g_signal_handler_disconnect (policy->manager, GPOINTER_TO_UINT (iter->data));
+	g_slist_free (policy->manager_ids);
 
-	for (iter = policy->dev_signal_ids; iter; iter = g_slist_next (iter)) {
-		DeviceSignalID *data = (DeviceSignalID *) iter->data;
+	for (iter = policy->settings_ids; iter; iter = g_slist_next (iter))
+		g_signal_handler_disconnect (policy->settings, GPOINTER_TO_UINT (iter->data));
+	g_slist_free (policy->settings_ids);
+
+	for (iter = policy->dev_ids; iter; iter = g_slist_next (iter)) {
+		DeviceSignalId *data = iter->data;
 
 		g_signal_handler_disconnect (data->device, data->id);
-		g_free (data);
+		g_slice_free (DeviceSignalId, data);
 	}
-	g_slist_free (policy->dev_signal_ids);
+	g_slist_free (policy->dev_ids);
 
 	g_free (policy->orig_hostname);
 	g_free (policy->cur_hostname);
 
+	g_object_unref (policy->settings);
 	g_object_unref (policy->manager);
 	g_free (policy);
 }

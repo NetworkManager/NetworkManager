@@ -1706,7 +1706,7 @@ msgstr "CATATAN: resolver libc mungkin tak mendukung lebih dari 3 nameserver."
 msgid "The nameservers listed below may not be recognized."
 msgstr "Nameserver yang terdaftar di bawah mungkin tak dikenali."
 
-#: ../src/system-settings/nm-default-wired-connection.c:157
+#: ../src/settings/nm-default-wired-connection.c:157
 #, c-format
 msgid "Auto %s"
 msgstr "Otomatis %s"

@@ -74,6 +74,8 @@ GQuark nm_setting_ip6_config_error_quark (void);
 
 typedef struct NMIP6Address NMIP6Address;
 
+GType nm_ip6_address_get_type (void);
+
 NMIP6Address *         nm_ip6_address_new         (void);
 NMIP6Address *         nm_ip6_address_dup         (NMIP6Address *source);
 void                   nm_ip6_address_ref         (NMIP6Address *address);
@@ -94,6 +96,8 @@ void                   nm_ip6_address_set_gateway (NMIP6Address *address,
                                                    const struct in6_addr *gw);
 
 typedef struct NMIP6Route NMIP6Route;
+
+GType nm_ip6_route_get_type (void);
 
 NMIP6Route *           nm_ip6_route_new          (void);
 NMIP6Route *           nm_ip6_route_dup          (NMIP6Route *route);

@@ -327,11 +327,17 @@ register_for_property_changed (NMClient *client)
 	                                     property_changed_info);
 }
 
-#define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK "org.freedesktop.NetworkManager.enable-disable-network"
-#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI    "org.freedesktop.NetworkManager.enable-disable-wifi"
-#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN    "org.freedesktop.NetworkManager.enable-disable-wwan"
-#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX   "org.freedesktop.NetworkManager.enable-disable-wimax"
-#define NM_AUTH_PERMISSION_USE_USER_CONNECTIONS   "org.freedesktop.NetworkManager.use-user-connections"
+#define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK     "org.freedesktop.NetworkManager.enable-disable-network"
+#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI        "org.freedesktop.NetworkManager.enable-disable-wifi"
+#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN        "org.freedesktop.NetworkManager.enable-disable-wwan"
+#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX       "org.freedesktop.NetworkManager.enable-disable-wimax"
+#define NM_AUTH_PERMISSION_SLEEP_WAKE                 "org.freedesktop.NetworkManager.sleep-wake"
+#define NM_AUTH_PERMISSION_NETWORK_CONTROL            "org.freedesktop.NetworkManager.network-control"
+#define NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED       "org.freedesktop.NetworkManager.wifi.share.protected"
+#define NM_AUTH_PERMISSION_WIFI_SHARE_OPEN            "org.freedesktop.NetworkManager.wifi.share.open"
+#define NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM     "org.freedesktop.NetworkManager.settings.modify.system"
+#define NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN        "org.freedesktop.NetworkManager.settings.modify.own"
+#define NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME   "org.freedesktop.NetworkManager.settings.modify.hostname"
 
 static NMClientPermission
 nm_permission_to_client (const char *nm)
@@ -344,8 +350,21 @@ nm_permission_to_client (const char *nm)
 		return NM_CLIENT_PERMISSION_ENABLE_DISABLE_WWAN;
 	else if (!strcmp (nm, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX))
 		return NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIMAX;
-	else if (!strcmp (nm, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS))
-		return NM_CLIENT_PERMISSION_USE_USER_CONNECTIONS;
+	else if (!strcmp (nm, NM_AUTH_PERMISSION_SLEEP_WAKE))
+		return NM_CLIENT_PERMISSION_SLEEP_WAKE;
+	else if (!strcmp (nm, NM_AUTH_PERMISSION_NETWORK_CONTROL))
+		return NM_CLIENT_PERMISSION_NETWORK_CONTROL;
+	else if (!strcmp (nm, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED))
+		return NM_CLIENT_PERMISSION_WIFI_SHARE_PROTECTED;
+	else if (!strcmp (nm, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN))
+		return NM_CLIENT_PERMISSION_WIFI_SHARE_OPEN;
+	else if (!strcmp (nm, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM))
+		return NM_CLIENT_PERMISSION_SETTINGS_MODIFY_SYSTEM;
+	else if (!strcmp (nm, NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN))
+		return NM_CLIENT_PERMISSION_SETTINGS_MODIFY_OWN;
+	else if (!strcmp (nm, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME))
+		return NM_CLIENT_PERMISSION_SETTINGS_MODIFY_HOSTNAME;
+
 	return NM_CLIENT_PERMISSION_NONE;
 }
 
@@ -504,9 +523,9 @@ constructor (GType type,
 	get_permissions_sync (NM_CLIENT (object));
 
 	priv->bus_proxy = dbus_g_proxy_new_for_name (connection,
-										"org.freedesktop.DBus",
-										"/org/freedesktop/DBus",
-										"org.freedesktop.DBus");
+	                                             DBUS_SERVICE_DBUS,
+	                                             DBUS_PATH_DBUS,
+	                                             DBUS_INTERFACE_DBUS);
 
 	dbus_g_proxy_add_signal (priv->bus_proxy, "NameOwnerChanged",
 						G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
@@ -648,7 +667,7 @@ get_property (GObject *object,
 		g_value_set_boolean (value, priv->manager_running);
 		break;
 	case PROP_NETWORKING_ENABLED:
-		g_value_set_boolean (value, priv->networking_enabled);
+		g_value_set_boolean (value, nm_client_networking_get_enabled (self));
 		break;
 	case PROP_WIRELESS_ENABLED:
 		g_value_set_boolean (value, priv->wireless_enabled);
@@ -813,6 +832,7 @@ nm_client_class_init (NMClientClass *client_class)
 	 * NMClient::active-connections:
 	 *
 	 * The active connections.
+	 * Type: GPtrArray<NMClient.ActiveConnection>
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ACTIVE_CONNECTIONS,
@@ -827,7 +847,7 @@ nm_client_class_init (NMClientClass *client_class)
 	/**
 	 * NMClient::device-added:
 	 * @client: the client that received the signal
-	 * @device: the new device
+	 * @device: (type NMClient.Device): the new device
 	 *
 	 * Notifies that a #NMDevice is added.
 	 **/
@@ -844,7 +864,7 @@ nm_client_class_init (NMClientClass *client_class)
 	/**
 	 * NMClient::device-removed:
 	 * @widget: the client that received the signal
-	 * @device: the removed device
+	 * @device: (type NMClient.Device): the removed device
 	 *
 	 * Notifies that a #NMDevice is removed.
 	 **/
@@ -888,7 +908,11 @@ nm_client_new (void)
 	DBusGConnection *connection;
 	GError *err = NULL;
 
+#ifdef LIBNM_GLIB_TEST
+	connection = dbus_g_bus_get (DBUS_BUS_SESSION, &err);
+#else
 	connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &err);
+#endif
 	if (!connection) {
 		g_warning ("Couldn't connect to system bus: %s", err->message);
 		g_error_free (err);
@@ -992,7 +1016,7 @@ client_device_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
  *
  * Gets all the detected devices.
  *
- * Returns: a #GPtrArray containing all the #NMDevice<!-- -->s.
+ * Returns: (transfer none) (element-type NMClient.Device): a #GPtrArray containing all the #NMDevice<!-- -->s.
  * The returned array is owned by the client and should not be modified.
  **/
 const GPtrArray *
@@ -1032,7 +1056,7 @@ nm_client_get_devices (NMClient *client)
  *
  * Gets a #NMDevice from a #NMClient.
  *
- * Returns: the #NMDevice for the given @object_path or %NULL if none is found.
+ * Returns: (transfer none): the #NMDevice for the given @object_path or %NULL if none is found.
  **/
 NMDevice *
 nm_client_get_device_by_path (NMClient *client, const char *object_path)
@@ -1060,7 +1084,9 @@ nm_client_get_device_by_path (NMClient *client, const char *object_path)
 }
 
 typedef struct {
-	NMClientActivateDeviceFn fn;
+	NMClient *client;
+	NMClientActivateDeviceFn act_fn;
+	NMClientAddActivateFn add_act_fn;
 	gpointer user_data;
 } ActivateDeviceInfo;
 
@@ -1072,8 +1098,8 @@ activate_cb (DBusGProxy *proxy,
 {
 	ActivateDeviceInfo *info = (ActivateDeviceInfo *) user_data;
 
-	if (info->fn)
-		info->fn (info->user_data, path, error);
+	if (info->act_fn)
+		info->act_fn (info->client, path, error, info->user_data);
 	else if (error)
 		nm_warning ("Device activation failed: (%d) %s", error->code, error->message);
 
@@ -1083,19 +1109,17 @@ activate_cb (DBusGProxy *proxy,
 /**
  * nm_client_activate_connection:
  * @client: a #NMClient
- * @service_name: the connection's service name
  * @connection_path: the connection's DBus path
  * @device: the #NMDevice
  * @specific_object: the device specific object (currently used only for
  * activating wireless devices and should be the #NMAccessPoint<!-- -->'s path.
- * @callback: the function to call when the call is done
+ * @callback: (scope async): the function to call when the call is done
  * @user_data: user data to pass to the callback function
  *
  * Activates a connection with the given #NMDevice.
  **/
 void
 nm_client_activate_connection (NMClient *client,
-					  const char *service_name,
 					  const char *connection_path,
 					  NMDevice *device,
 					  const char *specific_object,
@@ -1103,30 +1127,92 @@ nm_client_activate_connection (NMClient *client,
 					  gpointer user_data)
 {
 	ActivateDeviceInfo *info;
-	char *internal_so = (char *) specific_object;
 
 	g_return_if_fail (NM_IS_CLIENT (client));
 	g_return_if_fail (NM_IS_DEVICE (device));
-	g_return_if_fail (service_name != NULL);
 	g_return_if_fail (connection_path != NULL);
 
-	/* NULL specific object must be translated into "/" because D-Bus does
-	 * not have any idea of NULL object paths.
-	 */
-	if (internal_so == NULL)
-		internal_so = "/";
-
 	info = g_slice_new (ActivateDeviceInfo);
-	info->fn = callback;
+	info->act_fn = callback;
 	info->user_data = user_data;
+	info->client = client;
 
 	org_freedesktop_NetworkManager_activate_connection_async (NM_CLIENT_GET_PRIVATE (client)->client_proxy,
-											    service_name,
-											    connection_path,
-											    nm_object_get_path (NM_OBJECT (device)),
-											    internal_so,
-											    activate_cb,
-											    info);
+	                                                          connection_path,
+	                                                          nm_object_get_path (NM_OBJECT (device)),
+	                                                          specific_object ? specific_object : "/",
+	                                                          activate_cb,
+	                                                          info);
+}
+
+static void
+add_activate_cb (DBusGProxy *proxy,
+                 char *connection_path,
+                 char *active_path,
+                 GError *error,
+                 gpointer user_data)
+{
+	ActivateDeviceInfo *info = (ActivateDeviceInfo *) user_data;
+
+	if (info->add_act_fn)
+		info->add_act_fn (info->client, connection_path, active_path, error, info->user_data);
+	else if (error)
+		nm_warning ("Connection add and activate failed: (%d) %s", error->code, error->message);
+
+	g_slice_free (ActivateDeviceInfo, info);
+}
+
+/**
+ * nm_client_add_and_activate_connection:
+ * @client: a #NMClient
+ * @partial: an #NMConnection to add; the connection may be partially filled
+ *   and will be completed by NetworkManager using the given @device and
+ *   @specific_object before being added
+ * @device: the #NMDevice
+ * @specific_object: (allow-none): the object path of a connection-type-specific
+ *   object this activation should use. This parameter is currently ignored for
+ *   wired and mobile broadband connections, and the value of NULL should be used
+ *   (ie, no specific object).  For WiFi connections, pass the object path of a
+ *   specific AP from the card's scan list, which will be used to complete the
+ *   details of the newly added connection.
+ * @callback: (scope async): the function to call when the call is done
+ * @user_data: (closure): user data to pass to the callback function
+ *
+ * Adds a new connection using the given details (if any) as a template
+ * (automatically filling in missing settings with the capabilities of the
+ * given device and specific object), then activate the new connection.
+ * Cannot be used for VPN connections at this time.
+ **/
+void
+nm_client_add_and_activate_connection (NMClient *client,
+                                       NMConnection *partial,
+                                       NMDevice *device,
+                                       const char *specific_object,
+                                       NMClientAddActivateFn callback,
+                                       gpointer user_data)
+{
+	ActivateDeviceInfo *info;
+	GHashTable *hash = NULL;
+
+	g_return_if_fail (NM_IS_CLIENT (client));
+	g_return_if_fail (NM_IS_DEVICE (device));
+
+	info = g_slice_new (ActivateDeviceInfo);
+	info->add_act_fn = callback;
+	info->user_data = user_data;
+	info->client = client;
+
+	if (partial)
+		hash = nm_connection_to_hash (partial, NM_SETTING_HASH_FLAG_ALL);
+	else
+		hash = g_hash_table_new (g_str_hash, g_str_equal);
+	org_freedesktop_NetworkManager_add_and_activate_connection_async (NM_CLIENT_GET_PRIVATE (client)->client_proxy,
+	                                                                  hash,
+	                                                                  nm_object_get_path (NM_OBJECT (device)),
+	                                                                  specific_object ? specific_object : "/",
+	                                                                  add_activate_cb,
+	                                                                  info);
+	g_hash_table_unref (hash);
 }
 
 /**
@@ -1161,7 +1247,8 @@ nm_client_deactivate_connection (NMClient *client, NMActiveConnection *active)
  *
  * Gets the active connections.
  *
- * Returns: a #GPtrArray containing all the active #NMActiveConnection<!-- -->s.
+ * Returns: (transfer none) (element-type NMClient.ActiveConnection): a #GPtrArray
+*  containing all the active #NMActiveConnection<!-- -->s.
  * The returned array is owned by the client and should not be modified.
  **/
 const GPtrArray * 

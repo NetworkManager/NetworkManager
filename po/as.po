@@ -1598,7 +1598,7 @@ msgstr "মন কৰিব: libc resolver ৰ দ্বাৰা ৩ তকৈ 
 msgid "The nameservers listed below may not be recognized."
 msgstr "নিম্নলিখিত নাম-সেৱকসমূহ চিনাক্ত ন'হ'বও পাৰে  ।"
 
-#: ../src/system-settings/nm-default-wired-connection.c:157
+#: ../src/settings/nm-default-wired-connection.c:157
 #, c-format
 msgid "Auto %s"
 msgstr "স্বয়ংক্ৰিয় %s"

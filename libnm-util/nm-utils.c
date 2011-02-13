@@ -487,7 +487,7 @@ value_dup (gpointer key, gpointer val, gpointer user_data)
  *
  * Utility function to duplicate a hash table of GValues.
  *
- * Returns: a newly allocated duplicated #GHashTable, caller must free the
+ * Returns: (transfer container) (element-type utf8 GObject.Value): a newly allocated duplicated #GHashTable, caller must free the
  * returned hash with g_hash_table_unref() or g_hash_table_destroy()
  **/
 GHashTable *
@@ -1359,7 +1359,7 @@ nm_utils_security_valid (NMUtilsSecurityType type,
  * this serialization is not guaranteed to be stable and the #GArray may be
  * extended in the future.
  *
- * Returns: a newly allocated #GSList of #NMIP4Address objects
+ * Returns: (transfer full) (element-type NetworkManager.IP4Address): a newly allocated #GSList of #NMIP4Address objects
  **/
 GSList *
 nm_utils_ip4_addresses_from_gvalue (const GValue *value)
@@ -1441,7 +1441,7 @@ nm_utils_ip4_addresses_to_gvalue (GSList *list, GValue *value)
  * format of this serialization is not guaranteed to be stable and may be
  * extended in the future.
  *
- * Returns: a newly allocated #GSList of #NMIP4Route objects
+ * Returns: (transfer full) (element-type NetworkManager.IP4Route): a newly allocated #GSList of #NMIP4Route objects
  **/
 GSList *
 nm_utils_ip4_routes_from_gvalue (const GValue *value)
@@ -1604,7 +1604,7 @@ nm_utils_ip4_get_default_prefix (guint32 ip)
  * this serialization is not guaranteed to be stable and the #GValueArray may be
  * extended in the future.
  *
- * Returns: a newly allocated #GSList of #NMIP6Address objects
+ * Returns: (transfer full) (element-type NetworkManager.IP6Address): a newly allocated #GSList of #NMIP6Address objects
  **/
 GSList *
 nm_utils_ip6_addresses_from_gvalue (const GValue *value)
@@ -1747,7 +1747,7 @@ nm_utils_ip6_addresses_to_gvalue (GSList *list, GValue *value)
  * into a GSList of #NMIP6Route objects.  The specific format of this serialization
  * is not guaranteed to be stable and may be extended in the future.
  *
- * Returns: a newly allocated #GSList of #NMIP6Route objects
+ * Returns: (transfer full) (element-type NetworkManager.IP6Route): a newly allocated #GSList of #NMIP6Route objects
  **/
 GSList *
 nm_utils_ip6_routes_from_gvalue (const GValue *value)
@@ -1863,6 +1863,18 @@ nm_utils_ip6_routes_to_gvalue (GSList *list, GValue *value)
 	g_value_take_boxed (value, routes);
 }
 
+/* FIXME: the Posix namespace does not exist, and thus neither does
+   the in6_addr struct. Marking (skip) for now */
+/**
+ * nm_utils_ip6_dns_from_gvalue: (skip):
+ * @value: a #GValue
+ *
+ * Converts a #GValue containing a #GPtrArray of IP6 DNS, represented as
+ * #GByteArray<!-- -->s into a #GSList of #in6_addr<!-- -->s.
+ *
+ * Returns: (transfer full) (element-type Posix.in6_addr): a #GSList of IP6
+ * addresses.
+ */
 GSList *
 nm_utils_ip6_dns_from_gvalue (const GValue *value)
 {
@@ -2046,8 +2058,8 @@ utils_bin2hexstr (const char *bytes, int len, int final_len)
 /**
  * nm_utils_rsa_key_encrypt:
  * @data: RSA private key data to be encrypted
- * @in_password: existing password to use, if any
- * @out_password: if @in_password was NULL, a random password will be generated
+ * @in_password: (allow-none): existing password to use, if any
+ * @out_password: (out) (allow-none): if @in_password was NULL, a random password will be generated
  *  and returned in this argument
  * @error: detailed error information on return, if an error occurred
  *
@@ -2055,7 +2067,7 @@ utils_bin2hexstr (const char *bytes, int len, int final_len)
  * a password if no password was given) and converts the data to PEM format
  * suitable for writing to a file.
  *
- * Returns: on success, PEM-formatted data suitable for writing to a PEM-formatted
+ * Returns: (transfer full): on success, PEM-formatted data suitable for writing to a PEM-formatted
  * certificate/private key file.
  **/
 GByteArray *

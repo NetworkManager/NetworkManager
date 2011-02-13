@@ -325,6 +325,8 @@ nm_vpn_service_activate (NMVPNService *service,
                          NMConnection *connection,
                          NMActRequest *act_request,
                          NMDevice *device,
+                         gboolean user_requested,
+                         gulong user_uid,
                          GError **error)
 {
 	NMVPNConnection *vpn;
@@ -341,7 +343,7 @@ nm_vpn_service_activate (NMVPNService *service,
 
 	clear_quit_timeout (service);
 
-	vpn = nm_vpn_connection_new (connection, act_request, device);
+	vpn = nm_vpn_connection_new (connection, act_request, device, user_requested, user_uid);
 	g_signal_connect (vpn, "vpn-state-changed",
 				   G_CALLBACK (connection_vpn_state_changed),
 				   service);
@@ -415,7 +417,8 @@ nm_vpn_service_init (NMVPNService *self)
 	NMVPNServicePrivate *priv = NM_VPN_SERVICE_GET_PRIVATE (self);
 
 	priv->dbus_mgr = nm_dbus_manager_get ();
-	priv->name_owner_id = g_signal_connect (priv->dbus_mgr, "name-owner-changed",
+	priv->name_owner_id = g_signal_connect (priv->dbus_mgr,
+	                                        NM_DBUS_MANAGER_NAME_OWNER_CHANGED,
 	                                        G_CALLBACK (nm_vpn_service_name_owner_changed),
 	                                        self);
 }

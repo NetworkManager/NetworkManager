@@ -15,19 +15,23 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 - 2010 Red Hat, Inc.
+ * Copyright (C) 2009 - 2011 Red Hat, Inc.
  * Copyright (C) 2009 Novell, Inc.
  */
 
 #include <string.h>
+#include <glib/gi18n.h>
 
 #include "nm-dbus-glib-types.h"
 #include "nm-modem-cdma.h"
 #include "nm-modem-types.h"
 #include "nm-device.h"
+#include "nm-device-private.h"
 #include "nm-dbus-manager.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-cdma.h"
+#include "nm-setting-serial.h"
+#include "nm-setting-ppp.h"
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
 
@@ -270,6 +274,47 @@ real_check_connection_compatible (NMModem *modem,
 }
 
 static gboolean
+real_complete_connection (NMModem *modem,
+                          NMConnection *connection,
+                          const GSList *existing_connections,
+                          GError **error)
+{
+	NMSettingCdma *s_cdma;
+	NMSettingSerial *s_serial;
+	NMSettingPPP *s_ppp;
+
+	s_cdma = (NMSettingCdma *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CDMA);
+	s_serial = (NMSettingSerial *) nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL);
+	s_ppp = (NMSettingPPP *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP);
+
+	if (!s_cdma) {
+		s_cdma = (NMSettingCdma *) nm_setting_cdma_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_cdma));
+	}
+
+	if (!nm_setting_cdma_get_number (s_cdma))
+		g_object_set (G_OBJECT (s_cdma), NM_SETTING_CDMA_NUMBER, "#777", NULL);
+
+	/* Need serial and PPP settings at least */
+	if (!s_serial) {
+		s_serial = (NMSettingSerial *) nm_setting_serial_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_serial));
+	}
+	if (!s_ppp) {
+		s_ppp = (NMSettingPPP *) nm_setting_ppp_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_ppp));
+	}
+
+	nm_utils_complete_generic (connection,
+	                           NM_SETTING_CDMA_SETTING_NAME,
+	                           existing_connections,
+	                           _("CDMA connection %d"),
+	                           NULL);
+
+	return TRUE;
+}
+
+static gboolean
 real_get_user_pass (NMModem *modem,
                     NMConnection *connection,
                     const char **user,
@@ -344,6 +389,7 @@ nm_modem_cdma_class_init (NMModemCdmaClass *klass)
 	modem_class->get_setting_name = real_get_setting_name;
 	modem_class->get_best_auto_connection = real_get_best_auto_connection;
 	modem_class->check_connection_compatible = real_check_connection_compatible;
+	modem_class->complete_connection = real_complete_connection;
 	modem_class->act_stage1_prepare = real_act_stage1_prepare;
 	modem_class->deactivate_quickly = real_deactivate_quickly;
 

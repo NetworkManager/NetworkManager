@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2010 Red Hat, Inc.
+ * Copyright (C) 2005 - 2011 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -103,15 +103,6 @@ enum {
 };
 
 static guint signals[LAST_SIGNAL] = { 0 };
-
-typedef enum {
-	NM_WIFI_ERROR_CONNECTION_NOT_WIRELESS = 0,
-	NM_WIFI_ERROR_CONNECTION_INVALID,
-	NM_WIFI_ERROR_CONNECTION_INCOMPATIBLE,
-} NMWifiError;
-
-#define NM_WIFI_ERROR (nm_wifi_error_quark ())
-#define NM_TYPE_WIFI_ERROR (nm_wifi_error_get_type ()) 
 
 #define SUP_SIG_ID_LEN 5
 
@@ -201,6 +192,18 @@ static guint32 nm_device_wifi_get_bitrate (NMDeviceWifi *self);
 
 static void cull_scan_list (NMDeviceWifi *self);
 
+/*****************************************************************/
+
+typedef enum {
+	NM_WIFI_ERROR_CONNECTION_NOT_WIRELESS = 0,
+	NM_WIFI_ERROR_CONNECTION_INVALID,
+	NM_WIFI_ERROR_CONNECTION_INCOMPATIBLE,
+	NM_WIFI_ERROR_ACCESS_POINT_NOT_FOUND,
+} NMWifiError;
+
+#define NM_WIFI_ERROR (nm_wifi_error_quark ())
+#define NM_TYPE_WIFI_ERROR (nm_wifi_error_get_type ())
+
 static GQuark
 nm_wifi_error_quark (void)
 {
@@ -226,12 +229,16 @@ nm_wifi_error_get_type (void)
 			ENUM_ENTRY (NM_WIFI_ERROR_CONNECTION_INVALID, "ConnectionInvalid"),
 			/* Connection does not apply to this device. */
 			ENUM_ENTRY (NM_WIFI_ERROR_CONNECTION_INCOMPATIBLE, "ConnectionIncompatible"),
+			/* Given access point was not in this device's scan list. */
+			ENUM_ENTRY (NM_WIFI_ERROR_ACCESS_POINT_NOT_FOUND, "AccessPointNotFound"),
 			{ 0, 0, 0 }
 		};
 		etype = g_enum_register_static ("NMWifiError", values);
 	}
 	return etype;
 }
+
+/*****************************************************************/
 
 /* IPW rfkill handling (until 2.6.33) */
 RfKillState
@@ -290,6 +297,8 @@ ipw_rfkill_state_work (gpointer user_data)
 
 	return TRUE;
 }
+
+/*****************************************************************/
 
 /*
  * wireless_qual_to_percent
@@ -820,6 +829,20 @@ supplicant_interface_release (NMDeviceWifi *self)
 	}
 }
 
+
+static NMAccessPoint *
+get_ap_by_path (NMDeviceWifi *self, const char *path)
+{
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	GSList *iter;
+
+	for (iter = priv->ap_list; iter; iter = g_slist_next (iter)) {
+		if (strcmp (path, nm_ap_get_dbus_path (NM_AP (iter->data))) == 0)
+			return NM_AP (iter->data);
+	}
+	return NULL;
+}
+
 static NMAccessPoint *
 get_active_ap (NMDeviceWifi *self,
                NMAccessPoint *ignore_ap,
@@ -1315,6 +1338,169 @@ real_check_connection_compatible (NMDevice *device,
 	// FIXME: check channel/freq/band against bands the hardware supports
 	// FIXME: check encryption against device capabilities
 	// FIXME: check bitrate against device capabilities
+
+	return TRUE;
+}
+
+/*
+ * List of manufacturer default SSIDs that are often unchanged by users.
+ *
+ * NOTE: this list should *not* contain networks that you would like to
+ * automatically roam to like "Starbucks" or "AT&T" or "T-Mobile HotSpot".
+ */
+static const char *
+manf_defaults[] = {
+	"linksys",
+	"linksys-a",
+	"linksys-g",
+	"default",
+	"belkin54g",
+	"NETGEAR",
+	"o2DSL",
+	"WLAN",
+	"ALICE-WLAN",
+};
+
+#define ARRAY_SIZE(a)  (sizeof (a) / sizeof (a[0]))
+
+static gboolean
+is_manf_default_ssid (const GByteArray *ssid)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE (manf_defaults); i++) {
+		if (ssid->len == strlen (manf_defaults[i])) {
+			if (memcmp (manf_defaults[i], ssid->data, ssid->len) == 0)
+				return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+static gboolean
+real_complete_connection (NMDevice *device,
+                          NMConnection *connection,
+                          const char *specific_object,
+                          const GSList *existing_connections,
+                          GError **error)
+{
+	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	NMSetting8021x *s_8021x;
+	const GByteArray *setting_mac;
+	char *format, *str_ssid = NULL;
+	NMAccessPoint *ap = NULL;
+	const GByteArray *ssid = NULL;
+	GSList *iter;
+
+	s_wifi = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
+	s_wsec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
+	s_8021x = (NMSetting8021x *) nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X);
+
+	if (!specific_object) {
+		/* If not given a specific object, we need at minimum an SSID */
+		if (!s_wifi) {
+			g_set_error_literal (error,
+			                     NM_WIFI_ERROR,
+			                     NM_WIFI_ERROR_CONNECTION_INVALID,
+			                     "A 'wireless' setting is required if no AP path was given.");
+			return FALSE;
+		}
+
+		ssid = nm_setting_wireless_get_ssid (s_wifi);
+		if (!ssid || !ssid->len) {
+			g_set_error_literal (error,
+			                     NM_WIFI_ERROR,
+			                     NM_WIFI_ERROR_CONNECTION_INVALID,
+			                     "A 'wireless' setting with a valid SSID is required if no AP path was given.");
+			return FALSE;
+		}
+
+		/* Find a compatible AP in the scan list */
+		for (iter = priv->ap_list; iter; iter = g_slist_next (iter)) {
+			if (nm_ap_check_compatible (NM_AP (iter->data), connection)) {
+				ap = NM_AP (iter->data);
+				break;
+			}
+		}
+
+		/* If we still don't have an AP, then the WiFI settings needs to be
+		 * fully specified by the client.  Might not be able to find an AP
+		 * if the network isn't broadcasting the SSID for example.
+		 */
+		if (!ap) {
+			GSList *settings = NULL;
+			gboolean valid;
+
+			settings = g_slist_prepend (settings, s_wifi);
+			settings = g_slist_prepend (settings, s_wsec);
+			settings = g_slist_prepend (settings, s_8021x);
+			valid = nm_setting_verify (NM_SETTING (s_wifi), settings, error);
+			g_slist_free (settings);
+			if (!valid)
+				return FALSE;
+		}
+	} else {
+		ap = get_ap_by_path (self, specific_object);
+		if (!ap) {
+			g_set_error (error,
+			             NM_WIFI_ERROR,
+			             NM_WIFI_ERROR_ACCESS_POINT_NOT_FOUND,
+			             "The access point %s was not in the scan list.",
+			             specific_object);
+			return FALSE;
+		}
+	}
+
+	if (ap) {
+		ssid = nm_ap_get_ssid (ap);
+
+		/* If the SSID is a well-known SSID, lock the connection to the AP's
+		 * specific BSSID so NM doesn't autoconnect to some random wifi net.
+		 */
+		if (!nm_ap_complete_connection (ap,
+		                                connection,
+		                                is_manf_default_ssid (ssid),
+		                                error))
+			return FALSE;
+	}
+
+	g_assert (ssid);
+	str_ssid = nm_utils_ssid_to_utf8 ((const char *) ssid, ssid->len);
+	format = g_strdup_printf ("%s %%d", str_ssid);
+
+	nm_utils_complete_generic (connection,
+	                           NM_SETTING_WIRELESS_SETTING_NAME,
+	                           existing_connections,
+	                           format,
+	                           str_ssid);
+	g_free (str_ssid);
+	g_free (format);
+
+	setting_mac = nm_setting_wireless_get_mac_address (s_wifi);
+	if (setting_mac) {
+		/* Make sure the setting MAC (if any) matches the device's permanent MAC */
+		if (memcmp (setting_mac->data, priv->perm_hw_addr, ETH_ALEN)) {
+			g_set_error (error,
+				         NM_SETTING_WIRELESS_ERROR,
+				         NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
+				         NM_SETTING_WIRELESS_MAC_ADDRESS);
+			return FALSE;
+		}
+	} else {
+		GByteArray *mac;
+		const guint8 null_mac[ETH_ALEN] = { 0, 0, 0, 0, 0, 0 };
+
+		/* Lock the connection to this device by default */
+		if (memcmp (priv->perm_hw_addr, null_mac, ETH_ALEN)) {
+			mac = g_byte_array_sized_new (ETH_ALEN);
+			g_byte_array_append (mac, priv->perm_hw_addr, ETH_ALEN);
+			g_object_set (G_OBJECT (s_wifi), NM_SETTING_WIRELESS_MAC_ADDRESS, mac, NULL);
+			g_byte_array_free (mac, TRUE);
+		}
+	}
 
 	return TRUE;
 }
@@ -2193,6 +2379,27 @@ cleanup_association_attempt (NMDeviceWifi *self, gboolean disconnect)
 		nm_supplicant_interface_disconnect (priv->supplicant.iface);
 }
 
+static void
+wifi_secrets_cb (NMActRequest *req,
+                 guint32 call_id,
+                 NMConnection *connection,
+                 GError *error,
+                 gpointer user_data)
+{
+	NMDevice *dev = NM_DEVICE (user_data);
+
+	g_return_if_fail (req == nm_device_get_act_request (dev));
+	g_return_if_fail (nm_device_get_state (dev) == NM_DEVICE_STATE_NEED_AUTH);
+	g_return_if_fail (nm_act_request_get_connection (req) == connection);
+
+	if (error) {
+		nm_log_warn (LOGD_WIFI, "%s", error->message);
+		nm_device_state_changed (dev,
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_NO_SECRETS);
+	} else
+		nm_device_activate_schedule_stage1_device_prepare (dev);
+}
 
 static void
 remove_link_timeout (NMDeviceWifi *self)
@@ -2289,10 +2496,10 @@ link_timeout_cb (gpointer user_data)
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
 		nm_act_request_get_secrets (req,
 		                            setting_name,
-		                            TRUE,
-		                            SECRETS_CALLER_WIFI,
+		                            NM_ACT_REQUEST_GET_SECRETS_FLAG_REQUEST_NEW,
 		                            NULL,
-		                            NULL);
+		                            wifi_secrets_cb,
+		                            self);
 
 		return FALSE;
 	}
@@ -2504,6 +2711,7 @@ handle_auth_or_fail (NMDeviceWifi *self,
 	guint32 tries;
 	NMAccessPoint *ap;
 	NMConnection *connection;
+	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (self), NM_ACT_STAGE_RETURN_FAILURE);
 
@@ -2527,24 +2735,21 @@ handle_auth_or_fail (NMDeviceWifi *self,
 	nm_connection_clear_secrets (connection);
 	setting_name = nm_connection_need_secrets (connection, NULL);
 	if (setting_name) {
-		gboolean get_new;
+		guint32 flags = NM_ACT_REQUEST_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
 		/* If the caller doesn't necessarily want completely new secrets,
 		 * only ask for new secrets after the first failure.
 		 */
-		get_new = new_secrets ? TRUE : (tries ? TRUE : FALSE);
-		nm_act_request_get_secrets (req,
-		                            setting_name,
-		                            get_new,
-		                            SECRETS_CALLER_WIFI,
-		                            NULL,
-		                            NULL);
+		if (new_secrets || tries)
+			flags |= NM_ACT_REQUEST_GET_SECRETS_FLAG_REQUEST_NEW;
+		nm_act_request_get_secrets (req, setting_name, flags, NULL, wifi_secrets_cb, self);
 
 		g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
-	} else {
+		ret = NM_ACT_STAGE_RETURN_POSTPONE;
+	} else
 		nm_log_warn (LOGD_DEVICE, "Cleared secrets, but setting didn't need any secrets.");
-	}
-	return NM_ACT_STAGE_RETURN_POSTPONE;
+
+	return ret;
 }
 
 /*
@@ -2912,42 +3117,6 @@ real_act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 done:
 	set_current_ap (self, ap);
 	return NM_ACT_STAGE_RETURN_SUCCESS;
-}
-
-
-static void
-real_connection_secrets_updated (NMDevice *dev,
-                                 NMConnection *connection,
-                                 GSList *updated_settings,
-                                 RequestSecretsCaller caller)
-{
-	NMActRequest *req;
-	gboolean valid = FALSE;
-	GSList *iter;
-
-	g_return_if_fail (caller == SECRETS_CALLER_WIFI);
-
-	if (nm_device_get_state (dev) != NM_DEVICE_STATE_NEED_AUTH)
-		return;
-
-	for (iter = updated_settings; iter; iter = g_slist_next (iter)) {
-		const char *setting_name = (const char *) iter->data;
-
-		if (   !strcmp (setting_name, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME)
-		    || !strcmp (setting_name, NM_SETTING_802_1X_SETTING_NAME)) {
-			valid = TRUE;
-		} else {
-			nm_log_warn (LOGD_DEVICE, "Ignoring updated secrets for setting '%s'.",
-			             setting_name);
-		}
-	}
-
-	req = nm_device_get_act_request (dev);
-	g_assert (req);
-
-	g_return_if_fail (nm_act_request_get_connection (req) == connection);
-
-	nm_device_activate_schedule_stage1_device_prepare (dev);
 }
 
 static NMActStageReturn
@@ -3410,10 +3579,8 @@ device_state_changed (NMDevice *device,
 NMAccessPoint *
 nm_device_wifi_get_activation_ap (NMDeviceWifi *self)
 {
-	NMDeviceWifiPrivate *priv;
 	NMActRequest *req;
 	const char *ap_path;
-	GSList * elt;
 
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (self), NULL);
 
@@ -3422,18 +3589,8 @@ nm_device_wifi_get_activation_ap (NMDeviceWifi *self)
 		return NULL;
 
 	ap_path = nm_act_request_get_specific_object (req);
-	if (!ap_path)
-		return NULL;
 
-	/* Find the AP by it's object path */
-	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	for (elt = priv->ap_list; elt; elt = g_slist_next (elt)) {
-		NMAccessPoint *ap = NM_AP (elt->data);
-
-		if (!strcmp (ap_path, nm_ap_get_dbus_path (ap)))
-			return ap;
-	}
-	return NULL;
+	return ap_path ? get_ap_by_path (self, ap_path) : NULL;
 }
 
 static void
@@ -3659,8 +3816,8 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->update_initial_hw_address = real_update_initial_hw_address;
 	parent_class->get_best_auto_connection = real_get_best_auto_connection;
 	parent_class->is_available = real_is_available;
-	parent_class->connection_secrets_updated = real_connection_secrets_updated;
 	parent_class->check_connection_compatible = real_check_connection_compatible;
+	parent_class->complete_connection = real_complete_connection;
 
 	parent_class->act_stage1_prepare = real_act_stage1_prepare;
 	parent_class->act_stage2_config = real_act_stage2_config;

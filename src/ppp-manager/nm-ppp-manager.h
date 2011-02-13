@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2008 - 2010 Red Hat, Inc.
  */
 
 #ifndef NM_PPP_MANAGER_H
@@ -62,12 +62,6 @@ gboolean nm_ppp_manager_start (NMPPPManager *manager,
                                const char *ppp_name,
                                guint32 timeout_secs,
                                GError **err);
-
-void     nm_ppp_manager_update_secrets (NMPPPManager *manager,
-                                        const char *device,
-                                        const char *username,
-                                        const char *password,
-                                        const char *error_message);
 
 void     nm_ppp_manager_stop  (NMPPPManager *manager);
 

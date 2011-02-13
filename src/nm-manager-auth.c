@@ -18,11 +18,13 @@
  * Copyright (C) 2010 Red Hat, Inc.
  */
 
+#include <string.h>
+#include <dbus/dbus-glib-lowlevel.h>
+
+#include <nm-setting-connection.h>
 #include "nm-manager-auth.h"
 #include "nm-logging.h"
-
-#include <dbus/dbus-glib-lowlevel.h>
-#include <string.h>
+#include "nm-dbus-manager.h"
 
 struct NMAuthChain {
 	guint32 refcount;
@@ -78,12 +80,13 @@ _auth_chain_new (PolkitAuthority *authority,
                  DBusGMethodInvocation *context,
                  DBusGProxy *proxy,
                  DBusMessage *message,
+                 const char *dbus_sender,
                  NMAuthChainResultFunc done_func,
                  gpointer user_data)
 {
 	NMAuthChain *self;
 
-	g_return_val_if_fail (context || proxy || message, NULL);
+	g_return_val_if_fail (context || proxy || message || dbus_sender, NULL);
 
 	self = g_malloc0 (sizeof (NMAuthChain));
 	self->refcount = 1;
@@ -100,6 +103,8 @@ _auth_chain_new (PolkitAuthority *authority,
 		self->owner = dbus_g_method_get_sender (context);
 	else if (message)
 		self->owner = g_strdup (dbus_message_get_sender (message));
+	else if (dbus_sender)
+		self->owner = g_strdup (dbus_sender);
 
 	if (!self->owner) {
 		/* Need an owner */
@@ -118,7 +123,7 @@ nm_auth_chain_new (PolkitAuthority *authority,
                    NMAuthChainResultFunc done_func,
                    gpointer user_data)
 {
-	return _auth_chain_new (authority, context, proxy, NULL, done_func, user_data);
+	return _auth_chain_new (authority, context, proxy, NULL, NULL, done_func, user_data);
 }
 
 NMAuthChain *
@@ -127,7 +132,16 @@ nm_auth_chain_new_raw_message (PolkitAuthority *authority,
                                NMAuthChainResultFunc done_func,
                                gpointer user_data)
 {
-	return _auth_chain_new (authority, NULL, NULL, message, done_func, user_data);
+	return _auth_chain_new (authority, NULL, NULL, message, NULL, done_func, user_data);
+}
+
+NMAuthChain *
+nm_auth_chain_new_dbus_sender (PolkitAuthority *authority,
+                               const char *dbus_sender,
+                               NMAuthChainResultFunc done_func,
+                               gpointer user_data)
+{
+	return _auth_chain_new (authority, NULL, NULL, NULL, dbus_sender, done_func, user_data);
 }
 
 gpointer
@@ -162,6 +176,43 @@ nm_auth_chain_set_data (NMAuthChain *self,
 
 		g_hash_table_insert (self->data, g_strdup (tag), tmp);
 	}
+}
+
+gulong
+nm_auth_chain_get_data_ulong (NMAuthChain *self, const char *tag)
+{
+	gulong *ptr;
+
+	g_return_val_if_fail (self != NULL, 0);
+	g_return_val_if_fail (tag != NULL, 0);
+
+	ptr = nm_auth_chain_get_data (self, tag);
+	return *ptr;
+}
+
+
+void
+nm_auth_chain_set_data_ulong (NMAuthChain *self,
+                              const char *tag,
+                              gulong data)
+{
+	gulong *ptr;
+
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (tag != NULL);
+
+	ptr = g_malloc (sizeof (*ptr));
+	*ptr = data;
+	nm_auth_chain_set_data (self, tag, ptr, g_free);
+}
+
+NMAuthCallResult
+nm_auth_chain_get_result (NMAuthChain *self, const char *permission)
+{
+	g_return_val_if_fail (self != NULL, NM_AUTH_CALL_RESULT_UNKNOWN);
+	g_return_val_if_fail (permission != NULL, NM_AUTH_CALL_RESULT_UNKNOWN);
+
+	return GPOINTER_TO_UINT (nm_auth_chain_get_data (self, permission));
 }
 
 static void
@@ -317,7 +368,7 @@ gboolean
 nm_auth_get_caller_uid (DBusGMethodInvocation *context,
                         NMDBusManager *dbus_mgr,
                         gulong *out_uid,
-                        const char **out_error_desc)
+                        char **out_error_desc)
 {
 	DBusConnection *connection;
 	char *sender = NULL;
@@ -325,22 +376,27 @@ nm_auth_get_caller_uid (DBusGMethodInvocation *context,
 	DBusError dbus_error;
 
 	g_return_val_if_fail (context != NULL, FALSE);
-	g_return_val_if_fail (dbus_mgr != NULL, FALSE);
 	g_return_val_if_fail (out_uid != NULL, FALSE);
+
+	if (!dbus_mgr) {
+		dbus_mgr = nm_dbus_manager_get ();
+		g_assert (dbus_mgr);
+	} else
+		g_object_ref (dbus_mgr);
 
 	*out_uid = G_MAXULONG;
 
 	sender = dbus_g_method_get_sender (context);
 	if (!sender) {
 		if (out_error_desc)
-			*out_error_desc = "Could not determine D-Bus requestor";
+			*out_error_desc = g_strdup ("Could not determine D-Bus requestor");
 		goto out;
 	}
 
 	connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
 	if (!connection) {
 		if (out_error_desc)
-			*out_error_desc = "Could not get the D-Bus system bus";
+			*out_error_desc = g_strdup ("Could not get the D-Bus system bus");
 		goto out;
 	}
 
@@ -349,73 +405,55 @@ nm_auth_get_caller_uid (DBusGMethodInvocation *context,
 	*out_uid = dbus_bus_get_unix_user (connection, sender, &dbus_error);
 	if (dbus_error_is_set (&dbus_error)) {
 		if (out_error_desc)
-			*out_error_desc = "Could not determine the user ID of the requestor";
+			*out_error_desc = g_strdup_printf ("Could not determine the user ID of the requestor");
 		dbus_error_free (&dbus_error);
 		*out_uid = G_MAXULONG;
 	} else
 		success = TRUE;
 
 out:
+	g_object_unref (dbus_mgr);
 	g_free (sender);
 	return success;
 }
 
 gboolean
-nm_auth_uid_authorized (gulong uid,
-                        NMDBusManager *dbus_mgr,
-                        DBusGProxy *user_proxy,
-                        const char **out_error_desc)
+nm_auth_uid_in_acl (NMConnection *connection,
+                    NMSessionMonitor *smon,
+                    gulong uid,
+                    char **out_error_desc)
 {
-	DBusConnection *connection;
-	DBusError dbus_error;
-	char *service_owner = NULL;
-	const char *service_name;
-	gulong service_uid = G_MAXULONG;
+	NMSettingConnection *s_con;
+	const char *user = NULL;
+	GError *local = NULL;
 
-	g_return_val_if_fail (dbus_mgr != NULL, FALSE);
-	g_return_val_if_fail (out_error_desc != NULL, FALSE);
+	g_return_val_if_fail (connection != NULL, FALSE);
+	g_return_val_if_fail (smon != NULL, FALSE);
 
-	/* Ensure the request to activate the user connection came from the
-	 * same session as the user settings service.  FIXME: use ConsoleKit
-	 * too.
-	 */
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	g_assert (s_con);
 
-	if (!user_proxy) {
-		*out_error_desc = "No user settings service available";
+	/* Reject the request if the request comes from no session at all */
+	if (!nm_session_monitor_uid_has_session (smon, uid, &user, &local)) {
+		if (out_error_desc) {
+			*out_error_desc = g_strdup_printf ("No session found for uid %lu (%s)",
+			                                   uid,
+			                                   local && local->message ? local->message : "unknown");
+		}
+		g_clear_error (&local);
 		return FALSE;
 	}
 
-	service_name = dbus_g_proxy_get_bus_name (user_proxy);
-	if (!service_name) {
-		*out_error_desc = "Could not determine user settings service name";
+	if (!user) {
+		if (out_error_desc)
+			*out_error_desc = g_strdup_printf ("Could not determine username for uid %lu", uid);
 		return FALSE;
 	}
 
-	connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
-	if (!connection) {
-		*out_error_desc = "Could not get the D-Bus system bus";
-		return FALSE;
-	}
-
-	service_owner = nm_dbus_manager_get_name_owner (dbus_mgr, service_name, NULL);
-	if (!service_owner) {
-		*out_error_desc = "Could not determine D-Bus owner of the user settings service";
-		return FALSE;
-	}
-
-	dbus_error_init (&dbus_error);
-	service_uid = dbus_bus_get_unix_user (connection, service_owner, &dbus_error);
-	g_free (service_owner);
-
-	if (dbus_error_is_set (&dbus_error)) {
-		dbus_error_free (&dbus_error);
-		*out_error_desc = "Could not determine the Unix UID of the sender of the request";
-		return FALSE;
-	}
-
-	/* And finally, the actual UID check */
-	if (uid != service_uid) {
-		*out_error_desc = "Requestor UID does not match the UID of the user settings service";
+	/* Match the username returned by the session check to a user in the ACL */
+	if (!nm_setting_connection_permissions_user_allowed (s_con, user)) {
+		if (out_error_desc)
+			*out_error_desc = g_strdup_printf ("uid %lu has no permission to perform this operation", uid);
 		return FALSE;
 	}
 

@@ -29,6 +29,7 @@
 #include "nm-connection.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
+#include "nm-dbus-glib-types.h"
 
 #include "nm-setting-8021x.h"
 #include "nm-setting-bluetooth.h"
@@ -66,12 +67,6 @@
  * parameters (MTU, SSID, APN, channel, rate, etc) and IP-level parameters
  * (addresses, routes, addressing methods, etc).
  *
- * Most connections also have a %NMConnectionScope; a connection will be
- * provided over D-Bus either by the user settings service
- * (org.freedesktop.NetworkManagerUserSettings) running in an active user
- * session, or by the system-wide system settings service
- * (org.freedesktop.NetworkManagerSystemSettings) which provides  connections
- * for all users.
  */
 
 /**
@@ -113,9 +108,6 @@ nm_connection_error_get_type (void)
 typedef struct {
 	GHashTable *settings;
 
-	/* Type of the connection (system or user) */
-	NMConnectionScope scope;
-
 	/* D-Bus path of the connection, if any */
 	char *path;
 } NMConnectionPrivate;
@@ -126,7 +118,6 @@ G_DEFINE_TYPE (NMConnection, nm_connection, G_TYPE_OBJECT)
 
 enum {
 	PROP_0,
-	PROP_SCOPE,
 	PROP_PATH,
 
 	LAST_PROP
@@ -234,9 +225,9 @@ register_default_settings (void)
 	                      1);
 
 	register_one_setting (NM_SETTING_BLUETOOTH_SETTING_NAME,
-			      NM_TYPE_SETTING_BLUETOOTH,
-			      NM_SETTING_BLUETOOTH_ERROR,
-			      1);
+	                      NM_TYPE_SETTING_BLUETOOTH,
+	                      NM_SETTING_BLUETOOTH_ERROR,
+	                      1);
 
 	register_one_setting (NM_SETTING_WIMAX_SETTING_NAME,
 	                      NM_TYPE_SETTING_WIMAX,
@@ -359,7 +350,7 @@ nm_connection_lookup_setting_type_by_quark (GQuark error_quark)
  *
  * Create a new #NMSetting object of the desired type, given a setting name.
  *
- * Returns: the new setting object, or NULL if the setting name was unknown
+ * Returns: (transfer full): the new setting object, or NULL if the setting name was unknown
  **/
 NMSetting *
 nm_connection_create_setting (const char *name)
@@ -393,7 +384,7 @@ parse_one_setting (gpointer key, gpointer value, gpointer user_data)
 /**
  * nm_connection_add_setting:
  * @connection: a #NMConnection
- * @setting: the #NMSetting to add to the connection object
+ * @setting: (transfer full): the #NMSetting to add to the connection object
  *
  * Adds a #NMSetting to the connection, replacing any previous #NMSetting of the
  * same name which has previously been added to the #NMConnection.  The
@@ -435,7 +426,7 @@ nm_connection_remove_setting (NMConnection *connection, GType setting_type)
  * Gets the #NMSetting with the given #GType, if one has been previously added
  * to the #NMConnection.
  *
- * Returns: the #NMSetting, or NULL if no setting of that type was previously
+ * Returns: (transfer none): the #NMSetting, or NULL if no setting of that type was previously
  * added to the #NMConnection
  **/
 NMSetting *
@@ -456,7 +447,7 @@ nm_connection_get_setting (NMConnection *connection, GType setting_type)
  * Gets the #NMSetting with the given name, if one has been previously added
  * the the #NMConnection.
  *
- * Returns: the #NMSetting, or NULL if no setting with that name was previously
+ * Returns: (transfer none): the #NMSetting, or NULL if no setting with that name was previously
  * added to the #NMConnection
  **/
 NMSetting *
@@ -472,10 +463,37 @@ nm_connection_get_setting_by_name (NMConnection *connection, const char *name)
 	return type ? nm_connection_get_setting (connection, type) : NULL;
 }
 
+static gboolean
+validate_permissions_type (GHashTable *hash, GError **error)
+{
+	GHashTable *s_con;
+	GValue *permissions;
+
+	/* Ensure the connection::permissions item (if present) is the correct
+	 * type, otherwise the g_object_set() will throw a warning and ignore the
+	 * error, leaving us with no permissions.
+	 */
+	s_con = g_hash_table_lookup (hash, NM_SETTING_CONNECTION_SETTING_NAME);
+	if (s_con) {
+		permissions = g_hash_table_lookup (s_con, NM_SETTING_CONNECTION_PERMISSIONS);
+		if (permissions) {
+			if (   !G_VALUE_HOLDS (permissions, G_TYPE_STRV)
+			    && !G_VALUE_HOLDS (permissions, DBUS_TYPE_G_LIST_OF_STRING)) {
+				g_set_error_literal (error,
+				                     NM_SETTING_ERROR,
+				                     NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
+				                     "Wrong permissions property type; should be a list of strings.");
+				return FALSE;
+			}
+		}
+	}
+	return TRUE;
+}
+
 /**
  * nm_connection_replace_settings:
  * @connection: a #NMConnection
- * @new_settings: a #GHashTable of settings
+ * @new_settings: (element-type utf8 GLib.HashTable): a #GHashTable of settings
  * @error: location to store error, or %NULL
  *
  * Returns: %TRUE if the settings were valid and added to the connection, %FALSE
@@ -491,6 +509,9 @@ nm_connection_replace_settings (NMConnection *connection,
 	g_return_val_if_fail (new_settings != NULL, FALSE);
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
+
+	if (!validate_permissions_type (new_settings, error))
+		return FALSE;
 
 	g_hash_table_remove_all (NM_CONNECTION_GET_PRIVATE (connection)->settings);
 	g_hash_table_foreach (new_settings, parse_one_setting, connection);
@@ -630,7 +651,7 @@ nm_connection_verify (NMConnection *connection, GError **error)
  * nm_connection_update_secrets:
  * @connection: the #NMConnection
  * @setting_name: the setting object name to which the secrets apply
- * @secrets: a #GHashTable mapping string:#GValue of setting property names and
+ * @secrets: (element-type utf8 GObject.Value): a #GHashTable mapping string:#GValue of setting property names and
  * secrets
  * @error: location to store error, or %NULL
  *
@@ -643,28 +664,39 @@ nm_connection_verify (NMConnection *connection, GError **error)
 gboolean
 nm_connection_update_secrets (NMConnection *connection,
                               const char *setting_name,
-                              GHashTable *secrets,
+                              GHashTable *all_secrets,
                               GError **error)
 {
 	NMSetting *setting;
 	gboolean success;
+	GHashTable *setting_secrets;
 
 	g_return_val_if_fail (connection != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (setting_name != NULL, FALSE);
-	g_return_val_if_fail (secrets != NULL, FALSE);
+	g_return_val_if_fail (all_secrets != NULL, FALSE);
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
 
 	setting = nm_connection_get_setting (connection, nm_connection_lookup_setting_type (setting_name));
 	if (!setting) {
-		g_set_error (error, NM_CONNECTION_ERROR,
-		             NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND,
-		             "%s", setting_name);
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND,
+		                     setting_name);
 		return FALSE;
 	}
 
-	success = nm_setting_update_secrets (setting, secrets, error);
+	setting_secrets = g_hash_table_lookup (all_secrets, setting_name);
+	if (!setting_secrets) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND,
+		                     setting_name);
+		return FALSE;
+	}
+
+	success = nm_setting_update_secrets (setting, setting_secrets, error);
 	if (success)
 		g_signal_emit (connection, signals[SECRETS_UPDATED], 0, setting_name);
 	return success;
@@ -777,26 +809,10 @@ nm_connection_clear_secrets (NMConnection *connection)
 	g_hash_table_foreach (priv->settings, clear_setting_secrets, NULL);
 }
 
-static void
-add_one_setting_to_hash (gpointer key, gpointer data, gpointer user_data)
-{
-	NMSetting *setting = (NMSetting *) data;
-	GHashTable *connection_hash = (GHashTable *) user_data;
-	GHashTable *setting_hash;
-
-	g_return_if_fail (setting != NULL);
-	g_return_if_fail (connection_hash != NULL);
-
-	setting_hash = nm_setting_to_hash (setting);
-	if (setting_hash)
-		g_hash_table_insert (connection_hash,
-							 g_strdup (nm_setting_get_name (setting)),
-							 setting_hash);
-}
-
 /**
  * nm_connection_to_hash:
  * @connection: the #NMConnection
+ * @flags: hash flags, e.g. %NM_SETTING_HASH_FLAG_ALL
  *
  * Converts the #NMConnection into a #GHashTable describing the connection,
  * suitable for marshalling over D-Bus or serializing.  The hash table mapping
@@ -805,50 +821,50 @@ add_one_setting_to_hash (gpointer key, gpointer data, gpointer user_data)
  * are #GHashTables mapping string:GValue, each of which represents the
  * properties of the #NMSetting object.
  *
- * Returns: a new #GHashTable describing the connection, its settings, and
- * each setting's properties.  The caller owns the hash table and must unref
- * the hash table with g_hash_table_unref() when it is no longer needed.
+ * Returns: (transfer full) (element-type utf8 GLib.HashTable): a new 
+ * #GHashTable describing the connection, its settings, and each setting's
+ * properties.  The caller owns the hash table and must unref the hash table
+ * with g_hash_table_unref() when it is no longer needed.
  **/
 GHashTable *
-nm_connection_to_hash (NMConnection *connection)
+nm_connection_to_hash (NMConnection *connection, NMSettingHashFlags flags)
 {
 	NMConnectionPrivate *priv;
-	GHashTable *connection_hash;
+	GHashTableIter iter;
+	gpointer key, data;
+	GHashTable *ret, *setting_hash;
 
+	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	connection_hash = g_hash_table_new_full (g_str_hash, g_str_equal,
-									 g_free, (GDestroyNotify) g_hash_table_destroy);
+	ret = g_hash_table_new_full (g_str_hash, g_str_equal,
+	                             g_free, (GDestroyNotify) g_hash_table_destroy);
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
-	g_hash_table_foreach (priv->settings, add_one_setting_to_hash, connection_hash);
 
-	/* Don't send empty hashes */
-	if (g_hash_table_size (connection_hash) < 1) {
-		g_hash_table_destroy (connection_hash);
-		connection_hash = NULL;
+	/* Add each setting's hash to the main hash */
+	g_hash_table_iter_init (&iter, priv->settings);
+	while (g_hash_table_iter_next (&iter, &key, &data)) {
+		NMSetting *setting = NM_SETTING (data);
+
+		setting_hash = nm_setting_to_hash (setting, flags);
+		if (setting_hash)
+			g_hash_table_insert (ret, g_strdup (nm_setting_get_name (setting)), setting_hash);
 	}
 
-	return connection_hash;
-}
+	/* Don't send empty hashes */
+	if (g_hash_table_size (ret) < 1) {
+		g_hash_table_destroy (ret);
+		ret = NULL;
+	}
 
-typedef struct ForEachValueInfo {
-	NMSettingValueIterFn func;
-	gpointer user_data;
-} ForEachValueInfo;
-
-static void
-for_each_setting (gpointer key, gpointer value, gpointer user_data)
-{
-	ForEachValueInfo *info = (ForEachValueInfo *) user_data;
-
-	nm_setting_enumerate_values (NM_SETTING (value), info->func, info->user_data);
+	return ret;
 }
 
 /**
  * nm_connection_for_each_setting_value:
  * @connection: the #NMConnection
- * @func: user-supplied function called for each setting's property
+ * @func: (scope call): user-supplied function called for each setting's property
  * @user_data: user data passed to @func at each invocation
  *
  * Iterates over the properties of each #NMSetting object in the #NMConnection,
@@ -859,25 +875,15 @@ nm_connection_for_each_setting_value (NMConnection *connection,
                                       NMSettingValueIterFn func,
                                       gpointer user_data)
 {
-	NMConnectionPrivate *priv;
-	ForEachValueInfo *info;
+	GHashTableIter iter;
+	gpointer value;
 
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 	g_return_if_fail (func != NULL);
 
-	priv = NM_CONNECTION_GET_PRIVATE (connection);
-
-	info = g_slice_new0 (ForEachValueInfo);
-	if (!info) {
-		g_warning ("Not enough memory to enumerate values.");
-		return;
-	}
-	info->func = func;
-	info->user_data = user_data;
-
-	g_hash_table_foreach (priv->settings, for_each_setting, info);
-
-	g_slice_free (ForEachValueInfo, info);
+	g_hash_table_iter_init (&iter, NM_CONNECTION_GET_PRIVATE (connection)->settings);
+	while (g_hash_table_iter_next (&iter, NULL, &value))
+		nm_setting_enumerate_values (NM_SETTING (value), func, user_data);
 }
 
 static void
@@ -904,43 +910,6 @@ nm_connection_dump (NMConnection *connection)
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 
 	g_hash_table_foreach (NM_CONNECTION_GET_PRIVATE (connection)->settings, dump_setting, NULL);
-}
-
-/**
- * nm_connection_set_scope:
- * @connection: the #NMConnection
- * @scope: the scope of the connection
- *
- * Sets the scope of the connection.  This property is not serialized, and is
- * only for the reference of the caller.  A connection may have no scope
- * (internal, temporary connections), "system" scope (provided by the system
- * settings service), or "user" scope, provided by a user settings service.  The
- * creator of the #NMConnection object is responsible for setting the
- * connection's scope if needed.  Sets the #NMConnection:scope property.
- **/
-void
-nm_connection_set_scope (NMConnection *connection, NMConnectionScope scope)
-{
-	g_return_if_fail (NM_IS_CONNECTION (connection));
-
-	NM_CONNECTION_GET_PRIVATE (connection)->scope = scope;
-}
-
-/**
- * nm_connection_get_scope:
- * @connection: the #NMConnection
- *
- * Returns the connection scope.
- *
- * Returns: the scope of the connection, previously set by a call to
- * nm_connection_set_scope().
- **/
-NMConnectionScope
-nm_connection_get_scope (NMConnection *connection)
-{
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), NM_CONNECTION_SCOPE_UNKNOWN);
-
-	return NM_CONNECTION_GET_PRIVATE (connection)->scope;
 }
 
 /**
@@ -1010,7 +979,8 @@ nm_connection_new (void)
 
 /**
  * nm_connection_new_from_hash:
- * @hash: the #GHashTable describing the connection
+ * @hash: (element-type utf8 GLib.HashTable): the #GHashTable describing
+ * the connection
  * @error: on unsuccessful return, an error
  *
  * Creates a new #NMConnection from a hash table describing the connection.  See
@@ -1026,6 +996,9 @@ nm_connection_new_from_hash (GHashTable *hash, GError **error)
 	NMConnection *connection;
 
 	g_return_val_if_fail (hash != NULL, NULL);
+
+	if (!validate_permissions_type (hash, error))
+		return FALSE;
 
 	connection = nm_connection_new ();
 	g_hash_table_foreach (hash, parse_one_setting, connection);
@@ -1050,7 +1023,7 @@ duplicate_cb (gpointer key, gpointer value, gpointer user_data)
  *
  * Duplicates a #NMConnection.
  *
- * Returns: a new #NMConnection containing the same settings and properties
+ * Returns: (transfer full): a new #NMConnection containing the same settings and properties
  * as the source #NMConnection
  **/
 NMConnection *
@@ -1061,12 +1034,56 @@ nm_connection_duplicate (NMConnection *connection)
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	dup = nm_connection_new ();
-	nm_connection_set_scope (dup, nm_connection_get_scope (connection));
 	nm_connection_set_path (dup, nm_connection_get_path (connection));
 	g_hash_table_foreach (NM_CONNECTION_GET_PRIVATE (connection)->settings, duplicate_cb, dup);
 
 	return dup;
 }
+
+/**
+ * nm_connection_get_uuid:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return the UUID from the connections #NMSettingConnection.
+ *
+ * Returns: the UUID from the connection's 'connection' setting
+ **/
+const char *
+nm_connection_get_uuid (NMConnection *connection)
+{
+	NMSettingConnection *s_con;
+
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	g_return_val_if_fail (s_con != NULL, NULL);
+
+	return nm_setting_connection_get_uuid (s_con);
+}
+
+/**
+ * nm_connection_get_uuid:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return the UUID from the connections #NMSettingConnection.
+ *
+ * Returns: the UUID from the connection's 'connection' setting
+ **/
+const char *nm_connection_get_id (NMConnection *connection)
+{
+	NMSettingConnection *s_con;
+
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	g_return_val_if_fail (s_con != NULL, NULL);
+
+	return nm_setting_connection_get_id (s_con);
+}
+
+/*************************************************************/
 
 static void
 nm_connection_init (NMConnection *connection)
@@ -1098,9 +1115,6 @@ set_property (GObject *object, guint prop_id,
 	NMConnection *connection = NM_CONNECTION (object);
 
 	switch (prop_id) {
-	case PROP_SCOPE:
-		nm_connection_set_scope (connection, g_value_get_uint (value));
-		break;
 	case PROP_PATH:
 		nm_connection_set_path (connection, g_value_get_string (value));
 		break;
@@ -1117,9 +1131,6 @@ get_property (GObject *object, guint prop_id,
 	NMConnection *connection = NM_CONNECTION (object);
 
 	switch (prop_id) {
-	case PROP_SCOPE:
-		g_value_set_uint (value, nm_connection_get_scope (connection));
-		break;
 	case PROP_PATH:
 		g_value_set_string (value, nm_connection_get_path (connection));
 		break;
@@ -1142,23 +1153,6 @@ nm_connection_class_init (NMConnectionClass *klass)
 	object_class->finalize = finalize;
 
 	/* Properties */
-
-	/**
-	 * NMConnection:scope:
-	 *
-	 * The connection's scope, used only by the calling process as a record
-	 * of which settings service the connection is provided by.  One of the
-	 * NM_CONNECTION_SCOPE_* defines.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_SCOPE,
-		 g_param_spec_uint (NM_CONNECTION_SCOPE,
-						    "Scope",
-						    "Scope",
-						    NM_CONNECTION_SCOPE_UNKNOWN,
-						    NM_CONNECTION_SCOPE_USER,
-						    NM_CONNECTION_SCOPE_UNKNOWN,
-						    G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMConnection:path:

@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2010 Red Hat, Inc.
+ * Copyright (C) 2005 - 2011 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -570,6 +570,38 @@ nm_device_get_best_auto_connection (NMDevice *dev,
 		return NULL;
 
 	return NM_DEVICE_GET_CLASS (dev)->get_best_auto_connection (dev, connections, specific_object);
+}
+
+gboolean
+nm_device_complete_connection (NMDevice *self,
+                               NMConnection *connection,
+                               const char *specific_object,
+                               const GSList *existing_connections,
+                               GError **error)
+{
+	gboolean success = FALSE;
+
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (connection != NULL, FALSE);
+
+	if (!NM_DEVICE_GET_CLASS (self)->complete_connection) {
+		g_set_error (error,
+		             NM_DEVICE_INTERFACE_ERROR,
+		             NM_DEVICE_INTERFACE_ERROR_CONNECTION_INVALID,
+		             "Device class %s had no complete_connection method",
+		             G_OBJECT_TYPE_NAME (self));
+		return FALSE;
+	}
+
+	success = NM_DEVICE_GET_CLASS (self)->complete_connection (self,
+	                                                           connection,
+	                                                           specific_object,
+	                                                           existing_connections,
+	                                                           error);
+	if (success)
+		success = nm_connection_verify (connection, error);
+
+	return success;
 }
 
 static void
@@ -2883,31 +2915,6 @@ check_connection_compatible (NMDeviceInterface *dev_iface,
 	return TRUE;
 }
 
-static void
-connection_secrets_updated_cb (NMActRequest *req,
-                               NMConnection *connection,
-                               GSList *updated_settings,
-                               RequestSecretsCaller caller,
-                               gpointer user_data)
-{
-	NMDevice *self = NM_DEVICE (user_data);
-
-	if (NM_DEVICE_GET_CLASS (self)->connection_secrets_updated)
-		NM_DEVICE_GET_CLASS (self)->connection_secrets_updated (self, connection, updated_settings, caller);
-}
-
-static void
-connection_secrets_failed_cb (NMActRequest *req,
-                              NMConnection *connection,
-                              const char *setting_name,
-                              RequestSecretsCaller caller,
-                              gpointer user_data)
-{
-	NMDevice *self = NM_DEVICE (user_data);
-
-	nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NO_SECRETS);
-}
-
 static gboolean
 device_activation_precheck (NMDevice *self, NMConnection *connection, GError **error)
 {
@@ -2950,14 +2957,6 @@ nm_device_activate (NMDeviceInterface *device,
 	}
 
 	priv->act_request = g_object_ref (req);
-	priv->secrets_updated_id = g_signal_connect (req,
-										"connection-secrets-updated",
-										G_CALLBACK (connection_secrets_updated_cb),
-										device);
-	priv->secrets_failed_id = g_signal_connect (req,
-									    "connection-secrets-failed",
-									    G_CALLBACK (connection_secrets_failed_cb),
-									    device);
 
 	if (!nm_act_request_get_assumed (req)) {
 		/* HACK: update the state a bit early to avoid a race between the 
@@ -3358,10 +3357,8 @@ dispose (GObject *object)
 	    NMSettingIP4Config *s_ip4 = NULL;
 		const char *method = NULL;
 
-		/* Only system connections can be left up */
 		connection = nm_act_request_get_connection (priv->act_request);
-		if (   connection
-		    && (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_SYSTEM)) {
+		if (connection) {
 
 			/* Only static or DHCP IPv4 connections can be left up.
 			 * All IPv6 connections can be left up, so we don't have

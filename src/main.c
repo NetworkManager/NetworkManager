@@ -469,6 +469,7 @@ main (int argc, char *argv[])
 	NMDBusManager *dbus_mgr = NULL;
 	NMSupplicantManager *sup_mgr = NULL;
 	NMDHCPManager *dhcp_mgr = NULL;
+	NMSettings *settings = NULL;
 	GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
 	char *cfg_log_level = NULL, *cfg_log_domains = NULL;
@@ -688,7 +689,14 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	manager = nm_manager_get (config,
+	settings = nm_settings_new (config, plugins, &error);
+	if (!settings) {
+		nm_log_err (LOGD_CORE, "failed to initialize settings storage.");
+		goto done;
+	}
+
+	manager = nm_manager_get (settings,
+	                          config,
 	                          plugins,
 	                          state_file,
 	                          net_enabled,
@@ -702,7 +710,7 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	policy = nm_policy_new (manager, vpn_manager);
+	policy = nm_policy_new (manager, vpn_manager, settings);
 	if (policy == NULL) {
 		nm_log_err (LOGD_CORE, "failed to initialize the policy.");
 		goto done;
@@ -752,6 +760,9 @@ done:
 
 	if (manager)
 		g_object_unref (manager);
+
+	if (settings)
+		g_object_unref (settings);
 
 	if (vpn_manager)
 		g_object_unref (vpn_manager);

@@ -10,7 +10,7 @@ SUBDIRS= \
 	dnsmasq-manager \
 	modem-manager \
 	bluez-manager \
-	system-settings
+	settings
 
 if WITH_WIMAX
 SUBDIRS += wimax
@@ -30,7 +30,7 @@ INCLUDES = -I${top_srcdir} \
            -I${top_srcdir}/src/dnsmasq-manager \
            -I${top_srcdir}/src/modem-manager \
            -I$(top_srcdir)/src/bluez-manager \
-           -I$(top_srcdir)/src/system-settings \
+           -I$(top_srcdir)/src/settings \
            -I${top_srcdir}/libnm-util \
            -I${top_srcdir}/callouts
 
@@ -38,13 +38,14 @@ if WITH_WIMAX
 INCLUDES += -I$(top_srcdir)/src/wimax
 endif
 
-INCLUDES += -I${top_srcdir}/libnm-glib
-
 ###########################################
 # Test libraries
 ###########################################
 
-noinst_LTLIBRARIES = libtest-dhcp.la libtest-policy-hosts.la
+noinst_LTLIBRARIES = \
+	libtest-dhcp.la \
+	libtest-policy-hosts.la \
+	libtest-wifi-ap-utils.la
 
 ###########################################
 # DHCP test library
@@ -86,6 +87,22 @@ libtest_policy_hosts_la_LIBADD = \
 
 
 ###########################################
+# Wifi ap utils
+###########################################
+
+libtest_wifi_ap_utils_la_SOURCES = \
+	nm-wifi-ap-utils.c \
+	nm-wifi-ap-utils.h
+
+libtest_wifi_ap_utils_la_CPPFLAGS = \
+	$(GLIB_CFLAGS)
+
+libtest_wifi_ap_utils_la_LIBADD = \
+	${top_builddir}/libnm-util/libnm-util.la \
+	$(GLIB_LIBS)
+
+
+###########################################
 # NetworkManager
 ###########################################
 
@@ -115,6 +132,8 @@ NetworkManager_SOURCES = \
 		nm-device-gsm.h \
 		nm-wifi-ap.c \
 		nm-wifi-ap.h \
+		nm-wifi-ap-utils.c \
+		nm-wifi-ap-utils.h \
 		nm-dbus-manager.h \
 		nm-dbus-manager.c \
 		nm-udev-manager.c \
@@ -125,8 +144,6 @@ NetworkManager_SOURCES = \
 		nm-ip4-config.h \
 		nm-ip6-config.c \
 		nm-ip6-config.h \
-		nm-secrets-provider-interface.c \
-		nm-secrets-provider-interface.h \
 		nm-active-connection.h \
 		nm-active-connection.c \
 		main.c \
@@ -156,7 +173,9 @@ NetworkManager_SOURCES = \
 		nm-dhcp4-config.h \
 		nm-dhcp6-config.c \
 		nm-dhcp6-config.h \
-		nm-rfkill.h
+		nm-rfkill.h \
+		nm-session-monitor.c \
+		nm-session-monitor.h
 
 nm-access-point-glue.h: $(top_srcdir)/introspection/nm-access-point.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_access_point --mode=glib-server --output=$@ $<
@@ -252,8 +271,8 @@ NetworkManager_LDADD = \
 	./ppp-manager/libppp-manager.la \
 	./modem-manager/libmodem-manager.la \
 	./bluez-manager/libbluez-manager.la \
+	./settings/libsettings.la \
 	$(WIMAX_LIBS) \
-	./system-settings/libsystem-settings.la \
 	./backends/libnmbackend.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(DBUS_LIBS) \

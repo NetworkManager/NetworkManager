@@ -1602,7 +1602,7 @@ msgstr "குறிப்பு: இந்த libc மறுதீர்வா�
 msgid "The nameservers listed below may not be recognized."
 msgstr "கீழே பட்டியலிட்டப்படுள்ள பெயர்சேவையகங்கள் கண்டுபிடிக்கப்படவில்லை."
 
-#: ../src/system-settings/nm-default-wired-connection.c:157
+#: ../src/settings/nm-default-wired-connection.c:157
 #, c-format
 msgid "Auto %s"
 msgstr "தானியக்கி %s"

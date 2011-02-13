@@ -56,8 +56,7 @@
 #define DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT   (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, DBUS_TYPE_G_MAP_OF_VARIANT))
 #define DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH    (dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_OBJECT_PATH))
 
-static GHashTable *user_connections = NULL;
-static GHashTable *system_connections = NULL;
+static GHashTable *connections = NULL;
 
 static gboolean
 get_nm_state (NMClient *client)
@@ -307,7 +306,6 @@ get_dev_state_string (NMDeviceState state)
 static NMConnection *
 get_connection_for_active (NMActiveConnection *active)
 {
-	NMConnectionScope scope;
 	const char *path;
 
 	g_return_val_if_fail (active != NULL, NULL);
@@ -315,14 +313,7 @@ get_connection_for_active (NMActiveConnection *active)
 	path = nm_active_connection_get_connection (active);
 	g_return_val_if_fail (path != NULL, NULL);
 
-	scope = nm_active_connection_get_scope (active);
-	if (scope == NM_CONNECTION_SCOPE_USER)
-		return (NMConnection *) g_hash_table_lookup (user_connections, path);
-	else if (scope == NM_CONNECTION_SCOPE_SYSTEM)
-		return (NMConnection *) g_hash_table_lookup (system_connections, path);
-
-	g_warning ("error: unknown connection scope");
-	return NULL;
+	return (NMConnection *) g_hash_table_lookup (connections, path);
 }
 
 struct cb_info {
@@ -683,12 +674,10 @@ detail_vpn (gpointer data, gpointer user_data)
 static void
 get_one_connection (DBusGConnection *bus,
                     const char *path,
-                    NMConnectionScope scope,
                     GHashTable *table)
 {
 	DBusGProxy *proxy;
 	NMConnection *connection = NULL;
-	const char *service;
 	GError *error = NULL;
 	GHashTable *settings = NULL;
 
@@ -696,10 +685,8 @@ get_one_connection (DBusGConnection *bus,
 	g_return_if_fail (path != NULL);
 	g_return_if_fail (table != NULL);
 
-	service = (scope == NM_CONNECTION_SCOPE_SYSTEM) ?
-		NM_DBUS_SERVICE_SYSTEM_SETTINGS : NM_DBUS_SERVICE_USER_SETTINGS;
-
-	proxy = dbus_g_proxy_new_for_name (bus, service, path, NM_DBUS_IFACE_SETTINGS_CONNECTION);
+	proxy = dbus_g_proxy_new_for_name (bus, NM_DBUS_SERVICE,
+	                                   path, NM_DBUS_IFACE_SETTINGS_CONNECTION);
 	if (!proxy)
 		return;
 
@@ -722,7 +709,6 @@ get_one_connection (DBusGConnection *bus,
 		goto out;
 	}
 
-	nm_connection_set_scope (connection, scope);
 	nm_connection_set_path (connection, path);
 	g_hash_table_insert (table, g_strdup (path), g_object_ref (connection));
 
@@ -733,27 +719,29 @@ out:
 	g_object_unref (proxy);
 }
 
-static void
-get_connections_for_service (DBusGConnection *bus,
-                             NMConnectionScope scope,
-                             GHashTable *table)
+static gboolean
+get_all_connections (void)
 {
 	GError *error = NULL;
-	DBusGProxy *proxy;
+	DBusGConnection *bus;
+	DBusGProxy *proxy = NULL;
 	GPtrArray *paths = NULL;
 	int i;
-	const char *service;
+	gboolean sucess = FALSE;
 
-	service = (scope == NM_CONNECTION_SCOPE_SYSTEM) ?
-		NM_DBUS_SERVICE_SYSTEM_SETTINGS : NM_DBUS_SERVICE_USER_SETTINGS;
+	bus = dbus_g_bus_get (DBUS_BUS_SYSTEM, &error);
+	if (error || !bus) {
+		g_warning ("error: could not connect to dbus");
+		goto out;
+	}
 
 	proxy = dbus_g_proxy_new_for_name (bus,
-	                                   service,
+	                                   NM_DBUS_SERVICE,
 	                                   NM_DBUS_PATH_SETTINGS,
 	                                   NM_DBUS_IFACE_SETTINGS);
 	if (!proxy) {
-		g_warning ("error: failed to create DBus proxy for %s", service);
-		return;
+		g_warning ("error: failed to create DBus proxy for settings service");
+		goto out;
 	}
 
 	if (!dbus_g_proxy_call (proxy, "ListConnections", &error,
@@ -765,33 +753,20 @@ get_connections_for_service (DBusGConnection *bus,
 		goto out;
 	}
 
+	connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
+
 	for (i = 0; paths && (i < paths->len); i++)
-		get_one_connection (bus, g_ptr_array_index (paths, i), scope, table);
+		get_one_connection (bus, g_ptr_array_index (paths, i), connections);
+
+	sucess = TRUE;
 
 out:
-	g_object_unref (proxy);
-}
+	if (bus)
+		dbus_g_connection_unref (bus);
+	if (proxy)
+		g_object_unref (proxy);
 
-static gboolean
-get_all_connections (void)
-{
-	DBusGConnection *bus;
-	GError *error = NULL;
-
-	bus = dbus_g_bus_get (DBUS_BUS_SYSTEM, &error);
-	if (error || !bus) {
-		g_warning ("error: could not connect to dbus");
-		return FALSE;
-	}
-
-	user_connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
-	get_connections_for_service (bus, NM_CONNECTION_SCOPE_USER, user_connections);
-
-	system_connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
-	get_connections_for_service (bus, NM_CONNECTION_SCOPE_SYSTEM, system_connections);
-
-	dbus_g_connection_unref (bus);
-	return TRUE;
+	return sucess;
 }
 
 int
@@ -830,8 +805,7 @@ main (int argc, char *argv[])
 		g_ptr_array_foreach ((GPtrArray *) info.active, detail_vpn, &info);
 
 	g_object_unref (client);
-	g_hash_table_unref (user_connections);
-	g_hash_table_unref (system_connections);
+	g_hash_table_unref (connections);
 
 	return 0;
 }

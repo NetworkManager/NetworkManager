@@ -2,7 +2,7 @@ INCLUDES=-I$(top_srcdir)/system-settings/plugins/ifnet\
 	 -I$(top_srcdir)/libnm-glib \
 	 -I$(top_srcdir)/libnm-util \
 	 -I$(top_srcdir)/include \
-	 -I$(top_srcdir)/src/system-settings
+	 -I$(top_srcdir)/src/settings
 TESTS = check_ifnet
 check_PROGRAMS = check_ifnet
 check_ifnet_SOURCES = test_all.c 

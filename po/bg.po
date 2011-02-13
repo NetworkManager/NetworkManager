@@ -1932,7 +1932,7 @@ msgstr "ЗАБЕЛЕЖКА: libc може да не поддържа повеч�
 msgid "The nameservers listed below may not be recognized."
 msgstr "Следните сървъри за имена може да не бъдат разпознати."
 
-#: ../src/system-settings/nm-default-wired-connection.c:157
+#: ../src/settings/nm-default-wired-connection.c:157
 #, c-format
 msgid "Auto %s"
 msgstr "Автоматично %s"

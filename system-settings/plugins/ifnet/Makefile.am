@@ -1,6 +1,6 @@
 SUBDIRS = . tests
 INCLUDES = \
-	-I$(top_srcdir)/src/system-settings \
+	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/libnm-glib \
 	-I$(top_srcdir)/libnm-util

@@ -6,7 +6,10 @@ INCLUDES = \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src
 
-noinst_PROGRAMS = test-dhcp-options test-policy-hosts
+noinst_PROGRAMS = \
+	test-dhcp-options \
+	test-policy-hosts \
+	test-wifi-ap-utils
 
 ####### DHCP options test #######
 
@@ -39,11 +42,33 @@ test_policy_hosts_LDADD = \
 	$(top_builddir)/src/libtest-policy-hosts.la \
 	$(GLIB_LIBS)
 
+####### wifi ap utils test #######
+
+test_wifi_ap_utils_SOURCES = \
+	test-wifi-ap-utils.c
+
+test_wifi_ap_utils_CPPFLAGS = \
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS)
+
+test_wifi_ap_utils_LDADD = \
+	$(top_builddir)/libnm-util/libnm-util.la \
+	$(top_builddir)/src/libtest-wifi-ap-utils.la \
+	$(GLIB_LIBS) \
+	$(DBUS_LIBS)
+
+####### secret agent interface test #######
+
+EXTRA_DIST = test-secret-agent.py
+
+###########################################
+
 if WITH_TESTS
 
-check-local: test-dhcp-options
+check-local: test-dhcp-options test-policy-hosts
 	$(abs_builddir)/test-dhcp-options
 	$(abs_builddir)/test-policy-hosts
+	$(abs_builddir)/test-wifi-ap-utils
 
 endif
 

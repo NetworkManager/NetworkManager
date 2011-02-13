@@ -58,24 +58,24 @@ add_new_connection_config (const gchar * type, const gchar * name)
 }
 
 gboolean
-ifnet_add_connection (gchar * name, gchar * type)
+ifnet_add_connection (const char *name, const char *type)
 {
 	if (add_new_connection_config (type, name)) {
 		PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Adding network for %s", name);
 		net_parser_data_changed = TRUE;
 		return TRUE;
-	} else
-		return FALSE;
+	}
+	return FALSE;
 }
 
 gboolean
-ifnet_has_connection (gchar * conn_name)
+ifnet_has_connection (const char *conn_name)
 {
 	return g_hash_table_lookup (conn_table, conn_name) != NULL;
 }
 
 static GHashTable *
-get_connection_config (gchar * name)
+get_connection_config (const char *name)
 {
 	return g_hash_table_lookup (conn_table, name);
 }
@@ -87,7 +87,7 @@ static gchar *ignore_name[] = {
 };
 
 static gboolean
-ignore_connection_name (gchar * name)
+ignore_connection_name (const char *name)
 {
 	gboolean result = FALSE;
 	guint i = 0;
@@ -194,8 +194,8 @@ destroy_connection_config (GHashTable * conn)
 }
 
 // read settings from /etc/NetworkManager/nm-system-settings.conf
-gchar *
-ifnet_get_global_setting (gchar * group, gchar * key)
+const char *
+ifnet_get_global_setting (const char *group, const char *key)
 {
 	GError *error = NULL;
 	GKeyFile *keyfile = g_key_file_new ();
@@ -362,8 +362,8 @@ ifnet_init (gchar * config_file)
 	return TRUE;
 }
 
-gchar *
-ifnet_get_data (gchar * conn_name, const gchar * key)
+const char *
+ifnet_get_data (const char *conn_name, const char *key)
 {
 	GHashTable *conn = g_hash_table_lookup (conn_table, conn_name);
 
@@ -373,7 +373,7 @@ ifnet_get_data (gchar * conn_name, const gchar * key)
 }
 
 void
-ifnet_set_data (gchar * conn_name, gchar * key, gchar * value)
+ifnet_set_data (const char *conn_name, const char *key, const char *value)
 {
 	gpointer orin_key = NULL, orin_value = NULL;
 	GHashTable *conn = g_hash_table_lookup (conn_table, conn_name);
@@ -396,32 +396,26 @@ ifnet_set_data (gchar * conn_name, gchar * key, gchar * value)
 }
 
 // Remember to free return value
-gchar *
+const char *
 ifnet_get_global_data (const gchar * key)
 {
-	gchar *result = g_hash_table_lookup (global_settings_table, key);
-
-	if (result)
-		result = g_strdup (result);
-	else
-		return NULL;
-	strip_string (result, '"');
-	return result;
+	return g_hash_table_lookup (global_settings_table, key);
 }
 
 // Return names of legal connections
 GList *
-ifnet_get_connection_names ()
+ifnet_get_connection_names (void)
 {
 	GList *names = g_hash_table_get_keys (conn_table);
 	GList *result = NULL;
 
 	while (names) {
 		if (!ignore_connection_name (names->data))
-			result = g_list_append (result, names->data);
+			result = g_list_prepend (result, names->data);
 		names = names->next;
 	}
-	return result;
+	g_list_free (names);
+	return g_list_reverse (result);
 }
 
 /* format IP and route for writing */
@@ -455,7 +449,7 @@ format_ips (gchar * value, gchar ** out_line, gchar * key, gchar * name)
 }
 
 gboolean
-ifnet_flush_to_file (gchar * config_file)
+ifnet_flush_to_file (const char *config_file)
 {
 	GIOChannel *channel;
 	GError **error = NULL;
@@ -584,7 +578,7 @@ ifnet_flush_to_file (gchar * config_file)
 }
 
 gboolean
-ifnet_delete_network (gchar * conn_name)
+ifnet_delete_network (const char *conn_name)
 {
 	GHashTable *network = NULL;
 

@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2008 - 2010 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
 #include <sys/stat.h>
@@ -415,43 +415,37 @@ mac_address_writer (GKeyFile *file,
 	g_key_file_set_string (file, setting_name, key, mac);
 }
 
-typedef struct {
-	GKeyFile *file;
-	const char *setting_name;
-} WriteStringHashInfo;
-
-static void
-write_hash_of_string_helper (gpointer key, gpointer data, gpointer user_data)
-{
-	WriteStringHashInfo *info = (WriteStringHashInfo *) user_data;
-	const char *property = (const char *) key;
-	const char *value = (const char *) data;
-
-	g_key_file_set_string (info->file,
-	                       info->setting_name,
-	                       property,
-	                       value);
-}
-
 static void
 write_hash_of_string (GKeyFile *file,
                       NMSetting *setting,
                       const char *key,
                       const GValue *value)
 {
-	GHashTable *hash = g_value_get_boxed (value);
-	WriteStringHashInfo info;
-
-	info.file = file;
+	GHashTableIter iter;
+	const char *property = NULL, *data = NULL;
+	const char *group_name = nm_setting_get_name (setting);
+	gboolean vpn_secrets = FALSE;
 
 	/* Write VPN secrets out to a different group to keep them separate */
-	if (   (G_OBJECT_TYPE (setting) == NM_TYPE_SETTING_VPN)
-	    && !strcmp (key, NM_SETTING_VPN_SECRETS)) {
-		info.setting_name = VPN_SECRETS_GROUP;
-	} else
-		info.setting_name = nm_setting_get_name (setting);
+	if (NM_IS_SETTING_VPN (setting) && !strcmp (key, NM_SETTING_VPN_SECRETS)) {
+		group_name = VPN_SECRETS_GROUP;
+		vpn_secrets = TRUE;
+	}
 
-	g_hash_table_foreach (hash, write_hash_of_string_helper, &info);
+	g_hash_table_iter_init (&iter, (GHashTable *) g_value_get_boxed (value));
+	while (g_hash_table_iter_next (&iter, (gpointer *) &property, (gpointer *) &data)) {
+		NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
+
+		/* Handle VPN secrets specially; they are nested in the property's hash;
+		 * we don't want to write them if the secret is not saved or not required.
+		 */
+		if (vpn_secrets && nm_setting_get_secret_flags (setting, property, &flags, NULL)) {
+			if (flags & (NM_SETTING_SECRET_FLAG_NOT_SAVED | NM_SETTING_SECRET_FLAG_NOT_REQUIRED))
+				continue;
+		}
+
+		g_key_file_set_string (file, group_name, property, data);
+	}
 }
 
 static void
@@ -564,6 +558,7 @@ write_setting_value (NMSetting *setting,
 	GType type = G_VALUE_TYPE (value);
 	KeyWriter *writer = &key_writers[0];
 	GParamSpec *pspec;
+	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
 
 	/* Setting name gets picked up from the keyfile's section name instead */
 	if (!strcmp (key, NM_SETTING_NAME))
@@ -584,6 +579,14 @@ write_setting_value (NMSetting *setting,
 			return;
 		}
 	}
+
+	/* Don't write secrets that are owned by user secret agents or aren't
+	 * supposed to be saved.
+	 */
+	if (   (pspec->flags & NM_SETTING_PARAM_SECRET)
+	    && nm_setting_get_secret_flags (setting, key, &flags, NULL)
+	    && (flags != NM_SETTING_SECRET_FLAG_NONE))
+		return;
 
 	/* Look through the list of handlers for non-standard format key values */
 	while (writer->setting_name) {
@@ -658,8 +661,8 @@ write_setting_value (NMSetting *setting,
 	}
 }
 
-char *
-writer_id_to_filename (const char *id)
+static char *
+_writer_id_to_filename (const char *id)
 {
 	char *filename, *f;
 	const char *i = id;
@@ -678,28 +681,31 @@ writer_id_to_filename (const char *id)
 	return filename;
 }
 
-gboolean
-write_connection (NMConnection *connection,
-                  const char *keyfile_dir,
-                  uid_t owner_uid,
-                  pid_t owner_grp,
-                  char **out_path,
-                  GError **error)
+static gboolean
+_internal_write_connection (NMConnection *connection,
+                            const char *keyfile_dir,
+                            uid_t owner_uid,
+                            pid_t owner_grp,
+                            const char *existing_path,
+                            char **out_path,
+                            GError **error)
 {
-	NMSettingConnection *s_con;
 	GKeyFile *key_file;
 	char *data;
 	gsize len;
 	gboolean success = FALSE;
-	char *filename, *path;
-	int err;
+	char *filename = NULL, *path;
+	const char *id;
 
 	if (out_path)
 		g_return_val_if_fail (*out_path == NULL, FALSE);
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-	if (!s_con)
-		return success;
+	id = nm_connection_get_id (connection);
+	if (!id) {
+		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
+		             "%s.%d: connection had no ID", __FILE__, __LINE__);
+		return FALSE;
+	}
 
 	key_file = g_key_file_new ();
 	nm_connection_for_each_setting_value (connection, write_setting_value, key_file);
@@ -707,9 +713,30 @@ write_connection (NMConnection *connection,
 	if (!data)
 		goto out;
 
-	filename = writer_id_to_filename (nm_setting_connection_get_id (s_con));
+	filename = _writer_id_to_filename (id);
 	path = g_build_filename (keyfile_dir, filename, NULL);
-	g_free (filename);
+
+	/* If a file with this path already exists (but isn't the existing path
+	 * of the connection) then we need another name.  Multiple connections
+	 * can have the same ID (ie if two connections with the same ID are visible
+	 * to different users) but of course can't have the same path.  Yeah,
+	 * there's a race here, but there's not a lot we can do about it, and
+	 * we shouldn't get more than one connection with the same UUID either.
+	 */
+	if (g_file_test (path, G_FILE_TEST_EXISTS) && (g_strcmp0 (path, existing_path) != 0)) {
+		/* A keyfile with this connection's ID already exists. Pick another name. */
+		g_free (path);
+
+		path = g_strdup_printf ("%s/%s-%s", keyfile_dir, filename, nm_connection_get_uuid (connection));
+		if (g_file_test (path, G_FILE_TEST_EXISTS)) {
+			/* Hmm, this is odd. Give up. */
+			g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
+				         "%s.%d: could not find suitable keyfile file name (%s already used)",
+				         __FILE__, __LINE__, path);
+			g_free (path);
+			goto out;
+		}
+	}
 
 	g_file_set_contents (path, data, len, error);
 	if (chown (path, owner_uid, owner_grp) < 0) {
@@ -718,22 +745,55 @@ write_connection (NMConnection *connection,
 		             path, errno);
 		unlink (path);
 	} else {
-		err = chmod (path, S_IRUSR | S_IWUSR);
-		if (err) {
+		if (chmod (path, S_IRUSR | S_IWUSR) < 0) {
 			g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
 			             "%s.%d: error setting permissions on '%s': %d", __FILE__,
 			             __LINE__, path, errno);
 			unlink (path);
 		} else {
-			if (out_path)
-				*out_path = g_strdup (path);
+			if (out_path && g_strcmp0 (existing_path, path)) {
+				*out_path = path;  /* pass path out to caller */
+				path = NULL;
+			}
 			success = TRUE;
 		}
 	}
 	g_free (path);
 
 out:
+	g_free (filename);
 	g_free (data);
 	g_key_file_free (key_file);
 	return success;
 }
+
+gboolean
+nm_keyfile_plugin_write_connection (NMConnection *connection,
+                                    const char *existing_path,
+                                    char **out_path,
+                                    GError **error)
+{
+	return _internal_write_connection (connection,
+	                                   KEYFILE_DIR,
+	                                   0, 0,
+	                                   existing_path,
+	                                   out_path,
+	                                   error);
+}
+
+gboolean
+nm_keyfile_plugin_write_test_connection (NMConnection *connection,
+                                         const char *keyfile_dir,
+                                         uid_t owner_uid,
+                                         pid_t owner_grp,
+                                         char **out_path,
+                                         GError **error)
+{
+	return _internal_write_connection (connection,
+	                                   keyfile_dir,
+	                                   owner_uid, owner_grp,
+	                                   NULL,
+	                                   out_path,
+	                                   error);
+}
+

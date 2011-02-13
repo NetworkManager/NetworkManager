@@ -326,7 +326,7 @@ msgstr "NOTE: the libc resolver may not support more than 3 nameservers."
 msgid "The nameservers listed below may not be recognized."
 msgstr "The nameservers listed below may not be recognised."
 
-#: ../src/system-settings/nm-default-wired-connection.c:194
+#: ../src/settings/nm-default-wired-connection.c:194
 #, c-format
 msgid "Auto %s"
 msgstr "Auto %s"

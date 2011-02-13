@@ -68,6 +68,9 @@ GQuark nm_setting_wireless_error_quark (void);
 #define NM_SETTING_WIRELESS_SEEN_BSSIDS "seen-bssids"
 #define NM_SETTING_WIRELESS_SEC         "security"
 
+#define NM_SETTING_WIRELESS_MODE_ADHOC  "adhoc"
+#define NM_SETTING_WIRELESS_MODE_INFRA  "infrastructure"
+
 typedef struct {
 	NMSetting parent;
 } NMSettingWireless;

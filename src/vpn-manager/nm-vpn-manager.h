@@ -71,6 +71,8 @@ NMVPNConnection *nm_vpn_manager_activate_connection (NMVPNManager *manager,
                                                      NMConnection *connection,
                                                      NMActRequest *act_request,
                                                      NMDevice *device,
+                                                     gboolean user_requested,
+                                                     gulong user_uid,
                                                      GError **error);
 
 gboolean nm_vpn_manager_deactivate_connection (NMVPNManager *manager,

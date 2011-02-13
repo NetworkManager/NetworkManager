@@ -146,8 +146,9 @@ register_for_property_changed (NMIP6Config *config)
  *
  * Gets the IP6 addresses (containing the address, prefix, and gateway).
  *
- * Returns: the #GSList containing #NMSettingIP6Address<!-- -->es. This is the internal copy
- * used by the configuration and must not be modified.
+ * Returns: (element-type NetworkManager.IP6Address): the #GSList containing
+ * #NMIP6Address<!-- -->es. This is the internal copy used by the configuration
+ * and must not be modified.
  **/
 const GSList *
 nm_ip6_config_get_addresses (NMIP6Config *config)
@@ -174,15 +175,16 @@ nm_ip6_config_get_addresses (NMIP6Config *config)
 	return priv->addresses;
 }
 
+/* FIXME: like in libnm_util, in6_addr is not introspectable, so skipping here */
 /**
- * nm_ip6_config_get_nameservers:
+ * nm_ip6_config_get_nameservers: (skip)
  * @config: a #NMIP6Config
  *
  * Gets the domain name servers (DNS).
  *
- * Returns: a #GSList containing elements of type 'struct in6_addr' which contain
- * the addresses of nameservers of the configuration.  This is the internal copy
- * used by the configuration and must not be modified.
+ * Returns: (element-type Posix.in6_addr): a #GSList containing elements of type
+ * 'struct in6_addr' which contain the addresses of nameservers of the configuration.
+ * This is the internal copy used by the configuration and must not be modified.
  **/
 const GSList *
 nm_ip6_config_get_nameservers (NMIP6Config *config)
@@ -217,8 +219,8 @@ nm_ip6_config_get_nameservers (NMIP6Config *config)
  *
  * Gets the domain names.
  *
- * Returns: the #GPtrArray containing domains as strings. This is the 
- * internal copy used by the configuration, and must not be modified.
+ * Returns: (element-type utf8): the #GPtrArray containing domains as strings.
+ * This is the internal copy used by the configuration, and must not be modified.
  **/
 const GPtrArray *
 nm_ip6_config_get_domains (NMIP6Config *config)
@@ -251,8 +253,9 @@ nm_ip6_config_get_domains (NMIP6Config *config)
  *
  * Gets the routes.
  *
- * Returns: the #GSList containing #NMSettingIP6Route<!-- -->s. This is the 
- * internal copy used by the configuration, and must not be modified.
+ * Returns: (element-type NetworkManager.IP6Route): the #GSList containing
+ * #NMIP6Route<!-- -->s. This is the internal copy used by the configuration,
+ * and must not be modified.
  **/
 const GSList *
 nm_ip6_config_get_routes (NMIP6Config *config)

@@ -15,12 +15,15 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 - 2010 Red Hat, Inc.
+ * Copyright (C) 2009 - 2011 Red Hat, Inc.
  */
 
 #include <stdio.h>
 #include <string.h>
 #include <net/ethernet.h>
+#include <netinet/ether.h>
+
+#include <glib/gi18n.h>
 
 #include "nm-glib-compat.h"
 #include "nm-bluez-common.h"
@@ -36,6 +39,8 @@
 #include "nm-setting-bluetooth.h"
 #include "nm-setting-cdma.h"
 #include "nm-setting-gsm.h"
+#include "nm-setting-serial.h"
+#include "nm-setting-ppp.h"
 #include "nm-device-bt-glue.h"
 #include "NetworkManagerUtils.h"
 
@@ -45,6 +50,8 @@
 G_DEFINE_TYPE (NMDeviceBt, nm_device_bt, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_BT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_BT, NMDeviceBtPrivate))
+
+static gboolean modem_stage1 (NMDeviceBt *self, NMModem *modem, NMDeviceStateReason *reason);
 
 typedef struct {
 	char *bdaddr;
@@ -248,6 +255,156 @@ real_check_connection_compatible (NMDevice *device,
 	return addr_match;
 }
 
+static gboolean
+real_complete_connection (NMDevice *device,
+                          NMConnection *connection,
+                          const char *specific_object,
+                          const GSList *existing_connections,
+                          GError **error)
+{
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
+	NMSettingBluetooth *s_bt;
+	const GByteArray *setting_bdaddr;
+	struct ether_addr *devaddr = ether_aton (priv->bdaddr);
+	const char *ctype;
+	gboolean is_dun = FALSE, is_pan = FALSE;
+	NMSettingGsm *s_gsm;
+	NMSettingCdma *s_cdma;
+	NMSettingSerial *s_serial;
+	NMSettingPPP *s_ppp;
+	const char *format = NULL, *preferred = NULL;
+
+	s_gsm = (NMSettingGsm *) nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM);
+	s_cdma = (NMSettingCdma *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CDMA);
+	s_serial = (NMSettingSerial *) nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL);
+	s_ppp = (NMSettingPPP *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP);
+
+	s_bt = (NMSettingBluetooth *) nm_connection_get_setting (connection, NM_TYPE_SETTING_BLUETOOTH);
+	if (!s_bt) {
+		s_bt = (NMSettingBluetooth *) nm_setting_bluetooth_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_bt));
+	}
+
+	ctype = nm_setting_bluetooth_get_connection_type (s_bt);
+	if (ctype) {
+		if (!strcmp (ctype, NM_SETTING_BLUETOOTH_TYPE_DUN))
+			is_dun = TRUE;
+		else if (!strcmp (ctype, NM_SETTING_BLUETOOTH_TYPE_PANU))
+			is_pan = TRUE;
+	} else {
+		if (s_gsm || s_cdma)
+			is_dun = TRUE;
+		else if (priv->capabilities & NM_BT_CAPABILITY_NAP)
+			is_pan = TRUE;
+	}
+
+	if (is_pan) {
+		/* Make sure the device supports PAN */
+		if (!(priv->capabilities & NM_BT_CAPABILITY_NAP)) {
+			g_set_error_literal (error,
+			                     NM_SETTING_BLUETOOTH_ERROR,
+			                     NM_SETTING_BLUETOOTH_ERROR_INVALID_PROPERTY,
+			                     "PAN required but Bluetooth device does not support NAP");
+			return FALSE;
+		}
+
+		/* PAN can't use any DUN-related settings */
+		if (s_gsm || s_cdma || s_serial) {
+			g_set_error_literal (error,
+			                     NM_SETTING_BLUETOOTH_ERROR,
+			                     NM_SETTING_BLUETOOTH_ERROR_INVALID_PROPERTY,
+			                     "PAN incompatible with GSM, CDMA, or serial settings");
+			return FALSE;
+		}
+
+		g_object_set (G_OBJECT (s_bt),
+		              NM_SETTING_BLUETOOTH_TYPE, NM_SETTING_BLUETOOTH_TYPE_PANU,
+		              NULL);
+
+		format = _("PAN connection %d");
+	} else if (is_dun) {
+		/* Make sure the device supports PAN */
+		if (!(priv->capabilities & NM_BT_CAPABILITY_DUN)) {
+			g_set_error_literal (error,
+			                     NM_SETTING_BLUETOOTH_ERROR,
+			                     NM_SETTING_BLUETOOTH_ERROR_INVALID_PROPERTY,
+			                     "DUN required but Bluetooth device does not support DUN");
+			return FALSE;
+		}
+
+		/* Need at least a GSM or a CDMA setting */
+		if (!s_gsm && !s_cdma) {
+			g_set_error_literal (error,
+			                     NM_SETTING_BLUETOOTH_ERROR,
+			                     NM_SETTING_BLUETOOTH_ERROR_INVALID_PROPERTY,
+			                     "Setting requires DUN but no GSM or CDMA setting is present");
+			return FALSE;
+		}
+
+		g_object_set (G_OBJECT (s_bt),
+		              NM_SETTING_BLUETOOTH_TYPE, NM_SETTING_BLUETOOTH_TYPE_DUN,
+		              NULL);
+
+		if (s_gsm) {
+			format = _("GSM connection %d");
+			if (!nm_setting_gsm_get_number (s_gsm))
+				g_object_set (G_OBJECT (s_gsm), NM_SETTING_GSM_NUMBER, "*99#", NULL);
+		} else if (s_cdma) {
+			format = _("CDMA connection %d");
+			if (!nm_setting_cdma_get_number (s_cdma))
+				g_object_set (G_OBJECT (s_cdma), NM_SETTING_GSM_NUMBER, "#777", NULL);
+		} else
+			format = _("DUN connection %d");
+
+		/* Need serial and PPP settings */
+		if (!s_serial) {
+			s_serial = (NMSettingSerial *) nm_setting_serial_new ();
+			nm_connection_add_setting (connection, NM_SETTING (s_serial));
+		}
+		if (!s_ppp) {
+			s_ppp = (NMSettingPPP *) nm_setting_ppp_new ();
+			nm_connection_add_setting (connection, NM_SETTING (s_ppp));
+		}
+	} else {
+		g_set_error_literal (error,
+		                     NM_SETTING_BLUETOOTH_ERROR,
+		                     NM_SETTING_BLUETOOTH_ERROR_INVALID_PROPERTY,
+		                     "Unknown/unhandled Bluetooth connection type");
+		return FALSE;
+	}
+
+	nm_utils_complete_generic (connection,
+	                           NM_SETTING_BLUETOOTH_SETTING_NAME,
+	                           existing_connections,
+	                           format,
+	                           preferred);
+
+	setting_bdaddr = nm_setting_bluetooth_get_bdaddr (s_bt);
+	if (setting_bdaddr) {
+		/* Make sure the setting BT Address (if any) matches the device's */
+		if (memcmp (setting_bdaddr->data, devaddr->ether_addr_octet, ETH_ALEN)) {
+			g_set_error_literal (error,
+			                     NM_SETTING_BLUETOOTH_ERROR,
+			                     NM_SETTING_BLUETOOTH_ERROR_INVALID_PROPERTY,
+			                     NM_SETTING_BLUETOOTH_BDADDR);
+			return FALSE;
+		}
+	} else {
+		GByteArray *bdaddr;
+		const guint8 null_mac[ETH_ALEN] = { 0, 0, 0, 0, 0, 0 };
+
+		/* Lock the connection to this device by default */
+		if (memcmp (devaddr->ether_addr_octet, null_mac, ETH_ALEN)) {
+			bdaddr = g_byte_array_sized_new (ETH_ALEN);
+			g_byte_array_append (bdaddr, devaddr->ether_addr_octet, ETH_ALEN);
+			g_object_set (G_OBJECT (s_bt), NM_SETTING_BLUETOOTH_BDADDR, bdaddr, NULL);
+			g_byte_array_free (bdaddr, TRUE);
+		}
+	}
+
+	return TRUE;
+}
+
 static guint32
 real_get_generic_capabilities (NMDevice *dev)
 {
@@ -291,22 +448,30 @@ ppp_failed (NMModem *modem, NMDeviceStateReason reason, gpointer user_data)
 }
 
 static void
-modem_need_auth (NMModem *modem,
-	             const char *setting_name,
-	             gboolean retry,
-	             RequestSecretsCaller caller,
-	             const char *hint1,
-	             const char *hint2,
-	             gpointer user_data)
+modem_auth_requested (NMModem *modem, gpointer user_data)
 {
-	NMDeviceBt *self = NM_DEVICE_BT (user_data);
-	NMActRequest *req;
+	nm_device_state_changed (NM_DEVICE (user_data),
+	                         NM_DEVICE_STATE_NEED_AUTH,
+	                         NM_DEVICE_STATE_REASON_NONE);
+}
 
-	req = nm_device_get_act_request (NM_DEVICE (self));
-	g_assert (req);
+static void
+modem_auth_result (NMModem *modem, GError *error, gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (user_data);
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
+	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
-	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
-	nm_act_request_get_secrets (req, setting_name, retry, caller, hint1, hint2);
+	if (error) {
+		nm_device_state_changed (device,
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_NO_SECRETS);
+	} else {
+		/* Otherwise, on success for GSM/CDMA secrets we need to schedule modem stage1 again */
+		g_return_if_fail (nm_device_get_state (device) == NM_DEVICE_STATE_NEED_AUTH);
+		if (!modem_stage1 (NM_DEVICE_BT (device), priv->modem, &reason))
+			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
+	}
 }
 
 static void
@@ -412,41 +577,6 @@ modem_stage1 (NMDeviceBt *self, NMModem *modem, NMDeviceStateReason *reason)
 	return FALSE;
 }
 
-static void
-real_connection_secrets_updated (NMDevice *device,
-                                 NMConnection *connection,
-                                 GSList *updated_settings,
-                                 RequestSecretsCaller caller)
-{
-	NMDeviceBt *self = NM_DEVICE_BT (device);
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
-	NMActRequest *req;
-	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
-
-	g_return_if_fail (IS_ACTIVATING_STATE (nm_device_get_state (device)));
-
-	req = nm_device_get_act_request (device);
-	g_assert (req);
-
-	if (!nm_modem_connection_secrets_updated (priv->modem,
-                                              req,
-                                              connection,
-                                              updated_settings,
-                                              caller)) {
-		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NO_SECRETS);
-		return;
-	}
-
-	/* PPP handles stuff itself... */
-	if (caller == SECRETS_CALLER_PPP)
-		return;
-
-	/* Otherwise, on success for GSM/CDMA secrets we need to schedule modem stage1 again */
-	g_return_if_fail (nm_device_get_state (device) == NM_DEVICE_STATE_NEED_AUTH);
-	if (!modem_stage1 (self, priv->modem, &reason))
-		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED, reason);
-}
-
 /*****************************************************************************/
 
 gboolean
@@ -511,7 +641,8 @@ nm_device_bt_modem_added (NMDeviceBt *self,
 	g_signal_connect (modem, NM_MODEM_PPP_FAILED, G_CALLBACK (ppp_failed), self);
 	g_signal_connect (modem, NM_MODEM_PREPARE_RESULT, G_CALLBACK (modem_prepare_result), self);
 	g_signal_connect (modem, NM_MODEM_IP4_CONFIG_RESULT, G_CALLBACK (modem_ip4_config_result), self);
-	g_signal_connect (modem, NM_MODEM_NEED_AUTH, G_CALLBACK (modem_need_auth), self);
+	g_signal_connect (modem, NM_MODEM_AUTH_REQUESTED, G_CALLBACK (modem_auth_requested), self);
+	g_signal_connect (modem, NM_MODEM_AUTH_RESULT, G_CALLBACK (modem_auth_result), self);
 
 	/* Kick off the modem connection */
 	if (!modem_stage1 (self, modem, &reason))
@@ -1019,12 +1150,12 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 
 	device_class->get_best_auto_connection = real_get_best_auto_connection;
 	device_class->get_generic_capabilities = real_get_generic_capabilities;
-	device_class->connection_secrets_updated = real_connection_secrets_updated;
 	device_class->deactivate_quickly = real_deactivate_quickly;
 	device_class->act_stage2_config = real_act_stage2_config;
 	device_class->act_stage3_ip4_config_start = real_act_stage3_ip4_config_start;
 	device_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 	device_class->check_connection_compatible = real_check_connection_compatible;
+	device_class->complete_connection = real_complete_connection;
 
 	/* Properties */
 	g_object_class_install_property

@@ -48,16 +48,18 @@
 #define NM_DBUS_INTERFACE_DHCP6_CONFIG      NM_DBUS_INTERFACE ".DHCP6Config"
 
 
-#define NM_DBUS_SERVICE_USER_SETTINGS     "org.freedesktop.NetworkManagerUserSettings"
-#define NM_DBUS_SERVICE_SYSTEM_SETTINGS   "org.freedesktop.NetworkManagerSystemSettings"
-#define NM_DBUS_IFACE_SETTINGS            "org.freedesktop.NetworkManagerSettings"
-#define NM_DBUS_IFACE_SETTINGS_SYSTEM     "org.freedesktop.NetworkManagerSettings.System"
-#define NM_DBUS_PATH_SETTINGS             "/org/freedesktop/NetworkManagerSettings"
+#define NM_DBUS_IFACE_SETTINGS            "org.freedesktop.NetworkManager.Settings"
+#define NM_DBUS_PATH_SETTINGS             "/org/freedesktop/NetworkManager/Settings"
 
-#define NM_DBUS_IFACE_SETTINGS_CONNECTION "org.freedesktop.NetworkManagerSettings.Connection"
-#define NM_DBUS_PATH_SETTINGS_CONNECTION  "/org/freedesktop/NetworkManagerSettings/Connection"
-#define NM_DBUS_IFACE_SETTINGS_CONNECTION_SECRETS "org.freedesktop.NetworkManagerSettings.Connection.Secrets"
+#define NM_DBUS_IFACE_SETTINGS_CONNECTION "org.freedesktop.NetworkManager.Settings.Connection"
+#define NM_DBUS_PATH_SETTINGS_CONNECTION  "/org/freedesktop/NetworkManager/Settings/Connection"
+#define NM_DBUS_IFACE_SETTINGS_CONNECTION_SECRETS "org.freedesktop.NetworkManager.Settings.Connection.Secrets"
 
+#define NM_DBUS_INTERFACE_AGENT_MANAGER   NM_DBUS_INTERFACE ".AgentManager"
+#define NM_DBUS_PATH_AGENT_MANAGER        "/org/freedesktop/NetworkManager/AgentManager"
+
+#define NM_DBUS_INTERFACE_SECRET_AGENT    NM_DBUS_INTERFACE ".SecretAgent"
+#define NM_DBUS_PATH_SECRET_AGENT         "/org/freedesktop/NetworkManager/SecretAgent"
 
 /*
  * Types of NetworkManager states
@@ -154,7 +156,7 @@ typedef enum {
  * NMBluetoothCapabilities:
  * @NM_BT_CAPABILITY_NONE: device has no usable capabilities
  * @NM_BT_CAPABILITY_DUN: device provides Dial-Up Networking capability
- * @NM_BT_CAPABILITY_PAN: device provides Personal Area Networking capability
+ * @NM_BT_CAPABILITY_NAP: device provides Network Access Point capability
  *
  * #NMBluetoothCapabilities values indicate the usable capabilities of a
  * Bluetooth device.

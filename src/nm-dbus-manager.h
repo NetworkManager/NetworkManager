@@ -40,6 +40,9 @@ typedef gboolean (* NMDBusSignalHandlerFunc) (DBusConnection * connection,
 #define NM_IS_DBUS_MANAGER_CLASS(k) (G_TYPE_CHECK_CLASS_TYPE ((k), NM_TYPE_DBUS_MANAGER))
 #define NM_DBUS_MANAGER_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS ((o), NM_TYPE_DBUS_MANAGER, NMDBusManagerClass)) 
 
+#define NM_DBUS_MANAGER_DBUS_CONNECTION_CHANGED "dbus-connection-changed"
+#define NM_DBUS_MANAGER_NAME_OWNER_CHANGED      "name-owner-changed"
+
 typedef struct {
 	GObject parent;
 } NMDBusManager;

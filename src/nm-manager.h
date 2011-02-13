@@ -20,13 +20,14 @@
  */
 
 #ifndef NM_MANAGER_H
-#define NM_MANAGER_H 1
+#define NM_MANAGER_H
 
 #include <glib.h>
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
 #include "nm-device.h"
 #include "nm-device-interface.h"
+#include "nm-settings.h"
 
 #define NM_TYPE_MANAGER            (nm_manager_get_type ())
 #define NM_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MANAGER, NMManager))
@@ -62,25 +63,12 @@ typedef struct {
 	void (*device_removed) (NMManager *manager, NMDevice *device);
 	void (*state_changed) (NMManager *manager, guint state);
 	void (*properties_changed) (NMManager *manager, GHashTable *properties);
-
-	void (*connections_added) (NMManager *manager, NMConnectionScope scope);
-
-	void (*connection_added) (NMManager *manager,
-				  NMConnection *connection,
-				  NMConnectionScope scope);
-
-	void (*connection_updated) (NMManager *manager,
-				  NMConnection *connection,
-				  NMConnectionScope scope);
-
-	void (*connection_removed) (NMManager *manager,
-				    NMConnection *connection,
-				    NMConnectionScope scope);
 } NMManagerClass;
 
 GType nm_manager_get_type (void);
 
-NMManager *nm_manager_get (const char *config_file,
+NMManager *nm_manager_get (NMSettings *settings,
+                           const char *config_file,
                            const char *plugins,
                            const char *state_file,
                            gboolean initial_net_enabled,
@@ -99,7 +87,7 @@ const char * nm_manager_activate_connection (NMManager *manager,
                                              NMConnection *connection,
                                              const char *specific_object,
                                              const char *device_path,
-                                             gboolean user_requested,
+                                             const char *dbus_sender, /* NULL if automatic */
                                              GError **error);
 
 gboolean nm_manager_deactivate_connection (NMManager *manager,
@@ -110,16 +98,6 @@ gboolean nm_manager_deactivate_connection (NMManager *manager,
 /* State handling */
 
 NMState nm_manager_get_state (NMManager *manager);
-
-/* Connections */
-
-GSList *nm_manager_get_connections    (NMManager *manager, NMConnectionScope scope);
-
-gboolean nm_manager_auto_user_connections_allowed (NMManager *manager);
-
-NMConnection * nm_manager_get_connection_by_object_path (NMManager *manager,
-                                                         NMConnectionScope scope,
-                                                         const char *path);
 
 GPtrArray * nm_manager_get_active_connections_by_connection (NMManager *manager,
                                                              NMConnection *connection);

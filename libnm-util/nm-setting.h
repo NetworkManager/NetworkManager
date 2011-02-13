@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -84,6 +84,34 @@ GQuark nm_setting_error_quark (void);
 #define NM_SETTING_NAME "name"
 
 /**
+ * NMSettingSecretFlags:
+ * @NM_SETTING_SECRET_FLAG_NONE: the system is responsible for providing and
+ * storing this secret (default)
+ * @NM_SETTING_SECRET_FLAG_AGENT_OWNED: a user secret agent is responsible
+ * for providing and storing this secret; when it is required agents will be
+ * asked to retrieve it
+ * @NM_SETTING_SECRET_FLAG_NOT_SAVED: this secret should not be saved, but
+ * should be requested from the user each time it is needed
+ * @NM_SETTING_SECRET_FLAG_NOT_REQUIRED: in situations where it cannot be
+ * automatically determined that the secret is required (some VPNs and PPP
+ * providers dont require all secrets) this flag indicates that the specific
+ * secret is not required
+ *
+ * These flags indicate specific behavior related to handling of a secret.  Each
+ * secret has a corresponding set of these flags which indicate how the secret
+ * is to be stored and/or requested when it is needed.
+ *
+ **/
+typedef enum {
+	NM_SETTING_SECRET_FLAG_NONE         = 0x00000000,
+	NM_SETTING_SECRET_FLAG_AGENT_OWNED  = 0x00000001,
+	NM_SETTING_SECRET_FLAG_NOT_SAVED    = 0x00000002,
+	NM_SETTING_SECRET_FLAG_NOT_REQUIRED = 0x00000004
+
+	/* NOTE: if adding flags, update nm-setting-private.h as well */
+} NMSettingSecretFlags;
+
+/**
  * NMSetting:
  *
  * The NMSetting struct contains only private data.
@@ -108,6 +136,18 @@ typedef struct {
 	                                  GValue     *value,
 	                                  GError    **error);
 
+	gboolean    (*get_secret_flags)  (NMSetting  *setting,
+	                                  const char *secret_name,
+	                                  gboolean verify_secret,
+	                                  NMSettingSecretFlags *out_flags,
+	                                  GError **error);
+
+	gboolean    (*set_secret_flags)  (NMSetting  *setting,
+	                                  const char *secret_name,
+	                                  gboolean verify_secret,
+	                                  NMSettingSecretFlags flags,
+	                                  GError **error);
+
 	/* Padding for future expansion */
 	void (*_reserved1) (void);
 	void (*_reserved2) (void);
@@ -124,7 +164,25 @@ typedef void (*NMSettingValueIterFn) (NMSetting *setting,
 
 GType nm_setting_get_type (void);
 
-GHashTable *nm_setting_to_hash       (NMSetting *setting);
+/**
+ * NMSettingHashFlags:
+ * @NM_SETTING_HASH_FLAG_ALL: hash all properties (including secrets)
+ * @NM_SETTING_HASH_FLAG_NO_SECRETS: do not include secrets
+ * @NM_SETTING_HASH_FLAG_ONLY_SECRETS: only hash secrets
+ *
+ * These flags determine which properties are added to the resulting hash
+ * when calling nm_setting_to_hash().
+ *
+ **/
+typedef enum {
+	NM_SETTING_HASH_FLAG_ALL = 0x00000000,
+	NM_SETTING_HASH_FLAG_NO_SECRETS = 0x00000001,
+	NM_SETTING_HASH_FLAG_ONLY_SECRETS = 0x00000002,
+} NMSettingHashFlags;
+
+GHashTable *nm_setting_to_hash       (NMSetting *setting,
+                                      NMSettingHashFlags flags);
+
 NMSetting  *nm_setting_new_from_hash (GType setting_type,
                                       GHashTable *hash);
 
@@ -172,6 +230,16 @@ GPtrArray  *nm_setting_need_secrets   (NMSetting *setting);
 gboolean    nm_setting_update_secrets (NMSetting *setting,
                                        GHashTable *secrets,
                                        GError **error);
+
+gboolean    nm_setting_get_secret_flags (NMSetting *setting,
+                                         const char *secret_name,
+                                         NMSettingSecretFlags *out_flags,
+                                         GError **error);
+
+gboolean    nm_setting_set_secret_flags (NMSetting *setting,
+                                         const char *secret_name,
+                                         NMSettingSecretFlags flags,
+                                         GError **error);
 
 G_END_DECLS
 

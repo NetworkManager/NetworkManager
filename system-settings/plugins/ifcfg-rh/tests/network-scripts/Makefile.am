@@ -69,7 +69,9 @@ EXTRA_DIST = \
 	ifcfg-test-wired-qeth-static \
 	ifcfg-test-bridge-main \
 	ifcfg-test-bridge-component \
-	ifcfg-test-vlan-interface
+	ifcfg-test-vlan-interface \
+	ifcfg-test-wifi-wep-no-keys \
+	ifcfg-test-permissions
 
 check-local:
 	@for f in $(EXTRA_DIST); do \

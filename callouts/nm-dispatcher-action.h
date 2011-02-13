@@ -22,7 +22,6 @@
 #define NM_DISPATCHER_DBUS_IFACE   "org.freedesktop.nm_dispatcher"
 #define NM_DISPATCHER_DBUS_PATH    "/org/freedesktop/nm_dispatcher"
 
-#define NMD_CONNECTION_PROPS_SERVICE_NAME "service-name"
 #define NMD_CONNECTION_PROPS_PATH         "path"
 
 #define NMD_DEVICE_PROPS_INTERFACE        "interface"

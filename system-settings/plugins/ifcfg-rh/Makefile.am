@@ -23,7 +23,7 @@ libifcfg_rh_io_la_SOURCES = \
 	utils.h
 
 INCLUDES = \
-	-I$(top_srcdir)/src/system-settings \
+	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/libnm-glib \
 	-I$(top_srcdir)/libnm-util \

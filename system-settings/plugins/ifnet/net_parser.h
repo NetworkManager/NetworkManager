@@ -33,14 +33,14 @@ void ifnet_destroy (void);
 
 /* Reader functions */
 GList *ifnet_get_connection_names (void);
-gchar *ifnet_get_data (gchar * conn_name, const gchar * key);
-gchar *ifnet_get_global_data (const gchar * key);
-gchar *ifnet_get_global_setting (gchar * group, gchar * key);
-gboolean ifnet_has_connection (gchar * conn_name);
+const char *ifnet_get_data (const char *conn_name, const char *key);
+const char *ifnet_get_global_data (const char *key);
+const char *ifnet_get_global_setting (const char *group, const char *key);
+gboolean ifnet_has_connection (const char *conn_name);
 
 /* Writer functions */
-gboolean ifnet_flush_to_file (gchar * config_file);
-void ifnet_set_data (gchar * conn_name, gchar * key, gchar * value);
-gboolean ifnet_add_connection (gchar * name, gchar * type);
-gboolean ifnet_delete_network (gchar * conn_name);
+gboolean ifnet_flush_to_file (const char *config_file);
+void ifnet_set_data (const char *conn_name, const char *key, const char *value);
+gboolean ifnet_add_connection (const char *name, const char *type);
+gboolean ifnet_delete_network (const char *conn_name);
 #endif

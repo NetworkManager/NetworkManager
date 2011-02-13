@@ -1,12 +1,12 @@
 SUBDIRS = \
 	marshallers \
+	include \
 	libnm-util \
 	libnm-glib \
-	src \
-	include \
 	introspection \
-	callouts \
 	system-settings \
+	src \
+	callouts \
 	cli \
 	tools \
 	policy \
@@ -29,7 +29,8 @@ DISTCHECK_CONFIGURE_FLAGS = \
 	--with-tests=yes \
 	--with-docs=yes \
 	--with-udev-dir=$$dc_install_base/lib/udev \
-	--with-systemdsystemunitdir=$$dc_install_base/$(systemdsystemunitdir)
+	--with-systemdsystemunitdir=$$dc_install_base/$(systemdsystemunitdir) \
+	--enable-wimax=no
 
 DISTCLEANFILES = intltool-extract intltool-merge intltool-update
 

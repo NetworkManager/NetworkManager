@@ -162,11 +162,11 @@ warning messages.
 .B domains=\fI<domain1>,<domain2>, ...\fP
 The following log domains are available: [NONE, HW, RFKILL, ETHER, WIFI, BT, MB,
 DHCP4, DHCP6, PPP, WIFI_SCAN, IP4, IP6, AUTOIP4, DNS, VPN, SHARING, SUPPLICANT,
-USER_SET, SYS_SET, SUSPEND, CORE, DEVICE, OLPC, WIMAX].  When "NONE" is given by
-itself, logging is disabled.  MB = Mobile Broadband, USER_SET = user settings
-operations and communication, SYS_SET = system settings service operations, OLPC
-= OLPC Mesh device operations, CORE = core daemon operations, DEVICE = activation
-and general interface operations.
+AGENTS, SETTINGS, SUSPEND, CORE, DEVICE, OLPC, WIMAX].  When "NONE" is given by
+itself, logging is disabled.  MB = Mobile Broadband, AGENTS = secret agents
+operations and communication, SETTINGS = settings/config service operations,
+OLPC = OLPC Mesh device operations, CORE = core daemon operations, DEVICE =
+activation and general interface operations.
 .SH "SEE ALSO"
 .BR http://live.gnome.org/NetworkManager/SystemSettings
 .sp

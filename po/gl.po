@@ -1732,7 +1732,7 @@ msgstr "NOTE: o importador libc non permite máis de 3 nomes de servidores."
 msgid "The nameservers listed below may not be recognized."
 msgstr "Os nomes de servidores listados a seguir poden non ser recoñecidos"
 
-#: ../src/system-settings/nm-default-wired-connection.c:157
+#: ../src/settings/nm-default-wired-connection.c:157
 #, c-format
 msgid "Auto %s"
 msgstr "Auto %s"

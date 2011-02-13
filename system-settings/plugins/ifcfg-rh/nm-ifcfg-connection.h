@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
 #ifndef NM_IFCFG_CONNECTION_H
@@ -24,7 +24,7 @@
 G_BEGIN_DECLS
 
 #include <NetworkManager.h>
-#include <nm-sysconfig-connection.h>
+#include <nm-settings-connection.h>
 
 #define NM_TYPE_IFCFG_CONNECTION            (nm_ifcfg_connection_get_type ())
 #define NM_IFCFG_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_IFCFG_CONNECTION, NMIfcfgConnection))
@@ -33,25 +33,24 @@ G_BEGIN_DECLS
 #define NM_IS_IFCFG_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_IFCFG_CONNECTION))
 #define NM_IFCFG_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_IFCFG_CONNECTION, NMIfcfgConnectionClass))
 
-#define NM_IFCFG_CONNECTION_FILENAME  "filename"
 #define NM_IFCFG_CONNECTION_UNMANAGED "unmanaged"
-#define NM_IFCFG_CONNECTION_UDI       "udi"
 
 typedef struct {
-	NMSysconfigConnection parent;
+	NMSettingsConnection parent;
 } NMIfcfgConnection;
 
 typedef struct {
-	NMSysconfigConnectionClass parent;
+	NMSettingsConnectionClass parent;
 } NMIfcfgConnectionClass;
 
 GType nm_ifcfg_connection_get_type (void);
 
 NMIfcfgConnection *nm_ifcfg_connection_new (const char *filename,
+                                            NMConnection *source,
                                             GError **error,
                                             gboolean *ignore_error);
 
-const char *nm_ifcfg_connection_get_filename (NMIfcfgConnection *self);
+const char *nm_ifcfg_connection_get_path (NMIfcfgConnection *self);
 
 const char *nm_ifcfg_connection_get_unmanaged_spec (NMIfcfgConnection *self);
 

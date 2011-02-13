@@ -25,15 +25,21 @@
 #include <glib.h>
 #include <dbus/dbus-glib.h>
 
+#include <nm-connection.h>
 #include "nm-dbus-manager.h"
+#include "nm-session-monitor.h"
 
-#define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK "org.freedesktop.NetworkManager.enable-disable-network"
-#define NM_AUTH_PERMISSION_SLEEP_WAKE             "org.freedesktop.NetworkManager.sleep-wake"
-#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI    "org.freedesktop.NetworkManager.enable-disable-wifi"
-#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN    "org.freedesktop.NetworkManager.enable-disable-wwan"
-#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX   "org.freedesktop.NetworkManager.enable-disable-wimax"
-#define NM_AUTH_PERMISSION_USE_USER_CONNECTIONS   "org.freedesktop.NetworkManager.use-user-connections"
-#define NM_AUTH_PERMISSION_NETWORK_CONTROL        "org.freedesktop.NetworkManager.network-control"
+#define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK     "org.freedesktop.NetworkManager.enable-disable-network"
+#define NM_AUTH_PERMISSION_SLEEP_WAKE                 "org.freedesktop.NetworkManager.sleep-wake"
+#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI        "org.freedesktop.NetworkManager.enable-disable-wifi"
+#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN        "org.freedesktop.NetworkManager.enable-disable-wwan"
+#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX       "org.freedesktop.NetworkManager.enable-disable-wimax"
+#define NM_AUTH_PERMISSION_NETWORK_CONTROL            "org.freedesktop.NetworkManager.network-control"
+#define NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED       "org.freedesktop.NetworkManager.wifi.share.protected"
+#define NM_AUTH_PERMISSION_WIFI_SHARE_OPEN            "org.freedesktop.NetworkManager.wifi.share.open"
+#define NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM     "org.freedesktop.NetworkManager.settings.modify.system"
+#define NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN        "org.freedesktop.NetworkManager.settings.modify.own"
+#define NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME   "org.freedesktop.NetworkManager.settings.modify.hostname"
 
 
 typedef struct NMAuthChain NMAuthChain;
@@ -67,12 +73,26 @@ NMAuthChain *nm_auth_chain_new_raw_message (PolkitAuthority *authority,
                                             NMAuthChainResultFunc done_func,
                                             gpointer user_data);
 
+NMAuthChain *nm_auth_chain_new_dbus_sender (PolkitAuthority *authority,
+                                            const char *dbus_sender,
+                                            NMAuthChainResultFunc done_func,
+                                            gpointer user_data);
+
 gpointer nm_auth_chain_get_data (NMAuthChain *chain, const char *tag);
 
 void nm_auth_chain_set_data (NMAuthChain *chain,
                              const char *tag,
                              gpointer data,
                              GDestroyNotify data_destroy);
+
+void nm_auth_chain_set_data_ulong (NMAuthChain *chain,
+                                   const char *tag,
+                                   gulong data);
+
+gulong nm_auth_chain_get_data_ulong (NMAuthChain *chain, const char *tag);
+
+NMAuthCallResult nm_auth_chain_get_result (NMAuthChain *chain,
+                                           const char *permission);
 
 gboolean nm_auth_chain_add_call (NMAuthChain *chain,
                                  const char *permission,
@@ -84,12 +104,13 @@ void nm_auth_chain_unref (NMAuthChain *chain);
 gboolean nm_auth_get_caller_uid (DBusGMethodInvocation *context,
                                  NMDBusManager *dbus_mgr,
                                  gulong *out_uid,
-                                 const char **out_error_desc);
+                                 char **out_error_desc);
 
-gboolean nm_auth_uid_authorized (gulong uid,
-                                 NMDBusManager *dbus_mgr,
-                                 DBusGProxy *user_proxy,
-                                 const char **out_error_desc);
+/* Caller must free returned error description */
+gboolean nm_auth_uid_in_acl (NMConnection *connection,
+                             NMSessionMonitor *smon,
+                             gulong uid,
+                             char **out_error_desc);
 
 #endif /* NM_MANAGER_AUTH_H */
 

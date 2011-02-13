@@ -1691,7 +1691,7 @@ msgstr "नोट: libc समाधानकर्ता 3 नेमसर्�
 msgid "The nameservers listed below may not be recognized."
 msgstr "नीचे सूची में दिया गया नेमसर्वर पहचाना नहीं जा सकता है."
 
-#: ../src/system-settings/nm-default-wired-connection.c:157
+#: ../src/settings/nm-default-wired-connection.c:157
 #, c-format
 msgid "Auto %s"
 msgstr "स्वतः %s"

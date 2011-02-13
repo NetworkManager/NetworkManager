@@ -223,7 +223,7 @@ nm_object_class_init (NMObjectClass *nm_object_class)
  *
  * Gets the #NMObject's DBusGConnection.
  *
- * Returns: the connection
+ * Returns: (transfer none): the connection
  **/
 DBusGConnection *
 nm_object_get_connection (NMObject *object)

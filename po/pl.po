@@ -1780,7 +1780,7 @@ msgstr "UWAGA: obsługa nazw libc nie obsługuje więcej niż 3 serwery nazw."
 msgid "The nameservers listed below may not be recognized."
 msgstr "Poniższe serwery nazw nie mogą nie zostać rozpoznane."
 
-#: ../src/system-settings/nm-default-wired-connection.c:157
+#: ../src/settings/nm-default-wired-connection.c:157
 #, c-format
 msgid "Auto %s"
 msgstr "Automatyczne %s"

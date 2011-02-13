@@ -33,29 +33,7 @@ nm_active_connection_get_next_object_path (void)
 }
 
 void
-nm_active_connection_scope_to_value (NMConnection *connection, GValue *value)
-{
-	if (!connection) {
-		g_value_set_string (value, "");
-		return;
-	}
-
-	switch (nm_connection_get_scope (connection)) {
-	case NM_CONNECTION_SCOPE_SYSTEM:
-		g_value_set_string (value, NM_DBUS_SERVICE_SYSTEM_SETTINGS);
-		break;
-	case NM_CONNECTION_SCOPE_USER:
-		g_value_set_string (value, NM_DBUS_SERVICE_USER_SETTINGS);
-		break;
-	default:
-		nm_log_err (LOGD_CORE, "unknown connection scope!");
-		break;
-	}
-}
-
-void
 nm_active_connection_install_properties (GObjectClass *object_class,
-                                         guint prop_service_name,
                                          guint prop_connection,
                                          guint prop_specific_object,
                                          guint prop_devices,
@@ -64,13 +42,6 @@ nm_active_connection_install_properties (GObjectClass *object_class,
                                          guint prop_default6,
                                          guint prop_vpn)
 {
-	g_object_class_install_property (object_class, prop_service_name,
-		g_param_spec_string (NM_ACTIVE_CONNECTION_SERVICE_NAME,
-		                     "Service name",
-		                     "Service name",
-		                     NULL,
-		                     G_PARAM_READABLE));
-
 	g_object_class_install_property (object_class, prop_connection,
 		g_param_spec_boxed (NM_ACTIVE_CONNECTION_CONNECTION,
 		                    "Connection",

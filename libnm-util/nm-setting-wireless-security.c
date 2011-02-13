@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2010 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -33,6 +33,7 @@
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-utils-private.h"
+#include "nm-setting-private.h"
 
 GQuark
 nm_setting_wireless_security_error_quark (void)
@@ -82,19 +83,28 @@ G_DEFINE_TYPE (NMSettingWirelessSecurity, nm_setting_wireless_security, NM_TYPE_
 
 typedef struct {
 	char *key_mgmt;
-	guint32 wep_tx_keyidx;
 	char *auth_alg;
 	GSList *proto; /* GSList of strings */
 	GSList *pairwise; /* GSList of strings */
 	GSList *group; /* GSList of strings */
+
+	/* LEAP */
 	char *leap_username;
+	char *leap_password;
+	NMSettingSecretFlags leap_password_flags;
+
+	/* WEP */
 	char *wep_key0;
 	char *wep_key1;
 	char *wep_key2;
 	char *wep_key3;
-	char *psk;
-	char *leap_password;
+	NMSettingSecretFlags wep_key_flags;
 	NMWepKeyType wep_key_type;
+	guint32 wep_tx_keyidx;
+
+	/* WPA-PSK */
+	char *psk;
+	NMSettingSecretFlags psk_flags;
 } NMSettingWirelessSecurityPrivate;
 
 enum {
@@ -110,9 +120,12 @@ enum {
 	PROP_WEP_KEY1,
 	PROP_WEP_KEY2,
 	PROP_WEP_KEY3,
-	PROP_PSK,
-	PROP_LEAP_PASSWORD,
+	PROP_WEP_KEY_FLAGS,
 	PROP_WEP_KEY_TYPE,
+	PROP_PSK,
+	PROP_PSK_FLAGS,
+	PROP_LEAP_PASSWORD,
+	PROP_LEAP_PASSWORD_FLAGS,
 
 	LAST_PROP
 };
@@ -343,6 +356,21 @@ nm_setting_wireless_security_get_psk (NMSettingWirelessSecurity *setting)
 	return NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->psk;
 }
 
+/**
+ * nm_setting_wireless_security_get_psk_flags:
+ * @setting: the #NMSettingWirelessSecurity
+ *
+ * Returns: the #NMSettingSecretFlags pertaining to the
+ * #NMSettingWirelessSecurity:psk
+ **/
+NMSettingSecretFlags
+nm_setting_wireless_security_get_psk_flags (NMSettingWirelessSecurity *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), NM_SETTING_SECRET_FLAG_NONE);
+
+	return NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->psk_flags;
+}
+
 const char *
 nm_setting_wireless_security_get_leap_username (NMSettingWirelessSecurity *setting)
 {
@@ -357,6 +385,21 @@ nm_setting_wireless_security_get_leap_password (NMSettingWirelessSecurity *setti
 	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), NULL);
 
 	return NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->leap_password;
+}
+
+/**
+ * nm_setting_wireless_security_get_leap_password_flags:
+ * @setting: the #NMSettingWirelessSecurity
+ *
+ * Returns: the #NMSettingSecretFlags pertaining to the
+ * #NMSettingWirelessSecurity:leap-password
+ **/
+NMSettingSecretFlags
+nm_setting_wireless_security_get_leap_password_flags (NMSettingWirelessSecurity *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), NM_SETTING_SECRET_FLAG_NONE);
+
+	return NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->leap_password_flags;
 }
 
 const char *
@@ -426,6 +469,20 @@ nm_setting_wireless_security_get_auth_alg (NMSettingWirelessSecurity *setting)
 	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), NULL);
 
 	return NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->auth_alg;
+}
+
+/**
+ * nm_setting_wireless_security_get_wep_key_flags:
+ * @setting: the #NMSettingWirelessSecurity
+ *
+ * Returns: the #NMSettingSecretFlags pertaining to the all WEP keys
+ **/
+NMSettingSecretFlags
+nm_setting_wireless_security_get_wep_key_flags (NMSettingWirelessSecurity *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), NM_SETTING_SECRET_FLAG_NONE);
+
+	return NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->wep_key_flags;
 }
 
 NMWepKeyType
@@ -771,6 +828,58 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	return TRUE;
 }
 
+static gboolean
+get_secret_flags (NMSetting *setting,
+                  const char *secret_name,
+                  gboolean verify_secret,
+                  NMSettingSecretFlags *out_flags,
+                  GError **error)
+{
+	NMSettingClass *setting_class;
+	gboolean verify_override = verify_secret;
+
+	/* There's only one 'flags' property for WEP keys, so alias all the WEP key
+	 * property names to that flags property.
+	 */
+	if (   !g_strcmp0 (secret_name, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0)
+	    || !g_strcmp0 (secret_name, NM_SETTING_WIRELESS_SECURITY_WEP_KEY1)
+	    || !g_strcmp0 (secret_name, NM_SETTING_WIRELESS_SECURITY_WEP_KEY2)
+	    || !g_strcmp0 (secret_name, NM_SETTING_WIRELESS_SECURITY_WEP_KEY3)) {
+		secret_name = "wep-key";
+		verify_override = FALSE; /* Already know it's a secret */
+	}
+
+	/* Chain up to superclass with modified key name */
+	setting_class = NM_SETTING_CLASS (nm_setting_wireless_security_parent_class);
+	return setting_class->get_secret_flags (setting, secret_name, verify_override, out_flags, error);
+}
+
+static gboolean
+set_secret_flags (NMSetting *setting,
+                  const char *secret_name,
+                  gboolean verify_secret,
+                  NMSettingSecretFlags flags,
+                  GError **error)
+{
+	NMSettingClass *setting_class;
+	gboolean verify_override = verify_secret;
+
+	/* There's only one 'flags' property for WEP keys, so alias all the WEP key
+	 * property names to that flags property.
+	 */
+	if (   !g_strcmp0 (secret_name, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0)
+	    || !g_strcmp0 (secret_name, NM_SETTING_WIRELESS_SECURITY_WEP_KEY1)
+	    || !g_strcmp0 (secret_name, NM_SETTING_WIRELESS_SECURITY_WEP_KEY2)
+	    || !g_strcmp0 (secret_name, NM_SETTING_WIRELESS_SECURITY_WEP_KEY3)) {
+		secret_name = "wep-key";
+		verify_override = FALSE; /* Already know it's a secret */
+	}
+
+	/* Chain up to superclass with modified key name */
+	setting_class = NM_SETTING_CLASS (nm_setting_wireless_security_parent_class);
+	return setting_class->set_secret_flags (setting, secret_name, verify_override, flags, error);
+}
+
 static void
 nm_setting_wireless_security_init (NMSettingWirelessSecurity *setting)
 {
@@ -852,13 +961,22 @@ set_property (GObject *object, guint prop_id,
 	case PROP_WEP_KEY3:
 		nm_setting_wireless_security_set_wep_key (setting, 3, g_value_get_string (value));
 		break;
+	case PROP_WEP_KEY_FLAGS:
+		priv->wep_key_flags = g_value_get_uint (value);
+		break;
 	case PROP_PSK:
 		g_free (priv->psk);
 		priv->psk = g_value_dup_string (value);
 		break;
+	case PROP_PSK_FLAGS:
+		priv->psk_flags = g_value_get_uint (value);
+		break;
 	case PROP_LEAP_PASSWORD:
 		g_free (priv->leap_password);
 		priv->leap_password = g_value_dup_string (value);
+		break;
+	case PROP_LEAP_PASSWORD_FLAGS:
+		priv->leap_password_flags = g_value_get_uint (value);
 		break;
 	case PROP_WEP_KEY_TYPE:
 		priv->wep_key_type = g_value_get_uint (value);
@@ -910,11 +1028,20 @@ get_property (GObject *object, guint prop_id,
 	case PROP_WEP_KEY3:
 		g_value_set_string (value, priv->wep_key3);
 		break;
+	case PROP_WEP_KEY_FLAGS:
+		g_value_set_uint (value, priv->wep_key_flags);
+		break;
 	case PROP_PSK:
 		g_value_set_string (value, priv->psk);
 		break;
+	case PROP_PSK_FLAGS:
+		g_value_set_uint (value, priv->psk_flags);
+		break;
 	case PROP_LEAP_PASSWORD:
 		g_value_set_string (value, priv->leap_password);
+		break;
+	case PROP_LEAP_PASSWORD_FLAGS:
+		g_value_set_uint (value, priv->leap_password_flags);
 		break;
 	case PROP_WEP_KEY_TYPE:
 		g_value_set_uint (value, priv->wep_key_type);
@@ -938,8 +1065,10 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	parent_class->verify         = verify;
-	parent_class->need_secrets   = need_secrets;
+	parent_class->verify           = verify;
+	parent_class->need_secrets     = need_secrets;
+	parent_class->get_secret_flags = get_secret_flags;
+	parent_class->set_secret_flags = set_secret_flags;
 
 	/* Properties */
 	/**
@@ -1140,6 +1269,20 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
 
 	/**
+	 * NMSettingWirelessSecurity:wep-key-flags:
+	 *
+	 * Flags indicating how to handle #NMSettingWirelessSecurity WEP keys.
+	 **/
+	g_object_class_install_property (object_class, PROP_WEP_KEY_FLAGS,
+		 g_param_spec_uint (NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS,
+		                    "WEP Key Flags",
+		                    "Flags indicating how to handle the WEP keys.",
+		                    NM_SETTING_SECRET_FLAG_NONE,
+		                    NM_SETTING_SECRET_FLAGS_ALL,
+		                    NM_SETTING_SECRET_FLAG_NONE,
+		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
 	 * NMSettingWirelessSecurity:psk:
 	 *
 	 * Pre-Shared-Key for WPA networks.  If the key is 64-characters long, it
@@ -1165,6 +1308,20 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
 
 	/**
+	 * NMSettingWirelessSecurity:psk-flags:
+	 *
+	 * Flags indicating how to handle #NMSettingWirelessSecurity:psk
+	 **/
+	g_object_class_install_property (object_class, PROP_PSK_FLAGS,
+		 g_param_spec_uint (NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS,
+		                    "PSK Flags",
+		                    "Flags indicating how to handle the WPA PSK key.",
+		                    NM_SETTING_SECRET_FLAG_NONE,
+		                    NM_SETTING_SECRET_FLAGS_ALL,
+		                    NM_SETTING_SECRET_FLAG_NONE,
+		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
 	 * NMSettingWirelessSecurity:leap-password:
 	 *
 	 * The login password for legacy LEAP connections (ie, key-mgmt =
@@ -1178,6 +1335,20 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 						  "(ie, key-mgmt = 'ieee8021x' and auth-alg = 'leap').",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+
+	/**
+	 * NMSettingWirelessSecurity:leap-password-flags:
+	 *
+	 * Flags indicating how to handle #NMSettingWirelessSecurity:leap-password.
+	 **/
+	g_object_class_install_property (object_class, PROP_LEAP_PASSWORD_FLAGS,
+		 g_param_spec_uint (NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS,
+		                    "LEAP Password Flags",
+		                    "Flags indicating how to handle the LEAP password.",
+		                    NM_SETTING_SECRET_FLAG_NONE,
+		                    NM_SETTING_SECRET_FLAGS_ALL,
+		                    NM_SETTING_SECRET_FLAG_NONE,
+		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
 	 * NMSettingWirelessSecurity:wep-key-type:

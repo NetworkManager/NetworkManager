@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -53,9 +53,10 @@ GType nm_setting_cdma_error_get_type (void);
 #define NM_SETTING_CDMA_ERROR nm_setting_cdma_error_quark ()
 GQuark nm_setting_cdma_error_quark (void);
 
-#define NM_SETTING_CDMA_NUMBER       "number"
-#define NM_SETTING_CDMA_USERNAME     "username"
-#define NM_SETTING_CDMA_PASSWORD     "password"
+#define NM_SETTING_CDMA_NUMBER         "number"
+#define NM_SETTING_CDMA_USERNAME       "username"
+#define NM_SETTING_CDMA_PASSWORD       "password"
+#define NM_SETTING_CDMA_PASSWORD_FLAGS "password-flags"
 
 typedef struct {
 	NMSetting parent;
@@ -77,6 +78,7 @@ NMSetting  *nm_setting_cdma_new          (void);
 const char *nm_setting_cdma_get_number   (NMSettingCdma *setting);
 const char *nm_setting_cdma_get_username (NMSettingCdma *setting);
 const char *nm_setting_cdma_get_password (NMSettingCdma *setting);
+NMSettingSecretFlags nm_setting_cdma_get_password_flags (NMSettingCdma *setting);
 
 G_END_DECLS
 

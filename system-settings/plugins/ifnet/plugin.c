@@ -63,15 +63,12 @@ typedef struct {
 	gpointer user_data;
 } FileMonitorInfo;
 
-static void system_config_interface_init (NMSystemConfigInterface *
-					  system_config_interface_class);
+static void system_config_interface_init (NMSystemConfigInterface *class);
 
-static void
- reload_connections (gpointer config);
+static void reload_connections (gpointer config);
 
 G_DEFINE_TYPE_EXTENDED (SCPluginIfnet, sc_plugin_ifnet, G_TYPE_OBJECT, 0,
-			G_IMPLEMENT_INTERFACE (NM_TYPE_SYSTEM_CONFIG_INTERFACE,
-					       system_config_interface_init))
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_SYSTEM_CONFIG_INTERFACE, system_config_interface_init))
 #define SC_PLUGIN_IFNET_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), SC_TYPE_PLUGIN_IFNET, SCPluginIfnetPrivate))
 /*
 static void
@@ -126,20 +123,11 @@ write_system_hostname (NMSystemConfigInterface * config,
 static gboolean
 is_managed_plugin ()
 {
-	gchar *result = NULL;
+	const char *result = NULL;
 
-	result =
-	    ifnet_get_global_setting (IFNET_KEY_FILE_GROUP,
-				      IFNET_KEY_FILE_KEY_MANAGED);
-	if (result) {
-		if (is_true (result)) {
-			g_free (result);
-			return TRUE;
-		} else {
-			g_free (result);
-			return FALSE;
-		}
-	}
+	result = ifnet_get_global_setting (IFNET_KEY_FILE_GROUP, IFNET_KEY_FILE_KEY_MANAGED);
+	if (result)
+		return is_true (result);
 	return IFNET_MANAGE_WELL_KNOWN_DEFAULT;
 }
 
@@ -194,24 +182,23 @@ monitor_file_changes (const char *filename,
 	return monitor;
 }
 
+/* Callback for nm_settings_connection_replace_and_commit. Report any errors
+ * encountered when commiting connection settings updates. */
 static void
-update_old_connection (gchar * conn_name,
-		       NMIfnetConnection * old_conn,
-		       NMIfnetConnection * new_conn,
-		       SCPluginIfnetPrivate * priv)
+commit_cb (NMSettingsConnection *connection, GError *error, gpointer unused) 
 {
-	GError **error = NULL;
+	if (error) {
+		PLUGIN_WARN (IFNET_PLUGIN_NAME, "    error updating: %s",
+	             	 (error && error->message) ? error->message : "(unknown)");
+	} else {
+		NMSettingConnection *s_con;
 
-	if (!nm_sysconfig_connection_update (NM_SYSCONFIG_CONNECTION (old_conn),
-					     NM_CONNECTION (new_conn), TRUE,
-					     error)) {
-		PLUGIN_WARN (IFNET_PLUGIN_NAME, "error updating: %s",
-			     (error
-			      && (*error)) ? (*error)->message : "(unknown)");
-	} else
+		s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (connection),
+		                                                           NM_TYPE_SETTING_CONNECTION);
+		g_assert (s_con);
 		PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Connection %s updated",
-			      conn_name);
-	g_object_unref (new_conn);
+		              nm_setting_connection_get_id (s_con));
+	}
 }
 
 static void
@@ -268,92 +255,85 @@ reload_connections (gpointer config)
 
 	if (!reload_parsers ())
 		return;
+
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Loading connections");
+
 	conn_names = ifnet_get_connection_names ();
-	new_conn_names =
-	    g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+	new_conn_names = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, NULL);
 	for (n_iter = conn_names; n_iter; n_iter = g_list_next (n_iter)) {
-		NMIfnetConnection *exported;
+		NMIfnetConnection *new;
 		NMIfnetConnection *old;
-		gchar *conn_name = g_strdup (n_iter->data);
+		const char *conn_name = n_iter->data;
 
-		/* add the new connection */
-		exported = nm_ifnet_connection_new (conn_name);
-		if (!exported) {
-			g_free (conn_name);
+		/* read the new connection */
+		new = nm_ifnet_connection_new (conn_name, NULL);
+		if (!new)
 			continue;
-		}
-		g_signal_connect (G_OBJECT (exported), "ifnet_setup_monitors",
-				  G_CALLBACK (setup_monitors), config);
-		g_signal_connect (G_OBJECT (exported), "ifnet_cancel_monitors",
-				  G_CALLBACK (cancel_monitors), config);
-		old = g_hash_table_lookup (priv->config_connections, conn_name);
-		if (old && exported) {
-			gchar *auto_refresh =
-			    ifnet_get_global_setting (IFNET_KEY_FILE_GROUP,
-						      "auto_refresh");
 
+		g_signal_connect (G_OBJECT (new), "ifnet_setup_monitors",
+		                  G_CALLBACK (setup_monitors), config);
+		g_signal_connect (G_OBJECT (new), "ifnet_cancel_monitors",
+		                  G_CALLBACK (cancel_monitors), config);
+
+		old = g_hash_table_lookup (priv->config_connections, conn_name);
+		if (old && new) {
+			const char *auto_refresh;
+
+			auto_refresh = ifnet_get_global_setting (IFNET_KEY_FILE_GROUP, "auto_refresh");
 			if (auto_refresh && is_true (auto_refresh)) {
 				if (!nm_connection_compare (NM_CONNECTION (old),
-							    NM_CONNECTION
-							    (exported),
-							    NM_SETTING_COMPARE_FLAG_EXACT))
-				{
-					PLUGIN_PRINT (IFNET_PLUGIN_NAME,
-						      "Auto refreshing %s",
-						      conn_name);
-					g_signal_emit_by_name (old,
-							       NM_SETTINGS_CONNECTION_INTERFACE_REMOVED);
-					g_hash_table_remove
-					    (priv->config_connections,
-					     conn_name);
-					g_hash_table_insert
-					    (priv->config_connections,
-					     g_strdup (conn_name), exported);
+				                            NM_CONNECTION (new),
+				                            NM_SETTING_COMPARE_FLAG_EXACT)) {
+					PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Auto refreshing %s", conn_name);
+
+					/* Remove and re-add to disconnect and reconnect with new settings */
+					nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (old));
+					g_hash_table_remove (priv->config_connections, conn_name);
+					g_hash_table_insert (priv->config_connections, g_strdup (conn_name), new);
 					if (is_managed (conn_name))
-						g_signal_emit_by_name (self,
-								       NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED,
-								       exported);
+						g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, new);
 				}
-			} else
-				update_old_connection (conn_name, old,
-						       exported, priv);
-			g_signal_emit_by_name (self,
-					       NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
-		} else if (exported) {
-			g_hash_table_insert (priv->config_connections,
-					     g_strdup (conn_name), exported);
+			} else {
+				/* Update existing connection with new settings */
+				nm_settings_connection_replace_and_commit (NM_SETTINGS_CONNECTION (old),
+				                                           NM_CONNECTION (new),
+				                                           commit_cb, NULL);
+				g_object_unref (new);
+			}
+			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
+		} else if (new) {
+			g_hash_table_insert (priv->config_connections, g_strdup (conn_name), new);
 			if (is_managed (conn_name))
-				g_signal_emit_by_name (self,
-						       NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED,
-						       exported);
+				g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, new);
 		}
-		g_hash_table_insert (new_conn_names, conn_name, conn_name);
+		g_hash_table_insert (new_conn_names, (gpointer) conn_name, (gpointer) conn_name);
 	}
+
 	/* remove unused connections */
 	g_hash_table_iter_init (&iter, priv->config_connections);
 	while (g_hash_table_iter_next (&iter, &key, &value)) {
 		if (!g_hash_table_lookup (new_conn_names, key)) {
-			g_signal_emit_by_name (value,
-					       NM_SETTINGS_CONNECTION_INTERFACE_REMOVED);
+			nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (value));
 			g_hash_table_remove (priv->config_connections, key);
 		}
 	}
-	g_hash_table_remove_all (new_conn_names);
 	g_hash_table_destroy (new_conn_names);
 	g_list_free (conn_names);
 }
 
-static gboolean
-add_connection (NMSystemConfigInterface * config,
-		NMConnection * connection, GError ** error)
+static NMSettingsConnection *
+add_connection (NMSystemConfigInterface *config,
+                NMConnection *source,
+                GError **error)
 {
-	gboolean result;
+	NMIfnetConnection *connection = NULL;
+	char *conn_name;
 
-	result = ifnet_add_new_connection (connection, CONF_NET_FILE,
-					   WPA_SUPPLICANT_CONF, error);
+	conn_name = ifnet_add_new_connection (source, CONF_NET_FILE, WPA_SUPPLICANT_CONF, error);
+	if (conn_name)
+		connection = nm_ifnet_connection_new (conn_name, source);
 	reload_connections (config);
-	return result;
+	return connection ? NM_SETTINGS_CONNECTION (connection) : NULL;
 }
 
 static void
@@ -423,7 +403,7 @@ SCPluginIfnet_init (NMSystemConfigInterface * config)
 				g_signal_emit_by_name
 				    (self,
 				     NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED,
-				     NM_EXPORTED_CONNECTION (value));
+				     NM_CONNECTION (value));
 		}
 	}
 	/* Read hostname */
@@ -433,7 +413,7 @@ SCPluginIfnet_init (NMSystemConfigInterface * config)
 }
 
 static GSList *
-SCPluginIfnet_get_connections (NMSystemConfigInterface * config)
+get_connections (NMSystemConfigInterface * config)
 {
 	SCPluginIfnetPrivate *priv = SC_PLUGIN_IFNET_GET_PRIVATE (config);
 	GSList *connections = NULL;
@@ -459,15 +439,12 @@ SCPluginIfnet_get_connections (NMSystemConfigInterface * config)
 }
 
 static void
-system_config_interface_init (NMSystemConfigInterface *
-			      system_config_interface_class)
+system_config_interface_init (NMSystemConfigInterface *class)
 {
-	system_config_interface_class->init = SCPluginIfnet_init;
-	system_config_interface_class->get_connections =
-	    SCPluginIfnet_get_connections;
-	system_config_interface_class->get_unmanaged_specs =
-	    get_unmanaged_specs;
-	system_config_interface_class->add_connection = add_connection;
+	class->init = SCPluginIfnet_init;
+	class->get_connections = get_connections;
+	class->get_unmanaged_specs = get_unmanaged_specs;
+	class->add_connection = add_connection;
 }
 
 static void

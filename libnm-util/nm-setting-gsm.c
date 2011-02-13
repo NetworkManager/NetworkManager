@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2010 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -28,6 +28,7 @@
 #include "nm-setting-gsm.h"
 #include "nm-setting-serial.h"
 #include "nm-utils.h"
+#include "nm-setting-private.h"
 
 GQuark
 nm_setting_gsm_error_quark (void)
@@ -73,6 +74,7 @@ typedef struct {
 	char *number; /* For dialing, duh */
 	char *username;
 	char *password;
+	NMSettingSecretFlags password_flags;
 
 	char *apn; /* NULL for dynamic */
 	char *network_id; /* for manual registration or NULL for automatic */
@@ -80,6 +82,7 @@ typedef struct {
 	guint32 allowed_bands;     /* A bitfield of NM_SETTING_GSM_BAND_* */
 
 	char *pin;
+	NMSettingSecretFlags pin_flags;
 
 	gboolean home_only;
 } NMSettingGsmPrivate;
@@ -89,12 +92,12 @@ enum {
 	PROP_NUMBER,
 	PROP_USERNAME,
 	PROP_PASSWORD,
+	PROP_PASSWORD_FLAGS,
 	PROP_APN,
 	PROP_NETWORK_ID,
 	PROP_NETWORK_TYPE,
-	PROP_BAND,
 	PROP_PIN,
-	PROP_PUK,
+	PROP_PIN_FLAGS,
 	PROP_ALLOWED_BANDS,
 	PROP_HOME_ONLY,
 
@@ -140,6 +143,20 @@ nm_setting_gsm_get_password (NMSettingGsm *setting)
 	return NM_SETTING_GSM_GET_PRIVATE (setting)->password;
 }
 
+/**
+ * nm_setting_gsm_get_password_flags:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: the #NMSettingSecretFlags pertaining to the #NMSettingGsm:password
+ **/
+NMSettingSecretFlags
+nm_setting_gsm_get_password_flags (NMSettingGsm *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_GSM (setting), NM_SETTING_SECRET_FLAG_NONE);
+
+	return NM_SETTING_GSM_GET_PRIVATE (setting)->password_flags;
+}
+
 const char *
 nm_setting_gsm_get_apn (NMSettingGsm *setting)
 {
@@ -164,13 +181,6 @@ nm_setting_gsm_get_network_type (NMSettingGsm *setting)
 	return NM_SETTING_GSM_GET_PRIVATE (setting)->network_type;
 }
 
-int
-nm_setting_gsm_get_band (NMSettingGsm *setting)
-{
-	g_warning ("Tried to get deprecated property " NM_SETTING_GSM_SETTING_NAME "/" NM_SETTING_GSM_BAND);
-	return -1;
-}
-
 guint32
 nm_setting_gsm_get_allowed_bands (NMSettingGsm *setting)
 {
@@ -187,11 +197,18 @@ nm_setting_gsm_get_pin (NMSettingGsm *setting)
 	return NM_SETTING_GSM_GET_PRIVATE (setting)->pin;
 }
 
-const char *
-nm_setting_gsm_get_puk (NMSettingGsm *setting)
+/**
+ * nm_setting_gsm_get_pin_flags:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: the #NMSettingSecretFlags pertaining to the #NMSettingGsm:pin
+ **/
+NMSettingSecretFlags
+nm_setting_gsm_get_pin_flags (NMSettingGsm *setting)
 {
-	g_warning ("Tried to get deprecated property " NM_SETTING_GSM_SETTING_NAME "/" NM_SETTING_GSM_PUK);
-	return NULL;
+	g_return_val_if_fail (NM_IS_SETTING_GSM (setting), NM_SETTING_SECRET_FLAG_NONE);
+
+	return NM_SETTING_GSM_GET_PRIVATE (setting)->pin_flags;
 }
 
 gboolean
@@ -310,8 +327,10 @@ need_secrets (NMSetting *setting)
 		return NULL;
 
 	if (priv->username) {
-		secrets = g_ptr_array_sized_new (1);
-		g_ptr_array_add (secrets, NM_SETTING_GSM_PASSWORD);
+		if (!(priv->password_flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED)) {
+			secrets = g_ptr_array_sized_new (1);
+			g_ptr_array_add (secrets, NM_SETTING_GSM_PASSWORD);
+		}
 	}
 
 	return secrets;
@@ -343,7 +362,6 @@ set_property (GObject *object, guint prop_id,
 		    const GValue *value, GParamSpec *pspec)
 {
 	NMSettingGsmPrivate *priv = NM_SETTING_GSM_GET_PRIVATE (object);
-	const char *str;
 	char *tmp;
 
 	switch (prop_id) {
@@ -358,6 +376,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_PASSWORD:
 		g_free (priv->password);
 		priv->password = g_value_dup_string (value);
+		break;
+	case PROP_PASSWORD_FLAGS:
+		priv->password_flags = g_value_get_uint (value);
 		break;
 	case PROP_APN:
 		g_free (priv->apn);
@@ -376,10 +397,6 @@ set_property (GObject *object, guint prop_id,
 	case PROP_NETWORK_TYPE:
 		priv->network_type = g_value_get_int (value);
 		break;
-	case PROP_BAND:
-		if (g_value_get_int (value) != -1)
-			g_warning ("Tried to set deprecated property " NM_SETTING_GSM_SETTING_NAME "/" NM_SETTING_GSM_BAND);
-		break;
 	case PROP_ALLOWED_BANDS:
 		priv->allowed_bands = g_value_get_uint (value);
 		break;
@@ -387,10 +404,8 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->pin);
 		priv->pin = g_value_dup_string (value);
 		break;
-	case PROP_PUK:
-		str = g_value_get_string (value);
-		if (str && strlen (str))
-			g_warning ("Tried to set deprecated property " NM_SETTING_GSM_SETTING_NAME "/" NM_SETTING_GSM_PUK);
+	case PROP_PIN_FLAGS:
+		priv->pin_flags = g_value_get_uint (value);
 		break;
 	case PROP_HOME_ONLY:
 		priv->home_only = g_value_get_boolean (value);
@@ -417,6 +432,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_PASSWORD:
 		g_value_set_string (value, nm_setting_gsm_get_password (setting));
 		break;
+	case PROP_PASSWORD_FLAGS:
+		g_value_set_uint (value, nm_setting_gsm_get_password_flags (setting));
+		break;
 	case PROP_APN:
 		g_value_set_string (value, nm_setting_gsm_get_apn (setting));
 		break;
@@ -432,13 +450,8 @@ get_property (GObject *object, guint prop_id,
 	case PROP_PIN:
 		g_value_set_string (value, nm_setting_gsm_get_pin (setting));
 		break;
-	case PROP_PUK:
-		/* deprecated */
-		g_value_set_string (value, NULL);
-		break;
-	case PROP_BAND:
-		/* deprecated */
-		g_value_set_int (value, -1);
+	case PROP_PIN_FLAGS:
+		g_value_set_uint (value, nm_setting_gsm_get_pin_flags (setting));
 		break;
 	case PROP_HOME_ONLY:
 		g_value_set_boolean (value, nm_setting_gsm_get_home_only (setting));
@@ -519,6 +532,20 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 						  "a password or accept any password.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+
+	/**
+	 * NMSettingGsm:password-flags:
+	 *
+	 * Flags indicating how to handle #NMSettingGsm:password:.
+	 **/
+	g_object_class_install_property (object_class, PROP_PASSWORD_FLAGS,
+		 g_param_spec_uint (NM_SETTING_GSM_PASSWORD_FLAGS,
+		                    "Password Flags",
+		                    "Flags indicating how to handle the GSM password.",
+		                    NM_SETTING_SECRET_FLAG_NONE,
+		                    NM_SETTING_SECRET_FLAGS_ALL,
+		                    NM_SETTING_SECRET_FLAG_NONE,
+		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
 	 * NMSettingGsm:apn:
@@ -640,6 +667,20 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
 
 	/**
+	 * NMSettingGsm:pin-flags:
+	 *
+	 * Flags indicating how to handle #NMSettingGsm:pin:.
+	 **/
+	g_object_class_install_property (object_class, PROP_PIN_FLAGS,
+		 g_param_spec_uint (NM_SETTING_GSM_PIN_FLAGS,
+		                    "PIN Flags",
+		                    "Flags indicating how to handle the GSM SIM PIN.",
+		                    NM_SETTING_SECRET_FLAG_NONE,
+		                    NM_SETTING_SECRET_FLAGS_ALL,
+		                    NM_SETTING_SECRET_FLAG_NONE,
+		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
 	 * NMSettingGsm:home-only:
 	 *
 	 * When TRUE, only connections to the home network will be allowed.
@@ -654,31 +695,4 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 						  "not be made.",
 						  FALSE,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
-
-	/* Deprecated properties */
-	/**
-	 * NMSettingGsm:puk:
-	 *
-	 * DEPRECATED
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_PUK,
-		 g_param_spec_string (NM_SETTING_GSM_PUK,
-						  "PUK (DEPRECATED and UNUSED)",
-						  "PUK (DEPRECATED and UNUSED)",
-						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
-
-	/**
-	 * NMSettingGsm:band:
-	 *
-	 * DEPRECATED
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_BAND,
-		 g_param_spec_int (NM_SETTING_GSM_BAND,
-		                    "Band (DEPRECATED and UNUSED)",
-		                    "Band (DEPRECATED and UNUSED)",
-		                    -1, 5, -1,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 }

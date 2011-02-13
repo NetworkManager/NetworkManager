@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 - 2009 Red Hat, Inc.
+ * Copyright (C) 2008 - 2010 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -33,7 +33,6 @@
 #include <nm-setting-pppoe.h>
 #include <nm-setting-wireless-security.h>
 #include <nm-setting-8021x.h>
-#include <nm-settings-connection-interface.h>
 
 #include "common.h"
 #include "nm-ifcfg-connection.h"
@@ -41,20 +40,14 @@
 #include "writer.h"
 #include "nm-inotify-helper.h"
 
-static NMSettingsConnectionInterface *parent_settings_connection_iface;
-
-static void settings_connection_interface_init (NMSettingsConnectionInterface *klass);
-
-G_DEFINE_TYPE_EXTENDED (NMIfcfgConnection, nm_ifcfg_connection, NM_TYPE_SYSCONFIG_CONNECTION, 0,
-                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_CONNECTION_INTERFACE,
-                                               settings_connection_interface_init))
+G_DEFINE_TYPE (NMIfcfgConnection, nm_ifcfg_connection, NM_TYPE_SETTINGS_CONNECTION)
 
 #define NM_IFCFG_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IFCFG_CONNECTION, NMIfcfgConnectionPrivate))
 
 typedef struct {
 	gulong ih_event_id;
 
-	char *filename;
+	char *path;
 	int file_wd;
 
 	char *keyfile;
@@ -66,16 +59,12 @@ typedef struct {
 	char *route6file;
 	int route6file_wd;
 
-	char *udi;
 	char *unmanaged;
 } NMIfcfgConnectionPrivate;
 
 enum {
 	PROP_0,
-	PROP_FILENAME,
 	PROP_UNMANAGED,
-	PROP_UDI,
-
 	LAST_PROP
 };
 
@@ -96,7 +85,10 @@ files_changed_cb (NMInotifyHelper *ih,
 	NMIfcfgConnection *self = NM_IFCFG_CONNECTION (user_data);
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (self);
 
-	if ((evt->wd != priv->file_wd) && (evt->wd != priv->keyfile_wd) && (evt->wd != priv->routefile_wd) && (evt->wd != priv->route6file_wd))
+	if (   (evt->wd != priv->file_wd)
+	    && (evt->wd != priv->keyfile_wd)
+	    && (evt->wd != priv->routefile_wd)
+	    && (evt->wd != priv->route6file_wd))
 		return;
 
 	/* push the event up to the plugin */
@@ -104,7 +96,8 @@ files_changed_cb (NMInotifyHelper *ih,
 }
 
 NMIfcfgConnection *
-nm_ifcfg_connection_new (const char *filename,
+nm_ifcfg_connection_new (const char *full_path,
+                         NMConnection *source,
                          GError **error,
                          gboolean *ignore_error)
 {
@@ -117,31 +110,43 @@ nm_ifcfg_connection_new (const char *filename,
 	char *route6file = NULL;
 	NMInotifyHelper *ih;
 
-	g_return_val_if_fail (filename != NULL, NULL);
+	g_return_val_if_fail (full_path != NULL, NULL);
 
-	tmp = connection_from_file (filename, NULL, NULL, NULL, &unmanaged, &keyfile, &routefile, &route6file, error, ignore_error);
-	if (!tmp)
-		return NULL;
-
-	object = (GObject *) g_object_new (NM_TYPE_IFCFG_CONNECTION,
-	                                   NM_IFCFG_CONNECTION_FILENAME, filename,
-	                                   NM_IFCFG_CONNECTION_UNMANAGED, unmanaged,
-	                                   NULL);
-	if (!object) {
-		g_object_unref (tmp);
-		return NULL;
+	/* If we're given a connection already, prefer that instead of re-reading */
+	if (source)
+		tmp = g_object_ref (source);
+	else {
+		tmp = connection_from_file (full_path, NULL, NULL, NULL,
+		                            &unmanaged,
+		                            &keyfile,
+		                            &routefile,
+		                            &route6file,
+		                            error,
+		                            ignore_error);
+		if (!tmp)
+			return NULL;
 	}
 
+	object = (GObject *) g_object_new (NM_TYPE_IFCFG_CONNECTION,
+	                                   NM_IFCFG_CONNECTION_UNMANAGED, unmanaged,
+	                                   NULL);
+	if (!object)
+		goto out;
+
 	/* Update our settings with what was read from the file */
-	nm_sysconfig_connection_update (NM_SYSCONFIG_CONNECTION (object), tmp, FALSE, NULL);
-	g_object_unref (tmp);
+	if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object), tmp, error)) {
+		g_object_unref (object);
+		object = NULL;
+		goto out;
+	}
 
 	priv = NM_IFCFG_CONNECTION_GET_PRIVATE (object);
+	priv->path = g_strdup (full_path);
 
 	ih = nm_inotify_helper_get ();
 	priv->ih_event_id = g_signal_connect (ih, "event", G_CALLBACK (files_changed_cb), object);
 
-	priv->file_wd = nm_inotify_helper_add_watch (ih, filename);
+	priv->file_wd = nm_inotify_helper_add_watch (ih, full_path);
 
 	priv->keyfile = keyfile;
 	priv->keyfile_wd = nm_inotify_helper_add_watch (ih, keyfile);
@@ -152,15 +157,17 @@ nm_ifcfg_connection_new (const char *filename,
 	priv->route6file = route6file;
 	priv->route6file_wd = nm_inotify_helper_add_watch (ih, route6file);
 
-	return NM_IFCFG_CONNECTION (object);
+out:
+	g_object_unref (tmp);
+	return (NMIfcfgConnection *) object;
 }
 
 const char *
-nm_ifcfg_connection_get_filename (NMIfcfgConnection *self)
+nm_ifcfg_connection_get_path (NMIfcfgConnection *self)
 {
 	g_return_val_if_fail (NM_IS_IFCFG_CONNECTION (self), NULL);
 
-	return NM_IFCFG_CONNECTION_GET_PRIVATE (self)->filename;
+	return NM_IFCFG_CONNECTION_GET_PRIVATE (self)->path;
 }
 
 const char *
@@ -171,10 +178,10 @@ nm_ifcfg_connection_get_unmanaged_spec (NMIfcfgConnection *self)
 	return NM_IFCFG_CONNECTION_GET_PRIVATE (self)->unmanaged;
 }
 
-static gboolean
-update (NMSettingsConnectionInterface *connection,
-	    NMSettingsConnectionInterfaceUpdateFunc callback,
-	    gpointer user_data)
+static void
+commit_changes (NMSettingsConnection *connection,
+                NMSettingsConnectionCommitFunc callback,
+	            gpointer user_data)
 {
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (connection);
 	GError *error = NULL;
@@ -185,7 +192,7 @@ update (NMSettingsConnectionInterface *connection,
 	 * processes on-disk, read the existing connection back in and only rewrite
 	 * it if it's really changed.
 	 */
-	reread = connection_from_file (priv->filename, NULL, NULL, NULL,
+	reread = connection_from_file (priv->path, NULL, NULL, NULL,
 	                               &unmanaged, &keyfile, &routefile, &route6file,
 	                               NULL, NULL);
 	g_free (unmanaged);
@@ -200,28 +207,28 @@ update (NMSettingsConnectionInterface *connection,
 
 	if (!writer_update_connection (NM_CONNECTION (connection),
 	                               IFCFG_DIR,
-	                               priv->filename,
+	                               priv->path,
 	                               priv->keyfile,
 	                               &error)) {
 		callback (connection, error, user_data);
 		g_error_free (error);
-		return FALSE;
+		return;
 	}
 
 out:
 	if (reread)
 		g_object_unref (reread);
-	return parent_settings_connection_iface->update (connection, callback, user_data);
+	NM_SETTINGS_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->commit_changes (connection, callback, user_data);
 }
 
-static gboolean 
-do_delete (NMSettingsConnectionInterface *connection,
-	       NMSettingsConnectionInterfaceDeleteFunc callback,
+static void 
+do_delete (NMSettingsConnection *connection,
+	       NMSettingsConnectionDeleteFunc callback,
 	       gpointer user_data)
 {
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (connection);
 
-	g_unlink (priv->filename);
+	g_unlink (priv->path);
 	if (priv->keyfile)
 		g_unlink (priv->keyfile);
 	if (priv->routefile)
@@ -230,18 +237,10 @@ do_delete (NMSettingsConnectionInterface *connection,
 	if (priv->route6file)
 		g_unlink (priv->route6file);
 
-	return parent_settings_connection_iface->delete (connection, callback, user_data);
+	NM_SETTINGS_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->delete (connection, callback, user_data);
 }
 
 /* GObject */
-
-static void
-settings_connection_interface_init (NMSettingsConnectionInterface *iface)
-{
-	parent_settings_connection_iface = g_type_interface_peek_parent (iface);
-	iface->update = update;
-	iface->delete = do_delete;
-}
 
 static void
 nm_ifcfg_connection_init (NMIfcfgConnection *connection)
@@ -254,15 +253,14 @@ finalize (GObject *object)
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (object);
 	NMInotifyHelper *ih;
 
-	g_free (priv->udi);
-
 	nm_connection_clear_secrets (NM_CONNECTION (object));
 
 	ih = nm_inotify_helper_get ();
 
-	g_signal_handler_disconnect (ih, priv->ih_event_id);
+	if (priv->ih_event_id)
+		g_signal_handler_disconnect (ih, priv->ih_event_id);
 
-	g_free (priv->filename);
+	g_free (priv->path);
 	if (priv->file_wd >= 0)
 		nm_inotify_helper_remove_watch (ih, priv->file_wd);
 
@@ -288,16 +286,8 @@ set_property (GObject *object, guint prop_id,
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_FILENAME:
-		/* Construct only */
-		priv->filename = g_value_dup_string (value);
-		break;
 	case PROP_UNMANAGED:
 		priv->unmanaged = g_value_dup_string (value);
-		break;
-	case PROP_UDI:
-		/* Construct only */
-		priv->udi = g_value_dup_string (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -312,14 +302,8 @@ get_property (GObject *object, guint prop_id,
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_FILENAME:
-		g_value_set_string (value, priv->filename);
-		break;
 	case PROP_UNMANAGED:
 		g_value_set_string (value, priv->unmanaged);
-		break;
-	case PROP_UDI:
-		g_value_set_string (value, priv->udi);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -331,6 +315,7 @@ static void
 nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (ifcfg_connection_class);
+	NMSettingsConnectionClass *settings_class = NM_SETTINGS_CONNECTION_CLASS (ifcfg_connection_class);
 
 	g_type_class_add_private (ifcfg_connection_class, sizeof (NMIfcfgConnectionPrivate));
 
@@ -338,16 +323,10 @@ nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
+	settings_class->delete = do_delete;
+	settings_class->commit_changes = commit_changes;
 
 	/* Properties */
-	g_object_class_install_property
-		(object_class, PROP_FILENAME,
-		 g_param_spec_string (NM_IFCFG_CONNECTION_FILENAME,
-						  "FileName",
-						  "File name",
-						  NULL,
-						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-
 	g_object_class_install_property
 		(object_class, PROP_UNMANAGED,
 		 g_param_spec_string (NM_IFCFG_CONNECTION_UNMANAGED,
@@ -355,14 +334,6 @@ nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 						  "Unmanaged",
 						  NULL,
 						  G_PARAM_READWRITE));
-
-	g_object_class_install_property
-		(object_class, PROP_UDI,
-		 g_param_spec_string (NM_IFCFG_CONNECTION_UDI,
-						  "UDI",
-						  "UDI",
-						  NULL,
-						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	signals[IFCFG_CHANGED] =
 		g_signal_new ("ifcfg-changed",

@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2010 Red Hat, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
 #ifndef NM_CLIENT_H
@@ -58,10 +58,16 @@ typedef enum {
 	NM_CLIENT_PERMISSION_ENABLE_DISABLE_NETWORK = 1,
 	NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIFI = 2,
 	NM_CLIENT_PERMISSION_ENABLE_DISABLE_WWAN = 3,
-	NM_CLIENT_PERMISSION_USE_USER_CONNECTIONS = 4,
-	NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIMAX = 5,
+	NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIMAX = 4,
+	NM_CLIENT_PERMISSION_SLEEP_WAKE = 5,
+	NM_CLIENT_PERMISSION_NETWORK_CONTROL = 6,
+	NM_CLIENT_PERMISSION_WIFI_SHARE_PROTECTED = 7,
+	NM_CLIENT_PERMISSION_WIFI_SHARE_OPEN = 8,
+	NM_CLIENT_PERMISSION_SETTINGS_MODIFY_SYSTEM = 9,
+	NM_CLIENT_PERMISSION_SETTINGS_MODIFY_OWN = 10,
+	NM_CLIENT_PERMISSION_SETTINGS_MODIFY_HOSTNAME = 11,
 
-	NM_CLIENT_PERMISSION_LAST = NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIMAX
+	NM_CLIENT_PERMISSION_LAST = NM_CLIENT_PERMISSION_SETTINGS_MODIFY_HOSTNAME
 } NMClientPermission;
 
 typedef enum {
@@ -82,6 +88,9 @@ typedef struct {
 	/* Signals */
 	void (*device_added) (NMClient *client, NMDevice *device);
 	void (*device_removed) (NMClient *client, NMDevice *device);
+	void (*permission_changed) (NMClient *client,
+	                            NMClientPermission permission,
+	                            NMClientPermissionResult result);
 
 	/* Padding for future expansion */
 	void (*_reserved1) (void);
@@ -99,15 +108,30 @@ NMClient *nm_client_new (void);
 const GPtrArray *nm_client_get_devices    (NMClient *client);
 NMDevice *nm_client_get_device_by_path    (NMClient *client, const char *object_path);
 
-typedef void (*NMClientActivateDeviceFn) (gpointer user_data, const char *object_path, GError *error);
+typedef void (*NMClientActivateDeviceFn) (NMClient *client,
+                                          const char *object_path,
+                                          GError *error,
+                                          gpointer user_data);
 
 void nm_client_activate_connection (NMClient *client,
-						  const char *service_name,
-						  const char *connection_path,
-						  NMDevice *device,
-						  const char *specific_object,
-						  NMClientActivateDeviceFn callback,
-						  gpointer user_data);
+                                    const char *connection_path,
+                                    NMDevice *device,
+                                    const char *specific_object,
+                                    NMClientActivateDeviceFn callback,
+                                    gpointer user_data);
+
+typedef void (*NMClientAddActivateFn) (NMClient *client,
+                                       const char *connection_path,
+                                       const char *active_path,
+                                       GError *error,
+                                       gpointer user_data);
+
+void nm_client_add_and_activate_connection (NMClient *client,
+                                            NMConnection *partial,
+                                            NMDevice *device,
+                                            const char *specific_object,
+                                            NMClientAddActivateFn callback,
+                                            gpointer user_data);
 
 void nm_client_deactivate_connection (NMClient *client, NMActiveConnection *active);
 

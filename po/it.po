@@ -1610,7 +1610,7 @@ msgstr "NOTA: il risolutore libc non supporta più di 3 server di nomi."
 msgid "The nameservers listed below may not be recognized."
 msgstr "I server di nomi elencati sotto non possono essere riconosciuti."
 
-#: ../src/system-settings/nm-default-wired-connection.c:157
+#: ../src/settings/nm-default-wired-connection.c:157
 #, c-format
 msgid "Auto %s"
 msgstr "%s (automatica)"

@@ -74,6 +74,8 @@ GQuark nm_setting_ip4_config_error_quark (void);
 
 typedef struct NMIP4Address NMIP4Address;
 
+GType nm_ip4_address_get_type (void);
+
 NMIP4Address * nm_ip4_address_new         (void);
 NMIP4Address * nm_ip4_address_dup         (NMIP4Address *source);
 void           nm_ip4_address_ref         (NMIP4Address *address);
@@ -94,6 +96,8 @@ void           nm_ip4_address_set_gateway (NMIP4Address *address,
                                            guint32 gateway);  /* network byte order */
 
 typedef struct NMIP4Route NMIP4Route;
+
+GType nm_ip4_route_get_type (void);
 
 NMIP4Route * nm_ip4_route_new          (void);
 NMIP4Route * nm_ip4_route_dup          (NMIP4Route *route);

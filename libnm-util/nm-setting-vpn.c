@@ -18,16 +18,19 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
 #include <string.h>
+#include <errno.h>
+#include <stdlib.h>
 #include <dbus/dbus-glib.h>
 #include "nm-setting-vpn.h"
 #include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-setting-private.h"
 
 GQuark
 nm_setting_vpn_error_quark (void)
@@ -158,9 +161,17 @@ nm_setting_vpn_remove_data_item (NMSettingVPN *setting, const char *key)
 	g_hash_table_remove (NM_SETTING_VPN_GET_PRIVATE (setting)->data, key);
 }
 
+/**
+ * nm_setting_vpn_foreach_data_item:
+ * @setting: a #NMSettingVPN
+ * @func: (scope call): an user provided function
+ * @user_data:
+ *
+ * Iterates all data items stored in this setting
+ */
 void
 nm_setting_vpn_foreach_data_item (NMSettingVPN *setting,
-                                  VPNIterFunc func,
+                                  NMVPNIterFunc func,
                                   gpointer user_data)
 {
 	g_return_if_fail (NM_IS_SETTING_VPN (setting));
@@ -200,9 +211,17 @@ nm_setting_vpn_remove_secret (NMSettingVPN *setting, const char *key)
 	g_hash_table_remove (NM_SETTING_VPN_GET_PRIVATE (setting)->secrets, key);
 }
 
+/**
+ * nm_setting_vpn_foreach_secret:
+ * @setting: a #NMSettingVPN
+ * @func: (scope call): an user provided function
+ * @user_data:
+ *
+ * Iterates all secrets stored in this setting.
+ */
 void
 nm_setting_vpn_foreach_secret (NMSettingVPN *setting,
-                               VPNIterFunc func,
+                               NMVPNIterFunc func,
                                gpointer user_data)
 {
 	g_return_if_fail (NM_IS_SETTING_VPN (setting));
@@ -245,32 +264,156 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 }
 
 static gboolean
-update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **error)
+update_secret_string (NMSetting *setting,
+                      const char *key,
+                      const char *value,
+                      GError **error)
 {
 	NMSettingVPNPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
-	char *str;
 
 	g_return_val_if_fail (key != NULL, FALSE);
 	g_return_val_if_fail (value != NULL, FALSE);
 
-	if (!G_VALUE_HOLDS_STRING (value)) {
-		g_set_error (error, NM_SETTING_ERROR,
-		             NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
-		             "%s", key);
-		return FALSE;
-	}
-
-	str = g_value_dup_string (value);
-	if (!str || !strlen (str)) {
+	if (!value || !strlen (value)) {
 		g_set_error (error, NM_SETTING_ERROR,
 		             NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
 		             "Secret %s was empty", key);
-		g_free (str);
 		return FALSE;
 	}
 
-	g_hash_table_insert (priv->secrets, g_strdup (key), str);
+	g_hash_table_insert (priv->secrets, g_strdup (key), g_strdup (value));
 	return TRUE;
+}
+
+static gboolean
+update_secret_hash (NMSetting *setting,
+                    GHashTable *secrets,
+                    GError **error)
+{
+	NMSettingVPNPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
+	GHashTableIter iter;
+	const char *name, *value;
+
+	g_return_val_if_fail (secrets != NULL, FALSE);
+
+	/* Make sure the items are valid */
+	g_hash_table_iter_init (&iter, secrets);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &name, (gpointer *) &value)) {
+		if (!name || !strlen (name)) {
+			g_set_error_literal (error, NM_SETTING_ERROR,
+			                     NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
+			                     "Secret name was empty");
+			return FALSE;
+		}
+
+		if (!value || !strlen (value)) {
+			g_set_error (error, NM_SETTING_ERROR,
+			             NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
+				         "Secret %s value was empty", name);
+			return FALSE;
+		}
+	}
+
+	/* Now add the items to the settings' secrets list */
+	g_hash_table_iter_init (&iter, secrets);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &name, (gpointer *) &value)) {
+		if (value == NULL) {
+			g_warn_if_fail (value != NULL);
+			continue;
+		}
+		if (strlen (value) == 0) {
+			g_warn_if_fail (strlen (value) > 0);
+			continue;
+		}
+
+		g_hash_table_insert (priv->secrets, g_strdup (name), g_strdup (value));
+	}
+
+	return TRUE;
+}
+
+static gboolean
+update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **error)
+{
+	gboolean success = FALSE;
+
+	g_return_val_if_fail (key != NULL, FALSE);
+	g_return_val_if_fail (value != NULL, FALSE);
+
+	if (G_VALUE_HOLDS_STRING (value)) {
+		/* Passing the string properties individually isn't correct, and won't
+		 * produce the correct result, but for some reason that's how it used
+		 * to be done.  So even though it's not correct, keep the code around
+		 * for compatibility's sake.
+		 */
+		success = update_secret_string (setting, key, g_value_get_string (value), error);
+	} else if (G_VALUE_HOLDS (value, DBUS_TYPE_G_MAP_OF_STRING)) {
+		if (strcmp (key, NM_SETTING_VPN_SECRETS) != 0) {
+			g_set_error (error, NM_SETTING_ERROR, NM_SETTING_ERROR_PROPERTY_NOT_SECRET,
+			             "Property %s not a secret property", key);
+		} else
+			success = update_secret_hash (setting, g_value_get_boxed (value), error);
+	} else
+		g_set_error_literal (error, NM_SETTING_ERROR, NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH, key);
+
+	return success;
+}
+
+static gboolean
+get_secret_flags (NMSetting *setting,
+                  const char *secret_name,
+                  gboolean verify_secret,
+                  NMSettingSecretFlags *out_flags,
+                  GError **error)
+{
+	NMSettingVPNPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
+	gboolean success = FALSE;
+	char *flags_key;
+	gpointer val;
+	unsigned long tmp;
+
+	flags_key = g_strdup_printf ("%s-flags", secret_name);
+	if (g_hash_table_lookup_extended (priv->data, flags_key, NULL, &val)) {
+		errno = 0;
+		tmp = strtoul ((const char *) val, NULL, 10);
+		if ((errno == 0) && (tmp <= NM_SETTING_SECRET_FLAGS_ALL)) {
+			*out_flags = (guint32) tmp;
+			success = TRUE;
+		} else {
+			g_set_error (error,
+			             NM_SETTING_ERROR,
+			             NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
+			             "Failed to convert '%s' value '%s' to uint",
+			             flags_key, (const char *) val);
+		}
+	} else {
+		g_set_error (error,
+		             NM_SETTING_ERROR,
+		             NM_SETTING_ERROR_PROPERTY_NOT_FOUND,
+		             "Secret flags property '%s' not found", flags_key);
+	}
+	g_free (flags_key);
+	return success;
+}
+
+static gboolean
+set_secret_flags (NMSetting *setting,
+                  const char *secret_name,
+                  gboolean verify_secret,
+                  NMSettingSecretFlags flags,
+                  GError **error)
+{
+	g_hash_table_insert (NM_SETTING_VPN_GET_PRIVATE (setting)->data,
+	                     g_strdup_printf ("%s-flags", secret_name),
+	                     g_strdup_printf ("%u", flags));
+	return TRUE;
+}
+
+static GPtrArray *
+need_secrets (NMSetting *setting)
+{
+	/* Assume that VPN connections need secrets since they almost always will */
+	return g_ptr_array_sized_new (1);
 }
 
 static void
@@ -309,6 +452,8 @@ finalize (GObject *object)
 static void
 copy_hash (gpointer key, gpointer value, gpointer user_data)
 {
+	g_return_if_fail (value != NULL);
+	g_return_if_fail (strlen (value));
 	g_hash_table_insert ((GHashTable *) user_data, g_strdup (key), g_strdup (value));
 }
 
@@ -386,8 +531,12 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-	parent_class->verify       = verify;
+
+	parent_class->verify            = verify;
 	parent_class->update_one_secret = update_one_secret;
+	parent_class->get_secret_flags  = get_secret_flags;
+	parent_class->set_secret_flags  = set_secret_flags;
+	parent_class->need_secrets      = need_secrets;
 
 	/* Properties */
 	/**
@@ -395,7 +544,7 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 	 *
 	 * D-Bus service name of the VPN plugin that this setting uses to connect
 	 * to its network.  i.e. org.freedesktop.NetworkManager.vpnc for the vpnc
- 	 * plugin.
+	 * plugin.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SERVICE_TYPE,

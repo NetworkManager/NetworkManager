@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2009 Red Hat, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
 #ifndef __NM_REMOTE_CONNECTION_H__
@@ -38,12 +38,21 @@ G_BEGIN_DECLS
 #define NM_IS_REMOTE_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_REMOTE_CONNECTION))
 #define NM_REMOTE_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_REMOTE_CONNECTION, NMRemoteConnectionClass))
 
+#define NM_REMOTE_CONNECTION_UPDATED         "updated"
+#define NM_REMOTE_CONNECTION_REMOVED         "removed"
+
 typedef struct {
 	NMConnection parent;
 } NMRemoteConnection;
 
 typedef struct {
 	NMConnectionClass parent_class;
+
+	/* Signals */
+	void (*updated) (NMRemoteConnection *connection,
+	                 GHashTable *new_settings);
+
+	void (*removed) (NMRemoteConnection *connection);
 
 	/* Padding for future expansion */
 	void (*_reserved1) (void);
@@ -54,11 +63,36 @@ typedef struct {
 	void (*_reserved6) (void);
 } NMRemoteConnectionClass;
 
+typedef void (*NMRemoteConnectionCommitFunc) (NMRemoteConnection *connection,
+                                              GError *error,
+                                              gpointer user_data);
+
+typedef void (*NMRemoteConnectionDeleteFunc) (NMRemoteConnection *connection,
+                                              GError *error,
+                                              gpointer user_data);
+
+typedef void (*NMRemoteConnectionGetSecretsFunc) (NMRemoteConnection *connection,
+                                                  GHashTable *secrets,
+                                                  GError *error,
+                                                  gpointer user_data);
+
 GType nm_remote_connection_get_type (void);
 
 NMRemoteConnection *nm_remote_connection_new (DBusGConnection *bus,
-                                              NMConnectionScope scope,
                                               const char *path);
+
+void nm_remote_connection_commit_changes (NMRemoteConnection *connection,
+                                          NMRemoteConnectionCommitFunc callback,
+                                          gpointer user_data);
+
+void nm_remote_connection_delete (NMRemoteConnection *connection,
+                                  NMRemoteConnectionDeleteFunc callback,
+                                  gpointer user_data);
+
+void nm_remote_connection_get_secrets (NMRemoteConnection *connection,
+                                       const char *setting_name,
+                                       NMRemoteConnectionGetSecretsFunc callback,
+                                       gpointer user_data);
 G_END_DECLS
 
 #endif  /* __NM_REMOTE_CONNECTION__ */

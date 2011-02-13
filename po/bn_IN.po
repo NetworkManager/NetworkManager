@@ -1597,7 +1597,7 @@ msgstr ""
 msgid "The nameservers listed below may not be recognized."
 msgstr "নিম্নলিখিত নেম-সার্ভারগুলি সনাক্ত না হওয়ার সম্ভাবনা রয়েছে।"
 
-#: ../src/system-settings/nm-default-wired-connection.c:157
+#: ../src/settings/nm-default-wired-connection.c:157
 #, c-format
 msgid "Auto %s"
 msgstr "স্বয়ংক্রিয় %s"

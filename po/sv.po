@@ -1858,7 +1858,7 @@ msgstr "OBSERVERA: uppslag via glibc kanske inte har stöd för fler än 3 namns
 msgid "The nameservers listed below may not be recognized."
 msgstr "Namnservrarna listade nedan kanske inte kommer att kännas igen."
 
-#: ../src/system-settings/nm-default-wired-connection.c:157
+#: ../src/settings/nm-default-wired-connection.c:157
 #, c-format
 msgid "Auto %s"
 msgstr "Automatisk %s"

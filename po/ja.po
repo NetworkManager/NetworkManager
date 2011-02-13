@@ -1598,7 +1598,7 @@ msgstr "注記: libc リゾルバは ３つ以上のネームサーバーをサ�
 msgid "The nameservers listed below may not be recognized."
 msgstr "以下の一覧にあるネームサーバーは認識されないかも知れません。"
 
-#: ../src/system-settings/nm-default-wired-connection.c:157
+#: ../src/settings/nm-default-wired-connection.c:157
 #, c-format
 msgid "Auto %s"
 msgstr "自動 %s"

@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2010 Red Hat, Inc.
+ * Copyright (C) 2005 - 2011 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -84,13 +84,14 @@ typedef struct {
 	                                             GSList *connections,
 	                                             char **specific_object);
 
-	void        (* connection_secrets_updated) (NMDevice *self,
-	                                            NMConnection *connection,
-	                                            GSList *updated_settings,
-	                                            RequestSecretsCaller caller);
-
 	gboolean    (* check_connection_compatible) (NMDevice *self,
 	                                             NMConnection *connection,
+	                                             GError **error);
+
+	gboolean    (* complete_connection)         (NMDevice *self,
+	                                             NMConnection *connection,
+	                                             const char *specific_object,
+	                                             const GSList *existing_connections,
 	                                             GError **error);
 
 	NMActStageReturn	(* act_stage1_prepare)	(NMDevice *self,
@@ -161,6 +162,12 @@ gboolean		nm_device_is_available (NMDevice *dev);
 NMConnection * nm_device_get_best_auto_connection (NMDevice *dev,
                                                    GSList *connections,
                                                    char **specific_object);
+
+gboolean nm_device_complete_connection (NMDevice *device,
+                                        NMConnection *connection,
+                                        const char *specific_object,
+                                        const GSList *existing_connection,
+                                        GError **error);
 
 void			nm_device_activate_schedule_stage1_device_prepare		(NMDevice *device);
 void			nm_device_activate_schedule_stage2_device_config		(NMDevice *device);

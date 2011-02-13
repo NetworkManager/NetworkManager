@@ -26,13 +26,13 @@
 #include <NetworkManager.h>
 #include <nm-utils.h>
 #include <nm-setting-wireless-security.h>
-#include <nm-sysconfig-connection.h>
+#include <nm-settings-connection.h>
 #include <nm-system-config-interface.h>
-#include <nm-system-config-error.h>
+#include <nm-settings-error.h>
 #include "nm-ifupdown-connection.h"
 #include "parser.h"
 
-G_DEFINE_TYPE (NMIfupdownConnection, nm_ifupdown_connection, NM_TYPE_SYSCONFIG_CONNECTION)
+G_DEFINE_TYPE (NMIfupdownConnection, nm_ifupdown_connection, NM_TYPE_SETTINGS_CONNECTION)
 
 #define NM_IFUPDOWN_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IFUPDOWN_CONNECTION, NMIfupdownConnectionPrivate))
 
@@ -57,31 +57,12 @@ nm_ifupdown_connection_new (if_block *block)
 										 NULL);
 }
 
-static void
-get_secrets (NMExportedConnection *exported,
-             const gchar *setting_name,
-             const gchar **hints,
-             gboolean request_new,
-             DBusGMethodInvocation *context)
+static gboolean
+supports_secrets (NMSettingsConnection *connection, const char *setting_name)
 {
-	GError *error = NULL;
+	PLUGIN_PRINT ("SCPlugin-Ifupdown", "supports_secrets() for setting_name: '%s'", setting_name);
 
-	PLUGIN_PRINT ("SCPlugin-Ifupdown", "get_secrets() for setting_name:'%s'", setting_name);
-
-	/* FIXME: Only wifi secrets are supported for now */
-	if (strcmp (setting_name, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME)) {
-		g_set_error (&error,
-		             NM_SYSCONFIG_SETTINGS_ERROR,
-		             NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
-		             "%s.%d - security setting name not supported '%s'.",
-		             __FILE__, __LINE__, setting_name);
-		PLUGIN_PRINT ("SCPlugin-Ifupdown", "%s", error->message);
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-		return;
-	}
-
-	NM_EXPORTED_CONNECTION_CLASS (nm_ifupdown_connection_parent_class)->get_secrets (exported, setting_name, hints, request_new, context);
+	return (strcmp (setting_name, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0);
 }
 
 static void
@@ -165,7 +146,7 @@ static void
 nm_ifupdown_connection_class_init (NMIfupdownConnectionClass *ifupdown_connection_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (ifupdown_connection_class);
-	NMExportedConnectionClass *connection_class = NM_EXPORTED_CONNECTION_CLASS (ifupdown_connection_class);
+	NMSettingsConnectionClass *connection_class = NM_SETTINGS_CONNECTION_CLASS (ifupdown_connection_class);
 
 	g_type_class_add_private (ifupdown_connection_class, sizeof (NMIfupdownConnectionPrivate));
 
@@ -174,7 +155,7 @@ nm_ifupdown_connection_class_init (NMIfupdownConnectionClass *ifupdown_connectio
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 
-	connection_class->get_secrets = get_secrets;
+	connection_class->supports_secrets = supports_secrets;
 
 	/* Properties */
 	g_object_class_install_property

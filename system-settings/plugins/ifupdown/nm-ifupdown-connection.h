@@ -24,7 +24,7 @@
 #ifndef NM_IFUPDOWN_CONNECTION_H
 #define NM_IFUPDOWN_CONNECTION_H
 
-#include <nm-sysconfig-connection.h>
+#include <nm-settings-connection.h>
 #include "interface_parser.h"
 
 G_BEGIN_DECLS
@@ -39,11 +39,11 @@ G_BEGIN_DECLS
 #define NM_IFUPDOWN_CONNECTION_IFBLOCK "ifblock"
 
 typedef struct {
-	NMSysconfigConnection parent;
+	NMSettingsConnection parent;
 } NMIfupdownConnection;
 
 typedef struct {
-	NMSysconfigConnectionClass parent;
+	NMSettingsConnectionClass parent;
 } NMIfupdownConnectionClass;
 
 GType nm_ifupdown_connection_get_type (void);

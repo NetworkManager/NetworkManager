@@ -18,13 +18,14 @@ EXTRA_DIST = \
 	nm-manager.xml \
 	nm-manager-client.xml \
 	nm-settings.xml \
-	nm-settings-system.xml \
-	nm-exported-connection.xml \
+	nm-settings-connection.xml \
 	nm-vpn-plugin.xml \
 	nm-vpn-connection.xml \
 	nm-ppp-manager.xml \
 	nm-active-connection.xml \
 	nm-dhcp4-config.xml \
 	nm-dhcp6-config.xml \
-	nm-wimax-nsp.xml
+	nm-agent-manager.xml \
+	nm-wimax-nsp.xml \
+	nm-secret-agent.xml
 

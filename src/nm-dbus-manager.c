@@ -105,7 +105,7 @@ nm_dbus_manager_class_init (NMDBusManagerClass *klass)
 	object_class->dispose = nm_dbus_manager_dispose;
 
 	signals[DBUS_CONNECTION_CHANGED] =
-		g_signal_new ("dbus-connection-changed",
+		g_signal_new (NM_DBUS_MANAGER_DBUS_CONNECTION_CHANGED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMDBusManagerClass, dbus_connection_changed),
@@ -113,7 +113,7 @@ nm_dbus_manager_class_init (NMDBusManagerClass *klass)
 		              G_TYPE_NONE, 1, G_TYPE_POINTER);
 
 	signals[NAME_OWNER_CHANGED] =
-		g_signal_new ("name-owner-changed",
+		g_signal_new (NM_DBUS_MANAGER_NAME_OWNER_CHANGED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMDBusManagerClass, name_owner_changed),
@@ -336,24 +336,6 @@ nm_dbus_manager_start_service (NMDBusManager *self)
 
 	if (result != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
 		nm_log_err (LOGD_CORE, "Could not acquire the NetworkManager service as it is already taken.");
-		return FALSE;
-	}
-
-	if (!dbus_g_proxy_call (priv->proxy, "RequestName", &err,
-							G_TYPE_STRING, NM_DBUS_SERVICE_SYSTEM_SETTINGS,
-							G_TYPE_UINT, DBUS_NAME_FLAG_DO_NOT_QUEUE,
-							G_TYPE_INVALID,
-							G_TYPE_UINT, &result,
-							G_TYPE_INVALID)) {
-		nm_log_warn (LOGD_CORE, "Could not acquire the NetworkManagerSystemSettings service.\n"
-		             "  Message: '%s'", err->message);
-		g_error_free (err);
-		return FALSE;
-	}
-
-	if (result != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
-		nm_log_warn (LOGD_CORE, "Could not acquire the NetworkManagerSystemSettings service "
-		             "as it is already taken.");
 		return FALSE;
 	}
 

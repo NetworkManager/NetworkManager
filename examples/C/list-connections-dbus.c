@@ -13,7 +13,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 Red Hat, Inc.
+ * (C) Copyright 2011 Red Hat, Inc.
  */
 
 /*
@@ -69,7 +69,7 @@ int main (int argc, char *argv[])
 
 	/* Create a D-Bus proxy; NM_DBUS_* defined in NetworkManager.h */
 	proxy = dbus_g_proxy_new_for_name (bus,
-	                                   NM_DBUS_SERVICE_SYSTEM_SETTINGS,
+	                                   NM_DBUS_SERVICE,
 	                                   NM_DBUS_PATH_SETTINGS,
 	                                   NM_DBUS_IFACE_SETTINGS);
 

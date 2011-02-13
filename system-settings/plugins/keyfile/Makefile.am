@@ -1,14 +1,15 @@
 SUBDIRS=. tests
 
 INCLUDES = \
-	-I$(top_srcdir)/src/system-settings \
+	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/include \
-	-I$(top_srcdir)/libnm-util \
-	-I$(top_srcdir)/libnm-glib
+	-I$(top_srcdir)/libnm-util
 
-pkglib_LTLIBRARIES = libnm-settings-plugin-keyfile.la
+noinst_LTLIBRARIES = \
+	libkeyfile-io.la \
+	libnm-settings-plugin-keyfile.la
 
-noinst_LTLIBRARIES = libkeyfile-io.la
+##### I/O library for testcases #####
 
 libkeyfile_io_la_SOURCES = \
 	reader.c \
@@ -28,6 +29,8 @@ libkeyfile_io_la_CPPFLAGS = \
 
 libkeyfile_io_la_LIBADD = $(GLIB_LIBS)
 
+#####################################
+
 libnm_settings_plugin_keyfile_la_SOURCES = \
 	nm-keyfile-connection.c \
 	nm-keyfile-connection.h \
@@ -41,15 +44,15 @@ libnm_settings_plugin_keyfile_la_CPPFLAGS = \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DG_DISABLE_DEPRECATED
 
-libnm_settings_plugin_keyfile_la_LDFLAGS = -module -avoid-version
 libnm_settings_plugin_keyfile_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/libnm-glib/libnm-glib.la \
 	libkeyfile-io.la \
 	$(GLIB_LIBS) \
 	$(GMODULE_LIBS) \
 	$(DBUS_LIBS) \
 	$(GIO_LIBS)
+
+libnm_settings_plugin_keyfile_la_LDFLAGS = -rdynamic
 
 keyfiledir=$(sysconfdir)/NetworkManager/system-connections
 

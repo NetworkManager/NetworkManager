@@ -252,7 +252,7 @@ nm_device_wifi_get_capabilities (NMDeviceWifi *device)
  *
  * Gets the active #NMAccessPoint.
  *
- * Returns: the access point or %NULL if none is active
+ * Returns: (transfer none): the access point or %NULL if none is active
  **/
 NMAccessPoint *
 nm_device_wifi_get_active_access_point (NMDeviceWifi *device)
@@ -302,7 +302,8 @@ nm_device_wifi_get_active_access_point (NMDeviceWifi *device)
  *
  * Gets all the scanned access points of the #NMDeviceWifi.
  *
- * Returns: a #GPtrArray containing all the scanned #NMAccessPoint<!-- -->s.
+ * Returns: (element-type NMClient.AccessPoint): a #GPtrArray containing all the
+ * scanned #NMAccessPoint<!-- -->s.
  * The returned array is owned by the client and should not be modified.
  **/
 const GPtrArray *
@@ -342,7 +343,7 @@ nm_device_wifi_get_access_points (NMDeviceWifi *device)
  *
  * Gets a #NMAccessPoint by path.
  *
- * Returns: the access point or %NULL if none is found.
+ * Returns: (transfer none): the access point or %NULL if none is found.
  **/
 NMAccessPoint *
 nm_device_wifi_get_access_point_by_path (NMDeviceWifi *device,

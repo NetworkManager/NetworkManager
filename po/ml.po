@@ -1594,7 +1594,7 @@ msgstr "കുറിപ്പു്: libc റിസോള്‍വര്‍ 3 �
 msgid "The nameservers listed below may not be recognized."
 msgstr "താഴെ പറഞ്ഞിരിക്കുന്ന നെയിംസര്‍വറുകള്‍ തിരിച്ചറിയപ്പെടുന്നവയല്ല."
 
-#: ../src/system-settings/nm-default-wired-connection.c:157
+#: ../src/settings/nm-default-wired-connection.c:157
 #, c-format
 msgid "Auto %s"
 msgstr "ഓട്ടോ %s"

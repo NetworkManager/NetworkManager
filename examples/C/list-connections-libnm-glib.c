@@ -13,7 +13,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 Red Hat, Inc.
+ * (C) Copyright 2011 Red Hat, Inc.
  */
 
 /*
@@ -36,8 +36,6 @@
 #include <NetworkManager.h>
 #include <nm-utils.h>
 #include <nm-remote-settings.h>
-#include <nm-remote-settings-system.h>
-#include <nm-settings-interface.h>
 
 
 /* Global variables */
@@ -101,17 +99,17 @@ show_connection (NMConnection *data, gpointer user_data)
  * Now the connections can be listed.
  */
 static void
-get_connections_cb (NMSettingsInterface *settings, gpointer user_data)
+get_connections_cb (NMRemoteSettings *settings, gpointer user_data)
 {
-	GSList *system_connections;
+	GSList *connections;
 
-	system_connections = nm_settings_interface_list_connections (settings);
+	connections = nm_remote_settings_list_connections (settings);
 
-	printf ("System connections:\n===================\n");
+	printf ("Connections:\n===================\n");
 
-	g_slist_foreach (system_connections, (GFunc) show_connection, NULL);
+	g_slist_foreach (connections, (GFunc) show_connection, NULL);
 
-	g_slist_free (system_connections);
+	g_slist_free (connections);
 	g_object_unref (settings);
 
 	/* We are done, exit main loop */
@@ -123,11 +121,11 @@ static gboolean
 list_connections (gpointer data)
 {
 	DBusGConnection *bus = (DBusGConnection *) data;
-	NMRemoteSettingsSystem *system_settings;
-	gboolean system_settings_running;
+	NMRemoteSettings *settings;
+	gboolean settings_running;
 
 	/* Get system settings */
-	if (!(system_settings = nm_remote_settings_system_new (bus))) {
+	if (!(settings = nm_remote_settings_new (bus))) {
 		g_message ("Error: Could not get system settings.");
 		result = EXIT_FAILURE;
 		g_main_loop_quit (loop);
@@ -135,9 +133,9 @@ list_connections (gpointer data)
 	}
 
 	/* Find out whether setting service is running */
-	g_object_get (system_settings, NM_REMOTE_SETTINGS_SERVICE_RUNNING, &system_settings_running, NULL);
+	g_object_get (settings, NM_REMOTE_SETTINGS_SERVICE_RUNNING, &settings_running, NULL);
 
-	if (!system_settings_running) {
+	if (!settings_running) {
 		g_message ("Error: Can't obtain connections: settings service is not running.");
 		result = EXIT_FAILURE;
 		g_main_loop_quit (loop);
@@ -145,7 +143,7 @@ list_connections (gpointer data)
 	}
 
 	/* Connect to signal "connections-read" - emitted when connections are fetched and ready */
-	g_signal_connect (system_settings, NM_SETTINGS_INTERFACE_CONNECTIONS_READ,
+	g_signal_connect (settings, NM_REMOTE_SETTINGS_CONNECTIONS_READ,
 	                  G_CALLBACK (get_connections_cb), NULL);
 
 	return FALSE;

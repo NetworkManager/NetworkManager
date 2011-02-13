@@ -1680,7 +1680,7 @@ msgstr "NOTE: libc रिजॉलव्हर 3 पेक्षा जास्
 msgid "The nameservers listed below may not be recognized."
 msgstr "खालिल यादीतील नेमसर्व्हर्स् अनोळखी राहतील."
 
-#: ../src/system-settings/nm-default-wired-connection.c:157
+#: ../src/settings/nm-default-wired-connection.c:157
 #, c-format
 msgid "Auto %s"
 msgstr "स्वयं %s"

@@ -24,7 +24,6 @@
 
 #include <nm-client.h>
 #include <nm-remote-settings.h>
-#include <nm-remote-settings-system.h>
 
 /* nmcli exit codes */
 typedef enum {
@@ -95,14 +94,9 @@ typedef struct _NmCli {
 
 	int timeout;                                      /* Operation timeout */
 
-	NMRemoteSettingsSystem *system_settings;          /* System settings */
-	NMRemoteSettings *user_settings;                  /* User settings */
-
+	NMRemoteSettings *system_settings;                /* System settings */
 	gboolean system_settings_running;                 /* Is system settings service running? */
-	gboolean user_settings_running;                   /* Is user settings service running? */
-
 	GSList *system_connections;                       /* List of system connections */
-	GSList *user_connections;                         /* List of user connections */
 
 	gboolean should_wait;                             /* Indication that nmcli should not end yet */
 	gboolean nowait_flag;                             /* '--nowait' option; used for passing to callbacks */

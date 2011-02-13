@@ -19,13 +19,14 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
 #include <string.h>
 
 #include "nm-setting.h"
+#include "nm-setting-private.h"
 #include "nm-setting-connection.h"
 #include "nm-utils.h"
 
@@ -107,21 +108,23 @@ destroy_gvalue (gpointer data)
 /**
  * nm_setting_to_hash:
  * @setting: the #NMSetting
+ * @flags: hash flags, e.g. %NM_SETTING_HASH_FLAG_ALL
  *
  * Converts the #NMSetting into a #GHashTable mapping each setting property
  * name to a GValue describing that property, suitable for marshalling over
  * D-Bus or serializing.  The mapping is string:GValue.
  * 
- * Returns: a new #GHashTable describing the setting's properties
+ * Returns: (transfer full) (element-type utf8 GObject.Value): a new #GHashTable describing the setting's properties
  **/
 GHashTable *
-nm_setting_to_hash (NMSetting *setting)
+nm_setting_to_hash (NMSetting *setting, NMSettingHashFlags flags)
 {
 	GHashTable *hash;
 	GParamSpec **property_specs;
 	guint n_property_specs;
 	guint i;
 
+	g_return_val_if_fail (setting != NULL, NULL);
 	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
 
 	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (setting), &n_property_specs);
@@ -132,28 +135,40 @@ nm_setting_to_hash (NMSetting *setting)
 	}
 
 	hash = g_hash_table_new_full (g_str_hash, g_str_equal,
-							(GDestroyNotify) g_free,
-							destroy_gvalue);
+	                              (GDestroyNotify) g_free, destroy_gvalue);
 
 	for (i = 0; i < n_property_specs; i++) {
 		GParamSpec *prop_spec = property_specs[i];
+		GValue *value;
 
-		if (prop_spec->flags & NM_SETTING_PARAM_SERIALIZE) {
-			GValue *value;
+		if (!(prop_spec->flags & NM_SETTING_PARAM_SERIALIZE))
+			continue;
 
-			value = g_slice_new0 (GValue);
-			g_value_init (value, prop_spec->value_type);
-			g_object_get_property (G_OBJECT (setting), prop_spec->name, value);
+		if (   (flags & NM_SETTING_HASH_FLAG_NO_SECRETS)
+		    && (prop_spec->flags & NM_SETTING_PARAM_SECRET))
+			continue;
 
-			/* Don't serialize values with default values */
-			if (!g_param_value_defaults (prop_spec, value))
-				g_hash_table_insert (hash, g_strdup (prop_spec->name), value);
-			else
-				destroy_gvalue (value);
-		}
+		if (   (flags & NM_SETTING_HASH_FLAG_ONLY_SECRETS)
+		    && !(prop_spec->flags & NM_SETTING_PARAM_SECRET))
+			continue;
+
+		value = g_slice_new0 (GValue);
+		g_value_init (value, prop_spec->value_type);
+		g_object_get_property (G_OBJECT (setting), prop_spec->name, value);
+
+		/* Don't serialize values with default values */
+		if (!g_param_value_defaults (prop_spec, value))
+			g_hash_table_insert (hash, g_strdup (prop_spec->name), value);
+		else
+			destroy_gvalue (value);
 	}
-
 	g_free (property_specs);
+
+	/* Don't return empty hashes */
+	if (g_hash_table_size (hash) < 1) {
+		g_hash_table_destroy (hash);
+		hash = NULL;
+	}
 
 	return hash;
 }
@@ -254,7 +269,7 @@ duplicate_setting (NMSetting *setting,
  *
  * Duplicates a #NMSetting.
  *
- * Returns: a new #NMSetting containing the same properties and values as the
+ * Returns: (transfer full): a new #NMSetting containing the same properties and values as the
  * source #NMSetting
  **/
 NMSetting *
@@ -390,7 +405,7 @@ nm_setting_compare (NMSetting *a,
 /**
  * nm_setting_enumerate_values:
  * @setting: the #NMSetting
- * @func: user-supplied function called for each property of the setting
+ * @func: (scope call): user-supplied function called for each property of the setting
  * @user_data: user data passed to @func at each invocation
  *
  * Iterates over each property of the #NMSetting object, calling the supplied
@@ -465,7 +480,7 @@ nm_setting_clear_secrets (NMSetting *setting)
  * guide to what secrets may be required, because in some circumstances, there
  * is no way to conclusively determine exactly which secrets are needed.
  *
- * Returns: a #GPtrArray containing the property names of secrets of the
+ * Returns: (transfer full) (element-type utf8): a #GPtrArray containing the property names of secrets of the
  * #NMSetting which may be required; the caller owns the array
  * and must free the each array element with g_free(), as well as the array
  * itself with g_ptr_array_free()
@@ -483,11 +498,6 @@ nm_setting_need_secrets (NMSetting *setting)
 	return secrets;
 }
 
-typedef struct {
-	NMSetting *setting;
-	GError **error;
-} UpdateSecretsInfo;
-
 static gboolean
 update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **error)
 {
@@ -504,13 +514,9 @@ update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **
 		return FALSE;
 	}
 
-	if (!(prop_spec->flags & NM_SETTING_PARAM_SECRET)) {
-		g_set_error (error,
-		             NM_SETTING_ERROR,
-		             NM_SETTING_ERROR_PROPERTY_NOT_SECRET,
-		             "%s", key);
-		return FALSE;
-	}
+	/* Silently ignore non-secrets */
+	if (!(prop_spec->flags & NM_SETTING_PARAM_SECRET))
+		return TRUE;
 
 	if (g_value_type_compatible (G_VALUE_TYPE (value), G_PARAM_SPEC_VALUE_TYPE (prop_spec))) {
 		g_object_set_property (G_OBJECT (setting), prop_spec->name, value);
@@ -526,17 +532,6 @@ update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **
 		             "%s", key);
 	}
 	return success;
-}
-
-static void
-update_one_cb (gpointer key, gpointer val, gpointer user_data)
-{
-	UpdateSecretsInfo *info = user_data;
-	const char *secret_key = (const char *) key;
-	GValue *secret_value = (GValue *) val;
-
-	if (*(info->error) == NULL)
-		NM_SETTING_GET_CLASS (info->setting)->update_one_secret (info->setting, secret_key, secret_value, info->error);
 }
 
 /**
@@ -555,8 +550,9 @@ update_one_cb (gpointer key, gpointer val, gpointer user_data)
 gboolean
 nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets, GError **error)
 {
-	UpdateSecretsInfo *info;
-	gboolean success;
+	GHashTableIter iter;
+	gpointer key, data;
+	GError *tmp_error = NULL;
 
 	g_return_val_if_fail (setting != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
@@ -564,14 +560,137 @@ nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets, GError **err
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
 
-	info = g_malloc0 (sizeof (UpdateSecretsInfo));
-	info->setting = setting;
-	info->error = error;
-	g_hash_table_foreach (secrets, update_one_cb, info);
-	success = *(info->error) ? FALSE : TRUE;
-	g_free (info);
+	g_hash_table_iter_init (&iter, secrets);
+	while (g_hash_table_iter_next (&iter, &key, &data)) {
+		const char *secret_key = (const char *) key;
+		GValue *secret_value = (GValue *) data;
 
-	return success;
+		NM_SETTING_GET_CLASS (setting)->update_one_secret (setting, secret_key, secret_value, &tmp_error);
+		if (tmp_error) {
+			g_propagate_error (error, tmp_error);
+			break;
+		}
+	}
+
+	return tmp_error ? FALSE : TRUE;
+}
+
+static gboolean
+is_secret_prop (NMSetting *setting, const char *secret_name, GError **error)
+{
+	GParamSpec *pspec;
+
+	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), secret_name);
+	if (!pspec) {
+		g_set_error (error,
+		             NM_SETTING_ERROR,
+		             NM_SETTING_ERROR_PROPERTY_NOT_FOUND,
+		             "Secret %s not provided by this setting", secret_name);
+		return FALSE;
+	}
+
+	if (!(pspec->flags & NM_SETTING_PARAM_SECRET)) {
+		g_set_error (error,
+		             NM_SETTING_ERROR,
+		             NM_SETTING_ERROR_PROPERTY_NOT_SECRET,
+		             "Property %s is not a secret", secret_name);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
+get_secret_flags (NMSetting *setting,
+                  const char *secret_name,
+                  gboolean verify_secret,
+                  NMSettingSecretFlags *out_flags,
+                  GError **error)
+{
+	char *flags_prop;
+	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
+
+	if (verify_secret)
+		g_return_val_if_fail (is_secret_prop (setting, secret_name, error), FALSE);
+
+	flags_prop = g_strdup_printf ("%s-flags", secret_name);
+	g_object_get (G_OBJECT (setting), flags_prop, &flags, NULL);
+	g_free (flags_prop);
+
+	if (out_flags)
+		*out_flags = flags;
+	return TRUE;
+}
+
+/**
+ * nm_setting_get_secret_flags:
+ * @setting: the #NMSetting
+ * @secret_name: the secret key name to get flags for
+ * @out_flags: on success, the #NMSettingSecretFlags for the secret
+ * @error: location to store error, or %NULL
+ *
+ * For a given secret, retrieves the #NMSettingSecretFlags describing how to
+ * handle that secret.
+ *
+ * Returns: TRUE on success (if the given secret name was a valid property of
+ * this setting, and if that property is secret), FALSE if not
+ **/
+gboolean
+nm_setting_get_secret_flags (NMSetting *setting,
+                             const char *secret_name,
+                             NMSettingSecretFlags *out_flags,
+                             GError **error)
+{
+	g_return_val_if_fail (setting != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
+	g_return_val_if_fail (secret_name != NULL, FALSE);
+
+	return NM_SETTING_GET_CLASS (setting)->get_secret_flags (setting, secret_name, TRUE, out_flags, error);
+}
+
+static gboolean
+set_secret_flags (NMSetting *setting,
+                  const char *secret_name,
+                  gboolean verify_secret,
+                  NMSettingSecretFlags flags,
+                  GError **error)
+{
+	char *flags_prop;
+
+	if (verify_secret)
+		g_return_val_if_fail (is_secret_prop (setting, secret_name, error), FALSE);
+
+	flags_prop = g_strdup_printf ("%s-flags", secret_name);
+	g_object_set (G_OBJECT (setting), flags_prop, flags, NULL);
+	g_free (flags_prop);
+	return TRUE;
+}
+
+/**
+ * nm_setting_set_secret_flags:
+ * @setting: the #NMSetting
+ * @secret_name: the secret key name to set flags for
+ * @flags: the #NMSettingSecretFlags for the secret
+ * @error: location to store error, or %NULL
+ *
+ * For a given secret, retrieves the #NMSettingSecretFlags describing how to
+ * handle that secret.
+ *
+ * Returns: TRUE on success (if the given secret name was a valid property of
+ * this setting, and if that property is secret), FALSE if not
+ **/
+gboolean
+nm_setting_set_secret_flags (NMSetting *setting,
+                             const char *secret_name,
+                             NMSettingSecretFlags flags,
+                             GError **error)
+{
+	g_return_val_if_fail (setting != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
+	g_return_val_if_fail (secret_name != NULL, FALSE);
+	g_return_val_if_fail (flags <= NM_SETTING_SECRET_FLAGS_ALL, FALSE);
+
+	return NM_SETTING_GET_CLASS (setting)->set_secret_flags (setting, secret_name, TRUE, flags, error);
 }
 
 /**
@@ -730,6 +849,8 @@ nm_setting_class_init (NMSettingClass *setting_class)
 	object_class->finalize     = finalize;
 
 	setting_class->update_one_secret = update_one_secret;
+	setting_class->get_secret_flags = get_secret_flags;
+	setting_class->set_secret_flags = set_secret_flags;
 
 	/* Properties */
 

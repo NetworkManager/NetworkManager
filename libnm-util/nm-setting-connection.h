@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2010 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -74,6 +74,7 @@ GQuark nm_setting_connection_error_quark (void);
 #define NM_SETTING_CONNECTION_AUTOCONNECT "autoconnect"
 #define NM_SETTING_CONNECTION_TIMESTAMP   "timestamp"
 #define NM_SETTING_CONNECTION_READ_ONLY   "read-only"
+#define NM_SETTING_CONNECTION_PERMISSIONS "permissions"
 
 /**
  * NMSettingConnection:
@@ -97,13 +98,27 @@ typedef struct {
 
 GType nm_setting_connection_get_type (void);
 
-NMSetting * nm_setting_connection_new                 (void);
-const char *nm_setting_connection_get_id              (NMSettingConnection *setting);
-const char *nm_setting_connection_get_uuid            (NMSettingConnection *setting);
-const char *nm_setting_connection_get_connection_type (NMSettingConnection *setting);
-gboolean    nm_setting_connection_get_autoconnect     (NMSettingConnection *setting);
-guint64     nm_setting_connection_get_timestamp       (NMSettingConnection *setting);
-gboolean    nm_setting_connection_get_read_only       (NMSettingConnection *setting);
+NMSetting * nm_setting_connection_new                  (void);
+const char *nm_setting_connection_get_id               (NMSettingConnection *setting);
+const char *nm_setting_connection_get_uuid             (NMSettingConnection *setting);
+const char *nm_setting_connection_get_connection_type  (NMSettingConnection *setting);
+gboolean    nm_setting_connection_get_autoconnect      (NMSettingConnection *setting);
+guint64     nm_setting_connection_get_timestamp        (NMSettingConnection *setting);
+gboolean    nm_setting_connection_get_read_only        (NMSettingConnection *setting);
+
+guint32     nm_setting_connection_get_num_permissions  (NMSettingConnection *setting);
+gboolean    nm_setting_connection_get_permission       (NMSettingConnection *setting,
+                                                        guint32 idx,
+                                                        const char **out_ptype,
+                                                        const char **out_pitem,
+                                                        const char **out_detail);
+gboolean    nm_setting_connection_permissions_user_allowed (NMSettingConnection *setting, const char *uname);
+gboolean    nm_setting_connection_add_permission       (NMSettingConnection *setting,
+                                                        const char *ptype,
+                                                        const char *pitem,
+                                                        const char *detail);
+void        nm_setting_connection_remove_permission    (NMSettingConnection *setting,
+                                                        guint32 idx);
 
 G_END_DECLS
 

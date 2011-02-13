@@ -241,6 +241,8 @@ PKG_CHECK_MODULES(GIO, gio-2.0)
 AC_SUBST(GIO_CFLAGS)
 AC_SUBST(GIO_LIBS)
 
+GOBJECT_INTROSPECTION_CHECK([0.9.6])
+
 AC_ARG_WITH(udev-dir, AS_HELP_STRING([--with-udev-dir=DIR], [where the udev base directory is]))
 if test -n "$with_udev_dir" ; then
 	UDEV_BASE_DIR="$with_udev_dir"
@@ -258,6 +260,19 @@ if test "x$with_systemdsystemunitdir" != xno; then
 	AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])
 fi
 AM_CONDITIONAL(HAVE_SYSTEMD, [test -n "$with_systemdsystemunitdir" -a "x$with_systemdsystemunitdir" != xno ])
+
+dnl
+dnl Disable ConsoleKit support
+dnl
+AC_ARG_WITH(ck, AS_HELP_STRING([--without-ck], [Build NetworkManager without ConsoleKit session tracking support]))
+AM_CONDITIONAL(WITH_CONSOLEKIT, test x"$with_ck" != xno)
+no_ck=0
+if test x"$with_ck" = x"no"; then
+	no_ck="1"
+else
+	with_ck="yes"
+fi
+AC_DEFINE_UNQUOTED(NO_CONSOLEKIT, $no_ck, [Define to disable use of ConsoleKit])
 
 PKG_CHECK_MODULES(LIBNL, libnl-1 >= 1.0-pre8)
 AC_SUBST(LIBNL_CFLAGS)
@@ -537,8 +552,8 @@ src/ppp-manager/Makefile
 src/dnsmasq-manager/Makefile
 src/modem-manager/Makefile
 src/bluez-manager/Makefile
+src/settings/Makefile
 src/wimax/Makefile
-src/system-settings/Makefile
 src/backends/Makefile
 libnm-util/libnm-util.pc
 libnm-util/Makefile
@@ -547,6 +562,7 @@ libnm-util/tests/certs/Makefile
 libnm-glib/libnm-glib.pc
 libnm-glib/libnm-glib-vpn.pc
 libnm-glib/Makefile
+libnm-glib/tests/Makefile
 callouts/Makefile
 tools/Makefile
 system-settings/Makefile
@@ -628,6 +644,12 @@ if test -n "${with_systemdsystemunitdir}"; then
 	echo systemd support: ${with_systemdsystemunitdir}
 else
 	echo systemd support: no
+fi
+
+if test -n "${with_ck}"; then
+	echo ConsoleKit support: ${with_ck}
+else
+	echo ConsoleKit support: no
 fi
 
 if test "${enable_wimax}" = "yes"; then

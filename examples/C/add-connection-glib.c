@@ -13,7 +13,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 Red Hat, Inc.
+ * (C) Copyright 2011 Red Hat, Inc.
  */
 
 /*
@@ -74,7 +74,7 @@ add_connection (DBusGProxy *proxy, const char *con_name)
 	              NULL);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	hash = nm_connection_to_hash (connection);
+	hash = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
 
 	/* Call AddConnection with the hash as argument */
 	dbus_g_proxy_call (proxy, "AddConnection", &error,
@@ -99,7 +99,7 @@ int main (int argc, char *argv[])
 
 	/* Create a D-Bus proxy; NM_DBUS_* defined in NetworkManager.h */
 	proxy = dbus_g_proxy_new_for_name (bus,
-	                                   NM_DBUS_SERVICE_SYSTEM_SETTINGS,
+	                                   NM_DBUS_SERVICE,
 	                                   NM_DBUS_PATH_SETTINGS,
 	                                   NM_DBUS_IFACE_SETTINGS);
 
