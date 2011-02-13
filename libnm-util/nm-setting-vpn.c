@@ -442,6 +442,8 @@ finalize (GObject *object)
 static void
 copy_hash (gpointer key, gpointer value, gpointer user_data)
 {
+	g_return_if_fail (value != NULL);
+	g_return_if_fail (strlen (value));
 	g_hash_table_insert ((GHashTable *) user_data, g_strdup (key), g_strdup (value));
 }
 
