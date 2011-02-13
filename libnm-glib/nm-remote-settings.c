@@ -42,6 +42,7 @@ typedef struct {
 	GHashTable *connections;
 	GHashTable *pending;  /* Connections we don't have settings for yet */
 	gboolean service_running;
+	guint32 init_left;
 
 	/* AddConnectionInfo objects that are waiting for the connection to become initialized */
 	GSList *add_list;
@@ -258,6 +259,7 @@ connection_init_result_cb (NMRemoteConnection *remote,
 	AddConnectionInfo *addinfo;
 	const char *path;
 	GError *add_error = NULL;
+	gboolean remove_from_pending = TRUE;
 
 	/* Disconnect from the init-result signal just to be safe */
 	g_signal_handlers_disconnect_matched (remote,
@@ -294,6 +296,9 @@ connection_init_result_cb (NMRemoteConnection *remote,
 		 */
 		g_signal_emit (self, signals[NEW_CONNECTION], 0, remote);
 		break;
+	case NM_REMOTE_CONNECTION_INIT_RESULT_INVISIBLE:
+		remove_from_pending = FALSE;
+		/* fall through */
 	case NM_REMOTE_CONNECTION_INIT_RESULT_ERROR:
 		/* Complete pending AddConnection callbacks */
 		if (addinfo) {
@@ -308,10 +313,12 @@ connection_init_result_cb (NMRemoteConnection *remote,
 		break;
 	}
 
-	g_hash_table_remove (priv->pending, path);
+	if (remove_from_pending)
+		g_hash_table_remove (priv->pending, path);
 
 	/* Let listeners know that all connections have been found */
-	if (!g_hash_table_size (priv->pending))
+	priv->init_left--;
+	if (priv->init_left == 0)
 		g_signal_emit (self, signals[CONNECTIONS_READ], 0);
 }
 
@@ -361,6 +368,7 @@ fetch_connections_done (DBusGProxy *proxy,
                         gpointer user_data)
 {
 	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
+	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
 	int i;
 
 	if (error) {
@@ -383,6 +391,7 @@ fetch_connections_done (DBusGProxy *proxy,
 	if (connections->len == 0)
 		g_signal_emit (self, signals[CONNECTIONS_READ], 0);
 	else {
+		priv->init_left = connections->len;
 		for (i = 0; i < connections->len; i++) {
 			char *path = g_ptr_array_index (connections, i);
 

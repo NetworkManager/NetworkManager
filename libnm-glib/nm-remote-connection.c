@@ -262,7 +262,11 @@ init_get_settings_cb (DBusGProxy *proxy,
 
 	if (error) {
 		/* Connection doesn't exist, or isn't visible to this user */
-		priv->init_result = NM_REMOTE_CONNECTION_INIT_RESULT_ERROR;
+		if (dbus_g_error_has_name (error, "org.freedesktop.NetworkManager.Settings.PermissionDenied"))
+			priv->init_result = NM_REMOTE_CONNECTION_INIT_RESULT_INVISIBLE;
+		else
+			priv->init_result = NM_REMOTE_CONNECTION_INIT_RESULT_ERROR;
+
 		g_object_notify (G_OBJECT (self), NM_REMOTE_CONNECTION_INIT_RESULT);
 	} else {
 		priv->visible = TRUE;
