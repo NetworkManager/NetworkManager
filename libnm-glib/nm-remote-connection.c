@@ -46,6 +46,7 @@ enum {
 enum {
 	UPDATED,
 	REMOVED,
+	VISIBLE,
 
 	LAST_SIGNAL
 };
@@ -65,6 +66,7 @@ typedef struct {
 	GSList *calls;
 
 	NMRemoteConnectionInitResult init_result;
+	gboolean visible;
 	gboolean disposed;
 } NMRemoteConnectionPrivate;
 
@@ -263,6 +265,7 @@ init_get_settings_cb (DBusGProxy *proxy,
 		priv->init_result = NM_REMOTE_CONNECTION_INIT_RESULT_ERROR;
 		g_object_notify (G_OBJECT (self), NM_REMOTE_CONNECTION_INIT_RESULT);
 	} else {
+		priv->visible = TRUE;
 		replace_settings (self, new_settings);
 		g_hash_table_destroy (new_settings);
 		priv->init_result = NM_REMOTE_CONNECTION_INIT_RESULT_SUCCESS;
@@ -277,15 +280,31 @@ updated_get_settings_cb (DBusGProxy *proxy,
                          gpointer user_data)
 {
 	NMRemoteConnection *self = user_data;
+	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
 
 	if (error) {
-		/* The connection no longer exists, or is no longer visible to this
-		 * user; we must remove it.
+		GHashTable *hash;
+
+		/* Connection is no longer visible to this user.  Let the settings
+		 * service handle this via 'visible'.  The settings service will emit
+		 * the "removed" signal for us since it handles the lifetime of this
+		 * object.
 		 */
-		g_signal_emit (self, signals[REMOVED], 0);
+		hash = g_hash_table_new (g_str_hash, g_str_equal);
+		nm_connection_replace_settings (NM_CONNECTION (self), hash, NULL);
+		g_hash_table_destroy (hash);
+
+		priv->visible = FALSE;
+		g_signal_emit (self, signals[VISIBLE], 0, FALSE);
 	} else {
 		replace_settings (self, new_settings);
 		g_hash_table_destroy (new_settings);
+
+		/* Settings service will handle announcing the connection to clients */
+		if (priv->visible == FALSE) {
+			priv->visible = TRUE;
+			g_signal_emit (self, signals[VISIBLE], 0, TRUE);
+		}
 	}
 }
 
@@ -474,4 +493,12 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 	 	              NULL, NULL,
 		              g_cclosure_marshal_VOID__VOID,
 		              G_TYPE_NONE, 0);
+
+	signals[VISIBLE] =
+		g_signal_new ("visible",
+		              G_TYPE_FROM_CLASS (remote_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL,
+		              g_cclosure_marshal_VOID__BOOLEAN,
+		              G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
 }

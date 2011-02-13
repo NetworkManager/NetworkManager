@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2009 - 2010 Red Hat, Inc.
+ * Copyright (C) 2009 - 2011 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -206,6 +206,48 @@ connection_removed_cb (NMRemoteConnection *remote, gpointer user_data)
 }
 
 static void
+connection_visible_cb (NMRemoteConnection *remote,
+                       gboolean visible,
+                       gpointer user_data)
+{
+	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
+	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
+	const char *path;
+
+	path = nm_connection_get_path (NM_CONNECTION (remote));
+	g_assert (path);
+
+	/* When a connection becomes invisible, we put it back in the pending
+	 * hash until it becomes visible again.  When it does, we move it back to
+	 * the normal connections hash.
+	 */
+	if (visible) {
+		/* Connection visible to this user again */
+		if (g_hash_table_lookup (priv->pending, path)) {
+			/* Move connection from pending to visible hash; emit for clients */
+			g_hash_table_insert (priv->connections, g_strdup (path), g_object_ref (remote));
+			g_hash_table_remove (priv->pending, path);
+			g_signal_emit (self, signals[NEW_CONNECTION], 0, remote);
+		}
+	} else {
+		/* Connection now invisible to this user */
+		if (g_hash_table_lookup (priv->connections, path)) {
+			/* Move connection to pending hash and wait for it to become visible again */
+			g_hash_table_insert (priv->pending, g_strdup (path), g_object_ref (remote));
+			g_hash_table_remove (priv->connections, path);
+
+			/* Signal to clients that the connection is gone; but we have to
+			 * block our connection removed handler so we don't destroy
+			 * the connection when the signal is emitted.
+			 */
+			g_signal_handlers_block_by_func (remote, connection_removed_cb, self);
+			g_signal_emit_by_name (remote, NM_REMOTE_CONNECTION_REMOVED);
+			g_signal_handlers_unblock_by_func (remote, connection_removed_cb, self);
+		}
+	}
+}
+
+static void
 connection_init_result_cb (NMRemoteConnection *remote,
                            GParamSpec *pspec,
                            gpointer user_data)
@@ -293,6 +335,10 @@ new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
 	if (connection) {
 		g_signal_connect (connection, NM_REMOTE_CONNECTION_REMOVED,
 		                  G_CALLBACK (connection_removed_cb),
+		                  self);
+
+		g_signal_connect (connection, "visible",
+		                  G_CALLBACK (connection_visible_cb),
 		                  self);
 
 		g_signal_connect (connection, "notify::" NM_REMOTE_CONNECTION_INIT_RESULT,

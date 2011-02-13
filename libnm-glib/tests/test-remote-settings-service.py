@@ -18,6 +18,9 @@ class UnknownInterfaceException(dbus.DBusException):
 class UnknownPropertyException(dbus.DBusException):
     _dbus_error_name = IFACE_DBUS + '.UnknownProperty'
 
+class PermissionDeniedException(dbus.DBusException):
+    _dbus_error_name = IFACE_SETTINGS + '.PermissionDenied'
+
 mainloop = gobject.MainLoop()
 
 class Connection(dbus.service.Object):
@@ -26,10 +29,18 @@ class Connection(dbus.service.Object):
         self.path = object_path
         self.settings = settings
         self.remove_func = remove_func
+        self.visible = True
 
     @dbus.service.method(dbus_interface=IFACE_CONNECTION, in_signature='', out_signature='a{sa{sv}}')
     def GetSettings(self):
+        if not self.visible:
+            raise PermissionDeniedException()
         return self.settings
+
+    @dbus.service.method(dbus_interface=IFACE_CONNECTION, in_signature='b', out_signature='')
+    def SetVisible(self, vis):
+        self.visible = vis
+        self.Updated()
 
     @dbus.service.method(dbus_interface=IFACE_CONNECTION, in_signature='', out_signature='')
     def Delete(self):
@@ -38,6 +49,10 @@ class Connection(dbus.service.Object):
 
     @dbus.service.signal(IFACE_CONNECTION, signature='')
     def Removed(self):
+        pass
+
+    @dbus.service.signal(IFACE_CONNECTION, signature='')
+    def Updated(self):
         pass
 
 class Settings(dbus.service.Object):
