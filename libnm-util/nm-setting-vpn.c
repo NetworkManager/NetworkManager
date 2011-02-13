@@ -316,8 +316,18 @@ update_secret_hash (NMSetting *setting,
 
 	/* Now add the items to the settings' secrets list */
 	g_hash_table_iter_init (&iter, secrets);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &name, (gpointer *) &value))
+	while (g_hash_table_iter_next (&iter, (gpointer *) &name, (gpointer *) &value)) {
+		if (value == NULL) {
+			g_warn_if_fail (value != NULL);
+			continue;
+		}
+		if (strlen (value) == 0) {
+			g_warn_if_fail (strlen (value) > 0);
+			continue;
+		}
+
 		g_hash_table_insert (priv->secrets, g_strdup (name), g_strdup (value));
+	}
 
 	return TRUE;
 }
