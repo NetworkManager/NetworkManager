@@ -135,6 +135,9 @@ permission_new_from_str (const char *str)
 		/* Ensure that somebody didn't pass "user::" */
 		g_return_val_if_fail (last_colon > str, NULL);
 
+		/* Reject :[detail] for now */
+		g_return_val_if_fail (*(last_colon + 1) == '\0', NULL);
+
 		/* Make sure we don't include detail in the username */
 		ulen = last_colon - str;
 	} else
