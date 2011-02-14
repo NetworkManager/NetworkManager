@@ -1920,6 +1920,8 @@ scanning_allowed (NMDeviceWifi *self)
 	case NM_DEVICE_STATE_CONFIG:
 	case NM_DEVICE_STATE_NEED_AUTH:
 	case NM_DEVICE_STATE_IP_CONFIG:
+	case NM_DEVICE_STATE_IP_CHECK:
+	case NM_DEVICE_STATE_DEACTIVATING:
 		/* Don't scan when unusable or activating */
 		return FALSE;
 	case NM_DEVICE_STATE_DISCONNECTED:

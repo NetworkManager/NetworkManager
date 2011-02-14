@@ -104,47 +104,57 @@
           The device is in an unknown state.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="UNMANAGED" value="1">
+      <tp:enumvalue suffix="UNMANAGED" value="10">
         <tp:docstring>
-          The device is not managed by NetworkManager.
+          The device is recognized but not managed by NetworkManager.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="UNAVAILABLE" value="2">
+      <tp:enumvalue suffix="UNAVAILABLE" value="20">
         <tp:docstring>
           The device cannot be used (carrier off, rfkill, etc).
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="DISCONNECTED" value="3">
+      <tp:enumvalue suffix="DISCONNECTED" value="30">
         <tp:docstring>
           The device is not connected.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="PREPARE" value="4">
+      <tp:enumvalue suffix="PREPARE" value="40">
         <tp:docstring>
           The device is preparing to connect.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="CONFIG" value="5">
+      <tp:enumvalue suffix="CONFIG" value="50">
         <tp:docstring>
           The device is being configured.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="NEED_AUTH" value="6">
+      <tp:enumvalue suffix="NEED_AUTH" value="60">
         <tp:docstring>
           The device is awaiting secrets necessary to continue connection.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="IP_CONFIG" value="7">
+      <tp:enumvalue suffix="IP_CONFIG" value="70">
         <tp:docstring>
           The IP settings of the device are being requested and configured.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="ACTIVATED" value="8">
+      <tp:enumvalue suffix="IP_CHECK" value="80">
+        <tp:docstring>
+          The device's IP connectivity ability is being determined.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="ACTIVATED" value="90">
         <tp:docstring>
           The device is active.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="FAILED" value="9">
+      <tp:enumvalue suffix="DEACTIVATING" value="100">
+        <tp:docstring>
+          The device's network connection is being torn down.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="FAILED" value="110">
         <tp:docstring>
           The device is in a failure state following an attempt to activate it.
         </tp:docstring>

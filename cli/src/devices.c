@@ -293,8 +293,12 @@ device_state_to_string (NMDeviceState state)
 		return _("connecting (need authentication)");
 	case NM_DEVICE_STATE_IP_CONFIG:
 		return _("connecting (getting IP configuration)");
+	case NM_DEVICE_STATE_IP_CHECK:
+		return _("connecting (checking IP connectivity)");
 	case NM_DEVICE_STATE_ACTIVATED:
 		return _("connected");
+	case NM_DEVICE_STATE_DEACTIVATING:
+		return _("deactivating");
 	case NM_DEVICE_STATE_FAILED:
 		return _("connection failed");
 	default:

@@ -156,73 +156,53 @@ typedef enum {
 } NMBluetoothCapabilities;
 
 
-/*
- * Device states
- */
+/**
+ * NMDeviceState:
+ * @NM_DEVICE_STATE_UNKNOWN: the device's state is unknown
+ * @NM_DEVICE_STATE_UNMANAGED: the device is recognized, but not managed by
+ *   NetworkManager
+ * @NM_DEVICE_STATE_UNAVAILABLE: the device is managed by NetworkManager, but
+ *   is not available for use.  Reasons may include the wireless switched off,
+ *   missing firmware, no ethernet carrier, missing supplicant or modem manager,
+ *   etc.
+ * @NM_DEVICE_STATE_DISCONNECTED: the device can be activated, but is currently
+ *   idle and not connected to a network.
+ * @NM_DEVICE_STATE_PREPARE: the device is preparing the connection to the
+ *   network.  This may include operations like changing the MAC address,
+ *   setting physical link properties, and anything else required to connect
+ *   to the requested network.
+ * @NM_DEVICE_STATE_CONFIG: the device is connecting to the requested network.
+ *   This may include operations like associating with the WiFi AP, dialing
+ *   the modem, connecting to the remote Bluetooth device, etc.
+ * @NM_DEVICE_STATE_NEED_AUTH: the device requires more information to continue
+ *   connecting to the requested network.  This includes secrets like WiFi
+ *   passphrases, login passwords, PIN codes, etc.
+ * @NM_DEVICE_STATE_IP_CONFIG: the device is requesting IPv4 and/or IPv6
+ *   addresses and routing information from the network.
+ * @NM_DEVICE_STATE_IP_CHECK: the device is checking whether further action is
+ *   required for the requested network connection.  This may include checking
+ *   whether only local network access is available, whether a captive portal
+ *   is blocking access to the Internet, etc.
+ * @NM_DEVICE_STATE_ACTIVATED: the device has a network connection, either local
+ *   or global.
+ * @NM_DEVICE_STATE_DEACTIVATING: the device's network connection is no longer
+ *   valid and the device is tearing down resources used for the previous
+ *   connection.
+ *
+ **/
 typedef enum {
-	NM_DEVICE_STATE_UNKNOWN = 0,
-
-	/* Initial state of all devices and the only state for devices not
-	 * managed by NetworkManager.
-	 *
-	 * Allowed next states:
-	 *   UNAVAILABLE:  the device is now managed by NetworkManager
-	 */
-	NM_DEVICE_STATE_UNMANAGED = 1,
-
-	/* Indicates the device is not yet ready for use, but is managed by
-	 * NetworkManager.  For Ethernet devices, the device may not have an
-	 * active carrier.  For WiFi devices, the device may not have it's radio
-	 * enabled.
-	 *
-	 * Allowed next states:
-	 *   UNMANAGED:  the device is no longer managed by NetworkManager
-	 *   DISCONNECTED:  the device is now ready for use
-	 */
-	NM_DEVICE_STATE_UNAVAILABLE = 2,
-
-	/* Indicates the device does not have an activate connection to anything.
-	 *
-	 * Allowed next states:
-	 *   UNMANAGED:  the device is no longer managed by NetworkManager
-	 *   UNAVAILABLE:  the device is no longer ready for use (rfkill, no carrier, etc)
-	 *   PREPARE:  the device has started activation
-	 */
-	NM_DEVICE_STATE_DISCONNECTED = 3,
-
-	/* Indicate states in device activation.
-	 *
-	 * Allowed next states:
-	 *   UNMANAGED:  the device is no longer managed by NetworkManager
-	 *   UNAVAILABLE:  the device is no longer ready for use (rfkill, no carrier, etc)
-	 *   FAILED:  an error ocurred during activation
-	 *   NEED_AUTH:  authentication/secrets are needed
-	 *   ACTIVATED:  (IP_CONFIG only) activation was successful
-	 *   DISCONNECTED:  the device's connection is no longer valid, or NetworkManager went to sleep
-	 */
-	NM_DEVICE_STATE_PREPARE = 4,
-	NM_DEVICE_STATE_CONFIG = 5,
-	NM_DEVICE_STATE_NEED_AUTH = 6,
-	NM_DEVICE_STATE_IP_CONFIG = 7,
-
-	/* Indicates the device is part of an active network connection.
-	 *
-	 * Allowed next states:
-	 *   UNMANAGED:  the device is no longer managed by NetworkManager
-	 *   UNAVAILABLE:  the device is no longer ready for use (rfkill, no carrier, etc)
-	 *   FAILED:  a DHCP lease was not renewed, or another error
-	 *   DISCONNECTED:  the device's connection is no longer valid, or NetworkManager went to sleep
-	 */
-	NM_DEVICE_STATE_ACTIVATED = 8,
-
-	/* Indicates the device's activation failed.
-	 *
-	 * Allowed next states:
-	 *   UNMANAGED:  the device is no longer managed by NetworkManager
-	 *   UNAVAILABLE:  the device is no longer ready for use (rfkill, no carrier, etc)
-	 *   DISCONNECTED:  the device's connection is ready for activation, or NetworkManager went to sleep
-	 */
-	NM_DEVICE_STATE_FAILED = 9
+	NM_DEVICE_STATE_UNKNOWN      = 0,
+	NM_DEVICE_STATE_UNMANAGED    = 10,
+	NM_DEVICE_STATE_UNAVAILABLE  = 20,
+	NM_DEVICE_STATE_DISCONNECTED = 30,
+	NM_DEVICE_STATE_PREPARE      = 40,
+	NM_DEVICE_STATE_CONFIG       = 50,
+	NM_DEVICE_STATE_NEED_AUTH    = 60,
+	NM_DEVICE_STATE_IP_CONFIG    = 70,
+	NM_DEVICE_STATE_IP_CHECK     = 80,
+	NM_DEVICE_STATE_ACTIVATED    = 90,
+	NM_DEVICE_STATE_DEACTIVATING = 100,
+	NM_DEVICE_STATE_FAILED       = 110
 } NMDeviceState;
 
 
