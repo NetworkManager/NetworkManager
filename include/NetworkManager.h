@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /* NetworkManager -- Network link manager
  *
  * Dan Williams <dcbw@redhat.com>
@@ -16,7 +17,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2004 - 2010 Red Hat, Inc.
+ * (C) Copyright 2004 - 2011 Red Hat, Inc.
  */
 
 #ifndef NETWORK_MANAGER_H
@@ -61,11 +62,8 @@
 #define NM_DBUS_INTERFACE_SECRET_AGENT    NM_DBUS_INTERFACE ".SecretAgent"
 #define NM_DBUS_PATH_SECRET_AGENT         "/org/freedesktop/NetworkManager/SecretAgent"
 
-/*
- * Types of NetworkManager states
- */
-typedef enum NMState
-{
+/* General NetworkManager state */
+typedef enum {
 	NM_STATE_UNKNOWN = 0,
 	NM_STATE_ASLEEP,
 	NM_STATE_CONNECTING,
@@ -73,55 +71,43 @@ typedef enum NMState
 	NM_STATE_DISCONNECTED
 } NMState;
 
-
-/*
- * Types of NetworkManager devices
- */
-typedef enum NMDeviceType
-{
-	NM_DEVICE_TYPE_UNKNOWN = 0,
-	NM_DEVICE_TYPE_ETHERNET,
-	NM_DEVICE_TYPE_WIFI,
-	NM_DEVICE_TYPE_GSM,
-	NM_DEVICE_TYPE_CDMA,
-	NM_DEVICE_TYPE_BT,  /* Bluetooth */
-	NM_DEVICE_TYPE_OLPC_MESH,
-	NM_DEVICE_TYPE_WIMAX
+/* Types of NetworkManager devices */
+typedef enum {
+	NM_DEVICE_TYPE_UNKNOWN   = 0,
+	NM_DEVICE_TYPE_ETHERNET  = 1,
+	NM_DEVICE_TYPE_WIFI      = 2,
+	NM_DEVICE_TYPE_GSM       = 3,
+	NM_DEVICE_TYPE_CDMA      = 4,
+	NM_DEVICE_TYPE_BT        = 5,  /* Bluetooth */
+	NM_DEVICE_TYPE_OLPC_MESH = 6,
+	NM_DEVICE_TYPE_WIMAX     = 7
 } NMDeviceType;
 
-/* DEPRECATED TYPE NAMES */
-#define DEVICE_TYPE_UNKNOWN          NM_DEVICE_TYPE_UNKNOWN
-#define DEVICE_TYPE_802_3_ETHERNET   NM_DEVICE_TYPE_ETHERNET
-#define DEVICE_TYPE_802_11_WIRELESS  NM_DEVICE_TYPE_WIFI
-#define DEVICE_TYPE_GSM              NM_DEVICE_TYPE_GSM
-#define DEVICE_TYPE_CDMA             NM_DEVICE_TYPE_CDMA
+/* General device capability flags */
+typedef enum {
+	NM_DEVICE_CAP_NONE           = 0x00000000,
+	NM_DEVICE_CAP_NM_SUPPORTED   = 0x00000001,
+	NM_DEVICE_CAP_CARRIER_DETECT = 0x00000002
+} NMDeviceCapabilities;
 
 
-/*
- * General device capability bits
- *
- */
-#define NM_DEVICE_CAP_NONE               0x00000000
-#define NM_DEVICE_CAP_NM_SUPPORTED       0x00000001
-#define NM_DEVICE_CAP_CARRIER_DETECT     0x00000002
+/* 802.11 Wifi device capabilities */
+typedef enum {
+	NM_WIFI_DEVICE_CAP_NONE          = 0x00000000,
+	NM_WIFI_DEVICE_CAP_CIPHER_WEP40  = 0x00000001,
+	NM_WIFI_DEVICE_CAP_CIPHER_WEP104 = 0x00000002,
+	NM_WIFI_DEVICE_CAP_CIPHER_TKIP   = 0x00000004,
+	NM_WIFI_DEVICE_CAP_CIPHER_CCMP   = 0x00000008,
+	NM_WIFI_DEVICE_CAP_WPA           = 0x00000010,
+	NM_WIFI_DEVICE_CAP_RSN           = 0x00000020
+} NMDeviceWifiCapabilities;
 
 
-/* 802.11 wireless device-specific capabilities */
-#define NM_WIFI_DEVICE_CAP_NONE          0x00000000
-#define NM_WIFI_DEVICE_CAP_CIPHER_WEP40  0x00000001
-#define NM_WIFI_DEVICE_CAP_CIPHER_WEP104 0x00000002
-#define NM_WIFI_DEVICE_CAP_CIPHER_TKIP   0x00000004
-#define NM_WIFI_DEVICE_CAP_CIPHER_CCMP   0x00000008
-#define NM_WIFI_DEVICE_CAP_WPA           0x00000010
-#define NM_WIFI_DEVICE_CAP_RSN           0x00000020
-
-
-/*
- * 802.11 Access Point flags
- *
- */
-#define NM_802_11_AP_FLAGS_NONE          0x00000000
-#define NM_802_11_AP_FLAGS_PRIVACY       0x00000001
+/* 802.11 Access Point flags */
+typedef enum {
+	NM_802_11_AP_FLAGS_NONE    = 0x00000000,
+	NM_802_11_AP_FLAGS_PRIVACY = 0x00000001
+} NM80211ApFlags;
 
 /*
  * 802.11 Access Point security flags
@@ -130,17 +116,19 @@ typedef enum NMDeviceType
  * from various pieces of beacon information, like beacon flags and various
  * information elements.
  */
-#define NM_802_11_AP_SEC_NONE            0x00000000
-#define NM_802_11_AP_SEC_PAIR_WEP40      0x00000001
-#define NM_802_11_AP_SEC_PAIR_WEP104     0x00000002
-#define NM_802_11_AP_SEC_PAIR_TKIP       0x00000004
-#define NM_802_11_AP_SEC_PAIR_CCMP       0x00000008
-#define NM_802_11_AP_SEC_GROUP_WEP40     0x00000010
-#define NM_802_11_AP_SEC_GROUP_WEP104    0x00000020
-#define NM_802_11_AP_SEC_GROUP_TKIP      0x00000040
-#define NM_802_11_AP_SEC_GROUP_CCMP      0x00000080
-#define NM_802_11_AP_SEC_KEY_MGMT_PSK    0x00000100
-#define NM_802_11_AP_SEC_KEY_MGMT_802_1X 0x00000200
+typedef enum {
+	NM_802_11_AP_SEC_NONE            = 0x00000000,
+	NM_802_11_AP_SEC_PAIR_WEP40      = 0x00000001,
+	NM_802_11_AP_SEC_PAIR_WEP104     = 0x00000002,
+	NM_802_11_AP_SEC_PAIR_TKIP       = 0x00000004,
+	NM_802_11_AP_SEC_PAIR_CCMP       = 0x00000008,
+	NM_802_11_AP_SEC_GROUP_WEP40     = 0x00000010,
+	NM_802_11_AP_SEC_GROUP_WEP104    = 0x00000020,
+	NM_802_11_AP_SEC_GROUP_TKIP      = 0x00000040,
+	NM_802_11_AP_SEC_GROUP_CCMP      = 0x00000080,
+	NM_802_11_AP_SEC_KEY_MGMT_PSK    = 0x00000100,
+	NM_802_11_AP_SEC_KEY_MGMT_802_1X = 0x00000200
+} NM80211ApSecurityFlags;
 
 /*
  * 802.11 AP and Station modes
@@ -171,8 +159,7 @@ typedef enum {
 /*
  * Device states
  */
-typedef enum
-{
+typedef enum {
 	NM_DEVICE_STATE_UNKNOWN = 0,
 
 	/* Initial state of all devices and the only state for devices not
