@@ -193,18 +193,18 @@ libnm_glib_update_state (libnm_glib_ctx *ctx,
 	g_return_if_fail (ctx != NULL);
 
 	old_state = ctx->nm_state;
-	switch (state)
-	{
-		case NM_STATE_CONNECTED:
+	switch (state) {
+		case NM_STATE_CONNECTED_LOCAL:
+		case NM_STATE_CONNECTED_SITE:
+		case NM_STATE_CONNECTED_GLOBAL:
 			ctx->nm_state = LIBNM_ACTIVE_NETWORK_CONNECTION;
 			break;
-
 		case NM_STATE_ASLEEP:
 		case NM_STATE_CONNECTING:
 		case NM_STATE_DISCONNECTED:
+		case NM_STATE_DISCONNECTING:
 			ctx->nm_state = LIBNM_NO_NETWORK_CONNECTION;
 			break;
-
 		case NM_STATE_UNKNOWN:
 		default:
 			ctx->nm_state = LIBNM_NO_NETWORKMANAGER;

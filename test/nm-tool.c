@@ -71,19 +71,21 @@ get_nm_state (NMClient *client)
 	case NM_STATE_ASLEEP:
 		state_string = "asleep";
 		break;
-
 	case NM_STATE_CONNECTING:
 		state_string = "connecting";
 		break;
-
-	case NM_STATE_CONNECTED:
-		state_string = "connected";
+	case NM_STATE_CONNECTED_LOCAL:
+		state_string = "connected (local only)";
 		break;
-
+	case NM_STATE_CONNECTED_SITE:
+		state_string = "connected (site only)";
+		break;
+	case NM_STATE_CONNECTED_GLOBAL:
+		state_string = "connected (global)";
+		break;
 	case NM_STATE_DISCONNECTED:
 		state_string = "disconnected";
 		break;
-
 	case NM_STATE_UNKNOWN:
 	default:
 		state_string = "unknown";

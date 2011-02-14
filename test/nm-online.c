@@ -66,7 +66,9 @@ static DBusHandlerResult dbus_filter (DBusConnection *connection G_GNUC_UNUSED,
 	if (!dbus_message_get_args (message, NULL, DBUS_TYPE_UINT32, &state, DBUS_TYPE_INVALID))
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
-	if (state == NM_STATE_CONNECTED)
+	if (   state == NM_STATE_CONNECTED_LOCAL
+	    || state == NM_STATE_CONNECTED_SITE
+	    || state == NM_STATE_CONNECTED_GLOBAL)
 		g_main_loop_quit (loop);
 
 	return DBUS_HANDLER_RESULT_HANDLED;
@@ -193,7 +195,9 @@ int main (int argc, char *argv[])
 
 	/* Check after we setup the filter to ensure that we cannot race. */
 	state = check_online (connection);
-	if (state == NM_STATE_CONNECTED)
+	if (   state == NM_STATE_CONNECTED_LOCAL
+	    || state == NM_STATE_CONNECTED_SITE
+	    || state == NM_STATE_CONNECTED_GLOBAL)
 		return 0;
 	if (exit_no_nm && (state != NM_STATE_CONNECTING))
 		return 1;

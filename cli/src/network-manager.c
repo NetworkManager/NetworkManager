@@ -100,8 +100,14 @@ nm_state_to_string (NMState state)
 		return _("asleep");
 	case NM_STATE_CONNECTING:
 		return _("connecting");
-	case NM_STATE_CONNECTED:
+	case NM_STATE_CONNECTED_LOCAL:
+		return _("connected (local only)");
+	case NM_STATE_CONNECTED_SITE:
+		return _("connected (site only)");
+	case NM_STATE_CONNECTED_GLOBAL:
 		return _("connected");
+	case NM_STATE_DISCONNECTING:
+		return _("disconnecting");
 	case NM_STATE_DISCONNECTED:
 		return _("disconnected");
 	case NM_STATE_UNKNOWN:

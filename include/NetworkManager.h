@@ -62,13 +62,28 @@
 #define NM_DBUS_INTERFACE_SECRET_AGENT    NM_DBUS_INTERFACE ".SecretAgent"
 #define NM_DBUS_PATH_SECRET_AGENT         "/org/freedesktop/NetworkManager/SecretAgent"
 
-/* General NetworkManager state */
+/**
+ * NMState:
+ * @NM_STATE_UNKNOWN: networking state is unknown
+ * @NM_STATE_ASLEEP: networking is not enabled
+ * @NM_STATE_DISCONNECTED: there is no active network connection
+ * @NM_STATE_DISCONNECTING: network connections are being cleaned up
+ * @NM_STATE_CONNECTING: a network connection is being started
+ * @NM_STATE_CONNECTED_LOCAL: there is only local IPv4 and/or IPv6 connectivity
+ * @NM_STATE_CONNECTED_SITE: there is only site-wide IPv4 and/or IPv6 connectivity
+ * @NM_STATE_CONNECTED_GLOBAL: there is global IPv4 and/or IPv6 Internet connectivity
+ *
+ * #NMState values indicate the current overall networking state.
+ */
 typedef enum {
-	NM_STATE_UNKNOWN = 0,
-	NM_STATE_ASLEEP,
-	NM_STATE_CONNECTING,
-	NM_STATE_CONNECTED,
-	NM_STATE_DISCONNECTED
+	NM_STATE_UNKNOWN          = 0,
+	NM_STATE_ASLEEP           = 10,
+	NM_STATE_DISCONNECTED     = 20,
+	NM_STATE_DISCONNECTING    = 30,
+	NM_STATE_CONNECTING       = 40,
+	NM_STATE_CONNECTED_LOCAL  = 50,
+	NM_STATE_CONNECTED_SITE   = 60,
+	NM_STATE_CONNECTED_GLOBAL = 70
 } NMState;
 
 /* Types of NetworkManager devices */

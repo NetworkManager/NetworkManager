@@ -725,7 +725,7 @@ nm_client_class_init (NMClientClass *client_class)
 		 g_param_spec_uint (NM_CLIENT_STATE,
 						    "State",
 						    "NetworkManager state",
-						    NM_STATE_UNKNOWN, NM_STATE_DISCONNECTED, NM_STATE_UNKNOWN,
+						    NM_STATE_UNKNOWN, NM_STATE_CONNECTED_GLOBAL, NM_STATE_UNKNOWN,
 						    G_PARAM_READABLE));
 
 	/**

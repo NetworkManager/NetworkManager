@@ -323,27 +323,43 @@
       </tp:docstring>
       <tp:enumvalue suffix="UNKNOWN" value="0">
         <tp:docstring>
-          The NetworkManager daemon is in an unknown state.
+          Networking state is unknown.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="ASLEEP" value="1">
+      <tp:enumvalue suffix="ASLEEP" value="10">
         <tp:docstring>
-          The NetworkManager daemon is asleep and all interfaces managed by it are inactive.
+          Networking is inactive and all devices are disabled.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="CONNECTING" value="2">
+      <tp:enumvalue suffix="DISCONNECTED" value="20">
         <tp:docstring>
-          The NetworkManager daemon is connecting a device.  FIXME: What does this mean when one device is active and another is connecting?
+          There is no active network connection.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="CONNECTED" value="3">
+      <tp:enumvalue suffix="DISCONNECTING" value="30">
         <tp:docstring>
-          The NetworkManager daemon is connected.
+          Network connections are being cleaned up.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="DISCONNECTED" value="4">
+      <tp:enumvalue suffix="CONNECTING" value="40">
         <tp:docstring>
-          The NetworkManager daemon is disconnected.
+          A network device is connecting to a network and there is no other
+          available network connection.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="CONNECTED_LOCAL" value="50">
+        <tp:docstring>
+          A network device is connected, but there is only link-local connectivity.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="CONNECTED_SITE" value="60">
+        <tp:docstring>
+          A network device is connected, but there is only site-local connectivity.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="CONNECTED_GLOBAL" value="70">
+        <tp:docstring>
+          A network device is connected, with global network connectivity.
         </tp:docstring>
       </tp:enumvalue>
     </tp:enum>

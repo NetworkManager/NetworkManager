@@ -438,6 +438,7 @@ nm_manager_update_state (NMManager *manager)
 {
 	NMManagerPrivate *priv;
 	NMState new_state = NM_STATE_DISCONNECTED;
+	GSList *iter;
 
 	g_return_if_fail (NM_IS_MANAGER (manager));
 
@@ -446,16 +447,21 @@ nm_manager_update_state (NMManager *manager)
 	if (manager_sleeping (manager))
 		new_state = NM_STATE_ASLEEP;
 	else {
-		GSList *iter;
-
 		for (iter = priv->devices; iter; iter = iter->next) {
 			NMDevice *dev = NM_DEVICE (iter->data);
+			NMDeviceState state = nm_device_get_state (dev);
 
-			if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED) {
-				new_state = NM_STATE_CONNECTED;
+			if (state == NM_DEVICE_STATE_ACTIVATED) {
+				/* FIXME: handle local-only and site too */
+				new_state = NM_STATE_CONNECTED_GLOBAL;
 				break;
-			} else if (nm_device_is_activating (dev)) {
+			}
+
+			if (nm_device_is_activating (dev))
 				new_state = NM_STATE_CONNECTING;
+			else if (new_state != NM_STATE_CONNECTING) {
+				if (state == NM_DEVICE_STATE_DEACTIVATING)
+					new_state = NM_STATE_DISCONNECTING;
 			}
 		}
 	}
