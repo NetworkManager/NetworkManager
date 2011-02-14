@@ -691,7 +691,8 @@ main (int argc, char *argv[])
 
 	settings = nm_settings_new (config, plugins, &error);
 	if (!settings) {
-		nm_log_err (LOGD_CORE, "failed to initialize settings storage.");
+		nm_log_err (LOGD_CORE, "failed to initialize settings storage: %s",
+		            error && error->message ? error->message : "(unknown)");
 		goto done;
 	}
 
@@ -702,11 +703,11 @@ main (int argc, char *argv[])
 	                          net_enabled,
 	                          wifi_enabled,
 	                          wwan_enabled,
-							  wimax_enabled,
+	                          wimax_enabled,
 	                          &error);
 	if (manager == NULL) {
 		nm_log_err (LOGD_CORE, "failed to initialize the network manager: %s",
-		          error && error->message ? error->message : "(unknown)");
+		            error && error->message ? error->message : "(unknown)");
 		goto done;
 	}
 
