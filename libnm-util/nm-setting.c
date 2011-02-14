@@ -542,6 +542,7 @@ nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets, GError **err
 	GHashTableIter iter;
 	gpointer key, data;
 	GError *tmp_error = NULL;
+	gboolean success = TRUE;
 
 	g_return_val_if_fail (setting != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
@@ -556,9 +557,12 @@ nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets, GError **err
 
 		NM_SETTING_GET_CLASS (setting)->update_one_secret (setting, secret_key, secret_value, &tmp_error);
 	}
-	g_propagate_error (error, tmp_error);
+	if (tmp_error) {
+		success = FALSE;
+		g_propagate_error (error, tmp_error);
+	}
 
-	return !!tmp_error;
+	return success;
 }
 
 /**
