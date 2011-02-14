@@ -37,7 +37,9 @@
 #include <nm-cdma-device.h>
 #include <nm-device-bt.h>
 //#include <nm-device-olpc-mesh.h>
+#if WITH_WIMAX
 #include <nm-device-wimax.h>
+#endif
 #include <nm-utils.h>
 #include <nm-setting-ip4-config.h>
 #include <nm-setting-ip6-config.h>
@@ -50,7 +52,9 @@
 #include <nm-setting-cdma.h>
 #include <nm-setting-bluetooth.h>
 #include <nm-setting-olpc-mesh.h>
+#if WITH_WIMAX
 #include <nm-setting-wimax.h>
+#endif
 
 #include "utils.h"
 #include "devices.h"
@@ -83,8 +87,13 @@ static NmcOutputField nmc_fields_dev_list_sections[] = {
 	{"IP6-DNS",           N_("IP6-DNS"),           0, NULL, 0},  /* 10 */
 	{NULL,                NULL,                    0, NULL, 0}
 };
+#if WITH_WIMAX
 #define NMC_FIELDS_DEV_LIST_SECTIONS_ALL     "GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4-SETTINGS,IP4-DNS,IP6-SETTINGS,IP6-DNS"
 #define NMC_FIELDS_DEV_LIST_SECTIONS_COMMON  "GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4-SETTINGS,IP4-DNS,IP6-SETTINGS,IP6-DNS"
+#else
+#define NMC_FIELDS_DEV_LIST_SECTIONS_ALL     "GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,IP4-SETTINGS,IP4-DNS,IP6-SETTINGS,IP6-DNS"
+#define NMC_FIELDS_DEV_LIST_SECTIONS_COMMON  "GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,IP4-SETTINGS,IP4-DNS,IP6-SETTINGS,IP6-DNS"
+#endif
 
 /* Available fields for 'dev list' - GENERAL part */
 static NmcOutputField nmc_fields_dev_list_general[] = {
@@ -132,6 +141,7 @@ static NmcOutputField nmc_fields_dev_list_wifi_prop[] = {
 #define NMC_FIELDS_DEV_LIST_WIFI_PROP_ALL     "NAME,WEP,WPA,WPA2,TKIP,CCMP"
 #define NMC_FIELDS_DEV_LIST_WIFI_PROP_COMMON  "NAME,WEP,WPA,WPA2,TKIP,CCMP"
 
+#if WITH_WIMAX
 /* Available fields for 'dev list' - wimax properties part */
 static NmcOutputField nmc_fields_dev_list_wimax_prop[] = {
 	{"NAME",       N_("NAME"),        18, NULL, 0},  /* 0 */
@@ -144,6 +154,7 @@ static NmcOutputField nmc_fields_dev_list_wimax_prop[] = {
 };
 #define NMC_FIELDS_DEV_LIST_WIMAX_PROP_ALL     "NAME,CTR-FREQ,RSSI,CINR,TX-POW,BSID"
 #define NMC_FIELDS_DEV_LIST_WIMAX_PROP_COMMON  "NAME,CTR-FREQ,RSSI,CINR,TX-POW,BSID"
+#endif
 
 /* Available fields for 'dev list' - IPv4 settings part */
 static NmcOutputField nmc_fields_dev_list_ip4_settings[] = {
@@ -206,6 +217,7 @@ static NmcOutputField nmc_fields_dev_wifi_list[] = {
 #define NMC_FIELDS_DEV_WIFI_LIST_COMMON        "SSID,BSSID,MODE,FREQ,RATE,SIGNAL,SECURITY,ACTIVE"
 #define NMC_FIELDS_DEV_WIFI_LIST_FOR_DEV_LIST  "NAME,"NMC_FIELDS_DEV_WIFI_LIST_COMMON
 
+#if WITH_WIMAX
 /* Available fields for 'dev wimax list' */
 static NmcOutputField nmc_fields_dev_wimax_list[] = {
 	{"NAME",       N_("NAME"),        15, NULL, 0},  /* 0 */
@@ -220,6 +232,7 @@ static NmcOutputField nmc_fields_dev_wimax_list[] = {
 #define NMC_FIELDS_DEV_WIMAX_LIST_ALL           "NSP,SIGNAL,TYPE,DEVICE,ACTIVE,DBUS-PATH"
 #define NMC_FIELDS_DEV_WIMAX_LIST_COMMON        "NSP,SIGNAL,TYPE,DEVICE,ACTIVE"
 #define NMC_FIELDS_DEV_WIMAX_LIST_FOR_DEV_LIST  "NAME,"NMC_FIELDS_DEV_WIMAX_LIST_COMMON
+#endif
 
 
 /* static function prototypes */
@@ -229,8 +242,9 @@ static NMCResultCode do_devices_status (NmCli *nmc, int argc, char **argv);
 static NMCResultCode do_devices_list (NmCli *nmc, int argc, char **argv);
 static NMCResultCode do_device_disconnect (NmCli *nmc, int argc, char **argv);
 static NMCResultCode do_device_wifi (NmCli *nmc, int argc, char **argv);
+#if WITH_WIMAX
 static NMCResultCode do_device_wimax (NmCli *nmc, int argc, char **argv);
-
+#endif
 
 extern GMainLoop *loop;   /* glib main loop variable */
 
@@ -238,13 +252,20 @@ static void
 usage (void)
 {
 	fprintf (stderr,
-	 	 _("Usage: nmcli dev { COMMAND | help }\n\n"
-		 "  COMMAND := { status | list | disconnect | wifi | wimax }\n\n"
-		 "  status\n"
-		 "  list [iface <iface>]\n"
-		 "  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
-		 "  wifi [list [iface <iface>] [hwaddr <hwaddr>]]\n"
-		 "  wimax [list [iface <iface>] [nsp <name>]]\n\n"));
+	         _("Usage: nmcli dev { COMMAND | help }\n\n"
+#if WITH_WIMAX
+	         "  COMMAND := { status | list | disconnect | wifi | wimax }\n\n"
+#else
+	         "  COMMAND := { status | list | disconnect | wifi }\n\n"
+#endif
+	         "  status\n"
+	         "  list [iface <iface>]\n"
+	         "  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
+	         "  wifi [list [iface <iface>] [hwaddr <hwaddr>]]\n"
+#if WITH_WIMAX
+	         "  wimax [list [iface <iface>] [nsp <name>]]\n\n"
+#endif
+	         ));
 }
 
 /* quit main loop */
@@ -297,8 +318,10 @@ get_device_type (NMDevice * device)
 		return NM_SETTING_BLUETOOTH_SETTING_NAME;
 //	else if (NM_IS_DEVICE_OLPC_MESH (device))
 //		return NM_SETTING_OLPC_MESH_SETTING_NAME;
+#if WITH_WIMAX
 	else if (NM_IS_DEVICE_WIMAX (device))
 		return NM_SETTING_WIMAX_SETTING_NAME;
+#endif
 	else
 		return _("Unknown");
 }
@@ -481,6 +504,7 @@ detail_access_point (gpointer data, gpointer user_data)
 	g_string_free (security_str, TRUE);
 }
 
+#if WITH_WIMAX
 static void
 detail_wimax_nsp (NMWimaxNsp *nsp, NmCli *nmc, NMDevice *dev, int idx)
 {
@@ -526,6 +550,7 @@ detail_wimax_nsp (NMWimaxNsp *nsp, NmCli *nmc, NMDevice *dev, int idx)
 	g_free (nsp_name);
 	g_free (quality_str);
 }
+#endif
 
 struct cb_info {
 	NMClient *client;
@@ -603,8 +628,10 @@ show_device_info (gpointer data, gpointer user_data)
 				hwaddr = nm_device_ethernet_get_hw_address (NM_DEVICE_ETHERNET (device));
 			else if (NM_IS_DEVICE_WIFI (device))
 				hwaddr = nm_device_wifi_get_hw_address (NM_DEVICE_WIFI (device));
+#if WITH_WIMAX
 			else if (NM_IS_DEVICE_WIMAX (device))
 				hwaddr = nm_device_wimax_get_hw_address (NM_DEVICE_WIMAX (device));
+#endif
 
 			nmc->allowed_fields[0].value = nmc_fields_dev_list_sections[0].name;  /* "GENERAL"*/
 			nmc->allowed_fields[1].value = nm_device_get_iface (device);
@@ -715,7 +742,9 @@ show_device_info (gpointer data, gpointer user_data)
 				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 				was_output = TRUE;
 			}
-		} else if (NM_IS_DEVICE_WIMAX (device)) {
+		}
+#if WITH_WIMAX
+		else if (NM_IS_DEVICE_WIMAX (device)) {
 			/* WIMAX-PROPERTIES */
 			if (!strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[5].name)) {
 				char *cfreq = NULL, *rssi = NULL, *cinr = NULL, *txpow = NULL;
@@ -784,6 +813,7 @@ show_device_info (gpointer data, gpointer user_data)
 				was_output = TRUE;
 			}
 		}
+#endif
 
 		/* IP Setup info */
 		if (state == NM_DEVICE_STATE_ACTIVATED) {
@@ -1435,6 +1465,7 @@ do_device_wifi (NmCli *nmc, int argc, char **argv)
 	return nmc->return_value;
 }
 
+#if WITH_WIMAX
 static void
 show_nsp_info (NMDevice *device, NmCli *nmc)
 {
@@ -1628,6 +1659,7 @@ do_device_wimax (NmCli *nmc, int argc, char **argv)
 
 	return nmc->return_value;
 }
+#endif
 
 NMCResultCode
 do_devices (NmCli *nmc, int argc, char **argv)
@@ -1659,11 +1691,13 @@ do_devices (NmCli *nmc, int argc, char **argv)
 				goto opt_error;
 			nmc->return_value = do_device_wifi (nmc, argc-1, argv+1);
 		}
+#if WITH_WIMAX
 		else if (matches (*argv, "wimax") == 0) {
 			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
 				goto opt_error;
 			nmc->return_value = do_device_wimax (nmc, argc-1, argv+1);
 		}
+#endif
 		else if (strcmp (*argv, "help") == 0) {
 			usage ();
 		}

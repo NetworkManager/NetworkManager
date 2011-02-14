@@ -38,10 +38,14 @@
 #include <nm-setting-cdma.h>
 #include <nm-setting-bluetooth.h>
 #include <nm-setting-olpc-mesh.h>
+#if WITH_WIMAX
 #include <nm-setting-wimax.h>
+#endif
 #include <nm-device-ethernet.h>
 #include <nm-device-wifi.h>
+#if WITH_WIMAX
 #include <nm-device-wimax.h>
+#endif
 #include <nm-gsm-device.h>
 #include <nm-cdma-device.h>
 #include <nm-device-bt.h>
@@ -107,7 +111,7 @@ static NmcOutputField nmc_fields_settings_names[] = {
 	SETTING_FIELD (NM_SETTING_WIMAX_SETTING_NAME, 0),                 /* 15 */
 	{NULL, NULL, 0, NULL, 0}
 };
-#define NMC_FIELDS_SETTINGS_NAMES_ALL    NM_SETTING_CONNECTION_SETTING_NAME","\
+#define NMC_FIELDS_SETTINGS_NAMES_ALL_X  NM_SETTING_CONNECTION_SETTING_NAME","\
                                          NM_SETTING_WIRED_SETTING_NAME","\
                                          NM_SETTING_802_1X_SETTING_NAME","\
                                          NM_SETTING_WIRELESS_SETTING_NAME","\
@@ -121,8 +125,13 @@ static NmcOutputField nmc_fields_settings_names[] = {
                                          NM_SETTING_CDMA_SETTING_NAME","\
                                          NM_SETTING_BLUETOOTH_SETTING_NAME","\
                                          NM_SETTING_OLPC_MESH_SETTING_NAME","\
-                                         NM_SETTING_VPN_SETTING_NAME","\
+                                         NM_SETTING_VPN_SETTING_NAME
+#if WITH_WIMAX
+#define NMC_FIELDS_SETTINGS_NAMES_ALL    NMC_FIELDS_SETTINGS_NAMES_ALL_X","\
                                          NM_SETTING_WIMAX_SETTING_NAME
+#else
+#define NMC_FIELDS_SETTINGS_NAMES_ALL    NMC_FIELDS_SETTINGS_NAMES_ALL_X
+#endif
 
 
 typedef struct {
@@ -155,12 +164,16 @@ static void
 usage (void)
 {
 	fprintf (stderr,
-	 	 _("Usage: nmcli con { COMMAND | help }\n"
-		 "  COMMAND := { list | status | up | down }\n\n"
-		 "  list [id <id> | uuid <id>]\n"
-		 "  status\n"
-		 "  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [nsp <name>] [--nowait] [--timeout <timeout>]\n"
-		 "  down id <id> | uuid <id>\n"));
+	         _("Usage: nmcli con { COMMAND | help }\n"
+	         "  COMMAND := { list | status | up | down }\n\n"
+	         "  list [id <id> | uuid <id>]\n"
+	         "  status\n"
+#if WITH_WIMAX
+	         "  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [nsp <name>] [--nowait] [--timeout <timeout>]\n"
+#else
+	         "  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--timeout <timeout>]\n"
+#endif
+	         "  down id <id> | uuid <id>\n"));
 }
 
 /* quit main loop */
@@ -353,6 +366,7 @@ nmc_connection_detail (NMConnection *connection, NmCli *nmc)
 			}
 		}
 
+#if WITH_WIMAX
 		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[15].name)) {
 			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_WIMAX);
 			if (setting) {
@@ -361,6 +375,7 @@ nmc_connection_detail (NMConnection *connection, NmCli *nmc)
 				continue;
 			}
 		}
+#endif
 	}
 
 	if (print_settings_array)
@@ -846,6 +861,7 @@ check_olpc_mesh_compatible (NMDeviceOlpcMesh *device, NMConnection *connection, 
 }
 #endif
 
+#if WITH_WIMAX
 static gboolean
 check_wimax_compatible (NMDeviceWimax *device, NMConnection *connection, GError **error)
 {
@@ -890,6 +906,7 @@ check_wimax_compatible (NMDeviceWimax *device, NMConnection *connection, GError 
 
 	return TRUE;
 }
+#endif
 
 static gboolean
 check_gsm_compatible (NMGsmDevice *device, NMConnection *connection, GError **error)
@@ -959,8 +976,10 @@ nm_device_is_connection_compatible (NMDevice *device, NMConnection *connection, 
 		return check_bt_compatible (NM_DEVICE_BT (device), connection, error);
 //	else if (NM_IS_DEVICE_OLPC_MESH (device))
 //		return check_olpc_mesh_compatible (NM_DEVICE_OLPC_MESH (device), connection, error);
+#if WITH_WIMAX
 	else if (NM_IS_DEVICE_WIMAX (device))
 		return check_wimax_compatible (NM_DEVICE_WIMAX (device), connection, error);
+#endif
 	else if (NM_IS_GSM_DEVICE (device))
 		return check_gsm_compatible (NM_GSM_DEVICE (device), connection, error);
 	else if (NM_IS_CDMA_DEVICE (device))
@@ -1156,6 +1175,7 @@ find_device_for_connection (NmCli *nmc,
 				g_free (hwaddr_up);
 			}
 
+#if WITH_WIMAX
 			if (   found_device
 			    && nsp
 			    && !strcmp (con_type, NM_SETTING_WIMAX_SETTING_NAME)
@@ -1174,6 +1194,7 @@ find_device_for_connection (NmCli *nmc,
 					}
 				}
 			}
+#endif
 		}
 
 		if (found_device) {
@@ -1462,6 +1483,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 
 			ap = *argv;
 		}
+#if WITH_WIMAX
 		else if (strcmp (*argv, "nsp") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
@@ -1471,6 +1493,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 
 			nsp = *argv;
 		}
+#endif
 		else if (strcmp (*argv, "--nowait") == 0) {
 			wait = FALSE;
 		} else if (strcmp (*argv, "--timeout") == 0) {
