@@ -479,8 +479,12 @@ do_connections_list (NmCli *nmc, int argc, char **argv)
 			goto error;
 		valid_param_specified = TRUE;
 
-		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
+		/* Print headers */
+		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
+		nmc->print_fields.header_name = _("Connection list");
 		print_fields (nmc->print_fields, nmc->allowed_fields);
+
+		/* Print values */
 		g_slist_foreach (nmc->system_connections, (GFunc) show_connection, nmc);
 	}
 	else {
