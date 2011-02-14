@@ -169,12 +169,27 @@
       </tp:enumvalue>
       <tp:enumvalue suffix="GSM" value="3">
         <tp:docstring>
-          The device is a GSM-based cellular WAN device.
+          The device is a GSM/GPRS/EDGE/UMTS/HSPA cellular WAN device.
         </tp:docstring>
       </tp:enumvalue>
       <tp:enumvalue suffix="CDMA" value="4">
         <tp:docstring>
-          The device is a CDMA/IS-95-based cellular WAN device.
+          The device is a CDMA IS-95/1xRTT/EVDO cellular WAN device.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="BT" value="5">
+        <tp:docstring>
+          The device is Bluetooth device that provides PAN or DUN capabilities.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="OLPC_MESH" value="6">
+        <tp:docstring>
+          The device is an OLPC mesh networking device.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="WIMAX" value="7">
+        <tp:docstring>
+          The device is an 802.16e Mobile WiMAX device.
         </tp:docstring>
       </tp:enumvalue>
     </tp:enum>
