@@ -31,7 +31,6 @@
 #include "libnm_glib.h"
 
 #define	DBUS_NO_SERVICE_ERROR			"org.freedesktop.DBus.Error.ServiceDoesNotExist"
-#define NM_DBUS_SIGNAL_STATE_CHANGE	"StateChange"
 
 
 struct libnm_glib_ctx
@@ -272,7 +271,7 @@ libnm_glib_dbus_filter (DBusConnection *connection,
 	{
 		libnm_glib_get_nm_state (ctx);
 	}
-	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, NM_DBUS_SIGNAL_STATE_CHANGE))
+	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "StateChanged"))
 	{
 		NMState	state = NM_STATE_UNKNOWN;
 

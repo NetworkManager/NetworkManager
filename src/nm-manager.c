@@ -99,12 +99,6 @@ static gboolean impl_manager_set_logging (NMManager *manager,
                                           const char *domains,
                                           GError **error);
 
-/* Legacy 0.6 compatibility interface */
-
-static void impl_manager_legacy_sleep (NMManager *manager, DBusGMethodInvocation *context);
-static void impl_manager_legacy_wake  (NMManager *manager, DBusGMethodInvocation *context);
-static gboolean impl_manager_legacy_state (NMManager *manager, guint32 *state, GError **err);
-
 #include "nm-manager-glue.h"
 
 static void udev_device_added_cb (NMUdevManager *udev_mgr,
@@ -251,7 +245,6 @@ enum {
 	DEVICE_ADDED,
 	DEVICE_REMOVED,
 	STATE_CHANGED,
-	STATE_CHANGE,  /* DEPRECATED */
 	PROPERTIES_CHANGED,
 	CHECK_PERMISSIONS,
 	USER_PERMISSIONS_CHANGED,
@@ -472,9 +465,6 @@ nm_manager_update_state (NMManager *manager)
 		g_object_notify (G_OBJECT (manager), NM_MANAGER_STATE);
 
 		g_signal_emit (manager, signals[STATE_CHANGED], 0, priv->state);
-
-		/* Emit StateChange too for backwards compatibility */
-		g_signal_emit (manager, signals[STATE_CHANGE], 0, priv->state);
 	}
 }
 
@@ -2767,30 +2757,6 @@ impl_manager_get_permissions (NMManager *self,
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME, FALSE);
 }
 
-/* Legacy 0.6 compatibility interface */
-
-static void
-impl_manager_legacy_sleep (NMManager *manager, DBusGMethodInvocation *context)
-{
-	return impl_manager_sleep (manager, TRUE, context);
-}
-
-static void
-impl_manager_legacy_wake  (NMManager *manager, DBusGMethodInvocation *context)
-{
-	return impl_manager_sleep (manager, FALSE, context);
-}
-
-static gboolean
-impl_manager_legacy_state (NMManager *manager, guint32 *state, GError **err)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-
-	nm_manager_update_state (manager);
-	*state = priv->state;
-	return TRUE;
-}
-
 static gboolean
 impl_manager_set_logging (NMManager *manager,
                           const char *level,
@@ -3678,15 +3644,6 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		              0, NULL, NULL,
 		              g_cclosure_marshal_VOID__VOID,
 		              G_TYPE_NONE, 0);
-
-	/* StateChange is DEPRECATED */
-	signals[STATE_CHANGE] =
-		g_signal_new ("state-change",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL,
-		              g_cclosure_marshal_VOID__UINT,
-		              G_TYPE_NONE, 1, G_TYPE_UINT);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (manager_class),
 	                                 &dbus_glib_nm_manager_object_info);

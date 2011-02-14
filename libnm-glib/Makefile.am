@@ -181,7 +181,7 @@ libnm_glib_test_la_LIBADD = \
 
 #####################################################
 
-nm-client-bindings.h: $(top_srcdir)/introspection/nm-manager-client.xml
+nm-client-bindings.h: $(top_srcdir)/introspection/nm-manager.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_client --mode=glib-client --output=$@ $<
 
 nm-device-bindings.h: $(top_srcdir)/introspection/nm-device.xml

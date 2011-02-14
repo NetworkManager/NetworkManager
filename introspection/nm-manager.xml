@@ -348,42 +348,5 @@
       </tp:enumvalue>
     </tp:enum>
 
-    <!-- Legacy methods to maintain backwards compatibility for 0.6 branch. -->
-
-    <signal name="StateChange">
-      <tp:docstring>
-        DEPRECATED.  NetworkManager's state changed.  Use the 'StateChanged' signal instead.
-      </tp:docstring>
-      <arg name="state" type="u" tp:type="NM_STATE">
-        <tp:docstring>
-          The new state of NetworkManager.
-        </tp:docstring>
-      </arg>
-    </signal>
-
-    <method name="sleep">
-      <tp:docstring>
-        DEPRECATED.  Control the NetworkManager daemon's sleep state.  When asleep, all interfaces that it manages are deactivated.
-      </tp:docstring>
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_legacy_sleep"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
-    </method>
-
-    <method name="wake">
-      <tp:docstring>
-        DEPRECATED.  Control the NetworkManager daemon's sleep state.  When awake, all known interfaces are available to be activated.
-      </tp:docstring>
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_legacy_wake"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
-    </method>
-
-    <method name="state">
-      <tp:docstring>
-        DEPRECATED.  The overall state of the NetworkManager daemon.
-      </tp:docstring>
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_legacy_state"/>
-      <arg name="state" type="u" direction="out" tp:type="NM_STATE"/>
-    </method>
-
   </interface>
 </node>
