@@ -219,6 +219,7 @@ update_wwan_status (NMClient *client, gboolean notify)
 	}
 }
 
+#if WITH_WIMAX
 static void
 update_wimax_status (NMClient *client, gboolean notify)
 {
@@ -248,6 +249,7 @@ update_wimax_status (NMClient *client, gboolean notify)
 			_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_WIMAX_ENABLED);
 	}
 }
+#endif
 
 static GObject *
 new_active_connection (DBusGConnection *connection, const char *path)
@@ -548,7 +550,9 @@ constructor (GType type,
 	if (priv->manager_running) {
 		update_wireless_status (NM_CLIENT (object), FALSE);
 		update_wwan_status (NM_CLIENT (object), FALSE);
+#if WITH_WIMAX
 		update_wimax_status (NM_CLIENT (object), FALSE);
+#endif
 		nm_client_get_state (NM_CLIENT (object));
 	}
 
@@ -966,7 +970,9 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 		_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
 		update_wireless_status (client, TRUE);
 		update_wwan_status (client, TRUE);
+#if WITH_WIMAX
 		update_wimax_status (client, TRUE);
+#endif
 	}
 }
 
