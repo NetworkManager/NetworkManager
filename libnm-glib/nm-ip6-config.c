@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -165,7 +165,8 @@ nm_ip6_config_get_addresses (NMIP6Config *config)
 	if (!_nm_object_get_property (NM_OBJECT (config),
 	                              NM_DBUS_INTERFACE_IP6_CONFIG,
 	                              "Addresses",
-	                              &value)) {
+	                              &value,
+	                              NULL)) {
 		return NULL;
 	}
 
@@ -202,7 +203,8 @@ nm_ip6_config_get_nameservers (NMIP6Config *config)
 	if (!_nm_object_get_property (NM_OBJECT (config),
 	                              NM_DBUS_INTERFACE_IP6_CONFIG,
 	                              "Nameservers",
-	                              &value)) {
+	                              &value,
+	                              NULL)) {
 		return NULL;
 	}
 
@@ -237,7 +239,8 @@ nm_ip6_config_get_domains (NMIP6Config *config)
 	if (!_nm_object_get_property (NM_OBJECT (config),
 	                              NM_DBUS_INTERFACE_IP6_CONFIG,
 	                              "Domains",
-	                              &value)) {
+	                              &value,
+	                              NULL)) {
 		return NULL;
 	}
 
@@ -272,7 +275,8 @@ nm_ip6_config_get_routes (NMIP6Config *config)
 	if (!_nm_object_get_property (NM_OBJECT (config),
 	                              NM_DBUS_INTERFACE_IP6_CONFIG,
 	                              "Routes",
-	                              &value)) {
+	                              &value,
+	                              NULL)) {
 		return NULL;
 	}
 

@@ -125,8 +125,9 @@ nm_device_wimax_get_hw_address (NMDeviceWimax *wimax)
 	priv = NM_DEVICE_WIMAX_GET_PRIVATE (wimax);
 	if (!priv->hw_address) {
 		priv->hw_address = _nm_object_get_string_property (NM_OBJECT (wimax),
-														   NM_DBUS_INTERFACE_DEVICE_WIMAX,
-														   DBUS_PROP_HW_ADDRESS);
+		                                                   NM_DBUS_INTERFACE_DEVICE_WIMAX,
+		                                                   DBUS_PROP_HW_ADDRESS,
+		                                                   NULL);
 	}
 
 	return priv->hw_address;
@@ -170,8 +171,9 @@ nm_device_wimax_get_active_nsp (NMDeviceWimax *wimax)
 		return NULL;
 
 	path = _nm_object_get_object_path_property (NM_OBJECT (wimax),
-												NM_DBUS_INTERFACE_DEVICE_WIMAX,
-												DBUS_PROP_ACTIVE_NSP);
+	                                            NM_DBUS_INTERFACE_DEVICE_WIMAX,
+	                                            DBUS_PROP_ACTIVE_NSP,
+	                                            NULL);
 	if (path) {
 		g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
 		g_value_take_boxed (&value, path);
@@ -359,7 +361,8 @@ nm_device_wimax_get_center_frequency (NMDeviceWimax *self)
 	if (!priv->center_freq) {
 		priv->center_freq = _nm_object_get_uint_property (NM_OBJECT (self),
 		                                                  NM_DBUS_INTERFACE_DEVICE_WIMAX,
-		                                                  DBUS_PROP_CENTER_FREQUENCY);
+		                                                  DBUS_PROP_CENTER_FREQUENCY,
+		                                                  NULL);
 	}
 	return priv->center_freq;
 }
@@ -386,7 +389,8 @@ nm_device_wimax_get_rssi (NMDeviceWimax *self)
 	if (!priv->rssi) {
 		priv->rssi = _nm_object_get_int_property (NM_OBJECT (self),
 		                                          NM_DBUS_INTERFACE_DEVICE_WIMAX,
-		                                          DBUS_PROP_RSSI);
+		                                          DBUS_PROP_RSSI,
+		                                          NULL);
 	}
 	return priv->rssi;
 }
@@ -412,7 +416,8 @@ nm_device_wimax_get_cinr (NMDeviceWimax *self)
 	if (!priv->cinr) {
 		priv->cinr = _nm_object_get_int_property (NM_OBJECT (self),
 		                                          NM_DBUS_INTERFACE_DEVICE_WIMAX,
-		                                          DBUS_PROP_CINR);
+		                                          DBUS_PROP_CINR,
+		                                          NULL);
 	}
 	return priv->cinr;
 }
@@ -438,7 +443,8 @@ nm_device_wimax_get_tx_power (NMDeviceWimax *self)
 	if (!priv->tx_power) {
 		priv->tx_power = _nm_object_get_int_property (NM_OBJECT (self),
 		                                              NM_DBUS_INTERFACE_DEVICE_WIMAX,
-		                                              DBUS_PROP_TX_POWER);
+		                                              DBUS_PROP_TX_POWER,
+		                                              NULL);
 	}
 	return priv->tx_power;
 }
@@ -462,7 +468,8 @@ nm_device_wimax_get_bsid (NMDeviceWimax *self)
 	if (!priv->bsid) {
 		priv->bsid = _nm_object_get_string_property (NM_OBJECT (self),
 		                                             NM_DBUS_INTERFACE_DEVICE_WIMAX,
-		                                             DBUS_PROP_BSID);
+		                                             DBUS_PROP_BSID,
+		                                             NULL);
 	}
 	return priv->bsid;
 }

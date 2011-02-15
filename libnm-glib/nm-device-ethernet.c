@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2010 Red Hat, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
 #include "nm-device-ethernet.h"
@@ -99,7 +99,8 @@ nm_device_ethernet_get_hw_address (NMDeviceEthernet *device)
 	if (!priv->hw_address) {
 		priv->hw_address = _nm_object_get_string_property (NM_OBJECT (device),
 		                                                  NM_DBUS_INTERFACE_DEVICE_WIRED,
-		                                                  DBUS_PROP_HW_ADDRESS);
+		                                                  DBUS_PROP_HW_ADDRESS,
+		                                                  NULL);
 	}
 
 	return priv->hw_address;
@@ -125,7 +126,8 @@ nm_device_ethernet_get_permanent_hw_address (NMDeviceEthernet *device)
 	if (!priv->perm_hw_address) {
 		priv->perm_hw_address = _nm_object_get_string_property (NM_OBJECT (device),
 		                                                        NM_DBUS_INTERFACE_DEVICE_WIRED,
-		                                                        DBUS_PROP_PERM_HW_ADDRESS);
+		                                                        DBUS_PROP_PERM_HW_ADDRESS,
+		                                                        NULL);
 	}
 
 	return priv->perm_hw_address;
@@ -150,7 +152,8 @@ nm_device_ethernet_get_speed (NMDeviceEthernet *device)
 	if (!priv->speed) {
 		priv->speed = _nm_object_get_uint_property (NM_OBJECT (device),
 		                                           NM_DBUS_INTERFACE_DEVICE_WIRED,
-		                                           DBUS_PROP_SPEED);
+		                                           DBUS_PROP_SPEED,
+		                                           NULL);
 	}
 
 	return priv->speed;
@@ -175,7 +178,8 @@ nm_device_ethernet_get_carrier (NMDeviceEthernet *device)
 	if (!priv->carrier_valid) {
 		priv->carrier = _nm_object_get_boolean_property (NM_OBJECT (device),
 		                                                NM_DBUS_INTERFACE_DEVICE_WIRED,
-		                                                DBUS_PROP_CARRIER);
+		                                                DBUS_PROP_CARRIER,
+		                                                NULL);
 		priv->carrier_valid = TRUE;
 	}
 

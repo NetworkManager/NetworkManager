@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2010 Red Hat, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -86,7 +86,8 @@ nm_vpn_connection_get_banner (NMVPNConnection *vpn)
 	if (!priv->banner) {
 		priv->banner = _nm_object_get_string_property (NM_OBJECT (vpn),
 		                                               NM_DBUS_INTERFACE_VPN_CONNECTION,
-		                                               DBUS_PROP_BANNER);
+		                                               DBUS_PROP_BANNER,
+		                                               NULL);
 		if (priv->banner && !strlen (priv->banner)) {
 			g_free (priv->banner);
 			priv->banner = NULL;
@@ -106,7 +107,8 @@ nm_vpn_connection_get_vpn_state (NMVPNConnection *vpn)
 	if (priv->vpn_state == NM_VPN_CONNECTION_STATE_UNKNOWN) {
 		priv->vpn_state = _nm_object_get_uint_property (NM_OBJECT (vpn),
 		                                                NM_DBUS_INTERFACE_VPN_CONNECTION,
-		                                                DBUS_PROP_VPN_STATE);
+		                                                DBUS_PROP_VPN_STATE,
+		                                                NULL);
 	}
 	return priv->vpn_state;
 }

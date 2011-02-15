@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2010 Red Hat, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -765,7 +765,8 @@ nm_device_get_iface (NMDevice *device)
 	if (!priv->iface) {
 		priv->iface = _nm_object_get_string_property (NM_OBJECT (device),
 		                                             NM_DBUS_INTERFACE_DEVICE,
-		                                             "Interface");
+		                                             "Interface",
+		                                             NULL);
 	}
 
 	return priv->iface;
@@ -792,7 +793,8 @@ nm_device_get_ip_iface (NMDevice *device)
 	if (!priv->ip_iface) {
 		priv->ip_iface = _nm_object_get_string_property (NM_OBJECT (device),
 		                                                 NM_DBUS_INTERFACE_DEVICE,
-		                                                 "IpInterface");
+		                                                 "IpInterface",
+		                                                 NULL);
 	}
 
 	return priv->ip_iface;
@@ -819,7 +821,8 @@ nm_device_get_udi (NMDevice *device)
 	if (!priv->udi) {
 		priv->udi = _nm_object_get_string_property (NM_OBJECT (device),
 		                                           NM_DBUS_INTERFACE_DEVICE,
-		                                           "Udi");
+		                                           "Udi",
+		                                           NULL);
 	}
 
 	return priv->udi;
@@ -845,7 +848,8 @@ nm_device_get_driver (NMDevice *device)
 	if (!priv->driver) {
 		priv->driver = _nm_object_get_string_property (NM_OBJECT (device),
 		                                              NM_DBUS_INTERFACE_DEVICE,
-		                                              "Driver");
+		                                              "Driver",
+		                                              NULL);
 	}
 
 	return priv->driver;
@@ -870,7 +874,8 @@ nm_device_get_capabilities (NMDevice *device)
 	if (!priv->capabilities) {
 		priv->capabilities = _nm_object_get_uint_property (NM_OBJECT (device),
 		                                                  NM_DBUS_INTERFACE_DEVICE,
-		                                                  "Capabilities");
+		                                                  "Capabilities",
+		                                                  NULL);
 	}
 
 	return priv->capabilities;
@@ -895,7 +900,8 @@ nm_device_get_managed (NMDevice *device)
 	if (!priv->managed) {
 		priv->managed = _nm_object_get_boolean_property (NM_OBJECT (device),
 		                                                NM_DBUS_INTERFACE_DEVICE,
-		                                                "Managed");
+		                                                "Managed",
+		                                                NULL);
 	}
 
 	return priv->managed;
@@ -922,7 +928,8 @@ nm_device_get_firmware_missing (NMDevice *device)
 	if (!priv->firmware_missing) {
 		priv->firmware_missing = _nm_object_get_boolean_property (NM_OBJECT (device),
 		                                                          NM_DBUS_INTERFACE_DEVICE,
-		                                                          "FirmwareMissing");
+		                                                          "FirmwareMissing",
+		                                                          NULL);
 	}
 
 	return priv->firmware_missing;
@@ -951,7 +958,7 @@ nm_device_get_ip4_config (NMDevice *device)
 	if (priv->null_ip4_config)
 		return NULL;
 
-	path = _nm_object_get_object_path_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Ip4Config");
+	path = _nm_object_get_object_path_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Ip4Config", NULL);
 	if (path) {
 		g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
 		g_value_take_boxed (&value, path);
@@ -986,7 +993,7 @@ nm_device_get_dhcp4_config (NMDevice *device)
 	if (priv->null_dhcp4_config)
 		return NULL;
 
-	path = _nm_object_get_object_path_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Dhcp4Config");
+	path = _nm_object_get_object_path_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Dhcp4Config", NULL);
 	if (path) {
 		g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
 		g_value_take_boxed (&value, path);
@@ -1020,7 +1027,7 @@ nm_device_get_ip6_config (NMDevice *device)
 	if (priv->null_ip6_config)
 		return NULL;
 
-	path = _nm_object_get_object_path_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Ip6Config");
+	path = _nm_object_get_object_path_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Ip6Config", NULL);
 	if (path) {
 		g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
 		g_value_take_boxed (&value, path);
@@ -1055,7 +1062,7 @@ nm_device_get_dhcp6_config (NMDevice *device)
 	if (priv->null_dhcp6_config)
 		return NULL;
 
-	path = _nm_object_get_object_path_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Dhcp6Config");
+	path = _nm_object_get_object_path_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Dhcp6Config", NULL);
 	if (path) {
 		g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
 		g_value_take_boxed (&value, path);
@@ -1085,7 +1092,8 @@ nm_device_get_state (NMDevice *device)
 	if (priv->state == NM_DEVICE_STATE_UNKNOWN) {
 		priv->state = _nm_object_get_uint_property (NM_OBJECT (device), 
 		                                           NM_DBUS_INTERFACE_DEVICE,
-		                                           "State");
+		                                           "State",
+		                                           NULL);
 	}
 
 	return priv->state;

@@ -157,8 +157,9 @@ update_wireless_status (NMClient *client, gboolean notify)
 	gboolean poke = FALSE;
 
 	val = _nm_object_get_boolean_property (NM_OBJECT (client),
-										  NM_DBUS_INTERFACE,
-										  "WirelessHardwareEnabled");
+	                                       NM_DBUS_INTERFACE,
+	                                       "WirelessHardwareEnabled",
+	                                       NULL);
 	if (val != priv->wireless_hw_enabled) {
 		priv->wireless_hw_enabled = val;
 		poke = TRUE;
@@ -170,8 +171,9 @@ update_wireless_status (NMClient *client, gboolean notify)
 		val = FALSE;
 	else
 		val = _nm_object_get_boolean_property (NM_OBJECT (client),
-				                              NM_DBUS_INTERFACE,
-				                              "WirelessEnabled");
+		                                       NM_DBUS_INTERFACE,
+		                                       "WirelessEnabled",
+		                                       NULL);
 	if (val != priv->wireless_enabled) {
 		priv->wireless_enabled = val;
 		poke = TRUE;
@@ -197,7 +199,8 @@ update_wwan_status (NMClient *client, gboolean notify)
 
 	val = _nm_object_get_boolean_property (NM_OBJECT (client),
 	                                       NM_DBUS_INTERFACE,
-	                                       "WwanHardwareEnabled");
+	                                       "WwanHardwareEnabled",
+	                                       NULL);
 	if (val != priv->wwan_hw_enabled) {
 		priv->wwan_hw_enabled = val;
 		if (notify)
@@ -209,7 +212,8 @@ update_wwan_status (NMClient *client, gboolean notify)
 	else {
 		val = _nm_object_get_boolean_property (NM_OBJECT (client),
 		                                       NM_DBUS_INTERFACE,
-		                                       "WwanEnabled");
+		                                       "WwanEnabled",
+		                                       NULL);
 	}
 
 	if (val != priv->wwan_enabled) {
@@ -228,7 +232,8 @@ update_wimax_status (NMClient *client, gboolean notify)
 
 	val = _nm_object_get_boolean_property (NM_OBJECT (client),
 	                                       NM_DBUS_INTERFACE,
-	                                       "WimaxHardwareEnabled");
+	                                       "WimaxHardwareEnabled",
+	                                       NULL);
 	if (val != priv->wimax_hw_enabled) {
 		priv->wimax_hw_enabled = val;
 		if (notify)
@@ -240,7 +245,8 @@ update_wimax_status (NMClient *client, gboolean notify)
 	else {
 		val = _nm_object_get_boolean_property (NM_OBJECT (client),
 		                                       NM_DBUS_INTERFACE,
-		                                       "WimaxEnabled");
+		                                       "WimaxEnabled",
+		                                       NULL);
 	}
 
 	if (val != priv->wimax_enabled) {
@@ -1275,11 +1281,12 @@ nm_client_get_active_connections (NMClient *client)
 	if (!_nm_object_get_property (NM_OBJECT (client),
 	                             "org.freedesktop.NetworkManager",
 	                             "ActiveConnections",
-	                             &value)) {
+	                             &value,
+	                             NULL)) {
 		return NULL;
 	}
 
-	demarshal_active_connections (NM_OBJECT (client), NULL, &value, &priv->active_connections);	
+	demarshal_active_connections (NM_OBJECT (client), NULL, &value, &priv->active_connections);
 	g_value_unset (&value);
 
 	return handle_ptr_array_return (priv->active_connections);
@@ -1471,7 +1478,7 @@ nm_client_get_state (NMClient *client)
 		return NM_STATE_UNKNOWN;
 
 	if (priv->state == NM_STATE_UNKNOWN)
-		priv->state = _nm_object_get_uint_property (NM_OBJECT (client), NM_DBUS_INTERFACE, "State");
+		priv->state = _nm_object_get_uint_property (NM_OBJECT (client), NM_DBUS_INTERFACE, "State", NULL);
 
 	return priv->state;
 }
@@ -1497,7 +1504,8 @@ nm_client_networking_get_enabled (NMClient *client)
 		if (!priv->networking_enabled) {
 			priv->networking_enabled = _nm_object_get_boolean_property (NM_OBJECT (client),
 			                                                            NM_DBUS_INTERFACE,
-			                                                            "NetworkingEnabled");
+			                                                            "NetworkingEnabled",
+			                                                            NULL);
 			priv->have_networking_enabled = TRUE;
 		}
 	}

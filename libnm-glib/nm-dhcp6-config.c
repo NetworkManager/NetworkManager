@@ -17,7 +17,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 - 2010 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  * Copyright (C) 2008 Novell, Inc.
  */
 
@@ -218,7 +218,8 @@ nm_dhcp6_config_get_options (NMDHCP6Config *config)
 	if (!_nm_object_get_property (NM_OBJECT (config),
 	                              NM_DBUS_INTERFACE_DHCP6_CONFIG,
 	                              "Options",
-	                              &value))
+	                              &value,
+	                              NULL))
 		goto out;
 
 	demarshal_dhcp6_options (NM_OBJECT (config), NULL, &value, &priv->options);	

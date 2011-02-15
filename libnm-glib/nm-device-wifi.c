@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2010 Red Hat, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -125,7 +125,8 @@ nm_device_wifi_get_hw_address (NMDeviceWifi *device)
 	if (!priv->hw_address) {
 		priv->hw_address = _nm_object_get_string_property (NM_OBJECT (device),
 		                                                  NM_DBUS_INTERFACE_DEVICE_WIRELESS,
-		                                                  DBUS_PROP_HW_ADDRESS);
+		                                                  DBUS_PROP_HW_ADDRESS,
+		                                                  NULL);
 	}
 
 	return priv->hw_address;
@@ -151,7 +152,8 @@ nm_device_wifi_get_permanent_hw_address (NMDeviceWifi *device)
 	if (!priv->perm_hw_address) {
 		priv->perm_hw_address = _nm_object_get_string_property (NM_OBJECT (device),
 		                                                        NM_DBUS_INTERFACE_DEVICE_WIRELESS,
-		                                                        DBUS_PROP_PERM_HW_ADDRESS);
+		                                                        DBUS_PROP_PERM_HW_ADDRESS,
+		                                                        NULL);
 	}
 
 	return priv->perm_hw_address;
@@ -176,7 +178,8 @@ nm_device_wifi_get_mode (NMDeviceWifi *device)
 	if (!priv->mode) {
 		priv->mode = _nm_object_get_uint_property (NM_OBJECT (device),
 		                                          NM_DBUS_INTERFACE_DEVICE_WIRELESS,
-		                                          DBUS_PROP_MODE);
+		                                          DBUS_PROP_MODE,
+		                                          NULL);
 	}
 
 	return priv->mode;
@@ -215,7 +218,8 @@ nm_device_wifi_get_bitrate (NMDeviceWifi *device)
 	if (!priv->rate) {
 		priv->rate = _nm_object_get_uint_property (NM_OBJECT (device),
 		                                         NM_DBUS_INTERFACE_DEVICE_WIRELESS,
-		                                         DBUS_PROP_BITRATE);
+		                                         DBUS_PROP_BITRATE,
+		                                         NULL);
 	}
 
 	return priv->rate;
@@ -240,7 +244,8 @@ nm_device_wifi_get_capabilities (NMDeviceWifi *device)
 	if (!priv->wireless_caps) {
 		priv->wireless_caps = _nm_object_get_uint_property (NM_OBJECT (device),
 		                                                   NM_DBUS_INTERFACE_DEVICE_WIRELESS,
-		                                                   DBUS_PROP_WIRELESS_CAPABILITIES);
+		                                                   DBUS_PROP_WIRELESS_CAPABILITIES,
+		                                                   NULL);
 	}
 
 	return priv->wireless_caps;
@@ -285,7 +290,8 @@ nm_device_wifi_get_active_access_point (NMDeviceWifi *device)
 
 	path = _nm_object_get_object_path_property (NM_OBJECT (device),
 	                                           NM_DBUS_INTERFACE_DEVICE_WIRELESS,
-	                                           DBUS_PROP_ACTIVE_ACCESS_POINT);
+	                                           DBUS_PROP_ACTIVE_ACCESS_POINT,
+	                                           NULL);
 	if (path) {
 		g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
 		g_value_take_boxed (&value, path);

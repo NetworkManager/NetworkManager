@@ -17,7 +17,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
 #ifndef NM_OBJECT_PRIVATE_H
@@ -48,46 +48,55 @@ void _nm_object_queue_notify (NMObject *object, const char *property);
 /* DBus property accessors */
 
 gboolean _nm_object_get_property (NMObject *object,
-								 const char *interface,
-								 const char *prop_name,
-								 GValue *value);
+                                  const char *interface,
+                                  const char *prop_name,
+                                  GValue *value,
+                                  GError **error);
 
 void _nm_object_set_property (NMObject *object,
-							 const char *interface,
-							 const char *prop_name,
-							 GValue *value);
+                              const char *interface,
+                              const char *prop_name,
+                              GValue *value);
 
 char *_nm_object_get_string_property (NMObject *object,
-									 const char *interface,
-									 const char *prop_name);
+                                      const char *interface,
+                                      const char *prop_name,
+                                      GError **error);
 
 char *_nm_object_get_object_path_property (NMObject *object,
-										  const char *interface,
-										  const char *prop_name);
+                                           const char *interface,
+                                           const char *prop_name,
+                                           GError **error);
 
 gint32 _nm_object_get_int_property (NMObject *object,
-								   const char *interface,
-								   const char *prop_name);
+                                    const char *interface,
+                                    const char *prop_name,
+                                    GError **error);
 
 guint32 _nm_object_get_uint_property (NMObject *object,
-									 const char *interface,
-									 const char *prop_name);
+                                      const char *interface,
+                                      const char *prop_name,
+                                      GError **error);
 
 gboolean _nm_object_get_boolean_property (NMObject *object,
-										const char *interface,
-										const char *prop_name);
+                                          const char *interface,
+                                          const char *prop_name,
+                                          GError **error);
 
 gint8 _nm_object_get_byte_property (NMObject *object,
-								   const char *interface,
-								   const char *prop_name);
+                                    const char *interface,
+                                    const char *prop_name,
+                                    GError **error);
 
 gdouble _nm_object_get_double_property (NMObject *object,
-									   const char *interface,
-									   const char *prop_name);
+                                        const char *interface,
+                                        const char *prop_name,
+                                        GError **error);
 
 GByteArray *_nm_object_get_byte_array_property (NMObject *object,
-											   const char *interface,
-											   const char *prop_name);
+                                                const char *interface,
+                                                const char *prop_name,
+                                                GError **error);
 
 static inline const GPtrArray *
 handle_ptr_array_return (GPtrArray *array)

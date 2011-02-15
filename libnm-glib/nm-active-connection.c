@@ -17,7 +17,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2010 Red Hat, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  * Copyright (C) 2008 Novell, Inc.
  */
 
@@ -111,7 +111,8 @@ nm_active_connection_get_connection (NMActiveConnection *connection)
 	if (!priv->connection) {
 		priv->connection = _nm_object_get_string_property (NM_OBJECT (connection),
 		                                                  NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
-		                                                  DBUS_PROP_CONNECTION);
+		                                                  DBUS_PROP_CONNECTION,
+		                                                  NULL);
 	}
 
 	return priv->connection;
@@ -137,7 +138,8 @@ nm_active_connection_get_specific_object (NMActiveConnection *connection)
 	if (!priv->specific_object) {
 		priv->specific_object = _nm_object_get_string_property (NM_OBJECT (connection),
 		                                                       NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
-		                                                       DBUS_PROP_SPECIFIC_OBJECT);
+		                                                       DBUS_PROP_SPECIFIC_OBJECT,
+		                                                       NULL);
 	}
 
 	return priv->specific_object;
@@ -167,7 +169,8 @@ nm_active_connection_get_devices (NMActiveConnection *connection)
 	if (!_nm_object_get_property (NM_OBJECT (connection),
 	                             NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
 	                             DBUS_PROP_DEVICES,
-	                             &value)) {
+	                             &value,
+	                             NULL)) {
 		return NULL;
 	}
 
@@ -196,7 +199,8 @@ nm_active_connection_get_state (NMActiveConnection *connection)
 	if (!priv->state) {
 		priv->state = _nm_object_get_uint_property (NM_OBJECT (connection),
 		                                           NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
-		                                           DBUS_PROP_STATE);
+		                                           DBUS_PROP_STATE,
+		                                           NULL);
 	}
 
 	return priv->state;
@@ -222,7 +226,8 @@ nm_active_connection_get_default (NMActiveConnection *connection)
 	if (!priv->is_default) {
 		priv->is_default = _nm_object_get_boolean_property (NM_OBJECT (connection),
 		                                                    NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
-		                                                    DBUS_PROP_DEFAULT);
+		                                                    DBUS_PROP_DEFAULT,
+		                                                    NULL);
 	}
 
 	return priv->is_default;
@@ -248,7 +253,8 @@ nm_active_connection_get_default6 (NMActiveConnection *connection)
 	if (!priv->is_default6) {
 		priv->is_default6 = _nm_object_get_boolean_property (NM_OBJECT (connection),
 		                                                     NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
-		                                                     DBUS_PROP_DEFAULT6);
+		                                                     DBUS_PROP_DEFAULT6,
+		                                                     NULL);
 	}
 
 	return priv->is_default6;

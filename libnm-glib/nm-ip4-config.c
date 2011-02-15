@@ -17,7 +17,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2008 Novell, Inc.
+ * Copyright (C) 2007 - 2011 Novell, Inc.
  * Copyright (C) 2008 Red Hat, Inc.
  */
 
@@ -355,7 +355,8 @@ nm_ip4_config_get_addresses (NMIP4Config *config)
 	if (!_nm_object_get_property (NM_OBJECT (config),
 	                              NM_DBUS_INTERFACE_IP4_CONFIG,
 	                              "Addresses",
-	                              &value)) {
+	                              &value,
+	                              NULL)) {
 		return NULL;
 	}
 
@@ -402,7 +403,8 @@ nm_ip4_config_get_nameservers (NMIP4Config *config)
 		if (_nm_object_get_property (NM_OBJECT (config),
 		                             NM_DBUS_INTERFACE_IP4_CONFIG,
 		                             "Nameservers",
-		                             &value)) {
+		                             &value,
+		                             NULL)) {
 			array = (GArray *) g_value_get_boxed (&value);
 			if (array && array->len) {
 				priv->nameservers = g_array_sized_new (FALSE, TRUE, sizeof (guint32), array->len);
@@ -439,7 +441,8 @@ nm_ip4_config_get_domains (NMIP4Config *config)
 	if (_nm_object_get_property (NM_OBJECT (config),
 	                             NM_DBUS_INTERFACE_IP4_CONFIG,
 	                             "Domains",
-	                             &value)) {
+	                             &value,
+	                             NULL)) {
 		char **array = NULL, **p;
 
 		array = (char **) g_value_get_boxed (&value);
@@ -477,7 +480,8 @@ nm_ip4_config_get_wins_servers (NMIP4Config *config)
 		if (_nm_object_get_property (NM_OBJECT (config),
 		                             NM_DBUS_INTERFACE_IP4_CONFIG,
 		                             "Nameservers",
-		                             &value)) {
+		                             &value,
+		                             NULL)) {
 			array = (GArray *) g_value_get_boxed (&value);
 			if (array && array->len) {
 				priv->nameservers = g_array_sized_new (FALSE, TRUE, sizeof (guint32), array->len);
@@ -515,7 +519,8 @@ nm_ip4_config_get_routes (NMIP4Config *config)
 	if (!_nm_object_get_property (NM_OBJECT (config),
 	                              NM_DBUS_INTERFACE_IP4_CONFIG,
 	                              "Routes",
-	                              &value)) {
+	                              &value,
+	                              NULL)) {
 		return NULL;
 	}
 

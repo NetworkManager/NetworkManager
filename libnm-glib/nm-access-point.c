@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -114,7 +114,8 @@ nm_access_point_get_flags (NMAccessPoint *ap)
 	if (!priv->flags) {
 		priv->flags = _nm_object_get_uint_property (NM_OBJECT (ap),
 		                                           NM_DBUS_INTERFACE_ACCESS_POINT,
-		                                           DBUS_PROP_FLAGS);
+		                                           DBUS_PROP_FLAGS,
+		                                           NULL);
 	}
 
 	return priv->flags;
@@ -139,7 +140,8 @@ nm_access_point_get_wpa_flags (NMAccessPoint *ap)
 	if (!priv->wpa_flags) {
 		priv->wpa_flags = _nm_object_get_uint_property (NM_OBJECT (ap),
 		                                               NM_DBUS_INTERFACE_ACCESS_POINT,
-		                                               DBUS_PROP_WPA_FLAGS);
+		                                               DBUS_PROP_WPA_FLAGS,
+		                                               NULL);
 	}
 
 	return priv->wpa_flags;
@@ -164,7 +166,8 @@ nm_access_point_get_rsn_flags (NMAccessPoint *ap)
 	if (!priv->rsn_flags) {
 		priv->rsn_flags = _nm_object_get_uint_property (NM_OBJECT (ap),
 		                                               NM_DBUS_INTERFACE_ACCESS_POINT,
-		                                               DBUS_PROP_RSN_FLAGS);
+		                                               DBUS_PROP_RSN_FLAGS,
+		                                               NULL);
 	}
 
 	return priv->rsn_flags;
@@ -190,7 +193,8 @@ nm_access_point_get_ssid (NMAccessPoint *ap)
 	if (!priv->ssid) {
 		priv->ssid = _nm_object_get_byte_array_property (NM_OBJECT (ap),
 		                                                NM_DBUS_INTERFACE_ACCESS_POINT,
-		                                                DBUS_PROP_SSID);
+		                                                DBUS_PROP_SSID,
+		                                                NULL);
 	}
 
 	return priv->ssid;
@@ -215,7 +219,8 @@ nm_access_point_get_frequency (NMAccessPoint *ap)
 	if (!priv->frequency) {
 		priv->frequency = _nm_object_get_uint_property (NM_OBJECT (ap),
 		                                               NM_DBUS_INTERFACE_ACCESS_POINT,
-		                                               DBUS_PROP_FREQUENCY);
+		                                               DBUS_PROP_FREQUENCY,
+		                                               NULL);
 	}
 
 	return priv->frequency;
@@ -241,7 +246,8 @@ nm_access_point_get_hw_address (NMAccessPoint *ap)
 	if (!priv->hw_address) {
 		priv->hw_address = _nm_object_get_string_property (NM_OBJECT (ap),
 		                                                  NM_DBUS_INTERFACE_ACCESS_POINT,
-		                                                  DBUS_PROP_HW_ADDRESS);
+		                                                  DBUS_PROP_HW_ADDRESS,
+		                                                  NULL);
 	}
 
 	return priv->hw_address;
@@ -266,7 +272,8 @@ nm_access_point_get_mode (NMAccessPoint *ap)
 	if (!priv->mode) {
 		priv->mode = _nm_object_get_uint_property (NM_OBJECT (ap),
 		                                          NM_DBUS_INTERFACE_ACCESS_POINT,
-		                                          DBUS_PROP_MODE);
+		                                          DBUS_PROP_MODE,
+		                                          NULL);
 	}
 
 	return priv->mode;
@@ -291,7 +298,8 @@ nm_access_point_get_max_bitrate (NMAccessPoint *ap)
 	if (!priv->max_bitrate) {
 		priv->max_bitrate = _nm_object_get_uint_property (NM_OBJECT (ap),
 		                                              NM_DBUS_INTERFACE_ACCESS_POINT,
-		                                              DBUS_PROP_MAX_BITRATE);
+		                                              DBUS_PROP_MAX_BITRATE,
+		                                              NULL);
 	}
 
 	return priv->max_bitrate;
@@ -316,7 +324,8 @@ nm_access_point_get_strength (NMAccessPoint *ap)
 	if (!priv->strength) {
 		priv->strength = _nm_object_get_byte_property (NM_OBJECT (ap),
 		                                              NM_DBUS_INTERFACE_ACCESS_POINT,
-		                                              DBUS_PROP_STRENGTH);
+		                                              DBUS_PROP_STRENGTH,
+		                                              NULL);
 	}
 
 	return priv->strength;

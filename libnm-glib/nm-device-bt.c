@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2009 Red Hat, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
 #include "nm-device-bt.h"
@@ -96,7 +96,8 @@ nm_device_bt_get_hw_address (NMDeviceBt *device)
 	if (!priv->hw_address) {
 		priv->hw_address = _nm_object_get_string_property (NM_OBJECT (device),
 		                                                   NM_DBUS_INTERFACE_DEVICE_BLUETOOTH,
-		                                                   DBUS_PROP_HW_ADDRESS);
+		                                                   DBUS_PROP_HW_ADDRESS,
+		                                                   NULL);
 	}
 
 	return priv->hw_address;
@@ -121,7 +122,8 @@ nm_device_bt_get_name (NMDeviceBt *device)
 	if (!priv->name) {
 		priv->name = _nm_object_get_string_property (NM_OBJECT (device),
 		                                             NM_DBUS_INTERFACE_DEVICE_BLUETOOTH,
-		                                             DBUS_PROP_NAME);
+		                                             DBUS_PROP_NAME,
+		                                             NULL);
 	}
 
 	return priv->name;
@@ -146,7 +148,8 @@ nm_device_bt_get_capabilities (NMDeviceBt *device)
 	if (!priv->bt_capabilities_valid) {
 		priv->bt_capabilities = _nm_object_get_uint_property (NM_OBJECT (device),
 		                                                      NM_DBUS_INTERFACE_DEVICE_BLUETOOTH,
-		                                                      DBUS_PROP_BT_CAPABILITIES);
+		                                                      DBUS_PROP_BT_CAPABILITIES,
+		                                                      NULL);
 		priv->bt_capabilities_valid = TRUE;
 	}
 

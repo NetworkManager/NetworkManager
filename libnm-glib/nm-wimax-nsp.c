@@ -17,7 +17,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 Novell, Inc.
+ * Copyright (C) 2011 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -92,8 +92,9 @@ nm_wimax_nsp_get_name (NMWimaxNsp *nsp)
 	priv = NM_WIMAX_NSP_GET_PRIVATE (nsp);
 	if (!priv->name)
 		priv->name = _nm_object_get_string_property (NM_OBJECT (nsp),
-													 NM_DBUS_INTERFACE_WIMAX_NSP,
-													 DBUS_PROP_NAME);
+		                                             NM_DBUS_INTERFACE_WIMAX_NSP,
+		                                             DBUS_PROP_NAME,
+		                                             NULL);
 
 	return priv->name;
 }
@@ -117,7 +118,8 @@ nm_wimax_nsp_get_signal_quality (NMWimaxNsp *nsp)
 	if (!priv->signal_quality) {
 		priv->signal_quality = _nm_object_get_uint_property (NM_OBJECT (nsp),
 		                                                     NM_DBUS_INTERFACE_WIMAX_NSP,
-		                                                     DBUS_PROP_SIGNAL_QUALITY);
+		                                                     DBUS_PROP_SIGNAL_QUALITY,
+		                                                     NULL);
 	}
 
 	return priv->signal_quality;
@@ -142,7 +144,8 @@ nm_wimax_nsp_get_network_type (NMWimaxNsp *nsp)
 	if (!priv->network_type) {
 		priv->network_type = _nm_object_get_uint_property (NM_OBJECT (nsp),
 		                                                   NM_DBUS_INTERFACE_WIMAX_NSP,
-		                                                   DBUS_PROP_NETWORK_TYPE);
+		                                                   DBUS_PROP_NETWORK_TYPE,
+		                                                   NULL);
 	}
 
 	return priv->network_type;

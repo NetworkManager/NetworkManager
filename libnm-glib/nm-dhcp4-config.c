@@ -17,7 +17,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 - 2010 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  * Copyright (C) 2008 Novell, Inc.
  */
 
@@ -218,7 +218,8 @@ nm_dhcp4_config_get_options (NMDHCP4Config *config)
 	if (!_nm_object_get_property (NM_OBJECT (config),
 	                              NM_DBUS_INTERFACE_DHCP4_CONFIG,
 	                              "Options",
-	                              &value))
+	                              &value,
+	                              NULL))
 		goto out;
 
 	demarshal_dhcp4_options (NM_OBJECT (config), NULL, &value, &priv->options);	
