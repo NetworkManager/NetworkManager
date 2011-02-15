@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /*
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,7 +46,7 @@ add_connection (DBusGProxy *proxy, const char *con_name)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
-	char *uuid;
+	char *uuid, *new_con_path = NULL;
 	GHashTable *hash;
 	GError *error = NULL;
 
@@ -77,9 +78,19 @@ add_connection (DBusGProxy *proxy, const char *con_name)
 	hash = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
 
 	/* Call AddConnection with the hash as argument */
-	dbus_g_proxy_call (proxy, "AddConnection", &error,
-	                   DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, hash,
-	                   G_TYPE_INVALID);
+	if (!dbus_g_proxy_call (proxy, "AddConnection", &error,
+	                        DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, hash,
+	                        G_TYPE_INVALID,
+	                        DBUS_TYPE_G_OBJECT_PATH, &new_con_path,
+	                        G_TYPE_INVALID)) {
+		g_print ("Error adding connection: %s %s",
+		         dbus_g_error_get_name (error),
+		         error->message);
+		g_clear_error (&error);
+	} else {
+		g_print ("Added: %s\n", new_con_path);
+		g_free (new_con_path);
+	}
 
 	g_hash_table_destroy (hash);
 	g_object_unref (connection);
