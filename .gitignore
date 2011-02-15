@@ -62,6 +62,7 @@ docs/settings-spec.html
 docs/spec.html
 
 examples/C/add-connection-dbus-glib
+examples/C/add-connection-libnm-glib
 examples/C/get-active-connections
 examples/C/get-ap-info-libnm-glib
 examples/C/list-connections-dbus
