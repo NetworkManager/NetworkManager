@@ -752,7 +752,7 @@ remove_default_wired_connection (NMSettings *self,
 	const char *path = nm_connection_get_path (NM_CONNECTION (connection));
 
 	if (g_hash_table_lookup (priv->connections, path)) {
-		g_signal_emit_by_name (G_OBJECT (connection), NM_SETTINGS_SIGNAL_CONNECTION_REMOVED);
+		g_signal_emit_by_name (G_OBJECT (connection), NM_SETTINGS_CONNECTION_REMOVED);
 		g_hash_table_remove (priv->connections, path);
 	}
 }
