@@ -274,6 +274,9 @@ test_new_connection ()
 	g_object_unref (connection);
 }
 
+#define NET_GEN_NAME "net.generate"
+#define SUP_GEN_NAME "wpa_supplicant.conf.generate"
+
 static void
 test_update_connection ()
 {
@@ -287,8 +290,8 @@ test_update_connection ()
 		error == NULL ? "None" : (*error)->message);
 
 	success = ifnet_update_parsers_by_connection (connection, "eth0",
-	                                              "net.generate",
-	                                              "wpa_supplicant.conf.generate",
+	                                              NET_GEN_NAME,
+	                                              SUP_GEN_NAME,
 	                                              NULL,
 	                                              error);
 	ASSERT (success, "update connection", "update connection failed %s", "eth0");
@@ -299,60 +302,58 @@ test_update_connection ()
 		error == NULL ? "None" : (*error)->message);
 
 	success = ifnet_update_parsers_by_connection (connection, "0xab3ace",
-	                                              "net.generate",
-	                                              "wpa_supplicant.conf.generate",
+	                                              NET_GEN_NAME,
+	                                              SUP_GEN_NAME,
 	                                              NULL,
 	                                              error);
 	ASSERT (success, "update connection", "update connection failed %s", "0xab3ace");
 	g_object_unref (connection);
+
+	unlink (NET_GEN_NAME);
+	unlink (SUP_GEN_NAME);
 }
 
 static void
 test_add_connection ()
 {
-	GError **error = NULL;
 	NMConnection *connection;
 
-	connection = ifnet_update_connection_from_config_block ("eth0", error);
-	ASSERT (ifnet_add_new_connection
-		(connection, "net.generate",
-		 "wpa_supplicant.conf.generate", error),
-		"add connection", "add connection failed: %s", "eth0");
+	connection = ifnet_update_connection_from_config_block ("eth0", NULL);
+	ASSERT (ifnet_add_new_connection (connection, NET_GEN_NAME, SUP_GEN_NAME, NULL),
+	        "add connection", "add connection failed: %s", "eth0");
 	g_object_unref (connection);
-	connection =
-	    ifnet_update_connection_from_config_block ("myxjtu2", error);
-	ASSERT (ifnet_add_new_connection
-		(connection, "net.generate",
-		 "wpa_supplicant.conf.generate", error),
-		"add connection", "add connection failed: %s", "myxjtu2");
+	connection = ifnet_update_connection_from_config_block ("myxjtu2", NULL);
+	ASSERT (ifnet_add_new_connection (connection, NET_GEN_NAME, SUP_GEN_NAME, NULL),
+	        "add connection", "add connection failed: %s", "myxjtu2");
 	g_object_unref (connection);
+
+	unlink (NET_GEN_NAME);
+	unlink (SUP_GEN_NAME);
 }
 
 static void
 test_delete_connection ()
 {
-	GError **error = NULL;
+	GError *error = NULL;
 	NMConnection *connection;
 
-	connection = ifnet_update_connection_from_config_block ("eth7", error);
+	connection = ifnet_update_connection_from_config_block ("eth7", &error);
 	ASSERT (connection != NULL, "get connection",
-		"get connection failed: %s",
-		error == NULL ? "None" : (*error)->message);
-	ASSERT (ifnet_delete_connection_in_parsers
-		("eth7", "net.generate",
-		 "wpa_supplicant.conf.generate"),
-		"delete connection", "delete connection failed: %s", "eth7");
+	        "get connection failed: %s",
+	        error ? error->message : "None");
+	ASSERT (ifnet_delete_connection_in_parsers ("eth7", NET_GEN_NAME, SUP_GEN_NAME),
+	        "delete connection", "delete connection failed: %s", "eth7");
 	g_object_unref (connection);
-	connection =
-	    ifnet_update_connection_from_config_block ("qiaomuf", error);
+	connection = ifnet_update_connection_from_config_block ("qiaomuf", &error);
 	ASSERT (connection != NULL, "get connection",
-		"get connection failed: %s",
-		error == NULL ? "None" : (*error)->message);
-	ASSERT (ifnet_delete_connection_in_parsers
-		("qiaomuf", "net.generate",
-		 "wpa_supplicant.conf.generate"),
-		"delete connection", "delete connection failed: %s", "qiaomuf");
+	        "get connection failed: %s",
+	        error ? error->message : "None");
+	ASSERT (ifnet_delete_connection_in_parsers ("qiaomuf", NET_GEN_NAME, SUP_GEN_NAME),
+	        "delete connection", "delete connection failed: %s", "qiaomuf");
 	g_object_unref (connection);
+
+	unlink (NET_GEN_NAME);
+	unlink (SUP_GEN_NAME);
 }
 
 static void
