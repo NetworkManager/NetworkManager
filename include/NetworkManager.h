@@ -86,6 +86,9 @@ typedef enum {
 	NM_STATE_CONNECTED_GLOBAL = 70
 } NMState;
 
+/* For backwards compat */
+#define NM_STATE_CONNECTED NM_STATE_CONNECTED_GLOBAL
+
 /* Types of NetworkManager devices */
 typedef enum {
 	NM_DEVICE_TYPE_UNKNOWN   = 0,
