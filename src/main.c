@@ -173,7 +173,6 @@ nm_signal_handler (int signo)
 			g_main_loop_quit (main_loop);
 			break;
 
-		case SIGINT:
 		case SIGTERM:
 			/* let the fatal signals interrupt us */
 			--in_fatal;
@@ -214,7 +213,6 @@ setup_signals (void)
 	action.sa_mask = mask;
 	action.sa_flags = 0;
 	sigaction (SIGTERM,  &action, NULL);
-	sigaction (SIGINT,  &action, NULL);
 	sigaction (SIGILL,  &action, NULL);
 	sigaction (SIGBUS,  &action, NULL);
 	sigaction (SIGFPE,  &action, NULL);
