@@ -7,14 +7,14 @@ AM_CPPFLAGS = \
 	$(GLIB_CFLAGS)
 
 noinst_PROGRAMS = \
-	add-connection-glib \
+	add-connection-dbus-glib \
 	get-active-connections \
 	list-connections-dbus \
 	list-connections-libnm-glib \
 	get-ap-info-libnm-glib
 
-add_connection_glib_SOURCES = add-connection-glib.c
-add_connection_glib_LDADD = \
+add_connection_dbus_glib_SOURCES = add-connection-dbus-glib.c
+add_connection_dbus_glib_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS)
