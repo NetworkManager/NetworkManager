@@ -4,7 +4,7 @@ INCLUDES = \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_srcdir)/libnm-glib \
-	-I$(top_srcdir)/system-settings/plugins/ifcfg-rh
+	-I$(srcdir)/../
 
 noinst_PROGRAMS = test-ifcfg-rh test-ifcfg-rh-utils
 
@@ -20,7 +20,7 @@ test_ifcfg_rh_CPPFLAGS = \
 test_ifcfg_rh_LDADD = \
 	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/system-settings/plugins/ifcfg-rh/libifcfg-rh-io.la \
+	$(builddir)/../libifcfg-rh-io.la \
 	$(DBUS_LIBS)
 
 test_ifcfg_rh_utils_SOURCES = \
@@ -30,7 +30,7 @@ test_ifcfg_rh_utils_CPPFLAGS = \
 	$(GLIB_CFLAGS)
 
 test_ifcfg_rh_utils_LDADD = \
-	$(top_builddir)/system-settings/plugins/ifcfg-rh/libifcfg-rh-io.la
+	$(builddir)/../libifcfg-rh-io.la
 
 if WITH_TESTS
 

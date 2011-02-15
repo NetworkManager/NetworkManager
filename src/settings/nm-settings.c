@@ -62,7 +62,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-manager-auth.h"
 #include "nm-session-monitor.h"
-#include "system-settings/plugins/keyfile/plugin.h"
+#include "plugins/keyfile/plugin.h"
 #include "nm-agent-manager.h"
 
 #define CONFIG_KEY_NO_AUTO_DEFAULT "no-auto-default"

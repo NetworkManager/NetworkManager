@@ -2,7 +2,7 @@ INCLUDES = \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_srcdir)/libnm-glib \
-	-I$(top_srcdir)/system-settings/plugins/ifupdown
+	-I$(srcdir)/../
 
 noinst_PROGRAMS = test-ifupdown
 
@@ -17,7 +17,7 @@ test_ifupdown_CPPFLAGS = \
 test_ifupdown_LDADD = \
 	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/system-settings/plugins/ifupdown/libifupdown-io.la \
+	$(builddir)/../libifupdown-io.la \
 	$(DBUS_LIBS)
 
 if WITH_TESTS

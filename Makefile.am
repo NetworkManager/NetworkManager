@@ -4,7 +4,6 @@ SUBDIRS = \
 	libnm-util \
 	libnm-glib \
 	introspection \
-	system-settings \
 	src \
 	callouts \
 	cli \

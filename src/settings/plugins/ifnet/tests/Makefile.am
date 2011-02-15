@@ -1,4 +1,4 @@
-INCLUDES=-I$(top_srcdir)/system-settings/plugins/ifnet\
+INCLUDES=-I$(srcdir)/../ \
 	 -I$(top_srcdir)/libnm-glib \
 	 -I$(top_srcdir)/libnm-util \
 	 -I$(top_srcdir)/include \
@@ -7,7 +7,7 @@ TESTS = check_ifnet
 check_PROGRAMS = check_ifnet
 check_ifnet_SOURCES = test_all.c 
 check_ifnet_CPPFLAGS = $(CHECK_CFLAGS) $(GLIB_CFLAGS)
-check_ifnet_LDADD = $(top_srcdir)/libnm-util/libnm-util.la\
-		    $(top_srcdir)/system-settings/plugins/ifnet/lib-ifnet-io.la\
-		    $(CHECK_LIBS)\
+check_ifnet_LDADD = $(top_builddir)/libnm-util/libnm-util.la \
+		    $(builddir)/../lib-ifnet-io.la \
+		    $(CHECK_LIBS) \
 		    $(GLIB_LIBS)

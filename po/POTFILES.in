@@ -25,7 +25,7 @@ src/nm-device-ethernet.c
 src/nm-device-olpc-mesh.c
 src/nm-manager.c
 src/nm-netlink-monitor.c
+src/settings/plugins/ifcfg-rh/reader.c
+src/settings/plugins/ifnet/connection_parser.c
 src/settings/nm-default-wired-connection.c
-system-settings/plugins/ifcfg-rh/reader.c
-system-settings/plugins/ifnet/connection_parser.c
 

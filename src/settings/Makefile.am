@@ -1,3 +1,5 @@
+SUBDIRS=plugins
+
 INCLUDES = -I${top_srcdir} \
            -I${top_srcdir}/include \
            -I${top_srcdir}/libnm-util \
@@ -50,7 +52,7 @@ libsettings_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(top_builddir)/marshallers/libmarshallers.la \
 	$(top_builddir)/src/logging/libnm-logging.la \
-	$(top_builddir)/system-settings/plugins/keyfile/libnm-settings-plugin-keyfile.la \
+	$(builddir)/plugins/keyfile/libnm-settings-plugin-keyfile.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
 	$(GMODULE_LIBS) \
