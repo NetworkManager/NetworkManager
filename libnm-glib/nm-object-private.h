@@ -37,9 +37,11 @@ typedef struct {
 } NMPropertiesChangedInfo;
 
 
-void             _nm_object_handle_properties_changed (NMObject *object,
-                                                      DBusGProxy *proxy,
-                                                      const NMPropertiesChangedInfo *info);
+void _nm_object_handle_properties_changed (NMObject *object,
+                                           DBusGProxy *proxy,
+                                           const NMPropertiesChangedInfo *info);
+
+void _nm_object_process_properties_changed (NMObject *self, GHashTable *properties);
 
 gboolean _nm_object_demarshal_generic (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field);
 

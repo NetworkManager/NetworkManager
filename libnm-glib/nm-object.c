@@ -369,12 +369,18 @@ out:
 	g_free (prop_name);
 }
 
+void
+_nm_object_process_properties_changed (NMObject *self, GHashTable *properties)
+{
+	g_hash_table_foreach (properties, handle_property_changed, self);
+}
+
 static void
 properties_changed_proxy (DBusGProxy *proxy,
                           GHashTable *properties,
                           gpointer user_data)
 {
-	g_hash_table_foreach (properties, handle_property_changed, user_data);
+	_nm_object_process_properties_changed (NM_OBJECT (user_data), properties);
 }
 
 void
