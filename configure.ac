@@ -611,6 +611,8 @@ po/Makefile.in
 policy/Makefile
 data/Makefile
 docs/Makefile
+docs/api/Makefile
+docs/api/version.xml
 docs/libnm-glib/Makefile
 docs/libnm-util/Makefile
 NetworkManager.pc

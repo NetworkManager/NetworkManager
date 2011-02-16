@@ -57,9 +57,23 @@ docs/libnm-util/libnm-util.prerequisites
 docs/libnm-util/libnm-util.signals
 docs/libnm-util/libnm-util.types
 
-docs/generate-settings-spec
-docs/settings-spec.html
-docs/spec.html
+docs/api/version.xml
+docs/api/generate-settings-spec
+docs/api/settings-spec.html
+docs/api/spec.html
+docs/api/*.stamp
+docs/api/html/
+docs/api/tmpl/
+docs/api/xml/
+docs/api/NetworkManager-*.txt
+docs/api/NetworkManager-decl-list.txt.bak
+docs/api/NetworkManager-decl.txt.bak
+docs/api/NetworkManager.args
+docs/api/NetworkManager.hierarchy
+docs/api/NetworkManager.interfaces
+docs/api/NetworkManager.prerequisites
+docs/api/NetworkManager.signals
+docs/api/NetworkManager.types
 
 examples/C/add-connection-dbus-glib
 examples/C/add-connection-libnm-glib
