@@ -75,8 +75,11 @@ CLEANFILES += $(GENERATED_FILES)
 else
 
 EXTRA_DIST = $(GENERATE_SETTINGS_SPEC_SOURCE)
+CLEANFILES =
 
 endif
 
 EXTRA_DIST += version.xml.in
+
+CLEANFILES += html/* tmpl/* xml/*
 
