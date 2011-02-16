@@ -54,6 +54,7 @@ typedef struct {
 	DBusGProxy *client_proxy;
 	DBusGProxy *bus_proxy;
 	gboolean manager_running;
+	char *version;
 	NMState state;
 	GPtrArray *devices;
 	GPtrArray *active_connections;
@@ -75,6 +76,7 @@ typedef struct {
 
 enum {
 	PROP_0,
+	PROP_VERSION,
 	PROP_STATE,
 	PROP_MANAGER_RUNNING,
 	PROP_NETWORKING_ENABLED,
@@ -318,6 +320,7 @@ register_for_property_changed (NMClient *client)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
 	const NMPropertiesChangedInfo property_changed_info[] = {
+		{ NM_CLIENT_VERSION,                   _nm_object_demarshal_generic,  &priv->version },
 		{ NM_CLIENT_STATE,                     _nm_object_demarshal_generic,  &priv->state },
 		{ NM_CLIENT_NETWORKING_ENABLED,        _nm_object_demarshal_generic,  &priv->networking_enabled },
 		{ NM_CLIENT_WIRELESS_ENABLED,          _nm_object_demarshal_generic,  &priv->wireless_enabled },
@@ -605,6 +608,16 @@ dispose (GObject *object)
 }
 
 static void
+finalize (GObject *object)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
+
+	g_free (priv->version);
+
+	G_OBJECT_CLASS (nm_client_parent_class)->finalize (object);
+}
+
+static void
 set_property (GObject *object, guint prop_id,
 		    const GValue *value, GParamSpec *pspec)
 {
@@ -670,6 +683,9 @@ get_property (GObject *object,
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
 
 	switch (prop_id) {
+	case PROP_VERSION:
+		g_value_set_string (value, nm_client_get_version (self));
+		break;
 	case PROP_STATE:
 		g_value_set_uint (value, nm_client_get_state (self));
 		break;
@@ -718,8 +734,21 @@ nm_client_class_init (NMClientClass *client_class)
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
+	object_class->finalize = finalize;
 
 	/* properties */
+
+	/**
+	 * NMClient:version:
+	 *
+	 * The NetworkManager version.
+	 **/
+	g_object_class_install_property (object_class, PROP_VERSION,
+	                                 g_param_spec_string (NM_CLIENT_VERSION,
+	                                                      "Version",
+	                                                      "NetworkManager version",
+	                                                       NULL,
+	                                                       G_PARAM_READABLE));
 
 	/**
 	 * NMClient:state:
@@ -1455,6 +1484,37 @@ nm_client_wimax_hardware_get_enabled (NMClient *client)
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
 	return NM_CLIENT_GET_PRIVATE (client)->wimax_hw_enabled;
+}
+
+/**
+ * nm_client_get_version:
+ * @client: a #NMClient
+ *
+ * Gets NetworkManager version.
+ *
+ * Returns: string with the version
+ **/
+const char *
+nm_client_get_version (NMClient *client)
+{
+	NMClientPrivate *priv;
+	GError *err = NULL;
+
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+
+	priv = NM_CLIENT_GET_PRIVATE (client);
+
+	if (!priv->manager_running)
+		return NULL;
+
+	if (!priv->version)
+		priv->version = _nm_object_get_string_property (NM_OBJECT (client), NM_DBUS_INTERFACE, "Version", &err);
+
+	/* TODO: we don't pass the error to the caller yet, maybe later */
+	if (err)
+		g_error_free (err);
+
+	return priv->version;
 }
 
 /**

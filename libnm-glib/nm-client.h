@@ -41,6 +41,7 @@ G_BEGIN_DECLS
 #define NM_IS_CLIENT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_CLIENT))
 #define NM_CLIENT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_CLIENT, NMClientClass))
 
+#define NM_CLIENT_VERSION "version"
 #define NM_CLIENT_STATE "state"
 #define NM_CLIENT_MANAGER_RUNNING "manager-running"
 #define NM_CLIENT_NETWORKING_ENABLED "networking-enabled"
@@ -150,6 +151,7 @@ gboolean  nm_client_wimax_get_enabled (NMClient *client);
 void      nm_client_wimax_set_enabled (NMClient *client, gboolean enabled);
 gboolean  nm_client_wimax_hardware_get_enabled (NMClient *client);
 
+const char *nm_client_get_version        (NMClient *client);
 NMState   nm_client_get_state            (NMClient *client);
 gboolean  nm_client_get_manager_running  (NMClient *client);
 const GPtrArray *nm_client_get_active_connections (NMClient *client);
