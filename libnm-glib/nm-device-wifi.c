@@ -393,7 +393,7 @@ access_point_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 		priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 		ap = G_OBJECT (_nm_object_cache_get (path));
 		if (ap) {
-			g_ptr_array_add (priv->aps, g_object_ref (ap));
+			g_ptr_array_add (priv->aps, ap);
 		} else {
 			ap = G_OBJECT (nm_access_point_new (connection, path));
 			if (ap)
@@ -567,9 +567,7 @@ demarshal_active_ap (NMObject *object, GParamSpec *pspec, GValue *value, gpointe
 			priv->null_active_ap = TRUE;
 		else {
 			ap = NM_ACCESS_POINT (_nm_object_cache_get (path));
-			if (ap)
-				ap = g_object_ref (ap);
-			else {
+			if (!ap) {
 				connection = nm_object_get_connection (object);
 				ap = NM_ACCESS_POINT (nm_access_point_new (connection, path));
 			}

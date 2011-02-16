@@ -127,9 +127,7 @@ demarshal_ip4_config (NMObject *object, GParamSpec *pspec, GValue *value, gpoint
 			priv->null_ip4_config = TRUE;
 		else {
 			config = NM_IP4_CONFIG (_nm_object_cache_get (path));
-			if (config)
-				config = g_object_ref (config);
-			else {
+			if (!config) {
 				connection = nm_object_get_connection (object);
 				config = NM_IP4_CONFIG (nm_ip4_config_new (connection, path));
 			}
@@ -167,9 +165,7 @@ demarshal_dhcp4_config (NMObject *object, GParamSpec *pspec, GValue *value, gpoi
 			priv->null_dhcp4_config = TRUE;
 		else {
 			config = NM_DHCP4_CONFIG (_nm_object_cache_get (path));
-			if (config)
-				config = g_object_ref (config);
-			else {
+			if (!config) {
 				connection = nm_object_get_connection (object);
 				config = NM_DHCP4_CONFIG (nm_dhcp4_config_new (connection, path));
 			}
@@ -207,9 +203,7 @@ demarshal_ip6_config (NMObject *object, GParamSpec *pspec, GValue *value, gpoint
 			priv->null_ip6_config = TRUE;
 		else {
 			config = NM_IP6_CONFIG (_nm_object_cache_get (path));
-			if (config)
-				config = g_object_ref (config);
-			else {
+			if (!config) {
 				connection = nm_object_get_connection (object);
 				config = NM_IP6_CONFIG (nm_ip6_config_new (connection, path));
 			}
@@ -247,9 +241,7 @@ demarshal_dhcp6_config (NMObject *object, GParamSpec *pspec, GValue *value, gpoi
 			priv->null_dhcp6_config = TRUE;
 		else {
 			config = NM_DHCP6_CONFIG (_nm_object_cache_get (path));
-			if (config)
-				config = g_object_ref (config);
-			else {
+			if (!config) {
 				connection = nm_object_get_connection (object);
 				config = NM_DHCP6_CONFIG (nm_dhcp6_config_new (connection, path));
 			}

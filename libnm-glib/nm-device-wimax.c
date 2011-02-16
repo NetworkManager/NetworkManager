@@ -275,7 +275,7 @@ nsp_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 		priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 		nsp = G_OBJECT (_nm_object_cache_get (path));
 		if (nsp) {
-			g_ptr_array_add (priv->nsps, g_object_ref (nsp));
+			g_ptr_array_add (priv->nsps, nsp);
 		} else {
 			nsp = G_OBJECT (nm_wimax_nsp_new (connection, path));
 			if (nsp)
@@ -601,9 +601,7 @@ demarshal_active_nsp (NMObject *object, GParamSpec *pspec, GValue *value, gpoint
 			priv->null_active_nsp = TRUE;
 		else {
 			nsp = NM_WIMAX_NSP (_nm_object_cache_get (path));
-			if (nsp)
-				nsp = g_object_ref (nsp);
-			else {
+			if (!nsp) {
 				connection = nm_object_get_connection (object);
 				nsp = NM_WIMAX_NSP (nm_wimax_nsp_new (connection, path));
 			}

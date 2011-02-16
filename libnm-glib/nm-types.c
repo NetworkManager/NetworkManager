@@ -253,9 +253,9 @@ _nm_object_array_demarshal (GValue *value,
 
 			path = g_ptr_array_index (array, i);
 			object = G_OBJECT (_nm_object_cache_get (path));
-			if (object) {
-				g_ptr_array_add (temp, g_object_ref (object));
-			} else {
+			if (object)
+				g_ptr_array_add (temp, object);
+			else {
 				object = (*func) (connection, path);
 				if (object)
 					g_ptr_array_add (temp, object);

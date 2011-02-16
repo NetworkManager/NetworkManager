@@ -1024,7 +1024,7 @@ client_device_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 
 		device = G_OBJECT (_nm_object_cache_get (path));
 		if (device) {
-			g_ptr_array_add (priv->devices, g_object_ref (device));
+			g_ptr_array_add (priv->devices, device);
 		} else {
 			device = G_OBJECT (nm_device_new (connection, path));
 			if (device)
