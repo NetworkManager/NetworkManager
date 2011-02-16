@@ -49,7 +49,10 @@ typedef enum {
 	NMC_RESULT_ERROR_DEV_DISCONNECT = 6,
 
 	/* NetworkManager is not running */
-	NMC_RESULT_ERROR_NM_NOT_RUNNING = 7
+	NMC_RESULT_ERROR_NM_NOT_RUNNING = 7,
+
+	/* nmcli and NetworkManager versions mismatch */
+	NMC_RESULT_ERROR_VERSIONS_MISMATCH = 8
 } NMCResultCode;
 
 typedef enum {
@@ -107,6 +110,7 @@ typedef struct _NmCli {
 	char *required_fields;                            /* Required fields in output: '--fields' option */
 	NmcOutputField *allowed_fields;                   /* Array of allowed fields for particular commands */
 	NmcPrintFields print_fields;                      /* Structure with field indices to print */
+	gboolean nocheck_ver;                             /* Don't check nmcli and NM versions: option '--nocheck' */
 } NmCli;
 
 #endif /* NMC_NMCLI_H */

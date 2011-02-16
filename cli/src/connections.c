@@ -176,6 +176,15 @@ usage (void)
 	         "  down id <id> | uuid <id>\n"));
 }
 
+/* The real commands that do something - i.e. not 'help', etc. */
+static const char *real_con_commands[] = {
+	"list",
+	"status",
+	"up",
+	"down",
+	NULL
+};
+
 /* quit main loop */
 static void
 quit (void)
@@ -1655,18 +1664,60 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 		}
 	}
 
-	/* TODO: fail gracefully if we are using an old N-M with user settings
-	 * support */
-
 	if (active)
 		nm_client_deactivate_connection (nmc->client, active);
-	else {
+	else
 		fprintf (stderr, _("Warning: Connection not active\n"));
-	}
 	sleep (1);  /* Don't quit immediatelly and give NM time to check our permissions */
 
 error:
 	nmc->should_wait = FALSE;
+	return nmc->return_value;
+}
+
+static NMCResultCode
+parse_cmd (NmCli *nmc, int argc, char **argv)
+{
+	GError *error = NULL;
+
+	if (argc == 0) {
+		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
+			goto opt_error;
+		nmc->return_value = do_connections_list (nmc, argc, argv);
+	} else {
+
+	 	if (matches (*argv, "list") == 0) {
+			nmc->return_value = do_connections_list (nmc, argc-1, argv+1);
+		}
+		else if (matches(*argv, "status") == 0) {
+			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
+				goto opt_error;
+			nmc->return_value = do_connections_status (nmc, argc-1, argv+1);
+		}
+		else if (matches(*argv, "up") == 0) {
+			nmc->return_value = do_connection_up (nmc, argc-1, argv+1);
+		}
+		else if (matches(*argv, "down") == 0) {
+			nmc->return_value = do_connection_down (nmc, argc-1, argv+1);
+		}
+		else if (matches (*argv, "help") == 0) {
+			usage ();
+			nmc->should_wait = FALSE;
+		} else {
+			usage ();
+			g_string_printf (nmc->return_text, _("Error: 'con' command '%s' is not valid."), *argv);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			nmc->should_wait = FALSE;
+		}
+	}
+
+	return nmc->return_value;
+
+opt_error:
+	g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+	nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+	nmc->should_wait = FALSE;
+	g_error_free (error);
 	return nmc->return_value;
 }
 
@@ -1675,54 +1726,15 @@ static void
 get_connections_cb (NMRemoteSettings *settings, gpointer user_data)
 {
 	ArgsInfo *args = (ArgsInfo *) user_data;
-	GError *error = NULL;
 
+	/* Get the connection list */
 	args->nmc->system_connections = nm_remote_settings_list_connections (settings);
 
-	if (args->argc == 0) {
-		if (!nmc_terse_option_check (args->nmc->print_output, args->nmc->required_fields, &error))
-			goto opt_error;
-		args->nmc->return_value = do_connections_list (args->nmc, args->argc, args->argv);
-	} else {
-
-	 	if (matches (*args->argv, "list") == 0) {
-			args->nmc->return_value = do_connections_list (args->nmc, args->argc-1, args->argv+1);
-		}
-		else if (matches(*args->argv, "status") == 0) {
-			if (!nmc_terse_option_check (args->nmc->print_output, args->nmc->required_fields, &error))
-				goto opt_error;
-			args->nmc->return_value = do_connections_status (args->nmc, args->argc-1, args->argv+1);
-		}
-		else if (matches(*args->argv, "up") == 0) {
-			args->nmc->return_value = do_connection_up (args->nmc, args->argc-1, args->argv+1);
-		}
-		else if (matches(*args->argv, "down") == 0) {
-			args->nmc->return_value = do_connection_down (args->nmc, args->argc-1, args->argv+1);
-		}
-		else if (matches (*args->argv, "help") == 0) {
-			usage ();
-			args->nmc->should_wait = FALSE;
-		} else {
-			usage ();
-			g_string_printf (args->nmc->return_text, _("Error: 'con' command '%s' is not valid."), *args->argv);
-			args->nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			args->nmc->should_wait = FALSE;
-		}
-	}
+	parse_cmd (args->nmc, args->argc, args->argv);
 
 	if (!args->nmc->should_wait)
 		quit ();
-	return;
-
-opt_error:
-	g_string_printf (args->nmc->return_text, _("Error: %s."), error->message);
-	args->nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-	args->nmc->should_wait = FALSE;
-	g_error_free (error);
-	quit ();
-	return;
 }
-
 
 /* Entry point function for connections-related commands: 'nmcli con' */
 NMCResultCode
@@ -1730,47 +1742,66 @@ do_connections (NmCli *nmc, int argc, char **argv)
 {
 	DBusGConnection *bus;
 	GError *error = NULL;
+	int i = 0;
+	gboolean real_cmd = FALSE;
 
-	nmc->should_wait = TRUE;
-
-	args_info.nmc = nmc;
-	args_info.argc = argc;
-	args_info.argv = argv;
-
-	/* connect to DBus' system bus */
-	bus = dbus_g_bus_get (DBUS_BUS_SYSTEM, &error);
-	if (error || !bus) {
-		g_string_printf (nmc->return_text, _("Error: could not connect to D-Bus."));
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-		return nmc->return_value;
+	if (argc == 0)
+		real_cmd = TRUE;
+	else {
+		while (real_con_commands[i] && matches (*argv, real_con_commands[i]) != 0)
+			i++;
+ 		if (real_con_commands[i] != NULL)
+			real_cmd = TRUE;
 	}
 
-	/* get system settings */
-	if (!(nmc->system_settings = nm_remote_settings_new (bus))) {
-		g_string_printf (nmc->return_text, _("Error: Could not get system settings."));
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-		return nmc->return_value;
+	if (!real_cmd) {
+		/* no real execution command - no need to get connections */
+		return parse_cmd (nmc, argc, argv);
+	} else {
+		if (!nmc_versions_match (nmc))
+			return nmc->return_value;
 
+		nmc->should_wait = TRUE;
+
+		args_info.nmc = nmc;
+		args_info.argc = argc;
+		args_info.argv = argv;
+
+		/* connect to DBus' system bus */
+		bus = dbus_g_bus_get (DBUS_BUS_SYSTEM, &error);
+		if (error || !bus) {
+			g_string_printf (nmc->return_text, _("Error: could not connect to D-Bus."));
+			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+			return nmc->return_value;
+		}
+
+		/* get system settings */
+		if (!(nmc->system_settings = nm_remote_settings_new (bus))) {
+			g_string_printf (nmc->return_text, _("Error: Could not get system settings."));
+			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+			return nmc->return_value;
+
+		}
+
+		/* find out whether settings service is running */
+		g_object_get (nmc->system_settings, NM_REMOTE_SETTINGS_SERVICE_RUNNING, &nmc->system_settings_running, NULL);
+
+		if (!nmc->system_settings_running) {
+			g_string_printf (nmc->return_text, _("Error: Can't obtain connections: settings service is not running."));
+			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+			return nmc->return_value;
+		}
+
+		/* connect to signal "connections-read" - emitted when connections are fetched and ready */
+		g_signal_connect (nmc->system_settings, NM_REMOTE_SETTINGS_CONNECTIONS_READ,
+				  G_CALLBACK (get_connections_cb), &args_info);
+
+
+		dbus_g_connection_unref (bus);
+
+		/* The rest will be done in get_connection_cb() callback.
+		 * We need to wait for signals that connections are read.
+		 */
+		return NMC_RESULT_SUCCESS;
 	}
-
-	/* find out whether settings service is running */
-	g_object_get (nmc->system_settings, NM_REMOTE_SETTINGS_SERVICE_RUNNING, &nmc->system_settings_running, NULL);
-
-	if (!nmc->system_settings_running) {
-		g_string_printf (nmc->return_text, _("Error: Can't obtain connections: settings service is not running."));
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-		return nmc->return_value;
-	}
-
-	/* connect to signal "connections-read" - emitted when connections are fetched and ready */
-	g_signal_connect (nmc->system_settings, NM_REMOTE_SETTINGS_CONNECTIONS_READ,
-	                  G_CALLBACK (get_connections_cb), &args_info);
-
-
-	dbus_g_connection_unref (bus);
-
-	/* The rest will be done in get_connection_cb() callback.
-	 * We need to wait for signals that connections are read.
-	 */
-	return NMC_RESULT_SUCCESS;
 }

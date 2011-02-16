@@ -156,12 +156,11 @@ show_nm_status (NmCli *nmc)
 		return nmc->return_value;
 	}
 
-	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
-	nmc->print_fields.header_name = _("NetworkManager status");
-	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
-
 	nm_running = nmc_is_nm_running (nmc, NULL);
 	if (nm_running) {
+		if (!nmc_versions_match (nmc))
+			goto error;
+
 		nmc->get_client (nmc); /* create NMClient */
 		state = nm_client_get_state (nmc->client);
 		net_enabled_str = nm_client_networking_get_enabled (nmc->client) ? _("enabled") : _("disabled");
@@ -183,6 +182,10 @@ show_nm_status (NmCli *nmc)
 #endif
 	}
 
+	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
+	nmc->print_fields.header_name = _("NetworkManager status");
+	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+
 	nmc->allowed_fields[0].value = nm_running ? _("running") : _("not running");
 	nmc->allowed_fields[1].value = nm_client_get_version (nmc->client);
 	nmc->allowed_fields[2].value = nm_state_to_string (state);
@@ -200,6 +203,9 @@ show_nm_status (NmCli *nmc)
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
 	return NMC_RESULT_SUCCESS;
+
+error:
+	return nmc->return_value;
 }
 
 /* libnm-glib doesn't provide API fro Sleep method - implement D-Bus call ourselves */

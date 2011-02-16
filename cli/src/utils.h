@@ -33,5 +33,6 @@ GArray *parse_output_fields (const char *fields_str, const NmcOutputField fields
 gboolean nmc_terse_option_check (NMCPrintOutput print_output, const char *fields, GError **error);
 void print_fields (const NmcPrintFields fields, const NmcOutputField field_values[]);
 gboolean nmc_is_nm_running (NmCli *nmc, GError **error);
+gboolean nmc_versions_match (NmCli *nmc);
 
 #endif /* NMC_UTILS_H */

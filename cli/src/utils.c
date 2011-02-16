@@ -17,6 +17,9 @@
  * (C) Copyright 2010 - 2011 Red Hat, Inc.
  */
 
+/* Generated configuration file */
+#include "config.h"
+
 #include <stdio.h>
 #include <string.h>
 
@@ -349,5 +352,51 @@ done:
 		g_object_unref (proxy);
 
 	return has_owner;
+}
+
+/*
+* Compare versions of nmcli and NM daemon.
+* Return: TRUE  - the versions match (when only major and minor match, print a warning)
+*         FALSE - versions mismatch
+*/
+gboolean
+nmc_versions_match (NmCli *nmc)
+{
+	const char *nm_ver = NULL;
+	const char *dot;
+	gboolean match = FALSE;
+
+	g_return_val_if_fail (nmc != NULL, FALSE);
+
+	/* --nocheck option - don't compare the versions */
+	if (nmc->nocheck_ver)
+		return TRUE;
+
+	nmc->get_client (nmc);
+	nm_ver = nm_client_get_version (nmc->client);
+	if (nm_ver) {
+		if (!strcmp (nm_ver, VERSION))
+			match = TRUE;
+		else {
+			dot = strchr (nm_ver, '.');
+			if (dot) {
+				dot = strchr (dot + 1, '.');
+				if (dot && !strncmp (nm_ver, VERSION, dot-nm_ver)) {
+					fprintf(stderr,
+					        _("Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --nocheck to suppress the warning.\n"),
+					        VERSION, nm_ver);
+					match = TRUE;
+				}
+			}
+		}
+	}
+
+	if (!match) {
+		g_string_printf (nmc->return_text, _("Error: nmcli (%s) and NetworkManager (%s) versions don't match. Force execution using --nocheck, but the results are unpredictable."),
+		                 VERSION, nm_ver ? nm_ver : _("unknown"));
+		nmc->return_value = NMC_RESULT_ERROR_VERSIONS_MISMATCH;
+	}
+
+	return match;
 }
 
