@@ -54,7 +54,8 @@ get_ap_info_libnm_glib_LDADD = \
 	$(GLIB_LIBS)
 
 EXTRA_DIST = \
-	add-connection-glib.c \
+	add-connection-dbus-glib.c \
+	add-connection-libnm-glib.c \
 	get-active-connections.c \
 	list-connections-dbus.c \
 	list-connections-libnm-glib.c \
