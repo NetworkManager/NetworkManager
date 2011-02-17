@@ -42,6 +42,7 @@
 #include <nm-setting-pppoe.h>
 #include <nm-setting-serial.h>
 #include <nm-setting-vpn.h>
+#include <nm-setting-wimax.h>
 #include <nm-setting-wired.h>
 #include <nm-setting-wireless.h>
 #include <nm-setting-wireless-security.h>
@@ -63,6 +64,7 @@ static SettingNewFunc funcs[] = {
 	nm_setting_pppoe_new,
 	nm_setting_serial_new,
 	nm_setting_vpn_new,
+	nm_setting_wimax_new,
 	nm_setting_wired_new,
 	nm_setting_wireless_new,
 	nm_setting_wireless_security_new,
