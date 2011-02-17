@@ -211,13 +211,15 @@ nm_setting_wimax_class_init (NMSettingWimaxClass *setting_class)
 	/**
 	 * NMSettingWimax:network-name:
 	 *
-	 * Network name of the WiMAX network.
+	 * Network Service Provider (NSP) name of the WiMAX network this connection
+	 * should use.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NETWORK_NAME,
 		 g_param_spec_string (NM_SETTING_WIMAX_NETWORK_NAME,
 							  "NetworkName",
-							  "Network name",
+							  "Network Service Provider (NSP) name of the WiMAX "
+							  "network this connection should use.",
 							  NULL,
 							  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
