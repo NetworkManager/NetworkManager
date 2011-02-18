@@ -111,6 +111,15 @@
     </section>
   </chapter>
 
+  <chapter id="ref-migrating">
+    <title>Migrating from Previous Versions of NetworkManager</title>
+    <para>
+      This part describes changes you need to make in programs that
+      use older versions of NetworkManager.
+    </para>
+    <xi:include href="migrating-to-09.xml" />
+  </chapter>
+
   <index>
     <title>Index</title>
   </index>

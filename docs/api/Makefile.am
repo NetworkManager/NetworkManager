@@ -63,6 +63,7 @@ MKTMPL_OPTIONS=
 content_files = \
 	version.xml \
 	settings-spec.xml \
+	migrating-to-09.xml \
 	$(NULL)
 
 include $(top_srcdir)/gtk-doc.make

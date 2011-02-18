@@ -1,0 +1,157 @@
+<?xml version="1.0"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
+               "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd" [
+<!ENTITY % local.common.attrib "xmlns:xi  CDATA  #FIXED 'http://www.w3.org/2003/XInclude'">
+]>
+<section id="migrating-to-09">
+  <title>Migrating from NetworkManager 0.8 to NetworkManager 0.9</title>
+
+  <para>
+    NetworkManager 0.9 is a new major version of NetworkManager that breaks
+    both API and ABI compared to previous versions.  These changes are
+    intended to make communication with NetworkManager much simpler, especially
+    for network control and configuration programs.  Thankfully, most changes
+    are not difficult to implement, and the advantages of the simpler
+    architecture of NetworkManager 0.9 greatly outweight the effort of
+    updating client programs.
+  </para>
+
+  <section>
+    <title>Architecture and D-Bus API Changes in 0.9</title>
+
+    <para>
+      This section details the architectural and D-Bus API changes in
+      NetworkManager 0.9.
+    </para>
+
+    <section>
+    <title>Elimination of the User Settings Service</title>
+    <para>
+      Previously there were two "settings services", or D-Bus services that
+      provided and saved network configuration information.  NetworkManager
+      owned the "system" settings service, and one user-level applet owned the
+      "user" settings service.  Now, the "user" settings service has been
+      eliminated, so clients only have to track one D-Bus service to read and
+      update network configuration.  The functionality of the old user settings
+      service has been replaced with a "permissions" key on each connection
+      object to preserve the ability to restrict which users can use the
+      connection, and with a "secret agent" D-Bus API for user-session-level
+      secure storage of network secrets and passwords.
+    </para>
+    <para>
+      Elimination of the user settings service provides the following advantages
+      for clients of NetworkManager:
+      <itemizedlist>
+        <listitem>Simpler discovery of network configuration and change tracking</listitem>
+        <listitem>Simpler storage of user-level network secrets by control applets</listitem>
+        <listitem>Correct operation of fast-user switching and multi-seat configurations</listitem>
+        <listitem>More granular network connection permissions for system administrators</listitem>
+        <listitem>Connections are now system-wide by default (unless restricted by the user or system administrator)</listitem>
+        <listitem>Easier deployment of user-specific connections (ie, VPNs)</listitem>
+      </itemizedlist>
+    </para>
+    <para>
+      <emphasis role="strong">Action:</emphasis> if you develop a network control
+      applet that talks to NetworkManager and used to provide a user settings
+      service, you can eliminate that code and rely on NetworkManager for all
+      storage of network configuration.  Your applet should now implement the
+      Secret Agent D-Bus API (see below) to store user-specific secrets, and
+      add legacy user-specific configuration to NetworkManager when run.  More
+      information about both these changes follows.
+    </para>
+    </section>
+
+    <section>
+    <title>Settings Service Name Change</title>
+    <para>
+      With the elimination of the user settings service, the old
+      <literal>org.freedesktop.NetworkManagerUserSettings</literal> and
+      <literal>org.freedesktop.NetworkManagerSystemSettings</literal> D-Bus
+      service names are no longer used.  Instead NetworkManager provides the
+      settings service using its own D-Bus service name,
+      <literal>org.freedesktop.NetworkManager</literal>.  The object path of
+      the settings service remains unchanged.
+    </para>
+    <para>
+      <emphasis role="strong">Action:</emphasis> change the service name that
+      your application uses to request system network settings to
+      <literal>org.freedesktop.NetworkManager</literal>.
+    </para>
+    </section>
+
+    <section>
+    <title>Permissions Methods Consolidation</title>
+    <para>
+      Previously there were two D-Bus method calls to retrieve the list of
+      operations that a user client could perform, and two signals notifying
+      callers that they should recheck permissions.  Those two calls were:
+      <itemizedlist>
+        <listitem>
+          <literal>org.freedesktop.NetworkManagerSettings.System.GetPermissions</literal>
+          which returned a bitfield of operations the caller was allowed to
+          perform related to modify system network settings and the machine
+          hostname
+        </listitem>
+        <listitem>
+          <literal>org.freedesktop.NetworkManager.GetPermissions</literal> which
+          returned a dictionary mapping permission names to result strings like
+          "yes", "auth", or "no", relating to network control permissions like
+          the ability to enable or disable WiFi.
+        </listitem>
+      </itemizedlist>
+      These two calls have been consolidated into an enhanced
+      <literal>org.freedesktop.NetworkManager.GetPermissions</literal> call that
+      uses the same arguments, but includes all permissions, including those which
+      the settings service used to handle.
+    </para>
+    <para>
+      With this change, the bitfield items from
+      <literal>org.freedesktop.NetworkManagerSettings.System.GetPermissions</literal>
+      are now string-based permissions.  The mapping is as follows:
+      <table>
+        <tgroup cols="2">
+          <thead>
+            <row><entry>Old bitfield value</entry><entry>New permission name</entry></row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><screen>0x1 (connection-modify)</screen></entry>
+              <entry>
+                <literal>org.freedesktop.NetworkManager.settings.modify.system</literal>
+                or <literal>org.freedesktop.NetworkManager.settings.modify.system</literal>
+                depending on the permissions of the connection.
+              </entry>
+            </row>
+            <row>
+              <entry><screen>0x2 (wifi-share-protected)</screen></entry>
+              <entry>
+                <literal>org.freedesktop.NetworkManager.wifi.share.protected</literal>
+              </entry>
+            </row>
+            <row>
+              <entry><screen>0x4 (wifi-share-open)</screen></entry>
+              <entry>
+                <literal>org.freedesktop.NetworkManager.wifi.share.open</literal>
+              </entry>
+            </row>
+            <row>
+              <entry><screen>0x8 (hostname-modify)</screen></entry>
+              <entry>
+                <literal>org.freedesktop.NetworkManager.settings.modify.hostname</literal>
+              </entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+    </para>
+    <para>
+      <emphasis role="strong">Action:</emphasis> modify handling of existing
+      code that checks permissions to recognize the new permissions names for
+      old system settings permissions, and remove code that used to call
+      <literal>org.freedesktop.NetworkManagerSettings.System.GetPermissions</literal>.
+    </para>
+    </section>
+
+  </section>
+
+</section>
