@@ -320,7 +320,8 @@ test_get_active_connections (NMClient *client)
 
 		g_print ("    %s\n", nm_object_get_path (g_ptr_array_index (connections, i)));
 		devices = nm_active_connection_get_devices (g_ptr_array_index (connections, i));
-		g_ptr_array_foreach ((GPtrArray *) devices, show_active_connection_device, NULL);
+		if (devices)
+			g_ptr_array_foreach ((GPtrArray *) devices, show_active_connection_device, NULL);
 	}
 }
 
