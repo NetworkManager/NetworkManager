@@ -54,7 +54,7 @@ typedef struct {
 	NMDeviceType device_type;
 	char *udi;
 	char *driver;
-	guint32 capabilities;
+	NMDeviceCapabilities capabilities;
 	gboolean managed;
 	gboolean firmware_missing;
 	NMIP4Config *ip4_config;
@@ -912,7 +912,7 @@ nm_device_get_driver (NMDevice *device)
  *
  * Returns: the capabilities
  **/
-guint32
+NMDeviceCapabilities
 nm_device_get_capabilities (NMDevice *device)
 {
 	NMDevicePrivate *priv;
