@@ -152,9 +152,9 @@ write_one_setting (FILE *f, SettingNewFunc func)
 
 		(void) fprintf (f,
 			"      <row>\n"
-			"        <entry>%s</entry>\n"
-			"        <entry>%s</entry>\n"
-			"        <entry>%s</entry>\n"
+			"        <entry><screen>%s</screen></entry>\n"
+			"        <entry><screen>%s</screen></entry>\n"
+			"        <entry><screen>%s</screen></entry>\n"
 			"        <entry>%s</entry>\n"
 			"      </row>\n",
 			key_name, value_type, default_value ? default_value : "", value_desc);
