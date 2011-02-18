@@ -124,6 +124,7 @@ write_one_setting (FILE *f, SettingNewFunc func)
 		char *default_value;
 		TypeNameElement *name_iter;
 		GValue value = { 0, };
+		char *flags_str = NULL;
 
 		value_type = g_type_name (G_PARAM_SPEC_VALUE_TYPE (*iter));
 		for (name_iter = &name_map[0]; name_iter && name_iter->gvalue_name; name_iter++) {
@@ -150,15 +151,23 @@ write_one_setting (FILE *f, SettingNewFunc func)
 			g_object_get (G_OBJECT (s), NM_SETTING_NAME, &default_value, NULL);
 		}
 
+		if (g_str_has_suffix (key_name, "-flags"))
+			flags_str = g_strdup_printf (" (see <xref linkend=\"secrets-flags\"/> for flag values)");
+
 		(void) fprintf (f,
 			"      <row>\n"
 			"        <entry><screen>%s</screen></entry>\n"
 			"        <entry><screen>%s</screen></entry>\n"
 			"        <entry><screen>%s</screen></entry>\n"
-			"        <entry>%s</entry>\n"
+			"        <entry>%s%s</entry>\n"
 			"      </row>\n",
-			key_name, value_type, default_value ? default_value : "", value_desc);
+			key_name,
+			value_type,
+			default_value ? default_value : "",
+			value_desc,
+			flags_str ? flags_str : "");
 
+		g_free (flags_str);
 		g_free (default_value);
 	}
 
@@ -202,7 +211,7 @@ main (int argc, char *argv[])
 		"<!ENTITY %% local.common.attrib \"xmlns:xi  CDATA  #FIXED 'http://www.w3.org/2003/XInclude'\">"
 		"]>"
 		"<section>\n"
-		"  <title>NetworkManager " PACKAGE_VERSION " Settings Specification</title>\n"
+		"  <title>Configuration Settings</title>\n"
 		"  <para>\n");
 
 	for (fptr = funcs; fptr && *fptr; fptr++)

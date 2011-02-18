@@ -55,28 +55,61 @@
     </legalnotice>
   </bookinfo>
 
-  <reference id="ref-dbus">
+  <chapter id="ref-dbus">
     <title>D-Bus API Reference</title>
-    <partintro>
-      <para>
-	This part documents the D-Bus interface used to access the
-	NetworkManager daemon.
-      </para>
-    </partintro>
+    <para>
+      This part documents the D-Bus interface used to access the
+      NetworkManager daemon.
+    </para>
     <ulink url="spec.html"/>
-  </reference>
+  </chapter>
 
-  <reference id="ref-settings">
+  <chapter id="ref-settings">
     <title>Network Configuration Setting Specification</title>
-    <partintro>
-      <para>
-	This part documents the properties and value types of each "Setting"
-	object that composes the basic unit of NetworkManager configuration,
-	the "Connection".
-      </para>
-    </partintro>
+    <para>
+      This part documents the properties and value types of each "Setting"
+      object that composes the basic unit of NetworkManager configuration,
+      the "Connection".  Each Connection object is simply a dictionare mapping
+      setting names (like "wimax" or "bluetooth") to a dictionary of
+      key/value pairs that represents each itself.
+    </para>
     <xi:include href="settings-spec.xml" />
-  </reference>
+    <section id="secrets-flags">
+      <title>Secret flag types</title>
+      <para>
+        Each secret property in a setting has an associated "flags" property
+        that describes how to handle that secret.  The "flags" property is a
+        bitfield that contains zero or more of the following values logically
+        OR-ed together.
+      </para>
+      <para>
+        <itemizedlist>
+          <listitem>
+            <literal>0x0 (none)</literal> - the system is responsible for providing
+            and storing this secret.
+          </listitem>
+          <listitem>
+            <literal>0x1 (agent-owned)</literal> - a user-session secret agent
+            is responsible for providing and storing this secret; when it is
+            required, agents will be asked to provide it.
+          </listitem>
+          <listitem>
+            <literal>0x2 (not-saved)</literal> - this secret should not be saved
+            but should be requested from the user each time it is required. This
+            flag should be used for One-Time-Pad secrets, PIN codes from
+            hardware tokens, or if the user simply does not want to save the
+            secret.
+          </listitem>
+          <listitem>
+            <literal>0x4 (not-required)</literal> - in some situations it cannot
+            be automatically determined that a secret is required or not.  This
+            flag hints that the secret is not required and should not be
+            requested from the user.
+          </listitem>
+        </itemizedlist>
+      </para>
+    </section>
+  </chapter>
 
   <index>
     <title>Index</title>
