@@ -3,7 +3,7 @@
                "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd" [
 <!ENTITY % local.common.attrib "xmlns:xi  CDATA  #FIXED 'http://www.w3.org/2003/XInclude'">
 ]>
-<section id="migrating-to-09">
+<chapter id="ref-migrating">
   <title>Migrating from NetworkManager 0.8 to NetworkManager 0.9</title>
 
   <para>
@@ -154,4 +154,4 @@
 
   </section>
 
-</section>
+</chapter>
