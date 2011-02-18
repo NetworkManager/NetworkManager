@@ -75,7 +75,7 @@
 	the "Connection".
       </para>
     </partintro>
-    <ulink url="settings-spec.html"/>
+    <xi:include href="settings-spec.xml" />
   </reference>
 
   <index>

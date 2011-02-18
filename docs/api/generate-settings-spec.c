@@ -96,7 +96,6 @@ static TypeNameElement name_map[] = {
 static void
 write_one_setting (FILE *f, SettingNewFunc func)
 {
-	int w;
 	NMSetting *s;
 	GParamSpec **props, **iter;
 	guint num;
@@ -104,13 +103,21 @@ write_one_setting (FILE *f, SettingNewFunc func)
 	s = func ();
 
 	/* write out section header */
-	w = fprintf (f, "<p><h2>Setting name: '%s'</h2></p>\n", nm_setting_get_name (s));
+	(void) fprintf (f,
+		"<table>\n"
+		"  <title>%s setting</title>\n"
+		"  <tgroup cols=\"4\">\n"
+		"    <thead>\n"
+		"      <row>\n"
+		"        <entry>Key Name</entry>\n"
+		"        <entry>Value Type</entry>\n"
+		"        <entry>Default Value</entry>\n"
+		"        <entry>Value Description</entry>\n"
+		"      </row>\n"
+		"    </thead>\n"
+		"    <tbody>\n",
+		nm_setting_get_name (s));
 
-	w = fprintf (f, "<table cellspacing=10 border=0 cellpadding=2>\n");
-	w = fprintf (f, "<th align=left>Key Name</th>\n");
-	w = fprintf (f, "<th align=left>Value Type</th>\n");
-	w = fprintf (f, "<th align=left>Default Value</th>\n");
-	w = fprintf (f, "<th align=left>Value Description</th>\n");
 	props = g_object_class_list_properties (G_OBJECT_GET_CLASS (G_OBJECT (s)), &num);
 	for (iter = props; iter && *iter; iter++) {
 		const char *key_name, *value_type, *value_desc;
@@ -143,17 +150,23 @@ write_one_setting (FILE *f, SettingNewFunc func)
 			g_object_get (G_OBJECT (s), NM_SETTING_NAME, &default_value, NULL);
 		}
 
-		w = fprintf (f, "<tr align=left valign=top>\n");
-		w = fprintf (f, "<td><strong>%s</strong></td>\n", key_name);
-		w = fprintf (f, "<td>%s</td>\n", value_type);
-		w = fprintf (f, "<td>%s</td>\n", default_value ? default_value : "");
-		w = fprintf (f, "<td>%s</td>\n", value_desc);
-		w = fprintf (f, "</tr>\n");
+		(void) fprintf (f,
+			"      <row>\n"
+			"        <entry>%s</entry>\n"
+			"        <entry>%s</entry>\n"
+			"        <entry>%s</entry>\n"
+			"        <entry>%s</entry>\n"
+			"      </row>\n",
+			key_name, value_type, default_value ? default_value : "", value_desc);
 
 		g_free (default_value);
 	}
 
-	w = fprintf (f, "</table><br/>\n");
+	(void) fprintf (f,
+		"    </tbody>\n"
+		"  </tgroup>\n"
+		"</table>\n");
+
 	g_object_unref (s);
 }
 
@@ -162,7 +175,6 @@ main (int argc, char *argv[])
 {
 	GError *error = NULL;
 	FILE *f;
-	int w;
 	SettingNewFunc *fptr;
 
 	if (argc != 2) {
@@ -183,14 +195,22 @@ main (int argc, char *argv[])
 		_exit (3);
 	}
 
-	w = fprintf (f, "<html>\n<head>\n");
-	w = fprintf (f, "<title>NetworkManager " PACKAGE_VERSION " Settings Specification</title>");
-	w = fprintf (f, "</head>\n<body>\n");
+	(void) fprintf (f,
+		"<?xml version=\"1.0\"?>\n"
+		"<!DOCTYPE chapter PUBLIC \"-//OASIS//DTD DocBook XML V4.3//EN\"\n"
+		"               \"http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd\" [\n"
+		"<!ENTITY %% local.common.attrib \"xmlns:xi  CDATA  #FIXED 'http://www.w3.org/2003/XInclude'\">"
+		"]>"
+		"<section>\n"
+		"  <title>NetworkManager " PACKAGE_VERSION " Settings Specification</title>\n"
+		"  <para>\n");
 
 	for (fptr = funcs; fptr && *fptr; fptr++)
 		write_one_setting (f, *fptr);
 
-	w = fprintf (f, "</body>\n</html>\n");
+	(void) fprintf (f,
+		"  </para>\n"
+		"</section>\n");
 
 	fclose (f);
 	_exit (0);
