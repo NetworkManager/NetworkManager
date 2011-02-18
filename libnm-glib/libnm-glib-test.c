@@ -203,7 +203,7 @@ dump_wireless (NMDeviceWifi *device)
 
 	g_print ("AccessPoints:\n");
 	aps = nm_device_wifi_get_access_points (device);
-	for (i = 0; i < aps->len; i++) {
+	for (i = 0; aps && (i < aps->len); i++) {
 		dump_access_point (NM_ACCESS_POINT (g_ptr_array_index (aps, i)));
 		g_print ("\n");
 	}
