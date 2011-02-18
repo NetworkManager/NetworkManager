@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
 #ifndef NM_ACCESS_POINT_H
@@ -68,15 +68,15 @@ GType nm_access_point_get_type (void);
 
 GObject *nm_access_point_new (DBusGConnection *connection, const char *path);
 
-guint32      nm_access_point_get_flags        (NMAccessPoint *ap);
-guint32      nm_access_point_get_wpa_flags    (NMAccessPoint *ap);
-guint32      nm_access_point_get_rsn_flags    (NMAccessPoint *ap);
-const GByteArray * nm_access_point_get_ssid   (NMAccessPoint *ap);
-guint32      nm_access_point_get_frequency    (NMAccessPoint *ap);
-const char * nm_access_point_get_hw_address   (NMAccessPoint *ap);
-NM80211Mode  nm_access_point_get_mode         (NMAccessPoint *ap);
-guint32      nm_access_point_get_max_bitrate  (NMAccessPoint *ap);
-guint8       nm_access_point_get_strength     (NMAccessPoint *ap);
+NM80211ApFlags         nm_access_point_get_flags        (NMAccessPoint *ap);
+NM80211ApSecurityFlags nm_access_point_get_wpa_flags    (NMAccessPoint *ap);
+NM80211ApSecurityFlags nm_access_point_get_rsn_flags    (NMAccessPoint *ap);
+const GByteArray *     nm_access_point_get_ssid         (NMAccessPoint *ap);
+guint32                nm_access_point_get_frequency    (NMAccessPoint *ap);
+const char *           nm_access_point_get_hw_address   (NMAccessPoint *ap);
+NM80211Mode            nm_access_point_get_mode         (NMAccessPoint *ap);
+guint32                nm_access_point_get_max_bitrate  (NMAccessPoint *ap);
+guint8                 nm_access_point_get_strength     (NMAccessPoint *ap);
 
 G_END_DECLS
 
