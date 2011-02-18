@@ -51,6 +51,7 @@ typedef struct {
 
 	char *iface;
 	char *ip_iface;
+	NMDeviceType device_type;
 	char *udi;
 	char *driver;
 	guint32 capabilities;
@@ -87,6 +88,7 @@ enum {
 	PROP_VENDOR,
 	PROP_DHCP6_CONFIG,
 	PROP_IP_INTERFACE,
+	PROP_DEVICE_TYPE,
 
 	LAST_PROP
 };
@@ -393,6 +395,9 @@ get_property (GObject *object,
 	NMDevice *device = NM_DEVICE (object);
 
 	switch (prop_id) {
+	case PROP_DEVICE_TYPE:
+		g_value_set_uint (value, nm_device_get_device_type (device));
+		break;
 	case PROP_UDI:
 		g_value_set_string (value, nm_device_get_udi (device));
 		break;
@@ -442,6 +447,26 @@ get_property (GObject *object,
 }
 
 static void
+set_property (GObject *object,
+              guint prop_id,
+              const GValue *value,
+              GParamSpec *pspec)
+{
+	NMDevice *self = NM_DEVICE (object);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	switch (prop_id) {
+	case PROP_DEVICE_TYPE:
+		/* Construct only */
+		priv->device_type = g_value_get_uint (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
 nm_device_class_init (NMDeviceClass *device_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (device_class);
@@ -451,6 +476,7 @@ nm_device_class_init (NMDeviceClass *device_class)
 	/* virtual methods */
 	object_class->constructor = constructor;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
@@ -483,6 +509,18 @@ nm_device_class_init (NMDeviceClass *device_class)
 						  NULL,
 						  G_PARAM_READABLE));
 
+	/**
+	 * NMDevice:device-type:
+	 *
+	 * The numeric type of the device.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_DEVICE_TYPE,
+		 g_param_spec_uint (NM_DEVICE_DEVICE_TYPE,
+						  "Device Type",
+						  "Numeric device type (ie ethernet, wifi, etc)",
+						  NM_DEVICE_TYPE_UNKNOWN, G_MAXUINT32, NM_DEVICE_TYPE_UNKNOWN,
+						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 	/**
 	 * NMDevice:udi:
 	 *
@@ -677,6 +715,7 @@ nm_device_new (DBusGConnection *connection, const char *path)
 	GValue value = {0,};
 	GType dtype = 0;
 	NMDevice *device = NULL;
+	NMDeviceType nm_dtype;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (path != NULL, NULL);
@@ -701,7 +740,8 @@ nm_device_new (DBusGConnection *connection, const char *path)
 		goto out;
 	}
 
-	switch (g_value_get_uint (&value)) {
+	nm_dtype = g_value_get_uint (&value);
+	switch (nm_dtype) {
 	case NM_DEVICE_TYPE_ETHERNET:
 		dtype = NM_TYPE_DEVICE_ETHERNET;
 		break;
@@ -729,6 +769,7 @@ nm_device_new (DBusGConnection *connection, const char *path)
 		device = (NMDevice *) g_object_new (dtype,
 											NM_OBJECT_DBUS_CONNECTION, connection,
 											NM_OBJECT_DBUS_PATH, path,
+											NM_DEVICE_DEVICE_TYPE, nm_dtype,
 											NULL);
 	}
 
@@ -790,6 +831,22 @@ nm_device_get_ip_iface (NMDevice *device)
 	}
 
 	return priv->ip_iface;
+}
+
+/**
+ * nm_device_get_device_type:
+ * @device: a #NMDevice
+ *
+ * Returns the numeric type of the #NMDevice, ie ethernet, wifi, etc.
+ *
+ * Returns: the device type
+ **/
+NMDeviceType
+nm_device_get_device_type (NMDevice *self)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (self), NM_DEVICE_TYPE_UNKNOWN);
+
+	return NM_DEVICE_GET_PRIVATE (self)->device_type;
 }
 
 /**

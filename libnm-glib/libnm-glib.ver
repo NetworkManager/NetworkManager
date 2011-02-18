@@ -80,6 +80,7 @@ global:
 	nm_device_get_managed;
 	nm_device_get_product;
 	nm_device_get_state;
+	nm_device_get_device_type;
 	nm_device_get_type;
 	nm_device_get_udi;
 	nm_device_get_vendor;

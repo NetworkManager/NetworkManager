@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2010 Red Hat, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
 #ifndef NM_DEVICE_H
@@ -44,6 +44,7 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_DEVICE))
 #define NM_DEVICE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE, NMDeviceClass))
 
+#define NM_DEVICE_DEVICE_TYPE "device-type"
 #define NM_DEVICE_UDI "udi"
 #define NM_DEVICE_INTERFACE "interface"
 #define NM_DEVICE_IP_INTERFACE "ip-interface"
@@ -87,6 +88,7 @@ GObject * nm_device_new (DBusGConnection *connection, const char *path);
 
 const char *  nm_device_get_iface            (NMDevice *device);
 const char *  nm_device_get_ip_iface         (NMDevice *device);
+NMDeviceType  nm_device_get_device_type      (NMDevice *device);
 const char *  nm_device_get_udi              (NMDevice *device);
 const char *  nm_device_get_driver           (NMDevice *device);
 guint32       nm_device_get_capabilities     (NMDevice *device);
