@@ -67,17 +67,17 @@ GType nm_device_wifi_get_type (void);
 
 GObject *nm_device_wifi_new (DBusGConnection *connection, const char *path);
 
-const char *    nm_device_wifi_get_hw_address           (NMDeviceWifi *device);
-const char *    nm_device_wifi_get_permanent_hw_address (NMDeviceWifi *device);
-NM80211Mode     nm_device_wifi_get_mode                 (NMDeviceWifi *device);
-guint32         nm_device_wifi_get_bitrate              (NMDeviceWifi *device);
-guint32         nm_device_wifi_get_capabilities         (NMDeviceWifi *device);
-NMAccessPoint * nm_device_wifi_get_active_access_point  (NMDeviceWifi *device);
+const char *             nm_device_wifi_get_hw_address           (NMDeviceWifi *device);
+const char *             nm_device_wifi_get_permanent_hw_address (NMDeviceWifi *device);
+NM80211Mode              nm_device_wifi_get_mode                 (NMDeviceWifi *device);
+guint32                  nm_device_wifi_get_bitrate              (NMDeviceWifi *device);
+NMDeviceWifiCapabilities nm_device_wifi_get_capabilities         (NMDeviceWifi *device);
+NMAccessPoint *          nm_device_wifi_get_active_access_point  (NMDeviceWifi *device);
 
-NMAccessPoint * nm_device_wifi_get_access_point_by_path (NMDeviceWifi *device,
-                                                         const char *path);
+NMAccessPoint *          nm_device_wifi_get_access_point_by_path (NMDeviceWifi *device,
+                                                                  const char *path);
 
-const GPtrArray *nm_device_wifi_get_access_points       (NMDeviceWifi *device);
+const GPtrArray *        nm_device_wifi_get_access_points        (NMDeviceWifi *device);
 
 G_END_DECLS
 

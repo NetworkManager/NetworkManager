@@ -50,7 +50,7 @@ typedef struct {
 	guint32 rate;
 	NMAccessPoint *active_ap;
 	gboolean null_active_ap;
-	guint32 wireless_caps;
+	NMDeviceWifiCapabilities wireless_caps;
 	GPtrArray *aps;
 
 	gboolean wireless_enabled;
@@ -233,7 +233,7 @@ nm_device_wifi_get_bitrate (NMDeviceWifi *device)
  *
  * Returns: the capabilities
  **/
-guint32
+NMDeviceWifiCapabilities
 nm_device_wifi_get_capabilities (NMDeviceWifi *device)
 {
 	NMDeviceWifiPrivate *priv;
