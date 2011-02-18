@@ -274,8 +274,8 @@ nm_setting_bluetooth_class_init (NMSettingBluetoothClass *setting_class)
 		 g_param_spec_string (NM_SETTING_BLUETOOTH_TYPE,
 						  "Connection type",
 						  "Either '" NM_SETTING_BLUETOOTH_TYPE_DUN "' for "
-						  "Dial-Up Networking connections (not yet supported) "
-						  " or '" NM_SETTING_BLUETOOTH_TYPE_PANU "' for "
+						  "Dial-Up Networking connections or "
+						  "'" NM_SETTING_BLUETOOTH_TYPE_PANU "' for "
 						  "Personal Area Networking connections.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
