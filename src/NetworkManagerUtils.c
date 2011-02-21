@@ -370,6 +370,13 @@ nm_utils_merge_ip6_config (NMIP6Config *ip6_config, NMSettingIP6Config *setting)
 		nm_ip6_config_set_never_default (ip6_config, TRUE);
 }
 
+static void
+dispatcher_done_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
+{
+	dbus_g_proxy_end_call (proxy, call, NULL, G_TYPE_INVALID);
+	g_object_unref (proxy);
+}
+
 void
 nm_utils_call_dispatcher (const char *action,
                           NMConnection *connection,
@@ -448,18 +455,25 @@ nm_utils_call_dispatcher (const char *action,
 		value_hash_add_object_path (device_props, NMD_DEVICE_PROPS_PATH, nm_device_get_path (device));
 	}
 
-	dbus_g_proxy_call_no_reply (proxy, "Action",
-	                            G_TYPE_STRING, action,
-	                            DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, connection_hash,
-	                            DBUS_TYPE_G_MAP_OF_VARIANT, connection_props,
-	                            DBUS_TYPE_G_MAP_OF_VARIANT, device_props,
-	                            G_TYPE_INVALID);
-
-	g_object_unref (proxy);
+	/* Do a non-blocking call, but wait for the reply, because dbus-glib
+	 * sometimes needs time to complete internal housekeeping.  If we use
+	 * dbus_g_proxy_call_no_reply(), that housekeeping (specifically the
+	 * GetNameOwner response) doesn't complete and we run into an assert
+	 * on unreffing the proxy.
+	 */
+	dbus_g_proxy_begin_call_with_timeout (proxy, "Action",
+	                                      dispatcher_done_cb,
+	                                      dbus_mgr,
+	                                      g_object_unref,
+	                                      5000,
+	                                      G_TYPE_STRING, action,
+	                                      DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, connection_hash,
+	                                      DBUS_TYPE_G_MAP_OF_VARIANT, connection_props,
+	                                      DBUS_TYPE_G_MAP_OF_VARIANT, device_props,
+	                                      G_TYPE_INVALID);
 	g_hash_table_destroy (connection_hash);
 	g_hash_table_destroy (connection_props);
 	g_hash_table_destroy (device_props);
-	g_object_unref (dbus_mgr);
 }
 
 gboolean
