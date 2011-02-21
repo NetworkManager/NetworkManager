@@ -306,28 +306,32 @@ device_state_to_string (NMDeviceState state)
 	}
 }
 
-/* Return device type - use setting names to match with connection types */
+/* Convert device type to string. Use setting names strings to match with
+ * connection type names.
+ */
 static const char *
-get_device_type (NMDevice * device)
+device_type_to_string (NMDeviceType device_type)
 {
-	if (NM_IS_DEVICE_ETHERNET (device))
+	switch (device_type) {
+	case NM_DEVICE_TYPE_ETHERNET:
 		return NM_SETTING_WIRED_SETTING_NAME;
-	else if (NM_IS_DEVICE_WIFI (device))
+	case NM_DEVICE_TYPE_WIFI:
 		return NM_SETTING_WIRELESS_SETTING_NAME;
-	else if (NM_IS_GSM_DEVICE (device))
+	case NM_DEVICE_TYPE_GSM:
 		return NM_SETTING_GSM_SETTING_NAME;
-	else if (NM_IS_CDMA_DEVICE (device))
+	case NM_DEVICE_TYPE_CDMA:
 		return NM_SETTING_CDMA_SETTING_NAME;
-	else if (NM_IS_DEVICE_BT (device))
+	case NM_DEVICE_TYPE_BT:
 		return NM_SETTING_BLUETOOTH_SETTING_NAME;
-//	else if (NM_IS_DEVICE_OLPC_MESH (device))
+//	case NM_DEVICE_TYPE_OLPC_MESH:
 //		return NM_SETTING_OLPC_MESH_SETTING_NAME;
 #if WITH_WIMAX
-	else if (NM_IS_DEVICE_WIMAX (device))
+	case NM_DEVICE_TYPE_WIMAX:
 		return NM_SETTING_WIMAX_SETTING_NAME;
 #endif
-	else
+	default:
 		return _("Unknown");
+	}
 }
 
 static char *
@@ -641,7 +645,7 @@ show_device_info (gpointer data, gpointer user_data)
 
 			nmc->allowed_fields[0].value = nmc_fields_dev_list_sections[0].name;  /* "GENERAL"*/
 			nmc->allowed_fields[1].value = nm_device_get_iface (device);
-			nmc->allowed_fields[2].value = get_device_type (device);
+			nmc->allowed_fields[2].value = device_type_to_string (nm_device_get_device_type (device));
 			nmc->allowed_fields[3].value = nm_device_get_driver (device) ? nm_device_get_driver (device) : _("(unknown)");
 			nmc->allowed_fields[4].value = hwaddr ? hwaddr : _("unknown)");
 			nmc->allowed_fields[5].value = device_state_to_string (state);
@@ -950,7 +954,7 @@ static void
 show_device_status (NMDevice *device, NmCli *nmc)
 {
 	nmc->allowed_fields[0].value = nm_device_get_iface (device);
-	nmc->allowed_fields[1].value = get_device_type (device);
+	nmc->allowed_fields[1].value = device_type_to_string (nm_device_get_device_type (device));
 	nmc->allowed_fields[2].value = device_state_to_string (nm_device_get_state (device));
 	nmc->allowed_fields[3].value = nm_object_get_path (NM_OBJECT (device));
 
