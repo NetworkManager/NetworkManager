@@ -331,7 +331,7 @@ get_device_type (NMDevice * device)
 }
 
 static char *
-ap_wpa_rsn_flags_to_string (guint32 flags)
+ap_wpa_rsn_flags_to_string (NM80211ApSecurityFlags flags)
 {
 	char *flags_str[16]; /* Enough space for flags and terminating NULL */
 	char *ret_str;
@@ -425,7 +425,9 @@ detail_access_point (gpointer data, gpointer user_data)
 	NMAccessPoint *ap = NM_ACCESS_POINT (data);
 	APInfo *info = (APInfo *) user_data;
 	gboolean active = FALSE;
-	guint32 flags, wpa_flags, rsn_flags, freq, bitrate;
+	NM80211ApFlags flags;
+	NM80211ApSecurityFlags wpa_flags, rsn_flags;
+	guint32 freq, bitrate;
 	guint8 strength;
 	const GByteArray *ssid; 
 	const char *hwaddr;
