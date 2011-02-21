@@ -33,6 +33,8 @@ libppp_manager_la_LIBADD = \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS)
 
+if WITH_PPP
+
 pppd_plugindir = $(PPPD_PLUGIN_DIR)
 pppd_plugin_LTLIBRARIES = nm-pppd-plugin.la
 
@@ -51,6 +53,8 @@ nm_pppd_plugin_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS)
+
+endif
 
 BUILT_SOURCES = nm-ppp-manager-glue.h
 

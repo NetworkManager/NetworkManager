@@ -958,6 +958,15 @@ nm_ppp_manager_start (NMPPPManager *manager,
 
 	priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
 
+#if !WITH_PPP
+	/* PPP support disabled */
+	g_set_error_literal (err,
+	                     NM_PPP_MANAGER_ERROR,
+	                     NM_PPP_MANAGER_ERROR_UNKOWN,
+	                     "PPP support is not enabled.");
+	return FALSE;
+#endif
+
 	priv->pid = 0;
 
 	/* Make sure /dev/ppp exists (bgo #533064) */

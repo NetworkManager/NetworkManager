@@ -359,9 +359,16 @@ else
 fi
 AC_SUBST(DBUS_SYS_DIR)
 
-# PPPD
-AC_CHECK_HEADERS(pppd/pppd.h,,
-  AC_MSG_ERROR(couldn't find pppd.h. pppd development headers are required.))
+# pppd
+AC_ARG_ENABLE(ppp, AC_HELP_STRING([--enable-ppp], [enable PPP/PPPoE support]),
+                     [enable_ppp=${enableval}], [enable_ppp=yes])
+if (test "${enable_ppp}" = "yes"); then
+	AC_CHECK_HEADERS(pppd/pppd.h,,
+		AC_MSG_ERROR(couldn't find pppd.h. pppd development headers are required.))
+
+	AC_DEFINE(WITH_PPP, 1, [Define if you have PPP support])
+fi
+AM_CONDITIONAL(WITH_PPP, test "${enable_ppp}" = "yes")
 
 AC_ARG_WITH([pppd-plugin-dir], AS_HELP_STRING([--with-pppd-plugin-dir=DIR], [path to the pppd plugins directory]))
 
@@ -371,6 +378,7 @@ else
 	PPPD_PLUGIN_DIR="${libdir}/pppd/2.4.5"
 fi
 AC_SUBST(PPPD_PLUGIN_DIR)
+
 
 # dhclient support
 AC_ARG_WITH([dhclient], AS_HELP_STRING([--with-dhclient=yes|no|path], [Enable dhclient 4.x support]))
@@ -657,6 +665,12 @@ if test "${enable_wimax}" = "yes"; then
 	echo WiMAX support: yes
 else
 	echo WiMAX support: no
+fi
+
+if test "${enable_ppp}" = "yes"; then
+	echo PPP support: yes
+else
+	echo PPP support: no
 fi
 
 echo
