@@ -577,7 +577,7 @@ show_device_info (gpointer data, gpointer user_data)
 	char *tmp;
 	const char *hwaddr = NULL;
 	NMDeviceState state = NM_DEVICE_STATE_UNKNOWN;
-	guint32 caps;
+	NMDeviceCapabilities caps;
 	guint32 speed;
 	char *speed_str = NULL;
 	const GArray *array;
@@ -687,7 +687,7 @@ show_device_info (gpointer data, gpointer user_data)
 
 		/* Wireless specific information */
 		if ((NM_IS_DEVICE_WIFI (device))) {
-			guint32 wcaps;
+			NMDeviceWifiCapabilities wcaps;
 			NMAccessPoint *active_ap = NULL;
 			const char *active_bssid = NULL;
 			const GPtrArray *aps;
