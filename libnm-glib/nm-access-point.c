@@ -38,9 +38,9 @@ typedef struct {
 	gboolean disposed;
 	DBusGProxy *proxy;
 
-	NM80211ApFlags flags;
-	NM80211ApSecurityFlags wpa_flags;
-	NM80211ApSecurityFlags rsn_flags;
+	guint32 flags;
+	guint32 wpa_flags;
+	guint32 rsn_flags;
 	GByteArray *ssid;
 	guint32 frequency;
 	char *hw_address;
@@ -99,11 +99,11 @@ nm_access_point_new (DBusGConnection *connection, const char *path)
  * nm_access_point_get_flags:
  * @ap: a #NMAccessPoint
  *
- * Gets the flags of the access point.
+ * Gets the flags of the access point
  *
  * Returns: the flags
  **/
-NM80211ApFlags
+guint32
 nm_access_point_get_flags (NMAccessPoint *ap)
 {
 	NMAccessPointPrivate *priv;
@@ -124,11 +124,11 @@ nm_access_point_get_flags (NMAccessPoint *ap)
  * nm_access_point_get_wpa_flags:
  * @ap: a #NMAccessPoint
  *
- * Gets the WPA (version 1) flags of the access point.
+ * Gets the WPA flags of the access point.
  *
  * Returns: the WPA flags
  **/
-NM80211ApSecurityFlags
+guint32
 nm_access_point_get_wpa_flags (NMAccessPoint *ap)
 {
 	NMAccessPointPrivate *priv;
@@ -149,12 +149,11 @@ nm_access_point_get_wpa_flags (NMAccessPoint *ap)
  * nm_access_point_get_rsn_flags:
  * @ap: a #NMAccessPoint
  *
- * Gets the RSN (Robust Secure Network, ie WPA version 2) flags of the access
- * point.
+ * Gets the RSN flags of the access point.
  *
  * Returns: the RSN flags
  **/
-NM80211ApSecurityFlags
+guint32
 nm_access_point_get_rsn_flags (NMAccessPoint *ap)
 {
 	NMAccessPointPrivate *priv;
