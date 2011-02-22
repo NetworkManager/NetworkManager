@@ -480,6 +480,13 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 		                    G_PARAM_READABLE));
 
 	/* Signals */
+	/**
+	 * NMRemoteConnection::updated:
+	 * @connection: a #NMConnection
+	 *
+	 * This signal is emitted when a connection changes, and it is
+	 * still visible to the user.
+	 */
 	signals[UPDATED] = 
 		g_signal_new (NM_REMOTE_CONNECTION_UPDATED,
 		              G_TYPE_FROM_CLASS (remote_class),
@@ -489,6 +496,13 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 		              g_cclosure_marshal_VOID__VOID,
 		              G_TYPE_NONE, 0);
 
+	/**
+	 * NMRemoteConnection::removed:
+	 * @connection: a #NMConnection
+	 *
+	 * This signal is emitted when a connection is either deleted or becomes
+	 * invisible to the current user.
+	 */
 	signals[REMOVED] = 
 		g_signal_new (NM_REMOTE_CONNECTION_REMOVED,
 		              G_TYPE_FROM_CLASS (remote_class),
@@ -498,6 +512,7 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 		              g_cclosure_marshal_VOID__VOID,
 		              G_TYPE_NONE, 0);
 
+	/* Private signal */
 	signals[VISIBLE] =
 		g_signal_new ("visible",
 		              G_TYPE_FROM_CLASS (remote_class),
