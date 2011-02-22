@@ -493,7 +493,7 @@ validate_permissions_type (GHashTable *hash, GError **error)
 /**
  * nm_connection_replace_settings:
  * @connection: a #NMConnection
- * @new_settings: (element-type utf8 GLib.HashTable): a #GHashTable of settings
+ * @new_settings: (element-type utf8 GHashTable<utf8,GValue>): a #GHashTable of settings
  * @error: location to store error, or %NULL
  *
  * Returns: %TRUE if the settings were valid and added to the connection, %FALSE
@@ -728,11 +728,12 @@ add_setting_to_list (gpointer key, gpointer data, gpointer user_data)
 /**
  * nm_connection_need_secrets:
  * @connection: the #NMConnection
- * @hints: the address of a pointer to a #GPtrArray, initialized to NULL, which
- * on return points to an allocated #GPtrArray containing the property names of
- * secrets of the #NMSetting which may be required; the caller owns the array
- * and must free the each array element with g_free(), as well as the array
- * itself with g_ptr_array_free()
+ * @hints: (out callee-allocates) (element-type utf8) (allow-none) (transfer full):
+ *   the address of a pointer to a #GPtrArray, initialized to NULL, which on
+ *   return points to an allocated #GPtrArray containing the property names of
+ *   secrets of the #NMSetting which may be required; the caller owns the array
+ *   and must free the each array element with g_free(), as well as the array
+ *   itself with g_ptr_array_free()
  *
  * Returns the name of the first setting object in the connection which would
  * need secrets to make a successful connection.  The returned hints are only
@@ -741,7 +742,7 @@ add_setting_to_list (gpointer key, gpointer data, gpointer user_data)
  * secrets are needed.
  *
  * Returns: the setting name of the #NMSetting object which has invalid or
- * missing secrets
+ *   missing secrets
  **/
 const char *
 nm_connection_need_secrets (NMConnection *connection,
@@ -821,7 +822,7 @@ nm_connection_clear_secrets (NMConnection *connection)
  * are #GHashTables mapping string:GValue, each of which represents the
  * properties of the #NMSetting object.
  *
- * Returns: (transfer full) (element-type utf8 GLib.HashTable): a new 
+ * Returns: (transfer full) (element-type utf8 GHashTable<utf8,GValue>): a new
  * #GHashTable describing the connection, its settings, and each setting's
  * properties.  The caller owns the hash table and must unref the hash table
  * with g_hash_table_unref() when it is no longer needed.

@@ -169,6 +169,8 @@ nm_dhcp4_config_class_init (NMDHCP4ConfigClass *config_class)
 	 * NMDHCP4Config:options:
 	 *
 	 * The #GHashTable containing options of the configuration.
+	 *
+	 * Type: GHashTable<utf8,GValue>
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_OPTIONS,

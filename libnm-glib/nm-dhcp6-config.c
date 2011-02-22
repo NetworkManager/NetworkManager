@@ -169,6 +169,8 @@ nm_dhcp6_config_class_init (NMDHCP6ConfigClass *config_class)
 	 * NMDHCP6Config:options:
 	 *
 	 * The #GHashTable containing options of the configuration.
+	 *
+	 * Type: GHashTable<utf8,GValue>
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_OPTIONS,

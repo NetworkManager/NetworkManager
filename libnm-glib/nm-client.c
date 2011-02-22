@@ -1152,8 +1152,9 @@ activate_cb (DBusGProxy *proxy,
  * @client: a #NMClient
  * @connection_path: the connection's DBus path
  * @device: the #NMDevice
- * @specific_object: the device specific object (currently used only for
- * activating wireless devices and should be the #NMAccessPoint<!-- -->'s path.
+ * @specific_object: (allow-none): the device specific object (currently
+ *   used only for activating wireless devices and should be the
+ *   #NMAccessPoint<!-- -->'s path).
  * @callback: (scope async): the function to call when the call is done
  * @user_data: user data to pass to the callback function
  *
