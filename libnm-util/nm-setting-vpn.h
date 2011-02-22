@@ -72,8 +72,6 @@ typedef struct {
 } NMSettingVPNClass;
 
 typedef void (*NMVPNIterFunc) (const char *key, const char *value, gpointer user_data);
-/* For backward compatibility */
-typedef NMVPNIterFunc VPNIterFunc;
 
 GType nm_setting_vpn_get_type (void);
 
