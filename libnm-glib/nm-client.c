@@ -1140,7 +1140,7 @@ activate_cb (DBusGProxy *proxy,
 	ActivateDeviceInfo *info = (ActivateDeviceInfo *) user_data;
 
 	if (info->act_fn)
-		info->act_fn (info->client, path, error, info->user_data);
+		info->act_fn (info->client, error ? NULL : path, error, info->user_data);
 	else if (error)
 		g_warning ("Device activation failed: (%d) %s", error->code, error->message);
 
@@ -1155,8 +1155,8 @@ activate_cb (DBusGProxy *proxy,
  * @specific_object: (allow-none): the device specific object (currently
  *   used only for activating wireless devices and should be the
  *   #NMAccessPoint<!-- -->'s path).
- * @callback: (scope async): the function to call when the call is done
- * @user_data: user data to pass to the callback function
+ * @callback: (scope async) (allow-none): the function to call when the call is done
+ * @user_data: (closure): user data to pass to the callback function
  *
  * Activates a connection with the given #NMDevice.
  **/
@@ -1196,9 +1196,13 @@ add_activate_cb (DBusGProxy *proxy,
 {
 	ActivateDeviceInfo *info = (ActivateDeviceInfo *) user_data;
 
-	if (info->add_act_fn)
-		info->add_act_fn (info->client, connection_path, active_path, error, info->user_data);
-	else if (error)
+	if (info->add_act_fn) {
+		info->add_act_fn (info->client,
+		                  error ? NULL : connection_path,
+		                  error ? active_path : NULL,
+		                  error,
+		                  info->user_data);
+	} else if (error)
 		g_warning ("Connection add and activate failed: (%d) %s", error->code, error->message);
 
 	g_slice_free (ActivateDeviceInfo, info);
@@ -1217,7 +1221,7 @@ add_activate_cb (DBusGProxy *proxy,
  *   (ie, no specific object).  For WiFi connections, pass the object path of a
  *   specific AP from the card's scan list, which will be used to complete the
  *   details of the newly added connection.
- * @callback: (scope async): the function to call when the call is done
+ * @callback: (scope async) (allow-none): the function to call when the call is done
  * @user_data: (closure): user data to pass to the callback function
  *
  * Adds a new connection using the given details (if any) as a template
