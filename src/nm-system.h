@@ -55,7 +55,7 @@ gboolean		nm_system_replace_default_ip4_route_vpn (const char *iface,
 struct rtnl_route *nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device, NMIP4Config *vpn_config);
 
 
-void			nm_system_device_flush_addresses			(NMDevice *dev);
+void			nm_system_device_flush_addresses			(NMDevice *dev, int family);
 void			nm_system_device_flush_addresses_with_iface	(const char *iface);
 
 void			nm_system_enable_loopback				(void);
