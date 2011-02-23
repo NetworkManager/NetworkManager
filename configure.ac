@@ -20,14 +20,6 @@ AM_PROG_CC_C_O
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 
-dnl ensure that when the Automake generated makefile calls aclocal,
-dnl it honours the $ACLOCAL_FLAGS environment variable
-ACLOCAL_AMFLAGS="\${ACLOCAL_FLAGS}"
-if test -n "$ac_macro_dir"; then
-    ACLOCAL_AMFLAGS="-I $ac_macro_dir $ACLOCAL_AMFLAGS"
-fi
-AC_SUBST([ACLOCAL_AMFLAGS])
-
 dnl maintainer mode stuff
 if test $USE_MAINTAINER_MODE = yes; then
 	DISABLE_DEPRECATED="-DG_DISABLE_DEPRECATED"
