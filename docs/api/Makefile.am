@@ -38,15 +38,13 @@ GENERATED_FILES = spec.html settings-spec.xml
 
 spec.html: $(XMLS) $(OTHER_FILES)
 	$(XSLTPROC) $(top_srcdir)/tools/doc-generator.xsl $(top_srcdir)/introspection/all.xml > $@
-
-api/spec.html: spec.html
 	mkdir -p $(builddir)/html/
 	cp $(builddir)/spec.html $(builddir)/html/
 
-settings-spec.xml: generate-settings-spec $(top_builddir)/libnm-util/libnm-util.la
+settings-spec.xml: generate-settings-spec $(top_builddir)/libnm-util/libnm-util.la spec.html
 	$(builddir)/generate-settings-spec $(builddir)/$@
 
-all: $(GENERATED_FILES) api/spec.html
+all: $(GENERATED_FILES)
 
 ####################################
 
