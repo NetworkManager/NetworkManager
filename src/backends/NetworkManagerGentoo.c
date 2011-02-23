@@ -54,29 +54,14 @@ static void openrc_start_lo_if_necessary()
  */
 void nm_system_enable_loopback (void)
 {
-	GFile *file; 
-	GFileInputStream *in;
-	gchar buffer[BUFFER_SIZE];
-	gchar *comm, *readed, *tmp;
-	gssize r;
+	gchar *comm;
 
-	file = g_file_new_for_path ("/proc/1/comm");
-	in = g_file_read (file, NULL, NULL);
-
-	/* If anything goes wrong trying to open /proc/1/comm,
-	   we will assume OpenRC. */
-	if (!in) {
+	/* If anything goes wrong trying to open /proc/1/comm, we will assume
+	   OpenRC. */
+	if (!g_file_get_contents ("/proc/1/comm", &comm, NULL, NULL)) {
+		nm_log_info (LOGD_CORE, "NetworkManager is running with OpenRC...");
 		openrc_start_lo_if_necessary ();
 		return;
-	}
-
-	comm = g_strdup("");
-	while ((r = g_input_stream_read (G_INPUT_STREAM(in), buffer, BUFFER_SIZE, NULL, NULL)) > 0) {
-		readed = g_strndup (buffer, r);
-		tmp = g_strconcat (comm, readed, NULL);
-		g_free (comm);
-		g_free (readed);
-		comm = tmp;
 	}
 
 	if (g_strstr_len (comm, -1, "systemd")) {
