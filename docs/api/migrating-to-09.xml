@@ -51,6 +51,13 @@
       </itemizedlist>
     </para>
     <para>
+      With this change, D-Bus methods that previously took a "service name"
+      argument (like
+      <literal>org.freedesktop.NetworkManager.ActivateConnection</literal>) and
+      objects with service name properties (like ActiveConnection objects) no
+      longer have those arguments or properties.
+    </para>
+    <para>
       <emphasis role="strong">Action:</emphasis> if you develop a network control
       applet that talks to NetworkManager and used to provide a user settings
       service, you can eliminate that code and rely on NetworkManager for all
@@ -149,6 +156,73 @@
       code that checks permissions to recognize the new permissions names for
       old system settings permissions, and remove code that used to call
       <literal>org.freedesktop.NetworkManagerSettings.System.GetPermissions</literal>.
+    </para>
+    </section>
+
+    <section>
+    <title>AddConnection Returns Object Path of New Connection</title>
+    <para>
+      The <ulink url="spec.html#org.freedesktop.NetworkManager.Settings">
+      <literal>org.freedesktop.NetworkManager.Settings.AddConnection</literal>
+      </ulink> method call now returns the object path of the newly added
+      connection. Previously, if code wanted to manipulate a connection
+      post-addition, it had to wait for the new connection to be announced via
+      the NewConnection signal by matching connection UUIDs.  Now the object
+      path is returned and this workaround is no longer required.
+    </para>
+    <para>
+      <emphasis role="strong">Action:</emphasis> update code that adds new
+      connections to handle the object path returned from AddConnection, and
+      remove workarounds for finding the new connection via signals.
+    </para>
+    </section>
+
+    <section>
+    <title>AddConnection Returns Object Path of New Connection</title>
+    <para>
+      The <literal>org.freedesktop.NetworkManager.Settings.AddConnection</literal>
+      method call now returns the object path of the newly added connection.
+      Previously, if code wanted to manipulate a connection post-addition, it
+      had to wait for the new connection to be announced via the NewConnection
+      signal by matching connection UUIDs.  Now the object path is returned and
+      this workaround is no longer required.
+    </para>
+    <para>
+      <emphasis role="strong">Action:</emphasis> update code that adds new
+      connections to handle the object path returned from AddConnection, and
+      remove workarounds for finding the new connection via signals.
+    </para>
+    </section>
+
+    <section>
+    <title>Support for WiMAX Devices</title>
+    <para>
+      NetworkManager now supports WiMAX mobile broadband devices.  A
+      corresponding device type (<literal>NM_DEVICE_TYPE_WIMAX</literal>) and
+      a new <ulink url="spec.html#org.freedesktop.NetworkManager.Device.WiMax">
+      <literal>org.freedesktop.NetworkManager.Device.WiMax</literal></ulink>
+      D-Bus interface have been added.
+    </para>
+    <para>
+      <emphasis role="strong">Action:</emphasis> update code that handles
+      devices and/or displays status to users to recognize the new device type.
+      Also update code that creates new connections to allow creation of new
+      WiMAX connections.
+    </para>
+    </section>
+
+    <section>
+    <title>New Device States</title>
+    <para>
+      A few <ulink url="spec.html#type-NM_DEVICE_STATE">new device states</ulink>
+      have been added, and all device states have been renumbered for flexibility.
+      The new devices states IP_CHECK, SECONDARIES, and DEACTIVATING.
+    </para>
+    <para>
+      <emphasis role="strong">Action:</emphasis> where code checks device state
+      or shows UI indication of the device's state, make sure the new device
+      states are processed correctly, and that code in switch()-type statements
+      is updated to handle the new states.
     </para>
     </section>
 
