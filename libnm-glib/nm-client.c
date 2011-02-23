@@ -1142,7 +1142,7 @@ activate_cb (DBusGProxy *proxy,
 	if (info->act_fn)
 		info->act_fn (info->client, path, error, info->user_data);
 	else if (error)
-		nm_warning ("Device activation failed: (%d) %s", error->code, error->message);
+		g_warning ("Device activation failed: (%d) %s", error->code, error->message);
 
 	g_slice_free (ActivateDeviceInfo, info);
 }
@@ -1199,7 +1199,7 @@ add_activate_cb (DBusGProxy *proxy,
 	if (info->add_act_fn)
 		info->add_act_fn (info->client, connection_path, active_path, error, info->user_data);
 	else if (error)
-		nm_warning ("Connection add and activate failed: (%d) %s", error->code, error->message);
+		g_warning ("Connection add and activate failed: (%d) %s", error->code, error->message);
 
 	g_slice_free (ActivateDeviceInfo, info);
 }

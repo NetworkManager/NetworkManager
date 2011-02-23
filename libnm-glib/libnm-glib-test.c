@@ -80,8 +80,8 @@ ip4_address_as_string (guint32 ip)
 	if (inet_ntop (AF_INET, &tmp_addr, buf, INET_ADDRSTRLEN)) {
 		return g_strdup (buf);
 	} else {
-		nm_warning ("%s: error converting IP4 address 0x%X",
-		            __func__, ntohl (tmp_addr.s_addr));
+		g_warning ("%s: error converting IP4 address 0x%X",
+		           __func__, ntohl (tmp_addr.s_addr));
 		return NULL;
 	}
 }

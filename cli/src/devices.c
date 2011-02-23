@@ -411,8 +411,8 @@ ip6_address_as_string (const struct in6_addr *ip)
 		g_string_append_printf (ip6_str, "%02X", ip->s6_addr[0]);
 		for (j = 1; j < 16; j++)
 			g_string_append_printf (ip6_str, " %02X", ip->s6_addr[j]);
-		nm_warning ("%s: error converting IP6 address %s",
-		            __func__, ip6_str->str);
+		g_warning ("%s: error converting IP6 address %s",
+		           __func__, ip6_str->str);
 		g_string_free (ip6_str, TRUE);
 		return NULL;
 	}

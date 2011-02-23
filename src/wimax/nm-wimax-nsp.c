@@ -84,10 +84,7 @@ nm_wimax_nsp_export_to_dbus (NMWimaxNsp *self)
 
 	priv = GET_PRIVATE (self);
 
-	if (priv->dbus_path) {
-		nm_warning ("NSP already exported.");
-		return;
-	}
+	g_return_if_fail (priv->dbus_path == NULL);
 
 	mgr = nm_dbus_manager_get ();
 	g_assert (mgr);

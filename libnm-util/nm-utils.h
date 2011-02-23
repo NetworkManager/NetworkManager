@@ -20,7 +20,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2005 - 2010 Red Hat, Inc.
+ * (C) Copyright 2005 - 2011 Red Hat, Inc.
  */
 
 #ifndef NM_UTILS_H
@@ -32,121 +32,6 @@
 #include "nm-connection.h"
 
 G_BEGIN_DECLS
-
-/*********************************************************/
-/* The API defined here is _NOT_ guaranteed in any way!! */
-/*********************************************************/
-
-/**
- * nm_print_backtrace:
- *
- * Prints a backtrace of the calling process to the logging location.
- */
-#define nm_print_backtrace()						\
-G_STMT_START								\
-{									\
-	void *_call_stack[512];						\
-	int  _call_stack_size;						\
-	char **_symbols;						\
-	_call_stack_size = backtrace (_call_stack,			\
-				      G_N_ELEMENTS (_call_stack));	\
-	_symbols = backtrace_symbols (_call_stack, _call_stack_size);	\
-	if (_symbols != NULL)						\
-	{								\
-		int _i;							\
-		_i = 0;							\
-		g_critical ("traceback:\n");				\
-		while (_i < _call_stack_size)				\
-		{							\
-			g_critical ("\t%s\n", _symbols[_i]);		\
-			_i++;						\
-		}							\
-		free (_symbols);					\
-	}								\
-}									\
-G_STMT_END
-
-/**
- * nm_get_timestamp:
- * @timestamp: location in which to place the current timestamp
- *
- * For debugging only.
- */
-#define nm_get_timestamp(timestamp)					\
-G_STMT_START								\
-{									\
-	GTimeVal _tv;							\
-	g_get_current_time (&_tv);					\
-	*timestamp = (_tv.tv_sec * (1.0 * G_USEC_PER_SEC) +		\
-		      _tv.tv_usec) / G_USEC_PER_SEC;			\
-}									\
-G_STMT_END
-
-#define nm_info(fmt, args...)						\
-G_STMT_START								\
-{									\
-	g_message ("<info>  " fmt "\n", ##args);			\
-} G_STMT_END
-
-#define nm_info_str(fmt_str, args...)						\
-G_STMT_START								\
-{									\
-	g_message ("<info>  %s\n", fmt_str, ##args);			\
-} G_STMT_END
-
-#define nm_debug(fmt, args...)						\
-G_STMT_START								\
-{									\
-	gdouble _timestamp;						\
-	nm_get_timestamp (&_timestamp);					\
-	g_debug ("<debug> [%f] %s(): " fmt "\n", _timestamp,	\
-		 G_STRFUNC, ##args);				\
-} G_STMT_END
-
-#define nm_debug_str(fmt_str, args...)						\
-G_STMT_START								\
-{									\
-	gdouble _timestamp;						\
-	nm_get_timestamp (&_timestamp);					\
-	g_debug ("<debug> [%f] %s(): %s\n", _timestamp,	\
-		 G_STRFUNC, fmt_str, ##args);				\
-} G_STMT_END
-
-#define nm_warning(fmt, args...)					\
-G_STMT_START								\
-{									\
-	g_warning ("<WARN>  %s(): " fmt "\n", 			\
-		   G_STRFUNC, ##args);			\
-} G_STMT_END
-
-#define nm_warning_str(fmt_str, args...)					\
-G_STMT_START								\
-{									\
-	g_warning ("<WARN>  %s(): %s\n", 			\
-		   G_STRFUNC, fmt_str, ##args);			\
-} G_STMT_END
-
-#define nm_error(fmt, args...)						\
-G_STMT_START								\
-{									\
-	gdouble _timestamp;						\
-	nm_get_timestamp (&_timestamp);					\
-	g_critical ("<ERROR>\t[%f] %s (): " fmt "\n", _timestamp,	\
-		    G_STRFUNC, ##args);			\
-	nm_print_backtrace ();						\
-	G_BREAKPOINT ();						\
-} G_STMT_END
-
-#define nm_error_str(fmt_str, args...)						\
-G_STMT_START								\
-{									\
-	gdouble _timestamp;						\
-	nm_get_timestamp (&_timestamp);					\
-	g_critical ("<ERROR>\t[%f] %s (): %s\n", _timestamp,	\
-		    G_STRFUNC, fmt_str, ##args);			\
-	nm_print_backtrace ();						\
-	G_BREAKPOINT ();						\
-} G_STMT_END
 
 /* init, deinit nm_utils */
 gboolean nm_utils_init (GError **error);

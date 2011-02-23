@@ -89,8 +89,8 @@ ip4_dns_writer (GKeyFile *file,
 
 		addr.s_addr = g_array_index (array, guint32, i);
 		if (!inet_ntop (AF_INET, &addr, buf, sizeof (buf))) {
-			nm_warning ("%s: error converting IP4 address 0x%X",
-			            __func__, ntohl (addr.s_addr));
+			g_warning ("%s: error converting IP4 address 0x%X",
+			           __func__, ntohl (addr.s_addr));
 		} else
 			list[num++] = g_strdup (buf);
 	}
@@ -129,8 +129,8 @@ write_ip4_values (GKeyFile *file,
 				/* IP addresses */
 				addr.s_addr = g_array_index (tuple, guint32, k);
 				if (!inet_ntop (AF_INET, &addr, buf, sizeof (buf))) {
-					nm_warning ("%s: error converting IP4 address 0x%X",
-					            __func__, ntohl (addr.s_addr));
+					g_warning ("%s: error converting IP4 address 0x%X",
+					           __func__, ntohl (addr.s_addr));
 					success = FALSE;
 					break;
 				} else {
@@ -215,8 +215,8 @@ ip6_dns_writer (GKeyFile *file,
 			g_string_append_printf (ip6_str, "%02X", byte_array->data[0]);
 			for (j = 1; j < 16; j++)
 				g_string_append_printf (ip6_str, " %02X", byte_array->data[j]);
-			nm_warning ("%s: error converting IP6 address %s",
-			            __func__, ip6_str->str);
+			g_warning ("%s: error converting IP6 address %s",
+			           __func__, ip6_str->str);
 			g_string_free (ip6_str, TRUE);
 		} else
 			list[num++] = g_strdup (buf);
@@ -254,8 +254,8 @@ ip6_array_to_addr (GValueArray *values,
 		g_string_append_printf (ip6_str, "%02X", byte_array->data[0]);
 		for (idx = 1; idx < 16; idx++)
 			g_string_append_printf (ip6_str, " %02X", byte_array->data[idx]);
-		nm_warning ("%s: error %d converting IP6 address %s",
-		            __func__, errno, ip6_str->str);
+		g_warning ("%s: error %d converting IP6 address %s",
+		           __func__, errno, ip6_str->str);
 		g_string_free (ip6_str, TRUE);
 		return FALSE;
 	}
@@ -315,9 +315,9 @@ ip6_addr_writer (GKeyFile *file,
 		char *key_name, *ip6_addr;
 
 		if (values->n_values != 3) {
-			nm_warning ("%s: error writing IP6 address %d (address array length "
-			            "%d is not 3)",
-			            __func__, i, values->n_values);
+			g_warning ("%s: error writing IP6 address %d (address array length "
+			           "%d is not 3)",
+			           __func__, i, values->n_values);
 			continue;
 		}
 
@@ -405,8 +405,8 @@ mac_address_writer (GKeyFile *file,
 		return;
 
 	if (array->len != ETH_ALEN) {
-		nm_warning ("%s: invalid %s / %s MAC address length %d",
-		            __func__, setting_name, key, array->len);
+		g_warning ("%s: invalid %s / %s MAC address length %d",
+		           __func__, setting_name, key, array->len);
 		return;
 	}
 

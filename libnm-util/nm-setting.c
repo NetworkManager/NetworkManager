@@ -191,7 +191,7 @@ one_property_cb (gpointer key, gpointer val, gpointer user_data)
 	param_spec = g_object_class_find_property (info->class, prop_name);
 	if (!param_spec || !(param_spec->flags & NM_SETTING_PARAM_SERIALIZE)) {
 		/* Oh, we're so nice and only warn, maybe it should be a fatal error? */
-		nm_warning ("Ignoring invalid property '%s'", prop_name);
+		g_warning ("Ignoring invalid property '%s'", prop_name);
 		return;
 	}
 
@@ -200,8 +200,8 @@ one_property_cb (gpointer key, gpointer val, gpointer user_data)
 		info->params[info->n_params].name = prop_name;
 		info->n_params++;
 	} else {
-		nm_warning ("Ignoring property '%s' with invalid type (%s)",
-				  prop_name, G_VALUE_TYPE_NAME (src_value));
+		g_warning ("Ignoring property '%s' with invalid type (%s)",
+		           prop_name, G_VALUE_TYPE_NAME (src_value));
 		g_value_unset (dst_value);
 	}
 }
@@ -908,7 +908,7 @@ constructor (GType type,
 
 	priv = NM_SETTING_GET_PRIVATE (object);
 	if (!priv->name) {
-		nm_warning ("Setting name is not set.");
+		g_warning ("Setting name is not set.");
 		g_object_unref (object);
 		object = NULL;
 	}

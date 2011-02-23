@@ -259,10 +259,10 @@ connect_timer_expired (gpointer data)
 	NMVPNPlugin *plugin = NM_VPN_PLUGIN (data);
 	GError *err = NULL;
 
-	nm_info ("Connect timer expired, disconnecting.");
+	g_message ("Connect timer expired, disconnecting.");
 	nm_vpn_plugin_disconnect (plugin, &err);
 	if (err) {
-		nm_warning ("Disconnect failed: %s", err->message);
+		g_warning ("Disconnect failed: %s", err->message);
 		g_error_free (err);
 	}
 
@@ -367,11 +367,11 @@ impl_vpn_plugin_connect (NMVPNPlugin *plugin,
 
 	connection = nm_connection_new_from_hash (properties, error);
 	if (!connection) {
-		nm_warning ("%s: Invalid connection: '%s' / '%s' invalid: %d",
-		            __func__,
-		            g_type_name (nm_connection_lookup_setting_type_by_quark ((*error)->domain)),
-		            (*error)->message,
-		            (*error)->code);
+		g_warning ("%s: Invalid connection: '%s' / '%s' invalid: %d",
+		           __func__,
+		           g_type_name (nm_connection_lookup_setting_type_by_quark ((*error)->domain)),
+		           (*error)->message,
+		           (*error)->code);
 	} else {
 		success = nm_vpn_plugin_connect (plugin, connection, error);
 		g_object_unref (connection);
@@ -558,7 +558,7 @@ constructor (GType type,
 
  err:
 	if (err) {
-		nm_warning ("%s", err->message);
+		g_warning ("Failed to initialize VPN plugin: %s", err->message);
 		g_error_free (err);
 	}
 
@@ -633,7 +633,7 @@ dispose (GObject *object)
 		nm_vpn_plugin_disconnect (plugin, &err);
 
 	if (err) {
-		nm_warning ("%s", err->message);
+		g_warning ("Error disconnecting VPN connection: %s", err->message);
 		g_error_free (err);
 	}
 

@@ -642,8 +642,8 @@ nm_utils_convert_uint_array_to_string (const GValue *src_value, GValue *dest_val
 		memset (buf, 0, sizeof (buf));
 		addr.s_addr = g_array_index (array, guint32, i++);
 		if (!inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN))
-			nm_warning ("%s: error converting IP4 address 0x%X",
-			            __func__, ntohl (addr.s_addr));
+			g_warning ("%s: error converting IP4 address 0x%X",
+			           __func__, ntohl (addr.s_addr));
 		g_string_append_printf (printable, "%u (%s)", addr.s_addr, buf);
 	}
 	g_string_append_c (printable, ']');
@@ -684,8 +684,8 @@ nm_utils_convert_ip4_addr_route_struct_array_to_string (const GValue *src_value,
 		memset (buf, 0, sizeof (buf));
 		addr.s_addr = g_array_index (array, guint32, 0);
 		if (!inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN))
-			nm_warning ("%s: error converting IP4 address 0x%X",
-			            __func__, ntohl (addr.s_addr));
+			g_warning ("%s: error converting IP4 address 0x%X",
+			           __func__, ntohl (addr.s_addr));
 		if (is_addr)
 			g_string_append_printf (printable, "ip = %s", buf);
 		else
@@ -702,8 +702,8 @@ nm_utils_convert_ip4_addr_route_struct_array_to_string (const GValue *src_value,
 			memset (buf, 0, sizeof (buf));
 			addr.s_addr = g_array_index (array, guint32, 2);
 			if (!inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN))
-				nm_warning ("%s: error converting IP4 address 0x%X",
-				            __func__, ntohl (addr.s_addr));
+				g_warning ("%s: error converting IP4 address 0x%X",
+				           __func__, ntohl (addr.s_addr));
 			if (is_addr)
 				g_string_append_printf (printable, "gw = %s", buf);
 			else
@@ -819,8 +819,8 @@ nm_utils_inet6_ntop (struct in6_addr *addr, char *buf)
 		g_string_append_printf (ip6_str, "%02X", addr->s6_addr[0]);
 		for (i = 1; i < 16; i++)
 			g_string_append_printf (ip6_str, " %02X", addr->s6_addr[i]);
-		nm_warning ("%s: error converting IP6 address %s",
-		            __func__, ip6_str->str);
+		g_warning ("%s: error converting IP6 address %s",
+		           __func__, ip6_str->str);
 		g_string_free (ip6_str, TRUE);
 		return FALSE;
 	}
@@ -1357,7 +1357,7 @@ nm_utils_ip4_addresses_from_gvalue (const GValue *value)
 		NMIP4Address *addr;
 
 		if (array->len < 3) {
-			nm_warning ("Ignoring invalid IP4 address");
+			g_warning ("Ignoring invalid IP4 address");
 			continue;
 		}
 		
@@ -1439,7 +1439,7 @@ nm_utils_ip4_routes_from_gvalue (const GValue *value)
 		NMIP4Route *route;
 
 		if (array->len < 4) {
-			nm_warning ("Ignoring invalid IP4 route");
+			g_warning ("Ignoring invalid IP4 route");
 			continue;
 		}
 		
@@ -1607,27 +1607,27 @@ nm_utils_ip6_addresses_from_gvalue (const GValue *value)
 		guint32 prefix;
 
 		if (elements->n_values < 2 || elements->n_values > 3) {
-			nm_warning ("%s: ignoring invalid IP6 address structure", __func__);
+			g_warning ("%s: ignoring invalid IP6 address structure", __func__);
 			continue;
 		}
 
 		if (   (G_VALUE_TYPE (g_value_array_get_nth (elements, 0)) != DBUS_TYPE_G_UCHAR_ARRAY)
 		    || (G_VALUE_TYPE (g_value_array_get_nth (elements, 1)) != G_TYPE_UINT)) {
-			nm_warning ("%s: ignoring invalid IP6 address structure", __func__);
+			g_warning ("%s: ignoring invalid IP6 address structure", __func__);
 			continue;
 		}
 
 		/* Check optional 3rd element (gateway) */
 		if (   elements->n_values == 3
 		    && (G_VALUE_TYPE (g_value_array_get_nth (elements, 2)) != DBUS_TYPE_G_UCHAR_ARRAY)) {
-			nm_warning ("%s: ignoring invalid IP6 address structure", __func__);
+			g_warning ("%s: ignoring invalid IP6 address structure", __func__);
 			continue;
 		}
 
 		tmp = g_value_array_get_nth (elements, 0);
 		ba_addr = g_value_get_boxed (tmp);
 		if (ba_addr->len != 16) {
-			nm_warning ("%s: ignoring invalid IP6 address of length %d",
+			g_warning ("%s: ignoring invalid IP6 address of length %d",
 			            __func__, ba_addr->len);
 			continue;
 		}
@@ -1635,7 +1635,7 @@ nm_utils_ip6_addresses_from_gvalue (const GValue *value)
 		tmp = g_value_array_get_nth (elements, 1);
 		prefix = g_value_get_uint (tmp);
 		if (prefix > 128) {
-			nm_warning ("%s: ignoring invalid IP6 prefix %d",
+			g_warning ("%s: ignoring invalid IP6 prefix %d",
 			            __func__, prefix);
 			continue;
 		}
@@ -1644,7 +1644,7 @@ nm_utils_ip6_addresses_from_gvalue (const GValue *value)
 			tmp = g_value_array_get_nth (elements, 2);
 			ba_gw = g_value_get_boxed (tmp);
 			if (ba_gw->len != 16) {
-				nm_warning ("%s: ignoring invalid IP6 gateway address of length %d",
+				g_warning ("%s: ignoring invalid IP6 gateway address of length %d",
 				            __func__, ba_gw->len);
 				continue;
 			}
@@ -1751,13 +1751,13 @@ nm_utils_ip6_routes_from_gvalue (const GValue *value)
 			|| (G_VALUE_TYPE (g_value_array_get_nth (route_values, 1)) != G_TYPE_UINT)
 		    || (G_VALUE_TYPE (g_value_array_get_nth (route_values, 2)) != DBUS_TYPE_G_UCHAR_ARRAY)
 			|| (G_VALUE_TYPE (g_value_array_get_nth (route_values, 3)) != G_TYPE_UINT)) {
-			nm_warning ("Ignoring invalid IP6 route");
+			g_warning ("Ignoring invalid IP6 route");
 			continue;
 		}
 
 		dest = g_value_get_boxed (g_value_array_get_nth (route_values, 0));
 		if (dest->len != 16) {
-			nm_warning ("%s: ignoring invalid IP6 dest address of length %d",
+			g_warning ("%s: ignoring invalid IP6 dest address of length %d",
 			            __func__, dest->len);
 			continue;
 		}
@@ -1766,7 +1766,7 @@ nm_utils_ip6_routes_from_gvalue (const GValue *value)
 
 		next_hop = g_value_get_boxed (g_value_array_get_nth (route_values, 2));
 		if (next_hop->len != 16) {
-			nm_warning ("%s: ignoring invalid IP6 next_hop address of length %d",
+			g_warning ("%s: ignoring invalid IP6 next_hop address of length %d",
 			            __func__, next_hop->len);
 			continue;
 		}
@@ -1871,8 +1871,8 @@ nm_utils_ip6_dns_from_gvalue (const GValue *value)
 		struct in6_addr *addr;
 
 		if (bytearray->len != 16) {
-			nm_warning ("%s: ignoring invalid IP6 address of length %d",
-			            __func__, bytearray->len);
+			g_warning ("%s: ignoring invalid IP6 address of length %d",
+			           __func__, bytearray->len);
 			continue;
 		}
 
@@ -1939,9 +1939,9 @@ nm_utils_uuid_generate_from_string (const char *s)
 	char *buf = NULL;
 
 	if (!nm_utils_init (&error)) {
-		nm_warning ("error initializing crypto: (%d) %s",
-		            error ? error->code : 0,
-		            error ? error->message : "unknown");
+		g_warning ("error initializing crypto: (%d) %s",
+		           error ? error->code : 0,
+		           error ? error->message : "unknown");
 		if (error)
 			g_error_free (error);
 		return NULL;
@@ -1949,9 +1949,9 @@ nm_utils_uuid_generate_from_string (const char *s)
 
 	uuid = g_malloc0 (sizeof (*uuid));
 	if (!crypto_md5_hash (NULL, 0, s, strlen (s), (char *) uuid, sizeof (*uuid), &error)) {
-		nm_warning ("error generating UUID: (%d) %s",
-		            error ? error->code : 0,
-		            error ? error->message : "unknown");
+		g_warning ("error generating UUID: (%d) %s",
+		           error ? error->code : 0,
+		           error ? error->message : "unknown");
 		if (error)
 			g_error_free (error);
 		goto out;

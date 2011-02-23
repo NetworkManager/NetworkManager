@@ -253,8 +253,8 @@ ip4_address_as_string (guint32 ip)
 	if (inet_ntop (AF_INET, &tmp_addr, buf, INET_ADDRSTRLEN)) {
 		return g_strdup (buf);
 	} else {
-		nm_warning ("%s: error converting IP4 address 0x%X",
-		            __func__, ntohl (tmp_addr.s_addr));
+		g_warning ("%s: error converting IP4 address 0x%X",
+		           __func__, ntohl (tmp_addr.s_addr));
 		return NULL;
 	}
 }
@@ -274,8 +274,8 @@ ip6_address_as_string (const struct in6_addr *ip)
 		g_string_append_printf (ip6_str, "%02X", ip->s6_addr[0]);
 		for (j = 1; j < 16; j++)
 			g_string_append_printf (ip6_str, " %02X", ip->s6_addr[j]);
-		nm_warning ("%s: error converting IP6 address %s",
-		            __func__, ip6_str->str);
+		g_warning ("%s: error converting IP6 address %s",
+		           __func__, ip6_str->str);
 		g_string_free (ip6_str, TRUE);
 		return NULL;
 	}
@@ -696,7 +696,7 @@ get_one_connection (DBusGConnection *bus,
 	                        G_TYPE_INVALID,
 	                        DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, &settings,
 	                        G_TYPE_INVALID)) {
-		nm_warning ("error: cannot retrieve connection: %s", error ? error->message : "(unknown)");
+		g_warning ("error: cannot retrieve connection: %s", error ? error->message : "(unknown)");
 		goto out;
 	}
 
@@ -704,10 +704,10 @@ get_one_connection (DBusGConnection *bus,
 	g_hash_table_destroy (settings);
 
 	if (!connection) {
-		nm_warning ("error: invalid connection: '%s' / '%s' invalid: %d",
-		            error ? g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)) : "(unknown)",
-		            error ? error->message : "(unknown)",
-		            error ? error->code : -1);
+		g_warning ("error: invalid connection: '%s' / '%s' invalid: %d",
+		           error ? g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)) : "(unknown)",
+		           error ? error->message : "(unknown)",
+		           error ? error->code : -1);
 		goto out;
 	}
 
