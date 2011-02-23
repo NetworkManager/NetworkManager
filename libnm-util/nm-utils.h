@@ -159,7 +159,7 @@ gboolean    nm_utils_same_ssid        (const GByteArray * ssid1,
 							    const GByteArray * ssid2,
 							    gboolean ignore_trailing_null);
 
-char *nm_utils_ssid_to_utf8 (const char *ssid, guint32 len);
+char *nm_utils_ssid_to_utf8 (const GByteArray *ssid);
 
 GHashTable *nm_utils_gvalue_hash_dup  (GHashTable *hash);
 

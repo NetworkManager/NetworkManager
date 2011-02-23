@@ -214,45 +214,6 @@ get_encodings_for_lang (const char *lang,
 	return success;
 }
 
-static char *
-string_to_utf8 (const char *str, gsize len)
-{
-	char *converted = NULL;
-	char *lang, *e1 = NULL, *e2 = NULL, *e3 = NULL;
-
-	g_return_val_if_fail (str != NULL, NULL);
-
-	if (g_utf8_validate (str, len, NULL))
-		return g_strdup (str);
-
-	/* LANG may be a good encoding hint */
-	g_get_charset ((const char **)(&e1));
-	if ((lang = getenv ("LANG"))) {
-		char * dot;
-
-		lang = g_ascii_strdown (lang, -1);
-		if ((dot = strchr (lang, '.')))
-			*dot = '\0';
-
-		get_encodings_for_lang (lang, &e1, &e2, &e3);
-		g_free (lang);
-	}
-
-	converted = g_convert (str, len, "UTF-8", e1, NULL, NULL, NULL);
-	if (!converted && e2)
-		converted = g_convert (str, len, "UTF-8", e2, NULL, NULL, NULL);
-
-	if (!converted && e3)
-		converted = g_convert (str, len, "UTF-8", e3, NULL, NULL, NULL);
-
-	if (!converted) {
-		converted = g_convert_with_fallback (str, len, "UTF-8", e1,
-	                "?", NULL, NULL, NULL);
-	}
-
-	return converted;
-}
-
 /* init, deinit for libnm_util */
 
 static gboolean initialized = FALSE;
@@ -304,8 +265,7 @@ nm_utils_deinit (void)
 
 /**
  * nm_utils_ssid_to_utf8:
- * @ssid: pointer to a buffer containing the SSID data
- * @len: length of the SSID data in @ssid
+ * @ssid: a byte array containing the SSID data
  *
  * WiFi SSIDs are byte arrays, they are _not_ strings.  Thus, an SSID may
  * contain embedded NULLs and other unprintable characters.  Often it is
@@ -330,23 +290,46 @@ nm_utils_deinit (void)
  * Again, this function should be used for debugging and display purposes
  * _only_.
  *
- * Returns: an allocated string containing a UTF-8 representation of the
- * SSID, which must be freed by the caller using g_free().  Returns NULL
- * on errors.
+ * Returns: (transfer full): an allocated string containing a UTF-8
+ * representation of the SSID, which must be freed by the caller using g_free().
+ * Returns NULL on errors.
  **/
 char *
-nm_utils_ssid_to_utf8 (const char *ssid, guint32 len)
+nm_utils_ssid_to_utf8 (const GByteArray *ssid)
 {
-	char *converted = NULL, *buf;
-	gsize buflen = MIN (IW_ESSID_MAX_SIZE, (gsize) len);
+	char *converted = NULL;
+	char *lang, *e1 = NULL, *e2 = NULL, *e3 = NULL;
 
 	g_return_val_if_fail (ssid != NULL, NULL);
 
-	/* New buffer to ensure NULL-termination of SSID */
-	buf = g_malloc0 (IW_ESSID_MAX_SIZE + 1);
-	memcpy (buf, ssid, buflen);
-	converted = string_to_utf8 (buf, buflen);
-	g_free (buf);
+	if (g_utf8_validate ((const gchar *) ssid->data, ssid->len, NULL))
+		return g_strndup ((const gchar *) ssid->data, ssid->len);
+
+	/* LANG may be a good encoding hint */
+	g_get_charset ((const char **)(&e1));
+	if ((lang = getenv ("LANG"))) {
+		char * dot;
+
+		lang = g_ascii_strdown (lang, -1);
+		if ((dot = strchr (lang, '.')))
+			*dot = '\0';
+
+		get_encodings_for_lang (lang, &e1, &e2, &e3);
+		g_free (lang);
+	}
+
+	converted = g_convert ((const gchar *) ssid->data, ssid->len, "UTF-8", e1, NULL, NULL, NULL);
+	if (!converted && e2)
+		converted = g_convert ((const gchar *) ssid->data, ssid->len, "UTF-8", e2, NULL, NULL, NULL);
+
+	if (!converted && e3)
+		converted = g_convert ((const gchar *) ssid->data, ssid->len, "UTF-8", e3, NULL, NULL, NULL);
+
+	if (!converted) {
+		converted = g_convert_with_fallback ((const gchar *) ssid->data, ssid->len,
+		                                     "UTF-8", e1, "?", NULL, NULL, NULL);
+	}
+
 	return converted;
 }
 

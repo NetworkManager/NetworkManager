@@ -1468,7 +1468,7 @@ real_complete_connection (NMDevice *device,
 	}
 
 	g_assert (ssid);
-	str_ssid = nm_utils_ssid_to_utf8 ((const char *) ssid, ssid->len);
+	str_ssid = nm_utils_ssid_to_utf8 (ssid);
 	format = g_strdup_printf ("%s %%d", str_ssid);
 
 	nm_utils_complete_generic (connection,

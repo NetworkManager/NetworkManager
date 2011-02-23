@@ -2907,7 +2907,7 @@ wireless_connection_from_ifcfg (const char *file,
 
 	ssid = nm_setting_wireless_get_ssid (NM_SETTING_WIRELESS (wireless_setting));
 	if (ssid)
-		printable_ssid = nm_utils_ssid_to_utf8 ((const char *) ssid->data, ssid->len);
+		printable_ssid = nm_utils_ssid_to_utf8 (ssid);
 	else
 		printable_ssid = g_strdup_printf ("unmanaged");
 
