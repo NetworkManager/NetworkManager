@@ -144,17 +144,22 @@
           The device's IP connectivity ability is being determined.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="ACTIVATED" value="90">
+      <tp:enumvalue suffix="SECONDARIES" value="90">
+        <tp:docstring>
+          The device is waiting for secondary connections to be activated.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="ACTIVATED" value="100">
         <tp:docstring>
           The device is active.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="DEACTIVATING" value="100">
+      <tp:enumvalue suffix="DEACTIVATING" value="110">
         <tp:docstring>
           The device's network connection is being torn down.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="FAILED" value="110">
+      <tp:enumvalue suffix="FAILED" value="120">
         <tp:docstring>
           The device is in a failure state following an attempt to activate it.
         </tp:docstring>

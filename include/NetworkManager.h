@@ -201,6 +201,9 @@ typedef enum {
  *   required for the requested network connection.  This may include checking
  *   whether only local network access is available, whether a captive portal
  *   is blocking access to the Internet, etc.
+ * @NM_DEVICE_STATE_SECONDARIES: the device is waiting for a secondary
+ *   connection (like a VPN) which must activated before the device can be
+ *   activated
  * @NM_DEVICE_STATE_ACTIVATED: the device has a network connection, either local
  *   or global.
  * @NM_DEVICE_STATE_DEACTIVATING: the device's network connection is no longer
@@ -218,9 +221,10 @@ typedef enum {
 	NM_DEVICE_STATE_NEED_AUTH    = 60,
 	NM_DEVICE_STATE_IP_CONFIG    = 70,
 	NM_DEVICE_STATE_IP_CHECK     = 80,
-	NM_DEVICE_STATE_ACTIVATED    = 90,
-	NM_DEVICE_STATE_DEACTIVATING = 100,
-	NM_DEVICE_STATE_FAILED       = 110
+	NM_DEVICE_STATE_SECONDARIES  = 90,
+	NM_DEVICE_STATE_ACTIVATED    = 100,
+	NM_DEVICE_STATE_DEACTIVATING = 110,
+	NM_DEVICE_STATE_FAILED       = 120
 } NMDeviceState;
 
 
