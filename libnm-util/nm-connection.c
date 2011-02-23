@@ -594,9 +594,8 @@ diff_one_connection (NMConnection *a,
  * @a: a #NMConnection
  * @b: a second #NMConnection to compare with the first
  * @flags: compare flags, e.g. %NM_SETTING_COMPARE_FLAG_EXACT
- * @out_settings: (element-type utf8 GHashTable<utf8,guint32>): if the
- * connections differ, on return a hash table mapping setting names to
- * second-level GHashTable, which contains key names that differ
+ * @out_settings: if the connections differ, on return a hash table mapping
+ * setting names to second-level GHashTable, which contains key names that differ
  *
  * Compares two #NMConnection objects for similarity, with comparison behavior
  * modified by a set of flags.  See nm_setting_compare() for a description of
