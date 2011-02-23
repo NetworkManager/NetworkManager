@@ -4,6 +4,7 @@ global:
 	nm_connection_clear_secrets;
 	nm_connection_compare;
 	nm_connection_create_setting;
+	nm_connection_diff;
 	nm_connection_dump;
 	nm_connection_duplicate;
 	nm_connection_error_get_type;
@@ -115,6 +116,7 @@ global:
 	nm_setting_connection_get_autoconnect;
 	nm_setting_connection_get_timestamp;
 	nm_setting_connection_get_read_only;
+	nm_setting_diff;
 	nm_setting_duplicate;
 	nm_setting_enumerate_values;
 	nm_setting_error_get_type;

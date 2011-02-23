@@ -29,7 +29,10 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-vpn.h"
 #include "nm-setting-gsm.h"
+#include "nm-setting-wired.h"
 #include "nm-setting-ip6-config.h"
+#include "nm-setting-ip4-config.h"
+#include "nm-setting-pppoe.h"
 #include "nm-dbus-glib-types.h"
 
 static void
@@ -289,6 +292,240 @@ test_setting_gsm_apn_bad_chars (void)
 	        "gsm-apn-bad-chars", "unexpectedly valid GSM setting");
 }
 
+static NMConnection *
+new_test_connection (void)
+{
+	NMConnection *connection;
+	NMSetting *setting;
+	char *uuid;
+	gulong timestamp = time (NULL);
+
+	connection = nm_connection_new ();
+
+	setting = nm_setting_connection_new ();
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (G_OBJECT (setting),
+	              NM_SETTING_CONNECTION_ID, "foobar",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NM_SETTING_CONNECTION_TIMESTAMP, timestamp,
+	              NULL);
+	g_free (uuid);
+	nm_connection_add_setting (connection, setting);
+
+	setting = nm_setting_wired_new ();
+	g_object_set (G_OBJECT (setting),
+	              NM_SETTING_WIRED_MTU, 1592,
+	              NULL);
+	nm_connection_add_setting (connection, setting);
+
+	setting = nm_setting_ip4_config_new ();
+	g_object_set (G_OBJECT (setting),
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, "eyeofthetiger",
+	              NULL);
+	nm_connection_add_setting (connection, setting);
+
+	return connection;
+}
+
+typedef struct {
+	const char *key_name;
+	guint32 result;
+} DiffKey;
+
+typedef struct {
+	const char *name;
+	DiffKey keys[30];
+} DiffSetting;
+
+#define ARRAY_LEN(a)  (sizeof (a) / sizeof (a[0]))
+
+static void
+ensure_diffs (GHashTable *diffs, const DiffSetting *check, gsize n_check)
+{
+	guint i;
+
+	g_assert (g_hash_table_size (diffs) == n_check);
+
+	/* Loop through the settings */
+	for (i = 0; i < n_check; i++) {
+		GHashTable *setting_hash;
+		guint z = 0;
+
+		setting_hash = g_hash_table_lookup (diffs, check[i].name);
+		g_assert (setting_hash);
+
+		/* Get the number of keys to check */
+		while (check[i].keys[z].key_name)
+			z++;
+		g_assert (g_hash_table_size (setting_hash) == z);
+
+		/* Now compare the actual keys */
+		for (z = 0; check[i].keys[z].key_name; z++) {
+			NMSettingDiffResult result;
+
+			result = GPOINTER_TO_UINT (g_hash_table_lookup (setting_hash, check[i].keys[z].key_name));
+			g_assert (result == check[i].keys[z].result);
+		}
+	}
+}
+
+static void
+test_connection_diff_a_only (void)
+{
+	NMConnection *connection;
+	GHashTable *out_diffs = NULL;
+	gboolean same;
+	const DiffSetting settings[] = {
+		{ NM_SETTING_CONNECTION_SETTING_NAME, {
+			{ NM_SETTING_CONNECTION_ID,          NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_CONNECTION_UUID,        NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_CONNECTION_TYPE,        NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_CONNECTION_TIMESTAMP,   NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_CONNECTION_AUTOCONNECT, NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_CONNECTION_READ_ONLY,   NM_SETTING_DIFF_RESULT_IN_A },
+			{ NULL, NM_SETTING_DIFF_RESULT_UNKNOWN }
+		} },
+		{ NM_SETTING_WIRED_SETTING_NAME, {
+			{ NM_SETTING_WIRED_PORT,               NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_WIRED_SPEED,              NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_WIRED_DUPLEX,             NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_WIRED_AUTO_NEGOTIATE,     NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_WIRED_MAC_ADDRESS,        NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_WIRED_CLONED_MAC_ADDRESS, NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_WIRED_MTU,                NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_WIRED_S390_SUBCHANNELS,   NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_WIRED_S390_NETTYPE,       NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_WIRED_S390_OPTIONS,       NM_SETTING_DIFF_RESULT_IN_A },
+			{ NULL, NM_SETTING_DIFF_RESULT_UNKNOWN },
+		} },
+		{ NM_SETTING_IP4_CONFIG_SETTING_NAME, {
+			{ NM_SETTING_IP4_CONFIG_METHOD,             NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP4_CONFIG_DNS,                NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP4_CONFIG_DNS_SEARCH,         NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP4_CONFIG_ADDRESSES,          NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP4_CONFIG_ROUTES,             NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES, NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS,    NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID,     NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME, NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME,      NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP4_CONFIG_NEVER_DEFAULT,      NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP4_CONFIG_MAY_FAIL,           NM_SETTING_DIFF_RESULT_IN_A },
+			{ NULL, NM_SETTING_DIFF_RESULT_UNKNOWN },
+		} },
+	};
+
+	connection = new_test_connection ();
+
+	same = nm_connection_diff (connection, NULL, NM_SETTING_COMPARE_FLAG_EXACT, &out_diffs);
+	g_assert (same == FALSE);
+	g_assert (out_diffs != NULL);
+	g_assert (g_hash_table_size (out_diffs) > 0);
+
+	ensure_diffs (out_diffs, settings, ARRAY_LEN (settings));
+
+	g_object_unref (connection);
+}
+
+static void
+test_connection_diff_same (void)
+{
+	NMConnection *a, *b;
+	GHashTable *out_diffs = NULL;
+	gboolean same;
+
+	a = new_test_connection ();
+	b = nm_connection_duplicate (a);
+
+	same = nm_connection_diff (a, b, NM_SETTING_COMPARE_FLAG_EXACT, &out_diffs);
+	g_assert (same == TRUE);
+	g_assert (out_diffs == NULL);
+	g_object_unref (a);
+	g_object_unref (b);
+}
+
+static void
+test_connection_diff_different (void)
+{
+	NMConnection *a, *b;
+	GHashTable *out_diffs = NULL;
+	NMSetting *s_ip4;
+	gboolean same;
+	const DiffSetting settings[] = {
+		{ NM_SETTING_IP4_CONFIG_SETTING_NAME, {
+			{ NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_DIFF_RESULT_IN_A | NM_SETTING_DIFF_RESULT_IN_B },
+			{ NULL, NM_SETTING_DIFF_RESULT_UNKNOWN },
+		} },
+	};
+
+	a = new_test_connection ();
+	b = nm_connection_duplicate (a);
+	s_ip4 = nm_connection_get_setting (a, NM_TYPE_SETTING_IP4_CONFIG);
+	g_assert (s_ip4);
+	g_object_set (G_OBJECT (s_ip4),
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NULL);
+
+	same = nm_connection_diff (a, b, NM_SETTING_COMPARE_FLAG_EXACT, &out_diffs);
+	g_assert (same == FALSE);
+	g_assert (out_diffs != NULL);
+	g_assert (g_hash_table_size (out_diffs) > 0);
+
+	ensure_diffs (out_diffs, settings, ARRAY_LEN (settings));
+
+	g_object_unref (a);
+	g_object_unref (b);
+}
+
+static void
+test_connection_diff_no_secrets (void)
+{
+	NMConnection *a, *b;
+	GHashTable *out_diffs = NULL;
+	NMSetting *s_pppoe;
+	gboolean same;
+	const DiffSetting settings[] = {
+		{ NM_SETTING_PPPOE_SETTING_NAME, {
+			{ NM_SETTING_PPPOE_PASSWORD, NM_SETTING_DIFF_RESULT_IN_B },
+			{ NULL, NM_SETTING_DIFF_RESULT_UNKNOWN },
+		} },
+	};
+
+	a = new_test_connection ();
+	s_pppoe = nm_setting_pppoe_new ();
+	g_object_set (G_OBJECT (s_pppoe),
+	              NM_SETTING_PPPOE_USERNAME, "thomas",
+	              NULL);
+	nm_connection_add_setting (a, s_pppoe);
+
+	b = nm_connection_duplicate (a);
+
+	/* Add a secret to B */
+	s_pppoe = nm_connection_get_setting (b, NM_TYPE_SETTING_PPPOE);
+	g_assert (s_pppoe);
+	g_object_set (G_OBJECT (s_pppoe),
+	              NM_SETTING_PPPOE_PASSWORD, "secretpassword",
+	              NULL);
+
+	/* Make sure the diff returns no results as secrets are ignored */
+	same = nm_connection_diff (a, b, NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS, &out_diffs);
+	g_assert (same == TRUE);
+	g_assert (out_diffs == NULL);
+
+	/* Now make sure the diff returns results if secrets are not ignored */
+	same = nm_connection_diff (a, b, NM_SETTING_COMPARE_FLAG_EXACT, &out_diffs);
+	g_assert (same == FALSE);
+	g_assert (out_diffs != NULL);
+	g_assert (g_hash_table_size (out_diffs) > 0);
+
+	ensure_diffs (out_diffs, settings, ARRAY_LEN (settings));
+
+	g_object_unref (a);
+	g_object_unref (b);
+}
+
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
@@ -306,6 +543,10 @@ int main (int argc, char **argv)
 	test_setting_ip6_config_old_address_array ();
 	test_setting_gsm_apn_spaces ();
 	test_setting_gsm_apn_bad_chars ();
+	test_connection_diff_a_only ();
+	test_connection_diff_same ();
+	test_connection_diff_different ();
+	test_connection_diff_no_secrets ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);

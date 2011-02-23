@@ -127,6 +127,11 @@ gboolean      nm_connection_compare       (NMConnection *a,
                                            NMConnection *b,
                                            NMSettingCompareFlags flags);
 
+gboolean      nm_connection_diff          (NMConnection *a,
+                                           NMConnection *b,
+                                           NMSettingCompareFlags flags,
+                                           GHashTable **out_settings);
+
 gboolean      nm_connection_verify        (NMConnection *connection, GError **error);
 
 const char *  nm_connection_need_secrets  (NMConnection *connection,

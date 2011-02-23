@@ -160,6 +160,26 @@ gboolean    nm_setting_compare       (NMSetting *a,
                                       NMSetting *b,
                                       NMSettingCompareFlags flags);
 
+/**
+ * NMSettingDiffResult:
+ * @NM_SETTING_DIFF_RESULT_UNKNOWN: unknown result
+ * @NM_SETTING_DIFF_RESULT_IN_A: the property is present in setting A
+ * @NM_SETTING_DIFF_RESULT_IN_B: the property is present in setting B
+ *
+ * These values indicate the result of a setting difference operation.
+ **/
+typedef enum {
+	NM_SETTING_DIFF_RESULT_UNKNOWN = 0x00000000,
+	NM_SETTING_DIFF_RESULT_IN_A =    0x00000001,
+	NM_SETTING_DIFF_RESULT_IN_B =    0x00000002,
+} NMSettingDiffResult;
+
+gboolean    nm_setting_diff          (NMSetting *a,
+                                      NMSetting *b,
+                                      NMSettingCompareFlags flags,
+                                      gboolean invert_results,
+                                      GHashTable **results);
+
 void        nm_setting_enumerate_values (NMSetting *setting,
                                          NMSettingValueIterFn func,
                                          gpointer user_data);
