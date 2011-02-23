@@ -153,18 +153,16 @@ gboolean nm_utils_init (GError **error);
 void     nm_utils_deinit (void);
 
 /* SSID helpers */
-gboolean    nm_utils_is_empty_ssid    (const guint8 * ssid, int len);
-const char *nm_utils_escape_ssid      (const guint8 *ssid, guint32 len);
-gboolean    nm_utils_same_ssid        (const GByteArray * ssid1,
-							    const GByteArray * ssid2,
-							    gboolean ignore_trailing_null);
-
-char *nm_utils_ssid_to_utf8 (const GByteArray *ssid);
+gboolean    nm_utils_is_empty_ssid (const guint8 *ssid, int len);
+const char *nm_utils_escape_ssid   (const guint8 *ssid, guint32 len);
+gboolean    nm_utils_same_ssid     (const GByteArray *ssid1,
+                                    const GByteArray *ssid2,
+                                    gboolean ignore_trailing_null);
+char *      nm_utils_ssid_to_utf8  (const GByteArray *ssid);
 
 GHashTable *nm_utils_gvalue_hash_dup  (GHashTable *hash);
 
-void        nm_utils_slist_free       (GSList *list,
-							    GDestroyNotify elem_destroy_fn);
+void        nm_utils_slist_free    (GSList *list, GDestroyNotify elem_destroy_fn);
 
 typedef enum {
 	NMU_SEC_INVALID = 0,
