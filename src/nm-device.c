@@ -2869,17 +2869,22 @@ nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason)
 {
 	NMDevice *self = NM_DEVICE (device);
 	NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
+	gboolean tried_ipv6 = FALSE;
 
 	g_return_if_fail (self != NULL);
 
 	nm_log_info (LOGD_DEVICE, "(%s): deactivating device (reason: %d).",
 	             nm_device_get_iface (self), reason);
 
+	/* Check this before deactivate_quickly is run */
+	if (NM_DEVICE_GET_PRIVATE (self)->ip6_manager)
+		tried_ipv6 = TRUE;
+
 	nm_device_deactivate_quickly (self);
 
 	/* Take out any entries in the routing table and any IP address the device had. */
-	nm_system_device_flush_routes (self, nm_device_get_ip6_config (self) ? AF_UNSPEC : AF_INET);
-	nm_system_device_flush_addresses (self);
+	nm_system_device_flush_routes (self, tried_ipv6 ? AF_UNSPEC : AF_INET);
+	nm_system_device_flush_addresses (self, tried_ipv6 ? AF_UNSPEC : AF_INET);
 	nm_device_update_ip4_address (self);	
 
 	/* Clean up nameservers and addresses */

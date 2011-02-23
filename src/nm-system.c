@@ -1187,14 +1187,14 @@ nm_system_replace_default_ip6_route (const char *iface, const struct in6_addr *g
 	return success;
 }
 
-static void flush_addresses (const char *iface, gboolean ipv4_only)
+static void flush_addresses (const char *iface, int family)
 {
 	int iface_idx;
 
 	g_return_if_fail (iface != NULL);
 	iface_idx = nm_netlink_iface_to_index (iface);
 	if (iface_idx >= 0)
-		sync_addresses (iface, iface_idx, ipv4_only ? AF_INET : AF_UNSPEC, NULL, 0);
+		sync_addresses (iface, iface_idx, family, NULL, 0);
 }
 
 /*
@@ -1203,12 +1203,11 @@ static void flush_addresses (const char *iface, gboolean ipv4_only)
  * Flush all network addresses associated with a network device
  *
  */
-void nm_system_device_flush_addresses (NMDevice *dev)
+void nm_system_device_flush_addresses (NMDevice *dev, int family)
 {
 	g_return_if_fail (dev != NULL);
 
-	flush_addresses (nm_device_get_ip_iface (dev),
-					 nm_device_get_ip6_config (dev) == NULL);
+	flush_addresses (nm_device_get_ip_iface (dev), family);
 }
 
 
@@ -1220,7 +1219,7 @@ void nm_system_device_flush_addresses (NMDevice *dev)
  */
 void nm_system_device_flush_addresses_with_iface (const char *iface)
 {
-	flush_addresses (iface, FALSE);
+	flush_addresses (iface, AF_UNSPEC);
 }
 
 
