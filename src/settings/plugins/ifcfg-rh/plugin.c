@@ -256,9 +256,6 @@ connection_new_or_changed (SCPluginIfcfg *self,
 		return;
 	}
 
-	/* Existing connection that got changed */
-	PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "updating %s", path);
-
 	new = (NMIfcfgConnection *) nm_ifcfg_connection_new (path, NULL, &error, &ignore_error);
 	if (!new) {
 		/* errors reading connection; remove it */
