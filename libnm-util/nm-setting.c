@@ -692,11 +692,11 @@ nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets, GError **err
 		NM_SETTING_GET_CLASS (setting)->update_one_secret (setting, secret_key, secret_value, &tmp_error);
 		if (tmp_error) {
 			g_propagate_error (error, tmp_error);
-			break;
+			return FALSE;
 		}
 	}
 
-	return tmp_error ? FALSE : TRUE;
+	return TRUE;
 }
 
 static gboolean
