@@ -82,7 +82,7 @@ typedef struct {
 	                                            const char **out_setting_name,
 	                                            NMDeviceStateReason *reason);
 
-	void (*deactivate_quickly)                 (NMModem *self, NMDevice *device);
+	void (*deactivate)                         (NMModem *self, NMDevice *device);
 
 	/* Signals */
 	void (*ppp_stats)  (NMModem *self, guint32 in_bytes, guint32 out_bytes);
@@ -141,7 +141,7 @@ gboolean nm_modem_get_secrets (NMModem *modem,
                                gboolean request_new,
                                const char *hint);
 
-void nm_modem_deactivate_quickly (NMModem *modem, NMDevice *device);
+void nm_modem_deactivate (NMModem *modem, NMDevice *device);
 
 void nm_modem_device_state_changed (NMModem *modem,
                                     NMDeviceState new_state,

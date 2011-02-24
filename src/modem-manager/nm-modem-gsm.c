@@ -544,7 +544,7 @@ real_get_setting_name (NMModem *modem)
 }
 
 static void
-real_deactivate_quickly (NMModem *modem, NMDevice *device)
+real_deactivate (NMModem *modem, NMDevice *device)
 {
 	NMModemGsmPrivate *priv = NM_MODEM_GSM_GET_PRIVATE (modem);
 
@@ -558,7 +558,7 @@ real_deactivate_quickly (NMModem *modem, NMDevice *device)
 
 	priv->pin_tries = 0;
 
-	NM_MODEM_CLASS (nm_modem_gsm_parent_class)->deactivate_quickly (modem, device);	
+	NM_MODEM_CLASS (nm_modem_gsm_parent_class)->deactivate (modem, device);	
 }
 
 
@@ -597,7 +597,7 @@ nm_modem_gsm_class_init (NMModemGsmClass *klass)
 	modem_class->check_connection_compatible = real_check_connection_compatible;
 	modem_class->complete_connection = real_complete_connection;
 	modem_class->act_stage1_prepare = real_act_stage1_prepare;
-	modem_class->deactivate_quickly = real_deactivate_quickly;
+	modem_class->deactivate = real_deactivate;
 
 	dbus_g_error_domain_register (NM_GSM_ERROR, NULL, NM_TYPE_GSM_ERROR);
 }

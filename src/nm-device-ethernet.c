@@ -1571,7 +1571,7 @@ real_act_stage4_get_ip4_config (NMDevice *device,
 }
 
 static void
-real_deactivate_quickly (NMDevice *device)
+real_deactivate (NMDevice *device)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
@@ -2031,7 +2031,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->act_stage2_config = real_act_stage2_config;
 	parent_class->act_stage3_ip4_config_start = real_act_stage3_ip4_config_start;
 	parent_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
-	parent_class->deactivate_quickly = real_deactivate_quickly;
+	parent_class->deactivate = real_deactivate;
 	parent_class->spec_match_list = spec_match_list;
 	parent_class->connection_match_config = connection_match_config;
 

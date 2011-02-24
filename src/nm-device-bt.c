@@ -962,7 +962,7 @@ real_act_stage4_get_ip4_config (NMDevice *device,
 }
 
 static void
-real_deactivate_quickly (NMDevice *device)
+real_deactivate (NMDevice *device)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
 
@@ -972,7 +972,7 @@ real_deactivate_quickly (NMDevice *device)
 	if (priv->bt_type == NM_BT_CAPABILITY_DUN) {
 
 		if (priv->modem) {
-			nm_modem_deactivate_quickly (priv->modem, device);
+			nm_modem_deactivate (priv->modem, device);
 
 			/* Since we're killing the Modem object before it'll get the
 			 * state change signal, simulate the state change here.
@@ -1021,8 +1021,8 @@ real_deactivate_quickly (NMDevice *device)
 	g_free (priv->rfcomm_iface);
 	priv->rfcomm_iface = NULL;
 
-	if (NM_DEVICE_CLASS (nm_device_bt_parent_class)->deactivate_quickly)
-		NM_DEVICE_CLASS (nm_device_bt_parent_class)->deactivate_quickly (device);
+	if (NM_DEVICE_CLASS (nm_device_bt_parent_class)->deactivate)
+		NM_DEVICE_CLASS (nm_device_bt_parent_class)->deactivate (device);
 }
 
 /*****************************************************************************/
@@ -1150,7 +1150,7 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 
 	device_class->get_best_auto_connection = real_get_best_auto_connection;
 	device_class->get_generic_capabilities = real_get_generic_capabilities;
-	device_class->deactivate_quickly = real_deactivate_quickly;
+	device_class->deactivate = real_deactivate;
 	device_class->act_stage2_config = real_act_stage2_config;
 	device_class->act_stage3_ip4_config_start = real_act_stage3_ip4_config_start;
 	device_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;

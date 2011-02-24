@@ -636,7 +636,7 @@ nm_modem_complete_connection (NMModem *self,
 }
 
 static void
-real_deactivate_quickly (NMModem *self, NMDevice *device)
+real_deactivate (NMModem *self, NMDevice *device)
 {
 	NMModemPrivate *priv;
 	const char *iface;
@@ -690,9 +690,9 @@ real_deactivate_quickly (NMModem *self, NMDevice *device)
 }
 
 void
-nm_modem_deactivate_quickly (NMModem *self, NMDevice *device)
+nm_modem_deactivate (NMModem *self, NMDevice *device)
 {
-	NM_MODEM_GET_CLASS (self)->deactivate_quickly (self, device);
+	NM_MODEM_GET_CLASS (self)->deactivate (self, device);
 }
 
 static void
@@ -1082,7 +1082,7 @@ nm_modem_class_init (NMModemClass *klass)
 	object_class->finalize = finalize;
 
 	klass->act_stage1_prepare = real_act_stage1_prepare;
-	klass->deactivate_quickly = real_deactivate_quickly;
+	klass->deactivate = real_deactivate;
 
 	/* Properties */
 	g_object_class_install_property

@@ -1250,7 +1250,7 @@ real_take_down (NMDevice *dev)
 }
 
 static void
-real_deactivate_quickly (NMDevice *dev)
+real_deactivate (NMDevice *dev)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -1286,16 +1286,11 @@ real_deactivate_quickly (NMDevice *dev)
 
 	/* Reset MAC address back to initial address */
 	_set_hw_addr (self, priv->initial_hw_addr, "reset");
-}
 
-static void
-real_deactivate (NMDevice *dev)
-{
-	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
-
+	/* Ensure we're in infrastructure mode after deactivation; some devices
+	 * (usually older ones) don't scan well in adhoc mode.
+	 */
 	nm_device_wifi_set_mode (self, NM_802_11_MODE_INFRA);
-	/* FIXME: Should we reset the scan interval here? */
-/* 	nm_device_wifi_set_scan_interval (app_data, self, NM_WIRELESS_SCAN_INTERVAL_ACTIVE); */
 }
 
 static gboolean
@@ -3828,7 +3823,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->act_stage4_ip4_config_timeout = real_act_stage4_ip4_config_timeout;
 	parent_class->act_stage4_ip6_config_timeout = real_act_stage4_ip6_config_timeout;
 	parent_class->deactivate = real_deactivate;
-	parent_class->deactivate_quickly = real_deactivate_quickly;
 	parent_class->can_interrupt_activation = real_can_interrupt_activation;
 	parent_class->spec_match_list = spec_match_list;
 

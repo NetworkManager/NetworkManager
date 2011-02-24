@@ -245,9 +245,9 @@ real_hw_bring_up (NMDevice *device, gboolean *no_firmware)
 }
 
 static void
-real_deactivate_quickly (NMDevice *device)
+real_deactivate (NMDevice *device)
 {
-	nm_modem_deactivate_quickly (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem, device);
+	nm_modem_deactivate (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem, device);
 }
 
 static NMActStageReturn
@@ -416,7 +416,7 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	device_class->complete_connection = real_complete_connection;
 	device_class->hw_is_up = real_hw_is_up;
 	device_class->hw_bring_up = real_hw_bring_up;
-	device_class->deactivate_quickly = real_deactivate_quickly;
+	device_class->deactivate = real_deactivate;
 	device_class->act_stage1_prepare = real_act_stage1_prepare;
 	device_class->act_stage2_config = real_act_stage2_config;
 	device_class->act_stage3_ip4_config_start = real_act_stage3_ip4_config_start;

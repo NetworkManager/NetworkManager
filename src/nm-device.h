@@ -115,7 +115,6 @@ typedef struct {
 	                                                         NMIP6Config **config,
 	                                                         NMDeviceStateReason *reason);
 	void			(* deactivate)			(NMDevice *self);
-	void			(* deactivate_quickly)	(NMDevice *self);
 
 	gboolean		(* can_interrupt_activation)		(NMDevice *self);
 
@@ -175,7 +174,6 @@ void			nm_device_activate_schedule_stage4_ip4_config_get		(NMDevice *device);
 void			nm_device_activate_schedule_stage4_ip4_config_timeout	(NMDevice *device);
 void			nm_device_activate_schedule_stage4_ip6_config_get		(NMDevice *device);
 void			nm_device_activate_schedule_stage4_ip6_config_timeout	(NMDevice *device);
-gboolean		nm_device_deactivate_quickly	(NMDevice *dev);
 gboolean		nm_device_is_activating		(NMDevice *dev);
 gboolean		nm_device_can_interrupt_activation		(NMDevice *self);
 gboolean		nm_device_autoconnect_allowed	(NMDevice *self);

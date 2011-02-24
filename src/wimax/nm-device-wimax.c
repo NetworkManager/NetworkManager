@@ -804,7 +804,7 @@ force_disconnect (NMDeviceWimax *self, struct wmxsdk *sdk)
 }
 
 static void
-real_deactivate_quickly (NMDevice *device)
+real_deactivate (NMDevice *device)
 {
 	NMDeviceWimax *self = NM_DEVICE_WIMAX (device);
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
@@ -1469,7 +1469,7 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *klass)
 	device_class->is_available = real_is_available;
 	device_class->act_stage1_prepare = real_act_stage1_prepare;
 	device_class->act_stage2_config = real_act_stage2_config;
-	device_class->deactivate_quickly = real_deactivate_quickly;
+	device_class->deactivate = real_deactivate;
 
 	/* Properties */
 	g_object_class_install_property

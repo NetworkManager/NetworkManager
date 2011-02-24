@@ -2813,21 +2813,27 @@ dnsmasq_cleanup (NMDevice *self)
 }
 
 /*
- * nm_device_deactivate_quickly
+ * nm_device_deactivate
  *
- * Quickly deactivate a device, for things like sleep, etc.  Doesn't
- * clean much stuff up, and nm_device_deactivate() should be called
- * on the device eventually.
+ * Remove a device's routing table entries and IP address.
  *
  */
-gboolean
-nm_device_deactivate_quickly (NMDevice *self)
+static void
+nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason)
 {
-	NMDevicePrivate *priv;
+	NMDevice *self = NM_DEVICE (device);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
+	gboolean tried_ipv6 = FALSE;
 
-	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+	g_return_if_fail (self != NULL);
 
-	priv = NM_DEVICE_GET_PRIVATE (self);
+	nm_log_info (LOGD_DEVICE, "(%s): deactivating device (reason: %d).",
+	             nm_device_get_iface (self), reason);
+
+	/* Save whether or not we tried IPv6 for later */
+	if (NM_DEVICE_GET_PRIVATE (self)->ip6_manager)
+		tried_ipv6 = TRUE;
 
 	/* Break the activation chain */
 	activation_source_clear (self, TRUE, AF_INET);
@@ -2849,38 +2855,11 @@ nm_device_deactivate_quickly (NMDevice *self)
 		nm_utils_do_sysctl (priv->ip6_accept_ra_path, "0\n");
 
 	/* Call device type-specific deactivation */
-	if (NM_DEVICE_GET_CLASS (self)->deactivate_quickly)
-		NM_DEVICE_GET_CLASS (self)->deactivate_quickly (self);
+	if (NM_DEVICE_GET_CLASS (self)->deactivate)
+		NM_DEVICE_GET_CLASS (self)->deactivate (self);
 
 	/* Tear down an existing activation request */
 	clear_act_request (self);
-
-	return TRUE;
-}
-
-/*
- * nm_device_deactivate
- *
- * Remove a device's routing table entries and IP address.
- *
- */
-static void
-nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason)
-{
-	NMDevice *self = NM_DEVICE (device);
-	NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
-	gboolean tried_ipv6 = FALSE;
-
-	g_return_if_fail (self != NULL);
-
-	nm_log_info (LOGD_DEVICE, "(%s): deactivating device (reason: %d).",
-	             nm_device_get_iface (self), reason);
-
-	/* Check this before deactivate_quickly is run */
-	if (NM_DEVICE_GET_PRIVATE (self)->ip6_manager)
-		tried_ipv6 = TRUE;
-
-	nm_device_deactivate_quickly (self);
 
 	/* Take out any entries in the routing table and any IP address the device had. */
 	nm_system_device_flush_routes (self, tried_ipv6 ? AF_UNSPEC : AF_INET);
@@ -2890,10 +2869,6 @@ nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason)
 	/* Clean up nameservers and addresses */
 	nm_device_set_ip4_config (self, NULL, FALSE, &ignored);
 	nm_device_set_ip6_config (self, NULL, FALSE, &ignored);
-
-	/* Call device type-specific deactivation */
-	if (NM_DEVICE_GET_CLASS (self)->deactivate)
-		NM_DEVICE_GET_CLASS (self)->deactivate (self);
 }
 
 static gboolean
