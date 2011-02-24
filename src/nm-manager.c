@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2009 Novell, Inc.
- * Copyright (C) 2007 - 2010 Red Hat, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -464,18 +464,19 @@ nm_manager_update_state (NMManager *manager)
 }
 
 static void
-ignore_cb (NMSettingsConnectionInterface *connection, GError *error, gpointer user_data)
-{
-}
-
-static void
 update_active_connection_timestamp (NMManager *manager, NMDevice *device)
 {
 	NMActRequest *req;
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	NMSettingsConnectionInterface *connection_interface;
 	NMManagerPrivate *priv;
+	const char *connection_uuid;
+	guint64 timestamp;
+	guint64 *ts_ptr;
+	GKeyFile *timestamps_file;
+	char *data;
+	gsize len;
+	GError *error = NULL;
 
 	g_return_if_fail (NM_IS_DEVICE (device));
 
@@ -490,16 +491,36 @@ update_active_connection_timestamp (NMManager *manager, NMDevice *device)
 	if (nm_connection_get_scope (connection) != NM_CONNECTION_SCOPE_SYSTEM)
 		return;
 
+	/* Update timestamp in connection's object data */
+	timestamp = (guint64) time (NULL);
+	ts_ptr = g_new (guint64, 1);
+	*ts_ptr = timestamp;
+	g_object_set_data_full (G_OBJECT (connection), NM_SYSCONFIG_SETTINGS_TIMESTAMP_TAG, ts_ptr, g_free);
+
 	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (NM_CONNECTION (connection), NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_con);
-	g_object_set (s_con, NM_SETTING_CONNECTION_TIMESTAMP, (guint64) time (NULL), NULL);
+	connection_uuid = nm_setting_connection_get_uuid (s_con);
 
-	if (nm_setting_connection_get_read_only (s_con))
-		return;
+	/* Save timestamp to timestamps database file */
+	timestamps_file = g_key_file_new ();
+	if (!g_key_file_load_from_file (timestamps_file, NM_SYSCONFIG_SETTINGS_TIMESTAMPS_FILE, G_KEY_FILE_KEEP_COMMENTS, &error)) {
+		if (!(error->domain == G_FILE_ERROR && error->code == G_FILE_ERROR_NOENT))
+			nm_log_warn (LOGD_SYS_SET, "error parsing timestamps file '%s': %s", NM_SYSCONFIG_SETTINGS_TIMESTAMPS_FILE, error->message);
+		g_clear_error (&error);
+	}
 
-	connection_interface = nm_settings_interface_get_connection_by_path (NM_SETTINGS_INTERFACE (priv->sys_settings),
-	                                                                     nm_connection_get_path (connection));
-	nm_settings_connection_interface_update (connection_interface, ignore_cb, NULL);
+	g_key_file_set_uint64 (timestamps_file, "timestamps", connection_uuid, timestamp);
+
+	data = g_key_file_to_data (timestamps_file, &len, &error);
+	if (data) {
+		g_file_set_contents (NM_SYSCONFIG_SETTINGS_TIMESTAMPS_FILE, data, len, &error);
+		g_free (data);
+	}
+	if (error) {
+		nm_log_warn (LOGD_SYS_SET, "error saving timestamp: %s", error->message);
+		g_error_free (error);
+	}
+	g_key_file_free (timestamps_file);
 }
 
 static void

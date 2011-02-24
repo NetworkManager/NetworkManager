@@ -19,7 +19,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2010 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  * (C) Copyright 2008 Novell, Inc.
  */
 
@@ -480,8 +480,35 @@ connection_removed (NMSettingsConnectionInterface *connection,
                     gpointer user_data)
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (user_data);
+	NMSettingConnection *s_con;
+	GKeyFile *timestamps_file;
+	const char *connection_uuid;
+	char *data;
+	gsize len;
+	GError *error = NULL;
 
+	/* Remove connection from the table */
 	g_hash_table_remove (priv->connections, connection);
+
+	/* Remove timestamp from timestamps database file */
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (NM_CONNECTION (connection), NM_TYPE_SETTING_CONNECTION));
+	g_assert (s_con);
+	connection_uuid = nm_setting_connection_get_uuid (s_con);
+
+	timestamps_file = g_key_file_new ();
+	if (g_key_file_load_from_file (timestamps_file, NM_SYSCONFIG_SETTINGS_TIMESTAMPS_FILE, G_KEY_FILE_KEEP_COMMENTS, NULL)) {
+		g_key_file_remove_key (timestamps_file, "timestamps", connection_uuid, NULL);
+		data = g_key_file_to_data (timestamps_file, &len, &error);
+		if (data) {
+			g_file_set_contents (NM_SYSCONFIG_SETTINGS_TIMESTAMPS_FILE, data, len, &error);
+			g_free (data);
+		}
+		if (error) {
+			nm_log_warn (LOGD_SYS_SET, "error writing timestamps file '%s': %s", NM_SYSCONFIG_SETTINGS_TIMESTAMPS_FILE, error->message);
+			g_error_free (error);
+		}
+	}
+	g_key_file_free (timestamps_file);
 }
 
 static void
@@ -491,12 +518,40 @@ claim_connection (NMSysconfigSettings *self,
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 
+	NMSettingConnection *s_con;
+	const char *connection_uuid;
+	guint64 timestamp;
+	GKeyFile *timestamps_file;
+	GError *err = NULL;
+
 	g_return_if_fail (NM_IS_SYSCONFIG_SETTINGS (self));
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION_INTERFACE (connection));
 
 	if (g_hash_table_lookup (priv->connections, connection))
 		/* A plugin is lying to us. */
 		return;
+
+	/* Read timestamp from database file and store it into connection's object data */
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (NM_CONNECTION (connection), NM_TYPE_SETTING_CONNECTION));
+	g_assert (s_con);
+	connection_uuid = nm_setting_connection_get_uuid (s_con);
+
+	timestamps_file = g_key_file_new ();
+	g_key_file_load_from_file (timestamps_file, NM_SYSCONFIG_SETTINGS_TIMESTAMPS_FILE, G_KEY_FILE_KEEP_COMMENTS, NULL);
+	timestamp = g_key_file_get_uint64 (timestamps_file, "timestamps", connection_uuid, &err);
+
+	/* Update connection's timestamp */
+	if (!err) {
+		guint64 *ts_ptr = g_new (guint64, 1);
+
+		*ts_ptr = timestamp;
+		g_object_set_data_full (G_OBJECT (connection), NM_SYSCONFIG_SETTINGS_TIMESTAMP_TAG, ts_ptr, g_free);
+	} else {
+		nm_log_dbg (LOGD_SYS_SET, "failed to read connection timestamp for '%s': (%d) %s",
+		            connection_uuid, err->code, err->message);
+		g_clear_error (&err);
+	}
+	g_key_file_free (timestamps_file);
 
 	g_hash_table_insert (priv->connections, g_object_ref (connection), GINT_TO_POINTER (1));
 	g_signal_connect (connection,

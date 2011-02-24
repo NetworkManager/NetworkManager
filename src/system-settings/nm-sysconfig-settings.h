@@ -41,6 +41,8 @@
 #define NM_SYSCONFIG_SETTINGS_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SYSCONFIG_SETTINGS, NMSysconfigSettingsClass))
 
 #define NM_SYSCONFIG_SETTINGS_UNMANAGED_SPECS "unmanaged-specs"
+#define NM_SYSCONFIG_SETTINGS_TIMESTAMPS_FILE LOCALSTATEDIR"/lib/NetworkManager/timestamps"
+#define NM_SYSCONFIG_SETTINGS_TIMESTAMP_TAG   "timestamp-tag"
 
 typedef struct {
 	NMSettingsService parent_instance;

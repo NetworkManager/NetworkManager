@@ -17,7 +17,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * (C) Copyright 2008 Novell, Inc.
- * (C) Copyright 2008 - 2009 Red Hat, Inc.
+ * (C) Copyright 2008 - 2011 Red Hat, Inc.
  */
 
 #include <NetworkManager.h>
@@ -64,11 +64,16 @@ typedef struct {
 
 /**************************************************************/
 
+/* Has to be the same as NM_SYSCONFIG_SETTINGS_TIMESTAMP_TAG in nm-sysconfig-settings.h */
+#define CONNECTION_TIMESTAMP_TAG "timestamp-tag"
+
 static GHashTable *
 real_get_settings (NMExportedConnection *self, GError **error)
 {
 	NMConnection *no_secrets;
 	GHashTable *settings;
+	NMSettingConnection *s_con;
+	guint64 *timestamp;
 
 	/* Secrets should *never* be returned by the GetSettings method, they
 	 * get returned by the GetSecrets method which can be better
@@ -77,6 +82,20 @@ real_get_settings (NMExportedConnection *self, GError **error)
 	no_secrets = nm_connection_duplicate (NM_CONNECTION (self));
 	g_assert (no_secrets);
 	nm_connection_clear_secrets (no_secrets);
+
+	/* Timestamp is not updated internally in connection's 'timestamp'
+	 * property, because it would force updating the connection and in turn
+	 * writing to /etc periodically, which we want to avoid. Rather real
+	 * timestamps are kept track of in data associated with GObject.
+	 * Here we substitute connection's timestamp with the real one.
+	 */
+	timestamp = (guint64 *) g_object_get_data (G_OBJECT (self), CONNECTION_TIMESTAMP_TAG);
+	if (timestamp) {
+		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (NM_CONNECTION (no_secrets), NM_TYPE_SETTING_CONNECTION));
+		g_assert (s_con);
+		g_object_set (s_con, NM_SETTING_CONNECTION_TIMESTAMP, *timestamp, NULL);
+	}
+
 	settings = nm_connection_to_hash (no_secrets);
 	g_assert (settings);
 	g_object_unref (no_secrets);
