@@ -114,7 +114,7 @@ make_connection_setting (const char *file,
 {
 	NMSettingConnection *s_con;
 	const char *ifcfg_name = NULL;
-	char *new_id = NULL, *uuid = NULL, *value;
+	char *new_id = NULL, *uuid = NULL;
 	char *ifcfg_id;
 
 	ifcfg_name = utils_get_ifcfg_name (file, TRUE);
@@ -166,21 +166,6 @@ make_connection_setting (const char *file,
 	g_object_set (s_con, NM_SETTING_CONNECTION_AUTOCONNECT,
 	              svTrueValue (ifcfg, "ONBOOT", TRUE),
 	              NULL);
-
-	value = svGetValue (ifcfg, "LAST_CONNECT", FALSE);
-	if (value) {
-		unsigned long int tmp;
-		guint64 timestamp;
-
-		errno = 0;
-		tmp = strtoul (value, NULL, 10);
-		if (errno == 0) {
-			timestamp = (guint64) tmp;
-			g_object_set (s_con, NM_SETTING_CONNECTION_TIMESTAMP, timestamp, NULL);
-		} else
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid LAST_CONNECT time");
-		g_free (value);
-	}
 
 	return NM_SETTING (s_con);
 }
