@@ -1,4 +1,26 @@
 ==============================================
+NetworkManager-0.8.4
+Overview of changes since NetworkManager-0.8.2
+==============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Preliminary support for Exherbo Linux
+* Logging fixes to suppress unnecessary messages
+* Ensure removed devices are cleaned up
+* Fix potential 64-bit crash updating timestamps
+* IPv6 setup, routing, and compliance fixes
+* Handle reverse DNS lookups with local caching nameserver configurations
+* No longer updates /etc/hosts when hostname changes
+* Request WPAD option from DHCP servers
+* Shutdown crash fixes
+* nmcli support for WWAN connections
+* Persistent hostname sent to DHCP servers by default
+* Allow disabing PPP support at build time
+* Memory leak fixes
+* and much more...
+
+==============================================
 NetworkManager-0.8.2
 Overview of changes since NetworkManager-0.8.1
 ==============================================
