@@ -23,7 +23,6 @@
 
 #include <string.h>
 #include "nm-setting-cdma.h"
-#include "nm-setting-serial.h"
 #include "nm-utils.h"
 
 /**
@@ -69,7 +68,7 @@ nm_setting_cdma_error_get_type (void)
 			ENUM_ENTRY (NM_SETTING_CDMA_ERROR_INVALID_PROPERTY, "InvalidProperty"),
 			/* The specified property was missing and is required. */
 			ENUM_ENTRY (NM_SETTING_CDMA_ERROR_MISSING_PROPERTY, "MissingProperty"),
-			/* The required serial setting is missing */
+			/* The required serial setting is missing (DEPRECATED) */
 			ENUM_ENTRY (NM_SETTING_CDMA_ERROR_MISSING_SERIAL_SETTING, "MissingSerialSetting"),
 			{ 0, 0, 0 }
 		};
@@ -153,29 +152,10 @@ nm_setting_cdma_get_password (NMSettingCdma *setting)
 	return NM_SETTING_CDMA_GET_PRIVATE (setting)->password;
 }
 
-static gint
-find_setting_by_name (gconstpointer a, gconstpointer b)
-{
-	NMSetting *setting = NM_SETTING (a);
-	const char *str = (const char *) b;
-
-	return strcmp (nm_setting_get_name (setting), str);
-}
-
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingCdmaPrivate *priv = NM_SETTING_CDMA_GET_PRIVATE (setting);
-
-	/* Serial connections require a PPP setting */
-	if (all_settings && 
-	    !g_slist_find_custom (all_settings, NM_SETTING_SERIAL_SETTING_NAME, find_setting_by_name)) {
-		g_set_error (error,
-		             NM_SETTING_CDMA_ERROR,
-		             NM_SETTING_CDMA_ERROR_MISSING_SERIAL_SETTING,
-		             NULL);
-		return FALSE;
-	}
 
 	if (!priv->number) {
 		g_set_error (error,

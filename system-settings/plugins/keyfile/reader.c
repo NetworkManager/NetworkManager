@@ -33,10 +33,6 @@
 #include <nm-setting-wired.h>
 #include <nm-setting-wireless.h>
 #include <nm-setting-bluetooth.h>
-#include <nm-setting-serial.h>
-#include <nm-setting-gsm.h>
-#include <nm-setting-cdma.h>
-#include <nm-setting-ppp.h>
 #include <arpa/inet.h>
 #include <netinet/ether.h>
 #include <string.h>
@@ -1061,13 +1057,12 @@ connection_from_file (const char *filename, GError **error)
 	gboolean bad_owner, bad_permissions;
 	NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
-	NMSettingBluetooth *s_bt;
 	NMSetting *setting;
 	gchar **groups;
 	gsize length;
 	int i;
 	gboolean vpn_secrets = FALSE;
-	const char *ctype, *tmp;
+	const char *ctype;
 	GError *verify_error = NULL;
 
 	if (stat (filename, &statbuf) != 0 || !S_ISREG (statbuf.st_mode)) {
@@ -1114,36 +1109,9 @@ connection_from_file (const char *filename, GError **error)
 		ctype = nm_setting_connection_get_connection_type (s_con);
 		setting = nm_connection_get_setting_by_name (connection, ctype);
 		if (ctype) {
-			gboolean add_serial = FALSE;
-			NMSetting *new_setting = NULL;
-
 			if (!setting && !strcmp (ctype, NM_SETTING_WIRED_SETTING_NAME))
-				new_setting = nm_setting_wired_new ();
-			else if (!strcmp (ctype, NM_SETTING_BLUETOOTH_SETTING_NAME)) {
-				s_bt = (NMSettingBluetooth *) nm_connection_get_setting (connection, NM_TYPE_SETTING_BLUETOOTH);
-				if (s_bt) {
-					tmp = nm_setting_bluetooth_get_connection_type (s_bt);
-					if (tmp && !strcmp (tmp, NM_SETTING_BLUETOOTH_TYPE_DUN))
-						add_serial = TRUE;
-				}
-			} else if (!strcmp (ctype, NM_SETTING_GSM_SETTING_NAME))
-				add_serial = TRUE;
-			else if (!strcmp (ctype, NM_SETTING_CDMA_SETTING_NAME))
-				add_serial = TRUE;
-
-			/* Bluetooth DUN, GSM, and CDMA connections require a serial setting */
-			if (add_serial && !nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL))
-				new_setting = nm_setting_serial_new ();
-
-			if (new_setting)
-				nm_connection_add_setting (connection, new_setting);
+				nm_connection_add_setting (connection, nm_setting_wired_new ());
 		}
-	}
-
-	/* Serial connections require a PPP setting too */
-	if (nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL)) {
-		if (!nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP))
-			nm_connection_add_setting (connection, nm_setting_ppp_new ());
 	}
 
 	/* Handle vpn secrets after the 'vpn' setting was read */
