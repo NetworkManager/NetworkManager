@@ -790,6 +790,7 @@ addrconf6_setup (NMDevice *self)
 	NMActRequest *req;
 	NMConnection *connection;
 	NMSettingIP6Config *s_ip6;
+	gboolean success;
 
 	req = nm_device_get_act_request (self);
 	g_assert (req);
@@ -809,13 +810,14 @@ addrconf6_setup (NMDevice *self)
 	}
 
 	s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
-	nm_ip6_manager_prepare_interface (priv->ip6_manager,
-	                                  nm_device_get_ip_ifindex (self),
-	                                  s_ip6,
-	                                  priv->ip6_accept_ra_path);
-	priv->ip6_waiting_for_config = TRUE;
+	success = nm_ip6_manager_prepare_interface (priv->ip6_manager,
+	                                            nm_device_get_ip_ifindex (self),
+	                                            s_ip6,
+	                                            priv->ip6_accept_ra_path);
+	if (success)
+		priv->ip6_waiting_for_config = TRUE;
 
-	return TRUE;
+	return success;
 }
 
 static void

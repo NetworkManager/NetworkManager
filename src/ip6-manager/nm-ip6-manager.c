@@ -1051,7 +1051,7 @@ netlink_notification (NMNetlinkMonitor *monitor, struct nl_msg *msg, gpointer us
 	}
 }
 
-void
+gboolean
 nm_ip6_manager_prepare_interface (NMIP6Manager *manager,
                                   int ifindex,
                                   NMSettingIP6Config *s_ip6,
@@ -1061,16 +1061,17 @@ nm_ip6_manager_prepare_interface (NMIP6Manager *manager,
 	NMIP6Device *device;
 	const char *method = NULL;
 
-	g_return_if_fail (NM_IS_IP6_MANAGER (manager));
-	g_return_if_fail (ifindex > 0);
+	g_return_val_if_fail (NM_IS_IP6_MANAGER (manager), FALSE);
+	g_return_val_if_fail (ifindex > 0, FALSE);
 
 	priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
 
 	device = nm_ip6_device_new (manager, ifindex);
-	g_return_if_fail (device != NULL);
-	g_return_if_fail (   strchr (device->iface, '/') == NULL
-	                  && strcmp (device->iface, "all") != 0
-	                  && strcmp (device->iface, "default") != 0);
+	g_return_val_if_fail (device != NULL, FALSE);
+	g_return_val_if_fail (   strchr (device->iface, '/') == NULL
+	                      && strcmp (device->iface, "all") != 0
+	                      && strcmp (device->iface, "default") != 0,
+	                      FALSE);
 
 	if (s_ip6)
 		method = nm_setting_ip6_config_get_method (s_ip6);
@@ -1085,6 +1086,8 @@ nm_ip6_manager_prepare_interface (NMIP6Manager *manager,
 		device->target_state = NM_IP6_DEVICE_GOT_ADDRESS;
 		nm_utils_do_sysctl (accept_ra_path, "1\n");
 	}
+
+	return TRUE;
 }
 
 static gboolean

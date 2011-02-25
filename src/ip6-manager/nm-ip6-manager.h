@@ -71,7 +71,7 @@ typedef struct {
 GType nm_ip6_manager_get_type (void);
 
 NMIP6Manager *nm_ip6_manager_get               (void);
-void          nm_ip6_manager_prepare_interface (NMIP6Manager *manager,
+gboolean      nm_ip6_manager_prepare_interface (NMIP6Manager *manager,
                                                 int ifindex,
                                                 NMSettingIP6Config *s_ip6,
                                                 const char *accept_ra_path);
