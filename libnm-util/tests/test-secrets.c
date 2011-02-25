@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 - 2009 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  *
  */
 
@@ -30,6 +30,7 @@
 #include "nm-setting-wired.h"
 #include "nm-setting-8021x.h"
 #include "nm-setting-ip4-config.h"
+#include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-cdma.h"
 #include "nm-setting-gsm.h"
@@ -540,6 +541,109 @@ test_need_tls_phase2_secrets_blob (void)
 	g_object_unref (connection);
 }
 
+static void
+value_destroy (gpointer data)
+{
+	GValue *value = (GValue *) data;
+
+	g_value_unset (value);
+	g_slice_free (GValue, value);
+}
+
+static GValue *
+string_to_gvalue (const char *str)
+{
+	GValue *val = g_slice_new0 (GValue);
+
+	g_value_init (val, G_TYPE_STRING);
+	g_value_set_string (val, str);
+	return val;
+}
+
+static GValue *
+uint_to_gvalue (guint32 i)
+{
+	GValue *val;
+
+	val = g_slice_new0 (GValue);
+	g_value_init (val, G_TYPE_UINT);
+	g_value_set_uint (val, i);
+	return val;
+}
+
+static void
+test_update_secrets_wifi (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	unsigned char tmpssid[] = { 0x31, 0x33, 0x33, 0x37 };
+	const char *wepkey = "11111111111111111111111111";
+	GHashTable *secrets;
+	GError *error = NULL;
+	char *uuid;
+	GByteArray *ssid;
+	gboolean success;
+
+	connection = nm_connection_new ();
+	g_assert (connection);
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	g_assert (s_con);
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Wireless",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, FALSE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	/* Wireless setting */
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	g_assert (s_wifi);
+
+	ssid = g_byte_array_sized_new (sizeof (tmpssid));
+	g_byte_array_append (ssid, &tmpssid[0], sizeof (tmpssid));
+	g_object_set (s_wifi,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	              NULL);
+	g_byte_array_free (ssid, TRUE);
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	/* Wifi security */
+	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+	g_assert (s_wsec);
+
+	g_object_set (G_OBJECT (s_wsec),
+	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none",
+	              NULL);
+	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+
+	/* Build up the secrets hash */
+	secrets = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, value_destroy);
+	g_hash_table_insert (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, string_to_gvalue (wepkey));
+	g_hash_table_insert (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, uint_to_gvalue (NM_WEP_KEY_TYPE_KEY));
+
+	success = nm_connection_update_secrets (connection,
+	                                        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	                                        secrets,
+	                                        &error);
+	if (!success) {
+		/* Print the warning message before we assert success */
+		g_assert (error);
+		g_warning ("Error updating connection secrets: %s", error->message);
+		g_clear_error (&error);
+	}
+	g_assert (success);
+}
+
+
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
@@ -557,6 +661,8 @@ int main (int argc, char **argv)
 	test_need_tls_secrets_blob ();
 	test_need_tls_phase2_secrets_path ();
 	test_need_tls_phase2_secrets_blob ();
+
+	test_update_secrets_wifi ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);

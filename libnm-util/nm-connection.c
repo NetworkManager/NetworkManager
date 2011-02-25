@@ -707,7 +707,7 @@ nm_connection_verify (NMConnection *connection, GError **error)
  * nm_connection_update_secrets:
  * @connection: the #NMConnection
  * @setting_name: the setting object name to which the secrets apply
- * @secrets: a #GHashTable mapping string:#GValue of setting property names and
+ * @setting_secrets: a #GHashTable mapping string:#GValue of setting property names and
  * secrets
  * @error: location to store error, or %NULL
  *
@@ -720,31 +720,21 @@ nm_connection_verify (NMConnection *connection, GError **error)
 gboolean
 nm_connection_update_secrets (NMConnection *connection,
                               const char *setting_name,
-                              GHashTable *all_secrets,
+                              GHashTable *setting_secrets,
                               GError **error)
 {
 	NMSetting *setting;
 	gboolean success;
-	GHashTable *setting_secrets;
 
 	g_return_val_if_fail (connection != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (setting_name != NULL, FALSE);
-	g_return_val_if_fail (all_secrets != NULL, FALSE);
+	g_return_val_if_fail (setting_secrets != NULL, FALSE);
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
 
 	setting = nm_connection_get_setting (connection, nm_connection_lookup_setting_type (setting_name));
 	if (!setting) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND,
-		                     setting_name);
-		return FALSE;
-	}
-
-	setting_secrets = g_hash_table_lookup (all_secrets, setting_name);
-	if (!setting_secrets) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND,

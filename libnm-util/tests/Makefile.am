@@ -7,7 +7,7 @@ INCLUDES = \
 noinst_PROGRAMS = \
 	test-settings-defaults \
 	test-crypto \
-	test-need-secrets \
+	test-secrets \
 	test-general \
 	test-setting-8021x
 
@@ -34,15 +34,15 @@ test_crypto_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(GLIB_LIBS)
 
-test_need_secrets_SOURCES = \
-	test-need-secrets.c
+test_secrets_SOURCES = \
+	test-secrets.c
 
-test_need_secrets_CPPFLAGS = \
+test_secrets_CPPFLAGS = \
 	-DTEST_CERT_DIR=\"$(top_srcdir)/libnm-util/tests/certs/\" \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS)
 
-test_need_secrets_LDADD = \
+test_secrets_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS)
@@ -73,9 +73,9 @@ test_setting_8021x_LDADD = \
 
 if WITH_TESTS
 
-check-local: test-settings-defaults test-crypto test-need-secrets
+check-local: test-settings-defaults test-crypto test-secrets
 	$(abs_builddir)/test-settings-defaults
-	$(abs_builddir)/test-need-secrets
+	$(abs_builddir)/test-secrets
 	$(abs_builddir)/test-general
 
 # Private key and CA certificate in the same file (PEM)
