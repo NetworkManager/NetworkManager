@@ -28,8 +28,6 @@
 #include "nm-device-private.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-gsm.h"
-#include "nm-setting-serial.h"
-#include "nm-setting-ppp.h"
 #include "nm-modem-types.h"
 #include "nm-logging.h"
 #include "NetworkManagerUtils.h"
@@ -479,13 +477,8 @@ real_complete_connection (NMModem *modem,
                           GError **error)
 {
 	NMSettingGsm *s_gsm;
-	NMSettingSerial *s_serial;
-	NMSettingPPP *s_ppp;
 
 	s_gsm = (NMSettingGsm *) nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM);
-	s_serial = (NMSettingSerial *) nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL);
-	s_ppp = (NMSettingPPP *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP);
-
 	if (!s_gsm || !nm_setting_gsm_get_apn (s_gsm)) {
 		/* Need an APN at least */
 		g_set_error_literal (error,
@@ -497,16 +490,6 @@ real_complete_connection (NMModem *modem,
 
 	if (!nm_setting_gsm_get_number (s_gsm))
 		g_object_set (G_OBJECT (s_gsm), NM_SETTING_GSM_NUMBER, "*99#", NULL);
-
-	/* Need serial and PPP settings at least */
-	if (!s_serial) {
-		s_serial = (NMSettingSerial *) nm_setting_serial_new ();
-		nm_connection_add_setting (connection, NM_SETTING (s_serial));
-	}
-	if (!s_ppp) {
-		s_ppp = (NMSettingPPP *) nm_setting_ppp_new ();
-		nm_connection_add_setting (connection, NM_SETTING (s_ppp));
-	}
 
 	nm_utils_complete_generic (connection,
 	                           NM_SETTING_GSM_SETTING_NAME,

@@ -30,8 +30,6 @@
 #include "nm-dbus-manager.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-cdma.h"
-#include "nm-setting-serial.h"
-#include "nm-setting-ppp.h"
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
 
@@ -280,13 +278,8 @@ real_complete_connection (NMModem *modem,
                           GError **error)
 {
 	NMSettingCdma *s_cdma;
-	NMSettingSerial *s_serial;
-	NMSettingPPP *s_ppp;
 
 	s_cdma = (NMSettingCdma *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CDMA);
-	s_serial = (NMSettingSerial *) nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL);
-	s_ppp = (NMSettingPPP *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP);
-
 	if (!s_cdma) {
 		s_cdma = (NMSettingCdma *) nm_setting_cdma_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_cdma));
@@ -294,16 +287,6 @@ real_complete_connection (NMModem *modem,
 
 	if (!nm_setting_cdma_get_number (s_cdma))
 		g_object_set (G_OBJECT (s_cdma), NM_SETTING_CDMA_NUMBER, "#777", NULL);
-
-	/* Need serial and PPP settings at least */
-	if (!s_serial) {
-		s_serial = (NMSettingSerial *) nm_setting_serial_new ();
-		nm_connection_add_setting (connection, NM_SETTING (s_serial));
-	}
-	if (!s_ppp) {
-		s_ppp = (NMSettingPPP *) nm_setting_ppp_new ();
-		nm_connection_add_setting (connection, NM_SETTING (s_ppp));
-	}
 
 	nm_utils_complete_generic (connection,
 	                           NM_SETTING_CDMA_SETTING_NAME,

@@ -2017,7 +2017,9 @@ nm_device_activate_stage4_ip4_config_get (gpointer user_data)
 	g_object_set_data (G_OBJECT (nm_device_get_act_request (self)),
 					   NM_ACT_REQUEST_IP4_CONFIG, ip4_config);
 
+nm_log_info (LOGD_DEVICE | LOGD_IP4, "Scheduling stage 5");
 	nm_device_activate_schedule_stage5_ip_config_commit (self, AF_INET);
+nm_log_info (LOGD_DEVICE | LOGD_IP4, "Done scheduling stage 5");
 
 out:
 	nm_log_info (LOGD_DEVICE | LOGD_IP4,

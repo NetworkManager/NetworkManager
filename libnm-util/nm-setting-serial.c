@@ -19,14 +19,13 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
 #include <string.h>
 
 #include "nm-setting-serial.h"
-#include "nm-setting-ppp.h"
 
 GQuark
 nm_setting_serial_error_quark (void)
@@ -54,7 +53,7 @@ nm_setting_serial_error_get_type (void)
 			ENUM_ENTRY (NM_SETTING_SERIAL_ERROR_INVALID_PROPERTY, "InvalidProperty"),
 			/* The specified property was missing and is required. */
 			ENUM_ENTRY (NM_SETTING_SERIAL_ERROR_MISSING_PROPERTY, "MissingProperty"),
-			/* The required PPP setting is missing */
+			/* The required PPP setting is missing (DEPRECATED) */
 			ENUM_ENTRY (NM_SETTING_SERIAL_ERROR_MISSING_PPP_SETTING, "MissingPPPSetting"),
 			{ 0, 0, 0 }
 		};
@@ -134,28 +133,9 @@ nm_setting_serial_get_send_delay (NMSettingSerial *setting)
 	return NM_SETTING_SERIAL_GET_PRIVATE (setting)->send_delay;
 }
 
-static gint
-find_setting_by_name (gconstpointer a, gconstpointer b)
-{
-	NMSetting *setting = NM_SETTING (a);
-	const char *str = (const char *) b;
-
-	return strcmp (nm_setting_get_name (setting), str);
-}
-
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
-	/* Serial connections require a PPP setting */
-	if (all_settings && 
-	    !g_slist_find_custom (all_settings, NM_SETTING_PPP_SETTING_NAME, find_setting_by_name)) {
-		g_set_error_literal (error,
-		                     NM_SETTING_SERIAL_ERROR,
-		                     NM_SETTING_SERIAL_ERROR_MISSING_PPP_SETTING,
-		                     "Missing required PPP setting");
-		return FALSE;
-	}
-
 	return TRUE;
 }
 

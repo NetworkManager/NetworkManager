@@ -309,7 +309,7 @@ real_complete_connection (NMDevice *device,
 		}
 
 		/* PAN can't use any DUN-related settings */
-		if (s_gsm || s_cdma || s_serial) {
+		if (s_gsm || s_cdma || s_serial || s_ppp) {
 			g_set_error_literal (error,
 			                     NM_SETTING_BLUETOOTH_ERROR,
 			                     NM_SETTING_BLUETOOTH_ERROR_INVALID_PROPERTY,
@@ -355,16 +355,6 @@ real_complete_connection (NMDevice *device,
 				g_object_set (G_OBJECT (s_cdma), NM_SETTING_GSM_NUMBER, "#777", NULL);
 		} else
 			format = _("DUN connection %d");
-
-		/* Need serial and PPP settings */
-		if (!s_serial) {
-			s_serial = (NMSettingSerial *) nm_setting_serial_new ();
-			nm_connection_add_setting (connection, NM_SETTING (s_serial));
-		}
-		if (!s_ppp) {
-			s_ppp = (NMSettingPPP *) nm_setting_ppp_new ();
-			nm_connection_add_setting (connection, NM_SETTING (s_ppp));
-		}
 	} else {
 		g_set_error_literal (error,
 		                     NM_SETTING_BLUETOOTH_ERROR,
