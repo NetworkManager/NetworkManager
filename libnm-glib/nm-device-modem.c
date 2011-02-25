@@ -43,8 +43,8 @@ typedef struct {
 
 enum {
 	PROP_0,
-	PROP_MODEM_CAPABILITIES,
-	PROP_CURRENT_CAPABILITIES,
+	PROP_MODEM_CAPS,
+	PROP_CURRENT_CAPS,
 	LAST_PROP
 };
 
@@ -156,6 +156,27 @@ nm_device_modem_init (NMDeviceModem *device)
 }
 
 static void
+get_property (GObject *object,
+              guint prop_id,
+              GValue *value,
+              GParamSpec *pspec)
+{
+	NMDeviceModem *self = NM_DEVICE_MODEM (object);
+
+	switch (prop_id) {
+	case PROP_MODEM_CAPS:
+		g_value_set_uint (value, nm_device_modem_get_modem_capabilities (self));
+		break;
+	case PROP_CURRENT_CAPS:
+		g_value_set_uint (value, nm_device_modem_get_current_capabilities (self));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
 dispose (GObject *object)
 {
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (object);
@@ -181,6 +202,35 @@ nm_device_modem_class_init (NMDeviceModemClass *device_class)
 
 	/* virtual methods */
 	object_class->constructor = constructor;
+	object_class->get_property = get_property;
 	object_class->dispose = dispose;
+
+	/**
+	 * NMDeviceModem:modem-capabilities:
+	 *
+	 * The generic family of access technologies the modem supports.  Not all
+	 * capabilities are available at the same time however; some modems require
+	 * a firmware reload or other reinitialization to switch between eg
+	 * CDMA/EVDO and GSM/UMTS.
+	 **/
+	g_object_class_install_property (object_class, PROP_MODEM_CAPS,
+		g_param_spec_uint (NM_DEVICE_MODEM_MODEM_CAPABILITIES,
+		                   "Modem capabilities",
+		                   "Modem capabilities",
+		                   0, G_MAXUINT32, 0,
+		                   G_PARAM_READABLE));
+
+	/**
+	 * NMDeviceModem:current-capabilities:
+	 *
+	 * The generic family of access technologies the modem currently supports
+	 * without a firmware reload or reinitialization.
+	 **/
+	g_object_class_install_property (object_class, PROP_CURRENT_CAPS,
+		g_param_spec_uint (NM_DEVICE_MODEM_CURRENT_CAPABILITIES,
+		                   "Current capabilities",
+		                   "Current capabilities",
+		                   0, G_MAXUINT32, 0,
+		                   G_PARAM_READABLE));
 }
 
