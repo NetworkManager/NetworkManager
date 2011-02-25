@@ -677,8 +677,9 @@ try_complete_vpn (NMConnection *connection, GSList *existing, GError **error)
 	                           NM_SETTING_VPN_SETTING_NAME,
 	                           existing,
 	                           _("VPN connection %d"),
-	                           NULL);
-	
+	                           NULL,
+	                           FALSE); /* No IPv6 by default for now */
+
 	return TRUE;
 }
 

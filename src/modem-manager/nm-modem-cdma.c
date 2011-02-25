@@ -292,7 +292,8 @@ real_complete_connection (NMModem *modem,
 	                           NM_SETTING_CDMA_SETTING_NAME,
 	                           existing_connections,
 	                           _("CDMA connection %d"),
-	                           NULL);
+	                           NULL,
+	                           FALSE); /* No IPv6 yet by default */
 
 	return TRUE;
 }

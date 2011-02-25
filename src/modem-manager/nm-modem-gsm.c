@@ -495,7 +495,8 @@ real_complete_connection (NMModem *modem,
 	                           NM_SETTING_GSM_SETTING_NAME,
 	                           existing_connections,
 	                           _("GSM connection %d"),
-	                           NULL);
+	                           NULL,
+	                           FALSE); /* No IPv6 yet by default */
 
 	return TRUE;
 }

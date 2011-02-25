@@ -1470,7 +1470,8 @@ real_complete_connection (NMDevice *device,
 	                           NM_SETTING_WIRELESS_SETTING_NAME,
 	                           existing_connections,
 	                           format,
-	                           str_ssid);
+	                           str_ssid,
+	                           TRUE);
 	g_free (str_ssid);
 	g_free (format);
 

@@ -420,7 +420,8 @@ real_complete_connection (NMDevice *device,
 	                           NM_SETTING_OLPC_MESH_SETTING_NAME,
 	                           existing_connections,
 	                           _("Mesh %d"),
-	                           NULL);
+	                           NULL,
+	                           FALSE); /* No IPv6 by default */
 
 	return TRUE;
 }

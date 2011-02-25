@@ -785,7 +785,8 @@ nm_utils_complete_generic (NMConnection *connection,
                            const char *ctype,
                            const GSList *existing,
                            const char *format,
-                           const char *preferred)
+                           const char *preferred,
+                           gboolean default_enable_ipv6)
 {
 	NMSettingConnection *s_con;
 	NMSettingIP4Config *s_ip4;
@@ -826,13 +827,13 @@ nm_utils_complete_generic (NMConnection *connection,
 		              NULL);
 	}
 
+	/* Add an 'auto' IPv6 setting if allowed and not preset */
 	s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
-	if (!s_ip6) {
+	if (!s_ip6 && default_enable_ipv6) {
 		s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 	}
-	method = nm_setting_ip6_config_get_method (s_ip6);
-	if (!method) {
+	if (s_ip6 && !nm_setting_ip6_config_get_method (s_ip6)) {
 		g_object_set (G_OBJECT (s_ip6),
 		              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
 		              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
