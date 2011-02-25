@@ -165,7 +165,8 @@ dispose (GObject *object)
 
 	nm_ppp_manager_stop (NM_PPP_MANAGER (object));
 
-	g_object_unref (priv->act_req);
+	if (priv->act_req)
+		g_object_unref (priv->act_req);
 	g_object_unref (priv->dbus_manager);
 
 	G_OBJECT_CLASS (nm_ppp_manager_parent_class)->dispose (object);
@@ -723,6 +724,8 @@ create_pppd_cmd_line (NMPPPManager *self,
 	const char *ppp_binary;
 	NMCmdLine *cmd;
 	const char *ppp_debug;
+
+	g_return_val_if_fail (setting != NULL, NULL);
 
 	ppp_binary = nm_find_pppd ();
 	if (!ppp_binary) {
