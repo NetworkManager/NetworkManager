@@ -1446,7 +1446,6 @@ test_read_bt_dun_connection (void)
 	NMSettingConnection *s_con;
 	NMSettingBluetooth *s_bluetooth;
 	NMSettingSerial *s_serial;
-	NMSettingPPP *s_ppp;
 	NMSettingGsm *s_gsm;
 	GError *error = NULL;
 	const GByteArray *array;
@@ -1593,14 +1592,6 @@ test_read_bt_dun_connection (void)
 	        TEST_BT_DUN_FILE,
 	        NM_SETTING_SERIAL_SETTING_NAME);
 
-	/* ===== PPP SETTING ===== */
-
-	s_ppp = NM_SETTING_PPP (nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP));
-	ASSERT (s_ppp != NULL,
-	        "connection-verify-ppp", "failed to verify %s: missing %s setting",
-	        TEST_BT_DUN_FILE,
-	        NM_SETTING_PPP_SETTING_NAME);
-
 	g_object_unref (connection);
 }
 
@@ -1689,13 +1680,6 @@ test_write_bt_dun_connection (void)
 	              NM_SETTING_GSM_NUMBER,  "*99#",
 	              NULL);
 
-	/* Serial setting */
-	nm_connection_add_setting (connection, nm_setting_serial_new ());
-
-	/* PPP setting */
-	nm_connection_add_setting (connection, nm_setting_ppp_new ());
-
-
 	/* Write out the connection */
 	owner_uid = geteuid ();
 	owner_grp = getegid ();
@@ -1730,7 +1714,6 @@ test_read_gsm_connection (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingSerial *s_serial;
-	NMSettingPPP *s_ppp;
 	NMSettingGsm *s_gsm;
 	NMSetting *s_bluetooth;
 	GError *error = NULL;
@@ -1872,14 +1855,6 @@ test_read_gsm_connection (void)
 	        TEST_GSM_FILE,
 	        NM_SETTING_SERIAL_SETTING_NAME);
 
-	/* ===== PPP SETTING ===== */
-
-	s_ppp = NM_SETTING_PPP (nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP));
-	ASSERT (s_ppp != NULL,
-	        "connection-verify-ppp", "failed to verify %s: missing %s setting",
-	        TEST_GSM_FILE,
-	        NM_SETTING_PPP_SETTING_NAME);
-
 	g_object_unref (connection);
 }
 
@@ -1950,13 +1925,6 @@ test_write_gsm_connection (void)
 	              NM_SETTING_GSM_HOME_ONLY, TRUE,
 	              NM_SETTING_GSM_NETWORK_TYPE, NM_SETTING_GSM_NETWORK_TYPE_PREFER_UMTS_HSPA,
 	              NULL);
-
-	/* Serial setting */
-	nm_connection_add_setting (connection, nm_setting_serial_new ());
-
-	/* PPP setting */
-	nm_connection_add_setting (connection, nm_setting_ppp_new ());
-
 
 	/* Write out the connection */
 	owner_uid = geteuid ();
