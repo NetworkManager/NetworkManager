@@ -14,6 +14,7 @@ BUILT_SOURCES = \
 	nm-device-bt-bindings.h \
 	nm-settings-connection-bindings.h \
 	nm-device-wimax-bindings.h \
+	nm-device-modem-bindings.h \
 	nm-settings-bindings.h \
 	nm-vpn-connection-bindings.h \
 	nm-vpn-plugin-glue.h \
@@ -73,9 +74,7 @@ libnminclude_HEADERS = \
 	nm-device-bt.h \
 	nm-access-point.h \
 	nm-ip4-config.h \
-	nm-gsm-device.h \
-	nm-cdma-device.h \
-	nm-serial-device.h \
+	nm-device-modem.h \
 	nm-vpn-connection.h \
 	nm-types.h \
 	nm-active-connection.h \
@@ -103,9 +102,7 @@ libnm_glib_la_csources = \
 	nm-device-bt.c \
 	nm-access-point.c \
 	nm-ip4-config.c \
-	nm-gsm-device.c \
-	nm-cdma-device.c \
-	nm-serial-device.c \
+	nm-device-modem.c \
 	nm-vpn-connection.c \
 	nm-types.c \
 	nm-object-cache.c \
@@ -231,6 +228,9 @@ nm-secret-agent-glue.h: $(top_srcdir)/introspection/nm-secret-agent.xml
 
 nm-device-wimax-bindings.h: $(top_srcdir)/introspection/nm-device-wimax.xml
 	dbus-binding-tool --prefix=nm_device_wimax --mode=glib-client --output=$@ $<
+
+nm-device-modem-bindings.h: $(top_srcdir)/introspection/nm-device-modem.xml
+	dbus-binding-tool --prefix=nm_device_modem --mode=glib-client --output=$@ $<
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libnm-glib.pc libnm-glib-vpn.pc

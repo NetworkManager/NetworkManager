@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 - 2010 Red Hat, Inc.
+ * Copyright (C) 2009 - 2011 Red Hat, Inc.
  */
 
 #include <glib.h>
@@ -23,29 +23,38 @@
 #include "nm-device-modem.h"
 #include "nm-device-interface.h"
 #include "nm-modem.h"
+#include "nm-modem-cdma.h"
+#include "nm-modem-gsm.h"
 #include "nm-device-private.h"
 #include "nm-properties-changed-signal.h"
+#include "nm-rfkill.h"
 #include "nm-marshal.h"
 #include "nm-logging.h"
 
 static void device_interface_init (NMDeviceInterface *iface_class);
 
-G_DEFINE_TYPE_EXTENDED (NMDeviceModem, nm_device_modem, NM_TYPE_DEVICE, G_TYPE_FLAG_ABSTRACT,
+G_DEFINE_TYPE_EXTENDED (NMDeviceModem, nm_device_modem, NM_TYPE_DEVICE, 0,
                         G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_INTERFACE, device_interface_init))
 
 #define NM_DEVICE_MODEM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_MODEM, NMDeviceModemPrivate))
 
+#include "nm-device-modem-glue.h"
+
 typedef struct {
 	NMModem *modem;
+	NMDeviceModemCapabilities caps;
+	NMDeviceModemCapabilities current_caps;
 } NMDeviceModemPrivate;
 
 enum {
 	PROP_0,
-	PROP_MODEM
+	PROP_MODEM,
+	PROP_CAPABILITIES,
+	PROP_CURRENT_CAPABILITIES,
 };
 
 enum {
-	PPP_STATS,
+	PROPERTIES_CHANGED,
 	ENABLE_CHANGED,
 	LAST_SIGNAL
 };
@@ -54,15 +63,6 @@ static guint signals[LAST_SIGNAL] = { 0 };
 static void real_set_enabled (NMDeviceInterface *device, gboolean enabled);
 
 /*****************************************************************************/
-
-static void
-ppp_stats (NMModem *modem,
-		   guint32 in_bytes,
-		   guint32 out_bytes,
-		   gpointer user_data)
-{
-	g_signal_emit (G_OBJECT (user_data), signals[PPP_STATS], 0, in_bytes, out_bytes);
-}
 
 static void
 ppp_failed (NMModem *modem, NMDeviceStateReason reason, gpointer user_data)
@@ -324,6 +324,40 @@ real_set_enabled (NMDeviceInterface *device, gboolean enabled)
 
 /*****************************************************************************/
 
+NMDevice *
+nm_device_modem_new (NMModem *modem, const char *driver)
+{
+	NMDeviceModemCapabilities caps = NM_DEVICE_MODEM_CAPABILITY_NONE;
+	const char *type_desc = NULL;
+
+	g_return_val_if_fail (modem != NULL, NULL);
+	g_return_val_if_fail (NM_IS_MODEM (modem), NULL);
+	g_return_val_if_fail (driver != NULL, NULL);
+
+	if (NM_IS_MODEM_CDMA (modem)) {
+		caps = NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO;
+		type_desc = "CDMA/EVDO";
+	} else if (NM_IS_MODEM_GSM (modem)) {
+		caps = NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS;
+		type_desc = "GSM/UMTS";
+	} else {
+		nm_log_warn (LOGD_MB, "unhandled modem type %s", G_OBJECT_TYPE_NAME (modem));
+		return NULL;
+	}
+
+	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_MODEM,
+	                                  NM_DEVICE_INTERFACE_UDI, nm_modem_get_path (modem),
+	                                  NM_DEVICE_INTERFACE_IFACE, nm_modem_get_iface (modem),
+	                                  NM_DEVICE_INTERFACE_DRIVER, driver,
+	                                  NM_DEVICE_INTERFACE_TYPE_DESC, type_desc,
+	                                  NM_DEVICE_INTERFACE_DEVICE_TYPE, NM_DEVICE_TYPE_MODEM,
+	                                  NM_DEVICE_INTERFACE_RFKILL_TYPE, RFKILL_TYPE_WWAN,
+	                                  NM_DEVICE_MODEM_MODEM, modem,
+	                                  NM_DEVICE_MODEM_CAPABILITIES, caps,
+	                                  NM_DEVICE_MODEM_CURRENT_CAPABILITIES, caps,
+	                                  NULL);
+}
+
 static void
 device_interface_init (NMDeviceInterface *iface_class)
 {
@@ -346,7 +380,6 @@ set_modem (NMDeviceModem *self, NMModem *modem)
 
 	priv->modem = g_object_ref (modem);
 
-	g_signal_connect (modem, NM_MODEM_PPP_STATS, G_CALLBACK (ppp_stats), self);
 	g_signal_connect (modem, NM_MODEM_PPP_FAILED, G_CALLBACK (ppp_failed), self);
 	g_signal_connect (modem, NM_MODEM_PREPARE_RESULT, G_CALLBACK (modem_prepare_result), self);
 	g_signal_connect (modem, NM_MODEM_IP4_CONFIG_RESULT, G_CALLBACK (modem_ip4_config_result), self);
@@ -359,10 +392,18 @@ static void
 set_property (GObject *object, guint prop_id,
 			  const GValue *value, GParamSpec *pspec)
 {
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (object);
+
 	switch (prop_id) {
 	case PROP_MODEM:
 		/* construct-only */
 		set_modem (NM_DEVICE_MODEM (object), g_value_get_object (value));
+		break;
+	case PROP_CAPABILITIES:
+		priv->caps = g_value_get_uint (value);
+		break;
+	case PROP_CURRENT_CAPABILITIES:
+		priv->current_caps = g_value_get_uint (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -379,6 +420,12 @@ get_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_MODEM:
 		g_value_set_object (value, priv->modem);
+		break;
+	case PROP_CAPABILITIES:
+		g_value_set_uint (value, priv->caps);
+		break;
+	case PROP_CURRENT_CAPABILITIES:
+		g_value_set_uint (value, priv->current_caps);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -431,27 +478,34 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 		                      NM_TYPE_MODEM,
 		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
 
+	g_object_class_install_property (object_class, PROP_CAPABILITIES,
+		g_param_spec_uint (NM_DEVICE_MODEM_CAPABILITIES,
+		                   "Modem Capabilities",
+		                   "Modem Capabilities",
+		                   0, G_MAXUINT32, NM_DEVICE_MODEM_CAPABILITY_NONE,
+		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property (object_class, PROP_CURRENT_CAPABILITIES,
+		g_param_spec_uint (NM_DEVICE_MODEM_CURRENT_CAPABILITIES,
+		                   "Current modem Capabilities",
+		                   "Current modem Capabilities",
+		                   0, G_MAXUINT32, NM_DEVICE_MODEM_CAPABILITY_NONE,
+		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
 	/* Signals */
-	signals[PPP_STATS] =
-		g_signal_new ("ppp-stats",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMDeviceModemClass, ppp_stats),
-					  NULL, NULL,
-					  _nm_marshal_VOID__UINT_UINT,
-					  G_TYPE_NONE, 2,
-					  G_TYPE_UINT, G_TYPE_UINT);
+	signals[PROPERTIES_CHANGED] = 
+		nm_properties_changed_signal_new (object_class,
+		                                  G_STRUCT_OFFSET (NMDeviceModemClass, properties_changed));
 
 	signals[ENABLE_CHANGED] =
 		g_signal_new (NM_DEVICE_MODEM_ENABLE_CHANGED,
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
-					  0,
-					  NULL, NULL,
+					  0, NULL, NULL,
 					  g_cclosure_marshal_VOID__VOID,
 					  G_TYPE_NONE, 0);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (mclass),
-	                                 nm_modem_get_serial_dbus_info ());
+	                                 &dbus_glib_nm_device_modem_object_info);
 }
 

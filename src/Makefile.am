@@ -126,10 +126,6 @@ NetworkManager_SOURCES = \
 		nm-device-bt.h \
 		nm-device-modem.h \
 		nm-device-modem.c \
-		nm-device-cdma.c \
-		nm-device-cdma.h \
-		nm-device-gsm.c \
-		nm-device-gsm.h \
 		nm-wifi-ap.c \
 		nm-wifi-ap.h \
 		nm-wifi-ap-utils.c \
@@ -213,11 +209,8 @@ nm-dhcp4-config-glue.h: $(top_srcdir)/introspection/nm-dhcp4-config.xml
 nm-dhcp6-config-glue.h: $(top_srcdir)/introspection/nm-dhcp6-config.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_dhcp6_config --mode=glib-server --output=$@ $<
 
-nm-device-cdma-glue.h: $(top_srcdir)/introspection/nm-device-cdma.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_cdma --mode=glib-server --output=$@ $<
-
-nm-device-gsm-glue.h: $(top_srcdir)/introspection/nm-device-gsm.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_gsm --mode=glib-server --output=$@ $<
+nm-device-modem-glue.h: $(top_srcdir)/introspection/nm-device-modem.xml
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_modem --mode=glib-server --output=$@ $<
 
 BUILT_SOURCES = \
 	nm-access-point-glue.h \
@@ -227,8 +220,7 @@ BUILT_SOURCES = \
 	nm-device-wifi-glue.h \
 	nm-device-olpc-mesh-glue.h \
 	nm-device-bt-glue.h \
-	nm-device-cdma-glue.h \
-	nm-device-gsm-glue.h \
+	nm-device-modem-glue.h \
 	nm-ip4-config-glue.h \
 	nm-ip6-config-glue.h \
 	nm-active-connection-glue.h \

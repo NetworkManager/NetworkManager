@@ -33,8 +33,7 @@
 #include <nm-device.h>
 #include <nm-device-ethernet.h>
 #include <nm-device-wifi.h>
-#include <nm-gsm-device.h>
-#include <nm-cdma-device.h>
+#include <nm-device-modem.h>
 #include <nm-device-bt.h>
 //#include <nm-device-olpc-mesh.h>
 #if WITH_WIMAX
@@ -312,17 +311,22 @@ device_state_to_string (NMDeviceState state)
  * connection type names.
  */
 static const char *
-device_type_to_string (NMDeviceType device_type)
+device_type_to_string (NMDevice *device)
 {
-	switch (device_type) {
+	NMDeviceModemCapabilities caps = NM_DEVICE_MODEM_CAPABILITY_NONE;
+
+	switch (nm_device_get_device_type (device)) {
 	case NM_DEVICE_TYPE_ETHERNET:
 		return NM_SETTING_WIRED_SETTING_NAME;
 	case NM_DEVICE_TYPE_WIFI:
 		return NM_SETTING_WIRELESS_SETTING_NAME;
-	case NM_DEVICE_TYPE_GSM:
-		return NM_SETTING_GSM_SETTING_NAME;
-	case NM_DEVICE_TYPE_CDMA:
-		return NM_SETTING_CDMA_SETTING_NAME;
+	case NM_DEVICE_TYPE_MODEM:
+		caps = nm_device_modem_get_current_capabilities (NM_DEVICE_MODEM (device));
+		if (caps & NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS)
+			return NM_SETTING_GSM_SETTING_NAME;
+		else if (caps & NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO)
+			return NM_SETTING_CDMA_SETTING_NAME;
+		return _("Unknown");
 	case NM_DEVICE_TYPE_BT:
 		return NM_SETTING_BLUETOOTH_SETTING_NAME;
 //	case NM_DEVICE_TYPE_OLPC_MESH:
@@ -647,7 +651,7 @@ show_device_info (gpointer data, gpointer user_data)
 
 			nmc->allowed_fields[0].value = nmc_fields_dev_list_sections[0].name;  /* "GENERAL"*/
 			nmc->allowed_fields[1].value = nm_device_get_iface (device);
-			nmc->allowed_fields[2].value = device_type_to_string (nm_device_get_device_type (device));
+			nmc->allowed_fields[2].value = device_type_to_string (device);
 			nmc->allowed_fields[3].value = nm_device_get_driver (device) ? nm_device_get_driver (device) : _("(unknown)");
 			nmc->allowed_fields[4].value = hwaddr ? hwaddr : _("unknown)");
 			nmc->allowed_fields[5].value = device_state_to_string (state);
@@ -956,7 +960,7 @@ static void
 show_device_status (NMDevice *device, NmCli *nmc)
 {
 	nmc->allowed_fields[0].value = nm_device_get_iface (device);
-	nmc->allowed_fields[1].value = device_type_to_string (nm_device_get_device_type (device));
+	nmc->allowed_fields[1].value = device_type_to_string (device);
 	nmc->allowed_fields[2].value = device_state_to_string (nm_device_get_state (device));
 	nmc->allowed_fields[3].value = nm_object_get_path (NM_OBJECT (device));
 

@@ -42,8 +42,7 @@
 #if WITH_WIMAX
 #include "nm-device-wimax.h"
 #endif
-#include "nm-device-cdma.h"
-#include "nm-device-gsm.h"
+#include "nm-device-modem.h"
 #include "nm-system.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-setting-bluetooth.h"
@@ -421,14 +420,8 @@ modem_added (NMModemManager *modem_manager,
 		return;
 	}
 
-	/* Otherwise make a new top-level NMDevice for it */
-	if (NM_IS_MODEM_GSM (modem))
-		device = nm_device_gsm_new (NM_MODEM_GSM (modem), driver);
-	else if (NM_IS_MODEM_CDMA (modem))
-		device = nm_device_cdma_new (NM_MODEM_CDMA (modem), driver);
-	else
-		nm_log_info (LOGD_MB, "unhandled modem '%s'", ip_iface);
-
+	/* Make the new modem device */
+	device = nm_device_modem_new (modem, driver);
 	if (device)
 		add_device (self, device);
 }

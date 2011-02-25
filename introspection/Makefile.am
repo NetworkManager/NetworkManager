@@ -8,9 +8,7 @@ EXTRA_DIST = \
 	nm-device-wifi.xml \
 	nm-device-olpc-mesh.xml \
 	nm-device-ethernet.xml \
-	nm-device-cdma.xml \
-	nm-device-gsm.xml \
-	nm-device-serial.xml \
+	nm-device-modem.xml \
 	nm-device-wimax.xml \
 	nm-device.xml \
 	nm-ip4-config.xml \

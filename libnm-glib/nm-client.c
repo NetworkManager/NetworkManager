@@ -28,8 +28,6 @@
 #include "nm-client.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
-#include "nm-gsm-device.h"
-#include "nm-cdma-device.h"
 #include "nm-device-private.h"
 #include "nm-marshal.h"
 #include "nm-types-private.h"

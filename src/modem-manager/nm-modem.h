@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 - 2010 Red Hat, Inc.
+ * Copyright (C) 2009 - 2011 Red Hat, Inc.
  * Copyright (C) 2009 Novell, Inc.
  */
 
@@ -151,8 +151,6 @@ void nm_modem_device_state_changed (NMModem *modem,
 gboolean nm_modem_hw_is_up (NMModem *modem, NMDevice *device);
 
 gboolean nm_modem_hw_bring_up (NMModem *modem, NMDevice *device, gboolean *no_firmware);
-
-const DBusGObjectInfo *nm_modem_get_serial_dbus_info (void);
 
 gboolean      nm_modem_get_mm_enabled (NMModem *self);
 

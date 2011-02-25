@@ -43,6 +43,7 @@ IGNORE_HFILES= \
 	nm-device-bt-bindings.h \
 	nm-device-ethernet-bindings.h \
 	nm-device-wifi-bindings.h \
+	nm-device-modem-bindings.h \
 	nm-dhcp4-config-bindings.h \
 	nm-dhcp6-config-bindings.h \
 	nm-settings-connection-glue.h \

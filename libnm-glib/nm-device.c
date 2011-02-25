@@ -29,8 +29,7 @@
 #include "NetworkManager.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
-#include "nm-gsm-device.h"
-#include "nm-cdma-device.h"
+#include "nm-device-modem.h"
 #include "nm-device-bt.h"
 #include "nm-device-wimax.h"
 #include "nm-device.h"
@@ -748,11 +747,8 @@ nm_device_new (DBusGConnection *connection, const char *path)
 	case NM_DEVICE_TYPE_WIFI:
 		dtype = NM_TYPE_DEVICE_WIFI;
 		break;
-	case NM_DEVICE_TYPE_GSM:
-		dtype = NM_TYPE_GSM_DEVICE;
-		break;
-	case NM_DEVICE_TYPE_CDMA:
-		dtype = NM_TYPE_CDMA_DEVICE;
+	case NM_DEVICE_TYPE_MODEM:
+		dtype = NM_TYPE_DEVICE_MODEM;
 		break;
 	case NM_DEVICE_TYPE_BT:
 		dtype = NM_TYPE_DEVICE_BT;

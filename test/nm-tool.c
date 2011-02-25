@@ -37,8 +37,7 @@
 #include <nm-device.h>
 #include <nm-device-ethernet.h>
 #include <nm-device-wifi.h>
-#include <nm-gsm-device.h>
-#include <nm-cdma-device.h>
+#include <nm-device-modem.h>
 #include <nm-device-bt.h>
 #if WITH_WIMAX
 #include <nm-device-wimax.h>
@@ -372,11 +371,17 @@ detail_device (gpointer data, gpointer user_data)
 		print_string ("Type", "Wired");
 	else if (NM_IS_DEVICE_WIFI (device))
 		print_string ("Type", "802.11 WiFi");
-	else if (NM_IS_GSM_DEVICE (device))
-		print_string ("Type", "Mobile Broadband (GSM)");
-	else if (NM_IS_CDMA_DEVICE (device))
-		print_string ("Type", "Mobile Broadband (CDMA)");
-	else if (NM_IS_DEVICE_BT (device))
+	else if (NM_IS_DEVICE_MODEM (device)) {
+		NMDeviceModemCapabilities modem_caps;
+
+		modem_caps = nm_device_modem_get_current_capabilities (NM_DEVICE_MODEM (device));
+		if (modem_caps & NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS)
+			print_string ("Type", "Mobile Broadband (GSM)");
+		else if (modem_caps & NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO)
+			print_string ("Type", "Mobile Broadband (CDMA)");
+		else
+			print_string ("Type", "Mobile Broadband (unknown)");
+	} else if (NM_IS_DEVICE_BT (device))
 		print_string ("Type", "Bluetooth");
 #if WITH_WIMAX
 	else if (NM_IS_DEVICE_WIMAX (device))

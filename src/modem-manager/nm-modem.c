@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 - 2010 Red Hat, Inc.
+ * Copyright (C) 2009 - 2011 Red Hat, Inc.
  * Copyright (C) 2009 Novell, Inc.
  */
 
@@ -32,8 +32,6 @@
 #include "nm-device-private.h"
 #include "nm-device-interface.h"
 #include "nm-dbus-glib-types.h"
-
-#include "nm-serial-device-glue.h"
 
 G_DEFINE_TYPE (NMModem, nm_modem, G_TYPE_OBJECT)
 
@@ -1182,11 +1180,5 @@ nm_modem_class_init (NMModemClass *klass)
 					  NULL, NULL,
 					  g_cclosure_marshal_VOID__POINTER,
 					  G_TYPE_NONE, 1, G_TYPE_POINTER);
-}
-
-const DBusGObjectInfo *
-nm_modem_get_serial_dbus_info (void)
-{
-	return &dbus_glib_nm_serial_device_object_info;
 }
 

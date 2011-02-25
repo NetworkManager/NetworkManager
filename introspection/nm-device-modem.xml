@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+  <interface name="org.freedesktop.NetworkManager.Device.Modem">
+
+    <signal name="PropertiesChanged">
+        <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
+            <tp:docstring>
+                A dictionary mapping property names to variant boxed values
+            </tp:docstring>
+        </arg>
+    </signal>
+
+    <property name="ModemCapabilities" type="u" access="read" tp:type="NM_DEVICE_MODEM_CAPABILITIES">
+      <tp:docstring>
+        The generic family of access technologies the modem supports.  Not all
+        capabilities are available at the same time however; some modems require
+        a firmware reload or other reinitialization to switch between eg CDMA/EVDO
+        and GSM/UMTS.
+      </tp:docstring>
+    </property>
+
+    <property name="CurrentCapabilities" type="u" access="read" tp:type="NM_DEVICE_MODEM_CAPABILITIES">
+      <tp:docstring>
+        The generic family of access technologies the modem currently supports
+        without a firmware reload or reinitialization.
+      </tp:docstring>
+    </property>
+
+    <tp:flags name="NM_DEVICE_MODEM_CAPABILITIES" value-prefix="NM_DEVICE_MODEM_CAPABILITY" type="u">
+      <tp:docstring>
+        Flags describing one or more of the general access technology families
+        that a modem device supports.
+      </tp:docstring>
+      <tp:flag suffix="NONE" value="0x0">
+        <tp:docstring>Modem has no capabilties.</tp:docstring>
+      </tp:flag>
+      <tp:flag suffix="POTS" value="0x1">
+        <tp:docstring>
+          Modem supports the analog wired telephone network (ie 56k dialup) and
+          does not have wireless/cellular capabilities.
+        </tp:docstring>
+      </tp:flag>
+      <tp:flag suffix="CDMA_EVDO" value="0x2">
+        <tp:docstring>
+          Modem supports at least one of CDMA 1xRTT, EVDO revision 0, EVDO
+          revision A, or EVDO revision B.
+        </tp:docstring>
+      </tp:flag>
+      <tp:flag suffix="GSM_UMTS" value="0x4">
+        <tp:docstring>
+          Modem supports at least one of GSM, GPRS, EDGE, UMTS, HSDPA, HSUPA, or
+          HSPA+ packet switched data capability.
+        </tp:docstring>
+      </tp:flag>
+      <tp:flag suffix="LTE" value="0x8">
+        <tp:docstring>
+          Modem has at LTE data capability.
+        </tp:docstring>
+      </tp:flag>
+    </tp:flags>
+
+  </interface>
+</node>

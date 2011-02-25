@@ -36,9 +36,7 @@
 #define NM_DBUS_INTERFACE_DEVICE_BLUETOOTH  NM_DBUS_INTERFACE_DEVICE ".Bluetooth"
 #define NM_DBUS_PATH_ACCESS_POINT           NM_DBUS_PATH "/AccessPoint"
 #define NM_DBUS_INTERFACE_ACCESS_POINT      NM_DBUS_INTERFACE ".AccessPoint"
-#define NM_DBUS_INTERFACE_SERIAL_DEVICE     NM_DBUS_INTERFACE_DEVICE ".Serial"
-#define NM_DBUS_INTERFACE_GSM_DEVICE        NM_DBUS_INTERFACE_DEVICE ".Gsm"
-#define NM_DBUS_INTERFACE_CDMA_DEVICE       NM_DBUS_INTERFACE_DEVICE ".Cdma"
+#define NM_DBUS_INTERFACE_DEVICE_MODEM      NM_DBUS_INTERFACE_DEVICE ".Modem"
 #define NM_DBUS_INTERFACE_DEVICE_WIMAX      NM_DBUS_INTERFACE_DEVICE ".WiMax"
 #define NM_DBUS_INTERFACE_WIMAX_NSP         NM_DBUS_INTERFACE ".WiMax.Nsp"
 #define NM_DBUS_PATH_WIMAX_NSP              NM_DBUS_PATH "/Nsp"
@@ -94,11 +92,12 @@ typedef enum {
 	NM_DEVICE_TYPE_UNKNOWN   = 0,
 	NM_DEVICE_TYPE_ETHERNET  = 1,
 	NM_DEVICE_TYPE_WIFI      = 2,
-	NM_DEVICE_TYPE_GSM       = 3,
-	NM_DEVICE_TYPE_CDMA      = 4,
+	NM_DEVICE_TYPE_UNUSED1   = 3,
+	NM_DEVICE_TYPE_UNUSED2   = 4,
 	NM_DEVICE_TYPE_BT        = 5,  /* Bluetooth */
 	NM_DEVICE_TYPE_OLPC_MESH = 6,
-	NM_DEVICE_TYPE_WIMAX     = 7
+	NM_DEVICE_TYPE_WIMAX     = 7,
+	NM_DEVICE_TYPE_MODEM     = 8,
 } NMDeviceType;
 
 /* General device capability flags */
@@ -172,6 +171,30 @@ typedef enum {
 	NM_BT_CAPABILITY_DUN  = 0x00000001,
 	NM_BT_CAPABILITY_NAP  = 0x00000002,
 } NMBluetoothCapabilities;
+
+/**
+ * NMDeviceModemCapabilities:
+ * @NM_DEVICE_MODEM_CAPABILITY_NONE: modem has no usable capabilities
+ * @NM_DEVICE_MODEM_CAPABILITY_POTS: modem uses the analog wired telephone
+ * network and is not a wireless/cellular device
+ * @NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO: modem supports at least one of CDMA
+ * 1xRTT, EVDO revision 0, EVDO revision A, or EVDO revision B
+ * @NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS: modem supports at least one of GSM,
+ * GPRS, EDGE, UMTS, HSDPA, HSUPA, or HSPA+ packet switched data capability
+ * @NM_DEVICE_MODEM_CAPABILITY_LTE: modem has LTE data capability
+ *
+ * #NMDeviceModemCapabilities values indicate the generic radio access
+ * technology families a modem device supports.  For more information on the
+ * specific access technologies the device supports use the ModemManager D-Bus
+ * API.
+ */
+typedef enum {
+	NM_DEVICE_MODEM_CAPABILITY_NONE      = 0x00000000,
+	NM_DEVICE_MODEM_CAPABILITY_POTS      = 0x00000001,
+	NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO = 0x00000002,
+	NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS  = 0x00000004,
+	NM_DEVICE_MODEM_CAPABILITY_LTE       = 0x00000008,
+} NMDeviceModemCapabilities;
 
 
 /**
