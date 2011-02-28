@@ -1714,15 +1714,13 @@ make_wep_setting (shvarFile *ifcfg,
 	char *value;
 	shvarFile *keys_ifcfg = NULL;
 	int default_key_idx = 0;
-	gboolean has_default_key = FALSE;
+	gboolean has_default_key = FALSE, success;
 
 	s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
 	g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none", NULL);
 
 	value = svGetValue (ifcfg, "DEFAULTKEY", FALSE);
 	if (value) {
-		gboolean success;
-
 		success = get_int (value, &default_key_idx);
 		if (success && (default_key_idx >= 1) && (default_key_idx <= 4)) {
 			has_default_key = TRUE;
