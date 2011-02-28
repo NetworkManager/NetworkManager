@@ -1,25 +1,40 @@
 #include <nm-client.h>
+#include <nm-object.h>
+#include <nm-device.h>
 #include <nm-device-ethernet.h>
 #include <nm-device-wifi.h>
 #include <nm-cdma-device.h>
 #include <nm-gsm-device.h>
 #include <nm-serial-device.h>
+#include <nm-device-bt.h>
 #include <nm-access-point.h>
 #include <nm-ip4-config.h>
 #include <nm-ip6-config.h>
 #include <nm-active-connection.h>
 #include <nm-dhcp4-config.h>
+#include <nm-dhcp6-config.h>
+#include <nm-remote-settings.h>
+#include <nm-exported-connection.h>
+#include <nm-remote-connection.h>
+#include <nm-vpn-connection.h>
 
-nm_object_get_type
 nm_client_get_type
+nm_object_get_type
 nm_device_get_type
 nm_device_ethernet_get_type
 nm_device_wifi_get_type
-nm_gsm_device_get_type
 nm_cdma_device_get_type
+nm_gsm_device_get_type
 nm_serial_device_get_type
+nm_device_bt_get_type
 nm_access_point_get_type
 nm_ip4_config_get_type
+nm_ip6_config_get_type
 nm_active_connection_get_type
 nm_dhcp4_config_get_type
-nm_ip6_config_get_type
+nm_dhcp6_config_get_type
+nm_remote_settings_get_type
+nm_exported_connection_get_type
+nm_remote_connection_get_type
+nm_vpn_connection_get_type
+
