@@ -64,35 +64,6 @@
 #define PLUGIN_WARN(pname, fmt, args...) \
 	{ g_warning ("   " pname ": " fmt, ##args); }
 
-static gboolean eap_simple_reader (const char *eap_method,
-                                   shvarFile *ifcfg,
-                                   shvarFile *keys,
-                                   NMSetting8021x *s_8021x,
-                                   gboolean phase2,
-                                   GError **error);
-
-static gboolean eap_tls_reader (const char *eap_method,
-                                shvarFile *ifcfg,
-                                shvarFile *keys,
-                                NMSetting8021x *s_8021x,
-                                gboolean phase2,
-                                GError **error);
-
-static gboolean eap_peap_reader (const char *eap_method,
-                                 shvarFile *ifcfg,
-                                 shvarFile *keys,
-                                 NMSetting8021x *s_8021x,
-                                 gboolean phase2,
-                                 GError **error);
-
-static gboolean eap_ttls_reader (const char *eap_method,
-                                 shvarFile *ifcfg,
-                                 shvarFile *keys,
-                                 NMSetting8021x *s_8021x,
-                                 gboolean phase2,
-                                 GError **error);
-
-
 static gboolean
 get_int (const char *str, int *value)
 {
@@ -1977,30 +1948,6 @@ out:
 	return hashed;
 }
 
-typedef struct {
-	const char *method;
-	gboolean (*reader)(const char *eap_method,
-	                   shvarFile *ifcfg,
-	                   shvarFile *keys,
-	                   NMSetting8021x *s_8021x,
-	                   gboolean phase2,
-	                   GError **error);
-	gboolean wifi_phase2_only;
-} EAPReader;
-
-static EAPReader eap_readers[] = {
-	{ "md5", eap_simple_reader, TRUE },
-	{ "pap", eap_simple_reader, TRUE },
-	{ "chap", eap_simple_reader, TRUE },
-	{ "mschap", eap_simple_reader, TRUE },
-	{ "mschapv2", eap_simple_reader, TRUE },
-	{ "leap", eap_simple_reader, TRUE },
-	{ "tls", eap_tls_reader, FALSE },
-	{ "peap", eap_peap_reader, FALSE },
-	{ "ttls", eap_ttls_reader, FALSE },
-	{ NULL, NULL }
-};
-
 static gboolean
 eap_simple_reader (const char *eap_method,
                    shvarFile *ifcfg,
@@ -2403,6 +2350,30 @@ done:
 	g_free (anon_ident);
 	return success;
 }
+
+typedef struct {
+	const char *method;
+	gboolean (*reader)(const char *eap_method,
+	                   shvarFile *ifcfg,
+	                   shvarFile *keys,
+	                   NMSetting8021x *s_8021x,
+	                   gboolean phase2,
+	                   GError **error);
+	gboolean wifi_phase2_only;
+} EAPReader;
+
+static EAPReader eap_readers[] = {
+	{ "md5", eap_simple_reader, TRUE },
+	{ "pap", eap_simple_reader, TRUE },
+	{ "chap", eap_simple_reader, TRUE },
+	{ "mschap", eap_simple_reader, TRUE },
+	{ "mschapv2", eap_simple_reader, TRUE },
+	{ "leap", eap_simple_reader, TRUE },
+	{ "tls", eap_tls_reader, FALSE },
+	{ "peap", eap_peap_reader, FALSE },
+	{ "ttls", eap_ttls_reader, FALSE },
+	{ NULL, NULL }
+};
 
 static NMSetting8021x *
 fill_8021x (shvarFile *ifcfg,
