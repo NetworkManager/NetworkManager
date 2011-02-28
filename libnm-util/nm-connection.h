@@ -141,7 +141,7 @@ void          nm_connection_clear_secrets (NMConnection *connection);
 
 gboolean      nm_connection_update_secrets (NMConnection *connection,
                                             const char *setting_name,
-                                            GHashTable *secrets,
+                                            GHashTable *setting_secrets,
                                             GError **error);
 
 void             nm_connection_set_scope (NMConnection *connection,
