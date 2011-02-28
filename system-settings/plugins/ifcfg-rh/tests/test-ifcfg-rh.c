@@ -5634,7 +5634,6 @@ test_write_wired_static (void)
 	GByteArray *mac;
 	guint32 mtu = 1492;
 	char *uuid;
-	guint64 timestamp = 0x12344433L;
 	const guint32 ip1 = htonl (0x01010103);
 	const guint32 ip2 = htonl (0x01010105);
 	const guint32 gw = htonl (0x01010101);
@@ -5689,7 +5688,6 @@ test_write_wired_static (void)
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-	              NM_SETTING_CONNECTION_TIMESTAMP, timestamp,
 	              NULL);
 	g_free (uuid);
 
@@ -5984,7 +5982,6 @@ test_write_wired_static_ip6_only (void)
 	static unsigned char tmpmac[] = { 0x31, 0x33, 0x33, 0x37, 0xbe, 0xcd };
 	GByteArray *mac;
 	char *uuid;
-	guint64 timestamp = 0x12344433L;
 	struct in6_addr ip6;
 	struct in6_addr dns6;
 	NMIP6Address *addr6;
@@ -6017,7 +6014,6 @@ test_write_wired_static_ip6_only (void)
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-	              NM_SETTING_CONNECTION_TIMESTAMP, timestamp,
 	              NULL);
 	g_free (uuid);
 
@@ -6274,7 +6270,6 @@ test_write_wired_static_routes (void)
 	GByteArray *mac;
 	guint32 mtu = 1492;
 	char *uuid;
-	guint64 timestamp = 0x12344433L;
 	const guint32 ip1 = htonl (0x01010103);
 	const guint32 ip2 = htonl (0x01010105);
 	const guint32 gw = htonl (0x01010101);
@@ -6315,7 +6310,6 @@ test_write_wired_static_routes (void)
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-	              NM_SETTING_CONNECTION_TIMESTAMP, timestamp,
 	              NULL);
 	g_free (uuid);
 
