@@ -1710,14 +1710,14 @@ make_wep_setting (shvarFile *ifcfg,
                   const char *file,
                   GError **error)
 {
-	NMSettingWirelessSecurity *s_wireless_sec;
+	NMSettingWirelessSecurity *s_wsec;
 	char *value;
 	shvarFile *keys_ifcfg = NULL;
 	int default_key_idx = 0;
 	gboolean has_default_key = FALSE;
 
-	s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
-	g_object_set (s_wireless_sec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none", NULL);
+	s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
+	g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none", NULL);
 
 	value = svGetValue (ifcfg, "DEFAULTKEY", FALSE);
 	if (value) {
@@ -1727,7 +1727,7 @@ make_wep_setting (shvarFile *ifcfg,
 		if (success && (default_key_idx >= 1) && (default_key_idx <= 4)) {
 			has_default_key = TRUE;
 			default_key_idx--;  /* convert to [0...3] */
-			g_object_set (s_wireless_sec, NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, default_key_idx, NULL);
+			g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, default_key_idx, NULL);
 		} else {
 			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 			             "Invalid default WEP key '%s'", value);
@@ -1738,13 +1738,13 @@ make_wep_setting (shvarFile *ifcfg,
 	}
 
 	/* Read keys in the ifcfg file */
-	if (!read_wep_keys (ifcfg, default_key_idx, s_wireless_sec, error))
+	if (!read_wep_keys (ifcfg, default_key_idx, s_wsec, error))
 		goto error;
 
 	/* Try to get keys from the "shadow" key file */
 	keys_ifcfg = utils_get_keys_ifcfg (file, FALSE);
 	if (keys_ifcfg) {
-		if (!read_wep_keys (keys_ifcfg, default_key_idx, s_wireless_sec, error)) {
+		if (!read_wep_keys (keys_ifcfg, default_key_idx, s_wsec, error)) {
 			svCloseFile (keys_ifcfg);
 			goto error;
 		}
@@ -1760,9 +1760,9 @@ make_wep_setting (shvarFile *ifcfg,
 		g_free (value);
 
 		if (!strcmp (lcase, "open")) {
-			g_object_set (s_wireless_sec, NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", NULL);
+			g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", NULL);
 		} else if (!strcmp (lcase, "restricted")) {
-			g_object_set (s_wireless_sec, NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "shared", NULL);
+			g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "shared", NULL);
 		} else {
 			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 			             "Invalid WEP authentication algorithm '%s'",
@@ -1773,14 +1773,14 @@ make_wep_setting (shvarFile *ifcfg,
 		g_free (lcase);
 	}
 
-	if (   !nm_setting_wireless_security_get_wep_key (s_wireless_sec, 0)
-	    && !nm_setting_wireless_security_get_wep_key (s_wireless_sec, 1)
-	    && !nm_setting_wireless_security_get_wep_key (s_wireless_sec, 2)
-	    && !nm_setting_wireless_security_get_wep_key (s_wireless_sec, 3)
+	if (   !nm_setting_wireless_security_get_wep_key (s_wsec, 0)
+	    && !nm_setting_wireless_security_get_wep_key (s_wsec, 1)
+	    && !nm_setting_wireless_security_get_wep_key (s_wsec, 2)
+	    && !nm_setting_wireless_security_get_wep_key (s_wsec, 3)
 	    && (has_default_key == FALSE)) {
 		const char *auth_alg;
 
-		auth_alg = nm_setting_wireless_security_get_auth_alg (s_wireless_sec);
+		auth_alg = nm_setting_wireless_security_get_auth_alg (s_wsec);
 		if (auth_alg && !strcmp (auth_alg, "shared")) {
 			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 			             "WEP Shared Key authentication is invalid for "
@@ -1789,15 +1789,15 @@ make_wep_setting (shvarFile *ifcfg,
 		}
 
 		/* Unencrypted */
-		g_object_unref (s_wireless_sec);
-		s_wireless_sec = NULL;
+		g_object_unref (s_wsec);
+		s_wsec = NULL;
 	}
 
-	return (NMSetting *) s_wireless_sec;
+	return (NMSetting *) s_wsec;
 
 error:
-	if (s_wireless_sec)
-		g_object_unref (s_wireless_sec);
+	if (s_wsec)
+		g_object_unref (s_wsec);
 	return NULL;
 }
 
