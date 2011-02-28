@@ -2025,6 +2025,10 @@ eap_tls_reader (const char *eap_method,
 	char *privkey_password = NULL;
 	gboolean success = FALSE;
 	NMSetting8021xCKFormat privkey_format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
+	const char *ca_cert_key = phase2 ? "IEEE_8021X_INNER_CA_CERT" : "IEEE_8021X_CA_CERT";
+	const char *pk_pw_key = phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD": "IEEE_8021X_PRIVATE_KEY_PASSWORD";
+	const char *pk_key = phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY" : "IEEE_8021X_PRIVATE_KEY";
+	const char *cli_cert_key = phase2 ? "IEEE_8021X_INNER_CLIENT_CERT" : "IEEE_8021X_CLIENT_CERT";
 
 	value = svGetValue (ifcfg, "IEEE_8021X_IDENTITY", FALSE);
 	if (!value) {
@@ -2036,9 +2040,7 @@ eap_tls_reader (const char *eap_method,
 	g_object_set (s_8021x, NM_SETTING_802_1X_IDENTITY, value, NULL);
 	g_free (value);
 
-	ca_cert = svGetValue (ifcfg,
-	                      phase2 ? "IEEE_8021X_INNER_CA_CERT" : "IEEE_8021X_CA_CERT",
-	                      FALSE);
+	ca_cert = svGetValue (ifcfg, ca_cert_key, FALSE);
 	if (ca_cert) {
 		real_path = get_cert_file (ifcfg->fileName, ca_cert);
 		if (phase2) {
@@ -2059,37 +2061,31 @@ eap_tls_reader (const char *eap_method,
 	} else {
 		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: missing %s for EAP"
 		             " method '%s'; this is insecure!",
-	                     phase2 ? "IEEE_8021X_INNER_CA_CERT" : "IEEE_8021X_CA_CERT",
+		             ca_cert_key,
 		             eap_method);
 	}
 
 	/* Private key password */
-	privkey_password = svGetValue (ifcfg,
-	                               phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD": "IEEE_8021X_PRIVATE_KEY_PASSWORD",
-	                               FALSE);
+	privkey_password = svGetValue (ifcfg, pk_pw_key, FALSE);
 	if (!privkey_password && keys) {
 		/* Try the lookaside keys file */
-		privkey_password = svGetValue (keys,
-		                               phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD": "IEEE_8021X_PRIVATE_KEY_PASSWORD",
-		                               FALSE);
+		privkey_password = svGetValue (keys, pk_pw_key, FALSE);
 	}
 
 	if (!privkey_password) {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 		             "Missing %s for EAP method '%s'.",
-		             phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD" : "IEEE_8021X_PRIVATE_KEY_PASSWORD",
+		             pk_pw_key,
 		             eap_method);
 		goto done;
 	}
 
 	/* The private key itself */
-	privkey = svGetValue (ifcfg,
-	                      phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY" : "IEEE_8021X_PRIVATE_KEY",
-	                      FALSE);
+	privkey = svGetValue (ifcfg, pk_key, FALSE);
 	if (!privkey) {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 		             "Missing %s for EAP method '%s'.",
-	                      phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY" : "IEEE_8021X_PRIVATE_KEY",
+		             pk_key,
 		             eap_method);
 		goto done;
 	}
@@ -2121,13 +2117,11 @@ eap_tls_reader (const char *eap_method,
 	 */
 	if (   privkey_format == NM_SETTING_802_1X_CK_FORMAT_RAW_KEY
 	    || privkey_format == NM_SETTING_802_1X_CK_FORMAT_X509) {
-		client_cert = svGetValue (ifcfg,
-		                          phase2 ? "IEEE_8021X_INNER_CLIENT_CERT" : "IEEE_8021X_CLIENT_CERT",
-		                          FALSE);
+		client_cert = svGetValue (ifcfg, cli_cert_key, FALSE);
 		if (!client_cert) {
 			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 			             "Missing %s for EAP method '%s'.",
-			             phase2 ? "IEEE_8021X_INNER_CLIENT_CERT" : "IEEE_8021X_CLIENT_CERT",
+			             cli_cert_key,
 			             eap_method);
 			goto done;
 		}
