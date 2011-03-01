@@ -27,9 +27,8 @@ s_con = dbus.Dictionary({
     'uuid': '7371bb78-c1f7-42a3-a9db-5b9566e8ca07',
     'id': 'My Wifi'})
 
-ssid = dbus.Array([dbus.Byte('h'), dbus.Byte('o'), dbus.Byte('m'), dbus.Byte('e')], signature=dbus.Signature('y'))
 s_wifi = dbus.Dictionary({
-    'ssid': ssid,
+    'ssid': dbus.ByteArray("homewifi"),
     'security': '802-11-wireless-security'})
 
 s_wsec = dbus.Dictionary({'key-mgmt': 'wpa-eap'})
