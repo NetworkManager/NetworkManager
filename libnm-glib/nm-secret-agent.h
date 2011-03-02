@@ -40,11 +40,26 @@ typedef enum {
 	NM_SECRET_AGENT_ERROR_NO_SECRETS,
 } NMSecretAgentError;
 
-enum {
+/**
+ * NMSecretAgentGetSecretsFlags:
+ * @NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE: no special behavior; by default no
+ * user interaction is allowed and requests for secrets are fulfilled from
+ * persistent storage, or if no secrets are available an error is returned.
+ * @NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION: allows the request to
+ * interact with the user, possibly prompting via UI for secrets if any are
+ * required, or if none are found in persistent storage.
+ * @NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW: explicitly prompt for new
+ * secrets from the user.  This flag signals that NetworkManager thinks any
+ * existing secrets are invalid or wrong.  This flag implies that interaction
+ * is allowed.
+ *
+ * #NMSecretAgentGetSecretsFlags values modify the behavior of a GetSecrets request.
+ */
+typedef enum {
 	NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE = 0x0,
 	NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION = 0x1,
 	NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW = 0x2
-};
+} NMSecretAgentGetSecretsFlags;
 
 #define NM_TYPE_SECRET_AGENT            (nm_secret_agent_get_type ())
 #define NM_SECRET_AGENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SECRET_AGENT, NMSecretAgent))
@@ -95,7 +110,7 @@ typedef struct {
 	                     const char *connection_path,
 	                     const char *setting_name,
 	                     const char **hints,
-	                     guint32 flags,
+	                     NMSecretAgentGetSecretsFlags flags,
 	                     NMSecretAgentGetSecretsFunc callback,
 	                     gpointer callback_data);
 
@@ -152,7 +167,7 @@ void nm_secret_agent_get_secrets (NMSecretAgent *self,
                                   NMConnection *connection,
                                   const char *setting_name,
                                   const char **hints,
-                                  guint32 flags,
+                                  NMSecretAgentGetSecretsFlags flags,
                                   NMSecretAgentGetSecretsFunc callback,
                                   gpointer callback_data);
 
