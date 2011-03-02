@@ -3880,6 +3880,23 @@ nm_manager_auto_user_connections_allowed (NMManager *self)
 	       && priv->user_con_perm == NM_AUTH_CALL_RESULT_YES;
 }
 
+static guint64
+get_connection_timestamp (NMConnection *connection)
+{
+	if (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_SYSTEM) {
+		guint64 *ts_p;
+
+		ts_p = (guint64 *) g_object_get_data (G_OBJECT (connection), NM_SYSCONFIG_SETTINGS_TIMESTAMP_TAG);
+		return ts_p != NULL ? *ts_p : 0;
+	} else {
+		NMSettingConnection *s_con;
+
+		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+		g_assert (s_con);
+		return nm_setting_connection_get_timestamp (s_con);
+	}
+}
+
 static int
 connection_sort (gconstpointer pa, gconstpointer pb)
 {
@@ -3887,6 +3904,7 @@ connection_sort (gconstpointer pa, gconstpointer pb)
 	NMSettingConnection *con_a;
 	NMConnection *b = NM_CONNECTION (pb);
 	NMSettingConnection *con_b;
+	guint64 ts_a, ts_b;
 
 	con_a = (NMSettingConnection *) nm_connection_get_setting (a, NM_TYPE_SETTING_CONNECTION);
 	g_assert (con_a);
@@ -3899,10 +3917,13 @@ connection_sort (gconstpointer pa, gconstpointer pb)
 		return 1;
 	}
 
-	if (nm_setting_connection_get_timestamp (con_a) > nm_setting_connection_get_timestamp (con_b))
+	ts_a = get_connection_timestamp (a);
+	ts_b = get_connection_timestamp (b);
+	if (ts_a > ts_b)
 		return -1;
-	else if (nm_setting_connection_get_timestamp (con_a) == nm_setting_connection_get_timestamp (con_b))
+	else if (ts_a == ts_b)
 		return 0;
+
 	return 1;
 }
 
