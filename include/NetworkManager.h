@@ -23,6 +23,8 @@
 #ifndef NETWORK_MANAGER_H
 #define NETWORK_MANAGER_H
 
+#include "nm-version.h"
+
 /*
  * dbus services details
  */

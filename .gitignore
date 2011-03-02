@@ -32,6 +32,8 @@ man/*.[185]
 po/*.gmo
 po/.intltool-merge-cache
 
+include/nm-version.h
+
 docs/libnm-glib/*.stamp
 docs/libnm-glib/html/
 docs/libnm-glib/tmpl/

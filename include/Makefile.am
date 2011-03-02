@@ -4,11 +4,13 @@ EXTRA_DIST = \
      wireless-helper.h \
      nm-dbus-glib-types.h \
      nm-glib-compat.h \
-     nm-test-helpers.h
+     nm-test-helpers.h \
+     nm-version.h.in
 
 NetworkManagerincludedir=$(includedir)/NetworkManager
 
 NetworkManagerinclude_HEADERS = \
 	NetworkManager.h \
-	NetworkManagerVPN.h
+	NetworkManagerVPN.h \
+	nm-version.h
 
