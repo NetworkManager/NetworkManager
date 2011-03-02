@@ -468,39 +468,6 @@ nm_manager_update_state (NMManager *manager)
 }
 
 static void
-ignore_cb (NMSettingsConnection *connection, GError *error, gpointer user_data)
-{
-}
-
-static void
-update_active_connection_timestamp (NMManager *manager, NMDevice *device)
-{
-	NMActRequest *req;
-	NMConnection *connection;
-	NMSettingConnection *s_con;
-	NMManagerPrivate *priv;
-
-	g_return_if_fail (NM_IS_DEVICE (device));
-
-	priv = NM_MANAGER_GET_PRIVATE (manager);
-	req = nm_device_get_act_request (device);
-	if (!req)
-		return;
-
-	connection = nm_act_request_get_connection (req);
-	g_assert (connection);
-
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-	g_assert (s_con);
-	g_object_set (s_con, NM_SETTING_CONNECTION_TIMESTAMP, (guint64) time (NULL), NULL);
-
-	if (nm_setting_connection_get_read_only (s_con))
-		return;
-
-	nm_settings_connection_commit_changes (NM_SETTINGS_CONNECTION (connection), ignore_cb, NULL);
-}
-
-static void
 manager_device_state_changed (NMDevice *device,
                               NMDeviceState new_state,
                               NMDeviceState old_state,
@@ -523,8 +490,14 @@ manager_device_state_changed (NMDevice *device,
 
 	nm_manager_update_state (manager);
 
-	if (new_state == NM_DEVICE_STATE_ACTIVATED)
-		update_active_connection_timestamp (manager, device);
+	if (new_state == NM_DEVICE_STATE_ACTIVATED) {
+		NMActRequest *req;
+
+		req = nm_device_get_act_request (device);
+		if (req)
+			nm_settings_connection_update_timestamp (NM_SETTINGS_CONNECTION (nm_act_request_get_connection (req)),
+			                                         (guint64) time (NULL));
+	}
 }
 
 /* Removes a device from a device list; returns the start of the new device list */
@@ -3347,7 +3320,8 @@ periodic_update_active_connection_timestamps (gpointer user_data)
 
 		req = nm_manager_get_act_request_by_path (manager, active_path, &device);
 		if (device && nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED)
-			update_active_connection_timestamp (manager, device);
+			nm_settings_connection_update_timestamp (NM_SETTINGS_CONNECTION (nm_act_request_get_connection (req)),
+			                                         (guint64) time (NULL));
 	}
 
 	return TRUE;

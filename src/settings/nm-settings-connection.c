@@ -38,6 +38,8 @@
 #include "nm-marshal.h"
 #include "nm-agent-manager.h"
 
+#define SETTINGS_TIMESTAMPS_FILE  LOCALSTATEDIR"/lib/NetworkManager/timestamps"
+
 static void impl_settings_connection_get_settings (NMSettingsConnection *connection,
                                                    DBusGMethodInvocation *context);
 
@@ -88,6 +90,8 @@ typedef struct {
 
 	NMSessionMonitor *session_monitor;
 	guint session_changed_id;
+
+	guint64 timestamp; /* Up-to-date timestamp of connection use */
 } NMSettingsConnectionPrivate;
 
 /**************************************************************/
@@ -331,6 +335,34 @@ commit_changes (NMSettingsConnection *connection,
 }
 
 static void
+remove_timestamp_from_db (NMSettingsConnection *connection)
+{
+	GKeyFile *timestamps_file;
+
+	timestamps_file = g_key_file_new ();
+	if (g_key_file_load_from_file (timestamps_file, SETTINGS_TIMESTAMPS_FILE, G_KEY_FILE_KEEP_COMMENTS, NULL)) {
+		const char *connection_uuid;
+		char *data;
+		gsize len;
+		GError *error = NULL;
+
+		connection_uuid = nm_connection_get_uuid (NM_CONNECTION (connection));
+
+		g_key_file_remove_key (timestamps_file, "timestamps", connection_uuid, NULL);
+		data = g_key_file_to_data (timestamps_file, &len, &error);
+		if (data) {
+			g_file_set_contents (SETTINGS_TIMESTAMPS_FILE, data, len, &error);
+			g_free (data);
+		}
+		if (error) {
+			nm_log_warn (LOGD_SETTINGS, "error writing timestamps file '%s': %s", SETTINGS_TIMESTAMPS_FILE, error->message);
+			g_error_free (error);
+		}
+	}
+	g_key_file_free (timestamps_file);
+}
+
+static void
 do_delete (NMSettingsConnection *connection,
            NMSettingsConnectionDeleteFunc callback,
            gpointer user_data)
@@ -345,6 +377,9 @@ do_delete (NMSettingsConnection *connection,
 	for_agents = nm_connection_duplicate (NM_CONNECTION (connection));
 	nm_connection_clear_secrets (for_agents);
 	nm_agent_manager_delete_secrets (priv->agent_mgr, for_agents, FALSE, 0);
+
+	/* Remove timestamp from timestamps database file */
+	remove_timestamp_from_db (connection);
 
 	/* Signal the connection is removed and deleted */
 	g_signal_emit (connection, signals[REMOVED], 0);
@@ -865,15 +900,35 @@ get_settings_auth_cb (NMSettingsConnection *self,
 		dbus_g_method_return_error (context, error);
 	else {
 		GHashTable *settings;
+	 	NMConnection *dupl_con;
+		NMSettingConnection *s_con;
+		guint64 timestamp;
+
+	 	dupl_con = nm_connection_duplicate (NM_CONNECTION (self));
+ 		g_assert (dupl_con);
+
+		/* Timestamp is not updated in connection's 'timestamp' property,
+		 * because it would force updating the connection and in turn
+		 * writing to /etc periodically, which we want to avoid. Rather real
+		 * timestamps are kept track of in a private variable. So, substitute
+		 * timestamp property with the real one here before returning the settings.
+		 */
+		timestamp = nm_settings_connection_get_timestamp (self);
+		if (timestamp) {
+			s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (NM_CONNECTION (dupl_con), NM_TYPE_SETTING_CONNECTION));
+			g_assert (s_con);
+			g_object_set (s_con, NM_SETTING_CONNECTION_TIMESTAMP, timestamp, NULL);
+		}
 
 		/* Secrets should *never* be returned by the GetSettings method, they
 		 * get returned by the GetSecrets method which can be better
 		 * protected against leakage of secrets to unprivileged callers.
 		 */
-		settings = nm_connection_to_hash (NM_CONNECTION (self), NM_SETTING_HASH_FLAG_NO_SECRETS);
+		settings = nm_connection_to_hash (NM_CONNECTION (dupl_con), NM_SETTING_HASH_FLAG_NO_SECRETS);
 		g_assert (settings);
 		dbus_g_method_return (context, settings);
 		g_hash_table_destroy (settings);
+ 		g_object_unref (dupl_con);
 	}
 }
 
@@ -1192,6 +1247,99 @@ nm_settings_connection_signal_remove (NMSettingsConnection *self)
 	 * we take the connection off the bus.
 	 */
 	g_signal_emit_by_name (self, "unregister");
+}
+
+/**
+ * nm_settings_connection_get_timestamp:
+ * @connection: the #NMSettingsConnection
+ *
+ * Returns current connection's timestamp.
+ *
+ * Returns: timestamp of the last connection use (0 when it's not used)
+ **/
+guint64
+nm_settings_connection_get_timestamp (NMSettingsConnection *connection)
+{
+	g_return_val_if_fail (NM_SETTINGS_CONNECTION (connection), 0);
+
+	return NM_SETTINGS_CONNECTION_GET_PRIVATE (connection)->timestamp;
+}
+
+/**
+ * nm_settings_connection_update_timestamp:
+ * @connection: the #NMSettingsConnection
+ * @timestamp: timestamp to set into the connection and to store into
+ * the timestamps database
+ *
+ * Updates the connection and timestamps database with the provided timestamp.
+ **/
+void
+nm_settings_connection_update_timestamp (NMSettingsConnection *connection, guint64 timestamp)
+{
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
+	const char *connection_uuid;
+	GKeyFile *timestamps_file;
+	char *data;
+	gsize len;
+	GError *error = NULL;
+
+	/* Update timestamp in private storage */
+	priv->timestamp = timestamp;
+
+	/* Save timestamp to timestamps database file */
+	timestamps_file = g_key_file_new ();
+	if (!g_key_file_load_from_file (timestamps_file, SETTINGS_TIMESTAMPS_FILE, G_KEY_FILE_KEEP_COMMENTS, &error)) {
+		if (!(error->domain == G_FILE_ERROR && error->code == G_FILE_ERROR_NOENT))
+			nm_log_warn (LOGD_SETTINGS, "error parsing timestamps file '%s': %s", SETTINGS_TIMESTAMPS_FILE, error->message);
+		g_clear_error (&error);
+	}
+
+	connection_uuid = nm_connection_get_uuid (NM_CONNECTION (connection));
+	g_key_file_set_uint64 (timestamps_file, "timestamps", connection_uuid, timestamp);
+ 
+	data = g_key_file_to_data (timestamps_file, &len, &error);
+	if (data) {
+		g_file_set_contents (SETTINGS_TIMESTAMPS_FILE, data, len, &error);
+		g_free (data);
+	}
+	if (error) {
+		nm_log_warn (LOGD_SETTINGS, "error saving timestamp to file '%s': %s", SETTINGS_TIMESTAMPS_FILE, error->message);
+		g_error_free (error);
+	}
+	g_key_file_free (timestamps_file);
+}
+
+/**
+ * nm_settings_connection_read_and_fill_timestamp:
+ * @connection: the #NMSettingsConnection
+ *
+ * Retrieves timestamp of the connection's last usage from database file and
+ * stores it into the connection private data.
+ **/
+void
+nm_settings_connection_read_and_fill_timestamp (NMSettingsConnection *connection)
+{
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
+	const char *connection_uuid;
+	guint64 timestamp;
+	GKeyFile *timestamps_file;
+	GError *err = NULL;
+
+	/* Get timestamp from database file */
+	timestamps_file = g_key_file_new ();
+	g_key_file_load_from_file (timestamps_file, SETTINGS_TIMESTAMPS_FILE, G_KEY_FILE_KEEP_COMMENTS, NULL);
+	connection_uuid = nm_connection_get_uuid (NM_CONNECTION (connection));
+	timestamp = g_key_file_get_uint64 (timestamps_file, "timestamps", connection_uuid, &err);
+
+	/* Update connection's timestamp */
+	if (!err)
+		priv->timestamp = timestamp;
+	else {
+		nm_log_dbg (LOGD_SETTINGS, "failed to read connection timestamp for '%s': (%d) %s",
+		            connection_uuid, err->code, err->message);
+		g_clear_error (&err);
+	}
+	g_key_file_free (timestamps_file);
 }
 
 /**************************************************************/

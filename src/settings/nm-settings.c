@@ -19,7 +19,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2010 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  * (C) Copyright 2008 Novell, Inc.
  */
 
@@ -227,6 +227,7 @@ connection_sort (gconstpointer pa, gconstpointer pb)
 	NMSettingConnection *con_a;
 	NMConnection *b = NM_CONNECTION (pb);
 	NMSettingConnection *con_b;
+	guint64 ts_a, ts_b;
 
 	con_a = (NMSettingConnection *) nm_connection_get_setting (a, NM_TYPE_SETTING_CONNECTION);
 	g_assert (con_a);
@@ -239,9 +240,11 @@ connection_sort (gconstpointer pa, gconstpointer pb)
 		return 1;
 	}
 
-	if (nm_setting_connection_get_timestamp (con_a) > nm_setting_connection_get_timestamp (con_b))
+	ts_a = nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (pa));
+	ts_b = nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (pb));
+	if (ts_a > ts_b)
 		return -1;
-	else if (nm_setting_connection_get_timestamp (con_a) == nm_setting_connection_get_timestamp (con_b))
+	else if (ts_a == ts_b)
 		return 0;
 	return 1;
 }
@@ -691,6 +694,9 @@ claim_connection (NMSettings *self,
 		g_error_free (error);
 		return;
 	}
+
+	/* Read timestamp from look-aside file and put it into the connection's data */
+	nm_settings_connection_read_and_fill_timestamp (connection);
 
 	/* Ensure it's initial visibility is up-to-date */
 	nm_settings_connection_recheck_visibility (connection);

@@ -116,6 +116,12 @@ void nm_settings_connection_recheck_visibility (NMSettingsConnection *self);
 
 void nm_settings_connection_signal_remove (NMSettingsConnection *self);
 
+guint64 nm_settings_connection_get_timestamp (NMSettingsConnection *connection);
+
+void nm_settings_connection_update_timestamp (NMSettingsConnection *connection, guint64 timestamp);
+
+void nm_settings_connection_read_and_fill_timestamp (NMSettingsConnection *connection);
+
 G_END_DECLS
 
 #endif /* NM_SETTINGS_CONNECTION_H */
