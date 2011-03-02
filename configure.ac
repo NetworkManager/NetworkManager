@@ -1,6 +1,16 @@
 AC_PREREQ(2.52)
 
-AC_INIT(NetworkManager, 0.8.3.996, dcbw@redhat.com, NetworkManager)
+dnl The NM version number
+m4_define([nm_major_version], [0])
+m4_define([nm_minor_version], [8])
+m4_define([nm_micro_version], [3])
+m4_define([nm_nano_version],  [996])
+m4_define([nm_version],
+          [nm_major_version.nm_minor_version.nm_micro_version.nm_nano_version])
+
+AC_INIT([NetworkManager], [nm_version],
+        [http://bugzilla.gnome.org/enter_bug.gci?product=NetworkManager],
+        [NetworkManager])
 AM_INIT_AUTOMAKE([1.9 subdir-objects tar-ustar no-dist-gzip dist-bzip2])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([no])])
 AM_MAINTAINER_MODE
@@ -35,6 +45,16 @@ else
 	DISABLE_DEPRECATED=""
 fi
 AC_SUBST(DISABLE_DEPRECATED)
+
+dnl Version stuff
+NM_MAJOR_VERSION=nm_major_version
+NM_MINOR_VERSION=nm_minor_version
+NM_MICRO_VERSION=nm_micro_version
+NM_VERSION=nm_version
+AC_SUBST(NM_MAJOR_VERSION)
+AC_SUBST(NM_MINOR_VERSION)
+AC_SUBST(NM_MICRO_VERSION)
+AC_SUBST(NM_VERSION)
 
 dnl
 dnl Required headers
@@ -519,6 +539,7 @@ esac
 AC_CONFIG_FILES([
 Makefile
 include/Makefile
+include/nm-version.h
 src/Makefile
 src/tests/Makefile
 marshallers/Makefile
