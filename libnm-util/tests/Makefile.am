@@ -79,61 +79,49 @@ check-local: test-settings-defaults test-crypto test-need-secrets
 	$(abs_builddir)/test-general
 
 # Private key and CA certificate in the same file (PEM)
-	$(abs_builddir)/test-setting-8021x \
-		$(top_srcdir)/libnm-util/tests/certs/test_key_and_cert.pem \
-		"test" \
-		$(top_srcdir)/libnm-util/tests/certs/test-key-only-decrypted.der
+	$(abs_builddir)/test-setting-8021x $(srcdir)/certs/test_key_and_cert.pem "test"
 
 # Private key by itself (PEM)
-	$(abs_builddir)/test-setting-8021x \
-		$(top_srcdir)/libnm-util/tests/certs/test-key-only.pem \
-		"test" \
-		$(top_srcdir)/libnm-util/tests/certs/test-key-only-decrypted.der
+	$(abs_builddir)/test-setting-8021x $(srcdir)/certs/test-key-only.pem "test"
 
 # Private key and CA certificate in the same file (pkcs12)
-	$(abs_builddir)/test-setting-8021x \
-		$(top_srcdir)/libnm-util/tests/certs/test-cert.p12 \
-		"test"
+	$(abs_builddir)/test-setting-8021x $(srcdir)/certs/test-cert.p12 "test"
 
 # Normal CA certificate
-	$(abs_builddir)/test-crypto --cert \
-		$(top_srcdir)/libnm-util/tests/certs/test_ca_cert.pem
+	$(abs_builddir)/test-crypto --cert $(srcdir)/certs/test_ca_cert.pem
 
 # Another CA certificate
-	$(abs_builddir)/test-crypto --cert \
-		$(top_srcdir)/libnm-util/tests/certs/test2_ca_cert.pem
+	$(abs_builddir)/test-crypto --cert $(srcdir)/certs/test2_ca_cert.pem
 
 # CA certificate without an ending newline
-	$(abs_builddir)/test-crypto --cert \
-		$(top_srcdir)/libnm-util/tests/certs/ca-no-ending-newline.pem
+	$(abs_builddir)/test-crypto --cert $(srcdir)/certs/ca-no-ending-newline.pem
 
 # Combined user cert and private key
-	$(abs_builddir)/test-crypto --cert \
-		$(top_srcdir)/libnm-util/tests/certs/test_key_and_cert.pem
+	$(abs_builddir)/test-crypto --cert $(srcdir)/certs/test_key_and_cert.pem
 
 # Another combined user cert and private key
-	$(abs_builddir)/test-crypto --cert \
-		$(top_srcdir)/libnm-util/tests/certs/test2_key_and_cert.pem
+	$(abs_builddir)/test-crypto --cert $(srcdir)/certs/test2_key_and_cert.pem
 
 # Private key with 8 bytes of tail padding
 	$(abs_builddir)/test-crypto --key \
-		$(top_srcdir)/libnm-util/tests/certs/test_key_and_cert.pem \
-		"test"
+		$(srcdir)/certs/test_key_and_cert.pem \
+		"test" \
+		$(srcdir)/certs/test-key-only-decrypted.der
+
+# Private key only (not combined with a cert)
+	$(abs_builddir)/test-crypto --key \
+		$(srcdir)/certs/test-key-only.pem \
+		"test" \
+		$(srcdir)/certs/test-key-only-decrypted.der
 
 # Private key with 6 bytes of tail padding
-	$(abs_builddir)/test-crypto --key \
-		$(top_srcdir)/libnm-util/tests/certs/test2_key_and_cert.pem \
-		"12345testing"
+	$(abs_builddir)/test-crypto --key $(srcdir)/certs/test2_key_and_cert.pem "12345testing"
 
 # PKCS#12 file
-	$(abs_builddir)/test-crypto --p12 \
-		$(top_srcdir)/libnm-util/tests/certs/test-cert.p12 \
-		"test"
+	$(abs_builddir)/test-crypto --p12 $(srcdir)/certs/test-cert.p12 "test"
 
 # Another PKCS#12 file
-	$(abs_builddir)/test-crypto --p12 \
-		$(top_srcdir)/libnm-util/tests/certs/test2-cert.p12 \
-		"12345testing"
+	$(abs_builddir)/test-crypto --p12 $(srcdir)/certs/test2-cert.p12 "12345testing"
 
 endif
 

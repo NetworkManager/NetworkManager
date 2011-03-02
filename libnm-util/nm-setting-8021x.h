@@ -30,6 +30,18 @@
 
 G_BEGIN_DECLS
 
+/**
+ * NMSetting8021xCKFormat:
+ * @NM_SETTING_802_1X_CK_FORMAT_UNKNOWN: unknown file format
+ * @NM_SETTING_802_1X_CK_FORMAT_X509: file contains an X.509 format certificate
+ * @NM_SETTING_802_1X_CK_FORMAT_RAW_KEY: file contains an old-style OpenSSL PEM
+ * or DER private key
+ * @NM_SETTING_802_1X_CK_FORMAT_PKCS12: file contains a PKCS#12 certificate
+ * and private key
+ *
+ * #NMSetting8021xCKFormat values indicate the general type of a certificate
+ * or private key
+ */
 typedef enum {
 	NM_SETTING_802_1X_CK_FORMAT_UNKNOWN = 0,
 	NM_SETTING_802_1X_CK_FORMAT_X509,
@@ -37,11 +49,25 @@ typedef enum {
 	NM_SETTING_802_1X_CK_FORMAT_PKCS12
 } NMSetting8021xCKFormat;
 
+/**
+ * NMSetting8021xCKScheme:
+ * @NM_SETTING_802_1X_CK_SCHEME_UNKNOWN: unknown certificate or private key
+ * scheme
+ * @NM_SETTING_802_1X_CK_SCHEME_BLOB: certificate or key is stored as the raw
+ * item data
+ * @NM_SETTING_802_1X_CK_SCHEME_PATH: certificate or key is stored as a path
+ * to a file containing the certificate or key data
+ *
+ * #NMSetting8021xCKScheme values indicate how a certificate or private key is
+ * stored in the setting properties, either as a blob of the item's data, or as
+ * a path to a certificate or private key file on the filesystem
+ */
 typedef enum {
 	NM_SETTING_802_1X_CK_SCHEME_UNKNOWN = 0,
 	NM_SETTING_802_1X_CK_SCHEME_BLOB,
 	NM_SETTING_802_1X_CK_SCHEME_PATH
 } NMSetting8021xCKScheme;
+
 
 #define NM_TYPE_SETTING_802_1X            (nm_setting_802_1x_get_type ())
 #define NM_SETTING_802_1X(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTING_802_1X, NMSetting8021x))
@@ -93,29 +119,23 @@ GQuark nm_setting_802_1x_error_quark (void);
 #define NM_SETTING_802_1X_SYSTEM_CA_CERTS "system-ca-certs"
 
 /* PRIVATE KEY NOTE: when setting PKCS#12 private keys directly via properties
- * using the "blob" scheme, the data must be passed in PKCS#12 format.  In this
- * case, the private key password must also be passed to NetworkManager, and the
- * appropriate "client-cert" (or "phase2-client-cert") property of the
- * NMSetting8021x object must also contain the exact same PKCS#12 data that the
- * private key will when NetworkManager requests secrets.  This is because the
+ * using the "blob" scheme, the data must be passed in PKCS#12 binary format.
+ * In this case, the appropriate "client-cert" (or "phase2-client-cert")
+ * property of the NMSetting8021x object must also contain the exact same
+ * PKCS#12 binary data that the private key does.  This is because the
  * PKCS#12 file contains both the private key and client certificate, so both
  * properties need to be set to the same thing.  When using the "path" scheme,
- * just set both the private-key and client-cert properties to the same path,
- * and set the private-key password correctly.
+ * just set both the private-key and client-cert properties to the same path.
  *
  * When setting OpenSSL-derived "traditional" format (ie S/MIME style, not
  * PKCS#8) RSA and DSA keys directly via properties with the "blob" scheme, they
  * should be passed to NetworkManager in PEM format with the "DEK-Info" and
- * "Proc-Type" tags intact, or in decrypted binary DER format (not recommended,
- * as this may allow unprivileged users to read the decrypted private key).
- * When decryped keys are used (again, not recommended) the private key password
- * should not be set.  The recommended method for passing private keys to
- * NetworkManager is via the "path" scheme with encrypted private keys, and a
- * private key password.
+ * "Proc-Type" tags intact.  Decrypted private keys should not be used as this
+ * is insecure and could allow unprivileged users to access the decrypted
+ * private key data.
  *
  * When using the "path" scheme, just set the private-key and client-cert
- * properties to the paths to their respective objects, and set the private-key
- * password correctly.
+ * properties to the paths to their respective objects.
  */
 
 typedef struct {

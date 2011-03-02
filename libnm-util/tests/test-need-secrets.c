@@ -212,19 +212,24 @@ test_need_tls_secrets_blob (void)
 	        "need-tls-secrets-blob-key",
 	        "hints should be NULL since no secrets were required");
 
-	/* Connection is good; clear secrets and ensure private key password is not
-	 * required because our blob is decrypted.
-	 */
+	/* Clear secrets and ensure password is again required */
 	nm_connection_clear_secrets (connection);
 
 	hints = NULL;
 	setting_name = nm_connection_need_secrets (connection, &hints);
-	ASSERT (setting_name == NULL,
+	ASSERT (setting_name != NULL,
 	        "need-tls-secrets-blob-key-password",
-	        "unexpected secrets failure");
-	ASSERT (hints == NULL,
+	        "unexpected secrets success");
+	ASSERT (strcmp (setting_name, NM_SETTING_802_1X_SETTING_NAME) == 0,
+			"need-tls-secrets-blob-key-password",
+			"unexpected setting secrets required");
+
+	ASSERT (hints != NULL,
 	        "need-tls-secrets-blob-key-password",
-	        "hints should be NULL since no secrets were required");
+	        "expected returned secrets hints");
+	ASSERT (find_hints_item (hints, NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD),
+			"need-tls-secrets-blob-key-password",
+			"expected to require private key password, but it wasn't");
 
 	g_object_unref (connection);
 }
@@ -391,19 +396,24 @@ test_need_tls_phase2_secrets_blob (void)
 	        "need-tls-phase2-secrets-blob-key",
 	        "hints should be NULL since no secrets were required");
 
-	/* Connection is good; clear secrets and ensure private key password is not
-	 * required because our blob is decrypted.
-	 */
+	/* Connection is good; clear secrets and ensure private key password is then required */
 	nm_connection_clear_secrets (connection);
 
 	hints = NULL;
 	setting_name = nm_connection_need_secrets (connection, &hints);
-	ASSERT (setting_name == NULL,
+	ASSERT (setting_name != NULL,
 	        "need-tls-phase2-secrets-blob-key-password",
-	        "unexpected secrets failure");
-	ASSERT (hints == NULL,
+	        "unexpected secrets success");
+	ASSERT (strcmp (setting_name, NM_SETTING_802_1X_SETTING_NAME) == 0,
+			"need-tls-phase2-secrets-blob-key-password",
+			"unexpected setting secrets required");
+
+	ASSERT (hints != NULL,
 	        "need-tls-phase2-secrets-blob-key-password",
-	        "hints should be NULL since no secrets were required");
+	        "expected returned secrets hints");
+	ASSERT (find_hints_item (hints, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD),
+			"need-tls-phase2-secrets-blob-key-password",
+			"expected to require private key password, but it wasn't");
 
 	g_object_unref (connection);
 }

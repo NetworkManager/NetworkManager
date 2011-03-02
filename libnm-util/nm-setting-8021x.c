@@ -456,6 +456,22 @@ nm_setting_802_1x_get_ca_cert_path (NMSetting8021x *setting)
 	return (const char *) (NM_SETTING_802_1X_GET_PRIVATE (setting)->ca_cert->data + strlen (SCHEME_PATH));
 }
 
+static GByteArray *
+path_to_scheme_value (const char *path)
+{
+	GByteArray *array;
+
+	g_return_val_if_fail (path != NULL, NULL);
+
+	/* Add the path scheme tag to the front, then the fielname */
+	array = g_byte_array_sized_new (strlen (path) + strlen (SCHEME_PATH) + 1);
+	g_assert (array);
+	g_byte_array_append (array, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
+	g_byte_array_append (array, (const guint8 *) path, strlen (path));
+	g_byte_array_append (array, (const guint8 *) "\0", 1);
+	return array;
+}
+
 /**
  * nm_setting_802_1x_set_ca_cert:
  * @setting: the #NMSetting8021x
@@ -530,13 +546,9 @@ nm_setting_802_1x_set_ca_cert (NMSetting8021x *self,
 		if (data) {
 			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
 				priv->ca_cert = data;
-			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
-				/* Add the path scheme tag to the front, then the fielname */
-				priv->ca_cert = g_byte_array_sized_new (strlen (value) + strlen (SCHEME_PATH) + 1);
-				g_byte_array_append (priv->ca_cert, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
-				g_byte_array_append (priv->ca_cert, (const guint8 *) value, strlen (value));
-				g_byte_array_append (priv->ca_cert, (const guint8 *) "\0", 1);
-			} else
+			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+				priv->ca_cert = path_to_scheme_value (value);
+			else
 				g_assert_not_reached ();
 		}
 	}
@@ -690,13 +702,9 @@ nm_setting_802_1x_set_client_cert (NMSetting8021x *self,
 		if (data) {
 			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
 				priv->client_cert = data;
-			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
-				/* Add the path scheme tag to the front, then the fielname */
-				priv->client_cert = g_byte_array_sized_new (strlen (value) + strlen (SCHEME_PATH) + 1);
-				g_byte_array_append (priv->client_cert, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
-				g_byte_array_append (priv->client_cert, (const guint8 *) value, strlen (value));
-				g_byte_array_append (priv->client_cert, (const guint8 *) "\0", 1);
-			} else
+			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+				priv->client_cert = path_to_scheme_value (value);
+			else
 				g_assert_not_reached ();
 		}
 	}
@@ -949,13 +957,9 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *self,
 		if (data) {
 			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
 				priv->phase2_ca_cert = data;
-			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
-				/* Add the path scheme tag to the front, then the fielname */
-				priv->phase2_ca_cert = g_byte_array_sized_new (strlen (value) + strlen (SCHEME_PATH) + 1);
-				g_byte_array_append (priv->phase2_ca_cert, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
-				g_byte_array_append (priv->phase2_ca_cert, (const guint8 *) value, strlen (value));
-				g_byte_array_append (priv->phase2_ca_cert, (const guint8 *) "\0", 1);
-			} else
+			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+				priv->phase2_ca_cert = path_to_scheme_value (value);
+			else
 				g_assert_not_reached ();
 		}
 	}
@@ -1111,13 +1115,9 @@ nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *self,
 		if (data) {
 			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
 				priv->phase2_client_cert = data;
-			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
-				/* Add the path scheme tag to the front, then the fielname */
-				priv->phase2_client_cert = g_byte_array_sized_new (strlen (value) + strlen (SCHEME_PATH) + 1);
-				g_byte_array_append (priv->phase2_client_cert, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
-				g_byte_array_append (priv->phase2_client_cert, (const guint8 *) value, strlen (value));
-				g_byte_array_append (priv->phase2_client_cert, (const guint8 *) "\0", 1);
-			} else
+			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+				priv->phase2_client_cert = path_to_scheme_value (value);
+			else
 				g_assert_not_reached ();
 		}
 	}
@@ -1254,6 +1254,24 @@ nm_setting_802_1x_get_private_key_path (NMSetting8021x *setting)
 	return (const char *) (NM_SETTING_802_1X_GET_PRIVATE (setting)->private_key->data + strlen (SCHEME_PATH));
 }
 
+static GByteArray *
+file_to_byte_array (const char *filename)
+{
+	char *contents;
+	GByteArray *array = NULL;
+	gsize length = 0;
+
+	if (g_file_get_contents (filename, &contents, &length, NULL)) {
+		array = g_byte_array_sized_new (length);
+		if (array) {
+			g_byte_array_append (array, (guint8 *) contents, length);
+			g_assert (array->len == length);
+		}
+		g_free (contents);
+	}
+	return array;
+}
+
 /**
  * nm_setting_802_1x_set_private_key:
  * @setting: the #NMSetting8021x
@@ -1262,19 +1280,29 @@ nm_setting_802_1x_get_private_key_path (NMSetting8021x *setting)
  *   (PEM, DER, or PKCS#12 format).  The path must be UTF-8 encoded; use
  *   g_filename_to_utf8() to convert if needed.  Passing NULL with any @scheme
  *   clears the private key.
- * @password: password used to decrypt the private key
+ * @password: password used to decrypt the private key, or %NULL if the password
+ *   is unknown.  If the password is given but fails to decrypt the private key,
+ *   an error is returned.
  * @scheme: desired storage scheme for the private key
  * @out_format: on successful return, the type of the private key added
  * @error: on unsuccessful return, an error
  *
- * Reads a private key from disk and sets the #NMSetting8021x:private-key
- * property with the raw private key data if using the
- * %NM_SETTING_802_1X_CK_SCHEME_BLOB scheme, or with the path to the private key
- * file if using the %NM_SETTING_802_1X_CK_SCHEME_PATH scheme.
- *
  * Private keys are used to authenticate the connecting client to the network
  * when EAP-TLS is used as either the "phase 1" or "phase 2" 802.1x
  * authentication method.
+ *
+ * This function reads a private key from disk and sets the
+ * #NMSetting8021x:private-key property with the private key file data if using
+ * the %NM_SETTING_802_1X_CK_SCHEME_BLOB scheme, or with the path to the private
+ * key file if using the %NM_SETTING_802_1X_CK_SCHEME_PATH scheme.
+ *
+ * If @password is given, this function attempts to decrypt the private key to
+ * verify that @password is correct, and if it is, updates the
+ * #NMSetting8021x:private-key-password property with the given @password.  If
+ * the decryption is unsuccessful, %FALSE is returned, @error is set, and no
+ * internal data is changed.  If no @password is given, the private key is
+ * assumed to be valid, no decryption is performed, and the password may be set
+ * at a later time.
  *
  * WARNING: the private key property is not a "secret" property, and thus
  * unencrypted private key data using the BLOB scheme may be readable by
@@ -1293,8 +1321,6 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *self,
 {
 	NMSetting8021xPrivate *priv;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-	NMCryptoKeyType key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
-	GByteArray *data;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
 
@@ -1308,12 +1334,26 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *self,
 	if (out_format)
 		g_return_val_if_fail (*out_format == NM_SETTING_802_1X_CK_FORMAT_UNKNOWN, FALSE);
 
+	/* Ensure the private key is a recognized format and if the password was
+	 * given, that it decrypts the private key.
+	 */
+	if (value) {
+		format = crypto_verify_private_key (value, password, NULL);
+		if (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN) {
+			g_set_error (error,
+				         NM_SETTING_802_1X_ERROR,
+				         NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+				         NM_SETTING_802_1X_PRIVATE_KEY);
+			return FALSE;
+		}
+	}
+
 	priv = NM_SETTING_802_1X_GET_PRIVATE (self);
 
-	/* Clear out any previous private key blob */
+	/* Clear out any previous private key data */
 	if (priv->private_key) {
 		/* Try not to leave the private key around in memory */
-		memset (priv->private_key, 0, priv->private_key->len);
+		memset (priv->private_key->data, 0, priv->private_key->len);
 		g_byte_array_free (priv->private_key, TRUE);
 		priv->private_key = NULL;
 	}
@@ -1321,81 +1361,23 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *self,
 	g_free (priv->private_key_password);
 	priv->private_key_password = NULL;
 
-	if (!value)
+	if (value == NULL)
 		return TRUE;
 
-	/* Verify the key and the private key password */
-	data = crypto_get_private_key (value,
-	                               password,
-	                               &key_type,
-	                               &format,
-	                               error);
-	if (!data) {
-		/* As a special case for private keys, even if the decrypt fails,
-		 * return the key's file type.
-		 */
-		if (out_format && crypto_is_pkcs12_file (value, NULL))
-			*out_format = NM_SETTING_802_1X_CK_FORMAT_PKCS12;
-
-		return FALSE;
-	}
-
-	switch (format) {
-	case NM_CRYPTO_FILE_FORMAT_RAW_KEY:
-		if (out_format)
-			*out_format = NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
-		break;
-	case NM_CRYPTO_FILE_FORMAT_X509:
-		if (out_format)
-			*out_format = NM_SETTING_802_1X_CK_FORMAT_X509;
-		break;
-	case NM_CRYPTO_FILE_FORMAT_PKCS12:
-		if (out_format)
-			*out_format = NM_SETTING_802_1X_CK_FORMAT_PKCS12;
-		break;
-	default:
-		memset (data->data, 0, data->len);
-		g_byte_array_free (data, TRUE);
-		g_set_error (error,
-		             NM_SETTING_802_1X_ERROR,
-		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_802_1X_PRIVATE_KEY);
-		return FALSE;
-	}
-
-	g_assert (data);
+	priv->private_key_password = g_strdup (password);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-		priv->private_key = data;
-		data = NULL;
-
-		/* Always update the private key for blob + pkcs12 since the
-		 * pkcs12 files are encrypted
-		 */
-		if (format == NM_CRYPTO_FILE_FORMAT_PKCS12)
-			priv->private_key_password = g_strdup (password);
-	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
-		/* Add the path scheme tag to the front, then the fielname */
-		priv->private_key = g_byte_array_sized_new (strlen (value) + strlen (SCHEME_PATH) + 1);
-		g_byte_array_append (priv->private_key, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
-		g_byte_array_append (priv->private_key, (const guint8 *) value, strlen (value));
-		g_byte_array_append (priv->private_key, (const guint8 *) "\0", 1);
-
-		/* Always update the private key with paths since the key the
-		 * cert refers to is encrypted.
-		 */
-		priv->private_key_password = g_strdup (password);
-	} else
+		/* Shouldn't fail this since we just verified the private key above */
+		priv->private_key = file_to_byte_array (value);
+		g_assert (priv->private_key);
+	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		priv->private_key = path_to_scheme_value (value);
+	else
 		g_assert_not_reached ();
-
-	/* Clear and free private key data if it's no longer needed */
-	if (data) {
-		memset (data->data, 0, data->len);
-		g_byte_array_free (data, TRUE);
-	}
 
 	/* As required by NM and wpa_supplicant, set the client-cert
 	 * property to the same PKCS#12 data.
 	 */
+	g_assert (format != NM_CRYPTO_FILE_FORMAT_UNKNOWN);
 	if (format == NM_CRYPTO_FILE_FORMAT_PKCS12) {
 		if (priv->client_cert)
 			g_byte_array_free (priv->client_cert, TRUE);
@@ -1404,6 +1386,8 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *self,
 		g_byte_array_append (priv->client_cert, priv->private_key->data, priv->private_key->len);
 	}
 
+	if (out_format)
+		*out_format = format;
 	return priv->private_key != NULL;
 }
 
@@ -1463,7 +1447,7 @@ nm_setting_802_1x_get_private_key_format (NMSetting8021x *setting)
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		if (crypto_is_pkcs12_data (priv->private_key))
 			return NM_SETTING_802_1X_CK_FORMAT_PKCS12;
-		return NM_SETTING_802_1X_CK_FORMAT_X509;
+		return NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		path = nm_setting_802_1x_get_private_key_path (setting);
 		if (crypto_is_pkcs12_file (path, &error))
@@ -1473,7 +1457,7 @@ nm_setting_802_1x_get_private_key_format (NMSetting8021x *setting)
 			g_error_free (error);
 			return NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
 		}
-		return NM_SETTING_802_1X_CK_FORMAT_X509;
+		return NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
 	default:
 		break;
 	}
@@ -1587,26 +1571,36 @@ nm_setting_802_1x_get_phase2_private_key_path (NMSetting8021x *setting)
  * nm_setting_802_1x_set_phase2_private_key:
  * @setting: the #NMSetting8021x
  * @value: when @scheme is set to either %NM_SETTING_802_1X_CK_SCHEME_PATH or
- *   %NM_SETTING_802_1X_CK_SCHEME_BLOB, pass the path of the "phase2" private 
+ *   %NM_SETTING_802_1X_CK_SCHEME_BLOB, pass the path of the "phase2" private
  *   key file (PEM, DER, or PKCS#12 format).  The path must be UTF-8 encoded;
  *   use g_filename_to_utf8() to convert if needed.  Passing NULL with any
- *   @scheme clears the "phase2" private key.
- * @password: password used to decrypt the private key
+ *   @scheme clears the private key.
+ * @password: password used to decrypt the private key, or %NULL if the password
+ *   is unknown.  If the password is given but fails to decrypt the private key,
+ *   an error is returned.
  * @scheme: desired storage scheme for the private key
  * @out_format: on successful return, the type of the private key added
  * @error: on unsuccessful return, an error
- *
- * Reads a "phase 2" private key from disk and sets the
- * #NMSetting8021x:phase2-private-key property with the raw private key data if
- * using the %NM_SETTING_802_1X_CK_SCHEME_BLOB scheme, or with the path to the
- * private key file if using the %NM_SETTING_802_1X_CK_SCHEME_PATH scheme.
  *
  * Private keys are used to authenticate the connecting client to the network
  * when EAP-TLS is used as either the "phase 1" or "phase 2" 802.1x
  * authentication method.
  *
- * WARNING: the phase2 private key property is not a "secret" property, and thus
- * unencrypted private key data using the BLOB scheme may be readable by
+ * This function reads a private key from disk and sets the
+ * #NMSetting8021x:phase2-private-key property with the private key file data if
+ * using the %NM_SETTING_802_1X_CK_SCHEME_BLOB scheme, or with the path to the
+ * private key file if using the %NM_SETTING_802_1X_CK_SCHEME_PATH scheme.
+ *
+ * If @password is given, this function attempts to decrypt the private key to
+ * verify that @password is correct, and if it is, updates the
+ * #NMSetting8021x:phase2-private-key-password property with the given
+ * @password.  If the decryption is unsuccessful, %FALSE is returned, @error is
+ * set, and no internal data is changed.  If no @password is given, the private
+ * key is assumed to be valid, no decryption is performed, and the password may
+ * be set at a later time.
+ *
+ * WARNING: the "phase2" private key property is not a "secret" property, and
+ * thus unencrypted private key data using the BLOB scheme may be readable by
  * unprivileged users.  Private keys should always be encrypted with a private
  * key password to prevent unauthorized access to unencrypted private key data.
  *
@@ -1622,8 +1616,6 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
 {
 	NMSetting8021xPrivate *priv;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-	NMCryptoKeyType key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
-	GByteArray *data;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
 
@@ -1637,12 +1629,26 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
 	if (out_format)
 		g_return_val_if_fail (*out_format == NM_SETTING_802_1X_CK_FORMAT_UNKNOWN, FALSE);
 
+	/* Ensure the private key is a recognized format and if the password was
+	 * given, that it decrypts the private key.
+	 */
+	if (value) {
+		format = crypto_verify_private_key (value, password, NULL);
+		if (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN) {
+			g_set_error (error,
+				         NM_SETTING_802_1X_ERROR,
+				         NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+				         NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
+			return FALSE;
+		}
+	}
+
 	priv = NM_SETTING_802_1X_GET_PRIVATE (self);
 
-	/* Clear out any previous private key blob */
+	/* Clear out any previous private key data */
 	if (priv->phase2_private_key) {
 		/* Try not to leave the private key around in memory */
-		memset (priv->phase2_private_key, 0, priv->phase2_private_key->len);
+		memset (priv->phase2_private_key->data, 0, priv->phase2_private_key->len);
 		g_byte_array_free (priv->phase2_private_key, TRUE);
 		priv->phase2_private_key = NULL;
 	}
@@ -1650,81 +1656,23 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
 	g_free (priv->phase2_private_key_password);
 	priv->phase2_private_key_password = NULL;
 
-	if (!value)
+	if (value == NULL)
 		return TRUE;
 
-	/* Verify the key and the private key password */
-	data = crypto_get_private_key (value,
-	                               password,
-	                               &key_type,
-	                               &format,
-	                               error);
-	if (!data) {
-		/* As a special case for private keys, even if the decrypt fails,
-		 * return the key's file type.
-		 */
-		if (out_format && crypto_is_pkcs12_file (value, NULL))
-			*out_format = NM_SETTING_802_1X_CK_FORMAT_PKCS12;
-
-		return FALSE;
-	}
-
-	switch (format) {
-	case NM_CRYPTO_FILE_FORMAT_RAW_KEY:
-		if (out_format)
-			*out_format = NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
-		break;
-	case NM_CRYPTO_FILE_FORMAT_X509:
-		if (out_format)
-			*out_format = NM_SETTING_802_1X_CK_FORMAT_X509;
-		break;
-	case NM_CRYPTO_FILE_FORMAT_PKCS12:
-		if (out_format)
-			*out_format = NM_SETTING_802_1X_CK_FORMAT_PKCS12;
-		break;
-	default:
-		memset (data->data, 0, data->len);
-		g_byte_array_free (data, TRUE);
-		g_set_error (error,
-		             NM_SETTING_802_1X_ERROR,
-		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
-		return FALSE;
-	}
-
-	g_assert (data);
+	priv->phase2_private_key_password = g_strdup (password);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-		priv->phase2_private_key = data;
-		data = NULL;
-
-		/* Always update the private key for blob + pkcs12 since the
-		 * pkcs12 files are encrypted
-		 */
-		if (format == NM_CRYPTO_FILE_FORMAT_PKCS12)
-			priv->phase2_private_key_password = g_strdup (password);
-	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
-		/* Add the path scheme tag to the front, then the fielname */
-		priv->phase2_private_key = g_byte_array_sized_new (strlen (value) + strlen (SCHEME_PATH) + 1);
-		g_byte_array_append (priv->phase2_private_key, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
-		g_byte_array_append (priv->phase2_private_key, (const guint8 *) value, strlen (value));
-		g_byte_array_append (priv->phase2_private_key, (const guint8 *) "\0", 1);
-
-		/* Always update the private key with paths since the key the
-		 * cert refers to is encrypted.
-		 */
-		priv->phase2_private_key_password = g_strdup (password);
-	} else
+		/* Shouldn't fail this since we just verified the private key above */
+		priv->phase2_private_key = file_to_byte_array (value);
+		g_assert (priv->phase2_private_key);
+	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		priv->phase2_private_key = path_to_scheme_value (value);
+	else
 		g_assert_not_reached ();
-
-	/* Clear and free private key data if it's no longer needed */
-	if (data) {
-		memset (data->data, 0, data->len);
-		g_byte_array_free (data, TRUE);
-	}
 
 	/* As required by NM and wpa_supplicant, set the client-cert
 	 * property to the same PKCS#12 data.
 	 */
+	g_assert (format != NM_CRYPTO_FILE_FORMAT_UNKNOWN);
 	if (format == NM_CRYPTO_FILE_FORMAT_PKCS12) {
 		if (priv->phase2_client_cert)
 			g_byte_array_free (priv->phase2_client_cert, TRUE);
@@ -1733,6 +1681,8 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
 		g_byte_array_append (priv->phase2_client_cert, priv->phase2_private_key->data, priv->phase2_private_key->len);
 	}
 
+	if (out_format)
+		*out_format = format;
 	return priv->phase2_private_key != NULL;
 }
 
@@ -1760,7 +1710,7 @@ nm_setting_802_1x_get_phase2_private_key_format (NMSetting8021x *setting)
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		if (crypto_is_pkcs12_data (priv->phase2_private_key))
 			return NM_SETTING_802_1X_CK_FORMAT_PKCS12;
-		return NM_SETTING_802_1X_CK_FORMAT_X509;
+		return NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		path = nm_setting_802_1x_get_phase2_private_key_path (setting);
 		if (crypto_is_pkcs12_file (path, &error))
@@ -1770,7 +1720,7 @@ nm_setting_802_1x_get_phase2_private_key_format (NMSetting8021x *setting)
 			g_error_free (error);
 			return NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
 		}
-		return NM_SETTING_802_1X_CK_FORMAT_X509;
+		return NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
 	default:
 		break;
 	}
@@ -1805,35 +1755,19 @@ need_private_key_password (const GByteArray *blob,
                            const char *path,
                            const char *password)
 {
-	/* Private key password is only un-needed if the private key scheme is BLOB,
-	 * because BLOB keys are decrypted by the settings service.  A private key
-	 * password is required if the private key is PKCS#12 format, or if the
-	 * private key scheme is PATH.
-	 */
-	if (path) {
-		GByteArray *tmp;
-		NMCryptoKeyType key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
-		NMCryptoFileFormat key_format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 
-		/* check the password */
-		tmp = crypto_get_private_key (path, password, &key_type, &key_format, NULL);
-		if (tmp) {
-			/* Decrypt/verify successful; password must be OK */
-			g_byte_array_free (tmp, TRUE);
-			return FALSE;
-		}
-	} else if (blob) {
-		/* Non-PKCS#12 blob-scheme keys are already decrypted by their settings
-		 * service, thus if the private key is not PKCS#12 format, a new password
-		 * is not required.  If the PKCS#12 key can be decrypted with the given
-		 * password, then we don't need a new password either.
-		 */
-		if (!crypto_is_pkcs12_data (blob) || crypto_verify_pkcs12 (blob, password, NULL))
-			return FALSE;
-	} else
-		g_warning ("%s: unknown private key password scheme", __func__);
+	/* Private key password is required */
+	if (password) {
+		if (path)
+			format = crypto_verify_private_key (path, password, NULL);
+		else if (blob)
+			format = crypto_verify_private_key_data (blob, password, NULL);
+		else
+			g_warning ("%s: unknown private key password scheme", __func__);
+	}
 
-	return TRUE;
+	return (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN);
 }
 
 static void
@@ -3000,31 +2934,26 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 							   "Contains the private key when the 'eap' property "
 							   "is set to 'tls'.  Key data is specified using a "
 							   "'scheme'; two are currently supported: blob and "
-							   "path. When using the blob scheme and X.509 private "
-							   "keys, this property should be set to the keys's "
-							   "PEM or DER encoded data; if using DER-encoded "
-							   "data the private key must be decrypted as the "
-							   "DER format is incomplete. Use of decrypted "
-							   "DER-format private keys is not recommended as it "
-							   "may allow unprivileged users access to the "
-							   "decrypted data. When using X.509 private keys "
-							   "with the path scheme, this property should be "
-							   "set to the full UTF-8 encoded path of the key, "
+							   "path. When using the blob scheme and private "
+							   "keys, this property should be set to the key's "
+							   "encrypted PEM encoded data. When using private "
+							   "keys with the path scheme, this property should "
+							   "be set to the full UTF-8 encoded path of the key, "
 							   "prefixed with the string 'file://' and ending "
 							   "with a terminating NULL byte.  When using "
 							   "PKCS#12 format private keys and the blob "
 							   "scheme, this property should be set to the "
-							   "PKCS#12 data (which is encrypted) and the "
+							   "PKCS#12 data and the 'private-key-password' "
+							   "property must be set to password used to "
+							   "decrypt the PKCS#12 certificate and key.  When "
+							   "using PKCS#12 files and the path scheme, this "
+							   "property should be set to the full UTF-8 encoded "
+							   "path of the key, prefixed with the string "
+							   "'file://' and and ending with a terminating NULL "
+							   "byte, and as with the blob scheme the "
 							   "'private-key-password' property must be set to "
-							   "password used to decrypt the PKCS#12 certificate "
-							   "and key.  When using PKCS#12 files and the path "
-							   "scheme, this property should be set to the full "
-							   "UTF-8 encoded path of the key, prefixed with the "
-							   "string 'file://' and and ending with a "
-							   "terminating NULL byte, and as with the blob "
-							   "scheme the 'private-key-password' property must "
-							   "be set to the password used to decode the PKCS#12 "
-							   "private key and certificate.",
+							   "the password used to decode the PKCS#12 private "
+							   "key and certificate.",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
@@ -3082,30 +3011,25 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 							   "the 'phase2-eap' or 'phase2-autheap' property "
 							   "is set to 'tls'.  Key data is specified using a "
 							   "'scheme'; two are currently supported: blob and "
-							   "path. When using the blob scheme and X.509 private "
-							   "keys, this property should be set to the keys's "
-							   "PEM or DER encoded data; if using DER-encoded "
-							   "data the private key must be decrypted as the "
-							   "DER format is incomplete. Use of decrypted "
-							   "DER-format private keys is not recommended as it "
-							   "may allow unprivileged users access to the "
-							   "decrypted data. When using X.509 private keys "
-							   "with the path scheme, this property should be "
-							   "set to the full UTF-8 encoded path of the key, "
+							   "path. When using the blob scheme and private "
+							   "keys, this property should be set to the key's "
+							   "encrypted PEM encoded data. When using private "
+							   "keys with the path scheme, this property should "
+							   "be set to the full UTF-8 encoded path of the key, "
 							   "prefixed with the string 'file://' and ending "
 							   "with a terminating NULL byte.  When using "
 							   "PKCS#12 format private keys and the blob "
 							   "scheme, this property should be set to the "
-							   "PKCS#12 data (which is encrypted) and the "
-							   "'private-key-password' property must be set to "
-							   "password used to decrypt the PKCS#12 certificate "
-							   "and key.  When using PKCS#12 files and the path "
-							   "scheme, this property should be set to the full "
-							   "UTF-8 encoded path of the key, prefixed with the "
-							   "string 'file://' and and ending with a "
-							   "terminating NULL byte, and as with the blob "
-							   "scheme the 'private-key-password' property must "
-							   "be set to the password used to decode the PKCS#12 "
+							   "PKCS#12 data and the 'phase2-private-key-password' "
+							   "property must be set to password used to "
+							   "decrypt the PKCS#12 certificate and key.  When "
+							   "using PKCS#12 files and the path scheme, this "
+							   "property should be set to the full UTF-8 encoded "
+							   "path of the key, prefixed with the string "
+							   "'file://' and and ending with a terminating NULL "
+							   "byte, and as with the blob scheme the "
+							   "'phase2-private-key-password' property must be "
+							   "set to the password used to decode the PKCS#12 "
 							   "private key and certificate.",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));

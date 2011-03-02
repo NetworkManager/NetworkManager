@@ -18,8 +18,11 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  */
+
+#ifndef __CRYPTO_H__
+#define __CRYPTO_H__
 
 #include <glib.h>
 
@@ -51,8 +54,7 @@ enum {
 typedef enum {
 	NM_CRYPTO_KEY_TYPE_UNKNOWN = 0,
 	NM_CRYPTO_KEY_TYPE_RSA,
-	NM_CRYPTO_KEY_TYPE_DSA,
-	NM_CRYPTO_KEY_TYPE_ENCRYPTED
+	NM_CRYPTO_KEY_TYPE_DSA
 } NMCryptoKeyType;
 
 typedef enum {
@@ -69,26 +71,31 @@ gboolean crypto_init (GError **error);
 
 void crypto_deinit (void);
 
-GByteArray * crypto_get_private_key_data (GByteArray *contents,
-                                          const char *password,
-                                          NMCryptoKeyType *out_key_type,
-                                          NMCryptoFileFormat *out_file_format,
-                                          GError **error);
+GByteArray *crypto_decrypt_private_key_data (const GByteArray *contents,
+                                             const char *password,
+                                             NMCryptoKeyType *out_key_type,
+                                             GError **error);
 
-GByteArray * crypto_get_private_key (const char *file,
-                                     const char *password,
-                                     NMCryptoKeyType *out_key_type,
-                                     NMCryptoFileFormat *out_file_format,
-                                     GError **error);
+GByteArray *crypto_decrypt_private_key (const char *file,
+                                        const char *password,
+                                        NMCryptoKeyType *out_key_type,
+                                        GError **error);
 
-GByteArray * crypto_load_and_verify_certificate (const char *file,
-                                                 NMCryptoFileFormat *out_file_format,
-                                                 GError **error);
+GByteArray *crypto_load_and_verify_certificate (const char *file,
+                                                NMCryptoFileFormat *out_file_format,
+                                                GError **error);
 
 gboolean crypto_is_pkcs12_file (const char *file, GError **error);
 
 gboolean crypto_is_pkcs12_data (const GByteArray *data);
 
+NMCryptoFileFormat crypto_verify_private_key_data (const GByteArray *contents,
+                                                   const char *password,
+                                                   GError **error);
+
+NMCryptoFileFormat crypto_verify_private_key (const char *file,
+                                              const char *password,
+                                              GError **error);
 
 /* Internal utils API bits for crypto providers */
 
@@ -129,3 +136,4 @@ gboolean crypto_verify_pkcs12 (const GByteArray *data,
                                const char *password,
                                GError **error);
 
+#endif  /* __CRYPTO_H__ */

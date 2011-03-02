@@ -18,7 +18,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2009 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  */
 
 #include <glib.h>
@@ -113,28 +113,46 @@ test_load_cert (const char *path, const char *desc)
 	g_byte_array_free (array, TRUE);
 }
 
+static GByteArray *
+file_to_byte_array (const char *filename)
+{
+	char *contents;
+	GByteArray *array = NULL;
+	gsize length = 0;
+
+	if (g_file_get_contents (filename, &contents, &length, NULL)) {
+		array = g_byte_array_sized_new (length);
+		if (array) {
+			g_byte_array_append (array, (guint8 *) contents, length);
+			g_assert (array->len == length);
+		}
+		g_free (contents);
+	}
+	return array;
+}
+
 static void
 test_load_private_key (const char *path,
                        const char *password,
+                       const char *decrypted_path,
                        gboolean expect_fail,
                        const char *desc)
 {
 	NMCryptoKeyType key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
-	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-	GByteArray *array;
+	GByteArray *array, *decrypted;
 	GError *error = NULL;
 
-	array = crypto_get_private_key (path, password, &key_type, &format, &error);
+	array = crypto_decrypt_private_key (path, password, &key_type, &error);
 	if (expect_fail) {
 		ASSERT (array == NULL, desc,
 		        "unexpected success reading private key file '%s' with "
 		        "invalid password",
 		        path);
 
-		ASSERT (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN, desc,
-		        "unexpected success determining private key file '%s' "
-		        "format with invalid password (expected %d, got %d)",
-		        path, NM_CRYPTO_FILE_FORMAT_UNKNOWN, format);
+		ASSERT (key_type != NM_CRYPTO_KEY_TYPE_UNKNOWN, desc,
+		        "unexpected failure determining private key file '%s' "
+		        "type with invalid password (expected %d, got %d)",
+		        path, NM_CRYPTO_KEY_TYPE_UNKNOWN, key_type);
 		return;
 	}
 
@@ -142,13 +160,28 @@ test_load_private_key (const char *path,
 	        "couldn't read private key file '%s': %d %s",
 	        path, error->code, error->message);
 
-	ASSERT (format == NM_CRYPTO_FILE_FORMAT_RAW_KEY, desc,
-	        "%s: unexpected private key file format (expected %d, got %d)",
-	        path, NM_CRYPTO_FILE_FORMAT_RAW_KEY, format);
-
 	ASSERT (key_type == NM_CRYPTO_KEY_TYPE_RSA, desc,
 	        "%s: unexpected private key type (expected %d, got %d)",
-	        path, NM_CRYPTO_KEY_TYPE_RSA, format);
+	        path, NM_CRYPTO_KEY_TYPE_RSA, key_type);
+
+	if (decrypted_path) {
+		/* Compare the crypto decrypted key against a known-good decryption */
+		decrypted = file_to_byte_array (decrypted_path);
+		ASSERT (decrypted != NULL, desc,
+		        "couldn't read decrypted private key file '%s': %d %s",
+		        decrypted_path, error->code, error->message);
+
+		ASSERT (decrypted->len > 0, desc, "decrypted key file invalid (size 0)");
+
+		ASSERT (decrypted->len == array->len,
+			    desc, "decrypted key file (%d) and decrypted key data (%d) lengths don't match",
+			    decrypted->len, array->len);
+
+		ASSERT (memcmp (decrypted->data, array->data, array->len) == 0,
+			    desc, "decrypted key file and decrypted key data don't match");
+
+		g_byte_array_free (decrypted, TRUE);
+	}
 
 	g_byte_array_free (array, TRUE);
 }
@@ -159,46 +192,35 @@ test_load_pkcs12 (const char *path,
                   gboolean expect_fail,
                   const char *desc)
 {
-	NMCryptoKeyType key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-	GByteArray *array;
 	GError *error = NULL;
 
-	array = crypto_get_private_key (path, password, &key_type, &format, &error);
+	format = crypto_verify_private_key (path, password, &error);
 	if (expect_fail) {
-		ASSERT (array == NULL, desc,
+		ASSERT (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN, desc,
 		        "unexpected success reading PKCS#12 private key file "
 		        "'%s' with invalid password",
 		        path);
-
-		/* PKCS#12 file format can be determined even if the password
-		 * is wrong; check that.
-		 */
-		ASSERT (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN, desc,
-		        "unexpected success determining PKCS#12 private key "
-		        "'%s' file format with invalid password (expected %d, "
-		        "got %d)",
-		        path, NM_CRYPTO_FILE_FORMAT_UNKNOWN, format);
-		ASSERT (key_type == NM_CRYPTO_KEY_TYPE_UNKNOWN, desc,
-		        "unexpected success determining PKCS#12 private key "
-		        "'%s' type with invalid password (expected %d, got %d)",
-		        path, NM_CRYPTO_KEY_TYPE_UNKNOWN, key_type);
-		return;
+	} else {
+		ASSERT (format == NM_CRYPTO_FILE_FORMAT_PKCS12, desc,
+			    "%s: unexpected PKCS#12 private key file format (expected %d, got "
+			    "%d): %d %s",
+			    path, NM_CRYPTO_FILE_FORMAT_PKCS12, format, error->code, error->message);
 	}
+}
 
-	ASSERT (array != NULL, desc,
-	        "couldn't read PKCS#12 private key file '%s': %d %s",
-	        path, error->code, error->message);
+static void
+test_load_pkcs12_no_password (const char *path, const char *desc)
+{
+	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	GError *error = NULL;
 
+	/* We should still get a valid returned crypto file format */
+	format = crypto_verify_private_key (path, NULL, &error);
 	ASSERT (format == NM_CRYPTO_FILE_FORMAT_PKCS12, desc,
-	        "%s: unexpected PKCS#12 private key file format (expected %d, got %d)",
-	        path, NM_CRYPTO_FILE_FORMAT_RAW_KEY, format);
-
-	ASSERT (key_type == NM_CRYPTO_KEY_TYPE_ENCRYPTED, desc,
-	        "%s: unexpected PKCS#12 private key type (expected %d, got %d)",
-	        path, NM_CRYPTO_KEY_TYPE_ENCRYPTED, format);
-
-	g_byte_array_free (array, TRUE);
+		    "%s: unexpected PKCS#12 private key file format (expected %d, got "
+		    "%d): %d %s",
+		    path, NM_CRYPTO_FILE_FORMAT_PKCS12, format, error->code, error->message);
 }
 
 static void
@@ -211,10 +233,9 @@ test_is_pkcs12 (const char *path, gboolean expect_fail, const char *desc)
 		ASSERT (is_pkcs12 == FALSE, desc,
 		        "unexpected success reading non-PKCS#12 file '%s'",
 		        path);
-		return;
+	} else {
+		ASSERT (is_pkcs12 == TRUE, desc, "couldn't read PKCS#12 file '%s'", path);
 	}
-
-	ASSERT (is_pkcs12 == TRUE, desc, "couldn't read PKCS#12 file '%s'", path);
 }
 
 static void
@@ -223,23 +244,17 @@ test_encrypt_private_key (const char *path,
                           const char *desc)
 {
 	NMCryptoKeyType key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
-	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	GByteArray *array, *encrypted, *re_decrypted;
 	GError *error = NULL;
 
-	array = crypto_get_private_key (path, password, &key_type, &format, &error);
-
+	array = crypto_decrypt_private_key (path, password, &key_type, &error);
 	ASSERT (array != NULL, desc,
 	        "couldn't read private key file '%s': %d %s",
 	        path, error->code, error->message);
 
-	ASSERT (format == NM_CRYPTO_FILE_FORMAT_RAW_KEY, desc,
-	        "%s: unexpected private key file format (expected %d, got %d)",
-	        path, NM_CRYPTO_FILE_FORMAT_RAW_KEY, format);
-
 	ASSERT (key_type == NM_CRYPTO_KEY_TYPE_RSA, desc,
 	        "%s: unexpected private key type (expected %d, got %d)",
-	        path, NM_CRYPTO_KEY_TYPE_RSA, format);
+	        path, NM_CRYPTO_KEY_TYPE_RSA, key_type);
 
 	/* Now re-encrypt the private key */
 	encrypted = nm_utils_rsa_key_encrypt (array, password, NULL, &error);
@@ -249,20 +264,14 @@ test_encrypt_private_key (const char *path,
 
 	/* Then re-decrypt the private key */
 	key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
-	format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-	re_decrypted = crypto_get_private_key_data (encrypted, password, &key_type, &format, &error);
-
+	re_decrypted = crypto_decrypt_private_key_data (encrypted, password, &key_type, &error);
 	ASSERT (re_decrypted != NULL, desc,
 	        "couldn't read private key file '%s': %d %s",
 	        path, error->code, error->message);
 
-	ASSERT (format == NM_CRYPTO_FILE_FORMAT_RAW_KEY, desc,
-	        "%s: unexpected private key file format (expected %d, got %d)",
-	        path, NM_CRYPTO_FILE_FORMAT_RAW_KEY, format);
-
 	ASSERT (key_type == NM_CRYPTO_KEY_TYPE_RSA, desc,
 	        "%s: unexpected private key type (expected %d, got %d)",
-	        path, NM_CRYPTO_KEY_TYPE_RSA, format);
+	        path, NM_CRYPTO_KEY_TYPE_RSA, key_type);
 
 	/* Compare the original decrypted key with the re-decrypted key */
 	ASSERT (array->len == re_decrypted->len, desc,
@@ -292,17 +301,21 @@ int main (int argc, char **argv)
 	if (!strcmp (argv[1], "--cert"))
 		test_load_cert (argv[2], "cert");
 	else if (!strcmp (argv[1], "--key")) {
-		ASSERT (argc == 4, "test-crypto",
-		        "wrong number of arguments (--key <key file> <password>)");
+		const char *decrypted_path = (argc == 5) ? argv[4] : NULL;
 
-		test_load_private_key (argv[2], argv[3], FALSE, "private-key");
-		test_load_private_key (argv[2], "blahblahblah", TRUE, "private-key-bad-password");
+		ASSERT (argc == 4 || argc == 5, "test-crypto",
+		        "wrong number of arguments (--key <key file> <password> [<decrypted key file>])");
+
+		test_is_pkcs12 (argv[2], TRUE, "not-pkcs12");
+		test_load_private_key (argv[2], argv[3], decrypted_path, FALSE, "private-key");
+		test_load_private_key (argv[2], "blahblahblah", NULL, TRUE, "private-key-bad-password");
+		test_load_private_key (argv[2], NULL, NULL, TRUE, "private-key-no-password");
 		test_encrypt_private_key (argv[2], argv[3], "private-key-rencrypt");
-		test_is_pkcs12 (argv[2], TRUE, "is-pkcs12-not-pkcs12");
 	} else if (!strcmp (argv[1], "--p12")) {
 		test_is_pkcs12 (argv[2], FALSE, "is-pkcs12");
 		test_load_pkcs12 (argv[2], argv[3], FALSE, "pkcs12-private-key");
 		test_load_pkcs12 (argv[2], "blahblahblah", TRUE, "pkcs12-private-key-bad-password");
+		test_load_pkcs12_no_password (argv[2], "pkcs12-private-key-no-password");
 	} else {
 		ASSERT (argc > 2, "test-crypto", "unknown test type (not --cert, --key, or --p12)");
 	}
