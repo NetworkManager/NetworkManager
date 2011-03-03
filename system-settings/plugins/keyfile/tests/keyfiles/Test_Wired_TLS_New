@@ -1,0 +1,22 @@
+
+[connection]
+id=Wired TLS
+uuid=5ee46013-9469-4c6a-a60a-0c7a1e1c7488
+type=802-3-ethernet
+
+[802-1x]
+eap=tls;
+identity=Bill Smith
+ca-cert=test-ca-cert.pem
+client-cert=test-key-and-cert.pem
+private-key=test-key-and-cert.pem
+private-key-password=12345testing
+
+[ipv4]
+method=auto
+
+[802-3-ethernet]
+duplex=full
+
+[ipv6]
+method=ignore

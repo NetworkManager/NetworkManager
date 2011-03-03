@@ -37,6 +37,7 @@
 #include <nm-setting-serial.h>
 #include <nm-setting-ppp.h>
 #include <nm-setting-gsm.h>
+#include <nm-setting-8021x.h>
 
 #include "nm-test-helpers.h"
 
@@ -1952,6 +1953,122 @@ test_write_gsm_connection (void)
 	g_object_unref (connection);
 }
 
+#define TEST_WIRED_TLS_OLD_FILE TEST_KEYFILES_DIR"/Test_Wired_TLS_Old"
+
+static void
+test_read_wired_8021x_tls_old_connection (void)
+{
+	NMConnection *connection;
+	NMSetting *s_wired;
+	NMSetting8021x *s_8021x;
+	GError *error = NULL;
+	const char *tmp;
+	gboolean success;
+
+	connection = connection_from_file (TEST_WIRED_TLS_OLD_FILE, &error);
+	if (connection == NULL) {
+		g_assert (error);
+		g_warning ("Failed to read %s: %s", TEST_WIRED_TLS_OLD_FILE, error->message);
+		g_assert (connection);
+	}
+
+	success = nm_connection_verify (connection, &error);
+	if (!success) {
+		g_assert (error);
+		g_warning ("Failed to verify %s: %s", TEST_WIRED_TLS_OLD_FILE, error->message);
+		g_assert (success);
+	}
+
+	/* ===== Wired Setting ===== */
+	s_wired = nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
+	g_assert (s_wired != NULL);
+
+	/* ===== 802.1x Setting ===== */
+	s_8021x = (NMSetting8021x *) nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X);
+	g_assert (s_8021x != NULL);
+
+	g_assert (nm_setting_802_1x_get_num_eap_methods (s_8021x) == 1);
+	tmp = nm_setting_802_1x_get_eap_method (s_8021x, 0);
+	g_assert (g_strcmp0 (tmp, "tls") == 0);
+
+	tmp = nm_setting_802_1x_get_identity (s_8021x);
+	g_assert (g_strcmp0 (tmp, "Bill Smith") == 0);
+
+	tmp = nm_setting_802_1x_get_private_key_password (s_8021x);
+	g_assert (g_strcmp0 (tmp, "12345testing") == 0);
+
+	tmp = nm_setting_802_1x_get_ca_cert_path (s_8021x);
+	g_assert (g_strcmp0 (tmp, "/home/dcbw/Desktop/certinfra/CA/eaptest_ca_cert.pem") == 0);
+
+	tmp = nm_setting_802_1x_get_client_cert_path (s_8021x);
+	g_assert (g_strcmp0 (tmp, "/home/dcbw/Desktop/certinfra/client.pem") == 0);
+
+	tmp = nm_setting_802_1x_get_private_key_path (s_8021x);
+	g_assert (g_strcmp0 (tmp, "/home/dcbw/Desktop/certinfra/client.pem") == 0);
+
+	g_object_unref (connection);
+}
+
+#define TEST_WIRED_TLS_NEW_FILE TEST_KEYFILES_DIR"/Test_Wired_TLS_New"
+
+static void
+test_read_wired_8021x_tls_new_connection (void)
+{
+	NMConnection *connection;
+	NMSetting *s_wired;
+	NMSetting8021x *s_8021x;
+	GError *error = NULL;
+	const char *tmp;
+	gboolean success;
+
+	connection = connection_from_file (TEST_WIRED_TLS_NEW_FILE, &error);
+	if (connection == NULL) {
+		g_assert (error);
+		g_warning ("Failed to read %s: %s", TEST_WIRED_TLS_NEW_FILE, error->message);
+		g_assert (connection);
+	}
+
+	success = nm_connection_verify (connection, &error);
+	if (!success) {
+		g_assert (error);
+		g_warning ("Failed to verify %s: %s", TEST_WIRED_TLS_NEW_FILE, error->message);
+		g_assert (success);
+	}
+
+	/* ===== Wired Setting ===== */
+	s_wired = nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
+	g_assert (s_wired != NULL);
+
+	/* ===== 802.1x Setting ===== */
+	s_8021x = (NMSetting8021x *) nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X);
+	g_assert (s_8021x != NULL);
+
+	g_assert (nm_setting_802_1x_get_num_eap_methods (s_8021x) == 1);
+	tmp = nm_setting_802_1x_get_eap_method (s_8021x, 0);
+	g_assert (g_strcmp0 (tmp, "tls") == 0);
+
+	tmp = nm_setting_802_1x_get_identity (s_8021x);
+	g_assert (g_strcmp0 (tmp, "Bill Smith") == 0);
+
+	tmp = nm_setting_802_1x_get_private_key_password (s_8021x);
+	g_assert (g_strcmp0 (tmp, "12345testing") == 0);
+
+	tmp = nm_setting_802_1x_get_ca_cert_path (s_8021x);
+	g_assert (g_strcmp0 (tmp, "test-ca-cert.pem") == 0);
+
+	tmp = nm_setting_802_1x_get_client_cert_path (s_8021x);
+	g_assert (g_strcmp0 (tmp, "test-key-and-cert.pem") == 0);
+
+	tmp = nm_setting_802_1x_get_private_key_path (s_8021x);
+	g_assert (g_strcmp0 (tmp, "test-key-and-cert.pem") == 0);
+
+	g_object_unref (connection);
+}
+
+#define TEST_WIRED_TLS_CA_CERT TEST_KEYFILES_DIR"/test-ca-cert.pem"
+#define TEST_WIRED_TLS_CLI_CERT TEST_KEYFILES_DIR"/test-key-and-cert.pem"
+#define TEST_WIRED_TLS_PRIVKEY TEST_KEYFILES_DIR"/test-key-and-cert.pem"
+
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
@@ -1982,6 +2099,9 @@ int main (int argc, char **argv)
 
 	test_read_gsm_connection ();
 	test_write_gsm_connection ();
+
+	test_read_wired_8021x_tls_old_connection ();
+	test_read_wired_8021x_tls_new_connection ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);
