@@ -2070,6 +2070,7 @@ eap_tls_reader (const char *eap_method,
 	const char *pk_key = phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY" : "IEEE_8021X_PRIVATE_KEY";
 	const char *cli_cert_key = phase2 ? "IEEE_8021X_INNER_CLIENT_CERT" : "IEEE_8021X_CLIENT_CERT";
 	const char *pk_pw_flags_key = phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD_FLAGS": "IEEE_8021X_PRIVATE_KEY_PASSWORD_FLAGS";
+	const char *pk_pw_flags_prop = phase2 ? NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS : NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS;
 	NMSettingSecretFlags flags;
 
 	value = svGetValue (ifcfg, "IEEE_8021X_IDENTITY", FALSE);
@@ -2111,10 +2112,7 @@ eap_tls_reader (const char *eap_method,
 
 	/* Read and set private key password flags */
 	flags = read_secret_flags (ifcfg, pk_pw_flags_key);
-	g_object_set (s_8021x,
-	              phase2 ? NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS : NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS,
-	              flags,
-	              NULL);
+	g_object_set (s_8021x, pk_pw_flags_prop, flags, NULL);
 
 	/* Read the private key password if it's system-owned */
 	if (flags == NM_SETTING_SECRET_FLAG_NONE) {

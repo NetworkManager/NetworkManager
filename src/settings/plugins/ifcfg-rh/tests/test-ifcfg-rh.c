@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 - 2010 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
 #include <stdio.h>
@@ -2676,6 +2676,69 @@ test_read_wired_8021x_peap_mschapv2 (void)
 	        NM_SETTING_802_1X_CA_CERT);
 
 	g_object_unref (tmp_8021x);
+
+	g_object_unref (connection);
+}
+
+#define TEST_IFCFG_WIRED_8021X_TLS_AGENT TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-8021x-tls-agent"
+#define TEST_IFCFG_WIRED_8021X_TLS_ALWAYS TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-8021x-tls-always"
+
+static void
+test_read_wired_8021x_tls_secret_flags (const char *ifcfg, NMSettingSecretFlags expected_flags)
+{
+	NMConnection *connection;
+	NMSettingWired *s_wired;
+	NMSetting8021x *s_8021x;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *expected_identity = "David Smith";
+	gboolean success = FALSE;
+	char *dirname, *tmp;
+
+	connection = connection_from_file (ifcfg,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	g_assert_no_error (error);
+	g_assert (connection);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* ===== WIRED SETTING ===== */
+	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
+	g_assert (s_wired);
+
+	/* ===== 802.1x SETTING ===== */
+	s_8021x = (NMSetting8021x *) nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X);
+	g_assert (s_8021x);
+	g_assert_cmpint (nm_setting_802_1x_get_num_eap_methods (s_8021x), ==, 1);
+	g_assert_cmpstr (nm_setting_802_1x_get_eap_method (s_8021x, 0), ==, "tls");
+	g_assert_cmpstr (nm_setting_802_1x_get_identity (s_8021x), ==, expected_identity);
+	g_assert_cmpint (nm_setting_802_1x_get_private_key_password_flags (s_8021x), ==, expected_flags);
+
+	dirname = g_path_get_dirname (ifcfg);
+	tmp = g_build_path ("/", dirname, "test_ca_cert.pem", NULL);
+	g_assert_cmpstr (nm_setting_802_1x_get_ca_cert_path (s_8021x), ==, tmp);
+	g_free (tmp);
+
+	tmp = g_build_path ("/", dirname, "test1_key_and_cert.pem", NULL);
+	g_assert_cmpstr (nm_setting_802_1x_get_client_cert_path (s_8021x), ==, tmp);
+	g_assert_cmpstr (nm_setting_802_1x_get_private_key_path (s_8021x), ==, tmp);
+	g_free (tmp);
+
+	g_free (dirname);
 
 	g_object_unref (connection);
 }
@@ -10422,6 +10485,9 @@ int main (int argc, char **argv)
 	test_read_wired_dhcp6_only ();
 	test_read_onboot_no ();
 	test_read_wired_8021x_peap_mschapv2 ();
+	test_read_wired_8021x_tls_secret_flags (TEST_IFCFG_WIRED_8021X_TLS_AGENT, NM_SETTING_SECRET_FLAG_AGENT_OWNED);
+	test_read_wired_8021x_tls_secret_flags (TEST_IFCFG_WIRED_8021X_TLS_ALWAYS,
+	                                        NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED);
 	test_read_wifi_open ();
 	test_read_wifi_open_auto ();
 	test_read_wifi_open_ssid_hex ();

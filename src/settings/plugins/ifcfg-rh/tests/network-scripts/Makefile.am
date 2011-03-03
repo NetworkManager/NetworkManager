@@ -14,6 +14,8 @@ EXTRA_DIST = \
 	network-test-wired-defroute-no-gatewaydev-yes \
 	ifcfg-test-wired-8021x-peap-mschapv2 \
 	keys-test-wired-8021x-peap-mschapv2 \
+	ifcfg-test-wired-8021x-tls-agent \
+	ifcfg-test-wired-8021x-tls-always \
 	ifcfg-test-onboot-no \
 	ifcfg-test-wifi-open \
 	ifcfg-test-wifi-open-auto \
