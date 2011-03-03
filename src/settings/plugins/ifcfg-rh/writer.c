@@ -151,6 +151,7 @@ write_secret_file (const char *path,
 	success = TRUE;
 
 out:
+	g_free (tmppath);
 	return success;
 }
 
