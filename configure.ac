@@ -9,7 +9,7 @@ m4_define([nm_version],
           [nm_major_version.nm_minor_version.nm_micro_version.nm_nano_version])
 
 AC_INIT([NetworkManager], [nm_version],
-        [http://bugzilla.gnome.org/enter_bug.gci?product=NetworkManager],
+        [http://bugzilla.gnome.org/enter_bug.cgi?product=NetworkManager],
         [NetworkManager])
 AM_INIT_AUTOMAKE([1.9 subdir-objects tar-ustar no-dist-gzip dist-bzip2])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([no])])
