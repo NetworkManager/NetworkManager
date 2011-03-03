@@ -857,11 +857,11 @@ cert_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char 
 			success = TRUE;
 		} else if (   (array->len < 500)
 		           && g_utf8_validate ((const char *) array->data, array->len, NULL)) {
-	    	GByteArray *val;
+			GByteArray *val;
 			char *path;
 
 			path = get_cert_path (keyfile_path, array);
-		    if (g_file_test (path, G_FILE_TEST_EXISTS)) {
+			if (g_file_test (path, G_FILE_TEST_EXISTS)) {
 				/* Construct the proper value as required for the PATH scheme */
 				val = g_byte_array_sized_new (strlen (SCHEME_PATH) + array->len + 1);
 				g_byte_array_append (val, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
@@ -870,7 +870,7 @@ cert_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char 
 				g_object_set (setting, key, val, NULL);
 				g_byte_array_free (val, TRUE);
 				success = TRUE;
-		    }
+			}
 			g_free (path);
 		}
 
