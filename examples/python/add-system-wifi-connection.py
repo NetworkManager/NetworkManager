@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# Copyright (C) 2010 Red Hat, Inc.
+# Copyright (C) 2011 Red Hat, Inc.
 #
 
 import dbus
@@ -56,9 +56,8 @@ con = dbus.Dictionary({
 
 bus = dbus.SystemBus()
 
-print con
-proxy = bus.get_object("org.freedesktop.NetworkManagerSystemSettings", "/org/freedesktop/NetworkManagerSettings")
-settings = dbus.Interface(proxy, "org.freedesktop.NetworkManagerSettings")
+proxy = bus.get_object("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager/Settings")
+settings = dbus.Interface(proxy, "org.freedesktop.NetworkManager.Settings")
 
 settings.AddConnection(con)
 
