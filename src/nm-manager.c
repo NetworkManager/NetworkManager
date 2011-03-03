@@ -474,7 +474,7 @@ update_active_connection_timestamp (NMManager *manager, NMDevice *device)
 	guint64 timestamp;
 	guint64 *ts_ptr;
 	GKeyFile *timestamps_file;
-	char *data;
+	char *data, *tmp;
 	gsize len;
 	GError *error = NULL;
 
@@ -509,7 +509,9 @@ update_active_connection_timestamp (NMManager *manager, NMDevice *device)
 		g_clear_error (&error);
 	}
 
-	g_key_file_set_uint64 (timestamps_file, "timestamps", connection_uuid, timestamp);
+	tmp = g_strdup_printf ("%" G_GUINT64_FORMAT, timestamp);
+	g_key_file_set_value (timestamps_file, "timestamps", connection_uuid, tmp);
+	g_free (tmp);
 
 	data = g_key_file_to_data (timestamps_file, &len, &error);
 	if (data) {
