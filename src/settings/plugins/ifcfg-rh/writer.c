@@ -49,14 +49,57 @@
 	{ g_warning ("   " pname ": " fmt, ##args); }
 
 static void
+save_secret_flags (shvarFile *ifcfg,
+                   const char *key,
+                   NMSettingSecretFlags flags)
+{
+	GString *str;
+
+	g_return_if_fail (ifcfg != NULL);
+	g_return_if_fail (key != NULL);
+
+	if (flags == NM_SETTING_SECRET_FLAG_NONE) {
+		svSetValue (ifcfg, key, NULL, FALSE);
+		return;
+	}
+
+	/* Convert flags bitfield into string representation */
+	str = g_string_sized_new (20);
+	if (flags & NM_SETTING_SECRET_FLAG_AGENT_OWNED)
+		g_string_append (str, SECRET_FLAG_AGENT);
+
+	if (flags & NM_SETTING_SECRET_FLAG_NOT_SAVED) {
+		if (str->len)
+			g_string_append_c (str, ' ');
+		g_string_append (str, SECRET_FLAG_NOT_SAVED);
+	}
+
+	if (flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED) {
+		if (str->len)
+			g_string_append_c (str, ' ');
+		g_string_append (str, SECRET_FLAG_NOT_REQUIRED);
+	}
+
+	svSetValue (ifcfg, key, str->len ? str->str : NULL, FALSE);
+	g_string_free (str, TRUE);
+}
+
+static void
 set_secret (shvarFile *ifcfg,
             const char *key,
             const char *value,
+            const char *flags_key,
             NMSettingSecretFlags flags,
             gboolean verbatim)
 {
 	shvarFile *keyfile;
 	
+	/* Clear the secret from the ifcfg and the associated "keys" file */
+	svSetValue (ifcfg, key, NULL, FALSE);
+
+	/* Save secret flags */
+	save_secret_flags (ifcfg, flags_key, flags);
+
 	keyfile = utils_get_keys_ifcfg (ifcfg->fileName, TRUE);
 	if (!keyfile) {
 		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: could not create key file for '%s'",
@@ -64,8 +107,7 @@ set_secret (shvarFile *ifcfg,
 		goto error;
 	}
 
-	/* Clear the secret from the ifcfg and the associated "keys" file */
-	svSetValue (ifcfg, key, NULL, FALSE);
+	/* Clear the secret from the associated "keys" file */
 	svSetValue (keyfile, key, NULL, FALSE);
 
 	/* Only write the secret if it's system owned and supposed to be saved */
@@ -155,15 +197,11 @@ out:
 	return success;
 }
 
-typedef NMSetting8021xCKScheme (*SchemeFunc)(NMSetting8021x *setting);
-typedef const char *           (*PathFunc)  (NMSetting8021x *setting);
-typedef const GByteArray *     (*BlobFunc)  (NMSetting8021x *setting);
-
 typedef struct ObjectType {
 	const char *setting_key;
-	SchemeFunc scheme_func;
-	PathFunc path_func;
-	BlobFunc blob_func;
+	NMSetting8021xCKScheme (*scheme_func)(NMSetting8021x *setting);
+	const char *           (*path_func)  (NMSetting8021x *setting);
+	const GByteArray *     (*blob_func)  (NMSetting8021x *setting);
 	const char *ifcfg_key;
 	const char *suffix;
 } ObjectType;
@@ -243,7 +281,6 @@ static const ObjectType phase2_p12_type = {
 static gboolean
 write_object (NMSetting8021x *s_8021x,
               shvarFile *ifcfg,
-              const GByteArray *override_data,
               const ObjectType *objtype,
               GError **error)
 {
@@ -254,23 +291,16 @@ write_object (NMSetting8021x *s_8021x,
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
 	g_return_val_if_fail (objtype != NULL, FALSE);
 
-	if (override_data) {
-		/* if given explicit data to save, always use that instead of asking
-		 * the setting what to do.
-		 */
-		blob = override_data;
-	} else {
-		scheme = (*(objtype->scheme_func))(s_8021x);
-		switch (scheme) {
-		case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-			blob = (*(objtype->blob_func))(s_8021x);
-			break;
-		case NM_SETTING_802_1X_CK_SCHEME_PATH:
-			path = (*(objtype->path_func))(s_8021x);
-			break;
-		default:
-			break;
-		}
+	scheme = (*(objtype->scheme_func))(s_8021x);
+	switch (scheme) {
+	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
+		blob = (*(objtype->blob_func))(s_8021x);
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PATH:
+		path = (*(objtype->path_func))(s_8021x);
+		break;
+	default:
+		break;
 	}
 
 	/* If certificate/private key wasn't sent, the connection may no longer be
@@ -303,7 +333,7 @@ write_object (NMSetting8021x *s_8021x,
 		return TRUE;
 	}
 
-	/* If it's raw certificate data, write the cert data out to the standard file */
+	/* If it's raw certificate data, write the data out to the standard file */
 	if (blob) {
 		gboolean success;
 		char *new_file;
@@ -344,101 +374,72 @@ write_8021x_certs (NMSetting8021x *s_8021x,
                    shvarFile *ifcfg,
                    GError **error)
 {
-	GByteArray *enc_key = NULL;
 	const char *password = NULL;
-	char *generated_pw = NULL;
 	gboolean success = FALSE, is_pkcs12 = FALSE;
 	const ObjectType *otype = NULL;
-	const GByteArray *blob = NULL;
 	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
 
 	/* CA certificate */
-	if (phase2)
-		otype = &phase2_ca_type;
-	else
-		otype = &ca_type;
-
-	if (!write_object (s_8021x, ifcfg, NULL, otype, error))
+	if (!write_object (s_8021x, ifcfg, phase2 ? &phase2_ca_type : &ca_type, error))
 		return FALSE;
 
 	/* Private key */
 	if (phase2) {
-		if (nm_setting_802_1x_get_phase2_private_key_scheme (s_8021x) != NM_SETTING_802_1X_CK_SCHEME_UNKNOWN) {
-			if (nm_setting_802_1x_get_phase2_private_key_format (s_8021x) == NM_SETTING_802_1X_CK_FORMAT_PKCS12)
-				is_pkcs12 = TRUE;
+		otype = &phase2_pk_type;
+		if (nm_setting_802_1x_get_phase2_private_key_format (s_8021x) == NM_SETTING_802_1X_CK_FORMAT_PKCS12) {
+			otype = &phase2_p12_type;
+			is_pkcs12 = TRUE;
 		}
 		password = nm_setting_802_1x_get_phase2_private_key_password (s_8021x);
 		flags = nm_setting_802_1x_get_phase2_private_key_password_flags (s_8021x);
 	} else {
-		if (nm_setting_802_1x_get_private_key_scheme (s_8021x) != NM_SETTING_802_1X_CK_SCHEME_UNKNOWN) {
-			if (nm_setting_802_1x_get_private_key_format (s_8021x) == NM_SETTING_802_1X_CK_FORMAT_PKCS12)
-				is_pkcs12 = TRUE;
+		otype = &pk_type;
+		if (nm_setting_802_1x_get_private_key_format (s_8021x) == NM_SETTING_802_1X_CK_FORMAT_PKCS12) {
+			otype = &p12_type;
+			is_pkcs12 = TRUE;
 		}
 		password = nm_setting_802_1x_get_private_key_password (s_8021x);
 		flags = nm_setting_802_1x_get_private_key_password_flags (s_8021x);
 	}
 
-	if (is_pkcs12)
-		otype = phase2 ? &phase2_p12_type : &p12_type;
-	else
-		otype = phase2 ? &phase2_pk_type : &pk_type;
-
-	if ((*(otype->scheme_func))(s_8021x) == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		blob = (*(otype->blob_func))(s_8021x);
-
-	/* Only do the private key re-encrypt dance if we got the raw key data, which
-	 * by definition will be unencrypted.  If we're given a direct path to the
-	 * private key file, it'll be encrypted, so we don't need to re-encrypt.
-	 */
-	if (blob && !is_pkcs12) {
-		/* Encrypt the unencrypted private key with the fake password */
-		enc_key = nm_utils_rsa_key_encrypt (blob, password, &generated_pw, error);
-		if (!enc_key)
-			goto out;
-
-		if (generated_pw) {
-			password = generated_pw;
-			flags = NM_SETTING_SECRET_FLAG_NONE;
-		}
-	}
-
 	/* Save the private key */
-	if (!write_object (s_8021x, ifcfg, enc_key ? enc_key : blob, otype, error))
+	if (!write_object (s_8021x, ifcfg, otype, error))
 		goto out;
 
 	/* Private key password */
-	if (phase2)
-		set_secret (ifcfg, "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD", password, flags, FALSE);
-	else
-		set_secret (ifcfg, "IEEE_8021X_PRIVATE_KEY_PASSWORD", password, flags, FALSE);
+	if (phase2) {
+		set_secret (ifcfg,
+		            "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD",
+		            password,
+		            "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD_FLAGS",
+		            flags,
+		            FALSE);
+	} else {
+		set_secret (ifcfg,
+		            "IEEE_8021X_PRIVATE_KEY_PASSWORD",
+		            password,
+		            "IEEE_8021X_PRIVATE_KEY_PASSWORD_FLAGS",
+		            flags,
+		            FALSE);
+	}
 
 	/* Client certificate */
 	if (is_pkcs12) {
+		/* Don't need a client certificate with PKCS#12 since the file is both
+		 * the client certificate and the private key in one file.
+		 */
 		svSetValue (ifcfg,
 		            phase2 ? "IEEE_8021X_INNER_CLIENT_CERT" : "IEEE_8021X_CLIENT_CERT",
 		            NULL, FALSE);
 	} else {
-		if (phase2)
-			otype = &phase2_client_type;
-		else
-			otype = &client_type;
-
 		/* Save the client certificate */
-		if (!write_object (s_8021x, ifcfg, NULL, otype, error))
+		if (!write_object (s_8021x, ifcfg, phase2 ? &phase2_client_type : &client_type, error))
 			goto out;
 	}
 
 	success = TRUE;
 
 out:
-	if (generated_pw) {
-		memset (generated_pw, 0, strlen (generated_pw));
-		g_free (generated_pw);
-	}
-	if (enc_key) {
-		memset (enc_key->data, 0, enc_key->len);
-		g_byte_array_free (enc_key, TRUE);
-	}
 	return success;
 }
 
@@ -486,6 +487,7 @@ write_8021x_setting (NMConnection *connection,
 	set_secret (ifcfg,
 	            "IEEE_8021X_PASSWORD",
 	            nm_setting_802_1x_get_password (s_8021x),
+	            "IEEE_8021X_PASSWORD_FLAGS",
 	            nm_setting_802_1x_get_password_flags (s_8021x),
 	            FALSE);
 
@@ -590,8 +592,10 @@ write_wireless_security_setting (NMConnection *connection,
 			svSetValue (ifcfg, "IEEE_8021X_IDENTITY",
 			            nm_setting_wireless_security_get_leap_username (s_wsec),
 			            FALSE);
-			set_secret (ifcfg, "IEEE_8021X_PASSWORD",
+			set_secret (ifcfg,
+			            "IEEE_8021X_PASSWORD",
 			            nm_setting_wireless_security_get_leap_password (s_wsec),
+			            "IEEE_8021X_PASSWORD_FLAGS",
 			            nm_setting_wireless_security_get_leap_password_flags (s_wsec),
 			            FALSE);
 			*no_8021x = TRUE;
@@ -601,16 +605,16 @@ write_wireless_security_setting (NMConnection *connection,
 	/* WEP keys */
 
 	/* Clear any default key */
-	set_secret (ifcfg, "KEY", NULL, NM_SETTING_SECRET_FLAG_NONE, FALSE);
+	set_secret (ifcfg, "KEY", NULL, "WEP_KEY_FLAGS", NM_SETTING_SECRET_FLAG_NONE, FALSE);
 
 	/* Clear existing keys */
 	for (i = 0; i < 4; i++) {
 		tmp = g_strdup_printf ("KEY_PASSPHRASE%d", i + 1);
-		set_secret (ifcfg, tmp, NULL, NM_SETTING_SECRET_FLAG_NONE, FALSE);
+		set_secret (ifcfg, tmp, NULL, "WEP_KEY_FLAGS", NM_SETTING_SECRET_FLAG_NONE, FALSE);
 		g_free (tmp);
 
 		tmp = g_strdup_printf ("KEY%d", i + 1);
-		set_secret (ifcfg, tmp, NULL, NM_SETTING_SECRET_FLAG_NONE, FALSE);
+		set_secret (ifcfg, tmp, NULL, "WEP_KEY_FLAGS", NM_SETTING_SECRET_FLAG_NONE, FALSE);
 		g_free (tmp);
 	}
 
@@ -645,7 +649,12 @@ write_wireless_security_setting (NMConnection *connection,
 					}
 				}
 
-				set_secret (ifcfg, tmp, key, nm_setting_wireless_security_get_wep_key_flags (s_wsec), FALSE);
+				set_secret (ifcfg,
+				            tmp,
+				            key,
+				            "WEP_KEY_FLAGS",
+				            nm_setting_wireless_security_get_wep_key_flags (s_wsec),
+				            FALSE);
 				g_free (tmp);
 				g_free (ascii_key);
 			}
@@ -711,12 +720,19 @@ write_wireless_security_setting (NMConnection *connection,
 		set_secret (ifcfg,
 		            "WPA_PSK",
 		            quoted ? quoted->str : psk,
+		            "WPA_PSK_FLAGS",
 		            nm_setting_wireless_security_get_psk_flags (s_wsec),
 		            TRUE);
 		if (quoted)
 			g_string_free (quoted, TRUE);
-	} else
-		set_secret (ifcfg, "WPA_PSK", NULL, NM_SETTING_SECRET_FLAG_NONE, FALSE);
+	} else {
+		set_secret (ifcfg,
+		            "WPA_PSK",
+		            NULL,
+		            "WPA_PSK_FLAGS",
+		            NM_SETTING_SECRET_FLAG_NONE,
+		            FALSE);
+	}
 
 	return TRUE;
 }

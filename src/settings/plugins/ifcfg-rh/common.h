@@ -45,6 +45,10 @@
 #define TYPE_WIRELESS "Wireless"
 #define TYPE_BRIDGE   "Bridge"
 
+#define SECRET_FLAG_AGENT "user"
+#define SECRET_FLAG_NOT_SAVED "ask"
+#define SECRET_FLAG_NOT_REQUIRED "unused"
+
 #define IFCFG_PLUGIN_ERROR (ifcfg_plugin_error_quark ())
 GQuark ifcfg_plugin_error_quark (void);
 

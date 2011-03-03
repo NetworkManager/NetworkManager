@@ -50,6 +50,27 @@
 #include "reader.h"
 #include "writer.h"
 
+#if 0
+static void
+connection_diff (NMConnection *a, NMConnection *b)
+{
+	GHashTable *hash;
+	GHashTableIter iter, siter;
+	const char *setting_name, *key;
+	GHashTable *setting_hash = NULL;
+
+	if (!nm_connection_diff (a, b, NM_SETTING_COMPARE_FLAG_EXACT, &hash)) {
+		g_hash_table_iter_init (&iter, hash);
+		while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, (gpointer) &setting_hash)) {
+			g_hash_table_iter_init (&siter, setting_hash);
+			while (g_hash_table_iter_next (&siter, (gpointer) &key, NULL))
+				g_message (":: %s :: %s", setting_name,key);
+		}
+		g_hash_table_destroy (hash);
+	}
+}
+#endif
+
 typedef enum {
 	CK_CA_CERT = 0,
 	CK_CLIENT_CERT = 1,
@@ -4185,6 +4206,61 @@ test_read_wifi_leap (void)
 	g_object_unref (connection);
 }
 
+#define TEST_IFCFG_WIFI_LEAP_AGENT TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-leap-agent"
+#define TEST_IFCFG_WIFI_LEAP_ALWAYS TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-leap-always-ask"
+
+static void
+test_read_wifi_leap_secret_flags (const char *file, NMSettingSecretFlags expected_flags)
+{
+	NMConnection *connection;
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *expected_identity = "Bill Smith";
+	gboolean success;
+
+	connection = connection_from_file (file,
+	                                   NULL,
+	                                   TYPE_WIRELESS,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	g_assert_no_error (error);
+	g_assert (connection);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* ===== WIRELESS SETTING ===== */
+	s_wifi = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
+	g_assert (s_wifi);
+
+	g_assert (g_strcmp0 (nm_setting_wireless_get_security (s_wifi), NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0);
+
+	/* ===== WIRELESS SECURITY SETTING ===== */
+	s_wsec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
+	g_assert (s_wsec);
+
+	g_assert (g_strcmp0 (nm_setting_wireless_security_get_key_mgmt (s_wsec), "ieee8021x") == 0);
+	g_assert (g_strcmp0 (nm_setting_wireless_security_get_auth_alg (s_wsec), "leap") == 0);
+	g_assert (g_strcmp0 (nm_setting_wireless_security_get_leap_username (s_wsec), expected_identity) == 0);
+	/* password blank as it's not system-owned */
+	g_assert (nm_setting_wireless_security_get_leap_password_flags (s_wsec) == expected_flags);
+	g_assert (nm_setting_wireless_security_get_leap_password (s_wsec) == NULL);
+
+	g_object_unref (connection);
+}
+
 #define TEST_IFCFG_WIFI_WPA_PSK TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wpa-psk"
 
 static void
@@ -5814,6 +5890,70 @@ test_read_permissions (void)
 	g_object_unref (connection);
 }
 
+#define TEST_IFCFG_WIFI_WEP_AGENT_KEYS TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wep-agent-keys"
+
+static void
+test_read_wifi_wep_agent_keys (void)
+{
+	NMConnection *connection;
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	NMWepKeyType key_type;
+	gboolean success;
+	NMSettingSecretFlags flags;
+
+	connection = connection_from_file (TEST_IFCFG_WIFI_WEP_AGENT_KEYS,
+	                                   NULL,
+	                                   TYPE_WIRELESS,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	g_assert (connection != NULL);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* Ensure the connection is still marked for wifi security even though
+	 * we don't have any WEP keys because they are agent owned.
+	 */
+
+	/* ===== WIRELESS SETTING ===== */
+	s_wifi = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
+	g_assert (s_wifi);
+	tmp = nm_setting_wireless_get_security (s_wifi);
+	g_assert (g_strcmp0 (tmp, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0);
+
+	/* ===== WIRELESS SECURITY SETTING ===== */
+	s_wsec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
+	g_assert (s_wsec);
+
+	g_assert (strcmp (nm_setting_wireless_security_get_key_mgmt (s_wsec), "none") == 0);
+	g_assert (nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec) == 0);
+
+	key_type = nm_setting_wireless_security_get_wep_key_type (s_wsec);
+	g_assert (key_type == NM_WEP_KEY_TYPE_UNKNOWN || key_type == NM_WEP_KEY_TYPE_KEY);
+
+	/* We don't expect WEP key0 to be filled */
+	g_assert (nm_setting_wireless_security_get_wep_key (s_wsec, 0) == NULL);
+
+	flags = nm_setting_wireless_security_get_wep_key_flags (s_wsec);
+	g_assert (flags & NM_SETTING_SECRET_FLAG_AGENT_OWNED);
+
+	g_object_unref (connection);
+}
+
 static void
 test_write_wired_static (void)
 {
@@ -6772,6 +6912,203 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 	g_object_unref (reread);
 }
 
+#if 0
+static GByteArray *
+file_to_byte_array (const char *filename)
+{
+	char *contents;
+	GByteArray *array = NULL;
+	gsize length = 0;
+
+	if (g_file_get_contents (filename, &contents, &length, NULL)) {
+		array = g_byte_array_sized_new (length);
+		if (array) {
+			g_byte_array_append (array, (guint8 *) contents, length);
+			g_assert (array->len == length);
+		}
+		g_free (contents);
+	}
+	return array;
+}
+#endif
+
+#define TEST_IFCFG_WIRED_TLS_CA_CERT TEST_IFCFG_DIR"/network-scripts/test_ca_cert.pem"
+#define TEST_IFCFG_WIRED_TLS_CLIENT_CERT TEST_IFCFG_DIR"/network-scripts/test1_key_and_cert.pem"
+#define TEST_IFCFG_WIRED_TLS_PRIVATE_KEY TEST_IFCFG_DIR"/network-scripts/test1_key_and_cert.pem"
+
+static void
+test_write_wired_8021x_tls_blobs (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	NMSetting8021x *s_8021x;
+	char *uuid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	NMSetting8021xCKFormat format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
+	const char *pw;
+
+	connection = nm_connection_new ();
+	g_assert (connection != NULL);
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	g_assert (s_con);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wired 802.1x TLS Blobs",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	g_assert (s_wired);
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	g_assert (s_ip4);
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	g_assert (s_ip6);
+	g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	/* 802.1x setting */
+	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
+	g_assert (s_8021x);
+	nm_connection_add_setting (connection, NM_SETTING (s_8021x));
+
+	g_object_set (s_8021x, NM_SETTING_802_1X_IDENTITY, "Bill Smith", NULL);
+	nm_setting_802_1x_add_eap_method (s_8021x, "tls");
+
+	/* CA cert */
+	success = nm_setting_802_1x_set_ca_cert (s_8021x,
+	                                         TEST_IFCFG_WIRED_TLS_CA_CERT,
+	                                         NM_SETTING_802_1X_CK_SCHEME_BLOB,
+	                                         &format,
+	                                         &error);
+	if (!success) {
+		g_assert (error);
+		g_warning ("Failed to set CA certificate '%s': %s",
+		           TEST_IFCFG_WIRED_TLS_CA_CERT,
+		           error->message);
+	}
+	g_assert (success == TRUE);
+	g_assert (format == NM_SETTING_802_1X_CK_FORMAT_X509);
+
+	/* Client cert */
+	format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
+	success = nm_setting_802_1x_set_client_cert (s_8021x,
+	                                             TEST_IFCFG_WIRED_TLS_CLIENT_CERT,
+	                                             NM_SETTING_802_1X_CK_SCHEME_BLOB,
+	                                             &format,
+	                                             &error);
+	if (!success) {
+		g_assert (error);
+		g_warning ("Failed to set client certificate '%s': %s",
+		           TEST_IFCFG_WIRED_TLS_CLIENT_CERT,
+		           error->message);
+	}
+	g_assert (success == TRUE);
+	g_assert (format == NM_SETTING_802_1X_CK_FORMAT_X509);
+
+	/* Private key */
+	format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
+	success = nm_setting_802_1x_set_private_key (s_8021x,
+	                                             TEST_IFCFG_WIRED_TLS_PRIVATE_KEY,
+	                                             "test1",
+	                                             NM_SETTING_802_1X_CK_SCHEME_BLOB,
+	                                             &format,
+	                                             &error);
+	if (!success) {
+		g_assert (error);
+		g_warning ("Failed to set private key '%s': %s",
+		           TEST_IFCFG_WIRED_TLS_PRIVATE_KEY,
+		           error->message);
+	}
+	g_assert (success == TRUE);
+	g_assert (format == NM_SETTING_802_1X_CK_FORMAT_RAW_KEY);
+
+	/* Verify finished connection */
+	success = nm_connection_verify (connection, &error);
+	if (!success) {
+		g_assert (error);
+		g_warning ("Failed to verify connection: %s", error->message);
+	}
+	g_assert (success);
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	if (!success) {
+		g_assert (error);
+		g_warning ("Failed to write connection: %s", error->message);
+	}
+	g_assert (success);
+	g_assert (testfile != NULL);
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_WIRELESS,
+	                               NULL,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &routefile,
+	                               &route6file,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+	g_assert (keyfile != NULL);
+	unlink (keyfile);
+
+	g_assert (reread != NULL);
+
+	success = nm_connection_verify (reread, &error);
+	if (!success) {
+		g_assert (error);
+		g_warning ("Failed to verify %s: %s", testfile, error->message);
+	}
+	g_assert (success);
+
+	/* Ensure the reread connection's certificates and private key are paths */
+	s_8021x = (NMSetting8021x *) nm_connection_get_setting (reread, NM_TYPE_SETTING_802_1X);
+	g_assert (s_8021x);
+	g_assert (nm_setting_802_1x_get_ca_cert_scheme (s_8021x) == NM_SETTING_802_1X_CK_SCHEME_PATH);
+	g_assert (nm_setting_802_1x_get_client_cert_scheme (s_8021x) == NM_SETTING_802_1X_CK_SCHEME_PATH);
+	g_assert (nm_setting_802_1x_get_private_key_scheme (s_8021x) == NM_SETTING_802_1X_CK_SCHEME_PATH);
+
+	/* Ensure the private key password is still set */
+	pw = nm_setting_802_1x_get_private_key_password (s_8021x);
+	g_assert (pw != NULL);
+	g_assert (g_strcmp0 (pw, "test1") == 0);
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
 static void
 test_write_wifi_open (void)
 {
@@ -6903,7 +7240,6 @@ test_write_wifi_open (void)
 	ASSERT (tmp != NULL,
 	        "wifi-open-write-reread", "failed to read ESSID key from %s", testfile);
 
-	g_message ("%s", tmp);
 	ASSERT (strncmp (tmp, "\"\"", 2) != 0,
 	        "wifi-open-write-reread", "unexpected ESSID double-quote in %s", testfile);
 
@@ -7947,6 +8283,132 @@ test_write_wifi_leap (void)
 
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
 	        "wifi-leap-write", "written and re-read connection weren't the same.");
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
+test_write_wifi_leap_secret_flags (NMSettingSecretFlags flags)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	char *uuid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GByteArray *ssid;
+	const unsigned char ssid_data[] = "blahblah";
+
+	connection = nm_connection_new ();
+	g_assert (connection);
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	g_assert (s_con);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wifi LEAP Secret Flags",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wifi setting */
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	g_assert (s_wifi);
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	ssid = g_byte_array_sized_new (sizeof (ssid_data));
+	g_byte_array_append (ssid, ssid_data, sizeof (ssid_data));
+	g_object_set (s_wifi,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NM_SETTING_WIRELESS_MODE, "infrastructure",
+	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	              NULL);
+	g_byte_array_free (ssid, TRUE);
+
+	/* Wireless security setting */
+	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+	g_assert (s_wsec);
+	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+
+	g_object_set (s_wsec,
+	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x",
+	              NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "leap",
+	              NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, "Bill Smith",
+	              NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD, "foobar22",
+	              NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS, flags,
+	              NULL);
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	g_assert (s_ip4);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	g_assert (s_ip6);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+	g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_assert (testfile);
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_WIRELESS,
+	                               NULL,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &routefile,
+	                               &route6file,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	g_assert_no_error (error);
+
+	/* No key should be written out since the secret is not system owned */
+	g_assert (keyfile);
+	g_assert (g_file_test (keyfile, G_FILE_TEST_EXISTS) == FALSE);
+
+	g_assert (reread);
+
+	success = nm_connection_verify (reread, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* Remove the LEAP password from the original connection since it wont' be
+	 * in the reread connection, as the password is not system owned.
+	 */
+	g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD, NULL, NULL);
+	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -9439,6 +9901,136 @@ test_write_permissions (void)
 }
 
 static void
+test_write_wifi_wep_agent_keys (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	char *uuid;
+	const char *str_ssid = "foobarbaz";
+	GByteArray *ssid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+
+	connection = nm_connection_new ();
+	g_assert (connection != NULL);
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	g_assert (s_con);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wifi WEP Agent Owned",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	g_assert (s_ip4);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	g_assert (s_ip6);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+	g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
+
+	/* Wifi setting */
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	g_assert (s_wifi);
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	ssid = g_byte_array_sized_new (strlen (str_ssid));
+	g_byte_array_append (ssid, (guint8 *) str_ssid, strlen (str_ssid));
+	g_object_set (s_wifi,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	              NM_SETTING_WIRELESS_MODE, "infrastructure",
+	              NULL);
+	g_byte_array_free (ssid, TRUE);
+
+	/* Wifi security setting */
+	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+	g_assert (s_wsec);
+	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+
+	g_object_set (s_wsec,
+	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none",
+	              NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS, NM_SETTING_SECRET_FLAG_AGENT_OWNED,
+	              NULL);
+	nm_setting_wireless_security_set_wep_key (s_wsec, 0, "asdfdjaslfjasd;flasjdfl;aksdf");
+
+	/* Verify */
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_assert (testfile != NULL);
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_WIRELESS,
+	                               NULL,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &routefile,
+	                               &route6file,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	g_assert_no_error (error);
+	g_assert (reread);
+
+	success = nm_connection_verify (reread, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* Remove the WEP key from the original, because it should not have been
+	 * written out to disk as it was agent-owned.  The new connection should
+	 * not have any WEP keys set.
+	 */
+	nm_setting_wireless_security_set_wep_key (s_wsec, 0, NULL);
+
+	/* Compare original and reread */
+	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
+	g_assert (success);
+
+	if (route6file)
+		unlink (route6file);
+
+	g_free (testfile);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
 test_write_wired_pppoe (void)
 {
 	NMConnection *connection;
@@ -9843,6 +10435,9 @@ int main (int argc, char **argv)
 	test_read_wifi_wep_40_ascii ();
 	test_read_wifi_wep_104_ascii ();
 	test_read_wifi_leap ();
+	test_read_wifi_leap_secret_flags (TEST_IFCFG_WIFI_LEAP_AGENT, NM_SETTING_SECRET_FLAG_AGENT_OWNED);
+	test_read_wifi_leap_secret_flags (TEST_IFCFG_WIFI_LEAP_ALWAYS,
+	                                  NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED);
 	test_read_wifi_wpa_psk ();
 	test_read_wifi_wpa_psk_unquoted ();
 	test_read_wifi_wpa_psk_unquoted2 ();
@@ -9854,6 +10449,7 @@ int main (int argc, char **argv)
 	test_read_wired_qeth_static ();
 	test_read_wifi_wep_no_keys ();
 	test_read_permissions ();
+	test_read_wifi_wep_agent_keys ();
 
 	test_write_wired_static ();
 	test_write_wired_static_ip6_only ();
@@ -9861,6 +10457,7 @@ int main (int argc, char **argv)
 	test_read_write_static_routes_legacy ();
 	test_write_wired_dhcp ();
 	test_write_wired_dhcp_8021x_peap_mschapv2 ();
+	test_write_wired_8021x_tls_blobs ();
 	test_write_wifi_open ();
 	test_write_wifi_open_hex_ssid ();
 	test_write_wifi_wep ();
@@ -9869,6 +10466,9 @@ int main (int argc, char **argv)
 	test_write_wifi_wep_40_ascii ();
 	test_write_wifi_wep_104_ascii ();
 	test_write_wifi_leap ();
+	test_write_wifi_leap_secret_flags (NM_SETTING_SECRET_FLAG_AGENT_OWNED);
+	test_write_wifi_leap_secret_flags (NM_SETTING_SECRET_FLAG_NOT_SAVED);
+	test_write_wifi_leap_secret_flags (NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED);
 	test_write_wifi_wpa_psk ("Test Write Wifi WPA PSK",
 	                         "wifi-wpa-psk-write",
 	                         FALSE,
@@ -9905,6 +10505,7 @@ int main (int argc, char **argv)
 	test_write_wifi_wpa_eap_ttls_mschapv2 ();
 	test_write_wired_qeth_dhcp ();
 	test_write_permissions ();
+	test_write_wifi_wep_agent_keys ();
 
 	/* iSCSI / ibft */
 	test_read_ibft_dhcp ();

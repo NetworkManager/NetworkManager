@@ -30,6 +30,8 @@ EXTRA_DIST = \
 	keys-test-wifi-wep-eap-ttls-chap \
 	ifcfg-test-wifi-leap \
 	keys-test-wifi-leap \
+	ifcfg-test-wifi-leap-agent \
+	ifcfg-test-wifi-leap-always-ask \
 	ifcfg-test-wifi-wpa-psk \
 	keys-test-wifi-wpa-psk \
 	ifcfg-test-wifi-wpa-psk-unquoted \
@@ -71,7 +73,8 @@ EXTRA_DIST = \
 	ifcfg-test-bridge-component \
 	ifcfg-test-vlan-interface \
 	ifcfg-test-wifi-wep-no-keys \
-	ifcfg-test-permissions
+	ifcfg-test-permissions \
+	ifcfg-test-wifi-wep-agent-keys
 
 check-local:
 	@for f in $(EXTRA_DIST); do \

@@ -1705,6 +1705,30 @@ read_wep_keys (shvarFile *ifcfg,
 	return TRUE;
 }
 
+static NMSettingSecretFlags
+read_secret_flags (shvarFile *ifcfg, const char *flags_key)
+{
+	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
+	char *val;
+
+	g_return_val_if_fail (flags_key != NULL, NM_SETTING_SECRET_FLAG_NONE);
+	g_return_val_if_fail (flags_key[0] != '\0', NM_SETTING_SECRET_FLAG_NONE);
+	g_return_val_if_fail (g_str_has_suffix (flags_key, "_FLAGS"), NM_SETTING_SECRET_FLAG_NONE);
+
+	val = svGetValue (ifcfg, flags_key, FALSE);
+	if (val) {
+		if (strstr (val, SECRET_FLAG_AGENT))
+			flags |= NM_SETTING_SECRET_FLAG_AGENT_OWNED;
+		if (strstr (val, SECRET_FLAG_NOT_SAVED))
+			flags |= NM_SETTING_SECRET_FLAG_NOT_SAVED;
+		if (strstr (val, SECRET_FLAG_NOT_REQUIRED))
+			flags |= NM_SETTING_SECRET_FLAG_NOT_REQUIRED;
+
+		g_free (val);
+	}
+	return flags;
+}
+
 static NMSetting *
 make_wep_setting (shvarFile *ifcfg,
                   const char *file,
@@ -1715,6 +1739,7 @@ make_wep_setting (shvarFile *ifcfg,
 	shvarFile *keys_ifcfg = NULL;
 	int default_key_idx = 0;
 	gboolean has_default_key = FALSE, success;
+	NMSettingSecretFlags key_flags;
 
 	s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
 	g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none", NULL);
@@ -1735,19 +1760,25 @@ make_wep_setting (shvarFile *ifcfg,
  		g_free (value);
 	}
 
-	/* Read keys in the ifcfg file */
-	if (!read_wep_keys (ifcfg, default_key_idx, s_wsec, error))
-		goto error;
+	/* Read WEP key flags */
+	key_flags = read_secret_flags (ifcfg, "WEP_KEY_FLAGS");
+	g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS, key_flags, NULL);
 
-	/* Try to get keys from the "shadow" key file */
-	keys_ifcfg = utils_get_keys_ifcfg (file, FALSE);
-	if (keys_ifcfg) {
-		if (!read_wep_keys (keys_ifcfg, default_key_idx, s_wsec, error)) {
-			svCloseFile (keys_ifcfg);
+	/* Read keys in the ifcfg file if they are system-owned */
+	if (key_flags == NM_SETTING_SECRET_FLAG_NONE) {
+		if (!read_wep_keys (ifcfg, default_key_idx, s_wsec, error))
 			goto error;
+
+		/* Try to get keys from the "shadow" key file */
+		keys_ifcfg = utils_get_keys_ifcfg (file, FALSE);
+		if (keys_ifcfg) {
+			if (!read_wep_keys (keys_ifcfg, default_key_idx, s_wsec, error)) {
+				svCloseFile (keys_ifcfg);
+				goto error;
+			}
+			svCloseFile (keys_ifcfg);
+			g_assert (error == NULL || *error == NULL);
 		}
-		svCloseFile (keys_ifcfg);
-		g_assert (error == NULL || *error == NULL);
 	}
 
 	value = svGetValue (ifcfg, "SECURITYMODE", FALSE);
@@ -1771,11 +1802,15 @@ make_wep_setting (shvarFile *ifcfg,
 		g_free (lcase);
 	}
 
+	/* If no WEP keys were given, and the keys are not agent-owned, and no
+	 * default WEP key index was given, then the connection is unencrypted.
+	 */
 	if (   !nm_setting_wireless_security_get_wep_key (s_wsec, 0)
 	    && !nm_setting_wireless_security_get_wep_key (s_wsec, 1)
 	    && !nm_setting_wireless_security_get_wep_key (s_wsec, 2)
 	    && !nm_setting_wireless_security_get_wep_key (s_wsec, 3)
-	    && (has_default_key == FALSE)) {
+	    && (has_default_key == FALSE)
+	    && (key_flags == NM_SETTING_SECRET_FLAG_NONE)) {
 		const char *auth_alg;
 
 		auth_alg = nm_setting_wireless_security_get_auth_alg (s_wsec);
@@ -1954,6 +1989,7 @@ eap_simple_reader (const char *eap_method,
                    gboolean phase2,
                    GError **error)
 {
+	NMSettingSecretFlags flags;
 	char *value;
 
 	value = svGetValue (ifcfg, "IEEE_8021X_IDENTITY", FALSE);
@@ -1966,21 +2002,27 @@ eap_simple_reader (const char *eap_method,
 	g_object_set (s_8021x, NM_SETTING_802_1X_IDENTITY, value, NULL);
 	g_free (value);
 
-	value = svGetValue (ifcfg, "IEEE_8021X_PASSWORD", FALSE);
-	if (!value && keys) {
-		/* Try the lookaside keys file */
-		value = svGetValue (keys, "IEEE_8021X_PASSWORD", FALSE);
-	}
+	flags = read_secret_flags (ifcfg, "IEEE_8021X_PASSWORD_FLAGS");
+	g_object_set (s_8021x, NM_SETTING_802_1X_PASSWORD_FLAGS, flags, NULL);
 
-	if (!value) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-		             "Missing IEEE_8021X_PASSWORD for EAP method '%s'.",
-		             eap_method);
-		return FALSE;
-	}
+	/* Only read the password if it's system-owned */
+	if (flags == NM_SETTING_SECRET_FLAG_NONE) {
+		value = svGetValue (ifcfg, "IEEE_8021X_PASSWORD", FALSE);
+		if (!value && keys) {
+			/* Try the lookaside keys file */
+			value = svGetValue (keys, "IEEE_8021X_PASSWORD", FALSE);
+		}
 
-	g_object_set (s_8021x, NM_SETTING_802_1X_PASSWORD, value, NULL);
-	g_free (value);
+		if (!value) {
+			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			             "Missing IEEE_8021X_PASSWORD for EAP method '%s'.",
+			             eap_method);
+			return FALSE;
+		}
+
+		g_object_set (s_8021x, NM_SETTING_802_1X_PASSWORD, value, NULL);
+		g_free (value);
+	}
 
 	return TRUE;
 }
@@ -2027,6 +2069,8 @@ eap_tls_reader (const char *eap_method,
 	const char *pk_pw_key = phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD": "IEEE_8021X_PRIVATE_KEY_PASSWORD";
 	const char *pk_key = phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY" : "IEEE_8021X_PRIVATE_KEY";
 	const char *cli_cert_key = phase2 ? "IEEE_8021X_INNER_CLIENT_CERT" : "IEEE_8021X_CLIENT_CERT";
+	const char *pk_pw_flags_key = phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD_FLAGS": "IEEE_8021X_PRIVATE_KEY_PASSWORD_FLAGS";
+	NMSettingSecretFlags flags;
 
 	value = svGetValue (ifcfg, "IEEE_8021X_IDENTITY", FALSE);
 	if (!value) {
@@ -2056,6 +2100,8 @@ eap_tls_reader (const char *eap_method,
 			                                    error))
 				goto done;
 		}
+		g_free (real_path);
+		real_path = NULL;
 	} else {
 		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: missing %s for EAP"
 		             " method '%s'; this is insecure!",
@@ -2063,19 +2109,29 @@ eap_tls_reader (const char *eap_method,
 		             eap_method);
 	}
 
-	/* Private key password */
-	privkey_password = svGetValue (ifcfg, pk_pw_key, FALSE);
-	if (!privkey_password && keys) {
-		/* Try the lookaside keys file */
-		privkey_password = svGetValue (keys, pk_pw_key, FALSE);
-	}
+	/* Read and set private key password flags */
+	flags = read_secret_flags (ifcfg, pk_pw_flags_key);
+	g_object_set (s_8021x,
+	              phase2 ? NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS : NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS,
+	              flags,
+	              NULL);
 
-	if (!privkey_password) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-		             "Missing %s for EAP method '%s'.",
-		             pk_pw_key,
-		             eap_method);
-		goto done;
+	/* Read the private key password if it's system-owned */
+	if (flags == NM_SETTING_SECRET_FLAG_NONE) {
+		/* Private key password */
+		privkey_password = svGetValue (ifcfg, pk_pw_key, FALSE);
+		if (!privkey_password && keys) {
+			/* Try the lookaside keys file */
+			privkey_password = svGetValue (keys, pk_pw_key, FALSE);
+		}
+
+		if (!privkey_password) {
+			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			             "Missing %s for EAP method '%s'.",
+			             pk_pw_key,
+			             eap_method);
+			goto done;
+		}
 	}
 
 	/* The private key itself */
@@ -2088,13 +2144,12 @@ eap_tls_reader (const char *eap_method,
 		goto done;
 	}
 
-	g_free (real_path);
 	real_path = get_cert_file (ifcfg->fileName, privkey);
 	if (phase2) {
 		if (!nm_setting_802_1x_set_phase2_private_key (s_8021x,
 		                                               real_path,
 		                                               privkey_password,
-			                                           NM_SETTING_802_1X_CK_SCHEME_PATH,
+		                                               NM_SETTING_802_1X_CK_SCHEME_PATH,
 		                                               &privkey_format,
 		                                               error))
 			goto done;
@@ -2102,11 +2157,13 @@ eap_tls_reader (const char *eap_method,
 		if (!nm_setting_802_1x_set_private_key (s_8021x,
 		                                        real_path,
 		                                        privkey_password,
-			                                    NM_SETTING_802_1X_CK_SCHEME_PATH,
+		                                        NM_SETTING_802_1X_CK_SCHEME_PATH,
 		                                        &privkey_format,
 		                                        error))
 			goto done;
 	}
+	g_free (real_path);
+	real_path = NULL;
 
 	/* Only set the client certificate if the private key is not PKCS#12 format,
 	 * as NM (due to supplicant restrictions) requires.  If the key was PKCS#12,
@@ -2124,7 +2181,6 @@ eap_tls_reader (const char *eap_method,
 			goto done;
 		}
 
-		g_free (real_path);
 		real_path = get_cert_file (ifcfg->fileName, client_cert);
 		if (phase2) {
 			if (!nm_setting_802_1x_set_phase2_client_cert (s_8021x,
@@ -2141,6 +2197,8 @@ eap_tls_reader (const char *eap_method,
 			                                        error))
 				goto done;
 		}
+		g_free (real_path);
+		real_path = NULL;
 	}
 
 	success = TRUE;
@@ -2504,10 +2562,18 @@ make_wpa_setting (shvarFile *ifcfg,
 	}
 
 	if (!strcmp (value, "WPA-PSK")) {
-		psk = parse_wpa_psk (ifcfg, file, ssid, error);
-		if (psk) {
-			g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_PSK, psk, NULL);
-			g_free (psk);
+		NMSettingSecretFlags psk_flags;
+
+		psk_flags = read_secret_flags (ifcfg, "WPA_PSK_FLAGS");
+		g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS, psk_flags, NULL);
+
+		/* Read PSK if it's system-owned */
+		if (psk_flags == NM_SETTING_SECRET_FLAG_NONE) {
+			psk = parse_wpa_psk (ifcfg, file, ssid, error);
+			if (psk) {
+				g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_PSK, psk, NULL);
+				g_free (psk);
+			}
 		}
 
 		if (adhoc)
@@ -2553,6 +2619,7 @@ make_leap_setting (shvarFile *ifcfg,
 	NMSettingWirelessSecurity *wsec;
 	shvarFile *keys_ifcfg;
 	char *value;
+	NMSettingSecretFlags flags;
 
 	wsec = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
 
@@ -2567,18 +2634,24 @@ make_leap_setting (shvarFile *ifcfg,
 
 	g_free (value);
 
-	value = svGetValue (ifcfg, "IEEE_8021X_PASSWORD", FALSE);
-	if (!value) {
-		/* Try to get keys from the "shadow" key file */
-		keys_ifcfg = utils_get_keys_ifcfg (file, FALSE);
-		if (keys_ifcfg) {
-			value = svGetValue (keys_ifcfg, "IEEE_8021X_PASSWORD", FALSE);
-			svCloseFile (keys_ifcfg);
+	flags = read_secret_flags (ifcfg, "IEEE_8021X_PASSWORD_FLAGS");
+	g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS, flags, NULL);
+
+	/* Read LEAP password if it's system-owned */
+	if (flags == NM_SETTING_SECRET_FLAG_NONE) {
+		value = svGetValue (ifcfg, "IEEE_8021X_PASSWORD", FALSE);
+		if (!value) {
+			/* Try to get keys from the "shadow" key file */
+			keys_ifcfg = utils_get_keys_ifcfg (file, FALSE);
+			if (keys_ifcfg) {
+				value = svGetValue (keys_ifcfg, "IEEE_8021X_PASSWORD", FALSE);
+				svCloseFile (keys_ifcfg);
+			}
 		}
+		if (value && strlen (value))
+			g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD, value, NULL);
+		g_free (value);
 	}
-	if (value && strlen (value))
-		g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD, value, NULL);
-	g_free (value);
 
 	value = svGetValue (ifcfg, "IEEE_8021X_IDENTITY", FALSE);
 	if (!value || !strlen (value)) {
