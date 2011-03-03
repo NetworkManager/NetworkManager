@@ -520,9 +520,10 @@ claim_connection (NMSysconfigSettings *self,
 
 	NMSettingConnection *s_con;
 	const char *connection_uuid;
-	guint64 timestamp;
+	guint64 timestamp = 0;
 	GKeyFile *timestamps_file;
 	GError *err = NULL;
+	char *tmp_str;
 
 	g_return_if_fail (NM_IS_SYSCONFIG_SETTINGS (self));
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION_INTERFACE (connection));
@@ -538,7 +539,11 @@ claim_connection (NMSysconfigSettings *self,
 
 	timestamps_file = g_key_file_new ();
 	g_key_file_load_from_file (timestamps_file, NM_SYSCONFIG_SETTINGS_TIMESTAMPS_FILE, G_KEY_FILE_KEEP_COMMENTS, NULL);
-	timestamp = g_key_file_get_uint64 (timestamps_file, "timestamps", connection_uuid, &err);
+	tmp_str = g_key_file_get_value (timestamps_file, "timestamps", connection_uuid, &err);
+	if (tmp_str) {
+		timestamp = g_ascii_strtoull (tmp_str, NULL, 10);
+		g_free (tmp_str);
+	}
 
 	/* Update connection's timestamp */
 	if (!err) {
