@@ -317,11 +317,6 @@ nm_dhcp_manager_new (const char *client, GError **error)
 {
 	NMDHCPManagerPrivate *priv;
 	DBusGConnection *g_connection;
-	GType client_type;
-
-	client_type = get_client_type (client, error);
-	if (!client_type)
-		return NULL;
 
 	g_warn_if_fail (singleton == NULL);
 
@@ -329,13 +324,14 @@ nm_dhcp_manager_new (const char *client, GError **error)
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (singleton);
 
 	/* Client-specific setup */
-	priv->client_type = client_type;
+	priv->client_type = get_client_type (client, error);
 	if (priv->client_type == NM_TYPE_DHCP_DHCLIENT)
 		priv->get_lease_config_func = nm_dhcp_dhclient_get_lease_config;
 	else if (priv->client_type == NM_TYPE_DHCP_DHCPCD)
 		priv->get_lease_config_func = nm_dhcp_dhcpcd_get_lease_config;
-	else
-		g_assert_not_reached ();
+	else {
+		nm_log_warn (LOGD_DHCP, "No usable DHCP client found! DHCP configurations will fail.");
+	}
 
 	priv->clients = g_hash_table_new_full (g_direct_hash, g_direct_equal,
 	                                       NULL,
@@ -425,6 +421,9 @@ client_start (NMDHCPManager *self,
 	g_return_val_if_fail (uuid != NULL, NULL);
 
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
+
+	/* Ensure we have a usable DHCP client */
+	g_return_val_if_fail (priv->client_type != 0, NULL);
 
 	/* Kill any old client instance */
 	client = get_client_for_iface (self, iface, ipv6);
