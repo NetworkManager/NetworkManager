@@ -19,9 +19,13 @@
  * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
+#include <config.h>
+#include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <stdio.h>
 #include <errno.h>
+
 #include <dbus/dbus-glib.h>
 #include <nm-setting.h>
 #include <nm-setting-connection.h>
@@ -32,6 +36,7 @@
 #include <nm-setting-wireless.h>
 #include <nm-setting-ip4-config.h>
 #include <nm-setting-bluetooth.h>
+#include <nm-setting-8021x.h>
 #include <nm-utils.h>
 #include <string.h>
 #include <arpa/inet.h>
@@ -67,6 +72,8 @@ write_array_of_uint (GKeyFile *file,
 
 static void
 ip4_dns_writer (GKeyFile *file,
+                const char *keyfile_dir,
+                const char *uuid,
                 NMSetting *setting,
                 const char *key,
                 const GValue *value)
@@ -156,6 +163,8 @@ write_ip4_values (GKeyFile *file,
 
 static void
 ip4_addr_writer (GKeyFile *file,
+                 const char *keyfile_dir,
+                 const char *uuid,
                  NMSetting *setting,
                  const char *key,
                  const GValue *value)
@@ -172,6 +181,8 @@ ip4_addr_writer (GKeyFile *file,
 
 static void
 ip4_route_writer (GKeyFile *file,
+                  const char *keyfile_dir,
+                  const char *uuid,
                   NMSetting *setting,
                   const char *key,
                   const GValue *value)
@@ -188,6 +199,8 @@ ip4_route_writer (GKeyFile *file,
 
 static void
 ip6_dns_writer (GKeyFile *file,
+                const char *keyfile_dir,
+                const char *uuid,
                 NMSetting *setting,
                 const char *key,
                 const GValue *value)
@@ -296,6 +309,8 @@ ip6_array_to_addr_prefix (GValueArray *values)
 
 static void
 ip6_addr_writer (GKeyFile *file,
+                 const char *keyfile_dir,
+                 const char *uuid,
                  NMSetting *setting,
                  const char *key,
                  const GValue *value)
@@ -334,6 +349,8 @@ ip6_addr_writer (GKeyFile *file,
 
 static void
 ip6_route_writer (GKeyFile *file,
+                  const char *keyfile_dir,
+                  const char *uuid,
                   NMSetting *setting,
                   const char *key,
                   const GValue *value)
@@ -389,6 +406,8 @@ ip6_route_writer (GKeyFile *file,
 
 static void
 mac_address_writer (GKeyFile *file,
+                    const char *keyfile_dir,
+                    const char *uuid,
                     NMSetting *setting,
                     const char *key,
                     const GValue *value)
@@ -450,6 +469,8 @@ write_hash_of_string (GKeyFile *file,
 
 static void
 ssid_writer (GKeyFile *file,
+             const char *keyfile_dir,
+             const char *uuid,
              NMSetting *setting,
              const char *key,
              const GValue *value)
@@ -491,10 +512,206 @@ ssid_writer (GKeyFile *file,
 	}
 }
 
+typedef struct ObjectType {
+	const char *key;
+	const char *suffix;
+	const char *privkey_pw_prop;
+	NMSetting8021xCKScheme (*scheme_func) (NMSetting8021x *setting);
+	NMSetting8021xCKFormat (*format_func) (NMSetting8021x *setting);
+	const char *           (*path_func)   (NMSetting8021x *setting);
+	const GByteArray *     (*blob_func)   (NMSetting8021x *setting);
+} ObjectType;
+
+static const ObjectType objtypes[10] = {
+	{ NM_SETTING_802_1X_CA_CERT,
+	  "ca-cert",
+	  NULL,
+	  nm_setting_802_1x_get_ca_cert_scheme,
+	  NULL,
+	  nm_setting_802_1x_get_ca_cert_path,
+	  nm_setting_802_1x_get_ca_cert_blob },
+
+	{ NM_SETTING_802_1X_PHASE2_CA_CERT,
+	  "inner-ca-cert",
+	  NULL,
+	  nm_setting_802_1x_get_phase2_ca_cert_scheme,
+	  NULL,
+	  nm_setting_802_1x_get_phase2_ca_cert_path,
+	  nm_setting_802_1x_get_phase2_ca_cert_blob },
+
+	{ NM_SETTING_802_1X_CLIENT_CERT,
+	  "client-cert",
+	  NULL,
+	  nm_setting_802_1x_get_client_cert_scheme,
+	  NULL,
+	  nm_setting_802_1x_get_client_cert_path,
+	  nm_setting_802_1x_get_client_cert_blob },
+
+	{ NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
+	  "inner-client-cert",
+	  NULL,
+	  nm_setting_802_1x_get_phase2_client_cert_scheme,
+	  NULL,
+	  nm_setting_802_1x_get_phase2_client_cert_path,
+	  nm_setting_802_1x_get_phase2_client_cert_blob },
+
+	{ NM_SETTING_802_1X_PRIVATE_KEY,
+	  "private-key",
+	  NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD,
+	  nm_setting_802_1x_get_private_key_scheme,
+	  nm_setting_802_1x_get_private_key_format,
+	  nm_setting_802_1x_get_private_key_path,
+	  nm_setting_802_1x_get_private_key_blob },
+
+	{ NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
+	  "inner-private-key",
+	  NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD,
+	  nm_setting_802_1x_get_phase2_private_key_scheme,
+	  nm_setting_802_1x_get_phase2_private_key_format,
+	  nm_setting_802_1x_get_phase2_private_key_path,
+	  nm_setting_802_1x_get_phase2_private_key_blob },
+
+	{ NULL },
+};
+
+static gboolean
+write_cert_key_file (const char *path,
+                     const GByteArray *data,
+                     GError **error)
+{
+	char *tmppath;
+	int fd = -1, written;
+	gboolean success = FALSE;
+
+	tmppath = g_malloc0 (strlen (path) + 10);
+	g_assert (tmppath);
+	memcpy (tmppath, path, strlen (path));
+	strcat (tmppath, ".XXXXXX");
+
+	errno = 0;
+	fd = mkstemp (tmppath);
+	if (fd < 0) {
+		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
+		             "Could not create temporary file for '%s': %d",
+		             path, errno);
+		goto out;
+	}
+
+	/* Only readable by root */
+	errno = 0;
+	if (fchmod (fd, S_IRUSR | S_IWUSR) != 0) {
+		close (fd);
+		unlink (tmppath);
+		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
+		             "Could not set permissions for temporary file '%s': %d",
+		             path, errno);
+		goto out;
+	}
+
+	errno = 0;
+	written = write (fd, data->data, data->len);
+	if (written != data->len) {
+		close (fd);
+		unlink (tmppath);
+		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
+		             "Could not write temporary file for '%s': %d",
+		             path, errno);
+		goto out;
+	}
+	close (fd);
+
+	/* Try to rename */
+	errno = 0;
+	if (rename (tmppath, path) == 0)
+		success = TRUE;
+	else {
+		unlink (tmppath);
+		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
+		             "Could not rename temporary file to '%s': %d",
+		             path, errno);
+	}
+
+out:
+	g_free (tmppath);
+	return success;
+}
+
+static void
+cert_writer (GKeyFile *file,
+             const char *keyfile_dir,
+             const char *uuid,
+             NMSetting *setting,
+             const char *key,
+             const GValue *value)
+{
+	const char *setting_name = nm_setting_get_name (setting);
+	NMSetting8021xCKScheme scheme;
+	NMSetting8021xCKFormat format;
+	const char *path = NULL, *ext = "pem";
+	const ObjectType *objtype = NULL;
+	int i;
+
+	for (i = 0; i < G_N_ELEMENTS (objtypes) && objtypes[i].key; i++) {
+		if (g_strcmp0 (objtypes[i].key, key) == 0) {
+			objtype = &objtypes[i];
+			break;
+		}
+	}
+	g_return_if_fail (objtype != NULL);
+
+	scheme = objtypes->scheme_func (NM_SETTING_802_1X (setting));
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
+		path = objtype->path_func (NM_SETTING_802_1X (setting));
+		g_assert (path);
+		g_key_file_set_string (file, setting_name, key, path);
+	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+		const GByteArray *blob;
+		gboolean success;
+		GError *error = NULL;
+		char *new_path;
+
+		blob = objtype->blob_func (NM_SETTING_802_1X (setting));
+		g_assert (blob);
+
+		if (objtype->format_func) {
+			/* Get the extension for a private key */
+			format = objtype->format_func (NM_SETTING_802_1X (setting));
+			if (format == NM_SETTING_802_1X_CK_FORMAT_PKCS12)
+				ext = "p12";
+		} else {
+			/* DER or PEM format certificate? */
+			if (blob->len > 2 && blob->data[0] == 0x30 && blob->data[1] == 0x82)
+				ext = "der";
+		}
+
+		/* Write the raw data out to the standard file so that we can use paths
+		 * from now on instead of pushing around the certificate data.
+		 */
+		new_path = g_strdup_printf ("%s/%s-%s.%s", keyfile_dir, uuid, objtype->suffix, ext);
+		g_assert (new_path);
+
+		success = write_cert_key_file (new_path, blob, &error);
+		if (success) {
+			/* Write the path value to the keyfile */
+			g_key_file_set_string (file, setting_name, key, new_path);
+		} else {
+			g_warning ("Failed to write certificate/key %s: %s", new_path, error->message);
+			g_error_free (error);
+		}
+		g_free (new_path);
+	} else
+		g_assert_not_reached ();
+}
+
 typedef struct {
 	const char *setting_name;
 	const char *key;
-	void (*writer) (GKeyFile *keyfile, NMSetting *setting, const char *key, const GValue *value);
+	void (*writer) (GKeyFile *keyfile,
+	                const char *keyfile_dir,
+	                const char *uuid,
+	                NMSetting *setting,
+	                const char *key,
+	                const GValue *value);
 } KeyWriter;
 
 /* A table of keys that require further parsing/conversion because they are
@@ -543,8 +760,32 @@ static KeyWriter key_writers[] = {
 	{ NM_SETTING_WIRELESS_SETTING_NAME,
 	  NM_SETTING_WIRELESS_SSID,
 	  ssid_writer },
+	{ NM_SETTING_802_1X_SETTING_NAME,
+	  NM_SETTING_802_1X_CA_CERT,
+	  cert_writer },
+	{ NM_SETTING_802_1X_SETTING_NAME,
+	  NM_SETTING_802_1X_CLIENT_CERT,
+	  cert_writer },
+	{ NM_SETTING_802_1X_SETTING_NAME,
+	  NM_SETTING_802_1X_PRIVATE_KEY,
+	  cert_writer },
+	{ NM_SETTING_802_1X_SETTING_NAME,
+	  NM_SETTING_802_1X_PHASE2_CA_CERT,
+	  cert_writer },
+	{ NM_SETTING_802_1X_SETTING_NAME,
+	  NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
+	  cert_writer },
+	{ NM_SETTING_802_1X_SETTING_NAME,
+	  NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
+	  cert_writer },
 	{ NULL, NULL, NULL }
 };
+
+typedef struct {
+	GKeyFile *keyfile;
+	const char *keyfile_dir;
+	const char *uuid;
+} WriteInfo;
 
 static void
 write_setting_value (NMSetting *setting,
@@ -553,7 +794,7 @@ write_setting_value (NMSetting *setting,
                      GParamFlags flag,
                      gpointer user_data)
 {
-	GKeyFile *file = (GKeyFile *) user_data;
+	WriteInfo *info = user_data;
 	const char *setting_name;
 	GType type = G_VALUE_TYPE (value);
 	KeyWriter *writer = &key_writers[0];
@@ -575,7 +816,7 @@ write_setting_value (NMSetting *setting,
 	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), key);
 	if (pspec) {
 		if (g_param_value_defaults (pspec, (GValue *) value)) {
-			g_key_file_remove_key (file, setting_name, key, NULL);
+			g_key_file_remove_key (info->keyfile, setting_name, key, NULL);
 			return;
 		}
 	}
@@ -591,7 +832,7 @@ write_setting_value (NMSetting *setting,
 	/* Look through the list of handlers for non-standard format key values */
 	while (writer->setting_name) {
 		if (!strcmp (writer->setting_name, setting_name) && !strcmp (writer->key, key)) {
-			(*writer->writer) (file, setting, key, value);
+			(*writer->writer) (info->keyfile, info->keyfile_dir, info->uuid, setting, key, value);
 			return;
 		}
 		writer++;
@@ -602,21 +843,21 @@ write_setting_value (NMSetting *setting,
 
 		str = g_value_get_string (value);
 		if (str)
-			g_key_file_set_string (file, setting_name, key, str);
+			g_key_file_set_string (info->keyfile, setting_name, key, str);
 	} else if (type == G_TYPE_UINT)
-		g_key_file_set_integer (file, setting_name, key, (int) g_value_get_uint (value));
+		g_key_file_set_integer (info->keyfile, setting_name, key, (int) g_value_get_uint (value));
 	else if (type == G_TYPE_INT)
-		g_key_file_set_integer (file, setting_name, key, g_value_get_int (value));
+		g_key_file_set_integer (info->keyfile, setting_name, key, g_value_get_int (value));
 	else if (type == G_TYPE_UINT64) {
 		char *numstr;
 
 		numstr = g_strdup_printf ("%" G_GUINT64_FORMAT, g_value_get_uint64 (value));
-		g_key_file_set_value (file, setting_name, key, numstr);
+		g_key_file_set_value (info->keyfile, setting_name, key, numstr);
 		g_free (numstr);
 	} else if (type == G_TYPE_BOOLEAN) {
-		g_key_file_set_boolean (file, setting_name, key, g_value_get_boolean (value));
+		g_key_file_set_boolean (info->keyfile, setting_name, key, g_value_get_boolean (value));
 	} else if (type == G_TYPE_CHAR) {
-		g_key_file_set_integer (file, setting_name, key, (int) g_value_get_char (value));
+		g_key_file_set_integer (info->keyfile, setting_name, key, (int) g_value_get_char (value));
 	} else if (type == DBUS_TYPE_G_UCHAR_ARRAY) {
 		GByteArray *array;
 
@@ -629,7 +870,7 @@ write_setting_value (NMSetting *setting,
 			for (i = 0; i < array->len; i++)
 				tmp_array[i] = (int) array->data[i];
 
-			g_key_file_set_integer_list (file, setting_name, key, tmp_array, array->len);
+			g_key_file_set_integer_list (info->keyfile, setting_name, key, tmp_array, array->len);
 			g_free (tmp_array);
 		}
 	} else if (type == DBUS_TYPE_G_LIST_OF_STRING) {
@@ -645,13 +886,13 @@ write_setting_value (NMSetting *setting,
 			for (iter = list; iter; iter = iter->next)
 				array[i++] = iter->data;
 
-			g_key_file_set_string_list (file, setting_name, key, (const gchar **const) array, i);
+			g_key_file_set_string_list (info->keyfile, setting_name, key, (const gchar **const) array, i);
 			g_free (array);
 		}
 	} else if (type == DBUS_TYPE_G_MAP_OF_STRING) {
-		write_hash_of_string (file, setting, key, value);
+		write_hash_of_string (info->keyfile, setting, key, value);
 	} else if (type == DBUS_TYPE_G_UINT_ARRAY) {
-		if (!write_array_of_uint (file, setting, key, value)) {
+		if (!write_array_of_uint (info->keyfile, setting, key, value)) {
 			g_warning ("Unhandled setting property type (write) '%s/%s' : '%s'", 
 					 setting_name, key, g_type_name (type));
 		}
@@ -696,6 +937,7 @@ _internal_write_connection (NMConnection *connection,
 	gboolean success = FALSE;
 	char *filename = NULL, *path;
 	const char *id;
+	WriteInfo info;
 
 	if (out_path)
 		g_return_val_if_fail (*out_path == NULL, FALSE);
@@ -707,8 +949,11 @@ _internal_write_connection (NMConnection *connection,
 		return FALSE;
 	}
 
-	key_file = g_key_file_new ();
-	nm_connection_for_each_setting_value (connection, write_setting_value, key_file);
+	info.keyfile = key_file = g_key_file_new ();
+	info.keyfile_dir = keyfile_dir;
+	info.uuid = nm_connection_get_uuid (connection);
+	g_assert (info.uuid);
+	nm_connection_for_each_setting_value (connection, write_setting_value, &info);
 	data = g_key_file_to_data (key_file, &len, error);
 	if (!data)
 		goto out;
