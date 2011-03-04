@@ -182,15 +182,11 @@
           The device is an 802.11 WiFi device.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="GSM" value="3">
-        <tp:docstring>
-          The device is a GSM/GPRS/EDGE/UMTS/HSPA cellular WAN device.
-        </tp:docstring>
+      <tp:enumvalue suffix="UNUSED1" value="3">
+        <tp:docstring>Unused</tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="CDMA" value="4">
-        <tp:docstring>
-          The device is a CDMA IS-95/1xRTT/EVDO cellular WAN device.
-        </tp:docstring>
+      <tp:enumvalue suffix="UNUSED2" value="4">
+        <tp:docstring>Unused</tp:docstring>
       </tp:enumvalue>
       <tp:enumvalue suffix="BT" value="5">
         <tp:docstring>
@@ -205,6 +201,13 @@
       <tp:enumvalue suffix="WIMAX" value="7">
         <tp:docstring>
           The device is an 802.16e Mobile WiMAX device.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="MODEM" value="8">
+        <tp:docstring>
+          The device is a modem supporting one or more of analog telephone,
+          CDMA/EVDO, GSM/UMTS/HSPA, or LTE standards to access a cellular or
+          wireline data network.
         </tp:docstring>
       </tp:enumvalue>
     </tp:enum>

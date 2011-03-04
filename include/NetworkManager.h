@@ -89,7 +89,21 @@ typedef enum {
 /* For backwards compat */
 #define NM_STATE_CONNECTED NM_STATE_CONNECTED_GLOBAL
 
-/* Types of NetworkManager devices */
+/**
+ * NMDeviceType:
+ * @NM_DEVICE_TYPE_UNKNOWN: unknown device
+ * @NM_DEVICE_TYPE_ETHERNET: a wired ethernet device
+ * @NM_DEVICE_TYPE_WIFI: an 802.11 WiFi device
+ * @NM_DEVICE_TYPE_UNUSED1: not used
+ * @NM_DEVICE_TYPE_UNUSED2: not used
+ * @NM_DEVICE_TYPE_BT: a Bluetooth device supporting PAN or DUN access protocols
+ * @NM_DEVICE_TYPE_OLPC_MESH: an OLPC XO mesh networking device
+ * @NM_DEVICE_TYPE_WIMAX: an 802.16e Mobile WiMAX broadband device
+ * @NM_DEVICE_TYPE_MODEM: a modem supporting analog telephone, CDMA/EVDO,
+ * GSM/UMTS, or LTE network access protocols
+ *
+ * #NMState values indicate the current overall networking state.
+ */
 typedef enum {
 	NM_DEVICE_TYPE_UNKNOWN   = 0,
 	NM_DEVICE_TYPE_ETHERNET  = 1,
