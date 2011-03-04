@@ -31,6 +31,7 @@ INSTALL
 man/*.[185]
 po/*.gmo
 po/.intltool-merge-cache
+po/NetworkManager.pot
 
 include/nm-version.h
 
