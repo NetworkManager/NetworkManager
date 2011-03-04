@@ -7000,7 +7000,8 @@ file_to_byte_array (const char *filename)
 #define TEST_IFCFG_WIRED_TLS_PRIVATE_KEY TEST_IFCFG_DIR"/network-scripts/test1_key_and_cert.pem"
 
 static void
-test_write_wired_8021x_tls_blobs (void)
+test_write_wired_8021x_tls (NMSetting8021xCKScheme scheme,
+                            NMSettingSecretFlags flags)
 {
 	NMConnection *connection;
 	NMConnection *reread;
@@ -7066,32 +7067,22 @@ test_write_wired_8021x_tls_blobs (void)
 	/* CA cert */
 	success = nm_setting_802_1x_set_ca_cert (s_8021x,
 	                                         TEST_IFCFG_WIRED_TLS_CA_CERT,
-	                                         NM_SETTING_802_1X_CK_SCHEME_BLOB,
+	                                         scheme,
 	                                         &format,
 	                                         &error);
-	if (!success) {
-		g_assert (error);
-		g_warning ("Failed to set CA certificate '%s': %s",
-		           TEST_IFCFG_WIRED_TLS_CA_CERT,
-		           error->message);
-	}
-	g_assert (success == TRUE);
+	g_assert_no_error (error);
+	g_assert (success);
 	g_assert (format == NM_SETTING_802_1X_CK_FORMAT_X509);
 
 	/* Client cert */
 	format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
 	success = nm_setting_802_1x_set_client_cert (s_8021x,
 	                                             TEST_IFCFG_WIRED_TLS_CLIENT_CERT,
-	                                             NM_SETTING_802_1X_CK_SCHEME_BLOB,
+	                                             scheme,
 	                                             &format,
 	                                             &error);
-	if (!success) {
-		g_assert (error);
-		g_warning ("Failed to set client certificate '%s': %s",
-		           TEST_IFCFG_WIRED_TLS_CLIENT_CERT,
-		           error->message);
-	}
-	g_assert (success == TRUE);
+	g_assert_no_error (error);
+	g_assert (success);
 	g_assert (format == NM_SETTING_802_1X_CK_FORMAT_X509);
 
 	/* Private key */
@@ -7099,17 +7090,15 @@ test_write_wired_8021x_tls_blobs (void)
 	success = nm_setting_802_1x_set_private_key (s_8021x,
 	                                             TEST_IFCFG_WIRED_TLS_PRIVATE_KEY,
 	                                             "test1",
-	                                             NM_SETTING_802_1X_CK_SCHEME_BLOB,
+	                                             scheme,
 	                                             &format,
 	                                             &error);
-	if (!success) {
-		g_assert (error);
-		g_warning ("Failed to set private key '%s': %s",
-		           TEST_IFCFG_WIRED_TLS_PRIVATE_KEY,
-		           error->message);
-	}
-	g_assert (success == TRUE);
+	g_assert_no_error (error);
+	g_assert (success);
 	g_assert (format == NM_SETTING_802_1X_CK_FORMAT_RAW_KEY);
+
+	/* Set secret flags */
+	g_object_set (s_8021x, NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS, flags, NULL);
 
 	/* Verify finished connection */
 	success = nm_connection_verify (connection, &error);
@@ -7155,17 +7144,45 @@ test_write_wired_8021x_tls_blobs (void)
 	}
 	g_assert (success);
 
-	/* Ensure the reread connection's certificates and private key are paths */
+	/* Ensure the reread connection's certificates and private key are paths; no
+	 * matter what scheme was used in the original connection they will be read
+	 * back in as paths.
+	 */
 	s_8021x = (NMSetting8021x *) nm_connection_get_setting (reread, NM_TYPE_SETTING_802_1X);
 	g_assert (s_8021x);
-	g_assert (nm_setting_802_1x_get_ca_cert_scheme (s_8021x) == NM_SETTING_802_1X_CK_SCHEME_PATH);
-	g_assert (nm_setting_802_1x_get_client_cert_scheme (s_8021x) == NM_SETTING_802_1X_CK_SCHEME_PATH);
-	g_assert (nm_setting_802_1x_get_private_key_scheme (s_8021x) == NM_SETTING_802_1X_CK_SCHEME_PATH);
+	g_assert_cmpint (nm_setting_802_1x_get_ca_cert_scheme (s_8021x), ==, NM_SETTING_802_1X_CK_SCHEME_PATH);
+	g_assert_cmpint (nm_setting_802_1x_get_client_cert_scheme (s_8021x), ==, NM_SETTING_802_1X_CK_SCHEME_PATH);
+	g_assert_cmpint (nm_setting_802_1x_get_private_key_scheme (s_8021x), ==, NM_SETTING_802_1X_CK_SCHEME_PATH);
 
-	/* Ensure the private key password is still set */
+	g_assert_cmpint (nm_setting_802_1x_get_private_key_password_flags (s_8021x), ==, flags);
 	pw = nm_setting_802_1x_get_private_key_password (s_8021x);
-	g_assert (pw != NULL);
-	g_assert (g_strcmp0 (pw, "test1") == 0);
+	if (flags == NM_SETTING_SECRET_FLAG_NONE) {
+		/* Ensure the private key password is still set */
+		g_assert (pw != NULL);
+		g_assert_cmpstr (pw, ==, "test1");
+	} else {
+		/* If the secret isn't owned by system settings, make sure its no longer there */
+		g_assert (pw == NULL);
+	}
+
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
+		/* Do a direct compare if using the path scheme since then the
+		 * certificate and key properties should be the same.  If using blob
+		 * scheme the original connection cert/key properties will be blobs
+		 * but the re-read connection is always path scheme, so we wouldn't
+		 * expect it to compare successfully.
+		 */
+		if (flags != NM_SETTING_SECRET_FLAG_NONE) {
+			/* Clear original connection's private key password because flags
+			 * say it's not system-owned, and therefore it should not show up
+			 * in the re-read connection.
+			 */
+			s_8021x = (NMSetting8021x *) nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X);
+			g_object_set (s_8021x, NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD, NULL, NULL);
+		}
+
+		g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+	}
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -10523,7 +10540,10 @@ int main (int argc, char **argv)
 	test_read_write_static_routes_legacy ();
 	test_write_wired_dhcp ();
 	test_write_wired_dhcp_8021x_peap_mschapv2 ();
-	test_write_wired_8021x_tls_blobs ();
+	test_write_wired_8021x_tls (NM_SETTING_802_1X_CK_SCHEME_PATH, NM_SETTING_SECRET_FLAG_AGENT_OWNED);
+	test_write_wired_8021x_tls (NM_SETTING_802_1X_CK_SCHEME_PATH, NM_SETTING_SECRET_FLAG_NOT_SAVED);
+	test_write_wired_8021x_tls (NM_SETTING_802_1X_CK_SCHEME_PATH, NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED);
+	test_write_wired_8021x_tls (NM_SETTING_802_1X_CK_SCHEME_BLOB, NM_SETTING_SECRET_FLAG_NONE);
 	test_write_wifi_open ();
 	test_write_wifi_open_hex_ssid ();
 	test_write_wifi_wep ();
