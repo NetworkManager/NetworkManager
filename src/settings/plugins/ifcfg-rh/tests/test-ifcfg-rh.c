@@ -49,6 +49,7 @@
 #include "common.h"
 #include "reader.h"
 #include "writer.h"
+#include "utils.h"
 
 #if 0
 static void
@@ -7021,6 +7022,7 @@ test_write_wired_8021x_tls (NMSetting8021xCKScheme scheme,
 	gboolean ignore_error = FALSE;
 	NMSetting8021xCKFormat format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
 	const char *pw;
+	char *tmp;
 
 	connection = nm_connection_new ();
 	g_assert (connection != NULL);
@@ -7183,6 +7185,19 @@ test_write_wired_8021x_tls (NMSetting8021xCKScheme scheme,
 
 		g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
 	}
+
+	/* Clean up created certs and keys */
+	tmp = utils_cert_path (testfile, "ca-cert.der");
+	unlink (tmp);
+	g_free (tmp);
+
+	tmp = utils_cert_path (testfile, "client-cert.der");
+	unlink (tmp);
+	g_free (tmp);
+
+	tmp = utils_cert_path (testfile, "private-key.pem");
+	unlink (tmp);
+	g_free (tmp);
 
 	g_free (testfile);
 	g_object_unref (connection);
