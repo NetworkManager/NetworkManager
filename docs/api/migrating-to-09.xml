@@ -69,6 +69,55 @@
     </section>
 
     <section>
+    <title>User Secret Agents</title>
+    <para>
+      Even with the elimination of the user settings service, in some cases it
+      is still desirable to store secrets in the user's session and not in
+      system-wide storage (and thus available to all users).  To allow this
+      functionality the concept of agents has been introduced.  Using the new
+      <ulink url="spec.html#org.freedesktop.NetworkManager.AgentManager">
+      <literal>org.freedesktop.NetworkManager.AgentManager</literal></ulink>
+      D-Bus interface provided by NetworkManager, user applications can register
+      themselves as "secret agents", ie programs capable of saving and providing
+      secrets to NetworkManager.  The agent should export the
+      <ulink url="spec.html#org.freedesktop.NetworkManager.SecretAgent">
+      <literal>org.freedesktop.NetworkManager.SecretAgent</literal></ulink>
+      D-Bus interface, but should NOT claim a bus name on the system or session
+      bus.  Instead, NetworkManager talks to the agent directly over the D-Bus
+      connection which the agent used to register itself.
+    </para>
+    <para>
+      Each agent must send a unique identifier to NetworkManager when it
+      registers.  This identifier must follow certain rules (see the NM D-Bus
+      API documentation for more details) but looks essentially the same as
+      a D-Bus service name.  Only one agent using a given identifier may be
+      registered at the same time.  The agent is automatically unregistered
+      if it disconnects from D-Bus or exits.
+    </para>
+    <para>
+      When NetworkManager requires secrets during the attempt to connect to a
+      network, and no secrets are available from the internal settings service,
+      NetworkManager queries each registered agent for secrets.  Agents that
+      are in "active" user sessions (as determined by ConsoleKit) are preferred
+      over inactive ones.  Only agents belonging to users who have permission
+      to view and modify the connection are queried.  For more information on
+      connection permissions, see below.
+    </para>
+      When secrets are requested, the agent is also sent a set of flags that
+      modify the behavior of the request.  By default, the agent should never
+      attempt to query the user for secrets, but should simply return any
+      available saved secrets.  Other flags allow the agent to explicitly
+      request new secrets from the user.
+    <para>
+      <emphasis role="strong">Action:</emphasis> the parts of a previous user
+      settings service that handled secrets may be easily repurposed as the bulk
+      of the implementation of a secret agent.  The agent is sent all available
+      connection settings, and from those should be able to retrieve or save
+      any saved user secrets, or to request new secrets from the user.
+    </para>
+    </section>
+
+    <section>
     <title>Settings Service Interface Changes</title>
     <para>
       With the elimination of the user settings service, the old
@@ -232,7 +281,7 @@
     <section>
     <title>Support for WiMAX Devices</title>
     <para>
-      NetworkManager now supports WiMAX mobile broadband devices.  A
+      NetworkManager now supports Intel WiMAX mobile broadband devices.  A
       corresponding device type (<literal>NM_DEVICE_TYPE_WIMAX</literal>) and
       a new <ulink url="spec.html#org.freedesktop.NetworkManager.Device.WiMax">
       <literal>org.freedesktop.NetworkManager.Device.WiMax</literal></ulink>
@@ -300,6 +349,69 @@
       check the CurrentCapabilities device property to determine whether to
       treat the device as CDMA, GSM, or LTE for purposes of configuration and
       status.
+    </para>
+    </section>
+
+    <section>
+    <title>Secret Property Flags</title>
+    <para>
+      In the Connection object's configuration properties, each setting's secret
+      properties (like WiFi passphrases, or public key passwords, etc) now has
+      an associated "flags" property that changes how NetworkManager treats the
+      secret.  The "flags" property is a bitfield of one or more of the
+      following values:
+      <table>
+        <tgroup cols="2">
+          <thead>
+            <row><entry>Flag Value</entry><entry>Meaning</entry></row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><screen>0x00 (none)</screen></entry>
+              <entry>
+                NetworkManager is responsible for providing and storing this
+                secret (default)
+              </entry>
+            </row>
+            <row>
+              <entry><screen>0x01 (agent-owned)</screen></entry>
+              <entry>
+                A user secret agent is responsible for providing and storing
+                this secret; when it is required agents will be asked to
+                retrieve it
+              </entry>
+            </row>
+            <row>
+              <entry><screen>0x02 (not saved)</screen></entry>
+              <entry>
+                The secret is not saved, and should be requested each time it
+                is required.  Used for OTP/token configurations where the
+                secret changes periodically, or if the user simply wants to
+                manually enter the secret each time.
+              </entry>
+            </row>
+            <row>
+              <entry><screen>0x04 (not required)</screen></entry>
+              <entry>
+                In situations where it cannot be automatically determined that
+                the secret is required (some VPNs and PPP providers dont require
+                all possible secrets) this flag indicates that the specific
+                secret is not required.
+              </entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+    </para>
+    <para>
+      <emphasis role="strong">Action:</emphasis> user interface code which
+      handles entry of connection secrets should be updated to read and set
+      secret flags.  For example, code that creates new VPN connections may want
+      to set the "agent-owned" flag to ensure that the user's VPN password is
+      not available to all users.  EAP-TLS and VPN interface code might add a
+      checkbox that toggles the "not saved" bit to indicate that the
+      password/PIN code should be requested from a hardware token each time it
+      is required.
     </para>
     </section>
 
