@@ -2713,7 +2713,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 						  "Sometimes when using older RADIUS servers, it is "
 						  "necessary to force the client to use a particular "
 						  "PEAP version.  To do so, this property may be set to "
-						  "'0' or '1; to force that specific PEAP version.",
+						  "'0' or '1' to force that specific PEAP version.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
