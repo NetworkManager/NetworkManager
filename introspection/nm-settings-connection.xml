@@ -39,7 +39,7 @@
                 be requested separately using the GetSecrets() call.
             </tp:docstring>
             <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_connection_get_settings"/>
-          <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+            <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
             <arg name="settings" type="a{sa{sv}}" direction="out" tp:type="String_String_Variant_Map_Map">
                 <tp:docstring>
                     The nested settings maps describing this object.
