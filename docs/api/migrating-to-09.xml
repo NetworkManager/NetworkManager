@@ -69,7 +69,7 @@
     </section>
 
     <section>
-    <title>Settings Service Name Change</title>
+    <title>Settings Service Interface Changes</title>
     <para>
       With the elimination of the user settings service, the old
       <literal>org.freedesktop.NetworkManagerUserSettings</literal> and
@@ -80,9 +80,61 @@
       the settings service remains unchanged.
     </para>
     <para>
+      Additionally, the D-Bus interface of the settings service has changed
+      to <ulink url="spec.html#org.freedesktop.NetworkManager.Settings">
+      <literal>org.freedesktop.NetworkManager.Settings</literal></ulink> from
+      the old interface name of
+      <literal>org.freedesktop.NetworkManagerSettings</literal>, and the old
+      <literal>org.freedesktop.NetworkManagerSettings.System</literal>
+      interface has been merged into the new
+      <ulink url="spec.html#org.freedesktop.NetworkManager.Settings">
+      <literal>org.freedesktop.NetworkManager.Settings</literal></ulink> interface
+      as the split no longer made sense. This includes the
+      <literal>SaveHostname</literal> method and the <literal>Hostname</literal>
+      and <literal>CanModify</literal> properties.
+    </para>
+    <para>
       <emphasis role="strong">Action:</emphasis> change the service name that
       your application uses to request system network settings to
-      <literal>org.freedesktop.NetworkManager</literal>.
+      <literal>org.freedesktop.NetworkManager</literal>, and update the D-Bus
+      interface that codes uses to talk to the settings service to
+      <ulink url="spec.html#org.freedesktop.NetworkManager.Settings">
+      <literal>org.freedesktop.NetworkManager.Settings</literal></ulink>.
+      Listen for hostname changes using the new interface name as well.
+    </para>
+    </section>
+
+    <section>
+    <title>Connection Object Interface Changes</title>
+    <para>
+      Consistent with the interface changes to the Settings object, the
+      Connection object's D-Bus interface has changed to
+      <ulink url="spec.html#org.freedesktop.NetworkManager.Settings.Connection">
+      <literal>org.freedesktop.NetworkManager.Settings.Connection</literal></ulink>
+      from the previous 
+      <literal>org.freedesktop.NetworkManagerSettings.Connection</literal>.
+    </para>
+    <para>
+      Additionally, the
+      <literal>org.freedesktop.NetworkManager.Settings.Connection.Updated</literal>
+      signal of the Connection object no longer includes the updated settings
+      data argument, as that might allow users who are not authorized to
+      view the connection details to do so.  Instead, when a client receives the
+      Updated signal, it should requery the Connection's settings with the
+      <literal>org.freedesktop.NetworkManager.Settings.Connection.GetSettings</literal>
+      method.  If the client receives an error as a result of this method call,
+      it should assume the connection has been deleted.
+    </para>
+    <para>
+      <emphasis role="strong">Action:</emphasis> where code manipulates
+      Connection objects, update the D-Bus interface that code uses to be
+      <literal>org.freedesktop.NetworkManager.Settings.Connection</literal>.
+      Additionally, code that listens for the
+      <literal>org.freedesktop.NetworkManager.Settings.Connection.Updated</literal>
+      signal should no longer expect the new settings data as an argument, but
+      instead should request the new settings data using the
+      <literal>org.freedesktop.NetworkManager.Settings.Connection.GetSettings</literal>
+      method.
     </para>
     </section>
 
@@ -248,6 +300,52 @@
       check the CurrentCapabilities device property to determine whether to
       treat the device as CDMA, GSM, or LTE for purposes of configuration and
       status.
+    </para>
+    </section>
+
+    <section>
+    <title>Deprecated Methods Removed</title>
+    <para>
+      A few methods and signals of the <literal>org.freedesktop.NetworkManager</literal>
+      interface deprecated in version 0.7 have been removed.  All the
+      replacement methods and signals have existed since version 0.7 and so are
+      not new to this version of NetworkManager, but some older programs may
+      be using removed items.  The following table lists the removed items and
+      their replacements:
+      <table>
+        <tgroup cols="2">
+          <thead>
+            <row><entry>Removed Item</entry><entry>Replacement</entry></row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><screen>StateChange signal</screen></entry>
+              <entry>
+                Use the <literal>StateChanged</literal> signal, which has the
+                same arguments.
+              </entry>
+            </row>
+            <row>
+              <entry><screen>sleep() and wake() methods</screen></entry>
+              <entry>
+                Use the <literal>Sleep()</literal> method instead, which takes
+                a boolean argument indicating whether NetworkManager should
+                go to sleep or wake up.
+              </entry>
+            </row>
+            <row>
+              <entry><screen>state() method</screen></entry>
+              <entry>
+                Use the <literal>State</literal> property instead.
+              </entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+    </para>
+    <para>
+      <emphasis role="strong">Action:</emphasis> update code to use these
+      replacement methods and properties where it used old deprecated ones
     </para>
     </section>
 
