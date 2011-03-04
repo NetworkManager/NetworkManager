@@ -69,7 +69,7 @@
     <para>
       This part documents the properties and value types of each "Setting"
       object that composes the basic unit of NetworkManager configuration,
-      the "Connection".  Each Connection object is simply a dictionare mapping
+      the "Connection".  Each Connection object is simply a dictionary mapping
       setting names (like "wimax" or "bluetooth") to a dictionary of
       key/value pairs that represents each itself.
     </para>
