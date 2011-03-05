@@ -1,6 +1,7 @@
 SUBDIRS=. tests
 
 INCLUDES = \
+	-I$(top_srcdir)/src/logging \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/libnm-glib \
@@ -44,6 +45,7 @@ libnm_settings_plugin_ifupdown_la_CPPFLAGS = \
 libnm_settings_plugin_ifupdown_la_LDFLAGS = -module -avoid-version
 libnm_settings_plugin_ifupdown_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
+	$(top_builddir)/src/logging/libnm-logging.la \
 	libifupdown-io.la \
 	$(GLIB_LIBS) \
 	$(GMODULE_LIBS) \

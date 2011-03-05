@@ -48,7 +48,7 @@
 #include "parser.h"
 #include "nm-inotify-helper.h"
 
-#include <nm-utils.h>
+#include "nm-logging.h"
 
 #include <arpa/inet.h>
 
@@ -460,7 +460,7 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 	                                priv->conf_file,
 	                                G_KEY_FILE_NONE,
 	                                &error)) {
-		nm_info ("loading system config file (%s) caused error: (%d) %s",
+		nm_log_info (LOGD_SETTINGS, "loading system config file (%s) caused error: (%d) %s",
 		         priv->conf_file,
 		         error ? error->code : -1,
 		         error && error->message ? error->message : "(unknown)");
@@ -473,7 +473,7 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 		                                            IFUPDOWN_KEY_FILE_KEY_MANAGED,
 		                                            &error);
 		if (error) {
-			nm_info ("getting keyfile key '%s' in group '%s' failed: (%d) %s",
+			nm_log_info (LOGD_SETTINGS, "getting keyfile key '%s' in group '%s' failed: (%d) %s",
 			         IFUPDOWN_KEY_FILE_GROUP,
 			         IFUPDOWN_KEY_FILE_KEY_MANAGED,
 			         error ? error->code : -1,
@@ -595,7 +595,7 @@ update_system_hostname(NMInotifyHelper *inotify_helper,
 						 &hostname_file,
 						 &hostname_file_len,
 						 &error)) {
-		nm_warning ("update_system_hostname() - couldn't read "
+		nm_log_warn (LOGD_SETTINGS, "update_system_hostname() - couldn't read "
 				  IFUPDOWN_SYSTEM_HOSTNAME_FILE " (%d/%s)",
 				  error->code, error->message);
 		return;
@@ -629,7 +629,7 @@ write_system_hostname(NMSystemConfigInterface *config,
 						 newhostname,
 						 -1,
 						 &error)) {
-		nm_warning ("update_system_hostname() - couldn't write hostname (%s) to "
+		nm_log_warn (LOGD_SETTINGS, "update_system_hostname() - couldn't write hostname (%s) to "
 				  IFUPDOWN_SYSTEM_HOSTNAME_FILE " (%d/%s)",
 				  newhostname, error->code, error->message);	
 	} else {
