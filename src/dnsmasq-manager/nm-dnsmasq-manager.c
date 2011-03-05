@@ -254,7 +254,6 @@ create_dm_cmd_line (const char *iface,
 	struct in_addr addr;
 	char buf[INET_ADDRSTRLEN + 15];
 	char localaddr[INET_ADDRSTRLEN + 1];
-	int i;
 
 	dm_binary = nm_find_dnsmasq ();
 	if (!dm_binary) {
