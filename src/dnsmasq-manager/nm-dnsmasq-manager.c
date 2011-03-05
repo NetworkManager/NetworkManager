@@ -278,17 +278,10 @@ create_dm_cmd_line (const char *iface,
 	/* dnsmasq may read from it's default config file location, which if that
 	 * location is a valid config file, it will combine with the options here
 	 * and cause undesirable side-effects.  Like sending bogus IP addresses
-	 * as the gateway or whatever.  So give dnsmasq a bogus config file
-	 * location to avoid screwing up the configuration we're passing to it.
+	 * as the gateway or whatever.  So tell dnsmasq not to use any config file
+	 * at all.
 	 */
-	memset (buf, 0, sizeof (buf));
-	strcpy (buf, "/tmp/");
-	for (i = 5; i < 15; i++)
-		buf[i] = (char) (g_random_int_range ((guint32) 'a', (guint32) 'z') & 0xFF);
-	strcat (buf, ".conf");
-
 	nm_cmd_line_add_string (cmd, "--conf-file");
-	nm_cmd_line_add_string (cmd, buf);
 
 	nm_cmd_line_add_string (cmd, "--no-hosts");
 	nm_cmd_line_add_string (cmd, "--keep-in-foreground");
