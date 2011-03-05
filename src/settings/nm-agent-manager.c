@@ -448,7 +448,8 @@ request_free (Request *req)
 	if (req->idle_id)
 		g_source_remove (req->idle_id);
 
-	req->cancel_callback (req);
+	if (req->cancel_callback)
+		req->cancel_callback (req);
 
 	g_slist_free (req->pending);
 	g_slist_free (req->asked);
@@ -459,7 +460,8 @@ request_free (Request *req)
 		g_hash_table_unref (req->existing_secrets);
 	if (req->chain)
 		nm_auth_chain_unref (req->chain);
-	g_object_unref (req->authority);
+	if (req->authority)
+		g_object_unref (req->authority);
 	memset (req, 0, sizeof (Request));
 	g_free (req);
 }
