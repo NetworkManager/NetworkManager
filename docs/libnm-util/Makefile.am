@@ -54,7 +54,10 @@ GTKDOC_CFLAGS =				\
 	$(GLIB_CFLAGS)			\
 	$(DBUS_CFLAGS)
 
-GTKDOC_LIBS = $(top_builddir)/libnm-util/libnm-util.la
+GTKDOC_LIBS = \
+	$(top_builddir)/libnm-util/libnm-util.la \
+	$(GLIB_LIBS)
+
 
 
 # include common portion ...
