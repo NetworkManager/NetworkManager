@@ -51,6 +51,7 @@ void add_block(const char *type, const char* name)
 void add_data(const char *key,const char *data)
 {
 	if_data *ret;
+	char *idx;
 
 	// Check if there is a block where we can attach our data
 	if (first == NULL)
@@ -58,6 +59,11 @@ void add_data(const char *key,const char *data)
 
 	ret = (if_data*) calloc(1,sizeof(struct _if_data));
 	ret->key = g_strdup(key);
+	// Normalize keys. Convert '_' to '-', as ifupdown accepts both variants.
+	// When querying keys via ifparser_getkey(), use '-'.
+	while ((idx = strrchr(ret->key, '_'))) {
+		*idx = '-';
+	}
 	ret->data = g_strdup(data);
 
 	if (last->info == NULL)
