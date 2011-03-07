@@ -368,7 +368,7 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 			/* Bridge configuration */
 			if(!strncmp ("br", block->name, 2)) {
 				/* Try to find bridge ports */
-				const char *ports = ifparser_getkey (block, "bridge_ports");
+				const char *ports = ifparser_getkey (block, "bridge-ports");
 				if (ports) {
 					int i;
 					int state = 0;
