@@ -93,6 +93,10 @@ static void impl_manager_enable (NMManager *manager,
 static void impl_manager_get_permissions (NMManager *manager,
                                           DBusGMethodInvocation *context);
 
+static gboolean impl_manager_get_state (NMManager *manager,
+                                        guint32 *state,
+                                        GError **error);
+
 static gboolean impl_manager_set_logging (NMManager *manager,
                                           const char *level,
                                           const char *domains,
@@ -2724,6 +2728,14 @@ impl_manager_get_permissions (NMManager *self,
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME, FALSE);
+}
+
+static gboolean
+impl_manager_get_state (NMManager *manager, guint32 *state, GError **error)
+{
+	nm_manager_update_state (manager);
+	*state = NM_MANAGER_GET_PRIVATE (manager)->state;
+	return TRUE;
 }
 
 static gboolean

@@ -445,12 +445,6 @@
                 go to sleep or wake up.
               </entry>
             </row>
-            <row>
-              <entry><screen>state() method</screen></entry>
-              <entry>
-                Use the <literal>State</literal> property instead.
-              </entry>
-            </row>
           </tbody>
         </tgroup>
       </table>
