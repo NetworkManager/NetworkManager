@@ -302,7 +302,6 @@ nm_device_interface_activate (NMDeviceInterface *device,
 {
 	gboolean success;
 	NMConnection *connection;
-	NMSettingConnection *s_con;
 	char *iface;
 
 	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), FALSE);
@@ -310,12 +309,10 @@ nm_device_interface_activate (NMDeviceInterface *device,
 
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-	g_assert (s_con);
 
 	iface = nm_device_interface_get_iface (device);
 	nm_log_info (LOGD_DEVICE, "Activation (%s) starting connection '%s'", iface,
-			     nm_setting_connection_get_id (s_con));
+	             nm_connection_get_id (connection));
 	g_free (iface);
 
 	success = NM_DEVICE_INTERFACE_GET_INTERFACE (device)->activate (device, req, error);

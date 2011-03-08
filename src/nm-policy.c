@@ -74,19 +74,6 @@ struct NMPolicy {
 #define RETRIES_TAG "autoconnect-retries"
 #define RETRIES_DEFAULT	4
 
-static const char *
-get_connection_id (NMConnection *connection)
-{
-	NMSettingConnection *s_con;
-
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
-
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
-	g_return_val_if_fail (s_con != NULL, NULL);
-
-	return nm_setting_connection_get_id (s_con);
-}
-
 static NMDevice *
 get_best_ip4_device (NMManager *manager, NMActRequest **out_req)
 {
@@ -760,13 +747,8 @@ auto_activate_device (gpointer user_data)
 		                                     nm_device_get_path (data->device),
 		                                     NULL,
 		                                     &error)) {
-			NMSettingConnection *s_con;
-
-			s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (best_connection, NM_TYPE_SETTING_CONNECTION));
-			g_assert (s_con);
-
 			nm_log_info (LOGD_DEVICE, "Connection '%s' auto-activation failed: (%d) %s",
-			             nm_setting_connection_get_id (s_con), error->code, error->message);
+			             nm_connection_get_id (best_connection), error->code, error->message);
 			g_error_free (error);
 		}
 	}
@@ -894,7 +876,7 @@ device_state_changed (NMDevice *device,
 		if (connection && IS_ACTIVATING_STATE (old_state)) {
 			g_object_set_data (G_OBJECT (connection), INVALID_TAG, GUINT_TO_POINTER (TRUE));
 			if (get_connection_auto_retries (connection) == 0)
-				nm_log_info (LOGD_DEVICE, "Marking connection '%s' invalid.", get_connection_id (connection));
+				nm_log_info (LOGD_DEVICE, "Marking connection '%s' invalid.", nm_connection_get_id (connection));
 			nm_connection_clear_secrets (connection);
 		}
 		schedule_activate_check (policy, device, 3);
@@ -1062,7 +1044,6 @@ connection_updated (NMSettings *settings,
 static void
 _deactivate_if_active (NMManager *manager, NMConnection *connection)
 {
-	NMSettingConnection *s_con;
 	GPtrArray *list;
 	int i;
 
@@ -1070,16 +1051,13 @@ _deactivate_if_active (NMManager *manager, NMConnection *connection)
 	if (!list)
 		return;
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-	g_assert (s_con);
-
 	for (i = 0; i < list->len; i++) {
 		char *path = g_ptr_array_index (list, i);
 		GError *error = NULL;
 
 		if (!nm_manager_deactivate_connection (manager, path, NM_DEVICE_STATE_REASON_CONNECTION_REMOVED, &error)) {
 			nm_log_warn (LOGD_DEVICE, "Connection '%s' disappeared, but error deactivating it: (%d) %s",
-			             nm_setting_connection_get_id (s_con), error->code, error->message);
+			             nm_connection_get_id (connection), error->code, error->message);
 			g_error_free (error);
 		}
 		g_free (path);

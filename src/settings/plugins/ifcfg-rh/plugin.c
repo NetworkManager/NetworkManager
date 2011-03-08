@@ -117,7 +117,6 @@ _internal_new_connection (SCPluginIfcfg *self,
 {
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
 	NMIfcfgConnection *connection;
-	NMSettingConnection *s_con;
 	const char *cid;
 	GError *local = NULL;
 	gboolean ignore_error = FALSE;
@@ -136,9 +135,7 @@ _internal_new_connection (SCPluginIfcfg *self,
 		return NULL;
 	}
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (connection), NM_TYPE_SETTING_CONNECTION);
-	g_assert (s_con);
-	cid = nm_setting_connection_get_id (s_con);
+	cid = nm_connection_get_id (NM_CONNECTION (connection));
 	g_assert (cid);
 
 	g_hash_table_insert (priv->connections,
@@ -296,12 +293,9 @@ connection_new_or_changed (SCPluginIfcfg *self,
 		}
 	} else {
 		if (old_unmanaged) {  /* now managed */
-			NMSettingConnection *s_con;
 			const char *cid;
 
-			s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (new), NM_TYPE_SETTING_CONNECTION);
-			g_assert (s_con);
-			cid = nm_setting_connection_get_id (s_con);
+			cid = nm_connection_get_id (NM_CONNECTION (new));
 			g_assert (cid);
 
 			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Managing connection '%s' and its "

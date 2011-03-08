@@ -3130,7 +3130,6 @@ real_act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 	NMActRequest *req;
 	NMAccessPoint *ap;
 	NMConnection *connection;
-	NMSettingConnection *s_connection;
 	const char *setting_name;
 	NMSettingWireless *s_wireless;
 
@@ -3147,9 +3146,6 @@ real_act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
 
-	s_connection = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
-	g_assert (s_connection);
-
 	s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
 	g_assert (s_wireless);
 
@@ -3159,7 +3155,7 @@ real_act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 		nm_log_info (LOGD_DEVICE | LOGD_WIFI,
 		             "Activation (%s/wireless): access point '%s' has security,"
 		             " but secrets are required.",
-		             iface, nm_setting_connection_get_id (s_connection));
+		             iface, nm_connection_get_id (connection));
 
 		ret = handle_auth_or_fail (self, req, FALSE);
 		if (ret == NM_ACT_STAGE_RETURN_FAILURE)
@@ -3172,12 +3168,12 @@ real_act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 		nm_log_info (LOGD_DEVICE | LOGD_WIFI,
 		             "Activation (%s/wireless): connection '%s' has security"
 		             ", and secrets exist.  No new secrets needed.",
-		             iface, nm_setting_connection_get_id (s_connection));
+		             iface, nm_connection_get_id (connection));
 	} else {
 		nm_log_info (LOGD_DEVICE | LOGD_WIFI,
 		             "Activation (%s/wireless): connection '%s' requires no "
 		             "security.  No secrets needed.",
-		             iface, nm_setting_connection_get_id (s_connection));
+		             iface, nm_connection_get_id (connection));
 	}
 
 	config = build_supplicant_config (self, connection, ap);
@@ -3283,16 +3279,12 @@ handle_ip_config_timeout (NMDeviceWifi *self,
 	 */
 	auth_enforced = ap_auth_enforced (connection, ap, &encrypted);
 	if (encrypted && !auth_enforced && !may_fail) {
-		NMSettingConnection *s_con;
-
-		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-
 		/* Activation failed, we must have bad encryption key */
 		nm_log_warn (LOGD_DEVICE | LOGD_WIFI,
 		             "Activation (%s/wireless): could not get IP configuration for "
 		             "connection '%s'.",
-				     nm_device_get_iface (NM_DEVICE (self)),
-				     nm_setting_connection_get_id (s_con));
+		             nm_device_get_iface (NM_DEVICE (self)),
+		             nm_connection_get_id (connection));
 
 		ret = handle_auth_or_fail (self, NULL, TRUE);
 		if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {

@@ -597,7 +597,6 @@ connection_removed (NMSettingsConnection *obj, gpointer user_data)
 {
 	GObject *connection = G_OBJECT (obj);
 	guint id;
-
 	g_object_ref (connection);
 
 	/* Disconnect signal handlers, as plugins might still keep references
@@ -1289,7 +1288,6 @@ default_wired_try_update (NMDefaultWiredConnection *wired,
                           NMSettings *self)
 {
 	GError *error = NULL;
-	NMSettingConnection *s_con;
 	const char *id;
 	NMSettingsConnection *added;
 
@@ -1297,10 +1295,7 @@ default_wired_try_update (NMDefaultWiredConnection *wired,
 	 * persistent storage.
 	 */
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (wired),
-	                                                           NM_TYPE_SETTING_CONNECTION);
-	g_assert (s_con);
-	id = nm_setting_connection_get_id (s_con);
+	id = nm_connection_get_id (NM_CONNECTION (wired));
 	g_assert (id);
 
 	remove_default_wired_connection (self, NM_SETTINGS_CONNECTION (wired), FALSE);
@@ -1335,7 +1330,6 @@ nm_settings_device_added (NMSettings *self, NMDevice *device)
 	GByteArray *mac = NULL;
 	struct ether_addr tmp;
 	NMDefaultWiredConnection *wired;
-	NMSettingConnection *s_con;
 	gboolean read_only = TRUE;
 	const char *id;
 
@@ -1365,10 +1359,7 @@ nm_settings_device_added (NMSettings *self, NMDevice *device)
 	if (!wired)
 		goto ignore;
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (wired),
-	                                                           NM_TYPE_SETTING_CONNECTION);
-	g_assert (s_con);
-	id = nm_setting_connection_get_id (s_con);
+	id = nm_connection_get_id (NM_CONNECTION (wired));
 	g_assert (id);
 
 	nm_log_info (LOGD_SETTINGS, "Added default wired connection '%s' for %s",

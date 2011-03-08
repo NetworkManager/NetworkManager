@@ -1441,14 +1441,10 @@ add_device (NMManager *self, NMDevice *device)
 		                                                        (const GSList *) connections);
 		g_slist_free (connections);
 
-		if (existing) {
-			NMSettingConnection *s_con;
-
-			s_con = (NMSettingConnection *) nm_connection_get_setting (existing, NM_TYPE_SETTING_CONNECTION);
+		if (existing)
 			nm_log_dbg (LOGD_DEVICE, "(%s): found existing device connection '%s'",
 			            nm_device_get_iface (device),
-			            nm_setting_connection_get_id (s_con));
-		}
+			            nm_connection_get_id (existing));
 	}
 
 	/* Start the device if it's supposed to be managed */

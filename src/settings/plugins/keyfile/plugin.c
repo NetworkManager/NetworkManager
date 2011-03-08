@@ -250,18 +250,13 @@ dir_changed (GFileMonitor *monitor,
 			connection = nm_keyfile_connection_new (full_path, NULL, &error);
 			if (connection) {
 				NMKeyfileConnection *found = NULL;
-				NMSettingConnection *s_con;
 
 				/* Connection renames will show up as different files but with
 				 * the same UUID.  Try to find the original connection.
-				 */
-				s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (connection), NM_TYPE_SETTING_CONNECTION);
-				g_assert (s_con);
-
-				/* A connection rename is treated just like an update except
+				 * A connection rename is treated just like an update except
 				 * there's a bit more housekeeping with the hash table.
 				 */
-				found = find_by_uuid (self, nm_setting_connection_get_uuid (s_con));
+				found = find_by_uuid (self, nm_connection_get_uuid (NM_CONNECTION (connection)));
 				if (found) {
 					const char *old_path = nm_keyfile_connection_get_path (connection);
 

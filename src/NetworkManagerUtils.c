@@ -738,11 +738,9 @@ get_new_connection_name (const GSList *existing,
 
 	for (iter = existing; iter; iter = g_slist_next (iter)) {
 		NMConnection *candidate = NM_CONNECTION (iter->data);
-		NMSettingConnection *s_con;
 		const char *id;
 
-		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (candidate, NM_TYPE_SETTING_CONNECTION));
-		id = nm_setting_connection_get_id (s_con);
+		id = nm_connection_get_id (candidate);
 		g_assert (id);
 		names = g_slist_append (names, (gpointer) id);
 

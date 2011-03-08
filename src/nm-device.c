@@ -1517,12 +1517,9 @@ dhcp4_start (NMDevice *self,
              NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMSettingConnection *s_con;
 	NMSettingIP4Config *s_ip4;
 	guint8 *anycast = NULL;
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
-	g_assert (s_con);
 	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
 
 	if (priv->dhcp_anycast_address)
@@ -1537,7 +1534,7 @@ dhcp4_start (NMDevice *self,
 	g_warn_if_fail (priv->dhcp4_client == NULL);
 	priv->dhcp4_client = nm_dhcp_manager_start_ip4 (priv->dhcp_manager,
 	                                                nm_device_get_ip_iface (self),
-	                                                nm_setting_connection_get_uuid (s_con),
+	                                                nm_connection_get_uuid (connection),
 	                                                s_ip4,
 	                                                priv->dhcp_timeout,
 	                                                anycast);
@@ -1652,8 +1649,6 @@ dhcp6_start (NMDevice *self,
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	guint8 *anycast = NULL;
 	NMSettingIP6Config *s_ip6;
-	NMSettingConnection *s_con;
-	const char *uuid;
 	const char *ip_iface;
 	const struct in6_addr dest = { { { 0xFF,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } } };
 	int err;
@@ -1689,16 +1684,12 @@ dhcp6_start (NMDevice *self,
 		            priv->ip_iface ? priv->ip_iface : priv->iface, nl_geterror ());
 	}
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
-	g_assert (s_con);
-	uuid = nm_setting_connection_get_uuid (s_con);
-
 	s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
 
 	ip_iface = nm_device_get_ip_iface (self);
 	priv->dhcp6_client = nm_dhcp_manager_start_ip6 (priv->dhcp_manager,
 	                                                ip_iface,
-	                                                uuid,
+	                                                nm_connection_get_uuid (connection),
 	                                                s_ip6,
 	                                                priv->dhcp_timeout,
 	                                                anycast,

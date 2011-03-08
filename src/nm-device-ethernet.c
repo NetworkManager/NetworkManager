@@ -1350,7 +1350,6 @@ nm_8021x_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *reason)
 {
 	NMConnection *connection;
 	NMSetting8021x *security;
-	NMSettingConnection *s_connection;
 	const char *setting_name;
 	const char *iface;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
@@ -1364,7 +1363,6 @@ nm_8021x_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *reason)
 	}
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
-	s_connection = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 
 	/* If we need secrets, get them */
 	setting_name = nm_connection_need_secrets (connection, NULL);
@@ -1373,7 +1371,7 @@ nm_8021x_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *reason)
 
 		nm_log_info (LOGD_DEVICE | LOGD_ETHER,
 		             "Activation (%s/wired): connection '%s' has security, but secrets are required.",
-				     iface, nm_setting_connection_get_id (s_connection));
+				     iface, nm_connection_get_id (connection));
 
 		ret = handle_auth_or_fail (self, req, FALSE);
 		if (ret != NM_ACT_STAGE_RETURN_POSTPONE)
@@ -1381,7 +1379,7 @@ nm_8021x_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *reason)
 	} else {
 		nm_log_info (LOGD_DEVICE | LOGD_ETHER,
 		             "Activation (%s/wired): connection '%s' requires no security. No secrets needed.",
-				     iface, nm_setting_connection_get_id (s_connection));
+				     iface, nm_connection_get_id (connection));
 
 		if (supplicant_interface_init (self))
 			ret = NM_ACT_STAGE_RETURN_POSTPONE;
@@ -1799,7 +1797,6 @@ static gboolean
 ip4_match_config (NMDevice *self, NMConnection *connection)
 {
 	NMSettingIP4Config *s_ip4;
-	NMSettingConnection *s_con;
 	struct nl_handle *nlh = NULL;
 	struct nl_cache *addr_cache = NULL;
 	int i, num;
@@ -1810,10 +1807,6 @@ ip4_match_config (NMDevice *self, NMConnection *connection)
 	AddrData check_data;
 
 	ifindex = nm_device_get_ifindex (self);
-
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
-	g_assert (s_con);
-	g_assert (nm_setting_connection_get_uuid (s_con));
 
 	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
 	if (!s_ip4)
@@ -1833,7 +1826,7 @@ ip4_match_config (NMDevice *self, NMConnection *connection)
 	dhcp_mgr = nm_dhcp_manager_get ();
 	leases = nm_dhcp_manager_get_lease_config (dhcp_mgr,
 	                                           nm_device_get_iface (self),
-	                                           nm_setting_connection_get_uuid (s_con));
+	                                           nm_connection_get_uuid (connection));
 	g_object_unref (dhcp_mgr);
 
 	method = nm_setting_ip4_config_get_method (s_ip4);

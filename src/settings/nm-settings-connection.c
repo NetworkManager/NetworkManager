@@ -654,7 +654,6 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
                                     GError **error)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-	NMSettingConnection *s_con;
 	GHashTable *existing_secrets;
 	guint32 call_id = 0;
 
@@ -694,9 +693,8 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	if (existing_secrets)
 		g_hash_table_unref (existing_secrets);
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (self), NM_TYPE_SETTING_CONNECTION);
 	nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets requested flags 0x%X hint '%s'",
-	            nm_setting_connection_get_uuid (s_con),
+	            nm_connection_get_uuid (NM_CONNECTION (self)),
 	            setting_name,
 	            call_id,
 	            flags,
@@ -710,11 +708,9 @@ nm_settings_connection_cancel_secrets (NMSettingsConnection *self,
                                        guint32 call_id)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-	NMSettingConnection *s_con;
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (self), NM_TYPE_SETTING_CONNECTION);
 	nm_log_dbg (LOGD_SETTINGS, "(%s:%u) secrets canceled",
-	            nm_setting_connection_get_uuid (s_con),
+	            nm_connection_get_uuid (NM_CONNECTION (self)),
 	            call_id);
 
 	priv->reqs = g_slist_remove (priv->reqs, GUINT_TO_POINTER (call_id));
