@@ -1,1 +1,201 @@
+So you're interested in hacking on NetworkManager?  Here's some cool
+stuff you could do...
+
+* Internet Connectivity Detection
+
+This feature would consist of attempting to make an HTTP request to a known
+DNS address and compare the response to a well-known string, like Windows does.
+This feature and the server address should be configurable via an option in the
+/etc/NetworkManager/NetworkManager.conf config file.
+
+Once the device has successfully gotten an IPv4 or IPv6 address, it should
+enter the state NM_DEVICE_STATE_IP_CHECK, where this HTTP request would be
+performed.  After the check was done, the device would set a property in
+NMDevicePrivate to indicate whether Internet access was successful or not, and
+advance to the NM_DEVICE_STATE_ACTIVATED state.
+
+The NMManager object, when determining the overall NM_STATE_* state in the
+nm_manager_update_state() function, would query this property and set
+NM_STATE_CONNECTED_LOCAL, NM_STATE_CONNECTED_SITE, or NM_STATE_CONNECTED_GLOBAL
+based on it and the device's state.
+
+Ideally this feature would not require linking to an HTTP library like libcurl,
+but would use open-coded simple HTTP or libsoup for the request.  The request
+must be done asynchronously, of course.
+
+
+* ADSL support
+
+NetworkManager should natively support ADSL modems using one of the 3 main
+connection methods, PPP over ATM (pppoa), PPP over Ethernet (pppoe), or
+IP over ATM (ipoatm).  Initial support could be targeted at just pppoa and
+pppoe, and there is some code in NetworkManager already for pppoe.  More info
+about ADSL configuration on Linux in general is here:
+
+http://atm.eagle-usb.org/wakka.php?wiki=UeagleAtmDoc
+
+hicham started code for the configuration settings here:
+
+https://github.com/hicham-haouari/NetworkManager-ADSL-Support/commits/adsl
+
+After the libnm-util pieces, internally NM needs to be modified for ADSL
+support, of course.  That involves adding a new NM_DEVICE_TYPE_ADSL in
+NetworkManager.h, and then creating a new NMDeviceAdsl subclass in src/.  It's
+probably easiest to copy the nm-device-ethernet.c file and strip out stuff
+that's not required.  Like the nm-device-ethernet.c file handles the 'carrier'
+state though, the ADSL code should periodically poll the sysfs 'carrier'
+attribute of the DSL modem to detect when the modem has a link with the remote
+DSL concentrator, and only activate connections when the link is present.
+
+Detection of ADSL modems should be handled in nm-udev-manager.c checking for
+the "atm" subsystem.
+
+Code to manage br2684ctl will likely be required to be written for the PPPoE
+case before PPPoE is started on the bridge-created link "nasX".  There are
+quite a few examples of daemon management code in NetworkManager (dnsmasq,
+avahi-autoipd, ppp, dhclient, etc) so there should be a lot of code to
+copy and paste from.
+
+
+* Convert WEXT code to nl80211
+
+There's still some WEXT code in NetworkManager for signal strength reporting,
+mode, frequency, BSSID, etc.  This should all get converted to nl80211 code,
+possibly using libnl as a base.  It's not particularly hard, but some
+investigation on how to talk to netlink and how to use nl80211 and netlink
+attributes will need to be done.  Tools like 'iw' already do much of this work,
+but we *cannot* copy & paste code from them since the 'iw' license is not
+compatible with NetworkManager's GPL license.  For exmaple, the following code
+does the job, but should be reworked a bit to use the internal synchronous
+netlink connection from src/nm-netlink-manager.c instead of doing the
+netlink communication on its own with genl_connect() and such:
+
+http://mail.gnome.org/archives/networkmanager-list/2009-September/msg00214.html
+
+The same approach should be taken for signal strength reporting, etc.
+
+
+* Real Access Point mode support
+
+Now that NetworkManager requires wpa_supplicant 0.7.x or later, we can add
+full Access Point (AP) mode support.  NetworkManager currently implements
+connection sharing via AdHoc mode support, which has some limitations.  Instead,
+we should check whether the wifi device supports AP mode, and if so, use
+that mode instead.  wpa_supplicant has support for a "lightweight AP" mode which
+we should use.  Witold Sowa started this support a while ago and wrote the new
+D-Bus API for wpa_supplicant that makes all this possible, but some NM pieces
+are still missing.  If the wifi driver supports AP mode, then in
+src/supplicant-manager/ NM should send an AP-mode config instead of sending
+the adhoc config.
+
+
+* On-Demand WiFi Scan support
+
+Single-user and embedded devices often use a continuous wifi scan when the
+networking configuration interface is open to quickly allow users to find their
+wifi network.  NM periodically scans, but this could take as long as 2 mintues
+to update the list.  Note that WiFi scans require 2 - 10 seconds to complete,
+and during this time normal traffic (video, VOIP, streaming music, downloads,
+etc) is not transmitted, so a WiFi scan is a disruptive operation to the user.
+
+A D-Bus method should be added to the NMDeviceWifi device to allow user
+applications to request a scan.  This request should be rate-limited to no
+more than once every 10 seconds to give time for traffic to resume when the
+scan is done, and to lessen the effect of any DDoS by malicious user
+applications.  This request should also be restricted by one or more PolicyKit
+permissions like org.freedesktop.NetworkManager.network-control.
+
+To begin, a new method definition should be added to the
+introspection/nm-device-wifi.xml for a method called "RequestScan" which takes
+an argument called "options" of type of "a{sv}".  This argument will be used
+later.  An annotation (like the other functions have) should be added so that
+the method will be called "impl_device_request_scan".
+
+Next, the corresponding method implementation should be added to
+src/nm-device-wifi.c by adding the prototype for impl_device_request_scan
+near the top of the file, and implementing it below.  The implementation will
+recieve a GHashTable corresponding to the "a{sv}" argument list from the XML
+file, but we can ignore that for now.
+
+The incoming request should be authenticated using nm_auth_get_caller_uid()
+and additionally starting a PolicyKit authentication check with
+with nm_auth_chain_new().  See the function manager_device_disconnect_request()
+in src/nm-manager.c for an example of this.
+
+Only after the caller is authorized to scan should the request be checked
+against the last scan timestamp, and if the last scan was 10 seconds or more
+ago, a new scan should be requested.
+
+
+* Implement NM_DEVICE_STATE_DISCONNECTING
+
+To allow for "pre-down" scenarios, this state should be implemented before a
+device is taken down while it still has connectivity.  If the device is
+taken down because it's ethernet carrier was dropped, or because the WiFi
+connection was terminated by the supplicant, this state is pointless and should
+be skipped.  But if the user requested a manual "disconnect", or NM is dropping
+connections on exit, etc, then this state should be entered.  In the future
+this state should hook into a new dispatcher action in src/NetworkManagerUtils.c
+to exectue dispatcher scripts during the disconnection, and to wait a limited
+amount of time for each script to complete before allowing the device to
+proceed to the NM_DEVICE_STATE_DISCONNECTED state, fully implementing pre-down.
+
+
+* VPN re-connect
+
+NM should remember whether a VPN was connected if a connection disconnects
+(like WiFi drops out or short carrier drop) or if the laptop goes to sleep.
+Upon reconnect, if the same Connection is again active, the previously
+connected VPN should be activated again as well.  Basically, don't just drop
+the VPN because WiFi choked for 10 seconds, but reconnect the VPN if it was
+connected before the drop.
+
+
+* VPN autoconnect
+
+We should add a property to the NMSettingConnection object in
+libnm-util/nm-setting-connection.c called "vpns" that is a string list,
+containing a list of Connection UUIDs that should be activated when the base
+connection itself is activated.  This will allow a VPN connection to be
+started every time another connection is started, so that if you choose you're
+always on the VPN in your favorite coffee shop.
+
+The NM_DEVICE_STATE_SECONDARIES state was added specifically for cases like
+this.  Thus, after the base device has IP connectivity, but before it has
+signaled that it's fully activated, the device should enter the SECONDARIES
+state and kick off activation of the given VPN connection.  Only after this
+VPN connection has successfully connected should the base device to the
+NM_DEVICE_STATE_ACTIVATED state.
+
+
+* VPN and IPv6
+
+The internal VPN capability should support IPv6.  Essentially, the D-Bus
+interface between NetworkManager and the VPN service daemons should be extended
+with an IP6Config signal that passes up the IPv6 addressing and routing details
+if the VPN daemon is IPv6 capable.  NM should then process those details like it
+does with IPv4.  include/NetworkManagerVPN.h should be updated with key/value
+pairs defining the various IPv6 attributes much like the IPv4 ones are defined.
+
+
+* VPN IP Methods
+
+Some VPNs (openvpn with TAP for example) require that DHCP is run on a
+pseudo-ethernet device to obtain addressing information.  This is not currently
+possible, but NM already has all the code for DHCP.  Thus, a new "method"
+key should be defined in include/NetworkManagerVPN.h to allow for DHCP to
+be performed if the VPN service daemon requests it in the IP4Config or IP6Config
+signals.  A patch here:
+
+http://cgit.freedesktop.org/NetworkManager/NetworkManager/commit/?h=vpn-ip-method
+
+shows that, but internally NM needs to process this request, and instead of
+applying given IPv4 or IPv6 configuration (since there isn't any yet) it should
+kick off a DHCP request and wait for the request to finish.  When it does
+finish it should apply the configuration to the interface.  Most of the DHCP
+code is already written, but src/vpn-manager/nm-vpn-connection.c would need
+updates to recognize the new "method" property of the IP4Config signal and
+handle the DHCP lifetime after that.  The base NMDevice class in nm-device.c
+has code for handling the DHCP lifetime, connecting to NMDHCPManager signals
+for renew and failure processing, etc, and could be used as an example.
 
