@@ -138,21 +138,6 @@ make_connection_setting (const char *file,
 	              svTrueValue (ifcfg, "ONBOOT", TRUE),
 	              NULL);
 
-	value = svGetValue (ifcfg, "LAST_CONNECT", FALSE);
-	if (value) {
-		unsigned long int tmp;
-		guint64 timestamp;
-
-		errno = 0;
-		tmp = strtoul (value, NULL, 10);
-		if (errno == 0) {
-			timestamp = (guint64) tmp;
-			g_object_set (s_con, NM_SETTING_CONNECTION_TIMESTAMP, timestamp, NULL);
-		} else
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid LAST_CONNECT time");
-		g_free (value);
-	}
-
 	value = svGetValue (ifcfg, "USERS", FALSE);
 	if (value) {
 		char **items, **iter;
