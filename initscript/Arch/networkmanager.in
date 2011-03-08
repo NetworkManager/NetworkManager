@@ -17,6 +17,7 @@ PID=`pidof -o %PPID $NETWORKMANAGER_BIN`
 case "$1" in
 	start)
 		stat_busy "Starting NetworkManager"
+		[ ! -d /var/run/NetworkManager ] && install -d /var/run/NetworkManager
 		if [ -z "$PID" ]; then
 			$NETWORKMANAGER_BIN
 		fi
