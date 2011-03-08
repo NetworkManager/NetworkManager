@@ -1275,7 +1275,7 @@ nm_settings_connection_update_timestamp (NMSettingsConnection *connection, guint
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
 	const char *connection_uuid;
 	GKeyFile *timestamps_file;
-	char *data;
+	char *data, *tmp;
 	gsize len;
 	GError *error = NULL;
 
@@ -1291,7 +1291,9 @@ nm_settings_connection_update_timestamp (NMSettingsConnection *connection, guint
 	}
 
 	connection_uuid = nm_connection_get_uuid (NM_CONNECTION (connection));
-	g_key_file_set_uint64 (timestamps_file, "timestamps", connection_uuid, timestamp);
+	tmp = g_strdup_printf ("%" G_GUINT64_FORMAT, timestamp);
+	g_key_file_set_value (timestamps_file, "timestamps", connection_uuid, tmp);
+	g_free (tmp);
  
 	data = g_key_file_to_data (timestamps_file, &len, &error);
 	if (data) {
@@ -1317,15 +1319,20 @@ nm_settings_connection_read_and_fill_timestamp (NMSettingsConnection *connection
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
 	const char *connection_uuid;
-	guint64 timestamp;
+	guint64 timestamp = 0;
 	GKeyFile *timestamps_file;
 	GError *err = NULL;
+	char *tmp_str;
 
 	/* Get timestamp from database file */
 	timestamps_file = g_key_file_new ();
 	g_key_file_load_from_file (timestamps_file, SETTINGS_TIMESTAMPS_FILE, G_KEY_FILE_KEEP_COMMENTS, NULL);
 	connection_uuid = nm_connection_get_uuid (NM_CONNECTION (connection));
-	timestamp = g_key_file_get_uint64 (timestamps_file, "timestamps", connection_uuid, &err);
+	tmp_str = g_key_file_get_value (timestamps_file, "timestamps", connection_uuid, &err);
+	if (tmp_str) {
+		timestamp = g_ascii_strtoull (tmp_str, NULL, 10);
+		g_free (tmp_str);
+	}
 
 	/* Update connection's timestamp */
 	if (!err)
