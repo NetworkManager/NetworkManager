@@ -116,12 +116,12 @@ msgstr ""
 #: ../cli/src/connections.c:197 ../cli/src/connections.c:536
 #, c-format
 msgid "Error: 'con list': %s"
-msgstr "Erreur&nbsp;: 'con list': %s"
+msgstr "Erreur: 'con list': %s"
 
 #: ../cli/src/connections.c:199 ../cli/src/connections.c:538
 #, c-format
 msgid "Error: 'con list': %s; allowed fields: %s"
-msgstr "Erreur&nbsp;: 'con list': %s&nbsp;; champs autorisés&nbsp;: %s"
+msgstr "Erreur: 'con list': %s; champs autorisés: %s"
 
 #: ../cli/src/connections.c:207
 msgid "Connection details"
@@ -197,40 +197,40 @@ msgstr "Connexions utilisateur"
 #: ../cli/src/devices.c:980
 #, c-format
 msgid "Error: %s argument is missing."
-msgstr "Erreur&nbsp;: l'argument %s est manquant."
+msgstr "Erreur: l'argument %s est manquant."
 
 #: ../cli/src/connections.c:487
 #, c-format
 msgid "Error: %s - no such connection."
-msgstr "Erreur&nbsp;: %s - connexion introuvable."
+msgstr "Erreur: %s - connexion introuvable."
 
 #: ../cli/src/connections.c:519 ../cli/src/connections.c:1383
 #: ../cli/src/connections.c:1470 ../cli/src/devices.c:687
 #: ../cli/src/devices.c:754 ../cli/src/devices.c:888 ../cli/src/devices.c:986
 #, c-format
 msgid "Unknown parameter: %s\n"
-msgstr "Paramètre inconnu&nbsp;: %s\n"
+msgstr "Paramètre inconnu: %s\n"
 
 #: ../cli/src/connections.c:528
 #, c-format
 msgid "Error: no valid parameter specified."
-msgstr "Erreur&nbsp;: aucun paramètre valide spécifié."
+msgstr "Erreur: aucun paramètre valide spécifié."
 
 #: ../cli/src/connections.c:543 ../cli/src/connections.c:1572
 #: ../cli/src/devices.c:1192 ../cli/src/network-manager.c:274
 #, c-format
 msgid "Error: %s."
-msgstr "Erreur&nbsp;: %s."
+msgstr "Erreur: %s."
 
 #: ../cli/src/connections.c:649
 #, c-format
 msgid "Error: 'con status': %s"
-msgstr "Erreur&nbsp;: 'con status'&nbsp;: %s"
+msgstr "Erreur: 'con status': %s"
 
 #: ../cli/src/connections.c:651
 #, c-format
 msgid "Error: 'con status': %s; allowed fields: %s"
-msgstr "Erreur&nbsp;: 'con status'&nbsp;: %s&nbsp;; champs autorisés&nbsp;: %s"
+msgstr "Erreur: 'con status': %s; champs autorisés: %s"
 
 #: ../cli/src/connections.c:658
 msgid "Active connections"
@@ -350,7 +350,7 @@ msgstr "la connexion a été supprimée"
 #: ../cli/src/connections.c:1170
 #, c-format
 msgid "state: %s\n"
-msgstr "état&nbsp;: %s\n"
+msgstr "état: %s\n"
 
 #: ../cli/src/connections.c:1173 ../cli/src/connections.c:1199
 #, c-format
@@ -360,98 +360,98 @@ msgstr "Connexion activée\n"
 #: ../cli/src/connections.c:1176
 #, c-format
 msgid "Error: Connection activation failed."
-msgstr "Erreur&nbsp;: Échec de l'activation de la connexion"
+msgstr "Erreur: Échec de l'activation de la connexion"
 
 #: ../cli/src/connections.c:1195
 #, c-format
 msgid "state: %s (%d)\n"
-msgstr "état&nbsp;: %s (%d)\n"
+msgstr "état: %s (%d)\n"
 
 #: ../cli/src/connections.c:1205
 #, c-format
 msgid "Error: Connection activation failed: %s."
-msgstr "Erreur&nbsp;: L'activation de la connexion a échoué&nbsp;: %s."
+msgstr "Erreur: L'activation de la connexion a échoué: %s."
 
 #: ../cli/src/connections.c:1222 ../cli/src/devices.c:811
 #, c-format
 msgid "Error: Timeout %d sec expired."
-msgstr "Erreur&nbsp;: Le délai d'attente de %d sec a expiré."
+msgstr "Erreur: Le délai d'attente de %d sec a expiré."
 
 #: ../cli/src/connections.c:1265
 #, c-format
 msgid "Error: Connection activation failed: %s"
-msgstr "Erreur&nbsp;: L'activation de la connexion a échoué&nbsp;: %s"
+msgstr "Erreur: L'activation de la connexion a échoué: %s"
 
 #: ../cli/src/connections.c:1279
 #, c-format
 msgid "Error: Obtaining active connection for '%s' failed."
-msgstr "Erreur&nbsp;: L'obtention d'une connexion active pour '%s' a échoué."
+msgstr "Erreur: L'obtention d'une connexion active pour '%s' a échoué."
 
 #: ../cli/src/connections.c:1288
 #, c-format
 msgid "Active connection state: %s\n"
-msgstr "État de connexion active&nbsp;: %s\n"
+msgstr "État de connexion active: %s\n"
 
 #: ../cli/src/connections.c:1289
 #, c-format
 msgid "Active connection path: %s\n"
-msgstr "État de chemin actif&nbsp;: %s\n"
+msgstr "État de chemin actif: %s\n"
 
 #: ../cli/src/connections.c:1343 ../cli/src/connections.c:1461
 #, c-format
 msgid "Error: Unknown connection: %s."
-msgstr "Erreur&nbsp;: Connexion inconnue&nbsp;: %s."
+msgstr "Erreur: Connexion inconnue: %s."
 
 #: ../cli/src/connections.c:1378 ../cli/src/devices.c:882
 #, c-format
 msgid "Error: timeout value '%s' is not valid."
-msgstr "Erreur&nbsp;: Valeur de délai d'attente '%s' invalide."
+msgstr "Erreur: Valeur de délai d'attente '%s' invalide."
 
 #: ../cli/src/connections.c:1391 ../cli/src/connections.c:1478
 #, c-format
 msgid "Error: id or uuid has to be specified."
-msgstr "Erreur&nbsp;: ID ou UUID doit être spécifié."
+msgstr "Erreur: ID ou UUID doit être spécifié."
 
 #: ../cli/src/connections.c:1411
 #, c-format
 msgid "Error: No suitable device found: %s."
-msgstr "Erreur&nbsp;: Aucun périphérique convenable trouvé&nbsp;: %s."
+msgstr "Erreur: Aucun périphérique convenable trouvé: %s."
 
 #: ../cli/src/connections.c:1413
 #, c-format
 msgid "Error: No suitable device found."
-msgstr "Erreur&nbsp;: Aucun périphérique convenable trouvé."
+msgstr "Erreur: Aucun périphérique convenable trouvé."
 
 #: ../cli/src/connections.c:1505
 #, c-format
 msgid "Warning: Connection not active\n"
-msgstr "Avertissement&nbsp;: Connexion inactive\n"
+msgstr "Avertissement: Connexion inactive\n"
 
 #: ../cli/src/connections.c:1561
 #, c-format
 msgid "Error: 'con' command '%s' is not valid."
-msgstr "Erreur&nbsp;: Commande 'con' '%s' invalide."
+msgstr "Erreur: Commande 'con' '%s' invalide."
 
 #: ../cli/src/connections.c:1597
 #, c-format
 msgid "Error: could not connect to D-Bus."
-msgstr "Erreur&nbsp;: impossible de connecter à D-Bus."
+msgstr "Erreur: impossible de connecter à D-Bus."
 
 #: ../cli/src/connections.c:1604
 #, c-format
 msgid "Error: Could not get system settings."
-msgstr "Erreur&nbsp;: Paramètres système introuvables."
+msgstr "Erreur: Paramètres système introuvables."
 
 #: ../cli/src/connections.c:1612
 #, c-format
 msgid "Error: Could not get user settings."
-msgstr "Erreur&nbsp;: Paramètres utilisteur introuvables."
+msgstr "Erreur: Paramètres utilisteur introuvables."
 
 #: ../cli/src/connections.c:1622
 #, c-format
 msgid "Error: Can't obtain connections: settings services are not running."
 msgstr ""
-"Erreur&nbsp;: Impossible d'obtenir les connexions&nbsp;: les services des "
+"Erreur: Impossible d'obtenir les connexions: les services des "
 "paramètres ne sont pas en cours d'exécution."
 
 #. 0
@@ -692,7 +692,7 @@ msgstr "(aucun)"
 #: ../cli/src/devices.c:302
 #, c-format
 msgid "%s: error converting IP4 address 0x%X"
-msgstr "%s&nbsp;: erreur lors de la conversion de l'adresse IP4 0x%X"
+msgstr "%s: erreur lors de la conversion de l'adresse IP4 0x%X"
 
 #: ../cli/src/devices.c:349
 #, c-format
@@ -706,7 +706,7 @@ msgstr "%u Mo/s"
 
 #: ../cli/src/devices.c:359
 msgid "Encrypted: "
-msgstr "Chiffré&nbsp;: "
+msgstr "Chiffré: "
 
 #: ../cli/src/devices.c:364
 msgid "WEP "
@@ -735,12 +735,12 @@ msgstr "Infrastructure"
 #: ../cli/src/devices.c:442
 #, c-format
 msgid "Error: 'dev list': %s"
-msgstr "Erreur&nbsp;: 'dev list'&nbsp;: %s"
+msgstr "Erreur: 'dev list': %s"
 
 #: ../cli/src/devices.c:444
 #, c-format
 msgid "Error: 'dev list': %s; allowed fields: %s"
-msgstr "Erreur&nbsp;: 'dev list'&nbsp;: %s&nbsp;; champs autorisés&nbsp;: %s"
+msgstr "Erreur: 'dev list': %s; champs autorisés: %s"
 
 #: ../cli/src/devices.c:453
 msgid "Device details"
@@ -772,12 +772,12 @@ msgstr "arrêt"
 #: ../cli/src/devices.c:710
 #, c-format
 msgid "Error: 'dev status': %s"
-msgstr "Erreur&nbsp;: 'dev status'&nbsp;: %s"
+msgstr "Erreur: 'dev status': %s"
 
 #: ../cli/src/devices.c:712
 #, c-format
 msgid "Error: 'dev status': %s; allowed fields: %s"
-msgstr "Erreur&nbsp;: 'dev status'&nbsp;: %s&nbsp;; champs autorisés&nbsp;: %s"
+msgstr "Erreur: 'dev status': %s; champs autorisés: %s"
 
 #: ../cli/src/devices.c:719
 msgid "Status of devices"
@@ -786,42 +786,42 @@ msgstr "Statut des périphériques"
 #: ../cli/src/devices.c:747
 #, c-format
 msgid "Error: '%s' argument is missing."
-msgstr "Erreur&nbsp;: L'argument '%s' est manquant."
+msgstr "Erreur: L'argument '%s' est manquant."
 
 #: ../cli/src/devices.c:776 ../cli/src/devices.c:915 ../cli/src/devices.c:1035
 #, c-format
 msgid "Error: Device '%s' not found."
-msgstr "Erreur&nbsp;: Périphérique '%s' introuvable."
+msgstr "Erreur: Périphérique '%s' introuvable."
 
 #: ../cli/src/devices.c:799
 #, c-format
 msgid "Success: Device '%s' successfully disconnected."
-msgstr "Opération réussie&nbsp;: Périphérique '%s' correctement déconnecté."
+msgstr "Opération réussie: Périphérique '%s' correctement déconnecté."
 
 #: ../cli/src/devices.c:824
 #, c-format
 msgid "Error: Device '%s' (%s) disconnecting failed: %s"
-msgstr "Erreur&nbsp;: Échec de la déconnexion du périphérique '%s' (%s)&nbsp;: %s"
+msgstr "Erreur: Échec de la déconnexion du périphérique '%s' (%s): %s"
 
 #: ../cli/src/devices.c:832
 #, c-format
 msgid "Device state: %d (%s)\n"
-msgstr "État du périphérique&nbsp;: %d (%s)\n"
+msgstr "État du périphérique: %d (%s)\n"
 
 #: ../cli/src/devices.c:896
 #, c-format
 msgid "Error: iface has to be specified."
-msgstr "Erreur&nbsp;: iface doit être spécifié."
+msgstr "Erreur: iface doit être spécifié."
 
 #: ../cli/src/devices.c:1011
 #, c-format
 msgid "Error: 'dev wifi': %s"
-msgstr "Erreur&nbsp;: 'dev wifi'&nbsp;: %s"
+msgstr "Erreur: 'dev wifi': %s"
 
 #: ../cli/src/devices.c:1013
 #, c-format
 msgid "Error: 'dev wifi': %s; allowed fields: %s"
-msgstr "Erreur&nbsp;: 'dev wifi'&nbsp;: %s&nbsp;; champs autorisés&nbsp;: %s"
+msgstr "Erreur: 'dev wifi': %s; champs autorisés: %s"
 
 #: ../cli/src/devices.c:1020
 msgid "WiFi scan list"
@@ -830,22 +830,22 @@ msgstr "Liste du balayage WiFi"
 #: ../cli/src/devices.c:1055 ../cli/src/devices.c:1109
 #, c-format
 msgid "Error: Access point with hwaddr '%s' not found."
-msgstr "Erreur&nbsp;: Point d'accès avec hwaddr '%s' introuvable."
+msgstr "Erreur: Point d'accès avec hwaddr '%s' introuvable."
 
 #: ../cli/src/devices.c:1072
 #, c-format
 msgid "Error: Device '%s' is not a WiFi device."
-msgstr "Erreur&nbsp;: Le périphérique '%s' n'est pas un périphérique WiFi."
+msgstr "Erreur: Le périphérique '%s' n'est pas un périphérique WiFi."
 
 #: ../cli/src/devices.c:1136
 #, c-format
 msgid "Error: 'dev wifi' command '%s' is not valid."
-msgstr "Erreur&nbsp;: Commande 'dev wifi' '%s' invalide."
+msgstr "Erreur: Commande 'dev wifi' '%s' invalide."
 
 #: ../cli/src/devices.c:1183
 #, c-format
 msgid "Error: 'dev' command '%s' is not valid."
-msgstr "Erreur&nbsp;: Commande 'dev' '%s' invalide."
+msgstr "Erreur: Commande 'dev' '%s' invalide."
 
 #: ../cli/src/network-manager.c:35
 msgid "RUNNING"
@@ -907,12 +907,12 @@ msgstr "connexion"
 #: ../cli/src/network-manager.c:125
 #, c-format
 msgid "Error: 'nm status': %s"
-msgstr "Erreur&nbsp;: 'nm status'&nbsp;: %s"
+msgstr "Erreur: 'nm status': %s"
 
 #: ../cli/src/network-manager.c:127
 #, c-format
 msgid "Error: 'nm status': %s; allowed fields: %s"
-msgstr "Erreur&nbsp;: 'nm status'&nbsp;: %s&nbsp;; champs autorisés&nbsp;: %s"
+msgstr "Erreur: 'nm status': %s; champs autorisés: %s"
 
 #: ../cli/src/network-manager.c:134
 msgid "NetworkManager status"
@@ -942,7 +942,7 @@ msgstr "inactif"
 #: ../cli/src/network-manager.c:201 ../cli/src/network-manager.c:233
 #, c-format
 msgid "Error: '--fields' value '%s' is not valid here; allowed fields: %s"
-msgstr "Erreur&nbsp;: Valeur '--fields' '%s' est invalide&nbsp;; champs autorisés&nbsp;: %s"
+msgstr "Erreur: Valeur '--fields' '%s' est invalide; champs autorisés: %s"
 
 #: ../cli/src/network-manager.c:209
 msgid "WiFi enabled"
@@ -951,7 +951,7 @@ msgstr "WiFi activé"
 #: ../cli/src/network-manager.c:220
 #, c-format
 msgid "Error: invalid 'wifi' parameter: '%s'."
-msgstr "Erreur&nbsp;: Paramètre 'wifi' invalide&nbsp;: '%s'."
+msgstr "Erreur: Paramètre 'wifi' invalide: '%s'."
 
 #: ../cli/src/network-manager.c:241
 msgid "WWAN enabled"
@@ -960,12 +960,12 @@ msgstr "WWAN activé"
 #: ../cli/src/network-manager.c:252
 #, c-format
 msgid "Error: invalid 'wwan' parameter: '%s'."
-msgstr "Erreur&nbsp;: Paramètre 'wwan' invalide&nbsp;: '%s'."
+msgstr "Erreur: Paramètre 'wwan' invalide: '%s'."
 
 #: ../cli/src/network-manager.c:263
 #, c-format
 msgid "Error: 'nm' command '%s' is not valid."
-msgstr "Erreur&nbsp;: Commande 'nm' '%s' invalide."
+msgstr "Erreur: Commande 'nm' '%s' invalide."
 
 #: ../cli/src/nmcli.c:69
 #, c-format
@@ -1008,42 +1008,42 @@ msgstr ""
 #: ../cli/src/nmcli.c:113
 #, c-format
 msgid "Error: Object '%s' is unknown, try 'nmcli help'."
-msgstr "Erreur&nbsp;: Objet '%s' inconnu, essayez 'nmcli help'."
+msgstr "Erreur: Objet '%s' inconnu, essayez 'nmcli help'."
 
 #: ../cli/src/nmcli.c:143
 #, c-format
 msgid "Error: Option '--terse' is specified the second time."
-msgstr "Erreur&nbsp;: Option '--terse' est spécifiée la seconde fois."
+msgstr "Erreur: Option '--terse' est spécifiée la seconde fois."
 
 #: ../cli/src/nmcli.c:148
 #, c-format
 msgid "Error: Option '--terse' is mutually exclusive with '--pretty'."
-msgstr "Erreur&nbsp;: Option '--terse' est mutuellement exclusive avec '--pretty'."
+msgstr "Erreur: Option '--terse' est mutuellement exclusive avec '--pretty'."
 
 #: ../cli/src/nmcli.c:156
 #, c-format
 msgid "Error: Option '--pretty' is specified the second time."
-msgstr "Erreur&nbsp;: Option '--pretty' est spécifiée la seconde fois."
+msgstr "Erreur: Option '--pretty' est spécifiée la seconde fois."
 
 #: ../cli/src/nmcli.c:161
 #, c-format
 msgid "Error: Option '--pretty' is mutually exclusive with '--terse'."
-msgstr "Erreur&nbsp;: Option '--pretty' est mutuellement exclusive avec '--terse'."
+msgstr "Erreur: Option '--pretty' est mutuellement exclusive avec '--terse'."
 
 #: ../cli/src/nmcli.c:171 ../cli/src/nmcli.c:187
 #, c-format
 msgid "Error: missing argument for '%s' option."
-msgstr "Erreur&nbsp;: argument manquant pour l'option '%s'."
+msgstr "Erreur: argument manquant pour l'option '%s'."
 
 #: ../cli/src/nmcli.c:180 ../cli/src/nmcli.c:196
 #, c-format
 msgid "Error: '%s' is not valid argument for '%s' option."
-msgstr "Erreur&nbsp;: '%s' est un argument invalide pour l'option '%s'."
+msgstr "Erreur: '%s' est un argument invalide pour l'option '%s'."
 
 #: ../cli/src/nmcli.c:203
 #, c-format
 msgid "Error: fields for '%s' options are missing."
-msgstr "Erreur&nbsp;: Les champs pour les options '%s' sont manquants."
+msgstr "Erreur: Les champs pour les options '%s' sont manquants."
 
 #: ../cli/src/nmcli.c:209
 #, c-format
@@ -1053,7 +1053,7 @@ msgstr "outil nmcli, version %s\n"
 #: ../cli/src/nmcli.c:215
 #, c-format
 msgid "Error: Option '%s' is unknown, try 'nmcli -help'."
-msgstr "Erreur&nbsp;: Option '%s' inconnue, essayez 'nmcli -help'."
+msgstr "Erreur: Option '%s' inconnue, essayez 'nmcli -help'."
 
 #: ../cli/src/nmcli.c:234
 #, c-format
@@ -1063,7 +1063,7 @@ msgstr "Signal %d reçu, arrêt en cours..."
 #: ../cli/src/nmcli.c:259
 #, c-format
 msgid "Error: Could not connect to NetworkManager."
-msgstr "Erreur&nbsp;: Impossible de connecter à NetworkManager."
+msgstr "Erreur: Impossible de connecter à NetworkManager."
 
 #: ../cli/src/nmcli.c:275
 msgid "Success"
@@ -1314,7 +1314,7 @@ msgstr "Le déchiffrement de la clé privée a échoué : %s / %s."
 #, c-format
 msgid "Failed to decrypt the private key: unexpected padding length."
 msgstr ""
-"Le déchiffrement de la clé privée a échoué&nbsp;: Longueur de remplissage "
+"Le déchiffrement de la clé privée a échoué: Longueur de remplissage "
 "inattendue."
 
 #: ../libnm-util/crypto_gnutls.c:221 ../libnm-util/crypto_nss.c:278
@@ -1331,25 +1331,25 @@ msgstr "Allocation de mémoire pour chiffrement impossible."
 #, c-format
 msgid "Failed to initialize the encryption cipher context: %s / %s."
 msgstr ""
-"L'initialisation du contexte du cryptage de chiffrement a échoué&nbsp;: %s / "
+"L'initialisation du contexte du cryptage de chiffrement a échoué: %s / "
 "%s."
 
 #: ../libnm-util/crypto_gnutls.c:303
 #, c-format
 msgid "Failed to set symmetric key for encryption: %s / %s."
 msgstr ""
-"La définition de la clé symétrique pour le chiffrement a échoué&nbsp;: %s / %"
+"La définition de la clé symétrique pour le chiffrement a échoué: %s / %"
 "s."
 
 #: ../libnm-util/crypto_gnutls.c:313
 #, c-format
 msgid "Failed to set IV for encryption: %s / %s."
-msgstr "La définition d'IV pour le chiffrement a échoué&nbsp;: %s / %s."
+msgstr "La définition d'IV pour le chiffrement a échoué: %s / %s."
 
 #: ../libnm-util/crypto_gnutls.c:322
 #, c-format
 msgid "Failed to encrypt the data: %s / %s."
-msgstr "Le chiffrement des données a échoué&nbsp;; %s / %s."
+msgstr "Le chiffrement des données a échoué; %s / %s."
 
 #: ../libnm-util/crypto_gnutls.c:362
 #, c-format
@@ -1364,17 +1364,17 @@ msgstr "Impossible de décoder le certificat : %s"
 #: ../libnm-util/crypto_gnutls.c:408
 #, c-format
 msgid "Couldn't initialize PKCS#12 decoder: %s"
-msgstr "L'initialisation du décodeur PKCS#12 a échoué&nbsp;: %s"
+msgstr "L'initialisation du décodeur PKCS#12 a échoué: %s"
 
 #: ../libnm-util/crypto_gnutls.c:421
 #, c-format
 msgid "Couldn't decode PKCS#12 file: %s"
-msgstr "Impossible de décoder le fichier PKCS#12&nbsp;: %s"
+msgstr "Impossible de décoder le fichier PKCS#12: %s"
 
 #: ../libnm-util/crypto_gnutls.c:433
 #, c-format
 msgid "Couldn't verify PKCS#12 file: %s"
-msgstr "Impossible de vérifier le fichier PKCS#12&nbsp;: %s"
+msgstr "Impossible de vérifier le fichier PKCS#12: %s"
 
 #: ../libnm-util/crypto_nss.c:56
 #, c-format
@@ -1420,7 +1420,7 @@ msgstr "Le déchiffrement de la clé privée a échoué : %d."
 #, c-format
 msgid "Failed to decrypt the private key: decrypted data too large."
 msgstr ""
-"Le déchiffrement de la clé privée a échoué&nbsp;: les données déchiffrées "
+"Le déchiffrement de la clé privée a échoué: les données déchiffrées "
 "sont trop longues."
 
 #: ../libnm-util/crypto_nss.c:256
@@ -1466,22 +1466,22 @@ msgstr "Impossible de décoder le certificat : %d"
 #: ../libnm-util/crypto_nss.c:482
 #, c-format
 msgid "Couldn't convert password to UCS2: %d"
-msgstr "Impossible de convertir le mot de passe en UCS2&nbsp;: %d."
+msgstr "Impossible de convertir le mot de passe en UCS2: %d."
 
 #: ../libnm-util/crypto_nss.c:510
 #, c-format
 msgid "Couldn't initialize PKCS#12 decoder: %d"
-msgstr "Impossible d'initialiser le décodeur PKCS#12&nbsp;: %d"
+msgstr "Impossible d'initialiser le décodeur PKCS#12: %d"
 
 #: ../libnm-util/crypto_nss.c:519
 #, c-format
 msgid "Couldn't decode PKCS#12 file: %d"
-msgstr "Impossible de décoder le fichier PKCS#12&nbsp;: %d"
+msgstr "Impossible de décoder le fichier PKCS#12: %d"
 
 #: ../libnm-util/crypto_nss.c:528
 #, c-format
 msgid "Couldn't verify PKCS#12 file: %d"
-msgstr "Impossible de vérifier le fichier PKCS#12&nbsp;: %d"
+msgstr "Impossible de vérifier le fichier PKCS#12: %d"
 
 #: ../libnm-util/crypto_nss.c:557
 msgid "Could not generate random data."
@@ -1533,7 +1533,7 @@ msgstr ""
 #: ../src/nm-netlink-monitor.c:265
 #, c-format
 msgid "unable to enable netlink handle credential passing: %s"
-msgstr "impossible d'activer le passage de crédentiels de gestion netlink&nbsp;: %s"
+msgstr "impossible d'activer le passage de crédentiels de gestion netlink: %s"
 
 #: ../src/nm-netlink-monitor.c:291 ../src/nm-netlink-monitor.c:353
 #, c-format
@@ -1552,7 +1552,7 @@ msgstr ""
 #: ../src/nm-netlink-monitor.c:502
 #, c-format
 msgid "unable to join netlink group: %s"
-msgstr "impossible de joindre le groupe netlink&nbsp;: %s"
+msgstr "impossible de joindre le groupe netlink: %s"
 
 #: ../src/nm-netlink-monitor.c:629 ../src/nm-netlink-monitor.c:642
 #, c-format
