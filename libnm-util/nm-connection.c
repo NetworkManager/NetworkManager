@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2009 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -1129,7 +1129,7 @@ nm_connection_duplicate (NMConnection *connection)
  * nm_connection_get_uuid:
  * @connection: the #NMConnection
  *
- * A shortcut to return the UUID from the connections #NMSettingConnection.
+ * A shortcut to return the UUID from the connection's #NMSettingConnection.
  *
  * Returns: the UUID from the connection's 'connection' setting
  **/
@@ -1148,14 +1148,15 @@ nm_connection_get_uuid (NMConnection *connection)
 }
 
 /**
- * nm_connection_get_uuid:
+ * nm_connection_get_id:
  * @connection: the #NMConnection
  *
- * A shortcut to return the UUID from the connections #NMSettingConnection.
+ * A shortcut to return the ID from the connection's #NMSettingConnection.
  *
- * Returns: the UUID from the connection's 'connection' setting
+ * Returns: the ID from the connection's 'connection' setting
  **/
-const char *nm_connection_get_id (NMConnection *connection)
+const char *
+nm_connection_get_id (NMConnection *connection)
 {
 	NMSettingConnection *s_con;
 
