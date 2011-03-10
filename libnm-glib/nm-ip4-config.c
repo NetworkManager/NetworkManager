@@ -47,7 +47,6 @@ typedef struct {
 enum {
 	PROP_0,
 	PROP_ADDRESSES,
-	PROP_HOSTNAME,
 	PROP_NAMESERVERS,
 	PROP_DOMAINS,
 	PROP_ROUTES,
@@ -201,9 +200,6 @@ get_property (GObject *object,
 	case PROP_ADDRESSES:
 		nm_utils_ip4_addresses_to_gvalue (priv->addresses, value);
 		break;
-	case PROP_HOSTNAME:
-		g_value_set_string (value, NULL);
-		break;
 	case PROP_NAMESERVERS:
 		g_value_set_boxed (value, nm_ip4_config_get_nameservers (self));
 		break;
@@ -247,19 +243,6 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 						       "Addresses",
 						       "Addresses",
 						       G_PARAM_READABLE));
-
-	/**
-	 * NMIP4Config:hostname:
-	 *
-	 * DEPRECATED.  Don't use.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_HOSTNAME,
-		 g_param_spec_string (NM_IP4_CONFIG_HOSTNAME,
-						    "Hostname",
-						    "Hostname",
-						    NULL,
-						    G_PARAM_READABLE));
 
 	/**
 	 * NMIP4Config:nameservers:
@@ -364,20 +347,6 @@ nm_ip4_config_get_addresses (NMIP4Config *config)
 	g_value_unset (&value);
 
 	return priv->addresses;
-}
-
-/**
- * nm_ip4_config_get_hostname: (skip):
- * @config: a #NMIP4Config
- *
- * DEPRECATED.  Don't use.
- *
- * Returns: NULL
- **/
-const char *
-nm_ip4_config_get_hostname (NMIP4Config *config)
-{
-	return NULL;
 }
 
 /**
