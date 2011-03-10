@@ -470,6 +470,7 @@ reg_request_cb (DBusGProxy *proxy,
 
 /**
  * nm_secret_agent_register:
+ * @self: a #NMSecretAgent
  *
  * Registers the #NMSecretAgent with the NetworkManager secret manager,
  * indicating to NetworkManager that the agent is able to provide and save
@@ -524,6 +525,7 @@ nm_secret_agent_register (NMSecretAgent *self)
 
 /**
  * nm_secret_agent_unregister:
+ * @self: a #NMSecretAgent
  *
  * Unregisters the #NMSecretAgent with the NetworkManager secret manager,
  * indicating to NetworkManager that the agent is will no longer provide or
@@ -573,12 +575,15 @@ auto_register_cb (gpointer user_data)
  * @connection: the #NMConnection for which we're asked secrets
  * @setting_name: the name of the secret setting
  * @hints: (array zero-terminated=1): hints to the agent
- * @flags:
+ * @flags: flags that modify the behavior of the request
  * @callback: (scope async): a callback, invoked when the operation is done
  * @callback_data: (closure):
  *
  * Asyncronously retrieve secrets belonging to @connection for the
- * setting @setting_name.
+ * setting @setting_name.  @flags indicate specific behavior that the secret
+ * agent should use when performing the request, for example returning only
+ * existing secrets without user interaction, or requesting entirely new
+ * secrets from the user.
  *
  * VFunc: get_secrets
  */
