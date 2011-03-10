@@ -52,7 +52,6 @@
 
 #include <arpa/inet.h>
 
-#define G_UDEV_API_IS_SUBJECT_TO_CHANGE
 #include <gudev/gudev.h>
 
 #define ENI_INTERFACES_FILE "/etc/network/interfaces"

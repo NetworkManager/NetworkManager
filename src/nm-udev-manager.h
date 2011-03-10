@@ -25,7 +25,6 @@
 #include <glib.h>
 #include <glib-object.h>
 
-#define G_UDEV_API_IS_SUBJECT_TO_CHANGE
 #include <gudev/gudev.h>
 
 #include "nm-rfkill.h"
