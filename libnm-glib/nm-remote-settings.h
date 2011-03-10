@@ -110,7 +110,7 @@ GType nm_remote_settings_get_type (void);
 
 NMRemoteSettings *nm_remote_settings_new (DBusGConnection *bus);
 
-GSList * nm_remote_settings_list_connections (NMRemoteSettings *settings);
+GSList *nm_remote_settings_list_connections (NMRemoteSettings *settings);
 
 NMRemoteConnection * nm_remote_settings_get_connection_by_path (NMRemoteSettings *settings,
                                                                 const char *path);

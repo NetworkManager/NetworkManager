@@ -421,8 +421,12 @@ fetch_connections (gpointer user_data)
  * nm_remote_settings_list_connections:
  * @settings: the %NMRemoteSettings
  *
- * Returns: (transfer container) (element-type NMClient.RemoteConnection): all connections in the remote settings service, represented as
- * %NMRemoteConnection instances
+ * Returns: (transfer container) (element-type NMClient.RemoteConnection): a
+ * list containing all connections provided by the remote settings service.
+ * Each element of the returned list is a %NMRemoteConnection instance, which is
+ * owned by the %NMRemoteSettings object and should not be freed by the caller.
+ * The returned list is, however, owned by the caller and should be freed
+ * using g_slist_free() when no longer required.
  **/
 GSList *
 nm_remote_settings_list_connections (NMRemoteSettings *settings)
