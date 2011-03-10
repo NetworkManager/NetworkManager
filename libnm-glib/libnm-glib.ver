@@ -69,6 +69,7 @@ global:
 	nm_device_ethernet_new;
 	nm_device_get_capabilities;
 	nm_device_get_dhcp4_config;
+	nm_device_get_dhcp6_config;
 	nm_device_get_driver;
 	nm_device_get_firmware_missing;
 	nm_device_get_iface;
