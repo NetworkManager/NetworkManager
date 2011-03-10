@@ -153,7 +153,7 @@ libnm_glib_vpn_la_SOURCES = \
 libnm_glib_vpn_la_CFLAGS = $(GLIB_CFLAGS) $(DBUS_CFLAGS)
 libnm_glib_vpn_la_LIBADD = $(top_builddir)/libnm-util/libnm-util.la $(GLIB_LIBS) $(DBUS_LIBS)
 libnm_glib_vpn_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm-glib-vpn.ver \
-	-version-info "1:0:0"
+	-version-info "2:0:1"
 
 #####################################################
 # Test libnm-glib stuff
