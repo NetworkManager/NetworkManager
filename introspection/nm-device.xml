@@ -55,6 +55,13 @@
         Object path of the Ip6Config object describing the configuration of the device.  Only valid when the device is in the NM_DEVICE_STATE_ACTIVATED state.
       </tp:docstring>
     </property>
+    <property name="Dhcp6Config" type="o" access="read">
+      <tp:docstring>
+        Object path of the Dhcp6Config object describing the DHCP options
+        returned by the DHCP server.  Only valid when the device is in the
+        NM_DEVICE_STATE_ACTIVATED state.
+      </tp:docstring>
+    </property>
     <property name="Managed" type="b" access="read">
       <tp:docstring>
         Whether or not this device is managed by NetworkManager.
