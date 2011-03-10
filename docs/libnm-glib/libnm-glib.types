@@ -25,6 +25,7 @@ nm_device_wifi_get_type
 nm_device_modem_get_type
 nm_device_bt_get_type
 nm_device_wimax_get_type
+nm_wimax_nsp_get_type
 nm_access_point_get_type
 nm_ip4_config_get_type
 nm_ip6_config_get_type
