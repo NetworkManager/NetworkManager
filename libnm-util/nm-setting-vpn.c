@@ -165,7 +165,7 @@ nm_setting_vpn_remove_data_item (NMSettingVPN *setting, const char *key)
  * nm_setting_vpn_foreach_data_item:
  * @setting: a #NMSettingVPN
  * @func: (scope call): an user provided function
- * @user_data:
+ * @user_data: data to be passed to @func
  *
  * Iterates all data items stored in this setting
  */
@@ -215,7 +215,7 @@ nm_setting_vpn_remove_secret (NMSettingVPN *setting, const char *key)
  * nm_setting_vpn_foreach_secret:
  * @setting: a #NMSettingVPN
  * @func: (scope call): an user provided function
- * @user_data:
+ * @user_data: data to be passed to @func
  *
  * Iterates all secrets stored in this setting.
  */
