@@ -451,7 +451,7 @@ add_connection_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data
 	GError *error = NULL;
 	char *path = NULL;
 
-	if (dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_STRING, &path, G_TYPE_INVALID)) {
+	if (dbus_g_proxy_end_call (proxy, call, &error, DBUS_TYPE_G_OBJECT_PATH, &path, G_TYPE_INVALID)) {
 		info->connection = new_connection_cb (proxy, path, info->self);
 		g_assert (info->connection);
 		/* Wait until this connection is fully initialized before calling the callback */
