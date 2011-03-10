@@ -445,22 +445,21 @@ nm_remote_settings_list_connections (NMRemoteSettings *settings)
 }
 
 static void
-add_connection_done (DBusGProxy *proxy,
-                     char *path,
-                     GError *error,
-                     gpointer user_data)
+add_connection_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 {
 	AddConnectionInfo *info = user_data;
+	GError *error = NULL;
+	char *path = NULL;
 
-	if (error) {
-		add_connection_info_complete (info->self, info, error);
-	} else {
+	if (dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_STRING, &path, G_TYPE_INVALID)) {
 		info->connection = new_connection_cb (proxy, path, info->self);
 		g_assert (info->connection);
 		/* Wait until this connection is fully initialized before calling the callback */
-	}
+		g_free (path);
+	} else
+		add_connection_info_complete (info->self, info, error);
 
-	g_free (path);
+	g_clear_error (&error);
 }
 
 /**
@@ -500,10 +499,12 @@ nm_remote_settings_add_connection (NMRemoteSettings *settings,
 	info->callback_data = user_data;
 
 	new_settings = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
-	org_freedesktop_NetworkManager_Settings_add_connection_async (priv->proxy,
-	                                                              new_settings,
-	                                                              add_connection_done,
-	                                                              info);
+	dbus_g_proxy_begin_call (priv->proxy, "AddConnection",
+	                         add_connection_done,
+	                         info,
+	                         NULL,
+	                         DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, new_settings,
+	                         G_TYPE_INVALID);
 	g_hash_table_destroy (new_settings);
 
 	priv->add_list = g_slist_append (priv->add_list, info);
