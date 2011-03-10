@@ -303,7 +303,7 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
  *
  * Creates a new #NMIP4Config.
  *
- * Returns: a new IP4 configuration
+ * Returns: (transfer full): a new IP4 configuration
  **/
 GObject *
 nm_ip4_config_new (DBusGConnection *connection, const char *object_path)

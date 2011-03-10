@@ -62,7 +62,7 @@ enum {
  *
  * Creates a new #NMDeviceBt.
  *
- * Returns: a new device
+ * Returns: (transfer full): a new device
  **/
 GObject *
 nm_device_bt_new (DBusGConnection *connection, const char *path)

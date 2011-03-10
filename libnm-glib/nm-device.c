@@ -703,7 +703,7 @@ nm_device_class_init (NMDeviceClass *device_class)
  *
  * Creates a new #NMDevice.
  *
- * Returns: a new device
+ * Returns: (transfer full): a new device
  **/
 GObject *
 nm_device_new (DBusGConnection *connection, const char *path)

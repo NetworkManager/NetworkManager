@@ -77,7 +77,7 @@ enum {
  *
  * Creates a new #NMActiveConnection.
  *
- * Returns: a new active connection
+ * Returns: (transfer full): a new active connection
  **/
 GObject *
 nm_active_connection_new (DBusGConnection *connection, const char *path)

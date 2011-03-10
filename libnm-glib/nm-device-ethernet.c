@@ -65,7 +65,7 @@ enum {
  *
  * Creates a new #NMDeviceEthernet.
  *
- * Returns: a new device
+ * Returns: (transfer full): a new device
  **/
 GObject *
 nm_device_ethernet_new (DBusGConnection *connection, const char *path)

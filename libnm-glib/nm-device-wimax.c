@@ -88,11 +88,11 @@ static guint signals[LAST_SIGNAL] = { 0 };
 /**
  * nm_device_wimax_new:
  * @connection: the #DBusGConnection
- * @path: the DBus object path of the wimax
+ * @path: the D-Bus object path of the WiMAX device
  *
  * Creates a new #NMDeviceWimax.
  *
- * Returns: a new wimax
+ * Returns: (transfer full): a new WiMAX device
  **/
 GObject *
 nm_device_wimax_new (DBusGConnection *connection, const char *path)

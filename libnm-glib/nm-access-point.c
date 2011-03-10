@@ -81,7 +81,7 @@ enum {
  *
  * Creates a new #NMAccessPoint.
  *
- * Returns: a new access point
+ * Returns: (transfer full): a new access point
  **/
 GObject *
 nm_access_point_new (DBusGConnection *connection, const char *path)

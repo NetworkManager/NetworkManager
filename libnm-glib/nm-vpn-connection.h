@@ -65,7 +65,7 @@ typedef struct {
 
 GType nm_vpn_connection_get_type (void);
 
-GObject * nm_vpn_connection_new (DBusGConnection *dbus_connection, const char *path);
+GObject * nm_vpn_connection_new (DBusGConnection *connection, const char *path);
 
 NMVPNConnectionState  nm_vpn_connection_get_vpn_state  (NMVPNConnection *vpn);
 const char *          nm_vpn_connection_get_banner (NMVPNConnection *vpn);

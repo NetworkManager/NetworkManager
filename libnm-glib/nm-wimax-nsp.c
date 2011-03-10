@@ -56,11 +56,11 @@ enum {
 /**
  * nm_wimax_nsp_new:
  * @connection: the #DBusGConnection
- * @path: the DBusobject path of the wimax NSP
+ * @path: the D-Bus object path of the WiMAX NSP
  *
  * Creates a new #NMWimaxNsp.
  *
- * Returns: a new wimax nsp
+ * Returns: (transfer full): a new WiMAX NSP
  **/
 GObject *
 nm_wimax_nsp_new (DBusGConnection *connection, const char *path)

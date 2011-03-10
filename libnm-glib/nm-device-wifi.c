@@ -91,7 +91,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
  *
  * Creates a new #NMDeviceWifi.
  *
- * Returns: a new device
+ * Returns: (transfer full): a new WiFi device
  **/
 GObject *
 nm_device_wifi_new (DBusGConnection *connection, const char *path)

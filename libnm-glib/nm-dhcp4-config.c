@@ -170,7 +170,8 @@ nm_dhcp4_config_class_init (NMDHCP4ConfigClass *config_class)
 	 *
 	 * The #GHashTable containing options of the configuration.
 	 *
-	 * Type: GHashTable<utf8,GValue>
+	 * Type: GLib.HashTable
+	 * Element-Type: utf8,GObject.Value
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_OPTIONS,
@@ -188,7 +189,7 @@ nm_dhcp4_config_class_init (NMDHCP4ConfigClass *config_class)
  *
  * Creates a new #NMDHCP4Config.
  *
- * Returns: a new configuration
+ * Returns: (transfer full): a new configuration
  **/
 GObject *
 nm_dhcp4_config_new (DBusGConnection *connection, const char *object_path)

@@ -60,7 +60,7 @@ enum {
  *
  * Creates a new #NMIP6Config.
  *
- * Returns: a new IP6 configuration
+ * Returns: (transfer full): a new IP6 configuration
  **/
 GObject *
 nm_ip6_config_new (DBusGConnection *connection, const char *object_path)

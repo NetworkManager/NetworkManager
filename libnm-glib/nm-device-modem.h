@@ -56,8 +56,8 @@ typedef struct {
 
 GType nm_device_modem_get_type (void);
 
-NMDeviceModemCapabilities nm_device_modem_get_modem_capabilities (NMDeviceModem *modem);
-NMDeviceModemCapabilities nm_device_modem_get_current_capabilities (NMDeviceModem *modem);
+NMDeviceModemCapabilities nm_device_modem_get_modem_capabilities (NMDeviceModem *self);
+NMDeviceModemCapabilities nm_device_modem_get_current_capabilities (NMDeviceModem *self);
 
 G_END_DECLS
 
