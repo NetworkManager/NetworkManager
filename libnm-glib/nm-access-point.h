@@ -42,11 +42,15 @@ G_BEGIN_DECLS
 #define NM_ACCESS_POINT_WPA_FLAGS   "wpa-flags"
 #define NM_ACCESS_POINT_RSN_FLAGS   "rsn-flags"
 #define NM_ACCESS_POINT_SSID        "ssid"
+#define NM_ACCESS_POINT_BSSID       "bssid"
 #define NM_ACCESS_POINT_FREQUENCY   "frequency"
-#define NM_ACCESS_POINT_HW_ADDRESS  "hw-address"
 #define NM_ACCESS_POINT_MODE        "mode"
 #define NM_ACCESS_POINT_MAX_BITRATE "max-bitrate"
 #define NM_ACCESS_POINT_STRENGTH    "strength"
+
+/* DEPRECATED */
+#define NM_ACCESS_POINT_HW_ADDRESS  "hw-address"
+
 
 typedef struct {
 	NMObject parent;
@@ -72,11 +76,17 @@ NM80211ApFlags         nm_access_point_get_flags        (NMAccessPoint *ap);
 NM80211ApSecurityFlags nm_access_point_get_wpa_flags    (NMAccessPoint *ap);
 NM80211ApSecurityFlags nm_access_point_get_rsn_flags    (NMAccessPoint *ap);
 const GByteArray *     nm_access_point_get_ssid         (NMAccessPoint *ap);
+const char *           nm_access_point_get_bssid        (NMAccessPoint *ap);
 guint32                nm_access_point_get_frequency    (NMAccessPoint *ap);
-const char *           nm_access_point_get_hw_address   (NMAccessPoint *ap);
 NM80211Mode            nm_access_point_get_mode         (NMAccessPoint *ap);
 guint32                nm_access_point_get_max_bitrate  (NMAccessPoint *ap);
 guint8                 nm_access_point_get_strength     (NMAccessPoint *ap);
+
+GSList *               nm_access_point_filter_connections (NMAccessPoint *ap,
+                                                           const GSList *connections);
+
+/* DEPRECATED */
+const char *           nm_access_point_get_hw_address   (NMAccessPoint *ap);
 
 G_END_DECLS
 

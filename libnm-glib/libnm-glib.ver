@@ -5,6 +5,8 @@ global:
 	libnm_glib_register_callback;
 	libnm_glib_shutdown;
 	libnm_glib_unregister_callback;
+	nm_access_point_filter_connections;
+	nm_access_point_get_bssid;
 	nm_access_point_get_flags;
 	nm_access_point_get_frequency;
 	nm_access_point_get_hw_address;
