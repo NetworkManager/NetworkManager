@@ -20,7 +20,12 @@
  * Copyright (C) 2011 Red Hat, Inc.
  */
 
+#include <config.h>
 #include <string.h>
+
+#include <nm-connection.h>
+#include <nm-setting-connection.h>
+#include <nm-setting-wimax.h>
 
 #include "nm-wimax-nsp.h"
 #include "NetworkManager.h"
@@ -149,6 +154,61 @@ nm_wimax_nsp_get_network_type (NMWimaxNsp *nsp)
 	}
 
 	return priv->network_type;
+}
+
+/**
+ * nm_wimax_nsp_filter_connections:
+ * @nsp: an #NMWimaxNsp to filter connections for
+ * @connections: a list of #NMConnection objects to filter
+ *
+ * Filters a given list of connections for a given #NMWimaxNsp object and
+ * return connections which may be activated with the access point.  Any
+ * returned connections will match the @nsp's network name and other attributes.
+ *
+ * Returns: (transfer container) (element-type NetworkManager.Connection): a
+ * list of #NMConnection objects that could be activated with the given @nsp.
+ * The elements of the list are owned by their creator and should not be freed
+ * by the caller, but the returned list itself is owned by the caller and should
+ * be freed with g_slist_free() when it is no longer required.
+ **/
+GSList *
+nm_wimax_nsp_filter_connections (NMWimaxNsp *nsp, const GSList *connections)
+{
+	GSList *filtered = NULL;
+	const GSList *iter;
+
+	for (iter = connections; iter; iter = g_slist_next (iter)) {
+		NMConnection *candidate = NM_CONNECTION (iter->data);
+		NMSettingConnection *s_con;
+		NMSettingWimax *s_wimax;
+		const char *ctype;
+		const char *nsp_name;
+		const char *setting_name;
+
+		s_con = (NMSettingConnection *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_CONNECTION);
+		g_assert (s_con);
+		ctype = nm_setting_connection_get_connection_type (s_con);
+		if (strcmp (ctype, NM_SETTING_WIMAX_SETTING_NAME) != 0)
+			continue;
+
+		s_wimax = (NMSettingWimax *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_WIMAX);
+		if (!s_wimax)
+			continue;
+
+		setting_name = nm_setting_wimax_get_network_name (s_wimax);
+		if (!setting_name)
+			continue;
+
+		nsp_name = nm_wimax_nsp_get_name (nsp);
+		g_warn_if_fail (nsp_name != NULL);
+		if (g_strcmp0 (nsp_name, setting_name) != 0)
+			continue;
+
+		/* Connection applies to this device */
+		filtered = g_slist_prepend (filtered, candidate);
+	}
+
+	return g_slist_reverse (filtered);
 }
 
 /************************************************************/

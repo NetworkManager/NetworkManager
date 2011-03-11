@@ -171,6 +171,7 @@ global:
 	nm_vpn_connection_get_type;
 	nm_vpn_connection_get_vpn_state;
 	nm_vpn_connection_new;
+	nm_wimax_nsp_filter_connections;
 	nm_wimax_nsp_get_name;
 	nm_wimax_nsp_get_network_type;
 	nm_wimax_nsp_get_signal_quality;

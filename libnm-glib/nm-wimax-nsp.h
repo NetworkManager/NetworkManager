@@ -73,6 +73,9 @@ const char           * nm_wimax_nsp_get_name           (NMWimaxNsp *nsp);
 guint32                nm_wimax_nsp_get_signal_quality (NMWimaxNsp *nsp);
 NMWimaxNspNetworkType  nm_wimax_nsp_get_network_type   (NMWimaxNsp *nsp);
 
+GSList *               nm_wimax_nsp_filter_connections (NMWimaxNsp *nsp,
+                                                        const GSList *connections);
+
 G_END_DECLS
 
 #endif /* NM_WIMAX_NSP_H */
