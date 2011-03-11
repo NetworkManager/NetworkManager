@@ -21,6 +21,13 @@
  * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
+#include <config.h>
+#include <string.h>
+#include <netinet/ether.h>
+
+#include <nm-setting-connection.h>
+#include <nm-setting-bluetooth.h>
+
 #include "nm-device-bt.h"
 #include "nm-device-private.h"
 #include "nm-object-private.h"
@@ -156,6 +163,78 @@ nm_device_bt_get_capabilities (NMDeviceBt *device)
 	return priv->bt_capabilities;
 }
 
+static NMBluetoothCapabilities
+get_connection_bt_type (NMConnection *connection)
+{
+	NMSettingBluetooth *s_bt;
+	const char *bt_type;
+
+	s_bt = (NMSettingBluetooth *) nm_connection_get_setting (connection, NM_TYPE_SETTING_BLUETOOTH);
+	if (!s_bt)
+		return NM_BT_CAPABILITY_NONE;
+
+	bt_type = nm_setting_bluetooth_get_connection_type (s_bt);
+	g_assert (bt_type);
+
+	if (!strcmp (bt_type, NM_SETTING_BLUETOOTH_TYPE_DUN))
+		return NM_BT_CAPABILITY_DUN;
+	else if (!strcmp (bt_type, NM_SETTING_BLUETOOTH_TYPE_PANU))
+		return NM_BT_CAPABILITY_NAP;
+
+	return NM_BT_CAPABILITY_NONE;
+}
+
+static GSList *
+filter_connections (NMDevice *device, const GSList *connections)
+{
+	GSList *filtered = NULL;
+	const GSList *iter;
+
+	for (iter = connections; iter; iter = g_slist_next (iter)) {
+		NMConnection *candidate = NM_CONNECTION (iter->data);
+		NMSettingConnection *s_con;
+		NMSettingBluetooth *s_bt;
+		const char *ctype;
+		const GByteArray *mac;
+		const char *hw_str;
+		struct ether_addr *hw_mac;
+		NMBluetoothCapabilities dev_caps;
+		NMBluetoothCapabilities bt_type;
+
+		s_con = (NMSettingConnection *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_CONNECTION);
+		g_assert (s_con);
+
+		ctype = nm_setting_connection_get_connection_type (s_con);
+		if (strcmp (ctype, NM_SETTING_BLUETOOTH_SETTING_NAME) != 0)
+			continue;
+
+		s_bt = (NMSettingBluetooth *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_BLUETOOTH);
+		if (!s_bt)
+			continue;
+
+		/* Check BT address */
+		hw_str = nm_device_bt_get_hw_address (NM_DEVICE_BT (device));
+		if (hw_str) {
+			hw_mac = ether_aton (hw_str);
+			mac = nm_setting_bluetooth_get_bdaddr (s_bt);
+			if (mac && hw_mac && memcmp (mac->data, hw_mac->ether_addr_octet, ETH_ALEN))
+				continue;
+		}
+
+		dev_caps = nm_device_bt_get_capabilities (NM_DEVICE_BT (device));
+		bt_type = get_connection_bt_type (candidate);
+		if (!(bt_type & dev_caps))
+			continue;
+
+		/* Connection applies to this device */
+		filtered = g_slist_prepend (filtered, candidate);
+	}
+
+	return g_slist_reverse (filtered);
+}
+
+/************************************************************/
+
 static void
 nm_device_bt_init (NMDeviceBt *device)
 {
@@ -253,17 +332,19 @@ get_property (GObject *object,
 }
 
 static void
-nm_device_bt_class_init (NMDeviceBtClass *device_class)
+nm_device_bt_class_init (NMDeviceBtClass *bt_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (device_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (bt_class);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (bt_class);
 
-	g_type_class_add_private (device_class, sizeof (NMDeviceBtPrivate));
+	g_type_class_add_private (bt_class, sizeof (NMDeviceBtPrivate));
 
 	/* virtual methods */
 	object_class->constructor = constructor;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
+	device_class->filter_connections = filter_connections;
 
 	/* properties */
 

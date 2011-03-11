@@ -68,6 +68,7 @@ global:
 	nm_device_ethernet_get_speed;
 	nm_device_ethernet_get_type;
 	nm_device_ethernet_new;
+	nm_device_filter_connections;
 	nm_device_get_capabilities;
 	nm_device_get_dhcp4_config;
 	nm_device_get_dhcp6_config;

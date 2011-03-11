@@ -21,7 +21,12 @@
  * Copyright (C) 2009 Novell, Inc.
  */
 
+#include <config.h>
 #include <string.h>
+#include <netinet/ether.h>
+
+#include <nm-setting-connection.h>
+#include <nm-setting-wimax.h>
 
 #include "nm-device-wimax.h"
 #include "nm-object-private.h"
@@ -474,6 +479,48 @@ nm_device_wimax_get_bsid (NMDeviceWimax *self)
 	return priv->bsid;
 }
 
+static GSList *
+filter_connections (NMDevice *device, const GSList *connections)
+{
+	GSList *filtered = NULL;
+	const GSList *iter;
+
+	for (iter = connections; iter; iter = g_slist_next (iter)) {
+		NMConnection *candidate = NM_CONNECTION (iter->data);
+		NMSettingConnection *s_con;
+		NMSettingWimax *s_wimax;
+		const char *ctype;
+		const GByteArray *mac;
+		const char *hw_str;
+		struct ether_addr *hw_mac;
+
+		s_con = (NMSettingConnection *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_CONNECTION);
+		g_assert (s_con);
+
+		ctype = nm_setting_connection_get_connection_type (s_con);
+		if (strcmp (ctype, NM_SETTING_WIMAX_SETTING_NAME) != 0)
+			continue;
+
+		s_wimax = (NMSettingWimax *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_WIMAX);
+		if (!s_wimax)
+			continue;
+
+		/* Check MAC address */
+		hw_str = nm_device_wimax_get_hw_address (NM_DEVICE_WIMAX (device));
+		if (hw_str) {
+			hw_mac = ether_aton (hw_str);
+			mac = nm_setting_wimax_get_mac_address (s_wimax);
+			if (mac && hw_mac && memcmp (mac->data, hw_mac->ether_addr_octet, ETH_ALEN))
+				continue;
+		}
+
+		/* Connection applies to this device */
+		filtered = g_slist_prepend (filtered, candidate);
+	}
+
+	return g_slist_reverse (filtered);
+}
+
 /**************************************************************/
 
 static void
@@ -710,6 +757,7 @@ static void
 nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (wimax_class);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (wimax_class);
 
 	g_type_class_add_private (wimax_class, sizeof (NMDeviceWimaxPrivate));
 
@@ -717,6 +765,7 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	object_class->constructor = constructor;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
+	device_class->filter_connections = filter_connections;
 
 	/* properties */
 

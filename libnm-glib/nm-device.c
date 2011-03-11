@@ -1395,3 +1395,30 @@ nm_device_disconnect (NMDevice *device,
 	                                                        info);
 }
 
+/**
+ * nm_device_filter_connections:
+ * @device: an #NMDevice to filter connections for
+ * @connections: a list of #NMConnection objects to filter
+ *
+ * Filters a given list of connections for a given #NMDevice object and return
+ * connections which may be activated with the device. For example if @device
+ * is a WiFi device that supports only WEP encryption, the returned list will
+ * contain any WiFi connections in @connections that allow connection to
+ * unencrypted or WEP-enabled SSIDs.  The returned list will not contain
+ * Ethernet, Bluetooth, WiFi WPA connections, or any other connection that is
+ * incompatible with the device.
+ *
+ * Returns: (transfer container) (element-type NetworkManager.Connection): a
+ * list of #NMConnection objects that could be activated with the given @device.
+ * The elements of the list are owned by their creator and should not be freed
+ * by the caller, but the returned list itself is owned by the caller and should
+ * be freed with g_slist_free() when it is no longer required.
+ **/
+GSList *
+nm_device_filter_connections (NMDevice *device, const GSList *connections)
+{
+	if (NM_DEVICE_GET_CLASS (device)->filter_connections)
+		return NM_DEVICE_GET_CLASS (device)->filter_connections (device, connections);
+	return NULL;
+}
+

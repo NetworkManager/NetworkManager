@@ -21,7 +21,13 @@
  * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
+#include <config.h>
 #include <string.h>
+#include <netinet/ether.h>
+
+#include <nm-setting-connection.h>
+#include <nm-setting-wireless.h>
+#include <nm-setting-wireless-security.h>
 
 #include "nm-device-wifi.h"
 #include "nm-device-private.h"
@@ -477,6 +483,90 @@ _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device,
 		clean_up_aps (device, TRUE);
 }
 
+#define WPA_CAPS (NM_WIFI_DEVICE_CAP_CIPHER_TKIP | \
+                  NM_WIFI_DEVICE_CAP_CIPHER_CCMP | \
+                  NM_WIFI_DEVICE_CAP_WPA | \
+                  NM_WIFI_DEVICE_CAP_RSN)
+
+#define RSN_CAPS (NM_WIFI_DEVICE_CAP_CIPHER_CCMP | NM_WIFI_DEVICE_CAP_RSN)
+
+static gboolean
+has_proto (NMSettingWirelessSecurity *s_wsec, const char *proto)
+{
+	int i;
+
+	for (i = 0; i < nm_setting_wireless_security_get_num_protos (s_wsec); i++) {
+		if (g_strcmp0 (proto, nm_setting_wireless_security_get_proto (s_wsec, i)) == 0)
+			return TRUE;
+	}
+	return FALSE;
+}
+
+static GSList *
+filter_connections (NMDevice *device, const GSList *connections)
+{
+	GSList *filtered = NULL;
+	const GSList *iter;
+
+	for (iter = connections; iter; iter = g_slist_next (iter)) {
+		NMConnection *candidate = NM_CONNECTION (iter->data);
+		NMSettingConnection *s_con;
+		NMSettingWireless *s_wifi;
+		NMSettingWirelessSecurity *s_wsec;
+		const char *ctype;
+		const GByteArray *mac;
+		const char *hw_str;
+		struct ether_addr *hw_mac;
+		NMDeviceWifiCapabilities wifi_caps;
+		const char *key_mgmt;
+
+		s_con = (NMSettingConnection *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_CONNECTION);
+		g_assert (s_con);
+
+		ctype = nm_setting_connection_get_connection_type (s_con);
+		if (strcmp (ctype, NM_SETTING_WIRELESS_SETTING_NAME) != 0)
+			continue;
+
+		s_wifi = (NMSettingWireless *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_WIRELESS);
+		if (!s_wifi)
+			continue;
+
+		/* Check MAC address */
+		hw_str = nm_device_wifi_get_permanent_hw_address (NM_DEVICE_WIFI (device));
+		if (hw_str) {
+			hw_mac = ether_aton (hw_str);
+			mac = nm_setting_wireless_get_mac_address (s_wifi);
+			if (mac && hw_mac && memcmp (mac->data, hw_mac->ether_addr_octet, ETH_ALEN))
+				continue;
+		}
+
+		/* Check device capabilities; we assume all devices can do WEP at least */
+		wifi_caps = nm_device_wifi_get_capabilities (NM_DEVICE_WIFI (device));
+
+		s_wsec = (NMSettingWirelessSecurity *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_WIRELESS_SECURITY);
+		if (s_wsec) {
+			/* Connection has security, verify it against the device's capabilities */
+			key_mgmt = nm_setting_wireless_security_get_key_mgmt (s_wsec);
+			if (   !g_strcmp0 (key_mgmt, "wpa-none")
+			    || !g_strcmp0 (key_mgmt, "wpa-psk")
+			    || !g_strcmp0 (key_mgmt, "wpa-eap")) {
+
+				/* Is device only WEP capable? */
+				if (!(wifi_caps & WPA_CAPS))
+					continue;
+
+				/* Make sure WPA2/RSN-only connections don't get chosen for WPA-only cards */
+				if (has_proto (s_wsec, "rsn") && !has_proto (s_wsec, "wpa") && !(wifi_caps & RSN_CAPS))
+					continue;
+			}
+		}
+
+		/* Connection applies to this device */
+		filtered = g_slist_prepend (filtered, candidate);
+	}
+
+	return g_slist_reverse (filtered);
+}
 
 /**************************************************************/
 
@@ -683,17 +773,19 @@ finalize (GObject *object)
 }
 
 static void
-nm_device_wifi_class_init (NMDeviceWifiClass *device_class)
+nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (device_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (wifi_class);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (wifi_class);
 
-	g_type_class_add_private (device_class, sizeof (NMDeviceWifiPrivate));
+	g_type_class_add_private (wifi_class, sizeof (NMDeviceWifiPrivate));
 
 	/* virtual methods */
 	object_class->constructor = constructor;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
+	device_class->filter_connections = filter_connections;
 
 	/* properties */
 
