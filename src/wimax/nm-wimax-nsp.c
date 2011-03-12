@@ -146,7 +146,7 @@ set_property (GObject *object, guint prop_id,
 	case PROP_SIGNAL_QUALITY:
 		quality = g_value_get_uint (value);
 		if (quality != priv->signal_quality) {
-			priv->signal_quality = quality;
+			priv->signal_quality = CLAMP (quality, 0, 100);
 			g_object_notify (object, NM_WIMAX_NSP_SIGNAL_QUALITY);
 		}
 		break;

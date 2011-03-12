@@ -1075,7 +1075,7 @@ wmx_scan_result_cb (struct wmxsdk *wmxsdk,
 		if (net_type != nm_wimax_nsp_get_network_type (nsp))
 			g_object_set (nsp, NM_WIMAX_NSP_NETWORK_TYPE, net_type, NULL);
 
-		signalq = sdk_nsp->linkQuality;
+		signalq = CLAMP (sdk_nsp->linkQuality, 0, 100);
 		if (signalq != nm_wimax_nsp_get_signal_quality (nsp))
 			g_object_set (nsp, NM_WIMAX_NSP_SIGNAL_QUALITY, signalq, NULL);
 
