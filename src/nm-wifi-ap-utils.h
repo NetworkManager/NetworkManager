@@ -39,5 +39,7 @@ gboolean nm_ap_utils_complete_connection (const GByteArray *ssid,
                                           gboolean lock_bssid,
                                           GError **error);
 
+guint32 nm_ap_utils_level_to_quality (gint val);
+
 #endif  /* NM_WIFI_AP_UTILS_H */
 

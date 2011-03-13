@@ -500,16 +500,8 @@ foreach_property_cb (gpointer key, gpointer value, gpointer user_data)
 	} else if (G_VALUE_HOLDS_INT (variant)) {
 		gint val = g_value_get_int (variant);
 
-		if (!strcmp (key, "Signal")) {
-			if (val < 0) {
-				/* Rough conversion: best = -40, worst = -100 */
-				val = abs (CLAMP (val, -100, -40) + 40);
-				val = 100 - (int) ((100.0 * (double) val) / 60.0);
-			} else
-				val /= 100;
-
-			nm_ap_set_strength (ap, val);
-		}
+		if (!strcmp (key, "Signal"))
+			nm_ap_set_strength (ap, nm_ap_utils_level_to_quality (val));
 	} else if (G_VALUE_HOLDS_STRING (variant)) {
 		const char *val = g_value_get_string (variant);
 

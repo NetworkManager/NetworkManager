@@ -1238,6 +1238,57 @@ test_wpa_ap_wpa_psk_connection_5 (guint idx)
 
 /*******************************************/
 
+static void
+test_strength_dbm (void)
+{
+	/* boundary conditions first */
+	g_assert_cmpint (nm_ap_utils_level_to_quality (-1), ==, 100);
+	g_assert_cmpint (nm_ap_utils_level_to_quality (-40), ==, 100);
+	g_assert_cmpint (nm_ap_utils_level_to_quality (-30), ==, 100);
+	g_assert_cmpint (nm_ap_utils_level_to_quality (-100), ==, 0);
+	g_assert_cmpint (nm_ap_utils_level_to_quality (-200), ==, 0);
+
+	g_assert_cmpint (nm_ap_utils_level_to_quality (-81), ==, 32);
+	g_assert_cmpint (nm_ap_utils_level_to_quality (-92), ==, 14);
+	g_assert_cmpint (nm_ap_utils_level_to_quality (-74), ==, 44);
+	g_assert_cmpint (nm_ap_utils_level_to_quality (-81), ==, 32);
+	g_assert_cmpint (nm_ap_utils_level_to_quality (-66), ==, 57);
+}
+
+static void
+test_strength_percent (void)
+{
+	int i;
+
+	/* boundary conditions first */
+	g_assert_cmpint (nm_ap_utils_level_to_quality (0), ==, 0);
+	g_assert_cmpint (nm_ap_utils_level_to_quality (100), ==, 100);
+	g_assert_cmpint (nm_ap_utils_level_to_quality (110), ==, 100);
+
+	for (i = 0; i <= 100; i++)
+		g_assert_cmpint (nm_ap_utils_level_to_quality (i), ==, i);
+}
+
+static void
+test_strength_wext (void)
+{
+	/* boundary conditions that we assume aren't WEXT first */
+	g_assert_cmpint (nm_ap_utils_level_to_quality (256), ==, 100);
+	g_assert_cmpint (nm_ap_utils_level_to_quality (110), ==, 100);
+
+	/* boundary conditions that we assume are WEXT */
+	g_assert_cmpint (nm_ap_utils_level_to_quality (111), ==, 0);
+	g_assert_cmpint (nm_ap_utils_level_to_quality (150), ==, 0);
+	g_assert_cmpint (nm_ap_utils_level_to_quality (225), ==, 100);
+	g_assert_cmpint (nm_ap_utils_level_to_quality (255), ==, 100);
+
+	g_assert_cmpint (nm_ap_utils_level_to_quality (157), ==, 2);
+	g_assert_cmpint (nm_ap_utils_level_to_quality (200), ==, 74);
+	g_assert_cmpint (nm_ap_utils_level_to_quality (215), ==, 99);
+}
+
+/*******************************************/
+
 #if GLIB_CHECK_VERSION(2,25,12)
 typedef GTestFixtureFunc TCFunc;
 #else
@@ -1338,6 +1389,11 @@ int main (int argc, char **argv)
 	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_3, IDX_RSN_PSK));
 	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_4, IDX_RSN_PSK));
 	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_5, IDX_RSN_PSK));
+
+	/* Scanned signal strength conversion tests */
+	g_test_suite_add (suite, TESTCASE (test_strength_dbm, NULL));
+	g_test_suite_add (suite, TESTCASE (test_strength_percent, NULL));
+	g_test_suite_add (suite, TESTCASE (test_strength_wext, NULL));
 
 	return g_test_run ();
 }
