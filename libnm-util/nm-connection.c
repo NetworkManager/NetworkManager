@@ -1091,7 +1091,7 @@ nm_connection_new_from_hash (GHashTable *hash, GError **error)
 	g_return_val_if_fail (hash != NULL, NULL);
 
 	if (!validate_permissions_type (hash, error))
-		return FALSE;
+		return NULL;
 
 	connection = nm_connection_new ();
 	g_hash_table_foreach (hash, parse_one_setting, connection);

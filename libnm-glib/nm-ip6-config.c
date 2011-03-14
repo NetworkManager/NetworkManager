@@ -156,7 +156,7 @@ nm_ip6_config_get_addresses (NMIP6Config *config)
 	NMIP6ConfigPrivate *priv;
 	GValue value = { 0, };
 
-	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), 0);
+	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
 
 	priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 	if (priv->addresses)
@@ -266,7 +266,7 @@ nm_ip6_config_get_routes (NMIP6Config *config)
 	NMIP6ConfigPrivate *priv;
 	GValue value = { 0, };
 
-	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), 0);
+	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
 
 	priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 	if (priv->routes)

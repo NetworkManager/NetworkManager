@@ -286,7 +286,7 @@ nm_act_request_get_default6 (NMActRequest *req)
 GObject *
 nm_act_request_get_device (NMActRequest *req)
 {
-	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), NULL);
 
 	return G_OBJECT (NM_ACT_REQUEST_GET_PRIVATE (req)->device);
 }

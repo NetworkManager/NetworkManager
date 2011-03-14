@@ -998,8 +998,8 @@ nm_supplicant_interface_get_object_path (NMSupplicantInterface *self)
 const char *
 nm_supplicant_interface_get_ifname (NMSupplicantInterface *self)
 {
-	g_return_val_if_fail (self != NULL, FALSE);
-	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), FALSE);
+	g_return_val_if_fail (self != NULL, NULL);
+	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), NULL);
 
 	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->dev;
 }

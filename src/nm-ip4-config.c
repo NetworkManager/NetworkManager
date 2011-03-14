@@ -121,7 +121,7 @@ nm_ip4_config_export (NMIP4Config *config)
 const char *
 nm_ip4_config_get_dbus_path (NMIP4Config *config)
 {
-	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), FALSE);
+	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
 
 	return NM_IP4_CONFIG_GET_PRIVATE (config)->path;
 }

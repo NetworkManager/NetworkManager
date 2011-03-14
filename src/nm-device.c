@@ -3874,7 +3874,7 @@ spec_match_list (NMDeviceInterface *device, const GSList *specs)
 static NMConnection *
 connection_match_config (NMDeviceInterface *device, const GSList *connections)
 {
-	g_return_val_if_fail (device != NULL, FALSE);
+	g_return_val_if_fail (device != NULL, NULL);
 
 	if (NM_DEVICE_GET_CLASS (device)->connection_match_config)
 		return NM_DEVICE_GET_CLASS (device)->connection_match_config (NM_DEVICE (device), connections);

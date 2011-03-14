@@ -2158,7 +2158,7 @@ supports_mii_carrier_detect (NMDeviceEthernet *self)
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
 		nm_log_err (LOGD_HW, "couldn't open control socket.");
-		return 0;
+		return FALSE;
 	}
 
 	memset (&ifr, 0, sizeof (struct ifreq));

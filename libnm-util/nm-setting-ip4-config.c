@@ -415,7 +415,7 @@ nm_setting_ip4_config_get_ignore_auto_dns (NMSettingIP4Config *setting)
 const char *
 nm_setting_ip4_config_get_dhcp_client_id (NMSettingIP4Config *setting)
 {
-	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), FALSE);
+	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), NULL);
 
 	return NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->dhcp_client_id;
 }
@@ -431,7 +431,7 @@ nm_setting_ip4_config_get_dhcp_send_hostname (NMSettingIP4Config *setting)
 const char *
 nm_setting_ip4_config_get_dhcp_hostname (NMSettingIP4Config *setting)
 {
-	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), FALSE);
+	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), NULL);
 
 	return NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->dhcp_hostname;
 }

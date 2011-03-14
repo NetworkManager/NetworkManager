@@ -173,7 +173,7 @@ nm_ifcfg_connection_get_path (NMIfcfgConnection *self)
 const char *
 nm_ifcfg_connection_get_unmanaged_spec (NMIfcfgConnection *self)
 {
-	g_return_val_if_fail (NM_IS_IFCFG_CONNECTION (self), FALSE);
+	g_return_val_if_fail (NM_IS_IFCFG_CONNECTION (self), NULL);
 
 	return NM_IFCFG_CONNECTION_GET_PRIVATE (self)->unmanaged;
 }

@@ -353,7 +353,7 @@ create_dhclient_config (const char *iface,
 	GError *error = NULL;
 	gboolean success = FALSE;
 
-	g_return_val_if_fail (iface != NULL, FALSE);
+	g_return_val_if_fail (iface != NULL, NULL);
 
 #if defined(TARGET_SUSE)
 	orig = g_strdup (SYSCONFDIR "/dhclient.conf");
@@ -369,7 +369,7 @@ create_dhclient_config (const char *iface,
 
 	if (!orig) {
 		nm_log_warn (LOGD_DHCP, "(%s): not enough memory for dhclient options.", iface);
-		return FALSE;
+		return NULL;
 	}
 
 #if !defined(TARGET_SUSE) && !defined(TARGET_DEBIAN) && !defined(TARGET_GENTOO)
@@ -379,7 +379,7 @@ create_dhclient_config (const char *iface,
 		orig = g_strdup_printf (SYSCONFDIR "/dhcp/dhclient-%s.conf", iface);
 		if (!orig) {
 			nm_log_warn (LOGD_DHCP, "(%s): not enough memory for dhclient options.", iface);
-			return FALSE;
+			return NULL;
 		}
 	}
 #endif

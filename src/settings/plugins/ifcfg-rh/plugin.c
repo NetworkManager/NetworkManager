@@ -465,7 +465,7 @@ plugin_get_hostname (SCPluginIfcfg *plugin)
 	network = svNewFile (SC_NETWORK_FILE);
 	if (!network) {
 		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "Could not get hostname: failed to read " SC_NETWORK_FILE);
-		return FALSE;
+		return NULL;
 	}
 
 	hostname = svGetValue (network, "HOSTNAME", FALSE);

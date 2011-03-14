@@ -491,7 +491,7 @@ find_plugin (GSList *list, const char *pname)
 	GSList *iter;
 	GObject *obj = NULL;
 
-	g_return_val_if_fail (pname != NULL, FALSE);
+	g_return_val_if_fail (pname != NULL, NULL);
 
 	for (iter = list; iter && !obj; iter = g_slist_next (iter)) {
 		NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (iter->data);

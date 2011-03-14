@@ -152,8 +152,8 @@ nm_system_config_interface_add_connection (NMSystemConfigInterface *config,
                                            NMConnection *connection,
                                            GError **error)
 {
-	g_return_val_if_fail (config != NULL, FALSE);
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (config != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->add_connection)
 		return NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->add_connection (config, connection, error);

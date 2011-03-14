@@ -434,9 +434,9 @@ nm_access_point_filter_connections (NMAccessPoint *ap, const GSList *connections
 		setting_mode = nm_setting_wireless_get_mode (s_wifi);
 		if (setting_mode && ap_mode) {
 			if (!strcmp (setting_mode, "infrastructure") && (ap_mode != NM_802_11_MODE_INFRA))
-				return FALSE;
+				return NULL;
 			if (!strcmp (setting_mode, "adhoc") && (ap_mode != NM_802_11_MODE_ADHOC))
-				return FALSE;
+				return NULL;
 		}
 
 		/* Band and Channel/Frequency */

@@ -114,7 +114,7 @@ nm_ip6_config_export (NMIP6Config *config)
 const char *
 nm_ip6_config_get_dbus_path (NMIP6Config *config)
 {
-	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), FALSE);
+	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
 
 	return NM_IP6_CONFIG_GET_PRIVATE (config)->path;
 }
