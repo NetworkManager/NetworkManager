@@ -15,9 +15,8 @@ PKG_NAME=NetworkManager
 
 (cd $srcdir;
     gtkdocize || exit 1
-    autoreconf --install --symlink &&
-    intltoolize --force &&
-    autoreconf &&
+    autopoint --force
+    AUTOPOINT='intltoolize --automake --copy' autoreconf --force --install --verbose
     ./configure --enable-maintainer-mode $@
 )
 

@@ -75,11 +75,14 @@ AC_CHECK_FUNCS(select socket uname)
 dnl
 dnl translation support
 dnl
+IT_PROG_INTLTOOL([0.40.0])
+
+AM_GNU_GETTEXT([external])
+AM_GNU_GETTEXT_VERSION([0.17])
+
 GETTEXT_PACKAGE=NetworkManager
 AC_SUBST(GETTEXT_PACKAGE)
 AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE,"$GETTEXT_PACKAGE", [Gettext package])
-IT_PROG_INTLTOOL([0.35.0])
-AM_GLIB_GNU_GETTEXT
 
 dnl
 dnl Documentation
