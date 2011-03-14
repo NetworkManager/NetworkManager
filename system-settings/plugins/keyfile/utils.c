@@ -88,7 +88,8 @@ utils_should_ignore_file (const char *filename)
 	/* Ignore files with certain patterns */
 	if (   (check_prefix (base, ".") && check_suffix (base, SWP_TAG))   /* vim temporary files: .filename.swp */
 	    || (check_prefix (base, ".") && check_suffix (base, SWPX_TAG))  /* vim temporary files: .filename.swpx */
-	    || check_mkstemp_suffix (base))                                 /* temporary files created by mkstemp() */
+	    || check_mkstemp_suffix (base)                                  /* temporary files created by mkstemp() */
+	    || base[strlen (base) - 1] == '~')
 		ignore = TRUE;
 
 	g_free (base);
