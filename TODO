@@ -199,3 +199,47 @@ handle the DHCP lifetime after that.  The base NMDevice class in nm-device.c
 has code for handling the DHCP lifetime, connecting to NMDHCPManager signals
 for renew and failure processing, etc, and could be used as an example.
 
+
+* WPS
+
+wpa_supplicant has support for WPS (Wifi Protected Setup, basically Bluetooth-
+like PIN codes for setting up a wifi connection) and we should add support for
+this to NetworkManager too.  APs that support WPS will say so in their beacon
+IEs which are contained in the "WPA" and "RSN" properties of the BSS object
+exported by the supplicant, and can be processed in src/nm-wifi-ap.c's
+foreach_property_cb() function.  We should add some private fields to the
+NMAccessPoint object (defined in nm-wifi-ap.c) to remember whether a specific
+AP supports WPS and what WPS methods it supports, and expose that over D-Bus to
+GUI clients as well.
+
+There are two common WPS setup methods: PIN and button.  For PIN, the router
+either displays a random PIN on an LCD or the router's web UI, or a static PIN
+is printed on the router itself.  The user enters that PIN instead of a PSK
+when connecting.  For the "button" method, the router has a physical button that
+when pushed, allows any client to connect for a short period of time.
+
+We'll then need to add some properties to the NMSettingWirelessSecurity setting
+for the WPS PIN code so that when the user enters it through the GUI, it can
+be passed back to NM.  And we'll need to figure out some mechanism for passing
+back an indication that the user pushed the button on the router for the
+pushbutton method.
+
+When connecting to a new access point that supports WPS, the GUI client would
+call the AddAndActivateConnection method and wait for NM to request secrets.
+NM would determine that the AP supports WPS, and request WPS secrets from the
+applet.  The applet would ask the user for a PIN, or to push the button on the
+AP, instead of asking for a passphrase or PSK.  When the user has entered the
+PIN or pushed the button, the applet returns this information to NM, which
+proceeds with the connection.
+
+NM sends the correct wpa_supplicant config for WPS to the supplicant, and waits
+for the connection to occur.  WPS can only be used the *first* time, so after a
+first successfull connection, NM must request the actual hexadecimal PSK from 
+wpa_supplicant via D-Bus, and store that PSK in the connection, clear any WPS
+PIN code from the connection, and save the connection to backing storage.
+
+Any applet GUI should also allow the user to enter the PSK instead of completing
+association using WPS, since quite a few routers out there are broken, or
+because the user has no physical access to the router itself, but has been given
+as passphrase/PSK instead.
+
