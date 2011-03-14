@@ -1,4 +1,4 @@
-AC_PREREQ(2.52)
+AC_PREREQ([2.63])
 
 dnl The NM version number
 m4_define([nm_major_version], [0])
@@ -10,16 +10,18 @@ m4_define([nm_version],
 AC_INIT([NetworkManager], [nm_version],
         [http://bugzilla.gnome.org/enter_bug.cgi?product=NetworkManager],
         [NetworkManager])
-AM_INIT_AUTOMAKE([1.9 subdir-objects tar-ustar no-dist-gzip dist-bzip2])
-m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([no])])
-AM_MAINTAINER_MODE
-
-AC_CONFIG_MACRO_DIR([m4])
 
 AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_MACRO_DIR([m4])
+AC_CONFIG_AUX_DIR([build-aux])
 
-dnl Define _GNU_SOURCE for various things like strcasestr()
-AC_GNU_SOURCE
+AM_INIT_AUTOMAKE([1.10 subdir-objects tar-ustar no-dist-gzip dist-bzip2])
+AM_MAINTAINER_MODE([enable])
+
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([no])])
+
+dnl Define _SYSTEM_EXTENSIONS for various things like strcasestr()
+AC_USE_SYSTEM_EXTENSIONS
 
 dnl
 dnl Require programs
@@ -27,7 +29,10 @@ dnl
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_INSTALL
-AC_PROG_LIBTOOL
+
+dnl Initialize libtool
+LT_PREREQ([2.2])
+LT_INIT
 
 dnl maintainer mode stuff
 if test $USE_MAINTAINER_MODE = yes; then
@@ -197,19 +202,21 @@ if ! test x"$ac_distver" = x""; then
 fi
 
 AC_MSG_CHECKING([Linux Wireless Extensions >= 18])
-AC_TRY_COMPILE([#ifndef __user
+AC_COMPILE_IFELSE(
+	[AC_LANG_PROGRAM(
+              [[#ifndef __user
                 #define __user
                 #endif
                 #include <sys/types.h>
                 #include <linux/types.h>
                 #include <sys/socket.h>
                 #include <net/if.h>
-                #include <wireless.h>],
-               [#ifndef IWEVGENIE
+                #include <wireless.h>]],
+              [[#ifndef IWEVGENIE
                 #error "not found"
-                #endif],
-               [ac_have_iwevgenie=yes],
-               [ac_have_iwevgenie=no])
+                #endif]])],
+        [ac_have_iwevgenie=yes],
+        [ac_have_iwevgenie=no])
 AC_MSG_RESULT($ac_have_iwevgenie)
 if test "$ac_have_iwevgenie" = no; then
 	AC_MSG_ERROR(wireless-tools library and development headers >= 28pre9 not installed or not functional)
@@ -294,7 +301,7 @@ PKG_CHECK_MODULES(UUID, uuid)
 AC_SUBST(UUID_CFLAGS)
 AC_SUBST(UUID_LIBS)
 
-AC_ARG_ENABLE(wimax, AC_HELP_STRING([--enable-wimax], [enable WiMAX support]),
+AC_ARG_ENABLE(wimax, AS_HELP_STRING([--enable-wimax], [enable WiMAX support]),
                      [enable_wimax=${enableval}], [enable_wimax=yes])
 if (test "${enable_wimax}" = "yes"); then
 	PKG_CHECK_MODULES(IWMX_SDK, libiWmxSdk-0 >= 1.5.1, dummy=yes,
@@ -371,7 +378,7 @@ fi
 AC_SUBST(DBUS_SYS_DIR)
 
 # pppd
-AC_ARG_ENABLE(ppp, AC_HELP_STRING([--enable-ppp], [enable PPP/PPPoE support]),
+AC_ARG_ENABLE(ppp, AS_HELP_STRING([--enable-ppp], [enable PPP/PPPoE support]),
                      [enable_ppp=${enableval}], [enable_ppp=yes])
 if (test "${enable_ppp}" = "yes"); then
 	AC_CHECK_HEADERS(pppd/pppd.h,,
@@ -502,7 +509,7 @@ if test -n "${RESOLVCONF_PATH}"; then
 fi
 
 # iptables path
-AC_ARG_WITH(iptables, AC_HELP_STRING([--with-iptables=/path/to/iptables], [path to iptables])) 
+AC_ARG_WITH(iptables, AS_HELP_STRING([--with-iptables=/path/to/iptables], [path to iptables]))
 if test "x${with_iptables}" = x; then
   AC_PATH_PROG(IPTABLES_PATH, iptables, [], $PATH:/sbin:/usr/sbin)
   if ! test -x "$IPTABLES_PATH"; then
