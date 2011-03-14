@@ -24,7 +24,6 @@
 #ifndef NM_DNS_MANAGER_H
 #define NM_DNS_MANAGER_H
 
-#include "config.h"
 #include <glib-object.h>
 #include <dbus/dbus.h>
 #include "nm-ip4-config.h"

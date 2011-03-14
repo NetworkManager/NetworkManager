@@ -19,6 +19,8 @@
  * (C) Copyright 2009 - 2011 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <netinet/ether.h>
 
 #include <glib/gi18n.h>

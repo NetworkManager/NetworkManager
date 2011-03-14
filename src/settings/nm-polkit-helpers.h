@@ -22,7 +22,6 @@
 #ifndef NM_POLKIT_HELPERS_H
 #define NM_POLKIT_HELPERS_H
 
-#include <config.h>
 #include <polkit/polkit.h>
 
 /* Fix for polkit 0.97 and later */

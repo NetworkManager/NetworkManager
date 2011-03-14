@@ -19,7 +19,8 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#define _GNU_SOURCE
+#include "config.h"
+
 #include <dlfcn.h>
 #include <syslog.h>
 #include <execinfo.h>

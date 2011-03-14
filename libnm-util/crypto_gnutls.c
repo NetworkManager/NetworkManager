@@ -21,6 +21,7 @@
  * (C) Copyright 2007 - 2009 Red Hat, Inc.
  */
 
+#include "config.h"
 #include <glib.h>
 #include <glib/gi18n.h>
 

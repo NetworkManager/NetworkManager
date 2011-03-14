@@ -24,6 +24,7 @@
  * (C) Copyright 2005 - 2010 Red Hat, Inc.
  */
 
+#include "config.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>

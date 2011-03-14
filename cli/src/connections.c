@@ -17,6 +17,8 @@
  * (C) Copyright 2010 - 2011 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <glib/gi18n.h>
 #include <dbus/dbus.h>

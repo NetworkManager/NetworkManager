@@ -24,8 +24,6 @@
 #ifndef _INTERFACE_PARSER_H
 #define _INTERFACE_PARSER_H
 
-#include "config.h"
-
 typedef struct _if_data
 {
 	char *key;

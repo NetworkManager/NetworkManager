@@ -24,6 +24,7 @@
  * (C) Copyright 2009 One Laptop per Child
  */
 
+#include "config.h"
 #include <glib.h>
 #include <glib/gi18n.h>
 #include <dbus/dbus.h>

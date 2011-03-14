@@ -23,6 +23,8 @@
  * (C) Copyright 2008 Novell, Inc.
  */
 
+#include "config.h"
+
 #include <unistd.h>
 #include <string.h>
 #include <gmodule.h>

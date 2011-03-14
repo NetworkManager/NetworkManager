@@ -19,6 +19,8 @@
  * Copyright (C) 2009 Novell, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <glib/gi18n.h>
 

@@ -22,7 +22,6 @@
 #ifndef __NM_DBUS_MANAGER_H__
 #define __NM_DBUS_MANAGER_H__
 
-#include "config.h"
 #include <glib-object.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
