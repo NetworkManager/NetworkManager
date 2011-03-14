@@ -548,7 +548,7 @@ write_wireless_security_setting (NMConnection *connection,
 {
 	NMSettingWirelessSecurity *s_wsec;
 	const char *key_mgmt, *auth_alg, *key, *proto, *cipher, *psk;
-	gboolean wep = FALSE, wpa = FALSE;
+	gboolean wep = FALSE, wpa = FALSE, dynamic_wep = FALSE;
 	char *tmp;
 	guint32 i, num;
 	GString *str;
@@ -576,6 +576,7 @@ write_wireless_security_setting (NMConnection *connection,
 		*no_8021x = TRUE;
 	} else if (!strcmp (key_mgmt, "ieee8021x")) {
 		svSetValue (ifcfg, "KEY_MGMT", "IEEE8021X", FALSE);
+		dynamic_wep = TRUE;
 	} else if (!strcmp (key_mgmt, "wpa-eap")) {
 		svSetValue (ifcfg, "KEY_MGMT", "WPA-EAP", FALSE);
 		wpa = TRUE;
@@ -681,11 +682,17 @@ write_wireless_security_setting (NMConnection *connection,
 		if (i > 0)
 			g_string_append_c (str, ' ');
 		cipher = nm_setting_wireless_security_get_pairwise (s_wsec, i);
-		tmp = g_ascii_strup (cipher, -1);
-		g_string_append (str, tmp);
-		g_free (tmp);
+
+		/* Don't write out WEP40 or WEP104 if for some reason they are set; they
+		 * are not valid pairwise ciphers.
+		 */
+		if (strcmp (cipher, "wep40") && strcmp (cipher, "wep104")) {
+			tmp = g_ascii_strup (cipher, -1);
+			g_string_append (str, tmp);
+			g_free (tmp);
+		}
 	}
-	if (strlen (str->str))
+	if (strlen (str->str) && (dynamic_wep == FALSE))
 		svSetValue (ifcfg, "CIPHER_PAIRWISE", str->str, FALSE);
 	g_string_free (str, TRUE);
 
@@ -701,7 +708,7 @@ write_wireless_security_setting (NMConnection *connection,
 		g_string_append (str, tmp);
 		g_free (tmp);
 	}
-	if (strlen (str->str))
+	if (strlen (str->str) && (dynamic_wep == FALSE))
 		svSetValue (ifcfg, "CIPHER_GROUP", str->str, FALSE);
 	g_string_free (str, TRUE);
 

@@ -2401,7 +2401,7 @@ static EAPReader eap_readers[] = {
 	{ "chap", eap_simple_reader, TRUE },
 	{ "mschap", eap_simple_reader, TRUE },
 	{ "mschapv2", eap_simple_reader, TRUE },
-	{ "leap", eap_simple_reader, TRUE },
+	{ "leap", eap_simple_reader, FALSE },
 	{ "tls", eap_tls_reader, FALSE },
 	{ "peap", eap_peap_reader, FALSE },
 	{ "ttls", eap_ttls_reader, FALSE },
@@ -2506,16 +2506,22 @@ make_wpa_setting (shvarFile *ifcfg,
 {
 	NMSettingWirelessSecurity *wsec;
 	char *value, *psk, *lower;
+	gboolean wpa_psk = FALSE, wpa_eap = FALSE, ieee8021x = FALSE;
 
 	wsec = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
 
 	value = svGetValue (ifcfg, "KEY_MGMT", FALSE);
-	if (!value)
+	wpa_psk = !g_strcmp0 (value, "WPA-PSK");
+	wpa_eap = !g_strcmp0 (value, "WPA-EAP");
+	ieee8021x = !g_strcmp0 (value, "IEEE8021X");
+	if (!wpa_psk && !wpa_eap && !ieee8021x)
 		goto error; /* Not WPA or Dynamic WEP */
 
-	/* Pairwise and Group ciphers */
-	fill_wpa_ciphers (ifcfg, wsec, FALSE, adhoc);
-	fill_wpa_ciphers (ifcfg, wsec, TRUE, adhoc);
+	/* Pairwise and Group ciphers (only relevant for WPA/RSN) */
+	if (wpa_psk || wpa_eap) {
+		fill_wpa_ciphers (ifcfg, wsec, FALSE, adhoc);
+		fill_wpa_ciphers (ifcfg, wsec, TRUE, adhoc);
+	}
 
 	/* WPA and/or RSN */
 	if (adhoc) {
@@ -2535,7 +2541,7 @@ make_wpa_setting (shvarFile *ifcfg,
 		/* If neither WPA_ALLOW_WPA or WPA_ALLOW_WPA2 were present, default
 		 * to both WPA and RSN allowed.
 		 */
-		if (!allow_wpa && !allow_rsn) {
+		if (!allow_wpa && !allow_rsn && !ieee8021x) {
 			nm_setting_wireless_security_add_proto (wsec, "wpa");
 			nm_setting_wireless_security_add_proto (wsec, "rsn");
 		}

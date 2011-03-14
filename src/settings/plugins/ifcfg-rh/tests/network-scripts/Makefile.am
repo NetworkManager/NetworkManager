@@ -76,7 +76,9 @@ EXTRA_DIST = \
 	ifcfg-test-vlan-interface \
 	ifcfg-test-wifi-wep-no-keys \
 	ifcfg-test-permissions \
-	ifcfg-test-wifi-wep-agent-keys
+	ifcfg-test-wifi-wep-agent-keys \
+	ifcfg-test-wifi-dynamic-wep-leap \
+	keys-test-wifi-dynamic-wep-leap
 
 check-local:
 	@for f in $(EXTRA_DIST); do \
