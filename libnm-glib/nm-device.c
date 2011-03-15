@@ -522,7 +522,12 @@ nm_device_class_init (NMDeviceClass *device_class)
 	/**
 	 * NMDevice:udi:
 	 *
-	 * The Unique Device Identifier of the device.
+	 * An operating-system specific device hardware identifier; this is not
+	 * unique to a specific hardware device across reboots or hotplugs.  It
+	 * is an opaque string which for some device types (Bluetooth, Modem)
+	 * contains an identifier provided by the underlying hardware service daemon
+	 * such as Bluez or ModemManager, and clients can use this property to
+	 * request more information about the device from those services.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_UDI,
