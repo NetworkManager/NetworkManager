@@ -1169,7 +1169,8 @@ nm_client_activate_connection (NMClient *client,
 	ActivateDeviceInfo *info;
 
 	g_return_if_fail (NM_IS_CLIENT (client));
-	g_return_if_fail (NM_IS_DEVICE (device));
+	if (device)
+		g_return_if_fail (NM_IS_DEVICE (device));
 	g_return_if_fail (connection_path != NULL);
 
 	info = g_slice_new (ActivateDeviceInfo);
@@ -1179,7 +1180,7 @@ nm_client_activate_connection (NMClient *client,
 
 	org_freedesktop_NetworkManager_activate_connection_async (NM_CLIENT_GET_PRIVATE (client)->client_proxy,
 	                                                          connection_path,
-	                                                          nm_object_get_path (NM_OBJECT (device)),
+	                                                          device ? nm_object_get_path (NM_OBJECT (device)) : "/",
 	                                                          specific_object ? specific_object : "/",
 	                                                          activate_cb,
 	                                                          info);
