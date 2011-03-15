@@ -1177,6 +1177,263 @@ nm_connection_get_id (NMConnection *connection)
 
 /*************************************************************/
 
+/**
+ * nm_connection_get_setting_802_1x:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSetting8021x the connection might contain.
+ *
+ * Returns: an #NMSetting8021x if the connection contains one, otherwise NULL
+ **/
+NMSetting8021x *
+nm_connection_get_setting_802_1x (NMConnection *connection)
+{
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSetting8021x *) nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X);
+}
+
+/**
+ * nm_connection_get_setting_bluetooth:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingBluetooth the connection might contain.
+ *
+ * Returns: an #NMSettingBluetooth if the connection contains one, otherwise NULL
+ **/
+NMSettingBluetooth *
+nm_connection_get_setting_bluetooth (NMConnection *connection)
+{
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingBluetooth *) nm_connection_get_setting (connection, NM_TYPE_SETTING_BLUETOOTH);
+}
+
+/**
+ * nm_connection_get_setting_cdma:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingCdma the connection might contain.
+ *
+ * Returns: an #NMSettingCdma if the connection contains one, otherwise NULL
+ **/
+NMSettingCdma *
+nm_connection_get_setting_cdma (NMConnection *connection)
+{
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingCdma *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CDMA);
+}
+
+/**
+ * nm_connection_get_setting_connection:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingConnection the connection might contain.
+ *
+ * Returns: an #NMSettingConnection if the connection contains one, otherwise NULL
+ **/
+NMSettingConnection *
+nm_connection_get_setting_connection (NMConnection *connection)
+{
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+}
+
+/**
+ * nm_connection_get_setting_gsm:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingGsm the connection might contain.
+ *
+ * Returns: an #NMSettingGsm if the connection contains one, otherwise NULL
+ **/
+NMSettingGsm *
+nm_connection_get_setting_gsm (NMConnection *connection)
+{
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingGsm *) nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM);
+}
+
+/**
+ * nm_connection_get_setting_ip4_config:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingIP4Config the connection might contain.
+ *
+ * Returns: an #NMSettingIP4Config if the connection contains one, otherwise NULL
+ **/
+NMSettingIP4Config *
+nm_connection_get_setting_ip4_config (NMConnection *connection)
+{
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+}
+
+/**
+ * nm_connection_get_setting_ip6_config:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingIP6Config the connection might contain.
+ *
+ * Returns: an #NMSettingIP6Config if the connection contains one, otherwise NULL
+ **/
+NMSettingIP6Config *
+nm_connection_get_setting_ip6_config (NMConnection *connection)
+{
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
+}
+
+/**
+ * nm_connection_get_setting_olpc_mesh:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingOlpcMesh the connection might contain.
+ *
+ * Returns: an #NMSettingOlpcMesh if the connection contains one, otherwise NULL
+ **/
+NMSettingOlpcMesh *
+nm_connection_get_setting_olpc_mesh (NMConnection *connection)
+{
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingOlpcMesh *) nm_connection_get_setting (connection, NM_TYPE_SETTING_OLPC_MESH);
+}
+
+/**
+ * nm_connection_get_setting_ppp:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingPPP the connection might contain.
+ *
+ * Returns: an #NMSettingPPP if the connection contains one, otherwise NULL
+ **/
+NMSettingPPP *
+nm_connection_get_setting_ppp (NMConnection *connection)
+{
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingPPP *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP);
+}
+
+/**
+ * nm_connection_get_setting_pppoe:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingPPOE the connection might contain.
+ *
+ * Returns: an #NMSettingPPPOE if the connection contains one, otherwise NULL
+ **/
+NMSettingPPPOE *
+nm_connection_get_setting_pppoe (NMConnection *connection)
+{
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingPPPOE *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPPOE);
+}
+
+/**
+ * nm_connection_get_setting_vpn:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingVPN the connection might contain.
+ *
+ * Returns: an #NMSettingVPN if the connection contains one, otherwise NULL
+ **/
+NMSettingVPN *
+nm_connection_get_setting_vpn (NMConnection *connection)
+{
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
+}
+
+/**
+ * nm_connection_get_setting_wimax:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingWimax the connection might contain.
+ *
+ * Returns: an #NMSettingWimax if the connection contains one, otherwise NULL
+ **/
+NMSettingWimax *
+nm_connection_get_setting_wimax (NMConnection *connection)
+{
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingWimax *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIMAX);
+}
+
+/**
+ * nm_connection_get_setting_wired:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingWired the connection might contain.
+ *
+ * Returns: an #NMSettingWired if the connection contains one, otherwise NULL
+ **/
+NMSettingWired *
+nm_connection_get_setting_wired (NMConnection *connection)
+{
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
+}
+
+/**
+ * nm_connection_get_setting_wireless:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingWireless the connection might contain.
+ *
+ * Returns: an #NMSettingWireless if the connection contains one, otherwise NULL
+ **/
+NMSettingWireless *
+nm_connection_get_setting_wireless (NMConnection *connection)
+{
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
+}
+
+/**
+ * nm_connection_get_setting_wireless_security:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingWirelessSecurity the connection might contain.
+ *
+ * Returns: an #NMSettingWirelessSecurity if the connection contains one, otherwise NULL
+ **/
+NMSettingWirelessSecurity *
+nm_connection_get_setting_wireless_security (NMConnection *connection)
+{
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
+}
+
+/*************************************************************/
+
 static void
 nm_connection_init (NMConnection *connection)
 {

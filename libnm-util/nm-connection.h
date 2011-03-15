@@ -30,6 +30,22 @@
 #include <glib-object.h>
 #include <nm-setting.h>
 
+#include <nm-setting-8021x.h>
+#include <nm-setting-bluetooth.h>
+#include <nm-setting-cdma.h>
+#include <nm-setting-connection.h>
+#include <nm-setting-gsm.h>
+#include <nm-setting-ip4-config.h>
+#include <nm-setting-ip6-config.h>
+#include <nm-setting-olpc-mesh.h>
+#include <nm-setting-ppp.h>
+#include <nm-setting-pppoe.h>
+#include <nm-setting-vpn.h>
+#include <nm-setting-wimax.h>
+#include <nm-setting-wired.h>
+#include <nm-setting-wireless.h>
+#include <nm-setting-wireless-security.h>
+
 G_BEGIN_DECLS
 
 #define NM_TYPE_CONNECTION            (nm_connection_get_type ())
@@ -150,6 +166,22 @@ GType         nm_connection_lookup_setting_type_by_quark (GQuark error_quark);
 const char *  nm_connection_get_uuid      (NMConnection *connection);
 
 const char *  nm_connection_get_id        (NMConnection *connection);
+
+NMSetting8021x *           nm_connection_get_setting_802_1x            (NMConnection *connection);
+NMSettingBluetooth *       nm_connection_get_setting_bluetooth         (NMConnection *connection);
+NMSettingCdma *            nm_connection_get_setting_cdma              (NMConnection *connection);
+NMSettingConnection *      nm_connection_get_setting_connection        (NMConnection *connection);
+NMSettingGsm *             nm_connection_get_setting_gsm               (NMConnection *connection);
+NMSettingIP4Config *       nm_connection_get_setting_ip4_config        (NMConnection *connection);
+NMSettingIP6Config *       nm_connection_get_setting_ip6_config        (NMConnection *connection);
+NMSettingOlpcMesh *        nm_connection_get_setting_olpc_mesh         (NMConnection *connection);
+NMSettingPPP *             nm_connection_get_setting_ppp               (NMConnection *connection);
+NMSettingPPPOE *           nm_connection_get_setting_pppoe             (NMConnection *connection);
+NMSettingVPN *             nm_connection_get_setting_vpn               (NMConnection *connection);
+NMSettingWimax *           nm_connection_get_setting_wimax             (NMConnection *connection);
+NMSettingWired *           nm_connection_get_setting_wired             (NMConnection *connection);
+NMSettingWireless *        nm_connection_get_setting_wireless          (NMConnection *connection);
+NMSettingWirelessSecurity *nm_connection_get_setting_wireless_security (NMConnection *connection);
 
 G_END_DECLS
 
