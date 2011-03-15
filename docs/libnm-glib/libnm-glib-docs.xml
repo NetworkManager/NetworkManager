@@ -1,0 +1,118 @@
+<?xml version="1.0"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
+               "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+<book id="index" xmlns:xi="http://www.w3.org/2003/XInclude">
+  <bookinfo>
+    <title>libnm-glib Reference Manual</title>
+    <releaseinfo>
+      for libnm-glib 0.9
+      The latest version of this documentation can be found on-line at
+      <ulink role="online-location" url="http://projects.gnome.org/NetworkManager/developers/libnm-glib/09/">http://projects.gnome.org/NetworkManager/developers/libnm-glib/09/</ulink>.
+    </releaseinfo>
+    <authorgroup>
+      <author>
+	<firstname>Dan</firstname>
+	<surname>Williams</surname>
+	<affiliation>
+	  <address>
+	    <email>dcbw@redhat.com</email>
+	  </address>
+	</affiliation>
+      </author>
+    </authorgroup>
+
+    <copyright>
+      <year>2011</year>
+      <holder>The NetworkManager Authors</holder>
+    </copyright>
+
+    <legalnotice>
+      <para>
+	Permission is granted to copy, distribute and/or modify this
+	document under the terms of the <citetitle>GNU Free
+	Documentation License</citetitle>, Version 1.1 or any later
+	version published by the Free Software Foundation with no
+	Invariant Sections, no Front-Cover Texts, and no Back-Cover
+	Texts. You may obtain a copy of the <citetitle>GNU Free
+	Documentation License</citetitle> from the Free Software
+	Foundation by visiting <ulink type="http"
+	url="http://www.fsf.org">their Web site</ulink> or by writing
+	to:
+
+	<address>
+	  The Free Software Foundation, Inc.,
+	  <street>59 Temple Place</street> - Suite 330,
+	  <city>Boston</city>, <state>MA</state> <postcode>02111-1307</postcode>,
+	  <country>USA</country>
+	</address>
+      </para>
+
+      <para>
+	Many of the names used by companies to distinguish their
+	products and services are claimed as trademarks. Where those
+	names appear in any GNOME documentation, and those trademarks
+	are made aware to the members of the GNOME Documentation
+	Project, the names have been printed in caps or initial caps.
+      </para>
+    </legalnotice>
+  </bookinfo>
+
+  <chapter id="ref-overview">
+    <title>Object Overview</title>
+    <para>
+      libnm-glib maps closely to the actual D-Bus API that NetworkManager
+      provides, simply wrapping the remote D-Bus objects as native GObjects,
+      mapping D-Bus signals and properties to GObject signals and properties,
+      and providing helpful accessor and utility functions.  As such, objects
+      in the libnm-glib API have the same properties, behavior, signals, and
+      semantics as the NM D-Bus API.
+    </para>
+    <para>
+      The following is a rough overview of the libnm-glib object structure and
+      how to use the various parts of it:
+      <mediaobject  id="libnm-glib-overview">
+        <imageobject>
+          <imagedata fileref="libnm-glib.png" format="PNG"/>
+        </imageobject>
+      </mediaobject>
+    </para>
+  </chapter>
+
+  <chapter>
+    <title>libnm-glib API Reference</title>
+    <xi:include href="xml/nm-client.xml"/>
+    <xi:include href="xml/nm-active-connection.xml"/>
+    <xi:include href="xml/nm-device.xml"/>
+    <xi:include href="xml/nm-device-ethernet.xml"/>
+    <xi:include href="xml/nm-device-wifi.xml"/>
+    <xi:include href="xml/nm-device-modem.xml"/>
+    <xi:include href="xml/nm-device-bt.xml"/>
+    <xi:include href="xml/nm-device-wimax.xml"/>
+    <xi:include href="xml/nm-wimax-nsp.xml"/>
+    <xi:include href="xml/nm-access-point.xml"/>
+    <xi:include href="xml/nm-ip4-config.xml"/>
+    <xi:include href="xml/nm-ip6-config.xml"/>
+    <xi:include href="xml/nm-dhcp4-config.xml"/>
+    <xi:include href="xml/nm-dhcp6-config.xml"/>
+    <xi:include href="xml/nm-object.xml"/>
+    <xi:include href="xml/nm-remote-connection.xml"/>
+    <xi:include href="xml/nm-remote-settings.xml"/>
+    <xi:include href="xml/nm-types.xml"/>
+    <xi:include href="xml/nm-secret-agent.xml"/>
+    <xi:include href="xml/nm-vpn-connection.xml"/>
+    <xi:include href="xml/nm-vpn-plugin.xml"/>
+    <xi:include href="xml/nm-vpn-plugin-ui-interface.xml"/>
+  </chapter>
+
+  <chapter id="object-tree">
+    <title>Object Hierarchy</title>
+     <xi:include href="xml/tree_index.sgml"/>
+  </chapter>
+  <index id="api-index-full">
+    <title>API Index</title>
+    <xi:include href="xml/api-index-full.xml"><xi:fallback /></xi:include>
+  </index>
+
+  <xi:include href="xml/annotation-glossary.xml"><xi:fallback /></xi:include>
+</book>
+

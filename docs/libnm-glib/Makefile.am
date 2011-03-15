@@ -5,7 +5,7 @@ AUTOMAKE_OPTIONS = 1.6
 DOC_MODULE=libnm-glib
 
 # The top-level SGML file.
-DOC_MAIN_SGML_FILE=$(DOC_MODULE)-docs.sgml
+DOC_MAIN_SGML_FILE=$(DOC_MODULE)-docs.xml
 
 # The directory containing the source code. Relative to $(srcdir).
 # gtk-doc will search all .c & .h files beneath here for inline comments
@@ -58,7 +58,7 @@ IGNORE_HFILES= \
 	nm-vpn-plugin-glue.h
 
 # Images to copy into HTML directory.
-HTML_IMAGES = 
+HTML_IMAGES = libnm-glib.png
 
 # Extra XML files that are included by $(DOC_MAIN_SGML_FILE).
 content_files = 
