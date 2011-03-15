@@ -90,8 +90,8 @@ svOpenFile(const char *name, gboolean create)
 
 bail:
     if (s->fd != -1) close(s->fd);
-    if (s->arena) g_free (s->arena);
-    if (s->fileName) g_free (s->fileName);
+    g_free (s->arena);
+    g_free (s->fileName);
     g_free (s);
     return NULL;
 }

@@ -508,8 +508,7 @@ finalize (GObject *object)
 	if (priv->ssid)
 		g_byte_array_free (priv->ssid, TRUE);
 
-	if (priv->bssid)
-		g_free (priv->bssid);
+	g_free (priv->bssid);
 
 	G_OBJECT_CLASS (nm_access_point_parent_class)->finalize (object);
 }

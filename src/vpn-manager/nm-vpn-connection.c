@@ -474,8 +474,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_BANNER);
 	if (val) {
-		if (priv->banner)
-			g_free (priv->banner);
+		g_free (priv->banner);
 		priv->banner = g_strdup (g_value_get_string (val));
 	}
 
@@ -954,15 +953,11 @@ vpn_cleanup (NMVPNConnection *connection)
 		priv->gw_route = NULL;
 	}
 
-	if (priv->banner) {
-		g_free (priv->banner);
-		priv->banner = NULL;
-	}
+	g_free (priv->banner);
+	priv->banner = NULL;
 
-	if (priv->ip_iface) {
-		g_free (priv->ip_iface);
-		priv->ip_iface = NULL;
-	}
+	g_free (priv->ip_iface);
+	priv->ip_iface = NULL;
 
 	/* Clear out connection secrets to ensure that the settings service
 	 * gets asked for them next time the connection is activated.

@@ -195,7 +195,7 @@ property_changed (DBusGProxy *proxy,
 		    || (priv->name && !str)
 		    || (priv->name && str && strcmp (priv->name, str))) {
 			g_free (priv->name);
-			priv->name = str ? g_strdup (str) : NULL;
+			priv->name = g_strdup (str);
 			g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_NAME);
 		}
 	} else if (!strcmp (property, "RSSI")) {

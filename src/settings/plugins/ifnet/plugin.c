@@ -90,8 +90,7 @@ update_system_hostname (gpointer config)
 
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Updating hostname");
 
-	if (priv->hostname)
-		g_free (priv->hostname);
+	g_free (priv->hostname);
 	priv->hostname = read_hostname (IFNET_SYSTEM_HOSTNAME_FILE);
 
 	g_object_notify (G_OBJECT (config),
@@ -110,8 +109,7 @@ write_system_hostname (NMSystemConfigInterface * config,
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Write system hostname: %s",
 		      newhostname);
 	if (write_hostname (newhostname, IFNET_SYSTEM_HOSTNAME_FILE)) {
-		if (priv->hostname)
-			g_free (priv->hostname);
+		g_free (priv->hostname);
 		priv->hostname = g_strdup (newhostname);
 		g_object_notify (G_OBJECT (config),
 				 NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
@@ -512,8 +510,7 @@ dispose (GObject * object)
 		g_hash_table_destroy (priv->config_connections);
 	}
 
-	if (priv->hostname)
-		g_free (priv->hostname);
+	g_free (priv->hostname);
 	ifnet_destroy ();
 	wpa_parser_destroy ();
 	G_OBJECT_CLASS (sc_plugin_ifnet_parent_class)->dispose (object);

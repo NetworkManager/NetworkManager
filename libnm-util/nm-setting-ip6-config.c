@@ -502,9 +502,7 @@ finalize (GObject *object)
 	NMSettingIP6ConfigPrivate *priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (object);
 
 	g_free (priv->method);
-
-	if (priv->dns)
-		g_slist_free (priv->dns);
+	g_slist_free (priv->dns);
 
 	nm_utils_slist_free (priv->dns_search, g_free);
 	nm_utils_slist_free (priv->addresses, g_free);

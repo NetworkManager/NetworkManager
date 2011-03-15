@@ -186,9 +186,7 @@ finalize (GObject *object)
 {
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
 
-	if (priv->banner)
-		g_free (priv->banner);
-
+	g_free (priv->banner);
 	g_object_unref (priv->proxy);
 
 	G_OBJECT_CLASS (nm_vpn_connection_parent_class)->finalize (object);

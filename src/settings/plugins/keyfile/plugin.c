@@ -493,7 +493,7 @@ plugin_set_hostname (SCPluginKeyfile *plugin, const char *hostname)
 			g_free (data);
 
 			g_free (priv->hostname);
-			priv->hostname = hostname ? g_strdup (hostname) : NULL;
+			priv->hostname = g_strdup (hostname);
 			result = TRUE;
 		}
 

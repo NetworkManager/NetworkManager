@@ -1024,10 +1024,8 @@ nm_connection_set_path (NMConnection *connection, const char *path)
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
 
-	if (priv->path) {
-		g_free (priv->path);
-		priv->path = NULL;
-	}
+	g_free (priv->path);
+	priv->path = NULL;
 
 	if (path)
 		priv->path = g_strdup (path);

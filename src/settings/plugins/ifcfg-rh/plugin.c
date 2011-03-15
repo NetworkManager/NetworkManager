@@ -501,7 +501,7 @@ plugin_set_hostname (SCPluginIfcfg *plugin, const char *hostname)
 	svCloseFile (network);
 
 	g_free (priv->hostname);
-	priv->hostname = hostname ? g_strdup (hostname) : NULL;
+	priv->hostname = g_strdup (hostname);
 	return TRUE;
 }
 

@@ -600,9 +600,7 @@ update_system_hostname(NMInotifyHelper *inotify_helper,
 		return;
 	}
 
-	if (priv->hostname)
-		g_free(priv->hostname);
-
+	g_free(priv->hostname);
 	priv->hostname = g_strstrip(hostname_file);
 
 	/* We shouldn't return a zero-length hostname, but NULL */

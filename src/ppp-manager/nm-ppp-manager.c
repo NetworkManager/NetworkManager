@@ -192,8 +192,7 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_PARENT_IFACE:
-		if (priv->parent_iface)
-			g_free (priv->parent_iface);
+		g_free (priv->parent_iface);
 		priv->parent_iface = g_value_dup_string (value);
 		break;
 	default:

@@ -158,8 +158,7 @@ finalize (GObject * object)
 	    NM_IFNET_CONNECTION_GET_PRIVATE (object);
 	g_return_if_fail (priv);
 
-	if (priv->conn_name)
-		g_free (priv->conn_name);
+	g_free (priv->conn_name);
 	G_OBJECT_CLASS (nm_ifnet_connection_parent_class)->finalize (object);
 }
 

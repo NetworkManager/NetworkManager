@@ -470,8 +470,7 @@ eap_ttls_reader (const char *eap_method,
       done:
 	if (list)
 		g_strfreev (list);
-	if (inner_auth)
-		g_free (inner_auth);
+	g_free (inner_auth);
 	return success;
 }
 

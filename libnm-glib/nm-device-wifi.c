@@ -763,11 +763,8 @@ finalize (GObject *object)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (object);
 
-	if (priv->hw_address)
-		g_free (priv->hw_address);
-
-	if (priv->perm_hw_address)
-		g_free (priv->perm_hw_address);
+	g_free (priv->hw_address);
+	g_free (priv->perm_hw_address);
 
 	G_OBJECT_CLASS (nm_device_wifi_parent_class)->finalize (object);
 }
