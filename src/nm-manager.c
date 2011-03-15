@@ -346,6 +346,8 @@ nm_manager_get_device_by_udi (NMManager *manager, const char *udi)
 {
 	GSList *iter;
 
+	g_return_val_if_fail (udi != NULL, NULL);
+
 	for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
 		if (!strcmp (nm_device_get_udi (NM_DEVICE (iter->data)), udi))
 			return NM_DEVICE (iter->data);
@@ -357,6 +359,8 @@ static NMDevice *
 nm_manager_get_device_by_path (NMManager *manager, const char *path)
 {
 	GSList *iter;
+
+	g_return_val_if_fail (path != NULL, NULL);
 
 	for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
 		if (!strcmp (nm_device_get_path (NM_DEVICE (iter->data)), path))
@@ -673,7 +677,7 @@ pending_activation_new (NMManager *manager,
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	PendingActivation *pending;
-	NMDevice *device;
+	NMDevice *device = NULL;
 	NMConnection *connection = NULL;
 	GSList *all_connections = NULL;
 	gboolean success;
@@ -683,13 +687,16 @@ pending_activation_new (NMManager *manager,
 	g_return_val_if_fail (context != NULL, NULL);
 	g_return_val_if_fail (device_path != NULL, NULL);
 
-	/* A specific object path of "/" means NULL */
+	/* A object path of "/" means NULL */
 	if (g_strcmp0 (specific_object_path, "/") == 0)
 		specific_object_path = NULL;
+	if (g_strcmp0 (device_path, "/") == 0)
+		device_path = NULL;
 
 	/* Create the partial connection from the given settings */
 	if (settings) {
-		device = nm_manager_get_device_by_path (manager, device_path);
+		if (device_path)
+			device = nm_manager_get_device_by_path (manager, device_path);
 		if (!device) {
 			g_set_error_literal (error,
 				                 NM_MANAGER_ERROR,
