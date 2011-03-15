@@ -482,573 +482,6 @@ client_recheck_permissions (DBusGProxy *proxy, gpointer user_data)
 	}
 }
 
-static GObject*
-constructor (GType type,
-		   guint n_construct_params,
-		   GObjectConstructParam *construct_params)
-{
-	NMObject *object;
-	DBusGConnection *connection;
-	NMClientPrivate *priv;
-	GError *err = NULL;
-
-	object = (NMObject *) G_OBJECT_CLASS (nm_client_parent_class)->constructor (type,
-																 n_construct_params,
-																 construct_params);
-	if (!object)
-		return NULL;
-
-	priv = NM_CLIENT_GET_PRIVATE (object);
-	connection = nm_object_get_connection (object);
-
-	priv->client_proxy = dbus_g_proxy_new_for_name (connection,
-										   NM_DBUS_SERVICE,
-										   nm_object_get_path (object),
-										   NM_DBUS_INTERFACE);
-
-	register_for_property_changed (NM_CLIENT (object));
-
-	dbus_g_proxy_add_signal (priv->client_proxy, "DeviceAdded", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->client_proxy,
-						    "DeviceAdded",
-						    G_CALLBACK (client_device_added_proxy),
-						    object,
-						    NULL);
-
-	dbus_g_proxy_add_signal (priv->client_proxy, "DeviceRemoved", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->client_proxy,
-						    "DeviceRemoved",
-						    G_CALLBACK (client_device_removed_proxy),
-						    object,
-						    NULL);
-
-	/* Permissions */
-	dbus_g_proxy_add_signal (priv->client_proxy, "CheckPermissions", G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->client_proxy,
-	                             "CheckPermissions",
-	                             G_CALLBACK (client_recheck_permissions),
-	                             object,
-	                             NULL);
-	get_permissions_sync (NM_CLIENT (object));
-
-	priv->bus_proxy = dbus_g_proxy_new_for_name (connection,
-	                                             DBUS_SERVICE_DBUS,
-	                                             DBUS_PATH_DBUS,
-	                                             DBUS_INTERFACE_DBUS);
-
-	dbus_g_proxy_add_signal (priv->bus_proxy, "NameOwnerChanged",
-						G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
-						G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->bus_proxy,
-						    "NameOwnerChanged",
-						    G_CALLBACK (proxy_name_owner_changed),
-						    object, NULL);
-
-	if (!dbus_g_proxy_call (priv->bus_proxy,
-					    "NameHasOwner", &err,
-					    G_TYPE_STRING, NM_DBUS_SERVICE,
-					    G_TYPE_INVALID,
-					    G_TYPE_BOOLEAN, &priv->manager_running,
-					    G_TYPE_INVALID)) {
-		g_warning ("Error on NameHasOwner DBUS call: %s", err->message);
-		g_error_free (err);
-	}
-
-	if (priv->manager_running) {
-		update_wireless_status (NM_CLIENT (object), FALSE);
-		update_wwan_status (NM_CLIENT (object), FALSE);
-#if WITH_WIMAX
-		update_wimax_status (NM_CLIENT (object), FALSE);
-#endif
-		nm_client_get_state (NM_CLIENT (object));
-	}
-
-	g_signal_connect (G_OBJECT (object), "notify::" NM_CLIENT_WIRELESS_ENABLED,
-	                  G_CALLBACK (wireless_enabled_cb), NULL);
-
-	return G_OBJECT (object);
-}
-
-static void
-free_object_array (GPtrArray **array)
-{
-	g_return_if_fail (array != NULL);
-
-	if (*array) {
-		g_ptr_array_foreach (*array, (GFunc) g_object_unref, NULL);
-		g_ptr_array_free (*array, TRUE);
-		*array = NULL;
-	}
-}
-
-static void
-dispose (GObject *object)
-{
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
-
-	if (priv->disposed) {
-		G_OBJECT_CLASS (nm_client_parent_class)->dispose (object);
-		return;
-	}
-
-	if (priv->perm_call)
-		dbus_g_proxy_cancel_call (priv->client_proxy, priv->perm_call);
-
-	g_object_unref (priv->client_proxy);
-	g_object_unref (priv->bus_proxy);
-
-	free_object_array (&priv->devices);
-	free_object_array (&priv->active_connections);
-
-	g_hash_table_destroy (priv->permissions);
-
-	G_OBJECT_CLASS (nm_client_parent_class)->dispose (object);
-}
-
-static void
-finalize (GObject *object)
-{
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
-
-	g_free (priv->version);
-
-	G_OBJECT_CLASS (nm_client_parent_class)->finalize (object);
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-		    const GValue *value, GParamSpec *pspec)
-{
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
-	gboolean b;
-
-	switch (prop_id) {
-	case PROP_WIRELESS_ENABLED:
-		b = g_value_get_boolean (value);
-		if (priv->wireless_enabled != b) {
-			priv->wireless_enabled = b;
-			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WIRELESS_ENABLED);
-		}
-		break;
-	case PROP_WIRELESS_HARDWARE_ENABLED:
-		b = g_value_get_boolean (value);
-		if (priv->wireless_hw_enabled != b) {
-			priv->wireless_hw_enabled = b;
-			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WIRELESS_HARDWARE_ENABLED);
-		}
-		break;
-	case PROP_WWAN_ENABLED:
-		b = g_value_get_boolean (value);
-		if (priv->wwan_enabled != b) {
-			priv->wwan_enabled = b;
-			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WWAN_ENABLED);
-		}
-		break;
-	case PROP_WWAN_HARDWARE_ENABLED:
-		b = g_value_get_boolean (value);
-		if (priv->wwan_hw_enabled != b) {
-			priv->wwan_hw_enabled = b;
-			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WWAN_HARDWARE_ENABLED);
-		}
-		break;
-	case PROP_WIMAX_ENABLED:
-		b = g_value_get_boolean (value);
-		if (priv->wimax_enabled != b) {
-			priv->wimax_enabled = b;
-			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WIMAX_ENABLED);
-		}
-		break;
-	case PROP_WIMAX_HARDWARE_ENABLED:
-		b = g_value_get_boolean (value);
-		if (priv->wimax_hw_enabled != b) {
-			priv->wimax_hw_enabled = b;
-			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WIMAX_HARDWARE_ENABLED);
-		}
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-get_property (GObject *object,
-              guint prop_id,
-              GValue *value,
-              GParamSpec *pspec)
-{
-	NMClient *self = NM_CLIENT (object);
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
-
-	switch (prop_id) {
-	case PROP_VERSION:
-		g_value_set_string (value, nm_client_get_version (self));
-		break;
-	case PROP_STATE:
-		g_value_set_uint (value, nm_client_get_state (self));
-		break;
-	case PROP_MANAGER_RUNNING:
-		g_value_set_boolean (value, priv->manager_running);
-		break;
-	case PROP_NETWORKING_ENABLED:
-		g_value_set_boolean (value, nm_client_networking_get_enabled (self));
-		break;
-	case PROP_WIRELESS_ENABLED:
-		g_value_set_boolean (value, priv->wireless_enabled);
-		break;
-	case PROP_WIRELESS_HARDWARE_ENABLED:
-		g_value_set_boolean (value, priv->wireless_hw_enabled);
-		break;
-	case PROP_WWAN_ENABLED:
-		g_value_set_boolean (value, priv->wwan_enabled);
-		break;
-	case PROP_WWAN_HARDWARE_ENABLED:
-		g_value_set_boolean (value, priv->wwan_hw_enabled);
-		break;
-	case PROP_WIMAX_ENABLED:
-		g_value_set_boolean (value, priv->wimax_enabled);
-		break;
-	case PROP_WIMAX_HARDWARE_ENABLED:
-		g_value_set_boolean (value, priv->wimax_hw_enabled);
-		break;
-	case PROP_ACTIVE_CONNECTIONS:
-		g_value_set_boxed (value, nm_client_get_active_connections (self));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-nm_client_class_init (NMClientClass *client_class)
-{
-	GObjectClass *object_class = G_OBJECT_CLASS (client_class);
-
-	g_type_class_add_private (client_class, sizeof (NMClientPrivate));
-
-	/* virtual methods */
-	object_class->constructor = constructor;
-	object_class->set_property = set_property;
-	object_class->get_property = get_property;
-	object_class->dispose = dispose;
-	object_class->finalize = finalize;
-
-	/* properties */
-
-	/**
-	 * NMClient:version:
-	 *
-	 * The NetworkManager version.
-	 **/
-	g_object_class_install_property (object_class, PROP_VERSION,
-	                                 g_param_spec_string (NM_CLIENT_VERSION,
-	                                                      "Version",
-	                                                      "NetworkManager version",
-	                                                       NULL,
-	                                                       G_PARAM_READABLE));
-
-	/**
-	 * NMClient:state:
-	 *
-	 * The current daemon state.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_STATE,
-		 g_param_spec_uint (NM_CLIENT_STATE,
-						    "State",
-						    "NetworkManager state",
-						    NM_STATE_UNKNOWN, NM_STATE_CONNECTED_GLOBAL, NM_STATE_UNKNOWN,
-						    G_PARAM_READABLE));
-
-	/**
-	 * NMClient::manager-running:
-	 *
-	 * Whether the daemon is running.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_MANAGER_RUNNING,
-		 g_param_spec_boolean (NM_CLIENT_MANAGER_RUNNING,
-						       "ManagerRunning",
-						       "Whether NetworkManager is running",
-						       FALSE,
-						       G_PARAM_READABLE));
-
-	/**
-	 * NMClient::networking-enabled:
-	 *
-	 * Whether networking is enabled.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_NETWORKING_ENABLED,
-		 g_param_spec_boolean (NM_CLIENT_NETWORKING_ENABLED,
-						   "NetworkingEnabled",
-						   "Is networking enabled",
-						   TRUE,
-						   G_PARAM_READABLE));
-
-	/**
-	 * NMClient::wireless-enabled:
-	 *
-	 * Whether wireless is enabled.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_WIRELESS_ENABLED,
-		 g_param_spec_boolean (NM_CLIENT_WIRELESS_ENABLED,
-						   "WirelessEnabled",
-						   "Is wireless enabled",
-						   TRUE,
-						   G_PARAM_READWRITE));
-
-	/**
-	 * NMClient::wireless-hardware-enabled:
-	 *
-	 * Whether the wireless hardware is enabled.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_WIRELESS_HARDWARE_ENABLED,
-		 g_param_spec_boolean (NM_CLIENT_WIRELESS_HARDWARE_ENABLED,
-						   "WirelessHardwareEnabled",
-						   "Is wireless hardware enabled",
-						   TRUE,
-						   G_PARAM_READABLE));
-
-	/**
-	 * NMClient::wwan-enabled:
-	 *
-	 * Whether WWAN functionality is enabled.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_WWAN_ENABLED,
-		 g_param_spec_boolean (NM_CLIENT_WWAN_ENABLED,
-		                       "WwanEnabled",
-		                       "Is WWAN enabled",
-		                       TRUE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
-
-	/**
-	 * NMClient::wwan-hardware-enabled:
-	 *
-	 * Whether the WWAN hardware is enabled.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_WWAN_HARDWARE_ENABLED,
-		 g_param_spec_boolean (NM_CLIENT_WWAN_HARDWARE_ENABLED,
-		                       "WwanHardwareEnabled",
-		                       "Is WWAN hardware enabled",
-		                       TRUE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-
-	/**
-	 * NMClient::wimax-enabled:
-	 *
-	 * Whether WiMAX functionality is enabled.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_WIMAX_ENABLED,
-		 g_param_spec_boolean (NM_CLIENT_WIMAX_ENABLED,
-		                       "WimaxEnabled",
-		                       "Is WiMAX enabled",
-		                       TRUE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
-
-	/**
-	 * NMClient::wimax-hardware-enabled:
-	 *
-	 * Whether the WiMAX hardware is enabled.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_WIMAX_HARDWARE_ENABLED,
-		 g_param_spec_boolean (NM_CLIENT_WIMAX_HARDWARE_ENABLED,
-		                       "WimaxHardwareEnabled",
-		                       "Is WiMAX hardware enabled",
-		                       TRUE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-
-	/**
-	 * NMClient::active-connections:
-	 *
-	 * The active connections.
-	 * Type: GPtrArray<NMClient.ActiveConnection>
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_ACTIVE_CONNECTIONS,
-		 g_param_spec_boxed (NM_CLIENT_ACTIVE_CONNECTIONS,
-						   "Active connections",
-						   "Active connections",
-						   NM_TYPE_OBJECT_ARRAY,
-						   G_PARAM_READABLE));
-
-	/* signals */
-
-	/**
-	 * NMClient::device-added:
-	 * @client: the client that received the signal
-	 * @device: (type NMClient.Device): the new device
-	 *
-	 * Notifies that a #NMDevice is added.
-	 **/
-	signals[DEVICE_ADDED] =
-		g_signal_new ("device-added",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMClientClass, device_added),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__OBJECT,
-					  G_TYPE_NONE, 1,
-					  G_TYPE_OBJECT);
-
-	/**
-	 * NMClient::device-removed:
-	 * @widget: the client that received the signal
-	 * @device: (type NMClient.Device): the removed device
-	 *
-	 * Notifies that a #NMDevice is removed.
-	 **/
-	signals[DEVICE_REMOVED] =
-		g_signal_new ("device-removed",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMClientClass, device_removed),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__OBJECT,
-					  G_TYPE_NONE, 1,
-					  G_TYPE_OBJECT);
-
-	/**
-	 * NMClient::permission-changed:
-	 * @widget: the client that received the signal
-	 * @permission: a permission from #NMClientPermission
-	 * @result: the permission's result, one of #NMClientPermissionResult
-	 *
-	 * Notifies that a permission has changed
-	 **/
-	signals[PERMISSION_CHANGED] =
-		g_signal_new ("permission-changed",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  0, NULL, NULL,
-					  _nm_marshal_VOID__UINT_UINT,
-					  G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
-}
-
-/**
- * nm_client_new:
- *
- * Creates a new #NMClient.
- *
- * Returns: a new #NMClient
- **/
-NMClient *
-nm_client_new (void)
-{
-	DBusGConnection *connection;
-	GError *err = NULL;
-
-#ifdef LIBNM_GLIB_TEST
-	connection = dbus_g_bus_get (DBUS_BUS_SESSION, &err);
-#else
-	connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &err);
-#endif
-	if (!connection) {
-		g_warning ("Couldn't connect to system bus: %s", err->message);
-		g_error_free (err);
-		return NULL;
-	}
-
-	return (NMClient *) g_object_new (NM_TYPE_CLIENT,
-									  NM_OBJECT_DBUS_CONNECTION, connection,
-									  NM_OBJECT_DBUS_PATH, NM_DBUS_PATH,
-									  NULL);
-}
-
-static void
-proxy_name_owner_changed (DBusGProxy *proxy,
-						  const char *name,
-						  const char *old_owner,
-						  const char *new_owner,
-						  gpointer user_data)
-{
-	NMClient *client = NM_CLIENT (user_data);
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
-	gboolean old_good = (old_owner && strlen (old_owner));
-	gboolean new_good = (new_owner && strlen (new_owner));
-	gboolean new_running = FALSE;
-
-	if (!name || strcmp (name, NM_DBUS_SERVICE))
-		return;
-
-	if (!old_good && new_good)
-		new_running = TRUE;
-	else if (old_good && !new_good)
-		new_running = FALSE;
-
-	if (new_running == priv->manager_running)
-		return;
-
-	priv->manager_running = new_running;
-	if (!priv->manager_running) {
-		priv->state = NM_STATE_UNKNOWN;
-		_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
-		poke_wireless_devices_with_rf_status (client);
-		free_object_array (&priv->devices);
-		free_object_array (&priv->active_connections);
-		priv->wireless_enabled = FALSE;
-		priv->wireless_hw_enabled = FALSE;
-		priv->wwan_enabled = FALSE;
-		priv->wwan_hw_enabled = FALSE;
-		priv->wimax_enabled = FALSE;
-		priv->wimax_hw_enabled = FALSE;
-	} else {
-		_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
-		update_wireless_status (client, TRUE);
-		update_wwan_status (client, TRUE);
-#if WITH_WIMAX
-		update_wimax_status (client, TRUE);
-#endif
-	}
-}
-
-static void
-client_device_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
-{
-	NMClient *client = NM_CLIENT (user_data);
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
-	GObject *device;
-
-	device = G_OBJECT (nm_client_get_device_by_path (client, path));
-	if (!device) {
-		DBusGConnection *connection = nm_object_get_connection (NM_OBJECT (client));
-
-		device = G_OBJECT (_nm_object_cache_get (path));
-		if (device) {
-			g_ptr_array_add (priv->devices, device);
-		} else {
-			device = G_OBJECT (nm_device_new (connection, path));
-			if (device)
-				g_ptr_array_add (priv->devices, device);
-		}
-	}
-
-	if (device)
-		g_signal_emit (client, signals[DEVICE_ADDED], 0, device);
-}
-
-static void
-client_device_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
-{
-	NMClient *client = NM_CLIENT (user_data);
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
-	NMDevice *device;
-
-	device = nm_client_get_device_by_path (client, path);
-	if (device) {
-		g_signal_emit (client, signals[DEVICE_REMOVED], 0, device);
-		g_ptr_array_remove (priv->devices, device);
-		g_object_unref (device);
-	}
-}
-
 /**
  * nm_client_get_devices:
  * @client: a #NMClient
@@ -1648,5 +1081,576 @@ nm_client_get_permission_result (NMClient *client, NMClientPermission permission
 	result = g_hash_table_lookup (NM_CLIENT_GET_PRIVATE (client)->permissions,
 	                              GUINT_TO_POINTER (permission));
 	return GPOINTER_TO_UINT (result);
+}
+
+/****************************************************************/
+
+static void
+free_object_array (GPtrArray **array)
+{
+	g_return_if_fail (array != NULL);
+
+	if (*array) {
+		g_ptr_array_foreach (*array, (GFunc) g_object_unref, NULL);
+		g_ptr_array_free (*array, TRUE);
+		*array = NULL;
+	}
+}
+
+static void
+proxy_name_owner_changed (DBusGProxy *proxy,
+						  const char *name,
+						  const char *old_owner,
+						  const char *new_owner,
+						  gpointer user_data)
+{
+	NMClient *client = NM_CLIENT (user_data);
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
+	gboolean old_good = (old_owner && strlen (old_owner));
+	gboolean new_good = (new_owner && strlen (new_owner));
+	gboolean new_running = FALSE;
+
+	if (!name || strcmp (name, NM_DBUS_SERVICE))
+		return;
+
+	if (!old_good && new_good)
+		new_running = TRUE;
+	else if (old_good && !new_good)
+		new_running = FALSE;
+
+	if (new_running == priv->manager_running)
+		return;
+
+	priv->manager_running = new_running;
+	if (!priv->manager_running) {
+		priv->state = NM_STATE_UNKNOWN;
+		_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
+		poke_wireless_devices_with_rf_status (client);
+		free_object_array (&priv->devices);
+		free_object_array (&priv->active_connections);
+		priv->wireless_enabled = FALSE;
+		priv->wireless_hw_enabled = FALSE;
+		priv->wwan_enabled = FALSE;
+		priv->wwan_hw_enabled = FALSE;
+		priv->wimax_enabled = FALSE;
+		priv->wimax_hw_enabled = FALSE;
+	} else {
+		_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
+		update_wireless_status (client, TRUE);
+		update_wwan_status (client, TRUE);
+#if WITH_WIMAX
+		update_wimax_status (client, TRUE);
+#endif
+	}
+}
+
+static void
+client_device_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
+{
+	NMClient *client = NM_CLIENT (user_data);
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
+	GObject *device;
+
+	device = G_OBJECT (nm_client_get_device_by_path (client, path));
+	if (!device) {
+		DBusGConnection *connection = nm_object_get_connection (NM_OBJECT (client));
+
+		device = G_OBJECT (_nm_object_cache_get (path));
+		if (device) {
+			g_ptr_array_add (priv->devices, device);
+		} else {
+			device = G_OBJECT (nm_device_new (connection, path));
+			if (device)
+				g_ptr_array_add (priv->devices, device);
+		}
+	}
+
+	if (device)
+		g_signal_emit (client, signals[DEVICE_ADDED], 0, device);
+}
+
+static void
+client_device_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
+{
+	NMClient *client = NM_CLIENT (user_data);
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
+	NMDevice *device;
+
+	device = nm_client_get_device_by_path (client, path);
+	if (device) {
+		g_signal_emit (client, signals[DEVICE_REMOVED], 0, device);
+		g_ptr_array_remove (priv->devices, device);
+		g_object_unref (device);
+	}
+}
+
+/****************************************************************/
+
+/**
+ * nm_client_new:
+ *
+ * Creates a new #NMClient.
+ *
+ * Returns: a new #NMClient
+ **/
+NMClient *
+nm_client_new (void)
+{
+	DBusGConnection *connection;
+	GError *err = NULL;
+
+#ifdef LIBNM_GLIB_TEST
+	connection = dbus_g_bus_get (DBUS_BUS_SESSION, &err);
+#else
+	connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &err);
+#endif
+	if (!connection) {
+		g_warning ("Couldn't connect to system bus: %s", err->message);
+		g_error_free (err);
+		return NULL;
+	}
+
+	return (NMClient *) g_object_new (NM_TYPE_CLIENT,
+									  NM_OBJECT_DBUS_CONNECTION, connection,
+									  NM_OBJECT_DBUS_PATH, NM_DBUS_PATH,
+									  NULL);
+}
+
+static GObject*
+constructor (GType type,
+		   guint n_construct_params,
+		   GObjectConstructParam *construct_params)
+{
+	NMObject *object;
+	DBusGConnection *connection;
+	NMClientPrivate *priv;
+	GError *err = NULL;
+
+	object = (NMObject *) G_OBJECT_CLASS (nm_client_parent_class)->constructor (type,
+																 n_construct_params,
+																 construct_params);
+	if (!object)
+		return NULL;
+
+	priv = NM_CLIENT_GET_PRIVATE (object);
+	connection = nm_object_get_connection (object);
+
+	priv->client_proxy = dbus_g_proxy_new_for_name (connection,
+										   NM_DBUS_SERVICE,
+										   nm_object_get_path (object),
+										   NM_DBUS_INTERFACE);
+
+	register_for_property_changed (NM_CLIENT (object));
+
+	dbus_g_proxy_add_signal (priv->client_proxy, "DeviceAdded", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->client_proxy,
+						    "DeviceAdded",
+						    G_CALLBACK (client_device_added_proxy),
+						    object,
+						    NULL);
+
+	dbus_g_proxy_add_signal (priv->client_proxy, "DeviceRemoved", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->client_proxy,
+						    "DeviceRemoved",
+						    G_CALLBACK (client_device_removed_proxy),
+						    object,
+						    NULL);
+
+	/* Permissions */
+	dbus_g_proxy_add_signal (priv->client_proxy, "CheckPermissions", G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->client_proxy,
+	                             "CheckPermissions",
+	                             G_CALLBACK (client_recheck_permissions),
+	                             object,
+	                             NULL);
+	get_permissions_sync (NM_CLIENT (object));
+
+	priv->bus_proxy = dbus_g_proxy_new_for_name (connection,
+	                                             DBUS_SERVICE_DBUS,
+	                                             DBUS_PATH_DBUS,
+	                                             DBUS_INTERFACE_DBUS);
+
+	dbus_g_proxy_add_signal (priv->bus_proxy, "NameOwnerChanged",
+						G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+						G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->bus_proxy,
+						    "NameOwnerChanged",
+						    G_CALLBACK (proxy_name_owner_changed),
+						    object, NULL);
+
+	if (!dbus_g_proxy_call (priv->bus_proxy,
+					    "NameHasOwner", &err,
+					    G_TYPE_STRING, NM_DBUS_SERVICE,
+					    G_TYPE_INVALID,
+					    G_TYPE_BOOLEAN, &priv->manager_running,
+					    G_TYPE_INVALID)) {
+		g_warning ("Error on NameHasOwner DBUS call: %s", err->message);
+		g_error_free (err);
+	}
+
+	if (priv->manager_running) {
+		update_wireless_status (NM_CLIENT (object), FALSE);
+		update_wwan_status (NM_CLIENT (object), FALSE);
+#if WITH_WIMAX
+		update_wimax_status (NM_CLIENT (object), FALSE);
+#endif
+		nm_client_get_state (NM_CLIENT (object));
+	}
+
+	g_signal_connect (G_OBJECT (object), "notify::" NM_CLIENT_WIRELESS_ENABLED,
+	                  G_CALLBACK (wireless_enabled_cb), NULL);
+
+	return G_OBJECT (object);
+}
+
+static void
+dispose (GObject *object)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
+
+	if (priv->disposed) {
+		G_OBJECT_CLASS (nm_client_parent_class)->dispose (object);
+		return;
+	}
+
+	if (priv->perm_call)
+		dbus_g_proxy_cancel_call (priv->client_proxy, priv->perm_call);
+
+	g_object_unref (priv->client_proxy);
+	g_object_unref (priv->bus_proxy);
+
+	free_object_array (&priv->devices);
+	free_object_array (&priv->active_connections);
+
+	g_hash_table_destroy (priv->permissions);
+
+	G_OBJECT_CLASS (nm_client_parent_class)->dispose (object);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
+
+	g_free (priv->version);
+
+	G_OBJECT_CLASS (nm_client_parent_class)->finalize (object);
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+		    const GValue *value, GParamSpec *pspec)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
+	gboolean b;
+
+	switch (prop_id) {
+	case PROP_WIRELESS_ENABLED:
+		b = g_value_get_boolean (value);
+		if (priv->wireless_enabled != b) {
+			priv->wireless_enabled = b;
+			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WIRELESS_ENABLED);
+		}
+		break;
+	case PROP_WIRELESS_HARDWARE_ENABLED:
+		b = g_value_get_boolean (value);
+		if (priv->wireless_hw_enabled != b) {
+			priv->wireless_hw_enabled = b;
+			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WIRELESS_HARDWARE_ENABLED);
+		}
+		break;
+	case PROP_WWAN_ENABLED:
+		b = g_value_get_boolean (value);
+		if (priv->wwan_enabled != b) {
+			priv->wwan_enabled = b;
+			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WWAN_ENABLED);
+		}
+		break;
+	case PROP_WWAN_HARDWARE_ENABLED:
+		b = g_value_get_boolean (value);
+		if (priv->wwan_hw_enabled != b) {
+			priv->wwan_hw_enabled = b;
+			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WWAN_HARDWARE_ENABLED);
+		}
+		break;
+	case PROP_WIMAX_ENABLED:
+		b = g_value_get_boolean (value);
+		if (priv->wimax_enabled != b) {
+			priv->wimax_enabled = b;
+			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WIMAX_ENABLED);
+		}
+		break;
+	case PROP_WIMAX_HARDWARE_ENABLED:
+		b = g_value_get_boolean (value);
+		if (priv->wimax_hw_enabled != b) {
+			priv->wimax_hw_enabled = b;
+			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WIMAX_HARDWARE_ENABLED);
+		}
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+get_property (GObject *object,
+              guint prop_id,
+              GValue *value,
+              GParamSpec *pspec)
+{
+	NMClient *self = NM_CLIENT (object);
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+
+	switch (prop_id) {
+	case PROP_VERSION:
+		g_value_set_string (value, nm_client_get_version (self));
+		break;
+	case PROP_STATE:
+		g_value_set_uint (value, nm_client_get_state (self));
+		break;
+	case PROP_MANAGER_RUNNING:
+		g_value_set_boolean (value, priv->manager_running);
+		break;
+	case PROP_NETWORKING_ENABLED:
+		g_value_set_boolean (value, nm_client_networking_get_enabled (self));
+		break;
+	case PROP_WIRELESS_ENABLED:
+		g_value_set_boolean (value, priv->wireless_enabled);
+		break;
+	case PROP_WIRELESS_HARDWARE_ENABLED:
+		g_value_set_boolean (value, priv->wireless_hw_enabled);
+		break;
+	case PROP_WWAN_ENABLED:
+		g_value_set_boolean (value, priv->wwan_enabled);
+		break;
+	case PROP_WWAN_HARDWARE_ENABLED:
+		g_value_set_boolean (value, priv->wwan_hw_enabled);
+		break;
+	case PROP_WIMAX_ENABLED:
+		g_value_set_boolean (value, priv->wimax_enabled);
+		break;
+	case PROP_WIMAX_HARDWARE_ENABLED:
+		g_value_set_boolean (value, priv->wimax_hw_enabled);
+		break;
+	case PROP_ACTIVE_CONNECTIONS:
+		g_value_set_boxed (value, nm_client_get_active_connections (self));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+nm_client_class_init (NMClientClass *client_class)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (client_class);
+
+	g_type_class_add_private (client_class, sizeof (NMClientPrivate));
+
+	/* virtual methods */
+	object_class->constructor = constructor;
+	object_class->set_property = set_property;
+	object_class->get_property = get_property;
+	object_class->dispose = dispose;
+	object_class->finalize = finalize;
+
+	/* properties */
+
+	/**
+	 * NMClient:version:
+	 *
+	 * The NetworkManager version.
+	 **/
+	g_object_class_install_property (object_class, PROP_VERSION,
+	                                 g_param_spec_string (NM_CLIENT_VERSION,
+	                                                      "Version",
+	                                                      "NetworkManager version",
+	                                                       NULL,
+	                                                       G_PARAM_READABLE));
+
+	/**
+	 * NMClient:state:
+	 *
+	 * The current daemon state.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_STATE,
+		 g_param_spec_uint (NM_CLIENT_STATE,
+						    "State",
+						    "NetworkManager state",
+						    NM_STATE_UNKNOWN, NM_STATE_CONNECTED_GLOBAL, NM_STATE_UNKNOWN,
+						    G_PARAM_READABLE));
+
+	/**
+	 * NMClient::manager-running:
+	 *
+	 * Whether the daemon is running.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_MANAGER_RUNNING,
+		 g_param_spec_boolean (NM_CLIENT_MANAGER_RUNNING,
+						       "ManagerRunning",
+						       "Whether NetworkManager is running",
+						       FALSE,
+						       G_PARAM_READABLE));
+
+	/**
+	 * NMClient::networking-enabled:
+	 *
+	 * Whether networking is enabled.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_NETWORKING_ENABLED,
+		 g_param_spec_boolean (NM_CLIENT_NETWORKING_ENABLED,
+						   "NetworkingEnabled",
+						   "Is networking enabled",
+						   TRUE,
+						   G_PARAM_READABLE));
+
+	/**
+	 * NMClient::wireless-enabled:
+	 *
+	 * Whether wireless is enabled.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_WIRELESS_ENABLED,
+		 g_param_spec_boolean (NM_CLIENT_WIRELESS_ENABLED,
+						   "WirelessEnabled",
+						   "Is wireless enabled",
+						   TRUE,
+						   G_PARAM_READWRITE));
+
+	/**
+	 * NMClient::wireless-hardware-enabled:
+	 *
+	 * Whether the wireless hardware is enabled.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_WIRELESS_HARDWARE_ENABLED,
+		 g_param_spec_boolean (NM_CLIENT_WIRELESS_HARDWARE_ENABLED,
+						   "WirelessHardwareEnabled",
+						   "Is wireless hardware enabled",
+						   TRUE,
+						   G_PARAM_READABLE));
+
+	/**
+	 * NMClient::wwan-enabled:
+	 *
+	 * Whether WWAN functionality is enabled.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_WWAN_ENABLED,
+		 g_param_spec_boolean (NM_CLIENT_WWAN_ENABLED,
+		                       "WwanEnabled",
+		                       "Is WWAN enabled",
+		                       TRUE,
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+
+	/**
+	 * NMClient::wwan-hardware-enabled:
+	 *
+	 * Whether the WWAN hardware is enabled.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_WWAN_HARDWARE_ENABLED,
+		 g_param_spec_boolean (NM_CLIENT_WWAN_HARDWARE_ENABLED,
+		                       "WwanHardwareEnabled",
+		                       "Is WWAN hardware enabled",
+		                       TRUE,
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	/**
+	 * NMClient::wimax-enabled:
+	 *
+	 * Whether WiMAX functionality is enabled.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_WIMAX_ENABLED,
+		 g_param_spec_boolean (NM_CLIENT_WIMAX_ENABLED,
+		                       "WimaxEnabled",
+		                       "Is WiMAX enabled",
+		                       TRUE,
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+
+	/**
+	 * NMClient::wimax-hardware-enabled:
+	 *
+	 * Whether the WiMAX hardware is enabled.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_WIMAX_HARDWARE_ENABLED,
+		 g_param_spec_boolean (NM_CLIENT_WIMAX_HARDWARE_ENABLED,
+		                       "WimaxHardwareEnabled",
+		                       "Is WiMAX hardware enabled",
+		                       TRUE,
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	/**
+	 * NMClient::active-connections:
+	 *
+	 * The active connections.
+	 * Type: GPtrArray<NMClient.ActiveConnection>
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_ACTIVE_CONNECTIONS,
+		 g_param_spec_boxed (NM_CLIENT_ACTIVE_CONNECTIONS,
+						   "Active connections",
+						   "Active connections",
+						   NM_TYPE_OBJECT_ARRAY,
+						   G_PARAM_READABLE));
+
+	/* signals */
+
+	/**
+	 * NMClient::device-added:
+	 * @client: the client that received the signal
+	 * @device: (type NMClient.Device): the new device
+	 *
+	 * Notifies that a #NMDevice is added.
+	 **/
+	signals[DEVICE_ADDED] =
+		g_signal_new ("device-added",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMClientClass, device_added),
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__OBJECT,
+					  G_TYPE_NONE, 1,
+					  G_TYPE_OBJECT);
+
+	/**
+	 * NMClient::device-removed:
+	 * @widget: the client that received the signal
+	 * @device: (type NMClient.Device): the removed device
+	 *
+	 * Notifies that a #NMDevice is removed.
+	 **/
+	signals[DEVICE_REMOVED] =
+		g_signal_new ("device-removed",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMClientClass, device_removed),
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__OBJECT,
+					  G_TYPE_NONE, 1,
+					  G_TYPE_OBJECT);
+
+	/**
+	 * NMClient::permission-changed:
+	 * @widget: the client that received the signal
+	 * @permission: a permission from #NMClientPermission
+	 * @result: the permission's result, one of #NMClientPermissionResult
+	 *
+	 * Notifies that a permission has changed
+	 **/
+	signals[PERMISSION_CHANGED] =
+		g_signal_new ("permission-changed",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  0, NULL, NULL,
+					  _nm_marshal_VOID__UINT_UINT,
+					  G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 }
 
