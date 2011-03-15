@@ -683,6 +683,10 @@ pending_activation_new (NMManager *manager,
 	g_return_val_if_fail (context != NULL, NULL);
 	g_return_val_if_fail (device_path != NULL, NULL);
 
+	/* A specific object path of "/" means NULL */
+	if (g_strcmp0 (specific_object_path, "/") == 0)
+		specific_object_path = NULL;
+
 	/* Create the partial connection from the given settings */
 	if (settings) {
 		device = nm_manager_get_device_by_path (manager, device_path);
