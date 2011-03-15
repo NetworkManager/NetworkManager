@@ -452,7 +452,7 @@ real_check_connection_compatible (NMDevice *device,
 	const char *connection_type;
 	const GByteArray *mac;
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
 	connection_type = nm_setting_connection_get_connection_type (s_con);
@@ -463,7 +463,7 @@ real_check_connection_compatible (NMDevice *device,
 		return FALSE;
 	}
 
-	s_wimax = (NMSettingWimax *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIMAX);
+	s_wimax = nm_connection_get_setting_wimax (connection);
 	if (!s_wimax) {
 		g_set_error (error,
 		             NM_WIMAX_ERROR, NM_WIMAX_ERROR_CONNECTION_INVALID,
@@ -498,7 +498,7 @@ real_complete_connection (NMDevice *device,
 	NMWimaxNsp *nsp = NULL;
 	GSList *iter;
 
-	s_wimax = (NMSettingWimax *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIMAX);
+	s_wimax = nm_connection_get_setting_wimax (connection);
 
 	if (!specific_object) {
 		/* If not given a specific object, we need at minimum an NSP name */
@@ -609,7 +609,7 @@ real_get_best_auto_connection (NMDevice *device,
 		const char *connection_type;
 		const GByteArray *mac;
 
-		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+		s_con = nm_connection_get_setting_connection (connection);
 		g_assert (s_con);
 
 		if (!nm_setting_connection_get_autoconnect (s_con))
@@ -619,7 +619,7 @@ real_get_best_auto_connection (NMDevice *device,
 		if (strcmp (connection_type, NM_SETTING_WIMAX_SETTING_NAME))
 			continue;
 
-		s_wimax = (NMSettingWimax *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIMAX);
+		s_wimax = nm_connection_get_setting_wimax (connection);
 		if (!s_wimax)
 			continue;
 
@@ -754,7 +754,7 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	connection = nm_act_request_get_connection (nm_device_get_act_request (device));
 	g_assert (connection);
 
-	s_wimax = NM_SETTING_WIMAX (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIMAX));
+	s_wimax = nm_connection_get_setting_wimax (connection);
 	g_assert (s_wimax);
 
 	nsp = nm_setting_wimax_get_network_name (s_wimax);
