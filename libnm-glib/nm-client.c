@@ -675,6 +675,7 @@ nm_client_activate_connection (NMClient *client,
                                NMClientActivateFn callback,
                                gpointer user_data)
 {
+	NMClientPrivate *priv;
 	ActivateInfo *info;
 
 	g_return_if_fail (NM_IS_CLIENT (client));
@@ -687,7 +688,10 @@ nm_client_activate_connection (NMClient *client,
 	info->user_data = user_data;
 	info->client = client;
 
-	org_freedesktop_NetworkManager_activate_connection_async (NM_CLIENT_GET_PRIVATE (client)->client_proxy,
+	priv = NM_CLIENT_GET_PRIVATE (client);
+	priv->pending_activations = g_slist_prepend (priv->pending_activations, info);
+
+	org_freedesktop_NetworkManager_activate_connection_async (priv->client_proxy,
 	                                                          nm_connection_get_path (connection),
 	                                                          device ? nm_object_get_path (NM_OBJECT (device)) : "/",
 	                                                          specific_object ? specific_object : "/",
@@ -743,6 +747,7 @@ nm_client_add_and_activate_connection (NMClient *client,
                                        NMClientAddActivateFn callback,
                                        gpointer user_data)
 {
+	NMClientPrivate *priv;
 	ActivateInfo *info;
 	GHashTable *hash = NULL;
 
@@ -758,7 +763,11 @@ nm_client_add_and_activate_connection (NMClient *client,
 		hash = nm_connection_to_hash (partial, NM_SETTING_HASH_FLAG_ALL);
 	else
 		hash = g_hash_table_new (g_str_hash, g_str_equal);
-	org_freedesktop_NetworkManager_add_and_activate_connection_async (NM_CLIENT_GET_PRIVATE (client)->client_proxy,
+
+	priv = NM_CLIENT_GET_PRIVATE (client);
+	priv->pending_activations = g_slist_prepend (priv->pending_activations, info);
+
+	org_freedesktop_NetworkManager_add_and_activate_connection_async (priv->client_proxy,
 	                                                                  hash,
 	                                                                  nm_object_get_path (NM_OBJECT (device)),
 	                                                                  specific_object ? specific_object : "/",
