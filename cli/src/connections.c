@@ -154,7 +154,6 @@ static gboolean find_device_for_connection (NmCli *nmc, NMConnection *connection
                                             const char *nsp, NMDevice **device, const char **spec_object, GError **error);
 static const char *active_connection_state_to_string (NMActiveConnectionState state);
 static void active_connection_state_cb (NMActiveConnection *active, GParamSpec *pspec, gpointer user_data);
-static void activate_connection_cb (NMClient *client, const char *path, GError *error, gpointer user_data);
 static void get_connections_cb (NMRemoteSettings *settings, gpointer user_data);
 static NMCResultCode do_connections_list (NmCli *nmc, int argc, char **argv);
 static NMCResultCode do_connections_status (NmCli *nmc, int argc, char **argv);
@@ -993,40 +992,6 @@ nm_device_is_connection_compatible (NMDevice *device, NMConnection *connection, 
 	return FALSE;
 }
 
-
-/**
- * nm_client_get_active_connection_by_path:
- * @client: a #NMClient
- * @object_path: the object path to search for
- *
- * Gets a #NMActiveConnection from a #NMClient.
- *
- * Returns: the #NMActiveConnection for the given @object_path or %NULL if none is found.
- **/
-static NMActiveConnection *
-nm_client_get_active_connection_by_path (NMClient *client, const char *object_path)
-{
-	const GPtrArray *actives;
-	int i;
-	NMActiveConnection *active = NULL;
-
-	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-	g_return_val_if_fail (object_path, NULL);
-
-	actives = nm_client_get_active_connections (client);
-	if (!actives)
-		return NULL;
-
-	for (i = 0; i < actives->len; i++) {
-		NMActiveConnection *candidate = g_ptr_array_index (actives, i);
-		if (!strcmp (nm_object_get_path (NM_OBJECT (candidate)), object_path)) {
-			active = candidate;
-			break;
-		}
-	}
-
-	return active;
-}
 /* -------------------- */
 
 static NMActiveConnection *
@@ -1351,79 +1316,32 @@ timeout_cb (gpointer user_data)
 }
 
 static void
-foo_active_connections_changed_cb (NMClient *client,
-                                   GParamSpec *pspec,
-                                   gpointer user_data)
-{
-	/* Call again activate_connection_cb with dummy arguments;
-	 * the correct ones are taken from its first call.
-	 */
-	activate_connection_cb (NULL, NULL, NULL, NULL);
-}
-
-static void
-activate_connection_cb (NMClient *client, const char *path, GError *error, gpointer user_data)
+activate_connection_cb (NMClient *client, NMActiveConnection *active, GError *error, gpointer user_data)
 {
 	NmCli *nmc = (NmCli *) user_data;
-	NMActiveConnection *active;
 	NMActiveConnectionState state;
-	static gulong handler_id = 0;
-	static NmCli *orig_nmc;
-	static const char *orig_path;
-	static GError *orig_error;
 
-	if (nmc)
-	{
-		/* Called first time; store actual arguments */
-		orig_nmc = nmc;
-		orig_path = path;
-		orig_error = error;
-	}
-
-	/* Disconnect the handler not to be run any more */
-	if (handler_id != 0) {
-		g_signal_handler_disconnect (orig_nmc->client, handler_id);
-		handler_id = 0;
-	}
-
-	if (orig_error) {
-		g_string_printf (orig_nmc->return_text, _("Error: Connection activation failed: %s"), orig_error->message);
-		orig_nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
+	if (error) {
+		g_string_printf (nmc->return_text, _("Error: Connection activation failed: %s"), error->message);
+		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 		quit ();
 	} else {
-		active = nm_client_get_active_connection_by_path (orig_nmc->client, orig_path);
-		if (!active) {
-			/* The active connection path is not in active connections list yet; wait for active-connections signal. */
-			/* This is basically the case for VPN connections. */
-			if (nmc) {
-				/* Called first time, i.e. by nm_client_activate_connection() */
-				handler_id = g_signal_connect (orig_nmc->client, "notify::active-connections",
-				                               G_CALLBACK (foo_active_connections_changed_cb), NULL);
-				return;
-			} else {
-				g_string_printf (orig_nmc->return_text, _("Error: Obtaining active connection for '%s' failed."), orig_path);
-				orig_nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
-				quit ();
-				return;
-			}
-		}
-
 		state = nm_active_connection_get_state (active);
 
 		printf (_("Active connection state: %s\n"), active_connection_state_to_string (state));
-		printf (_("Active connection path: %s\n"), orig_path);
+		printf (_("Active connection path: %s\n"), nm_object_get_path (NM_OBJECT (active)));
 
-		if (orig_nmc->nowait_flag || state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
+		if (nmc->nowait_flag || state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
 			/* don't want to wait or already activated */
 			quit ();
 		} else {
 			if (NM_IS_VPN_CONNECTION (active))
-				g_signal_connect (NM_VPN_CONNECTION (active), "vpn-state-changed", G_CALLBACK (vpn_connection_state_cb), orig_nmc);
+				g_signal_connect (NM_VPN_CONNECTION (active), "vpn-state-changed", G_CALLBACK (vpn_connection_state_cb), nmc);
 			else
-				g_signal_connect (active, "notify::state", G_CALLBACK (active_connection_state_cb), orig_nmc);
+				g_signal_connect (active, "notify::state", G_CALLBACK (active_connection_state_cb), nmc);
 
 			/* Start timer not to loop forever when signals are not emitted */
-			g_timeout_add_seconds (orig_nmc->timeout, timeout_cb, orig_nmc);
+			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);
 		}
 	}
 }
@@ -1436,7 +1354,6 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	gboolean device_found;
 	NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
-	const char *con_path;
 	const char *con_type;
 	const char *iface = NULL;
 	const char *ap = NULL;
@@ -1543,8 +1460,6 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	/* create NMClient */
 	nmc->get_client (nmc);
 
-	con_path = nm_connection_get_path (connection);
-
 	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 	g_assert (s_con);
 	con_type = nm_setting_connection_get_connection_type (s_con);
@@ -1561,12 +1476,14 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	/* Use nowait_flag instead of should_wait because exitting has to be postponed till active_connection_state_cb()
-	 * is called, giving NM time to check our permissions */
+	/* Use nowait_flag instead of should_wait because exiting has to be postponed till
+	 * active_connection_state_cb() is called. That gives NM time to check our permissions
+	 * and we can follow activation progress.
+	 */
 	nmc->nowait_flag = !wait;
 	nmc->should_wait = TRUE;
 	nm_client_activate_connection (nmc->client,
-	                               con_path,
+	                               connection,
 	                               device,
 	                               spec_object,
 	                               activate_connection_cb,
