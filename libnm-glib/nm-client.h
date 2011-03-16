@@ -109,21 +109,21 @@ NMClient *nm_client_new (void);
 const GPtrArray *nm_client_get_devices    (NMClient *client);
 NMDevice *nm_client_get_device_by_path    (NMClient *client, const char *object_path);
 
-typedef void (*NMClientActivateDeviceFn) (NMClient *client,
-                                          const char *object_path,
-                                          GError *error,
-                                          gpointer user_data);
+typedef void (*NMClientActivateFn) (NMClient *client,
+                                    NMActiveConnection *active_connection,
+                                    GError *error,
+                                    gpointer user_data);
 
 void nm_client_activate_connection (NMClient *client,
-                                    const char *connection_path,
+                                    NMConnection *connection,
                                     NMDevice *device,
                                     const char *specific_object,
-                                    NMClientActivateDeviceFn callback,
+                                    NMClientActivateFn callback,
                                     gpointer user_data);
 
 typedef void (*NMClientAddActivateFn) (NMClient *client,
-                                       const char *connection_path,
-                                       const char *active_path,
+                                       NMActiveConnection *connection,
+                                       const char *new_connection_path,
                                        GError *error,
                                        gpointer user_data);
 

@@ -41,6 +41,7 @@
 
 void _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enabled);
 
+static void recheck_pending_activations (NMClient *self);
 
 G_DEFINE_TYPE (NMClient, nm_client, NM_TYPE_OBJECT)
 
@@ -59,6 +60,11 @@ typedef struct {
 
 	DBusGProxyCall *perm_call;
 	GHashTable *permissions;
+
+	/* Activations waiting for their NMActiveConnection
+	 * to appear and then their callback to be called.
+	 */
+	GSList *pending_activations;
 
 	gboolean have_networking_enabled;
 	gboolean networking_enabled;
@@ -557,10 +563,73 @@ nm_client_get_device_by_path (NMClient *client, const char *object_path)
 
 typedef struct {
 	NMClient *client;
-	NMClientActivateDeviceFn act_fn;
+	NMClientActivateFn act_fn;
 	NMClientAddActivateFn add_act_fn;
+	char *active_path;
+	char *new_connection_path;
 	gpointer user_data;
-} ActivateDeviceInfo;
+} ActivateInfo;
+
+static void
+activate_info_free (ActivateInfo *info)
+{
+	g_free (info->active_path);
+	g_free (info->new_connection_path);
+	memset (info, 0, sizeof (*info));
+	g_slice_free (ActivateInfo, info);
+}
+
+static void
+activate_info_complete (ActivateInfo *info,
+                        NMActiveConnection *active,
+                        GError *error)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (info->client);
+
+	if (info->act_fn)
+		info->act_fn (info->client, error ? NULL : active, error, info->user_data);
+	else if (info->add_act_fn) {
+		info->add_act_fn (info->client,
+		                  error ? NULL : active,
+		                  error ? NULL : info->new_connection_path,
+		                  error,
+		                  info->user_data);
+	} else if (error)
+		g_warning ("Device activation failed: (%d) %s", error->code, error->message);
+
+	priv->pending_activations = g_slist_remove (priv->pending_activations, info);
+}
+
+static void
+recheck_pending_activations (NMClient *self)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
+	GSList *iter;
+	const GPtrArray *active_connections;
+	int i;
+
+	active_connections = nm_client_get_active_connections (self);
+	if (!active_connections)
+		return;
+
+	/* For each active connection, look for a pending activation that has
+	 * the active connection's object path, and call its callback.
+	 */
+	for (i = 0; i < active_connections->len; i++) {
+		NMActiveConnection *active = g_ptr_array_index (active_connections, i);
+
+		for (iter = priv->pending_activations; iter; iter = g_slist_next (iter)) {
+			ActivateInfo *info = iter->data;
+
+			if (g_strcmp0 (info->active_path, nm_object_get_path (NM_OBJECT (active))) == 0) {
+				/* Call the pending activation's callback and it all up*/
+				activate_info_complete (info, active, NULL);
+				activate_info_free (info);
+				break;
+			}
+		}
+	}
+}
 
 static void
 activate_cb (DBusGProxy *proxy,
@@ -568,20 +637,21 @@ activate_cb (DBusGProxy *proxy,
              GError *error,
              gpointer user_data)
 {
-	ActivateDeviceInfo *info = (ActivateDeviceInfo *) user_data;
+	ActivateInfo *info = user_data;
 
-	if (info->act_fn)
-		info->act_fn (info->client, error ? NULL : path, error, info->user_data);
-	else if (error)
-		g_warning ("Device activation failed: (%d) %s", error->code, error->message);
-
-	g_slice_free (ActivateDeviceInfo, info);
+	if (error) {
+		activate_info_complete (info, NULL, error);
+		activate_info_free (info);
+	} else {
+		info->active_path = g_strdup (path);
+		recheck_pending_activations (info->client);
+	}
 }
 
 /**
  * nm_client_activate_connection:
  * @client: a #NMClient
- * @connection_path: the connection's DBus path
+ * @connection: an #NMConnection
  * @device: the #NMDevice
  * @specific_object: (allow-none): the device specific object (currently
  *   used only for activating wireless devices and should be the
@@ -589,30 +659,36 @@ activate_cb (DBusGProxy *proxy,
  * @callback: (scope async) (allow-none): the function to call when the call is done
  * @user_data: (closure): user data to pass to the callback function
  *
- * Activates a connection with the given #NMDevice.
+ * Starts a connection to a particular network using the configuration settings
+ * from @connection and the network device @device.  Certain connection types
+ * also take a "specific object" which is the object path of a connection-
+ * specific object, like an #NMAccessPoint for WiFi connections, or an
+ * #NMWimaxNsp for WiMAX connections, to which you wish to connect.  If the
+ * specific object is not given, NetworkManager can, in some cases, automatically
+ * determine which network to connect to given the settings in @connection.
  **/
 void
 nm_client_activate_connection (NMClient *client,
-					  const char *connection_path,
-					  NMDevice *device,
-					  const char *specific_object,
-					  NMClientActivateDeviceFn callback,
-					  gpointer user_data)
+                               NMConnection *connection,
+                               NMDevice *device,
+                               const char *specific_object,
+                               NMClientActivateFn callback,
+                               gpointer user_data)
 {
-	ActivateDeviceInfo *info;
+	ActivateInfo *info;
 
 	g_return_if_fail (NM_IS_CLIENT (client));
 	if (device)
 		g_return_if_fail (NM_IS_DEVICE (device));
-	g_return_if_fail (connection_path != NULL);
+	g_return_if_fail (NM_IS_CONNECTION (connection));
 
-	info = g_slice_new (ActivateDeviceInfo);
+	info = g_slice_new (ActivateInfo);
 	info->act_fn = callback;
 	info->user_data = user_data;
 	info->client = client;
 
 	org_freedesktop_NetworkManager_activate_connection_async (NM_CLIENT_GET_PRIVATE (client)->client_proxy,
-	                                                          connection_path,
+	                                                          nm_connection_get_path (connection),
 	                                                          device ? nm_object_get_path (NM_OBJECT (device)) : "/",
 	                                                          specific_object ? specific_object : "/",
 	                                                          activate_cb,
@@ -626,18 +702,16 @@ add_activate_cb (DBusGProxy *proxy,
                  GError *error,
                  gpointer user_data)
 {
-	ActivateDeviceInfo *info = (ActivateDeviceInfo *) user_data;
+	ActivateInfo *info = user_data;
 
-	if (info->add_act_fn) {
-		info->add_act_fn (info->client,
-		                  error ? NULL : connection_path,
-		                  error ? active_path : NULL,
-		                  error,
-		                  info->user_data);
-	} else if (error)
-		g_warning ("Connection add and activate failed: (%d) %s", error->code, error->message);
-
-	g_slice_free (ActivateDeviceInfo, info);
+	if (error) {
+		activate_info_complete (info, NULL, error);
+		activate_info_free (info);
+	} else {
+		info->new_connection_path = g_strdup (connection_path);
+		info->active_path = g_strdup (active_path);
+		recheck_pending_activations (info->client);
+	}
 }
 
 /**
@@ -669,13 +743,13 @@ nm_client_add_and_activate_connection (NMClient *client,
                                        NMClientAddActivateFn callback,
                                        gpointer user_data)
 {
-	ActivateDeviceInfo *info;
+	ActivateInfo *info;
 	GHashTable *hash = NULL;
 
 	g_return_if_fail (NM_IS_CLIENT (client));
 	g_return_if_fail (NM_IS_DEVICE (device));
 
-	info = g_slice_new (ActivateDeviceInfo);
+	info = g_slice_new (ActivateInfo);
 	info->add_act_fn = callback;
 	info->user_data = user_data;
 	info->client = client;
@@ -691,6 +765,12 @@ nm_client_add_and_activate_connection (NMClient *client,
 	                                                                  add_activate_cb,
 	                                                                  info);
 	g_hash_table_unref (hash);
+}
+
+static void
+active_connections_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
+{
+	recheck_pending_activations (NM_CLIENT (object));
 }
 
 /**
@@ -1300,6 +1380,9 @@ constructor (GType type,
 	g_signal_connect (G_OBJECT (object), "notify::" NM_CLIENT_WIRELESS_ENABLED,
 	                  G_CALLBACK (wireless_enabled_cb), NULL);
 
+	g_signal_connect (object, "notify::" NM_CLIENT_ACTIVE_CONNECTIONS,
+	                  G_CALLBACK (active_connections_changed_cb), NULL);
+
 	return G_OBJECT (object);
 }
 
@@ -1321,6 +1404,9 @@ dispose (GObject *object)
 
 	free_object_array (&priv->devices);
 	free_object_array (&priv->active_connections);
+
+	g_slist_foreach (priv->pending_activations, (GFunc) activate_info_free, NULL);
+	g_slist_free (priv->pending_activations);
 
 	g_hash_table_destroy (priv->permissions);
 
