@@ -137,7 +137,7 @@ libnm_glib_la_LIBADD = \
 	$(GUDEV_LIBS)
 
 libnm_glib_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm-glib.ver \
-	-version-info "4:0:1"
+	-version-info "5:0:1"
 
 noinst_PROGRAMS = libnm-glib-test
 
