@@ -403,7 +403,7 @@ show_connection (NMConnection *data, gpointer user_data)
 	char *timestamp_str;
 	char timestamp_real_str[64];
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	s_con = nm_connection_get_setting_connection (connection);
 	if (s_con) {
 		/* Obtain field values */
 		timestamp = nm_setting_connection_get_timestamp (s_con);
@@ -438,7 +438,7 @@ find_connection (GSList *list, const char *filter_type, const char *filter_val)
 	iterator = list;
 	while (iterator) {
 		connection = NM_CONNECTION (iterator->data);
-		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+		s_con = nm_connection_get_setting_connection (connection);
 		if (s_con) {
 			id = nm_setting_connection_get_id (s_con);
 			uuid = nm_setting_connection_get_uuid (s_con);
@@ -587,7 +587,7 @@ show_active_connection (gpointer data, gpointer user_data)
 
 		if (!strcmp (active_path, con_path)) {
 			/* This connection is active */
-			s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+			s_con = nm_connection_get_setting_connection (connection);
 			g_assert (s_con != NULL);
 
 			/* Obtain field values */
@@ -681,7 +681,7 @@ check_ethernet_compatible (NMDeviceEthernet *device, NMConnection *connection, G
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
 	connection_type = nm_setting_connection_get_connection_type (s_con);
@@ -695,7 +695,7 @@ check_ethernet_compatible (NMDeviceEthernet *device, NMConnection *connection, G
 	if (!strcmp (connection_type, NM_SETTING_PPPOE_SETTING_NAME))
 		is_pppoe = TRUE;
 
-	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
+	s_wired = nm_connection_get_setting_wired (connection);
 	/* Wired setting is optional for PPPoE */
 	if (!is_pppoe && !s_wired) {
 		g_set_error (error, 0, 0,
@@ -737,7 +737,7 @@ check_wifi_compatible (NMDeviceWifi *device, NMConnection *connection, GError **
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
 	if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_WIRELESS_SETTING_NAME)) {
@@ -746,7 +746,7 @@ check_wifi_compatible (NMDeviceWifi *device, NMConnection *connection, GError **
 		return FALSE;
 	}
 
-	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	if (!s_wireless) {
 		g_set_error (error, 0, 0,
 		             "The connection was not a valid WiFi connection.");
@@ -795,7 +795,7 @@ check_bt_compatible (NMDeviceBt *device, NMConnection *connection, GError **erro
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
 	if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_BLUETOOTH_SETTING_NAME)) {
@@ -804,7 +804,7 @@ check_bt_compatible (NMDeviceBt *device, NMConnection *connection, GError **erro
 		return FALSE;
 	}
 
-	s_bt = NM_SETTING_BLUETOOTH (nm_connection_get_setting (connection, NM_TYPE_SETTING_BLUETOOTH));
+	s_bt = nm_connection_get_setting_bluetooth (connection);
 	if (!s_bt) {
 		g_set_error (error, 0, 0,
 		             "The connection was not a valid Bluetooth connection.");
@@ -854,7 +854,7 @@ check_olpc_mesh_compatible (NMDeviceOlpcMesh *device, NMConnection *connection, 
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
 	if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_OLPC_MESH_SETTING_NAME)) {
@@ -863,7 +863,7 @@ check_olpc_mesh_compatible (NMDeviceOlpcMesh *device, NMConnection *connection, 
 		return FALSE;
 	}
 
-	s_mesh = NM_SETTING_OLPC_MESH (nm_connection_get_setting (connection, NM_TYPE_SETTING_OLPC_MESH));
+	s_mesh = nm_connection_get_setting_olpc_mesh (connection);
 	if (!s_mesh) {
 		g_set_error (error, 0, 0,
 		             "The connection was not a valid Mesh connection.");
@@ -886,7 +886,7 @@ check_wimax_compatible (NMDeviceWimax *device, NMConnection *connection, GError 
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
 	if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_WIMAX_SETTING_NAME)) {
@@ -895,7 +895,7 @@ check_wimax_compatible (NMDeviceWimax *device, NMConnection *connection, GError 
 		return FALSE;
 	}
 
-	s_wimax = NM_SETTING_WIMAX (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIMAX));
+	s_wimax = nm_connection_get_setting_wimax (connection);
 	if (!s_wimax) {
 		g_set_error (error, 0, 0,
 		             "The connection was not a valid WiMAX connection.");
@@ -931,7 +931,7 @@ check_modem_compatible (NMDeviceModem *device, NMConnection *connection, GError 
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
 	/* Figure out what the modem supports */
@@ -943,7 +943,7 @@ check_modem_compatible (NMDeviceModem *device, NMConnection *connection, GError 
 			return FALSE;
 		}
 
-		s_gsm = NM_SETTING_GSM (nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM));
+		s_gsm = nm_connection_get_setting_gsm (connection);
 		if (!s_gsm) {
 			g_set_error (error, 0, 0,
 				     "The connection was not a valid GSM connection.");
@@ -956,7 +956,7 @@ check_modem_compatible (NMDeviceModem *device, NMConnection *connection, GError 
 			return FALSE;
 		}
 
-		s_cdma = NM_SETTING_CDMA (nm_connection_get_setting (connection, NM_TYPE_SETTING_CDMA));
+		s_cdma = nm_connection_get_setting_cdma (connection);
 		if (!s_cdma) {
 			g_set_error (error, 0, 0,
 				     "The connection was not a valid CDMA connection.");
@@ -1067,7 +1067,7 @@ find_device_for_connection (NmCli *nmc,
 	g_return_val_if_fail (spec_object != NULL && *spec_object == NULL, FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 	con_type = nm_setting_connection_get_connection_type (s_con);
 
@@ -1460,7 +1460,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	/* create NMClient */
 	nmc->get_client (nmc);
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 	con_type = nm_setting_connection_get_connection_type (s_con);
 
