@@ -652,7 +652,7 @@ activate_cb (DBusGProxy *proxy,
  * nm_client_activate_connection:
  * @client: a #NMClient
  * @connection: an #NMConnection
- * @device: the #NMDevice
+ * @device: (allow-none): the #NMDevice
  * @specific_object: (allow-none): the device specific object (currently
  *   used only for activating WiFi devices - should be the #NMAccessPoint<!-- -->'s
  *   path or WiMAX devices - use #NMWimaxNsp<!-- -->'s path).
