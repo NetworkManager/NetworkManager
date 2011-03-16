@@ -61,16 +61,18 @@ nm_ifnet_connection_new (const char *conn_name, NMConnection *source)
 {
 	NMConnection *tmp;
 	GObject *object;
-	GError **error = NULL;
+	GError *error = NULL;
 
 	g_return_val_if_fail (conn_name != NULL, NULL);
 
 	if (source)
 		tmp = g_object_ref (source);
 	else {
-		tmp = ifnet_update_connection_from_config_block (conn_name, error);
-		if (!tmp)
+		tmp = ifnet_update_connection_from_config_block (conn_name, &error);
+		if (!tmp){
+			g_error_free (error);
 			return NULL;
+		}
 	}
 
 	object = (GObject *) g_object_new (NM_TYPE_IFNET_CONNECTION, NULL);
@@ -98,7 +100,7 @@ commit_changes (NMSettingsConnection *connection,
 {
 	GError *error = NULL;
 	NMIfnetConnectionPrivate *priv = NM_IFNET_CONNECTION_GET_PRIVATE (connection);
-	const char *new_name = NULL;
+	gchar *new_name = NULL;
 
 	g_signal_emit (connection, signals[IFNET_CANCEL_MONITORS], 0);
 	if (!ifnet_update_parsers_by_connection (NM_CONNECTION (connection),
@@ -116,7 +118,7 @@ commit_changes (NMSettingsConnection *connection,
 	}
 
 	g_free (priv->conn_name);
-	priv->conn_name = g_strdup (new_name);
+	priv->conn_name = new_name;
 
 	NM_SETTINGS_CONNECTION_CLASS (nm_ifnet_connection_parent_class)->commit_changes (connection, callback, user_data);
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Successfully updated %s", priv->conn_name);

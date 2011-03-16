@@ -88,9 +88,8 @@ update_system_hostname (gpointer config)
 {
 	SCPluginIfnetPrivate *priv = SC_PLUGIN_IFNET_GET_PRIVATE (config);
 
-	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Updating hostname");
-
-	g_free (priv->hostname);
+	if (priv->hostname)
+		g_free (priv->hostname);
 	priv->hostname = read_hostname (IFNET_SYSTEM_HOSTNAME_FILE);
 
 	g_object_notify (G_OBJECT (config),
@@ -170,8 +169,6 @@ monitor_file_changes (const char *filename,
 				   info);
 		g_signal_connect (monitor, "changed", G_CALLBACK (file_changed),
 				  info);
-		PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Monitoring %s", filename);
-
 	} else
 		PLUGIN_WARN (IFNET_PLUGIN_NAME,
 			     "Monitoring %s failed, error: %s", filename,
@@ -288,7 +285,7 @@ reload_connections (gpointer config)
 					nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (old));
 					g_hash_table_remove (priv->config_connections, conn_name);
 					g_hash_table_insert (priv->config_connections, g_strdup (conn_name), new);
-					if (is_managed (conn_name))
+					if (is_managed_plugin () && is_managed (conn_name))
 						g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, new);
 				}
 			} else {
@@ -301,7 +298,7 @@ reload_connections (gpointer config)
 			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
 		} else if (new) {
 			g_hash_table_insert (priv->config_connections, g_strdup (conn_name), new);
-			if (is_managed (conn_name))
+			if (is_managed_plugin () && is_managed (conn_name))
 				g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, new);
 		}
 		g_hash_table_insert (new_conn_names, (gpointer) conn_name, (gpointer) conn_name);
@@ -389,21 +386,6 @@ SCPluginIfnet_init (NMSystemConfigInterface * config)
 	// GFileMonitor setup
 	setup_monitors (NULL, config);
 	reload_connections (config);
-	/* Now if we're running in managed mode, let NM know there are new connections */
-	if (!priv->unmanaged_well_known) {
-		GHashTableIter iter;
-		gpointer key;
-		gpointer value;
-
-		g_hash_table_iter_init (&iter, priv->config_connections);
-		while (g_hash_table_iter_next (&iter, &key, &value)) {
-			if (is_managed ((gchar *) key))
-				g_signal_emit_by_name
-				    (self,
-				     NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED,
-				     NM_CONNECTION (value));
-		}
-	}
 	/* Read hostname */
 	update_system_hostname (self);
 

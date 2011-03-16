@@ -57,9 +57,16 @@ update_connection_id (NMConnection *connection, const char *conn_name)
 	gchar *idstr = NULL;
 	gchar *uuid_base = NULL;
 	gchar *uuid = NULL;
+	int name_len;
 	NMSettingConnection *setting;
 
-	idstr = g_strdup_printf ("%s (%s)", get_prefix (), conn_name);
+	name_len = strlen (conn_name);
+	if ((name_len > 2) && (g_str_has_prefix (conn_name, "0x"))) {
+		gchar * conn_name_printable = utils_hexstr2bin (conn_name + 2, name_len - 2);
+		idstr = g_strdup_printf ("%s (%s)", get_prefix (), conn_name_printable);
+		g_free (conn_name_printable);
+	} else
+		idstr = g_strdup_printf ("%s (%s)", get_prefix (), conn_name);
 	uuid_base = idstr;
 	uuid = nm_utils_uuid_generate_from_string (uuid_base);
 	setting =
@@ -281,7 +288,7 @@ eap_tls_reader (const char *eap_method,
 
 	success = TRUE;
 
-      done:
+done:
 	return success;
 }
 
@@ -380,7 +387,7 @@ eap_peap_reader (const char *eap_method,
 
 	success = TRUE;
 
-      done:
+done:
 	if (list)
 		g_strfreev (list);
 	return success;
@@ -467,7 +474,7 @@ eap_ttls_reader (const char *eap_method,
 	}
 
 	success = TRUE;
-      done:
+done:
 	if (list)
 		g_strfreev (list);
 	g_free (inner_auth);
@@ -570,7 +577,7 @@ make_ip4_setting (NMConnection *connection,
 
 	NMSettingIP4Config *ip4_setting =
 	    NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new ());
-	const char *value;
+	const char *value, *method;
 	gboolean is_static_block = is_static_ip4 (conn_name);
 	ip_block *iblock = NULL;
 
@@ -582,13 +589,41 @@ make_ip4_setting (NMConnection *connection,
 		      && strstr (value, "nogateway") ? TRUE : FALSE, NULL);
 
 	if (!is_static_block) {
-		g_object_set (ip4_setting,
-			      NM_SETTING_IP4_CONFIG_METHOD,
-			      NM_SETTING_IP4_CONFIG_METHOD_AUTO,
-			      NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, FALSE, NULL);
-		PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Using DHCP for %s",
-			      conn_name);
-	} else {
+		method = ifnet_get_data (conn_name, "config");
+		if (!method){
+			g_set_error (error, ifnet_plugin_error_quark (), 0,
+						 "Unknown config for %s", conn_name);
+			g_object_unref (ip4_setting);
+			return;
+		}
+		if (!strcmp (method, "dhcp"))
+			g_object_set (ip4_setting,
+						  NM_SETTING_IP4_CONFIG_METHOD,
+						  NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+						  NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, FALSE, NULL);
+		else if (!strcmp (method, "autoip")){
+			g_object_set (ip4_setting,
+						  NM_SETTING_IP4_CONFIG_METHOD,
+						  NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
+						  NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, FALSE, NULL);
+			nm_connection_add_setting (connection, NM_SETTING (ip4_setting));
+			return;
+		} else if (!strcmp (method, "shared")){
+			g_object_set (ip4_setting,
+						  NM_SETTING_IP4_CONFIG_METHOD,
+						  NM_SETTING_IP4_CONFIG_METHOD_SHARED,
+						  NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, FALSE, NULL);
+			nm_connection_add_setting (connection, NM_SETTING (ip4_setting));
+			return;
+		} else {
+			g_set_error (error, ifnet_plugin_error_quark (), 0,
+						 "Unknown config for %s", conn_name);
+			g_object_unref (ip4_setting);
+			return;
+		}
+		PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Using %s method for %s",
+					  method, conn_name);
+	}else {
 		iblock = convert_ip4_config_block (conn_name);
 		if (!iblock) {
 			g_set_error (error, ifnet_plugin_error_quark (), 0,
@@ -612,18 +647,9 @@ make_ip4_setting (NMConnection *connection,
 				g_object_set (ip4_setting,
 					      NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES,
 					      TRUE, NULL);
-			if (nm_setting_ip4_config_add_address
-			    (ip4_setting, ip4_addr)) {
-				PLUGIN_PRINT (IFNET_PLUGIN_NAME,
-					      "new address: %d", iblock->ip);
-				PLUGIN_PRINT (IFNET_PLUGIN_NAME,
-					      "ipv4 addresses count: %d",
-					      nm_setting_ip4_config_get_num_addresses
-					      (ip4_setting));
-			} else {
+			if (!nm_setting_ip4_config_add_address (ip4_setting, ip4_addr))
 				PLUGIN_WARN (IFNET_PLUGIN_NAME,
 					     "ignoring duplicate IP4 address");
-			}
 			nm_ip4_address_unref (ip4_addr);
 			current_iblock = iblock;
 			iblock = iblock->next;
@@ -637,7 +663,7 @@ make_ip4_setting (NMConnection *connection,
 	}
 
 	/* add dhcp hostname and client id */
-	if (!is_static_block) {
+	if (!is_static_block && !strcmp (method, "dhcp")) {
 		gchar *dhcp_hostname, *client_id;
 
 		get_dhcp_hostname_and_client_id (&dhcp_hostname, &client_id);
@@ -871,11 +897,11 @@ make_ip6_setting (NMConnection *connection,
 		destroy_ip6_block (current_iblock);
 	}
 
-      done:
+done:
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 	return;
 
-      error:
+error:
 	g_object_unref (s_ip6);
 	PLUGIN_WARN (IFNET_PLUGIN_NAME, "    warning: Ignore IPv6 for %s",
 		     conn_name);
@@ -1024,7 +1050,7 @@ make_wireless_connection_setting (const char *conn_name,
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "wireless_setting added for %s",
 		      conn_name);
 	return NM_SETTING (wireless_setting);
-      error:
+error:
 	if (wireless_setting)
 		g_object_unref (wireless_setting);
 	return NULL;
@@ -1067,7 +1093,7 @@ make_leap_setting (const char *ssid, GError **error)
 		      NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "leap", NULL);
 
 	return wsec;
-      error:
+error:
 	if (wsec)
 		g_object_unref (wsec);
 	return NULL;
@@ -1244,7 +1270,7 @@ make_wep_setting (const char *ssid, GError **error)
 	}
 	return s_wireless_sec;
 
-      error:
+error:
 	if (s_wireless_sec)
 		g_object_unref (s_wireless_sec);
 	return NULL;
@@ -1253,7 +1279,6 @@ make_wep_setting (const char *ssid, GError **error)
 static char *
 parse_wpa_psk (const char *psk, GError **error)
 {
-	const char *p = psk;
 	char *hashed = NULL;
 	gboolean quoted = FALSE;
 
@@ -1286,7 +1311,7 @@ parse_wpa_psk (const char *psk, GError **error)
 		strip_string (stripped, '"');
 
 		/* Length check */
-		if (strlen (p) < 8 || strlen (p) > 63) {
+		if (strlen (stripped) < 8 || strlen (stripped) > 63) {
 			g_set_error (error, ifnet_plugin_error_quark (), 0,
 				     "Invalid WPA_PSK (passphrases must be between "
 				     "8 and 63 characters long (inclusive))");
@@ -1426,7 +1451,7 @@ fill_8021x (const char *ssid,
 			nm_setting_802_1x_add_eap_method (s_8021x, lower);
 			found = TRUE;
 
-		      next:
+		next:
 			eap++;
 		}
 
@@ -1447,7 +1472,7 @@ fill_8021x (const char *ssid,
 
 	return s_8021x;
 
-      error:
+error:
 	g_object_unref (s_8021x);
 	return NULL;
 }
@@ -1535,7 +1560,7 @@ make_wpa_setting (const char *ssid,
 		goto error;
 	}
 	return wsec;
-      error:
+error:
 	if (wsec)
 		g_object_unref (wsec);
 	return NULL;
@@ -1587,7 +1612,7 @@ make_wireless_security_setting (const char *conn_name,
 	}
 
 	return wsec;
-      error:
+error:
 	return NULL;
 }
 
@@ -1971,7 +1996,7 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 	}
 
 	success = TRUE;
-      out:
+out:
 	if (generated_pw) {
 		memset (generated_pw, 0, strlen (generated_pw));
 		g_free (generated_pw);
@@ -2123,7 +2148,8 @@ write_wireless_security_setting (NMConnection * connection,
 	} else if (!strcmp (key_mgmt, "wpa-eap")) {
 		wpa_set_data (conn_name, "key_mgmt", "WPA-EAP");
 		wpa = TRUE;
-	}
+	} else
+		PLUGIN_WARN (IFNET_PLUGIN_NAME, "Unknown key_mgmt: %s", key_mgmt);
 
 	if (auth_alg) {
 		if (!strcmp (auth_alg, "shared"))
@@ -2218,8 +2244,10 @@ write_wireless_security_setting (NMConnection * connection,
 			g_string_append (quoted, psk);
 			g_string_append_c (quoted, '"');
 		}
-		wpa_set_data (conn_name, "psk",
-			      quoted ? quoted->str : (gchar *) psk);
+		/* psk will be lost here if we don't check it for NULL */
+		if (psk)
+			wpa_set_data (conn_name, "psk",
+					  quoted ? quoted->str : (gchar *) psk);
 		if (quoted)
 			g_string_free (quoted, TRUE);
 	} else
@@ -2235,10 +2263,12 @@ update_wireless_ssid (NMConnection *connection,
                       const char *ssid,
                       gboolean hex)
 {
-	ifnet_delete_network (conn_name);
-	wpa_delete_security (conn_name);
+	if(strcmp (conn_name, ssid)){
+		ifnet_delete_network (conn_name);
+		wpa_delete_security (conn_name);
+	}
 
-	ifnet_add_connection (ssid, "wireless");
+	ifnet_add_network (ssid, "wireless");
 	wpa_add_security (ssid);
 }
 
@@ -2279,11 +2309,12 @@ write_wireless_setting (NMConnection *connection,
 		return FALSE;
 	}
 
-	/* If the SSID contains any non-printable characters, we need to use the
-	 * hex notation of the SSID instead.
+	/* If the SSID contains any non-alnum characters, we need to use
+	 * the hex notation of the SSID instead. (Because openrc doesn't
+	 * support these characters, see bug #356337)
 	 */
 	for (i = 0; i < ssid->len; i++) {
-		if (!isprint (ssid->data[i])) {
+		if (!isalnum (ssid->data[i])) {
 			hex_ssid = TRUE;
 			break;
 		}
@@ -2482,11 +2513,14 @@ write_ip4_setting (NMConnection *connection, const char *conn_name, GError **err
 		}
 		ifnet_set_data (conn_name, "config", ips->str);
 		g_string_free (ips, TRUE);
-	} else
+	} else if (!strcmp (value, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
+		ifnet_set_data (conn_name, "config", "shared");
+	else if (!strcmp (value, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
+		ifnet_set_data (conn_name, "config", "autoip");
+	else
 		ifnet_set_data (conn_name, "config", "dhcp");
 
 	/* DNS Servers */
-	ifnet_set_data (conn_name, "dns_servers", NULL);
 	num = nm_setting_ip4_config_get_num_dns (s_ip4);
 	if (num > 0) {
 		dns = g_string_new (NULL);
@@ -2779,7 +2813,7 @@ ifnet_update_parsers_by_connection (NMConnection *connection,
                                     const char *conn_name,
                                     const char *config_file,
                                     const char *wpa_file,
-                                    const char **out_new_name,
+                                    gchar **out_new_name,
                                     GError **error)
 {
 	NMSettingConnection *s_con;
@@ -2799,6 +2833,7 @@ ifnet_update_parsers_by_connection (NMConnection *connection,
 			     NM_SETTING_CONNECTION_SETTING_NAME);
 		return FALSE;
 	}
+
 
 	type = nm_setting_connection_get_connection_type (s_con);
 	if (!type) {
@@ -2867,7 +2902,7 @@ ifnet_update_parsers_by_connection (NMConnection *connection,
 		wpa_flush_to_file (wpa_file);
 
 	if (out_new_name)
-		*out_new_name = new_name;
+		*out_new_name = g_strdup (conn_name);
 
 out:
 	return success;
@@ -2901,7 +2936,7 @@ get_wired_name ()
 	for (; i < 256; i++) {
 		gchar *conn_name = g_strdup_printf ("eth%d", i);
 
-		if (!ifnet_has_connection (conn_name)) {
+		if (!ifnet_has_network (conn_name)) {
 			return conn_name;
 		} else
 			g_free (conn_name);
@@ -2918,7 +2953,7 @@ get_ppp_name ()
 	for (; i < 256; i++) {
 		gchar *conn_name = g_strdup_printf ("ppp%d", i);
 
-		if (!ifnet_has_connection (conn_name)) {
+		if (!ifnet_has_network (conn_name)) {
 			return conn_name;
 		} else
 			g_free (conn_name);
@@ -3015,7 +3050,7 @@ ifnet_add_new_connection (NMConnection *connection,
 		goto out;
 	}
 
-	if (ifnet_add_connection (new_name, new_type)) {
+	if (ifnet_add_network (new_name, new_type)) {
 		success = ifnet_update_parsers_by_connection (connection,
 		                                              new_name,
 		                                              config_file,

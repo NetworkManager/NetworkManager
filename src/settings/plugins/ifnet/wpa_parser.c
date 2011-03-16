@@ -367,7 +367,7 @@ wpa_flush_to_file (const char *config_file)
 	gboolean result = FALSE;
 
 	if (!wpa_parser_data_changed)
-		return FALSE;
+		return TRUE;
 	if (!wsec_table || !wsec_global_table)
 		return FALSE;
 
@@ -439,7 +439,7 @@ wpa_flush_to_file (const char *config_file)
 	}
 	wpa_parser_data_changed = FALSE;
 	result = TRUE;
-      done:
+done:
 	g_io_channel_shutdown (channel, FALSE, NULL);
 	g_io_channel_unref (channel);
 	return result;
@@ -449,28 +449,35 @@ wpa_flush_to_file (const char *config_file)
 void
 wpa_set_data (const char *ssid, const char *key, const char *value)
 {
-	gpointer orig_key = NULL, orig_value = NULL;
+	gpointer old_key = NULL, old_value = NULL;
 	GHashTable *security = g_hash_table_lookup (wsec_table, ssid);
+	gchar * stripped = NULL;
 
 	g_return_if_fail (security != NULL);
 
+	if (value){
+		stripped = g_strdup(value);
+		if (strcmp (key, "ssid") != 0 && strcmp (key, "psk") != 0
+			&& !g_str_has_prefix (key, "wep_key"))
+			strip_string (stripped, '"');
+	}
+
 	/* Remove old key value pairs */
 	if (g_hash_table_lookup_extended
-	    (security, key, &orig_key, &orig_value)) {
-		g_hash_table_remove (security, orig_key);
-		g_free (orig_key);
-		g_free (orig_value);
-	}
+	    (security, key, &old_key, &old_value)) {
+		if (stripped && !strcmp(old_value, stripped)){
+			g_free (stripped);
+			return;
+		}
+		g_hash_table_remove (security, old_key);
+		g_free (old_key);
+		g_free (old_value);
+	} else if (!value)
+		return;
 
 	/* Add new key value */
-	if (value) {
-		gchar *new_value = g_strdup (value);
-
-		if (strcmp (key, "ssid") != 0 && strcmp (key, "psk") != 0
-		    && !g_str_has_prefix (key, "wep_key"))
-			strip_string (new_value, '"');
-		g_hash_table_insert (security, g_strdup (key), new_value);
-	}
+	if (stripped)
+		g_hash_table_insert (security, g_strdup (key), stripped);
 	wpa_parser_data_changed = TRUE;
 }
 
@@ -484,7 +491,7 @@ gboolean
 wpa_add_security (const char *ssid)
 {
 	if (wpa_has_security (ssid))
-		return FALSE;
+		return TRUE;
 	else {
 		GHashTable *security =
 		    g_hash_table_new (g_str_hash, g_str_equal);
@@ -511,16 +518,16 @@ wpa_add_security (const char *ssid)
 gboolean
 wpa_delete_security (const char *ssid)
 {
-	gpointer orig_key, orig_value;
+	gpointer old_key, old_value;
 
 	g_return_val_if_fail (wsec_table != NULL && ssid != NULL, FALSE);
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Deleting security for %s", ssid);
 	if (!g_hash_table_lookup_extended
-	    (wsec_table, ssid, &orig_key, &orig_value))
+	    (wsec_table, ssid, &old_key, &old_value))
 		return FALSE;
-	g_hash_table_remove (wsec_table, orig_key);
-	g_free (orig_key);
-	destroy_security ((GHashTable *) orig_value);
+	g_hash_table_remove (wsec_table, old_key);
+	g_free (old_key);
+	destroy_security ((GHashTable *) old_value);
 	wpa_parser_data_changed = TRUE;
 	return TRUE;
 

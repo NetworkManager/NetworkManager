@@ -274,6 +274,10 @@ is_static_ip4 (const char *conn_name)
 
 	if (!data)
 		return FALSE;
+	if (!strcmp (data, "shared"))
+		return FALSE;
+	if (!strcmp (data, "autoip"))
+		return FALSE;
 	dhcp6 = strstr (data, "dhcp6");
 	if (dhcp6) {
 		gchar *dhcp4;
@@ -320,7 +324,7 @@ is_ip4_address (const char *in_address)
 		*tmp = '\0';
 	g_regex_match (regex, address, 0, &match_info);
 	result = g_match_info_matches (match_info);
-      done:
+done:
 	if (match_info)
 		g_match_info_free (match_info);
 	g_regex_unref (regex);
@@ -445,7 +449,7 @@ create_ip4_block (gchar * ip)
 	}
 	g_strfreev (ip_mask);
 	return iblock;
-      error:
+error:
 	if (!is_ip6_address (ip))
 		PLUGIN_WARN (IFNET_PLUGIN_NAME, "Can't handle IPv4 address: %s",
 			     ip);
@@ -480,7 +484,7 @@ create_ip6_block (gchar * ip)
 		iblock->prefix = 64;
 	g_free (dup_ip);
 	return iblock;
-      error:
+error:
 	if (!is_ip4_address (ip))
 		PLUGIN_WARN (IFNET_PLUGIN_NAME, "Can't handle IPv6 address: %s",
 			     ip);
@@ -514,7 +518,7 @@ get_ip4_gateway (gchar * gateway)
 		goto error;
 	g_free (tmp);
 	return tmp_ip4_addr.s_addr;
-      error:
+error:
 	if (!is_ip6_address (tmp))
 		PLUGIN_WARN (IFNET_PLUGIN_NAME, "Can't handle IPv4 gateway: %s",
 			     tmp);
@@ -544,7 +548,7 @@ get_ip6_next_hop (gchar * next_hop)
 		goto error;
 	g_free (tmp);
 	return tmp_ip6_addr;
-      error:
+error:
 	if (!is_ip4_address (tmp))
 		PLUGIN_WARN (IFNET_PLUGIN_NAME,
 			     "Can't handle IPv6 next_hop: %s", tmp);
@@ -946,8 +950,8 @@ get_dhcp_hostname_and_client_id (char **hostname, char **client_id)
 		else if ((tmp = strstr (line, "send host-name")) != NULL) {
 			tmp += strlen ("send host-name");
 			g_strstrip (tmp);
-			strip_string (tmp, '"');
 			strip_string (tmp, ';');
+			strip_string (tmp, '"');
 			if (tmp[0] != '\0')
 				*hostname = g_strdup (tmp);
 			else

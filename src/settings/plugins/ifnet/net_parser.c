@@ -58,8 +58,10 @@ add_new_connection_config (const gchar * type, const gchar * name)
 }
 
 gboolean
-ifnet_add_connection (const char *name, const char *type)
+ifnet_add_network (const char *name, const char *type)
 {
+	if (ifnet_has_network (name))
+		return TRUE;
 	if (add_new_connection_config (type, name)) {
 		PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Adding network for %s", name);
 		net_parser_data_changed = TRUE;
@@ -69,7 +71,7 @@ ifnet_add_connection (const char *name, const char *type)
 }
 
 gboolean
-ifnet_has_connection (const char *conn_name)
+ifnet_has_network (const char *conn_name)
 {
 	return g_hash_table_lookup (conn_table, conn_name) != NULL;
 }
@@ -256,7 +258,7 @@ strip_function (GIOChannel * channel, gchar * line)
 				g_free (tmp);
 		}
 	}
-      done:
+done:
 	functions_list =
 	    g_list_append (functions_list, g_strdup (function_str->str));
 	g_string_free (function_str, TRUE);
@@ -375,23 +377,31 @@ ifnet_get_data (const char *conn_name, const char *key)
 void
 ifnet_set_data (const char *conn_name, const char *key, const char *value)
 {
-	gpointer orin_key = NULL, orin_value = NULL;
+	gpointer old_key = NULL, old_value = NULL;
 	GHashTable *conn = g_hash_table_lookup (conn_table, conn_name);
+	gchar * stripped = NULL;
 
 	if (!conn) {
-		PLUGIN_WARN (IFNET_PLUGIN_NAME,
-			     "%s does not exsit!", conn_name);
+		PLUGIN_WARN (IFNET_PLUGIN_NAME, "%s does not exsit!", conn_name);
 		return;
 	}
-	/* Remove existing key value pair */
-	if (g_hash_table_lookup_extended (conn, key, &orin_key, &orin_value)) {
-		g_hash_table_remove (conn, orin_key);
-		g_free (orin_key);
-		g_free (orin_value);
+	if (value){
+		stripped = g_strdup (value);
+		strip_string (stripped, '"');
 	}
-	if (value)
-		g_hash_table_insert (conn, g_strdup (key),
-				     strip_string (g_strdup (value), '"'));
+	/* Remove existing key value pair */
+	if (g_hash_table_lookup_extended (conn, key, &old_key, &old_value)) {
+		if (stripped && !strcmp(old_value, stripped)){
+			g_free (stripped);
+			return;
+		}
+		g_hash_table_remove (conn, old_key);
+		g_free (old_key);
+		g_free (old_value);
+	} else if (!value)
+		return;
+	if (stripped)
+		g_hash_table_insert (conn, g_strdup (key), stripped);
 	net_parser_data_changed = TRUE;
 }
 
@@ -443,7 +453,7 @@ format_ips (gchar * value, gchar ** out_line, gchar * key, gchar * name)
 					"\t\"%s\"\n", ipset[i]);
 	g_string_append (formated_string, ")\n");
 	*out_line = g_strdup (formated_string->str);
-      done:
+done:
 	g_string_free (formated_string, TRUE);
 	g_strfreev (ipset);
 }
@@ -461,7 +471,7 @@ ifnet_flush_to_file (const char *config_file)
 	gboolean result = FALSE;
 
 	if (!net_parser_data_changed)
-		return FALSE;
+		return TRUE;
 	if (!conn_table || !global_settings_table)
 		return FALSE;
 
@@ -571,7 +581,7 @@ ifnet_flush_to_file (const char *config_file)
 	}
 	result = TRUE;
 	net_parser_data_changed = FALSE;
-      done:
+done:
 	g_io_channel_shutdown (channel, FALSE, NULL);
 	g_io_channel_unref (channel);
 	return result;
