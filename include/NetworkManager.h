@@ -138,6 +138,7 @@ typedef enum {
 
 /* 802.11 Access Point flags */
 typedef enum {
+	/*< flags >*/
 	NM_802_11_AP_FLAGS_NONE    = 0x00000000,
 	NM_802_11_AP_FLAGS_PRIVACY = 0x00000001
 } NM80211ApFlags;
@@ -150,6 +151,7 @@ typedef enum {
  * information elements.
  */
 typedef enum {
+	/*< flags >*/
 	NM_802_11_AP_SEC_NONE            = 0x00000000,
 	NM_802_11_AP_SEC_PAIR_WEP40      = 0x00000001,
 	NM_802_11_AP_SEC_PAIR_WEP104     = 0x00000002,
@@ -183,6 +185,7 @@ typedef enum {
  * Bluetooth device.
  */
 typedef enum {
+	/*< flags >*/
 	NM_BT_CAPABILITY_NONE = 0x00000000,
 	NM_BT_CAPABILITY_DUN  = 0x00000001,
 	NM_BT_CAPABILITY_NAP  = 0x00000002,
@@ -205,6 +208,7 @@ typedef enum {
  * API.
  */
 typedef enum {
+	/*< flags >*/
 	NM_DEVICE_MODEM_CAPABILITY_NONE      = 0x00000000,
 	NM_DEVICE_MODEM_CAPABILITY_POTS      = 0x00000001,
 	NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO = 0x00000002,
