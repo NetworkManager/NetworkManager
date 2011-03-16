@@ -145,14 +145,15 @@ delete_cb (DBusGProxy *proxy, GError *error, gpointer user_data)
 	RemoteCall *call = user_data;
 	NMRemoteConnectionDeleteFunc func = (NMRemoteConnectionDeleteFunc) call->callback;
 
-	(*func)(call->self, error, call->user_data);
+	if (func != NULL)
+		(*func)(call->self, error, call->user_data);
 	remote_call_complete (call->self, call);
 }
 
 /**
  * nm_remote_connection_delete:
  * @connection: the #NMRemoteConnection
- * @callback: (scope async): a function to be called when the delete completes
+ * @callback: (scope async allow-none): a function to be called when the delete completes
  * @user_data: caller-specific data to be passed to @callback
  *
  * Delete the connection.
@@ -167,7 +168,6 @@ nm_remote_connection_delete (NMRemoteConnection *self,
 
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_REMOTE_CONNECTION (self));
-	g_return_if_fail (callback != NULL);
 
 	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
 
