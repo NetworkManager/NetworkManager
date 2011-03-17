@@ -259,6 +259,8 @@ wpas_state_string_to_enum (const char *str_state)
 		return NM_SUPPLICANT_INTERFACE_STATE_INACTIVE;
 	else if (!strcmp (str_state, "scanning"))
 		return NM_SUPPLICANT_INTERFACE_STATE_SCANNING;
+	else if (!strcmp (str_state, "authenticating"))
+		return NM_SUPPLICANT_INTERFACE_STATE_AUTHENTICATING;
 	else if (!strcmp (str_state, "associating"))
 		return NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATING;
 	else if (!strcmp (str_state, "associated"))
@@ -270,6 +272,7 @@ wpas_state_string_to_enum (const char *str_state)
 	else if (!strcmp (str_state, "completed"))
 		return NM_SUPPLICANT_INTERFACE_STATE_COMPLETED;
 
+	nm_log_warn (LOGD_SUPPLICANT, "Unknown supplicant state '%s'", str_state);
 	return -1;
 }
 
@@ -959,6 +962,8 @@ nm_supplicant_interface_state_to_string (guint32 state)
 		return "inactive";
 	case NM_SUPPLICANT_INTERFACE_STATE_SCANNING:
 		return "scanning";
+	case NM_SUPPLICANT_INTERFACE_STATE_AUTHENTICATING:
+		return "authenticating";
 	case NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATING:
 		return "associating";
 	case NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATED:
