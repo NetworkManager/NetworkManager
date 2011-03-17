@@ -859,7 +859,7 @@ companion_scan_allowed_cb (NMDeviceWifi *companion, gpointer user_data)
 
 	g_object_get (G_OBJECT (self), NM_DEVICE_INTERFACE_STATE, &state, NULL);
 
-	/* Don't allow the companion to scan while configure the mesh interface */
+	/* Don't allow the companion to scan while configuring the mesh interface */
 	return (state < NM_DEVICE_STATE_PREPARE) || (state > NM_DEVICE_STATE_IP_CONFIG);
 }
 
