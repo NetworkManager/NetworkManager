@@ -48,6 +48,11 @@
           The connection is activated.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="DEACTIVATING" value="3">
+        <tp:docstring>
+          The connection is being torn down and cleaned up.
+        </tp:docstring>
+      </tp:enumvalue>
     </tp:enum>
   </interface>
 </node>

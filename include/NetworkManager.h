@@ -417,14 +417,23 @@ typedef enum {
 } NMDeviceStateReason;
 
 
+/**
+ * NMActiveConnectionState:
+ * @NM_ACTIVE_CONNECTION_STATE_UNKNOWN: the state of the connection is unknown
+ * @NM_ACTIVE_CONNECTION_STATE_ACTIVATING: a network connection is being prepared
+ * @NM_ACTIVE_CONNECTION_STATE_ACTIVATED: there is a connection to the network
+ * @NM_ACTIVE_CONNECTION_STATE_DEACTIVATING: the network connection is being
+ *   torn down and cleaned up
+ *
+ * #NMActiveConnectionState values indicate the state of a connection to a
+ * specific network while it is starting, connected, or disconnecting from that
+ * network.
+ */
 typedef enum {
 	NM_ACTIVE_CONNECTION_STATE_UNKNOWN = 0,
-
-	/* Indicates the connection is activating */
 	NM_ACTIVE_CONNECTION_STATE_ACTIVATING,
-
-	/* Indicates the connection is currently active */
-	NM_ACTIVE_CONNECTION_STATE_ACTIVATED
+	NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
+	NM_ACTIVE_CONNECTION_STATE_DEACTIVATING
 } NMActiveConnectionState;
 
 #endif /* NETWORK_MANAGER_H */

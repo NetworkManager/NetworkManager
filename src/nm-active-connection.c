@@ -68,7 +68,7 @@ nm_active_connection_install_properties (GObjectClass *object_class,
 		                   "State",
 		                   "State",
 		                   NM_ACTIVE_CONNECTION_STATE_UNKNOWN,
-		                   NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
+		                   NM_ACTIVE_CONNECTION_STATE_DEACTIVATING,
 		                   NM_ACTIVE_CONNECTION_STATE_UNKNOWN,
 		                   G_PARAM_READABLE));
 

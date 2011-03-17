@@ -317,6 +317,22 @@
     </section>
 
     <section>
+    <title>New Active Connection State</title>
+    <para>
+      Along with the new device states, an
+      <ulink url="spec.html#type-NM_ACTIVE_CONNECTION_STATE">additional
+      ActiveConnection state</ulink> has been added: DEACTIVATING.  This state
+      is entered when the connection is being torn down and deactivated.
+    </para>
+    <para>
+      <emphasis role="strong">Action:</emphasis> where code checks active
+      connection states or shows UI indication of active connection states, make
+      sure the DEACTIVATING state is processed correctly, and that code in
+      switch()-type statements is updated to handle it.
+    </para>
+    </section>
+
+    <section>
     <title>Consolidated Modem Devices</title>
     <para>
       Many new mobile broadband devices support multiple access families, like

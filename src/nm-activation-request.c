@@ -440,8 +440,12 @@ device_state_changed (NMDevice *device,
 		new_default = priv->is_default;
 		new_default6 = priv->is_default6;
 		break;
+	case NM_DEVICE_STATE_DEACTIVATING:
+		new_ac_state = NM_ACTIVE_CONNECTION_STATE_DEACTIVATING;
+		break;
 	default:
 		new_ac_state = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
+		new_default = new_default6 = FALSE;
 		break;
 	}
 
