@@ -249,9 +249,11 @@ typedef enum {
  *   activated
  * @NM_DEVICE_STATE_ACTIVATED: the device has a network connection, either local
  *   or global.
- * @NM_DEVICE_STATE_DEACTIVATING: the device's network connection is no longer
- *   valid and the device is tearing down resources used for the previous
- *   connection.
+ * @NM_DEVICE_STATE_DEACTIVATING: a disconnection from the current network
+ *   connection was requested, and the device is cleaning up resources used for
+ *   that connection.  The network connection may still be valid.
+ * @NM_DEVICE_STATE_FAILED: the device failed to connect to the requested
+ *   network and is cleaning up the connection request
  *
  **/
 typedef enum {
