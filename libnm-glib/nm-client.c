@@ -734,9 +734,9 @@ add_activate_cb (DBusGProxy *proxy,
  * @callback: (scope async) (allow-none): the function to call when the call is done
  * @user_data: (closure): user data to pass to the callback function
  *
- * Adds a new connection using the given details (if any) as a template
- * (automatically filling in missing settings with the capabilities of the
- * given device and specific object), then activate the new connection.
+ * Adds a new connection using the given details (if any) as a template,
+ * automatically filling in missing settings with the capabilities of the
+ * given device and specific object.  The new connection is then activated.
  * Cannot be used for VPN connections at this time.
  **/
 void
