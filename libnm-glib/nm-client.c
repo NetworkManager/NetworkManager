@@ -653,9 +653,13 @@ activate_cb (DBusGProxy *proxy,
  * @client: a #NMClient
  * @connection: an #NMConnection
  * @device: (allow-none): the #NMDevice
- * @specific_object: (allow-none): the device specific object (currently
- *   used only for activating WiFi devices - should be the #NMAccessPoint<!-- -->'s
- *   path or WiMAX devices - use #NMWimaxNsp<!-- -->'s path).
+ * @specific_object: (allow-none): the object path of a connection-type-specific
+ *   object this activation should use. This parameter is currently ignored for
+ *   wired and mobile broadband connections, and the value of NULL should be used
+ *   (ie, no specific object).  For WiFi or WiMAX connections, pass the object
+ *   path of a #NMAccessPoint or #NMWimaxNsp owned by @device, which you can
+ *   get using nm_object_get_path(), and which will be used to complete the
+ *   details of the newly added connection.
  * @callback: (scope async) (allow-none): the function to call when the call is done
  * @user_data: (closure): user data to pass to the callback function
  *
@@ -728,8 +732,9 @@ add_activate_cb (DBusGProxy *proxy,
  * @specific_object: (allow-none): the object path of a connection-type-specific
  *   object this activation should use. This parameter is currently ignored for
  *   wired and mobile broadband connections, and the value of NULL should be used
- *   (ie, no specific object).  For WiFi connections, pass the object path of a
- *   specific AP from the card's scan list, which will be used to complete the
+ *   (ie, no specific object).  For WiFi or WiMAX connections, pass the object
+ *   path of a #NMAccessPoint or #NMWimaxNsp owned by @device, which you can
+ *   get using nm_object_get_path(), and which will be used to complete the
  *   details of the newly added connection.
  * @callback: (scope async) (allow-none): the function to call when the call is done
  * @user_data: (closure): user data to pass to the callback function
