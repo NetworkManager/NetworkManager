@@ -729,9 +729,10 @@ get_agent_request_secrets (Request *req, gboolean include_system_secrets)
 
 	tmp = nm_connection_duplicate (req->connection);
 	nm_connection_clear_secrets (tmp);
-	if (include_system_secrets)
-		nm_connection_update_secrets (tmp, req->setting_name, req->existing_secrets, NULL);
-	else {
+	if (include_system_secrets) {
+		if (req->existing_secrets)
+			nm_connection_update_secrets (tmp, req->setting_name, req->existing_secrets, NULL);
+	} else {
 		/* Update secret flags in the temporary connection to indicate that
 		 * the system secrets we're not sending to the agent aren't required,
 		 * so the agent can properly validate UI controls and such.
