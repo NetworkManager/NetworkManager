@@ -297,8 +297,14 @@ get_dev_state_string (NMDeviceState state)
 		return "connecting (need authentication)";
 	else if (state == NM_DEVICE_STATE_IP_CONFIG)
 		return "connecting (getting IP configuration)";
+	else if (state == NM_DEVICE_STATE_IP_CHECK)
+		return "connecting (checking IP connectivity)";
+	else if (state == NM_DEVICE_STATE_SECONDARIES)
+		return "connecting (starting dependent connections)";
 	else if (state == NM_DEVICE_STATE_ACTIVATED)
 		return "connected";
+	else if (state == NM_DEVICE_STATE_DEACTIVATING)
+		return "disconnecting";
 	else if (state == NM_DEVICE_STATE_FAILED)
 		return "connection failed";
 	return "unknown";

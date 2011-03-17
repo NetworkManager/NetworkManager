@@ -1190,6 +1190,8 @@ nm_device_handle_autoip4_event (NMDevice *self,
 			aipd_timeout_remove (self);
 			nm_device_activate_schedule_stage4_ip4_config_get (self);
 			break;
+		case NM_DEVICE_STATE_IP_CHECK:
+		case NM_DEVICE_STATE_SECONDARIES:
 		case NM_DEVICE_STATE_ACTIVATED:
 			priv->aipd_addr = ip.s_addr;
 			if (!handle_autoip_change (self, &reason))
@@ -2961,29 +2963,20 @@ gboolean
 nm_device_is_activating (NMDevice *device)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	NMDeviceState state;
 
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
-	switch (nm_device_get_state (device)) {
-	case NM_DEVICE_STATE_PREPARE:
-	case NM_DEVICE_STATE_CONFIG:
-	case NM_DEVICE_STATE_NEED_AUTH:
-	case NM_DEVICE_STATE_IP_CONFIG:
+	state = nm_device_get_state (device);
+	if (state >= NM_DEVICE_STATE_PREPARE && state <= NM_DEVICE_STATE_SECONDARIES)
 		return TRUE;
-		break;
-	default:
-		break;
-	}
 
 	/* There's a small race between the time when stage 1 is scheduled
 	 * and when the device actually sets STATE_PREPARE when the activation
 	 * handler is actually run.  If there's an activation handler scheduled
 	 * we're activating anyway.
 	 */
-	if (priv->act_source_id)
-		return TRUE;
-
-	return FALSE;
+	return priv->act_source_id ? TRUE : FALSE;
 }
 
 
@@ -3457,6 +3450,12 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
+static gboolean
+_is_connected (NMDeviceState state)
+{
+	return (state >= NM_DEVICE_STATE_IP_CONFIG && state <= NM_DEVICE_STATE_DEACTIVATING);
+}
+
 static void
 get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
@@ -3475,7 +3474,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->iface);
 		break;
 	case NM_DEVICE_INTERFACE_PROP_IP_IFACE:
-		if ((state == NM_DEVICE_STATE_ACTIVATED) || (state == NM_DEVICE_STATE_IP_CONFIG))
+		if (_is_connected (state))
 			g_value_set_string (value, nm_device_get_ip_iface (self));
 		else
 			g_value_set_string (value, NULL);
@@ -3493,33 +3492,25 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->ip4_address);
 		break;
 	case NM_DEVICE_INTERFACE_PROP_IP4_CONFIG:
-		if ((state == NM_DEVICE_STATE_ACTIVATED) || (state == NM_DEVICE_STATE_IP_CONFIG)) {
-			if (priv->ip4_config) {
-				g_value_set_boxed (value, nm_ip4_config_get_dbus_path (priv->ip4_config));
-				break;
-			}
-		}
-		g_value_set_boxed (value, "/");
+		if (_is_connected (state) && priv->ip4_config)
+			g_value_set_boxed (value, nm_ip4_config_get_dbus_path (priv->ip4_config));
+		else
+			g_value_set_boxed (value, "/");
 		break;
 	case NM_DEVICE_INTERFACE_PROP_DHCP4_CONFIG:
-		if (   ((state == NM_DEVICE_STATE_ACTIVATED) || (state == NM_DEVICE_STATE_IP_CONFIG))
-		    && priv->dhcp4_client)
+		if (_is_connected (state) && priv->dhcp4_client)
 			g_value_set_boxed (value, nm_dhcp4_config_get_dbus_path (priv->dhcp4_config));
 		else
 			g_value_set_boxed (value, "/");
 		break;
 	case NM_DEVICE_INTERFACE_PROP_IP6_CONFIG:
-		if ((state == NM_DEVICE_STATE_ACTIVATED) || (state == NM_DEVICE_STATE_IP_CONFIG)) {
-			if (priv->ip6_config) {
-				g_value_set_boxed (value, nm_ip6_config_get_dbus_path (priv->ip6_config));
-				break;
-			}
-		}
-		g_value_set_boxed (value, "/");
+		if (_is_connected (state) && priv->ip6_config)
+			g_value_set_boxed (value, nm_ip6_config_get_dbus_path (priv->ip6_config));
+		else
+			g_value_set_boxed (value, "/");
 		break;
 	case NM_DEVICE_INTERFACE_PROP_DHCP6_CONFIG:
-		if (   ((state == NM_DEVICE_STATE_ACTIVATED) || (state == NM_DEVICE_STATE_IP_CONFIG))
-		    && priv->dhcp6_client)
+		if (_is_connected (state) && priv->dhcp6_client)
 			g_value_set_boxed (value, nm_dhcp6_config_get_dbus_path (priv->dhcp6_config));
 		else
 			g_value_set_boxed (value, "/");

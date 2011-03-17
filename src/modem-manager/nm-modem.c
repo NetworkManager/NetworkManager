@@ -754,6 +754,12 @@ nm_modem_device_state_changed (NMModem *self,
 	}
 }
 
+static gboolean
+_state_is_active (NMDeviceState state)
+{
+	return (state >= NM_DEVICE_STATE_IP_CONFIG && state <= NM_DEVICE_STATE_DEACTIVATING);
+}
+
 gboolean
 nm_modem_hw_is_up (NMModem *self, NMDevice *device)
 {
@@ -764,7 +770,7 @@ nm_modem_hw_is_up (NMModem *self, NMDevice *device)
 		NMDeviceState state;
 
 		state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (device));
-		if (priv->pending_ip4_config || state == NM_DEVICE_STATE_IP_CONFIG || state == NM_DEVICE_STATE_ACTIVATED)
+		if (priv->pending_ip4_config || _state_is_active (state))
 			return nm_system_device_is_up (device);
 	}
 
@@ -781,7 +787,7 @@ nm_modem_hw_bring_up (NMModem *self, NMDevice *device, gboolean *no_firmware)
 		NMDeviceState state;
 
 		state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (device));
-		if (priv->pending_ip4_config || state == NM_DEVICE_STATE_IP_CONFIG || state == NM_DEVICE_STATE_ACTIVATED)
+		if (priv->pending_ip4_config || _state_is_active (state))
 			return nm_system_device_set_up_down (device, TRUE, no_firmware);
 	}
 
