@@ -763,17 +763,6 @@ nm_vpn_connection_disconnect (NMVPNConnection *connection,
 /******************************************************************************/
 
 static void
-cancel_get_secrets (NMVPNConnection *self)
-{
-	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
-
-	if (priv->secrets_id) {
-		nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (priv->connection), priv->secrets_id);
-		priv->secrets_id = 0;
-	}
-}
-
-static void
 vpn_secrets_cb (NMSettingsConnection *connection,
                 guint32 call_id,
                 const char *setting_name,
@@ -973,7 +962,11 @@ connection_state_changed (NMVPNConnection *self,
 {
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
-	cancel_get_secrets (self);
+	/* Clear any in-progress secrets request */
+	if (priv->secrets_id) {
+		nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (priv->connection), priv->secrets_id);
+		priv->secrets_id = 0;
+	}
 
 	switch (state) {
 	case NM_VPN_CONNECTION_STATE_NEED_AUTH:
@@ -1041,8 +1034,10 @@ dispose (GObject *object)
 	if (priv->proxy)
 		g_object_unref (priv->proxy);
 
-	if (priv->secrets_id)
-		nm_act_request_cancel_secrets (priv->act_request, priv->secrets_id);
+	if (priv->secrets_id) {
+		nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (priv->connection),
+		                                       priv->secrets_id);
+	}
 
 	g_object_unref (priv->act_request);
 	g_object_unref (priv->connection);
