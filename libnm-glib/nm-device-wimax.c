@@ -162,7 +162,10 @@ nm_device_wimax_get_active_nsp (NMDeviceWimax *wimax)
 	case NM_DEVICE_STATE_CONFIG:
 	case NM_DEVICE_STATE_NEED_AUTH:
 	case NM_DEVICE_STATE_IP_CONFIG:
+	case NM_DEVICE_STATE_IP_CHECK:
+	case NM_DEVICE_STATE_SECONDARIES:
 	case NM_DEVICE_STATE_ACTIVATED:
+	case NM_DEVICE_STATE_DEACTIVATING:
 		break;
 	default:
 		return NULL;

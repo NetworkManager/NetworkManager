@@ -209,15 +209,14 @@ nm_device_wifi_get_bitrate (NMDeviceWifi *device)
 
 	state = nm_device_get_state (NM_DEVICE (device));
 	switch (state) {
-	case NM_DEVICE_STATE_PREPARE:
-	case NM_DEVICE_STATE_CONFIG:
-	case NM_DEVICE_STATE_NEED_AUTH:
 	case NM_DEVICE_STATE_IP_CONFIG:
+	case NM_DEVICE_STATE_IP_CHECK:
+	case NM_DEVICE_STATE_SECONDARIES:
 	case NM_DEVICE_STATE_ACTIVATED:
+	case NM_DEVICE_STATE_DEACTIVATING:
 		break;
 	default:
 		return 0;
-		break;
 	}
 
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
@@ -281,7 +280,10 @@ nm_device_wifi_get_active_access_point (NMDeviceWifi *device)
 	case NM_DEVICE_STATE_CONFIG:
 	case NM_DEVICE_STATE_NEED_AUTH:
 	case NM_DEVICE_STATE_IP_CONFIG:
+	case NM_DEVICE_STATE_IP_CHECK:
+	case NM_DEVICE_STATE_SECONDARIES:
 	case NM_DEVICE_STATE_ACTIVATED:
+	case NM_DEVICE_STATE_DEACTIVATING:
 		break;
 	default:
 		return NULL;
