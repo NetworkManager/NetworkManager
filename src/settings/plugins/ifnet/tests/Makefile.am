@@ -11,3 +11,8 @@ check_ifnet_LDADD = $(top_builddir)/libnm-util/libnm-util.la \
 		    $(builddir)/../lib-ifnet-io.la \
 		    $(CHECK_LIBS) \
 		    $(GLIB_LIBS)
+EXTRA_DIST = hostname \
+			 net \
+			 net.all \
+			 nm-system-settings.conf \
+			 wpa_supplicant.conf
