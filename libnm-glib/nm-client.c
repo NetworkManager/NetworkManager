@@ -721,9 +721,9 @@ add_activate_cb (DBusGProxy *proxy,
 /**
  * nm_client_add_and_activate_connection:
  * @client: a #NMClient
- * @partial: an #NMConnection to add; the connection may be partially filled
- *   and will be completed by NetworkManager using the given @device and
- *   @specific_object before being added
+ * @partial: (allow-none): an #NMConnection to add; the connection may be
+ *   partially filled (or even NULL) and will be completed by NetworkManager
+ *   using the given @device and @specific_object before being added
  * @device: the #NMDevice
  * @specific_object: (allow-none): the object path of a connection-type-specific
  *   object this activation should use. This parameter is currently ignored for
