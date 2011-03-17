@@ -153,7 +153,7 @@ delete_cb (DBusGProxy *proxy, GError *error, gpointer user_data)
 /**
  * nm_remote_connection_delete:
  * @connection: the #NMRemoteConnection
- * @callback: (scope async allow-none): a function to be called when the delete completes
+ * @callback: (scope async) (allow-none): a function to be called when the delete completes
  * @user_data: caller-specific data to be passed to @callback
  *
  * Delete the connection.
