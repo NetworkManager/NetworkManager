@@ -501,6 +501,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 	gpointer callback_data = other_data3;
 	GError *local = NULL;
 	GHashTable *hash;
+	gboolean agent_had_system = FALSE;
 
 	if (error) {
 		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets request error: (%d) %s",
@@ -525,8 +526,6 @@ agent_secrets_done_cb (NMAgentManager *manager,
 
 	g_assert (secrets);
 	if (agent_dbus_owner) {
-		gboolean has_system = FALSE;
-
 		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets returned from agent %s",
 		            nm_connection_get_uuid (NM_CONNECTION (self)),
 		            setting_name,
@@ -539,8 +538,8 @@ agent_secrets_done_cb (NMAgentManager *manager,
 		 * save those system-owned secrets.  If not, discard them and use the
 		 * existing secrets, or fail the connection.
 		 */
-		for_each_secret (NM_CONNECTION (self), secrets, has_system_owned_secrets, &has_system);
-		if (has_system) {
+		for_each_secret (NM_CONNECTION (self), secrets, has_system_owned_secrets, &agent_had_system);
+		if (agent_had_system) {
 			if (flags == 0) {  /* ie SECRETS_FLAG_NONE */
 				/* No user interaction was allowed when requesting secrets; the
 				 * agent is being bad.  Remove system-owned secrets.
@@ -597,12 +596,24 @@ agent_secrets_done_cb (NMAgentManager *manager,
 			 */
 			update_secrets_cache (self);
 
-			nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) saving new secrets to backing storage",
-			            nm_connection_get_uuid (NM_CONNECTION (self)),
-			            setting_name,
-			            call_id);
+			/* Only save secrets to backing storage if the agent returned any
+			 * new system secrets.  If it didn't, then the secrets are agent-
+			 * owned and there's no point to writing out the connection when
+			 * nothing has changed, since agent-owned secrets don't get saved here.
+			 */
+			if (agent_had_system) {
+				nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) saving new secrets to backing storage",
+						    nm_connection_get_uuid (NM_CONNECTION (self)),
+						    setting_name,
+						    call_id);
 
-			nm_settings_connection_commit_changes (self, new_secrets_commit_cb, NULL);
+				nm_settings_connection_commit_changes (self, new_secrets_commit_cb, NULL);
+			} else {
+				nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) new agent secrets processed",
+						    nm_connection_get_uuid (NM_CONNECTION (self)),
+						    setting_name,
+						    call_id);
+			}
 		} else {
 			nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) failed to update with agent secrets: (%d) %s",
 			            nm_connection_get_uuid (NM_CONNECTION (self)),
