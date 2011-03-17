@@ -115,7 +115,10 @@ typedef struct {
 	                     gpointer callback_data);
 
 	/* Called when the subclass should cancel an outstanding request to
-	 * get secrets for a given connection.
+	 * get secrets for a given connection.  Canceling the request MUST
+	 * call the callback that was passed along with the initial get_secrets
+	 * call, sending the NM_SECRET_AGENT_ERROR/NM_SECRET_AGENT_ERROR_AGENT_CANCELED
+	 * error to that callback.
 	 */
 	void (*cancel_get_secrets) (NMSecretAgent *agent,
 	                            const char *connection_path,

@@ -69,6 +69,9 @@ typedef struct {
 	DBusGProxy *manager_proxy;
 	DBusGProxyCall *reg_call;
 
+	/* GetSecretsInfo structs of in-flight GetSecrets requests */
+	GSList *pending_gets;
+
 	char *nm_owner;
 
 	char *identifier;
@@ -172,6 +175,27 @@ _internal_unregister (NMSecretAgent *self)
 	}
 }
 
+typedef struct {
+	char *path;
+	char *setting_name;
+	DBusGMethodInvocation *context;
+} GetSecretsInfo;
+
+static void
+get_secrets_info_finalize (NMSecretAgent *self, GetSecretsInfo *info)
+{
+	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
+
+	g_return_if_fail (info != NULL);
+
+	priv->pending_gets = g_slist_remove (priv->pending_gets, info);
+
+	g_free (info->path);
+	g_free (info->setting_name);
+	memset (info, 0, sizeof (*info));
+	g_free (info);
+}
+
 static void
 name_owner_changed (DBusGProxy *proxy,
                     const char *name,
@@ -183,6 +207,7 @@ name_owner_changed (DBusGProxy *proxy,
 	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 	gboolean old_owner_good = (old_owner && strlen (old_owner));
 	gboolean new_owner_good = (new_owner && strlen (new_owner));
+	GSList *iter;
 
 	if (strcmp (name, NM_DBUS_SERVICE) == 0) {
 		g_free (priv->nm_owner);
@@ -192,6 +217,17 @@ name_owner_changed (DBusGProxy *proxy,
 			/* NM appeared */
 			auto_register_cb (self);
 		} else if (old_owner_good && !new_owner_good) {
+			/* Cancel any pending secrets requests */
+			for (iter = priv->pending_gets; iter; iter = g_slist_next (iter)) {
+				GetSecretsInfo *info = iter->data;
+
+				NM_SECRET_AGENT_GET_CLASS (self)->cancel_get_secrets (self,
+				                                                      info->path,
+				                                                      info->setting_name);
+			}
+			g_slist_free (priv->pending_gets);
+			priv->pending_gets = NULL;
+
 			/* NM disappeared */
 			_internal_unregister (self);
 		} else if (old_owner_good && new_owner_good && strcmp (old_owner, new_owner)) {
@@ -312,12 +348,15 @@ get_secrets_cb (NMSecretAgent *self,
                 GError *error,
                 gpointer user_data)
 {
-	DBusGMethodInvocation *context = user_data;
+	GetSecretsInfo *info = user_data;
 
 	if (error)
-		dbus_g_method_return_error (context, error);
+		dbus_g_method_return_error (info->context, error);
 	else
-		dbus_g_method_return (context, secrets);
+		dbus_g_method_return (info->context, secrets);
+
+	/* Remove the request from internal tracking */
+	get_secrets_info_finalize (self, info);
 }
 
 static void
@@ -329,8 +368,10 @@ impl_secret_agent_get_secrets (NMSecretAgent *self,
                                guint32 flags,
                                DBusGMethodInvocation *context)
 {
+	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 	GError *error = NULL;
 	NMConnection *connection = NULL;
+	GetSecretsInfo *info;
 
 	/* Make sure the request comes from NetworkManager and is valid */
 	if (!verify_request (self, context, connection_hash, connection_path, &connection, &error)) {
@@ -339,6 +380,12 @@ impl_secret_agent_get_secrets (NMSecretAgent *self,
 		return;
 	}
 
+	info = g_malloc0 (sizeof (GetSecretsInfo));
+	info->path = g_strdup (connection_path);
+	info->setting_name = g_strdup (setting_name);
+	info->context = context;
+	priv->pending_gets = g_slist_append (priv->pending_gets, info);
+
 	NM_SECRET_AGENT_GET_CLASS (self)->get_secrets (self,
 	                                               connection,
 	                                               connection_path,
@@ -346,8 +393,23 @@ impl_secret_agent_get_secrets (NMSecretAgent *self,
 	                                               hints,
 	                                               flags,
 	                                               get_secrets_cb,
-	                                               context);
+	                                               info);
 	g_object_unref (connection);
+}
+
+static GetSecretsInfo *
+find_get_secrets_info (GSList *list, const char *path, const char *setting_name)
+{
+	GSList *iter;
+
+	for (iter = list; iter; iter = g_slist_next (iter)) {
+		GetSecretsInfo *candidate = iter->data;
+
+		if (   g_strcmp0 (path, candidate->path) == 0
+		    && g_strcmp0 (setting_name, candidate->setting_name) == 0)
+			return candidate;
+	}
+	return NULL;
 }
 
 static void
@@ -356,16 +418,33 @@ impl_secret_agent_cancel_get_secrets (NMSecretAgent *self,
                                       const char *setting_name,
                                       DBusGMethodInvocation *context)
 {
+	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 	GError *error = NULL;
+	GetSecretsInfo *info;
 
 	/* Make sure the request comes from NetworkManager and is valid */
 	if (!verify_request (self, context, NULL, NULL, NULL, &error)) {
 		dbus_g_method_return_error (context, error);
 		g_clear_error (&error);
-	} else {
-		NM_SECRET_AGENT_GET_CLASS (self)->cancel_get_secrets (self, connection_path, setting_name);
-		dbus_g_method_return (context);
+		return;
 	}
+
+	info = find_get_secrets_info (priv->pending_gets, connection_path, setting_name);
+	if (!info) {
+		g_set_error_literal (&error,
+		                     NM_SECRET_AGENT_ERROR,
+		                     NM_SECRET_AGENT_ERROR_INTERNAL_ERROR,
+		                     "No secrets request in progress for this connection.");
+		dbus_g_method_return_error (context, error);
+		g_clear_error (&error);
+		return;
+	}
+
+	/* Send the cancel request up to the subclass and finalize it */
+	NM_SECRET_AGENT_GET_CLASS (self)->cancel_get_secrets (self,
+	                                                      info->path,
+	                                                      info->setting_name);
+	dbus_g_method_return (context);
 }
 
 static void
@@ -816,6 +895,9 @@ dispose (GObject *object)
 
 		g_free (priv->identifier);
 		g_free (priv->nm_owner);
+
+		while (priv->pending_gets)
+			get_secrets_info_finalize (self, priv->pending_gets->data);
 
 		if (priv->dbus_proxy)
 			g_object_unref (priv->dbus_proxy);
