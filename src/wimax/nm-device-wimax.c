@@ -748,8 +748,11 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (device);
 	NMConnection *connection;
 	NMSettingWimax *s_wimax;
-	const char *nsp;
+	const char *nsp_name, *iface;
 	int ret;
+
+	iface = nm_device_get_iface (device);
+	g_assert (iface);
 
 	connection = nm_act_request_get_connection (nm_device_get_act_request (device));
 	g_assert (connection);
@@ -757,14 +760,17 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	s_wimax = nm_connection_get_setting_wimax (connection);
 	g_assert (s_wimax);
 
-	nsp = nm_setting_wimax_get_network_name (s_wimax);
-	g_assert (nsp);
+	nsp_name = nm_setting_wimax_get_network_name (s_wimax);
+	g_assert (nsp_name);
+
+	nm_log_info (LOGD_WIMAX, "(%s): connecting to NSP '%s'",
+	             iface, nsp_name);
 
 	priv->connect_failed = FALSE;
-	ret = iwmx_sdk_connect (priv->sdk, nsp);
+	ret = iwmx_sdk_connect (priv->sdk, nsp_name);
 	if (ret < 0 && ret != -EINPROGRESS) {
 		nm_log_err (LOGD_WIMAX, "(%s): failed to connect to NSP '%s'",
-		            nm_device_get_iface (device), nsp);
+		            iface, nsp_name);
 		*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
