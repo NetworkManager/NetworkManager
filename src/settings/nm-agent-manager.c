@@ -527,7 +527,7 @@ request_add_agent (Request *req,
 	/* If the request should filter agents by UID, do that now */
 	if (req->filter_by_uid && (agent_uid != req->uid_filter)) {
 		nm_log_dbg (LOGD_AGENTS, "(%s) agent ignored for secrets request %p/%s "
-		            "(uid %ld not required %ld)",
+		            "(uid %d not required %ld)",
 				    nm_secret_agent_get_description (agent),
 				    req, req->setting_name, agent_uid, req->uid_filter);
 		return;

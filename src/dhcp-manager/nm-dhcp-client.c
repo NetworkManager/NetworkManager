@@ -1227,7 +1227,7 @@ ip6_options_to_config (NMDHCPClient *self)
 	if (str) {
 		if (!inet_pton (AF_INET6, str, &tmp_addr)) {
 			nm_log_warn (LOGD_DHCP6, "(%s): DHCP returned invalid address '%s'",
-			             priv->iface);
+			             priv->iface, str);
 			goto error;
 		}
 
