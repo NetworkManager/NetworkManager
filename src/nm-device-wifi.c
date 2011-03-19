@@ -772,7 +772,8 @@ supplicant_interface_release (NMDeviceWifi *self)
 	/* Reset the scan interval to be pretty frequent when disconnected */
 	priv->scan_interval = SCAN_INTERVAL_MIN + SCAN_INTERVAL_STEP;
 	nm_log_dbg (LOGD_WIFI_SCAN, "(%s): reset scanning interval to %d seconds",
-	            nm_device_get_iface (NM_DEVICE (self)));
+	            nm_device_get_iface (NM_DEVICE (self)),
+	            priv->scan_interval);
 
 	remove_supplicant_interface_error_handler (self);
 
@@ -1161,8 +1162,7 @@ _set_hw_addr (NMDeviceWifi *self, const guint8 *addr, const char *detail)
 
 	/* Do nothing if current MAC is same */
 	if (!memcmp (&priv->hw_addr, addr, ETH_ALEN)) {
-		nm_log_dbg (LOGD_DEVICE | LOGD_ETHER, "(%s): no MAC address change needed",
-		            iface, detail, mac_str);
+		nm_log_dbg (LOGD_DEVICE | LOGD_ETHER, "(%s): no MAC address change needed", iface);
 		g_free (mac_str);
 		return TRUE;
 	}
@@ -1494,11 +1494,8 @@ nm_device_wifi_get_mode (NMDeviceWifi *self)
 			break;
 		}
 	} else {
-		if (errno != ENODEV) {
-			nm_log_warn (LOGD_HW | LOGD_WIFI,
-			             "(%s): error %d getting card mode",
-			             iface, strerror (errno));
-		}
+		if (errno != ENODEV)
+			nm_log_warn (LOGD_HW | LOGD_WIFI, "(%s): error %d getting card mode", iface, errno);
 	}
 	close (fd);
 
@@ -1547,11 +1544,8 @@ nm_device_wifi_set_mode (NMDeviceWifi *self, const NM80211Mode mode)
 	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
 
 	if (ioctl (fd, SIOCSIWMODE, &wrq) < 0) {
-		if (errno != ENODEV) {
-			nm_log_err (LOGD_HW | LOGD_WIFI,
-			            "(%s): error setting mode %d",
-			            iface, mode, strerror (errno));
-		}
+		if (errno != ENODEV)
+			nm_log_err (LOGD_HW | LOGD_WIFI, "(%s): error setting mode %d", iface, mode);
 	} else
 		success = TRUE;
 	close (fd);

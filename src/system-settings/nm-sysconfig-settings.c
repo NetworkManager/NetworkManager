@@ -922,7 +922,6 @@ permission_call_done (GObject *object, GAsyncResult *result, gpointer user_data)
 	/* Some random error happened */
 	if (error) {
 		nm_log_err (LOGD_SYS_SET, "error checking '%s' permission: (%d) %s",
-		            __FILE__, __LINE__, __func__,
 		            call->pk_action,
 		            error ? error->code : -1,
 		            error && error->message ? error->message : "(unknown)");

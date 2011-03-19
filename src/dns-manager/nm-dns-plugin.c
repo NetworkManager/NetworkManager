@@ -205,7 +205,7 @@ ensure_killed (gpointer data)
 	/* ensure the child is reaped */
 	nm_log_dbg (LOGD_DNS, "waiting for %s pid %d to exit", info->progname, info->pid);
 	waitpid (info->pid, NULL, 0);
-	nm_log_dbg (LOGD_DNS, "dnsmasq pid %d cleaned up", info->progname, info->pid);
+	nm_log_dbg (LOGD_DNS, "dnsmasq pid %d cleaned up", info->pid);
 
 	g_free (info->progname);
 	g_free (info);

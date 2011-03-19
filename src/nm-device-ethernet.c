@@ -371,7 +371,7 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 				priv->subchan3 = g_path_get_basename (buf);
 		} else {
 			nm_log_warn (LOGD_DEVICE | LOGD_HW,
-			             "(%s): failed to read cdev link '%s': %s",
+			             "(%s): failed to read cdev link '%s': %d",
 			             iface, cdev_path, errno);
 		}
 		g_free (cdev_path);
@@ -681,8 +681,7 @@ _set_hw_addr (NMDeviceEthernet *self, const guint8 *addr, const char *detail)
 
 	/* Do nothing if current MAC is same */
 	if (!memcmp (&priv->hw_addr, addr, ETH_ALEN)) {
-		nm_log_dbg (LOGD_DEVICE | LOGD_ETHER, "(%s): no MAC address change needed",
-		            iface, detail, mac_str);
+		nm_log_dbg (LOGD_DEVICE | LOGD_ETHER, "(%s): no MAC address change needed", iface);
 		g_free (mac_str);
 		return TRUE;
 	}

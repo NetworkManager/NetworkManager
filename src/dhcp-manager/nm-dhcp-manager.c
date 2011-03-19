@@ -235,19 +235,19 @@ nm_dhcp_manager_handle_event (DBusGProxy *proxy,
 
 	client = get_client_for_pid (manager, (GPid) temp);
 	if (client == NULL) {
-		nm_log_warn (LOGD_DHCP, "(pid %d) unhandled DHCP event for interface %s", temp, iface);
+		nm_log_warn (LOGD_DHCP, "(pid %zd) unhandled DHCP event for interface %s", temp, iface);
 		goto out;
 	}
 
 	if (strcmp (iface, nm_dhcp_client_get_iface (client))) {
-		nm_log_warn (LOGD_DHCP, "(pid %d) received DHCP event from unexpected interface '%s' (expected '%s')",
+		nm_log_warn (LOGD_DHCP, "(pid %zd) received DHCP event from unexpected interface '%s' (expected '%s')",
 		             temp, iface, nm_dhcp_client_get_iface (client));
 		goto out;
 	}
 
 	reason = get_option (options, "reason");
 	if (reason == NULL) {
-		nm_log_warn (LOGD_DHCP, "(pid %d) DHCP event didn't have a reason", temp);
+		nm_log_warn (LOGD_DHCP, "(pid %zd) DHCP event didn't have a reason", temp);
 		goto out;
 	}
 

@@ -447,7 +447,7 @@ wpa_ie_data * wpa_parse_wpa_ie(const u8 *wpa_ie, size_t wpa_ie_len)
 		nm_log_dbg (LOGD_WIFI, "   key mgmt     0x%X", data->key_mgmt);
 		nm_log_dbg (LOGD_WIFI, "   capabilities 0x%X", data->capabilities);
 		nm_log_dbg (LOGD_WIFI, "   # pmkid      0x%X", data->num_pmkid);
-		nm_log_dbg (LOGD_WIFI, "");
+		nm_log_dbg (LOGD_WIFI, " ");
 	}
 
 	return data;

@@ -369,6 +369,7 @@ try_add_service (NMVPNManager *self, const char *namefile)
 	service = nm_vpn_service_new (namefile, &error);
 	if (!service) {
 		nm_log_warn (LOGD_VPN, "failed to load VPN service file %s: (%d) %s",
+		             namefile,
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
@@ -377,7 +378,7 @@ try_add_service (NMVPNManager *self, const char *namefile)
 
 	service_name = nm_vpn_service_get_dbus_service (service);
 	g_hash_table_insert (priv->services, (char *) service_name, service);
-	nm_log_info (LOGD_VPN, "VPN: loaded %s", service_name, service);
+	nm_log_info (LOGD_VPN, "VPN: loaded %s", service_name);
 }
 
 static void
@@ -409,7 +410,7 @@ vpn_dir_changed (GFileMonitor *monitor,
 			/* Stop active VPN connections and destroy the service */
 			nm_vpn_service_connections_stop (service, TRUE,
 			                                 NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
-			nm_log_info (LOGD_VPN, "VPN: unloaded %s", service_name, service);
+			nm_log_info (LOGD_VPN, "VPN: unloaded %s", service_name);
 			g_hash_table_remove (priv->services, service_name);
 		}
 		break;
