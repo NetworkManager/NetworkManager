@@ -239,7 +239,7 @@ DISTCLEANFILES = libnm-glib.pc libnm-glib.pc
 
 EXTRA_DIST = libnm-glib.pc.in libnm-glib-vpn.pc.in libnm-glib.ver libnm-glib-vpn.ver
 
-CLEANFILES = $(BUILT_SOURCES)
+CLEANFILES = $(BUILT_SOURCES) *-bindings.h *-glue.h
 
 -include $(INTROSPECTION_MAKEFILE)
 INTROSPECTION_GIRS =
