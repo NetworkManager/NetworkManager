@@ -69,24 +69,27 @@ GQuark nm_logging_error_quark    (void);
 GType  nm_logging_error_get_type (void);
 
 
-#define nm_log_err(domain, fmt, args...) \
-	{ _nm_log (G_STRLOC, G_STRFUNC, domain, LOGL_ERR, fmt, ##args); }
+#define nm_log_err(domain, ...) \
+	_nm_log (G_STRLOC, G_STRFUNC, domain, LOGL_ERR, ## __VA_ARGS__ )
 
-#define nm_log_warn(domain, fmt, args...) \
-	{ _nm_log (G_STRLOC, G_STRFUNC, domain, LOGL_WARN, fmt, ##args); }
+#define nm_log_warn(domain, ...) \
+	_nm_log (G_STRLOC, G_STRFUNC, domain, LOGL_WARN, ## __VA_ARGS__ )
 
-#define nm_log_info(domain, fmt, args...) \
-	{ _nm_log (G_STRLOC, G_STRFUNC, domain, LOGL_INFO, fmt, ##args); }
+#define nm_log_info(domain, ...) \
+	_nm_log (G_STRLOC, G_STRFUNC, domain, LOGL_INFO, ## __VA_ARGS__ )
 
-#define nm_log_dbg(domain, fmt, args...) \
-	{ _nm_log (G_STRLOC, G_STRFUNC, domain, LOGL_DEBUG, fmt, ##args); }
+#define nm_log_dbg(domain, ...) \
+	_nm_log (G_STRLOC, G_STRFUNC, domain, LOGL_DEBUG, ## __VA_ARGS__ )
 
-#define nm_log(domain, level, fmt, args...) \
-	{ _nm_log (G_STRLOC, G_STRFUNC, domain, level, fmt, ##args); }
+#define nm_log(domain, level, ...) \
+	_nm_log (G_STRLOC, G_STRFUNC, domain, level, ## __VA_ARGS__ )
 
-void _nm_log (const char *loc, const char *func,
-              guint32 domain, guint32 level,
-              const char *fmt, ...);
+void _nm_log (const char *loc,
+              const char *func,
+              guint32 domain,
+              guint32 level,
+              const char *fmt,
+              ...) __attribute__((__format__ (__printf__, 5, 6)));
 
 const char *nm_logging_level_to_string (void);
 char *nm_logging_domains_to_string (void);
