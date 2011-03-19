@@ -218,12 +218,13 @@ nm_logging_level_enabled (guint32 level)
 	return !!(log_level & level);
 }
 
-void _nm_log (const char *loc,
-              const char *func,
-              guint32 domain,
-              guint32 level,
-              const char *fmt,
-              ...)
+void
+_nm_log (const char *loc,
+         const char *func,
+         guint32 domain,
+         guint32 level,
+         const char *fmt,
+         ...)
 {
 	va_list args;
 	char *msg;
