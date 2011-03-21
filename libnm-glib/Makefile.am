@@ -136,7 +136,9 @@ libnm_glib_la_LIBADD = \
 	$(DBUS_LIBS) \
 	$(GUDEV_LIBS)
 
-libnm_glib_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm-glib.ver \
+SYMBOL_VIS_FILE=$(srcdir)/libnm-glib.ver
+
+libnm_glib_la_LDFLAGS = -Wl,--version-script=$(SYMBOL_VIS_FILE) \
 	-version-info "5:0:1"
 
 noinst_PROGRAMS = libnm-glib-test
@@ -265,3 +267,11 @@ typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
 
 CLEANFILES += $(gir_DATA) $(typelib_DATA)
 endif
+
+if WITH_TESTS
+
+check-local:
+	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-glib.so $(SYMBOL_VIS_FILE)
+
+endif
+
