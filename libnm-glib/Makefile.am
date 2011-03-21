@@ -129,7 +129,9 @@ libnm_glib_la_LIBADD = \
 	$(DBUS_LIBS) \
 	$(GUDEV_LIBS)
 
-libnm_glib_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm-glib.ver \
+SYMBOL_VIS_FILE=$(srcdir)/libnm-glib.ver
+
+libnm_glib_la_LDFLAGS = -Wl,--version-script=$(SYMBOL_VIS_FILE) \
 	-version-info "6:3:4"
 
 noinst_PROGRAMS = libnm-glib-test
@@ -208,3 +210,11 @@ DISTCLEANFILES = libnm-glib.pc libnm-glib.pc
 EXTRA_DIST = libnm-glib.pc.in libnm-glib-vpn.pc.in libnm-glib.ver libnm-glib-vpn.ver
 
 CLEANFILES = $(BUILT_SOURCES)
+
+if WITH_TESTS
+
+check-local:
+	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-glib.so $(SYMBOL_VIS_FILE)
+
+endif
+
