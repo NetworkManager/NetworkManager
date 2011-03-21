@@ -58,7 +58,9 @@ libnm_util_la_SOURCES=			\
 
 libnm_util_la_LIBADD = $(GLIB_LIBS) $(DBUS_LIBS) $(UUID_LIBS)
 
-libnm_util_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm-util.ver \
+SYMBOL_VIS_FILE=$(srcdir)/libnm-util.ver
+
+libnm_util_la_LDFLAGS = -Wl,--version-script=$(SYMBOL_VIS_FILE) \
 	-version-info "7:1:6"
 
 if WITH_GNUTLS
@@ -110,4 +112,11 @@ pkgconfig_DATA = libnm-util.pc
 DISTCLEANFILES = libnm-util.pc
 
 EXTRA_DIST = libnm-util.pc.in libnm-util.ver
+
+if WITH_TESTS
+
+check-local:
+	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-util.so $(SYMBOL_VIS_FILE)
+
+endif
 
