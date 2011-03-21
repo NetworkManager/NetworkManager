@@ -701,7 +701,7 @@ process_nduseropt_rdnss (NMIP6Device *device, struct nd_opt_hdr *opt)
 			cur_server->expires = server.expires;
 
 			if (server.expires > 0) {
-				nm_log_dbg (LOGD_IP6, "(%s): refreshing RA-provided nameserver %s (expires in %zd seconds)",
+				nm_log_dbg (LOGD_IP6, "(%s): refreshing RA-provided nameserver %s (expires in %ld seconds)",
 				            device->iface, buf,
 				            server.expires - now);
 				break;
@@ -720,7 +720,7 @@ process_nduseropt_rdnss (NMIP6Device *device, struct nd_opt_hdr *opt)
 		if (i < device->rdnss_servers->len)
 			continue;
 
-		nm_log_dbg (LOGD_IP6, "(%s): found RA-provided nameserver %s (expires in %zd seconds)",
+		nm_log_dbg (LOGD_IP6, "(%s): found RA-provided nameserver %s (expires in %ld seconds)",
 		            device->iface, buf, server.expires - now);
 
 		server.addr = *addr;
@@ -843,7 +843,7 @@ process_nduseropt_dnssl (NMIP6Device *device, struct nd_opt_hdr *opt)
 			cur_domain->expires = domain.expires;
 
 			if (domain.expires > 0) {
-				nm_log_dbg (LOGD_IP6, "(%s): refreshing RA-provided domain %s (expires in %zd seconds)",
+				nm_log_dbg (LOGD_IP6, "(%s): refreshing RA-provided domain %s (expires in %ld seconds)",
 				            device->iface, domain_str,
 				            domain.expires - now);
 				break;
@@ -862,7 +862,7 @@ process_nduseropt_dnssl (NMIP6Device *device, struct nd_opt_hdr *opt)
 		if (i < device->dnssl_domains->len)
 			continue;
 
-		nm_log_dbg (LOGD_IP6, "(%s): found RA-provided domain %s (expires in %zd seconds)",
+		nm_log_dbg (LOGD_IP6, "(%s): found RA-provided domain %s (expires in %ld seconds)",
 		            device->iface, domain_str, domain.expires - now);
 
 		g_assert (strlen (domain_str) < sizeof (domain.domain));
