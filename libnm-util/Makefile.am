@@ -66,7 +66,9 @@ libnm_util_la_SOURCES = \
 
 libnm_util_la_LIBADD = $(GLIB_LIBS) $(DBUS_LIBS) $(UUID_LIBS)
 
-libnm_util_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm-util.ver \
+SYMBOL_VIS_FILE=$(srcdir)/libnm-util.ver
+
+libnm_util_la_LDFLAGS = -Wl,--version-script=$(SYMBOL_VIS_FILE) \
 	-version-info "2:0:0"
 
 if WITH_GNUTLS
@@ -143,3 +145,11 @@ typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
 
 CLEANFILES += $(gir_DATA) $(typelib_DATA)
 endif
+
+if WITH_TESTS
+
+check-local:
+	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-util.so $(SYMBOL_VIS_FILE)
+
+endif
+
