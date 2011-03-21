@@ -9935,6 +9935,8 @@ test_read_ibft_malformed (const char *name, const char *iscsiadm_path)
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 
+	g_assert (g_file_test (iscsiadm_path, G_FILE_TEST_EXISTS));
+
 	connection = connection_from_file (TEST_IFCFG_IBFT_STATIC,
 	                                   NULL,
 	                                   TYPE_ETHERNET,
