@@ -471,7 +471,6 @@ update_ip4_routing_and_dns (NMPolicy *policy, gboolean force_update)
 
 			dns_type = NM_DNS_IP_CONFIG_TYPE_VPN;
 		}
-		g_object_unref (candidate);
 	}
 	g_slist_free (vpns);
 
@@ -596,7 +595,6 @@ update_ip6_routing_and_dns (NMPolicy *policy, gboolean force_update)
 
 			dns_type = NM_DNS_IP_CONFIG_TYPE_VPN;
 		}
-		g_object_unref (candidate);
 	}
 	g_slist_free (vpns);
 #endif
