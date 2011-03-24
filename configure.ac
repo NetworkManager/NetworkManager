@@ -32,7 +32,7 @@ AC_PROG_INSTALL
 
 dnl Initialize libtool
 LT_PREREQ([2.2])
-LT_INIT
+LT_INIT([disable-static])
 
 dnl maintainer mode stuff
 if test $USE_MAINTAINER_MODE = yes; then
