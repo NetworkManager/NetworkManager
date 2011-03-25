@@ -41,8 +41,6 @@
 
 void _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enabled);
 
-static void recheck_pending_activations (NMClient *self);
-
 G_DEFINE_TYPE (NMClient, nm_client, NM_TYPE_OBJECT)
 
 #define NM_CLIENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CLIENT, NMClientPrivate))
@@ -617,11 +615,12 @@ recheck_pending_activations (NMClient *self)
 	 */
 	for (i = 0; i < active_connections->len; i++) {
 		NMActiveConnection *active = g_ptr_array_index (active_connections, i);
+		const char *active_path = nm_object_get_path (NM_OBJECT (active));
 
 		for (iter = priv->pending_activations; iter; iter = g_slist_next (iter)) {
 			ActivateInfo *info = iter->data;
 
-			if (g_strcmp0 (info->active_path, nm_object_get_path (NM_OBJECT (active))) == 0) {
+			if (g_strcmp0 (info->active_path, active_path) == 0) {
 				/* Call the pending activation's callback and it all up*/
 				activate_info_complete (info, active, NULL);
 				activate_info_free (info);
@@ -687,7 +686,7 @@ nm_client_activate_connection (NMClient *client,
 		g_return_if_fail (NM_IS_DEVICE (device));
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 
-	info = g_slice_new (ActivateInfo);
+	info = g_slice_new0 (ActivateInfo);
 	info->act_fn = callback;
 	info->user_data = user_data;
 	info->client = client;
@@ -759,7 +758,7 @@ nm_client_add_and_activate_connection (NMClient *client,
 	g_return_if_fail (NM_IS_CLIENT (client));
 	g_return_if_fail (NM_IS_DEVICE (device));
 
-	info = g_slice_new (ActivateInfo);
+	info = g_slice_new0 (ActivateInfo);
 	info->add_act_fn = callback;
 	info->user_data = user_data;
 	info->client = client;
