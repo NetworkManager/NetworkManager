@@ -31,12 +31,13 @@
 #include <net/ethernet.h>
 #include <netinet/ether.h>
 #include <pwd.h>
-
-#include <NetworkManager.h>
-#include <nm-connection.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
+#include <glib/gi18n.h>
+
+#include <NetworkManager.h>
+#include <nm-connection.h>
 #include <nm-setting-8021x.h>
 #include <nm-setting-bluetooth.h>
 #include <nm-setting-cdma.h>
@@ -1326,6 +1327,45 @@ default_wired_try_update (NMDefaultWiredConnection *wired,
 	return TRUE;
 }
 
+static char *
+find_next_default_wired_name (NMSettings *self)
+{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	GHashTableIter iter;
+	NMConnection *connection = NULL;
+	GSList *names = NULL, *niter;
+	char *cname = NULL;
+	int i = 0;
+
+	g_hash_table_iter_init (&iter, priv->connections);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &connection)) {
+		const char *id;
+
+		id = nm_connection_get_id (connection);
+		g_assert (id);
+		names = g_slist_append (names, (gpointer) id);
+	}
+
+	/* Find the next available unique connection name */
+	while (!cname && (i++ < 10000)) {
+		char *temp;
+		gboolean found = FALSE;
+
+		temp = g_strdup_printf (_("Wired connection %d"), i);
+		for (niter = names; niter; niter = g_slist_next (niter)) {
+			if (g_strcmp0 (niter->data, temp) != 0) {
+				found = TRUE;
+				cname = g_strdup (temp);
+				break;
+			}
+		}
+		g_free (temp);
+	}
+	g_slist_free (names);
+
+	return cname;
+}
+
 void
 nm_settings_device_added (NMSettings *self, NMDevice *device)
 {
@@ -1334,6 +1374,7 @@ nm_settings_device_added (NMSettings *self, NMDevice *device)
 	NMDefaultWiredConnection *wired;
 	gboolean read_only = TRUE;
 	const char *id;
+	char *defname;
 
 	if (nm_device_get_device_type (device) != NM_DEVICE_TYPE_ETHERNET)
 		return;
@@ -1357,7 +1398,9 @@ nm_settings_device_added (NMSettings *self, NMDevice *device)
 	if (get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS))
 		read_only = FALSE;
 
-	wired = nm_default_wired_connection_new (mac, device, read_only);
+	defname = find_next_default_wired_name (self);
+	wired = nm_default_wired_connection_new (mac, device, defname, read_only);
+	g_free (defname);
 	if (!wired)
 		goto ignore;
 

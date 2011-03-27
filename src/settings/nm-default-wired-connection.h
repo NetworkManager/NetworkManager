@@ -34,10 +34,6 @@ G_BEGIN_DECLS
 #define NM_IS_DEFAULT_WIRED_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_DEFAULT_WIRED_CONNECTION))
 #define NM_DEFAULT_WIRED_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEFAULT_WIRED_CONNECTION, NMDefaultWiredConnectionClass))
 
-#define NM_DEFAULT_WIRED_CONNECTION_MAC   "mac"
-#define NM_DEFAULT_WIRED_CONNECTION_DEVICE "device"
-#define NM_DEFAULT_WIRED_CONNECTION_READ_ONLY "read-only"
-
 typedef struct {
 	NMSettingsConnection parent;
 } NMDefaultWiredConnection;
@@ -50,6 +46,7 @@ GType nm_default_wired_connection_get_type (void);
 
 NMDefaultWiredConnection *nm_default_wired_connection_new (const GByteArray *mac,
                                                            NMDevice *device,
+                                                           const char *defname,
                                                            gboolean read_only);
 
 NMDevice *nm_default_wired_connection_get_device (NMDefaultWiredConnection *wired);
