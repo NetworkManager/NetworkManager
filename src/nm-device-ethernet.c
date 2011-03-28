@@ -1676,7 +1676,7 @@ real_complete_connection (NMDevice *device,
 	 * then PPPoE should be our connection type.
 	 */
 	nm_utils_complete_generic (connection,
-	                           s_pppoe ? NM_SETTING_PPPOE_SETTING_NAME : NM_SETTING_CONNECTION_SETTING_NAME,
+	                           s_pppoe ? NM_SETTING_PPPOE_SETTING_NAME : NM_SETTING_WIRED_SETTING_NAME,
 	                           existing_connections,
 	                           s_pppoe ? _("PPPoE connection %d") : _("Wired connection %d"),
 	                           NULL,
