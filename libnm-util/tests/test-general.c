@@ -29,11 +29,13 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-vpn.h"
 #include "nm-setting-gsm.h"
+#include "nm-setting-cdma.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-pppoe.h"
+#include "nm-setting-serial.h"
 #include "nm-dbus-glib-types.h"
 
 static void
@@ -900,6 +902,221 @@ test_connection_diff_no_secrets (void)
 	g_object_unref (b);
 }
 
+static void
+add_generic_settings (NMConnection *connection, const char *ctype)
+{
+	NMSetting *setting;
+	char *uuid;
+
+	uuid = nm_utils_uuid_generate ();
+
+	setting = nm_setting_connection_new ();
+	g_object_set (setting,
+	              NM_SETTING_CONNECTION_ID, "asdfasdfadf",
+	              NM_SETTING_CONNECTION_TYPE, ctype,
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NULL);
+	nm_connection_add_setting (connection, setting);
+
+	g_free (uuid);
+
+	setting = nm_setting_ip4_config_new ();
+	g_object_set (setting, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	nm_connection_add_setting (connection, setting);
+
+	setting = nm_setting_ip6_config_new ();
+	g_object_set (setting, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
+	nm_connection_add_setting (connection, setting);
+}
+
+static void
+test_connection_good_base_types (void)
+{
+	NMConnection *connection;
+	NMSetting *setting;
+	gboolean success;
+	GError *error = NULL;
+	GByteArray *array;
+	const guint8 bdaddr[] = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66 };
+
+	/* Try a basic wired connection */
+	connection = nm_connection_new ();
+	add_generic_settings (connection, NM_SETTING_WIRED_SETTING_NAME);
+	setting = nm_setting_wired_new ();
+	nm_connection_add_setting (connection, setting);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_object_unref (connection);
+
+	/* Try a wired PPPoE connection */
+	connection = nm_connection_new ();
+	add_generic_settings (connection, NM_SETTING_PPPOE_SETTING_NAME);
+	setting = nm_setting_pppoe_new ();
+	g_object_set (setting, NM_SETTING_PPPOE_USERNAME, "bob smith", NULL);
+	nm_connection_add_setting (connection, setting);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_object_unref (connection);
+
+	/* Wifi connection */
+	connection = nm_connection_new ();
+	add_generic_settings (connection, NM_SETTING_WIRELESS_SETTING_NAME);
+
+	setting = nm_setting_wireless_new ();
+	array = g_byte_array_new ();
+	g_byte_array_append (array, (const guint8 *) "1234567", 7);
+	g_object_set (setting,
+	              NM_SETTING_WIRELESS_SSID, array,
+	              NM_SETTING_WIRELESS_MODE, "infrastructure",
+	              NULL);
+	g_byte_array_free (array, TRUE);
+	nm_connection_add_setting (connection, setting);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_object_unref (connection);
+
+	/* Bluetooth connection */
+	connection = nm_connection_new ();
+	add_generic_settings (connection, NM_SETTING_BLUETOOTH_SETTING_NAME);
+
+	setting = nm_setting_bluetooth_new ();
+	array = g_byte_array_new ();
+	g_byte_array_append (array, bdaddr, sizeof (bdaddr));
+	g_object_set (setting,
+	              NM_SETTING_BLUETOOTH_BDADDR, array,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_BLUETOOTH_TYPE_PANU,
+	              NULL);
+	g_byte_array_free (array, TRUE);
+	nm_connection_add_setting (connection, setting);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_object_unref (connection);
+
+	/* WiMAX connection */
+	connection = nm_connection_new ();
+	add_generic_settings (connection, NM_SETTING_WIMAX_SETTING_NAME);
+	setting = nm_setting_wimax_new ();
+	g_object_set (setting, NM_SETTING_WIMAX_NETWORK_NAME, "CLEAR", NULL);
+	nm_connection_add_setting (connection, setting);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_object_unref (connection);
+
+	/* GSM connection */
+	connection = nm_connection_new ();
+	add_generic_settings (connection, NM_SETTING_GSM_SETTING_NAME);
+
+	setting = nm_setting_gsm_new ();
+	g_object_set (setting,
+	              NM_SETTING_GSM_NUMBER, "*99#",
+	              NM_SETTING_GSM_APN, "metered.billing.sucks",
+	              NULL);
+	nm_connection_add_setting (connection, setting);
+
+	/* CDMA connection */
+	connection = nm_connection_new ();
+	add_generic_settings (connection, NM_SETTING_CDMA_SETTING_NAME);
+
+	setting = nm_setting_cdma_new ();
+	g_object_set (setting,
+	              NM_SETTING_CDMA_NUMBER, "#777",
+	              NM_SETTING_CDMA_USERNAME, "foobar@vzw.com",
+	              NULL);
+	nm_connection_add_setting (connection, setting);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_object_unref (connection);
+}
+
+static void
+test_connection_bad_base_types (void)
+{
+	NMConnection *connection;
+	NMSetting *setting;
+	gboolean success;
+	GError *error = NULL;
+
+	/* Test various non-base connection types to make sure they are rejected;
+	 * using a fake 'wired' connection so the rest of it verifies
+	 */
+
+	/* Connection setting */
+	connection = nm_connection_new ();
+	add_generic_settings (connection, NM_SETTING_CONNECTION_SETTING_NAME);
+	setting = nm_setting_wired_new ();
+	nm_connection_add_setting (connection, setting);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID);
+	g_assert (success == FALSE);
+	g_object_unref (connection);
+	g_clear_error (&error);
+
+	/* PPP setting */
+	connection = nm_connection_new ();
+	add_generic_settings (connection, NM_SETTING_PPP_SETTING_NAME);
+	setting = nm_setting_wired_new ();
+	nm_connection_add_setting (connection, setting);
+	setting = nm_setting_ppp_new ();
+	nm_connection_add_setting (connection, setting);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID);
+	g_assert (success == FALSE);
+	g_object_unref (connection);
+	g_clear_error (&error);
+
+	/* Serial setting */
+	connection = nm_connection_new ();
+	add_generic_settings (connection, NM_SETTING_SERIAL_SETTING_NAME);
+	setting = nm_setting_wired_new ();
+	nm_connection_add_setting (connection, setting);
+	setting = nm_setting_serial_new ();
+	nm_connection_add_setting (connection, setting);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID);
+	g_assert (success == FALSE);
+	g_object_unref (connection);
+	g_clear_error (&error);
+
+	/* IP4 setting */
+	connection = nm_connection_new ();
+	add_generic_settings (connection, NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	setting = nm_setting_wired_new ();
+	nm_connection_add_setting (connection, setting);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID);
+	g_assert (success == FALSE);
+	g_object_unref (connection);
+	g_clear_error (&error);
+
+	/* IP6 setting */
+	connection = nm_connection_new ();
+	add_generic_settings (connection, NM_SETTING_IP6_CONFIG_SETTING_NAME);
+	setting = nm_setting_wired_new ();
+	nm_connection_add_setting (connection, setting);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID);
+	g_assert (success == FALSE);
+	g_object_unref (connection);
+	g_clear_error (&error);
+}
+
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
@@ -928,6 +1145,8 @@ int main (int argc, char **argv)
 	test_connection_diff_same ();
 	test_connection_diff_different ();
 	test_connection_diff_no_secrets ();
+	test_connection_good_base_types ();
+	test_connection_bad_base_types ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);

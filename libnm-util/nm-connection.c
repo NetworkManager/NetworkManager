@@ -98,6 +98,7 @@ nm_connection_error_get_type (void)
 		static const GEnumValue values[] = {
 			ENUM_ENTRY (NM_CONNECTION_ERROR_UNKNOWN, "UnknownError"),
 			ENUM_ENTRY (NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND, "ConnectionSettingNotFound"),
+			ENUM_ENTRY (NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID, "ConnectionTypeInvalid"),
 			{ 0, 0, 0 }
 		};
 		etype = g_enum_register_static ("NMConnectionError", values);
@@ -139,6 +140,7 @@ static struct SettingInfo {
 	const char *name;
 	GType type;
 	guint32 priority;
+	gboolean base_type;
 	GQuark error_quark;
 } default_map[DEFAULT_MAP_SIZE] = { { NULL } };
 
@@ -170,7 +172,11 @@ setting_unregister (const char *name)
 #endif
 
 static void
-register_one_setting (const char *name, GType type, GQuark error_quark, guint32 priority)
+register_one_setting (const char *name,
+                      GType type,
+                      GQuark error_quark,
+                      guint32 priority,
+                      gboolean base_type)
 {
 	static guint32 i = 0;
 
@@ -181,6 +187,7 @@ register_one_setting (const char *name, GType type, GQuark error_quark, guint32 
 	default_map[i].type = type;
 	default_map[i].error_quark = error_quark;
 	default_map[i].priority = priority;
+	default_map[i].base_type = base_type;
 	i++;
 
 	setting_register (name, type);
@@ -197,82 +204,82 @@ register_default_settings (void)
 	register_one_setting (NM_SETTING_CONNECTION_SETTING_NAME,
 	                      NM_TYPE_SETTING_CONNECTION,
 	                      NM_SETTING_CONNECTION_ERROR,
-	                      0);
+	                      0, FALSE);
 
 	register_one_setting (NM_SETTING_WIRED_SETTING_NAME,
 	                      NM_TYPE_SETTING_WIRED,
 	                      NM_SETTING_WIRED_ERROR,
-	                      1);
+	                      1, TRUE);
 
 	register_one_setting (NM_SETTING_WIRELESS_SETTING_NAME,
 	                      NM_TYPE_SETTING_WIRELESS,
 	                      NM_SETTING_WIRELESS_ERROR,
-	                      1);
+	                      1, TRUE);
 
 	register_one_setting (NM_SETTING_OLPC_MESH_SETTING_NAME,
 	                      NM_TYPE_SETTING_OLPC_MESH,
 	                      NM_SETTING_OLPC_MESH_ERROR,
-	                      1);
+	                      1, TRUE);
 
 	register_one_setting (NM_SETTING_GSM_SETTING_NAME,
 	                      NM_TYPE_SETTING_GSM,
 	                      NM_SETTING_GSM_ERROR,
-	                      1);
+	                      1, TRUE);
 
 	register_one_setting (NM_SETTING_CDMA_SETTING_NAME,
 	                      NM_TYPE_SETTING_CDMA,
 	                      NM_SETTING_CDMA_ERROR,
-	                      1);
+	                      1, TRUE);
 
 	register_one_setting (NM_SETTING_BLUETOOTH_SETTING_NAME,
 	                      NM_TYPE_SETTING_BLUETOOTH,
 	                      NM_SETTING_BLUETOOTH_ERROR,
-	                      1);
+	                      1, TRUE);
 
 	register_one_setting (NM_SETTING_WIMAX_SETTING_NAME,
 	                      NM_TYPE_SETTING_WIMAX,
 	                      NM_SETTING_WIMAX_ERROR,
-	                      1);
+	                      1, TRUE);
 
 	register_one_setting (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	                      NM_TYPE_SETTING_WIRELESS_SECURITY,
 	                      NM_SETTING_WIRELESS_SECURITY_ERROR,
-	                      2);
+	                      2, FALSE);
 
 	register_one_setting (NM_SETTING_SERIAL_SETTING_NAME,
 	                      NM_TYPE_SETTING_SERIAL,
 	                      NM_SETTING_SERIAL_ERROR,
-	                      2);
+	                      2, FALSE);
 
 	register_one_setting (NM_SETTING_PPP_SETTING_NAME,
 	                      NM_TYPE_SETTING_PPP,
 	                      NM_SETTING_PPP_ERROR,
-	                      3);
+	                      3, FALSE);
 
 	register_one_setting (NM_SETTING_PPPOE_SETTING_NAME,
 	                      NM_TYPE_SETTING_PPPOE,
 	                      NM_SETTING_PPPOE_ERROR,
-	                      3);
+	                      3, TRUE);
 
 	register_one_setting (NM_SETTING_802_1X_SETTING_NAME,
 	                      NM_TYPE_SETTING_802_1X,
 	                      NM_SETTING_802_1X_ERROR,
-	                      3);
+	                      3, FALSE);
 
 	register_one_setting (NM_SETTING_VPN_SETTING_NAME,
 	                      NM_TYPE_SETTING_VPN,
 	                      NM_SETTING_VPN_ERROR,
-	                      4);
+	                      4, TRUE);
 
 	register_one_setting (NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	                      NM_TYPE_SETTING_IP4_CONFIG,
 	                      NM_SETTING_IP4_CONFIG_ERROR,
-	                      6);
+	                      6, FALSE);
 
 	register_one_setting (NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	                      NM_TYPE_SETTING_IP6_CONFIG,
 	                      NM_SETTING_IP6_CONFIG_ERROR,
-	                      6);
+	                      6, FALSE);
 
 	/* Be sure to update DEFAULT_MAP_SIZE if you add another setting!! */
 }
@@ -288,6 +295,18 @@ get_priority_for_setting_type (GType type)
 	}
 
 	return G_MAXUINT32;
+}
+
+static gboolean
+get_base_type_for_setting_type (GType type)
+{
+	int i;
+
+	for (i = 0; default_map[i].name; i++) {
+		if (default_map[i].type == type)
+			return default_map[i].base_type;
+	}
+	return FALSE;
 }
 
 /**
@@ -693,15 +712,17 @@ nm_connection_verify (NMConnection *connection, GError **error)
 	gpointer value;
 	GSList *all_settings = NULL;
 	gboolean success = TRUE;
+	const char *ctype;
+	GType base_type;
 
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
 
 	if (!NM_IS_CONNECTION (connection)) {
-		g_set_error (error,
-				NM_SETTING_CONNECTION_ERROR,
-				NM_SETTING_CONNECTION_ERROR_UNKNOWN,
-				"invalid connection; failed verification");
+		g_set_error_literal (error,
+		                     NM_SETTING_CONNECTION_ERROR,
+		                     NM_SETTING_CONNECTION_ERROR_UNKNOWN,
+		                     "invalid connection; failed verification");
 		g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	}
 
@@ -710,10 +731,10 @@ nm_connection_verify (NMConnection *connection, GError **error)
 	/* First, make sure there's at least 'connection' setting */
 	s_con = nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 	if (!s_con) {
-		g_set_error (error,
-		             NM_CONNECTION_ERROR,
-		             NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND,
-		             "connection setting not found");
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND,
+		                     "connection setting not found");
 		return FALSE;
 	}
 
@@ -726,9 +747,42 @@ nm_connection_verify (NMConnection *connection, GError **error)
 	g_hash_table_iter_init (&iter, priv->settings);
 	while (g_hash_table_iter_next (&iter, NULL, &value) && success)
 		success = nm_setting_verify (NM_SETTING (value), all_settings, error);
-
 	g_slist_free (all_settings);
-	return success;
+
+	if (success == FALSE)
+		return FALSE;
+
+	/* Now make sure the given 'type' setting can actually be the base setting
+	 * of the connection.  Can't have type=ppp for example.
+	 */
+	ctype = nm_setting_connection_get_connection_type (NM_SETTING_CONNECTION (s_con));
+	if (!ctype) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID,
+		                     "connection type missing");
+		return FALSE;
+	}
+
+	base_type = nm_connection_lookup_setting_type (ctype);
+	if (base_type == 0) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID,
+		                     "base setting GType not found");
+		return FALSE;
+	}
+
+	if (!get_base_type_for_setting_type (base_type)) {
+		g_set_error (error,
+			         NM_CONNECTION_ERROR,
+			         NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID,
+			         "connection type '%s' is not a base type",
+			         ctype);
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 /**

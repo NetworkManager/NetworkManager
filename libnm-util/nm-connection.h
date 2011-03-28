@@ -62,6 +62,10 @@ G_BEGIN_DECLS
  * @NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND: the #NMConnection object
  *   did not contain the required #NMSettingConnection object, which must be
  *   present for all connections
+ * @NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID: the 'type' property of the
+ *   'connection' setting did not point to a valid connection base type; ie
+ *   it was not a hardware-related setting like #NMSettingWired or
+ *   #NMSettingWireless.
  *
  * Describes errors that may result from operations involving a #NMConnection.
  *
@@ -69,7 +73,8 @@ G_BEGIN_DECLS
 typedef enum
 {
 	NM_CONNECTION_ERROR_UNKNOWN = 0,
-	NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND
+	NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND,
+	NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID
 } NMConnectionError;
 
 #define NM_TYPE_CONNECTION_ERROR (nm_connection_error_get_type ()) 
