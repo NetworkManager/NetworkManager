@@ -903,6 +903,7 @@ get_start (gpointer user_data)
 	if (setting_secrets && g_hash_table_size (setting_secrets)) {
 		NMConnection *tmp;
 		GError *error = NULL;
+		gboolean request_new = (req->flags & NM_SETTINGS_GET_SECRETS_FLAG_REQUEST_NEW);
 
 		/* The connection already had secrets; check if any more are required.
 		 * If no more are required, we're done.  If secrets are still needed,
@@ -918,7 +919,7 @@ get_start (gpointer user_data)
 		} else {
 			/* Do we have everything we need? */
 			/* FIXME: handle second check for VPN connections */
-			if (nm_connection_need_secrets (tmp, NULL) == NULL) {
+			if ((nm_connection_need_secrets (tmp, NULL) == NULL) && (request_new == FALSE)) {
 				nm_log_dbg (LOGD_AGENTS, "(%p/%s) system settings secrets sufficient",
 				            req, req->setting_name);
 
