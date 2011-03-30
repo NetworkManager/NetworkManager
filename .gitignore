@@ -168,6 +168,7 @@ src/settings/plugins/ifcfg-rh/tests/network-scripts/Test_Write_*
 src/settings/plugins/ifcfg-rh/tests/network-scripts/*-Test_Write_*
 src/settings/plugins/ifupdown/tests/test-ifupdown
 src/settings/plugins/ifnet/tests/check_ifnet
+src/settings/tests/test-wired-defname
 
 m4/gtk-doc.m4
 m4/intltool.m4

@@ -34,8 +34,6 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
-#include <glib/gi18n.h>
-
 #include <NetworkManager.h>
 #include <nm-connection.h>
 #include <nm-setting-8021x.h>
@@ -67,6 +65,7 @@
 #include "nm-session-monitor.h"
 #include "plugins/keyfile/plugin.h"
 #include "nm-agent-manager.h"
+#include "nm-settings-utils.h"
 
 #define CONFIG_KEY_NO_AUTO_DEFAULT "no-auto-default"
 
@@ -1327,48 +1326,10 @@ default_wired_try_update (NMDefaultWiredConnection *wired,
 	return TRUE;
 }
 
-static char *
-find_next_default_wired_name (NMSettings *self)
-{
-	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	GHashTableIter iter;
-	NMConnection *connection = NULL;
-	GSList *names = NULL, *niter;
-	char *cname = NULL;
-	int i = 0;
-
-	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &connection)) {
-		const char *id;
-
-		id = nm_connection_get_id (connection);
-		g_assert (id);
-		names = g_slist_append (names, (gpointer) id);
-	}
-
-	/* Find the next available unique connection name */
-	while (!cname && (i++ < 10000)) {
-		char *temp;
-		gboolean found = FALSE;
-
-		temp = g_strdup_printf (_("Wired connection %d"), i);
-		for (niter = names; niter; niter = g_slist_next (niter)) {
-			if (g_strcmp0 (niter->data, temp) != 0) {
-				found = TRUE;
-				cname = g_strdup (temp);
-				break;
-			}
-		}
-		g_free (temp);
-	}
-	g_slist_free (names);
-
-	return cname;
-}
-
 void
 nm_settings_device_added (NMSettings *self, NMDevice *device)
 {
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GByteArray *mac = NULL;
 	struct ether_addr tmp;
 	NMDefaultWiredConnection *wired;
@@ -1398,7 +1359,7 @@ nm_settings_device_added (NMSettings *self, NMDevice *device)
 	if (get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS))
 		read_only = FALSE;
 
-	defname = find_next_default_wired_name (self);
+	defname = nm_settings_utils_get_default_wired_name (priv->connections);
 	wired = nm_default_wired_connection_new (mac, device, defname, read_only);
 	g_free (defname);
 	if (!wired)

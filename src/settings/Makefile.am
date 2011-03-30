@@ -1,4 +1,4 @@
-SUBDIRS=plugins
+SUBDIRS=plugins . tests
 
 INCLUDES = -I${top_srcdir} \
            -I${top_srcdir}/include \
@@ -7,7 +7,20 @@ INCLUDES = -I${top_srcdir} \
            -I${top_srcdir}/src \
            -I${top_builddir}/marshallers
 
-noinst_LTLIBRARIES = libsettings.la
+noinst_LTLIBRARIES = libsettings.la libtest-settings-utils.la
+
+libtest_settings_utils_la_SOURCES = \
+	nm-settings-utils.c \
+	nm-settings-utils.h
+
+libtest_settings_utils_la_CPPFLAGS = \
+	$(DBUS_CFLAGS) \
+	$(GLIB_CFLAGS)
+
+libtest_settings_utils_la_LIBADD = \
+	$(top_builddir)/libnm-util/libnm-util.la \
+	$(DBUS_LIBS) \
+	$(GLIB_LIBS)
 
 BUILT_SOURCES = \
 	nm-settings-glue.h \
@@ -31,7 +44,9 @@ libsettings_la_SOURCES = \
 	nm-agent-manager.c \
 	nm-agent-manager.h \
 	nm-secret-agent.c \
-	nm-secret-agent.h
+	nm-secret-agent.h \
+	nm-settings-utils.h \
+	nm-settings-utils.c
 
 libsettings_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
