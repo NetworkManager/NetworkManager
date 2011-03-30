@@ -548,10 +548,14 @@ enum {
 	IDX_NONE = 0,
 	IDX_OPEN,
 	IDX_PRIV,
-	IDX_WPA_PSK,
-	IDX_RSN_PSK,
+	IDX_WPA_PSK_PTKIP_GTKIP,
+	IDX_WPA_PSK_PTKIP_PCCMP_GTKIP,
+	IDX_WPA_RSN_PSK_PTKIP_PCCMP_GTKIP,
+	IDX_WPA_RSN_PSK_PCCMP_GCCMP,
+	IDX_RSN_PSK_PCCMP_GCCMP,
+	IDX_RSN_PSK_PTKIP_PCCMP_GTKIP,
 	IDX_WPA_8021X,
-	IDX_RSN_8021X
+	IDX_RSN_8021X,
 };
 
 static guint32
@@ -559,8 +563,15 @@ flags_for_idx (guint32 idx)
 {
 	if (idx == IDX_OPEN)
 		return NM_802_11_AP_FLAGS_NONE;
-	else if (idx == IDX_PRIV || idx == IDX_WPA_PSK || idx == IDX_RSN_PSK
-	         || idx == IDX_WPA_8021X || idx == IDX_RSN_8021X)
+	else if (   idx == IDX_PRIV
+	         || idx == IDX_WPA_PSK_PTKIP_GTKIP
+	         || idx == IDX_WPA_PSK_PTKIP_PCCMP_GTKIP
+	         || idx == IDX_RSN_PSK_PCCMP_GCCMP
+	         || idx == IDX_RSN_PSK_PTKIP_PCCMP_GTKIP
+	         || idx == IDX_WPA_RSN_PSK_PTKIP_PCCMP_GTKIP
+	         || idx == IDX_WPA_RSN_PSK_PCCMP_GCCMP
+	         || idx == IDX_WPA_8021X
+	         || idx == IDX_RSN_8021X)
 		return NM_802_11_AP_FLAGS_PRIVACY;
 	else
 		g_assert_not_reached ();
@@ -569,10 +580,15 @@ flags_for_idx (guint32 idx)
 static guint32
 wpa_flags_for_idx (guint32 idx)
 {
-	if (idx == IDX_OPEN || idx == IDX_PRIV || idx == IDX_RSN_PSK || idx == IDX_RSN_8021X)
+	if (idx == IDX_OPEN || idx == IDX_PRIV ||  idx == IDX_RSN_8021X
+	    || idx == IDX_RSN_PSK_PCCMP_GCCMP || idx == IDX_RSN_PSK_PTKIP_PCCMP_GTKIP)
 		return NM_802_11_AP_SEC_NONE;
-	else if (idx == IDX_WPA_PSK)
+	else if (idx == IDX_WPA_PSK_PTKIP_GTKIP)
 		return NM_802_11_AP_SEC_PAIR_TKIP | NM_802_11_AP_SEC_GROUP_TKIP | NM_802_11_AP_SEC_KEY_MGMT_PSK;
+	else if (idx == IDX_WPA_RSN_PSK_PTKIP_PCCMP_GTKIP)
+		return NM_802_11_AP_SEC_PAIR_TKIP | NM_802_11_AP_SEC_PAIR_CCMP | NM_802_11_AP_SEC_GROUP_TKIP | NM_802_11_AP_SEC_KEY_MGMT_PSK;
+	else if (IDX_WPA_RSN_PSK_PCCMP_GCCMP)
+		return NM_802_11_AP_SEC_PAIR_CCMP | NM_802_11_AP_SEC_GROUP_CCMP | NM_802_11_AP_SEC_KEY_MGMT_PSK;
 	else if (idx == IDX_WPA_8021X)
 		return NM_802_11_AP_SEC_PAIR_TKIP | NM_802_11_AP_SEC_GROUP_TKIP | NM_802_11_AP_SEC_KEY_MGMT_802_1X;
 	else
@@ -582,9 +598,16 @@ wpa_flags_for_idx (guint32 idx)
 static guint32
 rsn_flags_for_idx (guint32 idx)
 {
-	if (idx == IDX_OPEN || idx == IDX_PRIV || idx == IDX_WPA_PSK || idx == IDX_WPA_8021X)
+	if (idx == IDX_OPEN || idx == IDX_PRIV || idx == IDX_WPA_8021X
+	    || idx == IDX_WPA_PSK_PTKIP_GTKIP || idx == IDX_WPA_PSK_PTKIP_PCCMP_GTKIP)
 		return NM_802_11_AP_SEC_NONE;
-	else if (idx == IDX_RSN_PSK)
+	else if (idx == IDX_RSN_PSK_PCCMP_GCCMP)
+		return NM_802_11_AP_SEC_PAIR_CCMP | NM_802_11_AP_SEC_GROUP_CCMP | NM_802_11_AP_SEC_KEY_MGMT_PSK;
+	else if (idx == IDX_RSN_PSK_PTKIP_PCCMP_GTKIP)
+		return NM_802_11_AP_SEC_PAIR_TKIP | NM_802_11_AP_SEC_PAIR_CCMP | NM_802_11_AP_SEC_GROUP_TKIP | NM_802_11_AP_SEC_KEY_MGMT_PSK;
+	else if (idx == IDX_WPA_RSN_PSK_PTKIP_PCCMP_GTKIP)
+		return NM_802_11_AP_SEC_PAIR_TKIP | NM_802_11_AP_SEC_PAIR_CCMP | NM_802_11_AP_SEC_GROUP_TKIP | NM_802_11_AP_SEC_KEY_MGMT_PSK;
+	else if (idx == IDX_WPA_RSN_PSK_PCCMP_GCCMP)
 		return NM_802_11_AP_SEC_PAIR_CCMP | NM_802_11_AP_SEC_GROUP_CCMP | NM_802_11_AP_SEC_KEY_MGMT_PSK;
 	else if (idx == IDX_RSN_8021X)
 		return NM_802_11_AP_SEC_PAIR_CCMP | NM_802_11_AP_SEC_GROUP_CCMP | NM_802_11_AP_SEC_KEY_MGMT_802_1X;
@@ -602,7 +625,9 @@ error_domain_for_idx (guint32 idx, guint num)
 			return NM_SETTING_802_1X_ERROR;
 		else
 			return NM_SETTING_WIRELESS_SECURITY_ERROR;
-	} else if (idx == IDX_WPA_PSK || idx == IDX_RSN_PSK)
+	} else if (idx == IDX_WPA_PSK_PTKIP_GTKIP || idx == IDX_WPA_PSK_PTKIP_PCCMP_GTKIP
+	           || idx == IDX_WPA_RSN_PSK_PCCMP_GCCMP || idx == IDX_WPA_RSN_PSK_PTKIP_PCCMP_GTKIP
+	           || idx == IDX_RSN_PSK_PTKIP_PCCMP_GTKIP || idx == IDX_RSN_PSK_PCCMP_GCCMP)
 		return NM_SETTING_WIRELESS_SECURITY_ERROR;
 	else
 		g_assert_not_reached ();
@@ -618,9 +643,11 @@ error_code_for_idx (guint32 idx, guint num)
 			return NM_SETTING_802_1X_ERROR_MISSING_PROPERTY;
 		else
 			return NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY;
-	} else if (idx == IDX_WPA_PSK || idx == IDX_RSN_PSK) {
+	} else if (idx == IDX_WPA_PSK_PTKIP_GTKIP || idx == IDX_WPA_PSK_PTKIP_PCCMP_GTKIP
+	           || idx == IDX_WPA_RSN_PSK_PCCMP_GCCMP || idx == IDX_WPA_RSN_PSK_PTKIP_PCCMP_GTKIP
+	           || idx == IDX_RSN_PSK_PTKIP_PCCMP_GTKIP || idx == IDX_RSN_PSK_PCCMP_GCCMP)
 		return NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY;
-	} else
+	else
 		g_assert_not_reached ();
 }
 
@@ -1300,6 +1327,7 @@ typedef void (*TCFunc)(void);
 int main (int argc, char **argv)
 {
 	GTestSuite *suite;
+	gsize i;
 
 	g_type_init ();
 	g_test_init (&argc, &argv, NULL);
@@ -1353,42 +1381,46 @@ int main (int argc, char **argv)
 	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_5, IDX_PRIV));
 
 	/* WPA-PSK tests */
-	g_test_suite_add (suite, TESTCASE (test_wpa_ap_empty_connection, IDX_WPA_PSK));
-	g_test_suite_add (suite, TESTCASE (test_wpa_ap_leap_connection_1, IDX_WPA_PSK));
-	g_test_suite_add (suite, TESTCASE (test_wpa_ap_leap_connection_2, IDX_WPA_PSK));
+	for (i = IDX_WPA_PSK_PTKIP_GTKIP; i <= IDX_WPA_RSN_PSK_PCCMP_GCCMP; i++) {
+		g_test_suite_add (suite, TESTCASE (test_wpa_ap_empty_connection, i));
+		g_test_suite_add (suite, TESTCASE (test_wpa_ap_leap_connection_1, i));
+		g_test_suite_add (suite, TESTCASE (test_wpa_ap_leap_connection_2, i));
 
-	g_test_suite_add (suite, TESTCASE (test_wpa_ap_dynamic_wep_connection, IDX_WPA_PSK));
+		g_test_suite_add (suite, TESTCASE (test_wpa_ap_dynamic_wep_connection, i));
 
-	g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_1, IDX_WPA_PSK));
-	g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_2, IDX_WPA_PSK));
-	g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_3, IDX_WPA_PSK));
-	g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_4, IDX_WPA_PSK));
-	g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_5, IDX_WPA_PSK));
+		g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_1, i));
+		g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_2, i));
+		g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_3, i));
+		g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_4, i));
+		g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_5, i));
 
-	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_1, IDX_WPA_PSK));
-	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_2, IDX_WPA_PSK));
-	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_3, IDX_WPA_PSK));
-	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_4, IDX_WPA_PSK));
-	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_5, IDX_WPA_PSK));
+		g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_1, i));
+		g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_2, i));
+		g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_3, i));
+		g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_4, i));
+		g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_5, i));
+	}
 
 	/* RSN-PSK tests */
-	g_test_suite_add (suite, TESTCASE (test_wpa_ap_empty_connection, IDX_RSN_PSK));
-	g_test_suite_add (suite, TESTCASE (test_wpa_ap_leap_connection_1, IDX_RSN_PSK));
-	g_test_suite_add (suite, TESTCASE (test_wpa_ap_leap_connection_2, IDX_RSN_PSK));
+	for (i = IDX_WPA_RSN_PSK_PTKIP_PCCMP_GTKIP; i <= IDX_RSN_PSK_PTKIP_PCCMP_GTKIP; i++) {
+		g_test_suite_add (suite, TESTCASE (test_wpa_ap_empty_connection, i));
+		g_test_suite_add (suite, TESTCASE (test_wpa_ap_leap_connection_1, i));
+		g_test_suite_add (suite, TESTCASE (test_wpa_ap_leap_connection_2, i));
 
-	g_test_suite_add (suite, TESTCASE (test_wpa_ap_dynamic_wep_connection, IDX_RSN_PSK));
+		g_test_suite_add (suite, TESTCASE (test_wpa_ap_dynamic_wep_connection, i));
 
-	g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_1, IDX_RSN_PSK));
-	g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_2, IDX_RSN_PSK));
-	g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_3, IDX_RSN_PSK));
-	g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_4, IDX_RSN_PSK));
-	g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_5, IDX_RSN_PSK));
+		g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_1, i));
+		g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_2, i));
+		g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_3, i));
+		g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_4, i));
+		g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_5, i));
 
-	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_1, IDX_RSN_PSK));
-	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_2, IDX_RSN_PSK));
-	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_3, IDX_RSN_PSK));
-	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_4, IDX_RSN_PSK));
-	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_5, IDX_RSN_PSK));
+		g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_1, i));
+		g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_2, i));
+		g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_3, i));
+		g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_4, i));
+		g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_5, i));
+	}
 
 	/* Scanned signal strength conversion tests */
 	g_test_suite_add (suite, TESTCASE (test_strength_dbm, NULL));
