@@ -24,6 +24,7 @@
 #include <glib.h>
 #include <glib-object.h>
 #include <nm-connection.h>
+#include "nm-settings-flags.h"
 
 #define NM_TYPE_AGENT_MANAGER            (nm_agent_manager_get_type ())
 #define NM_AGENT_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_AGENT_MANAGER, NMAgentManager))
@@ -50,7 +51,7 @@ typedef void (*NMAgentSecretsResultFunc) (NMAgentManager *manager,
                                           const char *agent_dbus_owner,
                                           gboolean agent_has_modify,
                                           const char *setting_name,
-                                          guint32 flags,
+                                          NMSettingsGetSecretsFlags flags,
                                           GHashTable *secrets,
                                           GError *error,
                                           gpointer user_data,
@@ -63,7 +64,7 @@ guint32 nm_agent_manager_get_secrets (NMAgentManager *manager,
                                       gulong uid,
                                       GHashTable *existing_secrets,
                                       const char *setting_name,
-                                      guint32 flags,
+                                      NMSettingsGetSecretsFlags flags,
                                       const char *hint,
                                       NMAgentSecretsResultFunc callback,
                                       gpointer callback_data,

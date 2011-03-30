@@ -343,7 +343,7 @@ struct _Request {
 	gboolean filter_by_uid;
 	gulong uid_filter;
 	char *setting_name;
-	guint32 flags;
+	NMSettingsGetSecretsFlags flags;
 	char *hint;
 
 	/* Current agent being asked for secrets */
@@ -384,7 +384,7 @@ request_new_get (NMConnection *connection,
                  gulong uid_filter,
                  GHashTable *existing_secrets,
                  const char *setting_name,
-                 guint32 flags,
+                 NMSettingsGetSecretsFlags flags,
                  const char *hint,
                  NMAgentSecretsResultFunc callback,
                  gpointer callback_data,
@@ -856,7 +856,8 @@ get_next_cb (Request *req)
 	 * secrets to the agent.  We shouldn't leak system-owned secrets to
 	 * unprivileged users.
 	 */
-	if ((req->flags != 0) && (req->existing_secrets || has_system_secrets (req->connection))) {
+	if (   (req->flags != NM_SETTINGS_GET_SECRETS_FLAG_NONE)
+	    && (req->existing_secrets || has_system_secrets (req->connection))) {
 		nm_log_dbg (LOGD_AGENTS, "(%p/%s) request has system secrets; checking agent %s for MODIFY",
 		            req, req->setting_name, agent_dbus_owner);
 
@@ -984,7 +985,7 @@ nm_agent_manager_get_secrets (NMAgentManager *self,
                               gulong uid_filter,
                               GHashTable *existing_secrets,
                               const char *setting_name,
-                              guint32 flags,
+                              NMSettingsGetSecretsFlags flags,
                               const char *hint,
                               NMAgentSecretsResultFunc callback,
                               gpointer callback_data,

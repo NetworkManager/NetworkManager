@@ -172,7 +172,7 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
                              NMConnection *connection,
                              const char *setting_name,
                              const char *hint,
-                             guint32 flags,
+                             NMSettingsGetSecretsFlags flags,
                              NMSecretAgentCallback callback,
                              gpointer callback_data)
 {

@@ -123,7 +123,7 @@ get_secrets_cb (NMSettingsConnection *connection,
 guint32
 nm_act_request_get_secrets (NMActRequest *self,
                             const char *setting_name,
-                            guint32 flags,
+                            NMSettingsGetSecretsFlags flags,
                             const char *hint,
                             NMActRequestSecretsFunc callback,
                             gpointer callback_data)

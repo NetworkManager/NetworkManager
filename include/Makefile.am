@@ -5,7 +5,8 @@ EXTRA_DIST = \
      nm-dbus-glib-types.h \
      nm-glib-compat.h \
      nm-test-helpers.h \
-     nm-version.h.in
+     nm-version.h.in \
+     nm-settings-flags.h
 
 NetworkManagerincludedir=$(includedir)/NetworkManager
 

@@ -514,12 +514,12 @@ nm_modem_get_secrets (NMModem *self,
                       const char *hint)
 {
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
-	guint32 flags = NM_ACT_REQUEST_GET_SECRETS_FLAG_ALLOW_INTERACTION;
+	NMSettingsGetSecretsFlags flags = NM_SETTINGS_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
 	cancel_get_secrets (self);
 
 	if (request_new)
-		flags |= NM_ACT_REQUEST_GET_SECRETS_FLAG_REQUEST_NEW;
+		flags |= NM_SETTINGS_GET_SECRETS_FLAG_REQUEST_NEW;
 	priv->secrets_id = nm_act_request_get_secrets (priv->act_request,
 	                                               setting_name,
 	                                               flags,
@@ -552,7 +552,7 @@ nm_modem_act_stage1_prepare (NMModem *self,
 	NMActStageReturn ret;
 	GPtrArray *hints = NULL;
 	const char *setting_name = NULL;
-	guint32 flags = NM_ACT_REQUEST_GET_SECRETS_FLAG_ALLOW_INTERACTION;
+	NMSettingsGetSecretsFlags flags = NM_SETTINGS_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
 	if (priv->act_request)
 		g_object_unref (priv->act_request);
@@ -565,7 +565,7 @@ nm_modem_act_stage1_prepare (NMModem *self,
 	                                                     reason);
 	if ((ret == NM_ACT_STAGE_RETURN_POSTPONE) && setting_name) {
 		if (priv->secrets_tries++)
-			flags |= NM_ACT_REQUEST_GET_SECRETS_FLAG_REQUEST_NEW;
+			flags |= NM_SETTINGS_GET_SECRETS_FLAG_REQUEST_NEW;
 
 		priv->secrets_id = nm_act_request_get_secrets (req,
 		                                               setting_name,

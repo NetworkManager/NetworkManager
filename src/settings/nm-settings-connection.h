@@ -23,6 +23,7 @@
 #define NM_SETTINGS_CONNECTION_H
 
 #include <nm-connection.h>
+#include "nm-settings-flags.h"
 
 G_BEGIN_DECLS
 
@@ -101,7 +102,7 @@ guint32 nm_settings_connection_get_secrets (NMSettingsConnection *connection,
                                             gboolean filter_by_uid,
                                             gulong uid,
                                             const char *setting_name,
-                                            guint32 flags,
+                                            NMSettingsGetSecretsFlags flags,
                                             const char *hint,
                                             NMSettingsConnectionSecretsFunc callback,
                                             gpointer callback_data,

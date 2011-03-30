@@ -25,6 +25,7 @@
 #include <glib-object.h>
 #include "nm-connection.h"
 #include "nm-active-connection.h"
+#include "nm-settings-flags.h"
 
 #define NM_TYPE_ACT_REQUEST            (nm_act_request_get_type ())
 #define NM_ACT_REQUEST(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_ACT_REQUEST, NMActRequest))
@@ -91,18 +92,9 @@ typedef void (*NMActRequestSecretsFunc) (NMActRequest *req,
                                          GError *error,
                                          gpointer user_data);
 
-/* NOTE: these values should match the NM_SECRET_AGENT_GET_SECRETS_FLAGS in
- * the nm-secret-agent.xml introspection file.
- */
-enum {
-	NM_ACT_REQUEST_GET_SECRETS_FLAG_NONE = 0x0,
-	NM_ACT_REQUEST_GET_SECRETS_FLAG_ALLOW_INTERACTION = 0x1,
-	NM_ACT_REQUEST_GET_SECRETS_FLAG_REQUEST_NEW = 0x2
-};
-
 guint32 nm_act_request_get_secrets (NMActRequest *req,
                                     const char *setting_name,
-                                    guint32 flags,
+                                    NMSettingsGetSecretsFlags flags,
                                     const char *hint,
                                     NMActRequestSecretsFunc callback,
                                     gpointer callback_data);

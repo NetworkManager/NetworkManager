@@ -28,6 +28,7 @@
 
 #include <nm-connection.h>
 #include "nm-dbus-manager.h"
+#include "nm-settings-flags.h"
 
 #define NM_TYPE_SECRET_AGENT            (nm_secret_agent_get_type ())
 #define NM_SECRET_AGENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SECRET_AGENT, NMSecretAgent))
@@ -71,7 +72,7 @@ gconstpointer nm_secret_agent_get_secrets  (NMSecretAgent *agent,
                                             NMConnection *connection,
                                             const char *setting_name,
                                             const char *hint,
-                                            guint32 flags,
+                                            NMSettingsGetSecretsFlags flags,
                                             NMSecretAgentCallback callback,
                                             gpointer callback_data);
 

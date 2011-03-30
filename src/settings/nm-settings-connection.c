@@ -488,7 +488,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
                        const char *agent_dbus_owner,
                        gboolean agent_has_modify,
                        const char *setting_name,
-                       guint32 flags,
+                       NMSettingsGetSecretsFlags flags,
                        GHashTable *secrets,
                        GError *error,
                        gpointer user_data,
@@ -540,7 +540,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 		 */
 		for_each_secret (NM_CONNECTION (self), secrets, has_system_owned_secrets, &agent_had_system);
 		if (agent_had_system) {
-			if (flags == 0) {  /* ie SECRETS_FLAG_NONE */
+			if (flags == NM_SETTINGS_GET_SECRETS_FLAG_NONE) {
 				/* No user interaction was allowed when requesting secrets; the
 				 * agent is being bad.  Remove system-owned secrets.
 				 */
@@ -578,7 +578,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 	/* If no user interaction was allowed, make sure that no "unsaved" secrets
 	 * came back.  Unsaved secrets by definition require user interaction.
 	 */
-	if (flags == 0)  /* ie SECRETS_FLAG_NONE */
+	if (flags == NM_SETTINGS_GET_SECRETS_FLAG_NONE)
 		for_each_secret (NM_CONNECTION (self), secrets, clear_unsaved_secrets, NULL);
 
 	/* Update the connection with our existing secrets from backing storage */
@@ -660,7 +660,7 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
                                     gboolean filter_by_uid,
                                     gulong uid,
                                     const char *setting_name,
-                                    guint32 flags,
+                                    NMSettingsGetSecretsFlags flags,
                                     const char *hint,
                                     NMSettingsConnectionSecretsFunc callback,
                                     gpointer callback_data,
@@ -1213,7 +1213,7 @@ dbus_secrets_auth_cb (NMSettingsConnection *self,
 			                                          TRUE,
 			                                          sender_uid,
 			                                          setting_name,
-			                                          0, /* GET_SECRETS_FLAG_NONE */
+			                                          NM_SETTINGS_GET_SECRETS_FLAG_NONE,
 			                                          NULL,
 			                                          dbus_get_agent_secrets_cb,
 			                                          context,

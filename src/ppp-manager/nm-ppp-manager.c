@@ -442,7 +442,7 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 	guint32 tries;
 	GPtrArray *hints = NULL;
 	GError *error = NULL;
-	guint32 flags = NM_ACT_REQUEST_GET_SECRETS_FLAG_ALLOW_INTERACTION;
+	NMSettingsGetSecretsFlags flags = NM_SETTINGS_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
 	connection = nm_act_request_get_connection (priv->act_req);
 
@@ -468,7 +468,7 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 	 */
 	tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), PPP_MANAGER_SECRET_TRIES));
 	if (tries > 1)
-		flags |= NM_ACT_REQUEST_GET_SECRETS_FLAG_REQUEST_NEW;
+		flags |= NM_SETTINGS_GET_SECRETS_FLAG_REQUEST_NEW;
 
 	priv->secrets_id = nm_act_request_get_secrets (priv->act_req,
 	                                               setting_name,
