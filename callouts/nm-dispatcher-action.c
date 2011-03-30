@@ -237,7 +237,10 @@ add_one_option_to_envp (gpointer key, gpointer value, gpointer user_data)
 }
 
 static char **
-construct_envp (const char *uuid, NMIP4Config *ip4_config, NMDHCP4Config *dhcp4_config)
+construct_envp (const char *uuid,
+                const char *id,
+                NMIP4Config *ip4_config,
+                NMDHCP4Config *dhcp4_config)
 {
 	guint32 env_size = 0;
 	char **envp;
@@ -264,7 +267,8 @@ construct_envp (const char *uuid, NMIP4Config *ip4_config, NMDHCP4Config *dhcp4_
 	           + 1 /* hostname */
 	           + g_slist_length (routes)
 	           + 1 /* routes length */
-	           + 1 /* connection UUID */;
+	           + 1 /* connection UUID */
+	           + 1 /* connection ID */;
 
 	if (dhcp4_config) {
 		options = nm_dhcp4_config_get_options (dhcp4_config);
@@ -275,6 +279,8 @@ construct_envp (const char *uuid, NMIP4Config *ip4_config, NMDHCP4Config *dhcp4_
 
 	if (uuid)
 		envp[envp_idx++] = g_strdup_printf ("CONNECTION_UUID=%s", uuid);
+	if (id)
+		envp[envp_idx++] = g_strdup_printf ("CONNECTION_ID=%s", id);
 
 	/* IP4 config stuff */
 	for (iter = addresses, num = 0; iter; iter = g_slist_next (iter)) {
@@ -384,6 +390,7 @@ dispatch_scripts (const char *action,
                   const char *parent_iface,
                   NMDeviceType type,
                   const char *uuid,
+                  const char *id,
                   NMIP4Config *ip4_config,
                   NMDHCP4Config *dhcp4_config)
 {
@@ -429,7 +436,7 @@ dispatch_scripts (const char *action,
 	}
 	g_dir_close (dir);
 
-	envp = construct_envp (uuid, ip4_config, dhcp4_config);
+	envp = construct_envp (uuid, id, ip4_config, dhcp4_config);
 
 	for (iter = scripts; iter; iter = g_slist_next (iter)) {
 		gchar *argv[4];
@@ -475,7 +482,7 @@ nm_dispatcher_action (Handler *h,
 	Dispatcher *d = g_object_get_data (G_OBJECT (h), "dispatcher");
 	NMConnection *connection;
 	char *iface = NULL, *parent_iface = NULL;
-	const char *uuid = NULL;
+	const char *uuid = NULL, *id = NULL;
 	NMDeviceType type = NM_DEVICE_TYPE_UNKNOWN;
 	NMDeviceState dev_state = NM_DEVICE_STATE_UNKNOWN;
 	NMDevice *device = NULL;
@@ -495,11 +502,8 @@ nm_dispatcher_action (Handler *h,
 
 	connection = nm_connection_new_from_hash (connection_hash, error);
 	if (connection) {
-		NMSettingConnection *s_con;
-
-		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-		if (s_con)
-			uuid = nm_setting_connection_get_uuid (s_con);
+		uuid = nm_connection_get_uuid (connection);
+		id = nm_connection_get_id (connection);
 	} else {
 		g_warning ("%s: Invalid connection: '%s' / '%s' invalid: %d",
 		           __func__,
@@ -560,7 +564,7 @@ nm_dispatcher_action (Handler *h,
 	}
 
 dispatch:
-	dispatch_scripts (action, iface, parent_iface, type, uuid, ip4_config, dhcp4_config);
+	dispatch_scripts (action, iface, parent_iface, type, uuid, id, ip4_config, dhcp4_config);
 
 	if (device)
 		g_object_unref (device);
