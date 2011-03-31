@@ -1447,43 +1447,22 @@ set_property (GObject *object, guint prop_id,
 	case PROP_WIRELESS_ENABLED:
 		b = g_value_get_boolean (value);
 		if (priv->wireless_enabled != b) {
-			priv->wireless_enabled = b;
-			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WIRELESS_ENABLED);
-		}
-		break;
-	case PROP_WIRELESS_HARDWARE_ENABLED:
-		b = g_value_get_boolean (value);
-		if (priv->wireless_hw_enabled != b) {
-			priv->wireless_hw_enabled = b;
-			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WIRELESS_HARDWARE_ENABLED);
+			nm_client_wireless_set_enabled (NM_CLIENT (object), b);
+			/* Let the property value flip when we get the change signal from NM */
 		}
 		break;
 	case PROP_WWAN_ENABLED:
 		b = g_value_get_boolean (value);
 		if (priv->wwan_enabled != b) {
-			priv->wwan_enabled = b;
-			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WWAN_ENABLED);
-		}
-		break;
-	case PROP_WWAN_HARDWARE_ENABLED:
-		b = g_value_get_boolean (value);
-		if (priv->wwan_hw_enabled != b) {
-			priv->wwan_hw_enabled = b;
-			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WWAN_HARDWARE_ENABLED);
+			nm_client_wwan_set_enabled (NM_CLIENT (object), b);
+			/* Let the property value flip when we get the change signal from NM */
 		}
 		break;
 	case PROP_WIMAX_ENABLED:
 		b = g_value_get_boolean (value);
 		if (priv->wimax_enabled != b) {
-			priv->wimax_enabled = b;
-			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WIMAX_ENABLED);
-		}
-		break;
-	case PROP_WIMAX_HARDWARE_ENABLED:
-		b = g_value_get_boolean (value);
-		if (priv->wimax_hw_enabled != b) {
-			priv->wimax_hw_enabled = b;
-			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WIMAX_HARDWARE_ENABLED);
+			nm_client_wimax_set_enabled (NM_CLIENT (object), b);
+			/* Let the property value flip when we get the change signal from NM */
 		}
 		break;
 	default:
@@ -1618,7 +1597,7 @@ nm_client_class_init (NMClientClass *client_class)
 		 g_param_spec_boolean (NM_CLIENT_WIRELESS_ENABLED,
 						   "WirelessEnabled",
 						   "Is wireless enabled",
-						   TRUE,
+						   FALSE,
 						   G_PARAM_READWRITE));
 
 	/**
@@ -1644,8 +1623,8 @@ nm_client_class_init (NMClientClass *client_class)
 		 g_param_spec_boolean (NM_CLIENT_WWAN_ENABLED,
 		                       "WwanEnabled",
 		                       "Is WWAN enabled",
-		                       TRUE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		                       FALSE,
+		                       G_PARAM_READWRITE));
 
 	/**
 	 * NMClient::wwan-hardware-enabled:
@@ -1657,8 +1636,8 @@ nm_client_class_init (NMClientClass *client_class)
 		 g_param_spec_boolean (NM_CLIENT_WWAN_HARDWARE_ENABLED,
 		                       "WwanHardwareEnabled",
 		                       "Is WWAN hardware enabled",
-		                       TRUE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                       FALSE,
+		                       G_PARAM_READABLE));
 
 	/**
 	 * NMClient::wimax-enabled:
@@ -1670,8 +1649,8 @@ nm_client_class_init (NMClientClass *client_class)
 		 g_param_spec_boolean (NM_CLIENT_WIMAX_ENABLED,
 		                       "WimaxEnabled",
 		                       "Is WiMAX enabled",
-		                       TRUE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		                       FALSE,
+		                       G_PARAM_READWRITE));
 
 	/**
 	 * NMClient::wimax-hardware-enabled:
@@ -1683,8 +1662,8 @@ nm_client_class_init (NMClientClass *client_class)
 		 g_param_spec_boolean (NM_CLIENT_WIMAX_HARDWARE_ENABLED,
 		                       "WimaxHardwareEnabled",
 		                       "Is WiMAX hardware enabled",
-		                       TRUE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                       FALSE,
+		                       G_PARAM_READABLE));
 
 	/**
 	 * NMClient::active-connections:
