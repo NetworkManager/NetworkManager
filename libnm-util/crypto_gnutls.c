@@ -58,8 +58,6 @@ crypto_init (GError **error)
 void
 crypto_deinit (void)
 {
-	if (initialized)
-		gnutls_global_deinit();
 }
 
 gboolean

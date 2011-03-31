@@ -234,13 +234,12 @@ gboolean
 nm_utils_init (GError **error)
 {
 	if (!initialized) {
+		initialized = TRUE;
+
 		if (!crypto_init (error))
 			return FALSE;
 
 		_nm_utils_register_value_transformations ();
-
-		atexit (nm_utils_deinit);
-		initialized = TRUE;
 	}
 	return TRUE;
 }
