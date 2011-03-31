@@ -1444,6 +1444,13 @@ set_property (GObject *object, guint prop_id,
 	gboolean b;
 
 	switch (prop_id) {
+	case PROP_NETWORKING_ENABLED:
+		b = g_value_get_boolean (value);
+		if (priv->networking_enabled != b) {
+			nm_client_networking_set_enabled (NM_CLIENT (object), b);
+			/* Let the property value flip when we get the change signal from NM */
+		}
+		break;
 	case PROP_WIRELESS_ENABLED:
 		b = g_value_get_boolean (value);
 		if (priv->wireless_enabled != b) {
@@ -1585,7 +1592,7 @@ nm_client_class_init (NMClientClass *client_class)
 						   "NetworkingEnabled",
 						   "Is networking enabled",
 						   TRUE,
-						   G_PARAM_READABLE));
+						   G_PARAM_READWRITE));
 
 	/**
 	 * NMClient::wireless-enabled:
