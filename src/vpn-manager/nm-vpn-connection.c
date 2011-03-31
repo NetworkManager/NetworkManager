@@ -765,6 +765,7 @@ nm_vpn_connection_disconnect (NMVPNConnection *connection,
 static void
 vpn_secrets_cb (NMSettingsConnection *connection,
                 guint32 call_id,
+                const char *agent_username,
                 const char *setting_name,
                 GError *error,
                 gpointer user_data)
@@ -836,6 +837,7 @@ connection_need_secrets_cb  (DBusGProxy *proxy,
 static void
 existing_secrets_cb (NMSettingsConnection *connection,
                      guint32 call_id,
+                     const char *agent_username,
                      const char *setting_name,
                      GError *error,
                      gpointer user_data)

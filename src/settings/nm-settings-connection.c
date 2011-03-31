@@ -486,6 +486,7 @@ static void
 agent_secrets_done_cb (NMAgentManager *manager,
                        guint32 call_id,
                        const char *agent_dbus_owner,
+                       const char *agent_username,
                        gboolean agent_has_modify,
                        const char *setting_name,
                        NMSettingsGetSecretsFlags flags,
@@ -511,7 +512,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 		            error->code,
 		            error->message ? error->message : "(unknown)");
 
-		callback (self, call_id, setting_name, error, callback_data);
+		callback (self, call_id, NULL, setting_name, error, callback_data);
 		return;
 	}
 
@@ -519,7 +520,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 		local = g_error_new (NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_SETTING,
 		                     "%s.%d - Connection didn't have requested setting '%s'.",
 		                     __FILE__, __LINE__, setting_name);
-		callback (self, call_id, setting_name, local, callback_data);
+		callback (self, call_id, NULL, setting_name, local, callback_data);
 		g_clear_error (&local);
 		return;
 	}
@@ -631,7 +632,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 		            (local && local->message) ? local->message : "(unknown)");
 	}
 
-	callback (self, call_id, setting_name, local, callback_data);
+	callback (self, call_id, agent_username, setting_name, local, callback_data);
 	g_clear_error (&local);
 	if (hash)
 		g_hash_table_destroy (hash);
@@ -1167,6 +1168,7 @@ impl_settings_connection_delete (NMSettingsConnection *self,
 static void
 dbus_get_agent_secrets_cb (NMSettingsConnection *self,
                            guint32 call_id,
+                           const char *agent_username,
                            const char *setting_name,
                            GError *error,
                            gpointer user_data)

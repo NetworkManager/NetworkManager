@@ -94,6 +94,7 @@ void nm_settings_connection_delete (NMSettingsConnection *connection,
 
 typedef void (*NMSettingsConnectionSecretsFunc) (NMSettingsConnection *connection,
                                                  guint32 call_id,
+                                                 const char *agent_username,
                                                  const char *setting_name,
                                                  GError *error,
                                                  gpointer user_data);
