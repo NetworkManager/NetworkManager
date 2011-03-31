@@ -74,10 +74,6 @@ crypto_init (GError **error)
 void
 crypto_deinit (void)
 {
-	if (initialized) {
-		NSS_Shutdown ();
-		PR_Cleanup ();
-	}
 }
 
 gboolean
