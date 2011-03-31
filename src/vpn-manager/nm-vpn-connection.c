@@ -62,6 +62,7 @@ typedef struct {
 	gulong user_uid;
 	NMActRequest *act_request;
 	guint32 secrets_id;
+	char *username;
 
 	NMDevice *parent_dev;
 	gulong device_monitor;
@@ -593,8 +594,36 @@ nm_vpn_connection_connect_cb (DBusGProxy *proxy, GError *err, gpointer user_data
 	}
 }
 
+/* Add a username to a hashed connection */
+static GHashTable *
+_hash_with_username (NMConnection *connection, const char *username)
+{
+	NMConnection *dup;
+	NMSetting *s_vpn;
+	GHashTable *hash;
+	const char *existing;
+
+	/* Shortcut if we weren't given a username or if there already was one in
+	 * the VPN setting; don't bother duplicating the connection and everything.
+	 */
+	s_vpn = nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
+	g_assert (s_vpn);
+	existing = nm_setting_vpn_get_user_name (NM_SETTING_VPN (s_vpn));
+	if (username == NULL || existing)
+		return nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
+
+	dup = nm_connection_duplicate (connection);
+	g_assert (dup);
+	s_vpn = nm_connection_get_setting (dup, NM_TYPE_SETTING_VPN);
+	g_assert (s_vpn);
+	g_object_set (s_vpn, NM_SETTING_VPN_USER_NAME, username, NULL);
+	hash = nm_connection_to_hash (dup, NM_SETTING_HASH_FLAG_ALL);
+	g_object_unref (dup);
+	return hash;
+}
+
 static void
-really_activate (NMVPNConnection *connection)
+really_activate (NMVPNConnection *connection, const char *username)
 {
 	NMVPNConnectionPrivate *priv;
 	GHashTable *hash;
@@ -614,7 +643,7 @@ really_activate (NMVPNConnection *connection)
 						    G_CALLBACK (nm_vpn_connection_ip4_config_get),
 						    connection, NULL);
 
-	hash = nm_connection_to_hash (priv->connection, NM_SETTING_HASH_FLAG_ALL);
+	hash = _hash_with_username (priv->connection, username);
 	org_freedesktop_NetworkManager_VPN_Plugin_connect_async (priv->proxy,
 	                                                         hash,
 	                                                         nm_vpn_connection_connect_cb,
@@ -781,7 +810,7 @@ vpn_secrets_cb (NMSettingsConnection *connection,
 	if (error)
 		nm_vpn_connection_fail (self, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
 	else
-		really_activate (self);
+		really_activate (self, agent_username);
 }
 
 static void
@@ -808,7 +837,7 @@ connection_need_secrets_cb  (DBusGProxy *proxy,
 				    nm_connection_get_id (priv->connection));
 
 		/* No secrets required */
-		really_activate (self);
+		really_activate (self, priv->username);
 		return;
 	}
 
@@ -861,8 +890,12 @@ existing_secrets_cb (NMSettingsConnection *connection,
 			        nm_connection_get_uuid (priv->connection),
 			        nm_connection_get_id (priv->connection));
 
+		/* Cache the username for later */
+		g_free (priv->username);
+		priv->username = g_strdup (agent_username);
+
 		/* Ask the VPN service if more secrets are required */
-		hash = nm_connection_to_hash (priv->connection, NM_SETTING_HASH_FLAG_ALL);
+		hash = _hash_with_username (priv->connection, priv->username);
 		org_freedesktop_NetworkManager_VPN_Plugin_need_secrets_async (priv->proxy,
 		                                                              hash,
 		                                                              connection_need_secrets_cb,
@@ -1043,6 +1076,7 @@ dispose (GObject *object)
 
 	g_object_unref (priv->act_request);
 	g_object_unref (priv->connection);
+	g_free (priv->username);
 
 	G_OBJECT_CLASS (nm_vpn_connection_parent_class)->dispose (object);
 }
