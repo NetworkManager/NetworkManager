@@ -731,6 +731,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 		/* Wired 802.1x must always use eapol_flags=0 */
 		if (!add_string_val (self, "0", "eapol_flags", FALSE, FALSE))
 			return FALSE;
+		nm_supplicant_config_set_ap_scan (self, 0);
 	}
 
 	ADD_STRING_LIST_VAL (setting, 802_1x, eap_method, eap_methods, "eap", TRUE, FALSE);
