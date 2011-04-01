@@ -70,7 +70,6 @@ struct NMPolicy {
 	char *cur_hostname;  /* hostname we want to assign */
 };
 
-#define INVALID_TAG "invalid"
 #define RETRIES_TAG "autoconnect-retries"
 #define RETRIES_DEFAULT	4
 
@@ -670,13 +669,15 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 static void
 set_connection_auto_retries (NMConnection *connection, guint retries)
 {
-	g_object_set_data (G_OBJECT (connection), RETRIES_TAG, GUINT_TO_POINTER (retries));
+	/* add +1 so that the tag still exists if the # retries is 0 */
+	g_object_set_data (G_OBJECT (connection), RETRIES_TAG, GUINT_TO_POINTER (retries + 1));
 }
 
 static guint32
 get_connection_auto_retries (NMConnection *connection)
 {
-	return GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), RETRIES_TAG));
+	/* subtract 1 to handle the +1 from set_connection_auto_retries() */
+	return GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), RETRIES_TAG)) - 1;
 }
 
 typedef struct {
@@ -709,29 +710,15 @@ auto_activate_device (gpointer user_data)
 	/* Remove connections that shouldn't be auto-activated */
 	while (iter) {
 		NMConnection *candidate = NM_CONNECTION (iter->data);
-		gboolean ignore = FALSE;
 
-		/* Ignore connecitons that were tried too many times */
-		if (g_object_get_data (G_OBJECT (candidate), INVALID_TAG)) {
-			guint retries = get_connection_auto_retries (candidate);
-
-			if (retries == 0)
-				ignore = TRUE;
-			else if (retries > 0)
-				set_connection_auto_retries (candidate, retries - 1);
-		} else {
-			/* Set the initial # of retries for auto-connection */
-			set_connection_auto_retries (candidate, RETRIES_DEFAULT);
-		}
-
-		/* Ignore connections that aren't visible to any logged-in users */
-		if (ignore == FALSE) {
-			if (!nm_settings_connection_is_visible (NM_SETTINGS_CONNECTION (candidate)))
-				ignore = TRUE;
-		}
-
+		/* Grab next item before we possibly delete the current item */
 		iter = g_slist_next (iter);
-		if (ignore)
+
+		/* Ignore connections that were tried too many times or are not visible
+		 * to any logged-in users.
+		 */
+		if (   get_connection_auto_retries (candidate) == 0
+		    || nm_settings_connection_is_visible (NM_SETTINGS_CONNECTION (candidate)) == FALSE)
 			connections = g_slist_remove (connections, candidate);
 	}
 
@@ -803,11 +790,11 @@ sleeping_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 	g_object_get (G_OBJECT (manager), NM_MANAGER_SLEEPING, &sleeping, NULL);
 	g_object_get (G_OBJECT (manager), NM_MANAGER_NETWORKING_ENABLED, &enabled, NULL);
 
-	/* Clear the invalid flag on all connections so they'll get retried on wakeup */
+	/* Reset retries on all connections so they'll checked on wakeup */
 	if (sleeping || !enabled) {
 		connections = nm_settings_get_connections (policy->settings);
 		for (iter = connections; iter; iter = g_slist_next (iter))
-			g_object_set_data (G_OBJECT (iter->data), INVALID_TAG, NULL);
+			set_connection_auto_retries (NM_CONNECTION (iter->data), RETRIES_DEFAULT);
 		g_slist_free (connections);
 	}
 }
@@ -872,14 +859,21 @@ device_state_changed (NMDevice *device,
 		 * it doesn't get automatically chosen over and over and over again.
 		 */
 		if (connection && IS_ACTIVATING_STATE (old_state)) {
-			g_object_set_data (G_OBJECT (connection), INVALID_TAG, GUINT_TO_POINTER (TRUE));
+			guint32 tries = get_connection_auto_retries (connection);
 
-			/* If the connection couldn't get the secrets it needed (ex because
-			 * the user canceled, or no secrets exist), there's no point in
-			 * automatically retrying because it's just going to fail anyway.
-			 */
-			if (reason == NM_DEVICE_STATE_REASON_NO_SECRETS)
+			if (reason == NM_DEVICE_STATE_REASON_NO_SECRETS) {
+				/* If the connection couldn't get the secrets it needed (ex because
+				 * the user canceled, or no secrets exist), there's no point in
+				 * automatically retrying because it's just going to fail anyway.
+				 */
 				set_connection_auto_retries (connection, 0);
+			} else if (tries > 0) {
+				/* Otherwise if it's a random failure, just decrease the number
+				 * of automatic retries so that the connection gets tried again
+				 * if it still has a retry count.
+				 */
+				set_connection_auto_retries (connection, tries - 1);
+			}
 
 			if (get_connection_auto_retries (connection) == 0)
 				nm_log_info (LOGD_DEVICE, "Marking connection '%s' invalid.", nm_connection_get_id (connection));
@@ -889,10 +883,7 @@ device_state_changed (NMDevice *device,
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
 		if (connection) {
-			/* Clear the invalid tag on the connection */
-			g_object_set_data (G_OBJECT (connection), INVALID_TAG, NULL);
-
-			/* Reset RETRIES_TAG to number from the setting */
+			/* Reset auto retries back to default since connection was successful */
 			set_connection_auto_retries (connection, RETRIES_DEFAULT);
 
 			/* And clear secrets so they will always be requested from the
@@ -1026,6 +1017,7 @@ connection_added (NMSettings *settings,
                   NMConnection *connection,
                   gpointer user_data)
 {
+	set_connection_auto_retries (connection, RETRIES_DEFAULT);
 	schedule_activate_all ((NMPolicy *) user_data);
 }
 
@@ -1041,8 +1033,8 @@ connection_updated (NMSettings *settings,
                     NMConnection *connection,
                     gpointer user_data)
 {
-	/* Clear the invalid tag on the connection if it got updated. */
-	g_object_set_data (G_OBJECT (connection), INVALID_TAG, NULL);
+	/* Reset auto retries back to default since connection was updated */
+	set_connection_auto_retries (connection, RETRIES_DEFAULT);
 
 	schedule_activate_all ((NMPolicy *) user_data);
 }
