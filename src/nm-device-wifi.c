@@ -2733,7 +2733,6 @@ handle_auth_or_fail (NMDeviceWifi *self,
 		/* If the caller doesn't necessarily want completely new secrets,
 		 * only ask for new secrets after the first failure.
 		 */
-g_message ("%s: new secrets %d, tries %d", __func__, new_secrets, tries);
 		if (new_secrets || tries)
 			flags |= NM_SETTINGS_GET_SECRETS_FLAG_REQUEST_NEW;
 		nm_act_request_get_secrets (req, setting_name, flags, NULL, wifi_secrets_cb, self);
