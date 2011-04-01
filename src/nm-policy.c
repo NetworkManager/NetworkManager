@@ -873,6 +873,14 @@ device_state_changed (NMDevice *device,
 		 */
 		if (connection && IS_ACTIVATING_STATE (old_state)) {
 			g_object_set_data (G_OBJECT (connection), INVALID_TAG, GUINT_TO_POINTER (TRUE));
+
+			/* If the connection couldn't get the secrets it needed (ex because
+			 * the user canceled, or no secrets exist), there's no point in
+			 * automatically retrying because it's just going to fail anyway.
+			 */
+			if (reason == NM_DEVICE_STATE_REASON_NO_SECRETS)
+				set_connection_auto_retries (connection, 0);
+
 			if (get_connection_auto_retries (connection) == 0)
 				nm_log_info (LOGD_DEVICE, "Marking connection '%s' invalid.", nm_connection_get_id (connection));
 			nm_connection_clear_secrets (connection);
