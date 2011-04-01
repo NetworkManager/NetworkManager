@@ -77,6 +77,18 @@ static struct wmxsdk *deviceid_to_wmxsdk(WIMAX_API_DEVICE_ID *device_id)
 	return NULL;
 }
 
+static int deviceid_to_index(WIMAX_API_DEVICE_ID *device_id)
+{
+	unsigned cnt;
+
+	for (cnt = 0; cnt < IWMX_SDK_DEV_MAX; cnt++) {
+		struct wmxsdk *wmxsdk = g_iwmx_sdk_devs[cnt];
+		if (wmxsdk && wmxsdk->device_id.deviceIndex == device_id->deviceIndex)
+			return cnt;
+	}
+	return -1;
+}
+
 struct wmxsdk *iwmx_sdk_get_wmxsdk_for_iface(const char *iface)
 {
 	unsigned cnt;
@@ -1366,19 +1378,24 @@ static void iwmx_sdk_addremove_cb(WIMAX_API_DEVICE_ID *devid,
 		}
 	}
 
-	if (device_id_list_size < devid->deviceIndex) {
-		nm_log_err(LOGD_WIMAX, "wmxsdk: changed device (%u) not in the list? (%u items)",
-		           devid->deviceIndex, device_id_list_size);
-		goto out;
-	}
-
 	if (presence) {
-		WIMAX_API_HW_DEVICE_ID *dev =
-			device_id_list + devid->deviceIndex;
-		iwmx_sdk_dev_add(devid->deviceIndex, dev->deviceIndex,
-			       dev->deviceName);
+		WIMAX_API_HW_DEVICE_ID *dev;
+
+		/* Make sure the wimax NS isn't lying to us */
+		if (device_id_list_size < devid->deviceIndex) {
+			nm_log_err(LOGD_WIMAX, "wmxsdk: changed device (%u) not in the list? (%u items)",
+			           devid->deviceIndex, device_id_list_size);
+			goto out;
+		}
+
+		/* Add the device to our internal list */
+		dev = device_id_list + devid->deviceIndex;
+		iwmx_sdk_dev_add(devid->deviceIndex, dev->deviceIndex, dev->deviceName);
 	} else {
-		iwmx_sdk_dev_rm(devid->deviceIndex);
+		/* Remove the device from our internal list */
+		cnt = deviceid_to_index(devid);
+		if (cnt >= 0)
+			iwmx_sdk_dev_rm(cnt);
 	}
 
 out:
