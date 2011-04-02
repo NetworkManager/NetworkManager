@@ -361,7 +361,7 @@ nm_setting_connection_permissions_user_allowed (NMSettingConnection *setting,
  * @setting: the #NMSettingConnection
  * @ptype: the permission type; at this time only "user" is supported
  * @pitem: the permission item formatted as required for @ptype
- * @detail: unused at this time; must be %NULL
+ * @detail: (allow-none): unused at this time; must be %NULL
  *
  * Adds a permission to the connection's permission list.  At this time, only
  * the "user" permission type is supported, and @pitem must be a username. See
