@@ -694,6 +694,7 @@ process_nduseropt_rdnss (NMIP6Device *device, struct nd_opt_hdr *opt)
 			continue;
 		}
 
+		/* Update the cached timeout if we already saw this server */
 		for (i = 0; i < device->rdnss_servers->len; i++) {
 			cur_server = &(g_array_index (device->rdnss_servers, NMIP6RDNSS, i));
 
@@ -836,6 +837,7 @@ process_nduseropt_dnssl (NMIP6Device *device, struct nd_opt_hdr *opt)
 		if (domain_str[0] == '\0')
 			continue;
 
+		/* Update cached domain information if we've seen this domain before */
 		for (i = 0; i < device->dnssl_domains->len; i++) {
 			cur_domain = &(g_array_index (device->dnssl_domains, NMIP6DNSSL, i));
 
