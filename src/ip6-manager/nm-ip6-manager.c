@@ -308,9 +308,9 @@ set_rdnss_timeout (NMIP6Device *device)
 	}
 
 	if (expires) {
-		device->rdnss_timeout_id = g_timeout_add_seconds (expires - now,
-														  rdnss_expired,
-														  device);
+		device->rdnss_timeout_id = g_timeout_add_seconds (MIN (expires - now, G_MAXUINT32 - 1),
+		                                                  rdnss_expired,
+		                                                  device);
 	}
 }
 
@@ -363,7 +363,7 @@ set_dnssl_timeout (NMIP6Device *device)
 	}
 
 	if (expires) {
-		device->dnssl_timeout_id = g_timeout_add_seconds (expires - now,
+		device->dnssl_timeout_id = g_timeout_add_seconds (MIN (expires - now, G_MAXUINT32 - 1),
 		                                                  dnssl_expired,
 		                                                  device);
 	}
