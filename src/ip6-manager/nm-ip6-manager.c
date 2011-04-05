@@ -689,8 +689,10 @@ process_nduseropt_rdnss (NMIP6Device *device, struct nd_opt_hdr *opt)
 	for (addr = (struct in6_addr *) (rdnss_opt + 1); opt_len >= 2; addr++, opt_len -= 2) {
 		char buf[INET6_ADDRSTRLEN + 1];
 
-		if (!inet_ntop (AF_INET6, addr, buf, sizeof (buf)))
-			strcpy(buf, "[invalid]");
+		if (!inet_ntop (AF_INET6, addr, buf, sizeof (buf))) {
+			nm_log_warn (LOGD_IP6, "(%s): received invalid RA-provided nameserver", device->iface);
+			continue;
+		}
 
 		for (i = 0; i < device->rdnss_servers->len; i++) {
 			cur_server = &(g_array_index (device->rdnss_servers, NMIP6RDNSS, i));
