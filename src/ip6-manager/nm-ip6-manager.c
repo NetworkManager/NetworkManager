@@ -30,7 +30,6 @@
 #include "NetworkManagerUtils.h"
 #include "nm-marshal.h"
 #include "nm-logging.h"
-#include "nm-system.h"
 
 /* Pre-DHCP addrconf timeout, in seconds */
 #define NM_IP6_TIMEOUT 20
