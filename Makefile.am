@@ -28,8 +28,7 @@ DISTCHECK_CONFIGURE_FLAGS = \
 	--with-tests=yes \
 	--with-docs=yes \
 	--with-udev-dir=$$dc_install_base/lib/udev \
-	--with-systemdsystemunitdir=$$dc_install_base/$(systemdsystemunitdir) \
-	--enable-wimax=no
+	--with-systemdsystemunitdir=$$dc_install_base/$(systemdsystemunitdir)
 
 DISTCLEANFILES = intltool-extract intltool-merge intltool-update
 
