@@ -1680,7 +1680,7 @@ dhcp6_start (NMDevice *self,
 	 */
 	err = nm_system_set_ip6_route (priv->ip_iface ? priv->ip_ifindex : priv->ifindex,
 	                               &dest, 8, NULL, 256, 0, RTPROT_BOOT, RT_TABLE_LOCAL, NULL);
-	if (err) {
+	if (err && (nl_get_errno () != EEXIST)) {
 		nm_log_err (LOGD_DEVICE | LOGD_IP6,
 		            "(%s): failed to add IPv6 multicast route: %s",
 		            priv->ip_iface ? priv->ip_iface : priv->iface, nl_geterror ());

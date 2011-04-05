@@ -312,10 +312,10 @@ sync_addresses (const char *iface, int ifindex, int family,
 		}
 
 		err = rtnl_addr_add (nlh, addrs[i], 0);
-		if (err < 0) {
+		if (err < 0 && (nl_get_errno () != EEXIST)) {
 			nm_log_err (log_domain,
 			            "(%s): error %d returned from rtnl_addr_add():\n%s",
-						iface, err, nl_geterror ());
+			            iface, err, nl_geterror ());
 		}
 
 		rtnl_addr_put (addrs[i]);
