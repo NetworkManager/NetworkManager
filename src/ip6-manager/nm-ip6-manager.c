@@ -261,7 +261,7 @@ static gboolean
 rdnss_expired (gpointer user_data)
 {
 	NMIP6Device *device = user_data;
-	CallbackInfo info = { device, IP6_DHCP_OPT_NONE };
+	CallbackInfo info = { device, IP6_DHCP_OPT_NONE, FALSE };
 
 	nm_log_dbg (LOGD_IP6, "(%s): IPv6 RDNSS information expired", device->iface);
 
