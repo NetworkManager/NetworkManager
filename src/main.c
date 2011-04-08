@@ -65,6 +65,7 @@
  */
 static NMManager *manager = NULL;
 static GMainLoop *main_loop = NULL;
+static int quit_pipe[2] = { -1, -1 };
 
 typedef struct {
 	time_t time;
@@ -152,55 +153,55 @@ nm_signal_handler (int signo)
 		return;
 	++in_fatal;
 
-	switch (signo)
-	{
-		case SIGSEGV:
-		case SIGBUS:
-		case SIGILL:
-		case SIGABRT:
-			nm_log_warn (LOGD_CORE, "caught signal %d. Generating backtrace...", signo);
-			nm_logging_backtrace ();
-			exit (1);
-			break;
-
-		case SIGFPE:
-		case SIGPIPE:
-			/* let the fatal signals interrupt us */
-			--in_fatal;
-
-			nm_log_warn (LOGD_CORE, "caught signal %d, shutting down abnormally. Generating backtrace...", signo);
-			nm_logging_backtrace ();
-			g_main_loop_quit (main_loop);
-			break;
-
-		case SIGINT:
-		case SIGTERM:
-			/* let the fatal signals interrupt us */
-			--in_fatal;
-
-			nm_log_info (LOGD_CORE, "caught signal %d, shutting down normally.", signo);
-			quit_early = TRUE;
-			g_main_loop_quit (main_loop);
-			break;
-
-		case SIGHUP:
-			--in_fatal;
-			/* FIXME:
-			 * Reread config stuff like system config files, VPN service files, etc
-			 */
-			break;
-
-		case SIGUSR1:
-			--in_fatal;
-			/* FIXME:
-			 * Play with log levels or something
-			 */
-			break;
-
-		default:
-			signal (signo, nm_signal_handler);
-			break;
+	switch (signo) {
+	case SIGSEGV:
+	case SIGBUS:
+	case SIGILL:
+	case SIGABRT:
+		nm_log_warn (LOGD_CORE, "caught signal %d. Generating backtrace...", signo);
+		nm_logging_backtrace ();
+		exit (1);
+		break;
+	case SIGFPE:
+	case SIGPIPE:
+		/* let the fatal signals interrupt us */
+		--in_fatal;
+		nm_log_warn (LOGD_CORE, "caught signal %d, shutting down abnormally. Generating backtrace...", signo);
+		nm_logging_backtrace ();
+		write (quit_pipe[1], "X", 1);
+		break;
+	case SIGINT:
+	case SIGTERM:
+		/* let the fatal signals interrupt us */
+		--in_fatal;
+		nm_log_info (LOGD_CORE, "caught signal %d, shutting down normally.", signo);
+		quit_early = TRUE;
+		write (quit_pipe[1], "X", 1);
+		break;
+	case SIGHUP:
+		--in_fatal;
+		/* Reread config stuff like system config files, VPN service files, etc */
+		break;
+	case SIGUSR1:
+		--in_fatal;
+		/* Play with log levels or something */
+		break;
+	default:
+		signal (signo, nm_signal_handler);
+		break;
 	}
+}
+
+static gboolean
+quit_watch (GIOChannel *src, GIOCondition condition, gpointer user_data)
+{
+
+	if (condition & G_IO_IN) {
+		nm_log_warn (LOGD_CORE, "quit request received, terminating...");
+		g_main_loop_quit (main_loop);
+	}
+
+	return FALSE;
 }
 
 static void
@@ -208,6 +209,17 @@ setup_signals (void)
 {
 	struct sigaction action;
 	sigset_t mask;
+	GIOChannel *quit_channel;
+
+	/* Set up our quit pipe */
+	if (pipe (quit_pipe) < 0) {
+		fprintf (stderr, "Failed to initialze SIGTERM pipe: %d", errno);
+		exit (1);
+	}
+	fcntl (quit_pipe[1], F_SETFL, O_NONBLOCK | fcntl (quit_pipe[1], F_GETFL));
+
+	quit_channel = g_io_channel_unix_new (quit_pipe[0]);
+	g_io_add_watch_full (quit_channel, G_PRIORITY_HIGH, G_IO_IN | G_IO_ERR, quit_watch, NULL, NULL);
 
 	sigemptyset (&mask);
 	action.sa_handler = nm_signal_handler;
