@@ -1390,9 +1390,9 @@ real_complete_connection (NMDevice *device,
 	const GByteArray *ssid = NULL;
 	GSList *iter;
 
-	s_wifi = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
-	s_wsec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
-	s_8021x = (NMSetting8021x *) nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X);
+	s_wifi = nm_connection_get_setting_wireless (connection);
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
+	s_8021x = nm_connection_get_setting_802_1x (connection);
 
 	if (!specific_object) {
 		/* If not given a specific object, we need at minimum an SSID */
@@ -1430,8 +1430,10 @@ real_complete_connection (NMDevice *device,
 			gboolean valid;
 
 			settings = g_slist_prepend (settings, s_wifi);
-			settings = g_slist_prepend (settings, s_wsec);
-			settings = g_slist_prepend (settings, s_8021x);
+			if (s_wsec)
+				settings = g_slist_prepend (settings, s_wsec);
+			if (s_8021x)
+				settings = g_slist_prepend (settings, s_8021x);
 			valid = nm_setting_verify (NM_SETTING (s_wifi), settings, error);
 			g_slist_free (settings);
 			if (!valid)
@@ -1447,6 +1449,12 @@ real_complete_connection (NMDevice *device,
 			             specific_object);
 			return FALSE;
 		}
+	}
+
+	/* Add a wifi setting if one doesn't exist yet */
+	if (!s_wifi) {
+		s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_wifi));
 	}
 
 	if (ap) {

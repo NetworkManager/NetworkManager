@@ -481,14 +481,10 @@ nm_ap_utils_complete_connection (const GByteArray *ap_ssid,
 	const char *mode, *key_mgmt, *auth_alg, *leap_username;
 	gboolean adhoc = FALSE;
 
-	s_wifi = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
-	s_wsec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
-	s_8021x = (NMSetting8021x *) nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X);
-
-	if (!s_wifi) {
-		s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
-		nm_connection_add_setting (connection, NM_SETTING (s_wifi));
-	}
+	s_wifi = nm_connection_get_setting_wireless (connection);
+	g_assert (s_wifi);
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
+	s_8021x = nm_connection_get_setting_802_1x (connection);
 
 	/* Fill in missing SSID */
 	ssid = nm_setting_wireless_get_ssid (s_wifi);

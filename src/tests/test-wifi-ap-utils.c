@@ -77,6 +77,14 @@ complete_connection (const char *ssid,
 {
 	GByteArray *tmp;
 	gboolean success;
+	NMSettingWireless *s_wifi;
+
+	/* Add a wifi setting if one doesn't exist */
+	s_wifi = nm_connection_get_setting_wireless (src);
+	if (!s_wifi) {
+		s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+		nm_connection_add_setting (src, NM_SETTING (s_wifi));
+	}
 
 	tmp = g_byte_array_sized_new (strlen (ssid));
 	g_byte_array_append (tmp, (const guint8 *) ssid, strlen (ssid));
