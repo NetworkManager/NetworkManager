@@ -189,19 +189,6 @@ error:
 	return NULL;
 }
 
-static void
-session_merge (Session *src, Session *dest)
-{
-	g_return_if_fail (src != NULL);
-	g_return_if_fail (dest != NULL);
-
-	g_warn_if_fail (g_strcmp0 (src->user, dest->user) == 0);
-	g_warn_if_fail (src->uid == dest->uid);
-
-	dest->local = (dest->local || src->local);
-	dest->active = (dest->active || src->active);
-}
-
 /********************************************************************/
 
 static void
@@ -250,24 +237,14 @@ reload_database (NMSessionMonitor *self, GError **error)
 	}
 
 	for (i = 0; i < len; i++) {
-		Session *found;
-
 		if (!g_str_has_prefix (groups[i], "Session "))
 			continue;
 
 		s = session_new (self->database, groups[i], error);
 		if (!s)
 			goto error;
-
-		found = g_hash_table_lookup (self->sessions_by_user, (gpointer) s->user);
-		if (found) {
-			session_merge (s, found);
-			session_free (s);
-		} else {
-			/* Entirely new user */
-			g_hash_table_insert (self->sessions_by_user, (gpointer) s->user, s);
-			g_hash_table_insert (self->sessions_by_uid, GUINT_TO_POINTER (s->uid), s);
-		}
+		g_hash_table_insert (self->sessions_by_user, (gpointer) s->user, s);
+		g_hash_table_insert (self->sessions_by_uid, GUINT_TO_POINTER (s->uid), s);
 	}
 
 	g_strfreev (groups);
