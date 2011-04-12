@@ -897,7 +897,7 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	NMSettingWired *s_wired;
 	const GByteArray *device_mac, *cloned_mac;
 	char *tmp;
-	const char *nettype, *portname, *s390_key, *s390_val;
+	const char *nettype, *portname, *ctcprot, *s390_key, *s390_val;
 	guint32 mtu, num_opts, i;
 	const GPtrArray *s390_subchannels;
 	GString *str;
@@ -964,6 +964,11 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	if (portname)
 		svSetValue (ifcfg, "PORTNAME", portname, FALSE);
 
+	svSetValue (ifcfg, "CTCPROT", NULL, FALSE);
+	ctcprot = nm_setting_wired_get_s390_option_by_key (s_wired, "ctcprot");
+	if (ctcprot)
+		svSetValue (ifcfg, "CTCPROT", ctcprot, FALSE);
+
 	svSetValue (ifcfg, "OPTIONS", NULL, FALSE);
 	num_opts = nm_setting_wired_get_num_s390_options (s_wired);
 	if (s390_subchannels && num_opts) {
@@ -972,7 +977,7 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 			nm_setting_wired_get_s390_option (s_wired, i, &s390_key, &s390_val);
 
 			/* portname is handled separately */
-			if (!strcmp (s390_key, "portname"))
+			if (!strcmp (s390_key, "portname") || !strcmp (s390_key, "ctcprot"))
 				continue;
 
 			if (str->len)
