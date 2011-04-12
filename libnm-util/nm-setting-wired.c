@@ -107,7 +107,7 @@ static const char *valid_s390_opts[] = {
 	"route6", "fake_broadcast", "broadcast_mode", "canonical_macaddr",
 	"checksumming", "sniffer", "large_send", "ipato_enable", "ipato_invert4",
 	"ipato_add4", "ipato_invert6", "ipato_add6", "vipa_add4", "vipa_add6",
-	"rxip_add4", "rxip_add6", "lancmd_timeout",
+	"rxip_add4", "rxip_add6", "lancmd_timeout", "ctcprot",
 	NULL
 };
 
@@ -197,7 +197,7 @@ nm_setting_wired_get_s390_subchannels (NMSettingWired *setting)
  * @setting: the #NMSettingWired
  *
  * Returns the s390 device type this connection should apply to.  Will be one
- * of 'qeth', 'lcs', or 'ctcm'.
+ * of 'qeth', 'lcs', or 'ctc'.
  *
  * Returns: the s390 device type
  **/
@@ -361,7 +361,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
 	const char *valid_ports[] = { "tp", "aui", "bnc", "mii", NULL };
 	const char *valid_duplex[] = { "half", "full", NULL };
-	const char *valid_nettype[] = { "qeth", "lcs", "ctcm", NULL };
+	const char *valid_nettype[] = { "qeth", "lcs", "ctc", NULL };
 	GHashTableIter iter;
 	const char *key, *value;
 
