@@ -71,6 +71,7 @@ EXTRA_DIST = \
 	ifcfg-test-wifi-wep-104-ascii \
 	keys-test-wifi-wep-104-ascii \
 	ifcfg-test-wired-qeth-static \
+	ifcfg-test-wired-ctc-static \
 	ifcfg-test-bridge-main \
 	ifcfg-test-bridge-component \
 	ifcfg-test-vlan-interface \

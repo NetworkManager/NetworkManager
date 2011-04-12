@@ -5832,6 +5832,75 @@ test_read_wired_qeth_static (void)
 	g_object_unref (connection);
 }
 
+#define TEST_IFCFG_WIRED_CTC_STATIC TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-ctc-static"
+
+static void
+test_read_wired_ctc_static (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const char *expected_id = "System test-wired-ctc-static";
+	const char *expected_channel0 = "0.0.1b00";
+	const char *expected_channel1 = "0.0.1b01";
+	const GPtrArray *subchannels;
+	gboolean success;
+
+	connection = connection_from_file (TEST_IFCFG_WIRED_CTC_STATIC,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	g_assert_no_error (error);
+	g_assert (connection);
+	
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_assert (unmanaged == FALSE);
+
+	/* ===== CONNECTION SETTING ===== */
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con != NULL);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, expected_id);
+
+	/* ===== WIRED SETTING ===== */
+	s_wired = nm_connection_get_setting_wired (connection);
+	g_assert (s_wired != NULL);
+
+	g_assert (nm_setting_wired_get_mac_address (s_wired) == NULL);
+
+	/* Subchannels */
+	subchannels = nm_setting_wired_get_s390_subchannels (s_wired);
+	g_assert (subchannels != NULL);
+	g_assert_cmpint (subchannels->len, ==, 2);
+
+	g_assert_cmpstr (g_ptr_array_index (subchannels, 0), ==, expected_channel0);
+	g_assert_cmpstr (g_ptr_array_index (subchannels, 1), ==, expected_channel1);
+
+	/* Nettype */
+	g_assert_cmpstr (nm_setting_wired_get_s390_nettype (s_wired), ==, "ctc");
+
+	/* port name */
+	tmp = nm_setting_wired_get_s390_option_by_key (s_wired, "ctcprot");
+	g_assert (tmp != NULL);
+	g_assert_cmpstr (tmp, ==, "0");
+
+	g_object_unref (connection);
+}
+
 #define TEST_IFCFG_WIFI_WEP_NO_KEYS TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wep-no-keys"
 
 static void
@@ -10758,6 +10827,7 @@ int main (int argc, char **argv)
 	test_read_wifi_wpa_eap_ttls_tls ();
 	test_read_wifi_wep_eap_ttls_chap ();
 	test_read_wired_qeth_static ();
+	test_read_wired_ctc_static ();
 	test_read_wifi_wep_no_keys ();
 	test_read_permissions ();
 	test_read_wifi_wep_agent_keys ();
