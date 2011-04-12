@@ -9187,6 +9187,132 @@ test_write_wired_qeth_dhcp (void)
 }
 
 static void
+test_write_wired_ctc_dhcp (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	char *uuid;
+	GPtrArray *subchans;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	shvarFile *ifcfg;
+	char *tmp;
+
+	connection = nm_connection_new ();
+	g_assert (connection);
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	g_assert (s_con);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wired ctc Static",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	g_assert (s_wired);
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	subchans = g_ptr_array_sized_new (2);
+	g_ptr_array_add (subchans, "0.0.600");
+	g_ptr_array_add (subchans, "0.0.601");
+	g_object_set (s_wired,
+	              NM_SETTING_WIRED_S390_SUBCHANNELS, subchans,
+	              NM_SETTING_WIRED_S390_NETTYPE, "ctc",
+	              NULL);
+	g_ptr_array_free (subchans, TRUE);
+	nm_setting_wired_add_s390_option (s_wired, "ctcprot", "0");
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	g_assert (s_ip4);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	g_assert (s_ip6);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+	g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
+
+	/* Verify */
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_assert (testfile != NULL);
+
+	/* Ensure the CTCPROT item gets written out as it's own option */
+	ifcfg = svNewFile (testfile);
+	g_assert (ifcfg);
+
+	tmp = svGetValue (ifcfg, "CTCPROT", TRUE);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, "0");
+
+	/* And that it's not in the generic OPTIONS string */
+	tmp = svGetValue (ifcfg, "OPTIONS", TRUE);
+	g_assert (tmp == NULL);
+
+	svCloseFile (ifcfg);
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_ETHERNET,
+	                               NULL,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &routefile,
+	                               &route6file,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	g_assert (reread);
+	success = nm_connection_verify (reread, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
+	g_assert (success);
+
+	if (route6file)
+		unlink (route6file);
+
+	g_free (testfile);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+
+static void
 test_write_wired_pppoe (void)
 {
 	NMConnection *connection;
@@ -9651,6 +9777,7 @@ int main (int argc, char **argv)
 	test_write_wifi_wpa_eap_ttls_tls ();
 	test_write_wifi_wpa_eap_ttls_mschapv2 ();
 	test_write_wired_qeth_dhcp ();
+	test_write_wired_ctc_dhcp ();
 
 	/* iSCSI / ibft */
 	test_read_ibft_dhcp ();

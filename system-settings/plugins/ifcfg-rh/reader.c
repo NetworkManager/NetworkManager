@@ -3039,6 +3039,11 @@ make_wired_setting (shvarFile *ifcfg,
 	}
 	g_free (value);
 
+	value = svGetValue (ifcfg, "CTCPROT", FALSE);
+	if (value && strlen (value))
+		nm_setting_wired_add_s390_option (s_wired, "ctcprot", value);
+	g_free (value);
+
 	nettype = svGetValue (ifcfg, "NETTYPE", FALSE);
 	if (nettype && strlen (nettype)) {
 		if (!strcmp (nettype, "qeth") || !strcmp (nettype, "lcs") || !strcmp (nettype, "ctc"))
@@ -3046,6 +3051,7 @@ make_wired_setting (shvarFile *ifcfg,
 		else
 			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: unknown s390 NETTYPE '%s'", nettype);
 	}
+	g_free (nettype);
 
 	value = svGetValue (ifcfg, "OPTIONS", FALSE);
 	if (value && strlen (value)) {
@@ -3067,8 +3073,6 @@ make_wired_setting (shvarFile *ifcfg,
 		g_strfreev (options);
 	}
 	g_free (value);
-
-	g_free (nettype);
 
 	if (!nm_controlled && !*unmanaged) {
 		/* If NM_CONTROLLED=no but there wasn't a MAC address or z/VM
@@ -3294,6 +3298,12 @@ connection_from_file (const char *filename,
 		}
 
 		g_free (device);
+	} else {
+		/* Check for IBM s390 CTC devices and call them Ethernet */
+		if (g_strcmp0 (type, "CTC") == 0) {
+			g_free (type);
+			type = g_strdup (TYPE_ETHERNET);
+		}
 	}
 
 	nmc = svGetValue (parsed, "NM_CONTROLLED", FALSE);
