@@ -54,6 +54,10 @@ EXTRA_DIST = \
 	route-test-wired-static-routes \
 	ifcfg-test-wired-static-routes-legacy \
 	route-test-wired-static-routes-legacy \
+	ifcfg-test-wired-ipv4-manual-1 \
+	ifcfg-test-wired-ipv4-manual-2 \
+	ifcfg-test-wired-ipv4-manual-3 \
+	ifcfg-test-wired-ipv4-manual-4 \
 	ifcfg-test-wired-ipv6-manual \
 	route6-test-wired-ipv6-manual \
 	ifcfg-test-wired-static-no-prefix-8 \
