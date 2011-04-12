@@ -423,10 +423,20 @@ net_add (NMUdevManager *self, GUdevDevice *device)
 
 	g_return_if_fail (device != NULL);
 
+	iface = g_udev_device_get_name (device);
+	if (!iface) {
+		nm_log_dbg (LOGD_HW, "failed to get device's interface");
+		return;
+	}
+
+	/* Ignore devices that don't report Ethernet encapsulation, except for
+	 * s390 CTC-type devices that report 256 for some reason.
+	 * FIXME: use something other than interface name to detect CTC here.
+	 */
 	etype = g_udev_device_get_sysfs_attr_as_int (device, "type");
-	if (etype != 1) {
+	if ((etype != 1) && (!strncmp (iface, "ctc", 3) && (etype != 256))) {
 		nm_log_dbg (LOGD_HW, "ignoring interface with type %d", etype);
-		return; /* Not using ethernet encapsulation, don't care */
+		return;
 	}
 
 	/* Not all ethernet devices are immediately usable; newer mobile broadband
@@ -452,12 +462,6 @@ net_add (NMUdevManager *self, GUdevDevice *device)
 			nm_log_dbg (LOGD_HW, "ignoring Nokia PC-Suite ethernet interface");
 			return;
 		}
-	}
-
-	iface = g_udev_device_get_name (device);
-	if (!iface) {
-		nm_log_dbg (LOGD_HW, "failed to get device's interface");
-		return;
 	}
 
 	g_signal_emit (self, signals[DEVICE_ADDED], 0, device, device_creator);
