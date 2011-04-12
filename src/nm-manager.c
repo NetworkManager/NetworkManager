@@ -860,7 +860,6 @@ static GPtrArray *
 get_active_connections (NMManager *manager, NMConnection *filter)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	NMVPNManager *vpn_manager;
 	GPtrArray *active;
 	GSList *iter;
 
@@ -882,9 +881,7 @@ get_active_connections (NMManager *manager, NMConnection *filter)
 	}
 
 	/* Add active VPN connections */
-	vpn_manager = nm_vpn_manager_get ();
-	nm_vpn_manager_add_active_connections (vpn_manager, filter, active);
-	g_object_unref (vpn_manager);
+	nm_vpn_manager_add_active_connections (priv->vpn_manager, filter, active);
 
 	return active;
 }
@@ -1898,7 +1895,6 @@ nm_manager_activate_connection (NMManager *manager,
 
 	if (!strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_VPN_SETTING_NAME)) {
 		NMActRequest *parent_req = NULL;
-		NMVPNManager *vpn_manager;
 
 		/* VPN connection */
 
@@ -1935,8 +1931,7 @@ nm_manager_activate_connection (NMManager *manager,
 			return NULL;
 		}
 
-		vpn_manager = nm_vpn_manager_get ();
-		vpn_connection = nm_vpn_manager_activate_connection (vpn_manager,
+		vpn_connection = nm_vpn_manager_activate_connection (priv->vpn_manager,
 		                                                     connection,
 		                                                     parent_req,
 		                                                     device,
@@ -1945,7 +1940,6 @@ nm_manager_activate_connection (NMManager *manager,
 		                                                     error);
 		if (vpn_connection)
 			path = nm_vpn_connection_get_active_connection_path (vpn_connection);
-		g_object_unref (vpn_manager);
 	} else {
 		NMDeviceState state;
 
@@ -2142,7 +2136,6 @@ nm_manager_deactivate_connection (NMManager *manager,
                                   GError **error)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	NMVPNManager *vpn_manager;
 	GSList *iter;
 	gboolean success = FALSE;
 	NMVPNConnectionStateReason vpn_reason = NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED;
@@ -2166,17 +2159,15 @@ nm_manager_deactivate_connection (NMManager *manager,
 	}
 
 	/* Check for VPN connections next */
-	vpn_manager = nm_vpn_manager_get ();
 	if (reason == NM_DEVICE_STATE_REASON_CONNECTION_REMOVED)
 		vpn_reason = NM_VPN_CONNECTION_STATE_REASON_CONNECTION_REMOVED;
-	if (nm_vpn_manager_deactivate_connection (vpn_manager, connection_path, vpn_reason)) {
+	if (nm_vpn_manager_deactivate_connection (priv->vpn_manager, connection_path, vpn_reason)) {
 		success = TRUE;
 	} else {
 		g_set_error (error,
 		             NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
 		             "%s", "The connection was not active.");
 	}
-	g_object_unref (vpn_manager);
 
 done:
 	g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
