@@ -26,7 +26,6 @@
 #include <glib-object.h>
 #include "nm-device.h"
 #include "nm-vpn-connection.h"
-#include "nm-activation-request.h"
 
 #define NM_TYPE_VPN_SERVICE            (nm_vpn_service_get_type ())
 #define NM_VPN_SERVICE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VPN_SERVICE, NMVPNService))
@@ -57,7 +56,6 @@ const char *nm_vpn_service_get_name_file (NMVPNService *service);
 
 NMVPNConnection * nm_vpn_service_activate (NMVPNService *service,
                                            NMConnection *connection,
-                                           NMActRequest *act_request,
                                            NMDevice *device,
                                            gboolean user_requested,
                                            gulong user_uid,

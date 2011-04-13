@@ -1933,7 +1933,6 @@ nm_manager_activate_connection (NMManager *manager,
 
 		vpn_connection = nm_vpn_manager_activate_connection (priv->vpn_manager,
 		                                                     connection,
-		                                                     parent_req,
 		                                                     device,
 		                                                     TRUE,
 		                                                     sender_uid,
