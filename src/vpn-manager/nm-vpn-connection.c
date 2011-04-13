@@ -925,7 +925,7 @@ connection_state_changed (NMVPNConnection *connection,
 {
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
-	nm_secrets_provider_interface_cancel_get_secrets (NM_SECRETS_PROVIDER_INTERFACE (priv->act_request));
+	nm_secrets_provider_interface_cancel_get_secrets (NM_SECRETS_PROVIDER_INTERFACE (connection));
 
 	switch (state) {
 	case NM_VPN_CONNECTION_STATE_NEED_AUTH:

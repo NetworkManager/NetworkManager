@@ -4334,7 +4334,7 @@ dispose (GObject *object)
 {
 	NMManager *manager = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	GSList *iter;
+	GSList *iter, *list;
 	DBusGConnection *bus;
 	DBusConnection *dbus_connection;
 
@@ -4380,6 +4380,20 @@ dispose (GObject *object)
 		priv->sys_settings = NULL;
 	}
 
+	/* Make sure we disconnect signal handlers from VPN connections that
+	 * might still be alive when the manager dies.
+	 */
+	list = nm_vpn_manager_get_active_connections (priv->vpn_manager);
+	for (iter = list; iter; iter = g_slist_next (iter)) {
+		g_signal_handlers_disconnect_by_func (G_OBJECT (iter->data),
+						      G_CALLBACK (provider_get_secrets),
+						      manager);
+		g_signal_handlers_disconnect_by_func (G_OBJECT (iter->data),
+						      G_CALLBACK (provider_cancel_secrets),
+						      manager);
+		/* unref to balance returned objects from the VPN manager */
+		g_object_unref (iter->data);
+	}
 	if (priv->vpn_manager_id) {
 		g_source_remove (priv->vpn_manager_id);
 		priv->vpn_manager_id = 0;
