@@ -26,7 +26,6 @@
 #include <glib-object.h>
 #include "NetworkManagerVPN.h"
 #include "nm-device.h"
-#include "nm-activation-request.h"
 #include "nm-secrets-provider-interface.h"
 #include "nm-vpn-connection-base.h"
 
@@ -57,9 +56,7 @@ typedef struct {
 
 GType nm_vpn_connection_get_type (void);
 
-NMVPNConnection * nm_vpn_connection_new (NMConnection *connection,
-                                         NMActRequest *act_request,
-                                         NMDevice *parent_device);
+NMVPNConnection * nm_vpn_connection_new (NMConnection *connection, NMDevice *parent_device);
 
 void                 nm_vpn_connection_activate        (NMVPNConnection *connection);
 NMConnection *       nm_vpn_connection_get_connection  (NMVPNConnection *connection);

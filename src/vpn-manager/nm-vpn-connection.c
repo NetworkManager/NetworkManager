@@ -61,8 +61,6 @@ typedef struct {
 
 	NMConnection *connection;
 
-	NMActRequest *act_request;
-
 	NMDevice *parent_dev;
 	gulong device_monitor;
 	gulong device_ip4;
@@ -199,15 +197,12 @@ device_ip4_config_changed (NMDevice *device,
 }
 
 NMVPNConnection *
-nm_vpn_connection_new (NMConnection *connection,
-                       NMActRequest *act_request,
-                       NMDevice *parent_device)
+nm_vpn_connection_new (NMConnection *connection, NMDevice *parent_device)
 {
 	NMVPNConnection *self;
 	NMVPNConnectionPrivate *priv;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
-	g_return_val_if_fail (NM_IS_ACT_REQUEST (act_request), NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (parent_device), NULL);
 
 	self = (NMVPNConnection *) g_object_new (NM_TYPE_VPN_CONNECTION, NULL);
@@ -218,7 +213,6 @@ nm_vpn_connection_new (NMConnection *connection,
 
 	priv->connection = g_object_ref (connection);
 	priv->parent_dev = g_object_ref (parent_device);
-	priv->act_request = g_object_ref (act_request);
 
 	priv->device_monitor = g_signal_connect (parent_device, "state-changed",
 									 G_CALLBACK (device_state_changed),
@@ -989,7 +983,6 @@ dispose (GObject *object)
 	if (priv->proxy)
 		g_object_unref (priv->proxy);
 
-	g_object_unref (priv->act_request);
 	g_object_unref (priv->connection);
 
 	G_OBJECT_CLASS (nm_vpn_connection_parent_class)->dispose (object);

@@ -157,7 +157,6 @@ connection_vpn_state_changed (NMVPNConnection *connection,
 NMVPNConnection *
 nm_vpn_manager_activate_connection (NMVPNManager *manager,
                                     NMConnection *connection,
-                                    NMActRequest *act_request,
                                     NMDevice *device,
                                     GError **error)
 {
@@ -168,7 +167,6 @@ nm_vpn_manager_activate_connection (NMVPNManager *manager,
 
 	g_return_val_if_fail (NM_IS_VPN_MANAGER (manager), NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
-	g_return_val_if_fail (NM_IS_ACT_REQUEST (act_request), NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 	g_return_val_if_fail (error != NULL, NULL);
 	g_return_val_if_fail (*error == NULL, NULL);
@@ -205,7 +203,7 @@ nm_vpn_manager_activate_connection (NMVPNManager *manager,
 		return NULL;
 	}
 
-	vpn = nm_vpn_service_activate (service, connection, act_request, device, error);
+	vpn = nm_vpn_service_activate (service, connection, device, error);
 	if (vpn) {
 		g_signal_connect (vpn, "vpn-state-changed",
 		                  G_CALLBACK (connection_vpn_state_changed),
