@@ -296,14 +296,14 @@ svSetValue(shvarFile *s, const char *key, const char *value, gboolean verbatim)
 	    if (s->current) s->current->data = keyValue;
 	    else s->lineList = g_list_append(s->lineList, keyValue);
 	    s->modified = 1;
+	    goto end;
 	} else if (val1) {
 	    /* delete line */
 	    s->lineList = g_list_remove_link(s->lineList, s->current);
 	    g_list_free_1(s->current);
 	    s->modified = 1;
-	    goto bail; /* do not need keyValue */
 	}
-	goto end;
+	goto bail; /* do not need keyValue */
     }
 
     if (!val1) {

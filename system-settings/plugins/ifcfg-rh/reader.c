@@ -309,7 +309,7 @@ fill_ip4_setting_from_ibft (shvarFile *ifcfg,
 				/* Record is good; fill IP4 config with its info */
 				if (!method) {
 					g_warning ("%s: malformed iscsiadm record: missing BOOTPROTO.", __func__);
-					return FALSE;
+					goto done;
 				}
 
 				g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, method, NULL);
@@ -320,7 +320,7 @@ fill_ip4_setting_from_ibft (shvarFile *ifcfg,
 				    if (!ipaddr.s_addr || !prefix) {
 						g_warning ("%s: malformed iscsiadm record: BOOTPROTO=static "
 						           "but missing IP address or prefix.", __func__);
-						return FALSE;
+						goto done;
 					}
 
 					addr = nm_ip4_address_new ();
@@ -337,7 +337,8 @@ fill_ip4_setting_from_ibft (shvarFile *ifcfg,
 
 					// FIXME: DNS search domains?
 				}
-				return TRUE;
+				success = TRUE;
+				goto done;
 			}
 			skip = FALSE;
 			hwaddr_matched = FALSE;
@@ -1177,6 +1178,7 @@ make_ip4_setting (shvarFile *ifcfg,
 		if (!g_ascii_strcasecmp (value, "bootp") || !g_ascii_strcasecmp (value, "dhcp"))
 			method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 		else if (!g_ascii_strcasecmp (value, "ibft")) {
+			g_free (value);
 			g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default, NULL);
 			/* iSCSI Boot Firmware Table: need to read values from the iSCSI 
 			 * firmware for this device and create the IP4 setting using those.
@@ -1692,6 +1694,7 @@ add_one_wep_key (shvarFile *ifcfg,
 
 	if (key) {
 		nm_setting_wireless_security_set_wep_key (s_wsec, key_idx, key);
+		g_free (key);
 		success = TRUE;
 	} else
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "Invalid WEP key length.");
@@ -2771,6 +2774,7 @@ make_wireless_setting (shvarFile *ifcfg,
 			ssid_len  = (value_len - 2) / 2;
 			memcpy (buf, tmp, ssid_len);
 			p = &buf[0];
+			g_free (tmp);
 		}
 
 		if (ssid_len > 32 || ssid_len == 0) {
@@ -2830,6 +2834,7 @@ make_wireless_setting (shvarFile *ifcfg,
 		if (!eth) {
 			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 			             "Invalid BSSID '%s'", value);
+			g_free (value);
 			goto error;
 		}
 
@@ -2837,6 +2842,7 @@ make_wireless_setting (shvarFile *ifcfg,
 		g_byte_array_append (bssid, eth->ether_addr_octet, ETH_ALEN);
 		g_object_set (s_wireless, NM_SETTING_WIRELESS_BSSID, bssid, NULL);
 		g_byte_array_free (bssid, TRUE);
+		g_free (value);
 	}
 
 	value = svGetValue (ifcfg, "CHANNEL", FALSE);
@@ -2856,6 +2862,7 @@ make_wireless_setting (shvarFile *ifcfg,
 			g_object_set (s_wireless, NM_SETTING_WIRELESS_BAND, "a", NULL);
 		else
 			g_object_set (s_wireless, NM_SETTING_WIRELESS_BAND, "bg", NULL);
+		g_free (value);
 	}
 
 	value = svGetValue (ifcfg, "MTU", FALSE);
@@ -2871,6 +2878,7 @@ make_wireless_setting (shvarFile *ifcfg,
 			goto error;
 		}
 		g_object_set (s_wireless, NM_SETTING_WIRELESS_MTU, (guint32) mtu, NULL);
+		g_free (value);
 	}
 
 done:
@@ -2933,6 +2941,7 @@ wireless_connection_from_ifcfg (const char *file,
 		/* Wireless security */
 		security_setting = make_wireless_security_setting (ifcfg, file, ssid, adhoc, &s_8021x, error);
 		if (*error) {
+			g_free (printable_ssid);
 			g_object_unref (connection);
 			return NULL;
 		}
@@ -3438,6 +3447,7 @@ connection_from_file (const char *filename,
 
 		g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_READ_ONLY, TRUE, NULL);
 	}
+	g_free (bootproto);
 
 	if (!nm_connection_verify (connection, &error)) {
 		g_object_unref (connection);
