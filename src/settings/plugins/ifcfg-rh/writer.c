@@ -1095,6 +1095,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	const char *value;
 	char *addr_key, *prefix_key, *netmask_key, *gw_key, *metric_key, *tmp;
 	char *route_path = NULL;
+	gint32 j;
 	guint32 i, num;
 	GString *searches;
 	gboolean success = FALSE;
@@ -1114,20 +1115,28 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 
 		/* IPv4 disabled, clear IPv4 related parameters */
 		svSetValue (ifcfg, "BOOTPROTO", NULL, FALSE);
-		for (i = 0; i < 254; i++) {
-			if (i == 0) {
+		for (j = -1; j < 256; j++) {
+			if (j == -1) {
 				addr_key = g_strdup ("IPADDR");
 				prefix_key = g_strdup ("PREFIX");
+				netmask_key = g_strdup ("NETMASK");
 				gw_key = g_strdup ("GATEWAY");
 			} else {
-				addr_key = g_strdup_printf ("IPADDR%d", i + 1);
-				prefix_key = g_strdup_printf ("PREFIX%d", i + 1);
-				gw_key = g_strdup_printf ("GATEWAY%d", i + 1);
+				addr_key = g_strdup_printf ("IPADDR%d", j);
+				prefix_key = g_strdup_printf ("PREFIX%d", j);
+				netmask_key = g_strdup_printf ("NETMASK%d", j);
+				gw_key = g_strdup_printf ("GATEWAY%d", j);
 			}
 
 			svSetValue (ifcfg, addr_key, NULL, FALSE);
 			svSetValue (ifcfg, prefix_key, NULL, FALSE);
+			svSetValue (ifcfg, netmask_key, NULL, FALSE);
 			svSetValue (ifcfg, gw_key, NULL, FALSE);
+
+			g_free (addr_key);
+			g_free (prefix_key);
+			g_free (netmask_key);
+			g_free (gw_key);
 		}
 
 		route_path = utils_get_route_path (ifcfg->fileName);
@@ -1151,25 +1160,27 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	else if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
 		svSetValue (ifcfg, "BOOTPROTO", "shared", FALSE);
 
+	/* Write out IPADDR0 .. IPADDR255, PREFIX0 .. PREFIX255, GATEWAY0 .. GATEWAY255
+	 * Possible NETMASK<n> is removed only (it's obsolete) */
 	num = nm_setting_ip4_config_get_num_addresses (s_ip4);
-	for (i = 0; i < 254; i++) {
-		char buf[INET_ADDRSTRLEN + 1];
+	svSetValue (ifcfg, "IPADDR", NULL, FALSE);
+	svSetValue (ifcfg, "PREFIX", NULL, FALSE);
+	svSetValue (ifcfg, "NETMASK", NULL, FALSE);
+	svSetValue (ifcfg, "GATEWAY", NULL, FALSE);
+	for (i = 0; i < 256; i++) {
+		char buf[INET_ADDRSTRLEN];
 		NMIP4Address *addr;
 		guint32 ip;
 
-		if (i == 0) {
-			addr_key = g_strdup ("IPADDR");
-			prefix_key = g_strdup ("PREFIX");
-			gw_key = g_strdup ("GATEWAY");
-		} else {
-			addr_key = g_strdup_printf ("IPADDR%d", i + 1);
-			prefix_key = g_strdup_printf ("PREFIX%d", i + 1);
-			gw_key = g_strdup_printf ("GATEWAY%d", i + 1);
-		}
+		addr_key = g_strdup_printf ("IPADDR%d", i);
+		prefix_key = g_strdup_printf ("PREFIX%d", i);
+		netmask_key = g_strdup_printf ("NETMASK%d", i);
+		gw_key = g_strdup_printf ("GATEWAY%d", i);
 
 		if (i >= num) {
 			svSetValue (ifcfg, addr_key, NULL, FALSE);
 			svSetValue (ifcfg, prefix_key, NULL, FALSE);
+			svSetValue (ifcfg, netmask_key, NULL, FALSE);
 			svSetValue (ifcfg, gw_key, NULL, FALSE);
 		} else {
 			addr = nm_setting_ip4_config_get_address (s_ip4, i);
@@ -1194,6 +1205,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 
 		g_free (addr_key);
 		g_free (prefix_key);
+		g_free (netmask_key);
 		g_free (gw_key);
 	}
 

@@ -494,7 +494,7 @@ parse_ip6_address (const char *value,
 static NMIP4Address *
 read_full_ip4_address (shvarFile *ifcfg,
                        const char *network_file,
-                       guint32 which,
+                       gint32 which,
                        GError **error)
 {
 	NMIP4Address *addr;
@@ -504,12 +504,12 @@ read_full_ip4_address (shvarFile *ifcfg,
 	shvarFile *network_ifcfg;
 	char *value;
 
-	g_return_val_if_fail (which > 0, NULL);
+	g_return_val_if_fail (which >= -1, NULL);
 	g_return_val_if_fail (ifcfg != NULL, NULL);
 	g_return_val_if_fail (network_file != NULL, NULL);
 
 	addr = nm_ip4_address_new ();
-	if (which == 1) {
+	if (which == -1) {
 		ip_tag = g_strdup ("IPADDR");
 		prefix_tag = g_strdup ("PREFIX");
 		netmask_tag = g_strdup ("NETMASK");
@@ -1120,7 +1120,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	char *value = NULL;
 	char *route_path = NULL;
 	char *method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
-	guint32 i;
+	gint32 i;
 	shvarFile *network_ifcfg;
 	shvarFile *route_ifcfg;
 	gboolean never_default = FALSE, tmp_success;
@@ -1197,6 +1197,9 @@ make_ip4_setting (shvarFile *ifcfg,
 		g_free (value);
 	} else {
 		char *tmp_ip4, *tmp_prefix, *tmp_netmask;
+		char *tmp_ip4_0, *tmp_prefix_0, *tmp_netmask_0;
+		char *tmp_ip4_1, *tmp_prefix_1, *tmp_netmask_1;
+		char *tmp_ip4_2, *tmp_prefix_2, *tmp_netmask_2;
 
 		/* If there is no BOOTPROTO, no IPADDR, no PREFIX, no NETMASK, but
 		 * valid IPv6 configuration, assume that IPv4 is disabled.  Otherwise,
@@ -1211,7 +1214,19 @@ make_ip4_setting (shvarFile *ifcfg,
 		tmp_ip4 = svGetValue (ifcfg, "IPADDR", FALSE);
 		tmp_prefix = svGetValue (ifcfg, "PREFIX", FALSE);
 		tmp_netmask = svGetValue (ifcfg, "NETMASK", FALSE);
-		if (!tmp_ip4 && !tmp_prefix && !tmp_netmask) {
+		tmp_ip4_0 = svGetValue (ifcfg, "IPADDR0", FALSE);
+		tmp_prefix_0 = svGetValue (ifcfg, "PREFIX0", FALSE);
+		tmp_netmask_0 = svGetValue (ifcfg, "NETMASK0", FALSE);
+		tmp_ip4_1 = svGetValue (ifcfg, "IPADDR1", FALSE);
+		tmp_prefix_1 = svGetValue (ifcfg, "PREFIX1", FALSE);
+		tmp_netmask_1 = svGetValue (ifcfg, "NETMASK1", FALSE);
+		tmp_ip4_2 = svGetValue (ifcfg, "IPADDR2", FALSE);
+		tmp_prefix_2 = svGetValue (ifcfg, "PREFIX2", FALSE);
+		tmp_netmask_2 = svGetValue (ifcfg, "NETMASK2", FALSE);
+		if (   !tmp_ip4   && !tmp_prefix   && !tmp_netmask
+		    && !tmp_ip4_0 && !tmp_prefix_0 && !tmp_netmask_0
+		    && !tmp_ip4_1 && !tmp_prefix_1 && !tmp_netmask_1
+		    && !tmp_ip4_2 && !tmp_prefix_2 && !tmp_netmask_2) {
 			if (valid_ip6_config) {
 				/* Nope, no IPv4 */
 				g_object_set (s_ip4,
@@ -1225,6 +1240,15 @@ make_ip4_setting (shvarFile *ifcfg,
 		g_free (tmp_ip4);
 		g_free (tmp_prefix);
 		g_free (tmp_netmask);
+		g_free (tmp_ip4_0);
+		g_free (tmp_prefix_0);
+		g_free (tmp_netmask_0);
+		g_free (tmp_ip4_1);
+		g_free (tmp_prefix_1);
+		g_free (tmp_netmask_1);
+		g_free (tmp_ip4_2);
+		g_free (tmp_prefix_2);
+		g_free (tmp_netmask_2);
 	}
 
 	g_object_set (s_ip4,
@@ -1239,12 +1263,17 @@ make_ip4_setting (shvarFile *ifcfg,
 	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
 		NMIP4Address *addr;
 
-		for (i = 1; i < 256; i++) {
+		for (i = -1; i < 256; i++) {
 			addr = read_full_ip4_address (ifcfg, network_file, i, error);
 			if (error && *error)
 				goto done;
-			if (!addr)
-				break;
+			if (!addr) {
+				/* The first mandatory variable is 2-indexed (IPADDR2)
+				 * Variables IPADDR, IPADDR0 and IPADDR1 are optional */
+				if (i > 1)
+					break;
+				continue;
+			}
 
 			if (!nm_setting_ip4_config_add_address (s_ip4, addr))
 				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate IP4 address");
