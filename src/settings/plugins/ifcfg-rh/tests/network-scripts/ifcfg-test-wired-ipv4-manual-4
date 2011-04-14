@@ -1,0 +1,11 @@
+# Intel Corporation 82540EP Gigabit Ethernet Controller (Mobile)
+TYPE=Ethernet
+DEVICE=eth0
+HWADDR=00:11:22:33:44:ee
+BOOTPROTO=none
+IPADDR=1.2.3.4
+PREFIX=24
+IPADDR1=9.8.7.6
+PREFIX1=16
+IPADDR2=3.3.3.3
+PREFIX2=8
