@@ -168,7 +168,7 @@ nm_signal_handler (int signo)
 		--in_fatal;
 		nm_log_warn (LOGD_CORE, "caught signal %d, shutting down abnormally. Generating backtrace...", signo);
 		nm_logging_backtrace ();
-		write (quit_pipe[1], "X", 1);
+		(void) write (quit_pipe[1], "X", 1);
 		break;
 	case SIGINT:
 	case SIGTERM:
@@ -176,7 +176,7 @@ nm_signal_handler (int signo)
 		--in_fatal;
 		nm_log_info (LOGD_CORE, "caught signal %d, shutting down normally.", signo);
 		quit_early = TRUE;
-		write (quit_pipe[1], "X", 1);
+		(void) write (quit_pipe[1], "X", 1);
 		break;
 	case SIGHUP:
 		--in_fatal;
