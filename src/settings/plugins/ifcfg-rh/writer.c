@@ -354,6 +354,7 @@ write_object (NMSetting8021x *s_8021x,
 		success = write_secret_file (new_file, (const char *) blob->data, blob->len, &write_error);
 		if (success) {
 			svSetValue (ifcfg, objtype->ifcfg_key, new_file, FALSE);
+			g_free (new_file);
 			return TRUE;
 		} else {
 			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
