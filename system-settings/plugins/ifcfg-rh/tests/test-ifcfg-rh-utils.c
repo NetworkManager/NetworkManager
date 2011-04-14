@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 - 2009 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
 #include <stdio.h>
@@ -53,7 +53,7 @@ test_get_ifcfg_path (const char *desc,
                      const char *path,
                      const char *expected)
 {
-	const char *result;
+	char *result;
 
 	result = utils_get_ifcfg_path (path);
 	if (expected == NULL) {
@@ -64,6 +64,7 @@ test_get_ifcfg_path (const char *desc,
 		ASSERT (strcmp (result, expected) == 0,
 		        desc, "unexpected ifcfg name '%s' created for '%s'", result, path);
 	}
+	g_free (result);
 }
 
 static void
@@ -71,7 +72,7 @@ test_get_keys_path (const char *desc,
                     const char *path,
                     const char *expected)
 {
-	const char *result;
+	char *result;
 
 	result = utils_get_keys_path (path);
 	if (expected == NULL) {
@@ -82,6 +83,7 @@ test_get_keys_path (const char *desc,
 		ASSERT (strcmp (result, expected) == 0,
 		        desc, "unexpected extra path '%s' created for '%s'", result, path);
 	}
+	g_free (result);
 }
 
 static void
@@ -89,7 +91,7 @@ test_get_route_path (const char *desc,
                      const char *path,
                      const char *expected)
 {
-	const char *result;
+	char *result;
 
 	result = utils_get_route_path (path);
 	if (expected == NULL) {
@@ -100,6 +102,7 @@ test_get_route_path (const char *desc,
 		ASSERT (strcmp (result, expected) == 0,
 		        desc, "unexpected extra path '%s' created for '%s'", result, path);
 	}
+	g_free (result);
 }
 
 static void
