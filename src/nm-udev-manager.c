@@ -385,8 +385,12 @@ device_creator (NMUdevManager *manager,
 	}
 
 	if (!driver) {
-		nm_log_warn (LOGD_HW, "%s: couldn't determine device driver; ignoring...", path);
-		goto out;
+                if (g_str_has_prefix (ifname), "easytether") {
+                        driver = "easytether";
+                } else {
+		        nm_log_warn (LOGD_HW, "%s: couldn't determine device driver; ignoring...", path);
+		        goto out;
+                }
 	}
 
 	ifindex = g_udev_device_get_sysfs_attr_as_int (udev_device, "ifindex");
