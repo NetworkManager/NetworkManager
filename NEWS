@@ -10,14 +10,21 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Ensure removed devices are cleaned up
 * Fix potential 64-bit crash updating timestamps
 * IPv6 setup, routing, and compliance fixes
+* Fix WWAN enable/disable handling
 * Handle reverse DNS lookups with local caching nameserver configurations
 * No longer updates /etc/hosts when hostname changes
 * Request WPAD option from DHCP servers
-* Shutdown crash fixes
+* Allow use of paths for certificates and keys in connection keyfiles
+* Allow operation without any DHCP client installed
+* Fix operation with newer versions of dnsmasq
 * nmcli support for WWAN connections
 * Persistent hostname sent to DHCP servers by default
 * Allow disabing PPP support at build time
+* Red Hat/Fedora ifcfg plugin fixes for handling S390 CTC device configuration
+* Red Hat/Fedora ifcfg plugin fixes for handling IPADDR config items
+* Shutdown crash fixes
 * Memory leak fixes
+* Documentation fixes and updates
 * and much more...
 
 ==============================================
