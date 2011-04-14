@@ -539,7 +539,7 @@ update_ip6_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	NMActRequest *best_req = NULL;
 	NMDnsManager *dns_mgr;
 	GSList *devices = NULL, *iter;
-#if NOT_YET
+#if 0
 	GSList *vpns;
 #endif
 	NMIP6Config *ip6_config = NULL;
@@ -555,7 +555,7 @@ update_ip6_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	if (!force_update && (best == policy->default_device6))
 		goto out;
 
-#if NOT_YET
+#if 0
 	/* If a VPN connection is active, it is preferred */
 	vpns = nm_vpn_manager_get_active_connections (policy->vpn_manager);
 	for (iter = vpns; iter; iter = g_slist_next (iter)) {

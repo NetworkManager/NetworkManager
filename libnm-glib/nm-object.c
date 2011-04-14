@@ -29,6 +29,7 @@
 #include "nm-object-private.h"
 #include "nm-dbus-glib-types.h"
 
+#define DEBUG 0
 
 G_DEFINE_ABSTRACT_TYPE (NMObject, nm_object, G_TYPE_OBJECT)
 

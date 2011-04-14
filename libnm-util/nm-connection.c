@@ -162,7 +162,7 @@ setting_register (const char *name, GType type)
 	g_hash_table_insert (registered_settings, g_strdup (name), g_strdup (g_type_name (type)));
 }
 
-#if UNUSED
+#if 0
 static void
 setting_unregister (const char *name)
 {

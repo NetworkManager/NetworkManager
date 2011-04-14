@@ -315,6 +315,8 @@ if (test "${enable_wimax}" = "yes"); then
 	AC_SUBST(IWMX_SDK_CFLAGS)
 	AC_SUBST(IWMX_SDK_LIBS)
 	AC_DEFINE(WITH_WIMAX, 1, [Define if you have WiMAX support])
+else
+	AC_DEFINE(WITH_WIMAX, 0, [Define if you have WiMAX support])
 fi
 AM_CONDITIONAL(WITH_WIMAX, test "${enable_wimax}" = "yes")
 
@@ -391,6 +393,8 @@ if (test "${enable_ppp}" = "yes"); then
 		AC_MSG_ERROR(couldn't find pppd.h. pppd development headers are required.))
 
 	AC_DEFINE(WITH_PPP, 1, [Define if you have PPP support])
+else
+	AC_DEFINE(WITH_PPP, 0, [Define if you have PPP support])
 fi
 AM_CONDITIONAL(WITH_PPP, test "${enable_ppp}" = "yes")
 
