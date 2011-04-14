@@ -305,6 +305,10 @@ test_read_minimal (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_NEVER_DEFAULT);
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -423,6 +427,7 @@ test_read_unmanaged (void)
 	        TEST_IFCFG_UNMANAGED,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
+	g_free (unmanaged);
 	g_object_unref (connection);
 }
 
@@ -434,7 +439,7 @@ test_read_wired_static (const char *file, const char *expected_id)
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
 	NMSettingIP6Config *s_ip6;
-	char *unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
 	char *route6file = NULL;
@@ -472,7 +477,7 @@ test_read_wired_static (const char *file, const char *expected_id)
 	ASSERT (nm_connection_verify (connection, &error),
 	        "wired-static-verify", "failed to verify %s: %s", file, error->message);
 
-	ASSERT (unmanaged == FALSE,
+	ASSERT (unmanaged == NULL,
 	        "wired-static-verify", "failed to verify %s: unexpected unmanaged value", file);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -726,6 +731,10 @@ test_read_wired_static (const char *file, const char *expected_id)
 			file);
 	}
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -737,7 +746,7 @@ test_read_wired_static_no_prefix (guint32 expected_prefix)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingIP4Config *s_ip4;
-	char *unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
 	char *route6file = NULL;
@@ -771,7 +780,7 @@ test_read_wired_static_no_prefix (guint32 expected_prefix)
 	ASSERT (nm_connection_verify (connection, &error),
 	        "wired-static-no-prefix-verify", "failed to verify %s: %s", file, error->message);
 
-	ASSERT (unmanaged == FALSE,
+	ASSERT (unmanaged == NULL,
 	        "wired-static-no-prefix-verify", "failed to verify %s: unexpected unmanaged value", file);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -833,6 +842,10 @@ test_read_wired_static_no_prefix (guint32 expected_prefix)
 	        NM_SETTING_IP4_CONFIG_ADDRESSES);
 
 	g_free (file);
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -876,7 +889,7 @@ test_read_wired_dhcp (void)
 	ASSERT (nm_connection_verify (connection, &error),
 	        "wired-dhcp-verify", "failed to verify %s: %s", TEST_IFCFG_WIRED_DHCP, error->message);
 
-	ASSERT (unmanaged == FALSE,
+	ASSERT (unmanaged == NULL,
 	        "wired-dhcp-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_DHCP);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -1003,7 +1016,10 @@ test_read_wired_dhcp (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
 
-
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -1046,7 +1062,7 @@ test_read_wired_global_gateway (void)
 	ASSERT (nm_connection_verify (connection, &error),
 	        "wired-global-gateway-verify", "failed to verify %s: %s", TEST_IFCFG_WIRED_GLOBAL_GATEWAY, error->message);
 
-	ASSERT (unmanaged == FALSE,
+	ASSERT (unmanaged == NULL,
 	        "wired-global-gateway-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_GLOBAL_GATEWAY);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -1130,6 +1146,10 @@ test_read_wired_global_gateway (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_ADDRESSES);
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -1169,7 +1189,7 @@ test_read_wired_never_default (void)
 	ASSERT (nm_connection_verify (connection, &error),
 	        "wired-never-default-verify", "failed to verify %s: %s", TEST_IFCFG_WIRED_NEVER_DEFAULT, error->message);
 
-	ASSERT (unmanaged == FALSE,
+	ASSERT (unmanaged == NULL,
 	        "wired-never-default-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_NEVER_DEFAULT);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -1252,6 +1272,10 @@ test_read_wired_never_default (void)
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP6_CONFIG_NEVER_DEFAULT);
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -1290,7 +1314,7 @@ test_read_wired_defroute_no (void)
 	ASSERT (nm_connection_verify (connection, &error),
 	        "wired-defroute-no-verify", "failed to verify %s: %s", TEST_IFCFG_WIRED_DEFROUTE_NO, error->message);
 
-	ASSERT (unmanaged == FALSE,
+	ASSERT (unmanaged == NULL,
 	        "wired-defroute-no-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_DEFROUTE_NO);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -1366,6 +1390,10 @@ test_read_wired_defroute_no (void)
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP6_CONFIG_NEVER_DEFAULT);
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -1411,7 +1439,7 @@ test_read_wired_defroute_no_gatewaydev_yes (void)
 	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
 	        error->message);
 
-	ASSERT (unmanaged == FALSE,
+	ASSERT (unmanaged == NULL,
 	        "wired-defroute-no-gatewaydev-yes-verify",
 	        "failed to verify %s: unexpected unmanaged value",
 	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES);
@@ -1489,6 +1517,10 @@ test_read_wired_defroute_no_gatewaydev_yes (void)
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP6_CONFIG_NEVER_DEFAULT);
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -1650,6 +1682,7 @@ test_read_wired_static_routes (void)
 	        "wired-static-routes-verify-ip4", "failed to verify %s: unexpected route metric #2",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES);
 
+	g_free (unmanaged);
 	g_free (keyfile);
 	g_free (routefile);
 	g_free (route6file);
@@ -1855,6 +1888,7 @@ test_read_wired_static_routes_legacy (void)
 	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected destination route #3 metric",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
 
+	g_free (unmanaged);
 	g_free (keyfile);
 	g_free (routefile);
 	g_free (route6file);
@@ -1900,7 +1934,7 @@ test_read_wired_ipv4_manual (const char *file, const char *expected_id)
 	ASSERT (nm_connection_verify (connection, &error),
 	        "wired-ipv4-manual-verify", "failed to verify %s: %s", file, error->message);
 
-	ASSERT (unmanaged == FALSE,
+	ASSERT (unmanaged == NULL,
 	        "wired-ipv4-manual-verify", "failed to verify %s: unexpected unmanaged value", file);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -2006,6 +2040,7 @@ test_read_wired_ipv4_manual (const char *file, const char *expected_id)
 		"wired-ipv4-manual-verify-ip4", "failed to verify %s: unexpected IP4 address #3",
 		file);
 
+	g_free (unmanaged);
 	g_free (keyfile);
 	g_free (routefile);
 	g_free (route6file);
@@ -2062,7 +2097,7 @@ test_read_wired_ipv6_manual (void)
 	ASSERT (nm_connection_verify (connection, &error),
 	        "wired-ipv6-manual-verify", "failed to verify %s: %s", TEST_IFCFG_WIRED_IPV6_MANUAL, error->message);
 
-	ASSERT (unmanaged == FALSE,
+	ASSERT (unmanaged == NULL,
 	        "wired-ipv6-manual-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_IPV6_MANUAL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -2305,6 +2340,7 @@ test_read_wired_ipv6_manual (void)
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP6_CONFIG_DNS);
 
+	g_free (unmanaged);
 	g_free (keyfile);
 	g_free (routefile);
 	g_free (route6file);
@@ -2352,7 +2388,7 @@ test_read_wired_ipv6_only (void)
 	ASSERT (nm_connection_verify (connection, &error),
 	        "wired-ipv6-only-verify", "failed to verify %s: %s", TEST_IFCFG_WIRED_IPV6_ONLY, error->message);
 
-	ASSERT (unmanaged == FALSE,
+	ASSERT (unmanaged == NULL,
 	        "wired-ipv6-only-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_IPV6_MANUAL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -2462,6 +2498,7 @@ test_read_wired_ipv6_only (void)
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP6_CONFIG_DNS);
 
+	g_free (unmanaged);
 	g_free (keyfile);
 	g_free (routefile);
 	g_free (route6file);
@@ -2504,7 +2541,7 @@ test_read_wired_dhcp6_only (void)
 	ASSERT (nm_connection_verify (connection, &error),
 	        "wired-dhcp6-only-verify", "failed to verify %s: %s", TEST_IFCFG_WIRED_DHCP6_ONLY, error->message);
 
-	ASSERT (unmanaged == FALSE,
+	ASSERT (unmanaged == NULL,
 	        "wired-dhcp6-only-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_DHCP6_ONLY);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -2567,6 +2604,7 @@ test_read_wired_dhcp6_only (void)
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP6_CONFIG_METHOD);
 
+	g_free (unmanaged);
 	g_free (keyfile);
 	g_free (routefile);
 	g_free (route6file);
@@ -2603,7 +2641,7 @@ test_read_onboot_no (void)
 	ASSERT (nm_connection_verify (connection, &error),
 	        "onboot-no-verify", "failed to verify %s: %s", TEST_IFCFG_ONBOOT_NO, error->message);
 
-	ASSERT (unmanaged == FALSE,
+	ASSERT (unmanaged == NULL,
 	        "onboot-no-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_ONBOOT_NO);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -2621,6 +2659,10 @@ test_read_onboot_no (void)
 	        NM_SETTING_CONNECTION_SETTING_NAME,
 	        NM_SETTING_CONNECTION_AUTOCONNECT);
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -2664,7 +2706,7 @@ test_read_wired_8021x_peap_mschapv2 (void)
 	ASSERT (nm_connection_verify (connection, &error),
 	        "wired-8021x-peap-mschapv2-verify", "failed to verify %s: %s", TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2, error->message);
 
-	ASSERT (unmanaged == FALSE,
+	ASSERT (unmanaged == NULL,
 	        "wired-8021x-peap-mschapv2-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2);
 
 	/* ===== WIRED SETTING ===== */
@@ -2807,6 +2849,10 @@ test_read_wired_8021x_peap_mschapv2 (void)
 
 	g_object_unref (tmp_8021x);
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -2985,6 +3031,10 @@ test_read_wifi_open (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_METHOD);
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -3063,6 +3113,10 @@ test_read_wifi_open_auto (void)
 	        NM_SETTING_WIRELESS_SETTING_NAME,
 	        NM_SETTING_WIRELESS_MODE);
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -3147,7 +3201,11 @@ test_read_wifi_open_ssid_hex (void)
 	        TEST_IFCFG_WIFI_OPEN_SSID_HEX,
 	        NM_SETTING_WIRELESS_SETTING_NAME,
 	        NM_SETTING_WIRELESS_SSID);
-	
+
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -3174,6 +3232,11 @@ test_read_wifi_open_ssid_bad (const char *file, const char *test)
 	                                   &ignore_error);
 	ASSERT (connection == NULL, test, "unexpected success reading %s", file);
 	g_clear_error (&error);
+
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 }
 
 #define TEST_IFCFG_WIFI_OPEN_SSID_QUOTED TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-quoted"
@@ -3257,7 +3320,11 @@ test_read_wifi_open_ssid_quoted (void)
 	        TEST_IFCFG_WIFI_OPEN_SSID_QUOTED,
 	        NM_SETTING_WIRELESS_SETTING_NAME,
 	        NM_SETTING_WIRELESS_SSID);
-	
+
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -3531,6 +3598,10 @@ test_read_wifi_wep (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_METHOD);
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -3795,6 +3866,10 @@ test_read_wifi_wep_adhoc (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -3931,6 +4006,10 @@ test_read_wifi_wep_passphrase (void)
 	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -4064,6 +4143,10 @@ test_read_wifi_wep_40_ascii (void)
 	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -4197,6 +4280,10 @@ test_read_wifi_wep_104_ascii (void)
 	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -4333,6 +4420,10 @@ test_read_wifi_leap (void)
 	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	        NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD);
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -4648,6 +4739,10 @@ test_read_wifi_wpa_psk (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_METHOD);
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -4749,6 +4844,10 @@ test_read_wifi_wpa_psk_unquoted (void)
 	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	        NM_SETTING_WIRELESS_SECURITY_PSK);
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -4782,6 +4881,11 @@ test_read_wifi_wpa_psk_unquoted2 (void)
 	ASSERT (connection == NULL,
 	        "wifi-wpa-psk-unquoted-read", "unexpected success reading %s", TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED2);
 	g_clear_error (&error);
+
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 }
 
 #define TEST_IFCFG_WIFI_WPA_PSK_ADHOC TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wpa-psk-adhoc"
@@ -4969,6 +5073,10 @@ test_read_wifi_wpa_psk_adhoc (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_METHOD);
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -5121,6 +5229,10 @@ test_read_wifi_wpa_psk_hex (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_METHOD);
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -5162,7 +5274,7 @@ test_read_wifi_wpa_eap_tls (void)
 	ASSERT (nm_connection_verify (connection, &error),
 	        "wifi-wpa-eap-tls-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_WPA_EAP_TLS, error->message);
 
-	ASSERT (unmanaged == FALSE,
+	ASSERT (unmanaged == NULL,
 	        "wifi-wpa-eap-tls-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIFI_WPA_EAP_TLS);
 
 	/* ===== WIRELESS SETTING ===== */
@@ -5268,6 +5380,10 @@ test_read_wifi_wpa_eap_tls (void)
 	                    "wifi-wpa-eap-tls-verify-8021x",
 	                    NM_SETTING_802_1X_PRIVATE_KEY);
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -5308,7 +5424,7 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 	ASSERT (nm_connection_verify (connection, &error),
 	        "wifi-wpa-eap-ttls-tls-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS, error->message);
 
-	ASSERT (unmanaged == FALSE,
+	ASSERT (unmanaged == NULL,
 	        "wifi-wpa-eap-ttls-tls-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS);
 
 	/* ===== WIRELESS SETTING ===== */
@@ -5436,6 +5552,10 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 	        NM_SETTING_802_1X_SETTING_NAME,
 	        NM_SETTING_802_1X_IDENTITY);
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -5477,7 +5597,7 @@ test_read_wifi_wep_eap_ttls_chap (void)
 	ASSERT (nm_connection_verify (connection, &error),
 	        "wifi-wep-eap-ttls-chap-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP, error->message);
 
-	ASSERT (unmanaged == FALSE,
+	ASSERT (unmanaged == NULL,
 	        "wifi-wep-eap-ttls-chap-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP);
 
 	/* ===== WIRELESS SETTING ===== */
@@ -5597,6 +5717,10 @@ test_read_wifi_wep_eap_ttls_chap (void)
 	        NM_SETTING_802_1X_SETTING_NAME,
 	        NM_SETTING_802_1X_PASSWORD);
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -5639,7 +5763,7 @@ test_read_wired_qeth_static (void)
 	ASSERT (nm_connection_verify (connection, &error),
 	        "wired-qeth-static-verify", "failed to verify %s: %s", TEST_IFCFG_WIRED_QETH_STATIC, error->message);
 
-	ASSERT (unmanaged == FALSE,
+	ASSERT (unmanaged == NULL,
 	        "wired-qeth-static-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_QETH_STATIC);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -5769,6 +5893,10 @@ test_read_wired_qeth_static (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_METHOD);
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -5809,7 +5937,7 @@ test_read_wired_ctc_static (void)
 	success = nm_connection_verify (connection, &error);
 	g_assert_no_error (error);
 	g_assert (success);
-	g_assert (unmanaged == FALSE);
+	g_assert (unmanaged == NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
@@ -5838,6 +5966,10 @@ test_read_wired_ctc_static (void)
 	g_assert (tmp != NULL);
 	g_assert_cmpstr (tmp, ==, "0");
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -6068,6 +6200,7 @@ test_write_wired_static (void)
 		unlink (route6file);
 
 	g_free (testfile);
+	g_free (unmanaged);
 	g_free (keyfile);
 	g_free (routefile);
 	g_free (route6file);
@@ -6186,6 +6319,10 @@ test_write_wired_dhcp (void)
 	        "wired-dhcp-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -6323,6 +6460,7 @@ test_write_wired_static_ip6_only (void)
 		unlink (route6file);
 
 	g_free (testfile);
+	g_free (unmanaged);
 	g_free (keyfile);
 	g_free (routefile);
 	g_free (route6file);
@@ -6467,6 +6605,7 @@ test_read_write_static_routes_legacy (void)
 	        "read-write-static-routes-legacy-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
+	g_free (unmanaged);
 	g_free (keyfile);
 	g_free (keyfile2);
 	g_free (routefile);
@@ -6648,6 +6787,7 @@ test_write_wired_static_routes (void)
 	        "wired-static-routes-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
+	g_free (unmanaged);
 	g_free (keyfile);
 	g_free (routefile);
 	g_free (route6file);
@@ -6789,6 +6929,10 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 	        "wired-dhcp-8021x-peap-mschapv2write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -6928,6 +7072,7 @@ test_write_wifi_open (void)
 	ASSERT (strncmp (tmp, "\"\"", 2) != 0,
 	        "wifi-open-write-reread", "unexpected ESSID double-quote in %s", testfile);
 
+	g_free (tmp);
 	svCloseFile (ifcfg);
 
 	unlink (testfile);
@@ -6942,6 +7087,10 @@ test_write_wifi_open (void)
 	        "wifi-open-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -7061,6 +7210,10 @@ test_write_wifi_open_hex_ssid (void)
 	        "wifi-open-hex-ssid-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -7212,6 +7365,10 @@ test_write_wifi_wep (void)
 	        "wifi-wep-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -7371,6 +7528,10 @@ test_write_wifi_wep_adhoc (void)
 	        "wifi-wep-adhoc-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -7520,6 +7681,10 @@ test_write_wifi_wep_passphrase (void)
 	        "wifi-wep-passphrase-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -7671,6 +7836,10 @@ test_write_wifi_wep_40_ascii (void)
 	        "wifi-wep-40-ascii-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -7822,6 +7991,10 @@ test_write_wifi_wep_104_ascii (void)
 	        "wifi-wep-104-ascii-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -7970,6 +8143,10 @@ test_write_wifi_leap (void)
 	        "wifi-leap-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -8131,6 +8308,10 @@ test_write_wifi_wpa_psk (const char *name,
 	        test_name, "written and re-read connection weren't the same.");
 
 	g_free (testfile);
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -8288,6 +8469,10 @@ test_write_wifi_wpa_psk_adhoc (void)
 	        "wifi-wpa-psk-adhoc-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -8465,6 +8650,10 @@ test_write_wifi_wpa_eap_tls (void)
 	        "wifi-wpa-eap-tls-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -8660,6 +8849,10 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 	        "wifi-wpa-eap-ttls-tls-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -8827,6 +9020,10 @@ test_write_wifi_wpa_eap_ttls_mschapv2 (void)
 	        "wifi-wpa-eap-ttls-mschapv2-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -8963,6 +9160,10 @@ test_read_ibft_dhcp (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_METHOD);
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -9175,6 +9376,10 @@ test_read_ibft_static (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_ADDRESSES);
 
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -9201,6 +9406,11 @@ test_read_ibft_malformed (const char *name, const char *iscsiadm_path)
 	                                   &ignore_error);
 	ASSERT (connection == NULL,
 	        name, "unexpectedly able to read %s", TEST_IFCFG_IBFT_STATIC);
+
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 }
 
 static void
@@ -9330,6 +9540,7 @@ test_write_wired_qeth_dhcp (void)
 		unlink (route6file);
 
 	g_free (testfile);
+	g_free (unmanaged);
 	g_free (keyfile);
 	g_free (routefile);
 	g_free (route6file);
@@ -9423,10 +9634,12 @@ test_write_wired_ctc_dhcp (void)
 	tmp = svGetValue (ifcfg, "CTCPROT", TRUE);
 	g_assert (tmp);
 	g_assert_cmpstr (tmp, ==, "0");
+	g_free (tmp);
 
 	/* And that it's not in the generic OPTIONS string */
 	tmp = svGetValue (ifcfg, "OPTIONS", TRUE);
 	g_assert (tmp == NULL);
+	g_free (tmp);
 
 	svCloseFile (ifcfg);
 
@@ -9455,6 +9668,7 @@ test_write_wired_ctc_dhcp (void)
 		unlink (route6file);
 
 	g_free (testfile);
+	g_free (unmanaged);
 	g_free (keyfile);
 	g_free (routefile);
 	g_free (route6file);
@@ -9750,6 +9964,11 @@ test_read_bridge_main (void)
 	                                   &ignore_error);
 	ASSERT (connection == NULL,
 	        "bridge-main-read", "unexpected success reading %s", TEST_IFCFG_BRIDGE_MAIN);
+
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 }
 
 #define TEST_IFCFG_BRIDGE_COMPONENT TEST_IFCFG_DIR"/network-scripts/ifcfg-test-bridge-component"
@@ -9784,8 +10003,11 @@ test_read_bridge_component (void)
 	ASSERT (g_strcmp0 (unmanaged, "mac:00:22:15:59:62:97") == 0,
 	        "bridge-component-read", "unexpected unmanaged spec from %s", TEST_IFCFG_BRIDGE_COMPONENT);
 
-	g_object_unref (connection);
 	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+	g_object_unref (connection);
 }
 
 #define TEST_IFCFG_VLAN_INTERFACE TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-interface"
@@ -9813,6 +10035,11 @@ test_read_vlan_interface (void)
 	                                   &ignore_error);
 	ASSERT (connection == NULL,
 	        "vlan-interface-read", "unexpected success reading %s", TEST_IFCFG_VLAN_INTERFACE);
+
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 }
 
 #define TEST_IFCFG_WIFI_OPEN_SSID_BAD_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-bad-hex"
