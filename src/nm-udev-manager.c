@@ -91,7 +91,7 @@ rfkill_type_to_desc (RfKillType rtype)
 	if (rtype == 0)
 		return "WiFi";
 	else if (rtype == 1)
-		return "WWan";
+		return "WWAN";
 	else if (rtype == 2)
 		return "WiMAX";
 	return "unknown";
