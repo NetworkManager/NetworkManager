@@ -783,7 +783,6 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 			}
 		}
 		dest = g_match_info_fetch (match_info, 1);
-		g_match_info_free (match_info);
 		if (!strcmp (dest, "default"))
 			strcpy (dest, "0.0.0.0");
 		if (inet_pton (AF_INET, dest, &ip4_addr) != 1) {
@@ -797,6 +796,7 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 
 		/* Prefix - is optional; 32 if missing */
 		prefix = g_match_info_fetch (match_info, 2);
+		g_match_info_free (match_info);
 		prefix_int = 32;
 		if (prefix) {
 			errno = 0;
@@ -808,7 +808,6 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 				goto error;
 			}
 		}
-
 		nm_ip4_route_set_prefix (route, (guint32) prefix_int);
 		g_free (prefix);
 
@@ -1037,7 +1036,6 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 			}
 		}
 		dest = g_match_info_fetch (match_info, 1);
-		g_match_info_free (match_info);
 		if (!strcmp (dest, "default"))
 			strcpy (dest, "::");
 		if (inet_pton (AF_INET6, dest, &ip6_addr) != 1) {
@@ -1051,6 +1049,7 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 
 		/* Prefix - is optional; 128 if missing */
 		prefix = g_match_info_fetch (match_info, 2);
+		g_match_info_free (match_info);
 		prefix_int = 128;
 		if (prefix) {
 			errno = 0;
@@ -1062,7 +1061,6 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 				goto error;
 			}
 		}
-
 		nm_ip6_route_set_prefix (route, (guint32) prefix_int);
 		g_free (prefix);
 
