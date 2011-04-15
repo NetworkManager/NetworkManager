@@ -51,9 +51,9 @@ typedef struct
 	guint32			freq;		/* Frequency in MHz; ie 2412 (== 2.412 GHz) */
 	guint32			max_bitrate;/* Maximum bitrate of the AP in Kbit/s (ie 54000 Kb/s == 54Mbit/s) */
 
-	guint32			flags;		/* General flags */
-	guint32			wpa_flags;	/* WPA-related flags */
-	guint32			rsn_flags;	/* RSN (WPA2) -related flags */
+	NM80211ApFlags         flags;      /* General flags */
+	NM80211ApSecurityFlags wpa_flags;  /* WPA-related flags */
+	NM80211ApSecurityFlags rsn_flags;  /* RSN (WPA2) -related flags */
 
 	/* Non-scanned attributes */
 	gboolean			fake;	/* Whether or not the AP is from a scan */
@@ -215,7 +215,17 @@ static void
 nm_ap_class_init (NMAccessPointClass *ap_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (ap_class);
-	guint32 all_sec_flags;
+	const NM80211ApSecurityFlags all_sec_flags =   NM_802_11_AP_SEC_NONE
+	                                             | NM_802_11_AP_SEC_PAIR_WEP40
+	                                             | NM_802_11_AP_SEC_PAIR_WEP104
+	                                             | NM_802_11_AP_SEC_PAIR_TKIP
+	                                             | NM_802_11_AP_SEC_PAIR_CCMP
+	                                             | NM_802_11_AP_SEC_GROUP_WEP40
+	                                             | NM_802_11_AP_SEC_GROUP_WEP104
+	                                             | NM_802_11_AP_SEC_GROUP_TKIP
+	                                             | NM_802_11_AP_SEC_GROUP_CCMP
+	                                             | NM_802_11_AP_SEC_KEY_MGMT_PSK
+	                                             | NM_802_11_AP_SEC_KEY_MGMT_802_1X;
 
 	g_type_class_add_private (ap_class, sizeof (NMAccessPointPrivate));
 
@@ -225,19 +235,6 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 	object_class->finalize = finalize;
 
 	/* properties */
-
-	all_sec_flags =   NM_802_11_AP_SEC_NONE
-	                | NM_802_11_AP_SEC_PAIR_WEP40
-	                | NM_802_11_AP_SEC_PAIR_WEP104
-	                | NM_802_11_AP_SEC_PAIR_TKIP
-	                | NM_802_11_AP_SEC_PAIR_CCMP
-	                | NM_802_11_AP_SEC_GROUP_WEP40
-	                | NM_802_11_AP_SEC_GROUP_WEP104
-	                | NM_802_11_AP_SEC_GROUP_TKIP
-	                | NM_802_11_AP_SEC_GROUP_CCMP
-	                | NM_802_11_AP_SEC_KEY_MGMT_PSK
-	                | NM_802_11_AP_SEC_KEY_MGMT_802_1X;
-
 	g_object_class_install_property
 		(object_class, PROP_FLAGS,
 		 g_param_spec_uint (NM_AP_FLAGS,
@@ -371,7 +368,7 @@ NMAccessPoint *nm_ap_new (void)
 	return (NMAccessPoint *) object;
 }
 
-static guint32
+static NM80211ApSecurityFlags
 pair_to_flags (const char *str)
 {
 	g_return_val_if_fail (str != NULL, NM_802_11_AP_SEC_NONE);
@@ -387,7 +384,7 @@ pair_to_flags (const char *str)
 	return NM_802_11_AP_SEC_NONE;
 }
 
-static guint32
+static NM80211ApSecurityFlags
 group_to_flags (const char *str)
 {
 	g_return_val_if_fail (str != NULL, NM_802_11_AP_SEC_NONE);
@@ -403,11 +400,11 @@ group_to_flags (const char *str)
 	return NM_802_11_AP_SEC_NONE;
 }
 
-static guint32
+static NM80211ApSecurityFlags
 security_from_dict (GHashTable *security)
 {
 	GValue *value;
-	guint32 flags = NM_802_11_AP_SEC_NONE;
+	NM80211ApSecurityFlags flags = NM_802_11_AP_SEC_NONE;
 	const char **items, **iter;
 
 	value = g_hash_table_lookup (security, "KeyMgmt");
@@ -482,12 +479,12 @@ foreach_property_cb (gpointer key, gpointer value, gpointer user_data)
 				}
 			}
 		} else if (!strcmp (key, "WPA")) {
-			guint32 flags = nm_ap_get_wpa_flags (ap);
+			NM80211ApSecurityFlags flags = nm_ap_get_wpa_flags (ap);
 
 			flags |= security_from_dict (g_value_get_boxed (variant));
 			nm_ap_set_wpa_flags (ap, flags);
 		} else if (!strcmp (key, "RSN")) {
-			guint32 flags = nm_ap_get_rsn_flags (ap);
+			NM80211ApSecurityFlags flags = nm_ap_get_rsn_flags (ap);
 
 			flags |= security_from_dict (g_value_get_boxed (variant));
 			nm_ap_set_rsn_flags (ap, flags);
@@ -516,7 +513,7 @@ foreach_property_cb (gpointer key, gpointer value, gpointer user_data)
 
 		if (strcmp (key, "Privacy") == 0) {
 			if (val) {
-				guint32 flags = nm_ap_get_flags (ap);
+				NM80211ApFlags flags = nm_ap_get_flags (ap);
 				nm_ap_set_flags (ap, flags | NM_802_11_AP_FLAGS_PRIVACY);
 			}
 		}
@@ -581,7 +578,7 @@ static void
 add_pair_ciphers (NMAccessPoint *ap, NMSettingWirelessSecurity *sec)
 {
 	guint32 num = nm_setting_wireless_security_get_num_pairwise (sec);
-	guint32 flags = NM_802_11_AP_SEC_NONE;
+	NM80211ApSecurityFlags flags = NM_802_11_AP_SEC_NONE;
 	guint32 i;
 
 	/* If no ciphers are specified, that means "all" WPA ciphers */
@@ -608,7 +605,7 @@ static void
 add_group_ciphers (NMAccessPoint *ap, NMSettingWirelessSecurity *sec)
 {
 	guint32 num = nm_setting_wireless_security_get_num_groups (sec);
-	guint32 flags = NM_802_11_AP_SEC_NONE;
+	NM80211ApSecurityFlags flags = NM_802_11_AP_SEC_NONE;
 	guint32 i;
 
 	/* If no ciphers are specified, that means "all" WPA ciphers */
@@ -643,7 +640,8 @@ nm_ap_new_fake_from_connection (NMConnection *connection)
 	NMSettingWirelessSecurity *s_wireless_sec;
 	const GByteArray *ssid;
 	const char *mode, *band, *key_mgmt;
-	guint32 channel, flags;
+	guint32 channel;
+	NM80211ApSecurityFlags flags;
 	gboolean psk = FALSE, eap = FALSE;
 
 	g_return_val_if_fail (connection != NULL, NULL);
@@ -874,21 +872,17 @@ nm_ap_set_ssid (NMAccessPoint *ap, const GByteArray * ssid)
 }
 
 
-guint32
+NM80211ApFlags
 nm_ap_get_flags (NMAccessPoint *ap)
 {
-	guint32 flags;
+	g_return_val_if_fail (NM_IS_AP (ap), NM_802_11_AP_SEC_NONE);
 
-	g_return_val_if_fail (NM_IS_AP (ap), NM_802_11_AP_FLAGS_NONE);
-
-	g_object_get (ap, NM_AP_FLAGS, &flags, NULL);
-
-	return flags;
+	return NM_AP_GET_PRIVATE (ap)->flags;
 }
 
 
 void
-nm_ap_set_flags (NMAccessPoint *ap, guint32 flags)
+nm_ap_set_flags (NMAccessPoint *ap, NM80211ApFlags flags)
 {
 	NMAccessPointPrivate *priv;
 
@@ -902,56 +896,46 @@ nm_ap_set_flags (NMAccessPoint *ap, guint32 flags)
 	}
 }
 
-guint32
+NM80211ApSecurityFlags
 nm_ap_get_wpa_flags (NMAccessPoint *ap)
 {
-	guint32 flags;
-
 	g_return_val_if_fail (NM_IS_AP (ap), NM_802_11_AP_SEC_NONE);
 
-	g_object_get (ap, NM_AP_WPA_FLAGS, &flags, NULL);
-
-	return flags;
+	return NM_AP_GET_PRIVATE (ap)->wpa_flags;
 }
 
 
 void
-nm_ap_set_wpa_flags (NMAccessPoint *ap, guint32 flags)
+nm_ap_set_wpa_flags (NMAccessPoint *ap, NM80211ApSecurityFlags flags)
 {
 	NMAccessPointPrivate *priv;
 
 	g_return_if_fail (NM_IS_AP (ap));
 
 	priv = NM_AP_GET_PRIVATE (ap);
-
 	if (priv->wpa_flags != flags) {
 		priv->wpa_flags = flags;
 		g_object_notify (G_OBJECT (ap), NM_AP_WPA_FLAGS);
 	}
 }
 
-guint32
+NM80211ApSecurityFlags
 nm_ap_get_rsn_flags (NMAccessPoint *ap)
 {
-	guint32 flags;
-
 	g_return_val_if_fail (NM_IS_AP (ap), NM_802_11_AP_SEC_NONE);
 
-	g_object_get (ap, NM_AP_RSN_FLAGS, &flags, NULL);
-
-	return flags;
+	return NM_AP_GET_PRIVATE (ap)->rsn_flags;
 }
 
 
 void
-nm_ap_set_rsn_flags (NMAccessPoint *ap, guint32 flags)
+nm_ap_set_rsn_flags (NMAccessPoint *ap, NM80211ApSecurityFlags flags)
 {
 	NMAccessPointPrivate *priv;
 
 	g_return_if_fail (NM_IS_AP (ap));
 
 	priv = NM_AP_GET_PRIVATE (ap);
-
 	if (priv->rsn_flags != flags) {
 		priv->rsn_flags = flags;
 		g_object_notify (G_OBJECT (ap), NM_AP_RSN_FLAGS);
@@ -1329,7 +1313,7 @@ nm_ap_complete_connection (NMAccessPoint *self,
 }
 
 static gboolean
-capabilities_compatible (guint32 a_flags, guint32 b_flags)
+capabilities_compatible (NM80211ApSecurityFlags a_flags, NM80211ApSecurityFlags b_flags)
 {
 	if (a_flags == b_flags)
 		return TRUE;
@@ -1402,10 +1386,10 @@ nm_ap_match_in_list (NMAccessPoint *find_ap,
 			if (nm_ap_get_rsn_flags (list_ap) != nm_ap_get_rsn_flags (find_ap))
 				continue;
 		} else {
-			guint32 list_wpa_flags = nm_ap_get_wpa_flags (list_ap);
-			guint32 find_wpa_flags = nm_ap_get_wpa_flags (find_ap);
-			guint32 list_rsn_flags = nm_ap_get_rsn_flags (list_ap);
-			guint32 find_rsn_flags = nm_ap_get_rsn_flags (find_ap);
+			NM80211ApSecurityFlags list_wpa_flags = nm_ap_get_wpa_flags (list_ap);
+			NM80211ApSecurityFlags find_wpa_flags = nm_ap_get_wpa_flags (find_ap);
+			NM80211ApSecurityFlags list_rsn_flags = nm_ap_get_rsn_flags (list_ap);
+			NM80211ApSecurityFlags find_rsn_flags = nm_ap_get_rsn_flags (find_ap);
 
 			/* Just ensure that there is overlap in the capabilities */
 			if (   !capabilities_compatible (list_wpa_flags, find_wpa_flags)

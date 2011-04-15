@@ -71,14 +71,14 @@ void				nm_ap_set_timestamp_via_timestamp	(NMAccessPoint *ap, const GTimeVal *ti
 const GByteArray *	nm_ap_get_ssid (const NMAccessPoint * ap);
 void				nm_ap_set_ssid (NMAccessPoint * ap, const GByteArray * ssid);
 
-guint32			nm_ap_get_flags	(NMAccessPoint *ap);
-void				nm_ap_set_flags	(NMAccessPoint *ap, guint32 flags);
+NM80211ApFlags         nm_ap_get_flags     (NMAccessPoint *ap);
+void                   nm_ap_set_flags     (NMAccessPoint *ap, NM80211ApFlags flags);
 
-guint32			nm_ap_get_wpa_flags	(NMAccessPoint *ap);
-void				nm_ap_set_wpa_flags	(NMAccessPoint *ap, guint32 flags);
+NM80211ApSecurityFlags nm_ap_get_wpa_flags (NMAccessPoint *ap);
+void                   nm_ap_set_wpa_flags (NMAccessPoint *ap, NM80211ApSecurityFlags flags);
 
-guint32			nm_ap_get_rsn_flags	(NMAccessPoint *ap);
-void				nm_ap_set_rsn_flags	(NMAccessPoint *ap, guint32 flags);
+NM80211ApSecurityFlags nm_ap_get_rsn_flags	(NMAccessPoint *ap);
+void                   nm_ap_set_rsn_flags  (NMAccessPoint *ap, NM80211ApSecurityFlags flags);
 
 const struct ether_addr * nm_ap_get_address	(const NMAccessPoint *ap);
 void				nm_ap_set_address		(NMAccessPoint *ap, const struct ether_addr *addr);
