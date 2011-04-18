@@ -2618,6 +2618,7 @@ user_get_secrets_cb (DBusGProxy *proxy,
                      gpointer user_data)
 {
 	GetSecretsInfo *info = (GetSecretsInfo *) user_data;
+	NMManagerPrivate *priv;
 	GHashTable *settings = NULL;
 	GError *error = NULL;
 	GObject *provider;
@@ -2625,6 +2626,15 @@ user_get_secrets_cb (DBusGProxy *proxy,
 	g_return_if_fail (info != NULL);
 	g_return_if_fail (info->provider);
 	g_return_if_fail (info->setting_name);
+
+	/* Remove the GetSecretsInfo from our internal list just in case
+	 * calling the secrets provider's get_secrets_result() function tries
+	 * to cancel the secrets request, which would cause us to double-free
+	 * the GetSecretsInfo.  We know we're going to free it at the end here,
+	 * so there's no need to track it anymore.
+	 */
+	priv = NM_MANAGER_GET_PRIVATE (info->manager);
+	priv->secrets_calls = g_slist_remove (priv->secrets_calls, info);
 
 	provider = g_object_ref (info->provider);
 
