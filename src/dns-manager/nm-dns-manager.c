@@ -61,7 +61,9 @@ G_DEFINE_TYPE(NMDnsManager, nm_dns_manager, G_TYPE_OBJECT)
                                        NM_TYPE_DNS_MANAGER, \
                                        NMDnsManagerPrivate))
 
-struct NMDnsManagerPrivate {
+typedef struct {
+	gboolean disposed;
+
 	NMIP4Config *ip4_vpn_config;
 	NMIP4Config *ip4_device_config;
 	NMIP6Config *ip6_vpn_config;
@@ -84,7 +86,7 @@ struct NMDnsManagerPrivate {
 	 * associated with a network interface (like hostnames).
 	 */
 	char *last_iface;
-};
+} NMDnsManagerPrivate;
 
 
 typedef struct {
@@ -1074,17 +1076,45 @@ nm_dns_manager_init (NMDnsManager *mgr)
 }
 
 static void
-nm_dns_manager_finalize (GObject *object)
+dispose (GObject *object)
+{
+	NMDnsManager *self = NM_DNS_MANAGER (object);
+	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	GError *error = NULL;
+
+	if (priv->disposed == FALSE) {
+		priv->disposed = TRUE;
+
+		g_slist_foreach (priv->plugins, (GFunc) g_object_unref, NULL);
+		g_slist_free (priv->plugins);
+		priv->plugins = NULL;
+
+		/* If we're quitting leave a valid resolv.conf in place, not one
+		 * pointing to 127.0.0.1 if any plugins were active.  Thus update
+		 * DNS after disposing of all plugins.
+		 */
+		if (!update_dns (self, priv->last_iface, TRUE, &error)) {
+			nm_log_warn (LOGD_DNS, "could not commit DNS changes on shutdown: (%d) %s",
+					     error ? error->code : -1,
+					     error && error->message ? error->message : "(unknown)");
+			g_clear_error (&error);
+		}
+
+		g_slist_foreach (priv->configs, (GFunc) g_object_unref, NULL);
+		g_slist_free (priv->configs);
+		priv->configs = NULL;
+	}
+
+	G_OBJECT_CLASS (nm_dns_manager_parent_class)->dispose (object);
+}
+
+static void
+finalize (GObject *object)
 {
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (object);
 
-	g_slist_foreach (priv->configs, (GFunc) g_object_unref, NULL);
-	g_slist_free (priv->configs);
 	g_free (priv->hostname);
 	g_free (priv->last_iface);
-
-	g_slist_foreach (priv->plugins, (GFunc) g_object_unref, NULL);
-	g_slist_free (priv->plugins);
 
 	G_OBJECT_CLASS (nm_dns_manager_parent_class)->finalize (object);
 }
@@ -1094,7 +1124,8 @@ nm_dns_manager_class_init (NMDnsManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-	object_class->finalize = nm_dns_manager_finalize;
+	object_class->dispose = dispose;
+	object_class->finalize = finalize;
 
 	g_type_class_add_private (object_class, sizeof (NMDnsManagerPrivate));
 }
