@@ -1099,19 +1099,19 @@ have_connection_for_device (NMSettings *self, GByteArray *mac)
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, &data)) {
 		NMConnection *connection = NM_CONNECTION (data);
-		const char *connection_type;
+		const char *ctype;
 
-		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-		connection_type = nm_setting_connection_get_connection_type (s_con);
+		s_con = nm_connection_get_setting_connection (connection);
+		ctype = nm_setting_connection_get_connection_type (s_con);
 
-		if (   strcmp (connection_type, NM_SETTING_WIRED_SETTING_NAME)
-		    && strcmp (connection_type, NM_SETTING_PPPOE_SETTING_NAME))
+		if (   strcmp (ctype, NM_SETTING_WIRED_SETTING_NAME)
+		    && strcmp (ctype, NM_SETTING_PPPOE_SETTING_NAME))
 			continue;
 
-		s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
+		s_wired = nm_connection_get_setting_wired (connection);
 
 		/* No wired setting; therefore the PPPoE connection applies to any device */
-		if (!s_wired && !strcmp (connection_type, NM_SETTING_PPPOE_SETTING_NAME)) {
+		if (!s_wired && !strcmp (ctype, NM_SETTING_PPPOE_SETTING_NAME)) {
 			ret = TRUE;
 			break;
 		}
