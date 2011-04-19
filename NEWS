@@ -12,6 +12,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * IPv6 setup, routing, and compliance fixes
 * Fix WWAN enable/disable handling
 * Handle reverse DNS lookups with local caching nameserver configurations
+* Ensure usable DNS configuration is written when NetworkManager quits
 * No longer updates /etc/hosts when hostname changes
 * Request WPAD option from DHCP servers
 * Allow use of paths for certificates and keys in connection keyfiles
