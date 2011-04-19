@@ -86,14 +86,6 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-NMPPPManager *
-nm_modem_get_ppp_manager (NMModem *self)
-{
-	g_return_val_if_fail (NM_IS_MODEM (self), NULL);
-
-	return NM_MODEM_GET_PRIVATE (self)->ppp_manager;
-}
-
 gboolean
 nm_modem_get_mm_enabled (NMModem *self)
 {

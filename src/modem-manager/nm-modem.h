@@ -99,7 +99,6 @@ GType nm_modem_get_type (void);
 
 /* Protected */
 
-NMPPPManager *nm_modem_get_ppp_manager (NMModem *modem);
 DBusGProxy *  nm_modem_get_proxy       (NMModem *modem, const char *interface);
 const char *  nm_modem_get_iface       (NMModem *modem);
 const char *  nm_modem_get_path        (NMModem *modem);
