@@ -923,7 +923,10 @@ device_state_changed (NMDevice *device,
 		break;
 	case NM_DEVICE_STATE_UNMANAGED:
 	case NM_DEVICE_STATE_UNAVAILABLE:
+		update_routing_and_dns (policy, FALSE);
+		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
+		/* Device is now available for auto-activation */
 		update_routing_and_dns (policy, FALSE);
 		schedule_activate_check (policy, device, 0);
 		break;
