@@ -885,6 +885,38 @@ write_wireless_setting (NMConnection *connection,
 	if (nm_setting_wireless_get_security (s_wireless)) {
 		if (!write_wireless_security_setting (connection, ifcfg, adhoc, no_8021x, error))
 			return FALSE;
+	} else {
+		char *keys_path;
+
+		/* Clear out wifi security keys */
+		svSetValue (ifcfg, "KEY_MGMT", NULL, FALSE);
+		svSetValue (ifcfg, "IEEE_8021X_IDENTITY", NULL, FALSE);
+		set_secret (ifcfg, "IEEE_8021X_PASSWORD", NULL, "IEEE_8021X_PASSWORD_FLAGS", NM_SETTING_SECRET_FLAG_NONE, FALSE);
+		svSetValue (ifcfg, "SECURITYMODE", NULL, FALSE);
+
+		/* Clear existing keys */
+		set_secret (ifcfg, "KEY", NULL, "WEP_KEY_FLAGS", NM_SETTING_SECRET_FLAG_NONE, FALSE);
+		for (i = 0; i < 4; i++) {
+			tmp = g_strdup_printf ("KEY_PASSPHRASE%d", i + 1);
+			set_secret (ifcfg, tmp, NULL, "WEP_KEY_FLAGS", NM_SETTING_SECRET_FLAG_NONE, FALSE);
+			g_free (tmp);
+	
+			tmp = g_strdup_printf ("KEY%d", i + 1);
+			set_secret (ifcfg, tmp, NULL, "WEP_KEY_FLAGS", NM_SETTING_SECRET_FLAG_NONE, FALSE);
+			g_free (tmp);
+		}
+
+		svSetValue (ifcfg, "DEFAULTKEY", NULL, FALSE);
+		svSetValue (ifcfg, "WPA_ALLOW_WPA", NULL, FALSE);
+		svSetValue (ifcfg, "WPA_ALLOW_WPA2", NULL, FALSE);
+		svSetValue (ifcfg, "CIPHER_PAIRWISE", NULL, FALSE);
+		svSetValue (ifcfg, "CIPHER_GROUP", NULL, FALSE);
+		set_secret (ifcfg, "WPA_PSK", NULL, "WPA_PSK_FLAGS", NM_SETTING_SECRET_FLAG_NONE, FALSE);
+
+		/* Kill any old keys file */
+		keys_path = utils_get_keys_path (ifcfg->fileName);
+		(void) unlink (keys_path);
+		g_free (keys_path);
 	}
 
 	svSetValue (ifcfg, "TYPE", TYPE_WIRELESS, FALSE);
