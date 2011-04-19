@@ -66,10 +66,14 @@ static gboolean impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 
 #include "nm-ppp-manager-glue.h"
 
+static void _ppp_cleanup  (NMPPPManager *manager);
+
 #define NM_PPPD_PLUGIN PLUGINDIR "/nm-pppd-plugin.so"
 #define PPP_MANAGER_SECRET_TRIES "ppp-manager-secret-tries"
 
 typedef struct {
+	gboolean disposed;
+
 	GPid pid;
 	NMDBusManager *dbus_manager;
 	char *dbus_path;
@@ -164,11 +168,19 @@ dispose (GObject *object)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (object);
 
-	nm_ppp_manager_stop (NM_PPP_MANAGER (object));
+	if (priv->disposed == FALSE) {
+		priv->disposed = TRUE;
 
-	if (priv->act_req)
-		g_object_unref (priv->act_req);
-	g_object_unref (priv->dbus_manager);
+		_ppp_cleanup (NM_PPP_MANAGER (object));
+
+		if (priv->act_req) {
+			g_object_unref (priv->act_req);
+			priv->act_req = NULL;
+		}
+
+		g_object_unref (priv->dbus_manager);
+		priv->dbus_manager = NULL;
+	}
 
 	G_OBJECT_CLASS (nm_ppp_manager_parent_class)->dispose (object);
 }
@@ -315,9 +327,12 @@ monitor_stats (NMPPPManager *manager)
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
 
 	priv->monitor_fd = socket (AF_INET, SOCK_DGRAM, 0);
-	if (priv->monitor_fd > 0)
+	if (priv->monitor_fd > 0) {
+		g_warn_if_fail (priv->monitor_id == 0);
+		if (priv->monitor_id)
+			g_source_remove (priv->monitor_id);
 		priv->monitor_id = g_timeout_add_seconds (5, monitor_cb, manager);
-	else
+	} else
 		nm_log_warn (LOGD_PPP, "could not monitor PPP stats: %s", strerror (errno));
 }
 
@@ -766,7 +781,7 @@ pppd_timed_out (gpointer data)
 	NMPPPManager *manager = NM_PPP_MANAGER (data);
 
 	nm_log_warn (LOGD_PPP, "pppd timed out or didn't initialize our dbus module");
-	nm_ppp_manager_stop (manager);
+	_ppp_cleanup (manager);
 
 	g_signal_emit (manager, signals[STATE_CHANGED], 0, NM_PPP_STATUS_DEAD);
 
@@ -1043,8 +1058,8 @@ ensure_killed (gpointer data)
 	return FALSE;
 }
 
-void
-nm_ppp_manager_stop (NMPPPManager *manager)
+static void
+_ppp_cleanup (NMPPPManager *manager)
 {
 	NMPPPManagerPrivate *priv;
 
