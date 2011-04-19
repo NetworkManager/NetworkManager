@@ -43,14 +43,6 @@ typedef struct {
 } NMDefaultWiredConnectionPrivate;
 
 enum {
-	PROP_0,
-	PROP_MAC,
-	PROP_DEVICE,
-	PROP_READ_ONLY,
-	LAST_PROP
-};
-
-enum {
 	TRY_UPDATE,
 	DELETED,
 	LAST_SIGNAL
