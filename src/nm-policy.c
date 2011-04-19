@@ -686,6 +686,16 @@ typedef struct {
 	guint id;
 } ActivateData;
 
+static void
+activate_data_free (ActivateData *data)
+{
+	if (data->id)
+		g_source_remove (data->id);
+	g_object_unref (data->device);
+	memset (data, 0, sizeof (*data));
+	g_free (data);
+}
+
 static gboolean
 auto_activate_device (gpointer user_data)
 {
@@ -697,6 +707,9 @@ auto_activate_device (gpointer user_data)
 
 	g_assert (data);
 	policy = data->policy;
+
+	data->id = 0;
+	policy->pending_activation_checks = g_slist_remove (policy->pending_activation_checks, data);
 
 	// FIXME: if a device is already activating (or activated) with a connection
 	// but another connection now overrides the current one for that device,
@@ -741,12 +754,35 @@ auto_activate_device (gpointer user_data)
 	g_slist_free (connections);
 
  out:
-	/* Remove this call's handler ID */
-	policy->pending_activation_checks = g_slist_remove (policy->pending_activation_checks, data);
-	g_object_unref (data->device);
-	g_free (data);
-
+	activate_data_free (data);
 	return FALSE;
+}
+
+static ActivateData *
+activate_data_new (NMPolicy *policy, NMDevice *device, guint delay_seconds)
+{
+	ActivateData *data;
+
+	data = g_malloc0 (sizeof (ActivateData));
+	data->policy = policy;
+	data->device = g_object_ref (device);
+	if (delay_seconds > 0)
+		data->id = g_timeout_add_seconds (delay_seconds, auto_activate_device, data);
+	else
+		data->id = g_idle_add (auto_activate_device, data);
+	return data;
+}
+
+static ActivateData *
+find_pending_activation (GSList *list, NMDevice *device)
+{
+	GSList *iter;
+
+	for (iter = list; iter; iter = g_slist_next (iter)) {
+		if (((ActivateData *) iter->data)->device == device)
+			return iter->data;
+	}
+	return NULL;
 }
 
 /*****************************************************************************/
@@ -803,7 +839,6 @@ static void
 schedule_activate_check (NMPolicy *policy, NMDevice *device, guint delay_seconds)
 {
 	ActivateData *data;
-	GSList *iter;
 	NMDeviceState state;
 
 	if (nm_manager_get_state (policy->manager) == NM_STATE_ASLEEP)
@@ -816,19 +851,11 @@ schedule_activate_check (NMPolicy *policy, NMDevice *device, guint delay_seconds
 	if (!nm_device_autoconnect_allowed (device))
 		return;
 
-	for (iter = policy->pending_activation_checks; iter; iter = g_slist_next (iter)) {
-		/* Only one pending activation check at a time */
-		if (((ActivateData *) iter->data)->device == device)
-			return;
+	/* Schedule an auto-activation if there isn't one already for this device */
+	if (find_pending_activation (policy->pending_activation_checks, device) == NULL) {
+		data = activate_data_new (policy, device, delay_seconds);
+		policy->pending_activation_checks = g_slist_append (policy->pending_activation_checks, data);
 	}
-
-	data = g_malloc0 (sizeof (ActivateData));
-	g_return_if_fail (data != NULL);
-
-	data->policy = policy;
-	data->device = g_object_ref (device);
-	data->id = delay_seconds ? g_timeout_add_seconds (delay_seconds, auto_activate_device, data) : g_idle_add (auto_activate_device, data);
-	policy->pending_activation_checks = g_slist_append (policy->pending_activation_checks, data);
 }
 
 static NMConnection *
@@ -968,21 +995,14 @@ static void
 device_removed (NMManager *manager, NMDevice *device, gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
+	ActivateData *tmp;
 	GSList *iter;
 
 	/* Clear any idle callbacks for this device */
-	iter = policy->pending_activation_checks;
-	while (iter) {
-		ActivateData *data = (ActivateData *) iter->data;
-		GSList *next = g_slist_next (iter);
-
-		if (data->device == device) {
-			g_source_remove (data->id);
-			g_object_unref (data->device);
-			g_free (data);
-			policy->pending_activation_checks = g_slist_delete_link (policy->pending_activation_checks, iter);
-		}
-		iter = next;
+	tmp = find_pending_activation (policy->pending_activation_checks, device);
+	if (tmp) {
+		policy->pending_activation_checks = g_slist_remove (policy->pending_activation_checks, tmp);
+		activate_data_free (tmp);
 	}
 
 	/* Clear any signal handlers for this device */
@@ -1171,13 +1191,7 @@ nm_policy_destroy (NMPolicy *policy)
 		policy->lookup = NULL;
 	}
 
-	for (iter = policy->pending_activation_checks; iter; iter = g_slist_next (iter)) {
-		ActivateData *data = (ActivateData *) iter->data;
-
-		g_source_remove (data->id);
-		g_object_unref (data->device);
-		g_free (data);
-	}
+	g_slist_foreach (policy->pending_activation_checks, (GFunc) activate_data_free, NULL);
 	g_slist_free (policy->pending_activation_checks);
 
 	g_signal_handler_disconnect (policy->vpn_manager, policy->vpn_activated_id);
