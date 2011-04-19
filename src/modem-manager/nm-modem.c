@@ -658,12 +658,13 @@ real_deactivate (NMModem *self, NMDevice *device)
 
 	priv->in_bytes = priv->out_bytes = 0;
 
+	if (priv->ppp_manager) {
+		g_object_unref (priv->ppp_manager);
+		priv->ppp_manager = NULL;
+	}
+
 	switch (priv->ip_method) {
 	case MM_MODEM_IP_METHOD_PPP:
-		if (priv->ppp_manager) {
-			g_object_unref (priv->ppp_manager);
-			priv->ppp_manager = NULL;
-		}
 		break;
 	case MM_MODEM_IP_METHOD_STATIC:
 	case MM_MODEM_IP_METHOD_DHCP:
