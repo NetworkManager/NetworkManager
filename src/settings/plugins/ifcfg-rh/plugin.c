@@ -213,7 +213,7 @@ remove_connection (SCPluginIfcfg *self, NMIfcfgConnection *connection)
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (connection != NULL);
 
-	managed = !!nm_ifcfg_connection_get_unmanaged_spec (connection);
+	managed = !nm_ifcfg_connection_get_unmanaged_spec (connection);
 	path = nm_ifcfg_connection_get_path (connection);
 
 	g_object_ref (connection);
