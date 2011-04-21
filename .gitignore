@@ -117,12 +117,12 @@ docs/api/NetworkManager.prerequisites
 docs/api/NetworkManager.signals
 docs/api/NetworkManager.types
 
-examples/C/add-connection-dbus-glib
-examples/C/add-connection-libnm-glib
-examples/C/get-active-connections-dbus-glib
-examples/C/get-ap-info-libnm-glib
-examples/C/list-connections-dbus-glib
-examples/C/list-connections-libnm-glib
+examples/C/glib/add-connection-dbus-glib
+examples/C/glib/add-connection-libnm-glib
+examples/C/glib/get-active-connections-dbus-glib
+examples/C/glib/get-ap-info-libnm-glib
+examples/C/glib/list-connections-dbus-glib
+examples/C/glib/list-connections-libnm-glib
 
 callouts/nm-dhcp-client.action
 callouts/nm-avahi-autoipd.action
