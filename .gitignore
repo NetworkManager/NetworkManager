@@ -121,7 +121,7 @@ examples/C/add-connection-dbus-glib
 examples/C/add-connection-libnm-glib
 examples/C/get-active-connections-dbus-glib
 examples/C/get-ap-info-libnm-glib
-examples/C/list-connections-dbus
+examples/C/list-connections-dbus-glib
 examples/C/list-connections-libnm-glib
 
 callouts/nm-dhcp-client.action
