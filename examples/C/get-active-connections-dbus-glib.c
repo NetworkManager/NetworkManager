@@ -23,7 +23,7 @@
  * dbus-glib and libnm-util libraries.
  *
  * Compile with:
- *   gcc -Wall `pkg-config --libs --cflags glib-2.0 dbus-glib-1 libnm-util` get-active-connections.c -o get-active-connections
+ *   gcc -Wall `pkg-config --libs --cflags glib-2.0 dbus-glib-1 libnm-util` get-active-connections-dbus-glib.c -o get-active-connections-dbus-glib
  */
 
 #include <glib.h>
