@@ -123,6 +123,7 @@ examples/C/glib/get-active-connections-dbus-glib
 examples/C/glib/get-ap-info-libnm-glib
 examples/C/glib/list-connections-dbus-glib
 examples/C/glib/list-connections-libnm-glib
+examples/C/glib/add-connection-wired
 
 callouts/nm-dhcp-client.action
 callouts/nm-avahi-autoipd.action
