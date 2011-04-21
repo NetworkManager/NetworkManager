@@ -189,7 +189,7 @@ show_nm_status (NmCli *nmc)
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
 
 	nmc->allowed_fields[0].value = nm_running ? _("running") : _("not running");
-	nmc->allowed_fields[1].value = nm_client_get_version (nmc->client);
+	nmc->allowed_fields[1].value = nm_running ? nm_client_get_version (nmc->client) : _("unknown");
 	nmc->allowed_fields[2].value = nm_state_to_string (state);
 	nmc->allowed_fields[3].value = net_enabled_str;
 	nmc->allowed_fields[4].value = wireless_hw_enabled_str;
