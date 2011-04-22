@@ -22,6 +22,9 @@
 #include <config.h>
 
 #include <netinet/ether.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <string.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
@@ -1007,22 +1010,25 @@ write_value_to_state_file (const char *filename,
 }
 
 static gboolean
-radio_enabled_for_rstate (RadioState *rstate, gboolean check_daemon_enabled)
+radio_enabled_for_rstate (RadioState *rstate, gboolean check_changeable)
 {
 	gboolean enabled;
 
-	enabled = rstate->user_enabled && rstate->sw_enabled && rstate->hw_enabled;
-	if (rstate->daemon_enabled_func && check_daemon_enabled)
-		enabled &= rstate->daemon_enabled;
+	enabled = rstate->user_enabled && rstate->hw_enabled;
+	if (check_changeable) {
+		enabled &= rstate->sw_enabled;
+		if (rstate->daemon_enabled_func)
+			enabled &= rstate->daemon_enabled;
+	}
 	return enabled;
 }
 
 static gboolean
-radio_enabled_for_type (NMManager *self, RfKillType rtype, gboolean check_daemon_enabled)
+radio_enabled_for_type (NMManager *self, RfKillType rtype, gboolean check_changeable)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
-	return radio_enabled_for_rstate (&priv->radio_states[rtype], check_daemon_enabled);
+	return radio_enabled_for_rstate (&priv->radio_states[rtype], check_changeable);
 }
 
 static void
@@ -3250,6 +3256,58 @@ dispose (GObject *object)
 	G_OBJECT_CLASS (nm_manager_parent_class)->dispose (object);
 }
 
+#define KERN_RFKILL_OP_CHANGE_ALL 3
+#define KERN_RFKILL_TYPE_WLAN     1
+struct rfkill_event {
+	__u32 idx;
+	__u8  type;
+	__u8  op;
+	__u8  soft, hard;
+} __attribute__((packed));
+
+static void
+rfkill_change_wifi (const char *desc, gboolean enabled)
+{
+	int fd;
+	struct rfkill_event event;
+	ssize_t len;
+
+	errno = 0;
+	fd = open ("/dev/rfkill", O_RDWR);
+	if (fd < 0) {
+		if (errno == EACCES)
+			nm_log_warn (LOGD_RFKILL, "(%s): failed to open killswitch device "
+			             "for WiFi radio control", desc);
+		return;
+	}
+
+	if (fcntl (fd, F_SETFL, O_NONBLOCK) < 0) {
+		nm_log_warn (LOGD_RFKILL, "(%s): failed to set killswitch device for "
+		             "non-blocking operation", desc);
+		close (fd);
+		return;
+	}
+
+	memset (&event, 0, sizeof (event));
+	event.op = KERN_RFKILL_OP_CHANGE_ALL;
+	event.type = KERN_RFKILL_TYPE_WLAN;
+	event.soft = enabled ? 0 : 1;
+
+	len = write (fd, &event, sizeof (event));
+	if (len < 0) {
+		nm_log_warn (LOGD_RFKILL, "(%s): failed to change WiFi killswitch state: (%d) %s",
+		             desc, errno, g_strerror (errno));
+	} else if (len == sizeof (event)) {
+		nm_log_info (LOGD_RFKILL, "%s hardware radio set %s",
+		             desc, enabled ? "enabled" : "disabled");
+	} else {
+		/* Failed to write full structure */
+		nm_log_warn (LOGD_RFKILL, "(%s): failed to change WiFi killswitch state", desc);
+	}
+
+	close (fd);
+}
+
 static void
 manager_radio_user_toggled (NMManager *self,
                             RadioState *rstate,
@@ -3291,8 +3349,13 @@ manager_radio_user_toggled (NMManager *self,
 	old_enabled = radio_enabled_for_rstate (rstate, TRUE);
 	rstate->user_enabled = enabled;
 	new_enabled = radio_enabled_for_rstate (rstate, FALSE);
-	if (new_enabled != old_enabled)
+	if (new_enabled != old_enabled) {
 		manager_update_radio_enabled (self, rstate, new_enabled);
+
+		/* For WiFi only (for now) set the actual kernel rfkill state */
+		if (rstate->rtype == RFKILL_TYPE_WLAN)
+			rfkill_change_wifi (rstate->desc, new_enabled);
+	}
 }
 
 static void

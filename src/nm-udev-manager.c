@@ -74,6 +74,7 @@ typedef struct {
 	char *driver;
 	RfKillType rtype;
 	gint state;
+	gboolean platform;
 } Killswitch;
 
 RfKillState
@@ -113,8 +114,8 @@ static Killswitch *
 killswitch_new (GUdevDevice *device, RfKillType rtype)
 {
 	Killswitch *ks;
-	GUdevDevice *parent = NULL;
-	const char *driver;
+	GUdevDevice *parent = NULL, *grandparent = NULL;
+	const char *driver, *subsys, *parent_subsys = NULL;
 
 	ks = g_malloc0 (sizeof (Killswitch));
 	ks->name = g_strdup (g_udev_device_get_name (device));
@@ -123,17 +124,33 @@ killswitch_new (GUdevDevice *device, RfKillType rtype)
 	ks->rtype = rtype;
 
 	driver = g_udev_device_get_property (device, "DRIVER");
-	if (!driver) {
-		parent = g_udev_device_get_parent (device);
-		if (parent)
-			driver = g_udev_device_get_property (parent, "DRIVER");
-	}
-	if (driver)
-		ks->driver = g_strdup (driver);
+	subsys = g_udev_device_get_subsystem (device);
 
+	/* Check parent for various attributes */
+	parent = g_udev_device_get_parent (device);
+	if (parent) {
+		parent_subsys = g_udev_device_get_subsystem (parent);
+		if (!driver)
+			driver = g_udev_device_get_property (parent, "DRIVER");
+		if (!driver) {
+			/* Sigh; try the grandparent */
+			grandparent = g_udev_device_get_parent (parent);
+			if (grandparent)
+				driver = g_udev_device_get_property (parent, "DRIVER");
+		}
+	}
+
+	if (!driver)
+		driver = "(unknown)";
+	ks->driver = g_strdup (driver);
+
+	if (g_strcmp0 (subsys, "platform") == 0 || g_strcmp0 (parent_subsys, "platform") == 0)
+		ks->platform = TRUE;
+
+	if (grandparent)
+		g_object_unref (grandparent);
 	if (parent)
 		g_object_unref (parent);
-
 	return ks;
 }
 
@@ -178,28 +195,77 @@ recheck_killswitches (NMUdevManager *self)
 	NMUdevManagerPrivate *priv = NM_UDEV_MANAGER_GET_PRIVATE (self);
 	GSList *iter;
 	RfKillState poll_states[RFKILL_TYPE_MAX];
+	gboolean platform_checked[RFKILL_TYPE_MAX];
 	int i;
 
 	/* Default state is unblocked */
-	for (i = 0; i < RFKILL_TYPE_MAX; i++)
+	for (i = 0; i < RFKILL_TYPE_MAX; i++) {
 		poll_states[i] = RFKILL_UNBLOCKED;
+		platform_checked[i] = FALSE;
+	}
 
+	/* Perform two passes here; the first pass is for non-platform switches,
+	 * which typically if hardkilled cannot be changed except by a physical
+	 * hardware switch.  The second pass checks platform killswitches, which
+	 * take precedence over device killswitches, because typically platform
+	 * killswitches control device killswitches.  That is, a hardblocked device
+	 * switch can often be unblocked by a platform switch.  Thus if we have
+	 * a hardblocked device switch and a softblocked platform switch, the
+	 * combined state should be softblocked since the platform switch can be
+	 * unblocked to change the device switch.
+	 */
+
+	/* Device switches first */
 	for (iter = priv->killswitches; iter; iter = g_slist_next (iter)) {
 		Killswitch *ks = iter->data;
 		GUdevDevice *device;
 		RfKillState dev_state;
+		int sysfs_state;
 
-		device = g_udev_client_query_by_subsystem_and_name (priv->client, "rfkill", ks->name);
-		if (!device)
-			continue;
-
-		dev_state = sysfs_state_to_nm_state (g_udev_device_get_property_as_int (device, "RFKILL_STATE"));
-		if (dev_state > poll_states[ks->rtype])
-			poll_states[ks->rtype] = dev_state;
-
-		g_object_unref (device);
+		if (ks->platform == FALSE) {
+			device = g_udev_client_query_by_subsystem_and_name (priv->client, "rfkill", ks->name);
+			if (device) {
+				sysfs_state = g_udev_device_get_property_as_int (device, "RFKILL_STATE");
+				dev_state = sysfs_state_to_nm_state (sysfs_state);
+				if (dev_state > poll_states[ks->rtype])
+					poll_states[ks->rtype] = dev_state;
+				g_object_unref (device);
+			}
+		}
 	}
 
+	/* Platform switches next; their state overwrites device state */
+	for (iter = priv->killswitches; iter; iter = g_slist_next (iter)) {
+		Killswitch *ks = iter->data;
+		GUdevDevice *device;
+		RfKillState dev_state;
+		int sysfs_state;
+
+		if (ks->platform == TRUE) {
+			device = g_udev_client_query_by_subsystem_and_name (priv->client, "rfkill", ks->name);
+			if (device) {
+				sysfs_state = g_udev_device_get_property_as_int (device, "RFKILL_STATE");
+				dev_state = sysfs_state_to_nm_state (sysfs_state);
+
+				if (platform_checked[ks->rtype] == FALSE) {
+					/* Overwrite device state with platform state for first
+					 * platform switch found.
+					 */
+					poll_states[ks->rtype] = dev_state;
+					platform_checked[ks->rtype] = TRUE;
+				} else {
+					/* If there are multiple platform switches of the same type,
+					 * take the "worst" state for all of that type.
+					 */
+					if (dev_state > poll_states[ks->rtype])
+						poll_states[ks->rtype] = dev_state;
+				}
+				g_object_unref (device);
+			}
+		}
+	}
+
+	/* Log and emit change signal for final rfkill states */
 	for (i = 0; i < RFKILL_TYPE_MAX; i++) {
 		if (poll_states[i] != priv->rfkill_states[i]) {
 			nm_log_dbg (LOGD_RFKILL, "%s rfkill state now '%s'",
