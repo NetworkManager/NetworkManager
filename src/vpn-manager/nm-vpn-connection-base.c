@@ -24,6 +24,7 @@
 #include "nm-active-connection.h"
 #include "nm-vpn-connection-base-glue.h"
 #include "nm-dbus-manager.h"
+#include "nm-setting-connection.h"
 
 G_DEFINE_ABSTRACT_TYPE (NMVpnConnectionBase, nm_vpn_connection_base, G_TYPE_OBJECT)
 
@@ -45,6 +46,7 @@ enum {
 	PROP_0,
 	PROP_SERVICE_NAME,
 	PROP_CONNECTION,
+	PROP_UUID,
 	PROP_SPECIFIC_OBJECT,
 	PROP_DEVICES,
 	PROP_STATE,
@@ -139,6 +141,7 @@ get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
 	NMVpnConnectionBasePrivate *priv = NM_VPN_CONNECTION_BASE_GET_PRIVATE (object);
+	NMSettingConnection *s_con;
 
 	switch (prop_id) {
 	case PROP_SERVICE_NAME:
@@ -146,6 +149,11 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_CONNECTION:
 		g_value_set_boxed (value, nm_connection_get_path (priv->connection));
+		break;
+	case PROP_UUID:
+		s_con = (NMSettingConnection *) nm_connection_get_setting (priv->connection, NM_TYPE_SETTING_CONNECTION);
+		g_assert (s_con);
+		g_value_set_boxed (value, nm_setting_connection_get_uuid (s_con));
 		break;
 	case PROP_SPECIFIC_OBJECT:
 		g_value_set_boxed (value, priv->ac_path);
@@ -186,6 +194,7 @@ nm_vpn_connection_base_class_init (NMVpnConnectionBaseClass *vpn_class)
     nm_active_connection_install_properties (object_class,
                                              PROP_SERVICE_NAME,
                                              PROP_CONNECTION,
+                                             PROP_UUID,
                                              PROP_SPECIFIC_OBJECT,
                                              PROP_DEVICES,
                                              PROP_STATE,

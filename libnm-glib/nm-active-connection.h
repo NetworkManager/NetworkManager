@@ -17,7 +17,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2010 Red Hat, Inc.
+ * Copyright (C) 2007 - 2011 Red Hat, Inc.
  * Copyright (C) 2008 Novell, Inc.
  */
 
@@ -41,6 +41,7 @@ G_BEGIN_DECLS
 
 #define NM_ACTIVE_CONNECTION_SERVICE_NAME        "service-name"
 #define NM_ACTIVE_CONNECTION_CONNECTION          "connection"
+#define NM_ACTIVE_CONNECTION_UUID                "uuid"
 #define NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT     "specific-object"
 #define NM_ACTIVE_CONNECTION_DEVICES             "devices"
 #define NM_ACTIVE_CONNECTION_STATE               "state"
@@ -70,6 +71,7 @@ GObject *nm_active_connection_new (DBusGConnection *connection, const char *path
 const char * nm_active_connection_get_service_name        (NMActiveConnection *connection);
 NMConnectionScope nm_active_connection_get_scope          (NMActiveConnection *connection);
 const char * nm_active_connection_get_connection          (NMActiveConnection *connection);
+const char * nm_active_connection_get_uuid                (NMActiveConnection *connection);
 const char * nm_active_connection_get_specific_object     (NMActiveConnection *connection);
 const GPtrArray *nm_active_connection_get_devices         (NMActiveConnection *connection);
 NMActiveConnectionState nm_active_connection_get_state    (NMActiveConnection *connection);

@@ -26,6 +26,7 @@
 
 #define NM_ACTIVE_CONNECTION_SERVICE_NAME "service-name"
 #define NM_ACTIVE_CONNECTION_CONNECTION "connection"
+#define NM_ACTIVE_CONNECTION_UUID "uuid"
 #define NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT "specific-object"
 #define NM_ACTIVE_CONNECTION_DEVICES "devices"
 #define NM_ACTIVE_CONNECTION_STATE "state"
@@ -40,6 +41,7 @@ void nm_active_connection_scope_to_value (NMConnection *connection, GValue *valu
 void nm_active_connection_install_properties (GObjectClass *object_class,
                                               guint prop_service_name,
                                               guint prop_connection,
+                                              guint prop_uuid,
                                               guint prop_specific_object,
                                               guint prop_devices,
                                               guint prop_state,

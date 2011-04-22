@@ -28,7 +28,7 @@
 #include "nm-activation-request.h"
 #include "nm-marshal.h"
 #include "nm-logging.h"
-#include "nm-setting-wireless-security.h"
+#include "nm-setting-connection.h"
 #include "nm-setting-8021x.h"
 #include "nm-dbus-manager.h"
 #include "nm-device.h"
@@ -86,6 +86,7 @@ enum {
 	PROP_0,
 	PROP_SERVICE_NAME,
 	PROP_CONNECTION,
+	PROP_UUID,
 	PROP_SPECIFIC_OBJECT,
 	PROP_DEVICES,
 	PROP_STATE,
@@ -255,6 +256,7 @@ get_property (GObject *object, guint prop_id,
 {
 	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (object);
 	GPtrArray *devices;
+	NMSettingConnection *s_con;
 
 	switch (prop_id) {
 	case PROP_SERVICE_NAME:
@@ -262,6 +264,11 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_CONNECTION:
 		g_value_set_boxed (value, nm_connection_get_path (priv->connection));
+		break;
+	case PROP_UUID:
+		s_con = (NMSettingConnection *) nm_connection_get_setting (priv->connection, NM_TYPE_SETTING_CONNECTION);
+		g_assert (s_con);
+		g_value_set_boxed (value, nm_setting_connection_get_uuid (s_con));
 		break;
 	case PROP_SPECIFIC_OBJECT:
 		if (priv->specific_object)
@@ -308,6 +315,7 @@ nm_act_request_class_init (NMActRequestClass *req_class)
     nm_active_connection_install_properties (object_class,
                                              PROP_SERVICE_NAME,
                                              PROP_CONNECTION,
+                                             PROP_UUID,
                                              PROP_SPECIFIC_OBJECT,
                                              PROP_DEVICES,
                                              PROP_STATE,

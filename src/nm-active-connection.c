@@ -57,6 +57,7 @@ void
 nm_active_connection_install_properties (GObjectClass *object_class,
                                          guint prop_service_name,
                                          guint prop_connection,
+                                         guint prop_uuid,
                                          guint prop_specific_object,
                                          guint prop_devices,
                                          guint prop_state,
@@ -77,6 +78,13 @@ nm_active_connection_install_properties (GObjectClass *object_class,
 		                    "Connection",
 		                    DBUS_TYPE_G_OBJECT_PATH,
 		                    G_PARAM_READABLE));
+
+	g_object_class_install_property (object_class, prop_uuid,
+		g_param_spec_string (NM_ACTIVE_CONNECTION_UUID,
+		                     "Connection UUID",
+		                     "Connection UUID",
+		                     NULL,
+		                     G_PARAM_READABLE));
 
 	g_object_class_install_property (object_class, prop_specific_object,
 		g_param_spec_boxed (NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT,
