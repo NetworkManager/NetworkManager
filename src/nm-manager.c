@@ -65,7 +65,15 @@
 
 #define UPOWER_DBUS_SERVICE "org.freedesktop.UPower"
 
-static gboolean impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err);
+static gboolean impl_manager_get_devices (NMManager *manager,
+                                          GPtrArray **devices,
+                                          GError **err);
+
+static gboolean impl_manager_get_device_by_ip_iface (NMManager *self,
+                                                     const char *iface,
+                                                     char **out_object_path,
+                                                     GError **error);
+
 static void impl_manager_activate_connection (NMManager *manager,
                                               const char *connection_path,
                                               const char *device_path,
@@ -140,7 +148,7 @@ static const char *internal_activate_device (NMManager *manager,
                                              gboolean assumed,
                                              GError **error);
 
-static NMDevice *find_device_by_iface (NMManager *self, const gchar *iface);
+static NMDevice *find_device_by_ip_iface (NMManager *self, const gchar *iface);
 
 static GSList * remove_one_device (NMManager *manager,
                                    GSList *list,
@@ -405,7 +413,7 @@ modem_added (NMModemManager *modem_manager,
 
 	ip_iface = nm_modem_get_iface (modem);
 
-	replace_device = find_device_by_iface (NM_MANAGER (user_data), ip_iface);
+	replace_device = find_device_by_ip_iface (NM_MANAGER (user_data), ip_iface);
 	if (replace_device) {
 		priv->devices = remove_one_device (NM_MANAGER (user_data),
 		                                   priv->devices,
@@ -1398,7 +1406,7 @@ add_device (NMManager *self, NMDevice *device)
 	iface = nm_device_get_ip_iface (device);
 	g_assert (iface);
 
-	if (!NM_IS_DEVICE_MODEM (device) && find_device_by_iface (self, iface)) {
+	if (!NM_IS_DEVICE_MODEM (device) && find_device_by_ip_iface (self, iface)) {
 		g_object_unref (device);
 		return;
 	}
@@ -1696,18 +1704,17 @@ bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
 }
 
 static NMDevice *
-find_device_by_iface (NMManager *self, const gchar *iface)
+find_device_by_ip_iface (NMManager *self, const gchar *iface)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GSList *iter;
 
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *device = NM_DEVICE (iter->data);
-		const gchar *d_iface = nm_device_get_ip_iface (device);
-		if (!strcmp (d_iface, iface))
-			return device;
-	}
+		NMDevice *candidate = iter->data;
 
+		if (g_strcmp0 (nm_device_get_ip_iface (candidate), iface) == 0)
+			return candidate;
+	}
 	return NULL;
 }
 
@@ -1762,7 +1769,7 @@ udev_device_removed_cb (NMUdevManager *manager,
 		 * they may have already been removed from sysfs.  Instead, we just
 		 * have to fall back to the device's interface name.
 		 */
-		device = find_device_by_iface (self, g_udev_device_get_name (udev_device));
+		device = find_device_by_ip_iface (self, g_udev_device_get_name (udev_device));
 	}
 
 	if (device)
@@ -1798,6 +1805,32 @@ impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err)
 		g_ptr_array_add (*devices, g_strdup (nm_device_get_path (NM_DEVICE (iter->data))));
 
 	return TRUE;
+}
+
+static gboolean
+impl_manager_get_device_by_ip_iface (NMManager *self,
+                                     const char *iface,
+                                     char **out_object_path,
+                                     GError **error)
+{
+	NMDevice *device;
+	const char *path = NULL;
+
+	device = find_device_by_ip_iface (self, iface);
+	if (device) {
+		path = nm_device_get_path (device);
+		if (path)
+			*out_object_path = g_strdup (path);
+	}
+
+	if (path == NULL) {
+		g_set_error_literal (error,
+		                     NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+		                     "No device found for the requested iface.");
+	}
+
+	return path ? TRUE : FALSE;
 }
 
 static NMActRequest *

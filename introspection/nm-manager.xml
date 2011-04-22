@@ -21,6 +21,25 @@
       </arg>
     </method>
 
+    <method name="GetDeviceByIpIface">
+      <tp:docstring>
+        Return the object path of the network device referenced by its IP
+        interface name.  Note that some devices (usually modems) only have an
+        IP interface name when they are connected.
+      </tp:docstring>
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_get_device_by_ip_iface"/>
+      <arg name="iface" type="s" direction="in">
+        <tp:docstring>
+          Interface name of the device to find.
+        </tp:docstring>
+      </arg>
+      <arg name="device" type="o" direction="out">
+        <tp:docstring>
+          Object path of the network device.
+        </tp:docstring>
+      </arg>
+    </method>
+
     <method name="ActivateConnection">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_activate_connection"/>
       <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
