@@ -91,6 +91,11 @@ static gboolean impl_settings_list_connections (NMSettings *self,
                                                 GPtrArray **connections,
                                                 GError **error);
 
+static gboolean impl_settings_get_connection_by_uuid (NMSettings *self,
+                                                      const char *uuid,
+                                                      char **out_object_path,
+                                                      GError **error);
+
 static void impl_settings_add_connection (NMSettings *self,
                                           GHashTable *settings,
                                           DBusGMethodInvocation *context);
@@ -220,6 +225,38 @@ impl_settings_list_connections (NMSettings *self,
 	while (g_hash_table_iter_next (&iter, &key, NULL))
 		g_ptr_array_add (*connections, g_strdup ((const char *) key));
 	return TRUE;
+}
+
+static gboolean
+impl_settings_get_connection_by_uuid (NMSettings *self,
+                                      const char *uuid,
+                                      char **out_object_path,
+                                      GError **error)
+{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	GHashTableIter iter;
+	NMConnection *candidate = NULL;
+	gboolean found = FALSE;
+
+	load_connections (self);
+
+	g_hash_table_iter_init (&iter, priv->connections);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &candidate)) {
+		if (g_strcmp0 (uuid, nm_connection_get_uuid (candidate)) == 0) {
+			*out_object_path = g_strdup (nm_connection_get_path (candidate));
+			found = TRUE;
+			break;
+		}
+	}
+
+	if (!found) {
+		g_set_error_literal (error,
+		                     NM_SETTINGS_ERROR,
+		                     NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		                     "No connection with the UUID was found.");
+	}
+
+	return found;
 }
 
 static int

@@ -18,6 +18,23 @@
       </arg>
     </method>
 
+    <method name="GetConnectionByUuid">
+      <tp:docstring>
+        Retrieve the object path of a connection, given that connection's UUID.
+      </tp:docstring>
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_get_connection_by_uuid"/>
+      <arg name="uuid" type="s" direction="in">
+        <tp:docstring>
+          The UUID to find the connection object path for.
+        </tp:docstring>
+      </arg>
+      <arg name="connection" type="o" direction="out">
+        <tp:docstring>
+          The connection's object path.
+        </tp:docstring>
+      </arg>
+    </method>
+
     <method name="AddConnection">
       <tp:docstring>
         Add new connection.

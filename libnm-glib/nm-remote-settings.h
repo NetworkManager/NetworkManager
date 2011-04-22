@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2009 Red Hat, Inc.
+ * Copyright (C) 2009 - 2011 Red Hat, Inc.
  */
 
 #ifndef NM_REMOTE_SETTINGS_H
@@ -114,6 +114,9 @@ GSList *nm_remote_settings_list_connections (NMRemoteSettings *settings);
 
 NMRemoteConnection * nm_remote_settings_get_connection_by_path (NMRemoteSettings *settings,
                                                                 const char *path);
+
+NMRemoteConnection *nm_remote_settings_get_connection_by_uuid (NMRemoteSettings *settings,
+                                                               const char *uuid);
 
 gboolean nm_remote_settings_add_connection (NMRemoteSettings *settings,
                                             NMConnection *connection,

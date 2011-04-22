@@ -182,6 +182,35 @@ nm_remote_settings_get_connection_by_path (NMRemoteSettings *settings, const cha
 	return g_hash_table_lookup (NM_REMOTE_SETTINGS_GET_PRIVATE (settings)->connections, path);
 }
 
+/**
+ * nm_remote_settings_get_connection_by_uuid:
+ * @settings: the %NMRemoteSettings
+ * @uuid: the UUID of the remote connection
+ *
+ * Returns the %NMRemoteConnection identified by @uuid.
+ *
+ * Returns: (transfer none): the remote connection object on success, or NULL if the object was
+ *  not known
+ **/
+NMRemoteConnection *
+nm_remote_settings_get_connection_by_uuid (NMRemoteSettings *settings, const char *uuid)
+{
+	GHashTableIter iter;
+	NMRemoteConnection *candidate;
+
+	g_return_val_if_fail (settings != NULL, NULL);
+	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), NULL);
+	g_return_val_if_fail (uuid != NULL, NULL);
+
+	g_hash_table_iter_init (&iter, NM_REMOTE_SETTINGS_GET_PRIVATE (settings)->connections);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &candidate)) {
+		if (g_strcmp0 (uuid, nm_connection_get_uuid (NM_CONNECTION (candidate))) == 0)
+			return candidate;
+	}
+
+	return NULL;
+}
+
 static void
 connection_removed_cb (NMRemoteConnection *remote, gpointer user_data)
 {
