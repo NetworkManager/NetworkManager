@@ -8,6 +8,12 @@
     <property name="SpecificObject" type="o" access="read">
       <tp:docstring>A specific object associated with the active connection.</tp:docstring>
     </property>
+    <property name="Uuid" type="s" access="read">
+      <tp:docstring>
+        The UUID of the connection, provided as a convenience so that clients
+        do not have to retrieve all connection details.
+      </tp:docstring>
+    </property>
     <property name="Devices" type="ao" access="read">
       <tp:docstring>Array of object paths representing devices which are part of this active connection.</tp:docstring>
     </property>

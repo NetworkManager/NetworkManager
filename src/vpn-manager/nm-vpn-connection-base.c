@@ -44,6 +44,7 @@ typedef struct {
 enum {
 	PROP_0,
 	PROP_CONNECTION,
+	PROP_UUID,
 	PROP_SPECIFIC_OBJECT,
 	PROP_DEVICES,
 	PROP_STATE,
@@ -143,6 +144,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_CONNECTION:
 		g_value_set_boxed (value, nm_connection_get_path (priv->connection));
 		break;
+	case PROP_UUID:
+		g_value_set_boxed (value, nm_connection_get_uuid (priv->connection));
+		break;
 	case PROP_SPECIFIC_OBJECT:
 		g_value_set_boxed (value, priv->ac_path);
 		break;
@@ -181,6 +185,7 @@ nm_vpn_connection_base_class_init (NMVpnConnectionBaseClass *vpn_class)
 	/* properties */
     nm_active_connection_install_properties (object_class,
                                              PROP_CONNECTION,
+                                             PROP_UUID,
                                              PROP_SPECIFIC_OBJECT,
                                              PROP_DEVICES,
                                              PROP_STATE,

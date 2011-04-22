@@ -44,6 +44,7 @@ typedef struct {
 	DBusGProxy *proxy;
 
 	char *connection;
+	char *uuid;
 	char *specific_object;
 	GPtrArray *devices;
 	NMActiveConnectionState state;
@@ -54,6 +55,7 @@ typedef struct {
 enum {
 	PROP_0,
 	PROP_CONNECTION,
+	PROP_UUID,
 	PROP_SPECIFIC_OBJECT,
 	PROP_DEVICES,
 	PROP_STATE,
@@ -64,6 +66,7 @@ enum {
 };
 
 #define DBUS_PROP_CONNECTION "Connection"
+#define DBUS_PROP_UUID "Uuid"
 #define DBUS_PROP_SPECIFIC_OBJECT "SpecificObject"
 #define DBUS_PROP_DEVICES "Devices"
 #define DBUS_PROP_STATE "State"
@@ -116,6 +119,33 @@ nm_active_connection_get_connection (NMActiveConnection *connection)
 	}
 
 	return priv->connection;
+}
+
+/**
+ * nm_active_connection_get_uuid:
+ * @connection: a #NMActiveConnection
+ *
+ * Gets the #NMConnection<!-- -->'s UUID.
+ *
+ * Returns: the UUID of the #NMConnection that backs the #NMActiveConnection.
+ * This is the internal string used by the connection, and must not be modified.
+ **/
+const char *
+nm_active_connection_get_uuid (NMActiveConnection *connection)
+{
+	NMActiveConnectionPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
+
+	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
+	if (!priv->uuid) {
+		priv->uuid = _nm_object_get_string_property (NM_OBJECT (connection),
+		                                             NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
+		                                             DBUS_PROP_UUID,
+		                                             NULL);
+	}
+
+	return priv->uuid;
 }
 
 /**
@@ -292,6 +322,7 @@ finalize (GObject *object)
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (object);
 
 	g_free (priv->connection);
+	g_free (priv->uuid);
 	g_free (priv->specific_object);
 
 	G_OBJECT_CLASS (nm_active_connection_parent_class)->finalize (object);
