@@ -30,6 +30,9 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_INSTALL
 
+# C++ only required if --enable-qt=yes
+AC_PROG_CXX
+
 dnl Initialize libtool
 LT_PREREQ([2.2])
 LT_INIT([disable-static])
@@ -272,7 +275,6 @@ if (test "${enable_qt}" = "yes"); then
 	if test x"$have_qt" = x"no"; then
 		AC_MSG_ERROR(Qt development headers are required)
 	fi
-	AC_PROG_CXX
 	AC_SUBST(QT_CFLAGS)
 	AC_SUBST(QT_LIBS)
 fi
