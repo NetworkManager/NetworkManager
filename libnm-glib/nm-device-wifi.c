@@ -504,70 +504,61 @@ has_proto (NMSettingWirelessSecurity *s_wsec, const char *proto)
 	return FALSE;
 }
 
-static GSList *
-filter_connections (NMDevice *device, const GSList *connections)
+static gboolean
+connection_valid (NMDevice *device, NMConnection *connection)
 {
-	GSList *filtered = NULL;
-	const GSList *iter;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	const char *ctype;
+	const GByteArray *mac;
+	const char *hw_str;
+	struct ether_addr *hw_mac;
+	NMDeviceWifiCapabilities wifi_caps;
+	const char *key_mgmt;
 
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *candidate = NM_CONNECTION (iter->data);
-		NMSettingConnection *s_con;
-		NMSettingWireless *s_wifi;
-		NMSettingWirelessSecurity *s_wsec;
-		const char *ctype;
-		const GByteArray *mac;
-		const char *hw_str;
-		struct ether_addr *hw_mac;
-		NMDeviceWifiCapabilities wifi_caps;
-		const char *key_mgmt;
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
 
-		s_con = (NMSettingConnection *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_CONNECTION);
-		g_assert (s_con);
+	ctype = nm_setting_connection_get_connection_type (s_con);
+	if (strcmp (ctype, NM_SETTING_WIRELESS_SETTING_NAME) != 0)
+		return FALSE;
 
-		ctype = nm_setting_connection_get_connection_type (s_con);
-		if (strcmp (ctype, NM_SETTING_WIRELESS_SETTING_NAME) != 0)
-			continue;
+	s_wifi = nm_connection_get_setting_wireless (connection);
+	if (!s_wifi)
+		return FALSE;
 
-		s_wifi = (NMSettingWireless *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_WIRELESS);
-		if (!s_wifi)
-			continue;
-
-		/* Check MAC address */
-		hw_str = nm_device_wifi_get_permanent_hw_address (NM_DEVICE_WIFI (device));
-		if (hw_str) {
-			hw_mac = ether_aton (hw_str);
-			mac = nm_setting_wireless_get_mac_address (s_wifi);
-			if (mac && hw_mac && memcmp (mac->data, hw_mac->ether_addr_octet, ETH_ALEN))
-				continue;
-		}
-
-		/* Check device capabilities; we assume all devices can do WEP at least */
-		wifi_caps = nm_device_wifi_get_capabilities (NM_DEVICE_WIFI (device));
-
-		s_wsec = (NMSettingWirelessSecurity *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_WIRELESS_SECURITY);
-		if (s_wsec) {
-			/* Connection has security, verify it against the device's capabilities */
-			key_mgmt = nm_setting_wireless_security_get_key_mgmt (s_wsec);
-			if (   !g_strcmp0 (key_mgmt, "wpa-none")
-			    || !g_strcmp0 (key_mgmt, "wpa-psk")
-			    || !g_strcmp0 (key_mgmt, "wpa-eap")) {
-
-				/* Is device only WEP capable? */
-				if (!(wifi_caps & WPA_CAPS))
-					continue;
-
-				/* Make sure WPA2/RSN-only connections don't get chosen for WPA-only cards */
-				if (has_proto (s_wsec, "rsn") && !has_proto (s_wsec, "wpa") && !(wifi_caps & RSN_CAPS))
-					continue;
-			}
-		}
-
-		/* Connection applies to this device */
-		filtered = g_slist_prepend (filtered, candidate);
+	/* Check MAC address */
+	hw_str = nm_device_wifi_get_permanent_hw_address (NM_DEVICE_WIFI (device));
+	if (hw_str) {
+		hw_mac = ether_aton (hw_str);
+		mac = nm_setting_wireless_get_mac_address (s_wifi);
+		if (mac && hw_mac && memcmp (mac->data, hw_mac->ether_addr_octet, ETH_ALEN))
+			return FALSE;
 	}
 
-	return g_slist_reverse (filtered);
+	/* Check device capabilities; we assume all devices can do WEP at least */
+	wifi_caps = nm_device_wifi_get_capabilities (NM_DEVICE_WIFI (device));
+
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
+	if (s_wsec) {
+		/* Connection has security, verify it against the device's capabilities */
+		key_mgmt = nm_setting_wireless_security_get_key_mgmt (s_wsec);
+		if (   !g_strcmp0 (key_mgmt, "wpa-none")
+		    || !g_strcmp0 (key_mgmt, "wpa-psk")
+		    || !g_strcmp0 (key_mgmt, "wpa-eap")) {
+
+			/* Is device only WEP capable? */
+			if (!(wifi_caps & WPA_CAPS))
+				return FALSE;
+
+			/* Make sure WPA2/RSN-only connections don't get chosen for WPA-only cards */
+			if (has_proto (s_wsec, "rsn") && !has_proto (s_wsec, "wpa") && !(wifi_caps & RSN_CAPS))
+				return FALSE;
+		}
+	}
+
+	return TRUE;
 }
 
 /**************************************************************/
@@ -784,7 +775,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
-	device_class->filter_connections = filter_connections;
+	device_class->connection_valid = connection_valid;
 
 	/* properties */
 

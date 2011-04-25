@@ -5,6 +5,7 @@ global:
 	libnm_glib_register_callback;
 	libnm_glib_shutdown;
 	libnm_glib_unregister_callback;
+	nm_access_point_connection_valid;
 	nm_access_point_filter_connections;
 	nm_access_point_get_bssid;
 	nm_access_point_get_flags;
@@ -56,6 +57,7 @@ global:
 	nm_device_bt_get_name;
 	nm_device_bt_get_type;
 	nm_device_bt_new;
+	nm_device_connection_valid;
 	nm_device_disconnect;
 	nm_device_ethernet_get_carrier;
 	nm_device_ethernet_get_hw_address;
@@ -161,6 +163,7 @@ global:
 	nm_vpn_connection_get_type;
 	nm_vpn_connection_get_vpn_state;
 	nm_vpn_connection_new;
+	nm_wimax_nsp_connection_valid;
 	nm_wimax_nsp_filter_connections;
 	nm_wimax_nsp_get_name;
 	nm_wimax_nsp_get_network_type;

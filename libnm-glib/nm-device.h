@@ -73,8 +73,8 @@ typedef struct {
 	                       NMDeviceState old_state,
 	                       NMDeviceStateReason reason);
 
-	GSList * (*filter_connections) (NMDevice *device,
-	                                const GSList *connections);
+	gboolean (*connection_valid)   (NMDevice *device,
+	                                NMConnection *connection);
 
 	/* Padding for future expansion */
 	void (*_reserved1) (void);
@@ -113,6 +113,9 @@ void                 nm_device_disconnect           (NMDevice *device,
 
 GSList *             nm_device_filter_connections   (NMDevice *device,
                                                      const GSList *connections);
+
+gboolean             nm_device_connection_valid     (NMDevice *device,
+                                                     NMConnection *connection);
 
 G_END_DECLS
 

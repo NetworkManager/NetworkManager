@@ -76,6 +76,9 @@ NMWimaxNspNetworkType  nm_wimax_nsp_get_network_type   (NMWimaxNsp *nsp);
 GSList *               nm_wimax_nsp_filter_connections (NMWimaxNsp *nsp,
                                                         const GSList *connections);
 
+gboolean               nm_wimax_nsp_connection_valid   (NMWimaxNsp *nsp,
+                                                        NMConnection *connection);
+
 G_END_DECLS
 
 #endif /* NM_WIMAX_NSP_H */

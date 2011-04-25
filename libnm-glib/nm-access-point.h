@@ -85,6 +85,9 @@ guint8                 nm_access_point_get_strength     (NMAccessPoint *ap);
 GSList *               nm_access_point_filter_connections (NMAccessPoint *ap,
                                                            const GSList *connections);
 
+gboolean               nm_access_point_connection_valid   (NMAccessPoint *ap,
+                                                           NMConnection *connection);
+
 /* DEPRECATED */
 const char *           nm_access_point_get_hw_address   (NMAccessPoint *ap);
 

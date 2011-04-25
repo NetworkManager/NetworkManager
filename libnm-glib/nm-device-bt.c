@@ -184,53 +184,44 @@ get_connection_bt_type (NMConnection *connection)
 	return NM_BT_CAPABILITY_NONE;
 }
 
-static GSList *
-filter_connections (NMDevice *device, const GSList *connections)
+static gboolean
+connection_valid (NMDevice *device, NMConnection *connection)
 {
-	GSList *filtered = NULL;
-	const GSList *iter;
+	NMSettingConnection *s_con;
+	NMSettingBluetooth *s_bt;
+	const char *ctype;
+	const GByteArray *mac;
+	const char *hw_str;
+	struct ether_addr *hw_mac;
+	NMBluetoothCapabilities dev_caps;
+	NMBluetoothCapabilities bt_type;
 
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *candidate = NM_CONNECTION (iter->data);
-		NMSettingConnection *s_con;
-		NMSettingBluetooth *s_bt;
-		const char *ctype;
-		const GByteArray *mac;
-		const char *hw_str;
-		struct ether_addr *hw_mac;
-		NMBluetoothCapabilities dev_caps;
-		NMBluetoothCapabilities bt_type;
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
 
-		s_con = (NMSettingConnection *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_CONNECTION);
-		g_assert (s_con);
+	ctype = nm_setting_connection_get_connection_type (s_con);
+	if (strcmp (ctype, NM_SETTING_BLUETOOTH_SETTING_NAME) != 0)
+		return FALSE;
 
-		ctype = nm_setting_connection_get_connection_type (s_con);
-		if (strcmp (ctype, NM_SETTING_BLUETOOTH_SETTING_NAME) != 0)
-			continue;
+	s_bt = nm_connection_get_setting_bluetooth (connection);
+	if (!s_bt)
+		return FALSE;
 
-		s_bt = (NMSettingBluetooth *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_BLUETOOTH);
-		if (!s_bt)
-			continue;
-
-		/* Check BT address */
-		hw_str = nm_device_bt_get_hw_address (NM_DEVICE_BT (device));
-		if (hw_str) {
-			hw_mac = ether_aton (hw_str);
-			mac = nm_setting_bluetooth_get_bdaddr (s_bt);
-			if (mac && hw_mac && memcmp (mac->data, hw_mac->ether_addr_octet, ETH_ALEN))
-				continue;
-		}
-
-		dev_caps = nm_device_bt_get_capabilities (NM_DEVICE_BT (device));
-		bt_type = get_connection_bt_type (candidate);
-		if (!(bt_type & dev_caps))
-			continue;
-
-		/* Connection applies to this device */
-		filtered = g_slist_prepend (filtered, candidate);
+	/* Check BT address */
+	hw_str = nm_device_bt_get_hw_address (NM_DEVICE_BT (device));
+	if (hw_str) {
+		hw_mac = ether_aton (hw_str);
+		mac = nm_setting_bluetooth_get_bdaddr (s_bt);
+		if (mac && hw_mac && memcmp (mac->data, hw_mac->ether_addr_octet, ETH_ALEN))
+			return FALSE;
 	}
 
-	return g_slist_reverse (filtered);
+	dev_caps = nm_device_bt_get_capabilities (NM_DEVICE_BT (device));
+	bt_type = get_connection_bt_type (connection);
+	if (!(bt_type & dev_caps))
+		return FALSE;
+
+	return TRUE;
 }
 
 /************************************************************/
@@ -344,7 +335,7 @@ nm_device_bt_class_init (NMDeviceBtClass *bt_class)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
-	device_class->filter_connections = filter_connections;
+	device_class->connection_valid = connection_valid;
 
 	/* properties */
 

@@ -360,8 +360,115 @@ nm_access_point_get_strength (NMAccessPoint *ap)
 
 /**
  * nm_access_point_filter_connections:
+ * @ap: an #NMAccessPoint to validate @connection against
+ * @connections: an #NMConnection to validate against @ap
+ *
+ * Validates a given connection against a given WiFi access point to ensure that
+ * the connection may be activated with that AP.  The connection must match the
+ * @ap's SSID, (if given) BSSID, and other attributes like security settings,
+ * channel, band, etc.
+ *
+ * Returns: %TRUE if the connection may be activated with this WiFi AP,
+ * %FALSE if it cannot be.
+ **/
+gboolean
+nm_access_point_connection_valid (NMAccessPoint *ap, NMConnection *connection)
+{
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	const char *ctype, *ap_bssid_str;
+	const GByteArray *setting_ssid;
+	const GByteArray *ap_ssid;
+	const GByteArray *setting_bssid;
+	struct ether_addr *ap_bssid;
+	const char *setting_mode;
+	NM80211Mode ap_mode;
+	const char *setting_band;
+	guint32 ap_freq, setting_chan, ap_chan;
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	ctype = nm_setting_connection_get_connection_type (s_con);
+	if (strcmp (ctype, NM_SETTING_WIRELESS_SETTING_NAME) != 0)
+		return FALSE;
+
+	s_wifi = nm_connection_get_setting_wireless (connection);
+	if (!s_wifi)
+		return FALSE;
+
+	/* SSID checks */
+	ap_ssid = nm_access_point_get_ssid (ap);
+	g_warn_if_fail (ap_ssid != NULL);
+	setting_ssid = nm_setting_wireless_get_ssid (s_wifi);
+	if (!setting_ssid || !ap_ssid || (setting_ssid->len != ap_ssid->len))
+		return FALSE;
+	if (memcmp (setting_ssid->data, ap_ssid->data, ap_ssid->len) != 0)
+		return FALSE;
+
+	/* BSSID checks */
+	ap_bssid_str = nm_access_point_get_bssid (ap);
+	g_warn_if_fail (ap_bssid_str);
+	setting_bssid = nm_setting_wireless_get_bssid (s_wifi);
+	if (setting_bssid && ap_bssid_str) {
+		g_assert (setting_bssid->len == ETH_ALEN);
+		ap_bssid = ether_aton (ap_bssid_str);
+		g_warn_if_fail (ap_bssid);
+		if (ap_bssid) {
+			if (memcmp (ap_bssid->ether_addr_octet, setting_bssid->data, ETH_ALEN) != 0)
+				return FALSE;
+		}
+	}
+
+	/* Mode */
+	ap_mode = nm_access_point_get_mode (ap);
+	g_warn_if_fail (ap_mode != NM_802_11_MODE_UNKNOWN);
+	setting_mode = nm_setting_wireless_get_mode (s_wifi);
+	if (setting_mode && ap_mode) {
+		if (!strcmp (setting_mode, "infrastructure") && (ap_mode != NM_802_11_MODE_INFRA))
+			return FALSE;
+		if (!strcmp (setting_mode, "adhoc") && (ap_mode != NM_802_11_MODE_ADHOC))
+			return FALSE;
+	}
+
+	/* Band and Channel/Frequency */
+	ap_freq = nm_access_point_get_frequency (ap);
+	g_warn_if_fail (ap_freq > 0);
+	if (ap_freq) {
+		setting_band = nm_setting_wireless_get_band (s_wifi);
+		if (g_strcmp0 (setting_band, "a") == 0) {
+			if (ap_freq < 4915 || ap_freq > 5825)
+				return FALSE;
+		} else if (g_strcmp0 (setting_band, "bg") == 0) {
+			if (ap_freq < 2412 || ap_freq > 2484)
+				return FALSE;
+		}
+
+		setting_chan = nm_setting_wireless_get_channel (s_wifi);
+		if (setting_chan) {
+			ap_chan = nm_utils_wifi_freq_to_channel (ap_freq);
+			if (setting_chan != ap_chan)
+				return FALSE;
+		}
+	}
+
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
+	if (!nm_setting_wireless_ap_security_compatible (s_wifi,
+	                                                 s_wsec,
+	                                                 nm_access_point_get_flags (ap),
+	                                                 nm_access_point_get_wpa_flags (ap),
+	                                                 nm_access_point_get_rsn_flags (ap),
+	                                                 ap_mode))
+		return FALSE;
+
+	return TRUE;
+}
+
+/**
+ * nm_access_point_filter_connections:
  * @ap: an #NMAccessPoint to filter connections for
- * @connections: a list of #NMConnection objects to filter
+ * @connections: (element-type NetworkManager.Connection): a list of
+ * #NMConnection objects to filter
  *
  * Filters a given list of connections for a given #NMAccessPoint object and
  * return connections which may be activated with the access point.  Any
@@ -382,95 +489,9 @@ nm_access_point_filter_connections (NMAccessPoint *ap, const GSList *connections
 
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		NMConnection *candidate = NM_CONNECTION (iter->data);
-		NMSettingConnection *s_con;
-		NMSettingWireless *s_wifi;
-		NMSettingWirelessSecurity *s_wsec;
-		const char *ctype, *ap_bssid_str;
-		const GByteArray *setting_ssid;
-		const GByteArray *ap_ssid;
-		const GByteArray *setting_bssid;
-		struct ether_addr *ap_bssid;
-		const char *setting_mode;
-		NM80211Mode ap_mode;
-		const char *setting_band;
-		guint32 ap_freq, setting_chan, ap_chan;
 
-		s_con = (NMSettingConnection *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_CONNECTION);
-		g_assert (s_con);
-		ctype = nm_setting_connection_get_connection_type (s_con);
-		if (strcmp (ctype, NM_SETTING_WIRELESS_SETTING_NAME) != 0)
-			continue;
-
-		s_wifi = (NMSettingWireless *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_WIRELESS);
-		if (!s_wifi)
-			continue;
-
-		/* SSID checks */
-		ap_ssid = nm_access_point_get_ssid (ap);
-		g_warn_if_fail (ap_ssid != NULL);
-		setting_ssid = nm_setting_wireless_get_ssid (s_wifi);
-		if (!setting_ssid || !ap_ssid || (setting_ssid->len != ap_ssid->len))
-			continue;
-		if (memcmp (setting_ssid->data, ap_ssid->data, ap_ssid->len) != 0)
-			continue;
-
-		/* BSSID checks */
-		ap_bssid_str = nm_access_point_get_bssid (ap);
-		g_warn_if_fail (ap_bssid_str);
-		setting_bssid = nm_setting_wireless_get_bssid (s_wifi);
-		if (setting_bssid && ap_bssid_str) {
-			g_assert (setting_bssid->len == ETH_ALEN);
-			ap_bssid = ether_aton (ap_bssid_str);
-			g_warn_if_fail (ap_bssid);
-			if (ap_bssid) {
-				if (memcmp (ap_bssid->ether_addr_octet, setting_bssid->data, ETH_ALEN) != 0)
-					continue;
-			}
-		}
-
-		/* Mode */
-		ap_mode = nm_access_point_get_mode (ap);
-		g_warn_if_fail (ap_mode != NM_802_11_MODE_UNKNOWN);
-		setting_mode = nm_setting_wireless_get_mode (s_wifi);
-		if (setting_mode && ap_mode) {
-			if (!strcmp (setting_mode, "infrastructure") && (ap_mode != NM_802_11_MODE_INFRA))
-				return NULL;
-			if (!strcmp (setting_mode, "adhoc") && (ap_mode != NM_802_11_MODE_ADHOC))
-				return NULL;
-		}
-
-		/* Band and Channel/Frequency */
-		ap_freq = nm_access_point_get_frequency (ap);
-		g_warn_if_fail (ap_freq > 0);
-		if (ap_freq) {
-			setting_band = nm_setting_wireless_get_band (s_wifi);
-			if (g_strcmp0 (setting_band, "a") == 0) {
-				if (ap_freq < 4915 || ap_freq > 5825)
-					continue;
-			} else if (g_strcmp0 (setting_band, "bg") == 0) {
-				if (ap_freq < 2412 || ap_freq > 2484)
-					continue;
-			}
-
-			setting_chan = nm_setting_wireless_get_channel (s_wifi);
-			if (setting_chan) {
-				ap_chan = nm_utils_wifi_freq_to_channel (ap_freq);
-				if (setting_chan != ap_chan)
-					continue;
-			}
-		}
-
-		s_wsec = (NMSettingWirelessSecurity *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_WIRELESS_SECURITY);
-		if (!nm_setting_wireless_ap_security_compatible (s_wifi,
-		                                                 s_wsec,
-		                                                 nm_access_point_get_flags (ap),
-		                                                 nm_access_point_get_wpa_flags (ap),
-		                                                 nm_access_point_get_rsn_flags (ap),
-		                                                 ap_mode))
-			continue;
-
-		/* Connection applies to this device */
-		filtered = g_slist_prepend (filtered, candidate);
+		if (nm_access_point_connection_valid (ap, candidate))
+			filtered = g_slist_prepend (filtered, candidate);
 	}
 
 	return g_slist_reverse (filtered);

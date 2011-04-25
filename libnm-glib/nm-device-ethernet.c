@@ -194,55 +194,46 @@ nm_device_ethernet_get_carrier (NMDeviceEthernet *device)
 	return priv->carrier;
 }
 
-static GSList *
-filter_connections (NMDevice *device, const GSList *connections)
+static gboolean
+connection_valid (NMDevice *device, NMConnection *connection)
 {
-	GSList *filtered = NULL;
-	const GSList *iter;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	const char *ctype;
+	gboolean is_pppoe = FALSE;
 
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *candidate = NM_CONNECTION (iter->data);
-		NMSettingConnection *s_con;
-		NMSettingWired *s_wired;
-		const char *ctype;
-		gboolean is_pppoe = FALSE;
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
 
-		s_con = (NMSettingConnection *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_CONNECTION);
-		g_assert (s_con);
+	ctype = nm_setting_connection_get_connection_type (s_con);
+	if (!strcmp (ctype, NM_SETTING_PPPOE_SETTING_NAME))
+		is_pppoe = TRUE;
+	else if (strcmp (ctype, NM_SETTING_WIRED_SETTING_NAME) != 0)
+		return FALSE;
 
-		ctype = nm_setting_connection_get_connection_type (s_con);
-		if (!strcmp (ctype, NM_SETTING_PPPOE_SETTING_NAME))
-			is_pppoe = TRUE;
-		else if (strcmp (ctype, NM_SETTING_WIRED_SETTING_NAME) != 0)
-			continue;
+	s_wired = nm_connection_get_setting_wired (connection);
+	/* Wired setting optional for PPPoE */
+	if (!is_pppoe && !s_wired)
+		return FALSE;
 
-		s_wired = (NMSettingWired *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_WIRED);
-		/* Wired setting optional for PPPoE */
-		if (!is_pppoe && !s_wired)
-			continue;
+	if (s_wired) {
+		const GByteArray *mac;
+		const char *perm_str;
+		struct ether_addr *perm_mac;
 
-		if (s_wired) {
-			const GByteArray *mac;
-			const char *perm_str;
-			struct ether_addr *perm_mac;
+		/* FIXME: filter using s390 subchannels when they are exported over the bus */
 
-			/* FIXME: filter using s390 subchannels when they are exported over the bus */
-
-			/* Check MAC address */
-			perm_str = nm_device_ethernet_get_permanent_hw_address (NM_DEVICE_ETHERNET (device));
-			if (perm_str) {
-				perm_mac = ether_aton (perm_str);
-				mac = nm_setting_wired_get_mac_address (s_wired);
-				if (mac && perm_mac && memcmp (mac->data, perm_mac->ether_addr_octet, ETH_ALEN))
-					continue;
-			}
+		/* Check MAC address */
+		perm_str = nm_device_ethernet_get_permanent_hw_address (NM_DEVICE_ETHERNET (device));
+		if (perm_str) {
+			perm_mac = ether_aton (perm_str);
+			mac = nm_setting_wired_get_mac_address (s_wired);
+			if (mac && perm_mac && memcmp (mac->data, perm_mac->ether_addr_octet, ETH_ALEN))
+				return FALSE;
 		}
-
-		/* Connection applies to this device */
-		filtered = g_slist_prepend (filtered, candidate);
 	}
 
-	return g_slist_reverse (filtered);
+	return TRUE;
 }
 
 /***********************************************************/
@@ -368,7 +359,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *eth_class)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
-	device_class->filter_connections = filter_connections;
+	device_class->connection_valid = connection_valid;
 
 	/* properties */
 

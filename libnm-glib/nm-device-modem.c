@@ -117,42 +117,35 @@ nm_device_modem_get_current_capabilities (NMDeviceModem *self)
 	return priv->current_caps;
 }
 
-static GSList *
-filter_connections (NMDevice *device, const GSList *connections)
+static gboolean
+connection_valid (NMDevice *device, NMConnection *connection)
 {
-	GSList *filtered = NULL;
-	const GSList *iter;
+	NMSettingConnection *s_con;
+	NMSettingGsm *s_gsm;
+	NMSettingCdma *s_cdma;
+	const char *ctype;
+	NMDeviceModemCapabilities current_caps;
 
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *candidate = NM_CONNECTION (iter->data);
-		NMSettingConnection *s_con;
-		NMSettingGsm *s_gsm;
-		NMSettingCdma *s_cdma;
-		const char *ctype;
-		NMDeviceModemCapabilities current_caps;
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
 
-		s_con = (NMSettingConnection *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_CONNECTION);
-		g_assert (s_con);
+	ctype = nm_setting_connection_get_connection_type (s_con);
+	if (   strcmp (ctype, NM_SETTING_GSM_SETTING_NAME) != 0
+	    && strcmp (ctype, NM_SETTING_CDMA_SETTING_NAME) != 0)
+		return FALSE;
 
-		ctype = nm_setting_connection_get_connection_type (s_con);
-		if (   strcmp (ctype, NM_SETTING_GSM_SETTING_NAME) != 0
-		    && strcmp (ctype, NM_SETTING_CDMA_SETTING_NAME) != 0)
-			continue;
+	s_gsm = nm_connection_get_setting_gsm (connection);
+	s_cdma = nm_connection_get_setting_cdma (connection);
+	if (!s_cdma && !s_gsm)
+		return FALSE;
 
-		s_gsm = (NMSettingGsm *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_GSM);
-		s_cdma = (NMSettingCdma *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_CDMA);
-		if (!s_cdma && !s_gsm)
-			continue;
-
-		current_caps = nm_device_modem_get_current_capabilities (NM_DEVICE_MODEM (device));
-		if (   (s_gsm && (current_caps & NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS))
-		    || (s_cdma && (current_caps & NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO))) {
-			/* Connection applies to this device */
-			filtered = g_slist_prepend (filtered, candidate);
-		}
+	current_caps = nm_device_modem_get_current_capabilities (NM_DEVICE_MODEM (device));
+	if (   !(s_gsm && (current_caps & NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS))
+	    && !(s_cdma && (current_caps & NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO))) {
+		return FALSE;
 	}
 
-	return g_slist_reverse (filtered);
+	return TRUE;
 }
 
 /*******************************************************************/
@@ -252,7 +245,7 @@ nm_device_modem_class_init (NMDeviceModemClass *modem_class)
 	object_class->constructor = constructor;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
-	device_class->filter_connections = filter_connections;
+	device_class->connection_valid = connection_valid;
 
 	/**
 	 * NMDeviceModem:modem-capabilities:

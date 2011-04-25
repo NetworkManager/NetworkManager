@@ -1401,6 +1401,30 @@ nm_device_disconnect (NMDevice *device,
 }
 
 /**
+ * nm_device_connection_valid:
+ * @device: an #NMDevice to validate @connection against
+ * @connection: an #NMConnection to validate against @device
+ *
+ * Validates a given connection for a given #NMDevice object and returns
+ * whether the connection may be activated with the device. For example if
+ * @device is a WiFi device that supports only WEP encryption, the connection
+ * will only be valid if it is a WiFi connection which describes a WEP or open
+ * network, and will not be valid if it describes a WPA network, or if it is
+ * an Ethernet, Bluetooth, WWAN, etc connection that is incompatible with the
+ * device.
+ *
+ * Returns: %TRUE if the connection may be activated with this device, %FALSE
+ * if is incompatible with the device's capabilities and characteristics.
+ **/
+gboolean
+nm_device_connection_valid (NMDevice *device, NMConnection *connection)
+{
+	if (NM_DEVICE_GET_CLASS (device)->connection_valid)
+		return NM_DEVICE_GET_CLASS (device)->connection_valid (device, connection);
+	return FALSE;
+}
+
+/**
  * nm_device_filter_connections:
  * @device: an #NMDevice to filter connections for
  * @connections: (element-type NetworkManager.Connection): a list of #NMConnection objects to filter
@@ -1422,8 +1446,17 @@ nm_device_disconnect (NMDevice *device,
 GSList *
 nm_device_filter_connections (NMDevice *device, const GSList *connections)
 {
-	if (NM_DEVICE_GET_CLASS (device)->filter_connections)
-		return NM_DEVICE_GET_CLASS (device)->filter_connections (device, connections);
-	return NULL;
+	GSList *filtered = NULL;
+	const GSList *iter;
+
+	for (iter = connections; iter; iter = g_slist_next (iter)) {
+		NMConnection *candidate = NM_CONNECTION (iter->data);
+
+		/* Connection applies to this device */
+		if (nm_device_connection_valid (device, candidate))
+			filtered = g_slist_prepend (filtered, candidate);
+	}
+
+	return g_slist_reverse (filtered);
 }
 
