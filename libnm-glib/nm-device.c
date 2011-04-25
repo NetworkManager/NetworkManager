@@ -1403,7 +1403,7 @@ nm_device_disconnect (NMDevice *device,
 /**
  * nm_device_filter_connections:
  * @device: an #NMDevice to filter connections for
- * @connections: a list of #NMConnection objects to filter
+ * @connections: (element-type NetworkManager.Connection): a list of #NMConnection objects to filter
  *
  * Filters a given list of connections for a given #NMDevice object and return
  * connections which may be activated with the device. For example if @device
