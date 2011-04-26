@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
 #include <syslog.h>
@@ -247,7 +247,7 @@ construct_envp (const char *uuid,
 	guint32 envp_idx = 0;
 	GHashTable *options = NULL;
 	GSList *addresses, *routes, *iter;
-	GArray *nameservers;
+	GArray *nameservers, *wins;
 	GPtrArray *domains;
 	guint32 num, i;
 	GString *tmp;
@@ -258,13 +258,14 @@ construct_envp (const char *uuid,
 	addresses = (GSList *) nm_ip4_config_get_addresses (ip4_config);
 	nameservers = (GArray *) nm_ip4_config_get_nameservers (ip4_config);
 	domains = (GPtrArray *) nm_ip4_config_get_domains (ip4_config);
+	wins = (GArray *) nm_ip4_config_get_wins_servers (ip4_config);
 	routes = (GSList *) nm_ip4_config_get_routes (ip4_config);
 
 	env_size =   g_slist_length (addresses)
 	           + 1 /* addresses length */
 	           + 1 /* nameservers */
 	           + 1 /* domains */
-	           + 1 /* hostname */
+	           + 1 /* WINS servers */
 	           + g_slist_length (routes)
 	           + 1 /* routes length */
 	           + 1 /* connection UUID */
@@ -334,6 +335,27 @@ construct_envp (const char *uuid,
 			if (i > 0)
 				g_string_append_c (tmp, ' ');
 			g_string_append (tmp, (char *) g_ptr_array_index (domains, i));
+		}
+		envp[envp_idx++] = tmp->str;
+		g_string_free (tmp, FALSE);
+	}
+
+	if (wins && wins->len) {
+		gboolean first = TRUE;
+
+		tmp = g_string_new ("IP4_WINS_SERVERS=");
+		for (i = 0; i < wins->len; i++) {
+			struct in_addr addr;
+			char buf[INET_ADDRSTRLEN + 1];
+
+			addr.s_addr = g_array_index (wins, guint32, i);
+			memset (buf, 0, sizeof (buf));
+			if (inet_ntop (AF_INET, &addr, buf, sizeof (buf))) {
+				if (!first)
+					g_string_append_c (tmp, ' ');
+				g_string_append (tmp, buf);
+				first = FALSE;
+			}
 		}
 		envp[envp_idx++] = tmp->str;
 		g_string_free (tmp, FALSE);
