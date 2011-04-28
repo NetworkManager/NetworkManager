@@ -8,7 +8,7 @@
 .SH NAME
 NetworkManager \- network management daemon
 .SH SYNOPSIS
-.B NetworkManager [\-\-no\-daemon] [\-\-pid\-file=<filename>] [\-\-state\-file=<filename>] [\-\-config=<filename>] [\-\-plugins=<plugin1>,plugin2>,...] [\-\-log\-level=<level>] [\-\-log\-domains=<domain1>,<domain2>,...]
+.B NetworkManager [\-\-version] [\-\-no\-daemon] [\-\-pid\-file=<filename>] [\-\-state\-file=<filename>] [\-\-config=<filename>] [\-\-plugins=<plugin1>,plugin2>,...] [\-\-log\-level=<level>] [\-\-log\-domains=<domain1>,<domain2>,...]
 .SH DESCRIPTION
 The \fINetworkManager\fP daemon attempts to make  networking configuration and
 operation as painless and automatic as possible by managing the primary network
@@ -60,6 +60,9 @@ The DHCPv4 lease has changed (renewed, rebound, etc).
 The DHCPv6 lease has changed (renewed, rebound, etc).
 .SH OPTIONS
 The following options are supported:
+.TP
+.I "\-\-version"
+Print the NetworkManager software version and exit.
 .TP
 .I "\-\-no\-daemon"
 Do not daemonize.  This is useful for debugging, and directs log output to the
