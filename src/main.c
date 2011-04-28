@@ -474,7 +474,7 @@ main (int argc, char *argv[])
 	char *log_level = NULL, *log_domains = NULL;
 	char **dns = NULL;
 	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE, wimax_enabled = TRUE;
-	gboolean success;
+	gboolean success, show_version = FALSE;
 	NMPolicy *policy = NULL;
 	NMVPNManager *vpn_manager = NULL;
 	NMDnsManager *dns_mgr = NULL;
@@ -487,6 +487,7 @@ main (int argc, char *argv[])
 	char *cfg_log_level = NULL, *cfg_log_domains = NULL;
 
 	GOptionEntry options[] = {
+		{ "version", 0, 0, G_OPTION_ARG_NONE, &show_version, "Print NetworkManager version and exit", NULL },
 		{ "no-daemon", 0, 0, G_OPTION_ARG_NONE, &become_daemon, "Don't become a daemon", NULL },
 		{ "g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &g_fatal_warnings, "Make all warnings fatal", NULL },
 		{ "pid-file", 0, 0, G_OPTION_ARG_FILENAME, &pidfile, "Specify the location of a PID file", "filename" },
@@ -495,15 +496,13 @@ main (int argc, char *argv[])
 		{ "plugins", 0, 0, G_OPTION_ARG_STRING, &plugins, "List of plugins separated by ','", "plugin1,plugin2" },
 		{ "log-level", 0, 0, G_OPTION_ARG_STRING, &log_level, "Log level: one of [ERR, WARN, INFO, DEBUG]", "INFO" },
 		{ "log-domains", 0, 0, G_OPTION_ARG_STRING, &log_domains,
-		        "Log domains separated by ',': any combination of [NONE,HW,RFKILL,ETHER,WIFI,BT,MB,DHCP4,DHCP6,PPP,WIFI_SCAN,IP4,IP6,AUTOIP4,DNS,VPN,SHARING,SUPPLICANT,USER_SET,SYS_SET,SUSPEND,CORE,DEVICE,OLPC]",
+		        "Log domains separated by ',': any combination of\n"
+		        "                                          [NONE,HW,RFKILL,ETHER,WIFI,BT,MB,DHCP4,DHCP6,PPP,\n"
+		        "                                           WIFI_SCAN,IP4,IP6,AUTOIP4,DNS,VPN,SHARING,SUPPLICANT,\n"
+		        "                                           AGENTS,SETTINGS,SUSPEND,CORE,DEVICE,OLPC,WIMAX]",
 		        "HW,RFKILL,WIFI" },
 		{NULL}
 	};
-
-	if (getuid () != 0) {
-		fprintf (stderr, "You must be root to run NetworkManager!\n");
-		exit (1);
-	}
 
 	if (!g_module_supported ()) {
 		fprintf (stderr, "GModules are not supported on your platform!\n");
@@ -529,6 +528,16 @@ main (int argc, char *argv[])
 
 	if (!success) {
 		fprintf (stderr, _("Invalid option.  Please use --help to see a list of valid options.\n"));
+		exit (1);
+	}
+
+	if (show_version) {
+		fprintf (stdout, NM_DIST_VERSION "\n");
+		exit (0);
+	}
+
+	if (getuid () != 0) {
+		fprintf (stderr, "You must be root to run NetworkManager!\n");
 		exit (1);
 	}
 
