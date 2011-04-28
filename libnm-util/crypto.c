@@ -585,14 +585,19 @@ crypto_load_and_verify_certificate (const char *file,
 		return contents;
 	}
 
-	array = extract_pem_cert_data (contents, error);
-	if (!array) {
-		g_byte_array_free (contents, TRUE);
-		return NULL;
-	}
+	/* Check for plain DER format */
+	if (contents->len > 2 && contents->data[0] == 0x30 && contents->data[1] == 0x82) {
+		*out_file_format = crypto_verify_cert (contents->data, contents->len, error);
+	} else {
+		array = extract_pem_cert_data (contents, error);
+		if (!array) {
+			g_byte_array_free (contents, TRUE);
+			return NULL;
+		}
 
-	*out_file_format = crypto_verify_cert (array->data, array->len, error);
-	g_byte_array_free (array, TRUE);
+		*out_file_format = crypto_verify_cert (array->data, array->len, error);
+		g_byte_array_free (array, TRUE);
+	}
 
 	if (*out_file_format != NM_CRYPTO_FILE_FORMAT_X509) {
 		g_byte_array_free (contents, TRUE);

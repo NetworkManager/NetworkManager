@@ -93,6 +93,9 @@ check-local: test-settings-defaults test-crypto test-secrets
 # Another CA certificate
 	$(abs_builddir)/test-crypto --cert $(srcdir)/certs/test2_ca_cert.pem
 
+# Normal CA certificate (DER format)
+	$(abs_builddir)/test-crypto --cert $(srcdir)/certs/test_ca_cert.der
+
 # CA certificate without an ending newline
 	$(abs_builddir)/test-crypto --cert $(srcdir)/certs/ca-no-ending-newline.pem
 
