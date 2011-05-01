@@ -445,22 +445,22 @@ nm_ip4_config_get_wins_servers (NMIP4Config *config)
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
 
 	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	if (!priv->nameservers) {
+	if (!priv->wins) {
 		if (_nm_object_get_property (NM_OBJECT (config),
 		                             NM_DBUS_INTERFACE_IP4_CONFIG,
-		                             "Nameservers",
+		                             "WinsServers",
 		                             &value,
 		                             NULL)) {
 			array = (GArray *) g_value_get_boxed (&value);
 			if (array && array->len) {
-				priv->nameservers = g_array_sized_new (FALSE, TRUE, sizeof (guint32), array->len);
-				g_array_append_vals (priv->nameservers, array->data, array->len);
+				priv->wins = g_array_sized_new (FALSE, TRUE, sizeof (guint32), array->len);
+				g_array_append_vals (priv->wins, array->data, array->len);
 			}
 			g_value_unset (&value);
 		}
 	}
 
-	return priv->nameservers;
+	return priv->wins;
 }
 
 /**
