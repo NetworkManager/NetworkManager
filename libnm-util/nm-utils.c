@@ -1884,6 +1884,18 @@ nm_utils_ip6_dns_from_gvalue (const GValue *value)
 	return g_slist_reverse (list);
 }
 
+/**
+ * nm_utils_ip6_dns_to_gvalue: (skip):
+ * @list: a list of #NMIP6Route objects
+ * @value: a pointer to a #GValue into which to place the converted DNS server
+ * addresses, which should be unset by the caller (when no longer needed) with
+ * g_value_unset().
+ *
+ * Utility function to convert a #GSList of 'struct in6_addr' structs into a
+ * GPtrArray of GByteArrays representing each server's IPv6 addresses in
+ * network byte order.  The specific format of this serialization is not
+ * guaranteed to be stable and may be extended in the future.
+ */
 void
 nm_utils_ip6_dns_to_gvalue (GSList *list, GValue *value)
 {
