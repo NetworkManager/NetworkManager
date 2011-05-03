@@ -923,10 +923,10 @@ permission_call_done (GObject *object, GAsyncResult *result, gpointer user_data)
 	if (error) {
 		nm_log_err (LOGD_SYS_SET, "error checking '%s' permission: (%d) %s",
 		            call->pk_action,
-		            error ? error->code : -1,
-		            error && error->message ? error->message : "(unknown)");
-		if (error)
-			g_error_free (error);
+		            error->code,
+		            error->message ? error->message : "(unknown)");
+
+		g_error_free (error);
 	} else {
 		/* If the caller is authorized, or the caller could authorize via a
 		 * challenge, then authorization is possible.  Otherwise, caller is out of
@@ -935,9 +935,9 @@ permission_call_done (GObject *object, GAsyncResult *result, gpointer user_data)
 		if (   polkit_authorization_result_get_is_authorized (pk_result)
 		    || polkit_authorization_result_get_is_challenge (pk_result))
 		    pk_call->permissions |= call->permission;
-	}
 
-	g_object_unref (pk_result);
+		g_object_unref (pk_result);
+	}
 
 done:
 	pk_call->permissions_calls--;
