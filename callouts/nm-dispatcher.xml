@@ -32,6 +32,46 @@
         </tp:docstring>
       </arg>
 
+      <arg name="device_ip4_config" type="a{sv}" direction="in">
+        <tp:docstring>
+          Properties of the device's IPv4 configuration.
+        </tp:docstring>
+      </arg>
+
+      <arg name="device_ip6_config" type="a{sv}" direction="in">
+        <tp:docstring>
+          Properties of the device's IPv6 configuration.
+        </tp:docstring>
+      </arg>
+
+      <arg name="device_dhcp4_config" type="a{sv}" direction="in">
+        <tp:docstring>
+          Properties of the device's DHCPv4 configuration.
+        </tp:docstring>
+      </arg>
+
+      <arg name="device_dhcp6_config" type="a{sv}" direction="in">
+        <tp:docstring>
+          Properties of the device's DHCPv6 configuration.
+        </tp:docstring>
+      </arg>
+
+      <arg name="vpn_ip_iface" type="s" direction="in">
+        <tp:docstring>VPN interface name.</tp:docstring>
+      </arg>
+
+      <arg name="vpn_ip4_config" type="a{sv}" direction="in">
+        <tp:docstring>
+          Properties of the VPN's IPv4 configuration.
+        </tp:docstring>
+      </arg>
+
+      <arg name="vpn_ip6_config" type="a{sv}" direction="in">
+        <tp:docstring>
+          Properties of the VPN's IPv6 configuration.
+        </tp:docstring>
+      </arg>
+
     </method>
   </interface>
 </node>

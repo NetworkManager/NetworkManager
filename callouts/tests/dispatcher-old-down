@@ -1,0 +1,19 @@
+[main]
+action=down
+iface=wlan0
+uuid=3fd2a33a-d81b-423f-ae99-e6baba742311
+id=Random Connection
+
+[device]
+state=30
+ip-interface=wlan0
+type=2
+interface=wlan0
+path=/org/freedesktop/NetworkManager/Devices/0
+
+[env]
+CONNECTION_UUID=3fd2a33a-d81b-423f-ae99-e6baba742311
+CONNECTION_ID=Random Connection
+DEVICE_IFACE=wlan0
+DEVICE_IP_IFACE=wlan0
+

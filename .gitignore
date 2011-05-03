@@ -141,6 +141,7 @@ initscript/*/[Nn]etwork[Mm]anager
 *-glue.h
 *-bindings.h
 nm-marshal.[ch]
+callouts/tests/test-dispatcher-envp
 libnm-glib/libnm-glib-test
 src/NetworkManager
 src/nm-crash-logger

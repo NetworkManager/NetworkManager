@@ -45,7 +45,9 @@ void nm_utils_merge_ip6_config (NMIP6Config *ip6_config, NMSettingIP6Config *set
 void nm_utils_call_dispatcher (const char *action,
                                NMConnection *connection,
                                NMDevice *device,
-                               const char *vpn_iface);
+                               const char *vpn_iface,
+                               NMIP4Config *vpn_ip4_config,
+                               NMIP6Config *vpn_ip6_config);
 
 gboolean nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr);
 gboolean nm_match_spec_s390_subchannels (const GSList *specs, const char *subchannels);
@@ -71,6 +73,12 @@ void        value_hash_add_uint        (GHashTable *hash,
 void        value_hash_add_bool        (GHashTable *hash,
 					                    const char *key,
 					                    gboolean val);
+
+void        value_hash_add_object_property (GHashTable *hash,
+                                            const char *key,
+                                            GObject *object,
+                                            const char *prop,
+                                            GType val_type);
 
 gboolean nm_utils_do_sysctl (const char *path, const char *value);
 

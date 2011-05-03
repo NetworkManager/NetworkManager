@@ -35,15 +35,9 @@
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
 
-#include <NetworkManager.h>
-#include "nm-glib-compat.h"
-#include <libnm-util/nm-connection.h>
-#include <libnm-util/nm-setting-ip4-config.h>
-#include <libnm-util/nm-setting-connection.h>
-#include <libnm-glib/nm-dhcp4-config.h>
-#include <libnm-glib/nm-device.h>
 
 #include "nm-dispatcher-action.h"
+#include "nm-dispatcher-utils.h"
 
 #define NMD_SCRIPT_DIR    SYSCONFDIR "/NetworkManager/dispatcher.d"
 
@@ -84,11 +78,18 @@ typedef struct {
 } Dispatcher;
 
 static gboolean
-nm_dispatcher_action (Handler *obj,
+nm_dispatcher_action (Handler *h,
                       const char *action,
-                      GHashTable *connection,
+                      GHashTable *connection_hash,
                       GHashTable *connection_props,
                       GHashTable *device_props,
+                      GHashTable *device_ip4_props,
+                      GHashTable *device_ip6_props,
+                      GHashTable *device_dhcp4_props,
+                      GHashTable *device_dhcp6_props,
+                      const char *vpn_ip_iface,
+                      GHashTable *vpn_ip4_props,
+                      GHashTable *vpn_ip6_props,
                       GError **error);
 
 #include "nm-dispatcher-glue.h"
@@ -220,207 +221,13 @@ child_setup (gpointer user_data G_GNUC_UNUSED)
         setpgid (pid, pid);
 }
 
-typedef struct {
-	char **envp;
-	guint32 i;
-} EnvAddInfo;
-
 static void
-add_one_option_to_envp (gpointer key, gpointer value, gpointer user_data)
-{
-	EnvAddInfo *info = (EnvAddInfo *) user_data;
-	char *ucased;
-
-	ucased = g_ascii_strup (key, -1);
-	info->envp[info->i++] = g_strdup_printf ("DHCP4_%s=%s", ucased, (char *) value);
-	g_free (ucased);
-}
-
-static char **
-construct_envp (const char *uuid,
-                const char *id,
-                NMIP4Config *ip4_config,
-                NMDHCP4Config *dhcp4_config)
-{
-	guint32 env_size = 0;
-	char **envp;
-	guint32 envp_idx = 0;
-	GHashTable *options = NULL;
-	GSList *addresses, *routes, *iter;
-	GArray *nameservers, *wins;
-	GPtrArray *domains;
-	guint32 num, i;
-	GString *tmp;
-
-	if (!ip4_config)
-		return g_new0 (char *, 1);
-
-	addresses = (GSList *) nm_ip4_config_get_addresses (ip4_config);
-	nameservers = (GArray *) nm_ip4_config_get_nameservers (ip4_config);
-	domains = (GPtrArray *) nm_ip4_config_get_domains (ip4_config);
-	wins = (GArray *) nm_ip4_config_get_wins_servers (ip4_config);
-	routes = (GSList *) nm_ip4_config_get_routes (ip4_config);
-
-	env_size =   g_slist_length (addresses)
-	           + 1 /* addresses length */
-	           + 1 /* nameservers */
-	           + 1 /* domains */
-	           + 1 /* WINS servers */
-	           + g_slist_length (routes)
-	           + 1 /* routes length */
-	           + 1 /* connection UUID */
-	           + 1 /* connection ID */;
-
-	if (dhcp4_config) {
-		options = nm_dhcp4_config_get_options (dhcp4_config);
-		env_size += g_hash_table_size (options);
-	}
-
-	envp = g_new0 (char *, env_size + 1);
-
-	if (uuid)
-		envp[envp_idx++] = g_strdup_printf ("CONNECTION_UUID=%s", uuid);
-	if (id)
-		envp[envp_idx++] = g_strdup_printf ("CONNECTION_ID=%s", id);
-
-	/* IP4 config stuff */
-	for (iter = addresses, num = 0; iter; iter = g_slist_next (iter)) {
-		NMIP4Address *addr = (NMIP4Address *) iter->data;
-		char str_addr[INET_ADDRSTRLEN + 1];
-		char str_gw[INET_ADDRSTRLEN + 1];
-		struct in_addr tmp_addr;
-		guint32 prefix = nm_ip4_address_get_prefix (addr);
-
-		memset (str_addr, 0, sizeof (str_addr));
-		tmp_addr.s_addr = nm_ip4_address_get_address (addr);
-		if (!inet_ntop (AF_INET, &tmp_addr, str_addr, sizeof (str_addr)))
-			continue;
-
-		memset (str_gw, 0, sizeof (str_gw));
-		tmp_addr.s_addr = nm_ip4_address_get_gateway (addr);
-		inet_ntop (AF_INET, &tmp_addr, str_gw, sizeof (str_gw));
-
-		tmp = g_string_sized_new (25 + strlen (str_addr) + strlen (str_gw));
-		g_string_append_printf (tmp, "IP4_ADDRESS_%d=%s/%d %s", num++, str_addr, prefix, str_gw);
-		envp[envp_idx++] = tmp->str;
-		g_string_free (tmp, FALSE);
-	}
-	if (num)
-		envp[envp_idx++] = g_strdup_printf ("IP4_NUM_ADDRESSES=%d", num);
-
-	if (nameservers && nameservers->len) {
-		gboolean first = TRUE;
-
-		tmp = g_string_new ("IP4_NAMESERVERS=");
-		for (i = 0; i < nameservers->len; i++) {
-			struct in_addr addr;
-			char buf[INET_ADDRSTRLEN + 1];
-
-			addr.s_addr = g_array_index (nameservers, guint32, i);
-			memset (buf, 0, sizeof (buf));
-			if (inet_ntop (AF_INET, &addr, buf, sizeof (buf))) {
-				if (!first)
-					g_string_append_c (tmp, ' ');
-				g_string_append (tmp, buf);
-				first = FALSE;
-			}
-		}
-		envp[envp_idx++] = tmp->str;
-		g_string_free (tmp, FALSE);
-	}
-
-	if (domains && domains->len) {
-		tmp = g_string_new ("IP4_DOMAINS=");
-		for (i = 0; i < domains->len; i++) {
-			if (i > 0)
-				g_string_append_c (tmp, ' ');
-			g_string_append (tmp, (char *) g_ptr_array_index (domains, i));
-		}
-		envp[envp_idx++] = tmp->str;
-		g_string_free (tmp, FALSE);
-	}
-
-	if (wins && wins->len) {
-		gboolean first = TRUE;
-
-		tmp = g_string_new ("IP4_WINS_SERVERS=");
-		for (i = 0; i < wins->len; i++) {
-			struct in_addr addr;
-			char buf[INET_ADDRSTRLEN + 1];
-
-			addr.s_addr = g_array_index (wins, guint32, i);
-			memset (buf, 0, sizeof (buf));
-			if (inet_ntop (AF_INET, &addr, buf, sizeof (buf))) {
-				if (!first)
-					g_string_append_c (tmp, ' ');
-				g_string_append (tmp, buf);
-				first = FALSE;
-			}
-		}
-		envp[envp_idx++] = tmp->str;
-		g_string_free (tmp, FALSE);
-	}
-
-	for (iter = routes, num = 0; iter; iter = g_slist_next (iter)) {
-		NMIP4Route *route = (NMIP4Route *) iter->data;
-		char str_addr[INET_ADDRSTRLEN + 1];
-		char str_nh[INET_ADDRSTRLEN + 1];
-		struct in_addr tmp_addr;
-		guint32 prefix = nm_ip4_route_get_prefix (route);
-		guint32 metric = nm_ip4_route_get_metric (route);
-
-		memset (str_addr, 0, sizeof (str_addr));
-		tmp_addr.s_addr = nm_ip4_route_get_dest (route);
-		if (!inet_ntop (AF_INET, &tmp_addr, str_addr, sizeof (str_addr)))
-			continue;
-
-		memset (str_nh, 0, sizeof (str_nh));
-		tmp_addr.s_addr = nm_ip4_route_get_next_hop (route);
-		inet_ntop (AF_INET, &tmp_addr, str_nh, sizeof (str_nh));
-
-		tmp = g_string_sized_new (30 + strlen (str_addr) + strlen (str_nh));
-		g_string_append_printf (tmp, "IP4_ROUTE_%d=%s/%d %s %d", num++, str_addr, prefix, str_nh, metric);
-		envp[envp_idx++] = tmp->str;
-		g_string_free (tmp, FALSE);
-	}
-	envp[envp_idx++] = g_strdup_printf ("IP4_NUM_ROUTES=%d", num);
-
-	/* DHCP stuff */
-	if (dhcp4_config && options) {
-		EnvAddInfo info;
-
-		info.envp = envp;
-		info.i = envp_idx;
-		g_hash_table_foreach (options, add_one_option_to_envp, &info);
-	}
-
-	if (debug) {
-		char **p;
-
-		g_message ("------------ Script Environment ------------");
-		for (p = envp; *p; p++)
-			g_message ("  %s", *p);
-		g_message ("\n");
-	}
-
-	return envp;
-}
-
-static void
-dispatch_scripts (const char *action,
-                  const char *iface,
-                  const char *parent_iface,
-                  NMDeviceType type,
-                  const char *uuid,
-                  const char *id,
-                  NMIP4Config *ip4_config,
-                  NMDHCP4Config *dhcp4_config)
+dispatch_scripts (const char *action, const char *iface, char **envp)
 {
 	GDir *dir;
 	const char *filename;
 	GSList *scripts = NULL, *iter;
 	GError *error = NULL;
-	char **envp = NULL;
 
 	if (!(dir = g_dir_open (NMD_SCRIPT_DIR, 0, &error))) {
 		g_warning ("g_dir_open() could not open '" NMD_SCRIPT_DIR "'.  '%s'",
@@ -458,8 +265,6 @@ dispatch_scripts (const char *action,
 	}
 	g_dir_close (dir);
 
-	envp = construct_envp (uuid, id, ip4_config, dhcp4_config);
-
 	for (iter = scripts; iter; iter = g_slist_next (iter)) {
 		gchar *argv[4];
 		gint status = -1;
@@ -487,8 +292,6 @@ dispatch_scripts (const char *action,
 		}
 	}
 
-	g_strfreev (envp);
-
 	g_slist_foreach (scripts, (GFunc) g_free, NULL);
 	g_slist_free (scripts);
 }
@@ -499,18 +302,18 @@ nm_dispatcher_action (Handler *h,
                       GHashTable *connection_hash,
                       GHashTable *connection_props,
                       GHashTable *device_props,
+                      GHashTable *device_ip4_props,
+                      GHashTable *device_ip6_props,
+                      GHashTable *device_dhcp4_props,
+                      GHashTable *device_dhcp6_props,
+                      const char *vpn_ip_iface,
+                      GHashTable *vpn_ip4_props,
+                      GHashTable *vpn_ip6_props,
                       GError **error)
 {
 	Dispatcher *d = g_object_get_data (G_OBJECT (h), "dispatcher");
-	NMConnection *connection;
-	char *iface = NULL, *parent_iface = NULL;
-	const char *uuid = NULL, *id = NULL;
-	NMDeviceType type = NM_DEVICE_TYPE_UNKNOWN;
-	NMDeviceState dev_state = NM_DEVICE_STATE_UNKNOWN;
-	NMDevice *device = NULL;
-	NMDHCP4Config *dhcp4_config = NULL;
-	NMIP4Config *ip4_config = NULL;
-	GValue *value;
+	char **envp, **p;
+	char *iface = NULL;
 
 	/* Back off the quit timeout */
 	if (d->quit_timeout)
@@ -518,80 +321,30 @@ nm_dispatcher_action (Handler *h,
 	if (!d->persist)
 		d->quit_timeout = g_timeout_add_seconds (10, quit_timeout_cb, NULL);
 
-	/* Hostname changes don't require a device nor contain a connection */
-	if (!strcmp (action, "hostname"))
-		goto dispatch;
+	envp = nm_dispatcher_utils_construct_envp (action,
+	                                           connection_hash,
+	                                           connection_props,
+	                                           device_props,
+	                                           device_ip4_props,
+	                                           device_ip6_props,
+	                                           device_dhcp4_props,
+	                                           device_dhcp6_props,
+	                                           vpn_ip_iface,
+	                                           vpn_ip4_props,
+	                                           vpn_ip6_props,
+	                                           &iface);
 
-	connection = nm_connection_new_from_hash (connection_hash, error);
-	if (connection) {
-		uuid = nm_connection_get_uuid (connection);
-		id = nm_connection_get_id (connection);
-	} else {
-		g_warning ("%s: Invalid connection: '%s' / '%s' invalid: %d",
-		           __func__,
-		           g_type_name (nm_connection_lookup_setting_type_by_quark ((*error)->domain)),
-		           (*error)->message, (*error)->code);
-		/* Don't fail on this error yet */
-		g_error_free (*error);
-		*error = NULL;
+	if (debug) {
+		g_message ("------------ Script Environment ------------");
+		for (p = envp; *p; p++)
+			g_message ("  %s", *p);
+		g_message ("\n");
 	}
 
-	/* interface name */
-	value = g_hash_table_lookup (device_props, NMD_DEVICE_PROPS_INTERFACE);
-	if (!value || !G_VALUE_HOLDS_STRING (value)) {
-		g_warning ("Missing or invalid required value " NMD_DEVICE_PROPS_INTERFACE "!");
-		goto out;
-	}
-	iface = (char *) g_value_get_string (value);
+	dispatch_scripts (action, iface, envp);
+	g_strfreev (envp);
+	g_free (iface);
 
-	/* IP interface name */
-	value = g_hash_table_lookup (device_props, NMD_DEVICE_PROPS_IP_INTERFACE);
-	if (value) {
-		if (!G_VALUE_HOLDS_STRING (value)) {
-			g_warning ("Invalid required value " NMD_DEVICE_PROPS_IP_INTERFACE "!");
-			goto out;
-		}
-		parent_iface = iface;
-		iface = (char *) g_value_get_string (value);
-	}
-
-	/* Device type */
-	value = g_hash_table_lookup (device_props, NMD_DEVICE_PROPS_TYPE);
-	if (!value || !G_VALUE_HOLDS_UINT (value)) {
-		g_warning ("Missing or invalid required value " NMD_DEVICE_PROPS_TYPE "!");
-		goto out;
-	}
-	type = g_value_get_uint (value);
-
-	/* Device state */
-	value = g_hash_table_lookup (device_props, NMD_DEVICE_PROPS_STATE);
-	if (!value || !G_VALUE_HOLDS_UINT (value)) {
-		g_warning ("Missing or invalid required value " NMD_DEVICE_PROPS_STATE "!");
-		goto out;
-	}
-	dev_state = g_value_get_uint (value);
-
-	/* device itself */
-	value = g_hash_table_lookup (device_props, NMD_DEVICE_PROPS_PATH);
-	if (!value || (G_VALUE_TYPE (value) != DBUS_TYPE_G_OBJECT_PATH)) {
-		g_warning ("Missing or invalid required value " NMD_DEVICE_PROPS_PATH "!");
-		goto out;
-	}
-	device = NM_DEVICE (nm_device_new (d->g_connection, (const char *) g_value_get_boxed (value)));
-
-	/* Get the DHCP4 config */
-	if (device && (dev_state == NM_DEVICE_STATE_ACTIVATED)) {
-		dhcp4_config = nm_device_get_dhcp4_config (device);
-		ip4_config = nm_device_get_ip4_config (device);
-	}
-
-dispatch:
-	dispatch_scripts (action, iface, parent_iface, type, uuid, id, ip4_config, dhcp4_config);
-
-	if (device)
-		g_object_unref (device);
-
-out:
 	return TRUE;
 }
 

@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2010 Red Hat, Inc.
+ * Copyright (C) 2005 - 2011 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -140,7 +140,9 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 		nm_utils_call_dispatcher ("vpn-up",
 		                          priv->connection,
 		                          priv->parent_dev,
-		                          ip_iface);
+		                          ip_iface,
+		                          priv->ip4_config,
+		                          NULL);
 		break;
 	case NM_VPN_CONNECTION_STATE_FAILED:
 	case NM_VPN_CONNECTION_STATE_DISCONNECTED:
@@ -148,7 +150,9 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 			nm_utils_call_dispatcher ("vpn-down",
 			                          priv->connection,
 			                          priv->parent_dev,
-			                          ip_iface);
+			                          ip_iface,
+			                          NULL,
+			                          NULL);
 		}
 		break;
 	default:

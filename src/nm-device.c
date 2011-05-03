@@ -1384,7 +1384,7 @@ handle_dhcp_lease_change (NMDevice *device, gboolean ipv6)
 			nm_dhcp_client_foreach_option (priv->dhcp6_client,
 			                               dhcp6_add_option_cb,
 			                               priv->dhcp6_config);
-			nm_utils_call_dispatcher ("dhcp6-change", connection, device, NULL);
+			nm_utils_call_dispatcher ("dhcp6-change", connection, device, NULL, NULL, NULL);
 		} else {
 			nm_log_warn (LOGD_DHCP6, "(%s): failed to update IPv6 config in response to DHCP event.",
 			             nm_device_get_ip_iface (device));
@@ -1409,7 +1409,7 @@ handle_dhcp_lease_change (NMDevice *device, gboolean ipv6)
 			nm_dhcp_client_foreach_option (priv->dhcp4_client,
 			                               dhcp4_add_option_cb,
 			                               priv->dhcp4_config);
-			nm_utils_call_dispatcher ("dhcp4-change", connection, device, NULL);
+			nm_utils_call_dispatcher ("dhcp4-change", connection, device, NULL, NULL, NULL);
 		} else {
 			nm_log_warn (LOGD_DHCP6, "(%s): failed to update IPv4 config in response to DHCP event.",
 			             nm_device_get_ip_iface (device));
@@ -3781,7 +3781,7 @@ nm_device_state_changed (NMDevice *device,
 	case NM_DEVICE_STATE_ACTIVATED:
 		nm_log_info (LOGD_DEVICE, "Activation (%s) successful, device activated.",
 		             nm_device_get_iface (device));
-		nm_utils_call_dispatcher ("up", nm_act_request_get_connection (req), device, NULL);
+		nm_utils_call_dispatcher ("up", nm_act_request_get_connection (req), device, NULL, NULL, NULL);
 		break;
 	case NM_DEVICE_STATE_FAILED:
 		nm_log_warn (LOGD_DEVICE, "Activation (%s) failed.", nm_device_get_iface (device));
@@ -3796,7 +3796,7 @@ nm_device_state_changed (NMDevice *device,
 	}
 
 	if (old_state == NM_DEVICE_STATE_ACTIVATED)
-		nm_utils_call_dispatcher ("down", nm_act_request_get_connection (req), device, NULL);
+		nm_utils_call_dispatcher ("down", nm_act_request_get_connection (req), device, NULL, NULL, NULL);
 
 	/* Dispose of the cached activation request */
 	if (req)

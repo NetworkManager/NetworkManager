@@ -1,3 +1,13 @@
+SUBDIRS=. tests
+
+###########################################
+# Test libraries
+###########################################
+
+noinst_LTLIBRARIES = \
+	libtest-dispatcher-envp.la
+
+
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = \
 	nm-dhcp-client.conf \
@@ -41,7 +51,9 @@ nm_avahi_autoipd_action_LDADD = \
 
 nm_dispatcher_action_SOURCES = \
 	nm-dispatcher-action.c \
-	nm-dispatcher-action.h
+	nm-dispatcher-action.h \
+	nm-dispatcher-utils.c \
+	nm-dispatcher-utils.h
 
 nm_dispatcher_action_CPPFLAGS = \
 	-I${top_srcdir} \
@@ -54,13 +66,32 @@ nm_dispatcher_action_CPPFLAGS = \
 	-DLIBEXECDIR=\"$(libexecdir)\"
 
 nm_dispatcher_action_LDADD = \
-	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS)
 
 nm-dispatcher-glue.h: nm-dispatcher.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_dispatcher --mode=glib-server --output=$@ $<
+
+###########################################
+# dispatcher envp
+###########################################
+
+libtest_dispatcher_envp_la_SOURCES = \
+	nm-dispatcher-utils.c \
+	nm-dispatcher-utils.h
+
+libtest_dispatcher_envp_la_CPPFLAGS = \
+	-I${top_srcdir}/include \
+	-I${top_srcdir}/libnm-util \
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS)
+
+libtest_dispatcher_envp_la_LIBADD = \
+	$(top_builddir)/libnm-util/libnm-util.la \
+	$(GLIB_LIBS) \
+	$(DBUS_LIBS)
+
 
 udevrulesdir = $(UDEV_BASE_DIR)/rules.d
 udevrules_DATA = 77-nm-olpc-mesh.rules

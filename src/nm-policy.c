@@ -238,7 +238,7 @@ _set_hostname (NMPolicy *policy,
 	}
 
 	if (nm_policy_set_system_hostname (policy->cur_hostname, msg))
-		nm_utils_call_dispatcher ("hostname", NULL, NULL, NULL);
+		nm_utils_call_dispatcher ("hostname", NULL, NULL, NULL, NULL, NULL);
 }
 
 static void

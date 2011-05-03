@@ -631,6 +631,7 @@ libnm-glib/libnm-glib-vpn.pc
 libnm-glib/Makefile
 libnm-glib/tests/Makefile
 callouts/Makefile
+callouts/tests/Makefile
 tools/Makefile
 cli/Makefile
 cli/src/Makefile
