@@ -3692,6 +3692,138 @@ nm_device_get_firmware_missing (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->firmware_missing;
 }
 
+static const char *
+state_to_string (NMDeviceState state)
+{
+	switch (state) {
+	case NM_DEVICE_STATE_UNMANAGED:
+		return "unmanaged";
+	case NM_DEVICE_STATE_UNAVAILABLE:
+		return "unavailable";
+	case NM_DEVICE_STATE_DISCONNECTED:
+		return "disconnected";
+	case NM_DEVICE_STATE_PREPARE:
+		return "prepare";
+	case NM_DEVICE_STATE_CONFIG:
+		return "config";
+	case NM_DEVICE_STATE_NEED_AUTH:
+		return "need-auth";
+	case NM_DEVICE_STATE_IP_CONFIG:
+		return "ip-config";
+	case NM_DEVICE_STATE_IP_CHECK:
+		return "ip-check";
+	case NM_DEVICE_STATE_SECONDARIES:
+		return "secondaries";
+	case NM_DEVICE_STATE_ACTIVATED:
+		return "activated";
+	case NM_DEVICE_STATE_DEACTIVATING:
+		return "deactivating";
+	case NM_DEVICE_STATE_FAILED:
+		return "failed";
+	default:
+		break;
+	}
+	return "unknown";
+}
+
+static const char *
+reason_to_string (NMDeviceStateReason reason)
+{
+	switch (reason) {
+	case NM_DEVICE_STATE_REASON_NONE:
+		return "none";
+	case NM_DEVICE_STATE_REASON_NOW_MANAGED:
+		return "managed";
+	case NM_DEVICE_STATE_REASON_NOW_UNMANAGED:
+		return "unmanaged";
+	case NM_DEVICE_STATE_REASON_CONFIG_FAILED:
+		return "config-failed";
+	case NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE:
+		return "ip-config-unavailable";
+	case NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED:
+		return "ip-config-expired";
+	case NM_DEVICE_STATE_REASON_NO_SECRETS:
+		return "no-secrets";
+	case NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT:
+		return "supplicant-disconnect";
+	case NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED:
+		return "supplicant-config-failed";
+	case NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED:
+		return "supplicant-failed";
+	case NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT:
+		return "supplicant-timeout";
+	case NM_DEVICE_STATE_REASON_PPP_START_FAILED:
+		return "ppp-start-failed";
+	case NM_DEVICE_STATE_REASON_PPP_DISCONNECT:
+		return "ppp-disconnect";
+	case NM_DEVICE_STATE_REASON_PPP_FAILED:
+		return "ppp-failed";
+	case NM_DEVICE_STATE_REASON_DHCP_START_FAILED:
+		return "dhcp-start-failed";
+	case NM_DEVICE_STATE_REASON_DHCP_ERROR:
+		return "dhcp-error";
+	case NM_DEVICE_STATE_REASON_DHCP_FAILED:
+		return "dhcp-failed";
+	case NM_DEVICE_STATE_REASON_SHARED_START_FAILED:
+		return "sharing-start-failed";
+	case NM_DEVICE_STATE_REASON_SHARED_FAILED:
+		return "sharing-failed";
+	case NM_DEVICE_STATE_REASON_AUTOIP_START_FAILED:
+		return "autoip-start-failed";
+	case NM_DEVICE_STATE_REASON_AUTOIP_ERROR:
+		return "autoip-error";
+	case NM_DEVICE_STATE_REASON_AUTOIP_FAILED:
+		return "autoip-failed";
+	case NM_DEVICE_STATE_REASON_MODEM_BUSY:
+		return "modem-busy";
+	case NM_DEVICE_STATE_REASON_MODEM_NO_DIAL_TONE:
+		return "modem-no-dialtone";
+	case NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER:
+		return "modem-no-carrier";
+	case NM_DEVICE_STATE_REASON_MODEM_DIAL_TIMEOUT:
+		return "modem-dial-timeout";
+	case NM_DEVICE_STATE_REASON_MODEM_DIAL_FAILED:
+		return "modem-dial-failed";
+	case NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED:
+		return "modem-init-failed";
+	case NM_DEVICE_STATE_REASON_GSM_APN_FAILED:
+		return "gsm-apn-failed";
+	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_NOT_SEARCHING:
+		return "gsm-registration-idle";
+	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_DENIED:
+		return "gsm-registration-denied";
+	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_TIMEOUT:
+		return "gsm-registration-timeout";
+	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_FAILED:
+		return "gsm-registration-failed";
+	case NM_DEVICE_STATE_REASON_GSM_PIN_CHECK_FAILED:
+		return "gsm-pin-check-failed";
+	case NM_DEVICE_STATE_REASON_FIRMWARE_MISSING:
+		return "firmware-missing";
+	case NM_DEVICE_STATE_REASON_REMOVED:
+		return "removed";
+	case NM_DEVICE_STATE_REASON_SLEEPING:
+		return "sleeping";
+	case NM_DEVICE_STATE_REASON_CONNECTION_REMOVED:
+		return "connection-removed";
+	case NM_DEVICE_STATE_REASON_USER_REQUESTED:
+		return "user-requested";
+	case NM_DEVICE_STATE_REASON_CARRIER:
+		return "carrier-chagned";
+	case NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED:
+		return "connection-assumed";
+	case NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE:
+		return "supplicant-available";
+	case NM_DEVICE_STATE_REASON_MODEM_NOT_FOUND:
+		return "modem-not-found";
+	case NM_DEVICE_STATE_REASON_BT_FAILED:
+		return "bluetooth-failed";
+	default:
+		break;
+	}
+	return "unknown";
+}
+
 void
 nm_device_state_changed (NMDevice *device,
                          NMDeviceState state,
@@ -3715,8 +3847,14 @@ nm_device_state_changed (NMDevice *device,
 	old_state = priv->state;
 	priv->state = state;
 
-	nm_log_info (LOGD_DEVICE, "(%s): device state change: %d -> %d (reason %d)",
-	             nm_device_get_iface (device), old_state, state, reason);
+	nm_log_info (LOGD_DEVICE, "(%s): device state change: %s -> %s (reason '%s') [%d %d %d]",
+	             nm_device_get_iface (device),
+	             state_to_string (old_state),
+	             state_to_string (state),
+	             reason_to_string (reason),
+	             old_state,
+	             state,
+	             reason);
 
 	/* Clear any delayed transitions */
 	delayed_transitions_clear (device);
