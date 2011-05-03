@@ -415,6 +415,8 @@ global:
 	nm_utils_ip4_routes_to_gvalue;
 	nm_utils_ip6_addresses_from_gvalue;
 	nm_utils_ip6_addresses_to_gvalue;
+	nm_utils_ip6_dns_from_gvalue;
+	nm_utils_ip6_dns_to_gvalue;
 	nm_utils_ip6_routes_from_gvalue;
 	nm_utils_ip6_routes_to_gvalue;
 	nm_utils_is_empty_ssid;
