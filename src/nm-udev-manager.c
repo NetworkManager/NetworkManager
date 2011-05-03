@@ -490,6 +490,7 @@ net_add (NMUdevManager *self, GUdevDevice *device)
 	gint etype;
 	const char *iface;
 	const char *tmp;
+	gboolean is_ctc;
 
 	g_return_if_fail (device != NULL);
 
@@ -499,12 +500,14 @@ net_add (NMUdevManager *self, GUdevDevice *device)
 		return;
 	}
 
+	etype = g_udev_device_get_sysfs_attr_as_int (device, "type");
+	is_ctc = (strncmp (iface, "ctc", 3) == 0) && (etype == 256);
+
 	/* Ignore devices that don't report Ethernet encapsulation, except for
 	 * s390 CTC-type devices that report 256 for some reason.
 	 * FIXME: use something other than interface name to detect CTC here.
 	 */
-	etype = g_udev_device_get_sysfs_attr_as_int (device, "type");
-	if ((etype != 1) && (!strncmp (iface, "ctc", 3) && (etype != 256))) {
+	if ((etype != 1) && (is_ctc == FALSE)) {
 		nm_log_dbg (LOGD_HW, "ignoring interface with type %d", etype);
 		return;
 	}
