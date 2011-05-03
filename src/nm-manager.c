@@ -992,6 +992,19 @@ user_proxy_cleanup (NMManager *self, gboolean resync_bt)
 	}
 }
 
+static const char*
+get_id_from_settings_hash (GHashTable *hash, const char *id)
+{
+	GHashTable *setting_hash;
+	GValue *value = NULL;
+
+	setting_hash = g_hash_table_lookup (hash, NM_SETTING_CONNECTION_SETTING_NAME);
+	if (setting_hash && (!strcmp (id, NM_SETTING_CONNECTION_ID) || !strcmp (id, NM_SETTING_CONNECTION_UUID)))
+		 value = g_hash_table_lookup (setting_hash, id);
+
+	return value ? g_value_get_string (value) : "(unknown)";
+}
+
 typedef struct GetSettingsInfo {
 	NMManager *manager;
 	NMConnection *connection;
@@ -1058,7 +1071,7 @@ user_connection_get_settings_cb  (DBusGProxy *proxy,
 
 	manager = info->manager;
 	connection = info->connection;
- 	if (connection == NULL) {
+	if (connection == NULL) {
 		const char *path = dbus_g_proxy_get_path (proxy);
 		NMManagerPrivate *priv;
 		GError *error = NULL;
@@ -1066,7 +1079,9 @@ user_connection_get_settings_cb  (DBusGProxy *proxy,
 
 		connection = nm_connection_new_from_hash (settings, &error);
 		if (connection == NULL) {
-			nm_log_warn (LOGD_USER_SET, "invalid connection: '%s' / '%s' invalid: %d",
+			nm_log_warn (LOGD_USER_SET, "invalid connection %s (%s): '%s' / '%s' invalid: %d",
+			             get_id_from_settings_hash (settings, NM_SETTING_CONNECTION_ID),
+			             get_id_from_settings_hash (settings, NM_SETTING_CONNECTION_UUID),
 			             g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)),
 			             error->message, error->code);
 			g_error_free (error);
@@ -1159,7 +1174,9 @@ user_connection_updated_cb (DBusGProxy *proxy,
 	new_connection = nm_connection_new_from_hash (settings, &error);
 	if (!new_connection) {
 		/* New connection invalid, remove existing connection */
-		nm_log_warn (LOGD_USER_SET, "invalid connection: '%s' / '%s' invalid: %d",
+		nm_log_warn (LOGD_USER_SET, "invalid connection %s (%s): '%s' / '%s' invalid: %d",
+		             get_id_from_settings_hash (settings, NM_SETTING_CONNECTION_ID),
+		             get_id_from_settings_hash (settings, NM_SETTING_CONNECTION_UUID),
 		             g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)),
 		             error->message, error->code);
 		g_error_free (error);
@@ -1438,7 +1455,13 @@ system_connection_updated_cb (NMSettingsConnectionInterface *connection,
 
 	if (!nm_connection_verify (NM_CONNECTION (existing), &error)) {
 		/* Updated connection invalid, remove existing connection */
-		nm_log_warn (LOGD_SYS_SET, "invalid connection: '%s' / '%s' invalid: %d",
+		NMSettingConnection *s_con;
+		const char *id, *uuid;
+		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (NM_CONNECTION (existing), NM_TYPE_SETTING_CONNECTION));
+
+		nm_log_warn (LOGD_SYS_SET, "invalid connection %s (%s): '%s' / '%s' invalid: %d",
+		             s_con && (id = nm_setting_connection_get_id (s_con)) ? id : "(unknown)",
+		             s_con && (uuid = nm_setting_connection_get_uuid (s_con)) ? uuid: "(unknown)",
 		             g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)),
 		             error->message, error->code);
 		g_error_free (error);
