@@ -112,7 +112,8 @@ set_visible (NMSettingsConnection *self, gboolean new_visible)
 gboolean
 nm_settings_connection_is_visible (NMSettingsConnection *self)
 {
-	g_return_val_if_fail (NM_SETTINGS_CONNECTION (self), FALSE);
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
 
 	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->visible;
 }
@@ -124,7 +125,8 @@ nm_settings_connection_recheck_visibility (NMSettingsConnection *self)
 	NMSettingConnection *s_con;
 	guint32 num, i;
 
-	g_return_if_fail (NM_SETTINGS_CONNECTION (self));
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
 
 	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
@@ -1271,7 +1273,8 @@ nm_settings_connection_signal_remove (NMSettingsConnection *self)
 guint64
 nm_settings_connection_get_timestamp (NMSettingsConnection *connection)
 {
-	g_return_val_if_fail (NM_SETTINGS_CONNECTION (connection), 0);
+	g_return_val_if_fail (connection != NULL, 0);
+	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (connection), 0);
 
 	return NM_SETTINGS_CONNECTION_GET_PRIVATE (connection)->timestamp;
 }
