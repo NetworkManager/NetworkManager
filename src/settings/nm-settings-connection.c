@@ -1424,6 +1424,8 @@ dispose (GObject *object)
 
 	set_visible (self, FALSE);
 
+	if (priv->session_changed_id)
+		g_signal_handler_disconnect (priv->session_monitor, priv->session_changed_id);
 	g_object_unref (priv->session_monitor);
 	g_object_unref (priv->agent_mgr);
 	g_object_unref (priv->dbus_mgr);
