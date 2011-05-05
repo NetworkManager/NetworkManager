@@ -1142,7 +1142,7 @@ get_decoded_property (GUdevDevice *device, const char *property)
 }
 
 static void
-nm_device_update_description (NMDevice *device)
+_device_update_description (NMDevice *device)
 {
 	NMDevicePrivate *priv;
 	const char *subsys[3] = { "net", "tty", NULL };
@@ -1257,7 +1257,7 @@ nm_device_get_product (NMDevice *device)
 
 	priv = NM_DEVICE_GET_PRIVATE (device);
 	if (!priv->product)
-		nm_device_update_description (device);
+		_device_update_description (device);
 	return priv->product;
 }
 
@@ -1279,7 +1279,7 @@ nm_device_get_vendor (NMDevice *device)
 
 	priv = NM_DEVICE_GET_PRIVATE (device);
 	if (!priv->vendor)
-		nm_device_update_description (device);
+		_device_update_description (device);
 	return priv->vendor;
 }
 
