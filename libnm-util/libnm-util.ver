@@ -130,6 +130,7 @@ global:
 	nm_setting_802_1x_get_phase2_private_key_path;
 	nm_setting_802_1x_get_phase2_private_key_scheme;
 	nm_setting_802_1x_get_pin;
+	nm_setting_802_1x_get_pin_flags;
 	nm_setting_802_1x_get_private_key_blob;
 	nm_setting_802_1x_get_private_key_format;
 	nm_setting_802_1x_get_private_key_password;
