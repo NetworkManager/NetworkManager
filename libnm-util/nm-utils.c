@@ -550,7 +550,7 @@ _nm_utils_string_slist_validate (GSList *list, const char **valid_values)
 }
 
 static void
-nm_utils_convert_strv_to_slist (const GValue *src_value, GValue *dest_value)
+_nm_utils_convert_strv_to_slist (const GValue *src_value, GValue *dest_value)
 {
 	char **str;
 	GSList *list = NULL;
@@ -567,7 +567,7 @@ nm_utils_convert_strv_to_slist (const GValue *src_value, GValue *dest_value)
 }
 
 static void
-nm_utils_convert_strv_to_ptrarray (const GValue *src_value, GValue *dest_value)
+_nm_utils_convert_strv_to_ptrarray (const GValue *src_value, GValue *dest_value)
 {
 	char **str;
 	GPtrArray *array = NULL;
@@ -585,7 +585,7 @@ nm_utils_convert_strv_to_ptrarray (const GValue *src_value, GValue *dest_value)
 }
 
 static void
-nm_utils_convert_strv_to_string (const GValue *src_value, GValue *dest_value)
+_nm_utils_convert_strv_to_string (const GValue *src_value, GValue *dest_value)
 {
 	GSList *strings;
 	GString *printable;
@@ -611,7 +611,7 @@ nm_utils_convert_strv_to_string (const GValue *src_value, GValue *dest_value)
 }
 
 static void
-nm_utils_convert_string_array_to_string (const GValue *src_value, GValue *dest_value)
+_nm_utils_convert_string_array_to_string (const GValue *src_value, GValue *dest_value)
 {
 	GPtrArray *strings;
 	GString *printable;
@@ -637,7 +637,7 @@ nm_utils_convert_string_array_to_string (const GValue *src_value, GValue *dest_v
 }
 
 static void
-nm_utils_convert_uint_array_to_string (const GValue *src_value, GValue *dest_value)
+_nm_utils_convert_uint_array_to_string (const GValue *src_value, GValue *dest_value)
 {
 	GArray *array;
 	GString *printable;
@@ -669,7 +669,7 @@ nm_utils_convert_uint_array_to_string (const GValue *src_value, GValue *dest_val
 }
 
 static void
-nm_utils_convert_ip4_addr_route_struct_array_to_string (const GValue *src_value, GValue *dest_value)
+_nm_utils_convert_ip4_addr_route_struct_array_to_string (const GValue *src_value, GValue *dest_value)
 {
 	GPtrArray *ptr_array;
 	GString *printable;
@@ -754,7 +754,7 @@ convert_one_gvalue_hash_entry (gpointer key, gpointer value, gpointer user_data)
 }
 
 static void
-nm_utils_convert_gvalue_hash_to_string (const GValue *src_value, GValue *dest_value)
+_nm_utils_convert_gvalue_hash_to_string (const GValue *src_value, GValue *dest_value)
 {
 	GHashTable *hash;
 	GString *printable;
@@ -780,7 +780,7 @@ convert_one_string_hash_entry (gpointer key, gpointer value, gpointer user_data)
 }
 
 static void
-nm_utils_convert_string_hash_to_string (const GValue *src_value, GValue *dest_value)
+_nm_utils_convert_string_hash_to_string (const GValue *src_value, GValue *dest_value)
 {
 	GHashTable *hash;
 	GString *printable;
@@ -799,7 +799,7 @@ nm_utils_convert_string_hash_to_string (const GValue *src_value, GValue *dest_va
 }
 
 static void
-nm_utils_convert_byte_array_to_string (const GValue *src_value, GValue *dest_value)
+_nm_utils_convert_byte_array_to_string (const GValue *src_value, GValue *dest_value)
 {
 	GArray *array;
 	GString *printable;
@@ -827,7 +827,7 @@ nm_utils_convert_byte_array_to_string (const GValue *src_value, GValue *dest_val
 }
 
 static gboolean
-nm_utils_inet6_ntop (struct in6_addr *addr, char *buf)
+_nm_utils_inet6_ntop (struct in6_addr *addr, char *buf)
 {
 	if (!inet_ntop (AF_INET6, addr, buf, INET6_ADDRSTRLEN)) {
 		int i;
@@ -844,7 +844,7 @@ nm_utils_inet6_ntop (struct in6_addr *addr, char *buf)
 }
 
 static void
-nm_utils_convert_ip6_dns_array_to_string (const GValue *src_value, GValue *dest_value)
+_nm_utils_convert_ip6_dns_array_to_string (const GValue *src_value, GValue *dest_value)
 {
 	GPtrArray *ptr_array;
 	GString *printable;
@@ -870,7 +870,7 @@ nm_utils_convert_ip6_dns_array_to_string (const GValue *src_value, GValue *dest_
 		}
 		addr = (struct in6_addr *) bytearray->data;
 		memset (buf, 0, sizeof (buf));
-		nm_utils_inet6_ntop (addr, buf);
+		_nm_utils_inet6_ntop (addr, buf);
 		g_string_append_printf (printable, "%s", buf);
 	}
 	g_string_append_c (printable, ']');
@@ -880,7 +880,7 @@ nm_utils_convert_ip6_dns_array_to_string (const GValue *src_value, GValue *dest_
 }
 
 static void
-nm_utils_convert_ip6_addr_struct_array_to_string (const GValue *src_value, GValue *dest_value)
+_nm_utils_convert_ip6_addr_struct_array_to_string (const GValue *src_value, GValue *dest_value)
 {
 	GPtrArray *ptr_array;
 	GString *printable;
@@ -921,7 +921,7 @@ nm_utils_convert_ip6_addr_struct_array_to_string (const GValue *src_value, GValu
 		}
 		addr = (struct in6_addr *) ba_addr->data;
 		memset (buf, 0, sizeof (buf));
-		nm_utils_inet6_ntop (addr, buf);
+		_nm_utils_inet6_ntop (addr, buf);
 		g_string_append_printf (printable, "ip = %s", buf);
 		g_string_append (printable, ", ");
 
@@ -944,7 +944,7 @@ nm_utils_convert_ip6_addr_struct_array_to_string (const GValue *src_value, GValu
 		}
 		addr = (struct in6_addr *) ba_addr->data;
 		memset (buf, 0, sizeof (buf));
-		nm_utils_inet6_ntop (addr, buf);
+		_nm_utils_inet6_ntop (addr, buf);
 		g_string_append_printf (printable, "gw = %s", buf);
 		g_string_append (printable, " }");
 	}
@@ -955,7 +955,7 @@ nm_utils_convert_ip6_addr_struct_array_to_string (const GValue *src_value, GValu
 }
 
 static void
-nm_utils_convert_ip6_route_struct_array_to_string (const GValue *src_value, GValue *dest_value)
+_nm_utils_convert_ip6_route_struct_array_to_string (const GValue *src_value, GValue *dest_value)
 {
 	GPtrArray *ptr_array;
 	GString *printable;
@@ -997,7 +997,7 @@ nm_utils_convert_ip6_route_struct_array_to_string (const GValue *src_value, GVal
 		}
 		addr = (struct in6_addr *) ba_addr->data;
 		memset (buf, 0, sizeof (buf));
-		nm_utils_inet6_ntop (addr, buf);
+		_nm_utils_inet6_ntop (addr, buf);
 		g_string_append_printf (printable, "dst = %s", buf);
 		g_string_append (printable, ", ");
 
@@ -1020,7 +1020,7 @@ nm_utils_convert_ip6_route_struct_array_to_string (const GValue *src_value, GVal
 		}
 		addr = (struct in6_addr *) ba_addr->data;
 		memset (buf, 0, sizeof (buf));
-		nm_utils_inet6_ntop (addr, buf);
+		_nm_utils_inet6_ntop (addr, buf);
 		g_string_append_printf (printable, "nh = %s", buf);
 		g_string_append (printable, ", ");
 
@@ -1041,7 +1041,7 @@ nm_utils_convert_ip6_route_struct_array_to_string (const GValue *src_value, GVal
 #define OLD_DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS (dbus_g_type_get_collection ("GPtrArray", OLD_DBUS_TYPE_G_IP6_ADDRESS))
 
 static void
-nm_utils_convert_old_ip6_addr_array (const GValue *src_value, GValue *dst_value)
+_nm_utils_convert_old_ip6_addr_array (const GValue *src_value, GValue *dst_value)
 {
 	GPtrArray *src_outer_array;
 	GPtrArray *dst_outer_array;
@@ -1097,43 +1097,43 @@ _nm_utils_register_value_transformations (void)
 	if (G_UNLIKELY (!registered)) {
 		g_value_register_transform_func (G_TYPE_STRV, 
 		                                 DBUS_TYPE_G_LIST_OF_STRING,
-		                                 nm_utils_convert_strv_to_slist);
+		                                 _nm_utils_convert_strv_to_slist);
 		g_value_register_transform_func (G_TYPE_STRV,
 		                                 DBUS_TYPE_G_ARRAY_OF_STRING,
-		                                 nm_utils_convert_strv_to_ptrarray);
+		                                 _nm_utils_convert_strv_to_ptrarray);
 		g_value_register_transform_func (DBUS_TYPE_G_LIST_OF_STRING,
 		                                 G_TYPE_STRING, 
-		                                 nm_utils_convert_strv_to_string);
+		                                 _nm_utils_convert_strv_to_string);
 		g_value_register_transform_func (DBUS_TYPE_G_ARRAY_OF_STRING,
 		                                 G_TYPE_STRING,
-		                                 nm_utils_convert_string_array_to_string);
+		                                 _nm_utils_convert_string_array_to_string);
 		g_value_register_transform_func (DBUS_TYPE_G_UINT_ARRAY,
 		                                 G_TYPE_STRING, 
-		                                 nm_utils_convert_uint_array_to_string);
+		                                 _nm_utils_convert_uint_array_to_string);
 		g_value_register_transform_func (DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
 		                                 G_TYPE_STRING, 
-		                                 nm_utils_convert_ip4_addr_route_struct_array_to_string);
+		                                 _nm_utils_convert_ip4_addr_route_struct_array_to_string);
 		g_value_register_transform_func (DBUS_TYPE_G_MAP_OF_VARIANT,
 		                                 G_TYPE_STRING, 
-		                                 nm_utils_convert_gvalue_hash_to_string);
+		                                 _nm_utils_convert_gvalue_hash_to_string);
 		g_value_register_transform_func (DBUS_TYPE_G_MAP_OF_STRING,
 		                                 G_TYPE_STRING, 
-		                                 nm_utils_convert_string_hash_to_string);
+		                                 _nm_utils_convert_string_hash_to_string);
 		g_value_register_transform_func (DBUS_TYPE_G_UCHAR_ARRAY,
 		                                 G_TYPE_STRING,
-		                                 nm_utils_convert_byte_array_to_string);
+		                                 _nm_utils_convert_byte_array_to_string);
 		g_value_register_transform_func (DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UCHAR,
 		                                 G_TYPE_STRING, 
-		                                 nm_utils_convert_ip6_dns_array_to_string);
+		                                 _nm_utils_convert_ip6_dns_array_to_string);
 		g_value_register_transform_func (DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS,
 		                                 G_TYPE_STRING, 
-		                                 nm_utils_convert_ip6_addr_struct_array_to_string);
+		                                 _nm_utils_convert_ip6_addr_struct_array_to_string);
 		g_value_register_transform_func (DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE,
 		                                 G_TYPE_STRING, 
-		                                 nm_utils_convert_ip6_route_struct_array_to_string);
+		                                 _nm_utils_convert_ip6_route_struct_array_to_string);
 		g_value_register_transform_func (OLD_DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS,
 		                                 DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS,
-		                                 nm_utils_convert_old_ip6_addr_array);
+		                                 _nm_utils_convert_old_ip6_addr_array);
 		registered = TRUE;
 	}
 }

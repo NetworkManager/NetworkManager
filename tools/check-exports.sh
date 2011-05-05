@@ -8,7 +8,7 @@ so=$1
 def=$2
 
 # Have to prefix with a tab and suffix with a ';' to match .ver file format
-get_syms='( objdump -t "$so" | grep "^[^ ]* [^l.*]*[.]"; objdump -t "$so" | grep "[.]hidden.*"; ) | sed "s/.* //" | sed "s/^/\t/" | sed "s/$/;/"'
+get_syms='( objdump -t "$so" | grep "^[^ ]* [^l.*]*[.]"; objdump -t "$so" | grep "^[^ ]* l[^.*]*\.text[^_]*nm_" | grep -v "_init"; ) | sed "s/.* //" | sed "s/^/\t/" | sed "s/$/;/"'
 
 echo $so: checking exported symbols against $def
 
