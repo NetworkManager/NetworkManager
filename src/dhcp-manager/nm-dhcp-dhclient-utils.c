@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2010 Red Hat, Inc.
+ * Copyright (C) 2011 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -166,8 +166,19 @@ nm_dhcp_dhclient_create_config (const char *interface,
 		}
 
 		if (hostname) {
-			g_string_append_printf (new_contents, HOSTNAME_FORMAT "\n", hostname);
+			char *plain_hostname, *dot;
+
+			plain_hostname = g_strdup (hostname);
+			dot = strchr (plain_hostname, '.');
+
+			/* get rid of the domain */
+			if (dot)
+				*dot = '\0';
+
+			g_string_append_printf (new_contents, HOSTNAME_FORMAT "\n", plain_hostname);
 			added = TRUE;
+
+			g_free (plain_hostname);
 		}
 
 		if (added)
