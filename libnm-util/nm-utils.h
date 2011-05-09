@@ -27,7 +27,6 @@
 #define NM_UTILS_H
 
 #include <glib.h>
-#include <execinfo.h>
 
 #include "nm-connection.h"
 
