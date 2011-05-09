@@ -3809,7 +3809,7 @@ reason_to_string (NMDeviceStateReason reason)
 	case NM_DEVICE_STATE_REASON_USER_REQUESTED:
 		return "user-requested";
 	case NM_DEVICE_STATE_REASON_CARRIER:
-		return "carrier-chagned";
+		return "carrier-changed";
 	case NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED:
 		return "connection-assumed";
 	case NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE:
