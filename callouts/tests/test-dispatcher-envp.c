@@ -130,17 +130,20 @@ static gboolean
 parse_main (GKeyFile *kf,
             GHashTable **out_con_hash,
             GHashTable **out_con_props,
-            char **out_iface,
+            char **out_expected_iface,
             char **out_action,
+            char **out_vpn_ip_iface,
             GError **error)
 {
 	char *uuid, *id;
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 
-	*out_iface = g_key_file_get_string (kf, "main", "iface", error);
-	if (*out_iface == NULL)
+	*out_expected_iface = g_key_file_get_string (kf, "main", "expected-iface", error);
+	if (*out_expected_iface == NULL)
 		return FALSE;
+
+	*out_vpn_ip_iface = g_key_file_get_string (kf, "main", "vpn-ip-iface", NULL);
 
 	*out_action = g_key_file_get_string (kf, "main", "action", error);
 	if (*out_action == NULL)
@@ -413,7 +416,7 @@ get_dispatcher_file (const char *file,
                      GHashTable **out_device_ip6_props,
                      GHashTable **out_device_dhcp4_props,
                      GHashTable **out_device_dhcp6_props,
-                     const char **out_vpn_ip_iface,
+                     char **out_vpn_ip_iface,
                      GHashTable **out_vpn_ip4_props,
                      GHashTable **out_vpn_ip6_props,
                      char **out_expected_iface,
@@ -429,7 +432,13 @@ get_dispatcher_file (const char *file,
 	if (!g_key_file_load_from_file (kf, file, G_KEY_FILE_NONE, error))
 		return FALSE;
 
-	if (!parse_main (kf, out_con_hash, out_con_props, out_expected_iface, out_action, error))
+	if (!parse_main (kf,
+	                 out_con_hash,
+	                 out_con_props,
+	                 out_expected_iface,
+	                 out_action,
+	                 out_vpn_ip_iface,
+	                 error))
 		goto out;
 
 	if (!parse_device (kf, out_device_props, error))
@@ -474,7 +483,7 @@ out:
 /*******************************************/
 
 static void
-test_generic (const char *path, const char *file)
+test_generic (const char *path, const char *file, const char *override_vpn_ip_iface)
 {
 	GHashTable *con_hash = NULL;
 	GHashTable *con_props = NULL;
@@ -483,7 +492,7 @@ test_generic (const char *path, const char *file)
 	GHashTable *device_ip6_props = NULL;
 	GHashTable *device_dhcp4_props = NULL;
 	GHashTable *device_dhcp6_props = NULL;
-	const char *vpn_ip_iface = NULL;
+	char *vpn_ip_iface = NULL;
 	GHashTable *vpn_ip4_props = NULL;
 	GHashTable *vpn_ip6_props = NULL;
 	char *expected_iface = NULL;
@@ -525,25 +534,31 @@ test_generic (const char *path, const char *file)
 	                                           device_ip6_props,
 	                                           device_dhcp4_props,
 	                                           device_dhcp6_props,
-	                                           vpn_ip_iface,
+	                                           override_vpn_ip_iface ? override_vpn_ip_iface : vpn_ip_iface,
 	                                           vpn_ip4_props,
 	                                           vpn_ip6_props,
 	                                           &out_iface);
 
 	/* Print out environment for now */
-	g_message ("\n");
+#ifdef DEBUG
+	g_message ("\n******* Generated environment:");
 	for (iter = denv; iter && *iter; iter++)
 		g_message ("   %s", *iter);
+#endif
 
-	g_assert_cmpint (g_strv_length (denv), ==, g_hash_table_size (expected_env));
-
+#ifdef DEBUG
 	{
 		GHashTableIter k;
 		const char *key;
+
+		g_message ("\n******* Expected environment:");
 		g_hash_table_iter_init (&k, expected_env);
 		while (g_hash_table_iter_next (&k, (gpointer) &key, NULL))
 			g_message ("   %s", key);
 	}
+#endif
+
+	g_assert_cmpint (g_strv_length (denv), ==, g_hash_table_size (expected_env));
 
 	/* Compare dispatcher generated env and expected env */
 	for (iter = denv; iter && *iter; iter++) {
@@ -556,6 +571,27 @@ test_generic (const char *path, const char *file)
 	}
 
 	g_assert_cmpstr (expected_iface, ==, out_iface);
+
+	g_free (out_iface);
+	g_free (vpn_ip_iface);
+	g_free (expected_iface);
+	g_free (action);
+	g_hash_table_destroy (con_hash);
+	g_hash_table_destroy (con_props);
+	g_hash_table_destroy (device_props);
+	if (device_ip4_props)
+		g_hash_table_destroy (device_ip4_props);
+	if (device_ip6_props)
+		g_hash_table_destroy (device_ip6_props);
+	if (device_dhcp4_props)
+		g_hash_table_destroy (device_dhcp4_props);
+	if (device_dhcp6_props)
+		g_hash_table_destroy (device_dhcp6_props);
+	if (vpn_ip4_props)
+		g_hash_table_destroy (vpn_ip4_props);
+	if (vpn_ip6_props)
+		g_hash_table_destroy (vpn_ip6_props);
+	g_hash_table_destroy (expected_env);
 }
 
 /*******************************************/
@@ -563,25 +599,34 @@ test_generic (const char *path, const char *file)
 static void
 test_old_up (const char *path)
 {
-	test_generic (path, "dispatcher-old-up");
+	test_generic (path, "dispatcher-old-up", NULL);
 }
 
 static void
 test_old_down (const char *path)
 {
-	test_generic (path, "dispatcher-old-down");
+	test_generic (path, "dispatcher-old-down", NULL);
 }
 
 static void
 test_old_vpn_up (const char *path)
 {
-	test_generic (path, "dispatcher-old-vpn-up");
+	test_generic (path, "dispatcher-old-vpn-up", NULL);
 }
 
 static void
 test_old_vpn_down (const char *path)
 {
-	test_generic (path, "dispatcher-old-vpn-down");
+	test_generic (path, "dispatcher-old-vpn-down", NULL);
+}
+
+static void
+test_up_empty_vpn_iface (const char *path)
+{
+	/* Test that an empty VPN iface variable, like is passed through D-Bus
+	 * from NM, is ignored by the dispatcher environment construction code.
+	 */
+	test_generic (path, "dispatcher-old-up", "");
 }
 
 /*******************************************/
@@ -609,6 +654,8 @@ int main (int argc, char **argv)
 	g_test_suite_add (suite, TESTCASE (test_old_down, argv[1]));
 	g_test_suite_add (suite, TESTCASE (test_old_vpn_up, argv[1]));
 	g_test_suite_add (suite, TESTCASE (test_old_vpn_down, argv[1]));
+
+	g_test_suite_add (suite, TESTCASE (test_up_empty_vpn_iface, argv[1]));
 
 	return g_test_run ();
 }

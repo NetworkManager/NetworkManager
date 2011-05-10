@@ -1,6 +1,6 @@
 [main]
 action=up
-iface=wlan0
+expected-iface=wlan0
 uuid=3fd2a33a-d81b-423f-ae99-e6baba742311
 id=Random Connection
 

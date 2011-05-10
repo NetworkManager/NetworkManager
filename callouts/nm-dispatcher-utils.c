@@ -410,6 +410,12 @@ nm_dispatcher_utils_construct_envp (const char *action,
 	if (!strcmp (action, "hostname"))
 		return g_new0 (char *, 1);
 
+	/* Canonicalize the VPN interface name; "" is used when passing it through
+	 * D-Bus so make sure that's fixed up here.
+	 */
+	if (vpn_ip_iface && !strlen (vpn_ip_iface))
+		vpn_ip_iface = NULL;
+
 	con_setting_hash = g_hash_table_lookup (connection_hash, NM_SETTING_CONNECTION_SETTING_NAME);
 	if (!con_setting_hash) {
 		g_warning ("Failed to read connection setting");
@@ -437,6 +443,8 @@ nm_dispatcher_utils_construct_envp (const char *action,
 		return NULL;
 	}
 	iface = g_value_get_string (value);
+	if (iface && !strlen (iface))
+		iface = NULL;
 
 	/* IP interface name */
 	value = g_hash_table_lookup (device_props, NMD_DEVICE_PROPS_IP_INTERFACE);
