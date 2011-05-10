@@ -512,7 +512,7 @@ validate_permissions_type (GHashTable *hash, GError **error)
 /**
  * nm_connection_replace_settings:
  * @connection: a #NMConnection
- * @new_settings: (element-type utf8 GHashTable<utf8,GValue>): a #GHashTable of settings
+ * @new_settings: (element-type utf8 GLib.HashTable): a #GHashTable of settings
  * @error: location to store error, or %NULL
  *
  * Returns: %TRUE if the settings were valid and added to the connection, %FALSE
@@ -640,9 +640,10 @@ diff_one_connection (NMConnection *a,
  * @a: a #NMConnection
  * @b: a second #NMConnection to compare with the first
  * @flags: compare flags, e.g. %NM_SETTING_COMPARE_FLAG_EXACT
- * @out_settings: (element-type utf8 GHashTable<utf8,guint32>): if the
+ * @out_settings: (element-type utf8 GLib.HashTable): if the
  * connections differ, on return a hash table mapping setting names to
- * second-level GHashTable, which contains key names that differ
+ * second-level GHashTable (utf8 to guint32), which contains the key names that
+ * differ mapped to one or more of %NMSettingDiffResult as a bitfield
  *
  * Compares two #NMConnection objects for similarity, with comparison behavior
  * modified by a set of flags.  See nm_setting_compare() for a description of
@@ -968,7 +969,7 @@ nm_connection_clear_secrets (NMConnection *connection)
  * are #GHashTables mapping string:GValue, each of which represents the
  * properties of the #NMSetting object.
  *
- * Returns: (transfer full) (element-type utf8 GHashTable<utf8,GValue>): a new
+ * Returns: (transfer full) (element-type utf8 GLib.HashTable): a new
  * #GHashTable describing the connection, its settings, and each setting's
  * properties.  The caller owns the hash table and must unref the hash table
  * with g_hash_table_unref() when it is no longer needed.

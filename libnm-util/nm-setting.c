@@ -112,9 +112,10 @@ destroy_gvalue (gpointer data)
  *
  * Converts the #NMSetting into a #GHashTable mapping each setting property
  * name to a GValue describing that property, suitable for marshalling over
- * D-Bus or serializing.  The mapping is string:GValue.
+ * D-Bus or serializing.  The mapping is string to GValue.
  * 
- * Returns: (transfer full) (element-type utf8 GObject.Value): a new #GHashTable describing the setting's properties
+ * Returns: (transfer full) (element-type utf8 GObject.Value): a new #GHashTable
+ * describing the setting's properties
  **/
 GHashTable *
 nm_setting_to_hash (NMSetting *setting, NMSettingHashFlags flags)
@@ -209,8 +210,8 @@ one_property_cb (gpointer key, gpointer val, gpointer user_data)
 /**
  * nm_setting_new_from_hash:
  * @setting_type: the #NMSetting type which the hash contains properties for
- * @hash: the #GHashTable containing a string:GValue mapping of properties
- * that apply to the setting
+ * @hash: (element-type utf8 GObject.Value): the #GHashTable containing a
+ * string to GValue mapping of properties that apply to the setting
  *
  * Creates a new #NMSetting object and populates that object with the properties
  * contained in the hash table, using each hash key as the property to set,
@@ -223,8 +224,7 @@ one_property_cb (gpointer key, gpointer val, gpointer user_data)
  * hash table, or NULL on failure
  **/
 NMSetting *
-nm_setting_new_from_hash (GType setting_type,
-                          GHashTable *hash)
+nm_setting_new_from_hash (GType setting_type, GHashTable *hash)
 {
 	NMSetting *setting;
 	NMSettingFromHashInfo info;
@@ -421,10 +421,11 @@ nm_setting_compare (NMSetting *a,
  * @flags: compare flags, e.g. %NM_SETTING_COMPARE_FLAG_EXACT
  * @invert_results: this parameter is used internally by libnm-util and should
  * be set to %FALSE.  If %TRUE inverts the meaning of the #NMSettingDiffResult.
- * @results: (element-type utf8 guint32): if the settings differ, on return a
- * hash table mapping the differing keys to one or more #NMSettingDiffResult
- * values OR-ed together.  If the settings do not differ, any hash table passed
- * in is unmodified.  If no hash table is passed in, a new one is created.
+ * @results: (inout) (transfer full) (element-type utf8 guint32): if the
+ * settings differ, on return a hash table mapping the differing keys to one or
+ * more %NMSettingDiffResult values OR-ed together.  If the settings do not
+ * differ, any hash table passed in is unmodified.  If no hash table is passed
+ * in and the settings differ, a new one is created and returned.
  *
  * Compares two #NMSetting objects for similarity, with comparison behavior
  * modified by a set of flags.  See the documentation for #NMSettingCompareFlags
@@ -661,8 +662,8 @@ update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **
 /**
  * nm_setting_update_secrets:
  * @setting: the #NMSetting
- * @secrets: a #GHashTable mapping string:#GValue of setting property names and
- * secrets
+ * @secrets: (element-type utf8 GObject.Value): a #GHashTable mapping
+ * string to #GValue of setting property names and secrets
  * @error: location to store error, or %NULL
  *
  * Update the setting's secrets, given a hash table of secrets intended for that
