@@ -228,20 +228,30 @@ construct_ip4_items (GSList *items, GHashTable *ip4_config, const char *prefix)
 static GSList *
 construct_device_dhcp4_items (GSList *items, GHashTable *dhcp4_config)
 {
-	GHashTableIter iter;
-	const char *key, *tmp;
-	GValue *val;
-	char *ucased;
+	GHashTableIter iter1, iter2;
+	const char *key1, *key2;
+	GValue *val1, *val2;
+	char *ucased1, *ucased2, *value_as_string;
 
 	if (dhcp4_config == NULL)
 		return items;
 
-	g_hash_table_iter_init (&iter, dhcp4_config);
-	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &val)) {
-		ucased = g_ascii_strup (key, -1);
-		tmp = g_value_get_string (val);
-		items = g_slist_prepend (items, g_strdup_printf ("DHCP4_%s=%s", ucased, tmp));
-		g_free (ucased);
+	g_hash_table_iter_init (&iter1, dhcp4_config);
+	while (g_hash_table_iter_next (&iter1, (gpointer) &key1, (gpointer) &val1)) {
+		if (g_type_is_a (G_VALUE_TYPE (val1), DBUS_TYPE_G_MAP_OF_VARIANT)) {
+			GHashTable *options_hash = (GHashTable *) g_value_get_boxed (val1);
+
+			g_hash_table_iter_init (&iter2, options_hash);
+			while (g_hash_table_iter_next (&iter2, (gpointer) &key2, (gpointer) &val2)) {
+				ucased1 = g_ascii_strup (key1, -1);
+				ucased2 = g_ascii_strup (key2, -1);
+				value_as_string = g_strdup_value_contents ((GValue *) val2);
+				items = g_slist_prepend (items, g_strdup_printf ("DHCP4_%s_%s=%s", ucased1, ucased2, value_as_string));
+				g_free (ucased1);
+				g_free (ucased2);
+				g_free (value_as_string);
+			}
+		}
 	}
 	return items;
 }
@@ -361,20 +371,30 @@ construct_ip6_items (GSList *items, GHashTable *ip6_config, const char *prefix)
 static GSList *
 construct_device_dhcp6_items (GSList *items, GHashTable *dhcp6_config)
 {
-	GHashTableIter iter;
-	const char *key, *tmp;
-	GValue *val;
-	char *ucased;
+	GHashTableIter iter1, iter2;
+	const char *key1, *key2;
+	GValue *val1, *val2;
+	char *ucased1, *ucased2, *value_as_string;
 
 	if (dhcp6_config == NULL)
 		return items;
 
-	g_hash_table_iter_init (&iter, dhcp6_config);
-	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &val)) {
-		ucased = g_ascii_strup (key, -1);
-		tmp = g_value_get_string (val);
-		items = g_slist_prepend (items, g_strdup_printf ("DHCP6_%s=%s", ucased, tmp));
-		g_free (ucased);
+	g_hash_table_iter_init (&iter1, dhcp6_config);
+	while (g_hash_table_iter_next (&iter1, (gpointer) &key1, (gpointer) &val1)) {
+		if (g_type_is_a (G_VALUE_TYPE (val1), DBUS_TYPE_G_MAP_OF_VARIANT)) {
+			GHashTable *options_hash = (GHashTable *) g_value_get_boxed (val1);
+
+			g_hash_table_iter_init (&iter2, options_hash);
+			while (g_hash_table_iter_next (&iter2, (gpointer) &key2, (gpointer) &val2)) {
+				ucased1 = g_ascii_strup (key1, -1);
+				ucased2 = g_ascii_strup (key2, -1);
+				value_as_string = g_strdup_value_contents ((GValue *) val2);
+				items = g_slist_prepend (items, g_strdup_printf ("DHCP6_%s_%s=%s", ucased1, ucased2, value_as_string));
+				g_free (ucased1);
+				g_free (ucased2);
+				g_free (value_as_string);
+			}
+		}
 	}
 	return items;
 }
