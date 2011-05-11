@@ -101,6 +101,23 @@ nm_dhcp6_config_get_option (NMDHCP6Config *self, const char *key)
 	return value ? g_value_get_string (value) : NULL;
 }
 
+/* Caller owns the list, but not the values in the list */
+GSList *
+nm_dhcp6_config_list_options (NMDHCP6Config *self)
+{
+	GHashTableIter iter;
+	const char *option = NULL;
+	GSList *list = NULL;
+
+	g_return_val_if_fail (NM_IS_DHCP6_CONFIG (self), NULL);
+
+	g_hash_table_iter_init (&iter, NM_DHCP6_CONFIG_GET_PRIVATE (self)->options);
+	while (g_hash_table_iter_next (&iter, (gpointer) &option, NULL))
+		list = g_slist_prepend (list, (gpointer) option);
+
+	return list;
+}
+
 const char *
 nm_dhcp6_config_get_dbus_path (NMDHCP6Config *self)
 {

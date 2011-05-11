@@ -58,4 +58,6 @@ void nm_dhcp4_config_reset (NMDHCP4Config *config);
 
 const char *nm_dhcp4_config_get_option (NMDHCP4Config *config, const char *option);
 
+GSList *nm_dhcp4_config_list_options (NMDHCP4Config *config);
+
 #endif /* NM_DHCP4_CONFIG_H */

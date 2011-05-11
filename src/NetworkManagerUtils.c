@@ -391,6 +391,38 @@ dump_object_to_props (GObject *object, GHashTable *hash)
 }
 
 static void
+dump_dhcp4_to_props (NMDHCP4Config *config, GHashTable *hash)
+{
+	GSList *options, *iter;
+
+	options = nm_dhcp4_config_list_options (config);
+	for (iter = options; iter; iter = g_slist_next (iter)) {
+		const char *option = (const char *) iter->data;
+		const char *val;
+
+		val = nm_dhcp4_config_get_option (config, option);
+		value_hash_add_str (hash, option, val);
+	}
+	g_slist_free (options);
+}
+
+static void
+dump_dhcp6_to_props (NMDHCP6Config *config, GHashTable *hash)
+{
+	GSList *options, *iter;
+
+	options = nm_dhcp6_config_list_options (config);
+	for (iter = options; iter; iter = g_slist_next (iter)) {
+		const char *option = (const char *) iter->data;
+		const char *val;
+
+		val = nm_dhcp6_config_get_option (config, option);
+		value_hash_add_str (hash, option, val);
+	}
+	g_slist_free (options);
+}
+
+static void
 fill_device_props (NMDevice *device,
                    GHashTable *dev_hash,
                    GHashTable *ip4_hash,
@@ -420,11 +452,11 @@ fill_device_props (NMDevice *device,
 
 	dhcp4_config = nm_device_get_dhcp4_config (device);
 	if (dhcp4_config)
-		dump_object_to_props (G_OBJECT (dhcp4_config), dhcp4_hash);
+		dump_dhcp4_to_props (dhcp4_config, dhcp4_hash);
 
 	dhcp6_config = nm_device_get_dhcp6_config (device);
 	if (dhcp6_config)
-		dump_object_to_props (G_OBJECT (dhcp6_config), dhcp6_hash);
+		dump_dhcp6_to_props (dhcp6_config, dhcp6_hash);
 }
 
 static void
