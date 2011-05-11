@@ -278,6 +278,8 @@ remove_all_nsps (NMDeviceWimax *self)
 {
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 
+	set_current_nsp (self, NULL);
+
 	while (g_slist_length (priv->nsp_list)) {
 		NMWimaxNsp *nsp = NM_WIMAX_NSP (priv->nsp_list->data);
 
@@ -1278,15 +1280,17 @@ device_state_changed (NMDevice *device,
 	if (new_state < NM_DEVICE_STATE_DISCONNECTED)
 		remove_all_nsps (self);
 
-	/* Request initial NSP list */
+	/* Request initial NSP list when device is first started */
 	if (   new_state == NM_DEVICE_STATE_DISCONNECTED
 	    && old_state < NM_DEVICE_STATE_DISCONNECTED) {
 		if (priv->sdk)
 			iwmx_sdk_get_networks (priv->sdk);
 	}
 
-	if (new_state == NM_DEVICE_STATE_FAILED || new_state <= NM_DEVICE_STATE_DISCONNECTED)
+	if (new_state == NM_DEVICE_STATE_FAILED || new_state <= NM_DEVICE_STATE_DISCONNECTED) {
+		set_current_nsp (self, NULL);
 		clear_activation_timeout (self);
+	}
 
 	if (new_state == NM_DEVICE_STATE_ACTIVATED) {
 		/* poll link quality and BSID */
