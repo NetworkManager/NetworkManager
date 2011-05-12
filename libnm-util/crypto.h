@@ -136,4 +136,9 @@ gboolean crypto_verify_pkcs12 (const GByteArray *data,
                                const char *password,
                                GError **error);
 
+gboolean crypto_verify_pkcs8 (const GByteArray *data,
+                              gboolean is_encrypted,
+                              const char *password,
+                              GError **error);
+
 #endif  /* __CRYPTO_H__ */

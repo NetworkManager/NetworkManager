@@ -17,5 +17,8 @@ EXTRA_DIST = \
 	test2-cert.p12 \
 	ca-no-ending-newline.pem \
 	test-key-only.pem \
-	test-key-only-decrypted.der
+	test-key-only-decrypted.der \
+	pkcs8-enc-key.pem \
+	pkcs8-noenc-key.pem \
+	pkcs8-decrypted.der
 

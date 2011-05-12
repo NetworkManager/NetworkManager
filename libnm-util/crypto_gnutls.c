@@ -439,6 +439,57 @@ out:
 }
 
 gboolean
+crypto_verify_pkcs8 (const GByteArray *data,
+                     gboolean is_encrypted,
+                     const char *password,
+                     GError **error)
+{
+	gnutls_x509_privkey_t p8;
+	gnutls_datum dt;
+	int err;
+
+	g_return_val_if_fail (data != NULL, FALSE);
+
+	dt.data = (unsigned char *) data->data;
+	dt.size = data->len;
+
+	err = gnutls_x509_privkey_init (&p8);
+	if (err < 0) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_DECODE_FAILED,
+		             _("Couldn't initialize PKCS#8 decoder: %s"),
+		             gnutls_strerror (err));
+		return FALSE;
+	}
+
+	err = gnutls_x509_privkey_import_pkcs8 (p8,
+	                                        &dt,
+	                                        GNUTLS_X509_FMT_DER,
+	                                        is_encrypted ? password : NULL,
+	                                        is_encrypted ? 0 : GNUTLS_PKCS_PLAIN);
+	gnutls_x509_privkey_deinit (p8);
+
+	if (err < 0) {
+		if (err == GNUTLS_E_UNKNOWN_CIPHER_TYPE) {
+			/* HACK: gnutls doesn't support all the cipher types that openssl
+			 * can use with PKCS#8, so if we encounter one, we have to assume
+			 * the given password works.  gnutls needs to unsuckify, apparently.
+			 * Specifically, by default openssl uses pbeWithMD5AndDES-CBC
+			 * which gnutls does not support.
+			 */
+		} else {
+			g_set_error (error, NM_CRYPTO_ERROR,
+				         NM_CRYPTO_ERR_FILE_FORMAT_INVALID,
+				         _("Couldn't decode PKCS#8 file: %s"),
+				         gnutls_strerror (err));
+			return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
+gboolean
 crypto_randomize (void *buffer, gsize buffer_len, GError **error)
 {
 	gcry_randomize (buffer, buffer_len, GCRY_STRONG_RANDOM);

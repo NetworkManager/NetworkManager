@@ -239,6 +239,29 @@ test_is_pkcs12 (const char *path, gboolean expect_fail, const char *desc)
 }
 
 static void
+test_load_pkcs8 (const char *path,
+                 const char *password,
+                 gboolean expect_fail,
+                 const char *desc)
+{
+	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	GError *error = NULL;
+
+	format = crypto_verify_private_key (path, password, &error);
+	if (expect_fail) {
+		ASSERT (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN, desc,
+		        "unexpected success reading PKCS#8 private key file "
+		        "'%s' with invalid password",
+		        path);
+	} else {
+		ASSERT (format == NM_CRYPTO_FILE_FORMAT_RAW_KEY, desc,
+			    "%s: unexpected PKCS#8 private key file format (expected %d, got "
+			    "%d): %d %s",
+			    path, NM_CRYPTO_FILE_FORMAT_RAW_KEY, format, error->code, error->message);
+	}
+}
+
+static void
 test_encrypt_private_key (const char *path,
                           const char *password,
                           const char *desc)
@@ -316,6 +339,17 @@ int main (int argc, char **argv)
 		test_load_pkcs12 (argv[2], argv[3], FALSE, "pkcs12-private-key");
 		test_load_pkcs12 (argv[2], "blahblahblah", TRUE, "pkcs12-private-key-bad-password");
 		test_load_pkcs12_no_password (argv[2], "pkcs12-private-key-no-password");
+	} else if (!strcmp (argv[1], "--pkcs8")) {
+		ASSERT (argc == 4, "test-crypto",
+		        "wrong number of arguments (--pkcs8 <key file> <password>)");
+
+		test_is_pkcs12 (argv[2], TRUE, "not-pkcs12");
+		test_load_pkcs8 (argv[2], argv[3], FALSE, "pkcs8-private-key");
+		/* Until gnutls and NSS grow support for all the ciphers that openssl
+		 * can use with PKCS#8, we can't actually verify the password.  So we
+		 * expect a bad password to work for the time being.
+		 */
+		test_load_pkcs8 (argv[2], "blahblahblah", FALSE, "pkcs8-private-key-bad-password");
 	} else {
 		ASSERT (argc > 2, "test-crypto", "unknown test type (not --cert, --key, or --p12)");
 	}

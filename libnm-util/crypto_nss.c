@@ -542,6 +542,21 @@ error:
 }
 
 gboolean
+crypto_verify_pkcs8 (const GByteArray *data,
+                     gboolean is_encrypted,
+                     const char *password,
+                     GError **error)
+{
+	g_return_val_if_fail (data != NULL, FALSE);
+
+	/* NSS apparently doesn't do PKCS#8 natively, but you have to put the
+	 * PKCS#8 key into a PKCS#12 file and import that??  So until we figure
+	 * all that out, we can only assume the password is valid.
+	 */
+	return TRUE;
+}
+
+gboolean
 crypto_randomize (void *buffer, gsize buffer_len, GError **error)
 {
 	SECStatus s;

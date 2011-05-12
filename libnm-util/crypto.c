@@ -52,6 +52,12 @@ _nm_crypto_error_quark (void)
 #define PEM_CERT_BEGIN    "-----BEGIN CERTIFICATE-----"
 #define PEM_CERT_END      "-----END CERTIFICATE-----"
 
+#define PEM_PKCS8_ENC_KEY_BEGIN "-----BEGIN ENCRYPTED PRIVATE KEY-----"
+#define PEM_PKCS8_ENC_KEY_END   "-----END ENCRYPTED PRIVATE KEY-----"
+
+#define PEM_PKCS8_DEC_KEY_BEGIN "-----BEGIN PRIVATE KEY-----"
+#define PEM_PKCS8_DEC_KEY_END   "-----END PRIVATE KEY-----"
+
 static gboolean
 find_tag (const char *tag,
           const GByteArray *array,
@@ -248,6 +254,71 @@ parse_error:
 	if (lines)
 		g_strfreev (lines);
 	return NULL;
+}
+
+static GByteArray *
+parse_pkcs8_key_file (const GByteArray *contents,
+                      gboolean *out_encrypted,
+                      GError **error)
+{
+	GByteArray *key = NULL;
+	gsize start = 0, end = 0;
+	unsigned char *der = NULL;
+	guint8 save_end;
+	gsize length = 0;
+	const char *start_tag = NULL, *end_tag = NULL;
+	gboolean encrypted = FALSE;
+
+	/* Try encrypted first, decrypted next */
+	if (find_tag (PEM_PKCS8_ENC_KEY_BEGIN, contents, 0, &start)) {
+		start_tag = PEM_PKCS8_ENC_KEY_BEGIN;
+		end_tag = PEM_PKCS8_ENC_KEY_END;
+		encrypted = TRUE;
+	} else if (find_tag (PEM_PKCS8_DEC_KEY_BEGIN, contents, 0, &start)) {
+		start_tag = PEM_PKCS8_DEC_KEY_BEGIN;
+		end_tag = PEM_PKCS8_DEC_KEY_END;
+		encrypted = FALSE;
+	} else {
+		g_set_error_literal (error, NM_CRYPTO_ERROR,
+		                     NM_CRYPTO_ERR_FILE_FORMAT_INVALID,
+		                     _("Failed to find expected PKCS#8 start tag."));
+		return NULL;
+	}
+
+	start += strlen (start_tag);
+	if (!find_tag (end_tag, contents, start, &end)) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_FILE_FORMAT_INVALID,
+		             _("Failed to find expected PKCS#8 end tag '%s'."),
+		             end_tag);
+		return NULL;
+	}
+
+	/* g_base64_decode() wants a NULL-terminated string */
+	save_end = contents->data[end];
+	contents->data[end] = '\0';
+	der = g_base64_decode ((const char *) (contents->data + start), &length);
+	contents->data[end] = save_end;
+
+	if (der && length) {
+		key = g_byte_array_sized_new (length);
+		if (key) {
+			g_byte_array_append (key, der, length);
+			g_assert (key->len == length);
+			*out_encrypted = encrypted;
+		} else {
+			g_set_error_literal (error, NM_CRYPTO_ERROR,
+			                     NM_CRYPTO_ERR_OUT_OF_MEMORY,
+			                     _("Not enough memory to store private key data."));
+		}
+	} else {
+		g_set_error_literal (error, NM_CRYPTO_ERROR,
+		                     NM_CRYPTO_ERR_DECODE_FAILED,
+		                     _("Failed to decode PKCS#8 private key."));
+	}
+
+	g_free (der);
+	return key;
 }
 
 static GByteArray *
@@ -654,6 +725,7 @@ crypto_verify_private_key_data (const GByteArray *contents,
 	GByteArray *tmp;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	NMCryptoKeyType ktype = NM_CRYPTO_KEY_TYPE_UNKNOWN;
+	gboolean is_encrypted = FALSE;
 
 	g_return_val_if_fail (contents != NULL, FALSE);
 
@@ -662,15 +734,29 @@ crypto_verify_private_key_data (const GByteArray *contents,
 		if (!password || crypto_verify_pkcs12 (contents, password, error))
 			format = NM_CRYPTO_FILE_FORMAT_PKCS12;
 	} else {
-		tmp = crypto_decrypt_private_key_data (contents, password, &ktype, error);
+		/* Maybe it's PKCS#8 */
+		tmp = parse_pkcs8_key_file (contents, &is_encrypted, error);
+		if (tmp) {
+			if (crypto_verify_pkcs8 (tmp, is_encrypted, password, error))
+				format = NM_CRYPTO_FILE_FORMAT_RAW_KEY;
+		} else {
+			g_clear_error (error);
+
+			/* Or it's old-style OpenSSL */
+			tmp = crypto_decrypt_private_key_data (contents, password, &ktype, error);
+			if (tmp)
+				format = NM_CRYPTO_FILE_FORMAT_RAW_KEY;
+			else if (!password && (ktype != NM_CRYPTO_KEY_TYPE_UNKNOWN))
+				format = NM_CRYPTO_FILE_FORMAT_RAW_KEY;
+		}
+
 		if (tmp) {
 			/* Don't leave decrypted key data around */
 			memset (tmp->data, 0, tmp->len);
 			g_byte_array_free (tmp, TRUE);
-			format = NM_CRYPTO_FILE_FORMAT_RAW_KEY;
-		} else if (!password && (ktype != NM_CRYPTO_KEY_TYPE_UNKNOWN))
-			format = NM_CRYPTO_FILE_FORMAT_RAW_KEY;
+		}
 	}
+
 	return format;
 }
 

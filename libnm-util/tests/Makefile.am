@@ -84,6 +84,9 @@ check-local: test-settings-defaults test-crypto test-secrets
 # Private key by itself (PEM)
 	$(abs_builddir)/test-setting-8021x $(srcdir)/certs/test-key-only.pem "test"
 
+# PKCS#8 private key by itself (PEM)
+	$(abs_builddir)/test-setting-8021x $(srcdir)/certs/pkcs8-enc-key.pem "1234567890"
+
 # Private key and CA certificate in the same file (pkcs12)
 	$(abs_builddir)/test-setting-8021x $(srcdir)/certs/test-cert.p12 "test"
 
@@ -125,6 +128,11 @@ check-local: test-settings-defaults test-crypto test-secrets
 
 # Another PKCS#12 file
 	$(abs_builddir)/test-crypto --p12 $(srcdir)/certs/test2-cert.p12 "12345testing"
+
+# PKCS#8 encrypted private key
+	$(abs_builddir)/test-crypto --pkcs8 \
+		$(srcdir)/certs/pkcs8-enc-key.pem \
+		"1234567890"
 
 endif
 
