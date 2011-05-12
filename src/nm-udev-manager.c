@@ -439,9 +439,13 @@ device_creator (NMUdevManager *manager,
 		if (parent) {
 			driver = g_udev_device_get_driver (parent);
 			if (!driver) {
-				/* try the grandparent only if it's an ibmebus device */
+				/* try the grandparent if it's an ibmebus device or if the
+				 * subsys is NULL which usually indicates some sort of
+				 * platform device like a 'gadget' net interface.
+				 */
 				subsys = g_udev_device_get_subsystem (parent);
-				if (subsys && !strcmp (subsys, "ibmebus")) {
+				if (   (g_strcmp0 (subsys, "ibmebus") == 0)
+				    || (subsys == NULL)) {
 					grandparent = g_udev_device_get_parent (parent);
 					if (grandparent)
 						driver = g_udev_device_get_driver (grandparent);
