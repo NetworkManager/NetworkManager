@@ -58,6 +58,11 @@ global:
 	nm_client_wwan_get_enabled;
 	nm_client_wwan_hardware_get_enabled;
 	nm_client_wwan_set_enabled;
+	nm_device_adsl_error_get_type;
+	nm_device_adsl_error_quark;
+	nm_device_adsl_get_carrier;
+	nm_device_adsl_get_type;
+	nm_device_adsl_new;
 	nm_device_bond_error_get_type;
 	nm_device_bond_error_quark;
 	nm_device_bond_get_carrier;

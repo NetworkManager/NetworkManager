@@ -22,6 +22,7 @@
 
 #include <nm-setting-connection.h>
 #include <nm-setting-wired.h>
+#include <nm-setting-adsl.h>
 #include <nm-setting-8021x.h>
 #include <nm-setting-wireless.h>
 #include <nm-setting-wireless-security.h>
@@ -63,5 +64,6 @@ gboolean setting_wimax_details (NMSettingWimax *s_wimax, NmCli *nmc);
 gboolean setting_infiniband_details (NMSettingInfiniband *s_infiniband, NmCli *nmc);
 gboolean setting_bond_details (NMSettingBond *s_bond, NmCli *nmc);
 gboolean setting_vlan_details (NMSettingVlan *s_vlan, NmCli *nmc);
+gboolean setting_adsl_details (NMSettingAdsl *s_adsl, NmCli *nmc);
 
 #endif /* NMC_SETTINGS_H */

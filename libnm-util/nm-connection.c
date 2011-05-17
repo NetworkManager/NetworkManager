@@ -41,6 +41,7 @@
 #include "nm-setting-pppoe.h"
 #include "nm-setting-wimax.h"
 #include "nm-setting-wired.h"
+#include "nm-setting-adsl.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-serial.h"
@@ -117,7 +118,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 static GHashTable *registered_settings = NULL;
 
-#define DEFAULT_MAP_SIZE 19
+#define DEFAULT_MAP_SIZE 20
 
 static struct SettingInfo {
 	const char *name;
@@ -257,6 +258,11 @@ register_default_settings (void)
 	register_one_setting (NM_SETTING_PPPOE_SETTING_NAME,
 	                      NM_TYPE_SETTING_PPPOE,
 	                      NM_SETTING_PPPOE_ERROR,
+	                      3, TRUE);
+
+	register_one_setting (NM_SETTING_ADSL_SETTING_NAME,
+	                      NM_TYPE_SETTING_ADSL,
+	                      NM_SETTING_ADSL_ERROR,
 	                      3, TRUE);
 
 	register_one_setting (NM_SETTING_802_1X_SETTING_NAME,
@@ -1622,6 +1628,23 @@ nm_connection_get_setting_wired (NMConnection *connection)
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
+}
+
+/**
+ * nm_connection_get_setting_adsl:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingAdsl the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingAdsl if the connection contains one, otherwise NULL
+ **/
+NMSettingAdsl *
+nm_connection_get_setting_adsl (NMConnection *connection)
+{
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingAdsl *) nm_connection_get_setting (connection, NM_TYPE_SETTING_ADSL);
 }
 
 /**

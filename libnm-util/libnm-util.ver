@@ -15,6 +15,7 @@ global:
 	nm_connection_get_path;
 	nm_connection_get_setting;
 	nm_connection_get_setting_802_1x;
+	nm_connection_get_setting_adsl;
 	nm_connection_get_setting_bluetooth;
 	nm_connection_get_setting_bond;
 	nm_connection_get_setting_by_name;
@@ -32,7 +33,6 @@ global:
 	nm_connection_get_setting_vpn;
 	nm_connection_get_setting_wimax;
 	nm_connection_get_setting_wired;
-	nm_connection_get_setting_adsl;
 	nm_connection_get_setting_wireless;
 	nm_connection_get_setting_wireless_security;
 	nm_connection_get_type;
@@ -174,14 +174,14 @@ global:
 	nm_setting_802_1x_set_private_key;
 	nm_setting_adsl_error_get_type;
 	nm_setting_adsl_error_quark;
-	nm_setting_adsl_get_username;
+	nm_setting_adsl_get_encapsulation;
 	nm_setting_adsl_get_password;
 	nm_setting_adsl_get_password_flags;
 	nm_setting_adsl_get_protocol;
-	nm_setting_adsl_get_encapsulation;
-	nm_setting_adsl_get_vpi;
-	nm_setting_adsl_get_vci;
 	nm_setting_adsl_get_type;
+	nm_setting_adsl_get_username;
+	nm_setting_adsl_get_vci;
+	nm_setting_adsl_get_vpi;
 	nm_setting_adsl_new;
 	nm_setting_bluetooth_error_get_type;
 	nm_setting_bluetooth_error_quark;

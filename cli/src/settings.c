@@ -348,6 +348,26 @@ static NmcOutputField nmc_fields_setting_pppoe[] = {
                                          NM_SETTING_PPPOE_PASSWORD
 #define NMC_FIELDS_SETTING_PPPOE_COMMON  NMC_FIELDS_SETTING_PPP_ALL
 
+/* Available fields for NM_SETTING_ADSL_SETTING_NAME */
+static NmcOutputField nmc_fields_setting_adsl[] = {
+	SETTING_FIELD ("name", 10),                                /* 0 */
+	SETTING_FIELD (NM_SETTING_ADSL_USERNAME, 15),              /* 1 */
+	SETTING_FIELD (NM_SETTING_ADSL_PASSWORD, 15),              /* 2 */
+	SETTING_FIELD (NM_SETTING_ADSL_VPI, 10),                   /* 3 */
+	SETTING_FIELD (NM_SETTING_ADSL_VCI, 10),                   /* 4 */
+	SETTING_FIELD (NM_SETTING_ADSL_ENCAPSULATION, 10),         /* 5 */
+	SETTING_FIELD (NM_SETTING_ADSL_PROTOCOL, 10),              /* 6 */
+	{NULL, NULL, 0, NULL, 0}
+};
+#define NMC_FIELDS_SETTING_ADSL_ALL     "name"","\
+                                        NM_SETTING_ADSL_USERNAME","\
+                                        NM_SETTING_ADSL_PASSWORD","\
+                                        NM_SETTING_ADSL_VPI","\
+                                        NM_SETTING_ADSL_VCI","\
+                                        NM_SETTING_ADSL_ENCAPSULATION","\
+                                        NM_SETTING_ADSL_PROTOCOL
+#define NMC_FIELDS_SETTING_ADSL_COMMON  NMC_FIELDS_SETTING_ADSL_ALL
+
 /* Available fields for NM_SETTING_GSM_SETTING_NAME */
 static NmcOutputField nmc_fields_setting_gsm[] = {
 	SETTING_FIELD ("name", 10),                                        /* 0 */
@@ -1712,6 +1732,34 @@ setting_vlan_details (NMSettingVlan *s_vlan, NmCli *nmc)
 	g_free (vlan_flags_str);
 	g_free (vlan_ingress_prio_str);
 	g_free (vlan_egress_prio_str);
+
+	return TRUE;
+}
+
+gboolean
+setting_adsl_details (NMSettingAdsl *s_adsl, NmCli *nmc)
+{
+	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
+	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
+	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
+
+	g_return_val_if_fail (NM_IS_SETTING_ADSL (s_adsl), FALSE);
+
+	nmc->allowed_fields = nmc_fields_setting_adsl;
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_ADSL_ALL, nmc->allowed_fields, NULL);
+	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
+	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
+
+	nmc->allowed_fields[0].value = NM_SETTING_ADSL_SETTING_NAME;
+	nmc->allowed_fields[1].value = nm_setting_adsl_get_username (s_adsl);
+	nmc->allowed_fields[2].value = nm_setting_adsl_get_password (s_adsl);
+	nmc->allowed_fields[3].value = g_strdup_printf ("%d", nm_setting_adsl_get_vpi (s_adsl));
+	nmc->allowed_fields[4].value = g_strdup_printf ("%d", nm_setting_adsl_get_vci (s_adsl));
+	nmc->allowed_fields[5].value = nm_setting_adsl_get_encapsulation (s_adsl);
+	nmc->allowed_fields[6].value = nm_setting_adsl_get_protocol (s_adsl);
+
+	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
+	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
 	return TRUE;
 }

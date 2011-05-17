@@ -31,6 +31,7 @@
 #include <nm-client.h>
 #include <nm-device.h>
 #include <nm-device-ethernet.h>
+#include <nm-device-adsl.h>
 #include <nm-device-wifi.h>
 #include <nm-device-modem.h>
 #include <nm-device-bt.h>
@@ -47,6 +48,7 @@
 #include <nm-vpn-connection.h>
 #include <nm-setting-connection.h>
 #include <nm-setting-wired.h>
+#include <nm-setting-adsl.h>
 #include <nm-setting-pppoe.h>
 #include <nm-setting-wireless.h>
 #include <nm-setting-gsm.h>
@@ -256,6 +258,8 @@ device_type_to_string (NMDevice *device)
 	switch (nm_device_get_device_type (device)) {
 	case NM_DEVICE_TYPE_ETHERNET:
 		return NM_SETTING_WIRED_SETTING_NAME;
+	case NM_DEVICE_TYPE_ADSL:
+		return NM_SETTING_ADSL_SETTING_NAME;
 	case NM_DEVICE_TYPE_WIFI:
 		return NM_SETTING_WIRELESS_SETTING_NAME;
 	case NM_DEVICE_TYPE_MODEM:

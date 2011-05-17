@@ -27,6 +27,7 @@
 
 #include "NetworkManager.h"
 #include "nm-device-ethernet.h"
+#include "nm-device-adsl.h"
 #include "nm-device-wifi.h"
 #include "nm-device-modem.h"
 #include "nm-device-bt.h"
@@ -207,6 +208,8 @@ _nm_device_gtype_from_dtype (NMDeviceType dtype)
 		return NM_TYPE_DEVICE_MODEM;
 	case NM_DEVICE_TYPE_BT:
 		return NM_TYPE_DEVICE_BT;
+	case NM_DEVICE_TYPE_ADSL:
+		return NM_TYPE_DEVICE_ADSL;
 	case NM_DEVICE_TYPE_OLPC_MESH:
 		return NM_TYPE_DEVICE_OLPC_MESH;
 	case NM_DEVICE_TYPE_WIMAX:
