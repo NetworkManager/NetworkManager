@@ -354,6 +354,25 @@ test_setting_gsm_apn_bad_chars (void)
 	        "gsm-apn-bad-chars", "unexpectedly valid GSM setting");
 }
 
+static void
+test_setting_gsm_apn_underscore (void)
+{
+	NMSettingGsm *s_gsm;
+	GError *error = NULL;
+	gboolean success;
+
+	s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
+	g_assert (s_gsm);
+
+	g_object_set (s_gsm, NM_SETTING_GSM_NUMBER, "*99#", NULL);
+
+	/* 65-character long */
+	g_object_set (s_gsm, NM_SETTING_GSM_APN, "foobar_baz", NULL);
+	success = nm_setting_verify (NM_SETTING (s_gsm), NULL, &error);
+	g_assert_no_error (error);
+	g_assert (success == TRUE);
+}
+
 static NMSettingWirelessSecurity *
 make_test_wsec_setting (const char *detail)
 {
@@ -1135,6 +1154,7 @@ int main (int argc, char **argv)
 	test_setting_ip6_config_old_address_array ();
 	test_setting_gsm_apn_spaces ();
 	test_setting_gsm_apn_bad_chars ();
+	test_setting_gsm_apn_underscore ();
 	test_setting_to_hash_all ();
 	test_setting_to_hash_no_secrets ();
 	test_setting_to_hash_only_secrets ();

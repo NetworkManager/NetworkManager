@@ -241,10 +241,28 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		}
 
 		/* APNs roughly follow the same rules as DNS domain names.  Allowed
-		 * characters are a-z, 0-9, . and -.  GSM 03.60 Section 14.9.
+		 * characters are a-z, 0-9, . and -.  GSM 03.03 Section 9.1 states:
+		 *
+		 *   The syntax of the APN shall follow the Name Syntax defined in
+		 *   RFC 2181 [14] and RFC 1035 [15]. The APN consists of one or
+		 *   more labels. Each label is coded as one octet length field
+		 *   followed by that number of octets coded as 8 bit ASCII characters.
+		 *   Following RFC 1035 [15] the labels should consist only of the
+		 *   alphabetic characters (A-Z and a-z), digits (0-9) and the
+		 *   dash (-). The case of alphabetic characters is not significant.
+		 *
+		 * A dot (.) is commonly used to separate parts of the APN, and
+		 * apparently the underscore (_) is used as well.  RFC 2181 indicates
+		 * that no restrictions of any kind are placed on DNS labels, and thus
+		 * it would appear that none are placed on APNs either, but many modems
+		 * and networks will fail to accept APNs that include odd characters
+		 * like space ( ) and such.
 		 */
 		for (i = 0; i < apn_len; i++) {
-			if (!isalnum (priv->apn[i]) && (priv->apn[i] != '.') && (priv->apn[i] != '-')) {
+			if (   !isalnum (priv->apn[i])
+			    && (priv->apn[i] != '.')
+			    && (priv->apn[i] != '_')
+			    && (priv->apn[i] != '-')) {
 				g_set_error (error,
 				             NM_SETTING_GSM_ERROR,
 				             NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
