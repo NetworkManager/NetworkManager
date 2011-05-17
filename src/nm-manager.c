@@ -48,6 +48,7 @@
 #include "nm-device-infiniband.h"
 #include "nm-device-bond.h"
 #include "nm-device-vlan.h"
+#include "nm-device-adsl.h"
 #include "nm-system.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-setting-bluetooth.h"
@@ -2025,6 +2026,12 @@ is_vlan (int ifindex)
 	return (nm_system_get_iface_type (ifindex, NULL) == NM_IFACE_TYPE_VLAN);
 }
 
+static gboolean
+is_adsl (GUdevDevice *device)
+{
+	return (g_strcmp0 (g_udev_device_get_subsystem (device), "atm") == 0);
+}
+
 static void
 udev_device_added_cb (NMUdevManager *udev_mgr,
                       GUdevDevice *udev_device,
@@ -2044,14 +2051,22 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 	g_return_if_fail (iface != NULL);
 	g_return_if_fail (sysfs_path != NULL);
 	g_return_if_fail (driver != NULL);
-	g_return_if_fail (ifindex > 0);
 
-	device = find_device_by_ifindex (self, ifindex);
-	if (device) {
-		/* If it's a virtual device we may need to update its UDI */
-		if (nm_system_get_iface_type (ifindex, iface) != NM_IFACE_TYPE_UNSPEC)
-			g_object_set (G_OBJECT (device), NM_DEVICE_UDI, sysfs_path, NULL);
-		return;
+	/* Most devices will have an ifindex here */
+	if (ifindex > 0) {
+		device = find_device_by_ifindex (self, ifindex);
+		if (device) {
+			/* If it's a virtual device we may need to update its UDI */
+			if (nm_system_get_iface_type (ifindex, iface) != NM_IFACE_TYPE_UNSPEC)
+				g_object_set (G_OBJECT (device), NM_DEVICE_UDI, sysfs_path, NULL);
+			return;
+		}
+	} else {
+		/* But ATM/ADSL devices don't */
+		g_return_if_fail (is_adsl (udev_device));
+		device = find_device_by_ip_iface (self, iface);
+		if (device)
+			return;
 	}
 
 	/* Try registered device factories */
@@ -2103,7 +2118,9 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 				}
 			} else
 				nm_log_err (LOGD_HW, "(%s): failed to get VLAN parent ifindex", iface);
-		} else
+		} else if (is_adsl (udev_device))
+			device = nm_device_adsl_new (sysfs_path, iface, driver);
+		else
 			device = nm_device_ethernet_new (sysfs_path, iface, driver);
 	}
 

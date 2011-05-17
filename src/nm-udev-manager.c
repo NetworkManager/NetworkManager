@@ -329,52 +329,34 @@ rfkill_remove (NMUdevManager *self,
 	}
 }
 
-static void
-net_add (NMUdevManager *self, GUdevDevice *udev_device)
+static gboolean
+dev_get_attrs (GUdevDevice *udev_device,
+               const char **out_ifname,
+               const char **out_path,
+               char **out_driver,
+               int *out_ifindex)
 {
 	GUdevDevice *parent = NULL, *grandparent = NULL;
-	gint ifindex;
-	gint etype;
-	const char *ifname, *driver, *path, *subsys, *tmp;
-	gboolean is_ctc;
+	const char *ifname, *driver, *path, *subsys;
+	gint ifindex = -1;
+	gboolean success = FALSE;
 
-	g_return_if_fail (udev_device != NULL);
+	g_return_val_if_fail (udev_device != NULL, FALSE);
+	g_return_val_if_fail (out_ifname != NULL, FALSE);
+	g_return_val_if_fail (out_path != NULL, FALSE);
+	g_return_val_if_fail (out_driver != NULL, FALSE);
+	g_return_val_if_fail (out_ifindex != NULL, FALSE);
 
 	ifname = g_udev_device_get_name (udev_device);
 	if (!ifname) {
 		nm_log_dbg (LOGD_HW, "failed to get device's interface");
-		return;
-	}
-
-	etype = g_udev_device_get_sysfs_attr_as_int (udev_device, "type");
-	is_ctc = (strncmp (ifname, "ctc", 3) == 0) && (etype == 256);
-
-	/* Ignore devices that don't report Ethernet encapsulation, except for
-	 * s390 CTC-type devices that report 256 for some reason.
-	 * FIXME: use something other than interface name to detect CTC here.
-	 */
-	if ((etype != ARPHRD_ETHER) && (etype != ARPHRD_INFINIBAND) && (is_ctc == FALSE)) {
-		nm_log_dbg (LOGD_HW, "(%s): ignoring interface with type %d", ifname, etype);
-		return;
-	}
-
-	/* Not all ethernet devices are immediately usable; newer mobile broadband
-	 * devices (Ericsson, Option, Sierra) require setup on the tty before the
-	 * ethernet device is usable.  2.6.33 and later kernels set the 'DEVTYPE'
-	 * uevent variable which we can use to ignore the interface as a NMDevice
-	 * subclass.  ModemManager will pick it up though and so we'll handle it
-	 * through the mobile broadband stuff.
-	 */
-	tmp = g_udev_device_get_property (udev_device, "DEVTYPE");
-	if (g_strcmp0 (tmp, "wwan") == 0) {
-		nm_log_dbg (LOGD_HW, "(%s): ignoring interface with devtype '%s'", ifname, tmp);
-		return;
+		return FALSE;
 	}
 
 	path = g_udev_device_get_sysfs_path (udev_device);
 	if (!path) {
 		nm_log_warn (LOGD_HW, "couldn't determine device path; ignoring...");
-		return;
+		return FALSE;
 	}
 
 	driver = g_udev_device_get_driver (udev_device);
@@ -399,11 +381,8 @@ net_add (NMUdevManager *self, GUdevDevice *udev_device)
 		}
 	}
 
-	ifindex = g_udev_device_get_sysfs_attr_as_int (udev_device, "ifindex");
-	if (ifindex <= 0) {
-		nm_log_warn (LOGD_HW, "%s: device had invalid ifindex %d; ignoring...", path, (guint32) ifindex);
-		goto out;
-	}
+	if (g_udev_device_get_sysfs_attr (udev_device, "ifindex"))
+		ifindex = g_udev_device_get_sysfs_attr_as_int (udev_device, "ifindex");
 
 	if (!driver) {
 		switch (nm_system_get_iface_type (ifindex, ifname)) {
@@ -425,18 +404,98 @@ net_add (NMUdevManager *self, GUdevDevice *udev_device)
 		}
 	}
 
-	g_signal_emit (self, signals[DEVICE_ADDED], 0, udev_device, ifname, path, driver, ifindex);
+	*out_ifname = ifname;
+	*out_path = path;
+	*out_driver = g_strdup (driver);
+	*out_ifindex = ifindex;
+	success = TRUE;
 
 out:
 	if (grandparent)
 		g_object_unref (grandparent);
 	if (parent)
 		g_object_unref (parent);
+
+	return success;
+}
+
+static void
+net_add (NMUdevManager *self, GUdevDevice *udev_device)
+{
+	gint ifindex = -1;
+	gint etype;
+	const char *ifname = NULL, *path = NULL, *tmp;
+	char *driver = NULL;
+	gboolean is_ctc;
+
+	g_return_if_fail (udev_device != NULL);
+
+	if (!dev_get_attrs (udev_device, &ifname, &path, &driver, &ifindex))
+		return;
+
+	if (ifindex < 0) {
+		nm_log_warn (LOGD_HW, "%s: device had invalid ifindex %d; ignoring...", path, ifindex);
+		goto out;
+	}
+
+	etype = g_udev_device_get_sysfs_attr_as_int (udev_device, "type");
+	is_ctc = (strncmp (ifname, "ctc", 3) == 0) && (etype == 256);
+
+	/* Ignore devices that don't report Ethernet encapsulation, except for
+	 * s390 CTC-type devices that report 256 for some reason.
+	 * FIXME: use something other than interface name to detect CTC here.
+	 */
+	if ((etype != ARPHRD_ETHER) && (etype != ARPHRD_INFINIBAND) && (is_ctc == FALSE)) {
+		nm_log_dbg (LOGD_HW, "(%s): ignoring interface with type %d", ifname, etype);
+		goto out;
+	}
+
+	/* Not all ethernet devices are immediately usable; newer mobile broadband
+	 * devices (Ericsson, Option, Sierra) require setup on the tty before the
+	 * ethernet device is usable.  2.6.33 and later kernels set the 'DEVTYPE'
+	 * uevent variable which we can use to ignore the interface as a NMDevice
+	 * subclass.  ModemManager will pick it up though and so we'll handle it
+	 * through the mobile broadband stuff.
+	 */
+	tmp = g_udev_device_get_property (udev_device, "DEVTYPE");
+	if (g_strcmp0 (tmp, "wwan") == 0) {
+		nm_log_dbg (LOGD_HW, "(%s): ignoring interface with devtype '%s'", ifname, tmp);
+		goto out;
+	}
+
+	g_signal_emit (self, signals[DEVICE_ADDED], 0, udev_device, ifname, path, driver, ifindex);
+
+out:
+	g_free (driver);
 }
 
 static void
 net_remove (NMUdevManager *self, GUdevDevice *device)
 {
+	g_signal_emit (self, signals[DEVICE_REMOVED], 0, device);
+}
+
+static void
+adsl_add (NMUdevManager *self, GUdevDevice *udev_device)
+{
+	gint ifindex = -1;
+	const char *ifname = NULL, *path = NULL;
+	char *driver = NULL;
+
+	g_return_if_fail (udev_device != NULL);
+
+	nm_log_dbg (LOGD_HW, "adsl_add: ATM Device detected from udev. Adding ..");
+
+	if (dev_get_attrs (udev_device, &ifname, &path, &driver, &ifindex))
+		g_signal_emit (self, signals[DEVICE_ADDED], 0, udev_device, ifname, path, driver, ifindex);
+	g_free (driver);
+}
+
+static void
+adsl_remove (NMUdevManager *self, GUdevDevice *device)
+{
+	nm_log_dbg (LOGD_HW, "adsl_remove: Removing ATM Device");
+
 	g_signal_emit (self, signals[DEVICE_REMOVED], 0, device);
 }
 
@@ -452,6 +511,14 @@ nm_udev_manager_query_devices (NMUdevManager *self)
 	devices = g_udev_client_query_by_subsystem (priv->client, "net");
 	for (iter = devices; iter; iter = g_list_next (iter)) {
 		net_add (self, G_UDEV_DEVICE (iter->data));
+		g_object_unref (G_UDEV_DEVICE (iter->data));
+	}
+	g_list_free (devices);
+
+
+	devices = g_udev_client_query_by_subsystem (priv->client, "atm");
+	for (iter = devices; iter; iter = g_list_next (iter)) {
+		adsl_add (self, G_UDEV_DEVICE (iter->data));
 		g_object_unref (G_UDEV_DEVICE (iter->data));
 	}
 	g_list_free (devices);
@@ -475,18 +542,23 @@ handle_uevent (GUdevClient *client,
 	nm_log_dbg (LOGD_HW, "UDEV event: action '%s' subsys '%s' device '%s'",
 	            action, subsys, g_udev_device_get_name (device));
 
-	g_return_if_fail (!strcmp (subsys, "rfkill") || !strcmp (subsys, "net"));
+	g_return_if_fail (!strcmp (subsys, "rfkill") || !strcmp (subsys, "net") ||
+	                  !strcmp (subsys, "atm"));
 
 	if (!strcmp (action, "add")) {
 		if (!strcmp (subsys, "rfkill"))
 			rfkill_add (self, device);
 		else if (!strcmp (subsys, "net"))
 			net_add (self, device);
+		else if (!strcmp (subsys, "atm"))
+			adsl_add (self, device);
 	} else if (!strcmp (action, "remove")) {
 		if (!strcmp (subsys, "rfkill"))
 			rfkill_remove (self, device);
 		else if (!strcmp (subsys, "net"))
 			net_remove (self, device);
+		else if (!strcmp (subsys, "atm"))
+			adsl_remove (self, device);
 	}
 
 	recheck_killswitches (self);
@@ -496,7 +568,7 @@ static void
 nm_udev_manager_init (NMUdevManager *self)
 {
 	NMUdevManagerPrivate *priv = NM_UDEV_MANAGER_GET_PRIVATE (self);
-	const char *subsys[3] = { "rfkill", "net", NULL };
+	const char *subsys[4] = { "rfkill", "net", "atm", NULL };
 	GList *switches, *iter;
 	guint32 i;
 

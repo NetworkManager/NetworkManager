@@ -120,6 +120,8 @@ NetworkManager_SOURCES = \
 		nm-device-private.h \
 		nm-device-ethernet.c \
 		nm-device-ethernet.h \
+		nm-device-adsl.c \
+		nm-device-adsl.h \
 		nm-device-wifi.c \
 		nm-device-wifi.h \
 		nm-device-wired.c \
@@ -220,6 +222,9 @@ nm-device-ethernet-glue.h: $(top_srcdir)/introspection/nm-device-ethernet.xml
 nm-device-infiniband-glue.h: $(top_srcdir)/introspection/nm-device-infiniband.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_infiniband --mode=glib-server --output=$@ $<
 
+nm-device-adsl-glue.h: $(top_srcdir)/introspection/nm-device-adsl.xml
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_adsl --mode=glib-server --output=$@ $<
+
 nm-device-wifi-glue.h: $(top_srcdir)/introspection/nm-device-wifi.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_wifi --mode=glib-server --output=$@ $<
 
@@ -261,6 +266,7 @@ BUILT_SOURCES = \
 	nm-device-infiniband-glue.h \
 	nm-device-bond-glue.h \
 	nm-device-vlan-glue.h \
+	nm-device-adsl-glue.h \
 	nm-device-wifi-glue.h \
 	nm-device-olpc-mesh-glue.h \
 	nm-device-bt-glue.h \

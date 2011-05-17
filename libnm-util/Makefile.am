@@ -16,6 +16,7 @@ libnm_util_include_HEADERS = 		\
 	nm-connection.h			\
 	nm-setting.h			\
 	nm-setting-8021x.h		\
+	nm-setting-adsl.h		\
 	nm-setting-bluetooth.h		\
 	nm-setting-bond.h		\
 	nm-setting-connection.h		\
@@ -49,6 +50,7 @@ libnm_util_la_csources = \
 	nm-param-spec-specialized.c	\
 	nm-setting.c			\
 	nm-setting-8021x.c		\
+	nm-setting-adsl.c		\
 	nm-setting-bluetooth.c		\
 	nm-setting-bond.c		\
 	nm-setting-connection.c		\

@@ -8,6 +8,7 @@ EXTRA_DIST = \
 	nm-device-wifi.xml \
 	nm-device-olpc-mesh.xml \
 	nm-device-ethernet.xml \
+	nm-device-adsl.xml \
 	nm-device-modem.xml \
 	nm-device-wimax.xml \
 	nm-device-infiniband.xml \

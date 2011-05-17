@@ -107,6 +107,7 @@ typedef enum {
  * GSM/UMTS, or LTE network access protocols
  * @NM_DEVICE_TYPE_INFINIBAND: an IP-over-InfiniBand device
  * @NM_DEVICE_TYPE_BOND: a bond master interface
+ * @NM_DEVICE_TYPE_ADSL: ADSL modem
  *
  * #NMDeviceType values indicate the type of hardware represented by
  * an #NMDevice.
@@ -124,6 +125,7 @@ typedef enum {
 	NM_DEVICE_TYPE_INFINIBAND = 9,
 	NM_DEVICE_TYPE_BOND       = 10,
 	NM_DEVICE_TYPE_VLAN       = 11,
+	NM_DEVICE_TYPE_ADSL       = 12,
 } NMDeviceType;
 
 /**
