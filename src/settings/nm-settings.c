@@ -49,6 +49,7 @@
 #include <nm-setting-serial.h>
 #include <nm-setting-vpn.h>
 #include <nm-setting-wired.h>
+#include <nm-setting-adsl.h>
 #include <nm-setting-wireless.h>
 #include <nm-setting-wireless-security.h>
 #include <nm-setting-bond.h>
@@ -1983,6 +1984,7 @@ nm_settings_class_init (NMSettingsClass *class)
 	dbus_g_error_domain_register (NM_SETTING_PPP_ERROR, NULL, NM_TYPE_SETTING_PPP_ERROR);
 	dbus_g_error_domain_register (NM_SETTING_PPPOE_ERROR, NULL, NM_TYPE_SETTING_PPPOE_ERROR);
 	dbus_g_error_domain_register (NM_SETTING_SERIAL_ERROR, NULL, NM_TYPE_SETTING_SERIAL_ERROR);
+	dbus_g_error_domain_register (NM_SETTING_ADSL_ERROR, NULL, NM_TYPE_SETTING_ADSL_ERROR);
 	dbus_g_error_domain_register (NM_SETTING_VPN_ERROR, NULL, NM_TYPE_SETTING_VPN_ERROR);
 	dbus_g_error_domain_register (NM_SETTING_WIRED_ERROR, NULL, NM_TYPE_SETTING_WIRED_ERROR);
 	dbus_g_error_domain_register (NM_SETTING_WIRELESS_SECURITY_ERROR, NULL, NM_TYPE_SETTING_WIRELESS_SECURITY_ERROR);

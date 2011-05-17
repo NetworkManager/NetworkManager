@@ -47,6 +47,7 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-ppp.h"
 #include "nm-setting-pppoe.h"
+#include "nm-setting-adsl.h"
 #include "nm-setting-gsm.h"
 #include "nm-setting-cdma.h"
 #include "nm-dbus-manager.h"
@@ -393,6 +394,9 @@ extract_details_from_connection (NMConnection *connection,
 	if (NM_IS_SETTING_PPPOE (setting)) {
 		*username = nm_setting_pppoe_get_username (NM_SETTING_PPPOE (setting));
 		*password = nm_setting_pppoe_get_password (NM_SETTING_PPPOE (setting));
+	} else if (NM_IS_SETTING_ADSL (setting)) {
+		*username = nm_setting_adsl_get_username (NM_SETTING_ADSL (setting));
+		*password = nm_setting_adsl_get_password (NM_SETTING_ADSL (setting));
 	} else if (NM_IS_SETTING_GSM (setting)) {
 		*username = nm_setting_gsm_get_username (NM_SETTING_GSM (setting));
 		*password = nm_setting_gsm_get_password (NM_SETTING_GSM (setting));
@@ -794,6 +798,7 @@ static NMCmdLine *
 create_pppd_cmd_line (NMPPPManager *self,
                       NMSettingPPP *setting, 
                       NMSettingPPPOE *pppoe,
+                      NMSettingAdsl  *adsl_pppoa,
                       const char *ppp_name,
                       GError **err)
 {
@@ -850,6 +855,26 @@ create_pppd_cmd_line (NMPPPManager *self,
 			nm_cmd_line_add_string (cmd, "rp_pppoe_service");
 			nm_cmd_line_add_string (cmd, pppoe_service);
 		}
+	} else if (adsl_pppoa) {
+		guint32 vpi, vci;
+		const gchar *encapsulation;
+		gchar *vpivci;
+
+		vpi = nm_setting_adsl_get_vpi (adsl_pppoa);
+		vci = nm_setting_adsl_get_vci (adsl_pppoa);
+		encapsulation = nm_setting_adsl_get_encapsulation (adsl_pppoa);
+		vpivci = g_strdup_printf("%d.%d", vpi, vci);
+
+		nm_cmd_line_add_string (cmd, "plugin");
+		nm_cmd_line_add_string (cmd, "pppoatm.so");
+		nm_cmd_line_add_string (cmd, vpivci);
+
+		if (!strcmp (encapsulation, "llc"))
+			nm_cmd_line_add_string (cmd, "llc-encaps");
+
+		nm_cmd_line_add_string (cmd, "noipdefault");
+
+		g_free (vpivci);
 	} else {
 		nm_cmd_line_add_string (cmd, priv->parent_iface);
 		/* Don't send some random address as the local address */
@@ -967,6 +992,7 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	NMSettingPPP *s_ppp;
 	gboolean s_ppp_created = FALSE;
 	NMSettingPPPOE *pppoe_setting;
+	NMSettingAdsl *adsl_setting;
 	NMCmdLine *ppp_cmd;
 	char *cmd_str;
 	struct stat st;
@@ -1008,7 +1034,9 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	if (pppoe_setting)
 		pppoe_fill_defaults (s_ppp);
 
-	ppp_cmd = create_pppd_cmd_line (manager, s_ppp, pppoe_setting, ppp_name, err);
+	adsl_setting = (NMSettingAdsl *) nm_connection_get_setting (connection, NM_TYPE_SETTING_ADSL);
+
+	ppp_cmd = create_pppd_cmd_line (manager, s_ppp, pppoe_setting, adsl_setting, ppp_name, err);
 	if (!ppp_cmd)
 		goto out;
 

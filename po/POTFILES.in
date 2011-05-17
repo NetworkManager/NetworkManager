@@ -22,6 +22,7 @@ src/logging/nm-logging.c
 src/modem-manager/nm-modem-cdma.c
 src/modem-manager/nm-modem-gsm.c
 src/nm-device-bond.c
+src/nm-device-adsl.c
 src/nm-device-bt.c
 src/nm-device-ethernet.c
 src/nm-device-infiniband.c
