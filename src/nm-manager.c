@@ -158,8 +158,6 @@ static GSList * remove_one_device (NMManager *manager,
                                    NMDevice *device,
                                    gboolean quitting);
 
-static NMDevice *nm_manager_get_device_by_udi (NMManager *manager, const char *udi);
-
 /* Fix for polkit 0.97 and later */
 #if !HAVE_POLKIT_AUTHORITY_GET_SYNC
 static inline PolkitAuthority *
