@@ -1465,12 +1465,13 @@ real_complete_connection (NMDevice *device,
 		 */
 		if (!nm_ap_complete_connection (ap,
 		                                connection,
-		                                ssid ? is_manf_default_ssid (ssid) : FALSE,
+		                                is_manf_default_ssid (ssid),
 		                                error))
 			return FALSE;
 	}
 
-	str_ssid = ssid ? nm_utils_ssid_to_utf8 (ssid) : g_strdup (_("<hidden>"));
+	g_assert (ssid);
+	str_ssid = nm_utils_ssid_to_utf8 (ssid);
 	format = g_strdup_printf ("%s %%d", str_ssid);
 
 	nm_utils_complete_generic (connection,
