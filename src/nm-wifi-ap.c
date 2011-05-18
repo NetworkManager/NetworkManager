@@ -866,7 +866,7 @@ nm_ap_set_ssid (NMAccessPoint *ap, const GByteArray * ssid)
 		/* Should never get zero-length SSIDs */
 		g_warn_if_fail (ssid->len > 0);
 
-		if (ssid->len)
+		if (ssid->len) {
 			priv->ssid = g_byte_array_sized_new (ssid->len);
 			priv->ssid->len = ssid->len;
 			memcpy (priv->ssid->data, ssid->data, ssid->len);
