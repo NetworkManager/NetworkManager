@@ -377,7 +377,8 @@ get_secret_flags (NMSetting *setting,
 		errno = 0;
 		tmp = strtoul ((const char *) val, NULL, 10);
 		if ((errno == 0) && (tmp <= NM_SETTING_SECRET_FLAGS_ALL)) {
-			*out_flags = (guint32) tmp;
+			if (out_flags)
+				*out_flags = (guint32) tmp;
 			success = TRUE;
 		} else {
 			g_set_error (error,
