@@ -22,6 +22,7 @@ libvpn_manager_la_SOURCES = \
 	nm-vpn-connection.h
 
 libvpn_manager_la_CPPFLAGS =	\
+	$(LIBNL_CFLAGS)		\
 	$(DBUS_CFLAGS)		\
 	$(GLIB_CFLAGS)		\
 	-DG_DISABLE_DEPRECATED
@@ -30,6 +31,7 @@ libvpn_manager_la_LIBADD = \
 	$(top_builddir)/marshallers/libmarshallers.la \
 	$(top_builddir)/src/logging/libnm-logging.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
+	$(LIBNL_LIBS) \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS)
 

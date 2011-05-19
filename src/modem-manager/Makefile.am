@@ -19,10 +19,12 @@ libmodem_manager_la_SOURCES = \
 	nm-modem-types.h
 
 libmodem_manager_la_CPPFLAGS = \
+	$(LIBNL_CFLAGS) \
 	$(DBUS_CFLAGS)
 
 libmodem_manager_la_LIBADD = \
 	$(top_builddir)/marshallers/libmarshallers.la \
 	$(top_builddir)/src/logging/libnm-logging.la \
+	$(LIBNL_LIBS) \
 	$(DBUS_LIBS)
 
