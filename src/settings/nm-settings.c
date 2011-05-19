@@ -699,6 +699,34 @@ connection_visibility_changed (NMSettingsConnection *connection,
 	               connection);
 }
 
+#define NM_DBUS_SERVICE_OPENCONNECT    "org.freedesktop.NetworkManager.openconnect"
+#define NM_OPENCONNECT_KEY_GATEWAY "gateway"
+#define NM_OPENCONNECT_KEY_COOKIE "cookie"
+#define NM_OPENCONNECT_KEY_GWCERT "gwcert"
+
+static void
+openconnect_migrate_hack (NMConnection *connection)
+{
+	NMSettingVPN *s_vpn;
+	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NOT_SAVED;
+
+	/* Huge hack.  There were some openconnect changes that needed to happen
+	 * pretty late, too late to get into distros.  Migration has already
+	 * happened for many people, and their secret flags are wrong.  But we
+	 * don't want to requrie re-migration, so we have to fix it up here. Ugh.
+	 */
+
+	s_vpn = nm_connection_get_setting_vpn (connection);
+	if (s_vpn == NULL)
+		return;
+
+	if (g_strcmp0 (nm_setting_vpn_get_service_type (s_vpn), NM_DBUS_SERVICE_OPENCONNECT) == 0) {
+		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_GATEWAY, flags, NULL);
+		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_COOKIE, flags, NULL);
+		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_GWCERT, flags, NULL);
+	}
+}
+
 static void
 claim_connection (NMSettings *self,
                   NMSettingsConnection *connection,
@@ -735,6 +763,9 @@ claim_connection (NMSettings *self,
 
 	/* Ensure it's initial visibility is up-to-date */
 	nm_settings_connection_recheck_visibility (connection);
+
+	/* Evil openconnect migration hack */
+	openconnect_migrate_hack (NM_CONNECTION (connection));
 
 	id = g_signal_connect (connection, NM_SETTINGS_CONNECTION_REMOVED,
 	                       G_CALLBACK (connection_removed),
