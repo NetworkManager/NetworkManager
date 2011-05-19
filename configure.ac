@@ -337,8 +337,20 @@ else
 fi
 AM_CONDITIONAL(WITH_WIMAX, test "${enable_wimax}" = "yes")
 
-PKG_CHECK_MODULES(POLKIT, polkit-gobject-1 >= 0.97)
-AC_SUBST(POLKIT_CFLAGS)
+PKG_CHECK_MODULES(POLKIT, [polkit-gobject-1 >= 0.97], [have_polkit=yes],[have_polkit=no])
+AC_ARG_ENABLE(polkit, AS_HELP_STRING([--enable-polkit], [enable PolicyKit support]),
+                     [enable_polkit=${enableval}], [enable_polkit=${have_polkit}])
+if (test "${enable_polkit}" = "yes"); then
+	if test x"$have_polkit" = x"no"; then
+		AC_MSG_ERROR(PolicyKit development headers are required)
+	fi
+	AC_SUBST(POLKIT_CFLAGS)
+	AC_SUBST(POLKIT_LIBS)
+	AC_DEFINE(WITH_POLKIT, 1, [Define if you have PolicyKit support])
+else
+	AC_DEFINE(WITH_POLKIT, 0, [Define if you have PolicyKit support])
+fi
+AM_CONDITIONAL(WITH_POLKIT, test "${enable_polkit}" = "yes")
 
 AC_ARG_WITH(crypto, AS_HELP_STRING([--with-crypto=nss | gnutls], [Cryptography library to use for certificate and key operations]),ac_crypto=$withval, ac_crypto=nss)
 
@@ -699,6 +711,12 @@ if test -n "${with_systemdsystemunitdir}"; then
 	echo systemd support: ${with_systemdsystemunitdir}
 else
 	echo systemd support: no
+fi
+
+if test "${enable_polkit}" = "yes"; then
+	echo PolicyKit support: yes
+else
+	echo PolicyKit support: no
 fi
 
 if test -n "${with_ck}"; then

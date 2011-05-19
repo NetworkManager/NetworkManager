@@ -18,9 +18,16 @@
  * Copyright (C) 2010 Red Hat, Inc.
  */
 
+#include <config.h>
 #include <string.h>
 #include <dbus/dbus-glib-lowlevel.h>
+#include <gio/gio.h>
+
+#if WITH_POLKIT
 #include <polkit/polkit.h>
+#else
+typedef guint PolkitAuthority;
+#endif
 
 #include "nm-setting-connection.h"
 #include "nm-manager-auth.h"
@@ -65,6 +72,7 @@ free_data (gpointer data)
 	g_free (tmp);
 }
 
+#if WITH_POLKIT
 static PolkitAuthority *
 pk_authority_get (void)
 {
@@ -85,6 +93,13 @@ pk_authority_get (void)
 	/* Yes, ref every time; we want to keep the object alive */
 	return g_object_ref (authority);
 }
+#else
+static PolkitAuthority *
+pk_authority_get (void)
+{
+	return NULL;
+}
+#endif
 
 static NMAuthChain *
 _auth_chain_new (DBusGMethodInvocation *context,
@@ -267,6 +282,7 @@ polkit_call_free (PolkitCall *call)
 	g_free (call);
 }
 
+#if WITH_POLKIT
 static void
 pk_call_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 {
@@ -317,9 +333,10 @@ pk_call_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	if (pk_result)
 		g_object_unref (pk_result);
 }
+#endif
 
 static gboolean
-polkit_call_error_idle_cb (gpointer user_data)
+polkit_call_early_finish_idle_cb (gpointer user_data)
 {
 	PolkitCall *call = user_data;
 
@@ -331,11 +348,11 @@ polkit_call_error_idle_cb (gpointer user_data)
 }
 
 static void
-polkit_call_schedule_error (PolkitCall *call)
+polkit_call_schedule_early_finish (PolkitCall *call, GError *error)
 {
 	if (!call->chain->error)
-		call->chain->error = g_error_new_literal (0, 0, "PolicyKit unavailable");
-	call->idle_id = g_idle_add (polkit_call_error_idle_cb, call);
+		call->chain->error = error;
+	call->idle_id = g_idle_add (polkit_call_early_finish_idle_cb, call);
 }
 
 gboolean
@@ -344,16 +361,20 @@ nm_auth_chain_add_call (NMAuthChain *self,
                         gboolean allow_interaction)
 {
 	PolkitCall *call;
+#if WITH_POLKIT
 	PolkitSubject *subject;
 	PolkitCheckAuthorizationFlags flags = POLKIT_CHECK_AUTHORIZATION_FLAGS_NONE;
+#endif
 
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (self->owner != NULL, FALSE);
 	g_return_val_if_fail (permission != NULL, FALSE);
 
+#if WITH_POLKIT
 	subject = polkit_system_bus_name_new (self->owner);
 	if (!subject)
 		return FALSE;
+#endif
 
 	call = g_malloc0 (sizeof (PolkitCall));
 	call->chain = self;
@@ -362,9 +383,10 @@ nm_auth_chain_add_call (NMAuthChain *self,
 
 	self->calls = g_slist_append (self->calls, call);
 
+#if WITH_POLKIT
 	if (self->authority == NULL) {
 		/* No polkit, no authorization */
-		polkit_call_schedule_error (call);
+		polkit_call_schedule_early_finish (call, g_error_new_literal (0, 0, "PolicyKit unavailable"));
 		g_object_unref (subject);
 		return FALSE;
 	}
@@ -381,6 +403,11 @@ nm_auth_chain_add_call (NMAuthChain *self,
 	                                      pk_call_cb,
 	                                      call);
 	g_object_unref (subject);
+#else
+	/* When PolicyKit is disabled, everything is authorized */
+	nm_auth_chain_set_data (self, call->permission, GUINT_TO_POINTER (NM_AUTH_CALL_RESULT_YES), NULL);
+	polkit_call_schedule_early_finish (call, NULL);
+#endif
 	return TRUE;
 }
 
