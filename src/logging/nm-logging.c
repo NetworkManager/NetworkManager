@@ -218,6 +218,12 @@ nm_logging_level_enabled (guint32 level)
 	return !!(log_level & level);
 }
 
+gboolean
+nm_logging_domain_enabled (guint32 domain)
+{
+	return !!(log_domains & domain);
+}
+
 void
 _nm_log (const char *loc,
          const char *func,

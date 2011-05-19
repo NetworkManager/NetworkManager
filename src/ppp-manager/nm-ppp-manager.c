@@ -798,7 +798,7 @@ create_pppd_cmd_line (NMPPPManager *self,
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (self);
 	const char *ppp_binary;
 	NMCmdLine *cmd;
-	const char *ppp_debug;
+	gboolean ppp_debug;
 
 	g_return_val_if_fail (setting != NULL, NULL);
 
@@ -819,7 +819,11 @@ create_pppd_cmd_line (NMPPPManager *self,
 	/* NM handles setting the default route */
 	nm_cmd_line_add_string (cmd, "nodefaultroute");
 
-	ppp_debug = getenv ("NM_PPP_DEBUG");
+	ppp_debug = !!getenv ("NM_PPP_DEBUG");
+	if (   nm_logging_level_enabled (LOGL_DEBUG)
+	    && nm_logging_domain_enabled (LOGD_PPP))
+		ppp_debug = TRUE;
+
 	if (ppp_debug)
 		nm_cmd_line_add_string (cmd, "debug");
 

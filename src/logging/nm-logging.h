@@ -95,6 +95,7 @@ void _nm_log (const char *loc,
 const char *nm_logging_level_to_string (void);
 char *nm_logging_domains_to_string (void);
 gboolean nm_logging_level_enabled (guint32 level);
+gboolean nm_logging_domain_enabled (guint32 domain);
 
 /* Undefine the nm-utils.h logging stuff to ensure errors */
 #undef nm_print_backtrace
