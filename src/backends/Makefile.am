@@ -63,10 +63,12 @@ endif
 
 libnmbackend_la_LIBADD += \
 	$(top_builddir)/src/logging/libnm-logging.la \
+	$(LIBNL_LIBS) \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS)
 
 libnmbackend_la_CPPFLAGS = \
+	$(LIBNL_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	-DG_DISABLE_DEPRECATED \

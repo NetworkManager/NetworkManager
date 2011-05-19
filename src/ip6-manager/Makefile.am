@@ -13,6 +13,7 @@ libip6_manager_la_SOURCES = \
 	nm-ip6-manager.h
 
 libip6_manager_la_CPPFLAGS = \
+	$(LIBNL_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	-DG_DISABLE_DEPRECATED
@@ -20,6 +21,7 @@ libip6_manager_la_CPPFLAGS = \
 libip6_manager_la_LIBADD = \
 	$(top_builddir)/marshallers/libmarshallers.la \
 	$(top_builddir)/src/logging/libnm-logging.la \
+	$(LIBNL_LIBS) \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS)
 
