@@ -19,12 +19,14 @@ libdns_manager_la_SOURCES = \
 	nm-dns-utils.c
 
 libdns_manager_la_CPPFLAGS = \
+	$(LIBNL_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	-DLOCALSTATEDIR=\"$(localstatedir)\"
 
 libdns_manager_la_LIBADD = \
 	$(top_builddir)/src/logging/libnm-logging.la \
+	$(LIBNL_LIBS) \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS)
 
