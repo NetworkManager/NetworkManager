@@ -795,8 +795,10 @@ sleeping_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 	if (sleeping || !enabled) {
 		connections = nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_SYSTEM);
 		connections = g_slist_concat (connections, nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_USER));
-		for (iter = connections; iter; iter = g_slist_next (iter))
+		for (iter = connections; iter; iter = g_slist_next (iter)) {
 			g_object_set_data (G_OBJECT (iter->data), INVALID_TAG, NULL);
+			g_object_unref (G_OBJECT (iter->data));
+		}
 		g_slist_free (connections);
 	}
 }
