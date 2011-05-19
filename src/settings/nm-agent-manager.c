@@ -33,7 +33,6 @@
 #include "nm-secret-agent.h"
 #include "nm-manager-auth.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-polkit-helpers.h"
 #include "nm-manager-auth.h"
 #include "nm-setting-vpn.h"
 #include "nm-setting-connection.h"
@@ -49,7 +48,6 @@ typedef struct {
 
 	NMDBusManager *dbus_mgr;
 	NMSessionMonitor *session_monitor;
-	PolkitAuthority *authority;
 
 	/* Hashed by owner name, not identifier, since two agents in different
 	 * sessions can use the same identifier.
@@ -338,7 +336,6 @@ typedef void (*RequestCancelFunc) (Request *req);
 
 struct _Request {
 	guint32 reqid;
-	PolkitAuthority *authority;
 	NMAuthChain *chain;
 
 	NMConnection *connection;
@@ -381,7 +378,6 @@ static guint32 next_req_id = 1;
 
 static Request *
 request_new_get (NMConnection *connection,
-                 PolkitAuthority *authority,
                  gboolean filter_by_uid,
                  gulong uid_filter,
                  GHashTable *existing_secrets,
@@ -402,7 +398,6 @@ request_new_get (NMConnection *connection,
 	req = g_malloc0 (sizeof (Request));
 	req->reqid = next_req_id++;
 	req->connection = g_object_ref (connection);
-	req->authority = g_object_ref (authority);
 	req->filter_by_uid = filter_by_uid;
 	req->uid_filter = uid_filter;
 	if (existing_secrets)
@@ -462,8 +457,6 @@ request_free (Request *req)
 		g_hash_table_unref (req->existing_secrets);
 	if (req->chain)
 		nm_auth_chain_unref (req->chain);
-	if (req->authority)
-		g_object_unref (req->authority);
 	memset (req, 0, sizeof (Request));
 	g_free (req);
 }
@@ -896,8 +889,7 @@ get_next_cb (Request *req)
 		nm_log_dbg (LOGD_AGENTS, "(%p/%s) request has system secrets; checking agent %s for MODIFY",
 		            req, req->setting_name, agent_dbus_owner);
 
-		req->chain = nm_auth_chain_new_dbus_sender (req->authority,
-		                                            agent_dbus_owner,
+		req->chain = nm_auth_chain_new_dbus_sender (agent_dbus_owner,
 		                                            get_agent_modify_auth_cb,
 		                                            req);
 		g_assert (req->chain);
@@ -1050,7 +1042,6 @@ nm_agent_manager_get_secrets (NMAgentManager *self,
 	 */
 
 	req = request_new_get (connection,
-	                       priv->authority,
 	                       filter_by_uid,
 	                       uid_filter,
 	                       existing_secrets,
@@ -1335,15 +1326,6 @@ static void
 nm_agent_manager_init (NMAgentManager *self)
 {
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
-	GError *error = NULL;
-
-	priv->authority = polkit_authority_get_sync (NULL, &error);
-	if (!priv->authority) {
-		nm_log_warn (LOGD_SETTINGS, "failed to create PolicyKit authority: (%d) %s",
-		             error ? error->code : -1,
-		             error && error->message ? error->message : "(unknown)");
-		g_clear_error (&error);
-	}
 
 	priv->agents = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
 	priv->requests = g_hash_table_new_full (g_direct_hash,
@@ -1365,7 +1347,6 @@ dispose (GObject *object)
 
 		g_object_unref (priv->session_monitor);
 		g_object_unref (priv->dbus_mgr);
-		g_object_unref (priv->authority);
 	}
 
 	G_OBJECT_CLASS (nm_agent_manager_parent_class)->dispose (object);

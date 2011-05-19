@@ -21,7 +21,6 @@
 #ifndef NM_MANAGER_AUTH_H
 #define NM_MANAGER_AUTH_H
 
-#include <polkit/polkit.h>
 #include <glib.h>
 #include <dbus/dbus-glib.h>
 
@@ -56,25 +55,16 @@ typedef void (*NMAuthChainResultFunc) (NMAuthChain *chain,
                                        DBusGMethodInvocation *context,
                                        gpointer user_data);
 
-typedef void (*NMAuthChainCallFunc) (NMAuthChain *chain,
-                                     const char *permission,
-                                     GError *error,
-                                     NMAuthCallResult result,
-                                     gpointer user_data);
-
-NMAuthChain *nm_auth_chain_new (PolkitAuthority *authority,
-                                DBusGMethodInvocation *context,
+NMAuthChain *nm_auth_chain_new (DBusGMethodInvocation *context,
                                 DBusGProxy *proxy,
                                 NMAuthChainResultFunc done_func,
                                 gpointer user_data);
 
-NMAuthChain *nm_auth_chain_new_raw_message (PolkitAuthority *authority,
-                                            DBusMessage *message,
+NMAuthChain *nm_auth_chain_new_raw_message (DBusMessage *message,
                                             NMAuthChainResultFunc done_func,
                                             gpointer user_data);
 
-NMAuthChain *nm_auth_chain_new_dbus_sender (PolkitAuthority *authority,
-                                            const char *dbus_sender,
+NMAuthChain *nm_auth_chain_new_dbus_sender (const char *dbus_sender,
                                             NMAuthChainResultFunc done_func,
                                             gpointer user_data);
 
@@ -111,6 +101,8 @@ gboolean nm_auth_uid_in_acl (NMConnection *connection,
                              NMSessionMonitor *smon,
                              gulong uid,
                              char **out_error_desc);
+
+void nm_auth_set_changed_func (GDestroyNotify callback, gpointer callback_data);
 
 #endif /* NM_MANAGER_AUTH_H */
 

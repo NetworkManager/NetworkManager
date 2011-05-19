@@ -34,7 +34,6 @@
 #include "nm-dbus-manager.h"
 #include "nm-settings-error.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-polkit-helpers.h"
 #include "nm-logging.h"
 #include "nm-manager-auth.h"
 #include "nm-marshal.h"
@@ -83,7 +82,6 @@ typedef struct {
 	NMDBusManager *dbus_mgr;
 	NMAgentManager *agent_mgr;
 
-	PolkitAuthority *authority;
 	GSList *pending_auths; /* List of pending authentication requests */
 	NMConnection *secrets;
 	gboolean visible; /* Is this connection is visible by some session? */
@@ -852,7 +850,7 @@ auth_start (NMSettingsConnection *self,
 	}
 
 	if (check_permission) {
-		chain = nm_auth_chain_new (priv->authority, context, NULL, pk_auth_cb, self);
+		chain = nm_auth_chain_new (context, NULL, pk_auth_cb, self);
 		g_assert (chain);
 		nm_auth_chain_set_data (chain, "perm", (gpointer) check_permission, NULL);
 		nm_auth_chain_set_data (chain, "callback", callback, NULL);
@@ -1371,17 +1369,8 @@ nm_settings_connection_init (NMSettingsConnection *self)
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	static guint32 dbus_counter = 0;
 	char *dbus_path;
-	GError *error = NULL;
 
 	priv->dbus_mgr = nm_dbus_manager_get ();
-
-	priv->authority = polkit_authority_get_sync (NULL, &error);
-	if (!priv->authority) {
-		nm_log_warn (LOGD_SETTINGS, "failed to create PolicyKit authority: (%d) %s",
-		             error ? error->code : -1,
-		             error && error->message ? error->message : "(unknown)");
-		g_clear_error (&error);
-	}
 
 	dbus_path = g_strdup_printf ("%s/%u", NM_DBUS_PATH_SETTINGS, dbus_counter++);
 	nm_connection_set_path (NM_CONNECTION (self), dbus_path);
@@ -1429,7 +1418,6 @@ dispose (GObject *object)
 	g_object_unref (priv->session_monitor);
 	g_object_unref (priv->agent_mgr);
 	g_object_unref (priv->dbus_mgr);
-	g_object_unref (priv->authority);
 
 out:
 	G_OBJECT_CLASS (nm_settings_connection_parent_class)->dispose (object);

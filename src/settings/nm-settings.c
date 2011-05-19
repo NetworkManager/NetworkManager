@@ -56,7 +56,6 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-settings.h"
 #include "nm-settings-connection.h"
-#include "nm-polkit-helpers.h"
 #include "nm-settings-error.h"
 #include "nm-default-wired-connection.h"
 #include "nm-logging.h"
@@ -114,8 +113,6 @@ typedef struct {
 
 	NMAgentManager *agent_mgr;
 
-	PolkitAuthority *authority;
-	guint auth_changed_id;
 	char *config_file;
 
 	NMSessionMonitor *session_monitor;
@@ -999,7 +996,7 @@ nm_settings_add_connection (NMSettings *self,
 		perm = NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM;
 
 	/* Otherwise validate the user request */
-	chain = nm_auth_chain_new (priv->authority, context, NULL, pk_add_cb, self);
+	chain = nm_auth_chain_new (context, NULL, pk_add_cb, self);
 	g_assert (chain);
 	priv->auths = g_slist_append (priv->auths, chain);
 	nm_auth_chain_add_call (chain, perm, TRUE);
@@ -1111,7 +1108,7 @@ impl_settings_save_hostname (NMSettings *self,
 	}
 
 	/* Otherwise validate the user request */
-	chain = nm_auth_chain_new (priv->authority, context, NULL, pk_hostname_cb, self);
+	chain = nm_auth_chain_new (context, NULL, pk_hostname_cb, self);
 	g_assert (chain);
 	priv->auths = g_slist_append (priv->auths, chain);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME, TRUE);
@@ -1476,17 +1473,8 @@ static void
 nm_settings_init (NMSettings *self)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	GError *error = NULL;
 
 	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
-
-	priv->authority = polkit_authority_get_sync (NULL, &error);
-	if (!priv->authority) {
-		nm_log_warn (LOGD_SETTINGS, "failed to create PolicyKit authority: (%d) %s",
-		             error ? error->code : -1,
-		             error && error->message ? error->message : "(unknown)");
-		g_clear_error (&error);
-	}
 
 	priv->session_monitor = nm_session_monitor_get ();
 
@@ -1504,11 +1492,6 @@ dispose (GObject *object)
 	NMSettings *self = NM_SETTINGS (object);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GSList *iter;
-
-	if (priv->auth_changed_id) {
-		g_signal_handler_disconnect (priv->authority, priv->auth_changed_id);
-		priv->auth_changed_id = 0;
-	}
 
 	for (iter = priv->auths; iter; iter = g_slist_next (iter))
 		nm_auth_chain_unref ((NMAuthChain *) iter->data);

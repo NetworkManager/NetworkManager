@@ -28,6 +28,7 @@
 #include <string.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
+#include <gio/gio.h>
 #include <glib/gi18n.h>
 
 #include "nm-glib-compat.h"
@@ -158,20 +159,6 @@ static GSList * remove_one_device (NMManager *manager,
                                    NMDevice *device,
                                    gboolean quitting);
 
-/* Fix for polkit 0.97 and later */
-#if !HAVE_POLKIT_AUTHORITY_GET_SYNC
-static inline PolkitAuthority *
-polkit_authority_get_sync (GCancellable *cancellable, GError **error)
-{
-	PolkitAuthority *authority;
-
-	authority = polkit_authority_get ();
-	if (!authority)
-		g_set_error (error, 0, 0, "failed to get the PolicyKit authority");
-	return authority;
-}
-#endif
-
 #define SSD_POKE_INTERVAL 120
 #define ORIGDEV_TAG "originating-device"
 
@@ -183,7 +170,6 @@ struct PendingActivation {
 	NMManager *manager;
 
 	DBusGMethodInvocation *context;
-	PolkitAuthority *authority;
 	PendingActivationFunc callback;
 	NMAuthChain *chain;
 
@@ -235,8 +221,6 @@ typedef struct {
 	DBusGProxy *aipd_proxy;
 	DBusGProxy *upower_proxy;
 
-	PolkitAuthority *authority;
-	guint auth_changed_id;
 	GSList *auth_chains;
 
 	/* Firmware dir monitor */
@@ -677,7 +661,6 @@ try_complete_vpn (NMConnection *connection, GSList *existing, GError **error)
 
 static PendingActivation *
 pending_activation_new (NMManager *manager,
-                        PolkitAuthority *authority,
                         DBusGMethodInvocation *context,
                         const char *device_path,
                         const char *connection_path,
@@ -694,7 +677,6 @@ pending_activation_new (NMManager *manager,
 	gboolean success;
 
 	g_return_val_if_fail (manager != NULL, NULL);
-	g_return_val_if_fail (authority != NULL, NULL);
 	g_return_val_if_fail (context != NULL, NULL);
 	g_return_val_if_fail (device_path != NULL, NULL);
 
@@ -742,7 +724,6 @@ pending_activation_new (NMManager *manager,
 
 	pending = g_slice_new0 (PendingActivation);
 	pending->manager = manager;
-	pending->authority = authority;
 	pending->context = context;
 	pending->callback = callback;
 
@@ -765,31 +746,23 @@ pending_auth_net_done (NMAuthChain *chain,
 {
 	PendingActivation *pending = user_data;
 	NMAuthCallResult result;
+	GError *tmp_error = NULL;
 
 	pending->chain = NULL;
-
-	if (error) {
-		pending->callback (pending, error);
-		goto out;
-	}
 
 	/* Caller has had a chance to obtain authorization, so we only need to
 	 * check for 'yes' here.
 	 */
 	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL));
 	if (result != NM_AUTH_CALL_RESULT_YES) {
-		error = g_error_new_literal (NM_MANAGER_ERROR,
-		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             "Not authorized to control networking.");
-		pending->callback (pending, error);
-		g_error_free (error);
-		goto out;
+		tmp_error = g_error_new_literal (NM_MANAGER_ERROR,
+		                                 NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                                 "Not authorized to control networking.");
 	}
 
-	pending->callback (pending, NULL);
-
-out:
+	pending->callback (pending, tmp_error);
 	nm_auth_chain_unref (chain);
+	g_clear_error (&tmp_error);
 }
 
 static void
@@ -825,8 +798,7 @@ pending_activation_check_authorized (PendingActivation *pending,
 	/* First check if the user is allowed to use networking at all, giving
 	 * the user a chance to authenticate to gain the permission.
 	 */
-	pending->chain = nm_auth_chain_new (pending->authority,
-	                                    pending->context,
+	pending->chain = nm_auth_chain_new (pending->context,
 	                                    NULL,
 	                                    pending_auth_net_done,
 	                                    pending);
@@ -1386,7 +1358,7 @@ manager_device_disconnect_request (NMDevice *device,
 		NMAuthChain *chain;
 
 		/* Otherwise validate the user request */
-		chain = nm_auth_chain_new (priv->authority, context, NULL, disconnect_net_auth_done_cb, self);
+		chain = nm_auth_chain_new (context, NULL, disconnect_net_auth_done_cb, self);
 		g_assert (chain);
 		priv->auth_chains = g_slist_append (priv->auth_chains, chain);
 
@@ -2101,7 +2073,6 @@ impl_manager_activate_connection (NMManager *self,
 	 * activate the connection.
 	 */
 	pending = pending_activation_new (self,
-	                                  priv->authority,
 	                                  context,
 	                                  device_path,
 	                                  connection_path,
@@ -2170,7 +2141,6 @@ impl_manager_add_and_activate_connection (NMManager *self,
 	 * activate the connection.
 	 */
 	pending = pending_activation_new (self,
-	                                  priv->authority,
 	                                  context,
 	                                  device_path,
 	                                  NULL,
@@ -2234,37 +2204,35 @@ done:
 
 static void
 deactivate_net_auth_done_cb (NMAuthChain *chain,
-                             GError *error,
+                             GError *auth_error,
                              DBusGMethodInvocation *context,
                              gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GError *ret_error = NULL;
+	GError *error = NULL;
 	NMAuthCallResult result;
 	const char *active_path;
 
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
 
 	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL));
-	ret_error = deactivate_disconnect_check_error (error, result, "Deactivate");
-	if (ret_error) {
-		dbus_g_method_return_error (context, ret_error);
-		g_error_free (ret_error);
-		goto done;
+	error = deactivate_disconnect_check_error (auth_error, result, "Deactivate");
+	if (!error) {
+		active_path = nm_auth_chain_get_data (chain, "path");
+		if (!nm_manager_deactivate_connection (self,
+		                                       active_path,
+		                                       NM_DEVICE_STATE_REASON_USER_REQUESTED,
+		                                       &error))
+			g_assert (error);
 	}
 
-	active_path = nm_auth_chain_get_data (chain, "path");
-	if (!nm_manager_deactivate_connection (self,
-	                                       active_path,
-	                                       NM_DEVICE_STATE_REASON_USER_REQUESTED,
-	                                       &ret_error)) {
-		dbus_g_method_return_error (context, ret_error);
-		g_clear_error (&ret_error);
-	} else
+	if (error)
+		dbus_g_method_return_error (context, error);
+	else
 		dbus_g_method_return (context);
 
-done:
+	g_clear_error (&error);
 	nm_auth_chain_unref (chain);
 }
 
@@ -2340,7 +2308,7 @@ impl_manager_deactivate_connection (NMManager *self,
 	}
 
 	/* Otherwise validate the user request */
-	chain = nm_auth_chain_new (priv->authority, context, NULL, deactivate_net_auth_done_cb, self);
+	chain = nm_auth_chain_new (context, NULL, deactivate_net_auth_done_cb, self);
 	g_assert (chain);
 	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
 
@@ -2411,25 +2379,6 @@ do_sleep_wake (NMManager *self)
 	}
 
 	nm_manager_update_state (self);
-}
-
-static gboolean
-return_no_pk_error (PolkitAuthority *authority,
-                    const char *detail,
-                    DBusGMethodInvocation *context)
-{
-	GError *error;
-
-	if (!authority) {
-		error = g_error_new (NM_MANAGER_ERROR,
-		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                     "%s request failed: PolicyKit not initialized",
-		                     detail);
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-		return FALSE;
-	}
-	return TRUE;
 }
 
 static void
@@ -2548,10 +2497,7 @@ impl_manager_sleep (NMManager *self,
 		return;
 	}
 
-	if (!return_no_pk_error (priv->authority, "Sleep/wake", context))
-		return;
-
-	chain = nm_auth_chain_new (priv->authority, context, NULL, sleep_auth_done_cb, self);
+	chain = nm_auth_chain_new (context, NULL, sleep_auth_done_cb, self);
 	g_assert (chain);
 	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
 
@@ -2686,10 +2632,7 @@ impl_manager_enable (NMManager *self,
 		return;
 	}
 
-	if (!return_no_pk_error (priv->authority, "Enable/disable", context))
-		return;
-
-	chain = nm_auth_chain_new (priv->authority, context, NULL, enable_net_done_cb, self);
+	chain = nm_auth_chain_new (context, NULL, enable_net_done_cb, self);
 	g_assert (chain);
 	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
 
@@ -2698,13 +2641,6 @@ impl_manager_enable (NMManager *self,
 }
 
 /* Permissions */
-
-static void
-pk_authority_changed_cb (GObject *object, gpointer user_data)
-{
-	/* Let clients know they should re-check their authorization */
-	g_signal_emit (NM_MANAGER (user_data), signals[CHECK_PERMISSIONS], 0);
-}
 
 static void
 get_perm_add_result (NMAuthChain *chain, GHashTable *results, const char *permission)
@@ -2770,10 +2706,7 @@ impl_manager_get_permissions (NMManager *self,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMAuthChain *chain;
 
-	if (!return_no_pk_error (priv->authority, "Permissions", context))
-		return;
-
-	chain = nm_auth_chain_new (priv->authority, context, NULL, get_permissions_done_cb, self);
+	chain = nm_auth_chain_new (context, NULL, get_permissions_done_cb, self);
 	g_assert (chain);
 	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
 
@@ -3057,7 +2990,7 @@ prop_filter (DBusConnection *connection,
 
 	if (uid > 0) {
 		/* Otherwise validate the user request */
-		chain = nm_auth_chain_new_raw_message (priv->authority, message, prop_set_auth_done_cb, self);
+		chain = nm_auth_chain_new_raw_message (message, prop_set_auth_done_cb, self);
 		g_assert (chain);
 		priv->auth_chains = g_slist_append (priv->auth_chains, chain);
 		nm_auth_chain_set_data (chain, "prop", g_strdup (glib_propname), g_free);
@@ -3187,7 +3120,8 @@ dispose (GObject *object)
 
 	g_slist_foreach (priv->auth_chains, (GFunc) nm_auth_chain_unref, NULL);
 	g_slist_free (priv->auth_chains);
-	g_object_unref (priv->authority);
+
+	nm_auth_set_changed_func (NULL, NULL);
 
 	while (g_slist_length (priv->devices)) {
 		priv->devices = remove_one_device (manager,
@@ -3464,13 +3398,19 @@ periodic_update_active_connection_timestamps (gpointer user_data)
 }
 
 static void
+authority_changed_cb (gpointer user_data)
+{
+	/* Let clients know they should re-check their authorization */
+	g_signal_emit (NM_MANAGER (user_data), signals[CHECK_PERMISSIONS], 0);
+}
+
+static void
 nm_manager_init (NMManager *manager)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	DBusGConnection *g_connection;
 	guint id, i;
 	GFile *file;
-	GError *error = NULL;
 
 	/* Initialize rfkill structures and states */
 	memset (priv->radio_states, 0, sizeof (priv->radio_states));
@@ -3561,18 +3501,8 @@ nm_manager_init (NMManager *manager)
 	} else
 		nm_log_warn (LOGD_SUSPEND, "could not initialize UPower D-Bus proxy");
 
-	priv->authority = polkit_authority_get_sync (NULL, &error);
-	if (priv->authority) {
-		priv->auth_changed_id = g_signal_connect (priv->authority,
-		                                          "changed",
-		                                          G_CALLBACK (pk_authority_changed_cb),
-		                                          manager);
-	} else {
-		nm_log_warn (LOGD_CORE, "failed to create PolicyKit authority: (%d) %s",
-		             error ? error->code : -1,
-		             error && error->message ? error->message : "(unknown)");
-		g_clear_error (&error);
-	}
+	/* Listen for authorization changes */
+	nm_auth_set_changed_func (authority_changed_cb, manager);
 
 	/* Monitor the firmware directory */
 	if (strlen (KERNEL_FIRMWARE_DIR)) {
