@@ -1756,11 +1756,11 @@ manager_hidden_ap_found (NMDeviceInterface *device,
 
 		s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
 		if (!s_wireless)
-			goto next;
+			continue;
 
 		num_bssids = nm_setting_wireless_get_num_seen_bssids (s_wireless);
 		if (num_bssids < 1)
-			goto next;
+			continue;
 
 		ssid = nm_setting_wireless_get_ssid (s_wireless);
 		g_assert (ssid);
@@ -1779,10 +1779,9 @@ manager_hidden_ap_found (NMDeviceInterface *device,
 			nm_ap_set_ssid (ap, ssid);
 			done = TRUE;
 		}
-
-next:
-		g_object_unref (connection);
 	}
+
+	g_slist_foreach (connections, (GFunc) g_object_unref, NULL);
 	g_slist_free (connections);
 }
 
@@ -2284,6 +2283,7 @@ bdaddr_matches_connection (NMSettingBluetooth *s_bt, const char *bdaddr)
 	return ret;
 }
 
+/* Caller should call g_object_ref() on return value if it wants to own that. */
 static NMConnection *
 bluez_manager_find_connection (NMManager *manager,
                                const char *bdaddr,
@@ -2328,6 +2328,7 @@ bluez_manager_find_connection (NMManager *manager,
 		break;
 	}
 
+	g_slist_foreach (connections, (GFunc) g_object_unref, NULL);
 	g_slist_free (connections);
 	return found;
 }
