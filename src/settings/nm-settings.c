@@ -703,6 +703,10 @@ connection_visibility_changed (NMSettingsConnection *connection,
 #define NM_OPENCONNECT_KEY_GATEWAY "gateway"
 #define NM_OPENCONNECT_KEY_COOKIE "cookie"
 #define NM_OPENCONNECT_KEY_GWCERT "gwcert"
+#define NM_OPENCONNECT_KEY_XMLCONFIG "xmlconfig"
+#define NM_OPENCONNECT_KEY_LASTHOST "lasthost"
+#define NM_OPENCONNECT_KEY_AUTOCONNECT "autoconnect"
+#define NM_OPENCONNECT_KEY_CERTSIGS "certsigs"
 
 static void
 openconnect_migrate_hack (NMConnection *connection)
@@ -721,9 +725,17 @@ openconnect_migrate_hack (NMConnection *connection)
 		return;
 
 	if (g_strcmp0 (nm_setting_vpn_get_service_type (s_vpn), NM_DBUS_SERVICE_OPENCONNECT) == 0) {
+		/* These are different for every login session, and should not be stored */
 		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_GATEWAY, flags, NULL);
 		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_COOKIE, flags, NULL);
 		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_GWCERT, flags, NULL);
+
+		/* These are purely internal data for the auth-dialog, and should be stored */
+		flags = 0;
+		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_XMLCONFIG, flags, NULL);
+		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_LASTHOST, flags, NULL);
+		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_AUTOCONNECT, flags, NULL);
+		nm_setting_set_secret_flags (NM_SETTING (s_vpn), NM_OPENCONNECT_KEY_CERTSIGS, flags, NULL);
 	}
 }
 
