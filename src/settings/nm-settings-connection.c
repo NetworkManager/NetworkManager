@@ -430,7 +430,7 @@ has_system_owned_secrets (GHashTableIter *iter,
 {
 	gboolean *has_system_owned = user_data;
 
-	if (!(flags & NM_SETTING_SECRET_FLAG_AGENT_OWNED)) {
+	if (flags == NM_SETTING_SECRET_FLAG_NONE) {
 		*has_system_owned = TRUE;
 		return FALSE;
 	}
