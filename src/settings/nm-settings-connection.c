@@ -447,25 +447,62 @@ for_each_secret (NMConnection *connection,
 	const char *setting_name;
 	GHashTable *setting_hash;
 
+	/* This function, given a hash of hashes representing new secrets of
+	 * an NMConnection, walks through each toplevel hash (which represents a
+	 * NMSetting), and for each setting, walks through that setting hash's
+	 * properties.  For each property that's a secret, it will check that
+	 * secret's flags in the backing NMConnection object, and call a supplied
+	 * callback.
+	 *
+	 * The one complexity is that the VPN setting's 'secrets' property is
+	 * *also* a hash table (since the key/value pairs are arbitrary and known
+	 * only to the VPN plugin itself).  That means we have three levels of
+	 * GHashTables that we potentially have to traverse here.  When we hit the
+	 * VPN setting's 'secrets' property, we special-case that and iterate over
+	 * each item in that 'secrets' hash table, calling the supplied callback
+	 * each time.
+	 */
+
 	/* Walk through the list of setting hashes */
 	g_hash_table_iter_init (&iter, secrets);
-	while (g_hash_table_iter_next (&iter,
-	                               (gpointer *) &setting_name,
-	                               (gpointer *) &setting_hash)) {
-		GHashTableIter setting_iter;
+	while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, (gpointer) &setting_hash)) {
+		NMSetting *setting;
+		GHashTableIter secret_iter;
 		const char *secret_name;
+		GValue *val;
+
+		/* Get the actual NMSetting from the connection so we can get secret flags
+		 * from the connection data, since flags aren't secrets.  What we're
+		 * iterating here is just the secrets, not a whole connection.
+		 */
+		setting = nm_connection_get_setting_by_name (connection, setting_name);
+		if (setting == NULL)
+			continue;
 
 		/* Walk through the list of keys in each setting hash */
-		g_hash_table_iter_init (&setting_iter, setting_hash);
-		while (g_hash_table_iter_next (&setting_iter, (gpointer *) &secret_name, NULL)) {
-			NMSetting *setting;
+		g_hash_table_iter_init (&secret_iter, setting_hash);
+		while (g_hash_table_iter_next (&secret_iter, (gpointer) &secret_name, (gpointer) &val)) {
 			NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
 
-			/* Get the actual NMSetting from the connection so we can get secret flags */
-			setting = nm_connection_get_setting_by_name (connection, setting_name);
-			if (setting && nm_setting_get_secret_flags (setting, secret_name, &flags, NULL)) {
-				if (callback (&setting_iter, flags, callback_data) == FALSE)
-					return;
+			/* VPN secrets need slightly different treatment here since the
+			 * "secrets" property is actually a hash table of secrets.
+			 */
+			if (NM_IS_SETTING_VPN (setting) && (g_strcmp0 (secret_name, NM_SETTING_VPN_SECRETS) == 0)) {
+				GHashTableIter vpn_secrets_iter;
+
+				/* Iterate through each secret from the VPN hash in the overall secrets hash */
+				g_hash_table_iter_init (&vpn_secrets_iter, g_value_get_boxed (val));
+				while (g_hash_table_iter_next (&vpn_secrets_iter, (gpointer) &secret_name, NULL)) {
+					if (nm_setting_get_secret_flags (setting, secret_name, &flags, NULL)) {
+						if (callback (&vpn_secrets_iter, flags, callback_data) == FALSE)
+							return;
+					}
+				}
+			} else {
+				if (nm_setting_get_secret_flags (setting, secret_name, &flags, NULL)) {
+					if (callback (&secret_iter, flags, callback_data) == FALSE)
+						return;
+				}
 			}
 		}
 	}
