@@ -161,23 +161,55 @@ nm_setting_vpn_remove_data_item (NMSettingVPN *setting, const char *key)
 	g_hash_table_remove (NM_SETTING_VPN_GET_PRIVATE (setting)->data, key);
 }
 
+static void
+foreach_item_helper (GHashTable *hash,
+                     NMVPNIterFunc func,
+                     gpointer user_data)
+{
+	GList *keys, *liter;
+	GSList *copied = NULL, *siter;
+
+	g_return_if_fail (hash != NULL);
+
+	/* Grab keys and copy them so that the callback func can modify
+	 * the hash table items if it wants to.
+	 */
+	keys = g_hash_table_get_keys (hash);
+	for (liter = keys; liter; liter = g_list_next (liter))
+		copied = g_slist_prepend (copied, g_strdup (liter->data));
+	copied = g_slist_reverse (copied);
+	g_list_free (keys);
+
+	for (siter = copied; siter; siter = g_slist_next (siter)) {
+		gpointer value;
+
+		value = g_hash_table_lookup (hash, siter->data);
+		func (siter->data, value, user_data);
+	}
+
+	g_slist_foreach (copied, (GFunc) g_free, NULL);
+	g_slist_free (copied);
+}
+
 /**
  * nm_setting_vpn_foreach_data_item:
  * @setting: a #NMSettingVPN
  * @func: (scope call): an user provided function
  * @user_data: data to be passed to @func
  *
- * Iterates all data items stored in this setting
+ * Iterates all data items stored in this setting.  It is safe to add, remove,
+ * and modify data items inside @func, though any additions or removals made
+ * during iteration will not be part of the iteration.
  */
 void
 nm_setting_vpn_foreach_data_item (NMSettingVPN *setting,
                                   NMVPNIterFunc func,
                                   gpointer user_data)
 {
+	g_return_if_fail (setting != NULL);
 	g_return_if_fail (NM_IS_SETTING_VPN (setting));
 
-	g_hash_table_foreach (NM_SETTING_VPN_GET_PRIVATE (setting)->data,
-	                      (GHFunc) func, user_data);
+	foreach_item_helper (NM_SETTING_VPN_GET_PRIVATE (setting)->data, func, user_data);
 }
 
 void
@@ -217,17 +249,19 @@ nm_setting_vpn_remove_secret (NMSettingVPN *setting, const char *key)
  * @func: (scope call): an user provided function
  * @user_data: data to be passed to @func
  *
- * Iterates all secrets stored in this setting.
+ * Iterates all secrets stored in this setting.  It is safe to add, remove,
+ * and modify secrets inside @func, though any additions or removals made during
+ * iteration will not be part of the iteration.
  */
 void
 nm_setting_vpn_foreach_secret (NMSettingVPN *setting,
                                NMVPNIterFunc func,
                                gpointer user_data)
 {
+	g_return_if_fail (setting != NULL);
 	g_return_if_fail (NM_IS_SETTING_VPN (setting));
 
-	g_hash_table_foreach (NM_SETTING_VPN_GET_PRIVATE (setting)->secrets,
-	                      (GHFunc) func, user_data);
+	foreach_item_helper (NM_SETTING_VPN_GET_PRIVATE (setting)->secrets, func, user_data);
 }
 
 static gboolean
@@ -423,6 +457,7 @@ destroy_one_secret (gpointer data)
 	char *secret = (char *) data;
 
 	/* Don't leave the secret lying around in memory */
+g_message ("%s: destroying %s", __func__, secret);
 	memset (secret, 0, strlen (secret));
 	g_free (secret);
 }

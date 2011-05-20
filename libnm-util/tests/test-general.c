@@ -195,6 +195,75 @@ test_setting_vpn_update_secrets (void)
 	g_object_unref (connection);
 }
 
+#define TO_DEL_NUM 50
+typedef struct {
+	NMSettingVPN *s_vpn;
+	char *to_del[TO_DEL_NUM];
+	guint called;
+} IterInfo;
+
+static void
+del_iter_func (const char *key, const char *value, gpointer user_data)
+{
+	IterInfo *info = user_data;
+	int i;
+
+	/* Record how many times this function gets called; it should get called
+	 * exactly as many times as there are keys in the hash table, regardless
+	 * of what keys we delete from the table.
+	 */
+	info->called++;
+
+	/* During the iteration, remove a bunch of stuff from the table */
+	if (info->called == 1) {
+		for (i = 0; i < TO_DEL_NUM; i++)
+			nm_setting_vpn_remove_data_item (info->s_vpn, info->to_del[i]);
+	}
+}
+
+static void
+test_setting_vpn_modify_during_foreach (void)
+{
+	NMSettingVPN *s_vpn;
+	IterInfo info;
+	char *key, *val;
+	int i, u = 0;
+
+	s_vpn = (NMSettingVPN *) nm_setting_vpn_new ();
+	g_assert (s_vpn);
+
+	for (i = 0; i < TO_DEL_NUM * 2; i++) {
+		key = g_strdup_printf ("adsfasdfadf%d", i);
+		val = g_strdup_printf ("42263236236awt%d", i);
+		nm_setting_vpn_add_data_item (s_vpn, key, val);
+
+		/* Cache some keys to delete */
+		if (i % 2)
+			info.to_del[u++] = g_strdup (key);
+
+		g_free (key);
+		g_free (val);
+	}
+
+	/* Iterate over current table keys */
+	info.s_vpn = s_vpn;
+	info.called = 0;
+	nm_setting_vpn_foreach_data_item (s_vpn, del_iter_func, &info);
+
+	/* Make sure all the things we removed during iteration are really gone */
+	for (i = 0; i < TO_DEL_NUM; i++) {
+		g_assert_cmpstr (nm_setting_vpn_get_data_item (s_vpn, info.to_del[i]), ==, NULL);
+		g_free (info.to_del[i]);
+	}
+
+	/* And make sure the foreach callback was called the same number of times
+	 * as there were keys in the table at the beginning of the foreach.
+	 */
+	g_assert_cmpint (info.called, ==, TO_DEL_NUM * 2);
+
+	g_object_unref (s_vpn);
+}
+
 #define OLD_DBUS_TYPE_G_IP6_ADDRESS (dbus_g_type_get_struct ("GValueArray", DBUS_TYPE_G_UCHAR_ARRAY, G_TYPE_UINT, G_TYPE_INVALID))
 #define OLD_DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS (dbus_g_type_get_collection ("GPtrArray", OLD_DBUS_TYPE_G_IP6_ADDRESS))
 
@@ -1151,6 +1220,7 @@ int main (int argc, char **argv)
 	/* The tests */
 	test_setting_vpn_items ();
 	test_setting_vpn_update_secrets ();
+	test_setting_vpn_modify_during_foreach ();
 	test_setting_ip6_config_old_address_array ();
 	test_setting_gsm_apn_spaces ();
 	test_setting_gsm_apn_bad_chars ();
