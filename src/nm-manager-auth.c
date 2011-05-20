@@ -25,8 +25,6 @@
 
 #if WITH_POLKIT
 #include <polkit/polkit.h>
-#else
-typedef guint PolkitAuthority;
 #endif
 
 #include "nm-setting-connection.h"
@@ -36,7 +34,9 @@ typedef guint PolkitAuthority;
 
 struct NMAuthChain {
 	guint32 refcount;
+#if WITH_POLKIT
 	PolkitAuthority *authority;
+#endif
 	GSList *calls;
 	GHashTable *data;
 
@@ -93,12 +93,6 @@ pk_authority_get (void)
 	/* Yes, ref every time; we want to keep the object alive */
 	return g_object_ref (authority);
 }
-#else
-static PolkitAuthority *
-pk_authority_get (void)
-{
-	return NULL;
-}
 #endif
 
 static NMAuthChain *
@@ -115,7 +109,9 @@ _auth_chain_new (DBusGMethodInvocation *context,
 
 	self = g_malloc0 (sizeof (NMAuthChain));
 	self->refcount = 1;
+#if WITH_POLKIT
 	self->authority = pk_authority_get ();
+#endif
 	self->data = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, free_data);
 	self->done_func = done_func;
 	self->user_data = user_data;
@@ -258,6 +254,19 @@ nm_auth_chain_remove_call (NMAuthChain *self, AuthCall *call)
 	self->calls = g_slist_remove (self->calls, call);
 }
 
+static AuthCall *
+auth_call_new (NMAuthChain *chain, const char *permission)
+{
+	AuthCall *call;
+
+	call = g_malloc0 (sizeof (AuthCall));
+	call->chain = chain;
+	call->permission = g_strdup (permission);
+	call->cancellable = g_cancellable_new ();
+	chain->calls = g_slist_append (chain->calls, call);
+	return call;
+}
+
 static void
 auth_call_cancel (AuthCall *call)
 {
@@ -282,63 +291,11 @@ auth_call_free (AuthCall *call)
 	g_free (call);
 }
 
-#if WITH_POLKIT
-static void
-pk_call_cb (GObject *object, GAsyncResult *result, gpointer user_data)
-{
-	AuthCall *call = user_data;
-	NMAuthChain *chain;
-	PolkitAuthorizationResult *pk_result;
-	GError *error = NULL;
-	guint call_result = NM_AUTH_CALL_RESULT_UNKNOWN;
-
-	/* If the call is already disposed do nothing */
-	if (call->disposed) {
-		auth_call_free (call);
-		return;
-	}
-
-	chain = call->chain;
-	nm_auth_chain_remove_call (chain, call);
-
-	pk_result = polkit_authority_check_authorization_finish (chain->authority,
-	                                                         result,
-	                                                         &error);
-	if (error) {
-		if (!chain->error)
-			chain->error = g_error_copy (error);
-
-		nm_log_warn (LOGD_CORE, "error requesting auth for %s: (%d) %s",
-		             call->permission,
-		             error ? error->code : -1,
-		             error && error->message ? error->message : "(unknown)");
-	} else {
-		if (polkit_authorization_result_get_is_authorized (pk_result)) {
-			/* Caller has the permission */
-			call_result = NM_AUTH_CALL_RESULT_YES;
-		} else if (polkit_authorization_result_get_is_challenge (pk_result)) {
-			/* Caller could authenticate to get the permission */
-			call_result = NM_AUTH_CALL_RESULT_AUTH;
-		} else
-			call_result = NM_AUTH_CALL_RESULT_NO;
-
-		nm_auth_chain_set_data (chain, call->permission, GUINT_TO_POINTER (call_result), NULL);
-	}
-
-	/* Check if all calls in the chain are complete */
-	nm_auth_chain_check_done (chain);
-
-	g_clear_error (&error);
-	auth_call_free (call);
-	if (pk_result)
-		g_object_unref (pk_result);
-}
-#endif
-
+/* This can get used from scheduled idles, hence the boolean return */
 static gboolean
-auth_call_early_finish_idle_cb (gpointer user_data)
+auth_call_complete (AuthCall *call)
 {
-	AuthCall *call = user_data;
+	g_return_val_if_fail (call != NULL, FALSE);
 
 	call->idle_id = 0;
 	nm_auth_chain_remove_call (call->chain, call);
@@ -352,8 +309,55 @@ auth_call_schedule_early_finish (AuthCall *call, GError *error)
 {
 	if (!call->chain->error)
 		call->chain->error = error;
-	call->idle_id = g_idle_add (auth_call_early_finish_idle_cb, call);
+	call->idle_id = g_idle_add ((GSourceFunc) auth_call_complete, call);
 }
+
+#if WITH_POLKIT
+static void
+pk_call_cb (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	AuthCall *call = user_data;
+	NMAuthChain *chain = call->chain;
+	PolkitAuthorizationResult *pk_result;
+	GError *error = NULL;
+
+	/* If the call is already disposed do nothing */
+	if (call->disposed) {
+		auth_call_free (call);
+		return;
+	}
+
+	pk_result = polkit_authority_check_authorization_finish (chain->authority, result, &error);
+	if (error) {
+		if (!chain->error)
+			chain->error = g_error_copy (error);
+
+		nm_log_warn (LOGD_CORE, "error requesting auth for %s: (%d) %s",
+		             call->permission,
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
+	} else {
+		guint call_result = NM_AUTH_CALL_RESULT_UNKNOWN;
+
+		if (polkit_authorization_result_get_is_authorized (pk_result)) {
+			/* Caller has the permission */
+			call_result = NM_AUTH_CALL_RESULT_YES;
+		} else if (polkit_authorization_result_get_is_challenge (pk_result)) {
+			/* Caller could authenticate to get the permission */
+			call_result = NM_AUTH_CALL_RESULT_AUTH;
+		} else
+			call_result = NM_AUTH_CALL_RESULT_NO;
+
+		nm_auth_chain_set_data (chain, call->permission, GUINT_TO_POINTER (call_result), NULL);
+	}
+
+	g_clear_error (&error);
+	if (pk_result)
+		g_object_unref (pk_result);
+
+	auth_call_complete (call);
+}
+#endif
 
 gboolean
 nm_auth_chain_add_call (NMAuthChain *self,
@@ -361,29 +365,21 @@ nm_auth_chain_add_call (NMAuthChain *self,
                         gboolean allow_interaction)
 {
 	AuthCall *call;
+
 #if WITH_POLKIT
 	PolkitSubject *subject;
 	PolkitCheckAuthorizationFlags flags = POLKIT_CHECK_AUTHORIZATION_FLAGS_NONE;
-#endif
 
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (self->owner != NULL, FALSE);
 	g_return_val_if_fail (permission != NULL, FALSE);
 
-#if WITH_POLKIT
 	subject = polkit_system_bus_name_new (self->owner);
 	if (!subject)
 		return FALSE;
-#endif
 
-	call = g_malloc0 (sizeof (AuthCall));
-	call->chain = self;
-	call->permission = g_strdup (permission);
-	call->cancellable = g_cancellable_new ();
+	call = auth_call_new (self, permission);
 
-	self->calls = g_slist_append (self->calls, call);
-
-#if WITH_POLKIT
 	if (self->authority == NULL) {
 		/* No polkit, no authorization */
 		auth_call_schedule_early_finish (call, g_error_new_literal (0, 0, "PolicyKit unavailable"));
@@ -404,10 +400,16 @@ nm_auth_chain_add_call (NMAuthChain *self,
 	                                      call);
 	g_object_unref (subject);
 #else
+	/* -- NO POLKIT -- */
+
+	g_return_val_if_fail (self != NULL, FALSE);
+
 	/* When PolicyKit is disabled, everything is authorized */
-	nm_auth_chain_set_data (self, call->permission, GUINT_TO_POINTER (NM_AUTH_CALL_RESULT_YES), NULL);
+	call = auth_call_new (self, permission);
+	nm_auth_chain_set_data (self, permission, GUINT_TO_POINTER (NM_AUTH_CALL_RESULT_YES), NULL);
 	auth_call_schedule_early_finish (call, NULL);
 #endif
+
 	return TRUE;
 }
 
@@ -422,8 +424,10 @@ nm_auth_chain_unref (NMAuthChain *self)
 	if (self->refcount > 0)
 		return;
 
+#if WITH_POLKIT
 	if (self->authority)
 		g_object_unref (self->authority);
+#endif
 	g_free (self->owner);
 
 	for (iter = self->calls; iter; iter = g_slist_next (iter))
@@ -540,15 +544,18 @@ typedef struct {
 	gpointer changed_data;
 } PkChangedInfo;
 
+#if WITH_POLKIT
 static void
 pk_authority_changed_cb (GObject *object, PkChangedInfo *info)
 {
 	info->changed_callback (info->changed_data);
 }
+#endif
 
 void
 nm_auth_set_changed_func (GDestroyNotify callback, gpointer callback_data)
 {
+#if WITH_POLKIT
 	static PkChangedInfo info = { NULL, NULL };
 	static guint32 changed_id = 0;
 	PolkitAuthority *authority;
@@ -576,5 +583,6 @@ nm_auth_set_changed_func (GDestroyNotify callback, gpointer callback_data)
 	}
 
 	g_object_unref (authority);
+#endif
 }
 
