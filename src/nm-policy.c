@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2010 Red Hat, Inc.
+ * Copyright (C) 2004 - 2011 Red Hat, Inc.
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
@@ -817,22 +817,28 @@ hostname_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 }
 
 static void
+reset_retries_all (NMSettings *settings)
+{
+	GSList *connections, *iter;
+
+	connections = nm_settings_get_connections (settings);
+	for (iter = connections; iter; iter = g_slist_next (iter))
+		set_connection_auto_retries (NM_CONNECTION (iter->data), RETRIES_DEFAULT);
+	g_slist_free (connections);
+}
+
+static void
 sleeping_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 {
 	NMPolicy *policy = user_data;
 	gboolean sleeping = FALSE, enabled = FALSE;
-	GSList *connections, *iter;
 
 	g_object_get (G_OBJECT (manager), NM_MANAGER_SLEEPING, &sleeping, NULL);
 	g_object_get (G_OBJECT (manager), NM_MANAGER_NETWORKING_ENABLED, &enabled, NULL);
 
 	/* Reset retries on all connections so they'll checked on wakeup */
-	if (sleeping || !enabled) {
-		connections = nm_settings_get_connections (policy->settings);
-		for (iter = connections; iter; iter = g_slist_next (iter))
-			set_connection_auto_retries (NM_CONNECTION (iter->data), RETRIES_DEFAULT);
-		g_slist_free (connections);
-	}
+	if (sleeping || !enabled)
+		reset_retries_all (policy->settings);
 }
 
 static void
@@ -1045,9 +1051,15 @@ connection_added (NMSettings *settings,
 }
 
 static void
-connections_loaded (NMSettings *settings,
-					gpointer user_data)
+connections_loaded (NMSettings *settings, gpointer user_data)
 {
+	// FIXME: "connections-loaded" signal is emmitted *before* we connect to it
+	// in nm_policy_new(). So this function is never called. Currently we work around
+	// that by calling reset_retries_all() in nm_policy_new()
+	
+	/* Initialize connections' auto-retries */
+	reset_retries_all (settings);
+
 	schedule_activate_all ((NMPolicy *) user_data);
 }
 
@@ -1174,6 +1186,9 @@ nm_policy_new (NMManager *manager,
 	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_CONNECTION_REMOVED, connection_removed);
 	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED,
 	                          connection_visibility_changed);
+
+	/* Initialize connections' auto-retries */
+	reset_retries_all (policy->settings);
 
 	initialized = TRUE;
 	return policy;
