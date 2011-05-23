@@ -178,10 +178,10 @@ only_system_secrets_cb (NMSetting *setting,
 
 			g_hash_table_iter_init (&iter, (GHashTable *) g_value_get_boxed (value));
 			while (g_hash_table_iter_next (&iter, (gpointer *) &secret_name, NULL)) {
-				if (nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL)) {
-					if (secret_flags != NM_SETTING_SECRET_FLAG_NONE)
-						nm_setting_vpn_remove_secret (NM_SETTING_VPN (setting), secret_name);
-				}
+				secret_flags = NM_SETTING_SECRET_FLAG_NONE;
+				nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL);
+				if (secret_flags != NM_SETTING_SECRET_FLAG_NONE)
+					nm_setting_vpn_remove_secret (NM_SETTING_VPN (setting), secret_name);
 			}
 		} else {
 			nm_setting_get_secret_flags (setting, key, &secret_flags, NULL);
@@ -482,7 +482,7 @@ for_each_secret (NMConnection *connection,
 		/* Walk through the list of keys in each setting hash */
 		g_hash_table_iter_init (&secret_iter, setting_hash);
 		while (g_hash_table_iter_next (&secret_iter, (gpointer) &secret_name, (gpointer) &val)) {
-			NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
+			NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 
 			/* VPN secrets need slightly different treatment here since the
 			 * "secrets" property is actually a hash table of secrets.
@@ -493,16 +493,15 @@ for_each_secret (NMConnection *connection,
 				/* Iterate through each secret from the VPN hash in the overall secrets hash */
 				g_hash_table_iter_init (&vpn_secrets_iter, g_value_get_boxed (val));
 				while (g_hash_table_iter_next (&vpn_secrets_iter, (gpointer) &secret_name, NULL)) {
-					if (nm_setting_get_secret_flags (setting, secret_name, &flags, NULL)) {
-						if (callback (&vpn_secrets_iter, flags, callback_data) == FALSE)
-							return;
-					}
-				}
-			} else {
-				if (nm_setting_get_secret_flags (setting, secret_name, &flags, NULL)) {
-					if (callback (&secret_iter, flags, callback_data) == FALSE)
+					secret_flags = NM_SETTING_SECRET_FLAG_NONE;
+					nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL);
+					if (callback (&vpn_secrets_iter, secret_flags, callback_data) == FALSE)
 						return;
 				}
+			} else {
+				nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL);
+				if (callback (&secret_iter, secret_flags, callback_data) == FALSE)
+					return;
 			}
 		}
 	}
@@ -1017,10 +1016,10 @@ only_agent_secrets_cb (NMSetting *setting,
 			/* VPNs are special; need to handle each secret separately */
 			g_hash_table_iter_init (&iter, (GHashTable *) g_value_get_boxed (value));
 			while (g_hash_table_iter_next (&iter, (gpointer *) &secret_name, NULL)) {
-				if (nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL)) {
-					if (secret_flags != NM_SETTING_SECRET_FLAG_AGENT_OWNED)
-						nm_setting_vpn_remove_secret (NM_SETTING_VPN (setting), secret_name);
-				}
+				secret_flags = NM_SETTING_SECRET_FLAG_NONE;
+				nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL);
+				if (secret_flags != NM_SETTING_SECRET_FLAG_AGENT_OWNED)
+					nm_setting_vpn_remove_secret (NM_SETTING_VPN (setting), secret_name);
 			}
 		} else {
 			nm_setting_get_secret_flags (setting, key, &secret_flags, NULL);

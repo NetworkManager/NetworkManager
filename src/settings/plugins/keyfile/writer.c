@@ -453,17 +453,22 @@ write_hash_of_string (GKeyFile *file,
 
 	g_hash_table_iter_init (&iter, (GHashTable *) g_value_get_boxed (value));
 	while (g_hash_table_iter_next (&iter, (gpointer *) &property, (gpointer *) &data)) {
-		NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
+		gboolean write_item = TRUE;
 
 		/* Handle VPN secrets specially; they are nested in the property's hash;
-		 * we don't want to write them if the secret is not saved or not required.
+		 * we don't want to write them if the secret is not saved, not required,
+		 * or owned by a user's secret agent.
 		 */
-		if (vpn_secrets && nm_setting_get_secret_flags (setting, property, &flags, NULL)) {
-			if (flags & (NM_SETTING_SECRET_FLAG_NOT_SAVED | NM_SETTING_SECRET_FLAG_NOT_REQUIRED))
-				continue;
+		if (vpn_secrets) {
+			NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
+
+			nm_setting_get_secret_flags (setting, property, &secret_flags, NULL);
+			if (secret_flags != NM_SETTING_SECRET_FLAG_NONE)
+				write_item = FALSE;
 		}
 
-		g_key_file_set_string (file, group_name, property, data);
+		if (write_item)
+			g_key_file_set_string (file, group_name, property, data);
 	}
 }
 
@@ -799,7 +804,6 @@ write_setting_value (NMSetting *setting,
 	GType type = G_VALUE_TYPE (value);
 	KeyWriter *writer = &key_writers[0];
 	GParamSpec *pspec;
-	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
 
 	/* Setting name gets picked up from the keyfile's section name instead */
 	if (!strcmp (key, NM_SETTING_NAME))
@@ -822,12 +826,17 @@ write_setting_value (NMSetting *setting,
 	}
 
 	/* Don't write secrets that are owned by user secret agents or aren't
-	 * supposed to be saved.
+	 * supposed to be saved.  VPN secrets are handled specially though since
+	 * the secret flags there are in a third-level hash in the 'secrets'
+	 * property.
 	 */
-	if (   (pspec->flags & NM_SETTING_PARAM_SECRET)
-	    && nm_setting_get_secret_flags (setting, key, &flags, NULL)
-	    && (flags != NM_SETTING_SECRET_FLAG_NONE))
-		return;
+	if (pspec->flags & NM_SETTING_PARAM_SECRET && !NM_IS_SETTING_VPN (setting)) {
+		NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
+
+		nm_setting_get_secret_flags (setting, key, &secret_flags, NULL);
+		if (secret_flags != NM_SETTING_SECRET_FLAG_NONE)
+			return;
+	}
 
 	/* Look through the list of handlers for non-standard format key values */
 	while (writer->setting_name) {

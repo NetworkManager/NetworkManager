@@ -846,10 +846,10 @@ check_system_secrets_cb (NMSetting *setting,
 		/* VPNs are special; need to handle each secret separately */
 		g_hash_table_iter_init (&iter, (GHashTable *) g_value_get_boxed (value));
 		while (g_hash_table_iter_next (&iter, (gpointer *) &secret_name, NULL)) {
-			if (nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL)) {
-				if (secret_flags == NM_SETTING_SECRET_FLAG_NONE)
-					*has_system = TRUE;
-			}
+			secret_flags = NM_SETTING_SECRET_FLAG_NONE;
+			nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL);
+			if (secret_flags == NM_SETTING_SECRET_FLAG_NONE)
+				*has_system = TRUE;
 		}
 	} else {
 		nm_setting_get_secret_flags (setting, key, &secret_flags, NULL);
