@@ -88,6 +88,11 @@ are still missing.  If the wifi driver supports AP mode, then in
 src/supplicant-manager/ NM should send an AP-mode config instead of sending
 the adhoc config.
 
+Note that some devices (airo, ipw2100, ipw2200, iwl3945, iwl4965, atmel, zd1201)
+will never support AP mode due to firmware limitations, so we clearly must still
+provide Ad-Hoc connection sharing support for those devices and switch between
+Ad-Hoc and AP mode depending on device capabilities.
+
 
 * On-Demand WiFi Scan support
 
