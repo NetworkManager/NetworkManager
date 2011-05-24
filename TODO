@@ -303,3 +303,58 @@ that handle different system proxy handlers.  Some of the proxy handlers are:
   GNOME/KDE: how do these desktop environments retrieve proxy configuration?
 
 
+* Bridging and Bonding Support
+
+The largest complication here is that NetworkManager normally operates on
+physical interfaces, while bridging and bonding involve tying multiple physical
+interfaces together into a logical interface.  This has interesting implications
+for the D-Bus API and the NM device model.  The first complication is that
+we may need to do 802.1x port authentication on an interface before it can
+communicate with the other side of the link, and those credentials may be
+different for each interface; thus we may need to do separate 802.1x
+operations on each interface that is part of a bridge/bond before adding each
+one to the master bridge/bond interface.
+
+In this way bridge/bond interfaces may be treated the same way as NetworkManager
+treats VPN interfaces already; one or more physical interface NMConnections must
+be activated before the master bridge/bond interface's NMConnection can be
+activated, though this all happens internally.
+
+To enable bridging and bonding in the NMConnection itself, we should create
+new NMSettingBridge and NMSettingBond classes that contain information specific
+to each.  Both settings would contain a 'components' property with an
+'array of string' type which would contain the UUIDs of the Connections of
+physical interfaces that compose the bridge or bond.  Thus NetworkManager would
+have the necessary information to tie lower-level interface configuration
+(802.1x, MTU, MAC address locking, duplex mode, speed, etc) to each physical
+interface that will be part of the bridge/bond, configure the interface with
+it, and then configure the master bridge/bond interface at upper layers using
+configuration specific for the bridge/bond interface (like IP details).  Thus
+for a single active bridge, two or more NMConnections would be activated; one
+for each physical interface component of the bridge/bond, and one for the master
+bridge/bond interface itself.
+
+NMSettingBridge would contain at least the following keys:
+
+  components: (array of string) UUIDs of component connections
+  stp:        (boolean) on to enable STP, off to disable
+
+NMSettingBond would contain at least the following keys:
+
+  components: (array of string) UUIDs of component connections
+  mode:       (string) one of "balance-rr", "active-backup", "balance-xor",
+                  "broadcast", "802.3ad", "balance-tlb", or "balance-alb"
+  monitor-interval: (uint) Specifies link monitoring interval (in milliseconds);
+                       NM will always enable netlink carrier monitoring if this
+                       value is non-zero so this property only affects speed and
+                       duplex checking
+
+In the future we may consider adding other bonding parameters like "up-delay"
+and "down-delay".
+
+Then we'd add a 'component' (boolean) property to NMSettingConnection to
+indicate that the component interface connections were in fact components of
+a bridge or bond and shouldn't be automatically started by NetworkManager or
+displayed as separate connections in the user interface.
+
+TO BE CONTINUED
