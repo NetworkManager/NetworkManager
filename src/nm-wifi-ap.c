@@ -58,12 +58,6 @@ typedef struct
 	/* Non-scanned attributes */
 	gboolean			fake;	/* Whether or not the AP is from a scan */
 	gboolean			broadcast;	/* Whether or not the AP is broadcasting (hidden) */
-	gboolean			user_created;	/* Whether or not the AP was created
-										 * by the user with "Create network..."
-										 * A subset of Ad-Hoc mode.  user_created
-										 * implies Ad-Hoc, but not necessarily
-										 * the other way around.
-										 */
 	glong				last_seen;	/* Last time the AP was seen in a scan in seconds */
 
 	/* Things from user prefs/NetworkManagerInfo */
@@ -1155,28 +1149,6 @@ void nm_ap_set_last_seen (NMAccessPoint *ap, const glong last_seen)
 	g_return_if_fail (NM_IS_AP (ap));
 
 	NM_AP_GET_PRIVATE (ap)->last_seen = last_seen;
-}
-
-
-/*
- * Get/Set functions to indicate that an access point is
- * user-created, ie whether or not its a network filled with
- * information from the user and intended to create a new Ad-Hoc
- * wireless network.
- *
- */
-gboolean nm_ap_get_user_created (const NMAccessPoint *ap)
-{
-	g_return_val_if_fail (NM_IS_AP (ap), FALSE);
-
-	return NM_AP_GET_PRIVATE (ap)->user_created;
-}
-
-void nm_ap_set_user_created (NMAccessPoint *ap, gboolean user_created)
-{
-	g_return_if_fail (NM_IS_AP (ap));
-
-	NM_AP_GET_PRIVATE (ap)->user_created = user_created;
 }
 
 
