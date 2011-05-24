@@ -248,3 +248,58 @@ association using WPS, since quite a few routers out there are broken, or
 because the user has no physical access to the router itself, but has been given
 as passphrase/PSK instead.
 
+
+* Proxies
+
+HTTP and other proxies are per-connection configuration.  It's highly unlikely
+that the same proxy you need to use at work is used at home or in a coffee shop.
+Thus, it makes sense that which proxy settings to use should be updated when
+network connections change.  NetworkManager is a perfect place to do this since
+it tracks which network connections are active, and it already queries the
+network for automatic proxy configuration via DHCP and WPAD.
+
+We should add a new NMSetting subclass called NMSettingProxy that holds
+necessary proxy configuration.  The properties of this setting should be a
+superset of what is provided in the Firefox proxy configuration screen and the
+various desktop environment proxy configuration tools like the GNOME Network
+Proxy control panel; this should include at a minimum:
+
+  method: "auto", "manual", "none"
+  default-proxy: string
+  default-proxy-port: uint
+  default-always: boolean (use default proxy for all protocols)
+  ssl-proxy: string
+  ssl-proxy-port: uint
+  ftp-proxy: string
+  ftp-proxy-port: uint
+  socks-proxy: string
+  socks-proxy-port: uint
+  socks-version: uint, either 4 or 5
+  no-proxy-for: array of strings (things not to use the proxy for, ie ".foobar.com",
+                 "192.168.0.1/24", an IPv6 address, etc)
+  pac-url: string (URL of PAC file, overrides DHCP-provided WPAD value)
+  (FIXME: proxy authentication?  do we need separate user/pass properties for
+    each protocol type?  should NM handle proxy auth or should it be punted
+    to each application?)
+
+After completing IP configuration but still during the NM_DEVICE_STATE_IP_CONFIG
+activation stage, NetworkManager would merge the automatically supplied proxy
+configuration (from DHCP's WPAD option) with user-provided overrides from the
+NMSettingProxy and send the results to the system.  The 'default' connection's
+proxy configuration would be preferred, so we'd have to update proxy
+configuration from nm-policy.c the same time we update DNS information and the
+default route.
+
+The merged proxy configuration would then be sent to the system.  There is no
+canonical proxy daemon in-use, so we should have plugins (if not separate
+shared libraries, then certainly encapsulated source files that implement a
+common glib GInterface or are subclasses of eg a parent NMProxyHandler class)
+that handle different system proxy handlers.  Some of the proxy handlers are:
+
+  libproxy: need to figure out how it gets proxy info and have NM write merged
+             proxy config out to that location
+  pacrunner: a D-Bus enabled daemon, NM would call D-Bus methods of the
+               pacrunner service with the proxy information
+  GNOME/KDE: how do these desktop environments retrieve proxy configuration?
+
+
