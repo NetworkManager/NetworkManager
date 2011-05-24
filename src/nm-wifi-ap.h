@@ -104,9 +104,6 @@ void				nm_ap_set_broadcast		(NMAccessPoint *ap, gboolean broadcast);
 glong			nm_ap_get_last_seen		(const NMAccessPoint *ap);
 void				nm_ap_set_last_seen		(NMAccessPoint *ap, const glong last_seen);
 
-gboolean			nm_ap_get_user_created	(const NMAccessPoint *ap);
-void				nm_ap_set_user_created	(NMAccessPoint *ap, gboolean user_created);
-
 GSList *			nm_ap_get_user_addresses	(const NMAccessPoint *ap);
 void				nm_ap_set_user_addresses (NMAccessPoint *ap, GSList *list);
 
