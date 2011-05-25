@@ -336,11 +336,13 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 		update_secrets_cache (self);
 
 		/* And add the transient secrets back */
-		g_hash_table_iter_init (&iter, transient_secrets);
-		while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, (gpointer) &setting_hash)) {
-			setting = nm_connection_get_setting_by_name (NM_CONNECTION (self), setting_name);
-			if (setting)
-				nm_setting_update_secrets (setting, setting_hash, NULL);
+		if (transient_secrets) {
+			g_hash_table_iter_init (&iter, transient_secrets);
+			while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, (gpointer) &setting_hash)) {
+				setting = nm_connection_get_setting_by_name (NM_CONNECTION (self), setting_name);
+				if (setting)
+					nm_setting_update_secrets (setting, setting_hash, NULL);
+			}
 		}
 
 		nm_settings_connection_recheck_visibility (self);
