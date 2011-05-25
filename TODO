@@ -194,15 +194,40 @@ signals.  A patch here:
 
 http://cgit.freedesktop.org/NetworkManager/NetworkManager/commit/?h=vpn-ip-method
 
-shows that, but internally NM needs to process this request, and instead of
-applying given IPv4 or IPv6 configuration (since there isn't any yet) it should
-kick off a DHCP request and wait for the request to finish.  When it does
-finish it should apply the configuration to the interface.  Most of the DHCP
-code is already written, but src/vpn-manager/nm-vpn-connection.c would need
-updates to recognize the new "method" property of the IP4Config signal and
-handle the DHCP lifetime after that.  The base NMDevice class in nm-device.c
-has code for handling the DHCP lifetime, connecting to NMDHCPManager signals
-for renew and failure processing, etc, and could be used as an example.
+shows that.  In nm-vpn-connection.c, upon receipt of the D-Bus Ip4Config signal
+from the VPN plugin, NetworkManager would inspect the "method" property of the
+ip4 config dictionary.  If that property was present and set to "auto" then
+DHCP would be started using the network interface returned in the dict.  The
+nm_vpn_connection_ip4_config_get() function should be split up into two
+functions, one containing the existing code for static configuration, and a
+second for handling DHCP kickoff.  Minimal parsing of the response should be
+handled in the newly reduced nm_vpn_connection_ip4_config_get() function.
+
+To handle DHCP, the NMVPNConnectionPrivate structure should have two members
+added:
+
+    NMDHCPManager *dhcp_manager;
+    NMDHCPClient  *dhcp4_client;
+
+which would be initialized in the new DHCP handler code split off from
+nm_vpn_connection_ip4_config_get().  These new members would be disposed of in
+both vpn_cleanup() and dispose(), though remember to stop any ongoing DHCP
+transaction when doing so (see dhcp4_cleanup() in nm-device.c for example code).
+For basic code to start the DHCP transaction, see dhcp4_start() in nm-device.c
+as well.  After calling nm_dhcp_manager_start_ip4() and connecting the signals
+to monitor success and failure, the VPN IP4 config handler would simply return
+without changing VPN state, unless a failure occurred.
+
+Then, when the DHCP transaction succeeds, which we'd know by checking the
+DHCP client state changes in the "state-changed" signal handler we attached to
+the DHCP client object returned from nm_dhcp_manager_start_ip4(), the code
+would retrieve the completed NMIP4Config object from the DHCP client using the
+nm_dhcp_client_get_ip4_config() function, and then proceed to execute
+essentially the bottom-half of the existing nm_vpn_connection_ip4_config_get()
+function to merge that config with user overrides and apply it to the VPN
+tunnel interface.  Other state changes from the DHCP client might trigger a
+failure of the VPN connection, just like DHCP timeouts and lease-renewal
+failures do for other devices (see dhcp_state_changed() in nm-device.c).
 
 
 * WPS
