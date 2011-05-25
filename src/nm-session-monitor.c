@@ -74,6 +74,7 @@ typedef enum {
 	NM_SESSION_MONITOR_ERROR_IO_ERROR = 0,
 	NM_SESSION_MONITOR_ERROR_MALFORMED_DATABASE,
 	NM_SESSION_MONITOR_ERROR_UNKNOWN_USER,
+	NM_SESSION_MONITOR_ERROR_NO_DATABASE,
 } NMSessionMonitorError;
 
 GQuark
@@ -101,6 +102,8 @@ nm_session_monitor_error_get_type (void)
 			ENUM_ENTRY (NM_SESSION_MONITOR_ERROR_MALFORMED_DATABASE, "MalformedDatabase"),
 			/* Username or UID could could not be found */
 			ENUM_ENTRY (NM_SESSION_MONITOR_ERROR_UNKNOWN_USER, "UnknownUser"),
+			/* No ConsoleKit database */
+			ENUM_ENTRY (NM_SESSION_MONITOR_ERROR_NO_DATABASE, "NoDatabase"),
 			{ 0, 0, 0 }
 		};
 
@@ -226,10 +229,11 @@ reload_database (NMSessionMonitor *self, GError **error)
 
 	free_database (self);
 
+	errno = 0;
 	if (stat (CKDB_PATH, &statbuf) != 0) {
 		g_set_error (error,
 		             NM_SESSION_MONITOR_ERROR,
-		             NM_SESSION_MONITOR_ERROR_IO_ERROR,
+		             errno == ENOENT ? NM_SESSION_MONITOR_ERROR_NO_DATABASE : NM_SESSION_MONITOR_ERROR_IO_ERROR,
 		             "Error statting file " CKDB_PATH ": %s",
 		             strerror (errno));
 		goto error;
@@ -292,10 +296,11 @@ ensure_database (NMSessionMonitor *self, GError **error)
 	if (self->database != NULL) {
 		struct stat statbuf;
 
+		errno = 0;
 		if (stat (CKDB_PATH, &statbuf) != 0) {
 			g_set_error (error,
 			             NM_SESSION_MONITOR_ERROR,
-			             NM_SESSION_MONITOR_ERROR_IO_ERROR,
+			             errno == ENOENT ? NM_SESSION_MONITOR_ERROR_NO_DATABASE : NM_SESSION_MONITOR_ERROR_IO_ERROR,
 			             "Error statting file " CKDB_PATH " to check timestamp: %s",
 			             strerror (errno));
 			goto out;
@@ -346,7 +351,12 @@ nm_session_monitor_init (NMSessionMonitor *self)
 
 	error = NULL;
 	if (!ensure_database (self, &error)) {
-		nm_log_err (LOGD_CORE, "Error loading " CKDB_PATH ": %s", error->message);
+		/* Ignore the first error if the CK database isn't found yet */
+		if (g_error_matches (error,
+		                     NM_SESSION_MONITOR_ERROR,
+		                     NM_SESSION_MONITOR_ERROR_NO_DATABASE) == FALSE) {
+			nm_log_err (LOGD_CORE, "Error loading " CKDB_PATH ": %s", error->message);
+		}
 		g_error_free (error);
 	}
 
