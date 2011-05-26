@@ -333,6 +333,7 @@ handle_property_changed (gpointer key, gpointer data, gpointer user_data)
 	GParamSpec *pspec;
 	gboolean success = FALSE, found = FALSE;
 	GSList *iter;
+	GValue *value = data;
 
 	prop_name = wincaps_to_dash ((char *) key);
 	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (self)), prop_name);
@@ -344,12 +345,19 @@ handle_property_changed (gpointer key, gpointer data, gpointer user_data)
 		goto out;
 	}
 
-	/* Iterate through the object and it's parents to find the property */
+	/* Iterate through the object and its parents to find the property */
 	for (iter = priv->pcs; iter; iter = g_slist_next (iter)) {
 		pci = g_hash_table_lookup ((GHashTable *) iter->data, prop_name);
 		if (pci) {
 			found = TRUE;
-			success = (*(pci->func)) (self, pspec, (GValue *) data, pci->field);
+
+			/* Handle NULL object paths */
+			if (G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH)) {
+				if (g_strcmp0 (g_value_get_boxed (value), "/") == 0)
+					value = NULL;
+			}
+
+			success = (*(pci->func)) (self, pspec, value, pci->field);
 			if (success)
 				break;
 		}
@@ -453,6 +461,11 @@ _nm_object_demarshal_generic (NMObject *object,
 			char **param = (char **) field;
 			g_free (*param);
 			*param = g_strdup (g_value_get_boxed (value));
+			/* Handle "NULL" object paths */
+			if (g_strcmp0 (*param, "/") == 0) {
+				g_free (*param);
+				*param = NULL;
+			}
 		} else {
 			success = FALSE;
 			goto done;
@@ -558,13 +571,18 @@ _nm_object_get_string_property (NMObject *object,
                                 GError **error)
 {
 	char *str = NULL;
+	const char *tmp;
 	GValue value = {0,};
 
 	if (_nm_object_get_property (object, interface, prop_name, &value, error)) {
 		if (G_VALUE_HOLDS_STRING (&value))
 			str = g_strdup (g_value_get_string (&value));
-		else if (G_VALUE_HOLDS (&value, DBUS_TYPE_G_OBJECT_PATH))
-			str = g_strdup (g_value_get_boxed (&value));
+		else if (G_VALUE_HOLDS (&value, DBUS_TYPE_G_OBJECT_PATH)) {
+			tmp = g_value_get_boxed (&value);
+			/* Handle "NULL" object paths */
+			if (g_strcmp0 (tmp, "/") != 0)
+				str = g_strdup (tmp);
+		}
 		g_value_unset (&value);
 	}
 
@@ -578,10 +596,13 @@ _nm_object_get_object_path_property (NMObject *object,
                                      GError **error)
 {
 	char *path = NULL;
+	const char *tmp;
 	GValue value = {0,};
 
 	if (_nm_object_get_property (object, interface, prop_name, &value, error)) {
-		path = g_strdup (g_value_get_boxed (&value));
+		tmp = g_value_get_boxed (&value);
+		if (g_strcmp0 (tmp, "/") != 0)
+			path = g_strdup (tmp);
 		g_value_unset (&value);
 	}
 

@@ -50,7 +50,7 @@ typedef struct {
 
 	char *hw_address;
 	NMWimaxNsp *active_nsp;
-	gboolean null_active_nsp;
+	gboolean got_active_nsp;
 	GPtrArray *nsps;
 
 	guint center_freq;
@@ -153,6 +153,7 @@ nm_device_wimax_get_active_nsp (NMDeviceWimax *wimax)
 	NMDeviceState state;
 	char *path;
 	GValue value = { 0, };
+	GError *error = NULL;
 
 	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (wimax), NULL);
 
@@ -173,21 +174,20 @@ nm_device_wimax_get_active_nsp (NMDeviceWimax *wimax)
 	}
 
 	priv = NM_DEVICE_WIMAX_GET_PRIVATE (wimax);
-	if (priv->active_nsp)
+	if (priv->got_active_nsp == TRUE)
 		return priv->active_nsp;
-	if (priv->null_active_nsp)
-		return NULL;
 
 	path = _nm_object_get_object_path_property (NM_OBJECT (wimax),
 	                                            NM_DBUS_INTERFACE_DEVICE_WIMAX,
 	                                            DBUS_PROP_ACTIVE_NSP,
-	                                            NULL);
-	if (path) {
+	                                            &error);
+	if (error == NULL) {
 		g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
 		g_value_take_boxed (&value, path);
 		demarshal_active_nsp (NM_OBJECT (wimax), NULL, &value, &priv->active_nsp);
 		g_value_unset (&value);
 	}
+	g_clear_error (&error);
 
 	return priv->active_nsp;
 }
@@ -309,8 +309,6 @@ nsp_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 		if (nsp == priv->active_nsp) {
 			g_object_unref (priv->active_nsp);
 			priv->active_nsp = NULL;
-			priv->null_active_nsp = FALSE;
-
 			_nm_object_queue_notify (NM_OBJECT (self), NM_DEVICE_WIMAX_ACTIVE_NSP);
 		}
 
@@ -607,7 +605,6 @@ state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 		if (priv->active_nsp) {
 			g_object_unref (priv->active_nsp);
 			priv->active_nsp = NULL;
-			priv->null_active_nsp = FALSE;
 		}
 		_nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_WIMAX_ACTIVE_NSP);
 		clear_link_status (self);
@@ -634,13 +631,11 @@ demarshal_active_nsp (NMObject *object, GParamSpec *pspec, GValue *value, gpoint
 	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
 		return FALSE;
 
-	priv->null_active_nsp = FALSE;
+	priv->got_active_nsp = TRUE;
 
-	path = g_value_get_boxed (value);
-	if (path) {
-		if (!strcmp (path, "/"))
-			priv->null_active_nsp = TRUE;
-		else {
+	if (value) {
+		path = g_value_get_boxed (value);
+		if (path) {
 			nsp = NM_WIMAX_NSP (_nm_object_cache_get (path));
 			if (!nsp) {
 				connection = nm_object_get_connection (object);

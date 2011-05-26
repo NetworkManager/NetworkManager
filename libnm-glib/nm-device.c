@@ -56,13 +56,13 @@ typedef struct {
 	gboolean managed;
 	gboolean firmware_missing;
 	NMIP4Config *ip4_config;
-	gboolean null_ip4_config;
+	gboolean got_ip4_config;
 	NMDHCP4Config *dhcp4_config;
-	gboolean null_dhcp4_config;
+	gboolean got_dhcp4_config;
 	NMIP6Config *ip6_config;
-	gboolean null_ip6_config;
+	gboolean got_ip6_config;
 	NMDHCP6Config *dhcp6_config;
-	gboolean null_dhcp6_config;
+	gboolean got_dhcp6_config;
 	NMDeviceState state;
 
 	GUdevClient *client;
@@ -119,13 +119,11 @@ demarshal_ip4_config (NMObject *object, GParamSpec *pspec, GValue *value, gpoint
 	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
 		return FALSE;
 
-	priv->null_ip4_config = FALSE;
+	priv->got_ip4_config = TRUE;
 
-	path = g_value_get_boxed (value);
-	if (path) {
-		if (!strcmp (path, "/"))
-			priv->null_ip4_config = TRUE;
-		else {
+	if (value) {
+		path = g_value_get_boxed (value);
+		if (path) {
 			config = NM_IP4_CONFIG (_nm_object_cache_get (path));
 			if (!config) {
 				connection = nm_object_get_connection (object);
@@ -157,13 +155,11 @@ demarshal_dhcp4_config (NMObject *object, GParamSpec *pspec, GValue *value, gpoi
 	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
 		return FALSE;
 
-	priv->null_dhcp4_config = FALSE;
+	priv->got_dhcp4_config = TRUE;
 
-	path = g_value_get_boxed (value);
-	if (path) {
-		if (!strcmp (path, "/"))
-			priv->null_dhcp4_config = TRUE;
-		else {
+	if (value) {
+		path = g_value_get_boxed (value);
+		if (path) {
 			config = NM_DHCP4_CONFIG (_nm_object_cache_get (path));
 			if (!config) {
 				connection = nm_object_get_connection (object);
@@ -195,13 +191,11 @@ demarshal_ip6_config (NMObject *object, GParamSpec *pspec, GValue *value, gpoint
 	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
 		return FALSE;
 
-	priv->null_ip6_config = FALSE;
+	priv->got_ip6_config = TRUE;
 
-	path = g_value_get_boxed (value);
-	if (path) {
-		if (!strcmp (path, "/"))
-			priv->null_ip6_config = TRUE;
-		else {
+	if (value) {
+		path = g_value_get_boxed (value);
+		if (path) {
 			config = NM_IP6_CONFIG (_nm_object_cache_get (path));
 			if (!config) {
 				connection = nm_object_get_connection (object);
@@ -233,13 +227,11 @@ demarshal_dhcp6_config (NMObject *object, GParamSpec *pspec, GValue *value, gpoi
 	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
 		return FALSE;
 
-	priv->null_dhcp6_config = FALSE;
+	priv->got_dhcp6_config = TRUE;
 
-	path = g_value_get_boxed (value);
-	if (path) {
-		if (!strcmp (path, "/"))
-			priv->null_dhcp6_config = TRUE;
-		else {
+	if (value) {
+		path = g_value_get_boxed (value);
+		if (path) {
 			config = NM_DHCP6_CONFIG (_nm_object_cache_get (path));
 			if (!config) {
 				connection = nm_object_get_connection (object);
@@ -998,22 +990,25 @@ nm_device_get_ip4_config (NMDevice *device)
 	NMDevicePrivate *priv;
 	char *path;
 	GValue value = { 0, };
+	GError *error = NULL;
 
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
 	priv = NM_DEVICE_GET_PRIVATE (device);
-	if (priv->ip4_config)
+	if (priv->got_ip4_config == TRUE)
 		return priv->ip4_config;
-	if (priv->null_ip4_config)
-		return NULL;
 
-	path = _nm_object_get_object_path_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Ip4Config", NULL);
-	if (path) {
+	path = _nm_object_get_object_path_property (NM_OBJECT (device),
+	                                            NM_DBUS_INTERFACE_DEVICE,
+	                                            "Ip4Config",
+	                                            &error);
+	if (error == NULL) {
 		g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
 		g_value_take_boxed (&value, path);
 		demarshal_ip4_config (NM_OBJECT (device), NULL, &value, &priv->ip4_config);
 		g_value_unset (&value);
 	}
+	g_clear_error (&error);
 
 	return priv->ip4_config;
 }
@@ -1033,22 +1028,25 @@ nm_device_get_dhcp4_config (NMDevice *device)
 	NMDevicePrivate *priv;
 	char *path;
 	GValue value = { 0, };
+	GError *error = NULL;
 
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
 	priv = NM_DEVICE_GET_PRIVATE (device);
-	if (priv->dhcp4_config)
+	if (priv->got_dhcp4_config == TRUE)
 		return priv->dhcp4_config;
-	if (priv->null_dhcp4_config)
-		return NULL;
 
-	path = _nm_object_get_object_path_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Dhcp4Config", NULL);
-	if (path) {
+	path = _nm_object_get_object_path_property (NM_OBJECT (device),
+	                                            NM_DBUS_INTERFACE_DEVICE,
+	                                            "Dhcp4Config",
+	                                            &error);
+	if (error == NULL) {
 		g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
 		g_value_take_boxed (&value, path);
 		demarshal_dhcp4_config (NM_OBJECT (device), NULL, &value, &priv->dhcp4_config);
 		g_value_unset (&value);
 	}
+	g_clear_error (&error);
 
 	return priv->dhcp4_config;
 }
@@ -1067,22 +1065,25 @@ nm_device_get_ip6_config (NMDevice *device)
 	NMDevicePrivate *priv;
 	char *path;
 	GValue value = { 0, };
+	GError *error = NULL;
 
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
 	priv = NM_DEVICE_GET_PRIVATE (device);
-	if (priv->ip6_config)
+	if (priv->got_ip6_config == TRUE)
 		return priv->ip6_config;
-	if (priv->null_ip6_config)
-		return NULL;
 
-	path = _nm_object_get_object_path_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Ip6Config", NULL);
-	if (path) {
+	path = _nm_object_get_object_path_property (NM_OBJECT (device),
+	                                            NM_DBUS_INTERFACE_DEVICE,
+	                                            "Ip6Config",
+	                                            &error);
+	if (error == NULL) {
 		g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
 		g_value_take_boxed (&value, path);
 		demarshal_ip6_config (NM_OBJECT (device), NULL, &value, &priv->ip6_config);
 		g_value_unset (&value);
 	}
+	g_clear_error (&error);
 
 	return priv->ip6_config;
 }
@@ -1102,22 +1103,25 @@ nm_device_get_dhcp6_config (NMDevice *device)
 	NMDevicePrivate *priv;
 	char *path;
 	GValue value = { 0, };
+	GError *error = NULL;
 
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
 	priv = NM_DEVICE_GET_PRIVATE (device);
-	if (priv->dhcp6_config)
+	if (priv->got_dhcp6_config == TRUE)
 		return priv->dhcp6_config;
-	if (priv->null_dhcp6_config)
-		return NULL;
 
-	path = _nm_object_get_object_path_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Dhcp6Config", NULL);
-	if (path) {
+	path = _nm_object_get_object_path_property (NM_OBJECT (device),
+	                                            NM_DBUS_INTERFACE_DEVICE,
+	                                            "Dhcp6Config",
+	                                            &error);
+	if (error == NULL) {
 		g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
 		g_value_take_boxed (&value, path);
 		demarshal_dhcp6_config (NM_OBJECT (device), NULL, &value, &priv->dhcp6_config);
 		g_value_unset (&value);
 	}
+	g_clear_error (&error);
 
 	return priv->dhcp6_config;
 }

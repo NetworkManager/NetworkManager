@@ -55,7 +55,7 @@ typedef struct {
 	NM80211Mode mode;
 	guint32 rate;
 	NMAccessPoint *active_ap;
-	gboolean null_active_ap;
+	gboolean got_active_ap;
 	NMDeviceWifiCapabilities wireless_caps;
 	GPtrArray *aps;
 
@@ -271,6 +271,7 @@ nm_device_wifi_get_active_access_point (NMDeviceWifi *device)
 	NMDeviceState state;
 	char *path;
 	GValue value = { 0, };
+	GError *error = NULL;
 
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), NULL);
 
@@ -291,21 +292,20 @@ nm_device_wifi_get_active_access_point (NMDeviceWifi *device)
 	}
 
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
-	if (priv->active_ap)
+	if (priv->got_active_ap == TRUE)
 		return priv->active_ap;
-	if (priv->null_active_ap)
-		return NULL;
 
 	path = _nm_object_get_object_path_property (NM_OBJECT (device),
-	                                           NM_DBUS_INTERFACE_DEVICE_WIRELESS,
-	                                           DBUS_PROP_ACTIVE_ACCESS_POINT,
-	                                           NULL);
-	if (path) {
+	                                            NM_DBUS_INTERFACE_DEVICE_WIRELESS,
+	                                            DBUS_PROP_ACTIVE_ACCESS_POINT,
+	                                            &error);
+	if (error == NULL) {
 		g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
 		g_value_take_boxed (&value, path);
 		demarshal_active_ap (NM_OBJECT (device), NULL, &value, &priv->active_ap);
 		g_value_unset (&value);
 	}
+	g_clear_error (&error);
 
 	return priv->active_ap;
 }
@@ -427,9 +427,8 @@ access_point_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 		if (ap == priv->active_ap) {
 			g_object_unref (priv->active_ap);
 			priv->active_ap = NULL;
-			priv->null_active_ap = FALSE;
-
 			_nm_object_queue_notify (NM_OBJECT (self), NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT);
+
 			priv->rate = 0;
 			_nm_object_queue_notify (NM_OBJECT (self), NM_DEVICE_WIFI_BITRATE);
 		}
@@ -620,7 +619,6 @@ state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 		if (priv->active_ap) {
 			g_object_unref (priv->active_ap);
 			priv->active_ap = NULL;
-			priv->null_active_ap = FALSE;
 		}
 		_nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT);
 		priv->rate = 0;
@@ -642,13 +640,11 @@ demarshal_active_ap (NMObject *object, GParamSpec *pspec, GValue *value, gpointe
 	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
 		return FALSE;
 
-	priv->null_active_ap = FALSE;
+	priv->got_active_ap = TRUE;
 
-	path = g_value_get_boxed (value);
-	if (path) {
-		if (!strcmp (path, "/"))
-			priv->null_active_ap = TRUE;
-		else {
+	if (value) {
+		path = g_value_get_boxed (value);
+		if (path) {
 			ap = NM_ACCESS_POINT (_nm_object_cache_get (path));
 			if (!ap) {
 				connection = nm_object_get_connection (object);
