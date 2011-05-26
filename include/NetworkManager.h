@@ -494,6 +494,9 @@ typedef enum {
 	/* A dependency of the connection failed */
 	NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED = 50,
 
+	/* Problem with the RFC 2684 Ethernet over ADSL bridge */
+	NM_DEVICE_STATE_REASON_BR2684_FAILED = 51,
+
 	/* Unused */
 	NM_DEVICE_STATE_REASON_LAST = 0xFFFF
 } NMDeviceStateReason;

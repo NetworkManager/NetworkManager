@@ -384,7 +384,7 @@ main (int argc, char *argv[])
 		        "                                          [NONE,HW,RFKILL,ETHER,WIFI,BT,MB,DHCP4,DHCP6,PPP,\n"
 		        "                                           WIFI_SCAN,IP4,IP6,AUTOIP4,DNS,VPN,SHARING,SUPPLICANT,\n"
 		        "                                           AGENTS,SETTINGS,SUSPEND,CORE,DEVICE,OLPC,WIMAX,\n"
-		        "                                           INFINIBAND,FIREWALL]"),
+		        "                                           INFINIBAND,FIREWALL,ADSL]"),
 		        "HW,RFKILL,WIFI" },
 		{ "connectivity-uri", 0, 0, G_OPTION_ARG_STRING, &connectivity_uri, "A http(s) address to check internet connectivity" },
 		{ "connectivity-interval", 0, 0, G_OPTION_ARG_INT, &connectivity_interval, "the interval in seconds how often a connectivity check will be done" },

@@ -31,8 +31,10 @@
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
 #include "nm-enum-types.h"
+#include "nm-system.h"
 
 #include "ppp-manager/nm-ppp-manager.h"
+#include "br2684-manager/nm-br2684-manager.h"
 #include "nm-setting-adsl.h"
 
 #include "nm-device-adsl-glue.h"
@@ -60,6 +62,9 @@ typedef struct {
 	/* PPP */
 	NMPPPManager *ppp_manager;
 	NMIP4Config  *pending_ip4_config;
+
+	/* RFC 2684 bridging (PPPoE over ATM) */
+	NMBr2684Manager *br2684_manager;
 } NMDeviceAdslPrivate;
 
 enum {
@@ -216,7 +221,6 @@ dispose (GObject *object)
 		priv->carrier_poll_id = 0;
 	}
 
-
 	G_OBJECT_CLASS (nm_device_adsl_parent_class)->dispose (object);
 }
 
@@ -294,15 +298,10 @@ real_check_connection_compatible (NMDevice *device,
                                   NMConnection *connection,
                                   GError **error)
 {
-	NMSettingConnection *s_con;
 	NMSettingAdsl *s_adsl;
-	const char *connection_type;
+	const char *protocol;
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-	g_assert (s_con);
-
-	connection_type = nm_setting_connection_get_connection_type (s_con);
-	if (strcmp (connection_type, NM_SETTING_ADSL_SETTING_NAME)) {
+	if (!nm_connection_is_type (connection, NM_SETTING_ADSL_SETTING_NAME)) {
 		g_set_error (error,
 		             NM_ADSL_ERROR, NM_ADSL_ERROR_CONNECTION_NOT_ADSL,
 		             "The connection was not an ADSL connection.");
@@ -310,11 +309,20 @@ real_check_connection_compatible (NMDevice *device,
 	}
 
 	s_adsl = (NMSettingAdsl *) nm_connection_get_setting (connection, NM_TYPE_SETTING_ADSL);
-	/* Wired setting is optional for PPPoE */
+
 	if (!s_adsl) {
 		g_set_error (error,
 		             NM_ADSL_ERROR, NM_ADSL_ERROR_CONNECTION_INVALID,
 		             "The connection was not a valid ADSL connection.");
+		return FALSE;
+	}
+
+	/* FIXME: we don't yet support IPoATM */
+	protocol = nm_setting_adsl_get_protocol (s_adsl);
+	if (g_strcmp0 (protocol, NM_SETTING_ADSL_PROTOCOL_IPOATM) == 0) {
+		g_set_error (error,
+		             NM_ADSL_ERROR, NM_ADSL_ERROR_CONNECTION_INVALID,
+		             "IPoATM connections are not yet supported.");
 		return FALSE;
 	}
 
@@ -365,6 +373,11 @@ real_deactivate (NMDevice *device)
 		g_object_unref (priv->ppp_manager);
 		priv->ppp_manager = NULL;
 	}
+
+	if (priv->br2684_manager) {
+		g_object_unref (priv->br2684_manager);
+		priv->br2684_manager = NULL;
+	}
 }
 
 static NMConnection *
@@ -399,13 +412,29 @@ real_get_best_auto_connection (NMDevice *dev,
 	return NULL;
 }
 
+static void
+br2684_state_changed (NMBr2684Manager *manager, guint status, gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (user_data);
+
+	if (status) {
+		nm_system_device_set_up_down_with_iface ("nas0", TRUE, NULL);
+		nm_device_activate_schedule_stage2_device_config (device);
+	} else {
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_BR2684_FAILED);
+	}
+}
+
 static NMActStageReturn
 real_act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 {
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	NMDeviceAdsl *self = NM_DEVICE_ADSL (dev);
+	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
 	NMActRequest *req;
 	NMSettingAdsl *s_adsl;
+	GError *err = NULL;
+	const char *protocol;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
@@ -415,6 +444,22 @@ real_act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	s_adsl = NM_SETTING_ADSL (device_get_setting (dev, NM_TYPE_SETTING_ADSL));
 	g_assert (s_adsl);
 
+	protocol = nm_setting_adsl_get_protocol (s_adsl);
+	if (!strcmp (protocol, "pppoe")) {
+		priv->br2684_manager = nm_br2684_manager_new();
+		if (!nm_br2684_manager_start (priv->br2684_manager, req, 30, &err)) {
+			nm_log_warn (LOGD_DEVICE, "(%s): RFC 2684 bridge failed to start: %s",
+					             nm_device_get_iface (NM_DEVICE (self)), err->message);
+			ret = NM_ACT_STAGE_RETURN_FAILURE;
+			goto out;
+		}
+		g_signal_connect (priv->br2684_manager, "state-changed",
+					   G_CALLBACK (br2684_state_changed),
+					   self);
+		ret = NM_ACT_STAGE_RETURN_POSTPONE;
+	}
+
+out:
 	return ret;
 }
 
@@ -488,7 +533,7 @@ pppoa_stage3_ip4_config_start (NMDeviceAdsl *self, NMDeviceStateReason *reason)
 		                  self);
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else {
-		nm_log_warn (LOGD_DEVICE, "(%s): ADSL(PPPoA) failed to start: %s",
+		nm_log_warn (LOGD_DEVICE, "(%s): ADSL failed to start: %s",
 		             nm_device_get_iface (NM_DEVICE (self)), err->message);
 		g_error_free (err);
 

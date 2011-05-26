@@ -798,7 +798,7 @@ static NMCmdLine *
 create_pppd_cmd_line (NMPPPManager *self,
                       NMSettingPPP *setting, 
                       NMSettingPPPOE *pppoe,
-                      NMSettingAdsl  *adsl_pppoa,
+                      NMSettingAdsl  *adsl,
                       const char *ppp_name,
                       GError **err)
 {
@@ -855,26 +855,37 @@ create_pppd_cmd_line (NMPPPManager *self,
 			nm_cmd_line_add_string (cmd, "rp_pppoe_service");
 			nm_cmd_line_add_string (cmd, pppoe_service);
 		}
-	} else if (adsl_pppoa) {
-		guint32 vpi, vci;
-		const gchar *encapsulation;
-		gchar *vpivci;
+	} else if (adsl) {
+		const gchar *protocol = nm_setting_adsl_get_protocol (adsl);
 
-		vpi = nm_setting_adsl_get_vpi (adsl_pppoa);
-		vci = nm_setting_adsl_get_vci (adsl_pppoa);
-		encapsulation = nm_setting_adsl_get_encapsulation (adsl_pppoa);
-		vpivci = g_strdup_printf("%d.%d", vpi, vci);
+		if (!strcmp (protocol, NM_SETTING_ADSL_PROTOCOL_PPPOA)) {
+			guint32 vpi = nm_setting_adsl_get_vpi (adsl);
+			guint32 vci = nm_setting_adsl_get_vci (adsl);
+			const char *encaps = nm_setting_adsl_get_encapsulation (adsl);
+			gchar *vpivci;
 
-		nm_cmd_line_add_string (cmd, "plugin");
-		nm_cmd_line_add_string (cmd, "pppoatm.so");
-		nm_cmd_line_add_string (cmd, vpivci);
+			nm_cmd_line_add_string (cmd, "plugin");
+			nm_cmd_line_add_string (cmd, "pppoatm.so");
 
-		if (!strcmp (encapsulation, "llc"))
-			nm_cmd_line_add_string (cmd, "llc-encaps");
+			vpivci = g_strdup_printf("%d.%d", vpi, vci);
+			nm_cmd_line_add_string (cmd, vpivci);
+			g_free (vpivci);
+
+			if (g_strcmp0 (encaps, NM_SETTING_ADSL_ENCAPSULATION_LLC) == 0)
+				nm_cmd_line_add_string (cmd, "llc-encaps");
+			else if (g_strcmp0 (encaps, NM_SETTING_ADSL_ENCAPSULATION_VCMUX) == 0)
+				nm_cmd_line_add_string (cmd, "vc-encaps");
+
+		} else if (!strcmp (protocol, NM_SETTING_ADSL_PROTOCOL_PPPOE)) {
+			nm_cmd_line_add_string (cmd, "plugin");
+			nm_cmd_line_add_string (cmd, "rp-pppoe.so");
+			/* FIXME: dynamically figure out the NAS interface name so we can
+			 * do more than one br2684 PPPoE connection at the same time.
+			 */
+			nm_cmd_line_add_string (cmd, "nas0");
+		}
 
 		nm_cmd_line_add_string (cmd, "noipdefault");
-
-		g_free (vpivci);
 	} else {
 		nm_cmd_line_add_string (cmd, priv->parent_iface);
 		/* Don't send some random address as the local address */

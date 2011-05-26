@@ -526,6 +526,11 @@
           A dependency of the connection failed.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="BR2684_FAILED" value="50">
+        <tp:docstring>
+          Problem with the RFC 2684 Ethernet over ADSL bridge.
+        </tp:docstring>
+      </tp:enumvalue>
     </tp:enum>
 
     <tp:struct name="NM_DEVICE_STATE_REASON_STRUCT">

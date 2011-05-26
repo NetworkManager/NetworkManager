@@ -4258,6 +4258,8 @@ reason_to_string (NMDeviceStateReason reason)
 		return "infiniband-mode";
 	case NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED:
 		return "dependency-failed";
+	case NM_DEVICE_STATE_REASON_BR2684_FAILED:
+		return "br2684 bridge failed";
 	default:
 		break;
 	}
