@@ -157,6 +157,7 @@ libnm-util/tests/test-crypto
 libnm-util/tests/test-settings-defaults
 libnm-util/tests/test-general
 libnm-util/tests/test-need-secrets
+libnm-util/tests/test-secrets
 libnm-util/tests/test-setting-8021x
 libnm-glib/tests/test-remote-settings-client
 src/tests/test-dhcp-options
