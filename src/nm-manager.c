@@ -1080,7 +1080,7 @@ manager_hidden_ap_found (NMDeviceInterface *device,
 			struct ether_addr seen_addr;
 
 			if (ether_aton_r (seen_bssid, &seen_addr)) {
-				if (memcmp (ap_addr, &seen_addr, sizeof (struct ether_addr))) {
+				if (memcmp (ap_addr, &seen_addr, sizeof (struct ether_addr)) == 0) {
 					/* Copy the SSID from the connection to the AP */
 					nm_ap_set_ssid (ap, ssid);
 					done = TRUE;
