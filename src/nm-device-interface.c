@@ -166,6 +166,14 @@ nm_device_interface_init (gpointer g_iface)
 
 	g_object_interface_install_property
 		(g_iface,
+		 g_param_spec_boxed (NM_DEVICE_INTERFACE_ACTIVE_CONNECTION,
+		                     "ActiveConnection",
+		                     "ActiveConnection",
+		                     DBUS_TYPE_G_OBJECT_PATH,
+		                     G_PARAM_READABLE));
+
+	g_object_interface_install_property
+		(g_iface,
 		 g_param_spec_uint (NM_DEVICE_INTERFACE_DEVICE_TYPE,
 							"DeviceType",
 							"DeviceType",

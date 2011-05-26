@@ -51,6 +51,14 @@
         The current state of the device.
       </tp:docstring>
     </property>
+    <property name="ActiveConnection" type="o" access="read">
+      <tp:docstring>
+        Object path of an ActiveConnection object that "owns" this device during
+        activation.  The ActiveConnection object tracks the life-cycle of a
+        connection to a specific network and implements the
+        org.freedesktop.NetworkManager.Connection.Active D-Bus interface.
+      </tp:docstring>
+    </property>
     <property name="Ip4Config" type="o" access="read">
       <tp:docstring>
         Object path of the Ip4Config object describing the configuration of the device.  Only valid when the device is in the NM_DEVICE_STATE_ACTIVATED state.
