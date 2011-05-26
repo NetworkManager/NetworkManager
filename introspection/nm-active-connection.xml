@@ -2,6 +2,14 @@
 
 <node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
   <interface name="org.freedesktop.NetworkManager.Connection.Active">
+    <tp:docstring>
+      Objects that implement the Connection.Active interface represent an attempt
+      to connect to a network using the details provided by a Connection object.
+      The Connection.Active object tracks the life-cycle of the connection
+      attempt and if successful indicates whether the connected network is the
+      "default" or preferred network for access.
+    </tp:docstring>
+
     <property name="Connection" type="o" access="read">
       <tp:docstring>The path of the connection.</tp:docstring>
     </property>
