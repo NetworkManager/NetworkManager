@@ -320,7 +320,8 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 	 * should not.  Thus we preserve non-system-owned secrets here.
 	 */
 	transient_secrets = nm_connection_to_hash (NM_CONNECTION (self), NM_SETTING_HASH_FLAG_ONLY_SECRETS);
-	for_each_secret (NM_CONNECTION (self), transient_secrets, clear_system_secrets, NULL);
+	if (transient_secrets)
+		for_each_secret (NM_CONNECTION (self), transient_secrets, clear_system_secrets, NULL);
 
 	new_settings = nm_connection_to_hash (new, NM_SETTING_HASH_FLAG_ALL);
 	g_assert (new_settings);
@@ -349,7 +350,8 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 		success = TRUE;
 	}
 	g_hash_table_destroy (new_settings);
-	g_hash_table_destroy (transient_secrets);
+	if (transient_secrets)
+		g_hash_table_destroy (transient_secrets);
 	return success;
 }
 
