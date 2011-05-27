@@ -34,6 +34,7 @@
 #include "nm-ip6-config.h"
 #include "nm-dhcp6-config.h"
 #include "nm-connection.h"
+#include "nm-active-connection.h"
 
 G_BEGIN_DECLS
 
@@ -57,6 +58,7 @@ G_BEGIN_DECLS
 #define NM_DEVICE_IP6_CONFIG "ip6-config"
 #define NM_DEVICE_DHCP6_CONFIG "dhcp6-config"
 #define NM_DEVICE_STATE "state"
+#define NM_DEVICE_ACTIVE_CONNECTION "active-connection"
 #define NM_DEVICE_VENDOR "vendor"
 #define NM_DEVICE_PRODUCT "product"
 
@@ -102,6 +104,7 @@ NMDHCP4Config *      nm_device_get_dhcp4_config     (NMDevice *device);
 NMIP6Config *        nm_device_get_ip6_config       (NMDevice *device);
 NMDHCP6Config *      nm_device_get_dhcp6_config     (NMDevice *device);
 NMDeviceState        nm_device_get_state            (NMDevice *device);
+NMActiveConnection * nm_device_get_active_connection(NMDevice *device);
 const char *         nm_device_get_product          (NMDevice *device);
 const char *         nm_device_get_vendor           (NMDevice *device);
 

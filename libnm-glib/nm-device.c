@@ -65,6 +65,9 @@ typedef struct {
 	gboolean got_dhcp6_config;
 	NMDeviceState state;
 
+	NMActiveConnection *active_connection;
+	gboolean got_active_connection;
+
 	GUdevClient *client;
 	char *product;
 	char *vendor;
@@ -87,6 +90,7 @@ enum {
 	PROP_DHCP6_CONFIG,
 	PROP_IP_INTERFACE,
 	PROP_DEVICE_TYPE,
+	PROP_ACTIVE_CONNECTION,
 
 	LAST_PROP
 };
@@ -252,6 +256,42 @@ demarshal_dhcp6_config (NMObject *object, GParamSpec *pspec, GValue *value, gpoi
 	return TRUE;
 }
 
+static gboolean
+demarshal_active_connection (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
+	const char *path;
+	NMActiveConnection *active = NULL;
+	DBusGConnection *connection;
+
+	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
+		return FALSE;
+
+	priv->got_active_connection = TRUE;
+
+	if (value) {
+		path = g_value_get_boxed (value);
+		if (path) {
+			active = NM_ACTIVE_CONNECTION (_nm_object_cache_get (path));
+			if (!active) {
+				connection = nm_object_get_connection (object);
+				active = NM_ACTIVE_CONNECTION (nm_active_connection_new (connection, path));
+			}
+		}
+	}
+
+	if (priv->active_connection) {
+		g_object_unref (priv->active_connection);
+		priv->active_connection = NULL;
+	}
+
+	if (active)
+		priv->active_connection = active;
+
+	_nm_object_queue_notify (object, NM_DEVICE_ACTIVE_CONNECTION);
+	return TRUE;
+}
+
 static void
 register_for_property_changed (NMDevice *device)
 {
@@ -268,6 +308,7 @@ register_for_property_changed (NMDevice *device)
 		{ NM_DEVICE_DHCP4_CONFIG,     demarshal_dhcp4_config,       &priv->dhcp4_config },
 		{ NM_DEVICE_IP6_CONFIG,       demarshal_ip6_config,         &priv->ip6_config },
 		{ NM_DEVICE_DHCP6_CONFIG,     demarshal_dhcp6_config,       &priv->dhcp6_config },
+		{ NM_DEVICE_ACTIVE_CONNECTION,demarshal_active_connection,  &priv->active_connection },
 		{ NULL },
 	};
 
@@ -357,6 +398,8 @@ dispose (GObject *object)
 		g_object_unref (priv->dhcp6_config);
 	if (priv->client)
 		g_object_unref (priv->client);
+	if (priv->active_connection)
+		g_object_unref (priv->active_connection);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
 }
@@ -423,6 +466,9 @@ get_property (GObject *object,
 		break;
 	case PROP_STATE:
 		g_value_set_uint (value, nm_device_get_state (device));
+		break;
+	case PROP_ACTIVE_CONNECTION:
+		g_value_set_object (value, nm_device_get_active_connection (device));
 		break;
 	case PROP_PRODUCT:
 		g_value_set_string (value, nm_device_get_product (device));
@@ -646,6 +692,19 @@ nm_device_class_init (NMDeviceClass *device_class)
 						  "State",
 						  0, G_MAXUINT32, 0,
 						  G_PARAM_READABLE));
+
+	/**
+	 * NMDevice:active-connection:
+	 *
+	 * The #NMActiveConnection object that "owns" this device during activation.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_ACTIVE_CONNECTION,
+		 g_param_spec_object (NM_DEVICE_ACTIVE_CONNECTION,
+		                      "ActiveConnection",
+		                      "Active Connection",
+		                      NM_TYPE_ACTIVE_CONNECTION,
+		                      G_PARAM_READABLE));
 
 	/**
 	 * NMDevice:vendor:
@@ -1150,6 +1209,43 @@ nm_device_get_state (NMDevice *device)
 	}
 
 	return priv->state;
+}
+
+/**
+ * nm_device_get_active_connection:
+ * @device: a #NMDevice
+ *
+ * Gets the #NMActiveConnection object which owns this device during activation.
+ *
+ * Returns: the #NMActiveConnection
+ **/
+NMActiveConnection *
+nm_device_get_active_connection (NMDevice *device)
+{
+	NMDevicePrivate *priv;
+	char *path;
+	GValue value = { 0, };
+	GError *error = NULL;
+
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+	if (priv->got_active_connection == TRUE)
+		return priv->active_connection;
+
+	path = _nm_object_get_object_path_property (NM_OBJECT (device),
+	                                            NM_DBUS_INTERFACE_DEVICE,
+	                                            "ActiveConnection",
+	                                            &error);
+	if (error == NULL) {
+		g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
+		g_value_take_boxed (&value, path);
+		demarshal_active_connection (NM_OBJECT (device), NULL, &value, &priv->active_connection);
+		g_value_unset (&value);
+	}
+	g_clear_error (&error);
+
+	return priv->active_connection;
 }
 
 /* From hostap, Copyright (c) 2002-2005, Jouni Malinen <jkmaline@cc.hut.fi> */
