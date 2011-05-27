@@ -773,6 +773,9 @@ claim_connection (NMSettings *self,
 	/* Read timestamp from look-aside file and put it into the connection's data */
 	nm_settings_connection_read_and_fill_timestamp (connection);
 
+	/* Read seen-bssids from look-aside file and put it into the connection's data */
+	nm_settings_connection_read_and_fill_seen_bssids (connection);
+
 	/* Ensure it's initial visibility is up-to-date */
 	nm_settings_connection_recheck_visibility (connection);
 

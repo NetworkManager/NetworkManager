@@ -24,6 +24,7 @@
 
 #include <nm-connection.h>
 #include "nm-settings-flags.h"
+#include <net/ethernet.h>
 
 G_BEGIN_DECLS
 
@@ -123,6 +124,14 @@ guint64 nm_settings_connection_get_timestamp (NMSettingsConnection *connection);
 void nm_settings_connection_update_timestamp (NMSettingsConnection *connection, guint64 timestamp);
 
 void nm_settings_connection_read_and_fill_timestamp (NMSettingsConnection *connection);
+
+gboolean nm_settings_connection_has_seen_bssid (NMSettingsConnection *connection,
+                                                const struct ether_addr *bssid);
+
+void nm_settings_connection_add_seen_bssid (NMSettingsConnection *connection,
+                                            const struct ether_addr *seen_bssid);
+
+void nm_settings_connection_read_and_fill_seen_bssids (NMSettingsConnection *connection);
 
 G_END_DECLS
 

@@ -55,6 +55,7 @@
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-system.h"
+#include "nm-settings-connection.h"
 
 static gboolean impl_device_get_access_points (NMDeviceWifi *device,
                                                GPtrArray **aps,
@@ -978,6 +979,28 @@ get_active_ap (NMDeviceWifi *self,
 }
 
 static void
+update_seen_bssids_cache (NMDeviceWifi *self, NMAccessPoint *ap)
+{
+	NMActRequest *req;
+	NMConnection *connection;
+
+	g_return_if_fail (ap != NULL);
+
+	/* Don't cache the BSSID for Ad-Hoc APs */
+	if (nm_ap_get_mode (ap) != NM_802_11_MODE_INFRA)
+		return;
+
+	if (nm_device_get_state (NM_DEVICE (self)) == NM_DEVICE_STATE_ACTIVATED) {
+		req = nm_device_get_act_request (NM_DEVICE (self));
+		if (req) {
+			connection = nm_act_request_get_connection (req);
+			nm_settings_connection_add_seen_bssid (NM_SETTINGS_CONNECTION (connection),
+			                                       nm_ap_get_address (ap));
+		}
+	}
+}
+
+static void
 set_current_ap (NMDeviceWifi *self, NMAccessPoint *new_ap)
 {
 	NMDeviceWifiPrivate *priv;
@@ -1003,6 +1026,9 @@ set_current_ap (NMDeviceWifi *self, NMAccessPoint *new_ap)
 		 */
 		priv->ap_list = g_slist_remove (priv->ap_list, new_ap);
 		priv->ap_list = g_slist_prepend (priv->ap_list, new_ap);
+
+		/* Update seen BSSIDs cache */
+		update_seen_bssids_cache (self, priv->current_ap);
 	}
 
 	/* Unref old AP here to ensure object lives if new_ap == old_ap */
@@ -3436,10 +3462,12 @@ activation_success_handler (NMDevice *dev)
 done:
 	periodic_update (self);
 
+	/* Update seen BSSIDs cache with the connected AP */
+	update_seen_bssids_cache (self, priv->current_ap);
+
 	/* Reset scan interval to something reasonable */
 	priv->scan_interval = SCAN_INTERVAL_MIN + (SCAN_INTERVAL_STEP * 2);
 }
-
 
 static void
 activation_failure_handler (NMDevice *dev)

@@ -63,6 +63,7 @@
 #include "nm-settings-connection.h"
 #include "nm-manager-auth.h"
 #include "NetworkManagerUtils.h"
+#include "nm-utils.h"
 
 #define NM_AUTOIP_DBUS_SERVICE "org.freedesktop.nm_avahi_autoipd"
 #define NM_AUTOIP_DBUS_IFACE   "org.freedesktop.nm_avahi_autoipd"
@@ -1040,52 +1041,27 @@ manager_hidden_ap_found (NMDeviceInterface *device,
 {
 	NMManager *manager = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	const struct ether_addr *ap_addr;
-	const GByteArray *ap_ssid;
+	const struct ether_addr *bssid;
 	GSList *iter;
 	GSList *connections;
 	gboolean done = FALSE;
 
-	ap_ssid = nm_ap_get_ssid (ap);
-	if (ap_ssid && ap_ssid->len)
-		return;
+	g_return_if_fail (nm_ap_get_ssid (ap) == NULL);
 
-	ap_addr = nm_ap_get_address (ap);
-	g_assert (ap_addr);
+	bssid = nm_ap_get_address (ap);
+	g_assert (bssid);
 
 	/* Look for this AP's BSSID in the seen-bssids list of a connection,
 	 * and if a match is found, copy over the SSID */
 	connections = nm_settings_get_connections (priv->settings);
-
 	for (iter = connections; iter && !done; iter = g_slist_next (iter)) {
 		NMConnection *connection = NM_CONNECTION (iter->data);
-		NMSettingWireless *s_wireless;
-		const GByteArray *ssid;
-		guint32 num_bssids;
-		guint32 i;
+		NMSettingWireless *s_wifi;
 
-		s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
-		if (!s_wireless)
-			continue;
-
-		num_bssids = nm_setting_wireless_get_num_seen_bssids (s_wireless);
-		if (num_bssids < 1)
-			continue;
-
-		ssid = nm_setting_wireless_get_ssid (s_wireless);
-		g_assert (ssid);
-
-		for (i = 0; i < num_bssids && !done; i++) {
-			const char *seen_bssid = nm_setting_wireless_get_seen_bssid (s_wireless, i);
-			struct ether_addr seen_addr;
-
-			if (ether_aton_r (seen_bssid, &seen_addr)) {
-				if (memcmp (ap_addr, &seen_addr, sizeof (struct ether_addr)) == 0) {
-					/* Copy the SSID from the connection to the AP */
-					nm_ap_set_ssid (ap, ssid);
-					done = TRUE;
-				}
-			}
+		s_wifi = nm_connection_get_setting_wireless (connection);
+		if (s_wifi) {
+			if (nm_settings_connection_has_seen_bssid (NM_SETTINGS_CONNECTION (connection), bssid))
+				nm_ap_set_ssid (ap, nm_setting_wireless_get_ssid (s_wifi));
 		}
 	}
 	g_slist_free (connections);
