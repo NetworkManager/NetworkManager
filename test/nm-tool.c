@@ -323,50 +323,31 @@ get_connection_for_active (NMActiveConnection *active)
 	return (NMConnection *) g_hash_table_lookup (connections, path);
 }
 
-struct cb_info {
-	NMClient *client;
-	const GPtrArray *active;
-};
-
 static void
 detail_device (gpointer data, gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (data);
-	struct cb_info *info = user_data;
 	char *tmp;
 	NMDeviceState state;
 	guint32 caps;
 	guint32 speed;
 	const GArray *array;
-	int j;
 	gboolean is_default = FALSE;
 	const char *id = NULL;
+	NMActiveConnection *active;
 
-	state = nm_device_get_state (device);
-
-	for (j = 0; info->active && (j < info->active->len); j++) {
-		NMActiveConnection *candidate = g_ptr_array_index (info->active, j);
-		const GPtrArray *devices = nm_active_connection_get_devices (candidate);
-		NMDevice *candidate_dev;
+	active = nm_device_get_active_connection (device);
+	if (active) {
 		NMConnection *connection;
 		NMSettingConnection *s_con;
 
-		if (!devices || !devices->len)
-			continue;
-		candidate_dev = g_ptr_array_index (devices, 0);
+		is_default = nm_active_connection_get_default (active);
 
-		if (candidate_dev == device) {
-			if (nm_active_connection_get_default (candidate))
-				is_default = TRUE;
-
-			connection = get_connection_for_active (candidate);
-			if (!connection)
-				break;
-
-			s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+		connection = get_connection_for_active (active);
+		if (connection) {
+			s_con = nm_connection_get_setting_connection (connection);
 			if (s_con)
 				id = nm_setting_connection_get_id (s_con);
-			break;
 		}
 	}
 
@@ -396,6 +377,7 @@ detail_device (gpointer data, gpointer user_data)
 
 	print_string ("Driver", nm_device_get_driver (device) ? nm_device_get_driver (device) : "(unknown)");
 
+	state = nm_device_get_state (device);
 	print_string ("State", get_dev_state_string (state));
 
 	if (is_default)
@@ -787,7 +769,7 @@ main (int argc, char *argv[])
 {
 	NMClient *client;
 	const GPtrArray *devices;
-	struct cb_info info;
+	const GPtrArray *active;
 
 	g_type_init ();
 
@@ -806,16 +788,13 @@ main (int argc, char *argv[])
 	if (!get_all_connections ())
 		exit (1);
 
-	info.client = client;
-	info.active = nm_client_get_active_connections (client);
-
-
 	devices = nm_client_get_devices (client);
 	if (devices)
-		g_ptr_array_foreach ((GPtrArray *) devices, detail_device, &info);
+		g_ptr_array_foreach ((GPtrArray *) devices, detail_device, NULL);
 
-	if (info.active)
-		g_ptr_array_foreach ((GPtrArray *) info.active, detail_vpn, &info);
+	active = nm_client_get_active_connections (client);
+	if (active)
+		g_ptr_array_foreach ((GPtrArray *) active, detail_vpn, NULL);
 
 	g_object_unref (client);
 	g_hash_table_unref (connections);
