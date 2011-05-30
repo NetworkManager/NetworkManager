@@ -848,6 +848,32 @@ get_device_connection (NMDevice *device)
 }
 
 static void
+clear_invalid_tag (NMManager *manager, NMDevice *device)
+{
+	GSList *connections, *iter;
+	NMDeviceInterface *dev_iface;
+	GError *error = NULL;
+
+	g_return_if_fail (NM_IS_MANAGER (manager));
+	g_return_if_fail (NM_IS_DEVICE (device));
+
+	dev_iface = NM_DEVICE_INTERFACE (device);
+
+	/* System connections first, then user connections */
+	connections = nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_SYSTEM);
+	connections = g_slist_concat (connections, nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_USER));
+
+	/* Clear INVALID_TAG for all connections compatible with the device */
+	for (iter = connections; iter; iter = g_slist_next (iter)) {
+		if (nm_device_interface_check_connection_compatible (dev_iface, iter->data, &error))
+			g_object_set_data (G_OBJECT (iter->data), INVALID_TAG, NULL);
+		g_object_unref (G_OBJECT (iter->data));
+		g_clear_error (&error);
+	}
+	g_slist_free (connections);
+}
+
+static void
 device_state_changed (NMDevice *device,
                       NMDeviceState new_state,
                       NMDeviceState old_state,
@@ -882,9 +908,14 @@ device_state_changed (NMDevice *device,
 
 		update_routing_and_dns (policy, FALSE);
 		break;
+	case NM_DEVICE_STATE_DISCONNECTED:
+		/* Clear INVALID_TAG when carrier on. If cable was unplugged
+		 * and plugged again, we should try to reconnect */
+		if (reason == NM_DEVICE_STATE_REASON_CARRIER && old_state == NM_DEVICE_STATE_UNAVAILABLE)
+			clear_invalid_tag (policy->manager, device);
+		/* fall through */
 	case NM_DEVICE_STATE_UNMANAGED:
 	case NM_DEVICE_STATE_UNAVAILABLE:
-	case NM_DEVICE_STATE_DISCONNECTED:
 		update_routing_and_dns (policy, FALSE);
 		schedule_activate_check (policy, device, 0);
 		break;
