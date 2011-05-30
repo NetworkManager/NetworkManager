@@ -817,13 +817,17 @@ hostname_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 }
 
 static void
-reset_retries_all (NMSettings *settings)
+reset_retries_all (NMSettings *settings, NMDevice *device)
 {
 	GSList *connections, *iter;
+	GError *error = NULL;
 
 	connections = nm_settings_get_connections (settings);
-	for (iter = connections; iter; iter = g_slist_next (iter))
-		set_connection_auto_retries (NM_CONNECTION (iter->data), RETRIES_DEFAULT);
+	for (iter = connections; iter; iter = g_slist_next (iter)) {
+		if (!device || nm_device_interface_check_connection_compatible (NM_DEVICE_INTERFACE (device), iter->data, &error))
+			set_connection_auto_retries (NM_CONNECTION (iter->data), RETRIES_DEFAULT);
+		g_clear_error (&error);
+	}
 	g_slist_free (connections);
 }
 
@@ -838,7 +842,7 @@ sleeping_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 
 	/* Reset retries on all connections so they'll checked on wakeup */
 	if (sleeping || !enabled)
-		reset_retries_all (policy->settings);
+		reset_retries_all (policy->settings, NULL);
 }
 
 static void
@@ -932,6 +936,11 @@ device_state_changed (NMDevice *device,
 		update_routing_and_dns (policy, FALSE);
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
+		/* Clear INVALID_TAG when carrier on. If cable was unplugged
+		 * and plugged again, we should try to reconnect */
+		if (reason == NM_DEVICE_STATE_REASON_CARRIER && old_state == NM_DEVICE_STATE_UNAVAILABLE)
+			reset_retries_all (policy->settings, device);
+
 		/* Device is now available for auto-activation */
 		update_routing_and_dns (policy, FALSE);
 		schedule_activate_check (policy, device, 0);
@@ -1058,7 +1067,7 @@ connections_loaded (NMSettings *settings, gpointer user_data)
 	// that by calling reset_retries_all() in nm_policy_new()
 	
 	/* Initialize connections' auto-retries */
-	reset_retries_all (settings);
+	reset_retries_all (settings, NULL);
 
 	schedule_activate_all ((NMPolicy *) user_data);
 }
@@ -1188,7 +1197,7 @@ nm_policy_new (NMManager *manager,
 	                          connection_visibility_changed);
 
 	/* Initialize connections' auto-retries */
-	reset_retries_all (policy->settings);
+	reset_retries_all (policy->settings, NULL);
 
 	initialized = TRUE;
 	return policy;
