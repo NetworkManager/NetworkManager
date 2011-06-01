@@ -668,6 +668,16 @@ cert_writer (GKeyFile *file,
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
 		path = objtype->path_func (NM_SETTING_802_1X (setting));
 		g_assert (path);
+
+		/* If the path is rooted in the keyfile directory, just use a
+		 * relative path instead of an absolute one.
+		 */
+		if (g_str_has_prefix (path, keyfile_dir)) {
+			path += strlen (keyfile_dir);
+			while (*path == '/')
+				path++;
+		}
+
 		g_key_file_set_string (file, setting_name, key, path);
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
 		const GByteArray *blob;
