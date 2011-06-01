@@ -865,7 +865,7 @@ cert_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char 
 				/* Construct the proper value as required for the PATH scheme */
 				val = g_byte_array_sized_new (strlen (SCHEME_PATH) + array->len + 1);
 				g_byte_array_append (val, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
-				g_byte_array_append (val, array->data, array->len);
+				g_byte_array_append (val, (const guint8 *) path, strlen (path));
 				g_byte_array_append (val, (const guint8 *) "\0", 1);
 				g_object_set (setting, key, val, NULL);
 				g_byte_array_free (val, TRUE);
