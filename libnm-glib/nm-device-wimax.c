@@ -628,12 +628,10 @@ demarshal_active_nsp (NMObject *object, GParamSpec *pspec, GValue *value, gpoint
 	NMWimaxNsp *nsp = NULL;
 	DBusGConnection *connection;
 
-	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
-		return FALSE;
-
-	priv->got_active_nsp = TRUE;
-
 	if (value) {
+		if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
+			return FALSE;
+
 		path = g_value_get_boxed (value);
 		if (path) {
 			nsp = NM_WIMAX_NSP (_nm_object_cache_get (path));
@@ -643,6 +641,8 @@ demarshal_active_nsp (NMObject *object, GParamSpec *pspec, GValue *value, gpoint
 			}
 		}
 	}
+
+	priv->got_active_nsp = TRUE;
 
 	if (priv->active_nsp) {
 		g_object_unref (priv->active_nsp);

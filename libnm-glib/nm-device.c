@@ -120,12 +120,10 @@ demarshal_ip4_config (NMObject *object, GParamSpec *pspec, GValue *value, gpoint
 	NMIP4Config *config = NULL;
 	DBusGConnection *connection;
 
-	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
-		return FALSE;
-
-	priv->got_ip4_config = TRUE;
-
 	if (value) {
+		if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
+			return FALSE;
+
 		path = g_value_get_boxed (value);
 		if (path) {
 			config = NM_IP4_CONFIG (_nm_object_cache_get (path));
@@ -135,6 +133,8 @@ demarshal_ip4_config (NMObject *object, GParamSpec *pspec, GValue *value, gpoint
 			}
 		}
 	}
+
+	priv->got_ip4_config = TRUE;
 
 	if (priv->ip4_config) {
 		g_object_unref (priv->ip4_config);
@@ -156,12 +156,10 @@ demarshal_dhcp4_config (NMObject *object, GParamSpec *pspec, GValue *value, gpoi
 	NMDHCP4Config *config = NULL;
 	DBusGConnection *connection;
 
-	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
-		return FALSE;
-
-	priv->got_dhcp4_config = TRUE;
-
 	if (value) {
+		if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
+			return FALSE;
+
 		path = g_value_get_boxed (value);
 		if (path) {
 			config = NM_DHCP4_CONFIG (_nm_object_cache_get (path));
@@ -171,6 +169,8 @@ demarshal_dhcp4_config (NMObject *object, GParamSpec *pspec, GValue *value, gpoi
 			}
 		}
 	}
+
+	priv->got_dhcp4_config = TRUE;
 
 	if (priv->dhcp4_config) {
 		g_object_unref (priv->dhcp4_config);
@@ -192,12 +192,10 @@ demarshal_ip6_config (NMObject *object, GParamSpec *pspec, GValue *value, gpoint
 	NMIP6Config *config = NULL;
 	DBusGConnection *connection;
 
-	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
-		return FALSE;
-
-	priv->got_ip6_config = TRUE;
-
 	if (value) {
+		if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
+			return FALSE;
+
 		path = g_value_get_boxed (value);
 		if (path) {
 			config = NM_IP6_CONFIG (_nm_object_cache_get (path));
@@ -207,6 +205,8 @@ demarshal_ip6_config (NMObject *object, GParamSpec *pspec, GValue *value, gpoint
 			}
 		}
 	}
+
+	priv->got_ip6_config = TRUE;
 
 	if (priv->ip6_config) {
 		g_object_unref (priv->ip6_config);

@@ -637,12 +637,10 @@ demarshal_active_ap (NMObject *object, GParamSpec *pspec, GValue *value, gpointe
 	NMAccessPoint *ap = NULL;
 	DBusGConnection *connection;
 
-	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
-		return FALSE;
-
-	priv->got_active_ap = TRUE;
-
 	if (value) {
+		if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
+			return FALSE;
+
 		path = g_value_get_boxed (value);
 		if (path) {
 			ap = NM_ACCESS_POINT (_nm_object_cache_get (path));
@@ -652,6 +650,8 @@ demarshal_active_ap (NMObject *object, GParamSpec *pspec, GValue *value, gpointe
 			}
 		}
 	}
+
+	priv->got_active_ap = TRUE;
 
 	if (priv->active_ap) {
 		g_object_unref (priv->active_ap);
