@@ -40,6 +40,7 @@
 #include <ctype.h>
 
 #include "nm-dbus-glib-types.h"
+#include "nm-system-config-interface.h"
 #include "reader.h"
 #include "common.h"
 
@@ -835,6 +836,24 @@ get_cert_path (const char *keyfile_path, GByteArray *cert_path)
 
 #define SCHEME_PATH "file://"
 
+static const char *certext[] = { ".pem", ".cert", ".crt", ".cer", ".p12", ".der", ".key" };
+
+static gboolean
+has_cert_ext (GByteArray *array)
+{
+	int i;
+
+	for (i = 0; i < G_N_ELEMENTS (certext); i++) {
+		guint32 extlen = strlen (certext[i]);
+
+		if (array->len <= extlen)
+			continue;
+		if (memcmp (&array->data[array->len - extlen], certext[i], extlen) == 0)
+			return TRUE;
+	}
+	return FALSE;
+}
+
 static void
 cert_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char *keyfile_path)
 {
@@ -859,9 +878,18 @@ cert_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char 
 		           && g_utf8_validate ((const char *) array->data, array->len, NULL)) {
 			GByteArray *val;
 			char *path;
+			gboolean exists;
+
+			/* Might be a bare path without the file:// prefix; in that case
+			 * if it's an absolute path, use that, otherwise treat it as a
+			 * relative path to the current directory.
+			 */
 
 			path = get_cert_path (keyfile_path, array);
-			if (g_file_test (path, G_FILE_TEST_EXISTS)) {
+			exists = g_file_test (path, G_FILE_TEST_EXISTS);
+			if (   exists
+			    || memchr (array->data, '/', array->len)
+			    || has_cert_ext (array)) {
 				/* Construct the proper value as required for the PATH scheme */
 				val = g_byte_array_sized_new (strlen (SCHEME_PATH) + array->len + 1);
 				g_byte_array_append (val, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
@@ -870,6 +898,11 @@ cert_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char 
 				g_object_set (setting, key, val, NULL);
 				g_byte_array_free (val, TRUE);
 				success = TRUE;
+
+				/* Warn if the certificate didn't exist */
+				if (exists == FALSE) {
+					PLUGIN_WARN (KEYFILE_PLUGIN_NAME, "   certificate or key %s does not exist", path);
+				}
 			}
 			g_free (path);
 		}
