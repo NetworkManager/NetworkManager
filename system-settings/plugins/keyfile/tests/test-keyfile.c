@@ -2159,16 +2159,23 @@ create_wired_tls_connection (NMSetting8021xCKScheme scheme)
 	return connection;
 }
 
+static char *
+get_path (const char *file, gboolean relative)
+{
+	return relative ? g_path_get_basename (file) : g_strdup (file);
+}
+
 static void
 test_write_wired_8021x_tls_connection_path (void)
 {
 	NMConnection *connection;
-	char *tmp;
+	char *tmp, *tmp2;
 	gboolean success;
 	NMConnection *reread;
 	char *testfile = NULL;
 	GError *error = NULL;
 	GKeyFile *keyfile;
+	gboolean relative = FALSE;
 
 	connection = create_wired_tls_connection (NM_SETTING_802_1X_CK_SCHEME_PATH);
 	g_assert (connection != NULL);
@@ -2206,12 +2213,22 @@ test_write_wired_8021x_tls_connection_path (void)
 		g_assert (success);
 	}
 
+	/* Depending on whether this test is being run from 'make check' or
+	 * 'make distcheck' we might be using relative paths (check) or
+	 * absolute ones (distcheck).
+	 */
+	tmp2 = g_path_get_dirname (testfile);
+	if (g_strcmp0 (tmp2, TEST_KEYFILES_DIR) == 0)
+		relative = TRUE;
+
 	/* CA cert */
 	tmp = g_key_file_get_string (keyfile,
 	                             NM_SETTING_802_1X_SETTING_NAME,
 	                             NM_SETTING_802_1X_CA_CERT,
 	                             NULL);
-	g_assert (g_strcmp0 (tmp, TEST_WIRED_TLS_CA_CERT) == 0);
+	tmp2 = get_path (TEST_WIRED_TLS_CA_CERT, relative);
+	g_assert_cmpstr (tmp, ==, tmp2);
+	g_free (tmp2);
 	g_free (tmp);
 
 	/* Client cert */
@@ -2219,7 +2236,9 @@ test_write_wired_8021x_tls_connection_path (void)
 	                             NM_SETTING_802_1X_SETTING_NAME,
 	                             NM_SETTING_802_1X_CLIENT_CERT,
 	                             NULL);
-	g_assert (g_strcmp0 (tmp, TEST_WIRED_TLS_CLIENT_CERT) == 0);
+	tmp2 = get_path (TEST_WIRED_TLS_CLIENT_CERT, relative);
+	g_assert_cmpstr (tmp, ==, tmp2);
+	g_free (tmp2);
 	g_free (tmp);
 
 	/* Private key */
@@ -2227,7 +2246,9 @@ test_write_wired_8021x_tls_connection_path (void)
 	                             NM_SETTING_802_1X_SETTING_NAME,
 	                             NM_SETTING_802_1X_PRIVATE_KEY,
 	                             NULL);
-	g_assert (g_strcmp0 (tmp, TEST_WIRED_TLS_PRIVKEY) == 0);
+	tmp2 = get_path (TEST_WIRED_TLS_PRIVKEY, relative);
+	g_assert_cmpstr (tmp, ==, tmp2);
+	g_free (tmp2);
 	g_free (tmp);
 
 	g_key_file_free (keyfile);
