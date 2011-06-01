@@ -74,6 +74,11 @@ check_suffix (const char *base, const char *tag)
 	return FALSE;
 }
 
+#define SWP_TAG ".swp"
+#define SWPX_TAG ".swpx"
+#define PEM_TAG ".pem"
+#define DER_TAG ".der"
+
 gboolean
 nm_keyfile_plugin_utils_should_ignore_file (const char *filename)
 {
@@ -88,6 +93,8 @@ nm_keyfile_plugin_utils_should_ignore_file (const char *filename)
 	/* Ignore files with certain patterns */
 	if (   (check_prefix (base, ".") && check_suffix (base, SWP_TAG))   /* vim temporary files: .filename.swp */
 	    || (check_prefix (base, ".") && check_suffix (base, SWPX_TAG))  /* vim temporary files: .filename.swpx */
+	    || check_suffix (base, PEM_TAG)                                 /* 802.1x certificates and keys */
+	    || check_suffix (base, DER_TAG)                                 /* 802.1x certificates and keys */
 	    || check_mkstemp_suffix (base)                                  /* temporary files created by mkstemp() */
 	    || base[strlen (base) - 1] == '~')
 		ignore = TRUE;
