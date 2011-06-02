@@ -178,6 +178,7 @@ struct PendingActivation {
 
 	gboolean have_connection;
 	gboolean authorized;
+	const char *wifi_shared_permission;
 
 	NMConnectionScope scope;
 	char *connection_path;
@@ -726,88 +727,56 @@ pending_activation_new (NMManager *manager,
 }
 
 static void
-pending_auth_user_done (NMAuthChain *chain,
-                        GError *error,
-                        DBusGMethodInvocation *context,
-                        gpointer user_data)
+pending_auth_done (NMAuthChain *chain,
+                   GError *error,
+                   DBusGMethodInvocation *context,
+                   gpointer user_data)
 {
 	PendingActivation *pending = user_data;
 	NMAuthCallResult result;
-
-	pending->chain = NULL;
+	GError *auth_error = NULL;
 
 	if (error) {
 		pending->callback (pending, error);
-		goto out;
+		return;
 	}
 
 	/* Caller has had a chance to obtain authorization, so we only need to
 	 * check for 'yes' here.
 	 */
-	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS));
+	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL);
 	if (result != NM_AUTH_CALL_RESULT_YES) {
-		error = g_error_new_literal (NM_MANAGER_ERROR,
-		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             "Not authorized to use user connections.");
-		pending->callback (pending, error);
-		g_error_free (error);
-	} else
-		pending->callback (pending, NULL);
-
-out:
-	nm_auth_chain_unref (chain);
-}
-
-static void
-pending_auth_net_done (NMAuthChain *chain,
-                       GError *error,
-                       DBusGMethodInvocation *context,
-                       gpointer user_data)
-{
-	PendingActivation *pending = user_data;
-	NMAuthCallResult result;
-
-	pending->chain = NULL;
-
-	if (error) {
-		pending->callback (pending, error);
+		auth_error = g_error_new_literal (NM_MANAGER_ERROR,
+		                                  NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                                  "Not authorized to control networking.");
 		goto out;
 	}
 
-	/* Caller has had a chance to obtain authorization, so we only need to
-	 * check for 'yes' here.
-	 */
-	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL));
-	if (result != NM_AUTH_CALL_RESULT_YES) {
-		error = g_error_new_literal (NM_MANAGER_ERROR,
-		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             "Not authorized to control networking.");
-		pending->callback (pending, error);
-		g_error_free (error);
-		goto out;
+	if (pending->scope == NM_CONNECTION_SCOPE_USER) {
+		result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS);
+		if (result != NM_AUTH_CALL_RESULT_YES) {
+			auth_error = g_error_new_literal (NM_MANAGER_ERROR,
+				                              NM_MANAGER_ERROR_PERMISSION_DENIED,
+				                              "Not authorized to use user connections.");
+			goto out;
+		}
 	}
 
-	if (pending->scope == NM_CONNECTION_SCOPE_SYSTEM) {
-		/* System connection and the user is authorized for that if they have
-		 * the network-control permission.
-		 */
-		pending->callback (pending, NULL);
-	} else {
-		g_assert (pending->scope == NM_CONNECTION_SCOPE_USER);
-
-		/* User connection, check the 'use-user-connections' permission */
-		pending->chain = nm_auth_chain_new (pending->authority,
-			                                pending->context,
-			                                NULL,
-			                                pending_auth_user_done,
-			                                pending);
-		nm_auth_chain_add_call (pending->chain,
-			                    NM_AUTH_PERMISSION_USE_USER_CONNECTIONS,
-			                    TRUE);
+	if (pending->wifi_shared_permission) {
+		result = nm_auth_chain_get_result (chain, pending->wifi_shared_permission);
+		if (result != NM_AUTH_CALL_RESULT_YES) {
+			auth_error = g_error_new_literal (NM_MANAGER_ERROR,
+				                              NM_MANAGER_ERROR_PERMISSION_DENIED,
+				                              "Not authorized to share connections via wifi.");
+			goto out;
+		}
 	}
+
+	/* Otherwise authorized and available to activate */
 
 out:
-	nm_auth_chain_unref (chain);
+	pending->callback (pending, auth_error);
+	g_clear_error (&auth_error);
 }
 
 static gboolean
@@ -834,14 +803,43 @@ check_user_authorized (NMDBusManager *dbus_mgr,
 		return TRUE;
 
 	/* Check whether the UID is authorized for user connections */
-	if (   scope == NM_CONNECTION_SCOPE_USER
-	    && !nm_auth_uid_authorized (*out_sender_uid,
+	if (scope == NM_CONNECTION_SCOPE_USER) {
+		if (nm_auth_uid_authorized (*out_sender_uid,
 	                                dbus_mgr,
 	                                user_proxy,
-	                                out_error_desc))
-		return FALSE;
+	                                out_error_desc) == FALSE)
+			return FALSE;
+	}
 
 	return TRUE;
+}
+
+static const char *
+get_shared_wifi_permission (NMConnection *connection)
+{
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	NMSettingIP4Config *s_ip4;
+	const char *permission = NULL;
+	const char *method;
+
+	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	if (s_ip4) {
+		method = nm_setting_ip4_config_get_method (s_ip4);
+		if (g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) != 0)
+			return NULL;  /* Not shared */
+	}
+
+	s_wsec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
+	s_wifi = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
+	if (s_wifi) {
+		if (nm_setting_wireless_get_security (s_wifi) || s_wsec)
+			permission = NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED;
+		else
+			permission = NM_AUTH_PERMISSION_WIFI_SHARE_OPEN;
+	}
+
+	return permission;
 }
 
 static void
@@ -852,6 +850,8 @@ pending_activation_check_authorized (PendingActivation *pending,
 	const char *error_desc = NULL;
 	gulong sender_uid = G_MAXULONG;
 	GError *error;
+	const char *wifi_permission = NULL;
+	NMConnection *connection;
 
 	g_return_if_fail (pending != NULL);
 	g_return_if_fail (dbus_mgr != NULL);
@@ -876,18 +876,39 @@ pending_activation_check_authorized (PendingActivation *pending,
 		return;
 	}
 
+	/* By this point we need the connection */
+	connection = nm_manager_get_connection_by_object_path (pending->manager,
+	                                                       pending->scope,
+	                                                       pending->connection_path);
+	if (!connection) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
+		                             "Connection could not be found.");
+		pending->callback (pending, error);
+		return;
+	}
+
 	/* First check if the user is allowed to use networking at all, giving
 	 * the user a chance to authenticate to gain the permission.
 	 */
 	pending->chain = nm_auth_chain_new (pending->authority,
 	                                    pending->context,
 	                                    NULL,
-	                                    pending_auth_net_done,
+	                                    pending_auth_done,
 	                                    pending);
 	g_assert (pending->chain);
-	nm_auth_chain_add_call (pending->chain,
-	                        NM_AUTH_PERMISSION_NETWORK_CONTROL,
-	                        TRUE);
+	nm_auth_chain_add_call (pending->chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
+
+	/* User connections require the 'use-user-connections' permission */
+	if (pending->scope == NM_CONNECTION_SCOPE_USER)
+		nm_auth_chain_add_call (pending->chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS, TRUE);
+
+	/* Shared wifi connections require special permissions too */
+	wifi_permission = get_shared_wifi_permission (connection);
+	if (wifi_permission) {
+		pending->wifi_shared_permission = wifi_permission;
+		nm_auth_chain_add_call (pending->chain, wifi_permission, TRUE);
+	}
 }
 
 static void
@@ -3075,8 +3096,7 @@ check_pending_ready (NMManager *self, PendingActivation *pending)
 	if (!pending->have_connection || !pending->authorized)
 		return;
 
-	/* Ok, we're authorized and the connection is available */
-
+	/* Ok, we're authorized and the connection is available, continue with activation */
 	nm_manager_pending_activation_remove (self, pending);
 
 	connection = nm_manager_get_connection_by_object_path (self,
@@ -3107,6 +3127,18 @@ out:
 }
 
 static void
+pending_activation_have_connection (NMManager *self, PendingActivation *pending)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+
+	if (pending->have_connection == FALSE) {
+		/* Kick off authorization checks when the connection becomes available */
+		pending->have_connection = TRUE;
+		pending_activation_check_authorized (pending, priv->dbus_mgr, priv->user_proxy);
+	}
+}
+
+static void
 connection_added_default_handler (NMManager *self,
                                   NMConnection *connection,
                                   NMConnectionScope scope)
@@ -3116,10 +3148,8 @@ connection_added_default_handler (NMManager *self,
 	pending = nm_manager_pending_activation_find (self,
 	                                              nm_connection_get_path (connection),
 	                                              scope);
-	if (pending) {
-		pending->have_connection = TRUE;
-		check_pending_ready (self, pending);
-	}
+	if (pending)
+		pending_activation_have_connection (self, pending);
 }
 
 static void
@@ -3184,9 +3214,7 @@ impl_manager_activate_connection (NMManager *self,
 	priv->pending_activations = g_slist_prepend (priv->pending_activations, pending);
 
 	if (nm_manager_get_connection_by_object_path (self, scope, connection_path))
-		pending->have_connection = TRUE;
-
-	pending_activation_check_authorized (pending, priv->dbus_mgr, priv->user_proxy);
+		pending_activation_have_connection (self, pending);
 }
 
 gboolean

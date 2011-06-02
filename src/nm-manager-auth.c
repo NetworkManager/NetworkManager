@@ -142,6 +142,12 @@ nm_auth_chain_get_data (NMAuthChain *self, const char *tag)
 	return tmp ? tmp->data : NULL;
 }
 
+NMAuthCallResult
+nm_auth_chain_get_result (NMAuthChain *chain, const char *permission)
+{
+	return GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, permission));
+}
+
 void
 nm_auth_chain_set_data (NMAuthChain *self,
                         const char *tag,
