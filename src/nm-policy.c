@@ -739,6 +739,8 @@ auto_activate_device (gpointer user_data)
 	if (best_connection) {
 		GError *error = NULL;
 
+		nm_log_info (LOGD_DEVICE, "Auto-activating connection '%s'.",
+		             nm_connection_get_id (best_connection));
 		if (!nm_manager_activate_connection (policy->manager,
 		                                     best_connection,
 		                                     specific_object,

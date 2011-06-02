@@ -1866,6 +1866,8 @@ internal_activate_device (NMManager *manager,
 
 	/* Tear down any existing connection */
 	if (nm_device_get_act_request (device)) {
+		nm_log_info (LOGD_DEVICE, "(%s): disconnecting for new activation request.",
+		             nm_device_get_iface (device));
 		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_DISCONNECTED,
 		                         NM_DEVICE_STATE_REASON_NONE);
