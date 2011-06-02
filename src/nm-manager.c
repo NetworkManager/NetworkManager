@@ -2747,7 +2747,17 @@ system_get_secrets_reply_cb (NMSettingsConnectionInterface *connection,
                              gpointer user_data)
 {
 	GetSecretsInfo *info = user_data;
+	NMManagerPrivate *priv;
 	GObject *provider;
+
+	/* Remove the GetSecretsInfo from our internal list just in case
+	 * calling the secrets provider's get_secrets_result() function tries
+	 * to cancel the secrets request, which would cause us to double-free
+	 * the GetSecretsInfo.  We know we're going to free it at the end here,
+	 * so there's no need to track it anymore.
+	 */
+	priv = NM_MANAGER_GET_PRIVATE (info->manager);
+	priv->secrets_calls = g_slist_remove (priv->secrets_calls, info);
 
 	provider = g_object_ref (info->provider);
 
