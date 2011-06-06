@@ -116,6 +116,38 @@ against the last scan timestamp, and if the last scan was 10 seconds or more
 ago, a new scan should be requested.
 
 
+* Reconnect to WiFi Networks Only If They Succeeded Once
+
+Currently, NetworkManager will attempt to connect to a previously attempted
+WiFi network even if that network was never successfully connected to.  This
+causes confusion because sometimes users will randomly try various WiFi networks
+hoping to find an open AP, and then wonder why NM tries to reconnect to any of
+those APs later when none of them worked originally due to AP-side MAC filtering
+or other failures.  What should happen is that NetworkManager should set a flag
+on a connection when that connection is successfully connected at least once,
+and only autoconnect the wifi network if that flag is present *and* the
+NMSettingConnection's 'autoconnect' property is TRUE.
+
+This is a bit tricky because we want to consider all connections that don't have
+this flag as having succeeded so that we don't break users' existing connections,
+while holding all newly created connections to this policy.  This flag should
+be determined and set for all connections, even if we only use it to determine
+WiFi behavior for now.
+
+This flag should be a new gboolean property on the NMSettingConnection object
+called "connect-success", with a default value of TRUE.  It should default to
+TRUE to ensure that existing connections are assumed to have connected
+successfully in the past.  New connections created via the AddConnection and
+AddAndActivateConnection D-Bus method calls should have the 'connect-success'
+property explicitly set to FALSE.  Then, in nm-device.c's device_state_changed()
+function where the NM_DEVICE_STATE_ACTIVATED state is handled, the
+'connect-success' property should be set to TRUE.
+
+For WiFi then, in nm-device-wifi.c's get_best_auto_connection() method, the
+'connect-success' property should be checked and if it is FALSE, the connection
+is not considered for auto-activation.
+
+
 * Implement NM_DEVICE_STATE_DISCONNECTING
 
 To allow for "pre-down" scenarios, this state should be implemented before a
