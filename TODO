@@ -162,6 +162,64 @@ amount of time for each script to complete before allowing the device to
 proceed to the NM_DEVICE_STATE_DISCONNECTED state, fully implementing pre-down.
 
 
+* Ethernet Network Auto-detection
+
+There are various methods we can use to autodetect which wired network connection
+to use if the user connects to more than one wired network on a frequent basis.
+First, 802.1x enterprise switches broadcast frames which can be used to indicate
+that the switch supports 802.1x and thus allow NetworkManager to select an
+802.1x connection instead of blindly trying DHCP.  Second, NetworkManager could
+listen for traffic from a list of MAC addresses.  Third, NetworkManager could
+integrate 'arping' functionality to determine if a given IP address matches a
+given MAC address, and thus automatically select that connection.  All these
+methods can co-exist and be used in parallel.
+
+One small caveat is that MAC addresses are trivial to spoof, so just because
+NetworkManager has discovered a certain MAC address does not mean the network
+is authenticated; only 802.1x security can assure that a network is the network
+the user expects it to be.
+
+In any case, a new 'anchor-addresses' property of type string-array should be
+added to the NMSettingWired setting.  Each string element of this property
+should be of the format "<ip>/<mac>" or simply "<mac>".  The first format with
+an IP address would indicate that "arping"-type behavior should be used to
+actively detect the given MAC address; obviously if the given MAC address is
+used for passive discovery as well.  The second format simply lists a MAC
+address to passively listen for.
+
+One drawback of listening or probing for known MAC addresses is an increase in
+latency during connections to ethernet networks.  The probing/listening delay
+should be a reasonable amount of time, like 4 - 5 seconds or so, and should
+only be used when a visible connection has anchor addresses.
+
+Next a gboolean 'anchor-probing' variable should be added to the
+NMDeviceEthernetPrivate structure in src/nm-device-ethernet.c.  This variable
+should be set to TRUE whenever the device's carrier turns on *and* there are
+visible NMConnections with anchor addresses (ie, connections which are system-
+wide or where one of the allowed users of that connection is logged in).  Then
+probing and listening are started, which involves opening a low-level socket
+on the interface and starting the arping run or listening for MAC addresses.
+A timer is also started (don't forget to cache the timer's source ID in the
+NMDeviceEthernetPrivate data, and to cancel the timer whenever the device
+transitions to any state other than DISCONNECTED).
+
+If a known MAC address is discovered as a result of probing or listening, the
+probe/listen socket, timeout, and data are cleaned up, and NetworkManager
+would begin activation of the NMConnection that specified the found MAC address
+in the 'anchor-addresses' property.  If two or more connections specify the
+same MAC address, the connection with the most recent timestamp should be
+preferred.
+
+Similarly, if the probing/listening process detects 802.1x frames the device
+should be marked as requring 802.1x authentication until the carrier drops.
+This would be accomplished by adding a new property to the NMDeviceEthernet
+object and exporting that property through the
+introspection/nm-device-ethernet.xml file.  This would allow clients like
+applets to ensure that users are aware that the device will not allow
+un-authenticated connections and that additional credentials are required to
+successfully connect to this network.
+
+
 * VPN re-connect
 
 NM should remember whether a VPN was connected if a connection disconnects
