@@ -34,27 +34,11 @@ about ADSL configuration on Linux in general is here:
 
 http://atm.eagle-usb.org/wakka.php?wiki=UeagleAtmDoc
 
-hicham started code for the configuration settings here:
-
-https://github.com/hicham-haouari/NetworkManager-ADSL-Support/commits/adsl
-
-After the libnm-util pieces, internally NM needs to be modified for ADSL
-support, of course.  That involves adding a new NM_DEVICE_TYPE_ADSL in
-NetworkManager.h, and then creating a new NMDeviceAdsl subclass in src/.  It's
-probably easiest to copy the nm-device-ethernet.c file and strip out stuff
-that's not required.  Like the nm-device-ethernet.c file handles the 'carrier'
-state though, the ADSL code should periodically poll the sysfs 'carrier'
-attribute of the DSL modem to detect when the modem has a link with the remote
-DSL concentrator, and only activate connections when the link is present.
-
-Detection of ADSL modems should be handled in nm-udev-manager.c checking for
-the "atm" subsystem.
-
-Code to manage br2684ctl will likely be required to be written for the PPPoE
-case before PPPoE is started on the bridge-created link "nasX".  There are
-quite a few examples of daemon management code in NetworkManager (dnsmasq,
-avahi-autoipd, ppp, dhclient, etc) so there should be a lot of code to
-copy and paste from.
+Big thanks to Pantelis Koukousoulas for getting ADSL working for PPPoA and PPPoE
+methods in the 'adsl' branch in NetworkManager git.  We need more testing, IPv6
+PPP support, and also support for multiple ADSL devices (by reading the "atmindex"
+attribute from the sysfs directory for the ATM interface on 2.6.38.8 and later
+kernels).
 
 
 * Convert WEXT code to nl80211
