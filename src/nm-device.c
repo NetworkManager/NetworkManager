@@ -2891,34 +2891,6 @@ check_connection_compatible (NMDeviceInterface *dev_iface,
 }
 
 static gboolean
-device_activation_precheck (NMDevice *self, NMConnection *connection, GError **error)
-{
-	NMConnection *current_connection;
-
-	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
-
-	if (nm_device_get_state (self) != NM_DEVICE_STATE_ACTIVATED)
-		return TRUE;
-
-	if (!nm_device_is_activating (self))
-		return TRUE;
-
-	// FIXME: why not just check connection path & service?
-	current_connection = nm_act_request_get_connection (nm_device_get_act_request (self));
-	if (nm_connection_compare (connection, current_connection, NM_SETTING_COMPARE_FLAG_EXACT)) {
-		/* Already activating or activated with the same connection */
-		g_set_error (error,
-		             NM_DEVICE_INTERFACE_ERROR,
-		             NM_DEVICE_INTERFACE_ERROR_CONNECTION_ACTIVATING,
-		             "%s", "Connection is already activating");
-		return FALSE;
-	}
-
-	return TRUE;
-}
-
-static gboolean
 nm_device_activate (NMDeviceInterface *device,
                     NMActRequest *req,
                     GError **error)
@@ -2926,9 +2898,21 @@ nm_device_activate (NMDeviceInterface *device,
 	NMDevice *self = NM_DEVICE (device);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (!device_activation_precheck (self, nm_act_request_get_connection (req), error)) {
-		g_assert (*error);
-		return FALSE;
+	/* Make sure this connection isn't activated already, or in the process of
+	 * being activated.
+	 */
+	if (   nm_device_is_activating (self)
+	    || (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED)) {
+		NMConnection *new = nm_act_request_get_connection (req);
+		NMConnection *current = nm_act_request_get_connection (priv->act_request);
+
+		if (new == current) {
+			g_set_error_literal (error,
+			                     NM_DEVICE_INTERFACE_ERROR,
+			                     NM_DEVICE_INTERFACE_ERROR_CONNECTION_ACTIVATING,
+			                     "Connection is already activating");
+			return FALSE;
+		}
 	}
 
 	priv->act_request = g_object_ref (req);
