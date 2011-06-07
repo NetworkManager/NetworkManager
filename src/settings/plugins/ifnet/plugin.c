@@ -278,7 +278,8 @@ reload_connections (gpointer config)
 			if (auto_refresh && is_true (auto_refresh)) {
 				if (!nm_connection_compare (NM_CONNECTION (old),
 				                            NM_CONNECTION (new),
-				                            NM_SETTING_COMPARE_FLAG_EXACT)) {
+				                            NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS |
+				                              NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)) {
 					PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Auto refreshing %s", conn_name);
 
 					/* Remove and re-add to disconnect and reconnect with new settings */

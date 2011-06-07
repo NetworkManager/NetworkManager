@@ -272,7 +272,8 @@ connection_new_or_changed (SCPluginIfcfg *self,
 	/* When the connections are the same, nothing is done */
 	if (nm_connection_compare (NM_CONNECTION (existing),
 	                           NM_CONNECTION (new),
-	                           NM_SETTING_COMPARE_FLAG_EXACT)) {
+	                           NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS |
+	                             NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)) {
 		g_object_unref (new);
 		return;
 	}

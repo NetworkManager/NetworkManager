@@ -231,7 +231,8 @@ dir_changed (GFileMonitor *monitor,
 			if (tmp) {
 				if (!nm_connection_compare (NM_CONNECTION (connection),
 				                            NM_CONNECTION (tmp),
-				                            NM_SETTING_COMPARE_FLAG_EXACT)) {
+				                            NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS |
+				                              NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)) {
 					PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "updating %s", full_path);
 					update_connection_settings (connection, tmp);
 				}
