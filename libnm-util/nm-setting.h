@@ -112,6 +112,35 @@ typedef enum {
 } NMSettingSecretFlags;
 
 /**
+ * NMSettingCompareFlags:
+ * @NM_SETTING_COMPARE_FLAG_EXACT: match all properties exactly
+ * @NM_SETTING_COMPARE_FLAG_FUZZY: match only important attributes, like SSID,
+ *   type, security settings, etc.  Does not match, for example, connection ID
+ *   or UUID.
+ * @NM_SETTING_COMPARE_FLAG_IGNORE_ID: ignore the connection's ID
+ * @NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS: ignore all secrets
+ * @NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS: ignore secrets for which
+ * the secret's flags indicate the secret is owned by a user secret agent
+ * (ie, the secret's flag includes @NM_SETTING_SECRET_FLAG_AGENT_OWNED)
+ * @NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS: ignore secrets for which
+ * the secret's flags indicate the secret should not be saved to persistent
+ * storage (ie, the secret's flag includes @NM_SETTING_SECRET_FLAG_NOT_SAVED)
+ *
+ * These flags modify the comparison behavior when comparing two settings or
+ * two connections.
+ *
+ **/
+typedef enum {
+	NM_SETTING_COMPARE_FLAG_EXACT = 0x00000000,
+	NM_SETTING_COMPARE_FLAG_FUZZY = 0x00000001,
+	NM_SETTING_COMPARE_FLAG_IGNORE_ID = 0x00000002,
+	NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS = 0x00000004,
+	NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS = 0x00000008,
+	NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS = 0x00000010
+} NMSettingCompareFlags;
+
+
+/**
  * NMSetting:
  *
  * The NMSetting struct contains only private data.
@@ -148,11 +177,16 @@ typedef struct {
 	                                  NMSettingSecretFlags flags,
 	                                  GError **error);
 
+	/* Returns TRUE if the given property contains the same value in both settings */
+	gboolean    (*compare_property)  (NMSetting *setting,
+	                                  NMSetting *other,
+	                                  const GParamSpec *prop_spec,
+	                                  NMSettingCompareFlags flags);
+
 	/* Padding for future expansion */
 	void (*_reserved1) (void);
 	void (*_reserved2) (void);
 	void (*_reserved3) (void);
-	void (*_reserved4) (void);
 } NMSettingClass;
 
 typedef void (*NMSettingValueIterFn) (NMSetting *setting,
@@ -193,26 +227,6 @@ const char *nm_setting_get_name      (NMSetting *setting);
 gboolean    nm_setting_verify        (NMSetting *setting,
                                       GSList    *all_settings,
                                       GError    **error);
-
-/**
- * NMSettingCompareFlags:
- * @NM_SETTING_COMPARE_FLAG_EXACT: match all properties exactly
- * @NM_SETTING_COMPARE_FLAG_FUZZY: match only important attributes, like SSID,
- *   type, security settings, etc.  Does not match, for example, connection ID
- *   or UUID.
- * @NM_SETTING_COMPARE_FLAG_IGNORE_ID: ignore the connection's ID
- * @NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS: ignore secrets
- *
- * These flags modify the comparison behavior when comparing two settings or
- * two connections.
- *
- **/
-typedef enum {
-	NM_SETTING_COMPARE_FLAG_EXACT = 0x00000000,
-	NM_SETTING_COMPARE_FLAG_FUZZY = 0x00000001,
-	NM_SETTING_COMPARE_FLAG_IGNORE_ID = 0x00000002,
-	NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS = 0x00000004
-} NMSettingCompareFlags;
 
 gboolean    nm_setting_compare       (NMSetting *a,
                                       NMSetting *b,

@@ -562,6 +562,21 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	return TRUE;
 }
 
+static gboolean
+compare_property (NMSetting *setting,
+                  NMSetting *other,
+                  const GParamSpec *prop_spec,
+                  NMSettingCompareFlags flags)
+{
+	/* Handle ignore ID */
+	if (   (flags & NM_SETTING_COMPARE_FLAG_IGNORE_ID)
+	    && g_strcmp0 (prop_spec->name, NM_SETTING_CONNECTION_ID) == 0)
+		return TRUE;
+
+	/* Otherwise chain up to parent to handle generic compare */
+	return NM_SETTING_CLASS (nm_setting_connection_parent_class)->compare_property (setting, other, prop_spec, flags);
+}
+
 static void
 nm_setting_connection_init (NMSettingConnection *setting)
 {
@@ -693,6 +708,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 	parent_class->verify       = verify;
+	parent_class->compare_property = compare_property;
 
 	/* Properties */
 

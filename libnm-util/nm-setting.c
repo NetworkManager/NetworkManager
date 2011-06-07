@@ -332,27 +332,52 @@ nm_setting_verify (NMSetting *setting, GSList *all_settings, GError **error)
 	return TRUE;
 }
 
-static inline gboolean
-should_compare_prop (NMSetting *setting,
-                     const char *prop_name,
-                     NMSettingCompareFlags comp_flags,
-                     GParamFlags prop_flags)
+static gboolean
+compare_property (NMSetting *setting,
+	              NMSetting *other,
+	              const GParamSpec *prop_spec,
+	              NMSettingCompareFlags flags)
 {
-	/* Fuzzy compare ignores secrets and properties defined with the FUZZY_IGNORE flag */
-	if (   (comp_flags & NM_SETTING_COMPARE_FLAG_FUZZY)
-	    && (prop_flags & (NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_SECRET)))
-		return FALSE;
+	GValue value1 = { 0 };
+	GValue value2 = { 0 };
+	gboolean different;
 
-	if (   (comp_flags & NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS)
-	    && (prop_flags & NM_SETTING_PARAM_SECRET))
-		return FALSE;
+	/* Handle compare flags */
+	if (prop_spec->flags & NM_SETTING_PARAM_SECRET) {
+		NMSettingSecretFlags a_secret_flags = NM_SETTING_SECRET_FLAG_NONE;
+		NMSettingSecretFlags b_secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 
-	if (   (comp_flags & NM_SETTING_COMPARE_FLAG_IGNORE_ID)
-	    && NM_IS_SETTING_CONNECTION (setting)
-	    && !strcmp (prop_name, NM_SETTING_CONNECTION_ID))
-		return FALSE;
+		nm_setting_get_secret_flags (setting, prop_spec->name, &a_secret_flags, NULL);
+		nm_setting_get_secret_flags (other, prop_spec->name, &b_secret_flags, NULL);
 
-	return TRUE;
+		/* If the secret flags aren't the same the settings aren't the same */
+		if (a_secret_flags != b_secret_flags)
+			return FALSE;
+
+		/* Check for various secret flags that might cause us to ignore comparing
+		 * this property.
+		 */
+		if (   (flags & NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS)
+		    && (a_secret_flags & NM_SETTING_SECRET_FLAG_AGENT_OWNED))
+			return TRUE;
+
+		if (   (flags & NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)
+		    && (a_secret_flags & NM_SETTING_SECRET_FLAG_NOT_SAVED))
+			return TRUE;
+	}
+
+	g_value_init (&value1, prop_spec->value_type);
+	g_object_get_property (G_OBJECT (setting), prop_spec->name, &value1);
+
+	g_value_init (&value2, prop_spec->value_type);
+	g_object_get_property (G_OBJECT (other), prop_spec->name, &value2);
+
+	different = g_param_values_cmp ((GParamSpec *) prop_spec, &value1, &value2);
+
+	g_value_unset (&value1);
+	g_value_unset (&value2);
+
+	return different == 0 ? TRUE : FALSE;
 }
 
 /**
@@ -374,7 +399,7 @@ nm_setting_compare (NMSetting *a,
 {
 	GParamSpec **property_specs;
 	guint n_property_specs;
-	gint different;
+	gint same = TRUE;
 	guint i;
 
 	g_return_val_if_fail (NM_IS_SETTING (a), FALSE);
@@ -386,32 +411,59 @@ nm_setting_compare (NMSetting *a,
 
 	/* And now all properties */
 	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (a), &n_property_specs);
-	different = FALSE;
-
-	for (i = 0; i < n_property_specs && !different; i++) {
+	for (i = 0; i < n_property_specs && same; i++) {
 		GParamSpec *prop_spec = property_specs[i];
-		GValue value1 = { 0 };
-		GValue value2 = { 0 };
 
-		/* Handle compare flags */
-		if (!should_compare_prop (a, prop_spec->name, flags, prop_spec->flags))
+		/* Fuzzy compare ignores secrets and properties defined with the FUZZY_IGNORE flag */
+		if (   (flags & NM_SETTING_COMPARE_FLAG_FUZZY)
+			&& (prop_spec->flags & (NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_SECRET)))
 			continue;
 
-		g_value_init (&value1, prop_spec->value_type);
-		g_object_get_property (G_OBJECT (a), prop_spec->name, &value1);
+		if (   (flags & NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS)
+		    && (prop_spec->flags & NM_SETTING_PARAM_SECRET))
+			continue;
 
-		g_value_init (&value2, prop_spec->value_type);
-		g_object_get_property (G_OBJECT (b), prop_spec->name, &value2);
-
-		different = g_param_values_cmp (prop_spec, &value1, &value2);
-
-		g_value_unset (&value1);
-		g_value_unset (&value2);
+		same = NM_SETTING_GET_CLASS (a)->compare_property (a, b, prop_spec, flags);
 	}
-
 	g_free (property_specs);
 
-	return different == 0 ? TRUE : FALSE;
+	return same;
+}
+
+static inline gboolean
+should_compare_prop (NMSetting *setting,
+                     const char *prop_name,
+                     NMSettingCompareFlags comp_flags,
+                     GParamFlags prop_flags)
+{
+	/* Fuzzy compare ignores secrets and properties defined with the FUZZY_IGNORE flag */
+	if (   (comp_flags & NM_SETTING_COMPARE_FLAG_FUZZY)
+	    && (prop_flags & (NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_SECRET)))
+		return FALSE;
+
+	if (prop_flags & NM_SETTING_PARAM_SECRET) {
+		NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
+
+		if (comp_flags & NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS)
+			return FALSE;
+
+		nm_setting_get_secret_flags (setting, prop_name, &secret_flags, NULL);
+
+		if (   (comp_flags & NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS)
+		    && (secret_flags & NM_SETTING_SECRET_FLAG_AGENT_OWNED))
+			return FALSE;
+
+		if (   (comp_flags & NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)
+		    && (secret_flags & NM_SETTING_SECRET_FLAG_NOT_SAVED))
+			return FALSE;
+	}
+
+	if (   (comp_flags & NM_SETTING_COMPARE_FLAG_IGNORE_ID)
+	    && NM_IS_SETTING_CONNECTION (setting)
+	    && !strcmp (prop_name, NM_SETTING_CONNECTION_ID))
+		return FALSE;
+
+	return TRUE;
 }
 
 /**
@@ -976,6 +1028,7 @@ nm_setting_class_init (NMSettingClass *setting_class)
 	setting_class->update_one_secret = update_one_secret;
 	setting_class->get_secret_flags = get_secret_flags;
 	setting_class->set_secret_flags = set_secret_flags;
+	setting_class->compare_property = compare_property;
 
 	/* Properties */
 

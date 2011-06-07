@@ -451,6 +451,68 @@ need_secrets (NMSetting *setting)
 	return g_ptr_array_sized_new (1);
 }
 
+static gboolean
+compare_one_secret (NMSettingVPN *a,
+                    NMSettingVPN *b,
+                    NMSettingCompareFlags flags)
+{
+	GHashTable *a_secrets, *b_secrets;
+	GHashTableIter iter;
+	const char *key, *val;
+
+	a_secrets = NM_SETTING_VPN_GET_PRIVATE (a)->secrets;
+	b_secrets = NM_SETTING_VPN_GET_PRIVATE (b)->secrets;
+
+	g_hash_table_iter_init (&iter, a_secrets);
+	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &val)) {
+		NMSettingSecretFlags a_secret_flags = NM_SETTING_SECRET_FLAG_NONE;
+		NMSettingSecretFlags b_secret_flags = NM_SETTING_SECRET_FLAG_NONE;
+
+		nm_setting_get_secret_flags (NM_SETTING (a), key, &a_secret_flags, NULL);
+		nm_setting_get_secret_flags (NM_SETTING (b), key, &b_secret_flags, NULL);
+
+		/* If the secret flags aren't the same, the settings aren't the same */
+		if (a_secret_flags != b_secret_flags)
+			return FALSE;
+
+		if (   (flags & NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS)
+		    && (a_secret_flags & NM_SETTING_SECRET_FLAG_AGENT_OWNED))
+			continue;
+
+		if (   (flags & NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)
+		    && (a_secret_flags & NM_SETTING_SECRET_FLAG_NOT_SAVED))
+			continue;
+
+		/* Now compare the values themselves */
+		if (g_strcmp0 (val, nm_setting_vpn_get_secret (b, key)) != 0)
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
+compare_property (NMSetting *setting,
+                  NMSetting *other,
+                  const GParamSpec *prop_spec,
+                  NMSettingCompareFlags flags)
+{
+	gboolean same;
+
+	/* We only need to treat the 'secrets' property specially */
+	if (g_strcmp0 (prop_spec->name, NM_SETTING_VPN_SECRETS) != 0)
+		return NM_SETTING_CLASS (nm_setting_vpn_parent_class)->compare_property (setting, other, prop_spec, flags);
+
+	/* Compare A to B to ensure everything in A is found in B */
+	same = compare_one_secret (NM_SETTING_VPN (setting), NM_SETTING_VPN (other), flags);
+	if (same) {
+		/* And then B to A to ensure everything in B is also found in A */
+		same = compare_one_secret (NM_SETTING_VPN (other), NM_SETTING_VPN (setting), flags);
+	}
+
+	return same;
+}
+
 static void
 destroy_one_secret (gpointer data)
 {
@@ -572,6 +634,7 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 	parent_class->get_secret_flags  = get_secret_flags;
 	parent_class->set_secret_flags  = set_secret_flags;
 	parent_class->need_secrets      = need_secrets;
+	parent_class->compare_property  = compare_property;
 
 	/* Properties */
 	/**
