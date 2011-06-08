@@ -980,21 +980,21 @@ check_writable (NMConnection *connection, GError **error)
 
 static void
 get_settings_auth_cb (NMSettingsConnection *self, 
-	                  DBusGMethodInvocation *context,
-	                  gulong sender_uid,
-	                  GError *error,
-	                  gpointer data)
+                      DBusGMethodInvocation *context,
+                      gulong sender_uid,
+                      GError *error,
+                      gpointer data)
 {
 	if (error)
 		dbus_g_method_return_error (context, error);
 	else {
 		GHashTable *settings;
-	 	NMConnection *dupl_con;
+		NMConnection *dupl_con;
 		NMSettingConnection *s_con;
 		guint64 timestamp;
 
-	 	dupl_con = nm_connection_duplicate (NM_CONNECTION (self));
- 		g_assert (dupl_con);
+		dupl_con = nm_connection_duplicate (NM_CONNECTION (self));
+		g_assert (dupl_con);
 
 		/* Timestamp is not updated in connection's 'timestamp' property,
 		 * because it would force updating the connection and in turn
@@ -1004,7 +1004,7 @@ get_settings_auth_cb (NMSettingsConnection *self,
 		 */
 		timestamp = nm_settings_connection_get_timestamp (self);
 		if (timestamp) {
-			s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (NM_CONNECTION (dupl_con), NM_TYPE_SETTING_CONNECTION));
+			s_con = nm_connection_get_setting_connection (NM_CONNECTION (dupl_con));
 			g_assert (s_con);
 			g_object_set (s_con, NM_SETTING_CONNECTION_TIMESTAMP, timestamp, NULL);
 		}
@@ -1017,7 +1017,7 @@ get_settings_auth_cb (NMSettingsConnection *self,
 		g_assert (settings);
 		dbus_g_method_return (context, settings);
 		g_hash_table_destroy (settings);
- 		g_object_unref (dupl_con);
+		g_object_unref (dupl_con);
 	}
 }
 
