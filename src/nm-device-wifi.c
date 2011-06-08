@@ -154,7 +154,6 @@ struct _NMDeviceWifiPrivate {
 	guint             link_timeout_id;
 
 	/* Static options from driver */
-	guint8            we_version;
 	guint32           capabilities;
 	gboolean          has_scan_capa_ssid;
 };
@@ -504,29 +503,14 @@ static guint32
 real_get_generic_capabilities (NMDevice *dev)
 {
 	int fd, err;
-	guint32 caps = NM_DEVICE_CAP_NONE, response_len = 0;
+	guint32 caps = NM_DEVICE_CAP_NONE;
 	struct iwreq wrq;
-	struct iw_range range;
 	const char *iface = nm_device_get_iface (dev);
-	gboolean success;
-
-	memset (&range, 0, sizeof (struct iw_range));
-	success = wireless_get_range (NM_DEVICE_WIFI (dev), &range, &response_len);
-	if (!success)
-		return NM_DEVICE_CAP_NONE;
-
-	/* Check for Wireless Extensions support >= 16 for wireless devices */
-	if ((response_len < 300) || (range.we_version_compiled < 16)) {
-		nm_log_err (LOGD_HW | LOGD_WIFI,
-		            "(%s): driver's Wireless Extensions version (%d) is too old.",
-					iface, range.we_version_compiled);
-		return NM_DEVICE_CAP_NONE;
-	}
 
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
 		nm_log_err (LOGD_HW, "(%s): couldn't open control socket.", iface);
-		goto out;
+		return NM_DEVICE_CAP_NONE;
 	}
 
 	/* Cards that don't scan aren't supported */
@@ -539,7 +523,6 @@ real_get_generic_capabilities (NMDevice *dev)
 	else
 		caps |= NM_DEVICE_CAP_NM_SUPPORTED;
 
-out:
 	return caps;
 }
 
@@ -549,11 +532,8 @@ out:
                   NM_WIFI_DEVICE_CAP_RSN)
 
 static guint32
-get_wireless_capabilities (NMDeviceWifi *self,
-                           iwrange * range,
-                           guint32 data_len)
+get_wireless_capabilities (NMDeviceWifi *self, iwrange *range)
 {
-	guint32 minlen;
 	guint32 caps = NM_WIFI_DEVICE_CAP_NONE;
 	const char * iface;
 
@@ -562,39 +542,35 @@ get_wireless_capabilities (NMDeviceWifi *self,
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
 
-	minlen = ((char *) &range->enc_capa) - (char *) range + sizeof (range->enc_capa);
-
 	/* All drivers should support WEP by default */
 	caps |= NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104;
 
-	if ((data_len >= minlen) && range->we_version_compiled >= 18) {
-		if (range->enc_capa & IW_ENC_CAPA_CIPHER_TKIP)
-			caps |= NM_WIFI_DEVICE_CAP_CIPHER_TKIP;
+	if (range->enc_capa & IW_ENC_CAPA_CIPHER_TKIP)
+		caps |= NM_WIFI_DEVICE_CAP_CIPHER_TKIP;
 
-		if (range->enc_capa & IW_ENC_CAPA_CIPHER_CCMP)
-			caps |= NM_WIFI_DEVICE_CAP_CIPHER_CCMP;
+	if (range->enc_capa & IW_ENC_CAPA_CIPHER_CCMP)
+		caps |= NM_WIFI_DEVICE_CAP_CIPHER_CCMP;
 
-		if (range->enc_capa & IW_ENC_CAPA_WPA)
-			caps |= NM_WIFI_DEVICE_CAP_WPA;
+	if (range->enc_capa & IW_ENC_CAPA_WPA)
+		caps |= NM_WIFI_DEVICE_CAP_WPA;
 
-		if (range->enc_capa & IW_ENC_CAPA_WPA2)
-			caps |= NM_WIFI_DEVICE_CAP_RSN;
+	if (range->enc_capa & IW_ENC_CAPA_WPA2)
+		caps |= NM_WIFI_DEVICE_CAP_RSN;
 
-		/* Check for cipher support but not WPA support */
-		if (    (caps & (NM_WIFI_DEVICE_CAP_CIPHER_TKIP | NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
-		    && !(caps & (NM_WIFI_DEVICE_CAP_WPA | NM_WIFI_DEVICE_CAP_RSN))) {
-			nm_log_warn (LOGD_WIFI, "%s: device supports WPA ciphers but not WPA protocol; "
-			             "WPA unavailable.", iface);
-			caps &= ~WPA_CAPS;
-		}
+	/* Check for cipher support but not WPA support */
+	if (    (caps & (NM_WIFI_DEVICE_CAP_CIPHER_TKIP | NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
+	    && !(caps & (NM_WIFI_DEVICE_CAP_WPA | NM_WIFI_DEVICE_CAP_RSN))) {
+		nm_log_warn (LOGD_WIFI, "%s: device supports WPA ciphers but not WPA protocol; "
+		             "WPA unavailable.", iface);
+		caps &= ~WPA_CAPS;
+	}
 
-		/* Check for WPA support but not cipher support */
-		if (    (caps & (NM_WIFI_DEVICE_CAP_WPA | NM_WIFI_DEVICE_CAP_RSN))
-		    && !(caps & (NM_WIFI_DEVICE_CAP_CIPHER_TKIP | NM_WIFI_DEVICE_CAP_CIPHER_CCMP))) {
-			nm_log_warn (LOGD_WIFI, "%s: device supports WPA protocol but not WPA ciphers; "
-			             "WPA unavailable.", iface);
-			caps &= ~WPA_CAPS;
-		}
+	/* Check for WPA support but not cipher support */
+	if (    (caps & (NM_WIFI_DEVICE_CAP_WPA | NM_WIFI_DEVICE_CAP_RSN))
+	    && !(caps & (NM_WIFI_DEVICE_CAP_CIPHER_TKIP | NM_WIFI_DEVICE_CAP_CIPHER_CCMP))) {
+		nm_log_warn (LOGD_WIFI, "%s: device supports WPA protocol but not WPA ciphers; "
+		             "WPA unavailable.", iface);
+		caps &= ~WPA_CAPS;
 	}
 
 	return caps;
@@ -666,8 +642,19 @@ constructor (GType type,
 
 	memset (&range, 0, sizeof (struct iw_range));
 	success = wireless_get_range (NM_DEVICE_WIFI (object), &range, &response_len);
-	if (!success)
+	if (!success) {
+		nm_log_info (LOGD_HW | LOGD_WIFI, "(%s): driver WEXT range request failed",
+		             nm_device_get_iface (NM_DEVICE (self)));
 		goto error;
+	}
+
+	if ((response_len < 300) || (range.we_version_compiled < 21)) {
+		nm_log_info (LOGD_HW | LOGD_WIFI,
+		             "(%s): driver WEXT version too old (got %d, expected >= 21)",
+		             nm_device_get_iface (NM_DEVICE (self)),
+		             range.we_version_compiled);
+		goto error;
+	}
 
 	priv->max_qual.qual = range.max_qual.qual;
 	priv->max_qual.level = range.max_qual.level;
@@ -677,8 +664,6 @@ constructor (GType type,
 	priv->num_freqs = MIN (range.num_frequency, IW_MAX_FREQUENCIES);
 	for (i = 0; i < priv->num_freqs; i++)
 		priv->freqs[i] = iw_freq_to_uint32 (&range.freq[i]);
-
-	priv->we_version = range.we_version_compiled;
 
 	/* Check for the ability to scan specific SSIDs.  Until the scan_capa
 	 * field gets added to wireless-tools, need to work around that by casting
@@ -699,7 +684,7 @@ constructor (GType type,
 	}
 
 	/* 802.11 wireless-specific capabilities */
-	priv->capabilities = get_wireless_capabilities (self, &range, response_len);
+	priv->capabilities = get_wireless_capabilities (self, &range);
 
 	/* Connect to the supplicant manager */
 	priv->supplicant.mgr = nm_supplicant_manager_get ();
@@ -1870,13 +1855,6 @@ nm_device_wifi_get_ssid (NMDeviceWifi *self)
 
 	len = wrq.u.essid.length;
 	if (!nm_utils_is_empty_ssid ((guint8 *) ssid, len)) {
-		/* Some drivers include nul termination in the SSID, so let's
-		 * remove it here before further processing. WE-21 changes this
-		 * to explicitly require the length _not_ to include nul
-		 * termination. */
-		if (len > 0 && ssid[len - 1] == '\0' && priv->we_version < 21)
-			len--;
-
 		priv->ssid = g_byte_array_sized_new (len);
 		g_byte_array_append (priv->ssid, (const guint8 *) ssid, len);
 	}

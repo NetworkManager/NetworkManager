@@ -104,7 +104,6 @@ struct _NMDeviceOlpcMeshPrivate
 	gint8			  num_freqs;
 	guint32			  freqs[IW_MAX_FREQUENCIES];
 
-	guint8			  we_version;
 	gboolean          up;
 
 	NMDevice *        companion;
@@ -147,44 +146,7 @@ nm_olpc_mesh_error_get_type (void)
 static guint32
 real_get_generic_capabilities (NMDevice *dev)
 {
-	int fd;
-	guint32 caps = NM_DEVICE_CAP_NONE;
-	struct iw_range range;
-	struct iwreq wrq;
-	const char *iface = nm_device_get_iface (dev);
-
-	/* Check for Wireless Extensions support >= 16 for wireless devices */
-
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		nm_log_warn (LOGD_OLPC_MESH, "couldn't open control socket.");
-		goto out;
-	}
-
-	memset (&wrq, 0, sizeof (struct iwreq));
-	memset (&range, 0, sizeof (struct iw_range));
-	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
-	wrq.u.data.pointer = (caddr_t) &range;
-	wrq.u.data.length = sizeof (struct iw_range);
-
-	if (ioctl (fd, SIOCGIWRANGE, &wrq) < 0) {
-		nm_log_warn (LOGD_OLPC_MESH, "couldn't get driver range information.");
-		goto out;
-	}
-
-	if ((wrq.u.data.length < 300) || (range.we_version_compiled < 16)) {
-		nm_log_warn (LOGD_OLPC_MESH,
-		             "(%s): driver's Wireless Extensions version (%d) is too old.",
-		             iface, range.we_version_compiled);
-		goto out;
-	} else {
-		caps |= NM_DEVICE_CAP_NM_SUPPORTED;
-	}
-
-out:
-	if (fd >= 0)
-		close (fd);
-	return caps;
+	return NM_DEVICE_CAP_NM_SUPPORTED;
 }
 
 static void
@@ -193,7 +155,6 @@ nm_device_olpc_mesh_init (NMDeviceOlpcMesh * self)
 	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
 
 	priv->dispose_has_run = FALSE;
-	priv->we_version = 0;
 	priv->companion = NULL;
 	priv->stage1_waiting = FALSE;
 
@@ -276,14 +237,23 @@ constructor (GType type,
 	wrq.u.data.pointer = (caddr_t) &range;
 	wrq.u.data.length = sizeof (struct iw_range);
 
-	if (ioctl (fd, SIOCGIWRANGE, &wrq) < 0)
+	if (ioctl (fd, SIOCGIWRANGE, &wrq) < 0) {
+		nm_log_info (LOGD_HW | LOGD_WIFI, "(%s): driver WEXT range request failed",
+		             nm_device_get_iface (NM_DEVICE (self)));
 		goto error;
+	}
+
+	if ((wrq.u.data.length < 300) || (range.we_version_compiled < 21)) {
+		nm_log_info (LOGD_HW | LOGD_WIFI,
+		             "(%s): driver WEXT version too old (got %d, expected >= 21)",
+		             nm_device_get_iface (NM_DEVICE (self)),
+		             range.we_version_compiled);
+		goto error;
+	}
 
 	priv->num_freqs = MIN (range.num_frequency, IW_MAX_FREQUENCIES);
 	for (i = 0; i < priv->num_freqs; i++)
 		priv->freqs[i] = iw_freq_to_uint32 (&range.freq[i]);
-
-	priv->we_version = range.we_version_compiled;
 
 	close (fd);
 
@@ -531,7 +501,6 @@ nm_device_olpc_mesh_set_channel (NMDeviceOlpcMesh *self, guint32 channel)
 static void
 nm_device_olpc_mesh_set_ssid (NMDeviceOlpcMesh *self, const GByteArray * ssid)
 {
-	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
 	int sk;
 	struct iwreq wrq;
 	const char * iface;
@@ -554,24 +523,10 @@ nm_device_olpc_mesh_set_ssid (NMDeviceOlpcMesh *self, const GByteArray * ssid)
 		memcpy (buf, ssid->data, MIN (sizeof (buf) - 1, len));
 	}
 	wrq.u.essid.pointer = (caddr_t) buf;
-
-	if (priv->we_version < 21) {
-		/* For historic reasons, set SSID length to include one extra
-		 * character, C string nul termination, even though SSID is
-		 * really an octet string that should not be presented as a C
-		 * string. Some Linux drivers decrement the length by one and
-		 * can thus end up missing the last octet of the SSID if the
-		 * length is not incremented here. WE-21 changes this to
-		 * explicitly require the length _not_ to include nul
-		 * termination. */
-		if (len)
-			len++;
-	}
 	wrq.u.essid.length = len;
 	wrq.u.essid.flags = (len > 0) ? 1 : 0; /* 1=enable SSID, 0=disable/any */
 
 	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
-
 	if (ioctl (sk, SIOCSIWESSID, &wrq) < 0) {
 		if (errno != ENODEV) {
 			nm_log_err (LOGD_OLPC_MESH, "(%s): error setting SSID to '%s': %s",
