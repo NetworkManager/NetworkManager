@@ -268,7 +268,7 @@ AC_SUBST(GIO_LIBS)
 GOBJECT_INTROSPECTION_CHECK([0.9.6])
 
 # Qt4
-PKG_CHECK_MODULES(QT, [Qt >= 4 QtCore QtDBus], [have_qt=yes],[have_qt=no])
+PKG_CHECK_MODULES(QT, [Qt >= 4 QtCore QtDBus QtNetwork], [have_qt=yes],[have_qt=no])
 AC_ARG_ENABLE(qt, AS_HELP_STRING([--enable-qt], [enable Qt examples]),
                      [enable_qt=${enableval}], [enable_qt=${have_qt}])
 if (test "${enable_qt}" = "yes"); then
