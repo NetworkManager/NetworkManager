@@ -11,7 +11,7 @@ m4_define([nm_version],
 AC_INIT([NetworkManager], [nm_version],
         [http://bugzilla.gnome.org/enter_bug.cgi?product=NetworkManager],
         [NetworkManager])
-AM_INIT_AUTOMAKE([1.9 subdir-objects tar-ustar no-dist-gzip dist-bzip2])
+AM_INIT_AUTOMAKE([1.9 subdir-objects tar-ustar no-dist-gzip dist-bzip2 -Wno-portability])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([no])])
 AM_MAINTAINER_MODE
 
