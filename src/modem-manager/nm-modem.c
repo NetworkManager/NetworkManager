@@ -65,6 +65,7 @@ typedef struct {
 	DBusGProxyCall *call;
 
 	gboolean mm_enabled;
+	guint32 mm_ip_timeout;
 
 	/* PPP stats */
 	guint32 in_bytes;
@@ -224,6 +225,7 @@ ppp_stage3_ip4_config_start (NMModem *self,
 	const char *ppp_name = NULL;
 	GError *error = NULL;
 	NMActStageReturn ret;
+	guint32 ip_timeout;
 
 	g_return_val_if_fail (self != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (NM_IS_MODEM (self), NM_ACT_STAGE_RETURN_FAILURE);
@@ -239,8 +241,17 @@ ppp_stage3_ip4_config_start (NMModem *self,
 			return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
+	/* Check if ModemManager requested a specific IP timeout to be used. If 0 reported,
+	 * use the default one (20s) */
+	if (priv->mm_ip_timeout > 0) {
+		nm_log_info (LOGD_PPP, "using modem-specified IP timeout: %u seconds",
+		             priv->mm_ip_timeout);
+		ip_timeout = priv->mm_ip_timeout;
+	} else
+		ip_timeout = 20;
+
 	priv->ppp_manager = nm_ppp_manager_new (priv->iface);
-	if (nm_ppp_manager_start (priv->ppp_manager, req, ppp_name, 20, &error)) {
+	if (nm_ppp_manager_start (priv->ppp_manager, req, ppp_name, ip_timeout, &error)) {
 		g_signal_connect (priv->ppp_manager, "state-changed",
 						  G_CALLBACK (ppp_state_changed),
 						  self);
@@ -480,7 +491,7 @@ nm_modem_act_stage1_prepare (NMModem *self,
 		if (hints)
 			g_ptr_array_free (hints, TRUE);
 	}
-	
+
 	return ret;
 }
 
@@ -684,6 +695,35 @@ nm_modem_get_path (NMModem *self)
 }
 
 static void
+get_mm_ip_timeout_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
+{
+	NMModem *self = NM_MODEM (user_data);
+	GError *error = NULL;
+	GValue value = { 0, };
+
+	/* On error or if invalid value, just set 0 and we will use the default
+	 * configuration afterwards */
+	if (dbus_g_proxy_end_call (proxy, call_id, &error,
+	                           G_TYPE_VALUE, &value,
+	                           G_TYPE_INVALID) &&
+	    G_VALUE_HOLDS_UINT (&value)) {
+		NM_MODEM_GET_PRIVATE (self)->mm_ip_timeout = g_value_get_uint (&value);
+		g_value_unset (&value);
+	}
+}
+
+static void
+query_mm_ip_timeout (NMModem *self)
+{
+	dbus_g_proxy_begin_call (NM_MODEM_GET_PRIVATE (self)->props_proxy,
+	                         "Get", get_mm_ip_timeout_done,
+	                         self, NULL,
+	                         G_TYPE_STRING, MM_DBUS_INTERFACE_MODEM,
+	                         G_TYPE_STRING, "IpTimeout",
+	                         G_TYPE_INVALID);
+}
+
+static void
 get_mm_enabled_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 {
 	NMModem *self = NM_MODEM (user_data);
@@ -852,6 +892,7 @@ constructor (GType type,
 	                             object,
 	                             NULL);
 
+	query_mm_ip_timeout (NM_MODEM (object));
 	query_mm_enabled (NM_MODEM (object));
 
 	return object;
