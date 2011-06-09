@@ -643,7 +643,8 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 		                     || NM_SETTING_GSM_BAND_U850
 		                     || NM_SETTING_GSM_BAND_U900
 		                     || NM_SETTING_GSM_BAND_U17IX
-		                     || NM_SETTING_GSM_BAND_U1900,
+		                     || NM_SETTING_GSM_BAND_U1900
+		                     || NM_SETTING_GSM_BAND_U2600,
 		                    NM_SETTING_GSM_BAND_ANY,
 		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 

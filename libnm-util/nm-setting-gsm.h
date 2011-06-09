@@ -88,6 +88,7 @@ typedef enum {
 	NM_SETTING_GSM_BAND_U900         = 0x00000400, /* WCDMA 3GPP UMTS 900 MHz      (Class VIII) */
 	NM_SETTING_GSM_BAND_U17IX        = 0x00000800, /* WCDMA 3GPP UMTS 1700 MHz     (Class IX) */
 	NM_SETTING_GSM_BAND_U1900        = 0x00001000, /* WCDMA 3GPP UMTS 1900 MHz     (Class II) */
+	NM_SETTING_GSM_BAND_U2600        = 0x00002000, /* WCDMA 3GPP UMTS 2600 MHz     (Class VII, internal) */
 } NMSettingGsmNetworkBand;
 
 typedef struct {
