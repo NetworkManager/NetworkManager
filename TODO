@@ -304,6 +304,44 @@ failure of the VPN connection, just like DHCP timeouts and lease-renewal
 failures do for other devices (see dhcp_state_changed() in nm-device.c).
 
 
+* VPN Service Daemon Secret Requests
+
+In addition to NM asking the service daemons whether more secrets are required,
+VPN service daemons (like nm-vpnc-service, nm-openvpn-service, etc) should be
+able to ask NetworkManager to provide secrets during the connection attempt. To
+do this, the plugin should advertise its ability to handle out-of-band secrets
+in its .service file via the key 'async-secrets=true'.  NetworkManager would
+check that key and if present activate the VPN as normal, but skip the explicit
+NeedSecrets calls.
+
+Instead, a new "SecretsRequired" signal would be added to
+introspection/nm-vpn-plugin.xml (and corresponding helper code added to
+libnm-glib/nm-vpn-plugin.c) that would be emitted when the plugin determined
+that secrets were required.  This signal would have D-Bus signature of "sas"
+for the arguments [ <s:uuid>, <as:secrets> ] with the <uuid> obviously being
+the connection UUID, and <secrets> being an array of strings of plugin-specific
+strings the plugin requires secrets for.  This array of strings would then be
+passed as the "hints" parameter in nm-vpn-connection.c when secrets are
+requested from agents in a subsequent nm_settings_connection_get_secrets() call.
+At this time the agent code only allows one hint per request, so we may need to
+extend that to allow more than one hint.
+
+Thus when connecting if the plugin supported async secrets NetworkManager would
+still request existing secrets (without interactivity) and send them to the
+VPN service daemon in the Connect D-Bus method, then wait for the service daemon
+to either request secrets asynchronously via the SecretsRequired signal or to
+signal successful connection via the Ip4Config signal.
+
+The vpnc plugin would need to be reworked to open a pipe to vpnc's stdout and
+stdin file descriptors to capture any authentication messages, and to match
+these messages to known secrets request strings.  When receiving one of these
+strings the plugin would determine which secret was being requested and then
+emit the SecretsRequired signal to NetworkManager.  This would also imply that
+nm-vpnc-service exectutes vpnc with the "--xauth-inter" argument to enable
+challenge-response and does not use the "--non-inter" flag which suppresses that
+behavior.
+
+
 * WPS
 
 wpa_supplicant has support for WPS (Wifi Protected Setup, basically Bluetooth-
