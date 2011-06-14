@@ -15,12 +15,11 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  *
  */
 
 #include <glib.h>
-#include <dbus/dbus-glib.h>
 #include <string.h>
 
 #include "nm-test-helpers.h"
@@ -103,11 +102,9 @@ test_defaults (GType type, const char *name)
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
-	DBusGConnection *bus;
 	char *base;
 
 	g_type_init ();
-	bus = dbus_g_bus_get (DBUS_BUS_SESSION, NULL);
 
 	if (!nm_utils_init (&error))
 		FAIL ("nm-utils-init", "failed to initialize libnm-util: %s", error->message);
