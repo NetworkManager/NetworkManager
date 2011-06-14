@@ -20,7 +20,6 @@
  */
 
 #include <glib.h>
-#include <dbus/dbus-glib.h>
 #include <string.h>
 
 #include "nm-test-helpers.h"
@@ -407,14 +406,12 @@ test_clear_phase2_private_key (const char *path, const char *password)
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
-	DBusGConnection *bus;
 	char *base;
 
 	if (argc < 3)
 		FAIL ("init", "need at least two arguments: <path> <password>");
 
 	g_type_init ();
-	bus = dbus_g_bus_get (DBUS_BUS_SESSION, NULL);
 
 	if (!nm_utils_init (&error))
 		FAIL ("nm-utils-init", "failed to initialize libnm-util: %s", error->message);
