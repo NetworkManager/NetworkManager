@@ -216,6 +216,8 @@ typedef struct {
 	DBusGProxy *user_proxy;
 	NMAuthCallResult user_con_perm;
 	NMAuthCallResult user_net_perm;
+	NMAuthCallResult user_wifi_share_open_perm;
+	NMAuthCallResult user_wifi_share_enc_perm;
 
 	GHashTable *system_connections;
 	NMSysconfigSettings *sys_settings;
@@ -814,32 +816,45 @@ check_user_authorized (NMDBusManager *dbus_mgr,
 	return TRUE;
 }
 
-static const char *
-get_shared_wifi_permission (NMConnection *connection)
+static void
+get_shared_wifi_type (NMConnection *connection,
+                      gboolean *out_wifi_share_open,
+                      gboolean *out_wifi_share_enc)
 {
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIP4Config *s_ip4;
-	const char *permission = NULL;
-	const char *method;
+	const char *method = NULL;
 
 	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
-	if (s_ip4) {
+	if (s_ip4)
 		method = nm_setting_ip4_config_get_method (s_ip4);
-		if (g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) != 0)
-			return NULL;  /* Not shared */
-	}
+
+	if (g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) != 0)
+		return;  /* Not shared */
 
 	s_wsec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
 	s_wifi = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
 	if (s_wifi) {
 		if (nm_setting_wireless_get_security (s_wifi) || s_wsec)
-			permission = NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED;
+			*out_wifi_share_enc = TRUE;
 		else
-			permission = NM_AUTH_PERMISSION_WIFI_SHARE_OPEN;
+			*out_wifi_share_open = TRUE;
 	}
+}
 
-	return permission;
+static const char *
+get_shared_wifi_permission (NMConnection *connection)
+{
+	gboolean wifi_share_open = FALSE, wifi_share_enc = FALSE;
+
+	get_shared_wifi_type (connection, &wifi_share_open, &wifi_share_enc);
+	if (wifi_share_open)
+		return NM_AUTH_PERMISSION_WIFI_SHARE_OPEN;
+	else if (wifi_share_enc)
+		return NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED;
+
+	return NULL;
 }
 
 static void
@@ -1001,6 +1016,8 @@ user_proxy_cleanup (NMManager *self, gboolean resync_bt)
 
 	priv->user_net_perm = NM_AUTH_CALL_RESULT_UNKNOWN;
 	priv->user_con_perm = NM_AUTH_CALL_RESULT_UNKNOWN;
+	priv->user_wifi_share_open_perm = NM_AUTH_CALL_RESULT_UNKNOWN;
+	priv->user_wifi_share_enc_perm = NM_AUTH_CALL_RESULT_UNKNOWN;
 
 	if (priv->user_proxy) {
 		g_object_unref (priv->user_proxy);
@@ -1323,17 +1340,26 @@ user_settings_authorized (NMManager *self, NMAuthChain *chain)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMAuthCallResult old_net_perm = priv->user_net_perm;
 	NMAuthCallResult old_con_perm = priv->user_con_perm;
+	NMAuthCallResult old_wifi_share_open_perm = priv->user_wifi_share_open_perm;
+	NMAuthCallResult old_wifi_share_enc_perm = priv->user_wifi_share_enc_perm;
 
 	/* If the user could potentially get authorization to use networking and/or
 	 * to use user connections, the user settings service is authorized.
 	 */
 	priv->user_net_perm = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL));
 	priv->user_con_perm = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_USE_USER_CONNECTIONS));
+	priv->user_wifi_share_open_perm = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN));
+	priv->user_wifi_share_enc_perm = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED));
 
 	nm_log_dbg (LOGD_USER_SET, "User connections permissions: net %d, con %d",
 	            priv->user_net_perm, priv->user_con_perm);
+	nm_log_dbg (LOGD_USER_SET, "User shared wifi permissions: open %d, protected %d",
+	            priv->user_wifi_share_open_perm, priv->user_wifi_share_enc_perm);
 
-	if (old_net_perm != priv->user_net_perm || old_con_perm != priv->user_con_perm)
+	if (   (old_net_perm != priv->user_net_perm)
+	    || (old_con_perm != priv->user_con_perm)
+	    || (old_wifi_share_open_perm != priv->user_wifi_share_open_perm)
+	    || (old_wifi_share_enc_perm != priv->user_wifi_share_enc_perm))
 		g_signal_emit (self, signals[USER_PERMISSIONS_CHANGED], 0);
 
 	/* If the user can't control the network they certainly aren't allowed
@@ -1765,8 +1791,8 @@ manager_hidden_ap_found (NMDeviceInterface *device,
 
 	/* Look for this AP's BSSID in the seen-bssids list of a connection,
 	 * and if a match is found, copy over the SSID */
-	connections = nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_SYSTEM);
-	connections = g_slist_concat (connections,  nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_USER));
+	connections = nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_SYSTEM, FALSE);
+	connections = g_slist_concat (connections,  nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_USER, FALSE));
 
 	for (iter = connections; iter && !done; iter = g_slist_next (iter)) {
 		NMConnection *connection = NM_CONNECTION (iter->data);
@@ -2313,8 +2339,8 @@ bluez_manager_find_connection (NMManager *manager,
 	NMConnection *found = NULL;
 	GSList *connections, *l;
 
-	connections = nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_SYSTEM);
-	connections = g_slist_concat (connections, nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_USER));
+	connections = nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_SYSTEM, FALSE);
+	connections = g_slist_concat (connections, nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_USER, FALSE));
 
 	for (l = connections; l != NULL; l = l->next) {
 		NMConnection *candidate = NM_CONNECTION (l->data);
@@ -4014,33 +4040,51 @@ connection_sort (gconstpointer pa, gconstpointer pb)
 	return 1;
 }
 
-static void
-connections_to_slist (gpointer key, gpointer value, gpointer user_data)
-{
-	GSList **list = (GSList **) user_data;
-
-	*list = g_slist_insert_sorted (*list, g_object_ref (value), connection_sort);
-}
-
 /* Returns a GSList of referenced NMConnection objects, caller must
  * unref the connections in the list and destroy the list.
  */
 GSList *
 nm_manager_get_connections (NMManager *manager,
-                            NMConnectionScope scope)
+                            NMConnectionScope scope,
+                            gboolean only_authorized)
 {
 	NMManagerPrivate *priv;
 	GSList *list = NULL;
+	GHashTable *table = NULL;
+	GHashTableIter iter;
+	NMConnection *connection;
 
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
 
 	priv = NM_MANAGER_GET_PRIVATE (manager);
+
 	if (scope == NM_CONNECTION_SCOPE_USER)
-		g_hash_table_foreach (priv->user_connections, connections_to_slist, &list);
+		table = priv->user_connections;
 	else if (scope == NM_CONNECTION_SCOPE_SYSTEM)
-		g_hash_table_foreach (priv->system_connections, connections_to_slist, &list);
-	else
+		table = priv->system_connections;
+	else {
 		nm_log_err (LOGD_CORE, "unknown NMConnectionScope %d", scope);
+		return NULL;
+	}
+
+	g_hash_table_iter_init (&iter, table);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &connection)) {
+		if (scope == NM_CONNECTION_SCOPE_USER && only_authorized) {
+			gboolean wifi_share_open = FALSE, wifi_share_enc = FALSE;
+
+			/* If requested, exclude shared wifi user connections when the user
+			 * is not authorized to create them.
+			 */
+			get_shared_wifi_type (connection, &wifi_share_open, &wifi_share_enc);
+			if (wifi_share_open && (priv->user_wifi_share_open_perm != NM_AUTH_CALL_RESULT_YES))
+				continue;
+			if (wifi_share_enc && (priv->user_wifi_share_enc_perm != NM_AUTH_CALL_RESULT_YES))
+				continue;
+		}
+
+		list = g_slist_insert_sorted (list, g_object_ref (connection), connection_sort);
+	}
+
 	return list;
 }
 
