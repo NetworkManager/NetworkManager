@@ -763,7 +763,7 @@ nm_client_add_and_activate_connection (NMClient *client,
 
 	if (partial)
 		hash = nm_connection_to_hash (partial, NM_SETTING_HASH_FLAG_ALL);
-	else
+	if (!hash)
 		hash = g_hash_table_new (g_str_hash, g_str_equal);
 
 	priv = NM_CLIENT_GET_PRIVATE (client);
