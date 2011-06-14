@@ -20,7 +20,6 @@
  */
 
 #include <glib.h>
-#include <dbus/dbus-glib.h>
 #include <string.h>
 
 #include "nm-test-helpers.h"
@@ -601,11 +600,9 @@ test_update_secrets_wifi_bad_setting_name (void)
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
-	DBusGConnection *bus;
 	char *base;
 
 	g_type_init ();
-	bus = dbus_g_bus_get (DBUS_BUS_SESSION, NULL);
 
 	if (!nm_utils_init (&error))
 		FAIL ("nm-utils-init", "failed to initialize libnm-util: %s", error->message);
