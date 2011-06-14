@@ -1316,13 +1316,14 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	if (utils_has_route_file_new_syntax (route_path)) {
 		shvarFile *routefile;
 
-		g_free (route_path);
 		routefile = utils_get_route_ifcfg (ifcfg->fileName, TRUE);
 		if (!routefile) {
 			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-			             "Could not create route file '%s'", routefile->fileName);
+			             "Could not create route file '%s'", route_path);
+			g_free (route_path);
 			goto out;
 		}
+		g_free (route_path);
 
 		num = nm_setting_ip4_config_get_num_routes (s_ip4);
 		for (i = 0; i < 256; i++) {
