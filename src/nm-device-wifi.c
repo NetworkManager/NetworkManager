@@ -1831,7 +1831,7 @@ nm_device_wifi_get_ssid (NMDeviceWifi *self)
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
 	sk = socket (AF_INET, SOCK_DGRAM, 0);
-	if (!sk) {
+	if (sk == -1) {
 		nm_log_err (LOGD_HW, "couldn't create socket: %d.", errno);
 		return NULL;
 	}

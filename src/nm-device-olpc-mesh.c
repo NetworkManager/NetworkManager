@@ -423,7 +423,7 @@ create_socket_with_request (NMDevice *self, struct iwreq *req)
 	g_return_val_if_fail (self != NULL, -1);
 
 	sk = socket (AF_INET, SOCK_DGRAM, 0);
-	if (!sk) {
+	if (sk == -1) {
 		nm_log_err (LOGD_OLPC_MESH, "Couldn't create socket: %d.", errno);
 		return -1;
 	}
@@ -510,7 +510,7 @@ nm_device_olpc_mesh_set_ssid (NMDeviceOlpcMesh *self, const GByteArray * ssid)
 	g_return_if_fail (self != NULL);
 
 	sk = socket (AF_INET, SOCK_DGRAM, 0);
-	if (!sk) {
+	if (sk == -1) {
 		nm_log_err (LOGD_OLPC_MESH, "Couldn't create socket: %d.", errno);
 		return;
 	}

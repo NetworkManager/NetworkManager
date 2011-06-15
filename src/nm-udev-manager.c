@@ -384,6 +384,9 @@ is_wireless (GUdevDevice *device)
 	g_assert (ifname);
 
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	if (fd == -1)
+		return FALSE;
+
 	strncpy (iwr.ifr_ifrn.ifrn_name, ifname, IFNAMSIZ);
 
 	path = g_udev_device_get_sysfs_path (device);
