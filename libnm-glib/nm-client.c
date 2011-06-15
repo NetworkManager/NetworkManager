@@ -557,6 +557,40 @@ nm_client_get_device_by_path (NMClient *client, const char *object_path)
 	return device;
 }
 
+/**
+ * nm_client_get_device_by_iface:
+ * @client: a #NMClient
+ * @iface: the interface name to search for
+ *
+ * Gets a #NMDevice from a #NMClient.
+ *
+ * Returns: (transfer none): the #NMDevice for the given @iface or %NULL if none is found.
+ **/
+NMDevice *
+nm_client_get_device_by_iface (NMClient *client, const char *iface)
+{
+	const GPtrArray *devices;
+	int i;
+	NMDevice *device = NULL;
+
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+	g_return_val_if_fail (iface, NULL);
+
+	devices = nm_client_get_devices (client);
+	if (!devices)
+		return NULL;
+
+	for (i = 0; i < devices->len; i++) {
+		NMDevice *candidate = g_ptr_array_index (devices, i);
+		if (!strcmp (nm_device_get_iface (candidate), iface)) {
+			device = candidate;
+			break;
+		}
+	}
+
+	return device;
+}
+
 typedef struct {
 	NMClient *client;
 	NMClientActivateFn act_fn;

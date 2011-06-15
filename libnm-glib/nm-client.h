@@ -108,6 +108,7 @@ NMClient *nm_client_new (void);
 
 const GPtrArray *nm_client_get_devices    (NMClient *client);
 NMDevice *nm_client_get_device_by_path    (NMClient *client, const char *object_path);
+NMDevice *nm_client_get_device_by_iface   (NMClient *client, const char *iface);
 
 typedef void (*NMClientActivateFn) (NMClient *client,
                                     NMActiveConnection *active_connection,
