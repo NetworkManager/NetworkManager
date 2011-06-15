@@ -3246,7 +3246,7 @@ is_wireless_device (const char *iface)
 	g_return_val_if_fail (iface != NULL, FALSE);
 
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (!fd)
+	if (fd == -1)
 		return FALSE;
 
 	memset (&wrq, 0, sizeof (struct iwreq));
