@@ -1077,22 +1077,10 @@ find_device_for_connection (NmCli *nmc,
 		/* VPN connections */
 		NMActiveConnection *active = NULL;
 		if (iface) {
-			const GPtrArray *connections = nm_client_get_active_connections (nmc->client);
-			for (i = 0; connections && (i < connections->len) && !active; i++) {
-				NMActiveConnection *candidate = g_ptr_array_index (connections, i);
-				const GPtrArray *devices = nm_active_connection_get_devices (candidate);
-				if (!devices || !devices->len)
-					continue;
+			*device = nm_client_get_device_by_iface (nmc->client, iface);
+			if (*device)
+				active = nm_device_get_active_connection (*device);
 
-				for (j = 0; devices && (j < devices->len); j++) {
-					NMDevice *dev = g_ptr_array_index (devices, j);
-					if (!strcmp (iface, nm_device_get_iface (dev))) {
-						active = candidate;
-						*device = dev;
-						break;
-					}
-				}
-			}
 			if (!active) {
 				g_set_error (error, 0, 0, _("no active connection on device '%s'"), iface);
 				return FALSE;
