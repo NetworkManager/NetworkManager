@@ -945,8 +945,8 @@ get_start (gpointer user_data)
 			g_clear_error (&error);
 		} else {
 			/* Do we have everything we need? */
-			/* FIXME: handle second check for VPN connections */
-			if ((nm_connection_need_secrets (tmp, NULL) == NULL) && (request_new == FALSE)) {
+			if (   (req->flags & NM_SETTINGS_GET_SECRETS_FLAG_ONLY_SYSTEM)
+			    || ((nm_connection_need_secrets (tmp, NULL) == NULL) && (request_new == FALSE))) {
 				nm_log_dbg (LOGD_AGENTS, "(%p/%s) system settings secrets sufficient",
 				            req, req->setting_name);
 
@@ -1059,7 +1059,8 @@ nm_agent_manager_get_secrets (NMAgentManager *self,
 	g_hash_table_insert (priv->requests, GUINT_TO_POINTER (req->reqid), req);
 
 	/* Kick off the request */
-	request_add_agents (self, req);
+	if (!(req->flags & NM_SETTINGS_GET_SECRETS_FLAG_ONLY_SYSTEM))
+		request_add_agents (self, req);
 	req->idle_id = g_idle_add (get_start, req);
 
 	return req->reqid;

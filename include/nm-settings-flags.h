@@ -22,12 +22,16 @@
 #define NM_SETTINGS_FLAGS_H
 
 /* NOTE: these values should match the NM_SECRET_AGENT_GET_SECRETS_FLAGS in
- * the nm-secret-agent.xml introspection file.
+ * the nm-secret-agent.xml introspection file; except ONLY_SYSTEM which is
+ * internal to NM.
  */
 typedef enum {
 	NM_SETTINGS_GET_SECRETS_FLAG_NONE = 0x0,
 	NM_SETTINGS_GET_SECRETS_FLAG_ALLOW_INTERACTION = 0x1,
-	NM_SETTINGS_GET_SECRETS_FLAG_REQUEST_NEW = 0x2
+	NM_SETTINGS_GET_SECRETS_FLAG_REQUEST_NEW = 0x2,
+
+	/* Internal only to NM */
+	NM_SETTINGS_GET_SECRETS_FLAG_ONLY_SYSTEM = 0x80000000
 } NMSettingsGetSecretsFlags;
 
 #endif  /* NM_SETTINGS_FLAGS_H */

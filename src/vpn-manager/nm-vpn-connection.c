@@ -53,6 +53,17 @@
 
 G_DEFINE_TYPE (NMVPNConnection, nm_vpn_connection, NM_TYPE_VPN_CONNECTION_BASE)
 
+typedef enum {
+	/* Only system secrets */
+	SECRETS_REQ_SYSTEM = 0,
+	/* All existing secrets including agent secrets */
+	SECRETS_REQ_EXISTING = 1,
+	/* New secrets required; ask an agent */
+	SECRETS_REQ_NEW = 2,
+	/* Placeholder for bounds checking */
+	SECRETS_REQ_LAST
+} SecretsReq;
+
 typedef struct {
 	gboolean disposed;
 
@@ -61,6 +72,7 @@ typedef struct {
 	gboolean user_requested;
 	gulong user_uid;
 	guint32 secrets_id;
+	SecretsReq secrets_idx;
 	char *username;
 
 	NMDevice *parent_dev;
@@ -97,6 +109,8 @@ enum {
 
 	LAST_PROP
 };
+
+static void get_secrets (NMVPNConnection *self, SecretsReq secrets_idx);
 
 static void
 nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
@@ -792,84 +806,50 @@ nm_vpn_connection_disconnect (NMVPNConnection *connection,
 /******************************************************************************/
 
 static void
-vpn_secrets_cb (NMSettingsConnection *connection,
-                guint32 call_id,
-                const char *agent_username,
-                const char *setting_name,
-                GError *error,
-                gpointer user_data)
+plugin_need_secrets_cb  (DBusGProxy *proxy,
+                         char *setting_name,
+                         GError *error,
+                         gpointer user_data)
 {
 	NMVPNConnection *self = NM_VPN_CONNECTION (user_data);
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
-
-	g_return_if_fail (NM_CONNECTION (connection) == priv->connection);
-	g_return_if_fail (call_id == priv->secrets_id);
-
-	priv->secrets_id = 0;
-
-	if (error)
-		nm_vpn_connection_fail (self, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
-	else
-		really_activate (self, agent_username);
-}
-
-static void
-connection_need_secrets_cb  (DBusGProxy *proxy,
-                             char *setting_name,
-                             GError *error,
-                             gpointer user_data)
-{
-	NMVPNConnection *self = NM_VPN_CONNECTION (user_data);
-	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
-	GError *local = NULL;
 
 	if (error) {
-		nm_log_err (LOGD_VPN, "NeedSecrets failed: %s %s",
+		nm_log_err (LOGD_VPN, "(%s/%s) plugin NeedSecrets request #%d failed: %s %s",
+		            nm_connection_get_uuid (priv->connection),
+		            nm_connection_get_id (priv->connection),
+		            priv->secrets_idx + 1,
 		            g_quark_to_string (error->domain),
 		            error->message);
 		nm_vpn_connection_fail (self, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
 		return;
 	}
 
-	if (!setting_name || !strlen (setting_name)) {
-		nm_log_dbg (LOGD_VPN, "(%s/%s) service indicated no additional secrets required",
-				    nm_connection_get_uuid (priv->connection),
-				    nm_connection_get_id (priv->connection));
+	if (setting_name && strlen (setting_name)) {
+		/* More secrets required */
+		nm_log_dbg (LOGD_VPN, "(%s/%s) service indicated additional secrets required",
+		            nm_connection_get_uuid (priv->connection),
+		            nm_connection_get_id (priv->connection));
 
-		/* No secrets required */
-		really_activate (self, priv->username);
+		get_secrets (self, priv->secrets_idx + 1);
 		return;
 	}
 
-	nm_log_dbg (LOGD_VPN, "(%s/%s) service indicated additional '%s' secrets required",
-			    nm_connection_get_uuid (priv->connection),
-			    nm_connection_get_id (priv->connection),
-			    setting_name);
+	nm_log_dbg (LOGD_VPN, "(%s/%s) service indicated no additional secrets required",
+	            nm_connection_get_uuid (priv->connection),
+	            nm_connection_get_id (priv->connection));
 
-	priv->secrets_id = nm_settings_connection_get_secrets (NM_SETTINGS_CONNECTION (priv->connection),
-	                                                       priv->user_requested,
-	                                                       priv->user_uid,
-	                                                       setting_name,
-	                                                       NM_SETTINGS_GET_SECRETS_FLAG_ALLOW_INTERACTION,
-	                                                       NULL,
-	                                                       vpn_secrets_cb,
-	                                                       self,
-	                                                       &local);
-	if (!priv->secrets_id) {
-		if (local)
-			nm_log_err (LOGD_VPN, "failed to get secrets: (%d) %s", local->code, local->message);
-		nm_vpn_connection_fail (self, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
-		g_clear_error (&local);
-	}
+	/* No secrets required; we can start the VPN */
+	really_activate (self, priv->username);
 }
 
 static void
-existing_secrets_cb (NMSettingsConnection *connection,
-                     guint32 call_id,
-                     const char *agent_username,
-                     const char *setting_name,
-                     GError *error,
-                     gpointer user_data)
+get_secrets_cb (NMSettingsConnection *connection,
+                guint32 call_id,
+                const char *agent_username,
+                const char *setting_name,
+                GError *error,
+                gpointer user_data)
 {
 	NMVPNConnection *self = NM_VPN_CONNECTION (user_data);
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
@@ -881,57 +861,77 @@ existing_secrets_cb (NMSettingsConnection *connection,
 	priv->secrets_id = 0;
 
 	if (error) {
-		nm_log_err (LOGD_VPN, "Failed to request existing VPN secrets #2: (%s) %s",
-		            g_quark_to_string (error->domain),
-		            error->message);
+		nm_log_err (LOGD_VPN, "Failed to request VPN secrets #%d: (%d) %s",
+		            priv->secrets_idx + 1, error->code, error->message);
 		nm_vpn_connection_fail (self, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
 	} else {
 		nm_log_dbg (LOGD_VPN, "(%s/%s) asking service if additional secrets are required",
-			        nm_connection_get_uuid (priv->connection),
-			        nm_connection_get_id (priv->connection));
+		            nm_connection_get_uuid (priv->connection),
+		            nm_connection_get_id (priv->connection));
 
 		/* Cache the username for later */
-		g_free (priv->username);
-		priv->username = g_strdup (agent_username);
+		if (agent_username) {
+			g_free (priv->username);
+			priv->username = g_strdup (agent_username);
+		}
 
 		/* Ask the VPN service if more secrets are required */
 		hash = _hash_with_username (priv->connection, priv->username);
 		org_freedesktop_NetworkManager_VPN_Plugin_need_secrets_async (priv->proxy,
 		                                                              hash,
-		                                                              connection_need_secrets_cb,
+		                                                              plugin_need_secrets_cb,
 		                                                              self);
 		g_hash_table_destroy (hash);
 	}
 }
 
 static void
-get_existing_secrets (NMVPNConnection *self)
+get_secrets (NMVPNConnection *self, SecretsReq secrets_idx)
 {
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+	NMSettingsGetSecretsFlags flags = NM_SETTINGS_GET_SECRETS_FLAG_NONE;
 	GError *error = NULL;
+	gboolean filter_by_uid = priv->user_requested;
 
-	nm_log_dbg (LOGD_VPN, "(%s/%s) requesting existing VPN secrets",
+	g_return_if_fail (secrets_idx < SECRETS_REQ_LAST);
+	priv->secrets_idx = secrets_idx;
+
+	nm_log_dbg (LOGD_VPN, "(%s/%s) requesting VPN secrets pass #%d",
 	            nm_connection_get_uuid (priv->connection),
-	            nm_connection_get_id (priv->connection));
+	            nm_connection_get_id (priv->connection),
+	            priv->secrets_idx + 1);
 
-	/* Just get existing secrets if any so we can ask the VPN service if
-	 * any more are required.
-	 */
+	switch (priv->secrets_idx) {
+	case SECRETS_REQ_SYSTEM:
+		flags = NM_SETTINGS_GET_SECRETS_FLAG_ONLY_SYSTEM;
+		filter_by_uid = FALSE;
+		break;
+	case SECRETS_REQ_EXISTING:
+		flags = NM_SETTINGS_GET_SECRETS_FLAG_NONE;
+		break;
+	case SECRETS_REQ_NEW:
+		flags = NM_SETTINGS_GET_SECRETS_FLAG_ALLOW_INTERACTION;
+		break;
+	default:
+		g_assert_not_reached ();
+	}
+
 	priv->secrets_id = nm_settings_connection_get_secrets (NM_SETTINGS_CONNECTION (priv->connection),
-	                                                       priv->user_requested,
+	                                                       filter_by_uid,
 	                                                       priv->user_uid,
 	                                                       NM_SETTING_VPN_SETTING_NAME,
-	                                                       NM_SETTINGS_GET_SECRETS_FLAG_NONE,
+	                                                       flags,
 	                                                       NULL,
-	                                                       existing_secrets_cb,
+	                                                       get_secrets_cb,
 	                                                       self,
 	                                                       &error);
-	if (priv->secrets_id == 0) {
-		nm_log_err (LOGD_VPN, "Failed to request existing VPN secrets #1: (%s) %s",
-		            g_quark_to_string (error->domain),
-		            error->message);
-		g_error_free (error);
+	if (!priv->secrets_id) {
+		if (error) {
+			nm_log_err (LOGD_VPN, "failed to request VPN secrets #%d: (%d) %s",
+			            priv->secrets_idx + 1, error->code, error->message);
+		}
 		nm_vpn_connection_fail (self, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
+		g_clear_error (&error);
 	}
 }
 
@@ -1002,10 +1002,16 @@ connection_state_changed (NMVPNConnection *self,
 		nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (priv->connection), priv->secrets_id);
 		priv->secrets_id = 0;
 	}
+	priv->secrets_idx = SECRETS_REQ_SYSTEM;
 
 	switch (state) {
 	case NM_VPN_CONNECTION_STATE_NEED_AUTH:
-		get_existing_secrets (self);
+		/* Kick off the secrets requests; first we get existing system secrets
+		 * and ask the plugin if these are sufficient, next we get all existing
+		 * secrets from system and from user agents and ask the plugin again,
+		 * and last we ask the user for new secrets if required.
+		 */
+		get_secrets (self, SECRETS_REQ_SYSTEM);
 		break;
 	case NM_VPN_CONNECTION_STATE_ACTIVATED:
 		/* Secrets no longer needed now that we're connected */
