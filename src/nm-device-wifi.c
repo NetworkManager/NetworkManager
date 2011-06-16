@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2010 Red Hat, Inc.
+ * Copyright (C) 2005 - 2011 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -33,6 +33,7 @@
 #include <linux/sockios.h>
 #include <linux/ethtool.h>
 #include <sys/ioctl.h>
+#include <netinet/ether.h>
 
 #include "nm-glib-compat.h"
 #include "nm-device.h"
@@ -1284,6 +1285,7 @@ real_check_connection_compatible (NMDevice *device,
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	const GByteArray *mac;
+	const GSList *mac_blacklist, *mac_blacklist_iter;
 
 	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_con);
@@ -1309,6 +1311,25 @@ real_check_connection_compatible (NMDevice *device,
 		             NM_WIFI_ERROR, NM_WIFI_ERROR_CONNECTION_INCOMPATIBLE,
 		             "The connection's MAC address did not match this device.");
 		return FALSE;
+	}
+
+	/* Check for MAC address blacklist */
+	mac_blacklist = nm_setting_wireless_get_mac_address_blacklist (s_wireless);
+	for (mac_blacklist_iter = mac_blacklist; mac_blacklist_iter;
+	     mac_blacklist_iter = g_slist_next (mac_blacklist_iter)) {
+		struct ether_addr addr;
+
+		if (!ether_aton_r (mac_blacklist_iter->data, &addr)) {
+			g_warn_if_reached ();
+			continue;
+		}
+		if (memcmp (&addr, &priv->perm_hw_addr, ETH_ALEN) == 0) {
+			g_set_error (error,
+			             NM_WIFI_ERROR, NM_WIFI_ERROR_CONNECTION_INCOMPATIBLE,
+			             "The connection's MAC address (%s) is blacklisted in %s.",
+			             mac_blacklist_iter->data, NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST);
+			return FALSE;
+		}
 	}
 
 	// FIXME: check channel/freq/band against bands the hardware supports
@@ -1363,6 +1384,8 @@ real_get_best_auto_connection (NMDevice *dev,
 		NMSettingConnection *s_con;
 		NMSettingWireless *s_wireless;
 		const GByteArray *mac;
+		const GSList *mac_blacklist, *mac_blacklist_iter;
+		gboolean mac_blacklist_found = FALSE;
 		NMSettingIP4Config *s_ip4;
 		const char *method = NULL;
 
@@ -1380,7 +1403,26 @@ real_get_best_auto_connection (NMDevice *dev,
 
 		mac = nm_setting_wireless_get_mac_address (s_wireless);
 		if (mac && memcmp (mac->data, &priv->perm_hw_addr, ETH_ALEN))
+			continue;
+
+		/* Check for MAC address blacklist */
+		mac_blacklist = nm_setting_wireless_get_mac_address_blacklist (s_wireless);
+		for (mac_blacklist_iter = mac_blacklist; mac_blacklist_iter;
+		     mac_blacklist_iter = g_slist_next (mac_blacklist_iter)) {
+			struct ether_addr addr;
+
+			if (!ether_aton_r (mac_blacklist_iter->data, &addr)) {
+				g_warn_if_reached ();
 				continue;
+			}
+			if (memcmp (&addr, &priv->perm_hw_addr, ETH_ALEN) == 0) {
+				mac_blacklist_found = TRUE;
+				break;
+			}
+		}
+		/* Found device MAC address in the blacklist - do not use this connection */
+		if (mac_blacklist_found)
+			continue;
 
 		/* Use the connection if it's a shared connection */
 		s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);

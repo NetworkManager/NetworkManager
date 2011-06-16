@@ -3096,7 +3096,9 @@ check_pending_ready (NMManager *self, PendingActivation *pending)
 	                                       &error);
 	if (!path) {
 		nm_log_warn (LOGD_CORE, "connection (%d) %s failed to activate: (%d) %s",
-		             pending->scope, pending->connection_path, error->code, error->message);
+		             pending->scope, pending->connection_path,
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
 	} else
 		g_object_notify (G_OBJECT (pending->manager), NM_MANAGER_ACTIVE_CONNECTIONS);
 

@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2010 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -58,6 +58,7 @@ GQuark nm_setting_wired_error_quark (void);
 #define NM_SETTING_WIRED_AUTO_NEGOTIATE "auto-negotiate"
 #define NM_SETTING_WIRED_MAC_ADDRESS "mac-address"
 #define NM_SETTING_WIRED_CLONED_MAC_ADDRESS "cloned-mac-address"
+#define NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST "mac-address-blacklist"
 #define NM_SETTING_WIRED_MTU "mtu"
 #define NM_SETTING_WIRED_S390_SUBCHANNELS "s390-subchannels"
 #define NM_SETTING_WIRED_S390_NETTYPE "s390-nettype"
@@ -86,6 +87,7 @@ const char *      nm_setting_wired_get_duplex           (NMSettingWired *setting
 gboolean          nm_setting_wired_get_auto_negotiate   (NMSettingWired *setting);
 const GByteArray *nm_setting_wired_get_mac_address      (NMSettingWired *setting);
 const GByteArray *nm_setting_wired_get_cloned_mac_address (NMSettingWired *setting);
+const GSList     *nm_setting_wired_get_mac_address_blacklist (NMSettingWired *setting);
 guint32           nm_setting_wired_get_mtu              (NMSettingWired *setting);
 
 const GPtrArray * nm_setting_wired_get_s390_subchannels (NMSettingWired *setting);
