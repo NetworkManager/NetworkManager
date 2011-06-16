@@ -1418,7 +1418,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	char *value = NULL;
 	char *str_value;
 	char *route6_path = NULL;
-	gboolean bool_value, ipv6forwarding, ipv6_autoconf, dhcp6 = FALSE;
+	gboolean ipv6init, ipv6forwarding, ipv6_autoconf, dhcp6 = FALSE;
 	char *method = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
 	guint32 i;
 	shvarFile *network_ifcfg;
@@ -1429,26 +1429,6 @@ make_ip6_setting (shvarFile *ifcfg,
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 		             "Could not allocate IP6 setting");
 		return NULL;
-	}
-
-	/* Is IPV6 enabled? Set method to "ignored", when not enabled */
-	str_value = svGetValue (ifcfg, "IPV6INIT", FALSE);
-	bool_value = svTrueValue (ifcfg, "IPV6INIT", FALSE);
-	if (!str_value) {
-		network_ifcfg = svNewFile (network_file);
-		if (network_ifcfg) {
-			bool_value = svTrueValue (network_ifcfg, "IPV6INIT", FALSE);
-			svCloseFile (network_ifcfg);
-		}
-	}
-	g_free (str_value);
-
-	if (!bool_value) {
-		/* IPv6 is disabled */
-		g_object_set (s_ip6,
-		              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-		              NULL);
-		return NM_SETTING (s_ip6);
 	}
 
 	/* First check if IPV6_DEFROUTE is set for this device; IPV6_DEFROUTE has the
@@ -1493,23 +1473,39 @@ make_ip6_setting (shvarFile *ifcfg,
 	}
 
 	/* Find out method property */
-	ipv6forwarding = svTrueValue (ifcfg, "IPV6FORWARDING", FALSE);
-	ipv6_autoconf = svTrueValue (ifcfg, "IPV6_AUTOCONF", !ipv6forwarding);
-	dhcp6 = svTrueValue (ifcfg, "DHCPV6C", FALSE);
+	/* Is IPV6 enabled? Set method to "ignored", when not enabled */
+	str_value = svGetValue (ifcfg, "IPV6INIT", FALSE);
+	ipv6init = svTrueValue (ifcfg, "IPV6INIT", FALSE);
+	if (!str_value) {
+		network_ifcfg = svNewFile (network_file);
+		if (network_ifcfg) {
+			ipv6init = svTrueValue (network_ifcfg, "IPV6INIT", FALSE);
+			svCloseFile (network_ifcfg);
+		}
+	}
+	g_free (str_value);
 
-	if (ipv6_autoconf)
-		method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
-	else if (dhcp6)
-		method = NM_SETTING_IP6_CONFIG_METHOD_DHCP;
+	if (!ipv6init)
+		method = NM_SETTING_IP6_CONFIG_METHOD_IGNORE;  /* IPv6 is disabled */
 	else {
-		/* IPV6_AUTOCONF=no and no IPv6 address -> method 'link-local' */
-		str_value = svGetValue (ifcfg, "IPV6ADDR", FALSE);
-		if (!str_value)
-			str_value = svGetValue (ifcfg, "IPV6ADDR_SECONDARIES", FALSE);
+		ipv6forwarding = svTrueValue (ifcfg, "IPV6FORWARDING", FALSE);
+		ipv6_autoconf = svTrueValue (ifcfg, "IPV6_AUTOCONF", !ipv6forwarding);
+		dhcp6 = svTrueValue (ifcfg, "DHCPV6C", FALSE);
 
-		if (!str_value)
-			method = NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL;
-		g_free (str_value);
+		if (ipv6_autoconf)
+			method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
+		else if (dhcp6)
+			method = NM_SETTING_IP6_CONFIG_METHOD_DHCP;
+		else {
+			/* IPV6_AUTOCONF=no and no IPv6 address -> method 'link-local' */
+			str_value = svGetValue (ifcfg, "IPV6ADDR", FALSE);
+			if (!str_value)
+				str_value = svGetValue (ifcfg, "IPV6ADDR_SECONDARIES", FALSE);
+
+			if (!str_value)
+				method = NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL;
+			g_free (str_value);
+		}
 	}
 	/* TODO - handle other methods */
 
@@ -1520,6 +1516,10 @@ make_ip6_setting (shvarFile *ifcfg,
 	              NM_SETTING_IP6_CONFIG_NEVER_DEFAULT, never_default,
 	              NM_SETTING_IP6_CONFIG_MAY_FAIL, !svTrueValue (ifcfg, "IPV6_FAILURE_FATAL", FALSE),
 	              NULL);
+
+	/* Don't bother to read IP, DNS and routes when IPv6 is disabled */
+	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0)
+		return NM_SETTING (s_ip6);
 
 	if (!strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
 		NMIP6Address *addr;
