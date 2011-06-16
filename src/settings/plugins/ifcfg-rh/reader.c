@@ -1228,15 +1228,11 @@ make_ip4_setting (shvarFile *ifcfg,
 		    && !tmp_ip4_0 && !tmp_prefix_0 && !tmp_netmask_0
 		    && !tmp_ip4_1 && !tmp_prefix_1 && !tmp_netmask_1
 		    && !tmp_ip4_2 && !tmp_prefix_2 && !tmp_netmask_2) {
-			if (valid_ip6_config) {
+			if (valid_ip6_config)
 				/* Nope, no IPv4 */
-				g_object_set (s_ip4,
-				              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
-				              NULL);
-				return NM_SETTING (s_ip4);
-			}
-
-			method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
+				method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
+			else
+				method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 		}
 		g_free (tmp_ip4);
 		g_free (tmp_prefix);
@@ -1259,6 +1255,9 @@ make_ip4_setting (shvarFile *ifcfg,
 	              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default,
 	              NM_SETTING_IP4_CONFIG_MAY_FAIL, !svTrueValue (ifcfg, "IPV4_FAILURE_FATAL", TRUE),
 	              NULL);
+
+	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0)
+		return NM_SETTING (s_ip4);
 
 	/* Handle manual settings */
 	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
