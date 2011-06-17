@@ -66,12 +66,16 @@ struct NMPolicy {
 
 	HostnameThread *lookup;
 
+	gint reset_retries_id;  /* idle handler for resetting the retries count */
+
 	char *orig_hostname; /* hostname at NM start time */
 	char *cur_hostname;  /* hostname we want to assign */
 };
 
 #define RETRIES_TAG "autoconnect-retries"
 #define RETRIES_DEFAULT	4
+#define RESET_RETRIES_TIMESTAMP_TAG "reset-retries-timestamp-tag"
+#define RESET_RETRIES_TIMER 300
 
 static NMDevice *
 get_best_ip4_device (NMManager *manager, NMActRequest **out_req)
@@ -870,6 +874,37 @@ schedule_activate_check (NMPolicy *policy, NMDevice *device, guint delay_seconds
 	}
 }
 
+static gboolean
+reset_connections_retries (gpointer user_data)
+{
+	NMPolicy *policy = (NMPolicy *) user_data;
+	GSList *connections, *iter;
+	time_t con_stamp, min_stamp, now;
+
+	policy->reset_retries_id = 0;
+
+	min_stamp = now = time (NULL);
+	connections = nm_settings_get_connections (policy->settings);
+	for (iter = connections; iter; iter = g_slist_next (iter)) {
+		con_stamp = GPOINTER_TO_SIZE (g_object_get_data (G_OBJECT (iter->data), RESET_RETRIES_TIMESTAMP_TAG));
+		if (con_stamp == 0)
+			continue;
+		if (con_stamp + RESET_RETRIES_TIMER <= now) {
+			set_connection_auto_retries (NM_CONNECTION (iter->data), RETRIES_DEFAULT);
+			g_object_set_data (G_OBJECT (iter->data), RESET_RETRIES_TIMESTAMP_TAG, GSIZE_TO_POINTER (0));
+			continue;
+		}
+		if (con_stamp < min_stamp)
+			min_stamp = con_stamp;
+	}
+	g_slist_free (connections);
+
+	/* Schedule the handler again if there are some stamps left */
+	if (min_stamp != now)
+		policy->reset_retries_id = g_timeout_add_seconds (RESET_RETRIES_TIMER - (now - min_stamp), reset_connections_retries, policy);
+	return FALSE;
+}
+
 static NMConnection *
 get_device_connection (NMDevice *device)
 {
@@ -914,8 +949,13 @@ device_state_changed (NMDevice *device,
 				set_connection_auto_retries (connection, tries - 1);
 			}
 
-			if (get_connection_auto_retries (connection) == 0)
+			if (get_connection_auto_retries (connection) == 0) {
 				nm_log_info (LOGD_DEVICE, "Marking connection '%s' invalid.", nm_connection_get_id (connection));
+				/* Schedule a handler to reset retries count */
+				g_object_set_data (G_OBJECT (connection), RESET_RETRIES_TIMESTAMP_TAG, GSIZE_TO_POINTER ((gsize) time (NULL)));
+				if (!policy->reset_retries_id)
+					policy->reset_retries_id = g_timeout_add_seconds (RESET_RETRIES_TIMER, reset_connections_retries, policy);
+			}
 			nm_connection_clear_secrets (connection);
 		}
 		schedule_activate_check (policy, device, 3);
@@ -938,7 +978,7 @@ device_state_changed (NMDevice *device,
 		update_routing_and_dns (policy, FALSE);
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
-		/* Clear INVALID_TAG when carrier on. If cable was unplugged
+		/* Reset RETRIES_TAG when carrier on. If cable was unplugged
 		 * and plugged again, we should try to reconnect */
 		if (reason == NM_DEVICE_STATE_REASON_CARRIER && old_state == NM_DEVICE_STATE_UNAVAILABLE)
 			reset_retries_all (policy->settings, device);
@@ -1245,6 +1285,9 @@ nm_policy_destroy (NMPolicy *policy)
 		g_slice_free (DeviceSignalId, data);
 	}
 	g_slist_free (policy->dev_ids);
+
+	if (policy->reset_retries_id)
+		g_source_remove (policy->reset_retries_id);
 
 	g_free (policy->orig_hostname);
 	g_free (policy->cur_hostname);
