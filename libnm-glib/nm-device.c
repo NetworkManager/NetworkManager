@@ -228,12 +228,10 @@ demarshal_dhcp6_config (NMObject *object, GParamSpec *pspec, GValue *value, gpoi
 	NMDHCP6Config *config = NULL;
 	DBusGConnection *connection;
 
-	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
-		return FALSE;
-
-	priv->got_dhcp6_config = TRUE;
-
 	if (value) {
+		if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
+			return FALSE;
+
 		path = g_value_get_boxed (value);
 		if (path) {
 			config = NM_DHCP6_CONFIG (_nm_object_cache_get (path));
@@ -243,6 +241,8 @@ demarshal_dhcp6_config (NMObject *object, GParamSpec *pspec, GValue *value, gpoi
 			}
 		}
 	}
+
+	priv->got_dhcp6_config = TRUE;
 
 	if (priv->dhcp6_config) {
 		g_object_unref (priv->dhcp6_config);
