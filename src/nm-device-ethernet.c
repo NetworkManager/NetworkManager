@@ -1895,7 +1895,7 @@ real_check_connection_compatible (NMDevice *device,
 				g_set_error (error,
 				             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INCOMPATIBLE,
 				             "The connection's MAC address (%s) is blacklisted in %s.",
-				             mac_blacklist_iter->data, NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST);
+				             (char *) mac_blacklist_iter->data, NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST);
 				return FALSE;
 			}
 		}
