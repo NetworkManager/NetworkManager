@@ -76,6 +76,7 @@ struct NMPolicy {
 #define RETRIES_DEFAULT	4
 #define RESET_RETRIES_TIMESTAMP_TAG "reset-retries-timestamp-tag"
 #define RESET_RETRIES_TIMER 300
+#define FAILURE_REASON_TAG "failure-reason"
 
 static NMDevice *
 get_best_ip4_device (NMManager *manager, NMActRequest **out_req)
@@ -838,6 +839,23 @@ reset_retries_all (NMSettings *settings, NMDevice *device)
 }
 
 static void
+reset_retries_for_failed_secrets (NMSettings *settings)
+{
+	GSList *connections, *iter;
+
+	connections = nm_settings_get_connections (settings);
+	for (iter = connections; iter; iter = g_slist_next (iter)) {
+		NMDeviceStateReason reason = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (iter->data), FAILURE_REASON_TAG));
+
+		if (reason == NM_DEVICE_STATE_REASON_NO_SECRETS) {
+			set_connection_auto_retries (NM_CONNECTION (iter->data), RETRIES_DEFAULT);
+			g_object_set_data (G_OBJECT (iter->data), FAILURE_REASON_TAG, GUINT_TO_POINTER (0));
+		}
+	}
+	g_slist_free (connections);
+}
+
+static void
 sleeping_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 {
 	NMPolicy *policy = user_data;
@@ -927,6 +945,9 @@ device_state_changed (NMDevice *device,
 	NMPolicy *policy = (NMPolicy *) user_data;
 	NMConnection *connection = get_device_connection (device);
 
+	if (connection)
+		g_object_set_data (G_OBJECT (connection), FAILURE_REASON_TAG, GUINT_TO_POINTER (0));
+
 	switch (new_state) {
 	case NM_DEVICE_STATE_FAILED:
 		/* Mark the connection invalid if it failed during activation so that
@@ -941,6 +962,11 @@ device_state_changed (NMDevice *device,
 				 * automatically retrying because it's just going to fail anyway.
 				 */
 				set_connection_auto_retries (connection, 0);
+
+				/* Mark the connection as failed due to missing secrets so that we can reset
+				 * RETRIES_TAG and automatically re-try when an secret agent registers.
+				 */
+				g_object_set_data (G_OBJECT (connection), FAILURE_REASON_TAG, GUINT_TO_POINTER (NM_DEVICE_STATE_REASON_NO_SECRETS));
 			} else if (tries > 0) {
 				/* Otherwise if it's a random failure, just decrease the number
 				 * of automatic retries so that the connection gets tried again
@@ -1173,6 +1199,19 @@ connection_visibility_changed (NMSettings *settings,
 }
 
 static void
+secret_agent_registered (NMSettings *settings,
+                         NMSecretAgent *agent,
+                         gpointer user_data)
+{
+	/* The registered secret agent may provide some missing secrets. Thus we
+	 * reset retries count here and schedule activation, so that the
+	 * connections failed due to missing secrets may re-try auto-connection.
+	 */
+	reset_retries_for_failed_secrets (settings);
+	schedule_activate_all ((NMPolicy *) user_data);
+}
+
+static void
 _connect_manager_signal (NMPolicy *policy, const char *name, gpointer callback)
 {
 	guint id;
@@ -1240,6 +1279,7 @@ nm_policy_new (NMManager *manager,
 	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_CONNECTION_REMOVED, connection_removed);
 	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED,
 	                          connection_visibility_changed);
+	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_AGENT_REGISTERED, secret_agent_registered);
 
 	/* Initialize connections' auto-retries */
 	reset_retries_all (policy->settings, NULL);

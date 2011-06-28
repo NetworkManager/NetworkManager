@@ -19,7 +19,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2010 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  * (C) Copyright 2008 Novell, Inc.
  */
 
@@ -31,6 +31,7 @@
 #include "nm-settings-connection.h"
 #include "nm-system-config-interface.h"
 #include "nm-device.h"
+#include "nm-secret-agent.h"
 
 #define NM_TYPE_SETTINGS            (nm_settings_get_type ())
 #define NM_SETTINGS(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTINGS, NMSettings))
@@ -48,6 +49,7 @@
 #define NM_SETTINGS_SIGNAL_CONNECTION_REMOVED            "connection-removed"
 #define NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED "connection-visibility-changed"
 #define NM_SETTINGS_SIGNAL_CONNECTIONS_LOADED            "connections-loaded"
+#define NM_SETTINGS_SIGNAL_AGENT_REGISTERED              "agent-registered"
 
 typedef struct {
 	GObject parent_instance;
@@ -68,6 +70,8 @@ typedef struct {
 	void (*connection_visibility_changed) (NMSettings *self, NMSettingsConnection *connection);
 
 	void (*connections_loaded) (NMSettings *self);
+
+	void (*agent_registered) (NMSettings *self, NMSecretAgent *agent);
 } NMSettingsClass;
 
 GType nm_settings_get_type (void);

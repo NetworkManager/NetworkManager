@@ -57,6 +57,14 @@ typedef struct {
 	GHashTable *requests;
 } NMAgentManagerPrivate;
 
+enum {
+        AGENT_REGISTERED,
+
+        LAST_SIGNAL
+};
+static guint signals[LAST_SIGNAL] = { 0 };
+
+
 typedef struct _Request Request;
 
 static void request_add_agent (Request *req,
@@ -276,6 +284,9 @@ impl_agent_manager_register (NMAgentManager *self,
 	nm_log_dbg (LOGD_AGENTS, "(%s) agent registered",
 	            nm_secret_agent_get_description (agent));
 	dbus_g_method_return (context);
+
+	/* Signal an agent was registered */
+	g_signal_emit (self, signals[AGENT_REGISTERED], 0, agent);
 
 	/* Add this agent to any in-progress secrets requests */
 	g_hash_table_iter_init (&iter, priv->requests);
@@ -1362,6 +1373,17 @@ nm_agent_manager_class_init (NMAgentManagerClass *agent_manager_class)
 
 	/* virtual methods */
 	object_class->dispose = dispose;
+
+	/* Signals */
+	signals[AGENT_REGISTERED] =
+		g_signal_new ("agent-registered",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMAgentManagerClass, agent_registered),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__OBJECT,
+		              G_TYPE_NONE, 1,
+		              G_TYPE_OBJECT);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (agent_manager_class),
 	                                 &dbus_glib_nm_agent_manager_object_info);

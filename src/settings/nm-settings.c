@@ -135,6 +135,7 @@ enum {
 	CONNECTION_REMOVED,
 	CONNECTION_VISIBILITY_CHANGED,
 	CONNECTIONS_LOADED,
+	AGENT_REGISTERED,
 
 	NEW_CONNECTION, /* exported, not used internally */
 	LAST_SIGNAL
@@ -697,6 +698,18 @@ connection_visibility_changed (NMSettingsConnection *connection,
 	               signals[CONNECTION_VISIBILITY_CHANGED],
 	               0,
 	               connection);
+}
+
+static void
+secret_agent_registered (NMAgentManager *agent_mgr,
+                         NMSecretAgent *agent,
+                         gpointer user_data)
+{
+	/* Re-emit for listeners like NMPolicy */
+	g_signal_emit (NM_SETTINGS (user_data),
+	               signals[AGENT_REGISTERED],
+	               0,
+	               agent);
 }
 
 #define NM_DBUS_SERVICE_OPENCONNECT    "org.freedesktop.NetworkManager.openconnect"
@@ -1530,6 +1543,8 @@ nm_settings_init (NMSettings *self)
 	 * recreated often.
 	 */
 	priv->agent_mgr = nm_agent_manager_get ();
+
+	g_signal_connect (priv->agent_mgr, "agent-registered", G_CALLBACK (secret_agent_registered), self);
 }
 
 static void
@@ -1692,6 +1707,16 @@ nm_settings_class_init (NMSettingsClass *class)
 	                              NULL, NULL,
 	                              g_cclosure_marshal_VOID__VOID,
 	                              G_TYPE_NONE, 0);
+
+	signals[AGENT_REGISTERED] =
+		g_signal_new (NM_SETTINGS_SIGNAL_AGENT_REGISTERED,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMSettingsClass, agent_registered),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__OBJECT,
+		              G_TYPE_NONE, 1, G_TYPE_OBJECT);
+
 
 	signals[NEW_CONNECTION] = 
 	                g_signal_new ("new-connection",
