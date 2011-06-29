@@ -682,12 +682,13 @@ nm_supplicant_interface_disconnect (NMSupplicantInterface * self)
 	if (!priv->iface_proxy)
 		return;
 
-	/* Don't try to disconnect if the supplicant interface is already disconnected */
-	if (   priv->state == NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED
-	    || priv->state == NM_SUPPLICANT_INTERFACE_STATE_INACTIVE) {
-		g_free (priv->net_path);
-		priv->net_path = NULL;
-		return;
+	/* Disconnect from the current AP */
+	if (   (priv->state >= NM_SUPPLICANT_INTERFACE_STATE_SCANNING)
+	    && (priv->state <= NM_SUPPLICANT_INTERFACE_STATE_COMPLETED)) {
+		dbus_g_proxy_begin_call (priv->iface_proxy, "Disconnect",
+			                     disconnect_cb,
+			                     NULL, NULL,
+			                     G_TYPE_INVALID);
 	}
 
 	/* Remove any network that was added by NetworkManager */
@@ -700,11 +701,6 @@ nm_supplicant_interface_disconnect (NMSupplicantInterface * self)
 		g_free (priv->net_path);
 		priv->net_path = NULL;
 	}
-
-	dbus_g_proxy_begin_call (priv->iface_proxy, "Disconnect",
-	                         disconnect_cb,
-	                         NULL, NULL,
-	                         G_TYPE_INVALID);
 }
 
 static void
