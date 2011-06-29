@@ -2450,88 +2450,86 @@ remove_link_timeout (NMDeviceWifi *self)
 static gboolean
 link_timeout_cb (gpointer user_data)
 {
-	NMDevice *              dev = NM_DEVICE (user_data);
-	NMDeviceWifi * self = NM_DEVICE_WIFI (dev);
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	NMActRequest *          req = NULL;
-	NMAccessPoint *         ap = NULL;
-	NMConnection *          connection;
-	const char *            setting_name;
-	gboolean                auth_enforced, encrypted = FALSE;
+	NMDevice *dev = NM_DEVICE (user_data);
 
-	g_assert (dev);
+	nm_log_warn (LOGD_WIFI, "(%s): link timed out.", nm_device_get_iface (dev));
 
-	priv->link_timeout_id = 0;
-
-	req = nm_device_get_act_request (dev);
-	ap = nm_device_wifi_get_activation_ap (self);
-	if (req == NULL || ap == NULL) {
-		/* shouldn't ever happen */
-		nm_log_err (LOGD_WIFI, "couldn't get activation request or activation AP.");
-		if (nm_device_is_activating (dev)) {
-			cleanup_association_attempt (self, TRUE);
-			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NONE);
-		}
-		return FALSE;
-	}
+	NM_DEVICE_WIFI_GET_PRIVATE (dev)->link_timeout_id = 0;
 
 	/* Disconnect event while activated; the supplicant hasn't been able
 	 * to reassociate within the timeout period, so the connection must
 	 * fail.
 	 */
-	if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED) {
+	if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED)
 		nm_device_state_changed (dev, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT);
-		return FALSE;
-	}
 
-	/* Disconnect event during initial authentication and credentials
-	 * ARE checked - we are likely to have wrong key.  Ask the user for
-	 * another one.
+	return FALSE;
+}
+
+static gboolean
+handle_authenticate_fail (NMDeviceWifi *self, guint32 new_state, guint32 old_state)
+{
+	NMDevice *device = NM_DEVICE (self);
+	NMSetting8021x *s_8021x;
+	NMSettingWirelessSecurity *s_wsec;
+	NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
+	NMActRequest *req;
+	NMConnection *connection;
+	const char *setting_name = NULL;
+	gboolean handled = FALSE;
+
+	g_return_val_if_fail (new_state == NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED, FALSE);
+
+	/* Only care about ASSOCIATED -> DISCONNECTED transitions since 802.1x stuff
+	 * happens between the ASSOCIATED and AUTHENTICATED states.
 	 */
-	if (nm_device_get_state (dev) != NM_DEVICE_STATE_CONFIG)
-		goto time_out;
+	if (old_state != NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATED)
+		return FALSE;
+
+	req = nm_device_get_act_request (NM_DEVICE (self));
+	g_return_val_if_fail (req != NULL, FALSE);
 
 	connection = nm_act_request_get_connection (req);
-	if (!connection)
-		goto time_out;
+	g_return_val_if_fail (connection != NULL, FALSE);
 
-	auth_enforced = ap_auth_enforced (connection, ap, &encrypted);
-	if (!encrypted || !auth_enforced)
-		goto time_out;
-
-	/* Drivers are still just too crappy, and emit too many disassociation
-	 * events during connection.  So for now, just let the driver and supplicant
-	 * keep trying to associate, and don't ask for new secrets when we get
-	 * disconnected during association.
+	/* If it's an 802.1x or LEAP connection with "always ask"/unsaved secrets
+	 * then we need to ask again because it might be an OTP token and the PIN
+	 * may have changed.
 	 */
-	if (0) {
-		nm_connection_clear_secrets (connection);
-		setting_name = nm_connection_need_secrets (connection, NULL);
-		if (!setting_name)
-			goto time_out;
+	s_8021x = nm_connection_get_setting_802_1x (connection);
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
 
-		/* Association/authentication failed during association, probably have a 
-		 * bad encryption key and the authenticating entity (AP, RADIUS server, etc)
-		 * denied the association due to bad credentials.
-		 */
-		nm_log_info (LOGD_DEVICE | LOGD_WIFI,
-		             "Activation (%s/wireless): disconnected during association,"
-		             " asking for new key.", nm_device_get_iface (dev));
-		cleanup_association_attempt (self, TRUE);
-		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
-		nm_act_request_get_secrets (req,
-		                            setting_name,
-		                            NM_SETTINGS_GET_SECRETS_FLAG_REQUEST_NEW,
-		                            NULL,
-		                            wifi_secrets_cb,
-		                            self);
-
-		return FALSE;
+	if (s_8021x) {
+		nm_setting_get_secret_flags (NM_SETTING (s_8021x),
+		                             NM_SETTING_802_1X_PASSWORD,
+		                             &secret_flags,
+		                             NULL);
+		setting_name = NM_SETTING_802_1X_SETTING_NAME;
+	} else if (s_wsec) {
+		nm_setting_get_secret_flags (NM_SETTING (s_wsec),
+		                             NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD,
+		                             &secret_flags,
+		                             NULL);
+		setting_name = NM_SETTING_WIRELESS_SECURITY_SETTING_NAME;
 	}
 
-time_out:
-	nm_log_warn (LOGD_WIFI, "(%s): link timed out.", nm_device_get_iface (dev));
-	return FALSE;
+	if (setting_name && (secret_flags & NM_SETTING_SECRET_FLAG_NOT_SAVED)) {
+		NMSettingsGetSecretsFlags flags =   NM_SETTINGS_GET_SECRETS_FLAG_ALLOW_INTERACTION
+		                                  | NM_SETTINGS_GET_SECRETS_FLAG_REQUEST_NEW;
+
+		nm_connection_clear_secrets (connection);
+
+		nm_log_info (LOGD_DEVICE | LOGD_WIFI,
+		             "Activation (%s/wireless): disconnected during association,"
+		             " asking for new key.", nm_device_get_iface (device));
+
+		cleanup_association_attempt (self, TRUE);
+		nm_device_state_changed (device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
+		nm_act_request_get_secrets (req, setting_name, flags, NULL, wifi_secrets_cb, self);
+		handled = TRUE;
+	}
+
+	return handled;
 }
 
 static void
@@ -2600,14 +2598,20 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		break;
 	case NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED:
 		if ((devstate == NM_DEVICE_STATE_ACTIVATED) || nm_device_is_activating (device)) {
-			/* Start the link timeout so we allow some time for reauthentication,
-			 * use a longer timeout if we are scanning since some cards take a
-			 * while to scan.
+			/* Disconnect during authentication means the 802.1x password is wrong */
+			if (handle_authenticate_fail (self, new_state, old_state))
+				break;
+		}
+
+		if (devstate == NM_DEVICE_STATE_ACTIVATED) {
+			/* If it's a disconnect while activated then start the link timer
+			 * to let the supplicant reconnect for a bit and if that doesn't
+			 * work kill the connection and try something else.  Allow a bit
+			 * more time if the card is scanning since sometimes the link will
+			 * drop while scanning and come back when the scan is done.
 			 */
-			if (!priv->link_timeout_id) {
-				priv->link_timeout_id = g_timeout_add_seconds (scanning ? 30 : 15,
-					                                           link_timeout_cb, self);
-			}
+			if (priv->link_timeout_id == 0)
+				priv->link_timeout_id = g_timeout_add_seconds (scanning ? 30 : 15, link_timeout_cb, self);
 		}
 		break;
 	case NM_SUPPLICANT_INTERFACE_STATE_DOWN:
@@ -3570,6 +3574,10 @@ device_state_changed (NMDevice *device,
 				supplicant_interface_acquire (self);
 		}
 		clear_aps = TRUE;
+		break;
+	case NM_DEVICE_STATE_NEED_AUTH:
+		if (priv->supplicant.iface)
+			nm_supplicant_interface_disconnect (priv->supplicant.iface);
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
 		activation_success_handler (device);
