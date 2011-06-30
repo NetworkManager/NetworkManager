@@ -34,6 +34,7 @@
 #include <unistd.h>
 #include <linux/if.h>
 #include <errno.h>
+#include <netinet/ether.h>
 
 #include <gudev/gudev.h>
 
@@ -881,6 +882,8 @@ real_get_best_auto_connection (NMDevice *dev,
 		NMSettingWired *s_wired;
 		const char *connection_type;
 		gboolean is_pppoe = FALSE;
+		const GSList *mac_blacklist, *mac_blacklist_iter;
+		gboolean mac_blacklist_found = FALSE;
 
 		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 		g_assert (s_con);
@@ -908,6 +911,25 @@ real_get_best_auto_connection (NMDevice *dev,
 
 			mac = nm_setting_wired_get_mac_address (s_wired);
 			if (try_mac && mac && memcmp (mac->data, &priv->perm_hw_addr, ETH_ALEN))
+				continue;
+
+			/* Check for MAC address blacklist */
+			mac_blacklist = nm_setting_wired_get_mac_address_blacklist (s_wired);
+			for (mac_blacklist_iter = mac_blacklist; mac_blacklist_iter;
+			     mac_blacklist_iter = g_slist_next (mac_blacklist_iter)) {
+				struct ether_addr addr;
+
+				if (!ether_aton_r (mac_blacklist_iter->data, &addr)) {
+					g_warn_if_reached ();
+					continue;
+				}
+				if (memcmp (&addr, &priv->perm_hw_addr, ETH_ALEN) == 0) {
+					mac_blacklist_found = TRUE;
+					break;
+				}
+			}
+			/* Found device MAC address in the blacklist - do not use this connection */
+			if (mac_blacklist_found)
 				continue;
 		}
 
@@ -1605,6 +1627,7 @@ real_check_connection_compatible (NMDevice *device,
 	gboolean is_pppoe = FALSE;
 	const GByteArray *mac;
 	gboolean try_mac = TRUE;
+	const GSList *mac_blacklist, *mac_blacklist_iter;
 
 	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_con);
@@ -1644,6 +1667,25 @@ real_check_connection_compatible (NMDevice *device,
 			             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INCOMPATIBLE,
 			             "The connection's MAC address did not match this device.");
 			return FALSE;
+		}
+
+		/* Check for MAC address blacklist */
+		mac_blacklist = nm_setting_wired_get_mac_address_blacklist (s_wired);
+		for (mac_blacklist_iter = mac_blacklist; mac_blacklist_iter;
+		     mac_blacklist_iter = g_slist_next (mac_blacklist_iter)) {
+			struct ether_addr addr;
+
+			if (!ether_aton_r (mac_blacklist_iter->data, &addr)) {
+				g_warn_if_reached ();
+				continue;
+			}
+			if (memcmp (&addr, &priv->perm_hw_addr, ETH_ALEN) == 0) {
+				g_set_error (error,
+				             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INCOMPATIBLE,
+				             "The connection's MAC address (%s) is blacklisted in %s.",
+				             (char *) mac_blacklist_iter->data, NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST);
+				return FALSE;
+			}
 		}
 	}
 

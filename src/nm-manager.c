@@ -2017,7 +2017,9 @@ pending_activate (NMManager *self, PendingActivation *pending)
 
 	if (!path) {
 		nm_log_warn (LOGD_CORE, "connection %s failed to activate: (%d) %s",
-		             pending->connection_path, error->code, error->message);
+		             pending->connection_path,
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
 	} else
 		g_object_notify (G_OBJECT (pending->manager), NM_MANAGER_ACTIVE_CONNECTIONS);
 
