@@ -2737,7 +2737,7 @@ make_wireless_setting (shvarFile *ifcfg,
 		g_clear_error (error);
 	}
 
-	value = svGetValue (ifcfg, "MACADDR_BLACKLIST", FALSE);
+	value = svGetValue (ifcfg, "HWADDR_BLACKLIST", FALSE);
 	if (value) {
 		char **list = NULL, **iter;
 		struct ether_addr addr;
@@ -2747,7 +2747,7 @@ make_wireless_setting (shvarFile *ifcfg,
 			if (**iter == '\0')
 				continue;
 			if (!ether_aton_r (*iter, &addr)) {
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid MAC in MACADDR_BLACKLIST '%s'", *iter);
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid MAC in HWADDR_BLACKLIST '%s'", *iter);
 				continue;
 			}
 			macaddr_blacklist = g_slist_prepend (macaddr_blacklist, *iter);
@@ -3157,7 +3157,7 @@ make_wired_setting (shvarFile *ifcfg,
 		g_clear_error (error);
 	}
 
-	value = svGetValue (ifcfg, "MACADDR_BLACKLIST", FALSE);
+	value = svGetValue (ifcfg, "HWADDR_BLACKLIST", FALSE);
 	if (value) {
 		char **list = NULL, **iter;
 		struct ether_addr addr;
@@ -3167,7 +3167,7 @@ make_wired_setting (shvarFile *ifcfg,
 			if (**iter == '\0')
 				continue;
 			if (!ether_aton_r (*iter, &addr)) {
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid MAC in MACADDR_BLACKLIST '%s'", *iter);
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid MAC in HWADDR_BLACKLIST '%s'", *iter);
 				continue;
 			}
 			macaddr_blacklist = g_slist_prepend (macaddr_blacklist, *iter);
