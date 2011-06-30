@@ -711,6 +711,7 @@ write_wireless_setting (NMConnection *connection,
 	char buf[33];
 	guint32 mtu, chan, i;
 	gboolean adhoc = FALSE, hex_ssid = FALSE;
+	const GSList *macaddr_blacklist;
 
 	s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
 	if (!s_wireless) {
@@ -737,6 +738,23 @@ write_wireless_setting (NMConnection *connection,
 		                       cloned_mac->data[3], cloned_mac->data[4], cloned_mac->data[5]);
 		svSetValue (ifcfg, "MACADDR", tmp, FALSE);
 		g_free (tmp);
+	}
+
+	svSetValue (ifcfg, "MACADDR_BLACKLIST", NULL, FALSE);
+	macaddr_blacklist = nm_setting_wireless_get_mac_address_blacklist (s_wireless);
+	if (macaddr_blacklist) {
+		const GSList *iter;
+		GString *blacklist_str = g_string_new (NULL);
+
+		for (iter = macaddr_blacklist; iter; iter = g_slist_next (iter)) {
+			g_string_append (blacklist_str, iter->data);
+			g_string_append_c (blacklist_str, ' ');
+
+		}
+		if (blacklist_str->len > 0)
+			g_string_truncate (blacklist_str, blacklist_str->len - 1);
+		svSetValue (ifcfg, "MACADDR_BLACKLIST", blacklist_str->str, FALSE);
+		g_string_free (blacklist_str, TRUE);
 	}
 
 	svSetValue (ifcfg, "MTU", NULL, FALSE);
@@ -880,6 +898,7 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	guint32 mtu, num_opts, i;
 	const GPtrArray *s390_subchannels;
 	GString *str;
+	const GSList *macaddr_blacklist;
 
 	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
 	if (!s_wired) {
@@ -905,6 +924,23 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		                       cloned_mac->data[3], cloned_mac->data[4], cloned_mac->data[5]);
 		svSetValue (ifcfg, "MACADDR", tmp, FALSE);
 		g_free (tmp);
+	}
+
+	svSetValue (ifcfg, "MACADDR_BLACKLIST", NULL, FALSE);
+	macaddr_blacklist = nm_setting_wired_get_mac_address_blacklist (s_wired);
+	if (macaddr_blacklist) {
+		const GSList *iter;
+		GString *blacklist_str = g_string_new (NULL);
+
+		for (iter = macaddr_blacklist; iter; iter = g_slist_next (iter)) {
+			g_string_append (blacklist_str, iter->data);
+			g_string_append_c (blacklist_str, ' ');
+
+		}
+		if (blacklist_str->len > 0)
+			g_string_truncate (blacklist_str, blacklist_str->len - 1);
+		svSetValue (ifcfg, "MACADDR_BLACKLIST", blacklist_str->str, FALSE);
+		g_string_free (blacklist_str, TRUE);
 	}
 
 	svSetValue (ifcfg, "MTU", NULL, FALSE);

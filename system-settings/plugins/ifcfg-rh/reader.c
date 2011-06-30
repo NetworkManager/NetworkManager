@@ -2698,6 +2698,7 @@ make_wireless_setting (shvarFile *ifcfg,
 {
 	NMSettingWireless *s_wireless;
 	GByteArray *array = NULL;
+	GSList *macaddr_blacklist = NULL;
 	char *value;
 
 	s_wireless = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
@@ -2731,6 +2732,30 @@ make_wireless_setting (shvarFile *ifcfg,
 			g_object_set (s_wireless, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, array, NULL);
 			g_byte_array_free (array, TRUE);
 		}
+	}
+
+	value = svGetValue (ifcfg, "MACADDR_BLACKLIST", FALSE);
+	if (value) {
+		char **list = NULL, **iter;
+		struct ether_addr addr;
+
+		list = g_strsplit_set (value, " \t", 0);
+		for (iter = list; iter && *iter; iter++) {
+			if (**iter == '\0')
+				continue;
+			if (!ether_aton_r (*iter, &addr)) {
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid MAC in MACADDR_BLACKLIST '%s'", *iter);
+				continue;
+			}
+			macaddr_blacklist = g_slist_prepend (macaddr_blacklist, *iter);
+		}
+		if (macaddr_blacklist) {
+			macaddr_blacklist = g_slist_reverse (macaddr_blacklist);
+			g_object_set (s_wireless, NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST, macaddr_blacklist, NULL);
+			g_slist_free (macaddr_blacklist);
+		}
+		g_free (value);
+		g_strfreev (list);
 	}
 
 	value = svGetValue (ifcfg, "ESSID", TRUE);
@@ -2991,6 +3016,7 @@ make_wired_setting (shvarFile *ifcfg,
 	char *value = NULL;
 	int mtu;
 	GByteArray *mac = NULL;
+	GSList *macaddr_blacklist = NULL;
 	char *nettype;
 
 	s_wired = NM_SETTING_WIRED (nm_setting_wired_new ());
@@ -3123,6 +3149,30 @@ make_wired_setting (shvarFile *ifcfg,
 			g_object_set (s_wired, NM_SETTING_WIRED_CLONED_MAC_ADDRESS, mac, NULL);
 			g_byte_array_free (mac, TRUE);
 		}
+	}
+
+	value = svGetValue (ifcfg, "MACADDR_BLACKLIST", FALSE);
+	if (value) {
+		char **list = NULL, **iter;
+		struct ether_addr addr;
+
+		list = g_strsplit_set (value, " \t", 0);
+		for (iter = list; iter && *iter; iter++) {
+			if (**iter == '\0')
+				continue;
+			if (!ether_aton_r (*iter, &addr)) {
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid MAC in MACADDR_BLACKLIST '%s'", *iter);
+				continue;
+			}
+			macaddr_blacklist = g_slist_prepend (macaddr_blacklist, *iter);
+		}
+		if (macaddr_blacklist) {
+			macaddr_blacklist = g_slist_reverse (macaddr_blacklist);
+			g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST, macaddr_blacklist, NULL);
+			g_slist_free (macaddr_blacklist);
+		}
+		g_free (value);
+		g_strfreev (list);
 	}
 
 	value = svGetValue (ifcfg, "KEY_MGMT", FALSE);
