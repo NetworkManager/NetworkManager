@@ -787,7 +787,7 @@ write_wireless_setting (NMConnection *connection,
 		g_free (tmp);
 	}
 
-	svSetValue (ifcfg, "MACADDR_BLACKLIST", NULL, FALSE);
+	svSetValue (ifcfg, "HWADDR_BLACKLIST", NULL, FALSE);
 	macaddr_blacklist = nm_setting_wireless_get_mac_address_blacklist (s_wireless);
 	if (macaddr_blacklist) {
 		const GSList *iter;
@@ -800,7 +800,7 @@ write_wireless_setting (NMConnection *connection,
 		}
 		if (blacklist_str->len > 0)
 			g_string_truncate (blacklist_str, blacklist_str->len - 1);
-		svSetValue (ifcfg, "MACADDR_BLACKLIST", blacklist_str->str, FALSE);
+		svSetValue (ifcfg, "HWADDR_BLACKLIST", blacklist_str->str, FALSE);
 		g_string_free (blacklist_str, TRUE);
 	}
 
@@ -980,7 +980,7 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		g_free (tmp);
 	}
 
-	svSetValue (ifcfg, "MACADDR_BLACKLIST", NULL, FALSE);
+	svSetValue (ifcfg, "HWADDR_BLACKLIST", NULL, FALSE);
 	macaddr_blacklist = nm_setting_wired_get_mac_address_blacklist (s_wired);
 	if (macaddr_blacklist) {
 		const GSList *iter;
@@ -993,7 +993,7 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		}
 		if (blacklist_str->len > 0)
 			g_string_truncate (blacklist_str, blacklist_str->len - 1);
-		svSetValue (ifcfg, "MACADDR_BLACKLIST", blacklist_str->str, FALSE);
+		svSetValue (ifcfg, "HWADDR_BLACKLIST", blacklist_str->str, FALSE);
 		g_string_free (blacklist_str, TRUE);
 	}
 
