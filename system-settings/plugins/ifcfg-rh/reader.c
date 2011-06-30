@@ -190,9 +190,9 @@ read_mac_address (shvarFile *ifcfg, const char *key, GByteArray **array, GError 
 
 	mac = ether_aton (value);
 	if (!mac) {
-		g_free (value);
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 		             "%s: the MAC address '%s' was invalid.", key, value);
+		g_free (value);
 		return FALSE;
 	}
 
@@ -2732,6 +2732,9 @@ make_wireless_setting (shvarFile *ifcfg,
 			g_object_set (s_wireless, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, array, NULL);
 			g_byte_array_free (array, TRUE);
 		}
+	} else {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: %s", (*error)->message);
+		g_clear_error (error);
 	}
 
 	value = svGetValue (ifcfg, "MACADDR_BLACKLIST", FALSE);
@@ -3149,6 +3152,9 @@ make_wired_setting (shvarFile *ifcfg,
 			g_object_set (s_wired, NM_SETTING_WIRED_CLONED_MAC_ADDRESS, mac, NULL);
 			g_byte_array_free (mac, TRUE);
 		}
+	} else {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: %s", (*error)->message);
+		g_clear_error (error);
 	}
 
 	value = svGetValue (ifcfg, "MACADDR_BLACKLIST", FALSE);
