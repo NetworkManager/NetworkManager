@@ -309,7 +309,8 @@ auth_call_schedule_early_finish (AuthCall *call, GError *error)
 {
 	if (!call->chain->error)
 		call->chain->error = error;
-	call->idle_id = g_idle_add ((GSourceFunc) auth_call_complete, call);
+	if (!call->idle_id)
+		call->idle_id = g_idle_add ((GSourceFunc) auth_call_complete, call);
 }
 
 #if WITH_POLKIT
