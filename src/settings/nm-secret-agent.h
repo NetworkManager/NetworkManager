@@ -60,6 +60,8 @@ const char *nm_secret_agent_get_identifier (NMSecretAgent *agent);
 
 uid_t       nm_secret_agent_get_owner_uid  (NMSecretAgent *agent);
 
+const char *nm_secret_agent_get_owner_username (NMSecretAgent *agent);
+
 guint32     nm_secret_agent_get_hash       (NMSecretAgent *agent);
 
 typedef void (*NMSecretAgentCallback) (NMSecretAgent *agent,

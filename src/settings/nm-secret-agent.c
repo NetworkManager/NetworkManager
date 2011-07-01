@@ -20,6 +20,9 @@
 
 #include <config.h>
 
+#include <sys/types.h>
+#include <pwd.h>
+
 #include <glib.h>
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-lowlevel.h>
@@ -41,6 +44,7 @@ typedef struct {
 	char *owner;
 	char *identifier;
 	uid_t owner_uid;
+	char *owner_username;
 	guint32 hash;
 
 	NMDBusManager *dbus_mgr;
@@ -132,6 +136,15 @@ nm_secret_agent_get_owner_uid  (NMSecretAgent *agent)
 	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), G_MAXUINT);
 
 	return NM_SECRET_AGENT_GET_PRIVATE (agent)->owner_uid;
+}
+
+const char *
+nm_secret_agent_get_owner_username(NMSecretAgent *agent)
+{
+	g_return_val_if_fail (agent != NULL, NULL);
+	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), NULL);
+
+	return NM_SECRET_AGENT_GET_PRIVATE (agent)->owner_username;
 }
 
 guint32
@@ -330,10 +343,16 @@ nm_secret_agent_new (NMDBusManager *dbus_mgr,
 	NMSecretAgent *self;
 	NMSecretAgentPrivate *priv;
 	DBusGConnection *bus;
-	char *hash_str;
+	char *hash_str, *username;
+	struct passwd *pw;
 
 	g_return_val_if_fail (owner != NULL, NULL);
 	g_return_val_if_fail (identifier != NULL, NULL);
+
+	pw = getpwuid (owner_uid);
+	g_return_val_if_fail (pw != NULL, NULL);
+	g_return_val_if_fail (pw->pw_name[0] != '\0', NULL);
+	username = g_strdup (pw->pw_name);
 
 	self = (NMSecretAgent *) g_object_new (NM_TYPE_SECRET_AGENT, NULL);
 	if (self) {
@@ -342,6 +361,7 @@ nm_secret_agent_new (NMDBusManager *dbus_mgr,
 		priv->owner = g_strdup (owner);
 		priv->identifier = g_strdup (identifier);
 		priv->owner_uid = owner_uid;
+		priv->owner_username = g_strdup (username);
 
 		hash_str = g_strdup_printf ("%08u%s", owner_uid, identifier);
 		priv->hash = g_str_hash (hash_str);
@@ -356,6 +376,7 @@ nm_secret_agent_new (NMDBusManager *dbus_mgr,
 		g_assert (priv->proxy);
 	}
 
+	g_free (username);
 	return self;
 }
 
@@ -379,6 +400,7 @@ dispose (GObject *object)
 		g_free (priv->description);
 		g_free (priv->owner);
 		g_free (priv->identifier);
+		g_free (priv->owner_username);
 
 		g_hash_table_destroy (priv->requests);
 		g_object_unref (priv->proxy);
