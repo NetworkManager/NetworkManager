@@ -110,7 +110,9 @@ NMState nm_manager_get_state (NMManager *manager);
 
 /* Connections */
 
-GSList *nm_manager_get_connections    (NMManager *manager, NMConnectionScope scope);
+GSList *nm_manager_get_connections    (NMManager *manager,
+                                       NMConnectionScope scope,
+                                       gboolean only_authorized);
 
 gboolean nm_manager_auto_user_connections_allowed (NMManager *manager);
 

@@ -700,9 +700,9 @@ auto_activate_device (gpointer user_data)
 		goto out;
 
 	/* System connections first, then user connections */
-	connections = nm_manager_get_connections (policy->manager, NM_CONNECTION_SCOPE_SYSTEM);
+	connections = nm_manager_get_connections (policy->manager, NM_CONNECTION_SCOPE_SYSTEM, FALSE);
 	if (nm_manager_auto_user_connections_allowed (policy->manager))
-		connections = g_slist_concat (connections, nm_manager_get_connections (policy->manager, NM_CONNECTION_SCOPE_USER));
+		connections = g_slist_concat (connections, nm_manager_get_connections (policy->manager, NM_CONNECTION_SCOPE_USER, TRUE));
 
 	/* Remove connections that are in the invalid list. */
 	iter = connections;
@@ -793,8 +793,8 @@ sleeping_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 
 	/* Clear the invalid flag on all connections so they'll get retried on wakeup */
 	if (sleeping || !enabled) {
-		connections = nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_SYSTEM);
-		connections = g_slist_concat (connections, nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_USER));
+		connections = nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_SYSTEM, FALSE);
+		connections = g_slist_concat (connections, nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_USER, FALSE));
 		for (iter = connections; iter; iter = g_slist_next (iter)) {
 			g_object_set_data (G_OBJECT (iter->data), INVALID_TAG, NULL);
 			g_object_unref (G_OBJECT (iter->data));
@@ -860,8 +860,8 @@ clear_invalid_tag (NMManager *manager, NMDevice *device)
 	dev_iface = NM_DEVICE_INTERFACE (device);
 
 	/* System connections first, then user connections */
-	connections = nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_SYSTEM);
-	connections = g_slist_concat (connections, nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_USER));
+	connections = nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_SYSTEM, FALSE);
+	connections = g_slist_concat (connections, nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_USER, FALSE));
 
 	/* Clear INVALID_TAG for all connections compatible with the device */
 	for (iter = connections; iter; iter = g_slist_next (iter)) {

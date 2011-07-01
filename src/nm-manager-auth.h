@@ -33,6 +33,8 @@
 #define NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN    "org.freedesktop.NetworkManager.enable-disable-wwan"
 #define NM_AUTH_PERMISSION_USE_USER_CONNECTIONS   "org.freedesktop.NetworkManager.use-user-connections"
 #define NM_AUTH_PERMISSION_NETWORK_CONTROL        "org.freedesktop.NetworkManager.network-control"
+#define NM_AUTH_PERMISSION_WIFI_SHARE_OPEN        "org.freedesktop.network-manager-settings.system.wifi.share.open"
+#define NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED   "org.freedesktop.network-manager-settings.system.wifi.share.protected"
 
 
 typedef struct NMAuthChain NMAuthChain;
@@ -67,6 +69,8 @@ NMAuthChain *nm_auth_chain_new_raw_message (PolkitAuthority *authority,
                                             gpointer user_data);
 
 gpointer nm_auth_chain_get_data (NMAuthChain *chain, const char *tag);
+
+NMAuthCallResult nm_auth_chain_get_result (NMAuthChain *chain, const char *permission);
 
 void nm_auth_chain_set_data (NMAuthChain *chain,
                              const char *tag,
