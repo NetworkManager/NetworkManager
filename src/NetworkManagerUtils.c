@@ -39,6 +39,9 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
+#include "nm-setting-wireless.h"
+#include "nm-setting-wireless-security.h"
+#include "nm-manager-auth.h"
 
 #include <netlink/addr.h>
 #include <netinet/in.h>
@@ -707,6 +710,33 @@ nm_match_spec_s390_subchannels (const GSList *specs, const char *subchannels)
 	}
 
 	return FALSE;
+}
+
+const char *
+nm_utils_get_shared_wifi_permission (NMConnection *connection)
+{
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	NMSettingIP4Config *s_ip4;
+	const char *method = NULL;
+
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	if (s_ip4)
+		method = nm_setting_ip4_config_get_method (s_ip4);
+
+	if (g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) != 0)
+		return NULL;  /* Not shared */
+
+	s_wifi = nm_connection_get_setting_wireless (connection);
+	if (s_wifi) {
+		s_wsec = nm_connection_get_setting_wireless_security (connection);
+		if (nm_setting_wireless_get_security (s_wifi) || s_wsec)
+			return NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED;
+		else
+			return NM_AUTH_PERMISSION_WIFI_SHARE_OPEN;
+	}
+
+	return NULL;
 }
 
 /*********************************/

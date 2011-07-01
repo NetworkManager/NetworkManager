@@ -52,6 +52,7 @@ void nm_utils_call_dispatcher (const char *action,
 gboolean nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr);
 gboolean nm_match_spec_s390_subchannels (const GSList *specs, const char *subchannels);
 
+const char *nm_utils_get_shared_wifi_permission (NMConnection *connection);
 
 GHashTable *value_hash_create          (void);
 void        value_hash_add             (GHashTable *hash,
