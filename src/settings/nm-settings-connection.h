@@ -117,6 +117,9 @@ gboolean nm_settings_connection_is_visible (NMSettingsConnection *self);
 
 void nm_settings_connection_recheck_visibility (NMSettingsConnection *self);
 
+gboolean nm_settings_connection_check_permission (NMSettingsConnection *self,
+                                                  const char *permission);
+
 void nm_settings_connection_signal_remove (NMSettingsConnection *self);
 
 guint64 nm_settings_connection_get_timestamp (NMSettingsConnection *connection);
