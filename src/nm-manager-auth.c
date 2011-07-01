@@ -173,6 +173,37 @@ nm_auth_chain_get_data (NMAuthChain *self, const char *tag)
 	return tmp ? tmp->data : NULL;
 }
 
+/**
+ * nm_auth_chain_steal_data:
+ * @self: A #NMAuthChain.
+ * @tag: A "tag" uniquely identifying the data to steal.
+ *
+ * Removes the datum assocated with @tag from the chain's data associations,
+ * without invoking the association's destroy handler.  The caller assumes
+ * ownership over the returned value.
+ *
+ * Returns: the datum originally associated with @tag
+ */
+gpointer
+nm_auth_chain_steal_data (NMAuthChain *self, const char *tag)
+{
+	ChainData *tmp;
+	gpointer value = NULL;
+
+	g_return_val_if_fail (self != NULL, NULL);
+	g_return_val_if_fail (tag != NULL, NULL);
+
+	tmp = g_hash_table_lookup (self->data, tag);
+	if (tmp) {
+		g_hash_table_steal (self->data, tag);
+		value = tmp->data;
+		/* Make sure the destroy handler isn't called when freeing */
+		tmp->destroy = NULL;
+		free_data (tmp);
+	}
+	return value;
+}
+
 void
 nm_auth_chain_set_data (NMAuthChain *self,
                         const char *tag,

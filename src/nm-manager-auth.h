@@ -70,6 +70,8 @@ NMAuthChain *nm_auth_chain_new_dbus_sender (const char *dbus_sender,
 
 gpointer nm_auth_chain_get_data (NMAuthChain *chain, const char *tag);
 
+gpointer nm_auth_chain_steal_data (NMAuthChain *chain, const char *tag);
+
 void nm_auth_chain_set_data (NMAuthChain *chain,
                              const char *tag,
                              gpointer data,
