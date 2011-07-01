@@ -46,6 +46,7 @@
 #include "nm-dns-manager.h"
 #include "nm-vpn-manager.h"
 #include "nm-policy-hostname.h"
+#include "nm-manager-auth.h"
 
 struct NMPolicy {
 	NMManager *manager;
@@ -727,16 +728,29 @@ auto_activate_device (gpointer user_data)
 
 	/* Remove connections that shouldn't be auto-activated */
 	while (iter) {
-		NMConnection *candidate = NM_CONNECTION (iter->data);
+		NMSettingsConnection *candidate = NM_SETTINGS_CONNECTION (iter->data);
+		gboolean remove_it = FALSE;
+		const char *permission;
 
 		/* Grab next item before we possibly delete the current item */
 		iter = g_slist_next (iter);
 
 		/* Ignore connections that were tried too many times or are not visible
-		 * to any logged-in users.
+		 * to any logged-in users.  Also ignore shared wifi connections for
+		 * which no user has the shared wifi permission.
 		 */
-		if (   get_connection_auto_retries (candidate) == 0
-		    || nm_settings_connection_is_visible (NM_SETTINGS_CONNECTION (candidate)) == FALSE)
+		if (   get_connection_auto_retries (NM_CONNECTION (candidate)) == 0
+		    || nm_settings_connection_is_visible (candidate) == FALSE)
+			remove_it = TRUE;
+		else {
+			permission = nm_utils_get_shared_wifi_permission (NM_CONNECTION (candidate));
+			if (permission) {
+				if (nm_settings_connection_check_permission (candidate, permission) == FALSE)
+					remove_it = TRUE;
+			}
+		}
+
+		if (remove_it)
 			connections = g_slist_remove (connections, candidate);
 	}
 
