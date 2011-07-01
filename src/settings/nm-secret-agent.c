@@ -47,6 +47,8 @@ typedef struct {
 	char *owner_username;
 	guint32 hash;
 
+	GSList *permissions;
+
 	NMDBusManager *dbus_mgr;
 	DBusGProxy *proxy;
 
@@ -154,6 +156,76 @@ nm_secret_agent_get_hash  (NMSecretAgent *agent)
 	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), 0);
 
 	return NM_SECRET_AGENT_GET_PRIVATE (agent)->hash;
+}
+
+/**
+ * nm_secret_agent_add_permission:
+ * @agent: A #NMSecretAgent.
+ * @permission: The name of the permission
+ *
+ * Records whether or not the agent has a given permission.
+ */
+void
+nm_secret_agent_add_permission (NMSecretAgent *agent,
+                                const char *permission,
+                                gboolean allowed)
+{
+	NMSecretAgentPrivate *priv;
+	GSList *iter;
+
+	g_return_if_fail (agent != NULL);
+	g_return_if_fail (permission != NULL);
+
+	priv = NM_SECRET_AGENT_GET_PRIVATE (agent);
+
+	/* Check if the permission is already in the list */
+	for (iter = priv->permissions; iter; iter = g_slist_next (iter)) {
+		if (g_strcmp0 (permission, iter->data) == 0) {
+			/* If the permission is no longer allowed, remove it from the
+			 * list.  If it is now allowed, do nothing since it's already
+			 * in the list.
+			 */
+			if (allowed == FALSE) {
+				g_free (iter->data);
+				priv->permissions = g_slist_delete_link (priv->permissions, iter);
+			}
+			return;
+		}
+	}
+
+	/* New permission that's allowed */
+	if (allowed)
+		priv->permissions = g_slist_prepend (priv->permissions, g_strdup (permission));
+}
+
+/**
+ * nm_secret_agent_has_permission:
+ * @agent: A #NMSecretAgent.
+ * @permission: The name of the permission to check for
+ *
+ * Returns whether or not the agent has the given permission.
+ * 
+ * Returns: %TRUE if the agent has the given permission, %FALSE if it does not
+ * or if the permission was not previous recorded with
+ * nm_secret_agent_add_permission().
+ */
+gboolean
+nm_secret_agent_has_permission (NMSecretAgent *agent, const char *permission)
+{
+	NMSecretAgentPrivate *priv;
+	GSList *iter;
+
+	g_return_val_if_fail (agent != NULL, FALSE);
+	g_return_val_if_fail (permission != NULL, FALSE);
+
+	priv = NM_SECRET_AGENT_GET_PRIVATE (agent);
+
+	/* Check if the permission is already in the list */
+	for (iter = priv->permissions; iter; iter = g_slist_next (iter)) {
+		if (g_strcmp0 (permission, iter->data) == 0)
+			return TRUE;
+	}
+	return FALSE;
 }
 
 /*************************************************************/
@@ -401,6 +473,9 @@ dispose (GObject *object)
 		g_free (priv->owner);
 		g_free (priv->identifier);
 		g_free (priv->owner_username);
+
+		g_slist_foreach (priv->permissions, (GFunc) g_free, NULL);
+		g_slist_free (priv->permissions);
 
 		g_hash_table_destroy (priv->requests);
 		g_object_unref (priv->proxy);
