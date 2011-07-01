@@ -1342,6 +1342,24 @@ nm_agent_manager_delete_secrets (NMAgentManager *self,
 
 /*************************************************************/
 
+NMSecretAgent *
+nm_agent_manager_get_agent_by_user (NMAgentManager *self, const char *username)
+{
+	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
+	GHashTableIter iter;
+	NMSecretAgent *agent;
+
+	g_hash_table_iter_init (&iter, priv->agents);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &agent)) {
+		if (g_strcmp0 (nm_secret_agent_get_owner_username (agent), username) == 0)
+			return agent;
+	}
+
+	return NULL;
+}
+
+/*************************************************************/
+
 static void
 name_owner_changed_cb (NMDBusManager *dbus_mgr,
                        const char *name,

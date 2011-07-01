@@ -89,4 +89,7 @@ guint32 nm_agent_manager_delete_secrets (NMAgentManager *manager,
                                          gboolean filter_by_uid,
                                          gulong uid_filter);
 
+NMSecretAgent *nm_agent_manager_get_agent_by_user (NMAgentManager *manager,
+                                                   const char *username);
+
 #endif /* NM_AGENT_MANAGER_H */
