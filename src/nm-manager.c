@@ -3084,6 +3084,13 @@ nm_manager_get (NMSettings *settings,
 }
 
 static void
+authority_changed_cb (gpointer user_data)
+{
+	/* Let clients know they should re-check their authorization */
+	g_signal_emit (NM_MANAGER (user_data), signals[CHECK_PERMISSIONS], 0);
+}
+
+static void
 dispose (GObject *object)
 {
 	NMManager *manager = NM_MANAGER (object);
@@ -3100,7 +3107,7 @@ dispose (GObject *object)
 	g_slist_foreach (priv->auth_chains, (GFunc) nm_auth_chain_unref, NULL);
 	g_slist_free (priv->auth_chains);
 
-	nm_auth_set_changed_func (NULL, NULL);
+	nm_auth_changed_func_unregister (authority_changed_cb, manager);
 
 	while (g_slist_length (priv->devices)) {
 		priv->devices = remove_one_device (manager,
@@ -3377,13 +3384,6 @@ periodic_update_active_connection_timestamps (gpointer user_data)
 }
 
 static void
-authority_changed_cb (gpointer user_data)
-{
-	/* Let clients know they should re-check their authorization */
-	g_signal_emit (NM_MANAGER (user_data), signals[CHECK_PERMISSIONS], 0);
-}
-
-static void
 nm_manager_init (NMManager *manager)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
@@ -3481,7 +3481,7 @@ nm_manager_init (NMManager *manager)
 		nm_log_warn (LOGD_SUSPEND, "could not initialize UPower D-Bus proxy");
 
 	/* Listen for authorization changes */
-	nm_auth_set_changed_func (authority_changed_cb, manager);
+	nm_auth_changed_func_register (authority_changed_cb, manager);
 
 	/* Monitor the firmware directory */
 	if (strlen (KERNEL_FIRMWARE_DIR)) {

@@ -102,7 +102,9 @@ gboolean nm_auth_uid_in_acl (NMConnection *connection,
                              gulong uid,
                              char **out_error_desc);
 
-void nm_auth_set_changed_func (GDestroyNotify callback, gpointer callback_data);
+void nm_auth_changed_func_register (GDestroyNotify callback, gpointer callback_data);
+
+void nm_auth_changed_func_unregister (GDestroyNotify callback, gpointer callback_data);
 
 #endif /* NM_MANAGER_AUTH_H */
 
