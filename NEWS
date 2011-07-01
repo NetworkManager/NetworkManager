@@ -1,4 +1,27 @@
 ==============================================
+NetworkManager-0.8.6
+Overview of changes since NetworkManager-0.8.4
+==============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Fix handling of WINS server address in libnm-glib
+* Fix checks for s390 CTC device types
+* Fix export of nm_device_get_ip_iface() in libnm-glib
+* Fix export of IPv6 DNS GValue conversion functions in libnm-glib
+* Recognize and manage platform 'gadget' devices
+* Send only "short" hostname, not FQDN, to DHCP servers
+* Allow "_" as a valid character for GSM APNs
+* Handle shared connections in the ifnet plugin
+* Fix Ad-Hoc frequency selection for user-created Ad-Hoc networks
+* Allow failed connections to be retried when Ethernet carrier bounces
+* Allow usage of paths for certificates and keys in the keyfile plugin
+* Fix crash requesting system VPN secrets
+* Add ability to blacklist certain MAC addresses for wired & wifi connections
+* Ensure users are authorized to share wifi networks (CVE-2011-2176)
+
+
+==============================================
 NetworkManager-0.8.4
 Overview of changes since NetworkManager-0.8.2
 ==============================================
