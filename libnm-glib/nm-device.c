@@ -1217,7 +1217,8 @@ nm_device_get_state (NMDevice *device)
  *
  * Gets the #NMActiveConnection object which owns this device during activation.
  *
- * Returns: the #NMActiveConnection
+ * Returns: (transfer none): the #NMActiveConnection or %NULL if the device is
+ * not part of an active connection
  **/
 NMActiveConnection *
 nm_device_get_active_connection (NMDevice *device)
