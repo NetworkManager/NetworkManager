@@ -35,8 +35,14 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_WIMAX_SETTING_NAME "wimax"
 
-typedef enum
-{
+/**
+ * NMSettingWimaxError:
+ * @NM_SETTING_WIMAX_ERROR_UNKNOWN: unknown or unclassified error
+ * @NM_SETTING_WIMAX_ERROR_INVALID_PROPERTY: the property was invalid
+ * @NM_SETTING_WIMAX_ERROR_MISSING_PROPERTY: the property was missing and is
+ * required
+ */
+typedef enum {
 	NM_SETTING_WIMAX_ERROR_UNKNOWN = 0,
 	NM_SETTING_WIMAX_ERROR_INVALID_PROPERTY,
 	NM_SETTING_WIMAX_ERROR_MISSING_PROPERTY

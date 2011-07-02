@@ -27,6 +27,22 @@
 #include "nm-setting-wimax.h"
 #include "nm-param-spec-specialized.h"
 
+/**
+ * SECTION:nm-setting-wimax
+ * @short_description: Describes 802.16e Mobile WiMAX connection properties
+ * @include: nm-setting-wimax.h
+ *
+ * The #NMSettingWimax object is a #NMSetting subclass that describes properties
+ * necessary for connection to 802.16e Mobile WiMAX networks.
+ **/
+
+/**
+ * nm_setting_wimax_error_quark:
+ *
+ * Registers an error quark for #NMSettingWimax if necessary.
+ *
+ * Returns: the error quark used for #NMSettingWimax errors.
+ **/
 GQuark
 nm_setting_wimax_error_quark (void)
 {
@@ -78,12 +94,28 @@ enum {
 	LAST_PROP
 };
 
+/**
+ * nm_setting_wimax_new:
+ *
+ * Creates a new #NMSettingWimax object with default values.
+ *
+ * Returns: the new empty #NMSettingWimax object
+ **/
 NMSetting *
 nm_setting_wimax_new (void)
 {
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_WIMAX, NULL);
 }
 
+/**
+ * nm_setting_wimax_get_network_name:
+ * @setting: the #NMSettingWimax
+ *
+ * Returns the WiMAX NSP name (ex "Sprint" or "CLEAR") which identifies the
+ * specific WiMAX network this setting describes a connection to.
+ *
+ * Returns: the WiMAX NSP name
+ **/
 const char *
 nm_setting_wimax_get_network_name (NMSettingWimax *setting)
 {
@@ -92,6 +124,15 @@ nm_setting_wimax_get_network_name (NMSettingWimax *setting)
 	return NM_SETTING_WIMAX_GET_PRIVATE (setting)->network_name;
 }
 
+/**
+ * nm_setting_wimax_get_mac_address:
+ * @setting: the #NMSettingWimax
+ *
+ * Returns the MAC address of a WiMAX device which this connection is locked
+ * to.
+ *
+ * Returns: the MAC address
+ **/
 const GByteArray *
 nm_setting_wimax_get_mac_address (NMSettingWimax *setting)
 {
