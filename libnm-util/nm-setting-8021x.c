@@ -2872,7 +2872,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 							   "Phase2 client certificate",
 							   "Contains the 'phase 2' client certificate if "
 							   "used by the EAP method specified in the "
-							   "'phase2-eap' or 'phase2-autheap' properties. "
+							   "'phase2-auth' or 'phase2-autheap' properties. "
 							   "Certificate data is specified using a 'scheme'; "
 							   "two are currently supported: blob and path.  "
 							   "When using the blob scheme (which is backwards "
@@ -2996,7 +2996,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 *
 	 * Private key data used by "phase 2" inner authentication methods.
 	 *
-	 * Contains the "phase 2" inner private key if the #NMSetting8021x:phase2-eap
+	 * Contains the "phase 2" inner private key if the #NMSetting8021x:phase2-auth
 	 * or #NMSetting8021x:phase2-autheap property is set to 'tls'.  Setting this
 	 * property directly is discouraged; use the
 	 * nm_setting_802_1x_set_phase2_private_key() function instead.
@@ -3006,7 +3006,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		 _nm_param_spec_specialized (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
 							   "Phase2 private key",
 							   "Contains the 'phase 2' inner private key when "
-							   "the 'phase2-eap' or 'phase2-autheap' property "
+							   "the 'phase2-auth' or 'phase2-autheap' property "
 							   "is set to 'tls'.  Key data is specified using a "
 							   "'scheme'; two are currently supported: blob and "
 							   "path. When using the blob scheme and private "
