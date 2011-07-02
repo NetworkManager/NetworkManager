@@ -78,8 +78,14 @@ typedef enum {
 
 #define NM_SETTING_802_1X_SETTING_NAME "802-1x"
 
-typedef enum
-{
+/**
+ * NMSetting8021xError:
+ * @NM_SETTING_802_1X_ERROR_UNKNOWN: unknown or unclassified error
+ * @NM_SETTING_802_1X_ERROR_INVALID_PROPERTY: the property was invalid
+ * @NM_SETTING_802_1X_ERROR_MISSING_PROPERTY: the property was missing and is
+ * required
+ */
+typedef enum {
 	NM_SETTING_802_1X_ERROR_UNKNOWN = 0,
 	NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
 	NM_SETTING_802_1X_ERROR_MISSING_PROPERTY

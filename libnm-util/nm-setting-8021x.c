@@ -1396,8 +1396,7 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *self,
  * @setting: the #NMSetting8021x
  *
  * Returns: the private key password used to decrypt the private key if
- *  previously set with nm_setting_802_1x_set_private_key_from_file(),
- *  nm_setting_802_1x_set_private_key_path(), or the
+ *  previously set with nm_setting_802_1x_set_private_key(), or the
  *  #NMSetting8021x:private-key-password property.
  **/
 const char *
@@ -1470,8 +1469,7 @@ nm_setting_802_1x_get_private_key_format (NMSetting8021x *setting)
  * @setting: the #NMSetting8021x
  *
  * Returns: the private key password used to decrypt the private key if
- *  previously set with nm_setting_802_1x_set_phase2_private_key_from_file(),
- *  nm_setting_802_1x_set_phase2_private_key_path(), or the
+ *  previously set with nm_setting_802_1x_set_phase2_private_key() or the
  *  #NMSetting8021x:phase2-private-key-password property.
  **/
 const char *
@@ -2998,8 +2996,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 *
 	 * Private key data used by "phase 2" inner authentication methods.
 	 *
-	 * Contains the "phase 2" inner private key if the #NMSetting8021x:auth or
-	 * #NMSetting8021x:phase2-autheap property is set to 'tls'.  Setting this
+	 * Contains the "phase 2" inner private key if the #NMSetting8021x:phase2-eap
+	 * or #NMSetting8021x:phase2-autheap property is set to 'tls'.  Setting this
 	 * property directly is discouraged; use the
 	 * nm_setting_802_1x_set_phase2_private_key() function instead.
 	 **/
@@ -3077,9 +3075,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * #NMSetting8021x:phase2-ca-path properties using the system CA directory
 	 * specified at configure time with the --system-ca-path switch.  The
 	 * certificates in this directory are added to the verification chain in
-	 * addition to any certificates specified by the #NMSetting8021x:ca-cert,
-	 * #NMSetting8021x:ca-cert-path, #NMSetting8021x:phase2-ca-cert and
-	 * #NMSetting8021x:phase2-ca-cert-path properties.
+	 * addition to any certificates specified by the #NMSetting8021x:ca-cert
+	 * and #NMSetting8021x:phase2-ca-cert properties.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SYSTEM_CA_CERTS,
