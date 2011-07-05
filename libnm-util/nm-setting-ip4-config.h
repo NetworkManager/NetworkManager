@@ -39,8 +39,16 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_IP4_CONFIG_SETTING_NAME "ipv4"
 
-typedef enum
-{
+/**
+ * NMSettingIP4ConfigError:
+ * @NM_SETTING_IP4_CONFIG_ERROR_UNKNOWN: unknown or unclassified error
+ * @NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY: the property was invalid
+ * @NM_SETTING_IP4_CONFIG_ERROR_MISSING_PROPERTY: the property was missing and is
+ * required
+ * @NM_SETTING_IP4_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD: the property's value is
+ * not valid with the given IP4 method
+ */
+typedef enum {
 	NM_SETTING_IP4_CONFIG_ERROR_UNKNOWN = 0,
 	NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY,
 	NM_SETTING_IP4_CONFIG_ERROR_MISSING_PROPERTY,
@@ -66,10 +74,48 @@ GQuark nm_setting_ip4_config_error_quark (void);
 #define NM_SETTING_IP4_CONFIG_NEVER_DEFAULT      "never-default"
 #define NM_SETTING_IP4_CONFIG_MAY_FAIL           "may-fail"
 
+/**
+ * NM_SETTING_IP4_CONFIG_METHOD_AUTO:
+ *
+ * IPv4 configuration should be automatically determined via a method appropriate
+ * for the hardware interface, ie DHCP or PPP or some other device-specific
+ * manner.
+ */
 #define NM_SETTING_IP4_CONFIG_METHOD_AUTO       "auto"
+
+/**
+ * NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL:
+ *
+ * IPv4 configuration should be automatically configured for link-local-only
+ * operation.
+ */
 #define NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL "link-local"
+
+/**
+ * NM_SETTING_IP4_CONFIG_METHOD_MANUAL:
+ *
+ * All necessary IPv4 configuration (addresses, prefix, DNS, etc) is specified
+ * in the setting's properties.
+ */
 #define NM_SETTING_IP4_CONFIG_METHOD_MANUAL     "manual"
+
+/**
+ * NM_SETTING_IP4_CONFIG_METHOD_SHARED:
+ *
+ * This connection specifies configuration that allows other computers to
+ * connect through it to the default network (usually the Internet).  The
+ * connection's interface will be assigned a private address, and a DHCP server,
+ * caching DNS server, and Network Address Translation (NAT) functionality will
+ * be started on this connection's interface to allow other devices to connect
+ * through that interface to the default network.
+ */
 #define NM_SETTING_IP4_CONFIG_METHOD_SHARED     "shared"
+
+/**
+ * NM_SETTING_IP4_CONFIG_METHOD_DISABLED:
+ *
+ * This connection does not use or require IPv4 address and it should be disabled.
+ */
 #define NM_SETTING_IP4_CONFIG_METHOD_DISABLED   "disabled"
 
 typedef struct NMIP4Address NMIP4Address;
@@ -100,7 +146,7 @@ typedef struct NMIP4Route NMIP4Route;
 GType nm_ip4_route_get_type (void);
 
 NMIP4Route * nm_ip4_route_new          (void);
-NMIP4Route * nm_ip4_route_dup          (NMIP4Route *route);
+NMIP4Route * nm_ip4_route_dup          (NMIP4Route *source);
 void         nm_ip4_route_ref          (NMIP4Route *route);
 void         nm_ip4_route_unref        (NMIP4Route *route);
 /* Return TRUE if routes are identical */
