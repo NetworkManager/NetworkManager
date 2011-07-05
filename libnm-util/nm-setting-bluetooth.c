@@ -34,6 +34,24 @@
 #include "nm-setting-cdma.h"
 #include "nm-setting-gsm.h"
 
+/**
+ * SECTION:nm-setting-bluetooth
+ * @short_description: Describes Bluetooth connection properties
+ * @include: nm-setting-bluetooth.h
+ *
+ * The #NMSettingBluetooth object is a #NMSetting subclass that describes
+ * properties necessary for connection to devices that provide network
+ * connections via the Bluetooth Dial-Up Networking (DUN) and Network Access
+ * Point (NAP) profiles.
+ **/
+
+/**
+ * nm_setting_bluetooth_error_quark:
+ *
+ * Registers an error quark for #NMSettingBluetooth if necessary.
+ *
+ * Returns: the error quark used for #NMSettingBluetooth errors.
+ **/
 GQuark
 nm_setting_bluetooth_error_quark (void)
 {
@@ -83,11 +101,27 @@ enum {
 	LAST_PROP
 };
 
+/**
+ * nm_setting_bluetooth_new:
+ *
+ * Creates a new #NMSettingBluetooth object with default values.
+ *
+ * Returns: the new empty #NMSettingBluetooth object
+ **/
 NMSetting *nm_setting_bluetooth_new (void)
 {
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_BLUETOOTH, NULL);
 }
 
+/**
+ * nm_setting_bluetooth_get_connection_type:
+ * @setting: the #NMSettingBluetooth
+ *
+ * Returns the connection method for communicating with the remote device (i.e.
+ * either DUN to a DUN-capable device or PANU to a NAP-capable device).
+ *
+ * Returns: the type, either %NM_SETTING_BLUETOOTH_PANU or %NM_SETTING_BLUETOOTH_DUN
+ **/
 const char *
 nm_setting_bluetooth_get_connection_type (NMSettingBluetooth *setting)
 {
@@ -96,6 +130,15 @@ nm_setting_bluetooth_get_connection_type (NMSettingBluetooth *setting)
 	return NM_SETTING_BLUETOOTH_GET_PRIVATE (setting)->type;
 }
 
+/**
+ * nm_setting_bluetooth_get_bdaddr:
+ * @setting: the #NMSettingBluetooth
+ *
+ * Gets the Bluetooth address of the remote device which this setting
+ * describes a connection to.
+ *
+ * Returns: the Bluetooth address
+ **/
 const GByteArray *
 nm_setting_bluetooth_get_bdaddr (NMSettingBluetooth *setting)
 {
@@ -266,8 +309,8 @@ nm_setting_bluetooth_class_init (NMSettingBluetoothClass *setting_class)
 	/**
 	 * NMSettingBluetooth:type:
 	 *
-	 * Either 'dun' for Dial-Up Networking connections (not yet supported) or
-	 * 'panu' for Personal Area Networking connections.
+	 * Either 'dun' for Dial-Up Networking connections or 'panu' for Personal
+	 * Area Networking connections to devices supporting the NAP profile.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_TYPE,

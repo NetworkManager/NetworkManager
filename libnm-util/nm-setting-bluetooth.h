@@ -40,8 +40,17 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_BLUETOOTH_SETTING_NAME "bluetooth"
 
-typedef enum
-{
+/**
+ * NMSettingBluetoothError:
+ * @NM_SETTING_BLUETOOTH_ERROR_UNKNOWN: unknown or unclassified error
+ * @NM_SETTING_BLUETOOTH_ERROR_INVALID_PROPERTY: the property was invalid
+ * @NM_SETTING_BLUETOOTH_ERROR_MISSING_PROPERTY: the property was missing and is
+ * required
+ * @NM_SETTING_BLUETOOTH_ERROR_TYPE_SETTING_NOT_FOUND: the connection
+ * did not contain a required type setting, ie for DUN connections the connection
+ * must also contain an #NMSettingGsm or #NMSettingCdma as appropriate
+ */
+typedef enum {
 	NM_SETTING_BLUETOOTH_ERROR_UNKNOWN = 0,
 	NM_SETTING_BLUETOOTH_ERROR_INVALID_PROPERTY,
 	NM_SETTING_BLUETOOTH_ERROR_MISSING_PROPERTY,
@@ -57,7 +66,20 @@ GQuark nm_setting_bluetooth_error_quark (void);
 #define NM_SETTING_BLUETOOTH_BDADDR    "bdaddr"
 #define NM_SETTING_BLUETOOTH_TYPE      "type"
 
+/**
+ * NM_SETTING_BLUETOOTH_TYPE_DUN:
+ *
+ * Connection type describing a connection to devices that support the Bluetooth
+ * DUN profile.
+ */
 #define NM_SETTING_BLUETOOTH_TYPE_DUN  "dun"
+
+/**
+ * NM_SETTING_BLUETOOTH_TYPE_PANU:
+ *
+ * Connection type describing a connection to devices that support the Bluetooth
+ * NAP (Network Access Point) protocol, which accepts connections via PANU.
+ */
 #define NM_SETTING_BLUETOOTH_TYPE_PANU "panu"
 
 typedef struct {
