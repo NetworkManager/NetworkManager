@@ -189,6 +189,15 @@ typedef struct {
 	void (*_reserved3) (void);
 } NMSettingClass;
 
+/**
+ * NMSettingValueIterFn:
+ * @setting: The setting for which properties are being iterated, given to
+ * nm_setting_enumerate_values()
+ * @key: The value/property name
+ * @value: The property's value
+ * @flags: The property's flags, like %NM_SETTING_PARAM_SECRET
+ * @user_data: User data passed to nm_setting_enumerate_values()
+ */
 typedef void (*NMSettingValueIterFn) (NMSetting *setting,
                                       const char *key,
                                       const GValue *value,
