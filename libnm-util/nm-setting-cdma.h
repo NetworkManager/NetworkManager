@@ -39,8 +39,16 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_CDMA_SETTING_NAME "cdma"
 
-typedef enum
-{
+/**
+ * NMSettingCdmaError:
+ * @NM_SETTING_CDMA_ERROR_UNKNOWN: unknown or unclassified error
+ * @NM_SETTING_CDMA_ERROR_INVALID_PROPERTY: the property was invalid
+ * @NM_SETTING_CDMA_ERROR_MISSING_PROPERTY: the property was missing and is
+ * required
+ * @NM_SETTING_CDMA_ERROR_MISSING_SERIAL_SETTING: the required #NMSettingSerial
+ * is missing in the connection
+ */
+typedef enum {
 	NM_SETTING_CDMA_ERROR_UNKNOWN = 0,
 	NM_SETTING_CDMA_ERROR_INVALID_PROPERTY,
 	NM_SETTING_CDMA_ERROR_MISSING_PROPERTY,
