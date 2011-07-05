@@ -31,6 +31,22 @@
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 
+/**
+ * SECTION:nm-setting-ip4-config
+ * @short_description: Describes IPv4 addressing, routing, and name service properties
+ * @include: nm-setting-ip4-config.h
+ *
+ * The #NMSettingIP4Config object is a #NMSetting subclass that describes
+ * properties related to IPv4 addressing, routing, and Domain Name Service
+ **/
+
+/**
+ * nm_setting_ip4_config_error_quark:
+ *
+ * Registers an error quark for #NMSettingIP4Config if necessary.
+ *
+ * Returns: the error quark used for #NMSettingIP4Config errors.
+ **/
 GQuark
 nm_setting_ip4_config_error_quark (void)
 {
@@ -104,12 +120,25 @@ enum {
 	LAST_PROP
 };
 
+/**
+ * nm_setting_ip4_config_new:
+ *
+ * Creates a new #NMSettingIP4Config object with default values.
+ *
+ * Returns: the new empty #NMSettingIP4Config object
+ **/
 NMSetting *
 nm_setting_ip4_config_new (void)
 {
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_IP4_CONFIG, NULL);
 }
 
+/**
+ * nm_setting_ip4_config_get_method:
+ * @setting: the #NMSettingIP4Config
+ *
+ * Returns: the #NMSettingIP4Config:method property of the setting
+ **/
 const char *
 nm_setting_ip4_config_get_method (NMSettingIP4Config *setting)
 {
@@ -118,6 +147,12 @@ nm_setting_ip4_config_get_method (NMSettingIP4Config *setting)
 	return NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->method;
 }
 
+/**
+ * nm_setting_ip4_config_get_num_dns:
+ * @setting: the #NMSettingIP4Config
+ *
+ * Returns: the number of configured DNS servers
+ **/
 guint32
 nm_setting_ip4_config_get_num_dns (NMSettingIP4Config *setting)
 {
@@ -126,6 +161,14 @@ nm_setting_ip4_config_get_num_dns (NMSettingIP4Config *setting)
 	return NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->dns->len;
 }
 
+/**
+ * nm_setting_ip4_config_get_dns:
+ * @setting: the #NMSettingIP4Config
+ * @i: index number of the DNS server to return
+ *
+ * Returns: the IPv4 address (network byte order) of the DNS server at index
+ * @i
+ **/
 guint32
 nm_setting_ip4_config_get_dns (NMSettingIP4Config *setting, guint32 i)
 {
@@ -139,6 +182,16 @@ nm_setting_ip4_config_get_dns (NMSettingIP4Config *setting, guint32 i)
 	return g_array_index (priv->dns, guint32, i);
 }
 
+/**
+ * nm_setting_ip4_config_add_dns:
+ * @setting: the #NMSettingIP4Config
+ * @dns: the IPv4 address (network byte order) of the DNS server to add
+ *
+ * Adds a new DNS server to the setting.
+ *
+ * Returns: %TRUE if the DNS server was added; %FALSE if the server was already
+ * known
+ **/
 gboolean
 nm_setting_ip4_config_add_dns (NMSettingIP4Config *setting, guint32 dns)
 {
@@ -157,6 +210,13 @@ nm_setting_ip4_config_add_dns (NMSettingIP4Config *setting, guint32 dns)
 	return TRUE;
 }
 
+/**
+ * nm_setting_ip4_config_remove_dns:
+ * @setting: the #NMSettingIP4Config
+ * @i: index number of the DNS server to remove
+ *
+ * Removes the DNS server at index @i.
+ **/
 void
 nm_setting_ip4_config_remove_dns (NMSettingIP4Config *setting, guint32 i)
 {
@@ -170,6 +230,12 @@ nm_setting_ip4_config_remove_dns (NMSettingIP4Config *setting, guint32 i)
 	g_array_remove_index (priv->dns, i);
 }
 
+/**
+ * nm_setting_ip4_config_clear_dns:
+ * @setting: the #NMSettingIP4Config
+ *
+ * Removes all configured DNS servers.
+ **/
 void
 nm_setting_ip4_config_clear_dns (NMSettingIP4Config *setting)
 {
@@ -181,6 +247,12 @@ nm_setting_ip4_config_clear_dns (NMSettingIP4Config *setting)
 	g_array_remove_range (priv->dns, 0, priv->dns->len);
 }
 
+/**
+ * nm_setting_ip4_config_get_num_dns_searches:
+ * @setting: the #NMSettingIP4Config
+ *
+ * Returns: the number of configured DNS search domains
+ **/
 guint32
 nm_setting_ip4_config_get_num_dns_searches (NMSettingIP4Config *setting)
 {
@@ -189,6 +261,13 @@ nm_setting_ip4_config_get_num_dns_searches (NMSettingIP4Config *setting)
 	return g_slist_length (NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->dns_search);
 }
 
+/**
+ * nm_setting_ip4_config_get_dns_search:
+ * @setting: the #NMSettingIP4Config
+ * @i: index number of the DNS search domain to return
+ *
+ * Returns: the DNS search domain at index @i
+ **/
 const char *
 nm_setting_ip4_config_get_dns_search (NMSettingIP4Config *setting, guint32 i)
 {
@@ -202,6 +281,16 @@ nm_setting_ip4_config_get_dns_search (NMSettingIP4Config *setting, guint32 i)
 	return (const char *) g_slist_nth_data (priv->dns_search, i);
 }
 
+/**
+ * nm_setting_ip4_config_add_dns_search:
+ * @setting: the #NMSettingIP4Config
+ * @dns_search: the search domain to add
+ *
+ * Adds a new DNS search domain to the setting.
+ *
+ * Returns: %TRUE if the DNS search domain was added; %FALSE if the search
+ * domain was already known
+ **/
 gboolean
 nm_setting_ip4_config_add_dns_search (NMSettingIP4Config *setting,
                                       const char *dns_search)
@@ -223,6 +312,13 @@ nm_setting_ip4_config_add_dns_search (NMSettingIP4Config *setting,
 	return TRUE;
 }
 
+/**
+ * nm_setting_ip4_config_remove_dns_search:
+ * @setting: the #NMSettingIP4Config
+ * @i: index number of the DNS search domain
+ *
+ * Removes the DNS search domain at index @i.
+ **/
 void
 nm_setting_ip4_config_remove_dns_search (NMSettingIP4Config *setting, guint32 i)
 {
@@ -239,6 +335,12 @@ nm_setting_ip4_config_remove_dns_search (NMSettingIP4Config *setting, guint32 i)
 	priv->dns_search = g_slist_delete_link (priv->dns_search, elt);
 }
 
+/**
+ * nm_setting_ip4_config_clear_dns_searches:
+ * @setting: the #NMSettingIP4Config
+ *
+ * Removes all configured DNS search domains.
+ **/
 void
 nm_setting_ip4_config_clear_dns_searches (NMSettingIP4Config *setting)
 {
@@ -248,6 +350,12 @@ nm_setting_ip4_config_clear_dns_searches (NMSettingIP4Config *setting)
 	NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->dns_search = NULL;
 }
 
+/**
+ * nm_setting_ip4_config_get_num_addresses:
+ * @setting: the #NMSettingIP4Config
+ *
+ * Returns: the number of configured addresses
+ **/
 guint32
 nm_setting_ip4_config_get_num_addresses (NMSettingIP4Config *setting)
 {
@@ -256,6 +364,13 @@ nm_setting_ip4_config_get_num_addresses (NMSettingIP4Config *setting)
 	return g_slist_length (NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->addresses);
 }
 
+/**
+ * nm_setting_ip4_config_get_address:
+ * @setting: the #NMSettingIP4Config
+ * @i: index number of the address to return
+ *
+ * Returns: the address at index @i
+ **/
 NMIP4Address *
 nm_setting_ip4_config_get_address (NMSettingIP4Config *setting, guint32 i)
 {
@@ -269,6 +384,17 @@ nm_setting_ip4_config_get_address (NMSettingIP4Config *setting, guint32 i)
 	return (NMIP4Address *) g_slist_nth_data (priv->addresses, i);
 }
 
+/**
+ * nm_setting_ip4_config_add_address:
+ * @setting: the #NMSettingIP4Config
+ * @address: the new address to add
+ *
+ * Adds a new IPv4 address and associated information to the setting.  The
+ * given address is duplicated internally and is not changed by this function.
+ *
+ * Returns: %TRUE if the address was added; %FALSE if the address was already
+ * known.
+ **/
 gboolean
 nm_setting_ip4_config_add_address (NMSettingIP4Config *setting,
                                    NMIP4Address *address)
@@ -293,6 +419,13 @@ nm_setting_ip4_config_add_address (NMSettingIP4Config *setting,
 	return TRUE;
 }
 
+/**
+ * nm_setting_ip4_config_remove_address:
+ * @setting: the #NMSettingIP4Config
+ * @i: index number of the address to remove
+ *
+ * Removes the address at index @i.
+ **/
 void
 nm_setting_ip4_config_remove_address (NMSettingIP4Config *setting, guint32 i)
 {
@@ -309,6 +442,12 @@ nm_setting_ip4_config_remove_address (NMSettingIP4Config *setting, guint32 i)
 	priv->addresses = g_slist_delete_link (priv->addresses, elt);
 }
 
+/**
+ * nm_setting_ip4_config_clear_addresses:
+ * @setting: the #NMSettingIP4Config
+ *
+ * Removes all configured addresses.
+ **/
 void
 nm_setting_ip4_config_clear_addresses (NMSettingIP4Config *setting)
 {
@@ -320,6 +459,12 @@ nm_setting_ip4_config_clear_addresses (NMSettingIP4Config *setting)
 	priv->addresses = NULL;
 }
 
+/**
+ * nm_setting_ip4_config_get_num_routes:
+ * @setting: the #NMSettingIP4Config
+ *
+ * Returns: the number of configured routes
+ **/
 guint32
 nm_setting_ip4_config_get_num_routes (NMSettingIP4Config *setting)
 {
@@ -328,6 +473,13 @@ nm_setting_ip4_config_get_num_routes (NMSettingIP4Config *setting)
 	return g_slist_length (NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->routes);
 }
 
+/**
+ * nm_setting_ip4_config_get_route:
+ * @setting: the #NMSettingIP4Config
+ * @i: index number of the route to return
+ *
+ * Returns: the route at index @i
+ **/
 NMIP4Route *
 nm_setting_ip4_config_get_route (NMSettingIP4Config *setting, guint32 i)
 {
@@ -341,6 +493,16 @@ nm_setting_ip4_config_get_route (NMSettingIP4Config *setting, guint32 i)
 	return (NMIP4Route *) g_slist_nth_data (priv->routes, i);
 }
 
+/**
+ * nm_setting_ip4_config_add_route:
+ * @setting: the #NMSettingIP4Config
+ * @route: the route to add
+ *
+ * Adds a new IPv4 route and associated information to the setting.  The
+ * given route is duplicated internally and is not changed by this function.
+ *
+ * Returns: %TRUE if the route was added; %FALSE if the route was already known.
+ **/
 gboolean
 nm_setting_ip4_config_add_route (NMSettingIP4Config *setting,
                                  NMIP4Route *route)
@@ -365,6 +527,13 @@ nm_setting_ip4_config_add_route (NMSettingIP4Config *setting,
 	return TRUE;
 }
 
+/**
+ * nm_setting_ip4_config_remove_route:
+ * @setting: the #NMSettingIP4Config
+ * @i: index number of the route
+ *
+ * Removes the route at index @i.
+ **/
 void
 nm_setting_ip4_config_remove_route (NMSettingIP4Config *setting, guint32 i)
 {
@@ -381,6 +550,12 @@ nm_setting_ip4_config_remove_route (NMSettingIP4Config *setting, guint32 i)
 	priv->routes = g_slist_delete_link (priv->routes, elt);
 }
 
+/**
+ * nm_setting_ip4_config_clear_routes:
+ * @setting: the #NMSettingIP4Config
+ *
+ * Removes all configured routes.
+ **/
 void
 nm_setting_ip4_config_clear_routes (NMSettingIP4Config *setting)
 {
@@ -392,6 +567,16 @@ nm_setting_ip4_config_clear_routes (NMSettingIP4Config *setting)
 	priv->routes = NULL;
 }
 
+/**
+ * nm_setting_ip4_config_get_ignore_auto_routes:
+ * @setting: the #NMSettingIP4Config
+ *
+ * Returns the value contained in the #NMSettingIP4Config:ignore-auto-routes
+ * property.
+ *
+ * Returns: %TRUE if automatically configured (ie via DHCP) routes should be
+ * ignored.
+ **/
 gboolean
 nm_setting_ip4_config_get_ignore_auto_routes (NMSettingIP4Config *setting)
 {
@@ -400,6 +585,16 @@ nm_setting_ip4_config_get_ignore_auto_routes (NMSettingIP4Config *setting)
 	return NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->ignore_auto_routes;
 }
 
+/**
+ * nm_setting_ip4_config_get_ignore_auto_dns:
+ * @setting: the #NMSettingIP4Config
+ *
+ * Returns the value contained in the #NMSettingIP4Config:ignore-auto-dns
+ * property.
+ *
+ * Returns: %TRUE if automatically configured (ie via DHCP) DNS information
+ * should be ignored.
+ **/
 gboolean
 nm_setting_ip4_config_get_ignore_auto_dns (NMSettingIP4Config *setting)
 {
@@ -408,6 +603,16 @@ nm_setting_ip4_config_get_ignore_auto_dns (NMSettingIP4Config *setting)
 	return NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->ignore_auto_dns;
 }
 
+/**
+ * nm_setting_ip4_config_get_dhcp_client_id:
+ * @setting: the #NMSettingIP4Config
+ *
+ * Returns the value contained in the #NMSettingIP4Config:dhcp-client-id
+ * property.
+ *
+ * Returns: the configured Client ID to send to the DHCP server when requesting
+ * addresses via DHCP.
+ **/
 const char *
 nm_setting_ip4_config_get_dhcp_client_id (NMSettingIP4Config *setting)
 {
@@ -416,6 +621,17 @@ nm_setting_ip4_config_get_dhcp_client_id (NMSettingIP4Config *setting)
 	return NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->dhcp_client_id;
 }
 
+/**
+ * nm_setting_ip4_config_get_dhcp_send_hostname:
+ * @setting: the #NMSettingIP4Config
+ *
+ * Returns the value contained in the #NMSettingIP4Config:dhcp-send-hostname
+ * property.
+ *
+ * Returns: %TRUE if NetworkManager should send the machine hostname to the
+ * DHCP server when requesting addresses to allow the server to automatically
+ * update DNS information for this machine.
+ **/
 gboolean
 nm_setting_ip4_config_get_dhcp_send_hostname (NMSettingIP4Config *setting)
 {
@@ -424,6 +640,15 @@ nm_setting_ip4_config_get_dhcp_send_hostname (NMSettingIP4Config *setting)
 	return NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->dhcp_send_hostname;
 }
 
+/**
+ * nm_setting_ip4_config_get_dhcp_hostname:
+ * @setting: the #NMSettingIP4Config
+ *
+ * Returns the value contained in the #NMSettingIP4Config:dhcp-hostname
+ * property.
+ *
+ * Returns: the configured hostname to send to the DHCP server
+ **/
 const char *
 nm_setting_ip4_config_get_dhcp_hostname (NMSettingIP4Config *setting)
 {
@@ -432,6 +657,16 @@ nm_setting_ip4_config_get_dhcp_hostname (NMSettingIP4Config *setting)
 	return NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->dhcp_hostname;
 }
 
+/**
+ * nm_setting_ip4_config_get_never_default:
+ * @setting: the #NMSettingIP4Config
+ *
+ * Returns the value contained in the #NMSettingIP4Config:never-default
+ * property.
+ *
+ * Returns: %TRUE if this connection should never be the default connection
+ * for IPv4 addressing
+ **/
 gboolean
 nm_setting_ip4_config_get_never_default (NMSettingIP4Config *setting)
 {
@@ -440,6 +675,16 @@ nm_setting_ip4_config_get_never_default (NMSettingIP4Config *setting)
 	return NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->never_default;
 }
 
+/**
+ * nm_setting_ip4_config_get_may_fail:
+ * @setting: the #NMSettingIP4Config
+ *
+ * Returns the value contained in the #NMSettingIP4Config:may-fail
+ * property.
+ *
+ * Returns: %TRUE if this connection doesn't require IPv4 addressing to complete
+ * for the connection to succeed.
+ **/
 gboolean
 nm_setting_ip4_config_get_may_fail (NMSettingIP4Config *setting)
 {
@@ -1019,6 +1264,13 @@ struct NMIP4Address {
 	guint32 gateway;   /* network byte order */
 };
 
+/**
+ * nm_ip4_address_new:
+ *
+ * Creates and returns a new #NMIP4Address object.
+ *
+ * Returns: (transfer full): the new empty #NMIP4Address object
+ **/
 NMIP4Address *
 nm_ip4_address_new (void)
 {
@@ -1029,6 +1281,14 @@ nm_ip4_address_new (void)
 	return address;
 }
 
+/**
+ * nm_ip4_address_dup:
+ * @source: the #NMIP4Address object to copy
+ *
+ * Copies a given #NMIP4Address object and returns the copy.
+ *
+ * Returns: (transfer full): the copy of the given #NMIP4Address copy
+ **/
 NMIP4Address *
 nm_ip4_address_dup (NMIP4Address *source)
 {
@@ -1045,6 +1305,12 @@ nm_ip4_address_dup (NMIP4Address *source)
 	return address;
 }
 
+/**
+ * nm_ip4_address_ref:
+ * @address: the #NMIP4Address
+ *
+ * Increases the reference count of the object.
+ **/
 void
 nm_ip4_address_ref (NMIP4Address *address)
 {
@@ -1054,6 +1320,13 @@ nm_ip4_address_ref (NMIP4Address *address)
 	address->refcount++;
 }
 
+/**
+ * nm_ip4_address_unref:
+ * @address: the #NMIP4Address
+ *
+ * Decreases the reference count of the object.  If the reference count
+ * reaches zero, the object will be destroyed.
+ **/
 void
 nm_ip4_address_unref (NMIP4Address *address)
 {
@@ -1067,6 +1340,15 @@ nm_ip4_address_unref (NMIP4Address *address)
 	}
 }
 
+/**
+ * nm_ip4_address_compare:
+ * @address: the #NMIP4Address
+ * @other: the #NMIP4Address to compare @address to.
+ *
+ * Determines if two #NMIP4Address objects contain the same values.
+ *
+ * Returns: %TRUE if the objects contain the same values, %FALSE if they do not.
+ **/
 gboolean
 nm_ip4_address_compare (NMIP4Address *address, NMIP4Address *other)
 {
@@ -1083,6 +1365,14 @@ nm_ip4_address_compare (NMIP4Address *address, NMIP4Address *other)
 	return TRUE;
 }
 
+/**
+ * nm_ip4_address_get_address:
+ * @address: the #NMIP4Address
+ *
+ * Gets the IPv4 address property of this address object.
+ *
+ * Returns: the IPv4 address in network byte order
+ **/
 guint32
 nm_ip4_address_get_address (NMIP4Address *address)
 {
@@ -1092,6 +1382,13 @@ nm_ip4_address_get_address (NMIP4Address *address)
 	return address->address;
 }
 
+/**
+ * nm_ip4_address_set_address:
+ * @address: the #NMIP4Address
+ * @addr: the IPv4 address in network byte order
+ *
+ * Sets the IPv4 address property of this object.
+ **/
 void
 nm_ip4_address_set_address (NMIP4Address *address, guint32 addr)
 {
@@ -1101,6 +1398,15 @@ nm_ip4_address_set_address (NMIP4Address *address, guint32 addr)
 	address->address = addr;
 }
 
+/**
+ * nm_ip4_address_get_prefix:
+ * @address: the #NMIP4Address
+ *
+ * Gets the IPv4 address prefix (ie "24" or "30" etc) property of this address
+ * object.
+ *
+ * Returns: the IPv4 address prefix
+ **/
 guint32
 nm_ip4_address_get_prefix (NMIP4Address *address)
 {
@@ -1110,15 +1416,31 @@ nm_ip4_address_get_prefix (NMIP4Address *address)
 	return address->prefix;
 }
 
+/**
+ * nm_ip4_address_set_prefix:
+ * @address: the #NMIP4Address
+ * @prefix: the address prefix, a number between 0 and 32 inclusive
+ *
+ * Sets the IPv4 address prefix.
+ **/
 void
 nm_ip4_address_set_prefix (NMIP4Address *address, guint32 prefix)
 {
 	g_return_if_fail (address != NULL);
 	g_return_if_fail (address->refcount > 0);
+	g_return_if_fail (prefix <= 32);
 
 	address->prefix = prefix;
 }
 
+/**
+ * nm_ip4_address_get_gateway:
+ * @address: the #NMIP4Address
+ *
+ * Gets the IPv4 default gateway property of this address object.
+ *
+ * Returns: the IPv4 gateway address in network byte order
+ **/
 guint32
 nm_ip4_address_get_gateway (NMIP4Address *address)
 {
@@ -1128,6 +1450,13 @@ nm_ip4_address_get_gateway (NMIP4Address *address)
 	return address->gateway;
 }
 
+/**
+ * nm_ip4_address_set_gateway:
+ * @address: the #NMIP4Address
+ * @gateway: the IPv4 default gateway in network byte order
+ *
+ * Sets the IPv4 default gateway property of this address object.
+ **/
 void
 nm_ip4_address_set_gateway (NMIP4Address *address, guint32 gateway)
 {
@@ -1147,6 +1476,13 @@ struct NMIP4Route {
 	guint32 metric;    /* lower metric == more preferred */
 };
 
+/**
+ * nm_ip4_route_new:
+ *
+ * Creates and returns a new #NMIP4Route object.
+ *
+ * Returns: (transfer full): the new empty #NMIP4Route object
+ **/
 NMIP4Route *
 nm_ip4_route_new (void)
 {
@@ -1157,6 +1493,14 @@ nm_ip4_route_new (void)
 	return route;
 }
 
+/**
+ * nm_ip4_route_dup:
+ * @source: the #NMIP4Route object to copy
+ *
+ * Copies a given #NMIP4Route object and returns the copy.
+ *
+ * Returns: (transfer full): the copy of the given #NMIP4Route copy
+ **/
 NMIP4Route *
 nm_ip4_route_dup (NMIP4Route *source)
 {
@@ -1174,6 +1518,12 @@ nm_ip4_route_dup (NMIP4Route *source)
 	return route;
 }
 
+/**
+ * nm_ip4_route_ref:
+ * @route: the #NMIP4Route
+ *
+ * Increases the reference count of the object.
+ **/
 void
 nm_ip4_route_ref (NMIP4Route *route)
 {
@@ -1183,6 +1533,13 @@ nm_ip4_route_ref (NMIP4Route *route)
 	route->refcount++;
 }
 
+/**
+ * nm_ip4_route_unref:
+ * @route: the #NMIP4Route
+ *
+ * Decreases the reference count of the object.  If the reference count
+ * reaches zero, the object will be destroyed.
+ **/
 void
 nm_ip4_route_unref (NMIP4Route *route)
 {
@@ -1196,6 +1553,15 @@ nm_ip4_route_unref (NMIP4Route *route)
 	}
 }
 
+/**
+ * nm_ip4_route_compare:
+ * @route: the #NMIP4Route
+ * @other: the #NMIP4Route to compare @route to.
+ *
+ * Determines if two #NMIP4Route objects contain the same values.
+ *
+ * Returns: %TRUE if the objects contain the same values, %FALSE if they do not.
+ **/
 gboolean
 nm_ip4_route_compare (NMIP4Route *route, NMIP4Route *other)
 {
@@ -1213,6 +1579,14 @@ nm_ip4_route_compare (NMIP4Route *route, NMIP4Route *other)
 	return TRUE;
 }
 
+/**
+ * nm_ip4_route_get_dest:
+ * @route: the #NMIP4Route
+ *
+ * Gets the IPv4 destination address property of this route object.
+ *
+ * Returns: the IPv4 address in network byte order
+ **/
 guint32
 nm_ip4_route_get_dest (NMIP4Route *route)
 {
@@ -1222,6 +1596,13 @@ nm_ip4_route_get_dest (NMIP4Route *route)
 	return route->dest;
 }
 
+/**
+ * nm_ip4_route_set_dest:
+ * @route: the #NMIP4Route
+ * @dest: the destination address in network byte order
+ *
+ * Sets the IPv4 destination address property of this route object.
+ **/
 void
 nm_ip4_route_set_dest (NMIP4Route *route, guint32 dest)
 {
@@ -1231,6 +1612,14 @@ nm_ip4_route_set_dest (NMIP4Route *route, guint32 dest)
 	route->dest = dest;
 }
 
+/**
+ * nm_ip4_route_get_prefix:
+ * @route: the #NMIP4Route
+ *
+ * Gets the IPv4 prefix (ie "24" or "30" etc) of this route.
+ *
+ * Returns: the IPv4 prefix
+ **/
 guint32
 nm_ip4_route_get_prefix (NMIP4Route *route)
 {
@@ -1240,6 +1629,13 @@ nm_ip4_route_get_prefix (NMIP4Route *route)
 	return route->prefix;
 }
 
+/**
+ * nm_ip4_route_set_prefix:
+ * @route: the #NMIP4Route
+ * @prefix: the prefix, a number between 0 and 32 inclusive
+ *
+ * Sets the IPv4 prefix of this route.
+ **/
 void
 nm_ip4_route_set_prefix (NMIP4Route *route, guint32 prefix)
 {
@@ -1249,6 +1645,14 @@ nm_ip4_route_set_prefix (NMIP4Route *route, guint32 prefix)
 	route->prefix = prefix;
 }
 
+/**
+ * nm_ip4_route_get_next_hop:
+ * @route: the #NMIP4Route
+ *
+ * Gets the IPv4 address of the next hop of this route.
+ *
+ * Returns: the IPv4 address in network byte order
+ **/
 guint32
 nm_ip4_route_get_next_hop (NMIP4Route *route)
 {
@@ -1258,6 +1662,13 @@ nm_ip4_route_get_next_hop (NMIP4Route *route)
 	return route->next_hop;
 }
 
+/**
+ * nm_ip4_route_set_next_hop:
+ * @route: the #NMIP4Route
+ * @next_hop: the IPv4 address of the next hop in network byte order
+ *
+ * Sets the IPv4 address of the next hop of this route.
+ **/
 void
 nm_ip4_route_set_next_hop (NMIP4Route *route, guint32 next_hop)
 {
@@ -1267,6 +1678,15 @@ nm_ip4_route_set_next_hop (NMIP4Route *route, guint32 next_hop)
 	route->next_hop = next_hop;
 }
 
+/**
+ * nm_ip4_route_get_metric:
+ * @route: the #NMIP4Route
+ *
+ * Gets the route metric property of this route object; lower values indicate
+ * "better" or more preferred routes.
+ *
+ * Returns: the route metric
+ **/
 guint32
 nm_ip4_route_get_metric (NMIP4Route *route)
 {
@@ -1276,6 +1696,14 @@ nm_ip4_route_get_metric (NMIP4Route *route)
 	return route->metric;
 }
 
+/**
+ * nm_ip4_route_set_metric:
+ * @route: the #NMIP4Route
+ * @metric: the route metric
+ *
+ * Sets the route metric property of this route object; lower values indicate
+ * "better" or more preferred routes.
+ **/
 void
 nm_ip4_route_set_metric (NMIP4Route *route, guint32 metric)
 {
