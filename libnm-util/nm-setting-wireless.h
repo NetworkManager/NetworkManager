@@ -41,8 +41,18 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_WIRELESS_SETTING_NAME "802-11-wireless"
 
-typedef enum
-{
+/**
+ * NMSettingWirelessError:
+ * @NM_SETTING_WIRELESS_ERROR_UNKNOWN: unknown or unclassified error
+ * @NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY: the property was invalid
+ * @NM_SETTING_WIRELESS_ERROR_MISSING_PROPERTY: the property was missing and is
+ * required
+ * @NM_SETTING_WIRELESS_ERROR_MISSING_SECURITY_SETTING: property values require
+ * the presence of an #NMSettingWirelessSecurity object in the connection
+ * @NM_SETTING_WIRELESS_ERROR_CHANNEL_REQUIRES_BAND: the property channel was
+ * set to a value that requires the #NMSettingWireless:band property to be set
+ */
+typedef enum {
 	NM_SETTING_WIRELESS_ERROR_UNKNOWN = 0,
 	NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
 	NM_SETTING_WIRELESS_ERROR_MISSING_PROPERTY,
@@ -70,7 +80,19 @@ GQuark nm_setting_wireless_error_quark (void);
 #define NM_SETTING_WIRELESS_SEEN_BSSIDS "seen-bssids"
 #define NM_SETTING_WIRELESS_SEC         "security"
 
+/**
+ * NM_SETTING_WIRELESS_MODE_ADHOC:
+ *
+ * Indicates Ad-Hoc mode where no access point is expected to be present.
+ */
 #define NM_SETTING_WIRELESS_MODE_ADHOC  "adhoc"
+
+/**
+ * NM_SETTING_WIRELESS_MODE_INFRA
+ *
+ * Indicates infrastructure mode where an access point is expected to be present
+ * for this connection.
+ */
 #define NM_SETTING_WIRELESS_MODE_INFRA  "infrastructure"
 
 typedef struct {
