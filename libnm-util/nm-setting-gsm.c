@@ -29,6 +29,23 @@
 #include "nm-utils.h"
 #include "nm-setting-private.h"
 
+/**
+ * SECTION:nm-setting-gsm
+ * @short_description: Describes GSM/3GPP-based mobile broadband properties
+ * @include: nm-setting-gsm.h
+ *
+ * The #NMSettingGsm object is a #NMSetting subclass that describes
+ * properties that allow connections to 3GPP-based mobile broadband
+ * networks, including those using GPRS/EDGE and UMTS/HSPA technology.
+ */
+
+/**
+ * nm_setting_gsm_error_quark:
+ *
+ * Registers an error quark for #NMSettingGsm if necessary.
+ *
+ * Returns: the error quark used for #NMSettingGsm errors.
+ **/
 GQuark
 nm_setting_gsm_error_quark (void)
 {
@@ -103,12 +120,25 @@ enum {
 	LAST_PROP
 };
 
+/**
+ * nm_setting_gsm_new:
+ *
+ * Creates a new #NMSettingGsm object with default values.
+ *
+ * Returns: the new empty #NMSettingGsm object
+ **/
 NMSetting *
 nm_setting_gsm_new (void)
 {
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_GSM, NULL);
 }
 
+/**
+ * nm_setting_gsm_get_number:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: the #NMSettingGsm:number property of the setting
+ **/
 const char *
 nm_setting_gsm_get_number (NMSettingGsm *setting)
 {
@@ -117,6 +147,12 @@ nm_setting_gsm_get_number (NMSettingGsm *setting)
 	return NM_SETTING_GSM_GET_PRIVATE (setting)->number;
 }
 
+/**
+ * nm_setting_gsm_get_username:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: the #NMSettingGsm:username property of the setting
+ **/
 const char *
 nm_setting_gsm_get_username (NMSettingGsm *setting)
 {
@@ -125,6 +161,12 @@ nm_setting_gsm_get_username (NMSettingGsm *setting)
 	return NM_SETTING_GSM_GET_PRIVATE (setting)->username;
 }
 
+/**
+ * nm_setting_gsm_get_password:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: the #NMSettingGsm:password property of the setting
+ **/
 const char *
 nm_setting_gsm_get_password (NMSettingGsm *setting)
 {
@@ -147,6 +189,12 @@ nm_setting_gsm_get_password_flags (NMSettingGsm *setting)
 	return NM_SETTING_GSM_GET_PRIVATE (setting)->password_flags;
 }
 
+/**
+ * nm_setting_gsm_get_apn:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: the #NMSettingGsm:apn property of the setting
+ **/
 const char *
 nm_setting_gsm_get_apn (NMSettingGsm *setting)
 {
@@ -155,6 +203,12 @@ nm_setting_gsm_get_apn (NMSettingGsm *setting)
 	return NM_SETTING_GSM_GET_PRIVATE (setting)->apn;
 }
 
+/**
+ * nm_setting_gsm_get_network_id:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: the #NMSettingGsm:network-id property of the setting
+ **/
 const char *
 nm_setting_gsm_get_network_id (NMSettingGsm *setting)
 {
@@ -163,6 +217,12 @@ nm_setting_gsm_get_network_id (NMSettingGsm *setting)
 	return NM_SETTING_GSM_GET_PRIVATE (setting)->network_id;
 }
 
+/**
+ * nm_setting_gsm_get_network_type:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: the #NMSettingGsm:network-type property of the setting
+ **/
 int
 nm_setting_gsm_get_network_type (NMSettingGsm *setting)
 {
@@ -171,6 +231,12 @@ nm_setting_gsm_get_network_type (NMSettingGsm *setting)
 	return NM_SETTING_GSM_GET_PRIVATE (setting)->network_type;
 }
 
+/**
+ * nm_setting_gsm_get_allowed_bands:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: the #NMSettingGsm:allowed-bands property of the setting
+ **/
 guint32
 nm_setting_gsm_get_allowed_bands (NMSettingGsm *setting)
 {
@@ -179,6 +245,12 @@ nm_setting_gsm_get_allowed_bands (NMSettingGsm *setting)
 	return NM_SETTING_GSM_GET_PRIVATE (setting)->allowed_bands;
 }
 
+/**
+ * nm_setting_gsm_get_pin:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: the #NMSettingGsm:pin property of the setting
+ **/
 const char *
 nm_setting_gsm_get_pin (NMSettingGsm *setting)
 {
@@ -201,6 +273,12 @@ nm_setting_gsm_get_pin_flags (NMSettingGsm *setting)
 	return NM_SETTING_GSM_GET_PRIVATE (setting)->pin_flags;
 }
 
+/**
+ * nm_setting_gsm_get_home_only:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: the #NMSettingGsm:home-only property of the setting
+ **/
 gboolean
 nm_setting_gsm_get_home_only (NMSettingGsm *setting)
 {
@@ -481,19 +559,20 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 	 * NMSettingGsm:number:
 	 *
 	 * Number to dial when establishing a PPP data session with the GSM-based
-	 * mobile broadband network.  In most cases, leave the number blank and a
-	 * number selecting the APN specified in the 'apn' property will be used
-	 * automatically when required.
+	 * mobile broadband network.  Many modems do not require PPP for connections
+	 * to the mobile network and thus this property should be left blank, which
+	 * allows NetworkManager to select the appropriate settings automatically.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NUMBER,
 		 g_param_spec_string (NM_SETTING_GSM_NUMBER,
 						  "Number",
-						  "Number to dial when establishing a PPP data session "
-						  "with the GSM-based mobile broadband network.  In most "
-						  "cases, leave the number blank and a number selecting "
-						  "the APN specified in the 'apn' property will be used "
-						  "automatically when required.",
+		                  "Number to dial when establishing a PPP data session "
+		                  "with the GSM-based mobile broadband network.  Many "
+		                  "modems do not require PPP for connections to the "
+		                  "mobile network and thus this property should be left "
+		                  "blank, which allows NetworkManager to select the "
+		                  "appropriate settings automatically.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
@@ -599,9 +678,9 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 	 * NMSettingGsm:network-type:
 	 *
 	 * Network preference to force the device to only use specific network
-	 * technologies.  The permitted values are: -1: any, 0: 3G only,
-	 * 1: GPRS/EDGE only, 2: prefer 3G, and 3: prefer 2G.  Note that not all
-	 * devices allow network preference control.
+	 * technologies.  Permitted values are those specified by
+	 * #NMSettingGsmNetworkType.  Note that not all devices allow network
+	 * preference control.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NETWORK_TYPE,
@@ -621,7 +700,8 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 	 * NMSettingGsm:allowed-bands:
 	 *
 	 * Bitfield of allowed frequency bands.  Note that not all devices allow
-	 * frequency band control.
+	 * frequency band control.  Permitted values are those specified by
+	 * #NMSettingGsmNetworkBand.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ALLOWED_BANDS,
@@ -668,7 +748,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 	/**
 	 * NMSettingGsm:pin-flags:
 	 *
-	 * Flags indicating how to handle #NMSettingGsm:pin:.
+	 * Flags indicating how to handle #NMSettingGsm:pin.
 	 **/
 	g_object_class_install_property (object_class, PROP_PIN_FLAGS,
 		 g_param_spec_uint (NM_SETTING_GSM_PIN_FLAGS,

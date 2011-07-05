@@ -39,8 +39,16 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_GSM_SETTING_NAME "gsm"
 
-typedef enum
-{
+/**
+ * NMSettingGsmError:
+ * @NM_SETTING_GSM_ERROR_UNKNOWN: unknown or unclassified error
+ * @NM_SETTING_GSM_ERROR_INVALID_PROPERTY: the property was invalid
+ * @NM_SETTING_GSM_ERROR_MISSING_PROPERTY: the property was missing and is
+ * required
+ * @NM_SETTING_GSM_ERROR_MISSING_SERIAL_SETTING: the required #NMSettingSerial
+ * is missing in the connection
+ */
+typedef enum {
 	NM_SETTING_GSM_ERROR_UNKNOWN = 0,
 	NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
 	NM_SETTING_GSM_ERROR_MISSING_PROPERTY,
@@ -65,6 +73,21 @@ GQuark nm_setting_gsm_error_quark (void);
 #define NM_SETTING_GSM_PIN_FLAGS      "pin-flags"
 #define NM_SETTING_GSM_HOME_ONLY      "home-only"
 
+/**
+ * NMSettingGsmNetworkType:
+ * @NM_SETTING_GSM_NETWORK_TYPE_ANY: any access technology may be used
+ * @NM_SETTING_GSM_NETWORK_TYPE_UMTS_HSPA: only 3G-type (UMTS and HSPA)
+ * technologies may be used
+ * @NM_SETTING_GSM_NETWORK_TYPE_GPRS_EDGE: only 2G-type (GPRS and EDGE)
+ * technologies may be used
+ * @NM_SETTING_GSM_NETWORK_TYPE_PREFER_UMTS_HSPA: 3G-type technologies are
+ * preferred but 2G-type technologies may be used as a fallback
+ * @NM_SETTING_GSM_NETWORK_TYPE_PREFER_GPRS_EDGE: 2G-type technologies are
+ * preferred but 3G-type technologies may be used as a fallback
+ *
+ * #NMSettingGsmNetworkType values indicate the allowed access technologies
+ * the device may use when connecting to this network.
+ */
 typedef enum {
 	NM_SETTING_GSM_NETWORK_TYPE_ANY = -1,
 	NM_SETTING_GSM_NETWORK_TYPE_UMTS_HSPA = 0,
@@ -73,6 +96,27 @@ typedef enum {
 	NM_SETTING_GSM_NETWORK_TYPE_PREFER_GPRS_EDGE = 3
 } NMSettingGsmNetworkType;
 
+/**
+ * NMSettingGsmNetworkBand:
+ * @NM_SETTING_GSM_BAND_UNKNOWN: unknown or no band specified
+ * @NM_SETTING_GSM_BAND_ANY: any band is allowed
+ * @NM_SETTING_GSM_BAND_EGSM: 900 MHz original GSM band
+ * @NM_SETTING_GSM_BAND_DCS: 1800 MHz DCS band
+ * @NM_SETTING_GSM_BAND_PCS: US 1900 MHz PCS band
+ * @NM_SETTING_GSM_BAND_G850: US 850 MHz Cellular band
+ * @NM_SETTING_GSM_BAND_U2100: WCDMA 3GPP UMTS 2100 MHz (Class I)
+ * @NM_SETTING_GSM_BAND_U1800: WCDMA 3GPP UMTS 1800 MHz (Class III)
+ * @NM_SETTING_GSM_BAND_U17IV: WCDMA 3GPP AWS 1700/2100 MHz (Class IV)
+ * @NM_SETTING_GSM_BAND_U800: WCDMA 3GPP UMTS 800 MHz (Class VI)
+ * @NM_SETTING_GSM_BAND_U850: WCDMA 3GPP UMTS 850 MHz (Class V)
+ * @NM_SETTING_GSM_BAND_U900: WCDMA 3GPP UMTS 900 MHz (Class VIII)
+ * @NM_SETTING_GSM_BAND_U17IX: WCDMA 3GPP UMTS 1700 MHz (Class IX)
+ * @NM_SETTING_GSM_BAND_U1900: WCDMA 3GPP UMTS 1900 MHz (Class II)
+ * @NM_SETTING_GSM_BAND_U2600: WCDMA 3GPP UMTS 2600 MHz (Class VII, internal)
+ *
+ * #NMSettingGsmNetworkBand values indicate the allowed frequency bands
+ * the device may use when connecting to this network.
+ */
 typedef enum {
 	NM_SETTING_GSM_BAND_UNKNOWN      = 0x00000000,
 	NM_SETTING_GSM_BAND_ANY          = 0x00000001,
