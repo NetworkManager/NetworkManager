@@ -27,6 +27,24 @@
 
 #include "nm-setting-serial.h"
 
+/**
+ * SECTION:nm-setting-serial
+ * @short_description: Describes connection properties for devices that use
+ * serial communications
+ * @include: nm-setting-serial.h
+ *
+ * The #NMSettingSerial object is a #NMSetting subclass that describes
+ * properties necessary for connections that may use serial communications,
+ * such as mobile broadband or analog telephone connections.
+ **/
+
+/**
+ * nm_setting_serial_error_quark:
+ *
+ * Registers an error quark for #NMSettingSerial if necessary.
+ *
+ * Returns: the error quark used for #NMSettingSerial errors.
+ **/
 GQuark
 nm_setting_serial_error_quark (void)
 {
@@ -87,12 +105,25 @@ enum {
 	LAST_PROP
 };
 
+/**
+ * nm_setting_serial_new:
+ *
+ * Creates a new #NMSettingSerial object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingSerial object
+ **/
 NMSetting *
 nm_setting_serial_new (void)
 {
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_SERIAL, NULL);
 }
 
+/**
+ * nm_setting_serial_get_baud:
+ * @setting: the #NMSettingSerial
+ *
+ * Returns: the #NMSettingSerial:baud property of the setting
+ **/
 guint
 nm_setting_serial_get_baud (NMSettingSerial *setting)
 {
@@ -101,6 +132,12 @@ nm_setting_serial_get_baud (NMSettingSerial *setting)
 	return NM_SETTING_SERIAL_GET_PRIVATE (setting)->baud;
 }
 
+/**
+ * nm_setting_serial_get_bits:
+ * @setting: the #NMSettingSerial
+ *
+ * Returns: the #NMSettingSerial:bits property of the setting
+ **/
 guint
 nm_setting_serial_get_bits (NMSettingSerial *setting)
 {
@@ -109,6 +146,12 @@ nm_setting_serial_get_bits (NMSettingSerial *setting)
 	return NM_SETTING_SERIAL_GET_PRIVATE (setting)->bits;
 }
 
+/**
+ * nm_setting_serial_get_parity:
+ * @setting: the #NMSettingSerial
+ *
+ * Returns: the #NMSettingSerial:parity property of the setting
+ **/
 char
 nm_setting_serial_get_parity (NMSettingSerial *setting)
 {
@@ -117,6 +160,12 @@ nm_setting_serial_get_parity (NMSettingSerial *setting)
 	return NM_SETTING_SERIAL_GET_PRIVATE (setting)->parity;
 }
 
+/**
+ * nm_setting_serial_get_stopbits:
+ * @setting: the #NMSettingSerial
+ *
+ * Returns: the #NMSettingSerial:stopbits property of the setting
+ **/
 guint
 nm_setting_serial_get_stopbits (NMSettingSerial *setting)
 {
@@ -125,6 +174,12 @@ nm_setting_serial_get_stopbits (NMSettingSerial *setting)
 	return NM_SETTING_SERIAL_GET_PRIVATE (setting)->stopbits;
 }
 
+/**
+ * nm_setting_serial_get_send_delay:
+ * @setting: the #NMSettingSerial
+ *
+ * Returns: the #NMSettingSerial:send-delay property of the setting
+ **/
 guint64
 nm_setting_serial_get_send_delay (NMSettingSerial *setting)
 {
