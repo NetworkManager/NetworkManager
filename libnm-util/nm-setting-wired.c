@@ -135,7 +135,7 @@ static const char *valid_s390_opts[] = {
  *
  * Creates a new #NMSettingWired object with default values.
  *
- * Returns: the new empty #NMSettingWired object
+ * Returns: (transfer full): the new empty #NMSettingWired object
  **/
 NMSetting *
 nm_setting_wired_new (void)

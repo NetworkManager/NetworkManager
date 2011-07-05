@@ -333,7 +333,7 @@ nm_setting_wireless_ap_security_compatible (NMSettingWireless *s_wireless,
  *
  * Creates a new #NMSettingWireless object with default values.
  *
- * Returns: the new empty #NMSettingWireless object
+ * Returns: (transfer full): the new empty #NMSettingWireless object
  **/
 NMSetting *
 nm_setting_wireless_new (void)
