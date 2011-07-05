@@ -129,7 +129,7 @@ enum {
  *
  * Creates a new #NMSettingIP4Config object with default values.
  *
- * Returns: the new empty #NMSettingIP4Config object
+ * Returns: (transfer full): the new empty #NMSettingIP4Config object
  **/
 NMSetting *
 nm_setting_ip4_config_new (void)
