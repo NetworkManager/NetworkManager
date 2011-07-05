@@ -35,6 +35,22 @@
 #include "nm-utils-private.h"
 #include "nm-dbus-glib-types.h"
 
+/**
+ * SECTION:nm-setting-wired
+ * @short_description: Describes connection properties for Ethernet-based networks
+ * @include: nm-setting-wired.h
+ *
+ * The #NMSettingWired object is a #NMSetting subclass that describes properties
+ * necessary for connection to Ethernet networks.
+ **/
+
+/**
+ * nm_setting_wired_error_quark:
+ *
+ * Registers an error quark for #NMSettingWired if necessary.
+ *
+ * Returns: the error quark used for #NMSettingWired errors.
+ **/
 GQuark
 nm_setting_wired_error_quark (void)
 {
@@ -114,12 +130,25 @@ static const char *valid_s390_opts[] = {
 	NULL
 };
 
+/**
+ * nm_setting_wired_new:
+ *
+ * Creates a new #NMSettingWired object with default values.
+ *
+ * Returns: the new empty #NMSettingWired object
+ **/
 NMSetting *
 nm_setting_wired_new (void)
 {
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_WIRED, NULL);
 }
 
+/**
+ * nm_setting_wired_get_port:
+ * @setting: the #NMSettingWired
+ *
+ * Returns: the #NMSettingWired:port property of the setting
+ **/
 const char *
 nm_setting_wired_get_port (NMSettingWired *setting)
 {
@@ -128,6 +157,12 @@ nm_setting_wired_get_port (NMSettingWired *setting)
 	return NM_SETTING_WIRED_GET_PRIVATE (setting)->port;
 }
 
+/**
+ * nm_setting_wired_get_speed:
+ * @setting: the #NMSettingWired
+ *
+ * Returns: the #NMSettingWired:speed property of the setting
+ **/
 guint32
 nm_setting_wired_get_speed (NMSettingWired *setting)
 {
@@ -136,6 +171,12 @@ nm_setting_wired_get_speed (NMSettingWired *setting)
 	return NM_SETTING_WIRED_GET_PRIVATE (setting)->speed;
 }
 
+/**
+ * nm_setting_wired_get_duplex:
+ * @setting: the #NMSettingWired
+ *
+ * Returns: the #NMSettingWired:duplex property of the setting
+ **/
 const char *
 nm_setting_wired_get_duplex (NMSettingWired *setting)
 {
@@ -144,6 +185,12 @@ nm_setting_wired_get_duplex (NMSettingWired *setting)
 	return NM_SETTING_WIRED_GET_PRIVATE (setting)->duplex;
 }
 
+/**
+ * nm_setting_wired_get_auto_negotiate:
+ * @setting: the #NMSettingWired
+ *
+ * Returns: the #NMSettingWired:auto-negotiate property of the setting
+ **/
 gboolean
 nm_setting_wired_get_auto_negotiate (NMSettingWired *setting)
 {
@@ -152,6 +199,12 @@ nm_setting_wired_get_auto_negotiate (NMSettingWired *setting)
 	return NM_SETTING_WIRED_GET_PRIVATE (setting)->auto_negotiate;
 }
 
+/**
+ * nm_setting_wired_get_mac_address:
+ * @setting: the #NMSettingWired
+ *
+ * Returns: the #NMSettingWired:mac-address property of the setting
+ **/
 const GByteArray *
 nm_setting_wired_get_mac_address (NMSettingWired *setting)
 {
@@ -160,6 +213,12 @@ nm_setting_wired_get_mac_address (NMSettingWired *setting)
 	return NM_SETTING_WIRED_GET_PRIVATE (setting)->device_mac_address;
 }
 
+/**
+ * nm_setting_wired_get_cloned_mac_address:
+ * @setting: the #NMSettingWired
+ *
+ * Returns: the #NMSettingWired:cloned-mac-address property of the setting
+ **/
 const GByteArray *
 nm_setting_wired_get_cloned_mac_address (NMSettingWired *setting)
 {
@@ -168,6 +227,13 @@ nm_setting_wired_get_cloned_mac_address (NMSettingWired *setting)
 	return NM_SETTING_WIRED_GET_PRIVATE (setting)->cloned_mac_address;
 }
 
+/**
+ * nm_setting_wired_get_mac_address_blacklist:
+ * @setting: the #NMSettingWired
+ *
+ * Returns: (element-type GLib.ByteArray): the #NMSettingWired:mac-address-blacklist
+ * property of the setting
+ **/
 const GSList *
 nm_setting_wired_get_mac_address_blacklist (NMSettingWired *setting)
 {
@@ -176,6 +242,12 @@ nm_setting_wired_get_mac_address_blacklist (NMSettingWired *setting)
 	return NM_SETTING_WIRED_GET_PRIVATE (setting)->mac_address_blacklist;
 }
 
+/**
+ * nm_setting_wired_get_mtu:
+ * @setting: the #NMSettingWired
+ *
+ * Returns: the #NMSettingWired:mtu property of the setting
+ **/
 guint32
 nm_setting_wired_get_mtu (NMSettingWired *setting)
 {
@@ -192,8 +264,8 @@ nm_setting_wired_get_mtu (NMSettingWired *setting)
  * connection is applicable to.  The connection should only be used in
  * conjunction with that device.
  *
- * Returns: a #GPtrArray of strings, each specifying one subchannel the
- * s390 device uses to communicate to the host.
+ * Returns: (element-type utf8): #GPtrArray of strings, each specifying one
+ * subchannel the s390 device uses to communicate to the host.
  **/
 const GPtrArray *
 nm_setting_wired_get_s390_subchannels (NMSettingWired *setting)
@@ -243,10 +315,10 @@ nm_setting_wired_get_num_s390_options (NMSettingWired *setting)
  * @setting: the #NMSettingWired
  * @idx: index of the desired option, from 0 to
  * nm_setting_wired_get_num_s390_options() - 1
- * @out_key: on return, the key name of the s390 specific option; this value is
- * owned by the setting and should not be modified
- * @out_value: on return, the value of the key of the s390 specific option; this
+ * @out_key: (out): on return, the key name of the s390 specific option; this
  * value is owned by the setting and should not be modified
+ * @out_value: (out): on return, the value of the key of the s390 specific
+ * option; this value is owned by the setting and should not be modified
  *
  * Given an index, return the value of the s390 option at that index.  indexes
  * are *not* guaranteed to be static across modifications to options done by

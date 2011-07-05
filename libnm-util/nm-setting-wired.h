@@ -39,8 +39,14 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_WIRED_SETTING_NAME "802-3-ethernet"
 
-typedef enum
-{
+/**
+ * NMSettingWiredError:
+ * @NM_SETTING_WIRED_ERROR_UNKNOWN: unknown or unclassified error
+ * @NM_SETTING_WIRED_ERROR_INVALID_PROPERTY: the property was invalid
+ * @NM_SETTING_WIRED_ERROR_MISSING_PROPERTY: the property was missing and is
+ * required
+ */
+typedef enum {
 	NM_SETTING_WIRED_ERROR_UNKNOWN = 0,
 	NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
 	NM_SETTING_WIRED_ERROR_MISSING_PROPERTY
