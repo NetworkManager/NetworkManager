@@ -34,6 +34,36 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-utils-private.h"
 
+/**
+ * SECTION:nm-setting-wireless-security
+ * @short_description: Describes connection properties for WiFi networks that
+ * use WEP, LEAP, WPA or WPA2/RSN security
+ * @include: nm-setting-wireless-security.h
+ *
+ * The #NMSettingWirelessSecurity object is a #NMSetting subclass that describes
+ * properties necessary for connection encrypted WiFi networks.
+ *
+ * It's a good idea to read up on wpa_supplicant configuration before using this
+ * setting extensively, since most of the options here correspond closely with
+ * the relevant wpa_supplicant configuration options.  To get a better overview
+ * of how WiFi security works, you may want to get copies of the following books.
+ *
+ *  802.11 Wireless Networks: The Definitive Guide, Second Edition
+ *       Author: Matthew Gast
+ *       ISBN: 978-0596100520
+ *
+ *  Cisco Wireless LAN Security
+ *       Authors: Krishna Sankar, Sri Sundaralingam, Darrin Miller, and Andrew Balinsky
+ *       ISBN: 978-1587051548
+ **/
+
+/**
+ * nm_setting_wired_error_quark:
+ *
+ * Registers an error quark for #NMSettingWired if necessary.
+ *
+ * Returns: the error quark used for #NMSettingWired errors.
+ **/
 GQuark
 nm_setting_wireless_security_error_quark (void)
 {
@@ -117,12 +147,25 @@ enum {
 	LAST_PROP
 };
 
+/**
+ * nm_setting_wireless_security_new:
+ *
+ * Creates a new #NMSettingWirelessSecurity object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingWirelessSecurity object
+ **/
 NMSetting *
 nm_setting_wireless_security_new (void)
 {
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_WIRELESS_SECURITY, NULL);
 }
 
+/**
+ * nm_setting_wireless_security_get_key_mgmt:
+ * @setting: the #NMSettingWirelessSecurity
+ *
+ * Returns: the #NMSettingWirelessSecurity:key-mgmt property of the setting
+ **/
 const char *
 nm_setting_wireless_security_get_key_mgmt (NMSettingWirelessSecurity *setting)
 {
@@ -131,6 +174,13 @@ nm_setting_wireless_security_get_key_mgmt (NMSettingWirelessSecurity *setting)
 	return NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->key_mgmt;
 }
 
+/**
+ * nm_setting_wireless_security_get_num_protos:
+ * @setting: the #NMSettingWirelessSecurity
+ *
+ * Returns: the number of security protocols this connection allows when
+ * connecting to secure WiFi networks
+ **/
 guint32
 nm_setting_wireless_security_get_num_protos (NMSettingWirelessSecurity *setting)
 {
@@ -139,6 +189,13 @@ nm_setting_wireless_security_get_num_protos (NMSettingWirelessSecurity *setting)
 	return g_slist_length (NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->proto);
 }
 
+/**
+ * nm_setting_wireless_security_get_proto:
+ * @setting: the #NMSettingWirelessSecurity
+ * @i: an index into the protocol list
+ *
+ * Returns: the protocol at index @i
+ **/
 const char *
 nm_setting_wireless_security_get_proto (NMSettingWirelessSecurity *setting, guint32 i)
 {
@@ -152,6 +209,21 @@ nm_setting_wireless_security_get_proto (NMSettingWirelessSecurity *setting, guin
 	return (const char *) g_slist_nth_data (priv->proto, i);
 }
 
+/**
+ * nm_setting_wireless_security_add_proto:
+ * @setting: the #NMSettingWirelessSecurity
+ * @proto: the protocol to add, one of "wpa" or "rsn"
+ *
+ * Adds a WiFi security protocol (one of "wpa" or "rsn") to the allowed list;
+ * only protocols in this list will be used when finding and connecting to
+ * the WiFi network specified by this connection.  For example, if the
+ * protocol list contains only "wpa" but the access point for the SSID specified
+ * by this connection only supports WPA2/RSN, the connection cannot be used
+ * with the access point.
+ *
+ * Returns: %TRUE if the protocol was new and and was added to the allowed
+ * protocol list, or %FALSE if it was already in the list
+ **/
 gboolean
 nm_setting_wireless_security_add_proto (NMSettingWirelessSecurity *setting, const char *proto)
 {
@@ -163,7 +235,7 @@ nm_setting_wireless_security_add_proto (NMSettingWirelessSecurity *setting, cons
 
 	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
 	for (iter = priv->proto; iter; iter = g_slist_next (iter)) {
-		if (!strcmp (proto, (char *) iter->data))
+		if (strcasecmp (proto, (char *) iter->data) == 0)
 			return FALSE;
 	}
 
@@ -171,6 +243,13 @@ nm_setting_wireless_security_add_proto (NMSettingWirelessSecurity *setting, cons
 	return TRUE;
 }
 
+/**
+ * nm_setting_wireless_security_remove_proto:
+ * @setting: the #NMSettingWirelessSecurity
+ * @i: index of the protocol to remove
+ *
+ * Removes a protocol from the allowed protocol list.
+ **/
 void
 nm_setting_wireless_security_remove_proto (NMSettingWirelessSecurity *setting, guint32 i)
 {
@@ -187,6 +266,13 @@ nm_setting_wireless_security_remove_proto (NMSettingWirelessSecurity *setting, g
 	priv->proto = g_slist_delete_link (priv->proto, elt);
 }
 
+/**
+ * nm_setting_wireless_security_clear_protos:
+ * @setting: the #NMSettingWirelessSecurity
+ *
+ * Removes all protocols from the allowed list.  If there are no protocols
+ * specified then all protocols are allowed.
+ **/
 void
 nm_setting_wireless_security_clear_protos (NMSettingWirelessSecurity *setting)
 {
@@ -199,6 +285,12 @@ nm_setting_wireless_security_clear_protos (NMSettingWirelessSecurity *setting)
 	priv->proto = NULL;
 }
 
+/**
+ * nm_setting_wireless_security_get_num_pairwise:
+ * @setting: the #NMSettingWirelessSecurity
+ *
+ * Returns: the number of pairwise encryption algorithms in the allowed list
+ **/
 guint32
 nm_setting_wireless_security_get_num_pairwise (NMSettingWirelessSecurity *setting)
 {
@@ -207,6 +299,16 @@ nm_setting_wireless_security_get_num_pairwise (NMSettingWirelessSecurity *settin
 	return g_slist_length (NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->pairwise);
 }
 
+/**
+ * nm_setting_wireless_security_get_pairwise:
+ * @setting: the #NMSettingWirelessSecurity
+ * @i: index of an item in the allowed pairwise encryption algorithm list
+ *
+ * Returns the allowed pairwise encryption algorithm from allowed algorithm
+ * list.
+ *
+ * Returns: the pairwise encryption algorithm at index @i
+ **/
 const char *
 nm_setting_wireless_security_get_pairwise (NMSettingWirelessSecurity *setting, guint32 i)
 {
@@ -220,6 +322,20 @@ nm_setting_wireless_security_get_pairwise (NMSettingWirelessSecurity *setting, g
 	return (const char *) g_slist_nth_data (priv->pairwise, i);
 }
 
+/**
+ * nm_setting_wireless_security_add_pairwise:
+ * @setting: the #NMSettingWirelessSecurity
+ * @pairwise: the encryption algorithm to add, one of "wep40", "wep104",
+ * "tkip", or "ccmp"
+ *
+ * Adds an encryption algorithm to the list of allowed pairwise encryption
+ * algorithms.  If the list is not empty, then only access points that support
+ * one or more of the encryption algorithms in the list will be considered
+ * compatible with this connection.
+ *
+ * Returns: %TRUE if the algorithm was added to the list, %FALSE if it was
+ * already in the list
+ **/
 gboolean
 nm_setting_wireless_security_add_pairwise (NMSettingWirelessSecurity *setting, const char *pairwise)
 {
@@ -231,7 +347,7 @@ nm_setting_wireless_security_add_pairwise (NMSettingWirelessSecurity *setting, c
 
 	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
 	for (iter = priv->pairwise; iter; iter = g_slist_next (iter)) {
-		if (!strcmp (pairwise, (char *) iter->data))
+		if (strcasecmp (pairwise, (char *) iter->data) == 0)
 			return FALSE;
 	}
 
@@ -239,6 +355,14 @@ nm_setting_wireless_security_add_pairwise (NMSettingWirelessSecurity *setting, c
 	return TRUE;
 }
 
+/**
+ * nm_setting_wireless_security_remove_pairwise:
+ * @setting: the #NMSettingWirelessSecurity
+ * @i: the index of an item in the allowed pairwise encryption algorithm list
+ *
+ * Removes an encryption algorithm from the allowed pairwise encryption
+ * algorithm list.
+ **/
 void
 nm_setting_wireless_security_remove_pairwise (NMSettingWirelessSecurity *setting, guint32 i)
 {
@@ -255,6 +379,13 @@ nm_setting_wireless_security_remove_pairwise (NMSettingWirelessSecurity *setting
 	priv->pairwise = g_slist_delete_link (priv->pairwise, elt);
 }
 
+/**
+ * nm_setting_wireless_security_clear_pairwise:
+ * @setting: the #NMSettingWirelessSecurity
+ *
+ * Removes all algorithms from the allowed list.  If there are no algorithms
+ * specified then all pairwise encryption algorithms are allowed.
+ **/
 void
 nm_setting_wireless_security_clear_pairwise (NMSettingWirelessSecurity *setting)
 {
@@ -267,6 +398,12 @@ nm_setting_wireless_security_clear_pairwise (NMSettingWirelessSecurity *setting)
 	priv->pairwise = NULL;
 }
 
+/**
+ * nm_setting_wireless_security_get_num_groups:
+ * @setting: the #NMSettingWirelessSecurity
+ *
+ * Returns: the number of groupwise encryption algorithms in the allowed list
+ **/
 guint32
 nm_setting_wireless_security_get_num_groups (NMSettingWirelessSecurity *setting)
 {
@@ -275,6 +412,16 @@ nm_setting_wireless_security_get_num_groups (NMSettingWirelessSecurity *setting)
 	return g_slist_length (NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->group);
 }
 
+/**
+ * nm_setting_wireless_security_get_group:
+ * @setting: the #NMSettingWirelessSecurity
+ * @i: index of an item in the allowed groupwise encryption algorithm list
+ *
+ * Returns the allowed groupwise encryption algorithm from allowed algorithm
+ * list.
+ *
+ * Returns: the groupwise encryption algorithm at index @i
+ **/
 const char *
 nm_setting_wireless_security_get_group (NMSettingWirelessSecurity *setting, guint32 i)
 {
@@ -288,6 +435,20 @@ nm_setting_wireless_security_get_group (NMSettingWirelessSecurity *setting, guin
 	return (const char *) g_slist_nth_data (priv->group, i);
 }
 
+/**
+ * nm_setting_wireless_security_add_group:
+ * @setting: the #NMSettingWirelessSecurity
+ * @group: the encryption algorithm to add, one of "wep40", "wep104",
+ * "tkip", or "ccmp"
+ *
+ * Adds an encryption algorithm to the list of allowed groupwise encryption
+ * algorithms.  If the list is not empty, then only access points that support
+ * one or more of the encryption algorithms in the list will be considered
+ * compatible with this connection.
+ *
+ * Returns: %TRUE if the algorithm was added to the list, %FALSE if it was
+ * already in the list
+ **/
 gboolean
 nm_setting_wireless_security_add_group (NMSettingWirelessSecurity *setting, const char *group)
 {
@@ -299,7 +460,7 @@ nm_setting_wireless_security_add_group (NMSettingWirelessSecurity *setting, cons
 
 	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
 	for (iter = priv->group; iter; iter = g_slist_next (iter)) {
-		if (!strcmp (group, (char *) iter->data))
+		if (strcasecmp (group, (char *) iter->data) == 0)
 			return FALSE;
 	}
 
@@ -307,6 +468,14 @@ nm_setting_wireless_security_add_group (NMSettingWirelessSecurity *setting, cons
 	return TRUE;
 }
 
+/**
+ * nm_setting_wireless_security_remove_group:
+ * @setting: the #NMSettingWirelessSecurity
+ * @i: the index of an item in the allowed groupwise encryption algorithm list
+ *
+ * Removes an encryption algorithm from the allowed groupwise encryption
+ * algorithm list.
+ **/
 void
 nm_setting_wireless_security_remove_group (NMSettingWirelessSecurity *setting, guint32 i)
 {
@@ -323,6 +492,13 @@ nm_setting_wireless_security_remove_group (NMSettingWirelessSecurity *setting, g
 	priv->group = g_slist_delete_link (priv->group, elt);
 }
 
+/**
+ * nm_setting_wireless_security_clear_groups:
+ * @setting: the #NMSettingWirelessSecurity
+ *
+ * Removes all algorithms from the allowed list.  If there are no algorithms
+ * specified then all groupwise encryption algorithms are allowed.
+ **/
 void
 nm_setting_wireless_security_clear_groups (NMSettingWirelessSecurity *setting)
 {
@@ -335,6 +511,12 @@ nm_setting_wireless_security_clear_groups (NMSettingWirelessSecurity *setting)
 	priv->group = NULL;
 }
 
+/**
+ * nm_setting_wireless_security_get_psk:
+ * @setting: the #NMSettingWirelessSecurity
+ *
+ * Returns: the #NMSettingWirelessSecurity:psk property of the setting
+ **/
 const char *
 nm_setting_wireless_security_get_psk (NMSettingWirelessSecurity *setting)
 {
@@ -343,6 +525,12 @@ nm_setting_wireless_security_get_psk (NMSettingWirelessSecurity *setting)
 	return NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->psk;
 }
 
+/**
+ * nm_setting_wireless_security_get_leap_username:
+ * @setting: the #NMSettingWirelessSecurity
+ *
+ * Returns: the #NMSettingWirelessSecurity:leap-username property of the setting
+ **/
 const char *
 nm_setting_wireless_security_get_leap_username (NMSettingWirelessSecurity *setting)
 {
@@ -351,6 +539,12 @@ nm_setting_wireless_security_get_leap_username (NMSettingWirelessSecurity *setti
 	return NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->leap_username;
 }
 
+/**
+ * nm_setting_wireless_security_get_leap_password:
+ * @setting: the #NMSettingWirelessSecurity
+ *
+ * Returns: the #NMSettingWirelessSecurity:leap-password property of the setting
+ **/
 const char *
 nm_setting_wireless_security_get_leap_password (NMSettingWirelessSecurity *setting)
 {
@@ -359,6 +553,13 @@ nm_setting_wireless_security_get_leap_password (NMSettingWirelessSecurity *setti
 	return NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->leap_password;
 }
 
+/**
+ * nm_setting_wireless_security_get_wep_key:
+ * @setting: the #NMSettingWirelessSecurity
+ * @idx: the WEP key index (0..3 inclusive)
+ *
+ * Returns: the WEP key at the given index
+ **/
 const char *
 nm_setting_wireless_security_get_wep_key (NMSettingWirelessSecurity *setting, guint32 idx)
 {
@@ -381,6 +582,16 @@ nm_setting_wireless_security_get_wep_key (NMSettingWirelessSecurity *setting, gu
 	return NULL;
 }
 
+/**
+ * nm_setting_wireless_security_set_wep_key:
+ * @setting: the #NMSettingWirelessSecurity
+ * @idx: the index of the key (0..3 inclusive)
+ * @key: the WEP key as a string, in either hexadecimal, ASCII, or passphrase
+ * form as determiend by the value of the #NMSettingWirelessSecurity:wep-key-type
+ * property.
+ *
+ * Sets a WEP key in the given index.
+ **/
 void
 nm_setting_wireless_security_set_wep_key (NMSettingWirelessSecurity *setting, guint32 idx, const char *key)
 {
@@ -412,6 +623,12 @@ nm_setting_wireless_security_set_wep_key (NMSettingWirelessSecurity *setting, gu
 	}
 }
 
+/**
+ * nm_setting_wireless_security_get_wep_tx_keyidx:
+ * @setting: the #NMSettingWirelessSecurity
+ *
+ * Returns: the #NMSettingWirelessSecurity:wep-tx-keyidx property of the setting
+ **/
 guint32
 nm_setting_wireless_security_get_wep_tx_keyidx (NMSettingWirelessSecurity *setting)
 {
@@ -420,6 +637,12 @@ nm_setting_wireless_security_get_wep_tx_keyidx (NMSettingWirelessSecurity *setti
 	return NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->wep_tx_keyidx;
 }
 
+/**
+ * nm_setting_wireless_security_get_auth_alg:
+ * @setting: the #NMSettingWirelessSecurity
+ *
+ * Returns: the #NMSettingWirelessSecurity:auth-alg property of the setting
+ **/
 const char *
 nm_setting_wireless_security_get_auth_alg (NMSettingWirelessSecurity *setting)
 {
@@ -428,6 +651,12 @@ nm_setting_wireless_security_get_auth_alg (NMSettingWirelessSecurity *setting)
 	return NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->auth_alg;
 }
 
+/**
+ * nm_setting_wireless_security_get_wep_key_type:
+ * @setting: the #NMSettingWirelessSecurity
+ *
+ * Returns: the #NMSettingWirelessSecurity:wep-key-type property of the setting
+ **/
 NMWepKeyType
 nm_setting_wireless_security_get_wep_key_type (NMSettingWirelessSecurity *setting)
 {
@@ -1182,9 +1411,8 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	/**
 	 * NMSettingWirelessSecurity:wep-key-type:
 	 *
-	 * Controls the interpretation of WEP keys.  Allowed values are 1 (interpret
-	 * WEP keys as hexadecimal or ASCII keys) or 2 (interpret WEP keys as WEP
-	 * Passphrases).  If set to 1 and the keys are hexadecimal, they must be
+	 * Controls the interpretation of WEP keys.  Allowed values are those given
+	 * by %NMWepKeyType.  If set to 1 and the keys are hexadecimal, they must be
 	 * either 10 or 26 characters in length.  If set to 1 and the keys are
 	 * ASCII keys, they must be either 5 or 13 characters in length.  If set to
 	 * 2, the passphrase is hashed using the de-facto MD5 method to derive the

@@ -39,8 +39,23 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_WIRELESS_SECURITY_SETTING_NAME "802-11-wireless-security"
 
-typedef enum
-{
+/**
+ * NMSettingWirelessSecurityError:
+ * @NM_SETTING_WIRELESS_SECURITY_ERROR_UNKNOWN: unknown or unclassified error
+ * @NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY: the property was invalid
+ * @NM_SETTING_WIRELESS_SECURITY_ERROR_MISSING_PROPERTY: the property was
+ * missing and is required
+ * @NM_SETTING_WIRELESS_SECURITY_ERROR_MISSING_802_1X_SETTING: a property contained
+ * a value that requires the connection to contain a #NMSetting8021x setting
+ * @NM_SETTING_WIRELESS_SECURITY_ERROR_LEAP_REQUIRES_802_1X: LEAP authentication
+ * was specified but key management was not set to "8021x"
+ * @NM_SETTING_WIRELESS_SECURITY_ERROR_LEAP_REQUIRES_USERNAME: LEAP authentication
+ * was specified but no LEAP username was given
+ * @NM_SETTING_WIRELESS_SECURITY_ERROR_SHARED_KEY_REQUIRES_WEP: Shared Key
+ * authentication was specified but the setting did not specify WEP as the
+ * encryption protocol
+ */
+typedef enum {
 	NM_SETTING_WIRELESS_SECURITY_ERROR_UNKNOWN = 0,
 	NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
 	NM_SETTING_WIRELESS_SECURITY_ERROR_MISSING_PROPERTY,
@@ -56,6 +71,29 @@ GType nm_setting_wireless_security_error_get_type (void);
 #define NM_SETTING_WIRELESS_SECURITY_ERROR nm_setting_wireless_security_error_quark ()
 GQuark nm_setting_wireless_security_error_quark (void);
 
+/**
+ * NMWepKeyType:
+ * @NM_WEP_KEY_TYPE_UNKNOWN: unknown WEP key type
+ * @NM_WEP_KEY_TYPE_KEY: indicates a hexadecimal or ASCII formatted WEP key.
+ * Hex keys are either 10 or 26 hexadecimal characters (ie "5f782f2f5f" or
+ * "732f2d712e4a394a375d366931"), while ASCII keys are either 5 or 13 ASCII
+ * characters (ie "abcde" or "blahblah99$*1").
+ * @NM_WEP_KEY_TYPE_PASSPHRASE: indicates a WEP passphrase (ex "I bought a duck
+ * on my way back from the market 235Q&^%^*%") instead of a hexadecimal or ASCII
+ * key.  Passphrases are between 8 and 64 characters inclusive and are hashed
+ * the actual WEP key using the MD5 hash algorithm.
+ * @NM_WEP_KEY_TYPE_LAST: placeholder value for bounds-checking
+ *
+ * The #NMWepKeyType values specify how any WEP keys present in the setting
+ * are intepreted.  There are no standards governing how to hash the various WEP
+ * key/passphrase formats into the actual WEP key.  Unfortunately some WEP keys
+ * can be interpreted in multiple ways, requring the setting to specify how to
+ * interpret the any WEP keys.  For example, the key "732f2d712e4a394a375d366931"
+ * is both a valid Hexadecimal WEP key and a WEP passphrase.  Further, many
+ * ASCII keys are also valid WEP passphrases, but since passphrases and ASCII
+ * keys are hashed differently to determine the actual WEP key the type must be
+ * specified.
+ */
 typedef enum {
 	NM_WEP_KEY_TYPE_UNKNOWN = 0,
 	NM_WEP_KEY_TYPE_KEY = 1,          /* Hex or ASCII */
