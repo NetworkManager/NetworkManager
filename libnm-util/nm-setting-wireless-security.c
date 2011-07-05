@@ -42,7 +42,7 @@
  * @include: nm-setting-wireless-security.h
  *
  * The #NMSettingWirelessSecurity object is a #NMSetting subclass that describes
- * properties necessary for connection encrypted WiFi networks.
+ * properties necessary for connection to encrypted WiFi networks.
  *
  * It's a good idea to read up on wpa_supplicant configuration before using this
  * setting extensively, since most of the options here correspond closely with
