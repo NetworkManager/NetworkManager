@@ -987,9 +987,9 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 
 	const char *pattern_empty = "^\\s*(\\#.*)?$";
 	const char *pattern_to1 = "^\\s*(" IPV6_ADDR_REGEX "|default)"  /* IPv6 or 'default' keyword */
-	                          "(?:/(\\d{1,2}))?";                   /* optional prefix */
+	                          "(?:/(\\d{1,3}))?";                   /* optional prefix */
 	const char *pattern_to2 = "to\\s+(" IPV6_ADDR_REGEX "|default)" /* IPv6 or 'default' keyword */
-	                          "(?:/(\\d{1,2}))?";                   /* optional prefix */
+	                          "(?:/(\\d{1,3}))?";                   /* optional prefix */
 	const char *pattern_via = "via\\s+(" IPV6_ADDR_REGEX ")";       /* IPv6 of gateway */
 	const char *pattern_metric = "metric\\s+(\\d+)";                /* metric */
 
