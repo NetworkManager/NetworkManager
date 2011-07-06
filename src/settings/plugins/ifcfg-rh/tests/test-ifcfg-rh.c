@@ -6491,7 +6491,7 @@ test_write_wired_static (void)
 	struct in6_addr ip6, ip6_1, ip6_2;
 	struct in6_addr route1_dest, route2_dest, route1_nexthop, route2_nexthop;
 	struct in6_addr dns6_1, dns6_2;
-	const guint32 route1_prefix = 64, route2_prefix = 0;
+	const guint32 route1_prefix = 64, route2_prefix = 128;
 	const guint32 route1_metric = 99, route2_metric = 1;
 	NMIP4Address *addr;
 	NMIP6Address *addr6;
