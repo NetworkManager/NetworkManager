@@ -40,8 +40,16 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_IP6_CONFIG_SETTING_NAME "ipv6"
 
-typedef enum
-{
+/**
+ * NMSettingIP6ConfigError:
+ * @NM_SETTING_IP6_CONFIG_ERROR_UNKNOWN: unknown or unclassified error
+ * @NM_SETTING_IP6_CONFIG_ERROR_INVALID_PROPERTY: the property was invalid
+ * @NM_SETTING_IP6_CONFIG_ERROR_MISSING_PROPERTY: the property was missing and is
+ * required
+ * @NM_SETTING_IP6_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD: the property's value is
+ * not valid with the given IPv6 method
+ */
+typedef enum {
 	NM_SETTING_IP6_CONFIG_ERROR_UNKNOWN = 0,
 	NM_SETTING_IP6_CONFIG_ERROR_INVALID_PROPERTY,
 	NM_SETTING_IP6_CONFIG_ERROR_MISSING_PROPERTY,
@@ -64,11 +72,58 @@ GQuark nm_setting_ip6_config_error_quark (void);
 #define NM_SETTING_IP6_CONFIG_NEVER_DEFAULT      "never-default"
 #define NM_SETTING_IP6_CONFIG_MAY_FAIL           "may-fail"
 
+/**
+ * NM_SETTING_IP6_CONFIG_METHOD_IGNORE:
+ *
+ * IPv6 is not required or is handled by some other mechanism, and NetworkManager
+ * should not configure IPv6 for this connection.
+ */
 #define NM_SETTING_IP6_CONFIG_METHOD_IGNORE     "ignore"
+
+/**
+ * NM_SETTING_IP6_CONFIG_METHOD_AUTO:
+ *
+ * IPv6 configuration should be automatically determined via a method appropriate
+ * for the hardware interface, ie router advertisements, DHCP, or PPP or some
+ * other device-specific manner.
+ */
 #define NM_SETTING_IP6_CONFIG_METHOD_AUTO       "auto"
+
+/**
+ * NM_SETTING_IP6_CONFIG_METHOD_DHCP:
+ *
+ * IPv6 configuration should be automatically determined via DHCPv6 only and
+ * router advertisements should be ignored.
+ */
 #define NM_SETTING_IP6_CONFIG_METHOD_DHCP       "dhcp"
+
+/**
+ * NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL:
+ *
+ * IPv6 configuration should be automatically configured for link-local-only
+ * operation.
+ */
 #define NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL "link-local"
+
+/**
+ * NM_SETTING_IP6_CONFIG_METHOD_MANUAL:
+ *
+ * All necessary IPv6 configuration (addresses, prefix, DNS, etc) is specified
+ * in the setting's properties.
+ */
 #define NM_SETTING_IP6_CONFIG_METHOD_MANUAL     "manual"
+
+/**
+ * NM_SETTING_IP6_CONFIG_METHOD_SHARED:
+ *
+ * This connection specifies configuration that allows other computers to
+ * connect through it to the default network (usually the Internet).  The
+ * connection's interface will be assigned a private address, and router
+ * advertisements, a caching DNS server, and Network Address Translation (NAT)
+ * functionality will be started on this connection's interface to allow other
+ * devices to connect through that interface to the default network. (not yet
+ * supported for IPv6)
+ */
 #define NM_SETTING_IP6_CONFIG_METHOD_SHARED     "shared"
 
 
@@ -91,12 +146,12 @@ void                   nm_ip6_address_set_prefix  (NMIP6Address *address,
 
 const struct in6_addr *nm_ip6_address_get_gateway (NMIP6Address *address);
 void                   nm_ip6_address_set_gateway (NMIP6Address *address,
-                                                   const struct in6_addr *gw);
+                                                   const struct in6_addr *gateway);
 
 typedef struct NMIP6Route NMIP6Route;
 
 NMIP6Route *           nm_ip6_route_new          (void);
-NMIP6Route *           nm_ip6_route_dup          (NMIP6Route *route);
+NMIP6Route *           nm_ip6_route_dup          (NMIP6Route *source);
 void                   nm_ip6_route_ref          (NMIP6Route *route);
 void                   nm_ip6_route_unref        (NMIP6Route *route);
 /* Return TRUE if routes are identical */

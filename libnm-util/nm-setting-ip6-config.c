@@ -30,6 +30,22 @@
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 
+/**
+ * SECTION:nm-setting-ip6-config
+ * @short_description: Describes IPv6 addressing, routing, and name service properties
+ * @include: nm-setting-ip6-config.h
+ *
+ * The #NMSettingIP6Config object is a #NMSetting subclass that describes
+ * properties related to IPv6 addressing, routing, and Domain Name Service
+ **/
+
+/**
+ * nm_setting_ip6_config_error_quark:
+ *
+ * Registers an error quark for #NMSettingIP6Config if necessary.
+ *
+ * Returns: the error quark used for #NMSettingIP6Config errors.
+ **/
 GQuark
 nm_setting_ip6_config_error_quark (void)
 {
@@ -98,12 +114,25 @@ enum {
 	LAST_PROP
 };
 
+/**
+ * nm_setting_ip6_config_new:
+ *
+ * Creates a new #NMSettingIP6Config object with default values.
+ *
+ * Returns: (transfer full): the new empty #NMSettingIP6Config object
+ **/
 NMSetting *
 nm_setting_ip6_config_new (void)
 {
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_IP6_CONFIG, NULL);
 }
 
+/**
+ * nm_setting_ip6_config_get_method:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Returns: the #NMSettingIP6Config:method property of the setting
+ **/
 const char *
 nm_setting_ip6_config_get_method (NMSettingIP6Config *setting)
 {
@@ -112,6 +141,12 @@ nm_setting_ip6_config_get_method (NMSettingIP6Config *setting)
 	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->method;
 }
 
+/**
+ * nm_setting_ip6_config_get_num_dns:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Returns: the number of configured DNS servers
+ **/
 guint32
 nm_setting_ip6_config_get_num_dns (NMSettingIP6Config *setting)
 {
@@ -120,6 +155,13 @@ nm_setting_ip6_config_get_num_dns (NMSettingIP6Config *setting)
 	return g_slist_length (NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->dns);
 }
 
+/**
+ * nm_setting_ip6_config_get_dns:
+ * @setting: the #NMSettingIP6Config
+ * @i: index number of the DNS server to return
+ *
+ * Returns: (transfer none): the IPv6 address of the DNS server at index @i
+ **/
 const struct in6_addr *
 nm_setting_ip6_config_get_dns (NMSettingIP6Config *setting, guint32 i)
 {
@@ -134,6 +176,16 @@ nm_setting_ip6_config_get_dns (NMSettingIP6Config *setting, guint32 i)
 	return (const struct in6_addr *) g_slist_nth_data (priv->dns, i);
 }
 
+/**
+ * nm_setting_ip6_config_add_dns:
+ * @setting: the #NMSettingIP6Config
+ * @dns: the IPv6 address of the DNS server to add
+ *
+ * Adds a new DNS server to the setting.
+ *
+ * Returns: %TRUE if the DNS server was added; %FALSE if the server was already
+ * known
+ **/
 gboolean
 nm_setting_ip6_config_add_dns (NMSettingIP6Config *setting, const struct in6_addr *addr)
 {
@@ -156,6 +208,13 @@ nm_setting_ip6_config_add_dns (NMSettingIP6Config *setting, const struct in6_add
 	return TRUE;
 }
 
+/**
+ * nm_setting_ip6_config_remove_dns:
+ * @setting: the #NMSettingIP6Config
+ * @i: index number of the DNS server to remove
+ *
+ * Removes the DNS server at index @i.
+ **/
 void
 nm_setting_ip6_config_remove_dns (NMSettingIP6Config *setting, guint32 i)
 {
@@ -172,6 +231,12 @@ nm_setting_ip6_config_remove_dns (NMSettingIP6Config *setting, guint32 i)
 	priv->dns = g_slist_delete_link (priv->dns, elt);
 }
 
+/**
+ * nm_setting_ip6_config_clear_dns:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Removes all configured DNS servers.
+ **/
 void
 nm_setting_ip6_config_clear_dns (NMSettingIP6Config *setting)
 {
@@ -181,6 +246,12 @@ nm_setting_ip6_config_clear_dns (NMSettingIP6Config *setting)
 	NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->dns = NULL;
 }
 
+/**
+ * nm_setting_ip6_config_get_num_dns_searches:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Returns: the number of configured DNS search domains
+ **/
 guint32
 nm_setting_ip6_config_get_num_dns_searches (NMSettingIP6Config *setting)
 {
@@ -189,6 +260,13 @@ nm_setting_ip6_config_get_num_dns_searches (NMSettingIP6Config *setting)
 	return g_slist_length (NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->dns_search);
 }
 
+/**
+ * nm_setting_ip6_config_get_dns_search:
+ * @setting: the #NMSettingIP6Config
+ * @i: index number of the DNS search domain to return
+ *
+ * Returns: the DNS search domain at index @i
+ **/
 const char *
 nm_setting_ip6_config_get_dns_search (NMSettingIP6Config *setting, guint32 i)
 {
@@ -202,6 +280,16 @@ nm_setting_ip6_config_get_dns_search (NMSettingIP6Config *setting, guint32 i)
 	return (const char *) g_slist_nth_data (priv->dns_search, i);
 }
 
+/**
+ * nm_setting_ip6_config_add_dns_search:
+ * @setting: the #NMSettingIP6Config
+ * @dns_search: the search domain to add
+ *
+ * Adds a new DNS search domain to the setting.
+ *
+ * Returns: %TRUE if the DNS search domain was added; %FALSE if the search
+ * domain was already known
+ **/
 gboolean
 nm_setting_ip6_config_add_dns_search (NMSettingIP6Config *setting,
                                       const char *dns_search)
@@ -223,6 +311,13 @@ nm_setting_ip6_config_add_dns_search (NMSettingIP6Config *setting,
 	return TRUE;
 }
 
+/**
+ * nm_setting_ip6_config_remove_dns_search:
+ * @setting: the #NMSettingIP6Config
+ * @i: index number of the DNS search domain
+ *
+ * Removes the DNS search domain at index @i.
+ **/
 void
 nm_setting_ip6_config_remove_dns_search (NMSettingIP6Config *setting, guint32 i)
 {
@@ -239,6 +334,12 @@ nm_setting_ip6_config_remove_dns_search (NMSettingIP6Config *setting, guint32 i)
 	priv->dns_search = g_slist_delete_link (priv->dns_search, elt);
 }
 
+/**
+ * nm_setting_ip6_config_clear_dns_searches:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Removes all configured DNS search domains.
+ **/
 void
 nm_setting_ip6_config_clear_dns_searches (NMSettingIP6Config *setting)
 {
@@ -248,6 +349,12 @@ nm_setting_ip6_config_clear_dns_searches (NMSettingIP6Config *setting)
 	NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->dns_search = NULL;
 }
 
+/**
+ * nm_setting_ip6_config_get_num_addresses:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Returns: the number of configured addresses
+ **/
 guint32
 nm_setting_ip6_config_get_num_addresses (NMSettingIP6Config *setting)
 {
@@ -256,6 +363,13 @@ nm_setting_ip6_config_get_num_addresses (NMSettingIP6Config *setting)
 	return g_slist_length (NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->addresses);
 }
 
+/**
+ * nm_setting_ip6_config_get_address:
+ * @setting: the #NMSettingIP6Config
+ * @i: index number of the address to return
+ *
+ * Returns: the address at index @i
+ **/
 NMIP6Address *
 nm_setting_ip6_config_get_address (NMSettingIP6Config *setting, guint32 i)
 {
@@ -269,6 +383,17 @@ nm_setting_ip6_config_get_address (NMSettingIP6Config *setting, guint32 i)
 	return (NMIP6Address *) g_slist_nth_data (priv->addresses, i);
 }
 
+/**
+ * nm_setting_ip6_config_add_address:
+ * @setting: the #NMSettingIP6Config
+ * @address: the new address to add
+ *
+ * Adds a new IPv6 address and associated information to the setting.  The
+ * given address is duplicated internally and is not changed by this function.
+ *
+ * Returns: %TRUE if the address was added; %FALSE if the address was already
+ * known.
+ **/
 gboolean
 nm_setting_ip6_config_add_address (NMSettingIP6Config *setting,
                                    NMIP6Address *address)
@@ -293,6 +418,13 @@ nm_setting_ip6_config_add_address (NMSettingIP6Config *setting,
 	return TRUE;
 }
 
+/**
+ * nm_setting_ip6_config_remove_address:
+ * @setting: the #NMSettingIP6Config
+ * @i: index number of the address to remove
+ *
+ * Removes the address at index @i.
+ **/
 void
 nm_setting_ip6_config_remove_address (NMSettingIP6Config *setting, guint32 i)
 {
@@ -309,6 +441,12 @@ nm_setting_ip6_config_remove_address (NMSettingIP6Config *setting, guint32 i)
 	priv->addresses = g_slist_delete_link (priv->addresses, elt);
 }
 
+/**
+ * nm_setting_ip6_config_clear_addresses:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Removes all configured addresses.
+ **/
 void
 nm_setting_ip6_config_clear_addresses (NMSettingIP6Config *setting)
 {
@@ -320,6 +458,12 @@ nm_setting_ip6_config_clear_addresses (NMSettingIP6Config *setting)
 	priv->addresses = NULL;
 }
 
+/**
+ * nm_setting_ip6_config_get_num_routes:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Returns: the number of configured routes
+ **/
 guint32
 nm_setting_ip6_config_get_num_routes (NMSettingIP6Config *setting)
 {
@@ -328,6 +472,13 @@ nm_setting_ip6_config_get_num_routes (NMSettingIP6Config *setting)
 	return g_slist_length (NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->routes);
 }
 
+/**
+ * nm_setting_ip6_config_get_route:
+ * @setting: the #NMSettingIP6Config
+ * @i: index number of the route to return
+ *
+ * Returns: the route at index @i
+ **/
 NMIP6Route *
 nm_setting_ip6_config_get_route (NMSettingIP6Config *setting, guint32 i)
 {
@@ -341,6 +492,16 @@ nm_setting_ip6_config_get_route (NMSettingIP6Config *setting, guint32 i)
 	return (NMIP6Route *) g_slist_nth_data (priv->routes, i);
 }
 
+/**
+ * nm_setting_ip6_config_add_route:
+ * @setting: the #NMSettingIP6Config
+ * @route: the route to add
+ *
+ * Adds a new IPv6 route and associated information to the setting.  The
+ * given route is duplicated internally and is not changed by this function.
+ *
+ * Returns: %TRUE if the route was added; %FALSE if the route was already known.
+ **/
 gboolean
 nm_setting_ip6_config_add_route (NMSettingIP6Config *setting,
                                  NMIP6Route *route)
@@ -365,6 +526,13 @@ nm_setting_ip6_config_add_route (NMSettingIP6Config *setting,
 	return TRUE;
 }
 
+/**
+ * nm_setting_ip6_config_remove_route:
+ * @setting: the #NMSettingIP6Config
+ * @i: index number of the route
+ *
+ * Removes the route at index @i.
+ **/
 void
 nm_setting_ip6_config_remove_route (NMSettingIP6Config *setting, guint32 i)
 {
@@ -381,6 +549,12 @@ nm_setting_ip6_config_remove_route (NMSettingIP6Config *setting, guint32 i)
 	priv->routes = g_slist_delete_link (priv->routes, elt);
 }
 
+/**
+ * nm_setting_ip6_config_clear_routes:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Removes all configured routes.
+ **/
 void
 nm_setting_ip6_config_clear_routes (NMSettingIP6Config *setting)
 {
@@ -392,6 +566,16 @@ nm_setting_ip6_config_clear_routes (NMSettingIP6Config *setting)
 	priv->routes = NULL;
 }
 
+/**
+ * nm_setting_ip6_config_get_ignore_auto_routes:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Returns the value contained in the #NMSettingIP6Config:ignore-auto-routes
+ * property.
+ *
+ * Returns: %TRUE if automatically configured (ie via DHCP) routes should be
+ * ignored.
+ **/
 gboolean
 nm_setting_ip6_config_get_ignore_auto_routes (NMSettingIP6Config *setting)
 {
@@ -400,6 +584,16 @@ nm_setting_ip6_config_get_ignore_auto_routes (NMSettingIP6Config *setting)
 	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->ignore_auto_routes;
 }
 
+/**
+ * nm_setting_ip6_config_get_ignore_auto_dns:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Returns the value contained in the #NMSettingIP6Config:ignore-auto-dns
+ * property.
+ *
+ * Returns: %TRUE if automatically configured (ie via DHCP or router
+ * advertisements) DNS information should be ignored.
+ **/
 gboolean
 nm_setting_ip6_config_get_ignore_auto_dns (NMSettingIP6Config *setting)
 {
@@ -408,6 +602,16 @@ nm_setting_ip6_config_get_ignore_auto_dns (NMSettingIP6Config *setting)
 	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->ignore_auto_dns;
 }
 
+/**
+ * nm_setting_ip6_config_get_never_default:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Returns the value contained in the #NMSettingIP6Config:never-default
+ * property.
+ *
+ * Returns: %TRUE if this connection should never be the default connection
+ * for IPv6 addressing
+ **/
 gboolean
 nm_setting_ip6_config_get_never_default (NMSettingIP6Config *setting)
 {
@@ -416,6 +620,16 @@ nm_setting_ip6_config_get_never_default (NMSettingIP6Config *setting)
 	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->never_default;
 }
 
+/**
+ * nm_setting_ip6_config_get_may_fail:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Returns the value contained in the #NMSettingIP6Config:may-fail
+ * property.
+ *
+ * Returns: %TRUE if this connection doesn't require IPv6 addressing to complete
+ * for the connection to succeed.
+ **/
 gboolean
 nm_setting_ip6_config_get_may_fail (NMSettingIP6Config *setting)
 {
@@ -853,6 +1067,13 @@ struct NMIP6Address {
 	struct in6_addr gateway;
 };
 
+/**
+ * nm_ip6_address_new:
+ *
+ * Creates and returns a new #NMIP6Address object.
+ *
+ * Returns: (transfer full): the new empty #NMIP6Address object
+ **/
 NMIP6Address *
 nm_ip6_address_new (void)
 {
@@ -863,6 +1084,14 @@ nm_ip6_address_new (void)
 	return address;
 }
 
+/**
+ * nm_ip6_address_dup:
+ * @source: the #NMIP6Address object to copy
+ *
+ * Copies a given #NMIP6Address object and returns the copy.
+ *
+ * Returns: (transfer full): the copy of the given #NMIP6Address copy
+ **/
 NMIP6Address *
 nm_ip6_address_dup (NMIP6Address *source)
 {
@@ -879,6 +1108,12 @@ nm_ip6_address_dup (NMIP6Address *source)
 	return address;
 }
 
+/**
+ * nm_ip6_address_ref:
+ * @address: the #NMIP6Address
+ *
+ * Increases the reference count of the object.
+ **/
 void
 nm_ip6_address_ref (NMIP6Address *address)
 {
@@ -888,6 +1123,13 @@ nm_ip6_address_ref (NMIP6Address *address)
 	address->refcount++;
 }
 
+/**
+ * nm_ip6_address_unref:
+ * @address: the #NMIP6Address
+ *
+ * Decreases the reference count of the object.  If the reference count
+ * reaches zero, the object will be destroyed.
+ **/
 void
 nm_ip6_address_unref (NMIP6Address *address)
 {
@@ -901,6 +1143,15 @@ nm_ip6_address_unref (NMIP6Address *address)
 	}
 }
 
+/**
+ * nm_ip6_address_compare:
+ * @address: the #NMIP6Address
+ * @other: the #NMIP6Address to compare @address to.
+ *
+ * Determines if two #NMIP6Address objects contain the same values.
+ *
+ * Returns: %TRUE if the objects contain the same values, %FALSE if they do not.
+ **/
 gboolean
 nm_ip6_address_compare (NMIP6Address *address, NMIP6Address *other)
 {
@@ -917,6 +1168,14 @@ nm_ip6_address_compare (NMIP6Address *address, NMIP6Address *other)
 	return TRUE;
 }
 
+/**
+ * nm_ip6_address_get_address:
+ * @address: the #NMIP6Address
+ *
+ * Gets the IPv6 address property of this address object.
+ *
+ * Returns: (transfer none): the IPv6 address
+ **/
 const struct in6_addr *
 nm_ip6_address_get_address (NMIP6Address *address)
 {
@@ -926,6 +1185,13 @@ nm_ip6_address_get_address (NMIP6Address *address)
 	return &address->address;
 }
 
+/**
+ * nm_ip6_address_set_address:
+ * @address: the #NMIP6Address
+ * @addr: the IPv6 address
+ *
+ * Sets the IPv6 address property of this object.
+ **/
 void
 nm_ip6_address_set_address (NMIP6Address *address, const struct in6_addr *addr)
 {
@@ -936,6 +1202,14 @@ nm_ip6_address_set_address (NMIP6Address *address, const struct in6_addr *addr)
 	memcpy (&address->address, addr, sizeof (struct in6_addr));
 }
 
+/**
+ * nm_ip6_address_get_prefix:
+ * @address: the #NMIP6Address
+ *
+ * Gets the IPv6 address prefix property of this address object.
+ *
+ * Returns: the IPv6 address prefix
+ **/
 guint32
 nm_ip6_address_get_prefix (NMIP6Address *address)
 {
@@ -945,15 +1219,31 @@ nm_ip6_address_get_prefix (NMIP6Address *address)
 	return address->prefix;
 }
 
+/**
+ * nm_ip6_address_set_prefix:
+ * @address: the #NMIP6Address
+ * @prefix: the address prefix, a number between 0 and 128 inclusive
+ *
+ * Sets the IPv6 address prefix.
+ **/
 void
 nm_ip6_address_set_prefix (NMIP6Address *address, guint32 prefix)
 {
 	g_return_if_fail (address != NULL);
 	g_return_if_fail (address->refcount > 0);
+	g_return_if_fail (prefix <= 128);
 
 	address->prefix = prefix;
 }
 
+/**
+ * nm_ip6_address_get_gateway:
+ * @address: the #NMIP6Address
+ *
+ * Gets the IPv6 default gateway property of this address object.
+ *
+ * Returns: (transfer none): the IPv6 gateway address
+ **/
 const struct in6_addr *
 nm_ip6_address_get_gateway (NMIP6Address *address)
 {
@@ -963,14 +1253,21 @@ nm_ip6_address_get_gateway (NMIP6Address *address)
 	return &address->gateway;
 }
 
+/**
+ * nm_ip6_address_set_gateway:
+ * @address: the #NMIP6Address
+ * @gateway: the IPv6 default gateway
+ *
+ * Sets the IPv6 default gateway property of this address object.
+ **/
 void
-nm_ip6_address_set_gateway (NMIP6Address *address, const struct in6_addr *gw)
+nm_ip6_address_set_gateway (NMIP6Address *address, const struct in6_addr *gateway)
 {
 	g_return_if_fail (address != NULL);
 	g_return_if_fail (address->refcount > 0);
-	g_return_if_fail (gw != NULL);
+	g_return_if_fail (gateway != NULL);
 
-	memcpy (&address->gateway, gw, sizeof (struct in6_addr));
+	memcpy (&address->gateway, gateway, sizeof (struct in6_addr));
 }
 
 /********************************************************************/
@@ -984,6 +1281,13 @@ struct NMIP6Route {
 	guint32 metric;    /* lower metric == more preferred */
 };
 
+/**
+ * nm_ip6_route_new:
+ *
+ * Creates and returns a new #NMIP6Route object.
+ *
+ * Returns: (transfer full): the new empty #NMIP6Route object
+ **/
 NMIP6Route *
 nm_ip6_route_new (void)
 {
@@ -994,6 +1298,14 @@ nm_ip6_route_new (void)
 	return route;
 }
 
+/**
+ * nm_ip6_route_dup:
+ * @source: the #NMIP6Route object to copy
+ *
+ * Copies a given #NMIP6Route object and returns the copy.
+ *
+ * Returns: (transfer full): the copy of the given #NMIP6Route copy
+ **/
 NMIP6Route *
 nm_ip6_route_dup (NMIP6Route *source)
 {
@@ -1011,6 +1323,12 @@ nm_ip6_route_dup (NMIP6Route *source)
 	return route;
 }
 
+/**
+ * nm_ip6_route_ref:
+ * @route: the #NMIP6Route
+ *
+ * Increases the reference count of the object.
+ **/
 void
 nm_ip6_route_ref (NMIP6Route *route)
 {
@@ -1020,6 +1338,13 @@ nm_ip6_route_ref (NMIP6Route *route)
 	route->refcount++;
 }
 
+/**
+ * nm_ip6_route_unref:
+ * @route: the #NMIP6Route
+ *
+ * Decreases the reference count of the object.  If the reference count
+ * reaches zero, the object will be destroyed.
+ **/
 void
 nm_ip6_route_unref (NMIP6Route *route)
 {
@@ -1033,6 +1358,15 @@ nm_ip6_route_unref (NMIP6Route *route)
 	}
 }
 
+/**
+ * nm_ip6_route_compare:
+ * @route: the #NMIP6Route
+ * @other: the #NMIP6Route to compare @route to.
+ *
+ * Determines if two #NMIP6Route objects contain the same values.
+ *
+ * Returns: %TRUE if the objects contain the same values, %FALSE if they do not.
+ **/
 gboolean
 nm_ip6_route_compare (NMIP6Route *route, NMIP6Route *other)
 {
@@ -1050,6 +1384,14 @@ nm_ip6_route_compare (NMIP6Route *route, NMIP6Route *other)
 	return TRUE;
 }
 
+/**
+ * nm_ip6_route_get_dest:
+ * @route: the #NMIP6Route
+ *
+ * Gets the IPv6 destination address property of this route object.
+ *
+ * Returns: the IPv6 address
+ **/
 const struct in6_addr *
 nm_ip6_route_get_dest (NMIP6Route *route)
 {
@@ -1059,6 +1401,13 @@ nm_ip6_route_get_dest (NMIP6Route *route)
 	return &route->dest;
 }
 
+/**
+ * nm_ip6_route_set_dest:
+ * @route: the #NMIP6Route
+ * @dest: the destination address
+ *
+ * Sets the IPv6 destination address property of this route object.
+ **/
 void
 nm_ip6_route_set_dest (NMIP6Route *route, const struct in6_addr *dest)
 {
@@ -1069,6 +1418,14 @@ nm_ip6_route_set_dest (NMIP6Route *route, const struct in6_addr *dest)
 	memcpy (&route->dest, dest, sizeof (struct in6_addr));
 }
 
+/**
+ * nm_ip6_route_get_prefix:
+ * @route: the #NMIP6Route
+ *
+ * Gets the IPv6 prefix (ie "32" or "64" etc) of this route.
+ *
+ * Returns: the IPv6 prefix
+ **/
 guint32
 nm_ip6_route_get_prefix (NMIP6Route *route)
 {
@@ -1078,15 +1435,31 @@ nm_ip6_route_get_prefix (NMIP6Route *route)
 	return route->prefix;
 }
 
+/**
+ * nm_ip6_route_set_prefix:
+ * @route: the #NMIP6Route
+ * @prefix: the prefix, a number between 1 and 128 inclusive
+ *
+ * Sets the IPv6 prefix of this route.
+ **/
 void
 nm_ip6_route_set_prefix (NMIP6Route *route, guint32 prefix)
 {
 	g_return_if_fail (route != NULL);
 	g_return_if_fail (route->refcount > 0);
+	g_return_if_fail (prefix <= 128);
 
 	route->prefix = prefix;
 }
 
+/**
+ * nm_ip6_route_get_next_hop:
+ * @route: the #NMIP6Route
+ *
+ * Gets the IPv6 address of the next hop of this route.
+ *
+ * Returns: the IPv6 address
+ **/
 const struct in6_addr *
 nm_ip6_route_get_next_hop (NMIP6Route *route)
 {
@@ -1096,6 +1469,13 @@ nm_ip6_route_get_next_hop (NMIP6Route *route)
 	return &route->next_hop;
 }
 
+/**
+ * nm_ip6_route_set_next_hop:
+ * @route: the #NMIP6Route
+ * @next_hop: the IPv6 address of the next hop
+ *
+ * Sets the IPv6 address of the next hop of this route.
+ **/
 void
 nm_ip6_route_set_next_hop (NMIP6Route *route, const struct in6_addr *next_hop)
 {
@@ -1106,6 +1486,15 @@ nm_ip6_route_set_next_hop (NMIP6Route *route, const struct in6_addr *next_hop)
 	memcpy (&route->next_hop, next_hop, sizeof (struct in6_addr));
 }
 
+/**
+ * nm_ip6_route_get_metric:
+ * @route: the #NMIP6Route
+ *
+ * Gets the route metric property of this route object; lower values indicate
+ * "better" or more preferred routes.
+ *
+ * Returns: the route metric
+ **/
 guint32
 nm_ip6_route_get_metric (NMIP6Route *route)
 {
@@ -1115,6 +1504,14 @@ nm_ip6_route_get_metric (NMIP6Route *route)
 	return route->metric;
 }
 
+/**
+ * nm_ip6_route_set_metric:
+ * @route: the #NMIP6Route
+ * @metric: the route metric
+ *
+ * Sets the route metric property of this route object; lower values indicate
+ * "better" or more preferred routes.
+ **/
 void
 nm_ip6_route_set_metric (NMIP6Route *route, guint32 metric)
 {
