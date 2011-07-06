@@ -1423,7 +1423,7 @@ nm_ip4_address_get_prefix (NMIP4Address *address)
 /**
  * nm_ip4_address_set_prefix:
  * @address: the #NMIP4Address
- * @prefix: the address prefix, a number between 0 and 32 inclusive
+ * @prefix: the address prefix, a number between 1 and 32 inclusive
  *
  * Sets the IPv4 address prefix.
  **/
@@ -1433,6 +1433,7 @@ nm_ip4_address_set_prefix (NMIP4Address *address, guint32 prefix)
 	g_return_if_fail (address != NULL);
 	g_return_if_fail (address->refcount > 0);
 	g_return_if_fail (prefix <= 32);
+	g_return_if_fail (prefix > 0);
 
 	address->prefix = prefix;
 }
@@ -1636,7 +1637,7 @@ nm_ip4_route_get_prefix (NMIP4Route *route)
 /**
  * nm_ip4_route_set_prefix:
  * @route: the #NMIP4Route
- * @prefix: the prefix, a number between 0 and 32 inclusive
+ * @prefix: the prefix, a number between 1 and 32 inclusive
  *
  * Sets the IPv4 prefix of this route.
  **/
@@ -1645,6 +1646,8 @@ nm_ip4_route_set_prefix (NMIP4Route *route, guint32 prefix)
 {
 	g_return_if_fail (route != NULL);
 	g_return_if_fail (route->refcount > 0);
+	g_return_if_fail (prefix <= 32);
+	g_return_if_fail (prefix > 0);
 
 	route->prefix = prefix;
 }
