@@ -574,7 +574,8 @@ read_full_ip4_address (shvarFile *ifcfg,
 	if (!nm_ip4_address_get_prefix (addr)) {
 		if (!read_ip4_address (ifcfg, netmask_tag, &tmp, error))
 			goto error;
-		nm_ip4_address_set_prefix (addr, nm_utils_ip4_netmask_to_prefix (tmp));
+		if (tmp)
+			nm_ip4_address_set_prefix (addr, nm_utils_ip4_netmask_to_prefix (tmp));
 	}
 
 	/* Try to autodetermine the prefix for the address' class */
@@ -661,7 +662,8 @@ read_one_ip4_route (shvarFile *ifcfg,
 	/* Prefix */
 	if (!read_ip4_address (ifcfg, netmask_tag, &tmp, error))
 		goto out;
-	nm_ip4_route_set_prefix (route, nm_utils_ip4_netmask_to_prefix (tmp));
+	if (tmp)
+		nm_ip4_route_set_prefix (route, nm_utils_ip4_netmask_to_prefix (tmp));
 
 	/* Validate the prefix */
 	if (  !nm_ip4_route_get_prefix (route)
@@ -788,7 +790,7 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 		if (prefix) {
 			errno = 0;
 			prefix_int = strtol (prefix, NULL, 10);
-			if (errno || prefix_int < 0 || prefix_int > 32) {
+			if (errno || prefix_int <= 0 || prefix_int > 32) {
 				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 					     "Invalid IP4 route destination prefix '%s'", prefix);
 				g_free (prefix);
@@ -1041,7 +1043,7 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 		if (prefix) {
 			errno = 0;
 			prefix_int = strtol (prefix, NULL, 10);
-			if (errno || prefix_int < 0 || prefix_int > 128) {
+			if (errno || prefix_int <= 0 || prefix_int > 128) {
 				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 					     "Invalid IP6 route destination prefix '%s'", prefix);
 				g_free (prefix);
