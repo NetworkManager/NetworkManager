@@ -914,7 +914,7 @@ cert_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char 
 
 		g_byte_array_free (array, TRUE);
 	} else {
-		g_warning ("%s: ignoring invalid SSID for %s / %s",
+		g_warning ("%s: ignoring invalid key/cert value for %s / %s",
 		           __func__, setting_name, key);
 	}
 }
