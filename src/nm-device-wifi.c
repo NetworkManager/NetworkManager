@@ -970,7 +970,10 @@ update_seen_bssids_cache (NMDeviceWifi *self, NMAccessPoint *ap)
 	NMActRequest *req;
 	NMConnection *connection;
 
-	g_return_if_fail (ap != NULL);
+	g_return_if_fail (NM_IS_DEVICE_WIFI (self));
+	
+	if (ap == NULL)
+		return;
 
 	/* Don't cache the BSSID for Ad-Hoc APs */
 	if (nm_ap_get_mode (ap) != NM_802_11_MODE_INFRA)
