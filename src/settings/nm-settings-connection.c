@@ -1339,6 +1339,8 @@ dbus_get_agent_secrets_cb (NMSettingsConnection *self,
 		update_secrets_cache (self);
 
 		hash = nm_connection_to_hash (NM_CONNECTION (self), NM_SETTING_HASH_FLAG_ONLY_SECRETS);
+		if (!hash)
+			hash = g_hash_table_new (NULL, NULL);
 		dbus_g_method_return (context, hash);
 		g_hash_table_destroy (hash);
 	}
