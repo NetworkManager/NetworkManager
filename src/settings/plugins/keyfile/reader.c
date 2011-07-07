@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 - 2009 Novell, Inc.
- * Copyright (C) 2008 - 2010 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
 #include <errno.h>
@@ -736,29 +736,27 @@ get_uchar_array (GKeyFile *keyfile,
                  const char *key)
 {
 	GByteArray *array = NULL;
-	char *p, *tmp_string;
+	char *tmp_string;
 	gint *tmp_list;
 	gsize length;
 	int i;
 
-	/* New format: just a string.  We try parsing the new format if there are
-	 * no ';' in the string or it's not just numbers.
+	/* New format: just a string
+	 * Old format: integer list; e.g. 11;25;38
 	 */
-	p = tmp_string = g_key_file_get_string (keyfile, setting_name, key, NULL);
+	tmp_string = g_key_file_get_string (keyfile, setting_name, key, NULL);
 	if (tmp_string) {
 		gboolean new_format = FALSE;
+		GRegex *regex;
+		GMatchInfo *match_info;
+		const char *pattern = "^[[:space:]]*[[:digit:]]+[[:space:]]*(;[[:space:]]*[[:digit:]]+[[:space:]]*)*(;[[:space:]]*)?$";
 
-		if (strchr (p, ';') == NULL)
+		regex = g_regex_new (pattern, 0, 0, NULL);
+		g_regex_match (regex, tmp_string, 0, &match_info);
+		if (!g_match_info_matches (match_info))
 			new_format = TRUE;
-		else {
-			new_format = TRUE;
-			while (p && *p) {
-				if (!isdigit (*p++)) {
-					new_format = FALSE;
-					break;
-				}
-			}
-		}
+		g_match_info_free (match_info);
+		g_regex_unref (regex);
 
 		if (new_format) {
 			array = g_byte_array_sized_new (strlen (tmp_string));
