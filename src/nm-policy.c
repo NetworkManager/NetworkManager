@@ -322,36 +322,36 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 		/* Grab a hostname out of the device's DHCP4 config */
 		dhcp4_config = nm_device_get_dhcp4_config (best4);
 		if (dhcp4_config) {
-			p = dhcp_hostname = nm_dhcp4_config_get_option (dhcp4_config, "host_name");
+			p = dhcp_hostname = nm_dhcp4_config_get_option (dhcp4_config, "new_host_name");
 			if (dhcp_hostname && strlen (dhcp_hostname)) {
 				/* Sanity check; strip leading spaces */
 				while (*p) {
 					if (!isblank (*p++)) {
-						_set_hostname (policy, TRUE, dhcp_hostname, "from DHCPv4");
+						_set_hostname (policy, TRUE, p-1, "from DHCPv4");
 						return;
 					}
 				}
 				nm_log_warn (LOGD_DNS, "DHCPv4-provided hostname '%s' looks invalid; ignoring it",
-					         dhcp_hostname);
+				             dhcp_hostname);
 			}
 		}
 	} else if (best6) {
 		NMDHCP6Config *dhcp6_config;
 
-		/* Grab a hostname out of the device's DHCP4 config */
+		/* Grab a hostname out of the device's DHCP6 config */
 		dhcp6_config = nm_device_get_dhcp6_config (best6);
 		if (dhcp6_config) {
-			p = dhcp_hostname = nm_dhcp6_config_get_option (dhcp6_config, "host_name");
+			p = dhcp_hostname = nm_dhcp6_config_get_option (dhcp6_config, "new_host_name");
 			if (dhcp_hostname && strlen (dhcp_hostname)) {
 				/* Sanity check; strip leading spaces */
 				while (*p) {
 					if (!isblank (*p++)) {
-						_set_hostname (policy, TRUE, dhcp_hostname, "from DHCPv6");
+						_set_hostname (policy, TRUE, p-1, "from DHCPv6");
 						return;
 					}
 				}
 				nm_log_warn (LOGD_DNS, "DHCPv6-provided hostname '%s' looks invalid; ignoring it",
-					         dhcp_hostname);
+				             dhcp_hostname);
 			}
 		}
 	}
