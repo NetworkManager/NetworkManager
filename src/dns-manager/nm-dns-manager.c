@@ -165,7 +165,7 @@ merge_one_ip4_config (NMResolvConfData *rc, NMIP4Config *src)
 }
 
 static void
-merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src)
+merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src, const char *iface)
 {
 	guint32 num, i;
 
@@ -181,8 +181,15 @@ merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src)
 			if (inet_ntop (AF_INET, &(addr->s6_addr32[3]), buf, INET_ADDRSTRLEN) > 0)
 				add_string_item (rc->nameservers, buf);
 		} else {
-			if (inet_ntop (AF_INET6, addr, buf, INET6_ADDRSTRLEN) > 0)
-				add_string_item (rc->nameservers, buf);
+			if (inet_ntop (AF_INET6, addr, buf, INET6_ADDRSTRLEN) > 0) {
+				if (IN6_IS_ADDR_LINKLOCAL (addr) && strchr (buf, '%') == NULL) {
+					char *tmp;
+					tmp = g_strdup_printf ("%s%%%s", buf, iface);
+					add_string_item (rc->nameservers, tmp);
+					g_free (tmp);
+				} else
+					add_string_item (rc->nameservers, buf);
+			}
 		}
 	}
 
@@ -594,9 +601,9 @@ update_dns (NMDnsManager *self,
 		merge_one_ip4_config (&rc, priv->ip4_device_config);
 
 	if (priv->ip6_vpn_config)
-		merge_one_ip6_config (&rc, priv->ip6_vpn_config);
+		merge_one_ip6_config (&rc, priv->ip6_vpn_config, iface);
 	if (priv->ip6_device_config)
-		merge_one_ip6_config (&rc, priv->ip6_device_config);
+		merge_one_ip6_config (&rc, priv->ip6_device_config, iface);
 
 	for (iter = priv->configs; iter; iter = g_slist_next (iter)) {
 		if (   (iter->data == priv->ip4_vpn_config)
@@ -612,7 +619,7 @@ update_dns (NMDnsManager *self,
 		} else if (NM_IS_IP6_CONFIG (iter->data)) {
 			NMIP6Config *config = NM_IP6_CONFIG (iter->data);
 
-			merge_one_ip6_config (&rc, config);
+			merge_one_ip6_config (&rc, config, iface);
 		} else
 			g_assert_not_reached ();
 	}
