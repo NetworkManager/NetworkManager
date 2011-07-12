@@ -204,7 +204,7 @@ typedef struct {
 	NMIP6Config *  ac_ip6_config;
 
 	char *         ip6_accept_ra_path;
-	guint32        ip6_accept_ra_save;
+	gint32         ip6_accept_ra_save;
 
 	NMDHCPClient *  dhcp6_client;
 	guint32         dhcp6_mode;
@@ -281,9 +281,10 @@ update_accept_ra_save (NMDevice *self)
 
 	/* Grab the original value of "accept_ra" so we can restore it when NM exits */
 	priv->ip6_accept_ra_path = new_path;
-	if (!nm_utils_get_proc_sys_net_value (priv->ip6_accept_ra_path,
-	                                      ip_iface,
-	                                      &priv->ip6_accept_ra_save)) {
+	if (!nm_utils_get_proc_sys_net_value_with_bounds (priv->ip6_accept_ra_path,
+	                                                  ip_iface,
+	                                                  &priv->ip6_accept_ra_save,
+	                                                  0, 1)) {
 		g_free (priv->ip6_accept_ra_path);
 		priv->ip6_accept_ra_path = NULL;
 	}

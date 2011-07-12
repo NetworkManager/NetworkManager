@@ -848,7 +848,7 @@ nm_utils_do_sysctl (const char *path, const char *value)
 gboolean
 nm_utils_get_proc_sys_net_value (const char *path,
                                  const char *iface,
-                                 guint32 *out_value)
+                                 gint32 *out_value)
 {
 	GError *error = NULL;
 	char *contents = NULL;
@@ -864,14 +864,36 @@ nm_utils_get_proc_sys_net_value (const char *path,
 	} else {
 		errno = 0;
 		tmp = strtol (contents, NULL, 10);
-		if ((errno == 0) && (tmp == 0 || tmp == 1)) {
-			*out_value = (guint32) tmp;
+		if (errno == 0) {
+			*out_value = (gint32) tmp;
 			success = TRUE;
 		}
 		g_free (contents);
 	}
 
 	return success;
+}
+
+gboolean
+nm_utils_get_proc_sys_net_value_with_bounds (const char *path,
+                                             const char *iface,
+                                             gint32 *out_value,
+                                             gint32 valid_min,
+                                             gint32 valid_max)
+{
+	gboolean result;
+	gint32 val;
+
+	result = nm_utils_get_proc_sys_net_value (path, iface, &val);
+
+	if (result) {
+		if (val >= valid_min && val <= valid_max)
+			*out_value = val;
+		else
+			result = FALSE;
+	}
+
+	return result;
 }
 
 static char *

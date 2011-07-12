@@ -91,7 +91,7 @@ typedef struct {
 
 	char *disable_ip6_path;
 	gboolean disable_ip6_save_valid;
-	guint32 disable_ip6_save;
+	gint32 disable_ip6_save;
 
 	guint finish_addrconf_id;
 	guint config_changed_id;
@@ -185,9 +185,10 @@ nm_ip6_device_new (NMIP6Manager *manager, int ifindex)
 	device->disable_ip6_path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/disable_ipv6",
 	                                            device->iface);
 	g_assert (device->disable_ip6_path);
-	device->disable_ip6_save_valid = nm_utils_get_proc_sys_net_value (device->disable_ip6_path,
-	                                                                  device->iface,
-	                                                                  &device->disable_ip6_save);
+	device->disable_ip6_save_valid = nm_utils_get_proc_sys_net_value_with_bounds (device->disable_ip6_path,
+	                                                                              device->iface,
+	                                                                              &device->disable_ip6_save,
+	                                                                              0, 1);
 
 	return device;
 
