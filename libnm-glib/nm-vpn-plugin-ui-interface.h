@@ -111,11 +111,7 @@ struct _NMVpnPluginUiInterface {
 	 */
 	char * (*get_suggested_name) (NMVpnPluginUiInterface *iface, NMConnection *connection);
 
-	/* Called when the user has chosen to remove the connection (for user
-	 * connections only; system connections are handled by the system
-	 * settings service).  Should clear out any VPN-specific secrets or data
-	 * related to the connection.
-	 */
+	/* Deprecated and no longer used */
 	gboolean (*delete_connection) (NMVpnPluginUiInterface *iface, NMConnection *connection, GError **error);
 
 	/* Padding for future expansion */
@@ -147,6 +143,7 @@ gboolean nm_vpn_plugin_ui_interface_export (NMVpnPluginUiInterface *iface,
 char *nm_vpn_plugin_ui_interface_get_suggested_name (NMVpnPluginUiInterface *iface,
                                                      NMConnection *connection);
 
+/* Deprecated and no longer used */
 gboolean nm_vpn_plugin_ui_interface_delete_connection (NMVpnPluginUiInterface *iface,
                                                        NMConnection *connection,
                                                        GError **error);
@@ -178,11 +175,7 @@ struct _NMVpnPluginUiWidgetInterface {
 	                               NMConnection *connection,
 	                               GError **error);
 
-	/* Called when the user has chosen to save the connection (for user
-	 * connections only; system connections are handled by the system
-	 * settings service).  Should save VPN-specific connection secrets in
-	 * a way that the auth-dialog can read them.
-	 */
+	/* Deprecated and no longer used */
 	gboolean (*save_secrets) (NMVpnPluginUiWidgetInterface *iface,
 	                          NMConnection *connection,
 	                          GError **error);
@@ -200,6 +193,7 @@ gboolean nm_vpn_plugin_ui_widget_interface_update_connection (NMVpnPluginUiWidge
                                                               NMConnection *connection,
                                                               GError **error);
 
+/* Deprecated and no longer used */
 gboolean nm_vpn_plugin_ui_widget_interface_save_secrets (NMVpnPluginUiWidgetInterface *iface,
                                                          NMConnection *connection,
                                                          GError **error);

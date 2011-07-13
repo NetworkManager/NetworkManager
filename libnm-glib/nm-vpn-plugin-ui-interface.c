@@ -150,12 +150,8 @@ nm_vpn_plugin_ui_interface_delete_connection (NMVpnPluginUiInterface *iface,
                                               NMConnection *connection,
                                               GError **error)
 {
-	g_return_val_if_fail (NM_IS_VPN_PLUGIN_UI_INTERFACE (iface), FALSE);
-
-	if (error)
-		g_return_val_if_fail (*error == NULL, FALSE);
-
-	return NM_VPN_PLUGIN_UI_INTERFACE_GET_INTERFACE (iface)->delete_connection (iface, connection, error);
+	/* Deprecated and no longer used */
+	return TRUE;
 }
 
 
@@ -235,11 +231,7 @@ nm_vpn_plugin_ui_widget_interface_save_secrets (NMVpnPluginUiWidgetInterface *if
                                                 NMConnection *connection,
                                                 GError **error)
 {
-	g_return_val_if_fail (NM_IS_VPN_PLUGIN_UI_WIDGET_INTERFACE (iface), FALSE);
-
-	if (error)
-		g_return_val_if_fail (*error == NULL, FALSE);
-
-	return NM_VPN_PLUGIN_UI_WIDGET_INTERFACE_GET_INTERFACE (iface)->save_secrets (iface, connection, error);
+	/* Deprecated and no longer used */
+	return TRUE;
 }
 
