@@ -2235,6 +2235,7 @@ eap_peap_reader (const char *eap_method,
                  gboolean phase2,
                  GError **error)
 {
+	char *anon_ident = NULL;
 	char *ca_cert = NULL;
 	char *real_cert_path = NULL;
 	char *inner_auth = NULL;
@@ -2275,6 +2276,10 @@ eap_peap_reader (const char *eap_method,
 
 	if (svTrueValue (ifcfg, "IEEE_8021X_PEAP_FORCE_NEW_LABEL", FALSE))
 		g_object_set (s_8021x, NM_SETTING_802_1X_PHASE1_PEAPLABEL, "1", NULL);
+
+	anon_ident = svGetValue (ifcfg, "IEEE_8021X_ANON_IDENTITY", FALSE);
+	if (anon_ident && strlen (anon_ident))
+		g_object_set (s_8021x, NM_SETTING_802_1X_ANONYMOUS_IDENTITY, anon_ident, NULL);
 
 	inner_auth = svGetValue (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS", FALSE);
 	if (!inner_auth) {
@@ -2325,6 +2330,7 @@ done:
 	g_free (peapver);
 	g_free (real_cert_path);
 	g_free (ca_cert);
+	g_free (anon_ident);
 	return success;
 }
 
