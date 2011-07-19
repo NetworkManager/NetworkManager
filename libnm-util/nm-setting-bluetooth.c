@@ -106,7 +106,7 @@ enum {
  *
  * Creates a new #NMSettingBluetooth object with default values.
  *
- * Returns: the new empty #NMSettingBluetooth object
+ * Returns: (transfer full): the new empty #NMSettingBluetooth object
  **/
 NMSetting *nm_setting_bluetooth_new (void)
 {

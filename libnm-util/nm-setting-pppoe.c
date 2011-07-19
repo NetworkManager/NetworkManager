@@ -107,7 +107,7 @@ enum {
  *
  * Creates a new #NMSettingPPPOE object with default values.
  *
- * Returns: the new empty #NMSettingPPPOE object
+ * Returns: (transfer full): the new empty #NMSettingPPPOE object
  **/
 NMSetting *
 nm_setting_pppoe_new (void)
