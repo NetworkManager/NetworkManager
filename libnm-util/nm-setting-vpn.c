@@ -141,6 +141,7 @@ nm_setting_vpn_new (void)
 
 /**
  * nm_setting_vpn_get_service_type:
+ * @setting: the #NMSettingVPN
  *
  * Returns the service name of the VPN, which identifies the specific VPN
  * plugin that should be used to connect to this VPN.
