@@ -39,8 +39,16 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_PPPOE_SETTING_NAME "pppoe"
 
-typedef enum
-{
+/**
+ * NMSettingPPPOEError:
+ * @NM_SETTING_PPPOE_ERROR_UNKNOWN: unknown or unclassified error
+ * @NM_SETTING_PPPOE_ERROR_INVALID_PROPERTY: the property was invalid
+ * @NM_SETTING_PPPOE_ERROR_MISSING_PROPERTY: the property was missing and is
+ * required
+ * @NM_SETTING_PPPOE_ERROR_MISSING_PPP_SETTING: the connection
+ * did not contain a required PPP setting for PPP related options
+ */
+typedef enum {
 	NM_SETTING_PPPOE_ERROR_UNKNOWN = 0,
 	NM_SETTING_PPPOE_ERROR_INVALID_PROPERTY,
 	NM_SETTING_PPPOE_ERROR_MISSING_PROPERTY,
