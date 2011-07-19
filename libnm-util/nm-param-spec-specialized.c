@@ -230,7 +230,7 @@ _gvalue_destroy (gpointer data)
 }
 
 static GValue *
-nm_gvalue_dup (const GValue *value)
+_gvalue_dup (const GValue *value)
 {
 	GValue *dup;
 
@@ -246,7 +246,7 @@ iterate_collection (const GValue *value, gpointer user_data)
 {
 	GSList **list = (GSList **) user_data;
 	
-	*list = g_slist_prepend (*list, nm_gvalue_dup (value));
+	*list = g_slist_prepend (*list, _gvalue_dup (value));
 }
 
 static gint
@@ -306,7 +306,7 @@ iterate_map (const GValue *key_val,
 {
 	GHashTable **hash = (GHashTable **) user_data;
 
-	g_hash_table_insert (*hash, g_value_dup_string (key_val), nm_gvalue_dup (value_val));
+	g_hash_table_insert (*hash, g_value_dup_string (key_val), _gvalue_dup (value_val));
 }
 
 typedef struct {
