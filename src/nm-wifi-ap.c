@@ -586,9 +586,9 @@ nm_ap_new_fake_from_connection (NMConnection *connection)
 
 	mode = nm_setting_wireless_get_mode (s_wireless);
 	if (mode) {
-		if (!strcmp (mode, "infrastructure"))
+		if (!strcmp (mode, NM_SETTING_WIRELESS_MODE_INFRA))
 			nm_ap_set_mode (ap, NM_802_11_MODE_INFRA);
-		else if (!strcmp (mode, "adhoc"))
+		else if (!strcmp (mode, NM_SETTING_WIRELESS_MODE_ADHOC))
 			nm_ap_set_mode (ap, NM_802_11_MODE_ADHOC);
 		else
 			goto error;
@@ -1211,9 +1211,9 @@ nm_ap_check_compatible (NMAccessPoint *self,
 
 	mode = nm_setting_wireless_get_mode (s_wireless);
 	if (mode) {
-		if (!strcmp (mode, "infrastructure") && (priv->mode != NM_802_11_MODE_INFRA))
+		if (!strcmp (mode, NM_SETTING_WIRELESS_MODE_INFRA) && (priv->mode != NM_802_11_MODE_INFRA))
 			return FALSE;
-		if (!strcmp (mode, "adhoc") && (priv->mode != NM_802_11_MODE_ADHOC))
+		if (!strcmp (mode, NM_SETTING_WIRELESS_MODE_ADHOC) && (priv->mode != NM_802_11_MODE_ADHOC))
 			return FALSE;
 	}
 
