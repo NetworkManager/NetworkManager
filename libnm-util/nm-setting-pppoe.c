@@ -27,6 +27,23 @@
 #include "nm-setting-pppoe.h"
 #include "nm-setting-ppp.h"
 
+/**
+ * SECTION:nm-setting-pppoe
+ * @short_description: Describes PPPoE connection properties
+ * @include: nm-setting-pppoe.h
+ *
+ * The #NMSettingPPPOE object is a #NMSetting subclass that describes
+ * properties necessary for connection to networks that require PPPoE connections
+ * to provide IP transport, for example cable or DSL modems.
+ **/
+
+/**
+ * nm_setting_pppoe_error_quark:
+ *
+ * Registers an error quark for #NMSettingPPPOE if necessary.
+ *
+ * Returns: the error quark used for #NMSettingPPPOE errors.
+ **/
 GQuark
 nm_setting_pppoe_error_quark (void)
 {
@@ -82,12 +99,25 @@ enum {
 	LAST_PROP
 };
 
+/**
+ * nm_setting_pppoe_new:
+ *
+ * Creates a new #NMSettingPPPOE object with default values.
+ *
+ * Returns: the new empty #NMSettingPPPOE object
+ **/
 NMSetting *
 nm_setting_pppoe_new (void)
 {
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_PPPOE, NULL);
 }
 
+/**
+ * nm_setting_pppoe_get_service:
+ * @setting: the #NMSettingPPPOE
+ *
+ * Returns: the #NMSettingPPPOE:service property of the setting
+ **/
 const char *
 nm_setting_pppoe_get_service  (NMSettingPPPOE *setting)
 {
@@ -96,6 +126,12 @@ nm_setting_pppoe_get_service  (NMSettingPPPOE *setting)
 	return NM_SETTING_PPPOE_GET_PRIVATE (setting)->service;
 }
 
+/**
+ * nm_setting_pppoe_get_service:
+ * @setting: the #NMSettingPPPOE
+ *
+ * Returns: the #NMSettingPPPOE:username property of the setting
+ **/
 const char *
 nm_setting_pppoe_get_username (NMSettingPPPOE *setting)
 {
@@ -104,6 +140,12 @@ nm_setting_pppoe_get_username (NMSettingPPPOE *setting)
 	return NM_SETTING_PPPOE_GET_PRIVATE (setting)->username;
 }
 
+/**
+ * nm_setting_pppoe_get_service:
+ * @setting: the #NMSettingPPPOE
+ *
+ * Returns: the #NMSettingPPPOE:password property of the setting
+ **/
 const char *
 nm_setting_pppoe_get_password (NMSettingPPPOE *setting)
 {
