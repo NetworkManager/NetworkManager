@@ -39,8 +39,16 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_PPP_SETTING_NAME "ppp"
 
-typedef enum
-{
+/**
+ * NMSettingPPPError:
+ * @NM_SETTING_PPP_ERROR_UNKNOWN: unknown or unclassified error
+ * @NM_SETTING_PPP_ERROR_INVALID_PROPERTY: the property was invalid
+ * @NM_SETTING_PPP_ERROR_MISSING_PROPERTY: the property was missing and is
+ * required
+ * @NM_SETTING_PPP_ERROR_REQUIRE_MPPE_NOT_ALLOWED: requiring MPPE is not compatible
+ * with other setting configuration parameters
+ */
+typedef enum {
 	NM_SETTING_PPP_ERROR_UNKNOWN = 0,
 	NM_SETTING_PPP_ERROR_INVALID_PROPERTY,
 	NM_SETTING_PPP_ERROR_MISSING_PROPERTY,
