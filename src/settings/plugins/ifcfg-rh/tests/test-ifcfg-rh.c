@@ -2707,6 +2707,7 @@ test_read_wired_8021x_peap_mschapv2 (void)
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_identity = "David Smith";
+	const char *expected_anon_identity = "somebody";
 	const char *expected_password = "foobar baz";
 	gboolean success = FALSE;
 	const char *expected_ca_cert_path;
@@ -2792,6 +2793,19 @@ test_read_wired_8021x_peap_mschapv2 (void)
 	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
 	        NM_SETTING_802_1X_SETTING_NAME,
 	        NM_SETTING_802_1X_IDENTITY);
+
+	/* Anonymous Identity */
+	tmp = nm_setting_802_1x_get_anonymous_identity (s_8021x);
+	ASSERT (tmp != NULL,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_ANONYMOUS_IDENTITY);
+	ASSERT (strcmp (tmp, expected_anon_identity) == 0,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_ANONYMOUS_IDENTITY);
 
 	/* Password */
 	tmp = nm_setting_802_1x_get_password (s_8021x);
@@ -7368,6 +7382,7 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 
 	g_object_set (s_8021x,
 	              NM_SETTING_802_1X_IDENTITY, "Bob Saget",
+	              NM_SETTING_802_1X_ANONYMOUS_IDENTITY, "barney",
 	              NM_SETTING_802_1X_PASSWORD, "Kids, it was back in October 2008...",
 	              NM_SETTING_802_1X_PHASE1_PEAPVER, "1",
 	              NM_SETTING_802_1X_PHASE1_PEAPLABEL, "1",
