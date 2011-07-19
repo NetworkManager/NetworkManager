@@ -1710,7 +1710,7 @@ nm_setting_802_1x_set_private_key_from_file (NMSetting8021x *setting,
  *
  * Returns: the private key password used to decrypt the private key if
  *  previously set with nm_setting_802_1x_set_private_key_from_file(),
- *  nm_setting_802_1x_set_private_key_path(), or the
+ *  nm_setting_802_1x_set_private_key(), or the
  *  #NMSetting8021x:private-key-password property.
  **/
 const char *
@@ -1786,7 +1786,7 @@ nm_setting_802_1x_get_private_key_type (NMSetting8021x *setting)
  *
  * Returns: the private key password used to decrypt the private key if
  *  previously set with nm_setting_802_1x_set_phase2_private_key_from_file(),
- *  nm_setting_802_1x_set_phase2_private_key_path(), or the
+ *  nm_setting_802_1x_set_phase2_private_key(), or the
  *  #NMSetting8021x:phase2-private-key-password property.
  **/
 const char *
