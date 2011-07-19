@@ -152,7 +152,7 @@ enum {
  *
  * Creates a new #NMSettingWirelessSecurity object with default values.
  *
- * Returns: (transfer full): the new empty #NMSettingWirelessSecurity object
+ * Returns: the new empty #NMSettingWirelessSecurity object
  **/
 NMSetting *
 nm_setting_wireless_security_new (void)

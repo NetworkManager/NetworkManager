@@ -231,7 +231,7 @@ nm_setting_wired_get_cloned_mac_address (NMSettingWired *setting)
  * nm_setting_wired_get_mac_address_blacklist:
  * @setting: the #NMSettingWired
  *
- * Returns: (element-type GLib.ByteArray): the #NMSettingWired:mac-address-blacklist
+ * Returns: the #NMSettingWired:mac-address-blacklist
  * property of the setting
  **/
 const GSList *
@@ -264,7 +264,7 @@ nm_setting_wired_get_mtu (NMSettingWired *setting)
  * connection is applicable to.  The connection should only be used in
  * conjunction with that device.
  *
- * Returns: (element-type utf8): #GPtrArray of strings, each specifying one
+ * Returns: #GPtrArray of strings, each specifying one
  * subchannel the s390 device uses to communicate to the host.
  **/
 const GPtrArray *
@@ -315,9 +315,9 @@ nm_setting_wired_get_num_s390_options (NMSettingWired *setting)
  * @setting: the #NMSettingWired
  * @idx: index of the desired option, from 0 to
  * nm_setting_wired_get_num_s390_options() - 1
- * @out_key: (out): on return, the key name of the s390 specific option; this
+ * @out_key: on return, the key name of the s390 specific option; this
  * value is owned by the setting and should not be modified
- * @out_value: (out): on return, the value of the key of the s390 specific
+ * @out_value: on return, the value of the key of the s390 specific
  * option; this value is owned by the setting and should not be modified
  *
  * Given an index, return the value of the s390 option at that index.  indexes

@@ -406,7 +406,7 @@ nm_setting_compare (NMSetting *a,
  * @flags: compare flags, e.g. %NM_SETTING_COMPARE_FLAG_EXACT
  * @invert_results: this parameter is used internally by libnm-util and should
  * be set to %FALSE.  If %TRUE inverts the meaning of the #NMSettingDiffResult.
- * @results: (element-type utf8 guint32): if the settings differ, on return a
+ * @results: if the settings differ, on return a
  * hash table mapping the differing keys to one or more #NMSettingDiffResult
  * values OR-ed together.  If the settings do not differ, any hash table passed
  * in is unmodified.  If no hash table is passed in, a new one is created.

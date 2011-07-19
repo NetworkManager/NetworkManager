@@ -110,7 +110,7 @@ enum {
  *
  * Creates a new #NMSettingSerial object with default values.
  *
- * Returns: (transfer full): the new empty #NMSettingSerial object
+ * Returns: the new empty #NMSettingSerial object
  **/
 NMSetting *
 nm_setting_serial_new (void)

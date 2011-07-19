@@ -119,7 +119,7 @@ enum {
  *
  * Creates a new #NMSettingIP6Config object with default values.
  *
- * Returns: (transfer full): the new empty #NMSettingIP6Config object
+ * Returns: the new empty #NMSettingIP6Config object
  **/
 NMSetting *
 nm_setting_ip6_config_new (void)
@@ -160,7 +160,7 @@ nm_setting_ip6_config_get_num_dns (NMSettingIP6Config *setting)
  * @setting: the #NMSettingIP6Config
  * @i: index number of the DNS server to return
  *
- * Returns: (transfer none): the IPv6 address of the DNS server at index @i
+ * Returns: the IPv6 address of the DNS server at index @i
  **/
 const struct in6_addr *
 nm_setting_ip6_config_get_dns (NMSettingIP6Config *setting, guint32 i)
@@ -1072,7 +1072,7 @@ struct NMIP6Address {
  *
  * Creates and returns a new #NMIP6Address object.
  *
- * Returns: (transfer full): the new empty #NMIP6Address object
+ * Returns: the new empty #NMIP6Address object
  **/
 NMIP6Address *
 nm_ip6_address_new (void)
@@ -1090,7 +1090,7 @@ nm_ip6_address_new (void)
  *
  * Copies a given #NMIP6Address object and returns the copy.
  *
- * Returns: (transfer full): the copy of the given #NMIP6Address copy
+ * Returns: the copy of the given #NMIP6Address copy
  **/
 NMIP6Address *
 nm_ip6_address_dup (NMIP6Address *source)
@@ -1174,7 +1174,7 @@ nm_ip6_address_compare (NMIP6Address *address, NMIP6Address *other)
  *
  * Gets the IPv6 address property of this address object.
  *
- * Returns: (transfer none): the IPv6 address
+ * Returns: the IPv6 address
  **/
 const struct in6_addr *
 nm_ip6_address_get_address (NMIP6Address *address)
@@ -1242,7 +1242,7 @@ nm_ip6_address_set_prefix (NMIP6Address *address, guint32 prefix)
  *
  * Gets the IPv6 default gateway property of this address object.
  *
- * Returns: (transfer none): the IPv6 gateway address
+ * Returns: the IPv6 gateway address
  **/
 const struct in6_addr *
 nm_ip6_address_get_gateway (NMIP6Address *address)
@@ -1286,7 +1286,7 @@ struct NMIP6Route {
  *
  * Creates and returns a new #NMIP6Route object.
  *
- * Returns: (transfer full): the new empty #NMIP6Route object
+ * Returns: the new empty #NMIP6Route object
  **/
 NMIP6Route *
 nm_ip6_route_new (void)
@@ -1304,7 +1304,7 @@ nm_ip6_route_new (void)
  *
  * Copies a given #NMIP6Route object and returns the copy.
  *
- * Returns: (transfer full): the copy of the given #NMIP6Route copy
+ * Returns: the copy of the given #NMIP6Route copy
  **/
 NMIP6Route *
 nm_ip6_route_dup (NMIP6Route *source)

@@ -1269,7 +1269,7 @@ struct NMIP4Address {
  *
  * Creates and returns a new #NMIP4Address object.
  *
- * Returns: (transfer full): the new empty #NMIP4Address object
+ * Returns: the new empty #NMIP4Address object
  **/
 NMIP4Address *
 nm_ip4_address_new (void)
@@ -1287,7 +1287,7 @@ nm_ip4_address_new (void)
  *
  * Copies a given #NMIP4Address object and returns the copy.
  *
- * Returns: (transfer full): the copy of the given #NMIP4Address copy
+ * Returns: the copy of the given #NMIP4Address copy
  **/
 NMIP4Address *
 nm_ip4_address_dup (NMIP4Address *source)
@@ -1481,7 +1481,7 @@ struct NMIP4Route {
  *
  * Creates and returns a new #NMIP4Route object.
  *
- * Returns: (transfer full): the new empty #NMIP4Route object
+ * Returns: the new empty #NMIP4Route object
  **/
 NMIP4Route *
 nm_ip4_route_new (void)
@@ -1499,7 +1499,7 @@ nm_ip4_route_new (void)
  *
  * Copies a given #NMIP4Route object and returns the copy.
  *
- * Returns: (transfer full): the copy of the given #NMIP4Route copy
+ * Returns: the copy of the given #NMIP4Route copy
  **/
 NMIP4Route *
 nm_ip4_route_dup (NMIP4Route *source)
