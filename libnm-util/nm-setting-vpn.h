@@ -39,8 +39,14 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_VPN_SETTING_NAME "vpn"
 
-typedef enum
-{
+/**
+ * NMSettingVPNError:
+ * @NM_SETTING_VPN_ERROR_UNKNOWN: unknown or unclassified error
+ * @NM_SETTING_VPN_ERROR_INVALID_PROPERTY: the property was invalid
+ * @NM_SETTING_VPN_ERROR_MISSING_PROPERTY: the property was missing and is
+ * required
+ */
+typedef enum {
 	NM_SETTING_VPN_ERROR_UNKNOWN = 0,
 	NM_SETTING_VPN_ERROR_INVALID_PROPERTY,
 	NM_SETTING_VPN_ERROR_MISSING_PROPERTY,
@@ -71,6 +77,13 @@ typedef struct {
 	void (*_reserved4) (void);
 } NMSettingVPNClass;
 
+/**
+ * VPNIterFunc:
+ * @key: the name of the data or secret item
+ * @value: the value of the data or secret item
+ * @user_data: User data passed to nm_setting_vpn_foreach_data_item() or
+ * nm_setting_vpn_foreach_secret()
+ **/
 typedef void (*VPNIterFunc) (const char *key, const char *value, gpointer user_data);
 
 GType nm_setting_vpn_get_type (void);
