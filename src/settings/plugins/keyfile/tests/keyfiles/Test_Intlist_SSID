@@ -1,0 +1,11 @@
+[connection]
+id=Test 
+uuid=2f962388-e5f3-45af-a62c-ac220b8f7baa
+type=802-11-wireless
+
+[802-11-wireless]
+ssid=98;108;97;104;49;50;51;52;
+
+[ipv4]
+method=auto
+

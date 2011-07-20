@@ -7,6 +7,7 @@ KEYFILES = \
 	ATT_Data_Connect_BT \
 	ATT_Data_Connect_Plain \
 	Test_String_SSID \
+	Test_Intlist_SSID \
 	Test_Wired_TLS_Old \
 	Test_Wired_TLS_New \
 	Test_Wired_TLS_Blob \

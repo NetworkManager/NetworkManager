@@ -749,7 +749,7 @@ get_uchar_array (GKeyFile *keyfile,
 		gboolean new_format = FALSE;
 		GRegex *regex;
 		GMatchInfo *match_info;
-		const char *pattern = "^[[:space:]]*[[:digit:]]+[[:space:]]*(;[[:space:]]*[[:digit:]]+[[:space:]]*)*(;[[:space:]]*)?$";
+		const char *pattern = "^[[:space:]]*[[:digit:]]{1,3}[[:space:]]*(;[[:space:]]*[[:digit:]]{1,3}[[:space:]]*)*(;[[:space:]]*)?$";
 
 		regex = g_regex_new (pattern, 0, 0, NULL);
 		g_regex_match (regex, tmp_string, 0, &match_info);
