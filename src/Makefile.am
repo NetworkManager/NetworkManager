@@ -159,6 +159,8 @@ NetworkManager_SOURCES = \
 		nm-manager-auth.h \
 		nm-netlink-monitor.c \
 		nm-netlink-monitor.h \
+		nm-netlink-utils.c \
+		nm-netlink-utils.h \
 		nm-activation-request.c \
 		nm-activation-request.h \
 		nm-properties-changed-signal.c \
