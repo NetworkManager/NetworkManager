@@ -1231,71 +1231,19 @@ nm_system_iface_flush_addresses (int ifindex, int family)
 }
 
 
-static void
-foreach_route (void (*callback)(struct nl_object *, gpointer),
-			gpointer user_data)
+static struct rtnl_route *
+delete_one_route (struct rtnl_route *route,
+                  struct nl_addr *dst,
+                  const char *iface,
+                  gpointer user_data)
 {
-	struct nl_handle *nlh;
-	struct nl_cache *route_cache;
+	guint32 log_level = GPOINTER_TO_UINT (user_data);
 
-	nlh = nm_netlink_get_default_handle ();
-	route_cache = rtnl_route_alloc_cache (nlh);
-	g_assert (route_cache);
-	nl_cache_foreach (route_cache, callback, user_data);
-	nl_cache_free (route_cache);
-}
-
-typedef struct {
-	const char *iface;
-	int iface_idx;
-	int family;
-} RouteCheckData;
-
-static void
-check_one_route (struct nl_object *object, void *user_data)
-{
-	RouteCheckData *data = (RouteCheckData *) user_data;
-	struct rtnl_route *route = (struct rtnl_route *) object;
-	guint32 log_level = LOGD_IP4 | LOGD_IP6;
-
-	if (nm_logging_level_enabled (LOGL_DEBUG))
-		nm_netlink_dump_route (route);
-
-	/* Delete all routes from this interface */
-	if (rtnl_route_get_oif (route) != data->iface_idx)
-		return;
-	if (data->family && rtnl_route_get_family (route) != data->family)
-		return;
-
-	/* We don't want to flush IPv6 link-local routes that may exist on the
-	 * the interface since the LL address and routes should normally stay
-	 * assigned all the time.
-	 */
-	if (   (data->family == AF_INET6 || data->family == AF_UNSPEC)
-	    && (rtnl_route_get_family (route) == AF_INET6)) {
-		struct nl_addr *nl;
-		struct in6_addr *addr = NULL;
-
-		nl = rtnl_route_get_dst (route);
-		if (nl)
-			addr = nl_addr_get_binary_addr (nl);
-
-		if (addr) {
-			if (   IN6_IS_ADDR_LINKLOCAL (addr)
-			    || IN6_IS_ADDR_MC_LINKLOCAL (addr)
-			    || (IN6_IS_ADDR_MULTICAST (addr) && (nl_addr_get_prefixlen (nl) == 8)))
-				return;
-		}
-	}
-
-	if (data->family == AF_INET)
-		log_level = LOGD_IP4;
-	else if (data->family == AF_INET6)
-		log_level = LOGD_IP6;
 	nm_log_dbg (log_level, "   deleting route");
-
 	if (!nm_netlink_route_delete (route))
-		nm_log_err (LOGD_DEVICE, "(%s): failed to delete route", data->iface);
+		nm_log_err (LOGD_DEVICE, "(%s): failed to delete route", iface);
+
+	return NULL;
 }
 
 /**
@@ -1310,7 +1258,6 @@ check_one_route (struct nl_object *object, void *user_data)
 gboolean
 nm_system_iface_flush_routes (int ifindex, int family)
 {
-	RouteCheckData check_data;
 	guint32 log_level = LOGD_IP4 | LOGD_IP6;
 	const char *sf = "UNSPEC";
 	const char *iface;
@@ -1330,56 +1277,43 @@ nm_system_iface_flush_routes (int ifindex, int family)
 	nm_log_dbg (log_level, "(%s): flushing routes ifindex %d family %s (%d)",
 	            iface, ifindex, sf, family);
 
-	memset (&check_data, 0, sizeof (check_data));
-	check_data.iface = iface;
-	check_data.iface_idx = ifindex;
-	check_data.family = family;
-	foreach_route (check_one_route, &check_data);
-
+	/* We don't want to flush IPv6 link-local routes that may exist on the
+	 * the interface since the LL address and routes should normally stay
+	 * assigned all the time.
+	 */
+	nm_netlink_foreach_route (ifindex, family, RT_SCOPE_UNIVERSE, TRUE, delete_one_route, GUINT_TO_POINTER (log_level));
 	return TRUE;
 }
 
-typedef struct {
-	struct rtnl_route *route;
-	NMIP4Config *config;
-	int ifindex;
-} SetPriorityInfo;
-
-static void
-find_route (struct nl_object *object, gpointer user_data)
+static struct rtnl_route *
+find_route (struct rtnl_route *route,
+            struct nl_addr *dst,
+            const char *iface,
+            gpointer user_data)
 {
-	struct rtnl_route *route = (struct rtnl_route *) object;
-	SetPriorityInfo *info = (SetPriorityInfo *) user_data;
-	struct nl_addr *dst;
+	NMIP4Config *config = user_data;
 	struct in_addr *dst_addr;
 	int num;
 	int i;
 
-	if (info->route ||
-	    rtnl_route_get_oif (route) != info->ifindex ||
-	    rtnl_route_get_scope (route) != RT_SCOPE_LINK)
-		return;
+	if (dst && (nl_addr_get_family (dst) != AF_INET))
+		return NULL;
 
-	dst = rtnl_route_get_dst (route);
-	if (nl_addr_get_family (dst) != AF_INET)
-		return;
-
+	/* Find the first route that handles a subnet of at least one of the
+	 * device's IPv4 addresses.
+	 */
 	dst_addr = nl_addr_get_binary_addr (dst);
-	num = nm_ip4_config_get_num_addresses (info->config);
+	num = nm_ip4_config_get_num_addresses (config);
 	for (i = 0; i < num; i++) {
-		NMIP4Address *addr = nm_ip4_config_get_address (info->config, i);
+		NMIP4Address *addr = nm_ip4_config_get_address (config, i);
 		guint32 prefix = nm_ip4_address_get_prefix (addr);
 		guint32 address = nm_ip4_address_get_address (addr);
 
-		if (prefix == nl_addr_get_prefixlen (dst) &&
-		    (address & nm_utils_ip4_prefix_to_netmask (prefix)) == dst_addr->s_addr) {
-
-			/* Ref the route so it sticks around after the cache is cleared */
-			rtnl_route_get (route);
-			info->route = route;
-			break;
-		}
+		if (   prefix == nl_addr_get_prefixlen (dst)
+		    && (address & nm_utils_ip4_prefix_to_netmask (prefix)) == dst_addr->s_addr)
+			return route;
 	}
+	return NULL;
 }
 
 static void
@@ -1387,20 +1321,15 @@ nm_system_device_set_priority (int ifindex,
                                NMIP4Config *config,
                                int priority)
 {
-	SetPriorityInfo info;
 	struct nl_handle *nlh;
+	struct rtnl_route *found;
 
-	info.route = NULL;
-	info.config = config;
-	info.ifindex = ifindex;
-
-	foreach_route (find_route, &info);
-	if (info.route) {
-		nm_netlink_route_delete (info.route);
-
+	found = nm_netlink_foreach_route (ifindex, AF_INET, RT_SCOPE_LINK, FALSE,  find_route, config);
+	if (found) {
 		nlh = nm_netlink_get_default_handle ();
-		rtnl_route_set_prio (info.route, priority);
-		rtnl_route_add (nlh, info.route, 0);
-		rtnl_route_put (info.route);
+		nm_netlink_route_delete (found);
+		rtnl_route_set_prio (found, priority);
+		rtnl_route_add (nlh, found, 0);
+		rtnl_route_put (found);
 	}
 }

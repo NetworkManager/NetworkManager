@@ -32,6 +32,29 @@ gboolean nm_netlink_find_address (int ifindex,
 
 gboolean nm_netlink_route_delete (struct rtnl_route *route);
 
-void nm_netlink_dump_route (struct rtnl_route *route);
+/**
+ * NlRouteForeachFunc:
+ * @route: the route being processed
+ * @dst: the route's destination address
+ * @iface: the interface name of the index passed to nm_netlink_foreach_route()
+ * @in_family: the address family passed to nm_netlink_foreach_route()
+ * @user_data: the user data pointer passed to nm_netlink_foreach_route()
+ *
+ * Returns: a route to return to the caller of nm_netlink_foreach_route() which
+ * terminates routing table iteration, or NULL to continue iterating the
+ * routing table.
+ **/
+typedef struct rtnl_route * (*NlRouteForeachFunc) (struct rtnl_route *route,
+                                                   struct nl_addr *dst,
+                                                   const char *iface,
+                                                   gpointer user_data);
+
+struct rtnl_route * nm_netlink_foreach_route (int ifindex,
+                                              int family,
+                                              int scope,
+                                              gboolean ignore_inet6_ll_mc,
+                                              NlRouteForeachFunc callback,
+                                              gpointer user_data);
 
 #endif  /* NM_NETLINK_MONITOR_H */
+
