@@ -119,6 +119,48 @@ nm_netlink_find_address (int ifindex,
 	return info.found;
 }
 
+struct rtnl_route *
+nm_netlink_route_new (int ifindex,
+                      int family,
+                      int mss,
+                      ...)
+{
+	va_list var_args;
+	struct rtnl_route *route;
+	NmNlProp prop = NMNL_PROP_INVALID;
+	int value;
+
+	route = rtnl_route_alloc ();
+	g_return_val_if_fail (route != NULL, NULL);
+
+	if (ifindex >= 0)
+		rtnl_route_set_oif (route, ifindex);
+	if (family != AF_UNSPEC)
+		rtnl_route_set_family (route, family);
+	if (mss > 0)
+		rtnl_route_set_metric (route, RTAX_ADVMSS, mss);
+
+	va_start (var_args, mss);
+	prop = va_arg (var_args, NmNlProp);
+	while (prop != NMNL_PROP_INVALID) {
+		value = va_arg (var_args, int);
+
+		if (prop == NMNL_PROP_PROT && value != RTPROT_UNSPEC)
+			rtnl_route_set_protocol (route, value);
+		else if (prop == NMNL_PROP_TABLE && value != RT_TABLE_UNSPEC)
+			rtnl_route_set_table (route, value);
+		else if (prop == NMNL_PROP_SCOPE && value != RT_SCOPE_NOWHERE)
+			rtnl_route_set_scope (route, value);
+		else if (prop == NMNL_PROP_PRIO && value > 0)
+			rtnl_route_set_prio (route, value);
+
+		prop = va_arg (var_args, NmNlProp);
+	}
+	va_end (var_args);
+
+	return route;
+}
+
 /**
  * nm_netlink_route_delete:
  * @route: the route to delete

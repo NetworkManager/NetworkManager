@@ -85,24 +85,6 @@ ip4_dest_in_same_subnet (NMIP4Config *config, guint32 dest, guint32 dest_prefix)
 }
 
 static struct rtnl_route *
-create_route (int iface_idx, int mss)
-{
-	struct rtnl_route *route;
-
-	route = rtnl_route_alloc ();
-	if (route) {
-		rtnl_route_set_oif (route, iface_idx);
-
-		if (mss && rtnl_route_set_metric (route, RTAX_ADVMSS, mss) < 0) {
-			nm_log_warn (LOGD_DEVICE, "could not set mss");
-		}
-	} else
-		nm_log_err (LOGD_DEVICE, "could not allocate route");
-
-	return route;
-}
-
-static struct rtnl_route *
 nm_system_device_set_ip4_route (int ifindex, 
                                 guint32 ip4_dest,
                                 guint32 ip4_prefix,
@@ -125,7 +107,9 @@ nm_system_device_set_ip4_route (int ifindex,
 	iface = nm_netlink_index_to_iface (ifindex);
 	g_return_val_if_fail (iface != NULL, NULL);
 
-	route = create_route (ifindex, mss);
+	route = nm_netlink_route_new (ifindex, AF_INET, mss,
+	                              NMNL_PROP_PRIO, metric,
+	                              NULL);
 	g_return_val_if_fail (route != NULL, NULL);
 
 	/* Destination */
@@ -149,17 +133,13 @@ nm_system_device_set_ip4_route (int ifindex,
 		}
 	}
 
-	/* Metric */
-	if (metric)
-		rtnl_route_set_prio (route, metric);
-
 	/* Add the route */
 	err = rtnl_route_add (nlh, route, 0);
 	if (err == -ESRCH && ip4_gateway) {
 		/* Gateway might be over a bridge; try adding a route to gateway first */
 		struct rtnl_route *route2;
 
-		route2 = create_route (ifindex, mss);
+		route2 = nm_netlink_route_new (ifindex, AF_INET, mss, NULL);
 		if (route2) {
 			/* Add route to gateway over bridge */
 			rtnl_route_set_dst (route2, gw_addr);
@@ -513,7 +493,11 @@ nm_system_set_ip6_route (int ifindex,
 	nlh = nm_netlink_get_default_handle ();
 	g_return_val_if_fail (nlh != NULL, -1);
 
-	route = create_route (ifindex, mss);
+	route = nm_netlink_route_new (ifindex, AF_INET6, mss,
+	                              NMNL_PROP_PROT, protocol,
+	                              NMNL_PROP_PRIO, metric,
+	                              NMNL_PROP_TABLE, table,
+	                              NULL);
 	g_return_val_if_fail (route != NULL, -1);
 
 	/* Destination */
@@ -537,23 +521,13 @@ nm_system_set_ip6_route (int ifindex,
 		}
 	}
 
-	/* Metric */
-	if (metric)
-		rtnl_route_set_prio (route, metric);
-
-	if (protocol)
-		rtnl_route_set_protocol (route, protocol);
-
-	if (table)
-		rtnl_route_set_table (route, table);
-
 	/* Add the route */
 	err = rtnl_route_add (nlh, route, 0);
 	if (err == -ESRCH && ip6_gateway) {
 		/* Gateway might be over a bridge; try adding a route to gateway first */
 		struct rtnl_route *route2;
 
-		route2 = create_route (ifindex, mss);
+		route2 = nm_netlink_route_new (ifindex, AF_INET6, mss, NULL);
 		if (route2) {
 			/* Add route to gateway over bridge */
 			rtnl_route_set_dst (route2, gw_addr);
@@ -865,14 +839,11 @@ add_ip4_route_to_gateway (int ifindex, guint32 gw, guint32 mss)
 	g_return_val_if_fail (nlh != NULL, NULL);
 
 	/* Gateway might be over a bridge; try adding a route to gateway first */
-	route = rtnl_route_alloc ();
-	if (route == NULL)
-		return NULL;
-
-	rtnl_route_set_family (route, AF_INET);
-	rtnl_route_set_table (route, RT_TABLE_MAIN);
-	rtnl_route_set_oif (route, ifindex);
-	rtnl_route_set_scope (route, RT_SCOPE_LINK);
+	route = nm_netlink_route_new (ifindex, AF_INET, mss,
+	                              NMNL_PROP_SCOPE, RT_SCOPE_LINK,
+	                              NMNL_PROP_TABLE, RT_TABLE_MAIN,
+	                              NULL);
+	g_return_val_if_fail (route != NULL, NULL);
 
 	gw_addr = nl_addr_build (AF_INET, &gw, sizeof (gw));
 	if (!gw_addr)
@@ -880,11 +851,6 @@ add_ip4_route_to_gateway (int ifindex, guint32 gw, guint32 mss)
 	nl_addr_set_prefixlen (gw_addr, 32);
 	rtnl_route_set_dst (route, gw_addr);
 	nl_addr_put (gw_addr);
-
-	if (mss) {
-		if (rtnl_route_set_metric (route, RTAX_ADVMSS, mss) < 0)
-			goto error;
-	}
 
 	/* Add direct route to the gateway */
 	err = rtnl_route_add (nlh, route, 0);
@@ -917,13 +883,11 @@ replace_default_ip4_route (int ifindex, guint32 gw, guint32 mss)
 	nlh = nm_netlink_get_default_handle ();
 	g_return_val_if_fail (nlh != NULL, -ENOMEM);
 
-	route = rtnl_route_alloc();
+	route = nm_netlink_route_new (ifindex, AF_INET, mss,
+	                              NMNL_PROP_SCOPE, RT_SCOPE_UNIVERSE,
+	                              NMNL_PROP_TABLE, RT_TABLE_MAIN,
+	                              NULL);
 	g_return_val_if_fail (route != NULL, -ENOMEM);
-
-	rtnl_route_set_family (route, AF_INET);
-	rtnl_route_set_table (route, RT_TABLE_MAIN);
-	rtnl_route_set_scope (route, RT_SCOPE_UNIVERSE);
-	rtnl_route_set_oif (route, ifindex);
 
 	/* Build up the destination address */
 	dst_addr = nl_addr_build (AF_INET, &dst, sizeof (dst));
@@ -942,12 +906,6 @@ replace_default_ip4_route (int ifindex, guint32 gw, guint32 mss)
 	}
 	nl_addr_set_prefixlen (gw_addr, 0);
 	rtnl_route_set_gateway (route, gw_addr);
-
-	if (mss > 0) {
-		err = rtnl_route_set_metric (route, RTAX_ADVMSS, mss);
-		if (err < 0)
-			goto out;
-	}
 
 	/* Add the new default route */
 	err = rtnl_route_add (nlh, route, NLM_F_REPLACE);
@@ -1078,14 +1036,11 @@ add_ip6_route_to_gateway (int ifindex, const struct in6_addr *gw)
 	g_return_val_if_fail (nlh != NULL, NULL);
 
 	/* Gateway might be over a bridge; try adding a route to gateway first */
-	route = rtnl_route_alloc ();
-	if (route == NULL)
-		return NULL;
-
-	rtnl_route_set_family (route, AF_INET6);
-	rtnl_route_set_table (route, RT_TABLE_MAIN);
-	rtnl_route_set_oif (route, ifindex);
-	rtnl_route_set_scope (route, RT_SCOPE_LINK);
+	route = nm_netlink_route_new (ifindex, AF_INET6, 0,
+	                              NMNL_PROP_SCOPE, RT_SCOPE_LINK,
+	                              NMNL_PROP_TABLE, RT_TABLE_MAIN,
+	                              NULL);
+	g_return_val_if_fail (route != NULL, NULL);
 
 	gw_addr = nl_addr_build (AF_INET, (void *) gw, sizeof (*gw));
 	if (!gw_addr)
@@ -1127,13 +1082,11 @@ replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
 	nlh = nm_netlink_get_default_handle ();
 	g_return_val_if_fail (nlh != NULL, -ENOMEM);
 
-	route = rtnl_route_alloc();
+	route = nm_netlink_route_new (ifindex, AF_INET6, 0,
+	                              NMNL_PROP_SCOPE, RT_SCOPE_UNIVERSE,
+	                              NMNL_PROP_TABLE, RT_TABLE_MAIN,
+	                              NULL);
 	g_return_val_if_fail (route != NULL, -ENOMEM);
-
-	rtnl_route_set_family (route, AF_INET6);
-	rtnl_route_set_table (route, RT_TABLE_MAIN);
-	rtnl_route_set_scope (route, RT_SCOPE_UNIVERSE);
-	rtnl_route_set_oif (route, ifindex);
 
 	if (gw && !IN6_IS_ADDR_UNSPECIFIED (gw)) {
 		/* Build up the gateway address */

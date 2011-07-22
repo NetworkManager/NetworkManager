@@ -30,6 +30,19 @@ gboolean nm_netlink_find_address (int ifindex,
                                   void *addr,  /* struct in_addr or struct in6_addr */
                                   int prefix_);
 
+typedef enum {
+	NMNL_PROP_INVALID = 0,
+	NMNL_PROP_PROT,
+	NMNL_PROP_SCOPE,
+	NMNL_PROP_TABLE,
+	NMNL_PROP_PRIO,
+} NmNlProp;
+
+struct rtnl_route * nm_netlink_route_new (int ifindex,
+                                          int family,
+                                          int mss,
+                                          ...) __attribute__((__sentinel__));
+
 gboolean nm_netlink_route_delete (struct rtnl_route *route);
 
 /**
