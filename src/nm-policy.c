@@ -425,6 +425,7 @@ update_ip4_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	NMConnection *connection = NULL;
 	NMSettingConnection *s_con = NULL;
 	const char *connection_id;
+	int ip_ifindex = 0;
 
 	best = get_best_ip4_device (policy->manager, &best_req);
 	if (!best)
@@ -461,17 +462,18 @@ update_ip4_routing_and_dns (NMPolicy *policy, gboolean force_update)
 			NMDevice *parent;
 
 			ip_iface = nm_vpn_connection_get_ip_iface (candidate);
+			ip_ifindex = nm_vpn_connection_get_ip_ifindex (candidate);
 			connection = nm_vpn_connection_get_connection (candidate);
 			addr = nm_ip4_config_get_address (ip4_config, 0);
 
 			parent = nm_vpn_connection_get_parent_device (candidate);
 			parent_ip4 = nm_device_get_ip4_config (parent);
 
-			nm_system_replace_default_ip4_route_vpn (ip_iface,
+			nm_system_replace_default_ip4_route_vpn (ip_ifindex,
 			                                         nm_ip4_address_get_gateway (addr),
 			                                         nm_vpn_connection_get_ip4_internal_gateway (candidate),
 			                                         nm_ip4_config_get_mss (ip4_config),
-			                                         nm_device_get_ip_iface (parent),
+			                                         nm_device_get_ip_ifindex (parent),
 			                                         nm_ip4_config_get_mss (parent_ip4));
 
 			dns_type = NM_DNS_IP_CONFIG_TYPE_VPN;
@@ -483,12 +485,14 @@ update_ip4_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	if (!ip_iface || !ip4_config) {
 		connection = nm_act_request_get_connection (best_req);
 		ip_iface = nm_device_get_ip_iface (best);
+		ip_ifindex = nm_device_get_ip_ifindex (best);
 		ip4_config = nm_device_get_ip4_config (best);
 		g_assert (ip4_config);
 		addr = nm_ip4_config_get_address (ip4_config, 0);
 
-		nm_system_replace_default_ip4_route (ip_iface, nm_ip4_address_get_gateway (addr), nm_ip4_config_get_mss (ip4_config));
-
+		nm_system_replace_default_ip4_route (ip_ifindex,
+		                                     nm_ip4_address_get_gateway (addr),
+		                                     nm_ip4_config_get_mss (ip4_config));
 		dns_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
 	}
 
@@ -551,6 +555,7 @@ update_ip6_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	NMIP6Config *ip6_config = NULL;
 	NMIP6Address *addr;
 	const char *ip_iface = NULL;
+	int ip_ifindex = -1;
 	NMConnection *connection = NULL;
 	NMSettingConnection *s_con = NULL;
 	const char *connection_id;
@@ -608,11 +613,12 @@ update_ip6_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	if (!ip_iface || !ip6_config) {
 		connection = nm_act_request_get_connection (best_req);
 		ip_iface = nm_device_get_ip_iface (best);
+		ip_ifindex = nm_device_get_ip_ifindex (best);
 		ip6_config = nm_device_get_ip6_config (best);
 		g_assert (ip6_config);
 		addr = nm_ip6_config_get_address (ip6_config, 0);
 
-		nm_system_replace_default_ip6_route (ip_iface, nm_ip6_address_get_gateway (addr));
+		nm_system_replace_default_ip6_route (ip_ifindex, nm_ip6_address_get_gateway (addr));
 
 		dns_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
 	}

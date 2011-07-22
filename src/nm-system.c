@@ -58,9 +58,9 @@
 #include <netlink/utils.h>
 #include <netlink/route/link.h>
 
-static void nm_system_device_set_priority (const char *iface,
-								   NMIP4Config *config,
-								   int priority);
+static void nm_system_device_set_priority (int ifindex,
+                                           NMIP4Config *config,
+                                           int priority);
 
 static gboolean
 ip4_dest_in_same_subnet (NMIP4Config *config, guint32 dest, guint32 dest_prefix)
@@ -488,7 +488,7 @@ nm_system_apply_ip4_config (int ifindex,
 	}
 
 	if (priority > 0)
-		nm_system_device_set_priority (iface, config, priority);
+		nm_system_device_set_priority (ifindex, config, priority);
 
 	return TRUE;
 }
@@ -618,15 +618,19 @@ add_ip6_addresses (NMIP6Config *config, const char *iface)
  *
  */
 gboolean
-nm_system_apply_ip6_config (const char *iface,
+nm_system_apply_ip6_config (int ifindex,
                             NMIP6Config *config,
                             int priority,
                             NMIP6ConfigCompareFlags flags)
 {
+	const char *iface;
 	int i;
 
-	g_return_val_if_fail (iface != NULL, FALSE);
+	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
+
+	iface = nm_netlink_index_to_iface (ifindex);
+	g_return_val_if_fail (iface != NULL, FALSE);
 
 	if (flags & NM_IP6_COMPARE_FLAG_ADDRESSES) {
 		if (!add_ip6_addresses (config, iface))
@@ -635,8 +639,6 @@ nm_system_apply_ip6_config (const char *iface,
 	}
 
 	if (flags & NM_IP6_COMPARE_FLAG_ROUTES) {
-		int ifindex = nm_netlink_iface_to_index (iface);
-
 		for (i = 0; i < nm_ip6_config_get_num_routes (config); i++) {
 			NMIP6Route *route = nm_ip6_config_get_route (config, i);
 			int err;
@@ -850,19 +852,19 @@ nm_system_iface_set_mac (int ifindex, const struct ether_addr *mac)
 }
 
 static struct rtnl_route *
-add_ip4_route_to_gateway (const char *iface, guint32 gw, guint32 mss)
+add_ip4_route_to_gateway (int ifindex, guint32 gw, guint32 mss)
 {
 	struct nl_handle *nlh;
 	struct rtnl_route *route = NULL;
 	struct nl_addr *gw_addr = NULL;
-	int iface_idx, err;
+	const char *iface;
+	int err;
+
+	iface = nm_netlink_index_to_iface (ifindex);
+	g_return_val_if_fail (iface != NULL, FALSE);
 
 	nlh = nm_netlink_get_default_handle ();
 	g_return_val_if_fail (nlh != NULL, NULL);
-
-	iface_idx = nm_netlink_iface_to_index (iface);
-	if (iface_idx < 0)
-		return NULL;
 
 	/* Gateway might be over a bridge; try adding a route to gateway first */
 	route = rtnl_route_alloc ();
@@ -871,7 +873,7 @@ add_ip4_route_to_gateway (const char *iface, guint32 gw, guint32 mss)
 
 	rtnl_route_set_family (route, AF_INET);
 	rtnl_route_set_table (route, RT_TABLE_MAIN);
-	rtnl_route_set_oif (route, iface_idx);
+	rtnl_route_set_oif (route, ifindex);
 	rtnl_route_set_scope (route, RT_SCOPE_LINK);
 
 	gw_addr = nl_addr_build (AF_INET, &gw, sizeof (gw));
@@ -903,23 +905,19 @@ error:
 }
 
 static int
-replace_default_ip4_route (const char *iface, guint32 gw, guint32 mss)
+replace_default_ip4_route (int ifindex, guint32 gw, guint32 mss)
 {
 	struct rtnl_route *route = NULL;
 	struct nl_handle *nlh;
 	struct nl_addr *dst_addr = NULL;
 	guint32 dst = 0;
 	struct nl_addr *gw_addr = NULL;
-	int iface_idx, err = -1;
+	int err = -1;
 
-	g_return_val_if_fail (iface != NULL, -ENODEV);
+	g_return_val_if_fail (ifindex > 0, -ENODEV);
 
 	nlh = nm_netlink_get_default_handle ();
 	g_return_val_if_fail (nlh != NULL, -ENOMEM);
-
-	iface_idx = nm_netlink_iface_to_index (iface);
-	if (iface_idx < 0)
-		return -ENODEV;
 
 	route = rtnl_route_alloc();
 	g_return_val_if_fail (route != NULL, -ENOMEM);
@@ -927,7 +925,7 @@ replace_default_ip4_route (const char *iface, guint32 gw, guint32 mss)
 	rtnl_route_set_family (route, AF_INET);
 	rtnl_route_set_table (route, RT_TABLE_MAIN);
 	rtnl_route_set_scope (route, RT_SCOPE_UNIVERSE);
-	rtnl_route_set_oif (route, iface_idx);
+	rtnl_route_set_oif (route, ifindex);
 
 	/* Build up the destination address */
 	dst_addr = nl_addr_build (AF_INET, &dst, sizeof (dst));
@@ -972,22 +970,26 @@ out:
  *
  */
 gboolean
-nm_system_replace_default_ip4_route_vpn (const char *iface,
+nm_system_replace_default_ip4_route_vpn (int ifindex,
                                          guint32 ext_gw,
                                          guint32 int_gw,
                                          guint32 mss,
-                                         const char *parent_iface,
+                                         int parent_ifindex,
                                          guint32 parent_mss)
 {
 	struct rtnl_route *gw_route = NULL;
 	struct nl_handle *nlh;
 	gboolean success = FALSE;
 	int err;
+	const char *iface;
+
+	iface = nm_netlink_index_to_iface (ifindex);
+	g_return_val_if_fail (iface != NULL, FALSE);
 
 	nlh = nm_netlink_get_default_handle ();
 	g_return_val_if_fail (nlh != NULL, FALSE);
 
-	err = replace_default_ip4_route (iface, int_gw, mss);
+	err = replace_default_ip4_route (ifindex, int_gw, mss);
 	if (err == 0) {
 		return TRUE;
 	} else if (err != -ESRCH) {
@@ -998,12 +1000,12 @@ nm_system_replace_default_ip4_route_vpn (const char *iface,
 	}
 
 	/* Try adding a direct route to the gateway first */
-	gw_route = add_ip4_route_to_gateway (parent_iface, ext_gw, parent_mss);
+	gw_route = add_ip4_route_to_gateway (parent_ifindex, ext_gw, parent_mss);
 	if (!gw_route)
 		return FALSE;
 
 	/* Try adding the original route again */
-	err = replace_default_ip4_route (iface, int_gw, mss);
+	err = replace_default_ip4_route (ifindex, int_gw, mss);
 	if (err != 0) {
 		rtnl_route_del (nlh, gw_route, 0);
 		nm_log_err (LOGD_DEVICE | LOGD_IP4,
@@ -1023,17 +1025,21 @@ nm_system_replace_default_ip4_route_vpn (const char *iface,
  *
  */
 gboolean
-nm_system_replace_default_ip4_route (const char *iface, guint32 gw, guint32 mss)
+nm_system_replace_default_ip4_route (int ifindex, guint32 gw, guint32 mss)
 {
 	struct rtnl_route *gw_route = NULL;
 	struct nl_handle *nlh;
 	gboolean success = FALSE;
+	const char *iface;
 	int err;
+
+	iface = nm_netlink_index_to_iface (ifindex);
+	g_return_val_if_fail (iface != NULL, FALSE);
 
 	nlh = nm_netlink_get_default_handle ();
 	g_return_val_if_fail (nlh != NULL, FALSE);
 
-	err = replace_default_ip4_route (iface, gw, mss);
+	err = replace_default_ip4_route (ifindex, gw, mss);
 	if (err == 0) {
 		return TRUE;
 	} else if (err != -ESRCH) {
@@ -1044,12 +1050,12 @@ nm_system_replace_default_ip4_route (const char *iface, guint32 gw, guint32 mss)
 	}
 
 	/* Try adding a direct route to the gateway first */
-	gw_route = add_ip4_route_to_gateway (iface, gw, mss);
+	gw_route = add_ip4_route_to_gateway (ifindex, gw, mss);
 	if (!gw_route)
 		return FALSE;
 
 	/* Try adding the original route again */
-	err = replace_default_ip4_route (iface, gw, mss);
+	err = replace_default_ip4_route (ifindex, gw, mss);
 	if (err != 0) {
 		rtnl_route_del (nlh, gw_route, 0);
 		nm_log_err (LOGD_DEVICE | LOGD_IP4,
@@ -1063,19 +1069,19 @@ nm_system_replace_default_ip4_route (const char *iface, guint32 gw, guint32 mss)
 }
 
 static struct rtnl_route *
-add_ip6_route_to_gateway (const char *iface, const struct in6_addr *gw)
+add_ip6_route_to_gateway (int ifindex, const struct in6_addr *gw)
 {
 	struct nl_handle *nlh;
 	struct rtnl_route *route = NULL;
 	struct nl_addr *gw_addr = NULL;
-	int iface_idx, err;
+	const char *iface;
+	int err;
+
+	iface = nm_netlink_index_to_iface (ifindex);
+	g_return_val_if_fail (iface != NULL, NULL);
 
 	nlh = nm_netlink_get_default_handle ();
 	g_return_val_if_fail (nlh != NULL, NULL);
-
-	iface_idx = nm_netlink_iface_to_index (iface);
-	if (iface_idx < 0)
-		return NULL;
 
 	/* Gateway might be over a bridge; try adding a route to gateway first */
 	route = rtnl_route_alloc ();
@@ -1084,7 +1090,7 @@ add_ip6_route_to_gateway (const char *iface, const struct in6_addr *gw)
 
 	rtnl_route_set_family (route, AF_INET6);
 	rtnl_route_set_table (route, RT_TABLE_MAIN);
-	rtnl_route_set_oif (route, iface_idx);
+	rtnl_route_set_oif (route, ifindex);
 	rtnl_route_set_scope (route, RT_SCOPE_LINK);
 
 	gw_addr = nl_addr_build (AF_INET, (void *) gw, sizeof (*gw));
@@ -1111,21 +1117,21 @@ error:
 }
 
 static int
-replace_default_ip6_route (const char *iface, const struct in6_addr *gw)
+replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
 {
 	struct rtnl_route *route = NULL;
 	struct nl_handle *nlh;
 	struct nl_addr *gw_addr = NULL;
-	int iface_idx, err = -1;
+	const char *iface;
+	int err = -1;
 
-	g_return_val_if_fail (iface != NULL, -ENODEV);
+	g_return_val_if_fail (ifindex > 0, FALSE);
+
+	iface = nm_netlink_index_to_iface (ifindex);
+	g_return_val_if_fail (iface != NULL, FALSE);
 
 	nlh = nm_netlink_get_default_handle ();
 	g_return_val_if_fail (nlh != NULL, -ENOMEM);
-
-	iface_idx = nm_netlink_iface_to_index (iface);
-	if (iface_idx < 0)
-		return -ENODEV;
 
 	route = rtnl_route_alloc();
 	g_return_val_if_fail (route != NULL, -ENOMEM);
@@ -1133,7 +1139,7 @@ replace_default_ip6_route (const char *iface, const struct in6_addr *gw)
 	rtnl_route_set_family (route, AF_INET6);
 	rtnl_route_set_table (route, RT_TABLE_MAIN);
 	rtnl_route_set_scope (route, RT_SCOPE_UNIVERSE);
-	rtnl_route_set_oif (route, iface_idx);
+	rtnl_route_set_oif (route, ifindex);
 
 	if (gw && !IN6_IS_ADDR_UNSPECIFIED (gw)) {
 		/* Build up the gateway address */
@@ -1170,20 +1176,24 @@ out:
  *
  */
 gboolean
-nm_system_replace_default_ip6_route (const char *iface, const struct in6_addr *gw)
+nm_system_replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
 {
 	struct rtnl_route *gw_route = NULL;
 	struct nl_handle *nlh;
 	gboolean success = FALSE;
+	const char *iface;
 	int err;
+
+	iface = nm_netlink_index_to_iface (ifindex);
+	g_return_val_if_fail (iface != NULL, FALSE);
 
 	nlh = nm_netlink_get_default_handle ();
 	g_return_val_if_fail (nlh != NULL, FALSE);
 
-	err = replace_default_ip6_route (iface, gw);
-	if (err == 0) {
+	err = replace_default_ip6_route (ifindex, gw);
+	if (err == 0)
 		return TRUE;
-	} else if (err != -ESRCH) {
+	if (err != -ESRCH) {
 		nm_log_err (LOGD_DEVICE | LOGD_IP6,
 		            "(%s): failed to set IPv6 default route: %d",
 		            iface, err);
@@ -1191,12 +1201,12 @@ nm_system_replace_default_ip6_route (const char *iface, const struct in6_addr *g
 	}
 
 	/* Try adding a direct route to the gateway first */
-	gw_route = add_ip6_route_to_gateway (iface, gw);
+	gw_route = add_ip6_route_to_gateway (ifindex, gw);
 	if (!gw_route)
 		return FALSE;
 
 	/* Try adding the original route again */
-	err = replace_default_ip6_route (iface, gw);
+	err = replace_default_ip6_route (ifindex, gw);
 	if (err != 0) {
 		rtnl_route_del (nlh, gw_route, 0);
 		nm_log_err (LOGD_DEVICE | LOGD_IP6,
@@ -1379,7 +1389,7 @@ nm_system_iface_flush_routes (int ifindex, int family)
 typedef struct {
 	struct rtnl_route *route;
 	NMIP4Config *config;
-	int iface;
+	int ifindex;
 } SetPriorityInfo;
 
 static void
@@ -1393,7 +1403,7 @@ find_route (struct nl_object *object, gpointer user_data)
 	int i;
 
 	if (info->route ||
-	    rtnl_route_get_oif (route) != info->iface ||
+	    rtnl_route_get_oif (route) != info->ifindex ||
 	    rtnl_route_get_scope (route) != RT_SCOPE_LINK)
 		return;
 
@@ -1420,21 +1430,19 @@ find_route (struct nl_object *object, gpointer user_data)
 }
 
 static void
-nm_system_device_set_priority (const char *iface,
-						 NMIP4Config *config,
-						 int priority)
+nm_system_device_set_priority (int ifindex,
+                               NMIP4Config *config,
+                               int priority)
 {
 	SetPriorityInfo info;
+	struct nl_handle *nlh;
 
 	info.route = NULL;
 	info.config = config;
-	info.iface = nm_netlink_iface_to_index (iface);
-	g_return_if_fail (info.iface >= 0);
+	info.ifindex = ifindex;
 
 	foreach_route (find_route, &info);
 	if (info.route) {
-		struct nl_handle *nlh;
-
 		nlh = nm_netlink_get_default_handle ();
 		rtnl_route_del (nlh, info.route, 0);
 

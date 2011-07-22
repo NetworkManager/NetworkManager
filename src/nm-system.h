@@ -37,18 +37,18 @@
 
 gboolean        nm_system_iface_flush_routes         (int ifindex, int family);
 
-gboolean		nm_system_replace_default_ip4_route   (const char *iface,
+gboolean		nm_system_replace_default_ip4_route   (int ifindex,
                                                        guint32 gw,
                                                        guint32 mss);
 
-gboolean		nm_system_replace_default_ip6_route   (const char *iface,
+gboolean		nm_system_replace_default_ip6_route   (int ifindex,
                                                        const struct in6_addr *gw);
 
-gboolean		nm_system_replace_default_ip4_route_vpn (const char *iface,
+gboolean		nm_system_replace_default_ip4_route_vpn (int ifindex,
                                                          guint32 ext_gw,
                                                          guint32 int_gw,
                                                          guint32 mss,
-                                                         const char *parent_iface,
+                                                         int parent_ifindex,
                                                          guint32 parent_mss);
 
 struct rtnl_route *nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device, NMIP4Config *vpn_config);
@@ -74,7 +74,7 @@ int             nm_system_set_ip6_route                 (int ifindex,
                                                          int table,
                                                          struct rtnl_route **out_route);
 
-gboolean		nm_system_apply_ip6_config              (const char *iface,
+gboolean		nm_system_apply_ip6_config              (int ifindex,
                                                          NMIP6Config *config,
                                                          int priority,
                                                          NMIP6ConfigCompareFlags flags);

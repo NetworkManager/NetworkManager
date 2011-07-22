@@ -3117,12 +3117,14 @@ nm_device_set_ip6_config (NMDevice *self,
 	gboolean success = TRUE;
 	NMIP6ConfigCompareFlags diff = NM_IP6_COMPARE_FLAG_ALL;
 	NMDnsManager *dns_mgr;
+	int ip_ifindex;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 	g_return_val_if_fail (reason != NULL, FALSE);
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	ip_iface = nm_device_get_ip_iface (self);
+	ip_ifindex = nm_device_get_ip_ifindex (self);
 
 	old_config = priv->ip6_config;
 
@@ -3148,7 +3150,7 @@ nm_device_set_ip6_config (NMDevice *self,
 		 * assumed when NM starts.
 		 */
 		if (!assumed)
-			success = nm_system_apply_ip6_config (ip_iface, new_config, nm_device_get_priority (self), diff);
+			success = nm_system_apply_ip6_config (ip_ifindex, new_config, nm_device_get_priority (self), diff);
 
 		if (success || assumed) {
 			/* Export over D-Bus */

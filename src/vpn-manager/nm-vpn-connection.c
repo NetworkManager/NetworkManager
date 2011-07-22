@@ -773,6 +773,14 @@ nm_vpn_connection_get_ip_iface (NMVPNConnection *connection)
 	return NM_VPN_CONNECTION_GET_PRIVATE (connection)->ip_iface;
 }
 
+int
+nm_vpn_connection_get_ip_ifindex (NMVPNConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), -1);
+
+	return NM_VPN_CONNECTION_GET_PRIVATE (connection)->ip_ifindex;
+}
+
 NMDevice *
 nm_vpn_connection_get_parent_device (NMVPNConnection *connection)
 {
