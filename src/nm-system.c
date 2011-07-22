@@ -1026,16 +1026,12 @@ gboolean
 nm_system_replace_default_ip4_route (int ifindex, guint32 gw, guint32 mss)
 {
 	struct rtnl_route *gw_route = NULL;
-	struct nl_handle *nlh;
 	gboolean success = FALSE;
 	const char *iface;
 	int err;
 
 	iface = nm_netlink_index_to_iface (ifindex);
 	g_return_val_if_fail (iface != NULL, FALSE);
-
-	nlh = nm_netlink_get_default_handle ();
-	g_return_val_if_fail (nlh != NULL, FALSE);
 
 	err = replace_default_ip4_route (ifindex, gw, mss);
 	if (err == 0) {
@@ -1177,16 +1173,12 @@ gboolean
 nm_system_replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
 {
 	struct rtnl_route *gw_route = NULL;
-	struct nl_handle *nlh;
 	gboolean success = FALSE;
 	const char *iface;
 	int err;
 
 	iface = nm_netlink_index_to_iface (ifindex);
 	g_return_val_if_fail (iface != NULL, FALSE);
-
-	nlh = nm_netlink_get_default_handle ();
-	g_return_val_if_fail (nlh != NULL, FALSE);
 
 	err = replace_default_ip6_route (ifindex, gw);
 	if (err == 0)
