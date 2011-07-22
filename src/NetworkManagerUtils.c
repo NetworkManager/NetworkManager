@@ -26,6 +26,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
@@ -42,9 +43,6 @@
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-manager-auth.h"
-
-#include <netlink/addr.h>
-#include <netinet/in.h>
 
 /*
  * nm_ethernet_address_is_valid
