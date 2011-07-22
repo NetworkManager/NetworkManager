@@ -1600,7 +1600,7 @@ real_act_stage3_ip4_config_start (NMDevice *self, NMDeviceStateReason *reason)
 
 	/* Make sure the interface is up before trying to do anything with it */
 	if (!nm_system_device_is_up_with_iface (ip_iface))
-		nm_system_device_set_up_down_with_iface (ip_iface, TRUE, NULL);
+		nm_system_iface_set_up (priv->ip_ifindex, TRUE, NULL);
 
 	req = nm_device_get_act_request (self);
 	connection = nm_act_request_get_connection (req);
@@ -2820,6 +2820,7 @@ nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
 	gboolean tried_ipv6 = FALSE;
+	int ifindex, family;
 
 	g_return_if_fail (self != NULL);
 
@@ -2857,8 +2858,10 @@ nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason)
 	clear_act_request (self);
 
 	/* Take out any entries in the routing table and any IP address the device had. */
-	nm_system_device_flush_routes (self, tried_ipv6 ? AF_UNSPEC : AF_INET);
-	nm_system_device_flush_addresses (self, tried_ipv6 ? AF_UNSPEC : AF_INET);
+	ifindex = nm_device_get_ip_ifindex (self);
+	family = tried_ipv6 ? AF_UNSPEC : AF_INET;
+	nm_system_iface_flush_routes (ifindex, family);
+	nm_system_iface_flush_addresses (ifindex, family);
 	nm_device_update_ip4_address (self);	
 
 	/* Clean up nameservers and addresses */

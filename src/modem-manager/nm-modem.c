@@ -629,7 +629,7 @@ static void
 real_deactivate (NMModem *self, NMDevice *device)
 {
 	NMModemPrivate *priv;
-	const char *iface;
+	int ifindex;
 
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_MODEM (self));
@@ -668,11 +668,11 @@ real_deactivate (NMModem *self, NMDevice *device)
 		break;
 	case MM_MODEM_IP_METHOD_STATIC:
 	case MM_MODEM_IP_METHOD_DHCP:
-		iface = nm_device_get_ip_iface (device);
+		ifindex = nm_device_get_ip_ifindex (device);
 		/* FIXME: use AF_UNSPEC here when we have IPv6 support */
-		nm_system_device_flush_routes_with_iface (iface, AF_INET);
-		nm_system_device_flush_addresses_with_iface (iface);
-		nm_system_device_set_up_down_with_iface (iface, FALSE, NULL);
+		nm_system_iface_flush_routes (ifindex, AF_INET);
+		nm_system_iface_flush_addresses (ifindex, AF_UNSPEC);
+		nm_system_iface_set_up (ifindex, FALSE, NULL);
 		break;
 	default:
 		nm_log_err (LOGD_MB, "unknown IP method %d", priv->ip_method);
@@ -781,7 +781,7 @@ nm_modem_hw_bring_up (NMModem *self, NMDevice *device, gboolean *no_firmware)
 
 		state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (device));
 		if (priv->pending_ip4_config || _state_is_active (state))
-			return nm_system_device_set_up_down (device, TRUE, no_firmware);
+			return nm_system_iface_set_up (nm_device_get_ip_ifindex (device), TRUE, no_firmware);
 	}
 
 	return TRUE;

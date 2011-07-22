@@ -659,46 +659,39 @@ nm_system_apply_ip6_config (const char *iface,
 	return TRUE;
 }
 
-/*
- * nm_system_device_set_up_down
+/**
+ * nm_system_iface_set_up:
+ * @ifindex: interface index
+ * @up: %TRUE to bring interface up, or %FALSE to take it down
+ * @no_firmware: on return, %TRUE if the operation may have failed due to
+ * missing firmware
  *
- * Mark the device as up or down.
+ * Bring the interface up or take it down.
  *
- */
+ * Returns: %TRUE on success, %FALSE on failure
+ **/
 gboolean
-nm_system_device_set_up_down (NMDevice *dev,
-                              gboolean up,
-                              gboolean *no_firmware)
-{
-	g_return_val_if_fail (dev != NULL, FALSE);
-
-	return nm_system_device_set_up_down_with_iface (nm_device_get_ip_iface (dev), up, no_firmware);
-}
-
-gboolean
-nm_system_device_set_up_down_with_iface (const char *iface,
-                                         gboolean up,
-                                         gboolean *no_firmware)
+nm_system_iface_set_up (int ifindex,
+                        gboolean up,
+                        gboolean *no_firmware)
 {
 	struct rtnl_link *request = NULL, *old = NULL;
 	struct nl_handle *nlh;
 	gboolean success = FALSE;
-	guint32 idx;
 
-	g_return_val_if_fail (iface != NULL, FALSE);
+	g_return_val_if_fail (ifindex > 0, FALSE);
 	if (no_firmware)
 		g_return_val_if_fail (*no_firmware == FALSE, FALSE);
 
 	if (!(request = rtnl_link_alloc ()))
-		goto out;
+		return FALSE;
 
 	if (up)
 		rtnl_link_set_flags (request, IFF_UP);
 	else
 		rtnl_link_unset_flags (request, IFF_UP);
 
-	idx = nm_netlink_iface_to_index (iface);
-	old = nm_netlink_index_to_rtnl_link (idx);
+	old = nm_netlink_index_to_rtnl_link (ifindex);
 	if (old) {
 		nlh = nm_netlink_get_default_handle ();
 		if (nlh) {
@@ -711,8 +704,6 @@ nm_system_device_set_up_down_with_iface (const char *iface,
 
 	rtnl_link_put (old);
 	rtnl_link_put (request);
-
-out:
 	return success;
 }
 
@@ -1187,39 +1178,21 @@ nm_system_replace_default_ip6_route (const char *iface, const struct in6_addr *g
 	return success;
 }
 
-static void flush_addresses (const char *iface, int family)
-{
-	int iface_idx;
-
-	g_return_if_fail (iface != NULL);
-	iface_idx = nm_netlink_iface_to_index (iface);
-	if (iface_idx >= 0)
-		sync_addresses (iface, iface_idx, family, NULL, 0);
-}
-
 /*
- * nm_system_device_flush_addresses
+ * nm_system_iface_flush_addresses
  *
  * Flush all network addresses associated with a network device
  *
  */
-void nm_system_device_flush_addresses (NMDevice *dev, int family)
+gboolean
+nm_system_iface_flush_addresses (int ifindex, int family)
 {
-	g_return_if_fail (dev != NULL);
+	const char *iface;
 
-	flush_addresses (nm_device_get_ip_iface (dev), family);
-}
+	g_return_val_if_fail (ifindex > 0, FALSE);
 
-
-/*
- * nm_system_device_flush_addresses_with_iface
- *
- * Flush all network addresses associated with a network device
- *
- */
-void nm_system_device_flush_addresses_with_iface (const char *iface)
-{
-	flush_addresses (iface, AF_UNSPEC);
+	iface = nm_netlink_index_to_iface (ifindex);
+	return iface ? sync_addresses (iface, ifindex, family, NULL, 0) : FALSE;
 }
 
 
@@ -1335,20 +1308,29 @@ check_one_route (struct nl_object *object, void *user_data)
 	}
 }
 
-static void flush_routes (int ifindex, const char *iface, int family)
+/**
+ * nm_system_iface_flush_routes:
+ * @ifindex: interface index
+ * @family: address family, i.e. AF_INET, AF_INET6, or AF_UNSPEC
+ *
+ * Flush all network addresses associated with a network device.
+ *
+ * Returns: %TRUE on success, %FALSE on failure
+ **/
+gboolean
+nm_system_iface_flush_routes (int ifindex, int family)
 {
 	RouteCheckData check_data;
 	guint32 log_level = LOGD_IP4 | LOGD_IP6;
 	const char *sf = "UNSPEC";
+	const char *iface;
 
-	g_return_if_fail (iface != NULL);
+	g_return_val_if_fail (ifindex > 0, FALSE);
 
-	if (ifindex < 0) {
-		ifindex = nm_netlink_iface_to_index (iface);
-		if (ifindex < 0) {
-			nm_log_dbg (LOGD_DEVICE, "(%s) failed to lookup interface index", iface);
-			return;
-		}
+	iface = nm_netlink_index_to_iface (ifindex);
+	if (iface < 0) {
+		nm_log_warn (LOGD_DEVICE, "(%d) failed to lookup interface name", ifindex);
+		return FALSE;
 	}
 
 	if (family == AF_INET) {
@@ -1366,33 +1348,8 @@ static void flush_routes (int ifindex, const char *iface, int family)
 	check_data.iface_idx = ifindex;
 	check_data.family = family;
 	foreach_route (check_one_route, &check_data);
-}
 
-/*
- * nm_system_device_flush_routes
- *
- * Flush all network addresses associated with a network device
- *
- */
-void nm_system_device_flush_routes (NMDevice *dev, int family)
-{
-	g_return_if_fail (dev != NULL);
-
-	flush_routes (nm_device_get_ip_ifindex (dev),
-	              nm_device_get_ip_iface (dev),
-	              family);
-}
-
-/*
- * nm_system_device_flush_routes_with_iface
- *
- * Flush all routes associated with a network device.  'family' is an
- * address family, either AF_INET, AF_INET6, or AF_UNSPEC.
- *
- */
-void nm_system_device_flush_routes_with_iface (const char *iface, int family)
-{
-	flush_routes (-1, iface, family);
+	return TRUE;
 }
 
 typedef struct {

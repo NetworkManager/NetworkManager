@@ -1142,13 +1142,13 @@ real_hw_bring_up (NMDevice *device, gboolean *no_firmware)
 	if (!NM_DEVICE_WIFI_GET_PRIVATE (device)->enabled)
 		return FALSE;
 
-	return nm_system_device_set_up_down (device, TRUE, no_firmware);
+	return nm_system_iface_set_up (nm_device_get_ip_ifindex (device), TRUE, no_firmware);
 }
 
 static void
-real_hw_take_down (NMDevice *dev)
+real_hw_take_down (NMDevice *device)
 {
-	nm_system_device_set_up_down (dev, FALSE, NULL);
+	nm_system_iface_set_up (nm_device_get_ip_ifindex (device), FALSE, NULL);
 }
 
 static gboolean
