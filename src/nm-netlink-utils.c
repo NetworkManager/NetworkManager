@@ -18,9 +18,11 @@
  * Copyright (C) 2011 Red Hat, Inc.
  */
 
+#include "logging/nm-logging.h"
 #include "nm-netlink-utils.h"
 #include "nm-netlink-monitor.h"
 
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netlink/netlink.h>
 #include <netlink/addr.h>
@@ -134,5 +136,56 @@ nm_netlink_route_delete (struct rtnl_route *route)
 	nlh = nm_netlink_get_default_handle ();
 	err = rtnl_route_del (nlh, route, 0);
 	return err == 0 ? TRUE : FALSE;
+}
+
+
+/**
+ * nm_netlink_dump_route:
+ * @route: the route to dump
+ *
+ * Logs the details of a route.
+ **/
+void
+nm_netlink_dump_route (struct rtnl_route *route)
+{
+	char buf6[INET6_ADDRSTRLEN];
+	char buf4[INET_ADDRSTRLEN];
+	struct nl_addr *nl;
+	struct in6_addr *addr6 = NULL;
+	struct in_addr *addr4 = NULL;
+	int prefixlen = 0;
+	const char *sf = "UNSPEC";
+	int family = rtnl_route_get_family (route);
+	guint32 log_level = LOGD_IP4 | LOGD_IP6;
+
+	memset (buf6, 0, sizeof (buf6));
+	memset (buf4, 0, sizeof (buf4));
+	nl = rtnl_route_get_dst (route);
+	if (nl) {
+		if (nl_addr_get_family (nl) == AF_INET) {
+			addr4 = nl_addr_get_binary_addr (nl);
+			if (addr4)
+				inet_ntop (AF_INET, addr4, &buf4[0], sizeof (buf4));
+		} else if (nl_addr_get_family (nl) == AF_INET6) {
+			addr6 = nl_addr_get_binary_addr (nl);
+			if (addr6)
+				inet_ntop (AF_INET6, addr6, &buf6[0], sizeof (buf6));
+		}
+		prefixlen = nl_addr_get_prefixlen (nl);
+	}
+
+	if (family == AF_INET) {
+		sf = "INET";
+		log_level = LOGD_IP4;
+	} else if (family == AF_INET6) {
+		sf = "INET6";
+		log_level = LOGD_IP6;
+	}
+
+	nm_log_dbg (log_level, "  route idx %d family %s (%d) addr %s/%d",
+	            rtnl_route_get_oif (route),
+	            sf, family,
+	            strlen (buf4) ? buf4 : (strlen (buf6) ? buf6 : "<unknown>"),
+	            prefixlen);
 }
 

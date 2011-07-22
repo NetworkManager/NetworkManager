@@ -32,4 +32,6 @@ gboolean nm_netlink_find_address (int ifindex,
 
 gboolean nm_netlink_route_delete (struct rtnl_route *route);
 
+void nm_netlink_dump_route (struct rtnl_route *route);
+
 #endif  /* NM_NETLINK_MONITOR_H */

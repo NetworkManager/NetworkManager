@@ -1245,46 +1245,6 @@ foreach_route (void (*callback)(struct nl_object *, gpointer),
 	nl_cache_free (route_cache);
 }
 
-static void
-dump_route (struct rtnl_route *route)
-{
-	char buf6[INET6_ADDRSTRLEN];
-	char buf4[INET_ADDRSTRLEN];
-	struct nl_addr *nl;
-	struct in6_addr *addr6 = NULL;
-	struct in_addr *addr4 = NULL;
-	int prefixlen = 0;
-	const char *sf = "UNSPEC";
-	int family = rtnl_route_get_family (route);
-
-	memset (buf6, 0, sizeof (buf6));
-	memset (buf4, 0, sizeof (buf4));
-	nl = rtnl_route_get_dst (route);
-	if (nl) {
-		if (nl_addr_get_family (nl) == AF_INET) {
-			addr4 = nl_addr_get_binary_addr (nl);
-			if (addr4)
-				inet_ntop (AF_INET, addr4, &buf4[0], sizeof (buf4));
-		} else if (nl_addr_get_family (nl) == AF_INET6) {
-			addr6 = nl_addr_get_binary_addr (nl);
-			if (addr6)
-				inet_ntop (AF_INET6, addr6, &buf6[0], sizeof (buf6));
-		}
-		prefixlen = nl_addr_get_prefixlen (nl);
-	}
-
-	if (family == AF_INET)
-		sf = "INET";
-	else if (family == AF_INET6)
-		sf = "INET6";
-
-	nm_log_dbg (LOGD_IP4 | LOGD_IP6, "  route idx %d family %s (%d) addr %s/%d",
-	            rtnl_route_get_oif (route),
-	            sf, family,
-	            strlen (buf4) ? buf4 : (strlen (buf6) ? buf6 : "<unknown>"),
-	            prefixlen);
-}
-
 typedef struct {
 	const char *iface;
 	int iface_idx;
@@ -1299,7 +1259,7 @@ check_one_route (struct nl_object *object, void *user_data)
 	guint32 log_level = LOGD_IP4 | LOGD_IP6;
 
 	if (nm_logging_level_enabled (LOGL_DEBUG))
-		dump_route (route);
+		nm_netlink_dump_route (route);
 
 	/* Delete all routes from this interface */
 	if (rtnl_route_get_oif (route) != data->iface_idx)
