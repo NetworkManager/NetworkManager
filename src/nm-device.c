@@ -1591,16 +1591,15 @@ real_act_stage3_ip4_config_start (NMDevice *self, NMDeviceStateReason *reason)
 	NMSettingIP4Config *s_ip4;
 	NMActRequest *req;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
-	const char *ip_iface, *method = NULL;
+	const char *method = NULL;
+	int ifindex;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-	/* Use the IP interface (not the control interface) for IP stuff */
-	ip_iface = nm_device_get_ip_iface (self);
-
 	/* Make sure the interface is up before trying to do anything with it */
-	if (!nm_system_device_is_up_with_iface (ip_iface))
-		nm_system_iface_set_up (priv->ip_ifindex, TRUE, NULL);
+	ifindex = nm_device_get_ip_ifindex (self);
+	if (!nm_system_iface_is_up (ifindex))
+		nm_system_iface_set_up (ifindex, TRUE, NULL);
 
 	req = nm_device_get_act_request (self);
 	connection = nm_act_request_get_connection (req);

@@ -764,7 +764,7 @@ nm_modem_hw_is_up (NMModem *self, NMDevice *device)
 
 		state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (device));
 		if (priv->pending_ip4_config || _state_is_active (state))
-			return nm_system_device_is_up (device);
+			return nm_system_iface_is_up (nm_device_get_ip_ifindex (device));
 	}
 
 	return TRUE;

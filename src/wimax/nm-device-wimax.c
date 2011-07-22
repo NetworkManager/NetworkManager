@@ -390,7 +390,7 @@ real_take_down (NMDevice *device)
 static gboolean
 real_hw_is_up (NMDevice *device)
 {
-	return nm_system_device_is_up (device);
+	return nm_system_iface_is_up (nm_device_get_ip_ifindex (device));
 }
 
 static gboolean

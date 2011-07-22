@@ -83,8 +83,7 @@ gboolean        nm_system_iface_set_up                  (int ifindex,
                                                          gboolean up,
                                                          gboolean *no_firmware);
 
-gboolean        nm_system_device_is_up (NMDevice *device);
-gboolean        nm_system_device_is_up_with_iface (const char *iface);
+gboolean        nm_system_iface_is_up                   (int ifindex);
 
 gboolean		nm_system_device_set_mtu (const char *iface, guint32 mtu);
 gboolean		nm_system_device_set_mac (const char *iface, const struct ether_addr *mac);

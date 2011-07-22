@@ -708,40 +708,30 @@ nm_system_iface_set_up (int ifindex,
 }
 
 gboolean
-nm_system_device_is_up (NMDevice *device)
+nm_system_iface_is_up (int ifindex)
 {
-	g_return_val_if_fail (device != NULL, FALSE);
+	const char *iface;
+	struct rtnl_link *l;
+	guint32 flags;
 
-	return nm_system_device_is_up_with_iface (nm_device_get_ip_iface (device));
-}
+	g_return_val_if_fail (ifindex > 0, FALSE);
 
-gboolean
-nm_system_device_is_up_with_iface (const char *iface)
-{
-	struct ifreq ifr;
-	int fd;
-	gboolean up = FALSE;
-
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		nm_log_err (LOGD_HW, "couldn't open control socket.");
+	iface = nm_netlink_index_to_iface (ifindex);
+	if (iface == NULL) {
+		nm_log_err (LOGD_HW, "failed to get interface name for index %d", ifindex);
 		return FALSE;
 	}
 
-	/* Get device's flags */
-	memset (&ifr, 0, sizeof (ifr));
-	strncpy (ifr.ifr_name, iface, IFNAMSIZ);
-	if (ioctl (fd, SIOCGIFFLAGS, &ifr) < 0) {
-		if (errno != ENODEV) {
-			nm_log_err (LOGD_HW, "(%s): could not get flags: errno %d",
-			            iface, errno);
-		}
-	} else {
-		up = !!(ifr.ifr_flags & IFF_UP);
+	l = nm_netlink_index_to_rtnl_link (ifindex);
+	if (l == NULL) {
+		nm_log_err (LOGD_HW, "(%s): failed to get interface link object", iface);
+		return FALSE;
 	}
-	close (fd);
 
-	return up;
+	flags = rtnl_link_get_flags (l);
+	rtnl_link_put (l);
+
+	return flags & IFF_UP;
 }
 
 gboolean
