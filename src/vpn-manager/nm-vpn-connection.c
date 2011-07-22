@@ -539,7 +539,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 
 	nm_system_iface_set_up (priv->ip_ifindex, TRUE, NULL);
 
-	if (nm_system_apply_ip4_config (priv->ip_iface, config, 0, NM_IP4_COMPARE_FLAG_ALL)) {
+	if (nm_system_apply_ip4_config (priv->ip_ifindex, config, 0, NM_IP4_COMPARE_FLAG_ALL)) {
 		NMDnsManager *dns_mgr;
 
 		/* Add any explicit route to the VPN gateway through the parent device */
@@ -971,7 +971,7 @@ vpn_cleanup (NMVPNConnection *connection)
 		/* Reset routes and addresses of the currently active device */
 		parent_config = nm_device_get_ip4_config (priv->parent_dev);
 		if (parent_config) {
-			if (!nm_system_apply_ip4_config (nm_device_get_ip_iface (priv->parent_dev),
+			if (!nm_system_apply_ip4_config (nm_device_get_ip_ifindex (priv->parent_dev),
 			                                 nm_device_get_ip4_config (priv->parent_dev),
 			                                 nm_device_get_priority (priv->parent_dev),
 			                                 NM_IP4_COMPARE_FLAG_ADDRESSES | NM_IP4_COMPARE_FLAG_ROUTES)) {

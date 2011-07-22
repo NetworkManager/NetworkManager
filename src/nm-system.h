@@ -59,7 +59,7 @@ gboolean        nm_system_iface_flush_addresses         (int ifindex, int family
 void			nm_system_enable_loopback				(void);
 void			nm_system_update_dns					(void);
 
-gboolean		nm_system_apply_ip4_config              (const char *iface,
+gboolean		nm_system_apply_ip4_config              (int ifindex,
                                                          NMIP4Config *config,
                                                          int priority,
                                                          NMIP4ConfigCompareFlags flags);
@@ -85,7 +85,8 @@ gboolean        nm_system_iface_set_up                  (int ifindex,
 
 gboolean        nm_system_iface_is_up                   (int ifindex);
 
-gboolean		nm_system_device_set_mtu (const char *iface, guint32 mtu);
-gboolean		nm_system_device_set_mac (const char *iface, const struct ether_addr *mac);
+gboolean		nm_system_iface_set_mtu                 (int ifindex, guint32 mtu);
+
+gboolean		nm_system_iface_set_mac                 (int ifindex, const struct ether_addr *mac);
 
 #endif

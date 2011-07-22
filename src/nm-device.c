@@ -3011,6 +3011,7 @@ nm_device_set_ip4_config (NMDevice *self,
 	gboolean success = TRUE;
 	NMIP4ConfigCompareFlags diff = NM_IP4_COMPARE_FLAG_ALL;
 	NMDnsManager *dns_mgr;
+	int ip_ifindex;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 	g_return_val_if_fail (reason != NULL, FALSE);
@@ -3041,8 +3042,10 @@ nm_device_set_ip4_config (NMDevice *self,
 		/* Don't touch the device's actual IP config if the connection is
 		 * assumed when NM starts.
 		 */
-		if (!assumed)
-			success = nm_system_apply_ip4_config (ip_iface, new_config, nm_device_get_priority (self), diff);
+		if (!assumed) {
+			ip_ifindex = nm_device_get_ip_ifindex (self);
+			success = nm_system_apply_ip4_config (ip_ifindex, new_config, nm_device_get_priority (self), diff);
+		}
 
 		if (success || assumed) {
 			/* Export over D-Bus */

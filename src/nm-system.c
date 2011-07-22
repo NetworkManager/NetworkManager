@@ -105,7 +105,7 @@ create_route (int iface_idx, int mss)
 }
 
 static struct rtnl_route *
-nm_system_device_set_ip4_route (const char *iface, 
+nm_system_device_set_ip4_route (int ifindex, 
                                 guint32 ip4_dest,
                                 guint32 ip4_prefix,
                                 guint32 ip4_gateway,
@@ -116,15 +116,18 @@ nm_system_device_set_ip4_route (const char *iface,
 	struct rtnl_route *route;
 	struct nl_addr *dest_addr;
 	struct nl_addr *gw_addr = NULL;
-	int err, iface_idx;
+	int err;
+	const char *iface;
+
+	g_return_val_if_fail (ifindex > 0, NULL);
 
 	nlh = nm_netlink_get_default_handle ();
 	g_return_val_if_fail (nlh != NULL, NULL);
 
-	iface_idx = nm_netlink_iface_to_index (iface);
-	g_return_val_if_fail (iface_idx >= 0, NULL);
+	iface = nm_netlink_index_to_iface (ifindex);
+	g_return_val_if_fail (iface != NULL, NULL);
 
-	route = create_route (iface_idx, mss);
+	route = create_route (ifindex, mss);
 	g_return_val_if_fail (route != NULL, NULL);
 
 	/* Destination */
@@ -158,7 +161,7 @@ nm_system_device_set_ip4_route (const char *iface,
 		/* Gateway might be over a bridge; try adding a route to gateway first */
 		struct rtnl_route *route2;
 
-		route2 = create_route (iface_idx, mss);
+		route2 = create_route (ifindex, mss);
 		if (route2) {
 			/* Add route to gateway over bridge */
 			rtnl_route_set_dst (route2, gw_addr);
@@ -188,8 +191,10 @@ nm_system_device_set_ip4_route (const char *iface,
 }
 
 static gboolean
-sync_addresses (const char *iface, int ifindex, int family,
-				struct rtnl_addr **addrs, int num_addrs)
+sync_addresses (int ifindex,
+                int family,
+				struct rtnl_addr **addrs,
+				int num_addrs)
 {
 	struct nl_handle *nlh;
 	struct nl_cache *addr_cache;
@@ -199,6 +204,10 @@ sync_addresses (const char *iface, int ifindex, int family,
 	int i, err;
 	guint32 log_domain = (family == AF_INET) ? LOGD_IP4 : LOGD_IP6;
 	char buf[INET6_ADDRSTRLEN + 1];
+	const char *iface;
+
+	iface = nm_netlink_index_to_iface (ifindex);
+	g_return_val_if_fail (iface != NULL, FALSE);
 
 	log_domain |= LOGD_DEVICE;
 
@@ -361,7 +370,7 @@ add_ip4_addresses (NMIP4Config *config, const char *iface)
 		rtnl_addr_set_ifindex (addrs[i], iface_idx);
 	}
 
-	return sync_addresses (iface, iface_idx, AF_INET, addrs, num_addrs);
+	return sync_addresses (iface_idx, AF_INET, addrs, num_addrs);
 }
 
 struct rtnl_route *
@@ -406,10 +415,10 @@ nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device, NMIP4Config *vpn_c
 	 * parent device.
 	 */
 	if (ip4_dest_in_same_subnet (parent_config, vpn_gw, parent_prefix)) {
-		route = nm_system_device_set_ip4_route (nm_device_get_ip_iface (parent_device),
+		route = nm_system_device_set_ip4_route (nm_device_get_ip_ifindex (parent_device),
 		                                        vpn_gw, 32, 0, 0, nm_ip4_config_get_mss (parent_config));
 	} else {
-		route = nm_system_device_set_ip4_route (nm_device_get_ip_iface (parent_device),
+		route = nm_system_device_set_ip4_route (nm_device_get_ip_ifindex (parent_device),
 		                                        vpn_gw, 32, parent_gw, 0, nm_ip4_config_get_mss (parent_config));
 	}
 
@@ -423,15 +432,19 @@ nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device, NMIP4Config *vpn_c
  *
  */
 gboolean
-nm_system_apply_ip4_config (const char *iface,
+nm_system_apply_ip4_config (int ifindex,
                             NMIP4Config *config,
                             int priority,
                             NMIP4ConfigCompareFlags flags)
 {
+	const char *iface;
 	int i;
 
-	g_return_val_if_fail (iface != NULL, FALSE);
+	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
+
+	iface = nm_netlink_index_to_iface (ifindex);
+	g_return_val_if_fail (iface != NULL, FALSE);
 
 	if (flags & NM_IP4_COMPARE_FLAG_ADDRESSES) {
 		if (!add_ip4_addresses (config, iface))
@@ -459,7 +472,7 @@ nm_system_apply_ip4_config (const char *iface,
 			    && nm_ip4_route_get_dest (route) == 0)
 				continue;
 
-			tmp = nm_system_device_set_ip4_route (iface,
+			tmp = nm_system_device_set_ip4_route (ifindex,
 			                                      nm_ip4_route_get_dest (route),
 			                                      nm_ip4_route_get_prefix (route),
 			                                      nm_ip4_route_get_next_hop (route),
@@ -471,7 +484,7 @@ nm_system_apply_ip4_config (const char *iface,
 
 	if (flags & NM_IP4_COMPARE_FLAG_MTU) {
 		if (nm_ip4_config_get_mtu (config))
-			nm_system_device_set_mtu (iface, nm_ip4_config_get_mtu (config));
+			nm_system_iface_set_mtu (ifindex, nm_ip4_config_get_mtu (config));
 	}
 
 	if (priority > 0)
@@ -595,7 +608,7 @@ add_ip6_addresses (NMIP6Config *config, const char *iface)
 		rtnl_addr_set_ifindex (addrs[i], iface_idx);
 	}
 
-	return sync_addresses (iface, iface_idx, AF_INET6, addrs, num_addrs);
+	return sync_addresses (iface_idx, AF_INET6, addrs, num_addrs);
 }
 
 /*
@@ -707,6 +720,13 @@ nm_system_iface_set_up (int ifindex,
 	return success;
 }
 
+/**
+ * nm_system_iface_is_up:
+ * @ifindex: interface index
+ *
+ * Returns: %TRUE if the interface is up, %FALSE if it was down or the check
+ * failed.
+ **/
 gboolean
 nm_system_iface_is_up (int ifindex)
 {
@@ -717,10 +737,7 @@ nm_system_iface_is_up (int ifindex)
 	g_return_val_if_fail (ifindex > 0, FALSE);
 
 	iface = nm_netlink_index_to_iface (ifindex);
-	if (iface == NULL) {
-		nm_log_err (LOGD_HW, "failed to get interface name for index %d", ifindex);
-		return FALSE;
-	}
+	g_return_val_if_fail (iface != NULL, FALSE);
 
 	l = nm_netlink_index_to_rtnl_link (ifindex);
 	if (l == NULL) {
@@ -734,72 +751,96 @@ nm_system_iface_is_up (int ifindex)
 	return flags & IFF_UP;
 }
 
+/**
+ * nm_system_iface_set_mtu:
+ * @ifindex: interface index
+ * @mtu: the new MTU
+ *
+ * Returns: %TRUE if the request was successful, %FALSE if it failed
+ **/
 gboolean
-nm_system_device_set_mtu (const char *iface, guint32 mtu)
+nm_system_iface_set_mtu (int ifindex, guint32 mtu)
 {
 	struct rtnl_link *old;
 	struct rtnl_link *new;
 	gboolean success = FALSE;
 	struct nl_handle *nlh;
-	int iface_idx;
+	const char *iface;
+	int err;
 
-	g_return_val_if_fail (iface != NULL, FALSE);
+	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (mtu > 0, FALSE);
+
+	iface = nm_netlink_index_to_iface (ifindex);
+	g_return_val_if_fail (iface != NULL, FALSE);
 
 	new = rtnl_link_alloc ();
 	if (!new)
 		return FALSE;
 
-	iface_idx = nm_netlink_iface_to_index (iface);
-	old = nm_netlink_index_to_rtnl_link (iface_idx);
+	old = nm_netlink_index_to_rtnl_link (ifindex);
 	if (old) {
 		rtnl_link_set_mtu (new, mtu);
 		nlh = nm_netlink_get_default_handle ();
 		if (nlh) {
-			rtnl_link_change (nlh, old, new, 0);
-			success = TRUE;
+			err = rtnl_link_change (nlh, old, new, 0);
+			if (err == 0)
+				success = TRUE;
+			else
+				nm_log_warn (LOGD_HW, "(%s): failed to change interface MTU", iface);
 		}
 		rtnl_link_put (old);
 	}
-
 	rtnl_link_put (new);
+
 	return success;
 }
 
+/**
+ * nm_system_iface_set_mac:
+ * @ifindex: interface index
+ * @mac: new MAC address
+ *
+ * Attempts to change the interface's MAC address to the requested value,
+ * ie MAC spoofing or cloning.
+ *
+ * Returns: %TRUE if the request succeeded, %FALSE if it failed.
+ **/
 gboolean
-nm_system_device_set_mac (const char *iface, const struct ether_addr *mac)
+nm_system_iface_set_mac (int ifindex, const struct ether_addr *mac)
 {
-	struct rtnl_link *old;
-	struct rtnl_link *new;
+	struct rtnl_link *old, *new;
 	gboolean success = FALSE;
 	struct nl_handle *nlh;
-	int iface_idx;
+	const char *iface;
 	struct nl_addr *addr = NULL;
+	int err;
 
-	g_return_val_if_fail (iface != NULL, FALSE);
+	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (mac != NULL, FALSE);
+
+	iface = nm_netlink_index_to_iface (ifindex);
+	g_return_val_if_fail (iface != NULL, FALSE);
 
 	new = rtnl_link_alloc ();
 	if (!new)
 		return FALSE;
 
-	iface_idx = nm_netlink_iface_to_index (iface);
-	old = nm_netlink_index_to_rtnl_link (iface_idx);
+	old = nm_netlink_index_to_rtnl_link (ifindex);
 	if (old) {
 		addr = nl_addr_build (AF_LLC, (void *) mac, ETH_ALEN);
 		if (!addr) {
-			char *mac_str;
-			mac_str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X", mac->ether_addr_octet[0], mac->ether_addr_octet[1], mac->ether_addr_octet[2],
-			                                                            mac->ether_addr_octet[3], mac->ether_addr_octet[4], mac->ether_addr_octet[5]);
-			nm_log_err (LOGD_DEVICE, "(%s): could not allocate memory for MAC address (%s)", iface, mac_str);
-			g_free (mac_str);
+			nm_log_err (LOGD_HW, "(%s): failed to allocate memory for MAC address change", iface);
 			return FALSE;
 		}
 		rtnl_link_set_addr (new, addr);
 		nlh = nm_netlink_get_default_handle ();
 		if (nlh) {
-			rtnl_link_change (nlh, old, new, 0);
-			success = TRUE;
+			err = rtnl_link_change (nlh, old, new, 0);
+			if (err == 0)
+				success = TRUE;
+			else
+				nm_log_warn (LOGD_HW, "(%s): failed to change interface MAC address", iface);
 		}
 		rtnl_link_put (old);
 	}
@@ -1177,12 +1218,8 @@ nm_system_replace_default_ip6_route (const char *iface, const struct in6_addr *g
 gboolean
 nm_system_iface_flush_addresses (int ifindex, int family)
 {
-	const char *iface;
-
 	g_return_val_if_fail (ifindex > 0, FALSE);
-
-	iface = nm_netlink_index_to_iface (ifindex);
-	return iface ? sync_addresses (iface, ifindex, family, NULL, 0) : FALSE;
+	return sync_addresses (ifindex, family, NULL, 0);
 }
 
 
@@ -1318,10 +1355,7 @@ nm_system_iface_flush_routes (int ifindex, int family)
 	g_return_val_if_fail (ifindex > 0, FALSE);
 
 	iface = nm_netlink_index_to_iface (ifindex);
-	if (iface < 0) {
-		nm_log_warn (LOGD_DEVICE, "(%d) failed to lookup interface name", ifindex);
-		return FALSE;
-	}
+	g_return_val_if_fail (iface != NULL, FALSE);
 
 	if (family == AF_INET) {
 		log_level = LOGD_IP4;

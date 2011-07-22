@@ -677,7 +677,7 @@ _set_hw_addr (NMDeviceEthernet *self, const guint8 *addr, const char *detail)
 	/* Can't change MAC address while device is up */
 	real_hw_take_down (dev);
 
-	success = nm_system_device_set_mac (iface, (struct ether_addr *) addr);
+	success = nm_system_iface_set_mac (nm_device_get_ip_ifindex (dev), (struct ether_addr *) addr);
 	if (success) {
 		/* MAC address succesfully changed; update the current MAC to match */
 		_update_hw_addr (self, addr);
