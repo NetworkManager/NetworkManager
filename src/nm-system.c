@@ -48,9 +48,7 @@
 #include "nm-utils.h"
 #include "nm-logging.h"
 #include "nm-netlink-monitor.h"
-
-/* Because of a bug in libnl, rtnl.h should be included before route.h */
-#include <netlink/route/rtnl.h>
+#include "nm-netlink-utils.h"
 
 #include <netlink/route/addr.h>
 #include <netlink/route/route.h>
@@ -170,7 +168,7 @@ nm_system_device_set_ip4_route (int ifindex,
 				/* Try adding the route again */
 				err = rtnl_route_add (nlh, route, 0);
 				if (err)
-					rtnl_route_del (nlh, route2, 0);
+					nm_netlink_route_delete (route2);
 			}
 			rtnl_route_put (route2);
 		}
@@ -564,7 +562,7 @@ nm_system_set_ip6_route (int ifindex,
 				/* Try adding the route again */
 				err = rtnl_route_add (nlh, route, 0);
 				if (err)
-					rtnl_route_del (nlh, route2, 0);
+					nm_netlink_route_delete (route2);
 			}
 			rtnl_route_put (route2);
 		}
@@ -1007,7 +1005,7 @@ nm_system_replace_default_ip4_route_vpn (int ifindex,
 	/* Try adding the original route again */
 	err = replace_default_ip4_route (ifindex, int_gw, mss);
 	if (err != 0) {
-		rtnl_route_del (nlh, gw_route, 0);
+		nm_netlink_route_delete (gw_route);
 		nm_log_err (LOGD_DEVICE | LOGD_IP4,
 		            "(%s): failed to set IPv4 default route (pass #2): %d",
 		            iface, err);
@@ -1057,7 +1055,7 @@ nm_system_replace_default_ip4_route (int ifindex, guint32 gw, guint32 mss)
 	/* Try adding the original route again */
 	err = replace_default_ip4_route (ifindex, gw, mss);
 	if (err != 0) {
-		rtnl_route_del (nlh, gw_route, 0);
+		nm_netlink_route_delete (gw_route);
 		nm_log_err (LOGD_DEVICE | LOGD_IP4,
 		            "(%s): failed to set IPv4 default route (pass #2): %d",
 		            iface, err);
@@ -1208,7 +1206,7 @@ nm_system_replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
 	/* Try adding the original route again */
 	err = replace_default_ip6_route (ifindex, gw);
 	if (err != 0) {
-		rtnl_route_del (nlh, gw_route, 0);
+		nm_netlink_route_delete (gw_route);
 		nm_log_err (LOGD_DEVICE | LOGD_IP6,
 		            "(%s): failed to set IPv6 default route (pass #2): %d",
 		            iface, err);
@@ -1298,7 +1296,6 @@ check_one_route (struct nl_object *object, void *user_data)
 {
 	RouteCheckData *data = (RouteCheckData *) user_data;
 	struct rtnl_route *route = (struct rtnl_route *) object;
-	int err;
 	guint32 log_level = LOGD_IP4 | LOGD_IP6;
 
 	if (nm_logging_level_enabled (LOGL_DEBUG))
@@ -1337,12 +1334,8 @@ check_one_route (struct nl_object *object, void *user_data)
 		log_level = LOGD_IP6;
 	nm_log_dbg (log_level, "   deleting route");
 
-	err = rtnl_route_del (nm_netlink_get_default_handle (), route, 0);
-	if (err < 0 && (err != -ERANGE)) {
-		nm_log_err (LOGD_DEVICE,
-		            "(%s): error %d returned from rtnl_route_del(): %s",
-		            data->iface, err, nl_geterror ());
-	}
+	if (!nm_netlink_route_delete (route))
+		nm_log_err (LOGD_DEVICE, "(%s): failed to delete route", data->iface);
 }
 
 /**
@@ -1443,9 +1436,9 @@ nm_system_device_set_priority (int ifindex,
 
 	foreach_route (find_route, &info);
 	if (info.route) {
-		nlh = nm_netlink_get_default_handle ();
-		rtnl_route_del (nlh, info.route, 0);
+		nm_netlink_route_delete (info.route);
 
+		nlh = nm_netlink_get_default_handle ();
 		rtnl_route_set_prio (info.route, priority);
 		rtnl_route_add (nlh, info.route, 0);
 		rtnl_route_put (info.route);

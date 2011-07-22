@@ -46,6 +46,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-dns-manager.h"
 #include "nm-netlink-monitor.h"
+#include "nm-netlink-utils.h"
 #include "nm-glib-compat.h"
 #include "settings/nm-settings-connection.h"
 
@@ -974,7 +975,7 @@ vpn_cleanup (NMVPNConnection *connection)
 
 		/* Remove any previously added VPN gateway host route */
 		if (priv->gw_route)
-			rtnl_route_del (nm_netlink_get_default_handle (), priv->gw_route, 0);
+			nm_netlink_route_delete (priv->gw_route);
 
 		/* Reset routes and addresses of the currently active device */
 		parent_config = nm_device_get_ip4_config (priv->parent_dev);

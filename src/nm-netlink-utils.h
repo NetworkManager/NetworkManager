@@ -22,10 +22,14 @@
 #define NM_NETLINK_UTILS_H
 
 #include <glib.h>
+#include <netlink/route/rtnl.h>
+#include <netlink/route/route.h>
 
 gboolean nm_netlink_find_address (int ifindex,
                                   int family,
                                   void *addr,  /* struct in_addr or struct in6_addr */
                                   int prefix_);
+
+gboolean nm_netlink_route_delete (struct rtnl_route *route);
 
 #endif  /* NM_NETLINK_MONITOR_H */

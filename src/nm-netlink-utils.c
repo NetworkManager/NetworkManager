@@ -117,3 +117,22 @@ nm_netlink_find_address (int ifindex,
 	return info.found;
 }
 
+/**
+ * nm_netlink_route_delete:
+ * @route: the route to delete
+ *
+ * Returns: %TRUE if the request was successful, %FALSE if it failed
+ **/
+gboolean
+nm_netlink_route_delete (struct rtnl_route *route)
+{
+	struct nl_handle *nlh;
+	int err;
+
+	g_return_val_if_fail (route != NULL, FALSE);
+
+	nlh = nm_netlink_get_default_handle ();
+	err = rtnl_route_del (nlh, route, 0);
+	return err == 0 ? TRUE : FALSE;
+}
+
