@@ -4,14 +4,12 @@ AC_DEFUN([NM_LIBNL_CHECK], [
     save_LDFLAGS="$LDFLAGS"
     CFLAGS="$CFLAGS $LIBNL_CFLAGS"
     LDFLAGS="$LDFLAGS $LIBNL_LIBS"
-    AC_RUN_IFELSE([
+    AC_RUN_IFELSE([AC_LANG_PROGRAM([[
 #include <stdio.h>
 #include <netlink/route/addr.h>
 #include <netlink/object-api.h>
-
-int
-main (int argc, char **argv)
-{
+]],
+[[
 	struct nl_handle *nlh;
 	struct nl_cache *cache;
 	struct nl_object *obj;
@@ -37,8 +35,7 @@ main (int argc, char **argv)
 		return 1;
 	else
 		return 2;
-}
-], libnl_bug=$?, libnl_bug=$?, libnl_bug=cross)
+]])], libnl_bug=$?, libnl_bug=$?, libnl_bug=cross)
 
     CFLAGS="$save_CFLAGS"
     LDFLAGS="$save_LDFLAGS"
