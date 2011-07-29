@@ -116,6 +116,8 @@ typedef struct {
 	char *anonymous_identity;
 	GByteArray *ca_cert;
 	char *ca_path;
+	char *subject_match;
+	GSList *altsubject_matches;
 	GByteArray *client_cert;
 	char *phase1_peapver;
 	char *phase1_peaplabel;
@@ -124,6 +126,8 @@ typedef struct {
 	char *phase2_autheap;
 	GByteArray *phase2_ca_cert;
 	char *phase2_ca_path;
+	char *phase2_subject_match;
+	GSList *phase2_altsubject_matches;
 	GByteArray *phase2_client_cert;
 	char *password;
 	NMSettingSecretFlags password_flags;
@@ -145,6 +149,8 @@ enum {
 	PROP_ANONYMOUS_IDENTITY,
 	PROP_CA_CERT,
 	PROP_CA_PATH,
+	PROP_SUBJECT_MATCH,
+	PROP_ALTSUBJECT_MATCHES,
 	PROP_CLIENT_CERT,
 	PROP_PHASE1_PEAPVER,
 	PROP_PHASE1_PEAPLABEL,
@@ -153,6 +159,8 @@ enum {
 	PROP_PHASE2_AUTHEAP,
 	PROP_PHASE2_CA_CERT,
 	PROP_PHASE2_CA_PATH,
+	PROP_PHASE2_SUBJECT_MATCH,
+	PROP_PHASE2_ALTSUBJECT_MATCHES,
 	PROP_PHASE2_CLIENT_CERT,
 	PROP_PASSWORD,
 	PROP_PASSWORD_FLAGS,
@@ -554,6 +562,135 @@ nm_setting_802_1x_set_ca_cert (NMSetting8021x *self,
 	}
 
 	return priv->ca_cert != NULL;
+}
+
+/**
+ * nm_setting_802_1x_get_subject_match:
+ * @setting: the #NMSetting8021x
+ *
+ * Returns: the #NMSetting8021x:subject-match property. This is the
+ * substring to be matched against the subject of the authentication
+ * server certificate, or NULL no subject verification is to be
+ * performed.
+ **/
+const char *
+nm_setting_802_1x_get_subject_match (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->subject_match;
+}
+
+/**
+ * nm_setting_802_1x_get_num_altsubject_matches:
+ * @setting: the #NMSetting8021x
+ *
+ * Returns the number of entries in the
+ * #NMSetting8021x:altsubject-matches property of this setting.
+ *
+ * Returns: the number of altsubject-matches entries.
+ **/
+guint32
+nm_setting_802_1x_get_num_altsubject_matches (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), 0);
+
+	return g_slist_length (NM_SETTING_802_1X_GET_PRIVATE (setting)->altsubject_matches);
+}
+
+/**
+ * nm_setting_802_1x_get_altsubject_match:
+ * @setting: the #NMSettingConnection
+ * @i: the zero-based index of the array of altSubjectName matches
+ *
+ * Returns the altSubjectName match at index @i.
+ *
+ * Returns: the altSubjectName match at index @i
+ **/
+const char *
+nm_setting_802_1x_get_altsubject_match (NMSetting8021x *setting, guint32 i)
+{
+	NMSetting8021xPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
+	g_return_val_if_fail (i <= g_slist_length (priv->altsubject_matches), NULL);
+
+	return (const char *) g_slist_nth_data (priv->altsubject_matches, i);
+}
+
+/**
+ * nm_setting_802_1x_add_altsubject_match:
+ * @setting: the #NMSetting8021x
+ * @altsubject_match: the altSubjectName to allow for this connection
+ *
+ * Adds an allowed alternate subject name match.  Until at least one
+ * match is added, the altSubjectName of the remote authentication
+ * server is not verified.
+ *
+ * Returns: TRUE if the alternative subject name match was
+ *  successfully added, FALSE if it was already allowed.
+ **/
+gboolean
+nm_setting_802_1x_add_altsubject_match (NMSetting8021x *setting,
+										const char *altsubject_match)
+{
+	NMSetting8021xPrivate *priv;
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
+	g_return_val_if_fail (altsubject_match != NULL, FALSE);
+
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
+	for (iter = priv->altsubject_matches; iter; iter = g_slist_next (iter)) {
+		if (!strcmp (altsubject_match, (char *) iter->data))
+			return FALSE;
+	}
+
+	priv->altsubject_matches = g_slist_append (priv->altsubject_matches, g_strdup (altsubject_match));
+	return TRUE;
+}
+
+/**
+ * nm_setting_802_1x_remove_altsubject_match:
+ * @setting: the #NMSetting8021x
+ * @i: the index of the altSubjectName match to remove
+ *
+ * Removes the allowed altSubjectName at the specified index.
+ **/
+void
+nm_setting_802_1x_remove_altsubject_match (NMSetting8021x *setting, guint32 i)
+{
+	NMSetting8021xPrivate *priv;
+	GSList *elt;
+
+	g_return_if_fail (NM_IS_SETTING_802_1X (setting));
+
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
+	elt = g_slist_nth (priv->altsubject_matches, i);
+	g_return_if_fail (elt != NULL);
+
+	g_free (elt->data);
+	priv->altsubject_matches = g_slist_delete_link (priv->altsubject_matches, elt);
+}
+
+/**
+ * nm_setting_802_1x_clear_altsubject_matches:
+ * @setting: the #NMSetting8021x
+ *
+ * Clears all altSubjectName matches.
+ **/
+void
+nm_setting_802_1x_clear_altsubject_matches (NMSetting8021x *setting)
+{
+	NMSetting8021xPrivate *priv;
+
+	g_return_if_fail (NM_IS_SETTING_802_1X (setting));
+
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
+	nm_utils_slist_free (priv->altsubject_matches, g_free);
+	priv->altsubject_matches = NULL;
 }
 
 /**
@@ -965,6 +1102,137 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *self,
 	}
 
 	return priv->phase2_ca_cert != NULL;
+}
+
+/**
+ * nm_setting_802_1x_get_phase2_subject_match:
+ * @setting: the #NMSetting8021x
+ *
+ * Returns: the #NMSetting8021x:phase2-subject-match property. This is
+ * the substring to be matched against the subject of the "phase 2"
+ * authentication server certificate, or NULL no subject verification
+ * is to be performed.
+ **/
+const char *
+nm_setting_802_1x_get_phase2_subject_match (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_subject_match;
+}
+
+/**
+ * nm_setting_802_1x_get_num_phase2_altsubject_matches:
+ * @setting: the #NMSetting8021x
+ *
+ * Returns the number of entries in the
+ * #NMSetting8021x:phase2-altsubject-matches property of this setting.
+ *
+ * Returns: the number of phase2-altsubject-matches entries.
+ **/
+guint32
+nm_setting_802_1x_get_num_phase2_altsubject_matches (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), 0);
+
+	return g_slist_length (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_altsubject_matches);
+}
+
+/**
+ * nm_setting_802_1x_get_phase2_altsubject_match:
+ * @setting: the #NMSettingConnection
+ * @i: the zero-based index of the array of "phase 2" altSubjectName matches
+ *
+ * Returns the "phase 2" altSubjectName match at index @i.
+ *
+ * Returns: the "phase 2" altSubjectName match at index @i
+ **/
+const char *
+nm_setting_802_1x_get_phase2_altsubject_match (NMSetting8021x *setting, guint32 i)
+{
+	NMSetting8021xPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
+	g_return_val_if_fail (i <= g_slist_length (priv->phase2_altsubject_matches), NULL);
+
+	return (const char *) g_slist_nth_data (priv->phase2_altsubject_matches, i);
+}
+
+/**
+ * nm_setting_802_1x_add_phase2_altsubject_match:
+ * @setting: the #NMSetting8021x
+ * @altsubject_match: the "phase 2" altSubjectName to allow for this
+ * connection
+ *
+ * Adds an allowed alternate subject name match for "phase 2".  Until
+ * at least one match is added, the altSubjectName of the "phase 2"
+ * remote authentication server is not verified.
+ *
+ * Returns: TRUE if the "phase 2" alternative subject name match was
+ *  successfully added, FALSE if it was already allowed.
+ **/
+gboolean
+nm_setting_802_1x_add_phase2_altsubject_match (NMSetting8021x *setting,
+											   const char *phase2_altsubject_match)
+{
+	NMSetting8021xPrivate *priv;
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
+	g_return_val_if_fail (phase2_altsubject_match != NULL, FALSE);
+
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
+	for (iter = priv->phase2_altsubject_matches; iter; iter = g_slist_next (iter)) {
+		if (!strcmp (phase2_altsubject_match, (char *) iter->data))
+			return FALSE;
+	}
+
+	priv->phase2_altsubject_matches = g_slist_append (priv->altsubject_matches,
+													  g_strdup (phase2_altsubject_match));
+	return TRUE;
+}
+
+/**
+ * nm_setting_802_1x_remove_phase2_altsubject_match:
+ * @setting: the #NMSetting8021x
+ * @i: the index of the "phase 2" altSubjectName match to remove
+ *
+ * Removes the allowed "phase 2" altSubjectName at the specified index.
+ **/
+void
+nm_setting_802_1x_remove_phase2_altsubject_match (NMSetting8021x *setting, guint32 i)
+{
+	NMSetting8021xPrivate *priv;
+	GSList *elt;
+
+	g_return_if_fail (NM_IS_SETTING_802_1X (setting));
+
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
+	elt = g_slist_nth (priv->phase2_altsubject_matches, i);
+	g_return_if_fail (elt != NULL);
+
+	g_free (elt->data);
+	priv->phase2_altsubject_matches = g_slist_delete_link (priv->phase2_altsubject_matches, elt);
+}
+
+/**
+ * nm_setting_802_1x_clear_phase2_altsubject_matches:
+ * @setting: the #NMSetting8021x
+ *
+ * Clears all "phase 2" altSubjectName matches.
+ **/
+void
+nm_setting_802_1x_clear_phase2_altsubject_matches (NMSetting8021x *setting)
+{
+	NMSetting8021xPrivate *priv;
+
+	g_return_if_fail (NM_IS_SETTING_802_1X (setting));
+
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
+	nm_utils_slist_free (priv->phase2_altsubject_matches, g_free);
+	priv->phase2_altsubject_matches = NULL;
 }
 
 /**
@@ -2265,15 +2533,19 @@ finalize (GObject *object)
 	g_free (priv->identity);
 	g_free (priv->anonymous_identity);
 	g_free (priv->ca_path);
+	g_free (priv->subject_match);
 	g_free (priv->phase1_peapver);
 	g_free (priv->phase1_peaplabel);
 	g_free (priv->phase1_fast_provisioning);
 	g_free (priv->phase2_auth);
 	g_free (priv->phase2_autheap);
 	g_free (priv->phase2_ca_path);
+	g_free (priv->phase2_subject_match);
 	g_free (priv->password);
 
 	nm_utils_slist_free (priv->eap, g_free);
+	nm_utils_slist_free (priv->altsubject_matches, g_free);
+	nm_utils_slist_free (priv->phase2_altsubject_matches, g_free);
 
 	if (priv->ca_cert)
 		g_byte_array_free (priv->ca_cert, TRUE);
@@ -2348,6 +2620,14 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->ca_path);
 		priv->ca_path = g_value_dup_string (value);
 		break;
+	case PROP_SUBJECT_MATCH:
+		g_free (priv->subject_match);
+		priv->subject_match = g_value_dup_string (value);
+		break;
+	case PROP_ALTSUBJECT_MATCHES:
+		nm_utils_slist_free (priv->altsubject_matches, g_free);
+		priv->altsubject_matches = g_value_dup_boxed (value);
+		break;
 	case PROP_CLIENT_CERT:
 		if (priv->client_cert) {
 			g_byte_array_free (priv->client_cert, TRUE);
@@ -2395,6 +2675,14 @@ set_property (GObject *object, guint prop_id,
 	case PROP_PHASE2_CA_PATH:
 		g_free (priv->phase2_ca_path);
 		priv->phase2_ca_path = g_value_dup_string (value);
+		break;
+	case PROP_PHASE2_SUBJECT_MATCH:
+		g_free (priv->phase2_subject_match);
+		priv->phase2_subject_match = g_value_dup_string (value);
+		break;
+	case PROP_PHASE2_ALTSUBJECT_MATCHES:
+		nm_utils_slist_free (priv->phase2_altsubject_matches, g_free);
+		priv->phase2_altsubject_matches = g_value_dup_boxed (value);
 		break;
 	case PROP_PHASE2_CLIENT_CERT:
 		if (priv->phase2_client_cert) {
@@ -2485,6 +2773,12 @@ get_property (GObject *object, guint prop_id,
 	case PROP_CA_PATH:
 		g_value_set_string (value, priv->ca_path);
 		break;
+	case PROP_SUBJECT_MATCH:
+		g_value_set_string (value, priv->subject_match);
+		break;
+	case PROP_ALTSUBJECT_MATCHES:
+		g_value_set_boxed (value, priv->altsubject_matches);
+		break;
 	case PROP_CLIENT_CERT:
 		g_value_set_boxed (value, priv->client_cert);
 		break;
@@ -2508,6 +2802,12 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PHASE2_CA_PATH:
 		g_value_set_string (value, priv->phase2_ca_path);
+		break;
+	case PROP_PHASE2_SUBJECT_MATCH:
+		g_value_set_string (value, priv->phase2_subject_match);
+		break;
+	case PROP_PHASE2_ALTSUBJECT_MATCHES:
+		g_value_set_boxed (value, priv->phase2_altsubject_matches);
 		break;
 	case PROP_PHASE2_CLIENT_CERT:
 		g_value_set_boxed (value, priv->phase2_client_cert);
@@ -2665,6 +2965,47 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 						  "specified in the 'ca-cert' property.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
+	 * NMSetting8021x:subject-match:
+	 *
+	 * Substring to be matched against the subject of the certificate
+	 * presented by the authentication server. When unset, no
+	 * verification of the authentication server certificate's subject
+	 * is performed.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_SUBJECT_MATCH,
+		 g_param_spec_string (NM_SETTING_802_1X_SUBJECT_MATCH,
+							  "Subject match",
+							  "Substring to be matched against the subject of "
+							  "the certificate presented by the authentication "
+							  "server. When unset, no verification of the "
+							  "authentication server certificate's subject is "
+							  "performed.",
+							  NULL,
+							  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
+	 * NMSetting8021x:altsubject-matches:
+	 *
+	 * List of strings to be matched against the altSubjectName of the
+	 * certificate presented by the authentication server. If the list
+	 * is empty, no verification of the server certificate's
+	 * altSubjectName is performed.
+	 **/
+	 g_object_class_install_property
+		 (object_class, PROP_ALTSUBJECT_MATCHES,
+		  _nm_param_spec_specialized (NM_SETTING_802_1X_ALTSUBJECT_MATCHES,
+									  "altSubjectName matches",
+									  "List of strings to be matched against "
+									  "the altSubjectName of the certificate "
+									  "presented by the authentication server. "
+									  "If the list is empty, no verification "
+									  "of the server certificate's "
+									  "altSubjectName is performed.",
+									  DBUS_TYPE_G_LIST_OF_STRING,
+									  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
 	 * NMSetting8021x:client-cert:
@@ -2857,6 +3198,51 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 						  "specified in the 'phase2-ca-cert' property.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
+	 * NMSetting8021x:phase2-subject-match:
+	 *
+	 * Substring to be matched against the subject of the certificate
+	 * presented by the authentication server during the inner "phase
+	 * 2" authentication. When unset, no verification of the
+	 * authentication server certificate's subject is performed.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_PHASE2_SUBJECT_MATCH,
+		 g_param_spec_string (NM_SETTING_802_1X_PHASE2_SUBJECT_MATCH,
+							  "Phase2 subject match",
+							  "Substring to be matched against the subject of "
+							  "the certificate presented by the authentication "
+							  "server during the inner 'phase2' "
+							  "authentication. When unset, no verification of "
+							  "the authentication server certificate's subject "
+							  "is performed.",
+							  NULL,
+							  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
+	 * NMSetting8021x:phase2-altsubject-matches:
+	 *
+	 * List of strings to be matched against the altSubjectName of the
+	 * certificate presented by the authentication server during the
+	 * inner "phase 2" authentication. If the list is empty, no
+	 * verification of the server certificate's altSubjectName is
+	 * performed.
+	 **/
+	 g_object_class_install_property
+		 (object_class, PROP_PHASE2_ALTSUBJECT_MATCHES,
+		  _nm_param_spec_specialized (NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES,
+									  "altSubjectName matches",
+									  "List of strings to be matched against "
+									  "List of strings to be matched against "
+									  "the altSubjectName of the certificate "
+									  "presented by the authentication server "
+									  "during the inner 'phase 2' "
+									  "authentication. If the list is empty, no "
+									  "verification of the server certificate's "
+									  "altSubjectName is performed.",
+									  DBUS_TYPE_G_LIST_OF_STRING,
+									  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
 	 * NMSetting8021x:phase2-client-cert:

@@ -103,6 +103,8 @@ GQuark nm_setting_802_1x_error_quark (void);
 #define NM_SETTING_802_1X_ANONYMOUS_IDENTITY "anonymous-identity"
 #define NM_SETTING_802_1X_CA_CERT "ca-cert"
 #define NM_SETTING_802_1X_CA_PATH "ca-path"
+#define NM_SETTING_802_1X_SUBJECT_MATCH "subject-match"
+#define NM_SETTING_802_1X_ALTSUBJECT_MATCHES "altsubject-matches"
 #define NM_SETTING_802_1X_CLIENT_CERT "client-cert"
 #define NM_SETTING_802_1X_PHASE1_PEAPVER "phase1-peapver"
 #define NM_SETTING_802_1X_PHASE1_PEAPLABEL "phase1-peaplabel"
@@ -111,6 +113,8 @@ GQuark nm_setting_802_1x_error_quark (void);
 #define NM_SETTING_802_1X_PHASE2_AUTHEAP "phase2-autheap"
 #define NM_SETTING_802_1X_PHASE2_CA_CERT "phase2-ca-cert"
 #define NM_SETTING_802_1X_PHASE2_CA_PATH "phase2-ca-path"
+#define NM_SETTING_802_1X_PHASE2_SUBJECT_MATCH "phase2-subject-match"
+#define NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES "phase2-altsubject-matches"
 #define NM_SETTING_802_1X_PHASE2_CLIENT_CERT "phase2-client-cert"
 #define NM_SETTING_802_1X_PASSWORD "password"
 #define NM_SETTING_802_1X_PASSWORD_FLAGS "password-flags"
@@ -185,6 +189,17 @@ gboolean               nm_setting_802_1x_set_ca_cert                 (NMSetting8
                                                                       NMSetting8021xCKFormat *out_format,
                                                                       GError **error);
 
+const char *      nm_setting_802_1x_get_subject_match                (NMSetting8021x *setting);
+
+guint32           nm_setting_802_1x_get_num_altsubject_matches       (NMSetting8021x *setting);
+const char *      nm_setting_802_1x_get_altsubject_match             (NMSetting8021x *setting,
+																	  guint32 i);
+gboolean          nm_setting_802_1x_add_altsubject_match             (NMSetting8021x *setting,
+																	  const char *altsubject_match);
+void              nm_setting_802_1x_remove_altsubject_match          (NMSetting8021x *setting,
+																	  guint32 i);
+void              nm_setting_802_1x_clear_altsubject_matches         (NMSetting8021x *setting);
+
 NMSetting8021xCKScheme nm_setting_802_1x_get_client_cert_scheme      (NMSetting8021x *setting);
 const GByteArray *     nm_setting_802_1x_get_client_cert_blob        (NMSetting8021x *setting);
 const char *           nm_setting_802_1x_get_client_cert_path        (NMSetting8021x *setting);
@@ -212,6 +227,17 @@ gboolean               nm_setting_802_1x_set_phase2_ca_cert          (NMSetting8
                                                                       NMSetting8021xCKScheme scheme,
                                                                       NMSetting8021xCKFormat *out_format,
                                                                       GError **error);
+
+const char *      nm_setting_802_1x_get_phase2_subject_match         (NMSetting8021x *setting);
+
+guint32           nm_setting_802_1x_get_num_phase2_altsubject_matches   (NMSetting8021x *setting);
+const char *      nm_setting_802_1x_get_phase2_altsubject_match         (NMSetting8021x *setting,
+																		 guint32 i);
+gboolean          nm_setting_802_1x_add_phase2_altsubject_match         (NMSetting8021x *setting,
+																		 const char *phase2_altsubject_match);
+void              nm_setting_802_1x_remove_phase2_altsubject_match      (NMSetting8021x *setting,
+																		 guint32 i);
+void              nm_setting_802_1x_clear_phase2_altsubject_matches     (NMSetting8021x *setting);
 
 NMSetting8021xCKScheme nm_setting_802_1x_get_phase2_client_cert_scheme   (NMSetting8021x *setting);
 const GByteArray *     nm_setting_802_1x_get_phase2_client_cert_blob     (NMSetting8021x *setting);
