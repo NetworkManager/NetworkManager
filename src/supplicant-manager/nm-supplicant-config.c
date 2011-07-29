@@ -864,6 +864,18 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 		break;
 	}
 
+	/* Subject match */
+	value = nm_setting_802_1x_get_subject_match (setting);
+	if (!add_string_val (self, value, "subject_match", FALSE, FALSE))
+		return FALSE;
+	value = nm_setting_802_1x_get_phase2_subject_match (setting);
+	if (!add_string_val (self, value, "subject_match2", FALSE, FALSE))
+		return FALSE;
+
+	/* altSubjectName match */
+	ADD_STRING_LIST_VAL (setting, 802_1x, altsubject_match, altsubject_matches, "altsubject_match", ';', FALSE, FALSE);
+	ADD_STRING_LIST_VAL (setting, 802_1x, phase2_altsubject_match, phase2_altsubject_matches, "altsubject_match2", ';', FALSE, FALSE);
+
 	/* Private key */
 	added = FALSE;
 	switch (nm_setting_802_1x_get_private_key_scheme (setting)) {
