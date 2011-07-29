@@ -451,7 +451,7 @@ add_string_val (NMSupplicantConfig *self,
 	return success;
 }
 
-#define ADD_STRING_LIST_VAL(setting, setting_name, field, field_plural, name, ucase, secret) \
+#define ADD_STRING_LIST_VAL(setting, setting_name, field, field_plural, name, separator, ucase, secret) \
 	if (nm_setting_##setting_name##_get_num_##field_plural (setting)) { \
 		guint32 k; \
 		GString *str = g_string_new (NULL); \
@@ -460,7 +460,7 @@ add_string_val (NMSupplicantConfig *self,
 			if (!str->len) { \
 				g_string_append (str, item); \
 			} else { \
-				g_string_append_c (str, ' '); \
+				g_string_append_c (str, separator); \
 				g_string_append (str, item); \
 			} \
 		} \
@@ -636,9 +636,9 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 	if (   !strcmp (key_mgmt, "wpa-none")
 	    || !strcmp (key_mgmt, "wpa-psk")
 	    || !strcmp (key_mgmt, "wpa-eap")) {
-		ADD_STRING_LIST_VAL (setting, wireless_security, proto, protos, "proto", TRUE, FALSE);
-		ADD_STRING_LIST_VAL (setting, wireless_security, pairwise, pairwise, "pairwise", TRUE, FALSE);
-		ADD_STRING_LIST_VAL (setting, wireless_security, group, groups, "group", TRUE, FALSE);
+		ADD_STRING_LIST_VAL (setting, wireless_security, proto, protos, "proto", ' ', TRUE, FALSE);
+		ADD_STRING_LIST_VAL (setting, wireless_security, pairwise, pairwise, "pairwise", ' ', TRUE, FALSE);
+		ADD_STRING_LIST_VAL (setting, wireless_security, group, groups, "group", ' ', TRUE, FALSE);
 	}
 
 	/* WEP keys if required */
@@ -742,7 +742,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 		nm_supplicant_config_set_ap_scan (self, 0);
 	}
 
-	ADD_STRING_LIST_VAL (setting, 802_1x, eap_method, eap_methods, "eap", TRUE, FALSE);
+	ADD_STRING_LIST_VAL (setting, 802_1x, eap_method, eap_methods, "eap", ' ', TRUE, FALSE);
 
 	/* Check for PEAP + GTC */
 	num_eap = nm_setting_802_1x_get_num_eap_methods (setting);
