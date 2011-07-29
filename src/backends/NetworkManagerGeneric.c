@@ -34,7 +34,9 @@
 #include "nm-system.h"
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
+#include "nm-netlink-compat.h"
 #include "nm-netlink-monitor.h"
+#include "nm-netlink-utils.h"
 
 /* Because of a bug in libnl, rtnl.h should be included before route.h */
 #include <netlink/route/rtnl.h>
@@ -50,7 +52,7 @@
  */
 void nm_generic_enable_loopback (void)
 {
-	struct nl_handle *	nlh = NULL;
+	struct nl_sock *	nlh = NULL;
 	struct rtnl_addr *	addr = NULL;
 	struct nl_addr *	nl_addr = NULL;
 	guint32			binaddr = 0;
@@ -92,7 +94,7 @@ void nm_generic_enable_loopback (void)
 
 	if ((err = rtnl_addr_add (nlh, addr, 0)) < 0) {
 		if (err != -EEXIST) {
-			nm_log_warn (LOGD_CORE, "error %d returned from rtnl_addr_add():\n%s", err, nl_geterror());
+			nm_log_warn (LOGD_CORE, "error %d returned from rtnl_addr_add():\n%s", err, nl_geterror(err));
 		}
 	}
 out:

@@ -49,6 +49,7 @@
 #include "nm-logging.h"
 #include "nm-netlink-monitor.h"
 #include "nm-netlink-utils.h"
+#include "nm-netlink-compat.h"
 
 #include <netlink/route/addr.h>
 #include <netlink/route/route.h>
@@ -92,7 +93,7 @@ nm_system_device_set_ip4_route (int ifindex,
                                 guint32 metric,
                                 int mss)
 {
-	struct nl_handle *nlh;
+	struct nl_sock *nlh;
 	struct rtnl_route *route;
 	struct nl_addr *dest_addr;
 	struct nl_addr *gw_addr = NULL;
@@ -160,7 +161,7 @@ nm_system_device_set_ip4_route (int ifindex,
 	if (err) {
 		nm_log_err (LOGD_DEVICE | LOGD_IP4,
 		            "(%s): failed to set IPv4 route: %s",
-		            iface, nl_geterror ());
+		            iface, nl_geterror (err));
 		rtnl_route_put (route);
 		route = NULL;
 	}
@@ -174,7 +175,7 @@ sync_addresses (int ifindex,
 				struct rtnl_addr **addrs,
 				int num_addrs)
 {
-	struct nl_handle *nlh;
+	struct nl_sock *nlh;
 	struct nl_cache *addr_cache;
 	struct rtnl_addr *filter_addr, *match_addr;
 	struct nl_object *match;
@@ -193,7 +194,8 @@ sync_addresses (int ifindex,
 	if (!nlh)
 		return FALSE;
 
-	addr_cache = rtnl_addr_alloc_cache (nlh);
+	rtnl_addr_alloc_cache(nlh, &addr_cache);
+
 	if (!addr_cache)
 		return FALSE;
 
@@ -266,7 +268,7 @@ sync_addresses (int ifindex,
 		err = rtnl_addr_delete (nlh, match_addr, 0);
 		if (err < 0) {
 			nm_log_err (log_domain, "(%s): error %d returned from rtnl_addr_delete(): %s",
-						iface, err, nl_geterror ());
+						iface, err, nl_geterror (err));
 		}
 	}
 
@@ -299,10 +301,10 @@ sync_addresses (int ifindex,
 		}
 
 		err = rtnl_addr_add (nlh, addrs[i], 0);
-		if (err < 0 && (nl_get_errno () != EEXIST)) {
+		if (err < 0 && (err != -NLE_EXIST)) {
 			nm_log_err (log_domain,
 			            "(%s): error %d returned from rtnl_addr_add():\n%s",
-			            iface, err, nl_geterror ());
+			            iface, err, nl_geterror (err));
 		}
 
 		rtnl_addr_put (addrs[i]);
@@ -482,7 +484,7 @@ nm_system_set_ip6_route (int ifindex,
                          int table,
                          struct rtnl_route **out_route)
 {
-	struct nl_handle *nlh;
+	struct nl_sock *nlh;
 	struct rtnl_route *route;
 	struct nl_addr *dest_addr;
 	struct nl_addr *gw_addr = NULL;
@@ -634,7 +636,7 @@ nm_system_apply_ip6_config (int ifindex,
 			if (err) {
 				nm_log_err (LOGD_DEVICE | LOGD_IP6,
 				            "(%s): failed to set IPv6 route: %s",
-				            iface, nl_geterror ());
+				            iface, nl_geterror (err));
 			}
 		}
 	}
@@ -663,8 +665,9 @@ nm_system_iface_set_up (int ifindex,
                         gboolean *no_firmware)
 {
 	struct rtnl_link *request = NULL, *old = NULL;
-	struct nl_handle *nlh;
+	struct nl_sock *nlh;
 	gboolean success = FALSE;
+	int err;
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	if (no_firmware)
@@ -682,10 +685,13 @@ nm_system_iface_set_up (int ifindex,
 	if (old) {
 		nlh = nm_netlink_get_default_handle ();
 		if (nlh) {
-			if (rtnl_link_change (nlh, old, request, 0) == 0)
+			err = rtnl_link_change (nlh, old, request, 0);
+			if (err == 0) {
 				success = TRUE;
-			else if ((nl_get_errno () == ENOENT) && no_firmware && up)
-				*no_firmware = TRUE;
+			} else {
+				if ((err == -NLE_OBJ_NOTFOUND) && no_firmware && up)
+					*no_firmware = TRUE;
+			}
 		}
 	}
 
@@ -738,7 +744,7 @@ nm_system_iface_set_mtu (int ifindex, guint32 mtu)
 	struct rtnl_link *old;
 	struct rtnl_link *new;
 	gboolean success = FALSE;
-	struct nl_handle *nlh;
+	struct nl_sock *nlh;
 	const char *iface;
 	int err;
 
@@ -785,7 +791,7 @@ nm_system_iface_set_mac (int ifindex, const struct ether_addr *mac)
 {
 	struct rtnl_link *old, *new;
 	gboolean success = FALSE;
-	struct nl_handle *nlh;
+	struct nl_sock *nlh;
 	const char *iface;
 	struct nl_addr *addr = NULL;
 	int err;
@@ -826,7 +832,7 @@ nm_system_iface_set_mac (int ifindex, const struct ether_addr *mac)
 static struct rtnl_route *
 add_ip4_route_to_gateway (int ifindex, guint32 gw, guint32 mss)
 {
-	struct nl_handle *nlh;
+	struct nl_sock *nlh;
 	struct rtnl_route *route = NULL;
 	struct nl_addr *gw_addr = NULL;
 	const char *iface;
@@ -872,7 +878,7 @@ static int
 replace_default_ip4_route (int ifindex, guint32 gw, guint32 mss)
 {
 	struct rtnl_route *route = NULL;
-	struct nl_handle *nlh;
+	struct nl_sock *nlh;
 	struct nl_addr *dst_addr = NULL;
 	guint32 dst = 0;
 	struct nl_addr *gw_addr = NULL;
@@ -934,7 +940,7 @@ nm_system_replace_default_ip4_route_vpn (int ifindex,
                                          guint32 parent_mss)
 {
 	struct rtnl_route *gw_route = NULL;
-	struct nl_handle *nlh;
+	struct nl_sock *nlh;
 	gboolean success = FALSE;
 	int err;
 	const char *iface;
@@ -1023,7 +1029,7 @@ nm_system_replace_default_ip4_route (int ifindex, guint32 gw, guint32 mss)
 static struct rtnl_route *
 add_ip6_route_to_gateway (int ifindex, const struct in6_addr *gw)
 {
-	struct nl_handle *nlh;
+	struct nl_sock *nlh;
 	struct rtnl_route *route = NULL;
 	struct nl_addr *gw_addr = NULL;
 	const char *iface;
@@ -1069,7 +1075,7 @@ static int
 replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
 {
 	struct rtnl_route *route = NULL;
-	struct nl_handle *nlh;
+	struct nl_sock *nlh;
 	struct nl_addr *gw_addr = NULL;
 	const char *iface;
 	int err = -1;
@@ -1266,14 +1272,14 @@ nm_system_device_set_priority (int ifindex,
                                NMIP4Config *config,
                                int priority)
 {
-	struct nl_handle *nlh;
+	struct nl_sock *nlh;
 	struct rtnl_route *found;
 
 	found = nm_netlink_foreach_route (ifindex, AF_INET, RT_SCOPE_LINK, FALSE,  find_route, config);
 	if (found) {
 		nlh = nm_netlink_get_default_handle ();
 		nm_netlink_route_delete (found);
-		rtnl_route_set_prio (found, priority);
+		rtnl_route_set_priority (found, priority);
 		rtnl_route_add (nlh, found, 0);
 		rtnl_route_put (found);
 	}

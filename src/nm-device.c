@@ -47,6 +47,8 @@
 #include "nm-utils.h"
 #include "nm-logging.h"
 #include "nm-netlink-monitor.h"
+#include "nm-netlink-utils.h"
+#include "nm-netlink-compat.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-setting-connection.h"
@@ -1679,10 +1681,10 @@ dhcp6_start (NMDevice *self,
 	 */
 	err = nm_system_set_ip6_route (priv->ip_iface ? priv->ip_ifindex : priv->ifindex,
 	                               &dest, 8, NULL, 256, 0, RTPROT_BOOT, RT_TABLE_LOCAL, NULL);
-	if (err && (nl_get_errno () != EEXIST)) {
+	if (err && (err != -NLE_EXIST)) {
 		nm_log_err (LOGD_DEVICE | LOGD_IP6,
 		            "(%s): failed to add IPv6 multicast route: %s",
-		            priv->ip_iface ? priv->ip_iface : priv->iface, nl_geterror ());
+		            priv->ip_iface ? priv->ip_iface : priv->iface, nl_geterror (err));
 	}
 
 	s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);

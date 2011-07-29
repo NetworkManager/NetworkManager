@@ -21,12 +21,15 @@
 #include "logging/nm-logging.h"
 #include "nm-netlink-utils.h"
 #include "nm-netlink-monitor.h"
+#include "nm-netlink-compat.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netlink/netlink.h>
 #include <netlink/addr.h>
 #include <netlink/route/addr.h>
+
+#include <errno.h>
 
 typedef struct {
 	int ifindex;
@@ -86,7 +89,7 @@ nm_netlink_find_address (int ifindex,
                          void *addr,  /* struct in_addr or struct in6_addr */
                          int prefix)
 {
-	struct nl_handle *nlh = NULL;
+	struct nl_sock *nlh = NULL;
 	struct nl_cache *cache = NULL;
 	FindAddrInfo info;
 
@@ -109,7 +112,7 @@ nm_netlink_find_address (int ifindex,
 
 	nlh = nm_netlink_get_default_handle ();
 	if (nlh) {
-		cache = rtnl_addr_alloc_cache (nlh);
+		rtnl_addr_alloc_cache(nlh, &cache);
 		if (cache) {
 			nl_cache_mngt_provide (cache);
 			nl_cache_foreach (cache, find_one_address, &info);
@@ -152,7 +155,7 @@ nm_netlink_route_new (int ifindex,
 		else if (prop == NMNL_PROP_SCOPE && value != RT_SCOPE_NOWHERE)
 			rtnl_route_set_scope (route, value);
 		else if (prop == NMNL_PROP_PRIO && value > 0)
-			rtnl_route_set_prio (route, value);
+			rtnl_route_set_priority (route, value);
 
 		prop = va_arg (var_args, NmNlProp);
 	}
@@ -170,14 +173,15 @@ nm_netlink_route_new (int ifindex,
 gboolean
 nm_netlink_route_delete (struct rtnl_route *route)
 {
-	struct nl_handle *nlh;
-	int err;
+	struct nl_sock *nlh;
+	int err=0;
 
 	g_return_val_if_fail (route != NULL, FALSE);
 
 	nlh = nm_netlink_get_default_handle ();
-	err = rtnl_route_del (nlh, route, 0);
-	return err == 0 ? TRUE : FALSE;
+	err = rtnl_route_delete (nlh, route, 0);
+
+	return ((err < 0) && (err != -NLE_RANGE)) ? FALSE: TRUE;
 }
 
 
@@ -321,10 +325,11 @@ nm_netlink_foreach_route (int ifindex,
 	info.user_data = user_data;
 	info.iface = nm_netlink_index_to_iface (ifindex);
 
-	cache = rtnl_route_alloc_cache (nm_netlink_get_default_handle ());
+	rtnl_route_alloc_cache (nm_netlink_get_default_handle (), family, NL_AUTO_PROVIDE, &cache);
 	g_return_val_if_fail (cache != NULL, NULL);
 	nl_cache_foreach (cache, foreach_route_cb, &info);
 	nl_cache_free (cache);
 	return info.out_route;
 }
+
 
