@@ -51,6 +51,13 @@ int rtnl_route_get_dst_len(struct rtnl_route *);
 struct nl_addr * rtnl_route_get_gateway(struct rtnl_route *);
 #endif
 
+/* libnl-2 API compatibility for libnl-3 */
+#ifdef HAVE_LIBNL3
+static inline int __rtnl_link_alloc_cache(struct nl_sock *h, struct nl_cache **cache) {
+       return rtnl_link_alloc_cache (h, AF_UNSPEC, cache);
+}
+#define rtnl_link_alloc_cache __rtnl_link_alloc_cache
+#endif
 
 /* libnl-1.0 compat functions */
 #ifdef HAVE_LIBNL1

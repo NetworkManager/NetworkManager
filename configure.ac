@@ -331,6 +331,15 @@ if (test "${have_libnl2}" = "yes"); then
 	have_libnl="yes"
 fi
 
+PKG_CHECK_MODULES(LIBNL3, libnl-3.0, [have_libnl2=yes], [have_libnl2=no])
+if (test "${have_libnl2}" = "yes"); then
+	AC_DEFINE(HAVE_LIBNL3, 1, [Define if you require specific libnl-3 support])
+	LIBNL_CFLAGS="$LIBNL3_CFLAGS"
+	LIBNL_LIBS="$LIBNL3_LIBS"
+	libnl_version="3"
+	have_libnl="yes"
+fi
+
 if (test "${have_libnl}" = "no"); then
 	AC_MSG_ERROR([libnl development header are required])
 fi
