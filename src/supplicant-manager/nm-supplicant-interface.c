@@ -467,7 +467,8 @@ interface_add_done (NMSupplicantInterface *self, char *path)
 	                             G_CALLBACK (wpas_iface_properties_changed),
 	                             self, NULL);
 
-	dbus_g_proxy_add_signal (priv->iface_proxy, "ScanDone", G_TYPE_INVALID);
+	dbus_g_proxy_add_signal (priv->iface_proxy, "ScanDone",
+	                         G_TYPE_BOOLEAN, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->iface_proxy, "ScanDone",
 	                             G_CALLBACK (wpas_iface_scan_done),
 	                             self,
@@ -475,9 +476,11 @@ interface_add_done (NMSupplicantInterface *self, char *path)
 
 	dbus_g_object_register_marshaller (_nm_marshal_VOID__STRING_BOXED,
 	                                   G_TYPE_NONE,
-	                                   G_TYPE_STRING, DBUS_TYPE_G_MAP_OF_VARIANT,
+	                                   DBUS_TYPE_G_OBJECT_PATH, DBUS_TYPE_G_MAP_OF_VARIANT,
 	                                   G_TYPE_INVALID);
-	dbus_g_proxy_add_signal (priv->iface_proxy, "BSSAdded", G_TYPE_INVALID);
+	dbus_g_proxy_add_signal (priv->iface_proxy, "BSSAdded", 
+	                         DBUS_TYPE_G_OBJECT_PATH, DBUS_TYPE_G_MAP_OF_VARIANT,
+	                         G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->iface_proxy, "BSSAdded",
 	                             G_CALLBACK (wpas_iface_bss_added),
 	                             self,
