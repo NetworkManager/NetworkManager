@@ -9,6 +9,7 @@
 # Hyunsok Oh <enshahar@gmail.com>, 2010.
 # Hyunsok Oh <hoh@redhat.com>, 2010.
 # Changwoo Ryu <cwryu@debian.org>, 2011.
+# Seongho Cho <darkcircle.0426@gmail.com>, 2011.
 #
 # 주의:
 # - 이 프로그램의 이름인 "Network Manager"는 "네트워크 관리" 혹은
@@ -17,46 +18,47 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: ko\n"
-"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?product=NetworkManager&component=general\n"
-"POT-Creation-Date: 2011-02-24 03:24+0000\n"
-"PO-Revision-Date: 2011-02-27 16:50+0900\n"
-"Last-Translator: Changwoo Ryu <cwryu@debian.org>\n"
+"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
+"product=NetworkManager&keywords=I18N+L10N&component=general\n"
+"POT-Creation-Date: 2011-05-31 03:25+0000\n"
+"PO-Revision-Date: 2011-07-24 05:55+0900\n"
+"Last-Translator: Seong-ho, Cho <darkcircle.0426@gmail.com>\n"
 "Language-Team: GNOME Korea <gnome-kr@googlegroups.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: ../cli/src/connections.c:63 ../cli/src/connections.c:77
-#: ../cli/src/devices.c:100 ../cli/src/devices.c:113 ../cli/src/devices.c:123
-#: ../cli/src/devices.c:133 ../cli/src/devices.c:147 ../cli/src/devices.c:161
-#: ../cli/src/devices.c:172 ../cli/src/devices.c:183 ../cli/src/devices.c:192
-#: ../cli/src/devices.c:201 ../cli/src/devices.c:223
+#: ../cli/src/connections.c:64 ../cli/src/connections.c:78
+#: ../cli/src/devices.c:101 ../cli/src/devices.c:114 ../cli/src/devices.c:124
+#: ../cli/src/devices.c:134 ../cli/src/devices.c:148 ../cli/src/devices.c:162
+#: ../cli/src/devices.c:173 ../cli/src/devices.c:184 ../cli/src/devices.c:193
+#: ../cli/src/devices.c:202 ../cli/src/devices.c:224
 msgid "NAME"
 msgstr "이름"
 
 #. 0
-#: ../cli/src/connections.c:64 ../cli/src/connections.c:78
+#: ../cli/src/connections.c:65 ../cli/src/connections.c:79
 msgid "UUID"
 msgstr "UUID"
 
 #. 1
-#: ../cli/src/connections.c:65
+#: ../cli/src/connections.c:66
 msgid "DEVICES"
 msgstr "장치"
 
 #. 2
-#: ../cli/src/connections.c:66
+#: ../cli/src/connections.c:67
 msgid "DEFAULT"
 msgstr "디폴트"
 
 #. 3
-#: ../cli/src/connections.c:67
+#: ../cli/src/connections.c:68
 msgid "SPEC-OBJECT"
 msgstr "스펙-객체"
 
 #. 4
-#: ../cli/src/connections.c:68
+#: ../cli/src/connections.c:69
 msgid "VPN"
 msgstr "VPN"
 
@@ -65,8 +67,8 @@ msgstr "VPN"
 #. 2
 #. 11
 #. 5
-#: ../cli/src/connections.c:69 ../cli/src/connections.c:84
-#: ../cli/src/devices.c:68 ../cli/src/devices.c:213 ../cli/src/devices.c:229
+#: ../cli/src/connections.c:70 ../cli/src/connections.c:85
+#: ../cli/src/devices.c:69 ../cli/src/devices.c:214 ../cli/src/devices.c:230
 msgid "DBUS-PATH"
 msgstr "DBUS 경로"
 
@@ -74,28 +76,28 @@ msgstr "DBUS 경로"
 #. 0
 #. 1
 #. 2
-#: ../cli/src/connections.c:79 ../cli/src/devices.c:66
-#: ../cli/src/devices.c:102 ../cli/src/devices.c:226
+#: ../cli/src/connections.c:80 ../cli/src/devices.c:67
+#: ../cli/src/devices.c:103 ../cli/src/devices.c:227
 msgid "TYPE"
 msgstr "유형"
 
 #. 2
-#: ../cli/src/connections.c:80
+#: ../cli/src/connections.c:81
 msgid "TIMESTAMP"
 msgstr "타임스탬프"
 
 #. 3
-#: ../cli/src/connections.c:81
+#: ../cli/src/connections.c:82
 msgid "TIMESTAMP-REAL"
 msgstr "실제 타임스탬프"
 
 #. 4
-#: ../cli/src/connections.c:82
+#: ../cli/src/connections.c:83
 msgid "AUTOCONNECT"
 msgstr "자동연결"
 
 #. 5
-#: ../cli/src/connections.c:83
+#: ../cli/src/connections.c:84
 msgid "READONLY"
 msgstr "읽기전용"
 
@@ -118,15 +120,16 @@ msgstr ""
 "\n"
 "  list [id <id> | uuid <id> ]\n"
 "  status\n"
-"  up id <id> | uuid <id> [iface <인터페이스>] [ap <하드웨어주소>] [--nowait] [--timeout <타임아웃시간>]\n"
+"  up id <id> | uuid <id> [iface <인터페이스>] [ap <하드웨어주소>] [--nowait] "
+"[--timeout <타임아웃시간>]\n"
 "  down id <id> | uuid <id>\n"
 
-#: ../cli/src/connections.c:220 ../cli/src/connections.c:542
+#: ../cli/src/connections.c:220 ../cli/src/connections.c:544
 #, c-format
 msgid "Error: 'con list': %s"
 msgstr "오류: 'con list': %s"
 
-#: ../cli/src/connections.c:222 ../cli/src/connections.c:544
+#: ../cli/src/connections.c:222 ../cli/src/connections.c:546
 #, c-format
 msgid "Error: 'con list': %s; allowed fields: %s"
 msgstr "오류: 'con list': %s. 허용된 필드: %s"
@@ -135,332 +138,332 @@ msgstr "오류: 'con list': %s. 허용된 필드: %s"
 msgid "Connection details"
 msgstr "연결 상세 정보"
 
-#: ../cli/src/connections.c:417
+#: ../cli/src/connections.c:419
 msgid "never"
 msgstr "하지않음"
 
 #. "CAPABILITIES"
 #. Print header
 #. "WIFI-PROPERTIES"
-#: ../cli/src/connections.c:418 ../cli/src/connections.c:419
-#: ../cli/src/connections.c:597 ../cli/src/connections.c:599
-#: ../cli/src/devices.c:503 ../cli/src/devices.c:556 ../cli/src/devices.c:681
-#: ../cli/src/devices.c:707 ../cli/src/devices.c:708 ../cli/src/devices.c:709
-#: ../cli/src/devices.c:710 ../cli/src/devices.c:711 ../cli/src/settings.c:518
-#: ../cli/src/settings.c:561 ../cli/src/settings.c:661
-#: ../cli/src/settings.c:935 ../cli/src/settings.c:936
-#: ../cli/src/settings.c:938 ../cli/src/settings.c:940
-#: ../cli/src/settings.c:1065 ../cli/src/settings.c:1066
-#: ../cli/src/settings.c:1067 ../cli/src/settings.c:1146
-#: ../cli/src/settings.c:1147 ../cli/src/settings.c:1148
+#: ../cli/src/connections.c:420 ../cli/src/connections.c:421
+#: ../cli/src/connections.c:599 ../cli/src/connections.c:601
+#: ../cli/src/devices.c:509 ../cli/src/devices.c:562 ../cli/src/devices.c:687
+#: ../cli/src/devices.c:713 ../cli/src/devices.c:714 ../cli/src/devices.c:715
+#: ../cli/src/devices.c:716 ../cli/src/devices.c:717 ../cli/src/settings.c:520
+#: ../cli/src/settings.c:563 ../cli/src/settings.c:663
+#: ../cli/src/settings.c:937 ../cli/src/settings.c:938
+#: ../cli/src/settings.c:940 ../cli/src/settings.c:942
+#: ../cli/src/settings.c:1067 ../cli/src/settings.c:1068
+#: ../cli/src/settings.c:1069 ../cli/src/settings.c:1148
 #: ../cli/src/settings.c:1149 ../cli/src/settings.c:1150
 #: ../cli/src/settings.c:1151 ../cli/src/settings.c:1152
 #: ../cli/src/settings.c:1153 ../cli/src/settings.c:1154
 #: ../cli/src/settings.c:1155 ../cli/src/settings.c:1156
 #: ../cli/src/settings.c:1157 ../cli/src/settings.c:1158
-#: ../cli/src/settings.c:1233
+#: ../cli/src/settings.c:1159 ../cli/src/settings.c:1160
+#: ../cli/src/settings.c:1235
 msgid "yes"
 msgstr "예"
 
-#: ../cli/src/connections.c:418 ../cli/src/connections.c:419
-#: ../cli/src/connections.c:597 ../cli/src/connections.c:599
-#: ../cli/src/devices.c:503 ../cli/src/devices.c:556 ../cli/src/devices.c:681
-#: ../cli/src/devices.c:707 ../cli/src/devices.c:708 ../cli/src/devices.c:709
-#: ../cli/src/devices.c:710 ../cli/src/devices.c:711 ../cli/src/settings.c:518
-#: ../cli/src/settings.c:520 ../cli/src/settings.c:561
-#: ../cli/src/settings.c:661 ../cli/src/settings.c:935
-#: ../cli/src/settings.c:936 ../cli/src/settings.c:938
-#: ../cli/src/settings.c:940 ../cli/src/settings.c:1065
-#: ../cli/src/settings.c:1066 ../cli/src/settings.c:1067
-#: ../cli/src/settings.c:1146 ../cli/src/settings.c:1147
+#: ../cli/src/connections.c:420 ../cli/src/connections.c:421
+#: ../cli/src/connections.c:599 ../cli/src/connections.c:601
+#: ../cli/src/devices.c:509 ../cli/src/devices.c:562 ../cli/src/devices.c:687
+#: ../cli/src/devices.c:713 ../cli/src/devices.c:714 ../cli/src/devices.c:715
+#: ../cli/src/devices.c:716 ../cli/src/devices.c:717 ../cli/src/settings.c:520
+#: ../cli/src/settings.c:522 ../cli/src/settings.c:563
+#: ../cli/src/settings.c:663 ../cli/src/settings.c:937
+#: ../cli/src/settings.c:938 ../cli/src/settings.c:940
+#: ../cli/src/settings.c:942 ../cli/src/settings.c:1067
+#: ../cli/src/settings.c:1068 ../cli/src/settings.c:1069
 #: ../cli/src/settings.c:1148 ../cli/src/settings.c:1149
 #: ../cli/src/settings.c:1150 ../cli/src/settings.c:1151
 #: ../cli/src/settings.c:1152 ../cli/src/settings.c:1153
 #: ../cli/src/settings.c:1154 ../cli/src/settings.c:1155
 #: ../cli/src/settings.c:1156 ../cli/src/settings.c:1157
-#: ../cli/src/settings.c:1158 ../cli/src/settings.c:1233
+#: ../cli/src/settings.c:1158 ../cli/src/settings.c:1159
+#: ../cli/src/settings.c:1160 ../cli/src/settings.c:1235
 msgid "no"
 msgstr "아니요"
 
-#: ../cli/src/connections.c:493
+#: ../cli/src/connections.c:495
 msgid "Connection list"
 msgstr "연결 목록"
 
-#: ../cli/src/connections.c:506 ../cli/src/connections.c:1468
-#: ../cli/src/connections.c:1483 ../cli/src/connections.c:1492
-#: ../cli/src/connections.c:1502 ../cli/src/connections.c:1514
-#: ../cli/src/connections.c:1609 ../cli/src/devices.c:1184
-#: ../cli/src/devices.c:1194 ../cli/src/devices.c:1308
-#: ../cli/src/devices.c:1315 ../cli/src/devices.c:1528
-#: ../cli/src/devices.c:1535
+#: ../cli/src/connections.c:508 ../cli/src/connections.c:1380
+#: ../cli/src/connections.c:1395 ../cli/src/connections.c:1404
+#: ../cli/src/connections.c:1414 ../cli/src/connections.c:1426
+#: ../cli/src/connections.c:1521 ../cli/src/devices.c:1190
+#: ../cli/src/devices.c:1200 ../cli/src/devices.c:1314
+#: ../cli/src/devices.c:1321 ../cli/src/devices.c:1534
+#: ../cli/src/devices.c:1541
 #, c-format
 msgid "Error: %s argument is missing."
 msgstr "오류: %s 인자가 없습니다."
 
-#: ../cli/src/connections.c:519
+#: ../cli/src/connections.c:521
 #, c-format
 msgid "Error: %s - no such connection."
 msgstr "오류: %s - 그런 연결이 없습니다."
 
-#: ../cli/src/connections.c:525 ../cli/src/connections.c:1527
-#: ../cli/src/connections.c:1626 ../cli/src/devices.c:981
-#: ../cli/src/devices.c:1061 ../cli/src/devices.c:1208
-#: ../cli/src/devices.c:1321 ../cli/src/devices.c:1541
+#: ../cli/src/connections.c:527 ../cli/src/connections.c:1439
+#: ../cli/src/connections.c:1538 ../cli/src/devices.c:987
+#: ../cli/src/devices.c:1067 ../cli/src/devices.c:1214
+#: ../cli/src/devices.c:1327 ../cli/src/devices.c:1547
 #, c-format
 msgid "Unknown parameter: %s\n"
 msgstr "알려져있지 않은 매개변수입니다: %s\n"
 
-#: ../cli/src/connections.c:534
+#: ../cli/src/connections.c:536
 #, c-format
 msgid "Error: no valid parameter specified."
 msgstr "오류: 옳바른 매개변수가 지정되지 않았습니다."
 
-#: ../cli/src/connections.c:549 ../cli/src/connections.c:1717
-#: ../cli/src/devices.c:1749 ../cli/src/network-manager.c:461
+#: ../cli/src/connections.c:551 ../cli/src/connections.c:1629
+#: ../cli/src/devices.c:1755 ../cli/src/network-manager.c:463
 #, c-format
 msgid "Error: %s."
 msgstr "오류: %s."
 
-#: ../cli/src/connections.c:637
+#: ../cli/src/connections.c:639
 #, c-format
 msgid "Error: 'con status': %s"
 msgstr "오류: 'con status': %s"
 
-#: ../cli/src/connections.c:639
+#: ../cli/src/connections.c:641
 #, c-format
 msgid "Error: 'con status': %s; allowed fields: %s"
 msgstr "오류: 'con status': %s. 허용된 필드: %s"
 
-#: ../cli/src/connections.c:647 ../cli/src/connections.c:1542
-#: ../cli/src/connections.c:1641 ../cli/src/devices.c:1008
-#: ../cli/src/devices.c:1070 ../cli/src/devices.c:1223
-#: ../cli/src/devices.c:1351 ../cli/src/devices.c:1570
+#: ../cli/src/connections.c:649 ../cli/src/connections.c:1454
+#: ../cli/src/connections.c:1553 ../cli/src/devices.c:1014
+#: ../cli/src/devices.c:1076 ../cli/src/devices.c:1229
+#: ../cli/src/devices.c:1357 ../cli/src/devices.c:1576
 #, c-format
 msgid "Error: Can't find out if NetworkManager is running: %s."
 msgstr "오류: 네트워크 관리 프로그램이 실행 중인지 알 수 없습니다: %s."
 
-#: ../cli/src/connections.c:651 ../cli/src/connections.c:1546
-#: ../cli/src/connections.c:1645 ../cli/src/devices.c:1012
-#: ../cli/src/devices.c:1074 ../cli/src/devices.c:1227
-#: ../cli/src/devices.c:1355 ../cli/src/devices.c:1574
+#: ../cli/src/connections.c:653 ../cli/src/connections.c:1458
+#: ../cli/src/connections.c:1557 ../cli/src/devices.c:1018
+#: ../cli/src/devices.c:1080 ../cli/src/devices.c:1233
+#: ../cli/src/devices.c:1361 ../cli/src/devices.c:1580
 #, c-format
 msgid "Error: NetworkManager is not running."
 msgstr "오류: 네트워크 관리 프로그램이 실행 중이 아닙니다."
 
-#: ../cli/src/connections.c:659
+#: ../cli/src/connections.c:661
 msgid "Active connections"
 msgstr "활성화된 연결"
 
-#: ../cli/src/connections.c:1139
+#: ../cli/src/connections.c:1097
 #, c-format
 msgid "no active connection on device '%s'"
 msgstr "장치 '%s'에 활성화된 연결이 없습니다"
 
-#: ../cli/src/connections.c:1147
+#: ../cli/src/connections.c:1105
 #, c-format
 msgid "no active connection or device"
 msgstr "활성화된 연결이나 장치가 없습니다"
 
-#: ../cli/src/connections.c:1218
+#: ../cli/src/connections.c:1176
 #, c-format
 msgid "device '%s' not compatible with connection '%s'"
 msgstr "'%s' 장치는 '%s' 연결과 호환되지 않습니다"
 
-#: ../cli/src/connections.c:1220
+#: ../cli/src/connections.c:1178
 #, c-format
 msgid "no device found for connection '%s'"
 msgstr "연결 '%s'에 대한 장치를 찾을 수 없습니다"
 
-#: ../cli/src/connections.c:1231
+#: ../cli/src/connections.c:1189
 msgid "activating"
 msgstr "활성화중"
 
-#: ../cli/src/connections.c:1233
+#: ../cli/src/connections.c:1191
 msgid "activated"
 msgstr "활성화됨"
 
-#: ../cli/src/connections.c:1236 ../cli/src/connections.c:1259
-#: ../cli/src/connections.c:1292 ../cli/src/devices.c:307
-#: ../cli/src/devices.c:682 ../cli/src/network-manager.c:116
-#: ../cli/src/network-manager.c:178 ../cli/src/network-manager.c:181
-#: ../cli/src/network-manager.c:296 ../cli/src/network-manager.c:351
-#: ../cli/src/network-manager.c:389 ../cli/src/network-manager.c:428
-#: ../cli/src/settings.c:483 ../cli/src/utils.c:396
+#: ../cli/src/connections.c:1193 ../cli/src/devices.c:304
+msgid "deactivating"
+msgstr "활성화 해제하는 중"
+
+#: ../cli/src/connections.c:1196 ../cli/src/connections.c:1219
+#: ../cli/src/connections.c:1252 ../cli/src/devices.c:308
+#: ../cli/src/devices.c:688 ../cli/src/network-manager.c:118
+#: ../cli/src/network-manager.c:180 ../cli/src/network-manager.c:183
+#: ../cli/src/network-manager.c:192 ../cli/src/network-manager.c:298
+#: ../cli/src/network-manager.c:353 ../cli/src/network-manager.c:391
+#: ../cli/src/network-manager.c:430 ../cli/src/settings.c:485
+#: ../cli/src/utils.c:396
 msgid "unknown"
 msgstr "알 수 없음"
 
-#: ../cli/src/connections.c:1245
+#: ../cli/src/connections.c:1205
 msgid "VPN connecting (prepare)"
 msgstr "VPN 연결 중 (준비)"
 
-#: ../cli/src/connections.c:1247
+#: ../cli/src/connections.c:1207
 msgid "VPN connecting (need authentication)"
 msgstr "VPN 연결 중 (인증 필요)"
 
-#: ../cli/src/connections.c:1249
+#: ../cli/src/connections.c:1209
 msgid "VPN connecting"
 msgstr "VPN 연결 중"
 
-#: ../cli/src/connections.c:1251
+#: ../cli/src/connections.c:1211
 msgid "VPN connecting (getting IP configuration)"
 msgstr "VPN 연결 중 (IP 설정 얻는 중)"
 
-#: ../cli/src/connections.c:1253
+#: ../cli/src/connections.c:1213
 msgid "VPN connected"
 msgstr "VPN 연결 됨"
 
-#: ../cli/src/connections.c:1255
+#: ../cli/src/connections.c:1215
 msgid "VPN connection failed"
 msgstr "VPN 연결 실패"
 
-#: ../cli/src/connections.c:1257
+#: ../cli/src/connections.c:1217
 msgid "VPN disconnected"
 msgstr "VPN 연결 끊겼음"
 
-#: ../cli/src/connections.c:1268
+#: ../cli/src/connections.c:1228
 msgid "unknown reason"
 msgstr "알 수 없는 이유"
 
-#: ../cli/src/connections.c:1270
+#: ../cli/src/connections.c:1230
 msgid "none"
 msgstr "없음"
 
-#: ../cli/src/connections.c:1272
+#: ../cli/src/connections.c:1232
 msgid "the user was disconnected"
 msgstr "사용자 연결이 끊어졌습니다"
 
-#: ../cli/src/connections.c:1274
+#: ../cli/src/connections.c:1234
 msgid "the base network connection was interrupted"
 msgstr "기반 네트워크 연결이 중지되었습니다"
 
-#: ../cli/src/connections.c:1276
+#: ../cli/src/connections.c:1236
 msgid "the VPN service stopped unexpectedly"
 msgstr "VPN 서비스가 예기치 못하게 중단되었습니다"
 
-#: ../cli/src/connections.c:1278
+#: ../cli/src/connections.c:1238
 msgid "the VPN service returned invalid configuration"
 msgstr "VPN 서비스가 잘못된 설정을 반환했습니다"
 
-#: ../cli/src/connections.c:1280
+#: ../cli/src/connections.c:1240
 msgid "the connection attempt timed out"
 msgstr "연결 시도가 시간을 초과했습니다"
 
-#: ../cli/src/connections.c:1282
+#: ../cli/src/connections.c:1242
 msgid "the VPN service did not start in time"
 msgstr "VPN 서비스가 제 시간에 시작되지 않았습니다"
 
-#: ../cli/src/connections.c:1284
+#: ../cli/src/connections.c:1244
 msgid "the VPN service failed to start"
 msgstr "VPN 서비스를 시작하는 데 실패했습니다"
 
-#: ../cli/src/connections.c:1286
+#: ../cli/src/connections.c:1246
 msgid "no valid VPN secrets"
 msgstr "옳바른 VPN 비밀 정보가 없습니다"
 
-#: ../cli/src/connections.c:1288
+#: ../cli/src/connections.c:1248
 msgid "invalid VPN secrets"
 msgstr "잘못된 VPN 비밀정보"
 
-#: ../cli/src/connections.c:1290
+#: ../cli/src/connections.c:1250
 msgid "the connection was removed"
 msgstr "연결이 제거되었습니다"
 
-#: ../cli/src/connections.c:1304
+#: ../cli/src/connections.c:1264
 #, c-format
 msgid "state: %s\n"
 msgstr "상태: %s\n"
 
-#: ../cli/src/connections.c:1307 ../cli/src/connections.c:1333
+#: ../cli/src/connections.c:1267 ../cli/src/connections.c:1293
 #, c-format
 msgid "Connection activated\n"
 msgstr "연결이 활성화되었습니다\n"
 
-#: ../cli/src/connections.c:1310
+#: ../cli/src/connections.c:1270
 #, c-format
 msgid "Error: Connection activation failed."
 msgstr "오류: 연결 활성화가 실패했습니다."
 
-#: ../cli/src/connections.c:1329
+#: ../cli/src/connections.c:1289
 #, c-format
 msgid "state: %s (%d)\n"
 msgstr "상태: %s (%d)\n"
 
-#: ../cli/src/connections.c:1339
+#: ../cli/src/connections.c:1299
 #, c-format
 msgid "Error: Connection activation failed: %s."
 msgstr "오류: 연결 활성화가 실패했습니다: %s."
 
-#: ../cli/src/connections.c:1356 ../cli/src/devices.c:1130
+#: ../cli/src/connections.c:1316 ../cli/src/devices.c:1136
 #, c-format
 msgid "Error: Timeout %d sec expired."
 msgstr "오류: 제한시간 %d초를 초과했습니다."
 
-#: ../cli/src/connections.c:1399
+#: ../cli/src/connections.c:1329
 #, c-format
 msgid "Error: Connection activation failed: %s"
 msgstr "오류: 연결 활성화가 실패했습니다: %s"
 
-#: ../cli/src/connections.c:1413
-#, c-format
-msgid "Error: Obtaining active connection for '%s' failed."
-msgstr "오류: '%s'에 대한 활성화된 연결을 얻는 데 실패했습니다."
-
-#: ../cli/src/connections.c:1422
+#: ../cli/src/connections.c:1335
 #, c-format
 msgid "Active connection state: %s\n"
 msgstr "활성화된 연결 상태: %s\n"
 
-#: ../cli/src/connections.c:1423
+#: ../cli/src/connections.c:1336
 #, c-format
 msgid "Active connection path: %s\n"
 msgstr "활성화된 연결 경로: %s\n"
 
-#: ../cli/src/connections.c:1476 ../cli/src/connections.c:1617
+#: ../cli/src/connections.c:1388 ../cli/src/connections.c:1529
 #, c-format
 msgid "Error: Unknown connection: %s."
 msgstr "오류: 알려지지 않은 연결: %s."
 
-#: ../cli/src/connections.c:1522 ../cli/src/devices.c:1202
+#: ../cli/src/connections.c:1434 ../cli/src/devices.c:1208
 #, c-format
 msgid "Error: timeout value '%s' is not valid."
 msgstr "오류: 시간 제한 값 '%s'이(가) 올바르지 않습니다."
 
-#: ../cli/src/connections.c:1535 ../cli/src/connections.c:1634
+#: ../cli/src/connections.c:1447 ../cli/src/connections.c:1546
 #, c-format
 msgid "Error: id or uuid has to be specified."
 msgstr "오류: id나 uuid를 지정해야만 합니다."
 
-#: ../cli/src/connections.c:1565
+#: ../cli/src/connections.c:1475
 #, c-format
 msgid "Error: No suitable device found: %s."
 msgstr "오류: 적절한 장치를 찾을 수 없습니다: %s."
 
-#: ../cli/src/connections.c:1567
+#: ../cli/src/connections.c:1477
 #, c-format
 msgid "Error: No suitable device found."
 msgstr "오류: 적절한 장치를 찾을 수 없습니다."
 
-#: ../cli/src/connections.c:1670
+#: ../cli/src/connections.c:1582
 #, c-format
 msgid "Warning: Connection not active\n"
 msgstr "경고: 연결이 활성화되어 있지 않습니다\n"
 
-#: ../cli/src/connections.c:1708
+#: ../cli/src/connections.c:1620
 #, c-format
 msgid "Error: 'con' command '%s' is not valid."
 msgstr "오류: 'con' 명령 '%s'은(는) 바른 명령이 아닙니다."
 
-#: ../cli/src/connections.c:1773
+#: ../cli/src/connections.c:1685
 #, c-format
 msgid "Error: could not connect to D-Bus."
 msgstr "오류: D-버스에 연결할 수 없습니다."
 
-#: ../cli/src/connections.c:1780
+#: ../cli/src/connections.c:1692
 #, c-format
 msgid "Error: Could not get system settings."
 msgstr "오류: 시스템 설정을 얻을 수 없습니다."
 
-#: ../cli/src/connections.c:1790
+#: ../cli/src/connections.c:1702
 #, c-format
 msgid "Error: Can't obtain connections: settings service is not running."
 msgstr "오류: 연결을 얻을 수 없습니다: 설정 서비스가 실행 중이 아닙니다."
@@ -468,222 +471,222 @@ msgstr "오류: 연결을 얻을 수 없습니다: 설정 서비스가 실행 �
 #. 0
 #. 9
 #. 3
-#: ../cli/src/devices.c:65 ../cli/src/devices.c:101 ../cli/src/devices.c:211
-#: ../cli/src/devices.c:227
+#: ../cli/src/devices.c:66 ../cli/src/devices.c:102 ../cli/src/devices.c:212
+#: ../cli/src/devices.c:228
 msgid "DEVICE"
 msgstr "장치"
 
 #. 1
 #. 4
 #. 1
-#: ../cli/src/devices.c:67 ../cli/src/devices.c:105
-#: ../cli/src/network-manager.c:37
+#: ../cli/src/devices.c:68 ../cli/src/devices.c:106
+#: ../cli/src/network-manager.c:39
 msgid "STATE"
 msgstr "상태"
 
-#: ../cli/src/devices.c:77
+#: ../cli/src/devices.c:78
 msgid "GENERAL"
 msgstr "일반"
 
 #. 0
-#: ../cli/src/devices.c:78
+#: ../cli/src/devices.c:79
 msgid "CAPABILITIES"
 msgstr "기능"
 
 #. 1
-#: ../cli/src/devices.c:79
+#: ../cli/src/devices.c:80
 msgid "WIFI-PROPERTIES"
 msgstr "WIFI 속성"
 
 #. 2
-#: ../cli/src/devices.c:80
+#: ../cli/src/devices.c:81
 msgid "AP"
 msgstr "AP"
 
 #. 3
-#: ../cli/src/devices.c:81
+#: ../cli/src/devices.c:82
 msgid "WIRED-PROPERTIES"
 msgstr "유선 속성"
 
 #. 4
-#: ../cli/src/devices.c:82
+#: ../cli/src/devices.c:83
 msgid "WIMAX-PROPERTIES"
 msgstr "WIMAX 속성"
 
 #. 5
 #. 0
-#: ../cli/src/devices.c:83 ../cli/src/devices.c:224
+#: ../cli/src/devices.c:84 ../cli/src/devices.c:225
 msgid "NSP"
 msgstr "NSP"
 
 #. 6
-#: ../cli/src/devices.c:84
+#: ../cli/src/devices.c:85
 msgid "IP4-SETTINGS"
 msgstr "IP4 설정"
 
 #. 7
-#: ../cli/src/devices.c:85
+#: ../cli/src/devices.c:86
 msgid "IP4-DNS"
 msgstr "IP4 DNS"
 
 #. 8
-#: ../cli/src/devices.c:86
+#: ../cli/src/devices.c:87
 msgid "IP6-SETTINGS"
 msgstr "IP6 설정"
 
 #. 9
-#: ../cli/src/devices.c:87
+#: ../cli/src/devices.c:88
 msgid "IP6-DNS"
 msgstr "IP6 DNS"
 
 #. 2
-#: ../cli/src/devices.c:103
+#: ../cli/src/devices.c:104
 msgid "DRIVER"
 msgstr "드라이버"
 
 #. 3
-#: ../cli/src/devices.c:104
+#: ../cli/src/devices.c:105
 msgid "HWADDR"
 msgstr "하드웨어주소"
 
 #. 0
-#: ../cli/src/devices.c:114
+#: ../cli/src/devices.c:115
 msgid "CARRIER-DETECT"
 msgstr "캐리어 감지"
 
 #. 1
-#: ../cli/src/devices.c:115
+#: ../cli/src/devices.c:116
 msgid "SPEED"
 msgstr "속도"
 
 #. 0
-#: ../cli/src/devices.c:124
+#: ../cli/src/devices.c:125
 msgid "CARRIER"
 msgstr "캐리어"
 
 #. 0
-#: ../cli/src/devices.c:134
+#: ../cli/src/devices.c:135
 msgid "WEP"
 msgstr "WEP"
 
 #. 1
-#: ../cli/src/devices.c:135
+#: ../cli/src/devices.c:136
 msgid "WPA"
 msgstr "WPA"
 
 #. 2
-#: ../cli/src/devices.c:136
+#: ../cli/src/devices.c:137
 msgid "WPA2"
 msgstr "WPA2"
 
 #. 3
-#: ../cli/src/devices.c:137
+#: ../cli/src/devices.c:138
 msgid "TKIP"
 msgstr "TKIP"
 
 #. 4
-#: ../cli/src/devices.c:138
+#: ../cli/src/devices.c:139
 msgid "CCMP"
 msgstr "CCMP"
 
 #. 0
-#: ../cli/src/devices.c:148
+#: ../cli/src/devices.c:149
 msgid "CTR-FREQ"
 msgstr "CTR 주파수"
 
 #. 1
-#: ../cli/src/devices.c:149
+#: ../cli/src/devices.c:150
 msgid "RSSI"
 msgstr "RSSI"
 
 #. 2
-#: ../cli/src/devices.c:150
+#: ../cli/src/devices.c:151
 msgid "CINR"
 msgstr "CINR"
 
 #. 3
-#: ../cli/src/devices.c:151
+#: ../cli/src/devices.c:152
 msgid "TX-POW"
 msgstr "TX-POW"
 
 #. 4
-#: ../cli/src/devices.c:152
+#: ../cli/src/devices.c:153
 msgid "BSID"
 msgstr "BSID"
 
 #. 0
-#: ../cli/src/devices.c:162 ../cli/src/devices.c:173
+#: ../cli/src/devices.c:163 ../cli/src/devices.c:174
 msgid "ADDRESS"
 msgstr "주소"
 
 #. 1
-#: ../cli/src/devices.c:163 ../cli/src/devices.c:174
+#: ../cli/src/devices.c:164 ../cli/src/devices.c:175
 msgid "PREFIX"
 msgstr "접두사"
 
 #. 2
-#: ../cli/src/devices.c:164 ../cli/src/devices.c:175
+#: ../cli/src/devices.c:165 ../cli/src/devices.c:176
 msgid "GATEWAY"
 msgstr "게이트웨이"
 
 #. 0
-#: ../cli/src/devices.c:184 ../cli/src/devices.c:193
+#: ../cli/src/devices.c:185 ../cli/src/devices.c:194
 msgid "DNS"
 msgstr "DNS"
 
 #. 0
-#: ../cli/src/devices.c:202
+#: ../cli/src/devices.c:203
 msgid "SSID"
 msgstr "SSID"
 
 #. 1
-#: ../cli/src/devices.c:203
+#: ../cli/src/devices.c:204
 msgid "BSSID"
 msgstr "BSSID"
 
 #. 2
-#: ../cli/src/devices.c:204
+#: ../cli/src/devices.c:205
 msgid "MODE"
 msgstr "모드"
 
 #. 3
-#: ../cli/src/devices.c:205
+#: ../cli/src/devices.c:206
 msgid "FREQ"
 msgstr "주파수"
 
 #. 4
-#: ../cli/src/devices.c:206
+#: ../cli/src/devices.c:207
 msgid "RATE"
 msgstr "전송률"
 
 #. 5
 #. 1
-#: ../cli/src/devices.c:207 ../cli/src/devices.c:225
+#: ../cli/src/devices.c:208 ../cli/src/devices.c:226
 msgid "SIGNAL"
 msgstr "신호"
 
 #. 6
-#: ../cli/src/devices.c:208
+#: ../cli/src/devices.c:209
 msgid "SECURITY"
 msgstr "보안"
 
 #. 7
-#: ../cli/src/devices.c:209
+#: ../cli/src/devices.c:210
 msgid "WPA-FLAGS"
 msgstr "WPA 플래그"
 
 #. 8
-#: ../cli/src/devices.c:210
+#: ../cli/src/devices.c:211
 msgid "RSN-FLAGS"
 msgstr "RSN 플래그"
 
 #. 10
 #. 4
-#: ../cli/src/devices.c:212 ../cli/src/devices.c:228
+#: ../cli/src/devices.c:213 ../cli/src/devices.c:229
 msgid "ACTIVE"
 msgstr "활성"
 
-#: ../cli/src/devices.c:255
+#: ../cli/src/devices.c:256
 #, c-format
 msgid ""
 "Usage: nmcli dev { COMMAND | help }\n"
@@ -712,308 +715,305 @@ msgstr ""
 "  wimax [list [iface <인터페이스>] | nsp <이름>]\n"
 "\n"
 
-#: ../cli/src/devices.c:283
+#: ../cli/src/devices.c:284
 msgid "unmanaged"
 msgstr "관리되지 않음"
 
-#: ../cli/src/devices.c:285
+#: ../cli/src/devices.c:286
 msgid "unavailable"
 msgstr "사용할 수 없음"
 
-#: ../cli/src/devices.c:287 ../cli/src/network-manager.c:113
+#: ../cli/src/devices.c:288 ../cli/src/network-manager.c:115
 msgid "disconnected"
 msgstr "연결 끊겼음"
 
-#: ../cli/src/devices.c:289
+#: ../cli/src/devices.c:290
 msgid "connecting (prepare)"
 msgstr "연결 중 (준비)"
 
-#: ../cli/src/devices.c:291
+#: ../cli/src/devices.c:292
 msgid "connecting (configuring)"
 msgstr "연결 중 (설정중)"
 
-#: ../cli/src/devices.c:293
+#: ../cli/src/devices.c:294
 msgid "connecting (need authentication)"
 msgstr "연결 중 (인증 필요)"
 
-#: ../cli/src/devices.c:295
+#: ../cli/src/devices.c:296
 msgid "connecting (getting IP configuration)"
 msgstr "연결 중 (IP 설정 가져오는 중)"
 
-#: ../cli/src/devices.c:297
+#: ../cli/src/devices.c:298
 msgid "connecting (checking IP connectivity)"
 msgstr "연결 중 (IP 연결 확인하는 중)"
 
-#: ../cli/src/devices.c:299
+#: ../cli/src/devices.c:300
 msgid "connecting (starting secondary connections)"
 msgstr "연결 중 (보조 연결 시작하는 중)"
 
-#: ../cli/src/devices.c:301 ../cli/src/network-manager.c:109
+#: ../cli/src/devices.c:302 ../cli/src/network-manager.c:111
 msgid "connected"
 msgstr "연결됨"
 
-#: ../cli/src/devices.c:303
-msgid "deactivating"
-msgstr "활성화 해제하는 중"
-
-#: ../cli/src/devices.c:305
+#: ../cli/src/devices.c:306
 msgid "connection failed"
 msgstr "연결 실패함"
 
-#: ../cli/src/devices.c:335 ../cli/src/devices.c:495 ../cli/src/devices.c:539
+#: ../cli/src/devices.c:331 ../cli/src/devices.c:341 ../cli/src/devices.c:501
+#: ../cli/src/devices.c:545
 msgid "Unknown"
 msgstr "알 수 없음"
 
-#: ../cli/src/devices.c:368
+#: ../cli/src/devices.c:374
 msgid "(none)"
 msgstr "(없음)"
 
-#: ../cli/src/devices.c:393
+#: ../cli/src/devices.c:399
 #, c-format
 msgid "%s: error converting IP4 address 0x%X"
 msgstr "%s: IP4 주소를 (0x%X) 변환하는 중 오류가 있습니다"
 
-#: ../cli/src/devices.c:464
+#: ../cli/src/devices.c:470
 #, c-format
 msgid "%u MHz"
 msgstr "%u MHz"
 
-#: ../cli/src/devices.c:465
+#: ../cli/src/devices.c:471
 #, c-format
 msgid "%u MB/s"
 msgstr "%u MB/s"
 
-#: ../cli/src/devices.c:474
+#: ../cli/src/devices.c:480
 msgid "Encrypted: "
 msgstr "암호화됨: "
 
-#: ../cli/src/devices.c:479
+#: ../cli/src/devices.c:485
 msgid "WEP "
 msgstr "WEP "
 
-#: ../cli/src/devices.c:481
+#: ../cli/src/devices.c:487
 msgid "WPA "
 msgstr "WPA "
 
-#: ../cli/src/devices.c:483
+#: ../cli/src/devices.c:489
 msgid "WPA2 "
 msgstr "WPA2 "
 
-#: ../cli/src/devices.c:486
+#: ../cli/src/devices.c:492
 msgid "Enterprise "
 msgstr "기업용 WPA "
 
-#: ../cli/src/devices.c:495
+#: ../cli/src/devices.c:501
 msgid "Ad-Hoc"
 msgstr "애드혹"
 
-#: ../cli/src/devices.c:495
+#: ../cli/src/devices.c:501
 msgid "Infrastructure"
 msgstr "인프라스트럭쳐"
 
-#: ../cli/src/devices.c:530
+#: ../cli/src/devices.c:536
 msgid "Home"
 msgstr "홈"
 
-#: ../cli/src/devices.c:533
+#: ../cli/src/devices.c:539
 msgid "Partner"
 msgstr "파트너"
 
-#: ../cli/src/devices.c:536
+#: ../cli/src/devices.c:542
 msgid "Roaming"
 msgstr "로밍"
 
-#: ../cli/src/devices.c:606
+#: ../cli/src/devices.c:612
 #, c-format
 msgid "Error: 'dev list': %s"
 msgstr "오류: 'dev list': %s"
 
-#: ../cli/src/devices.c:608
+#: ../cli/src/devices.c:614
 #, c-format
 msgid "Error: 'dev list': %s; allowed fields: %s"
 msgstr "오류: 'dev list': %s. 허용된 필드: %s"
 
-#: ../cli/src/devices.c:617
+#: ../cli/src/devices.c:623
 msgid "Device details"
 msgstr "장치 상세정보"
 
-#: ../cli/src/devices.c:651 ../cli/src/devices.c:1146 ../cli/src/utils.c:342
+#: ../cli/src/devices.c:657 ../cli/src/devices.c:1152 ../cli/src/utils.c:342
 msgid "(unknown)"
 msgstr "(알 수 없음)"
 
-#: ../cli/src/devices.c:652
+#: ../cli/src/devices.c:658
 msgid "unknown)"
 msgstr "알 수 없음)"
 
-#: ../cli/src/devices.c:678
+#: ../cli/src/devices.c:684
 #, c-format
 msgid "%u Mb/s"
 msgstr "%u Mb/s"
 
 #. Print header
 #. "WIRED-PROPERTIES"
-#: ../cli/src/devices.c:751
+#: ../cli/src/devices.c:757
 msgid "on"
 msgstr "켜짐"
 
-#: ../cli/src/devices.c:751
+#: ../cli/src/devices.c:757
 msgid "off"
 msgstr "꺼짐"
 
-#: ../cli/src/devices.c:998
+#: ../cli/src/devices.c:1004
 #, c-format
 msgid "Error: 'dev status': %s"
 msgstr "오류: 'dev status': %s"
 
-#: ../cli/src/devices.c:1000
+#: ../cli/src/devices.c:1006
 #, c-format
 msgid "Error: 'dev status': %s; allowed fields: %s"
 msgstr "오류: 'dev status': %s. 허용되는 필드: %s"
 
-#: ../cli/src/devices.c:1023
+#: ../cli/src/devices.c:1029
 msgid "Status of devices"
 msgstr "장치 상태"
 
-#: ../cli/src/devices.c:1054
+#: ../cli/src/devices.c:1060
 #, c-format
 msgid "Error: '%s' argument is missing."
 msgstr "오류: '%s' 인자가 없습니다."
 
-#: ../cli/src/devices.c:1095 ../cli/src/devices.c:1247
-#: ../cli/src/devices.c:1383 ../cli/src/devices.c:1602
+#: ../cli/src/devices.c:1101 ../cli/src/devices.c:1253
+#: ../cli/src/devices.c:1389 ../cli/src/devices.c:1608
 #, c-format
 msgid "Error: Device '%s' not found."
 msgstr "오류: '%s' 장치를 찾을 수 없습니다."
 
-#: ../cli/src/devices.c:1118
+#: ../cli/src/devices.c:1124
 #, c-format
 msgid "Success: Device '%s' successfully disconnected."
 msgstr "성공: '%s' 장치를 성공적으로 연결 해제했습니다."
 
-#: ../cli/src/devices.c:1143
+#: ../cli/src/devices.c:1149
 #, c-format
 msgid "Error: Device '%s' (%s) disconnecting failed: %s"
 msgstr "오류: 장치 '%s' (%s)의 연결 해제가 실패했습니다: %s"
 
-#: ../cli/src/devices.c:1151
+#: ../cli/src/devices.c:1157
 #, c-format
 msgid "Device state: %d (%s)\n"
 msgstr "장치 상태: %d (%s)\n"
 
-#: ../cli/src/devices.c:1216
+#: ../cli/src/devices.c:1222
 #, c-format
 msgid "Error: iface has to be specified."
 msgstr "오류: iface를 지정해야만 합니다."
 
-#: ../cli/src/devices.c:1341
+#: ../cli/src/devices.c:1347
 #, c-format
 msgid "Error: 'dev wifi': %s"
 msgstr "오류 'dev wifi': '%s'"
 
-#: ../cli/src/devices.c:1343
+#: ../cli/src/devices.c:1349
 #, c-format
 msgid "Error: 'dev wifi': %s; allowed fields: %s"
 msgstr "오류: 'dev wifi': %s. 허용되는 필드: %s"
 
-#: ../cli/src/devices.c:1366
+#: ../cli/src/devices.c:1372
 msgid "WiFi scan list"
 msgstr "검색된 WiFi 목록"
 
-#: ../cli/src/devices.c:1403 ../cli/src/devices.c:1457
-#: ../cli/src/devices.c:1664
+#: ../cli/src/devices.c:1409 ../cli/src/devices.c:1463
+#: ../cli/src/devices.c:1670
 #, c-format
 msgid "Error: Access point with hwaddr '%s' not found."
 msgstr "오류: 하드웨어주소가 '%s'인 억세스 포인트를 찾을 수 없습니다."
 
-#: ../cli/src/devices.c:1420
+#: ../cli/src/devices.c:1426
 #, c-format
 msgid "Error: Device '%s' is not a WiFi device."
 msgstr "오류: '%s' 장치는 WiFi 장치가 아닙니다."
 
-#: ../cli/src/devices.c:1484
+#: ../cli/src/devices.c:1490
 #, c-format
 msgid "Error: 'dev wifi' command '%s' is not valid."
 msgstr "오류 'dev wifi' 명령어 '%s'이(가) 바르지 않습니다."
 
-#: ../cli/src/devices.c:1560
+#: ../cli/src/devices.c:1566
 #, c-format
 msgid "Error: 'dev wimax': %s"
 msgstr "오류: 'dev wimax': '%s'"
 
-#: ../cli/src/devices.c:1562
+#: ../cli/src/devices.c:1568
 #, c-format
 msgid "Error: 'dev wimax': %s; allowed fields: %s"
 msgstr "오류: 'dev wimax': %s. 허용되는 필드: %s"
 
-#: ../cli/src/devices.c:1585
+#: ../cli/src/devices.c:1591
 msgid "WiMAX NSP list"
 msgstr "WiMAX NSP 목록"
 
-#: ../cli/src/devices.c:1622
+#: ../cli/src/devices.c:1628
 #, c-format
 msgid "Error: NSP with name '%s' not found."
 msgstr "오류: 이름이 '%s'인 NSP를 찾을 수 없습니다."
 
-#: ../cli/src/devices.c:1633
+#: ../cli/src/devices.c:1639
 #, c-format
 msgid "Error: Device '%s' is not a WiMAX device."
 msgstr "오류: '%s' 장치는 와이맥스 장치가 아닙니다."
 
-#: ../cli/src/devices.c:1691
+#: ../cli/src/devices.c:1697
 #, c-format
 msgid "Error: 'dev wimax' command '%s' is not valid."
 msgstr "오류 'dev wimax' 명령어 '%s'이(가) 바르지 않습니다."
 
-#: ../cli/src/devices.c:1741
+#: ../cli/src/devices.c:1747
 #, c-format
 msgid "Error: 'dev' command '%s' is not valid."
 msgstr "오류: 'dev' 명령어 '%s'이(가) 바르지 않습니다."
 
-#: ../cli/src/network-manager.c:35
+#: ../cli/src/network-manager.c:37
 msgid "RUNNING"
 msgstr "실행중"
 
 #. 0
-#: ../cli/src/network-manager.c:36
+#: ../cli/src/network-manager.c:38
 msgid "VERSION"
 msgstr "버전"
 
 #. 2
-#: ../cli/src/network-manager.c:38
+#: ../cli/src/network-manager.c:40
 msgid "NET-ENABLED"
 msgstr "네트워크 사용"
 
 #. 3
-#: ../cli/src/network-manager.c:39
+#: ../cli/src/network-manager.c:41
 msgid "WIFI-HARDWARE"
 msgstr "WIFI 하드웨어"
 
 #. 4
-#: ../cli/src/network-manager.c:40
+#: ../cli/src/network-manager.c:42
 msgid "WIFI"
 msgstr "WIFI"
 
 #. 5
-#: ../cli/src/network-manager.c:41
+#: ../cli/src/network-manager.c:43
 msgid "WWAN-HARDWARE"
 msgstr "WWAN 하드웨어"
 
 #. 6
-#: ../cli/src/network-manager.c:42
+#: ../cli/src/network-manager.c:44
 msgid "WWAN"
 msgstr "WWAN"
 
 #. 7
-#: ../cli/src/network-manager.c:43
+#: ../cli/src/network-manager.c:45
 msgid "WIMAX-HARDWARE"
 msgstr "와이맥스 하드웨어"
 
 #. 8
-#: ../cli/src/network-manager.c:44
+#: ../cli/src/network-manager.c:46
 msgid "WIMAX"
 msgstr "와이맥스"
 
-#: ../cli/src/network-manager.c:72
+#: ../cli/src/network-manager.c:74
 #, c-format
 msgid ""
 "Usage: nmcli nm { COMMAND | help }\n"
@@ -1044,136 +1044,136 @@ msgstr ""
 "  wimax [on|off]\n"
 "\n"
 
-#: ../cli/src/network-manager.c:101
+#: ../cli/src/network-manager.c:103
 msgid "asleep"
 msgstr "사용 일시 중지"
 
-#: ../cli/src/network-manager.c:103
+#: ../cli/src/network-manager.c:105
 msgid "connecting"
 msgstr "연결"
 
-#: ../cli/src/network-manager.c:105
+#: ../cli/src/network-manager.c:107
 msgid "connected (local only)"
 msgstr "연결됨 (로컬 전용)"
 
-#: ../cli/src/network-manager.c:107
+#: ../cli/src/network-manager.c:109
 msgid "connected (site only)"
 msgstr "연결됨 (사이트 전용)"
 
-#: ../cli/src/network-manager.c:111
+#: ../cli/src/network-manager.c:113
 msgid "disconnecting"
 msgstr "연결 끊는 중"
 
-#: ../cli/src/network-manager.c:151
+#: ../cli/src/network-manager.c:153
 #, c-format
 msgid "Error: 'nm status': %s"
 msgstr "오류: 'nm status': %s"
 
-#: ../cli/src/network-manager.c:153
+#: ../cli/src/network-manager.c:155
 #, c-format
 msgid "Error: 'nm status': %s; allowed fields: %s"
 msgstr "오류: 'nm status': %s. 허용되는 필드: %s"
 
 #. create NMClient
-#: ../cli/src/network-manager.c:166 ../cli/src/network-manager.c:167
 #: ../cli/src/network-manager.c:168 ../cli/src/network-manager.c:169
-#: ../cli/src/network-manager.c:170 ../cli/src/network-manager.c:172
-#: ../cli/src/network-manager.c:173 ../cli/src/network-manager.c:294
-#: ../cli/src/network-manager.c:349 ../cli/src/network-manager.c:387
-#: ../cli/src/network-manager.c:426
+#: ../cli/src/network-manager.c:170 ../cli/src/network-manager.c:171
+#: ../cli/src/network-manager.c:172 ../cli/src/network-manager.c:174
+#: ../cli/src/network-manager.c:175 ../cli/src/network-manager.c:296
+#: ../cli/src/network-manager.c:351 ../cli/src/network-manager.c:389
+#: ../cli/src/network-manager.c:428
 msgid "enabled"
 msgstr "사용"
 
-#: ../cli/src/network-manager.c:166 ../cli/src/network-manager.c:167
 #: ../cli/src/network-manager.c:168 ../cli/src/network-manager.c:169
-#: ../cli/src/network-manager.c:170 ../cli/src/network-manager.c:172
-#: ../cli/src/network-manager.c:173 ../cli/src/network-manager.c:294
-#: ../cli/src/network-manager.c:349 ../cli/src/network-manager.c:387
-#: ../cli/src/network-manager.c:426
+#: ../cli/src/network-manager.c:170 ../cli/src/network-manager.c:171
+#: ../cli/src/network-manager.c:172 ../cli/src/network-manager.c:174
+#: ../cli/src/network-manager.c:175 ../cli/src/network-manager.c:296
+#: ../cli/src/network-manager.c:351 ../cli/src/network-manager.c:389
+#: ../cli/src/network-manager.c:428
 msgid "disabled"
 msgstr "사용 않음"
 
-#: ../cli/src/network-manager.c:186
+#: ../cli/src/network-manager.c:188
 msgid "NetworkManager status"
 msgstr "네트워크 관리 상태"
 
 #. Print header
-#: ../cli/src/network-manager.c:189
+#: ../cli/src/network-manager.c:191
 msgid "running"
 msgstr "실행 중"
 
-#: ../cli/src/network-manager.c:189
+#: ../cli/src/network-manager.c:191
 msgid "not running"
 msgstr "실행 중이 아님"
 
-#: ../cli/src/network-manager.c:220 ../cli/src/utils.c:322
+#: ../cli/src/network-manager.c:222 ../cli/src/utils.c:322
 #, c-format
 msgid "Error: Couldn't connect to system bus: %s"
 msgstr "오류: 시스템 버스에 연결할 수 없습니다: %s"
 
-#: ../cli/src/network-manager.c:231
+#: ../cli/src/network-manager.c:233
 #, c-format
 msgid "Error: Couldn't create D-Bus object proxy."
 msgstr "오류: D-버스 오브젝트 프록시에 연결할 수 없습니다."
 
-#: ../cli/src/network-manager.c:237
+#: ../cli/src/network-manager.c:239
 #, c-format
 msgid "Error in sleep: %s"
 msgstr "일시 중지에 오류: %s"
 
-#: ../cli/src/network-manager.c:281 ../cli/src/network-manager.c:336
-#: ../cli/src/network-manager.c:374 ../cli/src/network-manager.c:413
+#: ../cli/src/network-manager.c:283 ../cli/src/network-manager.c:338
+#: ../cli/src/network-manager.c:376 ../cli/src/network-manager.c:415
 #, c-format
 msgid "Error: '--fields' value '%s' is not valid here; allowed fields: %s"
 msgstr "오류: '--fields' 값 '%s'은(는) 올바르지 않습니다. 허용되는 필드: %s"
 
-#: ../cli/src/network-manager.c:289
+#: ../cli/src/network-manager.c:291
 msgid "Networking enabled"
 msgstr "네트워크 사용"
 
-#: ../cli/src/network-manager.c:305
+#: ../cli/src/network-manager.c:307
 #, c-format
 msgid "Error: invalid 'enable' parameter: '%s'; use 'true' or 'false'."
 msgstr "오류: 잘못된 'enable' 매개변수: '%s'. 'true'나 'false'를 사용하십시오."
 
-#: ../cli/src/network-manager.c:315
+#: ../cli/src/network-manager.c:317
 #, c-format
 msgid "Error: Sleeping status is not exported by NetworkManager."
 msgstr "오류: 네트워크 관리 프로그램이 일시 중지 상태를 알려 주지 않습니다."
 
-#: ../cli/src/network-manager.c:323
+#: ../cli/src/network-manager.c:325
 #, c-format
 msgid "Error: invalid 'sleep' parameter: '%s'; use 'true' or 'false'."
 msgstr "오류: 잘못된 'sleep' 매개변수: '%s'. 'true'나 'fasle'를 사용하십시오."
 
-#: ../cli/src/network-manager.c:344
+#: ../cli/src/network-manager.c:346
 msgid "WiFi enabled"
 msgstr "WiFi 사용 중"
 
-#: ../cli/src/network-manager.c:360
+#: ../cli/src/network-manager.c:362
 #, c-format
 msgid "Error: invalid 'wifi' parameter: '%s'."
 msgstr "오류: 잘못된 'wifi' 매개변수: '%s'."
 
-#: ../cli/src/network-manager.c:382
+#: ../cli/src/network-manager.c:384
 msgid "WWAN enabled"
 msgstr "WWAN 사용 중"
 
-#: ../cli/src/network-manager.c:398
+#: ../cli/src/network-manager.c:400
 #, c-format
 msgid "Error: invalid 'wwan' parameter: '%s'."
 msgstr "오류: 잘못된 'wwan' 매개변수: '%s'."
 
-#: ../cli/src/network-manager.c:421
+#: ../cli/src/network-manager.c:423
 msgid "WiMAX enabled"
 msgstr "와이맥스 사용 중"
 
-#: ../cli/src/network-manager.c:437
+#: ../cli/src/network-manager.c:439
 #, c-format
 msgid "Error: invalid 'wimax' parameter: '%s'."
 msgstr "오류: 잘못된 'wimax' 매개변수: '%s'."
 
-#: ../cli/src/network-manager.c:450
+#: ../cli/src/network-manager.c:452
 #, c-format
 msgid "Error: 'nm' command '%s' is not valid."
 msgstr "오류: 'mn' 명령어 '%s'이(가) 바르지 않습니다."
@@ -1209,7 +1209,8 @@ msgstr ""
 "  -m[ode] tabular|multiline                출력 모드\n"
 "  -f[ields] <필드1,필드2,...>|all|common   출력 필드 지정\n"
 "  -e[scape] yes|no                         값에서 열 구분 문자를 이스케이프\n"
-"  -n[nocheck]                              nmcli 및 네트워크 관리 버전 검사하지 않기\n"
+"  -n[nocheck]                              nmcli 및 네트워크 관리 버전 검사하"
+"지 않기\n"
 "  -v[ersion]                               프로그램 버전 정보 표시\n"
 "  -h[elp]                                  이 도움말 표시\n"
 "\n"
@@ -1282,79 +1283,79 @@ msgstr "오류: NMClient 오브젝트를 만들 수 없습니다."
 msgid "Success"
 msgstr "성공"
 
-#: ../cli/src/settings.c:421
+#: ../cli/src/settings.c:423
 #, c-format
 msgid "%d (hex-ascii-key)"
 msgstr "%d (16진 아시키 열쇠글)"
 
-#: ../cli/src/settings.c:423
+#: ../cli/src/settings.c:425
 #, c-format
 msgid "%d (104/128-bit passphrase)"
 msgstr "%d (104/128-비트 열쇠글)"
 
-#: ../cli/src/settings.c:426
+#: ../cli/src/settings.c:428
 #, c-format
 msgid "%d (unknown)"
 msgstr "%d (알 수 없음)"
 
-#: ../cli/src/settings.c:452
+#: ../cli/src/settings.c:454
 msgid "0 (unknown)"
 msgstr "0 (알 수 없음)"
 
-#: ../cli/src/settings.c:458
+#: ../cli/src/settings.c:460
 msgid "any, "
 msgstr "아무, "
 
-#: ../cli/src/settings.c:460
+#: ../cli/src/settings.c:462
 msgid "900 MHz, "
 msgstr "900 MHz, "
 
-#: ../cli/src/settings.c:462
+#: ../cli/src/settings.c:464
 msgid "1800 MHz, "
 msgstr "1800 MHz, "
 
-#: ../cli/src/settings.c:464
+#: ../cli/src/settings.c:466
 msgid "1900 MHz, "
 msgstr "1900 MHz, "
 
-#: ../cli/src/settings.c:466
+#: ../cli/src/settings.c:468
 msgid "850 MHz, "
 msgstr "850 MHz, "
 
-#: ../cli/src/settings.c:468
+#: ../cli/src/settings.c:470
 msgid "WCDMA 3GPP UMTS 2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 2100 MHz, "
 
-#: ../cli/src/settings.c:470
+#: ../cli/src/settings.c:472
 msgid "WCDMA 3GPP UMTS 1800 MHz, "
 msgstr "WCDMA 3GPP UMTS 1800 MHz, "
 
-#: ../cli/src/settings.c:472
+#: ../cli/src/settings.c:474
 msgid "WCDMA 3GPP UMTS 1700/2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700/2100 MHz, "
 
-#: ../cli/src/settings.c:474
+#: ../cli/src/settings.c:476
 msgid "WCDMA 3GPP UMTS 800 MHz, "
 msgstr "WCDMA 3GPP UMTS 800 MHz, "
 
-#: ../cli/src/settings.c:476
+#: ../cli/src/settings.c:478
 msgid "WCDMA 3GPP UMTS 850 MHz, "
 msgstr "WCDMA 3GPP UMTS 850 MHz, "
 
-#: ../cli/src/settings.c:478
+#: ../cli/src/settings.c:480
 msgid "WCDMA 3GPP UMTS 900 MHz, "
 msgstr "WCDMA 3GPP UMTS 900 MHz, "
 
-#: ../cli/src/settings.c:480
+#: ../cli/src/settings.c:482
 msgid "WCDMA 3GPP UMTS 1700 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700 MHz, "
 
-#: ../cli/src/settings.c:564 ../cli/src/settings.c:730
+#: ../cli/src/settings.c:566 ../cli/src/settings.c:732
 msgid "auto"
 msgstr "자동"
 
-#: ../cli/src/settings.c:725 ../cli/src/settings.c:728
-#: ../cli/src/settings.c:729 ../cli/src/utils.c:176
+#: ../cli/src/settings.c:727 ../cli/src/settings.c:730
+#: ../cli/src/settings.c:731 ../cli/src/utils.c:176
 msgid "not set"
 msgstr "설정 안됨"
 
@@ -1393,350 +1394,381 @@ msgstr "오류: NameHasOwner 요청 실패: %s"
 msgid ""
 "Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --"
 "nocheck to suppress the warning.\n"
-msgstr "경고: nmcli (%s) 및 네트워크 관리 (%s) 버전이 맞지 않습니다. 이 경고를 무시하려면 --nocheck 옵션을 사용하십시오.\n"
+msgstr ""
+"경고: nmcli (%s) 및 네트워크 관리 (%s) 버전이 맞지 않습니다. 이 경고를 무시하"
+"려면 --nocheck 옵션을 사용하십시오.\n"
 
 #: ../cli/src/utils.c:395
 #, c-format
 msgid ""
 "Error: nmcli (%s) and NetworkManager (%s) versions don't match. Force "
 "execution using --nocheck, but the results are unpredictable."
-msgstr "경고: nmcli (%s) 및 네트워크 관리 (%s) 버전이 맞지 않습니다. --nocheck 옵션을 사용했으므로 계속하지만, 예상치 못한 결과가 나타날 수 있습니다."
+msgstr ""
+"경고: nmcli (%s) 및 네트워크 관리 (%s) 버전이 맞지 않습니다. --nocheck 옵션"
+"을 사용했으므로 계속하지만, 예상치 못한 결과가 나타날 수 있습니다."
 
-#: ../libnm-util/crypto.c:121
+#: ../libnm-util/crypto.c:133
 #, c-format
 msgid "PEM key file had no end tag '%s'."
 msgstr "PEM 키 파일에 끝 태그 '%s'이(가) 없습니다."
 
-#: ../libnm-util/crypto.c:131
+#: ../libnm-util/crypto.c:146
 #, c-format
 msgid "Doesn't look like a PEM private key file."
 msgstr "PEM 비밀 키 파일처럼 보이지 않습니다."
 
-#: ../libnm-util/crypto.c:139
+#: ../libnm-util/crypto.c:154
 #, c-format
 msgid "Not enough memory to store PEM file data."
 msgstr "PEM 파일 정보를 저장할 메모리가 부족합니다."
 
-#: ../libnm-util/crypto.c:155
+#: ../libnm-util/crypto.c:170
 #, c-format
 msgid "Malformed PEM file: Proc-Type was not first tag."
 msgstr "잘못된 형태의 PEM 파일: Proc-Type이 첫번째 태그가 아닙니다."
 
-#: ../libnm-util/crypto.c:163
+#: ../libnm-util/crypto.c:178
 #, c-format
 msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
 msgstr "잘못된 형태의 PEM 파일: 알려져 있지 않은 Proc-Type 태그 '%s'."
 
-#: ../libnm-util/crypto.c:173
+#: ../libnm-util/crypto.c:188
 #, c-format
 msgid "Malformed PEM file: DEK-Info was not the second tag."
 msgstr "잘못된 형태의 PEM 파일: DEK-Info가 두번째 태그가 아님."
 
-#: ../libnm-util/crypto.c:184
+#: ../libnm-util/crypto.c:199
 #, c-format
 msgid "Malformed PEM file: no IV found in DEK-Info tag."
 msgstr "잘못된 형태의 PEM 파일: IV를 DEK-Info 태그에서 찾을 수 없음."
 
-#: ../libnm-util/crypto.c:191
+#: ../libnm-util/crypto.c:206
 #, c-format
 msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
 msgstr "잘못된 형태의 PEM 파일: DEK-Info 태그안에 잘못된 형태의 IV가 있음."
 
-#: ../libnm-util/crypto.c:204
+#: ../libnm-util/crypto.c:219
 #, c-format
 msgid "Malformed PEM file: unknown private key cipher '%s'."
 msgstr "잘못된 형태의 PEM 파일: 알려져 있지 않은 비밀 키 암호화 방법 '%s'."
 
-#: ../libnm-util/crypto.c:223
+#: ../libnm-util/crypto.c:238
 #, c-format
 msgid "Could not decode private key."
 msgstr "비밀 키를 해독할 수 없습니다."
 
-#: ../libnm-util/crypto.c:268
-#, c-format
-msgid "PEM certificate '%s' had no end tag '%s'."
-msgstr "PEM 인증서 '%s'에 끝 태그 '%s'이(가) 없습니다."
+#: ../libnm-util/crypto.c:284
+msgid "Failed to find expected PKCS#8 start tag."
+msgstr "예상된 PKCS#8 시작 태그를 찾는데 실패하였습니다."
 
-#: ../libnm-util/crypto.c:278
+#: ../libnm-util/crypto.c:292
 #, c-format
-msgid "Failed to decode certificate."
-msgstr "인증서 해독에 실패했습니다."
+msgid "Failed to find expected PKCS#8 end tag '%s'."
+msgstr "예상된 PKCS#8 종료 태그 '%s' 를 찾는데 실패하였습니다."
 
-#: ../libnm-util/crypto.c:287
+#: ../libnm-util/crypto.c:312
+msgid "Not enough memory to store private key data."
+msgstr "개인 키 데이터를 저장할 메모리가 부족합니다."
+
+#: ../libnm-util/crypto.c:317
+msgid "Failed to decode PKCS#8 private key."
+msgstr "PKCS#8 개 키를 해독하는 데 실패했습니다."
+
+#: ../libnm-util/crypto.c:339 ../libnm-util/crypto.c:625
 #, c-format
 msgid "Not enough memory to store certificate data."
 msgstr "인증서 정보를 저장할 메모리가 부족합니다."
 
-#: ../libnm-util/crypto.c:295
-#, c-format
-msgid "Not enough memory to store file data."
-msgstr "파일 정보를 저장할 메모리가 부족합니다."
-
-#: ../libnm-util/crypto.c:325
+#: ../libnm-util/crypto.c:365
 #, c-format
 msgid "IV must be an even number of bytes in length."
 msgstr "IV의 길이는 짝수여야만 합니다."
 
-#: ../libnm-util/crypto.c:334
+#: ../libnm-util/crypto.c:374
 #, c-format
 msgid "Not enough memory to store the IV."
 msgstr "IV를 저장할 메모리가 부족합니다."
 
-#: ../libnm-util/crypto.c:345
+#: ../libnm-util/crypto.c:385
 #, c-format
 msgid "IV contains non-hexadecimal digits."
 msgstr "IV에 16진수 숫자가 아닌 문자가 있습니다."
 
-#: ../libnm-util/crypto.c:383 ../libnm-util/crypto_gnutls.c:148
-#: ../libnm-util/crypto_gnutls.c:266 ../libnm-util/crypto_nss.c:171
-#: ../libnm-util/crypto_nss.c:336
+#: ../libnm-util/crypto.c:423 ../libnm-util/crypto_gnutls.c:147
+#: ../libnm-util/crypto_gnutls.c:265 ../libnm-util/crypto_nss.c:167
+#: ../libnm-util/crypto_nss.c:332
 #, c-format
 msgid "Private key cipher '%s' was unknown."
 msgstr "비밀 키 암호화 방식 '%s'이(가) 알려져 있지 않습니다."
 
-#: ../libnm-util/crypto.c:392
+#: ../libnm-util/crypto.c:432
 #, c-format
 msgid "Not enough memory to decrypt private key."
 msgstr "비밀 키를 해독할 메모리가 부족합니다."
 
-#: ../libnm-util/crypto.c:512
-#, c-format
-msgid "Unable to determine private key type."
-msgstr "비밀 키 유형을 결정할 수 없습니다."
-
-#: ../libnm-util/crypto.c:531
+#: ../libnm-util/crypto.c:497
 #, c-format
 msgid "Not enough memory to store decrypted private key."
 msgstr "해독된 비밀 키를 저장할 메모리가 부족합니다."
 
-#: ../libnm-util/crypto_gnutls.c:49
+#: ../libnm-util/crypto.c:542
+#, c-format
+msgid "Unable to determine private key type."
+msgstr "비밀 키 유형을 결정할 수 없습니다."
+
+#: ../libnm-util/crypto.c:597
+#, c-format
+msgid "PEM certificate had no start tag '%s'."
+msgstr "PEM 인증서에 시작 태그 '%s'이(가) 없습니다."
+
+#: ../libnm-util/crypto.c:606
+#, c-format
+msgid "PEM certificate had no end tag '%s'."
+msgstr "PEM 인증서에 끝 태그 '%s'이(가) 없습니다."
+
+#: ../libnm-util/crypto.c:630
+#, c-format
+msgid "Failed to decode certificate."
+msgstr "인증서 해독에 실패했습니다."
+
+#: ../libnm-util/crypto_gnutls.c:50
 msgid "Failed to initialize the crypto engine."
 msgstr "암호화 엔진을 초기화하는 데 실패했습니다."
 
-#: ../libnm-util/crypto_gnutls.c:93
+#: ../libnm-util/crypto_gnutls.c:92
 #, c-format
 msgid "Failed to initialize the MD5 engine: %s / %s."
 msgstr "MD5 엔진을 초기화하는 데 실패했습니다: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:156
+#: ../libnm-util/crypto_gnutls.c:155
 #, c-format
 msgid "Invalid IV length (must be at least %zd)."
 msgstr "잘못된 IV 길이 (최소한 %zd바이트 이상이어야 함)."
 
-#: ../libnm-util/crypto_gnutls.c:165 ../libnm-util/crypto_nss.c:188
+#: ../libnm-util/crypto_gnutls.c:164 ../libnm-util/crypto_nss.c:184
 #, c-format
 msgid "Not enough memory for decrypted key buffer."
 msgstr "해독된 키 버퍼를 저장할 메모리가 부족합니다."
 
-#: ../libnm-util/crypto_gnutls.c:173
+#: ../libnm-util/crypto_gnutls.c:172
 #, c-format
 msgid "Failed to initialize the decryption cipher context: %s / %s."
 msgstr "암호 해독 문맥을 초기화하는 데 실패했습니다: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:182
+#: ../libnm-util/crypto_gnutls.c:181
 #, c-format
 msgid "Failed to set symmetric key for decryption: %s / %s."
 msgstr "해독을 위한 대칭 키를 설정하는 데 실패했습니다: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:191
+#: ../libnm-util/crypto_gnutls.c:190
 #, c-format
 msgid "Failed to set IV for decryption: %s / %s."
 msgstr "해독을 위해 IV를 설정하는 데 실패했습니다: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:200
+#: ../libnm-util/crypto_gnutls.c:199
 #, c-format
 msgid "Failed to decrypt the private key: %s / %s."
 msgstr "비밀 키를 해독하는 데 실패했습니다: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:210 ../libnm-util/crypto_nss.c:267
+#: ../libnm-util/crypto_gnutls.c:209 ../libnm-util/crypto_nss.c:263
 #, c-format
 msgid "Failed to decrypt the private key: unexpected padding length."
 msgstr "비밀 키를 해독하는 데 실패했습니다: 예기치 못한 패딩 길이."
 
-#: ../libnm-util/crypto_gnutls.c:221 ../libnm-util/crypto_nss.c:278
+#: ../libnm-util/crypto_gnutls.c:220 ../libnm-util/crypto_nss.c:274
 #, c-format
 msgid "Failed to decrypt the private key."
 msgstr "비밀 키를 해독하는 데 실패했습니다."
 
-#: ../libnm-util/crypto_gnutls.c:286 ../libnm-util/crypto_nss.c:356
+#: ../libnm-util/crypto_gnutls.c:285 ../libnm-util/crypto_nss.c:352
 #, c-format
 msgid "Could not allocate memory for encrypting."
 msgstr "암호화를 위한 메모리를 할당할 수 없습니다."
 
-#: ../libnm-util/crypto_gnutls.c:294
+#: ../libnm-util/crypto_gnutls.c:293
 #, c-format
 msgid "Failed to initialize the encryption cipher context: %s / %s."
 msgstr "암호화 문맥을 초기화하는 데 실패했습니다: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:303
+#: ../libnm-util/crypto_gnutls.c:302
 #, c-format
 msgid "Failed to set symmetric key for encryption: %s / %s."
 msgstr "암호화를 위한 대칭키를 설정하는 데 실패했습니다: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:313
+#: ../libnm-util/crypto_gnutls.c:312
 #, c-format
 msgid "Failed to set IV for encryption: %s / %s."
 msgstr "암호화를 위한 IV를 설정하는 데 실패했습니다: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:322
+#: ../libnm-util/crypto_gnutls.c:321
 #, c-format
 msgid "Failed to encrypt the data: %s / %s."
 msgstr "데이터를 암호화하는 데 실패했습니다: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:362
+#: ../libnm-util/crypto_gnutls.c:361
 #, c-format
 msgid "Error initializing certificate data: %s"
 msgstr "인증서 정보를 초기화하는 중 오류가 발생했습니다: %s"
 
-#: ../libnm-util/crypto_gnutls.c:384
+#: ../libnm-util/crypto_gnutls.c:383
 #, c-format
 msgid "Couldn't decode certificate: %s"
 msgstr "인증서를 해독할 수 없습니다: %s"
 
-#: ../libnm-util/crypto_gnutls.c:408
+#: ../libnm-util/crypto_gnutls.c:407
 #, c-format
 msgid "Couldn't initialize PKCS#12 decoder: %s"
 msgstr "PKCS#12 복호기를 초기화할 수 없습니다: %s"
 
-#: ../libnm-util/crypto_gnutls.c:421
+#: ../libnm-util/crypto_gnutls.c:420
 #, c-format
 msgid "Couldn't decode PKCS#12 file: %s"
 msgstr "PKCS#12 파일을 해독할 수 없습니다: %s"
 
-#: ../libnm-util/crypto_gnutls.c:433
+#: ../libnm-util/crypto_gnutls.c:432
 #, c-format
 msgid "Couldn't verify PKCS#12 file: %s"
 msgstr "PKCS#12 파일을 검증할 수 없습니다: %s"
+
+#: ../libnm-util/crypto_gnutls.c:460
+#, c-format
+msgid "Couldn't initialize PKCS#8 decoder: %s"
+msgstr "PKCS#12 복호기를 초기화할 수 없습니다: %s"
+
+#: ../libnm-util/crypto_gnutls.c:483
+#, c-format
+msgid "Couldn't decode PKCS#8 file: %s"
+msgstr "PKCS#12 파일을 해독할 수 없습니다: %s"
 
 #: ../libnm-util/crypto_nss.c:56
 #, c-format
 msgid "Failed to initialize the crypto engine: %d."
 msgstr "암호화 엔진을 초기화하는 데 실패했습니다: %d."
 
-#: ../libnm-util/crypto_nss.c:111
+#: ../libnm-util/crypto_nss.c:107
 #, c-format
 msgid "Failed to initialize the MD5 context: %d."
 msgstr "MD5 문맥을 초기화하는 데 실패했습니다: %d."
 
-#: ../libnm-util/crypto_nss.c:179
+#: ../libnm-util/crypto_nss.c:175
 #, c-format
 msgid "Invalid IV length (must be at least %d)."
 msgstr "잘못된 IV 길이입니다(최소한 %d 이상이어야 함)."
 
-#: ../libnm-util/crypto_nss.c:196
+#: ../libnm-util/crypto_nss.c:192
 #, c-format
 msgid "Failed to initialize the decryption cipher slot."
 msgstr "해독용 암호 슬롯을 할당하는 데 실패했습니다."
 
-#: ../libnm-util/crypto_nss.c:206
+#: ../libnm-util/crypto_nss.c:202
 #, c-format
 msgid "Failed to set symmetric key for decryption."
 msgstr "해독을 위한 대칭키를 설정하는 데 실패했습니다."
 
-#: ../libnm-util/crypto_nss.c:216
+#: ../libnm-util/crypto_nss.c:212
 #, c-format
 msgid "Failed to set IV for decryption."
 msgstr "해독을 위한 IV를 설정하는 데 실패했습니다."
 
-#: ../libnm-util/crypto_nss.c:224
+#: ../libnm-util/crypto_nss.c:220
 #, c-format
 msgid "Failed to initialize the decryption context."
 msgstr "해독 문맥을 초기화하는 데 실패했습니다."
 
-#: ../libnm-util/crypto_nss.c:237
+#: ../libnm-util/crypto_nss.c:233
 #, c-format
 msgid "Failed to decrypt the private key: %d."
 msgstr "비밀 키를 해독하는 데 실패했습니다: %d."
 
-#: ../libnm-util/crypto_nss.c:245
+#: ../libnm-util/crypto_nss.c:241
 #, c-format
 msgid "Failed to decrypt the private key: decrypted data too large."
 msgstr "비밀 키를 해독하는 데 실패했습니다: 해독 데이터가 너무 큽니다."
 
-#: ../libnm-util/crypto_nss.c:256
+#: ../libnm-util/crypto_nss.c:252
 #, c-format
 msgid "Failed to finalize decryption of the private key: %d."
 msgstr "비밀 키의 해독을 마무리하는 데 실패했습니다: %d."
 
-#: ../libnm-util/crypto_nss.c:364
+#: ../libnm-util/crypto_nss.c:360
 #, c-format
 msgid "Failed to initialize the encryption cipher slot."
 msgstr "암호화 암호 슬롯을 초기화하는 데 실패했습니다."
 
-#: ../libnm-util/crypto_nss.c:372
+#: ../libnm-util/crypto_nss.c:368
 #, c-format
 msgid "Failed to set symmetric key for encryption."
 msgstr "암호화를 위한 대칭키를 설정하는 데 실패했습니다."
 
-#: ../libnm-util/crypto_nss.c:380
+#: ../libnm-util/crypto_nss.c:376
 #, c-format
 msgid "Failed to set IV for encryption."
 msgstr "암호화를 위한 IV를 설정하는 데 실패했습니다."
 
-#: ../libnm-util/crypto_nss.c:388
+#: ../libnm-util/crypto_nss.c:384
 #, c-format
 msgid "Failed to initialize the encryption context."
 msgstr "암호화 문맥을 초기화하는 데 실패했습니다."
 
-#: ../libnm-util/crypto_nss.c:396
+#: ../libnm-util/crypto_nss.c:392
 #, c-format
 msgid "Failed to encrypt: %d."
 msgstr "암호화에 실패했습니다: %d."
 
-#: ../libnm-util/crypto_nss.c:404
+#: ../libnm-util/crypto_nss.c:400
 #, c-format
 msgid "Unexpected amount of data after encrypting."
 msgstr "암호화 후 데이터 크기가 예상과 다릅니다."
 
-#: ../libnm-util/crypto_nss.c:447
+#: ../libnm-util/crypto_nss.c:443
 #, c-format
 msgid "Couldn't decode certificate: %d"
 msgstr "인증서를 복호화할 수 없습니다: %d."
 
-#: ../libnm-util/crypto_nss.c:482
+#: ../libnm-util/crypto_nss.c:478
 #, c-format
 msgid "Couldn't convert password to UCS2: %d"
 msgstr "암호를 UCS2로 변환할 수 없습니다: %d"
 
-#: ../libnm-util/crypto_nss.c:510
+#: ../libnm-util/crypto_nss.c:506
 #, c-format
 msgid "Couldn't initialize PKCS#12 decoder: %d"
 msgstr "PKCS#12 복호기를 초기화할 수 없습니다: %d"
 
-#: ../libnm-util/crypto_nss.c:519
+#: ../libnm-util/crypto_nss.c:515
 #, c-format
 msgid "Couldn't decode PKCS#12 file: %d"
 msgstr "PKCS#12 파일을 복호화할 수 없습니다: %d"
 
-#: ../libnm-util/crypto_nss.c:528
+#: ../libnm-util/crypto_nss.c:524
 #, c-format
 msgid "Couldn't verify PKCS#12 file: %d"
 msgstr "PKCS#12 파일을 검증할 수 없습니다: %d"
 
-#: ../libnm-util/crypto_nss.c:557
+#: ../libnm-util/crypto_nss.c:568
 msgid "Could not generate random data."
 msgstr "랜덤 데이터를 생성할 수 없습니다."
 
-#: ../libnm-util/nm-utils.c:1988
+#: ../libnm-util/nm-utils.c:2000
 #, c-format
 msgid "Not enough memory to make encryption key."
 msgstr "암호화 키를 생성할 메모리가 부족합니다."
 
-#: ../libnm-util/nm-utils.c:2098
+#: ../libnm-util/nm-utils.c:2110
 msgid "Could not allocate memory for PEM file creation."
 msgstr "PEM 파일 생성을 위한 메모리를 할당할 수 없습니다."
 
-#: ../libnm-util/nm-utils.c:2110
+#: ../libnm-util/nm-utils.c:2122
 #, c-format
 msgid "Could not allocate memory for writing IV to PEM file."
 msgstr "IV를 PEM 파일에 쓰기 위한 메모리를 할당할 수 없습니다."
 
-#: ../libnm-util/nm-utils.c:2122
+#: ../libnm-util/nm-utils.c:2134
 #, c-format
 msgid "Could not allocate memory for writing encrypted key to PEM file."
 msgstr "암호화된 키를 PEM 파일에 기록하기 위한 메모리를 할당할 수 없습니다."
 
-#: ../libnm-util/nm-utils.c:2141
+#: ../libnm-util/nm-utils.c:2153
 #, c-format
 msgid "Could not allocate memory for PEM file data."
 msgstr "PEM 파일 데이터를 위한 메모리를 할당할 수 없습니다."
@@ -1785,7 +1817,9 @@ msgstr "개인 네트워크 연결을 수정합니다"
 msgid ""
 "Put NetworkManager to sleep or wake it up (should only be used by system "
 "power management)"
-msgstr "네트워크 관리 프로그램을 일시 중지하거나 다시 시작합니다 (시스템 전원 관리에서만 사용)"
+msgstr ""
+"네트워크 관리 프로그램을 일시 중지하거나 다시 시작합니다 (시스템 전원 관리에"
+"서만 사용)"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.h:12
 msgid "System policy prevents control of network connections"
@@ -1798,7 +1832,8 @@ msgstr "시스템 정책이 WiFi 장치 사용 여부 설정을 금지합니다"
 #: ../policy/org.freedesktop.NetworkManager.policy.in.h:14
 msgid ""
 "System policy prevents enabling or disabling WiMAX mobile broadband devices"
-msgstr "시스템 정책이 와이맥스 모바일 광대역 장치의 사용 여부 설정을 금지합니다"
+msgstr ""
+"시스템 정책이 와이맥스 모바일 광대역 장치의 사용 여부 설정을 금지합니다"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.h:15
 msgid "System policy prevents enabling or disabling mobile broadband devices"
@@ -1822,7 +1857,8 @@ msgstr "시스템 정책이 호스트 이름의 변경을 금지합니다"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.h:20
 msgid "System policy prevents putting NetworkManager to sleep or waking it up"
-msgstr "시스템 정책이 네트워크 관리 프로그램의 일시 중지나 다시 시작을 금지합니다"
+msgstr ""
+"시스템 정책이 네트워크 관리 프로그램의 일시 중지나 다시 시작을 금지합니다"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.h:21
 msgid "System policy prevents sharing connections via a protected WiFi network"
@@ -1832,12 +1868,12 @@ msgstr "시스템 정책이 보호된 WiFi 네트워크를 통한 연결 공유�
 msgid "System policy prevents sharing connections via an open WiFi network"
 msgstr "시스템 정책이 열린 WiFi 네트워크를 통한 연결 공유를 금지합니다"
 
-#: ../src/main.c:519
+#: ../src/main.c:530
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr "잘못된 옵션. 올바른 옵션의 목록을 보려면 --help 옵션을 이용하십시오.\n"
 
-#: ../src/main.c:590
+#: ../src/main.c:611
 #, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr "%s. 올바른 옵션의 목록을 보려면 --help 옵션을 이용하십시오.\n"
@@ -1851,7 +1887,9 @@ msgstr "# 네트워크 관리에서 만들어 냄\n"
 msgid ""
 "# Merged from %s\n"
 "\n"
-msgstr "# %s에서 합침\n\n"
+msgstr ""
+"# %s에서 합침\n"
+"\n"
 
 #: ../src/dhcp-manager/nm-dhcp-manager.c:284
 msgid "no usable DHCP client could be found."
@@ -1870,61 +1908,61 @@ msgstr "'dhcpcd'를 찾을 수 있습니다."
 msgid "unsupported DHCP client '%s'"
 msgstr "지원하지 않는 DHCP 클라이언트 '%s'"
 
-#: ../src/dns-manager/nm-dns-manager.c:367
+#: ../src/dns-manager/nm-dns-manager.c:369
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr ""
 "주의: libc 주소 검색은 3개를 초과하는 네임서버를 지원하지 않을 수 있습니다."
 
-#: ../src/dns-manager/nm-dns-manager.c:369
+#: ../src/dns-manager/nm-dns-manager.c:371
 msgid "The nameservers listed below may not be recognized."
 msgstr "아래 열거된 네임서버를 인식하지 못할 수 있습니다."
 
-#: ../src/logging/nm-logging.c:148
+#: ../src/logging/nm-logging.c:149
 #, c-format
 msgid "Unknown log level '%s'"
 msgstr "알려지지 않은 로그 수준 '%s'"
 
-#: ../src/logging/nm-logging.c:173
+#: ../src/logging/nm-logging.c:174
 #, c-format
 msgid "Unknown log domain '%s'"
 msgstr "알려지지 않은 로그 영역 '%s'"
 
-#: ../src/modem-manager/nm-modem-cdma.c:311 ../src/nm-device-bt.c:353
+#: ../src/modem-manager/nm-modem-cdma.c:296 ../src/nm-device-bt.c:355
 #, c-format
 msgid "CDMA connection %d"
 msgstr "CDMA 연결 %d"
 
-#: ../src/modem-manager/nm-modem-gsm.c:514 ../src/nm-device-bt.c:349
+#: ../src/modem-manager/nm-modem-gsm.c:499 ../src/nm-device-bt.c:351
 #, c-format
 msgid "GSM connection %d"
 msgstr "GSM 연결 %d"
 
-#: ../src/nm-device-bt.c:324
+#: ../src/nm-device-bt.c:326
 #, c-format
 msgid "PAN connection %d"
 msgstr "PAN 연결 %d"
 
-#: ../src/nm-device-bt.c:357
+#: ../src/nm-device-bt.c:359
 #, c-format
 msgid "DUN connection %d"
 msgstr "DUN 연결 %d"
 
-#: ../src/nm-device-ethernet.c:1684
+#: ../src/nm-device-ethernet.c:1681
 #, c-format
 msgid "PPPoE connection %d"
 msgstr "PPPoE 연결 %d"
 
-#: ../src/nm-device-ethernet.c:1684
+#: ../src/nm-device-ethernet.c:1681 ../src/settings/nm-settings-utils.c:50
 #, c-format
 msgid "Wired connection %d"
 msgstr "유선 연결 %d"
 
-#: ../src/nm-device-olpc-mesh.c:422
+#: ../src/nm-device-olpc-mesh.c:423
 #, c-format
 msgid "Mesh %d"
 msgstr "메시 %d"
 
-#: ../src/nm-manager.c:686
+#: ../src/nm-manager.c:655
 #, c-format
 msgid "VPN connection %d"
 msgstr "VPN 연결 %d"
@@ -1969,12 +2007,13 @@ msgstr "네트링크 그룹에 합류할 수 없습니다: %s"
 msgid "error updating link cache: %s"
 msgstr "네트링크 캐시를 갱신하는 중 오류가 발생했습니다: %s"
 
-#: ../src/settings/plugins/ifcfg-rh/reader.c:3439
-#: ../src/settings/plugins/ifnet/connection_parser.c:49
+#: ../src/settings/plugins/ifcfg-rh/reader.c:3512
+#: ../src/settings/plugins/ifnet/connection_parser.c:51
 msgid "System"
 msgstr "시스템"
 
-#: ../src/settings/nm-default-wired-connection.c:143
-#, c-format
-msgid "Auto %s"
-msgstr "자동 %s"
+#~ msgid "Error: Obtaining active connection for '%s' failed."
+#~ msgstr "오류: '%s'에 대한 활성화된 연결을 얻는 데 실패했습니다."
+
+#~ msgid "Auto %s"
+#~ msgstr "자동 %s"
