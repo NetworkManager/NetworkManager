@@ -227,7 +227,8 @@ event_handler (GIOChannel *channel,
 	g_return_val_if_fail (!(io_condition & ~EVENT_CONDITIONS), FALSE);
 
 	/* Process the netlink messages */
-	if ((err = nl_recvmsgs_default (priv->nlh_event)) < 0) {
+	err = nl_recvmsgs_default (priv->nlh_event);
+	if (err < 0) {
 		error = g_error_new (NM_NETLINK_MONITOR_ERROR,
 		                     NM_NETLINK_MONITOR_ERROR_PROCESSING_MESSAGE,
 		                     _("error processing netlink message: %s"),
@@ -252,7 +253,8 @@ nlh_setup (struct nl_sock *nlh,
 	if (valid_func)
 		nl_socket_modify_cb (nlh, NL_CB_VALID, NL_CB_CUSTOM, valid_func, cb_data);
 
-	if ((err = nl_connect (nlh, NETLINK_ROUTE)) < 0) {
+	err = nl_connect (nlh, NETLINK_ROUTE);
+	if (err < 0) {
 		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
 		             NM_NETLINK_MONITOR_ERROR_NETLINK_CONNECT,
 		             _("unable to connect to netlink for monitoring link status: %s"),
@@ -371,13 +373,13 @@ sync_connection_setup (NMNetlinkMonitor *self, GError **error)
 	 * themselves, busting caching.
 	 */
 	rtnl_addr_alloc_cache (priv->nlh_sync, &addr_cache);
+	g_warn_if_fail (addr_cache != NULL);
 	nl_cache_get_ops (addr_cache)->co_obj_ops->oo_id_attrs &= ~0x80;
 	nl_cache_free (addr_cache);
 #endif
 
 	err = rtnl_link_alloc_cache (priv->nlh_sync, &priv->link_cache);
-
-	if (err) {
+	if (err < 0) {
 		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
 		             NM_NETLINK_MONITOR_ERROR_NETLINK_ALLOC_LINK_CACHE,
 		             _("unable to allocate netlink link cache for monitoring link status: %s"),
@@ -503,7 +505,8 @@ nm_netlink_monitor_subscribe (NMNetlinkMonitor *self, int group, GError **error)
 
 	subs = get_subs (self, group) + 1;
 	if (subs == 1) {
-		if ((err = nl_socket_add_membership (priv->nlh_event, group)) < 0) {
+		err = nl_socket_add_membership (priv->nlh_event, group);
+		if (err < 0) {
 			g_set_error (error, NM_NETLINK_MONITOR_ERROR,
 			             NM_NETLINK_MONITOR_ERROR_NETLINK_JOIN_GROUP,
 			             _("unable to join netlink group: %s"),
@@ -572,9 +575,10 @@ deferred_emit_carrier_state (gpointer user_data)
 	/* Update the link cache with latest state, and if there are no errors
 	 * emit the link states for all the interfaces in the cache.
 	 */
-	if ((err = nl_cache_refill (priv->nlh_sync, priv->link_cache)) != 0) {
+	err = nl_cache_refill (priv->nlh_sync, priv->link_cache);
+	if (err < 0)
 		nm_log_err (LOGD_HW, "error updating link cache: %s", nl_geterror (err));
-	} else
+	else
 		nl_cache_foreach_filter (priv->link_cache, NULL, link_msg_handler, self);
 
 	return FALSE;
@@ -631,7 +635,8 @@ nm_netlink_monitor_get_flags_sync (NMNetlinkMonitor *self,
 	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
 
 	/* Update the link cache with the latest information */
-	if ((err = nl_cache_refill (priv->nlh_sync, priv->link_cache)) != 0) {
+	err = nl_cache_refill (priv->nlh_sync, priv->link_cache);
+	if (err < 0) {
 		g_set_error (error,
 		             NM_NETLINK_MONITOR_ERROR,
 		             NM_NETLINK_MONITOR_ERROR_LINK_CACHE_UPDATE,

@@ -194,9 +194,8 @@ sync_addresses (int ifindex,
 	if (!nlh)
 		return FALSE;
 
-	rtnl_addr_alloc_cache(nlh, &addr_cache);
-
-	if (!addr_cache)
+	err = rtnl_addr_alloc_cache (nlh, &addr_cache);
+	if (err < 0)
 		return FALSE;
 
 	filter_addr = rtnl_addr_alloc ();

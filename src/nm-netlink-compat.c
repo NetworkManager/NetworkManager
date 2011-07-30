@@ -24,33 +24,40 @@
 #include "nm-netlink-compat.h"
 
 #ifndef HAVE_LIBNL1
-struct rtnl_nexthop * nm_netlink_get_nh(struct rtnl_route * route) {
+struct rtnl_nexthop *
+nm_netlink_get_nh (struct rtnl_route * route)
+{
 	int hops;
 
 	hops = rtnl_route_get_nnexthops (route);
 	g_return_val_if_fail(hops > 0, NULL);
-
 	return rtnl_route_nexthop_n (route, 0);
 }
 
-int rtnl_route_get_oif(struct rtnl_route * route) {
+int
+rtnl_route_get_oif (struct rtnl_route * route)
+{
 	struct rtnl_nexthop * nh;
+
 	nh = nm_netlink_get_nh(route);
 	g_return_val_if_fail(nh, -NLE_OBJ_NOTFOUND);
 	return rtnl_route_nh_get_ifindex (nh);
 }
 
-int rtnl_route_set_oif(struct rtnl_route * route, int ifindex) {
+int
+rtnl_route_set_oif (struct rtnl_route * route, int ifindex)
+{
 	struct rtnl_nexthop * nh;
 
 	nh = rtnl_route_nh_alloc();
 	rtnl_route_nh_set_ifindex(nh, ifindex);
 	rtnl_route_add_nexthop(route, nh);
-
 	return 0;
 }
 
-struct nl_addr * rtnl_route_get_gateway(struct rtnl_route * route) {
+struct nl_addr *
+rtnl_route_get_gateway (struct rtnl_route * route)
+{
 	struct rtnl_nexthop * nh;
 
 	nh = nm_netlink_get_nh(route);
@@ -58,7 +65,9 @@ struct nl_addr * rtnl_route_get_gateway(struct rtnl_route * route) {
 	return rtnl_route_nh_get_gateway(nh);
 }
 
-int rtnl_route_set_gateway(struct rtnl_route * route, struct nl_addr * gw_addr) {
+int
+rtnl_route_set_gateway (struct rtnl_route * route, struct nl_addr * gw_addr)
+{
 	struct rtnl_nexthop * nh;
 
 	nh = nm_netlink_get_nh(route);
@@ -68,7 +77,9 @@ int rtnl_route_set_gateway(struct rtnl_route * route, struct nl_addr * gw_addr) 
 	return 0;
 }
 
-int rtnl_route_get_dst_len(struct rtnl_route * rtnlroute) {
+int
+rtnl_route_get_dst_len(struct rtnl_route * rtnlroute)
+{
 	struct nl_addr * dst;
 
 	dst = rtnl_route_get_dst(rtnlroute);
@@ -77,14 +88,16 @@ int rtnl_route_get_dst_len(struct rtnl_route * rtnlroute) {
 #endif
 
 #ifdef HAVE_LIBNL1
-int nl_compat_error(int err) {
-	err = abs(err);
+int
+nl_compat_error (int err)
+{
+	err = abs (err);
 
-	if(err==EEXIST)
+	if (err == EEXIST)
 		err = NLE_EXIST;
-	else if(err==ENOENT)
+	else if (err == ENOENT)
 		err = NLE_OBJ_NOTFOUND;
-	else if(err==ERANGE)
+	else if (err == ERANGE)
 		err = NLE_RANGE;
 
 	return -err;

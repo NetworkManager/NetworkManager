@@ -17,6 +17,7 @@
  *
  * Copyright (C) 2011 Caixa Magica Software.
  */
+
 #ifndef NM_NETLINK_COMPAT_H
 #define NM_NETLINK_COMPAT_H
 
@@ -53,7 +54,9 @@ struct nl_addr * rtnl_route_get_gateway(struct rtnl_route *);
 
 /* libnl-2 API compatibility for libnl-3 */
 #ifdef HAVE_LIBNL3
-static inline int __rtnl_link_alloc_cache(struct nl_sock *h, struct nl_cache **cache) {
+static inline int
+__rtnl_link_alloc_cache (struct nl_sock *h, struct nl_cache **cache)
+{
        return rtnl_link_alloc_cache (h, AF_UNSPEC, cache);
 }
 #define rtnl_link_alloc_cache __rtnl_link_alloc_cache
@@ -73,64 +76,82 @@ static inline int __rtnl_link_alloc_cache(struct nl_sock *h, struct nl_cache **c
 #define rtnl_route_set_priority rtnl_route_set_prio
 
 /* auxiliary functions */
-int nl_compat_error(int);
+int nl_compat_error (int);
 
 /* libnl-1.0 functions with modified prototypes in libnl-2/3*/
-static inline const char * __nl_geterror(int err)
+static inline const char * 
+__nl_geterror (int err)
 {
         /* err is set, can be parsed */
-        return nl_geterror();
+        return nl_geterror ();
 }
 #define nl_geterror __nl_geterror
 
-static inline int __rtnl_addr_alloc_cache(struct nl_sock *h, struct nl_cache **cache) {
-	*cache = rtnl_addr_alloc_cache(h);
-	if(!*cache)
-		return -ENOMEM;
-	return 0;
+static inline int
+__rtnl_addr_alloc_cache (struct nl_sock *h, struct nl_cache **cache)
+{
+	g_return_val_if_fail (cache != NULL, -EINVAL);
+
+	*cache = rtnl_addr_alloc_cache (h);
+	return *cache ? 0 : -ENOMEM;
 }
 #define rtnl_addr_alloc_cache __rtnl_addr_alloc_cache
 
-static inline int __rtnl_route_alloc_cache(struct nl_sock *h, int family, int flags, struct nl_cache **cache) {
-	*cache = rtnl_route_alloc_cache(h);
-	if(!*cache)
-		return -ENOMEM;
-	return 0;
+static inline int
+__rtnl_route_alloc_cache (struct nl_sock *h, int family, int flags, struct nl_cache **cache)
+{
+	g_return_val_if_fail (cache != NULL, -EINVAL);
+
+	*cache = rtnl_route_alloc_cache (h);
+	return *cache ? 0 : -ENOMEM;
 }
 #define rtnl_route_alloc_cache __rtnl_route_alloc_cache
 
-static inline int __rtnl_link_alloc_cache(struct nl_sock *h, struct nl_cache **cache) {
-        *cache = rtnl_link_alloc_cache (h);
-	if(!*cache)
-		return -ENOMEM;
-        return 0;
+static inline int
+__rtnl_link_alloc_cache (struct nl_sock *h, struct nl_cache **cache)
+{
+	g_return_val_if_fail (cache != NULL, -EINVAL);
+
+	*cache = rtnl_link_alloc_cache (h);
+	return *cache ? 0 : -ENOMEM;
 }
 #define rtnl_link_alloc_cache __rtnl_link_alloc_cache
 
-static inline int __rtnl_route_get_metric(struct rtnl_route * route, int metric, unsigned int *value) {
-	*value = rtnl_route_get_metric(route, metric);
+static inline int
+__rtnl_route_get_metric (struct rtnl_route *route, int metric, unsigned int *value)
+{
+	g_return_val_if_fail (value != NULL, -EINVAL);
+
+	*value = rtnl_route_get_metric (route, metric);
 	return 0;
 }
 #define rtnl_route_get_metric __rtnl_route_get_metric
 
-static inline int __rtnl_addr_add(struct nl_sock * h, struct rtnl_addr * addr, int flags) {
-	return nl_compat_error(rtnl_addr_add(h,addr,flags));
+static inline int
+__rtnl_addr_add (struct nl_sock *h, struct rtnl_addr *addr, int flags)
+{
+	return nl_compat_error (rtnl_addr_add (h, addr, flags));
 }
 #define rtnl_addr_add __rtnl_addr_add
 
-static inline int rtnl_route_delete(struct nl_sock * h, struct rtnl_route * route, int flags) {
-	return nl_compat_error(rtnl_route_del(h, route, flags));
+static inline int
+rtnl_route_delete (struct nl_sock *h, struct rtnl_route *route, int flags)
+{
+	return nl_compat_error (rtnl_route_del (h, route, flags));
 }
 #define rtnl_route_del rtnl_route_delete
 
-static inline int __rtnl_link_change(struct nl_sock * h, struct rtnl_link *old, struct rtnl_link * tmpl, int flags) {
-	return nl_compat_error(rtnl_link_change(h, old, tmpl,flags));
+static inline int
+__rtnl_link_change (struct nl_sock *h, struct rtnl_link *old, struct rtnl_link *tmpl, int flags)
+{
+	return nl_compat_error (rtnl_link_change (h, old, tmpl,flags));
 }
 #define rtnl_link_change __rtnl_link_change
 
-static inline int __nl_cache_include(struct nl_cache * cache, struct nl_object * obj, change_func_t cb, void * data)
+static inline int
+__nl_cache_include (struct nl_cache *cache, struct nl_object *obj, change_func_t cb, void *data)
 {
-	return nl_cache_include(cache, obj, cb);
+	return nl_cache_include (cache, obj, cb);
 }
 #define nl_cache_include __nl_cache_include
 

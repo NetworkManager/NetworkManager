@@ -94,7 +94,8 @@ void nm_generic_enable_loopback (void)
 
 	if ((err = rtnl_addr_add (nlh, addr, 0)) < 0) {
 		if (err != -EEXIST) {
-			nm_log_warn (LOGD_CORE, "error %d returned from rtnl_addr_add():\n%s", err, nl_geterror(err));
+			nm_log_warn (LOGD_CORE, "error setting loopback address: (%d) %s",
+			             err, nl_geterror (err));
 		}
 	}
 out:

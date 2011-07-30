@@ -174,14 +174,14 @@ gboolean
 nm_netlink_route_delete (struct rtnl_route *route)
 {
 	struct nl_sock *nlh;
-	int err=0;
+	int err = 0;
 
 	g_return_val_if_fail (route != NULL, FALSE);
 
 	nlh = nm_netlink_get_default_handle ();
 	err = rtnl_route_delete (nlh, route, 0);
 
-	return ((err < 0) && (err != -NLE_RANGE)) ? FALSE: TRUE;
+	return (err && (err != -NLE_RANGE)) ? FALSE : TRUE;
 }
 
 
