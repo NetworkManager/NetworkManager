@@ -269,19 +269,23 @@ connection_new_or_changed (SCPluginIfcfg *self,
 
 	/* Successfully read connection changes */
 
-	/* When the connections are the same, nothing is done */
-	if (nm_connection_compare (NM_CONNECTION (existing),
-	                           NM_CONNECTION (new),
-	                           NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS |
-	                             NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)) {
+	old_unmanaged = nm_ifcfg_connection_get_unmanaged_spec (NM_IFCFG_CONNECTION (existing));
+	new_unmanaged = nm_ifcfg_connection_get_unmanaged_spec (NM_IFCFG_CONNECTION (new));
+
+	/* When interface is unmanaged or the connections and unmanaged specs are the same
+	 * there's nothing to do */
+	if (   (g_strcmp0 (old_unmanaged, new_unmanaged) == 0 && new_unmanaged != NULL)
+	    || (   nm_connection_compare (NM_CONNECTION (existing),
+	                                  NM_CONNECTION (new),
+	                                  NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS |
+	                                    NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)
+	        && g_strcmp0 (old_unmanaged, new_unmanaged) == 0)) {
+
 		g_object_unref (new);
 		return;
 	}
 
 	PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "updating %s", path);
-
-	old_unmanaged = nm_ifcfg_connection_get_unmanaged_spec (NM_IFCFG_CONNECTION (existing));
-	new_unmanaged = nm_ifcfg_connection_get_unmanaged_spec (NM_IFCFG_CONNECTION (new));
 
 	if (new_unmanaged) {
 		if (!old_unmanaged) {
@@ -290,6 +294,11 @@ connection_new_or_changed (SCPluginIfcfg *self,
 			 * unmanaged specs have changed.
 			 */
 			nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (existing));
+			/* Remove the path so that claim_connection() doesn't complain later when
+			 * interface gets managed and connection is re-added. */
+			nm_connection_set_path (NM_CONNECTION (existing), NULL);
+
+			g_object_set (existing, NM_IFCFG_CONNECTION_UNMANAGED, new_unmanaged, NULL);
 			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
 		}
 	} else {
