@@ -95,7 +95,7 @@ nl_compat_error (int err)
 
 	if (err == EEXIST)
 		err = NLE_EXIST;
-	else if (err == ENOENT)
+	else if (err == ENOENT || err == ESRCH)
 		err = NLE_OBJ_NOTFOUND;
 	else if (err == ERANGE)
 		err = NLE_RANGE;
