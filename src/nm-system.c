@@ -136,7 +136,7 @@ nm_system_device_set_ip4_route (int ifindex,
 
 	/* Add the route */
 	err = rtnl_route_add (nlh, route, 0);
-	if (err == -ESRCH && ip4_gateway) {
+	if (((err == -NLE_OBJ_NOTFOUND) || (err == -NLE_FAILURE)) && ip4_gateway) {
 		/* Gateway might be over a bridge; try adding a route to gateway first */
 		struct rtnl_route *route2;
 
@@ -524,7 +524,7 @@ nm_system_set_ip6_route (int ifindex,
 
 	/* Add the route */
 	err = rtnl_route_add (nlh, route, 0);
-	if (err == -ESRCH && ip6_gateway) {
+	if (((err == -NLE_OBJ_NOTFOUND) || (err == -NLE_FAILURE)) && ip6_gateway) {
 		/* Gateway might be over a bridge; try adding a route to gateway first */
 		struct rtnl_route *route2;
 
@@ -953,7 +953,7 @@ nm_system_replace_default_ip4_route_vpn (int ifindex,
 	err = replace_default_ip4_route (ifindex, int_gw, mss);
 	if (err == 0) {
 		return TRUE;
-	} else if (err != -ESRCH) {
+	} else if ((err != -NLE_OBJ_NOTFOUND) && (err != -NLE_FAILURE)) {
 		nm_log_err (LOGD_DEVICE | LOGD_IP4,
 		            "(%s): failed to set IPv4 default route: %d",
 		            iface, err);
@@ -999,7 +999,7 @@ nm_system_replace_default_ip4_route (int ifindex, guint32 gw, guint32 mss)
 	err = replace_default_ip4_route (ifindex, gw, mss);
 	if (err == 0) {
 		return TRUE;
-	} else if (err != -ESRCH) {
+	} else if ((err != -NLE_OBJ_NOTFOUND) && (err != -NLE_FAILURE)) {
 		nm_log_err (LOGD_DEVICE | LOGD_IP4,
 		            "(%s): failed to set IPv4 default route: %d",
 		            iface, err);
@@ -1141,7 +1141,7 @@ nm_system_replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
 	err = replace_default_ip6_route (ifindex, gw);
 	if (err == 0)
 		return TRUE;
-	if (err != -ESRCH) {
+	if ((err != -NLE_OBJ_NOTFOUND) && (err != -NLE_FAILURE)) {
 		nm_log_err (LOGD_DEVICE | LOGD_IP6,
 		            "(%s): failed to set IPv6 default route: %d",
 		            iface, err);
