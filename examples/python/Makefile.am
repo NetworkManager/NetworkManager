@@ -5,6 +5,7 @@ EXTRA_DIST = \
 	vpn.py \
 	list-connections.py \
 	show-bssids.py \
-	disconnect-device.py
+	disconnect-device.py \
+	get-active-connections.py
 
 
