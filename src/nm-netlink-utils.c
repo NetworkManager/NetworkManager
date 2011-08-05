@@ -165,6 +165,86 @@ nm_netlink_route_new (int ifindex,
 }
 
 /**
+ * nm_netlink_route_add:
+ * @route: the route to add
+ *
+ * Returns: zero if succeeded or the netlink error otherwise.
+ **/
+int nm_netlink_route_add(struct rtnl_route * route,
+			 int family,
+			 const void * dest, /* in_addr or in6_addr */
+			 int dest_prefix,
+			 const void * gateway, /* in_addr or in6_addr */
+			 int flags)
+{
+	struct nl_sock * sk;
+	struct nl_addr * dest_addr, * gw_addr;
+	void * tmp_addr;
+	int addrlen, err, log;
+
+	if(family == AF_INET) {
+		addrlen = sizeof(struct in_addr);
+		log = LOGD_IP4;
+	}
+	else if (family == AF_INET6) {
+		addrlen = sizeof(struct in6_addr);
+		log = LOGD_IP6;
+	} else {
+		g_assert_not_reached ();
+	}
+
+
+	sk = nm_netlink_get_default_handle();
+
+	/* Build up the destination address */
+	if (dest) {
+		/* Copy to preserve const */
+		tmp_addr = g_malloc0(addrlen);
+		memcpy(tmp_addr, dest, addrlen);
+
+		dest_addr = nl_addr_build (family, tmp_addr, addrlen);
+		g_free(tmp_addr);
+
+		g_return_val_if_fail (dest_addr != NULL, -NLE_INVAL);
+		nl_addr_set_prefixlen (dest_addr, dest_prefix);
+
+		rtnl_route_set_dst (route, dest_addr);
+		nl_addr_put (dest_addr);
+	}
+
+	/* Build up the gateway address */
+	if (gateway) {
+		tmp_addr = g_malloc0(addrlen);
+		memcpy(tmp_addr, gateway, addrlen);
+
+		gw_addr = nl_addr_build (family, tmp_addr, addrlen);
+		g_free(tmp_addr);
+
+		if (gw_addr) {
+			nl_addr_set_prefixlen (gw_addr, 0);
+			rtnl_route_set_gateway (route, gw_addr);
+			rtnl_route_set_scope (route, RT_SCOPE_UNIVERSE);
+			nl_addr_put(gw_addr);
+		} else {
+			nm_log_err (LOGD_DEVICE | log, "Invalid gateway");
+		}
+	}
+
+	err = rtnl_route_add (sk, route, 0);
+
+	/* LIBNL Bug: Aliased ESRCH */
+	if (err == -NLE_FAILURE)
+		err = -NLE_OBJ_NOTFOUND;
+
+	if (err)
+		nm_log_warn (LOGD_DEVICE | log,
+                             "Failed to add route %s",
+                             nl_geterror(err));
+
+	return err;
+}
+
+/**
  * nm_netlink_route_delete:
  * @route: the route to delete
  *
