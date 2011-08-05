@@ -181,12 +181,15 @@ nm_netlink_route_delete (struct rtnl_route *route)
 	nlh = nm_netlink_get_default_handle ();
 	err = rtnl_route_delete (nlh, route, 0);
 
+	if (err)
+		nm_log_dbg (LOGD_IP4 | LOGD_IP6, "%s (%d)", nl_geterror(err), err);
+
 	/* Workaround libnl BUG: ESRCH is aliased to generic NLE_FAILURE
 	 * See: http://git.kernel.org/?p=libs/netlink/libnl.git;a=commit;h=7e9d5f */
 	if (err == -NLE_FAILURE)
 		err = -NLE_OBJ_NOTFOUND;
 
-	return (err && (err != -NLE_OBJ_NOTFOUND)) ? FALSE : TRUE;
+	return (err && (err != -NLE_OBJ_NOTFOUND) && (err != -NLE_RANGE) ) ? FALSE : TRUE;
 }
 
 
