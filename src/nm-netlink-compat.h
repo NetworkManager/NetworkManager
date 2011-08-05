@@ -135,6 +135,13 @@ __rtnl_addr_add (struct nl_sock *h, struct rtnl_addr *addr, int flags)
 #define rtnl_addr_add __rtnl_addr_add
 
 static inline int
+__rtnl_route_add (struct nl_sock *sk, struct rtnl_route *route, int flags)
+{
+	return nl_compat_error (rtnl_route_add (sk, route, flags));
+}
+#define rtnl_route_add __rtnl_route_add
+
+static inline int
 rtnl_route_delete (struct nl_sock *h, struct rtnl_route *route, int flags)
 {
 	return nl_compat_error (rtnl_route_del (h, route, flags));
