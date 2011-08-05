@@ -95,8 +95,6 @@ nm_system_device_set_ip4_route (int ifindex,
 {
 	struct nl_sock *nlh;
 	struct rtnl_route *route;
-	struct nl_addr *dest_addr;
-	struct nl_addr *gw_addr = NULL;
 	int err;
 	const char *iface;
 
@@ -113,50 +111,24 @@ nm_system_device_set_ip4_route (int ifindex,
 	                              NULL);
 	g_return_val_if_fail (route != NULL, NULL);
 
-	/* Destination */
-	dest_addr = nl_addr_build (AF_INET, &ip4_dest, sizeof (ip4_dest));
-	g_return_val_if_fail (dest_addr != NULL, NULL);
-	nl_addr_set_prefixlen (dest_addr, (int) ip4_prefix);
-
-	rtnl_route_set_dst (route, dest_addr);
-	nl_addr_put (dest_addr);
-
-	/* Gateway */
-	if (ip4_gateway) {
-		gw_addr = nl_addr_build (AF_INET, &ip4_gateway, sizeof (ip4_gateway));
-		if (gw_addr) {
-			rtnl_route_set_gateway (route, gw_addr);
-			rtnl_route_set_scope (route, RT_SCOPE_UNIVERSE);
-		} else {
-			nm_log_err (LOGD_DEVICE | LOGD_IP4, "Invalid gateway 0x%X", ip4_gateway);
-			rtnl_route_put (route);
-			return NULL;
-		}
-	}
-
 	/* Add the route */
-	err = rtnl_route_add (nlh, route, 0);
-	if (((err == -NLE_OBJ_NOTFOUND) || (err == -NLE_FAILURE)) && ip4_gateway) {
+	err = nm_netlink_route_add(route, AF_INET, &ip4_dest, ip4_prefix, &ip4_gateway, 0);
+	if (err == -NLE_OBJ_NOTFOUND && ip4_gateway) {
 		/* Gateway might be over a bridge; try adding a route to gateway first */
 		struct rtnl_route *route2;
 
 		route2 = nm_netlink_route_new (ifindex, AF_INET, mss, NULL);
 		if (route2) {
 			/* Add route to gateway over bridge */
-			rtnl_route_set_dst (route2, gw_addr);
-			err = rtnl_route_add (nlh, route2, 0);
+			err = nm_netlink_route_add(route2, AF_INET, &ip4_gateway, 32, NULL, 0);
 			if (!err) {
-				/* Try adding the route again */
-				err = rtnl_route_add (nlh, route, 0);
+				err = nm_netlink_route_add(route, AF_INET, &ip4_dest, ip4_prefix, &ip4_gateway, 0);
 				if (err)
 					nm_netlink_route_delete (route2);
 			}
 			rtnl_route_put (route2);
 		}
 	}
-
-	if (gw_addr)
-		nl_addr_put (gw_addr);
 
 	if (err) {
 		nm_log_err (LOGD_DEVICE | LOGD_IP4,
@@ -485,8 +457,6 @@ nm_system_set_ip6_route (int ifindex,
 {
 	struct nl_sock *nlh;
 	struct rtnl_route *route;
-	struct nl_addr *dest_addr;
-	struct nl_addr *gw_addr = NULL;
 	int err = 0;
 
 	g_return_val_if_fail (ifindex >= 0, -1);
@@ -501,50 +471,25 @@ nm_system_set_ip6_route (int ifindex,
 	                              NULL);
 	g_return_val_if_fail (route != NULL, -1);
 
-	/* Destination */
-	dest_addr = nl_addr_build (AF_INET6, (struct in6_addr *) ip6_dest, sizeof (*ip6_dest));
-	g_return_val_if_fail (dest_addr != NULL, -1);
-	nl_addr_set_prefixlen (dest_addr, (int) ip6_prefix);
-
-	rtnl_route_set_dst (route, dest_addr);
-	nl_addr_put (dest_addr);
-
-	/* Gateway */
-	if (ip6_gateway && !IN6_IS_ADDR_UNSPECIFIED (ip6_gateway)) {
-		gw_addr = nl_addr_build (AF_INET6, (struct in6_addr *) ip6_gateway, sizeof (*ip6_gateway));
-		if (gw_addr) {
-			rtnl_route_set_gateway (route, gw_addr);
-			rtnl_route_set_scope (route, RT_SCOPE_UNIVERSE);
-		} else {
-			nm_log_warn (LOGD_DEVICE | LOGD_IP6, "Invalid gateway");
-			rtnl_route_put (route);
-			return -1;
-		}
-	}
-
 	/* Add the route */
-	err = rtnl_route_add (nlh, route, 0);
-	if (((err == -NLE_OBJ_NOTFOUND) || (err == -NLE_FAILURE)) && ip6_gateway) {
+	err = nm_netlink_route_add(route, AF_INET6, &ip6_dest, ip6_prefix, &ip6_gateway, 0);
+	if (err == -NLE_OBJ_NOTFOUND && ip6_gateway) {
 		/* Gateway might be over a bridge; try adding a route to gateway first */
 		struct rtnl_route *route2;
 
 		route2 = nm_netlink_route_new (ifindex, AF_INET6, mss, NULL);
 		if (route2) {
+			err = nm_netlink_route_add(route, AF_INET6, &ip6_gateway, 128, NULL, 0);
 			/* Add route to gateway over bridge */
-			rtnl_route_set_dst (route2, gw_addr);
-			err = rtnl_route_add (nlh, route2, 0);
 			if (!err) {
 				/* Try adding the route again */
-				err = rtnl_route_add (nlh, route, 0);
+				err = nm_netlink_route_add(route, AF_INET6, &ip6_dest, ip6_prefix, &ip6_gateway, 0);
 				if (err)
 					nm_netlink_route_delete (route2);
 			}
 			rtnl_route_put (route2);
 		}
 	}
-
-	if (gw_addr)
-		nl_addr_put (gw_addr);
 
 	if (out_route)
 		*out_route = route;
@@ -833,7 +778,6 @@ add_ip4_route_to_gateway (int ifindex, guint32 gw, guint32 mss)
 {
 	struct nl_sock *nlh;
 	struct rtnl_route *route = NULL;
-	struct nl_addr *gw_addr = NULL;
 	const char *iface;
 	int err;
 
@@ -850,15 +794,8 @@ add_ip4_route_to_gateway (int ifindex, guint32 gw, guint32 mss)
 	                              NULL);
 	g_return_val_if_fail (route != NULL, NULL);
 
-	gw_addr = nl_addr_build (AF_INET, &gw, sizeof (gw));
-	if (!gw_addr)
-		goto error;
-	nl_addr_set_prefixlen (gw_addr, 32);
-	rtnl_route_set_dst (route, gw_addr);
-	nl_addr_put (gw_addr);
-
 	/* Add direct route to the gateway */
-	err = rtnl_route_add (nlh, route, 0);
+	err = nm_netlink_route_add(route, AF_INET, &gw, 32, NULL, 0);
 	if (err) {
 		nm_log_err (LOGD_DEVICE | LOGD_IP4,
 		            "(%s): failed to add IPv4 route to gateway (%d)",
@@ -878,10 +815,8 @@ replace_default_ip4_route (int ifindex, guint32 gw, guint32 mss)
 {
 	struct rtnl_route *route = NULL;
 	struct nl_sock *nlh;
-	struct nl_addr *dst_addr = NULL;
-	guint32 dst = 0;
-	struct nl_addr *gw_addr = NULL;
 	int err = -1;
+	int dst=0;
 
 	g_return_val_if_fail (ifindex > 0, -ENODEV);
 
@@ -894,32 +829,9 @@ replace_default_ip4_route (int ifindex, guint32 gw, guint32 mss)
 	                              NULL);
 	g_return_val_if_fail (route != NULL, -ENOMEM);
 
-	/* Build up the destination address */
-	dst_addr = nl_addr_build (AF_INET, &dst, sizeof (dst));
-	if (!dst_addr) {
-		err = -ENOMEM;
-		goto out;
-	}
-	nl_addr_set_prefixlen (dst_addr, 0);
-	rtnl_route_set_dst (route, dst_addr);
-
-	/* Build up the gateway address */
-	gw_addr = nl_addr_build (AF_INET, &gw, sizeof (gw));
-	if (!gw_addr) {
-		err = -ENOMEM;
-		goto out;
-	}
-	nl_addr_set_prefixlen (gw_addr, 0);
-	rtnl_route_set_gateway (route, gw_addr);
-
 	/* Add the new default route */
-	err = rtnl_route_add (nlh, route, NLM_F_REPLACE);
+	err = nm_netlink_route_add (route, AF_INET, &dst, 0, &gw, NLM_F_REPLACE);
 
-out:
-	if (dst_addr)
-		nl_addr_put (dst_addr);
-	if (gw_addr)
-		nl_addr_put (gw_addr);
 	rtnl_route_put (route);
 	return err;
 }
@@ -999,7 +911,7 @@ nm_system_replace_default_ip4_route (int ifindex, guint32 gw, guint32 mss)
 	err = replace_default_ip4_route (ifindex, gw, mss);
 	if (err == 0) {
 		return TRUE;
-	} else if ((err != -NLE_OBJ_NOTFOUND) && (err != -NLE_FAILURE)) {
+	} else if (err != -NLE_OBJ_NOTFOUND) {
 		nm_log_err (LOGD_DEVICE | LOGD_IP4,
 		            "(%s): failed to set IPv4 default route: %d",
 		            iface, err);
@@ -1030,7 +942,6 @@ add_ip6_route_to_gateway (int ifindex, const struct in6_addr *gw)
 {
 	struct nl_sock *nlh;
 	struct rtnl_route *route = NULL;
-	struct nl_addr *gw_addr = NULL;
 	const char *iface;
 	int err;
 
@@ -1047,15 +958,8 @@ add_ip6_route_to_gateway (int ifindex, const struct in6_addr *gw)
 	                              NULL);
 	g_return_val_if_fail (route != NULL, NULL);
 
-	gw_addr = nl_addr_build (AF_INET, (void *) gw, sizeof (*gw));
-	if (!gw_addr)
-		goto error;
-	nl_addr_set_prefixlen (gw_addr, 128);
-	rtnl_route_set_dst (route, gw_addr);
-	nl_addr_put (gw_addr);
-
 	/* Add direct route to the gateway */
-	err = rtnl_route_add (nlh, route, 0);
+	err = nm_netlink_route_add(route, AF_INET, gw, 128, NULL, 0);
 	if (err) {
 		nm_log_err (LOGD_DEVICE | LOGD_IP6,
 		            "(%s): failed to add IPv4 route to gateway (%d)",
@@ -1075,7 +979,6 @@ replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
 {
 	struct rtnl_route *route = NULL;
 	struct nl_sock *nlh;
-	struct nl_addr *gw_addr = NULL;
 	const char *iface;
 	int err = -1;
 
@@ -1093,20 +996,9 @@ replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
 	                              NULL);
 	g_return_val_if_fail (route != NULL, -ENOMEM);
 
-	if (gw && !IN6_IS_ADDR_UNSPECIFIED (gw)) {
-		/* Build up the gateway address */
-		gw_addr = nl_addr_build (AF_INET6, (void *) gw, sizeof (*gw));
-		if (!gw_addr) {
-			err = -ENOMEM;
-			goto out;
-		}
-		nl_addr_set_prefixlen (gw_addr, -1);
-		rtnl_route_set_gateway (route, gw_addr);
-	}
-
 	/* Add the new default route */
-	err = rtnl_route_add (nlh, route, NLM_F_REPLACE);
-	if (err == -EEXIST) {
+	nm_netlink_route_add(route, AF_INET6, NULL, 0, gw, NLM_F_REPLACE);
+	if (err == -NLE_EXIST) {
 		/* FIXME: even though we use NLM_F_REPLACE the kernel won't replace
 		 * the route if it's the same.  Should try to remove it first, then
 		 * add the new one again here.
@@ -1114,9 +1006,6 @@ replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
 		err = 0;
 	}
 
-out:
-	if (gw_addr)
-		nl_addr_put (gw_addr);
 	rtnl_route_put (route);
 	return err;
 }
@@ -1141,7 +1030,7 @@ nm_system_replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
 	err = replace_default_ip6_route (ifindex, gw);
 	if (err == 0)
 		return TRUE;
-	if ((err != -NLE_OBJ_NOTFOUND) && (err != -NLE_FAILURE)) {
+	if (err != -NLE_OBJ_NOTFOUND) {
 		nm_log_err (LOGD_DEVICE | LOGD_IP6,
 		            "(%s): failed to set IPv6 default route: %d",
 		            iface, err);
