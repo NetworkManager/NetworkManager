@@ -3,7 +3,7 @@
   xmlns:xi="http://www.w3.org/2001/XInclude">
 
 <tp:title>NetworkManager D-Bus Interface Specification</tp:title>
-<tp:version>0.8.4</tp:version>
+<tp:version>@VERSION@</tp:version>
 
 
 <tp:copyright>Copyright (C) 2008 - 2011 Red Hat, Inc.</tp:copyright>

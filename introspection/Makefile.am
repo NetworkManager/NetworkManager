@@ -1,5 +1,5 @@
 EXTRA_DIST = \
-	all.xml \
+	all.xml.in \
 	generic-types.xml \
 	errors.xml \
 	vpn-errors.xml \
