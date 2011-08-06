@@ -27,7 +27,7 @@ XSLTPROC = xsltproc --xinclude --nonet
 XMLS = $(wildcard $(top_srcdir)/introspection/nm-*.xml)
 
 OTHER_FILES= \
-	$(top_srcdir)/introspection/all.xml \
+	$(top_builddir)/introspection/all.xml \
 	$(top_srcdir)/introspection/generic-types.xml \
 	$(top_srcdir)/introspection/errors.xml \
 	$(top_srcdir)/introspection/vpn-errors.xml \
@@ -37,7 +37,7 @@ OTHER_FILES= \
 GENERATED_FILES = spec.html settings-spec.xml
 
 spec.html: $(XMLS) $(OTHER_FILES) html-build.stamp
-	$(XSLTPROC) $(top_srcdir)/tools/doc-generator.xsl $(top_srcdir)/introspection/all.xml > $@
+	$(XSLTPROC) $(top_srcdir)/tools/doc-generator.xsl $(top_builddir)/introspection/all.xml > $@
 	mkdir -p $(builddir)/html/
 	cp $@ $(builddir)/html/
 

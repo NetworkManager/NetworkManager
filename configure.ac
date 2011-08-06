@@ -664,6 +664,7 @@ initscript/Mandriva/networkmanager
 initscript/linexa/Makefile
 initscript/linexa/networkmanager
 introspection/Makefile
+introspection/all.xml
 man/Makefile
 man/NetworkManager.8
 man/NetworkManager.conf.5
