@@ -140,11 +140,15 @@ set_property (GObject *object, guint prop_id,
 			  const GValue *value, GParamSpec *pspec)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	DBusGConnection *connection;
 
 	switch (prop_id) {
 	case PROP_CONNECTION:
 		/* Construct only */
-		priv->connection = dbus_g_connection_ref ((DBusGConnection *) g_value_get_boxed (value));
+		connection = (DBusGConnection *) g_value_get_boxed (value);
+		if (!connection)
+			connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, NULL);
+		priv->connection = dbus_g_connection_ref (connection);
 		break;
 	case PROP_PATH:
 		/* Construct only */
