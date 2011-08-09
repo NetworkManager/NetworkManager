@@ -79,8 +79,6 @@ constructor (GType type,
 	if (!object)
 		return NULL;
 
-	_nm_object_cache_add (NM_OBJECT (object));
-
 	priv = NM_OBJECT_GET_PRIVATE (object);
 
 	if (priv->connection == NULL || priv->path == NULL) {
@@ -93,6 +91,8 @@ constructor (GType type,
 														NM_DBUS_SERVICE,
 														priv->path,
 														"org.freedesktop.DBus.Properties");
+
+	_nm_object_cache_add (NM_OBJECT (object));
 
 	return object;
 }
