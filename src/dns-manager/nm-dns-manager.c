@@ -711,7 +711,8 @@ update_dns (NMDnsManager *self,
 		                           vpn_configs,
 		                           dev_configs,
 		                           other_configs,
-		                           priv->hostname)) {
+		                           priv->hostname,
+					   iface)) {
 			nm_log_warn (LOGD_DNS, "DNS: plugin %s update failed", plugin_name);
 
 			/* If the plugin failed to update, we shouldn't write out a local

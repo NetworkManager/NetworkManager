@@ -133,23 +133,56 @@ add_ip4_config (GString *str, NMIP4Config *ip4, gboolean split)
 	return TRUE;
 }
 
-static gboolean
-ip6_addr_to_string (const struct in6_addr *addr, char *buf, size_t buflen)
+#define IP6_ADDR_BUFLEN (INET6_ADDRSTRLEN + 50)
+
+static char *
+ip6_addr_to_string (const struct in6_addr *addr, const char *iface)
 {
-	memset (buf, 0, buflen);
+	char *buf, *p;
+
+	/* allocate enough space for the address + interface name */
+	buf = g_malloc0 (IP6_ADDR_BUFLEN + 1);
 
 	/* inet_ntop is probably supposed to do this for us, but it doesn't */
-	if (IN6_IS_ADDR_V4MAPPED (addr))
-		return !!inet_ntop (AF_INET, &(addr->s6_addr32[3]), buf, buflen);
+	if (IN6_IS_ADDR_V4MAPPED (addr)) {
+		if (!inet_ntop (AF_INET, &(addr->s6_addr32[3]), buf, IP6_ADDR_BUFLEN))
+			goto error;
+		return buf;
+	}
 
-	return !!inet_ntop (AF_INET6, addr, buf, buflen);
+	if (!inet_ntop (AF_INET6, addr, buf, IP6_ADDR_BUFLEN))
+		goto error;
+
+	/* In the case of addr being a link-local address, inet_ntop can either
+	 * return an address with scope identifier already in place (like
+	 * fe80::202:b3ff:fe8d:7aaf%wlan0) or it returns an address without
+	 * scope identifier at all (like fe80::202:b3ff:fe8d:7aaf)
+	 */
+	p = strchr (buf, '%');
+	if (p) {
+		/* If we got a scope identifier, we need to replace the '%'
+		 * with '@', since dnsmasq supports '%' in server= addresses
+		 * only since version 2.58 and up
+		 */
+		*p = '@';
+	} else if (IN6_IS_ADDR_LINKLOCAL (addr)) {
+		/* If we got no scope identifier at all append the interface name */
+		strncat (buf, "@", IP6_ADDR_BUFLEN - strlen (buf));
+		strncat (buf, iface, IP6_ADDR_BUFLEN - strlen (buf));
+	}
+
+	return buf;
+
+error:
+	g_free (buf);
+	return NULL;
 }
 
 static gboolean
-add_ip6_config (GString *str, NMIP6Config *ip6, gboolean split)
+add_ip6_config (GString *str, NMIP6Config *ip6, gboolean split, const char *iface)
 {
-	char buf[INET6_ADDRSTRLEN + 1];
 	const struct in6_addr *addr;
+	char *buf;
 	int n, i;
 	gboolean added = FALSE;
 
@@ -159,7 +192,8 @@ add_ip6_config (GString *str, NMIP6Config *ip6, gboolean split)
 		 * the first nameserver here.
 		 */
 		addr = nm_ip6_config_get_nameserver (ip6, 0);
-		if (!ip6_addr_to_string (addr, &buf[0], sizeof (buf)))
+		buf = ip6_addr_to_string (addr, iface);
+		if (!buf)
 			return FALSE;
 
 		/* searches are preferred over domains */
@@ -181,6 +215,8 @@ add_ip6_config (GString *str, NMIP6Config *ip6, gboolean split)
 				added = TRUE;
 			}
 		}
+
+		g_free (buf);
 	}
 
 	/* If no searches or domains, just add the namservers */
@@ -188,8 +224,11 @@ add_ip6_config (GString *str, NMIP6Config *ip6, gboolean split)
 		n = nm_ip6_config_get_num_nameservers (ip6);
 		for (i = 0; i < n; i++) {
 			addr = nm_ip6_config_get_nameserver (ip6, i);
-			if (ip6_addr_to_string (addr, &buf[0], sizeof (buf)))
+			buf = ip6_addr_to_string (addr, iface);
+			if (buf) {
 				g_string_append_printf (str, "server=%s\n", buf);
+				g_free (buf);
+			}
 		}
 	}
 
@@ -201,7 +240,8 @@ update (NMDnsPlugin *plugin,
         const GSList *vpn_configs,
         const GSList *dev_configs,
         const GSList *other_configs,
-        const char *hostname)
+        const char *hostname,
+        const char *iface)
 {
 	NMDnsDnsmasq *self = NM_DNS_DNSMASQ (plugin);
 	GString *conf;
@@ -226,7 +266,7 @@ update (NMDnsPlugin *plugin,
 		if (NM_IS_IP4_CONFIG (iter->data))
 			add_ip4_config (conf, NM_IP4_CONFIG (iter->data), TRUE);
 		else if (NM_IS_IP6_CONFIG (iter->data))
-			add_ip6_config (conf, NM_IP6_CONFIG (iter->data), TRUE);
+			add_ip6_config (conf, NM_IP6_CONFIG (iter->data), TRUE, iface);
 	}
 
 	/* Now add interface configs without split DNS */
@@ -234,7 +274,7 @@ update (NMDnsPlugin *plugin,
 		if (NM_IS_IP4_CONFIG (iter->data))
 			add_ip4_config (conf, NM_IP4_CONFIG (iter->data), FALSE);
 		else if (NM_IS_IP6_CONFIG (iter->data))
-			add_ip6_config (conf, NM_IP6_CONFIG (iter->data), FALSE);
+			add_ip6_config (conf, NM_IP6_CONFIG (iter->data), FALSE, iface);
 	}
 
 	/* And any other random configs */
@@ -242,7 +282,7 @@ update (NMDnsPlugin *plugin,
 		if (NM_IS_IP4_CONFIG (iter->data))
 			add_ip4_config (conf, NM_IP4_CONFIG (iter->data), FALSE);
 		else if (NM_IS_IP6_CONFIG (iter->data))
-			add_ip6_config (conf, NM_IP6_CONFIG (iter->data), FALSE);
+			add_ip6_config (conf, NM_IP6_CONFIG (iter->data), FALSE, iface);
 	}
 
 	/* Write out the config file */
