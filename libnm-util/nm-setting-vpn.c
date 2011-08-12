@@ -756,23 +756,27 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 	/**
 	 * NMSettinVPN:user-name:
 	 *
-	 * User name of the currently logged in user for connections provided by the
-	 * user settings service.  This name is provided to the VPN plugin to use in
-	 * lieu of a custom username provided by that VPN plugins specific
-	 * configuration.  The VPN plugin itself decides which user name to use.
+	 * If the VPN connection requires a user name for authentication, that name
+	 * should be provided here.  If the connection is available to more than
+	 * one user, and the VPN requires each user to supply a different name, then
+	 * leave this property empty.  If this property is empty, NetworkManager
+	 * will automatically supply the username of the user which requested the
+	 * VPN connection.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_USER_NAME,
 		 g_param_spec_string (NM_SETTING_VPN_USER_NAME,
-						  "User name",
-						  "User name of the currently logged in user for "
-						  "connections provided by the user settings service.  "
-						  "This name is provided to the VPN plugin to use in "
-						  "lieu of a custom username provided by that VPN "
-						  "plugins specific configuration.  The VPN plugin "
-						  "itself decides which user name to use.",
-						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                      "User name",
+		                      "If the VPN connection requires a user name for "
+		                      "authentication, that name should be provided here.  "
+		                      "If the connection is available to more than one "
+		                      "user, and the VPN requires each user to supply a "
+		                      "different name, then leave this property empty.  If "
+		                      "this property is empty, NetworkManager will "
+		                      "automatically supply the username of the user which "
+		                      "requested the VPN connection.",
+		                      NULL,
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
 	 * NMSettingVPN:data:
