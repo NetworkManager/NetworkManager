@@ -53,7 +53,8 @@ typedef struct {
 	                    const GSList *vpn_configs,
 	                    const GSList *dev_configs,
 	                    const GSList *other_configs,
-	                    const char *hostname);
+	                    const char *hostname,
+	                    const char *iface);
 
 	/* Subclasses should override and return TRUE if they start a local
 	 * caching nameserver that listens on localhost and would block any
@@ -91,7 +92,8 @@ gboolean nm_dns_plugin_update (NMDnsPlugin *self,
                                const GSList *vpn_configs,
                                const GSList *dev_configs,
                                const GSList *other_configs,
-                               const char *hostname);
+                               const char *hostname,
+                               const char *iface);
 
 /* For subclasses/plugins */
 

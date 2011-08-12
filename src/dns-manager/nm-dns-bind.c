@@ -297,7 +297,8 @@ update (NMDnsPlugin *plugin,
         const GSList *vpn_configs,
         const GSList *dev_configs,
         const GSList *other_configs,
-        const char *hostname)
+        const char *hostname,
+        const char *iface)
 {
 	NMDnsBind *self = NM_DNS_BIND (plugin);
 	NMDnsBindPrivate *priv = NM_DNS_BIND_GET_PRIVATE (self);
