@@ -736,9 +736,6 @@ get_all_cb  (DBusGProxy *proxy,
 NMRemoteSettings *
 nm_remote_settings_new (DBusGConnection *bus)
 {
-	if (bus == NULL)
-		bus = dbus_g_bus_get (DBUS_BUS_SYSTEM, NULL);
-
 	return (NMRemoteSettings *) g_object_new (NM_TYPE_REMOTE_SETTINGS,
 	                                          NM_REMOTE_SETTINGS_BUS, bus,
 	                                          NULL);
@@ -887,11 +884,15 @@ set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (object);
+	DBusGConnection *connection;
 
 	switch (prop_id) {
 	case PROP_BUS:
 		/* Construct only */
-		priv->bus = dbus_g_connection_ref ((DBusGConnection *) g_value_get_boxed (value));
+		connection = (DBusGConnection *) g_value_get_boxed (value);
+		if (!connection)
+			connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, NULL);
+		priv->bus = dbus_g_connection_ref (connection);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
