@@ -612,6 +612,30 @@ compare_property (NMSetting *setting,
 }
 
 static void
+clear_secrets_with_flags (NMSetting *setting,
+	                      GParamSpec *pspec,
+	                      NMSettingClearSecretsWithFlagsFn func,
+	                      gpointer user_data)
+{
+	NMSettingVPNPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
+	GHashTableIter iter;
+	const char *secret;
+
+	if (priv->secrets == NULL)
+		return;
+
+	/* Iterate through secrets hash and check each entry */
+	g_hash_table_iter_init (&iter, priv->secrets);
+	while (g_hash_table_iter_next (&iter, (gpointer) &secret, NULL)) {
+		NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
+
+		nm_setting_get_secret_flags (setting, secret, &flags, NULL);
+		if (func (setting, pspec->name, flags, user_data) == TRUE)
+			g_hash_table_iter_remove (&iter);
+	}
+}
+
+static void
 destroy_one_secret (gpointer data)
 {
 	char *secret = (char *) data;
@@ -733,6 +757,7 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 	parent_class->set_secret_flags  = set_secret_flags;
 	parent_class->need_secrets      = need_secrets;
 	parent_class->compare_property  = compare_property;
+	parent_class->clear_secrets_with_flags = clear_secrets_with_flags;
 
 	/* Properties */
 	/**
