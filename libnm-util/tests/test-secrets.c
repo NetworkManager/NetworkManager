@@ -591,7 +591,84 @@ test_update_secrets_wifi_bad_setting_name (void)
 	                                        "asdfasdfasdfasf",
 	                                        secrets,
 	                                        &error);
-	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_SETTING_NOT_FOUND);
+	g_assert (success == FALSE);
+
+	g_object_unref (connection);
+}
+
+static void
+test_update_secrets_whole_connection (void)
+{
+	NMConnection *connection;
+	NMSettingWirelessSecurity *s_wsec;
+	GHashTable *secrets, *wsec_hash;
+	GError *error = NULL;
+	gboolean success;
+	const char *wepkey = "11111111111111111111111111";
+
+	connection = wifi_connection_new ();
+
+	/* Build up the secrets hash */
+	secrets = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
+	wsec_hash = g_hash_table_lookup (secrets, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	g_assert (wsec_hash);
+	g_hash_table_insert (wsec_hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, string_to_gvalue (wepkey));
+
+	success = nm_connection_update_secrets (connection, NULL, secrets, &error);
+	g_assert_no_error (error);
+	g_assert (success == TRUE);
+
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
+	g_assert (s_wsec);
+	g_assert_cmpstr (nm_setting_wireless_security_get_wep_key (s_wsec, 0), ==, wepkey);
+
+	g_object_unref (connection);
+}
+
+static void
+test_update_secrets_whole_connection_empty_hash (void)
+{
+	NMConnection *connection;
+	GHashTable *secrets;
+	GError *error = NULL;
+	gboolean success;
+
+	connection = wifi_connection_new ();
+	secrets = g_hash_table_new (g_str_hash, g_str_equal);
+	success = nm_connection_update_secrets (connection, NULL, secrets, &error);
+	g_assert_no_error (error);
+	g_assert (success == TRUE);
+	g_object_unref (connection);
+}
+
+static void
+test_update_secrets_whole_connection_bad_setting (void)
+{
+	NMConnection *connection;
+	GHashTable *secrets, *wsec_hash;
+	GError *error = NULL;
+	gboolean success;
+	const char *wepkey = "11111111111111111111111111";
+
+	connection = wifi_connection_new ();
+
+	/* Build up the secrets hash */
+	secrets = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
+	wsec_hash = g_hash_table_lookup (secrets, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	g_assert (wsec_hash);
+	g_hash_table_insert (wsec_hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, string_to_gvalue (wepkey));
+
+	/* Steal the wsec setting hash so it's not deallocated, and stuff it back
+	 * in with a different name so we ensure libnm-util is returning the right
+	 * error when it finds an entry in the connection hash that doesn't match
+	 * any setting in the connection.
+	 */
+	g_hash_table_steal (secrets, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	g_hash_table_insert (secrets, "asdfasdfasdfasdf", wsec_hash);
+
+	success = nm_connection_update_secrets (connection, NULL, secrets, &error);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_SETTING_NOT_FOUND);
 	g_assert (success == FALSE);
 
 	g_object_unref (connection);
@@ -616,6 +693,10 @@ int main (int argc, char **argv)
 	test_update_secrets_wifi_single_setting ();
 	test_update_secrets_wifi_full_hash ();
 	test_update_secrets_wifi_bad_setting_name ();
+
+	test_update_secrets_whole_connection ();
+	test_update_secrets_whole_connection_empty_hash ();
+	test_update_secrets_whole_connection_bad_setting ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);
