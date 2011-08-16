@@ -902,6 +902,9 @@ schedule_activate_check (NMPolicy *policy, NMDevice *device, guint delay_seconds
 	if (state < NM_DEVICE_STATE_DISCONNECTED)
 		return;
 
+	if (!nm_device_interface_get_enabled (NM_DEVICE_INTERFACE (device)))
+		return;
+
 	if (!nm_device_autoconnect_allowed (device))
 		return;
 
@@ -1060,6 +1063,12 @@ nsps_changed (NMDeviceWimax *device, NMWimaxNsp *nsp, gpointer user_data)
 }
 #endif
 
+static void
+modem_enabled_changed (NMDeviceModem *device, gpointer user_data)
+{
+	schedule_activate_check ((NMPolicy *) (user_data), NM_DEVICE (device), 0);
+}
+
 typedef struct {
 	gulong id;
 	NMDevice *device;
@@ -1094,6 +1103,8 @@ device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 		_connect_device_signal (policy, device, "nsp-added", nsps_changed);
 		_connect_device_signal (policy, device, "nsp-removed", nsps_changed);
 #endif
+	} else if (NM_IS_DEVICE_MODEM (device)) {
+		_connect_device_signal (policy, device, NM_DEVICE_MODEM_ENABLE_CHANGED, modem_enabled_changed);
 	}
 }
 

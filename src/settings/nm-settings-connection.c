@@ -382,25 +382,14 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 	new_settings = nm_connection_to_hash (new, NM_SETTING_HASH_FLAG_ALL);
 	g_assert (new_settings);
 	if (nm_connection_replace_settings (NM_CONNECTION (self), new_settings, error)) {
-		GHashTableIter iter;
-		NMSetting *setting;
-		const char *setting_name;
-		GHashTable *setting_hash;
-
 		/* Copy the connection to keep its secrets around even if NM
 		 * calls nm_connection_clear_secrets().
 		 */
 		update_secrets_cache (self);
 
 		/* And add the transient secrets back */
-		if (transient_secrets) {
-			g_hash_table_iter_init (&iter, transient_secrets);
-			while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, (gpointer) &setting_hash)) {
-				setting = nm_connection_get_setting_by_name (NM_CONNECTION (self), setting_name);
-				if (setting)
-					nm_setting_update_secrets (setting, setting_hash, NULL);
-			}
-		}
+		if (transient_secrets)
+			nm_connection_update_secrets (NM_CONNECTION (self), NULL, transient_secrets, NULL);
 
 		nm_settings_connection_recheck_visibility (self);
 		success = TRUE;
@@ -1109,31 +1098,30 @@ con_update_cb (NMSettingsConnection *connection,
 }
 
 static void
-only_agent_secrets_cb (NMSetting *setting,
-                       const char *key,
-                       const GValue *value,
-                       GParamFlags flags,
-                       gpointer user_data)
+secrets_filter_cb (NMSetting *setting,
+                   const char *key,
+                   const GValue *value,
+                   GParamFlags flags,
+                   gpointer user_data)
 {
+	NMSettingSecretFlags filter_flags = GPOINTER_TO_UINT (user_data);
+	NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
+	const char *secret_name = NULL;
+	GHashTableIter iter;
+
 	if (flags & NM_SETTING_PARAM_SECRET) {
-		NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
-
-		/* Clear out system-owned or always-ask secrets */
 		if (NM_IS_SETTING_VPN (setting) && !strcmp (key, NM_SETTING_VPN_SECRETS)) {
-			GHashTableIter iter;
-			const char *secret_name = NULL;
-
 			/* VPNs are special; need to handle each secret separately */
 			g_hash_table_iter_init (&iter, (GHashTable *) g_value_get_boxed (value));
-			while (g_hash_table_iter_next (&iter, (gpointer *) &secret_name, NULL)) {
+			while (g_hash_table_iter_next (&iter, (gpointer) &secret_name, NULL)) {
 				secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 				nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL);
-				if (secret_flags != NM_SETTING_SECRET_FLAG_AGENT_OWNED)
+				if (!(secret_flags & filter_flags))
 					nm_setting_vpn_remove_secret (NM_SETTING_VPN (setting), secret_name);
 			}
 		} else {
 			nm_setting_get_secret_flags (setting, key, &secret_flags, NULL);
-			if (secret_flags != NM_SETTING_SECRET_FLAG_AGENT_OWNED)
+			if (!(secret_flags & filter_flags))
 				g_object_set (G_OBJECT (setting), key, NULL, NULL);
 		}
 	}
@@ -1148,23 +1136,52 @@ update_auth_cb (NMSettingsConnection *self,
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	NMConnection *new_settings = data;
-	NMConnection *for_agent;
+	NMConnection *for_agent, *dup;
+	NMSettingSecretFlags filter_flags;
+	GHashTable *hash;
+	GError *local = NULL;
 
 	if (error)
 		dbus_g_method_return_error (context, error);
 	else {
+		/* Cache the new secrets since they may get overwritten by the replace
+		 * when transient secrets are copied back.
+		 */
+		dup = nm_connection_duplicate (new_settings);
+
 		/* Update and commit our settings. */
 		nm_settings_connection_replace_and_commit (self,
 		                                           new_settings,
 		                                           con_update_cb,
 		                                           context);
 
+		/* Copy new agent secrets back to the connection */
+		filter_flags = NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED;
+		nm_connection_for_each_setting_value (dup,
+		                                      secrets_filter_cb,
+		                                      GUINT_TO_POINTER (filter_flags));
+		hash = nm_connection_to_hash (dup, NM_SETTING_HASH_FLAG_ONLY_SECRETS);
+		g_object_unref (dup);
+
+		if (hash) {
+			if (!nm_connection_update_secrets (NM_CONNECTION (self), NULL, hash, &local)) {
+				nm_log_warn (LOGD_SETTINGS, "Failed to update connection secrets: (%d) %s",
+				             local ? local->code : -1,
+				             local && local->message ? local->message : "(unknown)");
+				g_clear_error (&local);
+			}
+			g_hash_table_destroy (hash);
+		}
+
 		/* Dupe the connection and clear out non-agent-owned secrets so we can
 		 * send the agent-owned ones to agents to be saved.  Only send them to
 		 * agents of the same UID as the Update() request sender.
 		 */
 		for_agent = nm_connection_duplicate (NM_CONNECTION (self));
-		nm_connection_for_each_setting_value (for_agent, only_agent_secrets_cb, NULL);
+		filter_flags = NM_SETTING_SECRET_FLAG_AGENT_OWNED;
+		nm_connection_for_each_setting_value (for_agent,
+		                                      secrets_filter_cb,
+		                                      GUINT_TO_POINTER (filter_flags));
 		nm_agent_manager_save_secrets (priv->agent_mgr, for_agent, TRUE, sender_uid);
 		g_object_unref (for_agent);
 	}

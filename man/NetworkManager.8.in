@@ -1,14 +1,16 @@
 .\" NetworkManager(8) manual page
 .\"
-.\" Copyright (C) 2005 - 2010 Red Hat, Inc.
+.\" Copyright (C) 2005 - 2011 Red Hat, Inc.
 .\" Copyright (C) 2005 - 2009 Novell, Inc.
 .\" Copyright (C) 2005 Robert Love
 .\"
-.TH NETWORKMANAGER "8" "January 29, 2010"
+.TH NETWORKMANAGER "8" "2 August 2011"
 .SH NAME
 NetworkManager \- network management daemon
 .SH SYNOPSIS
-.B NetworkManager [\-\-version] [\-\-no\-daemon] [\-\-pid\-file=<filename>] [\-\-state\-file=<filename>] [\-\-config=<filename>] [\-\-plugins=<plugin1>,plugin2>,...] [\-\-log\-level=<level>] [\-\-log\-domains=<domain1>,<domain2>,...]
+.B NetworkManager [\-\-version] | [\-\-help]
+.PP
+.B NetworkManager [\-\-no\-daemon] [\-\-pid\-file=<filename>] [\-\-state\-file=<filename>] [\-\-config=<filename>] [\-\-plugins=<plugin1>,plugin2>,...] [\-\-log\-level=<level>] [\-\-log\-domains=<domain1>,<domain2>,...]
 .SH DESCRIPTION
 The \fINetworkManager\fP daemon attempts to make  networking configuration and
 operation as painless and automatic as possible by managing the primary network
@@ -21,10 +23,22 @@ settings and operation.
 .P
 NetworkManager will execute scripts in the /etc/NetworkManager/dispatcher.d
 directory in alphabetical order in response to network events.  Each script
-should be (a) a regular file, (b) owned by root, (c) not writable by group or
-other, (d) not set-uid, (e) and executable by the owner.  Each script receives
-two arguments, the first being the interface name of the device just activated,
-and second an action.
+should be:
+.IP "(a)" 4
+a regular file
+.IP "(b)" 4
+owned by root
+.IP "(c)" 4
+not writable by group or other
+.IP "(d)" 4
+not set-uid
+.IP "(e)" 4
+and executable by the owner
+.PP
+Each script receives two arguments, the first being the interface name of the
+device just activated, and second an action.
+.PP
+Actions:
 .TP
 .I "up"
 The interface has been activated.  The environment contains more information
@@ -63,6 +77,9 @@ The following options are supported:
 .TP
 .I "\-\-version"
 Print the NetworkManager software version and exit.
+.TP
+.I "\-\-help"
+Print NetworkManager's available options and exit.
 .TP
 .I "\-\-no\-daemon"
 Do not daemonize.  This is useful for debugging, and directs log output to the
@@ -113,5 +130,7 @@ When set to anything, causes NetworkManager to turn on PPP debugging in pppd,
 which logs all PPP and PPTP frames and client/server exchanges.
 .SH SEE ALSO
 .BR nm\-tool (1),
+.BR nm\-online (1),
+.BR nmcli (1),
 .BR NetworkManager.conf (5).
 

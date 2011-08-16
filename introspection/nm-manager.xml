@@ -1,13 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<!-- 
-  READ ME! READ ME! READ ME! READ ME! READ ME!
-
-  This file needs to be kept in sync with nm-manager-client.xml with the exception of
-  the legacy methods at the end of this file.
--->
-
-<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+<node name="/org/freedesktop/NetworkManager" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
   <interface name="org.freedesktop.NetworkManager">
     <method name="GetDevices">
       <tp:docstring>

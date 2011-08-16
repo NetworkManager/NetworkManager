@@ -1,8 +1,8 @@
 .\" NetworkManager.conf(5) manual page
 .\"
-.\" Copyright (C) 2010 Red Hat, Inc.
+.\" Copyright (C) 2010 - 2011 Red Hat, Inc.
 .\"
-.TH "NetworkManager.conf" "5" "23 November 2010" ""
+.TH "NetworkManager.conf" "5" "2 August 2011" ""
 .SH NAME
 NetworkManager.conf \- NetworkManager configuration file
 .SH SYNOPSIS
@@ -20,9 +20,6 @@ is a configuration file for NetworkManager. It is used to set up various
 aspects of NetworkManager's behavior. The location of
 the file may be changed through use of the "\-\-config=" argument for
 \fBNetworkManager\fP (8).
-
-It is not necessary to restart NetworkManager when making changes, as the
-configuration file is watched for changes and reloaded automatically when necessary.
 .SH "FILE FORMAT"
 .P
 The configuration file format is so-called key file (sort of ini-style format).
@@ -163,12 +160,61 @@ warning messages.
 The following log domains are available: [NONE, HW, RFKILL, ETHER, WIFI, BT, MB,
 DHCP4, DHCP6, PPP, WIFI_SCAN, IP4, IP6, AUTOIP4, DNS, VPN, SHARING, SUPPLICANT,
 AGENTS, SETTINGS, SUSPEND, CORE, DEVICE, OLPC, WIMAX].  When "NONE" is given by
-itself, logging is disabled.  MB = Mobile Broadband, AGENTS = secret agents
-operations and communication, SETTINGS = settings/config service operations,
-OLPC = OLPC Mesh device operations, CORE = core daemon operations, DEVICE =
-activation and general interface operations.
+itself, logging is disabled.
+.PP
+.RS
+HW = Hardware related operations
+.br
+RFKILL = RFKill subsystem operations
+.br
+ETHER = Ethernet device operations
+.br
+WIFI = Wi-Fi device operations
+.br
+BT = Bluetooth
+.br
+MB = Mobile Broadband
+.br
+DHCP4 = DHCP for IPv4
+.br
+DHCP6 = DHCP for IPv6
+.br
+PPP = Point-to-point protocol operations
+.br
+WIFI_SCAN = Wi-Fi scanning operations
+.br
+IP4 = Domain for IPv4 logging
+.br
+IP6 = Domain for IPv6 logging
+.br
+AUTOIP4 = AutoIP (avahi) operations
+.br
+DNS = Domain Name System related operations
+.br
+VPN = Virtual Private Network connections and operaions
+.br
+SHARING = Connection sharing
+.br
+SUPPLICANT = WPA supplicant related operations
+.br
+AGENTS = Secret agents operations and communication
+.br
+SETTINGS = Settings/config service operations
+.br
+SUSPEND = Suspend/resume
+.br
+CORE = Core daemon operations
+.br
+DEVICE = Activation and general interface operations
+.br
+OLPC = OLPC Mesh device operations
+.br
+WIMAX = Wimax device operations
+.br
 .SH "SEE ALSO"
 .BR http://live.gnome.org/NetworkManager/SystemSettings
 .sp
 .BR NetworkManager (8),
-.BR nm\-tool (1).
+.BR nmcli (1),
+.BR nm\-tool (1),
+.BR nm\-online (1).

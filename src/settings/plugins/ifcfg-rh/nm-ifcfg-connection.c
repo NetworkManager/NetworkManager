@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 - 2010 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -181,7 +181,7 @@ nm_ifcfg_connection_get_unmanaged_spec (NMIfcfgConnection *self)
 static void
 commit_changes (NMSettingsConnection *connection,
                 NMSettingsConnectionCommitFunc callback,
-	            gpointer user_data)
+                gpointer user_data)
 {
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (connection);
 	GError *error = NULL;
@@ -208,9 +208,12 @@ commit_changes (NMSettingsConnection *connection,
 		                                NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS);
 		g_object_unref (reread);
 
-		/* Don't bother writing anything out if nothing really changed */
-		if (same == TRUE)
+		/* Don't bother writing anything out if in-memory and on-disk data are the same */
+		if (same) {
+			/* But chain up to parent to handle success - emits updated signal */
+			NM_SETTINGS_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->commit_changes (connection, callback, user_data);
 			return;
+		}
 	}
 
 	if (writer_update_connection (NM_CONNECTION (connection),
@@ -227,7 +230,7 @@ commit_changes (NMSettingsConnection *connection,
 	}
 }
 
-static void 
+static void
 do_delete (NMSettingsConnection *connection,
 	       NMSettingsConnectionDeleteFunc callback,
 	       gpointer user_data)

@@ -39,9 +39,7 @@
 #include <nm-device-wifi.h>
 #include <nm-device-modem.h>
 #include <nm-device-bt.h>
-#if WITH_WIMAX
 #include <nm-device-wimax.h>
-#endif
 #include <nm-utils.h>
 #include <nm-setting-ip4-config.h>
 #include <nm-setting-ip6-config.h>
@@ -198,7 +196,6 @@ detail_access_point (gpointer data, gpointer user_data)
 	g_free (tmp);
 }
 
-#if WITH_WIMAX
 static const char *
 wimax_network_type_to_str (NMWimaxNspNetworkType type)
 {
@@ -238,7 +235,6 @@ detail_nsp (gpointer data, gpointer user_data)
 	g_free (label);
 	g_free (data_str);
 }
-#endif
 
 static gchar *
 ip4_address_as_string (guint32 ip)
@@ -370,10 +366,8 @@ detail_device (gpointer data, gpointer user_data)
 			print_string ("Type", "Mobile Broadband (unknown)");
 	} else if (NM_IS_DEVICE_BT (device))
 		print_string ("Type", "Bluetooth");
-#if WITH_WIMAX
 	else if (NM_IS_DEVICE_WIMAX (device))
 		print_string ("Type", "WiMAX");
-#endif
 
 	print_string ("Driver", nm_device_get_driver (device) ? nm_device_get_driver (device) : "(unknown)");
 
@@ -390,10 +384,8 @@ detail_device (gpointer data, gpointer user_data)
 		tmp = g_strdup (nm_device_ethernet_get_hw_address (NM_DEVICE_ETHERNET (device)));
 	else if (NM_IS_DEVICE_WIFI (device))
 		tmp = g_strdup (nm_device_wifi_get_hw_address (NM_DEVICE_WIFI (device)));
-#if WITH_WIMAX
 	else if (NM_IS_DEVICE_WIMAX (device))
 		tmp = g_strdup (nm_device_wimax_get_hw_address (NM_DEVICE_WIMAX (device)));
-#endif
 
 	if (tmp) {
 		print_string ("HW Address", tmp);
@@ -459,7 +451,6 @@ detail_device (gpointer data, gpointer user_data)
 			print_string ("  Carrier", "on");
 		else
 			print_string ("  Carrier", "off");
-#if WITH_WIMAX
 	} else if (NM_IS_DEVICE_WIMAX (device)) {
 		NMDeviceWimax *wimax = NM_DEVICE_WIMAX (device);
 		NMWimaxNsp *active_nsp = NULL;
@@ -520,7 +511,6 @@ detail_device (gpointer data, gpointer user_data)
 		nsps = nm_device_wimax_get_nsps (NM_DEVICE_WIMAX (device));
 		if (nsps && nsps->len)
 			g_ptr_array_foreach ((GPtrArray *) nsps, detail_nsp, (gpointer) active_name);
-#endif
 	}
 
 	/* IP Setup info */
