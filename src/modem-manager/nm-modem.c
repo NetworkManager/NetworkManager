@@ -86,6 +86,17 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
+static void
+update_mm_enabled (NMModem *self, gboolean new_enabled)
+{
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
+
+	if (priv->mm_enabled != new_enabled) {
+		priv->mm_enabled = new_enabled;
+		g_object_notify (G_OBJECT (self), NM_MODEM_ENABLED);
+	}
+}
+
 gboolean
 nm_modem_get_mm_enabled (NMModem *self)
 {
@@ -822,8 +833,7 @@ get_mm_enabled_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_d
 	}
 
 	if (G_VALUE_HOLDS_BOOLEAN (&value)) {
-		NM_MODEM_GET_PRIVATE (self)->mm_enabled = g_value_get_boolean (&value);
-		g_object_notify (G_OBJECT (self), NM_MODEM_ENABLED);
+		update_mm_enabled (self, g_value_get_boolean (&value));
 	} else
 		nm_log_warn (LOGD_MB, "failed get modem enabled state: unexpected reply type");
 
@@ -880,6 +890,9 @@ nm_modem_set_mm_enabled (NMModem *self, gboolean enabled)
 		                         self, NULL,
 		                         G_TYPE_BOOLEAN, enabled,
 		                         G_TYPE_INVALID);
+		/* If we are disabling the modem, stop saying that it's enabled. */
+		if (!enabled)
+			update_mm_enabled (self, enabled);
 	}
 }
 
@@ -898,8 +911,7 @@ modem_properties_changed (DBusGProxy *proxy,
 
 	value = g_hash_table_lookup (props, "Enabled");
 	if (value && G_VALUE_HOLDS_BOOLEAN (value)) {
-		priv->mm_enabled = g_value_get_boolean (value);
-		g_object_notify (G_OBJECT (self), NM_MODEM_ENABLED);
+		update_mm_enabled (self, g_value_get_boolean (value));
 	}
 
 	value = g_hash_table_lookup (props, "IpMethod");
