@@ -221,7 +221,7 @@ AC_TRY_COMPILE([#ifndef __user
                [ac_have_iwevgenie=no])
 AC_MSG_RESULT($ac_have_iwevgenie)
 if test "$ac_have_iwevgenie" = no; then
-	AC_MSG_ERROR(wireless-tools library and development headers >= 28pre9 not installed or not functional)
+	AC_MSG_ERROR(wireless-tools or libiw development headers >= 28pre9 not installed or not functional)
 fi
 
 dnl
