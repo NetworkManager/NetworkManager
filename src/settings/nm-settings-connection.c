@@ -84,15 +84,27 @@ typedef struct {
 
 	NMDBusManager *dbus_mgr;
 	NMAgentManager *agent_mgr;
-
-	GSList *pending_auths; /* List of pending authentication requests */
-	NMConnection *secrets;
-	gboolean visible; /* Is this connection is visible by some session? */
-
-	GSList *reqs;  /* in-progress secrets requests */
-
 	NMSessionMonitor *session_monitor;
 	guint session_changed_id;
+
+	GSList *pending_auths; /* List of pending authentication requests */
+	gboolean visible; /* Is this connection is visible by some session? */
+	GSList *reqs;  /* in-progress secrets requests */
+
+	/* Caches secrets from on-disk connections; were they not cached any
+	 * call to nm_connection_clear_secrets() wipes them out and we'd have
+	 * to re-read them from disk which defeats the purpose of having the
+	 * connection in-memory at all.
+	 */
+	NMConnection *system_secrets;
+
+	/* Caches secrets from agents during the activation process; if new system
+	 * secrets are returned from an agent, they get written out to disk,
+	 * triggering a re-read of the connection, which reads only system
+	 * secrets, and would wipe out any agent-owned or not-saved secrets the
+	 * agent also returned.
+	 */
+	NMConnection *agent_secrets;
 
 	guint64 timestamp;   /* Up-to-date timestamp of connection use */
 	GHashTable *seen_bssids; /* Up-to-date BSSIDs that's been seen for the connection */
@@ -294,57 +306,67 @@ nm_settings_connection_check_permission (NMSettingsConnection *self,
 
 /**************************************************************/
 
-static void
-only_system_secrets_cb (NMSetting *setting,
-                        const char *key,
-                        const GValue *value,
-                        GParamFlags flags,
-                        gpointer user_data)
+static gboolean
+secrets_filter_cb (NMSetting *setting,
+                   const char *secret,
+                   NMSettingSecretFlags flags,
+                   gpointer user_data)
 {
-	if (flags & NM_SETTING_PARAM_SECRET) {
-		NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
+	NMSettingSecretFlags filter_flags = GPOINTER_TO_UINT (user_data);
 
-		/* VPNs are special; need to handle each secret separately */
-		if (NM_IS_SETTING_VPN (setting) && !strcmp (key, NM_SETTING_VPN_SECRETS)) {
-			GHashTableIter iter;
-			const char *secret_name = NULL;
+	/* Returns TRUE to remove the secret */
 
-			g_hash_table_iter_init (&iter, (GHashTable *) g_value_get_boxed (value));
-			while (g_hash_table_iter_next (&iter, (gpointer *) &secret_name, NULL)) {
-				secret_flags = NM_SETTING_SECRET_FLAG_NONE;
-				nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL);
-				if (secret_flags != NM_SETTING_SECRET_FLAG_NONE)
-					nm_setting_vpn_remove_secret (NM_SETTING_VPN (setting), secret_name);
-			}
-		} else {
-			nm_setting_get_secret_flags (setting, key, &secret_flags, NULL);
-			if (secret_flags != NM_SETTING_SECRET_FLAG_NONE)
-				g_object_set (G_OBJECT (setting), key, NULL, NULL);
-		}
-	}
+	/* Can't use bitops with SECRET_FLAG_NONE so handle that specifically */
+	if (   (flags == NM_SETTING_SECRET_FLAG_NONE)
+	    && (filter_flags == NM_SETTING_SECRET_FLAG_NONE))
+		return FALSE;
+
+	/* Otherwise if the secret has at least one of the desired flags keep it */
+	return (flags & filter_flags) ? FALSE : TRUE;
 }
 
 static void
-update_secrets_cache (NMSettingsConnection *self)
+update_system_secrets_cache (NMSettingsConnection *self)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
-	if (priv->secrets)
-		g_object_unref (priv->secrets);
-	priv->secrets = nm_connection_duplicate (NM_CONNECTION (self));
+	if (priv->system_secrets)
+		g_object_unref (priv->system_secrets);
+	priv->system_secrets = nm_connection_duplicate (NM_CONNECTION (self));
 
 	/* Clear out non-system-owned and not-saved secrets */
-	nm_connection_for_each_setting_value (priv->secrets, only_system_secrets_cb, NULL);
+	nm_connection_clear_secrets_with_flags (priv->system_secrets,
+	                                        secrets_filter_cb,
+	                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_NONE));
 }
 
-static gboolean
-clear_system_secrets (GHashTableIter *iter,
-                      NMSettingSecretFlags flags,
-                      gpointer user_data)
+static void
+update_agent_secrets_cache (NMSettingsConnection *self, NMConnection *new)
 {
-	if (flags == NM_SETTING_SECRET_FLAG_NONE)
-		g_hash_table_iter_remove (iter);
-	return TRUE;
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+	NMSettingSecretFlags filter_flags = NM_SETTING_SECRET_FLAG_NOT_SAVED | NM_SETTING_SECRET_FLAG_AGENT_OWNED;
+
+	if (priv->agent_secrets)
+		g_object_unref (priv->agent_secrets);
+	priv->agent_secrets = nm_connection_duplicate (new ? new : NM_CONNECTION (self));
+
+	/* Clear out non-system-owned secrets */
+	nm_connection_clear_secrets_with_flags (priv->agent_secrets,
+	                                        secrets_filter_cb,
+	                                        GUINT_TO_POINTER (filter_flags));
+}
+
+static void
+secrets_cleared_cb (NMSettingsConnection *self)
+{
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+
+	/* Clear agent secrets when connection's secrets are cleared since agent
+	 * secrets are transient.
+	 */
+	if (priv->agent_secrets)
+		g_object_unref (priv->agent_secrets);
+	priv->agent_secrets = NULL;
 }
 
 /* Update the settings of this connection to match that of 'new', taking care to
@@ -356,7 +378,7 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
                                          GError **error)
 {
 	NMSettingsConnectionPrivate *priv;
-	GHashTable *new_settings, *transient_secrets;
+	GHashTable *new_settings, *hash = NULL;
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (self != NULL, FALSE);
@@ -366,37 +388,29 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 
 	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
-	/* Replacing the settings might replace transient secrets, such as when
-	 * a user agent returns secrets, which might trigger the connection to be
-	 * written out, which triggers an inotify event to re-read and update the
-	 * connection, which, if we're not careful, could wipe out the transient
-	 * secrets the user agent just sent us.  Basically, only
-	 * nm_connection_clear_secrets() should wipe out transient secrets but
-	 * re-reading a connection from on-disk and updating our in-memory copy
-	 * should not.  Thus we preserve non-system-owned secrets here.
-	 */
-	transient_secrets = nm_connection_to_hash (NM_CONNECTION (self), NM_SETTING_HASH_FLAG_ONLY_SECRETS);
-	if (transient_secrets)
-		for_each_secret (NM_CONNECTION (self), transient_secrets, clear_system_secrets, NULL);
-
 	new_settings = nm_connection_to_hash (new, NM_SETTING_HASH_FLAG_ALL);
 	g_assert (new_settings);
 	if (nm_connection_replace_settings (NM_CONNECTION (self), new_settings, error)) {
-		/* Copy the connection to keep its secrets around even if NM
-		 * calls nm_connection_clear_secrets().
+		/* Cache the just-updated system secrets in case something calls
+		 * nm_connection_clear_secrets() and clears them.
 		 */
-		update_secrets_cache (self);
+		update_system_secrets_cache (self);
+		success = TRUE;
 
-		/* And add the transient secrets back */
-		if (transient_secrets)
-			nm_connection_update_secrets (NM_CONNECTION (self), NULL, transient_secrets, NULL);
+		/* Add agent and always-ask secrets back; they won't necessarily be
+		 * in the replacement connection data if it was eg reread from disk.
+		 */
+		if (priv->agent_secrets) {
+			hash = nm_connection_to_hash (priv->agent_secrets, NM_SETTING_HASH_FLAG_ONLY_SECRETS);
+			if (hash) {
+				success = nm_connection_update_secrets (NM_CONNECTION (self), NULL, hash, error);
+				g_hash_table_destroy (hash);
+			}
+		}
 
 		nm_settings_connection_recheck_visibility (self);
-		success = TRUE;
 	}
 	g_hash_table_destroy (new_settings);
-	if (transient_secrets)
-		g_hash_table_destroy (transient_secrets);
 	return success;
 }
 
@@ -719,7 +733,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 
 	/* Update the connection with our existing secrets from backing storage */
 	nm_connection_clear_secrets (NM_CONNECTION (self));
-	hash = nm_connection_to_hash (priv->secrets, NM_SETTING_HASH_FLAG_ONLY_SECRETS);
+	hash = nm_connection_to_hash (priv->system_secrets, NM_SETTING_HASH_FLAG_ONLY_SECRETS);
 	if (!hash || nm_connection_update_secrets (NM_CONNECTION (self), setting_name, hash, &local)) {
 		/* Update the connection with the agent's secrets; by this point if any
 		 * system-owned secrets exist in 'secrets' the agent that provided them
@@ -730,7 +744,8 @@ agent_secrets_done_cb (NMAgentManager *manager,
 			/* Now that all secrets are updated, copy and cache new secrets, 
 			 * then save them to backing storage.
 			 */
-			update_secrets_cache (self);
+			update_system_secrets_cache (self);
+			update_agent_secrets_cache (self, NULL);
 
 			/* Only save secrets to backing storage if the agent returned any
 			 * new system secrets.  If it didn't, then the secrets are agent-
@@ -807,11 +822,9 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	guint32 call_id = 0;
 
 	/* Use priv->secrets to work around the fact that nm_connection_clear_secrets()
-	 * will clear secrets on this object's settings.  priv->secrets should be
-	 * a complete copy of this object and kept in sync by
-	 * nm_settings_connection_replace_settings().
+	 * will clear secrets on this object's settings.
 	 */
-	if (!priv->secrets) {
+	if (!priv->system_secrets) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "%s.%d - Internal error; secrets cache invalid.",
 		             __FILE__, __LINE__);
@@ -826,7 +839,7 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 		return 0;
 	}
 
-	existing_secrets = nm_connection_to_hash (priv->secrets, NM_SETTING_HASH_FLAG_ONLY_SECRETS);
+	existing_secrets = nm_connection_to_hash (priv->system_secrets, NM_SETTING_HASH_FLAG_ONLY_SECRETS);
 	call_id = nm_agent_manager_get_secrets (priv->agent_mgr,
 	                                        NM_CONNECTION (self),
 	                                        filter_by_uid,
@@ -1084,47 +1097,40 @@ impl_settings_connection_get_settings (NMSettingsConnection *self,
 	auth_start (self, context, NULL, get_settings_auth_cb, NULL);
 }
 
+typedef struct {
+	DBusGMethodInvocation *context;
+	NMAgentManager *agent_mgr;
+	gulong sender_uid;
+} UpdateInfo;
+
 static void
-con_update_cb (NMSettingsConnection *connection,
+con_update_cb (NMSettingsConnection *self,
                GError *error,
                gpointer user_data)
 {
-	DBusGMethodInvocation *context = user_data;
+	UpdateInfo *info = user_data;
+	NMConnection *for_agent;
 
 	if (error)
-		dbus_g_method_return_error (context, error);
-	else
-		dbus_g_method_return (context);
-}
+		dbus_g_method_return_error (info->context, error);
+	else {
+		/* Dupe the connection so we can clear out non-agent-owned secrets,
+		 * as agent-owned secrets are the only ones we send back be saved.
+		 * Only send secrets to agents of the same UID that called update too.
+		 */
+		for_agent = nm_connection_duplicate (NM_CONNECTION (self));
+		nm_connection_clear_secrets_with_flags (for_agent,
+		                                        secrets_filter_cb,
+		                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
+		nm_agent_manager_save_secrets (info->agent_mgr, for_agent, TRUE, info->sender_uid);
+		g_object_unref (for_agent);
 
-static void
-secrets_filter_cb (NMSetting *setting,
-                   const char *key,
-                   const GValue *value,
-                   GParamFlags flags,
-                   gpointer user_data)
-{
-	NMSettingSecretFlags filter_flags = GPOINTER_TO_UINT (user_data);
-	NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
-	const char *secret_name = NULL;
-	GHashTableIter iter;
-
-	if (flags & NM_SETTING_PARAM_SECRET) {
-		if (NM_IS_SETTING_VPN (setting) && !strcmp (key, NM_SETTING_VPN_SECRETS)) {
-			/* VPNs are special; need to handle each secret separately */
-			g_hash_table_iter_init (&iter, (GHashTable *) g_value_get_boxed (value));
-			while (g_hash_table_iter_next (&iter, (gpointer) &secret_name, NULL)) {
-				secret_flags = NM_SETTING_SECRET_FLAG_NONE;
-				nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL);
-				if (!(secret_flags & filter_flags))
-					nm_setting_vpn_remove_secret (NM_SETTING_VPN (setting), secret_name);
-			}
-		} else {
-			nm_setting_get_secret_flags (setting, key, &secret_flags, NULL);
-			if (!(secret_flags & filter_flags))
-				g_object_set (G_OBJECT (setting), key, NULL, NULL);
-		}
+		dbus_g_method_return (info->context);
 	}
+
+	g_object_unref (info->agent_mgr);
+	memset (info, 0, sizeof (*info));
+	g_free (info);
 }
 
 static void
@@ -1136,54 +1142,27 @@ update_auth_cb (NMSettingsConnection *self,
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	NMConnection *new_settings = data;
-	NMConnection *for_agent, *dup;
-	NMSettingSecretFlags filter_flags;
-	GHashTable *hash;
-	GError *local = NULL;
+	UpdateInfo *info;
 
 	if (error)
 		dbus_g_method_return_error (context, error);
 	else {
-		/* Cache the new secrets since they may get overwritten by the replace
-		 * when transient secrets are copied back.
+		info = g_malloc0 (sizeof (*info));
+		info->context = context;
+		info->agent_mgr = g_object_ref (priv->agent_mgr);
+		info->sender_uid = sender_uid;
+
+		/* Cache the new secrets from the agent, as stuff like inotify-triggered
+		 * changes to connection's backing config files will blow them away if
+		 * they're in the main connection.
 		 */
-		dup = nm_connection_duplicate (new_settings);
+		update_agent_secrets_cache (self, new_settings);
 
 		/* Update and commit our settings. */
 		nm_settings_connection_replace_and_commit (self,
-		                                           new_settings,
-		                                           con_update_cb,
-		                                           context);
-
-		/* Copy new agent secrets back to the connection */
-		filter_flags = NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED;
-		nm_connection_for_each_setting_value (dup,
-		                                      secrets_filter_cb,
-		                                      GUINT_TO_POINTER (filter_flags));
-		hash = nm_connection_to_hash (dup, NM_SETTING_HASH_FLAG_ONLY_SECRETS);
-		g_object_unref (dup);
-
-		if (hash) {
-			if (!nm_connection_update_secrets (NM_CONNECTION (self), NULL, hash, &local)) {
-				nm_log_warn (LOGD_SETTINGS, "Failed to update connection secrets: (%d) %s",
-				             local ? local->code : -1,
-				             local && local->message ? local->message : "(unknown)");
-				g_clear_error (&local);
-			}
-			g_hash_table_destroy (hash);
-		}
-
-		/* Dupe the connection and clear out non-agent-owned secrets so we can
-		 * send the agent-owned ones to agents to be saved.  Only send them to
-		 * agents of the same UID as the Update() request sender.
-		 */
-		for_agent = nm_connection_duplicate (NM_CONNECTION (self));
-		filter_flags = NM_SETTING_SECRET_FLAG_AGENT_OWNED;
-		nm_connection_for_each_setting_value (for_agent,
-		                                      secrets_filter_cb,
-		                                      GUINT_TO_POINTER (filter_flags));
-		nm_agent_manager_save_secrets (priv->agent_mgr, for_agent, TRUE, sender_uid);
-		g_object_unref (for_agent);
+			                                       new_settings,
+			                                       con_update_cb,
+			                                       info);
 	}
 
 	g_object_unref (new_settings);
@@ -1345,16 +1324,11 @@ dbus_get_agent_secrets_cb (NMSettingsConnection *self,
 	if (error)
 		dbus_g_method_return_error (context, error);
 	else {
-		/* The connection's secrets will have been updated by the agent manager,
-		 * so we want to refresh the secrets cache.  Note that we will never save
-		 * new secrets to backing storage here because D-Bus initated requests will
-		 * never ask for completely new secrets from agents.  Thus system-owned
-		 * secrets should not have changed from backing storage.  We also don't
-		 * send agent-owned secrets back out to be saved since we assume the agent
-		 * that provided the secrets saved them itself.
+		/* Return secrets from agent and backing storage to the D-Bus caller;
+		 * nm_settings_connection_get_secrets() will have updated itself with
+		 * secrets from backing storage and those returned from the agent
+		 * by the time we get here.
 		 */
-		update_secrets_cache (self);
-
 		hash = nm_connection_to_hash (NM_CONNECTION (self), NM_SETTING_HASH_FLAG_ONLY_SECRETS);
 		if (!hash)
 			hash = g_hash_table_new (NULL, NULL);
@@ -1726,6 +1700,8 @@ nm_settings_connection_init (NMSettingsConnection *self)
 	priv->agent_mgr = nm_agent_manager_get ();
 
 	priv->seen_bssids = g_hash_table_new_full (mac_hash, mac_equal, g_free, g_free);
+
+	g_signal_connect (self, "secrets-cleared", G_CALLBACK (secrets_cleared_cb), NULL);
 }
 
 static void
@@ -1739,8 +1715,10 @@ dispose (GObject *object)
 		goto out;
 	priv->disposed = TRUE;
 
-	if (priv->secrets)
-		g_object_unref (priv->secrets);
+	if (priv->system_secrets)
+		g_object_unref (priv->system_secrets);
+	if (priv->agent_secrets)
+		g_object_unref (priv->agent_secrets);
 
 	/* Cancel PolicyKit requests */
 	for (iter = priv->pending_auths; iter; iter = g_slist_next (iter))

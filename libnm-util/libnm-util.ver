@@ -2,6 +2,7 @@
 global:
 	nm_connection_add_setting;
 	nm_connection_clear_secrets;
+	nm_connection_clear_secrets_with_flags;
 	nm_connection_compare;
 	nm_connection_create_setting;
 	nm_connection_diff;
@@ -174,6 +175,7 @@ global:
 	nm_setting_cdma_get_username;
 	nm_setting_cdma_new;
 	nm_setting_clear_secrets;
+	nm_setting_clear_secrets_with_flags;
 	nm_setting_compare;
 	nm_setting_connection_add_permission;
 	nm_setting_connection_error_get_type;

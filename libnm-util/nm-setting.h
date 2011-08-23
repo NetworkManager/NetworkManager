@@ -150,6 +150,21 @@ typedef struct {
 	GObject parent;
 } NMSetting;
 
+
+/**
+ * NMSettingClearSecretsWithFlagsFn:
+ * @setting: The setting for which secrets are being iterated
+ * @secret: The secret's name
+ * @flags: The secret's flags, eg %NM_SETTING_SECRET_FLAG_AGENT_OWNED
+ * @user_data: User data passed to nm_connection_clear_secrets_with_flags()
+ *
+ * Returns: %TRUE to clear the secret, %FALSE to not clear the secret
+ */
+typedef gboolean (*NMSettingClearSecretsWithFlagsFn) (NMSetting *setting,
+                                                      const char *secret,
+                                                      NMSettingSecretFlags flags,
+                                                      gpointer user_data);
+
 typedef struct {
 	GObjectClass parent;
 
@@ -183,10 +198,14 @@ typedef struct {
 	                                  const GParamSpec *prop_spec,
 	                                  NMSettingCompareFlags flags);
 
+	void        (*clear_secrets_with_flags) (NMSetting *setting,
+	                                         GParamSpec *pspec,
+	                                         NMSettingClearSecretsWithFlagsFn func,
+	                                         gpointer user_data);
+
 	/* Padding for future expansion */
 	void (*_reserved1) (void);
 	void (*_reserved2) (void);
-	void (*_reserved3) (void);
 } NMSettingClass;
 
 /**
@@ -269,6 +288,11 @@ char       *nm_setting_to_string      (NMSetting *setting);
 
 /* Secrets */
 void        nm_setting_clear_secrets  (NMSetting *setting);
+
+void        nm_setting_clear_secrets_with_flags (NMSetting *setting,
+                                                 NMSettingClearSecretsWithFlagsFn func,
+                                                 gpointer user_data);
+
 GPtrArray  *nm_setting_need_secrets   (NMSetting *setting);
 gboolean    nm_setting_update_secrets (NMSetting *setting,
                                        GHashTable *secrets,

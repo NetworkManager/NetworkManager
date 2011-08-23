@@ -648,6 +648,60 @@ nm_setting_clear_secrets (NMSetting *setting)
 	g_free (property_specs);
 }
 
+static void
+clear_secrets_with_flags (NMSetting *setting,
+	                      GParamSpec *pspec,
+	                      NMSettingClearSecretsWithFlagsFn func,
+	                      gpointer user_data)
+{
+	GValue value = { 0 };
+	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
+
+	/* Clear the secret if the user function says to do so */
+	nm_setting_get_secret_flags (setting, pspec->name, &flags, NULL);
+	if (func (setting, pspec->name, flags, user_data) == TRUE) {
+		g_value_init (&value, pspec->value_type);
+		g_param_value_set_default (pspec, &value);
+		g_object_set_property (G_OBJECT (setting), pspec->name, &value);
+		g_value_unset (&value);
+	}
+}
+
+/**
+ * nm_setting_clear_secrets_with_flags:
+ * @setting: the #NMSetting
+ * @func: function to be called to determine whether a specific secret should be
+ *  cleared or not
+ * @user_data: caller-supplied data passed to @func
+ *
+ * Clears and frees secrets determined by @func.
+ **/
+void
+nm_setting_clear_secrets_with_flags (NMSetting *setting,
+                                     NMSettingClearSecretsWithFlagsFn func,
+                                     gpointer user_data)
+{
+	GParamSpec **property_specs;
+	guint n_property_specs;
+	guint i;
+
+	g_return_if_fail (setting);
+	g_return_if_fail (NM_IS_SETTING (setting));
+	g_return_if_fail (func != NULL);
+
+	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (setting), &n_property_specs);
+	for (i = 0; i < n_property_specs; i++) {
+		if (property_specs[i]->flags & NM_SETTING_PARAM_SECRET) {
+			NM_SETTING_GET_CLASS (setting)->clear_secrets_with_flags (setting,
+			                                                          property_specs[i],
+			                                                          func,
+			                                                          user_data);
+		}
+	}
+
+	g_free (property_specs);
+}
+
 /**
  * nm_setting_need_secrets:
  * @setting: the #NMSetting
@@ -1029,6 +1083,7 @@ nm_setting_class_init (NMSettingClass *setting_class)
 	setting_class->get_secret_flags = get_secret_flags;
 	setting_class->set_secret_flags = set_secret_flags;
 	setting_class->compare_property = compare_property;
+	setting_class->clear_secrets_with_flags = clear_secrets_with_flags;
 
 	/* Properties */
 
