@@ -74,7 +74,7 @@
  * @NM_STATE_CONNECTED_GLOBAL: there is global IPv4 and/or IPv6 Internet connectivity
  *
  * #NMState values indicate the current overall networking state.
- */
+ **/
 typedef enum {
 	NM_STATE_UNKNOWN          = 0,
 	NM_STATE_ASLEEP           = 10,
@@ -103,7 +103,7 @@ typedef enum {
  * GSM/UMTS, or LTE network access protocols
  *
  * #NMState values indicate the current overall networking state.
- */
+ **/
 typedef enum {
 	NM_DEVICE_TYPE_UNKNOWN   = 0,
 	NM_DEVICE_TYPE_ETHERNET  = 1,
@@ -116,16 +116,36 @@ typedef enum {
 	NM_DEVICE_TYPE_MODEM     = 8,
 } NMDeviceType;
 
-/* General device capability flags */
+/**
+ * NMDeviceCapabilities:
+ * @NM_DEVICE_CAP_NONE: device has no special capabilities
+ * @NM_DEVICE_CAP_NM_SUPPORTED: NetworkManager supports this device
+ * @NM_DEVICE_CAP_CARRIER_DETECT: this device can indicate carrier status
+ *
+ * General device capability flags.
+ **/
 typedef enum {
+	/*< flags >*/
 	NM_DEVICE_CAP_NONE           = 0x00000000,
 	NM_DEVICE_CAP_NM_SUPPORTED   = 0x00000001,
 	NM_DEVICE_CAP_CARRIER_DETECT = 0x00000002
 } NMDeviceCapabilities;
 
 
-/* 802.11 Wifi device capabilities */
+/**
+ * NMDeviceWifiCapabilities:
+ * @NM_WIFI_DEVICE_CAP_NONE: device has no encryption/authentication capabilities
+ * @NM_WIFI_DEVICE_CAP_CIPHER_WEP40: device supports 40/64-bit WEP encryption
+ * @NM_WIFI_DEVICE_CAP_CIPHER_WEP104: device supports 104/128-bit WEP encryption
+ * @NM_WIFI_DEVICE_CAP_CIPHER_TKIP: device supports TKIP encryption
+ * @NM_WIFI_DEVICE_CAP_CIPHER_CCMP: device supports AES/CCMP encryption
+ * @NM_WIFI_DEVICE_CAP_WPA: device supports WPA1 authentication
+ * @NM_WIFI_DEVICE_CAP_RSN: device supports WPA2/RSN authentication
+ *
+ * 802.11 specific device encryption and authentication capabilities.
+ **/
 typedef enum {
+	/*< flags >*/
 	NM_WIFI_DEVICE_CAP_NONE          = 0x00000000,
 	NM_WIFI_DEVICE_CAP_CIPHER_WEP40  = 0x00000001,
 	NM_WIFI_DEVICE_CAP_CIPHER_WEP104 = 0x00000002,
@@ -136,20 +156,45 @@ typedef enum {
 } NMDeviceWifiCapabilities;
 
 
-/* 802.11 Access Point flags */
+/**
+ * NM80211ApFlags:
+ * @NM_802_11_AP_FLAGS_NONE: access point has no special capabilities
+ * @NM_802_11_AP_FLAGS_PRIVACY: access point requires authentication and
+ * encryption (usually means WEP)
+ *
+ * 802.11 access point flags. 
+ **/
 typedef enum {
 	/*< flags >*/
 	NM_802_11_AP_FLAGS_NONE    = 0x00000000,
 	NM_802_11_AP_FLAGS_PRIVACY = 0x00000001
 } NM80211ApFlags;
 
-/*
- * 802.11 Access Point security flags
+/**
+ * NM80211ApSecurityFlags:
+ * @NM_802_11_AP_SEC_NONE: the access point has no special security requirements
+ * @NM_802_11_AP_SEC_PAIR_WEP40: 40/64-bit WEP is supported for
+ * pairwise/unicast encryption
+ * @NM_802_11_AP_SEC_PAIR_WEP104: 104/128-bit WEP is supported for
+ * pairwise/unicast encryption
+ * @NM_802_11_AP_SEC_PAIR_TKIP: TKIP is supported for pairwise/unicast encryption
+ * @NM_802_11_AP_SEC_PAIR_CCMP: AES/CCMP is supported for pairwise/unicast encryption
+ * @NM_802_11_AP_SEC_GROUP_WEP40: 40/64-bit WEP is supported for group/broadcast
+ * encryption
+ * @NM_802_11_AP_SEC_GROUP_WEP104: 104/128-bit WEP is supported for
+ * group/broadcast encryption
+ * @NM_802_11_AP_SEC_GROUP_TKIP: TKIP is supported for group/broadcast encryption
+ * @NM_802_11_AP_SEC_GROUP_CCMP: AES/CCMP is supported for group/broadcast
+ * encryption
+ * @NM_802_11_AP_SEC_KEY_MGMT_PSK: WPA/RSN Pre-Shared Key encryption is 
+ * supported
+ * @NM_802_11_AP_SEC_KEY_MGMT_802_1X: 802.1x authentication and key management
+ * is supported
  *
- * These describe the current security requirements of the BSSID as extracted
- * from various pieces of beacon information, like beacon flags and various
- * information elements.
- */
+ * 802.11 access point security and authentication flags.  These flags describe
+ * the current security requirements of an access point as determined from the
+ * access point's beacon.
+ **/
 typedef enum {
 	/*< flags >*/
 	NM_802_11_AP_SEC_NONE            = 0x00000000,
@@ -165,10 +210,14 @@ typedef enum {
 	NM_802_11_AP_SEC_KEY_MGMT_802_1X = 0x00000200
 } NM80211ApSecurityFlags;
 
-/*
- * 802.11 AP and Station modes
+/**
+ * NM80211Mode:
+ * @NM_802_11_MODE_UNKNOWN: the device or access point mode is unknown
+ * @NM_802_11_MODE_ADHOC: the device or access point is in Ad-Hoc mode
+ * @NM_802_11_MODE_INFRA: the device or access point is in infrastructure mode
  *
- */
+ * Indicates the 802.11 mode an access point or device is currently in.
+ **/
 typedef enum {
 	NM_802_11_MODE_UNKNOWN = 0,
 	NM_802_11_MODE_ADHOC,
@@ -183,7 +232,7 @@ typedef enum {
  *
  * #NMBluetoothCapabilities values indicate the usable capabilities of a
  * Bluetooth device.
- */
+ **/
 typedef enum {
 	/*< flags >*/
 	NM_BT_CAPABILITY_NONE = 0x00000000,
@@ -206,7 +255,7 @@ typedef enum {
  * technology families a modem device supports.  For more information on the
  * specific access technologies the device supports use the ModemManager D-Bus
  * API.
- */
+ **/
 typedef enum {
 	/*< flags >*/
 	NM_DEVICE_MODEM_CAPABILITY_NONE      = 0x00000000,
@@ -428,7 +477,7 @@ typedef enum {
  * #NMActiveConnectionState values indicate the state of a connection to a
  * specific network while it is starting, connected, or disconnecting from that
  * network.
- */
+ **/
 typedef enum {
 	NM_ACTIVE_CONNECTION_STATE_UNKNOWN = 0,
 	NM_ACTIVE_CONNECTION_STATE_ACTIVATING,
