@@ -35,33 +35,31 @@
  * implemented in the backend files in backends/ directory
  */
 
-void			nm_system_device_flush_routes				(NMDevice *dev, int family);
-void			nm_system_device_flush_routes_with_iface	(const char *iface, int family);
+gboolean        nm_system_iface_flush_routes         (int ifindex, int family);
 
-gboolean		nm_system_replace_default_ip4_route   (const char *iface,
+gboolean		nm_system_replace_default_ip4_route   (int ifindex,
                                                        guint32 gw,
                                                        guint32 mss);
 
-gboolean		nm_system_replace_default_ip6_route   (const char *iface,
+gboolean		nm_system_replace_default_ip6_route   (int ifindex,
                                                        const struct in6_addr *gw);
 
-gboolean		nm_system_replace_default_ip4_route_vpn (const char *iface,
+gboolean		nm_system_replace_default_ip4_route_vpn (int ifindex,
                                                          guint32 ext_gw,
                                                          guint32 int_gw,
                                                          guint32 mss,
-                                                         const char *parent_iface,
+                                                         int parent_ifindex,
                                                          guint32 parent_mss);
 
 struct rtnl_route *nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device, NMIP4Config *vpn_config);
 
 
-void			nm_system_device_flush_addresses			(NMDevice *dev, int family);
-void			nm_system_device_flush_addresses_with_iface	(const char *iface);
+gboolean        nm_system_iface_flush_addresses         (int ifindex, int family);
 
 void			nm_system_enable_loopback				(void);
 void			nm_system_update_dns					(void);
 
-gboolean		nm_system_apply_ip4_config              (const char *iface,
+gboolean		nm_system_apply_ip4_config              (int ifindex,
                                                          NMIP4Config *config,
                                                          int priority,
                                                          NMIP4ConfigCompareFlags flags);
@@ -76,22 +74,19 @@ int             nm_system_set_ip6_route                 (int ifindex,
                                                          int table,
                                                          struct rtnl_route **out_route);
 
-gboolean		nm_system_apply_ip6_config              (const char *iface,
+gboolean		nm_system_apply_ip6_config              (int ifindex,
                                                          NMIP6Config *config,
                                                          int priority,
                                                          NMIP6ConfigCompareFlags flags);
 
-gboolean		nm_system_device_set_up_down				(NMDevice *dev,
-                                                             gboolean up,
-                                                             gboolean *no_firmware);
-gboolean		nm_system_device_set_up_down_with_iface		(const char *iface,
-                                                             gboolean up,
-                                                             gboolean *no_firmware);
+gboolean        nm_system_iface_set_up                  (int ifindex,
+                                                         gboolean up,
+                                                         gboolean *no_firmware);
 
-gboolean        nm_system_device_is_up (NMDevice *device);
-gboolean        nm_system_device_is_up_with_iface (const char *iface);
+gboolean        nm_system_iface_is_up                   (int ifindex);
 
-gboolean		nm_system_device_set_mtu (const char *iface, guint32 mtu);
-gboolean		nm_system_device_set_mac (const char *iface, const struct ether_addr *mac);
+gboolean		nm_system_iface_set_mtu                 (int ifindex, guint32 mtu);
+
+gboolean		nm_system_iface_set_mac                 (int ifindex, const struct ether_addr *mac);
 
 #endif

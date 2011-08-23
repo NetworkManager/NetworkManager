@@ -27,6 +27,8 @@
 
 #include "nm-ip6-manager.h"
 #include "nm-netlink-monitor.h"
+#include "nm-netlink-utils.h"
+#include "nm-netlink-compat.h"
 #include "NetworkManagerUtils.h"
 #include "nm-marshal.h"
 #include "nm-logging.h"
@@ -44,7 +46,7 @@ typedef struct {
 	NMNetlinkMonitor *monitor;
 	GHashTable *devices;
 
-	struct nl_handle *nlh;
+	struct nl_sock *nlh;
 	struct nl_cache *addr_cache, *route_cache;
 
 	guint netlink_id;
@@ -553,7 +555,7 @@ process_addr (NMIP6Manager *manager, struct nl_msg *msg)
 	}
 
 	old_size = nl_cache_nitems (priv->addr_cache);
-	nl_cache_include (priv->addr_cache, (struct nl_object *)rtnladdr, NULL);
+	nl_cache_include (priv->addr_cache, (struct nl_object *)rtnladdr, NULL, NULL);
 	rtnl_addr_put (rtnladdr);
 
 	/* The kernel will re-notify us of automatically-added addresses
@@ -593,7 +595,7 @@ process_route (NMIP6Manager *manager, struct nl_msg *msg)
 	}
 
 	old_size = nl_cache_nitems (priv->route_cache);
-	nl_cache_include (priv->route_cache, (struct nl_object *)rtnlroute, NULL);
+	nl_cache_include (priv->route_cache, (struct nl_object *)rtnlroute, NULL, NULL);
 	rtnl_route_put (rtnlroute);
 
 	/* As above in process_addr */
@@ -1248,7 +1250,7 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager, int ifindex)
 		nm_ip6_route_set_dest (ip6route, dest);
 		nm_ip6_route_set_prefix (ip6route, rtnl_route_get_dst_len (rtnlroute));
 		nm_ip6_route_set_next_hop (ip6route, gateway);
-		metric = rtnl_route_get_metric (rtnlroute, 1);
+		rtnl_route_get_metric(rtnlroute, 1, &metric);
 		if (metric != UINT_MAX)
 			nm_ip6_route_set_metric (ip6route, metric);
 		nm_ip6_config_take_route (config, ip6route);
@@ -1344,8 +1346,10 @@ nm_ip6_manager_init (NMIP6Manager *manager)
 	                                     G_CALLBACK (netlink_notification), manager);
 
 	priv->nlh = nm_netlink_get_default_handle ();
-	priv->addr_cache = rtnl_addr_alloc_cache (priv->nlh);
-	priv->route_cache = rtnl_route_alloc_cache (priv->nlh);
+	rtnl_addr_alloc_cache (priv->nlh, &priv->addr_cache);
+	g_warn_if_fail (priv->addr_cache != NULL);
+	rtnl_route_alloc_cache (priv->nlh, NETLINK_ROUTE, NL_AUTO_PROVIDE, &priv->route_cache);
+	g_warn_if_fail (priv->route_cache != NULL);
 }
 
 static void

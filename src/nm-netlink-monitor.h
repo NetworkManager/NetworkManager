@@ -90,10 +90,12 @@ gboolean          nm_netlink_monitor_get_flags_sync   (NMNetlinkMonitor *monitor
                                                        guint32 *ifflags,
                                                        GError **error);
 
+#include "nm-netlink-compat.h"
+
 /* Generic utility functions */
 int               nm_netlink_iface_to_index     (const char *iface);
 char *            nm_netlink_index_to_iface     (int idx);
 struct rtnl_link *nm_netlink_index_to_rtnl_link (int idx);
-struct nl_handle *nm_netlink_get_default_handle (void);
+struct nl_sock *  nm_netlink_get_default_handle (void);
 
 #endif  /* NM_NETLINK_MONITOR_H */

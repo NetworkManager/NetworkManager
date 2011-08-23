@@ -1133,7 +1133,7 @@ out:
 static gboolean
 real_hw_is_up (NMDevice *device)
 {
-	return nm_system_device_is_up (device);
+	return nm_system_iface_is_up (nm_device_get_ip_ifindex (device));
 }
 
 static gboolean
@@ -1142,13 +1142,13 @@ real_hw_bring_up (NMDevice *device, gboolean *no_firmware)
 	if (!NM_DEVICE_WIFI_GET_PRIVATE (device)->enabled)
 		return FALSE;
 
-	return nm_system_device_set_up_down (device, TRUE, no_firmware);
+	return nm_system_iface_set_up (nm_device_get_ip_ifindex (device), TRUE, no_firmware);
 }
 
 static void
-real_hw_take_down (NMDevice *dev)
+real_hw_take_down (NMDevice *device)
 {
-	nm_system_device_set_up_down (dev, FALSE, NULL);
+	nm_system_iface_set_up (nm_device_get_ip_ifindex (device), FALSE, NULL);
 }
 
 static gboolean
@@ -1209,7 +1209,7 @@ _set_hw_addr (NMDeviceWifi *self, const guint8 *addr, const char *detail)
 	/* Can't change MAC address while device is up */
 	real_hw_take_down (dev);
 
-	success = nm_system_device_set_mac (iface, (struct ether_addr *) addr);
+	success = nm_system_iface_set_mac (nm_device_get_ip_ifindex (dev), (struct ether_addr *) addr);
 	if (success) {
 		/* MAC address succesfully changed; update the current MAC to match */
 		_update_hw_addr (self, addr);

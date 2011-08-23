@@ -312,10 +312,43 @@ else
 fi
 AC_DEFINE_UNQUOTED(NO_CONSOLEKIT, $no_ck, [Define to disable use of ConsoleKit])
 
-PKG_CHECK_MODULES(LIBNL, libnl-1 >= 1.0-pre8)
+have_libnl="no"
+PKG_CHECK_MODULES(LIBNL1, libnl-1 >= 1.0-pre8, [have_libnl1=yes], [have_libnl1=no])
+if (test "${have_libnl1}" = "yes"); then
+	AC_DEFINE(HAVE_LIBNL1, 1, [Define if you require libnl-1 legacy support])
+	LIBNL_CFLAGS="$LIBNL1_CFLAGS"
+	LIBNL_LIBS="$LIBNL1_LIBS"
+	libnl_version="1"
+	have_libnl="yes"
+fi
+
+PKG_CHECK_MODULES(LIBNL2, libnl-2.0, [have_libnl2=yes], [have_libnl2=no])
+if (test "${have_libnl2}" = "yes"); then
+	AC_DEFINE(HAVE_LIBNL2, 1, [Define if you require specific libnl-2 support])
+	LIBNL_CFLAGS="$LIBNL2_CFLAGS"
+	LIBNL_LIBS="$LIBNL2_LIBS"
+	libnl_version="2"
+	have_libnl="yes"
+fi
+
+PKG_CHECK_MODULES(LIBNL3, libnl-3.0, [have_libnl2=yes], [have_libnl2=no])
+if (test "${have_libnl2}" = "yes"); then
+	AC_DEFINE(HAVE_LIBNL3, 1, [Define if you require specific libnl-3 support])
+	LIBNL_CFLAGS="$LIBNL3_CFLAGS"
+	LIBNL_LIBS="$LIBNL3_LIBS"
+	libnl_version="3"
+	have_libnl="yes"
+fi
+
+if (test "${have_libnl}" = "no"); then
+	AC_MSG_ERROR([libnl development header are required])
+fi
 AC_SUBST(LIBNL_CFLAGS)
 AC_SUBST(LIBNL_LIBS)
-NM_LIBNL_CHECK
+
+if (test "${libnl_version}" = "1"); then
+	NM_LIBNL_CHECK
+fi
 
 PKG_CHECK_MODULES(UUID, uuid)
 AC_SUBST(UUID_CFLAGS)
@@ -737,6 +770,8 @@ if test "${enable_ppp}" = "yes"; then
 else
 	echo PPP support: no
 fi
+
+echo libnl version: ${libnl_version}
 
 echo
 echo Building documentation: ${with_docs}

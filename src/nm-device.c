@@ -47,6 +47,8 @@
 #include "nm-utils.h"
 #include "nm-logging.h"
 #include "nm-netlink-monitor.h"
+#include "nm-netlink-utils.h"
+#include "nm-netlink-compat.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-setting-connection.h"
@@ -1591,16 +1593,15 @@ real_act_stage3_ip4_config_start (NMDevice *self, NMDeviceStateReason *reason)
 	NMSettingIP4Config *s_ip4;
 	NMActRequest *req;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
-	const char *ip_iface, *method = NULL;
+	const char *method = NULL;
+	int ifindex;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-	/* Use the IP interface (not the control interface) for IP stuff */
-	ip_iface = nm_device_get_ip_iface (self);
-
 	/* Make sure the interface is up before trying to do anything with it */
-	if (!nm_system_device_is_up_with_iface (ip_iface))
-		nm_system_device_set_up_down_with_iface (ip_iface, TRUE, NULL);
+	ifindex = nm_device_get_ip_ifindex (self);
+	if (!nm_system_iface_is_up (ifindex))
+		nm_system_iface_set_up (ifindex, TRUE, NULL);
 
 	req = nm_device_get_act_request (self);
 	connection = nm_act_request_get_connection (req);
@@ -1680,10 +1681,10 @@ dhcp6_start (NMDevice *self,
 	 */
 	err = nm_system_set_ip6_route (priv->ip_iface ? priv->ip_ifindex : priv->ifindex,
 	                               &dest, 8, NULL, 256, 0, RTPROT_BOOT, RT_TABLE_LOCAL, NULL);
-	if (err && (nl_get_errno () != EEXIST)) {
+	if (err && (err != -NLE_EXIST)) {
 		nm_log_err (LOGD_DEVICE | LOGD_IP6,
 		            "(%s): failed to add IPv6 multicast route: %s",
-		            priv->ip_iface ? priv->ip_iface : priv->iface, nl_geterror ());
+		            priv->ip_iface ? priv->ip_iface : priv->iface, nl_geterror (err));
 	}
 
 	s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
@@ -2820,6 +2821,7 @@ nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
 	gboolean tried_ipv6 = FALSE;
+	int ifindex, family;
 
 	g_return_if_fail (self != NULL);
 
@@ -2857,8 +2859,10 @@ nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason)
 	clear_act_request (self);
 
 	/* Take out any entries in the routing table and any IP address the device had. */
-	nm_system_device_flush_routes (self, tried_ipv6 ? AF_UNSPEC : AF_INET);
-	nm_system_device_flush_addresses (self, tried_ipv6 ? AF_UNSPEC : AF_INET);
+	ifindex = nm_device_get_ip_ifindex (self);
+	family = tried_ipv6 ? AF_UNSPEC : AF_INET;
+	nm_system_iface_flush_routes (ifindex, family);
+	nm_system_iface_flush_addresses (ifindex, family);
 	nm_device_update_ip4_address (self);	
 
 	/* Clean up nameservers and addresses */
@@ -3009,6 +3013,7 @@ nm_device_set_ip4_config (NMDevice *self,
 	gboolean success = TRUE;
 	NMIP4ConfigCompareFlags diff = NM_IP4_COMPARE_FLAG_ALL;
 	NMDnsManager *dns_mgr;
+	int ip_ifindex;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 	g_return_val_if_fail (reason != NULL, FALSE);
@@ -3039,8 +3044,10 @@ nm_device_set_ip4_config (NMDevice *self,
 		/* Don't touch the device's actual IP config if the connection is
 		 * assumed when NM starts.
 		 */
-		if (!assumed)
-			success = nm_system_apply_ip4_config (ip_iface, new_config, nm_device_get_priority (self), diff);
+		if (!assumed) {
+			ip_ifindex = nm_device_get_ip_ifindex (self);
+			success = nm_system_apply_ip4_config (ip_ifindex, new_config, nm_device_get_priority (self), diff);
+		}
 
 		if (success || assumed) {
 			/* Export over D-Bus */
@@ -3112,12 +3119,14 @@ nm_device_set_ip6_config (NMDevice *self,
 	gboolean success = TRUE;
 	NMIP6ConfigCompareFlags diff = NM_IP6_COMPARE_FLAG_ALL;
 	NMDnsManager *dns_mgr;
+	int ip_ifindex;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 	g_return_val_if_fail (reason != NULL, FALSE);
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	ip_iface = nm_device_get_ip_iface (self);
+	ip_ifindex = nm_device_get_ip_ifindex (self);
 
 	old_config = priv->ip6_config;
 
@@ -3143,7 +3152,7 @@ nm_device_set_ip6_config (NMDevice *self,
 		 * assumed when NM starts.
 		 */
 		if (!assumed)
-			success = nm_system_apply_ip6_config (ip_iface, new_config, nm_device_get_priority (self), diff);
+			success = nm_system_apply_ip6_config (ip_ifindex, new_config, nm_device_get_priority (self), diff);
 
 		if (success || assumed) {
 			/* Export over D-Bus */

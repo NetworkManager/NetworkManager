@@ -59,6 +59,7 @@
 #include "nm-logging.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-dhcp-manager.h"
+#include "nm-netlink-utils.h"
 
 #include "nm-device-ethernet-glue.h"
 
@@ -546,19 +547,19 @@ real_take_down (NMDevice *dev)
 static gboolean
 real_hw_is_up (NMDevice *device)
 {
-	return nm_system_device_is_up (device);
+	return nm_system_iface_is_up (nm_device_get_ip_ifindex (device));
 }
 
 static gboolean
 real_hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 {
-	return nm_system_device_set_up_down (dev, TRUE, no_firmware);
+	return nm_system_iface_set_up (nm_device_get_ip_ifindex (dev), TRUE, no_firmware);
 }
 
 static void
 real_hw_take_down (NMDevice *dev)
 {
-	nm_system_device_set_up_down (dev, FALSE, NULL);
+	nm_system_iface_set_up (nm_device_get_ip_ifindex (dev), FALSE, NULL);
 }
 
 NMDevice *
@@ -677,7 +678,7 @@ _set_hw_addr (NMDeviceEthernet *self, const guint8 *addr, const char *detail)
 	/* Can't change MAC address while device is up */
 	real_hw_take_down (dev);
 
-	success = nm_system_device_set_mac (iface, (struct ether_addr *) addr);
+	success = nm_system_iface_set_mac (nm_device_get_ip_ifindex (dev), (struct ether_addr *) addr);
 	if (success) {
 		/* MAC address succesfully changed; update the current MAC to match */
 		_update_hw_addr (self, addr);
@@ -1796,72 +1797,18 @@ wired_match_config (NMDevice *self, NMConnection *connection)
 	return TRUE;
 }
 
-typedef struct {
-	int ifindex;
-	NMIP4Address *addr;
-	gboolean found;
-} AddrData;
-
-static void
-check_one_address (struct nl_object *object, void *user_data)
-{
-	AddrData *data = user_data;
-	struct rtnl_addr *addr = (struct rtnl_addr *) object;
-	struct nl_addr *local;
-	struct in_addr tmp;
-
-	if (rtnl_addr_get_ifindex (addr) != data->ifindex)
-		return;
-	if (rtnl_addr_get_family (addr) != AF_INET)
-		return;
-
-	if (nm_ip4_address_get_prefix (data->addr) != rtnl_addr_get_prefixlen (addr))
-		return;
-
-	local = rtnl_addr_get_local (addr);
-	if (nl_addr_get_family (local) != AF_INET)
-		return;
-	if (nl_addr_get_len (local) != sizeof (struct in_addr))
-		return;
-	if (!nl_addr_get_binary_addr (local))
-		return;
-
-	memcpy (&tmp, nl_addr_get_binary_addr (local), nl_addr_get_len (local));
-	if (tmp.s_addr != nm_ip4_address_get_address (data->addr))
-		return;
-
-	/* Yay, found it */
-	data->found = TRUE;
-}
-
 static gboolean
 ip4_match_config (NMDevice *self, NMConnection *connection)
 {
 	NMSettingIP4Config *s_ip4;
-	struct nl_handle *nlh = NULL;
-	struct nl_cache *addr_cache = NULL;
 	int i, num;
 	GSList *leases, *iter;
 	NMDHCPManager *dhcp_mgr;
 	const char *method;
-	int ifindex;
-	AddrData check_data;
 
-	ifindex = nm_device_get_ifindex (self);
-
-	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	if (!s_ip4)
 		return FALSE;
-
-	/* Read all the device's IP addresses */
-	nlh = nm_netlink_get_default_handle ();
-	if (!nlh)
-		return FALSE;
-
-	addr_cache = rtnl_addr_alloc_cache (nlh);
-	if (!addr_cache)
-		return FALSE;
-	nl_cache_mngt_provide (addr_cache);
 
 	/* Get any saved leases that apply to this connection */
 	dhcp_mgr = nm_dhcp_manager_get ();
@@ -1876,15 +1823,14 @@ ip4_match_config (NMDevice *self, NMConnection *connection)
 
 		/* Find at least one lease's address on the device */
 		for (iter = leases; iter; iter = g_slist_next (iter)) {
-			NMIP4Config *addr = iter->data;
+			NMIP4Config *ip4_config = iter->data;
+			NMIP4Address *addr = nm_ip4_config_get_address (ip4_config, 0);
+			struct in_addr tmp = { .s_addr = nm_ip4_address_get_address (addr) };
 
-			memset (&check_data, 0, sizeof (check_data));
-			check_data.ifindex = ifindex;
-			check_data.found = FALSE;
-			check_data.addr = nm_ip4_config_get_address (addr, 0);
-
-			nl_cache_foreach (addr_cache, check_one_address, &check_data);
-			if (check_data.found) {
+			if (addr && nm_netlink_find_address (nm_device_get_ip_ifindex (self),
+			                                     AF_INET,
+			                                     &tmp,
+			                                     nm_ip4_address_get_prefix (addr))) {
 				found = TRUE; /* Yay, device has same address as a lease */
 				break;
 			}
@@ -1908,16 +1854,16 @@ ip4_match_config (NMDevice *self, NMConnection *connection)
 
 	/* Everything below for static addressing */
 
-	/* Find all IP4 addresses of this connection in the device's address list */
+	/* Find all IP4 addresses of this connection on the device */
 	num = nm_setting_ip4_config_get_num_addresses (s_ip4);
 	for (i = 0; i < num; i++) {
-		memset (&check_data, 0, sizeof (check_data));
-		check_data.ifindex = ifindex;
-		check_data.found = FALSE;
-		check_data.addr = nm_setting_ip4_config_get_address (s_ip4, i);
+		NMIP4Address *addr = nm_setting_ip4_config_get_address (s_ip4, i);
+		struct in_addr tmp = { .s_addr = nm_ip4_address_get_address (addr) };
 
-		nl_cache_foreach (addr_cache, check_one_address, &check_data);
-		if (!check_data.found)
+		if (!nm_netlink_find_address (nm_device_get_ip_ifindex (self),
+		                              AF_INET,
+		                              &tmp,
+		                              nm_ip4_address_get_prefix (addr)))
 			return FALSE;
 	}
 
