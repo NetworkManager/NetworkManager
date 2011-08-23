@@ -1163,7 +1163,7 @@ nm_setting_802_1x_get_phase2_altsubject_match (NMSetting8021x *setting, guint32 
 /**
  * nm_setting_802_1x_add_phase2_altsubject_match:
  * @setting: the #NMSetting8021x
- * @altsubject_match: the "phase 2" altSubjectName to allow for this
+ * @phase2_altsubject_match: the "phase 2" altSubjectName to allow for this
  * connection
  *
  * Adds an allowed alternate subject name match for "phase 2".  Until
