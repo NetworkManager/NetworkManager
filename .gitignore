@@ -125,6 +125,7 @@ examples/C/glib/list-connections-dbus-glib
 examples/C/glib/list-connections-libnm-glib
 examples/C/qt/add-connection-wired
 examples/C/qt/list-connections
+examples/C/qt/change-ipv4-addresses
 
 callouts/nm-dhcp-client.action
 callouts/nm-avahi-autoipd.action
@@ -173,6 +174,8 @@ src/settings/plugins/ifcfg-rh/tests/network-scripts/*-Test_Write_*
 src/settings/plugins/ifupdown/tests/test-ifupdown
 src/settings/plugins/ifnet/tests/check_ifnet
 src/settings/tests/test-wired-defname
+
+introspection/all.xml
 
 m4/gtk-doc.m4
 m4/intltool.m4
