@@ -1192,12 +1192,12 @@ device_supports_ap_ciphers (guint32 dev_caps,
  **/
 gboolean
 nm_utils_security_valid (NMUtilsSecurityType type,
-                         guint32 wifi_caps,
+                         NMDeviceWifiCapabilities wifi_caps,
                          gboolean have_ap,
                          gboolean adhoc,
-                         guint32 ap_flags,
-                         guint32 ap_wpa,
-                         guint32 ap_rsn)
+                         NM80211ApFlags ap_flags,
+                         NM80211ApSecurityFlags ap_wpa,
+                         NM80211ApSecurityFlags ap_rsn)
 {
 	gboolean good = TRUE;
 

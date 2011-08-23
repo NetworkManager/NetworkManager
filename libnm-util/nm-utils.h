@@ -48,6 +48,24 @@ GHashTable *nm_utils_gvalue_hash_dup  (GHashTable *hash);
 
 void        nm_utils_slist_free    (GSList *list, GDestroyNotify elem_destroy_fn);
 
+/**
+ * NMUtilsSecurityType:
+ * @NMU_SEC_INVALID: unknown or invalid security, placeholder and not used
+ * @NMU_SEC_NONE: unencrypted and open
+ * @NMU_SEC_STATIC_WEP: static WEP keys are used for encryption
+ * @NMU_SEC_LEAP: Cisco LEAP is used for authentication and for generating the
+ * dynamic WEP keys automatically
+ * @NMU_SEC_DYNAMIC_WEP: standard 802.1x is used for authentication and
+ * generating the dynamic WEP keys automatically
+ * @NMU_SEC_WPA_PSK: WPA1 is used with Pre-Shared Keys (PSK)
+ * @NMU_SEC_WPA_ENTERPRISE: WPA1 is used with 802.1x authentication
+ * @NMU_SEC_WPA2_PSK: WPA2/RSN is used with Pre-Shared Keys (PSK)
+ * @NMU_SEC_WPA2_ENTERPRISE: WPA2 is used with 802.1x authentication
+ *
+ * Describes generic security mechanisms that 802.11 access points may offer.
+ * Used with nm_utils_security_valid() for checking whether a given access
+ * point is compatible with a network device.
+ **/
 typedef enum {
 	NMU_SEC_INVALID = 0,
 	NMU_SEC_NONE,
@@ -61,12 +79,12 @@ typedef enum {
 } NMUtilsSecurityType;
 
 gboolean nm_utils_security_valid (NMUtilsSecurityType type,
-                                  guint32 wifi_caps,
+                                  NMDeviceWifiCapabilities wifi_caps,
                                   gboolean have_ap,
                                   gboolean adhoc,
-                                  guint32 ap_flags,
-                                  guint32 ap_wpa,
-                                  guint32 ap_rsn);
+                                  NM80211ApFlags ap_flags,
+                                  NM80211ApSecurityFlags ap_wpa,
+                                  NM80211ApSecurityFlags ap_rsn);
 
 GSList *nm_utils_ip4_addresses_from_gvalue (const GValue *value);
 void nm_utils_ip4_addresses_to_gvalue (GSList *list, GValue *value);
