@@ -1,4 +1,95 @@
 ==============================================
+NetworkManager-0.9.0
+Overview of changes since NetworkManager-0.8.x
+==============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* All connections and configuration now managed by NetworkManager
+* Ability for secrets to be stored in user session or by NetworkManager
+* All secrets can now be requested each time
+* Fast User Switching support
+* Ability to restrict connections to one or more users
+* Support for 802.1X certificate subject matching for greater security
+* Requires wpa_supplicant 0.7 or later
+* Better support for AP roaming using nl80211
+* Simplified D-Bus API for easier client usage and simplier applets
+* Support for GObject Introspection in libnm-glib and libnm-util
+
+
+==============================================
+NetworkManager-0.8.6
+Overview of changes since NetworkManager-0.8.4
+==============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Fix handling of WINS server address in libnm-glib
+* Fix checks for s390 CTC device types
+* Fix export of nm_device_get_ip_iface() in libnm-glib
+* Fix export of IPv6 DNS GValue conversion functions in libnm-glib
+* Recognize and manage platform 'gadget' devices
+* Send only "short" hostname, not FQDN, to DHCP servers
+* Allow "_" as a valid character for GSM APNs
+* Handle shared connections in the ifnet plugin
+* Fix Ad-Hoc frequency selection for user-created Ad-Hoc networks
+* Allow failed connections to be retried when Ethernet carrier bounces
+* Allow usage of paths for certificates and keys in the keyfile plugin
+* Fix crash requesting system VPN secrets
+* Add ability to blacklist certain MAC addresses for wired & wifi connections
+* Ensure users are authorized to share wifi networks (CVE-2011-2176)
+
+
+==============================================
+NetworkManager-0.8.4
+Overview of changes since NetworkManager-0.8.2
+==============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Preliminary support for Exherbo Linux
+* Logging fixes to suppress unnecessary messages
+* Ensure removed devices are cleaned up
+* Fix potential 64-bit crash updating timestamps
+* IPv6 setup, routing, and compliance fixes
+* Fix WWAN enable/disable handling
+* Handle reverse DNS lookups with local caching nameserver configurations
+* Ensure usable DNS configuration is written when NetworkManager quits
+* No longer updates /etc/hosts when hostname changes
+* Request WPAD option from DHCP servers
+* Allow use of paths for certificates and keys in connection keyfiles
+* Allow operation without any DHCP client installed
+* Fix operation with newer versions of dnsmasq
+* nmcli support for WWAN connections
+* Persistent hostname sent to DHCP servers by default
+* Allow disabing PPP support at build time
+* Red Hat/Fedora ifcfg plugin fixes for handling S390 CTC device configuration
+* Red Hat/Fedora ifcfg plugin fixes for handling IPADDR config items
+* Shutdown crash fixes
+* Memory leak fixes
+* Documentation fixes and updates
+* and much more...
+
+==============================================
+NetworkManager-0.8.2
+Overview of changes since NetworkManager-0.8.1
+==============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Native local caching nameserver support using dnsmasq
+* Automatically detect addition and removal of new VPN plugins
+* Support for handling suspend/resume signals from UPower
+* Ensure users are allowed to enable/disable WiFi and networking
+* Ensure WiFi enable state is perserved across reboot and suspend
+* Better handling of /etc/hosts and preservation of custom hostnames
+* Support for the systemd session management service
+* Better handling of 'keyfile' system connection errors
+* Support for S390 network devices
+* and much more...
+
+
+==============================================
 NetworkManager-0.7.0
 Overview of changes since NetworkManager-0.6.6
 ==============================================
