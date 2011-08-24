@@ -512,6 +512,30 @@ device up and do a full scan just in case the user is near a known SSID that was
 not in the N top recently used networks.  This is also beneficial to normal
 desktop use-cases.
 
+wpa_supplicant doesn't currently provide an explicit interface for sending SSIDs
+to the driver for background scanning, but could simply send a list using
+configured networks.  However, NM currently does not send *all* configured
+connections' SSIDs to the supplicant, so that's something we should do first
+to optimize connection times.  To do this, NM would need to order all networks
+using the NM timestamp and convert that into a supplicant priority number, which
+would need to be adjusted periodically when the timestamp was updated.  This
+would involve tracking each network (exposed by the supplicant as a D-Bus
+object) and making sure they were added, deleted, and updated when the backing
+NMConnection objects changed.  One complication is that the supplicant
+requires secrets for various network types when the network is added via D-Bus,
+and NetworkManager might not have those secrets yet.  We may need to modify
+the supplicant allow for *all* secrets (PSKs, WEP keys, etc) to be requested
+on-demand, not just EAP secrets like 802.1x passwords.  We then need to fix
+up the supplicant's D-Bus interface to actually send requests for secrets out
+over D-Bus (like wpa_supplicant_eap_param_needed() does for the socket-based
+control interface) and to handle the resulting reply from a D-Bus client like
+wpa_supplicant_ctrl_iface_ctrl_rsp() does.
+
+With the secrets request stuff and priority handling in place, wpa_supplicant
+would control network selection and roaming (based on the priorities NM gave it
+of course) instead of NetworkManager itself, and hopefully lead to a faster WiFi
+connection process.
+
 2) single-device-at-a-time with overlapping connections: this is also probably
 the best route to go for desktop use-cases as well.  Instead of bringing all
 available connections up, only bring up the "best" connection at any given
