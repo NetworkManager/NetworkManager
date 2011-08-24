@@ -495,3 +495,34 @@ a bridge or bond and shouldn't be automatically started by NetworkManager or
 displayed as separate connections in the user interface.
 
 TO BE CONTINUED
+
+
+* Better Tablet/Mobile Behavior
+
+There are a few components to this:
+
+1) kernel driver and hardware capabilities: most mobile devices use periodic
+background scanning to quickly determine whether a known SSID is available and
+notify the connection manager to connect to it.  This typically requires special
+capabilities and good powersave/sleep support from the WiFi kernel driver.
+There is a background scanning API in nl80211, but we need to determine how many
+SSIDs each driver allows for background scanning, and based on that number, give
+the driver the most recent N SSIDs.  We still need to periodically wake the
+device up and do a full scan just in case the user is near a known SSID that was
+not in the N top recently used networks.  This is also beneficial to normal
+desktop use-cases.
+
+2) single-device-at-a-time with overlapping connections: this is also probably
+the best route to go for desktop use-cases as well.  Instead of bringing all
+available connections up, only bring up the "best" connection at any given
+time based on the current priority list (which is rougly Ethernet > WiFi >
+3G/Bluetooth/WiMAX).  However, to ensure seamless connectivity, when one
+connection begins to degrade, the next-best connection should be started before
+the current one is terminated, such that there is a small amount of overlap.
+Consequently the same behavior should be used when a better connection becomes
+available.  This behavior should be suspended when special connections like
+Internet Connection Sharing ones are started, where clearly the priorities
+are different (ie, for Mobile Hotspot 3G > WiFi).
+
+
+
