@@ -9,6 +9,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Ability for secrets to be stored in user session or by NetworkManager
 * All secrets can now be requested each time
 * Fast User Switching support
+* Support for WiMAX mobile broadband
 * Ability to restrict connections to one or more users
 * Support for 802.1X certificate subject matching for greater security
 * Requires wpa_supplicant 0.7 or later
