@@ -1,4 +1,12 @@
 ==============================================
+NetworkManager-0.9.2
+Overview of changes since NetworkManager-0.9.0
+==============================================
+
+* Support for libnl2 and libnl3
+
+
+==============================================
 NetworkManager-0.9.0
 Overview of changes since NetworkManager-0.8.x
 ==============================================
@@ -6,15 +14,15 @@ Overview of changes since NetworkManager-0.8.x
 This is a new stable release of NetworkManager.  Notable changes include:
 
 * All connections and configuration now managed by NetworkManager
-* Ability for secrets to be stored in user session or by NetworkManager
+* Secrets for any connection can now be stored in user session or by NetworkManager
 * All secrets can now be requested each time
 * Fast User Switching support
 * Support for WiMAX mobile broadband
-* Ability to restrict connections to one or more users
+* Connections can now be restricted to one or more users
 * Support for 802.1X certificate subject matching for greater security
 * Requires wpa_supplicant 0.7 or later
-* Better support for AP roaming using nl80211
-* Simplified D-Bus API for easier client usage and simplier applets
+* Better support for AP roaming using nl80211 and background scanning
+* Simplified D-Bus API for easier client usage
 * Support for GObject Introspection in libnm-glib and libnm-util
 
 
