@@ -1104,7 +1104,7 @@ nm_ip6_manager_prepare_interface (NMIP6Manager *manager,
 		nm_utils_do_sysctl (accept_ra_path, "0\n");
 	} else {
 		device->target_state = NM_IP6_DEVICE_GOT_ADDRESS;
-		nm_utils_do_sysctl (accept_ra_path, "1\n");
+		nm_utils_do_sysctl (accept_ra_path, "2\n");
 	}
 
 	return TRUE;
