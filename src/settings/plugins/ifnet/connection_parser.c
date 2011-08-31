@@ -1742,27 +1742,27 @@ ifnet_update_connection_from_config_block (const char *conn_name, GError **error
 
 	/* IPv4 setting */
 	make_ip4_setting (connection, conn_name, error);
-	if (error && *error)
-		PLUGIN_WARN (IFNET_PLUGIN_NAME,
-			     "Found error: %s", (*error)->message);
+	if (error && *error) {
+		PLUGIN_WARN (IFNET_PLUGIN_NAME, "Found error: %s", (*error)->message);
+		goto error;
+	}
 
 	/* IPv6 setting */
 	make_ip6_setting (connection, conn_name, error);
-	if (error && *error)
-		PLUGIN_WARN (IFNET_PLUGIN_NAME,
-			     "Found error: %s", (*error)->message);
+	if (error && *error) {
+		PLUGIN_WARN (IFNET_PLUGIN_NAME, "Found error: %s", (*error)->message);
+		goto error;
+	}
 
 	success = nm_connection_verify (connection, error);
 	if (error && *error)
-		PLUGIN_WARN (IFNET_PLUGIN_NAME,
-			     "Found error: %s", (*error)->message);
+		PLUGIN_WARN (IFNET_PLUGIN_NAME, "Found error: %s", (*error)->message);
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Connection verified %s:%d", conn_name, success);
 	if (!success)
 		goto error;
 	return connection;
 
 error:
-	g_object_unref (setting);
 	g_object_unref (connection);
 	return NULL;
 }
