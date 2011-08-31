@@ -252,25 +252,25 @@ test_is_unmanaged ()
 static void
 test_new_connection ()
 {
-	GError **error = NULL;
+	GError *error = NULL;
 	NMConnection *connection;
 
-	connection = ifnet_update_connection_from_config_block ("eth2", error);
+	connection = ifnet_update_connection_from_config_block ("eth2", &error);
 	ASSERT (connection != NULL, "new connection",
 		"new connection failed: %s",
-		error == NULL ? "None" : (*error)->message);
+		error ? error->message : "None");
 	g_object_unref (connection);
-	connection =
-	    ifnet_update_connection_from_config_block ("qiaomuf", error);
+
+	connection = ifnet_update_connection_from_config_block ("qiaomuf", &error);
 	ASSERT (connection != NULL, "new connection",
-		"new connection failed: %s", error
-		&& (*error) ? (*error)->message : "NONE");
+		"new connection failed: %s",
+		error ? error->message : "NONE");
 	g_object_unref (connection);
-	connection =
-	    ifnet_update_connection_from_config_block ("myxjtu2", error);
+
+	connection = ifnet_update_connection_from_config_block ("myxjtu2", &error);
 	ASSERT (connection != NULL, "new connection",
-		"new connection failed: %s", error
-		&& (*error) ? (*error)->message : "NONE");
+		"new connection failed: %s",
+		error ? error->message : "NONE");
 	g_object_unref (connection);
 }
 
@@ -280,32 +280,32 @@ test_new_connection ()
 static void
 test_update_connection ()
 {
-	GError **error = NULL;
+	GError *error = NULL;
 	NMConnection *connection;
 	gboolean success;
 
-	connection = ifnet_update_connection_from_config_block ("eth0", error);
+	connection = ifnet_update_connection_from_config_block ("eth0", &error);
 	ASSERT (connection != NULL, "get connection",
 		"get connection failed: %s",
-		error == NULL ? "None" : (*error)->message);
+		error ? error->message : "None");
 
 	success = ifnet_update_parsers_by_connection (connection, "eth0",
 	                                              NET_GEN_NAME,
 	                                              SUP_GEN_NAME,
 	                                              NULL,
-	                                              error);
+	                                              &error);
 	ASSERT (success, "update connection", "update connection failed %s", "eth0");
 	g_object_unref (connection);
 
-	connection = ifnet_update_connection_from_config_block ("0xab3ace", error);
+	connection = ifnet_update_connection_from_config_block ("0xab3ace", &error);
 	ASSERT (connection != NULL, "get connection", "get connection failed: %s",
-		error == NULL ? "None" : (*error)->message);
+		error ? error->message : "None");
 
 	success = ifnet_update_parsers_by_connection (connection, "0xab3ace",
 	                                              NET_GEN_NAME,
 	                                              SUP_GEN_NAME,
 	                                              NULL,
-	                                              error);
+	                                              &error);
 	ASSERT (success, "update connection", "update connection failed %s", "0xab3ace");
 	g_object_unref (connection);
 
