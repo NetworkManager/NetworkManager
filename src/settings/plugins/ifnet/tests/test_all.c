@@ -357,6 +357,17 @@ test_delete_connection ()
 }
 
 static void
+test_missing_config ()
+{
+	GError *error = NULL;
+	NMConnection *connection;
+
+	connection = ifnet_update_connection_from_config_block ("eth8", &error);
+	ASSERT (connection == NULL && error != NULL, "get connection",
+	        "get connection should fail with 'Unknown config for eth8'");
+}
+
+static void
 run_all (gboolean run)
 {
 	if (run) {
@@ -378,6 +389,7 @@ run_all (gboolean run)
 		test_update_connection ();
 		test_add_connection ();
 		test_delete_connection ();
+		test_missing_config ();
 	}
 }
 

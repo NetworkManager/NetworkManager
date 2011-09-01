@@ -35,6 +35,8 @@ config_eth6=("192.168.4.{1..101}/24")
 config_eth7=( "dhcp" )
 auto_eth7="true"
 
+# missing config_eth8
+auto_eth8="true"
 
 config_myxjtu2=("202.117.16.121/24 brd 202.117.16.255")
 routes_myxjtu2=("default via 202.117.16.1")
