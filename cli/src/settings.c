@@ -39,6 +39,7 @@ static NmcOutputField nmc_fields_setting_connection[] = {
 	SETTING_FIELD (NM_SETTING_CONNECTION_AUTOCONNECT, 13),  /* 4 */
 	SETTING_FIELD (NM_SETTING_CONNECTION_TIMESTAMP, 10),    /* 5 */
 	SETTING_FIELD (NM_SETTING_CONNECTION_READ_ONLY, 10),    /* 6 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_PERMISSIONS, 30),  /* 7 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTING_CONNECTION_ALL     "name"","\
@@ -47,7 +48,8 @@ static NmcOutputField nmc_fields_setting_connection[] = {
                                               NM_SETTING_CONNECTION_TYPE","\
                                               NM_SETTING_CONNECTION_AUTOCONNECT","\
                                               NM_SETTING_CONNECTION_TIMESTAMP","\
-                                              NM_SETTING_CONNECTION_READ_ONLY
+                                              NM_SETTING_CONNECTION_READ_ONLY","\
+                                              NM_SETTING_CONNECTION_PERMISSIONS
 #define NMC_FIELDS_SETTING_CONNECTION_COMMON  NMC_FIELDS_SETTING_CONNECTION_ALL
 
 /* Available fields for NM_SETTING_WIRED_SETTING_NAME */
@@ -501,6 +503,10 @@ setting_connection_details (NMSetting *setting, NmCli *nmc)
 	NMSettingConnection *s_con;
 	guint64 timestamp;
 	char *timestamp_str;
+	const char *perm_item;
+	const char *perm_type;
+	GString *perm = NULL;
+	int i;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -516,6 +522,15 @@ setting_connection_details (NMSetting *setting, NmCli *nmc)
 	timestamp = nm_setting_connection_get_timestamp (s_con);
 	timestamp_str = g_strdup_printf ("%" G_GUINT64_FORMAT, timestamp);
 
+	/* get permissions */
+	perm = g_string_new (NULL);
+	for (i = 0; i < nm_setting_connection_get_num_permissions (s_con); i++) {
+		nm_setting_connection_get_permission (s_con, i, &perm_type, &perm_item, NULL);
+		g_string_append_printf (perm, "%s:%s,", perm_type, perm_item);
+	}
+	if (perm->len > 0)
+		g_string_truncate (perm, perm->len-1); /* remove trailing , */
+
 	nmc->allowed_fields[0].value = NM_SETTING_CONNECTION_SETTING_NAME;
 	nmc->allowed_fields[1].value = nm_setting_connection_get_id (s_con);
 	nmc->allowed_fields[2].value = nm_setting_connection_get_uuid (s_con);
@@ -523,11 +538,13 @@ setting_connection_details (NMSetting *setting, NmCli *nmc)
 	nmc->allowed_fields[4].value = nm_setting_connection_get_autoconnect (s_con) ? _("yes") : _("no");
 	nmc->allowed_fields[5].value = timestamp_str;
 	nmc->allowed_fields[6].value = nm_setting_connection_get_read_only (s_con) ? ("yes") : _("no");
+	nmc->allowed_fields[7].value = perm->str;
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
 	g_free (timestamp_str);
+	g_string_free (perm, TRUE);
 
 	return TRUE;
 }
