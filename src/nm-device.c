@@ -2523,7 +2523,7 @@ start_sharing (NMDevice *self)
 	add_share_rule (req, "filter", "FORWARD --in-interface %s --out-interface %s --jump ACCEPT", ip_iface, ip_iface);
 	add_share_rule (req, "filter", "FORWARD --source %s/%s --in-interface %s --jump ACCEPT", str_addr, str_mask, ip_iface);
 	add_share_rule (req, "filter", "FORWARD --destination %s/%s --out-interface %s --match state --state ESTABLISHED,RELATED --jump ACCEPT", str_addr, str_mask, ip_iface);
-	add_share_rule (req, "nat", "POSTROUTING --source %s/%s --destination ! %s/%s --jump MASQUERADE", str_addr, str_mask, str_addr, str_mask);
+	add_share_rule (req, "nat", "POSTROUTING --source %s/%s ! --destination %s/%s --jump MASQUERADE", str_addr, str_mask, str_addr, str_mask);
 
 	nm_act_request_set_shared (req, TRUE);
 
