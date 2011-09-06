@@ -1061,7 +1061,7 @@ find_device_for_connection (NmCli *nmc,
 	g_assert (s_con);
 	con_type = nm_setting_connection_get_connection_type (s_con);
 
-	if (strcmp (con_type, "vpn") == 0) {
+	if (strcmp (con_type, NM_SETTING_VPN_SETTING_NAME) == 0) {
 		/* VPN connections */
 		NMActiveConnection *active = NULL;
 		if (iface) {
@@ -1104,7 +1104,7 @@ find_device_for_connection (NmCli *nmc,
 				}
 			}
 
-			if (found_device && ap && !strcmp (con_type, "802-11-wireless") && NM_IS_DEVICE_WIFI (dev)) {
+			if (found_device && ap && !strcmp (con_type, NM_SETTING_WIRELESS_SETTING_NAME) && NM_IS_DEVICE_WIFI (dev)) {
 				char *bssid_up = g_ascii_strup (ap, -1);
 				const GPtrArray *aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (dev));
 				found_device = NULL;  /* Mark as not found; set to the device again later, only if AP matches */
