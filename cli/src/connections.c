@@ -165,7 +165,7 @@ usage (void)
 {
 	fprintf (stderr,
 	         _("Usage: nmcli con { COMMAND | help }\n"
-	         "  COMMAND := { list | status | up | down }\n\n"
+	         "  COMMAND := { list | status | up | down | delete }\n\n"
 	         "  list [id <id> | uuid <id>]\n"
 	         "  status\n"
 #if WITH_WIMAX
@@ -173,7 +173,8 @@ usage (void)
 #else
 	         "  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [--nowait] [--timeout <timeout>]\n"
 #endif
-	         "  down id <id> | uuid <id>\n"));
+	         "  down id <id> | uuid <id>\n"
+	         "  delete id <id> | uuid <id>\n"));
 }
 
 /* The real commands that do something - i.e. not 'help', etc. */
@@ -182,6 +183,7 @@ static const char *real_con_commands[] = {
 	"status",
 	"up",
 	"down",
+	"delete",
 	NULL
 };
 
@@ -1576,6 +1578,66 @@ error:
 }
 
 static NMCResultCode
+do_connection_delete (NmCli *nmc, int argc, char **argv)
+{
+	NMConnection *connection = NULL;
+	const char *selector;
+	const char *id = NULL;
+	GError *error = NULL;
+
+	nmc->should_wait = FALSE;
+
+	while (argc > 0) {
+		if (strcmp (*argv, "id") == 0 || strcmp (*argv, "uuid") == 0) {
+			selector = *argv;
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+			id = *argv;
+		}
+		else
+			fprintf (stderr, _("Unknown parameter: %s\n"), *argv);
+
+		argc--;
+		argv++;
+	}
+
+	if (!id) {
+		g_string_printf (nmc->return_text, _("Error: id or uuid has to be specified."));
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto error;
+	}
+
+	if (!nmc_is_nm_running (nmc, &error)) {
+		if (error) {
+			g_string_printf (nmc->return_text, _("Error: Can't find out if NetworkManager is running: %s."), error->message);
+			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+			g_error_free (error);
+		} else {
+			g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
+			nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
+		}
+		goto error;
+	}
+
+	connection = find_connection (nmc->system_connections, selector, id);
+
+	if (!connection) {
+		g_string_printf (nmc->return_text, _("Error: Unknown connection: %s."), id);
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		goto error;
+	}
+
+	/* Delete the connection */
+	nm_remote_connection_delete (NM_REMOTE_CONNECTION (connection), NULL, NULL);
+
+error:
+	return nmc->return_value;
+}
+
+static NMCResultCode
 parse_cmd (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
@@ -1599,6 +1661,9 @@ parse_cmd (NmCli *nmc, int argc, char **argv)
 		}
 		else if (matches(*argv, "down") == 0) {
 			nmc->return_value = do_connection_down (nmc, argc-1, argv+1);
+		}
+		else if (matches(*argv, "delete") == 0) {
+			nmc->return_value = do_connection_delete (nmc, argc-1, argv+1);
 		}
 		else if (matches (*argv, "help") == 0) {
 			usage ();
@@ -1672,6 +1737,7 @@ do_connections (NmCli *nmc, int argc, char **argv)
 		if (error || !bus) {
 			g_string_printf (nmc->return_text, _("Error: could not connect to D-Bus."));
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+			nmc->should_wait = FALSE;
 			return nmc->return_value;
 		}
 
@@ -1679,8 +1745,8 @@ do_connections (NmCli *nmc, int argc, char **argv)
 		if (!(nmc->system_settings = nm_remote_settings_new (bus))) {
 			g_string_printf (nmc->return_text, _("Error: Could not get system settings."));
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+			nmc->should_wait = FALSE;
 			return nmc->return_value;
-
 		}
 
 		/* find out whether settings service is running */
@@ -1689,6 +1755,7 @@ do_connections (NmCli *nmc, int argc, char **argv)
 		if (!nmc->system_settings_running) {
 			g_string_printf (nmc->return_text, _("Error: Can't obtain connections: settings service is not running."));
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+			nmc->should_wait = FALSE;
 			return nmc->return_value;
 		}
 

@@ -201,7 +201,7 @@ Connections
 .br
 Get information about NetworkManager's connections.
 .TP
-.SS \fICOMMAND\fP := { list | status | up | down }
+.SS \fICOMMAND\fP := { list | status | up | down | delete }
 .sp
 .RS
 .TP
@@ -254,6 +254,18 @@ or UUID using \fIuuid\fP.
 interface: org.freedesktop.NetworkManager
 method:    DeactivateConnection
 arguments: according to arguments
+.fi
+.TP
+.B delete id <id> | uuid <id>
+.br
+Delete a configured connection.  The connection to delete is specified with
+\fIid\fP (connection name) or \fIuuid\fP (connection UUID).
+.br
+.nf
+\fBReference to D-Bus:\fP
+interface: org.freedesktop.NetworkManager.Settings.Connection
+method:    Delete
+arguments: none
 .fi
 .RE
 
