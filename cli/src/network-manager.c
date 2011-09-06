@@ -57,15 +57,8 @@ static NmcOutputField nmc_fields_nm_status[] = {
 #define NMC_FIELDS_NM_WWAN           "WWAN"
 #define NMC_FIELDS_NM_WIMAX          "WIMAX"
 
-
+/* glib main loop variable - defined in nmcli.c */
 extern GMainLoop *loop;
-
-/* static function prototypes */
-static void usage (void);
-static void quit (void);
-static const char *nm_state_to_string (NMState state);
-static NMCResultCode show_nm_status (NmCli *nmc);
-
 
 static void
 usage (void)

@@ -141,24 +141,10 @@ typedef struct {
 	char **argv;
 } ArgsInfo;
 
-extern GMainLoop *loop;   /* glib main loop variable */
+/* glib main loop variable - defined in nmcli.c */
+extern GMainLoop *loop;
 
 static ArgsInfo args_info;
-
-/* static function prototypes */
-static void usage (void);
-static void quit (void);
-static void show_connection (NMConnection *data, gpointer user_data);
-static NMConnection *find_connection (GSList *list, const char *filter_type, const char *filter_val);
-static gboolean find_device_for_connection (NmCli *nmc, NMConnection *connection, const char *iface, const char *ap,
-                                            const char *nsp, NMDevice **device, const char **spec_object, GError **error);
-static const char *active_connection_state_to_string (NMActiveConnectionState state);
-static void active_connection_state_cb (NMActiveConnection *active, GParamSpec *pspec, gpointer user_data);
-static void get_connections_cb (NMRemoteSettings *settings, gpointer user_data);
-static NMCResultCode do_connections_list (NmCli *nmc, int argc, char **argv);
-static NMCResultCode do_connections_status (NmCli *nmc, int argc, char **argv);
-static NMCResultCode do_connection_up (NmCli *nmc, int argc, char **argv);
-static NMCResultCode do_connection_down (NmCli *nmc, int argc, char **argv);
 
 static void
 usage (void)

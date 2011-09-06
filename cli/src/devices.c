@@ -236,18 +236,8 @@ static NmcOutputField nmc_fields_dev_wimax_list[] = {
 #endif
 
 
-/* static function prototypes */
-static void usage (void);
-static const char *device_state_to_string (NMDeviceState state);
-static NMCResultCode do_devices_status (NmCli *nmc, int argc, char **argv);
-static NMCResultCode do_devices_list (NmCli *nmc, int argc, char **argv);
-static NMCResultCode do_device_disconnect (NmCli *nmc, int argc, char **argv);
-static NMCResultCode do_device_wifi (NmCli *nmc, int argc, char **argv);
-#if WITH_WIMAX
-static NMCResultCode do_device_wimax (NmCli *nmc, int argc, char **argv);
-#endif
-
-extern GMainLoop *loop;   /* glib main loop variable */
+/* glib main loop variable - defined in nmcli.c */
+extern GMainLoop *loop;
 
 static void
 usage (void)
