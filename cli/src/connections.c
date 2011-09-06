@@ -169,9 +169,9 @@ usage (void)
 	         "  list [id <id> | uuid <id>]\n"
 	         "  status\n"
 #if WITH_WIMAX
-	         "  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [nsp <name>] [--nowait] [--timeout <timeout>]\n"
+	         "  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [nsp <name>] [--nowait] [--timeout <timeout>]\n"
 #else
-	         "  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--timeout <timeout>]\n"
+	         "  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [--nowait] [--timeout <timeout>]\n"
 #endif
 	         "  down id <id> | uuid <id>\n"));
 }
@@ -1117,21 +1117,21 @@ find_device_for_connection (NmCli *nmc,
 			}
 
 			if (found_device && ap && !strcmp (con_type, "802-11-wireless") && NM_IS_DEVICE_WIFI (dev)) {
-				char *hwaddr_up = g_ascii_strup (ap, -1);
+				char *bssid_up = g_ascii_strup (ap, -1);
 				const GPtrArray *aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (dev));
 				found_device = NULL;  /* Mark as not found; set to the device again later, only if AP matches */
 
 				for (j = 0; aps && (j < aps->len); j++) {
 					NMAccessPoint *candidate_ap = g_ptr_array_index (aps, j);
-					const char *candidate_hwaddr = nm_access_point_get_hw_address (candidate_ap);
+					const char *candidate_bssid = nm_access_point_get_bssid (candidate_ap);
 
-					if (!strcmp (hwaddr_up, candidate_hwaddr)) {
+					if (!strcmp (bssid_up, candidate_bssid)) {
 						found_device = dev;
 						*spec_object = nm_object_get_path (NM_OBJECT (candidate_ap));
 						break;
 					}
 				}
-				g_free (hwaddr_up);
+				g_free (bssid_up);
 			}
 
 #if WITH_WIMAX

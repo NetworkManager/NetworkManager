@@ -262,7 +262,7 @@ usage (void)
 	         "  status\n"
 	         "  list [iface <iface>]\n"
 	         "  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
-	         "  wifi [list [iface <iface>] [hwaddr <hwaddr>]]\n"
+	         "  wifi [list [iface <iface>] [bssid <BSSID>]]\n"
 #if WITH_WIMAX
 	         "  wimax [list [iface <iface>] [nsp <name>]]\n\n"
 #endif
@@ -441,15 +441,15 @@ detail_access_point (gpointer data, gpointer user_data)
 	NM80211ApSecurityFlags wpa_flags, rsn_flags;
 	guint32 freq, bitrate;
 	guint8 strength;
-	const GByteArray *ssid; 
-	const char *hwaddr;
+	const GByteArray *ssid;
+	const char *bssid;
 	NM80211Mode mode;
 	char *freq_str, *ssid_str, *bitrate_str, *strength_str, *wpa_flags_str, *rsn_flags_str;
 	GString *security_str;
 	char *ap_name;
 
 	if (info->active_bssid) {
-		const char *current_bssid = nm_access_point_get_hw_address (ap);
+		const char *current_bssid = nm_access_point_get_bssid (ap);
 		if (current_bssid && !strcmp (current_bssid, info->active_bssid))
 			active = TRUE;
 	}
@@ -459,7 +459,7 @@ detail_access_point (gpointer data, gpointer user_data)
 	wpa_flags = nm_access_point_get_wpa_flags (ap);
 	rsn_flags = nm_access_point_get_rsn_flags (ap);
 	ssid = nm_access_point_get_ssid (ap);
-	hwaddr = nm_access_point_get_hw_address (ap);
+	bssid = nm_access_point_get_bssid (ap);
 	freq = nm_access_point_get_frequency (ap);
 	mode = nm_access_point_get_mode (ap);
 	bitrate = nm_access_point_get_max_bitrate (ap);
@@ -497,7 +497,7 @@ detail_access_point (gpointer data, gpointer user_data)
 	ap_name = g_strdup_printf ("AP%d", info->index++); /* AP */
 	info->nmc->allowed_fields[0].value = ap_name;
 	info->nmc->allowed_fields[1].value = ssid_str;
-	info->nmc->allowed_fields[2].value = hwaddr;
+	info->nmc->allowed_fields[2].value = bssid;
 	info->nmc->allowed_fields[3].value = mode == NM_802_11_MODE_ADHOC ? _("Ad-Hoc") : mode == NM_802_11_MODE_INFRA ? _("Infrastructure") : _("Unknown");
 	info->nmc->allowed_fields[4].value = freq_str;
 	info->nmc->allowed_fields[5].value = bitrate_str;
@@ -725,7 +725,7 @@ show_device_info (gpointer data, gpointer user_data)
 			if (!strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[3].name)) {
 				if (state == NM_DEVICE_STATE_ACTIVATED) {
 					active_ap = nm_device_wifi_get_active_access_point (NM_DEVICE_WIFI (device));
-					active_bssid = active_ap ? nm_access_point_get_hw_address (active_ap) : NULL;
+					active_bssid = active_ap ? nm_access_point_get_bssid (active_ap) : NULL;
 				}
 
 				nmc->allowed_fields = nmc_fields_dev_wifi_list;
@@ -1275,7 +1275,7 @@ show_acces_point_info (NMDevice *device, NmCli *nmc)
 
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
 		active_ap = nm_device_wifi_get_active_access_point (NM_DEVICE_WIFI (device));
-		active_bssid = active_ap ? nm_access_point_get_hw_address (active_ap) : NULL;
+		active_bssid = active_ap ? nm_access_point_get_bssid (active_ap) : NULL;
 	}
 
 	info = g_malloc0 (sizeof (APInfo));
@@ -1296,7 +1296,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	NMDevice *device = NULL;
 	NMAccessPoint *ap = NULL;
 	const char *iface = NULL;
-	const char *hwaddr_user = NULL;
+	const char *bssid_user = NULL;
 	const GPtrArray *devices;
 	const GPtrArray *aps;
 	APInfo *info;
@@ -1316,13 +1316,14 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 				goto error;
 			}
 			iface = *argv;
-		} else if (strcmp (*argv, "hwaddr") == 0) {
+		} else if (strcmp (*argv, "bssid") == 0 || strcmp (*argv, "hwaddr") == 0) {
+			/* hwaddr is deprecated and will be removed later */
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
-			hwaddr_user = *argv;
+			bssid_user = *argv;
 		} else {
 			fprintf (stderr, _("Unknown parameter: %s\n"), *argv);
 		}
@@ -1392,21 +1393,21 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		}
 
 		if (NM_IS_DEVICE_WIFI (device)) {
-			if (hwaddr_user) {
+			if (bssid_user) {
 				/* Specific AP requested - list only that */
 				aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (device));
 				for (j = 0; aps && (j < aps->len); j++) {
-					char *hwaddr_up;
+					char *bssid_up;
 					NMAccessPoint *candidate_ap = g_ptr_array_index (aps, j);
-					const char *candidate_hwaddr = nm_access_point_get_hw_address (candidate_ap);
+					const char *candidate_bssid = nm_access_point_get_bssid (candidate_ap);
 
-					hwaddr_up = g_ascii_strup (hwaddr_user, -1);
-					if (!strcmp (hwaddr_up, candidate_hwaddr))
+					bssid_up = g_ascii_strup (bssid_user, -1);
+					if (!strcmp (bssid_up, candidate_bssid))
 						ap = candidate_ap;
-					g_free (hwaddr_up);
+					g_free (bssid_up);
 				}
 				if (!ap) {
-				 	g_string_printf (nmc->return_text, _("Error: Access point with hwaddr '%s' not found."), hwaddr_user);
+				 	g_string_printf (nmc->return_text, _("Error: Access point with bssid '%s' not found."), bssid_user);
 					nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 					goto error;
 				}
@@ -1430,7 +1431,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	} else {
 		/* List APs for all devices */
 		print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
-		if (hwaddr_user) {
+		if (bssid_user) {
 			/* Specific AP requested - list only that */
 			for (i = 0; devices && (i < devices->len); i++) {
 				NMDevice *dev = g_ptr_array_index (devices, i);
@@ -1440,12 +1441,12 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 
 				aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (dev));
 				for (j = 0; aps && (j < aps->len); j++) {
-					char *hwaddr_up;
+					char *bssid_up;
 					NMAccessPoint *candidate_ap = g_ptr_array_index (aps, j);
-					const char *candidate_hwaddr = nm_access_point_get_hw_address (candidate_ap);
+					const char *candidate_bssid = nm_access_point_get_bssid (candidate_ap);
 
-					hwaddr_up = g_ascii_strup (hwaddr_user, -1);
-					if (!strcmp (hwaddr_up, candidate_hwaddr)) {
+					bssid_up = g_ascii_strup (bssid_user, -1);
+					if (!strcmp (bssid_up, candidate_bssid)) {
 						ap = candidate_ap;
 
 						info = g_malloc0 (sizeof (APInfo));
@@ -1456,11 +1457,11 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 						detail_access_point (ap, info);
 						g_free (info);
 					}
-					g_free (hwaddr_up);
+					g_free (bssid_up);
 				}
 			}
 			if (!ap) {
-			 	g_string_printf (nmc->return_text, _("Error: Access point with hwaddr '%s' not found."), hwaddr_user);
+			 	g_string_printf (nmc->return_text, _("Error: Access point with bssid '%s' not found."), bssid_user);
 				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 				goto error;
 			}
@@ -1667,7 +1668,7 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 				}
 			}
 			if (!nsp) {
-			 	g_string_printf (nmc->return_text, _("Error: Access point with hwaddr '%s' not found."), nsp_user);
+			 	g_string_printf (nmc->return_text, _("Error: Access point with nsp '%s' not found."), nsp_user);
 				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 				goto error;
 			}

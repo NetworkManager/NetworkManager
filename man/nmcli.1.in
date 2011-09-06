@@ -20,9 +20,9 @@
 .\" Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111,
 .\" USA.
 .\"
-.\" Copyright (C) 2010 Red Hat, Inc.
+.\" Copyright (C) 2010 - 2011 Red Hat, Inc.
 .\"
-.TH NMCLI "1" "22 September 2010"
+.TH NMCLI "1" "6 September 2011"
 
 .SH NAME
 nmcli \- command-line tool for controlling NetworkManager
@@ -226,7 +226,7 @@ Print status of active connections.
 No simple reference.
 .fi
 .TP
-.B up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [\-\-nowait] [\-\-timeout <timeout>]
+.B up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [\-\-nowait] [\-\-timeout <timeout>]
 .br
 Activate a connection.  The connection is identified by its name using \fIid\fP
 or UUID using \fIuuid\fP.  For requiring particular device to activate
@@ -303,9 +303,9 @@ method:    Disconnect
 arguments: none
 .fi
 .TP
-.B wifi [list [iface <iface>] [hwaddr <hwaddr>]]
+.B wifi [list [iface <iface>] [bssid <BSSID>]]
 .br
-List available WiFi access points.  \fIiface\fP and \fIhwaddr\fP options
+List available WiFi access points.  \fIiface\fP and \fIbssid\fP options
 can be used to get just APs for particular interface or specific AP,
 respectively.
 .br
@@ -329,7 +329,7 @@ or null.
 .RE
 Notes about localization:
 .br
-Be aware that \fInmcli\fP is localized and that's why the output depends on 
+Be aware that \fInmcli\fP is localized and that's why the output depends on
 your environment. It's important to realize that especially when you parse the
 output.
 .br
