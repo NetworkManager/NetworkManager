@@ -43,6 +43,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 <xi:include href="nm-settings-connection.xml"/>
 <xi:include href="nm-active-connection.xml"/>
 <xi:include href="nm-agent-manager.xml"/>
+<xi:include href="nm-secret-agent.xml"/>
 <xi:include href="nm-vpn-connection.xml"/>
 <xi:include href="nm-vpn-plugin.xml"/>
 
