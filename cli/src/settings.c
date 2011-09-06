@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 Red Hat, Inc.
+ * (C) Copyright 2010 - 2011 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -480,6 +480,10 @@ allowed_bands_to_string (guint32 bands)
 		g_string_append (band_str, _("WCDMA 3GPP UMTS 900 MHz, "));
 	if (bands & NM_SETTING_GSM_BAND_U17IX)
 		g_string_append (band_str, _("WCDMA 3GPP UMTS 1700 MHz, "));
+	if (bands & NM_SETTING_GSM_BAND_U1900)
+		g_string_append (band_str, _("WCDMA 3GPP UMTS 1900 MHz, "));
+	if (bands & NM_SETTING_GSM_BAND_U2600)
+		g_string_append (band_str, _("WCDMA 3GPP UMTS 2600 MHz, "));
 
 	if (band_str->str[band_str->len-1] == '(')
 		g_string_assign (band_str, _("unknown"));
@@ -490,7 +494,6 @@ allowed_bands_to_string (guint32 bands)
 
 	return g_string_free (band_str, FALSE);
 }
-
 
 gboolean
 setting_connection_details (NMSetting *setting, NmCli *nmc)
