@@ -194,6 +194,7 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 	if (multiline) {
 	/* --- Multiline mode --- */
 		enum { ML_HEADER_WIDTH = 79 };
+		enum { ML_VALUE_INDENT = 40 };
 		if (main_header && pretty) {
 			/* Print the main header */
 			int header_width = nmc_string_screen_width (fields.header_name, NULL) + 4;
@@ -218,7 +219,7 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 				tmp = g_strdup_printf ("%s%s%s:", section_prefix ? field_values[0].value : "",
 				                                  section_prefix ? "." : "",
 				                                  _(field_values[idx].name_l10n));
-				printf ("%-*s%s\n", terse ? 0 : 32, tmp, field_values[idx].value ? field_values[idx].value : not_set_str);
+				printf ("%-*s%s\n", terse ? 0 : ML_VALUE_INDENT, tmp, field_values[idx].value ? field_values[idx].value : not_set_str);
 				g_free (tmp);
 			}
 			if (pretty) {
