@@ -750,6 +750,8 @@ real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 
 	set_current_nsp (NM_DEVICE_WIMAX (device), nsp);
 
+	priv->prepare_done = TRUE;
+
 	/* If the device is scanning, it won't connect, so we have to wait until
 	 * it's not scanning to proceed to stage 2.
 	 */
@@ -795,7 +797,6 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	/* FIXME: Is 40 seconds good estimation? I have no idea */
 	priv->activation_timeout_id = g_timeout_add_seconds (40, activation_timed_out, device);
 
-	priv->prepare_done = TRUE;
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
 
