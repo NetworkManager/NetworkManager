@@ -54,14 +54,18 @@ static NmcOutputField nmc_fields_setting_connection[] = {
 
 /* Available fields for NM_SETTING_WIRED_SETTING_NAME */
 static NmcOutputField nmc_fields_setting_wired[] = {
-	SETTING_FIELD ("name",  17),                             /* 0 */
-	SETTING_FIELD (NM_SETTING_WIRED_PORT, 8),                /* 1 */
-	SETTING_FIELD (NM_SETTING_WIRED_SPEED, 10),              /* 2 */
-	SETTING_FIELD (NM_SETTING_WIRED_DUPLEX, 10),             /* 3 */
-	SETTING_FIELD (NM_SETTING_WIRED_AUTO_NEGOTIATE, 15),     /* 4 */
-	SETTING_FIELD (NM_SETTING_WIRED_MAC_ADDRESS, 19),        /* 5 */
-	SETTING_FIELD (NM_SETTING_WIRED_CLONED_MAC_ADDRESS, 19), /* 6 */
-	SETTING_FIELD (NM_SETTING_WIRED_MTU, 6),                 /* 7 */
+	SETTING_FIELD ("name",  17),                                  /* 0 */
+	SETTING_FIELD (NM_SETTING_WIRED_PORT, 8),                     /* 1 */
+	SETTING_FIELD (NM_SETTING_WIRED_SPEED, 10),                   /* 2 */
+	SETTING_FIELD (NM_SETTING_WIRED_DUPLEX, 10),                  /* 3 */
+	SETTING_FIELD (NM_SETTING_WIRED_AUTO_NEGOTIATE, 15),          /* 4 */
+	SETTING_FIELD (NM_SETTING_WIRED_MAC_ADDRESS, 19),             /* 5 */
+	SETTING_FIELD (NM_SETTING_WIRED_CLONED_MAC_ADDRESS, 19),      /* 6 */
+	SETTING_FIELD (NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST, 39),   /* 7 */
+	SETTING_FIELD (NM_SETTING_WIRED_MTU, 6),                      /* 8 */
+	SETTING_FIELD (NM_SETTING_WIRED_S390_SUBCHANNELS, 20),        /* 9 */
+	SETTING_FIELD (NM_SETTING_WIRED_S390_NETTYPE, 15),            /* 10 */
+	SETTING_FIELD (NM_SETTING_WIRED_S390_OPTIONS, 20),            /* 11 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTING_WIRED_ALL     "name"","\
@@ -71,7 +75,11 @@ static NmcOutputField nmc_fields_setting_wired[] = {
                                          NM_SETTING_WIRED_AUTO_NEGOTIATE","\
                                          NM_SETTING_WIRED_MAC_ADDRESS","\
                                          NM_SETTING_WIRED_CLONED_MAC_ADDRESS","\
-                                         NM_SETTING_WIRED_MTU
+                                         NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST","\
+                                         NM_SETTING_WIRED_MTU","\
+                                         NM_SETTING_WIRED_S390_SUBCHANNELS","\
+                                         NM_SETTING_WIRED_S390_NETTYPE","\
+                                         NM_SETTING_WIRED_S390_OPTIONS
 #define NMC_FIELDS_SETTING_WIRED_COMMON  NMC_FIELDS_SETTING_WIRED_ALL
 
 /* Available fields for NM_SETTING_802_1X_SETTING_NAME */
@@ -82,22 +90,26 @@ static NmcOutputField nmc_fields_setting_8021X[] = {
 	SETTING_FIELD (NM_SETTING_802_1X_ANONYMOUS_IDENTITY, 15),           /* 3 */
 	SETTING_FIELD (NM_SETTING_802_1X_CA_CERT, 10),                      /* 4 */
 	SETTING_FIELD (NM_SETTING_802_1X_CA_PATH, 10),                      /* 5 */
-	SETTING_FIELD (NM_SETTING_802_1X_CLIENT_CERT, 10),                  /* 6 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE1_PEAPVER, 10),               /* 7 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE1_PEAPLABEL, 10),             /* 8 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE1_FAST_PROVISIONING, 10),     /* 9 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_AUTH, 10),                  /* 10 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_AUTHEAP, 10),               /* 11 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_CA_CERT, 20),               /* 12 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_CA_PATH, 20),               /* 13 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_CLIENT_CERT, 20),           /* 14 */
-	SETTING_FIELD (NM_SETTING_802_1X_PASSWORD, 10),                     /* 15 */
-	SETTING_FIELD (NM_SETTING_802_1X_PRIVATE_KEY, 15),                  /* 16 */
-	SETTING_FIELD (NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD, 20),         /* 17 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY, 20),           /* 18 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD, 20),  /* 19 */
-	SETTING_FIELD (NM_SETTING_802_1X_PIN, 8),                           /* 20 */
-	SETTING_FIELD (NM_SETTING_802_1X_SYSTEM_CA_CERTS, 17),              /* 21 */
+	SETTING_FIELD (NM_SETTING_802_1X_SUBJECT_MATCH, 10),                /* 6 */
+	SETTING_FIELD (NM_SETTING_802_1X_ALTSUBJECT_MATCHES, 10),           /* 7 */
+	SETTING_FIELD (NM_SETTING_802_1X_CLIENT_CERT, 10),                  /* 8 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE1_PEAPVER, 10),               /* 9 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE1_PEAPLABEL, 10),             /* 10 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE1_FAST_PROVISIONING, 10),     /* 11 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_AUTH, 10),                  /* 12 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_AUTHEAP, 10),               /* 13 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_CA_CERT, 20),               /* 14 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_CA_PATH, 20),               /* 15 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_SUBJECT_MATCH, 10),         /* 16 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES, 10),    /* 17 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_CLIENT_CERT, 20),           /* 18 */
+	SETTING_FIELD (NM_SETTING_802_1X_PASSWORD, 10),                     /* 19 */
+	SETTING_FIELD (NM_SETTING_802_1X_PRIVATE_KEY, 15),                  /* 20 */
+	SETTING_FIELD (NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD, 20),         /* 21 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY, 20),           /* 22 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD, 20),  /* 23 */
+	SETTING_FIELD (NM_SETTING_802_1X_PIN, 8),                           /* 24 */
+	SETTING_FIELD (NM_SETTING_802_1X_SYSTEM_CA_CERTS, 17),              /* 25 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTING_802_1X_ALL     "name"","\
@@ -106,6 +118,8 @@ static NmcOutputField nmc_fields_setting_8021X[] = {
                                           NM_SETTING_802_1X_ANONYMOUS_IDENTITY","\
                                           NM_SETTING_802_1X_CA_CERT","\
                                           NM_SETTING_802_1X_CA_PATH","\
+                                          NM_SETTING_802_1X_SUBJECT_MATCH","\
+                                          NM_SETTING_802_1X_ALTSUBJECT_MATCHES","\
                                           NM_SETTING_802_1X_CLIENT_CERT","\
                                           NM_SETTING_802_1X_PHASE1_PEAPVER","\
                                           NM_SETTING_802_1X_PHASE1_PEAPLABEL","\
@@ -114,6 +128,8 @@ static NmcOutputField nmc_fields_setting_8021X[] = {
                                           NM_SETTING_802_1X_PHASE2_AUTHEAP","\
                                           NM_SETTING_802_1X_PHASE2_CA_CERT","\
                                           NM_SETTING_802_1X_PHASE2_CA_PATH","\
+                                          NM_SETTING_802_1X_PHASE2_SUBJECT_MATCH","\
+                                          NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES","\
                                           NM_SETTING_802_1X_PHASE2_CLIENT_CERT","\
                                           NM_SETTING_802_1X_PASSWORD","\
                                           NM_SETTING_802_1X_PRIVATE_KEY","\
@@ -136,9 +152,10 @@ static NmcOutputField nmc_fields_setting_wireless[] = {
 	SETTING_FIELD (NM_SETTING_WIRELESS_TX_POWER, 10),                  /* 7 */
 	SETTING_FIELD (NM_SETTING_WIRELESS_MAC_ADDRESS, 19),               /* 8 */
 	SETTING_FIELD (NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, 19),        /* 9 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_MTU, 6),                        /* 10 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SEEN_BSSIDS, 35),               /* 11 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SEC, 10),                       /* 12 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST, 39),     /* 10 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_MTU, 6),                        /* 11 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SEEN_BSSIDS, 35),               /* 12 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SEC, 10),                       /* 13 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTING_WIRELESS_ALL     "name"","\
@@ -151,6 +168,7 @@ static NmcOutputField nmc_fields_setting_wireless[] = {
                                             NM_SETTING_WIRELESS_TX_POWER","\
                                             NM_SETTING_WIRELESS_MAC_ADDRESS","\
                                             NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS","\
+                                            NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST","\
                                             NM_SETTING_WIRELESS_MTU","\
                                             NM_SETTING_WIRELESS_SEEN_BSSIDS","\
                                             NM_SETTING_WIRELESS_SEC
@@ -206,6 +224,7 @@ static NmcOutputField nmc_fields_setting_ip4_config[] = {
 	SETTING_FIELD (NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME, 19),      /* 9 */
 	SETTING_FIELD (NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, 14),           /* 10 */
 	SETTING_FIELD (NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, 15),           /* 11 */
+	SETTING_FIELD (NM_SETTING_IP4_CONFIG_MAY_FAIL, 12),                /* 12 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTING_IP4_CONFIG_ALL     "name"","\
@@ -219,7 +238,8 @@ static NmcOutputField nmc_fields_setting_ip4_config[] = {
                                               NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID","\
                                               NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME","\
                                               NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME","\
-                                              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT
+                                              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT","\
+                                              NM_SETTING_IP4_CONFIG_MAY_FAIL
 #define NMC_FIELDS_SETTING_IP4_CONFIG_COMMON  NMC_FIELDS_SETTING_IP4_CONFIG_ALL
 
 /* Available fields for NM_SETTING_IP6_CONFIG_SETTING_NAME */
@@ -233,6 +253,7 @@ static NmcOutputField nmc_fields_setting_ip6_config[] = {
 	SETTING_FIELD (NM_SETTING_IP6_CONFIG_IGNORE_AUTO_ROUTES, 19),      /* 6 */
 	SETTING_FIELD (NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS, 16),         /* 7 */
 	SETTING_FIELD (NM_SETTING_IP6_CONFIG_NEVER_DEFAULT, 15),           /* 8 */
+	SETTING_FIELD (NM_SETTING_IP6_CONFIG_MAY_FAIL, 12),                /* 9 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTING_IP6_CONFIG_ALL     "name"","\
@@ -243,7 +264,8 @@ static NmcOutputField nmc_fields_setting_ip6_config[] = {
                                               NM_SETTING_IP6_CONFIG_ROUTES","\
                                               NM_SETTING_IP6_CONFIG_IGNORE_AUTO_ROUTES","\
                                               NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS","\
-                                              NM_SETTING_IP6_CONFIG_NEVER_DEFAULT
+                                              NM_SETTING_IP6_CONFIG_NEVER_DEFAULT","\
+                                              NM_SETTING_IP6_CONFIG_MAY_FAIL
 #define NMC_FIELDS_SETTING_IP6_CONFIG_COMMON  NMC_FIELDS_SETTING_IP4_CONFIG_ALL
 
 /* Available fields for NM_SETTING_SERIAL_SETTING_NAME */
@@ -554,7 +576,11 @@ setting_wired_details (NMSetting *setting, NmCli *nmc)
 {
 	NMSettingWired *s_wired;
 	const GByteArray *mac;
+	const GSList *iter;
+	const GPtrArray *s390_channels;
+	int i;
 	char *speed_str, *mtu_str, *device_mac_str = NULL, *cloned_mac_str = NULL;
+	GString *mac_blacklist_s, *s390_channels_s, *s390_options_s;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -576,6 +602,29 @@ setting_wired_details (NMSetting *setting, NmCli *nmc)
 	if (mac)
 		cloned_mac_str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X", mac->data[0], mac->data[1], mac->data[2], mac->data[3], mac->data[4], mac->data[5]);
 
+	mac_blacklist_s = g_string_new (NULL);
+	iter = nm_setting_wired_get_mac_address_blacklist (s_wired);
+	while (iter) {
+		g_string_append_printf (mac_blacklist_s, "%s,", (char *) iter->data);
+		iter = iter->next;
+	}
+	g_string_truncate (mac_blacklist_s, mac_blacklist_s->len-1);  /* chop off trailing ',' */
+
+	s390_channels_s = g_string_new (NULL);
+	s390_channels = nm_setting_wired_get_s390_subchannels (s_wired);
+	for (i = 0; s390_channels && i < s390_channels->len; i++)
+		g_string_append_printf (s390_channels_s, "%s,", (char *) g_ptr_array_index (s390_channels, i));
+	g_string_truncate (s390_channels_s, s390_channels_s->len-1);  /* chop off trailing ',' */
+
+	s390_options_s = g_string_new (NULL);
+	for (i = 0; i < nm_setting_wired_get_num_s390_options (s_wired); i++) {
+		const char *key, *value;
+
+		nm_setting_wired_get_s390_option (s_wired, i, &key, &value);
+		g_string_append_printf (s390_options_s, "%s=%s,", key, value);
+	}
+	g_string_truncate (s390_options_s, s390_options_s->len-1);  /* chop off trailing ',' */
+
 	nmc->allowed_fields[0].value = NM_SETTING_WIRED_SETTING_NAME;
 	nmc->allowed_fields[1].value = nm_setting_wired_get_port (s_wired);
 	nmc->allowed_fields[2].value = speed_str;
@@ -583,7 +632,11 @@ setting_wired_details (NMSetting *setting, NmCli *nmc)
 	nmc->allowed_fields[4].value = nm_setting_wired_get_auto_negotiate (s_wired) ? _("yes") : _("no");
 	nmc->allowed_fields[5].value = device_mac_str;
 	nmc->allowed_fields[6].value = cloned_mac_str;
-	nmc->allowed_fields[7].value = strcmp (mtu_str, "0") ? mtu_str : _("auto");
+	nmc->allowed_fields[7].value = mac_blacklist_s->str;
+	nmc->allowed_fields[8].value = strcmp (mtu_str, "0") ? mtu_str : _("auto");
+	nmc->allowed_fields[9].value = s390_channels_s->str;
+	nmc->allowed_fields[10].value = nm_setting_wired_get_s390_nettype (s_wired);
+	nmc->allowed_fields[11].value = s390_options_s->str;
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
@@ -592,6 +645,9 @@ setting_wired_details (NMSetting *setting, NmCli *nmc)
 	g_free (device_mac_str);
 	g_free (cloned_mac_str);
 	g_free (mtu_str);
+	g_string_free (mac_blacklist_s, TRUE);
+	g_string_free (s390_channels_s, TRUE);
+	g_string_free (s390_options_s, TRUE);
 
 	return TRUE;
 }
@@ -601,7 +657,7 @@ setting_802_1X_details (NMSetting *setting, NmCli *nmc)
 {
 	NMSetting8021x *s_8021X;
 	NMSetting8021xCKScheme scheme;
-	GString *eap_str;
+	GString *eap_str, *alt_sub_match, *phase2_alt_sub_match;
 	char *ca_cert_str = NULL, *client_cert_str = NULL, *phase2_ca_cert_str = NULL;
 	char *phase2_client_cert_str = NULL, *private_key_str = NULL, *phase2_private_key_str = NULL;
 	int i;
@@ -659,28 +715,42 @@ setting_802_1X_details (NMSetting *setting, NmCli *nmc)
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 		phase2_private_key_str = g_strdup (nm_setting_802_1x_get_phase2_private_key_path (s_8021X));
 
+	alt_sub_match = g_string_new (NULL);
+	for (i = 0; i < nm_setting_802_1x_get_num_altsubject_matches (s_8021X); i++)
+		g_string_append_printf (alt_sub_match, "%s,", nm_setting_802_1x_get_altsubject_match (s_8021X, i));
+	g_string_truncate (alt_sub_match, alt_sub_match->len-1);  /* chop off trailing ',' */
+
+	phase2_alt_sub_match = g_string_new (NULL);
+	for (i = 0; i < nm_setting_802_1x_get_num_phase2_altsubject_matches (s_8021X); i++)
+		g_string_append_printf (phase2_alt_sub_match, "%s,", nm_setting_802_1x_get_phase2_altsubject_match (s_8021X, i));
+	g_string_truncate (phase2_alt_sub_match, phase2_alt_sub_match->len-1);  /* chop off trailing ',' */
+
 	nmc->allowed_fields[0].value = NM_SETTING_802_1X_SETTING_NAME;
 	nmc->allowed_fields[1].value = eap_str->str;
 	nmc->allowed_fields[2].value = nm_setting_802_1x_get_identity (s_8021X);
 	nmc->allowed_fields[3].value = nm_setting_802_1x_get_anonymous_identity (s_8021X);
 	nmc->allowed_fields[4].value = ca_cert_str;
 	nmc->allowed_fields[5].value = nm_setting_802_1x_get_ca_path (s_8021X);
-	nmc->allowed_fields[6].value = client_cert_str;
-	nmc->allowed_fields[7].value = nm_setting_802_1x_get_phase1_peapver (s_8021X);
-	nmc->allowed_fields[8].value = nm_setting_802_1x_get_phase1_peaplabel (s_8021X);
-	nmc->allowed_fields[9].value = nm_setting_802_1x_get_phase1_fast_provisioning (s_8021X);
-	nmc->allowed_fields[10].value = nm_setting_802_1x_get_phase2_auth (s_8021X);
-	nmc->allowed_fields[11].value = nm_setting_802_1x_get_phase2_autheap (s_8021X);
-	nmc->allowed_fields[12].value = phase2_ca_cert_str;
-	nmc->allowed_fields[13].value = nm_setting_802_1x_get_phase2_ca_path (s_8021X);
-	nmc->allowed_fields[14].value = phase2_client_cert_str;
-	nmc->allowed_fields[15].value = nm_setting_802_1x_get_password (s_8021X);
-	nmc->allowed_fields[16].value = private_key_str;
-	nmc->allowed_fields[17].value = nm_setting_802_1x_get_private_key_password (s_8021X);
-	nmc->allowed_fields[18].value = phase2_private_key_str;
-	nmc->allowed_fields[19].value = nm_setting_802_1x_get_phase2_private_key_password (s_8021X);
-	nmc->allowed_fields[20].value = nm_setting_802_1x_get_pin (s_8021X);
-	nmc->allowed_fields[21].value = nm_setting_802_1x_get_system_ca_certs (s_8021X) ? _("yes") : _("no");
+	nmc->allowed_fields[6].value = nm_setting_802_1x_get_subject_match (s_8021X);
+	nmc->allowed_fields[7].value = alt_sub_match->str;
+	nmc->allowed_fields[8].value = client_cert_str;
+	nmc->allowed_fields[9].value = nm_setting_802_1x_get_phase1_peapver (s_8021X);
+	nmc->allowed_fields[10].value = nm_setting_802_1x_get_phase1_peaplabel (s_8021X);
+	nmc->allowed_fields[11].value = nm_setting_802_1x_get_phase1_fast_provisioning (s_8021X);
+	nmc->allowed_fields[12].value = nm_setting_802_1x_get_phase2_auth (s_8021X);
+	nmc->allowed_fields[13].value = nm_setting_802_1x_get_phase2_autheap (s_8021X);
+	nmc->allowed_fields[14].value = phase2_ca_cert_str;
+	nmc->allowed_fields[15].value = nm_setting_802_1x_get_phase2_ca_path (s_8021X);
+	nmc->allowed_fields[16].value = nm_setting_802_1x_get_phase2_subject_match (s_8021X);
+	nmc->allowed_fields[17].value = phase2_alt_sub_match->str;
+	nmc->allowed_fields[18].value = phase2_client_cert_str;
+	nmc->allowed_fields[19].value = nm_setting_802_1x_get_password (s_8021X);
+	nmc->allowed_fields[20].value = private_key_str;
+	nmc->allowed_fields[21].value = nm_setting_802_1x_get_private_key_password (s_8021X);
+	nmc->allowed_fields[22].value = phase2_private_key_str;
+	nmc->allowed_fields[23].value = nm_setting_802_1x_get_phase2_private_key_password (s_8021X);
+	nmc->allowed_fields[24].value = nm_setting_802_1x_get_pin (s_8021X);
+	nmc->allowed_fields[25].value = nm_setting_802_1x_get_system_ca_certs (s_8021X) ? _("yes") : _("no");
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
@@ -692,6 +762,8 @@ setting_802_1X_details (NMSetting *setting, NmCli *nmc)
 	g_free (private_key_str);
 	g_free (phase2_private_key_str);
 	g_string_free (eap_str, TRUE);
+	g_string_free (alt_sub_match, TRUE);
+	g_string_free (phase2_alt_sub_match, TRUE);
 
 	return TRUE;
 }
@@ -704,7 +776,8 @@ setting_wireless_details (NMSetting *setting, NmCli *nmc)
 	const GByteArray *ssid, *bssid, *mac;
 	char *ssid_str, *channel_str, *rate_str, *tx_power_str, *mtu_str;
 	char *device_mac_str = NULL, *cloned_mac_str = NULL, *bssid_str = NULL;
-	GString *seen_bssids;
+	GString *mac_blacklist, *seen_bssids;
+	const GSList *iter;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -732,6 +805,15 @@ setting_wireless_details (NMSetting *setting, NmCli *nmc)
 	mac = nm_setting_wireless_get_cloned_mac_address (s_wireless);
 	if (mac)
 		cloned_mac_str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X", mac->data[0], mac->data[1], mac->data[2], mac->data[3], mac->data[4], mac->data[5]);
+
+	mac_blacklist = g_string_new (NULL);
+	iter = nm_setting_wireless_get_mac_address_blacklist (s_wireless);
+	while (iter) {
+		g_string_append_printf (mac_blacklist, "%s,", (char *) iter->data);
+		iter = iter->next;
+	}
+	g_string_truncate (mac_blacklist, mac_blacklist->len-1);  /* chop off trailing ',' */
+
 	seen_bssids = g_string_new (NULL);
 	for (i = 0; i < nm_setting_wireless_get_num_seen_bssids (s_wireless); i++) {
 		if (i > 0)
@@ -749,9 +831,10 @@ setting_wireless_details (NMSetting *setting, NmCli *nmc)
 	nmc->allowed_fields[7].value = tx_power_str;
 	nmc->allowed_fields[8].value = device_mac_str ? device_mac_str : _("not set");
 	nmc->allowed_fields[9].value = cloned_mac_str ? cloned_mac_str : _("not set");
-	nmc->allowed_fields[10].value = strcmp (mtu_str, "0") ?  mtu_str : _("auto");
-	nmc->allowed_fields[11].value = seen_bssids->str;
-	nmc->allowed_fields[12].value = nm_setting_wireless_get_security (s_wireless);
+	nmc->allowed_fields[10].value = mac_blacklist->str;
+	nmc->allowed_fields[11].value = strcmp (mtu_str, "0") ?  mtu_str : _("auto");
+	nmc->allowed_fields[12].value = seen_bssids->str;
+	nmc->allowed_fields[13].value = nm_setting_wireless_get_security (s_wireless);
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
@@ -765,6 +848,7 @@ setting_wireless_details (NMSetting *setting, NmCli *nmc)
 	g_free (cloned_mac_str);
 	g_free (mtu_str);
 	g_string_free (seen_bssids, TRUE);
+	g_string_free (mac_blacklist, TRUE);
 
 	return TRUE;
 }
@@ -960,6 +1044,7 @@ setting_ip4_config_details (NMSetting *setting, NmCli *nmc)
 	nmc->allowed_fields[9].value = nm_setting_ip4_config_get_dhcp_send_hostname (s_ip4) ? _("yes") : _("no");
 	nmc->allowed_fields[10].value = nm_setting_ip4_config_get_dhcp_hostname (s_ip4);
 	nmc->allowed_fields[11].value = nm_setting_ip4_config_get_never_default (s_ip4) ? _("yes") : _("no");
+	nmc->allowed_fields[12].value = nm_setting_ip4_config_get_may_fail (s_ip4) ? _("yes") : _("no");
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
@@ -1039,6 +1124,11 @@ setting_ip6_config_details (NMSetting *setting, NmCli *nmc)
 		g_string_append (addr_str, tmp);
 		g_free (tmp);
 
+		memset (buf, 0, sizeof (buf));
+		ip = nm_ip6_address_get_gateway (addr);
+		inet_ntop (AF_INET6, (const void *) ip, buf, sizeof (buf));
+		g_string_append_printf (addr_str, ", gw = %s", buf);
+
 		g_string_append (addr_str, " }");
 	}
 
@@ -1087,6 +1177,7 @@ setting_ip6_config_details (NMSetting *setting, NmCli *nmc)
 	nmc->allowed_fields[6].value = nm_setting_ip6_config_get_ignore_auto_routes (s_ip6) ? _("yes") : _("no");
 	nmc->allowed_fields[7].value = nm_setting_ip6_config_get_ignore_auto_dns (s_ip6) ? _("yes") : _("no");
 	nmc->allowed_fields[8].value = nm_setting_ip6_config_get_never_default (s_ip6) ? _("yes") : _("no");
+	nmc->allowed_fields[9].value = nm_setting_ip6_config_get_may_fail (s_ip6) ? _("yes") : _("no");
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
