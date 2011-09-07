@@ -549,4 +549,55 @@ Internet Connection Sharing ones are started, where clearly the priorities
 are different (ie, for Mobile Hotspot 3G > WiFi).
 
 
+* IP over Infiniband (IPoIB)
 
+These interfaces are similar to Ethernet interfaces with a few distinct
+differences:
+
+  1) they have 64-bit MAC addresses (GUIDs in Infiniband parlance)
+  2) DHCP clients need to be modified to handle IPoIB
+  3) they have a different ARP type and different L2 options
+
+By default the interfaces do not have IP capability, but they gain that
+capability when certain kernel modules (ib_ipoib.ko) are loaded, which causes
+the IP-capable interface is created.  The IP-capable interfaces apparently have
+ARPHRD_INFINIBAND set, which is likely what NM should use to identify them.
+
+One outstanding question is whether NM should (a) detect all Infiniband
+interfaces and load ib_ipoib.ko only when there is a defined NMConnection for
+an Infiniband interface, or (b) whether NM should automatically load ib_ipoib.ko
+for every Infiniband interface, or (c) whether NM should only manage Infiniband
+interfaces that already have associated IP-capable interfaces (ie, something
+else is responsible for loading ib_ipoib.ko).  Depending on our implementation,
+(a) might not be possible, because if IPoIB connections are treated similar to
+plain Ethernet connections, we may not have any information about whether a
+specific NMConnection is Infiniband other than the MAC address.
+
+The second question is whether to fold IPoIB support into the NMDeviceEthernet
+class as was done for s390 network interfaces, or whether to create a subclass
+of NMDevice:
+
+1) extend NMDeviceEthernet: this would involve loosening the assumption that
+hardware addresses (the 'hw-address'/'perm-hw-address' properties of
+NMDeviceEthernet and the 'mac-address'/'cloned-mac-address' properties of
+NMSettingWired) are 48 bits wide and instead can be either 48 or 64 bits wide.
+Any Infiniband-specific options (partitions, datagram vs. connected modes, etc)
+would need to be evaluated and then possibly added to NMSettingWired similar to
+what was done for s390.
+
+2) create a new NMDevice subclass for Infiniband devices tailored to Infiniband
+specific behavior and attributes.  This would be a lot more code since we'd have
+to duplicate much of what NMDeviceEthernet already does, plus add the
+Infiniband device class to libnm-glib.  This also would be the least invasive
+from an API standpoint since the existing API would be unchanged, except for
+the addition of a new value in the NMDeviceType enum, which clients should
+ignore if they don't understand it.  (Need to coordinate additions to this enum
+between 0.8.x and 0.9.x since 0.9.x has more device types, but we want to make
+sure new device types get the same number for both branches).
+
+For some general (and also Red Hat/Fedora specific) information see:
+
+http://tools.ietf.org/html/rfc4392
+http://rhkernel.org/#RHEL6+2.6.32-71.18.2.el6/Documentation/infiniband/ipoib.txt
+ 
+ 
