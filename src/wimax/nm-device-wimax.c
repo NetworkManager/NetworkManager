@@ -91,6 +91,9 @@ typedef struct {
 	struct ether_addr hw_addr;
 	guint activation_timeout_id;
 
+	/* Track whether stage1 (Prepare) is completed yet or not */
+	gboolean prepare_done;
+
 	guint sdk_action_defer_id;
 
 	guint link_timeout_id;
@@ -231,27 +234,25 @@ set_current_nsp (NMDeviceWimax *self, NMWimaxNsp *new_nsp)
 {
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 	NMWimaxNsp *old_nsp;
-	char *old_path = NULL;
+	gboolean path_changed = FALSE;
 
 	old_nsp = priv->current_nsp;
-	if (old_nsp) {
-		old_path = g_strdup (nm_wimax_nsp_get_dbus_path (old_nsp));
-		priv->current_nsp = NULL;
-	}
+	priv->current_nsp = NULL;
 
 	if (new_nsp)
 		priv->current_nsp = g_object_ref (new_nsp);
 
-	if (old_nsp)
-		g_object_unref (old_nsp);
+	if (old_nsp && new_nsp) {
+		path_changed = (g_strcmp0 (nm_wimax_nsp_get_dbus_path (old_nsp),
+		                           nm_wimax_nsp_get_dbus_path (new_nsp)) != 0);
+	}
 
 	/* Only notify if it's really changed */
-	if (   (!old_path && new_nsp)
-		|| (old_path && !new_nsp)
-	    || (old_path && new_nsp && strcmp (old_path, nm_wimax_nsp_get_dbus_path (new_nsp))))
+	if (old_nsp != new_nsp || path_changed)
 		g_object_notify (G_OBJECT (self), NM_DEVICE_WIMAX_ACTIVE_NSP);
 
-	g_free (old_path);
+	if (old_nsp)
+		g_object_unref (old_nsp);
 }
 
 NMWimaxNsp *
@@ -794,6 +795,7 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	/* FIXME: Is 40 seconds good estimation? I have no idea */
 	priv->activation_timeout_id = g_timeout_add_seconds (40, activation_timed_out, device);
 
+	priv->prepare_done = TRUE;
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
 
@@ -936,7 +938,7 @@ wmx_state_change_cb (struct wmxsdk *wmxsdk,
 		 * then check if we need to move to stage2 now that the device might be
 		 * ready.
 		 */
-		if (state == NM_DEVICE_STATE_PREPARE) {
+		if (state == NM_DEVICE_STATE_PREPARE && priv->prepare_done) {
 			if (   new_status == WIMAX_API_DEVICE_STATUS_Ready
 			    || new_status == WIMAX_API_DEVICE_STATUS_Connecting) {
 				nm_device_activate_schedule_stage2_device_config (NM_DEVICE (self));
@@ -1276,6 +1278,9 @@ device_state_changed (NMDevice *device,
 {
 	NMDeviceWimax *self = NM_DEVICE_WIMAX (device);
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
+
+	/* Reset our stage1 (Prepare) done marker since it's only valid while in stage1 */
+	priv->prepare_done = FALSE;
 
 	if (new_state < NM_DEVICE_STATE_DISCONNECTED)
 		remove_all_nsps (self);
