@@ -755,6 +755,8 @@ nm_system_iface_set_mac (int ifindex, const struct ether_addr *mac)
 		addr = nl_addr_build (AF_LLC, (void *) mac, ETH_ALEN);
 		if (!addr) {
 			nm_log_err (LOGD_HW, "(%s): failed to allocate memory for MAC address change", iface);
+			rtnl_link_put (old);
+			rtnl_link_put (new);
 			return FALSE;
 		}
 		rtnl_link_set_addr (new, addr);
