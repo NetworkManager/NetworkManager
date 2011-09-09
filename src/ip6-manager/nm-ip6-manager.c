@@ -911,6 +911,13 @@ process_nduseropt (NMIP6Manager *manager, struct nl_msg *msg)
 
 	ndmsg = (struct nduseroptmsg *) NLMSG_DATA (nlmsg_hdr (msg));
 
+	if (!nlmsg_valid_hdr (nlmsg_hdr (msg), sizeof (*ndmsg)) ||
+	    nlmsg_datalen (nlmsg_hdr (msg)) <
+		(ndmsg->nduseropt_opts_len + sizeof (*ndmsg))) {
+		nm_log_dbg (LOGD_IP6, "ignoring invalid nduseropt message");
+		return NULL;
+	}
+
 	if (ndmsg->nduseropt_family != AF_INET6 ||
 		ndmsg->nduseropt_icmp_type != ND_ROUTER_ADVERT ||
 		ndmsg->nduseropt_icmp_code != 0) {
