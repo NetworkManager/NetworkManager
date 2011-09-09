@@ -970,6 +970,19 @@ process_newlink (NMIP6Manager *manager, struct nl_msg *msg)
 	struct nlattr *pi[IFLA_INET6_MAX + 1];
 	int err;
 
+	/* FIXME: we have to do this manually for now since libnl doesn't yet
+	 * support the IFLA_PROTINFO attribute of NEWLINK messages.  When it does,
+	 * we can get rid of this function and just grab IFLA_PROTINFO from
+	 * nm_ip6_device_sync_from_netlink(), then get the IFLA_INET6_FLAGS out of
+	 * the PROTINFO.
+	 */
+	err = nlmsg_parse (hdr, sizeof (*ifi), tb, IFLA_MAX, link_policy);
+	if (err < 0) {
+		nm_log_dbg (LOGD_IP6, "ignoring invalid newlink netlink message "
+				      "while parsing PROTINFO attribute");
+		return NULL;
+	}
+
 	ifi = nlmsg_data (hdr);
 	if (ifi->ifi_family != AF_INET6) {
 		nm_log_dbg (LOGD_IP6, "ignoring netlink message family %d", ifi->ifi_family);
@@ -983,18 +996,6 @@ process_newlink (NMIP6Manager *manager, struct nl_msg *msg)
 		return NULL;
 	}
 
-	/* FIXME: we have to do this manually for now since libnl doesn't yet
-	 * support the IFLA_PROTINFO attribute of NEWLINK messages.  When it does,
-	 * we can get rid of this function and just grab IFLA_PROTINFO from
-	 * nm_ip6_device_sync_from_netlink(), then get the IFLA_INET6_FLAGS out of
-	 * the PROTINFO.
-	 */
-
-	err = nlmsg_parse (hdr, sizeof (*ifi), tb, IFLA_MAX, link_policy);
-	if (err < 0) {
-		nm_log_dbg (LOGD_IP6, "(%s): error parsing PROTINFO attribute", device->iface);
-		return NULL;
-	}
 	if (!tb[IFLA_PROTINFO]) {
 		nm_log_dbg (LOGD_IP6, "(%s): message had no PROTINFO attribute", device->iface);
 		return NULL;
