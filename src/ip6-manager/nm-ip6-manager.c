@@ -624,6 +624,11 @@ process_prefix (NMIP6Manager *manager, struct nl_msg *msg)
 
 	nm_log_dbg (LOGD_IP6, "processing netlink new prefix message");
 
+	if (!nlmsg_valid_hdr (nlmsg_hdr (msg), sizeof(*pmsg))) {
+		nm_log_dbg (LOGD_IP6, "ignoring invalid prefix message");
+		return NULL;
+	}
+
 	pmsg = (struct prefixmsg *) NLMSG_DATA (nlmsg_hdr (msg));
 	device = nm_ip6_manager_get_device (manager, pmsg->prefix_ifindex);
 
