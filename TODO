@@ -573,6 +573,16 @@ else is responsible for loading ib_ipoib.ko).  Depending on our implementation,
 plain Ethernet connections, we may not have any information about whether a
 specific NMConnection is Infiniband other than the MAC address.
 
+It turns out that on some distros other components (like system services) may
+load ib_ipoib.ko for us.  For exmaple, the 'rdma' package on Fedora/RHEL systems
+contains /etc/rc.d/init.d/rdma which uses values in /etc/rdma/rdma.conf to load
+ib_ipoib.ko at system startup if the user has requested it via IPOIB_LOAD=yes.
+For the time being, if the some other component of the system loads IP for us,
+NetworkManager should probably still recognize the Infiniband interface, but
+leave it in unmanaged mode if there is no available IPoIB interface associated
+with the Infiniband one.  i.e. for now, NM should not automatically load
+ib_ipoib.ko.
+
 The second question is whether to fold IPoIB support into the NMDeviceEthernet
 class as was done for s390 network interfaces, or whether to create a subclass
 of NMDevice:
@@ -581,9 +591,6 @@ of NMDevice:
 hardware addresses (the 'hw-address'/'perm-hw-address' properties of
 NMDeviceEthernet and the 'mac-address'/'cloned-mac-address' properties of
 NMSettingWired) are 48 bits wide and instead can be either 48 or 64 bits wide.
-Any Infiniband-specific options (partitions, datagram vs. connected modes, etc)
-would need to be evaluated and then possibly added to NMSettingWired similar to
-what was done for s390.
 
 2) create a new NMDevice subclass for Infiniband devices tailored to Infiniband
 specific behavior and attributes.  This would be a lot more code since we'd have
@@ -595,9 +602,16 @@ ignore if they don't understand it.  (Need to coordinate additions to this enum
 between 0.8.x and 0.9.x since 0.9.x has more device types, but we want to make
 sure new device types get the same number for both branches).
 
+For Infiniband specific options we could either fold them into NMSettingEthernet
+or create a new NMSettingInfiniband class.  Current Infiniband specific options
+are partitions/P_Keys, datagram vs. connected mode, and MTU.  The default MTU
+varies with the 'mode'; for datagram it is currently 2044, while for connected
+mode it is currently 65520.  Given that we only have 2 IB-specific options
+we should probably just fold them into NMSettingEthernet similar to what was
+done for s390-specific options.
+
 For some general (and also Red Hat/Fedora specific) information see:
 
 http://tools.ietf.org/html/rfc4392
 http://rhkernel.org/#RHEL6+2.6.32-71.18.2.el6/Documentation/infiniband/ipoib.txt
- 
- 
+
