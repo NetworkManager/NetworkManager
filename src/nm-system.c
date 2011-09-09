@@ -758,6 +758,7 @@ nm_system_iface_set_mac (int ifindex, const struct ether_addr *mac)
 			return FALSE;
 		}
 		rtnl_link_set_addr (new, addr);
+		nl_addr_put (addr);
 		nlh = nm_netlink_get_default_handle ();
 		if (nlh) {
 			err = rtnl_link_change (nlh, old, new, 0);
