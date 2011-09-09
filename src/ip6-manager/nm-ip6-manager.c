@@ -591,6 +591,7 @@ process_route (NMIP6Manager *manager, struct nl_msg *msg)
 	device = nm_ip6_manager_get_device (manager, rtnl_route_get_oif (rtnlroute));
 	if (!device) {
 		nm_log_dbg (LOGD_IP6, "ignoring message for unknown device");
+		rtnl_route_put (rtnlroute);
 		return NULL;
 	}
 
