@@ -551,6 +551,7 @@ process_addr (NMIP6Manager *manager, struct nl_msg *msg)
 	device = nm_ip6_manager_get_device (manager, rtnl_addr_get_ifindex (rtnladdr));
 	if (!device) {
 		nm_log_dbg (LOGD_IP6, "ignoring message for unknown device");
+		rtnl_addr_put (rtnladdr);
 		return NULL;
 	}
 
