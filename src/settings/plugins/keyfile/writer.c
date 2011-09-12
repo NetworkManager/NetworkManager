@@ -993,14 +993,26 @@ _internal_write_connection (NMConnection *connection,
 
 		path = g_strdup_printf ("%s/%s-%s", keyfile_dir, filename, nm_connection_get_uuid (connection));
 		if (g_file_test (path, G_FILE_TEST_EXISTS)) {
-			/* Hmm, this is odd. Give up. */
-			g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
-				         "%s.%d: could not find suitable keyfile file name (%s already used)",
-				         __FILE__, __LINE__, path);
-			g_free (path);
-			goto out;
+			if (existing_path == NULL || g_strcmp0 (path, existing_path) != 0) {
+				/* This should not happen. But, it actually occurs when
+				 * two connections have the same UUID, and one of the connections
+				 * is edited to contain the same ID as the other one.
+				 * Give up.
+				 */
+				g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
+				                    "%s.%d: could not find suitable keyfile file name (%s already used)",
+				                    __FILE__, __LINE__, path);
+				g_free (path);
+				goto out;
+			}
 		}
 	}
+
+	/* In case of updating the connection and changing the file path,
+	 * we need to remove the old one, not to end up with two connections.
+	 */
+	if (existing_path != NULL && strcmp (path, existing_path) != 0)
+		unlink (existing_path);
 
 	g_file_set_contents (path, data, len, error);
 	if (chown (path, owner_uid, owner_grp) < 0) {
