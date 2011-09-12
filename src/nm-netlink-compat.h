@@ -74,6 +74,7 @@ __rtnl_link_alloc_cache (struct nl_sock *h, struct nl_cache **cache)
 #define nl_socket_set_passcred nl_set_passcred
 #define nl_socket_disable_seq_check nl_disable_sequence_check
 #define rtnl_route_set_priority rtnl_route_set_prio
+#define nlmsg_datalen nlmsg_len
 
 /* auxiliary functions */
 int nl_compat_error (int);
