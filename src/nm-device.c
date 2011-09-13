@@ -3404,7 +3404,7 @@ set_property (GObject *object, guint prop_id,
 		priv->iface = g_value_dup_string (value);
 		if (priv->iface) {
 			priv->ifindex = nm_netlink_iface_to_index (priv->iface);
-			if (priv->ifindex < 0) {
+			if (priv->ifindex <= 0) {
 				nm_log_warn (LOGD_HW, "(%s): failed to look up interface index", priv->iface);
 			}
 		}
