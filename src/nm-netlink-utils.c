@@ -230,7 +230,7 @@ int nm_netlink_route_add(struct rtnl_route * route,
 		}
 	}
 
-	err = rtnl_route_add (sk, route, 0);
+	err = rtnl_route_add (sk, route, flags);
 
 	/* LIBNL Bug: Aliased ESRCH */
 	if (err == -NLE_FAILURE)
