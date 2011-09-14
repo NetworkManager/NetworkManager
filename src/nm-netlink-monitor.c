@@ -282,15 +282,12 @@ event_connection_setup (NMNetlinkMonitor *self, GError **error)
 	NMNetlinkMonitorPrivate *priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
 	GError *channel_error = NULL;
 	GIOFlags channel_flags;
-	struct nl_cb *cb;
 	int fd;
 
 	g_return_val_if_fail (priv->io_channel == NULL, FALSE);
 
 	/* Set up the event listener connection */
-	cb = nl_cb_alloc (NL_CB_DEFAULT);
-	priv->nlh_event = nl_socket_alloc_cb (cb);
-	nl_cb_put (cb);
+	priv->nlh_event = nl_socket_alloc ();
 	if (!priv->nlh_event) {
 		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
 		             NM_NETLINK_MONITOR_ERROR_NETLINK_ALLOC_HANDLE,
@@ -344,16 +341,13 @@ static gboolean
 sync_connection_setup (NMNetlinkMonitor *self, GError **error)
 {
 	NMNetlinkMonitorPrivate *priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
-	struct nl_cb *cb;
 #ifdef LIBNL_NEEDS_ADDR_CACHING_WORKAROUND
 	struct nl_cache *addr_cache;
 #endif
 	int err;
 
 	/* Set up the event listener connection */
-	cb = nl_cb_alloc (NL_CB_DEFAULT);
-	priv->nlh_sync = nl_socket_alloc_cb (cb);
-	nl_cb_put (cb);
+	priv->nlh_sync = nl_socket_alloc ();
 	if (!priv->nlh_sync) {
 		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
 		             NM_NETLINK_MONITOR_ERROR_NETLINK_ALLOC_HANDLE,
