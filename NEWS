@@ -19,6 +19,12 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Fix crash requesting system VPN secrets
 * Add ability to blacklist certain MAC addresses for wired & wifi connections
 * Ensure users are authorized to share wifi networks (CVE-2011-2176)
+* Ensure newly installed VPN plugins are able to talk to NetworkManager via D-Bus
+* Add a UUID property to the ActiveConnection interface for easier client
+   network connection determination
+* Fix handling of link-local IPv6 DNS servers when using the dnsmasq plugin
+* Allow subject verification of 802.1x/WPA Enterprise server certificates
+* Ensure the 'novj' pppd option is given to pppd when requested
 
 
 ==============================================
