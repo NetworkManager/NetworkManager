@@ -875,6 +875,8 @@ create_pppd_cmd_line (NMPPPManager *self,
 		nm_cmd_line_add_string (cmd, "refuse-mschap-v2");
 	if (nm_setting_ppp_get_nobsdcomp (setting))
 		nm_cmd_line_add_string (cmd, "nobsdcomp");
+	if (nm_setting_ppp_get_no_vj_comp (setting))
+		nm_cmd_line_add_string (cmd, "novj");
 	if (nm_setting_ppp_get_nodeflate (setting))
 		nm_cmd_line_add_string (cmd, "nodeflate");
 	if (nm_setting_ppp_get_require_mppe (setting))
