@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2010 Red Hat, Inc.
+ * Copyright (C) 2004 - 2011 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -59,10 +59,6 @@ typedef struct
 	gboolean			fake;	/* Whether or not the AP is from a scan */
 	gboolean			broadcast;	/* Whether or not the AP is broadcasting (hidden) */
 	glong				last_seen;	/* Last time the AP was seen in a scan in seconds */
-
-	/* Things from user prefs/NetworkManagerInfo */
-	GTimeVal			timestamp;
-	GSList *			user_addresses;
 } NMAccessPointPrivate;
 
 #define NM_AP_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_AP, NMAccessPointPrivate))
@@ -112,8 +108,6 @@ finalize (GObject *object)
 	g_free (priv->dbus_path);
 	if (priv->ssid)
 		g_byte_array_free (priv->ssid, TRUE);
-	g_slist_foreach (priv->user_addresses, (GFunc)g_free, NULL);
-	g_slist_free (priv->user_addresses);
 
 	G_OBJECT_CLASS (nm_ap_parent_class)->finalize (object);
 }
@@ -773,7 +767,6 @@ nm_ap_print_self (NMAccessPoint *ap,
 	            ap);
 	nm_log_dbg (LOGD_WIFI_SCAN, "    BSSID     " MAC_FMT, MAC_ARG (priv->address.ether_addr_octet));
 	nm_log_dbg (LOGD_WIFI_SCAN, "    mode      %d", priv->mode);
-	nm_log_dbg (LOGD_WIFI_SCAN, "    timestamp %ld", priv->timestamp.tv_sec);
 	nm_log_dbg (LOGD_WIFI_SCAN, "    flags     0x%X", priv->flags);
 	nm_log_dbg (LOGD_WIFI_SCAN, "    wpa flags 0x%X", priv->wpa_flags);
 	nm_log_dbg (LOGD_WIFI_SCAN, "    rsn flags 0x%X", priv->rsn_flags);
@@ -789,37 +782,6 @@ nm_ap_get_dbus_path (NMAccessPoint *ap)
 	g_return_val_if_fail (NM_IS_AP (ap), NULL);
 
 	return NM_AP_GET_PRIVATE (ap)->dbus_path;
-}
-
-
-/*
- * Get/set functions for timestamp
- *
- */
-const GTimeVal *nm_ap_get_timestamp (const NMAccessPoint *ap)
-{
-	g_return_val_if_fail (NM_IS_AP (ap), 0);
-
-	return (&NM_AP_GET_PRIVATE (ap)->timestamp);
-}
-
-void nm_ap_set_timestamp (NMAccessPoint *ap, glong sec, glong usec)
-{
-	NMAccessPointPrivate *priv;
-
-	g_return_if_fail (NM_IS_AP (ap));
-
-	priv = NM_AP_GET_PRIVATE (ap);
-
-	priv->timestamp.tv_sec = sec;
-	priv->timestamp.tv_usec = usec;
-}
-
-void nm_ap_set_timestamp_via_timestamp (NMAccessPoint *ap, const GTimeVal *timestamp)
-{
-	g_return_if_fail (NM_IS_AP (ap));
-
-	NM_AP_GET_PRIVATE (ap)->timestamp = *timestamp;
 }
 
 /*
@@ -1150,57 +1112,6 @@ void nm_ap_set_last_seen (NMAccessPoint *ap, const glong last_seen)
 
 	NM_AP_GET_PRIVATE (ap)->last_seen = last_seen;
 }
-
-
-/*
- * Get/Set functions for user address list
- *
- * The internal address list is always "owned" by the AP and
- * the list returned by nm_ap_get_user_addresses() is a deep copy.
- * Likewise, when setting the list, a deep copy is made for the
- * ap's actual list.
- *
- */
-GSList *nm_ap_get_user_addresses (const NMAccessPoint *ap)
-{
-	GSList	*new = NULL;
-	GSList	*elt = NULL;
-
-	g_return_val_if_fail (NM_IS_AP (ap), NULL);
-
-	for (elt = NM_AP_GET_PRIVATE (ap)->user_addresses; elt; elt = g_slist_next (elt))
-	{
-		if (elt->data)
-			new = g_slist_append (new, g_strdup (elt->data));
-	}
-
-	/* Return a _deep__copy_ of the address list */
-	return new;
-}
-
-void nm_ap_set_user_addresses (NMAccessPoint *ap, GSList *list)
-{
-	NMAccessPointPrivate *priv;
-	GSList	*elt = NULL;
-	GSList	*new = NULL;
-
-	g_return_if_fail (NM_IS_AP (ap));
-
-	priv = NM_AP_GET_PRIVATE (ap);
-
-	/* Free existing list */
-	g_slist_foreach (priv->user_addresses, (GFunc) g_free, NULL);
-
-	/* Copy new list and set as our own */
-	for (elt = list; elt; elt = g_slist_next (elt))
-	{
-		if (elt->data)
-			new = g_slist_append (new, g_ascii_strup (elt->data, -1));
-	}
-
-	priv->user_addresses = new;
-}
-
 
 gboolean
 nm_ap_check_compatible (NMAccessPoint *self,
