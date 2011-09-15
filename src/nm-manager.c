@@ -147,20 +147,6 @@ static GSList * remove_one_device (NMManager *manager,
 
 static NMDevice *nm_manager_get_device_by_udi (NMManager *manager, const char *udi);
 
-/* Fix for polkit 0.97 and later */
-#if !HAVE_POLKIT_AUTHORITY_GET_SYNC
-static inline PolkitAuthority *
-polkit_authority_get_sync (GCancellable *cancellable, GError **error)
-{
-	PolkitAuthority *authority;
-
-	authority = polkit_authority_get ();
-	if (!authority)
-		g_set_error (error, 0, 0, "failed to get the PolicyKit authority");
-	return authority;
-}
-#endif
-
 #define SSD_POKE_INTERVAL 120
 #define ORIGDEV_TAG "originating-device"
 

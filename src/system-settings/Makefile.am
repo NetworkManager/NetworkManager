@@ -16,7 +16,6 @@ libsystem_settings_la_SOURCES = \
 	nm-sysconfig-settings.h \
 	nm-inotify-helper.c \
 	nm-inotify-helper.h \
-	nm-polkit-helpers.h \
 	nm-system-config-error.c \
 	nm-system-config-error.h \
 	nm-system-config-interface.c \

@@ -1,5 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-/* NetworkManager system settings service
+/* NetworkManager -- Network link manager
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,8 +19,8 @@
  * (C) Copyright 2008 - 2010 Red Hat, Inc.
  */
 
-#ifndef NM_POLKIT_HELPERS_H
-#define NM_POLKIT_HELPERS_H
+#ifndef NM_POLKIT_H
+#define NM_POLKIT_H
 
 #include <config.h>
 #include <polkit/polkit.h>
@@ -44,4 +44,4 @@ polkit_authority_get_sync (GCancellable *cancellable, GError **error)
 }
 #endif
 
-#endif /* NM_POLKIT_HELPERS_H */
+#endif /* NM_POLKIT_H */

@@ -21,11 +21,11 @@
 #ifndef NM_MANAGER_AUTH_H
 #define NM_MANAGER_AUTH_H
 
-#include <polkit/polkit.h>
 #include <glib.h>
 #include <dbus/dbus-glib.h>
 
 #include "nm-dbus-manager.h"
+#include "nm-polkit.h"
 
 #define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK "org.freedesktop.NetworkManager.enable-disable-network"
 #define NM_AUTH_PERMISSION_SLEEP_WAKE             "org.freedesktop.NetworkManager.sleep-wake"

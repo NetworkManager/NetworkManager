@@ -127,6 +127,7 @@ NetworkManager_SOURCES = \
 		nm-policy-hosts.h \
 		nm-policy-hostname.c \
 		nm-policy-hostname.h \
+		nm-polkit.h \
 		NetworkManagerUtils.c \
 		NetworkManagerUtils.h \
 		nm-system.c \

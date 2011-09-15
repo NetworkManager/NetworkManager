@@ -27,7 +27,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-settings-connection-interface.h"
 #include "nm-settings-interface.h"
-#include "nm-polkit-helpers.h"
+#include "nm-polkit.h"
 #include "nm-logging.h"
 
 

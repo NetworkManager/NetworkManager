@@ -55,7 +55,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-sysconfig-settings.h"
 #include "nm-sysconfig-connection.h"
-#include "nm-polkit-helpers.h"
+#include "nm-polkit.h"
 #include "nm-system-config-error.h"
 #include "nm-default-wired-connection.h"
 #include "nm-logging.h"
