@@ -6,6 +6,5 @@ EXTRA_DIST = \
 	list-connections.py \
 	show-bssids.py \
 	disconnect-device.py \
-	get-active-connections.py
-
-
+	get-active-connections.py \
+	list-devices.py
