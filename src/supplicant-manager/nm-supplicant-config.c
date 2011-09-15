@@ -123,7 +123,7 @@ nm_supplicant_config_add_option_with_type (NMSupplicantConfig *self,
 			char buf[255];
 			memset (&buf[0], 0, sizeof (buf));
 			memcpy (&buf[0], value, len > 254 ? 254 : len);
-			nm_log_warn (LOGD_SUPPLICANT, "Key '%s' and/or value '%s' invalid.", key, buf);
+			nm_log_warn (LOGD_SUPPLICANT, "Key '%s' and/or value '%s' invalid.", key, secret ? "<omitted>" : buf);
 			return FALSE;
 		}
 	}
