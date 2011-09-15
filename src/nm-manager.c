@@ -214,7 +214,8 @@ typedef struct {
 	gboolean net_enabled;
 
 	NMVPNManager *vpn_manager;
-	guint vpn_manager_id;
+	gulong vpn_manager_activated_id;
+	gulong vpn_manager_deactivated_id;
 
 	NMModemManager *modem_manager;
 	guint modem_added_id;
@@ -374,6 +375,18 @@ manager_sleeping (NMManager *self)
 	if (priv->sleeping || !priv->net_enabled)
 		return TRUE;
 	return FALSE;
+}
+
+static void
+vpn_manager_connection_activated_cb (NMVPNManager *manager,
+                                     NMVPNConnection *vpn,
+                                     NMVPNConnectionState state,
+                                     NMVPNConnectionStateReason reason,
+                                     gpointer user_data)
+{
+	/* Update timestamp for the VPN connection */
+	nm_settings_connection_update_timestamp (NM_SETTINGS_CONNECTION (nm_vpn_connection_get_connection (vpn)),
+	                                         (guint64) time (NULL));
 }
 
 static void
@@ -3159,9 +3172,13 @@ dispose (GObject *object)
 
 	g_object_unref (priv->settings);
 
-	if (priv->vpn_manager_id) {
-		g_source_remove (priv->vpn_manager_id);
-		priv->vpn_manager_id = 0;
+	if (priv->vpn_manager_activated_id) {
+		g_source_remove (priv->vpn_manager_activated_id);
+		priv->vpn_manager_activated_id = 0;
+	}
+	if (priv->vpn_manager_deactivated_id) {
+		g_source_remove (priv->vpn_manager_deactivated_id);
+		priv->vpn_manager_deactivated_id = 0;
 	}
 	g_object_unref (priv->vpn_manager);
 
@@ -3402,6 +3419,7 @@ static gboolean
 periodic_update_active_connection_timestamps (gpointer user_data)
 {
 	NMManager *manager = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	GPtrArray *active;
 	int i;
 
@@ -3416,6 +3434,15 @@ periodic_update_active_connection_timestamps (gpointer user_data)
 		if (device && nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED)
 			nm_settings_connection_update_timestamp (NM_SETTINGS_CONNECTION (nm_act_request_get_connection (req)),
 			                                         (guint64) time (NULL));
+		else {
+			/* The connection is probably VPN */
+			NMVPNConnection *vpn_con;
+
+			vpn_con = nm_vpn_manager_get_vpn_connection_for_active (priv->vpn_manager, active_path);
+			if (vpn_con && nm_vpn_connection_get_vpn_state (vpn_con) == NM_VPN_CONNECTION_STATE_ACTIVATED)
+				nm_settings_connection_update_timestamp (NM_SETTINGS_CONNECTION (nm_vpn_connection_get_connection (vpn_con)),
+				                                         (guint64) time (NULL));
+		}
 	}
 
 	return TRUE;
@@ -3426,7 +3453,7 @@ nm_manager_init (NMManager *manager)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	DBusGConnection *g_connection;
-	guint id, i;
+	guint i;
 	GFile *file;
 
 	/* Initialize rfkill structures and states */
@@ -3471,9 +3498,10 @@ nm_manager_init (NMManager *manager)
 	                                           G_CALLBACK (modem_removed), manager);
 
 	priv->vpn_manager = nm_vpn_manager_get ();
-	id = g_signal_connect (G_OBJECT (priv->vpn_manager), "connection-deactivated",
-	                       G_CALLBACK (vpn_manager_connection_deactivated_cb), manager);
-	priv->vpn_manager_id = id;
+	priv->vpn_manager_activated_id = g_signal_connect (G_OBJECT (priv->vpn_manager), "connection-activated",
+	                                                   G_CALLBACK (vpn_manager_connection_activated_cb), manager);
+	priv->vpn_manager_deactivated_id = g_signal_connect (G_OBJECT (priv->vpn_manager), "connection-deactivated",
+	                                                   G_CALLBACK (vpn_manager_connection_deactivated_cb), manager);
 
 	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
 

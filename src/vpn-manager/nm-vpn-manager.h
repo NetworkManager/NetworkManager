@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2008 Red Hat, Inc.
+ * Copyright (C) 2005 - 2011 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -83,7 +83,10 @@ void nm_vpn_manager_add_active_connections (NMVPNManager *manager,
 
 GSList *nm_vpn_manager_get_active_connections (NMVPNManager *manager);
 
+NMVPNConnection *nm_vpn_manager_get_vpn_connection_for_active (NMVPNManager *manager,
+                                                               const char *active_path);
+
 NMConnection *nm_vpn_manager_get_connection_for_active (NMVPNManager *manager,
                                                         const char *active_path);
 
-#endif /* NM_VPN_VPN_MANAGER_H */
+#endif /* NM_VPN_MANAGER_H */
