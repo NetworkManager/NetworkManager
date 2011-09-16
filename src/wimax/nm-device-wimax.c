@@ -1133,18 +1133,22 @@ wmx_removed_cb (struct wmxsdk *wmxsdk, void *user_data)
 	NMDeviceWimax *self = NM_DEVICE_WIMAX (user_data);
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 
-	if (priv->sdk) {
-		/* Clear callbacks just in case we don't hold the last reference */
-		iwmx_sdk_set_callbacks (priv->sdk, NULL, NULL, NULL, NULL, NULL, NULL);
-
-		wmxsdk_unref (priv->sdk);
-		priv->sdk = NULL;
-
-		priv->status = WIMAX_API_DEVICE_STATUS_UnInitialized;
-		nm_device_state_changed (NM_DEVICE (self),
-								 NM_DEVICE_STATE_UNAVAILABLE,
-								 NM_DEVICE_STATE_REASON_NONE);
+	if (!priv->sdk) {
+		nm_log_dbg (LOGD_WIMAX, "(%s): removed unhandled WiMAX interface", wmxsdk->ifname);
+		return;
 	}
+
+	nm_log_dbg (LOGD_WIMAX, "(%s): removed WiMAX interface", wmxsdk->ifname);
+
+	/* Clear callbacks just in case we don't hold the last reference */
+	iwmx_sdk_set_callbacks (priv->sdk, NULL, NULL, NULL, NULL, NULL, NULL);
+	wmxsdk_unref (priv->sdk);
+	priv->sdk = NULL;
+
+	priv->status = WIMAX_API_DEVICE_STATUS_UnInitialized;
+	nm_device_state_changed (NM_DEVICE (self),
+							 NM_DEVICE_STATE_UNAVAILABLE,
+							 NM_DEVICE_STATE_REASON_NONE);
 }
 
 /*************************************************************************/
@@ -1329,21 +1333,27 @@ wmx_new_sdk_cb (struct wmxsdk *sdk, void *user_data)
 	NMDeviceWimax *self = NM_DEVICE_WIMAX (user_data);
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 
-	/* If we now have the SDK, schedule an idle handler to start the device up */
-	if (!priv->sdk) {
-		priv->sdk = wmxsdk_ref (sdk);
-		iwmx_sdk_set_callbacks(priv->sdk,
-		                       wmx_state_change_cb,
-		                       wmx_media_status_cb,
-		                       wmx_connect_result_cb,
-		                       wmx_scan_result_cb,
-		                       wmx_removed_cb,
-		                       self);
-		iwmx_sdk_set_fast_reconnect_enabled (priv->sdk, 0);
-
-		if (!priv->sdk_action_defer_id)
-			priv->sdk_action_defer_id = g_idle_add (sdk_action_defer_cb, self);
+	/* We only track one wmxsdk at a time because the WiMAX SDK is pretty stupid */
+	if (priv->sdk) {
+		nm_log_dbg (LOGD_WIMAX, "(%s): WiMAX interface already known", sdk->ifname);
+		return;
 	}
+
+	nm_log_dbg (LOGD_WIMAX, "(%s): new WiMAX interface (%s)", sdk->ifname, sdk->name);
+
+	/* Now that we have an SDK, schedule an idle handler to start the device up */
+	priv->sdk = wmxsdk_ref (sdk);
+	iwmx_sdk_set_callbacks(priv->sdk,
+	                       wmx_state_change_cb,
+	                       wmx_media_status_cb,
+	                       wmx_connect_result_cb,
+	                       wmx_scan_result_cb,
+	                       wmx_removed_cb,
+	                       self);
+	iwmx_sdk_set_fast_reconnect_enabled (priv->sdk, 0);
+
+	if (!priv->sdk_action_defer_id)
+		priv->sdk_action_defer_id = g_idle_add (sdk_action_defer_cb, self);
 }
 
 /*************************************************************************/
