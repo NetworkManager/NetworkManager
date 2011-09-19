@@ -17,6 +17,8 @@ PKG_NAME=NetworkManager
     gtkdocize || exit 1
     autopoint --force
     AUTOPOINT='intltoolize --automake --copy' autoreconf --force --install --verbose
-    ./configure --enable-maintainer-mode $@
+    if test -z "$NOCONFIGURE"; then
+        ./configure --enable-maintainer-mode $@
+    fi
 )
 
