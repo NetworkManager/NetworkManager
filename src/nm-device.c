@@ -189,6 +189,8 @@ static void addrconf6_cleanup (NMDevice *self);
 static void dhcp6_cleanup (NMDevice *self, gboolean stop, gboolean release);
 static void dhcp4_cleanup (NMDevice *self, gboolean stop, gboolean release);
 
+static const char *reason_to_string (NMDeviceStateReason reason);
+
 
 static void
 device_interface_init (NMDeviceInterface *device_interface_class)
@@ -2825,8 +2827,8 @@ nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason)
 
 	g_return_if_fail (self != NULL);
 
-	nm_log_info (LOGD_DEVICE, "(%s): deactivating device (reason: %d).",
-	             nm_device_get_iface (self), reason);
+	nm_log_info (LOGD_DEVICE, "(%s): deactivating device (reason '%s') [%d]",
+	             nm_device_get_iface (self), reason_to_string (reason), reason);
 
 	/* Save whether or not we tried IPv6 for later */
 	if (NM_DEVICE_GET_PRIVATE (self)->ip6_manager)
