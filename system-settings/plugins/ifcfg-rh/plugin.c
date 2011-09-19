@@ -648,8 +648,10 @@ sc_plugin_ifcfg_init (SCPluginIfcfg *plugin)
 	}
 
 	if (!success) {
-		dbus_g_connection_unref (priv->bus);
-		priv->bus = NULL;
+		if (priv->bus) {
+			dbus_g_connection_unref (priv->bus);
+			priv->bus = NULL;
+		}
 	}
 }
 
