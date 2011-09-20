@@ -14,15 +14,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# Copyright (C) 2010 Red Hat, Inc.
+# Copyright (C) 2010 - 2011 Red Hat, Inc.
 #
 
 import dbus
 
-# This example asks both the system settings service and the user settings
-# service for all configured connections.  It also asks for secrets, demonstrating
-# the mechanisms each settings service uses to prevent unauthorized access to
-# a user's network passwords
+# This example asks settings service for all configured connections.
+# It also asks for secrets, demonstrating the mechanism the secrets can
+# be handled with.
 
 bus = dbus.SystemBus()
 
@@ -30,12 +29,12 @@ def merge_secrets(proxy, config, setting_name):
     try:
         # returns a dict of dicts mapping name::setting, where setting is a dict
         # mapping key::value.  Each member of the 'setting' dict is a secret
-        secrets = proxy.GetSecrets(setting_name, [], False)
+        secrets = proxy.GetSecrets(setting_name)
 
         # Copy the secrets into our connection config
         for setting in secrets:
             for key in secrets[setting]:
-                config[setting_name][key] = setting[key]
+                config[setting_name][key] = secrets[setting][key]
     except Exception, e:
         pass
 
@@ -80,27 +79,26 @@ def print_connections():
     # List each connection's name, UUID, and type
     for path in connection_paths:
         con_proxy = bus.get_object(service_name, path)
-        connection = dbus.Interface(con_proxy, "org.freedesktop.NetworkManager.Settings.Connection")
-        config = connection.GetSettings()
+        settings_connection = dbus.Interface(con_proxy, "org.freedesktop.NetworkManager.Settings.Connection")
+        config = settings_connection.GetSettings()
 
         # Now get secrets too; we grab the secrets for each type of connection
         # (since there isn't a "get all secrets" call because most of the time
         # you only need 'wifi' secrets or '802.1x' secrets, not everything) and
         # merge that into the configuration data
-        connection_secrets = dbus.Interface(con_proxy, "org.freedesktop.NetworkManager.Settings.Connection.Secrets")
-        merge_secrets(connection_secrets, config, '802-11-wireless')
-        merge_secrets(connection_secrets, config, '802-11-wireless-security')
-        merge_secrets(connection_secrets, config, '802-1x')
-        merge_secrets(connection_secrets, config, 'gsm')
-        merge_secrets(connection_secrets, config, 'cdma')
-        merge_secrets(connection_secrets, config, 'ppp')
+        merge_secrets(settings_connection, config, '802-11-wireless')
+        merge_secrets(settings_connection, config, '802-11-wireless-security')
+        merge_secrets(settings_connection, config, '802-1x')
+        merge_secrets(settings_connection, config, 'gsm')
+        merge_secrets(settings_connection, config, 'cdma')
+        merge_secrets(settings_connection, config, 'ppp')
 
         # Get the details of the 'connection' setting
 	s_con = config['connection']
-	print "name: %s" % s_con['id']
+	print "    name: %s" % s_con['id']
 	print "    uuid: %s" % s_con['uuid']
 	print "    type: %s" % s_con['type']
-	print "    ----------------------------"
+	print "    ------------------------------------------"
         connection_to_string(config)
 
     print ""
