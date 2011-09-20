@@ -49,7 +49,7 @@ bus = dbus.SystemBus()
 proxy = bus.get_object("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager")
 manager = dbus.Interface(proxy, "org.freedesktop.NetworkManager")
 
-# Find the device the user wants to disconnect
+# Get all devices known to NM and print their properties
 devices = manager.GetDevices()
 for d in devices:
     dev_proxy = bus.get_object("org.freedesktop.NetworkManager", d)
