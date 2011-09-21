@@ -1573,8 +1573,11 @@ nm_device_dhcp4_renew (NMDevice *self, gboolean release)
 
 	g_return_val_if_fail (priv->dhcp4_client != NULL, FALSE);
 
+	nm_log_info (LOGD_DHCP4, "(%s): DHCPv4 lease renewal requested",
+	             nm_device_get_iface (self));
+
 	/* Terminate old DHCP instance and release the old lease */
-	dhcp4_cleanup (self, TRUE, TRUE);
+	dhcp4_cleanup (self, TRUE, release);
 
 	req = nm_device_get_act_request (self);
 	g_assert (req);
