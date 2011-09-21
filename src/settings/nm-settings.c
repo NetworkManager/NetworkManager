@@ -634,6 +634,7 @@ connection_removed (NMSettingsConnection *obj, gpointer user_data)
 {
 	GObject *connection = G_OBJECT (obj);
 	guint id;
+
 	g_object_ref (connection);
 
 	/* Disconnect signal handlers, as plugins might still keep references
@@ -653,7 +654,7 @@ connection_removed (NMSettingsConnection *obj, gpointer user_data)
 	if (id)
 		g_signal_handler_disconnect (connection, id);
 
-	/* Forget about the connection internall */
+	/* Forget about the connection internally */
 	g_hash_table_remove (NM_SETTINGS_GET_PRIVATE (user_data)->connections,
 	                     (gpointer) nm_connection_get_path (NM_CONNECTION (connection)));
 
@@ -840,9 +841,6 @@ claim_connection (NMSettings *self,
 	}
 }
 
-// TODO it seems that this is only ever used to remove a
-// NMDefaultWiredConnection, and it probably needs to stay that way. So this
-// *needs* a better name!
 static void
 remove_default_wired_connection (NMSettings *self,
                                  NMSettingsConnection *connection,
@@ -852,7 +850,8 @@ remove_default_wired_connection (NMSettings *self,
 	const char *path = nm_connection_get_path (NM_CONNECTION (connection));
 
 	if (g_hash_table_lookup (priv->connections, path)) {
-		g_signal_emit_by_name (G_OBJECT (connection), NM_SETTINGS_CONNECTION_REMOVED);
+		if (do_signal)
+			g_signal_emit_by_name (G_OBJECT (connection), NM_SETTINGS_CONNECTION_REMOVED);
 		g_hash_table_remove (priv->connections, path);
 	}
 }
@@ -1378,7 +1377,7 @@ delete_cb (NMSettingsConnection *connection, GError *error, gpointer user_data)
 {
 }
 
-static gboolean
+static void
 default_wired_try_update (NMDefaultWiredConnection *wired,
                           NMSettings *self)
 {
@@ -1389,6 +1388,9 @@ default_wired_try_update (NMDefaultWiredConnection *wired,
 	/* Try to move this default wired conneciton to a plugin so that it has
 	 * persistent storage.
 	 */
+
+	/* Keep it alive over removal so we can re-add it if we need to */
+	g_object_ref (wired);
 
 	id = nm_connection_get_id (NM_CONNECTION (wired));
 	g_assert (id);
@@ -1402,21 +1404,21 @@ default_wired_try_update (NMDefaultWiredConnection *wired,
 		                   DEFAULT_WIRED_TAG,
 		                   NULL);
 		nm_log_info (LOGD_SETTINGS, "Saved default wired connection '%s' to persistent storage", id);
-		return FALSE;
+	} else {
+		nm_log_warn (LOGD_SETTINGS, "couldn't save default wired connection '%s': %d / %s",
+			         id,
+			         error ? error->code : -1,
+			         (error && error->message) ? error->message : "(unknown)");
+		g_clear_error (&error);
+
+		/* If there was an error, don't destroy the default wired connection,
+		 * but add it back to the system settings service. Connection is already
+		 * exported on the bus, don't export it again, thus do_export == FALSE.
+		 */
+		claim_connection (self, NM_SETTINGS_CONNECTION (wired), FALSE);
 	}
 
-	nm_log_warn (LOGD_SETTINGS, "couldn't save default wired connection '%s': %d / %s",
-	             id,
-	             error ? error->code : -1,
-	             (error && error->message) ? error->message : "(unknown)");
-	g_clear_error (&error);
-
-	/* If there was an error, don't destroy the default wired connection,
-	 * but add it back to the system settings service. Connection is already
-	 * exported on the bus, don't export it again, thus do_export == FALSE.
-	 */
-	claim_connection (self, NM_SETTINGS_CONNECTION (wired), FALSE);
-	return TRUE;
+	g_object_unref (wired);
 }
 
 void
