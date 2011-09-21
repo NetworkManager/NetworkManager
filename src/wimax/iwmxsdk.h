@@ -34,6 +34,7 @@ typedef void (*WimaxStateChangeFunc) (struct wmxsdk *wmxsdk,
                                       WIMAX_API_DEVICE_STATUS new_status,
                                       WIMAX_API_DEVICE_STATUS old_status,
                                       WIMAX_API_STATUS_REASON reason,
+                                      WIMAX_API_CONNECTION_PROGRESS_INFO info,
                                       void *user_data);
 
 typedef void (*WimaxMediaStatusFunc) (struct wmxsdk *wmxsdk,
@@ -101,6 +102,7 @@ WIMAX_API_LINK_STATUS_INFO_EX *iwmx_sdk_get_link_status_info(struct wmxsdk *wmxs
 const char *iwmx_sdk_dev_status_to_str(WIMAX_API_DEVICE_STATUS status);
 const char *iwmx_sdk_reason_to_str(WIMAX_API_STATUS_REASON reason);
 const char *iwmx_sdk_media_status_to_str(WIMAX_API_MEDIA_STATUS status);
+const char *iwmx_sdk_con_progress_to_str(WIMAX_API_CONNECTION_PROGRESS_INFO progress);
 int iwmx_sdk_rf_state_set(struct wmxsdk *wmxsdk, WIMAX_API_RF_STATE rf_state);
 int iwmx_sdk_get_networks(struct wmxsdk *wmxsdk);
 int iwmx_sdk_api_init(void);

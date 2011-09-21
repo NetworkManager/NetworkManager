@@ -856,6 +856,7 @@ wmx_state_change_cb (struct wmxsdk *wmxsdk,
                      WIMAX_API_DEVICE_STATUS new_status,
                      WIMAX_API_DEVICE_STATUS old_status,
                      WIMAX_API_STATUS_REASON reason,
+                     WIMAX_API_CONNECTION_PROGRESS_INFO progress,
                      void *user_data)
 {
 	NMDeviceWimax *self = NM_DEVICE_WIMAX (user_data);
@@ -865,22 +866,23 @@ wmx_state_change_cb (struct wmxsdk *wmxsdk,
 	gboolean old_available = FALSE;
 	const char *nsp_name = NULL;
 
+	iface = nm_device_get_iface (NM_DEVICE (self));
+	nm_log_info (LOGD_WIMAX, "(%s): wimax state change %s -> %s (%s (%d))",
+	             iface,
+	             iwmx_sdk_dev_status_to_str (old_status),
+	             iwmx_sdk_dev_status_to_str (new_status),
+	             iwmx_sdk_con_progress_to_str (progress),
+	             progress);
+
 	if (new_status == old_status)
 		return;
 
-	iface = nm_device_get_iface (NM_DEVICE (self));
 	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
 	old_available = nm_device_is_available (NM_DEVICE (self));
 
 	priv->status = new_status;
 	if (priv->current_nsp)
 		nsp_name = nm_wimax_nsp_get_name (priv->current_nsp);
-
-	nm_log_info (LOGD_WIMAX, "(%s): wimax state change %s -> %s (reason %d)",
-	             iface,
-	             iwmx_sdk_dev_status_to_str (old_status),
-	             iwmx_sdk_dev_status_to_str (new_status),
-	             reason);
 
 	switch (new_status) {
 	case WIMAX_API_DEVICE_STATUS_UnInitialized:

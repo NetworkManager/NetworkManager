@@ -190,6 +190,7 @@ typedef struct {
 	WIMAX_API_DEVICE_STATUS new_status;
 	WIMAX_API_DEVICE_STATUS old_status;
 	WIMAX_API_STATUS_REASON reason;
+	WIMAX_API_CONNECTION_PROGRESS_INFO progress;
 } StateChangeInfo;
 
 static gboolean
@@ -202,6 +203,7 @@ state_change_handler(gpointer user_data)
 		                              info->new_status,
 		                              info->old_status,
 		                              info->reason,
+		                              info->progress,
 		                              info->wmxsdk->callback_data);
 	}
 	wmxsdk_unref(info->wmxsdk);
@@ -214,7 +216,8 @@ static void
 _schedule_state_change(struct wmxsdk *wmxsdk,
                        WIMAX_API_DEVICE_STATUS new_status,
                        WIMAX_API_DEVICE_STATUS old_status,
-                       WIMAX_API_STATUS_REASON reason)
+                       WIMAX_API_STATUS_REASON reason,
+                       WIMAX_API_CONNECTION_PROGRESS_INFO progress)
 {
 	StateChangeInfo *info;
 
@@ -227,6 +230,7 @@ _schedule_state_change(struct wmxsdk *wmxsdk,
 	info->new_status = new_status;
 	info->old_status = old_status;
 	info->reason = reason;
+	info->progress = progress;
 
 	wmxsdk_ref(wmxsdk);
 	g_idle_add(state_change_handler, info);
@@ -471,6 +475,48 @@ const char *iwmx_sdk_media_status_to_str(WIMAX_API_MEDIA_STATUS status)
 		return "link-down";
 	case WIMAX_API_MEDIA_STATUS_LINK_RENEW:
 		return "link-renew";
+	default:
+		return "unknown";
+	}
+}
+
+const char *
+iwmx_sdk_con_progress_to_str(WIMAX_API_CONNECTION_PROGRESS_INFO progress)
+{
+	switch (progress) {
+
+	/**< Device is in Ranging */
+	case WIMAX_API_DEVICE_CONNECTION_PROGRESS_Ranging:
+		return "ranging";
+
+	/**< Device is in SBC */
+	case WIMAX_API_DEVICE_CONNECTION_PROGRESS_SBC:
+		return "sbc";
+
+	/**< Device is in EAP authentication Device */
+	case WIMAX_API_DEVICE_CONNECTION_PROGRESS_EAP_authentication_Device:
+		return "eap-auth-device";
+
+	/**< Device is in EAP authentication User */
+	case WIMAX_API_DEVICE_CONNECTION_PROGRESS_EAP_authentication_User:
+		return "eap-auth-user";
+
+	/**< Device is in 3-way-handshake */
+	case WIMAX_API_DEVICE_CONNECTION_PROGRESS_3_way_handshake:
+		return "3way-handshake";
+
+	/**< Device is in Registration */
+	case WIMAX_API_DEVICE_CONNECTION_PROGRESS_Registration:
+		return "registration";
+
+	/**< Device is in De-registration */
+	case WIMAX_API_DEVICE_CONNECTION_PROGRESS_De_registration:
+		return "deregistration";
+
+	/**< Device is registered (operational) */
+	case WIMAX_API_DEVICE_CONNECTION_PROGRESS_Registered:
+		return "registered";
+
 	default:
 		return "unknown";
 	}
@@ -982,7 +1028,7 @@ static void __iwmx_sdk_state_change_cb(WIMAX_API_DEVICE_ID *device_id,
 	wmxsdk->status = status;
 	g_mutex_unlock(wmxsdk->status_mutex);
 
-	_schedule_state_change(wmxsdk, status, old_status, reason);
+	_schedule_state_change(wmxsdk, status, old_status, reason, pi);
 }
 
 /*
@@ -1170,7 +1216,8 @@ static int iwmx_sdk_setup(struct wmxsdk *wmxsdk)
 	_schedule_state_change(wmxsdk,
 	                       status,
 	                       WIMAX_API_DEVICE_STATUS_UnInitialized,
-	                       WIMAX_API_STATUS_REASON_Normal);
+	                       WIMAX_API_STATUS_REASON_Normal,
+	                       WIMAX_API_DEVICE_CONNECTION_PROGRESS_Ranging);
 
 	return 0;
 
