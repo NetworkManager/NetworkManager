@@ -564,6 +564,7 @@ do_delete (NMSettingsConnection *connection,
 	for_agents = nm_connection_duplicate (NM_CONNECTION (connection));
 	nm_connection_clear_secrets (for_agents);
 	nm_agent_manager_delete_secrets (priv->agent_mgr, for_agents, FALSE, 0);
+	g_object_unref (for_agents);
 
 	/* Remove timestamp from timestamps database file */
 	remove_entry_from_db (connection, "timestamps");
