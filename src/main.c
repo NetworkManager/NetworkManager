@@ -50,14 +50,13 @@
 #include "nm-vpn-manager.h"
 #include "nm-logging.h"
 #include "nm-policy-hosts.h"
+#include "nm-config.h"
 
 #if !defined(NM_DIST_VERSION)
 # define NM_DIST_VERSION VERSION
 #endif
 
 #define NM_DEFAULT_PID_FILE          LOCALSTATEDIR"/run/NetworkManager.pid"
-#define NM_DEFAULT_SYSTEM_CONF_FILE  SYSCONFDIR"/NetworkManager/NetworkManager.conf"
-#define NM_OLD_SYSTEM_CONF_FILE      SYSCONFDIR"/NetworkManager/nm-system-settings.conf"
 #define NM_DEFAULT_SYSTEM_STATE_FILE LOCALSTATEDIR"/lib/NetworkManager/NetworkManager.state"
 
 /*
@@ -310,46 +309,6 @@ done:
 }
 
 static gboolean
-parse_config_file (const char *filename,
-                   char **plugins,
-                   char **dhcp_client,
-                   char ***dns_plugins,
-                   char **log_level,
-                   char **log_domains,
-                   GError **error)
-{
-	GKeyFile *config;
-	gboolean success = FALSE;
-
-	config = g_key_file_new ();
-	if (!config) {
-		g_set_error (error, 0, 0,
-		             "Not enough memory to load config file.");
-		return FALSE;
-	}
-
-	g_key_file_set_list_separator (config, ',');
-	if (!g_key_file_load_from_file (config, filename, G_KEY_FILE_NONE, error))
-		goto out;
-
-	*plugins = g_key_file_get_value (config, "main", "plugins", error);
-	if (*error)
-		goto out;
-
-	*dhcp_client = g_key_file_get_value (config, "main", "dhcp", NULL);
-	*dns_plugins = g_key_file_get_string_list (config, "main", "dns", NULL, NULL);
-
-	*log_level = g_key_file_get_value (config, "logging", "level", NULL);
-	*log_domains = g_key_file_get_value (config, "logging", "domains", NULL);
-
-	success = TRUE;
-
-out:
-	g_key_file_free (config);
-	return success;
-}
-
-static gboolean
 parse_state_file (const char *filename,
                   gboolean *net_enabled,
                   gboolean *wifi_enabled,
@@ -469,10 +428,9 @@ main (int argc, char *argv[])
 	GOptionContext *opt_ctx = NULL;
 	gboolean become_daemon = FALSE;
 	gboolean g_fatal_warnings = FALSE;
-	char *pidfile = NULL, *state_file = NULL, *dhcp = NULL;
-	char *config = NULL, *plugins = NULL, *conf_plugins = NULL;
+	char *pidfile = NULL, *state_file = NULL;
+	char *config_path = NULL, *plugins = NULL;
 	char *log_level = NULL, *log_domains = NULL;
-	char **dns = NULL;
 	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE, wimax_enabled = TRUE;
 	gboolean success, show_version = FALSE;
 	NMPolicy *policy = NULL;
@@ -482,9 +440,9 @@ main (int argc, char *argv[])
 	NMSupplicantManager *sup_mgr = NULL;
 	NMDHCPManager *dhcp_mgr = NULL;
 	NMSettings *settings = NULL;
+	NMConfig *config;
 	GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
-	char *cfg_log_level = NULL, *cfg_log_domains = NULL;
 
 	GOptionEntry options[] = {
 		{ "version", 0, 0, G_OPTION_ARG_NONE, &show_version, "Print NetworkManager version and exit", NULL },
@@ -492,7 +450,7 @@ main (int argc, char *argv[])
 		{ "g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &g_fatal_warnings, "Make all warnings fatal", NULL },
 		{ "pid-file", 0, 0, G_OPTION_ARG_FILENAME, &pidfile, "Specify the location of a PID file", "filename" },
 		{ "state-file", 0, 0, G_OPTION_ARG_FILENAME, &state_file, "State file location", "/path/to/state.file" },
-		{ "config", 0, 0, G_OPTION_ARG_FILENAME, &config, "Config file location", "/path/to/config.file" },
+		{ "config", 0, 0, G_OPTION_ARG_FILENAME, &config_path, "Config file location", "/path/to/config.file" },
 		{ "plugins", 0, 0, G_OPTION_ARG_STRING, &plugins, "List of plugins separated by ','", "plugin1,plugin2" },
 		{ "log-level", 0, 0, G_OPTION_ARG_STRING, &log_level, "Log level: one of [ERR, WARN, INFO, DEBUG]", "INFO" },
 		{ "log-domains", 0, 0, G_OPTION_ARG_STRING, &log_domains,
@@ -554,68 +512,24 @@ main (int argc, char *argv[])
 	if (check_pidfile (pidfile))
 		exit (1);
 
-	/* Parse the config file */
-	if (config) {
-		if (!parse_config_file (config, &conf_plugins, &dhcp, &dns, &cfg_log_level, &cfg_log_domains, &error)) {
-			fprintf (stderr, "Config file %s invalid: (%d) %s\n",
-			         config,
-			         error ? error->code : -1,
-			         (error && error->message) ? error->message : "unknown");
-			exit (1);
-		}
-	} else {
-		gboolean parsed = FALSE;
-
-		/* Even though we prefer NetworkManager.conf, we need to check the
-		 * old nm-system-settings.conf first to preserve compat with older
-		 * setups.  In package managed systems dropping a NetworkManager.conf
-		 * onto the system would make NM use it instead of nm-system-settings.conf,
-		 * changing behavior during an upgrade.  We don't want that.
-		 */
-
-		/* Try deprecated nm-system-settings.conf first */
-		if (g_file_test (NM_OLD_SYSTEM_CONF_FILE, G_FILE_TEST_EXISTS)) {
-			config = g_strdup (NM_OLD_SYSTEM_CONF_FILE);
-			parsed = parse_config_file (config, &conf_plugins, &dhcp, &dns, &cfg_log_level, &cfg_log_domains, &error);
-			if (!parsed) {
-				fprintf (stderr, "Default config file %s invalid: (%d) %s\n",
-				         config,
-				         error ? error->code : -1,
-				         (error && error->message) ? error->message : "unknown");
-				g_free (config);
-				config = NULL;
-				g_clear_error (&error);
-			}
-		}
-
-		/* Try the preferred NetworkManager.conf last */
-		if (!parsed && g_file_test (NM_DEFAULT_SYSTEM_CONF_FILE, G_FILE_TEST_EXISTS)) {
-			config = g_strdup (NM_DEFAULT_SYSTEM_CONF_FILE);
-			parsed = parse_config_file (config, &conf_plugins, &dhcp, &dns, &cfg_log_level, &cfg_log_domains, &error);
-			if (!parsed) {
-				fprintf (stderr, "Default config file %s invalid: (%d) %s\n",
-				         config,
-				         error ? error->code : -1,
-				         (error && error->message) ? error->message : "unknown");
-				g_free (config);
-				config = NULL;
-				g_clear_error (&error);
-			}
-		}
+	/* Read the config file and CLI overrides */
+	config = nm_config_new (config_path, plugins, log_level, log_domains, &error);
+	if (config == NULL) {
+		fprintf (stderr, "Failed to read configuration: (%d) %s\n",
+		         error ? error->code : -1,
+		         (error && error->message) ? error->message : "unknown");
+		exit (1);
 	}
+
 	/* Logging setup */
-	if (!nm_logging_setup (log_level ? log_level : cfg_log_level,
-	                       log_domains ? log_domains : cfg_log_domains,
+	if (!nm_logging_setup (nm_config_get_log_level (config),
+	                       nm_config_get_log_domains (config),
 	                       &error)) {
 		fprintf (stderr,
 		         _("%s.  Please use --help to see a list of valid options.\n"),
 		         error->message);
 		exit (1);
 	}
-
-	/* Plugins specified with '--plugins' override those of config file */
-	plugins = plugins ? plugins : g_strdup (conf_plugins);
-	g_free (conf_plugins);
 
 	/* Parse the state file */
 	if (!parse_state_file (state_file, &net_enabled, &wifi_enabled, &wwan_enabled, &wimax_enabled, &error)) {
@@ -683,8 +597,7 @@ main (int argc, char *argv[])
 	nm_log_info (LOGD_CORE, "NetworkManager (version " NM_DIST_VERSION ") is starting...");
 	success = FALSE;
 
-	if (config)
-		nm_log_info (LOGD_CORE, "Read config file %s", config);
+	nm_log_info (LOGD_CORE, "Read config file %s", nm_config_get_path (config));
 
 	main_loop = g_main_loop_new (NULL, FALSE);
 
@@ -704,13 +617,15 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	dns_mgr = nm_dns_manager_get ((const char **) dns);
+	dns_mgr = nm_dns_manager_get (nm_config_get_dns_plugins (config));
 	if (!dns_mgr) {
 		nm_log_err (LOGD_CORE, "failed to start the DNS manager.");
 		goto done;
 	}
 
-	settings = nm_settings_new (config, plugins, &error);
+	settings = nm_settings_new (nm_config_get_path (config),
+	                            nm_config_get_plugins (config),
+	                            &error);
 	if (!settings) {
 		nm_log_err (LOGD_CORE, "failed to initialize settings storage: %s",
 		            error && error->message ? error->message : "(unknown)");
@@ -744,7 +659,7 @@ main (int argc, char *argv[])
 	}
 
 	/* Initialize DHCP manager */
-	dhcp_mgr = nm_dhcp_manager_new (dhcp, &error);
+	dhcp_mgr = nm_dhcp_manager_new (nm_config_get_dhcp_client (config), &error);
 	if (!dhcp_mgr) {
 		nm_log_err (LOGD_CORE, "failed to start the DHCP manager: %s.", error->message);
 		goto done;
@@ -804,17 +719,15 @@ done:
 	if (pidfile && wrote_pidfile)
 		unlink (pidfile);
 
+	nm_config_free (config);
+
 	/* Free options */
 	g_free (pidfile);
 	g_free (state_file);
-	g_free (config);
+	g_free (config_path);
 	g_free (plugins);
-	g_free (dhcp);
-	g_strfreev (dns);
 	g_free (log_level);
 	g_free (log_domains);
-	g_free (cfg_log_level);
-	g_free (cfg_log_domains);
 
 	nm_log_info (LOGD_CORE, "exiting (%s)", success ? "success" : "error");
 	exit (success ? 0 : 1);

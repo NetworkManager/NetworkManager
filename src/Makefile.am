@@ -142,6 +142,8 @@ NetworkManager_SOURCES = \
 		nm-ip6-config.h \
 		nm-active-connection.h \
 		nm-active-connection.c \
+		nm-config.h \
+		nm-config.c \
 		main.c \
 		nm-policy.c \
 		nm-policy.h \

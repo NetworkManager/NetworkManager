@@ -27,6 +27,7 @@
 
 #include <unistd.h>
 #include <string.h>
+#include <ctype.h>
 #include <gmodule.h>
 #include <net/ethernet.h>
 #include <netinet/ether.h>
@@ -546,23 +547,22 @@ find_plugin (GSList *list, const char *pname)
 }
 
 static gboolean
-load_plugins (NMSettings *self, const char *plugins, GError **error)
+load_plugins (NMSettings *self, const char **plugins, GError **error)
 {
 	GSList *list = NULL;
-	char **plist;
-	char **iter;
+	const char **iter;
 	gboolean success = TRUE;
 
-	plist = g_strsplit (plugins, ",", 0);
-	if (!plist)
-		return FALSE;
-
-	for (iter = plist; *iter; iter++) {
+	for (iter = plugins; *iter; iter++) {
 		GModule *plugin;
 		char *full_name, *path;
-		const char *pname = g_strstrip (*iter);
+		const char *pname = *iter;
 		GObject *obj;
 		GObject * (*factory_func) (void);
+
+		/* strip leading spaces */
+		while (isblank (*pname))
+			pname++;
 
 		/* keyfile plugin built in now */
 		if (!strcmp (pname, "keyfile"))
@@ -615,8 +615,6 @@ load_plugins (NMSettings *self, const char *plugins, GError **error)
 		add_plugin (self, NM_SYSTEM_CONFIG_INTERFACE (obj));
 		list = g_slist_append (list, obj);
 	}
-
-	g_strfreev (plist);
 
 	g_slist_foreach (list, (GFunc) g_object_unref, NULL);
 	g_slist_free (list);
@@ -1494,7 +1492,7 @@ nm_settings_device_removed (NMSettings *self, NMDevice *device)
 
 NMSettings *
 nm_settings_new (const char *config_file,
-                 const char *plugins,
+                 const char **plugins,
                  GError **error)
 {
 	NMSettings *self;
