@@ -68,8 +68,6 @@ typedef struct {
 GType nm_manager_get_type (void);
 
 NMManager *nm_manager_get (NMSettings *settings,
-                           const char *config_file,
-                           const char *plugins,
                            const char *state_file,
                            gboolean initial_net_enabled,
                            gboolean initial_wifi_enabled,

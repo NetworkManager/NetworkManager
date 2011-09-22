@@ -196,7 +196,6 @@ typedef struct {
 } RadioState;
 
 typedef struct {
-	char *config_file;
 	char *state_file;
 
 	GSList *devices;
@@ -3044,8 +3043,6 @@ out:
 
 NMManager *
 nm_manager_get (NMSettings *settings,
-                const char *config_file,
-                const char *plugins,
                 const char *state_file,
                 gboolean initial_net_enabled,
                 gboolean initial_wifi_enabled,
@@ -3081,7 +3078,6 @@ nm_manager_get (NMSettings *settings,
 
 	priv->settings = g_object_ref (settings);
 
-	priv->config_file = g_strdup (config_file);
 	priv->state_file = g_strdup (state_file);
 
 	priv->net_enabled = initial_net_enabled;
@@ -3168,7 +3164,6 @@ dispose (GObject *object)
 	}
 
 	g_free (priv->hostname);
-	g_free (priv->config_file);
 
 	g_object_unref (priv->settings);
 

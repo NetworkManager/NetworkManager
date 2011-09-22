@@ -718,8 +718,6 @@ main (int argc, char *argv[])
 	}
 
 	manager = nm_manager_get (settings,
-	                          config,
-	                          plugins,
 	                          state_file,
 	                          net_enabled,
 	                          wifi_enabled,
