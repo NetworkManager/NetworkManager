@@ -23,7 +23,8 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <net/ethernet.h>
-#include <net/if.h>
+#include <sys/socket.h>
+#include <linux/if.h>
 
 #include <WiMaxAPI.h>
 #include <WiMaxAPIEx.h>

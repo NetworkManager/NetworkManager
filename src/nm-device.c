@@ -25,7 +25,6 @@
 #include <dbus/dbus.h>
 #include <netinet/in.h>
 #include <string.h>
-#include <net/if.h>
 #include <unistd.h>
 #include <errno.h>
 #include <sys/ioctl.h>
@@ -34,6 +33,7 @@
 #include <sys/wait.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <linux/if.h>
 
 #include "nm-glib-compat.h"
 #include "nm-device-interface.h"

@@ -27,7 +27,8 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
-#include <net/if.h>
+#include <sys/socket.h>
+#include <linux/if.h>
 
 #include <glib.h>
 
@@ -1315,23 +1316,22 @@ void wmxsdk_unref(struct wmxsdk *wmxsdk)
 
 static void iwmx_sdk_dev_add(unsigned idx, unsigned api_idx, const char *name)
 {
-	int ifindex;
 	struct wmxsdk *wmxsdk;
 	const char *s;
 
 	if (idx >= IWMX_SDK_DEV_MAX) {
 		nm_log_err(LOGD_WIMAX, "BUG! idx (%u) >= IWMX_SDK_DEV_MAX (%u)", idx, IWMX_SDK_DEV_MAX);
-		goto error_bug;
+		return;
 	}
 	if (g_iwmx_sdk_devs[idx] != NULL) {
 		nm_log_err(LOGD_WIMAX, "BUG! device index %u already enumerated?", idx);
-		goto error_bug;
+		return;
 	}
 
 	wmxsdk = wmxsdk_new();
 	if (wmxsdk == NULL) {
 		nm_log_err(LOGD_WIMAX, "Can't allocate %zu bytes", sizeof(*wmxsdk));
-		goto error_bug;
+		return;
 	}
 
 	/*
@@ -1344,15 +1344,9 @@ static void iwmx_sdk_dev_add(unsigned idx, unsigned api_idx, const char *name)
 	    || sscanf(s, "if:%15[^ \f\n\r\t\v]", wmxsdk->ifname) != 1) {
 		nm_log_err(LOGD_WIMAX, "Cannot extract network interface name off '%s'",
 			      name);
-		goto error_noifname;
+		goto error;
 	}
 	nm_log_dbg(LOGD_WIMAX, "network interface name: '%s'", wmxsdk->ifname);
-
-	ifindex = if_nametoindex(wmxsdk->ifname);
-	if (ifindex <= 0) {
-		nm_log_err(LOGD_WIMAX, "wxmsdk: %s: cannot find interface index", wmxsdk->ifname);
-		goto error_noifname;
-	}
 
 	strncpy(wmxsdk->name, name, sizeof(wmxsdk->name));
 	wmxsdk->device_id.privilege = WIMAX_API_PRIVILEGE_READ_WRITE;
@@ -1360,7 +1354,7 @@ static void iwmx_sdk_dev_add(unsigned idx, unsigned api_idx, const char *name)
 
 	if (iwmx_sdk_setup(wmxsdk) != 0) {
 		nm_log_err(LOGD_WIMAX, "wxmsdk: %s: cannot set up interface", wmxsdk->ifname);
-		goto error_setup;
+		goto error;
 	}
 
 	g_iwmx_sdk_devs[idx] = wmxsdk;
@@ -1369,10 +1363,8 @@ static void iwmx_sdk_dev_add(unsigned idx, unsigned api_idx, const char *name)
 	iwmx_sdk_call_new_callbacks (wmxsdk);
 	return;
 
-error_setup:
-error_noifname:
+error:
 	wmxsdk_unref(wmxsdk);
-error_bug:
 	return;
 }
 

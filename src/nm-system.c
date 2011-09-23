@@ -40,7 +40,7 @@
 #include <netdb.h>
 #include <glib.h>
 #include <ctype.h>
-#include <net/if.h>
+#include <linux/if.h>
 
 #include "nm-system.h"
 #include "nm-device.h"

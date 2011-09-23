@@ -27,6 +27,6 @@
 #include <sys/types.h>
 #include <linux/types.h>
 #include <sys/socket.h>
-#include <net/if.h>
+#include <linux/if.h>
 #include <wireless.h>
 
