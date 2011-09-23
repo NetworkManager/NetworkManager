@@ -314,8 +314,8 @@ fi
 AC_DEFINE_UNQUOTED(NO_CONSOLEKIT, $no_ck, [Define to disable use of ConsoleKit])
 
 have_libnl="no"
-PKG_CHECK_MODULES(LIBNL3, libnl-3.0, [have_libnl2=yes], [have_libnl2=no])
-if (test "${have_libnl2}" = "yes"); then
+PKG_CHECK_MODULES(LIBNL3, libnl-3.0, [have_libnl3=yes], [have_libnl3=no])
+if (test "${have_libnl3}" = "yes"); then
 	AC_DEFINE(HAVE_LIBNL3, 1, [Define if you require specific libnl-3 support])
 	LIBNL_CFLAGS="$LIBNL3_CFLAGS"
 	LIBNL_LIBS="$LIBNL3_LIBS"
