@@ -315,10 +315,11 @@ AC_DEFINE_UNQUOTED(NO_CONSOLEKIT, $no_ck, [Define to disable use of ConsoleKit])
 
 have_libnl="no"
 PKG_CHECK_MODULES(LIBNL3, libnl-3.0, [have_libnl3=yes], [have_libnl3=no])
-if (test "${have_libnl3}" = "yes"); then
+PKG_CHECK_MODULES(LIBNL_ROUTE3, libnl-route-3.0, [have_libnl_route3=yes], [have_libnl_route3=no])
+if (test "${have_libnl3}" = "yes" -a "${have_libnl_route3}" = "yes"); then
 	AC_DEFINE(HAVE_LIBNL3, 1, [Define if you require specific libnl-3 support])
-	LIBNL_CFLAGS="$LIBNL3_CFLAGS"
-	LIBNL_LIBS="$LIBNL3_LIBS"
+	LIBNL_CFLAGS="$LIBNL3_CFLAGS $LIBNL_ROUTE3_CFLAGS"
+	LIBNL_LIBS="$LIBNL3_LIBS $LIBNL_ROUTE3_LIBS"
 	libnl_version="3"
 	have_libnl="yes"
 else
