@@ -632,7 +632,7 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	manager = nm_manager_get (settings,
+	manager = nm_manager_new (settings,
 	                          state_file,
 	                          net_enabled,
 	                          wifi_enabled,

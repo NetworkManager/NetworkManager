@@ -3041,8 +3041,17 @@ out:
 	return DBUS_HANDLER_RESULT_HANDLED;
 }
 
+static NMManager *singleton = NULL;
+
 NMManager *
-nm_manager_get (NMSettings *settings,
+nm_manager_get (void)
+{
+	g_assert (singleton);
+	return g_object_ref (singleton);
+}
+
+NMManager *
+nm_manager_new (NMSettings *settings,
                 const char *state_file,
                 gboolean initial_net_enabled,
                 gboolean initial_wifi_enabled,
@@ -3050,16 +3059,14 @@ nm_manager_get (NMSettings *settings,
                 gboolean initial_wimax_enabled,
                 GError **error)
 {
-	static NMManager *singleton = NULL;
 	NMManagerPrivate *priv;
 	DBusGConnection *bus;
 	DBusConnection *dbus_connection;
 
-	if (singleton)
-		return g_object_ref (singleton);
-
 	g_assert (settings);
 
+	/* Can only be called once */
+	g_assert (singleton == NULL);
 	singleton = (NMManager *) g_object_new (NM_TYPE_MANAGER, NULL);
 	g_assert (singleton);
 
