@@ -205,6 +205,13 @@ if ! test x"$ac_distver" = x""; then
   AC_DEFINE_UNQUOTED(NM_DIST_VERSION, "$ac_distver", [Define the distribution version string])
 fi
 
+AC_ARG_ENABLE(crashtrace,
+              AC_HELP_STRING([--disable-crashtrace], [Disable GNU backtrace extensions]),
+              [enable_crashtrace=${enableval}], [enable_crashtrace=yes])
+if test x"$enable_crashtrace" = xyes; then
+  AC_DEFINE(ENABLE_CRASHTRACE, 1, [Define if you have GNU backtrace extensions])
+fi
+
 AC_MSG_CHECKING([Linux Wireless Extensions >= 18])
 AC_TRY_COMPILE([#ifndef __user
                 #define __user
