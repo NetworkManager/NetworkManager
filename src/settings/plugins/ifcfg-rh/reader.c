@@ -3382,7 +3382,7 @@ connection_from_file (const char *filename,
 		network_file = SYSCONFDIR "/sysconfig/network";
 
 	if (!iscsiadm_path)
-		iscsiadm_path = SBINDIR "/iscsiadm";
+		iscsiadm_path = "/sbin/iscsiadm";
 
 	ifcfg_name = utils_get_ifcfg_name (filename, TRUE);
 	if (!ifcfg_name) {
