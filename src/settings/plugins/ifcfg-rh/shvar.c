@@ -142,10 +142,11 @@ svUnescape(char *s) {
  */
 static const char escapees[] = "\"'\\$~`";		/* must be escaped */
 static const char spaces[] = " \t|&;()<>";		/* only require "" */
+static const char newlines[] = "\n\r";			/* will be removed */
 char *
 svEscape(const char *s) {
     char *new;
-    int i, j, mangle = 0, space = 0;
+    int i, j, mangle = 0, space = 0, newline = 0;
     int newlen, slen;
     static int esclen, splen;
 
@@ -156,23 +157,26 @@ svEscape(const char *s) {
     for (i = 0; i < slen; i++) {
 	if (strchr(escapees, s[i])) mangle++;
 	if (strchr(spaces, s[i])) space++;
+	if (strchr(newlines, s[i])) newline++;
     }
-    if (!mangle && !space) return strdup(s);
+    if (!mangle && !space && !newline) return strdup(s);
 
-    newlen = slen + mangle + 3;	/* 3 is extra ""\0 */
+    newlen = slen + mangle - newline + 3;	/* 3 is extra ""\0 */
     new = g_malloc0(newlen);
     if (!new) return NULL;
 
     j = 0;
     new[j++] = '"';
     for (i = 0; i < slen; i++) {
+	if (strchr(newlines, s[i]))
+	    continue;
 	if (strchr(escapees, s[i])) {
 	    new[j++] = '\\';
 	}
 	new[j++] = s[i];
     }
     new[j++] = '"';
-    g_assert(j == slen + mangle + 2); /* j is the index of the '\0' */
+    g_assert(j == slen + mangle - newline + 2); /* j is the index of the '\0' */
 
     return new;
 }
