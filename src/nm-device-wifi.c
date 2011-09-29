@@ -25,7 +25,6 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <net/ethernet.h>
-#include <iwlib.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <signal.h>
@@ -34,6 +33,8 @@
 #include <linux/ethtool.h>
 #include <sys/ioctl.h>
 #include <netinet/ether.h>
+#include <net/if.h>
+#include <errno.h>
 
 #include "nm-glib-compat.h"
 #include "nm-device.h"
@@ -181,8 +182,6 @@ static void supplicant_iface_scan_done_cb (NMSupplicantInterface * iface,
 static void supplicant_iface_notify_scanning_cb (NMSupplicantInterface * iface,
                                                  GParamSpec * pspec,
                                                  NMDeviceWifi * self);
-
-static guint32 nm_device_wifi_get_bitrate (NMDeviceWifi *self);
 
 static void cull_scan_list (NMDeviceWifi *self);
 
@@ -749,7 +748,7 @@ periodic_update (NMDeviceWifi *self)
 		set_current_ap (self, new_ap);
 	}
 
-	new_rate = nm_device_wifi_get_bitrate (self);
+	new_rate = wifi_utils_get_rate (priv->wifi_data);
 	if (new_rate != priv->rate) {
 		priv->rate = new_rate;
 		g_object_notify (G_OBJECT (self), NM_DEVICE_WIFI_BITRATE);
@@ -1377,33 +1376,6 @@ impl_device_get_access_points (NMDeviceWifi *self,
 			g_ptr_array_add (*aps, g_strdup (nm_ap_get_dbus_path (ap)));
 	}
 	return TRUE;
-}
-
-/*
- * nm_device_wifi_get_bitrate
- *
- * For wireless devices, get the bitrate to broadcast/receive at.
- * Returned value is rate in Kb/s.
- *
- */
-static guint32
-nm_device_wifi_get_bitrate (NMDeviceWifi *self)
-{
-	int err = -1, fd;
-	struct iwreq wrq;
-
-	g_return_val_if_fail (self != NULL, 0);
-
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0)
-		return 0;
-
-	memset (&wrq, 0, sizeof (wrq));
-	strncpy (wrq.ifr_name, nm_device_get_iface (NM_DEVICE (self)), IFNAMSIZ);
-	err = ioctl (fd, SIOCGIWRATE, &wrq);
-	close (fd);
-
-	return ((err == 0) ? wrq.u.bitrate.value / 1000 : 0);
 }
 
 static gboolean
@@ -2908,7 +2880,7 @@ activation_success_handler (NMDevice *dev)
 	if (!nm_ap_get_freq (ap))
 		nm_ap_set_freq (ap, wifi_utils_get_freq (priv->wifi_data));
 	if (!nm_ap_get_max_bitrate (ap))
-		nm_ap_set_max_bitrate (ap, nm_device_wifi_get_bitrate (self));
+		nm_ap_set_max_bitrate (ap, wifi_utils_get_rate (priv->wifi_data));
 
 	tmp_ap = get_active_ap (self, ap, TRUE);
 	if (tmp_ap) {
