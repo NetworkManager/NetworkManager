@@ -1992,6 +1992,7 @@ nm_manager_activate_connection (NMManager *manager,
 		vpn_connection = nm_vpn_manager_activate_connection (priv->vpn_manager,
 		                                                     connection,
 		                                                     device,
+		                                                     specific_object,
 		                                                     TRUE,
 		                                                     sender_uid,
 		                                                     error);

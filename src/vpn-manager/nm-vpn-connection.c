@@ -221,6 +221,7 @@ device_ip4_config_changed (NMDevice *device,
 NMVPNConnection *
 nm_vpn_connection_new (NMConnection *connection,
                        NMDevice *parent_device,
+                       const char *specific_object,
                        gboolean user_requested,
                        gulong user_uid)
 {
@@ -249,7 +250,7 @@ nm_vpn_connection_new (NMConnection *connection,
 	                                     G_CALLBACK (device_ip4_config_changed),
 	                                     self);
 
-	nm_vpn_connection_base_export (NM_VPN_CONNECTION_BASE (self), connection);
+	nm_vpn_connection_base_export (NM_VPN_CONNECTION_BASE (self), connection, specific_object);
 
 	return self;
 }

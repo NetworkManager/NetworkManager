@@ -44,8 +44,11 @@ GType nm_vpn_connection_base_get_type (void);
 
 const char *nm_vpn_connection_base_get_ac_path (NMVpnConnectionBase *self);
 
+const char *nm_vpn_connection_base_get_specific_object (NMVpnConnectionBase *self);
+
 void nm_vpn_connection_base_export (NMVpnConnectionBase *self,
-                                    NMConnection *connection);
+                                    NMConnection *connection,
+                                    const char *specific_object);
 
 void nm_vpn_connection_base_set_state (NMVpnConnectionBase *self,
                                        NMVPNConnectionState vpn_state);

@@ -36,6 +36,7 @@ typedef struct {
 
 	NMConnection *connection;
 	char *ac_path;
+	char *specific_object;
 	gboolean is_default;
 	gboolean is_default6;
 	NMActiveConnectionState state;
@@ -91,9 +92,16 @@ nm_vpn_connection_base_get_ac_path (NMVpnConnectionBase *self)
 	return NM_VPN_CONNECTION_BASE_GET_PRIVATE (self)->ac_path;
 }
 
+const char *
+nm_vpn_connection_base_get_specific_object (NMVpnConnectionBase *self)
+{
+	return NM_VPN_CONNECTION_BASE_GET_PRIVATE (self)->specific_object;
+}
+
 void
 nm_vpn_connection_base_export (NMVpnConnectionBase *self,
-                               NMConnection *connection)
+                               NMConnection *connection,
+                               const char *specific_object)
 {
 	NMVpnConnectionBasePrivate *priv = NM_VPN_CONNECTION_BASE_GET_PRIVATE (self);
 	NMDBusManager *dbus_mgr;
@@ -101,6 +109,7 @@ nm_vpn_connection_base_export (NMVpnConnectionBase *self,
 	g_return_if_fail (priv->connection == NULL);
 
 	priv->connection = g_object_ref (connection);
+	priv->specific_object = g_strdup (specific_object);
 
 	dbus_mgr = nm_dbus_manager_get ();
 	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (dbus_mgr),
@@ -128,6 +137,7 @@ dispose (GObject *object)
 		priv->disposed = TRUE;
 
 		g_free (priv->ac_path);
+		g_free (priv->specific_object);
 		g_object_unref (priv->connection);
 	}
 
@@ -148,7 +158,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boxed (value, nm_connection_get_uuid (priv->connection));
 		break;
 	case PROP_SPECIFIC_OBJECT:
-		g_value_set_boxed (value, priv->ac_path);
+		g_value_set_boxed (value, priv->specific_object);
 		break;
 	case PROP_DEVICES:
 		g_value_take_boxed (value, g_ptr_array_new ());
