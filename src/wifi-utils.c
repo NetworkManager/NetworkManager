@@ -24,6 +24,8 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include <net/ethernet.h>
+#include <unistd.h>
+#include <math.h>
 
 #include <glib.h>
 
@@ -84,12 +86,12 @@ wifi_data_free (WifiData *data)
 
 /***************************************************************/
 
-#include <iwlib.h>
+#include <linux/wireless.h>
 
 typedef struct {
 	WifiData parent;
 	int fd;
-	iwqual max_qual;
+	struct iw_quality max_qual;
 	gint8 num_freqs;
 	guint32 freqs[IW_MAX_FREQUENCIES];
 } WifiDataWext;
@@ -477,7 +479,7 @@ wext_get_range (WifiDataWext *wext,
                   NM_WIFI_DEVICE_CAP_RSN)
 
 static guint32
-wext_get_caps (WifiDataWext *wext, iwrange *range)
+wext_get_caps (WifiDataWext *wext, struct iw_range *range)
 {
 	guint32 caps = NM_WIFI_DEVICE_CAP_NONE;
 

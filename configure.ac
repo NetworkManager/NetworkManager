@@ -217,8 +217,7 @@ AC_COMPILE_IFELSE(
                 #include <sys/types.h>
                 #include <linux/types.h>
                 #include <sys/socket.h>
-                #include <net/if.h>
-                #include <wireless.h>]],
+                #include <linux/wireless.h>]],
               [[#ifndef IWEVGENIE
                 #error "not found"
                 #endif]])],
@@ -226,7 +225,7 @@ AC_COMPILE_IFELSE(
         [ac_have_iwevgenie=no])
 AC_MSG_RESULT($ac_have_iwevgenie)
 if test "$ac_have_iwevgenie" = no; then
-	AC_MSG_ERROR(wireless-tools or libiw development headers >= 28pre9 not installed or not functional)
+	AC_MSG_ERROR(Linux kernel development headers not installed or not functional)
 fi
 
 dnl
