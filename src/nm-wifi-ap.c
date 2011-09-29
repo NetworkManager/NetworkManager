@@ -19,8 +19,6 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#include "wireless-helper.h"
-
 #include <string.h>
 #include <stdlib.h>
 
@@ -431,7 +429,7 @@ foreach_property_cb (gpointer key, gpointer value, gpointer user_data)
 		GArray *array = g_value_get_boxed (variant);
 
 		if (!strcmp (key, "SSID")) {
-			guint32 len = MIN (IW_ESSID_MAX_SIZE, array->len);
+			guint32 len = MIN (32, array->len);
 			GByteArray *ssid;
 
 			/* Stupid ieee80211 layer uses <hidden> */
