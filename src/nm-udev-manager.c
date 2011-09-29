@@ -27,8 +27,6 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#include "wireless-helper.h"
-
 #include <gudev/gudev.h>
 
 #include "nm-udev-manager.h"
@@ -38,6 +36,7 @@
 #include "nm-device-wifi.h"
 #include "nm-device-olpc-mesh.h"
 #include "nm-device-ethernet.h"
+#include "wifi-utils.h"
 #if WITH_WIMAX
 #include "nm-device-wimax.h"
 #endif
@@ -347,29 +346,16 @@ is_wireless (GUdevDevice *device)
 {
 	char phy80211_path[255];
 	struct stat s;
-	int fd;
-	struct iwreq iwr;
-	const char *ifname, *path;
-	gboolean is_wifi = FALSE;
+	const char *path;
 
-	ifname = g_udev_device_get_name (device);
-	g_assert (ifname);
-
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd == -1)
-		return FALSE;
-
-	strncpy (iwr.ifr_ifrn.ifrn_name, ifname, IFNAMSIZ);
-
+	/* Check for nl80211 sysfs paths */
 	path = g_udev_device_get_sysfs_path (device);
 	snprintf (phy80211_path, sizeof (phy80211_path), "%s/phy80211", path);
+	if ((stat (phy80211_path, &s) == 0 && (s.st_mode & S_IFDIR)))
+		return TRUE;
 
-	if (   (ioctl (fd, SIOCGIWNAME, &iwr) == 0)
-	    || (stat (phy80211_path, &s) == 0 && (s.st_mode & S_IFDIR)))
-		is_wifi = TRUE;
-
-	close (fd);
-	return is_wifi;
+	/* Otherwise hit up WEXT/nl80211 directly */
+	return wifi_utils_is_wifi (g_udev_device_get_name (device));
 }
 
 static gboolean

@@ -25,4 +25,6 @@
 
 WifiData *wifi_wext_init (const char *iface, int ifindex);
 
+gboolean wifi_wext_is_wifi (const char *iface);
+
 #endif  /* WIFI_UTILS_WEXT_H */

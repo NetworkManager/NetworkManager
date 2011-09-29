@@ -147,3 +147,14 @@ wifi_utils_deinit (WifiData *data)
 	wifi_data_free (data);
 }
 
+gboolean
+wifi_utils_is_wifi (const char *iface)
+{
+	g_return_val_if_fail (iface != NULL, FALSE);
+
+	if (wifi_wext_is_wifi (iface))
+		return TRUE;
+
+	return FALSE;
+}
+

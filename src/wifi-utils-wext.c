@@ -551,3 +551,20 @@ error:
 	return NULL;
 }
 
+gboolean
+wifi_wext_is_wifi (const char *iface)
+{
+	int fd;
+	struct iwreq iwr;
+	gboolean is_wifi = FALSE;
+
+	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	if (fd >= 0) {
+		strncpy (iwr.ifr_ifrn.ifrn_name, iface, IFNAMSIZ);
+		if (ioctl (fd, SIOCGIWNAME, &iwr) == 0)
+			is_wifi = TRUE;
+		close (fd);
+	}
+	return is_wifi;
+}
+
