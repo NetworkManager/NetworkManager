@@ -28,8 +28,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include "wireless-helper.h"
-
 #include "nm-client.h"
 #include "nm-device.h"
 #include "nm-device-ethernet.h"

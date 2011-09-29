@@ -31,8 +31,6 @@
 #include <errno.h>
 #include <arpa/inet.h>
 
-#include "wireless-helper.h"
-
 #include <glib.h>
 #include <glib-object.h>
 #include <glib/gi18n.h>
@@ -360,6 +358,8 @@ nm_utils_is_empty_ssid (const guint8 * ssid, int len)
         return TRUE;
 }
 
+#define ESSID_MAX_SIZE 32
+
 /**
  * nm_utils_escape_ssid:
  * @ssid: pointer to a buffer containing the SSID data
@@ -376,7 +376,7 @@ nm_utils_is_empty_ssid (const guint8 * ssid, int len)
 const char *
 nm_utils_escape_ssid (const guint8 * ssid, guint32 len)
 {
-	static char escaped[IW_ESSID_MAX_SIZE * 2 + 1];
+	static char escaped[ESSID_MAX_SIZE * 2 + 1];
 	const guint8 *s = ssid;
 	char *d = escaped;
 
@@ -385,7 +385,7 @@ nm_utils_escape_ssid (const guint8 * ssid, guint32 len)
 		return escaped;
 	}
 
-	len = MIN (len, (guint32) IW_ESSID_MAX_SIZE);
+	len = MIN (len, (guint32) ESSID_MAX_SIZE);
 	while (len--) {
 		if (*s == '\0') {
 			*d++ = '\\';

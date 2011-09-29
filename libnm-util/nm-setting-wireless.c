@@ -28,8 +28,6 @@
 #include <netinet/ether.h>
 #include <dbus/dbus-glib.h>
 
-#include "wireless-helper.h"
-
 #include "NetworkManager.h"
 #include "nm-setting-wireless.h"
 #include "nm-param-spec-specialized.h"
