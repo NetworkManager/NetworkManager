@@ -120,6 +120,9 @@ NetworkManager_SOURCES = \
 		nm-device-ethernet.h \
 		wifi-utils.c \
 		wifi-utils.h \
+		wifi-utils-private.h \
+		wifi-utils-wext.c \
+		wifi-utils-wext.h \
 		nm-device-wifi.c \
 		nm-device-wifi.h \
 		nm-device-olpc-mesh.c	\

@@ -22,6 +22,7 @@
 #ifndef WIFI_UTILS_H
 #define WIFI_UTILS_H
 
+#include <net/ethernet.h>
 #include <glib.h>
 
 #include "NetworkManager.h"
