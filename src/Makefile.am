@@ -118,6 +118,8 @@ NetworkManager_SOURCES = \
 		nm-device-private.h \
 		nm-device-ethernet.c \
 		nm-device-ethernet.h \
+		wifi-utils.c \
+		wifi-utils.h \
 		nm-device-wifi.c \
 		nm-device-wifi.h \
 		nm-device-olpc-mesh.c	\

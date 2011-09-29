@@ -57,6 +57,7 @@
 #include "nm-setting-ip6-config.h"
 #include "nm-system.h"
 #include "nm-settings-connection.h"
+#include "wifi-utils.h"
 
 static gboolean impl_device_get_access_points (NMDeviceWifi *device,
                                                GPtrArray **aps,
@@ -132,12 +133,7 @@ struct _NMDeviceWifiPrivate {
 	guint             ipw_rfkill_id;
 	RfKillState       ipw_rfkill_state;
 
-	GByteArray *      ssid;
 	gint8             invalid_strength_counter;
-	iwqual            max_qual;
-
-	gint8             num_freqs;
-	guint32           freqs[IW_MAX_FREQUENCIES];
 
 	GSList *          ap_list;
 	NMAccessPoint *   current_ap;
@@ -149,17 +145,14 @@ struct _NMDeviceWifiPrivate {
 	guint             pending_scan_id;
 
 	Supplicant        supplicant;
+	WifiData *        wifi_data;
 
 	guint32           failed_link_count;
 	guint             periodic_source_id;
 	guint             link_timeout_id;
 
-	/* Static options from driver */
-	guint32           capabilities;
-	gboolean          has_scan_capa_ssid;
+	NMDeviceWifiCapabilities capabilities;
 };
-
-static guint32 nm_device_wifi_get_frequency (NMDeviceWifi *self);
 
 static gboolean request_wireless_scan (gpointer user_data);
 
@@ -301,318 +294,11 @@ ipw_rfkill_state_work (gpointer user_data)
 
 /*****************************************************************/
 
-/*
- * wireless_qual_to_percent
- *
- * Convert an iw_quality structure from SIOCGIWSTATS into a magical signal
- * strength percentage.
- *
- */
-static int
-wireless_qual_to_percent (const struct iw_quality *qual,
-                          const struct iw_quality *max_qual)
-{
-	int percent = -1;
-	int level_percent = -1;
-
-	g_return_val_if_fail (qual != NULL, -1);
-	g_return_val_if_fail (max_qual != NULL, -1);
-
-	nm_log_dbg (LOGD_WIFI,
-	            "QL: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X, updated: 0x%X  ** MAX: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X, updated: 0x%X",
-	            (__s8) qual->qual, qual->qual, qual->qual,
-	            (__s8) qual->level, qual->level, qual->level,
-	            (__s8) qual->noise, qual->noise, qual->noise,
-	            qual->updated,
-	            (__s8) max_qual->qual, max_qual->qual, max_qual->qual,
-	            (__s8) max_qual->level, max_qual->level, max_qual->level,
-	            (__s8) max_qual->noise, max_qual->noise, max_qual->noise,
-	            max_qual->updated);
-
-	/* Try using the card's idea of the signal quality first as long as it tells us what the max quality is.
-	 * Drivers that fill in quality values MUST treat them as percentages, ie the "Link Quality" MUST be 
-	 * bounded by 0 and max_qual->qual, and MUST change in a linear fashion.  Within those bounds, drivers
-	 * are free to use whatever they want to calculate "Link Quality".
-	 */
-	if ((max_qual->qual != 0) && !(max_qual->updated & IW_QUAL_QUAL_INVALID) && !(qual->updated & IW_QUAL_QUAL_INVALID))
-		percent = (int)(100 * ((double)qual->qual / (double)max_qual->qual));
-
-	/* If the driver doesn't specify a complete and valid quality, we have two options:
-	 *
-	 * 1) dBm: driver must specify max_qual->level = 0, and have valid values for
-	 *        qual->level and (qual->noise OR max_qual->noise)
-	 * 2) raw RSSI: driver must specify max_qual->level > 0, and have valid values for
-	 *        qual->level and max_qual->level
-	 *
-	 * This is the WEXT spec.  If this interpretation is wrong, I'll fix it.  Otherwise,
-	 * If drivers don't conform to it, they are wrong and need to be fixed.
-	 */
-
-	if (    (max_qual->level == 0) && !(max_qual->updated & IW_QUAL_LEVEL_INVALID)          /* Valid max_qual->level == 0 */
-		&& !(qual->updated & IW_QUAL_LEVEL_INVALID)                                     /* Must have valid qual->level */
-		&& (    ((max_qual->noise > 0) && !(max_qual->updated & IW_QUAL_NOISE_INVALID)) /* Must have valid max_qual->noise */
-			|| ((qual->noise > 0) && !(qual->updated & IW_QUAL_NOISE_INVALID)))     /*    OR valid qual->noise */
-	   ) {
-		/* Absolute power values (dBm) */
-
-		/* Reasonable fallbacks for dumb drivers that don't specify either level. */
-		#define FALLBACK_NOISE_FLOOR_DBM  -90
-		#define FALLBACK_SIGNAL_MAX_DBM   -20
-		int max_level = FALLBACK_SIGNAL_MAX_DBM;
-		int noise = FALLBACK_NOISE_FLOOR_DBM;
-		int level = qual->level - 0x100;
-
-		level = CLAMP (level, FALLBACK_NOISE_FLOOR_DBM, FALLBACK_SIGNAL_MAX_DBM);
-
-		if ((qual->noise > 0) && !(qual->updated & IW_QUAL_NOISE_INVALID))
-			noise = qual->noise - 0x100;
-		else if ((max_qual->noise > 0) && !(max_qual->updated & IW_QUAL_NOISE_INVALID))
-			noise = max_qual->noise - 0x100;
-		noise = CLAMP (noise, FALLBACK_NOISE_FLOOR_DBM, FALLBACK_SIGNAL_MAX_DBM);
-
-		/* A sort of signal-to-noise ratio calculation */
-		level_percent = (int)(100 - 70 *(
-		                                ((double)max_level - (double)level) /
-		                                ((double)max_level - (double)noise)));
-		nm_log_dbg (LOGD_WIFI, "QL1: level_percent is %d.  max_level %d, level %d, noise_floor %d.",
-		            level_percent, max_level, level, noise);
-	} else if (   (max_qual->level != 0)
-	           && !(max_qual->updated & IW_QUAL_LEVEL_INVALID) /* Valid max_qual->level as upper bound */
-	           && !(qual->updated & IW_QUAL_LEVEL_INVALID)) {
-		/* Relative power values (RSSI) */
-
-		int level = qual->level;
-
-		/* Signal level is relavtive (0 -> max_qual->level) */
-		level = CLAMP (level, 0, max_qual->level);
-		level_percent = (int)(100 * ((double)level / (double)max_qual->level));
-		nm_log_dbg (LOGD_WIFI, "QL2: level_percent is %d.  max_level %d, level %d.",
-		            level_percent, max_qual->level, level);
-	} else if (percent == -1) {
-		nm_log_dbg (LOGD_WIFI, "QL: Could not get quality %% value from driver.  Driver is probably buggy.");
-	}
-
-	/* If the quality percent was 0 or doesn't exist, then try to use signal levels instead */
-	if ((percent < 1) && (level_percent >= 0))
-		percent = level_percent;
-
-	nm_log_dbg (LOGD_WIFI, "QL: Final quality percent is %d (%d).",
-	            percent, CLAMP (percent, 0, 100));
-	return (CLAMP (percent, 0, 100));
-}
-
-
-/*
- * nm_device_wifi_update_signal_strength
- *
- * Update the device's idea of the strength of its connection to the
- * current access point.
- *
- */
-static void
-nm_device_wifi_update_signal_strength (NMDeviceWifi *self,
-                                       NMAccessPoint *ap)
-{
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	const char *iface = nm_device_get_iface (NM_DEVICE (self));
-	int fd, percent = -1;
-
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd >= 0) {
-		struct iwreq wrq;
-		struct iw_statistics stats;
-
-		memset (&stats, 0, sizeof (stats));
-
-		wrq.u.data.pointer = &stats;
-		wrq.u.data.length = sizeof (stats);
-		wrq.u.data.flags = 1;  /* Clear updated flag */
-		strncpy (wrq.ifr_name, iface, IFNAMSIZ);
-
-		if (ioctl (fd, SIOCGIWSTATS, &wrq) == 0)
-			percent = wireless_qual_to_percent (&stats.qual, &priv->max_qual);
-		close (fd);
-	}
-
-	/* Try to smooth out the strength.  Atmel cards, for example, will give no strength
-	 * one second and normal strength the next.
-	 */
-	if (percent >= 0 || ++priv->invalid_strength_counter > 3) {
-		nm_ap_set_strength (ap, (gint8) percent);
-		priv->invalid_strength_counter = 0;
-	}
-}
-
-
-static gboolean
-wireless_get_range (NMDeviceWifi *self,
-                    struct iw_range *range,
-                    guint32 *response_len)
-{
-	int fd, i = 26;
-	gboolean success = FALSE;
-	const char *iface;
-	struct iwreq wrq;
-
-	g_return_val_if_fail (NM_IS_DEVICE_WIFI (self), FALSE);
-	g_return_val_if_fail (range != NULL, FALSE);
-
-	iface = nm_device_get_iface (NM_DEVICE (self));
-
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		nm_log_err (LOGD_HW, "(%s): couldn't open control socket.", iface);
-		return FALSE;
-	}
-
-	memset (&wrq, 0, sizeof (struct iwreq));
-	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
-	wrq.u.data.pointer = (caddr_t) range;
-	wrq.u.data.length = sizeof (struct iw_range);
-
-	/* Need to give some drivers time to recover after suspend/resume
-	 * (ex ipw3945 takes a few seconds to talk to its regulatory daemon;
-	 * see rh bz#362421)
-	 */
-	while (i-- > 0) {
-		if (ioctl (fd, SIOCGIWRANGE, &wrq) == 0) {
-			if (response_len)
-				*response_len = wrq.u.data.length;
-			success = TRUE;
-			break;
-		} else if (errno != EAGAIN) {
-			nm_log_err (LOGD_HW | LOGD_WIFI,
-			            "(%s): couldn't get driver range information (%d).",
-			            iface, errno);
-			break;
-		}
-
-		g_usleep (G_USEC_PER_SEC / 4);
-	}
-
-	if (i <= 0) {
-		nm_log_warn (LOGD_HW | LOGD_WIFI,
-		             "(%s): driver took too long to respond to IWRANGE query.",
-		             iface);
-	}
-
-	close (fd);
-	return success;
-}
-
 static guint32
 real_get_generic_capabilities (NMDevice *dev)
 {
-	int fd, err;
-	guint32 caps = NM_DEVICE_CAP_NONE;
-	struct iwreq wrq;
-	const char *iface = nm_device_get_iface (dev);
-
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		nm_log_err (LOGD_HW, "(%s): couldn't open control socket.", iface);
-		return NM_DEVICE_CAP_NONE;
-	}
-
-	/* Cards that don't scan aren't supported */
-	memset (&wrq, 0, sizeof (struct iwreq));
-	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
-	err = ioctl (fd, SIOCSIWSCAN, &wrq);
-	close (fd);
-	if ((err < 0) && (errno == EOPNOTSUPP))
-		caps = NM_DEVICE_CAP_NONE;
-	else
-		caps |= NM_DEVICE_CAP_NM_SUPPORTED;
-
-	return caps;
+	return NM_DEVICE_CAP_NM_SUPPORTED;
 }
-
-#define WPA_CAPS (NM_WIFI_DEVICE_CAP_CIPHER_TKIP | \
-                  NM_WIFI_DEVICE_CAP_CIPHER_CCMP | \
-                  NM_WIFI_DEVICE_CAP_WPA | \
-                  NM_WIFI_DEVICE_CAP_RSN)
-
-static guint32
-get_wireless_capabilities (NMDeviceWifi *self, iwrange *range)
-{
-	guint32 caps = NM_WIFI_DEVICE_CAP_NONE;
-	const char * iface;
-
-	g_return_val_if_fail (self != NULL, NM_WIFI_DEVICE_CAP_NONE);
-	g_return_val_if_fail (range != NULL, NM_WIFI_DEVICE_CAP_NONE);
-
-	iface = nm_device_get_iface (NM_DEVICE (self));
-
-	/* All drivers should support WEP by default */
-	caps |= NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104;
-
-	if (range->enc_capa & IW_ENC_CAPA_CIPHER_TKIP)
-		caps |= NM_WIFI_DEVICE_CAP_CIPHER_TKIP;
-
-	if (range->enc_capa & IW_ENC_CAPA_CIPHER_CCMP)
-		caps |= NM_WIFI_DEVICE_CAP_CIPHER_CCMP;
-
-	if (range->enc_capa & IW_ENC_CAPA_WPA)
-		caps |= NM_WIFI_DEVICE_CAP_WPA;
-
-	if (range->enc_capa & IW_ENC_CAPA_WPA2)
-		caps |= NM_WIFI_DEVICE_CAP_RSN;
-
-	/* Check for cipher support but not WPA support */
-	if (    (caps & (NM_WIFI_DEVICE_CAP_CIPHER_TKIP | NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
-	    && !(caps & (NM_WIFI_DEVICE_CAP_WPA | NM_WIFI_DEVICE_CAP_RSN))) {
-		nm_log_warn (LOGD_WIFI, "%s: device supports WPA ciphers but not WPA protocol; "
-		             "WPA unavailable.", iface);
-		caps &= ~WPA_CAPS;
-	}
-
-	/* Check for WPA support but not cipher support */
-	if (    (caps & (NM_WIFI_DEVICE_CAP_WPA | NM_WIFI_DEVICE_CAP_RSN))
-	    && !(caps & (NM_WIFI_DEVICE_CAP_CIPHER_TKIP | NM_WIFI_DEVICE_CAP_CIPHER_CCMP))) {
-		nm_log_warn (LOGD_WIFI, "%s: device supports WPA protocol but not WPA ciphers; "
-		             "WPA unavailable.", iface);
-		caps &= ~WPA_CAPS;
-	}
-
-	return caps;
-}
-
-
-static guint32 iw_freq_to_uint32 (struct iw_freq *freq)
-{
-	if (freq->e == 0) {
-		/* Some drivers report channel not frequency.  Convert to a
-		 * frequency; but this assumes that the device is in b/g mode.
-		 */
-		if ((freq->m >= 1) && (freq->m <= 13))
-			return 2407 + (5 * freq->m);
-		else if (freq->m == 14)
-			return 2484;
-	}
-
-	return (guint32) (((double) freq->m) * pow (10, freq->e) / 1000000);
-}
-
-
-/* Until a new wireless-tools comes out that has the defs and the structure,
- * need to copy them here.
- */
-/* Scan capability flags - in (struct iw_range *)->scan_capa */
-#define NM_IW_SCAN_CAPA_NONE    0x00
-#define NM_IW_SCAN_CAPA_ESSID   0x01
-
-struct iw_range_with_scan_capa
-{
-	guint32 throughput;
-	guint32 min_nwid;
-	guint32 max_nwid;
-	guint16 old_num_channels;
-	guint8  old_num_frequency;
-
-	guint8  scan_capa;
-/* don't need the rest... */
-};
-
 
 static GObject*
 constructor (GType type,
@@ -623,11 +309,6 @@ constructor (GType type,
 	GObjectClass *klass;
 	NMDeviceWifi *self;
 	NMDeviceWifiPrivate *priv;
-	struct iw_range range;
-	struct iw_range_with_scan_capa *scan_capa_range;
-	guint32 response_len = 0;
-	gboolean success;
-	int i;
 
 	klass = G_OBJECT_CLASS (nm_device_wifi_parent_class);
 	object = klass->constructor (type, n_construct_params, construct_params);
@@ -641,51 +322,15 @@ constructor (GType type,
 	            nm_device_get_iface (NM_DEVICE (self)),
 	            nm_device_get_ifindex (NM_DEVICE (self)));
 
-	memset (&range, 0, sizeof (struct iw_range));
-	success = wireless_get_range (NM_DEVICE_WIFI (object), &range, &response_len);
-	if (!success) {
-		nm_log_info (LOGD_HW | LOGD_WIFI, "(%s): driver WEXT range request failed",
+	priv->wifi_data = wifi_utils_init (nm_device_get_iface (NM_DEVICE (self)),
+	                                   nm_device_get_ifindex (NM_DEVICE (self)));
+	if (priv->wifi_data == NULL) {
+		nm_log_warn (LOGD_HW | LOGD_WIFI, "(%s): failed to initialize WiFi driver",
 		             nm_device_get_iface (NM_DEVICE (self)));
-		goto error;
+		g_object_unref (object);
+		return NULL;
 	}
-
-	if ((response_len < 300) || (range.we_version_compiled < 21)) {
-		nm_log_info (LOGD_HW | LOGD_WIFI,
-		             "(%s): driver WEXT version too old (got %d, expected >= 21)",
-		             nm_device_get_iface (NM_DEVICE (self)),
-		             range.we_version_compiled);
-		goto error;
-	}
-
-	priv->max_qual.qual = range.max_qual.qual;
-	priv->max_qual.level = range.max_qual.level;
-	priv->max_qual.noise = range.max_qual.noise;
-	priv->max_qual.updated = range.max_qual.updated;
-
-	priv->num_freqs = MIN (range.num_frequency, IW_MAX_FREQUENCIES);
-	for (i = 0; i < priv->num_freqs; i++)
-		priv->freqs[i] = iw_freq_to_uint32 (&range.freq[i]);
-
-	/* Check for the ability to scan specific SSIDs.  Until the scan_capa
-	 * field gets added to wireless-tools, need to work around that by casting
-	 * to the custom structure.
-	 */
-	scan_capa_range = (struct iw_range_with_scan_capa *) &range;
-	if (scan_capa_range->scan_capa & NM_IW_SCAN_CAPA_ESSID) {
-		priv->has_scan_capa_ssid = TRUE;
-		nm_log_info (LOGD_HW | LOGD_WIFI,
-		             "(%s): driver supports SSID scans (scan_capa 0x%02X).",
-		             nm_device_get_iface (NM_DEVICE (self)),
-		             scan_capa_range->scan_capa);
-	} else {
-		nm_log_info (LOGD_HW | LOGD_WIFI,
-		             "(%s): driver does not support SSID scans (scan_capa 0x%02X).",
-		             nm_device_get_iface (NM_DEVICE (self)),
-		             scan_capa_range->scan_capa);
-	}
-
-	/* 802.11 wireless-specific capabilities */
-	priv->capabilities = get_wireless_capabilities (self, &range);
+	priv->capabilities = wifi_utils_get_caps (priv->wifi_data);
 
 	/* Connect to the supplicant manager */
 	priv->supplicant.mgr = nm_supplicant_manager_get ();
@@ -708,10 +353,6 @@ constructor (GType type,
 	priv->ipw_rfkill_state = nm_device_wifi_get_ipw_rfkill_state (self);
 
 	return object;
-
-error:
-	g_object_unref (object);
-	return NULL;
 }
 
 static gboolean
@@ -839,16 +480,16 @@ get_active_ap (NMDeviceWifi *self,
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	const char *iface = nm_device_get_iface (NM_DEVICE (self));
 	struct ether_addr bssid;
-	const GByteArray *ssid;
+	GByteArray *ssid;
 	GSList *iter;
 	int i = 0;
-	NMAccessPoint *match_nofreq = NULL;
+	NMAccessPoint *match_nofreq = NULL, *active_ap = NULL;
 	gboolean found_a_band = FALSE;
 	gboolean found_bg_band = FALSE;
 	NM80211Mode devmode;
 	guint32 devfreq;
 
-	nm_device_wifi_get_bssid (self, &bssid);
+	wifi_utils_get_bssid (priv->wifi_data, &bssid);
 	nm_log_dbg (LOGD_WIFI, "(%s): active BSSID: %02x:%02x:%02x:%02x:%02x:%02x",
 	            iface,
 	            bssid.ether_addr_octet[0], bssid.ether_addr_octet[1],
@@ -858,15 +499,15 @@ get_active_ap (NMDeviceWifi *self,
 	if (!nm_ethernet_address_is_valid (&bssid))
 		return NULL;
 
-	ssid = nm_device_wifi_get_ssid (self);
+	ssid = wifi_utils_get_ssid (priv->wifi_data);
 	nm_log_dbg (LOGD_WIFI, "(%s): active SSID: %s%s%s",
 	            iface,
 	            ssid ? "'" : "",
 	            ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
 	            ssid ? "'" : "");
 
-	devmode = nm_device_wifi_get_mode (self);
-	devfreq = nm_device_wifi_get_frequency (self);
+	devmode = wifi_utils_get_mode (priv->wifi_data);
+	devfreq = wifi_utils_get_freq (priv->wifi_data);
 
 	/* When matching hidden APs, do a second pass that ignores the SSID check,
 	 * because NM might not yet know the SSID of the hidden AP in the scan list
@@ -930,7 +571,8 @@ get_active_ap (NMDeviceWifi *self,
 
 			// FIXME: handle security settings here too
 			nm_log_dbg (LOGD_WIFI, "      matched");
-			return ap;
+			active_ap = ap;
+			goto done;
 		}
 	}
 
@@ -957,11 +599,15 @@ get_active_ap (NMDeviceWifi *self,
 		            ap_bssid->ether_addr_octet[2], ap_bssid->ether_addr_octet[3],
 		            ap_bssid->ether_addr_octet[4], ap_bssid->ether_addr_octet[5]);
 
-		return match_nofreq;
+		active_ap = match_nofreq;
 	}
 
 	nm_log_dbg (LOGD_WIFI, "  No matching AP found.");
-	return NULL;
+
+done:
+	if (ssid)
+		g_byte_array_free (ssid, TRUE);
+	return active_ap;
 }
 
 static void
@@ -1038,7 +684,7 @@ periodic_update (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMAccessPoint *new_ap;
-	guint32 new_rate;
+	guint32 new_rate, percent;
 
 	/* In IBSS mode, most newer firmware/drivers do "BSS coalescing" where
 	 * multiple IBSS stations using the same SSID will eventually switch to
@@ -1051,7 +697,7 @@ periodic_update (NMDeviceWifi *self)
 	if (priv->current_ap && (nm_ap_get_mode (priv->current_ap) == NM_802_11_MODE_ADHOC)) {
 		struct ether_addr bssid = { {0x0, 0x0, 0x0, 0x0, 0x0, 0x0} };
 
-		nm_device_wifi_get_bssid (self, &bssid);
+		wifi_utils_get_bssid (priv->wifi_data, &bssid);
 		/* 0x02 means "locally administered" and should be OR-ed into
 		 * the first byte of IBSS BSSIDs.
 		 */
@@ -1061,8 +707,16 @@ periodic_update (NMDeviceWifi *self)
 	}
 
 	new_ap = get_active_ap (self, NULL, FALSE);
-	if (new_ap)
-		nm_device_wifi_update_signal_strength (self, new_ap);
+	if (new_ap) {
+		/* Try to smooth out the strength.  Atmel cards, for example, will give no strength
+		 * one second and normal strength the next.
+		 */
+		percent = wifi_utils_get_qual (priv->wifi_data);
+		if (percent >= 0 || ++priv->invalid_strength_counter > 3) {
+			nm_ap_set_strength (new_ap, (gint8) percent);
+			priv->invalid_strength_counter = 0;
+		}
+	}
 
 	if ((new_ap || priv->current_ap) && (new_ap != priv->current_ap)) {
 		const struct ether_addr *new_bssid = NULL;
@@ -1305,7 +959,7 @@ real_deactivate (NMDevice *dev)
 	/* Ensure we're in infrastructure mode after deactivation; some devices
 	 * (usually older ones) don't scan well in adhoc mode.
 	 */
-	nm_device_wifi_set_mode (self, NM_802_11_MODE_INFRA);
+	wifi_utils_set_mode (priv->wifi_data, NM_802_11_MODE_INFRA);
 }
 
 static gboolean
@@ -1726,191 +1380,6 @@ impl_device_get_access_points (NMDeviceWifi *self,
 }
 
 /*
- * nm_device_get_mode
- *
- * Get managed/infrastructure/adhoc mode on a device
- *
- */
-NM80211Mode
-nm_device_wifi_get_mode (NMDeviceWifi *self)
-{
-	int fd;
-	NM80211Mode mode = NM_802_11_MODE_UNKNOWN;
-	const char *iface;
-	struct iwreq wrq;
-
-	g_return_val_if_fail (self != NULL, NM_802_11_MODE_UNKNOWN);
-
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0)
-		goto out;
-
-	memset (&wrq, 0, sizeof (struct iwreq));
-	iface = nm_device_get_iface (NM_DEVICE (self));
-	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
-
-	if (ioctl (fd, SIOCGIWMODE, &wrq) == 0) {
-		switch (wrq.u.mode) {
-		case IW_MODE_ADHOC:
-			mode = NM_802_11_MODE_ADHOC;
-			break;
-		case IW_MODE_INFRA:
-			mode = NM_802_11_MODE_INFRA;
-			break;
-		default:
-			break;
-		}
-	} else {
-		if (errno != ENODEV)
-			nm_log_warn (LOGD_HW | LOGD_WIFI, "(%s): error %d getting card mode", iface, errno);
-	}
-	close (fd);
-
-out:
-	return mode;
-}
-
-
-/*
- * nm_device_wifi_set_mode
- *
- * Set managed/infrastructure/adhoc mode on a device
- *
- */
-gboolean
-nm_device_wifi_set_mode (NMDeviceWifi *self, const NM80211Mode mode)
-{
-	int fd;
-	const char *iface;
-	gboolean success = FALSE;
-	struct iwreq wrq;
-
-	g_return_val_if_fail (self != NULL, FALSE);
-	g_return_val_if_fail ((mode == NM_802_11_MODE_INFRA) || (mode == NM_802_11_MODE_ADHOC), FALSE);
-
-	if (nm_device_wifi_get_mode (self) == mode)
-		return TRUE;
-
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0)
-		goto out;
-
-	memset (&wrq, 0, sizeof (struct iwreq));
-	switch (mode) {
-	case NM_802_11_MODE_ADHOC:
-		wrq.u.mode = IW_MODE_ADHOC;
-		break;
-	case NM_802_11_MODE_INFRA:
-		wrq.u.mode = IW_MODE_INFRA;
-		break;
-	default:
-		goto out;
-	}
-
-	iface = nm_device_get_iface (NM_DEVICE (self));
-	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
-
-	if (ioctl (fd, SIOCSIWMODE, &wrq) < 0) {
-		if (errno != ENODEV)
-			nm_log_err (LOGD_HW | LOGD_WIFI, "(%s): error setting mode %d", iface, mode);
-	} else
-		success = TRUE;
-	close (fd);
-
-out:
-	return success;
-}
-
-
-/*
- * nm_device_wifi_get_frequency
- *
- * Get current frequency
- *
- */
-static guint32
-nm_device_wifi_get_frequency (NMDeviceWifi *self)
-{
-	int fd;
-	guint32 freq = 0;
-	const char *iface;
-	struct iwreq wrq;
-
-	g_return_val_if_fail (self != NULL, 0);
-
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0)
-		return 0;
-
-	memset (&wrq, 0, sizeof (struct iwreq));
-	iface = nm_device_get_iface (NM_DEVICE (self));
-	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
-
-	if (ioctl (fd, SIOCGIWFREQ, &wrq) < 0) {
-		nm_log_warn (LOGD_HW | LOGD_WIFI,
-		             "(%s): error getting frequency: %s",
-		             iface, strerror (errno));
-	} else
-		freq = iw_freq_to_uint32 (&wrq.u.freq);
-
-	close (fd);
-	return freq;
-}
-
-/*
- * nm_device_wifi_get_ssid
- *
- * If a device is wireless, return the ssid that it is attempting
- * to use.
- */
-const GByteArray *
-nm_device_wifi_get_ssid (NMDeviceWifi *self)
-{
-	NMDeviceWifiPrivate *priv;
-	int sk;
-	struct iwreq wrq;
-	char ssid[IW_ESSID_MAX_SIZE + 2];
-	guint32 len;
-
-	g_return_val_if_fail (self != NULL, NULL);
-	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-
-	sk = socket (AF_INET, SOCK_DGRAM, 0);
-	if (sk == -1) {
-		nm_log_err (LOGD_HW, "couldn't create socket: %d.", errno);
-		return NULL;
-	}
-
-	memset (ssid, 0, sizeof (ssid));
-	wrq.u.essid.pointer = (caddr_t) &ssid;
-	wrq.u.essid.length = sizeof (ssid);
-	wrq.u.essid.flags = 0;
-	strncpy (wrq.ifr_name, nm_device_get_iface (NM_DEVICE (self)), IFNAMSIZ);
-
-	if (ioctl (sk, SIOCGIWESSID, &wrq) < 0) {
-		nm_log_err (LOGD_HW | LOGD_WIFI, "(%s): couldn't get SSID: %d",
-		            nm_device_get_iface (NM_DEVICE (self)), errno);
-		goto out;
-	}
-
-	if (priv->ssid) {
-		g_byte_array_free (priv->ssid, TRUE);
-		priv->ssid = NULL;
-	}
-
-	len = wrq.u.essid.length;
-	if (!nm_utils_is_empty_ssid ((guint8 *) ssid, len)) {
-		priv->ssid = g_byte_array_sized_new (len);
-		g_byte_array_append (priv->ssid, (const guint8 *) ssid, len);
-	}
-
-out:
-	close (sk);
-	return priv->ssid;
-}
-
-
-/*
  * nm_device_wifi_get_bitrate
  *
  * For wireless devices, get the bitrate to broadcast/receive at.
@@ -1936,39 +1405,6 @@ nm_device_wifi_get_bitrate (NMDeviceWifi *self)
 
 	return ((err == 0) ? wrq.u.bitrate.value / 1000 : 0);
 }
-
-/*
- * nm_device_get_bssid
- *
- * If a device is wireless, get the access point's ethernet address
- * that the card is associated with.
- */
-void
-nm_device_wifi_get_bssid (NMDeviceWifi *self,
-                          struct ether_addr *bssid)
-{
-	int fd;
-	struct iwreq wrq;
-
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (bssid != NULL);
-
-	memset (bssid, 0, sizeof (struct ether_addr));
-
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		nm_log_err (LOGD_WIFI, "failed to open control socket.");
-		return;
-	}
-
-	memset (&wrq, 0, sizeof (wrq));
-	strncpy (wrq.ifr_name, nm_device_get_iface (NM_DEVICE (self)), IFNAMSIZ);
-	if (ioctl (fd, SIOCGIWAP, &wrq) == 0)
-		memcpy (bssid->ether_addr_octet, &(wrq.u.ap_addr.sa_data), ETH_ALEN);
-
-	close (fd);
-}
-
 
 static gboolean
 scanning_allowed (NMDeviceWifi *self)
@@ -2921,23 +2357,6 @@ remove_supplicant_timeouts (NMDeviceWifi *self)
 	remove_link_timeout (self);
 }
 
-static guint32
-find_supported_frequency (NMDeviceWifi *self, const guint32 *freqs)
-{
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	int i;
-
-	for (i = 0; i < priv->num_freqs; i++) {
-		while (*freqs) {
-			if (priv->freqs[i] == *freqs)
-				return *freqs;
-			freqs++;
-		}
-	}
-
-	return 0;
-}
-
 static NMSupplicantConfig *
 build_supplicant_config (NMDeviceWifi *self,
                          NMConnection *connection,
@@ -2970,9 +2389,9 @@ build_supplicant_config (NMDeviceWifi *self,
 		adhoc_freq = nm_ap_get_freq (ap);
 		if (!adhoc_freq) {
 			if (g_strcmp0 (band, "a") == 0)
-				adhoc_freq = find_supported_frequency (self, a_freqs);
+				adhoc_freq = wifi_utils_find_freq (priv->wifi_data, a_freqs);
 			else
-				adhoc_freq = find_supported_frequency (self, bg_freqs);
+				adhoc_freq = wifi_utils_find_freq (priv->wifi_data, bg_freqs);
 		}
 
 		if (!adhoc_freq) {
@@ -2987,7 +2406,7 @@ build_supplicant_config (NMDeviceWifi *self,
 	                                                s_wireless,
 	                                                nm_ap_get_broadcast (ap),
 	                                                adhoc_freq,
-	                                                priv->has_scan_capa_ssid)) {
+	                                                wifi_utils_can_scan_ssid (priv->wifi_data))) {
 		nm_log_err (LOGD_WIFI, "Couldn't add 802-11-wireless setting to supplicant config.");
 		goto error;
 	}
@@ -3483,11 +2902,11 @@ activation_success_handler (NMDevice *dev)
 	 * But if activation was successful, the card will know the BSSID.  Grab
 	 * the BSSID off the card and fill in the BSSID of the activation AP.
 	 */
-	nm_device_wifi_get_bssid (self, &bssid);
+	wifi_utils_get_bssid (priv->wifi_data, &bssid);
 	if (!nm_ethernet_address_is_valid (nm_ap_get_address (ap)))
 		nm_ap_set_address (ap, &bssid);
 	if (!nm_ap_get_freq (ap))
-		nm_ap_set_freq (ap, nm_device_wifi_get_frequency (self));
+		nm_ap_set_freq (ap, wifi_utils_get_freq (priv->wifi_data));
 	if (!nm_ap_get_max_bitrate (ap))
 		nm_ap_set_max_bitrate (ap, nm_device_wifi_get_bitrate (self));
 
@@ -3632,12 +3051,6 @@ device_state_changed (NMDevice *device,
 		 * the device is now ready to use.
 		 */
 		if (priv->enabled && (nm_device_get_firmware_missing (device) == FALSE)) {
-			gboolean success;
-			struct iw_range range;
-
-			/* Wait for some drivers like ipw3945 to come back to life */
-			success = wireless_get_range (self, &range, NULL);
-
 			if (!priv->supplicant.iface)
 				supplicant_interface_acquire (self);
 		}
@@ -3706,8 +3119,7 @@ real_set_enabled (NMDeviceInterface *device, gboolean enabled)
 	}
 
 	if (enabled) {
-		gboolean no_firmware = FALSE, success;
-		struct iw_range range;
+		gboolean no_firmware = FALSE;
 
 		if (state != NM_DEVICE_STATE_UNAVAILABLE)
 			nm_log_warn (LOGD_CORE, "not in expected unavailable state!");
@@ -3724,9 +3136,6 @@ real_set_enabled (NMDeviceInterface *device, gboolean enabled)
 			}
 			return;
 		}
-
-		/* Wait for some drivers like ipw3945 to come back to life */
-		success = wireless_get_range (self, &range, NULL);
 
 		/* Re-initialize the supplicant interface and wait for it to be ready */
 		if (priv->supplicant.iface)
@@ -3802,13 +3211,11 @@ dispose (GObject *object)
 		priv->supplicant.mgr = NULL;
 	}
 
-	if (priv->ssid) {
-		g_byte_array_free (priv->ssid, TRUE);
-		priv->ssid = NULL;
-	}
-
 	set_current_ap (self, NULL);
 	remove_all_aps (self);
+
+	if (priv->wifi_data)
+		wifi_utils_deinit (priv->wifi_data);
 
 	g_free (priv->ipw_rfkill_path);
 	if (priv->ipw_rfkill_id) {
@@ -3834,7 +3241,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_take_string (value, nm_ether_ntop ((struct ether_addr *) &priv->perm_hw_addr));
 		break;
 	case PROP_MODE:
-		g_value_set_uint (value, nm_device_wifi_get_mode (device));
+		g_value_set_uint (value, wifi_utils_get_mode (priv->wifi_data));
 		break;
 	case PROP_BITRATE:
 		g_value_set_uint (value, priv->rate);

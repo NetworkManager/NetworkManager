@@ -88,14 +88,6 @@ NMDevice *nm_device_wifi_new (const char *udi,
 
 void nm_device_wifi_get_address (NMDeviceWifi *dev, struct ether_addr *addr);
 
-void nm_device_wifi_get_bssid (NMDeviceWifi *dev, struct ether_addr *bssid);
-
-const GByteArray * nm_device_wifi_get_ssid (NMDeviceWifi *self);
-
-gboolean nm_device_wifi_set_mode (NMDeviceWifi *self, const NM80211Mode mode);
-
-NM80211Mode nm_device_wifi_get_mode (NMDeviceWifi *self);
-
 NMAccessPoint * nm_device_wifi_get_activation_ap (NMDeviceWifi *self);
 
 RfKillState nm_device_wifi_get_ipw_rfkill_state (NMDeviceWifi *self);
