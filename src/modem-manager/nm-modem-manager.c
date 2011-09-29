@@ -29,6 +29,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-modem-types.h"
 #include "nm-marshal.h"
+#include "nm-dbus-glib-types.h"
 
 #define MODEM_POKE_INTERVAL 120
 
@@ -235,6 +236,23 @@ modem_removed (DBusGProxy *proxy, const char *path, gpointer user_data)
 	}
 }
 
+static void
+mm_poke_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
+{
+	GPtrArray *modems;
+	int i;
+
+	if (dbus_g_proxy_end_call (proxy, call, NULL,
+	                           DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH, &modems,
+	                           G_TYPE_INVALID)) {
+		/* Don't care about the returned value, just free it */
+		for (i = 0; i < modems->len; i++)
+			g_free ((char *) g_ptr_array_index (modems, i));
+		g_ptr_array_free (modems, TRUE);
+	}
+	g_object_unref (proxy);
+}
+
 static gboolean
 poke_modem_cb (gpointer user_data)
 {
@@ -242,6 +260,7 @@ poke_modem_cb (gpointer user_data)
 	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
 	DBusGConnection *g_connection;
 	DBusGProxy *proxy;
+	DBusGProxyCall *call;
 
 	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
 	proxy = dbus_g_proxy_new_for_name (g_connection,
@@ -249,9 +268,13 @@ poke_modem_cb (gpointer user_data)
 									   MM_DBUS_PATH,
 									   MM_DBUS_INTERFACE);
 
-	dbus_g_proxy_call_no_reply (proxy, "EnumerateDevices", G_TYPE_INVALID);
-	g_object_unref (proxy);
-
+	call = dbus_g_proxy_begin_call_with_timeout (proxy,
+	                                             "EnumerateDevices",
+	                                             mm_poke_cb,
+	                                             NULL,
+	                                             NULL,
+	                                             5000,
+	                                             G_TYPE_INVALID);
 	return TRUE;
 }
 
