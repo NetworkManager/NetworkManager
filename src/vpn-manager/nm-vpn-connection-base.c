@@ -153,7 +153,7 @@ get_property (GObject *object, guint prop_id,
 	case PROP_UUID:
 		s_con = (NMSettingConnection *) nm_connection_get_setting (priv->connection, NM_TYPE_SETTING_CONNECTION);
 		g_assert (s_con);
-		g_value_set_boxed (value, nm_setting_connection_get_uuid (s_con));
+		g_value_set_string (value, nm_setting_connection_get_uuid (s_con));
 		break;
 	case PROP_SPECIFIC_OBJECT:
 		g_value_set_boxed (value, priv->ac_path);
