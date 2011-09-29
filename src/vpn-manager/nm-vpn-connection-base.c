@@ -155,7 +155,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boxed (value, nm_connection_get_path (priv->connection));
 		break;
 	case PROP_UUID:
-		g_value_set_boxed (value, nm_connection_get_uuid (priv->connection));
+		g_value_set_string (value, nm_connection_get_uuid (priv->connection));
 		break;
 	case PROP_SPECIFIC_OBJECT:
 		g_value_set_boxed (value, priv->specific_object);
