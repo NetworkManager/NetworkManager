@@ -487,7 +487,7 @@ net_add (NMUdevManager *self, GUdevDevice *device)
 	 * FIXME: use something other than interface name to detect CTC here.
 	 */
 	if ((etype != 1) && (is_ctc == FALSE)) {
-		nm_log_dbg (LOGD_HW, "ignoring interface with type %d", etype);
+		nm_log_dbg (LOGD_HW, "(%s): ignoring interface with type %d", iface, etype);
 		return;
 	}
 
@@ -500,7 +500,7 @@ net_add (NMUdevManager *self, GUdevDevice *device)
 	 */
 	tmp = g_udev_device_get_property (device, "DEVTYPE");
 	if (g_strcmp0 (tmp, "wwan") == 0) {
-		nm_log_dbg (LOGD_HW, "ignoring interface with devtype '%s'", tmp);
+		nm_log_dbg (LOGD_HW, "(%s): ignoring interface with devtype '%s'", iface, tmp);
 		return;
 	}
 
@@ -511,7 +511,7 @@ net_add (NMUdevManager *self, GUdevDevice *device)
 	if (g_strcmp0 (tmp, "0421") == 0) { /* Nokia vendor ID */
 		tmp = g_udev_device_get_property (device, "ID_MODEL");
 		if (tmp && (strstr (tmp, "PC-Suite") || strstr (tmp, "PC Suite"))) {
-			nm_log_dbg (LOGD_HW, "ignoring Nokia PC-Suite ethernet interface");
+			nm_log_dbg (LOGD_HW, "(%s): ignoring Nokia PC-Suite ethernet interface", iface);
 			return;
 		}
 	}
