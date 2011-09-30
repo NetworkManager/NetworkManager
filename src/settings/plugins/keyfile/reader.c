@@ -733,7 +733,8 @@ read_hash_of_string (GKeyFile *file, NMSetting *setting, const char *key)
 static GByteArray *
 get_uchar_array (GKeyFile *keyfile,
                  const char *setting_name,
-                 const char *key)
+                 const char *key,
+                 gboolean zero_terminate)
 {
 	GByteArray *array = NULL;
 	char *tmp_string;
@@ -746,22 +747,22 @@ get_uchar_array (GKeyFile *keyfile,
 	 */
 	tmp_string = g_key_file_get_string (keyfile, setting_name, key, NULL);
 	if (tmp_string) {
-		gboolean new_format = FALSE;
 		GRegex *regex;
 		GMatchInfo *match_info;
 		const char *pattern = "^[[:space:]]*[[:digit:]]{1,3}[[:space:]]*(;[[:space:]]*[[:digit:]]{1,3}[[:space:]]*)*(;[[:space:]]*)?$";
 
 		regex = g_regex_new (pattern, 0, 0, NULL);
 		g_regex_match (regex, tmp_string, 0, &match_info);
-		if (!g_match_info_matches (match_info))
-			new_format = TRUE;
+		if (!g_match_info_matches (match_info)) {
+			/* Handle as a simple string (ie, new format) */
+			length = strlen (tmp_string);
+			if (zero_terminate)
+				length++;
+			array = g_byte_array_sized_new (length);
+			g_byte_array_append (array, (guint8 *) tmp_string, length);
+		}
 		g_match_info_free (match_info);
 		g_regex_unref (regex);
-
-		if (new_format) {
-			array = g_byte_array_sized_new (strlen (tmp_string));
-			g_byte_array_append (array, (guint8 *) tmp_string, strlen (tmp_string));
-		}
 		g_free (tmp_string);
 	}
 
@@ -796,7 +797,7 @@ ssid_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char 
 	const char *setting_name = nm_setting_get_name (setting);
 	GByteArray *array;
 
-	array = get_uchar_array (keyfile, setting_name, key);
+	array = get_uchar_array (keyfile, setting_name, key, FALSE);
 	if (array) {
 		g_object_set (setting, key, array, NULL);
 		g_byte_array_free (array, TRUE);
@@ -837,19 +838,77 @@ get_cert_path (const char *keyfile_path, GByteArray *cert_path)
 static const char *certext[] = { ".pem", ".cert", ".crt", ".cer", ".p12", ".der", ".key" };
 
 static gboolean
-has_cert_ext (GByteArray *array)
+has_cert_ext (const char *path)
 {
 	int i;
 
 	for (i = 0; i < G_N_ELEMENTS (certext); i++) {
-		guint32 extlen = strlen (certext[i]);
-
-		if (array->len <= extlen)
-			continue;
-		if (memcmp (&array->data[array->len - extlen], certext[i], extlen) == 0)
+		if (g_str_has_suffix (path, certext[i]))
 			return TRUE;
 	}
 	return FALSE;
+}
+
+static gboolean
+handle_as_scheme (GByteArray *array, NMSetting *setting, const char *key)
+{
+	/* It's the PATH scheme, can just set plain data */
+	if (   (array->len > strlen (SCHEME_PATH))
+	    && g_str_has_prefix ((const char *) array->data, SCHEME_PATH)
+	    && (array->data[array->len - 1] == '\0')) {
+		g_object_set (setting, key, array, NULL);
+		return TRUE;
+	}
+	return FALSE;
+}
+
+static gboolean
+handle_as_path (GByteArray *array,
+                NMSetting *setting,
+                const char *key,
+                const char *keyfile_path)
+{
+	gsize validate_len = array->len;
+	GByteArray *val;
+	char *path;
+	gboolean exists, success = FALSE;
+
+	if (array->len > 500 || array->len < 1)
+		return FALSE;
+
+	/* If there's a trailing NULL tell g_utf8_validate() to to until the NULL */
+	if (array->data[array->len - 1] == '\0')
+		validate_len = -1;
+
+	if (g_utf8_validate ((const char *) array->data, validate_len, NULL) == FALSE)
+		return FALSE;
+
+	/* Might be a bare path without the file:// prefix; in that case
+	 * if it's an absolute path, use that, otherwise treat it as a
+	 * relative path to the current directory.
+	 */
+
+	path = get_cert_path (keyfile_path, array);
+	exists = g_file_test (path, G_FILE_TEST_EXISTS);
+	if (   exists
+	    || memchr (array->data, '/', array->len)
+	    || has_cert_ext (path)) {
+		/* Construct the proper value as required for the PATH scheme */
+		val = g_byte_array_sized_new (strlen (SCHEME_PATH) + strlen (path) + 1);
+		g_byte_array_append (val, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
+		g_byte_array_append (val, (const guint8 *) path, strlen (path));
+		g_byte_array_append (val, (const guint8 *) "\0", 1);
+		g_object_set (setting, key, val, NULL);
+		g_byte_array_free (val, TRUE);
+		success = TRUE;
+
+		/* Warn if the certificate didn't exist */
+		if (exists == FALSE)
+			PLUGIN_WARN (KEYFILE_PLUGIN_NAME, "   certificate or key %s does not exist", path);
+	}
+	g_free (path);
+
+	return success;
 }
 
 static void
@@ -859,62 +918,25 @@ cert_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char 
 	GByteArray *array;
 	gboolean success = FALSE;
 
-	array = get_uchar_array (keyfile, setting_name, key);
-	if (array) {
-		/* Value could be either:
-		 * 1) the raw key/cert data as a blob
-		 * 2) a path scheme (ie, starts with "file://")
-		 * 3) a plain path
-		 */
-		if (   (array->len > strlen (SCHEME_PATH))
-		    && g_str_has_prefix ((const char *) array->data, SCHEME_PATH)
-		    && (array->data[array->len - 1] == '\0')) {
-			/* It's the PATH scheme, can just set plain data */
+	array = get_uchar_array (keyfile, setting_name, key, TRUE);
+	if (array && array->len > 0) {
+		/* Try as a path + scheme (ie, starts with "file://") */
+		success = handle_as_scheme (array, setting, key);
+
+		/* If not, it might be a plain path */
+		if (success == FALSE)
+			success = handle_as_path (array, setting, key, keyfile_path);
+
+		/* If neither of those two, assume blob with certificate data */
+		if (success == FALSE)
 			g_object_set (setting, key, array, NULL);
-			success = TRUE;
-		} else if (   (array->len < 500)
-		           && g_utf8_validate ((const char *) array->data, array->len, NULL)) {
-			GByteArray *val;
-			char *path;
-			gboolean exists;
-
-			/* Might be a bare path without the file:// prefix; in that case
-			 * if it's an absolute path, use that, otherwise treat it as a
-			 * relative path to the current directory.
-			 */
-
-			path = get_cert_path (keyfile_path, array);
-			exists = g_file_test (path, G_FILE_TEST_EXISTS);
-			if (   exists
-			    || memchr (array->data, '/', array->len)
-			    || has_cert_ext (array)) {
-				/* Construct the proper value as required for the PATH scheme */
-				val = g_byte_array_sized_new (strlen (SCHEME_PATH) + array->len + 1);
-				g_byte_array_append (val, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
-				g_byte_array_append (val, (const guint8 *) path, strlen (path));
-				g_byte_array_append (val, (const guint8 *) "\0", 1);
-				g_object_set (setting, key, val, NULL);
-				g_byte_array_free (val, TRUE);
-				success = TRUE;
-
-				/* Warn if the certificate didn't exist */
-				if (exists == FALSE) {
-					PLUGIN_WARN (KEYFILE_PLUGIN_NAME, "   certificate or key %s does not exist", path);
-				}
-			}
-			g_free (path);
-		}
-
-		if (!success) {
-			/* Assume it's a simple blob value of the certificate or private key's data */
-			g_object_set (setting, key, array, NULL);
-		}
-
-		g_byte_array_free (array, TRUE);
 	} else {
 		g_warning ("%s: ignoring invalid key/cert value for %s / %s",
 		           __func__, setting_name, key);
 	}
+
+	if (array)
+		g_byte_array_free (array, TRUE);
 }
 
 typedef struct {
