@@ -130,14 +130,14 @@ fill_from_file (NMConfig *config,
 	gboolean success = FALSE;
 
 	if (g_file_test (path, G_FILE_TEST_EXISTS) == FALSE) {
-		g_set_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND, "file not found");
+		g_set_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND, "file %s not found", path);
 		return FALSE;
 	}
 
 	kf = g_key_file_new ();
 	if (!kf) {
 		g_set_error (error, NM_CONFIG_ERROR, NM_CONFIG_ERROR_NO_MEMORY,
-		             "Not enough memory to load config file");
+		             "Not enough memory to load config file %s", path);
 		return FALSE;
 	}
 
@@ -219,9 +219,13 @@ nm_config_new (const char *cli_config_path,
 		         NM_DEFAULT_SYSTEM_CONF_FILE,
 		         local ? local->code : -1,
 		         (local && local->message) ? local->message : "unknown");
+		g_propagate_error (error, local);
+		nm_config_free (config);
+		return NULL;
 	}
 
-	g_propagate_error (error, local);
+	/* ignore error if config file not found */
+	g_clear_error (&local);
 	return config;
 }
 

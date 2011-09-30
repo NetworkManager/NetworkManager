@@ -327,13 +327,15 @@ parse_state_file (const char *filename,
 
 	state_file = g_key_file_new ();
 	if (!state_file) {
-		g_set_error (error, 0, 0,
-		             "Not enough memory to load state file.");
+		g_set_error (error, NM_CONFIG_ERROR, NM_CONFIG_ERROR_NO_MEMORY,
+		             "Not enough memory to load state file %s.", filename);
 		return FALSE;
 	}
 
 	g_key_file_set_list_separator (state_file, ',');
 	if (!g_key_file_load_from_file (state_file, filename, G_KEY_FILE_KEEP_COMMENTS, &tmp_error)) {
+		gboolean ret = FALSE;
+
 		/* This is kinda ugly; create the file and directory if it doesn't
 		 * exist yet.  We can't rely on distros necessarily creating the
 		 * /var/lib/NetworkManager for us since we have to ensure that
@@ -343,15 +345,16 @@ parse_state_file (const char *filename,
 		    && tmp_error->code == G_FILE_ERROR_NOENT) {
 			char *data, *dirname;
 			gsize len = 0;
-			gboolean ret = FALSE;
+
+			g_clear_error (&tmp_error);
 
 			/* try to create the directory if it doesn't exist */
 			dirname = g_path_get_dirname (filename);
 			errno = 0;
-			if (mkdir (dirname, 0755) != 0) {
+			if (g_mkdir_with_parents (dirname, 0755) != 0) {
 				if (errno != EEXIST) {
 					g_set_error (error, G_FILE_ERROR, G_FILE_ERROR_ACCES,
-					             "Error creating state directory %s: %d", dirname, errno);
+					             "Error creating state directory %s: %s", dirname, strerror(errno));
 					g_free (dirname);
 					return FALSE;
 				}
@@ -368,53 +371,38 @@ parse_state_file (const char *filename,
 			if (data)
 				ret = g_file_set_contents (filename, data, len, error);
 			g_free (data);
-
-			return ret;
 		} else {
-			g_set_error_literal (error, tmp_error->domain, tmp_error->code, tmp_error->message);
-			g_clear_error (&tmp_error);
+			/* the error is not "No such file or directory" - propagate the error */
+			g_propagate_error (error, tmp_error);
 		}
 
-		/* Otherwise, file probably corrupt or inaccessible */
-		return FALSE;
+		return ret;
 	}
 
 	/* Reading state bits of NetworkManager; an error leaves the passed-in state
 	 * value unchanged.
 	 */
 	net = g_key_file_get_boolean (state_file, "main", "NetworkingEnabled", &tmp_error);
-	if (tmp_error)
-		g_set_error_literal (error, tmp_error->domain, tmp_error->code, tmp_error->message);
-	else
+	if (tmp_error == NULL)
 		*net_enabled = net;
 	g_clear_error (&tmp_error);
 
 	wifi = g_key_file_get_boolean (state_file, "main", "WirelessEnabled", &tmp_error);
-	if (tmp_error) {
-		g_clear_error (error);
-		g_set_error_literal (error, tmp_error->domain, tmp_error->code, tmp_error->message);
-	} else
+	if (tmp_error == NULL)
 		*wifi_enabled = wifi;
 	g_clear_error (&tmp_error);
 
 	wwan = g_key_file_get_boolean (state_file, "main", "WWANEnabled", &tmp_error);
-	if (tmp_error) {
-		g_clear_error (error);
-		g_set_error_literal (error, tmp_error->domain, tmp_error->code, tmp_error->message);
-	} else
+	if (tmp_error == NULL)
 		*wwan_enabled = wwan;
 	g_clear_error (&tmp_error);
 
 	wimax = g_key_file_get_boolean (state_file, "main", "WimaxEnabled", &tmp_error);
-	if (tmp_error) {
-		g_clear_error (error);
-		g_set_error_literal (error, tmp_error->domain, tmp_error->code, tmp_error->message);
-	} else
+	if (tmp_error == NULL)
 		*wimax_enabled = wimax;
 	g_clear_error (&tmp_error);
-
+!
 	g_key_file_free (state_file);
-
 	return TRUE;
 }
 
