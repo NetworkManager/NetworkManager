@@ -2756,7 +2756,7 @@ supplicant_iface_notify_scanning_cb (NMSupplicantInterface *iface,
 	scanning = nm_supplicant_interface_get_scanning (iface);
 	nm_log_dbg (LOGD_WIFI_SCAN, "(%s): now %s",
 	            nm_device_get_iface (NM_DEVICE (self)),
-	            scanning ? "scanning" : "not scanning");
+	            scanning ? "scanning" : "idle");
 
 	g_object_notify (G_OBJECT (self), "scanning");
 }
