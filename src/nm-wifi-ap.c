@@ -751,8 +751,7 @@ error:
 #define MAC_ARG(x) ((guint8*)(x))[0],((guint8*)(x))[1],((guint8*)(x))[2],((guint8*)(x))[3],((guint8*)(x))[4],((guint8*)(x))[5]
 
 void
-nm_ap_print_self (NMAccessPoint *ap,
-                  const char * prefix)
+nm_ap_dump (NMAccessPoint *ap, const char *prefix)
 {
 	NMAccessPointPrivate *priv;
 

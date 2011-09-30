@@ -1690,7 +1690,7 @@ nm_device_wifi_get_address (NMDeviceWifi *self,
 }
 
 static void
-nm_device_wifi_ap_list_print (NMDeviceWifi *self)
+ap_list_dump (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	GSList * elt;
@@ -1701,7 +1701,7 @@ nm_device_wifi_ap_list_print (NMDeviceWifi *self)
 	nm_log_dbg (LOGD_WIFI_SCAN, "Current AP list:");
 	for (elt = priv->ap_list; elt; elt = g_slist_next (elt), i++) {
 		NMAccessPoint * ap = NM_AP (elt->data);
-		nm_ap_print_self (ap, "AP: ");
+		nm_ap_dump (ap, "List AP: ");
 	}
 	nm_log_dbg (LOGD_WIFI_SCAN, "Current AP list: done");
 }
@@ -2180,7 +2180,7 @@ supplicant_iface_scan_done_cb (NMSupplicantInterface *iface,
 		 * happens when there are actual scan results to process.
 		 */
 		cull_scan_list (self);
-		nm_device_wifi_ap_list_print (self);
+		ap_list_dump (self);
 	}
 #endif
 }
@@ -2421,7 +2421,7 @@ supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
 
 	ap = nm_ap_new_from_properties (properties);
 	if (ap) {
-		nm_ap_print_self (ap, "AP: ");
+		nm_ap_dump (ap, "New AP: ");
 
 		/* Add the AP to the device's AP list */
 		merge_scanned_ap (self, ap);
@@ -2430,7 +2430,7 @@ supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
 		/* Remove outdated access points */
 		cull_scan_list (self);
 
-		nm_device_wifi_ap_list_print (self);
+		ap_list_dump (self);
 	} else {
 		nm_log_warn (LOGD_WIFI_SCAN, "(%s): invalid AP properties received",
 		             nm_device_get_iface (NM_DEVICE (self)));

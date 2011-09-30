@@ -112,6 +112,6 @@ NMAccessPoint *     nm_ap_match_in_list (NMAccessPoint *find_ap,
                                          GSList *ap_list,
                                          gboolean strict_match);
 
-void				nm_ap_print_self (NMAccessPoint *ap, const char * prefix);
+void				nm_ap_dump (NMAccessPoint *ap, const char *prefix);
 
 #endif /* NM_ACCESS_POINT_H */
