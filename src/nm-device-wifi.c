@@ -2265,6 +2265,9 @@ out:
  *
  */
 
+#define MAC_FMT "%02x:%02x:%02x:%02x:%02x:%02x"
+#define MAC_ARG(x) ((guint8*)(x))[0],((guint8*)(x))[1],((guint8*)(x))[2],((guint8*)(x))[3],((guint8*)(x))[4],((guint8*)(x))[5]
+
 /*
  * merge_scanned_ap
  *
@@ -2284,16 +2287,33 @@ merge_scanned_ap (NMDeviceWifi *self,
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMAccessPoint *found_ap = NULL;
 	const GByteArray *ssid;
+	const struct ether_addr *bssid;
 	gboolean strict_match = TRUE;
 	NMAccessPoint *current_ap = NULL;
 
 	/* Let the manager try to fill in the SSID from seen-bssids lists
 	 * if it can
 	 */
+	bssid = nm_ap_get_address (merge_ap);
 	ssid = nm_ap_get_ssid (merge_ap);
 	if (!ssid || nm_utils_is_empty_ssid (ssid->data, ssid->len)) {
+		/* Let the manager try to fill the AP's SSID from the database */
 		g_signal_emit (self, signals[HIDDEN_AP_FOUND], 0, merge_ap);
-		nm_ap_set_broadcast (merge_ap, FALSE);
+
+		ssid = nm_ap_get_ssid (merge_ap);
+		if (ssid && (nm_utils_is_empty_ssid (ssid->data, ssid->len) == FALSE)) {
+			/* Yay, matched it, no longer treat as hidden */
+			nm_log_dbg (LOGD_WIFI_SCAN, "(%s): matched hidden AP " MAC_FMT " => '%s'",
+			            nm_device_get_iface (NM_DEVICE (self)),
+			            MAC_ARG (bssid->ether_addr_octet),
+			            nm_utils_escape_ssid (ssid->data, ssid->len));
+			nm_ap_set_broadcast (merge_ap, FALSE);
+		} else {
+			/* Didn't have an entry for this AP in the database */
+			nm_log_dbg (LOGD_WIFI_SCAN, "(%s): failed to match hidden AP " MAC_FMT,
+			            nm_device_get_iface (NM_DEVICE (self)),
+			            MAC_ARG (bssid->ether_addr_octet));
+		}
 	}
 
 	/* If the incoming scan result matches the hidden AP that NM is currently
@@ -2308,6 +2328,13 @@ merge_scanned_ap (NMDeviceWifi *self,
 
 	found_ap = nm_ap_match_in_list (merge_ap, priv->ap_list, strict_match);
 	if (found_ap) {
+		nm_log_dbg (LOGD_WIFI_SCAN, "(%s): merging AP '%s' " MAC_FMT " (%p) with existing (%p)",
+		            nm_device_get_iface (NM_DEVICE (self)),
+		            ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
+		            MAC_ARG (bssid->ether_addr_octet),
+		            merge_ap,
+		            found_ap);
+
 		nm_ap_set_flags (found_ap, nm_ap_get_flags (merge_ap));
 		nm_ap_set_wpa_flags (found_ap, nm_ap_get_wpa_flags (merge_ap));
 		nm_ap_set_rsn_flags (found_ap, nm_ap_get_rsn_flags (merge_ap));
@@ -2323,7 +2350,12 @@ merge_scanned_ap (NMDeviceWifi *self,
 		nm_ap_set_fake (found_ap, FALSE);
 	} else {
 		/* New entry in the list */
-		// FIXME: figure out if reference counts are correct here for AP objects
+		nm_log_dbg (LOGD_WIFI_SCAN, "(%s): adding new AP '%s' " MAC_FMT " (%p)",
+		            nm_device_get_iface (NM_DEVICE (self)),
+		            ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
+		            MAC_ARG (bssid->ether_addr_octet),
+		            merge_ap);
+
 		g_object_ref (merge_ap);
 		priv->ap_list = g_slist_prepend (priv->ap_list, merge_ap);
 		nm_ap_export_to_dbus (merge_ap);
