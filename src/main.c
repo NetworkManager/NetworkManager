@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2010 Red Hat, Inc.
+ * Copyright (C) 2004 - 2011 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
@@ -313,7 +313,7 @@ parse_state_file (const char *filename,
                   gboolean *net_enabled,
                   gboolean *wifi_enabled,
                   gboolean *wwan_enabled,
-				  gboolean *wimax_enabled,
+                  gboolean *wimax_enabled,
                   GError **error)
 {
 	GKeyFile *state_file;
@@ -401,7 +401,7 @@ parse_state_file (const char *filename,
 	if (tmp_error == NULL)
 		*wimax_enabled = wimax;
 	g_clear_error (&tmp_error);
-!
+
 	g_key_file_free (state_file);
 	return TRUE;
 }
