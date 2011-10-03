@@ -1725,7 +1725,7 @@ write_connection (NMConnection *connection,
 
 			g_free (ifcfg_name);
 			while (idx++ < 500) {
-				ifcfg_name = g_strdup_printf ("%s/ifcfg-%s %u", ifcfg_dir, escaped, idx);
+				ifcfg_name = g_strdup_printf ("%s/ifcfg-%s-%u", ifcfg_dir, escaped, idx);
 				if (g_file_test (ifcfg_name, G_FILE_TEST_EXISTS) == FALSE)
 					break;
 				g_free (ifcfg_name);
