@@ -64,7 +64,7 @@ HTML_IMAGES = libnm-glib.png
 content_files = 
 
 # Other files to distribute.
-extra_files =
+extra_files = libnm-glib.png
 
 
 # CFLAGS and LDFLAGS for compiling scan program. Only needed
