@@ -62,6 +62,15 @@ __rtnl_link_alloc_cache (struct nl_sock *h, struct nl_cache **cache)
 #define rtnl_link_alloc_cache __rtnl_link_alloc_cache
 #endif
 
+
+/* libnl-2.0 compat functions */
+#ifdef HAVE_LIBNL2
+
+/* functions with similar prototypes */
+#define nlmsg_datalen nlmsg_len
+#endif
+
+
 /* libnl-1.0 compat functions */
 #ifdef HAVE_LIBNL1
 
