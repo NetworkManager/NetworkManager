@@ -336,13 +336,13 @@ svSetValue(shvarFile *s, const char *key, const char *value, gboolean verbatim)
     }
 
 end:
-    if (newval) free(newval);
-    if (val1) free(val1);
-    if (val2) free(val2);
+    g_free(newval);
+    g_free(val1);
+    g_free(val2);
     return;
 
 bail:
-    if (keyValue) free (keyValue);
+    g_free (keyValue);
     goto end;
 }
 
