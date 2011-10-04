@@ -313,7 +313,7 @@ is_ip4_address (const char *in_address)
 	gboolean result = FALSE;
 	gchar *tmp;
 	GRegex *regex = g_regex_new (pattern, 0, 0, NULL);
-	GMatchInfo *match_info;
+	GMatchInfo *match_info = NULL;
 
 	if (!address)
 		goto done;
