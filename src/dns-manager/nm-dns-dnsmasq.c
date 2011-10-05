@@ -246,7 +246,7 @@ update (NMDnsPlugin *plugin,
 	NMDnsDnsmasq *self = NM_DNS_DNSMASQ (plugin);
 	GString *conf;
 	GSList *iter;
-	const char *argv[10];
+	const char *argv[11];
 	GError *error = NULL;
 	int ignored;
 	GPid pid = 0;
@@ -307,7 +307,8 @@ update (NMDnsPlugin *plugin,
 	argv[5] = "--pid-file=" PIDFILE;
 	argv[6] = "--listen-address=127.0.0.1"; /* Should work for both 4 and 6 */
 	argv[7] = "--conf-file=" CONFFILE;
-	argv[8] = NULL;
+	argv[8] = "--cache-size=400";
+	argv[9] = NULL;
 
 	/* And finally spawn dnsmasq */
 	pid = nm_dns_plugin_child_spawn (NM_DNS_PLUGIN (self), argv, PIDFILE, "bin/dnsmasq");
