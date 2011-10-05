@@ -87,6 +87,7 @@ static struct nl_msg *nl80211_alloc_msg (WifiDataNl80211 *nl80211,
 	NLA_PUT_U32 (msg, NL80211_ATTR_IFINDEX, nl80211->parent.ifindex);
 
 	return msg;
+
  nla_put_failure:
 	nlmsg_free (msg);
 	return NULL;
@@ -476,6 +477,8 @@ static void nl80211_get_ap_info (WifiDataNl80211 *nl80211,
 				       sta_info);
 	}
 
+	return;
+
  nla_put_failure:
 	nlmsg_free (msg);
 	return;
@@ -489,7 +492,7 @@ wifi_nl80211_get_rate (WifiData *data)
 
 	nl80211_get_ap_info (nl80211, &sta_info);
 
-	return sta_info.txrate;
+	return sta_info.txrate * 1000;
 }
 
 static int
@@ -686,6 +689,10 @@ wifi_nl80211_init (const char *iface, int ifindex)
 	nl80211->num_freqs = device_info.num_freqs;
 	nl80211->parent.can_scan_ssid = device_info.can_scan_ssid;
 	nl80211->parent.caps = device_info.caps;
+
+	nm_log_info (LOGD_HW | LOGD_WIFI,
+	             "(%s): using nl80211 for WiFi device control",
+	             nl80211->parent.iface);
 
 	return (WifiData *) nl80211;
 
