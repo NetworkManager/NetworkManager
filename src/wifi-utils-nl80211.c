@@ -673,17 +673,33 @@ wifi_nl80211_init (const char *iface, int ifindex)
 	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_GET_WIPHY, 0);
 
 	if (nl80211_send_and_recv (nl80211, msg, nl80211_wiphy_info_handler,
-				   &device_info) < 0)
+				   &device_info) < 0) {
+		nm_log_dbg (LOGD_HW | LOGD_WIFI,
+				    "(%s): NL80211_CMD_GET_WIPHY request failed",
+				    nl80211->parent.iface);
 		goto error;
+	}
 
-	if (!device_info.success)
+	if (!device_info.success) {
+		nm_log_dbg (LOGD_HW | LOGD_WIFI,
+				    "(%s): NL80211_CMD_GET_WIPHY request indicated failure",
+				    nl80211->parent.iface);
 		goto error;
+	}
 
-	if (!device_info.can_scan_ssid)
+	if (!device_info.can_scan_ssid) {
+		nm_log_err (LOGD_HW | LOGD_WIFI,
+		            "(%s): driver does not support SSID scans",
+		            nl80211->parent.iface);
 		goto error;
+	}
 
-	if (device_info.num_freqs == 0 || device_info.freqs == NULL)
+	if (device_info.num_freqs == 0 || device_info.freqs == NULL) {
+		nm_log_err (LOGD_HW | LOGD_WIFI,
+				    "(%s): driver reports no supported frequencies",
+				    nl80211->parent.iface);
 		goto error;
+	}
 
 	nl80211->freqs = device_info.freqs;
 	nl80211->num_freqs = device_info.num_freqs;
