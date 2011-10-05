@@ -26,6 +26,7 @@
 #include "wifi-utils.h"
 #include "wifi-utils-private.h"
 #include "wifi-utils-wext.h"
+#include "wifi-utils-nl80211.h"
 
 gpointer
 wifi_data_new (const char *iface, int ifindex, gsize len)
@@ -51,10 +52,14 @@ wifi_data_free (WifiData *data)
 WifiData *
 wifi_utils_init (const char *iface, int ifindex, gboolean check_scan)
 {
+	WifiData *ret;
+
 	g_return_val_if_fail (iface != NULL, NULL);
 	g_return_val_if_fail (ifindex > 0, NULL);
 
-	/* Determine WEXT vs. nl80211 here */
+	ret = wifi_nl80211_init (iface, ifindex);
+	if (ret != NULL)
+		return ret;
 
 	return wifi_wext_init (iface, ifindex, check_scan);
 }

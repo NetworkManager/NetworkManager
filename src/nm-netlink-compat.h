@@ -172,6 +172,18 @@ __nl_cache_include (struct nl_cache *cache, struct nl_object *obj, change_func_t
 }
 #define nl_cache_include __nl_cache_include
 
+#include <netlink/genl/ctrl.h>
+
+static inline int __genl_ctrl_alloc_cache(struct nl_sock *h, struct nl_cache **cache)
+{
+	struct nl_cache *tmp = genl_ctrl_alloc_cache(h);
+	if (!tmp)
+		return -ENOMEM;
+	*cache = tmp;
+	return 0;
+}
+#define genl_ctrl_alloc_cache __genl_ctrl_alloc_cache
+
 #define NLE_SUCCESS             0
 #define NLE_FAILURE             1
 #define NLE_INTR                2

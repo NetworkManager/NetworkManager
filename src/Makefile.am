@@ -124,6 +124,8 @@ NetworkManager_SOURCES = \
 		wifi-utils-private.h \
 		wifi-utils-wext.c \
 		wifi-utils-wext.h \
+		wifi-utils-nl80211.c \
+		wifi-utils-nl80211.h \
 		nm-device-wifi.c \
 		nm-device-wifi.h \
 		nm-device-olpc-mesh.c	\

@@ -347,6 +347,12 @@ is_wireless (GUdevDevice *device)
 	char phy80211_path[255];
 	struct stat s;
 	const char *path;
+	const char *tmp;
+
+	/* Check devtype, newer kernels (2.6.32+) have this */
+	tmp = g_udev_device_get_property (device, "DEVTYPE");
+	if (g_strcmp0 (tmp, "wlan") == 0)
+		return TRUE;
 
 	/* Check for nl80211 sysfs paths */
 	path = g_udev_device_get_sysfs_path (device);
@@ -354,7 +360,7 @@ is_wireless (GUdevDevice *device)
 	if ((stat (phy80211_path, &s) == 0 && (s.st_mode & S_IFDIR)))
 		return TRUE;
 
-	/* Otherwise hit up WEXT/nl80211 directly */
+	/* Otherwise hit up WEXT directly */
 	return wifi_utils_is_wifi (g_udev_device_get_name (device));
 }
 
