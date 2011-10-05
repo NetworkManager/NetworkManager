@@ -208,7 +208,7 @@ if ! test x"$ac_distver" = x""; then
   AC_DEFINE_UNQUOTED(NM_DIST_VERSION, "$ac_distver", [Define the distribution version string])
 fi
 
-AC_MSG_CHECKING([Linux Wireless Extensions >= 18])
+AC_MSG_CHECKING([Linux kernel WEXT headers])
 AC_COMPILE_IFELSE(
 	[AC_LANG_PROGRAM(
               [[#ifndef __user
@@ -225,7 +225,25 @@ AC_COMPILE_IFELSE(
         [ac_have_iwevgenie=no])
 AC_MSG_RESULT($ac_have_iwevgenie)
 if test "$ac_have_iwevgenie" = no; then
-	AC_MSG_ERROR(Linux kernel development headers not installed or not functional)
+	AC_MSG_ERROR(Linux kernel development header linux/wireless.h not installed or not functional)
+fi
+
+AC_MSG_CHECKING([Linux kernel nl80211 headers])
+AC_COMPILE_IFELSE(
+	[AC_LANG_PROGRAM(
+              [[#ifndef __user
+                #define __user
+                #endif
+                #include <sys/types.h>
+                #include <linux/types.h>
+                #include <sys/socket.h>
+                #include <linux/nl80211.h>]],
+              [[int a = NL80211_RATE_INFO_BITRATE;]])],
+        [ac_have_nl80211=yes],
+        [ac_have_nl80211=no])
+AC_MSG_RESULT($ac_have_nl80211)
+if test "$ac_have_nl80211" = no; then
+	AC_MSG_ERROR(Linux kernel development header linux/nl80211.h not installed or not functional)
 fi
 
 dnl
