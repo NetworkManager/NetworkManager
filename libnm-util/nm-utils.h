@@ -27,7 +27,6 @@
 #define NM_UTILS_H
 
 #include <glib.h>
-#include <execinfo.h>
 
 #include "nm-connection.h"
 
@@ -41,30 +40,10 @@ G_BEGIN_DECLS
  * nm_print_backtrace:
  *
  * Prints a backtrace of the calling process to the logging location.
+ *
+ * DEPRECATED
  */
-#define nm_print_backtrace()						\
-G_STMT_START								\
-{									\
-	void *_call_stack[512];						\
-	int  _call_stack_size;						\
-	char **_symbols;						\
-	_call_stack_size = backtrace (_call_stack,			\
-				      G_N_ELEMENTS (_call_stack));	\
-	_symbols = backtrace_symbols (_call_stack, _call_stack_size);	\
-	if (_symbols != NULL)						\
-	{								\
-		int _i;							\
-		_i = 0;							\
-		g_critical ("traceback:\n");				\
-		while (_i < _call_stack_size)				\
-		{							\
-			g_critical ("\t%s\n", _symbols[_i]);		\
-			_i++;						\
-		}							\
-		free (_symbols);					\
-	}								\
-}									\
-G_STMT_END
+#define nm_print_backtrace() {}
 
 /**
  * nm_get_timestamp:
@@ -133,7 +112,6 @@ G_STMT_START								\
 	nm_get_timestamp (&_timestamp);					\
 	g_critical ("<ERROR>\t[%f] %s (): " fmt "\n", _timestamp,	\
 		    G_STRFUNC, ##args);			\
-	nm_print_backtrace ();						\
 	G_BREAKPOINT ();						\
 } G_STMT_END
 
@@ -144,7 +122,6 @@ G_STMT_START								\
 	nm_get_timestamp (&_timestamp);					\
 	g_critical ("<ERROR>\t[%f] %s (): %s\n", _timestamp,	\
 		    G_STRFUNC, fmt_str, ##args);			\
-	nm_print_backtrace ();						\
 	G_BREAKPOINT ();						\
 } G_STMT_END
 
