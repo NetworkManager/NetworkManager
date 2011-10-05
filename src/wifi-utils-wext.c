@@ -367,6 +367,21 @@ wifi_wext_get_qual (WifiData *data)
 /*********************/
 /* OLPC Mesh-only functions */
 
+static guint32
+wifi_wext_get_mesh_channel (WifiData *data)
+{
+	WifiDataWext *wext = (WifiDataWext *) data;
+	guint32 freq;
+	int i;
+
+	freq = wifi_utils_get_freq (data);
+	for (i = 0; i < wext->num_freqs; i++) {
+		if (freq == wext->freqs[i])
+			return i + 1;
+	}
+	return 0;
+}
+
 static gboolean
 wifi_wext_set_mesh_channel (WifiData *data, guint32 channel)
 {
@@ -549,6 +564,7 @@ wifi_wext_init (const char *iface, int ifindex, gboolean check_scan)
 	wext->parent.get_rate = wifi_wext_get_rate;
 	wext->parent.get_qual = wifi_wext_get_qual;
 	wext->parent.deinit = wifi_wext_deinit;
+	wext->parent.get_mesh_channel = wifi_wext_get_mesh_channel;
 	wext->parent.set_mesh_channel = wifi_wext_set_mesh_channel;
 	wext->parent.set_mesh_ssid = wifi_wext_set_mesh_ssid;
 

@@ -31,11 +31,13 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <net/ethernet.h>
-#include <iwlib.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <signal.h>
 #include <unistd.h>
+#include <linux/if.h>
+#include <sys/ioctl.h>
+#include <errno.h>
 
 #include "nm-device.h"
 #include "nm-device-wifi.h"
@@ -51,14 +53,13 @@
 #include "nm-setting-olpc-mesh.h"
 #include "nm-system.h"
 #include "nm-manager.h"
+#include "wifi-utils.h"
 
 /* This is a bug; but we can't really change API now... */
 #include "NetworkManagerVPN.h"
 
 
 #include "nm-device-olpc-mesh-glue.h"
-
-static void nm_device_olpc_mesh_set_ssid (NMDeviceOlpcMesh *self, const GByteArray * ssid);
 
 G_DEFINE_TYPE (NMDeviceOlpcMesh, nm_device_olpc_mesh, NM_TYPE_DEVICE)
 
@@ -101,8 +102,7 @@ struct _NMDeviceOlpcMeshPrivate
 
 	GByteArray *      ssid;
 
-	gint8			  num_freqs;
-	guint32			  freqs[IW_MAX_FREQUENCIES];
+	WifiData *        wifi_data;
 
 	gboolean          up;
 
@@ -161,44 +161,6 @@ nm_device_olpc_mesh_init (NMDeviceOlpcMesh * self)
 	memset (&(priv->hw_addr), 0, sizeof (struct ether_addr));
 }
 
-static guint32 iw_freq_to_uint32 (struct iw_freq *freq)
-{
-	if (freq->e == 0) {
-		/* Some drivers report channel not frequency.  Convert to a
-		 * frequency; but this assumes that the device is in b/g mode.
-		 */
-		if ((freq->m >= 1) && (freq->m <= 13))
-			return 2407 + (5 * freq->m);
-		else if (freq->m == 14)
-			return 2484;
-	}
-
-	return (guint32) (((double) freq->m) * pow (10, freq->e) / 1000000);
-}
-
-
-/* Until a new wireless-tools comes out that has the defs and the structure,
- * need to copy them here.
- */
-/* Scan capability flags - in (struct iw_range *)->scan_capa */
-#define NM_IW_SCAN_CAPA_NONE  0x00
-#define NM_IW_SCAN_CAPA_ESSID 0x01
-
-struct iw_range_with_scan_capa
-{
-	guint32 throughput;
-	guint32 min_nwid;
-	guint32 max_nwid;
-	guint16 old_num_channels;
-	guint8  old_num_frequency;
-
-	guint8  scan_capa;
-/* don't need the rest... */
-};
-
-
-
-
 static GObject*
 constructor (GType type,
              guint n_construct_params,
@@ -208,11 +170,6 @@ constructor (GType type,
 	GObjectClass *klass;
 	NMDeviceOlpcMesh *self;
 	NMDeviceOlpcMeshPrivate *priv;
-	const char *iface;
-	int fd;
-	struct iw_range range;
-	struct iwreq wrq;
-	int i;
 
 	klass = G_OBJECT_CLASS (nm_device_olpc_mesh_parent_class);
 	object = klass->constructor (type, n_construct_params, construct_params);
@@ -226,46 +183,19 @@ constructor (GType type,
 	            nm_device_get_iface (NM_DEVICE (self)),
 	            nm_device_get_ifindex (NM_DEVICE (self)));
 
-	iface = nm_device_get_iface (NM_DEVICE (self));
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0)
-		goto error;
-
-	memset (&wrq, 0, sizeof (struct iwreq));
-	memset (&range, 0, sizeof (struct iw_range));
-	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
-	wrq.u.data.pointer = (caddr_t) &range;
-	wrq.u.data.length = sizeof (struct iw_range);
-
-	if (ioctl (fd, SIOCGIWRANGE, &wrq) < 0) {
-		nm_log_info (LOGD_HW | LOGD_WIFI, "(%s): driver WEXT range request failed",
+	priv->wifi_data = wifi_utils_init (nm_device_get_iface (NM_DEVICE (self)),
+	                                   nm_device_get_ifindex (NM_DEVICE (self)),
+	                                   FALSE);
+	if (priv->wifi_data == NULL) {
+		nm_log_warn (LOGD_HW | LOGD_OLPC_MESH, "(%s): failed to initialize WiFi driver",
 		             nm_device_get_iface (NM_DEVICE (self)));
-		goto error;
+		g_object_unref (object);
+		return NULL;
 	}
-
-	if ((wrq.u.data.length < 300) || (range.we_version_compiled < 21)) {
-		nm_log_info (LOGD_HW | LOGD_WIFI,
-		             "(%s): driver WEXT version too old (got %d, expected >= 21)",
-		             nm_device_get_iface (NM_DEVICE (self)),
-		             range.we_version_compiled);
-		goto error;
-	}
-
-	priv->num_freqs = MIN (range.num_frequency, IW_MAX_FREQUENCIES);
-	for (i = 0; i < priv->num_freqs; i++)
-		priv->freqs[i] = iw_freq_to_uint32 (&range.freq[i]);
-
-	close (fd);
 
 	/* shorter timeout for mesh connectivity */
 	nm_device_set_dhcp_timeout (NM_DEVICE (self), 20);
 	return object;
-
-error:
-	if (fd >= 0)
-		close (fd);
-	g_object_unref (object);
-	return NULL;
 }
 
 static gboolean
@@ -414,131 +344,6 @@ nm_device_olpc_mesh_get_address (NMDeviceOlpcMesh *self,
 	memcpy (addr, &(priv->hw_addr), sizeof (struct ether_addr));
 }
 
-static int
-create_socket_with_request (NMDevice *self, struct iwreq *req)
-{
-	int sk;
-	const char * iface;
-
-	g_return_val_if_fail (self != NULL, -1);
-
-	sk = socket (AF_INET, SOCK_DGRAM, 0);
-	if (sk == -1) {
-		nm_log_err (LOGD_OLPC_MESH, "Couldn't create socket: %d.", errno);
-		return -1;
-	}
-
-	memset (req, 0, sizeof (struct iwreq));
-	iface = nm_device_get_iface (NM_DEVICE (self));
-	strncpy (req->ifr_name, iface, IFNAMSIZ);
-
-	return sk;
-}
-
-static guint32
-nm_device_olpc_mesh_get_channel (NMDeviceOlpcMesh *self)
-{
-	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
-	int sk;
-	struct iwreq req;
-	int ret = 0;
-	int i;
-	guint32 freq;
-
-	sk = create_socket_with_request (NM_DEVICE (self), &req);
-	if (sk == -1)
-		return 0;
-
-	if ((ioctl (sk, SIOCGIWFREQ, &req)) != 0) {
-		nm_log_warn (LOGD_OLPC_MESH, "(%s): failed to get channel (errno: %d)",
-		             nm_device_get_iface (NM_DEVICE (self)), errno);
-		goto out;
-	}
-
-	freq = iw_freq_to_uint32 (&req.u.freq);
-
-	for (i = 0 ; i < priv->num_freqs; i++) {
-		if (freq == priv->freqs[i])
-			break;
-	}
-	if (i < priv->num_freqs)
-		ret = i + 1;
-
-out:
-	if (sk >= 0)
-		close (sk);
-	return ret;
-}
-
-static void
-nm_device_olpc_mesh_set_channel (NMDeviceOlpcMesh *self, guint32 channel)
-{
-	int sk;
-	struct iwreq req;
-
-	if (nm_device_olpc_mesh_get_channel (self) == channel)
-		return;
-
-	sk = create_socket_with_request (NM_DEVICE (self), &req);
-	if (sk < 0)
-		return;
-
-	if (channel > 0) {
-		req.u.freq.flags = IW_FREQ_FIXED;
-		req.u.freq.e = 0;
-		req.u.freq.m = channel;
-	}
-
-	if (ioctl (sk, SIOCSIWFREQ, &req) != 0) {
-		nm_log_warn (LOGD_OLPC_MESH, "(%s): failed to set to channel %d (errno: %d)",
-		             nm_device_get_iface (NM_DEVICE (self)), channel, errno);
-	} else
-		g_object_notify (G_OBJECT (self), NM_DEVICE_OLPC_MESH_ACTIVE_CHANNEL);
-
-	close (sk);
-}
-
-static void
-nm_device_olpc_mesh_set_ssid (NMDeviceOlpcMesh *self, const GByteArray * ssid)
-{
-	int sk;
-	struct iwreq wrq;
-	const char * iface;
-	guint32 len = 0;
-	char buf[IW_ESSID_MAX_SIZE + 1];
-
-	g_return_if_fail (self != NULL);
-
-	sk = socket (AF_INET, SOCK_DGRAM, 0);
-	if (sk == -1) {
-		nm_log_err (LOGD_OLPC_MESH, "Couldn't create socket: %d.", errno);
-		return;
-	}
-
-	iface = nm_device_get_iface (NM_DEVICE (self));
-
-	memset (buf, 0, sizeof (buf));
-	if (ssid) {
-		len = ssid->len;
-		memcpy (buf, ssid->data, MIN (sizeof (buf) - 1, len));
-	}
-	wrq.u.essid.pointer = (caddr_t) buf;
-	wrq.u.essid.length = len;
-	wrq.u.essid.flags = (len > 0) ? 1 : 0; /* 1=enable SSID, 0=disable/any */
-
-	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
-	if (ioctl (sk, SIOCSIWESSID, &wrq) < 0) {
-		if (errno != ENODEV) {
-			nm_log_err (LOGD_OLPC_MESH, "(%s): error setting SSID to '%s': %s",
-			            iface,
-			            ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(null)",
-			            strerror (errno));
-		}
-    }
-
-	close (sk);
-}
-
 /****************************************************************************/
 
 static void
@@ -605,10 +410,22 @@ real_act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
+static void
+_mesh_set_channel (NMDeviceOlpcMesh *self, guint32 channel)
+{
+	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
+
+	if (wifi_utils_get_mesh_channel (priv->wifi_data) != channel) {
+		if (wifi_utils_set_mesh_channel (priv->wifi_data, channel))
+			g_object_notify (G_OBJECT (self), NM_DEVICE_OLPC_MESH_ACTIVE_CHANNEL);
+	}
+}
+
 static NMActStageReturn
 real_act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 {
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (dev);
+	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
 	NMConnection *connection;
 	NMSettingOlpcMesh *s_mesh;
 	NMActRequest *req;
@@ -627,8 +444,8 @@ real_act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 
 	channel = nm_setting_olpc_mesh_get_channel (s_mesh);
 	if (channel != 0)
-		nm_device_olpc_mesh_set_channel (self, channel);
-	nm_device_olpc_mesh_set_ssid (self, nm_setting_olpc_mesh_get_ssid (s_mesh));
+		_mesh_set_channel (self, channel);
+	wifi_utils_set_mesh_ssid (priv->wifi_data, nm_setting_olpc_mesh_get_ssid (s_mesh));
 
 	anycast_addr_array = nm_setting_olpc_mesh_get_dhcp_anycast_address (s_mesh);
 	if (anycast_addr_array)
@@ -650,6 +467,9 @@ dispose (GObject *object)
 		return;
 	}
 	priv->dispose_has_run = TRUE;
+
+	if (priv->wifi_data)
+		wifi_utils_deinit (priv->wifi_data);
 
 	device_cleanup (self);
 
@@ -681,7 +501,7 @@ get_property (GObject *object, guint prop_id,
 			g_value_set_boxed (value, "/");
 		break;
 	case PROP_ACTIVE_CHANNEL:
-		g_value_set_uint (value, nm_device_olpc_mesh_get_channel (device));
+		g_value_set_uint (value, wifi_utils_get_mesh_channel (priv->wifi_data));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

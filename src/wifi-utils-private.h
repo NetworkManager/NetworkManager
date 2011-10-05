@@ -59,6 +59,8 @@ struct WifiData {
 
 	/* OLPC Mesh-only functions */
 
+	guint32 (*get_mesh_channel) (WifiData *data);
+
 	/* channel == 0 means "auto channel" */
 	gboolean (*set_mesh_channel) (WifiData *data, guint32 channel);
 

@@ -159,6 +159,14 @@ wifi_utils_is_wifi (const char *iface)
 
 /* OLPC Mesh-only functions */
 
+guint32
+wifi_utils_get_mesh_channel (WifiData *data)
+{
+	g_return_val_if_fail (data != NULL, FALSE);
+	g_return_val_if_fail (data->get_mesh_channel != NULL, FALSE);
+	return data->get_mesh_channel (data);
+}
+
 gboolean
 wifi_utils_set_mesh_channel (WifiData *data, guint32 channel)
 {
