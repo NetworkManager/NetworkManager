@@ -41,24 +41,6 @@ attribute from the sysfs directory for the ATM interface on 2.6.38.8 and later
 kernels).
 
 
-* Convert WEXT code to nl80211
-
-There's still some WEXT code in NetworkManager for signal strength reporting,
-mode, frequency, BSSID, etc.  This should all get converted to nl80211 code,
-possibly using libnl as a base.  It's not particularly hard, but some
-investigation on how to talk to netlink and how to use nl80211 and netlink
-attributes will need to be done.  Tools like 'iw' already do much of this work,
-but we *cannot* copy & paste code from them since the 'iw' license is not
-compatible with NetworkManager's GPL license.  For exmaple, the following code
-does the job, but should be reworked a bit to use the internal synchronous
-netlink connection from src/nm-netlink-manager.c instead of doing the
-netlink communication on its own with genl_connect() and such:
-
-http://mail.gnome.org/archives/networkmanager-list/2009-September/msg00214.html
-
-The same approach should be taken for signal strength reporting, etc.
-
-
 * Real Access Point mode support
 
 Now that NetworkManager requires wpa_supplicant 0.7.x or later, we can add
