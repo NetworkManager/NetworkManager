@@ -30,9 +30,12 @@
 #include <errno.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
-#include <execinfo.h>
 #include <strings.h>
 #include <string.h>
+
+#ifdef ENABLE_CRASHTRACE
+#include <execinfo.h>
+#endif
 
 #include <glib/gi18n.h>
 
@@ -262,6 +265,7 @@ _nm_log (const char *loc,
 static void
 fallback_get_backtrace (void)
 {
+#ifdef ENABLE_CRASHTRACE
 	void *frames[64];
 	Dl_info info;
 	size_t size;
@@ -289,6 +293,7 @@ fallback_get_backtrace (void)
 		}
 	}
 	syslog (LOG_CRIT, "******************* END **********************************");
+#endif  /* ENABLE_CRASHTRACE */
 }
 
 

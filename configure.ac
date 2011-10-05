@@ -611,6 +611,13 @@ fi
 AC_DEFINE_UNQUOTED(KERNEL_FIRMWARE_DIR, "$KERNEL_FIRMWARE_DIR", [Define to path of the kernel firmware directory])
 AC_SUBST(KERNEL_FIRMWARE_DIR)
 
+AC_ARG_ENABLE(crashtrace,
+              AS_HELP_STRING([--disable-crashtrace], [Disable GNU backtrace extensions]),
+              [enable_crashtrace=${enableval}], [enable_crashtrace=yes])
+if test x"$enable_crashtrace" = xyes; then
+  AC_DEFINE(ENABLE_CRASHTRACE, 1, [Define if you have GNU backtrace extensions])
+fi
+
 NM_COMPILER_WARNINGS
 
 GTK_DOC_CHECK(1.0)
