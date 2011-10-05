@@ -56,6 +56,14 @@ struct WifiData {
 	int (*get_qual) (WifiData *data);
 
 	void (*deinit) (WifiData *data);
+
+	/* OLPC Mesh-only functions */
+
+	/* channel == 0 means "auto channel" */
+	gboolean (*set_mesh_channel) (WifiData *data, guint32 channel);
+
+	/* ssid == NULL means "auto SSID" */
+	gboolean (*set_mesh_ssid) (WifiData *data, const GByteArray *ssid);
 };
 
 gpointer wifi_data_new (const char *iface, int ifindex, gsize len);

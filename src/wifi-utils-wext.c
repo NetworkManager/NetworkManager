@@ -364,6 +364,68 @@ wifi_wext_get_qual (WifiData *data)
 	return wext_qual_to_percent (&stats.qual, &wext->max_qual);
 }
 
+/*********************/
+/* OLPC Mesh-only functions */
+
+static gboolean
+wifi_wext_set_mesh_channel (WifiData *data, guint32 channel)
+{
+	WifiDataWext *wext = (WifiDataWext *) data;
+	struct iwreq wrq;
+
+	memset (&wrq, 0, sizeof (struct iwreq));
+	strncpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
+
+	if (channel > 0) {
+		wrq.u.freq.flags = IW_FREQ_FIXED;
+		wrq.u.freq.e = 0;
+		wrq.u.freq.m = channel;
+	}
+
+	if (ioctl (wext->fd, SIOCSIWFREQ, &wrq) < 0) {
+		nm_log_err (LOGD_HW | LOGD_WIFI | LOGD_OLPC_MESH,
+		            "(%s): error setting channel to %d: %s",
+		            wext->parent.iface, channel, strerror (errno));
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
+wifi_wext_set_mesh_ssid (WifiData *data, const GByteArray *ssid)
+{
+	WifiDataWext *wext = (WifiDataWext *) data;
+	struct iwreq wrq;
+	guint32 len = 0;
+	char buf[IW_ESSID_MAX_SIZE + 1];
+
+	memset (buf, 0, sizeof (buf));
+	if (ssid) {
+		len = ssid->len;
+		memcpy (buf, ssid->data, MIN (sizeof (buf) - 1, len));
+	}
+	wrq.u.essid.pointer = (caddr_t) buf;
+	wrq.u.essid.length = len;
+	wrq.u.essid.flags = (len > 0) ? 1 : 0; /* 1=enable SSID, 0=disable/any */
+
+	strncpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
+	if (ioctl (wext->fd, SIOCSIWESSID, &wrq) == 0)
+		return TRUE;
+
+	if (errno != ENODEV) {
+		nm_log_err (LOGD_HW | LOGD_WIFI | LOGD_OLPC_MESH,
+		            "(%s): error setting SSID to '%s': %s",
+		            wext->parent.iface,
+		            ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(null)",
+		            strerror (errno));
+	}
+
+	return FALSE;
+}
+
+/*********************/
+
 static gboolean
 wext_can_scan (WifiDataWext *wext)
 {
@@ -487,6 +549,8 @@ wifi_wext_init (const char *iface, int ifindex)
 	wext->parent.get_rate = wifi_wext_get_rate;
 	wext->parent.get_qual = wifi_wext_get_qual;
 	wext->parent.deinit = wifi_wext_deinit;
+	wext->parent.set_mesh_channel = wifi_wext_set_mesh_channel;
+	wext->parent.set_mesh_ssid = wifi_wext_set_mesh_ssid;
 
 	wext->fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (wext->fd < 0)

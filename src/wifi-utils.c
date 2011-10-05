@@ -88,9 +88,7 @@ wifi_utils_set_mode (WifiData *data, const NM80211Mode mode)
 	g_return_val_if_fail ((mode == NM_802_11_MODE_INFRA) || (mode == NM_802_11_MODE_ADHOC), FALSE);
 
 	/* nl80211 probably doesn't need this */
-	if (data->set_mode)
-		return data->set_mode (data, mode);
-	return TRUE;
+	return data->set_mode ? data->set_mode (data, mode) : TRUE;
 }
 
 guint32
@@ -156,5 +154,26 @@ wifi_utils_is_wifi (const char *iface)
 		return TRUE;
 
 	return FALSE;
+}
+
+
+/* OLPC Mesh-only functions */
+
+gboolean
+wifi_utils_set_mesh_channel (WifiData *data, guint32 channel)
+{
+	g_return_val_if_fail (data != NULL, FALSE);
+	g_return_val_if_fail (channel >= 0, FALSE);
+	g_return_val_if_fail (channel <= 13, FALSE);
+	g_return_val_if_fail (data->set_mesh_channel != NULL, FALSE);
+	return data->set_mesh_channel (data, channel);
+}
+
+gboolean
+wifi_utils_set_mesh_ssid (WifiData *data, const GByteArray *ssid)
+{
+	g_return_val_if_fail (data != NULL, FALSE);
+	g_return_val_if_fail (data->set_mesh_ssid != NULL, FALSE);
+	return data->set_mesh_ssid (data, ssid);
 }
 

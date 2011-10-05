@@ -61,4 +61,10 @@ guint32 wifi_utils_get_rate (WifiData *data);
 /* Returns quality 0 - 100% on succes, or -1 on error */
 int wifi_utils_get_qual (WifiData *data);
 
+
+/* OLPC Mesh-only functions */
+gboolean wifi_utils_set_mesh_channel (WifiData *data, guint32 channel);
+
+gboolean wifi_utils_set_mesh_ssid (WifiData *data, const GByteArray *ssid);
+
 #endif  /* WIFI_UTILS_H */
