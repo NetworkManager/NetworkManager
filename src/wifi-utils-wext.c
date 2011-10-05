@@ -624,6 +624,10 @@ wifi_wext_init (const char *iface, int ifindex, gboolean check_scan)
 
 	wext->parent.caps = wext_get_caps (wext, &range);
 
+	nm_log_info (LOGD_HW | LOGD_WIFI,
+	             "(%s): using WEXT for WiFi device control",
+	             wext->parent.iface);
+
 	return (WifiData *) wext;
 
 error:
