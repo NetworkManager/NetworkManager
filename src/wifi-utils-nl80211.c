@@ -452,7 +452,8 @@ static int nl80211_station_handler (struct nl_msg *msg, void *arg)
 	if (rinfo[NL80211_RATE_INFO_BITRATE] == NULL)
 		return NL_SKIP;
 
-	info->txrate = nla_get_u16 (rinfo[NL80211_RATE_INFO_BITRATE]) / 10;
+	/* convert from nl80211's units of 100kbps to NM's kbps */
+	info->txrate = nla_get_u16 (rinfo[NL80211_RATE_INFO_BITRATE]) * 100;
 	info->valid = TRUE;
 	return NL_SKIP;
 }
@@ -492,7 +493,7 @@ wifi_nl80211_get_rate (WifiData *data)
 
 	nl80211_get_ap_info (nl80211, &sta_info);
 
-	return sta_info.txrate * 1000;
+	return sta_info.txrate;
 }
 
 static int
