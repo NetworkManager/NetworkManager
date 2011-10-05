@@ -531,7 +531,7 @@ wext_get_caps (WifiDataWext *wext, struct iw_range *range)
 }
 
 WifiData *
-wifi_wext_init (const char *iface, int ifindex)
+wifi_wext_init (const char *iface, int ifindex, gboolean check_scan)
 {
 	WifiDataWext *wext;
 	struct iw_range range;
@@ -581,7 +581,7 @@ wifi_wext_init (const char *iface, int ifindex)
 		wext->freqs[i] = iw_freq_to_uint32 (&range.freq[i]);
 
 	/* Check for scanning capability; cards that can't scan are not supported */
-	if (wext_can_scan (wext) == FALSE) {
+	if (check_scan && (wext_can_scan (wext) == FALSE)) {
 		nm_log_info (LOGD_HW | LOGD_WIFI,
 		             "(%s): drivers that cannot scan are unsupported",
 		             wext->parent.iface);

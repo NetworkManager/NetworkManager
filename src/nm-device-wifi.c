@@ -322,7 +322,8 @@ constructor (GType type,
 	            nm_device_get_ifindex (NM_DEVICE (self)));
 
 	priv->wifi_data = wifi_utils_init (nm_device_get_iface (NM_DEVICE (self)),
-	                                   nm_device_get_ifindex (NM_DEVICE (self)));
+	                                   nm_device_get_ifindex (NM_DEVICE (self)),
+	                                   TRUE);
 	if (priv->wifi_data == NULL) {
 		nm_log_warn (LOGD_HW | LOGD_WIFI, "(%s): failed to initialize WiFi driver",
 		             nm_device_get_iface (NM_DEVICE (self)));

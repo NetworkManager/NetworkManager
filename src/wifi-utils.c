@@ -49,14 +49,14 @@ wifi_data_free (WifiData *data)
 /***************************************************************/
 
 WifiData *
-wifi_utils_init (const char *iface, int ifindex)
+wifi_utils_init (const char *iface, int ifindex, gboolean check_scan)
 {
 	g_return_val_if_fail (iface != NULL, NULL);
 	g_return_val_if_fail (ifindex > 0, NULL);
 
 	/* Determine WEXT vs. nl80211 here */
 
-	return wifi_wext_init (iface, ifindex);
+	return wifi_wext_init (iface, ifindex, check_scan);
 }
 
 NMDeviceWifiCapabilities
