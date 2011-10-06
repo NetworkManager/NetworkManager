@@ -215,8 +215,8 @@ static guint32 nl80211_mbm_to_percent (gint32 mbm)
 
 	mbm = CLAMP(mbm, NOISE_FLOOR_MBM, SIGNAL_MAX_MBM);
 
-	return 100 - 70 * ((SIGNAL_MAX_MBM - mbm) /
-			   (SIGNAL_MAX_MBM - NOISE_FLOOR_MBM));
+	return 100 - 70 * (((float) SIGNAL_MAX_MBM - (float) mbm) /
+			   ((float) SIGNAL_MAX_MBM - (float) NOISE_FLOOR_MBM));
 }
 
 struct nl80211_bss_info {
