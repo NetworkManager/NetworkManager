@@ -1567,7 +1567,7 @@ static NMCResultCode
 do_connection_delete (NmCli *nmc, int argc, char **argv)
 {
 	NMConnection *connection = NULL;
-	const char *selector;
+	const char *selector = NULL;
 	const char *id = NULL;
 	GError *error = NULL;
 
