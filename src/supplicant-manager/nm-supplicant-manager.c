@@ -45,8 +45,10 @@ typedef struct {
 	NMDBusManager * dbus_mgr;
 	guint           name_owner_id;
 	DBusGProxy *    proxy;
+	DBusGProxy *    props_proxy;
 	gboolean        running;
 	GHashTable *    ifaces;
+	gboolean        fast_supported;
 	guint           die_count_reset_id;
 	guint           die_count;
 	gboolean        disposed;
@@ -122,6 +124,56 @@ nm_supplicant_manager_iface_release (NMSupplicantManager *self,
 	g_hash_table_remove (priv->ifaces, ifname);
 }
 
+static void
+get_eap_methods_reply (DBusGProxy *proxy,
+                       DBusGProxyCall *call,
+                       gpointer user_data)
+{
+	NMSupplicantManager *self = NM_SUPPLICANT_MANAGER (user_data);
+	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
+	GError *error = NULL;
+	GValue value = { 0 };
+	const char **iter;
+
+	if (dbus_g_proxy_end_call (proxy, call, &error,
+	                           G_TYPE_VALUE, &value,
+	                           G_TYPE_INVALID)) {
+		if (G_VALUE_HOLDS (&value, G_TYPE_STRV)) {
+			iter = g_value_get_boxed (&value);
+			while (iter) {
+				if (strcasecmp (*iter++, "FAST") == 0) {
+					priv->fast_supported = TRUE;
+					break;
+				}
+			}
+		} else {
+			nm_log_warn (LOGD_SUPPLICANT, "Unexpected EapMethods property type %s",
+			             G_VALUE_TYPE_NAME (&value));
+		}
+		g_value_unset (&value);
+	} else {
+		nm_log_warn (LOGD_SUPPLICANT, "Unexpected error requesting EapMethods: (%d) %s",
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
+	}
+
+	nm_log_dbg (LOGD_SUPPLICANT, "EAP-FAST is %ssupported",
+	            priv->fast_supported ? "" : "not ");
+}
+
+static void
+check_supported_eap_methods (NMSupplicantManager *self)
+{
+	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
+
+	dbus_g_proxy_begin_call (priv->props_proxy, "Get",
+	                         get_eap_methods_reply, self, NULL,
+	                         G_TYPE_STRING, WPAS_DBUS_INTERFACE,
+	                         G_TYPE_STRING, "EapMethods",
+	                         G_TYPE_INVALID);
+}
+
 gboolean
 nm_supplicant_manager_available (NMSupplicantManager *self)
 {
@@ -187,6 +239,7 @@ name_owner_changed (NMDBusManager *dbus_mgr,
 	if (!old_owner_good && new_owner_good) {
 		nm_log_info (LOGD_SUPPLICANT, "wpa_supplicant started");
 		set_running (self, TRUE);
+		check_supported_eap_methods (self);
 	} else if (old_owner_good && !new_owner_good) {
 		nm_log_info (LOGD_SUPPLICANT, "wpa_supplicant stopped");
 
@@ -207,6 +260,8 @@ name_owner_changed (NMDBusManager *dbus_mgr,
 		}
 
 		set_running (self, FALSE);
+
+		priv->fast_supported = FALSE;
 	}
 }
 
@@ -227,7 +282,7 @@ nm_supplicant_manager_get (void)
 }
 
 static void
-nm_supplicant_manager_init (NMSupplicantManager * self)
+nm_supplicant_manager_init (NMSupplicantManager *self)
 {
 	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
 	DBusGConnection *bus;
@@ -245,7 +300,16 @@ nm_supplicant_manager_init (NMSupplicantManager * self)
 	                                         WPAS_DBUS_PATH,
 	                                         WPAS_DBUS_INTERFACE);
 
+	priv->props_proxy = dbus_g_proxy_new_for_name (bus,
+	                                               WPAS_DBUS_SERVICE,
+	                                               WPAS_DBUS_PATH,
+	                                               DBUS_INTERFACE_PROPERTIES);
+
 	priv->ifaces = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
+
+	/* Grab list of supported EAP methods */
+	if (priv->running)
+		check_supported_eap_methods (self);
 }
 
 static void
@@ -289,6 +353,9 @@ dispose (GObject *object)
 
 	if (priv->proxy)
 		g_object_unref (priv->proxy);
+
+	if (priv->props_proxy)
+		g_object_unref (priv->props_proxy);
 
 out:
 	/* Chain up to the parent class */
