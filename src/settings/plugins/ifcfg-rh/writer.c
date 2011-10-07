@@ -1097,6 +1097,8 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 		svSetValue (ifcfg, "USERS", str->str, FALSE);
 		g_string_free (str, TRUE);
 	}
+
+	svSetValue (ifcfg, "ZONE", nm_setting_connection_get_zone(s_con), FALSE);
 }
 
 static gboolean

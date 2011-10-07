@@ -85,7 +85,7 @@ make_connection_setting (const char *file,
 {
 	NMSettingConnection *s_con;
 	const char *ifcfg_name = NULL;
-	char *new_id = NULL, *uuid = NULL, *value;
+	char *new_id = NULL, *uuid = NULL, *zone = NULL, *value;
 	char *ifcfg_id;
 
 	ifcfg_name = utils_get_ifcfg_name (file, TRUE);
@@ -127,6 +127,7 @@ make_connection_setting (const char *file,
 		g_free (uuid);
 		uuid = nm_utils_uuid_generate_from_string (ifcfg->fileName);
 	}
+
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_TYPE, type,
 	              NM_SETTING_CONNECTION_UUID, uuid,
@@ -152,6 +153,15 @@ make_connection_setting (const char *file,
 		g_free (value);
 		g_strfreev (items);
 	}
+
+
+	zone = svGetValue(ifcfg, "ZONE", FALSE);
+	if (!zone || !strlen (zone)) {
+		g_free (zone);
+		zone = NULL;
+	}
+	g_object_set (s_con, NM_SETTING_CONNECTION_ZONE, zone, NULL);
+	g_free (zone);
 
 	return NM_SETTING (s_con);
 }
