@@ -1234,12 +1234,25 @@ dhcp4_lease_change (NMDevice *device)
 }
 
 static void
+dhcp4_fail (NMDevice *device, gboolean timeout)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	NMDeviceState dev_state = nm_device_get_state (device);
+
+	nm_dhcp4_config_reset (priv->dhcp4_config);
+
+	if (timeout || (dev_state == NM_DEVICE_STATE_IP_CONFIG))
+		nm_device_activate_schedule_stage4_ip4_config_timeout (device);
+	else if (dev_state == NM_DEVICE_STATE_ACTIVATED)
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
+}
+
+static void
 dhcp4_state_changed (NMDHCPClient *client,
                      NMDHCPState state,
                      gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 	NMDeviceState dev_state;
 
 	g_return_if_fail (nm_dhcp_client_get_ipv6 (client) == FALSE);
@@ -1260,20 +1273,13 @@ dhcp4_state_changed (NMDHCPClient *client,
 			dhcp4_lease_change (device);
 		break;
 	case DHC_TIMEOUT: /* timed out contacting DHCP server */
-		nm_dhcp4_config_reset (priv->dhcp4_config);
-		if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG)
-			nm_device_activate_schedule_stage4_ip4_config_timeout (device);
+		dhcp4_fail (device, TRUE);
 		break;
 	case DHC_END: /* dhclient exited normally */
 	case DHC_FAIL: /* all attempts to contact server timed out, sleeping */
 	case DHC_ABEND: /* dhclient exited abnormally */
-		nm_dhcp4_config_reset (priv->dhcp4_config);
-
 		/* dhclient quit and can't get/renew a lease; so kill the connection */
-		if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG)
-			nm_device_activate_schedule_stage4_ip4_config_timeout (device);
-		else if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED)
-			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
+		dhcp4_fail (device, FALSE);
 		break;
 	default:
 		break;
@@ -1289,9 +1295,7 @@ dhcp4_timeout (NMDHCPClient *client, gpointer user_data)
 	g_return_if_fail (nm_dhcp_client_get_ipv6 (client) == FALSE);
 
 	nm_dhcp_client_stop (client, FALSE);
-
-	if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG)
-		nm_device_activate_schedule_stage4_ip4_config_timeout (device);
+	dhcp4_fail (device, TRUE);
 }
 
 static NMActStageReturn
@@ -1634,6 +1638,20 @@ dhcp6_lease_change (NMDevice *device)
 }
 
 static void
+dhcp6_fail (NMDevice *device, gboolean timeout)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	NMDeviceState dev_state = nm_device_get_state (device);
+
+	nm_dhcp6_config_reset (priv->dhcp6_config);
+
+	if (timeout || (dev_state == NM_DEVICE_STATE_IP_CONFIG))
+		nm_device_activate_schedule_stage4_ip6_config_timeout (device);
+	else if (dev_state == NM_DEVICE_STATE_ACTIVATED)
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
+}
+
+static void
 dhcp6_state_changed (NMDHCPClient *client,
                      NMDHCPState state,
                      gpointer user_data)
@@ -1660,9 +1678,7 @@ dhcp6_state_changed (NMDHCPClient *client,
 			dhcp6_lease_change (device);
 		break;
 	case DHC_TIMEOUT: /* timed out contacting DHCP server */
-		nm_dhcp6_config_reset (priv->dhcp6_config);
-		if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG)
-			nm_device_activate_schedule_stage4_ip6_config_timeout (device);
+		dhcp6_fail (device, TRUE);
 		break;
 	case DHC_END: /* dhclient exited normally */
 		/* In IPv6 info-only mode, the client doesn't handle leases so it
@@ -1674,13 +1690,8 @@ dhcp6_state_changed (NMDHCPClient *client,
 		/* Otherwise, fall through */
 	case DHC_FAIL: /* all attempts to contact server timed out, sleeping */
 	case DHC_ABEND: /* dhclient exited abnormally */
-		nm_dhcp6_config_reset (priv->dhcp6_config);
-
 		/* dhclient quit and can't get/renew a lease; so kill the connection */
-		if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG)
-			nm_device_activate_schedule_stage4_ip6_config_timeout (device);
-		else if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED)
-			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
+		dhcp6_fail (device, FALSE);
 		break;
 	default:
 		break;
@@ -1696,9 +1707,7 @@ dhcp6_timeout (NMDHCPClient *client, gpointer user_data)
 	g_return_if_fail (nm_dhcp_client_get_ipv6 (client) == TRUE);
 
 	nm_dhcp_client_stop (client, FALSE);
-
-	if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG)
-		nm_device_activate_schedule_stage4_ip6_config_timeout (device);
+	dhcp6_fail (device, TRUE);
 }
 
 static NMActStageReturn
