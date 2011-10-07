@@ -180,11 +180,6 @@ static gboolean nm_device_set_ip6_config (NMDevice *dev,
                                           gboolean assumed,
                                           NMDeviceStateReason *reason);
 
-static NMActStageReturn dhcp6_start (NMDevice *self,
-                                     NMConnection *connection,
-                                     guint32 dhcp_opt,
-                                     NMDeviceStateReason *reason);
-
 static void dhcp4_cleanup (NMDevice *self, gboolean stop, gboolean release);
 
 static const char *reason_to_string (NMDeviceStateReason reason);
