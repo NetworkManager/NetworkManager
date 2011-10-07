@@ -47,6 +47,7 @@ static gboolean
 verify (NMSetting *setting, GSList *all_settings)
 {
 	NMSettingTemplate *self = NM_SETTING_TEMPLATE (setting);
+	return TRUE;
 }
 
 static void

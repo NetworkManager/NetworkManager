@@ -72,4 +72,6 @@ int main() {
         QDBusConnection::systemBus());
 
     addConnection(interface, "__Test connection__");
+
+    return 0;
 }
