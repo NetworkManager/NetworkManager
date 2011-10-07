@@ -140,7 +140,7 @@ get_eap_methods_reply (DBusGProxy *proxy,
 	                           G_TYPE_INVALID)) {
 		if (G_VALUE_HOLDS (&value, G_TYPE_STRV)) {
 			iter = g_value_get_boxed (&value);
-			while (iter) {
+			while (iter && *iter) {
 				if (strcasecmp (*iter++, "FAST") == 0) {
 					priv->fast_supported = TRUE;
 					break;
