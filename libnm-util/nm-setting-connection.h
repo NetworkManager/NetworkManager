@@ -75,6 +75,14 @@ GQuark nm_setting_connection_error_quark (void);
 #define NM_SETTING_CONNECTION_TIMESTAMP   "timestamp"
 #define NM_SETTING_CONNECTION_READ_ONLY   "read-only"
 #define NM_SETTING_CONNECTION_PERMISSIONS "permissions"
+#define NM_SETTING_CONNECTION_ZONE        "zone"
+
+/* Well-known zone names */
+#define NM_SETTING_CONNECTION_ZONE_TRUSTED   "trusted"
+#define NM_SETTING_CONNECTION_ZONE_HOME      "home"
+#define NM_SETTING_CONNECTION_ZONE_WORK      "work"
+#define NM_SETTING_CONNECTION_ZONE_PUBLIC    "public"
+#define NM_SETTING_CONNECTION_ZONE_BLOCK     "block"
 
 /**
  * NMSettingConnection:
@@ -112,6 +120,7 @@ gboolean    nm_setting_connection_get_permission       (NMSettingConnection *set
                                                         const char **out_ptype,
                                                         const char **out_pitem,
                                                         const char **out_detail);
+const char *nm_setting_connection_get_zone             (NMSettingConnection *setting);
 gboolean    nm_setting_connection_permissions_user_allowed (NMSettingConnection *setting, const char *uname);
 gboolean    nm_setting_connection_add_permission       (NMSettingConnection *setting,
                                                         const char *ptype,

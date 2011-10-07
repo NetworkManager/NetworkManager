@@ -186,6 +186,7 @@ global:
 	nm_setting_connection_get_id;
 	nm_setting_connection_get_num_permissions;
 	nm_setting_connection_get_permission;
+	nm_setting_connection_get_zone;
 	nm_setting_connection_get_read_only;
 	nm_setting_connection_get_timestamp;
 	nm_setting_connection_get_type;

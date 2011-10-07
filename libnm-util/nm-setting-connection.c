@@ -101,6 +101,7 @@ typedef struct {
 	gboolean autoconnect;
 	guint64 timestamp;
 	gboolean read_only;
+	char *zone;
 } NMSettingConnectionPrivate;
 
 enum {
@@ -112,6 +113,7 @@ enum {
 	PROP_AUTOCONNECT,
 	PROP_TIMESTAMP,
 	PROP_READ_ONLY,
+	PROP_ZONE,
 
 	LAST_PROP
 };
@@ -478,6 +480,22 @@ nm_setting_connection_get_read_only (NMSettingConnection *setting)
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->read_only;
 }
 
+/**
+ * nm_setting_connection_get_zone:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns the #NMSettingConnection:zone property of the connection.
+ *
+ * Returns: the trust level of a connection
+ **/
+const char *
+nm_setting_connection_get_zone (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), NULL);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->zone;
+}
+
 static gint
 find_setting_by_name (gconstpointer a, gconstpointer b)
 {
@@ -550,6 +568,14 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
+	if (priv->zone && !priv->zone[0]) {
+		g_set_error (error,
+		             NM_SETTING_CONNECTION_ERROR,
+		             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_CONNECTION_TYPE);
+		return FALSE;
+	}
+
 	/* Make sure the corresponding 'type' item is present */
 	if (all_settings && !g_slist_find_custom (all_settings, priv->type, find_setting_by_name)) {
 		g_set_error (error,
@@ -591,6 +617,7 @@ finalize (GObject *object)
 	g_free (priv->id);
 	g_free (priv->uuid);
 	g_free (priv->type);
+	g_free (priv->zone);
 	nm_utils_slist_free (priv->permissions, (GDestroyNotify) permission_free);
 
 	G_OBJECT_CLASS (nm_setting_connection_parent_class)->finalize (object);
@@ -644,6 +671,10 @@ set_property (GObject *object, guint prop_id,
 	case PROP_READ_ONLY:
 		priv->read_only = g_value_get_boolean (value);
 		break;
+	case PROP_ZONE:
+		g_free (priv->zone);
+		priv->zone = g_value_dup_string (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -688,6 +719,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_READ_ONLY:
 		g_value_set_boolean (value, nm_setting_connection_get_read_only (setting));
+		break;
+	case PROP_ZONE:
+		g_value_set_string (value, nm_setting_connection_get_zone (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -876,4 +910,26 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	                      "cannot yet write updated connections back out.",
 	                      FALSE,
 	                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+
+	/**
+	 * NMSettingConnection:zone:
+	 *
+	 * The trust level of a the connection.
+	 * Free form case-insensitive string (for example "Home", "Work", "Public").
+	 * NULL or unspecified zone means the connection will be placed in the
+	 * default zone as defined by the firewall.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_ZONE,
+		 g_param_spec_string (NM_SETTING_CONNECTION_ZONE,
+						  "Zone",
+						  "The trust level of a the connection."
+						  "Free form case-insensitive string (for example "
+						  "\"Home\", \"Work\", \"Public\").  NULL or "
+						  "unspecified zone means the connection will be "
+						  "placed in the default zone as defined by the "
+						  "firewall.",
+						  NULL,
+						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+
 }
