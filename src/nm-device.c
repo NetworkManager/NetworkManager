@@ -1191,108 +1191,6 @@ dhcp4_add_option_cb (gpointer key, gpointer value, gpointer user_data)
 }
 
 static void
-dhcp6_add_option_cb (gpointer key, gpointer value, gpointer user_data)
-{
-	nm_dhcp6_config_add_option (NM_DHCP6_CONFIG (user_data),
-	                            (const char *) key,
-	                            (const char *) value);
-}
-
-static void
-merge_dhcp_config_to_master (NMIP6Config *dst, NMIP6Config *src)
-{
-	guint32 i;
-
-	g_return_if_fail (src != NULL);
-	g_return_if_fail (dst != NULL);
-
-	/* addresses */
-	for (i = 0; i < nm_ip6_config_get_num_addresses (src); i++)
-		nm_ip6_config_add_address (dst, nm_ip6_config_get_address (src, i));
-
-	/* ptp address; only replace if src doesn't have one */
-	if (!nm_ip6_config_get_ptp_address (dst))
-		nm_ip6_config_set_ptp_address (dst, nm_ip6_config_get_ptp_address (src));
-
-	/* nameservers */
-	for (i = 0; i < nm_ip6_config_get_num_nameservers (src); i++)
-		nm_ip6_config_add_nameserver (dst, nm_ip6_config_get_nameserver (src, i));
-
-	/* routes */
-	for (i = 0; i < nm_ip6_config_get_num_routes (src); i++)
-		nm_ip6_config_add_route (dst, nm_ip6_config_get_route (src, i));
-
-	/* domains */
-	for (i = 0; i < nm_ip6_config_get_num_domains (src); i++)
-		nm_ip6_config_add_domain (dst, nm_ip6_config_get_domain (src, i));
-
-	/* dns searches */
-	for (i = 0; i < nm_ip6_config_get_num_searches (src); i++)
-		nm_ip6_config_add_search (dst, nm_ip6_config_get_search (src, i));
-
-	if (!nm_ip6_config_get_mss (dst))
-		nm_ip6_config_set_mss (dst, nm_ip6_config_get_mss (src));
-}
-
-
-static gboolean
-update_ip6_config_with_dhcp (NMDevice *device, NMIP6Config *ip6_config, NMDeviceStateReason *reason)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
-	NMIP6Config *dhcp6_config;
-	NMActRequest *req;
-	NMConnection *connection;
-	NMSettingIP6Config *s_ip6;
-	gboolean assumed, need_dhcp;
-
-	req = nm_device_get_act_request (device);
-	g_assert (req);
-	connection = nm_act_request_get_connection (req);
-	g_assert (connection);
-	assumed = nm_act_request_get_assumed (req);
-
-	if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_AUTO))
-		need_dhcp = TRUE;
-	else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_DHCP)) {
-		need_dhcp = TRUE;
-		g_assert (priv->dhcp6_client);  /* sanity check */
-	}
-
-	if (need_dhcp) {
-		dhcp6_config = nm_dhcp_client_get_ip6_config (priv->dhcp6_client, TRUE);
-		if (!dhcp6_config) {
-			*reason = NM_DEVICE_STATE_REASON_DHCP_ERROR;
-			return FALSE;
-		}
-		if (!ip6_config && dhcp6_config)
-			ip6_config = dhcp6_config;
-		else
-			merge_dhcp_config_to_master (ip6_config, dhcp6_config);
-	}
-
-	s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG));
-	nm_utils_merge_ip6_config (ip6_config, s_ip6);
-
-	g_object_set_data (G_OBJECT (req), NM_ACT_REQUEST_IP6_CONFIG, ip6_config);
-
-	if (nm_device_set_ip6_config (device, ip6_config, assumed, reason)) {
-		nm_dhcp6_config_reset (priv->dhcp6_config);
-		nm_dhcp_client_foreach_option (priv->dhcp6_client,
-		                               dhcp6_add_option_cb,
-		                               priv->dhcp6_config);
-		nm_utils_call_dispatcher ("dhcp6-change", connection, device, NULL, NULL, NULL);
-		g_object_notify (G_OBJECT (device), NM_DEVICE_INTERFACE_DHCP6_CONFIG);
-	} else {
-		nm_log_warn (LOGD_DHCP6, "(%s): failed to update IPv6 config in response to DHCP event.",
-		             nm_device_get_ip_iface (device));
-		*reason = NM_DEVICE_STATE_REASON_DHCP_ERROR;
-		return FALSE;
-	}
-
-	return TRUE;
-}
-
-static void
 dhcp4_lease_change (NMDevice *device)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
@@ -1589,6 +1487,108 @@ real_act_stage3_ip4_config_start (NMDevice *self, NMDeviceStateReason *reason)
 
 /*********************************************/
 /* DHCPv6 stuff */
+
+static void
+dhcp6_add_option_cb (gpointer key, gpointer value, gpointer user_data)
+{
+	nm_dhcp6_config_add_option (NM_DHCP6_CONFIG (user_data),
+	                            (const char *) key,
+	                            (const char *) value);
+}
+
+static void
+merge_dhcp_config_to_master (NMIP6Config *dst, NMIP6Config *src)
+{
+	guint32 i;
+
+	g_return_if_fail (src != NULL);
+	g_return_if_fail (dst != NULL);
+
+	/* addresses */
+	for (i = 0; i < nm_ip6_config_get_num_addresses (src); i++)
+		nm_ip6_config_add_address (dst, nm_ip6_config_get_address (src, i));
+
+	/* ptp address; only replace if src doesn't have one */
+	if (!nm_ip6_config_get_ptp_address (dst))
+		nm_ip6_config_set_ptp_address (dst, nm_ip6_config_get_ptp_address (src));
+
+	/* nameservers */
+	for (i = 0; i < nm_ip6_config_get_num_nameservers (src); i++)
+		nm_ip6_config_add_nameserver (dst, nm_ip6_config_get_nameserver (src, i));
+
+	/* routes */
+	for (i = 0; i < nm_ip6_config_get_num_routes (src); i++)
+		nm_ip6_config_add_route (dst, nm_ip6_config_get_route (src, i));
+
+	/* domains */
+	for (i = 0; i < nm_ip6_config_get_num_domains (src); i++)
+		nm_ip6_config_add_domain (dst, nm_ip6_config_get_domain (src, i));
+
+	/* dns searches */
+	for (i = 0; i < nm_ip6_config_get_num_searches (src); i++)
+		nm_ip6_config_add_search (dst, nm_ip6_config_get_search (src, i));
+
+	if (!nm_ip6_config_get_mss (dst))
+		nm_ip6_config_set_mss (dst, nm_ip6_config_get_mss (src));
+}
+
+
+static gboolean
+update_ip6_config_with_dhcp (NMDevice *device, NMIP6Config *ip6_config, NMDeviceStateReason *reason)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	NMIP6Config *dhcp6_config;
+	NMActRequest *req;
+	NMConnection *connection;
+	NMSettingIP6Config *s_ip6;
+	gboolean assumed, need_dhcp;
+
+	req = nm_device_get_act_request (device);
+	g_assert (req);
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+	assumed = nm_act_request_get_assumed (req);
+
+	if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_AUTO))
+		need_dhcp = TRUE;
+	else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_DHCP)) {
+		need_dhcp = TRUE;
+		g_assert (priv->dhcp6_client);  /* sanity check */
+	}
+
+	if (need_dhcp) {
+		dhcp6_config = nm_dhcp_client_get_ip6_config (priv->dhcp6_client, TRUE);
+		if (!dhcp6_config) {
+			*reason = NM_DEVICE_STATE_REASON_DHCP_ERROR;
+			return FALSE;
+		}
+		if (!ip6_config && dhcp6_config)
+			ip6_config = dhcp6_config;
+		else
+			merge_dhcp_config_to_master (ip6_config, dhcp6_config);
+	}
+
+	s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG));
+	nm_utils_merge_ip6_config (ip6_config, s_ip6);
+
+	g_object_set_data (G_OBJECT (req), NM_ACT_REQUEST_IP6_CONFIG, ip6_config);
+
+	if (nm_device_set_ip6_config (device, ip6_config, assumed, reason)) {
+		nm_dhcp6_config_reset (priv->dhcp6_config);
+		nm_dhcp_client_foreach_option (priv->dhcp6_client,
+		                               dhcp6_add_option_cb,
+		                               priv->dhcp6_config);
+		nm_utils_call_dispatcher ("dhcp6-change", connection, device, NULL, NULL, NULL);
+		g_object_notify (G_OBJECT (device), NM_DEVICE_INTERFACE_DHCP6_CONFIG);
+	} else {
+		nm_log_warn (LOGD_DHCP6, "(%s): failed to update IPv6 config in response to DHCP event.",
+		             nm_device_get_ip_iface (device));
+		*reason = NM_DEVICE_STATE_REASON_DHCP_ERROR;
+		return FALSE;
+	}
+
+	return TRUE;
+}
 
 static void
 dhcp6_lease_change (NMDevice *device)
