@@ -45,6 +45,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-supplicant-manager.h"
 #include "nm-dhcp-manager.h"
+#include "nm-firewall-manager.h"
 #include "nm-hostname-provider.h"
 #include "nm-netlink-monitor.h"
 #include "nm-vpn-manager.h"
@@ -427,6 +428,7 @@ main (int argc, char *argv[])
 	NMDBusManager *dbus_mgr = NULL;
 	NMSupplicantManager *sup_mgr = NULL;
 	NMDHCPManager *dhcp_mgr = NULL;
+	NMFirewallManager *fw_mgr = NULL;
 	NMSettings *settings = NULL;
 	NMConfig *config;
 	GError *error = NULL;
@@ -664,6 +666,13 @@ main (int argc, char *argv[])
 
 	nm_dhcp_manager_set_hostname_provider (dhcp_mgr, NM_HOSTNAME_PROVIDER (manager));
 
+	/* Initialize Firewall manager */
+	fw_mgr = nm_firewall_manager_get ();
+	if (!fw_mgr) {
+		nm_log_err (LOGD_CORE, "failed to start the Firewall manager: %s.", error->message);
+		goto done;
+	}
+
 	/* Start our DBus service */
 	if (!nm_dbus_manager_start_service (dbus_mgr)) {
 		nm_log_err (LOGD_CORE, "failed to start the dbus service.");
@@ -707,6 +716,9 @@ done:
 
 	if (sup_mgr)
 		g_object_unref (sup_mgr);
+
+	if (fw_mgr)
+		g_object_unref (fw_mgr);
 
 	if (dbus_mgr)
 		g_object_unref (dbus_mgr);

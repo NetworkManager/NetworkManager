@@ -673,6 +673,7 @@ src/ppp-manager/Makefile
 src/dnsmasq-manager/Makefile
 src/modem-manager/Makefile
 src/bluez-manager/Makefile
+src/firewall-manager/Makefile
 src/settings/Makefile
 src/settings/plugins/Makefile
 src/settings/plugins/ifupdown/Makefile

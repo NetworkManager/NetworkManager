@@ -10,6 +10,7 @@ SUBDIRS= \
 	dnsmasq-manager \
 	modem-manager \
 	bluez-manager \
+	firewall-manager \
 	settings
 
 if WITH_WIMAX
@@ -30,6 +31,7 @@ INCLUDES = -I${top_srcdir} \
            -I${top_srcdir}/src/dnsmasq-manager \
            -I${top_srcdir}/src/modem-manager \
            -I$(top_srcdir)/src/bluez-manager \
+           -I$(top_srcdir)/src/firewall-manager \
            -I$(top_srcdir)/src/settings \
            -I${top_srcdir}/libnm-util \
            -I${top_srcdir}/callouts
@@ -277,6 +279,7 @@ NetworkManager_LDADD = \
 	./ppp-manager/libppp-manager.la \
 	./modem-manager/libmodem-manager.la \
 	./bluez-manager/libbluez-manager.la \
+	./firewall-manager/libfirewall-manager.la \
 	./settings/libsettings.la \
 	$(WIMAX_LIBS) \
 	./backends/libnmbackend.la \

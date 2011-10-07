@@ -57,6 +57,7 @@
 #include "nm-ip6-manager.h"
 #include "nm-marshal.h"
 #include "nm-rfkill.h"
+#include "nm-firewall-manager.h"
 
 #define PENDING_IP4_CONFIG "pending-ip4-config"
 #define PENDING_IP6_CONFIG "pending-ip6-config"
@@ -128,6 +129,10 @@ typedef struct {
 	/* dnsmasq stuff for shared connections */
 	NMDnsMasqManager *dnsmasq_manager;
 	gulong            dnsmasq_state_id;
+
+	/* Firewall Manager */
+	NMFirewallManager *fw_manager;
+	DBusGProxyCall    *fw_call;
 
 	/* avahi-autoipd stuff */
 	GPid    aipd_pid;
@@ -296,6 +301,8 @@ constructor (GType type,
 		NM_DEVICE_GET_CLASS (dev)->update_initial_hw_address (dev);
 
 	priv->dhcp_manager = nm_dhcp_manager_get ();
+
+	priv->fw_manager = nm_firewall_manager_get ();
 
 	update_accept_ra_save (dev);
 
@@ -2420,11 +2427,45 @@ out:
 	return FALSE;
 }
 
+static void
+ip4_add_to_zone_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	GError *error = NULL;
+
+	priv->fw_call = NULL;
+
+	if (proxy && call_id) {
+		if (!dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID)) {
+			nm_log_warn (LOGD_DEVICE, "adding iface to zone failed: (%d) %s",
+					     error ? error->code : -1,
+					     error && error->message ? error->message : "(unknown)");
+			g_clear_error (&error);
+
+			/*
+			 * TODO: do we need to do anything else here ?
+			 */
+		} else {
+			/* ip_iface was correctly added to zone by firewall */
+		}
+	} else {
+		/* firewall isn't running or we couldn't determine zone */
+	}
+
+	activation_source_schedule (self, nm_device_activate_ip4_config_commit, AF_INET);
+
+	nm_log_info (LOGD_DEVICE | LOGD_IP4,
+		         "Activation (%s) Stage 5 of 5 (IPv4 Configure Commit) scheduled...",
+		         nm_device_get_iface (self));
+}
+
 void
 nm_device_activate_schedule_ip4_config_result (NMDevice *self, NMIP4Config *config)
 {
 	NMDevicePrivate *priv;
 	NMConnection *connection;
+	NMSettingConnection *s_con;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -2446,11 +2487,19 @@ nm_device_activate_schedule_ip4_config_result (NMDevice *self, NMIP4Config *conf
 	                        g_object_ref (config),
 	                        g_object_unref);
 
-	activation_source_schedule (self, nm_device_activate_ip4_config_commit, AF_INET);
-
-	nm_log_info (LOGD_DEVICE | LOGD_IP4,
-		         "Activation (%s) Stage 5 of 5 (IPv4 Configure Commit) scheduled...",
-		         nm_device_get_iface (self));
+	/* Only set the interface's zone if the device isn't yet activated.  If
+	 * already activated, the zone has already been set.
+	 */
+	if (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED)
+		ip4_add_to_zone_cb (NULL, NULL, self);
+	else {
+		s_con = nm_connection_get_setting_connection (connection);
+		priv->fw_call = nm_firewall_manager_add_to_zone (priv->fw_manager,
+		                                                 nm_device_get_ip_iface (self),
+		                                                 nm_setting_connection_get_zone (s_con),
+		                                                 ip4_add_to_zone_cb,
+		                                                 self);
+	}
 }
 
 gboolean
@@ -2517,10 +2566,46 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 	return FALSE;
 }
 
+
+static void
+ip6_add_to_zone_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	GError *error = NULL;
+
+	priv->fw_call = NULL;
+
+	if (proxy && call_id) {
+		if (!dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID)) {
+			nm_log_warn (LOGD_DEVICE, "adding iface to zone failed: (%d) %s",
+					     error ? error->code : -1,
+					     error && error->message ? error->message : "(unknown)");
+			g_clear_error (&error);
+
+			/*
+			 * TODO: do we need to do anything else here ?
+			 */
+		} else {
+			/* ip_iface was correctly added to zone by firewall */
+		}
+	} else {
+		/* firewall isn't running or we couldn't determine zone */
+	}
+
+	activation_source_schedule (self, nm_device_activate_ip6_config_commit, AF_INET6);
+
+	nm_log_info (LOGD_DEVICE | LOGD_IP4,
+		         "Activation (%s) Stage 5 of 5 (IPv6 Commit) scheduled...",
+		         nm_device_get_iface (self));
+}
+
 void
 nm_device_activate_schedule_ip6_config_result (NMDevice *self, NMIP6Config *config)
 {
 	NMDevicePrivate *priv;
+	NMConnection *connection;
+	NMSettingConnection *s_con;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -2532,17 +2617,28 @@ nm_device_activate_schedule_ip6_config_result (NMDevice *self, NMIP6Config *conf
 		return;
 	}
 
+	connection = nm_act_request_get_connection (priv->act_request);
+	g_assert (connection);
+
 	/* Save the pending config */
 	g_object_set_data_full (G_OBJECT (priv->act_request),
 	                        PENDING_IP6_CONFIG,
 	                        g_object_ref (config),
 	                        g_object_unref);
 
-	activation_source_schedule (self, nm_device_activate_ip6_config_commit, AF_INET6);
-
-	nm_log_info (LOGD_DEVICE | LOGD_IP4,
-		         "Activation (%s) Stage 5 of 5 (IPv6 Commit) scheduled...",
-		         nm_device_get_iface (self));
+	/* Only set the interface's zone if the device isn't yet activated.  If
+	 * already activated, the zone has already been set.
+	 */
+	if (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED)
+		ip6_add_to_zone_cb (NULL, NULL, self);
+	else {
+		s_con = nm_connection_get_setting_connection (connection);
+		priv->fw_call = nm_firewall_manager_add_to_zone (priv->fw_manager,
+		                                                 nm_device_get_ip_iface (self),
+		                                                 nm_setting_connection_get_zone (s_con),
+		                                                 ip6_add_to_zone_cb,
+		                                                 self);
+	}
 }
 
 gboolean
@@ -2710,6 +2806,12 @@ nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason)
 	/* Save whether or not we tried IPv6 for later */
 	if (priv->ip6_manager || priv->ip6_config)
 		tried_ipv6 = TRUE;
+
+	/* Clean up when device was deactivated during call to firewall */
+	if (priv->fw_call) {
+		nm_firewall_manager_cancel_add (priv->fw_manager, priv->fw_call);
+		priv->fw_call = NULL;
+	}
 
 	/* Break the activation chain */
 	activation_source_clear (self, TRUE, AF_INET);
@@ -3255,6 +3357,9 @@ finalize (GObject *object)
 
 	if (priv->dhcp_manager)
 		g_object_unref (priv->dhcp_manager);
+
+	if (priv->fw_manager)
+		g_object_unref (priv->fw_manager);
 
 	g_free (priv->udi);
 	g_free (priv->iface);
