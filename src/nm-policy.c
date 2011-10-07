@@ -47,6 +47,7 @@
 #include "nm-vpn-manager.h"
 #include "nm-policy-hostname.h"
 #include "nm-manager-auth.h"
+#include "nm-firewall-manager.h"
 
 struct NMPolicy {
 	NMManager *manager;
@@ -59,6 +60,8 @@ struct NMPolicy {
 	NMVPNManager *vpn_manager;
 	gulong vpn_activated_id;
 	gulong vpn_deactivated_id;
+
+	NMFirewallManager *fw_manager;
 
 	NMSettings *settings;
 
@@ -1200,14 +1203,65 @@ connections_loaded (NMSettings *settings, gpointer user_data)
 }
 
 static void
+add_to_zone_cb (DBusGProxy       *proxy,
+                DBusGProxyCall   *call_id,
+                void             *user_data)
+{
+	GError *error = NULL;
+
+	if (!proxy || !call_id)
+		return;
+
+	if (!dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID)) {
+		nm_log_warn (LOGD_DEVICE, "adding iface to zone failed: (%d) %s",
+				     error ? error->code : -1,
+				     error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
+
+		/* TODO: do we need to do anything else here ? */
+	}
+
+}
+
+static void
+inform_firewall_about_zone (NMPolicy * policy,
+                            NMConnection *connection)
+{
+	NMSettingConnection *s_con = nm_connection_get_setting_connection(connection);
+	const char *zone = nm_setting_connection_get_zone(s_con);
+	const char *uuid = nm_setting_connection_get_uuid(s_con);
+	GSList *iter, *devices;
+
+	if (!zone)
+		return;
+
+	devices = nm_manager_get_devices (policy->manager);
+	for (iter = devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *dev = NM_DEVICE (iter->data);
+		NMConnection *dev_connection = get_device_connection (dev);
+		if (g_strcmp0 (uuid, nm_connection_get_uuid (dev_connection)) == 0) {
+			nm_firewall_manager_add_to_zone (policy->fw_manager,
+			                                 nm_device_get_ip_iface(dev),
+			                                 zone,
+			                                 add_to_zone_cb,
+			                                 NULL);
+		}
+	}
+}
+
+static void
 connection_updated (NMSettings *settings,
                     NMConnection *connection,
                     gpointer user_data)
 {
+	NMPolicy *policy = (NMPolicy *) user_data;
+
+	inform_firewall_about_zone (policy, connection);
+
 	/* Reset auto retries back to default since connection was updated */
 	set_connection_auto_retries (connection, RETRIES_DEFAULT);
 
-	schedule_activate_all ((NMPolicy *) user_data);
+	schedule_activate_all (policy);
 }
 
 static void
@@ -1325,6 +1379,8 @@ nm_policy_new (NMManager *manager,
 	                       G_CALLBACK (vpn_connection_deactivated), policy);
 	policy->vpn_deactivated_id = id;
 
+	policy->fw_manager = nm_firewall_manager_get();
+
 	_connect_manager_signal (policy, "state-changed", global_state_changed);
 	_connect_manager_signal (policy, "notify::" NM_MANAGER_HOSTNAME, hostname_changed);
 	_connect_manager_signal (policy, "notify::" NM_MANAGER_SLEEPING, sleeping_changed);
@@ -1368,6 +1424,8 @@ nm_policy_destroy (NMPolicy *policy)
 	g_signal_handler_disconnect (policy->vpn_manager, policy->vpn_activated_id);
 	g_signal_handler_disconnect (policy->vpn_manager, policy->vpn_deactivated_id);
 	g_object_unref (policy->vpn_manager);
+
+	g_object_unref (policy->fw_manager);
 
 	for (iter = policy->manager_ids; iter; iter = g_slist_next (iter))
 		g_signal_handler_disconnect (policy->manager, GPOINTER_TO_UINT (iter->data));
