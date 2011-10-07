@@ -1029,6 +1029,9 @@ nm_device_activate_schedule_stage2_device_config (NMDevice *self)
 	         nm_device_get_iface (self));
 }
 
+/*********************************************/
+/* avahi-autoipd stuff */
+
 static void
 aipd_timeout_remove (NMDevice *self)
 {
@@ -1333,6 +1336,9 @@ aipd_exec (NMDevice *self, GError **error)
 
 	return TRUE;
 }
+
+/*********************************************/
+/* DHCPv4 stuff */
 
 static void
 dhcp4_add_option_cb (gpointer key, gpointer value, gpointer user_data)
@@ -1684,6 +1690,67 @@ nm_device_dhcp4_renew (NMDevice *self, gboolean release)
 	return (ret != NM_ACT_STAGE_RETURN_FAILURE);
 }
 
+/*********************************************/
+
+static GHashTable *shared_ips = NULL;
+
+static void
+release_shared_ip (gpointer data)
+{
+	g_hash_table_remove (shared_ips, data);
+}
+
+static guint32
+reserve_shared_ip (void)
+{
+	guint32 start = (guint32) ntohl (0x0a2a0001); /* 10.42.0.1 */
+	guint32 count = 0;
+
+	while (g_hash_table_lookup (shared_ips, GUINT_TO_POINTER (start + count))) {
+		count += ntohl (0x100);
+		if (count > ntohl (0xFE00)) {
+			nm_log_err (LOGD_SHARING, "ran out of shared IP addresses!");
+			return 0;
+		}
+	}
+
+	g_hash_table_insert (shared_ips, GUINT_TO_POINTER (start + count), GUINT_TO_POINTER (TRUE));
+	return start + count;
+}
+
+static NMIP4Config *
+nm_device_new_ip4_shared_config (NMDevice *self, NMDeviceStateReason *reason)
+{
+	NMIP4Config *config = NULL;
+	NMIP4Address *addr;
+	guint32 tmp_addr;
+
+	g_return_val_if_fail (self != NULL, NULL);
+
+	if (G_UNLIKELY (shared_ips == NULL))
+		shared_ips = g_hash_table_new (g_direct_hash, g_direct_equal);
+
+	tmp_addr = reserve_shared_ip ();
+	if (!tmp_addr) {
+		*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
+		return NULL;
+	}
+
+	config = nm_ip4_config_new ();
+	addr = nm_ip4_address_new ();
+	nm_ip4_address_set_address (addr, tmp_addr);
+	nm_ip4_address_set_prefix (addr, 24);
+	nm_ip4_config_take_address (config, addr);
+
+	/* Remove the address lock when the object gets disposed */
+	g_object_set_data_full (G_OBJECT (config), "shared-ip",
+	                        GUINT_TO_POINTER (tmp_addr), release_shared_ip);
+
+	return config;
+}
+
+/*********************************************/
+
 static NMActStageReturn
 real_act_stage3_ip4_config_start (NMDevice *self, NMDeviceStateReason *reason)
 {
@@ -1944,63 +2011,6 @@ nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 
 	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 3 of 5 (IP Configure Start) scheduled.",
 	             nm_device_get_iface (self));
-}
-
-static GHashTable *shared_ips = NULL;
-
-static void
-release_shared_ip (gpointer data)
-{
-	g_hash_table_remove (shared_ips, data);
-}
-
-static guint32
-reserve_shared_ip (void)
-{
-	guint32 start = (guint32) ntohl (0x0a2a0001); /* 10.42.0.1 */
-	guint32 count = 0;
-
-	while (g_hash_table_lookup (shared_ips, GUINT_TO_POINTER (start + count))) {
-		count += ntohl (0x100);
-		if (count > ntohl (0xFE00)) {
-			nm_log_err (LOGD_SHARING, "ran out of shared IP addresses!");
-			return 0;
-		}
-	}
-
-	g_hash_table_insert (shared_ips, GUINT_TO_POINTER (start + count), GUINT_TO_POINTER (TRUE));
-	return start + count;
-}
-
-static NMIP4Config *
-nm_device_new_ip4_shared_config (NMDevice *self, NMDeviceStateReason *reason)
-{
-	NMIP4Config *config = NULL;
-	NMIP4Address *addr;
-	guint32 tmp_addr;
-
-	g_return_val_if_fail (self != NULL, NULL);
-
-	if (G_UNLIKELY (shared_ips == NULL))
-		shared_ips = g_hash_table_new (g_direct_hash, g_direct_equal);
-
-	tmp_addr = reserve_shared_ip ();
-	if (!tmp_addr) {
-		*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
-		return NULL;
-	}
-
-	config = nm_ip4_config_new ();
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, tmp_addr);
-	nm_ip4_address_set_prefix (addr, 24);
-	nm_ip4_config_take_address (config, addr);
-
-	/* Remove the address lock when the object gets disposed */
-	g_object_set_data_full (G_OBJECT (config), "shared-ip",
-	                        GUINT_TO_POINTER (tmp_addr), release_shared_ip);
-
-	return config;
 }
 
 static NMActStageReturn
