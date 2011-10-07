@@ -109,10 +109,8 @@ typedef struct {
 														 NMIP6Config **config,
 	                                                     NMDeviceStateReason *reason);
 	NMActStageReturn	(* act_stage4_ip4_config_timeout)	(NMDevice *self,
-	                                                         NMIP4Config **config,
 	                                                         NMDeviceStateReason *reason);
 	NMActStageReturn	(* act_stage4_ip6_config_timeout)	(NMDevice *self,
-	                                                         NMIP6Config **config,
 	                                                         NMDeviceStateReason *reason);
 	void			(* deactivate)			(NMDevice *self);
 

@@ -2216,13 +2216,8 @@ nm_device_activate_schedule_stage4_ip4_config_get (NMDevice *self)
 
 
 static NMActStageReturn
-real_act_stage4_ip4_config_timeout (NMDevice *self,
-									NMIP4Config **config,
-									NMDeviceStateReason *reason)
+real_act_stage4_ip4_config_timeout (NMDevice *self, NMDeviceStateReason *reason)
 {
-	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
-	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
-
 	/* Notify of invalid DHCP4 config object */
 	g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_DHCP4_CONFIG);
 
@@ -2246,7 +2241,6 @@ nm_device_activate_stage4_ip4_config_timeout (gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMIP4Config *ip4_config = NULL;
 	const char *iface;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
@@ -2259,7 +2253,7 @@ nm_device_activate_stage4_ip4_config_timeout (gpointer user_data)
 	             "Activation (%s) Stage 4 of 5 (IP4 Configure Timeout) started...",
 	             iface);
 
-	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_ip4_config_timeout (self, &ip4_config, &reason);
+	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_ip4_config_timeout (self, &reason);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
 		goto out;
 	else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
@@ -2267,11 +2261,6 @@ nm_device_activate_stage4_ip4_config_timeout (gpointer user_data)
 		goto out;
 	}
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);	
-
-	if (ip4_config) {
-		g_object_set_data (G_OBJECT (nm_device_get_act_request (self)),
-						   NM_ACT_REQUEST_IP4_CONFIG, ip4_config);
-	}
 
 	priv->ip4_ready = TRUE;
 	nm_device_activate_stage5_ip_config_commit (self);
@@ -2436,13 +2425,8 @@ nm_device_activate_schedule_stage4_ip6_config_get (NMDevice *self)
 
 
 static NMActStageReturn
-real_act_stage4_ip6_config_timeout (NMDevice *self,
-									NMIP6Config **config,
-									NMDeviceStateReason *reason)
+real_act_stage4_ip6_config_timeout (NMDevice *self, NMDeviceStateReason *reason)
 {
-	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
-	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
-
 	/* Notify of invalid DHCP4 config object */
 	g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_DHCP6_CONFIG);
 
@@ -2466,7 +2450,6 @@ nm_device_activate_stage4_ip6_config_timeout (gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMIP6Config *ip6_config = NULL;
 	const char *iface;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
@@ -2479,7 +2462,7 @@ nm_device_activate_stage4_ip6_config_timeout (gpointer user_data)
 	             "Activation (%s) Stage 4 of 5 (IP6 Configure Timeout) started...",
 	             iface);
 
-	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_ip6_config_timeout (self, &ip6_config, &reason);
+	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_ip6_config_timeout (self, &reason);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
 		goto out;
 	else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
@@ -2487,11 +2470,6 @@ nm_device_activate_stage4_ip6_config_timeout (gpointer user_data)
 		goto out;
 	}
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
-
-	if (ip6_config) {
-		g_object_set_data (G_OBJECT (nm_device_get_act_request (self)),
-						   NM_ACT_REQUEST_IP6_CONFIG, ip6_config);
-	}
 
 	priv->ip6_ready = TRUE;
 	nm_device_activate_stage5_ip_config_commit (self);

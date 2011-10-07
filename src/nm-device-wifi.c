@@ -2795,9 +2795,7 @@ handle_ip_config_timeout (NMDeviceWifi *self,
 
 
 static NMActStageReturn
-real_act_stage4_ip4_config_timeout (NMDevice *dev,
-                                    NMIP4Config **config,
-                                    NMDeviceStateReason *reason)
+real_act_stage4_ip4_config_timeout (NMDevice *dev, NMDeviceStateReason *reason)
 {
 	NMActRequest *req;
 	NMConnection *connection;
@@ -2816,15 +2814,13 @@ real_act_stage4_ip4_config_timeout (NMDevice *dev,
 
 	ret = handle_ip_config_timeout (NM_DEVICE_WIFI (dev), connection, may_fail, &chain_up, reason);
 	if (chain_up)
-		ret = NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage4_ip4_config_timeout (dev, config, reason);
+		ret = NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage4_ip4_config_timeout (dev, reason);
 
 	return ret;
 }
 
 static NMActStageReturn
-real_act_stage4_ip6_config_timeout (NMDevice *dev,
-                                    NMIP6Config **config,
-                                    NMDeviceStateReason *reason)
+real_act_stage4_ip6_config_timeout (NMDevice *dev, NMDeviceStateReason *reason)
 {
 	NMActRequest *req;
 	NMConnection *connection;
@@ -2843,7 +2839,7 @@ real_act_stage4_ip6_config_timeout (NMDevice *dev,
 
 	ret = handle_ip_config_timeout (NM_DEVICE_WIFI (dev), connection, may_fail, &chain_up, reason);
 	if (chain_up)
-		ret = NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage4_ip6_config_timeout (dev, config, reason);
+		ret = NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage4_ip6_config_timeout (dev, reason);
 
 	return ret;
 }
