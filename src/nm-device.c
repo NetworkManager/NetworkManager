@@ -2806,6 +2806,7 @@ static void
 nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason)
 {
 	NMDevice *self = NM_DEVICE (device);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
 	gboolean tried_ipv6 = FALSE;
 
@@ -2815,7 +2816,7 @@ nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason)
 	             nm_device_get_iface (self), reason);
 
 	/* Check this before deactivate_quickly is run */
-	if (NM_DEVICE_GET_PRIVATE (self)->ip6_manager)
+	if (priv->ip6_manager || priv->ip6_config)
 		tried_ipv6 = TRUE;
 
 	nm_device_deactivate_quickly (self);
