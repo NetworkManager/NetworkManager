@@ -190,7 +190,6 @@ bind_device_to_connection (SCPluginIfupdown *self,
 	NMSetting *s_wired = NULL;
 	NMSetting *s_wifi = NULL;
 	const char *iface, *address;
-	struct ether_addr *tmp_mac;
 
 	iface = g_udev_device_get_name (device);
 	if (!iface) {
@@ -204,15 +203,12 @@ bind_device_to_connection (SCPluginIfupdown *self,
 		return;
 	}
 
-	tmp_mac = ether_aton (address);
+	mac_address = nm_utils_hwaddr_atoba (address, ARPHRD_ETHER);
 	if (!tmp_mac) {
 		PLUGIN_WARN ("SCPluginIfupdown", "failed to parse MAC address '%s' for %s",
 		             address, iface);
 		return;
 	}
-
-	mac_address = g_byte_array_sized_new (ETH_ALEN);
-	g_byte_array_append (mac_address, &(tmp_mac->ether_addr_octet[0]), ETH_ALEN);
 
 	s_wired = nm_connection_get_setting (NM_CONNECTION (exported), NM_TYPE_SETTING_WIRED);
 	s_wifi = nm_connection_get_setting (NM_CONNECTION (exported), NM_TYPE_SETTING_WIRELESS);

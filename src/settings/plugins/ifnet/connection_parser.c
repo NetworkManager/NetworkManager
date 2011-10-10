@@ -509,20 +509,17 @@ static gboolean
 read_mac_address (const char *conn_name, GByteArray **array, GError **error)
 {
 	const char *value = ifnet_get_data (conn_name, "mac");
-	struct ether_addr *mac;
 
 	if (!value || !strlen (value))
 		return TRUE;
 
-	mac = ether_aton (value);
-	if (!mac) {
+	*array = nm_utils_hwaddr_atoba (value, ARPHRD_ETHER);
+	if (!*array) {
 		g_set_error (error, ifnet_plugin_error_quark (), 0,
-			     "The MAC address '%s' was invalid.", value);
+					 "The MAC address '%s' was invalid.", value);
 		return FALSE;
 	}
 
-	*array = g_byte_array_sized_new (ETH_ALEN);
-	g_byte_array_append (*array, (guint8 *) mac->ether_addr_octet, ETH_ALEN);
 	return TRUE;
 }
 
@@ -1012,18 +1009,15 @@ make_wireless_connection_setting (const char *conn_name,
 	/* BSSID setting */
 	value = wpa_get_value (conn_name, "bssid");
 	if (value) {
-		struct ether_addr *eth;
 		GByteArray *bssid;
 
-		eth = ether_aton (value);
-		if (!eth) {
+		bssid = nm_utils_hwaddr_atoba (value, ARPHRD_ETHER);
+		if (!bssid) {
 			g_set_error (error, ifnet_plugin_error_quark (), 0,
-				     "Invalid BSSID '%s'", value);
+						 "Invalid BSSID '%s'", value);
 			goto error;
 		}
 
-		bssid = g_byte_array_sized_new (ETH_ALEN);
-		g_byte_array_append (bssid, eth->ether_addr_octet, ETH_ALEN);
 		g_object_set (wireless_setting, NM_SETTING_WIRELESS_BSSID,
 			      bssid, NULL);
 		g_byte_array_free (bssid, TRUE);

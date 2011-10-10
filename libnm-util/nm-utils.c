@@ -25,11 +25,14 @@
  */
 
 #include "config.h"
+#include <ctype.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <arpa/inet.h>
+#include <netinet/ether.h>
+#include <linux/if_infiniband.h>
 
 #include <glib.h>
 #include <glib-object.h>
@@ -2386,3 +2389,114 @@ nm_utils_wifi_is_channel_valid (guint32 channel, const char *band)
 		return FALSE;
 }
 
+/**
+ * nm_utils_hwaddr_len:
+ * @type: the type of address; either %ARPHRD_ETHER or %ARPHRD_INFINIBAND
+ *
+ * Returns the length in octets of a hardware address of type @type.
+ *
+ * Return value: the length
+ */
+int
+nm_utils_hwaddr_len (int type)
+{
+	if (type == ARPHRD_ETHER)
+		return ETH_ALEN;
+	else if (type == ARPHRD_INFINIBAND)
+		return INFINIBAND_ALEN;
+	else
+		g_return_val_if_reached (-1);
+}
+
+#define HEXVAL(c) ((c) <= '9' ? (c) - '0' : ((c) & 0x4F) - 'A' + 10)
+
+/**
+ * nm_utils_hwaddr_aton:
+ * @asc: the ASCII representation of a hardware address
+ * @type: the type of address; either %ARPHRD_ETHER or %ARPHRD_INFINIBAND
+ * @buffer: buffer to store the result into
+ *
+ * Parses @asc and converts it to binary form in @buffer. See
+ * nm_utils_hwaddr_atoba() if you'd rather have the result in a
+ * #GByteArray.
+ *
+ * Return value: @buffer, or %NULL if @asc couldn't be parsed
+ */
+guint8 *
+nm_utils_hwaddr_aton (const char *asc, int type, gpointer buffer)
+{
+	const char *in = asc;
+	guint8 *out = (guint8 *)buffer;
+	int left = nm_utils_hwaddr_len (type);
+
+	while (left && *in) {
+		if (!isxdigit (in[0]) || !isxdigit (in[1]))
+			return NULL;
+
+		*out++ = (HEXVAL (in[0]) << 4) + HEXVAL (in[1]);
+		left--;
+		in += 2;
+		if (*in) {
+			if (*in != ':')
+				return NULL;
+			in++;
+		}
+	}
+
+	if (left == 0 && !*in)
+		return buffer;
+	else
+		return NULL;
+}
+
+/**
+ * nm_utils_hwaddr_atoba:
+ * @asc: the ASCII representation of a hardware address
+ * @type: the type of address; either %ARPHRD_ETHER or %ARPHRD_INFINIBAND
+ *
+ * Parses @asc and converts it to binary form in a #GByteArray. See
+ * nm_utils_hwaddr_aton() if you don't want a #GByteArray.
+ *
+ * Return value: a new #GByteArray, or %NULL if @asc couldn't be
+ * parsed
+ */
+GByteArray *
+nm_utils_hwaddr_atoba (const char *asc, int type)
+{
+	GByteArray *ba;
+	int len = nm_utils_hwaddr_len (type);
+
+	ba = g_byte_array_sized_new (len);
+	ba->len = len;
+	if (!nm_utils_hwaddr_aton (asc, type, ba->data)) {
+		g_byte_array_unref (ba);
+		return NULL;
+	}
+
+	return ba;
+}
+
+/**
+ * nm_utils_hwaddr_ntoa:
+ * @addr: a binary hardware address
+ * @type: the type of address; either %ARPHRD_ETHER or %ARPHRD_INFINIBAND
+ *
+ * Converts @addr to textual form.
+ *
+ * Return value: (transfer full): the textual form of @addr
+ */
+char *
+nm_utils_hwaddr_ntoa (gconstpointer addr, int type)
+{
+	const guint8 *in = addr;
+	GString *out = g_string_new (NULL);
+	int left = nm_utils_hwaddr_len (type);
+
+	while (left--) {
+		if (out->len)
+			g_string_append_c (out, ':');
+		g_string_append_printf (out, "%02X", *in++);
+	}
+
+	return g_string_free (out, FALSE);
+}

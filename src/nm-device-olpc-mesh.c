@@ -31,6 +31,7 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <net/ethernet.h>
+#include <netinet/ether.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <signal.h>
@@ -492,7 +493,7 @@ get_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
 		nm_device_olpc_mesh_get_address (device, &hw_addr);
-		g_value_take_string (value, nm_ether_ntop (&hw_addr));
+		g_value_take_string (value, nm_utils_hwaddr_ntoa (&hw_addr, ARPHRD_ETHER));
 		break;
 	case PROP_COMPANION:
 		if (priv->companion)

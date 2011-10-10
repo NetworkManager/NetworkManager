@@ -206,7 +206,6 @@ static gboolean
 read_mac_address (shvarFile *ifcfg, const char *key, GByteArray **array, GError **error)
 {
 	char *value = NULL;
-	struct ether_addr *mac;
 
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
 	g_return_val_if_fail (array != NULL, FALSE);
@@ -220,8 +219,8 @@ read_mac_address (shvarFile *ifcfg, const char *key, GByteArray **array, GError 
 		return TRUE;
 	}
 
-	mac = ether_aton (value);
-	if (!mac) {
+	*array = nm_utils_hwaddr_atoba (value, ARPHRD_ETHER);
+	if (!*array) {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 		             "%s: the MAC address '%s' was invalid.", key, value);
 		g_free (value);
@@ -229,8 +228,6 @@ read_mac_address (shvarFile *ifcfg, const char *key, GByteArray **array, GError 
 	}
 
 	g_free (value);
-	*array = g_byte_array_sized_new (ETH_ALEN);
-	g_byte_array_append (*array, (guint8 *) mac->ether_addr_octet, ETH_ALEN);
 	return TRUE;
 }
 
@@ -2947,19 +2944,16 @@ make_wireless_setting (shvarFile *ifcfg,
 
 	value = svGetValue (ifcfg, "BSSID", FALSE);
 	if (value) {
-		struct ether_addr *eth;
 		GByteArray *bssid;
 
-		eth = ether_aton (value);
-		if (!eth) {
+		bssid = nm_utils_hwaddr_atoba (value, ARPHRD_ETHER);
+		if (!bssid) {
 			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 			             "Invalid BSSID '%s'", value);
 			g_free (value);
 			goto error;
 		}
 
-		bssid = g_byte_array_sized_new (ETH_ALEN);
-		g_byte_array_append (bssid, eth->ether_addr_octet, ETH_ALEN);
 		g_object_set (s_wireless, NM_SETTING_WIRELESS_BSSID, bssid, NULL);
 		g_byte_array_free (bssid, TRUE);
 		g_free (value);

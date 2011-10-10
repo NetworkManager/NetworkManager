@@ -732,13 +732,13 @@ periodic_update (NMDeviceWifi *self)
 
 		if (new_ap) {
 			new_bssid = nm_ap_get_address (new_ap);
-			new_addr = nm_ether_ntop (new_bssid);
+			new_addr = nm_utils_hwaddr_ntoa (new_bssid, ARPHRD_ETHER);
 			new_ssid = nm_ap_get_ssid (new_ap);
 		}
 
 		if (priv->current_ap) {
 			old_bssid = nm_ap_get_address (priv->current_ap);
-			old_addr = nm_ether_ntop (old_bssid);
+			old_addr = nm_utils_hwaddr_ntoa (old_bssid, ARPHRD_ETHER);
 			old_ssid = nm_ap_get_ssid (priv->current_ap);
 		}
 
@@ -2963,7 +2963,7 @@ spec_match_list (NMDevice *device, const GSList *specs)
 	char *hwaddr;
 	gboolean matched;
 
-	hwaddr = nm_ether_ntop ((struct ether_addr *) &priv->perm_hw_addr);
+	hwaddr = nm_utils_hwaddr_ntoa (&priv->perm_hw_addr, ARPHRD_ETHER);
 	matched = nm_match_spec_hwaddr (specs, hwaddr);
 	g_free (hwaddr);
 
@@ -3196,10 +3196,10 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
-		g_value_take_string (value, nm_ether_ntop ((struct ether_addr *) &priv->hw_addr));
+		g_value_take_string (value, nm_utils_hwaddr_ntoa (&priv->hw_addr, ARPHRD_ETHER));
 		break;
 	case PROP_PERM_HW_ADDRESS:
-		g_value_take_string (value, nm_ether_ntop ((struct ether_addr *) &priv->perm_hw_addr));
+		g_value_take_string (value, nm_utils_hwaddr_ntoa (&priv->perm_hw_addr, ARPHRD_ETHER));
 		break;
 	case PROP_MODE:
 		g_value_set_uint (value, wifi_utils_get_mode (priv->wifi_data));

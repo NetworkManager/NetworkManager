@@ -118,6 +118,20 @@ guint32 nm_utils_wifi_channel_to_freq (guint32 channel, const char *band);
 guint32 nm_utils_wifi_find_next_channel (guint32 channel, int direction, char *band);
 gboolean nm_utils_wifi_is_channel_valid (guint32 channel, const char *band);
 
+/**
+ * NM_UTILS_HWADDR_LEN_MAX:
+ *
+ * The maximum length of a hardware address of a type known by
+ * nm_utils_hwaddr_len() or nm_utils_hwaddr_aton(). This can be used
+ * as the size of the buffer passed to nm_utils_hwaddr_aton().
+ */
+#define NM_UTILS_HWADDR_LEN_MAX 20 /* INFINIBAND_ALEN */
+
+int         nm_utils_hwaddr_len   (int type) G_GNUC_PURE;
+char       *nm_utils_hwaddr_ntoa  (gconstpointer addr, int type);
+GByteArray *nm_utils_hwaddr_atoba (const char *asc, int type);
+guint8     *nm_utils_hwaddr_aton  (const char *asc, int type, gpointer buffer);
+
 G_END_DECLS
 
 #endif /* NM_UTILS_H */

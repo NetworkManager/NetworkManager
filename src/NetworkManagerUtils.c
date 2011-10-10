@@ -159,18 +159,6 @@ nm_utils_ip4_prefix_to_netmask (guint32 prefix)
 	return (guint32) htonl (netmask);
 }
 
-char *
-nm_ether_ntop (const struct ether_addr *mac)
-{
-	/* we like leading zeros and all-caps, instead
-	 * of what glibc's ether_ntop() gives us
-	 */
-	return g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
-	                        mac->ether_addr_octet[0], mac->ether_addr_octet[1],
-	                        mac->ether_addr_octet[2], mac->ether_addr_octet[3],
-	                        mac->ether_addr_octet[4], mac->ether_addr_octet[5]);
-}
-
 void
 nm_utils_merge_ip4_config (NMIP4Config *ip4_config, NMSettingIP4Config *setting)
 {

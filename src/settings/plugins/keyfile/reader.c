@@ -34,6 +34,7 @@
 #include <nm-setting-wireless.h>
 #include <nm-setting-bluetooth.h>
 #include <nm-setting-8021x.h>
+#include <nm-utils.h>
 #include <arpa/inet.h>
 #include <netinet/ether.h>
 #include <string.h>
@@ -650,7 +651,6 @@ static void
 mac_address_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char *keyfile_path)
 {
 	const char *setting_name = nm_setting_get_name (setting);
-	struct ether_addr *eth;
 	char *tmp_string = NULL, *p;
 	gint *tmp_list;
 	GByteArray *array = NULL;
@@ -668,11 +668,9 @@ mac_address_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, cons
 		}
 		if (i == 5) {
 			/* parse as a MAC address */
-			eth = ether_aton (tmp_string);
-			if (eth) {
+			array = nm_utils_hwaddr_atoba (tmp_string, ARPHRD_ETHER);
+			if (array) {
 				g_free (tmp_string);
-				array = g_byte_array_sized_new (ETH_ALEN);
-				g_byte_array_append (array, eth->ether_addr_octet, ETH_ALEN);
 				goto done;
 			}
 		}

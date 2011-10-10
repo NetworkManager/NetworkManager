@@ -21,6 +21,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <netinet/ether.h>
 
 #include "nm-wifi-ap.h"
 #include "nm-wifi-ap-utils.h"
@@ -181,7 +182,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->freq);
 		break;
 	case PROP_HW_ADDRESS:
-		g_value_take_string (value, nm_ether_ntop (&priv->address));
+		g_value_take_string (value, nm_utils_hwaddr_ntoa (&priv->address, ARPHRD_ETHER));
 		break;
 	case PROP_MODE:
 		g_value_set_uint (value, priv->mode);

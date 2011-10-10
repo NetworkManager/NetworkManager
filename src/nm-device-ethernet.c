@@ -61,6 +61,7 @@
 #include "nm-properties-changed-signal.h"
 #include "nm-dhcp-manager.h"
 #include "nm-netlink-utils.h"
+#include "nm-utils.h"
 
 #include "nm-device-ethernet-glue.h"
 
@@ -1761,7 +1762,7 @@ spec_match_list (NMDevice *device, const GSList *specs)
 	char *hwaddr;
 	gboolean matched;
 
-	hwaddr = nm_ether_ntop ((struct ether_addr *) &priv->perm_hw_addr);
+	hwaddr = nm_utils_hwaddr_ntoa (&priv->perm_hw_addr, ARPHRD_ETHER);
 	matched = nm_match_spec_hwaddr (specs, hwaddr);
 	g_free (hwaddr);
 
@@ -1947,10 +1948,10 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
-		g_value_take_string (value, nm_ether_ntop ((struct ether_addr *) &priv->hw_addr));
+		g_value_take_string (value, nm_utils_hwaddr_ntoa (&priv->hw_addr, ARPHRD_ETHER));
 		break;
 	case PROP_PERM_HW_ADDRESS:
-		g_value_take_string (value, nm_ether_ntop ((struct ether_addr *) &priv->perm_hw_addr));
+		g_value_take_string (value, nm_utils_hwaddr_ntoa (&priv->perm_hw_addr, ARPHRD_ETHER));
 		break;
 	case PROP_SPEED:
 		g_value_set_uint (value, nm_device_ethernet_get_speed (self));

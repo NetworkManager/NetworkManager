@@ -1576,7 +1576,7 @@ nm_settings_connection_add_seen_bssid (NMSettingsConnection *connection,
 		return;  /* Already in the list */
 
 	/* Add the new BSSID; let the hash take ownership of the allocated BSSID string */
-	bssid_str = nm_ether_ntop (seen_bssid);
+	bssid_str = nm_utils_hwaddr_ntoa (seen_bssid, ARPHRD_ETHER);
 	g_return_if_fail (bssid_str != NULL);
 	g_hash_table_insert (priv->seen_bssids, mac_dup (seen_bssid), bssid_str);
 

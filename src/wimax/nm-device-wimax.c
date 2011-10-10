@@ -25,6 +25,7 @@
 #include <net/ethernet.h>
 #include <sys/socket.h>
 #include <linux/if.h>
+#include <netinet/ether.h>
 
 #include <WiMaxAPI.h>
 #include <WiMaxAPIEx.h>
@@ -1434,7 +1435,7 @@ get_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
 		nm_device_wimax_get_hw_address (self, &hw_addr);
-		g_value_take_string (value, nm_ether_ntop (&hw_addr));
+		g_value_take_string (value, nm_utils_hwaddr_ntoa (&hw_addr, ARPHRD_ETHER));
 		break;
 	case PROP_ACTIVE_NSP:
 		if (priv->current_nsp)
