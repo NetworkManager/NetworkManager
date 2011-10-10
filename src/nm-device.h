@@ -174,6 +174,9 @@ void			nm_device_activate_schedule_ip4_config_timeout (NMDevice *device);
 void			nm_device_activate_schedule_ip6_config_result  (NMDevice *device, NMIP6Config *config);
 void			nm_device_activate_schedule_ip6_config_timeout (NMDevice *device);
 
+gboolean        nm_device_activate_ip4_state_in_conf           (NMDevice *device);
+gboolean        nm_device_activate_ip6_state_in_conf           (NMDevice *device);
+
 gboolean		nm_device_is_activating		(NMDevice *dev);
 gboolean		nm_device_can_interrupt_activation		(NMDevice *self);
 gboolean		nm_device_autoconnect_allowed	(NMDevice *self);

@@ -1441,7 +1441,7 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 	NMDevice *device = NM_DEVICE (user_data);
 
 	/* Ignore PPP IP4 events that come in after initial configuration */
-	if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG) {
+	if (nm_device_activate_ip4_state_in_conf (device)) {
 		nm_device_set_ip_iface (device, iface);
 		nm_device_activate_schedule_ip4_config_result (device, config);
 	}

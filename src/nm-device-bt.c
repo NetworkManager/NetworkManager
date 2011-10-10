@@ -425,12 +425,12 @@ ppp_failed (NMModem *modem, NMDeviceStateReason reason, gpointer user_data)
 	case NM_DEVICE_STATE_PREPARE:
 	case NM_DEVICE_STATE_CONFIG:
 	case NM_DEVICE_STATE_NEED_AUTH:
-	case NM_DEVICE_STATE_IP_CHECK:
-	case NM_DEVICE_STATE_SECONDARIES:
-	case NM_DEVICE_STATE_ACTIVATED:
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
 		break;
 	case NM_DEVICE_STATE_IP_CONFIG:
+	case NM_DEVICE_STATE_IP_CHECK:
+	case NM_DEVICE_STATE_SECONDARIES:
+	case NM_DEVICE_STATE_ACTIVATED:
 		if (nm_device_ip_config_should_fail (device, FALSE)) {
 			nm_device_state_changed (device,
 			                         NM_DEVICE_STATE_FAILED,
@@ -526,10 +526,8 @@ modem_ip4_config_result (NMModem *self,
                          gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
-	NMDeviceState state;
 
-	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (device));
-	g_return_if_fail (state == NM_DEVICE_STATE_IP_CONFIG);
+	g_return_if_fail (nm_device_activate_ip4_state_in_conf (device) == TRUE);
 
 	if (error) {
 		nm_log_warn (LOGD_MB | LOGD_IP4 | LOGD_BT,
