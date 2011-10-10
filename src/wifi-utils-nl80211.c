@@ -630,6 +630,18 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 		}
 	}
 
+	if (tb[NL80211_ATTR_SUPPORTED_IFTYPES]) {
+		struct nlattr *nl_mode;
+		int i;
+
+		nla_for_each_nested (nl_mode, tb[NL80211_ATTR_SUPPORTED_IFTYPES], i) {
+			if (nla_type (nl_mode) == NL80211_IFTYPE_AP) {
+				info->caps |= NM_WIFI_DEVICE_CAP_AP;
+				break;
+			}
+		}
+	}
+
 	info->success = TRUE;
 
 	return NL_SKIP;

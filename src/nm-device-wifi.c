@@ -332,6 +332,11 @@ constructor (GType type,
 	}
 	priv->capabilities = wifi_utils_get_caps (priv->wifi_data);
 
+	if (priv->capabilities & NM_WIFI_DEVICE_CAP_AP) {
+		nm_log_warn (LOGD_HW | LOGD_WIFI, "(%s): driver supports Access Point (AP) mode",
+		             nm_device_get_iface (NM_DEVICE (self)));
+	}
+
 	/* Connect to the supplicant manager */
 	priv->supplicant.mgr = nm_supplicant_manager_get ();
 	g_assert (priv->supplicant.mgr);
