@@ -2834,7 +2834,7 @@ nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason)
 	             nm_device_get_iface (self), reason_to_string (reason), reason);
 
 	/* Save whether or not we tried IPv6 for later */
-	if (NM_DEVICE_GET_PRIVATE (self)->ip6_manager)
+	if (priv->ip6_manager || priv->ip6_config)
 		tried_ipv6 = TRUE;
 
 	/* Break the activation chain */
