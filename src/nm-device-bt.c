@@ -543,7 +543,7 @@ modem_ip4_config_result (NMModem *self,
 		if (iface)
 			nm_device_set_ip_iface (device, iface);
 
-		nm_device_activate_schedule_stage4_ip4_config_get (device);
+		nm_device_activate_schedule_ip4_config_result (device, config);
 	}
 }
 
@@ -920,7 +920,9 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 }
 
 static NMActStageReturn
-real_act_stage3_ip4_config_start (NMDevice *device, NMDeviceStateReason *reason)
+real_act_stage3_ip4_config_start (NMDevice *device,
+                                  NMIP4Config **out_config,
+                                  NMDeviceStateReason *reason)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
 	NMActStageReturn ret;
@@ -931,27 +933,7 @@ real_act_stage3_ip4_config_start (NMDevice *device, NMDeviceStateReason *reason)
 		                                        NM_DEVICE_CLASS (nm_device_bt_parent_class),
 		                                        reason);
 	} else
-		ret = NM_DEVICE_CLASS (nm_device_bt_parent_class)->act_stage3_ip4_config_start (device, reason);
-
-	return ret;
-}
-
-static NMActStageReturn
-real_act_stage4_get_ip4_config (NMDevice *device,
-                                NMIP4Config **config,
-                                NMDeviceStateReason *reason)
-{
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
-	NMActStageReturn ret;
-
-	if (priv->bt_type == NM_BT_CAPABILITY_DUN) {
-		ret = nm_modem_stage4_get_ip4_config (NM_DEVICE_BT_GET_PRIVATE (device)->modem,
-		                                      device,
-		                                      NM_DEVICE_CLASS (nm_device_bt_parent_class),
-		                                      config,
-		                                      reason);
-	} else
-		ret = NM_DEVICE_CLASS (nm_device_bt_parent_class)->act_stage4_get_ip4_config (device, config, reason);
+		ret = NM_DEVICE_CLASS (nm_device_bt_parent_class)->act_stage3_ip4_config_start (device, out_config, reason);
 
 	return ret;
 }
@@ -1148,7 +1130,6 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 	device_class->deactivate = real_deactivate;
 	device_class->act_stage2_config = real_act_stage2_config;
 	device_class->act_stage3_ip4_config_start = real_act_stage3_ip4_config_start;
-	device_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 	device_class->check_connection_compatible = real_check_connection_compatible;
 	device_class->complete_connection = real_complete_connection;
 

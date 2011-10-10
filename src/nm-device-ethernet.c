@@ -1434,19 +1434,17 @@ ppp_state_changed (NMPPPManager *ppp_manager, NMPPPStatus status, gpointer user_
 
 static void
 ppp_ip4_config (NMPPPManager *ppp_manager,
-			 const char *iface,
-			 NMIP4Config *config,
-			 gpointer user_data)
+                const char *iface,
+                NMIP4Config *config,
+                gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
 
 	/* Ignore PPP IP4 events that come in after initial configuration */
-	if (nm_device_get_state (device) != NM_DEVICE_STATE_IP_CONFIG)
-		return;
-
-	nm_device_set_ip_iface (device, iface);
-	NM_DEVICE_ETHERNET_GET_PRIVATE (device)->pending_ip4_config = g_object_ref (config);
-	nm_device_activate_schedule_stage4_ip4_config_get (device);
+	if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG) {
+		nm_device_set_ip_iface (device, iface);
+		nm_device_activate_schedule_ip4_config_result (device, config);
+	}
 }
 
 static NMActStageReturn
@@ -1519,7 +1517,9 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 }
 
 static NMActStageReturn
-real_act_stage3_ip4_config_start (NMDevice *device, NMDeviceStateReason *reason)
+real_act_stage3_ip4_config_start (NMDevice *device,
+                                  NMIP4Config **out_config,
+                                  NMDeviceStateReason *reason)
 {
 	NMSettingConnection *s_con;
 	const char *connection_type;
@@ -1533,61 +1533,29 @@ real_act_stage3_ip4_config_start (NMDevice *device, NMDeviceStateReason *reason)
 	if (!strcmp (connection_type, NM_SETTING_PPPOE_SETTING_NAME))
 		return pppoe_stage3_ip4_config_start (NM_DEVICE_ETHERNET (device), reason);
 
-	return NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->act_stage3_ip4_config_start (device, reason);
+	return NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->act_stage3_ip4_config_start (device, out_config, reason);
 }
 
-static NMActStageReturn
-real_act_stage4_get_ip4_config (NMDevice *device,
-                                NMIP4Config **config,
-                                NMDeviceStateReason *reason)
+static void
+real_ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 {
-	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-	NMActStageReturn ret;
+	NMConnection *connection;
+	NMSettingWired *s_wired;
+	guint32 mtu;
 
-	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
-	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
-	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+	/* MTU only set for plain ethernet */
+	if (NM_DEVICE_ETHERNET_GET_PRIVATE (device)->ppp_manager)
+		return;
 
-	if (!priv->ppp_manager) {
-		/* Regular ethernet connection. */
+	connection = nm_act_request_get_connection (nm_device_get_act_request (device));
+	g_assert (connection);
+	s_wired = nm_connection_get_setting_wired (connection);
+	g_assert (s_wired);
 
-		/* Chain up to parent */
-		ret = NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->act_stage4_get_ip4_config (device, config, reason);
-
-		if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
-			NMConnection *connection;
-			NMSettingWired *s_wired;
-			guint32 mtu;
-
-			connection = nm_act_request_get_connection (nm_device_get_act_request (device));
-			g_assert (connection);
-			s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
-			g_assert (s_wired);
-
-			/* MTU override */
-			mtu = nm_setting_wired_get_mtu (s_wired);
-			if (mtu)
-				nm_ip4_config_set_mtu (*config, mtu);
-		}
-	} else {
-		NMConnection *connection;
-		NMSettingIP4Config *s_ip4;
-
-		/* PPPoE */
-		*config = priv->pending_ip4_config;
-		priv->pending_ip4_config = NULL;
-
-		/* Merge user-defined overrides into the IP4Config to be applied */
-		connection = nm_act_request_get_connection (nm_device_get_act_request (device));
-		g_assert (connection);
-		s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
-		nm_utils_merge_ip4_config (*config, s_ip4);
-
-		ret = NM_ACT_STAGE_RETURN_SUCCESS;
-	}
-
-	return ret;
+	/* MTU override */
+	mtu = nm_setting_wired_get_mtu (s_wired);
+	if (mtu)
+		nm_ip4_config_set_mtu (config, mtu);
 }
 
 static void
@@ -2011,7 +1979,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->act_stage1_prepare = real_act_stage1_prepare;
 	parent_class->act_stage2_config = real_act_stage2_config;
 	parent_class->act_stage3_ip4_config_start = real_act_stage3_ip4_config_start;
-	parent_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
+	parent_class->ip4_config_pre_commit = real_ip4_config_pre_commit;
 	parent_class->deactivate = real_deactivate;
 	parent_class->spec_match_list = spec_match_list;
 	parent_class->connection_match_config = connection_match_config;

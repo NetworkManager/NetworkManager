@@ -99,19 +99,20 @@ typedef struct {
 	NMActStageReturn	(* act_stage2_config)	(NMDevice *self,
 	                                             NMDeviceStateReason *reason);
 	NMActStageReturn	(* act_stage3_ip4_config_start) (NMDevice *self,
+														 NMIP4Config **out_config,
 														 NMDeviceStateReason *reason);
 	NMActStageReturn	(* act_stage3_ip6_config_start) (NMDevice *self,
+														 NMIP6Config **out_config,
 														 NMDeviceStateReason *reason);
-	NMActStageReturn	(* act_stage4_get_ip4_config)	(NMDevice *self,
-														 NMIP4Config **config,
-	                                                     NMDeviceStateReason *reason);
-	NMActStageReturn	(* act_stage4_get_ip6_config)	(NMDevice *self,
-														 NMIP6Config **config,
-	                                                     NMDeviceStateReason *reason);
 	NMActStageReturn	(* act_stage4_ip4_config_timeout)	(NMDevice *self,
 	                                                         NMDeviceStateReason *reason);
 	NMActStageReturn	(* act_stage4_ip6_config_timeout)	(NMDevice *self,
 	                                                         NMDeviceStateReason *reason);
+
+	/* Called right before IP config is set; use for setting MTU etc */
+	void                (* ip4_config_pre_commit) (NMDevice *self, NMIP4Config *config);
+	void                (* ip6_config_pre_commit) (NMDevice *self, NMIP6Config *config);
+
 	void			(* deactivate)			(NMDevice *self);
 
 	gboolean		(* can_interrupt_activation)		(NMDevice *self);
@@ -150,8 +151,6 @@ NMDHCP6Config * nm_device_get_dhcp6_config (NMDevice *dev);
 NMIP4Config *	nm_device_get_ip4_config	(NMDevice *dev);
 NMIP6Config *	nm_device_get_ip6_config	(NMDevice *dev);
 
-void *		nm_device_get_system_config_data	(NMDevice *dev);
-
 NMActRequest *	nm_device_get_act_request	(NMDevice *dev);
 
 gboolean		nm_device_is_available (NMDevice *dev);
@@ -168,10 +167,13 @@ gboolean nm_device_complete_connection (NMDevice *device,
 
 void			nm_device_activate_schedule_stage1_device_prepare		(NMDevice *device);
 void			nm_device_activate_schedule_stage2_device_config		(NMDevice *device);
-void			nm_device_activate_schedule_stage4_ip4_config_get		(NMDevice *device);
-void			nm_device_activate_schedule_stage4_ip4_config_timeout	(NMDevice *device);
-void			nm_device_activate_schedule_stage4_ip6_config_get		(NMDevice *device);
-void			nm_device_activate_schedule_stage4_ip6_config_timeout	(NMDevice *device);
+
+void			nm_device_activate_schedule_ip4_config_result  (NMDevice *device, NMIP4Config *config);
+void			nm_device_activate_schedule_ip4_config_timeout (NMDevice *device);
+
+void			nm_device_activate_schedule_ip6_config_result  (NMDevice *device, NMIP6Config *config);
+void			nm_device_activate_schedule_ip6_config_timeout (NMDevice *device);
+
 gboolean		nm_device_is_activating		(NMDevice *dev);
 gboolean		nm_device_can_interrupt_activation		(NMDevice *self);
 gboolean		nm_device_autoconnect_allowed	(NMDevice *self);

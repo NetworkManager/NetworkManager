@@ -155,7 +155,7 @@ modem_ip4_config_result (NMModem *self,
 		if (iface)
 			nm_device_set_ip_iface (device, iface);
 
-		nm_device_activate_schedule_stage4_ip4_config_get (device);
+		nm_device_activate_schedule_ip4_config_result (device, config);
 	}
 }
 
@@ -275,24 +275,14 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 }
 
 static NMActStageReturn
-real_act_stage3_ip4_config_start (NMDevice *device, NMDeviceStateReason *reason)
+real_act_stage3_ip4_config_start (NMDevice *device,
+                                  NMIP4Config **out_config,
+                                  NMDeviceStateReason *reason)
 {
 	return nm_modem_stage3_ip4_config_start (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem,
 	                                         device,
 	                                         NM_DEVICE_CLASS (nm_device_modem_parent_class),
 	                                         reason);
-}
-
-static NMActStageReturn
-real_act_stage4_get_ip4_config (NMDevice *device,
-                                NMIP4Config **config,
-                                NMDeviceStateReason *reason)
-{
-	return nm_modem_stage4_get_ip4_config (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem,
-	                                       device,
-	                                       NM_DEVICE_CLASS (nm_device_modem_parent_class),
-	                                       config,
-	                                       reason);
 }
 
 /*****************************************************************************/
@@ -469,7 +459,6 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	device_class->act_stage1_prepare = real_act_stage1_prepare;
 	device_class->act_stage2_config = real_act_stage2_config;
 	device_class->act_stage3_ip4_config_start = real_act_stage3_ip4_config_start;
-	device_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 
 	/* Properties */
 	g_object_class_install_property

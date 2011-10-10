@@ -2684,38 +2684,22 @@ out:
 	return ret;
 }
 
-static NMActStageReturn
-real_act_stage4_get_ip4_config (NMDevice *dev,
-                                NMIP4Config **config,
-                                NMDeviceStateReason *reason)
+static void
+real_ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 {
-	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
-	NMDeviceClass *parent_class;
+	NMConnection *connection;
+	NMSettingWireless *s_wifi;
+	guint32 mtu;
 
-	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
-	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
+	connection = nm_act_request_get_connection (nm_device_get_act_request (device));
+	g_assert (connection);
+	s_wifi = nm_connection_get_setting_wireless (connection);
+	g_assert (s_wifi);
 
-	/* Chain up to parent */
-	parent_class = NM_DEVICE_CLASS (nm_device_wifi_parent_class);
-	ret = parent_class->act_stage4_get_ip4_config (dev, config, reason);
-
-	if ((ret == NM_ACT_STAGE_RETURN_SUCCESS) && *config) {
-		NMConnection *connection;
-		NMSettingWireless *s_wireless;
-		guint32 mtu;
-
-		connection = nm_act_request_get_connection (nm_device_get_act_request (dev));
-		g_assert (connection);
-		s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
-		g_assert (s_wireless);
-
-		/* MTU override */
-		mtu = nm_setting_wireless_get_mtu (s_wireless);
-		if (mtu)
-			nm_ip4_config_set_mtu (*config, mtu);
-	}
-
-	return ret;
+	/* MTU override */
+	mtu = nm_setting_wireless_get_mtu (s_wifi);
+	if (mtu)
+		nm_ip4_config_set_mtu (config, mtu);
 }
 
 static gboolean
@@ -3290,7 +3274,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 
 	parent_class->act_stage1_prepare = real_act_stage1_prepare;
 	parent_class->act_stage2_config = real_act_stage2_config;
-	parent_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
+	parent_class->ip4_config_pre_commit = real_ip4_config_pre_commit;
 	parent_class->act_stage4_ip4_config_timeout = real_act_stage4_ip4_config_timeout;
 	parent_class->act_stage4_ip6_config_timeout = real_act_stage4_ip6_config_timeout;
 	parent_class->deactivate = real_deactivate;
