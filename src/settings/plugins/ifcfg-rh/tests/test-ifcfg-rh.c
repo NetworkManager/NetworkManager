@@ -10141,6 +10141,207 @@ test_write_wifi_wpa_then_open (void)
 }
 
 static void
+test_write_wifi_wpa_then_wep_with_perms (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	char *uuid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GByteArray *ssid;
+	GSList *perm_list = NULL;
+	const unsigned char ssid_data[] = "SomeSSID";
+
+	/* Test that writing out a WPA config then changing that to a WEP
+	 * config works and doesn't cause infinite loop or other issues.
+	 */
+
+	connection = nm_connection_new ();
+	g_assert (connection);
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	g_assert (s_con);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	perm_list = g_slist_append (perm_list, "user:superman:");
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "random wifi connection 2",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_PERMISSIONS, perm_list,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+	g_slist_free (perm_list);
+	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 1,
+                "test_write_wifi_wpa_then_wep_with_perms", "unexpected failure adding valid user permisson");
+
+	/* Wifi setting */
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	g_assert (s_wifi);
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	ssid = g_byte_array_sized_new (sizeof (ssid_data));
+	g_byte_array_append (ssid, ssid_data, sizeof (ssid_data));
+
+	g_object_set (s_wifi,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NM_SETTING_WIRELESS_MODE, "infrastructure",
+	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	              NULL);
+
+	g_byte_array_free (ssid, TRUE);
+
+	/* Wireless security setting */
+	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+	g_assert (s_wsec);
+	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+
+	g_object_set (s_wsec,
+	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk",
+	              NM_SETTING_WIRELESS_SECURITY_PSK, "My cool PSK",
+	              NULL);
+
+	nm_setting_wireless_security_add_proto (s_wsec, "wpa");
+	nm_setting_wireless_security_add_pairwise (s_wsec, "tkip");
+	nm_setting_wireless_security_add_group (s_wsec, "tkip");
+
+	nm_setting_wireless_security_add_proto (s_wsec, "rsn");
+	nm_setting_wireless_security_add_pairwise (s_wsec, "ccmp");
+	nm_setting_wireless_security_add_group (s_wsec, "ccmp");
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	g_assert (s_ip4);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	g_assert (s_ip6);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6,
+	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NULL);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_assert (testfile);
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_WIRELESS,
+	                               NULL,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &routefile,
+	                               &route6file,
+	                               &error,
+	                               &ignore_error);
+	g_assert_no_error (error);
+	g_assert (reread);
+
+	success = nm_connection_verify (reread, &error);
+	g_assert_no_error (error);
+
+	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
+	g_assert (success);
+
+	g_free (unmanaged);
+	unmanaged = NULL;
+	g_free (routefile);
+	routefile = NULL;
+	g_free (route6file);
+	route6file = NULL;
+	g_object_unref (reread);
+
+	/* Now change the connection to WEP and recheck */
+	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+	g_assert (s_wsec);
+	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+
+	g_object_set (s_wsec,
+	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none",
+	              NULL);
+	nm_setting_wireless_security_set_wep_key (s_wsec, 0, "abraka  dabra");
+
+	/* Write it back out */
+	success = writer_update_connection (connection,
+	                                    TEST_SCRATCH_DIR "/network-scripts/",
+	                                    testfile,
+	                                    keyfile,
+	                                    &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	g_free (keyfile);
+	keyfile = NULL;
+
+	/* re-read it for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_WIRELESS,
+	                               NULL,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &routefile,
+	                               &route6file,
+	                               &error,
+	                               &ignore_error);
+	g_assert_no_error (error);
+
+	g_assert (reread);
+
+	success = nm_connection_verify (reread, &error);
+	g_assert_no_error (error);
+
+	success = nm_connection_compare (connection, reread,
+	                                 NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS |
+	                                 NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS);
+
+	ASSERT (success,
+	        "test_write_wifi_wpa_then_wep_with_perms", "failed to compare connections");
+
+	unlink (keyfile);
+	unlink (testfile);
+
+	g_free (testfile);
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+	g_object_unref (reread);
+
+	g_object_unref (connection);
+}
+
+static void
 test_write_wifi_dynamic_wep_leap (void)
 {
 	NMConnection *connection;
@@ -11713,6 +11914,7 @@ int main (int argc, char **argv)
 	test_write_wifi_wpa_eap_ttls_mschapv2 ();
 	test_write_wifi_dynamic_wep_leap ();
 	test_write_wifi_wpa_then_open ();
+	test_write_wifi_wpa_then_wep_with_perms ();
 	test_write_wired_qeth_dhcp ();
 	test_write_wired_ctc_dhcp ();
 	test_write_permissions ();
