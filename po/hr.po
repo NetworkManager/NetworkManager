@@ -1,220 +1,2180 @@
 # NetworkManager
 # Copyright (C) Red Hat, Inc.
 # This file is distributed under the same license as the NetworkManager package.
+#
 # Tomislav Vujec <tvujec@redhat.com>, 2005.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager \n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-02-04 17:28+0100\n"
-"PO-Revision-Date: 2005-02-04 01:08+0100\n"
-"Last-Translator: Tomislav Vujec <tvujec@redhat.com>\n"
+"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
+"product=NetworkManager&keywords=I18N+L10N&component=general\n"
+"POT-Creation-Date: 2011-05-18 03:24+0000\n"
+"PO-Revision-Date: 2011-09-14 02:06+0200\n"
+"Last-Translator: Tomislav Krznar <tomislav.krznar@gmail.com>\n"
 "Language-Team: Croatian <hr@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<"
+"=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Language: hr\n"
+"X-Generator: Lokalize 1.2\n"
 
-#: info-daemon/networks.glade:11
-msgid "Modify Wireless Networks"
-msgstr "Postavke bežičnih mreža"
+#: ../cli/src/connections.c:64 ../cli/src/connections.c:78
+#: ../cli/src/devices.c:101 ../cli/src/devices.c:114 ../cli/src/devices.c:124
+#: ../cli/src/devices.c:134 ../cli/src/devices.c:148 ../cli/src/devices.c:162
+#: ../cli/src/devices.c:173 ../cli/src/devices.c:184 ../cli/src/devices.c:193
+#: ../cli/src/devices.c:202 ../cli/src/devices.c:224
+msgid "NAME"
+msgstr "NAZIV"
 
-#: info-daemon/networks.glade:92
-msgid "<span weight=\"bold\">Wireless Networks:</span>"
-msgstr "<span weight=\"bold\">Bežične mreže:</span>"
+#. 0
+#: ../cli/src/connections.c:65 ../cli/src/connections.c:79
+msgid "UUID"
+msgstr "UUID"
 
-#: info-daemon/passphrase.glade:9
-msgid "Wireless Network Key Required"
-msgstr "Potreban je ključ bežične mreže"
+#. 1
+#: ../cli/src/connections.c:66
+msgid "DEVICES"
+msgstr "UREĐAJI"
 
-#: info-daemon/passphrase.glade:52
-msgid "_Login to Network"
-msgstr "_Prijava na mrežu"
+#. 2
+#: ../cli/src/connections.c:67
+msgid "DEFAULT"
+msgstr "UOBIČAJENO"
 
-#: info-daemon/passphrase.glade:100
+#. 3
+#: ../cli/src/connections.c:68
+#, fuzzy
+msgid "SPEC-OBJECT"
+msgstr "SPEC-OBJEKT"
+
+#. 4
+#: ../cli/src/connections.c:69
+msgid "VPN"
+msgstr "VPN"
+
+#. 5
+#. 6
+#. 2
+#. 11
+#. 5
+#: ../cli/src/connections.c:70 ../cli/src/connections.c:85
+#: ../cli/src/devices.c:69 ../cli/src/devices.c:214 ../cli/src/devices.c:230
+msgid "DBUS-PATH"
+msgstr "DBUS-PUTANJA"
+
+#. 1
+#. 0
+#. 1
+#. 2
+#: ../cli/src/connections.c:80 ../cli/src/devices.c:67
+#: ../cli/src/devices.c:103 ../cli/src/devices.c:227
+msgid "TYPE"
+msgstr "TIP"
+
+#. 2
+#: ../cli/src/connections.c:81
+#, fuzzy
+msgid "TIMESTAMP"
+msgstr "VREMENSKA OZNAKA"
+
+#. 3
+#: ../cli/src/connections.c:82
+#, fuzzy
+msgid "TIMESTAMP-REAL"
+msgstr "VREMENSKA OZNAKA-STVARNO"
+
+#. 4
+#: ../cli/src/connections.c:83
+#, fuzzy
+msgid "AUTOCONNECT"
+msgstr "AUTOMATSKO SPAJANJE"
+
+#. 5
+#: ../cli/src/connections.c:84
+#, fuzzy
+msgid "READONLY"
+msgstr "SAMO ZA ČITANJE"
+
+#: ../cli/src/connections.c:167
+#, c-format
 msgid ""
-"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
-"Network</span>\n"
+"Usage: nmcli con { COMMAND | help }\n"
+"  COMMAND := { list | status | up | down }\n"
 "\n"
-"A passphrase or encryption key is required to access the wireless network '%"
-"s'."
+"  list [id <id> | uuid <id>]\n"
+"  status\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [nsp <name>] [--"
+"nowait] [--timeout <timeout>]\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--timeout "
+"<timeout>]\n"
+"  down id <id> | uuid <id>\n"
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">Potrebna je lozinka za bežičnu mrežu</"
-"span>\n"
+"Uporaba: nmcli con { NAREDBA | help }\n"
+"  COMMAND := { list | status | up | down }\n"
 "\n"
-"Za pristup mreži '%s', potrebna je lozinka ili ključ."
+"  list [id <id> | uuid <id>]\n"
+"  status\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [nsp <name>] [-- "
+"nowait] [--timeout <timeout>]\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--timeout "
+"<timeout>]\n"
+"  down id <id> | uuid <id>\n"
 
-#: info-daemon/passphrase.glade:129 panel-applet/essid.glade:246
-msgid "Key Type:"
-msgstr "Tip ključa:"
+#: ../cli/src/connections.c:220 ../cli/src/connections.c:542
+#, c-format
+msgid "Error: 'con list': %s"
+msgstr "Greška: 'con list': %s"
 
-#: info-daemon/passphrase.glade:150 panel-applet/essid.glade:315
+#: ../cli/src/connections.c:222 ../cli/src/connections.c:544
+#, c-format
+msgid "Error: 'con list': %s; allowed fields: %s"
+msgstr "Greška: 'con list': %s; dozvoljena polja: %s"
+
+#: ../cli/src/connections.c:230
+msgid "Connection details"
+msgstr "Detalji veze"
+
+#: ../cli/src/connections.c:417
+msgid "never"
+msgstr "nikad"
+
+#. "CAPABILITIES"
+#. Print header
+#. "WIFI-PROPERTIES"
+#: ../cli/src/connections.c:418 ../cli/src/connections.c:419
+#: ../cli/src/connections.c:597 ../cli/src/connections.c:599
+#: ../cli/src/devices.c:509 ../cli/src/devices.c:562 ../cli/src/devices.c:687
+#: ../cli/src/devices.c:713 ../cli/src/devices.c:714 ../cli/src/devices.c:715
+#: ../cli/src/devices.c:716 ../cli/src/devices.c:717 ../cli/src/settings.c:520
+#: ../cli/src/settings.c:563 ../cli/src/settings.c:663
+#: ../cli/src/settings.c:937 ../cli/src/settings.c:938
+#: ../cli/src/settings.c:940 ../cli/src/settings.c:942
+#: ../cli/src/settings.c:1067 ../cli/src/settings.c:1068
+#: ../cli/src/settings.c:1069 ../cli/src/settings.c:1148
+#: ../cli/src/settings.c:1149 ../cli/src/settings.c:1150
+#: ../cli/src/settings.c:1151 ../cli/src/settings.c:1152
+#: ../cli/src/settings.c:1153 ../cli/src/settings.c:1154
+#: ../cli/src/settings.c:1155 ../cli/src/settings.c:1156
+#: ../cli/src/settings.c:1157 ../cli/src/settings.c:1158
+#: ../cli/src/settings.c:1159 ../cli/src/settings.c:1160
+#: ../cli/src/settings.c:1235
+msgid "yes"
+msgstr "da"
+
+#: ../cli/src/connections.c:418 ../cli/src/connections.c:419
+#: ../cli/src/connections.c:597 ../cli/src/connections.c:599
+#: ../cli/src/devices.c:509 ../cli/src/devices.c:562 ../cli/src/devices.c:687
+#: ../cli/src/devices.c:713 ../cli/src/devices.c:714 ../cli/src/devices.c:715
+#: ../cli/src/devices.c:716 ../cli/src/devices.c:717 ../cli/src/settings.c:520
+#: ../cli/src/settings.c:522 ../cli/src/settings.c:563
+#: ../cli/src/settings.c:663 ../cli/src/settings.c:937
+#: ../cli/src/settings.c:938 ../cli/src/settings.c:940
+#: ../cli/src/settings.c:942 ../cli/src/settings.c:1067
+#: ../cli/src/settings.c:1068 ../cli/src/settings.c:1069
+#: ../cli/src/settings.c:1148 ../cli/src/settings.c:1149
+#: ../cli/src/settings.c:1150 ../cli/src/settings.c:1151
+#: ../cli/src/settings.c:1152 ../cli/src/settings.c:1153
+#: ../cli/src/settings.c:1154 ../cli/src/settings.c:1155
+#: ../cli/src/settings.c:1156 ../cli/src/settings.c:1157
+#: ../cli/src/settings.c:1158 ../cli/src/settings.c:1159
+#: ../cli/src/settings.c:1160 ../cli/src/settings.c:1235
+msgid "no"
+msgstr "ne"
+
+#: ../cli/src/connections.c:493
+#| msgid "C_onnect"
+msgid "Connection list"
+msgstr "Lista veza"
+
+#: ../cli/src/connections.c:506 ../cli/src/connections.c:1378
+#: ../cli/src/connections.c:1393 ../cli/src/connections.c:1402
+#: ../cli/src/connections.c:1412 ../cli/src/connections.c:1424
+#: ../cli/src/connections.c:1519 ../cli/src/devices.c:1190
+#: ../cli/src/devices.c:1200 ../cli/src/devices.c:1314
+#: ../cli/src/devices.c:1321 ../cli/src/devices.c:1534
+#: ../cli/src/devices.c:1541
+#, c-format
+msgid "Error: %s argument is missing."
+msgstr "Greška: nedostaje argument %s."
+
+#: ../cli/src/connections.c:519
+#, c-format
+msgid "Error: %s - no such connection."
+msgstr "Greška: %s - veza ne postoji."
+
+#: ../cli/src/connections.c:525 ../cli/src/connections.c:1437
+#: ../cli/src/connections.c:1536 ../cli/src/devices.c:987
+#: ../cli/src/devices.c:1067 ../cli/src/devices.c:1214
+#: ../cli/src/devices.c:1327 ../cli/src/devices.c:1547
+#, c-format
+msgid "Unknown parameter: %s\n"
+msgstr "Nepoznati parametar: %s\n"
+
+#: ../cli/src/connections.c:534
+#, c-format
+msgid "Error: no valid parameter specified."
+msgstr "Greška: nije određen važeći parametar."
+
+#: ../cli/src/connections.c:549 ../cli/src/connections.c:1627
+#: ../cli/src/devices.c:1755 ../cli/src/network-manager.c:463
+#, c-format
+msgid "Error: %s."
+msgstr "Greška: %s."
+
+#: ../cli/src/connections.c:637
+#, c-format
+msgid "Error: 'con status': %s"
+msgstr "Greška: 'con status': %s"
+
+#: ../cli/src/connections.c:639
+#, c-format
+msgid "Error: 'con status': %s; allowed fields: %s"
+msgstr "Greška: 'con status': %s; dozvoljena polja: %s"
+
+#: ../cli/src/connections.c:647 ../cli/src/connections.c:1452
+#: ../cli/src/connections.c:1551 ../cli/src/devices.c:1014
+#: ../cli/src/devices.c:1076 ../cli/src/devices.c:1229
+#: ../cli/src/devices.c:1357 ../cli/src/devices.c:1576
+#, c-format
+msgid "Error: Can't find out if NetworkManager is running: %s."
+msgstr "Greška: Ne mogu otkriti je li NetworkManager pokrenut: %s."
+
+#: ../cli/src/connections.c:651 ../cli/src/connections.c:1456
+#: ../cli/src/connections.c:1555 ../cli/src/devices.c:1018
+#: ../cli/src/devices.c:1080 ../cli/src/devices.c:1233
+#: ../cli/src/devices.c:1361 ../cli/src/devices.c:1580
+#, c-format
+#| msgid "NetworkManager is not running"
+msgid "Error: NetworkManager is not running."
+msgstr "Greška: NetworkManager nije pokrenut."
+
+#: ../cli/src/connections.c:659
+#| msgid "Wired network connection"
+msgid "Active connections"
+msgstr "Aktivne veze"
+
+#: ../cli/src/connections.c:1095
+#, c-format
+msgid "no active connection on device '%s'"
+msgstr "nema aktivne veze na uređaju '%s'"
+
+#: ../cli/src/connections.c:1103
+#, c-format
+msgid "no active connection or device"
+msgstr "nema aktivne veze ili uređaja"
+
+#: ../cli/src/connections.c:1174
+#, c-format
+msgid "device '%s' not compatible with connection '%s'"
+msgstr "uređaj '%s' ne podržava vezu '%s'"
+
+#: ../cli/src/connections.c:1176
+#, c-format
+msgid "no device found for connection '%s'"
+msgstr "nije pronađen uređaj za vezu '%s'"
+
+#: ../cli/src/connections.c:1187
+msgid "activating"
+msgstr "aktiviram"
+
+#: ../cli/src/connections.c:1189
+msgid "activated"
+msgstr "aktivirano"
+
+#: ../cli/src/connections.c:1191 ../cli/src/devices.c:304
+msgid "deactivating"
+msgstr "deaktiviram"
+
+#: ../cli/src/connections.c:1194 ../cli/src/connections.c:1217
+#: ../cli/src/connections.c:1250 ../cli/src/devices.c:308
+#: ../cli/src/devices.c:688 ../cli/src/network-manager.c:118
+#: ../cli/src/network-manager.c:180 ../cli/src/network-manager.c:183
+#: ../cli/src/network-manager.c:192 ../cli/src/network-manager.c:298
+#: ../cli/src/network-manager.c:353 ../cli/src/network-manager.c:391
+#: ../cli/src/network-manager.c:430 ../cli/src/settings.c:485
+#: ../cli/src/utils.c:396
+msgid "unknown"
+msgstr "nepoznato"
+
+#: ../cli/src/connections.c:1203
+msgid "VPN connecting (prepare)"
+msgstr "VPN spajanje (priprema)"
+
+#: ../cli/src/connections.c:1205
+msgid "VPN connecting (need authentication)"
+msgstr "VPN spajanje (potrebna potvrda)"
+
+#: ../cli/src/connections.c:1207
+#| msgid "No network connection"
+msgid "VPN connecting"
+msgstr "VPN spajanje"
+
+#: ../cli/src/connections.c:1209
+msgid "VPN connecting (getting IP configuration)"
+msgstr "VPN spajanje (dohvat IP konfiguracije)"
+
+#: ../cli/src/connections.c:1211
+msgid "VPN connected"
+msgstr "VPN spojen"
+
+#: ../cli/src/connections.c:1213
+msgid "VPN connection failed"
+msgstr "VPN spajanje neuspješno"
+
+#: ../cli/src/connections.c:1215
+msgid "VPN disconnected"
+msgstr "VPN odspojen"
+
+#: ../cli/src/connections.c:1226
+msgid "unknown reason"
+msgstr "nepoznat razlog"
+
+#: ../cli/src/connections.c:1228
+msgid "none"
+msgstr "nijedan"
+
+#: ../cli/src/connections.c:1230
+msgid "the user was disconnected"
+msgstr "korisnik je odspojen"
+
+#: ../cli/src/connections.c:1232
+#| msgid "Wireless network connection"
+msgid "the base network connection was interrupted"
+msgstr "osnovna mrežna veza je prekinuta"
+
+#: ../cli/src/connections.c:1234
+msgid "the VPN service stopped unexpectedly"
+msgstr "VPN servis je neočekivano zaustavljen"
+
+#: ../cli/src/connections.c:1236
+msgid "the VPN service returned invalid configuration"
+msgstr "VPN servis je vratio nevažeću konfiguraciju"
+
+#: ../cli/src/connections.c:1238
+msgid "the connection attempt timed out"
+msgstr "vrijeme spajanja je prekoračeno"
+
+#: ../cli/src/connections.c:1240
+msgid "the VPN service did not start in time"
+msgstr "VPN servis nije pokrenut pravovremeno"
+
+#: ../cli/src/connections.c:1242
+msgid "the VPN service failed to start"
+msgstr "VPN servis nije pokrenut"
+
+#: ../cli/src/connections.c:1244
+msgid "no valid VPN secrets"
+msgstr "nema važećih VPN tajni"
+
+#: ../cli/src/connections.c:1246
+msgid "invalid VPN secrets"
+msgstr "nevažeće VPN tajne"
+
+#: ../cli/src/connections.c:1248
+msgid "the connection was removed"
+msgstr "veza je uklonjena"
+
+#: ../cli/src/connections.c:1262
+#, c-format
+msgid "state: %s\n"
+msgstr "stanje: %s\n"
+
+#: ../cli/src/connections.c:1265 ../cli/src/connections.c:1291
+#, c-format
+msgid "Connection activated\n"
+msgstr "Veza aktivirana\n"
+
+#: ../cli/src/connections.c:1268
+#, c-format
+msgid "Error: Connection activation failed."
+msgstr "Greška: Aktivacija veze neuspješna."
+
+#: ../cli/src/connections.c:1287
+#, c-format
+msgid "state: %s (%d)\n"
+msgstr "stanje: %s (%d)\n"
+
+#: ../cli/src/connections.c:1297
+#, c-format
+msgid "Error: Connection activation failed: %s."
+msgstr "Greška: Aktivacija veze neuspješna: %s."
+
+#: ../cli/src/connections.c:1314 ../cli/src/devices.c:1136
+#, c-format
+msgid "Error: Timeout %d sec expired."
+msgstr "Greška: Vrijeme spajanja %d sekundi prekoračeno."
+
+#: ../cli/src/connections.c:1327
+#, c-format
+msgid "Error: Connection activation failed: %s"
+msgstr "Greška: Aktivacija veze neuspješna: %s"
+
+#: ../cli/src/connections.c:1333
+#, c-format
+msgid "Active connection state: %s\n"
+msgstr "Stanje aktivne veze: %s\n"
+
+#: ../cli/src/connections.c:1334
+#, c-format
+msgid "Active connection path: %s\n"
+msgstr "Putanja aktivne veze: %s\n"
+
+#: ../cli/src/connections.c:1386 ../cli/src/connections.c:1527
+#, c-format
+msgid "Error: Unknown connection: %s."
+msgstr "Greška: Nepoznata veza: %s."
+
+#: ../cli/src/connections.c:1432 ../cli/src/devices.c:1208
+#, c-format
+msgid "Error: timeout value '%s' is not valid."
+msgstr "Greška: vrijednost vremena spajanja '%s' nije važeća."
+
+#: ../cli/src/connections.c:1445 ../cli/src/connections.c:1544
+#, c-format
+msgid "Error: id or uuid has to be specified."
+msgstr "Greška: id ili uuid mora biti određen."
+
+#: ../cli/src/connections.c:1473
+#, c-format
+msgid "Error: No suitable device found: %s."
+msgstr "Greška: Prikladni uređaji nisu pronađeni: %s."
+
+#: ../cli/src/connections.c:1475
+#, c-format
+msgid "Error: No suitable device found."
+msgstr "Greška: Prikladni uređaji nisu pronađeni."
+
+#: ../cli/src/connections.c:1580
+#, c-format
+msgid "Warning: Connection not active\n"
+msgstr "Upozorenje: Veza nije aktivna\n"
+
+#: ../cli/src/connections.c:1618
+#, c-format
+msgid "Error: 'con' command '%s' is not valid."
+msgstr "Greška: 'con' naredba '%s' nije važeća."
+
+#: ../cli/src/connections.c:1683
+#, c-format
+msgid "Error: could not connect to D-Bus."
+msgstr "Greška: neuspješno spajanje na D-Bus."
+
+#: ../cli/src/connections.c:1690
+#, c-format
+msgid "Error: Could not get system settings."
+msgstr "Greška: Neuspješan dohvat postavki sustava."
+
+#: ../cli/src/connections.c:1700
+#, c-format
+msgid "Error: Can't obtain connections: settings service is not running."
+msgstr "Greška: Neuspješan dohvat veza: servis postavki nije pokrenut."
+
+#. 0
+#. 9
+#. 3
+#: ../cli/src/devices.c:66 ../cli/src/devices.c:102 ../cli/src/devices.c:212
+#: ../cli/src/devices.c:228
+msgid "DEVICE"
+msgstr "UREĐAJ"
+
+#. 1
+#. 4
+#. 1
+#: ../cli/src/devices.c:68 ../cli/src/devices.c:106
+#: ../cli/src/network-manager.c:39
+msgid "STATE"
+msgstr "STANJE"
+
+#: ../cli/src/devices.c:78
+msgid "GENERAL"
+msgstr "OPĆENITO"
+
+#. 0
+#: ../cli/src/devices.c:79
+msgid "CAPABILITIES"
+msgstr "MOGUĆNOSTI"
+
+#. 1
+#: ../cli/src/devices.c:80
+msgid "WIFI-PROPERTIES"
+msgstr "WIFI-SVOJSTVA"
+
+#. 2
+#: ../cli/src/devices.c:81
+msgid "AP"
+msgstr "AP"
+
+#. 3
+#: ../cli/src/devices.c:82
+#, fuzzy
+msgid "WIRED-PROPERTIES"
+msgstr "ŽIČNO-SVOJSTVA"
+
+#. 4
+#: ../cli/src/devices.c:83
+msgid "WIMAX-PROPERTIES"
+msgstr "WIMAX-SVOJSTVA"
+
+#. 5
+#. 0
+#: ../cli/src/devices.c:84 ../cli/src/devices.c:225
+msgid "NSP"
+msgstr "NSP"
+
+#. 6
+#: ../cli/src/devices.c:85
+msgid "IP4-SETTINGS"
+msgstr "IP4-POSTAVKE"
+
+#. 7
+#: ../cli/src/devices.c:86
+msgid "IP4-DNS"
+msgstr "IP4-DNS"
+
+#. 8
+#: ../cli/src/devices.c:87
+msgid "IP6-SETTINGS"
+msgstr "IP6-POSTAVKE"
+
+#. 9
+#: ../cli/src/devices.c:88
+msgid "IP6-DNS"
+msgstr "IP6-DNS"
+
+#. 2
+#: ../cli/src/devices.c:104
+#, fuzzy
+msgid "DRIVER"
+msgstr "DRIVER"
+
+#. 3
+#: ../cli/src/devices.c:105
+#, fuzzy
+msgid "HWADDR"
+msgstr "HWADDR"
+
+#. 0
+#: ../cli/src/devices.c:115
+#, fuzzy
+msgid "CARRIER-DETECT"
+msgstr "OTKRIVANJE-NOSIOCA"
+
+#. 1
+#: ../cli/src/devices.c:116
+msgid "SPEED"
+msgstr "BRZINA"
+
+#. 0
+#: ../cli/src/devices.c:125
+msgid "CARRIER"
+msgstr "NOSIOC"
+
+#. 0
+#: ../cli/src/devices.c:135
+msgid "WEP"
+msgstr "WEP"
+
+#. 1
+#: ../cli/src/devices.c:136
+msgid "WPA"
+msgstr "WPA"
+
+#. 2
+#: ../cli/src/devices.c:137
+msgid "WPA2"
+msgstr "WPA2"
+
+#. 3
+#: ../cli/src/devices.c:138
+msgid "TKIP"
+msgstr "TKIP"
+
+#. 4
+#: ../cli/src/devices.c:139
+msgid "CCMP"
+msgstr "CCMP"
+
+#. 0
+#: ../cli/src/devices.c:149
+#, fuzzy
+msgid "CTR-FREQ"
+msgstr "CTR-FREQ"
+
+#. 1
+#: ../cli/src/devices.c:150
+msgid "RSSI"
+msgstr "RSSI"
+
+#. 2
+#: ../cli/src/devices.c:151
+msgid "CINR"
+msgstr "CINR"
+
+#. 3
+#: ../cli/src/devices.c:152
+#, fuzzy
+msgid "TX-POW"
+msgstr "TX-POW"
+
+#. 4
+#: ../cli/src/devices.c:153
+msgid "BSID"
+msgstr "BSID"
+
+#. 0
+#: ../cli/src/devices.c:163 ../cli/src/devices.c:174
+msgid "ADDRESS"
+msgstr "ADRESA"
+
+#. 1
+#: ../cli/src/devices.c:164 ../cli/src/devices.c:175
+msgid "PREFIX"
+msgstr "PREFIKS"
+
+#. 2
+#: ../cli/src/devices.c:165 ../cli/src/devices.c:176
+#, fuzzy
+msgid "GATEWAY"
+msgstr "GATEWAY"
+
+#. 0
+#: ../cli/src/devices.c:185 ../cli/src/devices.c:194
+msgid "DNS"
+msgstr "DNS"
+
+#. 0
+#: ../cli/src/devices.c:203
+msgid "SSID"
+msgstr "SSID"
+
+#. 1
+#: ../cli/src/devices.c:204
+msgid "BSSID"
+msgstr "BSSID"
+
+#. 2
+#: ../cli/src/devices.c:205
+#, fuzzy
+msgid "MODE"
+msgstr "NAČIN"
+
+#. 3
+#: ../cli/src/devices.c:206
+msgid "FREQ"
+msgstr "FREKVENCIJA"
+
+#. 4
+#: ../cli/src/devices.c:207
+msgid "RATE"
+msgstr "BRZINA"
+
+#. 5
+#. 1
+#: ../cli/src/devices.c:208 ../cli/src/devices.c:226
+msgid "SIGNAL"
+msgstr "SIGNAL"
+
+#. 6
+#: ../cli/src/devices.c:209
+msgid "SECURITY"
+msgstr "SIGURNOST"
+
+#. 7
+#: ../cli/src/devices.c:210
+msgid "WPA-FLAGS"
+msgstr "WPA-ZASTAVICE"
+
+#. 8
+#: ../cli/src/devices.c:211
+msgid "RSN-FLAGS"
+msgstr "RSN-ZASTAVICE"
+
+#. 10
+#. 4
+#: ../cli/src/devices.c:213 ../cli/src/devices.c:229
+msgid "ACTIVE"
+msgstr "AKTIVAN"
+
+#: ../cli/src/devices.c:256
+#, c-format
 msgid ""
-"128-bit Passphrase (WEP)\n"
-"Ascii Key (WEP)\n"
-"Hex Key (WEP)"
+"Usage: nmcli dev { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | list | disconnect | wifi | wimax }\n"
+"\n"
+"  COMMAND := { status | list | disconnect | wifi }\n"
+"\n"
+"  status\n"
+"  list [iface <iface>]\n"
+"  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
+"  wifi [list [iface <iface>] [hwaddr <hwaddr>]]\n"
+"  wimax [list [iface <iface>] [nsp <name>]]\n"
+"\n"
 msgstr ""
-"128-bitna lozinka (WEP)\n"
-"Slovčani ključ (WEP)\n"
-"Heksadecimalni ključ (WEP)"
+"Uporaba: nmcli dev { NAREDBA | help }\n"
+"\n"
+"  NAREDBA := { status | list | disconnect | wifi | wimax }\n"
+"\n"
+"  NAREDBA := { status | list | disconnect | wifi }\n"
+"\n"
+"  status\n"
+"  list [iface <iface>]\n"
+"  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
+"  wifi [list [iface <iface>] [hwaddr <hwaddr>]]\n"
+"  wimax [list [iface <iface>] [nsp <name>]]\n"
+"\n"
 
-#: info-daemon/passphrase.glade:181
-#: info-daemon/NetworkManagerInfoPassphraseDialog.c:139
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:149
-#: panel-applet/essid.glade:270
-msgid "Passphrase:"
-msgstr "Lozinka:"
+#: ../cli/src/devices.c:284
+msgid "unmanaged"
+msgstr "neupravljan"
 
-#: info-daemon/passphrase.glade:209 panel-applet/essid.glade:203
-#: panel-applet/essid.glade:300
-msgid "*"
-msgstr "*"
+#: ../cli/src/devices.c:286
+msgid "unavailable"
+msgstr "nedostupan"
 
-#: info-daemon/NetworkManagerInfoPassphraseDialog.c:142
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:152
-msgid "Ascii Key:"
-msgstr "Slovčani ključ"
+#: ../cli/src/devices.c:288 ../cli/src/network-manager.c:115
+#| msgid "C_onnect"
+msgid "disconnected"
+msgstr "odspojen"
 
-#: info-daemon/NetworkManagerInfoPassphraseDialog.c:145
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:155
-msgid "Hex Key:"
-msgstr "Heksadecimalni ključ"
+#: ../cli/src/devices.c:290
+msgid "connecting (prepare)"
+msgstr "spajanje (priprema)"
 
-#: info-daemon/NetworkManagerInfoVPN.c:157
+#: ../cli/src/devices.c:292
+msgid "connecting (configuring)"
+msgstr "spajanje (konfiguracija)"
+
+#: ../cli/src/devices.c:294
+msgid "connecting (need authentication)"
+msgstr "spajanje (potrebna potvrda)"
+
+#: ../cli/src/devices.c:296
+msgid "connecting (getting IP configuration)"
+msgstr "spajanje (dohvat IP konfiguracije)"
+
+#: ../cli/src/devices.c:298
+msgid "connecting (checking IP connectivity)"
+msgstr "spajanje (provjera IP spojivosti)"
+
+#: ../cli/src/devices.c:300
+msgid "connecting (starting secondary connections)"
+msgstr "spajanje (pokretanje sekundarnih veza)"
+
+#: ../cli/src/devices.c:302 ../cli/src/network-manager.c:111
+#| msgid "C_onnect"
+msgid "connected"
+msgstr "spojen"
+
+#: ../cli/src/devices.c:306
+msgid "connection failed"
+msgstr "spajanje neuspješno"
+
+#: ../cli/src/devices.c:331 ../cli/src/devices.c:341 ../cli/src/devices.c:501
+#: ../cli/src/devices.c:545
+msgid "Unknown"
+msgstr "Nepoznat"
+
+#: ../cli/src/devices.c:374
+msgid "(none)"
+msgstr "(nijedan)"
+
+#: ../cli/src/devices.c:399
 #, c-format
-msgid "You must log in to access the private network %s"
-msgstr "Prijava je potrebna za pristup na mrežu %s"
+msgid "%s: error converting IP4 address 0x%X"
+msgstr "%s: greška pretvorbe IP4 adrese 0x%X"
 
-#: panel-applet/NMWirelessApplet.c:313
-msgid "No network connection"
-msgstr "Nema spoja na mrežu"
-
-#: panel-applet/NMWirelessApplet.c:318
-msgid "Wired network connection"
-msgstr "Spoj na žičanu mrežu"
-
-#: panel-applet/NMWirelessApplet.c:323
-msgid "Connecting to a wired network..."
-msgstr "Spajanje na žičanu mrežu..."
-
-#: panel-applet/NMWirelessApplet.c:332
-msgid "Connected to an Ad-Hoc wireless network"
-msgstr "Spoj na Ad-Hoc bežičnu mrežu"
-
-#: panel-applet/NMWirelessApplet.c:346
+#: ../cli/src/devices.c:470
 #, c-format
-msgid "Wireless network connection to '%s' (%d%%)"
-msgstr "Spoj na bežičnu mrežu '%s' (%d%%)"
+msgid "%u MHz"
+msgstr "%u MHz"
 
-#: panel-applet/NMWirelessApplet.c:351
-msgid "Wireless network connection"
-msgstr "Spoj na bežičnu mrežu"
-
-#: panel-applet/NMWirelessApplet.c:356
+#: ../cli/src/devices.c:471
 #, c-format
-msgid "Connecting to wireless network '%s'..."
-msgstr "Spajanje na bežičnu mrežu '%s'..."
+msgid "%u MB/s"
+msgstr "%u MB/s"
 
-#: panel-applet/NMWirelessApplet.c:362
-msgid "NetworkManager is not running"
-msgstr "NetworkManager nije pokrenut"
+#: ../cli/src/devices.c:480
+msgid "Encrypted: "
+msgstr "Zaštićeno: "
 
-#: panel-applet/NMWirelessApplet.c:367
-msgid "Scanning for wireless networks..."
-msgstr "Potraga za bežičnim mrežama..."
+#: ../cli/src/devices.c:485
+msgid "WEP "
+msgstr "WEP "
 
-#: panel-applet/NMWirelessApplet.c:690
-msgid "Other Wireless Networks..."
-msgstr "Ostale bežične mreže..."
+#: ../cli/src/devices.c:487
+msgid "WPA "
+msgstr "WPA "
 
-#: panel-applet/NMWirelessApplet.c:711
-msgid "Create new Wireless Network..."
-msgstr "Stvori novu bečičnu mrežu..."
+#: ../cli/src/devices.c:489
+msgid "WPA2 "
+msgstr "WPA2 "
 
-#: panel-applet/NMWirelessApplet.c:821
-msgid "No network devices have been found"
-msgstr "Nema mrežnih uređaja"
+#: ../cli/src/devices.c:492
+msgid "Enterprise "
+msgstr "Enterprise "
 
-#: panel-applet/NMWirelessApplet.c:939
-msgid "NetworkManager is not running..."
-msgstr "NetworkManager nije pokrenut..."
+#: ../cli/src/devices.c:501
+msgid "Ad-Hoc"
+msgstr "Ad-Hoc"
 
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:228
-msgid "Create new wireless network"
-msgstr "Stvori novu bečičnu mrežu"
+#: ../cli/src/devices.c:501
+msgid "Infrastructure"
+msgstr "Infrastruktura"
 
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:229
+#: ../cli/src/devices.c:536
+msgid "Home"
+msgstr "Početna"
+
+#: ../cli/src/devices.c:539
+msgid "Partner"
+msgstr "Partner"
+
+#: ../cli/src/devices.c:542
+msgid "Roaming"
+msgstr "Roaming"
+
+#: ../cli/src/devices.c:612
+#, c-format
+msgid "Error: 'dev list': %s"
+msgstr "Greška: 'dev list': %s"
+
+#: ../cli/src/devices.c:614
+#, c-format
+msgid "Error: 'dev list': %s; allowed fields: %s"
+msgstr "Greška: 'dev list': %s; dozvoljena polja: %s"
+
+#: ../cli/src/devices.c:623
+msgid "Device details"
+msgstr "Detalji uređaja"
+
+#: ../cli/src/devices.c:657 ../cli/src/devices.c:1152 ../cli/src/utils.c:342
+msgid "(unknown)"
+msgstr "(nepoznat)"
+
+#: ../cli/src/devices.c:658
+msgid "unknown)"
+msgstr "nepoznat)"
+
+#: ../cli/src/devices.c:684
+#, c-format
+msgid "%u Mb/s"
+msgstr "%u Mb/s"
+
+#. Print header
+#. "WIRED-PROPERTIES"
+#: ../cli/src/devices.c:757
+msgid "on"
+msgstr "uključen"
+
+#: ../cli/src/devices.c:757
+msgid "off"
+msgstr "isključen"
+
+#: ../cli/src/devices.c:1004
+#, c-format
+msgid "Error: 'dev status': %s"
+msgstr "Greška: 'dev status': %s"
+
+#: ../cli/src/devices.c:1006
+#, c-format
+msgid "Error: 'dev status': %s; allowed fields: %s"
+msgstr "Greška: 'dev status': s; dozvoljena polja: %s"
+
+#: ../cli/src/devices.c:1029
+msgid "Status of devices"
+msgstr "Stanje uređaja"
+
+#: ../cli/src/devices.c:1060
+#, c-format
+msgid "Error: '%s' argument is missing."
+msgstr "Greška: nedostaje argument '%s'."
+
+#: ../cli/src/devices.c:1101 ../cli/src/devices.c:1253
+#: ../cli/src/devices.c:1389 ../cli/src/devices.c:1608
+#, c-format
+msgid "Error: Device '%s' not found."
+msgstr "Greška: Uređaj '%s' nije pronađen."
+
+#: ../cli/src/devices.c:1124
+#, c-format
+msgid "Success: Device '%s' successfully disconnected."
+msgstr "Uspjeh: Uređaj '%s' uspješno odspojen."
+
+#: ../cli/src/devices.c:1149
+#, c-format
+msgid "Error: Device '%s' (%s) disconnecting failed: %s"
+msgstr "Greška: Odspajanje uređaja '%s' (%s) neuspješno: %s"
+
+#: ../cli/src/devices.c:1157
+#, c-format
+msgid "Device state: %d (%s)\n"
+msgstr "Stanje uređaja: %d (%s) \n"
+
+#: ../cli/src/devices.c:1222
+#, c-format
+msgid "Error: iface has to be specified."
+msgstr "Greška: iface mora biti određen."
+
+#: ../cli/src/devices.c:1347
+#, c-format
+msgid "Error: 'dev wifi': %s"
+msgstr "Greška: 'dev wifi': %s"
+
+#: ../cli/src/devices.c:1349
+#, c-format
+msgid "Error: 'dev wifi': %s; allowed fields: %s"
+msgstr "Greška: 'dev wifi': %s; dozvoljena polja: %s"
+
+#: ../cli/src/devices.c:1372
+msgid "WiFi scan list"
+msgstr "WiFi rezultati skeniranja"
+
+#: ../cli/src/devices.c:1409 ../cli/src/devices.c:1463
+#: ../cli/src/devices.c:1670
+#, c-format
+msgid "Error: Access point with hwaddr '%s' not found."
+msgstr "Greška: Pristupna točka adrese '%s' nije pronađena."
+
+#: ../cli/src/devices.c:1426
+#, c-format
+msgid "Error: Device '%s' is not a WiFi device."
+msgstr "Greška: Uređaj '%s' nije WiFi uređaj."
+
+#: ../cli/src/devices.c:1490
+#, c-format
+msgid "Error: 'dev wifi' command '%s' is not valid."
+msgstr "Greška: 'dev wifi' naredba '%s' nije važeća."
+
+#: ../cli/src/devices.c:1566
+#, c-format
+msgid "Error: 'dev wimax': %s"
+msgstr "Greška: 'dev wimax': %s"
+
+#: ../cli/src/devices.c:1568
+#, c-format
+msgid "Error: 'dev wimax': %s; allowed fields: %s"
+msgstr "Greška: 'dev wimax': %s; dozvoljena polja: %s"
+
+#: ../cli/src/devices.c:1591
+msgid "WiMAX NSP list"
+msgstr "WiMAX NSP popis"
+
+#: ../cli/src/devices.c:1628
+#, c-format
+msgid "Error: NSP with name '%s' not found."
+msgstr "Greška: NSP imena '%s' nije pronađen."
+
+#: ../cli/src/devices.c:1639
+#, c-format
+msgid "Error: Device '%s' is not a WiMAX device."
+msgstr "Greška: Uređaj '%s' nije WiMAX uređaj."
+
+#: ../cli/src/devices.c:1697
+#, c-format
+msgid "Error: 'dev wimax' command '%s' is not valid."
+msgstr "Greška: 'dev wimax' naredba '%s' nije važeća."
+
+#: ../cli/src/devices.c:1747
+#, c-format
+msgid "Error: 'dev' command '%s' is not valid."
+msgstr "Greška: 'dev' naredba '%s' nije važeća."
+
+#: ../cli/src/network-manager.c:37
+msgid "RUNNING"
+msgstr "POKRENUT"
+
+#. 0
+#: ../cli/src/network-manager.c:38
+msgid "VERSION"
+msgstr "VERZIJA"
+
+#. 2
+#: ../cli/src/network-manager.c:40
+#, fuzzy
+msgid "NET-ENABLED"
+msgstr "MREŽA-OMOGUĆENA"
+
+#. 3
+#: ../cli/src/network-manager.c:41
+#, fuzzy
+msgid "WIFI-HARDWARE"
+msgstr "WIFI-HARDVER"
+
+#. 4
+#: ../cli/src/network-manager.c:42
+msgid "WIFI"
+msgstr "WIFI"
+
+#. 5
+#: ../cli/src/network-manager.c:43
+#, fuzzy
+msgid "WWAN-HARDWARE"
+msgstr "WWAN-HARDVER"
+
+#. 6
+#: ../cli/src/network-manager.c:44
+msgid "WWAN"
+msgstr "WWAN"
+
+#. 7
+#: ../cli/src/network-manager.c:45
+#, fuzzy
+msgid "WIMAX-HARDWARE"
+msgstr "WIMAX-HARDVER"
+
+#. 8
+#: ../cli/src/network-manager.c:46
+msgid "WIMAX"
+msgstr "WIMAX"
+
+#: ../cli/src/network-manager.c:74
+#, c-format
 msgid ""
-"Enter the ESSID and security settings of the wireless network you wish to "
-"create."
-msgstr "Unesi ESSID i sigurnosne postavke bežične mreže koju treba stvoriti."
-
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:234
-msgid "Custom wireless network"
-msgstr "Posebna bežična mreža"
-
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:235
-msgid "Enter the ESSID of the wireless network to which you wish to connect."
+"Usage: nmcli nm { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | enable | sleep | wifi | wwan | wimax }\n"
+"\n"
+"  COMMAND := { status | enable | sleep | wifi | wwan }\n"
+"\n"
+"  status\n"
+"  enable [true|false]\n"
+"  sleep [true|false]\n"
+"  wifi [on|off]\n"
+"  wwan [on|off]\n"
+"  wimax [on|off]\n"
+"\n"
 msgstr ""
-"Unesi ESSID i sigurnosne postavke bežične mreže na koju se treba spojiti."
+"Uporaba: nmcli nm { NAREDBA | help }\n"
+"\n"
+"  NAREDBA := { status | enable | sleep | wifi | wwan | wimax }\n"
+"\n"
+"  NAREDBA := { status | enable | sleep | wifi | wwan }\n"
+"\n"
+"  status\n"
+"  enable [true|false]\n"
+"  sleep [true|false]\n"
+"  wifi [on|off]\n"
+"  wwan [on|off]\n"
+"  wimax [on|off]\n"
+"\n"
 
-#. Reuse the above string to make the translators less angry.
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:316
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:325
+#: ../cli/src/network-manager.c:103
+#, fuzzy
+msgid "asleep"
+msgstr "u stanju čekanja"
+
+#: ../cli/src/network-manager.c:105
+#| msgid "C_onnect"
+msgid "connecting"
+msgstr "spajanje"
+
+#: ../cli/src/network-manager.c:107
+msgid "connected (local only)"
+msgstr "spojen (lokalna veza)"
+
+#: ../cli/src/network-manager.c:109
+msgid "connected (site only)"
+msgstr ""
+
+#: ../cli/src/network-manager.c:113
+msgid "disconnecting"
+msgstr "odspajanje"
+
+#: ../cli/src/network-manager.c:153
+#, c-format
+msgid "Error: 'nm status': %s"
+msgstr "Greška: 'nm status': %s"
+
+#: ../cli/src/network-manager.c:155
+#, c-format
+msgid "Error: 'nm status': %s; allowed fields: %s"
+msgstr "Greška: 'nm status': %s; dozvoljena polja: %s"
+
+#. create NMClient
+#: ../cli/src/network-manager.c:168 ../cli/src/network-manager.c:169
+#: ../cli/src/network-manager.c:170 ../cli/src/network-manager.c:171
+#: ../cli/src/network-manager.c:172 ../cli/src/network-manager.c:174
+#: ../cli/src/network-manager.c:175 ../cli/src/network-manager.c:296
+#: ../cli/src/network-manager.c:351 ../cli/src/network-manager.c:389
+#: ../cli/src/network-manager.c:428
+msgid "enabled"
+msgstr "omogućen"
+
+#: ../cli/src/network-manager.c:168 ../cli/src/network-manager.c:169
+#: ../cli/src/network-manager.c:170 ../cli/src/network-manager.c:171
+#: ../cli/src/network-manager.c:172 ../cli/src/network-manager.c:174
+#: ../cli/src/network-manager.c:175 ../cli/src/network-manager.c:296
+#: ../cli/src/network-manager.c:351 ../cli/src/network-manager.c:389
+#: ../cli/src/network-manager.c:428
+msgid "disabled"
+msgstr "onemogućen"
+
+#: ../cli/src/network-manager.c:188
+#| msgid "NetworkManager is not running"
+msgid "NetworkManager status"
+msgstr "NetworkManager stanje"
+
+#. Print header
+#: ../cli/src/network-manager.c:191
+msgid "running"
+msgstr "pokrenut"
+
+#: ../cli/src/network-manager.c:191
+msgid "not running"
+msgstr "nije pokrenut"
+
+#: ../cli/src/network-manager.c:222 ../cli/src/utils.c:322
+#, c-format
+msgid "Error: Couldn't connect to system bus: %s"
+msgstr "Greška: Neuspješno spajanje na sabirnicu sustava: %s"
+
+#: ../cli/src/network-manager.c:233
+#, c-format
+msgid "Error: Couldn't create D-Bus object proxy."
+msgstr ""
+
+#: ../cli/src/network-manager.c:239
+#, c-format
+msgid "Error in sleep: %s"
+msgstr "Pogreška u čekanju: %s"
+
+#: ../cli/src/network-manager.c:283 ../cli/src/network-manager.c:338
+#: ../cli/src/network-manager.c:376 ../cli/src/network-manager.c:415
+#, c-format
+msgid "Error: '--fields' value '%s' is not valid here; allowed fields: %s"
+msgstr "Greška: '--fields' vrijednost '%s' nije važeća; dozvoljena polja: %s"
+
+#: ../cli/src/network-manager.c:291
+msgid "Networking enabled"
+msgstr "Umrežavanje omogućeno"
+
+#: ../cli/src/network-manager.c:307
+#, c-format
+msgid "Error: invalid 'enable' parameter: '%s'; use 'true' or 'false'."
+msgstr ""
+"Greška: nevažeći 'enable' parametar: '%s'; dozvoljeni su 'true' i 'false'."
+
+#: ../cli/src/network-manager.c:317
+#, c-format
+msgid "Error: Sleeping status is not exported by NetworkManager."
+msgstr "Greška: NetworkManager nije izveo stanje čekanja."
+
+#: ../cli/src/network-manager.c:325
+#, c-format
+msgid "Error: invalid 'sleep' parameter: '%s'; use 'true' or 'false'."
+msgstr ""
+"Greška: nevažeći 'sleep' parametar: '%s'; dozvoljeni su 'true' i 'false'."
+
+#: ../cli/src/network-manager.c:346
+msgid "WiFi enabled"
+msgstr "WiFi omogućen"
+
+#: ../cli/src/network-manager.c:362
+#, c-format
+msgid "Error: invalid 'wifi' parameter: '%s'."
+msgstr "Greška: nevažeći 'wifi' parametar: '%s'."
+
+#: ../cli/src/network-manager.c:384
+msgid "WWAN enabled"
+msgstr "WWAN omogućen"
+
+#: ../cli/src/network-manager.c:400
+#, c-format
+msgid "Error: invalid 'wwan' parameter: '%s'."
+msgstr "Greška: nevažeći 'wwan' parametar: '%s'."
+
+#: ../cli/src/network-manager.c:423
+msgid "WiMAX enabled"
+msgstr "WiMAX omogućen"
+
+#: ../cli/src/network-manager.c:439
+#, c-format
+msgid "Error: invalid 'wimax' parameter: '%s'."
+msgstr "Greška: nevažeći 'wimax' parametar: '%s'."
+
+#: ../cli/src/network-manager.c:452
+#, c-format
+msgid "Error: 'nm' command '%s' is not valid."
+msgstr "Greška: 'nm' naredba '%s' nije važeća."
+
+#: ../cli/src/nmcli.c:64
+#, c-format
 msgid ""
-"The NetworkManager Applet could not find some required resources (the glade "
-"file was not found)."
+"Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
+"\n"
+"OPTIONS\n"
+"  -t[erse]                                   terse output\n"
+"  -p[retty]                                  pretty output\n"
+"  -m[ode] tabular|multiline                  output mode\n"
+"  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
+"  -e[scape] yes|no                           escape columns separators in "
+"values\n"
+"  -n[ocheck]                                 don't check nmcli and "
+"NetworkManager versions\n"
+"  -v[ersion]                                 show program version\n"
+"  -h[elp]                                    print this help\n"
+"\n"
+"OBJECT\n"
+"  nm          NetworkManager status\n"
+"  con         NetworkManager connections\n"
+"  dev         devices managed by NetworkManager\n"
+"\n"
 msgstr ""
-"NetworkManager ne može naći potrebne datoteke (glade datoteka nije "
-"pronađena)."
+"Uporaba: %s [OPCIJE] OBJEKT { NAREDBA | help }\n"
+"\n"
+"OPCIJE\n"
+"  -t[erse]                                   sažet ispis\n"
+"  -p[retty]                                  uljepšan ispis\n"
+"  -m[ode] tabular|multiline                  način ispisa\n"
+"  -f[ields] <field1,field2,...>|all|common   određuje polja koja će se "
+"ispisati\n"
+"  -e[scape] yes|no                           izbacuje razdjelnike stupaca u "
+"vrijednostima\n"
+"  -n[ocheck]                                 bez provjere verzija nmcli i "
+"NetworkManagera\n"
+"  -v[ersion]                                 prikazuje verziju programa\n"
+"  -h[elp]                                    ispisuje ovu pomoć\n"
+"\n"
+"OBJEKT\n"
+"  nm          NetworkManager stanje\n"
+"  con         NetworkManager veze\n"
+"  dev         uređaji kojima upravlja NetworkManager\n"
+"\n"
 
-#: panel-applet/essid.glade:53
-msgid "C_onnect"
-msgstr "_Spoji se"
-
-#: panel-applet/essid.glade:132
-msgid "Wireless _adapter:"
-msgstr "Bežični _uređaj:"
-
-#: panel-applet/essid.glade:172
-msgid "Wireless _Network:"
-msgstr "Bežična _mreža:"
-
-#: panel-applet/essid.glade:337
-msgid "Connect with encryption enabled"
-msgstr "Spoji se sa enkripcijom"
-
-#: panel-applet/menu-info.c:109
+#: ../cli/src/nmcli.c:109
 #, c-format
-msgid "Wired Network (%s)"
-msgstr "Žičana mreža (%s)"
+msgid "Error: Object '%s' is unknown, try 'nmcli help'."
+msgstr "Greška: Objekt '%s' je nepoznat, pokušajte 'nmcli help'."
 
-#: panel-applet/menu-info.c:111
-msgid "Wired Network"
-msgstr "Žičana mreža"
-
-#: panel-applet/menu-info.c:177
+#: ../cli/src/nmcli.c:139
 #, c-format
-msgid "Wireless Network (%s)"
-msgid_plural "Wireless Networks (%s)"
-msgstr[0] "Bežična mreža (%s)"
-msgstr[1] "Bežične mreže (%s)"
+msgid "Error: Option '--terse' is specified the second time."
+msgstr "Greška: Opcija '--terse' označena dva puta."
 
-#: panel-applet/menu-info.c:179
-msgid "Wireless Network"
-msgid_plural "Wireless Networks"
-msgstr[0] "Bežična mreža"
-msgstr[1] "Bežične mreže"
+#: ../cli/src/nmcli.c:144
+#, c-format
+msgid "Error: Option '--terse' is mutually exclusive with '--pretty'."
+msgstr "Greška: Opcije '--terse' i '--pretty' se međusobno isključuju."
 
-#: panel-applet/menu-info.c:316
-msgid " (invalid Unicode)"
-msgstr " (greška u unicodu)"
+#: ../cli/src/nmcli.c:152
+#, c-format
+msgid "Error: Option '--pretty' is specified the second time."
+msgstr "Greška: Opcija '--pretty' označena dva puta."
 
-#: examples/python/systray/eggtrayicon.c:111
-msgid "Orientation"
-msgstr "Orjentacija"
+#: ../cli/src/nmcli.c:157
+#, c-format
+msgid "Error: Option '--pretty' is mutually exclusive with '--terse'."
+msgstr "Greška: Opcije '--pretty' i '--terse' se međusobno isključuju."
 
-#: examples/python/systray/eggtrayicon.c:112
-msgid "The orientation of the tray."
-msgstr "Orjentacija ladice."
+#: ../cli/src/nmcli.c:167 ../cli/src/nmcli.c:183
+#, c-format
+msgid "Error: missing argument for '%s' option."
+msgstr "Greška: nedostaje argument za opciju '%s'."
+
+#: ../cli/src/nmcli.c:176 ../cli/src/nmcli.c:192
+#, c-format
+msgid "Error: '%s' is not valid argument for '%s' option."
+msgstr "Greška: nevažeći argument '%s' za opciju '%s'."
+
+#: ../cli/src/nmcli.c:199
+#, c-format
+msgid "Error: fields for '%s' options are missing."
+msgstr "Greška: nedostaju polja za opciju '%s'."
+
+#: ../cli/src/nmcli.c:207
+#, c-format
+msgid "nmcli tool, version %s\n"
+msgstr "nmcli alat, verzija %s\n"
+
+#: ../cli/src/nmcli.c:213
+#, c-format
+msgid "Error: Option '%s' is unknown, try 'nmcli -help'."
+msgstr "Greška: Nepoznata opcija '%s', pokušajte 'nmcli -help'."
+
+#: ../cli/src/nmcli.c:232
+#, c-format
+msgid "Caught signal %d, shutting down..."
+msgstr "Primljen signal %d, isključujem..."
+
+#: ../cli/src/nmcli.c:257
+msgid "Error: Could not create NMClient object."
+msgstr "Greška: Neuspješno stvaranje NMClient objekta."
+
+#: ../cli/src/nmcli.c:273
+msgid "Success"
+msgstr "Uspjeh"
+
+#: ../cli/src/settings.c:423
+#, fuzzy, c-format
+msgid "%d (hex-ascii-key)"
+msgstr "%d (heksadekadski ascii ključ)"
+
+#: ../cli/src/settings.c:425
+#, c-format
+msgid "%d (104/128-bit passphrase)"
+msgstr "%d (104/128-bitna lozinka)"
+
+#: ../cli/src/settings.c:428
+#, c-format
+msgid "%d (unknown)"
+msgstr "%d (nepoznat)"
+
+#: ../cli/src/settings.c:454
+msgid "0 (unknown)"
+msgstr "0 (nepoznat)"
+
+#: ../cli/src/settings.c:460
+msgid "any, "
+msgstr "bilo koji, "
+
+#: ../cli/src/settings.c:462
+msgid "900 MHz, "
+msgstr "900 MHz, "
+
+#: ../cli/src/settings.c:464
+msgid "1800 MHz, "
+msgstr "1800 MHz, "
+
+#: ../cli/src/settings.c:466
+msgid "1900 MHz, "
+msgstr "1900 MHz, "
+
+#: ../cli/src/settings.c:468
+msgid "850 MHz, "
+msgstr "850 MHz, "
+
+#: ../cli/src/settings.c:470
+msgid "WCDMA 3GPP UMTS 2100 MHz, "
+msgstr "WCDMA 3GPP UMTS 2100 MHz, "
+
+#: ../cli/src/settings.c:472
+msgid "WCDMA 3GPP UMTS 1800 MHz, "
+msgstr "WCDMA 3GPP UMTS 1800 MHz, "
+
+#: ../cli/src/settings.c:474
+msgid "WCDMA 3GPP UMTS 1700/2100 MHz, "
+msgstr "WCDMA 3GPP UMTS 1700/2100 MHz, "
+
+#: ../cli/src/settings.c:476
+msgid "WCDMA 3GPP UMTS 800 MHz, "
+msgstr "WCDMA 3GPP UMTS 800 MHz, "
+
+#: ../cli/src/settings.c:478
+msgid "WCDMA 3GPP UMTS 850 MHz, "
+msgstr "WCDMA 3GPP UMTS 850 MHz, "
+
+#: ../cli/src/settings.c:480
+msgid "WCDMA 3GPP UMTS 900 MHz, "
+msgstr "WCDMA 3GPP UMTS 900 MHz, "
+
+#: ../cli/src/settings.c:482
+msgid "WCDMA 3GPP UMTS 1700 MHz, "
+msgstr "WCDMA 3GPP UMTS 1700 MHz, "
+
+#: ../cli/src/settings.c:566 ../cli/src/settings.c:732
+msgid "auto"
+msgstr "automatski"
+
+#: ../cli/src/settings.c:727 ../cli/src/settings.c:730
+#: ../cli/src/settings.c:731 ../cli/src/utils.c:176
+msgid "not set"
+msgstr "nije postavljen"
+
+#: ../cli/src/utils.c:128
+#, c-format
+msgid "field '%s' has to be alone"
+msgstr "polje '%s' mora biti samo"
+
+#: ../cli/src/utils.c:131
+#, c-format
+msgid "invalid field '%s'"
+msgstr "nevažeće polje '%s'"
+
+#: ../cli/src/utils.c:150
+#, c-format
+msgid "Option '--terse' requires specifying '--fields'"
+msgstr "Opcija '--terse' zahtijeva označavanje '--fields'"
+
+#: ../cli/src/utils.c:154
+#, c-format
+msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
+msgstr ""
+"Opcija '--terse' zahtijeva označene vrijednosti opcije '--fields', a ne '%s'"
+
+#: ../cli/src/utils.c:333
+#, c-format
+msgid "Error: Couldn't create D-Bus object proxy for org.freedesktop.DBus"
+msgstr ""
+
+#: ../cli/src/utils.c:341
+#, fuzzy, c-format
+msgid "Error: NameHasOwner request failed: %s"
+msgstr "Greška: NameHasOwner zahtjev neuspješan: %s"
+
+#: ../cli/src/utils.c:386
+#, c-format
+msgid ""
+"Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --"
+"nocheck to suppress the warning.\n"
+msgstr ""
+"Upozorenje: verzije nmcli (%s) i NetworkManager (%s) se ne podudaraju. "
+"Korištenje "
+"--nocheck zanemaruje ovo upozorenje.\n"
+
+#: ../cli/src/utils.c:395
+#, c-format
+msgid ""
+"Error: nmcli (%s) and NetworkManager (%s) versions don't match. Force "
+"execution using --nocheck, but the results are unpredictable."
+msgstr ""
+"Greška: verzije nmcli (%s) i NetworkManager (%s) se ne podudaraju. Korištenje "
+"--nocheck prisiljava izvršavanje, uz moguće neočekivane rezultate.\n."
+
+#: ../libnm-util/crypto.c:133
+#, c-format
+msgid "PEM key file had no end tag '%s'."
+msgstr "Datoteka PEM ključa nema završnu oznaku '%s'."
+
+#: ../libnm-util/crypto.c:146
+#, c-format
+msgid "Doesn't look like a PEM private key file."
+msgstr "Ne izgleda kao datoteka PEM privatnog ključa."
+
+#: ../libnm-util/crypto.c:154
+#, c-format
+msgid "Not enough memory to store PEM file data."
+msgstr "Nedovoljno memorije za spremanje podataka PEM datoteke."
+
+#: ../libnm-util/crypto.c:170
+#, fuzzy, c-format
+msgid "Malformed PEM file: Proc-Type was not first tag."
+msgstr "Deformirana PEM datoteka: Proc-Type nije prva oznaka."
+
+#: ../libnm-util/crypto.c:178
+#, fuzzy, c-format
+msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
+msgstr "Deformirana PEM datoteka: nepoznata Proc-Type oznaka '%s'."
+
+#: ../libnm-util/crypto.c:188
+#, fuzzy, c-format
+msgid "Malformed PEM file: DEK-Info was not the second tag."
+msgstr "Deformirana PEM datoteka: DEK-Info nije druga oznaka."
+
+#: ../libnm-util/crypto.c:199
+#, fuzzy, c-format
+msgid "Malformed PEM file: no IV found in DEK-Info tag."
+msgstr "Deformirana PEM datoteka: IV nije pronađen u DEK-Info oznaci."
+
+#: ../libnm-util/crypto.c:206
+#, fuzzy, c-format
+msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
+msgstr "Deformirana PEM datoteka: nevažeći IV oblik u DEK-Info oznaci."
+
+#: ../libnm-util/crypto.c:219
+#, fuzzy, c-format
+msgid "Malformed PEM file: unknown private key cipher '%s'."
+msgstr "Deformirana PEM datoteka: nepoznata šifra privatnog ključa '%s'."
+
+#: ../libnm-util/crypto.c:238
+#, c-format
+msgid "Could not decode private key."
+msgstr "Neuspješno dekodiranje privatnog ključa."
+
+#: ../libnm-util/crypto.c:284
+msgid "Failed to find expected PKCS#8 start tag."
+msgstr "Neuspješno traženje očekivane PKCS#8 početne oznake."
+
+#: ../libnm-util/crypto.c:292
+#, c-format
+msgid "Failed to find expected PKCS#8 end tag '%s'."
+msgstr "Neuspješno traženje očekivane PKCS#8 krajnje oznake '%s'."
+
+#: ../libnm-util/crypto.c:312
+msgid "Not enough memory to store private key data."
+msgstr "Nedovoljno memorije za spremanje podataka privatnog ključa."
+
+#: ../libnm-util/crypto.c:317
+msgid "Failed to decode PKCS#8 private key."
+msgstr "Neuspješno dekodiranje PKCS#8 privatnog ključa."
+
+#: ../libnm-util/crypto.c:339 ../libnm-util/crypto.c:625
+#, c-format
+msgid "Not enough memory to store certificate data."
+msgstr "Nedovoljno memorije za spremanje podataka certifikata."
+
+#: ../libnm-util/crypto.c:365
+#, c-format
+msgid "IV must be an even number of bytes in length."
+msgstr "IV mora biti dugačak paran broj bajtova."
+
+#: ../libnm-util/crypto.c:374
+#, c-format
+msgid "Not enough memory to store the IV."
+msgstr "Nedovoljno memorije za spremanje IV-a."
+
+#: ../libnm-util/crypto.c:385
+#, c-format
+msgid "IV contains non-hexadecimal digits."
+msgstr "IV sadrži znamenke koje nisu heksadekadske."
+
+#: ../libnm-util/crypto.c:423 ../libnm-util/crypto_gnutls.c:147
+#: ../libnm-util/crypto_gnutls.c:265 ../libnm-util/crypto_nss.c:167
+#: ../libnm-util/crypto_nss.c:332
+#, c-format
+msgid "Private key cipher '%s' was unknown."
+msgstr "Šifra privatnog ključa '%s' je nepoznata."
+
+#: ../libnm-util/crypto.c:432
+#, c-format
+msgid "Not enough memory to decrypt private key."
+msgstr "Nedovoljno memorije za dešifriranje privatnog ključa."
+
+#: ../libnm-util/crypto.c:497
+#, c-format
+msgid "Not enough memory to store decrypted private key."
+msgstr "Nedovoljno memorije za spremanje dešifriranog privatnog ključa."
+
+#: ../libnm-util/crypto.c:542
+#, c-format
+msgid "Unable to determine private key type."
+msgstr "Neuspješno određivanje vrste privatnog ključa."
+
+#: ../libnm-util/crypto.c:597
+#, c-format
+msgid "PEM certificate had no start tag '%s'."
+msgstr "PEM certifikat nema početnu oznaku '%s'."
+
+#: ../libnm-util/crypto.c:606
+#, c-format
+msgid "PEM certificate had no end tag '%s'."
+msgstr "PEM certifikat nema krajnju oznaku '%s'."
+
+#: ../libnm-util/crypto.c:630
+#, c-format
+msgid "Failed to decode certificate."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:50
+msgid "Failed to initialize the crypto engine."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:92
+#, c-format
+msgid "Failed to initialize the MD5 engine: %s / %s."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:155
+#, c-format
+msgid "Invalid IV length (must be at least %zd)."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:164 ../libnm-util/crypto_nss.c:184
+#, c-format
+msgid "Not enough memory for decrypted key buffer."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:172
+#, c-format
+msgid "Failed to initialize the decryption cipher context: %s / %s."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:181
+#, c-format
+msgid "Failed to set symmetric key for decryption: %s / %s."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:190
+#, c-format
+msgid "Failed to set IV for decryption: %s / %s."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:199
+#, c-format
+msgid "Failed to decrypt the private key: %s / %s."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:209 ../libnm-util/crypto_nss.c:263
+#, c-format
+msgid "Failed to decrypt the private key: unexpected padding length."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:220 ../libnm-util/crypto_nss.c:274
+#, c-format
+msgid "Failed to decrypt the private key."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:285 ../libnm-util/crypto_nss.c:352
+#, c-format
+msgid "Could not allocate memory for encrypting."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:293
+#, c-format
+msgid "Failed to initialize the encryption cipher context: %s / %s."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:302
+#, c-format
+msgid "Failed to set symmetric key for encryption: %s / %s."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:312
+#, c-format
+msgid "Failed to set IV for encryption: %s / %s."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:321
+#, c-format
+msgid "Failed to encrypt the data: %s / %s."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:361
+#, c-format
+msgid "Error initializing certificate data: %s"
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:383
+#, c-format
+msgid "Couldn't decode certificate: %s"
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:407
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %s"
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:420
+#, c-format
+msgid "Couldn't decode PKCS#12 file: %s"
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:432
+#, c-format
+msgid "Couldn't verify PKCS#12 file: %s"
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:460
+#, c-format
+msgid "Couldn't initialize PKCS#8 decoder: %s"
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:483
+#, c-format
+msgid "Couldn't decode PKCS#8 file: %s"
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:56
+#, c-format
+msgid "Failed to initialize the crypto engine: %d."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:107
+#, c-format
+msgid "Failed to initialize the MD5 context: %d."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:175
+#, c-format
+msgid "Invalid IV length (must be at least %d)."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:192
+#, c-format
+msgid "Failed to initialize the decryption cipher slot."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:202
+#, c-format
+msgid "Failed to set symmetric key for decryption."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:212
+#, c-format
+msgid "Failed to set IV for decryption."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:220
+#, c-format
+msgid "Failed to initialize the decryption context."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:233
+#, c-format
+msgid "Failed to decrypt the private key: %d."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:241
+#, c-format
+msgid "Failed to decrypt the private key: decrypted data too large."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:252
+#, c-format
+msgid "Failed to finalize decryption of the private key: %d."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:360
+#, c-format
+msgid "Failed to initialize the encryption cipher slot."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:368
+#, c-format
+msgid "Failed to set symmetric key for encryption."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:376
+#, c-format
+msgid "Failed to set IV for encryption."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:384
+#, c-format
+msgid "Failed to initialize the encryption context."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:392
+#, c-format
+msgid "Failed to encrypt: %d."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:400
+#, c-format
+msgid "Unexpected amount of data after encrypting."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:443
+#, c-format
+msgid "Couldn't decode certificate: %d"
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:478
+#, c-format
+msgid "Couldn't convert password to UCS2: %d"
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:506
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %d"
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:515
+#, c-format
+msgid "Couldn't decode PKCS#12 file: %d"
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:524
+#, c-format
+msgid "Couldn't verify PKCS#12 file: %d"
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:568
+msgid "Could not generate random data."
+msgstr ""
+
+#: ../libnm-util/nm-utils.c:2000
+#, c-format
+msgid "Not enough memory to make encryption key."
+msgstr ""
+
+#: ../libnm-util/nm-utils.c:2110
+msgid "Could not allocate memory for PEM file creation."
+msgstr ""
+
+#: ../libnm-util/nm-utils.c:2122
+#, c-format
+msgid "Could not allocate memory for writing IV to PEM file."
+msgstr ""
+
+#: ../libnm-util/nm-utils.c:2134
+#, c-format
+msgid "Could not allocate memory for writing encrypted key to PEM file."
+msgstr ""
+
+#: ../libnm-util/nm-utils.c:2153
+#, c-format
+msgid "Could not allocate memory for PEM file data."
+msgstr ""
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:1
+#| msgid "No network connection"
+msgid "Allow control of network connections"
+msgstr "Dozvoli upravljanje mrežnim vezama"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:2
+#| msgid "Connecting to a wired network..."
+msgid "Connection sharing via a protected WiFi network"
+msgstr "Dijeljenje veze korištenjem zaštićene WiFi mreže"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:3
+#| msgid "Connecting to a wired network..."
+msgid "Connection sharing via an open WiFi network"
+msgstr "Dijeljenje veze korištenjem otvorene WiFi mreže"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:4
+msgid "Enable or disable WiFi devices"
+msgstr "Omogućuje ili onemogućuje WiFi uređaje"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:5
+msgid "Enable or disable WiMAX mobile broadband devices"
+msgstr "Omogućuje ili onemogućuje WiMAX mobilne širokopojasne uređaje"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:6
+msgid "Enable or disable mobile broadband devices"
+msgstr "Omogućuje ili onemogućuje mobilne širokopojasne uređaje"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:7
+msgid "Enable or disable system networking"
+msgstr ""
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:8
+#| msgid "No network connection"
+msgid "Modify network connections for all users"
+msgstr ""
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:9
+msgid "Modify persistent system hostname"
+msgstr ""
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:10
+#| msgid "No network connection"
+msgid "Modify personal network connections"
+msgstr ""
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:11
+msgid ""
+"Put NetworkManager to sleep or wake it up (should only be used by system "
+"power management)"
+msgstr ""
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:12
+#| msgid "Wireless network connection"
+msgid "System policy prevents control of network connections"
+msgstr ""
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:13
+msgid "System policy prevents enabling or disabling WiFi devices"
+msgstr ""
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:14
+msgid ""
+"System policy prevents enabling or disabling WiMAX mobile broadband devices"
+msgstr ""
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:15
+msgid "System policy prevents enabling or disabling mobile broadband devices"
+msgstr ""
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:16
+msgid "System policy prevents enabling or disabling system networking"
+msgstr ""
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:17
+msgid "System policy prevents modification of network settings for all users"
+msgstr ""
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:18
+msgid "System policy prevents modification of personal network settings"
+msgstr ""
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:19
+msgid "System policy prevents modification of the persistent system hostname"
+msgstr ""
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:20
+msgid "System policy prevents putting NetworkManager to sleep or waking it up"
+msgstr ""
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:21
+msgid "System policy prevents sharing connections via a protected WiFi network"
+msgstr ""
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:22
+msgid "System policy prevents sharing connections via an open WiFi network"
+msgstr ""
+
+#: ../src/main.c:530
+#, c-format
+msgid "Invalid option.  Please use --help to see a list of valid options.\n"
+msgstr "Nevažeća opcija.  Upišite --help za popis važećih opcija.\n"
+
+#: ../src/main.c:611
+#, c-format
+msgid "%s.  Please use --help to see a list of valid options.\n"
+msgstr "%s.  Upišite --help za popis važećih opcija.\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:62
+msgid "# Created by NetworkManager\n"
+msgstr "# Napravio NetworkManager\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:69
+#, c-format
+msgid ""
+"# Merged from %s\n"
+"\n"
+msgstr ""
+"# Spojeno iz %s\n"
+"\n"
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:284
+msgid "no usable DHCP client could be found."
+msgstr "nije pronađen upotrebljiv DHCP klijent."
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:293
+msgid "'dhclient' could be found."
+msgstr "'dhclient' nije pronađen."
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:303
+msgid "'dhcpcd' could be found."
+msgstr "'dhcpcd' nije pronađen."
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:311
+#, c-format
+msgid "unsupported DHCP client '%s'"
+msgstr "nepodržani DHCP klijent '%s'"
+
+#: ../src/dns-manager/nm-dns-manager.c:369
+#, fuzzy
+msgid "NOTE: the libc resolver may not support more than 3 nameservers."
+msgstr "OPASKA: libc resolver ne podržava više od 3 nameservera"
+
+#: ../src/dns-manager/nm-dns-manager.c:371
+msgid "The nameservers listed below may not be recognized."
+msgstr ""
+
+#: ../src/logging/nm-logging.c:149
+#, fuzzy, c-format
+msgid "Unknown log level '%s'"
+msgstr "Nepoznata razina dnevnika '%s'"
+
+#: ../src/logging/nm-logging.c:174
+#, fuzzy, c-format
+msgid "Unknown log domain '%s'"
+msgstr "Nepoznata domena dnevnika '%s'"
+
+#: ../src/modem-manager/nm-modem-cdma.c:296 ../src/nm-device-bt.c:355
+#, c-format
+msgid "CDMA connection %d"
+msgstr "CDMA veza %d"
+
+#: ../src/modem-manager/nm-modem-gsm.c:499 ../src/nm-device-bt.c:351
+#, c-format
+msgid "GSM connection %d"
+msgstr "GSM veza %d"
+
+#: ../src/nm-device-bt.c:326
+#, c-format
+#| msgid "No network connection"
+msgid "PAN connection %d"
+msgstr "PAN veza %d"
+
+#: ../src/nm-device-bt.c:359
+#, c-format
+#| msgid "No network connection"
+msgid "DUN connection %d"
+msgstr "DUN veza %d"
+
+#: ../src/nm-device-ethernet.c:1681
+#, c-format
+#| msgid "No network connection"
+msgid "PPPoE connection %d"
+msgstr "PPPoE veza %d"
+
+#: ../src/nm-device-ethernet.c:1681 ../src/settings/nm-settings-utils.c:50
+#, fuzzy, c-format
+#| msgid "Wired network connection"
+msgid "Wired connection %d"
+msgstr "Spoj na žičanu mrežu %d"
+
+#: ../src/nm-device-olpc-mesh.c:423
+#, c-format
+msgid "Mesh %d"
+msgstr "Mreža %d"
+
+#: ../src/nm-manager.c:673
+#, c-format
+#| msgid "No network connection"
+msgid "VPN connection %d"
+msgstr "VPN veza %d"
+
+#: ../src/nm-netlink-monitor.c:100 ../src/nm-netlink-monitor.c:231
+#: ../src/nm-netlink-monitor.c:653
+#, c-format
+msgid "error processing netlink message: %s"
+msgstr ""
+
+#: ../src/nm-netlink-monitor.c:214
+msgid "error occurred while waiting for data on socket"
+msgstr ""
+
+#: ../src/nm-netlink-monitor.c:254
+#, c-format
+msgid "unable to connect to netlink for monitoring link status: %s"
+msgstr ""
+
+#: ../src/nm-netlink-monitor.c:265
+#, c-format
+msgid "unable to enable netlink handle credential passing: %s"
+msgstr ""
+
+#: ../src/nm-netlink-monitor.c:291 ../src/nm-netlink-monitor.c:353
+#, c-format
+msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgstr ""
+
+#: ../src/nm-netlink-monitor.c:376
+#, c-format
+msgid "unable to allocate netlink link cache for monitoring link status: %s"
+msgstr ""
+
+#: ../src/nm-netlink-monitor.c:502
+#, c-format
+msgid "unable to join netlink group: %s"
+msgstr ""
+
+#: ../src/nm-netlink-monitor.c:629 ../src/nm-netlink-monitor.c:642
+#, c-format
+msgid "error updating link cache: %s"
+msgstr ""
+
+#: ../src/settings/plugins/ifcfg-rh/reader.c:3512
+#: ../src/settings/plugins/ifnet/connection_parser.c:51
+msgid "System"
+msgstr "Sustav"
+
+#~ msgid "Modify Wireless Networks"
+#~ msgstr "Postavke bežičnih mreža"
+
+#~ msgid "<span weight=\"bold\">Wireless Networks:</span>"
+#~ msgstr "<span weight=\"bold\">Bežične mreže:</span>"
+
+#~ msgid "Wireless Network Key Required"
+#~ msgstr "Potreban je ključ bežične mreže"
+
+#~ msgid "_Login to Network"
+#~ msgstr "_Prijava na mrežu"
+
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
+#~ "Network</span>\n"
+#~ "\n"
+#~ "A passphrase or encryption key is required to access the wireless network "
+#~ "'%s'."
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">Potrebna je lozinka za bežičnu "
+#~ "mrežu</span>\n"
+#~ "\n"
+#~ "Za pristup mreži '%s', potrebna je lozinka ili ključ."
+
+#~ msgid "Key Type:"
+#~ msgstr "Tip ključa:"
+
+#~ msgid ""
+#~ "128-bit Passphrase (WEP)\n"
+#~ "Ascii Key (WEP)\n"
+#~ "Hex Key (WEP)"
+#~ msgstr ""
+#~ "128-bitna lozinka (WEP)\n"
+#~ "Slovčani ključ (WEP)\n"
+#~ "Heksadecimalni ključ (WEP)"
+
+#~ msgid "Passphrase:"
+#~ msgstr "Lozinka:"
+
+#~ msgid "*"
+#~ msgstr "*"
+
+#~ msgid "Ascii Key:"
+#~ msgstr "Slovčani ključ"
+
+#~ msgid "Hex Key:"
+#~ msgstr "Heksadecimalni ključ"
+
+#~ msgid "You must log in to access the private network %s"
+#~ msgstr "Prijava je potrebna za pristup na mrežu %s"
+
+#~ msgid "Connected to an Ad-Hoc wireless network"
+#~ msgstr "Spoj na Ad-Hoc bežičnu mrežu"
+
+#~ msgid "Wireless network connection to '%s' (%d%%)"
+#~ msgstr "Spoj na bežičnu mrežu '%s' (%d%%)"
+
+#~ msgid "Connecting to wireless network '%s'..."
+#~ msgstr "Spajanje na bežičnu mrežu '%s'..."
+
+#~ msgid "Scanning for wireless networks..."
+#~ msgstr "Potraga za bežičnim mrežama..."
+
+#~ msgid "Other Wireless Networks..."
+#~ msgstr "Ostale bežične mreže..."
+
+#~ msgid "Create new Wireless Network..."
+#~ msgstr "Stvori novu bečičnu mrežu..."
+
+#~ msgid "No network devices have been found"
+#~ msgstr "Nema mrežnih uređaja"
+
+#~ msgid "NetworkManager is not running..."
+#~ msgstr "NetworkManager nije pokrenut..."
+
+#~ msgid "Create new wireless network"
+#~ msgstr "Stvori novu bečičnu mrežu"
+
+#~ msgid ""
+#~ "Enter the ESSID and security settings of the wireless network you wish to "
+#~ "create."
+#~ msgstr ""
+#~ "Unesi ESSID i sigurnosne postavke bežične mreže koju treba stvoriti."
+
+#~ msgid "Custom wireless network"
+#~ msgstr "Posebna bežična mreža"
+
+#~ msgid ""
+#~ "Enter the ESSID of the wireless network to which you wish to connect."
+#~ msgstr ""
+#~ "Unesi ESSID i sigurnosne postavke bežične mreže na koju se treba spojiti."
+
+#~ msgid ""
+#~ "The NetworkManager Applet could not find some required resources (the "
+#~ "glade file was not found)."
+#~ msgstr ""
+#~ "NetworkManager ne može naći potrebne datoteke (glade datoteka nije "
+#~ "pronađena)."
+
+#~ msgid "Wireless _adapter:"
+#~ msgstr "Bežični _uređaj:"
+
+#~ msgid "Wireless _Network:"
+#~ msgstr "Bežična _mreža:"
+
+#~ msgid "Connect with encryption enabled"
+#~ msgstr "Spoji se sa enkripcijom"
+
+#~ msgid "Wired Network (%s)"
+#~ msgstr "Žičana mreža (%s)"
+
+#~ msgid "Wired Network"
+#~ msgstr "Žičana mreža"
+
+#~ msgid "Wireless Network (%s)"
+#~ msgid_plural "Wireless Networks (%s)"
+#~ msgstr[0] "Bežična mreža (%s)"
+#~ msgstr[1] "Bežične mreže (%s)"
+
+#~ msgid "Wireless Network"
+#~ msgid_plural "Wireless Networks"
+#~ msgstr[0] "Bežična mreža"
+#~ msgstr[1] "Bežične mreže"
+
+#~ msgid " (invalid Unicode)"
+#~ msgstr " (greška u unicodu)"
+
+#~ msgid "Orientation"
+#~ msgstr "Orjentacija"
+
+#~ msgid "The orientation of the tray."
+#~ msgstr "Orjentacija ladice."
