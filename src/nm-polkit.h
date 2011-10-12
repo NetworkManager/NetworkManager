@@ -29,7 +29,7 @@
 #define NM_SYSCONFIG_POLICY_ACTION_WIFI_SHARE_OPEN      "org.freedesktop.network-manager-settings.system.wifi.share.open"
 #define NM_SYSCONFIG_POLICY_ACTION_HOSTNAME_MODIFY      "org.freedesktop.network-manager-settings.system.hostname.modify"
 
-#if HAVE_POLKIT
+#if WITH_POLKIT
 #include <polkit/polkit.h>
 #else
 
@@ -121,10 +121,10 @@ polkit_authorization_result_get_is_challenge  (PolkitAuthorizationResult *result
 	return FALSE;
 }
 
-#endif /* HAVE_POLKIT */
+#endif /* WITH_POLKIT */
 
 
-#if !HAVE_POLKIT || !HAVE_POLKIT_AUTHORITY_GET_SYNC
+#if !WITH_POLKIT || !HAVE_POLKIT_AUTHORITY_GET_SYNC
 /* Fix for polkit 0.97 and later and when polkit is disabled */
 static inline PolkitAuthority *
 polkit_authority_get_sync (GCancellable *cancellable, GError **error)
@@ -136,6 +136,6 @@ polkit_authority_get_sync (GCancellable *cancellable, GError **error)
 		g_set_error (error, 0, 0, "failed to get the PolicyKit authority");
 	return authority;
 }
-#endif /* !HAVE_POLKIT || !HAVE_POLKIT_AUTHORITY_GET_SYNC */
+#endif /* !WITH_POLKIT || !HAVE_POLKIT_AUTHORITY_GET_SYNC */
 
 #endif /* NM_POLKIT_H */

@@ -18,7 +18,7 @@
 
 #include <config.h>
 
-#if !HAVE_POLKIT
+#if !WITH_POLKIT
 
 #include "nm-polkit.h"
 
@@ -30,5 +30,5 @@ static void polkit_authorization_result_init (PolkitAuthorizationResult *self) {
 static void polkit_authority_class_init (PolkitAuthorityClass *klass) { }
 static void polkit_authorization_result_class_init (PolkitAuthorizationResultClass *klass) { }
 
-#endif /* !HAVE_POLKIT */
+#endif /* !WITH_POLKIT */
 
