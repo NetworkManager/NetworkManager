@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2008 Red Hat, Inc.
+ * Copyright (C) 2005 - 2011 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
@@ -57,6 +57,7 @@ const char *nm_vpn_service_get_name_file (NMVPNService *service);
 NMVPNConnection * nm_vpn_service_activate (NMVPNService *service,
                                            NMConnection *connection,
                                            NMDevice *device,
+                                           const char *specific_object,
                                            GError **error);
 
 GSList * nm_vpn_service_get_active_connections (NMVPNService *service);

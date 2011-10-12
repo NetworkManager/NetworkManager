@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2010 Red Hat, Inc.
+ * Copyright (C) 2005 - 2011 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
@@ -324,6 +324,7 @@ NMVPNConnection *
 nm_vpn_service_activate (NMVPNService *service,
                          NMConnection *connection,
                          NMDevice *device,
+                         const char *specific_object,
                          GError **error)
 {
 	NMVPNConnection *vpn;
@@ -339,7 +340,7 @@ nm_vpn_service_activate (NMVPNService *service,
 
 	clear_quit_timeout (service);
 
-	vpn = nm_vpn_connection_new (connection, device);
+	vpn = nm_vpn_connection_new (connection, device, specific_object);
 	g_signal_connect (vpn, "vpn-state-changed",
 				   G_CALLBACK (connection_vpn_state_changed),
 				   service);

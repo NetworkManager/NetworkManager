@@ -3042,6 +3042,7 @@ nm_manager_activate_connection (NMManager *manager,
 		vpn_connection = nm_vpn_manager_activate_connection (priv->vpn_manager,
 		                                                     connection,
 		                                                     device,
+		                                                     specific_object,
 		                                                     error);
 		if (vpn_connection) {
 			g_signal_connect (vpn_connection, "manager-get-secrets",

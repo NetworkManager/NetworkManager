@@ -56,11 +56,14 @@ typedef struct {
 
 GType nm_vpn_connection_get_type (void);
 
-NMVPNConnection * nm_vpn_connection_new (NMConnection *connection, NMDevice *parent_device);
+NMVPNConnection * nm_vpn_connection_new (NMConnection *connection,
+                                         NMDevice *parent_device,
+                                         const char *specific_object);
 
 void                 nm_vpn_connection_activate        (NMVPNConnection *connection);
 NMConnection *       nm_vpn_connection_get_connection  (NMVPNConnection *connection);
 const char *         nm_vpn_connection_get_active_connection_path (NMVPNConnection *connection);
+const char *         nm_vpn_connection_get_specific_object_path (NMVPNConnection *connection);
 const char *         nm_vpn_connection_get_name        (NMVPNConnection *connection);
 NMVPNConnectionState nm_vpn_connection_get_vpn_state   (NMVPNConnection *connection);
 const char *         nm_vpn_connection_get_banner      (NMVPNConnection *connection);
