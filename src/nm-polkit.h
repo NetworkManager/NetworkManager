@@ -30,117 +30,112 @@
 #define NM_SYSCONFIG_POLICY_ACTION_HOSTNAME_MODIFY      "org.freedesktop.network-manager-settings.system.hostname.modify"
 
 #if HAVE_POLKIT
-
 #include <polkit/polkit.h>
+#else
 
-/* Fix for polkit 0.97 and later */
-#if !HAVE_POLKIT_AUTHORITY_GET_SYNC
-PolkitAuthority *
-polkit_authority_get_sync (GCancellable *cancellable, GError **error);
-#endif /* !HAVE_POLKIT_AUTHORITY_GET_SYNC */
-
-
-#else /* ! HAVE_POLKIT */
-/* Stubs for the polkit api, that always allow the requested operation. */
-
+/* Stub out PolicyKit's internal data structures: */
 #include <glib-object.h>
 #include <gio/gio.h>
 
-/* Stub out PolicyKit's internal data structures: */
-
-/* ... PolkitSubject
-   In Polkit this is an interface, not a class, but to make it easier for
-   me to create instances of it, here it is just a class. */
-#define POLKIT_TYPE_SUBJECT          (polkit_subject_get_type())
-#define POLKIT_SUBJECT(o)            (G_TYPE_CHECK_INSTANCE_CAST ((o), POLKIT_TYPE_SUBJECT, PolkitSubject))
-#define POLKIT_SUBJECT_CLASS(k)      (G_TYPE_CHECK_CLASS_CAST((k), POLKIT_TYPE_SUBJECT, PolkitSubjectClass))
-#define POLKIT_SUBJECT_GET_CLASS(o)  (G_TYPE_INSTANCE_GET_CLASS ((o), POLKIT_TYPE_SUBJECT, PolkitSubjectClass))
-#define POLKIT_IS_SUBJECT(o)         (G_TYPE_CHECK_INSTANCE_TYPE ((o), POLKIT_TYPE_SUBJECT))
-#define POLKIT_IS_SUBJECT_CLASS(k)   (G_TYPE_CHECK_CLASS_TYPE ((k), POLKIT_TYPE_SUBJECT))
-typedef struct _PolkitSubject PolkitSubject;
-typedef struct _PolkitSubjectClass PolkitSubjectClass;
-struct _PolkitSubject
-{
-	GObject parent_instance;
-};
-struct _PolkitSubjectClass
-{
-	GObjectClass parent_class;
-};
-GType polkit_subject_get_type (void);
-
-/* ... PolkitAuthority */
-#define POLKIT_TYPE_AUTHORITY          (polkit_authority_get_type())
-#define POLKIT_AUTHORITY(o)            (G_TYPE_CHECK_INSTANCE_CAST ((o), POLKIT_TYPE_AUTHORITY, PolkitAuthority))
-#define POLKIT_AUTHORITY_CLASS(k)      (G_TYPE_CHECK_CLASS_CAST((k), POLKIT_TYPE_AUTHORITY, PolkitAuthorityClass))
-#define POLKIT_AUTHORITY_GET_CLASS(o)  (G_TYPE_INSTANCE_GET_CLASS ((o), POLKIT_TYPE_AUTHORITY, PolkitAuthorityClass))
-#define POLKIT_IS_AUTHORITY(o)         (G_TYPE_CHECK_INSTANCE_TYPE ((o), POLKIT_TYPE_AUTHORITY))
-#define POLKIT_IS_AUTHORITY_CLASS(k)   (G_TYPE_CHECK_CLASS_TYPE ((k), POLKIT_TYPE_AUTHORITY))
-typedef struct _PolkitAuthority PolkitAuthority;
-typedef struct _PolkitAuthorityClass PolkitAuthorityClass;
-struct _PolkitAuthority
-{
-	GObject parent_instance;
-};
-struct _PolkitAuthorityClass
-{
-	GObjectClass parent_class;
-};
-GType polkit_authority_get_type (void);
-
-/* ... PolkitAuthorizationResult */
-#define POLKIT_TYPE_AUTHORIZATION_RESULT          (polkit_authorization_result_get_type())
-#define POLKIT_AUTHORIZATION_RESULT(o)            (G_TYPE_CHECK_INSTANCE_CAST ((o), POLKIT_TYPE_AUTHORIZATION_RESULT, PolkitAuthorizationResult))
-#define POLKIT_AUTHORIZATION_RESULT_CLASS(k)      (G_TYPE_CHECK_CLASS_CAST((k), POLKIT_TYPE_AUTHORIZATION_RESULT, PolkitAuthorizationResultClass))
-#define POLKIT_AUTHORIZATION_RESULT_GET_CLASS(o)  (G_TYPE_INSTANCE_GET_CLASS ((o), POLKIT_TYPE_AUTHORIZATION_RESULT, PolkitAuthorizationResultClass))
-#define POLKIT_IS_AUTHORIZATION_RESULT(o)         (G_TYPE_CHECK_INSTANCE_TYPE ((o), POLKIT_TYPE_AUTHORIZATION_RESULT))
-#define POLKIT_IS_AUTHORIZATION_RESULT_CLASS(k)   (G_TYPE_CHECK_CLASS_TYPE ((k), POLKIT_TYPE_AUTHORIZATION_RESULT))
-typedef struct _PolkitAuthorizationResult PolkitAuthorizationResult;
-typedef struct _PolkitAuthorizationResultClass PolkitAuthorizationResultClass;
-struct _PolkitAuthorizationResult
-{
-	GObject parent_instance;
-};
-struct _PolkitAuthorizationResultClass
-{
-	GObjectClass parent_class;
-};
-GType polkit_authorization_result_get_type (void);
-
-
-/* From polkitcheckauthorizationflags.h */
-typedef enum
-{
+typedef enum {
   POLKIT_CHECK_AUTHORIZATION_FLAGS_NONE = 0,
-  POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION = (1<<0),
+  POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION = (1 << 0),
 } PolkitCheckAuthorizationFlags;
 
+typedef void PolkitSubject;
+
+static inline PolkitSubject *
+polkit_system_bus_name_new (const gchar *name)
+{
+	return (PolkitSubject *) 0x1;
+}
+
+/* PolkitAuthority */
+#define POLKIT_TYPE_AUTHORITY          (polkit_authority_get_type())
+#define POLKIT_AUTHORITY(o)            (G_TYPE_CHECK_INSTANCE_CAST ((o), POLKIT_TYPE_AUTHORITY, PolkitAuthority))
+
+typedef struct {
+	GObject parent_instance;
+} PolkitAuthority;
+
+typedef struct {
+	GObjectClass parent_class;
+} PolkitAuthorityClass;
+
+GType polkit_authority_get_type (void);
+
+/* PolkitAuthorizationResult */
+#define POLKIT_TYPE_AUTHORIZATION_RESULT          (polkit_authorization_result_get_type())
+#define POLKIT_AUTHORIZATION_RESULT(o)            (G_TYPE_CHECK_INSTANCE_CAST ((o), POLKIT_TYPE_AUTHORIZATION_RESULT, PolkitAuthorizationResult))
+
+typedef struct {
+	GObject parent_instance;
+} PolkitAuthorizationResult;
+
+typedef struct {
+	GObjectClass parent_class;
+} PolkitAuthorizationResultClass;
+
+GType polkit_authorization_result_get_type (void);
+
+static inline PolkitAuthority *
+polkit_authority_get (void)
+{
+	return (PolkitAuthority *) g_object_new (POLKIT_TYPE_AUTHORITY, NULL);
+}
+
+static inline void
+polkit_authority_check_authorization (PolkitAuthority               *authority,
+                                      PolkitSubject                 *subject,
+                                      const gchar                   *action_id,
+                                      gpointer                       details,
+                                      PolkitCheckAuthorizationFlags  flags,
+                                      GCancellable                  *cancellable,
+                                      GAsyncReadyCallback            callback,
+                                      gpointer                       user_data)
+{
+	GSimpleAsyncResult *dummy_result;
+
+	dummy_result = g_simple_async_result_new(G_OBJECT (authority), callback, user_data, NULL);
+	g_simple_async_result_complete_in_idle (dummy_result);
+}
+
+static inline PolkitAuthorizationResult *
+polkit_authority_check_authorization_finish (PolkitAuthority *authority,
+                                             GAsyncResult    *res,
+                                             GError         **error)
+{
+	return (PolkitAuthorizationResult *) g_object_new (POLKIT_TYPE_AUTHORIZATION_RESULT, NULL);
+}
+
 /* From polkitauthority.h */
-PolkitAuthority *polkit_authority_get (void);
+static inline gboolean
+polkit_authorization_result_get_is_authorized (PolkitAuthorizationResult *result)
+{
+	return TRUE;
+}
 
-PolkitAuthority *
-polkit_authority_get_sync (GCancellable *cancellable, GError **error);
-
-void polkit_authority_check_authorization (PolkitAuthority               *authority,
-                                           PolkitSubject                 *subject,
-                                           const gchar                   *action_id,
-                                           gpointer                       details,
-                                           PolkitCheckAuthorizationFlags  flags,
-                                           GCancellable                  *cancellable,
-                                           GAsyncReadyCallback            callback,
-                                           gpointer                       user_data);
-
-PolkitAuthorizationResult *polkit_authority_check_authorization_finish (PolkitAuthority *authority,
-                                                                        GAsyncResult    *res,
-                                                                        GError         **error);
-
-/* From polkitauthorizationresult.h */
-gboolean polkit_authorization_result_get_is_authorized (PolkitAuthorizationResult *result);
-gboolean polkit_authorization_result_get_is_challenge  (PolkitAuthorizationResult *result);
-
-/* From polkitsystembusname.h */
-PolkitSubject *polkit_system_bus_name_new (const gchar *name);
+static inline gboolean
+polkit_authorization_result_get_is_challenge  (PolkitAuthorizationResult *result)
+{
+	return FALSE;
+}
 
 #endif /* HAVE_POLKIT */
+
+
+#if !HAVE_POLKIT || !HAVE_POLKIT_AUTHORITY_GET_SYNC
+/* Fix for polkit 0.97 and later and when polkit is disabled */
+static inline PolkitAuthority *
+polkit_authority_get_sync (GCancellable *cancellable, GError **error)
+{
+	PolkitAuthority *authority;
+
+	authority = polkit_authority_get ();
+	if (!authority)
+		g_set_error (error, 0, 0, "failed to get the PolicyKit authority");
+	return authority;
+}
+#endif /* !HAVE_POLKIT || !HAVE_POLKIT_AUTHORITY_GET_SYNC */
 
 #endif /* NM_POLKIT_H */
