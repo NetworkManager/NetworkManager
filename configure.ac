@@ -295,12 +295,18 @@ PKG_CHECK_MODULES(UUID, uuid)
 AC_SUBST(UUID_CFLAGS)
 AC_SUBST(UUID_LIBS)
 
-PKG_CHECK_MODULES(POLKIT, polkit-gobject-1)
-AC_SUBST(POLKIT_CFLAGS)
-
-# Check for polkit_authority_get_sync()
-AC_CHECK_LIB([polkit-gobject-1], [polkit_authority_get_sync], ac_have_pk_auth_get_sync="1", ac_have_pk_auth_get_sync="0")
-AC_DEFINE_UNQUOTED(HAVE_POLKIT_AUTHORITY_GET_SYNC, $ac_have_pk_auth_get_sync, [Define if you have a polkit with polkit_authority_get_sync()])
+AC_ARG_WITH([polkit],
+  AS_HELP_STRING([--without-polkit], [Don't use PolicyKit; just allow every request.]),
+  [], [with_polkit=yes])
+if test "x$with_polkit" = xyes; then
+  PKG_CHECK_MODULES(POLKIT, polkit-gobject-1)
+  AC_SUBST(POLKIT_CFLAGS)
+  AC_DEFINE([HAVE_POLKIT], 1, [Define if you have polkit])
+  # Check for polkit_authority_get_sync()
+  AC_CHECK_LIB([polkit-gobject-1], [polkit_authority_get_sync], ac_have_pk_auth_get_sync="1", ac_have_pk_auth_get_sync="0")
+  AC_DEFINE_UNQUOTED(HAVE_POLKIT_AUTHORITY_GET_SYNC, $ac_have_pk_auth_get_sync, [Define if you have a polkit with polkit_authority_get_sync()])
+fi
+AM_CONDITIONAL([WITH_POLKIT], [test "x$with_polkit" = xyes])
 
 AC_ARG_WITH(crypto, AS_HELP_STRING([--with-crypto=nss | gnutls], [Cryptography library to use for certificate and key operations]),ac_crypto=$withval, ac_crypto=nss)
 

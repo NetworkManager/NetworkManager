@@ -127,6 +127,7 @@ NetworkManager_SOURCES = \
 		nm-policy-hosts.h \
 		nm-policy-hostname.c \
 		nm-policy-hostname.h \
+		nm-polkit.c \
 		nm-polkit.h \
 		NetworkManagerUtils.c \
 		NetworkManagerUtils.h \
@@ -214,6 +215,7 @@ NetworkManager_CPPFLAGS = \
 	$(GUDEV_CFLAGS) \
 	$(LIBNL_CFLAGS) \
 	$(GMODULE_CFLAGS) \
+	$(GIO_CFLAGS) \
 	$(POLKIT_CFLAGS) \
 	-DG_DISABLE_DEPRECATED \
 	-DBINDIR=\"$(bindir)\" \
@@ -246,6 +248,7 @@ NetworkManager_LDADD = \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS) \
 	$(GMODULE_LIBS) \
+	$(GIO_LIBS) \
 	$(POLKIT_LIBS) \
 	$(LIBM) \
 	$(LIBDL)
