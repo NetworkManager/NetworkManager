@@ -25,6 +25,13 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Fix handling of link-local IPv6 DNS servers when using the dnsmasq plugin
 * Allow subject verification of 802.1x/WPA Enterprise server certificates
 * Ensure the 'novj' pppd option is given to pppd when requested
+* Fix various crashes and a security issue in the ifcfg settings plugin
+* Fix a crash accessing the Uuid property of active VPN connections
+* Allow disabling the built-in crash backtrace functionality
+* Allow building with out PolicyKit
+* dnsmasq local caching nameserver plugin cache size bumpted to 400 entries (from 150)
+* Ensure IPv6 static routes are flushed for manual configs too
+* IPv6 RAs are now accepted when forwarding is configured
 
 
 ==============================================
