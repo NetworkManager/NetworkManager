@@ -92,7 +92,7 @@ _gvalues_compare_fixed (const GValue *value1, const GValue *value2)
 
 	switch (G_VALUE_TYPE (value1)) {
 	case G_TYPE_CHAR: {
-#if GLIB_CHECK_VERSION(2,30,1)
+#if GLIB_CHECK_VERSION(2,31,0)
 		gchar val1 = g_value_get_schar (value1);
 		gchar val2 = g_value_get_schar (value2);
 #else
