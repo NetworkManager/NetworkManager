@@ -2470,7 +2470,7 @@ link_timeout_cb (gpointer user_data)
 }
 
 static gboolean
-handle_authenticate_fail (NMDeviceWifi *self, guint32 new_state, guint32 old_state)
+handle_8021x_auth_fail (NMDeviceWifi *self, guint32 new_state, guint32 old_state)
 {
 	NMDevice *device = NM_DEVICE (self);
 	NMSetting8021x *s_8021x;
@@ -2601,18 +2601,21 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		break;
 	case NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED:
 		if ((devstate == NM_DEVICE_STATE_ACTIVATED) || nm_device_is_activating (device)) {
-			/* Disconnect during authentication means the 802.1x password is wrong */
-			if (handle_authenticate_fail (self, new_state, old_state))
+			/* Disconnect of an 802.1x/LEAP connection during authentication
+			 * means secrets might be wrong. Not always the case, but until we
+			 * have more information from wpa_supplicant about why the
+			 * disconnect happened this is the best we can do.
+			 */
+			if (handle_8021x_auth_fail (self, new_state, old_state))
 				break;
 		}
 
+		/* Otherwise it might be a stupid driver or some transient error, so
+		 * let the supplicant try to reconnect a few more times.  Give it more
+		 * time if a scan is in progress since the link might be dropped during
+		 * the scan but will be re-established when the scan is done.
+		 */
 		if (devstate == NM_DEVICE_STATE_ACTIVATED) {
-			/* If it's a disconnect while activated then start the link timer
-			 * to let the supplicant reconnect for a bit and if that doesn't
-			 * work kill the connection and try something else.  Allow a bit
-			 * more time if the card is scanning since sometimes the link will
-			 * drop while scanning and come back when the scan is done.
-			 */
 			if (priv->link_timeout_id == 0)
 				priv->link_timeout_id = g_timeout_add_seconds (scanning ? 30 : 15, link_timeout_cb, self);
 		}
