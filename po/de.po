@@ -15,8 +15,8 @@ msgstr ""
 "Project-Id-Version: NetworkManager HEAD\n"
 "Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
 "product=NetworkManager&keywords=I18N+L10N&component=general\n"
-"POT-Creation-Date: 2011-03-31 15:25+0000\n"
-"PO-Revision-Date: 2011-03-31 21:08+0200\n"
+"POT-Creation-Date: 2011-08-20 15:25+0000\n"
+"PO-Revision-Date: 2011-08-31 13:16+0100\n"
 "Last-Translator: Christian Kirbach <Christian.Kirbach@googlemail.com>\n"
 "Language-Team: Deutsch <gnome-de@gnome.org>\n"
 "MIME-Version: 1.0\n"
@@ -121,12 +121,12 @@ msgstr ""
 "nowait] [--timeout <timeout>]\n"
 "  down id <Kennung> | uuid <Kennung>\n"
 
-#: ../cli/src/connections.c:220 ../cli/src/connections.c:542
+#: ../cli/src/connections.c:220 ../cli/src/connections.c:544
 #, c-format
 msgid "Error: 'con list': %s"
 msgstr "Fehler: »Verb. Liste«: %s"
 
-#: ../cli/src/connections.c:222 ../cli/src/connections.c:544
+#: ../cli/src/connections.c:222 ../cli/src/connections.c:546
 #, c-format
 msgid "Error: 'con list': %s; allowed fields: %s"
 msgstr "Fehler: »Verb. Liste«: %s; erlaubte Felder: %s"
@@ -135,15 +135,15 @@ msgstr "Fehler: »Verb. Liste«: %s; erlaubte Felder: %s"
 msgid "Connection details"
 msgstr "Verbindungsinformationen"
 
-#: ../cli/src/connections.c:417
+#: ../cli/src/connections.c:419
 msgid "never"
 msgstr "nie"
 
 #. "CAPABILITIES"
 #. Print header
 #. "WIFI-PROPERTIES"
-#: ../cli/src/connections.c:418 ../cli/src/connections.c:419
-#: ../cli/src/connections.c:597 ../cli/src/connections.c:599
+#: ../cli/src/connections.c:420 ../cli/src/connections.c:421
+#: ../cli/src/connections.c:599 ../cli/src/connections.c:601
 #: ../cli/src/devices.c:509 ../cli/src/devices.c:562 ../cli/src/devices.c:687
 #: ../cli/src/devices.c:713 ../cli/src/devices.c:714 ../cli/src/devices.c:715
 #: ../cli/src/devices.c:716 ../cli/src/devices.c:717 ../cli/src/settings.c:520
@@ -162,8 +162,8 @@ msgstr "nie"
 msgid "yes"
 msgstr "ja"
 
-#: ../cli/src/connections.c:418 ../cli/src/connections.c:419
-#: ../cli/src/connections.c:597 ../cli/src/connections.c:599
+#: ../cli/src/connections.c:420 ../cli/src/connections.c:421
+#: ../cli/src/connections.c:599 ../cli/src/connections.c:601
 #: ../cli/src/devices.c:509 ../cli/src/devices.c:562 ../cli/src/devices.c:687
 #: ../cli/src/devices.c:713 ../cli/src/devices.c:714 ../cli/src/devices.c:715
 #: ../cli/src/devices.c:716 ../cli/src/devices.c:717 ../cli/src/settings.c:520
@@ -182,14 +182,14 @@ msgstr "ja"
 msgid "no"
 msgstr "nein"
 
-#: ../cli/src/connections.c:493
+#: ../cli/src/connections.c:495
 msgid "Connection list"
 msgstr "Verbindungsliste"
 
-#: ../cli/src/connections.c:506 ../cli/src/connections.c:1378
-#: ../cli/src/connections.c:1393 ../cli/src/connections.c:1402
-#: ../cli/src/connections.c:1412 ../cli/src/connections.c:1424
-#: ../cli/src/connections.c:1519 ../cli/src/devices.c:1190
+#: ../cli/src/connections.c:508 ../cli/src/connections.c:1368
+#: ../cli/src/connections.c:1383 ../cli/src/connections.c:1392
+#: ../cli/src/connections.c:1402 ../cli/src/connections.c:1414
+#: ../cli/src/connections.c:1509 ../cli/src/devices.c:1190
 #: ../cli/src/devices.c:1200 ../cli/src/devices.c:1314
 #: ../cli/src/devices.c:1321 ../cli/src/devices.c:1534
 #: ../cli/src/devices.c:1541
@@ -197,42 +197,42 @@ msgstr "Verbindungsliste"
 msgid "Error: %s argument is missing."
 msgstr "Fehler: Argument %s fehlt."
 
-#: ../cli/src/connections.c:519
+#: ../cli/src/connections.c:521
 #, c-format
 msgid "Error: %s - no such connection."
 msgstr "Fehler: Verbindung %s existiert nicht."
 
-#: ../cli/src/connections.c:525 ../cli/src/connections.c:1437
-#: ../cli/src/connections.c:1536 ../cli/src/devices.c:987
+#: ../cli/src/connections.c:527 ../cli/src/connections.c:1427
+#: ../cli/src/connections.c:1526 ../cli/src/devices.c:987
 #: ../cli/src/devices.c:1067 ../cli/src/devices.c:1214
 #: ../cli/src/devices.c:1327 ../cli/src/devices.c:1547
 #, c-format
 msgid "Unknown parameter: %s\n"
 msgstr "Unbekannter Parameter: %s\n"
 
-#: ../cli/src/connections.c:534
+#: ../cli/src/connections.c:536
 #, c-format
 msgid "Error: no valid parameter specified."
 msgstr "Fehler: Es wurde kein gültiger Parameter angegeben."
 
-#: ../cli/src/connections.c:549 ../cli/src/connections.c:1627
+#: ../cli/src/connections.c:551 ../cli/src/connections.c:1617
 #: ../cli/src/devices.c:1755 ../cli/src/network-manager.c:463
 #, c-format
 msgid "Error: %s."
 msgstr "Fehler: %s."
 
-#: ../cli/src/connections.c:637
+#: ../cli/src/connections.c:639
 #, c-format
 msgid "Error: 'con status': %s"
 msgstr "Fehler: »Verb. Status«: %s"
 
-#: ../cli/src/connections.c:639
+#: ../cli/src/connections.c:641
 #, c-format
 msgid "Error: 'con status': %s; allowed fields: %s"
 msgstr "Fehler: »Verb. Status«: %s; erlaubte Felder: %s"
 
-#: ../cli/src/connections.c:647 ../cli/src/connections.c:1452
-#: ../cli/src/connections.c:1551 ../cli/src/devices.c:1014
+#: ../cli/src/connections.c:649 ../cli/src/connections.c:1442
+#: ../cli/src/connections.c:1541 ../cli/src/devices.c:1014
 #: ../cli/src/devices.c:1076 ../cli/src/devices.c:1229
 #: ../cli/src/devices.c:1357 ../cli/src/devices.c:1576
 #, c-format
@@ -240,227 +240,228 @@ msgid "Error: Can't find out if NetworkManager is running: %s."
 msgstr ""
 "Fehler: Es kann nicht erkannt werden, ob NetworkManager ausgeführt wird: %s."
 
-#: ../cli/src/connections.c:651 ../cli/src/connections.c:1456
-#: ../cli/src/connections.c:1555 ../cli/src/devices.c:1018
+#: ../cli/src/connections.c:653 ../cli/src/connections.c:1446
+#: ../cli/src/connections.c:1545 ../cli/src/devices.c:1018
 #: ../cli/src/devices.c:1080 ../cli/src/devices.c:1233
 #: ../cli/src/devices.c:1361 ../cli/src/devices.c:1580
 #, c-format
 msgid "Error: NetworkManager is not running."
 msgstr "Fehler: NetworkManager wird nicht ausgeführt"
 
-#: ../cli/src/connections.c:659
+#: ../cli/src/connections.c:661
 msgid "Active connections"
 msgstr "Aktive Verbindungen"
 
-#: ../cli/src/connections.c:1095
+#: ../cli/src/connections.c:1085
 #, c-format
 msgid "no active connection on device '%s'"
 msgstr "Keine aktive Verbindung auf Gerät »%s«"
 
-#: ../cli/src/connections.c:1103
+#: ../cli/src/connections.c:1093
 #, c-format
 msgid "no active connection or device"
 msgstr "Keine aktive Verbindung oder Gerät"
 
-#: ../cli/src/connections.c:1174
+#: ../cli/src/connections.c:1164
 #, c-format
 msgid "device '%s' not compatible with connection '%s'"
 msgstr "Gerät »%s« ist nicht mit der Verbindung »%s« kompatibel"
 
-#: ../cli/src/connections.c:1176
+#: ../cli/src/connections.c:1166
 #, c-format
 msgid "no device found for connection '%s'"
 msgstr "Für die Verbindung »%s« wurde kein Gerät gefunden"
 
-#: ../cli/src/connections.c:1187
+#: ../cli/src/connections.c:1177
 msgid "activating"
 msgstr "wird aktiviert"
 
-#: ../cli/src/connections.c:1189
+#: ../cli/src/connections.c:1179
 msgid "activated"
 msgstr "aktiviert"
 
-#: ../cli/src/connections.c:1191 ../cli/src/devices.c:304
+#: ../cli/src/connections.c:1181 ../cli/src/devices.c:304
 msgid "deactivating"
 msgstr "wird deaktiviert"
 
-#: ../cli/src/connections.c:1194 ../cli/src/connections.c:1217
-#: ../cli/src/connections.c:1250 ../cli/src/devices.c:308
+#: ../cli/src/connections.c:1184 ../cli/src/connections.c:1207
+#: ../cli/src/connections.c:1240 ../cli/src/devices.c:308
 #: ../cli/src/devices.c:688 ../cli/src/network-manager.c:118
 #: ../cli/src/network-manager.c:180 ../cli/src/network-manager.c:183
-#: ../cli/src/network-manager.c:298 ../cli/src/network-manager.c:353
-#: ../cli/src/network-manager.c:391 ../cli/src/network-manager.c:430
-#: ../cli/src/settings.c:485 ../cli/src/utils.c:396
+#: ../cli/src/network-manager.c:192 ../cli/src/network-manager.c:298
+#: ../cli/src/network-manager.c:353 ../cli/src/network-manager.c:391
+#: ../cli/src/network-manager.c:430 ../cli/src/settings.c:485
+#: ../cli/src/utils.c:396
 msgid "unknown"
 msgstr "unbekannt"
 
-#: ../cli/src/connections.c:1203
+#: ../cli/src/connections.c:1193
 msgid "VPN connecting (prepare)"
 msgstr "VPN wird verbunden (wird vorbereitet)"
 
-#: ../cli/src/connections.c:1205
+#: ../cli/src/connections.c:1195
 msgid "VPN connecting (need authentication)"
 msgstr "VPN wird verbunden (Legitimierung wird benötigt)"
 
-#: ../cli/src/connections.c:1207
+#: ../cli/src/connections.c:1197
 msgid "VPN connecting"
 msgstr "VPN wird verbunden"
 
-#: ../cli/src/connections.c:1209
+#: ../cli/src/connections.c:1199
 msgid "VPN connecting (getting IP configuration)"
 msgstr "VPN wird verbunden (IP-Einstellungen werden ermittelt)"
 
-#: ../cli/src/connections.c:1211
+#: ../cli/src/connections.c:1201
 msgid "VPN connected"
 msgstr "VPN verbunden"
 
-#: ../cli/src/connections.c:1213
+#: ../cli/src/connections.c:1203
 msgid "VPN connection failed"
 msgstr "VPN-Verbindung gescheitert"
 
-#: ../cli/src/connections.c:1215
+#: ../cli/src/connections.c:1205
 msgid "VPN disconnected"
 msgstr "VPN getrennt"
 
-#: ../cli/src/connections.c:1226
+#: ../cli/src/connections.c:1216
 msgid "unknown reason"
 msgstr "unbekannter Grund"
 
-#: ../cli/src/connections.c:1228
+#: ../cli/src/connections.c:1218
 msgid "none"
 msgstr "kein"
 
-#: ../cli/src/connections.c:1230
+#: ../cli/src/connections.c:1220
 msgid "the user was disconnected"
 msgstr "Der Benutzer wurde getrennt"
 
-#: ../cli/src/connections.c:1232
+#: ../cli/src/connections.c:1222
 msgid "the base network connection was interrupted"
 msgstr "Die Basisverbindung wurde unterbrochen"
 
-#: ../cli/src/connections.c:1234
+#: ../cli/src/connections.c:1224
 msgid "the VPN service stopped unexpectedly"
 msgstr "Der VPN-Dienst wurde unerwartet gestoppt"
 
-#: ../cli/src/connections.c:1236
+#: ../cli/src/connections.c:1226
 msgid "the VPN service returned invalid configuration"
 msgstr "Der VPN-Dienst gab ungültige Einstellungen zurück"
 
-#: ../cli/src/connections.c:1238
+#: ../cli/src/connections.c:1228
 msgid "the connection attempt timed out"
 msgstr "Der Verbindungsversuch benötigte zu viel Zeit"
 
-#: ../cli/src/connections.c:1240
+#: ../cli/src/connections.c:1230
 msgid "the VPN service did not start in time"
 msgstr "Der VPN-Dienst wurde nicht rechtzeitig gestartet"
 
-#: ../cli/src/connections.c:1242
+#: ../cli/src/connections.c:1232
 msgid "the VPN service failed to start"
 msgstr "Der VPN-Dienst konnte nicht gestartet werden"
 
-#: ../cli/src/connections.c:1244
+#: ../cli/src/connections.c:1234
 msgid "no valid VPN secrets"
 msgstr "Keine gültigen VPN-Schlüssel"
 
-#: ../cli/src/connections.c:1246
+#: ../cli/src/connections.c:1236
 msgid "invalid VPN secrets"
 msgstr "Ungültige VPN-Schlüssel"
 
-#: ../cli/src/connections.c:1248
+#: ../cli/src/connections.c:1238
 msgid "the connection was removed"
 msgstr "Die Verbindung wurde entfernt"
 
-#: ../cli/src/connections.c:1262
+#: ../cli/src/connections.c:1252
 #, c-format
 msgid "state: %s\n"
 msgstr "Status: %s\n"
 
-#: ../cli/src/connections.c:1265 ../cli/src/connections.c:1291
+#: ../cli/src/connections.c:1255 ../cli/src/connections.c:1281
 #, c-format
 msgid "Connection activated\n"
 msgstr "Verbindung aktiviert\n"
 
-#: ../cli/src/connections.c:1268
+#: ../cli/src/connections.c:1258
 #, c-format
 msgid "Error: Connection activation failed."
 msgstr "Fehler: Aktivierung der Verbindung ist gescheitert."
 
-#: ../cli/src/connections.c:1287
+#: ../cli/src/connections.c:1277
 #, c-format
 msgid "state: %s (%d)\n"
 msgstr "Status: %s (%d)\n"
 
-#: ../cli/src/connections.c:1297
+#: ../cli/src/connections.c:1287
 #, c-format
 msgid "Error: Connection activation failed: %s."
 msgstr "Fehler: Aktivierung der Verbindung ist gescheitert: %s."
 
-#: ../cli/src/connections.c:1314 ../cli/src/devices.c:1136
+#: ../cli/src/connections.c:1304 ../cli/src/devices.c:1136
 #, c-format
 msgid "Error: Timeout %d sec expired."
 msgstr "Fehler: Zeitbeschränkung von %d Sekunden ist abgelaufen."
 
-#: ../cli/src/connections.c:1327
+#: ../cli/src/connections.c:1317
 #, c-format
 msgid "Error: Connection activation failed: %s"
 msgstr "Fehler: Aktivierung der Verbindung ist gescheitert: %s"
 
-#: ../cli/src/connections.c:1333
+#: ../cli/src/connections.c:1323
 #, c-format
 msgid "Active connection state: %s\n"
 msgstr "Status der aktiven Verbindung: %s\n"
 
-#: ../cli/src/connections.c:1334
+#: ../cli/src/connections.c:1324
 #, c-format
 msgid "Active connection path: %s\n"
 msgstr "Pfad der aktiven Verbindung: %s\n"
 
-#: ../cli/src/connections.c:1386 ../cli/src/connections.c:1527
+#: ../cli/src/connections.c:1376 ../cli/src/connections.c:1517
 #, c-format
 msgid "Error: Unknown connection: %s."
 msgstr "Fehler: Unbekannte Verbindung: %s."
 
-#: ../cli/src/connections.c:1432 ../cli/src/devices.c:1208
+#: ../cli/src/connections.c:1422 ../cli/src/devices.c:1208
 #, c-format
 msgid "Error: timeout value '%s' is not valid."
 msgstr "Fehler: Der Wert »%s« ist keine gültige Zeitangabe."
 
-#: ../cli/src/connections.c:1445 ../cli/src/connections.c:1544
+#: ../cli/src/connections.c:1435 ../cli/src/connections.c:1534
 #, c-format
 msgid "Error: id or uuid has to be specified."
 msgstr "Fehler: id oder uuid müssen angegeben werden."
 
-#: ../cli/src/connections.c:1473
+#: ../cli/src/connections.c:1463
 #, c-format
 msgid "Error: No suitable device found: %s."
 msgstr "Fehler: Es wurde kein passendes Gerät gefunden: %s."
 
-#: ../cli/src/connections.c:1475
+#: ../cli/src/connections.c:1465
 #, c-format
 msgid "Error: No suitable device found."
 msgstr "Fehler: Es wurde kein passendes Gerät gefunden."
 
-#: ../cli/src/connections.c:1580
+#: ../cli/src/connections.c:1570
 #, c-format
 msgid "Warning: Connection not active\n"
 msgstr "Warnung: Verbindung ist nicht aktiv\n"
 
-#: ../cli/src/connections.c:1618
+#: ../cli/src/connections.c:1608
 #, c-format
 msgid "Error: 'con' command '%s' is not valid."
 msgstr "Fehler: Der »con«-Befehl »%s« ist ungültig."
 
-#: ../cli/src/connections.c:1683
+#: ../cli/src/connections.c:1673
 #, c-format
 msgid "Error: could not connect to D-Bus."
 msgstr "Fehler: Verbindung zu D-Bus konnte nicht hergestellt werden."
 
-#: ../cli/src/connections.c:1690
+#: ../cli/src/connections.c:1680
 #, c-format
 msgid "Error: Could not get system settings."
 msgstr "Fehler: Systemeinstellungen konnten nicht ermittelt werden."
 
-#: ../cli/src/connections.c:1700
+#: ../cli/src/connections.c:1690
 #, c-format
 msgid "Error: Can't obtain connections: settings service is not running."
 msgstr ""
@@ -1418,111 +1419,129 @@ msgstr ""
 "überein. Eine Ausführung kann mit »--nocheck« erzwungen werden, aber die "
 "Resultate sind unvorhersehbar."
 
-#: ../libnm-util/crypto.c:127
+#: ../libnm-util/crypto.c:133
 #, c-format
 msgid "PEM key file had no end tag '%s'."
 msgstr "PEM-Schlüsseldatei hat kein abschließendes Tag »%s«."
 
-#: ../libnm-util/crypto.c:140
+#: ../libnm-util/crypto.c:146
 #, c-format
 msgid "Doesn't look like a PEM private key file."
 msgstr "Das sieht nicht nach einer privaten PEM-Schlüsseldatei aus."
 
-#: ../libnm-util/crypto.c:148
+#: ../libnm-util/crypto.c:154
 #, c-format
 msgid "Not enough memory to store PEM file data."
 msgstr "Nicht genügend freier Speicher zum Speichern der PEM-Datendatei."
 
-#: ../libnm-util/crypto.c:164
+#: ../libnm-util/crypto.c:170
 #, c-format
 msgid "Malformed PEM file: Proc-Type was not first tag."
 msgstr "Fehlerhafte PEM-Datei: Proc-Type ist nicht das erste Tag."
 
-#: ../libnm-util/crypto.c:172
+#: ../libnm-util/crypto.c:178
 #, c-format
 msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
 msgstr "Fehlerhafte PEM-Datei: unbekannter Proc-Type-Tag »%s«."
 
-#: ../libnm-util/crypto.c:182
+#: ../libnm-util/crypto.c:188
 #, c-format
 msgid "Malformed PEM file: DEK-Info was not the second tag."
 msgstr "Fehlerhafte PEM-Datei: DEK-Info ist nicht das zweite Tag."
 
-#: ../libnm-util/crypto.c:193
+#: ../libnm-util/crypto.c:199
 #, c-format
 msgid "Malformed PEM file: no IV found in DEK-Info tag."
 msgstr "Fehlerhafte PEM-Datei: kein IV im DEK-Info-Tag gefunden."
 
-#: ../libnm-util/crypto.c:200
+#: ../libnm-util/crypto.c:206
 #, c-format
 msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
 msgstr "Fehlerhafte PEM-Datei: falsches Format des IV im DEK-Info-Tag."
 
-#: ../libnm-util/crypto.c:213
+#: ../libnm-util/crypto.c:219
 #, c-format
 msgid "Malformed PEM file: unknown private key cipher '%s'."
 msgstr "Fehlerhafte PEM-Datei: Unbekannter privater Schlüsselstrom »%s«."
 
-#: ../libnm-util/crypto.c:232
+#: ../libnm-util/crypto.c:238
 #, c-format
 msgid "Could not decode private key."
 msgstr "Der private Schlüssel konnte nicht entschlüsselt werden."
 
-#: ../libnm-util/crypto.c:268 ../libnm-util/crypto.c:554
+#: ../libnm-util/crypto.c:284
+msgid "Failed to find expected PKCS#8 start tag."
+msgstr "Auffinden der erwarteten PKCS#8-Startmarkierung scheiterte."
+
+#: ../libnm-util/crypto.c:292
+#, c-format
+msgid "Failed to find expected PKCS#8 end tag '%s'."
+msgstr "Auffinden der erwarteten PKCS#8-Endmarkierung »%s« scheiterte."
+
+#: ../libnm-util/crypto.c:312
+msgid "Not enough memory to store private key data."
+msgstr ""
+"Nicht genug freier Speicher zum Speichern der Daten des privaten Schlüssels."
+
+#: ../libnm-util/crypto.c:317
+msgid "Failed to decode PKCS#8 private key."
+msgstr "Die Entschlüsselung des privaten  PKCS#8-Schlüssels scheiterte."
+
+#: ../libnm-util/crypto.c:339 ../libnm-util/crypto.c:625
 #, c-format
 msgid "Not enough memory to store certificate data."
 msgstr "Nicht genug freier Speicher zum Speichern des Zertifikats."
 
-#: ../libnm-util/crypto.c:294
+#: ../libnm-util/crypto.c:365
 #, c-format
 msgid "IV must be an even number of bytes in length."
 msgstr "IV muss eine gerade Anzahl an Byte lang sein."
 
-#: ../libnm-util/crypto.c:303
+#: ../libnm-util/crypto.c:374
 #, c-format
 msgid "Not enough memory to store the IV."
 msgstr "Nicht genug freier Speicher zum Speichern des IV."
 
-#: ../libnm-util/crypto.c:314
+#: ../libnm-util/crypto.c:385
 #, c-format
 msgid "IV contains non-hexadecimal digits."
 msgstr "IV enthält nicht-hexadezimale Zeichen."
 
-#: ../libnm-util/crypto.c:352 ../libnm-util/crypto_gnutls.c:149
-#: ../libnm-util/crypto_gnutls.c:267 ../libnm-util/crypto_nss.c:171
-#: ../libnm-util/crypto_nss.c:336
+#: ../libnm-util/crypto.c:423 ../libnm-util/crypto_gnutls.c:147
+#: ../libnm-util/crypto_gnutls.c:265 ../libnm-util/crypto_nss.c:167
+#: ../libnm-util/crypto_nss.c:332
 #, c-format
 msgid "Private key cipher '%s' was unknown."
 msgstr "Privater Schlüsselstrom »%s« ist unbekannt."
 
-#: ../libnm-util/crypto.c:361
+#: ../libnm-util/crypto.c:432
 #, c-format
 msgid "Not enough memory to decrypt private key."
 msgstr "Nicht genug freier Speicher zum Entschlüsseln des privaten Schlüssels."
 
-#: ../libnm-util/crypto.c:426
+#: ../libnm-util/crypto.c:497
 #, c-format
 msgid "Not enough memory to store decrypted private key."
 msgstr ""
 "Nicht genug freier Speicher zum Speichern des entschlüsselten privaten "
 "Schlüssels."
 
-#: ../libnm-util/crypto.c:471
+#: ../libnm-util/crypto.c:542
 #, c-format
 msgid "Unable to determine private key type."
 msgstr "Der Typ des privaten Schlüssels konnte nicht bestimmt werden."
 
-#: ../libnm-util/crypto.c:526
+#: ../libnm-util/crypto.c:597
 #, c-format
 msgid "PEM certificate had no start tag '%s'."
 msgstr "PEM-Zertifikat hatte kein Start-Tag »%s«."
 
-#: ../libnm-util/crypto.c:535
+#: ../libnm-util/crypto.c:606
 #, c-format
 msgid "PEM certificate had no end tag '%s'."
 msgstr "PEM-Zertifikat hatte kein abschließendes Tag »%s«."
 
-#: ../libnm-util/crypto.c:559
+#: ../libnm-util/crypto.c:630
 #, c-format
 msgid "Failed to decode certificate."
 msgstr "Die Entschlüsselung des Zertifikats scheiterte."
@@ -1531,254 +1550,264 @@ msgstr "Die Entschlüsselung des Zertifikats scheiterte."
 msgid "Failed to initialize the crypto engine."
 msgstr "Die Initialisierung der crypto-engine scheiterte."
 
-#: ../libnm-util/crypto_gnutls.c:94
+#: ../libnm-util/crypto_gnutls.c:92
 #, c-format
 msgid "Failed to initialize the MD5 engine: %s / %s."
 msgstr "Die Initialisierung der MD5-engine %s / %s scheiterte."
 
-#: ../libnm-util/crypto_gnutls.c:157
+#: ../libnm-util/crypto_gnutls.c:155
 #, c-format
 msgid "Invalid IV length (must be at least %zd)."
 msgstr "Ungültige IV-Länge (muss mindestens %zd betragen)."
 
-#: ../libnm-util/crypto_gnutls.c:166 ../libnm-util/crypto_nss.c:188
+#: ../libnm-util/crypto_gnutls.c:164 ../libnm-util/crypto_nss.c:184
 #, c-format
 msgid "Not enough memory for decrypted key buffer."
 msgstr ""
 "Nicht genug freier Speicher zum Zwischenspeichern des entschlüsselten "
 "Schlüssels."
 
-#: ../libnm-util/crypto_gnutls.c:174
+#: ../libnm-util/crypto_gnutls.c:172
 #, c-format
 msgid "Failed to initialize the decryption cipher context: %s / %s."
 msgstr ""
 "Die Initialisierung des Entschlüsselung-Chiffrekontextes scheiterte: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:183
+#: ../libnm-util/crypto_gnutls.c:181
 #, c-format
 msgid "Failed to set symmetric key for decryption: %s / %s."
 msgstr ""
 "Das Anlegen der symmetrischen Schlüssel zum Entschlüsseln scheiterte: %s / %"
 "s."
 
-#: ../libnm-util/crypto_gnutls.c:192
+#: ../libnm-util/crypto_gnutls.c:190
 #, c-format
 msgid "Failed to set IV for decryption: %s / %s."
 msgstr "Das Anlegen des IV zum Entschlüsseln scheiterte: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:201
+#: ../libnm-util/crypto_gnutls.c:199
 #, c-format
 msgid "Failed to decrypt the private key: %s / %s."
 msgstr "Die Entschlüsselung des privaten Schlüssels scheiterte: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:211 ../libnm-util/crypto_nss.c:267
+#: ../libnm-util/crypto_gnutls.c:209 ../libnm-util/crypto_nss.c:263
 #, c-format
 msgid "Failed to decrypt the private key: unexpected padding length."
 msgstr ""
 "Die Entschlüsselung des privaten Schlüssels scheiterte: Unerwartete "
 "Zeilenlänge."
 
-#: ../libnm-util/crypto_gnutls.c:222 ../libnm-util/crypto_nss.c:278
+#: ../libnm-util/crypto_gnutls.c:220 ../libnm-util/crypto_nss.c:274
 #, c-format
 msgid "Failed to decrypt the private key."
 msgstr "Die Entschlüsselung des privaten Schlüssels scheiterte."
 
-#: ../libnm-util/crypto_gnutls.c:287 ../libnm-util/crypto_nss.c:356
+#: ../libnm-util/crypto_gnutls.c:285 ../libnm-util/crypto_nss.c:352
 #, c-format
 msgid "Could not allocate memory for encrypting."
 msgstr ""
 "Es konnte nicht genügend freier Speicher zum Verschlüsseln angefordert "
 "werden."
 
-#: ../libnm-util/crypto_gnutls.c:295
+#: ../libnm-util/crypto_gnutls.c:293
 #, c-format
 msgid "Failed to initialize the encryption cipher context: %s / %s."
 msgstr ""
 "Die Initialisierung des Verschlüsselung-Chiffrekontextes scheiterte: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:304
+#: ../libnm-util/crypto_gnutls.c:302
 #, c-format
 msgid "Failed to set symmetric key for encryption: %s / %s."
 msgstr ""
 "Das Anlegen des symmetrischen Schlüssels zum Verschlüsseln scheiterte: %s / %"
 "s."
 
-#: ../libnm-util/crypto_gnutls.c:314
+#: ../libnm-util/crypto_gnutls.c:312
 #, c-format
 msgid "Failed to set IV for encryption: %s / %s."
 msgstr "Das Anlegen des IV zur Verschlüsselung scheiterte: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:323
+#: ../libnm-util/crypto_gnutls.c:321
 #, c-format
 msgid "Failed to encrypt the data: %s / %s."
 msgstr "Die Verschlüsselung der Daten scheiterte: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:363
+#: ../libnm-util/crypto_gnutls.c:361
 #, c-format
 msgid "Error initializing certificate data: %s"
 msgstr "Die Initialisierung der Zertifikatsdaten schlug fehl: %s"
 
-#: ../libnm-util/crypto_gnutls.c:385
+#: ../libnm-util/crypto_gnutls.c:383
 #, c-format
 msgid "Couldn't decode certificate: %s"
 msgstr "Zertifikat konnte nicht entschlüsselt werden: %s"
 
-#: ../libnm-util/crypto_gnutls.c:409
+#: ../libnm-util/crypto_gnutls.c:407
 #, c-format
 msgid "Couldn't initialize PKCS#12 decoder: %s"
 msgstr "PKCS#12-Decoder konnte nicht initialisiert werden: %s"
 
-#: ../libnm-util/crypto_gnutls.c:422
+#: ../libnm-util/crypto_gnutls.c:420
 #, c-format
 msgid "Couldn't decode PKCS#12 file: %s"
 msgstr "PKCS#12 konnte nicht entschlüsselt werden: %s"
 
-#: ../libnm-util/crypto_gnutls.c:434
+#: ../libnm-util/crypto_gnutls.c:432
 #, c-format
 msgid "Couldn't verify PKCS#12 file: %s"
 msgstr "PKCS#12-Datei konnte nicht überprüft werden: %s"
+
+#: ../libnm-util/crypto_gnutls.c:460
+#, c-format
+msgid "Couldn't initialize PKCS#8 decoder: %s"
+msgstr "PKCS#8-Decoder konnte nicht initialisiert werden: %s"
+
+#: ../libnm-util/crypto_gnutls.c:483
+#, c-format
+msgid "Couldn't decode PKCS#8 file: %s"
+msgstr "PKCS#8-Datei konnte nicht entschlüsselt werden: %s"
 
 #: ../libnm-util/crypto_nss.c:56
 #, c-format
 msgid "Failed to initialize the crypto engine: %d."
 msgstr "Die Initialisierung der crypto-engine scheiterte: %d."
 
-#: ../libnm-util/crypto_nss.c:111
+#: ../libnm-util/crypto_nss.c:107
 #, c-format
 msgid "Failed to initialize the MD5 context: %d."
 msgstr "Die Initialisierung des MD5-Kontexts scheiterte: %d."
 
-#: ../libnm-util/crypto_nss.c:179
+#: ../libnm-util/crypto_nss.c:175
 #, c-format
 msgid "Invalid IV length (must be at least %d)."
 msgstr "Ungültige IV-Länge (muss mindestens %d betragen)."
 
-#: ../libnm-util/crypto_nss.c:196
+#: ../libnm-util/crypto_nss.c:192
 #, c-format
 msgid "Failed to initialize the decryption cipher slot."
 msgstr "Die Initialisierung des Entschlüsselungsstromslots scheiterte."
 
-#: ../libnm-util/crypto_nss.c:206
+#: ../libnm-util/crypto_nss.c:202
 #, c-format
 msgid "Failed to set symmetric key for decryption."
 msgstr ""
 "Das Anlegen des symmetrischen Schlüssels zur Entschlüsselung scheiterte."
 
-#: ../libnm-util/crypto_nss.c:216
+#: ../libnm-util/crypto_nss.c:212
 #, c-format
 msgid "Failed to set IV for decryption."
 msgstr "Das Anlegen des IV zur Entschlüsselung scheiterte."
 
-#: ../libnm-util/crypto_nss.c:224
+#: ../libnm-util/crypto_nss.c:220
 #, c-format
 msgid "Failed to initialize the decryption context."
 msgstr "Die Initialisierung des Entschlüsselungskontexts scheiterte."
 
-#: ../libnm-util/crypto_nss.c:237
+#: ../libnm-util/crypto_nss.c:233
 #, c-format
 msgid "Failed to decrypt the private key: %d."
 msgstr "Das Entschlüsseln des privaten Schlüssels scheiterte: %d."
 
-#: ../libnm-util/crypto_nss.c:245
+#: ../libnm-util/crypto_nss.c:241
 #, c-format
 msgid "Failed to decrypt the private key: decrypted data too large."
 msgstr ""
 "Das Entschlüsseln des privaten Schlüssels scheiterte: Die entschlüsselten "
 "Daten sind zu groß."
 
-#: ../libnm-util/crypto_nss.c:256
+#: ../libnm-util/crypto_nss.c:252
 #, c-format
 msgid "Failed to finalize decryption of the private key: %d."
 msgstr ""
 "Das Abschließen der Entschlüsselung des privaten Schlüssels scheiterte: %d."
 
-#: ../libnm-util/crypto_nss.c:364
+#: ../libnm-util/crypto_nss.c:360
 #, c-format
 msgid "Failed to initialize the encryption cipher slot."
 msgstr "Die Initialisierung des Verschlüsselungsstromslots scheiterte."
 
-#: ../libnm-util/crypto_nss.c:372
+#: ../libnm-util/crypto_nss.c:368
 #, c-format
 msgid "Failed to set symmetric key for encryption."
 msgstr ""
 "Das Anlegen des symmetrischen Schlüssels zur Verschlüsselung scheiterte."
 
-#: ../libnm-util/crypto_nss.c:380
+#: ../libnm-util/crypto_nss.c:376
 #, c-format
 msgid "Failed to set IV for encryption."
 msgstr "Das Anlegen des IV zur Verschlüsselung scheiterte."
 
-#: ../libnm-util/crypto_nss.c:388
+#: ../libnm-util/crypto_nss.c:384
 #, c-format
 msgid "Failed to initialize the encryption context."
-msgstr "Die Initialisierung des Verschlusselungskontexts scheiterte."
+msgstr "Die Initialisierung des Verschlüsselungskontexts scheiterte."
 
-#: ../libnm-util/crypto_nss.c:396
+#: ../libnm-util/crypto_nss.c:392
 #, c-format
 msgid "Failed to encrypt: %d."
 msgstr "Das Verschlüsseln scheiterte: %d."
 
-#: ../libnm-util/crypto_nss.c:404
+#: ../libnm-util/crypto_nss.c:400
 #, c-format
 msgid "Unexpected amount of data after encrypting."
 msgstr "Unerwartete Datenmenge nach der Verschlüsselung."
 
-#: ../libnm-util/crypto_nss.c:447
+#: ../libnm-util/crypto_nss.c:443
 #, c-format
 msgid "Couldn't decode certificate: %d"
 msgstr "Das Zertifikat konnte nicht entschlüsselt werden: %d"
 
-#: ../libnm-util/crypto_nss.c:482
+#: ../libnm-util/crypto_nss.c:478
 #, c-format
 msgid "Couldn't convert password to UCS2: %d"
 msgstr "Das Passwort konnte nicht zu UCS2 konvertiert werden: %d"
 
-#: ../libnm-util/crypto_nss.c:510
+#: ../libnm-util/crypto_nss.c:506
 #, c-format
 msgid "Couldn't initialize PKCS#12 decoder: %d"
 msgstr "PKCS#12-Decoder konnte nicht initialisiert werden: %d"
 
-#: ../libnm-util/crypto_nss.c:519
+#: ../libnm-util/crypto_nss.c:515
 #, c-format
 msgid "Couldn't decode PKCS#12 file: %d"
 msgstr "PKCS#12-Datei konnte nicht verschlüsselt werden: %d"
 
-#: ../libnm-util/crypto_nss.c:528
+#: ../libnm-util/crypto_nss.c:524
 #, c-format
 msgid "Couldn't verify PKCS#12 file: %d"
 msgstr "PKCS#12-Datei konnte nicht überprüft werden: %d"
 
-#: ../libnm-util/crypto_nss.c:557
+#: ../libnm-util/crypto_nss.c:568
 msgid "Could not generate random data."
 msgstr "Es konnten keine Zufallsdaten generiert werden."
 
-#: ../libnm-util/nm-utils.c:1989
+#: ../libnm-util/nm-utils.c:2000
 #, c-format
 msgid "Not enough memory to make encryption key."
 msgstr ""
 "Nicht genügend freier Speicher zur Erstellung des Verschlüsselungsschlüssels."
 
-#: ../libnm-util/nm-utils.c:2099
+#: ../libnm-util/nm-utils.c:2110
 msgid "Could not allocate memory for PEM file creation."
 msgstr ""
 "Es konnte nicht genügend freier Speicher zur Erstellung der PEM-Datei "
 "angefordert werden."
 
-#: ../libnm-util/nm-utils.c:2111
+#: ../libnm-util/nm-utils.c:2122
 #, c-format
 msgid "Could not allocate memory for writing IV to PEM file."
 msgstr ""
 "Es konnte nicht genügend freier Speicher zum Schreiben des IV in die PEM-"
 "Datei angefordert werden."
 
-#: ../libnm-util/nm-utils.c:2123
+#: ../libnm-util/nm-utils.c:2134
 #, c-format
 msgid "Could not allocate memory for writing encrypted key to PEM file."
 msgstr ""
 "Es konnte nicht genügend freier Speicher zum Schreiben des verschlüsselten "
 "Schlüssels in die PEM-Datei angefordert werden."
 
-#: ../libnm-util/nm-utils.c:2142
+#: ../libnm-util/nm-utils.c:2153
 #, c-format
 msgid "Could not allocate memory for PEM file data."
 msgstr ""
@@ -1899,14 +1928,14 @@ msgstr ""
 "Die Systemrichtlinien verhindern Verbindungsfreigaben über ein offenes WLAN-"
 "Netzwerk"
 
-#: ../src/main.c:519
+#: ../src/main.c:530
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr ""
 "Ungültige Option.  Verwenden Sie --help um eine Liste der verfügbaren "
 "Optionen zu erhalten.\n"
 
-#: ../src/main.c:590
+#: ../src/main.c:611
 #, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr ""
@@ -1943,13 +1972,13 @@ msgstr "»dhcpcd« konnte nicht gefunden werden."
 msgid "unsupported DHCP client '%s'"
 msgstr "Nicht unterstützter DHCP-Client »%s«"
 
-#: ../src/dns-manager/nm-dns-manager.c:367
+#: ../src/dns-manager/nm-dns-manager.c:376
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr ""
 "HINWEIS: Der libc-resolver unterstützt eventuell nicht mehr als drei "
 "Nameserver."
 
-#: ../src/dns-manager/nm-dns-manager.c:369
+#: ../src/dns-manager/nm-dns-manager.c:378
 msgid "The nameservers listed below may not be recognized."
 msgstr "Die nachfolgend gelisteten Nameserver werden eventuell nicht erkannt."
 
@@ -1983,22 +2012,22 @@ msgstr "PAN-Verbindung %d"
 msgid "DUN connection %d"
 msgstr "DUN-Verbindung %d"
 
-#: ../src/nm-device-ethernet.c:1681
+#: ../src/nm-device-ethernet.c:1723
 #, c-format
 msgid "PPPoE connection %d"
 msgstr "PPPoE-Verbindung %d"
 
-#: ../src/nm-device-ethernet.c:1681 ../src/settings/nm-settings-utils.c:50
+#: ../src/nm-device-ethernet.c:1723 ../src/settings/nm-settings-utils.c:50
 #, c-format
 msgid "Wired connection %d"
 msgstr "Kabelgebundene Verbindung %d"
 
-#: ../src/nm-device-olpc-mesh.c:423
+#: ../src/nm-device-olpc-mesh.c:393
 #, c-format
 msgid "Mesh %d"
 msgstr "Maschennetz %d‬"
 
-#: ../src/nm-manager.c:660
+#: ../src/nm-manager.c:657
 #, c-format
 msgid "VPN connection %d"
 msgstr "VPN-Verbindung %d"
@@ -2051,7 +2080,7 @@ msgstr "Der netlink-Gruppe konnte nicht beigetreten werden: %s"
 msgid "error updating link cache: %s"
 msgstr "Die Aktualisierung des Verbindungszwischenspeichers schlug fehl: %s"
 
-#: ../src/settings/plugins/ifcfg-rh/reader.c:3464
+#: ../src/settings/plugins/ifcfg-rh/reader.c:3575
 #: ../src/settings/plugins/ifnet/connection_parser.c:51
 msgid "System"
 msgstr "System"
@@ -2079,9 +2108,6 @@ msgstr "System"
 
 #~ msgid "Error: Could not get user settings."
 #~ msgstr "Fehler: Benutzereinstellungen konnten nicht ermittelt werden."
-
-#~ msgid "Not enough memory to store file data."
-#~ msgstr "Nicht genug freier Speicher zum Speichern der Datei."
 
 #~ msgid "Allow use of user-specific connections"
 #~ msgstr "Die Verwendung von benutzerspezifischen Verbindungen erlauben"
