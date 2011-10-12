@@ -12,6 +12,13 @@ Overview of changes since NetworkManager-0.9.0
 * Fix an issue with duplicated keyfile connections
 * Ensure the 'novj' options is passed through to pppd
 * Store timestamps for VPN connections too
+* Fix a crash when deleting default wired connections
+* Fix a security issue in the ifcfg-rh plugin with newlines in file names
+* Fix the "SpecificObject" property for active VPN connection objects
+* Improve handling of rfkill on some platforms
+* Spaces no longer used in ifcfg config file names
+* IPv6 RAs are now accepted when forwarding is configured
+* dnsmasq local caching nameserver plugin cache size bumped to 400 entries (from 150)
 
 
 ==============================================
