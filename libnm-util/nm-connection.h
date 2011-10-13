@@ -36,6 +36,7 @@
 #include <nm-setting-cdma.h>
 #include <nm-setting-connection.h>
 #include <nm-setting-gsm.h>
+#include <nm-setting-infiniband.h>
 #include <nm-setting-ip4-config.h>
 #include <nm-setting-ip6-config.h>
 #include <nm-setting-olpc-mesh.h>
@@ -188,6 +189,7 @@ NMSettingBond *            nm_connection_get_setting_bond              (NMConnec
 NMSettingCdma *            nm_connection_get_setting_cdma              (NMConnection *connection);
 NMSettingConnection *      nm_connection_get_setting_connection        (NMConnection *connection);
 NMSettingGsm *             nm_connection_get_setting_gsm               (NMConnection *connection);
+NMSettingInfiniband *      nm_connection_get_setting_infiniband        (NMConnection *connection);
 NMSettingIP4Config *       nm_connection_get_setting_ip4_config        (NMConnection *connection);
 NMSettingIP6Config *       nm_connection_get_setting_ip6_config        (NMConnection *connection);
 NMSettingOlpcMesh *        nm_connection_get_setting_olpc_mesh         (NMConnection *connection);

@@ -34,6 +34,7 @@
 #include "nm-setting-8021x.h"
 #include "nm-setting-bluetooth.h"
 #include "nm-setting-connection.h"
+#include "nm-setting-infiniband.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-setting-ppp.h"
@@ -136,7 +137,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 static GHashTable *registered_settings = NULL;
 
-#define DEFAULT_MAP_SIZE 17
+#define DEFAULT_MAP_SIZE 18
 
 static struct SettingInfo {
 	const char *name;
@@ -246,6 +247,11 @@ register_default_settings (void)
 	register_one_setting (NM_SETTING_BOND_SETTING_NAME,
 	                      NM_TYPE_SETTING_BOND,
 	                      NM_SETTING_BOND_ERROR,
+	                      1, TRUE);
+
+	register_one_setting (NM_SETTING_INFINIBAND_SETTING_NAME,
+	                      NM_TYPE_SETTING_INFINIBAND,
+	                      NM_SETTING_INFINIBAND_ERROR,
 	                      1, TRUE);
 
 	register_one_setting (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
@@ -1410,6 +1416,23 @@ nm_connection_get_setting_gsm (NMConnection *connection)
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingGsm *) nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM);
+}
+
+/**
+ * nm_connection_get_setting_infiniband:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingInfiniband the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingInfiniband if the connection contains one, otherwise NULL
+ **/
+NMSettingInfiniband *
+nm_connection_get_setting_infiniband (NMConnection *connection)
+{
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingInfiniband *) nm_connection_get_setting (connection, NM_TYPE_SETTING_INFINIBAND);
 }
 
 /**

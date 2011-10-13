@@ -21,6 +21,7 @@ global:
 	nm_connection_get_setting_cdma;
 	nm_connection_get_setting_connection;
 	nm_connection_get_setting_gsm;
+	nm_connection_get_setting_infiniband;
 	nm_connection_get_setting_ip4_config;
 	nm_connection_get_setting_ip6_config;
 	nm_connection_get_setting_olpc_mesh;
@@ -234,6 +235,12 @@ global:
 	nm_setting_gsm_get_type;
 	nm_setting_gsm_get_username;
 	nm_setting_gsm_new;
+	nm_setting_infiniband_error_get_type;
+	nm_setting_infiniband_error_quark;
+	nm_setting_infiniband_get_mac_address;
+	nm_setting_infiniband_get_mtu;
+	nm_setting_infiniband_get_type;
+	nm_setting_infiniband_new;
 	nm_setting_ip4_config_add_address;
 	nm_setting_ip4_config_add_dns;
 	nm_setting_ip4_config_add_dns_search;
