@@ -308,8 +308,8 @@ nm_setting_get_name (NMSetting *setting)
 /**
  * nm_setting_verify:
  * @setting: the #NMSetting to verify
- * @all_settings: a #GSList of all settings in the connection from which @setting
- * came
+ * @all_settings: (element-type NMSetting): a #GSList of all settings
+ *     in the connection from which @setting came
  * @error: location to store error, or %NULL
  *
  * Validates the setting.  Each setting's properties have allowed values, and
@@ -670,8 +670,8 @@ clear_secrets_with_flags (NMSetting *setting,
 /**
  * nm_setting_clear_secrets_with_flags:
  * @setting: the #NMSetting
- * @func: function to be called to determine whether a specific secret should be
- *  cleared or not
+ * @func: (scope call): function to be called to determine whether a
+ *     specific secret should be cleared or not
  * @user_data: caller-supplied data passed to @func
  *
  * Clears and frees secrets determined by @func.

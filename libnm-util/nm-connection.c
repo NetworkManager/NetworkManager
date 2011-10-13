@@ -975,8 +975,8 @@ nm_connection_clear_secrets (NMConnection *connection)
 /**
  * nm_connection_clear_secrets_with_flags:
  * @connection: the #NMConnection
- * @func: function to be called to determine whether a specific secret should be
- *  cleared or not
+ * @func: (scope call): function to be called to determine whether a
+ *     specific secret should be cleared or not
  * @user_data: caller-supplied data passed to @func
  *
  * Clears and frees secrets determined by @func.

@@ -490,7 +490,7 @@ nm_utils_gvalue_hash_dup (GHashTable *hash)
 }
 
 /**
- * nm_utils_slist_free:
+ * nm_utils_slist_free: (skip)
  * @list: a #GSList
  * @elem_destroy_fn: user function called for each element in @list
  *
@@ -1373,7 +1373,7 @@ nm_utils_ip4_addresses_from_gvalue (const GValue *value)
 
 /**
  * nm_utils_ip4_addresses_to_gvalue:
- * @list: a list of #NMIP4Address objects
+ * @list: (element-type NMIP4Address): a list of #NMIP4Address objects
  * @value: a pointer to a #GValue into which to place the converted addresses,
  * which should be unset by the caller (when no longer needed) with
  * g_value_unset().
@@ -1456,7 +1456,7 @@ nm_utils_ip4_routes_from_gvalue (const GValue *value)
 
 /**
  * nm_utils_ip4_routes_to_gvalue:
- * @list: a list of #NMIP4Route objects
+ * @list: (element-type NMIP4Route): a list of #NMIP4Route objects
  * @value: a pointer to a #GValue into which to place the converted routes,
  * which should be unset by the caller (when no longer needed) with
  * g_value_unset().
@@ -1664,7 +1664,7 @@ nm_utils_ip6_addresses_from_gvalue (const GValue *value)
 
 /**
  * nm_utils_ip6_addresses_to_gvalue:
- * @list: a list of #NMIP6Address objects
+ * @list: (element-type NMIP6Address): a list of #NMIP6Address objects
  * @value: a pointer to a #GValue into which to place the converted addresses,
  * which should be unset by the caller (when no longer needed) with
  * g_value_unset().
@@ -1786,7 +1786,7 @@ nm_utils_ip6_routes_from_gvalue (const GValue *value)
 
 /**
  * nm_utils_ip6_routes_to_gvalue:
- * @list: a list of #NMIP6Route objects
+ * @list: (element-type NMIP6Route): a list of #NMIP6Route objects
  * @value: a pointer to a #GValue into which to place the converted routes,
  * which should be unset by the caller (when no longer needed) with
  * g_value_unset().
