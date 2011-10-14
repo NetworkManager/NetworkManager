@@ -130,12 +130,16 @@ NetworkManager_SOURCES = \
 		wifi-utils-nl80211.h \
 		nm-device-wifi.c \
 		nm-device-wifi.h \
+		nm-device-wired.c \
+		nm-device-wired.h \
 		nm-device-olpc-mesh.c	\
 		nm-device-olpc-mesh.h	\
 		nm-device-bt.c \
 		nm-device-bt.h \
 		nm-device-modem.h \
 		nm-device-modem.c \
+		nm-device-infiniband.c \
+		nm-device-infiniband.h \
 		nm-wifi-ap.c \
 		nm-wifi-ap.h \
 		nm-wifi-ap-utils.c \
@@ -201,6 +205,9 @@ nm-device-interface-glue.h: $(top_srcdir)/introspection/nm-device.xml
 nm-device-ethernet-glue.h: $(top_srcdir)/introspection/nm-device-ethernet.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_ethernet --mode=glib-server --output=$@ $<
 
+nm-device-infiniband-glue.h: $(top_srcdir)/introspection/nm-device-infiniband.xml
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_infiniband --mode=glib-server --output=$@ $<
+
 nm-device-wifi-glue.h: $(top_srcdir)/introspection/nm-device-wifi.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_wifi --mode=glib-server --output=$@ $<
 
@@ -233,6 +240,7 @@ BUILT_SOURCES = \
 	nm-manager-glue.h \
 	nm-device-interface-glue.h \
 	nm-device-ethernet-glue.h \
+	nm-device-infiniband-glue.h \
 	nm-device-wifi-glue.h \
 	nm-device-olpc-mesh-glue.h \
 	nm-device-bt-glue.h \

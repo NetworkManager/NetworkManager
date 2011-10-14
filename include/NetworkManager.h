@@ -101,20 +101,22 @@ typedef enum {
  * @NM_DEVICE_TYPE_WIMAX: an 802.16e Mobile WiMAX broadband device
  * @NM_DEVICE_TYPE_MODEM: a modem supporting analog telephone, CDMA/EVDO,
  * GSM/UMTS, or LTE network access protocols
+ * @NM_DEVICE_TYPE_INFINIBAND: an IP-over-Infiniband device
  *
  * #NMDeviceType values indicate the type of hardware represented by
  * an #NMDevice.
  **/
 typedef enum {
-	NM_DEVICE_TYPE_UNKNOWN   = 0,
-	NM_DEVICE_TYPE_ETHERNET  = 1,
-	NM_DEVICE_TYPE_WIFI      = 2,
-	NM_DEVICE_TYPE_UNUSED1   = 3,
-	NM_DEVICE_TYPE_UNUSED2   = 4,
-	NM_DEVICE_TYPE_BT        = 5,  /* Bluetooth */
-	NM_DEVICE_TYPE_OLPC_MESH = 6,
-	NM_DEVICE_TYPE_WIMAX     = 7,
-	NM_DEVICE_TYPE_MODEM     = 8,
+	NM_DEVICE_TYPE_UNKNOWN    = 0,
+	NM_DEVICE_TYPE_ETHERNET   = 1,
+	NM_DEVICE_TYPE_WIFI       = 2,
+	NM_DEVICE_TYPE_UNUSED1    = 3,
+	NM_DEVICE_TYPE_UNUSED2    = 4,
+	NM_DEVICE_TYPE_BT         = 5,  /* Bluetooth */
+	NM_DEVICE_TYPE_OLPC_MESH  = 6,
+	NM_DEVICE_TYPE_WIMAX      = 7,
+	NM_DEVICE_TYPE_MODEM      = 8,
+	NM_DEVICE_TYPE_INFINIBAND = 9,
 } NMDeviceType;
 
 /**

@@ -296,15 +296,6 @@ constructor (GType type,
 		goto error;
 	}
 
-	if (NM_DEVICE_GET_CLASS (dev)->update_hw_address)
-		NM_DEVICE_GET_CLASS (dev)->update_hw_address (dev);
-
-	if (NM_DEVICE_GET_CLASS (dev)->update_permanent_hw_address)
-		NM_DEVICE_GET_CLASS (dev)->update_permanent_hw_address (dev);
-
-	if (NM_DEVICE_GET_CLASS (dev)->update_initial_hw_address)
-		NM_DEVICE_GET_CLASS (dev)->update_initial_hw_address (dev);
-
 	priv->dhcp_manager = nm_dhcp_manager_get ();
 
 	priv->fw_manager = nm_firewall_manager_get ();
@@ -317,6 +308,24 @@ constructor (GType type,
 error:
 	g_object_unref (dev);
 	return NULL;
+}
+
+static void
+constructed (GObject *object)
+{
+	NMDevice *dev = NM_DEVICE (object);
+
+	if (NM_DEVICE_GET_CLASS (dev)->update_hw_address)
+		NM_DEVICE_GET_CLASS (dev)->update_hw_address (dev);
+
+	if (NM_DEVICE_GET_CLASS (dev)->update_permanent_hw_address)
+		NM_DEVICE_GET_CLASS (dev)->update_permanent_hw_address (dev);
+
+	if (NM_DEVICE_GET_CLASS (dev)->update_initial_hw_address)
+		NM_DEVICE_GET_CLASS (dev)->update_initial_hw_address (dev);
+
+	if (G_OBJECT_CLASS (nm_device_parent_class)->constructed)
+		G_OBJECT_CLASS (nm_device_parent_class)->constructed (object);
 }
 
 static gboolean
@@ -3598,6 +3607,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->constructor = constructor;
+	object_class->constructed = constructed;
 
 	klass->get_type_capabilities = real_get_type_capabilities;
 	klass->get_generic_capabilities = real_get_generic_capabilities;

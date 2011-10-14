@@ -23,9 +23,8 @@
 #define NM_DEVICE_ETHERNET_H
 
 #include <glib-object.h>
-#include <net/ethernet.h>
 
-#include "nm-device.h"
+#include "nm-device-wired.h"
 
 G_BEGIN_DECLS
 
@@ -42,11 +41,11 @@ G_BEGIN_DECLS
 #define NM_DEVICE_ETHERNET_CARRIER "carrier"
 
 typedef struct {
-	NMDevice parent;
+	NMDeviceWired parent;
 } NMDeviceEthernet;
 
 typedef struct {
-	NMDeviceClass parent;
+	NMDeviceWiredClass parent;
 
 	/* Signals */
 	void (*properties_changed) (NMDeviceEthernet *device, GHashTable *properties);
@@ -59,9 +58,6 @@ GType nm_device_ethernet_get_type (void);
 NMDevice *nm_device_ethernet_new (const char *udi,
                                   const char *iface,
                                   const char *driver);
-
-void nm_device_ethernet_get_address (NMDeviceEthernet *dev,
-                                     struct ether_addr *addr);
 
 gboolean nm_device_bond_connection_matches (NMDevice *device, NMConnection *connection);
 

@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include <net/if_arp.h>
 
 #include <gudev/gudev.h>
 
@@ -35,6 +36,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-device-wifi.h"
 #include "nm-device-olpc-mesh.h"
+#include "nm-device-infiniband.h"
 #include "nm-device-ethernet.h"
 #include "wifi-utils.h"
 #if WITH_WIMAX
@@ -381,6 +383,13 @@ is_wimax (const char *driver)
 	return g_strcmp0 (driver, "i2400m_usb") == 0;
 }
 
+static gboolean
+is_infiniband (GUdevDevice *device)
+{
+	gint etype = g_udev_device_get_sysfs_attr_as_int (device, "type");
+	return etype == ARPHRD_INFINIBAND;
+}
+
 static GObject *
 device_creator (NMUdevManager *manager,
                 GUdevDevice *udev_device,
@@ -454,7 +463,9 @@ device_creator (NMUdevManager *manager,
 #if WITH_WIMAX
 		device = (GObject *) nm_device_wimax_new (path, ifname, driver);
 #endif
-	} else
+	} else if (is_infiniband (udev_device))
+		device = (GObject *) nm_device_infiniband_new (path, ifname, driver);
+	else
 		device = (GObject *) nm_device_ethernet_new (path, ifname, driver);
 
 out:
@@ -488,7 +499,7 @@ net_add (NMUdevManager *self, GUdevDevice *device)
 	 * s390 CTC-type devices that report 256 for some reason.
 	 * FIXME: use something other than interface name to detect CTC here.
 	 */
-	if ((etype != 1) && (is_ctc == FALSE)) {
+	if ((etype != ARPHRD_ETHER) && (etype != ARPHRD_INFINIBAND) && (is_ctc == FALSE)) {
 		nm_log_dbg (LOGD_HW, "(%s): ignoring interface with type %d", iface, etype);
 		return;
 	}

@@ -52,6 +52,7 @@ enum {
 	LOGD_DEVICE     = 0x00200000, /* Device state and activation */
 	LOGD_OLPC_MESH  = 0x00400000,
 	LOGD_WIMAX      = 0x00800000,
+	LOGD_INFINIBAND = 0x01000000,
 };
 
 #define LOGD_DHCP (LOGD_DHCP4 | LOGD_DHCP6)
