@@ -743,13 +743,13 @@ get_uchar_array (GKeyFile *keyfile,
 	int i;
 
 	/* New format: just a string
-	 * Old format: integer list; e.g. 11;25;38
+	 * Old format: integer list; e.g. 11;25;38;
 	 */
 	tmp_string = g_key_file_get_string (keyfile, setting_name, key, NULL);
 	if (tmp_string) {
 		GRegex *regex;
 		GMatchInfo *match_info;
-		const char *pattern = "^[[:space:]]*[[:digit:]]{1,3}[[:space:]]*(;[[:space:]]*[[:digit:]]{1,3}[[:space:]]*)*(;[[:space:]]*)?$";
+		const char *pattern = "^[[:space:]]*[[:digit:]]{1,3};[[:space:]]*([[:space:]]*[[:digit:]]{1,3};[[:space:]]*)*([[:space:]]*)?$";
 
 		regex = g_regex_new (pattern, 0, 0, NULL);
 		g_regex_match (regex, tmp_string, 0, &match_info);
