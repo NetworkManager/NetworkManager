@@ -730,11 +730,27 @@ read_hash_of_string (GKeyFile *file, NMSetting *setting, const char *key)
 	g_strfreev (keys);
 }
 
+static void
+unescape_semicolons (char *str)
+{
+	int i;
+	gsize len = strlen (str);
+
+	for (i = 0; i < len; i++) {
+		if (str[i] == '\\' && str[i+1] == ';') {
+			memmove(str + i, str + i + 1, len - (i + 1));
+			len--;
+		}
+		str[len] = '\0';
+	}
+}
+
 static GByteArray *
 get_uchar_array (GKeyFile *keyfile,
                  const char *setting_name,
                  const char *key,
-                 gboolean zero_terminate)
+                 gboolean zero_terminate,
+                 gboolean unescape_semicolon)
 {
 	GByteArray *array = NULL;
 	char *tmp_string;
@@ -749,12 +765,14 @@ get_uchar_array (GKeyFile *keyfile,
 	if (tmp_string) {
 		GRegex *regex;
 		GMatchInfo *match_info;
-		const char *pattern = "^[[:space:]]*[[:digit:]]{1,3};[[:space:]]*([[:space:]]*[[:digit:]]{1,3};[[:space:]]*)*([[:space:]]*)?$";
+		const char *pattern = "^[[:space:]]*[[:digit:]]{1,3}[[:space:]]*;([[:space:]]*[[:digit:]]{1,3}[[:space:]]*;)*([[:space:]]*)?$";
 
 		regex = g_regex_new (pattern, 0, 0, NULL);
 		g_regex_match (regex, tmp_string, 0, &match_info);
 		if (!g_match_info_matches (match_info)) {
 			/* Handle as a simple string (ie, new format) */
+			if (unescape_semicolon)
+				unescape_semicolons (tmp_string);
 			length = strlen (tmp_string);
 			if (zero_terminate)
 				length++;
@@ -797,7 +815,7 @@ ssid_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char 
 	const char *setting_name = nm_setting_get_name (setting);
 	GByteArray *array;
 
-	array = get_uchar_array (keyfile, setting_name, key, FALSE);
+	array = get_uchar_array (keyfile, setting_name, key, FALSE, TRUE);
 	if (array) {
 		g_object_set (setting, key, array, NULL);
 		g_byte_array_free (array, TRUE);
@@ -918,7 +936,7 @@ cert_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char 
 	GByteArray *array;
 	gboolean success = FALSE;
 
-	array = get_uchar_array (keyfile, setting_name, key, TRUE);
+	array = get_uchar_array (keyfile, setting_name, key, TRUE, FALSE);
 	if (array && array->len > 0) {
 		/* Try as a path + scheme (ie, starts with "file://") */
 		success = handle_as_scheme (array, setting, key);

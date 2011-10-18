@@ -483,6 +483,7 @@ ssid_writer (GKeyFile *file,
 	GByteArray *array;
 	const char *setting_name = nm_setting_get_name (setting);
 	gboolean new_format = TRUE;
+	unsigned int semicolons = 0;
 	int i, *tmp_array;
 	char *ssid;
 
@@ -501,11 +502,24 @@ ssid_writer (GKeyFile *file,
 			new_format = FALSE;
 			break;
 		}
+		if (c == ';')
+			semicolons++;
 	}
 
 	if (new_format) {
-		ssid = g_malloc0 (array->len + 1);
-		memcpy (ssid, array->data, array->len);
+		ssid = g_malloc0 (array->len + semicolons + 1);
+		if (semicolons == 0)
+			memcpy (ssid, array->data, array->len);
+		else {
+			/* Escape semicolons with backslashes to make strings
+			 * containing ';', such as '16;17;' unambiguous */
+			int j = 0;
+			for (i = 0; i < array->len; i++) {
+				if (array->data[i] == ';')
+					ssid[j++] = '\\';
+				ssid[j++] = array->data[i];
+			}
+		}
 		g_key_file_set_string (file, setting_name, key, ssid);
 		g_free (ssid);
 	} else {
