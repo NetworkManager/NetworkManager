@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2008 - 2010 Red Hat, Inc.
+ * (C) Copyright 2008 - 2011 Red Hat, Inc.
  */
 
 #ifndef __COMMON_H__
@@ -44,6 +44,7 @@
 #define TYPE_ETHERNET "Ethernet"
 #define TYPE_WIRELESS "Wireless"
 #define TYPE_BRIDGE   "Bridge"
+#define TYPE_BOND     "Bond"
 
 #define SECRET_FLAG_AGENT "user"
 #define SECRET_FLAG_NOT_SAVED "ask"

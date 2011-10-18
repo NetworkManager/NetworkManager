@@ -50,6 +50,7 @@
 #include <nm-setting-wired.h>
 #include <nm-setting-wireless.h>
 #include <nm-setting-8021x.h>
+#include <nm-setting-bond.h>
 #include <nm-utils.h>
 
 #include "common.h"
@@ -3349,6 +3350,150 @@ is_wireless_device (const char *iface)
 	return is_wireless;
 }
 
+static void
+handle_bond_option (NMSettingBond *s_bond,
+                    const char *key,
+                    const char *value)
+{
+	if (!g_strcmp0 (key, "mode"))
+		g_object_set (s_bond, NM_SETTING_BOND_MODE, value, NULL);
+	else if (!g_strcmp0 (key, "miimon"))
+		g_object_set (s_bond, NM_SETTING_BOND_MIIMON, strtoul(value, NULL, 0), NULL);
+	else if (!g_strcmp0 (key, "updelay"))
+		g_object_set (s_bond, NM_SETTING_BOND_UPDELAY, strtoul(value, NULL, 0), NULL);
+	else if (!g_strcmp0 (key, "downdelay"))
+		g_object_set (s_bond, NM_SETTING_BOND_DOWNDELAY, strtoul(value, NULL, 0), NULL);
+	else if (!g_strcmp0 (key, "arp_interval"))
+		g_object_set (s_bond, NM_SETTING_BOND_ARP_INTERVAL, strtoul(value, NULL, 0), NULL);
+	else if (!g_strcmp0 (key, "arp_ip_target"))
+		g_object_set (s_bond, NM_SETTING_BOND_ARP_IP_TARGET, value, NULL);
+	else
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid bonding option '%s'", key);
+}
+
+static NMSetting *
+make_bond_setting (shvarFile *ifcfg,
+                   const char *file,
+                   gboolean nm_controlled,
+                   char **unmanaged,
+                   GError **error)
+{
+	NMSettingBond *s_bond;
+	char *value;
+
+	s_bond = NM_SETTING_BOND (nm_setting_bond_new ());
+
+	value = svGetValue (ifcfg, "DEVICE", FALSE);
+	if (!value || !strlen (value)) {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "mandatory DEVICE keyword missing");
+		goto error;
+	}
+
+	g_object_set (s_bond, NM_SETTING_BOND_INTERFACE_NAME, value, NULL);
+	g_free (value);
+
+	value = svGetValue (ifcfg, "BONDING_OPTS", FALSE);
+	if (value) {
+		char **items, **iter;
+
+		items = g_strsplit_set (value, " ", -1);
+		for (iter = items; iter && *iter; iter++) {
+			if (strlen (*iter)) {
+				char **keys, *key, *val;
+
+				keys = g_strsplit_set (*iter, "=", 2);
+				if (keys && *keys) {
+					key = *keys;
+					val = *(keys + 1);
+					if (val && strlen(key) && strlen(val))
+						handle_bond_option (s_bond, key, val);
+				}
+
+				g_strfreev (keys);
+			}
+		}
+		g_free (value);
+		g_strfreev (items);
+	}
+
+	return (NMSetting *) s_bond;
+
+error:
+	g_object_unref (s_bond);
+	return NULL;
+}
+
+static NMConnection *
+bond_connection_from_ifcfg (const char *file,
+                            shvarFile *ifcfg,
+                            gboolean nm_controlled,
+                            char **unmanaged,
+                            GError **error)
+{
+	NMConnection *connection = NULL;
+	NMSetting *con_setting = NULL;
+	NMSetting *bond_setting = NULL;
+	NMSetting *wired_setting = NULL;
+	NMSetting8021x *s_8021x = NULL;
+
+	g_return_val_if_fail (file != NULL, NULL);
+	g_return_val_if_fail (ifcfg != NULL, NULL);
+
+	connection = nm_connection_new ();
+	if (!connection) {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		             "Failed to allocate new connection for %s.", file);
+		return NULL;
+	}
+
+	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_BOND_SETTING_NAME, NULL);
+	if (!con_setting) {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		             "Failed to create connection setting.");
+		g_object_unref (connection);
+		return NULL;
+	}
+	nm_connection_add_setting (connection, con_setting);
+
+	bond_setting = make_bond_setting (ifcfg, file, nm_controlled, unmanaged, error);
+	if (!bond_setting) {
+		g_object_unref (connection);
+		return NULL;
+	}
+	nm_connection_add_setting (connection, bond_setting);
+
+	wired_setting = make_wired_setting (ifcfg, file, nm_controlled, unmanaged, &s_8021x, error);
+	if (!wired_setting) {
+		g_object_unref (connection);
+		return NULL;
+	}
+	nm_connection_add_setting (connection, wired_setting);
+
+	if (s_8021x)
+		nm_connection_add_setting (connection, NM_SETTING (s_8021x));
+
+	if (!nm_connection_verify (connection, error)) {
+		g_object_unref (connection);
+		return NULL;
+	}
+
+	return connection;
+}
+
+static gboolean
+is_bond_device (const char *name, shvarFile *parsed)
+{
+	g_return_val_if_fail (name != NULL, FALSE);
+	g_return_val_if_fail (parsed != NULL, FALSE);
+
+	if (svTrueValue (parsed, "BONDING_MASTER", FALSE))
+		return TRUE;
+	
+	/* XXX: Check for "bond[\d]+"? */
+
+	return FALSE;
+}
+
 enum {
 	IGNORE_REASON_NONE = 0x00,
 	IGNORE_REASON_BRIDGE = 0x01,
@@ -3412,9 +3557,6 @@ connection_from_file (const char *filename,
 	if (!type) {
 		char *device;
 
-		/* If no type, if the device has wireless extensions, it's wifi,
-		 * otherwise it's ethernet.
-		 */
 		device = svGetValue (parsed, "DEVICE", FALSE);
 		if (!device) {
 			g_set_error (&error, IFCFG_PLUGIN_ERROR, 0,
@@ -3432,8 +3574,10 @@ connection_from_file (const char *filename,
 		}
 
 		if (!test_type) {
+			if (is_bond_device (device, parsed))
+				type = g_strdup (TYPE_BOND);
 			/* Test wireless extensions */
-			if (is_wireless_device (device))
+			else if (is_wireless_device (device))
 				type = g_strdup (TYPE_WIRELESS);
 			else
 				type = g_strdup (TYPE_ETHERNET);
@@ -3466,6 +3610,13 @@ connection_from_file (const char *filename,
 		g_free (lower);
 	}
 
+	if (svTrueValue (parsed, "BONDING_MASTER", FALSE) &&
+	    strcasecmp (type, TYPE_BOND)) {
+		g_set_error (&error, IFCFG_PLUGIN_ERROR, 0,
+		             "BONDING_MASTER=yes key only allowed in TYPE=bond connections");
+		goto done;
+	}
+
 	/* Ignore BRIDGE= and VLAN= connections for now too (rh #619863) */
 	tmp = svGetValue (parsed, "BRIDGE", FALSE);
 	if (tmp) {
@@ -3491,7 +3642,9 @@ connection_from_file (const char *filename,
 	else if (!strcasecmp (type, TYPE_BRIDGE)) {
 		g_set_error (&error, IFCFG_PLUGIN_ERROR, 0,
 		             "Bridge connections are not yet supported");
-	} else {
+	} else if (!strcasecmp (type, TYPE_BOND))
+		connection = bond_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, &error);
+	else {
 		g_set_error (&error, IFCFG_PLUGIN_ERROR, 0,
 		             "Unknown connection type '%s'", type);
 	}

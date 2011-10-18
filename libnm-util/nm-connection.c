@@ -44,6 +44,7 @@
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-vpn.h"
 #include "nm-setting-olpc-mesh.h"
+#include "nm-setting-bond.h"
 
 #include "nm-setting-serial.h"
 #include "nm-setting-gsm.h"
@@ -135,7 +136,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 static GHashTable *registered_settings = NULL;
 
-#define DEFAULT_MAP_SIZE 16
+#define DEFAULT_MAP_SIZE 17
 
 static struct SettingInfo {
 	const char *name;
@@ -240,6 +241,11 @@ register_default_settings (void)
 	register_one_setting (NM_SETTING_WIMAX_SETTING_NAME,
 	                      NM_TYPE_SETTING_WIMAX,
 	                      NM_SETTING_WIMAX_ERROR,
+	                      1, TRUE);
+
+	register_one_setting (NM_SETTING_BOND_SETTING_NAME,
+	                      NM_TYPE_SETTING_BOND,
+	                      NM_SETTING_BOND_ERROR,
 	                      1, TRUE);
 
 	register_one_setting (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
@@ -1336,6 +1342,23 @@ nm_connection_get_setting_bluetooth (NMConnection *connection)
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingBluetooth *) nm_connection_get_setting (connection, NM_TYPE_SETTING_BLUETOOTH);
+}
+
+/**
+ * nm_connection_get_setting_bond:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingBond the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingBond if the connection contains one, otherwise NULL
+ **/
+NMSettingBond *
+nm_connection_get_setting_bond (NMConnection *connection)
+{
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingBond *) nm_connection_get_setting (connection, NM_TYPE_SETTING_BOND);
 }
 
 /**
