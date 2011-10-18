@@ -718,6 +718,13 @@ nm_netlink_iface_to_index (const char *iface)
 	return idx;
 }
 
+/**
+ * nm_netlink_index_to_iface:
+ * @idx: kernel interface index
+ *
+ * Returns: the device name corresponding to the kernel interface index; caller
+ * owns returned value and must free it when it is no longer required
+ **/
 #define MAX_IFACE_LEN 33
 char *
 nm_netlink_index_to_iface (int idx)
@@ -736,6 +743,7 @@ nm_netlink_index_to_iface (int idx)
 
 	nl_cache_refill (priv->nlh_sync, priv->link_cache);
 	if (!rtnl_link_i2name (priv->link_cache, idx, buf, MAX_IFACE_LEN - 1)) {
+		nm_log_warn (LOGD_HW, "(%d) failed to find interface name for index", idx);
 		g_free (buf);
 		buf = NULL;
 	}

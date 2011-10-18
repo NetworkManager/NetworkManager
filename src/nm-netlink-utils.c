@@ -323,7 +323,7 @@ typedef struct {
 	int family;
 	int scope;
 	gboolean ignore_inet6_ll_mc;
-	const char *iface;
+	char *iface;
 	NlRouteForeachFunc callback;
 	gpointer user_data;
 	struct rtnl_route *out_route;
@@ -414,9 +414,12 @@ nm_netlink_foreach_route (int ifindex,
 	info.iface = nm_netlink_index_to_iface (ifindex);
 
 	rtnl_route_alloc_cache (nm_netlink_get_default_handle (), family, NL_AUTO_PROVIDE, &cache);
-	g_return_val_if_fail (cache != NULL, NULL);
-	nl_cache_foreach (cache, foreach_route_cb, &info);
-	nl_cache_free (cache);
+	g_warn_if_fail (cache != NULL);
+	if (cache) {
+		nl_cache_foreach (cache, foreach_route_cb, &info);
+		nl_cache_free (cache);
+	}
+	g_free (info.iface);
 	return info.out_route;
 }
 
