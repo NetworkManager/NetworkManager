@@ -151,6 +151,9 @@ NMDHCP6Config * nm_device_get_dhcp6_config (NMDevice *dev);
 NMIP4Config *	nm_device_get_ip4_config	(NMDevice *dev);
 NMIP6Config *	nm_device_get_ip6_config	(NMDevice *dev);
 
+NMDevice *	nm_device_get_master (NMDevice *self);
+void		nm_device_set_master (NMDevice *self, NMDevice *master);
+
 NMActRequest *	nm_device_get_act_request	(NMDevice *dev);
 
 gboolean		nm_device_is_available (NMDevice *dev);

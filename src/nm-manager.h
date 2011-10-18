@@ -84,6 +84,10 @@ void nm_manager_start (NMManager *manager);
 
 GSList *nm_manager_get_devices (NMManager *manager);
 
+NMDevice *nm_manager_get_device_by_master (NMManager *manager,
+					   const char *master,
+					   const char *driver);
+
 const char * nm_manager_activate_connection (NMManager *manager,
                                              NMConnection *connection,
                                              const char *specific_object,

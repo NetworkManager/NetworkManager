@@ -366,6 +366,24 @@ nm_manager_get_device_by_path (NMManager *manager, const char *path)
 	return NULL;
 }
 
+NMDevice *
+nm_manager_get_device_by_master (NMManager *manager, const char *master, const char *driver)
+{
+	GSList *iter;
+
+	g_return_val_if_fail (master != NULL, NULL);
+
+	for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
+		NMDevice *device = NM_DEVICE (iter->data);
+
+		if (!strcmp (nm_device_get_iface (device), master) &&
+		    (!driver || !strcmp (nm_device_get_driver (device), driver)))
+			return device;
+	}
+
+	return NULL;
+}
+
 static gboolean
 manager_sleeping (NMManager *self)
 {

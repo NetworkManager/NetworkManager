@@ -163,6 +163,9 @@ typedef struct {
 
 	/* inhibit autoconnect feature */
 	gboolean	autoconnect_inhibit;
+
+	/* master interface for bridge, bond, vlan, etc */
+	NMDevice *	master;
 } NMDevicePrivate;
 
 static gboolean check_connection_compatible (NMDeviceInterface *device,
@@ -500,6 +503,24 @@ nm_device_get_type_desc (NMDevice *self)
 	g_return_val_if_fail (self != NULL, NULL);
 
 	return NM_DEVICE_GET_PRIVATE (self)->type_desc;
+}
+
+NMDevice *
+nm_device_get_master (NMDevice *self)
+{
+	g_return_val_if_fail (self != NULL, NULL);
+
+	return NM_DEVICE_GET_PRIVATE (self)->master;
+}
+
+void
+nm_device_set_master (NMDevice *self, NMDevice *master)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+
+	if (priv->master)
+		g_object_unref (priv->master);
+	priv->master = master ? g_object_ref (master) : NULL;
 }
 
 /*
@@ -3323,6 +3344,9 @@ finalize (GObject *object)
 	g_free (priv->type_desc);
 	if (priv->dhcp_anycast_address)
 		g_byte_array_free (priv->dhcp_anycast_address, TRUE);
+
+	/* release master reference it still exists */
+	nm_device_set_master (self, NULL);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->finalize (object);
 }
