@@ -52,6 +52,7 @@
 #include <nm-setting-wired.h>
 #include <nm-setting-wireless.h>
 #include <nm-setting-wireless-security.h>
+#include <nm-setting-bond.h>
 
 #include "../nm-device-ethernet.h"
 #include "nm-dbus-glib-types.h"
@@ -1172,7 +1173,7 @@ impl_settings_save_hostname (NMSettings *self,
 }
 
 static gboolean
-have_connection_for_device (NMSettings *self, GByteArray *mac)
+have_connection_for_device (NMSettings *self, GByteArray *mac, NMDevice *device)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GHashTableIter iter;
@@ -1193,6 +1194,14 @@ have_connection_for_device (NMSettings *self, GByteArray *mac)
 
 		s_con = nm_connection_get_setting_connection (connection);
 		ctype = nm_setting_connection_get_connection_type (s_con);
+
+		if (!strcmp (ctype, NM_SETTING_BOND_SETTING_NAME)) {
+			if (nm_device_bond_connection_matches (device, connection)) {
+				ret = TRUE;
+				break;
+			} else
+				continue;
+		}
 
 		if (   strcmp (ctype, NM_SETTING_WIRED_SETTING_NAME)
 		    && strcmp (ctype, NM_SETTING_PPPOE_SETTING_NAME))
@@ -1445,7 +1454,7 @@ nm_settings_device_added (NMSettings *self, NMDevice *device)
 	mac = g_byte_array_sized_new (ETH_ALEN);
 	g_byte_array_append (mac, tmp.ether_addr_octet, ETH_ALEN);
 
-	if (   have_connection_for_device (self, mac)
+	if (   have_connection_for_device (self, mac, device)
 	    || is_mac_auto_wired_blacklisted (self, mac))
 		goto ignore;
 

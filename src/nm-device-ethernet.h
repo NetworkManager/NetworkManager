@@ -63,6 +63,8 @@ NMDevice *nm_device_ethernet_new (const char *udi,
 void nm_device_ethernet_get_address (NMDeviceEthernet *dev,
                                      struct ether_addr *addr);
 
+gboolean nm_device_bond_connection_matches (NMDevice *device, NMConnection *connection);
+
 G_END_DECLS
 
 #endif	/* NM_DEVICE_ETHERNET_H */

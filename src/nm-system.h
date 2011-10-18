@@ -92,4 +92,6 @@ gboolean		nm_system_iface_set_mac                 (int ifindex, const struct eth
 
 gboolean		nm_system_add_bonding_master	(NMSettingBond *setting);
 
+char *			nm_system_get_link_type		(const char *name);
+
 #endif

@@ -55,6 +55,7 @@
 #include "nm-setting-wired.h"
 #include "nm-setting-8021x.h"
 #include "nm-setting-pppoe.h"
+#include "nm-setting-bond.h"
 #include "ppp-manager/nm-ppp-manager.h"
 #include "nm-logging.h"
 #include "nm-properties-changed-signal.h"
@@ -599,6 +600,22 @@ nm_device_ethernet_get_address (NMDeviceEthernet *self, struct ether_addr *addr)
 	memcpy (addr, &priv->hw_addr, sizeof (priv->hw_addr));
 }
 
+gboolean
+nm_device_bond_connection_matches (NMDevice *device, NMConnection *connection)
+{
+	NMSettingBond *s_bond;
+	const char *devname;
+
+	devname = nm_device_get_iface (device);
+	g_assert(devname);
+
+	s_bond = nm_connection_get_setting_bond (connection);
+	if (s_bond && !strcmp (devname, nm_setting_bond_get_interface_name (s_bond)))
+		return TRUE;
+
+	return FALSE;
+}
+
 /* Returns speed in Mb/s */
 static guint32
 nm_device_ethernet_get_speed (NMDeviceEthernet *self)
@@ -890,6 +907,14 @@ real_get_best_auto_connection (NMDevice *dev,
 		g_assert (s_con);
 
 		connection_type = nm_setting_connection_get_connection_type (s_con);
+
+		if (!strcmp (connection_type, NM_SETTING_BOND_SETTING_NAME)) {
+			if (nm_device_bond_connection_matches (dev, connection))
+				return connection;
+
+			continue;
+		}
+	
 		if (!strcmp (connection_type, NM_SETTING_PPPOE_SETTING_NAME))
 			is_pppoe = TRUE;
 
@@ -1593,7 +1618,7 @@ real_check_connection_compatible (NMDevice *device,
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	const char *connection_type;
-	gboolean is_pppoe = FALSE;
+	gboolean is_pppoe = FALSE, is_bond = FALSE;
 	const GByteArray *mac;
 	gboolean try_mac = TRUE;
 	const GSList *mac_blacklist, *mac_blacklist_iter;
@@ -1603,19 +1628,23 @@ real_check_connection_compatible (NMDevice *device,
 
 	connection_type = nm_setting_connection_get_connection_type (s_con);
 	if (   strcmp (connection_type, NM_SETTING_WIRED_SETTING_NAME)
+	    && strcmp (connection_type, NM_SETTING_BOND_SETTING_NAME)
 	    && strcmp (connection_type, NM_SETTING_PPPOE_SETTING_NAME)) {
 		g_set_error (error,
 		             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_NOT_WIRED,
-		             "The connection was not a wired or PPPoE connection.");
+		             "The connection was not a wired, bond, or PPPoE connection.");
 		return FALSE;
 	}
 
 	if (!strcmp (connection_type, NM_SETTING_PPPOE_SETTING_NAME))
 		is_pppoe = TRUE;
 
+	if (!strcmp (connection_type, NM_SETTING_BOND_SETTING_NAME))
+		is_bond = TRUE;
+
 	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
 	/* Wired setting is optional for PPPoE */
-	if (!is_pppoe && !s_wired) {
+	if (!is_pppoe && !s_wired && !is_bond) {
 		g_set_error (error,
 		             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INVALID,
 		             "The connection was not a valid wired connection.");

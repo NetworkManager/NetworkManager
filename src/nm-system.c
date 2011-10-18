@@ -1233,3 +1233,35 @@ nm_system_add_bonding_master(NMSettingBond *setting)
 
 	return TRUE;
 }
+
+/**
+ * nm_system_get_link_type:
+ * @name: name of link
+ *
+ * Lookup virtual link type. The returned string is allocated and needs
+ * to be freed after usage.
+ *
+ * Returns: Name of virtual link type or NULL if not a virtual link.
+ **/
+char *
+nm_system_get_link_type (const char *name)
+{
+	struct rtnl_link *result;
+	struct nl_sock *nlh;
+	char *type;
+
+	nlh = nm_netlink_get_default_handle ();
+	if (!nlh)
+		return NULL;
+
+	if (rtnl_link_get_kernel (nlh, 0, name, &result) < 0)
+		return NULL;
+
+	if ((type = rtnl_link_get_type (result)))
+		type = g_strdup (type);
+
+	rtnl_link_put (result);
+
+	return type;
+}
+

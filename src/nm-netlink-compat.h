@@ -68,13 +68,6 @@ __rtnl_link_alloc_cache (struct nl_sock *h, struct nl_cache **cache)
 
 /* functions with similar prototypes */
 #define nlmsg_datalen nlmsg_len
-
-static inline int
-rtnl_link_bond_add (struct nl_sock *h, const char *name, void *data)
-{
-	/* Bonding only in libnl3 */
-	return -NLE_OPNOTSUPP;
-}
 #endif  /* HAVE_LIBNL2 */
 
 
@@ -222,6 +215,11 @@ static inline int __genl_ctrl_alloc_cache(struct nl_sock *h, struct nl_cache **c
 #define NLE_PERM                28
 #define NLE_PKTLOC_FILE         29
 
+#endif  /* HAVE_LIBNL1 */
+
+/* Stuff that only libnl3 has */
+#if HAVE_LIBNL1 || HAVE_LIBNL2
+
 static inline int
 rtnl_link_bond_add (struct nl_sock *h, const char *name, void *data)
 {
@@ -229,6 +227,20 @@ rtnl_link_bond_add (struct nl_sock *h, const char *name, void *data)
 	return -NLE_OPNOTSUPP;
 }
 
-#endif  /* HAVE_LIBNL1 */
+static inline int
+rtnl_link_get_kernel (struct nl_sock *h, int f, const char *name, struct rtnl_link **out_link)
+{
+	/* Bonding only in libnl3 */
+	return -NLE_OPNOTSUPP;
+}
+
+static inline char *
+rtnl_link_get_type (struct rtnl_link *rtnl_link)
+{
+	/* Bonding only in libnl3 */
+	return NULL;
+}
+
+#endif  /* HAVE_LIBNL1 || HAVE_LIBNL2 */
 
 #endif /* NM_NETLINK_COMPAT_H */

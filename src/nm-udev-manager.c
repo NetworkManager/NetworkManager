@@ -40,6 +40,7 @@
 #if WITH_WIMAX
 #include "nm-device-wimax.h"
 #endif
+#include "nm-system.h"
 
 typedef struct {
 	GUdevClient *client;
@@ -422,9 +423,18 @@ device_creator (NMUdevManager *manager,
 	}
 
 	if (!driver) {
-		if (g_str_has_prefix (ifname, "easytether")) {
+		char *type;
+
+		type = nm_system_get_link_type (ifname);
+		if (type) {
+			if (g_strcmp0 (type, "bond") == 0)
+				driver = "bonding";
+			g_free (type);
+		} else if (g_str_has_prefix (ifname, "easytether")) {
 			driver = "easytether";
-		} else {
+		}
+		
+		if (!driver) {
 			nm_log_warn (LOGD_HW, "%s: couldn't determine device driver; ignoring...", path);
 			goto out;
 		}
