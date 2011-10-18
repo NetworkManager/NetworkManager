@@ -1529,6 +1529,8 @@ real_act_stage3_ip4_config_start (NMDevice *self,
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	if (s_ip4)
 		method = nm_setting_ip4_config_get_method (s_ip4);
+	else if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME))
+		method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
 
 	/* Start IPv4 addressing based on the method requested */
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0)
