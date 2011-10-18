@@ -32,6 +32,7 @@ global:
 	nm_connection_get_setting_wireless_security;
 	nm_connection_get_type;
 	nm_connection_get_uuid;
+	nm_connection_is_type;
 	nm_connection_lookup_setting_type;
 	nm_connection_lookup_setting_type_by_quark;
 	nm_connection_need_secrets;

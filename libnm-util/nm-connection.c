@@ -1051,6 +1051,37 @@ nm_connection_to_hash (NMConnection *connection, NMSettingHashFlags flags)
 }
 
 /**
+ * nm_connection_is_type:
+ * @connection: the #NMConnection
+ * @type: a setting name to check the connection's type against (like 
+ * %NM_SETTING_WIRELESS_SETTING_NAME or %NM_SETTING_WIRED_SETTING_NAME)
+ *
+ * A convenience function to check if the given @connection is a particular
+ * type (ie wired, wifi, ppp, etc). Checks the #NMSettingConnection:type
+ * property of the connection and matches that against @type.
+ *
+ * Returns: %TRUE if the connection is of the given @type, %FALSE if not
+ **/
+gboolean
+nm_connection_is_type (NMConnection *connection, const char *type)
+{
+	NMSettingConnection *s_con;
+	const char *type2;
+
+	g_return_val_if_fail (connection != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (type != NULL, FALSE);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+
+	type2 = nm_setting_connection_get_connection_type (s_con);
+	g_assert (type2);
+
+	return !strcmp (type2, type);
+}
+
+/**
  * nm_connection_for_each_setting_value:
  * @connection: the #NMConnection
  * @func: (scope call): user-supplied function called for each setting's property
