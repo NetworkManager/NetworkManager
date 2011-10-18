@@ -1202,3 +1202,34 @@ nm_system_device_set_priority (int ifindex,
 		rtnl_route_put (found);
 	}
 }
+
+/**
+ * nm_system_add_bonding_master:
+ * @setting: bonding setting
+ *
+ * Adds a virtual bonding device if it does not exist yet.
+ *
+ * Returns: %TRUE on success, %FALSE on failure
+ */
+gboolean
+nm_system_add_bonding_master(NMSettingBond *setting)
+{
+	struct nl_sock *sock;
+	const char *name;
+	int err;
+
+	sock = nm_netlink_get_default_handle ();
+	name = nm_setting_bond_get_interface_name (setting);
+	g_assert (name);
+
+	/* Existing bonding devices with matching name will be reused */
+	err = rtnl_link_bond_add (sock, name, NULL);
+	if (err < 0) {
+		nm_log_err (LOGD_DEVICE, "(%s): error %d returned from "
+		            "rtnl_link_bond_add(): %s",
+		            name, err, nl_geterror (err));
+		return FALSE;
+	}
+
+	return TRUE;
+}

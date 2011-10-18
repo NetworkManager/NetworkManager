@@ -924,12 +924,80 @@ get_active_connections (NMManager *manager, NMConnection *filter)
 /* Settings stuff via NMSettings                                   */
 /*******************************************************************/
 
+static gboolean
+connection_needs_virtual_device (NMConnection *connection)
+{
+	if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME))
+		return TRUE;
+
+	return FALSE;
+}
+
+static gboolean
+system_update_virtual_device (NMConnection *connection)
+{
+	if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)) {
+		NMSettingBond *s_bond;
+
+		s_bond = nm_connection_get_setting_bond (connection);
+		g_assert (s_bond);
+
+		return nm_system_add_bonding_master (s_bond);
+	}
+
+	return TRUE;
+}
+
 static void
-connections_changed (NMSettings *settings,
+system_create_virtual_devices (NMSettings *settings)
+{
+	GSList *iter, *connections;
+
+	nm_log_info (LOGD_CORE, "Creating virtual devices");
+
+	connections = nm_settings_get_connections (settings);
+	for (iter = connections; iter; iter = g_slist_next (iter)) {
+		NMConnection *connection = NM_CONNECTION (iter->data);
+
+		if (connection_needs_virtual_device (connection))
+			system_update_virtual_device (connection);
+	}
+
+	g_slist_free (connections);
+}
+
+static void
+connection_added (NMSettings *settings,
+                  NMSettingsConnection *connection,
+                  NMManager *manager)
+{
+	bluez_manager_resync_devices (manager);
+
+	if (connection_needs_virtual_device (NM_CONNECTION (connection)))
+		system_update_virtual_device (NM_CONNECTION (connection));
+}
+
+static void
+connection_changed (NMSettings *settings,
                      NMSettingsConnection *connection,
                      NMManager *manager)
 {
 	bluez_manager_resync_devices (manager);
+
+	/* FIXME: Some virtual devices may need to be updated in the future. */
+}
+
+static void
+connection_removed (NMSettings *settings,
+                    NMSettingsConnection *connection,
+                    NMManager *manager)
+{
+	bluez_manager_resync_devices (manager);
+
+	/*
+	 * Do not delete existing virtual devices to keep connectivity up.
+	 * Virtual devices are reused when NetworkManager is restarted.
+	 */
 }
 
 static void
@@ -2823,6 +2891,12 @@ nm_manager_start (NMManager *self)
 
 	nm_udev_manager_query_devices (priv->udev_mgr);
 	bluez_manager_resync_devices (self);
+
+	/*
+	 * Connections added before the manager is started do not emit
+	 * connection-added signals thus devices have to be created manually.
+	 */
+	system_create_virtual_devices (priv->settings);
 }
 
 static gboolean
@@ -3099,13 +3173,13 @@ nm_manager_new (NMSettings *settings,
 	g_signal_connect (priv->settings, "notify::" NM_SETTINGS_HOSTNAME,
 	                  G_CALLBACK (system_hostname_changed_cb), singleton);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_ADDED,
-	                  G_CALLBACK (connections_changed), singleton);
+	                  G_CALLBACK (connection_added), singleton);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,
-	                  G_CALLBACK (connections_changed), singleton);
+	                  G_CALLBACK (connection_changed), singleton);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_REMOVED,
-	                  G_CALLBACK (connections_changed), singleton);
+	                  G_CALLBACK (connection_removed), singleton);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED,
-	                  G_CALLBACK (connections_changed), singleton);
+	                  G_CALLBACK (connection_changed), singleton);
 
 	dbus_g_connection_register_g_object (bus, NM_DBUS_PATH, G_OBJECT (singleton));
 

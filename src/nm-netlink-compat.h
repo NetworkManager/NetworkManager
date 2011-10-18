@@ -68,7 +68,14 @@ __rtnl_link_alloc_cache (struct nl_sock *h, struct nl_cache **cache)
 
 /* functions with similar prototypes */
 #define nlmsg_datalen nlmsg_len
-#endif
+
+static inline int
+rtnl_link_bond_add (struct nl_sock *h, const char *name, void *data)
+{
+	/* Bonding only in libnl3 */
+	return -NLE_OPNOTSUPP;
+}
+#endif  /* HAVE_LIBNL2 */
 
 
 /* libnl-1.0 compat functions */
@@ -214,6 +221,14 @@ static inline int __genl_ctrl_alloc_cache(struct nl_sock *h, struct nl_cache **c
 #define NLE_NOACCESS            27
 #define NLE_PERM                28
 #define NLE_PKTLOC_FILE         29
-#endif
+
+static inline int
+rtnl_link_bond_add (struct nl_sock *h, const char *name, void *data)
+{
+	/* Bonding only in libnl3 */
+	return -NLE_OPNOTSUPP;
+}
+
+#endif  /* HAVE_LIBNL1 */
 
 #endif /* NM_NETLINK_COMPAT_H */

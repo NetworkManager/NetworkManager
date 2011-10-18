@@ -30,6 +30,7 @@
 #include <glib.h>
 #include "nm-device.h"
 #include "nm-ip4-config.h"
+#include "nm-setting-bond.h"
 
 /* Prototypes for system/distribution dependent functions,
  * implemented in the backend files in backends/ directory
@@ -88,5 +89,7 @@ gboolean        nm_system_iface_is_up                   (int ifindex);
 gboolean		nm_system_iface_set_mtu                 (int ifindex, guint32 mtu);
 
 gboolean		nm_system_iface_set_mac                 (int ifindex, const struct ether_addr *mac);
+
+gboolean		nm_system_add_bonding_master	(NMSettingBond *setting);
 
 #endif
