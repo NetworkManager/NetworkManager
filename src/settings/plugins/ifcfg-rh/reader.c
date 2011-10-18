@@ -140,6 +140,14 @@ make_connection_setting (const char *file,
 	              svTrueValue (ifcfg, "ONBOOT", TRUE),
 	              NULL);
 
+	value = svGetValue (ifcfg, "MASTER", FALSE);
+	if (value) {
+		g_object_set (s_con, NM_SETTING_CONNECTION_MASTER, value, NULL);
+		g_object_set (s_con, NM_SETTING_CONNECTION_SLAVE_TYPE,
+		              NM_SETTING_BOND_SETTING_NAME, NULL);
+		g_free (value);
+	}
+
 	value = svGetValue (ifcfg, "USERS", FALSE);
 	if (value) {
 		char **items, **iter;
@@ -1126,7 +1134,7 @@ static NMSetting *
 make_ip4_setting (shvarFile *ifcfg,
                   const char *network_file,
                   const char *iscsiadm_path,
-                  gboolean valid_ip6_config,
+                  gboolean can_disable_ip4,
                   GError **error)
 {
 	NMSettingIP4Config *s_ip4 = NULL;
@@ -1241,7 +1249,7 @@ make_ip4_setting (shvarFile *ifcfg,
 		    && !tmp_ip4_0 && !tmp_prefix_0 && !tmp_netmask_0
 		    && !tmp_ip4_1 && !tmp_prefix_1 && !tmp_netmask_1
 		    && !tmp_ip4_2 && !tmp_prefix_2 && !tmp_netmask_2) {
-			if (valid_ip6_config)
+			if (can_disable_ip4)
 				/* Nope, no IPv4 */
 				method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
 			else
@@ -3481,6 +3489,21 @@ bond_connection_from_ifcfg (const char *file,
 }
 
 static gboolean
+disabling_ip4_config_allowed (NMConnection *connection)
+{
+	NMSettingConnection *s_con;
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+
+	/* bonding slaves are allowed to have no ip configuration */
+	if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BOND_SETTING_NAME))
+		return TRUE;
+
+	return FALSE;
+}
+
+static gboolean
 is_bond_device (const char *name, shvarFile *parsed)
 {
 	g_return_val_if_fail (name != NULL, FALSE);
@@ -3518,7 +3541,7 @@ connection_from_file (const char *filename,
 	NMSetting *s_ip4, *s_ip6;
 	const char *ifcfg_name = NULL;
 	gboolean nm_controlled = TRUE;
-	gboolean ip6_used = FALSE;
+	gboolean can_disable_ip4 = FALSE;
 	GError *error = NULL;
 	guint32 ignore_reason = IGNORE_REASON_NONE;
 
@@ -3687,10 +3710,13 @@ connection_from_file (const char *filename,
 		nm_connection_add_setting (connection, s_ip6);
 		method = nm_setting_ip6_config_get_method (NM_SETTING_IP6_CONFIG (s_ip6));
 		if (method && strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE))
-			ip6_used = TRUE;
+			can_disable_ip4 = TRUE;
 	}
 
-	s_ip4 = make_ip4_setting (parsed, network_file, iscsiadm_path, ip6_used, &error);
+	if (disabling_ip4_config_allowed (connection))
+		can_disable_ip4 = TRUE;
+
+	s_ip4 = make_ip4_setting (parsed, network_file, iscsiadm_path, can_disable_ip4, &error);
 	if (error) {
 		g_object_unref (connection);
 		connection = NULL;
@@ -3707,7 +3733,7 @@ connection_from_file (const char *filename,
 	    && !g_ascii_strcasecmp (bootproto, "ibft")) {
 		NMSettingConnection *s_con;
 
-		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+		s_con = nm_connection_get_setting_connection (connection);
 		g_assert (s_con);
 
 		g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_READ_ONLY, TRUE, NULL);

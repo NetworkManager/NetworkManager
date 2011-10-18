@@ -197,12 +197,15 @@ global:
 	nm_setting_connection_get_connection_type;
 	nm_setting_connection_get_id;
 	nm_setting_connection_get_num_permissions;
+	nm_setting_connection_get_master;
 	nm_setting_connection_get_permission;
 	nm_setting_connection_get_read_only;
+	nm_setting_connection_get_slave_type;
 	nm_setting_connection_get_timestamp;
 	nm_setting_connection_get_type;
 	nm_setting_connection_get_uuid;
 	nm_setting_connection_get_zone;
+	nm_setting_connection_is_slave_type;
 	nm_setting_connection_new;
 	nm_setting_connection_permissions_user_allowed;
 	nm_setting_connection_remove_permission;

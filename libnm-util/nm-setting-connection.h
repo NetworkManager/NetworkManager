@@ -49,6 +49,8 @@ G_BEGIN_DECLS
  * @NM_SETTING_CONNECTION_ERROR_TYPE_SETTING_NOT_FOUND: the #NMSetting object
  *   referenced by the setting name contained in the
  *   #NMSettingConnection:type property was not present in the #NMConnection
+ * @NM_SETTING_CONNECTION_ERROR_IP_CONFIG_NOT_ALLOWED: ip configuration is not
+ *   allowed to be present.
  *
  * Describes errors that may result from operations involving a
  * #NMSettingConnection.
@@ -59,7 +61,8 @@ typedef enum
 	NM_SETTING_CONNECTION_ERROR_UNKNOWN = 0,
 	NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
 	NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
-	NM_SETTING_CONNECTION_ERROR_TYPE_SETTING_NOT_FOUND
+	NM_SETTING_CONNECTION_ERROR_TYPE_SETTING_NOT_FOUND,
+	NM_SETTING_CONNECTION_ERROR_IP_CONFIG_NOT_ALLOWED,
 } NMSettingConnectionError;
 
 #define NM_TYPE_SETTING_CONNECTION_ERROR (nm_setting_connection_error_get_type ()) 
@@ -76,6 +79,8 @@ GQuark nm_setting_connection_error_quark (void);
 #define NM_SETTING_CONNECTION_READ_ONLY   "read-only"
 #define NM_SETTING_CONNECTION_PERMISSIONS "permissions"
 #define NM_SETTING_CONNECTION_ZONE        "zone"
+#define NM_SETTING_CONNECTION_MASTER      "master"
+#define NM_SETTING_CONNECTION_SLAVE_TYPE  "slave-type"
 
 /* Well-known zone names */
 #define NM_SETTING_CONNECTION_ZONE_TRUSTED   "trusted"
@@ -128,6 +133,10 @@ gboolean    nm_setting_connection_add_permission       (NMSettingConnection *set
                                                         const char *detail);
 void        nm_setting_connection_remove_permission    (NMSettingConnection *setting,
                                                         guint32 idx);
+const char *nm_setting_connection_get_master           (NMSettingConnection *setting);
+gboolean    nm_setting_connection_is_slave_type        (NMSettingConnection *setting,
+							const char *type);
+const char *nm_setting_connection_get_slave_type       (NMSettingConnection *setting);
 
 G_END_DECLS
 
