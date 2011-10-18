@@ -1595,6 +1595,38 @@ test_read_intlike_ssid (void)
 	g_object_unref (connection);
 }
 
+#define TEST_INTLIKE_SSID_2_FILE TEST_KEYFILES_DIR"/Test_Intlike_SSID_2"
+
+static void
+test_read_intlike_ssid_2 (void)
+{
+	NMConnection *connection;
+	NMSettingWireless *s_wifi;
+	GError *error = NULL;
+	gboolean success;
+	const GByteArray *array;
+	const char *expected_ssid = "11;12;13;";
+
+	connection = nm_keyfile_plugin_connection_from_file (TEST_INTLIKE_SSID_2_FILE, &error);
+	g_assert_no_error (error);
+	g_assert (connection);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* SSID */
+	s_wifi = nm_connection_get_setting_wireless (connection);
+	g_assert (s_wifi);
+
+	array = nm_setting_wireless_get_ssid (s_wifi);
+	g_assert (array != NULL);
+	g_assert_cmpint (array->len, ==, strlen (expected_ssid));
+	g_assert_cmpint (memcmp (array->data, expected_ssid, strlen (expected_ssid)), ==, 0);
+
+	g_object_unref (connection);
+}
+
 static void
 test_write_intlike_ssid (void)
 {
@@ -1664,6 +1696,94 @@ test_write_intlike_ssid (void)
 	g_assert_no_error (error);
 	g_assert (tmp);
 	g_assert_cmpstr (tmp, ==, "101");
+
+	g_key_file_free (keyfile);
+
+	/* Read the connection back in and compare it to the one we just wrote out */
+	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
+	g_assert_no_error (error);
+	g_assert (reread);
+
+	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
+	g_assert (success);
+
+	g_clear_error (&error);
+	unlink (testfile);
+	g_free (testfile);
+
+	g_object_unref (reread);
+	g_object_unref (connection);
+}
+
+static void
+test_write_intlike_ssid_2 (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	NMSettingIP4Config *s_ip4;
+	char *uuid, *testfile = NULL;
+	GByteArray *ssid;
+	unsigned char tmpssid[] = { 49, 49, 59, 49, 50, 59, 49, 51, 59};
+	gboolean success;
+	NMConnection *reread;
+	GError *error = NULL;
+	pid_t owner_grp;
+	uid_t owner_uid;
+	GKeyFile *keyfile;
+	char *tmp;
+
+	connection = nm_connection_new ();
+	g_assert (connection);
+
+	/* Connection setting */
+
+	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
+	g_assert (s_con);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Intlike SSID Test 2",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wireless setting */
+	s_wifi = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
+	g_assert (s_wifi);
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	ssid = g_byte_array_sized_new (sizeof (tmpssid));
+	g_byte_array_append (ssid, &tmpssid[0], sizeof (tmpssid));
+	g_object_set (s_wifi, NM_SETTING_WIRELESS_SSID, ssid, NULL);
+	g_byte_array_free (ssid, TRUE);
+
+	/* IP4 setting */
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new ());
+	g_assert (s_ip4);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+
+	/* Write out the connection */
+	owner_uid = geteuid ();
+	owner_grp = getegid ();
+	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_assert (testfile != NULL);
+
+	/* Ensure the SSID was written out as a plain "11;12;13;" */
+	keyfile = g_key_file_new ();
+	success = g_key_file_load_from_file (keyfile, testfile, 0, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	tmp = g_key_file_get_string (keyfile, NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_SSID, &error);
+	g_assert_no_error (error);
+	g_assert (tmp);
+	g_assert_cmpstr (tmp, ==, "11\\;12\\;13\\;");
 
 	g_key_file_free (keyfile);
 
@@ -2738,6 +2858,9 @@ int main (int argc, char **argv)
 
 	test_read_intlike_ssid ();
 	test_write_intlike_ssid ();
+
+	test_read_intlike_ssid_2 ();
+	test_write_intlike_ssid_2 ();
 
 	test_read_bt_dun_connection ();
 	test_write_bt_dun_connection ();
