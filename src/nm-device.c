@@ -537,6 +537,16 @@ nm_device_get_act_request (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->act_request;
 }
 
+NMConnection *
+nm_device_get_connection (NMDevice *self)
+{
+	NMActRequest *req;
+
+	req = nm_device_get_act_request (self);
+	g_assert (req);
+
+	return nm_act_request_get_connection (req);
+}
 
 gboolean
 nm_device_is_available (NMDevice *self)
@@ -759,6 +769,52 @@ real_act_stage1_prepare (NMDevice *self, NMDeviceStateReason *reason)
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
+static gboolean
+handle_slave_activation (NMDevice *slave, NMDevice *master)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+
+	connection = nm_device_get_connection (slave);
+	g_assert (connection);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+
+	if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BOND_SETTING_NAME)) {
+		/*
+		 * Bonding
+		 *
+		 * Kernel expects slaves to be down while the enslaving is
+		 * taking place.
+		 */
+		nm_device_hw_take_down (slave, TRUE);
+
+		if (!nm_system_iface_enslave (slave, master))
+			return FALSE;
+
+		nm_device_hw_bring_up (slave, TRUE, NULL);
+	}
+
+	return TRUE;
+}
+
+static void
+handle_slave_deactivation (NMDevice *slave, NMDevice *master)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+
+	connection = nm_device_get_connection (slave);
+	g_assert (connection);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+
+	if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BOND_SETTING_NAME))
+		nm_system_iface_release (slave, master);
+}
+
 /*
  * nm_device_activate_stage1_device_prepare
  *
@@ -773,6 +829,7 @@ nm_device_activate_stage1_device_prepare (gpointer user_data)
 	const char *iface;
 	NMActStageReturn ret;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
+	NMDevice *master;
 
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, 0);
@@ -782,6 +839,13 @@ nm_device_activate_stage1_device_prepare (gpointer user_data)
 	iface = nm_device_get_iface (self);
 	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 1 of 5 (Device Prepare) started...", iface);
 	nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_REASON_NONE);
+
+	if ((master = nm_device_get_master (self))) {
+		if (!handle_slave_activation (self, master)) {
+			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
+			goto out;
+		}
+	}
 
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage1_prepare (self, &reason);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {
@@ -2771,6 +2835,7 @@ nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason)
 	NMDevice *self = NM_DEVICE (device);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
+	NMDevice *master;
 	gboolean tried_ipv6 = FALSE;
 	int ifindex, family;
 
@@ -2813,6 +2878,9 @@ nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason)
 	/* Call device type-specific deactivation */
 	if (NM_DEVICE_GET_CLASS (self)->deactivate)
 		NM_DEVICE_GET_CLASS (self)->deactivate (self);
+
+	if ((master = nm_device_get_master (self)))
+		handle_slave_deactivation (self, master);
 
 	/* Tear down an existing activation request */
 	clear_act_request (self);

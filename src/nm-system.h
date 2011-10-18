@@ -84,6 +84,7 @@ gboolean        nm_system_iface_set_up                  (int ifindex,
                                                          gboolean up,
                                                          gboolean *no_firmware);
 
+guint32		nm_system_iface_get_flags		(int ifindex);
 gboolean        nm_system_iface_is_up                   (int ifindex);
 
 gboolean		nm_system_iface_set_mtu                 (int ifindex, guint32 mtu);
@@ -91,6 +92,8 @@ gboolean		nm_system_iface_set_mtu                 (int ifindex, guint32 mtu);
 gboolean		nm_system_iface_set_mac                 (int ifindex, const struct ether_addr *mac);
 
 gboolean		nm_system_add_bonding_master	(NMSettingBond *setting);
+gboolean		nm_system_iface_enslave		(NMDevice *slave, NMDevice *master);
+gboolean		nm_system_iface_release		(NMDevice *slave, NMDevice *master);
 
 char *			nm_system_get_link_type		(const char *name);
 
