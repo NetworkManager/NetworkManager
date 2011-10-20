@@ -55,6 +55,7 @@ int main (int argc, char ** argv)
 	syslog (LOG_CRIT, "******************* START **********************************");
 	while (!done)
 	{
+		line[sizeof (line) - 1] = '\0';
 		bytes_read = read (out, line, sizeof (line) - 1);
 		if (bytes_read > 0)
 		{
