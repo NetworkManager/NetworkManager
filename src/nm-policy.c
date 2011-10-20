@@ -322,7 +322,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 		/* Grab a hostname out of the device's DHCP4 config */
 		dhcp4_config = nm_device_get_dhcp4_config (best4);
 		if (dhcp4_config) {
-			p = dhcp_hostname = nm_dhcp4_config_get_option (dhcp4_config, "new_host_name");
+			p = dhcp_hostname = nm_dhcp4_config_get_option (dhcp4_config, "host_name");
 			if (dhcp_hostname && strlen (dhcp_hostname)) {
 				/* Sanity check; strip leading spaces */
 				while (*p) {
@@ -341,7 +341,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 		/* Grab a hostname out of the device's DHCP6 config */
 		dhcp6_config = nm_device_get_dhcp6_config (best6);
 		if (dhcp6_config) {
-			p = dhcp_hostname = nm_dhcp6_config_get_option (dhcp6_config, "new_host_name");
+			p = dhcp_hostname = nm_dhcp6_config_get_option (dhcp6_config, "host_name");
 			if (dhcp_hostname && strlen (dhcp_hostname)) {
 				/* Sanity check; strip leading spaces */
 				while (*p) {
