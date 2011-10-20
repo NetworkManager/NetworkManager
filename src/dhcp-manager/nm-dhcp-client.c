@@ -638,7 +638,7 @@ nm_dhcp_client_foreach_option (NMDHCPClient *self,
 		}
 
 		if (!ignore) {
-			const char *tmp_key = value;
+			const char *tmp_key = key;
 
 			/* Remove the "new_" prefix that dhclient passes back */
 			if (!strncmp (key, NEW_TAG, strlen (NEW_TAG)))
