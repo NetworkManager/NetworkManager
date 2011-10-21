@@ -67,6 +67,8 @@
 #include "nm-device-factory.h"
 #include "wifi-utils.h"
 #include "nm-enum-types.h"
+#include "nm-connectivity.h"
+
 
 #define NM_AUTOIP_DBUS_SERVICE "org.freedesktop.nm_avahi_autoipd"
 #define NM_AUTOIP_DBUS_IFACE   "org.freedesktop.nm_avahi_autoipd"
@@ -194,6 +196,7 @@ typedef struct {
 
 	GSList *devices;
 	NMState state;
+	NMConnectivity *connectivity;
 
 	NMDBusManager *dbus_mgr;
 	NMUdevManager *udev_mgr;
@@ -424,21 +427,25 @@ nm_manager_update_state (NMManager *manager)
 	if (manager_sleeping (manager))
 		new_state = NM_STATE_ASLEEP;
 	else {
-		for (iter = priv->devices; iter; iter = iter->next) {
-			NMDevice *dev = NM_DEVICE (iter->data);
-			NMDeviceState state = nm_device_get_state (dev);
+		if (nm_connectivity_get_connected (priv->connectivity))
+			new_state = NM_STATE_CONNECTED_GLOBAL;
+		else {
+			for (iter = priv->devices; iter; iter = iter->next) {
+				NMDevice *dev = NM_DEVICE (iter->data);
+				NMDeviceState state = nm_device_get_state (dev);
 
-			if (state == NM_DEVICE_STATE_ACTIVATED) {
-				/* FIXME: handle local-only and site too */
-				new_state = NM_STATE_CONNECTED_GLOBAL;
-				break;
-			}
+				if (state == NM_DEVICE_STATE_ACTIVATED) {
+					/* FIXME: handle local-only too */
+					new_state = NM_STATE_CONNECTED_SITE;
+					break;
+				}
 
-			if (nm_device_is_activating (dev))
-				new_state = NM_STATE_CONNECTING;
-			else if (new_state != NM_STATE_CONNECTING) {
-				if (state == NM_DEVICE_STATE_DEACTIVATING)
-					new_state = NM_STATE_DISCONNECTING;
+				if (nm_device_is_activating (dev))
+					new_state = NM_STATE_CONNECTING;
+				else if (new_state != NM_STATE_CONNECTING) {
+					if (state == NM_DEVICE_STATE_DEACTIVATING)
+						new_state = NM_STATE_DISCONNECTING;
+				}
 			}
 		}
 	}
@@ -459,6 +466,7 @@ manager_device_state_changed (NMDevice *device,
                               gpointer user_data)
 {
 	NMManager *manager = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
 	switch (new_state) {
 	case NM_DEVICE_STATE_UNMANAGED:
@@ -473,6 +481,10 @@ manager_device_state_changed (NMDevice *device,
 	}
 
 	nm_manager_update_state (manager);
+
+	/* trigger a connectivity check */
+	if (new_state == NM_DEVICE_STATE_ACTIVATED || old_state == NM_DEVICE_STATE_ACTIVATED)
+		nm_connectivity_check (priv->connectivity);
 }
 
 /* Removes a device from a device list; returns the start of the new device list */
@@ -3342,6 +3354,36 @@ handle_firmware_changed (gpointer user_data)
 }
 
 static void
+connectivity_connected_changed (NMConnectivity *connectivity, gboolean connected, gpointer user_data)
+{
+	NMManager *manager;
+	NMManagerPrivate *priv;
+	NMState new_state;
+	g_return_if_fail (NM_IS_MANAGER (user_data));
+
+	manager = NM_MANAGER (user_data);
+	priv = NM_MANAGER_GET_PRIVATE (manager);
+
+	new_state = NM_STATE_DISCONNECTED;
+
+	if (connected)
+		new_state = NM_STATE_CONNECTED_GLOBAL;
+	else
+	{
+		/* FIXME: handle local here, too */
+		new_state = NM_STATE_CONNECTED_SITE;
+	}
+
+	if (priv->state != new_state) {
+		priv->state = new_state;
+		g_object_notify (G_OBJECT (manager), NM_MANAGER_STATE);
+
+		g_signal_emit (manager, signals[STATE_CHANGED], 0, priv->state);
+		nm_log_dbg (LOGD_CORE, "connectivity changed to: %i", connected);
+	}
+}
+
+static void
 firmware_dir_changed (GFileMonitor *monitor,
                       GFile *file,
                       GFile *other_file,
@@ -3542,6 +3584,9 @@ nm_manager_new (NMSettings *settings,
                 gboolean initial_wifi_enabled,
                 gboolean initial_wwan_enabled,
                 gboolean initial_wimax_enabled,
+                const gchar *connectivity_uri,
+                gint connectivity_interval,
+                const gchar *connectivity_response,
                 GError **error)
 {
 	NMManagerPrivate *priv;
@@ -3556,6 +3601,11 @@ nm_manager_new (NMSettings *settings,
 	g_assert (singleton);
 
 	priv = NM_MANAGER_GET_PRIVATE (singleton);
+
+	priv->connectivity = nm_connectivity_new (connectivity_uri, connectivity_interval, connectivity_response);
+
+	g_signal_connect (priv->connectivity, NM_CONNECTIVITY_SIGNAL_CONNECTED_CHANGED,
+	                  G_CALLBACK (connectivity_connected_changed), singleton);
 
 	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
 	g_assert (bus);
@@ -3653,6 +3703,11 @@ dispose (GObject *object)
 		                                   priv->devices,
 		                                   NM_DEVICE (priv->devices->data),
 		                                   TRUE);
+	}
+
+	if (priv->connectivity) {
+		g_object_unref (priv->connectivity);
+		priv->connectivity = NULL;
 	}
 
 	g_free (priv->hostname);

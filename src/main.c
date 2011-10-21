@@ -346,6 +346,9 @@ main (int argc, char *argv[])
 	char *pidfile = NULL, *state_file = NULL;
 	char *config_path = NULL, *plugins = NULL;
 	char *log_level = NULL, *log_domains = NULL;
+	char *connectivity_uri = NULL;
+	gint connectivity_interval = -1;
+	char *connectivity_response = NULL;
 	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE, wimax_enabled = TRUE;
 	gboolean success, show_version = FALSE;
 	NMPolicy *policy = NULL;
@@ -379,6 +382,9 @@ main (int argc, char *argv[])
 		        "                                           AGENTS,SETTINGS,SUSPEND,CORE,DEVICE,OLPC,WIMAX,\n"
 		        "                                           INFINIBAND,FIREWALL]"),
 		        "HW,RFKILL,WIFI" },
+		{ "connectivity-uri", 0, 0, G_OPTION_ARG_STRING, &connectivity_uri, "A http(s) address to check internet connectivity" },
+		{ "connectivity-interval", 0, 0, G_OPTION_ARG_INT, &connectivity_interval, "the interval in seconds how often a connectivity check will be done" },
+		{ "connectivity-response", 0, 0, G_OPTION_ARG_STRING, &connectivity_response, "the expected start of the response" },
 		{NULL}
 	};
 
@@ -436,7 +442,8 @@ main (int argc, char *argv[])
 		exit (1);
 
 	/* Read the config file and CLI overrides */
-	config = nm_config_new (config_path, plugins, log_level, log_domains, &error);
+	config = nm_config_new (config_path, plugins, log_level, log_domains,
+	                        connectivity_uri, connectivity_interval, connectivity_response, &error);
 	if (config == NULL) {
 		fprintf (stderr, _("Failed to read configuration: (%d) %s\n"),
 		         error ? error->code : -1,
@@ -566,6 +573,9 @@ main (int argc, char *argv[])
 	                          wifi_enabled,
 	                          wwan_enabled,
 	                          wimax_enabled,
+	                          nm_config_get_connectivity_uri (config),
+	                          nm_config_get_connectivity_interval (config),
+	                          nm_config_get_connectivity_response (config),
 	                          &error);
 	if (manager == NULL) {
 		nm_log_err (LOGD_CORE, "failed to initialize the network manager: %s",
@@ -666,6 +676,8 @@ done:
 	g_free (plugins);
 	g_free (log_level);
 	g_free (log_domains);
+	g_free (connectivity_uri);
+	g_free (connectivity_response);
 
 	nm_log_info (LOGD_CORE, "exiting (%s)", success ? "success" : "error");
 	exit (success ? 0 : 1);

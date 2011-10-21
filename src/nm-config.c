@@ -34,6 +34,9 @@ struct NMConfig {
 	char **dns_plugins;
 	char *log_level;
 	char *log_domains;
+	char *connectivity_uri;
+	guint connectivity_interval;
+	char *connectivity_response;
 };
 
 /************************************************************************/
@@ -97,6 +100,31 @@ nm_config_get_log_domains (NMConfig *config)
 	return config->log_domains;
 }
 
+const char *
+nm_config_get_connectivity_uri (NMConfig *config)
+{
+	g_return_val_if_fail (config != NULL, NULL);
+
+	return config->connectivity_uri;
+}
+
+const guint
+nm_config_get_connectivity_interval (NMConfig *config)
+{
+	g_return_val_if_fail (config != NULL, -1);
+
+	return config->connectivity_interval;
+}
+
+const char *
+nm_config_get_connectivity_response (NMConfig *config)
+{
+	g_return_val_if_fail (config != NULL, NULL);
+
+	return config->connectivity_response;
+}
+
+
 /************************************************************************/
 
 static gboolean
@@ -105,6 +133,9 @@ fill_from_file (NMConfig *config,
                 const char *cli_plugins,
                 const char *cli_log_level,
                 const char *cli_log_domains,
+                const char *cli_connectivity_uri,
+                const gint cli_connectivity_interval,
+                const char *cli_connectivity_response,
                 GError **error)
 {
 	GKeyFile *kf;
@@ -144,6 +175,22 @@ fill_from_file (NMConfig *config,
 			config->log_domains = g_strdup (cli_log_domains);
 		else
 			config->log_domains = g_key_file_get_value (kf, "logging", "domains", NULL);
+
+		if (cli_connectivity_uri && strlen (cli_connectivity_uri))
+			config->connectivity_uri = g_strdup (cli_connectivity_uri);
+		else
+			config->connectivity_uri = g_key_file_get_value (kf, "connectivity", "uri", NULL);
+
+		if (cli_connectivity_interval >= 0)
+			config->connectivity_interval = cli_connectivity_interval;
+		else
+			config->connectivity_interval = g_key_file_get_integer (kf, "connectivity", "interval", NULL);
+
+		if (cli_connectivity_response && strlen (cli_connectivity_response))
+			config->connectivity_response = g_strdup (cli_connectivity_response);
+		else
+			config->connectivity_response = g_key_file_get_value (kf, "connectivity", "response", NULL);
+
 		success = TRUE;
 	}
 
@@ -156,6 +203,9 @@ nm_config_new (const char *cli_config_path,
                const char *cli_plugins,
                const char *cli_log_level,
                const char *cli_log_domains,
+               const char *cli_connectivity_uri,
+               const gint cli_connectivity_interval,
+               const char *cli_connectivity_response,
                GError **error)
 {
 	NMConfig *config;
@@ -165,7 +215,9 @@ nm_config_new (const char *cli_config_path,
 
 	if (cli_config_path) {
 		/* Bad user-specific config file path is a hard error */
-		if (!fill_from_file (config, cli_config_path, cli_plugins, cli_log_level, cli_log_domains, error)) {
+		if (!fill_from_file (config, cli_config_path, cli_plugins, cli_log_level, cli_log_domains,
+		                     cli_connectivity_uri, cli_connectivity_interval, cli_connectivity_response,
+		                     error)) {
 			nm_config_free (config);
 			return NULL;
 		}
@@ -180,7 +232,9 @@ nm_config_new (const char *cli_config_path,
 	 */
 
 	/* Try deprecated nm-system-settings.conf first */
-	if (fill_from_file (config, NM_OLD_SYSTEM_CONF_FILE, cli_plugins, cli_log_level, cli_log_domains, &local))
+	if (fill_from_file (config, NM_OLD_SYSTEM_CONF_FILE, cli_plugins, cli_log_level, cli_log_domains,
+	                    cli_connectivity_uri, cli_connectivity_interval, cli_connectivity_response,
+	                    &local))
 		return config;
 
 	if (g_error_matches (local, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND) == FALSE) {
@@ -192,7 +246,9 @@ nm_config_new (const char *cli_config_path,
 	g_clear_error (&local);
 
 	/* Try the standard config file location next */
-	if (fill_from_file (config, NM_DEFAULT_SYSTEM_CONF_FILE, cli_plugins, cli_log_level, cli_log_domains, &local))
+	if (fill_from_file (config, NM_DEFAULT_SYSTEM_CONF_FILE, cli_plugins, cli_log_level, cli_log_domains,
+	                    cli_connectivity_uri, cli_connectivity_interval, cli_connectivity_response,
+	                    &local))
 		return config;
 
 	if (g_error_matches (local, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND) == FALSE) {
@@ -230,7 +286,8 @@ nm_config_free (NMConfig *config)
 	g_strfreev (config->dns_plugins);
 	g_free (config->log_level);
 	g_free (config->log_domains);
-
+	g_free (config->connectivity_uri);
+	g_free (config->connectivity_response);
 	memset (config, 0, sizeof (*config));
 	g_free (config);
 }

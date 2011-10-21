@@ -190,7 +190,11 @@ NetworkManager_SOURCES = \
 		nm-rfkill.h \
 		nm-session-monitor.h \
 		nm-session-utils.c \
-		nm-session-utils.h
+		nm-session-utils.h \
+		nm-session-monitor.c \
+		nm-session-monitor.h \
+		nm-connectivity.c \
+		nm-connectivity.h
 
 if SESSION_TRACKING_SYSTEMD
 NetworkManager_SOURCES += nm-session-monitor-systemd.c
@@ -272,6 +276,7 @@ NetworkManager_CPPFLAGS = \
 	$(GMODULE_CFLAGS) \
 	$(POLKIT_CFLAGS) \
 	$(SYSTEMD_CFLAGS) \
+	$(LIBSOUP_CFLAGS) \
 	-DG_DISABLE_DEPRECATED \
 	-DBINDIR=\"$(bindir)\" \
 	-DSBINDIR=\"$(sbindir)\" \
@@ -307,6 +312,7 @@ NetworkManager_LDADD = \
 	$(GMODULE_LIBS) \
 	$(POLKIT_LIBS) \
 	$(SYSTEMD_LIBS) \
+	$(LIBSOUP_LIBS) \
 	$(LIBM) \
 	$(LIBDL)
 
