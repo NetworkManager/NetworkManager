@@ -645,7 +645,7 @@ show_device_info (gpointer data, gpointer user_data)
 			nmc->allowed_fields[1].value = nm_device_get_iface (device);
 			nmc->allowed_fields[2].value = device_type_to_string (device);
 			nmc->allowed_fields[3].value = nm_device_get_driver (device) ? nm_device_get_driver (device) : _("(unknown)");
-			nmc->allowed_fields[4].value = hwaddr ? hwaddr : _("unknown)");
+			nmc->allowed_fields[4].value = hwaddr ? hwaddr : _("(unknown)");
 			nmc->allowed_fields[5].value = device_state_to_string (state);
 
 			nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;

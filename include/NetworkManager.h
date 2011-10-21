@@ -102,7 +102,8 @@ typedef enum {
  * @NM_DEVICE_TYPE_MODEM: a modem supporting analog telephone, CDMA/EVDO,
  * GSM/UMTS, or LTE network access protocols
  *
- * #NMState values indicate the current overall networking state.
+ * #NMDeviceType values indicate the type of hardware represented by
+ * an #NMDevice.
  **/
 typedef enum {
 	NM_DEVICE_TYPE_UNKNOWN   = 0,
