@@ -137,10 +137,13 @@ typedef struct {
 	/* IP6 configuration info */
 	NMIP6Config *  ip6_config;
 	IpState        ip6_state;
+
 	NMIP6Manager * ip6_manager;
 	gulong         ip6_addrconf_sigid;
 	gulong         ip6_config_changed_sigid;
 	gboolean       ip6_waiting_for_config;
+	/* IP6 config from autoconf */
+	NMIP6Config *  ac_ip6_config;
 
 	char *         ip6_accept_ra_path;
 	guint32        ip6_accept_ra_save;
@@ -150,6 +153,8 @@ typedef struct {
 	gulong          dhcp6_state_sigid;
 	gulong          dhcp6_timeout_sigid;
 	NMDHCP6Config * dhcp6_config;
+	/* IP6 config from DHCP */
+	NMIP6Config *   dhcp6_ip6_config;
 
 	/* inhibit autoconnect feature */
 	gboolean	autoconnect_inhibit;
@@ -1501,16 +1506,49 @@ merge_ip6_configs (NMIP6Config *dst, NMIP6Config *src)
 		nm_ip6_config_set_mss (dst, nm_ip6_config_get_mss (src));
 }
 
+static gboolean
+ip6_config_merge_and_apply (NMDevice *self,
+                            NMIP6Config *src_config,
+                            NMDeviceStateReason *out_reason)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMConnection *connection;
+	gboolean assumed, success;
+	NMIP6Config *composite;
+
+	g_assert (priv->act_request);
+	connection = nm_act_request_get_connection (priv->act_request);
+	g_assert (connection);
+
+	/* If no config was passed in, create a new one */
+	composite = nm_ip6_config_new ();
+	g_assert (composite);
+
+	merge_ip6_configs (composite, src_config);
+
+	/* Merge RA and DHCPv6 configs into the composite config */
+	if (priv->ac_ip6_config && (src_config != priv->ac_ip6_config))
+		merge_ip6_configs (composite, priv->ac_ip6_config);
+	if (priv->dhcp6_ip6_config && (src_config != priv->dhcp6_ip6_config))
+		merge_ip6_configs (composite, priv->dhcp6_ip6_config);
+
+	/* Merge user overrides into the composite config */
+	nm_utils_merge_ip6_config (composite, nm_connection_get_setting_ip6_config (connection));
+
+	assumed = nm_act_request_get_assumed (priv->act_request);
+	success = nm_device_set_ip6_config (self, composite, assumed, out_reason);
+	g_object_unref (composite);
+	return success;
+}
+
 static void
-dhcp6_lease_change (NMDevice *device, NMIP6Config *config)
+dhcp6_lease_change (NMDevice *device)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
-	NMIP6Config *ra_config = NULL;
 	NMConnection *connection;
-	NMActRequest *req;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
-	if (config == NULL) {
+	if (priv->dhcp6_ip6_config == NULL) {
 		nm_log_warn (LOGD_DHCP6, "(%s): failed to get DHCPv6 config for rebind",
 		             nm_device_get_ip_iface (device));
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
@@ -1519,38 +1557,18 @@ dhcp6_lease_change (NMDevice *device, NMIP6Config *config)
 
 	g_assert (priv->dhcp6_client);  /* sanity check */
 
-	req = nm_device_get_act_request (device);
-	g_assert (req);
-	connection = nm_act_request_get_connection (req);
+	connection = nm_act_request_get_connection (priv->act_request);
 	g_assert (connection);
 
-	/* May need to merge RA config and DHCPv6 config */
-	if (priv->ip6_manager && ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
-		ra_config = nm_ip6_manager_get_ip6_config (priv->ip6_manager,
-		                                           nm_device_get_ip_ifindex (device));
-		if (ra_config == NULL) {
-			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED,
-				                     NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
-			return;
-		}
-
-		/* Merge RA config with DHCPv6 config */
-		merge_ip6_configs (config, ra_config);
-		g_object_unref (ra_config);
-	}
-
-	/* Merge DHCPv6 and RA composite config with user overrides */
-	nm_utils_merge_ip6_config (config, nm_connection_get_setting_ip6_config (connection));
-
-	if (nm_device_set_ip6_config (device, config, FALSE, &reason) == FALSE) {
+	/* Apply the updated config */
+	if (ip6_config_merge_and_apply (device, NULL, &reason) == FALSE) {
 		nm_log_warn (LOGD_DHCP6, "(%s): failed to update IPv6 config in response to DHCP event.",
 		             nm_device_get_ip_iface (device));
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
-		return;
+	} else {
+		/* Notify dispatcher scripts of new DHCPv6 config */
+		nm_utils_call_dispatcher ("dhcp6-change", connection, device, NULL, NULL, NULL);
 	}
-
-	/* Notify dispatcher scripts of new DHCP4 config */
-	nm_utils_call_dispatcher ("dhcp6-change", connection, device, NULL, NULL, NULL);
 }
 
 static void
@@ -1574,7 +1592,6 @@ dhcp6_state_changed (NMDHCPClient *client,
 	NMDevice *device = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 	NMDeviceState dev_state;
-	NMIP6Config *config;
 
 	g_return_if_fail (nm_dhcp_client_get_ipv6 (client) == TRUE);
 
@@ -1588,21 +1605,21 @@ dhcp6_state_changed (NMDHCPClient *client,
 	case DHC_RENEW6:     /* lease renewed */
 	case DHC_REBOOT:     /* have valid lease, but now obtained a different one */
 	case DHC_REBIND6:    /* new, different lease */
-		config = nm_dhcp_client_get_ip6_config (priv->dhcp6_client, FALSE);
+		if (priv->dhcp6_ip6_config)
+			g_object_unref (priv->dhcp6_ip6_config);
+		priv->dhcp6_ip6_config = nm_dhcp_client_get_ip6_config (priv->dhcp6_client, FALSE);
 		if (priv->ip6_state == IP_CONF)
-			nm_device_activate_schedule_ip6_config_result (device, config);
+			nm_device_activate_schedule_ip6_config_result (device, priv->dhcp6_ip6_config);
 		else if (priv->ip6_state == IP_DONE)
-			dhcp6_lease_change (device, config);
+			dhcp6_lease_change (device);
 
-		if (config) {
+		if (priv->dhcp6_ip6_config) {
 			/* Update the DHCP6 config object with new DHCP options */
 			nm_dhcp6_config_reset (priv->dhcp6_config);
 			nm_dhcp_client_foreach_option (priv->dhcp6_client,
 			                               dhcp6_add_option_cb,
 			                               priv->dhcp6_config);
 			g_object_notify (G_OBJECT (device), NM_DEVICE_INTERFACE_DHCP6_CONFIG);
-
-			g_object_unref (config);
 		}
 		break;
 	case DHC_TIMEOUT: /* timed out contacting DHCP server */
@@ -1647,17 +1664,13 @@ dhcp6_start (NMDevice *self,
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	guint8 *anycast = NULL;
-	NMSettingIP6Config *s_ip6;
 	const char *ip_iface;
 	const struct in6_addr dest = { { { 0xFF,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } } };
 	int err;
 
 	if (!connection) {
-		NMActRequest *req;
-
-		req = nm_device_get_act_request (self);
-		g_assert (req);
-		connection = nm_act_request_get_connection (req);
+		g_assert (priv->act_request);
+		connection = nm_act_request_get_connection (priv->act_request);
 		g_assert (connection);
 	}
 
@@ -1671,6 +1684,12 @@ dhcp6_start (NMDevice *self,
 		g_object_unref (priv->dhcp6_config);
 	priv->dhcp6_config = nm_dhcp6_config_new ();
 
+	g_warn_if_fail (priv->dhcp6_ip6_config == NULL);
+	if (priv->dhcp6_ip6_config) {
+		g_object_unref (priv->dhcp6_ip6_config);
+		priv->dhcp6_ip6_config = NULL;
+	}
+
 	/* DHCPv6 communicates with the DHCPv6 server via two multicast addresses,
 	 * ff02::1:2 (link-scope) and ff05::1:3 (site-scope).  Make sure we have
 	 * a multicast route (ff00::/8) for client <-> server communication.
@@ -1683,13 +1702,11 @@ dhcp6_start (NMDevice *self,
 		            priv->ip_iface ? priv->ip_iface : priv->iface, nl_geterror (err));
 	}
 
-	s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
-
 	ip_iface = nm_device_get_ip_iface (self);
 	priv->dhcp6_client = nm_dhcp_manager_start_ip6 (priv->dhcp_manager,
 	                                                ip_iface,
 	                                                nm_connection_get_uuid (connection),
-	                                                s_ip6,
+	                                                nm_connection_get_setting_ip6_config (connection),
 	                                                priv->dhcp_timeout,
 	                                                anycast,
 	                                                (dhcp_opt == IP6_DHCP_OPT_OTHERCONF) ? TRUE : FALSE);
@@ -1724,18 +1741,14 @@ ip6_addrconf_complete (NMIP6Manager *ip6_manager,
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMActRequest *req;
 	NMConnection *connection;
 	NMActStageReturn ret;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
-	NMIP6Config *config;
 
 	if (ifindex != nm_device_get_ip_ifindex (self))
 		return;
-	req = nm_device_get_act_request (self);
-	if (!req)
-		return;
-	connection = nm_act_request_get_connection (req);
+	g_return_if_fail (priv->act_request != NULL);
+	connection = nm_act_request_get_connection (priv->act_request);
 	g_assert (connection);
 
 	if (!priv->ip6_waiting_for_config)
@@ -1752,10 +1765,8 @@ ip6_addrconf_complete (NMIP6Manager *ip6_manager,
 
 	/* If addrconf is all that's required, we're done */
 	if (priv->dhcp6_mode == IP6_DHCP_OPT_NONE) {
-		config = nm_ip6_manager_get_ip6_config (ip6_manager, ifindex);
-		nm_device_activate_schedule_ip6_config_result (self, config);
-		if (config)
-			g_object_unref (config);
+		priv->ac_ip6_config = nm_ip6_manager_get_ip6_config (ip6_manager, ifindex);
+		nm_device_activate_schedule_ip6_config_result (self, priv->ac_ip6_config);
 		return;
 	}
 
@@ -1775,10 +1786,8 @@ ip6_addrconf_complete (NMIP6Manager *ip6_manager,
 	case NM_ACT_STAGE_RETURN_SUCCESS:
 		/* Shouldn't get this, but handle it anyway */
 		g_warn_if_reached ();
-		config = nm_ip6_manager_get_ip6_config (ip6_manager, ifindex);
-		nm_device_activate_schedule_ip6_config_result (self, config);
-		if (config)
-			g_object_unref (config);
+		priv->ac_ip6_config = nm_ip6_manager_get_ip6_config (ip6_manager, ifindex);
+		nm_device_activate_schedule_ip6_config_result (self, priv->ac_ip6_config);
 		break;
 	case NM_ACT_STAGE_RETURN_POSTPONE:
 		/* Success; wait for DHCPv6 to complete */
@@ -1798,50 +1807,27 @@ ip6_config_changed (NMIP6Manager *ip6_manager,
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMIP6Config *config, *dhcp_config = NULL;
-	NMConnection *connection;
-	NMActRequest *req;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
 	if (ifindex != nm_device_get_ip_ifindex (self))
 		return;
-	if (!nm_device_get_act_request (self))
-		return;
+	g_return_if_fail (priv->act_request != NULL);
 
-	/* FIXME: re-run DHCPv6 here to get any new nameservers or whatever */
-
-	if (!success && (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED)) {
+	/* If autoconf failed and IPv6 previously succeeded, fail */
+	if (!success && (priv->ip6_state == IP_DONE)) {
 		nm_device_state_changed (self,
 		                         NM_DEVICE_STATE_FAILED,
 		                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 		return;
 	}
 
-	req = nm_device_get_act_request (self);
-	g_assert (req);
-	connection = nm_act_request_get_connection (req);
-	g_assert (connection);
+	/* FIXME: re-run DHCPv6 here to get any new nameservers or whatever */
 
-	config = nm_ip6_manager_get_ip6_config (ip6_manager, ifindex);
+	if (priv->ac_ip6_config)
+		g_object_unref (priv->ac_ip6_config);
+	priv->ac_ip6_config = nm_ip6_manager_get_ip6_config (ip6_manager, ifindex);
 
-	/* May need to merge RA config and DHCPv6 config */
-	if (priv->dhcp6_client) {
-		dhcp_config = nm_dhcp_client_get_ip6_config (priv->dhcp6_client, FALSE);
-		if (dhcp_config == NULL) {
-			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED,
-				                     NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
-			return;
-		}
-
-		/* Merge DHCPv6 config with RA config */
-		merge_ip6_configs (config, dhcp_config);
-		g_object_unref (dhcp_config);
-	}
-
-	/* Merge DHCPv6 and RA composite config with user overrides */
-	nm_utils_merge_ip6_config (config, nm_connection_get_setting_ip6_config (connection));
-
-	if (nm_device_set_ip6_config (self, config, FALSE, &reason) == FALSE) {
+	if (ip6_config_merge_and_apply (self, NULL, &reason) == FALSE) {
 		nm_log_warn (LOGD_DHCP6, "(%s): failed to update IPv6 config in response to Router Advertisement.",
 		             nm_device_get_ip_iface (self));
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
@@ -1852,15 +1838,18 @@ static gboolean
 addrconf6_start (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMActRequest *req;
 	NMConnection *connection;
-	NMSettingIP6Config *s_ip6;
 	gboolean success;
 
-	req = nm_device_get_act_request (self);
-	g_assert (req);
-	connection = nm_act_request_get_connection (req);
+	g_assert (priv->act_request);
+	connection = nm_act_request_get_connection (priv->act_request);
 	g_assert (connection);
+
+	g_warn_if_fail (priv->ac_ip6_config == NULL);
+	if (priv->ac_ip6_config) {
+		g_object_unref (priv->ac_ip6_config);
+		priv->ac_ip6_config = NULL;
+	}
 
 	if (!priv->ip6_manager) {
 		priv->ip6_manager = nm_ip6_manager_get ();
@@ -1874,10 +1863,9 @@ addrconf6_start (NMDevice *self)
 		                                                   self);
 	}
 
-	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	success = nm_ip6_manager_prepare_interface (priv->ip6_manager,
 	                                            nm_device_get_ip_ifindex (self),
-	                                            s_ip6,
+	                                            nm_connection_get_setting_ip6_config (connection),
 	                                            priv->ip6_accept_ra_path);
 	if (success) {
 		priv->ip6_waiting_for_config = TRUE;
@@ -1891,6 +1879,11 @@ static void
 addrconf6_cleanup (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->ac_ip6_config) {
+		g_object_unref (priv->ac_ip6_config);
+		priv->ac_ip6_config = NULL;
+	}
 
 	if (!priv->ip6_manager)
 		return;
@@ -2476,7 +2469,6 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 	const char *iface;
 	NMConnection *connection;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
-	gboolean assumed;
 	int ifindex;
 
 	/* Clear the activation source ID now that this stage has run */
@@ -2503,21 +2495,18 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 	if (NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit)
 		NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit (self, config);
 
-	assumed = nm_act_request_get_assumed (priv->act_request);
-	if (!nm_device_set_ip6_config (self, config, assumed, &reason)) {
+	if (ip6_config_merge_and_apply (self, config, &reason)) {
+		/* Enter the ACTIVATED state if this is the first method to complete */
+		priv->ip6_state = IP_DONE;
+		if (nm_device_get_state (self) == NM_DEVICE_STATE_IP_CONFIG)
+			nm_device_state_changed (self, NM_DEVICE_STATE_ACTIVATED, NM_DEVICE_STATE_REASON_NONE);
+	} else {
 		nm_log_info (LOGD_DEVICE | LOGD_IP6,
 			         "Activation (%s) Stage 5 of 5 (IPv6 Commit) failed",
 					 iface);
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
-		goto out;
 	}
 
-	/* Enter the ACTIVATED state if this is the first method to complete */
-	priv->ip6_state = IP_DONE;
-	if (nm_device_get_state (self) == NM_DEVICE_STATE_IP_CONFIG)
-		nm_device_state_changed (self, NM_DEVICE_STATE_ACTIVATED, NM_DEVICE_STATE_REASON_NONE);
-
-out:
 	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 5 of 5 (IPv6 Commit) complete.",
 	             iface);
 
@@ -2527,12 +2516,10 @@ out:
 	return FALSE;
 }
 
-/* Takes ownership of IP6Config */
 void
 nm_device_activate_schedule_ip6_config_result (NMDevice *self, NMIP6Config *config)
 {
 	NMDevicePrivate *priv;
-	NMConnection *connection;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -2544,11 +2531,7 @@ nm_device_activate_schedule_ip6_config_result (NMDevice *self, NMIP6Config *conf
 		return;
 	}
 
-	connection = nm_act_request_get_connection (priv->act_request);
-	g_assert (connection);
-
-	/* Merge with user overrides and save the pending config */
-	nm_utils_merge_ip6_config (config, nm_connection_get_setting_ip6_config (connection));
+	/* Save the pending config */
 	g_object_set_data_full (G_OBJECT (priv->act_request),
 	                        PENDING_IP6_CONFIG,
 	                        g_object_ref (config),
@@ -2654,6 +2637,11 @@ dhcp6_cleanup (NMDevice *self, gboolean stop, gboolean release)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	priv->dhcp6_mode = IP6_DHCP_OPT_NONE;
+
+	if (priv->dhcp6_ip6_config) {
+		g_object_unref (priv->dhcp6_ip6_config);
+		priv->dhcp6_ip6_config = NULL;
+	}
 
 	if (priv->dhcp6_config) {
 		g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_DHCP6_CONFIG);
