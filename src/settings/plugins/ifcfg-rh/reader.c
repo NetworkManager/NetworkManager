@@ -183,7 +183,8 @@ make_connection_setting (const char *file,
 }
 
 static gboolean
-read_mac_address (shvarFile *ifcfg, const char *key, GByteArray **array, GError **error)
+read_mac_address (shvarFile *ifcfg, const char *key, int type,
+                  GByteArray **array, GError **error)
 {
 	char *value = NULL;
 
@@ -199,7 +200,7 @@ read_mac_address (shvarFile *ifcfg, const char *key, GByteArray **array, GError 
 		return TRUE;
 	}
 
-	*array = nm_utils_hwaddr_atoba (value, ARPHRD_ETHER);
+	*array = nm_utils_hwaddr_atoba (value, type);
 	if (!*array) {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 		             "%s: the MAC address '%s' was invalid.", key, value);
@@ -289,7 +290,7 @@ fill_ip4_setting_from_ibft (shvarFile *ifcfg,
 		goto done;
 	}
 
-	if (!read_mac_address (ifcfg, "HWADDR", &ifcfg_mac, error))
+	if (!read_mac_address (ifcfg, "HWADDR", ARPHRD_ETHER, &ifcfg_mac, error))
 		goto done;
 	/* Ensure we got a MAC */
 	if (!ifcfg_mac) {
@@ -2771,7 +2772,7 @@ make_wireless_setting (shvarFile *ifcfg,
 
 	s_wireless = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
 
-	if (read_mac_address (ifcfg, "HWADDR", &array, error)) {
+	if (read_mac_address (ifcfg, "HWADDR", ARPHRD_ETHER, &array, error)) {
 		if (array) {
 			g_object_set (s_wireless, NM_SETTING_WIRELESS_MAC_ADDRESS, array, NULL);
 
@@ -2795,7 +2796,7 @@ make_wireless_setting (shvarFile *ifcfg,
 	}
 
 	array = NULL;
-	if (read_mac_address (ifcfg, "MACADDR", &array, error)) {
+	if (read_mac_address (ifcfg, "MACADDR", ARPHRD_ETHER, &array, error)) {
 		if (array) {
 			g_object_set (s_wireless, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, array, NULL);
 			g_byte_array_free (array, TRUE);
@@ -3101,7 +3102,7 @@ make_wired_setting (shvarFile *ifcfg,
 		g_free (value);
 	}
 
-	if (read_mac_address (ifcfg, "HWADDR", &mac, error)) {
+	if (read_mac_address (ifcfg, "HWADDR", ARPHRD_ETHER, &mac, error)) {
 		if (mac) {
 			g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
 
@@ -3212,7 +3213,7 @@ make_wired_setting (shvarFile *ifcfg,
 	}
 
 	mac = NULL;
-	if (read_mac_address (ifcfg, "MACADDR", &mac, error)) {
+	if (read_mac_address (ifcfg, "MACADDR", ARPHRD_ETHER, &mac, error)) {
 		if (mac) {
 			g_object_set (s_wired, NM_SETTING_WIRED_CLONED_MAC_ADDRESS, mac, NULL);
 			g_byte_array_free (mac, TRUE);
@@ -3308,6 +3309,105 @@ wired_connection_from_ifcfg (const char *file,
 
 	if (s_8021x)
 		nm_connection_add_setting (connection, NM_SETTING (s_8021x));
+
+	if (!nm_connection_verify (connection, error)) {
+		g_object_unref (connection);
+		return NULL;
+	}
+
+	return connection;
+}
+
+static NMSetting *
+make_infiniband_setting (shvarFile *ifcfg,
+                         const char *file,
+                         gboolean nm_controlled,
+                         char **unmanaged,
+                         GError **error)
+{
+	NMSettingInfiniband *s_infiniband;
+	char *value = NULL;
+	GByteArray *mac = NULL;
+	int mtu;
+
+	s_infiniband = NM_SETTING_INFINIBAND (nm_setting_infiniband_new ());
+
+	value = svGetValue (ifcfg, "MTU", FALSE);
+	if (value) {
+		if (get_int (value, &mtu)) {
+			if (mtu >= 0 && mtu < 65536)
+				g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MTU, mtu, NULL);
+		} else {
+			/* Shouldn't be fatal... */
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid MTU '%s'", value);
+		}
+		g_free (value);
+	}
+
+	if (read_mac_address (ifcfg, "HWADDR", ARPHRD_INFINIBAND, &mac, error)) {
+		if (mac) {
+			g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MAC_ADDRESS, mac, NULL);
+
+			/* A connection can only be unmanaged if we know the MAC address */
+			if (!nm_controlled) {
+				char *mac_str = nm_utils_hwaddr_ntoa (mac->data, ARPHRD_INFINIBAND);
+				*unmanaged = g_strdup_printf ("mac:%s", mac_str);
+				g_free (mac_str);
+			}
+
+			g_byte_array_free (mac, TRUE);
+		}
+	} else {
+		g_object_unref (s_infiniband);
+		return NULL;
+	}
+
+	if (!nm_controlled && !*unmanaged) {
+		/* If NM_CONTROLLED=no but there wasn't a MAC address, notify
+		   the user that the device cannot be unmanaged.
+		 */
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: NM_CONTROLLED was false but HWADDR was missing; device will be managed");
+	}
+
+	return (NMSetting *) s_infiniband;
+}
+
+static NMConnection *
+infiniband_connection_from_ifcfg (const char *file,
+                                  shvarFile *ifcfg,
+                                  gboolean nm_controlled,
+                                  char **unmanaged,
+                                  GError **error)
+{
+	NMConnection *connection = NULL;
+	NMSetting *con_setting = NULL;
+	NMSetting *infiniband_setting = NULL;
+
+	g_return_val_if_fail (file != NULL, NULL);
+	g_return_val_if_fail (ifcfg != NULL, NULL);
+
+	connection = nm_connection_new ();
+	if (!connection) {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		             "Failed to allocate new connection for %s.", file);
+		return NULL;
+	}
+
+	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_INFINIBAND_SETTING_NAME, NULL, NULL);
+	if (!con_setting) {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		             "Failed to create connection setting.");
+		g_object_unref (connection);
+		return NULL;
+	}
+	nm_connection_add_setting (connection, con_setting);
+
+	infiniband_setting = make_infiniband_setting (ifcfg, file, nm_controlled, unmanaged, error);
+	if (!infiniband_setting) {
+		g_object_unref (connection);
+		return NULL;
+	}
+	nm_connection_add_setting (connection, infiniband_setting);
 
 	if (!nm_connection_verify (connection, error)) {
 		g_object_unref (connection);
@@ -3662,6 +3762,8 @@ connection_from_file (const char *filename,
 		connection = wired_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, &error);
 	else if (!strcasecmp (type, TYPE_WIRELESS))
 		connection = wireless_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, &error);
+	else if (!strcasecmp (type, TYPE_INFINIBAND))
+		connection = infiniband_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, &error);
 	else if (!strcasecmp (type, TYPE_BRIDGE)) {
 		g_set_error (&error, IFCFG_PLUGIN_ERROR, 0,
 		             "Bridge connections are not yet supported");

@@ -41,10 +41,11 @@
 #define IFCFG_PLUGIN_NAME "ifcfg-rh"
 #define IFCFG_PLUGIN_INFO "(c) 2007 - 2010 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list."
 
-#define TYPE_ETHERNET "Ethernet"
-#define TYPE_WIRELESS "Wireless"
-#define TYPE_BRIDGE   "Bridge"
-#define TYPE_BOND     "Bond"
+#define TYPE_ETHERNET   "Ethernet"
+#define TYPE_WIRELESS   "Wireless"
+#define TYPE_INFINIBAND "Infiniband"
+#define TYPE_BRIDGE     "Bridge"
+#define TYPE_BOND       "Bond"
 
 #define SECRET_FLAG_AGENT "user"
 #define SECRET_FLAG_NOT_SAVED "ask"
