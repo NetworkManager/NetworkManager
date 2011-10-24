@@ -155,7 +155,7 @@ nm_ip6_device_new (NMIP6Manager *manager, int ifindex)
 	}
 
 	device->ifindex = ifindex;
-	device->iface = g_strdup (nm_netlink_index_to_iface (ifindex));
+	device->iface = nm_netlink_index_to_iface (ifindex);
 	if (!device->iface) {
 		nm_log_err (LOGD_IP6, "(%d): could not find interface name from index.",
 		            ifindex);
