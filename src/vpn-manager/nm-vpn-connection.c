@@ -286,6 +286,28 @@ plugin_failed (DBusGProxy *proxy,
 	}
 }
 
+static const char *
+vpn_state_to_string (NMVPNServiceState state)
+{
+	switch (state) {
+	case NM_VPN_SERVICE_STATE_INIT:
+		return "init";
+	case NM_VPN_SERVICE_STATE_SHUTDOWN:
+		return "shutdown";
+	case NM_VPN_SERVICE_STATE_STARTING:
+		return "starting";
+	case NM_VPN_SERVICE_STATE_STARTED:
+		return "started";
+	case NM_VPN_SERVICE_STATE_STOPPING:
+		return "stopping";
+	case NM_VPN_SERVICE_STATE_STOPPED:
+		return "stopped";
+	default:
+		break;
+	}
+	return "unknown";
+}
+
 static void
 plugin_state_changed (DBusGProxy *proxy,
                       NMVPNServiceState state,
@@ -294,7 +316,8 @@ plugin_state_changed (DBusGProxy *proxy,
 	NMVPNConnection *connection = NM_VPN_CONNECTION (user_data);
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
-	nm_log_info (LOGD_VPN, "VPN plugin state changed: %d", state);
+	nm_log_info (LOGD_VPN, "VPN plugin state changed: %s (%d)",
+	             vpn_state_to_string (state), state);
 
 	if (state == NM_VPN_SERVICE_STATE_STOPPED) {
 		/* Clear connection secrets to ensure secrets get requested each time the
