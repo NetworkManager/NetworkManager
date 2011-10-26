@@ -656,7 +656,7 @@ auto_register_cb (gpointer user_data)
  * @hints: (array zero-terminated=1): hints to the agent
  * @flags: flags that modify the behavior of the request
  * @callback: (scope async): a callback, invoked when the operation is done
- * @callback_data: (closure):
+ * @user_data: (closure): caller-specific data to be passed to @callback
  *
  * Asyncronously retrieve secrets belonging to @connection for the
  * setting @setting_name.  @flags indicate specific behavior that the secret
@@ -673,7 +673,7 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
                              const char **hints,
                              NMSecretAgentGetSecretsFlags flags,
                              NMSecretAgentGetSecretsFunc callback,
-                             gpointer callback_data)
+                             gpointer user_data)
 {
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_SECRET_AGENT (self));
@@ -691,7 +691,7 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
 	                                               hints,
 	                                               flags,
 	                                               callback,
-	                                               callback_data);
+	                                               user_data);
 }
 
 /**
@@ -699,7 +699,7 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
  * @self: a #NMSecretAgent
  * @connection: a #NMConnection
  * @callback: (scope async): a callback, invoked when the operation is done
- * @callback_data: (closure):
+ * @user_data: (closure): caller-specific data to be passed to @callback
  *
  * Asyncronously ensure that all secrets inside @connection
  * are stored to disk.
@@ -710,7 +710,7 @@ void
 nm_secret_agent_save_secrets (NMSecretAgent *self,
                               NMConnection *connection,
                               NMSecretAgentSaveSecretsFunc callback,
-                              gpointer callback_data)
+                              gpointer user_data)
 {
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_SECRET_AGENT (self));
@@ -722,7 +722,7 @@ nm_secret_agent_save_secrets (NMSecretAgent *self,
 	                                                connection,
 	                                                nm_connection_get_path (connection),
 	                                                callback,
-	                                                callback_data);
+	                                                user_data);
 }
 
 /**
@@ -730,7 +730,7 @@ nm_secret_agent_save_secrets (NMSecretAgent *self,
  * @self: a #NMSecretAgent
  * @connection: a #NMConnection
  * @callback: (scope async): a callback, invoked when the operation is done
- * @callback_data: (closure):
+ * @user_data: (closure): caller-specific data to be passed to @callback
  *
  * Asynchronously ask the agent to delete all saved secrets belonging to
  * @connection.
@@ -741,7 +741,7 @@ void
 nm_secret_agent_delete_secrets (NMSecretAgent *self,
                                 NMConnection *connection,
                                 NMSecretAgentDeleteSecretsFunc callback,
-                                gpointer callback_data)
+                                gpointer user_data)
 {
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_SECRET_AGENT (self));
@@ -753,7 +753,7 @@ nm_secret_agent_delete_secrets (NMSecretAgent *self,
 	                                                  connection,
 	                                                  nm_connection_get_path (connection),
 	                                                  callback,
-	                                                  callback_data);
+	                                                  user_data);
 }
 
 /**************************************************************/

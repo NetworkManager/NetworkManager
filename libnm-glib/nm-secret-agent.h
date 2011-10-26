@@ -101,7 +101,7 @@ typedef struct {
 	/* Called when the subclass should retrieve and return secrets.  Subclass
 	 * must copy or reference any arguments it may require after returning from
 	 * this method, as the arguments will freed (except for 'agent', 'callback',
-	 * and 'callback_data' of course).  If the request is canceled, the callback
+	 * and 'user_data' of course).  If the request is canceled, the callback
 	 * should still be called, but with the NM_SECRET_AGENT_ERROR_AGENT_CANCELED
 	 * error.
 	 */
@@ -112,7 +112,7 @@ typedef struct {
 	                     const char **hints,
 	                     NMSecretAgentGetSecretsFlags flags,
 	                     NMSecretAgentGetSecretsFunc callback,
-	                     gpointer callback_data);
+	                     gpointer user_data);
 
 	/* Called when the subclass should cancel an outstanding request to
 	 * get secrets for a given connection.  Canceling the request MUST
@@ -127,26 +127,26 @@ typedef struct {
 	/* Called when the subclass should save the secrets contained in the
 	 * connection to backing storage.  Subclass must copy or reference any
 	 * arguments it may require after returning from this method, as the
-	 * arguments will freed (except for 'agent', 'callback', and 'callback_data'
+	 * arguments will freed (except for 'agent', 'callback', and 'user_data'
 	 * of course).
 	 */
 	void (*save_secrets) (NMSecretAgent *agent,
 	                      NMConnection *connection,
 	                      const char *connection_path,
 	                      NMSecretAgentSaveSecretsFunc callback,
-	                      gpointer callback_data);
+	                      gpointer user_data);
 
 	/* Called when the subclass should delete the secrets contained in the
 	 * connection from backing storage.  Subclass must copy or reference any
 	 * arguments it may require after returning from this method, as the
-	 * arguments will freed (except for 'agent', 'callback', and 'callback_data'
+	 * arguments will freed (except for 'agent', 'callback', and 'user_data'
 	 * of course).
 	 */
 	void (*delete_secrets) (NMSecretAgent *agent,
 	                        NMConnection *connection,
 	                        const char *connection_path,
 	                        NMSecretAgentDeleteSecretsFunc callback,
-	                        gpointer callback_data);
+	                        gpointer user_data);
 
 	/* Signals */
 	void (*registration_result) (NMSecretAgent *agent, GError *error);
@@ -172,17 +172,17 @@ void nm_secret_agent_get_secrets (NMSecretAgent *self,
                                   const char **hints,
                                   NMSecretAgentGetSecretsFlags flags,
                                   NMSecretAgentGetSecretsFunc callback,
-                                  gpointer callback_data);
+                                  gpointer user_data);
 
 void nm_secret_agent_save_secrets (NMSecretAgent *self,
                                    NMConnection *connection,
                                    NMSecretAgentSaveSecretsFunc callback,
-                                   gpointer callback_data);
+                                   gpointer user_data);
 
 void nm_secret_agent_delete_secrets (NMSecretAgent *self,
                                      NMConnection *connection,
                                      NMSecretAgentDeleteSecretsFunc callback,
-                                     gpointer callback_data);
+                                     gpointer user_data);
 
 G_END_DECLS
 

@@ -1475,8 +1475,9 @@ deactivate_cb (DBusGProxy *proxy,
 /**
  * nm_device_disconnect:
  * @device: a #NMDevice
- * @callback: (scope async): callback to be called when disconnect operation completes
- * @user_data: caller-specific data passed to @callback
+ * @callback: (scope async) (allow-none): callback to be called when disconnect
+ * operation completes
+ * @user_data: (closure): caller-specific data passed to @callback
  *
  * Disconnects the device if currently connected, and prevents the device from
  * automatically connecting to networks until the next manual network connection

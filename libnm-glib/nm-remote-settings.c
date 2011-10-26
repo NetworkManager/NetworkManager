@@ -501,7 +501,7 @@ add_connection_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data
  * @connection: the connection to add. Note that this object's settings will be
  *   added, not the object itself
  * @callback: (scope async): callback to be called when the add operation completes
- * @user_data: caller-specific data passed to @callback
+ * @user_data: (closure): caller-specific data passed to @callback
  *
  * Requests that the remote settings service add the given settings to a new
  * connection.
@@ -594,7 +594,8 @@ save_hostname_cb (DBusGProxy *proxy,
 	GError *error = NULL;
 
 	dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID);
-	info->callback (info->settings, error, info->callback_data);
+	if (info->callback != NULL)
+		info->callback (info->settings, error, info->callback_data);
 	g_clear_error (&error);
 }
 
@@ -603,8 +604,9 @@ save_hostname_cb (DBusGProxy *proxy,
  * @settings: the %NMRemoteSettings
  * @hostname: the new persistent hostname to set, or NULL to clear any existing
  *  persistent hostname
- * @callback: (scope async): callback to be called when the hostname operation completes
- * @user_data: caller-specific data passed to @callback
+ * @callback: (scope async) (allow none): callback to be called when the
+ * hostname operation completes
+ * @user_data: (closure): caller-specific data passed to @callback
  *
  * Requests that the machine's persistent hostname be set to the specified value
  * or cleared.

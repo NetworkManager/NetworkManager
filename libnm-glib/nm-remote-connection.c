@@ -94,15 +94,17 @@ update_cb (DBusGProxy *proxy, GError *error, gpointer user_data)
 	RemoteCall *call = user_data;
 	NMRemoteConnectionCommitFunc func = (NMRemoteConnectionCommitFunc) call->callback;
 
-	(*func)(call->self, error, call->user_data);
+	if (func != NULL)
+		(*func)(call->self, error, call->user_data);
 	remote_call_complete (call->self, call);
 }
 
 /**
  * nm_remote_connection_commit_changes:
  * @connection: the #NMRemoteConnection
- * @callback: (scope async): a function to be called when the commit completes
- * @user_data: caller-specific data to be passed to @callback
+ * @callback: (scope async) (allow none): a function to be called when the
+ * commit completes
+ * @user_data: (closure): caller-specific data to be passed to @callback
  *
  * Save any local changes to the settings and properties of this connection and
  * save them in the settings service.
@@ -154,7 +156,7 @@ delete_cb (DBusGProxy *proxy, GError *error, gpointer user_data)
  * nm_remote_connection_delete:
  * @connection: the #NMRemoteConnection
  * @callback: (scope async) (allow-none): a function to be called when the delete completes
- * @user_data: caller-specific data to be passed to @callback
+ * @user_data: (closure): caller-specific data to be passed to @callback
  *
  * Delete the connection.
  **/
@@ -197,8 +199,9 @@ get_secrets_cb (DBusGProxy *proxy, GHashTable *secrets, GError *error, gpointer 
  * nm_remote_connection_get_secrets:
  * @connection: the #NMRemoteConnection
  * @setting_name: the #NMSetting object name to get secrets for
- * @callback: (scope async): a function to be called when the update completes
- * @user_data: caller-specific data to be passed to @callback
+ * @callback: (scope async): a function to be called when the update completes;
+ * must not be NULL
+ * @user_data: (closure): caller-specific data to be passed to @callback
  *
  * Request the connection's secrets.
  **/
