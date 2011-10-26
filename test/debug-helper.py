@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Copyright (C) 2011 `Mathieu Trudel-Lapierre <mathieu.tl@gmail.com>
+# Copyright (C) 2011 Mathieu Trudel-Lapierre <mathieu.tl@gmail.com>
 
 import dbus
 import argparse
