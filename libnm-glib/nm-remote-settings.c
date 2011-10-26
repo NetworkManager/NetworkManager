@@ -604,7 +604,7 @@ save_hostname_cb (DBusGProxy *proxy,
  * @settings: the %NMRemoteSettings
  * @hostname: the new persistent hostname to set, or NULL to clear any existing
  *  persistent hostname
- * @callback: (scope async) (allow none): callback to be called when the
+ * @callback: (scope async) (allow-none): callback to be called when the
  * hostname operation completes
  * @user_data: (closure): caller-specific data passed to @callback
  *

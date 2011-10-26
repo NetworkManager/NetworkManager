@@ -102,7 +102,7 @@ update_cb (DBusGProxy *proxy, GError *error, gpointer user_data)
 /**
  * nm_remote_connection_commit_changes:
  * @connection: the #NMRemoteConnection
- * @callback: (scope async) (allow none): a function to be called when the
+ * @callback: (scope async) (allow-none): a function to be called when the
  * commit completes
  * @user_data: (closure): caller-specific data to be passed to @callback
  *
