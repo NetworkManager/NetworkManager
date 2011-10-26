@@ -31,6 +31,7 @@
 #include "nm-device-modem.h"
 #include "nm-device-bt.h"
 #include "nm-device-wimax.h"
+#include "nm-device-infiniband.h"
 #include "nm-device.h"
 #include "nm-device-private.h"
 #include "nm-object-private.h"
@@ -871,6 +872,9 @@ nm_device_new (DBusGConnection *connection, const char *path)
 		break;
 	case NM_DEVICE_TYPE_WIMAX:
 		dtype = NM_TYPE_DEVICE_WIMAX;
+		break;
+	case NM_DEVICE_TYPE_INFINIBAND:
+		dtype = NM_TYPE_DEVICE_INFINIBAND;
 		break;
 	default:
 		g_warning ("Unknown device type %d", g_value_get_uint (&value));

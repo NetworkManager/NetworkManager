@@ -10,6 +10,7 @@ BUILT_SOURCES = \
 	nm-client-bindings.h \
 	nm-device-bindings.h \
 	nm-device-ethernet-bindings.h \
+	nm-device-infiniband-bindings.h \
 	nm-device-wifi-bindings.h \
 	nm-device-bt-bindings.h \
 	nm-settings-connection-bindings.h \
@@ -70,6 +71,7 @@ libnminclude_HEADERS = \
 	nm-client.h \
 	nm-device.h \
 	nm-device-ethernet.h \
+	nm-device-infiniband.h \
 	nm-device-wifi.h \
 	nm-device-bt.h \
 	nm-access-point.h \
@@ -98,6 +100,7 @@ libnm_glib_la_csources = \
 	nm-dbus-utils.c \
 	nm-device.c \
 	nm-device-ethernet.c \
+	nm-device-infiniband.c \
 	nm-device-wifi.c \
 	nm-device-bt.c \
 	nm-access-point.c \
@@ -188,6 +191,9 @@ nm-device-bindings.h: $(top_srcdir)/introspection/nm-device.xml
 
 nm-device-ethernet-bindings.h: $(top_srcdir)/introspection/nm-device-ethernet.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_ethernet --mode=glib-client --output=$@ $<
+
+nm-device-infiniband-bindings.h: $(top_srcdir)/introspection/nm-device-infiniband.xml
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_infiniband --mode=glib-client --output=$@ $<
 
 nm-device-wifi-bindings.h: $(top_srcdir)/introspection/nm-device-wifi.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_wifi --mode=glib-client --output=$@ $<
