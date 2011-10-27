@@ -768,7 +768,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_HOME_ONLY,
 		 g_param_spec_boolean (NM_SETTING_GSM_HOME_ONLY,
-						  "PIN",
+						  "Home Only",
 						  "When TRUE, only connections to the home network will "
 						  "be allowed.  Connections to roaming networks will "
 						  "not be made.",
