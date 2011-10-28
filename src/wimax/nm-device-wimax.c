@@ -1009,7 +1009,7 @@ wmx_media_status_cb (struct wmxsdk *wmxsdk,
 		break;
 	case WIMAX_API_MEDIA_STATUS_LINK_DOWN:
 		nm_log_dbg (LOGD_WIMAX, "(%s): starting link timeout", iface);
-		priv->link_timeout_id = g_timeout_add (15, link_timeout_cb, self);
+		priv->link_timeout_id = g_timeout_add_seconds (15, link_timeout_cb, self);
 		break;
 	case WIMAX_API_MEDIA_STATUS_LINK_RENEW:
 		nm_log_dbg (LOGD_WIMAX, "(%s): renewing DHCP lease", iface);
