@@ -19,11 +19,12 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2010 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
 #include "nm-param-spec-specialized.h"
+#include "nm-glib-compat.h"
 
 struct _NMParamSpecSpecialized {
 	GParamSpec parent;
@@ -92,13 +93,8 @@ _gvalues_compare_fixed (const GValue *value1, const GValue *value2)
 
 	switch (G_VALUE_TYPE (value1)) {
 	case G_TYPE_CHAR: {
-#if GLIB_CHECK_VERSION(2,31,0)
 		gchar val1 = g_value_get_schar (value1);
 		gchar val2 = g_value_get_schar (value2);
-#else
-		gchar val1 = g_value_get_char (value1);
-		gchar val2 = g_value_get_char (value2);
-#endif
 		if (val1 != val2)
 			ret = val1 < val2 ? -1 : val1 > val2;
 		break;

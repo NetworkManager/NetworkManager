@@ -16,7 +16,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2008 Red Hat, Inc.
+ * (C) Copyright 2008 - 2011 Red Hat, Inc.
  */
 
 #ifndef NM_GLIB_COMPAT_H
@@ -24,14 +24,9 @@
 
 #include <glib.h>
 
-#if !GLIB_CHECK_VERSION(2,14,0)
-
-#define g_timeout_add_seconds(i, f, d) \
-	g_timeout_add (i * G_USEC_PER_SEC, f, d)
-
-#define g_timeout_add_seconds_full(p, i, f, d, n) \
-	g_timeout_add_full (p, i * G_USEC_PER_SEC, f, d, n)
-
-#endif /* !GLIB_CHECK_VERSION(2,14,0) */
+#if !GLIB_CHECK_VERSION(2,31,0)
+#define g_value_set_schar g_value_set_char
+#define g_value_get_schar g_value_get_char
+#endif
 
 #endif  /* NM_GLIB_COMPAT_H */

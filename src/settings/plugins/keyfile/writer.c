@@ -44,6 +44,7 @@
 #include <ctype.h>
 
 #include "nm-dbus-glib-types.h"
+#include "nm-glib-compat.h"
 #include "writer.h"
 #include "common.h"
 
@@ -890,7 +891,7 @@ write_setting_value (NMSetting *setting,
 	} else if (type == G_TYPE_BOOLEAN) {
 		g_key_file_set_boolean (info->keyfile, setting_name, key, g_value_get_boolean (value));
 	} else if (type == G_TYPE_CHAR) {
-		g_key_file_set_integer (info->keyfile, setting_name, key, (int) g_value_get_char (value));
+		g_key_file_set_integer (info->keyfile, setting_name, key, (int) g_value_get_schar (value));
 	} else if (type == DBUS_TYPE_G_UCHAR_ARRAY) {
 		GByteArray *array;
 

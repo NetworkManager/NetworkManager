@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include "nm-setting-serial.h"
+#include "nm-glib-compat.h"
 
 /**
  * SECTION:nm-setting-serial
@@ -214,7 +215,7 @@ set_property (GObject *object, guint prop_id,
 		priv->bits = g_value_get_uint (value);
 		break;
 	case PROP_PARITY:
-		priv->parity = g_value_get_char (value);
+		priv->parity = g_value_get_schar (value);
 		break;
 	case PROP_STOPBITS:
 		priv->stopbits = g_value_get_uint (value);
@@ -242,7 +243,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, nm_setting_serial_get_bits (setting));
 		break;
 	case PROP_PARITY:
-		g_value_set_char (value, nm_setting_serial_get_parity (setting));
+		g_value_set_schar (value, nm_setting_serial_get_parity (setting));
 		break;
 	case PROP_STOPBITS:
 		g_value_set_uint (value, nm_setting_serial_get_stopbits (setting));

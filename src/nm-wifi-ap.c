@@ -33,6 +33,7 @@
 #include "wpa.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-setting-wireless.h"
+#include "nm-glib-compat.h"
 
 #include "nm-access-point-glue.h"
 
@@ -141,7 +142,7 @@ set_property (GObject *object, guint prop_id,
 		nm_ap_set_max_bitrate (ap, g_value_get_uint (value));
 		break;
 	case PROP_STRENGTH:
-		nm_ap_set_strength (ap, g_value_get_char (value));
+		nm_ap_set_strength (ap, g_value_get_schar (value));
 		break;
 	case PROP_HW_ADDRESS:
 		break;
@@ -191,7 +192,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->max_bitrate);
 		break;
 	case PROP_STRENGTH:
-		g_value_set_char (value, priv->strength);
+		g_value_set_schar (value, priv->strength);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

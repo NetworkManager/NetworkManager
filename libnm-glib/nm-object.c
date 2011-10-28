@@ -28,6 +28,7 @@
 #include "nm-object-cache.h"
 #include "nm-object-private.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-glib-compat.h"
 
 #define DEBUG 0
 
@@ -438,11 +439,11 @@ _nm_object_handle_properties_changed (NMObject *object,
 	}
 }
 
-#define HANDLE_TYPE(ucase, lcase) \
+#define HANDLE_TYPE(ucase, lcase, getter) \
 	} else if (pspec->value_type == G_TYPE_##ucase) { \
 		if (G_VALUE_HOLDS_##ucase (value)) { \
 			g##lcase *param = (g##lcase *) field; \
-			*param = g_value_get_##lcase (value); \
+			*param = g_value_get_##getter (value); \
 		} else { \
 			success = FALSE; \
 			goto done; \
@@ -474,16 +475,16 @@ _nm_object_demarshal_generic (NMObject *object,
 			success = FALSE;
 			goto done;
 		}
-	HANDLE_TYPE(BOOLEAN, boolean)
-	HANDLE_TYPE(CHAR, char)
-	HANDLE_TYPE(UCHAR, uchar)
-	HANDLE_TYPE(DOUBLE, double)
-	HANDLE_TYPE(INT, int)
-	HANDLE_TYPE(UINT, uint)
-	HANDLE_TYPE(INT64, int)
-	HANDLE_TYPE(UINT64, uint)
-	HANDLE_TYPE(LONG, long)
-	HANDLE_TYPE(ULONG, ulong)
+	HANDLE_TYPE(BOOLEAN, boolean, boolean)
+	HANDLE_TYPE(CHAR, char, schar)
+	HANDLE_TYPE(UCHAR, uchar, uchar)
+	HANDLE_TYPE(DOUBLE, double, double)
+	HANDLE_TYPE(INT, int, int)
+	HANDLE_TYPE(UINT, uint, uint)
+	HANDLE_TYPE(INT64, int, int)
+	HANDLE_TYPE(UINT64, uint, uint)
+	HANDLE_TYPE(LONG, long, long)
+	HANDLE_TYPE(ULONG, ulong, ulong)
 	} else {
 		g_warning ("%s: %s/%s unhandled type %s.",
 		           __func__, G_OBJECT_TYPE_NAME (object), pspec->name,
