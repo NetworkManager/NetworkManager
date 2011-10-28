@@ -262,7 +262,7 @@ daemon_watch_cb (GPid pid, gint status, gpointer user_data)
 		             priv->iface, pid,
 		             WIFEXITED (status) ? WEXITSTATUS (status) : -1);
 	} else {
-		nm_log_info (LOGD_DHCP6, "(%s): DHCPv4 client pid %d exited with status %d",
+		nm_log_info (LOGD_DHCP4, "(%s): DHCPv4 client pid %d exited with status %d",
 		             priv->iface, pid,
 		             WIFEXITED (status) ? WEXITSTATUS (status) : -1);
 	}
