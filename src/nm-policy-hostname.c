@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2010 Red Hat, Inc.
+ * Copyright (C) 2004 - 2011 Red Hat, Inc.
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
@@ -36,7 +36,11 @@
 struct HostnameThread {
 	GThread *thread;
 
+#if GLIB_CHECK_VERSION (2,31,0)
+	GMutex lock;
+#else
 	GMutex *lock;
+#endif
 	gboolean dead;
 	int ret;
 
@@ -49,6 +53,25 @@ struct HostnameThread {
 	HostnameThreadCallback callback;
 	gpointer user_data;
 };
+
+/*
+ * GMutex API has changed:
+ * http://developer.gnome.org/glib/2.31/glib-Threads.html#GMutex
+ * http://developer.gnome.org/glib/2.31/glib-Deprecated-Thread-APIs.html
+*/
+#if GLIB_CHECK_VERSION (2,31,0)
+#define X_MUTEX_LOCK(mutex)        g_mutex_lock   (&(mutex))
+#define X_MUTEX_UNLOCK(mutex)      g_mutex_unlock (&(mutex))
+#define X_MUTEX_INIT(mutex)        g_mutex_init   (&(mutex))
+#define X_MUTEX_CLEAR(mutex)       g_mutex_clear  (&(mutex))
+#define X_THREAD_CREATE(func,data) g_thread_try_new ("hostname-thread", func, data, NULL);
+#else
+#define X_MUTEX_LOCK(mutex)        g_mutex_lock   (mutex)
+#define X_MUTEX_UNLOCK(mutex)      g_mutex_unlock (mutex)
+#define X_MUTEX_INIT(mutex)        mutex = g_mutex_new ()
+#define X_MUTEX_CLEAR(mutex)       g_mutex_free (mutex)
+#define X_THREAD_CREATE(func,data) g_thread_create (func, data, FALSE, NULL);
+#endif
 
 static gboolean
 hostname_thread_run_cb (gpointer user_data)
@@ -72,12 +95,12 @@ hostname_thread_worker (gpointer data)
 
 	nm_log_dbg (LOGD_DNS, "(%p) starting address reverse-lookup", ht);
 
-	g_mutex_lock (ht->lock);
+	X_MUTEX_LOCK (ht->lock);
 	if (ht->dead) {
-		g_mutex_unlock (ht->lock);
+		X_MUTEX_UNLOCK (ht->lock);
 		return (gpointer) NULL;
 	}
-	g_mutex_unlock (ht->lock);
+	X_MUTEX_UNLOCK (ht->lock);
 
 	ht->ret = getnameinfo (ht->addr, ht->addr_size, ht->hostname, NI_MAXHOST, NULL, 0, NI_NAMEREQD);
 	if (ht->ret == 0) {
@@ -106,7 +129,7 @@ hostname_thread_free (HostnameThread *ht)
 
 	nm_log_dbg (LOGD_DNS, "(%p) freeing reverse-lookup thread", ht);
 
-	g_mutex_free (ht->lock);
+	X_MUTEX_CLEAR (ht->lock);
 	memset (ht, 0, sizeof (HostnameThread));
 	g_free (ht);
 }
@@ -123,7 +146,7 @@ hostname4_thread_new (guint32 ip4_addr,
 	ht = g_malloc0 (sizeof (HostnameThread));
 	g_assert (ht);
 
-	ht->lock = g_mutex_new ();
+	X_MUTEX_INIT (ht->lock);
 	ht->callback = callback;
 	ht->user_data = user_data;
 
@@ -132,7 +155,7 @@ hostname4_thread_new (guint32 ip4_addr,
 	ht->addr = (struct sockaddr *) &ht->addr4;
 	ht->addr_size = sizeof (ht->addr4);
 
-	ht->thread = g_thread_create (hostname_thread_worker, ht, FALSE, NULL);
+	ht->thread = X_THREAD_CREATE (hostname_thread_worker, ht);
 	if (!ht->thread) {
 		hostname_thread_free (ht);
 		return NULL;
@@ -158,7 +181,7 @@ hostname6_thread_new (const struct in6_addr *ip6_addr,
 	ht = g_malloc0 (sizeof (HostnameThread));
 	g_assert (ht);
 
-	ht->lock = g_mutex_new ();
+	X_MUTEX_INIT (ht->lock);
 	ht->callback = callback;
 	ht->user_data = user_data;
 
@@ -167,7 +190,7 @@ hostname6_thread_new (const struct in6_addr *ip6_addr,
 	ht->addr = (struct sockaddr *) &ht->addr6;
 	ht->addr_size = sizeof (ht->addr6);
 
-	ht->thread = g_thread_create (hostname_thread_worker, ht, FALSE, NULL);
+	ht->thread = X_THREAD_CREATE (hostname_thread_worker, ht);
 	if (!ht->thread) {
 		hostname_thread_free (ht);
 		return NULL;
@@ -189,9 +212,9 @@ hostname_thread_kill (HostnameThread *ht)
 
 	nm_log_dbg (LOGD_DNS, "(%p) stopping reverse-lookup thread", ht);
 
-	g_mutex_lock (ht->lock);
+	X_MUTEX_LOCK (ht->lock);
 	ht->dead = TRUE;
-	g_mutex_unlock (ht->lock);
+	X_MUTEX_UNLOCK (ht->lock);
 }
 
 gboolean
