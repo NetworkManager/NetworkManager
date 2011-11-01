@@ -679,7 +679,7 @@ cert_writer (GKeyFile *file,
 	}
 	g_return_if_fail (objtype != NULL);
 
-	scheme = objtypes->scheme_func (NM_SETTING_802_1X (setting));
+	scheme = objtype->scheme_func (NM_SETTING_802_1X (setting));
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
 		path = objtype->path_func (NM_SETTING_802_1X (setting));
 		g_assert (path);
