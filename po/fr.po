@@ -1,973 +1,1200 @@
-# translation of fr.po to French
 # French translation of NetworkManager.
-# Copyright (C) 2004-2008 The GNOME Foundation.
+# Copyright (C) 2004-2011 The GNOME Foundation.
 # This file is distributed under the same license as the NetworkManager package.
-#
 #
 # Raphaël Tournoy <lexpas@free.fr>, 2004.
 # Stéphane Raimbault <stephane.raimbault@gmail.com>, 2006-2008.
 # Jonathan Ernst <jonathan@ernstfamily.ch>, 2007.
 # Robert-André Mauchin <zebob.m@pengzone.org>, 2007-2008.
 # Sam Friedmann <sam.friedmann@redhat.com>, 2010.
+# Claude Paroz <claude@2xlibre.net>, 2011
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: fr\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-05-06 14:31+0530\n"
+"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
+"product=NetworkManager&keywords=I18N+L10N&component=general\n"
+"POT-Creation-Date: 2011-09-24 03:25+0000\n"
 "PO-Revision-Date: 2010-05-07 15:23+1000\n"
-"Last-Translator: Sam Friedmann <sam.friedmann@redhat.com>\n"
-"Language-Team: French <French fedora-trans-fr@fedoraproject.org>\n"
+"Last-Translator: Claude Paroz <claude@2xlibre.net>\n"
+"Language-Team: French <traduc@traduc.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n>1;\n"
-"X-Generator: KBabel 1.11.4\n"
 
-#: ../cli/src/connections.c:59 ../cli/src/connections.c:74
-#: ../cli/src/devices.c:85 ../cli/src/devices.c:98 ../cli/src/devices.c:108
-#: ../cli/src/devices.c:118 ../cli/src/devices.c:131 ../cli/src/devices.c:142
-#: ../cli/src/devices.c:152
+#: ../cli/src/connections.c:64 ../cli/src/connections.c:78
+#: ../cli/src/devices.c:101 ../cli/src/devices.c:114 ../cli/src/devices.c:124
+#: ../cli/src/devices.c:134 ../cli/src/devices.c:148 ../cli/src/devices.c:162
+#: ../cli/src/devices.c:173 ../cli/src/devices.c:184 ../cli/src/devices.c:193
+#: ../cli/src/devices.c:202 ../cli/src/devices.c:224
 msgid "NAME"
 msgstr "NOM"
 
 #. 0
-#: ../cli/src/connections.c:60 ../cli/src/connections.c:75
+#: ../cli/src/connections.c:65 ../cli/src/connections.c:79
 msgid "UUID"
 msgstr "UUID"
 
 #. 1
-#: ../cli/src/connections.c:61
+#: ../cli/src/connections.c:66
 msgid "DEVICES"
 msgstr "PÉRIPHÉRIQUES"
 
 #. 2
-#: ../cli/src/connections.c:62 ../cli/src/connections.c:77
-msgid "SCOPE"
-msgstr "ÉTENDUE"
+#: ../cli/src/connections.c:67
+msgid "DEFAULT"
+msgstr "PAR DÉFAUT"
 
 #. 3
-#: ../cli/src/connections.c:63
-msgid "DEFAULT"
-msgstr "DÉFAUT"
-
-#. 4
-#: ../cli/src/connections.c:64
-msgid "DBUS-SERVICE"
-msgstr "DBUS-SERVICE"
-
-#. 5
-#: ../cli/src/connections.c:65
+#: ../cli/src/connections.c:68
 msgid "SPEC-OBJECT"
 msgstr "SPEC-OBJECT"
 
-#. 6
-#: ../cli/src/connections.c:66
+#. 4
+#: ../cli/src/connections.c:69
 msgid "VPN"
 msgstr "VPN"
+
+#. 5
+#. 6
+#. 2
+#. 11
+#. 5
+#: ../cli/src/connections.c:70 ../cli/src/connections.c:85
+#: ../cli/src/devices.c:69 ../cli/src/devices.c:214 ../cli/src/devices.c:230
+msgid "DBUS-PATH"
+msgstr "CHEMIN DBUS"
 
 #. 1
 #. 0
 #. 1
-#: ../cli/src/connections.c:76 ../cli/src/devices.c:61 ../cli/src/devices.c:87
+#. 2
+#: ../cli/src/connections.c:80 ../cli/src/devices.c:67
+#: ../cli/src/devices.c:103 ../cli/src/devices.c:227
 msgid "TYPE"
 msgstr "TYPE"
 
-#. 3
-#: ../cli/src/connections.c:78
+#. 2
+#: ../cli/src/connections.c:81
 msgid "TIMESTAMP"
 msgstr "TIMESTAMP"
 
-#. 4
-#: ../cli/src/connections.c:79
+#. 3
+#: ../cli/src/connections.c:82
 msgid "TIMESTAMP-REAL"
 msgstr "TIMESTAMP-REAL"
 
-#. 5
-#: ../cli/src/connections.c:80
+#. 4
+#: ../cli/src/connections.c:83
 msgid "AUTOCONNECT"
 msgstr "AUTOCONNECT"
 
-#. 6
-#: ../cli/src/connections.c:81
+#. 5
+#: ../cli/src/connections.c:84
 msgid "READONLY"
-msgstr "READONLY"
+msgstr "LECT. SEULE"
 
-#: ../cli/src/connections.c:157
+#: ../cli/src/connections.c:153
 #, c-format
 msgid ""
 "Usage: nmcli con { COMMAND | help }\n"
-"  COMMAND := { list | status | up | down }\n"
+"  COMMAND := { list | status | up | down | delete }\n"
 "\n"
-"  list [id <id> | uuid <id> | system | user]\n"
+"  list [id <id> | uuid <id>]\n"
 "  status\n"
-"  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--timeout "
+"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [nsp <name>] [--"
+"nowait] [--timeout <timeout>]\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [--nowait] [--timeout "
 "<timeout>]\n"
 "  down id <id> | uuid <id>\n"
+"  delete id <id> | uuid <id>\n"
 msgstr ""
-"Usage: nmcli con { COMMAND | help }\n"
-"  COMMAND := { list | status | up | down }\n"
+"Utilisation : nmcli con { COMMANDE | help }\n"
+"  COMMANDE := { list | status | up | down }\n"
 "\n"
-"  list [id <id> | uuid <id> | system | user]\n"
+"  list [id <id> | uuid <id>]\n"
 "  status\n"
-"  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--timeout "
-"<timeout>]\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [nsp <nom>] [--"
+"nowait] [--timeout <délai>]\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [--nowait] [--timeout "
+"<délai>]\n"
 "  down id <id> | uuid <id>\n"
+"  delete id <id> | uuid <id>\n"
 
-#: ../cli/src/connections.c:197 ../cli/src/connections.c:536
+#: ../cli/src/connections.c:208 ../cli/src/connections.c:532
 #, c-format
 msgid "Error: 'con list': %s"
-msgstr "Erreur: 'con list': %s"
+msgstr "Erreur : « con list » : %s"
 
-#: ../cli/src/connections.c:199 ../cli/src/connections.c:538
+#: ../cli/src/connections.c:210 ../cli/src/connections.c:534
 #, c-format
 msgid "Error: 'con list': %s; allowed fields: %s"
-msgstr "Erreur: 'con list': %s; champs autorisés: %s"
+msgstr "Erreur : « con list » : %s ; champs autorisés : %s"
 
-#: ../cli/src/connections.c:207
+#: ../cli/src/connections.c:218
 msgid "Connection details"
 msgstr "Détails de connexion"
 
-#: ../cli/src/connections.c:381 ../cli/src/connections.c:601
-msgid "system"
-msgstr "système"
-
-#: ../cli/src/connections.c:381 ../cli/src/connections.c:601
-msgid "user"
-msgstr "utilisateur"
-
-#: ../cli/src/connections.c:383
+#: ../cli/src/connections.c:407
 msgid "never"
 msgstr "jamais"
 
 #. "CAPABILITIES"
 #. Print header
 #. "WIFI-PROPERTIES"
-#: ../cli/src/connections.c:384 ../cli/src/connections.c:385
-#: ../cli/src/connections.c:602 ../cli/src/connections.c:605
-#: ../cli/src/devices.c:388 ../cli/src/devices.c:513 ../cli/src/devices.c:539
-#: ../cli/src/devices.c:540 ../cli/src/devices.c:541 ../cli/src/devices.c:542
-#: ../cli/src/devices.c:543 ../cli/src/settings.c:504
-#: ../cli/src/settings.c:544 ../cli/src/settings.c:643
-#: ../cli/src/settings.c:912 ../cli/src/settings.c:913
-#: ../cli/src/settings.c:915 ../cli/src/settings.c:917
-#: ../cli/src/settings.c:1042 ../cli/src/settings.c:1043
-#: ../cli/src/settings.c:1044 ../cli/src/settings.c:1123
-#: ../cli/src/settings.c:1124 ../cli/src/settings.c:1125
-#: ../cli/src/settings.c:1126 ../cli/src/settings.c:1127
-#: ../cli/src/settings.c:1128 ../cli/src/settings.c:1129
-#: ../cli/src/settings.c:1130 ../cli/src/settings.c:1131
-#: ../cli/src/settings.c:1132 ../cli/src/settings.c:1133
-#: ../cli/src/settings.c:1134 ../cli/src/settings.c:1135
-#: ../cli/src/settings.c:1210
+#: ../cli/src/connections.c:408 ../cli/src/connections.c:409
+#: ../cli/src/connections.c:587 ../cli/src/connections.c:589
+#: ../cli/src/devices.c:499 ../cli/src/devices.c:552 ../cli/src/devices.c:677
+#: ../cli/src/devices.c:703 ../cli/src/devices.c:704 ../cli/src/devices.c:705
+#: ../cli/src/devices.c:706 ../cli/src/devices.c:707 ../cli/src/settings.c:560
+#: ../cli/src/settings.c:632 ../cli/src/settings.c:753
+#: ../cli/src/settings.c:1041 ../cli/src/settings.c:1042
+#: ../cli/src/settings.c:1044 ../cli/src/settings.c:1046
+#: ../cli/src/settings.c:1047 ../cli/src/settings.c:1177
+#: ../cli/src/settings.c:1178 ../cli/src/settings.c:1179
+#: ../cli/src/settings.c:1180 ../cli/src/settings.c:1259
+#: ../cli/src/settings.c:1260 ../cli/src/settings.c:1261
+#: ../cli/src/settings.c:1262 ../cli/src/settings.c:1263
+#: ../cli/src/settings.c:1264 ../cli/src/settings.c:1265
+#: ../cli/src/settings.c:1266 ../cli/src/settings.c:1267
+#: ../cli/src/settings.c:1268 ../cli/src/settings.c:1269
+#: ../cli/src/settings.c:1270 ../cli/src/settings.c:1271
+#: ../cli/src/settings.c:1346
 msgid "yes"
 msgstr "oui"
 
-#: ../cli/src/connections.c:384 ../cli/src/connections.c:385
-#: ../cli/src/connections.c:602 ../cli/src/connections.c:605
-#: ../cli/src/devices.c:388 ../cli/src/devices.c:513 ../cli/src/devices.c:539
-#: ../cli/src/devices.c:540 ../cli/src/devices.c:541 ../cli/src/devices.c:542
-#: ../cli/src/devices.c:543 ../cli/src/settings.c:504
-#: ../cli/src/settings.c:506 ../cli/src/settings.c:544
-#: ../cli/src/settings.c:643 ../cli/src/settings.c:912
-#: ../cli/src/settings.c:913 ../cli/src/settings.c:915
-#: ../cli/src/settings.c:917 ../cli/src/settings.c:1042
-#: ../cli/src/settings.c:1043 ../cli/src/settings.c:1044
-#: ../cli/src/settings.c:1123 ../cli/src/settings.c:1124
-#: ../cli/src/settings.c:1125 ../cli/src/settings.c:1126
-#: ../cli/src/settings.c:1127 ../cli/src/settings.c:1128
-#: ../cli/src/settings.c:1129 ../cli/src/settings.c:1130
-#: ../cli/src/settings.c:1131 ../cli/src/settings.c:1132
-#: ../cli/src/settings.c:1133 ../cli/src/settings.c:1134
-#: ../cli/src/settings.c:1135 ../cli/src/settings.c:1210
+#: ../cli/src/connections.c:408 ../cli/src/connections.c:409
+#: ../cli/src/connections.c:587 ../cli/src/connections.c:589
+#: ../cli/src/devices.c:499 ../cli/src/devices.c:552 ../cli/src/devices.c:677
+#: ../cli/src/devices.c:703 ../cli/src/devices.c:704 ../cli/src/devices.c:705
+#: ../cli/src/devices.c:706 ../cli/src/devices.c:707 ../cli/src/settings.c:560
+#: ../cli/src/settings.c:562 ../cli/src/settings.c:632
+#: ../cli/src/settings.c:753 ../cli/src/settings.c:1041
+#: ../cli/src/settings.c:1042 ../cli/src/settings.c:1044
+#: ../cli/src/settings.c:1046 ../cli/src/settings.c:1047
+#: ../cli/src/settings.c:1177 ../cli/src/settings.c:1178
+#: ../cli/src/settings.c:1179 ../cli/src/settings.c:1180
+#: ../cli/src/settings.c:1259 ../cli/src/settings.c:1260
+#: ../cli/src/settings.c:1261 ../cli/src/settings.c:1262
+#: ../cli/src/settings.c:1263 ../cli/src/settings.c:1264
+#: ../cli/src/settings.c:1265 ../cli/src/settings.c:1266
+#: ../cli/src/settings.c:1267 ../cli/src/settings.c:1268
+#: ../cli/src/settings.c:1269 ../cli/src/settings.c:1270
+#: ../cli/src/settings.c:1271 ../cli/src/settings.c:1346
 msgid "no"
 msgstr "non"
 
-#: ../cli/src/connections.c:457 ../cli/src/connections.c:500
-msgid "System connections"
-msgstr "Connexions système"
+#: ../cli/src/connections.c:483
+msgid "Connection list"
+msgstr "Liste des connexions"
 
-#: ../cli/src/connections.c:462 ../cli/src/connections.c:513
-msgid "User connections"
-msgstr "Connexions utilisateur"
-
-#: ../cli/src/connections.c:474 ../cli/src/connections.c:1334
-#: ../cli/src/connections.c:1350 ../cli/src/connections.c:1359
-#: ../cli/src/connections.c:1370 ../cli/src/connections.c:1452
-#: ../cli/src/devices.c:864 ../cli/src/devices.c:874 ../cli/src/devices.c:973
-#: ../cli/src/devices.c:980
+#: ../cli/src/connections.c:496 ../cli/src/connections.c:1356
+#: ../cli/src/connections.c:1371 ../cli/src/connections.c:1380
+#: ../cli/src/connections.c:1390 ../cli/src/connections.c:1402
+#: ../cli/src/connections.c:1497 ../cli/src/connections.c:1580
+#: ../cli/src/devices.c:1180 ../cli/src/devices.c:1190
+#: ../cli/src/devices.c:1304 ../cli/src/devices.c:1312
+#: ../cli/src/devices.c:1525 ../cli/src/devices.c:1532
 #, c-format
 msgid "Error: %s argument is missing."
-msgstr "Erreur: l'argument %s est manquant."
+msgstr "Erreur : le paramètre %s est manquant."
 
-#: ../cli/src/connections.c:487
+#: ../cli/src/connections.c:509
 #, c-format
 msgid "Error: %s - no such connection."
-msgstr "Erreur: %s - connexion introuvable."
+msgstr "Erreur : %s - connexion introuvable."
 
-#: ../cli/src/connections.c:519 ../cli/src/connections.c:1383
-#: ../cli/src/connections.c:1470 ../cli/src/devices.c:687
-#: ../cli/src/devices.c:754 ../cli/src/devices.c:888 ../cli/src/devices.c:986
+#: ../cli/src/connections.c:515 ../cli/src/connections.c:1415
+#: ../cli/src/connections.c:1514 ../cli/src/connections.c:1587
+#: ../cli/src/devices.c:977 ../cli/src/devices.c:1057
+#: ../cli/src/devices.c:1204 ../cli/src/devices.c:1318
+#: ../cli/src/devices.c:1538
 #, c-format
 msgid "Unknown parameter: %s\n"
-msgstr "Paramètre inconnu: %s\n"
+msgstr "Paramètre inconnu : %s\n"
 
-#: ../cli/src/connections.c:528
+#: ../cli/src/connections.c:524
 #, c-format
 msgid "Error: no valid parameter specified."
-msgstr "Erreur: aucun paramètre valide spécifié."
+msgstr "Erreur : aucun paramètre valide spécifié."
 
-#: ../cli/src/connections.c:543 ../cli/src/connections.c:1572
-#: ../cli/src/devices.c:1192 ../cli/src/network-manager.c:274
+#: ../cli/src/connections.c:539 ../cli/src/connections.c:1668
+#: ../cli/src/devices.c:1746 ../cli/src/network-manager.c:456
 #, c-format
 msgid "Error: %s."
-msgstr "Erreur: %s."
+msgstr "Erreur : %s."
 
-#: ../cli/src/connections.c:649
+#: ../cli/src/connections.c:627
 #, c-format
 msgid "Error: 'con status': %s"
-msgstr "Erreur: 'con status': %s"
+msgstr "Erreur : « con status » : %s"
 
-#: ../cli/src/connections.c:651
+#: ../cli/src/connections.c:629
 #, c-format
 msgid "Error: 'con status': %s; allowed fields: %s"
-msgstr "Erreur: 'con status': %s; champs autorisés: %s"
+msgstr "Erreur : « con status » : %s ; champs autorisés : %s"
 
-#: ../cli/src/connections.c:658
+#: ../cli/src/connections.c:637 ../cli/src/connections.c:1430
+#: ../cli/src/connections.c:1529 ../cli/src/connections.c:1601
+#: ../cli/src/devices.c:1004 ../cli/src/devices.c:1066
+#: ../cli/src/devices.c:1219 ../cli/src/devices.c:1348
+#: ../cli/src/devices.c:1567
+#, c-format
+msgid "Error: Can't find out if NetworkManager is running: %s."
+msgstr "Erreur : impossible de savoir si NetworkManager fonctionne : %s."
+
+#: ../cli/src/connections.c:641 ../cli/src/connections.c:1434
+#: ../cli/src/connections.c:1533 ../cli/src/connections.c:1605
+#: ../cli/src/devices.c:1008 ../cli/src/devices.c:1070
+#: ../cli/src/devices.c:1223 ../cli/src/devices.c:1352
+#: ../cli/src/devices.c:1571
+#, c-format
+msgid "Error: NetworkManager is not running."
+msgstr "Erreur : NetworkManager n'est pas lancé."
+
+#: ../cli/src/connections.c:649
 msgid "Active connections"
 msgstr "Connexions actives"
 
-#: ../cli/src/connections.c:1026
+#: ../cli/src/connections.c:1073
 #, c-format
 msgid "no active connection on device '%s'"
-msgstr "aucune connexion active sur le périphérique '%s'"
+msgstr "aucune connexion active sur le périphérique « %s »"
 
-#: ../cli/src/connections.c:1034
+#: ../cli/src/connections.c:1081
 #, c-format
 msgid "no active connection or device"
-msgstr "aucune connexion active ou périphérique"
+msgstr "aucune connexion ou périphérique actif"
 
-#: ../cli/src/connections.c:1084
+#: ../cli/src/connections.c:1152
 #, c-format
 msgid "device '%s' not compatible with connection '%s'"
-msgstr "périphérique '%s' incompatible avec la connexion '%s'"
+msgstr "périphérique « %s » incompatible avec la connexion « %s »"
 
-#: ../cli/src/connections.c:1086
+#: ../cli/src/connections.c:1154
 #, c-format
 msgid "no device found for connection '%s'"
-msgstr "aucun périphérique trouvé pour la connexion '%s'"
+msgstr "aucun périphérique trouvé pour la connexion « %s »"
 
-#: ../cli/src/connections.c:1097
+#: ../cli/src/connections.c:1165
 msgid "activating"
 msgstr "activation"
 
-#: ../cli/src/connections.c:1099
+#: ../cli/src/connections.c:1167
 msgid "activated"
 msgstr "activé"
 
-#: ../cli/src/connections.c:1102 ../cli/src/connections.c:1125
-#: ../cli/src/connections.c:1158 ../cli/src/devices.c:224
-#: ../cli/src/devices.c:514 ../cli/src/network-manager.c:92
-#: ../cli/src/network-manager.c:145 ../cli/src/settings.c:469
+#: ../cli/src/connections.c:1169 ../cli/src/devices.c:294
+msgid "deactivating"
+msgstr "désactivation"
+
+#: ../cli/src/connections.c:1172 ../cli/src/connections.c:1195
+#: ../cli/src/connections.c:1228 ../cli/src/devices.c:298
+#: ../cli/src/devices.c:678 ../cli/src/network-manager.c:111
+#: ../cli/src/network-manager.c:173 ../cli/src/network-manager.c:176
+#: ../cli/src/network-manager.c:185 ../cli/src/network-manager.c:291
+#: ../cli/src/network-manager.c:346 ../cli/src/network-manager.c:384
+#: ../cli/src/network-manager.c:423 ../cli/src/settings.c:513
+#: ../cli/src/utils.c:397
 msgid "unknown"
 msgstr "inconnu"
 
-#: ../cli/src/connections.c:1111
+#: ../cli/src/connections.c:1181
 msgid "VPN connecting (prepare)"
 msgstr "Connexion VPN (préparation)"
 
-#: ../cli/src/connections.c:1113
+#: ../cli/src/connections.c:1183
 msgid "VPN connecting (need authentication)"
 msgstr "Connexion VPN (authentification requise)"
 
-#: ../cli/src/connections.c:1115
+#: ../cli/src/connections.c:1185
 msgid "VPN connecting"
 msgstr "Connexion VPN"
 
-#: ../cli/src/connections.c:1117
+#: ../cli/src/connections.c:1187
 msgid "VPN connecting (getting IP configuration)"
 msgstr "Connexion VPN (obtention de la configuration IP)"
 
-#: ../cli/src/connections.c:1119
+#: ../cli/src/connections.c:1189
 msgid "VPN connected"
 msgstr "VPN connecté"
 
-#: ../cli/src/connections.c:1121
+#: ../cli/src/connections.c:1191
 msgid "VPN connection failed"
 msgstr "Échec de la connexion VPN"
 
-#: ../cli/src/connections.c:1123
+#: ../cli/src/connections.c:1193
 msgid "VPN disconnected"
 msgstr "VPN déconnecté"
 
-#: ../cli/src/connections.c:1134
+#: ../cli/src/connections.c:1204
 msgid "unknown reason"
 msgstr "raison inconnue"
 
-#: ../cli/src/connections.c:1136
+#: ../cli/src/connections.c:1206
 msgid "none"
 msgstr "aucun"
 
-#: ../cli/src/connections.c:1138
+#: ../cli/src/connections.c:1208
 msgid "the user was disconnected"
 msgstr "l'utilisateur a été déconnecté"
 
-#: ../cli/src/connections.c:1140
+#: ../cli/src/connections.c:1210
 msgid "the base network connection was interrupted"
 msgstr "la connexion réseau de base a été interrompue"
 
-#: ../cli/src/connections.c:1142
+#: ../cli/src/connections.c:1212
 msgid "the VPN service stopped unexpectedly"
 msgstr "arrêt inattendu du service VPN"
 
-#: ../cli/src/connections.c:1144
+#: ../cli/src/connections.c:1214
 msgid "the VPN service returned invalid configuration"
 msgstr "le service VPN a retourné une configuration invalide"
 
-#: ../cli/src/connections.c:1146
+#: ../cli/src/connections.c:1216
 msgid "the connection attempt timed out"
 msgstr "le délai d'attente de la tentative de connexion a été dépassé"
 
-#: ../cli/src/connections.c:1148
+#: ../cli/src/connections.c:1218
 msgid "the VPN service did not start in time"
 msgstr "le service VPN n'a pas démarré à temps"
 
-#: ../cli/src/connections.c:1150
+#: ../cli/src/connections.c:1220
 msgid "the VPN service failed to start"
 msgstr "échec du démarrage du service VPN"
 
-#: ../cli/src/connections.c:1152
+#: ../cli/src/connections.c:1222
 msgid "no valid VPN secrets"
 msgstr "aucun secret VPN valide"
 
-#: ../cli/src/connections.c:1154
+#: ../cli/src/connections.c:1224
 msgid "invalid VPN secrets"
 msgstr "secrets VPN invalides"
 
-#: ../cli/src/connections.c:1156
+#: ../cli/src/connections.c:1226
 msgid "the connection was removed"
 msgstr "la connexion a été supprimée"
 
-#: ../cli/src/connections.c:1170
+#: ../cli/src/connections.c:1240
 #, c-format
 msgid "state: %s\n"
-msgstr "état: %s\n"
+msgstr "état : %s\n"
 
-#: ../cli/src/connections.c:1173 ../cli/src/connections.c:1199
+#: ../cli/src/connections.c:1243 ../cli/src/connections.c:1269
 #, c-format
 msgid "Connection activated\n"
 msgstr "Connexion activée\n"
 
-#: ../cli/src/connections.c:1176
+#: ../cli/src/connections.c:1246
 #, c-format
 msgid "Error: Connection activation failed."
-msgstr "Erreur: Échec de l'activation de la connexion"
-
-#: ../cli/src/connections.c:1195
-#, c-format
-msgid "state: %s (%d)\n"
-msgstr "état: %s (%d)\n"
-
-#: ../cli/src/connections.c:1205
-#, c-format
-msgid "Error: Connection activation failed: %s."
-msgstr "Erreur: L'activation de la connexion a échoué: %s."
-
-#: ../cli/src/connections.c:1222 ../cli/src/devices.c:811
-#, c-format
-msgid "Error: Timeout %d sec expired."
-msgstr "Erreur: Le délai d'attente de %d sec a expiré."
+msgstr "Erreur : échec de l'activation de la connexion."
 
 #: ../cli/src/connections.c:1265
 #, c-format
-msgid "Error: Connection activation failed: %s"
-msgstr "Erreur: L'activation de la connexion a échoué: %s"
+msgid "state: %s (%d)\n"
+msgstr "état : %s (%d)\n"
 
-#: ../cli/src/connections.c:1279
+#: ../cli/src/connections.c:1275
 #, c-format
-msgid "Error: Obtaining active connection for '%s' failed."
-msgstr "Erreur: L'obtention d'une connexion active pour '%s' a échoué."
+msgid "Error: Connection activation failed: %s."
+msgstr "Erreur : l'activation de la connexion a échoué : %s."
 
-#: ../cli/src/connections.c:1288
+#: ../cli/src/connections.c:1292 ../cli/src/devices.c:1126
+#, c-format
+msgid "Error: Timeout %d sec expired."
+msgstr "Erreur : le délai d'attente de %d sec a expiré."
+
+#: ../cli/src/connections.c:1305
+#, c-format
+msgid "Error: Connection activation failed: %s"
+msgstr "Erreur : l'activation de la connexion a échoué : %s"
+
+#: ../cli/src/connections.c:1311
 #, c-format
 msgid "Active connection state: %s\n"
-msgstr "État de connexion active: %s\n"
+msgstr "État de la connexion active : %s\n"
 
-#: ../cli/src/connections.c:1289
+#: ../cli/src/connections.c:1312
 #, c-format
 msgid "Active connection path: %s\n"
-msgstr "État de chemin actif: %s\n"
+msgstr "Chemin de la connection active : %s\n"
 
-#: ../cli/src/connections.c:1343 ../cli/src/connections.c:1461
+#: ../cli/src/connections.c:1364 ../cli/src/connections.c:1505
+#: ../cli/src/connections.c:1614
 #, c-format
 msgid "Error: Unknown connection: %s."
-msgstr "Erreur: Connexion inconnue: %s."
+msgstr "Erreur : connexion inconnue : %s."
 
-#: ../cli/src/connections.c:1378 ../cli/src/devices.c:882
+#: ../cli/src/connections.c:1410 ../cli/src/devices.c:1198
 #, c-format
 msgid "Error: timeout value '%s' is not valid."
-msgstr "Erreur: Valeur de délai d'attente '%s' invalide."
+msgstr "Erreur : valeur de délai d'attente « %s » non valide."
 
-#: ../cli/src/connections.c:1391 ../cli/src/connections.c:1478
+#: ../cli/src/connections.c:1423 ../cli/src/connections.c:1522
+#: ../cli/src/connections.c:1594
 #, c-format
 msgid "Error: id or uuid has to be specified."
-msgstr "Erreur: ID ou UUID doit être spécifié."
+msgstr "Erreur : ID ou UUID doit être spécifié."
 
-#: ../cli/src/connections.c:1411
+#: ../cli/src/connections.c:1451
 #, c-format
 msgid "Error: No suitable device found: %s."
-msgstr "Erreur: Aucun périphérique convenable trouvé: %s."
+msgstr "Erreur : aucun périphérique convenable trouvé : %s."
 
-#: ../cli/src/connections.c:1413
+#: ../cli/src/connections.c:1453
 #, c-format
 msgid "Error: No suitable device found."
-msgstr "Erreur: Aucun périphérique convenable trouvé."
+msgstr "Erreur : aucun périphérique convenable trouvé."
 
-#: ../cli/src/connections.c:1505
+#: ../cli/src/connections.c:1558
 #, c-format
 msgid "Warning: Connection not active\n"
-msgstr "Avertissement: Connexion inactive\n"
+msgstr "Avertissement : connexion inactive\n"
 
-#: ../cli/src/connections.c:1561
+#: ../cli/src/connections.c:1659
 #, c-format
 msgid "Error: 'con' command '%s' is not valid."
-msgstr "Erreur: Commande 'con' '%s' invalide."
+msgstr "Erreur : commande « con » « %s » non valide."
 
-#: ../cli/src/connections.c:1597
+#: ../cli/src/connections.c:1724
 #, c-format
 msgid "Error: could not connect to D-Bus."
-msgstr "Erreur: impossible de connecter à D-Bus."
+msgstr "Erreur : impossible de se connecter à D-Bus."
 
-#: ../cli/src/connections.c:1604
+#: ../cli/src/connections.c:1732
 #, c-format
 msgid "Error: Could not get system settings."
-msgstr "Erreur: Paramètres système introuvables."
+msgstr "Erreur : impossible d'obtenir les paramètres système."
 
-#: ../cli/src/connections.c:1612
+#: ../cli/src/connections.c:1742
 #, c-format
-msgid "Error: Could not get user settings."
-msgstr "Erreur: Paramètres utilisteur introuvables."
-
-#: ../cli/src/connections.c:1622
-#, c-format
-msgid "Error: Can't obtain connections: settings services are not running."
+msgid "Error: Can't obtain connections: settings service is not running."
 msgstr ""
-"Erreur: Impossible d'obtenir les connexions: les services des "
-"paramètres ne sont pas en cours d'exécution."
+"Erreur : impossible d'obtenir les connexions : le service des paramètres n'est "
+"pas en cours d'exécution."
 
 #. 0
 #. 9
-#: ../cli/src/devices.c:60 ../cli/src/devices.c:86 ../cli/src/devices.c:162
+#. 3
+#: ../cli/src/devices.c:66 ../cli/src/devices.c:102 ../cli/src/devices.c:212
+#: ../cli/src/devices.c:228
 msgid "DEVICE"
 msgstr "PÉRIPHÉRIQUE"
 
 #. 1
 #. 4
-#. 0
-#: ../cli/src/devices.c:62 ../cli/src/devices.c:90
-#: ../cli/src/network-manager.c:36
+#. 1
+#: ../cli/src/devices.c:68 ../cli/src/devices.c:106
+#: ../cli/src/network-manager.c:39
 msgid "STATE"
 msgstr "ÉTAT"
 
-#: ../cli/src/devices.c:71
+#: ../cli/src/devices.c:78
 msgid "GENERAL"
 msgstr "GÉNÉRAL"
 
 #. 0
-#: ../cli/src/devices.c:72
+#: ../cli/src/devices.c:79
 msgid "CAPABILITIES"
-msgstr "CAPABILITÉS"
+msgstr "CAPACITÉS"
 
 #. 1
-#: ../cli/src/devices.c:73
+#: ../cli/src/devices.c:80
 msgid "WIFI-PROPERTIES"
 msgstr "PROPRIÉTÉS-WIFI"
 
 #. 2
-#: ../cli/src/devices.c:74
+#: ../cli/src/devices.c:81
 msgid "AP"
 msgstr "PA"
 
 #. 3
-#: ../cli/src/devices.c:75
+#: ../cli/src/devices.c:82
 msgid "WIRED-PROPERTIES"
 msgstr "PROPRIÉTÉS-CABLÉES"
 
 #. 4
-#: ../cli/src/devices.c:76
+#: ../cli/src/devices.c:83
+msgid "WIMAX-PROPERTIES"
+msgstr "PROPRIÉTÉS-WIMAX"
+
+#. 5
+#. 0
+#: ../cli/src/devices.c:84 ../cli/src/devices.c:225
+msgid "NSP"
+msgstr "NSP"
+
+#. 6
+#: ../cli/src/devices.c:85
 msgid "IP4-SETTINGS"
 msgstr "PARAMÈTRES-IP4"
 
-#. 5
-#: ../cli/src/devices.c:77
+#. 7
+#: ../cli/src/devices.c:86
 msgid "IP4-DNS"
 msgstr "DNS-IP4"
 
-#. 2
+#. 8
+#: ../cli/src/devices.c:87
+msgid "IP6-SETTINGS"
+msgstr "PARAMÈTRES-IP6"
+
+#. 9
 #: ../cli/src/devices.c:88
+msgid "IP6-DNS"
+msgstr "DNS-IP6"
+
+#. 2
+#: ../cli/src/devices.c:104
 msgid "DRIVER"
 msgstr "PILOTE"
 
 #. 3
-#: ../cli/src/devices.c:89
+#: ../cli/src/devices.c:105
 msgid "HWADDR"
-msgstr "HWADDR"
+msgstr "ADR.-MAT."
 
 #. 0
-#: ../cli/src/devices.c:99
+#: ../cli/src/devices.c:115
 msgid "CARRIER-DETECT"
-msgstr "DÉTECTION-OPÉRATEUR"
+msgstr "DÉTECTION-PORTEUSE"
 
 #. 1
-#: ../cli/src/devices.c:100
+#: ../cli/src/devices.c:116
 msgid "SPEED"
 msgstr "VITESSE"
 
 #. 0
-#: ../cli/src/devices.c:109
+#: ../cli/src/devices.c:125
 msgid "CARRIER"
-msgstr "OPÉRATEUR"
+msgstr "PORTEUSE"
 
 #. 0
-#: ../cli/src/devices.c:119
+#: ../cli/src/devices.c:135
 msgid "WEP"
 msgstr "WEP"
 
 #. 1
-#: ../cli/src/devices.c:120
+#: ../cli/src/devices.c:136
 msgid "WPA"
 msgstr "WPA"
 
 #. 2
-#: ../cli/src/devices.c:121
+#: ../cli/src/devices.c:137
 msgid "WPA2"
 msgstr "WPA2"
 
 #. 3
-#: ../cli/src/devices.c:122
+#: ../cli/src/devices.c:138
 msgid "TKIP"
 msgstr "TKIP"
 
 #. 4
-#: ../cli/src/devices.c:123
+#: ../cli/src/devices.c:139
 msgid "CCMP"
 msgstr "CCMP"
 
 #. 0
-#: ../cli/src/devices.c:132
+#: ../cli/src/devices.c:149
+msgid "CTR-FREQ"
+msgstr "FRÉQ-CTR"
+
+#. 1
+#: ../cli/src/devices.c:150
+msgid "RSSI"
+msgstr "RSSI"
+
+#. 2
+#: ../cli/src/devices.c:151
+msgid "CINR"
+msgstr "CINR"
+
+#. 3
+#: ../cli/src/devices.c:152
+msgid "TX-POW"
+msgstr "TX-POW"
+
+#. 4
+#: ../cli/src/devices.c:153
+msgid "BSID"
+msgstr "BSID"
+
+#. 0
+#: ../cli/src/devices.c:163 ../cli/src/devices.c:174
 msgid "ADDRESS"
 msgstr "ADRESSE"
 
 #. 1
-#: ../cli/src/devices.c:133
+#: ../cli/src/devices.c:164 ../cli/src/devices.c:175
 msgid "PREFIX"
 msgstr "PRÉFIXE"
 
 #. 2
-#: ../cli/src/devices.c:134
+#: ../cli/src/devices.c:165 ../cli/src/devices.c:176
 msgid "GATEWAY"
 msgstr "PASSERELLE"
 
 #. 0
-#: ../cli/src/devices.c:143
+#: ../cli/src/devices.c:185 ../cli/src/devices.c:194
 msgid "DNS"
 msgstr "DNS"
 
 #. 0
-#: ../cli/src/devices.c:153
+#: ../cli/src/devices.c:203
 msgid "SSID"
 msgstr "SSID"
 
 #. 1
-#: ../cli/src/devices.c:154
+#: ../cli/src/devices.c:204
 msgid "BSSID"
 msgstr "BSSID"
 
 #. 2
-#: ../cli/src/devices.c:155
+#: ../cli/src/devices.c:205
 msgid "MODE"
 msgstr "MODE"
 
 #. 3
-#: ../cli/src/devices.c:156
+#: ../cli/src/devices.c:206
 msgid "FREQ"
-msgstr "FREQ"
+msgstr "FRÉQ"
 
 #. 4
-#: ../cli/src/devices.c:157
+#: ../cli/src/devices.c:207
 msgid "RATE"
 msgstr "DÉBIT"
 
 #. 5
-#: ../cli/src/devices.c:158
+#. 1
+#: ../cli/src/devices.c:208 ../cli/src/devices.c:226
 msgid "SIGNAL"
 msgstr "SIGNAL"
 
 #. 6
-#: ../cli/src/devices.c:159
+#: ../cli/src/devices.c:209
 msgid "SECURITY"
 msgstr "SÉCURITÉ"
 
 #. 7
-#: ../cli/src/devices.c:160
+#: ../cli/src/devices.c:210
 msgid "WPA-FLAGS"
 msgstr "DRAPEAUX-WPA"
 
 #. 8
-#: ../cli/src/devices.c:161
+#: ../cli/src/devices.c:211
 msgid "RSN-FLAGS"
 msgstr "DRAPEAUX-RSN"
 
 #. 10
-#: ../cli/src/devices.c:163
+#. 4
+#: ../cli/src/devices.c:213 ../cli/src/devices.c:229
 msgid "ACTIVE"
 msgstr "ACTIF"
 
-#: ../cli/src/devices.c:186
+#: ../cli/src/devices.c:246
 #, c-format
 msgid ""
 "Usage: nmcli dev { COMMAND | help }\n"
 "\n"
+"  COMMAND := { status | list | disconnect | wifi | wimax }\n"
+"\n"
 "  COMMAND := { status | list | disconnect | wifi }\n"
 "\n"
 "  status\n"
 "  list [iface <iface>]\n"
 "  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
-"  wifi [list [iface <iface>] [hwaddr <hwaddr>]]\n"
+"  wifi [list [iface <iface>] [bssid <BSSID>]]\n"
+"  wimax [list [iface <iface>] [nsp <name>]]\n"
 "\n"
 msgstr ""
-"Usage: nmcli dev { COMMAND | help }\n"
+"Utilisation : nmcli dev { COMMANDE | help }\n"
 "\n"
-"  COMMAND := { status | list | disconnect | wifi }\n"
+"  COMMANDE := { status | list | disconnect | wifi | wimax }\n"
+"\n"
+"  COMMANDE := { status | list | disconnect | wifi }\n"
 "\n"
 "  status\n"
 "  list [iface <iface>]\n"
-"  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
-"  wifi [list [iface <iface>] [hwaddr <hwaddr>]]\n"
+"  disconnect iface <iface> [--nowait] [--timeout <délai>]\n"
+"  wifi [list [iface <iface>] [bssid <BSSID>]]\n"
+"  wimax [list [iface <iface>] [nsp <nom>]]\n"
 "\n"
 
-#: ../cli/src/devices.c:206
+#: ../cli/src/devices.c:274
 msgid "unmanaged"
 msgstr "non-géré"
 
-#: ../cli/src/devices.c:208
+#: ../cli/src/devices.c:276
 msgid "unavailable"
 msgstr "indisponible"
 
-#: ../cli/src/devices.c:210 ../cli/src/network-manager.c:89
+#: ../cli/src/devices.c:278 ../cli/src/network-manager.c:108
 msgid "disconnected"
 msgstr "déconnecté"
 
-#: ../cli/src/devices.c:212
+#: ../cli/src/devices.c:280
 msgid "connecting (prepare)"
-msgstr "connexion (préparer)"
+msgstr "connexion (préparation)"
 
-#: ../cli/src/devices.c:214
+#: ../cli/src/devices.c:282
 msgid "connecting (configuring)"
 msgstr "connexion (configuration)"
 
-#: ../cli/src/devices.c:216
+#: ../cli/src/devices.c:284
 msgid "connecting (need authentication)"
 msgstr "connexion (authentification requise)"
 
-#: ../cli/src/devices.c:218
+#: ../cli/src/devices.c:286
 msgid "connecting (getting IP configuration)"
 msgstr "connexion (obtention de la configuration IP)"
 
-#: ../cli/src/devices.c:220 ../cli/src/network-manager.c:87
+#: ../cli/src/devices.c:288
+msgid "connecting (checking IP connectivity)"
+msgstr "connexion (contrôle de la connectivité IP)"
+
+#: ../cli/src/devices.c:290
+msgid "connecting (starting secondary connections)"
+msgstr "connexion (démarrage des connexions secondaires)"
+
+#: ../cli/src/devices.c:292 ../cli/src/network-manager.c:104
 msgid "connected"
 msgstr "connecté"
 
-#: ../cli/src/devices.c:222
+#: ../cli/src/devices.c:296
 msgid "connection failed"
 msgstr "échec de la connexion"
 
-#: ../cli/src/devices.c:245 ../cli/src/devices.c:380
+#: ../cli/src/devices.c:321 ../cli/src/devices.c:331 ../cli/src/devices.c:491
+#: ../cli/src/devices.c:535
 msgid "Unknown"
 msgstr "Inconnu"
 
-#: ../cli/src/devices.c:277
+#: ../cli/src/devices.c:364
 msgid "(none)"
 msgstr "(aucun)"
 
-#: ../cli/src/devices.c:302
+#: ../cli/src/devices.c:389
 #, c-format
 msgid "%s: error converting IP4 address 0x%X"
-msgstr "%s: erreur lors de la conversion de l'adresse IP4 0x%X"
+msgstr "%s : erreur lors de la conversion de l'adresse IP4 0x%X"
 
-#: ../cli/src/devices.c:349
+#: ../cli/src/devices.c:460
 #, c-format
 msgid "%u MHz"
 msgstr "%u MHz"
 
-#: ../cli/src/devices.c:350
+#: ../cli/src/devices.c:461
 #, c-format
 msgid "%u MB/s"
 msgstr "%u Mo/s"
 
-#: ../cli/src/devices.c:359
+#: ../cli/src/devices.c:470
 msgid "Encrypted: "
-msgstr "Chiffré: "
+msgstr "Chiffré : "
 
-#: ../cli/src/devices.c:364
+#: ../cli/src/devices.c:475
 msgid "WEP "
 msgstr "WEP "
 
-#: ../cli/src/devices.c:366
+#: ../cli/src/devices.c:477
 msgid "WPA "
 msgstr "WPA "
 
-#: ../cli/src/devices.c:368
+#: ../cli/src/devices.c:479
 msgid "WPA2 "
 msgstr "WPA2 "
 
-#: ../cli/src/devices.c:371
+#: ../cli/src/devices.c:482
 msgid "Enterprise "
 msgstr "Enterprise "
 
-#: ../cli/src/devices.c:380
+#: ../cli/src/devices.c:491
 msgid "Ad-Hoc"
 msgstr "Ad-Hoc"
 
-#: ../cli/src/devices.c:380
+#: ../cli/src/devices.c:491
 msgid "Infrastructure"
 msgstr "Infrastructure"
 
-#: ../cli/src/devices.c:442
+#: ../cli/src/devices.c:526
+msgid "Home"
+msgstr "Domicile"
+
+#: ../cli/src/devices.c:529
+msgid "Partner"
+msgstr "Partenaire"
+
+#: ../cli/src/devices.c:532
+msgid "Roaming"
+msgstr "Itinérance"
+
+#: ../cli/src/devices.c:602
 #, c-format
 msgid "Error: 'dev list': %s"
-msgstr "Erreur: 'dev list': %s"
+msgstr "Erreur : « dev list » : %s"
 
-#: ../cli/src/devices.c:444
+#: ../cli/src/devices.c:604
 #, c-format
 msgid "Error: 'dev list': %s; allowed fields: %s"
-msgstr "Erreur: 'dev list': %s; champs autorisés: %s"
+msgstr "Erreur : « dev list » : %s ; champs autorisés : %s"
 
-#: ../cli/src/devices.c:453
+#: ../cli/src/devices.c:613
 msgid "Device details"
-msgstr "Détails périphérique"
+msgstr "Détails de périphérique"
 
-#: ../cli/src/devices.c:483 ../cli/src/devices.c:827
+#: ../cli/src/devices.c:647 ../cli/src/devices.c:1142 ../cli/src/utils.c:343
 msgid "(unknown)"
 msgstr "(inconnu)"
 
-#: ../cli/src/devices.c:484
+#: ../cli/src/devices.c:648
 msgid "unknown)"
 msgstr "inconnu)"
 
-#: ../cli/src/devices.c:510
+#: ../cli/src/devices.c:674
 #, c-format
 msgid "%u Mb/s"
-msgstr "%u Mo/s"
+msgstr "%u Mb/s"
 
 #. Print header
 #. "WIRED-PROPERTIES"
-#: ../cli/src/devices.c:583
+#: ../cli/src/devices.c:747
 msgid "on"
 msgstr "marche"
 
-#: ../cli/src/devices.c:583
+#: ../cli/src/devices.c:747
 msgid "off"
 msgstr "arrêt"
 
-#: ../cli/src/devices.c:710
+#: ../cli/src/devices.c:994
 #, c-format
 msgid "Error: 'dev status': %s"
-msgstr "Erreur: 'dev status': %s"
+msgstr "Erreur : « dev status » : %s"
 
-#: ../cli/src/devices.c:712
+#: ../cli/src/devices.c:996
 #, c-format
 msgid "Error: 'dev status': %s; allowed fields: %s"
-msgstr "Erreur: 'dev status': %s; champs autorisés: %s"
+msgstr "Erreur : « dev status » : %s ; champs autorisés : %s"
 
-#: ../cli/src/devices.c:719
+#: ../cli/src/devices.c:1019
 msgid "Status of devices"
-msgstr "Statut des périphériques"
+msgstr "État des périphériques"
 
-#: ../cli/src/devices.c:747
+#: ../cli/src/devices.c:1050
 #, c-format
 msgid "Error: '%s' argument is missing."
-msgstr "Erreur: L'argument '%s' est manquant."
+msgstr "Erreur : le paramètre « %s » est manquant."
 
-#: ../cli/src/devices.c:776 ../cli/src/devices.c:915 ../cli/src/devices.c:1035
+#: ../cli/src/devices.c:1091 ../cli/src/devices.c:1243
+#: ../cli/src/devices.c:1380 ../cli/src/devices.c:1599
 #, c-format
 msgid "Error: Device '%s' not found."
-msgstr "Erreur: Périphérique '%s' introuvable."
+msgstr "Erreur : périphérique « %s » introuvable."
 
-#: ../cli/src/devices.c:799
+#: ../cli/src/devices.c:1114
 #, c-format
 msgid "Success: Device '%s' successfully disconnected."
-msgstr "Opération réussie: Périphérique '%s' correctement déconnecté."
+msgstr "Opération réussie : périphérique « %s » correctement déconnecté."
 
-#: ../cli/src/devices.c:824
+#: ../cli/src/devices.c:1139
 #, c-format
 msgid "Error: Device '%s' (%s) disconnecting failed: %s"
-msgstr "Erreur: Échec de la déconnexion du périphérique '%s' (%s): %s"
+msgstr "Erreur : échec de la déconnexion du périphérique « %s » (%s) : %s"
 
-#: ../cli/src/devices.c:832
+#: ../cli/src/devices.c:1147
 #, c-format
 msgid "Device state: %d (%s)\n"
-msgstr "État du périphérique: %d (%s)\n"
+msgstr "État du périphérique : %d (%s)\n"
 
-#: ../cli/src/devices.c:896
+#: ../cli/src/devices.c:1212
 #, c-format
 msgid "Error: iface has to be specified."
-msgstr "Erreur: iface doit être spécifié."
+msgstr "Erreur : iface doit être spécifié."
 
-#: ../cli/src/devices.c:1011
+#: ../cli/src/devices.c:1338
 #, c-format
 msgid "Error: 'dev wifi': %s"
-msgstr "Erreur: 'dev wifi': %s"
+msgstr "Erreur : « dev wifi » : %s"
 
-#: ../cli/src/devices.c:1013
+#: ../cli/src/devices.c:1340
 #, c-format
 msgid "Error: 'dev wifi': %s; allowed fields: %s"
-msgstr "Erreur: 'dev wifi': %s; champs autorisés: %s"
+msgstr "Erreur : « dev wifi » : %s ; champs autorisés : %s"
 
-#: ../cli/src/devices.c:1020
+#: ../cli/src/devices.c:1363
 msgid "WiFi scan list"
 msgstr "Liste du balayage WiFi"
 
-#: ../cli/src/devices.c:1055 ../cli/src/devices.c:1109
+#: ../cli/src/devices.c:1400 ../cli/src/devices.c:1454
 #, c-format
-msgid "Error: Access point with hwaddr '%s' not found."
-msgstr "Erreur: Point d'accès avec hwaddr '%s' introuvable."
+msgid "Error: Access point with bssid '%s' not found."
+msgstr "Erreur : point d'accès avec bssid « %s » introuvable."
 
-#: ../cli/src/devices.c:1072
+#: ../cli/src/devices.c:1417
 #, c-format
 msgid "Error: Device '%s' is not a WiFi device."
-msgstr "Erreur: Le périphérique '%s' n'est pas un périphérique WiFi."
+msgstr "Erreur : le périphérique « %s » n'est pas un périphérique WiFi."
 
-#: ../cli/src/devices.c:1136
+#: ../cli/src/devices.c:1481
 #, c-format
 msgid "Error: 'dev wifi' command '%s' is not valid."
-msgstr "Erreur: Commande 'dev wifi' '%s' invalide."
+msgstr "Erreur : commande « dev wifi » « %s » non valide."
 
-#: ../cli/src/devices.c:1183
+#: ../cli/src/devices.c:1557
+#, c-format
+msgid "Error: 'dev wimax': %s"
+msgstr "Erreur : « dev wimax » : %s"
+
+#: ../cli/src/devices.c:1559
+#, c-format
+msgid "Error: 'dev wimax': %s; allowed fields: %s"
+msgstr "Erreur : « dev wimax » : %s ; champs autorisés : %s"
+
+#: ../cli/src/devices.c:1582
+msgid "WiMAX NSP list"
+msgstr "Liste NSP WiMax"
+
+#: ../cli/src/devices.c:1619
+#, c-format
+msgid "Error: NSP with name '%s' not found."
+msgstr "Erreur : NSP nommé « %s » introuvable."
+
+#: ../cli/src/devices.c:1630
+#, c-format
+msgid "Error: Device '%s' is not a WiMAX device."
+msgstr "Erreur : le périphérique « %s » n'est pas un périphérique WiMax."
+
+#: ../cli/src/devices.c:1661
+#, c-format
+msgid "Error: Access point with nsp '%s' not found."
+msgstr "Erreur : point d'accès avec nsp « %s » introuvable."
+
+#: ../cli/src/devices.c:1688
+#, c-format
+msgid "Error: 'dev wimax' command '%s' is not valid."
+msgstr "Erreur : commande « dev wifi » « %s » non valide."
+
+#: ../cli/src/devices.c:1738
 #, c-format
 msgid "Error: 'dev' command '%s' is not valid."
-msgstr "Erreur: Commande 'dev' '%s' invalide."
+msgstr "Erreur : commande « dev » « %s » non valide."
 
-#: ../cli/src/network-manager.c:35
-msgid "RUNNING"
-msgstr "EN COURS D'EXÉCUTION"
-
-#. 1
+#
 #: ../cli/src/network-manager.c:37
+msgid "RUNNING"
+msgstr "ÉTAT FONCT."
+
+#. 0
+#: ../cli/src/network-manager.c:38
+msgid "VERSION"
+msgstr "VERSION"
+
+#. 2
+#: ../cli/src/network-manager.c:40
+msgid "NET-ENABLED"
+msgstr "RÉSEAU-ACT."
+
+#. 3
+#: ../cli/src/network-manager.c:41
 msgid "WIFI-HARDWARE"
 msgstr "MATÉRIEL-WIFI"
 
-#. 2
-#: ../cli/src/network-manager.c:38
+#. 4
+#: ../cli/src/network-manager.c:42
 msgid "WIFI"
 msgstr "WIFI"
 
-#. 3
-#: ../cli/src/network-manager.c:39
+#. 5
+#: ../cli/src/network-manager.c:43
 msgid "WWAN-HARDWARE"
 msgstr "MATÉRIEL-WWAN"
 
-#. 4
-#: ../cli/src/network-manager.c:40
+#. 6
+#: ../cli/src/network-manager.c:44
 msgid "WWAN"
 msgstr "WWAN"
 
-#: ../cli/src/network-manager.c:62
+#. 7
+#: ../cli/src/network-manager.c:45
+msgid "WIMAX-HARDWARE"
+msgstr "MATÉRIEL-WIMAX"
+
+#. 8
+#: ../cli/src/network-manager.c:46
+msgid "WIMAX"
+msgstr "WIMAX"
+
+#: ../cli/src/network-manager.c:67
 #, c-format
 msgid ""
 "Usage: nmcli nm { COMMAND | help }\n"
 "\n"
-"  COMMAND := { status | sleep | wakeup | wifi | wwan }\n"
+"  COMMAND := { status | enable | sleep | wifi | wwan | wimax }\n"
+"\n"
+"  COMMAND := { status | enable | sleep | wifi | wwan }\n"
 "\n"
 "  status\n"
-"  sleep\n"
-"  wakeup\n"
+"  enable [true|false]\n"
+"  sleep [true|false]\n"
 "  wifi [on|off]\n"
 "  wwan [on|off]\n"
+"  wimax [on|off]\n"
 "\n"
 msgstr ""
-"Usage: nmcli nm { COMMAND | help }\n"
+"Utilisation : nmcli nm { COMMANDE | help }\n"
 "\n"
-"  COMMAND := { status | sleep | wakeup | wifi | wwan }\n"
+"  COMMANDE := { status | enable | sleep | wifi | wwan | wimax }\n"
+"\n"
+"  COMMANDE := { status | enable | sleep | wifi | wwan }\n"
 "\n"
 "  status\n"
-"  sleep\n"
-"  wakeup\n"
+"  enable [true|false]\n"
+"  sleep [true|false]\n"
 "  wifi [on|off]\n"
 "  wwan [on|off]\n"
+"  wimax [on|off]\n"
 "\n"
 
-#: ../cli/src/network-manager.c:83
+#: ../cli/src/network-manager.c:96
 msgid "asleep"
 msgstr "veille"
 
-#: ../cli/src/network-manager.c:85
+#: ../cli/src/network-manager.c:98
 msgid "connecting"
 msgstr "connexion"
 
-#: ../cli/src/network-manager.c:125
+#: ../cli/src/network-manager.c:100
+msgid "connected (local only)"
+msgstr "connecté (local seulement)"
+
+#: ../cli/src/network-manager.c:102
+msgid "connected (site only)"
+msgstr "connecté (site seulement)"
+
+#: ../cli/src/network-manager.c:106
+msgid "disconnecting"
+msgstr "déconnexion"
+
+#: ../cli/src/network-manager.c:146
 #, c-format
 msgid "Error: 'nm status': %s"
-msgstr "Erreur: 'nm status': %s"
+msgstr "Erreur : « nm status » : %s"
 
-#: ../cli/src/network-manager.c:127
+#: ../cli/src/network-manager.c:148
 #, c-format
 msgid "Error: 'nm status': %s; allowed fields: %s"
-msgstr "Erreur: 'nm status': %s; champs autorisés: %s"
+msgstr "Erreur : « nm status » : %s ; champs autorisés : %s"
 
-#: ../cli/src/network-manager.c:134
+#. create NMClient
+#: ../cli/src/network-manager.c:161 ../cli/src/network-manager.c:162
+#: ../cli/src/network-manager.c:163 ../cli/src/network-manager.c:164
+#: ../cli/src/network-manager.c:165 ../cli/src/network-manager.c:167
+#: ../cli/src/network-manager.c:168 ../cli/src/network-manager.c:289
+#: ../cli/src/network-manager.c:344 ../cli/src/network-manager.c:382
+#: ../cli/src/network-manager.c:421
+msgid "enabled"
+msgstr "activé"
+
+#: ../cli/src/network-manager.c:161 ../cli/src/network-manager.c:162
+#: ../cli/src/network-manager.c:163 ../cli/src/network-manager.c:164
+#: ../cli/src/network-manager.c:165 ../cli/src/network-manager.c:167
+#: ../cli/src/network-manager.c:168 ../cli/src/network-manager.c:289
+#: ../cli/src/network-manager.c:344 ../cli/src/network-manager.c:382
+#: ../cli/src/network-manager.c:421
+msgid "disabled"
+msgstr "désactivé"
+
+#: ../cli/src/network-manager.c:181
 msgid "NetworkManager status"
 msgstr "État de NetworkManager"
 
 #. Print header
-#: ../cli/src/network-manager.c:140 ../cli/src/network-manager.c:141
-#: ../cli/src/network-manager.c:142 ../cli/src/network-manager.c:143
-#: ../cli/src/network-manager.c:211 ../cli/src/network-manager.c:243
-msgid "enabled"
-msgstr "activé"
-
-#: ../cli/src/network-manager.c:140 ../cli/src/network-manager.c:141
-#: ../cli/src/network-manager.c:142 ../cli/src/network-manager.c:143
-#: ../cli/src/network-manager.c:211 ../cli/src/network-manager.c:243
-msgid "disabled"
-msgstr "désactivé"
-
-#: ../cli/src/network-manager.c:148
+#: ../cli/src/network-manager.c:184
 msgid "running"
 msgstr "actif"
 
-#: ../cli/src/network-manager.c:148
+#: ../cli/src/network-manager.c:184
 msgid "not running"
 msgstr "inactif"
 
-#: ../cli/src/network-manager.c:201 ../cli/src/network-manager.c:233
+#: ../cli/src/network-manager.c:215 ../cli/src/utils.c:323
+#, c-format
+msgid "Error: Couldn't connect to system bus: %s"
+msgstr "Erreur : impossible de se connecter au bus système : %s"
+
+#: ../cli/src/network-manager.c:226
+#, c-format
+msgid "Error: Couldn't create D-Bus object proxy."
+msgstr "Erreur : impossible de créer l'objet proxy D-Bus."
+
+#: ../cli/src/network-manager.c:232
+#, c-format
+msgid "Error in sleep: %s"
+msgstr "Erreur dans la commande sleep : %s"
+
+#: ../cli/src/network-manager.c:276 ../cli/src/network-manager.c:331
+#: ../cli/src/network-manager.c:369 ../cli/src/network-manager.c:408
 #, c-format
 msgid "Error: '--fields' value '%s' is not valid here; allowed fields: %s"
-msgstr "Erreur: Valeur '--fields' '%s' est invalide; champs autorisés: %s"
+msgstr ""
+"Erreur : valeur « --fields » « %s » n'est pas valide à cet endroit ; champs "
+"autorisés : %s"
 
-#: ../cli/src/network-manager.c:209
+#: ../cli/src/network-manager.c:284
+msgid "Networking enabled"
+msgstr "Réseau activé"
+
+#: ../cli/src/network-manager.c:300
+#, c-format
+msgid "Error: invalid 'enable' parameter: '%s'; use 'true' or 'false'."
+msgstr ""
+"Erreur : paramètre « enable » non valide : « %s » ; utilisez « true » ou « false »."
+
+#: ../cli/src/network-manager.c:310
+#, c-format
+msgid "Error: Sleeping status is not exported by NetworkManager."
+msgstr "Erreur : l'état de sommeil n'est pas exporté par NetworkManager."
+
+#: ../cli/src/network-manager.c:318
+#, c-format
+msgid "Error: invalid 'sleep' parameter: '%s'; use 'true' or 'false'."
+msgstr ""
+"Erreur : paramètre « sleep » non valide : « %s » ; utilisez « true » ou « false »."
+
+#: ../cli/src/network-manager.c:339
 msgid "WiFi enabled"
 msgstr "WiFi activé"
 
-#: ../cli/src/network-manager.c:220
+#: ../cli/src/network-manager.c:355
 #, c-format
 msgid "Error: invalid 'wifi' parameter: '%s'."
-msgstr "Erreur: Paramètre 'wifi' invalide: '%s'."
+msgstr "Erreur : paramètre « wifi » non valide : « %s »."
 
-#: ../cli/src/network-manager.c:241
+#: ../cli/src/network-manager.c:377
 msgid "WWAN enabled"
 msgstr "WWAN activé"
 
-#: ../cli/src/network-manager.c:252
+#: ../cli/src/network-manager.c:393
 #, c-format
 msgid "Error: invalid 'wwan' parameter: '%s'."
-msgstr "Erreur: Paramètre 'wwan' invalide: '%s'."
+msgstr "Erreur : paramètre « wwan » non valide : « %s »."
 
-#: ../cli/src/network-manager.c:263
+#: ../cli/src/network-manager.c:416
+msgid "WiMAX enabled"
+msgstr "WiMAX activé"
+
+#: ../cli/src/network-manager.c:432
+#, c-format
+msgid "Error: invalid 'wimax' parameter: '%s'."
+msgstr "Erreur : paramètre « wimax » non valide : « %s »."
+
+#: ../cli/src/network-manager.c:445
 #, c-format
 msgid "Error: 'nm' command '%s' is not valid."
-msgstr "Erreur: Commande 'nm' '%s' invalide."
+msgstr "Erreur : commande « nm » « %s » non valide."
 
-#: ../cli/src/nmcli.c:69
+#: ../cli/src/nmcli.c:64
 #, c-format
 msgid ""
 "Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
@@ -979,6 +1206,8 @@ msgid ""
 "  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
 "  -e[scape] yes|no                           escape columns separators in "
 "values\n"
+"  -n[ocheck]                                 don't check nmcli and "
+"NetworkManager versions\n"
 "  -v[ersion]                                 show program version\n"
 "  -h[elp]                                    print this help\n"
 "\n"
@@ -988,594 +1217,732 @@ msgid ""
 "  dev         devices managed by NetworkManager\n"
 "\n"
 msgstr ""
-"Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
+"Utilisation : %s [OPTIONS] OBJET { COMMANDE | help }\n"
 "\n"
 "OPTIONS\n"
 "  -t[erse]                                   sortie laconique\n"
 "  -p[retty]                                  sortie formatée\n"
 "  -m[ode] tabular|multiline                  mode de sortie\n"
-"  -f[ields] <field1,field2,...>|all|common   spécifie les champs à sortir\n"
-"  -e[scape] yes|no                           échapper les séprateurs de colonnes dans les valeurs\n"
-"  -v[ersion]                                 afficher la version du programme\n"
-"  -h[elp]                                    imprimer l'aide\n"
+"  -f[ields] <field1,field2,...>|all|common   spécifie les champs à afficher\n"
+"  -e[scape] yes|no                           échapper les séparateurs de "
+"colonnes dans les valeurs\n"
+"  -n[ocheck]                                 ne pas vérifier les versions de "
+"nmcli et NetworkManager\n"
+"  -v[ersion]                                 afficher la version du "
+"programme\n"
+"  -h[elp]                                    afficher l'aide\n"
 "\n"
-"OBJECT\n"
-"  nm          statut de NetworkManager\n"
+"OBJET\n"
+"  nm          état de NetworkManager\n"
 "  con         connexions de NetworkManager\n"
 "  dev         périphériques gérés par NetworkManager\n"
 "\n"
 
-#: ../cli/src/nmcli.c:113
+#: ../cli/src/nmcli.c:109
 #, c-format
 msgid "Error: Object '%s' is unknown, try 'nmcli help'."
-msgstr "Erreur: Objet '%s' inconnu, essayez 'nmcli help'."
+msgstr "Erreur : objet « %s » inconnu, essayez « nmcli help »."
 
-#: ../cli/src/nmcli.c:143
+#: ../cli/src/nmcli.c:139
 #, c-format
 msgid "Error: Option '--terse' is specified the second time."
-msgstr "Erreur: Option '--terse' est spécifiée la seconde fois."
+msgstr "Erreur : option « --terse » est spécifiée la seconde fois."
 
-#: ../cli/src/nmcli.c:148
+#: ../cli/src/nmcli.c:144
 #, c-format
 msgid "Error: Option '--terse' is mutually exclusive with '--pretty'."
-msgstr "Erreur: Option '--terse' est mutuellement exclusive avec '--pretty'."
+msgstr "Erreur : option « --terse » mutuellement exclusive avec « --pretty »."
 
-#: ../cli/src/nmcli.c:156
+#: ../cli/src/nmcli.c:152
 #, c-format
 msgid "Error: Option '--pretty' is specified the second time."
-msgstr "Erreur: Option '--pretty' est spécifiée la seconde fois."
+msgstr "Erreur : option « --pretty » est spécifiée la seconde fois."
 
-#: ../cli/src/nmcli.c:161
+#: ../cli/src/nmcli.c:157
 #, c-format
 msgid "Error: Option '--pretty' is mutually exclusive with '--terse'."
-msgstr "Erreur: Option '--pretty' est mutuellement exclusive avec '--terse'."
+msgstr "Erreur : option « --pretty » mutuellement exclusive avec « --terse »."
 
-#: ../cli/src/nmcli.c:171 ../cli/src/nmcli.c:187
+#: ../cli/src/nmcli.c:167 ../cli/src/nmcli.c:183
 #, c-format
 msgid "Error: missing argument for '%s' option."
-msgstr "Erreur: argument manquant pour l'option '%s'."
+msgstr "Erreur : paramètre manquant pour l'option « %s »."
 
-#: ../cli/src/nmcli.c:180 ../cli/src/nmcli.c:196
+#: ../cli/src/nmcli.c:176 ../cli/src/nmcli.c:192
 #, c-format
 msgid "Error: '%s' is not valid argument for '%s' option."
-msgstr "Erreur: '%s' est un argument invalide pour l'option '%s'."
+msgstr "Erreur : « %s » est n'est pas un paramètre valide pour l'option « %s »."
 
-#: ../cli/src/nmcli.c:203
+#: ../cli/src/nmcli.c:199
 #, c-format
 msgid "Error: fields for '%s' options are missing."
-msgstr "Erreur: Les champs pour les options '%s' sont manquants."
+msgstr "Erreur : les champs pour les options « %s » sont manquants."
 
-#: ../cli/src/nmcli.c:209
+#: ../cli/src/nmcli.c:207
 #, c-format
 msgid "nmcli tool, version %s\n"
 msgstr "outil nmcli, version %s\n"
 
-#: ../cli/src/nmcli.c:215
+#: ../cli/src/nmcli.c:213
 #, c-format
 msgid "Error: Option '%s' is unknown, try 'nmcli -help'."
-msgstr "Erreur: Option '%s' inconnue, essayez 'nmcli -help'."
+msgstr "Erreur : option « %s » inconnue, essayez « nmcli -help »."
 
-#: ../cli/src/nmcli.c:234
+#: ../cli/src/nmcli.c:232
 #, c-format
 msgid "Caught signal %d, shutting down..."
 msgstr "Signal %d reçu, arrêt en cours..."
 
-#: ../cli/src/nmcli.c:259
-#, c-format
-msgid "Error: Could not connect to NetworkManager."
-msgstr "Erreur: Impossible de connecter à NetworkManager."
+#: ../cli/src/nmcli.c:257
+msgid "Error: Could not create NMClient object."
+msgstr "Erreur : impossible de créer l'objet NMClient."
 
-#: ../cli/src/nmcli.c:275
+#: ../cli/src/nmcli.c:273
 msgid "Success"
-msgstr "Réussite"
+msgstr "Succès"
 
-#: ../cli/src/settings.c:407
+#: ../cli/src/settings.c:447
 #, c-format
 msgid "%d (hex-ascii-key)"
 msgstr "%d (hex-ascii-key)"
 
-#: ../cli/src/settings.c:409
+#: ../cli/src/settings.c:449
 #, c-format
 msgid "%d (104/128-bit passphrase)"
-msgstr "%d (104/128-bit passphrase)"
+msgstr "%d (phrase de passe 104/128-bit)"
 
-#: ../cli/src/settings.c:412
+#: ../cli/src/settings.c:452
 #, c-format
 msgid "%d (unknown)"
 msgstr "%d (inconnu)"
 
-#: ../cli/src/settings.c:438
+#: ../cli/src/settings.c:478
 msgid "0 (unknown)"
 msgstr "0 (inconnu)"
 
-#: ../cli/src/settings.c:444
+#: ../cli/src/settings.c:484
 msgid "any, "
-msgstr "any, "
+msgstr "tous, "
 
-#: ../cli/src/settings.c:446
+#: ../cli/src/settings.c:486
 msgid "900 MHz, "
 msgstr "900 MHz, "
 
-#: ../cli/src/settings.c:448
+#: ../cli/src/settings.c:488
 msgid "1800 MHz, "
 msgstr "1800 MHz, "
 
-#: ../cli/src/settings.c:450
+#: ../cli/src/settings.c:490
 msgid "1900 MHz, "
 msgstr "1900 MHz, "
 
-#: ../cli/src/settings.c:452
+#: ../cli/src/settings.c:492
 msgid "850 MHz, "
 msgstr "850 MHz, "
 
-#: ../cli/src/settings.c:454
+#: ../cli/src/settings.c:494
 msgid "WCDMA 3GPP UMTS 2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 2100 MHz, "
 
-#: ../cli/src/settings.c:456
+#: ../cli/src/settings.c:496
 msgid "WCDMA 3GPP UMTS 1800 MHz, "
 msgstr "WCDMA 3GPP UMTS 1800 MHz, "
 
-#: ../cli/src/settings.c:458
+#: ../cli/src/settings.c:498
 msgid "WCDMA 3GPP UMTS 1700/2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700/2100 MHz, "
 
-#: ../cli/src/settings.c:460
+#: ../cli/src/settings.c:500
 msgid "WCDMA 3GPP UMTS 800 MHz, "
 msgstr "WCDMA 3GPP UMTS 800 MHz, "
 
-#: ../cli/src/settings.c:462
+#: ../cli/src/settings.c:502
 msgid "WCDMA 3GPP UMTS 850 MHz, "
 msgstr "WCDMA 3GPP UMTS 850 MHz, "
 
-#: ../cli/src/settings.c:464
+#: ../cli/src/settings.c:504
 msgid "WCDMA 3GPP UMTS 900 MHz, "
 msgstr "WCDMA 3GPP UMTS 900 MHz, "
 
-#: ../cli/src/settings.c:466
+#: ../cli/src/settings.c:506
 msgid "WCDMA 3GPP UMTS 1700 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700 MHz, "
 
-#: ../cli/src/settings.c:546 ../cli/src/settings.c:708
+#: ../cli/src/settings.c:508
+msgid "WCDMA 3GPP UMTS 1900 MHz, "
+msgstr "WCDMA 3GPP UMTS 1900 MHz, "
+
+#: ../cli/src/settings.c:510
+msgid "WCDMA 3GPP UMTS 2600 MHz, "
+msgstr "WCDMA 3GPP UMTS 2600 MHz, "
+
+#: ../cli/src/settings.c:636 ../cli/src/settings.c:835
 msgid "auto"
 msgstr "auto"
 
-#: ../cli/src/settings.c:704 ../cli/src/settings.c:707 ../cli/src/utils.c:172
+#: ../cli/src/settings.c:829 ../cli/src/settings.c:832
+#: ../cli/src/settings.c:833 ../cli/src/utils.c:176
 msgid "not set"
 msgstr "non défini"
 
-#: ../cli/src/utils.c:124
+#: ../cli/src/utils.c:128
 #, c-format
 msgid "field '%s' has to be alone"
-msgstr "champ '%s' doit être seul"
+msgstr "champ « %s » doit être seul"
 
-#: ../cli/src/utils.c:127
+#: ../cli/src/utils.c:131
 #, c-format
 msgid "invalid field '%s'"
-msgstr "champ '%s' invalide"
-
-#: ../cli/src/utils.c:146
-#, c-format
-msgid "Option '--terse' requires specifying '--fields'"
-msgstr "Option '--terse' requiert la spécification de '--fields'"
+msgstr "champ « %s » non valide"
 
 #: ../cli/src/utils.c:150
 #, c-format
-msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
-msgstr "Option '--terse' requiert des valeurs d'options '--fields' spécifiques, pas '%s'"
+msgid "Option '--terse' requires specifying '--fields'"
+msgstr "L'option « --terse » requiert la spécification de « --fields »"
 
-#: ../libnm-util/crypto.c:120
+#: ../cli/src/utils.c:154
+#, c-format
+msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
+msgstr ""
+"L'option « --terse » requiert des valeurs d'options « --fields » spécifiques, pas "
+"« %s »"
+
+#: ../cli/src/utils.c:334
+#, c-format
+msgid "Error: Couldn't create D-Bus object proxy for org.freedesktop.DBus"
+msgstr "Erreur : impossible de créer le proxy d'objet D-Bus pour org.freedesktop.DBus"
+
+#: ../cli/src/utils.c:342
+#, c-format
+msgid "Error: NameHasOwner request failed: %s"
+msgstr "Erreur : la requête NameHasOwner a échoué : %s"
+
+#: ../cli/src/utils.c:387
+#, c-format
+msgid ""
+"Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --"
+"nocheck to suppress the warning.\n"
+msgstr ""
+"Avertissement : les versions de nmcli (%s) et de NetworkManager (%s) ne "
+"correspondent pas. Utilisez --nocheck pour supprimer cet avertissement.\n"
+
+#: ../cli/src/utils.c:396
+#, c-format
+msgid ""
+"Error: nmcli (%s) and NetworkManager (%s) versions don't match. Force "
+"execution using --nocheck, but the results are unpredictable."
+msgstr ""
+"Erreur : les versions de nmcli (%s) et de NetworkManager (%s) ne correspondent "
+"pas. L'exécution peut être forcée avec --nocheck, mais les résultats sont "
+"imprévisibles."
+
+#: ../libnm-util/crypto.c:133
 #, c-format
 msgid "PEM key file had no end tag '%s'."
 msgstr "Le fichier de clé PEM n'a pas de balise de fin « %s »."
 
-#: ../libnm-util/crypto.c:130
+#: ../libnm-util/crypto.c:146
 #, c-format
 msgid "Doesn't look like a PEM private key file."
 msgstr "Cela ne semble pas être un fichier de clé privée PEM."
 
-#: ../libnm-util/crypto.c:138
+#: ../libnm-util/crypto.c:154
 #, c-format
 msgid "Not enough memory to store PEM file data."
 msgstr "Mémoire insuffisante pour contenir les données du fichier PEM."
 
-#: ../libnm-util/crypto.c:154
+#: ../libnm-util/crypto.c:170
 #, c-format
 msgid "Malformed PEM file: Proc-Type was not first tag."
 msgstr "Fichier PEM incorrect : Proc-Type n'est pas la première balise."
 
-#: ../libnm-util/crypto.c:162
+#: ../libnm-util/crypto.c:178
 #, c-format
 msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
 msgstr "Fichier PEM incorrect : étiquette Proc-Type « %s » inconnue."
 
-#: ../libnm-util/crypto.c:172
+#: ../libnm-util/crypto.c:188
 #, c-format
 msgid "Malformed PEM file: DEK-Info was not the second tag."
 msgstr "Fichier PEM incorrect : DEK-Info n'est pas la deuxième balise."
 
-#: ../libnm-util/crypto.c:183
+#: ../libnm-util/crypto.c:199
 #, c-format
 msgid "Malformed PEM file: no IV found in DEK-Info tag."
 msgstr "Fichier PEM incorrect : aucun IV trouvé dans la balise DEK-Info."
 
-#: ../libnm-util/crypto.c:190
+#: ../libnm-util/crypto.c:206
 #, c-format
 msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
 msgstr "Fichier PEM incorrect : format IV invalide dans la balise DEK-Info."
 
-#: ../libnm-util/crypto.c:203
+#: ../libnm-util/crypto.c:219
 #, c-format
 msgid "Malformed PEM file: unknown private key cipher '%s'."
 msgstr "Fichier PEM incorrect : chiffre de clé privée « %s » inconnu."
 
-#: ../libnm-util/crypto.c:222
+#: ../libnm-util/crypto.c:238
 #, c-format
 msgid "Could not decode private key."
 msgstr "Impossible de décoder la clé privée."
 
-#: ../libnm-util/crypto.c:267
-#, c-format
-msgid "PEM certificate '%s' had no end tag '%s'."
-msgstr "Le certificat PEM « %s » n'a pas de balise de fin « %s »."
+#: ../libnm-util/crypto.c:284
+msgid "Failed to find expected PKCS#8 start tag."
+msgstr "Impossible de trouver la balise initiale PKCS#8 attendue."
 
-#: ../libnm-util/crypto.c:277
+#: ../libnm-util/crypto.c:292
 #, c-format
-msgid "Failed to decode certificate."
-msgstr "Impossible de décoder le certificat."
+msgid "Failed to find expected PKCS#8 end tag '%s'."
+msgstr "Impossible de trouver la balise terminale PKCS#8 attendue (« %s »)."
 
-#: ../libnm-util/crypto.c:286
+#: ../libnm-util/crypto.c:312
+msgid "Not enough memory to store private key data."
+msgstr "Mémoire insuffisante pour contenir les données de la clé privée."
+
+#: ../libnm-util/crypto.c:317
+msgid "Failed to decode PKCS#8 private key."
+msgstr "Le décodage de la clé privée PKCS#8 a échoué."
+
+#: ../libnm-util/crypto.c:339 ../libnm-util/crypto.c:625
 #, c-format
 msgid "Not enough memory to store certificate data."
 msgstr "Mémoire insuffisante pour contenir les données du certificat."
 
-#: ../libnm-util/crypto.c:294
-#, c-format
-msgid "Not enough memory to store file data."
-msgstr "Mémoire insuffisante pour contenir les données du fichier."
-
-#: ../libnm-util/crypto.c:324
+#: ../libnm-util/crypto.c:365
 #, c-format
 msgid "IV must be an even number of bytes in length."
-msgstr "La longueur en octets d'IV doit être paire."
+msgstr "La longueur en octets de IV doit être paire."
 
-#: ../libnm-util/crypto.c:333
+#: ../libnm-util/crypto.c:374
 #, c-format
 msgid "Not enough memory to store the IV."
-msgstr "Mémoire insuffisante pour contenir l'IV."
+msgstr "Mémoire insuffisante pour contenir le IV."
 
-#: ../libnm-util/crypto.c:344
+#: ../libnm-util/crypto.c:385
 #, c-format
 msgid "IV contains non-hexadecimal digits."
-msgstr "L'IV contient des chiffres non-hexadécimaux."
+msgstr "Le IV contient des chiffres non hexadécimaux."
 
-#: ../libnm-util/crypto.c:382 ../libnm-util/crypto_gnutls.c:148
-#: ../libnm-util/crypto_gnutls.c:266 ../libnm-util/crypto_nss.c:171
-#: ../libnm-util/crypto_nss.c:336
+#: ../libnm-util/crypto.c:423 ../libnm-util/crypto_gnutls.c:147
+#: ../libnm-util/crypto_gnutls.c:265 ../libnm-util/crypto_nss.c:167
+#: ../libnm-util/crypto_nss.c:332
 #, c-format
 msgid "Private key cipher '%s' was unknown."
 msgstr "Le chiffre « %s » de la clé privée est inconnu."
 
-#: ../libnm-util/crypto.c:391
+#: ../libnm-util/crypto.c:432
 #, c-format
 msgid "Not enough memory to decrypt private key."
-msgstr "Mémoire insuffisante pour contenir la clé privée déchiffrée."
+msgstr "Mémoire insuffisante pour déchiffrer la clé privée."
 
-#: ../libnm-util/crypto.c:511
-#, c-format
-msgid "Unable to determine private key type."
-msgstr "Impossible de déterminer le type de la clé privée."
-
-#: ../libnm-util/crypto.c:530
+#: ../libnm-util/crypto.c:497
 #, c-format
 msgid "Not enough memory to store decrypted private key."
 msgstr "Mémoire insuffisante pour contenir la clé privée déchiffrée."
 
-#: ../libnm-util/crypto_gnutls.c:49
+#: ../libnm-util/crypto.c:542
+#, c-format
+msgid "Unable to determine private key type."
+msgstr "Impossible de déterminer le type de la clé privée."
+
+#: ../libnm-util/crypto.c:597
+#, c-format
+msgid "PEM certificate had no start tag '%s'."
+msgstr "Le certificat PEM n'a pas de balise initiale « %s »."
+
+#: ../libnm-util/crypto.c:606
+#, c-format
+msgid "PEM certificate had no end tag '%s'."
+msgstr "Le certificat PEM n'a pas de balise terminale « %s »."
+
+#: ../libnm-util/crypto.c:630
+#, c-format
+msgid "Failed to decode certificate."
+msgstr "Impossible de décoder le certificat."
+
+#: ../libnm-util/crypto_gnutls.c:50
 msgid "Failed to initialize the crypto engine."
 msgstr "L'initialisation du moteur de chiffrement a échoué."
 
-#: ../libnm-util/crypto_gnutls.c:93
+#: ../libnm-util/crypto_gnutls.c:92
 #, c-format
 msgid "Failed to initialize the MD5 engine: %s / %s."
 msgstr "L'initialisation du moteur MD5 a échoué : %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:156
+#: ../libnm-util/crypto_gnutls.c:155
 #, c-format
 msgid "Invalid IV length (must be at least %zd)."
 msgstr "Longueur IV invalide (minimum %zd)."
 
-#: ../libnm-util/crypto_gnutls.c:165 ../libnm-util/crypto_nss.c:188
+#: ../libnm-util/crypto_gnutls.c:164 ../libnm-util/crypto_nss.c:184
 #, c-format
 msgid "Not enough memory for decrypted key buffer."
 msgstr "Mémoire insuffisante pour le tampon de clé déchiffrée."
 
-#: ../libnm-util/crypto_gnutls.c:173
+#: ../libnm-util/crypto_gnutls.c:172
 #, c-format
 msgid "Failed to initialize the decryption cipher context: %s / %s."
-msgstr "L'initialisation du contexte du chiffre de déchiffrement a échoué : %s / %s."
+msgstr ""
+"L'initialisation du contexte du chiffre de déchiffrement a échoué : %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:182
+#: ../libnm-util/crypto_gnutls.c:181
 #, c-format
 msgid "Failed to set symmetric key for decryption: %s / %s."
-msgstr "La définition de la clé symétrique pour le déchiffrement a échoué : %s / %s."
+msgstr ""
+"La définition de la clé symétrique pour le déchiffrement a échoué : %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:191
+#: ../libnm-util/crypto_gnutls.c:190
 #, c-format
 msgid "Failed to set IV for decryption: %s / %s."
-msgstr "La définition d'IV pour le déchiffrement a échoué : %s / %s."
+msgstr "La définition de IV pour le déchiffrement a échoué : %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:200
+#: ../libnm-util/crypto_gnutls.c:199
 #, c-format
 msgid "Failed to decrypt the private key: %s / %s."
 msgstr "Le déchiffrement de la clé privée a échoué : %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:210 ../libnm-util/crypto_nss.c:267
+#: ../libnm-util/crypto_gnutls.c:209 ../libnm-util/crypto_nss.c:263
 #, c-format
 msgid "Failed to decrypt the private key: unexpected padding length."
 msgstr ""
-"Le déchiffrement de la clé privée a échoué: Longueur de remplissage "
+"Le déchiffrement de la clé privée a échoué : longueur de remplissage "
 "inattendue."
 
-#: ../libnm-util/crypto_gnutls.c:221 ../libnm-util/crypto_nss.c:278
+#: ../libnm-util/crypto_gnutls.c:220 ../libnm-util/crypto_nss.c:274
 #, c-format
 msgid "Failed to decrypt the private key."
 msgstr "Le déchiffrement de la clé privée a échoué."
 
-#: ../libnm-util/crypto_gnutls.c:286 ../libnm-util/crypto_nss.c:356
+#: ../libnm-util/crypto_gnutls.c:285 ../libnm-util/crypto_nss.c:352
 #, c-format
 msgid "Could not allocate memory for encrypting."
 msgstr "Allocation de mémoire pour chiffrement impossible."
 
-#: ../libnm-util/crypto_gnutls.c:294
+#: ../libnm-util/crypto_gnutls.c:293
 #, c-format
 msgid "Failed to initialize the encryption cipher context: %s / %s."
 msgstr ""
-"L'initialisation du contexte du cryptage de chiffrement a échoué: %s / "
-"%s."
+"L'initialisation du contexte du cryptage de chiffrement a échoué : %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:303
+#: ../libnm-util/crypto_gnutls.c:302
 #, c-format
 msgid "Failed to set symmetric key for encryption: %s / %s."
 msgstr ""
-"La définition de la clé symétrique pour le chiffrement a échoué: %s / %"
-"s."
+"La définition de la clé symétrique pour le chiffrement a échoué : %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:313
+#: ../libnm-util/crypto_gnutls.c:312
 #, c-format
 msgid "Failed to set IV for encryption: %s / %s."
-msgstr "La définition d'IV pour le chiffrement a échoué: %s / %s."
+msgstr "La définition de IV pour le chiffrement a échoué : %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:322
+#: ../libnm-util/crypto_gnutls.c:321
 #, c-format
 msgid "Failed to encrypt the data: %s / %s."
-msgstr "Le chiffrement des données a échoué; %s / %s."
+msgstr "Le chiffrement des données a échoué : %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:362
+#: ../libnm-util/crypto_gnutls.c:361
 #, c-format
 msgid "Error initializing certificate data: %s"
 msgstr "Erreur lors de l'initialisation des données du certificat : %s"
 
-#: ../libnm-util/crypto_gnutls.c:384
+#: ../libnm-util/crypto_gnutls.c:383
 #, c-format
 msgid "Couldn't decode certificate: %s"
 msgstr "Impossible de décoder le certificat : %s"
 
-#: ../libnm-util/crypto_gnutls.c:408
+#: ../libnm-util/crypto_gnutls.c:407
 #, c-format
 msgid "Couldn't initialize PKCS#12 decoder: %s"
-msgstr "L'initialisation du décodeur PKCS#12 a échoué: %s"
+msgstr "L'initialisation du décodeur PKCS#12 a échoué : %s"
 
-#: ../libnm-util/crypto_gnutls.c:421
+#: ../libnm-util/crypto_gnutls.c:420
 #, c-format
 msgid "Couldn't decode PKCS#12 file: %s"
-msgstr "Impossible de décoder le fichier PKCS#12: %s"
+msgstr "Impossible de décoder le fichier PKCS#12 : %s"
 
-#: ../libnm-util/crypto_gnutls.c:433
+#: ../libnm-util/crypto_gnutls.c:432
 #, c-format
 msgid "Couldn't verify PKCS#12 file: %s"
-msgstr "Impossible de vérifier le fichier PKCS#12: %s"
+msgstr "Impossible de vérifier le fichier PKCS#12 : %s"
+
+#: ../libnm-util/crypto_gnutls.c:460
+#, c-format
+msgid "Couldn't initialize PKCS#8 decoder: %s"
+msgstr "L'initialisation du décodeur PKCS#8 a échoué : %s"
+
+#: ../libnm-util/crypto_gnutls.c:483
+#, c-format
+msgid "Couldn't decode PKCS#8 file: %s"
+msgstr "Impossible de décoder le fichier PKCS#8 : %s"
 
 #: ../libnm-util/crypto_nss.c:56
 #, c-format
 msgid "Failed to initialize the crypto engine: %d."
 msgstr "L'initialisation du moteur de chiffrement a échoué : %d."
 
-#: ../libnm-util/crypto_nss.c:111
+#: ../libnm-util/crypto_nss.c:107
 #, c-format
 msgid "Failed to initialize the MD5 context: %d."
 msgstr "L'initialisation du contexte MD5 a échoué : %d."
 
-#: ../libnm-util/crypto_nss.c:179
+#: ../libnm-util/crypto_nss.c:175
 #, c-format
 msgid "Invalid IV length (must be at least %d)."
 msgstr "Longueur IV invalide (minimum %d)."
 
-#: ../libnm-util/crypto_nss.c:196
+#: ../libnm-util/crypto_nss.c:192
 #, c-format
 msgid "Failed to initialize the decryption cipher slot."
-msgstr "L'initialisation de l'emplacement du chiffre de déchiffrement a échoué."
+msgstr ""
+"L'initialisation de l'emplacement du chiffre de déchiffrement a échoué."
 
-#: ../libnm-util/crypto_nss.c:206
+#: ../libnm-util/crypto_nss.c:202
 #, c-format
 msgid "Failed to set symmetric key for decryption."
 msgstr "La définition de la clé symétrique pour le déchiffrement a échoué."
 
-#: ../libnm-util/crypto_nss.c:216
+#: ../libnm-util/crypto_nss.c:212
 #, c-format
 msgid "Failed to set IV for decryption."
-msgstr "La définition d'IV pour le déchiffrement a échoué."
+msgstr "La définition de IV pour le déchiffrement a échoué."
 
-#: ../libnm-util/crypto_nss.c:224
+#: ../libnm-util/crypto_nss.c:220
 #, c-format
 msgid "Failed to initialize the decryption context."
 msgstr "L'initialisation du contexte de déchiffrement a échoué."
 
-#: ../libnm-util/crypto_nss.c:237
+#: ../libnm-util/crypto_nss.c:233
 #, c-format
 msgid "Failed to decrypt the private key: %d."
 msgstr "Le déchiffrement de la clé privée a échoué : %d."
 
-#: ../libnm-util/crypto_nss.c:245
+#: ../libnm-util/crypto_nss.c:241
 #, c-format
 msgid "Failed to decrypt the private key: decrypted data too large."
 msgstr ""
-"Le déchiffrement de la clé privée a échoué: les données déchiffrées "
-"sont trop longues."
+"Le déchiffrement de la clé privée a échoué : les données déchiffrées sont "
+"trop longues."
 
-#: ../libnm-util/crypto_nss.c:256
+#: ../libnm-util/crypto_nss.c:252
 #, c-format
 msgid "Failed to finalize decryption of the private key: %d."
 msgstr "La finalisation du déchiffrement de la clé privée a échoué : %d."
 
-#: ../libnm-util/crypto_nss.c:364
+#: ../libnm-util/crypto_nss.c:360
 #, c-format
 msgid "Failed to initialize the encryption cipher slot."
 msgstr "L'initialisation de l'emplacement du cryptage de chiffrement a échoué."
 
-#: ../libnm-util/crypto_nss.c:372
+#: ../libnm-util/crypto_nss.c:368
 #, c-format
 msgid "Failed to set symmetric key for encryption."
 msgstr "La définition de la clé symétrique pour le chiffrement a échoué."
 
-#: ../libnm-util/crypto_nss.c:380
+#: ../libnm-util/crypto_nss.c:376
 #, c-format
 msgid "Failed to set IV for encryption."
-msgstr "La définition d'IV pour le déchiffrement a échoué."
+msgstr "La définition de IV pour le chiffrement a échoué."
 
-#: ../libnm-util/crypto_nss.c:388
+#: ../libnm-util/crypto_nss.c:384
 #, c-format
 msgid "Failed to initialize the encryption context."
 msgstr "L'initialisation du contexte de chiffrement a échoué."
 
-#: ../libnm-util/crypto_nss.c:396
+#: ../libnm-util/crypto_nss.c:392
 #, c-format
 msgid "Failed to encrypt: %d."
 msgstr "Le chiffrement a échoué : %d."
 
-#: ../libnm-util/crypto_nss.c:404
+#: ../libnm-util/crypto_nss.c:400
 #, c-format
 msgid "Unexpected amount of data after encrypting."
 msgstr "Quantité de données inattendue après chiffrement."
 
-#: ../libnm-util/crypto_nss.c:447
+#: ../libnm-util/crypto_nss.c:443
 #, c-format
 msgid "Couldn't decode certificate: %d"
 msgstr "Impossible de décoder le certificat : %d"
 
-#: ../libnm-util/crypto_nss.c:482
+#: ../libnm-util/crypto_nss.c:478
 #, c-format
 msgid "Couldn't convert password to UCS2: %d"
-msgstr "Impossible de convertir le mot de passe en UCS2: %d."
+msgstr "Impossible de convertir le mot de passe en UCS2 : %d."
 
-#: ../libnm-util/crypto_nss.c:510
+#: ../libnm-util/crypto_nss.c:506
 #, c-format
 msgid "Couldn't initialize PKCS#12 decoder: %d"
-msgstr "Impossible d'initialiser le décodeur PKCS#12: %d"
+msgstr "Impossible d'initialiser le décodeur PKCS#12 : %d"
 
-#: ../libnm-util/crypto_nss.c:519
+#: ../libnm-util/crypto_nss.c:515
 #, c-format
 msgid "Couldn't decode PKCS#12 file: %d"
-msgstr "Impossible de décoder le fichier PKCS#12: %d"
+msgstr "Impossible de décoder le fichier PKCS#12 : %d"
 
-#: ../libnm-util/crypto_nss.c:528
+#: ../libnm-util/crypto_nss.c:524
 #, c-format
 msgid "Couldn't verify PKCS#12 file: %d"
-msgstr "Impossible de vérifier le fichier PKCS#12: %d"
+msgstr "Impossible de vérifier le fichier PKCS#12 : %d"
 
-#: ../libnm-util/crypto_nss.c:557
+#: ../libnm-util/crypto_nss.c:568
 msgid "Could not generate random data."
-msgstr "Impossible des données aléatoires."
+msgstr "Impossible de générer des données aléatoires."
 
-#: ../libnm-util/nm-utils.c:1925
+#: ../libnm-util/nm-utils.c:2000
 #, c-format
 msgid "Not enough memory to make encryption key."
 msgstr "Mémoire insuffisante pour créer une clé de chiffrement."
 
-#: ../libnm-util/nm-utils.c:2035
+#: ../libnm-util/nm-utils.c:2110
 msgid "Could not allocate memory for PEM file creation."
-msgstr "Allocation de mémoire pour la création du fichier PEM impossible."
+msgstr "Allocation de mémoire impossible pour la création du fichier PEM."
 
-#: ../libnm-util/nm-utils.c:2047
+#: ../libnm-util/nm-utils.c:2122
 #, c-format
 msgid "Could not allocate memory for writing IV to PEM file."
-msgstr "Allocation de mémoire pour l'écriture d'IV sur le fichier PEM impossible."
+msgstr ""
+"Allocation de mémoire impossible pour l'écriture de IV dans le fichier PEM."
 
-#: ../libnm-util/nm-utils.c:2059
+#: ../libnm-util/nm-utils.c:2134
 #, c-format
 msgid "Could not allocate memory for writing encrypted key to PEM file."
 msgstr ""
-"Allocation de mémoire pour l'écriture de la clé chiffrée sur le fichier PEM "
-"impossible."
+"Allocation de mémoire impossible pour l'écriture de la clé chiffrée dans le "
+"fichier PEM."
 
-#: ../libnm-util/nm-utils.c:2078
+#: ../libnm-util/nm-utils.c:2153
 #, c-format
 msgid "Could not allocate memory for PEM file data."
-msgstr "Allocation de mémoire pour les données du fichier PEM impossible."
+msgstr "Allocation de mémoire impossible pour les données du fichier PEM."
 
-#: ../src/nm-netlink-monitor.c:100 ../src/nm-netlink-monitor.c:231
-#: ../src/nm-netlink-monitor.c:653
-#, c-format
-msgid "error processing netlink message: %s"
-msgstr "erreur lors du traitement du message netlink : %s"
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:1
+msgid "Allow control of network connections"
+msgstr "Autoriser le contrôle des connexions réseau"
 
-#: ../src/nm-netlink-monitor.c:214
-msgid "error occurred while waiting for data on socket"
-msgstr "une erreur est survenue pendant l'attente de données sur le connecteur"
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:2
+msgid "Connection sharing via a protected WiFi network"
+msgstr "Partage de connexion via un réseau WiFi protégé"
 
-#: ../src/nm-netlink-monitor.c:254
-#, c-format
-msgid "unable to connect to netlink for monitoring link status: %s"
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:3
+msgid "Connection sharing via an open WiFi network"
+msgstr "Partage de connexion via un réseau WiFi ouvert"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:4
+msgid "Enable or disable WiFi devices"
+msgstr "Activer ou désactiver des périphériques WiFi"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:5
+msgid "Enable or disable WiMAX mobile broadband devices"
+msgstr "Activer ou désactiver des périphériques WiMAX à large bande"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:6
+msgid "Enable or disable mobile broadband devices"
+msgstr "Activer ou désactiver des périphériques mobiles à large bande"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:7
+msgid "Enable or disable system networking"
+msgstr "Activer ou désactiver le réseau système"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:8
+msgid "Modify network connections for all users"
+msgstr "Modifier les connexions réseau pour tous les utilisateurs"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:9
+msgid "Modify persistent system hostname"
+msgstr "Modifier le nom d'hôte persistant du système"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:10
+msgid "Modify personal network connections"
+msgstr "Modifier les connexions du réseau personnel"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:11
+msgid ""
+"Put NetworkManager to sleep or wake it up (should only be used by system "
+"power management)"
 msgstr ""
-"impossible de se connecter à netlink pour surveiller l'état de la "
-"connexion : %s"
+"Mettre NetworkManager en veille ou le réveiller (utile uniquement pour la "
+"gestion d'énergie du système)"
 
-#: ../src/nm-netlink-monitor.c:265
-#, c-format
-msgid "unable to enable netlink handle credential passing: %s"
-msgstr "impossible d'activer le passage de crédentiels de gestion netlink: %s"
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:12
+msgid "System policy prevents control of network connections"
+msgstr "La politique du système empêche le contrôle des connexions réseau"
 
-#: ../src/nm-netlink-monitor.c:291 ../src/nm-netlink-monitor.c:353
-#, c-format
-msgid "unable to allocate netlink handle for monitoring link status: %s"
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:13
+msgid "System policy prevents enabling or disabling WiFi devices"
 msgstr ""
-"impossible d'allouer un gestionnaire netlink pour surveiller l'état de la "
-"connexion : %s"
+"La politique du système empêche l'activation ou la désactivation de "
+"périphériques WiFi"
 
-#: ../src/nm-netlink-monitor.c:376
-#, c-format
-msgid "unable to allocate netlink link cache for monitoring link status: %s"
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:14
+msgid ""
+"System policy prevents enabling or disabling WiMAX mobile broadband devices"
 msgstr ""
-"impossible d'allouer un cache de connexion netlink pour surveiller l'état de "
-"la connexion : %s"
+"La politique du système empêche l'activation ou la désactivation de "
+"périphériques WiMAX à large bande"
 
-#: ../src/nm-netlink-monitor.c:502
-#, c-format
-msgid "unable to join netlink group: %s"
-msgstr "impossible de joindre le groupe netlink: %s"
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:15
+msgid "System policy prevents enabling or disabling mobile broadband devices"
+msgstr ""
+"La politique du système empêche l'activation ou la désactivation de "
+"périphériques mobiles à large bande"
 
-#: ../src/nm-netlink-monitor.c:629 ../src/nm-netlink-monitor.c:642
-#, c-format
-msgid "error updating link cache: %s"
-msgstr "erreur lors de la mise à jour du cache de connexion : %s"
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:16
+msgid "System policy prevents enabling or disabling system networking"
+msgstr ""
+"La politique du système empêche l'activation ou la désactivation du réseau du "
+"système"
 
-#: ../src/main.c:502
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:17
+msgid "System policy prevents modification of network settings for all users"
+msgstr ""
+"La politique du système empêche toute modification des paramètres réseau pour "
+"tous les utilisateurs"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:18
+msgid "System policy prevents modification of personal network settings"
+msgstr ""
+"La politique du système empêche toute modification des paramètres réseau "
+"personnels"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:19
+msgid "System policy prevents modification of the persistent system hostname"
+msgstr ""
+"La politique du système empêche toute modification du nom d'hôte persistant "
+"du système"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:20
+msgid "System policy prevents putting NetworkManager to sleep or waking it up"
+msgstr ""
+"La politique du système empêche la mise en veille et le réveil de NetworkManager"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:21
+msgid "System policy prevents sharing connections via a protected WiFi network"
+msgstr ""
+"La politique du système empêche tout partage des connexions via un réseau "
+"WiFi protégé"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:22
+msgid "System policy prevents sharing connections via an open WiFi network"
+msgstr ""
+"La politique du système empêche tout partage des connexions via un réseau "
+"WiFi ouvert"
+
+#: ../src/main.c:530
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr ""
-"Option non valide.  Utilisez --help pour afficher une liste d'options "
+"Option non valide. Utilisez --help pour afficher une liste d'options "
 "valides.\n"
 
-#: ../src/main.c:562
+#: ../src/main.c:611
 #, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
-msgstr "%s.  Veuillez utiliser --help pour afficher une liste d'options valides.\n"
+msgstr "%s. Utilisez --help pour afficher une liste d'options valides.\n"
 
-#: ../src/dhcp-manager/nm-dhcp-dhclient.c:325
+#: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:62
 msgid "# Created by NetworkManager\n"
 msgstr "# Créé par NetworkManager\n"
 
-#: ../src/dhcp-manager/nm-dhcp-dhclient.c:341
+#: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:69
 #, c-format
 msgid ""
 "# Merged from %s\n"
@@ -1584,87 +1951,130 @@ msgstr ""
 "# Fusionné depuis %s\n"
 "\n"
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:279
+#: ../src/dhcp-manager/nm-dhcp-manager.c:284
 msgid "no usable DHCP client could be found."
 msgstr "aucun client DHCP utilisable n'a pu être trouvé."
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:288
+#: ../src/dhcp-manager/nm-dhcp-manager.c:293
 msgid "'dhclient' could be found."
-msgstr "'dhclient' a été trouvé.be found."
+msgstr "« dhclient » a été trouvé."
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:298
+#: ../src/dhcp-manager/nm-dhcp-manager.c:303
 msgid "'dhcpcd' could be found."
-msgstr "'dhcpcd' introuvable."
+msgstr "« dhcpcd » a été trouvé."
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:306
+#: ../src/dhcp-manager/nm-dhcp-manager.c:311
 #, c-format
 msgid "unsupported DHCP client '%s'"
-msgstr "client DHCP '%s' non pris en charge"
+msgstr "client DHCP « %s » non pris en charge"
 
-#: ../src/logging/nm-logging.c:146
-#, c-format
-msgid "Unknown log level '%s'"
-msgstr "Niveau de journalisation inconnu '%s'"
-
-#: ../src/logging/nm-logging.c:171
-#, c-format
-msgid "Unknown log domain '%s'"
-msgstr "Domaine de journalisation inconnu '%s'"
-
-#: ../src/dns-manager/nm-dns-manager.c:343
+#: ../src/dns-manager/nm-dns-manager.c:376
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr ""
 "NOTE : il se peut que le solveur libc ne prenne pas en charge plus de 3 "
 "serveurs de noms."
 
-#: ../src/dns-manager/nm-dns-manager.c:345
+#: ../src/dns-manager/nm-dns-manager.c:378
 msgid "The nameservers listed below may not be recognized."
 msgstr "Les serveurs de noms listés ci-dessous peuvent ne pas être reconnus."
 
-#: ../src/settings/nm-default-wired-connection.c:157
+#: ../src/logging/nm-logging.c:149
 #, c-format
-msgid "Auto %s"
-msgstr "Auto %s"
+msgid "Unknown log level '%s'"
+msgstr "Niveau de journalisation « %s » inconnu"
 
-#: ../system-settings/plugins/ifcfg-rh/reader.c:3256
+#: ../src/logging/nm-logging.c:174
+#, c-format
+msgid "Unknown log domain '%s'"
+msgstr "Domaine de journalisation « %s » inconnu"
+
+#: ../src/modem-manager/nm-modem-cdma.c:296 ../src/nm-device-bt.c:355
+#, c-format
+msgid "CDMA connection %d"
+msgstr "Connexion CDMA %d"
+
+#: ../src/modem-manager/nm-modem-gsm.c:499 ../src/nm-device-bt.c:351
+#, c-format
+msgid "GSM connection %d"
+msgstr "Connexion GSM %d"
+
+#: ../src/nm-device-bt.c:326
+#, c-format
+msgid "PAN connection %d"
+msgstr "Connexion PAN %d"
+
+#: ../src/nm-device-bt.c:359
+#, c-format
+msgid "DUN connection %d"
+msgstr "Connexion DUN %d"
+
+#: ../src/nm-device-ethernet.c:1724
+#, c-format
+msgid "PPPoE connection %d"
+msgstr "Connexion PPPoE %d"
+
+#: ../src/nm-device-ethernet.c:1724 ../src/settings/nm-settings-utils.c:50
+#, c-format
+msgid "Wired connection %d"
+msgstr "Connexion filaire %d"
+
+#: ../src/nm-device-olpc-mesh.c:393
+#, c-format
+msgid "Mesh %d"
+msgstr "Réseau maillé %d"
+
+#: ../src/nm-manager.c:670
+#, c-format
+msgid "VPN connection %d"
+msgstr "Connexion VPN %d"
+
+#: ../src/nm-netlink-monitor.c:101 ../src/nm-netlink-monitor.c:234
+#: ../src/nm-netlink-monitor.c:661
+#, c-format
+msgid "error processing netlink message: %s"
+msgstr "erreur lors du traitement du message netlink : %s"
+
+#: ../src/nm-netlink-monitor.c:216
+msgid "error occurred while waiting for data on socket"
+msgstr "une erreur est survenue pendant l'attente de données sur le connecteur"
+
+#: ../src/nm-netlink-monitor.c:260
+#, c-format
+msgid "unable to connect to netlink for monitoring link status: %s"
+msgstr ""
+"impossible de se connecter à netlink pour surveiller l'état de la "
+"connexion : %s"
+
+#: ../src/nm-netlink-monitor.c:271
+#, c-format
+msgid "unable to enable netlink handle credential passing: %s"
+msgstr "impossible d'activer le passage de crédentiels de gestion netlink: %s"
+
+#: ../src/nm-netlink-monitor.c:294 ../src/nm-netlink-monitor.c:354
+#, c-format
+msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgstr ""
+"impossible d'allouer un gestionnaire netlink pour surveiller l'état de la "
+"connexion : %s"
+
+#: ../src/nm-netlink-monitor.c:379
+#, c-format
+msgid "unable to allocate netlink link cache for monitoring link status: %s"
+msgstr ""
+"impossible d'allouer un cache de connexion netlink pour surveiller l'état de "
+"la connexion : %s"
+
+#: ../src/nm-netlink-monitor.c:506
+#, c-format
+msgid "unable to join netlink group: %s"
+msgstr "impossible de joindre le groupe netlink : %s"
+
+#: ../src/nm-netlink-monitor.c:637 ../src/nm-netlink-monitor.c:650
+#, c-format
+msgid "error updating link cache: %s"
+msgstr "erreur lors de la mise à jour du cache de connexion : %s"
+
+#: ../src/settings/plugins/ifcfg-rh/reader.c:3575
+#: ../src/settings/plugins/ifnet/connection_parser.c:51
 msgid "System"
 msgstr "Système"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:1
-msgid "Connection sharing via a protected WiFi network"
-msgstr "Partage de connexion via un réseau WiFi protégé"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:2
-msgid "Connection sharing via an open WiFi network"
-msgstr "Partage de connexion via un réseau WiFi ouvert"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:3
-msgid "Modify persistent system hostname"
-msgstr "Modifier le nom d'hôte du système persistant"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:4
-msgid "Modify system connections"
-msgstr "Modifier les connexions système"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:5
-msgid "System policy prevents modification of system settings"
-msgstr "La stratégie du système empêche toute modification des paramètres du système"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:6
-msgid "System policy prevents modification of the persistent system hostname"
-msgstr ""
-"La stratégie du système empêche toute modification du nom d'hôte du système "
-"persistant"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:7
-msgid "System policy prevents sharing connections via a protected WiFi network"
-msgstr ""
-"La stratégie du système empêche tout partage des connexions via un réseau "
-"WiFi protégé"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:8
-msgid "System policy prevents sharing connections via an open WiFi network"
-msgstr ""
-"La stratégie du système empêche tout partage des connexions via un réseau "
-"WiFi ouvert"
-
