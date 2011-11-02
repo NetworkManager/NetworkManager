@@ -972,6 +972,28 @@ static struct nla_policy link_prot_policy[IFLA_INET6_MAX + 1] = {
 	[IFLA_INET6_FLAGS]	= { .type = NLA_U32 },
 };
 
+static char *
+ra_flags_to_string (guint32 ra_flags)
+{
+	GString *s = g_string_sized_new (20);
+
+	g_string_append (s, " (");
+	if (ra_flags & IF_RS_SENT)
+		g_string_append_c (s, 'S');
+
+	if (ra_flags & IF_RA_RCVD)
+		g_string_append_c (s, 'R');
+
+	if (ra_flags & IF_RA_OTHERCONF)
+		g_string_append_c (s, 'O');
+
+	if (ra_flags & IF_RA_MANAGED)
+		g_string_append_c (s, 'M');
+
+	g_string_append_c (s, ')');
+	return g_string_free (s, FALSE);
+}
+
 static NMIP6Device *
 process_newlink (NMIP6Manager *manager, struct nl_msg *msg)
 {
@@ -981,6 +1003,7 @@ process_newlink (NMIP6Manager *manager, struct nl_msg *msg)
 	struct nlattr *tb[IFLA_MAX + 1];
 	struct nlattr *pi[IFLA_INET6_MAX + 1];
 	int err;
+	char *flags_str = NULL;
 
 	/* FIXME: we have to do this manually for now since libnl doesn't yet
 	 * support the IFLA_PROTINFO attribute of NEWLINK messages.  When it does,
@@ -1024,7 +1047,12 @@ process_newlink (NMIP6Manager *manager, struct nl_msg *msg)
 	}
 
 	device->ra_flags = nla_get_u32 (pi[IFLA_INET6_FLAGS]);
-	nm_log_dbg (LOGD_IP6, "(%s): got IPv6 flags 0x%X", device->iface, device->ra_flags);
+
+	if (nm_logging_level_enabled (LOGL_DEBUG))
+		flags_str = ra_flags_to_string (device->ra_flags);
+	nm_log_dbg (LOGD_IP6, "(%s): got IPv6 flags 0x%X%s",
+	            device->iface, device->ra_flags, flags_str ? flags_str : "");
+	g_free (flags_str);
 
 	return device;
 }
