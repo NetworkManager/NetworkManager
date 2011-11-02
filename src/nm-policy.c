@@ -71,6 +71,7 @@ struct NMPolicy {
 
 	char *orig_hostname; /* hostname at NM start time */
 	char *cur_hostname;  /* hostname we want to assign */
+	gboolean hostname_changed;  /* TRUE if NM ever set the hostname */
 };
 
 #define RETRIES_TAG "autoconnect-retries"
@@ -233,8 +234,29 @@ _set_hostname (NMPolicy *policy,
 {
 	NMDnsManager *dns_mgr;
 
+	/* The incoming hostname *can* be NULL, which will get translated to
+	 * 'localhost.localdomain' or such in the hostname policy code, but we
+	 * keep cur_hostname = NULL in the case because we need to know that
+	 * there was no valid hostname to start with.
+	 */
+
+	/* Don't change the hostname or update DNS this is the first time we're
+	 * trying to change the hostname, and it's not actually changing.
+	 */
+	if (   policy->orig_hostname
+	    && (policy->hostname_changed == FALSE)
+	    && g_strcmp0 (policy->orig_hostname, new_hostname) == 0)
+		return;
+
+	/* Don't change the hostname or update DNS if the hostname isn't actually
+	 * going to change.
+	 */
+	if (g_strcmp0 (policy->cur_hostname, new_hostname) == 0)
+		return;
+
 	g_free (policy->cur_hostname);
 	policy->cur_hostname = g_strdup (new_hostname);
+	policy->hostname_changed = TRUE;
 
 	dns_mgr = nm_dns_manager_get (NULL);
 	nm_dns_manager_set_hostname (dns_mgr, policy->cur_hostname);
