@@ -1023,6 +1023,15 @@ device_state_changed (NMDevice *device,
 		update_routing_and_dns (policy, FALSE);
 		break;
 	case NM_DEVICE_STATE_UNMANAGED:
+		if (   old_state == NM_DEVICE_STATE_UNAVAILABLE
+		    || old_state == NM_DEVICE_STATE_DISCONNECTED) {
+			/* If the device was never activated, there's no point in
+			 * updating routing or DNS.  This allows us to keep the previous
+			 * resolv.conf or routes from before NM started if no device was
+			 * ever managed by NM.
+			 */
+			break;
+		}
 	case NM_DEVICE_STATE_UNAVAILABLE:
 		update_routing_and_dns (policy, FALSE);
 		break;
