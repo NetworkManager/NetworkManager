@@ -1066,7 +1066,7 @@ netlink_notification (NMNetlinkMonitor *monitor, struct nl_msg *msg, gpointer us
 	gboolean config_changed = FALSE;
 
 	hdr = nlmsg_hdr (msg);
-	nm_log_dbg (LOGD_HW, "netlink notificate type %d", hdr->nlmsg_type);
+	nm_log_dbg (LOGD_HW, "netlink event type %d", hdr->nlmsg_type);
 	switch (hdr->nlmsg_type) {
 	case RTM_NEWADDR:
 	case RTM_DELADDR:
