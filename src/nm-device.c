@@ -1790,7 +1790,8 @@ ip6_addrconf_complete (NMIP6Manager *ip6_manager,
 		nm_device_activate_schedule_ip6_config_result (self, priv->ac_ip6_config);
 		break;
 	case NM_ACT_STAGE_RETURN_POSTPONE:
-		/* Success; wait for DHCPv6 to complete */
+		/* Cache acquired autoconf config and wait for DHCPv6 to complete */
+		priv->ac_ip6_config = nm_ip6_manager_get_ip6_config (ip6_manager, ifindex);
 		break;
 	default:
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
