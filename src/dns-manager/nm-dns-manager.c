@@ -1097,20 +1097,15 @@ dispose (GObject *object)
 		g_slist_free (priv->plugins);
 		priv->plugins = NULL;
 
-		/* If last_iface is NULL, this means we haven't done a DNS update before,
-		 * so no reason to try and take down entries from resolv.conf.
+		/* If we're quitting leave a valid resolv.conf in place, not one
+		 * pointing to 127.0.0.1 if any plugins were active.  Thus update
+		 * DNS after disposing of all plugins.
 		 */
-		if (priv->last_iface != NULL) {
-			/* If we're quitting leave a valid resolv.conf in place, not one
-			 * pointing to 127.0.0.1 if any plugins were active.  Thus update
-			 * DNS after disposing of all plugins.
-			 */
-			if (!update_dns (self, priv->last_iface, TRUE, &error)) {
-				nm_log_warn (LOGD_DNS, "could not commit DNS changes on shutdown: (%d) %s",
-				             error ? error->code : -1,
-				             error && error->message ? error->message : "(unknown)");
-				g_clear_error (&error);
-			}
+		if (!update_dns (self, priv->last_iface, TRUE, &error)) {
+			nm_log_warn (LOGD_DNS, "could not commit DNS changes on shutdown: (%d) %s",
+					     error ? error->code : -1,
+					     error && error->message ? error->message : "(unknown)");
+			g_clear_error (&error);
 		}
 
 		g_slist_foreach (priv->configs, (GFunc) g_object_unref, NULL);
