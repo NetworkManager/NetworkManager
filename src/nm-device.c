@@ -1863,7 +1863,7 @@ release_shared_ip (gpointer data)
 static guint32
 reserve_shared_ip (void)
 {
-	guint32 start = (guint32) ntohl (0x0a2a2b01); /* 10.42.43.1 */
+	guint32 start = (guint32) ntohl (0x0a2a0001); /* 10.42.0.1 */
 	guint32 count = 0;
 
 	while (g_hash_table_lookup (shared_ips, GUINT_TO_POINTER (start + count))) {
