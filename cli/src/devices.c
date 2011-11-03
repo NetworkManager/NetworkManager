@@ -41,6 +41,7 @@
 #if WITH_WIMAX
 #include <nm-device-wimax.h>
 #endif
+#include <nm-device-infiniband.h>
 #include <nm-utils.h>
 #include <nm-setting-ip4-config.h>
 #include <nm-setting-ip6-config.h>
@@ -56,6 +57,7 @@
 #if WITH_WIMAX
 #include <nm-setting-wimax.h>
 #endif
+#include <nm-setting-infiniband.h>
 
 #include "utils.h"
 #include "devices.h"
@@ -327,6 +329,8 @@ device_type_to_string (NMDevice *device)
 	case NM_DEVICE_TYPE_WIMAX:
 		return NM_SETTING_WIMAX_SETTING_NAME;
 #endif
+	case NM_DEVICE_TYPE_INFINIBAND:
+		return NM_SETTING_INFINIBAND_SETTING_NAME;
 	default:
 		return _("Unknown");
 	}
@@ -640,6 +644,8 @@ show_device_info (gpointer data, gpointer user_data)
 			else if (NM_IS_DEVICE_WIMAX (device))
 				hwaddr = nm_device_wimax_get_hw_address (NM_DEVICE_WIMAX (device));
 #endif
+			else if (NM_IS_DEVICE_INFINIBAND (device))
+				hwaddr = nm_device_infiniband_get_hw_address (NM_DEVICE_INFINIBAND (device));
 
 			nmc->allowed_fields[0].value = nmc_fields_dev_list_sections[0].name;  /* "GENERAL"*/
 			nmc->allowed_fields[1].value = nm_device_get_iface (device);

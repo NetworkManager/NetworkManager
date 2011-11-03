@@ -43,6 +43,7 @@
 #if WITH_WIMAX
 #include <nm-setting-wimax.h>
 #endif
+#include <nm-setting-infiniband.h>
 #include <nm-device-ethernet.h>
 #include <nm-device-wifi.h>
 #if WITH_WIMAX
@@ -51,8 +52,10 @@
 #include <nm-device-modem.h>
 #include <nm-device-bt.h>
 //#include <nm-device-olpc-mesh.h>
+#include <nm-device-infiniband.h>
 #include <nm-remote-settings.h>
 #include <nm-vpn-connection.h>
+#include <nm-utils.h>
 
 #include "utils.h"
 #include "settings.h"
@@ -960,6 +963,57 @@ check_modem_compatible (NMDeviceModem *device, NMConnection *connection, GError 
 }
 
 static gboolean
+check_infiniband_compatible (NMDeviceInfiniband *device, NMConnection *connection, GError **error)
+{
+	NMSettingConnection *s_con;
+	NMSettingInfiniband *s_infiniband;
+	const char *connection_type;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+
+	connection_type = nm_setting_connection_get_connection_type (s_con);
+	if (strcmp (connection_type, NM_SETTING_INFINIBAND_SETTING_NAME)) {
+		g_set_error (error, 0, 0,
+		             "The connection was not an Infiniband connection.");
+		return FALSE;
+	}
+
+	s_infiniband = nm_connection_get_setting_infiniband (connection);
+	if (!s_infiniband) {
+		g_set_error (error, 0, 0,
+		             "The connection was not a valid Infiniband connection.");
+		return FALSE;
+	}
+
+	if (s_infiniband) {
+		const GByteArray *mac;
+		const char *device_mac_str;
+		GByteArray *device_mac;
+
+		device_mac_str = nm_device_infiniband_get_hw_address (device);
+		device_mac = nm_utils_hwaddr_atoba (device_mac_str, ARPHRD_INFINIBAND);
+		if (!device_mac) {
+			g_set_error (error, 0, 0, "Invalid device MAC address.");
+			return FALSE;
+		}
+
+		mac = nm_setting_infiniband_get_mac_address (s_infiniband);
+		if (mac && memcmp (mac->data, device_mac->data, mac->len)) {
+			g_byte_array_unref (device_mac);
+			g_set_error (error, 0, 0,
+			             "The connection's MAC address did not match this device.");
+			return FALSE;
+		}
+		g_byte_array_unref (device_mac);
+	}
+
+	return TRUE;
+}
+
+static gboolean
 nm_device_is_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
@@ -979,6 +1033,8 @@ nm_device_is_connection_compatible (NMDevice *device, NMConnection *connection, 
 #endif
 	else if (NM_IS_DEVICE_MODEM (device))
 		return check_modem_compatible (NM_DEVICE_MODEM (device), connection, error);
+	else if (NM_IS_DEVICE_INFINIBAND (device))
+		return check_infiniband_compatible (NM_DEVICE_INFINIBAND (device), connection, error);
 
 	g_set_error (error, 0, 0, "unhandled device type '%s'", G_OBJECT_TYPE_NAME (device));
 	return FALSE;
