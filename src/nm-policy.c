@@ -971,13 +971,10 @@ reset_connections_retries (gpointer user_data)
 static NMConnection *
 get_device_connection (NMDevice *device)
 {
-	NMActRequest *req;
+	NMActRequest *req = NULL;
 
 	req = nm_device_get_act_request (device);
-	if (!req)
-		return NULL;
-
-	return nm_act_request_get_connection (req);
+	return req ? nm_act_request_get_connection (req) : NULL;
 }
 
 static void
@@ -1207,44 +1204,40 @@ add_to_zone_cb (DBusGProxy       *proxy,
                 DBusGProxyCall   *call_id,
                 void             *user_data)
 {
+	NMDevice *device = NM_DEVICE (user_data);
 	GError *error = NULL;
 
-	if (!proxy || !call_id)
-		return;
+	if (proxy && call_id) {
+		if (!dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID)) {
+			nm_log_warn (LOGD_DEVICE, "(%s) addition to firewall zone failed: (%d) %s",
+						 nm_device_get_ip_iface (device),
+						 error ? error->code : -1,
+						 error && error->message ? error->message : "(unknown)");
+			g_clear_error (&error);
 
-	if (!dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID)) {
-		nm_log_warn (LOGD_DEVICE, "adding iface to zone failed: (%d) %s",
-				     error ? error->code : -1,
-				     error && error->message ? error->message : "(unknown)");
-		g_clear_error (&error);
-
-		/* TODO: do we need to do anything else here ? */
+			/* FIXME: fail connection since firewall zone add failed? */
+		}
 	}
-
+	g_object_unref (device);
 }
 
 static void
 inform_firewall_about_zone (NMPolicy * policy,
                             NMConnection *connection)
 {
-	NMSettingConnection *s_con = nm_connection_get_setting_connection(connection);
-	const char *zone = nm_setting_connection_get_zone(s_con);
-	const char *uuid = nm_setting_connection_get_uuid(s_con);
+	NMSettingConnection *s_con = nm_connection_get_setting_connection (connection);
 	GSList *iter, *devices;
-
-	if (!zone)
-		return;
 
 	devices = nm_manager_get_devices (policy->manager);
 	for (iter = devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *dev = NM_DEVICE (iter->data);
-		NMConnection *dev_connection = get_device_connection (dev);
-		if (g_strcmp0 (uuid, nm_connection_get_uuid (dev_connection)) == 0) {
+
+		if (get_device_connection (dev) == connection) {
 			nm_firewall_manager_add_to_zone (policy->fw_manager,
-			                                 nm_device_get_ip_iface(dev),
-			                                 zone,
+			                                 nm_device_get_ip_iface (dev),
+			                                 nm_setting_connection_get_zone (s_con),
 			                                 add_to_zone_cb,
-			                                 NULL);
+			                                 g_object_ref (dev));
 		}
 	}
 }

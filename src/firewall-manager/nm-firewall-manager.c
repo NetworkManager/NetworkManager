@@ -25,8 +25,7 @@
 #include "nm-firewall-manager.h"
 #include "nm-dbus-manager.h"
 #include "nm-logging.h"
-
-#define DBUS_TYPE_G_STRING_VALUE_HASHTABLE (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE))
+#include "nm-dbus-glib-types.h"
 
 #define NM_FIREWALL_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
                                               NM_TYPE_FIREWALL_MANAGER, \
@@ -62,21 +61,20 @@ nm_firewall_manager_add_to_zone (NMFirewallManager *self,
 	DBusGProxyCall * call = NULL;
 
 	if (nm_firewall_manager_available (self)) {
-		nm_log_dbg (LOGD_DEVICE, "telling firewall to add ip_iface: %s to zone: %s", ip_iface, zone );
-		call = dbus_g_proxy_begin_call_with_timeout(priv->proxy,
-		                                            "AddInterface",
-		                                            callback,
-		                                            callback_data, /* NMDevice */
-		                                            NULL, /* destroy callback_data */
-		                                            10000,      /* timeout */
-		                                            G_TYPE_STRING, ip_iface,
-		                                            G_TYPE_STRING, zone,
-		                                            DBUS_TYPE_G_STRING_VALUE_HASHTABLE, NULL, /* a{sv}:options */
-		                                            G_TYPE_INVALID);
-	}
-	else {
-		nm_log_dbg (LOGD_DEVICE, "firewall isn't running.");
-		callback(NULL, NULL, callback_data);
+		nm_log_dbg (LOGD_DEVICE, "(%s) adding to firewall zone: %s", ip_iface, zone );
+		call = dbus_g_proxy_begin_call_with_timeout (priv->proxy,
+		                                             "AddInterface",
+		                                             callback,
+		                                             callback_data, /* NMDevice */
+		                                             NULL, /* destroy callback_data */
+		                                             10000,      /* timeout */
+		                                             G_TYPE_STRING, ip_iface,
+		                                             G_TYPE_STRING, zone ? zone : "",
+		                                             DBUS_TYPE_G_MAP_OF_VARIANT, NULL, /* a{sv}:options */
+		                                             G_TYPE_INVALID);
+	} else {
+		nm_log_dbg (LOGD_DEVICE, "Firewall zone add skipped because firewall isn't running");
+		callback (NULL, NULL, callback_data);
 	}
 
 	return call;
@@ -86,7 +84,7 @@ void nm_firewall_manager_cancel_add (NMFirewallManager *self, DBusGProxyCall * f
 {
 	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
 
-	dbus_g_proxy_cancel_call(priv->proxy, fw_call);
+	dbus_g_proxy_cancel_call (priv->proxy, fw_call);
 }
 
 gboolean
@@ -125,10 +123,10 @@ name_owner_changed (NMDBusManager *dbus_mgr,
 		return;
 
 	if (!old_owner_good && new_owner_good) {
-		nm_log_info (LOGD_DEVICE, "firewall started");
+		nm_log_dbg (LOGD_DEVICE, "firewall started");
 		set_running (self, TRUE);
 	} else if (old_owner_good && !new_owner_good) {
-		nm_log_info (LOGD_DEVICE, "firewall stopped");
+		nm_log_dbg (LOGD_DEVICE, "firewall stopped");
 		set_running (self, FALSE);
 	}
 }

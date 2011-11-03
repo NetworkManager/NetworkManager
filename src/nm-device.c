@@ -2443,29 +2443,23 @@ ip4_add_to_zone_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_da
 					     error && error->message ? error->message : "(unknown)");
 			g_clear_error (&error);
 
-			/*
-			 * TODO: do we need to do anything else here ?
-			 */
-		} else {
-			/* ip_iface was correctly added to zone by firewall */
+			/* FIXME: fail the device activation? */
 		}
-	} else {
-		/* firewall isn't running or we couldn't determine zone */
 	}
 
 	activation_source_schedule (self, nm_device_activate_ip4_config_commit, AF_INET);
 
 	nm_log_info (LOGD_DEVICE | LOGD_IP4,
-		         "Activation (%s) Stage 5 of 5 (IPv4 Configure Commit) scheduled...",
-		         nm_device_get_iface (self));
+	             "Activation (%s) Stage 5 of 5 (IPv4 Configure Commit) scheduled...",
+	             nm_device_get_iface (self));
 }
 
 void
 nm_device_activate_schedule_ip4_config_result (NMDevice *self, NMIP4Config *config)
 {
 	NMDevicePrivate *priv;
-	NMConnection *connection;
-	NMSettingConnection *s_con;
+	NMConnection *connection = NULL;
+	NMSettingConnection *s_con = NULL;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -2583,29 +2577,23 @@ ip6_add_to_zone_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_da
 					     error && error->message ? error->message : "(unknown)");
 			g_clear_error (&error);
 
-			/*
-			 * TODO: do we need to do anything else here ?
-			 */
-		} else {
-			/* ip_iface was correctly added to zone by firewall */
+			/* FIXME: fail the device activation? */
 		}
-	} else {
-		/* firewall isn't running or we couldn't determine zone */
 	}
 
 	activation_source_schedule (self, nm_device_activate_ip6_config_commit, AF_INET6);
 
-	nm_log_info (LOGD_DEVICE | LOGD_IP4,
-		         "Activation (%s) Stage 5 of 5 (IPv6 Commit) scheduled...",
-		         nm_device_get_iface (self));
+	nm_log_info (LOGD_DEVICE | LOGD_IP6,
+	             "Activation (%s) Stage 5 of 5 (IPv6 Commit) scheduled...",
+	             nm_device_get_iface (self));
 }
 
 void
 nm_device_activate_schedule_ip6_config_result (NMDevice *self, NMIP6Config *config)
 {
 	NMDevicePrivate *priv;
-	NMConnection *connection;
-	NMSettingConnection *s_con;
+	NMConnection *connection = NULL;
+	NMSettingConnection *s_con = NULL;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
