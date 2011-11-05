@@ -1337,6 +1337,7 @@ nm_ip6_manager_init (NMIP6Manager *manager)
 	priv->monitor = nm_netlink_monitor_get ();
 	nm_netlink_monitor_subscribe (priv->monitor, RTNLGRP_IPV6_IFADDR, NULL);
 	nm_netlink_monitor_subscribe (priv->monitor, RTNLGRP_IPV6_PREFIX, NULL);
+	nm_netlink_monitor_subscribe (priv->monitor, RTNLGRP_IPV6_ROUTE, NULL);
 	nm_netlink_monitor_subscribe (priv->monitor, RTNLGRP_ND_USEROPT, NULL);
 	nm_netlink_monitor_subscribe (priv->monitor, RTNLGRP_LINK, NULL);
 
