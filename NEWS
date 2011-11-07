@@ -32,6 +32,9 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * dnsmasq local caching nameserver plugin cache size bumpted to 400 entries (from 150)
 * Ensure IPv6 static routes are flushed for manual configs too
 * IPv6 RAs are now accepted when forwarding is configured
+* Fix bug causing IPv6 RA-provided routes to be ignored
+* Fix possible wrong handling of 'keyfile' connection certificates
+* Correct Shared connection IP address range to be as documented
 
 
 ==============================================
