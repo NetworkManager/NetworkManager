@@ -22,6 +22,11 @@ Overview of changes since NetworkManager-0.9.0
 * Fix handling of SSIDs in the keyfile plugin
 * Fix some GObject Introspection annotations in libnm-glib and libnm-util
 * Fix setting hostnames from DHCP
+* Fixes for building with recent GLib versions
+* Don't update routing and DNS until a device is managed
+* Fix bug causing IPv6 RA-provided routes to be ignored
+* Fix possible wrong handling of 'keyfile' connection certificates
+* Correct Shared connection IP address range to be as documented
 
 
 ==============================================
