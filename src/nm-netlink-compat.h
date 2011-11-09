@@ -219,7 +219,7 @@ static inline int __genl_ctrl_alloc_cache(struct nl_sock *h, struct nl_cache **c
 #endif  /* HAVE_LIBNL1 */
 
 /* Stuff that only libnl3 has */
-#if HAVE_LIBNL1 || HAVE_LIBNL2
+#if (defined HAVE_LIBNL1 || defined HAVE_LIBNL2)
 
 static inline int
 rtnl_link_bond_add (struct nl_sock *h, const char *name, void *data)
