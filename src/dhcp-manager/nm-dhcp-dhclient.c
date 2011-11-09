@@ -418,8 +418,8 @@ dhclient_start (NMDHCPClient *client,
 	GPtrArray *argv = NULL;
 	GPid pid = -1;
 	GError *error = NULL;
-	const char *iface, *uuid;
-	char *binary_name, *cmd_str, *pid_file = NULL;
+	const char *iface, *uuid, *system_bus_address;
+	char *binary_name, *cmd_str, *pid_file = NULL, *system_bus_address_env = NULL;
 	gboolean ipv6;
 	guint log_domain;
 
@@ -503,6 +503,18 @@ dhclient_start (NMDHCPClient *client,
 		g_ptr_array_add (argv, (gpointer) priv->conf_file);
 	}
 
+	/* Usually the system bus address is well-known; but if it's supposed
+	 * to be something else, we need to push it to dhclient, since dhclient
+	 * sanitizes the environment it gives the action scripts.
+	 */
+	system_bus_address = getenv ("DBUS_SYSTEM_BUS_ADDRESS");
+	if (system_bus_address) {
+		system_bus_address_env = g_strdup_printf ("DBUS_SYSTEM_BUS_ADDRESS=%s", system_bus_address);
+		g_ptr_array_add (argv, (gpointer) "-e");
+		g_ptr_array_add (argv, (gpointer) system_bus_address_env);
+	}
+
+
 	g_ptr_array_add (argv, (gpointer) iface);
 	g_ptr_array_add (argv, NULL);
 
@@ -521,6 +533,7 @@ dhclient_start (NMDHCPClient *client,
 	}
 
 	g_ptr_array_free (argv, TRUE);
+	g_free (system_bus_address_env);
 	return pid;
 }
 
