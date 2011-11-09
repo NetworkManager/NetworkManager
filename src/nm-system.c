@@ -1216,6 +1216,74 @@ nm_system_device_set_priority (int ifindex,
 	}
 }
 
+static gboolean
+set_bond_attr (const char *iface, const char *attr, const char *value)
+{
+	char file[FILENAME_MAX];
+	gboolean ret;
+
+	snprintf (file, sizeof(file), "/sys/class/net/%s/bonding/%s",
+	          iface, attr);
+
+	ret = nm_utils_do_sysctl (file, value);
+	if (!ret)
+		nm_log_warn (LOGD_HW, "(%s): failed to set bonding attribute "
+		             "'%s' to '%s'", iface, attr, value);
+
+	return ret;
+}
+
+static gboolean
+set_bond_attr_int (const char *iface, const char *attr,
+                   guint32 value)
+{
+	char buf[128];
+
+	snprintf (buf, sizeof(buf), "%u", value);
+
+	return set_bond_attr (iface, attr, buf);
+}
+
+gboolean
+nm_system_apply_bonding_config (NMSettingBond *s_bond)
+{
+	const char *name, *val;
+
+	name = nm_setting_bond_get_interface_name (s_bond);
+	g_assert (name);
+
+	if ((val = nm_setting_bond_get_mode (s_bond)))
+		set_bond_attr (name, "mode", val);
+
+	/*
+	 * FIXME:
+	 *
+	 * ifup-eth contains code to append targets if the value is prefixed
+	 * with '+':
+	 *
+	 *  if [ "${key}" = "arp_ip_target" -a "${value:0:1}" != "+" ]; then
+	 *  OLDIFS=$IFS;
+	 *  IFS=',';
+	 *  for arp_ip in $value; do
+	 *      if ! grep -q $arp_ip /sys/class/net/${DEVICE}/bonding/$key; then
+	 *          echo +$arp_ip > /sys/class/net/${DEVICE}/bonding/$key
+	 *      fi
+	 *  done
+	 *
+	 * Not sure if this is actually being used and it seems dangerous as
+	 * the result is pretty much unforeseeable.
+	 */
+	if ((val = nm_setting_bond_get_arp_ip_target (s_bond)))
+		set_bond_attr (name, "arp_ip_target", val);
+
+	set_bond_attr_int (name, "miimon", nm_setting_bond_get_miimon (s_bond));
+	set_bond_attr_int (name, "downdelay", nm_setting_bond_get_downdelay (s_bond));
+	set_bond_attr_int (name, "updelay", nm_setting_bond_get_updelay (s_bond));
+	set_bond_attr_int (name, "arp_interval", nm_setting_bond_get_arp_interval (s_bond));
+
+	return TRUE;
+}
+
 /**
  * nm_system_add_bonding_master:
  * @setting: bonding setting
@@ -1243,6 +1311,8 @@ nm_system_add_bonding_master (NMSettingBond *setting)
 		            name, err, nl_geterror (err));
 		return FALSE;
 	}
+
+	nm_system_apply_bonding_config (setting);
 
 	return TRUE;
 }
