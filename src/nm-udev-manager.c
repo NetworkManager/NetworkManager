@@ -423,15 +423,15 @@ device_creator (NMUdevManager *manager,
 	}
 
 	if (!driver) {
-		char *type;
+		switch (nm_system_get_iface_type (ifname)) {
+		case NM_IFACE_TYPE_BOND:
+			driver = "bonding";
+			break;
 
-		type = nm_system_get_link_type (ifname);
-		if (type) {
-			if (g_strcmp0 (type, "bond") == 0)
-				driver = "bonding";
-			g_free (type);
-		} else if (g_str_has_prefix (ifname, "easytether")) {
-			driver = "easytether";
+		default:
+			if (g_str_has_prefix (ifname, "easytether"))
+				driver = "easytether";
+			break;
 		}
 		
 		if (!driver) {

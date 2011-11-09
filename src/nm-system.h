@@ -95,6 +95,13 @@ gboolean		nm_system_add_bonding_master	(NMSettingBond *setting);
 gboolean		nm_system_iface_enslave		(NMDevice *slave, NMDevice *master);
 gboolean		nm_system_iface_release		(NMDevice *slave, NMDevice *master);
 
-char *			nm_system_get_link_type		(const char *name);
+enum {
+		NM_IFACE_TYPE_UNSPEC = 0,
+		NM_IFACE_TYPE_BOND,
+		NM_IFACE_TYPE_VLAN,
+		NM_IFACE_TYPE_DUMMY,
+};
+
+int             nm_system_get_iface_type                (const char *name);
 
 #endif

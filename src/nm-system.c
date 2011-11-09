@@ -1423,33 +1423,39 @@ out:
 }
 
 /**
- * nm_system_get_link_type:
- * @name: name of link
+ * nm_system_get_iface_type:
+ * @name: name of interface
  *
- * Lookup virtual link type. The returned string is allocated and needs
- * to be freed after usage.
+ * Lookup the type of an interface
  *
- * Returns: Name of virtual link type or NULL if not a virtual link.
+ * Returns: Interface type (NM_IFACE_TYPE_*) or NM_IFACE_TYPE_UNSPEC.
  **/
-char *
-nm_system_get_link_type (const char *name)
+int
+nm_system_get_iface_type (const char *name)
 {
 	struct rtnl_link *result;
 	struct nl_sock *nlh;
 	char *type;
+	int res = NM_IFACE_TYPE_UNSPEC;
 
 	nlh = nm_netlink_get_default_handle ();
 	if (!nlh)
-		return NULL;
+		goto out;
 
 	if (rtnl_link_get_kernel (nlh, 0, name, &result) < 0)
-		return NULL;
+		goto out;
 
-	if ((type = rtnl_link_get_type (result)))
-		type = g_strdup (type);
+	type = rtnl_link_get_type (result);
+
+	if (!g_strcmp0 (type, "bond"))
+		res = NM_IFACE_TYPE_BOND;
+	else if (!g_strcmp0 (type, "vlan"))
+		res = NM_IFACE_TYPE_VLAN;
+	else if (!g_strcmp0 (type, "dummy"))
+		res = NM_IFACE_TYPE_DUMMY;
 
 	rtnl_link_put (result);
-
-	return type;
+out:
+	return res;
 }
 
