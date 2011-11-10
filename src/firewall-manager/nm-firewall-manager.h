@@ -23,7 +23,6 @@
 
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
-#include "nm-firewall-types.h"
 
 #define FIREWALL_DBUS_SERVICE	"org.fedoraproject.FirewallD"
 #define FIREWALL_DBUS_PATH		"/org/fedoraproject/FirewallD"
@@ -41,13 +40,11 @@ G_BEGIN_DECLS
 
 #define NM_FIREWALL_MANAGER_AVAILABLE "available"
 
-struct _NMFirewallManager
-{
+typedef struct {
 	GObject parent;
-};
+} NMFirewallManager;
 
-typedef struct
-{
+typedef struct {
 	GObjectClass parent;
 } NMFirewallManagerClass;
 

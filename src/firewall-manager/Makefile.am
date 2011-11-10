@@ -8,7 +8,6 @@ INCLUDES = \
 noinst_LTLIBRARIES = libfirewall-manager.la
 
 libfirewall_manager_la_SOURCES = \
-	nm-firewall-types.h \
 	nm-firewall-manager.h \
 	nm-firewall-manager.c
 
