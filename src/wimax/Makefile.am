@@ -20,7 +20,8 @@ libwimax_la_SOURCES = \
 
 libwimax_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
-	$(IWMX_SDK_CFLAGS)
+	$(IWMX_SDK_CFLAGS) \
+	$(LIBNL_CFLAGS)
 
 libwimax_la_LIBADD = \
 	$(DBUS_LIBS) \
