@@ -45,8 +45,7 @@
 typedef struct {
 	WifiData parent;
 	struct nl_sock *nl_sock;
-	struct nl_cache *nl_cache;
-	struct genl_family *nl_family;
+	int id;
 	struct nl_cb *nl_cb;
 	guint32 *freqs;
 	int num_freqs;
@@ -81,8 +80,7 @@ static struct nl_msg *nl80211_alloc_msg (WifiDataNl80211 *nl80211,
 	if (!msg)
 		return NULL;
 
-	genlmsg_put (msg, 0, 0, genl_family_get_id (nl80211->nl_family), 0,
-		     flags, cmd, 0);
+	genlmsg_put (msg, 0, 0, nl80211->id, 0, flags, cmd, 0);
 
 	NLA_PUT_U32 (msg, NL80211_ATTR_IFINDEX, nl80211->parent.ifindex);
 
@@ -137,10 +135,6 @@ wifi_nl80211_deinit (WifiData *parent)
 {
 	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) parent;
 
-	if (nl80211->nl_family)
-		genl_family_put (nl80211->nl_family);
-	if (nl80211->nl_cache)
-		nl_cache_free (nl80211->nl_cache);
 	if (nl80211->nl_sock)
 		nl_socket_free (nl80211->nl_sock);
 	if (nl80211->nl_cb)
@@ -672,11 +666,8 @@ wifi_nl80211_init (const char *iface, int ifindex)
 	if (genl_connect (nl80211->nl_sock))
 		goto error;
 
-	if (genl_ctrl_alloc_cache (nl80211->nl_sock, &nl80211->nl_cache))
-		goto error;
-
-	nl80211->nl_family = genl_ctrl_search_by_name (nl80211->nl_cache, "nl80211");
-	if (nl80211->nl_family == NULL)
+	nl80211->id = genl_ctrl_resolve (nl80211->nl_sock, "nl80211");
+	if (nl80211->id < 0)
 		goto error;
 
 	nl80211->nl_cb = nl_cb_alloc (NL_CB_DEFAULT);
