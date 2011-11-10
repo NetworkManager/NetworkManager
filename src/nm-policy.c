@@ -1200,30 +1200,21 @@ connections_loaded (NMSettings *settings, gpointer user_data)
 }
 
 static void
-add_to_zone_cb (DBusGProxy       *proxy,
-                DBusGProxyCall   *call_id,
-                void             *user_data)
+add_to_zone_cb (GError *error,
+                gpointer user_data1,
+                gpointer user_data2)
 {
-	NMDevice *device = NM_DEVICE (user_data);
-	GError *error = NULL;
+	NMDevice *device = NM_DEVICE (user_data1);
 
-	if (proxy && call_id) {
-		if (!dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID)) {
-			nm_log_warn (LOGD_DEVICE, "(%s) addition to firewall zone failed: (%d) %s",
-						 nm_device_get_ip_iface (device),
-						 error ? error->code : -1,
-						 error && error->message ? error->message : "(unknown)");
-			g_clear_error (&error);
-
-			/* FIXME: fail connection since firewall zone add failed? */
-		}
+	if (error) {
+		/* FIXME: what do we do here? */
 	}
+
 	g_object_unref (device);
 }
 
 static void
-inform_firewall_about_zone (NMPolicy * policy,
-                            NMConnection *connection)
+inform_firewall_about_zone (NMPolicy *policy, NMConnection *connection)
 {
 	NMSettingConnection *s_con = nm_connection_get_setting_connection (connection);
 	GSList *iter, *devices;
@@ -1232,12 +1223,14 @@ inform_firewall_about_zone (NMPolicy * policy,
 	for (iter = devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *dev = NM_DEVICE (iter->data);
 
-		if (get_device_connection (dev) == connection) {
+		if (   (get_device_connection (dev) == connection)
+		    && (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED)) {
 			nm_firewall_manager_add_to_zone (policy->fw_manager,
 			                                 nm_device_get_ip_iface (dev),
 			                                 nm_setting_connection_get_zone (s_con),
 			                                 add_to_zone_cb,
-			                                 g_object_ref (dev));
+			                                 g_object_ref (dev),
+			                                 NULL);
 		}
 	}
 }

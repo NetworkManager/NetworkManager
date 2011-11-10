@@ -191,6 +191,8 @@ static gboolean nm_device_set_ip6_config (NMDevice *dev,
                                           gboolean assumed,
                                           NMDeviceStateReason *reason);
 
+static gboolean nm_device_activate_ip6_config_commit (gpointer user_data);
+
 static void dhcp4_cleanup (NMDevice *self, gboolean stop, gboolean release);
 
 static const char *reason_to_string (NMDeviceStateReason reason);
@@ -2390,6 +2392,9 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 	if (NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit)
 		NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit (self, config);
 
+	/* Merge with user overrides */
+	nm_utils_merge_ip4_config (config, nm_connection_get_setting_ip4_config (connection));
+
 	assumed = nm_act_request_get_assumed (priv->act_request);
 	if (!nm_device_set_ip4_config (self, config, assumed, &reason)) {
 		nm_log_info (LOGD_DEVICE | LOGD_IP4,
@@ -2428,38 +2433,62 @@ out:
 }
 
 static void
-ip4_add_to_zone_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
+fw_add_to_zone_cb (GError *error,
+                   gpointer user_data1,
+                   gpointer user_data2)
 {
-	NMDevice *self = NM_DEVICE (user_data);
+	NMDevice *self = NM_DEVICE (user_data1);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	GError *error = NULL;
+	gboolean ip4 = GPOINTER_TO_UINT (user_data2);
 
 	priv->fw_call = NULL;
 
-	if (proxy && call_id) {
-		if (!dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID)) {
-			nm_log_warn (LOGD_DEVICE, "adding iface to zone failed: (%d) %s",
-					     error ? error->code : -1,
-					     error && error->message ? error->message : "(unknown)");
-			g_clear_error (&error);
-
-			/* FIXME: fail the device activation? */
-		}
+	if (error) {
+		/* FIXME: fail the device activation? */
 	}
 
-	activation_source_schedule (self, nm_device_activate_ip4_config_commit, AF_INET);
+	if (ip4)
+		activation_source_schedule (self, nm_device_activate_ip4_config_commit, AF_INET);
+	else
+		activation_source_schedule (self, nm_device_activate_ip6_config_commit, AF_INET6);
 
-	nm_log_info (LOGD_DEVICE | LOGD_IP4,
-	             "Activation (%s) Stage 5 of 5 (IPv4 Configure Commit) scheduled...",
-	             nm_device_get_iface (self));
+	nm_log_info (LOGD_DEVICE | (ip4 ? LOGD_IP4 : LOGD_IP6),
+	             "Activation (%s) Stage 5 of 5 (IPv%c Configure Commit) scheduled...",
+	             nm_device_get_iface (self),
+	             ip4 ? '4' : '6');
+}
+
+static void
+fw_add_to_zone (NMDevice *self, gboolean ip4)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMConnection *connection;
+	NMSettingConnection *s_con = NULL;
+
+	/* Only set the interface's zone if the device isn't yet activated.  If
+	 * already activated, the zone has already been set.
+	 */
+	if (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED) {
+		fw_add_to_zone_cb (NULL, self, GUINT_TO_POINTER (ip4));
+		return;
+	}
+
+	/* Otherwise tell the firewall to add the interface to the specified zone */
+	connection = nm_act_request_get_connection (priv->act_request);
+	g_assert (connection);
+	s_con = nm_connection_get_setting_connection (connection);
+	priv->fw_call = nm_firewall_manager_add_to_zone (priv->fw_manager,
+	                                                 nm_device_get_ip_iface (self),
+	                                                 nm_setting_connection_get_zone (s_con),
+	                                                 fw_add_to_zone_cb,
+	                                                 self,
+	                                                 GUINT_TO_POINTER (ip4));
 }
 
 void
 nm_device_activate_schedule_ip4_config_result (NMDevice *self, NMIP4Config *config)
 {
 	NMDevicePrivate *priv;
-	NMConnection *connection = NULL;
-	NMSettingConnection *s_con = NULL;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -2471,29 +2500,12 @@ nm_device_activate_schedule_ip4_config_result (NMDevice *self, NMIP4Config *conf
 		return;
 	}
 
-	connection = nm_act_request_get_connection (priv->act_request);
-	g_assert (connection);
-
-	/* Merge with user overrides and save the pending config */
-	nm_utils_merge_ip4_config (config, nm_connection_get_setting_ip4_config (connection));
 	g_object_set_data_full (G_OBJECT (priv->act_request),
 	                        PENDING_IP4_CONFIG,
 	                        g_object_ref (config),
 	                        g_object_unref);
 
-	/* Only set the interface's zone if the device isn't yet activated.  If
-	 * already activated, the zone has already been set.
-	 */
-	if (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED)
-		ip4_add_to_zone_cb (NULL, NULL, self);
-	else {
-		s_con = nm_connection_get_setting_connection (connection);
-		priv->fw_call = nm_firewall_manager_add_to_zone (priv->fw_manager,
-		                                                 nm_device_get_ip_iface (self),
-		                                                 nm_setting_connection_get_zone (s_con),
-		                                                 ip4_add_to_zone_cb,
-		                                                 self);
-	}
+	fw_add_to_zone (self, AF_INET);
 }
 
 gboolean
@@ -2560,40 +2572,10 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 	return FALSE;
 }
 
-
-static void
-ip6_add_to_zone_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
-{
-	NMDevice *self = NM_DEVICE (user_data);
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	GError *error = NULL;
-
-	priv->fw_call = NULL;
-
-	if (proxy && call_id) {
-		if (!dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID)) {
-			nm_log_warn (LOGD_DEVICE, "adding iface to zone failed: (%d) %s",
-					     error ? error->code : -1,
-					     error && error->message ? error->message : "(unknown)");
-			g_clear_error (&error);
-
-			/* FIXME: fail the device activation? */
-		}
-	}
-
-	activation_source_schedule (self, nm_device_activate_ip6_config_commit, AF_INET6);
-
-	nm_log_info (LOGD_DEVICE | LOGD_IP6,
-	             "Activation (%s) Stage 5 of 5 (IPv6 Commit) scheduled...",
-	             nm_device_get_iface (self));
-}
-
 void
 nm_device_activate_schedule_ip6_config_result (NMDevice *self, NMIP6Config *config)
 {
 	NMDevicePrivate *priv;
-	NMConnection *connection = NULL;
-	NMSettingConnection *s_con = NULL;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -2605,28 +2587,13 @@ nm_device_activate_schedule_ip6_config_result (NMDevice *self, NMIP6Config *conf
 		return;
 	}
 
-	connection = nm_act_request_get_connection (priv->act_request);
-	g_assert (connection);
-
 	/* Save the pending config */
 	g_object_set_data_full (G_OBJECT (priv->act_request),
 	                        PENDING_IP6_CONFIG,
 	                        g_object_ref (config),
 	                        g_object_unref);
 
-	/* Only set the interface's zone if the device isn't yet activated.  If
-	 * already activated, the zone has already been set.
-	 */
-	if (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED)
-		ip6_add_to_zone_cb (NULL, NULL, self);
-	else {
-		s_con = nm_connection_get_setting_connection (connection);
-		priv->fw_call = nm_firewall_manager_add_to_zone (priv->fw_manager,
-		                                                 nm_device_get_ip_iface (self),
-		                                                 nm_setting_connection_get_zone (s_con),
-		                                                 ip6_add_to_zone_cb,
-		                                                 self);
-	}
+	fw_add_to_zone (self, AF_INET6);
 }
 
 gboolean

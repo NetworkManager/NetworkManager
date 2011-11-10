@@ -50,60 +50,89 @@ typedef struct {
 
 /********************************************************************/
 
-DBusGProxyCall *
-nm_firewall_manager_add_to_zone (NMFirewallManager *self,
-                                 const char *ip_iface,
-                                 const char *zone,
-                                 DBusGProxyCallNotify callback,
-                                 gpointer callback_data)
-{
-	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
-	DBusGProxyCall * call = NULL;
+typedef struct {
+	char *iface;
+	FwAddToZoneFunc callback;
+	gpointer user_data1;
+	gpointer user_data2;
+} AddInfo;
 
-	if (nm_firewall_manager_available (self)) {
-		nm_log_dbg (LOGD_DEVICE, "(%s) adding to firewall zone: %s", ip_iface, zone );
-		call = dbus_g_proxy_begin_call_with_timeout (priv->proxy,
-		                                             "AddInterface",
-		                                             callback,
-		                                             callback_data, /* NMDevice */
-		                                             NULL, /* destroy callback_data */
-		                                             10000,      /* timeout */
-		                                             G_TYPE_STRING, ip_iface,
-		                                             G_TYPE_STRING, zone ? zone : "",
-		                                             DBUS_TYPE_G_MAP_OF_VARIANT, NULL, /* a{sv}:options */
-		                                             G_TYPE_INVALID);
-	} else {
-		nm_log_dbg (LOGD_DEVICE, "Firewall zone add skipped because firewall isn't running");
-		callback (NULL, NULL, callback_data);
+static void
+add_info_free (AddInfo *info)
+{
+	g_return_if_fail (info != NULL);
+	g_free (info->iface);
+	g_free (info);
+}
+
+static void
+add_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
+{
+	AddInfo *info = user_data;
+	GError *error = NULL;
+
+	if (!dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID)) {
+		g_assert (error);
+		nm_log_warn (LOGD_DEVICE, "(%s) firewall zone change failed: (%d) %s",
+		             info->iface, error->code, error->message);
 	}
 
-	return call;
+	info->callback (error, info->user_data1, info->user_data2);
+	g_clear_error (&error);
 }
 
-void nm_firewall_manager_cancel_add (NMFirewallManager *self, DBusGProxyCall * fw_call)
+gpointer
+nm_firewall_manager_add_to_zone (NMFirewallManager *self,
+                                 const char *iface,
+                                 const char *zone,
+                                 FwAddToZoneFunc callback,
+                                 gpointer user_data1,
+                                 gpointer user_data2)
 {
 	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
+	AddInfo *info;
 
-	dbus_g_proxy_cancel_call (priv->proxy, fw_call);
+	if (priv->running == FALSE) {
+		nm_log_dbg (LOGD_DEVICE, "(%s) firewall zone change skipped (not running)", iface);
+		callback (NULL, user_data1, user_data2);
+		return NULL;
+	}
+
+	info = g_malloc0 (sizeof (*info));
+	info->iface = g_strdup (iface);
+	info->callback = callback;
+	info->user_data1 = user_data1;
+	info->user_data2 = user_data2;
+
+	nm_log_dbg (LOGD_DEVICE, "(%s) firewall zone change -> %s", iface, zone );
+	return dbus_g_proxy_begin_call_with_timeout (priv->proxy,
+	                                             "AddInterface",
+	                                             add_cb,
+	                                             info,
+	                                             (GDestroyNotify) add_info_free,
+	                                             10000,      /* timeout */
+	                                             G_TYPE_STRING, iface,
+	                                             G_TYPE_STRING, zone ? zone : "",
+	                                             DBUS_TYPE_G_MAP_OF_VARIANT, NULL, /* a{sv}:options */
+	                                             G_TYPE_INVALID);
 }
 
-gboolean
-nm_firewall_manager_available (NMFirewallManager *self)
+void nm_firewall_manager_cancel_add (NMFirewallManager *self, gpointer call)
 {
-	g_return_val_if_fail (self != NULL, FALSE);
-	g_return_val_if_fail (NM_IS_FIREWALL_MANAGER (self), FALSE);
-
-	return NM_FIREWALL_MANAGER_GET_PRIVATE (self)->running;
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_FIREWALL_MANAGER (self));
+	dbus_g_proxy_cancel_call (NM_FIREWALL_MANAGER_GET_PRIVATE (self)->proxy,
+	                          (DBusGProxyCall *) call);
 }
 
 static void
 set_running (NMFirewallManager *self, gboolean now_running)
 {
 	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
-	gboolean old_available = nm_firewall_manager_available (self);
+	gboolean old_running = priv->running;
 
 	priv->running = now_running;
-	if (old_available != nm_firewall_manager_available (self))
+	if (old_running != priv->running)
 		g_object_notify (G_OBJECT (self), NM_FIREWALL_MANAGER_AVAILABLE);
 }
 
@@ -179,7 +208,7 @@ get_property (GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
 	switch (prop_id) {
 	case PROP_AVAILABLE:
-		g_value_set_boolean (value, nm_firewall_manager_available (NM_FIREWALL_MANAGER (object)));
+		g_value_set_boolean (value, NM_FIREWALL_MANAGER_GET_PRIVATE (object)->running);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

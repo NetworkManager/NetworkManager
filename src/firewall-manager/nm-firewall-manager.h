@@ -55,9 +55,17 @@ GType nm_firewall_manager_get_type (void);
 
 NMFirewallManager *nm_firewall_manager_get (void);
 
-gboolean nm_firewall_manager_available (NMFirewallManager *mgr);
+typedef void (*FwAddToZoneFunc) (GError *error,
+                                 gpointer user_data1,
+                                 gpointer user_data2);
 
-DBusGProxyCall *nm_firewall_manager_add_to_zone(NMFirewallManager *mgr, const char *ip_iface, const char *zone, DBusGProxyCallNotify callback, gpointer callback_data);
-void nm_firewall_manager_cancel_add (NMFirewallManager *mgr, DBusGProxyCall * fw_call);
+gpointer nm_firewall_manager_add_to_zone (NMFirewallManager *mgr,
+                                          const char *iface,
+                                          const char *zone,
+                                          FwAddToZoneFunc callback,
+                                          gpointer user_data1,
+                                          gpointer user_data2);
+
+void nm_firewall_manager_cancel_add (NMFirewallManager *mgr, gpointer fw_call);
 
 #endif /* NM_FIREWALL_MANAGER_H */
