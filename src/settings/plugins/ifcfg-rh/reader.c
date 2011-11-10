@@ -78,16 +78,58 @@ get_int (const char *str, int *value)
 	return TRUE;
 }
 
+static char *
+make_connection_name (shvarFile *ifcfg, const char *ifcfg_name,
+                      const char *suggested, const char *prefix)
+{
+	char *full_name = NULL, *name, *device;
+
+	/* If the ifcfg file already has a NAME, always use that */
+	name = svGetValue (ifcfg, "NAME", FALSE);
+	if (name && strlen (name))
+		return name;
+
+	/* Otherwise construct a new NAME */
+	g_free (name);
+	device = svGetValue (ifcfg, "DEVICE", FALSE);
+
+	/*
+	 * No name was specified, construct a default connection name based
+	 * on the information we have.
+	 */
+	if (!prefix)
+		prefix = reader_get_prefix();
+
+	/* For cosmetic reasons, if the suggested name is the same as
+	 * the ifcfg files name, don't use it.  Mainly for wifi so that
+	 * the SSID is shown in the connection ID instead of just "wlan0".
+	 */
+	if (suggested && strcmp (ifcfg_name, suggested)) {
+		if (device)
+			full_name = g_strdup_printf ("%s %s (%s)", prefix, suggested, device);
+		else
+			full_name = g_strdup_printf ("%s %s (%s)", prefix, suggested, ifcfg_name);
+	} else {
+		if (device && strcmp (ifcfg_name, device))
+			full_name = g_strdup_printf ("%s %s (%s)", prefix, ifcfg_name, device);
+		else
+			full_name = g_strdup_printf ("%s %s", prefix, ifcfg_name);
+	}
+
+	g_free (device);
+	return full_name;
+}
+
 static NMSetting *
 make_connection_setting (const char *file,
                          shvarFile *ifcfg,
                          const char *type,
-                         const char *suggested)
+                         const char *suggested,
+                         const char *prefix)
 {
 	NMSettingConnection *s_con;
 	const char *ifcfg_name = NULL;
-	char *new_id = NULL, *uuid = NULL, *zone = NULL, *value;
-	char *ifcfg_id;
+	char *new_id, *uuid = NULL, *zone = NULL, *value;
 
 	ifcfg_name = utils_get_ifcfg_name (file, TRUE);
 	if (!ifcfg_name)
@@ -95,32 +137,9 @@ make_connection_setting (const char *file,
 
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
 
-	/* Try the ifcfg file's internally defined name if available */
-	ifcfg_id = svGetValue (ifcfg, "NAME", FALSE);
-	if (ifcfg_id && strlen (ifcfg_id))
-		g_object_set (s_con, NM_SETTING_CONNECTION_ID, ifcfg_id, NULL);
-
-	if (!nm_setting_connection_get_id (s_con)) {
-		if (suggested) {
-			/* For cosmetic reasons, if the suggested name is the same as
-			 * the ifcfg files name, don't use it.  Mainly for wifi so that
-			 * the SSID is shown in the connection ID instead of just "wlan0".
-			 */
-			if (strcmp (ifcfg_name, suggested)) {
-				new_id = g_strdup_printf ("%s %s (%s)", reader_get_prefix (), suggested, ifcfg_name);
-				g_object_set (s_con, NM_SETTING_CONNECTION_ID, new_id, NULL);
-			}
-		}
-
-		/* Use the ifcfg file's name as a last resort */
-		if (!nm_setting_connection_get_id (s_con)) {
-			new_id = g_strdup_printf ("%s %s", reader_get_prefix (), ifcfg_name);
-			g_object_set (s_con, NM_SETTING_CONNECTION_ID, new_id, NULL);
-		}
-	}
-
+	new_id = make_connection_name (ifcfg, ifcfg_name, suggested, prefix);
+	g_object_set (s_con, NM_SETTING_CONNECTION_ID, new_id, NULL);
 	g_free (new_id);
-	g_free (ifcfg_id);
 
 	/* Try for a UUID key before falling back to hashing the file name */
 	uuid = svGetValue (ifcfg, "UUID", FALSE);
@@ -142,9 +161,17 @@ make_connection_setting (const char *file,
 
 	value = svGetValue (ifcfg, "MASTER", FALSE);
 	if (value) {
+		const char *id;
+
 		g_object_set (s_con, NM_SETTING_CONNECTION_MASTER, value, NULL);
 		g_object_set (s_con, NM_SETTING_CONNECTION_SLAVE_TYPE,
 		              NM_SETTING_BOND_SETTING_NAME, NULL);
+
+		/* Add a suffix to all slaves: "<NAME> [slave-of <MASTER>]" */
+		id = nm_setting_connection_get_id (s_con);
+		new_id = g_strdup_printf ("%s [slave-of %s]", id, value);
+		g_object_set (s_con, NM_SETTING_CONNECTION_ID, new_id, NULL);
+
 		g_free (value);
 	}
 
@@ -3051,7 +3078,7 @@ wireless_connection_from_ifcfg (const char *file,
 	/* Connection */
 	con_setting = make_connection_setting (file, ifcfg,
 	                                       NM_SETTING_WIRELESS_SETTING_NAME,
-	                                       printable_ssid);
+	                                       printable_ssid, NULL);
 	g_free (printable_ssid);
 	if (!con_setting) {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
@@ -3290,7 +3317,7 @@ wired_connection_from_ifcfg (const char *file,
 		return NULL;
 	}
 
-	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_WIRED_SETTING_NAME, NULL);
+	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_WIRED_SETTING_NAME, NULL, NULL);
 	if (!con_setting) {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 		             "Failed to create connection setting.");
@@ -3454,7 +3481,7 @@ bond_connection_from_ifcfg (const char *file,
 		return NULL;
 	}
 
-	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_BOND_SETTING_NAME, NULL);
+	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_BOND_SETTING_NAME, NULL, _("Bond"));
 	if (!con_setting) {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 		             "Failed to create connection setting.");
