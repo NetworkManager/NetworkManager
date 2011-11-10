@@ -2127,6 +2127,15 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 
 out:
 	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 3 of 5 (IP Configure Start) complete.", iface);
+
+	/* Handle interfaces (bond slaves, etc) that won't have any IP config; they
+	 * need to move to ACTIVATED.
+	 */
+	if (priv->ip4_state == IP_DONE && priv->ip6_state == IP_DONE) {
+		/* FIXME: call layer2 stuff to set MTU? */
+		nm_device_state_changed (self, NM_DEVICE_STATE_ACTIVATED, NM_DEVICE_STATE_REASON_NONE);
+	}
+
 	return FALSE;
 }
 
