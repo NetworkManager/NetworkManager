@@ -1211,8 +1211,11 @@ real_complete_connection (NMDevice *device,
 		GByteArray *mac;
 		const guint8 null_mac[ETH_ALEN] = { 0, 0, 0, 0, 0, 0 };
 
-		/* Lock the connection to this device by default */
-		if (memcmp (priv->perm_hw_addr, null_mac, ETH_ALEN)) {
+		/* Lock the connection to this device by default if it uses a
+		 * permanent MAC address (ie not a 'locally administered' one)
+		 */
+		if (   !(priv->perm_hw_addr[0] & 0x02)
+		    && memcmp (priv->perm_hw_addr, null_mac, ETH_ALEN)) {
 			mac = g_byte_array_sized_new (ETH_ALEN);
 			g_byte_array_append (mac, priv->perm_hw_addr, ETH_ALEN);
 			g_object_set (G_OBJECT (s_wifi), NM_SETTING_WIRELESS_MAC_ADDRESS, mac, NULL);
