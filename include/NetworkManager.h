@@ -463,6 +463,18 @@ typedef enum {
 	/* The Bluetooth connection failed or timed out */
 	NM_DEVICE_STATE_REASON_BT_FAILED = 44,
 
+	/* GSM Modem's SIM Card not inserted */
+	NM_DEVICE_STATE_REASON_GSM_SIM_NOT_INSERTED = 45,
+
+	/* GSM Modem's SIM Pin required */
+	NM_DEVICE_STATE_REASON_GSM_SIM_PIN_REQUIRED = 46,
+
+	/* GSM Modem's SIM Puk required */
+	NM_DEVICE_STATE_REASON_GSM_SIM_PUK_REQUIRED = 47,
+
+	/* GSM Modem's SIM wrong */
+	NM_DEVICE_STATE_REASON_GSM_SIM_WRONG = 48,
+
 	/* Unused */
 	NM_DEVICE_STATE_REASON_LAST = 0xFFFF
 } NMDeviceStateReason;

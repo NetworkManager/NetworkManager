@@ -3863,6 +3863,14 @@ reason_to_string (NMDeviceStateReason reason)
 		return "modem-not-found";
 	case NM_DEVICE_STATE_REASON_BT_FAILED:
 		return "bluetooth-failed";
+	case NM_DEVICE_STATE_REASON_GSM_SIM_NOT_INSERTED:
+		return "gsm-sim-not-inserted";
+	case NM_DEVICE_STATE_REASON_GSM_SIM_PIN_REQUIRED:
+		return "gsm-sim-pin-required";
+	case NM_DEVICE_STATE_REASON_GSM_SIM_PUK_REQUIRED:
+		return "gsm-sim-puk-required";
+	case NM_DEVICE_STATE_REASON_GSM_SIM_WRONG:
+		return "gsm-sim-wrong";
 	default:
 		break;
 	}

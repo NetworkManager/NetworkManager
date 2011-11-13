@@ -140,20 +140,33 @@ translate_mm_error (GError *error)
 
 	if (dbus_g_error_has_name (error, MM_MODEM_CONNECT_ERROR_NO_CARRIER))
 		reason = NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER;
-	if (dbus_g_error_has_name (error, MM_MODEM_CONNECT_ERROR_NO_DIALTONE))
-		reason = NM_DEVICE_STATE_REASON_MODEM_DIAL_TIMEOUT;
-	if (dbus_g_error_has_name (error, MM_MODEM_CONNECT_ERROR_BUSY))
+	else if (dbus_g_error_has_name (error, MM_MODEM_CONNECT_ERROR_NO_DIALTONE))
+		reason = NM_DEVICE_STATE_REASON_MODEM_NO_DIAL_TONE;
+	else if (dbus_g_error_has_name (error, MM_MODEM_CONNECT_ERROR_BUSY))
 		reason = NM_DEVICE_STATE_REASON_MODEM_BUSY;
-	if (dbus_g_error_has_name (error, MM_MODEM_CONNECT_ERROR_NO_ANSWER))
+	else if (dbus_g_error_has_name (error, MM_MODEM_CONNECT_ERROR_NO_ANSWER))
 		reason = NM_DEVICE_STATE_REASON_MODEM_DIAL_TIMEOUT;
-	if (dbus_g_error_has_name (error, MM_MODEM_ERROR_NETWORK_NOT_ALLOWED))
+	else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_NETWORK_NOT_ALLOWED))
 		reason = NM_DEVICE_STATE_REASON_GSM_REGISTRATION_DENIED;
-	if (dbus_g_error_has_name (error, MM_MODEM_ERROR_NETWORK_TIMEOUT))
+	else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_NETWORK_TIMEOUT))
 		reason = NM_DEVICE_STATE_REASON_GSM_REGISTRATION_TIMEOUT;
-	if (dbus_g_error_has_name (error, MM_MODEM_ERROR_NO_NETWORK))
+	else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_NO_NETWORK))
 		reason = NM_DEVICE_STATE_REASON_GSM_REGISTRATION_NOT_SEARCHING;
+	else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_NOT_INSERTED))
+		reason = NM_DEVICE_STATE_REASON_GSM_SIM_NOT_INSERTED;
+	else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_PIN))
+		reason = NM_DEVICE_STATE_REASON_GSM_SIM_PIN_REQUIRED;
+	else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_PUK))
+		reason = NM_DEVICE_STATE_REASON_GSM_SIM_PUK_REQUIRED;
+	else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_WRONG))
+		reason = NM_DEVICE_STATE_REASON_GSM_SIM_WRONG;
+	else {
+		/* unable to map the ModemManager error to a NM_DEVICE_STATE_REASON */
+		nm_log_dbg (LOGD_MB, "unmapped dbus error detected: '%s'", dbus_g_error_get_name (error));
+		reason = NM_DEVICE_STATE_REASON_UNKNOWN;
+	}
 
-	/* FIXME: We have only GSM error messages here, and we have no idea which 
+	/* FIXME: We have only GSM error messages here, and we have no idea which
 	   activation state failed. Reasons like:
 	   NM_DEVICE_STATE_REASON_MODEM_DIAL_FAILED,
 	   NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED,
@@ -162,9 +175,6 @@ translate_mm_error (GError *error)
 	   NM_DEVICE_STATE_REASON_GSM_PIN_CHECK_FAILED
 	   are not used.
 	*/
-	else
-		reason = NM_DEVICE_STATE_REASON_UNKNOWN;
-
 	return reason;
 }
 
@@ -257,6 +267,7 @@ static void
 stage1_pin_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 {
 	NMModemGsm *self = NM_MODEM_GSM (user_data);
+	NMDeviceStateReason reason;
 	GError *error = NULL;
 
 	if (dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID)) {
@@ -266,9 +277,14 @@ stage1_pin_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 		nm_log_warn (LOGD_MB, "GSM PIN unlock failed: (%d) %s",
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
-		g_error_free (error);
 
-		g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
+		/* try to translate the error reason */
+		reason = translate_mm_error (error);
+		if (reason == NM_DEVICE_STATE_REASON_UNKNOWN)
+			reason = NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED;
+
+		g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, reason);
+		g_error_free (error);
 	}
 }
 
@@ -301,6 +317,7 @@ static void
 stage1_enable_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 {
 	NMModemGsm *self = NM_MODEM_GSM (user_data);
+	NMDeviceStateReason reason;
 	GError *error = NULL;
 
 	if (dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID))
@@ -312,8 +329,13 @@ stage1_enable_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_da
 
 		if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_PIN))
 			handle_enable_pin_required (self);
-		else
-			g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
+		else {
+			/* try to translate the error reason */
+			reason = translate_mm_error (error);
+			if (reason == NM_DEVICE_STATE_REASON_UNKNOWN)
+				reason = NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED;
+			g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, reason);
+		}
 
 		g_error_free (error);
 	}
