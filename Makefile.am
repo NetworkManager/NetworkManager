@@ -38,3 +38,8 @@ pkgconfig_DATA = NetworkManager.pc
 
 ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
 
+CLEANFILES = cscope.in.out cscope.out cscope.po.out
+
+.PHONY: cscope
+cscope:
+	cscope -b -q -R -Iinclude -ssrc -slibnm-glib -slibnm-util -smarshallers -scli/src;
