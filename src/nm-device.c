@@ -4079,6 +4079,8 @@ reason_to_string (NMDeviceStateReason reason)
 		return "gsm-sim-puk-required";
 	case NM_DEVICE_STATE_REASON_GSM_SIM_WRONG:
 		return "gsm-sim-wrong";
+	case NM_DEVICE_STATE_REASON_INFINIBAND_MODE:
+		return "infiniband-mode";
 	default:
 		break;
 	}

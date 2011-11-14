@@ -242,6 +242,7 @@ global:
 	nm_setting_infiniband_error_quark;
 	nm_setting_infiniband_get_mac_address;
 	nm_setting_infiniband_get_mtu;
+	nm_setting_infiniband_get_transport_mode;
 	nm_setting_infiniband_get_type;
 	nm_setting_infiniband_new;
 	nm_setting_ip4_config_add_address;

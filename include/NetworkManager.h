@@ -479,6 +479,9 @@ typedef enum {
 	/* GSM Modem's SIM wrong */
 	NM_DEVICE_STATE_REASON_GSM_SIM_WRONG = 48,
 
+	/* Infiniband device does not support connected mode */
+	NM_DEVICE_STATE_REASON_INFINIBAND_MODE = 49,
+
 	/* Unused */
 	NM_DEVICE_STATE_REASON_LAST = 0xFFFF
 } NMDeviceStateReason;

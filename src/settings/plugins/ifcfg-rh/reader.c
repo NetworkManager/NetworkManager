@@ -3356,6 +3356,9 @@ make_infiniband_setting (shvarFile *ifcfg,
 		return NULL;
 	}
 
+	if (svTrueValue (ifcfg, "CONNECTED_MODE", FALSE))
+		g_object_set (s_infiniband, NM_SETTING_INFINIBAND_TRANSPORT_MODE, "connected", NULL);
+
 	if (!nm_controlled && !*unmanaged) {
 		/* If NM_CONTROLLED=no but there wasn't a MAC address, notify
 		   the user that the device cannot be unmanaged.

@@ -31,14 +31,7 @@
 #include "nm-properties-changed-signal.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
-#if 0
 #include "nm-device-private.h"
-#include "nm-activation-request.h"
-#include "nm-setting-connection.h"
-#include "nm-setting-wired.h"
-#include "nm-dhcp-manager.h"
-#include "nm-netlink-utils.h"
-#endif
 
 #include "nm-device-infiniband-glue.h"
 
@@ -215,6 +208,53 @@ real_get_best_auto_connection (NMDevice *dev,
 		return connection;
 	}
 	return NULL;
+}
+
+static NMActStageReturn
+real_act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
+{
+	NMActRequest *req;
+	NMConnection *connection;
+	NMSettingInfiniband *s_infiniband;
+	const char *transport_mode;
+	char *mode_path, *mode_value;
+	gboolean ok;
+
+	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	req = nm_device_get_act_request (dev);
+	g_return_val_if_fail (req != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+	s_infiniband = nm_connection_get_setting_infiniband (connection);
+	g_assert (s_infiniband);
+
+	transport_mode = nm_setting_infiniband_get_transport_mode (s_infiniband);
+
+	mode_path = g_strdup_printf ("/sys/class/net/%s/mode", nm_device_get_iface (dev));
+	if (!g_file_test (mode_path, G_FILE_TEST_EXISTS)) {
+		g_free (mode_path);
+
+		if (!strcmp (transport_mode, "datagram"))
+			return NM_ACT_STAGE_RETURN_SUCCESS;
+		else {
+			*reason = NM_DEVICE_STATE_REASON_INFINIBAND_MODE;
+			return NM_ACT_STAGE_RETURN_FAILURE;
+		}
+	}
+
+	mode_value = g_strdup_printf ("%s\n", transport_mode);
+	ok = nm_utils_do_sysctl (mode_path, mode_value);
+	g_free (mode_value);
+	g_free (mode_path);
+
+	if (!ok) {
+		*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
+
+	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
 static void
@@ -434,6 +474,7 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 	parent_class->check_connection_compatible = real_check_connection_compatible;
 	parent_class->complete_connection = real_complete_connection;
 
+	parent_class->act_stage1_prepare = real_act_stage1_prepare;
 	parent_class->ip4_config_pre_commit = real_ip4_config_pre_commit;
 	parent_class->spec_match_list = spec_match_list;
 	parent_class->connection_match_config = connection_match_config;

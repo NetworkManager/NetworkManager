@@ -81,6 +81,7 @@ G_DEFINE_TYPE (NMSettingInfiniband, nm_setting_infiniband, NM_TYPE_SETTING)
 
 typedef struct {
 	GByteArray *mac_address;
+	char *transport_mode;
 	guint32 mtu;
 } NMSettingInfinibandPrivate;
 
@@ -88,6 +89,7 @@ enum {
 	PROP_0,
 	PROP_MAC_ADDRESS,
 	PROP_MTU,
+	PROP_TRANSPORT_MODE,
 
 	LAST_PROP
 };
@@ -133,6 +135,23 @@ nm_setting_infiniband_get_mtu (NMSettingInfiniband *setting)
 	return NM_SETTING_INFINIBAND_GET_PRIVATE (setting)->mtu;
 }
 
+/**
+ * nm_setting_infiniband_get_transport_mode:
+ * @setting: the #NMSettingInfiniband
+ *
+ * Returns the transport mode for this device. Either 'datagram' or
+ * 'connected'.
+ *
+ * Returns: the IPoIB transport mode
+ **/
+const char *
+nm_setting_infiniband_get_transport_mode (NMSettingInfiniband *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_INFINIBAND (setting), NULL);
+
+	return NM_SETTING_INFINIBAND_GET_PRIVATE (setting)->transport_mode;
+}
+
 
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
@@ -144,6 +163,20 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		             NM_SETTING_INFINIBAND_ERROR,
 		             NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY,
 		             NM_SETTING_INFINIBAND_MAC_ADDRESS);
+		return FALSE;
+	}
+
+	if (!g_strcmp0 (priv->transport_mode, "datagram")) {
+		if (priv->mtu > 2044)
+			priv->mtu = 2044;
+	} else if (!g_strcmp0 (priv->transport_mode, "connected")) {
+		if (priv->mtu > 65520)
+			priv->mtu = 65520;
+	} else {
+		g_set_error (error,
+		             NM_SETTING_INFINIBAND_ERROR,
+		             NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_INFINIBAND_TRANSPORT_MODE);
 		return FALSE;
 	}
 
@@ -161,6 +194,7 @@ finalize (GObject *object)
 {
 	NMSettingInfinibandPrivate *priv = NM_SETTING_INFINIBAND_GET_PRIVATE (object);
 
+	g_free (priv->transport_mode);
 	if (priv->mac_address)
 		g_byte_array_free (priv->mac_address, TRUE);
 
@@ -182,6 +216,10 @@ set_property (GObject *object, guint prop_id,
 	case PROP_MTU:
 		priv->mtu = g_value_get_uint (value);
 		break;
+	case PROP_TRANSPORT_MODE:
+		g_free (priv->transport_mode);
+		priv->transport_mode = g_value_dup_string (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -200,6 +238,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_MTU:
 		g_value_set_uint (value, nm_setting_infiniband_get_mtu (setting));
+		break;
+	case PROP_TRANSPORT_MODE:
+		g_value_set_string (value, nm_setting_infiniband_get_transport_mode (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -255,5 +296,19 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 		                    "multiple frames.",
 		                    0, G_MAXUINT32, 0,
 		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+
+	/**
+	 * NMSettingInfiniband:transport-mode:
+	 *
+	 * The IP-over-Inifiniband transport mode. Either 'datagram' or
+	 * 'connected'.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_TRANSPORT_MODE,
+		 g_param_spec_string (NM_SETTING_INFINIBAND_TRANSPORT_MODE,
+							  "Transport Mode",
+							  "The IPoIB transport mode. Either 'datagram' or 'connected'.",
+							  "datagram",
+							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 }
 
