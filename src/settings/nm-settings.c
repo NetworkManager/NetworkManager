@@ -902,6 +902,45 @@ add_new_connection (NMSettings *self,
 	return NULL;
 }
 
+static gboolean
+secrets_filter_cb (NMSetting *setting,
+                   const char *secret,
+                   NMSettingSecretFlags flags,
+                   gpointer user_data)
+{
+	NMSettingSecretFlags filter_flags = GPOINTER_TO_UINT (user_data);
+
+	/* Returns TRUE to remove the secret */
+
+	/* Can't use bitops with SECRET_FLAG_NONE so handle that specifically */
+	if (   (flags == NM_SETTING_SECRET_FLAG_NONE)
+	    && (filter_flags == NM_SETTING_SECRET_FLAG_NONE))
+		return FALSE;
+
+	/* Otherwise if the secret has at least one of the desired flags keep it */
+	return (flags & filter_flags) ? FALSE : TRUE;
+}
+
+static void
+send_agent_owned_secrets (NMSettings *self,
+                          NMSettingsConnection *connection,
+                          gulong caller_uid)
+{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	NMConnection *for_agent;
+
+	/* Dupe the connection so we can clear out non-agent-owned secrets,
+	 * as agent-owned secrets are the only ones we send back to be saved.
+	 * Only send secrets to agents of the same UID that called update too.
+	 */
+	for_agent = nm_connection_duplicate (NM_CONNECTION (connection));
+	nm_connection_clear_secrets_with_flags (for_agent,
+	                                        secrets_filter_cb,
+	                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
+	nm_agent_manager_save_secrets (priv->agent_mgr, for_agent, TRUE, caller_uid);
+	g_object_unref (for_agent);
+}
+
 static void
 pk_add_cb (NMAuthChain *chain,
            GError *chain_error,
@@ -916,6 +955,7 @@ pk_add_cb (NMAuthChain *chain,
 	NMSettingsConnection *added = NULL;
 	NMSettingsAddCallback callback;
 	gpointer callback_data;
+	gulong caller_uid;
 	const char *perm;
 
 	priv->auths = g_slist_remove (priv->auths, chain);
@@ -955,8 +995,13 @@ pk_add_cb (NMAuthChain *chain,
 done:
 	callback = nm_auth_chain_get_data (chain, "callback");
 	callback_data = nm_auth_chain_get_data (chain, "callback-data");
+	caller_uid = nm_auth_chain_get_data_ulong (chain, "caller-uid");
 
 	callback (self, added, error, context, callback_data);
+
+	/* Send agent-owned secrets to the agents */
+	if (!error && added)
+		send_agent_owned_secrets (self, added, caller_uid);
 
 	g_clear_error (&error);
 	nm_auth_chain_unref (chain);
@@ -1061,6 +1106,7 @@ nm_settings_add_connection (NMSettings *self,
 	nm_auth_chain_set_data (chain, "connection", g_object_ref (connection), g_object_unref);
 	nm_auth_chain_set_data (chain, "callback", callback, NULL);
 	nm_auth_chain_set_data (chain, "callback-data", user_data, NULL);
+	nm_auth_chain_set_data_ulong (chain, "caller-uid", caller_uid);
 }
 
 static void
