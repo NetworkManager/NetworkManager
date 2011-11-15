@@ -550,6 +550,7 @@ find_plugin (GSList *list, const char *pname)
 static gboolean
 load_plugins (NMSettings *self, const char **plugins, GError **error)
 {
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GSList *list = NULL;
 	const char **iter;
 	gboolean success = TRUE;
@@ -559,7 +560,7 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 		char *full_name, *path;
 		const char *pname = *iter;
 		GObject *obj;
-		GObject * (*factory_func) (void);
+		GObject * (*factory_func) (const char *);
 
 		/* strip leading spaces */
 		while (isblank (*pname))
@@ -602,7 +603,7 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 			break;
 		}
 
-		obj = (*factory_func) ();
+		obj = (*factory_func) (priv->config_file);
 		if (!obj || !NM_IS_SYSTEM_CONFIG_INTERFACE (obj)) {
 			g_set_error (error, 0, 0,
 			             "Plugin '%s' returned invalid system config object.",
@@ -1573,7 +1574,7 @@ nm_settings_new (const char *config_file,
 	}
 
 	/* Add the keyfile plugin last */
-	keyfile_plugin = nm_settings_keyfile_plugin_new ();
+	keyfile_plugin = nm_settings_keyfile_plugin_new (config_file);
 	g_assert (keyfile_plugin);
 	add_plugin (self, NM_SYSTEM_CONFIG_INTERFACE (keyfile_plugin));
 

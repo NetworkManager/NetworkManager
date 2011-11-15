@@ -39,7 +39,7 @@ G_BEGIN_DECLS
 /* Plugin's factory function that returns a GObject that implements
  * NMSystemConfigInterface.
  */
-GObject * nm_system_config_factory (void);
+GObject * nm_system_config_factory (const char *config_file);
 
 #define NM_TYPE_SYSTEM_CONFIG_INTERFACE      (nm_system_config_interface_get_type ())
 #define NM_SYSTEM_CONFIG_INTERFACE(obj)      (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SYSTEM_CONFIG_INTERFACE, NMSystemConfigInterface))

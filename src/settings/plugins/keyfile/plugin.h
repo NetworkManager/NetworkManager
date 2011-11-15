@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
 #ifndef _PLUGIN_H_
@@ -43,6 +43,6 @@ GType sc_plugin_keyfile_get_type (void);
 
 GQuark keyfile_plugin_error_quark (void);
 
-GObject *nm_settings_keyfile_plugin_new (void);
+GObject *nm_settings_keyfile_plugin_new (const char *config_file);
 
 #endif	/* _PLUGIN_H_ */

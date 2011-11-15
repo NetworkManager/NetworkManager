@@ -48,6 +48,7 @@
 typedef struct {
 	GHashTable *config_connections;
 	gchar *hostname;
+	char *conf_file;
 	gboolean unmanaged_well_known;
 
 	GFileMonitor *hostname_monitor;
@@ -494,6 +495,7 @@ dispose (GObject * object)
 	}
 
 	g_free (priv->hostname);
+	g_free (priv->conf_file);
 	ifnet_destroy ();
 	wpa_parser_destroy ();
 	G_OBJECT_CLASS (sc_plugin_ifnet_parent_class)->dispose (object);
@@ -527,16 +529,37 @@ sc_plugin_ifnet_class_init (SCPluginIfnetClass * req_class)
 					  NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
 }
 
+const char *
+ifnet_plugin_get_conf_file (void)
+{
+	SCPluginIfnet *ifnet_plugin;
+	SCPluginIfnetPrivate *priv;
+
+	/* Get config file name. Plugin's singleton has already been created
+	 * with correct config file path, so the string passed here has no efect
+	 * and we get the valid file name.
+	 */
+	ifnet_plugin = SC_PLUGIN_IFNET (nm_system_config_factory ("fake string"));
+	priv = SC_PLUGIN_IFNET_GET_PRIVATE (ifnet_plugin);
+	g_object_unref (ifnet_plugin);
+
+	return priv->conf_file;
+}
+
 G_MODULE_EXPORT GObject *
-nm_system_config_factory (void)
+nm_system_config_factory (const char *config_file)
 {
 	static SCPluginIfnet *singleton = NULL;
+	SCPluginIfnetPrivate *priv;
 
-	if (!singleton)
-		singleton
-		    =
-		    SC_PLUGIN_IFNET (g_object_new (SC_TYPE_PLUGIN_IFNET, NULL));
-	else
+	if (!singleton) {
+		singleton = SC_PLUGIN_IFNET (g_object_new (SC_TYPE_PLUGIN_IFNET, NULL));
+		if (singleton) {
+			priv = SC_PLUGIN_IFNET_GET_PRIVATE (singleton);
+			priv->conf_file = strdup (config_file);
+		}
+	} else
 		g_object_ref (singleton);
+
 	return G_OBJECT (singleton);
 }

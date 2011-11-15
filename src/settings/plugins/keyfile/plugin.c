@@ -42,9 +42,6 @@
 #include "common.h"
 #include "utils.h"
 
-#define CONF_FILE SYSCONFDIR "/NetworkManager/NetworkManager.conf"
-#define OLD_CONF_FILE SYSCONFDIR "/NetworkManager/nm-system-settings.conf"
-
 static char *plugin_get_hostname (SCPluginKeyfile *plugin);
 static void system_config_interface_init (NMSystemConfigInterface *system_config_interface_class);
 
@@ -60,7 +57,7 @@ typedef struct {
 	GFileMonitor *monitor;
 	guint monitor_id;
 
-	const char *conf_file;
+	char *conf_file;
 	GFileMonitor *conf_file_monitor;
 	guint conf_file_monitor_id;
 
@@ -517,14 +514,6 @@ plugin_set_hostname (SCPluginKeyfile *plugin, const char *hostname)
 static void
 sc_plugin_keyfile_init (SCPluginKeyfile *plugin)
 {
-	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (plugin);
-
-	if (g_file_test (CONF_FILE, G_FILE_TEST_EXISTS))
-		priv->conf_file = CONF_FILE;
-	else
-		priv->conf_file = OLD_CONF_FILE;
-
-	priv->hostname = plugin_get_hostname (plugin);
 }
 
 static void
@@ -597,6 +586,7 @@ dispose (GObject *object)
 	}
 
 	g_free (priv->hostname);
+	g_free (priv->conf_file);
 
 	if (priv->hash)
 		g_hash_table_destroy (priv->hash);
@@ -642,13 +632,22 @@ system_config_interface_init (NMSystemConfigInterface *system_config_interface_c
 }
 
 GObject *
-nm_settings_keyfile_plugin_new (void)
+nm_settings_keyfile_plugin_new (const char *config_file)
 {
 	static SCPluginKeyfile *singleton = NULL;
+	SCPluginKeyfilePrivate *priv;
 
-	if (!singleton)
+	if (!singleton) {
 		singleton = SC_PLUGIN_KEYFILE (g_object_new (SC_TYPE_PLUGIN_KEYFILE, NULL));
-	else
+		if (singleton) {
+			priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (singleton);
+
+			priv->conf_file = strdup (config_file);
+
+			/* plugin_set_hostname() has to be called *after* priv->conf_file is set */
+			priv->hostname = plugin_get_hostname (singleton);
+		}
+	} else
 		g_object_ref (singleton);
 
 	return G_OBJECT (singleton);

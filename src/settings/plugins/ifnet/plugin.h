@@ -43,5 +43,7 @@ struct _SCPluginIfnetClass {
 	GObjectClass parent;
 };
 
+const char * ifnet_plugin_get_conf_file (void);
+
 GType sc_plugin_ifnet_get_type (void);
 #endif

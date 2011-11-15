@@ -790,7 +790,7 @@ system_config_interface_init (NMSystemConfigInterface *system_config_interface_c
 }
 
 G_MODULE_EXPORT GObject *
-nm_system_config_factory (void)
+nm_system_config_factory (const char *config_file)
 {
 	static SCPluginIfcfg *singleton = NULL;
 	SCPluginIfcfgPrivate *priv;

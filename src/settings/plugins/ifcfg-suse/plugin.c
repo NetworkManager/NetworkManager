@@ -18,7 +18,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2009 Red Hat, Inc.
+ * (C) Copyright 2007 - 2011 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -309,7 +309,7 @@ system_config_interface_init (NMSystemConfigInterface *system_config_interface_c
 }
 
 G_MODULE_EXPORT GObject *
-nm_system_config_factory (void)
+nm_system_config_factory (const char *config_file)
 {
 	static SCPluginIfcfg *singleton = NULL;
 

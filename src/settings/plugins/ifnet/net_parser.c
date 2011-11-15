@@ -22,6 +22,7 @@
 #include <string.h>
 #include <nm-system-config-interface.h>
 #include <stdio.h>
+#include "plugin.h"
 #include "net_parser.h"
 #include "net_utils.h"
 
@@ -106,7 +107,6 @@ ignore_connection_name (const char *name)
 	if (strlen (name) == 12 && is_hex (name))
 		result = TRUE;
 	return result;
-
 }
 
 static gboolean
@@ -195,26 +195,31 @@ destroy_connection_config (GHashTable * conn)
 	g_hash_table_destroy (conn);
 }
 
-// read settings from /etc/NetworkManager/nm-system-settings.conf
+/* Read settings from NetworkManager's config file */
 const char *
 ifnet_get_global_setting (const char *group, const char *key)
 {
 	GError *error = NULL;
 	GKeyFile *keyfile = g_key_file_new ();
 	gchar *result = NULL;
+	const char *conf_file;
+
+	/* Get confing file name from plugin. */
+	conf_file = ifnet_plugin_get_conf_file ();
 
 	if (!g_key_file_load_from_file (keyfile,
-					IFNET_SYSTEM_SETTINGS_KEY_FILE,
+					conf_file,
 					G_KEY_FILE_NONE, &error)) {
 		PLUGIN_WARN (IFNET_PLUGIN_NAME,
 			     "loading system config file (%s) caused error: (%d) %s",
-			     IFNET_SYSTEM_SETTINGS_KEY_FILE,
+			     conf_file,
 			     error ? error->code : -1, error
 			     && error->message ? error->message : "(unknown)");
 	} else {
 		result = g_key_file_get_string (keyfile, group, key, &error);
 	}
 	g_key_file_free (keyfile);
+
 	return result;
 }
 

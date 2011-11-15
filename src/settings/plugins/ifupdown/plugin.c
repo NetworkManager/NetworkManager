@@ -19,7 +19,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * (C) Copyright 2007,2008 Canonical Ltd.
- * (C) Copyright 2009 Red Hat, Inc.
+ * (C) Copyright 2009 - 2011 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -60,9 +60,6 @@
 #define IFUPDOWN_PLUGIN_INFO "(C) 2008 Canonical Ltd.  To report bugs please use the NetworkManager mailing list."
 #define IFUPDOWN_SYSTEM_HOSTNAME_FILE "/etc/hostname"
 
-#define IFUPDOWN_SYSTEM_SETTINGS_KEY_FILE SYSCONFDIR "/NetworkManager/NetworkManager.conf"
-#define IFUPDOWN_OLD_SYSTEM_SETTINGS_KEY_FILE SYSCONFDIR "/NetworkManager/nm-system-settings.conf"
-
 #define IFUPDOWN_KEY_FILE_GROUP "ifupdown"
 #define IFUPDOWN_KEY_FILE_KEY_MANAGED "managed"
 #define IFUPDOWN_UNMANAGE_WELL_KNOWN_DEFAULT TRUE
@@ -81,7 +78,7 @@ typedef struct {
 	GHashTable *well_known_interfaces;
 	GHashTable *well_known_ifaces;
 	gboolean unmanage_well_known;
-	const char *conf_file;
+	char *conf_file;
 
 	gulong inotify_event_id;
 	int inotify_system_hostname_wd;
@@ -448,12 +445,7 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 	g_list_free (keys);
 	g_hash_table_destroy (auto_ifaces);
 
-	/* Find the config file */
-	if (g_file_test (IFUPDOWN_SYSTEM_SETTINGS_KEY_FILE, G_FILE_TEST_EXISTS))
-		priv->conf_file = IFUPDOWN_SYSTEM_SETTINGS_KEY_FILE;
-	else
-		priv->conf_file = IFUPDOWN_OLD_SYSTEM_SETTINGS_KEY_FILE;
-
+	/* Read the config file to find out whether to manage interfaces */
 	keyfile = g_key_file_new ();
 	if (!g_key_file_load_from_file (keyfile,
 	                                priv->conf_file,
@@ -706,20 +698,28 @@ GObject__dispose (GObject *object)
 	if (priv->well_known_interfaces)
 		g_hash_table_destroy(priv->well_known_interfaces);
 
+	g_free (priv->conf_file);
+
 	if (priv->client)
 		g_object_unref (priv->client);
+
 
 	G_OBJECT_CLASS (sc_plugin_ifupdown_parent_class)->dispose (object);
 }
 
 G_MODULE_EXPORT GObject *
-nm_system_config_factory (void)
+nm_system_config_factory (const char *config_file)
 {
 	static SCPluginIfupdown *singleton = NULL;
+	SCPluginIfupdownPrivate *priv;
 
-	if (!singleton)
+	if (!singleton) {
 		singleton = SC_PLUGIN_IFUPDOWN (g_object_new (SC_TYPE_PLUGIN_IFUPDOWN, NULL));
-	else
+		if (singleton) {
+			priv = SC_PLUGIN_IFUPDOWN_GET_PRIVATE (singleton);
+			priv->conf_file = strdup (config_file);
+		}
+	} else
 		g_object_ref (singleton);
 
 	return G_OBJECT (singleton);
