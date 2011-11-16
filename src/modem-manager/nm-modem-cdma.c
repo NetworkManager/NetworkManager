@@ -32,6 +32,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-cdma.h"
+#include "nm-setting-ppp.h"
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
 
@@ -280,6 +281,7 @@ real_complete_connection (NMModem *modem,
                           GError **error)
 {
 	NMSettingCdma *s_cdma;
+	NMSettingPPP *s_ppp;
 
 	s_cdma = nm_connection_get_setting_cdma (connection);
 	if (!s_cdma) {
@@ -289,6 +291,16 @@ real_complete_connection (NMModem *modem,
 
 	if (!nm_setting_cdma_get_number (s_cdma))
 		g_object_set (G_OBJECT (s_cdma), NM_SETTING_CDMA_NUMBER, "#777", NULL);
+
+	s_ppp = nm_connection_get_setting_ppp (connection);
+	if (!s_ppp) {
+		s_ppp = (NMSettingPPP *) nm_setting_ppp_new ();
+		g_object_set (G_OBJECT (s_ppp),
+		              NM_SETTING_PPP_LCP_ECHO_FAILURE, 5,
+		              NM_SETTING_PPP_LCP_ECHO_INTERVAL, 30,
+		              NULL);
+		nm_connection_add_setting (connection, NM_SETTING (s_ppp));
+	}
 
 	nm_utils_complete_generic (connection,
 	                           NM_SETTING_CDMA_SETTING_NAME,

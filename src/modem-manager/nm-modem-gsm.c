@@ -30,6 +30,7 @@
 #include "nm-device-private.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-gsm.h"
+#include "nm-setting-ppp.h"
 #include "nm-modem-types.h"
 #include "nm-logging.h"
 #include "NetworkManagerUtils.h"
@@ -501,6 +502,7 @@ real_complete_connection (NMModem *modem,
                           GError **error)
 {
 	NMSettingGsm *s_gsm;
+	NMSettingPPP *s_ppp;
 
 	s_gsm = nm_connection_get_setting_gsm (connection);
 	if (!s_gsm || !nm_setting_gsm_get_apn (s_gsm)) {
@@ -514,6 +516,16 @@ real_complete_connection (NMModem *modem,
 
 	if (!nm_setting_gsm_get_number (s_gsm))
 		g_object_set (G_OBJECT (s_gsm), NM_SETTING_GSM_NUMBER, "*99#", NULL);
+
+	s_ppp = nm_connection_get_setting_ppp (connection);
+	if (!s_ppp) {
+		s_ppp = (NMSettingPPP *) nm_setting_ppp_new ();
+		g_object_set (G_OBJECT (s_ppp),
+		              NM_SETTING_PPP_LCP_ECHO_FAILURE, 5,
+		              NM_SETTING_PPP_LCP_ECHO_INTERVAL, 30,
+		              NULL);
+		nm_connection_add_setting (connection, NM_SETTING (s_ppp));
+	}
 
 	nm_utils_complete_generic (connection,
 	                           NM_SETTING_GSM_SETTING_NAME,

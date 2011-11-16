@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2008 - 2010 Red Hat, Inc.
+ * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -934,12 +934,6 @@ pppoe_fill_defaults (NMSettingPPP *setting)
 
 	if (!nm_setting_ppp_get_mru (setting))
 		g_object_set (setting, NM_SETTING_PPP_MRU, (guint32) 1492, NULL);
-
-	if (!nm_setting_ppp_get_lcp_echo_interval (setting))
-		g_object_set (setting, NM_SETTING_PPP_LCP_ECHO_INTERVAL, (guint32) 20, NULL);
-
-	if (!nm_setting_ppp_get_lcp_echo_failure (setting))
-		g_object_set (setting, NM_SETTING_PPP_LCP_ECHO_FAILURE, (guint32) 3, NULL);
 
 	g_object_set (setting,
 			    NM_SETTING_PPP_NOAUTH, TRUE,
