@@ -42,6 +42,7 @@
 #include "nm-setting-wireless.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-ppp.h"
+#include "nm-utils.h"
 
 #include "nm-ifupdown-connection.h"
 #include "plugin.h"
@@ -204,7 +205,7 @@ bind_device_to_connection (SCPluginIfupdown *self,
 	}
 
 	mac_address = nm_utils_hwaddr_atoba (address, ARPHRD_ETHER);
-	if (!tmp_mac) {
+	if (!mac_address) {
 		PLUGIN_WARN ("SCPluginIfupdown", "failed to parse MAC address '%s' for %s",
 		             address, iface);
 		return;
