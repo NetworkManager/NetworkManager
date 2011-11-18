@@ -246,7 +246,7 @@ nm_vpn_connection_new (NMConnection *connection,
 									 G_CALLBACK (device_state_changed),
 									 self);
 
-	priv->device_ip4 = g_signal_connect (parent_device, "notify::" NM_DEVICE_INTERFACE_IP4_CONFIG,
+	priv->device_ip4 = g_signal_connect (parent_device, "notify::" NM_DEVICE_IP4_CONFIG,
 	                                     G_CALLBACK (device_ip4_config_changed),
 	                                     self);
 

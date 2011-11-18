@@ -631,9 +631,7 @@ static gboolean
 companion_scan_allowed_cb (NMDeviceWifi *companion, gpointer user_data)
 {
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (user_data);
-	NMDeviceState state;
-
-	g_object_get (G_OBJECT (self), NM_DEVICE_INTERFACE_STATE, &state, NULL);
+	NMDeviceState state = nm_device_get_state (NM_DEVICE (self));
 
 	/* Don't allow the companion to scan while configuring the mesh interface */
 	return (state < NM_DEVICE_STATE_PREPARE) || (state > NM_DEVICE_STATE_IP_CONFIG);
@@ -643,9 +641,7 @@ static gboolean
 companion_autoconnect_allowed_cb (NMDeviceWifi *companion, gpointer user_data)
 {
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (user_data);
-	NMDeviceState state;
-
-	g_object_get (G_OBJECT (self), NM_DEVICE_INTERFACE_STATE, &state, NULL);
+	NMDeviceState state = nm_device_get_state (NM_DEVICE (self));
 
 	/* Don't allow the companion to autoconnect while a mesh connection is
 	 * active */
@@ -782,11 +778,11 @@ nm_device_olpc_mesh_new (const char *udi,
 	g_return_val_if_fail (driver != NULL, NULL);
 
 	obj = g_object_new (NM_TYPE_DEVICE_OLPC_MESH,
-	                    NM_DEVICE_INTERFACE_UDI, udi,
-	                    NM_DEVICE_INTERFACE_IFACE, iface,
-	                    NM_DEVICE_INTERFACE_DRIVER, driver,
-	                    NM_DEVICE_INTERFACE_TYPE_DESC, "802.11 OLPC Mesh",
-	                    NM_DEVICE_INTERFACE_DEVICE_TYPE, NM_DEVICE_TYPE_OLPC_MESH,
+	                    NM_DEVICE_UDI, udi,
+	                    NM_DEVICE_IFACE, iface,
+	                    NM_DEVICE_DRIVER, driver,
+	                    NM_DEVICE_TYPE_DESC, "802.11 OLPC Mesh",
+	                    NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_OLPC_MESH,
 	                    NULL);
 	if (obj == NULL)
 		return NULL;

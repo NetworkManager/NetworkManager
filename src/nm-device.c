@@ -58,6 +58,11 @@
 #include "nm-marshal.h"
 #include "nm-rfkill.h"
 #include "nm-firewall-manager.h"
+#include "nm-properties-changed-signal.h"
+
+static void impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context);
+
+#include "nm-device-interface-glue.h"
 
 #define PENDING_IP4_CONFIG "pending-ip4-config"
 #define PENDING_IP6_CONFIG "pending-ip6-config"
@@ -106,14 +111,40 @@ nm_device_error_get_type (void)
 
 /***********************************************************/
 
-G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, G_TYPE_OBJECT)
-
 enum {
 	STATE_CHANGED,
+	DISCONNECT_REQUEST,
 	AUTOCONNECT_ALLOWED,
 	LAST_SIGNAL,
 };
 static guint signals[LAST_SIGNAL] = { 0 };
+
+enum {
+	PROP_0,
+	PROP_UDI,
+	PROP_IFACE,
+	PROP_IP_IFACE,
+	PROP_DRIVER,
+	PROP_CAPABILITIES,
+	PROP_IP4_ADDRESS,
+	PROP_IP4_CONFIG,
+	PROP_DHCP4_CONFIG,
+	PROP_IP6_CONFIG,
+	PROP_DHCP6_CONFIG,
+	PROP_STATE,
+	PROP_ACTIVE_CONNECTION,
+	PROP_DEVICE_TYPE,
+	PROP_MANAGED,
+	PROP_FIRMWARE_MISSING,
+	PROP_TYPE_DESC,
+	PROP_RFKILL_TYPE,
+	PROP_IFINDEX,
+	LAST_PROP
+};
+
+/***********************************************************/
+
+G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, G_TYPE_OBJECT)
 
 #define NM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE, NMDevicePrivate))
 
@@ -454,7 +485,7 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 
 	/* Emit change notification */
 	if (g_strcmp0 (old_ip_iface, priv->ip_iface))
-		g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_IP_IFACE);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_IP_IFACE);
 	g_free (old_ip_iface);
 }
 
@@ -1412,7 +1443,7 @@ dhcp4_state_changed (NMDHCPClient *client,
 			nm_dhcp_client_foreach_option (priv->dhcp4_client,
 			                               dhcp4_add_option_cb,
 			                               priv->dhcp4_config);
-			g_object_notify (G_OBJECT (device), NM_DEVICE_INTERFACE_DHCP4_CONFIG);
+			g_object_notify (G_OBJECT (device), NM_DEVICE_DHCP4_CONFIG);
 
 			g_object_unref (config);
 		}
@@ -1786,7 +1817,7 @@ dhcp6_state_changed (NMDHCPClient *client,
 			nm_dhcp_client_foreach_option (priv->dhcp6_client,
 			                               dhcp6_add_option_cb,
 			                               priv->dhcp6_config);
-			g_object_notify (G_OBJECT (device), NM_DEVICE_INTERFACE_DHCP6_CONFIG);
+			g_object_notify (G_OBJECT (device), NM_DEVICE_DHCP6_CONFIG);
 		}
 		break;
 	case DHC_TIMEOUT: /* timed out contacting DHCP server */
@@ -2825,7 +2856,7 @@ dhcp4_cleanup (NMDevice *self, gboolean stop, gboolean release)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (priv->dhcp4_config) {
-		g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_DHCP4_CONFIG);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP4_CONFIG);
 		g_object_unref (priv->dhcp4_config);
 		priv->dhcp4_config = NULL;
 	}
@@ -2863,7 +2894,7 @@ dhcp6_cleanup (NMDevice *self, gboolean stop, gboolean release)
 	}
 
 	if (priv->dhcp6_config) {
-		g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_DHCP6_CONFIG);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP6_CONFIG);
 		g_object_unref (priv->dhcp6_config);
 		priv->dhcp6_config = NULL;
 	}
@@ -3026,6 +3057,12 @@ nm_device_disconnect (NMDevice *device, GError **error)
 	                         NM_DEVICE_STATE_DISCONNECTED,
 	                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
 	return TRUE;
+}
+
+static void
+impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context)
+{
+	g_signal_emit (device, signals[DISCONNECT_REQUEST], 0, context);
 }
 
 gboolean
@@ -3206,7 +3243,7 @@ nm_device_set_ip4_config (NMDevice *self,
 	}
 	g_object_unref (dns_mgr);
 
-	g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_IP4_CONFIG);
+	g_object_notify (G_OBJECT (self), NM_DEVICE_IP4_CONFIG);
 
 	return success;
 }
@@ -3269,7 +3306,7 @@ nm_device_set_ip6_config (NMDevice *self,
 	}
 	g_object_unref (dns_mgr);
 
-	g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_IP6_CONFIG);
+	g_object_notify (G_OBJECT (self), NM_DEVICE_IP6_CONFIG);
 
 	return success;
 }
@@ -3503,11 +3540,11 @@ set_property (GObject *object, guint prop_id,
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
  
 	switch (prop_id) {
-	case NM_DEVICE_INTERFACE_PROP_UDI:
+	case PROP_UDI:
 		/* construct-only */
 		priv->udi = g_strdup (g_value_get_string (value));
 		break;
-	case NM_DEVICE_INTERFACE_PROP_IFACE:
+	case PROP_IFACE:
 		g_free (priv->iface);
 		priv->ifindex = 0;
 		priv->iface = g_value_dup_string (value);
@@ -3518,32 +3555,32 @@ set_property (GObject *object, guint prop_id,
 			}
 		}
 		break;
-	case NM_DEVICE_INTERFACE_PROP_IP_IFACE:
+	case PROP_IP_IFACE:
 		break;
-	case NM_DEVICE_INTERFACE_PROP_DRIVER:
+	case PROP_DRIVER:
 		priv->driver = g_strdup (g_value_get_string (value));
 		break;
-	case NM_DEVICE_INTERFACE_PROP_CAPABILITIES:
+	case PROP_CAPABILITIES:
 		priv->capabilities = g_value_get_uint (value);
 		break;
-	case NM_DEVICE_INTERFACE_PROP_IP4_ADDRESS:
+	case PROP_IP4_ADDRESS:
 		priv->ip4_address = g_value_get_uint (value);
 		break;
-	case NM_DEVICE_INTERFACE_PROP_MANAGED:
+	case PROP_MANAGED:
 		priv->managed = g_value_get_boolean (value);
 		break;
-	case NM_DEVICE_INTERFACE_PROP_FIRMWARE_MISSING:
+	case PROP_FIRMWARE_MISSING:
 		priv->firmware_missing = g_value_get_boolean (value);
 		break;
-	case NM_DEVICE_INTERFACE_PROP_DEVICE_TYPE:
+	case PROP_DEVICE_TYPE:
 		g_return_if_fail (priv->type == NM_DEVICE_TYPE_UNKNOWN);
 		priv->type = g_value_get_uint (value);
 		break;
-	case NM_DEVICE_INTERFACE_PROP_TYPE_DESC:
+	case PROP_TYPE_DESC:
 		g_free (priv->type_desc);
 		priv->type_desc = g_value_dup_string (value);
 		break;
-	case NM_DEVICE_INTERFACE_PROP_RFKILL_TYPE:
+	case PROP_RFKILL_TYPE:
 		priv->rfkill_type = g_value_get_uint (value);
 		break;
 	default:
@@ -3570,75 +3607,75 @@ get_property (GObject *object, guint prop_id,
 	state = nm_device_get_state (self);
 
 	switch (prop_id) {
-	case NM_DEVICE_INTERFACE_PROP_UDI:
+	case PROP_UDI:
 		g_value_set_string (value, priv->udi);
 		break;
-	case NM_DEVICE_INTERFACE_PROP_IFACE:
+	case PROP_IFACE:
 		g_value_set_string (value, priv->iface);
 		break;
-	case NM_DEVICE_INTERFACE_PROP_IP_IFACE:
+	case PROP_IP_IFACE:
 		if (_is_connected (state))
 			g_value_set_string (value, nm_device_get_ip_iface (self));
 		else
 			g_value_set_string (value, NULL);
 		break;
-	case NM_DEVICE_INTERFACE_PROP_IFINDEX:
+	case PROP_IFINDEX:
 		g_value_set_int (value, priv->ifindex);
 		break;
-	case NM_DEVICE_INTERFACE_PROP_DRIVER:
+	case PROP_DRIVER:
 		g_value_set_string (value, priv->driver);
 		break;
-	case NM_DEVICE_INTERFACE_PROP_CAPABILITIES:
+	case PROP_CAPABILITIES:
 		g_value_set_uint (value, priv->capabilities);
 		break;
-	case NM_DEVICE_INTERFACE_PROP_IP4_ADDRESS:
+	case PROP_IP4_ADDRESS:
 		g_value_set_uint (value, priv->ip4_address);
 		break;
-	case NM_DEVICE_INTERFACE_PROP_IP4_CONFIG:
+	case PROP_IP4_CONFIG:
 		if (_is_connected (state) && priv->ip4_config)
 			g_value_set_boxed (value, nm_ip4_config_get_dbus_path (priv->ip4_config));
 		else
 			g_value_set_boxed (value, "/");
 		break;
-	case NM_DEVICE_INTERFACE_PROP_DHCP4_CONFIG:
+	case PROP_DHCP4_CONFIG:
 		if (_is_connected (state) && priv->dhcp4_client)
 			g_value_set_boxed (value, nm_dhcp4_config_get_dbus_path (priv->dhcp4_config));
 		else
 			g_value_set_boxed (value, "/");
 		break;
-	case NM_DEVICE_INTERFACE_PROP_IP6_CONFIG:
+	case PROP_IP6_CONFIG:
 		if (_is_connected (state) && priv->ip6_config)
 			g_value_set_boxed (value, nm_ip6_config_get_dbus_path (priv->ip6_config));
 		else
 			g_value_set_boxed (value, "/");
 		break;
-	case NM_DEVICE_INTERFACE_PROP_DHCP6_CONFIG:
+	case PROP_DHCP6_CONFIG:
 		if (_is_connected (state) && priv->dhcp6_client)
 			g_value_set_boxed (value, nm_dhcp6_config_get_dbus_path (priv->dhcp6_config));
 		else
 			g_value_set_boxed (value, "/");
 		break;
-	case NM_DEVICE_INTERFACE_PROP_STATE:
+	case PROP_STATE:
 		g_value_set_uint (value, priv->state);
 		break;
-	case NM_DEVICE_INTERFACE_PROP_ACTIVE_CONNECTION:
+	case PROP_ACTIVE_CONNECTION:
 		if (priv->act_request)
 			ac_path = nm_act_request_get_active_connection_path (priv->act_request);
 		g_value_set_boxed (value, ac_path ? ac_path : "/");
 		break;
-	case NM_DEVICE_INTERFACE_PROP_DEVICE_TYPE:
+	case PROP_DEVICE_TYPE:
 		g_value_set_uint (value, priv->type);
 		break;
-	case NM_DEVICE_INTERFACE_PROP_MANAGED:
+	case PROP_MANAGED:
 		g_value_set_boolean (value, priv->managed);
 		break;
-	case NM_DEVICE_INTERFACE_PROP_FIRMWARE_MISSING:
+	case PROP_FIRMWARE_MISSING:
 		g_value_set_boolean (value, priv->firmware_missing);
 		break;
-	case NM_DEVICE_INTERFACE_PROP_TYPE_DESC:
+	case PROP_TYPE_DESC:
 		g_value_set_string (value, priv->type_desc);
 		break;
-	case NM_DEVICE_INTERFACE_PROP_RFKILL_TYPE:
+	case PROP_RFKILL_TYPE:
 		g_value_set_uint (value, priv->rfkill_type);
 		break;
 	default:
@@ -3673,79 +3710,153 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->act_stage4_ip6_config_timeout = real_act_stage4_ip6_config_timeout;
 
 	/* Properties */
+	g_object_class_install_property
+		(object_class, PROP_UDI,
+		 g_param_spec_string (NM_DEVICE_UDI,
+		                      "UDI",
+		                      "Unique Device Identifier",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
-	g_object_class_override_property (object_class,
-									  NM_DEVICE_INTERFACE_PROP_UDI,
-									  NM_DEVICE_INTERFACE_UDI);
+	g_object_class_install_property
+		(object_class, PROP_IFACE,
+		 g_param_spec_string (NM_DEVICE_IFACE,
+		                      "Interface",
+		                      "Interface",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
-	g_object_class_override_property (object_class,
-									  NM_DEVICE_INTERFACE_PROP_IFACE,
-									  NM_DEVICE_INTERFACE_IFACE);
+	g_object_class_install_property
+		(object_class, PROP_IP_IFACE,
+		 g_param_spec_string (NM_DEVICE_IP_IFACE,
+		                      "IP Interface",
+		                      "IP Interface",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
-	g_object_class_override_property (object_class,
-	                                  NM_DEVICE_INTERFACE_PROP_IP_IFACE,
-	                                  NM_DEVICE_INTERFACE_IP_IFACE);
+	g_object_class_install_property
+		(object_class, PROP_DRIVER,
+		 g_param_spec_string (NM_DEVICE_DRIVER,
+		                      "Driver",
+		                      "Driver",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
-	g_object_class_override_property (object_class,
-	                                  NM_DEVICE_INTERFACE_PROP_IFINDEX,
-	                                  NM_DEVICE_INTERFACE_IFINDEX);
+	g_object_class_install_property
+		(object_class, PROP_CAPABILITIES,
+		 g_param_spec_uint (NM_DEVICE_CAPABILITIES,
+		                    "Capabilities",
+		                    "Capabilities",
+		                    0, G_MAXUINT32, NM_DEVICE_CAP_NONE,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
-	g_object_class_override_property (object_class,
-									  NM_DEVICE_INTERFACE_PROP_DRIVER,
-									  NM_DEVICE_INTERFACE_DRIVER);
+	g_object_class_install_property
+		(object_class, PROP_IP4_ADDRESS,
+		 g_param_spec_uint (NM_DEVICE_IP4_ADDRESS,
+		                    "IP4 address",
+		                    "IP4 address",
+		                    0, G_MAXUINT32, 0, /* FIXME */
+		                    G_PARAM_READWRITE));
 
-	g_object_class_override_property (object_class,
-									  NM_DEVICE_INTERFACE_PROP_CAPABILITIES,
-									  NM_DEVICE_INTERFACE_CAPABILITIES);
+	g_object_class_install_property
+		(object_class, PROP_IP4_CONFIG,
+		 g_param_spec_boxed (NM_DEVICE_IP4_CONFIG,
+		                     "IP4 Config",
+		                     "IP4 Config",
+		                     DBUS_TYPE_G_OBJECT_PATH,
+		                     G_PARAM_READWRITE));
 
-	g_object_class_override_property (object_class,
-									  NM_DEVICE_INTERFACE_PROP_IP4_ADDRESS,
-									  NM_DEVICE_INTERFACE_IP4_ADDRESS);
+	g_object_class_install_property
+		(object_class, PROP_DHCP4_CONFIG,
+		 g_param_spec_boxed (NM_DEVICE_DHCP4_CONFIG,
+		                     "DHCP4 Config",
+		                     "DHCP4 Config",
+		                     DBUS_TYPE_G_OBJECT_PATH,
+		                     G_PARAM_READWRITE));
 
-	g_object_class_override_property (object_class,
-									  NM_DEVICE_INTERFACE_PROP_IP4_CONFIG,
-									  NM_DEVICE_INTERFACE_IP4_CONFIG);
+	g_object_class_install_property
+		(object_class, PROP_IP6_CONFIG,
+		 g_param_spec_boxed (NM_DEVICE_IP6_CONFIG,
+		                     "IP6 Config",
+		                     "IP6 Config",
+		                     DBUS_TYPE_G_OBJECT_PATH,
+		                     G_PARAM_READWRITE));
 
-	g_object_class_override_property (object_class,
-									  NM_DEVICE_INTERFACE_PROP_DHCP4_CONFIG,
-									  NM_DEVICE_INTERFACE_DHCP4_CONFIG);
+	g_object_class_install_property
+		(object_class, PROP_DHCP6_CONFIG,
+		 g_param_spec_boxed (NM_DEVICE_DHCP6_CONFIG,
+		                     "DHCP6 Config",
+		                     "DHCP6 Config",
+		                     DBUS_TYPE_G_OBJECT_PATH,
+		                     G_PARAM_READWRITE));
 
-	g_object_class_override_property (object_class,
-									  NM_DEVICE_INTERFACE_PROP_IP6_CONFIG,
-									  NM_DEVICE_INTERFACE_IP6_CONFIG);
+	g_object_class_install_property
+		(object_class, PROP_STATE,
+		 g_param_spec_uint (NM_DEVICE_STATE,
+		                    "State",
+		                    "State",
+		                    0, G_MAXUINT32, NM_DEVICE_STATE_UNKNOWN,
+		                    G_PARAM_READABLE));
 
-	g_object_class_override_property (object_class,
-	                                  NM_DEVICE_INTERFACE_PROP_DHCP6_CONFIG,
-	                                  NM_DEVICE_INTERFACE_DHCP6_CONFIG);
+	g_object_class_install_property
+		(object_class, PROP_ACTIVE_CONNECTION,
+		 g_param_spec_boxed (NM_DEVICE_ACTIVE_CONNECTION,
+		                     "ActiveConnection",
+		                     "ActiveConnection",
+		                     DBUS_TYPE_G_OBJECT_PATH,
+		                     G_PARAM_READABLE));
 
-	g_object_class_override_property (object_class,
-									  NM_DEVICE_INTERFACE_PROP_STATE,
-									  NM_DEVICE_INTERFACE_STATE);
+	g_object_class_install_property
+		(object_class, PROP_DEVICE_TYPE,
+		 g_param_spec_uint (NM_DEVICE_DEVICE_TYPE,
+		                    "DeviceType",
+		                    "DeviceType",
+		                    0, G_MAXUINT32, NM_DEVICE_TYPE_UNKNOWN,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
 
-	g_object_class_override_property (object_class,
-	                                  NM_DEVICE_INTERFACE_PROP_ACTIVE_CONNECTION,
-	                                  NM_DEVICE_INTERFACE_ACTIVE_CONNECTION);
+	g_object_class_install_property
+		(object_class, PROP_MANAGED,
+		 g_param_spec_boolean (NM_DEVICE_MANAGED,
+		                       "Managed",
+		                       "Managed",
+		                       FALSE,
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
-	g_object_class_override_property (object_class,
-									  NM_DEVICE_INTERFACE_PROP_DEVICE_TYPE,
-									  NM_DEVICE_INTERFACE_DEVICE_TYPE);
+	g_object_class_install_property
+		(object_class, PROP_FIRMWARE_MISSING,
+		 g_param_spec_boolean (NM_DEVICE_FIRMWARE_MISSING,
+		                       "FirmwareMissing",
+		                       "Firmware missing",
+		                       FALSE,
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
-	g_object_class_override_property (object_class,
-									  NM_DEVICE_INTERFACE_PROP_MANAGED,
-									  NM_DEVICE_INTERFACE_MANAGED);
+	g_object_class_install_property
+		(object_class, PROP_TYPE_DESC,
+		 g_param_spec_string (NM_DEVICE_TYPE_DESC,
+		                      "Type Description",
+		                      "Device type description",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
 
-	g_object_class_override_property (object_class,
-									  NM_DEVICE_INTERFACE_PROP_FIRMWARE_MISSING,
-									  NM_DEVICE_INTERFACE_FIRMWARE_MISSING);
+	g_object_class_install_property
+		(object_class, PROP_RFKILL_TYPE,
+		 g_param_spec_uint (NM_DEVICE_RFKILL_TYPE,
+		                    "Rfkill Type",
+		                    "Type of rfkill switch (if any) supported by this device",
+		                    RFKILL_TYPE_WLAN,
+		                    RFKILL_TYPE_MAX,
+		                    RFKILL_TYPE_UNKNOWN,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
 
-	g_object_class_override_property (object_class,
-									  NM_DEVICE_INTERFACE_PROP_TYPE_DESC,
-									  NM_DEVICE_INTERFACE_TYPE_DESC);
+	g_object_class_install_property
+		(object_class, PROP_IFINDEX,
+		 g_param_spec_int (NM_DEVICE_IFINDEX,
+		                   "Ifindex",
+		                   "Ifindex",
+		                   0, G_MAXINT, 0,
+		                   G_PARAM_READABLE | NM_PROPERTY_PARAM_NO_EXPORT));
 
-	g_object_class_override_property (object_class,
-	                                  NM_DEVICE_INTERFACE_PROP_RFKILL_TYPE,
-	                                  NM_DEVICE_INTERFACE_RFKILL_TYPE);
-
+	/* Signals */
 	signals[STATE_CHANGED] =
 		g_signal_new ("state-changed",
 		              G_OBJECT_CLASS_TYPE (object_class),
@@ -3755,6 +3866,14 @@ nm_device_class_init (NMDeviceClass *klass)
 		              G_TYPE_NONE, 3,
 		              G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 
+	signals[DISCONNECT_REQUEST] =
+		g_signal_new (NM_DEVICE_DISCONNECT_REQUEST,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL,
+		              g_cclosure_marshal_VOID__POINTER,
+		              G_TYPE_NONE, 1, G_TYPE_POINTER);
+
 	signals[AUTOCONNECT_ALLOWED] =
 		g_signal_new ("autoconnect-allowed",
 		              G_OBJECT_CLASS_TYPE (object_class),
@@ -3763,6 +3882,9 @@ nm_device_class_init (NMDeviceClass *klass)
 		              autoconnect_allowed_accumulator, NULL,
 		              _nm_marshal_BOOLEAN__VOID,
 		              G_TYPE_BOOLEAN, 0);
+
+	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
+	                                 &dbus_glib_nm_device_interface_object_info);
 
 	dbus_g_error_domain_register (NM_DEVICE_ERROR, NULL, NM_TYPE_DEVICE_ERROR);
 }
@@ -3804,7 +3926,7 @@ nm_device_set_firmware_missing (NMDevice *self, gboolean new_missing)
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	if (priv->firmware_missing != new_missing) {
 		priv->firmware_missing = new_missing;
-		g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_FIRMWARE_MISSING);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_FIRMWARE_MISSING);
 	}
 }
 
@@ -4024,7 +4146,7 @@ nm_device_state_changed (NMDevice *device,
 		break;
 	}
 
-	g_object_notify (G_OBJECT (device), NM_DEVICE_INTERFACE_STATE);
+	g_object_notify (G_OBJECT (device), NM_DEVICE_STATE);
 	g_signal_emit_by_name (device, "state-changed", state, old_state, reason);
 
 	/* Post-process the event after internal notification */
@@ -4105,7 +4227,7 @@ nm_device_set_managed (NMDevice *device,
 	             nm_device_get_iface (device),
 	             managed ? "managed" : "unmanaged");
 
-	g_object_notify (G_OBJECT (device), NM_DEVICE_INTERFACE_MANAGED);
+	g_object_notify (G_OBJECT (device), NM_DEVICE_MANAGED);
 
 	/* If now managed, jump to unavailable */
 	if (managed)

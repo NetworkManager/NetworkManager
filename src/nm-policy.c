@@ -1162,8 +1162,8 @@ device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 	NMPolicy *policy = (NMPolicy *) user_data;
 
 	_connect_device_signal (policy, device, "state-changed", device_state_changed);
-	_connect_device_signal (policy, device, "notify::" NM_DEVICE_INTERFACE_IP4_CONFIG, device_ip_config_changed);
-	_connect_device_signal (policy, device, "notify::" NM_DEVICE_INTERFACE_IP6_CONFIG, device_ip_config_changed);
+	_connect_device_signal (policy, device, "notify::" NM_DEVICE_IP4_CONFIG, device_ip_config_changed);
+	_connect_device_signal (policy, device, "notify::" NM_DEVICE_IP6_CONFIG, device_ip_config_changed);
 
 	if (NM_IS_DEVICE_WIFI (device)) {
 		_connect_device_signal (policy, device, "access-point-added", wireless_networks_changed);

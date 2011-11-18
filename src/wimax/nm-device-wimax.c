@@ -1369,12 +1369,12 @@ nm_device_wimax_new (const char *udi,
 	g_return_val_if_fail (driver != NULL, NULL);
 
 	device = (NMDevice *) g_object_new (NM_TYPE_DEVICE_WIMAX,
-	                                    NM_DEVICE_INTERFACE_UDI, udi,
-	                                    NM_DEVICE_INTERFACE_IFACE, iface,
-	                                    NM_DEVICE_INTERFACE_DRIVER, driver,
-	                                    NM_DEVICE_INTERFACE_TYPE_DESC, "WiMAX",
-	                                    NM_DEVICE_INTERFACE_DEVICE_TYPE, NM_DEVICE_TYPE_WIMAX,
-	                                    NM_DEVICE_INTERFACE_RFKILL_TYPE, RFKILL_TYPE_WIMAX,
+	                                    NM_DEVICE_UDI, udi,
+	                                    NM_DEVICE_IFACE, iface,
+	                                    NM_DEVICE_DRIVER, driver,
+	                                    NM_DEVICE_TYPE_DESC, "WiMAX",
+	                                    NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_WIMAX,
+	                                    NM_DEVICE_RFKILL_TYPE, RFKILL_TYPE_WIMAX,
 	                                    NULL);
 	if (device) {
 		struct wmxsdk *sdk;

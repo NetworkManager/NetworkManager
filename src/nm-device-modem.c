@@ -333,12 +333,12 @@ nm_device_modem_new (NMModem *modem, const char *driver)
 	}
 
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_MODEM,
-	                                  NM_DEVICE_INTERFACE_UDI, nm_modem_get_path (modem),
-	                                  NM_DEVICE_INTERFACE_IFACE, nm_modem_get_iface (modem),
-	                                  NM_DEVICE_INTERFACE_DRIVER, driver,
-	                                  NM_DEVICE_INTERFACE_TYPE_DESC, type_desc,
-	                                  NM_DEVICE_INTERFACE_DEVICE_TYPE, NM_DEVICE_TYPE_MODEM,
-	                                  NM_DEVICE_INTERFACE_RFKILL_TYPE, RFKILL_TYPE_WWAN,
+	                                  NM_DEVICE_UDI, nm_modem_get_path (modem),
+	                                  NM_DEVICE_IFACE, nm_modem_get_iface (modem),
+	                                  NM_DEVICE_DRIVER, driver,
+	                                  NM_DEVICE_TYPE_DESC, type_desc,
+	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_MODEM,
+	                                  NM_DEVICE_RFKILL_TYPE, RFKILL_TYPE_WWAN,
 	                                  NM_DEVICE_MODEM_MODEM, modem,
 	                                  NM_DEVICE_MODEM_CAPABILITIES, caps,
 	                                  NM_DEVICE_MODEM_CURRENT_CAPABILITIES, caps,

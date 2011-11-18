@@ -1160,7 +1160,7 @@ manager_update_radio_enabled (NMManager *self,
 	for (iter = priv->devices; iter; iter = iter->next) {
 		RfKillType devtype = RFKILL_TYPE_UNKNOWN;
 
-		g_object_get (G_OBJECT (iter->data), NM_DEVICE_INTERFACE_RFKILL_TYPE, &devtype, NULL);
+		g_object_get (G_OBJECT (iter->data), NM_DEVICE_RFKILL_TYPE, &devtype, NULL);
 		if (devtype == rstate->rtype) {
 			nm_log_dbg (LOGD_RFKILL, "(%s): setting radio %s",
 			            nm_device_get_iface (NM_DEVICE (iter->data)),
@@ -1237,7 +1237,7 @@ nm_manager_get_modem_enabled_state (NMManager *self)
 		RfKillState candidate_state = RFKILL_UNBLOCKED;
 		RfKillType devtype = RFKILL_TYPE_UNKNOWN;
 
-		g_object_get (G_OBJECT (candidate), NM_DEVICE_INTERFACE_RFKILL_TYPE, &devtype, NULL);
+		g_object_get (G_OBJECT (candidate), NM_DEVICE_RFKILL_TYPE, &devtype, NULL);
 		if (devtype == RFKILL_TYPE_WWAN) {
 			if (!nm_device_get_enabled (candidate))
 				candidate_state = RFKILL_SOFT_BLOCKED;
@@ -1505,7 +1505,7 @@ add_device (NMManager *self, NMDevice *device)
 					  G_CALLBACK (manager_device_state_changed),
 					  self);
 
-	g_signal_connect (device, NM_DEVICE_INTERFACE_DISCONNECT_REQUEST,
+	g_signal_connect (device, NM_DEVICE_DISCONNECT_REQUEST,
 					  G_CALLBACK (manager_device_disconnect_request),
 					  self);
 
@@ -2474,7 +2474,7 @@ do_sleep_wake (NMManager *self)
 					            rstate->desc, rstate->hw_enabled, rstate->sw_enabled, rstate->user_enabled);
 				}
 
-				g_object_get (G_OBJECT (device), NM_DEVICE_INTERFACE_RFKILL_TYPE, &devtype, NULL);
+				g_object_get (G_OBJECT (device), NM_DEVICE_RFKILL_TYPE, &devtype, NULL);
 				if (devtype == rstate->rtype)
 					nm_device_set_enabled (device, enabled);
 			}

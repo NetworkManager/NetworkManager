@@ -34,6 +34,30 @@
 #include "nm-dhcp6-config.h"
 #include "nm-connection.h"
 
+/* Properties */
+#define NM_DEVICE_UDI              "udi"
+#define NM_DEVICE_IFACE            "interface"
+#define NM_DEVICE_IP_IFACE         "ip-interface"
+#define NM_DEVICE_DRIVER           "driver"
+#define NM_DEVICE_CAPABILITIES     "capabilities"
+#define NM_DEVICE_IP4_ADDRESS      "ip4-address"
+#define NM_DEVICE_IP4_CONFIG       "ip4-config"
+#define NM_DEVICE_DHCP4_CONFIG     "dhcp4-config"
+#define NM_DEVICE_IP6_CONFIG       "ip6-config"
+#define NM_DEVICE_DHCP6_CONFIG     "dhcp6-config"
+#define NM_DEVICE_STATE            "state"
+#define NM_DEVICE_ACTIVE_CONNECTION "active-connection"
+#define NM_DEVICE_DEVICE_TYPE      "device-type" /* ugh */
+#define NM_DEVICE_MANAGED          "managed"
+#define NM_DEVICE_FIRMWARE_MISSING "firmware-missing"
+#define NM_DEVICE_TYPE_DESC        "type-desc"    /* Internal only */
+#define NM_DEVICE_RFKILL_TYPE      "rfkill-type"  /* Internal only */
+#define NM_DEVICE_IFINDEX          "ifindex"      /* Internal only */
+
+/* Internal signal */
+#define NM_DEVICE_DISCONNECT_REQUEST "disconnect-request"
+
+
 G_BEGIN_DECLS
 
 #define NM_TYPE_DEVICE			(nm_device_get_type ())

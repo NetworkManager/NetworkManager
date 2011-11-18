@@ -1017,15 +1017,15 @@ nm_device_bt_new (const char *udi,
 	g_return_val_if_fail (capabilities != NM_BT_CAPABILITY_NONE, NULL);
 
 	device = (NMDevice *) g_object_new (NM_TYPE_DEVICE_BT,
-	                                    NM_DEVICE_INTERFACE_UDI, udi,
-	                                    NM_DEVICE_INTERFACE_IFACE, bdaddr,
-	                                    NM_DEVICE_INTERFACE_DRIVER, "bluez",
+	                                    NM_DEVICE_UDI, udi,
+	                                    NM_DEVICE_IFACE, bdaddr,
+	                                    NM_DEVICE_DRIVER, "bluez",
 	                                    NM_DEVICE_BT_HW_ADDRESS, bdaddr,
 	                                    NM_DEVICE_BT_NAME, name,
 	                                    NM_DEVICE_BT_CAPABILITIES, capabilities,
-	                                    NM_DEVICE_INTERFACE_MANAGED, managed,
-	                                    NM_DEVICE_INTERFACE_TYPE_DESC, "Bluetooth",
-	                                    NM_DEVICE_INTERFACE_DEVICE_TYPE, NM_DEVICE_TYPE_BT,
+	                                    NM_DEVICE_MANAGED, managed,
+	                                    NM_DEVICE_TYPE_DESC, "Bluetooth",
+	                                    NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_BT,
 	                                    NULL);
 	if (device)
 		g_signal_connect (device, "state-changed", G_CALLBACK (device_state_changed), device);

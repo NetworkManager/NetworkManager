@@ -28,175 +28,14 @@
 #include "nm-properties-changed-signal.h"
 #include "nm-rfkill.h"
 
-static void impl_device_disconnect (NMDeviceInterface *device,
-                                    DBusGMethodInvocation *context);
-
-#include "nm-device-interface-glue.h"
-
 static void
 nm_device_interface_init (gpointer g_iface)
 {
-	GType iface_type = G_TYPE_FROM_INTERFACE (g_iface);
 	static gboolean initialized = FALSE;
 
 	if (initialized)
 		return;
-
-	/* Properties */
-	g_object_interface_install_property
-		(g_iface,
-		 g_param_spec_string (NM_DEVICE_INTERFACE_UDI,
-							  "UDI",
-							  "Unique Device Identifier",
-							  NULL,
-							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-
-	g_object_interface_install_property
-		(g_iface,
-		 g_param_spec_string (NM_DEVICE_INTERFACE_IFACE,
-							  "Interface",
-							  "Interface",
-							  NULL,
-							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-
-	g_object_interface_install_property
-		(g_iface,
-		 g_param_spec_string (NM_DEVICE_INTERFACE_IP_IFACE,
-		                      "IP Interface",
-		                      "IP Interface",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-
-	g_object_interface_install_property
-		(g_iface,
-		 g_param_spec_string (NM_DEVICE_INTERFACE_DRIVER,
-							  "Driver",
-							  "Driver",
-							  NULL,
-							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-	
-	g_object_interface_install_property
-		(g_iface,
-		 g_param_spec_uint (NM_DEVICE_INTERFACE_CAPABILITIES,
-							"Capabilities",
-							"Capabilities",
-							0, G_MAXUINT32, NM_DEVICE_CAP_NONE,
-							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-
-	g_object_interface_install_property
-		(g_iface,
-		 g_param_spec_uint (NM_DEVICE_INTERFACE_IP4_ADDRESS,
-							"IP4 address",
-							"IP4 address",
-							0, G_MAXUINT32, 0, /* FIXME */
-							G_PARAM_READWRITE));
-
-	g_object_interface_install_property
-		(g_iface,
-		 g_param_spec_boxed (NM_DEVICE_INTERFACE_IP4_CONFIG,
-							  "IP4 Config",
-							  "IP4 Config",
-							  DBUS_TYPE_G_OBJECT_PATH,
-							  G_PARAM_READWRITE));
-
-	g_object_interface_install_property
-		(g_iface,
-		 g_param_spec_boxed (NM_DEVICE_INTERFACE_DHCP4_CONFIG,
-							  "DHCP4 Config",
-							  "DHCP4 Config",
-							  DBUS_TYPE_G_OBJECT_PATH,
-							  G_PARAM_READWRITE));
-
-	g_object_interface_install_property
-		(g_iface,
-		 g_param_spec_boxed (NM_DEVICE_INTERFACE_IP6_CONFIG,
-							  "IP6 Config",
-							  "IP6 Config",
-							  DBUS_TYPE_G_OBJECT_PATH,
-							  G_PARAM_READWRITE));
-
-	g_object_interface_install_property
-		(g_iface,
-		 g_param_spec_boxed (NM_DEVICE_INTERFACE_DHCP6_CONFIG,
-							  "DHCP6 Config",
-							  "DHCP6 Config",
-							  DBUS_TYPE_G_OBJECT_PATH,
-							  G_PARAM_READWRITE));
-
-	g_object_interface_install_property
-		(g_iface,
-		 g_param_spec_uint (NM_DEVICE_INTERFACE_STATE,
-							"State",
-							"State",
-							0, G_MAXUINT32, NM_DEVICE_STATE_UNKNOWN,
-							G_PARAM_READABLE));
-
-	g_object_interface_install_property
-		(g_iface,
-		 g_param_spec_boxed (NM_DEVICE_INTERFACE_ACTIVE_CONNECTION,
-		                     "ActiveConnection",
-		                     "ActiveConnection",
-		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READABLE));
-
-	g_object_interface_install_property
-		(g_iface,
-		 g_param_spec_uint (NM_DEVICE_INTERFACE_DEVICE_TYPE,
-							"DeviceType",
-							"DeviceType",
-							0, G_MAXUINT32, NM_DEVICE_TYPE_UNKNOWN,
-							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
-
-	g_object_interface_install_property
-		(g_iface, g_param_spec_boolean (NM_DEVICE_INTERFACE_MANAGED,
-	                                   "Managed",
-	                                   "Managed",
-	                                   FALSE,
-	                                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-
-	g_object_interface_install_property
-		(g_iface, g_param_spec_boolean (NM_DEVICE_INTERFACE_FIRMWARE_MISSING,
-	                                   "FirmwareMissing",
-	                                   "Firmware missing",
-	                                   FALSE,
-	                                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-
-	g_object_interface_install_property
-		(g_iface,
-		 g_param_spec_string (NM_DEVICE_INTERFACE_TYPE_DESC,
-							  "Type Description",
-							  "Device type description",
-							  NULL,
-							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
-
-	g_object_interface_install_property
-		(g_iface, g_param_spec_uint (NM_DEVICE_INTERFACE_RFKILL_TYPE,
-	                                 "Rfkill Type",
-	                                 "Type of rfkill switch (if any) supported by this device",
-	                                 RFKILL_TYPE_WLAN,
-	                                 RFKILL_TYPE_MAX,
-	                                 RFKILL_TYPE_UNKNOWN,
-	                                 G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
-
-	g_object_interface_install_property
-		(g_iface,
-		 g_param_spec_int (NM_DEVICE_INTERFACE_IFINDEX,
-							"Ifindex",
-							"Ifindex",
-							0, G_MAXINT, 0,
-							G_PARAM_READABLE | NM_PROPERTY_PARAM_NO_EXPORT));
-
 	/* Signals */
-	g_signal_new (NM_DEVICE_INTERFACE_DISCONNECT_REQUEST,
-	              iface_type,
-	              G_SIGNAL_RUN_FIRST,
-	              0, NULL, NULL,
-	              g_cclosure_marshal_VOID__POINTER,
-	              G_TYPE_NONE, 1, G_TYPE_POINTER);
-
-	dbus_g_object_type_install_info (iface_type,
-									 &dbus_glib_nm_device_interface_object_info);
-
 	initialized = TRUE;
 }
 
@@ -227,12 +66,5 @@ nm_device_interface_get_type (void)
 	}
 
 	return device_interface_type;
-}
-
-static void
-impl_device_disconnect (NMDeviceInterface *device,
-                        DBusGMethodInvocation *context)
-{
-	g_signal_emit_by_name (device, NM_DEVICE_INTERFACE_DISCONNECT_REQUEST, context);
 }
 
