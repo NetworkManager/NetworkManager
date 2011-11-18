@@ -7,8 +7,10 @@ INCLUDES = \
 
 noinst_LTLIBRARIES = libnmbackend.la
 
-libnmbackend_la_SOURCES = NetworkManagerGeneric.c	\
-				NetworkManagerGeneric.h
+libnmbackend_la_SOURCES = \
+	NetworkManagerGeneric.c \
+	NetworkManagerGeneric.h \
+	nm-backend.h
 
 libnmbackend_la_LIBADD =
 

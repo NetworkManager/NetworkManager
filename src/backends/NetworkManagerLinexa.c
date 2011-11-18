@@ -28,35 +28,18 @@
 #include <config.h>
 #endif
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-
 #include "NetworkManagerGeneric.h"
-#include "nm-system.h"
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
 
-/*
- * nm_system_enable_loopback
- *
- * Bring up the loopback interface
- *
- */
-void nm_system_enable_loopback (void)
+void nm_backend_enable_loopback (void)
 {
 	nm_generic_enable_loopback ();
 }
 
-/*
- * nm_system_update_dns
- *
- * Invalidate the nscd host cache, if it exists, since
- * we changed resolv.conf.
- *
- */
-void nm_system_update_dns (void)
+void nm_backend_update_dns (void)
 {
+	/* Invalidate the nscd host cache, if it exists, since we changed resolv.conf */
 	if (g_file_test ("/usr/sbin/nscd", G_FILE_TEST_IS_EXECUTABLE)) {
 		nm_log_info (LOGD_DNS, "Clearing nscd hosts cache.");
 		nm_spawn_process ("/usr/sbin/nscd -i hosts");

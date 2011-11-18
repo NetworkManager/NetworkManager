@@ -27,17 +27,11 @@
 #include <config.h>
 #endif
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <gio/gio.h>
+#include <glib.h>
 
 #include "NetworkManagerGeneric.h"
-#include "nm-system.h"
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
-
-#define BUFFER_SIZE 512
 
 static void openrc_start_lo_if_necessary() 
 {
@@ -46,18 +40,11 @@ static void openrc_start_lo_if_necessary()
                 nm_spawn_process ("/etc/init.d/net.lo start");
 }
 
-/*
- * nm_system_enable_loopback
- *
- * Bring up the loopback interface
- *
- */
-void nm_system_enable_loopback (void)
+void nm_backend_enable_loopback (void)
 {
 	gchar *comm;
 
-	/* If anything goes wrong trying to open /proc/1/comm, we will assume
-	   OpenRC. */
+	/* If anything goes wrong trying to open /proc/1/comm, we will assume OpenRC */
 	if (!g_file_get_contents ("/proc/1/comm", &comm, NULL, NULL)) {
 		nm_log_info (LOGD_CORE, "NetworkManager is running with OpenRC...");
 		openrc_start_lo_if_necessary ();
@@ -77,15 +64,11 @@ void nm_system_enable_loopback (void)
 	g_free (comm);
 }
 
-/*
- * nm_system_update_dns
- *
- * Make glibc/nscd aware of any changes to the resolv.conf file by
- * restarting nscd. Only restart if already running.
- *
- */
-void nm_system_update_dns (void)
+void nm_backend_update_dns (void)
 {
+	/* Make glibc/nscd aware of any changes to the resolv.conf file by
+	 * restarting nscd. Only restart if already running.
+	 */
 	if (g_file_test ("/usr/sbin/nscd", G_FILE_TEST_IS_EXECUTABLE)) {
 		nm_log_info (LOGD_DNS, "Clearing nscd hosts cache.");
 		nm_spawn_process ("/usr/sbin/nscd -i hosts");

@@ -40,7 +40,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-manager.h"
 #include "nm-policy.h"
-#include "nm-system.h"
+#include "backends/nm-backend.h"
 #include "nm-dns-manager.h"
 #include "nm-dbus-manager.h"
 #include "nm-supplicant-manager.h"
@@ -685,7 +685,7 @@ main (int argc, char *argv[])
 	nm_manager_start (manager);
 
 	/* Bring up the loopback interface. */
-	nm_system_enable_loopback ();
+	nm_backend_enable_loopback ();
 
 	success = TRUE;
 

@@ -23,35 +23,15 @@
  * (C) Copyright 2006 Alex Smith
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-
-#include "nm-system.h"
-
 /* Provided by the frugalwareutils package on Frugalware */
 #include <libfwnetconfig.h> 
 
-/*
- * nm_system_enable_loopback
- *
- * Bring up the loopback interface
- *
- */
-void nm_system_enable_loopback (void)
+void nm_backend_enable_loopback (void)
 {
 	fwnet_loup ();
 }
 
-
-/*
- * nm_system_update_dns
- *
- * Make glibc/nscd aware of any changes to the resolv.conf file by
- * restarting nscd.
- *
- */
-void nm_system_update_dns (void)
+void nm_backend_update_dns (void)
 {
 	/* I'm not running nscd */
 }

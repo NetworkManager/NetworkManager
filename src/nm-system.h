@@ -57,9 +57,6 @@ struct rtnl_route *nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device,
 
 gboolean        nm_system_iface_flush_addresses         (int ifindex, int family);
 
-void			nm_system_enable_loopback				(void);
-void			nm_system_update_dns					(void);
-
 gboolean		nm_system_apply_ip4_config              (int ifindex,
                                                          NMIP4Config *config,
                                                          int priority,

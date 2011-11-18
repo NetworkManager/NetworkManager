@@ -1,6 +1,5 @@
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /* NetworkManager -- Network link manager
- *
- * Ozan Caglayan <ozan@pardus.org.tr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,22 +15,15 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2004 RedHat, Inc.
- * (C) Copyright 2009 TUBITAK/UEKAE
+ * Copyright (C) 2011 Red Hat, Inc.
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+#ifndef NM_BACKEND_H
+#define NM_BACKEND_H
 
-#include "NetworkManagerGeneric.h"
+/* Random disto-specific stuff */
 
-void nm_backend_enable_loopback (void)
-{
-	nm_generic_enable_loopback ();
-}
+void nm_backend_enable_loopback (void);
+void nm_backend_update_dns      (void);
 
-void nm_backend_update_dns (void)
-{
-}
-
+#endif  /* NM_BACKEND_H */
