@@ -532,6 +532,31 @@ ssid_writer (GKeyFile *file,
 	}
 }
 
+static void
+password_raw_writer (GKeyFile *file,
+                     const char *keyfile_dir,
+                     const char *uuid,
+                     NMSetting *setting,
+                     const char *key,
+                     const GValue *value)
+{
+	const char *setting_name = nm_setting_get_name (setting);
+	GByteArray *array;
+	int i, *tmp_array;
+
+	g_return_if_fail (G_VALUE_HOLDS (value, DBUS_TYPE_G_UCHAR_ARRAY));
+
+	array = (GByteArray *) g_value_get_boxed (value);
+	if (!array || !array->len)
+		return;
+
+	tmp_array = g_new (gint, array->len);
+	for (i = 0; i < array->len; i++)
+		tmp_array[i] = (int) array->data[i];
+	g_key_file_set_integer_list (file, setting_name, key, tmp_array, array->len);
+	g_free (tmp_array);
+}
+
 typedef struct ObjectType {
 	const char *key;
 	const char *suffix;
@@ -790,6 +815,9 @@ static KeyWriter key_writers[] = {
 	{ NM_SETTING_WIRELESS_SETTING_NAME,
 	  NM_SETTING_WIRELESS_SSID,
 	  ssid_writer },
+	{ NM_SETTING_802_1X_SETTING_NAME,
+	  NM_SETTING_802_1X_PASSWORD_RAW,
+	  password_raw_writer },
 	{ NM_SETTING_802_1X_SETTING_NAME,
 	  NM_SETTING_802_1X_CA_CERT,
 	  cert_writer },

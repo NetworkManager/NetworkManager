@@ -823,6 +823,22 @@ ssid_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char 
 	}
 }
 
+static void
+password_raw_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char *keyfile_path)
+{
+	const char *setting_name = nm_setting_get_name (setting);
+	GByteArray *array;
+
+	array = get_uchar_array (keyfile, setting_name, key, FALSE, TRUE);
+	if (array) {
+		g_object_set (setting, key, array, NULL);
+		g_byte_array_free (array, TRUE);
+	} else {
+		g_warning ("%s: ignoring invalid raw password for %s / %s",
+		           __func__, setting_name, key);
+	}
+}
+
 static char *
 get_cert_path (const char *keyfile_path, GByteArray *cert_path)
 {
@@ -1021,6 +1037,10 @@ static KeyParser key_parsers[] = {
 	  NM_SETTING_WIRELESS_SSID,
 	  TRUE,
 	  ssid_parser },
+	{ NM_SETTING_802_1X_SETTING_NAME,
+	  NM_SETTING_802_1X_PASSWORD_RAW,
+	  TRUE,
+	  password_raw_parser },
 	{ NM_SETTING_802_1X_SETTING_NAME,
 	  NM_SETTING_802_1X_CA_CERT,
 	  TRUE,
