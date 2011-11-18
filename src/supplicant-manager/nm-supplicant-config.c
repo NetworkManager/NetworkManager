@@ -728,8 +728,21 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	g_return_val_if_fail (connection_uid != NULL, FALSE);
 
 	value = nm_setting_802_1x_get_password (setting);
-	if (!add_string_val (self, value, "password", FALSE, TRUE))
-		return FALSE;
+	if (value) {
+		if (!add_string_val (self, value, "password", FALSE, TRUE))
+			return FALSE;
+	} else {
+		array = nm_setting_802_1x_get_password_raw (setting);
+		success = nm_supplicant_config_add_option (self,
+		                                           "password",
+		                                           (const char *)array->data,
+		                                           array->len,
+		                                           TRUE);
+		if (!success) {
+			nm_log_warn (LOGD_SUPPLICANT, "Error adding password-raw to supplicant config.");
+			return FALSE;
+		}
+	}
 	value = nm_setting_802_1x_get_pin (setting);
 	if (!add_string_val (self, value, "pin", FALSE, TRUE))
 		return FALSE;
