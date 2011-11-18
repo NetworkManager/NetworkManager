@@ -62,6 +62,50 @@
 #define PENDING_IP4_CONFIG "pending-ip4-config"
 #define PENDING_IP6_CONFIG "pending-ip6-config"
 
+/***********************************************************/
+typedef enum {
+	NM_DEVICE_ERROR_CONNECTION_ACTIVATING = 0,
+	NM_DEVICE_ERROR_CONNECTION_INVALID,
+	NM_DEVICE_ERROR_NOT_ACTIVE,
+} NMDeviceError;
+
+#define NM_DEVICE_ERROR (nm_device_error_quark ())
+#define NM_TYPE_DEVICE_ERROR (nm_device_error_get_type ())
+
+static GQuark
+nm_device_error_quark (void)
+{
+	static GQuark quark = 0;
+	if (!quark)
+		quark = g_quark_from_static_string ("nm-device-error");
+	return quark;
+}
+
+/* This should really be standard. */
+#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
+
+static GType
+nm_device_error_get_type (void)
+{
+	static GType etype = 0;
+
+	if (etype == 0) {
+		static const GEnumValue values[] = {
+			/* Connection is already activating. */
+			ENUM_ENTRY (NM_DEVICE_ERROR_CONNECTION_ACTIVATING, "ConnectionActivating"),
+			/* Connection is invalid for this device. */
+			ENUM_ENTRY (NM_DEVICE_ERROR_CONNECTION_INVALID, "ConnectionInvalid"),
+			/* Operation could not be performed because the device is not active. */
+			ENUM_ENTRY (NM_DEVICE_ERROR_NOT_ACTIVE, "NotActive"),
+			{ 0, 0, 0 }
+		};
+		etype = g_enum_register_static ("NMDeviceError", values);
+	}
+	return etype;
+}
+
+/***********************************************************/
+
 G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, G_TYPE_OBJECT)
 
 enum {
@@ -628,9 +672,7 @@ nm_device_complete_connection (NMDevice *self,
 	g_return_val_if_fail (connection != NULL, FALSE);
 
 	if (!NM_DEVICE_GET_CLASS (self)->complete_connection) {
-		g_set_error (error,
-		             NM_DEVICE_INTERFACE_ERROR,
-		             NM_DEVICE_INTERFACE_ERROR_CONNECTION_INVALID,
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CONNECTION_INVALID,
 		             "Device class %s had no complete_connection method",
 		             G_OBJECT_TYPE_NAME (self));
 		return FALSE;
@@ -2973,9 +3015,7 @@ nm_device_disconnect (NMDevice *device, GError **error)
 
 	priv = NM_DEVICE_GET_PRIVATE (device);
 	if (priv->state <= NM_DEVICE_STATE_DISCONNECTED) {
-		g_set_error_literal (error,
-		                     NM_DEVICE_INTERFACE_ERROR,
-		                     NM_DEVICE_INTERFACE_ERROR_NOT_ACTIVE,
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_NOT_ACTIVE,
 		                     "Cannot disconnect an inactive device.");
 		return FALSE;
 	}
@@ -3016,9 +3056,7 @@ nm_device_activate (NMDevice *self, NMActRequest *req, GError **error)
 		NMConnection *current = nm_act_request_get_connection (priv->act_request);
 
 		if (new == current) {
-			g_set_error_literal (error,
-			                     NM_DEVICE_INTERFACE_ERROR,
-			                     NM_DEVICE_INTERFACE_ERROR_CONNECTION_ACTIVATING,
+			g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CONNECTION_ACTIVATING,
 			                     "Connection is already activating");
 			return FALSE;
 		}
@@ -3715,6 +3753,8 @@ nm_device_class_init (NMDeviceClass *klass)
 		              autoconnect_allowed_accumulator, NULL,
 		              _nm_marshal_BOOLEAN__VOID,
 		              G_TYPE_BOOLEAN, 0);
+
+	dbus_g_error_domain_register (NM_DEVICE_ERROR, NULL, NM_TYPE_DEVICE_ERROR);
 }
 
 static gboolean

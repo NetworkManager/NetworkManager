@@ -33,39 +33,6 @@ static void impl_device_disconnect (NMDeviceInterface *device,
 
 #include "nm-device-interface-glue.h"
 
-GQuark
-nm_device_interface_error_quark (void)
-{
-	static GQuark quark = 0;
-	if (!quark)
-		quark = g_quark_from_static_string ("nm-device-interface-error");
-	return quark;
-}
-
-/* This should really be standard. */
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-GType
-nm_device_interface_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			/* Connection is already activating. */
-			ENUM_ENTRY (NM_DEVICE_INTERFACE_ERROR_CONNECTION_ACTIVATING, "ConnectionActivating"),
-			/* Connection is invalid for this device. */
-			ENUM_ENTRY (NM_DEVICE_INTERFACE_ERROR_CONNECTION_INVALID, "ConnectionInvalid"),
-			/* Operation could not be performed because the device is not active. */
-			ENUM_ENTRY (NM_DEVICE_INTERFACE_ERROR_NOT_ACTIVE, "NotActive"),
-			{ 0, 0, 0 }
-		};
-		etype = g_enum_register_static ("NMDeviceInterfaceError", values);
-	}
-	return etype;
-}
-
-
 static void
 nm_device_interface_init (gpointer g_iface)
 {
@@ -238,10 +205,6 @@ nm_device_interface_init (gpointer g_iface)
 
 	dbus_g_object_type_install_info (iface_type,
 									 &dbus_glib_nm_device_interface_object_info);
-
-	dbus_g_error_domain_register (NM_DEVICE_INTERFACE_ERROR,
-	                              NULL,
-	                              NM_TYPE_DEVICE_INTERFACE_ERROR);
 
 	initialized = TRUE;
 }

@@ -32,16 +32,6 @@
 #define NM_IS_DEVICE_INTERFACE(obj)   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DEVICE_INTERFACE))
 #define NM_DEVICE_INTERFACE_GET_INTERFACE(obj) (G_TYPE_INSTANCE_GET_INTERFACE ((obj), NM_TYPE_DEVICE_INTERFACE, NMDeviceInterface))
 
-typedef enum
-{
-	NM_DEVICE_INTERFACE_ERROR_CONNECTION_ACTIVATING = 0,
-	NM_DEVICE_INTERFACE_ERROR_CONNECTION_INVALID,
-	NM_DEVICE_INTERFACE_ERROR_NOT_ACTIVE,
-} NMDeviceInterfaceError;
-
-#define NM_DEVICE_INTERFACE_ERROR (nm_device_interface_error_quark ())
-#define NM_TYPE_DEVICE_INTERFACE_ERROR (nm_device_interface_error_get_type ()) 
-
 #define NM_DEVICE_INTERFACE_DISCONNECT_REQUEST "disconnect-request"
 
 #define NM_DEVICE_INTERFACE_UDI              "udi"
@@ -98,9 +88,6 @@ struct _NMDeviceInterface {
 	                       NMDeviceState old_state,
 	                       NMDeviceStateReason reason);
 };
-
-GQuark nm_device_interface_error_quark (void);
-GType nm_device_interface_error_get_type (void);
 
 GType nm_device_interface_get_type (void);
 
