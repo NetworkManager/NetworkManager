@@ -1032,7 +1032,7 @@ system_unmanaged_devices_changed_cb (NMSettings *settings,
 		NMDevice *device = NM_DEVICE (iter->data);
 		gboolean managed;
 
-		managed = !nm_device_interface_spec_match_list (NM_DEVICE_INTERFACE (device), unmanaged_specs);
+		managed = !nm_device_spec_match_list (device, unmanaged_specs);
 		nm_device_set_managed (device,
 		                       managed,
 		                       managed ? NM_DEVICE_STATE_REASON_NOW_MANAGED :
@@ -1579,7 +1579,7 @@ add_device (NMManager *self, NMDevice *device)
 	/* Start the device if it's supposed to be managed */
 	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
 	if (   !manager_sleeping (self)
-	    && !nm_device_interface_spec_match_list (NM_DEVICE_INTERFACE (device), unmanaged_specs)) {
+	    && !nm_device_spec_match_list (device, unmanaged_specs)) {
 		nm_device_set_managed (device,
 		                       TRUE,
 		                       existing ? NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED :
@@ -2480,7 +2480,7 @@ do_sleep_wake (NMManager *self)
 			}
 
 			nm_device_clear_autoconnect_inhibit (device);
-			if (nm_device_interface_spec_match_list (NM_DEVICE_INTERFACE (device), unmanaged_specs))
+			if (nm_device_spec_match_list (device, unmanaged_specs))
 				nm_device_set_managed (device, FALSE, NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
 			else
 				nm_device_set_managed (device, TRUE, NM_DEVICE_STATE_REASON_NOW_MANAGED);

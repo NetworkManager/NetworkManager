@@ -100,8 +100,6 @@ struct _NMDeviceInterface {
 	void (*deactivate) (NMDeviceInterface *device, NMDeviceStateReason reason);
 	gboolean (*disconnect) (NMDeviceInterface *device, GError **error);
 
-	gboolean (*spec_match_list) (NMDeviceInterface *device, const GSList *specs);
-
 	void (*set_enabled) (NMDeviceInterface *device, gboolean enabled);
 
 	gboolean (*get_enabled) (NMDeviceInterface *device);
@@ -125,9 +123,6 @@ gboolean nm_device_interface_activate (NMDeviceInterface *device,
 				       GError **error);
 
 void nm_device_interface_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason);
-
-gboolean nm_device_interface_spec_match_list (NMDeviceInterface *device,
-                                              const GSList *specs);
 
 gboolean nm_device_interface_get_enabled (NMDeviceInterface *device);
 

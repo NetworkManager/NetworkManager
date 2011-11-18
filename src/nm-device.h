@@ -165,6 +165,8 @@ gboolean nm_device_can_assume_connections (NMDevice *device);
 NMConnection * nm_device_connection_match_config (NMDevice *device,
                                                   const GSList *connections);
 
+gboolean nm_device_spec_match_list (NMDevice *device, const GSList *specs);
+
 gboolean		nm_device_is_activating		(NMDevice *dev);
 gboolean		nm_device_can_interrupt_activation		(NMDevice *self);
 gboolean		nm_device_autoconnect_allowed	(NMDevice *self);

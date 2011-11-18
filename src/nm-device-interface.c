@@ -359,17 +359,6 @@ nm_device_interface_deactivate (NMDeviceInterface *device, NMDeviceStateReason r
 	NM_DEVICE_INTERFACE_GET_INTERFACE (device)->deactivate (device, reason);
 }
 
-gboolean
-nm_device_interface_spec_match_list (NMDeviceInterface *device,
-                                     const GSList *specs)
-{
-	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), FALSE);
-
-	if (NM_DEVICE_INTERFACE_GET_INTERFACE (device)->spec_match_list)
-		return NM_DEVICE_INTERFACE_GET_INTERFACE (device)->spec_match_list (device, specs);
-	return FALSE;
-}
-
 void
 nm_device_interface_set_enabled (NMDeviceInterface *device, gboolean enabled)
 {
