@@ -1487,6 +1487,14 @@ add_device (NMManager *self, NMDevice *device)
 	iface = nm_device_get_ip_iface (device);
 	g_assert (iface);
 
+	/* Ignore the device if we already know about it.  But some modems will
+	 * provide pseudo-ethernet devices that NM has already claimed while
+	 * ModemManager is still detecting the modem's serial ports, so when the
+	 * MM modem object finally shows up it may have the same IP interface as the
+	 * ethernet interface we've already detected.  In this case we skip the
+	 * check for an existing device with the same IP interface name and kill
+	 * the ethernet device later in favor of the modem device.
+	 */
 	if (!NM_IS_DEVICE_MODEM (device) && find_device_by_ip_iface (self, iface)) {
 		g_object_unref (device);
 		return;
