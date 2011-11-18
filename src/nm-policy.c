@@ -730,7 +730,7 @@ activate_data_free (ActivateData *data)
 	g_free (data);
 }
 
-static NMActStageReturn
+static gboolean
 check_master_dependency (NMManager *manager, NMDevice *device, NMConnection *connection)
 {
 	NMSettingConnection *s_con;
