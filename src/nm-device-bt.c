@@ -31,7 +31,6 @@
 #include "nm-bluez-common.h"
 #include "nm-dbus-manager.h"
 #include "nm-device-bt.h"
-#include "nm-device-interface.h"
 #include "nm-device-private.h"
 #include "nm-logging.h"
 #include "nm-marshal.h"

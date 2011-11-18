@@ -21,7 +21,6 @@
 #include <glib.h>
 
 #include "nm-device-modem.h"
-#include "nm-device-interface.h"
 #include "nm-modem.h"
 #include "nm-modem-cdma.h"
 #include "nm-modem-gsm.h"

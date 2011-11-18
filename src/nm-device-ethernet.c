@@ -40,7 +40,6 @@
 
 #include "nm-glib-compat.h"
 #include "nm-device-ethernet.h"
-#include "nm-device-interface.h"
 #include "nm-device-private.h"
 #include "nm-activation-request.h"
 #include "NetworkManagerUtils.h"

@@ -30,7 +30,6 @@
 #include "NetworkManager.h"
 #include "NetworkManagerVPN.h"
 #include "nm-vpn-connection.h"
-#include "nm-device-interface.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-vpn.h"
 #include "nm-setting-ip4-config.h"

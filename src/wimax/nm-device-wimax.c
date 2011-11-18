@@ -33,7 +33,6 @@
 #include "nm-device-wimax.h"
 #include "nm-wimax-util.h"
 #include "nm-logging.h"
-#include "nm-device-interface.h"
 #include "nm-device-private.h"
 #include "nm-system.h"
 #include "NetworkManagerUtils.h"

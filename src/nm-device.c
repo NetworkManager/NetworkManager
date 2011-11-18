@@ -36,7 +36,6 @@
 #include <linux/if.h>
 
 #include "nm-glib-compat.h"
-#include "nm-device-interface.h"
 #include "nm-device.h"
 #include "nm-device-private.h"
 #include "NetworkManagerUtils.h"

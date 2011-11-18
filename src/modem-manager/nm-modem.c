@@ -30,7 +30,6 @@
 #include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
-#include "nm-device-interface.h"
 #include "nm-dbus-glib-types.h"
 
 G_DEFINE_TYPE (NMModem, nm_modem, G_TYPE_OBJECT)

@@ -31,7 +31,6 @@
 #include "nm-wifi-ap.h"
 #include "nm-activation-request.h"
 #include "nm-logging.h"
-#include "nm-device-interface.h"
 #include "nm-device.h"
 #include "nm-device-wifi.h"
 #include "nm-device-ethernet.h"

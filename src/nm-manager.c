@@ -38,7 +38,6 @@
 #include "nm-vpn-manager.h"
 #include "nm-modem-manager.h"
 #include "nm-device-bt.h"
-#include "nm-device-interface.h"
 #include "nm-device.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
@@ -1171,7 +1170,7 @@ manager_update_radio_enabled (NMManager *self,
 }
 
 static void
-manager_hidden_ap_found (NMDeviceInterface *device,
+manager_hidden_ap_found (NMDevice *device,
                          NMAccessPoint *ap,
                          gpointer user_data)
 {

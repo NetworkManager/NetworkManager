@@ -115,8 +115,6 @@ NetworkManager_SOURCES = \
 		nm-call-store.h \
 		nm-device.c \
 		nm-device.h \
-		nm-device-interface.c \
-		nm-device-interface.h \
 		nm-device-private.h \
 		nm-device-ethernet.c \
 		nm-device-ethernet.h \

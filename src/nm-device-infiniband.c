@@ -27,7 +27,6 @@
 #include <netinet/ether.h>
 
 #include "nm-device-infiniband.h"
-#include "nm-device-interface.h"
 #include "nm-logging.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-utils.h"

@@ -27,7 +27,6 @@
 #include <netinet/ether.h>
 
 #include "nm-device-wired.h"
-#include "nm-device-interface.h"
 #include "nm-device-private.h"
 #include "nm-dhcp-manager.h"
 #include "nm-logging.h"

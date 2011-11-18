@@ -39,7 +39,6 @@
 #include "nm-glib-compat.h"
 #include "nm-device.h"
 #include "nm-device-wifi.h"
-#include "nm-device-interface.h"
 #include "nm-device-private.h"
 #include "nm-utils.h"
 #include "nm-logging.h"

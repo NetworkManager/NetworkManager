@@ -43,7 +43,6 @@
 #include "nm-device.h"
 #include "nm-device-wifi.h"
 #include "nm-device-olpc-mesh.h"
-#include "nm-device-interface.h"
 #include "nm-device-private.h"
 #include "nm-utils.h"
 #include "nm-logging.h"

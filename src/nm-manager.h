@@ -26,7 +26,6 @@
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
 #include "nm-device.h"
-#include "nm-device-interface.h"
 #include "nm-settings.h"
 
 #define NM_TYPE_MANAGER            (nm_manager_get_type ())
