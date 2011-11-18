@@ -1986,7 +1986,7 @@ internal_activate_device (NMManager *manager,
 	                          sender_uid,
 	                          assumed,
 	                          (gpointer) device);
-	success = nm_device_interface_activate (NM_DEVICE_INTERFACE (device), req, error);
+	success = nm_device_activate (device, req, error);
 	g_object_unref (req);
 
 	return success ? nm_act_request_get_active_connection_path (req) : NULL;

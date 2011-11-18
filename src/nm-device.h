@@ -198,6 +198,8 @@ void nm_device_state_changed (NMDevice *device,
 
 gboolean nm_device_get_firmware_missing (NMDevice *self);
 
+gboolean nm_device_activate (NMDevice *device, NMActRequest *req, GError **error);
+
 gboolean nm_device_disconnect (NMDevice *device, GError **error);
 
 G_END_DECLS

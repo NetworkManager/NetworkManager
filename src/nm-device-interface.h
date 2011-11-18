@@ -93,10 +93,6 @@ struct _NMDeviceInterface {
 	GTypeInterface g_iface;
 
 	/* Methods */
-	gboolean (*activate) (NMDeviceInterface *device,
-	                      NMActRequest *req,
-	                      GError **error);
-
 	void (*deactivate) (NMDeviceInterface *device, NMDeviceStateReason reason);
 
 	/* Signals */
@@ -110,10 +106,6 @@ GQuark nm_device_interface_error_quark (void);
 GType nm_device_interface_error_get_type (void);
 
 GType nm_device_interface_get_type (void);
-
-gboolean nm_device_interface_activate (NMDeviceInterface *device,
-				       NMActRequest *req,
-				       GError **error);
 
 void nm_device_interface_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason);
 

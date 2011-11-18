@@ -168,9 +168,6 @@ typedef struct {
 	NMDevice *	master;
 } NMDevicePrivate;
 
-static gboolean nm_device_activate (NMDeviceInterface *device,
-                                    NMActRequest *req,
-                                    GError **error);
 static void nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason);
 
 static void nm_device_take_down (NMDevice *dev, gboolean wait, NMDeviceStateReason reason);
@@ -198,7 +195,6 @@ static void
 device_interface_init (NMDeviceInterface *device_interface_class)
 {
 	/* interface implementation */
-	device_interface_class->activate = nm_device_activate;
 	device_interface_class->deactivate = nm_device_deactivate;
 }
 
@@ -3004,13 +3000,25 @@ nm_device_disconnect (NMDevice *device, GError **error)
 	return TRUE;
 }
 
-static gboolean
-nm_device_activate (NMDeviceInterface *device,
-                    NMActRequest *req,
-                    GError **error)
+gboolean
+nm_device_activate (NMDevice *self, NMActRequest *req, GError **error)
 {
-	NMDevice *self = NM_DEVICE (device);
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevicePrivate *priv;
+	NMConnection *connection;
+
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+	g_return_val_if_fail (req != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+
+	nm_log_info (LOGD_DEVICE, "Activation (%s) starting connection '%s'",
+	             nm_device_get_iface (self),
+	             nm_connection_get_id (connection));
 
 	/* Make sure this connection isn't activated already, or in the process of
 	 * being activated.

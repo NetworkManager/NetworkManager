@@ -275,46 +275,6 @@ nm_device_interface_get_type (void)
 	return device_interface_type;
 }
 
-/* FIXME: This should be public and nm_device_get_iface() should be removed. */
-static char *
-nm_device_interface_get_iface (NMDeviceInterface *device)
-{
-	char *iface = NULL;
-
-	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), NULL);
-
-	g_object_get (device, NM_DEVICE_INTERFACE_IFACE, &iface, NULL);
-
-	return iface;
-}
-
-gboolean
-nm_device_interface_activate (NMDeviceInterface *device,
-                              NMActRequest *req,
-                              GError **error)
-{
-	gboolean success;
-	NMConnection *connection;
-	char *iface;
-
-	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), FALSE);
-	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
-
-	connection = nm_act_request_get_connection (req);
-	g_assert (connection);
-
-	iface = nm_device_interface_get_iface (device);
-	nm_log_info (LOGD_DEVICE, "Activation (%s) starting connection '%s'", iface,
-	             nm_connection_get_id (connection));
-	g_free (iface);
-
-	success = NM_DEVICE_INTERFACE_GET_INTERFACE (device)->activate (device, req, error);
-	if (!success)
-		g_assert (*error);
-
-	return success;
-}
-
 static void
 impl_device_disconnect (NMDeviceInterface *device,
                         DBusGMethodInvocation *context)
