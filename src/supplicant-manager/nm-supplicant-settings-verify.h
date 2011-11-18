@@ -25,6 +25,7 @@ typedef enum OptType {
 	TYPE_INVALID = 0,
 	TYPE_INT,
 	TYPE_BYTES,
+	TYPE_UTF8,
 	TYPE_KEYWORD,
 	TYPE_STRING
 } OptType;

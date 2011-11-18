@@ -44,6 +44,10 @@ static gboolean validate_type_bytes   (const struct Opt * opt,
                                        const char * value,
                                        const guint32 len);
 
+static gboolean validate_type_utf8    (const struct Opt *opt,
+                                       const char * value,
+                                       const guint32 len);
+
 static gboolean validate_type_keyword (const struct Opt * opt,
                                        const char * value,
                                        const guint32 len);
@@ -58,6 +62,7 @@ struct validate_entry {
 static const struct validate_entry validate_table[] = {
 	{ TYPE_INT,     validate_type_int     },
 	{ TYPE_BYTES,   validate_type_bytes   },
+	{ TYPE_UTF8,    validate_type_utf8    },
 	{ TYPE_KEYWORD, validate_type_keyword },
 };
 
@@ -168,6 +173,26 @@ validate_type_bytes (const struct Opt * opt,
 
 	check_len = opt->int_high ? opt->int_high : 255;
 	if (len > check_len)
+		return FALSE;
+
+	return TRUE;
+}
+
+static gboolean
+validate_type_utf8 (const struct Opt *opt,
+                    const char * value,
+                    const guint32 len)
+{
+	guint32 check_len;
+
+	g_return_val_if_fail (opt != NULL, FALSE);
+	g_return_val_if_fail (value != NULL, FALSE);
+
+	check_len = opt->int_high ? opt->int_high : 255;
+	/* Note that we deliberately don't validate the UTF-8, because
+	   some "UTF-8" fields, such as 8021x.password, do not actually
+	   have to be valid UTF-8 */
+	if (g_utf8_strlen (value, len) > check_len)
 		return FALSE;
 
 	return TRUE;

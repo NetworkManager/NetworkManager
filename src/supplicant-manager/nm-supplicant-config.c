@@ -293,6 +293,7 @@ get_hash_cb (gpointer key, gpointer value, gpointer user_data)
 		g_value_set_int (variant, atoi (opt->value));
 		break;
 	case TYPE_BYTES:
+	case TYPE_UTF8:
 		array = g_byte_array_sized_new (opt->len);
 		g_byte_array_append (array, (const guint8 *) opt->value, opt->len);
 		g_value_init (variant, DBUS_TYPE_G_UCHAR_ARRAY);
