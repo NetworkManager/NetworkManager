@@ -36,10 +36,6 @@ INCLUDES = -I${top_srcdir} \
            -I${top_srcdir}/libnm-util \
            -I${top_srcdir}/callouts
 
-if WITH_WIMAX
-INCLUDES += -I$(top_srcdir)/src/wimax
-endif
-
 ###########################################
 # Test libraries
 ###########################################
@@ -146,6 +142,7 @@ NetworkManager_SOURCES = \
 		nm-dbus-manager.c \
 		nm-udev-manager.c \
 		nm-udev-manager.h \
+		nm-device-factory.h \
 		nm-hostname-provider.c \
 		nm-hostname-provider.h \
 		nm-ip4-config.c \
@@ -265,13 +262,8 @@ NetworkManager_CPPFLAGS = \
 	-DLOCALSTATEDIR=\"$(localstatedir)\" \
 	-DNM_RUN_DIR=\"$(rundir)\" \
 	-DNMLOCALEDIR=\"$(datadir)/locale\" \
+	-DNMPLUGINDIR=\"$(pkglibdir)\"
 	-DARP_DEBUG
-
-
-WIMAX_LIBS=
-if WITH_WIMAX
-WIMAX_LIBS += ./wimax/libwimax.la
-endif
 
 NetworkManager_LDADD = \
 	$(top_builddir)/marshallers/libmarshallers.la \
@@ -287,7 +279,6 @@ NetworkManager_LDADD = \
 	./bluez-manager/libbluez-manager.la \
 	./firewall-manager/libfirewall-manager.la \
 	./settings/libsettings.la \
-	$(WIMAX_LIBS) \
 	./backends/libnmbackend.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(DBUS_LIBS) \

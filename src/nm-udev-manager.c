@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include <net/if_arp.h>
 
+#include <gmodule.h>
 #include <gudev/gudev.h>
 
 #include "nm-udev-manager.h"
@@ -38,14 +39,15 @@
 #include "nm-device-olpc-mesh.h"
 #include "nm-device-infiniband.h"
 #include "nm-device-ethernet.h"
+#include "nm-device-factory.h"
 #include "wifi-utils.h"
-#if WITH_WIMAX
-#include "nm-device-wimax.h"
-#endif
 #include "nm-system.h"
 
 typedef struct {
 	GUdevClient *client;
+
+	/* List of NMDeviceFactoryFunc pointers sorted in priority order */
+	GSList *factories;
 
 	/* Authoritative rfkill state (RFKILL_* enum) */
 	RfKillState rfkill_states[RFKILL_TYPE_MAX];
@@ -375,15 +377,6 @@ is_olpc_mesh (GUdevDevice *device)
 }
 
 static gboolean
-is_wimax (const char *driver)
-{
-	/* FIXME: check 'DEVTYPE' instead; but since we only support Intel
-	 * WiMAX devices for now this is appropriate.
-	 */
-	return g_strcmp0 (driver, "i2400m_usb") == 0;
-}
-
-static gboolean
 is_infiniband (GUdevDevice *device)
 {
 	gint etype = g_udev_device_get_sysfs_attr_as_int (device, "type");
@@ -395,10 +388,13 @@ device_creator (NMUdevManager *manager,
                 GUdevDevice *udev_device,
                 gboolean sleeping)
 {
+	NMUdevManagerPrivate *priv = NM_UDEV_MANAGER_GET_PRIVATE (manager);
 	GObject *device = NULL;
 	const char *ifname, *driver, *path, *subsys;
 	GUdevDevice *parent = NULL, *grandparent = NULL;
 	gint ifindex;
+	GError *error = NULL;
+	GSList *iter;
 
 	ifname = g_udev_device_get_name (udev_device);
 	g_assert (ifname);
@@ -455,18 +451,35 @@ device_creator (NMUdevManager *manager,
 		goto out;
 	}
 
-	if (is_olpc_mesh (udev_device)) /* must be before is_wireless */
-		device = (GObject *) nm_device_olpc_mesh_new (path, ifname, driver);
-	else if (is_wireless (udev_device))
-		device = (GObject *) nm_device_wifi_new (path, ifname, driver);
-	else if (is_wimax (driver)) {
-#if WITH_WIMAX
-		device = (GObject *) nm_device_wimax_new (path, ifname, driver);
-#endif
-	} else if (is_infiniband (udev_device))
-		device = (GObject *) nm_device_infiniband_new (path, ifname, driver);
-	else
-		device = (GObject *) nm_device_ethernet_new (path, ifname, driver);
+	/* Try registered device factories */
+	for (iter = priv->factories; iter; iter = g_slist_next (iter)) {
+		NMDeviceFactoryCreateFunc create_func = iter->data;
+
+		g_clear_error (&error);
+		device = create_func (udev_device, path, ifname, driver, &error);
+		if (device) {
+			g_assert_no_error (error);
+			break;  /* success! */
+		}
+
+		if (error) {
+			nm_log_warn (LOGD_HW, "%s: factory failed to create device: (%d) %s",
+			             path, error->code, error->message);
+			g_clear_error (&error);
+			goto out;
+		}
+	}
+
+	if (device == NULL) {
+		if (is_olpc_mesh (udev_device)) /* must be before is_wireless */
+			device = (GObject *) nm_device_olpc_mesh_new (path, ifname, driver);
+		else if (is_wireless (udev_device))
+			device = (GObject *) nm_device_wifi_new (path, ifname, driver);
+		else if (is_infiniband (udev_device))
+			device = (GObject *) nm_device_infiniband_new (path, ifname, driver);
+		else
+			device = (GObject *) nm_device_ethernet_new (path, ifname, driver);
+	}
 
 out:
 	if (grandparent)
@@ -555,6 +568,121 @@ nm_udev_manager_query_devices (NMUdevManager *self)
 	g_list_free (devices);
 }
 
+#define PLUGIN_PREFIX "libnm-device-plugin-"
+
+typedef struct {
+	NMDeviceType t;
+	guint priority;
+	NMDeviceFactoryCreateFunc create_func;
+} PluginInfo;
+
+static gint
+plugin_sort (PluginInfo *a, PluginInfo *b)
+{
+	/* Higher priority means sort earlier in the list (ie, return -1) */
+	if (a->priority > b->priority)
+		return -1;
+	else if (a->priority < b->priority)
+		return 1;
+	return 0;
+}
+
+static void
+load_device_factories (NMUdevManager *self)
+{
+	NMUdevManagerPrivate *priv = NM_UDEV_MANAGER_GET_PRIVATE (self);
+	GDir *dir;
+	GError *error = NULL;
+	const char *item;
+	char *path;
+	GSList *list = NULL, *iter;
+
+	dir = g_dir_open (NMPLUGINDIR, 0, &error);
+	if (!dir) {
+		nm_log_warn (LOGD_HW, "Failed to open plugin directory %s: %s",
+		             NMPLUGINDIR,
+		             (error && error->message) ? error->message : "(unknown)");
+		g_clear_error (&error);
+		return;
+	}
+
+	while ((item = g_dir_read_name (dir))) {
+		GModule *plugin;
+		NMDeviceFactoryCreateFunc create_func;
+		NMDeviceFactoryPriorityFunc priority_func;
+		NMDeviceFactoryTypeFunc type_func;
+		PluginInfo *info = NULL;
+		NMDeviceType plugin_type;
+
+		if (!g_str_has_prefix (item, PLUGIN_PREFIX))
+			continue;
+
+		path = g_module_build_path (NMPLUGINDIR, item);
+		g_assert (path);
+		plugin = g_module_open (path, G_MODULE_BIND_LOCAL);
+		g_free (path);
+
+		if (!plugin) {
+			nm_log_warn (LOGD_HW, "(%s): failed to load plugin: %s", item, g_module_error ());
+			continue;
+		}
+
+		if (!g_module_symbol (plugin, "nm_device_factory_get_type", (gpointer) (&type_func))) {
+			nm_log_warn (LOGD_HW, "(%s): failed to find device factory: %s", item, g_module_error ());
+			g_module_close (plugin);
+			continue;
+		}
+
+		/* Make sure we don't double-load plugins */
+		plugin_type = type_func ();
+		for (iter = list; iter; iter = g_slist_next (iter)) {
+			PluginInfo *candidate = iter->data;
+
+			if (plugin_type == candidate->t) {
+				info = candidate;
+				break;
+			}
+		}
+		if (info) {
+			g_module_close (plugin);
+			continue;
+		}
+
+		if (!g_module_symbol (plugin, "nm_device_factory_create_device", (gpointer) (&create_func))) {
+			nm_log_warn (LOGD_HW, "(%s): failed to find device creator: %s", item, g_module_error ());
+			g_module_close (plugin);
+			continue;
+		}
+
+		info = g_malloc0 (sizeof (*info));
+		info->create_func = create_func;
+		info->t = plugin_type;
+
+		/* Grab priority; higher number equals higher priority */
+		if (g_module_symbol (plugin, "nm_device_factory_get_priority", (gpointer) (&priority_func)))
+			info->priority = priority_func ();
+		else {
+			nm_log_dbg (LOGD_HW, "(%s): failed to find device factory priority func: %s",
+			            item, g_module_error ());
+		}
+
+		g_module_make_resident (plugin);
+		list = g_slist_insert_sorted (list, info, (GCompareFunc) plugin_sort);
+
+		nm_log_info (LOGD_HW, "Loaded device factory: %s", g_module_name (plugin));
+	};
+	g_dir_close (dir);
+
+	/* Ditch the priority info and copy the factory functions to our private data */
+	for (iter = list; iter; iter = g_slist_next (iter)) {
+		PluginInfo *info = iter->data;
+
+		priv->factories = g_slist_append (priv->factories, info->create_func);
+		g_free (info);
+	}
+	g_slist_free (list);
+}
+
 static void
 handle_uevent (GUdevClient *client,
                const char *action,
@@ -612,6 +740,8 @@ nm_udev_manager_init (NMUdevManager *self)
 	g_list_free (switches);
 
 	recheck_killswitches (self);
+
+	load_device_factories (self);
 }
 
 static void
@@ -630,6 +760,8 @@ dispose (GObject *object)
 
 	g_slist_foreach (priv->killswitches, (GFunc) killswitch_destroy, NULL);
 	g_slist_free (priv->killswitches);
+
+	g_slist_free (priv->factories);
 
 	G_OBJECT_CLASS (nm_udev_manager_parent_class)->dispose (object);	
 }
