@@ -168,9 +168,6 @@ typedef struct {
 	NMDevice *	master;
 } NMDevicePrivate;
 
-static gboolean check_connection_compatible (NMDeviceInterface *device,
-                                             NMConnection *connection,
-                                             GError **error);
 static gboolean nm_device_activate (NMDeviceInterface *device,
                                     NMActRequest *req,
                                     GError **error);
@@ -205,7 +202,6 @@ static void
 device_interface_init (NMDeviceInterface *device_interface_class)
 {
 	/* interface implementation */
-	device_interface_class->check_connection_compatible = check_connection_compatible;
 	device_interface_class->activate = nm_device_activate;
 	device_interface_class->deactivate = nm_device_deactivate;
 	device_interface_class->disconnect = device_disconnect;
@@ -654,6 +650,23 @@ nm_device_complete_connection (NMDevice *self,
 		success = nm_connection_verify (connection, error);
 
 	return success;
+}
+
+gboolean
+nm_device_check_connection_compatible (NMDevice *device,
+                                       NMConnection *connection,
+                                       GError **error)
+{
+	g_return_val_if_fail (device != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+	g_return_val_if_fail (connection != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (error != NULL, FALSE);
+	g_return_val_if_fail (*error == NULL, FALSE);
+
+	if (NM_DEVICE_GET_CLASS (device)->check_connection_compatible)
+		return NM_DEVICE_GET_CLASS (device)->check_connection_compatible (device, connection, error);
+	return TRUE;
 }
 
 static void
@@ -2953,19 +2966,6 @@ device_disconnect (NMDeviceInterface *device,
 
 	priv->autoconnect_inhibit = TRUE;	
 	nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_USER_REQUESTED);
-	return TRUE;
-}
-
-static gboolean
-check_connection_compatible (NMDeviceInterface *dev_iface,
-                             NMConnection *connection,
-                             GError **error)
-{
-	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (NM_DEVICE (dev_iface));
-
-	if (klass->check_connection_compatible)
-		return klass->check_connection_compatible (NM_DEVICE (dev_iface), connection, error);
-
 	return TRUE;
 }
 

@@ -913,7 +913,7 @@ reset_retries_all (NMSettings *settings, NMDevice *device)
 
 	connections = nm_settings_get_connections (settings);
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		if (!device || nm_device_interface_check_connection_compatible (NM_DEVICE_INTERFACE (device), iter->data, &error))
+		if (!device || nm_device_check_connection_compatible (device, iter->data, &error))
 			set_connection_auto_retries (NM_CONNECTION (iter->data), RETRIES_DEFAULT);
 		g_clear_error (&error);
 	}

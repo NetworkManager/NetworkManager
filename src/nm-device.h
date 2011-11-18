@@ -156,6 +156,11 @@ gboolean nm_device_complete_connection (NMDevice *device,
                                         const GSList *existing_connection,
                                         GError **error);
 
+gboolean nm_device_check_connection_compatible (NMDevice *device,
+                                                NMConnection *connection,
+                                                GError **error);
+
+
 gboolean		nm_device_is_activating		(NMDevice *dev);
 gboolean		nm_device_can_interrupt_activation		(NMDevice *self);
 gboolean		nm_device_autoconnect_allowed	(NMDevice *self);

@@ -1962,17 +1962,14 @@ internal_activate_device (NMManager *manager,
                           GError **error)
 {
 	NMActRequest *req;
-	NMDeviceInterface *dev_iface;
 	gboolean success;
 
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	dev_iface = NM_DEVICE_INTERFACE (device);
-
 	/* Ensure the requested connection is compatible with the device */
-	if (!nm_device_interface_check_connection_compatible (dev_iface, connection, error))
+	if (!nm_device_check_connection_compatible (device, connection, error))
 		return NULL;
 
 	/* Tear down any existing connection */
@@ -1990,7 +1987,7 @@ internal_activate_device (NMManager *manager,
 	                          sender_uid,
 	                          assumed,
 	                          (gpointer) device);
-	success = nm_device_interface_activate (dev_iface, req, error);
+	success = nm_device_interface_activate (NM_DEVICE_INTERFACE (device), req, error);
 	g_object_unref (req);
 
 	return success ? nm_act_request_get_active_connection_path (req) : NULL;

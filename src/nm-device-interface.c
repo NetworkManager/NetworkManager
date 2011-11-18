@@ -289,21 +289,6 @@ nm_device_interface_get_iface (NMDeviceInterface *device)
 }
 
 gboolean
-nm_device_interface_check_connection_compatible (NMDeviceInterface *device,
-                                                 NMConnection *connection,
-                                                 GError **error)
-{
-	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), FALSE);
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
-	g_return_val_if_fail (error != NULL, FALSE);
-	g_return_val_if_fail (*error == NULL, FALSE);
-
-	if (NM_DEVICE_INTERFACE_GET_INTERFACE (device)->check_connection_compatible)
-		return NM_DEVICE_INTERFACE_GET_INTERFACE (device)->check_connection_compatible (device, connection, error);
-	return TRUE;
-}
-
-gboolean
 nm_device_interface_activate (NMDeviceInterface *device,
                               NMActRequest *req,
                               GError **error)
