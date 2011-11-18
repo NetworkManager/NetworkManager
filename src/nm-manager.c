@@ -39,7 +39,7 @@
 #include "nm-modem-manager.h"
 #include "nm-device-bt.h"
 #include "nm-device-interface.h"
-#include "nm-device-private.h"
+#include "nm-device.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
 #include "nm-device-olpc-mesh.h"

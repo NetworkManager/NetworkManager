@@ -2845,6 +2845,32 @@ dnsmasq_cleanup (NMDevice *self)
 	priv->dnsmasq_manager = NULL;
 }
 
+static void
+_update_ip4_address (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	struct ifreq req;
+	guint32 new_address;
+	int fd;
+
+	g_return_if_fail (self  != NULL);
+
+	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		nm_log_err (LOGD_IP4, "couldn't open control socket.");
+		return;
+	}
+
+	memset (&req, 0, sizeof (struct ifreq));
+	strncpy (req.ifr_name, nm_device_get_ip_iface (self), IFNAMSIZ);
+	if (ioctl (fd, SIOCGIFADDR, &req) == 0) {
+		new_address = ((struct sockaddr_in *)(&req.ifr_addr))->sin_addr.s_addr;
+		if (new_address != priv->ip4_address)
+			priv->ip4_address = new_address;
+	}
+	close (fd);
+}
+
 /*
  * nm_device_deactivate
  *
@@ -2912,7 +2938,7 @@ nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason)
 	family = tried_ipv6 ? AF_UNSPEC : AF_INET;
 	nm_system_iface_flush_routes (ifindex, family);
 	nm_system_iface_flush_addresses (ifindex, family);
-	nm_device_update_ip4_address (self);	
+	_update_ip4_address (self);
 
 	/* Clean up nameservers and addresses */
 	nm_device_set_ip4_config (self, NULL, FALSE, &ignored);
@@ -3106,7 +3132,7 @@ nm_device_set_ip4_config (NMDevice *self,
 			/* Add the DNS information to the DNS manager */
 			nm_dns_manager_add_ip4_config (dns_mgr, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
 
-			nm_device_update_ip4_address (self);
+			_update_ip4_address (self);
 		}
 	}
 	g_object_unref (dns_mgr);
@@ -3114,46 +3140,6 @@ nm_device_set_ip4_config (NMDevice *self,
 	g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_IP4_CONFIG);
 
 	return success;
-}
-
-/*
- * nm_device_get_ip4_address
- *
- * Get a device's IPv4 address
- *
- */
-guint32
-nm_device_get_ip4_address (NMDevice *self)
-{
-	g_return_val_if_fail (self != NULL, 0);
-
-	return NM_DEVICE_GET_PRIVATE (self)->ip4_address;
-}
-
-
-void
-nm_device_update_ip4_address (NMDevice *self)
-{
-	struct ifreq req;
-	guint32 new_address;
-	int fd;
-	
-	g_return_if_fail (self  != NULL);
-
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		nm_log_err (LOGD_IP4, "couldn't open control socket.");
-		return;
-	}
-
-	memset (&req, 0, sizeof (struct ifreq));
-	strncpy (req.ifr_name, nm_device_get_ip_iface (self), IFNAMSIZ);
-	if (ioctl (fd, SIOCGIFADDR, &req) == 0) {
-		new_address = ((struct sockaddr_in *)(&req.ifr_addr))->sin_addr.s_addr;
-		if (new_address != nm_device_get_ip4_address (self))
-			NM_DEVICE_GET_PRIVATE (self)->ip4_address = new_address;
-	}
-	close (fd);
 }
 
 static gboolean
@@ -3281,7 +3267,7 @@ out:
 	if (NM_DEVICE_GET_CLASS (self)->update_hw_address)
 		NM_DEVICE_GET_CLASS (self)->update_hw_address (self);
 
-	nm_device_update_ip4_address (self);
+	_update_ip4_address (self);
 	return TRUE;
 }
 

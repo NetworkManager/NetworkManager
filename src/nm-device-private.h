@@ -24,26 +24,45 @@
 
 #include "nm-device.h"
 
+/* This file should only be used by subclasses of NMDevice */
+
+enum NMActStageReturn {
+	NM_ACT_STAGE_RETURN_FAILURE = 0,
+	NM_ACT_STAGE_RETURN_SUCCESS,
+	NM_ACT_STAGE_RETURN_POSTPONE,
+	NM_ACT_STAGE_RETURN_STOP         /* This activation chain is done */
+};
+
 void nm_device_set_ip_iface (NMDevice *self, const char *iface);
 
 void nm_device_activate_schedule_stage3_ip_config_start (NMDevice *device);
-
-void nm_device_state_changed (NMDevice *device,
-                              NMDeviceState state,
-                              NMDeviceStateReason reason);
 
 gboolean nm_device_hw_bring_up (NMDevice *self, gboolean wait, gboolean *no_firmware);
 
 void nm_device_hw_take_down (NMDevice *self, gboolean block);
 
-void nm_device_handle_autoip4_event (NMDevice *self,
-                                     const char *event,
-                                     const char *address);
-
 gboolean nm_device_ip_config_should_fail (NMDevice *self, gboolean ip6);
 
-gboolean nm_device_get_firmware_missing (NMDevice *self);
-
 void nm_device_set_firmware_missing (NMDevice *self, gboolean missing);
+
+guint32 nm_device_get_capabilities (NMDevice *dev);
+guint32 nm_device_get_type_capabilities (NMDevice *dev);
+
+void nm_device_activate_schedule_stage1_device_prepare (NMDevice *device);
+void nm_device_activate_schedule_stage2_device_config (NMDevice *device);
+
+void nm_device_activate_schedule_ip4_config_result(NMDevice *device, NMIP4Config *config);
+void nm_device_activate_schedule_ip4_config_timeout (NMDevice *device);
+
+void nm_device_activate_schedule_ip6_config_result (NMDevice *device, NMIP6Config *config);
+void nm_device_activate_schedule_ip6_config_timeout (NMDevice *device);
+
+gboolean nm_device_activate_ip4_state_in_conf (NMDevice *device);
+gboolean nm_device_activate_ip6_state_in_conf (NMDevice *device);
+
+void nm_device_set_dhcp_timeout (NMDevice *device, guint32 timeout);
+void nm_device_set_dhcp_anycast_address (NMDevice *device, guint8 *addr);
+
+gboolean nm_device_dhcp4_renew (NMDevice *device, gboolean release);
 
 #endif	/* NM_DEVICE_PRIVATE_H */
