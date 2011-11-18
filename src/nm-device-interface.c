@@ -315,35 +315,6 @@ nm_device_interface_activate (NMDeviceInterface *device,
 	return success;
 }
 
-gboolean
-nm_device_interface_disconnect (NMDeviceInterface *device,
-                                GError **error)
-{
-	NMDeviceState state;
-	gboolean success = FALSE;
-
-	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), FALSE);
-
-	g_object_get (G_OBJECT (device), "state", &state, NULL);
-
-	switch (state) {
-	case NM_DEVICE_STATE_UNKNOWN:
-	case NM_DEVICE_STATE_UNMANAGED:
-	case NM_DEVICE_STATE_UNAVAILABLE:
-	case NM_DEVICE_STATE_DISCONNECTED:
-		g_set_error_literal (error,
-		                     NM_DEVICE_INTERFACE_ERROR,
-		                     NM_DEVICE_INTERFACE_ERROR_NOT_ACTIVE,
-		                     "Cannot disconnect an inactive device.");
-		break;
-	default:
-		success = NM_DEVICE_INTERFACE_GET_INTERFACE (device)->disconnect (device, error);
-		break;
-	}
-
-	return success;
-}
-
 static void
 impl_device_disconnect (NMDeviceInterface *device,
                         DBusGMethodInvocation *context)

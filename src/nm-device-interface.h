@@ -98,7 +98,6 @@ struct _NMDeviceInterface {
 	                      GError **error);
 
 	void (*deactivate) (NMDeviceInterface *device, NMDeviceStateReason reason);
-	gboolean (*disconnect) (NMDeviceInterface *device, GError **error);
 
 	/* Signals */
 	void (*state_changed) (NMDeviceInterface *device,
@@ -109,8 +108,6 @@ struct _NMDeviceInterface {
 
 GQuark nm_device_interface_error_quark (void);
 GType nm_device_interface_error_get_type (void);
-
-gboolean nm_device_interface_disconnect (NMDeviceInterface *device, GError **error);
 
 GType nm_device_interface_get_type (void);
 

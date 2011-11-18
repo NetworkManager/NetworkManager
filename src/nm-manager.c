@@ -1409,7 +1409,7 @@ disconnect_net_auth_done_cb (NMAuthChain *chain,
 	error = deactivate_disconnect_check_error (auth_error, result, "Disconnect");
 	if (!error) {
 		device = nm_auth_chain_get_data (chain, "device");
-		if (!nm_device_interface_disconnect (NM_DEVICE_INTERFACE (device), &error))
+		if (!nm_device_disconnect (device, &error))
 			g_assert (error);
 	}
 
@@ -1461,7 +1461,7 @@ manager_device_disconnect_request (NMDevice *device,
 
 	/* Yay for root */
 	if (0 == sender_uid) {
-		if (!nm_device_interface_disconnect (NM_DEVICE_INTERFACE (device), &error)) {
+		if (!nm_device_disconnect (device, &error)) {
 			dbus_g_method_return_error (context, error);
 			g_clear_error (&error);
 		} else

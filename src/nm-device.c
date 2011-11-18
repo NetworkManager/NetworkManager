@@ -172,7 +172,6 @@ static gboolean nm_device_activate (NMDeviceInterface *device,
                                     NMActRequest *req,
                                     GError **error);
 static void nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason);
-static gboolean device_disconnect (NMDeviceInterface *device, GError **error);
 
 static void nm_device_take_down (NMDevice *dev, gboolean wait, NMDeviceStateReason reason);
 
@@ -201,7 +200,6 @@ device_interface_init (NMDeviceInterface *device_interface_class)
 	/* interface implementation */
 	device_interface_class->activate = nm_device_activate;
 	device_interface_class->deactivate = nm_device_deactivate;
-	device_interface_class->disconnect = device_disconnect;
 }
 
 
@@ -2982,14 +2980,27 @@ nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason)
 	nm_device_set_ip6_config (self, NULL, FALSE, &ignored);
 }
 
-static gboolean
-device_disconnect (NMDeviceInterface *device,
-                   GError **error)
+gboolean
+nm_device_disconnect (NMDevice *device, GError **error)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (NM_DEVICE (device));
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (device != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+	if (priv->state <= NM_DEVICE_STATE_DISCONNECTED) {
+		g_set_error_literal (error,
+		                     NM_DEVICE_INTERFACE_ERROR,
+		                     NM_DEVICE_INTERFACE_ERROR_NOT_ACTIVE,
+		                     "Cannot disconnect an inactive device.");
+		return FALSE;
+	}
 
 	priv->autoconnect_inhibit = TRUE;	
-	nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_USER_REQUESTED);
+	nm_device_state_changed (device,
+	                         NM_DEVICE_STATE_DISCONNECTED,
+	                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
 	return TRUE;
 }
 

@@ -188,7 +188,6 @@ void nm_device_set_managed (NMDevice *device,
 
 void nm_device_clear_autoconnect_inhibit (NMDevice *device);
 
-
 void nm_device_handle_autoip4_event (NMDevice *self,
                                      const char *event,
                                      const char *address);
@@ -198,6 +197,8 @@ void nm_device_state_changed (NMDevice *device,
                               NMDeviceStateReason reason);
 
 gboolean nm_device_get_firmware_missing (NMDevice *self);
+
+gboolean nm_device_disconnect (NMDevice *device, GError **error);
 
 G_END_DECLS
 
