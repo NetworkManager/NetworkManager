@@ -322,7 +322,7 @@ update_availability (NMDeviceWimax *self, gboolean old_available)
 	if (new_available == old_available)
 		return FALSE;
 
-	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
+	state = nm_device_get_state (device);
 	if (state == NM_DEVICE_STATE_UNAVAILABLE) {
 		if (new_available == TRUE) {
 			nm_device_state_changed (device,
@@ -879,7 +879,7 @@ wmx_state_change_cb (struct wmxsdk *wmxsdk,
 	if (new_status == old_status)
 		return;
 
-	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
+	state = nm_device_get_state (NM_DEVICE (self));
 	old_available = nm_device_is_available (NM_DEVICE (self));
 
 	priv->status = new_status;
@@ -994,7 +994,7 @@ wmx_media_status_cb (struct wmxsdk *wmxsdk,
 	const char *iface;
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
-	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
+	state = nm_device_get_state (NM_DEVICE (self));
 
 	nm_log_dbg (LOGD_WIMAX, "(%s): media status change to %s",
 	            iface, iwmx_sdk_media_status_to_str (new_status));
@@ -1035,7 +1035,7 @@ wmx_connect_result_cb (struct wmxsdk *wmxsdk,
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 	NMDeviceState state;
 
-	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
+	state = nm_device_get_state (NM_DEVICE (self));
 	if (IS_ACTIVATING_STATE (state)) {
 		priv->connect_failed = (result == WIMAX_API_CONNECTION_SUCCESS);
 		/* Wait for the state change so we can get the reason code; we

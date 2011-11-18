@@ -2096,7 +2096,7 @@ nm_manager_activate_connection (NMManager *manager,
 			return NULL;
 		}
 
-		state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (device));
+		state = nm_device_get_state (device);
 		if (state < NM_DEVICE_STATE_DISCONNECTED) {
 			g_set_error (error,
 			             NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNMANAGED_DEVICE,

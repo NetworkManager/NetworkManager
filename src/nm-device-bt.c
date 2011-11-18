@@ -421,7 +421,7 @@ ppp_failed (NMModem *modem, NMDeviceStateReason reason, gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
 
-	switch (nm_device_interface_get_state (NM_DEVICE_INTERFACE (device))) {
+	switch (nm_device_get_state (device)) {
 	case NM_DEVICE_STATE_PREPARE:
 	case NM_DEVICE_STATE_CONFIG:
 	case NM_DEVICE_STATE_NEED_AUTH:
@@ -478,7 +478,7 @@ modem_prepare_result (NMModem *modem,
 	NMDevice *device = NM_DEVICE (user_data);
 	NMDeviceState state;
 
-	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (device));
+	state = nm_device_get_state (device);
 	g_return_if_fail (state == NM_DEVICE_STATE_CONFIG || state == NM_DEVICE_STATE_NEED_AUTH);
 
 	if (success) {
@@ -611,7 +611,7 @@ nm_device_bt_modem_added (NMDeviceBt *self,
 	/* Can only accept the modem in stage2, but since the interface matched
 	 * what we were expecting, don't let anything else claim the modem either.
 	 */
-	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
+	state = nm_device_get_state (NM_DEVICE (self));
 	if (state != NM_DEVICE_STATE_CONFIG) {
 		nm_log_warn (LOGD_BT | LOGD_MB,
 		             "(%s): modem found but device not in correct state (%d)",

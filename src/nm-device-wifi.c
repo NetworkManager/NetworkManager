@@ -3071,7 +3071,7 @@ real_set_enabled (NMDeviceInterface *device, gboolean enabled)
 	            nm_device_get_iface (NM_DEVICE (device)),
 	            enabled ? "enabled" : "disabled");
 
-	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
+	state = nm_device_get_state (NM_DEVICE (self));
 	if (state < NM_DEVICE_STATE_UNAVAILABLE) {
 		nm_log_dbg (LOGD_WIFI, "(%s): %s blocked by UNMANAGED state",
 		            enabled ? "enable" : "disable",

@@ -334,11 +334,14 @@ gboolean
 nm_device_interface_disconnect (NMDeviceInterface *device,
                                 GError **error)
 {
+	NMDeviceState state;
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), FALSE);
 
-	switch (nm_device_interface_get_state (device)) {
+	g_object_get (G_OBJECT (device), "state", &state, NULL);
+
+	switch (state) {
 	case NM_DEVICE_STATE_UNKNOWN:
 	case NM_DEVICE_STATE_UNMANAGED:
 	case NM_DEVICE_STATE_UNAVAILABLE:
@@ -369,15 +372,6 @@ nm_device_interface_deactivate (NMDeviceInterface *device, NMDeviceStateReason r
 	g_return_if_fail (NM_IS_DEVICE_INTERFACE (device));
 
 	NM_DEVICE_INTERFACE_GET_INTERFACE (device)->deactivate (device, reason);
-}
-
-NMDeviceState
-nm_device_interface_get_state (NMDeviceInterface *device)
-{
-	NMDeviceState state;
-
-	g_object_get (G_OBJECT (device), "state", &state, NULL);
-	return state;
 }
 
 gboolean

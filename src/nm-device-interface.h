@@ -141,8 +141,6 @@ gboolean nm_device_interface_activate (NMDeviceInterface *device,
 
 void nm_device_interface_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason);
 
-NMDeviceState nm_device_interface_get_state (NMDeviceInterface *device);
-
 gboolean nm_device_interface_spec_match_list (NMDeviceInterface *device,
                                               const GSList *specs);
 

@@ -960,7 +960,7 @@ schedule_activate_check (NMPolicy *policy, NMDevice *device, guint delay_seconds
 	if (nm_manager_get_state (policy->manager) == NM_STATE_ASLEEP)
 		return;
 
-	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (device));
+	state = nm_device_get_state (device);
 	if (state < NM_DEVICE_STATE_DISCONNECTED)
 		return;
 

@@ -69,7 +69,7 @@ ppp_failed (NMModem *modem, NMDeviceStateReason reason, gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
 
-	switch (nm_device_interface_get_state (NM_DEVICE_INTERFACE (device))) {
+	switch (nm_device_get_state (device)) {
 	case NM_DEVICE_STATE_PREPARE:
 	case NM_DEVICE_STATE_CONFIG:
 	case NM_DEVICE_STATE_NEED_AUTH:
@@ -99,7 +99,7 @@ modem_prepare_result (NMModem *modem,
 	NMDevice *device = NM_DEVICE (user_data);
 	NMDeviceState state;
 
-	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (device));
+	state = nm_device_get_state (device);
 	g_return_if_fail (state == NM_DEVICE_STATE_PREPARE);
 
 	if (success)
@@ -302,7 +302,7 @@ real_set_enabled (NMDeviceInterface *device, gboolean enabled)
 		nm_modem_set_mm_enabled (priv->modem, enabled);
 
 		if (enabled == FALSE) {
-			state = nm_device_interface_get_state (device);
+			state = nm_device_get_state (NM_DEVICE (device));
 			if (state == NM_DEVICE_STATE_ACTIVATED) {
 				nm_device_state_changed (NM_DEVICE (device),
 				                         NM_DEVICE_STATE_DISCONNECTED,

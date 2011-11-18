@@ -77,7 +77,7 @@ carrier_action_defer_cb (gpointer user_data)
 
 	priv->carrier_action_defer_id = 0;
 
-	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
+	state = nm_device_get_state (NM_DEVICE (self));
 	if (state == NM_DEVICE_STATE_UNAVAILABLE) {
 		if (priv->carrier)
 			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_CARRIER);
@@ -109,7 +109,7 @@ set_carrier (NMDeviceWired *self,
 	priv->carrier = carrier;
 	g_object_notify (G_OBJECT (self), "carrier");
 
-	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
+	state = nm_device_get_state (NM_DEVICE (self));
 	nm_log_info (LOGD_HW | NM_DEVICE_WIRED_LOG_LEVEL (NM_DEVICE (self)),
 	             "(%s): carrier now %s (device state %d%s)",
 	             nm_device_get_iface (NM_DEVICE (self)),
@@ -166,7 +166,7 @@ carrier_off (NMNetlinkMonitor *monitor,
 		 * so that tripping over a cable, power-cycling a switch, or breaking
 		 * off the RJ45 locking tab isn't so catastrophic.
 		 */
-		state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
+		state = nm_device_get_state (device);
 		if (state > NM_DEVICE_STATE_DISCONNECTED)
 			defer = TRUE;
 
