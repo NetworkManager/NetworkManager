@@ -92,9 +92,6 @@ typedef struct _NMDeviceInterface NMDeviceInterface;
 struct _NMDeviceInterface {
 	GTypeInterface g_iface;
 
-	/* Methods */
-	void (*deactivate) (NMDeviceInterface *device, NMDeviceStateReason reason);
-
 	/* Signals */
 	void (*state_changed) (NMDeviceInterface *device,
 	                       NMDeviceState new_state,
@@ -106,7 +103,5 @@ GQuark nm_device_interface_error_quark (void);
 GType nm_device_interface_error_get_type (void);
 
 GType nm_device_interface_get_type (void);
-
-void nm_device_interface_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason);
 
 #endif /* NM_DEVICE_INTERFACE_H */

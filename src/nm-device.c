@@ -62,10 +62,7 @@
 #define PENDING_IP4_CONFIG "pending-ip4-config"
 #define PENDING_IP6_CONFIG "pending-ip6-config"
 
-static void device_interface_init (NMDeviceInterface *device_interface_class);
-
-G_DEFINE_TYPE_EXTENDED (NMDevice, nm_device, G_TYPE_OBJECT, G_TYPE_FLAG_ABSTRACT,
-						G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_INTERFACE, device_interface_init))
+G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, G_TYPE_OBJECT)
 
 enum {
 	AUTOCONNECT_ALLOWED,
@@ -168,8 +165,6 @@ typedef struct {
 	NMDevice *	master;
 } NMDevicePrivate;
 
-static void nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason);
-
 static void nm_device_take_down (NMDevice *dev, gboolean wait, NMDeviceStateReason reason);
 
 static gboolean nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware);
@@ -189,15 +184,6 @@ static gboolean nm_device_activate_ip6_config_commit (gpointer user_data);
 static void dhcp4_cleanup (NMDevice *self, gboolean stop, gboolean release);
 
 static const char *reason_to_string (NMDeviceStateReason reason);
-
-
-static void
-device_interface_init (NMDeviceInterface *device_interface_class)
-{
-	/* interface implementation */
-	device_interface_class->deactivate = nm_device_deactivate;
-}
-
 
 static void
 nm_device_init (NMDevice *self)
@@ -2909,21 +2895,22 @@ _update_ip4_address (NMDevice *self)
  *
  */
 static void
-nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason)
+nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 {
-	NMDevice *self = NM_DEVICE (device);
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevicePrivate *priv;
 	NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
 	NMDevice *master;
 	gboolean tried_ipv6 = FALSE;
 	int ifindex, family;
 
 	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_DEVICE (self));
 
 	nm_log_info (LOGD_DEVICE, "(%s): deactivating device (reason '%s') [%d]",
 	             nm_device_get_iface (self), reason_to_string (reason), reason);
 
 	/* Save whether or not we tried IPv6 for later */
+	priv = NM_DEVICE_GET_PRIVATE (self);
 	if (priv->ip6_manager || priv->ip6_config)
 		tried_ipv6 = TRUE;
 
@@ -3361,7 +3348,7 @@ nm_device_take_down (NMDevice *self, gboolean block, NMDeviceStateReason reason)
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	if (nm_device_get_act_request (self))
-		nm_device_interface_deactivate (NM_DEVICE_INTERFACE (self), reason);
+		nm_device_deactivate (self, reason);
 
 	if (nm_device_is_up (self)) {
 		nm_log_info (LOGD_HW, "(%s): cleaning up...", nm_device_get_iface (self));
@@ -3976,11 +3963,11 @@ nm_device_state_changed (NMDevice *device,
 		 * assuming the device's existing connection.
 		 */
 		if (reason != NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED)
-			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device), reason);
+			nm_device_deactivate (device, reason);
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
 		if (old_state != NM_DEVICE_STATE_UNAVAILABLE)
-			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device), reason);
+			nm_device_deactivate (device, reason);
 		break;
 	default:
 		priv->autoconnect_inhibit = FALSE;

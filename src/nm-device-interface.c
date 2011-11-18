@@ -282,11 +282,3 @@ impl_device_disconnect (NMDeviceInterface *device,
 	g_signal_emit_by_name (device, NM_DEVICE_INTERFACE_DISCONNECT_REQUEST, context);
 }
 
-void
-nm_device_interface_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason)
-{
-	g_return_if_fail (NM_IS_DEVICE_INTERFACE (device));
-
-	NM_DEVICE_INTERFACE_GET_INTERFACE (device)->deactivate (device, reason);
-}
-
