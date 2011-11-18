@@ -32,12 +32,6 @@
 #include "nm-activation-request.h"
 #include "nm-logging.h"
 #include "nm-device.h"
-#include "nm-device-wifi.h"
-#include "nm-device-ethernet.h"
-#include "nm-device-modem.h"
-#if WITH_WIMAX
-#include "nm-device-wimax.h"
-#endif
 #include "nm-dbus-manager.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-connection.h"
@@ -97,6 +91,7 @@ get_best_ip4_device (NMManager *manager, NMActRequest **out_req)
 	devices = nm_manager_get_devices (manager);
 	for (iter = devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *dev = NM_DEVICE (iter->data);
+		NMDeviceType devtype = nm_device_get_device_type (dev);
 		NMActRequest *req;
 		NMConnection *connection;
 		NMIP4Config *ip4_config;
@@ -137,7 +132,7 @@ get_best_ip4_device (NMManager *manager, NMActRequest **out_req)
 			}
 		}
 
-		if (!can_default && !NM_IS_DEVICE_MODEM (dev))
+		if (!can_default && (devtype != NM_DEVICE_TYPE_MODEM))
 			continue;
 
 		/* 'never-default' devices can't ever be the default */
@@ -171,6 +166,7 @@ get_best_ip6_device (NMManager *manager, NMActRequest **out_req)
 	devices = nm_manager_get_devices (manager);
 	for (iter = devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *dev = NM_DEVICE (iter->data);
+		NMDeviceType devtype = nm_device_get_device_type (dev);
 		NMActRequest *req;
 		NMConnection *connection;
 		NMIP6Config *ip6_config;
@@ -211,7 +207,7 @@ get_best_ip6_device (NMManager *manager, NMActRequest **out_req)
 			}
 		}
 
-		if (!can_default && !NM_IS_DEVICE_MODEM (dev))
+		if (!can_default && (devtype != NM_DEVICE_TYPE_MODEM))
 			continue;
 
 		/* 'never-default' devices can't ever be the default */
@@ -1119,23 +1115,21 @@ device_ip_config_changed (NMDevice *device,
 }
 
 static void
-wireless_networks_changed (NMDeviceWifi *device, NMAccessPoint *ap, gpointer user_data)
+wireless_networks_changed (NMDevice *device, GObject *ap, gpointer user_data)
 {
-	schedule_activate_check ((NMPolicy *) user_data, NM_DEVICE (device), 0);
+	schedule_activate_check ((NMPolicy *) user_data, device, 0);
 }
 
-#if WITH_WIMAX
 static void
-nsps_changed (NMDeviceWimax *device, NMWimaxNsp *nsp, gpointer user_data)
+nsps_changed (NMDevice *device, GObject *nsp, gpointer user_data)
 {
-	schedule_activate_check ((NMPolicy *) user_data, NM_DEVICE (device), 0);
+	schedule_activate_check ((NMPolicy *) user_data, device, 0);
 }
-#endif
 
 static void
-modem_enabled_changed (NMDeviceModem *device, gpointer user_data)
+modem_enabled_changed (NMDevice *device, gpointer user_data)
 {
-	schedule_activate_check ((NMPolicy *) (user_data), NM_DEVICE (device), 0);
+	schedule_activate_check ((NMPolicy *) (user_data), device, 0);
 }
 
 typedef struct {
@@ -1164,16 +1158,20 @@ device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 	_connect_device_signal (policy, device, "notify::" NM_DEVICE_IP4_CONFIG, device_ip_config_changed);
 	_connect_device_signal (policy, device, "notify::" NM_DEVICE_IP6_CONFIG, device_ip_config_changed);
 
-	if (NM_IS_DEVICE_WIFI (device)) {
+	switch (nm_device_get_device_type (device)) {
+	case NM_DEVICE_TYPE_WIFI:
 		_connect_device_signal (policy, device, "access-point-added", wireless_networks_changed);
 		_connect_device_signal (policy, device, "access-point-removed", wireless_networks_changed);
-#if WITH_WIMAX
-	} else if (NM_IS_DEVICE_WIMAX (device)) {
+		break;
+	case NM_DEVICE_TYPE_WIMAX:
 		_connect_device_signal (policy, device, "nsp-added", nsps_changed);
 		_connect_device_signal (policy, device, "nsp-removed", nsps_changed);
-#endif
-	} else if (NM_IS_DEVICE_MODEM (device)) {
-		_connect_device_signal (policy, device, NM_DEVICE_MODEM_ENABLE_CHANGED, modem_enabled_changed);
+		break;
+	case NM_DEVICE_TYPE_MODEM:
+		_connect_device_signal (policy, device, "enable-changed", modem_enabled_changed);
+		break;
+	default:
+		break;
 	}
 }
 

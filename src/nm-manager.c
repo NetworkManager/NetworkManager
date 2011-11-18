@@ -436,7 +436,7 @@ modem_added (NMModemManager *modem_manager,
 
 	/* Give Bluetooth DUN devices first chance to claim the modem */
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		if (NM_IS_DEVICE_BT (iter->data)) {
+		if (nm_device_get_device_type (iter->data) == NM_DEVICE_TYPE_BT) {
 			if (nm_device_bt_modem_added (NM_DEVICE_BT (iter->data), modem, driver))
 				return;
 		}
@@ -576,7 +576,7 @@ modem_removed (NMModemManager *modem_manager,
 
 	/* Give Bluetooth DUN devices first chance to handle the modem removal */
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		if (NM_IS_DEVICE_BT (iter->data)) {
+		if (nm_device_get_device_type (iter->data) == NM_DEVICE_TYPE_BT) {
 			if (nm_device_bt_modem_removed (NM_DEVICE_BT (iter->data), modem))
 				return;
 		}
@@ -1209,7 +1209,7 @@ nm_manager_get_ipw_rfkill_state (NMManager *self)
 		NMDevice *candidate = NM_DEVICE (iter->data);
 		RfKillState candidate_state;
 
-		if (NM_IS_DEVICE_WIFI (candidate)) {
+		if (nm_device_get_device_type (candidate) == NM_DEVICE_TYPE_WIFI) {
 			candidate_state = nm_device_wifi_get_ipw_rfkill_state (NM_DEVICE_WIFI (candidate));
 
 			if (candidate_state > ipw_state)
@@ -1483,9 +1483,12 @@ add_device (NMManager *self, NMDevice *device)
 	NMConnection *existing = NULL;
 	gboolean managed = FALSE, enabled = FALSE;
 	RfKillType rtype;
+	NMDeviceType devtype;
 
 	iface = nm_device_get_ip_iface (device);
 	g_assert (iface);
+
+	devtype = nm_device_get_device_type (device);
 
 	/* Ignore the device if we already know about it.  But some modems will
 	 * provide pseudo-ethernet devices that NM has already claimed while
@@ -1495,7 +1498,7 @@ add_device (NMManager *self, NMDevice *device)
 	 * check for an existing device with the same IP interface name and kill
 	 * the ethernet device later in favor of the modem device.
 	 */
-	if (!NM_IS_DEVICE_MODEM (device) && find_device_by_ip_iface (self, iface)) {
+	if ((devtype != NM_DEVICE_TYPE_MODEM) && find_device_by_ip_iface (self, iface)) {
 		g_object_unref (device);
 		return;
 	}
@@ -1510,7 +1513,7 @@ add_device (NMManager *self, NMDevice *device)
 					  G_CALLBACK (manager_device_disconnect_request),
 					  self);
 
-	if (NM_IS_DEVICE_WIFI (device)) {
+	if (devtype == NM_DEVICE_TYPE_WIFI) {
 		/* Attach to the access-point-added signal so that the manager can fill
 		 * non-SSID-broadcasting APs with an SSID.
 		 */
@@ -1524,7 +1527,7 @@ add_device (NMManager *self, NMDevice *device)
 		g_signal_connect (device, "notify::" NM_DEVICE_WIFI_IPW_RFKILL_STATE,
 		                  G_CALLBACK (manager_ipw_rfkill_state_changed),
 		                  self);
-	} else if (NM_IS_DEVICE_MODEM (device)) {
+	} else if (devtype == NM_DEVICE_TYPE_MODEM) {
 		g_signal_connect (device, NM_DEVICE_MODEM_ENABLE_CHANGED,
 		                  G_CALLBACK (manager_modem_enabled_changed),
 		                  self);
@@ -1694,7 +1697,7 @@ bluez_manager_resync_devices (NMManager *self)
 		guint32 uuids;
 		const char *bdaddr;
 
-		if (NM_IS_DEVICE_BT (candidate)) {
+		if (nm_device_get_device_type (candidate) == NM_DEVICE_TYPE_BT) {
 			uuids = nm_device_bt_get_capabilities (NM_DEVICE_BT (candidate));
 			bdaddr = nm_device_bt_get_hw_address (NM_DEVICE_BT (candidate));
 
