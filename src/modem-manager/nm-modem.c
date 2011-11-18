@@ -611,7 +611,7 @@ nm_modem_device_state_changed (NMModem *self,
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_MODEM (self));
 
-	if (IS_ACTIVATING_STATE (old_state) || (old_state == NM_DEVICE_STATE_ACTIVATED))
+	if (old_state >= NM_DEVICE_STATE_PREPARE && old_state <= NM_DEVICE_STATE_ACTIVATED)
 		was_connected = TRUE;
 
 	priv = NM_MODEM_GET_PRIVATE (self);

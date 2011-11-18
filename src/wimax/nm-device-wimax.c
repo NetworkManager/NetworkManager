@@ -918,7 +918,7 @@ wmx_state_change_cb (struct wmxsdk *wmxsdk,
 	}
 
 	/* Handle activation success and failure */
-	if (IS_ACTIVATING_STATE (state)) {
+	if (nm_device_is_activating (NM_DEVICE (self))) {
 	    if (new_status == WIMAX_API_DEVICE_STATUS_Data_Connected) {
 			/* Success */
 			clear_activation_timeout (self);
@@ -1033,10 +1033,8 @@ wmx_connect_result_cb (struct wmxsdk *wmxsdk,
 {
 	NMDeviceWimax *self = NM_DEVICE_WIMAX (user_data);
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
-	NMDeviceState state;
 
-	state = nm_device_get_state (NM_DEVICE (self));
-	if (IS_ACTIVATING_STATE (state)) {
+	if (nm_device_is_activating (NM_DEVICE (self))) {
 		priv->connect_failed = (result == WIMAX_API_CONNECTION_SUCCESS);
 		/* Wait for the state change so we can get the reason code; we
 		 * cache the connect failure so we don't have to wait for the

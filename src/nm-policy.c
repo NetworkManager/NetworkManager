@@ -1035,7 +1035,9 @@ device_state_changed (NMDevice *device,
 		/* Mark the connection invalid if it failed during activation so that
 		 * it doesn't get automatically chosen over and over and over again.
 		 */
-		if (connection && IS_ACTIVATING_STATE (old_state)) {
+		if (   connection
+		    && old_state >= NM_DEVICE_STATE_PREPARE
+		    && old_state <= NM_DEVICE_STATE_ACTIVATED) {
 			guint32 tries = get_connection_auto_retries (connection);
 
 			if (reason == NM_DEVICE_STATE_REASON_NO_SECRETS) {
