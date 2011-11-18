@@ -105,7 +105,7 @@ static const struct Opt opt_table[] = {
 	{ "eapol_flags",        TYPE_INT,     0, 3, FALSE,  NULL },
 	{ "eap",                TYPE_KEYWORD, 0, 0, FALSE,  eap_allowed },
 	{ "identity",           TYPE_BYTES,   0, 0, FALSE,  NULL },
-	{ "password",           TYPE_BYTES,   0, 0, FALSE,  NULL },
+	{ "password",           TYPE_UTF8,    0, 0, FALSE,  NULL },
 	{ "ca_path",            TYPE_BYTES,   0, 0, FALSE,  NULL },
 	{ "subject_match",      TYPE_BYTES,   0, 0, FALSE,  NULL },
 	{ "altsubject_match",   TYPE_BYTES,   0, 0, FALSE,  NULL },
