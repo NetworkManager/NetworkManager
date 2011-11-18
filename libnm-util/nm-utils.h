@@ -128,6 +128,7 @@ gboolean nm_utils_wifi_is_channel_valid (guint32 channel, const char *band);
 #define NM_UTILS_HWADDR_LEN_MAX 20 /* INFINIBAND_ALEN */
 
 int         nm_utils_hwaddr_len   (int type) G_GNUC_PURE;
+int         nm_utils_hwaddr_type  (int len) G_GNUC_PURE;
 char       *nm_utils_hwaddr_ntoa  (gconstpointer addr, int type);
 GByteArray *nm_utils_hwaddr_atoba (const char *asc, int type);
 guint8     *nm_utils_hwaddr_aton  (const char *asc, int type, gpointer buffer);

@@ -2408,6 +2408,27 @@ nm_utils_hwaddr_len (int type)
 		g_return_val_if_reached (-1);
 }
 
+/**
+ * nm_utils_hwaddr_type:
+ * @len: the length of hardware address in bytes
+ *
+ * Returns the type (either %ARPHRD_ETHER or %ARPHRD_INFINIBAND) of the raw
+ * address given its length.
+ *
+ * Return value: the type, either %ARPHRD_ETHER or %ARPHRD_INFINIBAND, or -1 if
+ * the address length was not recognized
+ */
+int
+nm_utils_hwaddr_type (int len)
+{
+	if (len == ETH_ALEN)
+		return ARPHRD_ETHER;
+	else if (len == INFINIBAND_ALEN)
+		return ARPHRD_INFINIBAND;
+	else
+		g_return_val_if_reached (-1);
+}
+
 #define HEXVAL(c) ((c) <= '9' ? (c) - '0' : ((c) & 0x4F) - 'A' + 10)
 
 /**

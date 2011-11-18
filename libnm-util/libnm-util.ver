@@ -452,6 +452,7 @@ global:
 	nm_utils_hwaddr_aton;
 	nm_utils_hwaddr_len;
 	nm_utils_hwaddr_ntoa;
+	nm_utils_hwaddr_type;
 	nm_utils_init;
 	nm_utils_ip4_addresses_from_gvalue;
 	nm_utils_ip4_addresses_to_gvalue;
