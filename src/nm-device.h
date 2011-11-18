@@ -73,6 +73,8 @@ typedef struct {
 
 	gboolean	(* is_available) (NMDevice *self);
 
+	gboolean    (* get_enabled) (NMDevice *self);
+
 	NMConnection * (* get_best_auto_connection) (NMDevice *self,
 	                                             GSList *connections,
 	                                             char **specific_object);
@@ -172,6 +174,8 @@ gboolean		nm_device_can_interrupt_activation		(NMDevice *self);
 gboolean		nm_device_autoconnect_allowed	(NMDevice *self);
 
 NMDeviceState nm_device_get_state (NMDevice *device);
+
+gboolean nm_device_get_enabled (NMDevice *device);
 
 gboolean nm_device_get_managed (NMDevice *device);
 void nm_device_set_managed (NMDevice *device,

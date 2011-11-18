@@ -964,7 +964,7 @@ schedule_activate_check (NMPolicy *policy, NMDevice *device, guint delay_seconds
 	if (state < NM_DEVICE_STATE_DISCONNECTED)
 		return;
 
-	if (!nm_device_interface_get_enabled (NM_DEVICE_INTERFACE (device)))
+	if (!nm_device_get_enabled (device))
 		return;
 
 	if (!nm_device_autoconnect_allowed (device))

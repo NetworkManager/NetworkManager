@@ -1239,7 +1239,7 @@ nm_manager_get_modem_enabled_state (NMManager *self)
 
 		g_object_get (G_OBJECT (candidate), NM_DEVICE_INTERFACE_RFKILL_TYPE, &devtype, NULL);
 		if (devtype == RFKILL_TYPE_WWAN) {
-			if (!nm_device_interface_get_enabled (NM_DEVICE_INTERFACE (candidate)))
+			if (!nm_device_get_enabled (candidate))
 				candidate_state = RFKILL_SOFT_BLOCKED;
 
 			if (candidate_state > wwan_state)

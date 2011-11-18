@@ -560,6 +560,17 @@ nm_device_is_available (NMDevice *self)
 	return TRUE;
 }
 
+gboolean
+nm_device_get_enabled (NMDevice *self)
+{
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	if (NM_DEVICE_GET_CLASS (self)->get_enabled)
+		return NM_DEVICE_GET_CLASS (self)->get_enabled (self);
+	return TRUE;
+}
+
 static gboolean
 autoconnect_allowed_accumulator (GSignalInvocationHint *ihint,
                                  GValue *return_accu,

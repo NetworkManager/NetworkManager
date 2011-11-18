@@ -286,7 +286,7 @@ real_act_stage3_ip4_config_start (NMDevice *device,
 /*****************************************************************************/
 
 static gboolean
-real_get_enabled (NMDeviceInterface *device)
+real_get_enabled (NMDevice *device)
 {
 	return nm_modem_get_mm_enabled (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem);
 }
@@ -351,7 +351,6 @@ nm_device_modem_new (NMModem *modem, const char *driver)
 static void
 device_interface_init (NMDeviceInterface *iface_class)
 {
-    iface_class->get_enabled = real_get_enabled;
     iface_class->set_enabled = real_set_enabled;
 }
 
@@ -457,6 +456,7 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	device_class->act_stage1_prepare = real_act_stage1_prepare;
 	device_class->act_stage2_config = real_act_stage2_config;
 	device_class->act_stage3_ip4_config_start = real_act_stage3_ip4_config_start;
+	device_class->get_enabled = real_get_enabled;
 
 	/* Properties */
 	g_object_class_install_property
