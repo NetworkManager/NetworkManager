@@ -37,6 +37,4 @@ NMConnection *connection_from_file (const char *filename,
                                     GError **error,
                                     gboolean *ignore_error);
 
-const char *reader_get_prefix (void);
-
 #endif  /* __READER_H__ */

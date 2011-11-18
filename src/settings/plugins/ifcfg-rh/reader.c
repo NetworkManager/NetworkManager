@@ -79,10 +79,12 @@ get_int (const char *str, int *value)
 }
 
 static char *
-make_connection_name (shvarFile *ifcfg, const char *ifcfg_name,
-                      const char *suggested, const char *prefix)
+make_connection_name (shvarFile *ifcfg,
+                      const char *ifcfg_name,
+                      const char *suggested,
+                      const char *prefix)
 {
-	char *full_name = NULL, *name, *device;
+	char *full_name = NULL, *name;
 
 	/* If the ifcfg file already has a NAME, always use that */
 	name = svGetValue (ifcfg, "NAME", FALSE);
@@ -91,32 +93,18 @@ make_connection_name (shvarFile *ifcfg, const char *ifcfg_name,
 
 	/* Otherwise construct a new NAME */
 	g_free (name);
-	device = svGetValue (ifcfg, "DEVICE", FALSE);
-
-	/*
-	 * No name was specified, construct a default connection name based
-	 * on the information we have.
-	 */
 	if (!prefix)
-		prefix = reader_get_prefix();
+		prefix = _("System");
 
 	/* For cosmetic reasons, if the suggested name is the same as
 	 * the ifcfg files name, don't use it.  Mainly for wifi so that
 	 * the SSID is shown in the connection ID instead of just "wlan0".
 	 */
-	if (suggested && strcmp (ifcfg_name, suggested)) {
-		if (device)
-			full_name = g_strdup_printf ("%s %s (%s)", prefix, suggested, device);
-		else
-			full_name = g_strdup_printf ("%s %s (%s)", prefix, suggested, ifcfg_name);
-	} else {
-		if (device && strcmp (ifcfg_name, device))
-			full_name = g_strdup_printf ("%s %s (%s)", prefix, ifcfg_name, device);
-		else
-			full_name = g_strdup_printf ("%s %s", prefix, ifcfg_name);
-	}
+	if (suggested && strcmp (ifcfg_name, suggested))
+		full_name = g_strdup_printf ("%s %s (%s)", prefix, suggested, ifcfg_name);
+	else
+		full_name = g_strdup_printf ("%s %s", prefix, ifcfg_name);
 
-	g_free (device);
 	return full_name;
 }
 
@@ -161,17 +149,9 @@ make_connection_setting (const char *file,
 
 	value = svGetValue (ifcfg, "MASTER", FALSE);
 	if (value) {
-		const char *id;
-
 		g_object_set (s_con, NM_SETTING_CONNECTION_MASTER, value, NULL);
 		g_object_set (s_con, NM_SETTING_CONNECTION_SLAVE_TYPE,
 		              NM_SETTING_BOND_SETTING_NAME, NULL);
-
-		/* Add a suffix to all slaves: "<NAME> [slave-of <MASTER>]" */
-		id = nm_setting_connection_get_id (s_con);
-		new_id = g_strdup_printf ("%s [slave-of %s]", id, value);
-		g_object_set (s_con, NM_SETTING_CONNECTION_ID, new_id, NULL);
-
 		g_free (value);
 	}
 
@@ -3777,11 +3757,5 @@ done:
 	else
 		g_clear_error (&error);
 	return connection;
-}
-
-const char *
-reader_get_prefix (void)
-{
-	return _("System");
 }
 
