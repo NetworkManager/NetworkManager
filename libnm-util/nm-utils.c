@@ -2430,12 +2430,22 @@ nm_utils_hwaddr_aton (const char *asc, int type, gpointer buffer)
 	int left = nm_utils_hwaddr_len (type);
 
 	while (left && *in) {
-		if (!isxdigit (in[0]) || !isxdigit (in[1]))
+		guint8 d1 = in[0], d2 = in[1];
+
+		if (!isxdigit (d1))
 			return NULL;
 
-		*out++ = (HEXVAL (in[0]) << 4) + HEXVAL (in[1]);
+		/* If there's no leading zero (ie "aa:b:cc") then fake it */
+		if (d2 && isxdigit (d2)) {
+			*out++ = (HEXVAL (d1) << 4) + HEXVAL (d2);
+			in += 2;
+		} else {
+			/* Fake leading zero */
+			*out++ = (HEXVAL ('0') << 4) + HEXVAL (d1);
+			in += 1;
+		}
+
 		left--;
-		in += 2;
 		if (*in) {
 			if (*in != ':')
 				return NULL;
