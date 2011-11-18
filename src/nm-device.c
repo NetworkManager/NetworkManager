@@ -636,6 +636,15 @@ nm_device_set_enabled (NMDevice *self, gboolean enabled)
 		NM_DEVICE_GET_CLASS (self)->set_enabled (self, enabled);
 }
 
+RfKillType
+nm_device_get_rfkill_type (NMDevice *self)
+{
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	return NM_DEVICE_GET_PRIVATE (self)->rfkill_type;
+}
+
 static gboolean
 autoconnect_allowed_accumulator (GSignalInvocationHint *ihint,
                                  GValue *return_accu,

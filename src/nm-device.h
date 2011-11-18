@@ -33,6 +33,7 @@
 #include "nm-dhcp4-config.h"
 #include "nm-dhcp6-config.h"
 #include "nm-connection.h"
+#include "nm-rfkill.h"
 
 /* Properties */
 #define NM_DEVICE_UDI              "udi"
@@ -209,6 +210,8 @@ NMDeviceState nm_device_get_state (NMDevice *device);
 gboolean nm_device_get_enabled (NMDevice *device);
 
 void nm_device_set_enabled (NMDevice *device, gboolean enabled);
+
+RfKillType nm_device_get_rfkill_type (NMDevice *device);
 
 gboolean nm_device_get_managed (NMDevice *device);
 void nm_device_set_managed (NMDevice *device,

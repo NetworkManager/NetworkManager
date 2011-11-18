@@ -42,9 +42,6 @@
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
 #include "nm-device-olpc-mesh.h"
-#if WITH_WIMAX
-#include "nm-device-wimax.h"
-#endif
 #include "nm-device-modem.h"
 #include "nm-system.h"
 #include "nm-properties-changed-signal.h"
@@ -1157,14 +1154,13 @@ manager_update_radio_enabled (NMManager *self,
 
 	/* enable/disable wireless devices as required */
 	for (iter = priv->devices; iter; iter = iter->next) {
-		RfKillType devtype = RFKILL_TYPE_UNKNOWN;
+		NMDevice *device = NM_DEVICE (iter->data);
 
-		g_object_get (G_OBJECT (iter->data), NM_DEVICE_RFKILL_TYPE, &devtype, NULL);
-		if (devtype == rstate->rtype) {
+		if (nm_device_get_rfkill_type (device) == rstate->rtype) {
 			nm_log_dbg (LOGD_RFKILL, "(%s): setting radio %s",
-			            nm_device_get_iface (NM_DEVICE (iter->data)),
+			            nm_device_get_iface (device),
 			            enabled ? "enabled" : "disabled");
-			nm_device_set_enabled (NM_DEVICE (iter->data), enabled);
+			nm_device_set_enabled (device, enabled);
 		}
 	}
 }
@@ -1234,10 +1230,8 @@ nm_manager_get_modem_enabled_state (NMManager *self)
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *candidate = NM_DEVICE (iter->data);
 		RfKillState candidate_state = RFKILL_UNBLOCKED;
-		RfKillType devtype = RFKILL_TYPE_UNKNOWN;
 
-		g_object_get (G_OBJECT (candidate), NM_DEVICE_RFKILL_TYPE, &devtype, NULL);
-		if (devtype == RFKILL_TYPE_WWAN) {
+		if (nm_device_get_rfkill_type (candidate) == RFKILL_TYPE_WWAN) {
 			if (!nm_device_get_enabled (candidate))
 				candidate_state = RFKILL_SOFT_BLOCKED;
 
@@ -1488,7 +1482,7 @@ add_device (NMManager *self, NMDevice *device)
 	const GSList *unmanaged_specs;
 	NMConnection *existing = NULL;
 	gboolean managed = FALSE, enabled = FALSE;
-	RfKillType rtype = RFKILL_TYPE_UNKNOWN;
+	RfKillType rtype;
 
 	iface = nm_device_get_ip_iface (device);
 	g_assert (iface);
@@ -1522,22 +1516,18 @@ add_device (NMManager *self, NMDevice *device)
 		g_signal_connect (device, "notify::" NM_DEVICE_WIFI_IPW_RFKILL_STATE,
 		                  G_CALLBACK (manager_ipw_rfkill_state_changed),
 		                  self);
-		rtype = RFKILL_TYPE_WLAN;
 	} else if (NM_IS_DEVICE_MODEM (device)) {
 		g_signal_connect (device, NM_DEVICE_MODEM_ENABLE_CHANGED,
 		                  G_CALLBACK (manager_modem_enabled_changed),
 		                  self);
-		rtype = RFKILL_TYPE_WWAN;
-#if WITH_WIMAX
-	} else if (NM_IS_DEVICE_WIMAX (device)) {
-		rtype = RFKILL_TYPE_WIMAX;
-#endif
 	}
 
+	/* Update global rfkill state for this device type with the device's
+	 * rfkill state, and then set this device's rfkill state based on the
+	 * global state.
+	 */
+	rtype = nm_device_get_rfkill_type (device);
 	if (rtype != RFKILL_TYPE_UNKNOWN) {
-		/* Update global rfkill state with this device's rfkill state, and
-		 * then set this device's rfkill state based on the global state.
-		 */
 		nm_manager_rfkill_update (self, rtype);
 		enabled = radio_enabled_for_type (self, rtype, TRUE);
 		nm_device_set_enabled (device, enabled);
@@ -2465,7 +2455,6 @@ do_sleep_wake (NMManager *self)
 			for (i = 0; i < RFKILL_TYPE_MAX; i++) {
 				RadioState *rstate = &priv->radio_states[i];
 				gboolean enabled = radio_enabled_for_rstate (rstate, TRUE);
-				RfKillType devtype = RFKILL_TYPE_UNKNOWN;
 
 				if (rstate->desc) {
 					nm_log_dbg (LOGD_RFKILL, "%s %s devices (hw_enabled %d, sw_enabled %d, user_enabled %d)",
@@ -2473,8 +2462,7 @@ do_sleep_wake (NMManager *self)
 					            rstate->desc, rstate->hw_enabled, rstate->sw_enabled, rstate->user_enabled);
 				}
 
-				g_object_get (G_OBJECT (device), NM_DEVICE_RFKILL_TYPE, &devtype, NULL);
-				if (devtype == rstate->rtype)
+				if (nm_device_get_rfkill_type (device) == rstate->rtype)
 					nm_device_set_enabled (device, enabled);
 			}
 
