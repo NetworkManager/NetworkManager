@@ -121,6 +121,8 @@ global:
 	nm_setting_802_1x_get_num_phase2_altsubject_matches;
 	nm_setting_802_1x_get_password;
 	nm_setting_802_1x_get_password_flags;
+	nm_setting_802_1x_get_password_raw;
+	nm_setting_802_1x_get_password_raw_flags;
 	nm_setting_802_1x_get_phase1_fast_provisioning;
 	nm_setting_802_1x_get_phase1_peaplabel;
 	nm_setting_802_1x_get_phase1_peapver;

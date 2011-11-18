@@ -131,6 +131,8 @@ typedef struct {
 	GByteArray *phase2_client_cert;
 	char *password;
 	NMSettingSecretFlags password_flags;
+	GByteArray *password_raw;
+	NMSettingSecretFlags password_raw_flags;
 	char *pin;
 	NMSettingSecretFlags pin_flags;
 	GByteArray *private_key;
@@ -164,6 +166,8 @@ enum {
 	PROP_PHASE2_CLIENT_CERT,
 	PROP_PASSWORD,
 	PROP_PASSWORD_FLAGS,
+	PROP_PASSWORD_RAW,
+	PROP_PASSWORD_RAW_FLAGS,
 	PROP_PRIVATE_KEY,
 	PROP_PRIVATE_KEY_PASSWORD,
 	PROP_PRIVATE_KEY_PASSWORD_FLAGS,
@@ -1423,6 +1427,37 @@ nm_setting_802_1x_get_password_flags (NMSetting8021x *setting)
 }
 
 /**
+ * nm_setting_802_1x_get_password_raw:
+ * @setting: the #NMSetting8021x
+ *
+ * Returns: the password used by the authentication method as a
+ * UTF-8-encoded array of bytes, as specified by the
+ * #NMSetting8021x:password-raw property
+ **/
+const GByteArray *
+nm_setting_802_1x_get_password_raw (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->password_raw;
+}
+
+/**
+ * nm_setting_802_1x_get_password_raw_flags:
+ * @setting: the #NMSetting8021x
+ *
+ * Returns: the #NMSettingSecretFlags pertaining to the
+ *   #NMSetting8021x:password-raw
+ **/
+NMSettingSecretFlags
+nm_setting_802_1x_get_password_raw_flags (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_SECRET_FLAG_NONE);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->password_raw_flags;
+}
+
+/**
  * nm_setting_802_1x_get_pin:
  * @setting: the #NMSetting8021x
  *
@@ -2001,8 +2036,11 @@ need_secrets_password (NMSetting8021x *self,
 {
 	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (self);
 
-	if (!priv->password || !strlen (priv->password))
+	if (   (!priv->password || !strlen (priv->password))
+	    && (!priv->password_raw || !priv->password_raw->len)) {
 		g_ptr_array_add (secrets, NM_SETTING_802_1X_PASSWORD);
+		g_ptr_array_add (secrets, NM_SETTING_802_1X_PASSWORD_RAW);
+	}
 }
 
 static void
@@ -2542,6 +2580,8 @@ finalize (GObject *object)
 	g_free (priv->phase2_ca_path);
 	g_free (priv->phase2_subject_match);
 	g_free (priv->password);
+	if (priv->password_raw)
+		g_byte_array_free (priv->password_raw, TRUE);
 
 	nm_utils_slist_free (priv->eap, g_free);
 	nm_utils_slist_free (priv->altsubject_matches, g_free);
@@ -2703,6 +2743,14 @@ set_property (GObject *object, guint prop_id,
 	case PROP_PASSWORD_FLAGS:
 		priv->password_flags = g_value_get_uint (value);
 		break;
+	case PROP_PASSWORD_RAW:
+		if (priv->password_raw)
+			g_byte_array_free (priv->password_raw, TRUE);
+		priv->password_raw = g_value_dup_boxed (value);
+		break;
+	case PROP_PASSWORD_RAW_FLAGS:
+		priv->password_raw_flags = g_value_get_uint (value);
+		break;
 	case PROP_PRIVATE_KEY:
 		if (priv->private_key) {
 			g_byte_array_free (priv->private_key, TRUE);
@@ -2817,6 +2865,12 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PASSWORD_FLAGS:
 		g_value_set_uint (value, priv->password_flags);
+		break;
+	case PROP_PASSWORD_RAW:
+		g_value_set_boxed (value, priv->password_raw);
+		break;
+	case PROP_PASSWORD_RAW_FLAGS:
+		g_value_set_uint (value, priv->password_raw_flags);
 		break;
 	case PROP_PRIVATE_KEY:
 		g_value_set_boxed (value, priv->private_key);
@@ -3274,7 +3328,9 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	/**
 	 * NMSetting8021x:password:
 	 *
-	 * Password used for EAP authentication methods.
+	 * Password used for EAP authentication methods. If both
+	 * #NMSetting8021x:password and #NMSetting8021x:password-raw are
+	 * specified, #NMSetting8021x:password is preferred.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PASSWORD,
@@ -3293,6 +3349,36 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		 g_param_spec_uint (NM_SETTING_802_1X_PASSWORD_FLAGS,
 		                    "Password Flags",
 		                    "Flags indicating how to handle the 802.1x password.",
+		                    NM_SETTING_SECRET_FLAG_NONE,
+		                    NM_SETTING_SECRET_FLAGS_ALL,
+		                    NM_SETTING_SECRET_FLAG_NONE,
+		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
+	 * NMSetting8021x:password-raw:
+	 *
+	 * Password used for EAP authentication methods delivered as a
+	 * UTF-8-encoded array of bytes. If both #NMSetting8021x:password
+	 * and #NMSetting8021x:password-raw are specified,
+	 * #NMSetting8021x:password is preferred.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_PASSWORD_RAW,
+		 _nm_param_spec_specialized (NM_SETTING_802_1X_PASSWORD_RAW,
+		                             "Password byte array",
+		                             "Password used for EAP authentication methods as a byte array",
+		                             DBUS_TYPE_G_UCHAR_ARRAY,
+		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+
+	/**
+	 * NMSetting8021x:password-raw-flags:
+	 *
+	 * Flags indicating how to handle #NMSetting8021x:password-raw:.
+	 **/
+	g_object_class_install_property (object_class, PROP_PASSWORD_RAW_FLAGS,
+		 g_param_spec_uint (NM_SETTING_802_1X_PASSWORD_RAW_FLAGS,
+		                    "Password byte array Flags",
+		                    "Flags indicating how to handle the 802.1x password byte array.",
 		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_NONE,

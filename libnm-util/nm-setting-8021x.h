@@ -118,6 +118,8 @@ GQuark nm_setting_802_1x_error_quark (void);
 #define NM_SETTING_802_1X_PHASE2_CLIENT_CERT "phase2-client-cert"
 #define NM_SETTING_802_1X_PASSWORD "password"
 #define NM_SETTING_802_1X_PASSWORD_FLAGS "password-flags"
+#define NM_SETTING_802_1X_PASSWORD_RAW "password-raw"
+#define NM_SETTING_802_1X_PASSWORD_RAW_FLAGS "password-raw-flags"
 #define NM_SETTING_802_1X_PRIVATE_KEY "private-key"
 #define NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD "private-key-password"
 #define NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS "private-key-password-flags"
@@ -250,6 +252,8 @@ gboolean               nm_setting_802_1x_set_phase2_client_cert          (NMSett
 
 const char *      nm_setting_802_1x_get_password                     (NMSetting8021x *setting);
 NMSettingSecretFlags nm_setting_802_1x_get_password_flags            (NMSetting8021x *setting);
+const GByteArray *   nm_setting_802_1x_get_password_raw              (NMSetting8021x *setting);
+NMSettingSecretFlags nm_setting_802_1x_get_password_raw_flags        (NMSetting8021x *setting);
 
 const char *      nm_setting_802_1x_get_pin                          (NMSetting8021x *setting);
 NMSettingSecretFlags nm_setting_802_1x_get_pin_flags                 (NMSetting8021x *setting);
