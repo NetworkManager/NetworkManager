@@ -81,12 +81,6 @@ typedef struct _NMDeviceInterface NMDeviceInterface;
 
 struct _NMDeviceInterface {
 	GTypeInterface g_iface;
-
-	/* Signals */
-	void (*state_changed) (NMDeviceInterface *device,
-	                       NMDeviceState new_state,
-	                       NMDeviceState old_state,
-	                       NMDeviceStateReason reason);
 };
 
 GType nm_device_interface_get_type (void);

@@ -52,6 +52,11 @@ typedef struct {
 typedef struct {
 	GObjectClass parent;
 
+	void (*state_changed) (NMDevice *device,
+	                       NMDeviceState new_state,
+	                       NMDeviceState old_state,
+	                       NMDeviceStateReason reason);
+
 	/* Hardware state, ie IFF_UP */
 	gboolean        (*hw_is_up)      (NMDevice *self);
 	gboolean        (*hw_bring_up)   (NMDevice *self, gboolean *no_firmware);

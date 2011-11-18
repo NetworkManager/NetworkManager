@@ -109,6 +109,7 @@ nm_device_error_get_type (void)
 G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, G_TYPE_OBJECT)
 
 enum {
+	STATE_CHANGED,
 	AUTOCONNECT_ALLOWED,
 	LAST_SIGNAL,
 };
@@ -3744,6 +3745,15 @@ nm_device_class_init (NMDeviceClass *klass)
 	g_object_class_override_property (object_class,
 	                                  NM_DEVICE_INTERFACE_PROP_RFKILL_TYPE,
 	                                  NM_DEVICE_INTERFACE_RFKILL_TYPE);
+
+	signals[STATE_CHANGED] =
+		g_signal_new ("state-changed",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL,
+		              _nm_marshal_VOID__UINT_UINT_UINT,
+		              G_TYPE_NONE, 3,
+		              G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 
 	signals[AUTOCONNECT_ALLOWED] =
 		g_signal_new ("autoconnect-allowed",

@@ -187,15 +187,6 @@ nm_device_interface_init (gpointer g_iface)
 							G_PARAM_READABLE | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	/* Signals */
-	g_signal_new ("state-changed",
-				  iface_type,
-				  G_SIGNAL_RUN_FIRST,
-				  G_STRUCT_OFFSET (NMDeviceInterface, state_changed),
-				  NULL, NULL,
-				  _nm_marshal_VOID__UINT_UINT_UINT,
-				  G_TYPE_NONE, 3,
-				  G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
-
 	g_signal_new (NM_DEVICE_INTERFACE_DISCONNECT_REQUEST,
 	              iface_type,
 	              G_SIGNAL_RUN_FIRST,
