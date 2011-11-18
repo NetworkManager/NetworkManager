@@ -175,7 +175,6 @@ static void nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason
 static gboolean device_disconnect (NMDeviceInterface *device, GError **error);
 static gboolean spec_match_list (NMDeviceInterface *device, const GSList *specs);
 static NMConnection *connection_match_config (NMDeviceInterface *device, const GSList *connections);
-static gboolean can_assume_connections (NMDeviceInterface *device);
 
 static void nm_device_take_down (NMDevice *dev, gboolean wait, NMDeviceStateReason reason);
 
@@ -207,7 +206,6 @@ device_interface_init (NMDeviceInterface *device_interface_class)
 	device_interface_class->disconnect = device_disconnect;
 	device_interface_class->spec_match_list = spec_match_list;
 	device_interface_class->connection_match_config = connection_match_config;
-	device_interface_class->can_assume_connections = can_assume_connections;
 }
 
 
@@ -667,6 +665,15 @@ nm_device_check_connection_compatible (NMDevice *device,
 	if (NM_DEVICE_GET_CLASS (device)->check_connection_compatible)
 		return NM_DEVICE_GET_CLASS (device)->check_connection_compatible (device, connection, error);
 	return TRUE;
+}
+
+gboolean
+nm_device_can_assume_connections (NMDevice *device)
+{
+	g_return_val_if_fail (device != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+
+	return !!NM_DEVICE_GET_CLASS (device)->connection_match_config;
 }
 
 static void
@@ -3345,8 +3352,7 @@ dispose (GObject *object)
 	/* Don't down can-assume-connection capable devices that are activated with
 	 * a connection that can be assumed.
 	 */
-	if (   nm_device_interface_can_assume_connections (NM_DEVICE_INTERFACE (self))
-	    && (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED)) {
+	if (nm_device_can_assume_connections (self) && (priv->state == NM_DEVICE_STATE_ACTIVATED)) {
 		NMConnection *connection;
 	    NMSettingIP4Config *s_ip4 = NULL;
 		const char *method = NULL;
@@ -4057,14 +4063,6 @@ connection_match_config (NMDeviceInterface *device, const GSList *connections)
 	if (NM_DEVICE_GET_CLASS (device)->connection_match_config)
 		return NM_DEVICE_GET_CLASS (device)->connection_match_config (NM_DEVICE (device), connections);
 	return NULL;
-}
-
-static gboolean
-can_assume_connections (NMDeviceInterface *device)
-{
-	g_return_val_if_fail (device != NULL, FALSE);
-
-	return !!NM_DEVICE_GET_CLASS (device)->connection_match_config;
 }
 
 void

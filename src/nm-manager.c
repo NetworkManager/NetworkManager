@@ -553,7 +553,7 @@ remove_one_device (NMManager *manager,
 		 * connections get torn down and the interface is deactivated.
 		 */
 
-		if (   !nm_device_interface_can_assume_connections (NM_DEVICE_INTERFACE (device))
+		if (   !nm_device_can_assume_connections (device)
 		    || (nm_device_get_state (device) != NM_DEVICE_STATE_ACTIVATED)
 		    || !quitting)
 			nm_device_set_managed (device, FALSE, NM_DEVICE_STATE_REASON_REMOVED);
@@ -1563,7 +1563,7 @@ add_device (NMManager *self, NMDevice *device)
 	/* Check if we should assume the device's active connection by matching its
 	 * config with an existing system connection.
 	 */
-	if (nm_device_interface_can_assume_connections (NM_DEVICE_INTERFACE (device))) {
+	if (nm_device_can_assume_connections (device)) {
 		GSList *connections = NULL;
 
 		connections = nm_settings_get_connections (priv->settings);

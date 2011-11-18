@@ -104,8 +104,6 @@ struct _NMDeviceInterface {
 
 	NMConnection * (*connection_match_config) (NMDeviceInterface *device, const GSList *specs);
 
-	gboolean (*can_assume_connections) (NMDeviceInterface *device);
-
 	void (*set_enabled) (NMDeviceInterface *device, gboolean enabled);
 
 	gboolean (*get_enabled) (NMDeviceInterface *device);
@@ -135,8 +133,6 @@ gboolean nm_device_interface_spec_match_list (NMDeviceInterface *device,
 
 NMConnection * nm_device_interface_connection_match_config (NMDeviceInterface *device,
                                                             const GSList *connections);
-
-gboolean nm_device_interface_can_assume_connections (NMDeviceInterface *device);
 
 gboolean nm_device_interface_get_enabled (NMDeviceInterface *device);
 
