@@ -370,17 +370,6 @@ nm_device_interface_spec_match_list (NMDeviceInterface *device,
 	return FALSE;
 }
 
-NMConnection *
-nm_device_interface_connection_match_config (NMDeviceInterface *device,
-                                             const GSList *connections)
-{
-	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), NULL);
-
-	if (NM_DEVICE_INTERFACE_GET_INTERFACE (device)->connection_match_config)
-		return NM_DEVICE_INTERFACE_GET_INTERFACE (device)->connection_match_config (device, connections);
-	return NULL;
-}
-
 void
 nm_device_interface_set_enabled (NMDeviceInterface *device, gboolean enabled)
 {

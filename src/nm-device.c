@@ -174,7 +174,6 @@ static gboolean nm_device_activate (NMDeviceInterface *device,
 static void nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason);
 static gboolean device_disconnect (NMDeviceInterface *device, GError **error);
 static gboolean spec_match_list (NMDeviceInterface *device, const GSList *specs);
-static NMConnection *connection_match_config (NMDeviceInterface *device, const GSList *connections);
 
 static void nm_device_take_down (NMDevice *dev, gboolean wait, NMDeviceStateReason reason);
 
@@ -205,7 +204,6 @@ device_interface_init (NMDeviceInterface *device_interface_class)
 	device_interface_class->deactivate = nm_device_deactivate;
 	device_interface_class->disconnect = device_disconnect;
 	device_interface_class->spec_match_list = spec_match_list;
-	device_interface_class->connection_match_config = connection_match_config;
 }
 
 
@@ -4055,10 +4053,11 @@ spec_match_list (NMDeviceInterface *device, const GSList *specs)
 	return FALSE;
 }
 
-static NMConnection *
-connection_match_config (NMDeviceInterface *device, const GSList *connections)
+NMConnection *
+nm_device_connection_match_config (NMDevice *device, const GSList *connections)
 {
 	g_return_val_if_fail (device != NULL, NULL);
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
 	if (NM_DEVICE_GET_CLASS (device)->connection_match_config)
 		return NM_DEVICE_GET_CLASS (device)->connection_match_config (NM_DEVICE (device), connections);

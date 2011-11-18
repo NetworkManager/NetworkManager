@@ -1567,8 +1567,7 @@ add_device (NMManager *self, NMDevice *device)
 		GSList *connections = NULL;
 
 		connections = nm_settings_get_connections (priv->settings);
-		existing = nm_device_interface_connection_match_config (NM_DEVICE_INTERFACE (device),
-		                                                        (const GSList *) connections);
+		existing = nm_device_connection_match_config (device, (const GSList *) connections);
 		g_slist_free (connections);
 
 		if (existing)
