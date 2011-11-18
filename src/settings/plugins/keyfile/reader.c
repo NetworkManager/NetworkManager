@@ -37,6 +37,7 @@
 #include <nm-utils.h>
 #include <arpa/inet.h>
 #include <netinet/ether.h>
+#include <linux/if_infiniband.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -655,7 +656,7 @@ mac_address_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, cons
 	gint *tmp_list;
 	GByteArray *array = NULL;
 	gsize length;
-	int i;
+	int i, type;
 
 	p = tmp_string = g_key_file_get_string (keyfile, setting_name, key, NULL);
 	if (tmp_string) {
@@ -666,41 +667,45 @@ mac_address_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, cons
 				i++;
 			p++;
 		}
-		if (i == 5) {
-			/* parse as a MAC address */
-			array = nm_utils_hwaddr_atoba (tmp_string, ARPHRD_ETHER);
-			if (array) {
-				g_free (tmp_string);
-				goto done;
-			}
-		}
+
+		/* If we found enough it's probably a string-format MAC address */
+		type = nm_utils_hwaddr_type (i + 1);
+		if (type > 0)
+			array = nm_utils_hwaddr_atoba (tmp_string, type);
 	}
 	g_free (tmp_string);
 
-	/* Old format; list of ints */
-	tmp_list = g_key_file_get_integer_list (keyfile, setting_name, key, &length, NULL);
-	array = g_byte_array_sized_new (length);
-	for (i = 0; i < length; i++) {
-		int val = tmp_list[i];
-		unsigned char v = (unsigned char) (val & 0xFF);
+	if (array == NULL) {
+		/* Old format; list of ints */
+		tmp_list = g_key_file_get_integer_list (keyfile, setting_name, key, &length, NULL);
+		type = nm_utils_hwaddr_type (length);
+		if (type < 0) {
+			array = g_byte_array_sized_new (length);
+			for (i = 0; i < length; i++) {
+				int val = tmp_list[i];
+				const guint8 v = (guint8) (val & 0xFF);
 
-		if (val < 0 || val > 255) {
-			g_warning ("%s: %s / %s ignoring invalid byte element '%d' (not "
-			           " between 0 and 255 inclusive)", __func__, setting_name,
-			           key, val);
-		} else
-			g_byte_array_append (array, (const unsigned char *) &v, sizeof (v));
+				if (val < 0 || val > 255) {
+					g_warning ("%s: %s / %s ignoring invalid byte element '%d' (not "
+							   " between 0 and 255 inclusive)", __func__, setting_name,
+							   key, val);
+					g_byte_array_free (array, TRUE);
+					array = NULL;
+					break;
+				}
+				g_byte_array_append (array, &v, 1);
+			}
+		}
+		g_free (tmp_list);
 	}
-	g_free (tmp_list);
 
-done:
-	if (array->len == ETH_ALEN) {
+	if (array) {
 		g_object_set (setting, key, array, NULL);
+		g_byte_array_free (array, TRUE);
 	} else {
 		g_warning ("%s: ignoring invalid MAC address for %s / %s",
 		           __func__, setting_name, key);
 	}
-	g_byte_array_free (array, TRUE);
 }
 
 static void
@@ -1031,6 +1036,10 @@ static KeyParser key_parsers[] = {
 	  mac_address_parser },
 	{ NM_SETTING_BLUETOOTH_SETTING_NAME,
 	  NM_SETTING_BLUETOOTH_BDADDR,
+	  TRUE,
+	  mac_address_parser },
+	{ NM_SETTING_INFINIBAND_SETTING_NAME,
+	  NM_SETTING_INFINIBAND_MAC_ADDRESS,
 	  TRUE,
 	  mac_address_parser },
 	{ NM_SETTING_WIRELESS_SETTING_NAME,

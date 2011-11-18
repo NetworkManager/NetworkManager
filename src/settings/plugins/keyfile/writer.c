@@ -416,7 +416,7 @@ mac_address_writer (GKeyFile *file,
 	GByteArray *array;
 	const char *setting_name = nm_setting_get_name (setting);
 	char *mac;
-	struct ether_addr tmp;
+	int type;
 
 	g_return_if_fail (G_VALUE_HOLDS (value, DBUS_TYPE_G_UCHAR_ARRAY));
 
@@ -424,15 +424,16 @@ mac_address_writer (GKeyFile *file,
 	if (!array)
 		return;
 
-	if (array->len != ETH_ALEN) {
+	type = nm_utils_hwaddr_type (array->len);
+	if (type < 0) {
 		g_warning ("%s: invalid %s / %s MAC address length %d",
 		           __func__, setting_name, key, array->len);
 		return;
 	}
 
-	memcpy (tmp.ether_addr_octet, array->data, ETH_ALEN);
-	mac = ether_ntoa (&tmp);
+	mac = nm_utils_hwaddr_ntoa (array->data, type);
 	g_key_file_set_string (file, setting_name, key, mac);
+	g_free (mac);
 }
 
 static void
@@ -811,6 +812,9 @@ static KeyWriter key_writers[] = {
 	  mac_address_writer },
 	{ NM_SETTING_BLUETOOTH_SETTING_NAME,
 	  NM_SETTING_BLUETOOTH_BDADDR,
+	  mac_address_writer },
+	{ NM_SETTING_INFINIBAND_SETTING_NAME,
+	  NM_SETTING_INFINIBAND_MAC_ADDRESS,
 	  mac_address_writer },
 	{ NM_SETTING_WIRELESS_SETTING_NAME,
 	  NM_SETTING_WIRELESS_SSID,
