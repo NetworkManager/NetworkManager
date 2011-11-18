@@ -32,8 +32,6 @@
 #include "nm-utils.h"
 #include "nm-logging.h"
 #include "nm-device.h"
-#include "nm-device-wifi.h"
-#include "nm-device-ethernet.h"
 #include "nm-dbus-manager.h"
 #include "nm-dispatcher-action.h"
 #include "nm-dbus-glib-types.h"
