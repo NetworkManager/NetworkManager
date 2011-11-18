@@ -1165,7 +1165,7 @@ manager_update_radio_enabled (NMManager *self,
 			nm_log_dbg (LOGD_RFKILL, "(%s): setting radio %s",
 			            nm_device_get_iface (NM_DEVICE (iter->data)),
 			            enabled ? "enabled" : "disabled");
-			nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (iter->data), enabled);
+			nm_device_set_enabled (NM_DEVICE (iter->data), enabled);
 		}
 	}
 }
@@ -1541,7 +1541,7 @@ add_device (NMManager *self, NMDevice *device)
 		 */
 		nm_manager_rfkill_update (self, rtype);
 		enabled = radio_enabled_for_type (self, rtype, TRUE);
-		nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (device), enabled);
+		nm_device_set_enabled (device, enabled);
 	}
 
 	type_desc = nm_device_get_type_desc (device);
@@ -2476,7 +2476,7 @@ do_sleep_wake (NMManager *self)
 
 				g_object_get (G_OBJECT (device), NM_DEVICE_INTERFACE_RFKILL_TYPE, &devtype, NULL);
 				if (devtype == rstate->rtype)
-					nm_device_interface_set_enabled (NM_DEVICE_INTERFACE (device), enabled);
+					nm_device_set_enabled (device, enabled);
 			}
 
 			nm_device_clear_autoconnect_inhibit (device);

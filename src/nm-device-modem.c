@@ -31,10 +31,7 @@
 #include "nm-marshal.h"
 #include "nm-logging.h"
 
-static void device_interface_init (NMDeviceInterface *iface_class);
-
-G_DEFINE_TYPE_EXTENDED (NMDeviceModem, nm_device_modem, NM_TYPE_DEVICE, 0,
-                        G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_INTERFACE, device_interface_init))
+G_DEFINE_TYPE (NMDeviceModem, nm_device_modem, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_MODEM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_MODEM, NMDeviceModemPrivate))
 
@@ -60,7 +57,7 @@ enum {
 };
 static guint signals[LAST_SIGNAL] = { 0 };
 
-static void real_set_enabled (NMDeviceInterface *device, gboolean enabled);
+static void real_set_enabled (NMDevice *device, gboolean enabled);
 
 /*****************************************************************************/
 
@@ -163,7 +160,7 @@ modem_enabled_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 	NMDeviceModem *self = NM_DEVICE_MODEM (user_data);
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (self);
 
-	real_set_enabled (NM_DEVICE_INTERFACE (self), nm_modem_get_mm_enabled (priv->modem));
+	real_set_enabled (NM_DEVICE (self), nm_modem_get_mm_enabled (priv->modem));
 
 	g_signal_emit (G_OBJECT (self), signals[ENABLE_CHANGED], 0);
 }
@@ -292,7 +289,7 @@ real_get_enabled (NMDevice *device)
 }
 
 static void
-real_set_enabled (NMDeviceInterface *device, gboolean enabled)
+real_set_enabled (NMDevice *device, gboolean enabled)
 {
 	NMDeviceModem *self = NM_DEVICE_MODEM (device);
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (self);
@@ -346,12 +343,6 @@ nm_device_modem_new (NMModem *modem, const char *driver)
 	                                  NM_DEVICE_MODEM_CAPABILITIES, caps,
 	                                  NM_DEVICE_MODEM_CURRENT_CAPABILITIES, caps,
 	                                  NULL);
-}
-
-static void
-device_interface_init (NMDeviceInterface *iface_class)
-{
-    iface_class->set_enabled = real_set_enabled;
 }
 
 static void
@@ -457,6 +448,7 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	device_class->act_stage2_config = real_act_stage2_config;
 	device_class->act_stage3_ip4_config_start = real_act_stage3_ip4_config_start;
 	device_class->get_enabled = real_get_enabled;
+    device_class->set_enabled = real_set_enabled;
 
 	/* Properties */
 	g_object_class_install_property

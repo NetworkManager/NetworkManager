@@ -49,10 +49,7 @@ static gboolean impl_device_get_nsp_list (NMDeviceWimax *device, GPtrArray **lis
 
 #include "nm-device-wimax-glue.h"
 
-static void device_interface_init (NMDeviceInterface *iface_class);
-
-G_DEFINE_TYPE_EXTENDED (NMDeviceWimax, nm_device_wimax, NM_TYPE_DEVICE, 0,
-						G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_INTERFACE, device_interface_init))
+G_DEFINE_TYPE (NMDeviceWimax, nm_device_wimax, NM_TYPE_DEVICE)
 
 enum {
 	PROP_0,
@@ -345,7 +342,7 @@ update_availability (NMDeviceWimax *self, gboolean old_available)
 /* NMDeviceInterface interface */
 
 static void
-real_set_enabled (NMDeviceInterface *device, gboolean enabled)
+real_set_enabled (NMDevice *device, gboolean enabled)
 {
 	NMDeviceWimax *self = NM_DEVICE_WIMAX (device);
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
@@ -1398,12 +1395,6 @@ nm_device_wimax_new (const char *udi,
 }
 
 static void
-device_interface_init (NMDeviceInterface *iface_class)
-{
-    iface_class->set_enabled = real_set_enabled;
-}
-
-static void
 nm_device_wimax_init (NMDeviceWimax *self)
 {
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
@@ -1525,6 +1516,7 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *klass)
 	device_class->act_stage1_prepare = real_act_stage1_prepare;
 	device_class->act_stage2_config = real_act_stage2_config;
 	device_class->deactivate = real_deactivate;
+    device_class->set_enabled = real_set_enabled;
 
 	/* Properties */
 	g_object_class_install_property

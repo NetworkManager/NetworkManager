@@ -359,12 +359,3 @@ nm_device_interface_deactivate (NMDeviceInterface *device, NMDeviceStateReason r
 	NM_DEVICE_INTERFACE_GET_INTERFACE (device)->deactivate (device, reason);
 }
 
-void
-nm_device_interface_set_enabled (NMDeviceInterface *device, gboolean enabled)
-{
-	g_return_if_fail (NM_IS_DEVICE_INTERFACE (device));
-
-	if (NM_DEVICE_INTERFACE_GET_INTERFACE (device)->set_enabled)
-		NM_DEVICE_INTERFACE_GET_INTERFACE (device)->set_enabled (device, enabled);
-}
-
