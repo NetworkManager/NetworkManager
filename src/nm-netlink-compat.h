@@ -207,7 +207,7 @@ __nl_cache_include (struct nl_cache *cache, struct nl_object *obj, change_func_t
 #endif  /* HAVE_LIBNL1 */
 
 /* Stuff that only libnl3 has */
-#if (defined HAVE_LIBNL1 || defined HAVE_LIBNL2)
+#if defined(HAVE_LIBNL1) || defined(HAVE_LIBNL2)
 
 static inline int
 rtnl_link_bond_add (struct nl_sock *h, const char *name, void *data)
