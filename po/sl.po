@@ -11,9 +11,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager master\n"
 "Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?product=NetworkManager&keywords=I18N+L10N&component=general\n"
-"POT-Creation-Date: 2011-08-20 15:25+0000\n"
-"PO-Revision-Date: 2011-09-21 09:12+0100\n"
-"Last-Translator: Matej Urbančič <mateju@svn.gnome.org>\n"
+"POT-Creation-Date: 2011-10-12 15:25+0000\n"
+"PO-Revision-Date: 2011-10-30 11:49+0100\n"
+"Last-Translator: Martin Srebotnjak  <miles@filmsi.net>\n"
 "Language-Team: Slovenian GNOME Translation Team <gnome-si@googlegroups.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -110,441 +110,464 @@ msgstr "SAMODEJNO POVEŽI"
 msgid "READONLY"
 msgstr "SAMO ZA BRANJE"
 
-#: ../cli/src/connections.c:167
+#: ../cli/src/connections.c:153
 #, c-format
+#| msgid ""
+#| "Usage: nmcli con { COMMAND | help }\n"
+#| "  COMMAND := { list | status | up | down }\n"
+#| "\n"
+#| "  list [id <id> | uuid <id>]\n"
+#| "  status\n"
+#| "  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [nsp <name>] [--"
+#| "nowait] [--timeout <timeout>]\n"
+#| "  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--"
+#| "timeout <timeout>]\n"
+#| "  down id <id> | uuid <id>\n"
 msgid ""
 "Usage: nmcli con { COMMAND | help }\n"
-"  COMMAND := { list | status | up | down }\n"
+"  COMMAND := { list | status | up | down | delete }\n"
 "\n"
 "  list [id <id> | uuid <id>]\n"
 "  status\n"
-"  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [nsp <name>] [--nowait] [--timeout <timeout>]\n"
-"  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--timeout <timeout>]\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [nsp <name>] [--nowait] [--timeout <timeout>]\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [--nowait] [--timeout <timeout>]\n"
 "  down id <id> | uuid <id>\n"
+"  delete id <id> | uuid <id>\n"
 msgstr ""
 "Uporaba: nmcli con { UKAZ | help }\n"
-"  UKAZ := { list | status | up | down }\n"
+"  UKAZ := { list | status | up | down | delete }\n"
 "\n"
-"  list [id <id> | uuid <id> | system | user]\n"
+"  list [id <id> | uuid <id>]\n"
 "  status\n"
-"  up id <id> | uuid <id> [iface <vmesnik>] [ap <strojni-naslov>] [nsp <ime>] [--nowait] [--timeout <zakasnitev>]\n"
-"  up id <id> | uuid <id> [iface <vmesnik>] [ap <strojni-naslov>] [--nowait] [--timeout <zakasnitev>]\n"
+"  up id <id> | uuid <id> [iface <vmesnik>] [ap <BSSID>] [nsp <ime>] [--nowait] [--timeout <zakasnitev>]\n"
+"  up id <id> | uuid <id> [iface <vmesnik>] [ap <BSSID>] [--nowait] [--timeout <zakasnitev>]\n"
 "  down id <id> | uuid <id>\n"
+"  delete id <id> | uuid <id>\n"
 
-#: ../cli/src/connections.c:220
-#: ../cli/src/connections.c:544
+#: ../cli/src/connections.c:208
+#: ../cli/src/connections.c:532
 #, c-format
 msgid "Error: 'con list': %s"
 msgstr "Napaka: 'con list': %s"
 
-#: ../cli/src/connections.c:222
-#: ../cli/src/connections.c:546
+#: ../cli/src/connections.c:210
+#: ../cli/src/connections.c:534
 #, c-format
 msgid "Error: 'con list': %s; allowed fields: %s"
 msgstr "Napaka: 'con list': %s; dovoljena so polja: %s"
 
-#: ../cli/src/connections.c:230
+#: ../cli/src/connections.c:218
 msgid "Connection details"
 msgstr "Podatki o povezavi"
 
-#: ../cli/src/connections.c:419
+#: ../cli/src/connections.c:407
 msgid "never"
 msgstr "nikoli"
 
 #. "CAPABILITIES"
 #. Print header
 #. "WIFI-PROPERTIES"
-#: ../cli/src/connections.c:420
-#: ../cli/src/connections.c:421
-#: ../cli/src/connections.c:599
-#: ../cli/src/connections.c:601
-#: ../cli/src/devices.c:509
-#: ../cli/src/devices.c:562
-#: ../cli/src/devices.c:687
-#: ../cli/src/devices.c:713
-#: ../cli/src/devices.c:714
-#: ../cli/src/devices.c:715
-#: ../cli/src/devices.c:716
-#: ../cli/src/devices.c:717
-#: ../cli/src/settings.c:520
-#: ../cli/src/settings.c:563
-#: ../cli/src/settings.c:663
-#: ../cli/src/settings.c:937
-#: ../cli/src/settings.c:938
-#: ../cli/src/settings.c:940
-#: ../cli/src/settings.c:942
-#: ../cli/src/settings.c:1067
-#: ../cli/src/settings.c:1068
-#: ../cli/src/settings.c:1069
-#: ../cli/src/settings.c:1148
-#: ../cli/src/settings.c:1149
-#: ../cli/src/settings.c:1150
-#: ../cli/src/settings.c:1151
-#: ../cli/src/settings.c:1152
-#: ../cli/src/settings.c:1153
-#: ../cli/src/settings.c:1154
-#: ../cli/src/settings.c:1155
-#: ../cli/src/settings.c:1156
-#: ../cli/src/settings.c:1157
-#: ../cli/src/settings.c:1158
-#: ../cli/src/settings.c:1159
-#: ../cli/src/settings.c:1160
-#: ../cli/src/settings.c:1235
+#: ../cli/src/connections.c:408
+#: ../cli/src/connections.c:409
+#: ../cli/src/connections.c:587
+#: ../cli/src/connections.c:589
+#: ../cli/src/devices.c:499
+#: ../cli/src/devices.c:552
+#: ../cli/src/devices.c:677
+#: ../cli/src/devices.c:703
+#: ../cli/src/devices.c:704
+#: ../cli/src/devices.c:705
+#: ../cli/src/devices.c:706
+#: ../cli/src/devices.c:707
+#: ../cli/src/settings.c:560
+#: ../cli/src/settings.c:632
+#: ../cli/src/settings.c:753
+#: ../cli/src/settings.c:1041
+#: ../cli/src/settings.c:1042
+#: ../cli/src/settings.c:1044
+#: ../cli/src/settings.c:1046
+#: ../cli/src/settings.c:1047
+#: ../cli/src/settings.c:1177
+#: ../cli/src/settings.c:1178
+#: ../cli/src/settings.c:1179
+#: ../cli/src/settings.c:1180
+#: ../cli/src/settings.c:1259
+#: ../cli/src/settings.c:1260
+#: ../cli/src/settings.c:1261
+#: ../cli/src/settings.c:1262
+#: ../cli/src/settings.c:1263
+#: ../cli/src/settings.c:1264
+#: ../cli/src/settings.c:1265
+#: ../cli/src/settings.c:1266
+#: ../cli/src/settings.c:1267
+#: ../cli/src/settings.c:1268
+#: ../cli/src/settings.c:1269
+#: ../cli/src/settings.c:1270
+#: ../cli/src/settings.c:1271
+#: ../cli/src/settings.c:1346
 msgid "yes"
 msgstr "da"
 
-#: ../cli/src/connections.c:420
-#: ../cli/src/connections.c:421
-#: ../cli/src/connections.c:599
-#: ../cli/src/connections.c:601
-#: ../cli/src/devices.c:509
-#: ../cli/src/devices.c:562
-#: ../cli/src/devices.c:687
-#: ../cli/src/devices.c:713
-#: ../cli/src/devices.c:714
-#: ../cli/src/devices.c:715
-#: ../cli/src/devices.c:716
-#: ../cli/src/devices.c:717
-#: ../cli/src/settings.c:520
-#: ../cli/src/settings.c:522
-#: ../cli/src/settings.c:563
-#: ../cli/src/settings.c:663
-#: ../cli/src/settings.c:937
-#: ../cli/src/settings.c:938
-#: ../cli/src/settings.c:940
-#: ../cli/src/settings.c:942
-#: ../cli/src/settings.c:1067
-#: ../cli/src/settings.c:1068
-#: ../cli/src/settings.c:1069
-#: ../cli/src/settings.c:1148
-#: ../cli/src/settings.c:1149
-#: ../cli/src/settings.c:1150
-#: ../cli/src/settings.c:1151
-#: ../cli/src/settings.c:1152
-#: ../cli/src/settings.c:1153
-#: ../cli/src/settings.c:1154
-#: ../cli/src/settings.c:1155
-#: ../cli/src/settings.c:1156
-#: ../cli/src/settings.c:1157
-#: ../cli/src/settings.c:1158
-#: ../cli/src/settings.c:1159
-#: ../cli/src/settings.c:1160
-#: ../cli/src/settings.c:1235
+#: ../cli/src/connections.c:408
+#: ../cli/src/connections.c:409
+#: ../cli/src/connections.c:587
+#: ../cli/src/connections.c:589
+#: ../cli/src/devices.c:499
+#: ../cli/src/devices.c:552
+#: ../cli/src/devices.c:677
+#: ../cli/src/devices.c:703
+#: ../cli/src/devices.c:704
+#: ../cli/src/devices.c:705
+#: ../cli/src/devices.c:706
+#: ../cli/src/devices.c:707
+#: ../cli/src/settings.c:560
+#: ../cli/src/settings.c:562
+#: ../cli/src/settings.c:632
+#: ../cli/src/settings.c:753
+#: ../cli/src/settings.c:1041
+#: ../cli/src/settings.c:1042
+#: ../cli/src/settings.c:1044
+#: ../cli/src/settings.c:1046
+#: ../cli/src/settings.c:1047
+#: ../cli/src/settings.c:1177
+#: ../cli/src/settings.c:1178
+#: ../cli/src/settings.c:1179
+#: ../cli/src/settings.c:1180
+#: ../cli/src/settings.c:1259
+#: ../cli/src/settings.c:1260
+#: ../cli/src/settings.c:1261
+#: ../cli/src/settings.c:1262
+#: ../cli/src/settings.c:1263
+#: ../cli/src/settings.c:1264
+#: ../cli/src/settings.c:1265
+#: ../cli/src/settings.c:1266
+#: ../cli/src/settings.c:1267
+#: ../cli/src/settings.c:1268
+#: ../cli/src/settings.c:1269
+#: ../cli/src/settings.c:1270
+#: ../cli/src/settings.c:1271
+#: ../cli/src/settings.c:1346
 msgid "no"
 msgstr "ne"
 
-#: ../cli/src/connections.c:495
+#: ../cli/src/connections.c:483
 msgid "Connection list"
 msgstr "Seznam povezav"
 
-#: ../cli/src/connections.c:508
-#: ../cli/src/connections.c:1368
-#: ../cli/src/connections.c:1383
-#: ../cli/src/connections.c:1392
+#: ../cli/src/connections.c:496
+#: ../cli/src/connections.c:1356
+#: ../cli/src/connections.c:1371
+#: ../cli/src/connections.c:1380
+#: ../cli/src/connections.c:1390
 #: ../cli/src/connections.c:1402
-#: ../cli/src/connections.c:1414
-#: ../cli/src/connections.c:1509
+#: ../cli/src/connections.c:1497
+#: ../cli/src/connections.c:1580
+#: ../cli/src/devices.c:1180
 #: ../cli/src/devices.c:1190
-#: ../cli/src/devices.c:1200
-#: ../cli/src/devices.c:1314
-#: ../cli/src/devices.c:1321
-#: ../cli/src/devices.c:1534
-#: ../cli/src/devices.c:1541
+#: ../cli/src/devices.c:1304
+#: ../cli/src/devices.c:1312
+#: ../cli/src/devices.c:1525
+#: ../cli/src/devices.c:1532
 #, c-format
 msgid "Error: %s argument is missing."
 msgstr "Napaka: manjka argument %s."
 
-#: ../cli/src/connections.c:521
+#: ../cli/src/connections.c:509
 #, c-format
 msgid "Error: %s - no such connection."
 msgstr "Napaka: %s - povezava ne obstaja."
 
-#: ../cli/src/connections.c:527
-#: ../cli/src/connections.c:1427
-#: ../cli/src/connections.c:1526
-#: ../cli/src/devices.c:987
-#: ../cli/src/devices.c:1067
-#: ../cli/src/devices.c:1214
-#: ../cli/src/devices.c:1327
-#: ../cli/src/devices.c:1547
+#: ../cli/src/connections.c:515
+#: ../cli/src/connections.c:1415
+#: ../cli/src/connections.c:1514
+#: ../cli/src/connections.c:1587
+#: ../cli/src/devices.c:977
+#: ../cli/src/devices.c:1057
+#: ../cli/src/devices.c:1204
+#: ../cli/src/devices.c:1318
+#: ../cli/src/devices.c:1538
 #, c-format
 msgid "Unknown parameter: %s\n"
 msgstr "Neznan parameter: %s\n"
 
-#: ../cli/src/connections.c:536
+#: ../cli/src/connections.c:524
 #, c-format
 msgid "Error: no valid parameter specified."
 msgstr "Napaka: ni podanega veljavnega parametra."
 
-#: ../cli/src/connections.c:551
-#: ../cli/src/connections.c:1617
-#: ../cli/src/devices.c:1755
-#: ../cli/src/network-manager.c:463
+#: ../cli/src/connections.c:539
+#: ../cli/src/connections.c:1668
+#: ../cli/src/devices.c:1746
+#: ../cli/src/network-manager.c:456
 #, c-format
 msgid "Error: %s."
 msgstr "Napaka: %s."
 
-#: ../cli/src/connections.c:639
+#: ../cli/src/connections.c:627
 #, c-format
 msgid "Error: 'con status': %s"
 msgstr "Napaka: 'con status': %s"
 
-#: ../cli/src/connections.c:641
+#: ../cli/src/connections.c:629
 #, c-format
 msgid "Error: 'con status': %s; allowed fields: %s"
 msgstr "Napaka: 'con status': %s; dovoljena polja: %s"
 
-#: ../cli/src/connections.c:649
-#: ../cli/src/connections.c:1442
-#: ../cli/src/connections.c:1541
-#: ../cli/src/devices.c:1014
-#: ../cli/src/devices.c:1076
-#: ../cli/src/devices.c:1229
-#: ../cli/src/devices.c:1357
-#: ../cli/src/devices.c:1576
+#: ../cli/src/connections.c:637
+#: ../cli/src/connections.c:1430
+#: ../cli/src/connections.c:1529
+#: ../cli/src/connections.c:1601
+#: ../cli/src/devices.c:1004
+#: ../cli/src/devices.c:1066
+#: ../cli/src/devices.c:1219
+#: ../cli/src/devices.c:1348
+#: ../cli/src/devices.c:1567
 #, c-format
 msgid "Error: Can't find out if NetworkManager is running: %s."
 msgstr "Napaka: ni mogoče ugotoviti, ali se program NetworkManager izvaja: %s."
 
-#: ../cli/src/connections.c:653
-#: ../cli/src/connections.c:1446
-#: ../cli/src/connections.c:1545
-#: ../cli/src/devices.c:1018
-#: ../cli/src/devices.c:1080
-#: ../cli/src/devices.c:1233
-#: ../cli/src/devices.c:1361
-#: ../cli/src/devices.c:1580
+#: ../cli/src/connections.c:641
+#: ../cli/src/connections.c:1434
+#: ../cli/src/connections.c:1533
+#: ../cli/src/connections.c:1605
+#: ../cli/src/devices.c:1008
+#: ../cli/src/devices.c:1070
+#: ../cli/src/devices.c:1223
+#: ../cli/src/devices.c:1352
+#: ../cli/src/devices.c:1571
 #, c-format
 msgid "Error: NetworkManager is not running."
 msgstr "Napaka: program NetworkManager ni zagnan."
 
-#: ../cli/src/connections.c:661
+#: ../cli/src/connections.c:649
 msgid "Active connections"
 msgstr "Dejavne povezave"
 
-#: ../cli/src/connections.c:1085
+#: ../cli/src/connections.c:1073
 #, c-format
 msgid "no active connection on device '%s'"
 msgstr "ni dejavnih povezav na napravi '%s'"
 
-#: ../cli/src/connections.c:1093
+#: ../cli/src/connections.c:1081
 #, c-format
 msgid "no active connection or device"
 msgstr "ni dejavne povezave ali naprave"
 
-#: ../cli/src/connections.c:1164
+#: ../cli/src/connections.c:1152
 #, c-format
 msgid "device '%s' not compatible with connection '%s'"
 msgstr "naprava '%s' ni združljiva s povezavo '%s'"
 
-#: ../cli/src/connections.c:1166
+#: ../cli/src/connections.c:1154
 #, c-format
 msgid "no device found for connection '%s'"
 msgstr "ni naprave za povezavo '%s'"
 
-#: ../cli/src/connections.c:1177
+#: ../cli/src/connections.c:1165
 msgid "activating"
 msgstr "začenjanje"
 
-#: ../cli/src/connections.c:1179
+#: ../cli/src/connections.c:1167
 msgid "activated"
 msgstr "začeto"
 
-#: ../cli/src/connections.c:1181
-#: ../cli/src/devices.c:304
+#: ../cli/src/connections.c:1169
+#: ../cli/src/devices.c:294
 msgid "deactivating"
 msgstr "onemogočanje"
 
-#: ../cli/src/connections.c:1184
-#: ../cli/src/connections.c:1207
-#: ../cli/src/connections.c:1240
-#: ../cli/src/devices.c:308
-#: ../cli/src/devices.c:688
-#: ../cli/src/network-manager.c:118
-#: ../cli/src/network-manager.c:180
-#: ../cli/src/network-manager.c:183
-#: ../cli/src/network-manager.c:192
-#: ../cli/src/network-manager.c:298
-#: ../cli/src/network-manager.c:353
-#: ../cli/src/network-manager.c:391
-#: ../cli/src/network-manager.c:430
-#: ../cli/src/settings.c:485
-#: ../cli/src/utils.c:396
+#: ../cli/src/connections.c:1172
+#: ../cli/src/connections.c:1195
+#: ../cli/src/connections.c:1228
+#: ../cli/src/devices.c:298
+#: ../cli/src/devices.c:678
+#: ../cli/src/network-manager.c:111
+#: ../cli/src/network-manager.c:173
+#: ../cli/src/network-manager.c:176
+#: ../cli/src/network-manager.c:185
+#: ../cli/src/network-manager.c:291
+#: ../cli/src/network-manager.c:346
+#: ../cli/src/network-manager.c:384
+#: ../cli/src/network-manager.c:423
+#: ../cli/src/settings.c:513
+#: ../cli/src/utils.c:397
 msgid "unknown"
 msgstr "neznano"
 
-#: ../cli/src/connections.c:1193
+#: ../cli/src/connections.c:1181
 msgid "VPN connecting (prepare)"
 msgstr "VPN povezovanje (priprava)"
 
-#: ../cli/src/connections.c:1195
+#: ../cli/src/connections.c:1183
 msgid "VPN connecting (need authentication)"
 msgstr "VPN povezovanje (zahtevana je overitev)"
 
-#: ../cli/src/connections.c:1197
+#: ../cli/src/connections.c:1185
 msgid "VPN connecting"
 msgstr "VPN povezovanje"
 
-#: ../cli/src/connections.c:1199
+#: ../cli/src/connections.c:1187
 msgid "VPN connecting (getting IP configuration)"
 msgstr "VPN povezovanje (pridobivanje nastavitev IP)"
 
-#: ../cli/src/connections.c:1201
+#: ../cli/src/connections.c:1189
 msgid "VPN connected"
 msgstr "Povezan v VPN"
 
-#: ../cli/src/connections.c:1203
+#: ../cli/src/connections.c:1191
 msgid "VPN connection failed"
 msgstr "Povezava z VPN je spodletela"
 
-#: ../cli/src/connections.c:1205
+#: ../cli/src/connections.c:1193
 msgid "VPN disconnected"
 msgstr "Povezava z VPN je prekinjena"
 
-#: ../cli/src/connections.c:1216
+#: ../cli/src/connections.c:1204
 msgid "unknown reason"
 msgstr "neznan vzrok"
 
-#: ../cli/src/connections.c:1218
+#: ../cli/src/connections.c:1206
 msgid "none"
 msgstr "brez"
 
-#: ../cli/src/connections.c:1220
+#: ../cli/src/connections.c:1208
 msgid "the user was disconnected"
 msgstr "povezava z uporabnikom je prekinjena"
 
-#: ../cli/src/connections.c:1222
+#: ../cli/src/connections.c:1210
 msgid "the base network connection was interrupted"
 msgstr "osnovna omrežna povezava je bila prekinjena"
 
-#: ../cli/src/connections.c:1224
+#: ../cli/src/connections.c:1212
 msgid "the VPN service stopped unexpectedly"
 msgstr "storitev VPN je nepričakovano zaustavljena"
 
-#: ../cli/src/connections.c:1226
+#: ../cli/src/connections.c:1214
 msgid "the VPN service returned invalid configuration"
 msgstr "storitev VPN je vrnila neveljavne nastavitve"
 
-#: ../cli/src/connections.c:1228
+#: ../cli/src/connections.c:1216
 msgid "the connection attempt timed out"
 msgstr "poskus povezave je časovno potekel"
 
-#: ../cli/src/connections.c:1230
+#: ../cli/src/connections.c:1218
 msgid "the VPN service did not start in time"
 msgstr "storitev VPN se ni pravočasno začela"
 
-#: ../cli/src/connections.c:1232
+#: ../cli/src/connections.c:1220
 msgid "the VPN service failed to start"
 msgstr "storitev VPN ni uspešno začeta"
 
-#: ../cli/src/connections.c:1234
+#: ../cli/src/connections.c:1222
 msgid "no valid VPN secrets"
 msgstr "ni veljavnih VPN skrivnosti"
 
-#: ../cli/src/connections.c:1236
+#: ../cli/src/connections.c:1224
 msgid "invalid VPN secrets"
 msgstr "neveljavne VPN skrivnosti"
 
-#: ../cli/src/connections.c:1238
+#: ../cli/src/connections.c:1226
 msgid "the connection was removed"
 msgstr "povezava je odstranjena"
 
-#: ../cli/src/connections.c:1252
+#: ../cli/src/connections.c:1240
 #, c-format
 msgid "state: %s\n"
 msgstr "stanje: %s\n"
 
-#: ../cli/src/connections.c:1255
-#: ../cli/src/connections.c:1281
+#: ../cli/src/connections.c:1243
+#: ../cli/src/connections.c:1269
 #, c-format
 msgid "Connection activated\n"
 msgstr "Povezava je omogočena\n"
 
-#: ../cli/src/connections.c:1258
+#: ../cli/src/connections.c:1246
 #, c-format
 msgid "Error: Connection activation failed."
 msgstr "Napaka: začenjanje povezave ni uspelo."
 
-#: ../cli/src/connections.c:1277
+#: ../cli/src/connections.c:1265
 #, c-format
 msgid "state: %s (%d)\n"
 msgstr "stanje: %s (%d)\n"
 
-#: ../cli/src/connections.c:1287
+#: ../cli/src/connections.c:1275
 #, c-format
 msgid "Error: Connection activation failed: %s."
 msgstr "Napaka: začenjanje povezave ni uspelo: %s."
 
-#: ../cli/src/connections.c:1304
-#: ../cli/src/devices.c:1136
+#: ../cli/src/connections.c:1292
+#: ../cli/src/devices.c:1126
 #, c-format
 msgid "Error: Timeout %d sec expired."
 msgstr "Napaka: časovna omejitev %d sekund je potekla."
 
-#: ../cli/src/connections.c:1317
+#: ../cli/src/connections.c:1305
 #, c-format
 msgid "Error: Connection activation failed: %s"
 msgstr "Napaka: začenjanje povezave ni uspelo: %s."
 
-#: ../cli/src/connections.c:1323
+#: ../cli/src/connections.c:1311
 #, c-format
 msgid "Active connection state: %s\n"
 msgstr "Stanje dejavne povezave: %s\n"
 
-#: ../cli/src/connections.c:1324
+#: ../cli/src/connections.c:1312
 #, c-format
 msgid "Active connection path: %s\n"
 msgstr "Pot dejavne povezave: %s\n"
 
-#: ../cli/src/connections.c:1376
-#: ../cli/src/connections.c:1517
+#: ../cli/src/connections.c:1364
+#: ../cli/src/connections.c:1505
+#: ../cli/src/connections.c:1614
 #, c-format
 msgid "Error: Unknown connection: %s."
 msgstr "Napaka: neznana povezava: %s."
 
-#: ../cli/src/connections.c:1422
-#: ../cli/src/devices.c:1208
+#: ../cli/src/connections.c:1410
+#: ../cli/src/devices.c:1198
 #, c-format
 msgid "Error: timeout value '%s' is not valid."
 msgstr "Napaka: vrednost časovne omejitve '%s' ni veljavna."
 
-#: ../cli/src/connections.c:1435
-#: ../cli/src/connections.c:1534
+#: ../cli/src/connections.c:1423
+#: ../cli/src/connections.c:1522
+#: ../cli/src/connections.c:1594
 #, c-format
 msgid "Error: id or uuid has to be specified."
 msgstr "Napaka: podatek id ali uuid ni naveden."
 
-#: ../cli/src/connections.c:1463
+#: ../cli/src/connections.c:1451
 #, c-format
 msgid "Error: No suitable device found: %s."
 msgstr "Napaka: ni mogoče najti ustrezne naprave: %s."
 
-#: ../cli/src/connections.c:1465
+#: ../cli/src/connections.c:1453
 #, c-format
 msgid "Error: No suitable device found."
 msgstr "Napaka: ni mogoče najti ustrezne naprave."
 
-#: ../cli/src/connections.c:1570
+#: ../cli/src/connections.c:1558
 #, c-format
 msgid "Warning: Connection not active\n"
 msgstr "Opozorilo: povezava ni dejavna\n"
 
-#: ../cli/src/connections.c:1608
+#: ../cli/src/connections.c:1659
 #, c-format
 msgid "Error: 'con' command '%s' is not valid."
 msgstr "Napaka: ukaz 'con' '%s' ni veljaven."
 
-#: ../cli/src/connections.c:1673
+#: ../cli/src/connections.c:1724
 #, c-format
 msgid "Error: could not connect to D-Bus."
 msgstr "Napaka: povezava z D-Bus ni mogoča."
 
-#: ../cli/src/connections.c:1680
+#: ../cli/src/connections.c:1732
 #, c-format
 msgid "Error: Could not get system settings."
 msgstr "Napaka: ni mogoče pridobiti sistemskih nastavitev."
 
-#: ../cli/src/connections.c:1690
+#: ../cli/src/connections.c:1742
 #, c-format
 msgid "Error: Can't obtain connections: settings service is not running."
 msgstr "Napaka: ni mogoče pridobiti povezav: storitev nastavitev ni zagnana."
@@ -777,8 +800,21 @@ msgstr "RSN-ZASTAVICE"
 msgid "ACTIVE"
 msgstr "DEJAVNO"
 
-#: ../cli/src/devices.c:256
+#: ../cli/src/devices.c:246
 #, c-format
+#| msgid ""
+#| "Usage: nmcli dev { COMMAND | help }\n"
+#| "\n"
+#| "  COMMAND := { status | list | disconnect | wifi | wimax }\n"
+#| "\n"
+#| "  COMMAND := { status | list | disconnect | wifi }\n"
+#| "\n"
+#| "  status\n"
+#| "  list [iface <iface>]\n"
+#| "  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
+#| "  wifi [list [iface <iface>] [hwaddr <hwaddr>]]\n"
+#| "  wimax [list [iface <iface>] [nsp <name>]]\n"
+#| "\n"
 msgid ""
 "Usage: nmcli dev { COMMAND | help }\n"
 "\n"
@@ -789,282 +825,288 @@ msgid ""
 "  status\n"
 "  list [iface <iface>]\n"
 "  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
-"  wifi [list [iface <iface>] [hwaddr <hwaddr>]]\n"
+"  wifi [list [iface <iface>] [bssid <BSSID>]]\n"
 "  wimax [list [iface <iface>] [nsp <name>]]\n"
 "\n"
 msgstr ""
 "Uporaba: nmcli dev { UKAZ | help }\n"
 "\n"
-"UKAZ := { status | list | disconnect | wifi | wimax }\n"
+"  UKAZ := { status | list | disconnect | wifi | wimax }\n"
 "\n"
-"UKAZ := { status | list | disconnect | wifi }\n"
+"  UKAZ := { status | list | disconnect | wifi }\n"
 "\n"
 "  status\n"
-"  list [iface <iface>]\n"
+"  list [iface <vmesnik>]\n"
 "  disconnect iface <vmesnik> [--nowait] [--timeout <zakasnitev>]\n"
-"  wifi [list [iface <vmesnik>] [hwaddr <strojna-oprema>]]\n"
+"  wifi [list [iface <vmesnik>] [bssid <BSSID>]]\n"
 "  wimax [list [iface <vmesnik>] [nsp <ime>]]\n"
 "\n"
 
-#: ../cli/src/devices.c:284
+#: ../cli/src/devices.c:274
 msgid "unmanaged"
 msgstr "neupravljano"
 
-#: ../cli/src/devices.c:286
+#: ../cli/src/devices.c:276
 msgid "unavailable"
 msgstr "ni razpoložljivo"
 
-#: ../cli/src/devices.c:288
-#: ../cli/src/network-manager.c:115
+#: ../cli/src/devices.c:278
+#: ../cli/src/network-manager.c:108
 msgid "disconnected"
 msgstr "povezava je prekinjena"
 
-#: ../cli/src/devices.c:290
+#: ../cli/src/devices.c:280
 msgid "connecting (prepare)"
 msgstr "povezovanje  (priprava)"
 
-#: ../cli/src/devices.c:292
+#: ../cli/src/devices.c:282
 msgid "connecting (configuring)"
 msgstr "povezovanje (nastavljanje)"
 
-#: ../cli/src/devices.c:294
+#: ../cli/src/devices.c:284
 msgid "connecting (need authentication)"
 msgstr "povezovanje (zahteva overitev)"
 
-#: ../cli/src/devices.c:296
+#: ../cli/src/devices.c:286
 msgid "connecting (getting IP configuration)"
 msgstr "povezovanje (pridobivanje nastavitev IP)"
 
-#: ../cli/src/devices.c:298
+#: ../cli/src/devices.c:288
 msgid "connecting (checking IP connectivity)"
 msgstr "povezovanje (preverjanje povezljivosti IP)"
 
-#: ../cli/src/devices.c:300
+#: ../cli/src/devices.c:290
 msgid "connecting (starting secondary connections)"
 msgstr "povezovanje (zagon drugotnih povezav)"
 
-#: ../cli/src/devices.c:302
-#: ../cli/src/network-manager.c:111
+#: ../cli/src/devices.c:292
+#: ../cli/src/network-manager.c:104
 msgid "connected"
 msgstr "povezano"
 
-#: ../cli/src/devices.c:306
+#: ../cli/src/devices.c:296
 msgid "connection failed"
 msgstr "povezava je spodletela"
 
+#: ../cli/src/devices.c:321
 #: ../cli/src/devices.c:331
-#: ../cli/src/devices.c:341
-#: ../cli/src/devices.c:501
-#: ../cli/src/devices.c:545
+#: ../cli/src/devices.c:491
+#: ../cli/src/devices.c:535
 msgid "Unknown"
 msgstr "Neznano"
 
-#: ../cli/src/devices.c:374
+#: ../cli/src/devices.c:364
 msgid "(none)"
 msgstr "(brez)"
 
-#: ../cli/src/devices.c:399
+#: ../cli/src/devices.c:389
 #, c-format
 msgid "%s: error converting IP4 address 0x%X"
 msgstr "%s: napaka med pretvarjanjem naslova IP4 0x%X"
 
-#: ../cli/src/devices.c:470
+#: ../cli/src/devices.c:460
 #, c-format
 msgid "%u MHz"
 msgstr "%u MHz"
 
-#: ../cli/src/devices.c:471
+#: ../cli/src/devices.c:461
 #, c-format
 msgid "%u MB/s"
 msgstr "%u MB/s"
 
-#: ../cli/src/devices.c:480
+#: ../cli/src/devices.c:470
 msgid "Encrypted: "
 msgstr "Šifrirano: "
 
-#: ../cli/src/devices.c:485
+#: ../cli/src/devices.c:475
 msgid "WEP "
 msgstr "WEP "
 
-#: ../cli/src/devices.c:487
+#: ../cli/src/devices.c:477
 msgid "WPA "
 msgstr "WPA "
 
-#: ../cli/src/devices.c:489
+#: ../cli/src/devices.c:479
 msgid "WPA2 "
 msgstr "WPA2 "
 
-#: ../cli/src/devices.c:492
+#: ../cli/src/devices.c:482
 msgid "Enterprise "
 msgstr "Podjetniški "
 
-#: ../cli/src/devices.c:501
+#: ../cli/src/devices.c:491
 msgid "Ad-Hoc"
 msgstr "Ad-Hoc"
 
-#: ../cli/src/devices.c:501
+#: ../cli/src/devices.c:491
 msgid "Infrastructure"
 msgstr "infrastruktura"
 
-#: ../cli/src/devices.c:536
+#: ../cli/src/devices.c:526
 msgid "Home"
 msgstr "Domov"
 
-#: ../cli/src/devices.c:539
+#: ../cli/src/devices.c:529
 msgid "Partner"
 msgstr "Partner"
 
-#: ../cli/src/devices.c:542
+#: ../cli/src/devices.c:532
 msgid "Roaming"
 msgstr "Gostovanje"
 
-#: ../cli/src/devices.c:612
+#: ../cli/src/devices.c:602
 #, c-format
 msgid "Error: 'dev list': %s"
 msgstr "Napaka: 'dev list': %s"
 
-#: ../cli/src/devices.c:614
+#: ../cli/src/devices.c:604
 #, c-format
 msgid "Error: 'dev list': %s; allowed fields: %s"
 msgstr "Napaka: 'dev list': %s; dovoljena polja: %s"
 
-#: ../cli/src/devices.c:623
+#: ../cli/src/devices.c:613
 msgid "Device details"
 msgstr "Podrobnosti naprave"
 
-#: ../cli/src/devices.c:657
-#: ../cli/src/devices.c:1152
-#: ../cli/src/utils.c:342
+#: ../cli/src/devices.c:647
+#: ../cli/src/devices.c:1142
+#: ../cli/src/utils.c:343
 msgid "(unknown)"
 msgstr "(neznano)"
 
-#: ../cli/src/devices.c:658
+#: ../cli/src/devices.c:648
 msgid "unknown)"
 msgstr "neznano)"
 
-#: ../cli/src/devices.c:684
+#: ../cli/src/devices.c:674
 #, c-format
 msgid "%u Mb/s"
 msgstr "%u Mb/s"
 
 #. Print header
 #. "WIRED-PROPERTIES"
-#: ../cli/src/devices.c:757
+#: ../cli/src/devices.c:747
 msgid "on"
 msgstr "omogočeno"
 
-#: ../cli/src/devices.c:757
+#: ../cli/src/devices.c:747
 msgid "off"
 msgstr "onemogočeno"
 
-#: ../cli/src/devices.c:1004
+#: ../cli/src/devices.c:994
 #, c-format
 msgid "Error: 'dev status': %s"
 msgstr "Napaka: 'dev status': %s"
 
-#: ../cli/src/devices.c:1006
+#: ../cli/src/devices.c:996
 #, c-format
 msgid "Error: 'dev status': %s; allowed fields: %s"
 msgstr "Napaka: 'dev status': %s; dovoljena polja: %s"
 
-#: ../cli/src/devices.c:1029
+#: ../cli/src/devices.c:1019
 msgid "Status of devices"
 msgstr "Stanje naprav"
 
-#: ../cli/src/devices.c:1060
+#: ../cli/src/devices.c:1050
 #, c-format
 msgid "Error: '%s' argument is missing."
 msgstr "Napaka: manjka argument '%s'"
 
-#: ../cli/src/devices.c:1101
-#: ../cli/src/devices.c:1253
-#: ../cli/src/devices.c:1389
-#: ../cli/src/devices.c:1608
+#: ../cli/src/devices.c:1091
+#: ../cli/src/devices.c:1243
+#: ../cli/src/devices.c:1380
+#: ../cli/src/devices.c:1599
 #, c-format
 msgid "Error: Device '%s' not found."
 msgstr "Napaka: naprave '%s' ni mogoče najti"
 
-#: ../cli/src/devices.c:1124
+#: ../cli/src/devices.c:1114
 #, c-format
 msgid "Success: Device '%s' successfully disconnected."
 msgstr "Obvestilo: povezava naprave '%s' je uspešno prekinjena."
 
-#: ../cli/src/devices.c:1149
+#: ../cli/src/devices.c:1139
 #, c-format
 msgid "Error: Device '%s' (%s) disconnecting failed: %s"
 msgstr "Napaka: prišlo je do napake med prekinjanjem naprave '%s' (%s): %s"
 
-#: ../cli/src/devices.c:1157
+#: ../cli/src/devices.c:1147
 #, c-format
 msgid "Device state: %d (%s)\n"
 msgstr "Stanje naprave: %d (%s)\n"
 
-#: ../cli/src/devices.c:1222
+#: ../cli/src/devices.c:1212
 #, c-format
 msgid "Error: iface has to be specified."
 msgstr "Napaka: iface nastavitev mora določena."
 
-#: ../cli/src/devices.c:1347
+#: ../cli/src/devices.c:1338
 #, c-format
 msgid "Error: 'dev wifi': %s"
 msgstr "Napaka: 'dev wifi': %s"
 
-#: ../cli/src/devices.c:1349
+#: ../cli/src/devices.c:1340
 #, c-format
 msgid "Error: 'dev wifi': %s; allowed fields: %s"
 msgstr "Napaka: 'dev wifi': %s; dovoljena polja: %s"
 
-#: ../cli/src/devices.c:1372
+#: ../cli/src/devices.c:1363
 msgid "WiFi scan list"
 msgstr "WiFi seznam preiskovanja"
 
-#: ../cli/src/devices.c:1409
-#: ../cli/src/devices.c:1463
-#: ../cli/src/devices.c:1670
+#: ../cli/src/devices.c:1400
+#: ../cli/src/devices.c:1454
 #, c-format
-msgid "Error: Access point with hwaddr '%s' not found."
-msgstr "Napaka: dostopne točke s strojnim naslovom '%s' ni mogoče najti."
+#| msgid "Error: Access point with hwaddr '%s' not found."
+msgid "Error: Access point with bssid '%s' not found."
+msgstr "Napaka: dostopne točke z bssid '%s' ni mogoče najti."
 
-#: ../cli/src/devices.c:1426
+#: ../cli/src/devices.c:1417
 #, c-format
 msgid "Error: Device '%s' is not a WiFi device."
 msgstr "Napaka: naprava '%s' ni veljavna WiFi naprava."
 
-#: ../cli/src/devices.c:1490
+#: ../cli/src/devices.c:1481
 #, c-format
 msgid "Error: 'dev wifi' command '%s' is not valid."
 msgstr "Napaka: 'dev wifi' ukaz '%s' ni veljaven."
 
-#: ../cli/src/devices.c:1566
+#: ../cli/src/devices.c:1557
 #, c-format
 msgid "Error: 'dev wimax': %s"
 msgstr "Napaka: 'dev wimax': %s"
 
-#: ../cli/src/devices.c:1568
+#: ../cli/src/devices.c:1559
 #, c-format
 msgid "Error: 'dev wimax': %s; allowed fields: %s"
 msgstr "Napaka: 'dev wimax': %s; dovoljena polja: %s"
 
-#: ../cli/src/devices.c:1591
+#: ../cli/src/devices.c:1582
 msgid "WiMAX NSP list"
 msgstr "Seznam ponudnikov storitev WiMAX"
 
-#: ../cli/src/devices.c:1628
+#: ../cli/src/devices.c:1619
 #, c-format
 msgid "Error: NSP with name '%s' not found."
 msgstr "Napaka: ponudnika omrežnih storitev '%s' ni mogoče najti"
 
-#: ../cli/src/devices.c:1639
+#: ../cli/src/devices.c:1630
 #, c-format
 msgid "Error: Device '%s' is not a WiMAX device."
 msgstr "Napaka: naprava '%s' ni naprava WiMAX."
 
-#: ../cli/src/devices.c:1697
+#: ../cli/src/devices.c:1661
+#, c-format
+#| msgid "Error: Access point with hwaddr '%s' not found."
+msgid "Error: Access point with nsp '%s' not found."
+msgstr "Napaka: dostopne točke z nsp '%s' ni mogoče najti."
+
+#: ../cli/src/devices.c:1688
 #, c-format
 msgid "Error: 'dev wimax' command '%s' is not valid."
 msgstr "Napaka: 'dev wimax' ukaz '%s' ni veljaven."
 
-#: ../cli/src/devices.c:1747
+#: ../cli/src/devices.c:1738
 #, c-format
 msgid "Error: 'dev' command '%s' is not valid."
 msgstr "Napaka: 'dev' ukaz '%s' ni veljaven."
@@ -1113,7 +1155,7 @@ msgstr "WIFI-STROJNA OPREMA"
 msgid "WIMAX"
 msgstr "WIMAX"
 
-#: ../cli/src/network-manager.c:74
+#: ../cli/src/network-manager.c:67
 #, c-format
 msgid ""
 "Usage: nmcli nm { COMMAND | help }\n"
@@ -1144,149 +1186,149 @@ msgstr ""
 "  wimax [on|off]\n"
 "\n"
 
-#: ../cli/src/network-manager.c:103
+#: ../cli/src/network-manager.c:96
 msgid "asleep"
 msgstr "v mirovanju"
 
-#: ../cli/src/network-manager.c:105
+#: ../cli/src/network-manager.c:98
 msgid "connecting"
 msgstr "povezovanje"
 
-#: ../cli/src/network-manager.c:107
+#: ../cli/src/network-manager.c:100
 msgid "connected (local only)"
 msgstr "povezan (le krajevno)"
 
-#: ../cli/src/network-manager.c:109
+#: ../cli/src/network-manager.c:102
 msgid "connected (site only)"
 msgstr "povezan (le mesto)"
 
-#: ../cli/src/network-manager.c:113
+#: ../cli/src/network-manager.c:106
 msgid "disconnecting"
 msgstr "prekinjanje povezave"
 
-#: ../cli/src/network-manager.c:153
+#: ../cli/src/network-manager.c:146
 #, c-format
 msgid "Error: 'nm status': %s"
 msgstr "Napaka: 'nm status': %s"
 
-#: ../cli/src/network-manager.c:155
+#: ../cli/src/network-manager.c:148
 #, c-format
 msgid "Error: 'nm status': %s; allowed fields: %s"
 msgstr "Napaka: 'nm status': %s; dovoljena polja: %s"
 
 #. create NMClient
+#: ../cli/src/network-manager.c:161
+#: ../cli/src/network-manager.c:162
+#: ../cli/src/network-manager.c:163
+#: ../cli/src/network-manager.c:164
+#: ../cli/src/network-manager.c:165
+#: ../cli/src/network-manager.c:167
 #: ../cli/src/network-manager.c:168
-#: ../cli/src/network-manager.c:169
-#: ../cli/src/network-manager.c:170
-#: ../cli/src/network-manager.c:171
-#: ../cli/src/network-manager.c:172
-#: ../cli/src/network-manager.c:174
-#: ../cli/src/network-manager.c:175
-#: ../cli/src/network-manager.c:296
-#: ../cli/src/network-manager.c:351
-#: ../cli/src/network-manager.c:389
-#: ../cli/src/network-manager.c:428
+#: ../cli/src/network-manager.c:289
+#: ../cli/src/network-manager.c:344
+#: ../cli/src/network-manager.c:382
+#: ../cli/src/network-manager.c:421
 msgid "enabled"
 msgstr "omogočeno"
 
+#: ../cli/src/network-manager.c:161
+#: ../cli/src/network-manager.c:162
+#: ../cli/src/network-manager.c:163
+#: ../cli/src/network-manager.c:164
+#: ../cli/src/network-manager.c:165
+#: ../cli/src/network-manager.c:167
 #: ../cli/src/network-manager.c:168
-#: ../cli/src/network-manager.c:169
-#: ../cli/src/network-manager.c:170
-#: ../cli/src/network-manager.c:171
-#: ../cli/src/network-manager.c:172
-#: ../cli/src/network-manager.c:174
-#: ../cli/src/network-manager.c:175
-#: ../cli/src/network-manager.c:296
-#: ../cli/src/network-manager.c:351
-#: ../cli/src/network-manager.c:389
-#: ../cli/src/network-manager.c:428
+#: ../cli/src/network-manager.c:289
+#: ../cli/src/network-manager.c:344
+#: ../cli/src/network-manager.c:382
+#: ../cli/src/network-manager.c:421
 msgid "disabled"
 msgstr "onemogočeno"
 
-#: ../cli/src/network-manager.c:188
+#: ../cli/src/network-manager.c:181
 msgid "NetworkManager status"
 msgstr "Stanje NetworkManager"
 
 #. Print header
-#: ../cli/src/network-manager.c:191
+#: ../cli/src/network-manager.c:184
 msgid "running"
 msgstr "v teku"
 
-#: ../cli/src/network-manager.c:191
+#: ../cli/src/network-manager.c:184
 msgid "not running"
 msgstr "ni v teku"
 
-#: ../cli/src/network-manager.c:222
-#: ../cli/src/utils.c:322
+#: ../cli/src/network-manager.c:215
+#: ../cli/src/utils.c:323
 #, c-format
 msgid "Error: Couldn't connect to system bus: %s"
 msgstr "Napaka: ni se mogoče povezati s sistemskim vodilom: %s"
 
-#: ../cli/src/network-manager.c:233
+#: ../cli/src/network-manager.c:226
 #, c-format
 msgid "Error: Couldn't create D-Bus object proxy."
 msgstr "Napaka: ni mogoče ustvariti posredniškega predmeta vodila D-Bus."
 
-#: ../cli/src/network-manager.c:239
+#: ../cli/src/network-manager.c:232
 #, c-format
 msgid "Error in sleep: %s"
 msgstr "Napaka v mirovanju: %s"
 
-#: ../cli/src/network-manager.c:283
-#: ../cli/src/network-manager.c:338
-#: ../cli/src/network-manager.c:376
-#: ../cli/src/network-manager.c:415
+#: ../cli/src/network-manager.c:276
+#: ../cli/src/network-manager.c:331
+#: ../cli/src/network-manager.c:369
+#: ../cli/src/network-manager.c:408
 #, c-format
 msgid "Error: '--fields' value '%s' is not valid here; allowed fields: %s"
 msgstr "Napaka: vrednost '--fields' '%s' ni veljavna, dovoljena polja: %s"
 
-#: ../cli/src/network-manager.c:291
+#: ../cli/src/network-manager.c:284
 msgid "Networking enabled"
 msgstr "Omrežje je omogočeno"
 
-#: ../cli/src/network-manager.c:307
+#: ../cli/src/network-manager.c:300
 #, c-format
 msgid "Error: invalid 'enable' parameter: '%s'; use 'true' or 'false'."
 msgstr "Napaka: neveljaven parameter 'enable': '%s'; uporabite 'true' ali 'false'."
 
-#: ../cli/src/network-manager.c:317
+#: ../cli/src/network-manager.c:310
 #, c-format
 msgid "Error: Sleeping status is not exported by NetworkManager."
 msgstr "Napaka: stanje v mirovanju ni izvoženo s programom NetworkManager."
 
-#: ../cli/src/network-manager.c:325
+#: ../cli/src/network-manager.c:318
 #, c-format
 msgid "Error: invalid 'sleep' parameter: '%s'; use 'true' or 'false'."
 msgstr "Napaka: neveljaven parameter 'sleep': '%s'; uporabite 'true' ali 'false'."
 
-#: ../cli/src/network-manager.c:346
+#: ../cli/src/network-manager.c:339
 msgid "WiFi enabled"
 msgstr "WiFi je omogočen"
 
-#: ../cli/src/network-manager.c:362
+#: ../cli/src/network-manager.c:355
 #, c-format
 msgid "Error: invalid 'wifi' parameter: '%s'."
 msgstr "Napaka: neveljaven 'wifi' parameter: '%s'."
 
-#: ../cli/src/network-manager.c:384
+#: ../cli/src/network-manager.c:377
 msgid "WWAN enabled"
 msgstr "WWAN je omogočen"
 
-#: ../cli/src/network-manager.c:400
+#: ../cli/src/network-manager.c:393
 #, c-format
 msgid "Error: invalid 'wwan' parameter: '%s'."
 msgstr "Napaka: neveljaven 'wwan' parameter: '%s'."
 
-#: ../cli/src/network-manager.c:423
+#: ../cli/src/network-manager.c:416
 msgid "WiMAX enabled"
 msgstr "WiMAX je omogočen"
 
-#: ../cli/src/network-manager.c:439
+#: ../cli/src/network-manager.c:432
 #, c-format
 msgid "Error: invalid 'wimax' parameter: '%s'."
 msgstr "Napaka: neveljaven parameter 'wimax': '%s'."
 
-#: ../cli/src/network-manager.c:452
+#: ../cli/src/network-manager.c:445
 #, c-format
 msgid "Error: 'nm' command '%s' is not valid."
 msgstr "Napaka: ukaz 'nm' '%s' ni veljaven"
@@ -1395,81 +1437,91 @@ msgstr "Napaka: ni mogoče ustvariti predmeta NMClient."
 msgid "Success"
 msgstr "Uspešno zaključeno"
 
-#: ../cli/src/settings.c:423
+#: ../cli/src/settings.c:447
 #, c-format
 msgid "%d (hex-ascii-key)"
 msgstr "%d (šestnajstiški-ascii-ključ)"
 
-#: ../cli/src/settings.c:425
+#: ../cli/src/settings.c:449
 #, c-format
 msgid "%d (104/128-bit passphrase)"
 msgstr "%d (104/128-bitno šifrirno geslo)"
 
-#: ../cli/src/settings.c:428
+#: ../cli/src/settings.c:452
 #, c-format
 msgid "%d (unknown)"
 msgstr "%d (neznano)"
 
-#: ../cli/src/settings.c:454
+#: ../cli/src/settings.c:478
 msgid "0 (unknown)"
 msgstr "0 (neznano)"
 
-#: ../cli/src/settings.c:460
+#: ../cli/src/settings.c:484
 msgid "any, "
 msgstr "karkoli, "
 
-#: ../cli/src/settings.c:462
+#: ../cli/src/settings.c:486
 msgid "900 MHz, "
 msgstr "900 MHz, "
 
-#: ../cli/src/settings.c:464
+#: ../cli/src/settings.c:488
 msgid "1800 MHz, "
 msgstr "1800 MHz, "
 
-#: ../cli/src/settings.c:466
+#: ../cli/src/settings.c:490
 msgid "1900 MHz, "
 msgstr "1900 MHz, "
 
-#: ../cli/src/settings.c:468
+#: ../cli/src/settings.c:492
 msgid "850 MHz, "
 msgstr "850 MHz, "
 
-#: ../cli/src/settings.c:470
+#: ../cli/src/settings.c:494
 msgid "WCDMA 3GPP UMTS 2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 2100 MHz, "
 
-#: ../cli/src/settings.c:472
+#: ../cli/src/settings.c:496
 msgid "WCDMA 3GPP UMTS 1800 MHz, "
 msgstr "WCDMA 3GPP UMTS 1800 MHz, "
 
-#: ../cli/src/settings.c:474
+#: ../cli/src/settings.c:498
 msgid "WCDMA 3GPP UMTS 1700/2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700/2100 MHz, "
 
-#: ../cli/src/settings.c:476
+#: ../cli/src/settings.c:500
 msgid "WCDMA 3GPP UMTS 800 MHz, "
 msgstr "WCDMA 3GPP UMTS 800 MHz, "
 
-#: ../cli/src/settings.c:478
+#: ../cli/src/settings.c:502
 msgid "WCDMA 3GPP UMTS 850 MHz, "
 msgstr "WCDMA 3GPP UMTS 850 MHz, "
 
-#: ../cli/src/settings.c:480
+#: ../cli/src/settings.c:504
 msgid "WCDMA 3GPP UMTS 900 MHz, "
 msgstr "WCDMA 3GPP UMTS 900 MHz, "
 
-#: ../cli/src/settings.c:482
+#: ../cli/src/settings.c:506
 msgid "WCDMA 3GPP UMTS 1700 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700 MHz, "
 
-#: ../cli/src/settings.c:566
-#: ../cli/src/settings.c:732
+#: ../cli/src/settings.c:508
+#| msgid "WCDMA 3GPP UMTS 900 MHz, "
+msgid "WCDMA 3GPP UMTS 1900 MHz, "
+msgstr "WCDMA 3GPP UMTS 900 MHz, "
+
+#: ../cli/src/settings.c:510
+#| msgid "WCDMA 3GPP UMTS 2100 MHz, "
+msgid "WCDMA 3GPP UMTS 2600 MHz, "
+msgstr "WCDMA 3GPP UMTS 2100 MHz, "
+
+#: ../cli/src/settings.c:636
+#: ../cli/src/settings.c:835
 msgid "auto"
 msgstr "samodejno"
 
-#: ../cli/src/settings.c:727
-#: ../cli/src/settings.c:730
-#: ../cli/src/settings.c:731
+#: ../cli/src/settings.c:829
+#: ../cli/src/settings.c:832
+#: ../cli/src/settings.c:833
 #: ../cli/src/utils.c:176
 msgid "not set"
 msgstr "ni nastavljeno"
@@ -1494,22 +1546,22 @@ msgstr "Možnost '--terse' zahteva podan argument '--fields'"
 msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
 msgstr "Možnost '--terse' zahteva posebne vrednosti '--polja' in ne '%s'"
 
-#: ../cli/src/utils.c:333
+#: ../cli/src/utils.c:334
 #, c-format
 msgid "Error: Couldn't create D-Bus object proxy for org.freedesktop.DBus"
 msgstr "Napaka: ni mogoče ustvariti posredniškega predmeta D-Bus za org.freedesktop.DBus"
 
-#: ../cli/src/utils.c:341
+#: ../cli/src/utils.c:342
 #, c-format
 msgid "Error: NameHasOwner request failed: %s"
 msgstr "Napaka: zahteva NameHasOwner ni uspela: %s"
 
-#: ../cli/src/utils.c:386
+#: ../cli/src/utils.c:387
 #, c-format
 msgid "Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --nocheck to suppress the warning.\n"
 msgstr "Opozorilo: različici nmcli (%s) in NetworkManager (%s) se ne ujemata. Uporabite --nocheck, da onemogočite opozorilo.\n"
 
-#: ../cli/src/utils.c:395
+#: ../cli/src/utils.c:396
 #, c-format
 msgid "Error: nmcli (%s) and NetworkManager (%s) versions don't match. Force execution using --nocheck, but the results are unpredictable."
 msgstr "Napaka: različici nmcli (%s) in NetworkManager (%s) se ne ujemata. Izvajanje vsilite z --nocheck, rezultati pa niso napovedljivi."
@@ -1975,12 +2027,12 @@ msgstr "Sistemska pravila preprečujejo souporabo povezav preko zaščitenega Wi
 msgid "System policy prevents sharing connections via an open WiFi network"
 msgstr "Sistemska pravila preprečujejo souporabo povezav preko odprtega WiFi omrežja"
 
-#: ../src/main.c:530
+#: ../src/main.c:476
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr "Neveljavna možnost. Uporabite --help za seznam veljavnih možnosti.\n"
 
-#: ../src/main.c:611
+#: ../src/main.c:517
 #, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr "%s. Uporabite --help za prikaz seznam veljavnih možnosti.\n"
@@ -2023,12 +2075,12 @@ msgstr "OPOMBA: razreševalnik libc morda ne podpira več kot 3 imenskih strežn
 msgid "The nameservers listed below may not be recognized."
 msgstr "Navedeni imenski strežniki morda ne bodo prepoznani."
 
-#: ../src/logging/nm-logging.c:149
+#: ../src/logging/nm-logging.c:152
 #, c-format
 msgid "Unknown log level '%s'"
 msgstr "Neznana raven beleženja '%s'"
 
-#: ../src/logging/nm-logging.c:174
+#: ../src/logging/nm-logging.c:177
 #, c-format
 msgid "Unknown log domain '%s'"
 msgstr "Neznana domena beleženja '%s'"
@@ -2055,12 +2107,12 @@ msgstr "Povezava PAN %d"
 msgid "DUN connection %d"
 msgstr "Povezava DUN %d"
 
-#: ../src/nm-device-ethernet.c:1723
+#: ../src/nm-device-ethernet.c:1724
 #, c-format
 msgid "PPPoE connection %d"
 msgstr "Povezava PPPoE %d"
 
-#: ../src/nm-device-ethernet.c:1723
+#: ../src/nm-device-ethernet.c:1724
 #: ../src/settings/nm-settings-utils.c:50
 #, c-format
 msgid "Wired connection %d"
@@ -2071,50 +2123,50 @@ msgstr "Žična povezava %d"
 msgid "Mesh %d"
 msgstr "Mreža %d"
 
-#: ../src/nm-manager.c:657
+#: ../src/nm-manager.c:669
 #, c-format
 msgid "VPN connection %d"
 msgstr "Povezava VPN %d"
 
-#: ../src/nm-netlink-monitor.c:100
-#: ../src/nm-netlink-monitor.c:231
-#: ../src/nm-netlink-monitor.c:653
+#: ../src/nm-netlink-monitor.c:101
+#: ../src/nm-netlink-monitor.c:234
+#: ../src/nm-netlink-monitor.c:661
 #, c-format
 msgid "error processing netlink message: %s"
 msgstr "napaka med obdelovanjem sporočila netlink: %s"
 
-#: ../src/nm-netlink-monitor.c:214
+#: ../src/nm-netlink-monitor.c:216
 msgid "error occurred while waiting for data on socket"
 msgstr "med čakanjem na podatke na vtiču je prišlo do napake"
 
-#: ../src/nm-netlink-monitor.c:254
+#: ../src/nm-netlink-monitor.c:260
 #, c-format
 msgid "unable to connect to netlink for monitoring link status: %s"
 msgstr "ni se mogoče povezati z netlink za nadziranje stanja povezave: %s"
 
-#: ../src/nm-netlink-monitor.c:265
+#: ../src/nm-netlink-monitor.c:271
 #, c-format
 msgid "unable to enable netlink handle credential passing: %s"
 msgstr "ni mogoče omogočiti ročnika netlink overjanje:% s"
 
-#: ../src/nm-netlink-monitor.c:291
-#: ../src/nm-netlink-monitor.c:353
+#: ../src/nm-netlink-monitor.c:294
+#: ../src/nm-netlink-monitor.c:354
 #, c-format
 msgid "unable to allocate netlink handle for monitoring link status: %s"
 msgstr "ni mogoče dodeliti ročice netlink za nadziranje stanja povezave: %s"
 
-#: ../src/nm-netlink-monitor.c:376
+#: ../src/nm-netlink-monitor.c:379
 #, c-format
 msgid "unable to allocate netlink link cache for monitoring link status: %s"
 msgstr "ni mogoče dodeliti predpomnilnika netlink povezav za nadziranje stanja povezave: %s"
 
-#: ../src/nm-netlink-monitor.c:502
+#: ../src/nm-netlink-monitor.c:506
 #, c-format
 msgid "unable to join netlink group: %s"
 msgstr "skupini netlink se ni mogoče pridružiti: %s"
 
-#: ../src/nm-netlink-monitor.c:629
-#: ../src/nm-netlink-monitor.c:642
+#: ../src/nm-netlink-monitor.c:637
+#: ../src/nm-netlink-monitor.c:650
 #, c-format
 msgid "error updating link cache: %s"
 msgstr "napaka med posodabljanjem predpomnilnika povezave: %s"
@@ -2124,35 +2176,3 @@ msgstr "napaka med posodabljanjem predpomnilnika povezave: %s"
 msgid "System"
 msgstr "Sistem"
 
-#~ msgid "SCOPE"
-#~ msgstr "OBSEG"
-
-#~ msgid "DBUS-SERVICE"
-#~ msgstr "STORITEV-DBUS"
-
-#~ msgid "system"
-#~ msgstr "sistem"
-
-#~ msgid "user"
-#~ msgstr "uporabnik"
-
-#~ msgid "System connections"
-#~ msgstr "Sistemske povezave"
-
-#~ msgid "User connections"
-#~ msgstr "Uporabniške povezave"
-
-#~ msgid "Error: Obtaining active connection for '%s' failed."
-#~ msgstr "Napaka: pridobivanje dejavne povezave '%s' je spodletelo."
-
-#~ msgid "Error: Could not get user settings."
-#~ msgstr "Napaka: ni mogoče pridobiti uporabniških nastavitev."
-
-#~ msgid "Allow use of user-specific connections"
-#~ msgstr "Dovoli uporabo posebnih uporabniških povezav."
-
-#~ msgid "System policy prevents use of user-specific connections"
-#~ msgstr "Sistemska določila preprečujejo uporabo uporabniških povezav."
-
-#~ msgid "Auto %s"
-#~ msgstr "Samodejno %s"
