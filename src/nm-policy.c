@@ -736,6 +736,7 @@ check_master_dependency (NMManager *manager, NMDevice *device, NMConnection *con
 	NMSettingConnection *s_con;
 	NMDevice *master_device;
 	const char *master;
+	NMActRequest *req;
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -750,6 +751,11 @@ check_master_dependency (NMManager *manager, NMDevice *device, NMConnection *con
 
 	/* If master device is not yet present, postpone activation until later */
 	if (!master_device)
+		return FALSE;
+
+	/* Make all slaves wait for the master connection to activate. */
+	req = nm_device_get_act_request (master_device);
+	if (!req || !nm_act_request_get_connection (req))
 		return FALSE;
 
 	nm_device_set_master (device, master_device);
