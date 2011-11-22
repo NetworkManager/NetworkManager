@@ -650,7 +650,6 @@ read_one_ip4_route (shvarFile *ifcfg,
 
 	g_return_val_if_fail (ifcfg != NULL, NULL);
 	g_return_val_if_fail (network_file != NULL, NULL);
-	g_return_val_if_fail (which >= 0, NULL);
 
 	route = nm_ip4_route_new ();
 
