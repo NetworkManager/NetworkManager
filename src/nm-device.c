@@ -423,7 +423,7 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 	priv->ip_iface = g_strdup (iface);
 	if (priv->ip_iface) {
 		priv->ip_ifindex = nm_netlink_iface_to_index (priv->ip_iface);
-		if (!priv->ip_ifindex) {
+		if (priv->ip_ifindex < 0) {
 			nm_log_warn (LOGD_HW, "(%s): failed to look up interface index", iface);
 		}
 	}

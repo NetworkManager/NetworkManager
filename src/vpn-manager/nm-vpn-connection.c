@@ -452,7 +452,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 
 	/* Grab the interface index for address/routing operations */
 	priv->ip_ifindex = nm_netlink_iface_to_index (priv->ip_iface);
-	if (!priv->ip_ifindex) {
+	if (priv->ip_ifindex < 0) {
 		nm_log_err (LOGD_VPN, "(%s): failed to look up VPN interface index", priv->ip_iface);
 		goto error;
 	}
