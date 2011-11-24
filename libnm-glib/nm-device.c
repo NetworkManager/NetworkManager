@@ -264,12 +264,10 @@ demarshal_active_connection (NMObject *object, GParamSpec *pspec, GValue *value,
 	NMActiveConnection *active = NULL;
 	DBusGConnection *connection;
 
-	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
-		return FALSE;
-
-	priv->got_active_connection = TRUE;
-
 	if (value) {
+		if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
+			return FALSE;
+
 		path = g_value_get_boxed (value);
 		if (path) {
 			active = NM_ACTIVE_CONNECTION (_nm_object_cache_get (path));
@@ -279,6 +277,8 @@ demarshal_active_connection (NMObject *object, GParamSpec *pspec, GValue *value,
 			}
 		}
 	}
+
+	priv->got_active_connection = TRUE;
 
 	if (priv->active_connection) {
 		g_object_unref (priv->active_connection);
