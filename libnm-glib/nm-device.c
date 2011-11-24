@@ -36,6 +36,7 @@
 #include "nm-object-private.h"
 #include "nm-object-cache.h"
 #include "nm-marshal.h"
+#include "nm-dbus-glib-types.h"
 
 #include "nm-device-bindings.h"
 
@@ -334,6 +335,60 @@ device_state_changed (DBusGProxy *proxy,
 	}
 }
 
+static void
+get_all_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
+{
+	NMObject *self = NM_OBJECT (user_data);
+	GHashTable *props = NULL;
+	GError *error = NULL;
+
+	if (!dbus_g_proxy_end_call (proxy, call, &error,
+	                            DBUS_TYPE_G_MAP_OF_VARIANT, &props,
+	                            G_TYPE_INVALID)) {
+		if (!(error->domain == DBUS_GERROR && error->code == DBUS_GERROR_NO_REPLY)) {
+			g_warning ("%s: couldn't retrieve device properties: (%d) %s.",
+			           __func__,
+			           error ? error->code : -1,
+			           (error && error->message) ? error->message : "(unknown)");
+		}
+		g_clear_error (&error);
+		g_object_unref (proxy);
+		return;
+	}
+	g_object_unref (proxy);
+
+	/* Hack: libnm-glib's NMDevice doesn't have ip4-address property. Remove
+	 * it from the hash to prevent warnings.
+	 */
+	g_hash_table_remove (props, "Ip4Address");
+
+	_nm_object_process_properties_changed (NM_OBJECT (self), props);
+	g_hash_table_destroy (props);
+
+}
+
+static void
+initialize_properties (NMObject *object)
+{
+	DBusGProxy *props_proxy;
+
+	/* D-Bus properties proxy */
+	props_proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (object),
+	                                         NM_DBUS_SERVICE,
+	                                         nm_object_get_path (object),
+	                                         "org.freedesktop.DBus.Properties");
+	g_assert (props_proxy);
+
+	/* Get properties */
+	dbus_g_proxy_begin_call (props_proxy, "GetAll",
+	                         get_all_cb,
+	                         object,
+	                         NULL,
+	                         G_TYPE_STRING, NM_DBUS_INTERFACE_DEVICE,
+	                         G_TYPE_INVALID);
+
+}
+
 static GObject*
 constructor (GType type,
 			 guint n_construct_params,
@@ -356,6 +411,12 @@ constructor (GType type,
 											 NM_DBUS_INTERFACE_DEVICE);
 
 	register_for_property_changed (NM_DEVICE (object));
+
+	/* Get initial properties, so that we have all properties set even if
+	 * no PropertiesChanged signal is received.
+	 * It has to be called after register_for_property_changed().
+	 */
+	initialize_properties (object);
 
 	dbus_g_object_register_marshaller (_nm_marshal_VOID__UINT_UINT_UINT,
 									   G_TYPE_NONE,

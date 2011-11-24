@@ -1424,6 +1424,14 @@ constructor (GType type,
 	g_signal_connect (object, "notify::" NM_CLIENT_ACTIVE_CONNECTIONS,
 	                  G_CALLBACK (active_connections_changed_cb), NULL);
 
+	/* Get initial devices from NM. It is important to do it early. Else,
+	 * a 'lazy' call won't find removed device.
+	 * Solves this case: DeviceRemoved signal is received, we get devices
+	 *   from NM, but the removed object path is not there any more, and
+	 *   NMClient doesn't have the device either.
+	 */
+	nm_client_get_devices (NM_CLIENT (object));
+
 	return G_OBJECT (object);
 }
 
