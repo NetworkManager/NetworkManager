@@ -726,6 +726,13 @@ constructor (GType type,
 	                  G_CALLBACK (state_changed_cb),
 	                  NULL);
 
+	/* Get initial access points to prevent possible errors on
+	 * AccessPointRemoved signal processing. We could make D-Bus
+	 * GetAccessPoints() call on a removed WiFi device object (when
+	 * AccessPointRemoved was triggered by removing the device).
+	 */
+	nm_device_wifi_get_access_points (NM_DEVICE_WIFI (object));
+
 	return object;
 }
 
