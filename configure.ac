@@ -744,6 +744,7 @@ docs/libnm-util/Makefile
 NetworkManager.pc
 examples/Makefile
 examples/python/Makefile
+examples/ruby/Makefile
 examples/C/Makefile
 examples/C/glib/Makefile
 examples/C/qt/Makefile

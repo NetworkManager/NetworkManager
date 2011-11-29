@@ -1,3 +1,4 @@
 SUBDIRS= \
 	python \
+	ruby \
 	C
