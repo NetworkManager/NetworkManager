@@ -1620,7 +1620,9 @@ ip6_config_merge_and_apply (NMDevice *self,
 	composite = nm_ip6_config_new ();
 	g_assert (composite);
 
-	merge_ip6_configs (composite, src_config);
+	/* Merge in the given config first, if any */
+	if (src_config)
+		merge_ip6_configs (composite, src_config);
 
 	/* Merge RA and DHCPv6 configs into the composite config */
 	if (priv->ac_ip6_config && (src_config != priv->ac_ip6_config))
