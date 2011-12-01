@@ -112,6 +112,14 @@ typedef struct {
 } NMIP6Device;
 
 static void
+clear_config_changed (NMIP6Device *device)
+{
+	if (device->config_changed_id)
+		g_source_remove (device->config_changed_id);
+	device->config_changed_id = 0;
+}
+
+static void
 nm_ip6_device_destroy (NMIP6Device *device)
 {
 	g_return_if_fail (device != NULL);
@@ -124,8 +132,9 @@ nm_ip6_device_destroy (NMIP6Device *device)
 
 	if (device->finish_addrconf_id)
 		g_source_remove (device->finish_addrconf_id);
-	if (device->config_changed_id)
-		g_source_remove (device->config_changed_id);
+
+	clear_config_changed (device);
+
 	g_free (device->iface);
 	if (device->rdnss_servers)
 		g_array_free (device->rdnss_servers, TRUE);
@@ -267,6 +276,7 @@ rdnss_expired (gpointer user_data)
 	nm_log_dbg (LOGD_IP6, "(%s): IPv6 RDNSS information expired", device->iface);
 
 	set_rdnss_timeout (device);
+	clear_config_changed (device);
 	emit_config_changed (&info);
 	return FALSE;
 }
@@ -321,11 +331,12 @@ static gboolean
 dnssl_expired (gpointer user_data)
 {
 	NMIP6Device *device = user_data;
-	CallbackInfo info = { device, IP6_DHCP_OPT_NONE };
+	CallbackInfo info = { device, IP6_DHCP_OPT_NONE, FALSE };
 
 	nm_log_dbg (LOGD_IP6, "(%s): IPv6 DNSSL information expired", device->iface);
 
 	set_dnssl_timeout (device);
+	clear_config_changed (device);
 	emit_config_changed (&info);
 	return FALSE;
 }
