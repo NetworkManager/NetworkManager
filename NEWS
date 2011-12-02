@@ -9,7 +9,17 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * IP configuration is now non-blocking; waiting for IPv6 RA no longer blocks
     the device from activating if IPv4 is ready and vice versa
 * Addded support for firewall "zones" via FirewallD
-* Added Basic support for bonding interfaces
+* Added basic support for bonded interfaces
+* WiFi connections are no longer locked to a specific MAC address if they are
+    "locally administered" addresses (ie, 02:::::)
+* New state change reasons have been added for mobile broadband PIN errors
+* Agent-owned secrets are now sent to agents for newly created connections
+* Support for non-UTF8-encoded 802.1x passwords has been added
+* libnm-glib now fetches some properties more aggressively (like active
+    connections, access points, etc)
+* Added basic support for IP-over-Infiniband interfaces
+* Added support for device plugins and converted WiMAX support to a plugin for
+    easier packaging and simpler dependencies
 
 
 ==============================================
