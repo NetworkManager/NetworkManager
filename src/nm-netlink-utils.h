@@ -76,5 +76,5 @@ struct rtnl_route * nm_netlink_foreach_route (int ifindex,
                                               NlRouteForeachFunc callback,
                                               gpointer user_data);
 
-#endif  /* NM_NETLINK_MONITOR_H */
+#endif  /* NM_NETLINK_UTILS_H */
 
