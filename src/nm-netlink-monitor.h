@@ -58,7 +58,6 @@ typedef struct {
 	void (*notification) (NMNetlinkMonitor *monitor, struct nl_msg *msg);
 	void (*carrier_on)   (NMNetlinkMonitor *monitor, int index);
 	void (*carrier_off)  (NMNetlinkMonitor *monitor, int index);
-	void (*error)        (NMNetlinkMonitor *monitor, GError *error);
 } NMNetlinkMonitorClass;
 
 
@@ -83,8 +82,8 @@ void              nm_netlink_monitor_unsubscribe      (NMNetlinkMonitor *monitor
 gboolean          nm_netlink_monitor_request_ip6_info (NMNetlinkMonitor *monitor,
                                                        GError **error);
 
-gboolean          nm_netlink_monitor_request_status   (NMNetlinkMonitor *monitor,
-                                                       GError **error);
+void              nm_netlink_monitor_request_status   (NMNetlinkMonitor *monitor);
+
 gboolean          nm_netlink_monitor_get_flags_sync   (NMNetlinkMonitor *monitor,
                                                        guint32 ifindex,
                                                        guint32 *ifflags,

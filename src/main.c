@@ -67,80 +67,6 @@ static NMManager *manager = NULL;
 static GMainLoop *main_loop = NULL;
 static int quit_pipe[2] = { -1, -1 };
 
-typedef struct {
-	time_t time;
-	GQuark domain;
-	guint32 code;
-	guint32 count;
-} MonitorInfo;
-
-static gboolean
-detach_monitor (gpointer data)
-{
-	nm_log_warn (LOGD_HW, "detaching netlink event monitor");
-	nm_netlink_monitor_detach (NM_NETLINK_MONITOR (data));
-	return FALSE;
-}
-
-static void
-nm_error_monitoring_device_link_state (NMNetlinkMonitor *monitor,
-									   GError *error,
-									   gpointer user_data)
-{
-	MonitorInfo *info = (MonitorInfo *) user_data;
-	time_t now;
-
-	now = time (NULL);
-
-	if (   (info->domain != error->domain)
-	    || (info->code != error->code)
-	    || (info->time && now > info->time + 10)) {
-		/* FIXME: Try to handle the error instead of just printing it. */
-		nm_log_warn (LOGD_HW, "error monitoring device for netlink events: %s\n", error->message);
-
-		info->time = now;
-		info->domain = error->domain;
-		info->code = error->code;
-		info->count = 0;
-	}
-
-	info->count++;
-	if (info->count > 100) {
-		/* Broken drivers will sometimes cause a flood of netlink errors.
-		 * rh #459205, novell #443429, lp #284507
-		 */
-		nm_log_warn (LOGD_HW, "excessive netlink errors ocurred, disabling netlink monitor.");
-		nm_log_warn (LOGD_HW, "link change events will not be processed.");
-		g_idle_add_full (G_PRIORITY_HIGH, detach_monitor, monitor, NULL);
-	}
-}
-
-static gboolean
-nm_monitor_setup (GError **error)
-{
-	NMNetlinkMonitor *monitor;
-	MonitorInfo *info;
-
-	monitor = nm_netlink_monitor_get ();
-	if (!nm_netlink_monitor_open_connection (monitor, error)) {
-		g_object_unref (monitor);
-		return FALSE;
-	}
-
-	info = g_new0 (MonitorInfo, 1);
-	g_signal_connect_data (G_OBJECT (monitor), "error",
-						   G_CALLBACK (nm_error_monitoring_device_link_state),
-						   info,
-						   (GClosureNotify) g_free,
-						   0);
-	nm_netlink_monitor_attach (monitor);
-
-	/* Request initial status of cards */
-	nm_netlink_monitor_request_status (monitor, NULL);
-
-	return TRUE;
-}
-
 static gboolean quit_early = FALSE;
 
 static void
@@ -431,6 +357,7 @@ main (int argc, char *argv[])
 	NMFirewallManager *fw_mgr = NULL;
 	NMSettings *settings = NULL;
 	NMConfig *config;
+	NMNetlinkMonitor *monitor = NULL;
 	GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
 
@@ -600,12 +527,8 @@ main (int argc, char *argv[])
 
 	main_loop = g_main_loop_new (NULL, FALSE);
 
-	/* Create watch functions that monitor cards for link status. */
-	if (!nm_monitor_setup (&error)) {
-		nm_log_err (LOGD_CORE, "failed to start monitoring devices: %s.",
-		            error && error->message ? error->message : "(unknown)");
-		goto done;
-	}
+	/* Create netlink monitor object */
+	monitor = nm_netlink_monitor_get ();
 
 	/* Initialize our DBus service & connection */
 	dbus_mgr = nm_dbus_manager_get ();

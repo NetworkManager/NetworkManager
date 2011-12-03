@@ -243,14 +243,7 @@ constructor (GType type,
 		/* Request link state again just in case an error occurred getting the
 		 * initial link state.
 		 */
-		if (!nm_netlink_monitor_request_status (priv->monitor, &error)) {
-			nm_log_warn (LOGD_HW | NM_DEVICE_WIRED_LOG_LEVEL (NM_DEVICE (self)),
-			             "(%s): couldn't request carrier state: (%d) %s",
-			             nm_device_get_iface (NM_DEVICE (self)),
-			             error ? error->code : -1,
-			             (error && error->message) ? error->message : "unknown");
-			g_clear_error (&error);
-		}
+		nm_netlink_monitor_request_status (priv->monitor);
 	} else {
 		nm_log_info (LOGD_HW | NM_DEVICE_WIRED_LOG_LEVEL (NM_DEVICE (self)),
 		             "(%s): driver '%s' does not support carrier detection.",

@@ -76,7 +76,6 @@ enum {
 	NOTIFICATION = 0,
 	CARRIER_ON,
 	CARRIER_OFF,
-	ERROR,
 	LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -84,11 +83,60 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 G_DEFINE_TYPE (NMNetlinkMonitor, nm_netlink_monitor, G_TYPE_OBJECT);
 
+/****************************************************************/
+
+static gboolean
+detach_monitor (gpointer data)
+{
+	nm_log_warn (LOGD_HW, "detaching netlink event monitor");
+	nm_netlink_monitor_detach (NM_NETLINK_MONITOR (data));
+	return FALSE;
+}
+
+static void
+log_error_limited (NMNetlinkMonitor *monitor, guint32 code, const char *fmt, ...)
+{
+	static time_t rl_time = 0;
+	static guint32 rl_code = 0;
+	static guint32 rl_count = 0;
+	va_list args;
+	char *msg;
+	time_t now;
+
+	g_return_if_fail (monitor != NULL);
+
+	now = time (NULL);
+
+	if ((code != rl_code) || (now > rl_time + 10)) {
+		va_start (args, fmt);
+		msg = g_strdup_vprintf (fmt, args);
+		va_end (args);
+
+		nm_log_warn (LOGD_HW, "error monitoring device for netlink events: %s\n", msg);
+		g_free (msg);
+
+		rl_time = now;
+		rl_code = code;
+		rl_count = 0;
+	}
+
+	rl_count++;
+	if (rl_count > 100) {
+		/* Broken drivers will sometimes cause a flood of netlink errors.
+		 * rh #459205, novell #443429, lp #284507
+		 */
+		nm_log_warn (LOGD_HW, "excessive netlink errors ocurred, disabling netlink monitor.");
+		nm_log_warn (LOGD_HW, "link change events will not be processed.");
+		g_idle_add_full (G_PRIORITY_HIGH, detach_monitor, monitor, NULL);
+	}
+}
+
+/****************************************************************/
+
 static void
 link_msg_handler (struct nl_object *obj, void *arg)
 {
 	NMNetlinkMonitor *self = NM_NETLINK_MONITOR (arg);
-	GError *error;
 	struct rtnl_link *filter;
 	struct rtnl_link *link_obj;
 	guint flags;
@@ -96,12 +144,9 @@ link_msg_handler (struct nl_object *obj, void *arg)
 
 	filter = rtnl_link_alloc ();
 	if (!filter) {
-		error = g_error_new (NM_NETLINK_MONITOR_ERROR,
-		                     NM_NETLINK_MONITOR_ERROR_BAD_ALLOC,
-		                     _("error processing netlink message: %s"),
-		                     nl_geterror (ENOMEM));
-		g_signal_emit (self, signals[ERROR], 0, error);
-		g_error_free (error);
+		log_error_limited (self, NM_NETLINK_MONITOR_ERROR_BAD_ALLOC,
+		                   _("error processing netlink message: %s"),
+		                   nl_geterror (ENOMEM));
 		return;
 	}
 
@@ -195,7 +240,6 @@ event_handler (GIOChannel *channel,
 {
 	NMNetlinkMonitor *self = (NMNetlinkMonitor *) user_data;
 	NMNetlinkMonitorPrivate *priv;
-	GError *error = NULL;
 	int err;
 
 	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (self), TRUE);
@@ -204,22 +248,17 @@ event_handler (GIOChannel *channel,
 	g_return_val_if_fail (priv->event_id > 0, TRUE);
 
 	if (io_condition & ERROR_CONDITIONS) {
-		const char *err_msg;
+		const char *err_msg = _("error occurred while waiting for data on socket");
 		int err_code = 0;
 		socklen_t err_len = sizeof (err_code);
 
 		/* Grab error information */	 
 		if (getsockopt (g_io_channel_unix_get_fd (channel), 
-						SOL_SOCKET, SO_ERROR, (void *) &err_code, &err_len))
+						SOL_SOCKET, SO_ERROR,
+						(void *) &err_code, &err_len) == 0)
 			err_msg = strerror (err_code);
-		else
-			err_msg = _("error occurred while waiting for data on socket");
 
-		error = g_error_new (NM_NETLINK_MONITOR_ERROR,
-		                     NM_NETLINK_MONITOR_ERROR_WAITING_FOR_SOCKET_DATA,
-		                     "%s", err_msg);
-		g_signal_emit (self, signals[ERROR], 0, error);
-		g_error_free (error);
+		log_error_limited (self, NM_NETLINK_MONITOR_ERROR_WAITING_FOR_SOCKET_DATA, "%s", err_msg);
 		return TRUE;
 	} else if (io_condition & DISCONNECT_CONDITIONS)
 		return FALSE;
@@ -229,12 +268,9 @@ event_handler (GIOChannel *channel,
 	/* Process the netlink messages */
 	err = nl_recvmsgs_default (priv->nlh_event);
 	if (err < 0) {
-		error = g_error_new (NM_NETLINK_MONITOR_ERROR,
-		                     NM_NETLINK_MONITOR_ERROR_PROCESSING_MESSAGE,
-		                     _("error processing netlink message: %s"),
-		                     nl_geterror (err));
-		g_signal_emit (self, signals[ERROR], 0, error);
-		g_error_free (error);
+		log_error_limited (self, NM_NETLINK_MONITOR_ERROR_PROCESSING_MESSAGE,
+		                   _("error processing netlink message: %s"),
+		                   nl_geterror (err));
 	}
 
 	return TRUE;
@@ -578,20 +614,18 @@ deferred_emit_carrier_state (gpointer user_data)
 	return FALSE;
 }
 
-gboolean
-nm_netlink_monitor_request_status (NMNetlinkMonitor *self, GError **error)
+void
+nm_netlink_monitor_request_status (NMNetlinkMonitor *self)
 {
 	NMNetlinkMonitorPrivate *priv;
 
-	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (self), FALSE);
+	g_return_if_fail (NM_IS_NETLINK_MONITOR (self));
 
 	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
 
 	/* Schedule the carrier state emission */
 	if (!priv->request_status_id)
 		priv->request_status_id = g_idle_add (deferred_emit_carrier_state, self);
-
-	return TRUE;
 }
 
 typedef struct {
@@ -778,10 +812,26 @@ NMNetlinkMonitor *
 nm_netlink_monitor_get (void)
 {
 	static NMNetlinkMonitor *singleton = NULL;
+	GError *error = NULL;
 
-	if (!singleton)
-		singleton = NM_NETLINK_MONITOR (g_object_new (NM_TYPE_NETLINK_MONITOR, NULL));
-	else
+	if (!singleton) {
+		singleton = (NMNetlinkMonitor *) g_object_new (NM_TYPE_NETLINK_MONITOR, NULL);
+		g_return_val_if_fail (singleton != NULL, NULL);
+
+		if (nm_netlink_monitor_open_connection (singleton, &error)) {
+			nm_netlink_monitor_attach (singleton);
+			/* Request initial status of cards */
+			nm_netlink_monitor_request_status (singleton);
+		} else {
+			nm_log_warn (LOGD_HW, "Failed to connect to netlink: (%d) %s",
+			             error ? error->code : 0,
+			             (error && error->message) ? error->message : "(unknown)");
+			g_clear_error (&error);
+
+			g_object_unref (singleton);
+			singleton = NULL;
+		}
+	} else
 		g_object_ref (singleton);
 
 	return singleton;
@@ -860,14 +910,6 @@ nm_netlink_monitor_class_init (NMNetlinkMonitorClass *monitor_class)
 		              G_STRUCT_OFFSET (NMNetlinkMonitorClass, carrier_off),
 		              NULL, NULL, g_cclosure_marshal_VOID__INT,
 		              G_TYPE_NONE, 1, G_TYPE_INT);
-
-	signals[ERROR] =
-		g_signal_new ("error",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
-		              G_STRUCT_OFFSET (NMNetlinkMonitorClass, error),
-		              NULL, NULL, g_cclosure_marshal_VOID__POINTER,
-		              G_TYPE_NONE, 1, G_TYPE_POINTER);
 }
 
 GQuark
