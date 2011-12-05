@@ -1491,7 +1491,7 @@ dhcp4_start (NMDevice *self,
 	NMSettingIP4Config *s_ip4;
 	guint8 *anycast = NULL;
 
-	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 
 	if (priv->dhcp_anycast_address)
 		anycast = priv->dhcp_anycast_address->data;
@@ -3471,7 +3471,7 @@ dispose (GObject *object)
 			 * All IPv6 connections can be left up, so we don't have
 			 * to check that.
 			 */
-			s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+			s_ip4 = nm_connection_get_setting_ip4_config (connection);
 			if (s_ip4)
 				method = nm_setting_ip4_config_get_method (s_ip4);
 			if (   !method

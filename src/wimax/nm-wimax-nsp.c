@@ -118,7 +118,7 @@ nm_wimax_nsp_check_compatible (NMWimaxNsp *self,
 
 	priv = GET_PRIVATE (self);
 
-	s_wimax = NM_SETTING_WIMAX (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIMAX));
+	s_wimax = nm_connection_get_setting_wimax (connection);
 	if (!s_wimax)
 		return FALSE;
 

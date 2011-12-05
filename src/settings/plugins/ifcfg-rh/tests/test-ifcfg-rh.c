@@ -235,7 +235,7 @@ test_read_minimal (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "minimal-wired-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_MINIMAL,
@@ -275,7 +275,7 @@ test_read_minimal (void)
 
 	/* ===== WIRED SETTING ===== */
 
-	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	s_wired = nm_connection_get_setting_wired (connection);
 	ASSERT (s_wired != NULL,
 	        "minimal-wired-verify-wired", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_MINIMAL,
@@ -307,7 +307,7 @@ test_read_minimal (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "minimal-wired-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_MINIMAL,
@@ -379,7 +379,7 @@ test_read_unmanaged (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "unmanaged-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_UNMANAGED,
@@ -417,7 +417,7 @@ test_read_unmanaged (void)
 
 	/* ===== WIRED SETTING ===== */
 
-	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	s_wired = nm_connection_get_setting_wired (connection);
 	ASSERT (s_wired != NULL,
 	        "unmanaged-verify-wired", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_UNMANAGED,
@@ -443,7 +443,7 @@ test_read_unmanaged (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 == NULL,
 	        "unmanaged-verify-ip4", "failed to verify %s: unexpected %s setting",
 	        TEST_IFCFG_UNMANAGED,
@@ -504,7 +504,7 @@ test_read_wired_static (const char *file, const char *expected_id)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wired-static-verify-connection", "failed to verify %s: missing %s setting",
 	        file,
@@ -539,7 +539,7 @@ test_read_wired_static (const char *file, const char *expected_id)
 
 	/* ===== WIRED SETTING ===== */
 
-	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	s_wired = nm_connection_get_setting_wired (connection);
 	ASSERT (s_wired != NULL,
 	        "wired-static-verify-wired", "failed to verify %s: missing %s setting",
 	        file,
@@ -571,7 +571,7 @@ test_read_wired_static (const char *file, const char *expected_id)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "wired-static-verify-ip4", "failed to verify %s: missing %s setting",
 	        file,
@@ -666,7 +666,7 @@ test_read_wired_static (const char *file, const char *expected_id)
 	if (!strcmp (expected_id, "System test-wired-static")) {
 		/* ===== IPv6 SETTING ===== */
 
-		s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG));
+		s_ip6 = nm_connection_get_setting_ip6_config (connection);
 		ASSERT (s_ip6 != NULL,
 			"wired-static-verify-ip6", "failed to verify %s: missing %s setting",
 			file,
@@ -807,7 +807,7 @@ test_read_wired_static_no_prefix (guint32 expected_prefix)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wired-static-no-prefix-verify-connection", "failed to verify %s: missing %s setting",
 	        file,
@@ -829,7 +829,7 @@ test_read_wired_static_no_prefix (guint32 expected_prefix)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "wired-static-no-prefix-verify-ip4", "failed to verify %s: missing %s setting",
 	        file,
@@ -916,7 +916,7 @@ test_read_wired_dhcp (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wired-dhcp-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_DHCP,
@@ -951,7 +951,7 @@ test_read_wired_dhcp (void)
 
 	/* ===== WIRED SETTING ===== */
 
-	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	s_wired = nm_connection_get_setting_wired (connection);
 	ASSERT (s_wired != NULL,
 	        "wired-dhcp-verify-wired", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_DHCP,
@@ -977,7 +977,7 @@ test_read_wired_dhcp (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "wired-dhcp-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_DHCP,
@@ -1089,7 +1089,7 @@ test_read_wired_global_gateway (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wired-global-gateway-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_GLOBAL_GATEWAY,
@@ -1110,7 +1110,7 @@ test_read_wired_global_gateway (void)
 
 	/* ===== WIRED SETTING ===== */
 
-	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	s_wired = nm_connection_get_setting_wired (connection);
 	ASSERT (s_wired != NULL,
 	        "wired-global-gateway-verify-wired", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_GLOBAL_GATEWAY,
@@ -1118,7 +1118,7 @@ test_read_wired_global_gateway (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "wired-global-gateway-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_GLOBAL_GATEWAY,
@@ -1216,7 +1216,7 @@ test_read_wired_never_default (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wired-never-default-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_NEVER_DEFAULT,
@@ -1237,7 +1237,7 @@ test_read_wired_never_default (void)
 
 	/* ===== WIRED SETTING ===== */
 
-	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	s_wired = nm_connection_get_setting_wired (connection);
 	ASSERT (s_wired != NULL,
 	        "wired-never-default-verify-wired", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_NEVER_DEFAULT,
@@ -1245,7 +1245,7 @@ test_read_wired_never_default (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "wired-never-default-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_NEVER_DEFAULT,
@@ -1274,7 +1274,7 @@ test_read_wired_never_default (void)
 
 	/* ===== IPv6 SETTING ===== */
 
-	s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG));
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	ASSERT (s_ip6 != NULL,
 	        "wired-never-default-verify-ip6", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_NEVER_DEFAULT,
@@ -1341,7 +1341,7 @@ test_read_wired_defroute_no (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wired-defroute-no-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_DEFROUTE_NO,
@@ -1362,7 +1362,7 @@ test_read_wired_defroute_no (void)
 
 	/* ===== WIRED SETTING ===== */
 
-	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	s_wired = nm_connection_get_setting_wired (connection);
 	ASSERT (s_wired != NULL,
 	        "wired-defroute-no-verify-wired", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_DEFROUTE_NO,
@@ -1370,7 +1370,7 @@ test_read_wired_defroute_no (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "wired-defroute-no-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_DEFROUTE_NO,
@@ -1392,7 +1392,7 @@ test_read_wired_defroute_no (void)
 
 	/* ===== IPv6 SETTING ===== */
 
-	s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG));
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	ASSERT (s_ip6 != NULL,
 	        "wired-defroute-no-verify-ip6", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_DEFROUTE_NO,
@@ -1468,7 +1468,7 @@ test_read_wired_defroute_no_gatewaydev_yes (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wired-defroute-no-gatewaydev-yes-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
@@ -1489,7 +1489,7 @@ test_read_wired_defroute_no_gatewaydev_yes (void)
 
 	/* ===== WIRED SETTING ===== */
 
-	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	s_wired = nm_connection_get_setting_wired (connection);
 	ASSERT (s_wired != NULL,
 	        "wired-defroute-no-gatewaydev-yes-verify-wired", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
@@ -1497,7 +1497,7 @@ test_read_wired_defroute_no_gatewaydev_yes (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "wired-defroute-no-gatewaydev-yes-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
@@ -1519,7 +1519,7 @@ test_read_wired_defroute_no_gatewaydev_yes (void)
 
 	/* ===== IPv6 SETTING ===== */
 
-	s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG));
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	ASSERT (s_ip6 != NULL,
 	        "wired-defroute-no-gatewaydev-yes-verify-ip6", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
@@ -1597,7 +1597,7 @@ test_read_wired_static_routes (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wired-static-routes-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES,
@@ -1618,7 +1618,7 @@ test_read_wired_static_routes (void)
 
 	/* ===== WIRED SETTING ===== */
 
-	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	s_wired = nm_connection_get_setting_wired (connection);
 	ASSERT (s_wired != NULL,
 	        "wired-static-routes-verify-wired", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES,
@@ -1626,7 +1626,7 @@ test_read_wired_static_routes (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "wired-static-routes-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES,
@@ -1764,7 +1764,7 @@ test_read_wired_static_routes_legacy (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wired-static-routes-legacy-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
@@ -1785,7 +1785,7 @@ test_read_wired_static_routes_legacy (void)
 
 	/* ===== WIRED SETTING ===== */
 
-	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	s_wired = nm_connection_get_setting_wired (connection);
 	ASSERT (s_wired != NULL,
 	        "wired-static-routes-legacy-verify-wired", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
@@ -1793,7 +1793,7 @@ test_read_wired_static_routes_legacy (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
@@ -1961,7 +1961,7 @@ test_read_wired_ipv4_manual (const char *file, const char *expected_id)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wired-ipv4-manual-verify-connection", "failed to verify %s: missing %s setting",
 	        file,
@@ -1982,7 +1982,7 @@ test_read_wired_ipv4_manual (const char *file, const char *expected_id)
 
 	/* ===== WIRED SETTING ===== */
 
-	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	s_wired = nm_connection_get_setting_wired (connection);
 	ASSERT (s_wired != NULL,
 	        "wired-ipv4-manual-verify-wired", "failed to verify %s: missing %s setting",
 	        file,
@@ -1990,7 +1990,7 @@ test_read_wired_ipv4_manual (const char *file, const char *expected_id)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "wired-ipv4-manual-verify-ip4", "failed to verify %s: missing %s setting",
 	        file,
@@ -2124,7 +2124,7 @@ test_read_wired_ipv6_manual (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wired-ipv6-manual-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
@@ -2145,7 +2145,7 @@ test_read_wired_ipv6_manual (void)
 
 	/* ===== WIRED SETTING ===== */
 
-	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	s_wired = nm_connection_get_setting_wired (connection);
 	ASSERT (s_wired != NULL,
 	        "wired-ipv6-manual-verify-wired", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
@@ -2153,7 +2153,7 @@ test_read_wired_ipv6_manual (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
@@ -2211,7 +2211,7 @@ test_read_wired_ipv6_manual (void)
 
 	/* ===== IPv6 SETTING ===== */
 
-	s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG));
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	ASSERT (s_ip6 != NULL,
 	        "wired-ipv6-manual-verify-ip6", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
@@ -2415,7 +2415,7 @@ test_read_wired_ipv6_only (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wired-ipv6-only-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
@@ -2436,7 +2436,7 @@ test_read_wired_ipv6_only (void)
 
 	/* ===== WIRED SETTING ===== */
 
-	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	s_wired = nm_connection_get_setting_wired (connection);
 	ASSERT (s_wired != NULL,
 	        "wired-ipv6-only-verify-wired", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
@@ -2444,7 +2444,7 @@ test_read_wired_ipv6_only (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "wired-ipv6-only-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
@@ -2459,7 +2459,7 @@ test_read_wired_ipv6_only (void)
 
 	/* ===== IPv6 SETTING ===== */
 
-	s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG));
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	ASSERT (s_ip6 != NULL,
 	        "wired-ipv6-only-verify-ip6", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
@@ -2568,7 +2568,7 @@ test_read_wired_dhcp6_only (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wired-dhcp6-only-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_DHCP6_ONLY,
@@ -2589,7 +2589,7 @@ test_read_wired_dhcp6_only (void)
 
 	/* ===== WIRED SETTING ===== */
 
-	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	s_wired = nm_connection_get_setting_wired (connection);
 	ASSERT (s_wired != NULL,
 	        "wired-dhcp6-only-verify-wired", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_DHCP6_ONLY,
@@ -2597,7 +2597,7 @@ test_read_wired_dhcp6_only (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "wired-dhcp6-only-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_DHCP6_ONLY,
@@ -2612,7 +2612,7 @@ test_read_wired_dhcp6_only (void)
 
 	/* ===== IPv6 SETTING ===== */
 
-	s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG));
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	ASSERT (s_ip6 != NULL,
 	        "wired-dhcp6-only-verify-ip6", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_DHCP6_ONLY,
@@ -2668,7 +2668,7 @@ test_read_onboot_no (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "onboot-no-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_ONBOOT_NO,
@@ -2734,7 +2734,7 @@ test_read_wired_8021x_peap_mschapv2 (void)
 
 	/* ===== WIRED SETTING ===== */
 
-	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	s_wired = nm_connection_get_setting_wired (connection);
 	ASSERT (s_wired != NULL,
 	        "wired-8021x-peap-mschapv2-verify-wired", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
@@ -2742,7 +2742,7 @@ test_read_wired_8021x_peap_mschapv2 (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "wired-8021x-peap-mschapv2-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
@@ -2757,7 +2757,7 @@ test_read_wired_8021x_peap_mschapv2 (void)
 	        NM_SETTING_IP4_CONFIG_METHOD);
 
 	/* ===== 802.1x SETTING ===== */
-	s_8021x = NM_SETTING_802_1X (nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X));
+	s_8021x = nm_connection_get_setting_802_1x (connection);
 	ASSERT (s_8021x != NULL,
 	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
@@ -2929,11 +2929,11 @@ test_read_wired_8021x_tls_secret_flags (const char *ifcfg, NMSettingSecretFlags 
 	g_assert (success);
 
 	/* ===== WIRED SETTING ===== */
-	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
+	s_wired = nm_connection_get_setting_wired (connection);
 	g_assert (s_wired);
 
 	/* ===== 802.1x SETTING ===== */
-	s_8021x = (NMSetting8021x *) nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X);
+	s_8021x = nm_connection_get_setting_802_1x (connection);
 	g_assert (s_8021x);
 	g_assert_cmpint (nm_setting_802_1x_get_num_eap_methods (s_8021x), ==, 1);
 	g_assert_cmpstr (nm_setting_802_1x_get_eap_method (s_8021x, 0), ==, "tls");
@@ -3001,7 +3001,7 @@ test_read_wifi_open (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wifi-open-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_OPEN,
@@ -3041,7 +3041,7 @@ test_read_wifi_open (void)
 
 	/* ===== WIRELESS SETTING ===== */
 
-	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	ASSERT (s_wireless != NULL,
 	        "wifi-open-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_OPEN,
@@ -3120,7 +3120,7 @@ test_read_wifi_open (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "wifi-open-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_OPEN,
@@ -3177,7 +3177,7 @@ test_read_wifi_open_auto (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wifi-open-auto-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_OPEN_AUTO,
@@ -3198,7 +3198,7 @@ test_read_wifi_open_auto (void)
 
 	/* ===== WIRELESS SETTING ===== */
 
-	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	ASSERT (s_wireless != NULL,
 	        "wifi-open-auto-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_OPEN_AUTO,
@@ -3260,7 +3260,7 @@ test_read_wifi_open_ssid_hex (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wifi-open-ssid-hex-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_OPEN_SSID_HEX,
@@ -3281,7 +3281,7 @@ test_read_wifi_open_ssid_hex (void)
 
 	/* ===== WIRELESS SETTING ===== */
 
-	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	ASSERT (s_wireless != NULL,
 	        "wifi-open-ssid-hex-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_OPEN_SSID_HEX,
@@ -3379,7 +3379,7 @@ test_read_wifi_open_ssid_quoted (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wifi-open-ssid-quoted-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_OPEN_SSID_QUOTED,
@@ -3400,7 +3400,7 @@ test_read_wifi_open_ssid_quoted (void)
 
 	/* ===== WIRELESS SETTING ===== */
 
-	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	ASSERT (s_wireless != NULL,
 	        "wifi-open-ssid-quoted-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_OPEN_SSID_QUOTED,
@@ -3476,7 +3476,7 @@ test_read_wifi_wep (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wifi-wep-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WEP,
@@ -3516,7 +3516,7 @@ test_read_wifi_wep (void)
 
 	/* ===== WIRELESS SETTING ===== */
 
-	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	ASSERT (s_wireless != NULL,
 	        "wifi-wep-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WEP,
@@ -3608,7 +3608,7 @@ test_read_wifi_wep (void)
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
-	s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY));
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	ASSERT (s_wsec != NULL,
 	        "wifi-wep-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WEP,
@@ -3687,7 +3687,7 @@ test_read_wifi_wep (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "wifi-wep-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WEP,
@@ -3752,7 +3752,7 @@ test_read_wifi_wep_adhoc (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wifi-wep-adhoc-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WEP_ADHOC,
@@ -3785,7 +3785,7 @@ test_read_wifi_wep_adhoc (void)
 
 	/* ===== WIRELESS SETTING ===== */
 
-	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	ASSERT (s_wireless != NULL,
 	        "wifi-wep-adhoc-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WEP_ADHOC,
@@ -3852,7 +3852,7 @@ test_read_wifi_wep_adhoc (void)
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
-	s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY));
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	ASSERT (s_wsec != NULL,
 	        "wifi-wep-adhoc-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WEP_ADHOC,
@@ -3919,7 +3919,7 @@ test_read_wifi_wep_adhoc (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "wifi-wep-adhoc-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WEP_ADHOC,
@@ -4015,7 +4015,7 @@ test_read_wifi_wep_passphrase (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wifi-wep-passphrase-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
@@ -4023,7 +4023,7 @@ test_read_wifi_wep_passphrase (void)
 
 	/* ===== WIRELESS SETTING ===== */
 
-	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	ASSERT (s_wireless != NULL,
 	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
@@ -4045,7 +4045,7 @@ test_read_wifi_wep_passphrase (void)
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
-	s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY));
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	ASSERT (s_wsec != NULL,
 	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
@@ -4153,7 +4153,7 @@ test_read_wifi_wep_40_ascii (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wifi-wep-40-ascii-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WEP_40_ASCII,
@@ -4161,7 +4161,7 @@ test_read_wifi_wep_40_ascii (void)
 
 	/* ===== WIRELESS SETTING ===== */
 
-	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	ASSERT (s_wireless != NULL,
 	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WEP_40_ASCII,
@@ -4182,7 +4182,7 @@ test_read_wifi_wep_40_ascii (void)
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
-	s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY));
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	ASSERT (s_wsec != NULL,
 	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WEP_40_ASCII,
@@ -4290,7 +4290,7 @@ test_read_wifi_wep_104_ascii (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wifi-wep-104-ascii-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WEP_104_ASCII,
@@ -4298,7 +4298,7 @@ test_read_wifi_wep_104_ascii (void)
 
 	/* ===== WIRELESS SETTING ===== */
 
-	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	ASSERT (s_wireless != NULL,
 	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WEP_104_ASCII,
@@ -4319,7 +4319,7 @@ test_read_wifi_wep_104_ascii (void)
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
-	s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY));
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	ASSERT (s_wsec != NULL,
 	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WEP_104_ASCII,
@@ -4428,7 +4428,7 @@ test_read_wifi_leap (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wifi-leap-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_LEAP,
@@ -4449,7 +4449,7 @@ test_read_wifi_leap (void)
 
 	/* ===== WIRELESS SETTING ===== */
 
-	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	ASSERT (s_wireless != NULL,
 	        "wifi-leap-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_LEAP,
@@ -4471,7 +4471,7 @@ test_read_wifi_leap (void)
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
-	s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY));
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	ASSERT (s_wsec != NULL,
 	        "wifi-leap-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_LEAP,
@@ -4566,13 +4566,13 @@ test_read_wifi_leap_secret_flags (const char *file, NMSettingSecretFlags expecte
 	g_assert (success);
 
 	/* ===== WIRELESS SETTING ===== */
-	s_wifi = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
+	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
 
 	g_assert (g_strcmp0 (nm_setting_wireless_get_security (s_wifi), NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0);
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
-	s_wsec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	g_assert (s_wsec);
 
 	g_assert (g_strcmp0 (nm_setting_wireless_security_get_key_mgmt (s_wsec), "ieee8021x") == 0);
@@ -4643,7 +4643,7 @@ test_read_wifi_wpa_psk (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wifi-wpa-psk-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WPA_PSK,
@@ -4683,7 +4683,7 @@ test_read_wifi_wpa_psk (void)
 
 	/* ===== WIRELESS SETTING ===== */
 
-	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	ASSERT (s_wireless != NULL,
 	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WPA_PSK,
@@ -4774,7 +4774,7 @@ test_read_wifi_wpa_psk (void)
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
-	s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY));
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	ASSERT (s_wsec != NULL,
 	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WPA_PSK,
@@ -4887,7 +4887,7 @@ test_read_wifi_wpa_psk (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "wifi-wpa-psk-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WPA_PSK,
@@ -4945,7 +4945,7 @@ test_read_wifi_wpa_psk_unquoted (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wifi-wpa-psk-unquoted-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
@@ -4966,7 +4966,7 @@ test_read_wifi_wpa_psk_unquoted (void)
 
 	/* ===== WIRELESS SETTING ===== */
 
-	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	ASSERT (s_wireless != NULL,
 	        "wifi-wpa-psk-unquoted-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
@@ -4987,7 +4987,7 @@ test_read_wifi_wpa_psk_unquoted (void)
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
-	s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY));
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	ASSERT (s_wsec != NULL,
 	        "wifi-wpa-psk-unquoted-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
@@ -5092,7 +5092,7 @@ test_read_wifi_wpa_psk_adhoc (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wifi-wpa-psk-adhoc-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
@@ -5113,7 +5113,7 @@ test_read_wifi_wpa_psk_adhoc (void)
 
 	/* ===== WIRELESS SETTING ===== */
 
-	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	ASSERT (s_wireless != NULL,
 	        "wifi-wpa-psk-adhoc-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
@@ -5147,7 +5147,7 @@ test_read_wifi_wpa_psk_adhoc (void)
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
-	s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY));
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	ASSERT (s_wsec != NULL,
 	        "wifi-wpa-psk-adhoc-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
@@ -5221,7 +5221,7 @@ test_read_wifi_wpa_psk_adhoc (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "wifi-wpa-psk-adhoc-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
@@ -5283,7 +5283,7 @@ test_read_wifi_wpa_psk_hex (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wifi-wpa-psk-hex-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WPA_PSK_HEX,
@@ -5304,7 +5304,7 @@ test_read_wifi_wpa_psk_hex (void)
 
 	/* ===== WIRELESS SETTING ===== */
 
-	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	ASSERT (s_wireless != NULL,
 	        "wifi-wpa-psk-hex-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WPA_PSK_HEX,
@@ -5343,7 +5343,7 @@ test_read_wifi_wpa_psk_hex (void)
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
-	s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY));
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	ASSERT (s_wsec != NULL,
 	        "wifi-wpa-psk-hex-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WPA_PSK_HEX,
@@ -5377,7 +5377,7 @@ test_read_wifi_wpa_psk_hex (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "wifi-wpa-psk-hex-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WPA_PSK_HEX,
@@ -5441,7 +5441,7 @@ test_read_wifi_wpa_eap_tls (void)
 
 	/* ===== WIRELESS SETTING ===== */
 
-	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	ASSERT (s_wireless != NULL,
 	        "wifi-wpa-eap-tls-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
@@ -5449,7 +5449,7 @@ test_read_wifi_wpa_eap_tls (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "wifi-wpa-eap-tls-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
@@ -5464,7 +5464,7 @@ test_read_wifi_wpa_eap_tls (void)
 	        NM_SETTING_IP4_CONFIG_METHOD);
 
 	/* ===== 802.1x SETTING ===== */
-	s_8021x = NM_SETTING_802_1X (nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X));
+	s_8021x = nm_connection_get_setting_802_1x (connection);
 	ASSERT (s_8021x != NULL,
 	        "wifi-wpa-eap-tls-verify-8021x", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
@@ -5591,7 +5591,7 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 
 	/* ===== WIRELESS SETTING ===== */
 
-	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	ASSERT (s_wireless != NULL,
 	        "wifi-wpa-eap-ttls-tls-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
@@ -5599,7 +5599,7 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "wifi-wpa-eap-ttls-tls-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
@@ -5614,7 +5614,7 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 	        NM_SETTING_IP4_CONFIG_METHOD);
 
 	/* ===== 802.1x SETTING ===== */
-	s_8021x = NM_SETTING_802_1X (nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X));
+	s_8021x = nm_connection_get_setting_802_1x (connection);
 	ASSERT (s_8021x != NULL,
 	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
@@ -5756,13 +5756,13 @@ test_read_wifi_dynamic_wep_leap (void)
 
 	/* ===== WIRELESS SETTING ===== */
 
-	s_wifi = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
+	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
 
 	g_assert_cmpstr (nm_setting_wireless_get_security (s_wifi), ==, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
 
 	/* ===== WiFi SECURITY SETTING ===== */
-	s_wsec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	g_assert (s_wsec);
 
 	/* Key management */
@@ -5778,7 +5778,7 @@ test_read_wifi_dynamic_wep_leap (void)
 	g_assert_cmpstr (nm_setting_wireless_security_get_leap_password (s_wsec), ==, NULL);
 
 	/* ===== 802.1x SETTING ===== */
-	s_8021x = (NMSetting8021x *) nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X);
+	s_8021x = nm_connection_get_setting_802_1x (connection);
 	g_assert (s_8021x);
 
 	/* EAP method should be "leap" */
@@ -5839,7 +5839,7 @@ test_read_wifi_wep_eap_ttls_chap (void)
 
 	/* ===== WIRELESS SETTING ===== */
 
-	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	ASSERT (s_wireless != NULL,
 	        "wifi-wep-eap-ttls-chap-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
@@ -5847,7 +5847,7 @@ test_read_wifi_wep_eap_ttls_chap (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "wifi-wep-eap-ttls-chap-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
@@ -5862,7 +5862,7 @@ test_read_wifi_wep_eap_ttls_chap (void)
 	        NM_SETTING_IP4_CONFIG_METHOD);
 
 	/* ===== 802.1x SETTING ===== */
-	s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY));
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	ASSERT (s_wsec != NULL,
 	        "wifi-wep-eap-ttls-chap-verify-wireless-security", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
@@ -5882,7 +5882,7 @@ test_read_wifi_wep_eap_ttls_chap (void)
 	        NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
 
 	/* ===== 802.1x SETTING ===== */
-	s_8021x = NM_SETTING_802_1X (nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X));
+	s_8021x = nm_connection_get_setting_802_1x (connection);
 	ASSERT (s_8021x != NULL,
 	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
@@ -6005,7 +6005,7 @@ test_read_wired_qeth_static (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wired-qeth-static-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_QETH_STATIC,
@@ -6026,7 +6026,7 @@ test_read_wired_qeth_static (void)
 
 	/* ===== WIRED SETTING ===== */
 
-	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	s_wired = nm_connection_get_setting_wired (connection);
 	ASSERT (s_wired != NULL,
 	        "wired-qeth-static-verify-wired", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_QETH_STATIC,
@@ -6116,7 +6116,7 @@ test_read_wired_qeth_static (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "wired-qeth-static-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIRED_QETH_STATIC,
@@ -6247,7 +6247,7 @@ test_read_wifi_wep_no_keys (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "wifi-wep-no-keys-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
@@ -6273,7 +6273,7 @@ test_read_wifi_wep_no_keys (void)
 
 	/* ===== WIRELESS SETTING ===== */
 
-	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	ASSERT (s_wireless != NULL,
 	        "wifi-wep-no-keys-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
@@ -6295,7 +6295,7 @@ test_read_wifi_wep_no_keys (void)
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
-	s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY));
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	ASSERT (s_wsec != NULL,
 	        "wifi-wep-no-keys-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
@@ -6371,7 +6371,7 @@ test_read_permissions (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "permissions-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_PERMISSIONS,
@@ -6451,13 +6451,13 @@ test_read_wifi_wep_agent_keys (void)
 	 */
 
 	/* ===== WIRELESS SETTING ===== */
-	s_wifi = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
+	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
 	tmp = nm_setting_wireless_get_security (s_wifi);
 	g_assert (g_strcmp0 (tmp, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0);
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
-	s_wsec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	g_assert (s_wsec);
 
 	g_assert (strcmp (nm_setting_wireless_security_get_key_mgmt (s_wsec), "none") == 0);
@@ -6692,8 +6692,8 @@ test_write_wired_static (void)
 	 * However after re-reading they are dropped into IPv4 setting.
 	 * So, in order to comparison succeeded, move DNS domains back to IPv6 setting.
 	 */
-	reread_s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (reread, NM_TYPE_SETTING_IP4_CONFIG));
-	reread_s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting (reread, NM_TYPE_SETTING_IP6_CONFIG));
+	reread_s_ip4 = nm_connection_get_setting_ip4_config (reread);
+	reread_s_ip6 = nm_connection_get_setting_ip6_config (reread);
 	nm_setting_ip6_config_add_dns_search (reread_s_ip6, nm_setting_ip4_config_get_dns_search (reread_s_ip4, 2));
 	nm_setting_ip6_config_add_dns_search (reread_s_ip6, nm_setting_ip4_config_get_dns_search (reread_s_ip4, 3));
 	nm_setting_ip4_config_remove_dns_search (reread_s_ip4, 3);
@@ -7018,7 +7018,7 @@ test_read_write_static_routes_legacy (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "read-write-static-routes-legacy-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY,
@@ -7041,7 +7041,7 @@ test_read_write_static_routes_legacy (void)
 
 	/* ===== WIRED SETTING ===== */
 
-	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	s_wired = nm_connection_get_setting_wired (connection);
 	ASSERT (s_wired != NULL,
 	        "read-write-static-routes-legacy-verify-wired", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY,
@@ -7049,7 +7049,7 @@ test_read_write_static_routes_legacy (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "read-write-static-routes-legacy-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY,
@@ -7628,7 +7628,7 @@ test_write_wired_8021x_tls (NMSetting8021xCKScheme scheme,
 	 * matter what scheme was used in the original connection they will be read
 	 * back in as paths.
 	 */
-	s_8021x = (NMSetting8021x *) nm_connection_get_setting (reread, NM_TYPE_SETTING_802_1X);
+	s_8021x = nm_connection_get_setting_802_1x (reread);
 	g_assert (s_8021x);
 	g_assert_cmpint (nm_setting_802_1x_get_ca_cert_scheme (s_8021x), ==, NM_SETTING_802_1X_CK_SCHEME_PATH);
 	g_assert_cmpint (nm_setting_802_1x_get_client_cert_scheme (s_8021x), ==, NM_SETTING_802_1X_CK_SCHEME_PATH);
@@ -7657,7 +7657,7 @@ test_write_wired_8021x_tls (NMSetting8021xCKScheme scheme,
 			 * say it's not system-owned, and therefore it should not show up
 			 * in the re-read connection.
 			 */
-			s_8021x = (NMSetting8021x *) nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X);
+			s_8021x = nm_connection_get_setting_802_1x (connection);
 			g_object_set (s_8021x, NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD, NULL, NULL);
 		}
 
@@ -10085,7 +10085,7 @@ test_write_wifi_wpa_then_open (void)
 	g_object_unref (reread);
 
 	/* Now change the connection to open and recheck */
-	s_wifi = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
+	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
 	g_object_set (s_wifi, NM_SETTING_WIRELESS_SEC, NULL, NULL);
 	nm_connection_remove_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
@@ -10534,7 +10534,7 @@ test_read_ibft_dhcp (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "ibft-dhcp-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_IBFT_DHCP,
@@ -10581,7 +10581,7 @@ test_read_ibft_dhcp (void)
 
 	/* ===== WIRED SETTING ===== */
 
-	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	s_wired = nm_connection_get_setting_wired (connection);
 	ASSERT (s_wired != NULL,
 	        "ibft-dhcp-verify-wired", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_IBFT_DHCP,
@@ -10613,7 +10613,7 @@ test_read_ibft_dhcp (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "ibft-dhcp-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_IBFT_DHCP,
@@ -10679,7 +10679,7 @@ test_read_ibft_static (void)
 
 	/* ===== CONNECTION SETTING ===== */
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
 	        "ibft-static-verify-connection", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_IBFT_STATIC,
@@ -10726,7 +10726,7 @@ test_read_ibft_static (void)
 
 	/* ===== WIRED SETTING ===== */
 
-	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	s_wired = nm_connection_get_setting_wired (connection);
 	ASSERT (s_wired != NULL,
 	        "ibft-static-verify-wired", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_IBFT_STATIC,
@@ -10758,7 +10758,7 @@ test_read_ibft_static (void)
 
 	/* ===== IPv4 SETTING ===== */
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 	        "ibft-static-verify-ip4", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_IBFT_STATIC,

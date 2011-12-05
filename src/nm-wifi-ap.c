@@ -634,7 +634,7 @@ nm_ap_new_fake_from_connection (NMConnection *connection)
 
 	g_return_val_if_fail (connection != NULL, NULL);
 
-	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	g_return_val_if_fail (s_wireless != NULL, NULL);
 
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
@@ -671,7 +671,7 @@ nm_ap_new_fake_from_connection (NMConnection *connection)
 		nm_ap_set_freq (ap, freq);
 	}
 
-	s_wireless_sec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
+	s_wireless_sec = nm_connection_get_setting_wireless_security (connection);
 	/* Assume presence of a security setting means the AP is encrypted */
 	if (!s_wireless_sec)
 		goto done;
@@ -1129,7 +1129,7 @@ nm_ap_check_compatible (NMAccessPoint *self,
 
 	priv = NM_AP_GET_PRIVATE (self);
 
-	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	if (s_wireless == NULL)
 		return FALSE;
 	
@@ -1167,8 +1167,7 @@ nm_ap_check_compatible (NMAccessPoint *self,
 			return FALSE;
 	}
 
-	s_wireless_sec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection,
-	                                                                          NM_TYPE_SETTING_WIRELESS_SECURITY);
+	s_wireless_sec = nm_connection_get_setting_wireless_security (connection);
 
 	return nm_setting_wireless_ap_security_compatible (s_wireless,
 	                                                   s_wireless_sec,

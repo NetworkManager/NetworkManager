@@ -456,7 +456,7 @@ write_8021x_setting (NMConnection *connection,
 	gboolean success = FALSE;
 	GString *phase2_auth;
 
-	s_8021x = (NMSetting8021x *) nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X);
+	s_8021x = nm_connection_get_setting_802_1x (connection);
 	if (!s_8021x) {
 		/* If wired, clear KEY_MGMT */
 		if (wired)
@@ -554,7 +554,7 @@ write_wireless_security_setting (NMConnection *connection,
 	guint32 i, num;
 	GString *str;
 
-	s_wsec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	if (!s_wsec) {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 		             "Missing '%s' setting", NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
@@ -761,7 +761,7 @@ write_wireless_setting (NMConnection *connection,
 	gboolean adhoc = FALSE, hex_ssid = FALSE;
 	const GSList *macaddr_blacklist;
 
-	s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	if (!s_wireless) {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 		             "Missing '%s' setting", NM_SETTING_WIRELESS_SETTING_NAME);
@@ -955,7 +955,7 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	GString *str;
 	const GSList *macaddr_blacklist;
 
-	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
+	s_wired = nm_connection_get_setting_wired (connection);
 	if (!s_wired) {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 		             "Missing '%s' setting", NM_SETTING_WIRED_SETTING_NAME);
@@ -1174,7 +1174,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	gboolean fake_ip4 = FALSE;
 	const char *method = NULL;
 
-	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	if (s_ip4)
 		method = nm_setting_ip4_config_get_method (s_ip4);
 
@@ -1511,7 +1511,7 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	GString *ip_str1, *ip_str2, *ip_ptr;
 	char *route6_path;
 
-	s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	if (!s_ip6) {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 		             "Missing '%s' setting", NM_SETTING_IP6_CONFIG_SETTING_NAME);
@@ -1589,7 +1589,7 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	}
 
 	/* Write out DNS - 'DNS' key is used both for IPv4 and IPv6 */
-	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	num4 = s_ip4 ? nm_setting_ip4_config_get_num_dns (s_ip4) : 0; /* from where to start with IPv6 entries */
 	num = nm_setting_ip6_config_get_num_dns (s_ip6);
 	for (i = 0; i < 254; i++) {
@@ -1701,7 +1701,7 @@ write_connection (NMConnection *connection,
 	gboolean no_8021x = FALSE;
 	gboolean wired = FALSE;
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	if (!s_con) {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 		             "Missing '%s' setting", NM_SETTING_CONNECTION_SETTING_NAME);
@@ -1761,7 +1761,7 @@ write_connection (NMConnection *connection,
 
 	if (!strcmp (type, NM_SETTING_WIRED_SETTING_NAME)) {
 		// FIXME: can't write PPPoE at this time
-		if (nm_connection_get_setting (connection, NM_TYPE_SETTING_PPPOE)) {
+		if (nm_connection_get_setting_pppoe (connection)) {
 			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 			             "Can't write connection type '%s'",
 			             NM_SETTING_PPPOE_SETTING_NAME);
@@ -1788,7 +1788,7 @@ write_connection (NMConnection *connection,
 	if (!write_ip4_setting (connection, ifcfg, error))
 		goto out;
 
-	s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	if (s_ip6) {
 		if (!write_ip6_setting (connection, ifcfg, error))
 			goto out;

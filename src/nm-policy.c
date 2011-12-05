@@ -114,7 +114,7 @@ get_best_ip4_device (NMManager *manager, NMActRequest **out_req)
 		g_assert (connection);
 
 		/* Never set the default route through an IPv4LL-addressed device */
-		s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+		s_ip4 = nm_connection_get_setting_ip4_config (connection);
 		if (s_ip4)
 			method = nm_setting_ip4_config_get_method (s_ip4);
 
@@ -189,7 +189,7 @@ get_best_ip6_device (NMManager *manager, NMActRequest **out_req)
 		g_assert (connection);
 
 		/* Never set the default route through an IPv4LL-addressed device */
-		s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
+		s_ip6 = nm_connection_get_setting_ip6_config (connection);
 		if (s_ip6)
 			method = nm_setting_ip6_config_get_method (s_ip6);
 
@@ -469,7 +469,7 @@ update_ip4_routing_and_dns (NMPolicy *policy, gboolean force_update)
 			can_default = FALSE;
 
 		/* Check the user's preference from the NMConnection */
-		s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (vpn_connection, NM_TYPE_SETTING_IP4_CONFIG);
+		s_ip4 = nm_connection_get_setting_ip4_config (vpn_connection);
 		if (s_ip4 && nm_setting_ip4_config_get_never_default (s_ip4))
 			can_default = FALSE;
 
@@ -545,7 +545,7 @@ update_ip4_routing_and_dns (NMPolicy *policy, gboolean force_update)
 		nm_act_request_set_default (best_req, TRUE);
 
 	if (connection)
-		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+		s_con = nm_connection_get_setting_connection (connection);
 
 	connection_id = s_con ? nm_setting_connection_get_id (s_con) : NULL;
 	if (connection_id) {
@@ -596,7 +596,7 @@ update_ip6_routing_and_dns (NMPolicy *policy, gboolean force_update)
 		/* If it's marked 'never-default', don't make it default */
 		vpn_connection = nm_vpn_connection_get_connection (candidate);
 		g_assert (vpn_connection);
-		s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (vpn_connection, NM_TYPE_SETTING_IP6_CONFIG);
+		s_ip6 = nm_connection_get_setting_ip6_config (vpn_connection);
 		if (s_ip6 && nm_setting_ip6_config_get_never_default (s_ip6))
 			can_default = FALSE;
 
@@ -672,7 +672,7 @@ update_ip6_routing_and_dns (NMPolicy *policy, gboolean force_update)
 		nm_act_request_set_default6 (best_req, TRUE);
 
 	if (connection)
-		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+		s_con = nm_connection_get_setting_connection (connection);
 
 	connection_id = s_con ? nm_setting_connection_get_id (s_con) : NULL;
 	if (connection_id) {

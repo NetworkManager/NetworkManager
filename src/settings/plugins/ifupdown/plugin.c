@@ -188,8 +188,8 @@ bind_device_to_connection (SCPluginIfupdown *self,
                            NMIfupdownConnection *exported)
 {
 	GByteArray *mac_address;
-	NMSetting *s_wired = NULL;
-	NMSetting *s_wifi = NULL;
+	NMSettingWired *s_wired;
+	NMSettingWireless *s_wifi;
 	const char *iface, *address;
 
 	iface = g_udev_device_get_name (device);
@@ -211,8 +211,8 @@ bind_device_to_connection (SCPluginIfupdown *self,
 		return;
 	}
 
-	s_wired = nm_connection_get_setting (NM_CONNECTION (exported), NM_TYPE_SETTING_WIRED);
-	s_wifi = nm_connection_get_setting (NM_CONNECTION (exported), NM_TYPE_SETTING_WIRELESS);
+	s_wired = nm_connection_get_setting_wired (NM_CONNECTION (exported));
+	s_wifi = nm_connection_get_setting_wireless (NM_CONNECTION (exported));
 	if (s_wired) {
 		PLUGIN_PRINT ("SCPluginIfupdown", "locking wired connection setting");
 		g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, mac_address, NULL);
@@ -426,13 +426,13 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 	keys = g_hash_table_get_keys (priv->iface_connections);
 	for (iter = keys; iter; iter = g_list_next (iter)) {
 		NMIfupdownConnection *exported;
-		NMSetting *setting;
+		NMSettingConnection *setting;
 
 		if (!g_hash_table_lookup (auto_ifaces, iter->data))
 			continue;
 
 		exported = g_hash_table_lookup (priv->iface_connections, iter->data);
-		setting = NM_SETTING (nm_connection_get_setting (NM_CONNECTION (exported), NM_TYPE_SETTING_CONNECTION));
+		setting = nm_connection_get_setting_connection (NM_CONNECTION (exported));
 		g_object_set (setting, NM_SETTING_CONNECTION_AUTOCONNECT, TRUE, NULL);
 
 		nm_settings_connection_commit_changes (NM_SETTINGS_CONNECTION (exported), ignore_cb, NULL);

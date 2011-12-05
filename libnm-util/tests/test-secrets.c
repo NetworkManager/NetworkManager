@@ -527,7 +527,7 @@ test_update_secrets_wifi_single_setting (void)
 	g_assert (success);
 
 	/* Make sure the secret is now in the connection */
-	s_wsec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	g_assert (s_wsec);
 	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 0);
 	g_assert_cmpstr (tmp, ==, wepkey);
@@ -563,7 +563,7 @@ test_update_secrets_wifi_full_hash (void)
 	g_assert (success);
 
 	/* Make sure the secret is now in the connection */
-	s_wsec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	g_assert (s_wsec);
 	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 0);
 	g_assert_cmpstr (tmp, ==, wepkey);

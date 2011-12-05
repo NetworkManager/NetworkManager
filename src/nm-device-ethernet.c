@@ -650,7 +650,7 @@ real_get_best_auto_connection (NMDevice *dev,
 		const GSList *mac_blacklist, *mac_blacklist_iter;
 		gboolean mac_blacklist_found = FALSE;
 
-		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+		s_con = nm_connection_get_setting_connection (connection);
 		g_assert (s_con);
 
 		connection_type = nm_setting_connection_get_connection_type (s_con);
@@ -670,7 +670,7 @@ real_get_best_auto_connection (NMDevice *dev,
 		if (!nm_setting_connection_get_autoconnect (s_con))
 			continue;
 
-		s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
+		s_wired = nm_connection_get_setting_wired (connection);
 		/* Wired setting optional for PPPoE */
 		if (!is_pppoe && !s_wired)
 			continue;
@@ -881,7 +881,7 @@ build_supplicant_config (NMDeviceEthernet *self)
 	if (!config)
 		return NULL;
 
-	security = NM_SETTING_802_1X (nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X));
+	security = nm_connection_get_setting_802_1x (connection);
 	if (!nm_supplicant_config_add_setting_8021x (config, security, con_path, TRUE)) {
 		nm_log_warn (LOGD_DEVICE, "Couldn't add 802.1X security setting to supplicant config.");
 		g_object_unref (config);
@@ -1149,7 +1149,7 @@ nm_8021x_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *reason)
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 
 	connection = nm_act_request_get_connection (nm_device_get_act_request (NM_DEVICE (self)));
-	security = NM_SETTING_802_1X (nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X));
+	security = nm_connection_get_setting_802_1x (connection);
 	if (!security) {
 		nm_log_err (LOGD_DEVICE, "Invalid or missing 802.1X security");
 		*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
@@ -1235,7 +1235,7 @@ pppoe_stage3_ip4_config_start (NMDeviceEthernet *self, NMDeviceStateReason *reas
 	connection = nm_act_request_get_connection (req);
 	g_assert (req);
 
-	s_pppoe = (NMSettingPPPOE *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPPOE);
+	s_pppoe = nm_connection_get_setting_pppoe (connection);
 	g_assert (s_pppoe);
 
 	priv->ppp_manager = nm_ppp_manager_new (nm_device_get_iface (NM_DEVICE (self)));
@@ -1370,7 +1370,7 @@ real_check_connection_compatible (NMDevice *device,
 	gboolean try_mac = TRUE;
 	const GSList *mac_blacklist, *mac_blacklist_iter;
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
 	connection_type = nm_setting_connection_get_connection_type (s_con);
@@ -1389,7 +1389,7 @@ real_check_connection_compatible (NMDevice *device,
 	if (!strcmp (connection_type, NM_SETTING_BOND_SETTING_NAME))
 		is_bond = TRUE;
 
-	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
+	s_wired = nm_connection_get_setting_wired (connection);
 	/* Wired setting is optional for PPPoE */
 	if (!is_pppoe && !s_wired && !is_bond) {
 		g_set_error (error,
@@ -1451,7 +1451,7 @@ real_complete_connection (NMDevice *device,
 	NMSettingPPPOE *s_pppoe;
 	const GByteArray *setting_mac;
 
-	s_pppoe = (NMSettingPPPOE *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPPOE);
+	s_pppoe = nm_connection_get_setting_pppoe (connection);
 
 	/* We can't telepathically figure out the service name or username, so if
 	 * those weren't given, we can't complete the connection.
@@ -1469,7 +1469,7 @@ real_complete_connection (NMDevice *device,
 	                           NULL,
 	                           s_pppoe ? FALSE : TRUE); /* No IPv6 by default yet for PPPoE */
 
-	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
+	s_wired = nm_connection_get_setting_wired (connection);
 	if (!s_wired) {
 		s_wired = (NMSettingWired *) nm_setting_wired_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_wired));
@@ -1526,7 +1526,7 @@ wired_match_config (NMDevice *self, NMConnection *connection)
 	const GByteArray *s_ether;
 	gboolean try_mac = TRUE;
 
-	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
+	s_wired = nm_connection_get_setting_wired (connection);
 	if (!s_wired)
 		return FALSE;
 
@@ -1556,7 +1556,7 @@ connection_match_config (NMDevice *self, const GSList *connections)
 	for (iter = connections; iter; iter = iter->next) {
 		NMConnection *candidate = NM_CONNECTION (iter->data);
 
-		s_con = (NMSettingConnection *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_CONNECTION);
+		s_con = nm_connection_get_setting_connection (candidate);
 		g_assert (s_con);
 		if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_WIRED_SETTING_NAME))
 			continue;
@@ -1564,8 +1564,8 @@ connection_match_config (NMDevice *self, const GSList *connections)
 		/* Can't assume 802.1x or PPPoE connections; they have too much state
 		 * that's impossible to get on-the-fly from PPPoE or the supplicant.
 		 */
-		if (   nm_connection_get_setting (candidate, NM_TYPE_SETTING_802_1X)
-		    || nm_connection_get_setting (candidate, NM_TYPE_SETTING_PPPOE))
+		if (   nm_connection_get_setting_802_1x (candidate)
+		    || nm_connection_get_setting_pppoe (candidate))
 			continue;
 
 		if (!wired_match_config (self, candidate))

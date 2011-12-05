@@ -311,8 +311,7 @@ update_wireless_security_setting_from_if_block(NMConnection *connection,
 		return;
 	}
 
-	s_wireless = NM_SETTING_WIRELESS(nm_connection_get_setting(connection,
-												    NM_TYPE_SETTING_WIRELESS));
+	s_wireless = nm_connection_get_setting_wireless(connection);
 	g_return_if_fail(s_wireless);
 
 	PLUGIN_PRINT ("SCPlugin-Ifupdown","update wireless security settings (%s).", block->name);
@@ -537,7 +536,7 @@ ifupdown_update_connection_from_if_block (NMConnection *connection,
 	NMSettingConnection *s_con;
 	gboolean success = FALSE;
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	s_con = nm_connection_get_setting_connection (connection);
 	if(!s_con) {
 		s_con = NM_SETTING_CONNECTION (nm_setting_connection_new());
 		g_assert (s_con);

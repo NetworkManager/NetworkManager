@@ -189,8 +189,7 @@ commit_cb (NMSettingsConnection *connection, GError *error, gpointer unused)
 	} else {
 		NMSettingConnection *s_con;
 
-		s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (connection),
-		                                                           NM_TYPE_SETTING_CONNECTION);
+		s_con = nm_connection_get_setting_connection (NM_CONNECTION (connection));
 		g_assert (s_con);
 		PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Connection %s updated",
 		              nm_setting_connection_get_id (s_con));

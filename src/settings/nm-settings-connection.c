@@ -221,7 +221,7 @@ nm_settings_connection_recheck_visibility (NMSettingsConnection *self)
 
 	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (self), NM_TYPE_SETTING_CONNECTION);
+	s_con = nm_connection_get_setting_connection (NM_CONNECTION (self));
 	g_assert (s_con);
 
 	/* Check every user in the ACL for a session */
@@ -1024,7 +1024,7 @@ check_writable (NMConnection *connection, GError **error)
 	g_return_val_if_fail (connection != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	s_con = nm_connection_get_setting_connection (connection);
 	if (!s_con) {
 		g_set_error_literal (error,
 		                     NM_SETTINGS_ERROR,
@@ -1175,11 +1175,11 @@ get_modify_permission_update (NMConnection *old, NMConnection *new)
 	NMSettingConnection *s_con;
 	guint32 orig_num = 0, new_num = 0;
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (old, NM_TYPE_SETTING_CONNECTION);
+	s_con = nm_connection_get_setting_connection (old);
 	g_assert (s_con);
 	orig_num = nm_setting_connection_get_num_permissions (s_con);
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (new, NM_TYPE_SETTING_CONNECTION);
+	s_con = nm_connection_get_setting_connection (new);
 	g_assert (s_con);
 	new_num = nm_setting_connection_get_num_permissions (s_con);
 
@@ -1283,7 +1283,7 @@ get_modify_permission_basic (NMSettingsConnection *connection)
 	 * we use the 'modify.own' permission instead of 'modify.system'.  If the
 	 * request affects more than just the caller, require 'modify.system'.
 	 */
-	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (connection), NM_TYPE_SETTING_CONNECTION);
+	s_con = nm_connection_get_setting_connection (NM_CONNECTION (connection));
 	g_assert (s_con);
 	if (nm_setting_connection_get_num_permissions (s_con) == 1)
 		return NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN;

@@ -69,9 +69,7 @@ update_connection_id (NMConnection *connection, const char *conn_name)
 		idstr = g_strdup_printf ("%s (%s)", get_prefix (), conn_name);
 	uuid_base = idstr;
 	uuid = nm_utils_uuid_generate_from_string (uuid_base);
-	setting =
-	    (NMSettingConnection *) nm_connection_get_setting (connection,
-							       NM_TYPE_SETTING_CONNECTION);
+	setting = nm_connection_get_setting_connection (connection);
 	g_object_set (setting, NM_SETTING_CONNECTION_ID, idstr,
 		      NM_SETTING_CONNECTION_UUID, uuid, NULL);
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME,
@@ -1660,9 +1658,7 @@ ifnet_update_connection_from_config_block (const char *conn_name, GError **error
 	connection = nm_connection_new ();
 	if (!connection)
 		return NULL;
-	setting =
-	    (NMSettingConnection *) nm_connection_get_setting (connection,
-							       NM_TYPE_SETTING_CONNECTION);
+	setting = nm_connection_get_setting_connection (connection);
 	if (!setting) {
 		setting = NM_SETTING_CONNECTION (nm_setting_connection_new ());
 		g_assert (setting);
@@ -2015,10 +2011,7 @@ write_8021x_setting (NMConnection *connection,
 	GString *phase2_auth;
 	GString *phase1;
 
-	s_8021x =
-	    (NMSetting8021x *) nm_connection_get_setting (connection,
-							  NM_TYPE_SETTING_802_1X);
-
+	s_8021x = nm_connection_get_setting_802_1x (connection);
 	if (!s_8021x) {
 		return TRUE;
 	}
@@ -2113,9 +2106,7 @@ write_wireless_security_setting (NMConnection * connection,
 	guint32 i, num;
 	GString *str;
 
-	s_wsec =
-	    (NMSettingWirelessSecurity *) nm_connection_get_setting (connection,
-								     NM_TYPE_SETTING_WIRELESS_SECURITY);
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	if (!s_wsec) {
 		g_set_error (error, ifnet_plugin_error_quark (), 0,
 			     "Missing '%s' setting",
@@ -2281,7 +2272,7 @@ write_wireless_setting (NMConnection *connection,
 	gboolean adhoc = FALSE, hex_ssid = FALSE;
 	gchar *ssid_str, *tmp;
 
-	s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	if (!s_wireless) {
 		g_set_error (error, ifnet_plugin_error_quark (), 0,
 			     "Missing '%s' setting",
@@ -2400,9 +2391,7 @@ write_wired_setting (NMConnection *connection,
 	char *tmp;
 	guint32 mtu;
 
-	s_wired =
-	    (NMSettingWired *) nm_connection_get_setting (connection,
-							  NM_TYPE_SETTING_WIRED);
+	s_wired = nm_connection_get_setting_wired (connection);
 	if (!s_wired) {
 		g_set_error (error, ifnet_plugin_error_quark (), 0,
 			     "Missing '%s' setting",
@@ -2456,9 +2445,7 @@ write_ip4_setting (NMConnection *connection, const char *conn_name, GError **err
 	gboolean has_def_route = FALSE;
 	gboolean success = FALSE;
 
-	s_ip4 =
-	    (NMSettingIP4Config *) nm_connection_get_setting (connection,
-							      NM_TYPE_SETTING_IP4_CONFIG);
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	if (!s_ip4) {
 		g_set_error (error, ifnet_plugin_error_quark (), 0,
 			     "Missing '%s' setting",
@@ -2662,9 +2649,7 @@ write_ip6_setting (NMConnection *connection, const char *conn_name, GError **err
 	NMIP6Address *addr;
 	const struct in6_addr *ip;
 
-	s_ip6 =
-	    (NMSettingIP6Config *) nm_connection_get_setting (connection,
-							      NM_TYPE_SETTING_IP6_CONFIG);
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	if (!s_ip6) {
 		g_set_error (error, ifnet_plugin_error_quark (), 0,
 			     "Missing '%s' setting",
@@ -2850,7 +2835,7 @@ ifnet_update_parsers_by_connection (NMConnection *connection,
 		NMSettingPPPOE *s_pppoe;
 
 		/* Writing pppoe setting */
-		s_pppoe = NM_SETTING_PPPOE (nm_connection_get_setting (connection, NM_TYPE_SETTING_PPPOE));
+		s_pppoe = nm_connection_get_setting_pppoe (connection);
 		if (!write_pppoe_setting (conn_name, s_pppoe))
 			goto out;
 		pppoe = TRUE;
@@ -2878,7 +2863,7 @@ ifnet_update_parsers_by_connection (NMConnection *connection,
 	if (!write_ip4_setting (connection, conn_name, error))
 		goto out;
 
-	s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	if (s_ip6) {
 		/* IPv6 Setting */
 		if (!write_ip6_setting (connection, conn_name, error))
@@ -2966,9 +2951,7 @@ get_wireless_name (NMConnection * connection)
 	char buf[33];
 	int i = 0;
 
-	s_wireless =
-	    (NMSettingWireless *) nm_connection_get_setting (connection,
-							     NM_TYPE_SETTING_WIRELESS);
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	if (!s_wireless)
 		return NULL;
 
@@ -3014,7 +2997,7 @@ ifnet_add_new_connection (NMConnection *connection,
 	const char *type;
 	gchar *new_type, *new_name = NULL;
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 	type = nm_setting_connection_get_connection_type (s_con);
 	g_assert (type);

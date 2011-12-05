@@ -258,10 +258,10 @@ static const char *
 nm_vpn_connection_get_service (NMVPNConnection *connection)
 {
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
-	NMSettingVPN *setting;
+	NMSettingVPN *s_vpn;
 
-	setting = (NMSettingVPN *) nm_connection_get_setting (priv->connection, NM_TYPE_SETTING_VPN);
-	return nm_setting_vpn_get_service_type (setting);
+	s_vpn = nm_connection_get_setting_vpn (priv->connection);
+	return nm_setting_vpn_get_service_type (s_vpn);
 }
 
 static void
@@ -558,7 +558,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	print_vpn_config (config, priv->ip4_internal_gw, priv->ip_iface, priv->banner);
 
 	/* Merge in user overrides from the NMConnection's IPv4 setting */
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (priv->connection, NM_TYPE_SETTING_IP4_CONFIG));
+	s_ip4 = nm_connection_get_setting_ip4_config (priv->connection);
 	nm_utils_merge_ip4_config (config, s_ip4);
 
 	nm_system_iface_set_up (priv->ip_ifindex, TRUE, NULL);
@@ -645,22 +645,22 @@ static GHashTable *
 _hash_with_username (NMConnection *connection, const char *username)
 {
 	NMConnection *dup;
-	NMSetting *s_vpn;
+	NMSettingVPN *s_vpn;
 	GHashTable *hash;
 	const char *existing;
 
 	/* Shortcut if we weren't given a username or if there already was one in
 	 * the VPN setting; don't bother duplicating the connection and everything.
 	 */
-	s_vpn = nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
+	s_vpn = nm_connection_get_setting_vpn (connection);
 	g_assert (s_vpn);
-	existing = nm_setting_vpn_get_user_name (NM_SETTING_VPN (s_vpn));
+	existing = nm_setting_vpn_get_user_name (s_vpn);
 	if (username == NULL || existing)
 		return nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
 
 	dup = nm_connection_duplicate (connection);
 	g_assert (dup);
-	s_vpn = nm_connection_get_setting (dup, NM_TYPE_SETTING_VPN);
+	s_vpn = nm_connection_get_setting_vpn (dup);
 	g_assert (s_vpn);
 	g_object_set (s_vpn, NM_SETTING_VPN_USER_NAME, username, NULL);
 	hash = nm_connection_to_hash (dup, NM_SETTING_HASH_FLAG_ALL);
@@ -747,14 +747,14 @@ const char *
 nm_vpn_connection_get_name (NMVPNConnection *connection)
 {
 	NMVPNConnectionPrivate *priv;
-	NMSettingConnection *setting;
+	NMSettingConnection *s_con;
 
 	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), NULL);
 
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
-	setting = (NMSettingConnection *) nm_connection_get_setting (priv->connection, NM_TYPE_SETTING_CONNECTION);
+	s_con = nm_connection_get_setting_connection (priv->connection);
 
-	return nm_setting_connection_get_id (setting);
+	return nm_setting_connection_get_id (s_con);
 }
 
 NMConnection *

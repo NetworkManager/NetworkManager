@@ -261,7 +261,7 @@ real_check_connection_compatible (NMDevice *device,
 	NMSettingConnection *s_con;
 	NMSettingOlpcMesh *s_mesh;
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
 	if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_OLPC_MESH_SETTING_NAME)) {
@@ -271,7 +271,7 @@ real_check_connection_compatible (NMDevice *device,
 		return FALSE;
 	}
 
-	s_mesh = NM_SETTING_OLPC_MESH (nm_connection_get_setting (connection, NM_TYPE_SETTING_OLPC_MESH));
+	s_mesh = nm_connection_get_setting_olpc_mesh (connection);
 	if (!s_mesh) {
 		g_set_error (error,
 		             NM_OLPC_MESH_ERROR, NM_OLPC_MESH_ERROR_CONNECTION_INVALID,
@@ -294,7 +294,7 @@ real_complete_connection (NMDevice *device,
 	NMSettingOlpcMesh *s_mesh;
 	GByteArray *tmp;
 
-	s_mesh = (NMSettingOlpcMesh *) nm_connection_get_setting (connection, NM_TYPE_SETTING_OLPC_MESH);
+	s_mesh = nm_connection_get_setting_olpc_mesh (connection);
 	if (!s_mesh) {
 		s_mesh = (NMSettingOlpcMesh *) nm_setting_olpc_mesh_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_mesh));
@@ -439,7 +439,7 @@ real_act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
 
-	s_mesh = NM_SETTING_OLPC_MESH (nm_connection_get_setting (connection, NM_TYPE_SETTING_OLPC_MESH));
+	s_mesh = nm_connection_get_setting_olpc_mesh (connection);
 	g_assert (s_mesh);
 
 	channel = nm_setting_olpc_mesh_get_channel (s_mesh);

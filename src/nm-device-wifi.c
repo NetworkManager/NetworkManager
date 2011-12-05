@@ -975,7 +975,7 @@ real_check_connection_compatible (NMDevice *device,
 	const GByteArray *mac;
 	const GSList *mac_blacklist, *mac_blacklist_iter;
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
 	if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_WIRELESS_SETTING_NAME)) {
@@ -985,7 +985,7 @@ real_check_connection_compatible (NMDevice *device,
 		return FALSE;
 	}
 
-	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	if (!s_wireless) {
 		g_set_error (error,
 		             NM_WIFI_ERROR, NM_WIFI_ERROR_CONNECTION_INVALID,
@@ -1272,7 +1272,7 @@ real_get_best_auto_connection (NMDevice *dev,
 		NMSettingIP4Config *s_ip4;
 		const char *method = NULL;
 
-		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+		s_con = nm_connection_get_setting_connection (connection);
 		if (s_con == NULL)
 			continue;
 		if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_WIRELESS_SETTING_NAME))
@@ -1280,7 +1280,7 @@ real_get_best_auto_connection (NMDevice *dev,
 		if (!nm_setting_connection_get_autoconnect (s_con))
 			continue;
 
-		s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
+		s_wireless = nm_connection_get_setting_wireless (connection);
 		if (!s_wireless)
 			continue;
 
@@ -1308,7 +1308,7 @@ real_get_best_auto_connection (NMDevice *dev,
 			continue;
 
 		/* Use the connection if it's a shared connection */
-		s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+		s_ip4 = nm_connection_get_setting_ip4_config (connection);
 		if (s_ip4)
 			method = nm_setting_ip4_config_get_method (s_ip4);
 
@@ -1433,7 +1433,7 @@ scanning_allowed (NMDeviceWifi *self)
 
 		/* Don't scan when a shared connection is active; it makes drivers mad */
 		connection = nm_act_request_get_connection (req);
-		s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+		s_ip4 = nm_connection_get_setting_ip4_config (connection);
 		if (s_ip4)
 			ip4_method = nm_setting_ip4_config_get_method (s_ip4);
 
@@ -1444,7 +1444,7 @@ scanning_allowed (NMDeviceWifi *self)
 		 * intra-ESS roaming (which requires periodic scanning) isn't being
 		 * used due to the specific AP lock. (bgo #513820)
 		 */
-		s_wifi = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
+		s_wifi = nm_connection_get_setting_wireless (connection);
 		g_assert (s_wifi);
 		bssid = nm_setting_wireless_get_bssid (s_wifi);
 		if (bssid && bssid->len == ETH_ALEN)
@@ -2347,7 +2347,7 @@ build_supplicant_config (NMDeviceWifi *self,
 
 	g_return_val_if_fail (self != NULL, NULL);
 
-	s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	g_return_val_if_fail (s_wireless != NULL, NULL);
 
 	config = nm_supplicant_config_new ();
@@ -2388,13 +2388,13 @@ build_supplicant_config (NMDeviceWifi *self,
 		goto error;
 	}
 
-	s_wireless_sec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
+	s_wireless_sec = nm_connection_get_setting_wireless_security (connection);
 	if (s_wireless_sec) {
 		NMSetting8021x *s_8021x;
 		const char *con_path = nm_connection_get_path (connection);
 
 		g_assert (con_path);
-		s_8021x = (NMSetting8021x *) nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X);
+		s_8021x = nm_connection_get_setting_802_1x (connection);
 		if (!nm_supplicant_config_add_setting_wireless_security (config,
 		                                                         s_wireless_sec,
 		                                                         s_8021x,
@@ -2532,7 +2532,7 @@ real_act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	g_return_val_if_fail (connection != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
 	/* Set spoof MAC to the interface */
-	s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wireless);
 
 	cloned_mac = nm_setting_wireless_get_cloned_mac_address (s_wireless);
@@ -2608,7 +2608,7 @@ real_act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
 
-	s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
+	s_wireless = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wireless);
 
 	/* If we need secrets, get them */
@@ -2791,7 +2791,7 @@ real_act_stage4_ip4_config_timeout (NMDevice *dev, NMDeviceStateReason *reason)
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
 
-	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	if (s_ip4)
 		may_fail = nm_setting_ip4_config_get_may_fail (s_ip4);
 
@@ -2816,7 +2816,7 @@ real_act_stage4_ip6_config_timeout (NMDevice *dev, NMDeviceStateReason *reason)
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
 
-	s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	if (s_ip6)
 		may_fail = nm_setting_ip6_config_get_may_fail (s_ip6);
 

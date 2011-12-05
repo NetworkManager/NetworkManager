@@ -941,7 +941,7 @@ nm_utils_complete_generic (NMConnection *connection,
 	const char *method;
 	char *id, *uuid;
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	s_con = nm_connection_get_setting_connection (connection);
 	if (!s_con) {
 		s_con = (NMSettingConnection *) nm_setting_connection_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_con));
@@ -962,7 +962,7 @@ nm_utils_complete_generic (NMConnection *connection,
 	}
 
 	/* Add an 'auto' IPv4 connection if present */
-	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	if (!s_ip4) {
 		s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_ip4));
@@ -975,7 +975,7 @@ nm_utils_complete_generic (NMConnection *connection,
 	}
 
 	/* Add an 'auto' IPv6 setting if allowed and not preset */
-	s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	if (!s_ip6 && default_enable_ipv6) {
 		s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_ip6));

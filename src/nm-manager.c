@@ -653,11 +653,11 @@ might_be_vpn (NMConnection *connection)
 	NMSettingConnection *s_con;
 	const char *ctype = NULL;
 
-	if (nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN))
+	if (nm_connection_get_setting_vpn (connection))
 		return TRUE;
 
 	/* Make sure it's not a VPN, which we can't autocomplete yet */
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	s_con = nm_connection_get_setting_connection (connection);
 	if (s_con)
 		ctype = nm_setting_connection_get_connection_type (s_con);
 
@@ -669,7 +669,7 @@ try_complete_vpn (NMConnection *connection, GSList *existing, GError **error)
 {
 	g_assert (might_be_vpn (connection) == TRUE);
 
-	if (!nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN)) {
+	if (!nm_connection_get_setting_vpn (connection)) {
 		g_set_error_literal (error,
 			                 NM_MANAGER_ERROR,
 			                 NM_MANAGER_ERROR_UNSUPPORTED_CONNECTION_TYPE,
@@ -1655,14 +1655,14 @@ bluez_manager_find_connection (NMManager *manager,
 		const char *con_type;
 		const char *bt_type;
 
-		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (candidate, NM_TYPE_SETTING_CONNECTION));
+		s_con = nm_connection_get_setting_connection (candidate);
 		g_assert (s_con);
 		con_type = nm_setting_connection_get_connection_type (s_con);
 		g_assert (con_type);
 		if (!g_str_equal (con_type, NM_SETTING_BLUETOOTH_SETTING_NAME))
 			continue;
 
-		s_bt = (NMSettingBluetooth *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_BLUETOOTH);
+		s_bt = nm_connection_get_setting_bluetooth (candidate);
 		if (!s_bt)
 			continue;
 
@@ -2030,7 +2030,7 @@ nm_manager_activate_connection (NMManager *manager,
 		}
 	}
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
 	if (!strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_VPN_SETTING_NAME)) {

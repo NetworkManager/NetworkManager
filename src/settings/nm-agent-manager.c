@@ -962,7 +962,7 @@ get_next_cb (Request *req)
 		 * we use the 'modify.own' permission instead of 'modify.system'.  If the
 		 * request affects more than just the caller, require 'modify.system'.
 		 */
-		s_con = (NMSettingConnection *) nm_connection_get_setting (req->connection, NM_TYPE_SETTING_CONNECTION);
+		s_con = nm_connection_get_setting_connection (req->connection);
 		g_assert (s_con);
 		if (nm_setting_connection_get_num_permissions (s_con) == 1)
 			perm = NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN;

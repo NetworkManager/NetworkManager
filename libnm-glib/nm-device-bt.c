@@ -169,7 +169,7 @@ get_connection_bt_type (NMConnection *connection)
 	NMSettingBluetooth *s_bt;
 	const char *bt_type;
 
-	s_bt = (NMSettingBluetooth *) nm_connection_get_setting (connection, NM_TYPE_SETTING_BLUETOOTH);
+	s_bt = nm_connection_get_setting_bluetooth (connection);
 	if (!s_bt)
 		return NM_BT_CAPABILITY_NONE;
 

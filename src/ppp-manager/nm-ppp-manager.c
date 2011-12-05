@@ -374,7 +374,7 @@ extract_details_from_connection (NMConnection *connection,
 	g_return_val_if_fail (username != NULL, FALSE);
 	g_return_val_if_fail (password != NULL, FALSE);
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
 	connection_type = nm_setting_connection_get_connection_type (s_con);
@@ -579,7 +579,7 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 	g_object_set_data (G_OBJECT (connection), PPP_MANAGER_SECRET_TRIES, NULL);
 
 	/* Merge in custom MTU */
-	s_ppp = (NMSettingPPP *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP);
+	s_ppp = nm_connection_get_setting_ppp (connection);
 	if (s_ppp) {
 		guint32 mtu = nm_setting_ppp_get_mtu (s_ppp);
 
@@ -999,7 +999,7 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
 
-	s_ppp = (NMSettingPPP *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP);
+	s_ppp = nm_connection_get_setting_ppp (connection);
 	if (!s_ppp) {
 		/* If the PPP settings are all default we may not have a PPP setting yet,
 		 * so just make a default one here.
@@ -1008,7 +1008,7 @@ nm_ppp_manager_start (NMPPPManager *manager,
 		s_ppp_created = TRUE;
 	}
 	
-	pppoe_setting = (NMSettingPPPOE *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPPOE);
+	pppoe_setting = nm_connection_get_setting_pppoe (connection);
 	if (pppoe_setting)
 		pppoe_fill_defaults (s_ppp);
 

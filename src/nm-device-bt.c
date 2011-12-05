@@ -154,7 +154,7 @@ get_connection_bt_type (NMConnection *connection)
 	NMSettingBluetooth *s_bt;
 	const char *bt_type;
 
-	s_bt = (NMSettingBluetooth *) nm_connection_get_setting (connection, NM_TYPE_SETTING_BLUETOOTH);
+	s_bt = nm_connection_get_setting_bluetooth (connection);
 	if (!s_bt)
 		return NM_BT_CAPABILITY_NONE;
 
@@ -182,7 +182,7 @@ real_get_best_auto_connection (NMDevice *device,
 		NMSettingConnection *s_con;
 		guint32 bt_type;
 
-		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+		s_con = nm_connection_get_setting_connection (connection);
 		g_assert (s_con);
 
 		if (!nm_setting_connection_get_autoconnect (s_con))
@@ -213,7 +213,7 @@ real_check_connection_compatible (NMDevice *device,
 	int addr_match = FALSE;
 	guint32 bt_type;
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
 	if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_BLUETOOTH_SETTING_NAME)) {
@@ -223,7 +223,7 @@ real_check_connection_compatible (NMDevice *device,
 		return FALSE;
 	}
 
-	s_bt = NM_SETTING_BLUETOOTH (nm_connection_get_setting (connection, NM_TYPE_SETTING_BLUETOOTH));
+	s_bt = nm_connection_get_setting_bluetooth (connection);
 	if (!s_bt) {
 		g_set_error (error,
 		             NM_BT_ERROR, NM_BT_ERROR_CONNECTION_INVALID,
@@ -275,12 +275,12 @@ real_complete_connection (NMDevice *device,
 	NMSettingPPP *s_ppp;
 	const char *format = NULL, *preferred = NULL;
 
-	s_gsm = (NMSettingGsm *) nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM);
-	s_cdma = (NMSettingCdma *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CDMA);
+	s_gsm = nm_connection_get_setting_gsm (connection);
+	s_cdma = nm_connection_get_setting_cdma (connection);
 	s_serial = (NMSettingSerial *) nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL);
-	s_ppp = (NMSettingPPP *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP);
+	s_ppp = nm_connection_get_setting_ppp (connection);
 
-	s_bt = (NMSettingBluetooth *) nm_connection_get_setting (connection, NM_TYPE_SETTING_BLUETOOTH);
+	s_bt = nm_connection_get_setting_bluetooth (connection);
 	if (!s_bt) {
 		s_bt = (NMSettingBluetooth *) nm_setting_bluetooth_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_bt));

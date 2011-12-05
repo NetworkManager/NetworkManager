@@ -185,7 +185,7 @@ nm_vpn_manager_activate_connection (NMVPNManager *manager,
 		return NULL;
 	}
 
-	vpn_setting = (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
+	vpn_setting = nm_connection_get_setting_vpn (connection);
 	if (!vpn_setting) {
 		g_set_error (error,
 		             NM_VPN_MANAGER_ERROR, NM_VPN_MANAGER_ERROR_CONNECTION_INVALID,

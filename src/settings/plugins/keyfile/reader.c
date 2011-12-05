@@ -1327,7 +1327,7 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 	 * the keyfile didn't include it, which can happen when the base
 	 * device type setting is all default values (like ethernet).
 	 */
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	s_con = nm_connection_get_setting_connection (connection);
 	if (s_con) {
 		ctype = nm_setting_connection_get_connection_type (s_con);
 		setting = nm_connection_get_setting_by_name (connection, ctype);
@@ -1341,7 +1341,7 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 	if (vpn_secrets) {
 		NMSettingVPN *s_vpn;
 
-		s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
+		s_vpn = nm_connection_get_setting_vpn (connection);
 		if (s_vpn)
 			read_vpn_secrets (key_file, s_vpn);
 	}

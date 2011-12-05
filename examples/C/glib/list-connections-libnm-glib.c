@@ -76,7 +76,7 @@ show_connection (NMConnection *data, gpointer user_data)
 	char timestamp_real_str[64];
 	const char *val1, *val2, *val3, *val4, *val5;
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	s_con = nm_connection_get_setting_connection (connection);
 	if (s_con) {
 		/* Get various info from NMSettingConnection and show it */
 		timestamp = nm_setting_connection_get_timestamp (s_con);

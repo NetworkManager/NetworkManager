@@ -162,7 +162,7 @@ fill_wifi_empty (NMConnection *connection)
 {
 	NMSettingWireless *s_wifi;
 
-	s_wifi = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
+	s_wifi = nm_connection_get_setting_wireless (connection);
 	if (!s_wifi) {
 		s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_wifi));
@@ -175,7 +175,7 @@ fill_wifi (NMConnection *connection, const KeyData items[])
 {
 	NMSettingWireless *s_wifi;
 
-	s_wifi = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
+	s_wifi = nm_connection_get_setting_wireless (connection);
 	if (!s_wifi) {
 		s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_wifi));
@@ -190,7 +190,7 @@ fill_wsec (NMConnection *connection, const KeyData items[])
 {
 	NMSettingWirelessSecurity *s_wsec;
 
-	s_wsec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	if (!s_wsec) {
 		s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_wsec));
@@ -205,7 +205,7 @@ fill_8021x (NMConnection *connection, const KeyData items[])
 {
 	NMSetting8021x *s_8021x;
 
-	s_8021x = (NMSetting8021x *) nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X);
+	s_8021x = nm_connection_get_setting_802_1x (connection);
 	if (!s_8021x) {
 		s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_8021x));

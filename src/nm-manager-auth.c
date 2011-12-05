@@ -541,7 +541,7 @@ nm_auth_uid_in_acl (NMConnection *connection,
 	g_return_val_if_fail (connection != NULL, FALSE);
 	g_return_val_if_fail (smon != NULL, FALSE);
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
 	/* Reject the request if the request comes from no session at all */

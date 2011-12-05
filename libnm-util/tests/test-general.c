@@ -921,7 +921,7 @@ test_connection_diff_different (void)
 {
 	NMConnection *a, *b;
 	GHashTable *out_diffs = NULL;
-	NMSetting *s_ip4;
+	NMSettingIP4Config *s_ip4;
 	gboolean same;
 	const DiffSetting settings[] = {
 		{ NM_SETTING_IP4_CONFIG_SETTING_NAME, {
@@ -932,7 +932,7 @@ test_connection_diff_different (void)
 
 	a = new_test_connection ();
 	b = nm_connection_duplicate (a);
-	s_ip4 = nm_connection_get_setting (a, NM_TYPE_SETTING_IP4_CONFIG);
+	s_ip4 = nm_connection_get_setting_ip4_config (a);
 	g_assert (s_ip4);
 	g_object_set (G_OBJECT (s_ip4),
 	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
@@ -973,7 +973,7 @@ test_connection_diff_no_secrets (void)
 	b = nm_connection_duplicate (a);
 
 	/* Add a secret to B */
-	s_pppoe = nm_connection_get_setting (b, NM_TYPE_SETTING_PPPOE);
+	s_pppoe = NM_SETTING (nm_connection_get_setting_pppoe (b));
 	g_assert (s_pppoe);
 	g_object_set (G_OBJECT (s_pppoe),
 	              NM_SETTING_PPPOE_PASSWORD, "secretpassword",

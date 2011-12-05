@@ -269,9 +269,9 @@ connection_sort (gconstpointer pa, gconstpointer pb)
 	NMSettingConnection *con_b;
 	guint64 ts_a, ts_b;
 
-	con_a = (NMSettingConnection *) nm_connection_get_setting (a, NM_TYPE_SETTING_CONNECTION);
+	con_a = nm_connection_get_setting_connection (a);
 	g_assert (con_a);
-	con_b = (NMSettingConnection *) nm_connection_get_setting (b, NM_TYPE_SETTING_CONNECTION);
+	con_b = nm_connection_get_setting_connection (b);
 	g_assert (con_b);
 
 	if (nm_setting_connection_get_autoconnect (con_a) != nm_setting_connection_get_autoconnect (con_b)) {
@@ -1092,7 +1092,7 @@ nm_settings_add_connection (NMSettings *self,
 	 * we use the 'modify.own' permission instead of 'modify.system'.  If the
 	 * request affects more than just the caller, require 'modify.system'.
 	 */
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 	if (nm_setting_connection_get_num_permissions (s_con) == 1)
 		perm = NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN;
@@ -1363,8 +1363,7 @@ default_wired_deleted (NMDefaultWiredConnection *wired,
 	 * connection for that device again.
 	 */
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (wired),
-	                                                           NM_TYPE_SETTING_CONNECTION);
+	s_con = nm_connection_get_setting_connection (NM_CONNECTION (wired));
 	g_assert (s_con);
 
 	/* Ignore removals of read-only connections, since they couldn't have

@@ -721,7 +721,7 @@ gboolean
 nm_connection_verify (NMConnection *connection, GError **error)
 {
 	NMConnectionPrivate *priv;
-	NMSetting *s_con;
+	NMSettingConnection *s_con;
 	GHashTableIter iter;
 	gpointer value;
 	GSList *all_settings = NULL;
@@ -743,7 +743,7 @@ nm_connection_verify (NMConnection *connection, GError **error)
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
 
 	/* First, make sure there's at least 'connection' setting */
-	s_con = nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	s_con = nm_connection_get_setting_connection (connection);
 	if (!s_con) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
@@ -769,7 +769,7 @@ nm_connection_verify (NMConnection *connection, GError **error)
 	/* Now make sure the given 'type' setting can actually be the base setting
 	 * of the connection.  Can't have type=ppp for example.
 	 */
-	ctype = nm_setting_connection_get_connection_type (NM_SETTING_CONNECTION (s_con));
+	ctype = nm_setting_connection_get_connection_type (s_con);
 	if (!ctype) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
@@ -1286,7 +1286,7 @@ nm_connection_get_uuid (NMConnection *connection)
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	s_con = nm_connection_get_setting_connection (connection);
 	g_return_val_if_fail (s_con != NULL, NULL);
 
 	return nm_setting_connection_get_uuid (s_con);
@@ -1308,7 +1308,7 @@ nm_connection_get_id (NMConnection *connection)
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	s_con = nm_connection_get_setting_connection (connection);
 	g_return_val_if_fail (s_con != NULL, NULL);
 
 	return nm_setting_connection_get_id (s_con);

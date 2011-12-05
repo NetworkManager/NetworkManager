@@ -169,7 +169,7 @@ create_connect_properties (NMConnection *connection)
 	GHashTable *properties;
 	const char *str;
 
-	setting = NM_SETTING_CDMA (nm_connection_get_setting (connection, NM_TYPE_SETTING_CDMA));
+	setting = nm_connection_get_setting_cdma (connection);
 	properties = value_hash_create ();
 
 	str = nm_setting_cdma_get_number (setting);
@@ -230,7 +230,7 @@ real_get_best_auto_connection (NMModem *modem,
 		NMConnection *connection = NM_CONNECTION (iter->data);
 		NMSettingConnection *s_con;
 
-		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+		s_con = nm_connection_get_setting_connection (connection);
 		g_assert (s_con);
 
 		if (!nm_setting_connection_get_autoconnect (s_con))
@@ -252,7 +252,7 @@ real_check_connection_compatible (NMModem *modem,
 	NMSettingConnection *s_con;
 	NMSettingCdma *s_cdma;
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
 	if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_CDMA_SETTING_NAME)) {
@@ -262,7 +262,7 @@ real_check_connection_compatible (NMModem *modem,
 		return FALSE;
 	}
 
-	s_cdma = NM_SETTING_CDMA (nm_connection_get_setting (connection, NM_TYPE_SETTING_CDMA));
+	s_cdma = nm_connection_get_setting_cdma (connection);
 	if (!s_cdma) {
 		g_set_error (error,
 		             NM_CDMA_ERROR, NM_CDMA_ERROR_CONNECTION_INVALID,
@@ -281,7 +281,7 @@ real_complete_connection (NMModem *modem,
 {
 	NMSettingCdma *s_cdma;
 
-	s_cdma = (NMSettingCdma *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CDMA);
+	s_cdma = nm_connection_get_setting_cdma (connection);
 	if (!s_cdma) {
 		s_cdma = (NMSettingCdma *) nm_setting_cdma_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_cdma));
@@ -308,7 +308,7 @@ real_get_user_pass (NMModem *modem,
 {
 	NMSettingCdma *s_cdma;
 
-	s_cdma = (NMSettingCdma *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CDMA);
+	s_cdma = nm_connection_get_setting_cdma (connection);
 	if (!s_cdma)
 		return FALSE;
 

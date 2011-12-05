@@ -349,7 +349,7 @@ create_connect_properties (NMConnection *connection)
 	GHashTable *properties;
 	const char *str;
 
-	setting = NM_SETTING_GSM (nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM));
+	setting = nm_connection_get_setting_gsm (connection);
 	properties = value_hash_create ();
 
 	str = nm_setting_gsm_get_number (setting);
@@ -451,7 +451,7 @@ real_get_best_auto_connection (NMModem *modem,
 		NMConnection *connection = NM_CONNECTION (iter->data);
 		NMSettingConnection *s_con;
 
-		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+		s_con = nm_connection_get_setting_connection (connection);
 		g_assert (s_con);
 
 		if (!nm_setting_connection_get_autoconnect (s_con))
@@ -473,7 +473,7 @@ real_check_connection_compatible (NMModem *modem,
 	NMSettingConnection *s_con;
 	NMSettingGsm *s_gsm;
 
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
 	if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_GSM_SETTING_NAME)) {
@@ -483,7 +483,7 @@ real_check_connection_compatible (NMModem *modem,
 		return FALSE;
 	}
 
-	s_gsm = NM_SETTING_GSM (nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM));
+	s_gsm = nm_connection_get_setting_gsm (connection);
 	if (!s_gsm) {
 		g_set_error (error,
 		             NM_GSM_ERROR, NM_GSM_ERROR_CONNECTION_INVALID,
@@ -502,7 +502,7 @@ real_complete_connection (NMModem *modem,
 {
 	NMSettingGsm *s_gsm;
 
-	s_gsm = (NMSettingGsm *) nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM);
+	s_gsm = nm_connection_get_setting_gsm (connection);
 	if (!s_gsm || !nm_setting_gsm_get_apn (s_gsm)) {
 		/* Need an APN at least */
 		g_set_error_literal (error,
@@ -533,7 +533,7 @@ real_get_user_pass (NMModem *modem,
 {
 	NMSettingGsm *s_gsm;
 
-	s_gsm = (NMSettingGsm *) nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM);
+	s_gsm = nm_connection_get_setting_gsm (connection);
 	if (!s_gsm)
 		return FALSE;
 

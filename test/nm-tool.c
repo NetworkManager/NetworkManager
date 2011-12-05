@@ -627,7 +627,7 @@ detail_vpn (gpointer data, gpointer user_data)
 	connection = get_connection_for_active (active);
 	g_return_if_fail (connection != NULL);
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	s_con = nm_connection_get_setting_connection (connection);
 	g_return_if_fail (s_con != NULL);
 
 	print_header ("VPN", NULL, nm_setting_connection_get_id (s_con));

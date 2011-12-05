@@ -569,7 +569,7 @@ impl_ifcfgrh_get_ifcfg_details (SCPluginIfcfg *plugin,
 		return FALSE;
 	}
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (connection), NM_TYPE_SETTING_CONNECTION);
+	s_con = nm_connection_get_setting_connection (NM_CONNECTION (connection));
 	if (!s_con) {
 		g_set_error (error,
 		             NM_SETTINGS_ERROR,
