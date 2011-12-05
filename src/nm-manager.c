@@ -3368,8 +3368,7 @@ connectivity_connected_changed (NMConnectivity *connectivity, gboolean connected
 
 	if (connected)
 		new_state = NM_STATE_CONNECTED_GLOBAL;
-	else
-	{
+	else {
 		/* FIXME: handle local here, too */
 		new_state = NM_STATE_CONNECTED_SITE;
 	}
