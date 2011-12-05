@@ -844,15 +844,11 @@ static NMActStageReturn
 real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
-	NMActRequest *req;
 	NMDBusManager *dbus_mgr;
 	DBusGConnection *g_connection;
 	gboolean dun = FALSE;
 
-	req = nm_device_get_act_request (device);
-	g_assert (req);
-
-	priv->bt_type = get_connection_bt_type (nm_act_request_get_connection (req));
+	priv->bt_type = get_connection_bt_type (nm_device_get_connection (device));
 	if (priv->bt_type == NM_BT_CAPABILITY_NONE) {
 		// FIXME: set a reason code
 		return NM_ACT_STAGE_RETURN_FAILURE;

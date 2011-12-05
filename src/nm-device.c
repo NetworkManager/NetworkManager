@@ -826,16 +826,13 @@ activation_source_schedule (NMDevice *self, GSourceFunc func, int family)
 gboolean
 nm_device_ip_config_should_fail (NMDevice *self, gboolean ip6)
 {
-	NMActRequest *req;
 	NMConnection *connection;
 	NMSettingIP4Config *s_ip4;
 	NMSettingIP6Config *s_ip6;
 
 	g_return_val_if_fail (self != NULL, TRUE);
 
-	req = nm_device_get_act_request (self);
-	g_assert (req);
-	connection = nm_act_request_get_connection (req);
+	connection = nm_device_get_connection (self);
 	g_assert (connection);
 
 	/* Fail the connection if the failed IP method is required to complete */
@@ -1375,7 +1372,6 @@ static void
 dhcp4_lease_change (NMDevice *device, NMIP4Config *config)
 {
 	NMConnection *connection;
-	NMActRequest *req;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
 	if (config == NULL) {
@@ -1385,9 +1381,7 @@ dhcp4_lease_change (NMDevice *device, NMIP4Config *config)
 		return;
 	}
 
-	req = nm_device_get_act_request (device);
-	g_assert (req);
-	connection = nm_act_request_get_connection (req);
+	connection = nm_device_get_connection (device);
 	g_assert (connection);
 
 	/* Merge with user overrides */
@@ -1533,7 +1527,6 @@ nm_device_dhcp4_renew (NMDevice *self, gboolean release)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActStageReturn ret;
 	NMDeviceStateReason reason;
-	NMActRequest *req;
 	NMConnection *connection;
 
 	g_return_val_if_fail (priv->dhcp4_client != NULL, FALSE);
@@ -1544,9 +1537,7 @@ nm_device_dhcp4_renew (NMDevice *self, gboolean release)
 	/* Terminate old DHCP instance and release the old lease */
 	dhcp4_cleanup (self, TRUE, release);
 
-	req = nm_device_get_act_request (self);
-	g_assert (req);
-	connection = nm_act_request_get_connection (req);
+	connection = nm_device_get_connection (self);
 	g_assert (connection);
 
 	/* Start DHCP again on the interface */
@@ -1624,14 +1615,13 @@ real_act_stage3_ip4_config_start (NMDevice *self,
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
 	NMSettingIP4Config *s_ip4;
-	NMActRequest *req;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	const char *method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-	req = nm_device_get_act_request (self);
-	connection = nm_act_request_get_connection (req);
+	connection = nm_device_get_connection (self);
+	g_assert (connection);
 
 	/* If we did not receive IP4 configuration information, default to DHCP */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
@@ -1720,8 +1710,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 	gboolean assumed, success;
 	NMIP6Config *composite;
 
-	g_assert (priv->act_request);
-	connection = nm_act_request_get_connection (priv->act_request);
+	connection = nm_device_get_connection (self);
 	g_assert (connection);
 
 	/* If no config was passed in, create a new one */
@@ -1763,7 +1752,7 @@ dhcp6_lease_change (NMDevice *device)
 
 	g_assert (priv->dhcp6_client);  /* sanity check */
 
-	connection = nm_act_request_get_connection (priv->act_request);
+	connection = nm_device_get_connection (device);
 	g_assert (connection);
 
 	/* Apply the updated config */
@@ -1875,8 +1864,7 @@ dhcp6_start (NMDevice *self,
 	int err;
 
 	if (!connection) {
-		g_assert (priv->act_request);
-		connection = nm_act_request_get_connection (priv->act_request);
+		connection = nm_device_get_connection (self);
 		g_assert (connection);
 	}
 
@@ -1954,7 +1942,7 @@ ip6_addrconf_complete (NMIP6Manager *ip6_manager,
 	if (ifindex != nm_device_get_ip_ifindex (self))
 		return;
 	g_return_if_fail (priv->act_request != NULL);
-	connection = nm_act_request_get_connection (priv->act_request);
+	connection = nm_device_get_connection (self);
 	g_assert (connection);
 
 	if (!priv->ip6_waiting_for_config)
@@ -2048,8 +2036,7 @@ addrconf6_start (NMDevice *self)
 	NMConnection *connection;
 	gboolean success;
 
-	g_assert (priv->act_request);
-	connection = nm_act_request_get_connection (priv->act_request);
+	connection = nm_device_get_connection (self);
 	g_assert (connection);
 
 	g_warn_if_fail (priv->ac_ip6_config == NULL);
@@ -2121,14 +2108,11 @@ real_act_stage3_ip6_config_start (NMDevice *self,
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	const char *ip_iface;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
-	NMActRequest *req;
 	NMConnection *connection;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-	req = nm_device_get_act_request (self);
-	g_assert (req);
-	connection = nm_act_request_get_connection (req);
+	connection = nm_device_get_connection (self);
 	g_assert (connection);
 
 	ip_iface = nm_device_get_ip_iface (self);
@@ -2680,7 +2664,7 @@ fw_add_to_zone (NMDevice *self, gboolean ip4)
 	}
 
 	/* Otherwise tell the firewall to add the interface to the specified zone */
-	connection = nm_act_request_get_connection (priv->act_request);
+	connection = nm_device_get_connection (self);
 	g_assert (connection);
 	s_con = nm_connection_get_setting_connection (connection);
 	priv->fw_call = nm_firewall_manager_add_to_zone (priv->fw_manager,
@@ -3464,7 +3448,7 @@ dispose (GObject *object)
 	    NMSettingIP4Config *s_ip4 = NULL;
 		const char *method = NULL;
 
-		connection = nm_act_request_get_connection (priv->act_request);
+		connection = nm_device_get_connection (self);
 		if (connection) {
 
 			/* Only static or DHCP IPv4 connections can be left up.

@@ -2690,7 +2690,7 @@ real_ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 	NMSettingWireless *s_wifi;
 	guint32 mtu;
 
-	connection = nm_act_request_get_connection (nm_device_get_act_request (device));
+	connection = nm_device_get_connection (device);
 	g_assert (connection);
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
@@ -2780,15 +2780,12 @@ handle_ip_config_timeout (NMDeviceWifi *self,
 static NMActStageReturn
 real_act_stage4_ip4_config_timeout (NMDevice *dev, NMDeviceStateReason *reason)
 {
-	NMActRequest *req;
 	NMConnection *connection;
 	NMSettingIP4Config *s_ip4;
 	gboolean may_fail = FALSE, chain_up = FALSE;
 	NMActStageReturn ret;
 
-	req = nm_device_get_act_request (dev);
-	g_assert (req);
-	connection = nm_act_request_get_connection (req);
+	connection = nm_device_get_connection (dev);
 	g_assert (connection);
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
@@ -2805,15 +2802,12 @@ real_act_stage4_ip4_config_timeout (NMDevice *dev, NMDeviceStateReason *reason)
 static NMActStageReturn
 real_act_stage4_ip6_config_timeout (NMDevice *dev, NMDeviceStateReason *reason)
 {
-	NMActRequest *req;
 	NMConnection *connection;
 	NMSettingIP6Config *s_ip6;
 	gboolean may_fail = FALSE, chain_up = FALSE;
 	NMActStageReturn ret;
 
-	req = nm_device_get_act_request (dev);
-	g_assert (req);
-	connection = nm_act_request_get_connection (req);
+	connection = nm_device_get_connection (dev);
 	g_assert (connection);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
@@ -2902,13 +2896,9 @@ activation_failure_handler (NMDevice *dev)
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMAccessPoint *ap;
 	const GByteArray * ssid;
-	NMActRequest *req;
 	NMConnection *connection;
 
-	req = nm_device_get_act_request (dev);
-	g_assert (req);
-
-	connection = nm_act_request_get_connection (req);
+	connection = nm_device_get_connection (dev);
 	g_assert (connection);
 
 	/* Clear wireless secrets tries on failure */

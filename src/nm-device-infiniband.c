@@ -224,7 +224,7 @@ real_ip4_config_pre_commit (NMDevice *self, NMIP4Config *config)
 	NMSettingInfiniband *s_infiniband;
 	guint32 mtu;
 
-	connection = nm_act_request_get_connection (nm_device_get_act_request (self));
+	connection = nm_device_get_connection (self);
 	g_assert (connection);
 	s_infiniband = nm_connection_get_setting_infiniband (connection);
 	g_assert (s_infiniband);

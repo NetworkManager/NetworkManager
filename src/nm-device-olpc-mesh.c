@@ -428,15 +428,11 @@ real_act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
 	NMConnection *connection;
 	NMSettingOlpcMesh *s_mesh;
-	NMActRequest *req;
 	guint32 channel;
 	const GByteArray *anycast_addr_array;
 	guint8 *anycast_addr = NULL;
 
-	req = nm_device_get_act_request (dev);
-	g_assert (req);
-
-	connection = nm_act_request_get_connection (req);
+	connection = nm_device_get_connection (dev);
 	g_assert (connection);
 
 	s_mesh = nm_connection_get_setting_olpc_mesh (connection);
