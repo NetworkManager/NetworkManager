@@ -277,7 +277,7 @@ real_complete_connection (NMDevice *device,
 
 	s_gsm = nm_connection_get_setting_gsm (connection);
 	s_cdma = nm_connection_get_setting_cdma (connection);
-	s_serial = (NMSettingSerial *) nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL);
+	s_serial = nm_connection_get_setting_serial (connection);
 	s_ppp = nm_connection_get_setting_ppp (connection);
 
 	s_bt = nm_connection_get_setting_bluetooth (connection);

@@ -27,6 +27,7 @@ global:
 	nm_connection_get_setting_olpc_mesh;
 	nm_connection_get_setting_ppp;
 	nm_connection_get_setting_pppoe;
+	nm_connection_get_setting_serial;
 	nm_connection_get_setting_vpn;
 	nm_connection_get_setting_wimax;
 	nm_connection_get_setting_wired;

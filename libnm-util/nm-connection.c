@@ -43,6 +43,7 @@
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
+#include "nm-setting-serial.h"
 #include "nm-setting-vpn.h"
 #include "nm-setting-olpc-mesh.h"
 #include "nm-setting-bond.h"
@@ -1518,6 +1519,23 @@ nm_connection_get_setting_pppoe (NMConnection *connection)
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingPPPOE *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPPOE);
+}
+
+/**
+ * nm_connection_get_setting_serial:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingSerial the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingSerial if the connection contains one, otherwise NULL
+ **/
+NMSettingSerial *
+nm_connection_get_setting_serial (NMConnection *connection)
+{
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingSerial *) nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL);
 }
 
 /**

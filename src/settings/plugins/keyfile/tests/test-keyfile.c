@@ -1954,7 +1954,7 @@ test_read_bt_dun_connection (void)
 
 	/* ===== SERIAL SETTING ===== */
 
-	s_serial = NM_SETTING_SERIAL (nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL));
+	s_serial = nm_connection_get_setting_serial (connection);
 	ASSERT (s_serial != NULL,
 	        "connection-verify-serial", "failed to verify %s: missing %s setting",
 	        TEST_BT_DUN_FILE,
@@ -2217,7 +2217,7 @@ test_read_gsm_connection (void)
 
 	/* ===== SERIAL SETTING ===== */
 
-	s_serial = NM_SETTING_SERIAL (nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL));
+	s_serial = nm_connection_get_setting_serial (connection);
 	ASSERT (s_serial != NULL,
 	        "connection-verify-serial", "failed to verify %s: missing %s setting",
 	        TEST_GSM_FILE,
