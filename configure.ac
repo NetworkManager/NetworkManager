@@ -288,10 +288,6 @@ PKG_CHECK_MODULES(GIO, gio-2.0)
 AC_SUBST(GIO_CFLAGS)
 AC_SUBST(GIO_LIBS)
 
-PKG_CHECK_MODULES(LIBSOUP, [libsoup-2.4 >= 2.26])
-AC_SUBST(LIBSOUP_CFLAGS)
-AC_SUBST(LIBSOUP_LIBS)
-
 GOBJECT_INTROSPECTION_CHECK([0.9.6])
 
 # Qt4
@@ -660,6 +656,21 @@ if test x"$enable_crashtrace" = xyes; then
   AC_DEFINE(ENABLE_CRASHTRACE, 1, [Define if you have GNU backtrace extensions])
 fi
 
+PKG_CHECK_MODULES(LIBSOUP, [libsoup-2.4 >= 2.26], [have_libsoup=yes],[have_libsoup=no])
+AC_ARG_ENABLE(concheck, AS_HELP_STRING([--enable-concheck], [enable connectivity checking support]),
+                     [enable_concheck=${enableval}], [enable_concheck=${have_libsoup}])
+if (test "${enable_concheck}" = "yes"); then
+	if test x"$have_concheck" = x"no"; then
+		AC_MSG_ERROR(Connectivity checking requires libsoup development headers)
+	fi
+	AC_SUBST(LIBSOUP_CFLAGS)
+	AC_SUBST(LIBSOUP_LIBS)
+	AC_DEFINE(WITH_CONCHECK, 1, [Define if you want connectivity checking support])
+else
+	AC_DEFINE(WITH_CONCHECK, 0, [Define if you want connectivity checking support])
+fi
+AM_CONDITIONAL(WITH_CONCHECK, test "${enable_concheck}" = "yes")
+
 NM_COMPILER_WARNINGS
 
 GTK_DOC_CHECK(1.0)
@@ -819,6 +830,12 @@ if test "${enable_ppp}" = "yes"; then
 	echo PPP support: yes
 else
 	echo PPP support: no
+fi
+
+if test "${enable_concheck}" = "yes"; then
+	echo Connectivity checking support: yes
+else
+	echo Connectivity checking support: no
 fi
 
 echo libnl version: ${libnl_version}
