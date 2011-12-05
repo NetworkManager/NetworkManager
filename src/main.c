@@ -268,8 +268,7 @@ parse_state_file (const char *filename,
 		 * /var/lib/NetworkManager for us since we have to ensure that
 		 * users upgrading NM get this working too.
 		 */
-		if (   tmp_error->domain == G_FILE_ERROR
-		    && tmp_error->code == G_FILE_ERROR_NOENT) {
+		if (g_error_matches (tmp_error, G_FILE_ERROR, G_FILE_ERROR_NOENT)) {
 			char *data, *dirname;
 			gsize len = 0;
 
