@@ -352,6 +352,49 @@ is_ip6_address (const char *in_address)
 
 }
 
+// 'c' is only used for openrc style
+static gchar **
+split_addresses_by_char (const gchar *addresses, const gchar *c)
+{
+	gchar **ipset;
+
+	if (addresses == NULL)
+		return NULL;
+
+	if (strchr (addresses, '(') != NULL) { // old baselayout style
+		gchar *tmp = g_strdup (addresses);
+		strip_string (tmp, '(');
+		strip_string (tmp, ')');
+		strip_string (tmp, '"');
+		strip_string (tmp, '\'');
+		ipset = g_strsplit (tmp, "\" \"", 0);
+		g_free(tmp);
+	} else { // openrc style
+		if (strstr (addresses, "netmask"))
+			// There is only one ip address if "netmask" is specified.
+			// '\n' is not used in config so there will be only one split.
+			ipset = g_strsplit (addresses, "\n", 0);
+		else
+			ipset = g_strsplit (addresses, c, 0);
+	}
+
+	return ipset;
+}
+
+static gchar **
+split_addresses (const gchar* addresses)
+{
+	// " " is only used by openrc style
+	return split_addresses_by_char (addresses, " ");
+}
+
+static gchar **
+split_routes (const gchar* routes)
+{
+	// "\"" is only used by openrc style
+	return split_addresses_by_char (routes, "\"");
+}
+
 gboolean
 has_ip6_address (const char *conn_name)
 {
@@ -360,7 +403,7 @@ has_ip6_address (const char *conn_name)
 	guint i;
 
 	g_return_val_if_fail (conn_name != NULL, FALSE);
-	ipset = g_strsplit (ifnet_get_data (conn_name, "config"), "\" \"", 0);
+	ipset = split_addresses (ifnet_get_data (conn_name, "config"));
 	length = g_strv_length (ipset);
 	for (i = 0; i < length; i++) {
 		if (!is_ip6_address (ipset[i]))
@@ -512,8 +555,11 @@ get_ip4_gateway (gchar * gateway)
 	tmp = g_strdup (tmp);
 	strip_string (tmp, ' ');
 	strip_string (tmp, '"');
+
+	// Only one gateway is selected
 	if ((split = strstr (tmp, "\"")) != NULL)
 		*split = '\0';
+
 	if (!inet_pton (AF_INET, tmp, &tmp_ip4_addr))
 		goto error;
 	g_free (tmp);
@@ -567,14 +613,11 @@ convert_ip4_config_block (const char *conn_name)
 	gchar *ip;
 	guint32 def_gateway = 0;
 	const char *routes;
-	gchar *pos;
 	ip_block *start = NULL, *current = NULL, *iblock = NULL;
-	const char *pattern =
-	    "((\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.)\\{(\\d{1,3})\\.\\.(\\d{1,3})\\}(/\\d{1,2}))";
 
 	g_return_val_if_fail (conn_name != NULL, NULL);
 
-	ipset = g_strsplit (ifnet_get_data (conn_name, "config"), "\" \"", 0);
+	ipset = split_addresses (ifnet_get_data (conn_name, "config"));
 	length = g_strv_length (ipset);
 
 	routes = ifnet_get_data (conn_name, "routes");
@@ -584,73 +627,16 @@ convert_ip4_config_block (const char *conn_name)
 	for (i = 0; i < length; i++) {
 		ip = ipset[i];
 		ip = strip_string (ip, '"');
-		//Handle ip like 192.168.4.{1..3}
-		if ((pos = strchr (ip, '{')) != NULL) {
-			gchar *ip_start, *ip_prefix;
-			gchar *begin_str, *end_str;
-			int begin, end, j;
-			GRegex *regex;
-			GMatchInfo *match_info;
-
-			regex = g_regex_new (pattern, 0, 0, NULL);
-			g_regex_match (regex, ip, 0, &match_info);
-			g_regex_unref (regex);
-
-			if (!g_match_info_matches (match_info)) {
-				g_match_info_free (match_info);
-				continue;
-			}
-			begin_str = g_match_info_fetch (match_info, 3);
-			end_str = g_match_info_fetch (match_info, 4);
-			begin = atoi (begin_str);
-			end = atoi (end_str);
-			ip_start = g_match_info_fetch (match_info, 2);
-			ip_prefix = g_match_info_fetch (match_info, 5);
-			if (end < begin || begin < 1 || end > 254) {
-				g_match_info_free (match_info);
-				continue;
-			}
-
-			for (j = begin; j <= end; j++) {
-				char suf[4];
-				gchar *newip;
-
-				sprintf (suf, "%d", j);
-				newip =
-				    g_strconcat (ip_start, suf, ip_prefix,
-						 NULL);
-				iblock = create_ip4_block (newip);
-				if (iblock == NULL) {
-					g_free (newip);
-					continue;
-				}
-				if (!iblock->gateway && def_gateway != 0)
-					iblock->gateway = def_gateway;
-				if (start == NULL)
-					start = current = iblock;
-				else {
-					current->next = iblock;
-					current = iblock;
-				}
-				g_free (newip);
-			}
-			g_free (begin_str);
-			g_free (end_str);
-			g_free (ip_start);
-			g_free (ip_prefix);
-			g_match_info_free (match_info);
-		} else {
-			iblock = create_ip4_block (ip);
-			if (iblock == NULL)
-				continue;
-			if (!iblock->gateway && def_gateway != 0)
-				iblock->gateway = def_gateway;
-			if (start == NULL)
-				start = current = iblock;
-			else {
-				current->next = iblock;
-				current = iblock;
-			}
+		iblock = create_ip4_block (ip);
+		if (iblock == NULL)
+			continue;
+		if (!iblock->gateway && def_gateway != 0)
+			iblock->gateway = def_gateway;
+		if (start == NULL)
+			start = current = iblock;
+		else {
+			current->next = iblock;
+			current = iblock;
 		}
 	}
 	g_strfreev (ipset);
@@ -667,7 +653,7 @@ convert_ip6_config_block (const char *conn_name)
 	ip6_block *start = NULL, *current = NULL, *iblock = NULL;
 
 	g_return_val_if_fail (conn_name != NULL, NULL);
-	ipset = g_strsplit (ifnet_get_data (conn_name, "config"), "\" \"", 0);
+	ipset = split_addresses (ifnet_get_data (conn_name, "config"));
 	length = g_strv_length (ipset);
 	for (i = 0; i < length; i++) {
 		ip = ipset[i];
@@ -693,15 +679,11 @@ convert_ip4_routes_block (const char *conn_name)
 	guint length;
 	guint i;
 	gchar *ip;
-	const char *routes;
 	ip_block *start = NULL, *current = NULL, *iblock = NULL;
 
 	g_return_val_if_fail (conn_name != NULL, NULL);
 
-	routes = ifnet_get_data (conn_name, "routes");
-	if (!routes)
-		return NULL;
-	ipset = g_strsplit (routes, "\" \"", 0);
+	ipset = split_routes (ifnet_get_data (conn_name, "routes"));
 	length = g_strv_length (ipset);
 	for (i = 0; i < length; i++) {
 		ip = ipset[i];
@@ -731,15 +713,11 @@ convert_ip6_routes_block (const char *conn_name)
 	guint length;
 	guint i;
 	gchar *ip, *tmp_addr;
-	const char *routes;
 	ip6_block *start = NULL, *current = NULL, *iblock = NULL;
 	struct in6_addr *tmp_ip6_addr;
 
 	g_return_val_if_fail (conn_name != NULL, NULL);
-	routes = ifnet_get_data (conn_name, "routes");
-	if (!routes)
-		return NULL;
-	ipset = g_strsplit (routes, "\" \"", 0);
+	ipset = split_routes (ifnet_get_data (conn_name, "routes"));
 	length = g_strv_length (ipset);
 	for (i = 0; i < length; i++) {
 		ip = ipset[i];

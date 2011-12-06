@@ -562,7 +562,7 @@ make_wired_connection_setting (NMConnection *connection,
 		nm_connection_add_setting (connection, NM_SETTING (s_wired));
 }
 
-/* add NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, 
+/* add NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME,
  * NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID in future*/
 static void
 make_ip4_setting (NMConnection *connection,
@@ -591,19 +591,19 @@ make_ip4_setting (NMConnection *connection,
 			g_object_unref (ip4_setting);
 			return;
 		}
-		if (!strcmp (method, "dhcp"))
+		if (strstr (method, "dhcp"))
 			g_object_set (ip4_setting,
 						  NM_SETTING_IP4_CONFIG_METHOD,
 						  NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 						  NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, FALSE, NULL);
-		else if (!strcmp (method, "autoip")){
+		else if (strstr (method, "autoip")) {
 			g_object_set (ip4_setting,
 						  NM_SETTING_IP4_CONFIG_METHOD,
 						  NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
 						  NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, FALSE, NULL);
 			nm_connection_add_setting (connection, NM_SETTING (ip4_setting));
 			return;
-		} else if (!strcmp (method, "shared")){
+		} else if (strstr (method, "shared")) {
 			g_object_set (ip4_setting,
 						  NM_SETTING_IP4_CONFIG_METHOD,
 						  NM_SETTING_IP4_CONFIG_METHOD_SHARED,
@@ -658,7 +658,7 @@ make_ip4_setting (NMConnection *connection,
 	}
 
 	/* add dhcp hostname and client id */
-	if (!is_static_block && !strcmp (method, "dhcp")) {
+	if (!is_static_block && strstr (method, "dhcp")) {
 		gchar *dhcp_hostname, *client_id;
 
 		get_dhcp_hostname_and_client_id (&dhcp_hostname, &client_id);
@@ -863,7 +863,7 @@ make_ip6_setting (NMConnection *connection,
 		nm_ip6_route_set_dest (route, iblock->ip);
 		nm_ip6_route_set_next_hop (route, iblock->next_hop);
 		nm_ip6_route_set_prefix (route, iblock->prefix);
-		/* metric is not per routes configuration right now 
+		/* metric is not per routes configuration right now
 		 * global metric is also supported (metric="x") */
 		if ((metric_str = ifnet_get_data (conn_name, "metric")) != NULL) {
 			metric = strtol (metric_str, NULL, 10);
@@ -990,7 +990,7 @@ make_wireless_connection_setting (const char *conn_name,
 		goto error;
 	}
 
-	/* mode=0: infrastructure 
+	/* mode=0: infrastructure
 	 * mode=1: adhoc */
 	value = wpa_get_value (conn_name, "mode");
 	if (value)

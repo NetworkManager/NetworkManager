@@ -169,12 +169,10 @@ init_block_by_line (gchar * buf)
 			conn = add_new_connection_config ("wireless", pos);
 	}
 	data = g_strdup (key_value[1]);
-	tmp = strip_string (data, '(');
-	tmp = strip_string (tmp, ')');
-	strip_string (tmp, '"');
+	tmp = strip_string (data, '"');
 	strip_string (tmp, '\'');
 	if (conn)
-		g_hash_table_insert (conn, g_strdup (key_value[0]),
+		g_hash_table_insert (conn, strip_string (g_strdup (key_value[0]), ' '),
 				     g_strdup (tmp));
 	g_free (data);
 	g_strfreev (key_value);
@@ -288,6 +286,20 @@ is_function (gchar * line)
 	return FALSE;
 }
 
+static void
+append_line (GString *buf, gchar* line)
+{
+	gchar *pos = NULL;
+
+	if ((pos = strchr (line, '#')) != NULL)
+		*pos = '\0';
+	g_strstrip (line);
+
+	if (line[0] != '\0')
+		g_string_append_printf (buf, " %s", line);
+	g_free (line);
+}
+
 gboolean
 ifnet_init (gchar * config_file)
 {
@@ -296,6 +308,8 @@ ifnet_init (gchar * config_file)
 
 	/* Handle multiple lines with brackets */
 	gboolean complete = TRUE;
+
+	gboolean openrc_style = TRUE;
 
 	/* line buffer */
 	GString *buf;
@@ -324,36 +338,60 @@ ifnet_init (gchar * config_file)
 			strip_function (channel, line);
 			continue;
 		}
-		if (line[0] != '#' && line[0] != '\0') {
-			gchar *pos = NULL;
 
+		// New openrc style, bash arrays are not allowed. We only care about '"'
+		if (openrc_style && line[0] != '#' && line[0] != '\0'
+				&& !strchr (line, '(') && !strchr (line, ')')) {
+			gchar *tmp = line;
+
+			while ((tmp = strchr (tmp, '"')) != NULL) {
+				complete = !complete;
+				++tmp;
+			}
+
+			append_line (buf, line);
+			// Add "(separator) for routes. It will be easier for later parsing
+			if (strstr (buf->str, "via"))
+				g_string_append_printf (buf, "\"");
+
+			if (!complete)
+				continue;
+
+			strip_string (buf->str, '"');
+
+			init_block_by_line (buf->str);
+			g_string_free (buf, TRUE);
+			buf = g_string_new (NULL);
+		}
+		// Old bash arrays for baselayout-1, to be deleted
+		else if (line[0] != '#' && line[0] != '\0') {
 			if (!complete) {
 				complete =
 				    g_strrstr (line,
 					       ")") == NULL ? FALSE : TRUE;
-				if ((pos = strchr (line, '#')) != NULL)
-					*pos = '\0';
-				g_strstrip (line);
-				if (line[0] != '\0') {
-					g_string_append_printf (buf,
-								" %s", line);
-				}
-				g_free (line);
-				if (!complete)
+
+				append_line (buf, line);
+				if (!complete) {
+					openrc_style = FALSE;
 					continue;
+				}
+				else {
+					openrc_style = TRUE;
+				}
 			} else {
 				complete =
 				    (g_strrstr (line, "(") != NULL
 				     && g_strrstr (line, ")") != NULL)
 				    || g_strrstr (line, "(") == NULL;
-				if ((pos = strchr (line, '#')) != NULL)
-					*pos = '\0';
-				g_strstrip (line);
-				if (line[0] != '\0')
-					g_string_append (buf, line);
-				g_free (line);
+
+				append_line (buf, line);
 				if (!complete)
+				{
+					openrc_style = FALSE;
 					continue;
+				} else {
+					openrc_style = TRUE;
+				}
 			}
 			init_block_by_line (buf->str);
 			g_string_free (buf, TRUE);
@@ -396,7 +434,7 @@ ifnet_set_data (const char *conn_name, const char *key, const char *value)
 	}
 	/* Remove existing key value pair */
 	if (g_hash_table_lookup_extended (conn, key, &old_key, &old_value)) {
-		if (stripped && !strcmp(old_value, stripped)){
+		if (stripped && !strcmp (old_value, stripped)) {
 			g_free (stripped);
 			return;
 		}

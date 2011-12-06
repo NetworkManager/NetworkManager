@@ -37,7 +37,7 @@ static void
 test_getdata ()
 {
 	ASSERT (ifnet_get_data ("eth1", "config")
-		&& strcmp (ifnet_get_data ("eth1", "config"), "dhcp") == 0,
+		&& strcmp (ifnet_get_data ("eth1", "config"), "( \"dhcp\" )") == 0,
 		"get data", "config_eth1 is not correct");
 	ASSERT (ifnet_get_data ("ppp0", "username")
 		&& strcmp (ifnet_get_data ("ppp0", "username"), "user") == 0,
@@ -84,7 +84,7 @@ test_is_static ()
 	ASSERT (is_static_ip4 ("eth0") == TRUE, "is static",
 		"a static interface is recognized as dhcp");
 	ASSERT (!is_static_ip6 ("eth0") == TRUE, "is static",
-		"a static interface is recognized as dhcp");
+		"a dhcp interface is recognized as static");
 }
 
 static void
@@ -182,10 +182,6 @@ test_convert_ipv4_config_block ()
 	ASSERT (iblock == NULL, "convert config_block",
 		"convert error configuration");
 	destroy_ip_block (iblock);
-	iblock = convert_ip4_config_block ("eth6");
-	ASSERT (iblock != NULL, "convert config_block",
-		"convert error configuration");
-	destroy_ip_block (iblock);
 }
 
 static void
@@ -196,6 +192,16 @@ test_convert_ipv4_routes_block ()
 
 	ASSERT (iblock != NULL, "convert ip4 routes", "should get one route");
 	check_ip_block (iblock, "192.168.4.0", "255.255.255.0", "192.168.4.1");
+	iblock = iblock->next;
+	destroy_ip_block (tmp);
+	ASSERT (iblock == NULL, "convert ip4 routes",
+		"should only get one route");
+
+	iblock = convert_ip4_routes_block ("eth9");
+	tmp = iblock;
+
+	ASSERT (iblock != NULL, "convert ip4 routes", "should get one route");
+	check_ip_block (iblock, "10.0.0.0", "255.0.0.0", "192.168.0.1");
 	iblock = iblock->next;
 	destroy_ip_block (tmp);
 	ASSERT (iblock == NULL, "convert ip4 routes",
@@ -270,6 +276,18 @@ test_new_connection ()
 	connection = ifnet_update_connection_from_config_block ("myxjtu2", &error);
 	ASSERT (connection != NULL, "new connection",
 		"new connection failed: %s",
+		error ? error->message : "NONE");
+	g_object_unref (connection);
+
+	connection = ifnet_update_connection_from_config_block ("eth9", &error);
+	ASSERT (connection != NULL, "new connection",
+		"new connection(eth9) failed: %s",
+		error ? error->message : "NONE");
+	g_object_unref (connection);
+
+	connection = ifnet_update_connection_from_config_block ("eth10", &error);
+	ASSERT (connection != NULL, "new connection",
+		"new connection(eth10) failed: %s",
 		error ? error->message : "NONE");
 	g_object_unref (connection);
 }
