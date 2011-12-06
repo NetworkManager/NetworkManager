@@ -73,7 +73,7 @@ add_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 
 	if (!dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID)) {
 		g_assert (error);
-		nm_log_warn (LOGD_DEVICE, "(%s) firewall zone change failed: (%d) %s",
+		nm_log_warn (LOGD_FIREWALL, "(%s) firewall zone change failed: (%d) %s",
 		             info->iface, error->code, error->message);
 	}
 
@@ -93,7 +93,7 @@ nm_firewall_manager_add_to_zone (NMFirewallManager *self,
 	AddInfo *info;
 
 	if (priv->running == FALSE) {
-		nm_log_dbg (LOGD_DEVICE, "(%s) firewall zone change skipped (not running)", iface);
+		nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone change skipped (not running)", iface);
 		callback (NULL, user_data1, user_data2);
 		return NULL;
 	}
@@ -104,7 +104,7 @@ nm_firewall_manager_add_to_zone (NMFirewallManager *self,
 	info->user_data1 = user_data1;
 	info->user_data2 = user_data2;
 
-	nm_log_dbg (LOGD_DEVICE, "(%s) firewall zone change -> %s", iface, zone );
+	nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone change -> %s", iface, zone );
 	return dbus_g_proxy_begin_call_with_timeout (priv->proxy,
 	                                             "AddInterface",
 	                                             add_cb,
@@ -152,10 +152,10 @@ name_owner_changed (NMDBusManager *dbus_mgr,
 		return;
 
 	if (!old_owner_good && new_owner_good) {
-		nm_log_dbg (LOGD_DEVICE, "firewall started");
+		nm_log_dbg (LOGD_FIREWALL, "firewall started");
 		set_running (self, TRUE);
 	} else if (old_owner_good && !new_owner_good) {
-		nm_log_dbg (LOGD_DEVICE, "firewall stopped");
+		nm_log_dbg (LOGD_FIREWALL, "firewall stopped");
 		set_running (self, FALSE);
 	}
 }
@@ -188,7 +188,7 @@ nm_firewall_manager_init (NMFirewallManager * self)
 	                                        G_CALLBACK (name_owner_changed),
 	                                        self);
 	priv->running = nm_dbus_manager_name_has_owner (priv->dbus_mgr, FIREWALL_DBUS_SERVICE);
-	nm_log_dbg (LOGD_DEVICE, "firewall is %s running", priv->running ? "" : "not" );
+	nm_log_dbg (LOGD_FIREWALL, "firewall is %s running", priv->running ? "" : "not" );
 
 	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
 	priv->proxy = dbus_g_proxy_new_for_name (bus,
