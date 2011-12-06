@@ -2567,7 +2567,7 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 	int ifindex;
 
 	/* Clear the activation source ID now that this stage has run */
-	activation_source_clear (self, FALSE, 0);
+	activation_source_clear (self, FALSE, AF_INET);
 
 	iface = nm_device_get_iface (self);
 	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 5 of 5 (IPv4 Commit) started...",
@@ -2726,7 +2726,7 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 	int ifindex;
 
 	/* Clear the activation source ID now that this stage has run */
-	activation_source_clear (self, FALSE, 0);
+	activation_source_clear (self, FALSE, AF_INET6);
 
 	iface = nm_device_get_iface (self);
 	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 5 of 5 (IPv6 Commit) started...",
