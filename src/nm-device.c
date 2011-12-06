@@ -2561,6 +2561,10 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, 0);
 
+	iface = nm_device_get_iface (self);
+	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 5 of 5 (IPv4 Commit) started...",
+	             iface);
+
 	req = nm_device_get_act_request (self);
 	g_assert (req);
 	connection = nm_act_request_get_connection (req);
@@ -2568,10 +2572,6 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 
 	config = g_object_get_data (G_OBJECT (req), PENDING_IP4_CONFIG);
 	g_assert (config);
-
-	iface = nm_device_get_iface (self);
-	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 5 of 5 (IPv4 Commit) started...",
-	             iface);
 
 	/* Make sure the interface is up again just because */
 	ifindex = nm_device_get_ip_ifindex (self);
@@ -2720,6 +2720,10 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, 0);
 
+	iface = nm_device_get_iface (self);
+	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 5 of 5 (IPv6 Commit) started...",
+	             iface);
+
 	req = nm_device_get_act_request (self);
 	g_assert (req);
 	connection = nm_act_request_get_connection (req);
@@ -2727,10 +2731,6 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 
 	config = g_object_get_data (G_OBJECT (req), PENDING_IP6_CONFIG);
 	g_assert (config);
-
-	iface = nm_device_get_iface (self);
-	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 5 of 5 (IPv6 Commit) started...",
-	             iface);
 
 	/* Make sure the interface is up again just because */
 	ifindex = nm_device_get_ip_ifindex (self);
