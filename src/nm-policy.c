@@ -76,6 +76,9 @@ struct NMPolicy {
 #define RESET_RETRIES_TIMER 300
 #define FAILURE_REASON_TAG "failure-reason"
 
+static void schedule_activate_all (NMPolicy *policy);
+
+
 static NMDevice *
 get_best_ip4_device (NMManager *manager, NMActRequest **out_req)
 {
@@ -978,6 +981,7 @@ reset_connections_retries (gpointer user_data)
 	NMPolicy *policy = (NMPolicy *) user_data;
 	GSList *connections, *iter;
 	time_t con_stamp, min_stamp, now;
+	gboolean changed = FALSE;
 
 	policy->reset_retries_id = 0;
 
@@ -990,6 +994,7 @@ reset_connections_retries (gpointer user_data)
 		if (con_stamp + RESET_RETRIES_TIMER <= now) {
 			set_connection_auto_retries (NM_CONNECTION (iter->data), RETRIES_DEFAULT);
 			g_object_set_data (G_OBJECT (iter->data), RESET_RETRIES_TIMESTAMP_TAG, GSIZE_TO_POINTER (0));
+			changed = TRUE;
 			continue;
 		}
 		if (con_stamp < min_stamp)
@@ -1000,6 +1005,11 @@ reset_connections_retries (gpointer user_data)
 	/* Schedule the handler again if there are some stamps left */
 	if (min_stamp != now)
 		policy->reset_retries_id = g_timeout_add_seconds (RESET_RETRIES_TIMER - (now - min_stamp), reset_connections_retries, policy);
+
+	/* If anything changed, try to activate the newly re-enabled connections */
+	if (changed)
+		schedule_activate_all (policy);
+
 	return FALSE;
 }
 
