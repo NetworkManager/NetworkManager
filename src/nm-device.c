@@ -1615,7 +1615,7 @@ real_act_stage3_ip4_config_start (NMDevice *self,
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
 	NMSettingIP4Config *s_ip4;
-	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
+	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	const char *method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
@@ -1639,15 +1639,20 @@ real_act_stage3_ip4_config_start (NMDevice *self,
 		/* Use only IPv4 config from the connection data */
 		*out_config = nm_ip4_config_new ();
 		g_assert (*out_config);
+		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	} else if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) == 0) {
 		*out_config = shared4_new_config (self, reason);
-		if (*out_config)
+		if (*out_config) {
 			priv->dnsmasq_manager = nm_dnsmasq_manager_new (nm_device_get_ip_iface (self));
-		else
+			ret = NM_ACT_STAGE_RETURN_SUCCESS;
+		} else
 			ret = NM_ACT_STAGE_RETURN_FAILURE;
 	} else if (s_ip4 && !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
 		/* Nothing to do... */
 		ret = NM_ACT_STAGE_RETURN_STOP;
+	} else {
+		nm_log_warn (LOGD_IP4, "(%s): unhandled IPv4 config method; will fail",
+		             nm_device_get_ip_iface (self));
 	}
 
 	return ret;
@@ -2151,6 +2156,9 @@ real_act_stage3_ip6_config_start (NMDevice *self,
 		if (priv->ip6_accept_ra_path)
 			nm_utils_do_sysctl (priv->ip6_accept_ra_path, "0\n");
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
+	} else {
+		nm_log_warn (LOGD_IP6, "(%s): unhandled IPv6 config method; will fail",
+		             nm_device_get_ip_iface (self));
 	}
 
 	/* Other methods (shared) aren't implemented yet */
