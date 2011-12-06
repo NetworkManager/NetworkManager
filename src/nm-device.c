@@ -2637,7 +2637,9 @@ fw_add_to_zone_cb (GError *error,
 {
 	NMDevice *self = NM_DEVICE (user_data1);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	gboolean ip4 = GPOINTER_TO_UINT (user_data2);
+	int family = GPOINTER_TO_INT (user_data2);
+	char ipver = 'x';
+	guint32 logd = LOGD_NONE;
 
 	priv->fw_call = NULL;
 
@@ -2645,19 +2647,24 @@ fw_add_to_zone_cb (GError *error,
 		/* FIXME: fail the device activation? */
 	}
 
-	if (ip4)
+	if (family == AF_INET) {
 		activation_source_schedule (self, nm_device_activate_ip4_config_commit, AF_INET);
-	else
+		ipver = '4';
+		logd = LOGD_IP4;
+	} else if (family == AF_INET6) {
 		activation_source_schedule (self, nm_device_activate_ip6_config_commit, AF_INET6);
+		ipver = '6';
+		logd = LOGD_IP6;
+	} else
+		g_assert_not_reached ();
 
-	nm_log_info (LOGD_DEVICE | (ip4 ? LOGD_IP4 : LOGD_IP6),
+	nm_log_info (LOGD_DEVICE | logd,
 	             "Activation (%s) Stage 5 of 5 (IPv%c Configure Commit) scheduled...",
-	             nm_device_get_iface (self),
-	             ip4 ? '4' : '6');
+	             nm_device_get_iface (self), ipver);
 }
 
 static void
-fw_add_to_zone (NMDevice *self, gboolean ip4)
+fw_add_to_zone (NMDevice *self, int family)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
@@ -2667,7 +2674,7 @@ fw_add_to_zone (NMDevice *self, gboolean ip4)
 	 * already activated, the zone has already been set.
 	 */
 	if (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED) {
-		fw_add_to_zone_cb (NULL, self, GUINT_TO_POINTER (ip4));
+		fw_add_to_zone_cb (NULL, self, GINT_TO_POINTER (family));
 		return;
 	}
 
@@ -2680,7 +2687,7 @@ fw_add_to_zone (NMDevice *self, gboolean ip4)
 	                                                 nm_setting_connection_get_zone (s_con),
 	                                                 fw_add_to_zone_cb,
 	                                                 self,
-	                                                 GUINT_TO_POINTER (ip4));
+	                                                 GINT_TO_POINTER (family));
 }
 
 void
