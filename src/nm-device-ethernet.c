@@ -615,79 +615,104 @@ match_subchans (NMDeviceEthernet *self, NMSettingWired *s_wired, gboolean *try_m
 	return TRUE;
 }
 
+static gboolean
+match_ethernet_connection (NMDevice *device, NMConnection *connection,
+                           gboolean check_blacklist, GError **error)
+{
+	const char *iface;
+	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+	NMSettingWired *s_wired;
+
+	s_wired = nm_connection_get_setting_wired (connection);
+
+	iface = nm_connection_get_virtual_iface_name (connection);
+	if (iface && strcmp (nm_device_get_iface (device), iface))
+		return FALSE;
+
+	if (nm_connection_is_type (connection, NM_SETTING_PPPOE_SETTING_NAME)) {
+		/* NOP */
+	} else if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)) {
+		/* NOP */
+	} else if (nm_connection_is_type (connection, NM_SETTING_WIRED_SETTING_NAME)) {
+		if (!s_wired) {
+			g_set_error (error,
+			             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INVALID,
+			             "The connection was not a valid wired connection.");
+			return FALSE;
+		}
+	} else {
+		g_set_error (error,
+		             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_NOT_WIRED,
+		             "The connection was not a wired, bond, or PPPoE connection.");
+		return FALSE;
+	}
+
+	if (s_wired) {
+		const GByteArray *mac;
+		gboolean try_mac = TRUE;
+		const GSList *mac_blacklist, *mac_blacklist_iter;
+
+		if (!match_subchans (self, s_wired, &try_mac)) {
+			g_set_error (error,
+			             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INCOMPATIBLE,
+			             "The connection's s390 subchannels did not match this device.");
+			return FALSE;
+		}
+
+		mac = nm_setting_wired_get_mac_address (s_wired);
+		if (try_mac && mac && memcmp (mac->data, &priv->perm_hw_addr, ETH_ALEN)) {
+			g_set_error (error,
+			             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INCOMPATIBLE,
+			             "The connection's MAC address did not match this device.");
+			return FALSE;
+		}
+
+		if (!check_blacklist)
+			return TRUE;
+
+		/* Check for MAC address blacklist */
+		mac_blacklist = nm_setting_wired_get_mac_address_blacklist (s_wired);
+		for (mac_blacklist_iter = mac_blacklist; mac_blacklist_iter;
+			 mac_blacklist_iter = g_slist_next (mac_blacklist_iter)) {
+			struct ether_addr addr;
+
+			if (!ether_aton_r (mac_blacklist_iter->data, &addr)) {
+				g_warn_if_reached ();
+				return FALSE;
+			}
+			if (memcmp (&addr, &priv->perm_hw_addr, ETH_ALEN) == 0) {
+				g_set_error (error,
+				             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INCOMPATIBLE,
+				             "The connection's MAC address (%s) is blacklisted in %s.",
+				             (char *) mac_blacklist_iter->data, NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST);
+				return FALSE;
+			}
+		}
+	}
+
+	return TRUE;
+}
+
 static NMConnection *
 real_get_best_auto_connection (NMDevice *dev,
                                GSList *connections,
                                char **specific_object)
 {
-	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (dev);
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	GSList *iter;
 
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		NMConnection *connection = NM_CONNECTION (iter->data);
 		NMSettingConnection *s_con;
-		NMSettingWired *s_wired;
-		const char *connection_type, *iface;
-		gboolean is_pppoe = FALSE;
-		const GSList *mac_blacklist, *mac_blacklist_iter;
-		gboolean mac_blacklist_found = FALSE;
 
 		s_con = nm_connection_get_setting_connection (connection);
 		g_assert (s_con);
 
-		connection_type = nm_setting_connection_get_connection_type (s_con);
-
-		iface = nm_connection_get_virtual_iface_name (connection);
-		if (iface && strcmp (nm_device_get_iface (dev), iface))
-			continue;
-	
-		if (!strcmp (connection_type, NM_SETTING_PPPOE_SETTING_NAME))
-			is_pppoe = TRUE;
-
-		if (!is_pppoe && strcmp (connection_type, NM_SETTING_WIRED_SETTING_NAME))
-			continue;
-		if (!nm_setting_connection_get_autoconnect (s_con))
-			continue;
-
-		s_wired = nm_connection_get_setting_wired (connection);
-		/* Wired setting optional for PPPoE */
-		if (!is_pppoe && !s_wired)
-			continue;
-
-		if (s_wired) {
-			const GByteArray *mac;
-			gboolean try_mac = TRUE;
-
-			if (!match_subchans (self, s_wired, &try_mac))
-				continue;
-
-			mac = nm_setting_wired_get_mac_address (s_wired);
-			if (try_mac && mac && memcmp (mac->data, &priv->perm_hw_addr, ETH_ALEN))
-				continue;
-
-			/* Check for MAC address blacklist */
-			mac_blacklist = nm_setting_wired_get_mac_address_blacklist (s_wired);
-			for (mac_blacklist_iter = mac_blacklist; mac_blacklist_iter;
-			     mac_blacklist_iter = g_slist_next (mac_blacklist_iter)) {
-				struct ether_addr addr;
-
-				if (!ether_aton_r (mac_blacklist_iter->data, &addr)) {
-					g_warn_if_reached ();
-					continue;
-				}
-				if (memcmp (&addr, &priv->perm_hw_addr, ETH_ALEN) == 0) {
-					mac_blacklist_found = TRUE;
-					break;
-				}
-			}
-			/* Found device MAC address in the blacklist - do not use this connection */
-			if (mac_blacklist_found)
-				continue;
-		}
-
-		return connection;
+		if (   nm_setting_connection_get_autoconnect (s_con)
+		    && match_ethernet_connection (dev, connection, TRUE, NULL))
+			return connection;
 	}
+
 	return NULL;
 }
 
@@ -1340,83 +1365,7 @@ real_check_connection_compatible (NMDevice *device,
                                   NMConnection *connection,
                                   GError **error)
 {
-	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-	NMSettingConnection *s_con;
-	NMSettingWired *s_wired;
-	const char *connection_type;
-	gboolean is_pppoe = FALSE, is_bond = FALSE;
-	const GByteArray *mac;
-	gboolean try_mac = TRUE;
-	const GSList *mac_blacklist, *mac_blacklist_iter;
-
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
-
-	connection_type = nm_setting_connection_get_connection_type (s_con);
-	if (   strcmp (connection_type, NM_SETTING_WIRED_SETTING_NAME)
-	    && strcmp (connection_type, NM_SETTING_BOND_SETTING_NAME)
-	    && strcmp (connection_type, NM_SETTING_PPPOE_SETTING_NAME)) {
-		g_set_error (error,
-		             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_NOT_WIRED,
-		             "The connection was not a wired, bond, or PPPoE connection.");
-		return FALSE;
-	}
-
-	if (!strcmp (connection_type, NM_SETTING_PPPOE_SETTING_NAME))
-		is_pppoe = TRUE;
-
-	if (!strcmp (connection_type, NM_SETTING_BOND_SETTING_NAME))
-		is_bond = TRUE;
-
-	s_wired = nm_connection_get_setting_wired (connection);
-	/* Wired setting is optional for PPPoE */
-	if (!is_pppoe && !s_wired && !is_bond) {
-		g_set_error (error,
-		             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INVALID,
-		             "The connection was not a valid wired connection.");
-		return FALSE;
-	}
-
-	if (s_wired) {
-		if (!match_subchans (self, s_wired, &try_mac)) {
-			g_set_error (error,
-			             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INCOMPATIBLE,
-			             "The connection's s390 subchannels did not match this device.");
-			return FALSE;
-		}
-
-		mac = nm_setting_wired_get_mac_address (s_wired);
-		if (try_mac && mac && memcmp (mac->data, &priv->perm_hw_addr, ETH_ALEN)) {
-			g_set_error (error,
-			             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INCOMPATIBLE,
-			             "The connection's MAC address did not match this device.");
-			return FALSE;
-		}
-
-		/* Check for MAC address blacklist */
-		mac_blacklist = nm_setting_wired_get_mac_address_blacklist (s_wired);
-		for (mac_blacklist_iter = mac_blacklist; mac_blacklist_iter;
-		     mac_blacklist_iter = g_slist_next (mac_blacklist_iter)) {
-			struct ether_addr addr;
-
-			if (!ether_aton_r (mac_blacklist_iter->data, &addr)) {
-				g_warn_if_reached ();
-				continue;
-			}
-			if (memcmp (&addr, &priv->perm_hw_addr, ETH_ALEN) == 0) {
-				g_set_error (error,
-				             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INCOMPATIBLE,
-				             "The connection's MAC address (%s) is blacklisted in %s.",
-				             (char *) mac_blacklist_iter->data, NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST);
-				return FALSE;
-			}
-		}
-	}
-
-	// FIXME: check bitrate against device capabilities
-
-	return TRUE;
+	return match_ethernet_connection (device, connection, TRUE, error);
 }
 
 static gboolean
@@ -1498,53 +1447,19 @@ spec_match_list (NMDevice *device, const GSList *specs)
 	return matched;
 }
 
-static gboolean
-wired_match_config (NMDevice *self, NMConnection *connection)
-{
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-	NMSettingWired *s_wired;
-	const GByteArray *s_ether;
-	gboolean try_mac = TRUE;
-
-	s_wired = nm_connection_get_setting_wired (connection);
-	if (!s_wired)
-		return FALSE;
-
-	if (!match_subchans (NM_DEVICE_ETHERNET (self), s_wired, &try_mac))
-		return FALSE;
-
-	/* MAC address check */
-	s_ether = nm_setting_wired_get_mac_address (s_wired);
-	if (try_mac && s_ether && memcmp (s_ether->data, priv->perm_hw_addr, ETH_ALEN))
-		return FALSE;
-
-	return TRUE;
-}
-
 static NMConnection *
 connection_match_config (NMDevice *self, const GSList *connections)
 {
 	const GSList *iter;
-	GSList *wired_matches;
-	NMSettingConnection *s_con;
+	GSList *ether_matches;
 	NMConnection *match;
 
 	/* First narrow @connections down to those that match in their
 	 * NMSettingWired configuration.
 	 */
-	wired_matches = NULL;
+	ether_matches = NULL;
 	for (iter = connections; iter; iter = iter->next) {
 		NMConnection *candidate = NM_CONNECTION (iter->data);
-		const char *iface;
-
-		iface = nm_connection_get_virtual_iface_name (candidate);
-		if (iface && strcmp (nm_device_get_iface (self), iface))
-			continue;
-
-		s_con = nm_connection_get_setting_connection (candidate);
-		g_assert (s_con);
-		if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_WIRED_SETTING_NAME))
-			continue;
 
 		/* Can't assume 802.1x or PPPoE connections; they have too much state
 		 * that's impossible to get on-the-fly from PPPoE or the supplicant.
@@ -1553,16 +1468,16 @@ connection_match_config (NMDevice *self, const GSList *connections)
 		    || nm_connection_get_setting_pppoe (candidate))
 			continue;
 
-		if (!wired_match_config (self, candidate))
+		if (!match_ethernet_connection (self, candidate, FALSE, NULL))
 			continue;
 
-		wired_matches = g_slist_prepend (wired_matches, candidate);
+		ether_matches = g_slist_prepend (ether_matches, candidate);
 	}
 
 	/* Now pass those to the super method, which will check IP config */
-	wired_matches = g_slist_reverse (wired_matches);
-	match = NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->connection_match_config (self, wired_matches);
-	g_slist_free (wired_matches);
+	ether_matches = g_slist_reverse (ether_matches);
+	match = NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->connection_match_config (self, ether_matches);
+	g_slist_free (ether_matches);
 
 	return match;
 }
