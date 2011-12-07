@@ -479,22 +479,28 @@ format_ips (gchar * value, gchar ** out_line, gchar * key, gchar * name)
 	guint length, i;
 	GString *formated_string = g_string_new (NULL);
 
+	strip_string (value, '(');
+	strip_string (value, ')');
 	strip_string (value, '"');
-	ipset = g_strsplit (value, "\" \"", 0);
+	ipset = g_strsplit (value, "\"", 0);
 	length = g_strv_length (ipset);
 
 	//only one line
 	if (length < 2) {
 		*out_line =
-		    g_strdup_printf ("%s_%s=( \"%s\" )\n", key, name, value);
+		    g_strdup_printf ("%s_%s=\"%s\"\n", key, name, value);
 		goto done;
 	}
 	// Multiple lines
-	g_string_append_printf (formated_string, "%s_%s=(\n", key, name);
+	g_string_append_printf (formated_string, "%s_%s=\"\n", key, name);
 	for (i = 0; i < length; i++)
-		g_string_append_printf (formated_string,
-					"\t\"%s\"\n", ipset[i]);
-	g_string_append (formated_string, ")\n");
+	{
+		strip_string (ipset[i], ' ');
+		if (ipset[i][0] != '\0')
+			g_string_append_printf (formated_string,
+						"%s\n", ipset[i]);
+	}
+	g_string_append (formated_string, "\"\n");
 	*out_line = g_strdup (formated_string->str);
 done:
 	g_string_free (formated_string, TRUE);
@@ -509,7 +515,7 @@ ifnet_flush_to_file (const char *config_file)
 	gpointer key, value, name, network;
 	GHashTableIter iter, iter_network;
 	GList *list_iter;
-	gchar *out_line;
+	gchar *out_line = NULL;
 	gsize bytes_written;
 	gboolean result = FALSE;
 
