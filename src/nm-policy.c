@@ -1022,6 +1022,38 @@ get_device_connection (NMDevice *device)
 	return req ? nm_act_request_get_connection (req) : NULL;
 }
 
+static void schedule_activate_all (NMPolicy *policy);
+
+static void
+activate_slave_connections (NMPolicy *policy, NMConnection *connection,
+                            NMDevice *device)
+{
+	const char *master_device;
+	GSList *connections, *iter;
+
+	master_device = nm_device_get_iface (device);
+	g_assert (master_device);
+
+	connections = nm_settings_get_connections (policy->settings);
+	for (iter = connections; iter; iter = g_slist_next (iter)) {
+		NMConnection *slave;
+		NMSettingConnection *s_slave_con;
+
+		slave = NM_CONNECTION (iter->data);
+		g_assert (slave);
+
+		s_slave_con = nm_connection_get_setting_connection (slave);
+		g_assert (s_slave_con);
+
+		if (!g_strcmp0 (nm_setting_connection_get_master (s_slave_con), master_device))
+			set_connection_auto_retries (slave, RETRIES_DEFAULT);
+	}
+
+	g_slist_free (connections);
+
+	schedule_activate_all (policy);
+}
+
 static void
 device_state_changed (NMDevice *device,
                       NMDeviceState new_state,
@@ -1111,6 +1143,13 @@ device_state_changed (NMDevice *device,
 		update_routing_and_dns (policy, FALSE);
 		schedule_activate_check (policy, device, 0);
 		break;
+
+	case NM_DEVICE_STATE_PREPARE:
+		/* Reset auto-connect retries of all slaves and schedule them for
+		 * activation. */
+		activate_slave_connections (policy, connection, device);
+		break;
+
 	default:
 		break;
 	}
