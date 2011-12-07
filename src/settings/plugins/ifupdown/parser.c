@@ -433,6 +433,15 @@ eni_plugin_error_quark() {
 	return error_quark;
 }
 	
+static void
+ifupdown_add_search_item(gpointer data, gpointer user_data)
+{
+	const char *dns_search = data;
+	NMSettingIP4Config *ip4_setting = user_data;
+
+	if (!nm_setting_ip4_config_add_dns_search (ip4_setting, dns_search))
+		PLUGIN_WARN ("SCPlugin-Ifupdown", "    warning: duplicate DNS domain '%s'", dns_search);
+}
 
 static void
 update_ip4_setting_from_if_block(NMConnection *connection,
@@ -456,14 +465,18 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 		const char *gateway_v = ifparser_getkey(block, "gateway");
 		const char *nameserver_v = ifparser_getkey(block, "dns-nameserver");
 		const char *nameservers_v = ifparser_getkey(block, "dns-nameservers");
+		const char *search_v = ifparser_getkey(block, "dns-search");
 		GSList* nameservers_list = NULL;
 		GSList* nameservers_list_i = NULL;
+		GSList* search_list = NULL;
 		GError *error = NULL;
 
 		if(nameservers_v)
 			nameservers_list_i = nameservers_list = string_to_glist_of_strings (nameservers_v);
 		if(nameserver_v)
 			nameservers_list_i = nameservers_list = g_slist_append(nameservers_list, g_strdup(nameserver_v));
+		if(search_v)
+			search_list = string_to_glist_of_strings (search_v);
 
 		if (!address_v)
 			address_v = g_strdup ("0.0.0.0");
@@ -512,6 +525,13 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 		}
 		if (!nm_setting_ip4_config_get_num_dns (ip4_setting))
 			PLUGIN_PRINT("SCPlugin-Ifupdown", "No dns-nameserver configured in /etc/network/interfaces");
+
+		/* DNS searches */
+                if (search_list) {
+			g_slist_foreach (search_list, (GFunc) ifupdown_add_search_item, ip4_setting);
+			g_slist_foreach (search_list, (GFunc) g_free, NULL);
+			g_slist_free (search_list);
+		}
 
 		g_object_set(ip4_setting,
 				   NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
