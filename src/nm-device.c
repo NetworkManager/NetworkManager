@@ -899,7 +899,17 @@ handle_slave_activation (NMDevice *slave, NMDevice *master)
 			return FALSE;
 
 		nm_device_hw_bring_up (slave, TRUE, NULL);
+	} else {
+		nm_log_warn (LOGD_DEVICE, "(%s): Unable to enslave. Unknown slave type '%s'",
+		             nm_device_get_iface (slave), nm_setting_connection_get_slave_type (s_con));
+
+		/* Abort activation */
+		return FALSE;
 	}
+
+	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 1 of 5 (Device Prepare) enslaved to %s",
+	             nm_device_get_iface (slave),
+				 nm_device_get_iface (master));
 
 	return TRUE;
 }
@@ -916,8 +926,11 @@ handle_slave_deactivation (NMDevice *slave, NMDevice *master)
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
-	if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BOND_SETTING_NAME))
+	if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BOND_SETTING_NAME)) {
 		nm_system_iface_release (slave, master);
+		nm_log_info (LOGD_DEVICE, "Device %s released from master %s",
+			         nm_device_get_iface (slave), nm_device_get_iface (master));
+	}
 }
 
 /*
