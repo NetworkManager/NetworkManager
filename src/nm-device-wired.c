@@ -391,6 +391,11 @@ ip4_match_config (NMDevice *self, NMConnection *connection)
 		g_slist_free (leases);
 	}
 
+	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
+		// FIXME: Enforce no ipv4 addresses?
+		return TRUE;
+	}
+
 	/* 'shared' and 'link-local' aren't supported methods because 'shared'
 	 * requires too much iptables and dnsmasq state to be reclaimed, and
 	 * avahi-autoipd isn't smart enough to allow the link-local address to be
