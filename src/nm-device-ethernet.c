@@ -1535,6 +1535,11 @@ connection_match_config (NMDevice *self, const GSList *connections)
 	wired_matches = NULL;
 	for (iter = connections; iter; iter = iter->next) {
 		NMConnection *candidate = NM_CONNECTION (iter->data);
+		const char *iface;
+
+		iface = nm_connection_get_virtual_iface_name (candidate);
+		if (iface && strcmp (nm_device_get_iface (self), iface))
+			continue;
 
 		s_con = nm_connection_get_setting_connection (candidate);
 		g_assert (s_con);
