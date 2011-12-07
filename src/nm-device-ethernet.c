@@ -76,6 +76,12 @@ typedef enum
 #define NM_ETHERNET_ERROR (nm_ethernet_error_quark ())
 #define NM_TYPE_ETHERNET_ERROR (nm_ethernet_error_get_type ()) 
 
+typedef enum
+{
+	NM_ETHERNET_TYPE_UNSPEC = 0,
+	NM_ETHERNET_TYPE_BOND,
+} NMEthernetType;
+
 typedef struct Supplicant {
 	NMSupplicantManager *mgr;
 	NMSupplicantInterface *iface;
@@ -105,6 +111,8 @@ typedef struct {
 	/* PPPoE */
 	NMPPPManager *ppp_manager;
 	NMIP4Config  *pending_ip4_config;
+
+	NMEthernetType      type;
 } NMDeviceEthernetPrivate;
 
 enum {
@@ -282,6 +290,13 @@ constructor (GType type,
 	self = NM_DEVICE (object);
 	priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
+	// FIXME: Convert this into a no-export property so type can be specified
+	//        when the device is created.
+	if (!strcmp(nm_device_get_driver (self), "bonding"))
+		priv->type = NM_ETHERNET_TYPE_BOND;
+	else
+		priv->type = NM_ETHERNET_TYPE_UNSPEC;
+
 	nm_log_dbg (LOGD_HW | LOGD_ETHER, "(%s): kernel ifindex %d",
 	            nm_device_get_iface (NM_DEVICE (self)),
 	            nm_device_get_ifindex (NM_DEVICE (self)));
@@ -313,6 +328,8 @@ device_state_changed (NMDevice *device,
                       NMDeviceStateReason reason,
                       gpointer user_data)
 {
+	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
 	switch (new_state) {
 	case NM_DEVICE_STATE_ACTIVATED:
@@ -320,6 +337,17 @@ device_state_changed (NMDevice *device,
 	case NM_DEVICE_STATE_DISCONNECTED:
 		clear_secrets_tries (device);
 		break;
+
+	case NM_DEVICE_STATE_UNAVAILABLE:
+		switch (priv->type) {
+		case NM_ETHERNET_TYPE_BOND:
+			/* Use NM_DEVICE_STATE_REASON_CARRIER to make sure num retries is reset */
+			nm_device_state_changed (device, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_CARRIER);
+			break;
+
+		default:
+			break;
+		}
 	default:
 		break;
 	}
