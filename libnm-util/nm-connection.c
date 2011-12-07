@@ -496,6 +496,33 @@ nm_connection_get_setting_by_name (NMConnection *connection, const char *name)
 	return type ? nm_connection_get_setting (connection, type) : NULL;
 }
 
+/**
+ * nm_connection_get_type_setting:
+ * @connection: a #NMConnection
+ *
+ * Returns: (transfer none): the #NMSetting of the connection base type
+ */
+static NMSetting *
+nm_connection_get_type_setting (NMConnection *connection)
+{
+	NMSettingConnection *s_con;
+	const char *type;
+	NMSetting *base;
+
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+
+	type = nm_setting_connection_get_connection_type (s_con);
+	g_assert (type);
+
+	base = nm_connection_get_setting_by_name (connection, type);
+	g_assert (base);
+
+	return base;
+}
+
 static gboolean
 validate_permissions_type (GHashTable *hash, GError **error)
 {
@@ -1186,6 +1213,30 @@ nm_connection_get_path (NMConnection *connection)
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return NM_CONNECTION_GET_PRIVATE (connection)->path;
+}
+
+/**
+ * nm_connection_get_virtual_iface_name:
+ * @connection: The #NMConnection
+ *
+ * Returns the name of the virtual kernel interface which the connection
+ * needs to use if specified in the settings. This function abstracts all
+ * connection types which require this functionality. For all other
+ * connection types, this function will return NULL.
+ *
+ * Returns: Name of the kernel interface or NULL
+ */
+const char *
+nm_connection_get_virtual_iface_name (NMConnection *connection)
+{
+	NMSetting *base;
+
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	base = nm_connection_get_type_setting (connection);
+	g_assert (base);
+
+	return nm_setting_get_virtual_iface_name (base);
 }
 
 /**

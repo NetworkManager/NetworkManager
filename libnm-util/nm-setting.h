@@ -203,9 +203,10 @@ typedef struct {
 	                                         NMSettingClearSecretsWithFlagsFn func,
 	                                         gpointer user_data);
 
+	const char *(*get_virtual_iface_name) (NMSetting *setting);
+
 	/* Padding for future expansion */
 	void (*_reserved1) (void);
-	void (*_reserved2) (void);
 } NMSettingClass;
 
 /**
@@ -307,6 +308,8 @@ gboolean    nm_setting_set_secret_flags (NMSetting *setting,
                                          const char *secret_name,
                                          NMSettingSecretFlags flags,
                                          GError **error);
+
+const char *nm_setting_get_virtual_iface_name (NMSetting *setting);
 
 G_END_DECLS
 

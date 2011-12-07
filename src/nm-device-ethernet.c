@@ -379,23 +379,6 @@ nm_device_ethernet_new (const char *udi,
 	                                  NULL);
 }
 
-
-gboolean
-nm_device_bond_connection_matches (NMDevice *device, NMConnection *connection)
-{
-	NMSettingBond *s_bond;
-	const char *devname;
-
-	devname = nm_device_get_iface (device);
-	g_assert(devname);
-
-	s_bond = nm_connection_get_setting_bond (connection);
-	if (s_bond && !strcmp (devname, nm_setting_bond_get_interface_name (s_bond)))
-		return TRUE;
-
-	return FALSE;
-}
-
 /* Returns speed in Mb/s */
 static guint32
 nm_device_ethernet_get_speed (NMDeviceEthernet *self)
@@ -645,7 +628,7 @@ real_get_best_auto_connection (NMDevice *dev,
 		NMConnection *connection = NM_CONNECTION (iter->data);
 		NMSettingConnection *s_con;
 		NMSettingWired *s_wired;
-		const char *connection_type;
+		const char *connection_type, *iface;
 		gboolean is_pppoe = FALSE;
 		const GSList *mac_blacklist, *mac_blacklist_iter;
 		gboolean mac_blacklist_found = FALSE;
@@ -655,12 +638,9 @@ real_get_best_auto_connection (NMDevice *dev,
 
 		connection_type = nm_setting_connection_get_connection_type (s_con);
 
-		if (!strcmp (connection_type, NM_SETTING_BOND_SETTING_NAME)) {
-			if (nm_device_bond_connection_matches (dev, connection))
-				return connection;
-
+		iface = nm_connection_get_virtual_iface_name (connection);
+		if (iface && strcmp (nm_device_get_iface (dev), iface))
 			continue;
-		}
 	
 		if (!strcmp (connection_type, NM_SETTING_PPPOE_SETTING_NAME))
 			is_pppoe = TRUE;

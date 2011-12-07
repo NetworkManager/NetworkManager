@@ -33,6 +33,7 @@ global:
 	nm_connection_get_setting_wired;
 	nm_connection_get_setting_wireless;
 	nm_connection_get_setting_wireless_security;
+	nm_connection_get_virtual_iface_name;
 	nm_connection_get_type;
 	nm_connection_get_uuid;
 	nm_connection_is_type;
@@ -303,6 +304,7 @@ global:
 	nm_setting_ip6_config_remove_dns;
 	nm_setting_ip6_config_remove_dns_search;
 	nm_setting_ip6_config_remove_route;
+	nm_setting_get_virtual_iface_name;
 	nm_setting_need_secrets;
 	nm_setting_new_from_hash;
 	nm_setting_olpc_mesh_error_get_type;

@@ -992,6 +992,26 @@ nm_setting_to_string (NMSetting *setting)
 	return g_string_free (string, FALSE);
 }
 
+/**
+ * nm_setting_get_virtual_iface_name:
+ * @setting: the #NMSetting
+ *
+ * Returns the name of the virtual kernel interface which the connection
+ * needs to use if specified in the settings.
+ *
+ * Returns: (transfer full) (element-type utf8): Name of the virtual interface
+ **/
+const char *
+nm_setting_get_virtual_iface_name (NMSetting *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
+
+	if (NM_SETTING_GET_CLASS (setting)->get_virtual_iface_name)
+		return NM_SETTING_GET_CLASS (setting)->get_virtual_iface_name (setting);
+
+	return NULL;
+}
+
 /*****************************************************************************/
 
 static void

@@ -1239,13 +1239,14 @@ have_connection_for_device (NMSettings *self, GByteArray *mac, NMDevice *device)
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, &data)) {
 		NMConnection *connection = NM_CONNECTION (data);
-		const char *ctype;
+		const char *ctype, *iface;
 
 		s_con = nm_connection_get_setting_connection (connection);
 		ctype = nm_setting_connection_get_connection_type (s_con);
 
-		if (!strcmp (ctype, NM_SETTING_BOND_SETTING_NAME)) {
-			if (nm_device_bond_connection_matches (device, connection)) {
+		iface = nm_connection_get_virtual_iface_name (connection);
+		if (iface) {
+			if (!strcmp (iface, nm_device_get_iface (device))) {
 				ret = TRUE;
 				break;
 			} else
