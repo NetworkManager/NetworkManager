@@ -1,0 +1,5 @@
+iface eth0 inet static
+  address 10.0.0.3
+  netmask 255.0.0.0
+  dns-search example.com foo.example.com
+  dns-nameservers 10.0.0.1 10.0.0.2
