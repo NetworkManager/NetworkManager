@@ -342,7 +342,7 @@ device_state_changed (NMDevice *device,
 		switch (priv->type) {
 		case NM_ETHERNET_TYPE_BOND:
 			/* Use NM_DEVICE_STATE_REASON_CARRIER to make sure num retries is reset */
-			nm_device_state_changed (device, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_CARRIER);
+			nm_device_queue_state (device, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_CARRIER);
 			break;
 
 		default:

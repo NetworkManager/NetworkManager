@@ -154,12 +154,17 @@ typedef enum {
 } IpState;
 
 typedef struct {
+	NMDeviceState state;
+	NMDeviceStateReason reason;
+	guint id;
+} QueuedState;
+
+typedef struct {
 	gboolean disposed;
 	gboolean initialized;
 
 	NMDeviceState state;
-	guint         failed_to_disconnected_id;
-	guint         unavailable_to_disconnected_id;
+	QueuedState   queued_state;
 
 	char *        udi;
 	char *        path;
@@ -2852,22 +2857,16 @@ clear_act_request (NMDevice *self)
 }
 
 static void
-delayed_transitions_clear (NMDevice *self)
+queued_state_clear (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->failed_to_disconnected_id) {
-		nm_log_dbg (LOGD_DEVICE, "(%s): clearing failed->disconnected transition",
-		            nm_device_get_iface (self));
-		g_source_remove (priv->failed_to_disconnected_id);
-		priv->failed_to_disconnected_id = 0;
+	if (priv->queued_state.id) {
+		nm_log_dbg (LOGD_DEVICE, "(%s): clearing queued state transition (id %d)",
+		            nm_device_get_iface (self), priv->queued_state.id);
+		g_source_remove (priv->queued_state.id);
 	}
-	if (priv->unavailable_to_disconnected_id) {
-		nm_log_dbg (LOGD_DEVICE, "(%s): clearing unavailable->disconnected transition",
-		            nm_device_get_iface (self));
-		g_source_remove (priv->unavailable_to_disconnected_id);
-		priv->unavailable_to_disconnected_id = 0;
-	}
+	memset (&priv->queued_state, 0, sizeof (priv->queued_state));
 }
 
 static void
@@ -3018,8 +3017,8 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 	activation_source_clear (self, TRUE, AF_INET);
 	activation_source_clear (self, TRUE, AF_INET6);
 
-	/* Clear any delayed transitions */
-	delayed_transitions_clear (self);
+	/* Clear any queued transitions */
+	queued_state_clear (self);
 
 	priv->ip4_state = priv->ip6_state = IP_NONE;
 
@@ -3493,8 +3492,8 @@ dispose (GObject *object)
 		}
 	}
 
-	/* Clear any delayed transitions */
-	delayed_transitions_clear (self);
+	/* Clear any queued transitions */
+	queued_state_clear (self);
 
 	/* Clean up and stop DHCP */
 	dhcp4_cleanup (self, take_down, FALSE);
@@ -3909,32 +3908,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	dbus_g_error_domain_register (NM_DEVICE_ERROR, NULL, NM_TYPE_DEVICE_ERROR);
 }
 
-static gboolean
-failed_to_disconnected (gpointer user_data)
-{
-	NMDevice *self = NM_DEVICE (user_data);
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	nm_log_dbg (LOGD_DEVICE, "(%s): running failed->disconnected transition",
-	            nm_device_get_iface (self));
-	priv->failed_to_disconnected_id = 0;
-	nm_device_state_changed (self, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
-	return FALSE;
-}
-
-static gboolean
-unavailable_to_disconnected (gpointer user_data)
-{
-	NMDevice *self = NM_DEVICE (user_data);
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	nm_log_dbg (LOGD_DEVICE, "(%s): running unavailable->disconnected transition",
-	            nm_device_get_iface (self));
-	priv->unavailable_to_disconnected_id = 0;
-	nm_device_state_changed (self, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
-	return FALSE;
-}
-
 void
 nm_device_set_firmware_missing (NMDevice *self, gboolean new_missing)
 {
@@ -4128,8 +4101,8 @@ nm_device_state_changed (NMDevice *device,
 	             state,
 	             reason);
 
-	/* Clear any delayed transitions */
-	delayed_transitions_clear (device);
+	/* Clear any queued transitions */
+	queued_state_clear (device);
 
 	/* Cache the activation request for the dispatcher */
 	req = priv->act_request ? g_object_ref (priv->act_request) : NULL;
@@ -4182,7 +4155,7 @@ nm_device_state_changed (NMDevice *device,
 		if (nm_device_is_available (device)) {
 			nm_log_dbg (LOGD_DEVICE, "(%s): device is available, will transition to DISCONNECTED",
 			            nm_device_get_iface (device));
-			priv->unavailable_to_disconnected_id = g_idle_add (unavailable_to_disconnected, device);
+			nm_device_queue_state (device, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
 		} else {
 			nm_log_dbg (LOGD_DEVICE, "(%s): device not yet available for transition to DISCONNECTED",
 			            nm_device_get_iface (device));
@@ -4199,7 +4172,7 @@ nm_device_state_changed (NMDevice *device,
 		 * immediately because we can't change states again from the state
 		 * handler for a variety of reasons.
 		 */
-		priv->failed_to_disconnected_id = g_idle_add (failed_to_disconnected, device);
+		nm_device_queue_state (device, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
 		break;
 	default:
 		break;
@@ -4211,6 +4184,52 @@ nm_device_state_changed (NMDevice *device,
 	/* Dispose of the cached activation request */
 	if (req)
 		g_object_unref (req);
+}
+
+static gboolean
+queued_set_state (gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->queued_state.id) {
+		priv->queued_state.id = 0;
+
+		nm_log_dbg (LOGD_DEVICE, "(%s): running queued state change to %s (id %d)",
+			        nm_device_get_iface (self),
+			        state_to_string (priv->queued_state.state),
+			        priv->queued_state.id);
+		nm_device_state_changed (self, priv->queued_state.state, priv->queued_state.reason);
+	}
+	queued_state_clear (self);
+	return FALSE;
+}
+
+void
+nm_device_queue_state (NMDevice *self,
+                       NMDeviceState state,
+                       NMDeviceStateReason reason)
+{
+	NMDevicePrivate *priv;
+
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	/* We should only ever have one delayed state transition at a time */
+	if (priv->queued_state.id) {
+		g_warn_if_fail (priv->queued_state.id == 0);
+		queued_state_clear (self);
+	}
+
+	priv->queued_state.state = state;
+	priv->queued_state.reason = reason;
+	priv->queued_state.id = g_idle_add (queued_set_state, self);
+
+	nm_log_dbg (LOGD_DEVICE, "(%s): queued state change to %s (id %d)",
+	            nm_device_get_iface (self), state_to_string (state),
+	            priv->queued_state.id);
 }
 
 NMDeviceState

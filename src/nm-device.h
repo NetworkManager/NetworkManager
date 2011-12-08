@@ -228,6 +228,10 @@ void nm_device_state_changed (NMDevice *device,
                               NMDeviceState state,
                               NMDeviceStateReason reason);
 
+void nm_device_queue_state   (NMDevice *self,
+                              NMDeviceState state,
+                              NMDeviceStateReason reason);
+
 gboolean nm_device_get_firmware_missing (NMDevice *self);
 
 gboolean nm_device_activate (NMDevice *device, NMActRequest *req, GError **error);
