@@ -743,6 +743,7 @@ docs/libnm-glib/Makefile
 docs/libnm-util/Makefile
 NetworkManager.pc
 examples/Makefile
+examples/shell/Makefile
 examples/python/Makefile
 examples/ruby/Makefile
 examples/C/Makefile
