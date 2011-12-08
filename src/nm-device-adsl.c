@@ -27,11 +27,11 @@
 #include "nm-device-adsl.h"
 #include "nm-device-private.h"
 #include "nm-properties-changed-signal.h"
-#include "nm-glib-compat.h"
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
 #include "nm-enum-types.h"
 #include "nm-system.h"
+#include "nm-netlink-monitor.h"
 
 #include "ppp-manager/nm-ppp-manager.h"
 #include "br2684-manager/nm-br2684-manager.h"
@@ -63,7 +63,6 @@ typedef struct {
 
 	/* PPP */
 	NMPPPManager *ppp_manager;
-	NMIP4Config  *pending_ip4_config;
 
 	/* RFC 2684 bridging (PPPoE over ATM) */
 	NMBr2684Manager *br2684_manager;
@@ -221,13 +220,18 @@ static void
 br2684_state_changed (NMBr2684Manager *manager, guint status, gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
+	int ifindex;
 
 	if (status) {
-		nm_system_device_set_up_down_with_iface ("nas0", TRUE, NULL);
-		nm_device_activate_schedule_stage2_device_config (device);
-	} else {
+		ifindex = nm_netlink_iface_to_index ("nas0");
+		if (ifindex > 0)
+			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_BR2684_FAILED);
+		else {
+			nm_system_iface_set_up (ifindex, TRUE, NULL);
+			nm_device_activate_schedule_stage2_device_config (device);
+		}
+	} else
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_BR2684_FAILED);
-	}
 }
 
 static NMActStageReturn
@@ -294,23 +298,23 @@ ppp_state_changed (NMPPPManager *ppp_manager, NMPPPStatus status, gpointer user_
 
 static void
 ppp_ip4_config (NMPPPManager *ppp_manager,
-			 const char *iface,
-			 NMIP4Config *config,
-			 gpointer user_data)
+                const char *iface,
+                NMIP4Config *config,
+                gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
 
 	/* Ignore PPP IP4 events that come in after initial configuration */
-	if (nm_device_get_state (device) != NM_DEVICE_STATE_IP_CONFIG)
-		return;
-
-	nm_device_set_ip_iface (device, iface);
-	NM_DEVICE_ADSL_GET_PRIVATE (device)->pending_ip4_config = g_object_ref (config);
-	nm_device_activate_schedule_stage4_ip4_config_get (device);
+	if (nm_device_activate_ip4_state_in_conf (device)) {
+		nm_device_set_ip_iface (device, iface);
+		nm_device_activate_schedule_ip4_config_result (device, config);
+	}
 }
 
 static NMActStageReturn
-real_act_stage3_ip4_config_start (NMDevice *device, NMDeviceStateReason *reason)
+real_act_stage3_ip4_config_start (NMDevice *device,
+                                  NMIP4Config **out_config,
+                                  NMDeviceStateReason *reason)
 {
 	NMDeviceAdsl *self = NM_DEVICE_ADSL (device);
 	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
@@ -321,7 +325,7 @@ real_act_stage3_ip4_config_start (NMDevice *device, NMDeviceStateReason *reason)
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	const char *iface = nm_device_get_iface (device);
 
-	req = nm_device_get_act_request (NM_DEVICE (self));
+	req = nm_device_get_act_request (device);
 	g_assert (req);
 
 	connection = nm_act_request_get_connection (req);
@@ -340,7 +344,7 @@ real_act_stage3_ip4_config_start (NMDevice *device, NMDeviceStateReason *reason)
 		                  self);
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else {
-		nm_log_warn (LOGD_DEVICE, "(%s): ADSL failed to start: %s", iface, err->message);
+		nm_log_warn (LOGD_DEVICE, "(%s): PPP failed to start: %s", iface, err->message);
 		g_error_free (err);
 
 		g_object_unref (priv->ppp_manager);
@@ -352,43 +356,11 @@ real_act_stage3_ip4_config_start (NMDevice *device, NMDeviceStateReason *reason)
 	return ret;
 }
 
-static NMActStageReturn
-real_act_stage4_get_ip4_config (NMDevice *device,
-                                NMIP4Config **config,
-                                NMDeviceStateReason *reason)
-{
-	NMDeviceAdsl *self = NM_DEVICE_ADSL (device);
-	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
-	NMConnection *connection;
-	NMSettingIP4Config *s_ip4;
-
-	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
-	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
-	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
-
-	/* PPP */
-	*config = priv->pending_ip4_config;
-	priv->pending_ip4_config = NULL;
-
-	/* Merge user-defined overrides into the IP4Config to be applied */
-	connection = nm_device_get_connection (device);
-	g_assert (connection);
-	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	nm_utils_merge_ip4_config (*config, s_ip4);
-
-	return NM_ACT_STAGE_RETURN_SUCCESS;
-}
-
 static void
 real_deactivate (NMDevice *device)
 {
 	NMDeviceAdsl *self = NM_DEVICE_ADSL (device);
 	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
-
-	if (priv->pending_ip4_config) {
-		g_object_unref (priv->pending_ip4_config);
-		priv->pending_ip4_config = NULL;
-	}
 
 	if (priv->ppp_manager) {
 		g_object_unref (priv->ppp_manager);
@@ -580,7 +552,6 @@ nm_device_adsl_class_init (NMDeviceAdslClass *klass)
 	parent_class->act_stage1_prepare = real_act_stage1_prepare;
 	parent_class->act_stage2_config = real_act_stage2_config;
 	parent_class->act_stage3_ip4_config_start = real_act_stage3_ip4_config_start;
-	parent_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 	parent_class->deactivate = real_deactivate;
 
 	/* properties */
