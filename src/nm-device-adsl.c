@@ -54,6 +54,8 @@ nm_adsl_error_quark (void)
 	return quark;
 }
 
+/**********************************************/
+
 typedef struct {
 	gboolean      disposed;
 	gboolean      carrier;
@@ -81,182 +83,7 @@ enum {
 	LAST_PROP
 };
 
-/* FIXME: Move it to nm-device.c and then get rid of all foo_device_get_setting() all around.
-   It's here now to keep the patch short. */
-static NMSetting *
-device_get_setting (NMDevice *device, GType setting_type)
-{
-	NMActRequest *req;
-	NMSetting *setting = NULL;
-	NMConnection *connection;
-
-	req = nm_device_get_act_request (device);
-	if (req) {
-		connection = nm_act_request_get_connection (req);
-		if (connection)
-			setting = nm_connection_get_setting (connection, setting_type);
-	}
-
-	return setting;
-}
-
-static void
-set_carrier (NMDeviceAdsl *self, const gboolean carrier)
-{
-	NMDeviceAdslPrivate *priv;
-	NMDeviceState state;
-
-	g_return_if_fail (NM_IS_DEVICE (self));
-
-	priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
-
-	if (priv->carrier == carrier)
-		return;
-
-	priv->carrier = carrier;
-	g_object_notify (G_OBJECT (self), NM_DEVICE_ADSL_CARRIER);
-
-	state = nm_device_get_state (NM_DEVICE (self));
-	nm_log_info (LOGD_HW, "(%s): carrier now %s (device state %d)",
-	             nm_device_get_iface (NM_DEVICE (self)),
-	             carrier ? "ON" : "OFF",
-	             state);
-
-	if (state == NM_DEVICE_STATE_UNAVAILABLE) {
-		if (priv->carrier)
-			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_CARRIER);
-	} else if (state >= NM_DEVICE_STATE_DISCONNECTED) {
-		if (!priv->carrier)
-			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_CARRIER);
-	}
-}
-
-static gboolean
-carrier_update_cb (gpointer user_data)
-{
-	NMDeviceAdsl *self = NM_DEVICE_ADSL (user_data);
-	GError *error = NULL;
-	gboolean carrier = FALSE;
-	char *path, *contents;
-	const char *iface;
-	gboolean success;
-
-	iface = nm_device_get_iface (NM_DEVICE (self));
-
-	path  = g_strdup_printf ("/sys/class/atm/%s/carrier", iface);
-	success = g_file_get_contents(path, &contents, NULL, &error);
-	g_free (path);
-
-	if (!success) {
-		nm_log_dbg (LOGD_DEVICE, "error reading %s: (%d) %s",
-		            path,
-		            error ? error->code : -1,
-		            error && error->message ? error->message : "(unknown)");
-		g_clear_error (&error);
-		return TRUE;
-	}
-
-	carrier = (gboolean) atoi (contents);
-	g_free (contents);
-	set_carrier (self, carrier);
-	return TRUE;
-}
-
-
-NMDevice *
-nm_device_adsl_new (const char *udi,
-                    const char *iface,
-                    const char *driver)
-{
-	g_return_val_if_fail (udi != NULL, NULL);
-
-	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_ADSL,
-	                                  NM_DEVICE_UDI, udi,
-	                                  NM_DEVICE_IFACE, iface,
-	                                  NM_DEVICE_DRIVER, driver,
-	                                  NM_DEVICE_TYPE_DESC, "ADSL",
-	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_ADSL,
-	                                  NULL);
-}
-
-static GObject*
-constructor (GType type,
-			 guint n_construct_params,
-			 GObjectConstructParam *construct_params)
-{
-	GObject *object;
-	NMDeviceAdslPrivate *priv;
-	NMDevice *self;
-
-	object = G_OBJECT_CLASS (nm_device_adsl_parent_class)->constructor (type,
-	                                                                    n_construct_params,
-	                                                                    construct_params);
-	if (!object)
-		return NULL;
-
-	self = NM_DEVICE (object);
-	priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
-
-	priv->carrier = FALSE;
-	priv->carrier_poll_id = g_timeout_add_seconds(5, carrier_update_cb, self);
-
-	return object;
-}
-
-static void
-dispose (GObject *object)
-{
-	NMDeviceAdsl *self = NM_DEVICE_ADSL (object);
-	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
-
-	if (priv->disposed) {
-		G_OBJECT_CLASS (nm_device_adsl_parent_class)->dispose (object);
-		return;
-	}
-
-	priv->disposed = TRUE;
-
-	if (priv->carrier_poll_id) {
-		g_source_remove (priv->carrier_poll_id);
-		priv->carrier_poll_id = 0;
-	}
-
-	G_OBJECT_CLASS (nm_device_adsl_parent_class)->dispose (object);
-}
-
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMDeviceAdsl *self = NM_DEVICE_ADSL (object);
-	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE(self);
-
-	switch (prop_id) {
-	case PROP_CARRIER:
-		g_value_set_boolean (value, priv->carrier);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-			  const GValue *value, GParamSpec *pspec)
-{
-	switch (prop_id) {
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-nm_device_adsl_init (NMDeviceAdsl * self)
-{
-}
-
+/**************************************************************/
 
 static guint32
 real_get_generic_capabilities (NMDevice *dev)
@@ -308,8 +135,7 @@ real_check_connection_compatible (NMDevice *device,
 		return FALSE;
 	}
 
-	s_adsl = (NMSettingAdsl *) nm_connection_get_setting (connection, NM_TYPE_SETTING_ADSL);
-
+	s_adsl = nm_connection_get_setting_adsl (connection);
 	if (!s_adsl) {
 		g_set_error (error,
 		             NM_ADSL_ERROR, NM_ADSL_ERROR_CONNECTION_INVALID,
@@ -338,12 +164,11 @@ real_complete_connection (NMDevice *device,
 {
 	NMSettingAdsl *s_adsl;
 
-	s_adsl = (NMSettingAdsl *) nm_connection_get_setting (connection, NM_TYPE_SETTING_ADSL);
-
 	/*
 	 * We can't telepathically figure out the username, so if
 	 * it wasn't given, we can't complete the connection.
 	 */
+	s_adsl = nm_connection_get_setting_adsl (connection);
 	if (s_adsl && !nm_setting_verify (NM_SETTING (s_adsl), NULL, error))
 		return FALSE;
 
@@ -356,28 +181,6 @@ real_complete_connection (NMDevice *device,
 
 
 	return TRUE;
-}
-
-static void
-real_deactivate (NMDevice *device)
-{
-	NMDeviceAdsl *self = NM_DEVICE_ADSL (device);
-	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
-
-	if (priv->pending_ip4_config) {
-		g_object_unref (priv->pending_ip4_config);
-		priv->pending_ip4_config = NULL;
-	}
-
-	if (priv->ppp_manager) {
-		g_object_unref (priv->ppp_manager);
-		priv->ppp_manager = NULL;
-	}
-
-	if (priv->br2684_manager) {
-		g_object_unref (priv->br2684_manager);
-		priv->br2684_manager = NULL;
-	}
 }
 
 static NMConnection *
@@ -400,7 +203,7 @@ real_get_best_auto_connection (NMDevice *dev,
 		if (strcmp (connection_type, NM_SETTING_ADSL_SETTING_NAME))
 			continue;
 
-		s_adsl = (NMSettingAdsl *) nm_connection_get_setting (connection, NM_TYPE_SETTING_ADSL);
+		s_adsl = nm_connection_get_setting_adsl (connection);
 		if (!s_adsl)
 			continue;
 
@@ -411,6 +214,8 @@ real_get_best_auto_connection (NMDevice *dev,
 	}
 	return NULL;
 }
+
+/**************************************************************/
 
 static void
 br2684_state_changed (NMBr2684Manager *manager, guint status, gpointer user_data)
@@ -441,7 +246,7 @@ real_act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	req = nm_device_get_act_request (NM_DEVICE (self));
 	g_return_val_if_fail (req != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-	s_adsl = NM_SETTING_ADSL (device_get_setting (dev, NM_TYPE_SETTING_ADSL));
+	s_adsl = nm_connection_get_setting_adsl (nm_device_get_connection (dev));
 	g_assert (s_adsl);
 
 	protocol = nm_setting_adsl_get_protocol (s_adsl);
@@ -505,14 +310,16 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 }
 
 static NMActStageReturn
-pppoa_stage3_ip4_config_start (NMDeviceAdsl *self, NMDeviceStateReason *reason)
+real_act_stage3_ip4_config_start (NMDevice *device, NMDeviceStateReason *reason)
 {
+	NMDeviceAdsl *self = NM_DEVICE_ADSL (device);
 	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
 	NMConnection *connection;
 	NMSettingAdsl *s_adsl;
 	NMActRequest *req;
 	GError *err = NULL;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
+	const char *iface = nm_device_get_iface (device);
 
 	req = nm_device_get_act_request (NM_DEVICE (self));
 	g_assert (req);
@@ -520,10 +327,10 @@ pppoa_stage3_ip4_config_start (NMDeviceAdsl *self, NMDeviceStateReason *reason)
 	connection = nm_act_request_get_connection (req);
 	g_assert (req);
 
-	s_adsl = (NMSettingAdsl *) nm_connection_get_setting (connection, NM_TYPE_SETTING_ADSL);
+	s_adsl = nm_connection_get_setting_adsl (connection);
 	g_assert (s_adsl);
 
-	priv->ppp_manager = nm_ppp_manager_new (nm_device_get_iface (NM_DEVICE (self)));
+	priv->ppp_manager = nm_ppp_manager_new (iface);
 	if (nm_ppp_manager_start (priv->ppp_manager, req, nm_setting_adsl_get_username (s_adsl), 30, &err)) {
 		g_signal_connect (priv->ppp_manager, "state-changed",
 		                  G_CALLBACK (ppp_state_changed),
@@ -533,8 +340,7 @@ pppoa_stage3_ip4_config_start (NMDeviceAdsl *self, NMDeviceStateReason *reason)
 		                  self);
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else {
-		nm_log_warn (LOGD_DEVICE, "(%s): ADSL failed to start: %s",
-		             nm_device_get_iface (NM_DEVICE (self)), err->message);
+		nm_log_warn (LOGD_DEVICE, "(%s): ADSL failed to start: %s", iface, err->message);
 		g_error_free (err);
 
 		g_object_unref (priv->ppp_manager);
@@ -544,22 +350,6 @@ pppoa_stage3_ip4_config_start (NMDeviceAdsl *self, NMDeviceStateReason *reason)
 	}
 
 	return ret;
-}
-
-static NMActStageReturn
-real_act_stage3_ip4_config_start (NMDevice *device, NMDeviceStateReason *reason)
-{
-	NMSettingConnection *s_con;
-	const char *connection_type;
-
-	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
-
-	s_con = NM_SETTING_CONNECTION (device_get_setting (device, NM_TYPE_SETTING_CONNECTION));
-	g_assert (s_con);
-
-	connection_type = nm_setting_connection_get_connection_type (s_con);
-
-	return pppoa_stage3_ip4_config_start (NM_DEVICE_ADSL (device), reason);
 }
 
 static NMActStageReturn
@@ -581,12 +371,189 @@ real_act_stage4_get_ip4_config (NMDevice *device,
 	priv->pending_ip4_config = NULL;
 
 	/* Merge user-defined overrides into the IP4Config to be applied */
-	connection = nm_act_request_get_connection (nm_device_get_act_request (device));
+	connection = nm_device_get_connection (device);
 	g_assert (connection);
-	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	nm_utils_merge_ip4_config (*config, s_ip4);
 
 	return NM_ACT_STAGE_RETURN_SUCCESS;
+}
+
+static void
+real_deactivate (NMDevice *device)
+{
+	NMDeviceAdsl *self = NM_DEVICE_ADSL (device);
+	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
+
+	if (priv->pending_ip4_config) {
+		g_object_unref (priv->pending_ip4_config);
+		priv->pending_ip4_config = NULL;
+	}
+
+	if (priv->ppp_manager) {
+		g_object_unref (priv->ppp_manager);
+		priv->ppp_manager = NULL;
+	}
+
+	if (priv->br2684_manager) {
+		g_object_unref (priv->br2684_manager);
+		priv->br2684_manager = NULL;
+	}
+}
+
+/**************************************************************/
+
+static void
+set_carrier (NMDeviceAdsl *self, const gboolean carrier)
+{
+	NMDeviceAdslPrivate *priv;
+	NMDeviceState state;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
+
+	if (priv->carrier == carrier)
+		return;
+
+	priv->carrier = carrier;
+	g_object_notify (G_OBJECT (self), NM_DEVICE_ADSL_CARRIER);
+
+	state = nm_device_get_state (NM_DEVICE (self));
+	nm_log_info (LOGD_HW, "(%s): carrier now %s (device state %d)",
+	             nm_device_get_iface (NM_DEVICE (self)),
+	             carrier ? "ON" : "OFF",
+	             state);
+
+	if (state == NM_DEVICE_STATE_UNAVAILABLE) {
+		if (priv->carrier)
+			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_CARRIER);
+	} else if (state >= NM_DEVICE_STATE_DISCONNECTED) {
+		if (!priv->carrier)
+			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_CARRIER);
+	}
+}
+
+static gboolean
+carrier_update_cb (gpointer user_data)
+{
+	NMDeviceAdsl *self = NM_DEVICE_ADSL (user_data);
+	GError *error = NULL;
+	gboolean carrier = FALSE;
+	char *path, *contents;
+	const char *iface;
+	gboolean success;
+
+	iface = nm_device_get_iface (NM_DEVICE (self));
+
+	path  = g_strdup_printf ("/sys/class/atm/%s/carrier", iface);
+	success = g_file_get_contents(path, &contents, NULL, &error);
+	g_free (path);
+
+	if (!success) {
+		nm_log_dbg (LOGD_DEVICE, "error reading %s: (%d) %s",
+		            path,
+		            error ? error->code : -1,
+		            error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
+		return TRUE;
+	}
+
+	carrier = (gboolean) atoi (contents);
+	g_free (contents);
+	set_carrier (self, carrier);
+	return TRUE;
+}
+
+/**************************************************************/
+
+NMDevice *
+nm_device_adsl_new (const char *udi,
+                    const char *iface,
+                    const char *driver)
+{
+	g_return_val_if_fail (udi != NULL, NULL);
+
+	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_ADSL,
+	                                  NM_DEVICE_UDI, udi,
+	                                  NM_DEVICE_IFACE, iface,
+	                                  NM_DEVICE_DRIVER, driver,
+	                                  NM_DEVICE_TYPE_DESC, "ADSL",
+	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_ADSL,
+	                                  NULL);
+}
+
+static GObject*
+constructor (GType type,
+			 guint n_construct_params,
+			 GObjectConstructParam *construct_params)
+{
+	GObject *object;
+	NMDeviceAdslPrivate *priv;
+
+	object = G_OBJECT_CLASS (nm_device_adsl_parent_class)->constructor (type,
+	                                                                    n_construct_params,
+	                                                                    construct_params);
+	if (object) {
+		priv = NM_DEVICE_ADSL_GET_PRIVATE (object);
+		priv->carrier_poll_id = g_timeout_add_seconds (5, carrier_update_cb, object);
+	}
+
+	return object;
+}
+
+static void
+dispose (GObject *object)
+{
+	NMDeviceAdsl *self = NM_DEVICE_ADSL (object);
+	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
+
+	if (priv->disposed) {
+		G_OBJECT_CLASS (nm_device_adsl_parent_class)->dispose (object);
+		return;
+	}
+
+	priv->disposed = TRUE;
+
+	if (priv->carrier_poll_id) {
+		g_source_remove (priv->carrier_poll_id);
+		priv->carrier_poll_id = 0;
+	}
+
+	G_OBJECT_CLASS (nm_device_adsl_parent_class)->dispose (object);
+}
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMDeviceAdsl *self = NM_DEVICE_ADSL (object);
+	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE(self);
+
+	switch (prop_id) {
+	case PROP_CARRIER:
+		g_value_set_boolean (value, priv->carrier);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+			  const GValue *value, GParamSpec *pspec)
+{
+	switch (prop_id) {
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+nm_device_adsl_init (NMDeviceAdsl * self)
+{
 }
 
 static void
