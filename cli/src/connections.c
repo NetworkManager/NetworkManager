@@ -829,9 +829,7 @@ check_bt_compatible (NMDeviceBt *device, NMConnection *connection, GError **erro
 
 	device_hw_str = nm_device_bt_get_hw_address (device);
 
-	str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
-	                       array->data[0], array->data[1], array->data[2],
-	                       array->data[3], array->data[4], array->data[5]);
+	str = nm_utils_hwaddr_ntoa (array->data, ARPHRD_ETHER);
 	addr_match = !strcmp (device_hw_str, str);
 	g_free (str);
 

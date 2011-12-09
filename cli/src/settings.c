@@ -607,10 +607,10 @@ setting_wired_details (NMSettingWired *s_wired, NmCli *nmc)
 	mtu_str = g_strdup_printf ("%d", nm_setting_wired_get_mtu (s_wired));
 	mac = nm_setting_wired_get_mac_address (s_wired);
 	if (mac)
-		device_mac_str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X", mac->data[0], mac->data[1], mac->data[2], mac->data[3], mac->data[4], mac->data[5]);
+		device_mac_str = nm_utils_hwaddr_ntoa (mac->data, ARPHRD_ETHER);
 	mac = nm_setting_wired_get_cloned_mac_address (s_wired);
 	if (mac)
-		cloned_mac_str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X", mac->data[0], mac->data[1], mac->data[2], mac->data[3], mac->data[4], mac->data[5]);
+		cloned_mac_str = nm_utils_hwaddr_ntoa (mac->data, ARPHRD_ETHER);
 
 	mac_blacklist_s = g_string_new (NULL);
 	iter = nm_setting_wired_get_mac_address_blacklist (s_wired);
@@ -802,15 +802,15 @@ setting_wireless_details (NMSettingWireless *s_wireless, NmCli *nmc)
 	rate_str = g_strdup_printf ("%d", nm_setting_wireless_get_rate (s_wireless));
 	bssid = nm_setting_wireless_get_bssid (s_wireless);
 	if (bssid)
-		bssid_str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X", bssid->data[0], bssid->data[1], bssid->data[2], bssid->data[3], bssid->data[4], bssid->data[5]);
+		bssid_str = nm_utils_hwaddr_ntoa (bssid->data, ARPHRD_ETHER);
 	tx_power_str = g_strdup_printf ("%d", nm_setting_wireless_get_tx_power (s_wireless));
 	mtu_str = g_strdup_printf ("%d", nm_setting_wireless_get_mtu (s_wireless));
 	mac = nm_setting_wireless_get_mac_address (s_wireless);
 	if (mac)
-		device_mac_str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X", mac->data[0], mac->data[1], mac->data[2], mac->data[3], mac->data[4], mac->data[5]);
+		device_mac_str = nm_utils_hwaddr_ntoa (mac->data, ARPHRD_ETHER);
 	mac = nm_setting_wireless_get_cloned_mac_address (s_wireless);
 	if (mac)
-		cloned_mac_str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X", mac->data[0], mac->data[1], mac->data[2], mac->data[3], mac->data[4], mac->data[5]);
+		cloned_mac_str = nm_utils_hwaddr_ntoa (mac->data, ARPHRD_ETHER);
 
 	mac_blacklist = g_string_new (NULL);
 	iter = nm_setting_wireless_get_mac_address_blacklist (s_wireless);
@@ -1389,8 +1389,8 @@ setting_bluetooth_details (NMSettingBluetooth *s_bluetooth, NmCli *nmc)
 
 	bdaddr = nm_setting_bluetooth_get_bdaddr (s_bluetooth);
 	if (bdaddr)
-		bdaddr_str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X", bdaddr->data[0], bdaddr->data[1], bdaddr->data[2],
-		                                                               bdaddr->data[3], bdaddr->data[4], bdaddr->data[5]);
+		bdaddr_str = nm_utils_hwaddr_ntoa (bdaddr->data, ARPHRD_ETHER);
+
 	nmc->allowed_fields[0].value = NM_SETTING_BLUETOOTH_SETTING_NAME;
 	nmc->allowed_fields[1].value = bdaddr_str;
 	nmc->allowed_fields[2].value = nm_setting_bluetooth_get_connection_type (s_bluetooth);
@@ -1424,8 +1424,8 @@ setting_olpc_mesh_details (NMSettingOlpcMesh *s_olpc_mesh, NmCli *nmc)
 	channel_str = g_strdup_printf ("%d", nm_setting_olpc_mesh_get_channel (s_olpc_mesh));
 	dhcp_anycast = nm_setting_olpc_mesh_get_dhcp_anycast_address (s_olpc_mesh);
 	if (dhcp_anycast)
-		dhcp_anycast_str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X", dhcp_anycast->data[0], dhcp_anycast->data[1], dhcp_anycast->data[2],
-		                                                                     dhcp_anycast->data[3], dhcp_anycast->data[4], dhcp_anycast->data[5]);
+		dhcp_anycast_str = nm_utils_hwaddr_ntoa (dhcp_anycast->data, ARPHRD_ETHER);
+
 	nmc->allowed_fields[0].value = NM_SETTING_OLPC_MESH_SETTING_NAME;
 	nmc->allowed_fields[1].value = ssid_str;
 	nmc->allowed_fields[2].value = channel_str;
@@ -1505,7 +1505,7 @@ setting_wimax_details (NMSettingWimax *s_wimax, NmCli *nmc)
 
 	mac = nm_setting_wimax_get_mac_address (s_wimax);
 	if (mac)
-		device_mac_str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X", mac->data[0], mac->data[1], mac->data[2], mac->data[3], mac->data[4], mac->data[5]);
+		device_mac_str = nm_utils_hwaddr_ntoa (mac->data, ARPHRD_ETHER);
 
 	nmc->allowed_fields[0].value = NM_SETTING_WIMAX_SETTING_NAME;
 	nmc->allowed_fields[1].value = device_mac_str;
