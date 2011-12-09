@@ -7,7 +7,6 @@ SUBDIRS= \
 	ip6-manager \
 	supplicant-manager \
 	ppp-manager \
-	br2684-manager \
 	backends \
 	dnsmasq-manager \
 	modem-manager \
@@ -312,7 +311,6 @@ NetworkManager_LDADD = \
 	./supplicant-manager/libsupplicant-manager.la \
 	./dnsmasq-manager/libdnsmasq-manager.la \
 	./ppp-manager/libppp-manager.la \
-	./br2684-manager/libbr2684-manager.la \
 	./modem-manager/libmodem-manager.la \
 	./bluez-manager/libbluez-manager.la \
 	./wifi/libwifi-utils.la \

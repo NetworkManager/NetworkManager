@@ -879,10 +879,7 @@ create_pppd_cmd_line (NMPPPManager *self,
 		} else if (!strcmp (protocol, NM_SETTING_ADSL_PROTOCOL_PPPOE)) {
 			nm_cmd_line_add_string (cmd, "plugin");
 			nm_cmd_line_add_string (cmd, "rp-pppoe.so");
-			/* FIXME: dynamically figure out the NAS interface name so we can
-			 * do more than one br2684 PPPoE connection at the same time.
-			 */
-			nm_cmd_line_add_string (cmd, "nas0");
+			nm_cmd_line_add_string (cmd, priv->parent_iface);
 		}
 
 		nm_cmd_line_add_string (cmd, "noipdefault");

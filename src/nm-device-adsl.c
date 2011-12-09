@@ -18,12 +18,22 @@
  * Pantelis Koukousoulas <pktoss@gmail.com>
  */
 
+#include <config.h>
+
+#include <sys/socket.h>
+#include <linux/atmdev.h>
+#include <linux/atmbr2684.h>
+
+#include <errno.h>
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 #include <glib.h>
 #include <glib/gi18n.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "nm-glib-compat.h"
 #include "nm-device-adsl.h"
 #include "nm-device-private.h"
 #include "nm-properties-changed-signal.h"
@@ -34,7 +44,6 @@
 #include "nm-netlink-monitor.h"
 
 #include "ppp-manager/nm-ppp-manager.h"
-#include "br2684-manager/nm-br2684-manager.h"
 #include "nm-setting-adsl.h"
 
 #include "nm-device-adsl-glue.h"
@@ -60,12 +69,19 @@ typedef struct {
 	gboolean      disposed;
 	gboolean      carrier;
 	guint         carrier_poll_id;
+	int           atm_index;
+
+	/* Watch for 'nas' interfaces going away */
+	NMNetlinkMonitor *monitor;
+	guint             netlink_id;
 
 	/* PPP */
 	NMPPPManager *ppp_manager;
 
 	/* RFC 2684 bridging (PPPoE over ATM) */
-	NMBr2684Manager *br2684_manager;
+	int           brfd;
+	int           nas_ifindex;
+	char *        nas_ifname;
 } NMDeviceAdslPrivate;
 
 enum {
@@ -193,19 +209,16 @@ real_get_best_auto_connection (NMDevice *dev,
 		NMConnection *connection = NM_CONNECTION (iter->data);
 		NMSettingConnection *s_con;
 		NMSettingAdsl *s_adsl;
-		const char *connection_type;
 
-		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
-		g_assert (s_con);
-
-		connection_type = nm_setting_connection_get_connection_type (s_con);
-		if (strcmp (connection_type, NM_SETTING_ADSL_SETTING_NAME))
+		if (!nm_connection_is_type (connection, NM_SETTING_ADSL_SETTING_NAME))
 			continue;
 
 		s_adsl = nm_connection_get_setting_adsl (connection);
 		if (!s_adsl)
 			continue;
 
+		s_con = nm_connection_get_setting_connection (connection);
+		g_assert (s_con);
 		if (!nm_setting_connection_get_autoconnect (s_con))
 			continue;
 
@@ -217,65 +230,245 @@ real_get_best_auto_connection (NMDevice *dev,
 /**************************************************************/
 
 static void
-br2684_state_changed (NMBr2684Manager *manager, guint status, gpointer user_data)
+set_nas_iface (NMDeviceAdsl *self, int idx, const char *name)
 {
-	NMDevice *device = NM_DEVICE (user_data);
-	int ifindex;
+	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
 
-	if (status) {
-		ifindex = nm_netlink_iface_to_index ("nas0");
-		if (ifindex > 0)
-			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_BR2684_FAILED);
-		else {
-			nm_system_iface_set_up (ifindex, TRUE, NULL);
-			nm_device_activate_schedule_stage2_device_config (device);
+	g_return_if_fail (name != NULL);
+
+	g_warn_if_fail (priv->nas_ifindex <= 0);
+	if (idx > 0)
+		priv->nas_ifindex = idx;
+	else
+		priv->nas_ifindex = nm_netlink_iface_to_index (name);
+	g_warn_if_fail (priv->nas_ifindex > 0);
+
+	g_warn_if_fail (priv->nas_ifname == NULL);
+	priv->nas_ifname = g_strdup (name);
+}
+
+static gboolean
+br2684_create_iface (NMDeviceAdsl *self, NMSettingAdsl *s_adsl)
+{
+	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
+	const char *iface = nm_device_get_iface (NM_DEVICE (self));
+	struct atm_newif_br2684 ni;
+	int err, fd;
+	gboolean success = FALSE;
+	guint num = 0;
+
+	g_return_val_if_fail (s_adsl != NULL, FALSE);
+
+	fd = socket (PF_ATMPVC, SOCK_DGRAM, ATM_AAL5);
+	if (fd < 0) {
+		nm_log_err (LOGD_ADSL, "(%s): failed to open ATM control socket (%d)",
+		            iface, errno);
+		return FALSE;
+	}
+
+	memset (&ni, 0, sizeof (ni));
+	ni.backend_num = ATM_BACKEND_BR2684;
+	ni.media = BR2684_MEDIA_ETHERNET;
+	ni.mtu = 1500;
+
+	/* Loop attempting to create an interface that doesn't exist yet.  The
+	 * kernel can create one for us automatically, but due to API issues it
+	 * cannot return that name to us.  Since we want to know the name right
+	 * away, just brute-force it.
+	 */
+	while (num < 10000) {
+		memset (&ni.ifname, 0, sizeof (ni.ifname));
+		snprintf (ni.ifname, sizeof (ni.ifname), "nas%d", num);
+
+		err = ioctl (fd, ATM_NEWBACKENDIF, &ni);
+		if (err == 0) {
+			set_nas_iface (self, -1, ni.ifname);
+			nm_log_info (LOGD_ADSL, "(%s): using NAS interface %s (%d)",
+			             iface, priv->nas_ifname, priv->nas_ifindex);
+			success = TRUE;
+			break;
+		} else if (errno == -EEXIST) {
+			/* Try again */
+			num++;
+		} else {
+			nm_log_warn (LOGD_ADSL, "(%s): failed to create br2684 interface (%d)",
+			             iface, errno);
+			break;
 		}
-	} else
-		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_BR2684_FAILED);
+	}
+
+	close (fd);
+	return success;
+}
+
+static gboolean
+br2684_assign_vcc (NMDeviceAdsl *self, NMSettingAdsl *s_adsl)
+{
+	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
+	const char *iface = nm_device_get_iface (NM_DEVICE (self));
+	struct sockaddr_atmpvc addr;
+	struct atm_backend_br2684 be;
+	struct atm_qos qos;
+	int err, bufsize = 8192;
+	const char *encapsulation;
+	gboolean is_llc;
+
+	g_return_val_if_fail (priv->brfd == -1, FALSE);
+	g_return_val_if_fail (priv->nas_ifname != NULL, FALSE);
+
+	priv->brfd = socket (PF_ATMPVC, SOCK_DGRAM, ATM_AAL5);
+	if (priv->brfd < 0) {
+		nm_log_err (LOGD_ADSL, "(%s): failed to open ATM control socket (%d)",
+		            iface, errno);
+		return FALSE;
+	}
+
+	err = setsockopt (priv->brfd, SOL_SOCKET, SO_SNDBUF, &bufsize, sizeof (bufsize));
+	if (err != 0) {
+		nm_log_err (LOGD_ADSL, "(%s): failed to set SNDBUF option (%d)",
+		            iface, errno);
+		goto error;
+	}
+
+	/* QoS */
+	memset (&qos, 0, sizeof (qos));
+	qos.aal = ATM_AAL5;
+	qos.txtp.traffic_class = ATM_UBR;
+	qos.txtp.max_sdu = 1524;
+	qos.txtp.pcr = ATM_MAX_PCR;
+	qos.rxtp = qos.txtp;
+
+	err = setsockopt (priv->brfd, SOL_ATM, SO_ATMQOS, &qos, sizeof (qos));
+	if (err != 0) {
+		nm_log_err (LOGD_ADSL, "(%s): failed to set QoS (%d)",
+		            iface, errno);
+		goto error;
+	}
+
+	encapsulation = nm_setting_adsl_get_encapsulation (s_adsl);
+
+	/* VPI/VCI */
+	memset (&addr, 0, sizeof (addr));
+	addr.sap_family = AF_ATMPVC;
+	addr.sap_addr.itf = priv->atm_index;
+	addr.sap_addr.vpi = (guint16) nm_setting_adsl_get_vpi (s_adsl);
+	addr.sap_addr.vci = (int) nm_setting_adsl_get_vci (s_adsl);
+
+	nm_log_dbg (LOGD_ADSL, "(%s): assigning address %d.%d.%d encapsulation %s",
+	            nm_device_get_iface (NM_DEVICE (self)),
+	            priv->atm_index, addr.sap_addr.vpi, addr.sap_addr.vci,
+	            encapsulation);
+
+	err = connect (priv->brfd, (struct sockaddr*) &addr, sizeof (addr));
+	if (err != 0) {
+		nm_log_err (LOGD_ADSL, "(%s): failed to set VPI/VCI (%d)",
+		            iface, errno);
+		goto error;
+	}
+
+	/* And last attach the VCC to the interface */
+	is_llc = (g_strcmp0 (encapsulation, "llc") == 0);
+
+	memset (&be, 0, sizeof (be));
+	be.backend_num = ATM_BACKEND_BR2684;
+	be.ifspec.method = BR2684_FIND_BYIFNAME;
+	strcpy (be.ifspec.spec.ifname, priv->nas_ifname);
+	be.fcs_in = BR2684_FCSIN_NO;
+	be.fcs_out = BR2684_FCSOUT_NO;
+	be.encaps = is_llc ? BR2684_ENCAPS_LLC : BR2684_ENCAPS_VC;
+	err = ioctl (priv->brfd, ATM_SETBACKEND, &be);
+	if (err != 0) {
+		nm_log_err (LOGD_ADSL, "(%s): failed to attach VCC (%d)",
+		            iface, errno);
+		goto error;
+	}
+
+	return TRUE;
+
+error:
+	close (priv->brfd);
+	priv->brfd = -1;
+	return FALSE;
+}
+
+static void
+netlink_notification (NMNetlinkMonitor *monitor,
+                      struct nl_msg *msg,
+                      gpointer user_data)
+{
+	NMDeviceAdsl *self = NM_DEVICE_ADSL (user_data);
+	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
+	NMDevice *device = NM_DEVICE (user_data);
+	struct nlmsghdr *hdr = nlmsg_hdr (msg);
+	const char *iface = nm_device_get_iface (device);
+
+	/* This only gets called for PPPoE connections and "nas" interfaces */
+
+	if ((hdr->nlmsg_type == RTM_DELLINK) && (priv->nas_ifindex >= 0)) {
+		struct ifinfomsg *ifi = nlmsg_data (hdr);
+
+		if (ifi->ifi_index == priv->nas_ifindex) {
+			/* NAS device went away for some reason; kill the connection */
+			nm_log_dbg (LOGD_ADSL, "(%s): NAS interface disappeared", iface);
+			nm_device_state_changed (device,
+			                         NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_BR2684_FAILED);
+		}
+	}
 }
 
 static NMActStageReturn
-real_act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
+real_act_stage2_config (NMDevice *device, NMDeviceStateReason *out_reason)
 {
-	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
-	NMDeviceAdsl *self = NM_DEVICE_ADSL (dev);
+	NMDeviceAdsl *self = NM_DEVICE_ADSL (device);
 	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
-	NMActRequest *req;
+	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMSettingAdsl *s_adsl;
-	GError *err = NULL;
 	const char *protocol;
 
-	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+	g_assert (out_reason);
 
-	req = nm_device_get_act_request (NM_DEVICE (self));
-	g_return_val_if_fail (req != NULL, NM_ACT_STAGE_RETURN_FAILURE);
-
-	s_adsl = nm_connection_get_setting_adsl (nm_device_get_connection (dev));
+	s_adsl = nm_connection_get_setting_adsl (nm_device_get_connection (device));
 	g_assert (s_adsl);
 
 	protocol = nm_setting_adsl_get_protocol (s_adsl);
-	if (!strcmp (protocol, "pppoe")) {
-		priv->br2684_manager = nm_br2684_manager_new();
-		if (!nm_br2684_manager_start (priv->br2684_manager, req, 30, &err)) {
-			nm_log_warn (LOGD_DEVICE, "(%s): RFC 2684 bridge failed to start: %s",
-					             nm_device_get_iface (NM_DEVICE (self)), err->message);
-			ret = NM_ACT_STAGE_RETURN_FAILURE;
-			goto out;
+	nm_log_dbg (LOGD_ADSL, "(%s): using ADSL protocol '%s'",
+	             nm_device_get_iface (device), protocol);
+
+	if (g_strcmp0 (protocol, NM_SETTING_ADSL_PROTOCOL_PPPOE) == 0) {
+
+		/* PPPoE needs RFC2684 bridging before we can do PPP over it */
+		if (!br2684_create_iface (self, s_adsl)) {
+			*out_reason = NM_DEVICE_STATE_REASON_BR2684_FAILED;
+			goto done;
 		}
-		g_signal_connect (priv->br2684_manager, "state-changed",
-					   G_CALLBACK (br2684_state_changed),
-					   self);
-		ret = NM_ACT_STAGE_RETURN_POSTPONE;
+
+		/* Set up the VCC */
+		if (!br2684_assign_vcc (self, s_adsl)) {
+			*out_reason = NM_DEVICE_STATE_REASON_BR2684_FAILED;
+			goto done;
+		}
+
+		/* Watch for the 'nas' interface going away */
+		priv->netlink_id = g_signal_connect (priv->monitor, "notification",
+		                                     G_CALLBACK (netlink_notification),
+		                                     self);
+
+		nm_log_dbg (LOGD_ADSL, "(%s): ATM setup successful", nm_device_get_iface (device));
+
+		/* otherwise we're good for stage3 */
+		nm_system_iface_set_up (priv->nas_ifindex, TRUE, NULL);
+		ret = NM_ACT_STAGE_RETURN_SUCCESS;
+
+	} else if (g_strcmp0 (protocol, NM_SETTING_ADSL_PROTOCOL_PPPOA) == 0) {
+		/* PPPoA doesn't need anything special */
+		ret = NM_ACT_STAGE_RETURN_SUCCESS;
+	} else {
+		nm_log_warn (LOGD_ADSL, "(%s): unhandled ADSL protocol '%s'",
+		             nm_device_get_iface (device), protocol);
 	}
 
-out:
-	return ret;
-}
-
-static NMActStageReturn
-real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
-{
-	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
+done:
 	return ret;
 }
 
@@ -324,6 +517,7 @@ real_act_stage3_ip4_config_start (NMDevice *device,
 	GError *err = NULL;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	const char *iface = nm_device_get_iface (device);
+	const char *ppp_iface;
 
 	req = nm_device_get_act_request (device);
 	g_assert (req);
@@ -334,7 +528,19 @@ real_act_stage3_ip4_config_start (NMDevice *device,
 	s_adsl = nm_connection_get_setting_adsl (connection);
 	g_assert (s_adsl);
 
-	priv->ppp_manager = nm_ppp_manager_new (iface);
+	/* PPPoE uses the NAS inteface, not the ATM interface */
+	if (g_strcmp0 (nm_setting_adsl_get_protocol (s_adsl), NM_SETTING_ADSL_PROTOCOL_PPPOE) == 0) {
+		g_assert (priv->nas_ifname);
+		ppp_iface = priv->nas_ifname;
+
+		nm_log_dbg (LOGD_ADSL, "(%s): starting PPPoE on NAS interface %s",
+			        iface, priv->nas_ifname);
+	} else {
+		ppp_iface = iface;
+		nm_log_dbg (LOGD_ADSL, "(%s): starting PPPoA", iface);
+	}
+
+	priv->ppp_manager = nm_ppp_manager_new (ppp_iface);
 	if (nm_ppp_manager_start (priv->ppp_manager, req, nm_setting_adsl_get_username (s_adsl), 30, &err)) {
 		g_signal_connect (priv->ppp_manager, "state-changed",
 		                  G_CALLBACK (ppp_state_changed),
@@ -344,7 +550,7 @@ real_act_stage3_ip4_config_start (NMDevice *device,
 		                  self);
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else {
-		nm_log_warn (LOGD_DEVICE, "(%s): PPP failed to start: %s", iface, err->message);
+		nm_log_warn (LOGD_ADSL, "(%s): PPP failed to start: %s", iface, err->message);
 		g_error_free (err);
 
 		g_object_unref (priv->ppp_manager);
@@ -367,10 +573,24 @@ real_deactivate (NMDevice *device)
 		priv->ppp_manager = NULL;
 	}
 
-	if (priv->br2684_manager) {
-		g_object_unref (priv->br2684_manager);
-		priv->br2684_manager = NULL;
+	if (priv->netlink_id) {
+		g_signal_handler_disconnect (priv->monitor, priv->netlink_id);
+		priv->netlink_id = 0;
 	}
+
+	if (priv->brfd >= 0) {
+		close (priv->brfd);
+		priv->brfd = -1;
+	}
+
+	/* FIXME: kernel has no way of explicitly deleting the 'nasX' interface yet,
+	 * so it gets leaked.  It does get destroyed when it's no longer in use,
+	 * but we have no control over that.
+	 */
+	if (priv->nas_ifindex >= 0)
+		priv->nas_ifindex = -1;
+	g_free (priv->nas_ifname);
+	priv->nas_ifname = NULL;
 }
 
 /**************************************************************/
@@ -419,11 +639,11 @@ carrier_update_cb (gpointer user_data)
 	iface = nm_device_get_iface (NM_DEVICE (self));
 
 	path  = g_strdup_printf ("/sys/class/atm/%s/carrier", iface);
-	success = g_file_get_contents(path, &contents, NULL, &error);
+	success = g_file_get_contents (path, &contents, NULL, &error);
 	g_free (path);
 
 	if (!success) {
-		nm_log_dbg (LOGD_DEVICE, "error reading %s: (%d) %s",
+		nm_log_dbg (LOGD_ADSL, "error reading %s: (%d) %s",
 		            path,
 		            error ? error->code : -1,
 		            error && error->message ? error->message : "(unknown)");
@@ -455,6 +675,20 @@ nm_device_adsl_new (const char *udi,
 	                                  NULL);
 }
 
+static int
+get_atm_index (const char *iface, GError **error)
+{
+	char *path, *contents;
+	int idx = -1;
+
+	path = g_strdup_printf ("/sys/class/atm/%s/atmindex", iface);
+	if (g_file_get_contents (path, &contents, NULL, error))
+		idx = atoi (contents);
+	g_free (path);
+	g_free (contents);
+	return idx;
+}
+
 static GObject*
 constructor (GType type,
 			 guint n_construct_params,
@@ -462,14 +696,31 @@ constructor (GType type,
 {
 	GObject *object;
 	NMDeviceAdslPrivate *priv;
+	GError *error = NULL;
 
 	object = G_OBJECT_CLASS (nm_device_adsl_parent_class)->constructor (type,
 	                                                                    n_construct_params,
 	                                                                    construct_params);
-	if (object) {
-		priv = NM_DEVICE_ADSL_GET_PRIVATE (object);
-		priv->carrier_poll_id = g_timeout_add_seconds (5, carrier_update_cb, object);
+	if (!object)
+		return NULL;
+
+	priv = NM_DEVICE_ADSL_GET_PRIVATE (object);
+
+	priv->atm_index = get_atm_index (nm_device_get_iface (NM_DEVICE (object)), &error);
+	if (priv->atm_index < 0) {
+		nm_log_dbg (LOGD_ADSL, "error reading ATM device index: (%d) %s",
+		            error ? error->code : -1,
+		            error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
+		g_object_unref (object);
+		return NULL;
+	} else {
+		nm_log_dbg (LOGD_ADSL, "(%s): ATM device index %d",
+				    nm_device_get_iface (NM_DEVICE (object)), priv->atm_index);
 	}
+
+	/* Poll the carrier */
+	priv->carrier_poll_id = g_timeout_add_seconds (5, carrier_update_cb, object);
 
 	return object;
 }
@@ -491,6 +742,20 @@ dispose (GObject *object)
 		g_source_remove (priv->carrier_poll_id);
 		priv->carrier_poll_id = 0;
 	}
+
+	if (priv->netlink_id) {
+		g_source_remove (priv->netlink_id);
+		priv->netlink_id = 0;
+	}
+
+	if (priv->monitor) {
+		nm_netlink_monitor_unsubscribe (priv->monitor, RTNLGRP_LINK);
+		g_object_unref (priv->monitor);
+		priv->monitor = NULL;
+	}
+
+	g_free (priv->nas_ifname);
+	priv->nas_ifname = NULL;
 
 	G_OBJECT_CLASS (nm_device_adsl_parent_class)->dispose (object);
 }
@@ -524,8 +789,12 @@ set_property (GObject *object, guint prop_id,
 }
 
 static void
-nm_device_adsl_init (NMDeviceAdsl * self)
+nm_device_adsl_init (NMDeviceAdsl *self)
 {
+	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
+
+	priv->monitor = nm_netlink_monitor_get ();
+	nm_netlink_monitor_subscribe (priv->monitor, RTNLGRP_LINK, NULL);
 }
 
 static void
@@ -549,7 +818,6 @@ nm_device_adsl_class_init (NMDeviceAdslClass *klass)
 	parent_class->get_best_auto_connection = real_get_best_auto_connection;
 	parent_class->complete_connection = real_complete_connection;
 
-	parent_class->act_stage1_prepare = real_act_stage1_prepare;
 	parent_class->act_stage2_config = real_act_stage2_config;
 	parent_class->act_stage3_ip4_config_start = real_act_stage3_ip4_config_start;
 	parent_class->deactivate = real_deactivate;
