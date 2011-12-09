@@ -102,6 +102,7 @@ static NmcOutputField nmc_fields_settings_names[] = {
 	SETTING_FIELD (NM_SETTING_OLPC_MESH_SETTING_NAME, 0),             /* 13 */
 	SETTING_FIELD (NM_SETTING_VPN_SETTING_NAME, 0),                   /* 14 */
 	SETTING_FIELD (NM_SETTING_WIMAX_SETTING_NAME, 0),                 /* 15 */
+	SETTING_FIELD (NM_SETTING_INFINIBAND_SETTING_NAME, 0),            /* 16 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTINGS_NAMES_ALL_X  NM_SETTING_CONNECTION_SETTING_NAME","\
@@ -118,7 +119,8 @@ static NmcOutputField nmc_fields_settings_names[] = {
                                          NM_SETTING_CDMA_SETTING_NAME","\
                                          NM_SETTING_BLUETOOTH_SETTING_NAME","\
                                          NM_SETTING_OLPC_MESH_SETTING_NAME","\
-                                         NM_SETTING_VPN_SETTING_NAME
+                                         NM_SETTING_VPN_SETTING_NAME","\
+                                         NM_SETTING_INFINIBAND_SETTING_NAME
 #if WITH_WIMAX
 #define NMC_FIELDS_SETTINGS_NAMES_ALL    NMC_FIELDS_SETTINGS_NAMES_ALL_X","\
                                          NM_SETTING_WIMAX_SETTING_NAME
@@ -364,6 +366,15 @@ nmc_connection_detail (NMConnection *connection, NmCli *nmc)
 			}
 		}
 #endif
+
+		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[16].name)) {
+			NMSettingInfiniband *s_infiniband = nm_connection_get_setting_infiniband (connection);
+			if (s_infiniband) {
+				setting_infiniband_details (s_infiniband, nmc);
+				was_output = TRUE;
+				continue;
+			}
+		}
 	}
 
 	if (print_settings_array)

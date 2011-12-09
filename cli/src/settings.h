@@ -36,6 +36,7 @@
 #include <nm-setting-olpc-mesh.h>
 #include <nm-setting-vpn.h>
 #include <nm-setting-wimax.h>
+#include <nm-setting-infiniband.h>
 
 #include "nmcli.h"
 #include "utils.h"
@@ -57,5 +58,6 @@ gboolean setting_bluetooth_details (NMSettingBluetooth *s_bluetooth, NmCli *nmc)
 gboolean setting_olpc_mesh_details (NMSettingOlpcMesh *s_olpc_mesh, NmCli *nmc);
 gboolean setting_vpn_details (NMSettingVPN *s_vpn, NmCli *nmc);
 gboolean setting_wimax_details (NMSettingWimax *s_wimax, NmCli *nmc);
+gboolean setting_infiniband_details (NMSettingInfiniband *s_infiniband, NmCli *nmc);
 
 #endif /* NMC_SETTINGS_H */
