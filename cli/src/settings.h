@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 Red Hat, Inc.
+ * (C) Copyright 2010 - 2011 Red Hat, Inc.
  */
 
 #ifndef NMC_SETTINGS_H
@@ -41,21 +41,21 @@
 #include "utils.h"
 
 
-gboolean setting_connection_details (NMSetting *setting, NmCli *nmc);
-gboolean setting_wired_details (NMSetting *setting, NmCli *nmc);
-gboolean setting_802_1X_details (NMSetting *setting, NmCli *nmc);
-gboolean setting_wireless_details (NMSetting *setting, NmCli *nmc);
-gboolean setting_wireless_security_details (NMSetting *setting, NmCli *nmc);
-gboolean setting_ip4_config_details (NMSetting *setting, NmCli *nmc);
-gboolean setting_ip6_config_details (NMSetting *setting, NmCli *nmc);
-gboolean setting_serial_details (NMSetting *setting, NmCli *nmc);
-gboolean setting_ppp_details (NMSetting *setting, NmCli *nmc);
-gboolean setting_pppoe_details (NMSetting *setting, NmCli *nmc);
-gboolean setting_gsm_details (NMSetting *setting, NmCli *nmc);
-gboolean setting_cdma_details (NMSetting *setting, NmCli *nmc);
-gboolean setting_bluetooth_details (NMSetting *setting, NmCli *nmc);
-gboolean setting_olpc_mesh_details (NMSetting *setting, NmCli *nmc);
-gboolean setting_vpn_details (NMSetting *setting, NmCli *nmc);
-gboolean setting_wimax_details (NMSetting *setting, NmCli *nmc);
+gboolean setting_connection_details (NMSettingConnection *s_con, NmCli *nmc);
+gboolean setting_wired_details (NMSettingWired *s_wired, NmCli *nmc);
+gboolean setting_802_1X_details (NMSetting8021x *s_8021X, NmCli *nmc);
+gboolean setting_wireless_details (NMSettingWireless *s_wireless, NmCli *nmc);
+gboolean setting_wireless_security_details (NMSettingWirelessSecurity *s_wsec, NmCli *nmc);
+gboolean setting_ip4_config_details (NMSettingIP4Config *s_ip4, NmCli *nmc);
+gboolean setting_ip6_config_details (NMSettingIP6Config *s_ip6, NmCli *nmc);
+gboolean setting_serial_details (NMSettingSerial *s_serial, NmCli *nmc);
+gboolean setting_ppp_details (NMSettingPPP *s_ppp, NmCli *nmc);
+gboolean setting_pppoe_details (NMSettingPPPOE *s_pppoe, NmCli *nmc);
+gboolean setting_gsm_details (NMSettingGsm *s_gsm, NmCli *nmc);
+gboolean setting_cdma_details (NMSettingCdma *s_cdma, NmCli *nmc);
+gboolean setting_bluetooth_details (NMSettingBluetooth *s_bluetooth, NmCli *nmc);
+gboolean setting_olpc_mesh_details (NMSettingOlpcMesh *s_olpc_mesh, NmCli *nmc);
+gboolean setting_vpn_details (NMSettingVPN *s_vpn, NmCli *nmc);
+gboolean setting_wimax_details (NMSettingWimax *s_wimax, NmCli *nmc);
 
 #endif /* NMC_SETTINGS_H */

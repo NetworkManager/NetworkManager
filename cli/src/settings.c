@@ -520,9 +520,8 @@ allowed_bands_to_string (guint32 bands)
 }
 
 gboolean
-setting_connection_details (NMSetting *setting, NmCli *nmc)
+setting_connection_details (NMSettingConnection *s_con, NmCli *nmc)
 {
-	NMSettingConnection *s_con;
 	guint64 timestamp;
 	char *timestamp_str;
 	const char *perm_item;
@@ -533,8 +532,7 @@ setting_connection_details (NMSetting *setting, NmCli *nmc)
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
 
-	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), FALSE);
-	s_con = (NMSettingConnection *) setting;
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (s_con), FALSE);
 
 	nmc->allowed_fields = nmc_fields_setting_connection;
 	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_CONNECTION_ALL, nmc->allowed_fields, NULL);
@@ -572,9 +570,8 @@ setting_connection_details (NMSetting *setting, NmCli *nmc)
 }
 
 gboolean
-setting_wired_details (NMSetting *setting, NmCli *nmc)
+setting_wired_details (NMSettingWired *s_wired, NmCli *nmc)
 {
-	NMSettingWired *s_wired;
 	const GByteArray *mac;
 	const GSList *iter;
 	const GPtrArray *s390_channels;
@@ -585,8 +582,7 @@ setting_wired_details (NMSetting *setting, NmCli *nmc)
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
 
-	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), FALSE);
-	s_wired = (NMSettingWired *) setting;
+	g_return_val_if_fail (NM_IS_SETTING_WIRED (s_wired), FALSE);
 
 	nmc->allowed_fields = nmc_fields_setting_wired;
 	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_WIRED_ALL, nmc->allowed_fields, NULL);
@@ -653,9 +649,8 @@ setting_wired_details (NMSetting *setting, NmCli *nmc)
 }
 
 gboolean
-setting_802_1X_details (NMSetting *setting, NmCli *nmc)
+setting_802_1X_details (NMSetting8021x *s_8021X, NmCli *nmc)
 {
-	NMSetting8021x *s_8021X;
 	NMSetting8021xCKScheme scheme;
 	GString *eap_str, *alt_sub_match, *phase2_alt_sub_match;
 	char *ca_cert_str = NULL, *client_cert_str = NULL, *phase2_ca_cert_str = NULL;
@@ -665,8 +660,7 @@ setting_802_1X_details (NMSetting *setting, NmCli *nmc)
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
 
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
-	s_8021X = (NMSetting8021x *) setting;
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (s_8021X), FALSE);
 
 	nmc->allowed_fields = nmc_fields_setting_8021X;
 	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_802_1X_ALL, nmc->allowed_fields, NULL);
@@ -769,9 +763,8 @@ setting_802_1X_details (NMSetting *setting, NmCli *nmc)
 }
 
 gboolean
-setting_wireless_details (NMSetting *setting, NmCli *nmc)
+setting_wireless_details (NMSettingWireless *s_wireless, NmCli *nmc)
 {
-	NMSettingWireless *s_wireless;
 	int i;
 	const GByteArray *ssid, *bssid, *mac;
 	char *ssid_str, *channel_str, *rate_str, *tx_power_str, *mtu_str;
@@ -782,8 +775,7 @@ setting_wireless_details (NMSetting *setting, NmCli *nmc)
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
 
-	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), FALSE);
-	s_wireless = (NMSettingWireless *) setting;
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (s_wireless), FALSE);
 
 	nmc->allowed_fields = nmc_fields_setting_wireless;
 	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_WIRELESS_ALL, nmc->allowed_fields, NULL);
@@ -854,9 +846,8 @@ setting_wireless_details (NMSetting *setting, NmCli *nmc)
 }
 
 gboolean
-setting_wireless_security_details (NMSetting *setting, NmCli *nmc)
+setting_wireless_security_details (NMSettingWirelessSecurity *s_wireless_sec, NmCli *nmc)
 {
-	NMSettingWirelessSecurity *s_wireless_sec;
 	int i;
 	char *wep_tx_keyidx_str, *wep_key_type_str;
 	GString *protos, *pairwises, *groups;
@@ -864,8 +855,7 @@ setting_wireless_security_details (NMSetting *setting, NmCli *nmc)
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
 
-	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), FALSE);
-	s_wireless_sec = (NMSettingWirelessSecurity *) setting;
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (s_wireless_sec), FALSE);
 
 	nmc->allowed_fields = nmc_fields_setting_wireless_security;
 	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_WIRELESS_SECURITY_ALL, nmc->allowed_fields, NULL);
@@ -922,17 +912,15 @@ setting_wireless_security_details (NMSetting *setting, NmCli *nmc)
 }
 
 gboolean
-setting_ip4_config_details (NMSetting *setting, NmCli *nmc)
+setting_ip4_config_details (NMSettingIP4Config *s_ip4, NmCli *nmc)
 {
-	NMSettingIP4Config *s_ip4;
 	GString *dns_str, *dns_search_str, *addr_str, *route_str;
 	int i, num;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
 
-	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), FALSE);
-	s_ip4 = (NMSettingIP4Config *) setting;
+	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (s_ip4), FALSE);
 
 	nmc->allowed_fields = nmc_fields_setting_ip4_config;
 	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_IP4_CONFIG_ALL, nmc->allowed_fields, NULL);
@@ -1058,17 +1046,15 @@ setting_ip4_config_details (NMSetting *setting, NmCli *nmc)
 }
 
 gboolean
-setting_ip6_config_details (NMSetting *setting, NmCli *nmc)
+setting_ip6_config_details (NMSettingIP6Config *s_ip6, NmCli *nmc)
 {
-	NMSettingIP6Config *s_ip6;
 	GString *dns_str, *dns_search_str, *addr_str, *route_str;
 	int i, num;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
 
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), FALSE);
-	s_ip6 = (NMSettingIP6Config *) setting;
+	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (s_ip6), FALSE);
 
 	nmc->allowed_fields = nmc_fields_setting_ip6_config;
 	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_IP6_CONFIG_ALL, nmc->allowed_fields, NULL);
@@ -1191,16 +1177,14 @@ setting_ip6_config_details (NMSetting *setting, NmCli *nmc)
 }
 
 gboolean
-setting_serial_details (NMSetting *setting, NmCli *nmc)
+setting_serial_details (NMSettingSerial *s_serial, NmCli *nmc)
 {
-	NMSettingSerial *s_serial;
 	char *baud_str, *bits_str, *parity_str, *stopbits_str, *send_delay_str;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
 
-	g_return_val_if_fail (NM_IS_SETTING_SERIAL (setting), FALSE);
-	s_serial = (NMSettingSerial *) setting;
+	g_return_val_if_fail (NM_IS_SETTING_SERIAL (s_serial), FALSE);
 
 	nmc->allowed_fields = nmc_fields_setting_serial;
 	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_SERIAL_ALL, nmc->allowed_fields, NULL);
@@ -1233,16 +1217,14 @@ setting_serial_details (NMSetting *setting, NmCli *nmc)
 }
 
 gboolean
-setting_ppp_details (NMSetting *setting, NmCli *nmc)
+setting_ppp_details (NMSettingPPP *s_ppp, NmCli *nmc)
 {
-	NMSettingPPP *s_ppp;
 	char *baud_str, *mru_str, *mtu_str, *lcp_echo_failure_str, *lcp_echo_interval_str;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
 
-	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
-	s_ppp = (NMSettingPPP *) setting;
+	g_return_val_if_fail (NM_IS_SETTING_PPP (s_ppp), FALSE);
 
 	nmc->allowed_fields = nmc_fields_setting_ppp;
 	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_PPP_ALL, nmc->allowed_fields, NULL);
@@ -1288,15 +1270,13 @@ setting_ppp_details (NMSetting *setting, NmCli *nmc)
 }
 
 gboolean
-setting_pppoe_details (NMSetting *setting, NmCli *nmc)
+setting_pppoe_details (NMSettingPPPOE *s_pppoe, NmCli *nmc)
 {
-	NMSettingPPPOE *s_pppoe;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
 
-	g_return_val_if_fail (NM_IS_SETTING_PPPOE (setting), FALSE);
-	s_pppoe = (NMSettingPPPOE *) setting;
+	g_return_val_if_fail (NM_IS_SETTING_PPPOE (s_pppoe), FALSE);
 
 	nmc->allowed_fields = nmc_fields_setting_pppoe;
 	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_PPPOE_ALL, nmc->allowed_fields, NULL);
@@ -1315,16 +1295,14 @@ setting_pppoe_details (NMSetting *setting, NmCli *nmc)
 }
 
 gboolean
-setting_gsm_details (NMSetting *setting, NmCli *nmc)
+setting_gsm_details (NMSettingGsm *s_gsm, NmCli *nmc)
 {
-	NMSettingGsm *s_gsm;
 	char *network_type_str, *allowed_bands_str;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
 
-	g_return_val_if_fail (NM_IS_SETTING_GSM (setting), FALSE);
-	s_gsm = (NMSettingGsm *) setting;
+	g_return_val_if_fail (NM_IS_SETTING_GSM (s_gsm), FALSE);
 
 	nmc->allowed_fields = nmc_fields_setting_gsm;
 	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_GSM_ALL, nmc->allowed_fields, NULL);
@@ -1355,15 +1333,13 @@ setting_gsm_details (NMSetting *setting, NmCli *nmc)
 }
 
 gboolean
-setting_cdma_details (NMSetting *setting, NmCli *nmc)
+setting_cdma_details (NMSettingCdma *s_cdma, NmCli *nmc)
 {
-	NMSettingCdma *s_cdma;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
 
-	g_return_val_if_fail (NM_IS_SETTING_CDMA (setting), FALSE);
-	s_cdma = (NMSettingCdma *) setting;
+	g_return_val_if_fail (NM_IS_SETTING_CDMA (s_cdma), FALSE);
 
 	nmc->allowed_fields = nmc_fields_setting_cdma;
 	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_CDMA_ALL, nmc->allowed_fields, NULL);
@@ -1382,17 +1358,15 @@ setting_cdma_details (NMSetting *setting, NmCli *nmc)
 }
 
 gboolean
-setting_bluetooth_details (NMSetting *setting, NmCli *nmc)
+setting_bluetooth_details (NMSettingBluetooth *s_bluetooth, NmCli *nmc)
 {
-	NMSettingBluetooth *s_bluetooth;
 	const GByteArray *bdaddr;
 	char *bdaddr_str = NULL;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
 
-	g_return_val_if_fail (NM_IS_SETTING_BLUETOOTH (setting), FALSE);
-	s_bluetooth = (NMSettingBluetooth *) setting;
+	g_return_val_if_fail (NM_IS_SETTING_BLUETOOTH (s_bluetooth), FALSE);
 
 	nmc->allowed_fields = nmc_fields_setting_bluetooth;
 	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_BLUETOOTH_ALL, nmc->allowed_fields, NULL);
@@ -1416,17 +1390,15 @@ setting_bluetooth_details (NMSetting *setting, NmCli *nmc)
 }
 
 gboolean
-setting_olpc_mesh_details (NMSetting *setting, NmCli *nmc)
+setting_olpc_mesh_details (NMSettingOlpcMesh *s_olpc_mesh, NmCli *nmc)
 {
-	NMSettingOlpcMesh *s_olpc_mesh;
 	const GByteArray *ssid, *dhcp_anycast;
 	char *ssid_str, *channel_str, *dhcp_anycast_str = NULL;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
 
-	g_return_val_if_fail (NM_IS_SETTING_OLPC_MESH (setting), FALSE);
-	s_olpc_mesh = (NMSettingOlpcMesh *) setting;
+	g_return_val_if_fail (NM_IS_SETTING_OLPC_MESH (s_olpc_mesh), FALSE);
 
 	nmc->allowed_fields = nmc_fields_setting_olpc_mesh;
 	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_OLPC_MESH_ALL, nmc->allowed_fields, NULL);
@@ -1467,16 +1439,14 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 }
 
 gboolean
-setting_vpn_details (NMSetting *setting, NmCli *nmc)
+setting_vpn_details (NMSettingVPN *s_vpn, NmCli *nmc)
 {
-	NMSettingVPN *s_vpn;
 	GString *data_item_str, *secret_str;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
 
-	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), FALSE);
-	s_vpn = (NMSettingVPN *) setting;
+	g_return_val_if_fail (NM_IS_SETTING_VPN (s_vpn), FALSE);
 
 	nmc->allowed_fields = nmc_fields_setting_vpn;
 	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_VPN_ALL, nmc->allowed_fields, NULL);
@@ -1504,17 +1474,15 @@ setting_vpn_details (NMSetting *setting, NmCli *nmc)
 }
 
 gboolean
-setting_wimax_details (NMSetting *setting, NmCli *nmc)
+setting_wimax_details (NMSettingWimax *s_wimax, NmCli *nmc)
 {
-	NMSettingWimax *s_wimax;
 	const GByteArray *mac;
 	char *device_mac_str = NULL;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
 
-	g_return_val_if_fail (NM_IS_SETTING_WIMAX (setting), FALSE);
-	s_wimax = (NMSettingWimax *) setting;
+	g_return_val_if_fail (NM_IS_SETTING_WIMAX (s_wimax), FALSE);
 
 	nmc->allowed_fields = nmc_fields_setting_wimax;
 	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_WIMAX_ALL, nmc->allowed_fields, NULL);

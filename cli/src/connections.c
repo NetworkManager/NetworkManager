@@ -32,18 +32,6 @@
 #include <netinet/ether.h>
 
 #include <nm-client.h>
-#include <nm-setting-connection.h>
-#include <nm-setting-wired.h>
-#include <nm-setting-pppoe.h>
-#include <nm-setting-wireless.h>
-#include <nm-setting-gsm.h>
-#include <nm-setting-cdma.h>
-#include <nm-setting-bluetooth.h>
-#include <nm-setting-olpc-mesh.h>
-#if WITH_WIMAX
-#include <nm-setting-wimax.h>
-#endif
-#include <nm-setting-infiniband.h>
 #include <nm-device-ethernet.h>
 #include <nm-device-wifi.h>
 #if WITH_WIMAX
@@ -187,7 +175,6 @@ quit (void)
 static gboolean
 nmc_connection_detail (NMConnection *connection, NmCli *nmc)
 {
-	NMSetting *setting;
 	GError *error = NULL;
 	GArray *print_settings_array;
 	int i;
@@ -233,135 +220,135 @@ nmc_connection_detail (NMConnection *connection, NmCli *nmc)
 		was_output = FALSE;
 
 		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[0].name)) {
-			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
-			if (setting) {
-				setting_connection_details (setting, nmc);
+			NMSettingConnection *s_con = nm_connection_get_setting_connection (connection);
+			if (s_con) {
+				setting_connection_details (s_con, nmc);
 				was_output = TRUE;
 				continue;
 			}
 		}
 
 		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[1].name)) {
-			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
-			if (setting) {
-				setting_wired_details (setting, nmc);
+			NMSettingWired *s_wired = nm_connection_get_setting_wired (connection);
+			if (s_wired) {
+				setting_wired_details (s_wired, nmc);
 				was_output = TRUE;
 				continue;
 			}
 		}
 
 		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[2].name)) {
-			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X);
-			if (setting) {
-				setting_802_1X_details (setting, nmc);
+			NMSetting8021x *s_8021X = nm_connection_get_setting_802_1x (connection);
+			if (s_8021X) {
+				setting_802_1X_details (s_8021X, nmc);
 				was_output = TRUE;
 				continue;
 			}
 		}
 
 		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[3].name)) {
-			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
-			if (setting) {
-				setting_wireless_details (setting, nmc);
+			NMSettingWireless *s_wireless = nm_connection_get_setting_wireless (connection);
+			if (s_wireless) {
+				setting_wireless_details (s_wireless, nmc);
 				was_output = TRUE;
 				continue;
 			}
 		}
 
 		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[4].name)) {
-			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
-			if (setting) {
-				setting_wireless_security_details (setting, nmc);
+			NMSettingWirelessSecurity *s_wsec = nm_connection_get_setting_wireless_security (connection);
+			if (s_wsec) {
+				setting_wireless_security_details (s_wsec, nmc);
 				was_output = TRUE;
 				continue;
 			}
 		}
 
 		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[5].name)) {
-			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
-			if (setting) {
-				setting_ip4_config_details (setting, nmc);
+			NMSettingIP4Config *s_ip4 = nm_connection_get_setting_ip4_config (connection);
+			if (s_ip4) {
+				setting_ip4_config_details (s_ip4, nmc);
 				was_output = TRUE;
 				continue;
 			}
 		}
 
 		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[6].name)) {
-			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
-			if (setting) {
-				setting_ip6_config_details (setting, nmc);
+			NMSettingIP6Config *s_ip6 = nm_connection_get_setting_ip6_config (connection);
+			if (s_ip6) {
+				setting_ip6_config_details (s_ip6, nmc);
 				was_output = TRUE;
 				continue;
 			}
 		}
 
 		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[7].name)) {
-			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL);
-			if (setting) {
-				setting_serial_details (setting, nmc);
+			NMSettingSerial *s_serial = nm_connection_get_setting_serial (connection);
+			if (s_serial) {
+				setting_serial_details (s_serial, nmc);
 				was_output = TRUE;
 				continue;
 			}
 		}
 
 		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[8].name)) {
-			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP);
-			if (setting) {
-				setting_ppp_details (setting, nmc);
+			NMSettingPPP *s_ppp = nm_connection_get_setting_ppp (connection);
+			if (s_ppp) {
+				setting_ppp_details (s_ppp, nmc);
 				was_output = TRUE;
 				continue;
 			}
 		}
 
 		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[9].name)) {
-			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_PPPOE);
-			if (setting) {
-				setting_pppoe_details (setting, nmc);
+			NMSettingPPPOE *s_pppoe = nm_connection_get_setting_pppoe (connection);
+			if (s_pppoe) {
+				setting_pppoe_details (s_pppoe, nmc);
 				was_output = TRUE;
 				continue;
 			}
 		}
 
 		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[10].name)) {
-			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM);
-			if (setting) {
-				setting_gsm_details (setting, nmc);
+			NMSettingGsm *s_gsm = nm_connection_get_setting_gsm (connection);
+			if (s_gsm) {
+				setting_gsm_details (s_gsm, nmc);
 				was_output = TRUE;
 				continue;
 			}
 		}
 
 		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[11].name)) {
-			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_CDMA);
-			if (setting) {
-				setting_cdma_details (setting, nmc);
+			NMSettingCdma *s_cdma = nm_connection_get_setting_cdma (connection);
+			if (s_cdma) {
+				setting_cdma_details (s_cdma, nmc);
 				was_output = TRUE;
 				continue;
 			}
 		}
 
 		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[12].name)) {
-			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_BLUETOOTH);
-			if (setting) {
-				setting_bluetooth_details (setting, nmc);
+			NMSettingBluetooth *s_bluetooth = nm_connection_get_setting_bluetooth (connection);
+			if (s_bluetooth) {
+				setting_bluetooth_details (s_bluetooth, nmc);
 				was_output = TRUE;
 				continue;
 			}
 		}
 
 		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[13].name)) {
-			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_OLPC_MESH);
-			if (setting) {
-				setting_olpc_mesh_details (setting, nmc);
+			NMSettingOlpcMesh *s_olpc_mesh = nm_connection_get_setting_olpc_mesh (connection);
+			if (s_olpc_mesh) {
+				setting_olpc_mesh_details (s_olpc_mesh, nmc);
 				was_output = TRUE;
 				continue;
 			}
 		}
 
 		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[14].name)) {
-			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
-			if (setting) {
-				setting_vpn_details (setting, nmc);
+			NMSettingVPN *s_vpn = nm_connection_get_setting_vpn (connection);
+			if (s_vpn) {
+				setting_vpn_details (s_vpn, nmc);
 				was_output = TRUE;
 				continue;
 			}
@@ -369,9 +356,9 @@ nmc_connection_detail (NMConnection *connection, NmCli *nmc)
 
 #if WITH_WIMAX
 		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[15].name)) {
-			setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_WIMAX);
-			if (setting) {
-				setting_wimax_details (setting, nmc);
+			NMSettingWimax *s_wimax = nm_connection_get_setting_wimax (connection);
+			if (s_wimax) {
+				setting_wimax_details (s_wimax, nmc);
 				was_output = TRUE;
 				continue;
 			}
