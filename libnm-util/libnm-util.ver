@@ -33,9 +33,9 @@ global:
 	nm_connection_get_setting_wired;
 	nm_connection_get_setting_wireless;
 	nm_connection_get_setting_wireless_security;
-	nm_connection_get_virtual_iface_name;
 	nm_connection_get_type;
 	nm_connection_get_uuid;
+	nm_connection_get_virtual_iface_name;
 	nm_connection_is_type;
 	nm_connection_lookup_setting_type;
 	nm_connection_lookup_setting_type_by_quark;
@@ -222,6 +222,7 @@ global:
 	nm_setting_get_name;
 	nm_setting_get_secret_flags;
 	nm_setting_get_type;
+	nm_setting_get_virtual_iface_name;
 	nm_setting_gsm_error_get_type;
 	nm_setting_gsm_error_quark;
 	nm_setting_gsm_get_allowed_bands;
@@ -304,7 +305,6 @@ global:
 	nm_setting_ip6_config_remove_dns;
 	nm_setting_ip6_config_remove_dns_search;
 	nm_setting_ip6_config_remove_route;
-	nm_setting_get_virtual_iface_name;
 	nm_setting_need_secrets;
 	nm_setting_new_from_hash;
 	nm_setting_olpc_mesh_error_get_type;
