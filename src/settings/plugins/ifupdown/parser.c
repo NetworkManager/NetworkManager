@@ -457,7 +457,7 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 				   NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 				   NULL);
 	} else {
- 		struct in_addr tmp_ip4_addr;
+		struct in_addr tmp_ip4_addr;
 		NMIP4Address *ip4_addr = nm_ip4_address_new ();
 
 		const char *address_v = ifparser_getkey(block, "address");
