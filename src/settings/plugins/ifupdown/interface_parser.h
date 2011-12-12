@@ -24,6 +24,8 @@
 #ifndef _INTERFACE_PARSER_H
 #define _INTERFACE_PARSER_H
 
+#include <glib.h>
+
 typedef struct _if_data
 {
 	char *key;
@@ -45,6 +47,7 @@ void ifparser_destroy(void);
 if_block *ifparser_getif(const char* iface);
 if_block *ifparser_getfirst(void);
 const char *ifparser_getkey(if_block* iface, const char *key);
+gboolean ifparser_haskey(if_block* iface, const char *key);
 int ifparser_get_num_blocks(void);
 int ifparser_get_num_info(if_block* iface);
 

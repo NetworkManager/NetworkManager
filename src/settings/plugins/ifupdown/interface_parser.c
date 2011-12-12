@@ -294,6 +294,19 @@ const char *ifparser_getkey(if_block* iface, const char *key)
 	return NULL;
 }
 
+gboolean
+ifparser_haskey(if_block* iface, const char *key)
+{
+	if_data *curr = iface->info;
+
+	while (curr != NULL) {
+		if (strcmp (curr->key, key) == 0)
+			return TRUE;
+		curr = curr->next;
+	}
+	return FALSE;
+}
+
 int ifparser_get_num_info(if_block* iface)
 {
 	int i = 0;
