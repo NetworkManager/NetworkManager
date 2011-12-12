@@ -181,8 +181,11 @@ default_adapter_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	if (!dbus_g_proxy_end_call (proxy, call, &err,
 	                            DBUS_TYPE_G_OBJECT_PATH, &default_adapter,
 	                            G_TYPE_INVALID)) {
-		nm_log_warn (LOGD_BT, "bluez error getting default adapter: %s",
-		             err && err->message ? err->message : "(unknown)");
+		/* Ignore "No such adapter" errors; just means bluetooth isn't active */
+		if (!dbus_g_error_has_name (err, "org.bluez.Error.NoSuchAdapter")) {
+			nm_log_warn (LOGD_BT, "bluez error getting default adapter: %s",
+			             err && err->message ? err->message : "(unknown)");
+		}
 		g_error_free (err);
 		return;
 	}
