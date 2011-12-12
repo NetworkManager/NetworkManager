@@ -178,8 +178,6 @@ NetworkManager_SOURCES = \
 		nm-activation-request.h \
 		nm-properties-changed-signal.c \
 		nm-properties-changed-signal.h \
-		wpa.c \
-		wpa.h \
 		nm-dhcp4-config.c \
 		nm-dhcp4-config.h \
 		nm-dhcp6-config.c \

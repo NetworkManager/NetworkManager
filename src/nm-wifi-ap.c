@@ -29,7 +29,7 @@
 #include "nm-utils.h"
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
-#include "wpa.h"
+
 #include "nm-properties-changed-signal.h"
 #include "nm-setting-wireless.h"
 #include "nm-glib-compat.h"
