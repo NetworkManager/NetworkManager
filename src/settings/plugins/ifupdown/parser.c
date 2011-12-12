@@ -432,15 +432,27 @@ eni_plugin_error_quark() {
 
 	return error_quark;
 }
-	
+
 static void
-ifupdown_add_search_item(gpointer data, gpointer user_data)
+ifupdown_ip4_add_search_item(gpointer data, gpointer user_data)
 {
 	const char *dns_search = data;
 	NMSettingIP4Config *ip4_setting = user_data;
 
 	if (!nm_setting_ip4_config_add_dns_search (ip4_setting, dns_search))
-		PLUGIN_WARN ("SCPlugin-Ifupdown", "    warning: duplicate DNS domain '%s'", dns_search);
+		PLUGIN_WARN ("SCPlugin-Ifupdown",
+				   "    warning: duplicate DNS domain '%s'", dns_search);
+}
+
+static void
+ifupdown_ip6_add_search_item(gpointer data, gpointer user_data)
+{
+	const char *dns_search = data;
+	NMSettingIP6Config *ip6_setting = user_data;
+
+	if (!nm_setting_ip6_config_add_dns_search (ip6_setting, dns_search))
+		PLUGIN_WARN ("SCPlugin-Ifupdown",
+				   "    warning: duplicate DNS domain '%s'", dns_search);
 }
 
 static void
@@ -527,8 +539,8 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 			PLUGIN_PRINT("SCPlugin-Ifupdown", "No dns-nameserver configured in /etc/network/interfaces");
 
 		/* DNS searches */
-                if (search_list) {
-			g_slist_foreach (search_list, (GFunc) ifupdown_add_search_item, ip4_setting);
+		if (search_list) {
+			g_slist_foreach (search_list, (GFunc) ifupdown_ip4_add_search_item, ip4_setting);
 			g_slist_foreach (search_list, (GFunc) g_free, NULL);
 			g_slist_free (search_list);
 		}
@@ -542,6 +554,105 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 	}
 
 	nm_connection_add_setting(connection, NM_SETTING(ip4_setting));
+}
+
+static void
+update_ip6_setting_from_if_block(NMConnection *connection,
+						   if_block *block)
+{
+	NMSettingIP6Config *ip6_setting = NM_SETTING_IP6_CONFIG (nm_setting_ip6_config_new());
+	const char *type = ifparser_getkey(block, "inet6");
+	gboolean is_static = type && (!strcmp("static", type) ||
+							!strcmp("v4tunnel", type));
+
+	if(!is_static) {
+		g_object_set(ip6_setting,
+		             NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+		             NULL);
+	} else {
+		struct in6_addr tmp_ip6_addr;
+		NMIP6Address *ip6_addr = nm_ip6_address_new ();
+
+		const char *address_v = ifparser_getkey(block, "address");
+		const char *prefix_v = ifparser_getkey(block, "netmask");
+		const char *gateway_v = ifparser_getkey(block, "gateway");
+		const char *nameserver_v = ifparser_getkey(block, "dns-nameserver");
+		const char *nameservers_v = ifparser_getkey(block, "dns-nameservers");
+		const char *search_v = ifparser_getkey(block, "dns-search");
+		int prefix_int;
+		GSList* nameservers_list = NULL;
+		GSList* nameservers_list_i = NULL;
+		GSList* search_list = NULL;
+		GError *error = NULL;
+
+		if(nameservers_v)
+			nameservers_list_i = nameservers_list = string_to_glist_of_strings (nameservers_v);
+		if(nameserver_v)
+			nameservers_list_i = nameservers_list = g_slist_append(nameservers_list, g_strdup(nameserver_v));
+		if(search_v)
+			search_list = string_to_glist_of_strings (search_v);
+
+		if (!address_v)
+			address_v = g_strdup ("::");
+
+		if (inet_pton (AF_INET6, address_v, &tmp_ip6_addr))
+			nm_ip6_address_set_address (ip6_addr, &tmp_ip6_addr);
+		else
+			g_set_error (&error, eni_plugin_error_quark (), 0,
+					   "Invalid %s IP6 address '%s'", "address", address_v);
+		if (!prefix_v)
+			prefix_v = g_strdup( "128");
+
+		prefix_int = g_ascii_strtoll(prefix_v, NULL, 10);
+		nm_ip6_address_set_prefix (ip6_addr, prefix_int);
+
+		if (!gateway_v)
+			gateway_v = g_strdup (address_v);
+
+		if (inet_pton (AF_INET, gateway_v, &tmp_ip6_addr))
+			nm_ip6_address_set_gateway (ip6_addr, &tmp_ip6_addr);
+		else
+			g_set_error (&error, eni_plugin_error_quark (), 0,
+					   "Invalid %s IP6 address '%s'", "gateway", gateway_v);
+
+		if (nm_setting_ip6_config_add_address (ip6_setting, ip6_addr)) {
+			PLUGIN_PRINT("SCPlugin-Ifupdown", "addresses count: %d",
+					   nm_setting_ip6_config_get_num_addresses (ip6_setting));
+		} else {
+			PLUGIN_PRINT("SCPlugin-Ifupdown", "ignoring duplicate IP6 address");
+		}
+
+		while (nameservers_list_i) {
+			gchar *dns = nameservers_list_i->data;
+			nameservers_list_i = nameservers_list_i->next;
+			if (!dns)
+				continue;
+			if (inet_pton (AF_INET6, dns, &tmp_ip6_addr)) {
+				if (!nm_setting_ip6_config_add_dns (ip6_setting, &tmp_ip6_addr))
+					PLUGIN_PRINT("SCPlugin-Ifupdown", "ignoring duplicate DNS server '%s'", dns);
+			} else
+				g_set_error (&error, eni_plugin_error_quark (), 0,
+						   "Invalid %s IP6 address nameserver '%s'", "nameserver", dns);
+		}
+		if (!nm_setting_ip6_config_get_num_dns (ip6_setting))
+			PLUGIN_PRINT("SCPlugin-Ifupdown", "No dns-nameserver configured in /etc/network/interfaces");
+
+		/* DNS searches */
+		if (search_list) {
+			g_slist_foreach (search_list, (GFunc) ifupdown_ip6_add_search_item, ip6_setting);
+			g_slist_foreach (search_list, (GFunc) g_free, NULL);
+			g_slist_free (search_list);
+		}
+
+		g_object_set (ip6_setting,
+		              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+		              NULL);
+
+		g_slist_foreach (nameservers_list, (GFunc) g_free, NULL);
+		g_slist_free (nameservers_list);
+	}
+
+	nm_connection_add_setting(connection, NM_SETTING(ip6_setting));
 }
 
 gboolean
@@ -581,13 +692,16 @@ ifupdown_update_connection_from_if_block (NMConnection *connection,
 			   block->name, type, idstr, nm_setting_connection_get_uuid (s_con));
 
 	if (!strcmp (NM_SETTING_WIRED_SETTING_NAME, type))
-		update_wired_setting_from_if_block (connection, block);	
+		update_wired_setting_from_if_block (connection, block);
 	else if (!strcmp (NM_SETTING_WIRELESS_SETTING_NAME, type)) {
 		update_wireless_setting_from_if_block (connection, block);
 		update_wireless_security_setting_from_if_block (connection, block);
 	}
 
-	update_ip4_setting_from_if_block (connection, block);
+	if (ifparser_haskey(block, "inet6"))
+		update_ip6_setting_from_if_block (connection, block);
+	else
+		update_ip4_setting_from_if_block (connection, block);
 
 	success = nm_connection_verify (connection, error);
 

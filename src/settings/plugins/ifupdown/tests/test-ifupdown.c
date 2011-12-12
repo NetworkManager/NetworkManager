@@ -637,6 +637,207 @@ test17_read_static_ipv4 (const char *path)
 	g_object_unref (connection);
 }
 
+static void
+test18_read_static_ipv6 (const char *path)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingIP6Config *s_ip6;
+	NMSettingWired *s_wired;
+	char *unmanaged = NULL;
+	GError *error = NULL;
+	const char* tmp;
+	const char *expected_address = "fc00::1";
+	const char *expected_id = "Ifupdown (myip6tunnel)";
+	const char *expected_dns1 = "fc00::2";
+	const char *expected_dns2 = "fc00::3";
+	const char *expected_search1 = "example.com";
+	const char *expected_search2 = "foo.example.com";
+	guint32 expected_prefix = 64;
+	NMIP6Address *ip6_addr;
+	struct in6_addr addr;
+	if_block *block = NULL;
+#define TEST18_NAME "wired-static-verify-ip6"
+	const char* file = "test18-" TEST18_NAME;
+
+	init_ifparser_with_file (path, file);
+	block = ifparser_getfirst ();
+	connection = nm_connection_new();
+	ifupdown_update_connection_from_if_block(connection, block, &error);
+
+	ASSERT (connection != NULL,
+			TEST18_NAME
+			"failed to read %s: %s", file, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+			TEST18_NAME,
+			"failed to verify %s: %s", file, error->message);
+
+	ASSERT (unmanaged == NULL,
+			TEST18_NAME,
+			"failed to verify %s: unexpected unmanaged value", file);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = nm_connection_get_setting_connection (connection);
+	ASSERT (s_con != NULL,
+			TEST18_NAME, "failed to verify %s: missing %s setting",
+			file,
+			NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+			TEST18_NAME,
+			"failed to verify %s: missing %s / %s key",
+			file,
+			NM_SETTING_CONNECTION_SETTING_NAME,
+			NM_SETTING_CONNECTION_ID);
+
+	ASSERT (strcmp (tmp, expected_id) == 0,
+			TEST18_NAME,
+			"failed to verify %s: unexpected %s / %s key value",
+			file,
+			NM_SETTING_CONNECTION_SETTING_NAME,
+			NM_SETTING_CONNECTION_ID);
+
+	/* ===== WIRED SETTING ===== */
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	ASSERT (s_wired != NULL,
+			TEST18_NAME, "failed to verify %s: missing %s setting",
+			file,
+			NM_SETTING_WIRED_SETTING_NAME);
+
+	/* ===== IPv6 SETTING ===== */
+
+	ASSERT (inet_pton (AF_INET6, expected_address, &addr) > 0,
+			TEST18_NAME,
+			"failed to verify %s: couldn't convert IP address #1",
+			file);
+
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	ASSERT (s_ip6 != NULL,
+			TEST18_NAME,
+			"failed to verify %s: missing %s setting",
+			file,
+			NM_SETTING_IP6_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip6_config_get_method (s_ip6);
+	ASSERT (strcmp (tmp, NM_SETTING_IP6_CONFIG_METHOD_MANUAL) == 0,
+			TEST18_NAME,
+			"failed to verify %s: unexpected %s / %s key value",
+			file,
+			NM_SETTING_IP6_CONFIG_SETTING_NAME,
+			NM_SETTING_IP6_CONFIG_METHOD);
+
+	/* IP addresses */
+	ASSERT (nm_setting_ip6_config_get_num_addresses (s_ip6) == 1,
+			TEST18_NAME,
+			"failed to verify %s: unexpected number of %s / %s",
+			file,
+			NM_SETTING_IP6_CONFIG_SETTING_NAME,
+			NM_SETTING_IP6_CONFIG_ADDRESSES);
+
+	ip6_addr = nm_setting_ip6_config_get_address (s_ip6, 0);
+	ASSERT (ip6_addr,
+			TEST18_NAME,
+			"failed to verify %s: missing %s / %s #1",
+			file,
+			NM_SETTING_IP6_CONFIG_SETTING_NAME,
+			NM_SETTING_IP6_CONFIG_ADDRESSES);
+
+	ASSERT (nm_ip6_address_get_prefix (ip6_addr) == expected_prefix,
+			TEST18_NAME
+			"failed to verify %s: unexpected %s / %s prefix",
+			file,
+			NM_SETTING_IP6_CONFIG_SETTING_NAME,
+			NM_SETTING_IP6_CONFIG_ADDRESSES);
+
+	ASSERT (IN6_ARE_ADDR_EQUAL (nm_ip6_address_get_address (ip6_addr),
+								&addr),
+			TEST18_NAME,
+			"failed to verify %s: unexpected %s / %s",
+			file,
+			NM_SETTING_IP6_CONFIG_SETTING_NAME,
+			NM_SETTING_IP6_CONFIG_ADDRESSES);
+
+	/* DNS Addresses */
+	ASSERT (nm_setting_ip6_config_get_num_dns (s_ip6) == 2,
+			TEST18_NAME,
+			"failed to verify %s: unexpected number of %s / %s values",
+			file,
+			NM_SETTING_IP6_CONFIG_SETTING_NAME,
+			NM_SETTING_IP6_CONFIG_DNS);
+
+	ASSERT (inet_pton (AF_INET6, expected_dns1, &addr) > 0,
+			TEST18_NAME,
+			"failed to verify %s: couldn't convert DNS IP address #1",
+			file);
+
+	ASSERT (IN6_ARE_ADDR_EQUAL (nm_setting_ip6_config_get_dns (s_ip6, 0),
+								&addr),
+			TEST18_NAME,
+			"failed to verify %s: unexpected %s / %s #1",
+			file,
+			NM_SETTING_IP6_CONFIG_SETTING_NAME,
+			NM_SETTING_IP6_CONFIG_DNS);
+
+	ASSERT (inet_pton (AF_INET6, expected_dns2, &addr) > 0,
+			TEST18_NAME,
+			"failed to verify %s: couldn't convert DNS IP address #2",
+			file);
+
+	ASSERT (IN6_ARE_ADDR_EQUAL (nm_setting_ip6_config_get_dns (s_ip6, 1),
+								&addr),
+			TEST18_NAME, "failed to verify %s: unexpected %s / %s #2",
+			file,
+			NM_SETTING_IP6_CONFIG_SETTING_NAME,
+			NM_SETTING_IP6_CONFIG_DNS);
+
+	/* DNS search domains */
+	ASSERT (nm_setting_ip6_config_get_num_dns_searches (s_ip6) == 2,
+			TEST18_NAME,
+			"failed to verify %s: unexpected number of %s / %s values",
+			file,
+			NM_SETTING_IP6_CONFIG_SETTING_NAME,
+			NM_SETTING_IP6_CONFIG_DNS_SEARCH);
+
+	tmp = nm_setting_ip6_config_get_dns_search (s_ip6, 0);
+	ASSERT (tmp != NULL,
+			"wired-ipv6-manual-verify-ip6",
+			"failed to verify %s: missing %s / %s #1",
+			file,
+			NM_SETTING_IP6_CONFIG_SETTING_NAME,
+			NM_SETTING_IP6_CONFIG_DNS_SEARCH);
+
+	ASSERT (strcmp (tmp, expected_search1) == 0,
+			"wired-ipv6-manual-verify-ip6",
+			"failed to verify %s: unexpected %s / %s #1",
+			file,
+			NM_SETTING_IP6_CONFIG_SETTING_NAME,
+			NM_SETTING_IP6_CONFIG_DNS_SEARCH);
+
+	tmp = nm_setting_ip6_config_get_dns_search (s_ip6, 1);
+	ASSERT (tmp != NULL,
+			TEST18_NAME,
+			"failed to verify %s: missing %s / %s #2",
+			file,
+			NM_SETTING_IP6_CONFIG_SETTING_NAME,
+			NM_SETTING_IP6_CONFIG_DNS_SEARCH);
+
+	ASSERT (strcmp (tmp, expected_search2) == 0,
+			TEST18_NAME,
+			"failed to verify %s: unexpected %s / %s #2",
+			file,
+			NM_SETTING_IP6_CONFIG_SETTING_NAME,
+			NM_SETTING_IP6_CONFIG_DNS_SEARCH);
+
+	g_free (unmanaged);
+	g_object_unref (connection);
+}
+
 
 #if GLIB_CHECK_VERSION(2,25,12)
 typedef GTestFixtureFunc TCFunc;
@@ -679,6 +880,7 @@ int main (int argc, char **argv)
 	g_test_suite_add (suite, TESTCASE (test15_trailing_space, TEST_ENI_DIR));
 	g_test_suite_add (suite, TESTCASE (test16_missing_newline, TEST_ENI_DIR));
 	g_test_suite_add (suite, TESTCASE (test17_read_static_ipv4, TEST_ENI_DIR));
+	g_test_suite_add (suite, TESTCASE (test18_read_static_ipv6, TEST_ENI_DIR));
 
 	return g_test_run ();
 }

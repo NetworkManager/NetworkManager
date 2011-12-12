@@ -1,0 +1,6 @@
+iface myip6tunnel inet6 v4tunnel
+  address fc00::1
+  netmask 64
+  endpoint 78.35.24.124
+  dns-nameservers fc00::2 fc00::3
+  dns-search example.com foo.example.com
