@@ -34,7 +34,16 @@
 #include "nm-logging.h"
 #include "nm-utils.h"
 
-#include "wireless-helper.h"
+/* Hacks necessary to #include wireless.h; yay for WEXT */
+#ifndef __user
+#define __user
+#endif
+#include <sys/types.h>
+#include <linux/types.h>
+#include <sys/socket.h>
+#include <linux/if.h>
+#include <linux/wireless.h>
+
 
 typedef struct {
 	WifiData parent;
