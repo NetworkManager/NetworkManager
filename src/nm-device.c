@@ -3047,8 +3047,10 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 	/* Take out any entries in the routing table and any IP address the device had. */
 	ifindex = nm_device_get_ip_ifindex (self);
 	family = tried_ipv6 ? AF_UNSPEC : AF_INET;
-	nm_system_iface_flush_routes (ifindex, family);
-	nm_system_iface_flush_addresses (ifindex, family);
+	if (ifindex >= 0) {
+		nm_system_iface_flush_routes (ifindex, family);
+		nm_system_iface_flush_addresses (ifindex, family);
+	}
 	_update_ip4_address (self);
 
 	/* Clean up nameservers and addresses */
