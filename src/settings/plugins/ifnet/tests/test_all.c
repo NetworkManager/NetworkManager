@@ -33,6 +33,16 @@
 #include "wpa_parser.h"
 #include "connection_parser.h"
 
+/* Fake config file function to make the linker happy */
+const char *ifnet_plugin_get_conf_file (void);
+
+const char *
+ifnet_plugin_get_conf_file (void)
+{
+	return "/etc/foo/barasdfasdfasdfasdf";
+}
+
+
 static void
 test_getdata ()
 {
