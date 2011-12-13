@@ -45,13 +45,13 @@ lib_ifnet_io_la_SOURCES = \
 	wpa_parser.c
 
 lib_ifnet_io_la_CPPFLAGS = \
-			   $(GLIB_CFLAGS) \
-		           $(DBUS_CFLAGS) \
-		           -DG_DISABLE_DEPRECATED \
-		           -DSYSCONFDIR=\"$(sysconfdir)\" \
-		           -DSBINDIR=\"$(sbindir)\"
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS) \
+	-DG_DISABLE_DEPRECATED \
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
+	-DSBINDIR=\"$(sbindir)\"
 
 lib_ifnet_io_la_LIBADD = \
-			 $(top_builddir)/libnm-util/libnm-util.la \
-			 $(GLIB_LIBS)\
-			 $(GIO_LIBS)
+	 $(top_builddir)/libnm-util/libnm-util.la \
+	 $(GLIB_LIBS)\
+	 $(GIO_LIBS)
