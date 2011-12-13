@@ -21,8 +21,11 @@
 
 #ifndef _WPA_PARSER_H
 #define _WPA_PARSER_H
-#define WPA_SUPPLICANT_CONF "/etc/wpa_supplicant/wpa_supplicant.conf"
+
 #include <glib.h>
+
+#define WPA_SUPPLICANT_CONF SYSCONFDIR "/wpa_supplicant/wpa_supplicant.conf"
+
 void wpa_parser_init (const char *wpa_supplicant_conf);
 void wpa_parser_destroy (void);
 

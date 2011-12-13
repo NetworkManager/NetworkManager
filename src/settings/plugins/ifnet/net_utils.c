@@ -875,8 +875,8 @@ void
 get_dhcp_hostname_and_client_id (char **hostname, char **client_id)
 {
 	const char *dhcp_client;
-	const gchar *dhcpcd_conf = "/etc/dhcpcd.conf";
-	const gchar *dhclient_conf = "/etc/dhcp/dhclient.conf";
+	const gchar *dhcpcd_conf = SYSCONFDIR "/dhcpcd.conf";
+	const gchar *dhclient_conf = SYSCONFDIR "/dhcp/dhclient.conf";
 	gchar *line = NULL, *tmp = NULL, *contents = NULL;
 	gchar **all_lines;
 	guint line_num, i;
