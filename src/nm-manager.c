@@ -432,28 +432,25 @@ nm_manager_update_state (NMManager *manager)
 	if (manager_sleeping (manager))
 		new_state = NM_STATE_ASLEEP;
 	else {
+		for (iter = priv->devices; iter; iter = iter->next) {
+			NMDevice *dev = NM_DEVICE (iter->data);
+			NMDeviceState state = nm_device_get_state (dev);
+
+			if (state == NM_DEVICE_STATE_ACTIVATED) {
+				new_state = NM_STATE_CONNECTED_GLOBAL;
 #if WITH_CONCHECK
-		if (nm_connectivity_get_connected (priv->connectivity))
-			new_state = NM_STATE_CONNECTED_GLOBAL;
-		else
-#endif
-		{
-			for (iter = priv->devices; iter; iter = iter->next) {
-				NMDevice *dev = NM_DEVICE (iter->data);
-				NMDeviceState state = nm_device_get_state (dev);
-
-				if (state == NM_DEVICE_STATE_ACTIVATED) {
-					/* FIXME: handle local-only too */
+				/* Connectivity check might have a better idea */
+				if (nm_connectivity_get_connected (priv->connectivity) == FALSE)
 					new_state = NM_STATE_CONNECTED_SITE;
-					break;
-				}
+#endif
+				break;
+			}
 
-				if (nm_device_is_activating (dev))
-					new_state = NM_STATE_CONNECTING;
-				else if (new_state != NM_STATE_CONNECTING) {
-					if (state == NM_DEVICE_STATE_DEACTIVATING)
-						new_state = NM_STATE_DISCONNECTING;
-				}
+			if (nm_device_is_activating (dev))
+				new_state = NM_STATE_CONNECTING;
+			else if (new_state != NM_STATE_CONNECTING) {
+				if (state == NM_DEVICE_STATE_DEACTIVATING)
+					new_state = NM_STATE_DISCONNECTING;
 			}
 		}
 	}
@@ -3364,34 +3361,18 @@ handle_firmware_changed (gpointer user_data)
 
 #if WITH_CONCHECK
 static void
-connectivity_connected_changed (NMConnectivity *connectivity,
-                                gboolean connected,
-                                gpointer user_data)
+connectivity_changed (NMConnectivity *connectivity,
+                      GParamSpec *pspec,
+                      gpointer user_data)
 {
-	NMManager *manager;
-	NMManagerPrivate *priv;
-	NMState new_state;
-	g_return_if_fail (NM_IS_MANAGER (user_data));
+	NMManager *self = NM_MANAGER (user_data);
+	gboolean connected;
 
-	manager = NM_MANAGER (user_data);
-	priv = NM_MANAGER_GET_PRIVATE (manager);
+	connected = nm_connectivity_get_connected (connectivity);
+	nm_log_dbg (LOGD_CORE, "connectivity indicates %s",
+	            connected ? "CONNECTED" : "NOT CONNECTED");
 
-	new_state = NM_STATE_DISCONNECTED;
-
-	if (connected)
-		new_state = NM_STATE_CONNECTED_GLOBAL;
-	else {
-		/* FIXME: handle local here, too */
-		new_state = NM_STATE_CONNECTED_SITE;
-	}
-
-	if (priv->state != new_state) {
-		priv->state = new_state;
-		g_object_notify (G_OBJECT (manager), NM_MANAGER_STATE);
-
-		g_signal_emit (manager, signals[STATE_CHANGED], 0, priv->state);
-		nm_log_dbg (LOGD_CORE, "connectivity changed to: %i", connected);
-	}
+	nm_manager_update_state (self);
 }
 #endif  /* WITH_CONCHECK */
 
@@ -3617,8 +3598,8 @@ nm_manager_new (NMSettings *settings,
 #if WITH_CONCHECK
 	priv->connectivity = nm_connectivity_new (connectivity_uri, connectivity_interval, connectivity_response);
 
-	g_signal_connect (priv->connectivity, NM_CONNECTIVITY_SIGNAL_CONNECTED_CHANGED,
-	                  G_CALLBACK (connectivity_connected_changed), singleton);
+	g_signal_connect (priv->connectivity, "notify::" NM_CONNECTIVITY_CONNECTED,
+	                  G_CALLBACK (connectivity_changed), singleton);
 #endif
 
 	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);

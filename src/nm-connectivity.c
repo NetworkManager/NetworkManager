@@ -28,42 +28,36 @@
 #include "nm-logging.h"
 #include "nm-manager.h"
 
-
-typedef struct {
-	/* used for http requests */
-	SoupSession *soup_session;
-	/* indicates if a connectivity check is currently running */
-	gboolean check_running;
-	/* the uri to check */
-	char *check_uri;
-	/* seconds when a check will be repeated */
-	guint check_interval;
-	/* the expected response for the connectivity check */
-	char *check_response;
-	/* indicates if the last connection check was successful */
-	gboolean connected;
-	/* the source id for the periodic check */
-	guint check_interval_source_id;
-
-} NMConnectivityPrivate;
-
 G_DEFINE_TYPE (NMConnectivity, nm_connectivity, G_TYPE_OBJECT)
 
 #define NM_CONNECTIVITY_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CONNECTIVITY, NMConnectivityPrivate))
 
 
-enum {
-	CONNECTED_CHANGED,
-	LAST_SIGNAL
-};
-static guint signals[LAST_SIGNAL] = { 0 };
+#define DEFAULT_RESPONSE "NetworkManager is online" /* NOT LOCALIZED */
+
+typedef struct {
+	/* used for http requests */
+	SoupSession *soup_session;
+	/* indicates if a connectivity check is currently running */
+	gboolean running;
+	/* the uri to check */
+	char *uri;
+	/* seconds when a check will be repeated */
+	guint interval;
+	/* the expected response for the connectivity check */
+	char *response;
+	/* indicates if the last connection check was successful */
+	gboolean connected;
+	/* the source id for the periodic check */
+	guint check_id;
+} NMConnectivityPrivate;
 
 enum {
 	PROP_0,
-	PROP_CHECK_RUNNING,
-	PROP_CHECK_URI,
-	PROP_CHECK_INTERVAL,
-	PROP_CHECK_RESPONSE,
+	PROP_RUNNING,
+	PROP_URI,
+	PROP_INTERVAL,
+	PROP_RESPONSE,
 	PROP_CONNECTED,
 	LAST_PROP
 };
@@ -73,31 +67,19 @@ gboolean
 nm_connectivity_get_connected (NMConnectivity *connectivity)
 {
 	g_return_val_if_fail (NM_IS_CONNECTIVITY (connectivity), FALSE);
+
 	return NM_CONNECTIVITY_GET_PRIVATE (connectivity)->connected;
 }
-
-static gboolean
-nm_connectivity_interval (NMConnectivity *connectivity)
-{
-	/* periodically check connectivity */
-	nm_connectivity_check (connectivity);
-	return TRUE;
-}
-
 
 static void
 nm_connectivity_check_cb (SoupSession *session, SoupMessage *msg, gpointer user_data)
 {
-	NMConnectivity *connectivity;
-	NMConnectivityPrivate *priv;
+	NMConnectivity *self = NM_CONNECTIVITY (user_data);
+	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 	SoupURI *soup_uri;
 	gboolean connected_new = FALSE;
 	const char *nm_header;
 	char *uri_string;
-
-	g_return_if_fail (NM_IS_CONNECTIVITY (user_data));
-	connectivity = NM_CONNECTIVITY (user_data);
-	priv = NM_CONNECTIVITY_GET_PRIVATE (connectivity);
 
 	soup_uri = soup_message_get_uri (msg);
 	uri_string = soup_uri_to_string (soup_uri, FALSE);
@@ -109,13 +91,13 @@ nm_connectivity_check_cb (SoupSession *session, SoupMessage *msg, gpointer user_
 		connected_new = TRUE;
 	} else {
 		/* check response */
-		if (msg->response_body->data &&	(g_str_has_prefix (msg->response_body->data, priv->check_response))) {
+		if (msg->response_body->data &&	(g_str_has_prefix (msg->response_body->data, priv->response))) {
 			nm_log_dbg (LOGD_CORE, "Connectivity check for uri '%s' with expected response '%s' successful.",
-				        uri_string, priv->check_response);
+				        uri_string, priv->response);
 			connected_new = TRUE;
 		} else {
 			nm_log_dbg (LOGD_CORE, "Connectivity check for uri '%s' with expected response '%s' failed.",
-						uri_string, priv->check_response);
+						uri_string, priv->response);
 		}
 	}
 	g_free (uri_string);
@@ -123,83 +105,98 @@ nm_connectivity_check_cb (SoupSession *session, SoupMessage *msg, gpointer user_
 	/* update connectivity and emit signal */
 	if (priv->connected != connected_new) {
 		priv->connected = connected_new;
-		g_object_notify (G_OBJECT (connectivity), NM_CONNECTIVITY_CONNECTED);
-		g_signal_emit_by_name (connectivity, NM_CONNECTIVITY_SIGNAL_CONNECTED_CHANGED, priv->connected);
+		g_object_notify (G_OBJECT (self), NM_CONNECTIVITY_CONNECTED);
 	}
 
-	priv->check_running = FALSE;
-	g_object_notify (G_OBJECT (connectivity), NM_CONNECTIVITY_CHECK_RUNNING);
+	priv->running = FALSE;
+	g_object_notify (G_OBJECT (self), NM_CONNECTIVITY_RUNNING);
 }
 
 
 void
-nm_connectivity_check (NMConnectivity *connectivity)
+nm_connectivity_check (NMConnectivity *self)
 {
 	NMConnectivityPrivate *priv;
 	SoupURI *soup_uri;
 	SoupMessage *msg;
 
-	g_return_if_fail (NM_IS_CONNECTIVITY (connectivity));
-	priv = NM_CONNECTIVITY_GET_PRIVATE (connectivity);
+	g_return_if_fail (NM_IS_CONNECTIVITY (self));
+	priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
-	if (priv->check_running)
+	if (priv->running)
 		return;
 
-	if (priv->check_uri && priv->check_uri[0]) {
+	if (priv->uri) {
 		/* check given url async */
-		soup_uri = soup_uri_new (priv->check_uri);
+		soup_uri = soup_uri_new (priv->uri);
 		if (soup_uri && SOUP_URI_VALID_FOR_HTTP (soup_uri)) {
 			msg = soup_message_new_from_uri ("GET", soup_uri);
 			soup_message_set_flags (msg, SOUP_MESSAGE_NO_REDIRECT);
 			soup_session_queue_message (priv->soup_session,
 			                            msg,
 			                            nm_connectivity_check_cb,
-			                            connectivity);
+			                            self);
 
-			priv->check_running = TRUE;
-			g_object_notify (G_OBJECT (connectivity), NM_CONNECTIVITY_CHECK_RUNNING);
-			nm_log_dbg (LOGD_CORE, "Connectivity check with uri '%s' started.", priv->check_uri);
+			priv->running = TRUE;
+			g_object_notify (G_OBJECT (self), NM_CONNECTIVITY_RUNNING);
+			nm_log_dbg (LOGD_CORE, "Connectivity check with uri '%s' started.", priv->uri);
 		} else
-			nm_log_err (LOGD_CORE, "Invalid uri '%s' for connectivity check.", priv->check_uri);
+			nm_log_err (LOGD_CORE, "Invalid uri '%s' for connectivity check.", priv->uri);
 
 		if (soup_uri)
 			soup_uri_free (soup_uri);
 	} else {
-		/* no uri given - default is connected so nm-manager can set NMState to GLOBAL */
+		/* No URI given - default is connected */
 		if (!priv->connected) {
 			priv->connected = TRUE;
-			g_object_notify (G_OBJECT (connectivity), NM_CONNECTIVITY_CONNECTED);
-			g_signal_emit_by_name (connectivity, NM_CONNECTIVITY_SIGNAL_CONNECTED_CHANGED, priv->connected);
+			g_object_notify (G_OBJECT (self), NM_CONNECTIVITY_CONNECTED);
 		}
 	}
 }
 
+static gboolean
+do_check (gpointer user_data)
+{
+	nm_connectivity_check (NM_CONNECTIVITY (user_data));
+	return TRUE;  /* keep checking */
+}
 
-NMConnectivity*
+NMConnectivity *
 nm_connectivity_new (const gchar *check_uri,
                      guint check_interval,
                      const gchar *check_response)
 {
-	NMConnectivity *connectivity = g_object_new (NM_TYPE_CONNECTIVITY, NULL);
-	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (connectivity);
+	NMConnectivity *self;
+	NMConnectivityPrivate *priv;
 
-	priv->check_uri = g_strdup (check_uri);
-	priv->check_interval = check_interval;
-	if (check_response)
-		priv->check_response = g_strdup (check_response);
-	else
-		priv->check_response = g_strdup ("NetworkManager is online"); /* NOT LOCALIZED */
+	self = g_object_new (NM_TYPE_CONNECTIVITY,
+	                     NM_CONNECTIVITY_URI, check_uri,
+	                     NM_CONNECTIVITY_INTERVAL, check_interval,
+	                     NM_CONNECTIVITY_RESPONSE, check_response ? check_response : DEFAULT_RESPONSE,
+	                     NULL);
+	g_return_val_if_fail (self != NULL, NULL);
 
-	if (check_uri && strlen (check_uri) && (check_interval > 0)) {
-		priv->check_interval_source_id = g_timeout_add_seconds (check_interval,
-		                                                        (GSourceFunc) nm_connectivity_interval,
-		                                                        connectivity);
-	} else
-		priv->check_interval_source_id = 0;
+	/* Kick off a check if required */
+	priv = NM_CONNECTIVITY_GET_PRIVATE (self);
+	if (priv->uri && priv->interval)
+		priv->check_id = g_timeout_add_seconds (priv->interval, do_check, self);
 
-	return connectivity;
+	return self;
 }
 
+static char *
+sanitize_string_val (const GValue *val)
+{
+	char *s;
+
+	/* Return NULL if string is NULL or zero-length */
+	s = g_value_dup_string (val);
+	if (!s || !s[0]) {
+		g_free (s);
+		return NULL;
+	}
+	return s;
+}
 
 static void
 set_property (GObject *object, guint property_id,
@@ -209,19 +206,19 @@ set_property (GObject *object, guint property_id,
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
 	switch (property_id) {
-	case PROP_CHECK_RUNNING:
-		priv->check_running = g_value_get_boolean (value);
+	case PROP_RUNNING:
+		priv->running = g_value_get_boolean (value);
 		break;
-	case PROP_CHECK_URI:
-		g_free (priv->check_uri);
-		priv->check_uri = g_value_dup_string (value);
+	case PROP_URI:
+		g_free (priv->uri);
+		priv->uri = sanitize_string_val (value);
 		break;
-	case PROP_CHECK_INTERVAL:
-		priv->check_interval = g_value_get_uint (value);
+	case PROP_INTERVAL:
+		priv->interval = g_value_get_uint (value);
 		break;
-	case PROP_CHECK_RESPONSE:
-		g_free (priv->check_response);
-		priv->check_response = g_value_dup_string (value);
+	case PROP_RESPONSE:
+		g_free (priv->response);
+		priv->response = sanitize_string_val (value);
 		break;
 	case PROP_CONNECTED:
 		priv->connected = g_value_get_boolean (value);
@@ -240,17 +237,17 @@ get_property (GObject *object, guint property_id,
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
 	switch (property_id) {
-	case PROP_CHECK_RUNNING:
-		g_value_set_boolean (value, priv->check_running);
+	case PROP_RUNNING:
+		g_value_set_boolean (value, priv->running);
 		break;
-	case PROP_CHECK_URI:
-		g_value_set_string (value, priv->check_uri);
+	case PROP_URI:
+		g_value_set_string (value, priv->uri);
 		break;
-	case PROP_CHECK_INTERVAL:
-		g_value_set_uint (value, priv->check_interval);
+	case PROP_INTERVAL:
+		g_value_set_uint (value, priv->interval);
 		break;
-	case PROP_CHECK_RESPONSE:
-		g_value_set_string (value, priv->check_response);
+	case PROP_RESPONSE:
+		g_value_set_string (value, priv->response);
 		break;
 	case PROP_CONNECTED:
 		g_value_set_boolean (value, priv->connected);
@@ -274,8 +271,8 @@ nm_connectivity_init (NMConnectivity *self)
 static void
 dispose (GObject *object)
 {
-	NMConnectivity *connectivity = NM_CONNECTIVITY (object);
-	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (connectivity);
+	NMConnectivity *self = NM_CONNECTIVITY (object);
+	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
 	if (priv->soup_session) {
 		soup_session_abort (priv->soup_session);
@@ -283,12 +280,12 @@ dispose (GObject *object)
 		priv->soup_session = NULL;
 	}
 
-	g_free (priv->check_uri);
-	g_free (priv->check_response);
+	g_free (priv->uri);
+	g_free (priv->response);
 
-	if (priv->check_interval_source_id > 0) {
-		g_warn_if_fail (g_source_remove (priv->check_interval_source_id) == TRUE);
-		priv->check_interval_source_id = 0;
+	if (priv->check_id > 0) {
+		g_source_remove (priv->check_id);
+		priv->check_id = 0;
 	}
 }
 
@@ -306,51 +303,43 @@ nm_connectivity_class_init (NMConnectivityClass *klass)
 
 	/* properties */
 	g_object_class_install_property
-		(object_class, PROP_CHECK_RUNNING,
-		 g_param_spec_string (NM_CONNECTIVITY_CHECK_RUNNING,
-		                      "Running",
-		                      "Is Connectivity chunk running",
-		                      NULL,
-		                      G_PARAM_READABLE));
+		(object_class, PROP_RUNNING,
+		 g_param_spec_boolean (NM_CONNECTIVITY_RUNNING,
+		                       "Running",
+		                       "Connectivity check is running",
+		                       FALSE,
+		                       G_PARAM_READABLE));
+
 	g_object_class_install_property
-		(object_class, PROP_CHECK_URI,
-		 g_param_spec_string (NM_CONNECTIVITY_CHECK_URI,
+		(object_class, PROP_URI,
+		 g_param_spec_string (NM_CONNECTIVITY_URI,
 		                      "URI",
 		                      "Connectivity check URI",
 		                      NULL,
 		                      G_PARAM_READWRITE));
+
 	g_object_class_install_property
-		(object_class, PROP_CHECK_INTERVAL,
-		 g_param_spec_uint (NM_CONNECTIVITY_CHECK_INTERVAL,
+		(object_class, PROP_INTERVAL,
+		 g_param_spec_uint (NM_CONNECTIVITY_INTERVAL,
 		                    "Interval",
 		                    "Connectivity check interval in seconds",
-		                    0,
-		                    G_MAXUINT,
-		                    300,
-		                    G_PARAM_READWRITE));
+		                    0, G_MAXUINT, 300,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+
 	g_object_class_install_property
-		(object_class, PROP_CHECK_RESPONSE,
-		 g_param_spec_string (NM_CONNECTIVITY_CHECK_RESPONSE,
-		                      "REsponse",
-		                      "Connectivity check reponse",
-		                      NULL,
-		                      G_PARAM_READWRITE));
+		(object_class, PROP_RESPONSE,
+		 g_param_spec_string (NM_CONNECTIVITY_RESPONSE,
+		                      "Response",
+		                      "Expected connectivity check reponse",
+		                      DEFAULT_RESPONSE,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+
 	g_object_class_install_property
 		(object_class, PROP_CONNECTED,
-		 g_param_spec_string (NM_CONNECTIVITY_CONNECTED,
-		                      "Connected",
-		                      "Is connected",
-		                      NULL,
-		                      G_PARAM_READABLE));
-
-	/* signals */
-	signals[CONNECTED_CHANGED] =
-		g_signal_new (NM_CONNECTIVITY_SIGNAL_CONNECTED_CHANGED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMConnectivityClass, connected_changed),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__BOOLEAN,
-		              G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
+		 g_param_spec_boolean (NM_CONNECTIVITY_CONNECTED,
+		                       "Connected",
+		                       "Is connected",
+		                       FALSE,
+		                       G_PARAM_READABLE));
 }
 

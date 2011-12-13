@@ -34,15 +34,12 @@
 #define NM_IS_CONNECTIVITY_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_CONNECTIVITY))
 #define NM_CONNECTIVITY_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_CONNECTIVITY, NMConnectivityClass))
 
-
-#define NM_CONNECTIVITY_CHECK_RUNNING "check-running"
-#define NM_CONNECTIVITY_CHECK_URI "check-uri"
-#define NM_CONNECTIVITY_CHECK_INTERVAL "check-interval"
-#define NM_CONNECTIVITY_CHECK_RESPONSE "check-response"
+/* Properties */
+#define NM_CONNECTIVITY_RUNNING   "running"
+#define NM_CONNECTIVITY_URI       "uri"
+#define NM_CONNECTIVITY_INTERVAL  "interval"
+#define NM_CONNECTIVITY_RESPONSE  "response"
 #define NM_CONNECTIVITY_CONNECTED "connected"
-
-
-#define NM_CONNECTIVITY_SIGNAL_CONNECTED_CHANGED "connected-changed"
 
 
 typedef struct {
@@ -51,18 +48,17 @@ typedef struct {
 
 typedef struct {
 	GObjectClass parent;
-
-	/* Signals */
-	void (*connected_changed) (NMConnectivity *connectivity, gboolean connected);
 } NMConnectivityClass;
 
 GType nm_connectivity_get_type (void);
 
 
-NMConnectivity *nm_connectivity_new (const gchar *check_uri, guint check_interval, const gchar *check_response);
+NMConnectivity *nm_connectivity_new           (const gchar *check_uri,
+                                               guint check_interval,
+                                               const gchar *check_response);
 
-void nm_connectivity_check (NMConnectivity *connectivity);
+void            nm_connectivity_check         (NMConnectivity *connectivity);
 
-gboolean nm_connectivity_get_connected (NMConnectivity *connectivity);
+gboolean        nm_connectivity_get_connected (NMConnectivity *connectivity);
 
 #endif /* NM_CONNECTIVITY_H */
