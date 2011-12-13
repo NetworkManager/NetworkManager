@@ -47,7 +47,7 @@
 #include "nm-setting-vpn.h"
 #include "nm-setting-olpc-mesh.h"
 #include "nm-setting-bond.h"
-
+#include "nm-setting-vlan.h"
 #include "nm-setting-serial.h"
 #include "nm-setting-gsm.h"
 #include "nm-setting-cdma.h"
@@ -117,7 +117,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 static GHashTable *registered_settings = NULL;
 
-#define DEFAULT_MAP_SIZE 18
+#define DEFAULT_MAP_SIZE 19
 
 static struct SettingInfo {
 	const char *name;
@@ -232,6 +232,11 @@ register_default_settings (void)
 	register_one_setting (NM_SETTING_INFINIBAND_SETTING_NAME,
 	                      NM_TYPE_SETTING_INFINIBAND,
 	                      NM_SETTING_INFINIBAND_ERROR,
+	                      1, TRUE);
+
+	register_one_setting (NM_SETTING_VLAN_SETTING_NAME,
+	                      NM_TYPE_SETTING_VLAN,
+	                      NM_SETTING_VLAN_ERROR,
 	                      1, TRUE);
 
 	register_one_setting (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
@@ -1651,6 +1656,23 @@ nm_connection_get_setting_wireless_security (NMConnection *connection)
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
+}
+
+/**
+ * nm_connection_get_setting_vlan:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingVlan the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingVlan if the connection contains one, otherwise NULL
+ **/
+NMSettingVlan *
+nm_connection_get_setting_vlan (NMConnection *connection)
+{
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingVlan *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VLAN);
 }
 
 /*************************************************************/

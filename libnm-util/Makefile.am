@@ -21,6 +21,7 @@ libnm_util_include_HEADERS = 		\
 	nm-setting-connection.h		\
 	nm-setting-infiniband.h		\
 	nm-setting-ip4-config.h		\
+	nm-setting-vlan.h		\
 	nm-setting-ip6-config.h		\
 	nm-setting-ppp.h		\
 	nm-setting-pppoe.h		\
@@ -53,6 +54,7 @@ libnm_util_la_csources = \
 	nm-setting-connection.c		\
 	nm-setting-infiniband.c		\
 	nm-setting-ip4-config.c		\
+	nm-setting-vlan.c		\
 	nm-setting-ip6-config.c		\
 	nm-setting-ppp.c		\
 	nm-setting-pppoe.c		\

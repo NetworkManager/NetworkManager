@@ -48,6 +48,7 @@
 #include <nm-setting-wired.h>
 #include <nm-setting-wireless.h>
 #include <nm-setting-wireless-security.h>
+#include <nm-setting-vlan.h>
 
 G_BEGIN_DECLS
 
@@ -201,6 +202,7 @@ NMSettingWimax *           nm_connection_get_setting_wimax             (NMConnec
 NMSettingWired *           nm_connection_get_setting_wired             (NMConnection *connection);
 NMSettingWireless *        nm_connection_get_setting_wireless          (NMConnection *connection);
 NMSettingWirelessSecurity *nm_connection_get_setting_wireless_security (NMConnection *connection);
+NMSettingVlan *            nm_connection_get_setting_vlan              (NMConnection *connection);
 
 G_END_DECLS
 
