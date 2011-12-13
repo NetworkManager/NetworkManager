@@ -59,6 +59,7 @@
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
 #include <netlink/route/link.h>
+#include <netlink/route/link/vlan.h>
 
 #ifdef HAVE_LIBNL3
 #include <netlink/route/link/bonding.h>
@@ -1528,3 +1529,154 @@ out:
 	return res;
 }
 
+static void ingress_priority_iterator (gpointer data, gpointer user_data)
+{
+	struct rtnl_link *new_link = user_data;
+	vlan_priority_map *item = data;
+
+	g_return_if_fail (item != NULL);
+	g_return_if_fail (new_link != NULL);
+
+	if ((item->from < 0) || (item->from > 7))
+		return;
+
+	rtnl_link_vlan_set_ingress_map (new_link, item->from, item->to);
+}
+
+static void egress_priority_iterator(gpointer data, gpointer user_data)
+{
+	struct rtnl_link *new_link = user_data;
+	vlan_priority_map *item = data;
+
+	g_return_if_fail (item != NULL);
+	g_return_if_fail (new_link != NULL);
+
+	if ((item->to < 0) || (item->to > 7))
+		return;
+
+	rtnl_link_vlan_set_egress_map (new_link, item->from, item->to);
+}
+
+/**
+ * nm_system_add_vlan_device:
+ * @setting: NMSettingVlan
+ *
+ * Add a VLAN device specified in @setting.
+ *
+ * Returns: %TRUE on success, or %FALSE
+ */
+gboolean
+nm_system_add_vlan_device (NMSettingVlan *setting)
+{
+	int ret = 0;
+	int if_index = 0;
+	struct rtnl_link *new_link = NULL;
+	struct nl_sock *nlh = NULL;
+	const GSList *list = NULL;
+
+	const char *interface_name = NULL;
+	const char *vlan_slave = NULL;
+	guint32 vlan_id = 0;
+	guint32 vlan_flags = 0;
+
+	g_return_val_if_fail (NM_IS_SETTING_VLAN (setting), FALSE);
+
+	vlan_slave = nm_setting_vlan_get_slave (setting);
+	g_return_val_if_fail (vlan_slave != NULL, FALSE);
+
+	vlan_id = nm_setting_vlan_get_id (setting);
+	g_return_val_if_fail (vlan_id != 0, FALSE);
+	g_return_val_if_fail (vlan_id < 4096, FALSE);
+
+	nlh = nm_netlink_get_default_handle ();
+	g_return_val_if_fail (nlh != NULL, FALSE);
+
+	interface_name = nm_setting_vlan_get_interface_name (setting);
+	g_return_val_if_fail (interface_name != NULL, FALSE);
+
+	if_index = nm_netlink_iface_to_index (vlan_slave);
+	g_return_val_if_fail (if_index > 0, FALSE);
+
+	new_link = rtnl_link_alloc ();
+	g_return_val_if_fail (new_link != NULL, FALSE);
+
+	ret = rtnl_link_set_type (new_link, "vlan");
+	if (ret < 0)
+		goto free_new_link;
+
+	rtnl_link_set_link (new_link, if_index);
+	rtnl_link_set_name (new_link, interface_name);
+	rtnl_link_vlan_set_id (new_link, vlan_id);
+
+	vlan_flags = nm_setting_vlan_get_flags (setting);
+	if (vlan_flags)
+		rtnl_link_vlan_set_flags (new_link, vlan_flags);
+
+	list = nm_setting_vlan_get_ingress_priority_map (setting);
+	if (list != NULL)
+		g_slist_foreach ((GSList *)list, (GFunc)ingress_priority_iterator, new_link);
+
+	list = nm_setting_vlan_get_egress_priority_map (setting);
+	if (list != NULL)
+		g_slist_foreach((GSList *)list, (GFunc)egress_priority_iterator, new_link);
+
+	ret = rtnl_link_add (nlh, new_link, NLM_F_CREATE);
+	if (ret < 0)
+		goto free_new_link;
+
+	rtnl_link_put (new_link);
+
+	return TRUE;
+
+free_new_link:
+	rtnl_link_put (new_link);
+
+	return FALSE;
+}
+
+/**
+ * nm_system_del_vlan_device:
+ * @setting: NMSettingVlan
+ *
+ * Delete a VLAN device specified in @setting.
+ *
+ * Returns: %TRUE on success, or %FALSE
+ */
+gboolean
+nm_system_del_vlan_device (NMSettingVlan *setting)
+{
+	int ret = 0;
+	struct nl_sock *nlh = NULL;
+	struct nl_cache *cache = NULL;
+	struct rtnl_link *new_link = NULL;
+	const char *interface_name = NULL;
+
+	interface_name = nm_setting_vlan_get_interface_name (setting);
+	g_return_val_if_fail (interface_name != NULL, FALSE);
+
+	nlh = nm_netlink_get_default_handle ();
+	g_return_val_if_fail (nlh != NULL, FALSE);
+
+	ret = rtnl_link_alloc_cache (nlh, &cache);
+	g_return_val_if_fail (ret == 0, FALSE);
+	g_return_val_if_fail (cache != NULL, FALSE);
+
+	new_link = rtnl_link_get_by_name (cache, interface_name);
+	if (!new_link)
+		goto free_cache;
+
+	ret = rtnl_link_delete (nlh, new_link);
+	if (ret < 0)
+		goto free_new_link;
+
+	rtnl_link_put (new_link);
+
+	return TRUE;
+
+free_new_link:
+	rtnl_link_put (new_link);
+
+free_cache:
+	nl_cache_free (cache);
+	return FALSE;
+}

@@ -31,6 +31,7 @@
 #include "nm-device.h"
 #include "nm-ip4-config.h"
 #include "nm-setting-bond.h"
+#include "nm-setting-vlan.h"
 
 /* Prototypes for system/distribution dependent functions,
  * implemented in the backend files in backends/ directory
@@ -101,5 +102,8 @@ enum {
 };
 
 int             nm_system_get_iface_type      (int ifindex, const char *name);
+
+gboolean		nm_system_add_vlan_device (NMSettingVlan *setting);
+gboolean		nm_system_del_vlan_device (NMSettingVlan *setting);
 
 #endif
