@@ -11755,6 +11755,9 @@ test_read_vlan_interface (void)
 	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
+	NMSettingConnection *s_con;
+	NMSettingVlan *s_vlan;
+	guint32 from = 0, to = 0;
 
 	connection = connection_from_file (TEST_IFCFG_VLAN_INTERFACE,
 	                                   NULL,
@@ -11766,13 +11769,55 @@ test_read_vlan_interface (void)
 	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
-	ASSERT (connection == NULL,
+	ASSERT (connection != NULL,
 	        "vlan-interface-read", "unexpected success reading %s", TEST_IFCFG_VLAN_INTERFACE);
 
 	g_free (unmanaged);
 	g_free (keyfile);
 	g_free (routefile);
 	g_free (route6file);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+
+	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, "eth9");
+	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_VLAN_SETTING_NAME);
+
+	s_vlan = nm_connection_get_setting_vlan (connection);
+	g_assert (s_vlan);
+
+	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, "vlan43");
+	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 43);
+	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==,
+	                 NM_VLAN_FLAG_GVRP | NM_VLAN_FLAG_LOOSE_BINDING);
+
+	/* Ingress map */
+	g_assert_cmpint (nm_setting_vlan_get_num_priorities (s_vlan, NM_VLAN_INGRESS_MAP), ==, 2);
+
+	g_assert (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_INGRESS_MAP, 0, &from, &to));
+	g_assert_cmpint (from, ==, 0);
+	g_assert_cmpint (to, ==, 1);
+
+	g_assert (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_INGRESS_MAP, 1, &from, &to));
+	g_assert_cmpint (from, ==, 2);
+	g_assert_cmpint (to, ==, 5);
+
+	/* Egress map */
+	g_assert_cmpint (nm_setting_vlan_get_num_priorities (s_vlan, NM_VLAN_EGRESS_MAP), ==, 3);
+
+	g_assert (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_EGRESS_MAP, 0, &from, &to));
+	g_assert_cmpint (from, ==, 12);
+	g_assert_cmpint (to, ==, 3);
+
+	g_assert (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_EGRESS_MAP, 1, &from, &to));
+	g_assert_cmpint (from, ==, 14);
+	g_assert_cmpint (to, ==, 7);
+
+	g_assert (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_EGRESS_MAP, 2, &from, &to));
+	g_assert_cmpint (from, ==, 3);
+	g_assert_cmpint (to, ==, 1);
+
+	g_object_unref (connection);
 }
 
 #define TEST_IFCFG_BOND_MAIN TEST_IFCFG_DIR"/network-scripts/ifcfg-test-bond-main"

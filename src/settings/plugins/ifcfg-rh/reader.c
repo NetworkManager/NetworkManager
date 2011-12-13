@@ -40,6 +40,7 @@
 #include <NetworkManager.h>
 #include <nm-setting-connection.h>
 #include <nm-setting-ip4-config.h>
+#include <nm-setting-vlan.h>
 #include <nm-setting-ip6-config.h>
 #include <nm-setting-wired.h>
 #include <nm-setting-wireless.h>
@@ -3708,10 +3709,171 @@ is_bond_device (const char *name, shvarFile *parsed)
 	return FALSE;
 }
 
+static NMSetting *
+make_vlan_setting (shvarFile *ifcfg,
+                   const char *file,
+                   gboolean nm_controlled,
+                   char **unmanaged,
+                   NMSetting8021x **s_8021x,
+                   GError **error)
+{
+	NMSettingVlan *s_vlan = NULL;
+	char *value = NULL;
+	char *interface_name = NULL;
+	char *vlan_slave = NULL;
+	char *p = NULL;
+	guint32 vlan_id = 0;
+	guint32 vlan_flags = 0;
+
+	s_vlan = NM_SETTING_VLAN (nm_setting_vlan_new ());
+
+	interface_name = svGetValue (ifcfg, "DEVICE", FALSE);
+	if (!interface_name)
+		goto error_return;
+	else
+		g_object_set (s_vlan, NM_SETTING_VLAN_INTERFACE_NAME, interface_name, NULL);
+
+	p = strchr (interface_name, -1, '.');
+	if (p) {
+		/*
+		 * eth0.43
+		 * PHYSDEV is assumed from it
+		 */
+		vlan_slave = g_strndup (interface_name, p - interface_name);
+		p++;
+	} else {
+		/*
+		 * vlan43
+		 * PHYSDEV must be set
+		 */
+		p = interface_name + 4;
+		vlan_slave = svGetValue (ifcfg, "PHYSDEV", FALSE);
+	}
+
+	vlan_id = g_ascii_strtoull (p, NULL, 10);
+	if (vlan_id >= 0 && vlan_id < 4096)
+		g_object_set (s_vlan, NM_SETTING_VLAN_ID, vlan_id, NULL);
+	else
+		goto free_interface_name;
+
+	if (vlan_slave) {
+		g_object_set (s_vlan, NM_SETTING_VLAN_SLAVE, vlan_slave, NULL);
+		g_free (vlan_slave);
+	}
+
+	value = svGetValue (ifcfg, "REORDER_HDR", FALSE);
+	if (value)
+		vlan_flags |= NM_VLAN_FLAG_REORDER_HDR;
+	g_free (value);
+
+	value = svGetValue (ifcfg, "VLAN_FLAGS", FALSE);
+	if (g_strstr_len (value, -1, "GVRP"))
+		vlan_flags |= NM_VLAN_FLAG_GVRP;
+	if (g_strstr_len (value, -1, "LOOSE_BINDING"))
+		vlan_flags |= NM_VLAN_FLAG_LOOSE_BINDING;
+
+	g_object_set (s_vlan, NM_SETTING_VLAN_FLAGS, vlan_flags, NULL);
+	g_free (value);
+
+	value = svGetValue (ifcfg, "VLAN_INGRESS_PRIORITY_MAP", FALSE);
+	if (value) {
+		gchar **list = NULL, **iter;
+		list = g_strsplit_set (value, ",", -1);
+		for (iter = list; iter && *iter; iter++) {
+			if (!g_strrstr (*iter, ":"))
+				continue;
+
+			if (!nm_setting_vlan_add_priority_str (s_vlan, NM_VLAN_INGRESS_MAP, *iter))
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid priority map '%s'", *iter);
+		}
+		g_free (value);
+		g_strfreev (list);
+	}
+
+	value = svGetValue (ifcfg, "VLAN_EGRESS_PRIORITY_MAP", FALSE);
+	if (value) {
+		gchar **list = NULL, **iter;
+		list = g_strsplit_set (value, ",", -1);
+		for (iter = list; iter && *iter; iter++) {
+			if (!g_strrstr (*iter, ":"))
+				continue;
+
+			if (!nm_setting_vlan_add_priority_str (s_vlan, NM_VLAN_EGRESS_MAP, *iter))
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid priority map '%s'", *iter);
+		}
+		g_free (value);
+		g_strfreev (list);
+	}
+
+	return (NMSetting *) s_vlan;
+
+free_interface_name:
+	g_free (vlan_slave);
+	g_free (interface_name);
+error_return:
+	g_object_unref (s_vlan);
+	return NULL;
+}
+
+static NMConnection *
+vlan_connection_from_ifcfg (const char *file,
+			     shvarFile *ifcfg,
+			     gboolean nm_controlled,
+			     char **unmanaged,
+			     GError **error)
+{
+	NMConnection *connection = NULL;
+	NMSetting *con_setting = NULL;
+	NMSetting *wired_setting = NULL;
+	NMSetting *vlan_setting = NULL;
+	NMSetting8021x *s_8021x = NULL;
+
+	g_return_val_if_fail (file != NULL, NULL);
+	g_return_val_if_fail (ifcfg != NULL, NULL);
+
+	connection = nm_connection_new ();
+	if (!connection) {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			     "Failed to allocate new connection for %s.", file);
+		return NULL;
+	}
+
+	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_VLAN_SETTING_NAME, NULL, "Vlan");
+	if (!con_setting) {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			     "Failed to create connection setting.");
+		g_object_unref (connection);
+		return NULL;
+	}
+	nm_connection_add_setting (connection, con_setting);
+
+	vlan_setting = make_vlan_setting (ifcfg, file, nm_controlled, unmanaged, &s_8021x, error);
+	if (!vlan_setting) {
+		g_object_unref (connection);
+		return NULL;
+	}
+	nm_connection_add_setting (connection, vlan_setting);
+
+	wired_setting = make_wired_setting (ifcfg, file, nm_controlled, unmanaged, &s_8021x, error);
+	if (!wired_setting) {
+		g_object_unref (connection);
+		return NULL;
+	}
+	nm_connection_add_setting (connection, wired_setting);
+
+	if (s_8021x)
+		nm_connection_add_setting (connection, NM_SETTING (s_8021x));
+	if (!nm_connection_verify (connection, error)) {
+		g_object_unref (connection);
+		return NULL;
+	}
+
+	return connection;
+}
+
 enum {
 	IGNORE_REASON_NONE = 0x00,
 	IGNORE_REASON_BRIDGE = 0x01,
-	IGNORE_REASON_VLAN = 0x02,
 };
 
 NMConnection *
@@ -3831,21 +3993,12 @@ connection_from_file (const char *filename,
 		goto done;
 	}
 
-	/* Ignore BRIDGE= and VLAN= connections for now too (rh #619863) */
+	/* Ignore BRIDGE= connections for now too (rh #619863) */
 	tmp = svGetValue (parsed, "BRIDGE", FALSE);
 	if (tmp) {
 		g_free (tmp);
 		nm_controlled = FALSE;
 		ignore_reason = IGNORE_REASON_BRIDGE;
-	}
-
-	if (nm_controlled) {
-		tmp = svGetValue (parsed, "VLAN", FALSE);
-		if (tmp) {
-			g_free (tmp);
-			nm_controlled = FALSE;
-			ignore_reason = IGNORE_REASON_VLAN;
-		}
 	}
 
 	/* Construct the connection */
@@ -3855,11 +4008,13 @@ connection_from_file (const char *filename,
 		connection = wireless_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, &error);
 	else if (!strcasecmp (type, TYPE_INFINIBAND))
 		connection = infiniband_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, &error);
-	else if (!strcasecmp (type, TYPE_BRIDGE)) {
+	else if (!strcasecmp (type, TYPE_BOND))
+		connection = bond_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, &error);
+	else if (!strcasecmp (type, TYPE_VLAN))
+		connection = vlan_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, &error);
+	else if (!strcasecmp (type, TYPE_BRIDGE))
 		g_set_error (&error, IFCFG_PLUGIN_ERROR, 0,
 		             "Bridge connections are not yet supported");
-	} else if (!strcasecmp (type, TYPE_BOND))
-		connection = bond_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, &error);
 	else {
 		g_set_error (&error, IFCFG_PLUGIN_ERROR, 0,
 		             "Unknown connection type '%s'", type);
