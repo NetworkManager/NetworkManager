@@ -37,6 +37,7 @@
 #include <nm-setting-ip4-config.h>
 #include <nm-setting-ip6-config.h>
 #include <nm-setting-pppoe.h>
+#include <nm-setting-vlan.h>
 #include <nm-utils.h>
 
 #include "common.h"
@@ -1125,6 +1126,93 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	return TRUE;
 }
 
+static GString *vlan_priority_maplist_to_stringlist (NMSettingVlan *s_vlan, NMVlanPriorityMap map)
+{
+	GSList *strlist = NULL, *iter;
+	GString *value = NULL;
+
+	if (map == NM_VLAN_INGRESS_MAP)
+		g_object_get (G_OBJECT (s_vlan), NM_SETTING_VLAN_INGRESS_PRIORITY_MAP, &strlist, NULL);
+	else if (map == NM_VLAN_EGRESS_MAP)
+		g_object_get (G_OBJECT (s_vlan), NM_SETTING_VLAN_EGRESS_PRIORITY_MAP, &strlist, NULL);
+	else
+		return NULL;
+
+	value = g_string_new ("");
+	for (iter = strlist; iter; iter = g_slist_next (iter))
+		g_string_append_printf (value, "%s%s", value->len ? "," : "", (const char *) iter->data);
+
+	nm_utils_slist_free (strlist, g_free);
+
+	return value;
+}
+
+static gboolean
+write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
+{
+	NMSettingVlan *s_vlan;
+	NMSettingConnection *s_con;
+	const char *master = NULL;
+	guint32 vlan_flags = 0;
+	GString *text = NULL;
+
+	s_con = nm_connection_get_setting_connection (connection);
+	if (!s_con) {
+		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "Missing connection setting");
+		return FALSE;
+	}
+
+	s_vlan = nm_connection_get_setting_vlan (connection);
+	if (!s_vlan) {
+		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "Missing VLAN setting");
+		return FALSE;
+	}
+
+	svSetValue (ifcfg, "VLAN", "yes", FALSE);
+	svSetValue (ifcfg, "TYPE", TYPE_VLAN, FALSE);
+
+	master = nm_setting_connection_get_master (s_con);
+	if (!master) {
+		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0,
+		                     "Missing VLAN master interface name or connection UUID");
+		return FALSE;
+	}
+	svSetValue (ifcfg, "PHYSDEV", master, FALSE);
+	svSetValue (ifcfg, "MASTER", master, FALSE);
+
+	svSetValue (ifcfg, "DEVICE", nm_setting_vlan_get_interface_name (s_vlan), FALSE);
+
+	vlan_flags = nm_setting_vlan_get_flags (s_vlan);
+	if (vlan_flags & NM_VLAN_FLAG_REORDER_HEADERS)
+		svSetValue (ifcfg, "REORDER_HDR", "1", FALSE);
+	else
+		svSetValue (ifcfg, "REORDER_HDR", "0", FALSE);
+
+	if (vlan_flags & NM_VLAN_FLAG_GVRP) {
+		if (vlan_flags & NM_VLAN_FLAG_LOOSE_BINDING)
+			svSetValue (ifcfg, "VLAN_FLAGS", "GVRP,LOOSE_BINDING", FALSE);
+		else
+			svSetValue (ifcfg, "VLAN_FLAGS", "GVRP", FALSE);
+	} else {
+		if (vlan_flags & NM_VLAN_FLAG_LOOSE_BINDING)
+			svSetValue (ifcfg, "VLAN_FLAGS", "LOOSE_BINDING", FALSE);
+	}
+
+	text = vlan_priority_maplist_to_stringlist (s_vlan, NM_VLAN_INGRESS_MAP);
+	if (text != NULL)
+		svSetValue (ifcfg, "VLAN_INGRESS_PRIORITY_MAP", text->str, FALSE);
+	g_string_free (text, TRUE);
+	text = NULL;
+
+	text = vlan_priority_maplist_to_stringlist (s_vlan, NM_VLAN_EGRESS_MAP);
+	if (text != NULL)
+		svSetValue (ifcfg, "VLAN_EGRESS_PRIORITY_MAP", text->str, FALSE);
+	g_string_free (text, TRUE);
+	text = NULL;
+
+	return TRUE;
+}
+
 static void
 write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 {
@@ -1831,6 +1919,9 @@ write_connection (NMConnection *connection,
 		if (!write_wired_setting (connection, ifcfg, error))
 			goto out;
 		wired = TRUE;
+	} else if (!strcmp (type, NM_SETTING_VLAN_SETTING_NAME)) {
+		if (!write_vlan_setting (connection, ifcfg, error))
+			goto out;
 	} else if (!strcmp (type, NM_SETTING_WIRELESS_SETTING_NAME)) {
 		if (!write_wireless_setting (connection, ifcfg, &no_8021x, error))
 			goto out;

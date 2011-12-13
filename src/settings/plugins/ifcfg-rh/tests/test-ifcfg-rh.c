@@ -44,6 +44,7 @@
 #include <nm-setting-gsm.h>
 #include <nm-setting-cdma.h>
 #include <nm-setting-serial.h>
+#include <nm-setting-vlan.h>
 
 #include "nm-test-helpers.h"
 
@@ -11820,6 +11821,46 @@ test_read_vlan_interface (void)
 	g_object_unref (connection);
 }
 
+static void
+test_write_vlan (void)
+{
+	NMConnection *connection;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	char *written = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	gboolean success = FALSE;
+
+	connection = connection_from_file (TEST_IFCFG_VLAN_INTERFACE,
+	                                   NULL,
+	                                   TYPE_VLAN,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	g_assert (connection != NULL);
+
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &written,
+	                                 &error);
+	g_assert (success);
+
+	unlink (written);
+	g_free (written);
+
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+}
+
 #define TEST_IFCFG_BOND_MAIN TEST_IFCFG_DIR"/network-scripts/ifcfg-test-bond-main"
 
 static void
@@ -12311,6 +12352,7 @@ int main (int argc, char **argv)
 	test_read_bridge_main ();
 	test_read_bridge_component ();
 	test_read_vlan_interface ();
+	test_write_vlan ();
 	test_read_bond_main ();
 	test_read_bond_slave ();
 
