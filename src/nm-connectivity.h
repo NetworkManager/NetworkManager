@@ -57,7 +57,9 @@ NMConnectivity *nm_connectivity_new           (const gchar *check_uri,
                                                guint check_interval,
                                                const gchar *check_response);
 
-void            nm_connectivity_check         (NMConnectivity *connectivity);
+void            nm_connectivity_start_check   (NMConnectivity *connectivity);
+
+void            nm_connectivity_stop_check    (NMConnectivity *connectivity);
 
 gboolean        nm_connectivity_get_connected (NMConnectivity *connectivity);
 

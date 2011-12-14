@@ -470,7 +470,8 @@ manager_device_state_changed (NMDevice *device,
                               NMDeviceStateReason reason,
                               gpointer user_data)
 {
-	NMManager *manager = NM_MANAGER (user_data);
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
 	switch (new_state) {
 	case NM_DEVICE_STATE_UNMANAGED:
@@ -478,18 +479,26 @@ manager_device_state_changed (NMDevice *device,
 	case NM_DEVICE_STATE_DISCONNECTED:
 	case NM_DEVICE_STATE_PREPARE:
 	case NM_DEVICE_STATE_FAILED:
-		g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
+		g_object_notify (G_OBJECT (self), NM_MANAGER_ACTIVE_CONNECTIONS);
 		break;
 	default:
 		break;
 	}
 
-	nm_manager_update_state (manager);
+	nm_manager_update_state (self);
 
 #if WITH_CONCHECK
-	/* trigger a connectivity check */
-	if (new_state == NM_DEVICE_STATE_ACTIVATED || old_state == NM_DEVICE_STATE_ACTIVATED)
-		nm_connectivity_check (NM_MANAGER_GET_PRIVATE (manager)->connectivity);
+	if (priv->state >= NM_STATE_CONNECTED_LOCAL) {
+		if (old_state == NM_DEVICE_STATE_ACTIVATED || new_state == NM_DEVICE_STATE_ACTIVATED) {
+			/* Still connected, but a device activated or deactivated; make sure
+			 * we still have connectivity on the other activated devices.
+			 */
+			nm_connectivity_start_check (priv->connectivity);
+		}
+	} else {
+		/* Cannot be connected if no devices are activated */
+		nm_connectivity_stop_check (priv->connectivity);
+	}
 #endif
 }
 
