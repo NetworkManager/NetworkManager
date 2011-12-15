@@ -181,7 +181,7 @@ monitor_file_changes (const char *filename,
 /* Callback for nm_settings_connection_replace_and_commit. Report any errors
  * encountered when commiting connection settings updates. */
 static void
-commit_cb (NMSettingsConnection *connection, GError *error, gpointer unused) 
+commit_cb (NMSettingsConnection *connection, GError *error, gpointer unused)
 {
 	if (error) {
 		PLUGIN_WARN (IFNET_PLUGIN_NAME, "    error updating: %s",
@@ -317,6 +317,26 @@ reload_connections (gpointer config)
 	g_list_free (conn_names);
 }
 
+static void
+check_flagged_secrets (NMSetting  *setting,
+                       const char *key,
+                       const GValue *value,
+                       GParamFlags flags,
+                       gpointer user_data)
+{
+	gboolean *is_system_secret = user_data;
+
+	if (flags & NM_SETTING_PARAM_SECRET) {
+		NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
+
+		nm_setting_get_secret_flags (setting, key, &secret_flags, NULL);
+
+		if (secret_flags != NM_SETTING_SECRET_FLAG_NONE) {
+			*is_system_secret = TRUE;
+		}
+	}
+}
+
 static NMSettingsConnection *
 add_connection (NMSystemConfigInterface *config,
                 NMConnection *source,
@@ -324,11 +344,27 @@ add_connection (NMSystemConfigInterface *config,
 {
 	NMIfnetConnection *connection = NULL;
 	char *conn_name;
+	gboolean has_flagged_secrets = FALSE;
+	NMSettingConnection *settings = NM_SETTING_CONNECTION (
+			nm_connection_get_setting (source, NM_TYPE_SETTING_CONNECTION));
 
-	conn_name = ifnet_add_new_connection (source, CONF_NET_FILE, WPA_SUPPLICANT_CONF, error);
-	if (conn_name)
-		connection = nm_ifnet_connection_new (conn_name, source);
-	reload_connections (config);
+	g_assert (settings);
+	/* If the connection is not available for all users, ignore
+	 * it as this plugin only deals with System Connections */
+	if (nm_setting_connection_get_num_permissions (settings))
+		return NULL;
+
+	/* If the connection has flagged secrets, ignore
+	 * it as this plugin does not deal with user agent service */
+	nm_connection_for_each_setting_value (source, check_flagged_secrets, &has_flagged_secrets);
+
+	if (!has_flagged_secrets) {
+		conn_name = ifnet_add_new_connection (source, CONF_NET_FILE, WPA_SUPPLICANT_CONF, error);
+		if (conn_name)
+			connection = nm_ifnet_connection_new (conn_name, source);
+		reload_connections (config);
+	}
+
 	return connection ? NM_SETTINGS_CONNECTION (connection) : NULL;
 }
 
