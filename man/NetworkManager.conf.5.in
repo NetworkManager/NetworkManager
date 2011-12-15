@@ -211,6 +211,26 @@ OLPC = OLPC Mesh device operations
 .br
 WIMAX = Wimax device operations
 .br
+.SS [connectivity]
+This section controls NetworkManager's optional connectivity checking
+functionality.  This allows NetworkManager to detect whether or not the system
+can actually access the internet or whether it is behind a captive portal.
+.TP
+.B uri=\fI<uri>\fP
+The URI of a web page to periodically request when connectivity is being checked.
+This page should return the header "X-NetworkManager-Status" with a value of
+"online".  Alternatively, it's body content should be set to "NetworkManager
+is online".  The body content check can be controlled by the \fIresponse\fP
+option.  If this option is blank or missing, connectivity checking is disabled.
+.TP
+.B interval=\fI<seconds>\fP
+Controls how often connectivity is checked when a network connection exists. If
+set to 0 connectivity checking is disabled.  If missing, the default is 300
+seconds.
+.TP
+.B response=\fI<response>\fP
+If set controls what body content NetworkManager checks for when requesting the
+URI for connectivity checking.  If missing, defaults to "NetworkManager is online"
 .SH "SEE ALSO"
 .BR http://live.gnome.org/NetworkManager/SystemSettings
 .sp
