@@ -530,18 +530,6 @@ net_add (NMUdevManager *self, GUdevDevice *device)
 		return;
 	}
 
-	/* Ignore Nokia cdc-ether interfaces in PC-Suite mode since we need to
-	 * talk phonet to use them, which ModemManager doesn't do yet.
-	 */
-	tmp = g_udev_device_get_property (device, "ID_VENDOR_ID");
-	if (g_strcmp0 (tmp, "0421") == 0) { /* Nokia vendor ID */
-		tmp = g_udev_device_get_property (device, "ID_MODEL");
-		if (tmp && (strstr (tmp, "PC-Suite") || strstr (tmp, "PC Suite"))) {
-			nm_log_dbg (LOGD_HW, "(%s): ignoring Nokia PC-Suite ethernet interface", iface);
-			return;
-		}
-	}
-
 	g_signal_emit (self, signals[DEVICE_ADDED], 0, device, device_creator);
 }
 
