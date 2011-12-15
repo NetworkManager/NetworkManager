@@ -493,10 +493,13 @@ manager_device_state_changed (NMDevice *device,
 			/* Still connected, but a device activated or deactivated; make sure
 			 * we still have connectivity on the other activated devices.
 			 */
+			nm_log_dbg (LOGD_CORE, "(%s): triggered connectivity check due to state change",
+			            nm_device_get_iface (device));
 			nm_connectivity_start_check (priv->connectivity);
 		}
 	} else {
 		/* Cannot be connected if no devices are activated */
+		nm_log_dbg (LOGD_CORE, "stopping connectivity checks");
 		nm_connectivity_stop_check (priv->connectivity);
 	}
 #endif
@@ -3378,7 +3381,7 @@ connectivity_changed (NMConnectivity *connectivity,
 	gboolean connected;
 
 	connected = nm_connectivity_get_connected (connectivity);
-	nm_log_dbg (LOGD_CORE, "connectivity indicates %s",
+	nm_log_dbg (LOGD_CORE, "connectivity checking indicates %s",
 	            connected ? "CONNECTED" : "NOT CONNECTED");
 
 	nm_manager_update_state (self);

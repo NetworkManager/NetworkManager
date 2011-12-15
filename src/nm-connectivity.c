@@ -112,8 +112,8 @@ nm_connectivity_check_cb (SoupSession *session, SoupMessage *msg, gpointer user_
 				        uri_string, priv->response);
 			connected_new = TRUE;
 		} else {
-			nm_log_dbg (LOGD_CORE, "Connectivity check for uri '%s' with expected response '%s' failed.",
-						uri_string, priv->response);
+			nm_log_dbg (LOGD_CORE, "Connectivity check for uri '%s' with expected response '%s' failed (status %d).",
+						uri_string, priv->response, msg->status_code);
 		}
 	}
 	g_free (uri_string);
