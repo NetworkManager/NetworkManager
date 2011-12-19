@@ -126,7 +126,8 @@
       service names are no longer used.  Instead NetworkManager provides the
       settings service using its own D-Bus service name,
       <literal>org.freedesktop.NetworkManager</literal>.  The object path of
-      the settings service remains unchanged.
+      the settings service has also changed to
+      <literal>/org/freedesktop/NetworkManager/Settings</literal>.
     </para>
     <para>
       Additionally, the D-Bus interface of the settings service has changed
@@ -143,11 +144,12 @@
       and <literal>CanModify</literal> properties.
     </para>
     <para>
-      <emphasis role="strong">Action:</emphasis> change the service name that
-      your application uses to request system network settings to
-      <literal>org.freedesktop.NetworkManager</literal>, and update the D-Bus
-      interface that codes uses to talk to the settings service to
-      <ulink url="spec.html#org.freedesktop.NetworkManager.Settings">
+      <emphasis role="strong">Action:</emphasis> change the service name and
+      object path that your application uses to request system network settings
+      to <literal>org.freedesktop.NetworkManager</literal> and
+      <literal>/org/freedesktop/NetworkManager/Settings</literal> respectively,
+      and update the D-Bus interface that codes uses to talk to the settings
+      service to <ulink url="spec.html#org.freedesktop.NetworkManager.Settings">
       <literal>org.freedesktop.NetworkManager.Settings</literal></ulink>.
       Listen for hostname changes using the new interface name as well.
     </para>
