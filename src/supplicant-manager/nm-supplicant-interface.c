@@ -79,6 +79,7 @@ typedef struct {
 	NMDBusManager *       dbus_mgr;
 	char *                dev;
 	gboolean              is_wireless;
+	gboolean              has_netreply;  /* Whether querying 802.1x credentials is supported */
 
 	char *                object_path;
 	guint32               state;
@@ -444,6 +445,62 @@ wpas_iface_get_props (NMSupplicantInterface *self)
 }
 
 static void
+wpas_iface_network_request (DBusGProxy *proxy,
+                            const char *object_path,
+                            const char *field,
+                            const char *message,
+                            gpointer user_data)
+{
+	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	g_return_if_fail (priv->has_netreply == TRUE);
+}
+
+
+static void
+iface_check_netreply_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
+{
+	NMSupplicantInfo *info = (NMSupplicantInfo *) user_data;
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (info->interface);
+	GError *error = NULL;
+
+	if (   dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID)
+	    || dbus_g_error_has_name (error, "fi.w1.wpa_supplicant1.InvalidArgs")) {
+		/* We know NetworkReply is supported if the NetworkReply method returned
+		 * successfully (which is unexpected since we sent a bogus network
+		 * object path) or if we got an "InvalidArgs" (which indicates NetworkReply
+		 * is supported).  We know it's not supported if we get an
+		 * "UnknownMethod" error.
+		 */
+		priv->has_netreply = TRUE;
+
+		nm_log_dbg (LOGD_SUPPLICANT, "Supplicant %s network credentials requests",
+			        priv->has_netreply ? "supports" : "does not support");
+	}
+	g_clear_error (&error);
+}
+
+static void
+wpas_iface_check_network_reply (NMSupplicantInterface *self)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	NMSupplicantInfo *info;
+	DBusGProxyCall *call;
+
+	info = nm_supplicant_info_new (self, priv->props_proxy, priv->other_pcalls);
+	call = dbus_g_proxy_begin_call (priv->iface_proxy, "NetworkReply",
+	                                iface_check_netreply_cb,
+	                                info,
+	                                nm_supplicant_info_destroy,
+	                                DBUS_TYPE_G_OBJECT_PATH, "/foobaraasdfasdf",
+	                                G_TYPE_STRING, "foobar",
+	                                G_TYPE_STRING, "foobar",
+	                                G_TYPE_INVALID);
+	nm_supplicant_info_set_call (info, call);
+}
+
+static void
 interface_add_done (NMSupplicantInterface *self, char *path)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
@@ -486,12 +543,27 @@ interface_add_done (NMSupplicantInterface *self, char *path)
 	                             self,
 	                             NULL);
 
+	dbus_g_object_register_marshaller (_nm_marshal_VOID__STRING_STRING_STRING,
+	                                   G_TYPE_NONE,
+	                                   DBUS_TYPE_G_OBJECT_PATH, G_TYPE_STRING, G_TYPE_STRING,
+	                                   G_TYPE_INVALID);
+	dbus_g_proxy_add_signal (priv->iface_proxy, "NetworkRequest",
+	                         DBUS_TYPE_G_OBJECT_PATH, G_TYPE_STRING, G_TYPE_STRING,
+	                         G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->iface_proxy, "NetworkRequest",
+	                             G_CALLBACK (wpas_iface_network_request),
+	                             self,
+	                             NULL);
+
 	priv->props_proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (priv->dbus_mgr),
 	                                               WPAS_DBUS_SERVICE,
 	                                               path,
 	                                               DBUS_INTERFACE_PROPERTIES);
 	/* Get initial properties */
 	wpas_iface_get_props (self);
+
+	/* Check whether NetworkReply is supported */
+	wpas_iface_check_network_reply (self);
 
 	set_state (self, NM_SUPPLICANT_INTERFACE_STATE_READY);
 }
