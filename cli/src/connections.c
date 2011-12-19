@@ -55,14 +55,16 @@ static NmcOutputField nmc_fields_con_status[] = {
 	{"NAME",          N_("NAME"),         25, NULL, 0},  /* 0 */
 	{"UUID",          N_("UUID"),         38, NULL, 0},  /* 1 */
 	{"DEVICES",       N_("DEVICES"),      10, NULL, 0},  /* 2 */
-	{"DEFAULT",       N_("DEFAULT"),       8, NULL, 0},  /* 3 */
-	{"SPEC-OBJECT",   N_("SPEC-OBJECT"),  10, NULL, 0},  /* 4 */
-	{"VPN",           N_("VPN"),           5, NULL, 0},  /* 5 */
-	{"DBUS-PATH",     N_("DBUS-PATH"),    51, NULL, 0},  /* 6 */
-	{"ZONE",          N_("ZONE"),         15, NULL, 0},  /* 7 */
+	{"STATE",         N_("STATE"),        12, NULL, 0},  /* 3 */
+	{"DEFAULT",       N_("DEFAULT"),       8, NULL, 0},  /* 4 */
+	{"DEFAULT6",      N_("DEFAULT6"),      9, NULL, 0},  /* 5 */
+	{"SPEC-OBJECT",   N_("SPEC-OBJECT"),  10, NULL, 0},  /* 6 */
+	{"VPN",           N_("VPN"),           5, NULL, 0},  /* 7 */
+	{"DBUS-PATH",     N_("DBUS-PATH"),    51, NULL, 0},  /* 8 */
+	{"ZONE",          N_("ZONE"),         15, NULL, 0},  /* 9 */
 	{NULL,            NULL,                0, NULL, 0}
 };
-#define NMC_FIELDS_CON_STATUS_ALL     "NAME,UUID,DEVICES,DEFAULT,VPN,ZONE,DBUS-PATH,SPEC-OBJECT"
+#define NMC_FIELDS_CON_STATUS_ALL     "NAME,UUID,DEVICES,STATE,DEFAULT,DEFAULT6,VPN,ZONE,DBUS-PATH,SPEC-OBJECT"
 #define NMC_FIELDS_CON_STATUS_COMMON  "NAME,UUID,DEVICES,DEFAULT,VPN"
 
 /* Available fields for 'con list' */
@@ -546,6 +548,22 @@ error:
 	return nmc->return_value;
 }
 
+static const char *
+active_connection_state_to_string (NMActiveConnectionState state)
+{
+	switch (state) {
+	case NM_ACTIVE_CONNECTION_STATE_ACTIVATING:
+		return _("activating");
+	case NM_ACTIVE_CONNECTION_STATE_ACTIVATED:
+		return _("activated");
+	case NM_ACTIVE_CONNECTION_STATE_DEACTIVATING:
+		return _("deactivating");
+	case NM_ACTIVE_CONNECTION_STATE_UNKNOWN:
+	default:
+		return _("unknown");
+	}
+}
+
 static void
 show_active_connection (gpointer data, gpointer user_data)
 {
@@ -557,8 +575,10 @@ show_active_connection (gpointer data, gpointer user_data)
 	const GPtrArray *devices;
 	GString *dev_str;
 	int i;
+	NMActiveConnectionState state;
 
 	active_path = nm_active_connection_get_connection (active);
+	state = nm_active_connection_get_state (active);
 
 	/* Get devices of the active connection */
 	dev_str = g_string_new (NULL);
@@ -586,11 +606,13 @@ show_active_connection (gpointer data, gpointer user_data)
 			nmc->allowed_fields[0].value = nm_setting_connection_get_id (s_con);
 			nmc->allowed_fields[1].value = nm_setting_connection_get_uuid (s_con);
 			nmc->allowed_fields[2].value = dev_str->str;
-			nmc->allowed_fields[3].value = nm_active_connection_get_default (active) ? _("yes") : _("no");
-			nmc->allowed_fields[4].value = nm_active_connection_get_specific_object (active);
-			nmc->allowed_fields[5].value = NM_IS_VPN_CONNECTION (active) ? _("yes") : _("no");
-			nmc->allowed_fields[6].value = nm_object_get_path (NM_OBJECT (active));
-			nmc->allowed_fields[7].value = nm_setting_connection_get_zone (s_con);
+			nmc->allowed_fields[3].value = active_connection_state_to_string (state);
+			nmc->allowed_fields[4].value = nm_active_connection_get_default (active) ? _("yes") : _("no");
+			nmc->allowed_fields[5].value = nm_active_connection_get_default6 (active) ? _("yes") : _("no");
+			nmc->allowed_fields[6].value = nm_active_connection_get_specific_object (active);
+			nmc->allowed_fields[7].value = NM_IS_VPN_CONNECTION (active) ? _("yes") : _("no");
+			nmc->allowed_fields[8].value = nm_object_get_path (NM_OBJECT (active));
+			nmc->allowed_fields[9].value = nm_setting_connection_get_zone (s_con);
 
 			nmc->print_fields.flags &= ~NMC_PF_FLAG_MAIN_HEADER_ADD & ~NMC_PF_FLAG_MAIN_HEADER_ONLY & ~NMC_PF_FLAG_FIELD_NAMES; /* Clear header flags */
 			print_fields (nmc->print_fields, nmc->allowed_fields);
@@ -1208,22 +1230,6 @@ find_device_for_connection (NmCli *nmc,
 				g_set_error (error, 0, 0, _("no device found for connection '%s'"), nm_setting_connection_get_id (s_con));
 			return FALSE;
 		}
-	}
-}
-
-static const char *
-active_connection_state_to_string (NMActiveConnectionState state)
-{
-	switch (state) {
-	case NM_ACTIVE_CONNECTION_STATE_ACTIVATING:
-		return _("activating");
-	case NM_ACTIVE_CONNECTION_STATE_ACTIVATED:
-		return _("activated");
-	case NM_ACTIVE_CONNECTION_STATE_DEACTIVATING:
-		return _("deactivating");
-	case NM_ACTIVE_CONNECTION_STATE_UNKNOWN:
-	default:
-		return _("unknown");
 	}
 }
 
