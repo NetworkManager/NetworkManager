@@ -55,7 +55,6 @@ typedef enum {
 GQuark nm_setting_vlan_error_quark (void);
 
 #define NM_SETTING_VLAN_INTERFACE_NAME       "interface-name"
-#define NM_SETTING_VLAN_SLAVE                "slave"
 #define NM_SETTING_VLAN_ID                   "id"
 #define NM_SETTING_VLAN_FLAGS                "flags"
 #define NM_SETTING_VLAN_INGRESS_PRIORITY_MAP "ingress-priority-map"
@@ -80,8 +79,8 @@ typedef struct {
  * @NM_VLAN_INGRESS_MAP: map for incoming data
  * @NM_VLAN_EGRESS_MAP: map for outgoing data
  *
- * A selector for traffic QoS priority maps; these map outgoing packet priorities
- * to VLAN QoS priorities.
+ * A selector for traffic priority maps; these map Linux SKB priorities
+ * to 802.1p priorities used in VLANs.
  **/
 typedef enum {
 	NM_VLAN_INGRESS_MAP,
@@ -104,13 +103,14 @@ typedef enum {
 	NM_VLAN_FLAG_REORDER_HEADERS = 0x1,
 	NM_VLAN_FLAG_GVRP            = 0x2,
 	NM_VLAN_FLAG_LOOSE_BINDING   = 0x4,
+
+	/* NOTE: if adding flags update nm-setting-vlan.c::verify() */
 } NMVlanFlags;
 
 GType nm_setting_vlan_get_type (void);
 NMSetting *nm_setting_vlan_new (void);
 
 const char *nm_setting_vlan_get_interface_name (NMSettingVlan *setting);
-const char *nm_setting_vlan_get_slave          (NMSettingVlan *setting);
 guint32     nm_setting_vlan_get_id             (NMSettingVlan *setting);
 guint32     nm_setting_vlan_get_flags          (NMSettingVlan *setting);
 
