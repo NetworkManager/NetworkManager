@@ -75,13 +75,17 @@ enum {
 GObject *
 nm_device_ethernet_new (DBusGConnection *connection, const char *path)
 {
+	GObject *device;
+
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (path != NULL, NULL);
 
-	return g_object_new (NM_TYPE_DEVICE_ETHERNET,
-	                     NM_OBJECT_DBUS_CONNECTION, connection,
-	                     NM_OBJECT_DBUS_PATH, path,
-	                     NULL);
+	device = g_object_new (NM_TYPE_DEVICE_ETHERNET,
+						   NM_OBJECT_DBUS_CONNECTION, connection,
+						   NM_OBJECT_DBUS_PATH, path,
+						   NULL);
+	_nm_object_ensure_inited (NM_OBJECT (device));
+	return device;
 }
 
 /**
@@ -224,19 +228,12 @@ register_properties (NMDeviceEthernet *device)
 	                                property_info);
 }
 
-static GObject*
-constructor (GType type,
-			 guint n_construct_params,
-			 GObjectConstructParam *construct_params)
+static void
+constructed (GObject *object)
 {
-	GObject *object;
 	NMDeviceEthernetPrivate *priv;
 
-	object = G_OBJECT_CLASS (nm_device_ethernet_parent_class)->constructor (type,
-																				  n_construct_params,
-																				  construct_params);
-	if (!object)
-		return NULL;
+	G_OBJECT_CLASS (nm_device_ethernet_parent_class)->constructed (object);
 
 	priv = NM_DEVICE_ETHERNET_GET_PRIVATE (object);
 
@@ -246,8 +243,6 @@ constructor (GType type,
 	                                         NM_DBUS_INTERFACE_DEVICE_WIRED);
 
 	register_properties (NM_DEVICE_ETHERNET (object));
-
-	return object;
 }
 
 static void
@@ -314,7 +309,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *eth_class)
 	g_type_class_add_private (eth_class, sizeof (NMDeviceEthernetPrivate));
 
 	/* virtual methods */
-	object_class->constructor = constructor;
+	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;

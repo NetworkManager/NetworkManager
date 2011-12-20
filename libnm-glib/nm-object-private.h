@@ -23,8 +23,7 @@
 #ifndef NM_OBJECT_PRIVATE_H
 #define NM_OBJECT_PRIVATE_H
 
-#include <glib.h>
-#include <glib-object.h>
+#include <gio/gio.h>
 #include "nm-object.h"
 
 void _nm_object_ensure_inited (NMObject *object);
@@ -47,7 +46,12 @@ void _nm_object_register_properties (NMObject *object,
 
 gboolean _nm_object_reload_properties (NMObject *object, GError **error);
 
-void _nm_object_process_properties_changed (NMObject *self, GHashTable *properties);
+void     _nm_object_reload_properties_async  (NMObject *object,
+                                              GAsyncReadyCallback callback,
+                                              gpointer user_data);
+gboolean _nm_object_reload_properties_finish (NMObject *object,
+                                              GAsyncResult *result,
+                                              GError **error);
 
 typedef void (*NMPseudoPropertyChangedFunc) (NMObject *self, NMObject *changed);
 void _nm_object_register_pseudo_property (NMObject *object,

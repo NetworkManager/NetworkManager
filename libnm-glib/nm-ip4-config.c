@@ -132,32 +132,23 @@ register_properties (NMIP4Config *config)
 	                                property_info);
 }
 
-static GObject*
-constructor (GType type,
-		   guint n_construct_params,
-		   GObjectConstructParam *construct_params)
+static void
+constructed (GObject *object)
 {
-	NMObject *object;
 	DBusGConnection *connection;
 	NMIP4ConfigPrivate *priv;
 
-	object = (NMObject *) G_OBJECT_CLASS (nm_ip4_config_parent_class)->constructor (type,
-																 n_construct_params,
-																 construct_params);
-	if (!object)
-		return NULL;
+	G_OBJECT_CLASS (nm_ip4_config_parent_class)->constructed (object);
 
 	priv = NM_IP4_CONFIG_GET_PRIVATE (object);
-	connection = nm_object_get_connection (object);
+	connection = nm_object_get_connection (NM_OBJECT (object));
 
 	priv->proxy = dbus_g_proxy_new_for_name (connection,
 										   NM_DBUS_SERVICE,
-										   nm_object_get_path (object),
+										   nm_object_get_path (NM_OBJECT (object)),
 										   NM_DBUS_INTERFACE_IP4_CONFIG);
 
 	register_properties (NM_IP4_CONFIG (object));
-
-	return G_OBJECT (object);
 }
 
 static void
@@ -226,7 +217,7 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	g_type_class_add_private (config_class, sizeof (NMIP4ConfigPrivate));
 
 	/* virtual methods */
-	object_class->constructor = constructor;
+	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->finalize = finalize;
 

@@ -216,20 +216,13 @@ nm_ip6_config_get_routes (NMIP6Config *config)
 	return NM_IP6_CONFIG_GET_PRIVATE (config)->routes;
 }
 
-static GObject*
-constructor (GType type,
-             guint n_construct_params,
-             GObjectConstructParam *construct_params)
+static void
+constructed (GObject *object)
 {
-	GObject *object;
 	DBusGConnection *connection;
 	NMIP6ConfigPrivate *priv;
 
-	object = G_OBJECT_CLASS (nm_ip6_config_parent_class)->constructor (type,
-	                                                                   n_construct_params,
-	                                                                   construct_params);
-	if (!object)
-		return NULL;
+	G_OBJECT_CLASS (nm_ip6_config_parent_class)->constructed (object);
 
 	priv = NM_IP6_CONFIG_GET_PRIVATE (object);
 	connection = nm_object_get_connection (NM_OBJECT (object));
@@ -240,8 +233,6 @@ constructor (GType type,
 	                                         NM_DBUS_INTERFACE_IP6_CONFIG);
 
 	register_properties (NM_IP6_CONFIG (object));
-
-	return object;
 }
 
 static void
@@ -309,7 +300,7 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	g_type_class_add_private (config_class, sizeof (NMIP6ConfigPrivate));
 
 	/* virtual methods */
-	object_class->constructor = constructor;
+	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->finalize = finalize;
 

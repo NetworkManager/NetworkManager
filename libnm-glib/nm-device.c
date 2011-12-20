@@ -163,82 +163,20 @@ device_state_changed (DBusGProxy *proxy,
 }
 
 static void
-get_all_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
+constructed (GObject *object)
 {
-	NMObject *self = NM_OBJECT (user_data);
-	GHashTable *props = NULL;
-	GError *error = NULL;
-
-	if (!dbus_g_proxy_end_call (proxy, call, &error,
-	                            DBUS_TYPE_G_MAP_OF_VARIANT, &props,
-	                            G_TYPE_INVALID)) {
-		if (!(error->domain == DBUS_GERROR && error->code == DBUS_GERROR_NO_REPLY)) {
-			g_warning ("%s: couldn't retrieve device properties: (%d) %s.",
-			           __func__,
-			           error ? error->code : -1,
-			           (error && error->message) ? error->message : "(unknown)");
-		}
-		g_clear_error (&error);
-		g_object_unref (proxy);
-		return;
-	}
-	g_object_unref (proxy);
-
-	_nm_object_process_properties_changed (NM_OBJECT (self), props);
-	g_hash_table_destroy (props);
-
-}
-
-static void
-initialize_properties (NMObject *object)
-{
-	DBusGProxy *props_proxy;
-
-	/* D-Bus properties proxy */
-	props_proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (object),
-	                                         NM_DBUS_SERVICE,
-	                                         nm_object_get_path (object),
-	                                         "org.freedesktop.DBus.Properties");
-	g_assert (props_proxy);
-
-	/* Get properties */
-	dbus_g_proxy_begin_call (props_proxy, "GetAll",
-	                         get_all_cb,
-	                         object,
-	                         NULL,
-	                         G_TYPE_STRING, NM_DBUS_INTERFACE_DEVICE,
-	                         G_TYPE_INVALID);
-
-}
-
-static GObject*
-constructor (GType type,
-			 guint n_construct_params,
-			 GObjectConstructParam *construct_params)
-{
-	NMObject *object;
 	NMDevicePrivate *priv;
 
-	object = (NMObject *) G_OBJECT_CLASS (nm_device_parent_class)->constructor (type,
-																				n_construct_params,
-																				construct_params);
-	if (!object)
-		return NULL;
+	G_OBJECT_CLASS (nm_device_parent_class)->constructed (object);
 
 	priv = NM_DEVICE_GET_PRIVATE (object);
 
-	priv->proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (object),
+	priv->proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (object)),
 											 NM_DBUS_SERVICE,
-											 nm_object_get_path (object),
+											 nm_object_get_path (NM_OBJECT (object)),
 											 NM_DBUS_INTERFACE_DEVICE);
 
 	register_properties (NM_DEVICE (object));
-
-	/* Get initial properties, so that we have all properties set even if
-	 * no PropertiesChanged signal is received.
-	 * It has to be called after register_for_property_changed().
-	 */
-	initialize_properties (object);
 
 	dbus_g_object_register_marshaller (_nm_marshal_VOID__UINT_UINT_UINT,
 									   G_TYPE_NONE,
@@ -254,8 +192,6 @@ constructor (GType type,
 								 G_CALLBACK (device_state_changed),
 								 NM_DEVICE (object),
 								 NULL);
-
-	return G_OBJECT (object);
 }
 
 static void
@@ -393,7 +329,7 @@ nm_device_class_init (NMDeviceClass *device_class)
 	g_type_class_add_private (device_class, sizeof (NMDevicePrivate));
 
 	/* virtual methods */
-	object_class->constructor = constructor;
+	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
@@ -704,6 +640,7 @@ GObject *
 nm_device_new (DBusGConnection *connection, const char *path)
 {
 	GType dtype;
+	NMDevice *device = NULL;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (path != NULL, NULL);
@@ -712,10 +649,12 @@ nm_device_new (DBusGConnection *connection, const char *path)
 	if (dtype == G_TYPE_INVALID)
 		return NULL;
 
-	return g_object_new (dtype,
-	                     NM_OBJECT_DBUS_CONNECTION, connection,
-	                     NM_OBJECT_DBUS_PATH, path,
-	                     NULL);
+	device = (NMDevice *) g_object_new (dtype,
+	                                    NM_OBJECT_DBUS_CONNECTION, connection,
+	                                    NM_OBJECT_DBUS_PATH, path,
+	                                    NULL);
+	_nm_object_ensure_inited (NM_OBJECT (device));
+	return G_OBJECT (device);
 }
 
 typedef struct {

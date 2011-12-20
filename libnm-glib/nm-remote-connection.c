@@ -382,17 +382,10 @@ nm_remote_connection_new (DBusGConnection *bus,
 	                                            NULL);
 }
 
-static GObject *
-constructor (GType type,
-             guint n_construct_params,
-             GObjectConstructParam *construct_params)
+static void
+constructed (GObject *object)
 {
-	GObject *object;
 	NMRemoteConnectionPrivate *priv;
-
-	object = G_OBJECT_CLASS (nm_remote_connection_parent_class)->constructor (type, n_construct_params, construct_params);
-	if (!object)
-		return NULL;
 
 	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (object);
 	g_assert (priv->bus);
@@ -414,7 +407,6 @@ constructor (GType type,
 	dbus_g_proxy_begin_call (priv->proxy, "GetSettings",
 	                         init_get_settings_cb, object, NULL,
 	                         G_TYPE_INVALID);
-	return object;
 }
 
 static void
@@ -486,7 +478,7 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
-	object_class->constructor = constructor;
+	object_class->constructed = constructed;
 
 	/* Properties */
 	g_object_class_install_property

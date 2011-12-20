@@ -533,30 +533,21 @@ register_properties (NMAccessPoint *ap)
 	                                property_info);
 }
 
-static GObject*
-constructor (GType type,
-			 guint n_construct_params,
-			 GObjectConstructParam *construct_params)
+static void
+constructed (GObject *object)
 {
-	NMObject *object;
 	NMAccessPointPrivate *priv;
 
-	object = (NMObject *) G_OBJECT_CLASS (nm_access_point_parent_class)->constructor (type,
-																	  n_construct_params,
-																	  construct_params);
-	if (!object)
-		return NULL;
+	G_OBJECT_CLASS (nm_access_point_parent_class)->constructed (object);
 
 	priv = NM_ACCESS_POINT_GET_PRIVATE (object);
 
-	priv->proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (object),
+	priv->proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (object)),
 									    NM_DBUS_SERVICE,
-									    nm_object_get_path (object),
+									    nm_object_get_path (NM_OBJECT (object)),
 									    NM_DBUS_INTERFACE_ACCESS_POINT);
 
 	register_properties (NM_ACCESS_POINT (object));
-
-	return G_OBJECT (object);
 }
 
 
@@ -568,7 +559,7 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 	g_type_class_add_private (ap_class, sizeof (NMAccessPointPrivate));
 
 	/* virtual methods */
-	object_class->constructor = constructor;
+	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;

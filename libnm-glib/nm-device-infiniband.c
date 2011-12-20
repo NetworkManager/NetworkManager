@@ -68,13 +68,17 @@ enum {
 GObject *
 nm_device_infiniband_new (DBusGConnection *connection, const char *path)
 {
+	GObject *device;
+
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (path != NULL, NULL);
 
-	return g_object_new (NM_TYPE_DEVICE_INFINIBAND,
-	                     NM_OBJECT_DBUS_CONNECTION, connection,
-	                     NM_OBJECT_DBUS_PATH, path,
-	                     NULL);
+	device = g_object_new (NM_TYPE_DEVICE_INFINIBAND,
+						   NM_OBJECT_DBUS_CONNECTION, connection,
+						   NM_OBJECT_DBUS_PATH, path,
+						   NULL);
+	_nm_object_ensure_inited (NM_OBJECT (device));
+	return device;
 }
 
 /**
@@ -168,19 +172,12 @@ register_properties (NMDeviceInfiniband *device)
 	                                property_info);
 }
 
-static GObject*
-constructor (GType type,
-             guint n_construct_params,
-             GObjectConstructParam *construct_params)
+static void
+constructed (GObject *object)
 {
-	GObject *object;
 	NMDeviceInfinibandPrivate *priv;
 
-	object = G_OBJECT_CLASS (nm_device_infiniband_parent_class)->constructor (type,
-																			  n_construct_params,
-																			  construct_params);
-	if (!object)
-		return NULL;
+	G_OBJECT_CLASS (nm_device_infiniband_parent_class)->constructed (object);
 
 	priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (object);
 
@@ -190,8 +187,6 @@ constructor (GType type,
 	                                         NM_DBUS_INTERFACE_DEVICE_INFINIBAND);
 
 	register_properties (NM_DEVICE_INFINIBAND (object));
-
-	return object;
 }
 
 static void
@@ -247,7 +242,7 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *eth_class)
 	g_type_class_add_private (eth_class, sizeof (NMDeviceInfinibandPrivate));
 
 	/* virtual methods */
-	object_class->constructor = constructor;
+	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;

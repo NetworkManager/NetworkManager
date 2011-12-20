@@ -164,25 +164,18 @@ register_properties (NMVPNConnection *connection)
 	                                property_info);
 }
 
-static GObject*
-constructor (GType type,
-		   guint n_construct_params,
-		   GObjectConstructParam *construct_params)
+static void
+constructed (GObject *object)
 {
-	NMObject *object;
 	NMVPNConnectionPrivate *priv;
 
-	object = (NMObject *) G_OBJECT_CLASS (nm_vpn_connection_parent_class)->constructor (type,
-																	    n_construct_params,
-																	    construct_params);
-	if (!object)
-		return NULL;
+	G_OBJECT_CLASS (nm_vpn_connection_parent_class)->constructed (object);
 
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
 
-	priv->proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (object),
+	priv->proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (object)),
 									 NM_DBUS_SERVICE,
-									 nm_object_get_path (object),
+									 nm_object_get_path (NM_OBJECT (object)),
 									 NM_DBUS_INTERFACE_VPN_CONNECTION);
 
 	dbus_g_object_register_marshaller (_nm_marshal_VOID__UINT_UINT,
@@ -197,8 +190,6 @@ constructor (GType type,
 						    NULL);
 
 	register_properties (NM_VPN_CONNECTION (object));
-
-	return G_OBJECT (object);
 }
 
 static void
@@ -241,7 +232,7 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 	g_type_class_add_private (connection_class, sizeof (NMVPNConnectionPrivate));
 
 	/* virtual methods */
-	object_class->constructor = constructor;
+	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->finalize = finalize;
 

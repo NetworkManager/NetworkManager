@@ -43,7 +43,7 @@ libdeprecated_HEADERS = libnm_glib.h
 lib_LTLIBRARIES = libnm-glib.la libnm-glib-vpn.la
 
 libnm_glib_la_CFLAGS = \
-	$(GLIB_CFLAGS) \
+	$(GIO_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	$(GUDEV_CFLAGS)
 
@@ -117,7 +117,7 @@ libnm_glib_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(top_builddir)/marshallers/libmarshallers.la \
 	$(builddir)/libdeprecated-nm-glib.la \
-	$(GLIB_LIBS) \
+	$(GIO_LIBS) \
 	$(DBUS_LIBS) \
 	$(GUDEV_LIBS)
 
@@ -129,16 +129,16 @@ libnm_glib_la_LDFLAGS = -Wl,--version-script=$(SYMBOL_VIS_FILE) \
 noinst_PROGRAMS = libnm-glib-test
 
 libnm_glib_test_SOURCES = libnm-glib-test.c
-libnm_glib_test_CFLAGS = $(GLIB_CFLAGS) $(DBUS_CFLAGS)
-libnm_glib_test_LDADD = libnm-glib.la $(top_builddir)/libnm-util/libnm-util.la $(GLIB_LIBS) $(DBUS_LIBS)
+libnm_glib_test_CFLAGS = $(GIO_CFLAGS) $(DBUS_CFLAGS)
+libnm_glib_test_LDADD = libnm-glib.la $(top_builddir)/libnm-util/libnm-util.la $(GIO_LIBS) $(DBUS_LIBS)
 
 
 libnm_glib_vpn_la_SOURCES = \
 	nm-vpn-plugin.c \
 	nm-vpn-plugin-ui-interface.c \
 	nm-vpn-plugin-utils.c
-libnm_glib_vpn_la_CFLAGS = $(GLIB_CFLAGS) $(DBUS_CFLAGS)
-libnm_glib_vpn_la_LIBADD = $(top_builddir)/libnm-util/libnm-util.la $(GLIB_LIBS) $(DBUS_LIBS)
+libnm_glib_vpn_la_CFLAGS = $(GIO_CFLAGS) $(DBUS_CFLAGS)
+libnm_glib_vpn_la_LIBADD = $(top_builddir)/libnm-util/libnm-util.la $(GIO_LIBS) $(DBUS_LIBS)
 libnm_glib_vpn_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm-glib-vpn.ver \
 	-version-info "2:0:1"
 
@@ -147,7 +147,7 @@ libnm_glib_vpn_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm-glib-vpn.ver \
 #####################################################
 
 libnm_glib_test_la_CFLAGS = \
-	$(GLIB_CFLAGS) \
+	$(GIO_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	$(GUDEV_CFLAGS) \
 	-DLIBNM_GLIB_TEST
@@ -159,7 +159,7 @@ libnm_glib_test_la_SOURCES = \
 libnm_glib_test_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(top_builddir)/marshallers/libmarshallers.la \
-	$(GLIB_LIBS) \
+	$(GIO_LIBS) \
 	$(DBUS_LIBS) \
 	$(GUDEV_LIBS)
 

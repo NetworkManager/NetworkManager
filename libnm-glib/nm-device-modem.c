@@ -147,29 +147,21 @@ register_properties (NMDeviceModem *device)
 	                                property_info);
 }
 
-static GObject*
-constructor (GType type,
-             guint n_construct_params,
-             GObjectConstructParam *construct_params)
+static void
+constructed (GObject *object)
 {
-	GObject *object;
 	NMDeviceModemPrivate *priv;
 
-	object = G_OBJECT_CLASS (nm_device_modem_parent_class)->constructor (type,
-	                                                                     n_construct_params,
-	                                                                     construct_params);
-	if (object) {
-		priv = NM_DEVICE_MODEM_GET_PRIVATE (object);
+	G_OBJECT_CLASS (nm_device_modem_parent_class)->constructed (object);
 
-		priv->proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (object)),
-		                                         NM_DBUS_SERVICE,
-		                                         nm_object_get_path (NM_OBJECT (object)),
-		                                         NM_DBUS_INTERFACE_DEVICE_MODEM);
+	priv = NM_DEVICE_MODEM_GET_PRIVATE (object);
 
-		register_properties (NM_DEVICE_MODEM (object));
-	}
+	priv->proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (object)),
+	                                         NM_DBUS_SERVICE,
+	                                         nm_object_get_path (NM_OBJECT (object)),
+	                                         NM_DBUS_INTERFACE_DEVICE_MODEM);
 
-	return object;
+	register_properties (NM_DEVICE_MODEM (object));
 }
 
 static void
@@ -224,7 +216,7 @@ nm_device_modem_class_init (NMDeviceModemClass *modem_class)
 	g_type_class_add_private (modem_class, sizeof (NMDeviceModemPrivate));
 
 	/* virtual methods */
-	object_class->constructor = constructor;
+	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 	device_class->connection_valid = connection_valid;

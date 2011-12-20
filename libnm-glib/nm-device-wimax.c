@@ -97,13 +97,17 @@ static guint signals[LAST_SIGNAL] = { 0 };
 GObject *
 nm_device_wimax_new (DBusGConnection *connection, const char *path)
 {
+	GObject *device;
+
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (path != NULL, NULL);
 
-	return g_object_new (NM_TYPE_DEVICE_WIMAX,
-	                     NM_OBJECT_DBUS_CONNECTION, connection,
-	                     NM_OBJECT_DBUS_PATH, path,
-	                     NULL);
+	device = g_object_new (NM_TYPE_DEVICE_WIMAX,
+						   NM_OBJECT_DBUS_CONNECTION, connection,
+						   NM_OBJECT_DBUS_PATH, path,
+						   NULL);
+	_nm_object_ensure_inited (NM_OBJECT (device));
+	return device;
 }
 
 /**
@@ -525,19 +529,12 @@ register_properties (NMDeviceWimax *wimax)
 	                                     nsp_removed);
 }
 
-static GObject*
-constructor (GType type,
-		   guint n_construct_params,
-		   GObjectConstructParam *construct_params)
+static void
+constructed (GObject *object)
 {
-	GObject *object;
 	NMDeviceWimaxPrivate *priv;
 
-	object = G_OBJECT_CLASS (nm_device_wimax_parent_class)->constructor (type,
-																		 n_construct_params,
-																		 construct_params);
-	if (!object)
-		return NULL;
+	G_OBJECT_CLASS (nm_device_wimax_parent_class)->constructed (object);
 
 	priv = NM_DEVICE_WIMAX_GET_PRIVATE (object);
 
@@ -552,8 +549,6 @@ constructor (GType type,
 	                  "notify::" NM_DEVICE_STATE,
 	                  G_CALLBACK (state_changed_cb),
 	                  NULL);
-
-	return object;
 }
 
 static void
@@ -586,7 +581,7 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	g_type_class_add_private (wimax_class, sizeof (NMDeviceWimaxPrivate));
 
 	/* virtual methods */
-	object_class->constructor = constructor;
+	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 	device_class->connection_valid = connection_valid;

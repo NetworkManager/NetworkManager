@@ -34,7 +34,13 @@
 
 #define DEBUG 0
 
-G_DEFINE_ABSTRACT_TYPE (NMObject, nm_object, G_TYPE_OBJECT)
+static void nm_object_initable_iface_init (GInitableIface *iface);
+static void nm_object_async_initable_iface_init (GAsyncInitableIface *iface);
+
+G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMObject, nm_object, G_TYPE_OBJECT,
+                                  G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, nm_object_initable_iface_init);
+                                  G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, nm_object_async_initable_iface_init);
+                                  )
 
 #define NM_OBJECT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_OBJECT, NMObjectPrivate))
 
@@ -46,6 +52,8 @@ typedef struct {
 
 	gpointer field;
 } PropertyInfo;
+
+static void reload_complete (NMObject *object);
 
 typedef struct {
 	PropertyInfo pi;
@@ -70,6 +78,10 @@ typedef struct {
 	GSList *notify_props;
 	guint32 notify_id;
 	gboolean inited, disposed;
+
+	GSList *reload_results;
+	guint reload_remaining;
+	GError *reload_error;
 } NMObjectPrivate;
 
 enum {
@@ -96,8 +108,6 @@ constructor (GType type,
 	object = G_OBJECT_CLASS (nm_object_parent_class)->constructor (type,
 																   n_construct_params,
 																   construct_params);
-	if (!object)
-		return NULL;
 
 	priv = NM_OBJECT_GET_PRIVATE (object);
 
@@ -107,14 +117,75 @@ constructor (GType type,
 		return NULL;
 	}
 
-	priv->properties_proxy = dbus_g_proxy_new_for_name (priv->connection,
-														NM_DBUS_SERVICE,
-														priv->path,
-														"org.freedesktop.DBus.Properties");
-
 	_nm_object_cache_add (NM_OBJECT (object));
 
 	return object;
+}
+
+static void
+constructed (GObject *object)
+{
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+
+	if (G_OBJECT_CLASS (nm_object_parent_class)->constructed)
+		G_OBJECT_CLASS (nm_object_parent_class)->constructed (object);
+
+	priv->properties_proxy = dbus_g_proxy_new_for_name (priv->connection,
+	                                                    NM_DBUS_SERVICE,
+	                                                    priv->path,
+	                                                    "org.freedesktop.DBus.Properties");
+}
+
+static gboolean
+init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
+{
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (initable);
+
+	priv->inited = TRUE;
+	return _nm_object_reload_properties (NM_OBJECT (initable), error);
+}
+
+static void
+init_async_got_properties (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	GSimpleAsyncResult *simple = user_data;
+	GError *error = NULL;
+
+	priv->inited = TRUE;
+	if (_nm_object_reload_properties_finish (NM_OBJECT (object), result, &error))
+		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+	else
+		g_simple_async_result_take_error (simple, error);
+
+	g_simple_async_result_complete (simple);
+	g_object_unref (simple);
+}
+
+static void
+init_async (GAsyncInitable *initable, int io_priority,
+            GCancellable *cancellable, GAsyncReadyCallback callback,
+            gpointer user_data)
+{
+	GSimpleAsyncResult *simple;
+
+	simple = g_simple_async_result_new (G_OBJECT (initable), callback, user_data, init_async);
+	_nm_object_reload_properties_async (NM_OBJECT (initable), init_async_got_properties, simple);
+}
+
+static gboolean
+init_finish (GAsyncInitable *initable, GAsyncResult *result, GError **error)
+{
+	GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
+
+	/* This is needed for now because of bug 667375; it can go away
+	 * when we depend on glib >= 2.38
+	 */
+
+	if (g_simple_async_result_propagate_error (simple, error))
+		return FALSE;
+	else
+		return g_simple_async_result_get_op_res_gboolean (simple);
 }
 
 static void
@@ -219,6 +290,7 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 
 	/* virtual methods */
 	object_class->constructor = constructor;
+	object_class->constructed = constructed;
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
@@ -251,6 +323,19 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 							  "DBus Object Path",
 							  NULL,
 							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+}
+
+static void
+nm_object_initable_iface_init (GInitableIface *iface)
+{
+	iface->init = init_sync;
+}
+
+static void
+nm_object_async_initable_iface_init (GAsyncInitableIface *iface)
+{
+	iface->init_async = init_async;
+	iface->init_finish = init_finish;
 }
 
 /**
@@ -352,15 +437,25 @@ static GObject *
 _nm_object_create (GType type, DBusGConnection *connection, const char *path)
 {
 	NMObjectTypeFunc type_func;
+	GObject *object;
+	GError *error = NULL;
 
 	type_func = g_hash_table_lookup (type_funcs, GSIZE_TO_POINTER (type));
 	if (type_func)
 		type = type_func (connection, path);
 
-	return g_object_new (type,
-	                     NM_OBJECT_DBUS_CONNECTION, connection,
-	                     NM_OBJECT_DBUS_PATH, path,
-	                     NULL);
+	object = g_object_new (type,
+	                       NM_OBJECT_DBUS_CONNECTION, connection,
+	                       NM_OBJECT_DBUS_PATH, path,
+	                       NULL);
+	if (!g_initable_init (G_INITABLE (object), NULL, &error)) {
+		g_object_unref (object);
+		object = NULL;
+		g_warning ("Could not create object for %s: %s", path, error->message);
+		g_error_free (error);
+	}
+
+	return object;
 }
 
 typedef void (*NMObjectCreateCallbackFunc) (GObject *, gpointer);
@@ -370,6 +465,33 @@ typedef struct {
 	NMObjectCreateCallbackFunc callback;
 	gpointer user_data;
 } NMObjectTypeAsyncData;
+
+static void
+create_async_complete (GObject *object, NMObjectTypeAsyncData *async_data)
+{
+	async_data->callback (object, async_data->user_data);
+
+	g_free (async_data->path);
+	g_slice_free (NMObjectTypeAsyncData, async_data);
+}
+
+static void
+async_inited (GObject *source, GAsyncResult *result, gpointer user_data)
+{
+	NMObjectTypeAsyncData *async_data = user_data;
+	GObject *object = G_OBJECT (source);
+	GError *error = NULL;
+
+	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (object), result, &error)) {
+		g_warning ("Could not create object for %s: %s",
+		           nm_object_get_path (NM_OBJECT (object)), error->message);
+		g_error_free (error);
+		g_object_unref (object);
+		object = NULL;
+	}
+
+	create_async_complete (object, async_data);
+}
 
 static void
 async_got_type (GType type, gpointer user_data)
@@ -382,13 +504,13 @@ async_got_type (GType type, gpointer user_data)
 		                       NM_OBJECT_DBUS_CONNECTION, async_data->connection,
 		                       NM_OBJECT_DBUS_PATH, async_data->path,
 		                       NULL);
-	} else
-		object = NULL;
+	} else {
+		create_async_complete (NULL, async_data);
+		return;
+	}
 
-	async_data->callback (object, async_data->user_data);
-
-	g_free (async_data->path);
-	g_slice_free (NMObjectTypeAsyncData, async_data);
+	g_async_initable_init_async (G_ASYNC_INITABLE (object), G_PRIORITY_DEFAULT,
+	                             NULL, async_inited, async_data);
 }
 
 static void
@@ -396,6 +518,7 @@ _nm_object_create_async (GType type, DBusGConnection *connection, const char *pa
                          NMObjectCreateCallbackFunc callback, gpointer user_data)
 {
 	NMObjectTypeAsyncFunc type_async_func;
+	NMObjectTypeFunc type_func;
 	NMObjectTypeAsyncData *async_data;
 
 	async_data = g_slice_new (NMObjectTypeAsyncData);
@@ -405,10 +528,16 @@ _nm_object_create_async (GType type, DBusGConnection *connection, const char *pa
 	async_data->user_data = user_data;
 
 	type_async_func = g_hash_table_lookup (type_async_funcs, GSIZE_TO_POINTER (type));
-	if (type_async_func)
+	if (type_async_func) {
 		type_async_func (connection, path, async_got_type, async_data);
-	else
-		async_got_type (type, async_data);
+		return;
+	}
+
+	type_func = g_hash_table_lookup (type_funcs, GSIZE_TO_POINTER (type));
+	if (type_func)
+		type = type_func (connection, path);
+
+	async_got_type (type, async_data);
 }
 
 /* Stolen from dbus-glib */
@@ -449,6 +578,7 @@ object_created (GObject *obj, gpointer user_data)
 {
 	ObjectCreatedData *odata = user_data;
 	NMObject *self = odata->self;
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
 	PropertyInfo *pi = odata->pi;
 
 	/* We assume that on error, the creator_func printed something */
@@ -477,6 +607,9 @@ object_created (GObject *obj, gpointer user_data)
 
 	if (odata->property_name)
 		_nm_object_queue_notify (self, odata->property_name);
+
+	if (priv->reload_results && --priv->reload_remaining == 0)
+		reload_complete (self);
 
 	g_object_unref (self);
 	g_free (odata->objects);
@@ -514,12 +647,14 @@ handle_object_property (NMObject *self, const char *property_name, GValue *value
 		obj = _nm_object_create (pi->object_type, priv->connection, path);
 		object_created (obj, odata);
 		return obj != NULL;
-	} else {
-		_nm_object_create_async (pi->object_type, priv->connection, path,
-		                         object_created, odata);
-		/* Assume success */
-		return TRUE;
 	}
+
+	if (priv->reload_results)
+		priv->reload_remaining++;
+	_nm_object_create_async (pi->object_type, priv->connection, path,
+	                         object_created, odata);
+	/* Assume success */
+	return TRUE;
 }
 
 static gboolean
@@ -532,6 +667,7 @@ handle_object_array_property (NMObject *self, const char *property_name, GValue 
 	GPtrArray **array = pi->field;
 	const char *path;
 	ObjectCreatedData *odata;
+	gboolean add_to_reload = (priv->reload_results != NULL);
 	int i;
 
 	paths = g_value_get_boxed (value);
@@ -554,13 +690,19 @@ handle_object_array_property (NMObject *self, const char *property_name, GValue 
 		obj = G_OBJECT (_nm_object_cache_get (path));
 		if (obj) {
 			object_created (obj, odata);
+			continue;
 		} else if (synchronously) {
 			obj = _nm_object_create (pi->object_type, priv->connection, path);
 			object_created (obj, odata);
-		} else {
-			_nm_object_create_async (pi->object_type, priv->connection, path,
-			                         object_created, odata);
+			continue;
 		}
+
+		if (add_to_reload) {
+			priv->reload_remaining++;
+			add_to_reload = FALSE;
+		}
+		_nm_object_create_async (pi->object_type, priv->connection, path,
+		                         object_created, odata);
 	}
 
 	if (!synchronously) {
@@ -636,8 +778,8 @@ out:
 	g_free (prop_name);
 }
 
-void
-_nm_object_process_properties_changed (NMObject *self, GHashTable *properties)
+static void
+process_properties_changed (NMObject *self, GHashTable *properties)
 {
 	GHashTableIter iter;
 	gpointer name, value;
@@ -652,7 +794,7 @@ properties_changed_proxy (DBusGProxy *proxy,
                           GHashTable *properties,
                           gpointer user_data)
 {
-	_nm_object_process_properties_changed (NM_OBJECT (user_data), properties);
+	process_properties_changed (NM_OBJECT (user_data), properties);
 }
 
 #define HANDLE_TYPE(ucase, lcase, getter) \
@@ -773,8 +915,6 @@ _nm_object_reload_properties (NMObject *object, GError **error)
 	if (!priv->property_interfaces)
 		return TRUE;
 
-	priv->inited = TRUE;
-
 	for (p = priv->property_interfaces; p; p = p->next) {
 		if (!dbus_g_proxy_call (priv->properties_proxy, "GetAll", error,
 		                        G_TYPE_STRING, p->data,
@@ -783,7 +923,7 @@ _nm_object_reload_properties (NMObject *object, GError **error)
 		                        G_TYPE_INVALID))
 			return FALSE;
 
-		_nm_object_process_properties_changed (object, props);
+		process_properties_changed (object, props);
 		g_hash_table_destroy (props);
 	}
 
@@ -803,11 +943,14 @@ _nm_object_ensure_inited (NMObject *object)
 	GError *error = NULL;
 
 	if (!priv->inited) {
-		if (!_nm_object_reload_properties (object, &error)) {
+		if (!g_initable_init (G_INITABLE (object), NULL, &error)) {
 			g_warning ("Could not initialize %s %s: %s",
 			           G_OBJECT_TYPE_NAME (object), priv->path,
 			           error->message);
 			g_error_free (error);
+
+			/* Only warn once */
+			priv->inited = TRUE;
 		}
 	}
 }
@@ -1025,4 +1168,149 @@ _nm_object_reload_pseudo_property (NMObject *object,
 	g_value_take_boxed (&value, temp);
 	handle_object_array_property (object, NULL, &value, &ppi->pi, TRUE);
 	g_value_unset (&value);
+}
+
+static void
+reload_complete (NMObject *object)
+{
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	GSimpleAsyncResult *simple;
+	GSList *results, *iter;
+	GError *error;
+
+	results = priv->reload_results;
+	priv->reload_results = NULL;
+	error = priv->reload_error;
+	priv->reload_error = NULL;
+
+	for (iter = results; iter; iter = iter->next) {
+		simple = results->data;
+
+		if (error)
+			g_simple_async_result_set_from_error (simple, error);
+		else
+			g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+
+		g_simple_async_result_complete (simple);
+		g_object_unref (simple);
+	}
+	g_slist_free (results);
+	g_clear_error (&error);
+}
+
+static void
+reload_got_properties (DBusGProxy *proxy, DBusGProxyCall *call,
+                       gpointer user_data)
+{
+	NMObject *object = user_data;
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	GHashTable *props = NULL;
+	GError *error = NULL;
+
+	if (dbus_g_proxy_end_call (proxy, call, &error,
+	                           DBUS_TYPE_G_MAP_OF_VARIANT, &props,
+	                           G_TYPE_INVALID)) {
+		process_properties_changed (object, props);
+		g_hash_table_destroy (props);
+	} else {
+		if (priv->reload_error)
+			g_error_free (error);
+		else
+			priv->reload_error = error;
+	}
+
+	if (--priv->reload_remaining == 0)
+		reload_complete (object);
+}
+
+static void
+reload_got_pseudo_property (DBusGProxy *proxy, DBusGProxyCall *call,
+                            gpointer user_data)
+{
+	PseudoPropertyInfo *ppi = user_data;
+	NMObject *object = ppi->self;
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	GPtrArray *temp;
+	GValue value = { 0, };
+	GError *error = NULL;
+
+	if (dbus_g_proxy_end_call (proxy, call, &error,
+	                           DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH, &temp,
+	                           G_TYPE_INVALID)) {
+		g_value_init (&value, DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH);
+		g_value_take_boxed (&value, temp);
+		handle_object_array_property (object, NULL, &value, &ppi->pi, FALSE);
+		g_value_unset (&value);
+	} else {
+		if (priv->reload_error)
+			g_error_free (error);
+		else
+			priv->reload_error = error;
+	}
+
+	if (--priv->reload_remaining == 0)
+		reload_complete (object);
+}
+
+void
+_nm_object_reload_properties_async (NMObject *object, GAsyncReadyCallback callback, gpointer user_data)
+{
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	GSimpleAsyncResult *simple;
+	GSList *p;
+
+	simple = g_simple_async_result_new (G_OBJECT (object), callback,
+	                                    user_data, _nm_object_reload_properties_async);
+
+	if (!priv->property_interfaces && !priv->pseudo_properties) {
+		g_simple_async_result_complete_in_idle (simple);
+		return;
+	}
+
+	priv->reload_results = g_slist_prepend (priv->reload_results, simple);
+
+	/* If there was already a reload happening, we don't need to
+	 * re-read the properties again, we just need to wait for the
+	 * existing reload to finish.
+	 */
+	if (priv->reload_results->next)
+		return;
+
+	for (p = priv->property_interfaces; p; p = p->next) {
+		priv->reload_remaining++;
+		dbus_g_proxy_begin_call (priv->properties_proxy, "GetAll",
+		                         reload_got_properties, object, NULL,
+		                         G_TYPE_STRING, p->data,
+		                         G_TYPE_INVALID);
+	}
+
+	if (priv->pseudo_properties) {
+		GHashTableIter iter;
+		gpointer key, value;
+		PseudoPropertyInfo *ppi;
+
+		g_hash_table_iter_init (&iter, priv->pseudo_properties);
+		while (g_hash_table_iter_next (&iter, &key, &value)) {
+			ppi = value;
+			priv->reload_remaining++;
+			dbus_g_proxy_begin_call (ppi->proxy, ppi->get_method,
+			                         reload_got_pseudo_property, ppi, NULL,
+			                         G_TYPE_INVALID);
+		}
+	}
+}
+
+gboolean
+_nm_object_reload_properties_finish (NMObject *object, GAsyncResult *result, GError **error)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (NM_IS_OBJECT (object), FALSE);
+	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (object), _nm_object_reload_properties_async), FALSE);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error))
+		return FALSE;
+
+	return g_simple_async_result_get_op_res_gboolean (simple);
 }

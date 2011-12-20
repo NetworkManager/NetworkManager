@@ -754,18 +754,11 @@ nm_remote_settings_init (NMRemoteSettings *self)
 	priv->pending = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
 }
 
-static GObject *
-constructor (GType type,
-             guint n_construct_params,
-             GObjectConstructParam *construct_params)
+static void
+constructed (GObject *object)
 {
-	GObject *object;
 	NMRemoteSettingsPrivate *priv;
 	GError *error = NULL;
-
-	object = G_OBJECT_CLASS (nm_remote_settings_parent_class)->constructor (type, n_construct_params, construct_params);
-	if (!object)
-		return NULL;
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (object);
 
@@ -847,7 +840,6 @@ constructor (GType type,
 	                         G_TYPE_STRING, NM_DBUS_IFACE_SETTINGS,
 	                         G_TYPE_INVALID);	
 
-	return object;
 }
 
 static void
@@ -937,7 +929,7 @@ nm_remote_settings_class_init (NMRemoteSettingsClass *class)
 	g_type_class_add_private (class, sizeof (NMRemoteSettingsPrivate));
 
 	/* Virtual methods */
-	object_class->constructor = constructor;
+	object_class->constructed = constructed;
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
