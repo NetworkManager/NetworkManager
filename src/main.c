@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2011 Red Hat, Inc.
+ * Copyright (C) 2004 - 2012 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
@@ -25,6 +25,7 @@
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
 #include <getopt.h>
+#include <locale.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -383,6 +384,9 @@ main (int argc, char *argv[])
 		fprintf (stderr, "GModules are not supported on your platform!\n");
 		exit (1);
 	}
+
+	/* Set locale to be able to use environment variables */
+	setlocale (LC_ALL, "");
 
 	bindtextdomain (GETTEXT_PACKAGE, NMLOCALEDIR);
 	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
