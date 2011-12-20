@@ -59,6 +59,7 @@ enum {
 #define NM_SUPPLICANT_INTERFACE_NEW_BSS          "new-bss"
 #define NM_SUPPLICANT_INTERFACE_SCAN_DONE        "scan-done"
 #define NM_SUPPLICANT_INTERFACE_CONNECTION_ERROR "connection-error"
+#define NM_SUPPLICANT_INTERFACE_CREDENTIALS_REQUEST "credentials-request"
 
 struct _NMSupplicantInterface {
 	GObject parent;
@@ -89,6 +90,11 @@ typedef struct {
 	void (*connection_error) (NMSupplicantInterface * iface,
 	                          const char * name,
 	                          const char * message);
+
+	/* 802.1x credentials requested */
+	void (*credentials_request) (NMSupplicantInterface *iface,
+	                             const char *field,
+	                             const char *message);
 } NMSupplicantInterfaceClass;
 
 
@@ -117,5 +123,12 @@ const char *nm_supplicant_interface_state_to_string (guint32 state);
 gboolean nm_supplicant_interface_get_scanning (NMSupplicantInterface *self);
 
 const char *nm_supplicant_interface_get_ifname (NMSupplicantInterface *self);
+
+gboolean nm_supplicant_interface_get_has_credentials_request (NMSupplicantInterface *self);
+
+gboolean nm_supplicant_interface_credentials_reply (NMSupplicantInterface *self,
+                                                    const char *field,
+                                                    const char *value,
+                                                    GError **error);
 
 #endif	/* NM_SUPPLICANT_INTERFACE_H */

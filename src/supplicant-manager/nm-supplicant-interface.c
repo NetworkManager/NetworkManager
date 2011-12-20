@@ -55,11 +55,12 @@ static void wpas_iface_scan_done (DBusGProxy *proxy,
 
 /* Signals */
 enum {
-	STATE,             /* change in the interface's state */
-	REMOVED,           /* interface was removed by the supplicant */
-	NEW_BSS,           /* interface saw a new access point from a scan */
-	SCAN_DONE,         /* wifi scan is complete */
-	CONNECTION_ERROR,  /* an error occurred during a connection request */
+	STATE,               /* change in the interface's state */
+	REMOVED,             /* interface was removed by the supplicant */
+	NEW_BSS,             /* interface saw a new access point from a scan */
+	SCAN_DONE,           /* wifi scan is complete */
+	CONNECTION_ERROR,    /* an error occurred during a connection request */
+	CREDENTIALS_REQUEST, /* 802.1x identity or password requested */
 	LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -79,7 +80,7 @@ typedef struct {
 	NMDBusManager *       dbus_mgr;
 	char *                dev;
 	gboolean              is_wireless;
-	gboolean              has_netreply;  /* Whether querying 802.1x credentials is supported */
+	gboolean              has_credreq;  /* Whether querying 802.1x credentials is supported */
 
 	char *                object_path;
 	guint32               state;
@@ -444,6 +445,33 @@ wpas_iface_get_props (NMSupplicantInterface *self)
 	nm_supplicant_info_set_call (info, call);
 }
 
+gboolean
+nm_supplicant_interface_credentials_reply (NMSupplicantInterface *self,
+                                           const char *field,
+                                           const char *value,
+                                           GError **error)
+{
+	NMSupplicantInterfacePrivate *priv;
+
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), FALSE);
+	g_return_val_if_fail (field != NULL, FALSE);
+	g_return_val_if_fail (value != NULL, FALSE);
+
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	g_return_val_if_fail (priv->has_credreq == TRUE, FALSE);
+
+	/* Need a network block object path */
+	g_return_val_if_fail (priv->net_path, FALSE);
+	return dbus_g_proxy_call_with_timeout (priv->iface_proxy, "NetworkReply",
+	                                       5000,
+	                                       error,
+	                                       DBUS_TYPE_G_OBJECT_PATH, priv->net_path,
+	                                       G_TYPE_STRING, field,
+	                                       G_TYPE_STRING, value,
+	                                       G_TYPE_INVALID);
+}
+
 static void
 wpas_iface_network_request (DBusGProxy *proxy,
                             const char *object_path,
@@ -454,9 +482,12 @@ wpas_iface_network_request (DBusGProxy *proxy,
 	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	g_return_if_fail (priv->has_netreply == TRUE);
-}
+	g_return_if_fail (priv->has_credreq == TRUE);
+	g_return_if_fail (priv->net_path != NULL);
+	g_return_if_fail (g_strcmp0 (object_path, priv->net_path) == 0);
 
+	g_signal_emit (self, signals[CREDENTIALS_REQUEST], 0, field, message);
+}
 
 static void
 iface_check_netreply_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
@@ -473,10 +504,10 @@ iface_check_netreply_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer us
 		 * is supported).  We know it's not supported if we get an
 		 * "UnknownMethod" error.
 		 */
-		priv->has_netreply = TRUE;
+		priv->has_credreq = TRUE;
 
 		nm_log_dbg (LOGD_SUPPLICANT, "Supplicant %s network credentials requests",
-			        priv->has_netreply ? "supports" : "does not support");
+			        priv->has_credreq ? "supports" : "does not support");
 	}
 	g_clear_error (&error);
 }
@@ -1276,6 +1307,15 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, connection_error),
+		              NULL, NULL,
+		              _nm_marshal_VOID__STRING_STRING,
+		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
+
+	signals[CREDENTIALS_REQUEST] =
+		g_signal_new (NM_SUPPLICANT_INTERFACE_CREDENTIALS_REQUEST,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_LAST,
+		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, credentials_request),
 		              NULL, NULL,
 		              _nm_marshal_VOID__STRING_STRING,
 		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
