@@ -100,16 +100,23 @@ static NmcOutputField nmc_fields_dev_list_sections[] = {
 
 /* Available fields for 'dev list' - GENERAL part */
 static NmcOutputField nmc_fields_dev_list_general[] = {
-	{"NAME",       N_("NAME"),        10, NULL, 0},  /* 0 */
-	{"DEVICE",     N_("DEVICE"),      10, NULL, 0},  /* 1 */
-	{"TYPE",       N_("TYPE"),        17, NULL, 0},  /* 2 */
-	{"DRIVER",     N_("DRIVER"),      10, NULL, 0},  /* 3 */
-	{"HWADDR",     N_("HWADDR"),      19, NULL, 0},  /* 4 */
-	{"STATE",      N_("STATE"),       14, NULL, 0},  /* 5 */
-	{NULL,         NULL,               0, NULL, 0}
+	{"NAME",              N_("NAME"),              10, NULL, 0},  /* 0 */
+	{"DEVICE",            N_("DEVICE"),            10, NULL, 0},  /* 1 */
+	{"TYPE",              N_("TYPE"),              17, NULL, 0},  /* 2 */
+	{"VENDOR",            N_("VENDOR"),            20, NULL, 0},  /* 3 */
+	{"PRODUCT",           N_("PRODUCT"),           50, NULL, 0},  /* 4 */
+	{"DRIVER",            N_("DRIVER"),             9, NULL, 0},  /* 5 */
+	{"HWADDR",            N_("HWADDR"),            19, NULL, 0},  /* 6 */
+	{"STATE",             N_("STATE"),             14, NULL, 0},  /* 7 */
+	{"UDI",               N_("UDI"),               64, NULL, 0},  /* 8 */
+	{"IP-IFACE",          N_("IP-IFACE"),          10, NULL, 0},  /* 9 */
+	{"NM-MANAGED",        N_("NM-MANAGED"),        15, NULL, 0},  /* 10 */
+	{"FIRMWARE-MISSING",  N_("FIRMWARE-MISSING"),  18, NULL, 0},  /* 11 */
+	{"CONNECTION",        N_("CONNECTION"),        51, NULL, 0},  /* 12 */
+	{NULL, NULL, 0, NULL, 0}
 };
-#define NMC_FIELDS_DEV_LIST_GENERAL_ALL     "NAME,DEVICE,TYPE,DRIVER,HWADDR,STATE"
-#define NMC_FIELDS_DEV_LIST_GENERAL_COMMON  "NAME,DEVICE,TYPE,DRIVER,HWADDR,STATE"
+#define NMC_FIELDS_DEV_LIST_GENERAL_ALL     "NAME,DEVICE,TYPE,VENDOR,PRODUCT,DRIVER,HWADDR,STATE,UDI,IP-IFACE,NM-MANAGED,FIRMWARE-MISSING,CONNECTION"
+#define NMC_FIELDS_DEV_LIST_GENERAL_COMMON  "NAME,DEVICE,TYPE,VENDOR,PRODUCT,DRIVER,HWADDR,STATE"
 
 /* Available fields for 'dev list' - CAPABILITIES part */
 static NmcOutputField nmc_fields_dev_list_cap[] = {
@@ -580,6 +587,7 @@ show_device_info (gpointer data, gpointer user_data)
 	const char *hwaddr = NULL;
 	NMDeviceState state = NM_DEVICE_STATE_UNKNOWN;
 	NMDeviceCapabilities caps;
+	NMActiveConnection *acon;
 	guint32 speed;
 	char *speed_str = NULL;
 	const GArray *array;
@@ -650,9 +658,17 @@ show_device_info (gpointer data, gpointer user_data)
 			nmc->allowed_fields[0].value = nmc_fields_dev_list_sections[0].name;  /* "GENERAL"*/
 			nmc->allowed_fields[1].value = nm_device_get_iface (device);
 			nmc->allowed_fields[2].value = device_type_to_string (device);
-			nmc->allowed_fields[3].value = nm_device_get_driver (device) ? nm_device_get_driver (device) : _("(unknown)");
-			nmc->allowed_fields[4].value = hwaddr ? hwaddr : _("(unknown)");
-			nmc->allowed_fields[5].value = device_state_to_string (state);
+			nmc->allowed_fields[3].value = nm_device_get_vendor (device);
+			nmc->allowed_fields[4].value = nm_device_get_product (device);
+			nmc->allowed_fields[5].value = nm_device_get_driver (device) ? nm_device_get_driver (device) : _("(unknown)");
+			nmc->allowed_fields[6].value = hwaddr ? hwaddr : _("(unknown)");
+			nmc->allowed_fields[7].value = device_state_to_string (state);
+			nmc->allowed_fields[8].value = nm_device_get_udi (device);
+			nmc->allowed_fields[9].value = nm_device_get_ip_iface (device);
+			nmc->allowed_fields[10].value = nm_device_get_managed (device) ? _("yes") : _("no");
+			nmc->allowed_fields[11].value = nm_device_get_firmware_missing (device) ? _("yes") : _("no");
+			nmc->allowed_fields[12].value = (acon = nm_device_get_active_connection (device)) ?
+			                                   nm_object_get_path (NM_OBJECT (acon)) : _("not connected");
 
 			nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 			print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
