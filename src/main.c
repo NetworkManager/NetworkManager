@@ -140,7 +140,7 @@ setup_signals (void)
 
 	/* Set up our quit pipe */
 	if (pipe (quit_pipe) < 0) {
-		fprintf (stderr, "Failed to initialze SIGTERM pipe: %d", errno);
+		fprintf (stderr, _("Failed to initialze SIGTERM pipe: %d"), errno);
 		exit (1);
 	}
 	fcntl (quit_pipe[1], F_SETFL, O_NONBLOCK | fcntl (quit_pipe[1], F_GETFL));
@@ -171,18 +171,18 @@ write_pidfile (const char *pidfile)
 	gboolean success = FALSE;
  
 	if ((fd = open (pidfile, O_CREAT|O_WRONLY|O_TRUNC, 00644)) < 0) {
-		fprintf (stderr, "Opening %s failed: %s\n", pidfile, strerror (errno));
+		fprintf (stderr, _("Opening %s failed: %s\n"), pidfile, strerror (errno));
 		return FALSE;
 	}
 
  	snprintf (pid, sizeof (pid), "%d", getpid ());
 	if (write (fd, pid, strlen (pid)) < 0)
-		fprintf (stderr, "Writing to %s failed: %s\n", pidfile, strerror (errno));
+		fprintf (stderr, _("Writing to %s failed: %s\n"), pidfile, strerror (errno));
 	else
 		success = TRUE;
 
 	if (close (fd))
-		fprintf (stderr, "Closing %s failed: %s\n", pidfile, strerror (errno));
+		fprintf (stderr, _("Closing %s failed: %s\n"), pidfile, strerror (errno));
 
 	return success;
 }
@@ -225,7 +225,7 @@ check_pidfile (const char *pidfile)
 	if (strcmp (process_name, "NetworkManager") == 0) {
 		/* Check that the process exists */
 		if (kill (pid, 0) == 0) {
-			fprintf (stderr, "NetworkManager is already running (pid %ld)\n", pid);
+			fprintf (stderr, _("NetworkManager is already running (pid %ld)\n"), pid);
 			nm_running = TRUE;
 		}
 	}
@@ -362,26 +362,28 @@ main (int argc, char *argv[])
 	gboolean wrote_pidfile = FALSE;
 
 	GOptionEntry options[] = {
-		{ "version", 0, 0, G_OPTION_ARG_NONE, &show_version, "Print NetworkManager version and exit", NULL },
-		{ "no-daemon", 0, 0, G_OPTION_ARG_NONE, &become_daemon, "Don't become a daemon", NULL },
-		{ "g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &g_fatal_warnings, "Make all warnings fatal", NULL },
-		{ "pid-file", 0, 0, G_OPTION_ARG_FILENAME, &pidfile, "Specify the location of a PID file", "filename" },
-		{ "state-file", 0, 0, G_OPTION_ARG_FILENAME, &state_file, "State file location", "/path/to/state.file" },
-		{ "config", 0, 0, G_OPTION_ARG_FILENAME, &config_path, "Config file location", "/path/to/config.file" },
-		{ "plugins", 0, 0, G_OPTION_ARG_STRING, &plugins, "List of plugins separated by ','", "plugin1,plugin2" },
-		{ "log-level", 0, 0, G_OPTION_ARG_STRING, &log_level, "Log level: one of [ERR, WARN, INFO, DEBUG]", "INFO" },
+		{ "version", 0, 0, G_OPTION_ARG_NONE, &show_version, N_("Print NetworkManager version and exit"), NULL },
+		{ "no-daemon", 0, 0, G_OPTION_ARG_NONE, &become_daemon, N_("Don't become a daemon"), NULL },
+		{ "g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &g_fatal_warnings, N_("Make all warnings fatal"), NULL },
+		{ "pid-file", 0, 0, G_OPTION_ARG_FILENAME, &pidfile, N_("Specify the location of a PID file"), N_("filename") },
+		{ "state-file", 0, 0, G_OPTION_ARG_FILENAME, &state_file, N_("State file location"), N_("/path/to/state.file") },
+		{ "config", 0, 0, G_OPTION_ARG_FILENAME, &config_path, N_("Config file location"), N_("/path/to/config.file") },
+		{ "plugins", 0, 0, G_OPTION_ARG_STRING, &plugins, N_("List of plugins separated by ','"), N_("plugin1,plugin2") },
+		/* Translators: Do not translate the values in the square brackets */
+		{ "log-level", 0, 0, G_OPTION_ARG_STRING, &log_level, N_("Log level: one of [ERR, WARN, INFO, DEBUG]"), "INFO" },
 		{ "log-domains", 0, 0, G_OPTION_ARG_STRING, &log_domains,
-		        "Log domains separated by ',': any combination of\n"
+		        /* Translators: Do not translate the values in the square brackets */
+		        N_("Log domains separated by ',': any combination of\n"
 		        "                                          [NONE,HW,RFKILL,ETHER,WIFI,BT,MB,DHCP4,DHCP6,PPP,\n"
 		        "                                           WIFI_SCAN,IP4,IP6,AUTOIP4,DNS,VPN,SHARING,SUPPLICANT,\n"
 		        "                                           AGENTS,SETTINGS,SUSPEND,CORE,DEVICE,OLPC,WIMAX,\n"
-		        "                                           INFINIBAND,FIREWALL]",
+		        "                                           INFINIBAND,FIREWALL]"),
 		        "HW,RFKILL,WIFI" },
 		{NULL}
 	};
 
 	if (!g_module_supported ()) {
-		fprintf (stderr, "GModules are not supported on your platform!\n");
+		fprintf (stderr, _("GModules are not supported on your platform!\n"));
 		exit (1);
 	}
 
@@ -400,7 +402,7 @@ main (int argc, char *argv[])
 	g_option_context_add_main_entries (opt_ctx, options, NULL);
 
 	g_option_context_set_summary (opt_ctx,
-		"NetworkManager monitors all network connections and automatically\nchooses the best connection to use.  It also allows the user to\nspecify wireless access points which wireless cards in the computer\nshould associate with.");
+		_("NetworkManager monitors all network connections and automatically\nchooses the best connection to use.  It also allows the user to\nspecify wireless access points which wireless cards in the computer\nshould associate with."));
 
 	success = g_option_context_parse (opt_ctx, &argc, &argv, NULL);
 	g_option_context_free (opt_ctx);
@@ -416,7 +418,7 @@ main (int argc, char *argv[])
 	}
 
 	if (getuid () != 0) {
-		fprintf (stderr, "You must be root to run NetworkManager!\n");
+		fprintf (stderr, _("You must be root to run NetworkManager!\n"));
 		exit (1);
 	}
 
@@ -436,9 +438,9 @@ main (int argc, char *argv[])
 	/* Read the config file and CLI overrides */
 	config = nm_config_new (config_path, plugins, log_level, log_domains, &error);
 	if (config == NULL) {
-		fprintf (stderr, "Failed to read configuration: (%d) %s\n",
+		fprintf (stderr, _("Failed to read configuration: (%d) %s\n"),
 		         error ? error->code : -1,
-		         (error && error->message) ? error->message : "unknown");
+		         (error && error->message) ? error->message : _("unknown"));
 		exit (1);
 	}
 
@@ -454,10 +456,10 @@ main (int argc, char *argv[])
 
 	/* Parse the state file */
 	if (!parse_state_file (state_file, &net_enabled, &wifi_enabled, &wwan_enabled, &wimax_enabled, &error)) {
-		fprintf (stderr, "State file %s parsing failed: (%d) %s\n",
+		fprintf (stderr, _("State file %s parsing failed: (%d) %s\n"),
 		         state_file,
 		         error ? error->code : -1,
-		         (error && error->message) ? error->message : "unknown");
+		         (error && error->message) ? error->message : _("unknown"));
 		/* Not a hard failure */
 	}
 	g_clear_error (&error);
@@ -471,7 +473,7 @@ main (int argc, char *argv[])
 			int saved_errno;
 
 			saved_errno = errno;
-			fprintf (stderr, "Could not daemonize: %s [error %u]\n",
+			fprintf (stderr, _("Could not daemonize: %s [error %u]\n"),
 			         g_strerror (saved_errno),
 			         saved_errno);
 			exit (1);
