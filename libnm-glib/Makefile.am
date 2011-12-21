@@ -98,7 +98,6 @@ libnmvpn_HEADERS = \
 libnm_glib_la_csources = \
 	nm-object.c \
 	nm-client.c \
-	nm-dbus-utils.c \
 	nm-device.c \
 	nm-device-ethernet.c \
 	nm-device-infiniband.c \
@@ -122,7 +121,6 @@ libnm_glib_la_csources = \
 
 libnm_glib_la_private_headers = \
 	nm-object-private.h \
-	nm-dbus-utils.h \
 	nm-device-private.h \
 	nm-types-private.h \
 	nm-object-cache.h \
