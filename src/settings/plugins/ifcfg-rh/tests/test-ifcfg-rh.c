@@ -11769,8 +11769,8 @@ test_read_vlan_interface (void)
 	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
-	ASSERT (connection != NULL,
-	        "vlan-interface-read", "unexpected success reading %s", TEST_IFCFG_VLAN_INTERFACE);
+	g_assert_no_error (error);
+	g_assert (connection != NULL);
 
 	g_free (unmanaged);
 	g_free (keyfile);

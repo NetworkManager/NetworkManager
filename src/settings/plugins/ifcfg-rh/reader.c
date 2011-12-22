@@ -142,14 +142,6 @@ make_connection_setting (const char *file,
 	              svTrueValue (ifcfg, "ONBOOT", TRUE),
 	              NULL);
 
-	value = svGetValue (ifcfg, "MASTER", FALSE);
-	if (value) {
-		g_object_set (s_con, NM_SETTING_CONNECTION_MASTER, value, NULL);
-		g_object_set (s_con, NM_SETTING_CONNECTION_SLAVE_TYPE,
-		              NM_SETTING_BOND_SETTING_NAME, NULL);
-		g_free (value);
-	}
-
 	value = svGetValue (ifcfg, "USERS", FALSE);
 	if (value) {
 		char **items, **iter;
@@ -3381,6 +3373,7 @@ wired_connection_from_ifcfg (const char *file,
 	NMSetting *con_setting = NULL;
 	NMSetting *wired_setting = NULL;
 	NMSetting8021x *s_8021x = NULL;
+	char *value;
 
 	g_return_val_if_fail (file != NULL, NULL);
 	g_return_val_if_fail (ifcfg != NULL, NULL);
@@ -3400,6 +3393,16 @@ wired_connection_from_ifcfg (const char *file,
 		return NULL;
 	}
 	nm_connection_add_setting (connection, con_setting);
+
+	/* Might be a bond slave; handle master device or connection */
+	value = svGetValue (ifcfg, "MASTER", FALSE);
+	if (value) {
+		g_object_set (con_setting, NM_SETTING_CONNECTION_MASTER, value, NULL);
+		g_object_set (con_setting,
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BOND_SETTING_NAME,
+		              NULL);
+		g_free (value);
+	}
 
 	wired_setting = make_wired_setting (ifcfg, file, nm_controlled, unmanaged, &s_8021x, error);
 	if (!wired_setting) {
@@ -3709,61 +3712,96 @@ is_bond_device (const char *name, shvarFile *parsed)
 	return FALSE;
 }
 
+static void
+parse_prio_map_list (NMSettingVlan *s_vlan,
+                     shvarFile *ifcfg,
+                     const char *key,
+                     NMVlanPriorityMap map)
+{
+	char *value;
+	gchar **list = NULL, **iter;
+
+	value = svGetValue (ifcfg, key, FALSE);
+	if (!value)
+		return;
+
+	list = g_strsplit_set (value, ",", -1);
+	g_free (value);
+
+	for (iter = list; iter && *iter; iter++) {
+		if (!*iter || !strchr (*iter, ':'))
+			continue;
+
+		if (!nm_setting_vlan_add_priority_str (s_vlan, map, *iter)) {
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid %s priority map item '%s'",
+			             key, *iter);
+		}
+	}
+	g_strfreev (list);
+}
+
 static NMSetting *
 make_vlan_setting (shvarFile *ifcfg,
                    const char *file,
                    gboolean nm_controlled,
+                   char **out_master,
                    char **unmanaged,
                    NMSetting8021x **s_8021x,
                    GError **error)
 {
 	NMSettingVlan *s_vlan = NULL;
 	char *value = NULL;
-	char *interface_name = NULL;
-	char *vlan_slave = NULL;
+	char *iface_name = NULL;
+	char *master = NULL;
 	char *p = NULL;
 	guint32 vlan_id = 0;
 	guint32 vlan_flags = 0;
 
+	iface_name = svGetValue (ifcfg, "DEVICE", FALSE);
+	if (!iface_name) {
+		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0,
+		                     "Missing DEVICE property; cannot determine VLAN ID.");
+		return NULL;
+	}
+
 	s_vlan = NM_SETTING_VLAN (nm_setting_vlan_new ());
 
-	interface_name = svGetValue (ifcfg, "DEVICE", FALSE);
-	if (!interface_name)
-		goto error_return;
-	else
-		g_object_set (s_vlan, NM_SETTING_VLAN_INTERFACE_NAME, interface_name, NULL);
+	g_object_set (s_vlan, NM_SETTING_VLAN_INTERFACE_NAME, iface_name, NULL);
 
-	p = strchr (interface_name, -1, '.');
+	p = strchr (iface_name, '.');
 	if (p) {
-		/*
-		 * eth0.43
-		 * PHYSDEV is assumed from it
-		 */
-		vlan_slave = g_strndup (interface_name, p - interface_name);
+		/* eth0.43; PHYSDEV is assumed from it */
+		master = g_strndup (iface_name, p - iface_name);
 		p++;
 	} else {
-		/*
-		 * vlan43
-		 * PHYSDEV must be set
-		 */
-		p = interface_name + 4;
-		vlan_slave = svGetValue (ifcfg, "PHYSDEV", FALSE);
+		/* format like vlan43; PHYSDEV or MASTER must be set */
+		if (g_str_has_prefix (iface_name, "vlan"))
+			p = iface_name + 4;
+
+		master = svGetValue (ifcfg, "PHYSDEV", FALSE);
+		if (master == NULL)
+			master = svGetValue (ifcfg, "MASTER", FALSE);
+	}
+
+	if (master == NULL) {
+		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0,
+				             "Failed to determine VLAN master from DEVICE, PHYSDEV, or MASTER");
+		goto error;
 	}
 
 	vlan_id = g_ascii_strtoull (p, NULL, 10);
 	if (vlan_id >= 0 && vlan_id < 4096)
 		g_object_set (s_vlan, NM_SETTING_VLAN_ID, vlan_id, NULL);
-	else
-		goto free_interface_name;
-
-	if (vlan_slave) {
-		g_object_set (s_vlan, NM_SETTING_VLAN_SLAVE, vlan_slave, NULL);
-		g_free (vlan_slave);
+	else {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		             "Failed to determine VLAN ID from DEVICE '%s'",
+		             iface_name);
+		goto error;
 	}
 
 	value = svGetValue (ifcfg, "REORDER_HDR", FALSE);
 	if (value)
-		vlan_flags |= NM_VLAN_FLAG_REORDER_HDR;
+		vlan_flags |= NM_VLAN_FLAG_REORDER_HEADERS;
 	g_free (value);
 
 	value = svGetValue (ifcfg, "VLAN_FLAGS", FALSE);
@@ -3775,58 +3813,33 @@ make_vlan_setting (shvarFile *ifcfg,
 	g_object_set (s_vlan, NM_SETTING_VLAN_FLAGS, vlan_flags, NULL);
 	g_free (value);
 
-	value = svGetValue (ifcfg, "VLAN_INGRESS_PRIORITY_MAP", FALSE);
-	if (value) {
-		gchar **list = NULL, **iter;
-		list = g_strsplit_set (value, ",", -1);
-		for (iter = list; iter && *iter; iter++) {
-			if (!g_strrstr (*iter, ":"))
-				continue;
+	parse_prio_map_list (s_vlan, ifcfg, "VLAN_INGRESS_PRIORITY_MAP", NM_VLAN_INGRESS_MAP);
+	parse_prio_map_list (s_vlan, ifcfg, "VLAN_EGRESS_PRIORITY_MAP", NM_VLAN_EGRESS_MAP);
 
-			if (!nm_setting_vlan_add_priority_str (s_vlan, NM_VLAN_INGRESS_MAP, *iter))
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid priority map '%s'", *iter);
-		}
-		g_free (value);
-		g_strfreev (list);
-	}
-
-	value = svGetValue (ifcfg, "VLAN_EGRESS_PRIORITY_MAP", FALSE);
-	if (value) {
-		gchar **list = NULL, **iter;
-		list = g_strsplit_set (value, ",", -1);
-		for (iter = list; iter && *iter; iter++) {
-			if (!g_strrstr (*iter, ":"))
-				continue;
-
-			if (!nm_setting_vlan_add_priority_str (s_vlan, NM_VLAN_EGRESS_MAP, *iter))
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid priority map '%s'", *iter);
-		}
-		g_free (value);
-		g_strfreev (list);
-	}
-
+	if (out_master)
+		*out_master = master;
 	return (NMSetting *) s_vlan;
 
-free_interface_name:
-	g_free (vlan_slave);
-	g_free (interface_name);
-error_return:
+error:
+	g_free (master);
+	g_free (iface_name);
 	g_object_unref (s_vlan);
 	return NULL;
 }
 
 static NMConnection *
 vlan_connection_from_ifcfg (const char *file,
-			     shvarFile *ifcfg,
-			     gboolean nm_controlled,
-			     char **unmanaged,
-			     GError **error)
+                            shvarFile *ifcfg,
+                            gboolean nm_controlled,
+                            char **unmanaged,
+                            GError **error)
 {
 	NMConnection *connection = NULL;
 	NMSetting *con_setting = NULL;
 	NMSetting *wired_setting = NULL;
 	NMSetting *vlan_setting = NULL;
 	NMSetting8021x *s_8021x = NULL;
+	char *master = NULL;
 
 	g_return_val_if_fail (file != NULL, NULL);
 	g_return_val_if_fail (ifcfg != NULL, NULL);
@@ -3847,12 +3860,26 @@ vlan_connection_from_ifcfg (const char *file,
 	}
 	nm_connection_add_setting (connection, con_setting);
 
-	vlan_setting = make_vlan_setting (ifcfg, file, nm_controlled, unmanaged, &s_8021x, error);
+	vlan_setting = make_vlan_setting (ifcfg, file, nm_controlled, &master, unmanaged, &s_8021x, error);
 	if (!vlan_setting) {
 		g_object_unref (connection);
 		return NULL;
 	}
 	nm_connection_add_setting (connection, vlan_setting);
+
+	/* Handle master interface or connection */
+	if (master == NULL) {
+		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0,
+		                     "No master interface or connection UUID specified.");
+		g_object_unref (connection);
+		return NULL;
+	} else {
+		g_object_set (con_setting, NM_SETTING_CONNECTION_MASTER, master, NULL);
+		g_object_set (con_setting,
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_VLAN_SETTING_NAME,
+		              NULL);
+		g_free (master);
+	}
 
 	wired_setting = make_wired_setting (ifcfg, file, nm_controlled, unmanaged, &s_8021x, error);
 	if (!wired_setting) {
