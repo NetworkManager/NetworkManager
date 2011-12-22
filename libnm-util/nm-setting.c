@@ -999,7 +999,8 @@ nm_setting_to_string (NMSetting *setting)
  * Returns the name of the virtual kernel interface which the connection
  * needs to use if specified in the settings.
  *
- * Returns: (transfer full) (element-type utf8): Name of the virtual interface
+ * Returns: Name of the virtual interface or %NULL if the setting does not
+ * support this feature
  **/
 const char *
 nm_setting_get_virtual_iface_name (NMSetting *setting)

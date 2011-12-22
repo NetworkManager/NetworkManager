@@ -2488,8 +2488,8 @@ nm_utils_hwaddr_aton (const char *asc, int type, gpointer buffer)
  * Parses @asc and converts it to binary form in a #GByteArray. See
  * nm_utils_hwaddr_aton() if you don't want a #GByteArray.
  *
- * Return value: a new #GByteArray, or %NULL if @asc couldn't be
- * parsed
+ * Return value: (transfer full): a new #GByteArray, or %NULL if @asc couldn't
+ * be parsed
  */
 GByteArray *
 nm_utils_hwaddr_atoba (const char *asc, int type)
