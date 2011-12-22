@@ -45,12 +45,6 @@
 #include "connection_parser.h"
 #include "nm-ifnet-connection.h"
 
-static const char *
-get_prefix (void)
-{
-	return _("System");
-}
-
 static void
 update_connection_id (NMConnection *connection, const char *conn_name)
 {
@@ -62,11 +56,9 @@ update_connection_id (NMConnection *connection, const char *conn_name)
 
 	name_len = strlen (conn_name);
 	if ((name_len > 2) && (g_str_has_prefix (conn_name, "0x"))) {
-		gchar * conn_name_printable = utils_hexstr2bin (conn_name + 2, name_len - 2);
-		idstr = g_strdup_printf ("%s (%s)", get_prefix (), conn_name_printable);
-		g_free (conn_name_printable);
+		idstr = utils_hexstr2bin (conn_name + 2, name_len - 2);
 	} else
-		idstr = g_strdup_printf ("%s (%s)", get_prefix (), conn_name);
+		idstr = g_strdup_printf ("%s", conn_name);
 	uuid_base = idstr;
 	uuid = nm_utils_uuid_generate_from_string (uuid_base);
 	setting = nm_connection_get_setting_connection (connection);
