@@ -3799,10 +3799,8 @@ make_vlan_setting (shvarFile *ifcfg,
 		goto error;
 	}
 
-	value = svGetValue (ifcfg, "REORDER_HDR", FALSE);
-	if (value)
+	if (svTrueValue (ifcfg, "REORDER_HDR", FALSE))
 		vlan_flags |= NM_VLAN_FLAG_REORDER_HEADERS;
-	g_free (value);
 
 	value = svGetValue (ifcfg, "VLAN_FLAGS", FALSE);
 	if (g_strstr_len (value, -1, "GVRP"))
