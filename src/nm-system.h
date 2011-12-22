@@ -103,7 +103,9 @@ enum {
 
 int             nm_system_get_iface_type      (int ifindex, const char *name);
 
-gboolean		nm_system_add_vlan_device (NMSettingVlan *setting);
-gboolean		nm_system_del_vlan_device (NMSettingVlan *setting);
+gboolean        nm_system_add_vlan_iface (NMConnection *connection,
+                                          const char *iface,
+                                          int master_ifindex);
+gboolean        nm_system_del_vlan_iface (const char *iface);
 
 #endif

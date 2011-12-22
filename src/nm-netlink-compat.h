@@ -243,6 +243,55 @@ rtnl_link_bond_release_ifindex (struct nl_sock *h, int slave_ifidx)
 	/* Bonding only in libnl3 */
 	return -NLE_OPNOTSUPP;
 }
+
+static inline int
+rtnl_link_vlan_set_id (struct rtnl_link *l, int id)
+{
+	/* VLAN only in libnl3 */
+	return -NLE_OPNOTSUPP;
+}
+
+static inline int
+rtnl_link_vlan_set_flags (struct rtnl_link *l, unsigned int flags)
+{
+	/* VLAN only in libnl3 */
+	return -NLE_OPNOTSUPP;
+}
+
+static inline int
+rtnl_link_vlan_set_ingress_map (struct rtnl_link *l, int from, uint32_t to)
+{
+	/* VLAN only in libnl3 */
+	return -NLE_OPNOTSUPP;
+}
+
+static inline int
+rtnl_link_vlan_set_egress_map (struct rtnl_link *l, int from, uint32_t to)
+{
+	/* VLAN only in libnl3 */
+	return -NLE_OPNOTSUPP;
+}
+
+static inline int
+rtnl_link_set_type (struct rtnl_link *l, const char *type)
+{
+	/* Operation only in libnl3 */
+	return -NLE_OPNOTSUPP;
+}
+
+static inline int
+rtnl_link_add (struct nl_sock *sk, struct rtnl_link *l, int flags)
+{
+	/* Operation only in libnl3 */
+	return -NLE_OPNOTSUPP;
+}
+
+static inline int
+rtnl_link_delete(struct nl_sock *sk, const struct rtnl_link *l)
+{
+	/* Operation only in libnl3 */
+	return -NLE_OPNOTSUPP;
+}
 #endif  /* HAVE_LIBNL1 || HAVE_LIBNL2 */
 
 #endif /* NM_NETLINK_COMPAT_H */
