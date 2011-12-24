@@ -183,8 +183,16 @@ NetworkManager_SOURCES = \
 		nm-dhcp6-config.c \
 		nm-dhcp6-config.h \
 		nm-rfkill.h \
-		nm-session-monitor.c \
 		nm-session-monitor.h
+
+if WITH_SYSTEMD
+NetworkManager_SOURCES += \
+		nm-session-monitor-systemd.c
+
+else
+NetworkManager_SOURCES += \
+		nm-session-monitor.c
+endif
 
 nm-access-point-glue.h: $(top_srcdir)/introspection/nm-access-point.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_access_point --mode=glib-server --output=$@ $<
@@ -251,6 +259,7 @@ NetworkManager_CPPFLAGS = \
 	$(LIBNL_CFLAGS) \
 	$(GMODULE_CFLAGS) \
 	$(POLKIT_CFLAGS) \
+	$(SYSTEMD_CFLAGS) \
 	-DG_DISABLE_DEPRECATED \
 	-DBINDIR=\"$(bindir)\" \
 	-DSBINDIR=\"$(sbindir)\" \
@@ -285,6 +294,7 @@ NetworkManager_LDADD = \
 	$(LIBNL_LIBS) \
 	$(GMODULE_LIBS) \
 	$(POLKIT_LIBS) \
+	$(SYSTEMD_LIBS) \
 	$(LIBM) \
 	$(LIBDL)
 

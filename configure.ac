@@ -322,6 +322,8 @@ if test "x$with_systemdsystemunitdir" != xno; then
 fi
 AM_CONDITIONAL(HAVE_SYSTEMD, [test -n "$with_systemdsystemunitdir" -a "x$with_systemdsystemunitdir" != xno ])
 
+SESSION_TRACKING=none
+
 dnl
 dnl Disable ConsoleKit support
 dnl
@@ -332,9 +334,25 @@ if test x"$with_ck" = x"no"; then
 	no_ck="1"
 else
 	with_ck="yes"
+        SESSION_TRACKING=ConsoleKit
 fi
 AC_DEFINE_UNQUOTED(NO_CONSOLEKIT, $no_ck, [Define to disable use of ConsoleKit])
 
+# systemd session tracking
+AC_ARG_ENABLE([systemd],
+              AS_HELP_STRING([--enable-systemd], [Use systemd for session tracking]),
+              [with_systemd=$enableval],
+              [with_systemd=no])
+if test "$with_systemd" = "yes" ; then
+  PKG_CHECK_MODULES(SYSTEMD, [libsystemd-login])
+  SESSION_TRACKING=systemd
+fi
+
+AC_SUBST(SYSTEMD_CFLAGS)
+AC_SUBST(SYSTEMD_LIBS)
+
+
+AM_CONDITIONAL(WITH_SYSTEMD, [test "$with_systemd" = "yes"], [Using systemd])
 have_libnl="no"
 PKG_CHECK_MODULES(LIBNL3, libnl-3.0, [have_libnl3=yes], [have_libnl3=no])
 PKG_CHECK_MODULES(LIBNL_ROUTE3, libnl-route-3.0, [have_libnl_route3=yes], [have_libnl_route3=no])
@@ -777,9 +795,9 @@ else
 fi
 
 if test -n "${with_systemdsystemunitdir}"; then
-	echo systemd support: ${with_systemdsystemunitdir}
+	echo systemd unit support: ${with_systemdsystemunitdir}
 else
-	echo systemd support: no
+	echo systemd unit support: no
 fi
 
 if test "${enable_polkit}" = "yes"; then
@@ -788,11 +806,7 @@ else
 	echo PolicyKit support: no
 fi
 
-if test -n "${with_ck}"; then
-	echo ConsoleKit support: ${with_ck}
-else
-	echo ConsoleKit support: no
-fi
+        echo Session tracking: ${SESSION_TRACKING}
 
 if test "${enable_wimax}" = "yes"; then
 	echo WiMAX support: yes
