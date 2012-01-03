@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2011 Red Hat, Inc.
+ * (C) Copyright 2010 - 2012 Red Hat, Inc.
  */
 
 /* Generated configuration file */
@@ -96,6 +96,20 @@ nmc_string_screen_width (const char *start, const char *end)
 	return width;
 }
 
+void
+set_val_str (NmcOutputField fields_array[], guint32 idx, const char *value)
+{
+	fields_array[idx].flags = 0;
+	fields_array[idx].value = value;
+}
+
+void
+set_val_arr (NmcOutputField fields_array[], guint32 idx, const char **value)
+{
+	fields_array[idx].flags = NMC_OF_FLAG_ARRAY;
+	fields_array[idx].value = value;
+}
+
 /*
  * Parse comma separated fields in 'fields_str' according to 'fields_array'.
  * IN:  'field_str':    comma-separated fields names
@@ -172,9 +186,8 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 	int table_width = 0;
 	char *line = NULL;
 	char *indent_str;
-	const char *value;
 	const char *not_set_str = _("not set");
-	int i, idx;
+	int i;
 	gboolean multiline = fields.flags & NMC_PF_FLAG_MULTILINE;
 	gboolean terse = fields.flags & NMC_PF_FLAG_TERSE;
 	gboolean pretty = fields.flags & NMC_PF_FLAG_PRETTY;
@@ -213,14 +226,39 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 		if (!main_header_only && !field_names) {
 			for (i = 0; i < fields.indices->len; i++) {
 				char *tmp;
-				idx = g_array_index (fields.indices, int, i);
+				int idx = g_array_index (fields.indices, int, i);
+				guint32 value_is_array = field_values[idx].flags & NMC_OF_FLAG_ARRAY;
+
+				/* section prefix can't be an array */
+				g_assert (!value_is_array || !section_prefix || idx != 0);
+
 				if (section_prefix && idx == 0)  /* The first field is section prefix */
 					continue;
-				tmp = g_strdup_printf ("%s%s%s:", section_prefix ? field_values[0].value : "",
-				                                  section_prefix ? "." : "",
-				                                  _(field_values[idx].name_l10n));
-				printf ("%-*s%s\n", terse ? 0 : ML_VALUE_INDENT, tmp, field_values[idx].value ? field_values[idx].value : not_set_str);
-				g_free (tmp);
+
+				if (value_is_array) {
+					/* value is a null-terminated string array */
+					const char **p;
+					int j;
+
+					for (p = (const char **) field_values[idx].value, j = 1; p && *p; p++, j++) {
+						tmp = g_strdup_printf ("%s%s%s[%d]:", section_prefix ? (const char*) field_values[0].value : "",
+						                                      section_prefix ? "." : "",
+						                                      _(field_values[idx].name_l10n),
+						                                      j);
+						printf ("%-*s%s\n", terse ? 0 : ML_VALUE_INDENT, tmp, *p ? *p : not_set_str);
+						g_free (tmp);
+					}
+				} else {
+					/* value is a string */
+					const char *hdr_name = (const char*) field_values[0].value;
+					const char *val = (const char*) field_values[idx].value;
+
+					tmp = g_strdup_printf ("%s%s%s:", section_prefix ? hdr_name : "",
+					                                  section_prefix ? "." : "",
+					                                  _(field_values[idx].name_l10n));
+					printf ("%-*s%s\n", terse ? 0 : ML_VALUE_INDENT, tmp, val ? val : not_set_str);
+					g_free (tmp);
+				}
 			}
 			if (pretty) {
 				line = g_strnfill (ML_HEADER_WIDTH, '-');
@@ -235,11 +273,16 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 	str = g_string_new (NULL);
 
 	for (i = 0; i < fields.indices->len; i++) {
-		idx = g_array_index (fields.indices, int, i);
+		int idx = g_array_index (fields.indices, int, i);
+		guint32 value_is_array = field_values[idx].flags & NMC_OF_FLAG_ARRAY;
+		char *value;
 		if (field_names)
 			value = _(field_values[idx].name_l10n);
 		else
-			value = field_values[idx].value ? field_values[idx].value : not_set_str;
+			value = field_values[idx].value ?
+			        (value_is_array ? g_strjoinv (" | ", (char **) field_values[idx].value) : (char *) field_values[idx].value) :
+			        (char *) not_set_str;
+
 		if (terse) {
 			if (escape) {
 				const char *p = value;
@@ -250,18 +293,19 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 					p++;
 				}
 			}
-			else 
+			else
 				g_string_append_printf (str, "%s", value);
 			g_string_append_c (str, ':');  /* Column separator */
 		} else {
 			width1 = strlen (value);
 			width2 = nmc_string_screen_width (value, NULL);  /* Width of the string (in screen colums) */
-			if (strlen (value) == 0)
-				value = "--";
-			g_string_append_printf (str, "%-*s", field_values[idx].width + width1 - width2, value);
+			g_string_append_printf (str, "%-*s", field_values[idx].width + width1 - width2, strlen (value) > 0 ? value : "--");
 			g_string_append_c (str, ' ');  /* Column separator */
 			table_width += field_values[idx].width + width1 - width2 + 1;
 		}
+
+		if (value_is_array && field_values[idx].value)
+			g_free (value);
 	}
 
 	/* Print the main table header */

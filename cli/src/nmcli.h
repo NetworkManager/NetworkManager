@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2011 Red Hat, Inc.
+ * (C) Copyright 2010 - 2012 Red Hat, Inc.
  */
 
 #ifndef NMC_NMCLI_H
@@ -62,23 +62,26 @@ typedef enum {
 } NMCPrintOutput;
 
 /* === Output fields === */
+/* Flags for NmcOutputField */
+#define NMC_OF_FLAG_ARRAY              0x00000001   /* 'value' is an NULL-terminated array rather then a single string */
+
 typedef struct {
 	const char *name;       /* Field's name */
 	const char *name_l10n;  /* Field's name for translation */
 	int width;              /* Width in screen columns */
-	const char *value;      /* Value of current field */
+	const void *value;      /* Value of current field - char* or char** */
 	guint32 flags;          /* Flags */
 } NmcOutputField;
 
 /* Flags for NmcPrintFields */
-#define	NMC_PF_FLAG_MULTILINE          0x00000001   /* Multiline output instead of tabular */
-#define	NMC_PF_FLAG_TERSE              0x00000002   /* Terse output mode */
-#define	NMC_PF_FLAG_PRETTY             0x00000004   /* Pretty output mode */
-#define	NMC_PF_FLAG_MAIN_HEADER_ADD    0x00000008   /* Print main header in addition to values/field names */
-#define	NMC_PF_FLAG_MAIN_HEADER_ONLY   0x00000010   /* Print main header only */
-#define	NMC_PF_FLAG_FIELD_NAMES        0x00000020   /* Print field names instead of values */
-#define	NMC_PF_FLAG_ESCAPE             0x00000040   /* Escape column separator and '\' */
-#define	NMC_PF_FLAG_SECTION_PREFIX     0x00000080   /* Use the first value as section prefix for the other field names - just in multiline */
+#define NMC_PF_FLAG_MULTILINE          0x00000001   /* Multiline output instead of tabular */
+#define NMC_PF_FLAG_TERSE              0x00000002   /* Terse output mode */
+#define NMC_PF_FLAG_PRETTY             0x00000004   /* Pretty output mode */
+#define NMC_PF_FLAG_MAIN_HEADER_ADD    0x00000008   /* Print main header in addition to values/field names */
+#define NMC_PF_FLAG_MAIN_HEADER_ONLY   0x00000010   /* Print main header only */
+#define NMC_PF_FLAG_FIELD_NAMES        0x00000020   /* Print field names instead of values */
+#define NMC_PF_FLAG_ESCAPE             0x00000040   /* Escape column separator and '\' */
+#define NMC_PF_FLAG_SECTION_PREFIX     0x00000080   /* Use the first value as section prefix for the other field names - just in multiline */
 
 typedef struct {
 	GArray *indices;      /* Array of field indices to the array of allowed fields */
