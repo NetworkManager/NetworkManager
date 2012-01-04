@@ -323,11 +323,11 @@ _nm_ip6_address_array_copy (GPtrArray *src)
 	dest = g_ptr_array_sized_new (src->len);
 	for (i = 0; i < src->len; i++) {
 		struct in6_addr *addr = g_ptr_array_index (src, i);
-		struct in6_addr *dup;
+		struct in6_addr *copy;
 
-		dup = g_malloc0 (sizeof (struct in6_addr));
-		memcpy (dup, addr, sizeof (struct in6_addr));
-		g_ptr_array_add (dest, dup);
+		copy = g_malloc0 (sizeof (struct in6_addr));
+		memcpy (copy, addr, sizeof (struct in6_addr));
+		g_ptr_array_add (dest, copy);
 	}
 	return dest;
 }

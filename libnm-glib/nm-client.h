@@ -156,7 +156,7 @@ const char *nm_client_get_version        (NMClient *client);
 NMState   nm_client_get_state            (NMClient *client);
 gboolean  nm_client_get_manager_running  (NMClient *client);
 const GPtrArray *nm_client_get_active_connections (NMClient *client);
-void      nm_client_sleep                (NMClient *client, gboolean sleep);
+void      nm_client_sleep                (NMClient *client, gboolean sleep_);
 
 NMClientPermissionResult nm_client_get_permission_result (NMClient *client,
                                                           NMClientPermission permission);

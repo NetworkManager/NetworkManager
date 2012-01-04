@@ -1160,14 +1160,14 @@ nm_client_networking_set_enabled (NMClient *client, gboolean enable)
 /**
  * nm_client_sleep:
  * @client: a #NMClient
- * @sleep: %TRUE to put the daemon to sleep
+ * @sleep_: %TRUE to put the daemon to sleep
  *
  * Deprecated; use nm_client_networking_set_enabled() instead.
  **/
 void
-nm_client_sleep (NMClient *client, gboolean sleep)
+nm_client_sleep (NMClient *client, gboolean sleep_)
 {
-	nm_client_networking_set_enabled (client, !sleep);
+	nm_client_networking_set_enabled (client, !sleep_);
 }
 
 /**
