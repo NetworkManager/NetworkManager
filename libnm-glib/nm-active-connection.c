@@ -371,6 +371,9 @@ get_property (GObject *object,
 	case PROP_CONNECTION:
 		g_value_set_string (value, nm_active_connection_get_connection (self));
 		break;
+	case PROP_UUID:
+		g_value_set_string (value, nm_active_connection_get_uuid (self));
+		break;
 	case PROP_SPECIFIC_OBJECT:
 		g_value_set_boxed (value, nm_active_connection_get_specific_object (self));
 		break;
@@ -479,6 +482,19 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 		 g_param_spec_string (NM_ACTIVE_CONNECTION_CONNECTION,
 						      "Connection",
 						      "Connection",
+						      NULL,
+						      G_PARAM_READABLE));
+
+	/**
+	 * NMActiveConnection:uuid:
+	 *
+	 * The active connection's UUID
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_UUID,
+		 g_param_spec_string (NM_ACTIVE_CONNECTION_UUID,
+						      "UUID",
+						      "UUID",
 						      NULL,
 						      G_PARAM_READABLE));
 
