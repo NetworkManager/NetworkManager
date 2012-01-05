@@ -18,7 +18,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2011 Red Hat, Inc.
+ * (C) Copyright 2007 - 2012 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -779,7 +779,7 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
-	 * NMSettinVPN:user-name:
+	 * NMSettingVPN:user-name:
 	 *
 	 * If the VPN connection requires a user name for authentication, that name
 	 * should be provided here.  If the connection is available to more than
