@@ -24,10 +24,6 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
 #include <glib.h>
 #include <glib/gi18n.h>
 
@@ -386,46 +382,6 @@ ap_wpa_rsn_flags_to_string (NM80211ApSecurityFlags flags)
 		 g_free (flags_str[i++]);
 
 	return ret_str;
-}
-
-static gchar *
-ip4_address_as_string (guint32 ip)
-{
-	struct in_addr tmp_addr;
-	char buf[INET_ADDRSTRLEN+1];
-
-	memset (&buf, '\0', sizeof (buf));
-	tmp_addr.s_addr = ip;
-
-	if (inet_ntop (AF_INET, &tmp_addr, buf, INET_ADDRSTRLEN)) {
-		return g_strdup (buf);
-	} else {
-		g_warning (_("%s: error converting IP4 address 0x%X"),
-		            __func__, ntohl (tmp_addr.s_addr));
-		return NULL;
-	}
-}
-
-static gchar *
-ip6_address_as_string (const struct in6_addr *ip)
-{
-	char buf[INET6_ADDRSTRLEN];
-
-	memset (&buf, '\0', sizeof (buf));
-
-	if (inet_ntop (AF_INET6, ip, buf, INET6_ADDRSTRLEN)) {
-		return g_strdup (buf);
-	} else {
-		int j;
-		GString *ip6_str = g_string_new (NULL);
-		g_string_append_printf (ip6_str, "%02X", ip->s6_addr[0]);
-		for (j = 1; j < 16; j++)
-			g_string_append_printf (ip6_str, " %02X", ip->s6_addr[j]);
-		g_warning ("%s: error converting IP6 address %s",
-		           __func__, ip6_str->str);
-		g_string_free (ip6_str, TRUE);
-		return NULL;
-	}
 }
 
 typedef struct {
@@ -879,9 +835,9 @@ show_device_info (gpointer data, gpointer user_data)
 					guint32 prefix;
 					char *ip_str, *gw_str;
 
-					ip_str = ip4_address_as_string (nm_ip4_address_get_address (addr));
+					ip_str = nmc_ip4_address_as_string (nm_ip4_address_get_address (addr), NULL);
 					prefix = nm_ip4_address_get_prefix (addr);
-					gw_str = ip4_address_as_string (nm_ip4_address_get_gateway (addr));
+					gw_str = nmc_ip4_address_as_string (nm_ip4_address_get_gateway (addr), NULL);
 
 					addr_arr[j++] = g_strdup_printf ("ip = %s/%u, gw = %s", ip_str, prefix, gw_str);
 					g_free (ip_str);
@@ -898,8 +854,8 @@ show_device_info (gpointer data, gpointer user_data)
 					guint32 prefix, metric;
 					char *dest_str, *nexthop_str;
 
-					dest_str = ip4_address_as_string (nm_ip4_route_get_dest (route));
-					nexthop_str = ip4_address_as_string (nm_ip4_route_get_next_hop (route));
+					dest_str = nmc_ip4_address_as_string (nm_ip4_route_get_dest (route), NULL);
+					nexthop_str = nmc_ip4_address_as_string (nm_ip4_route_get_next_hop (route), NULL);
 					prefix = nm_ip4_route_get_prefix (route);
 					metric = nm_ip4_route_get_metric (route);
 
@@ -914,7 +870,7 @@ show_device_info (gpointer data, gpointer user_data)
 				if (array) {
 					dns_arr = g_new (char *, array->len + 1);
 					for (j = 0; j < array->len; j++)
-						dns_arr[j] = ip4_address_as_string (g_array_index (array, guint32, j));
+						dns_arr[j] = nmc_ip4_address_as_string (g_array_index (array, guint32, j), NULL);
 
 					dns_arr[j] = NULL;
 				}
@@ -934,7 +890,7 @@ show_device_info (gpointer data, gpointer user_data)
 				if (array) {
 					wins_arr = g_new (char *, array->len + 1);
 					for (j = 0; j < array->len; j++)
-						wins_arr[j] = ip4_address_as_string (g_array_index (array, guint32, j));
+						wins_arr[j] = nmc_ip4_address_as_string (g_array_index (array, guint32, j), NULL);
 
 					wins_arr[j] = NULL;
 				}
@@ -1013,9 +969,9 @@ show_device_info (gpointer data, gpointer user_data)
 					guint32 prefix;
 					char *ip_str, *gw_str;
 
-					ip_str = ip6_address_as_string (nm_ip6_address_get_address (addr));
+					ip_str = nmc_ip6_address_as_string (nm_ip6_address_get_address (addr), NULL);
 					prefix = nm_ip6_address_get_prefix (addr);
-					gw_str = ip6_address_as_string (nm_ip6_address_get_gateway (addr));
+					gw_str = nmc_ip6_address_as_string (nm_ip6_address_get_gateway (addr), NULL);
 
 					addr_arr[j++] = g_strdup_printf ("ip = %s/%u, gw = %s", ip_str, prefix, gw_str);
 					g_free (ip_str);
@@ -1032,8 +988,8 @@ show_device_info (gpointer data, gpointer user_data)
 					guint32 prefix, metric;
 					char *dest_str, *nexthop_str;
 
-					dest_str = ip6_address_as_string (nm_ip6_route_get_dest (route));
-					nexthop_str = ip6_address_as_string (nm_ip6_route_get_next_hop (route));
+					dest_str = nmc_ip6_address_as_string (nm_ip6_route_get_dest (route), NULL);
+					nexthop_str = nmc_ip6_address_as_string (nm_ip6_route_get_next_hop (route), NULL);
 					prefix = nm_ip6_route_get_prefix (route);
 					metric = nm_ip6_route_get_metric (route);
 
@@ -1048,7 +1004,7 @@ show_device_info (gpointer data, gpointer user_data)
 				dns_arr = g_new (char *, g_slist_length (list) + 1);
 				j = 0;
 				for (iter = list; iter; iter = g_slist_next (iter))
-					dns_arr[j++] = ip6_address_as_string (iter->data);
+					dns_arr[j++] = nmc_ip6_address_as_string (iter->data, NULL);
 
 				dns_arr[j] = NULL;
 

@@ -23,6 +23,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 #include <glib.h>
 #include <glib/gi18n.h>
 #include <dbus/dbus-glib-bindings.h>
@@ -76,6 +80,60 @@ ssid_to_printable (const char *str, gsize len)
 	}
 	printable_str = g_string_free (printable, FALSE);
 	return printable_str;
+}
+
+/*
+ * Converts IPv4 address from guint32 in network-byte order to text representation.
+ * Returns: text form of the IP or NULL (then error is set)
+ */
+char *
+nmc_ip4_address_as_string (guint32 ip, GError **error)
+{
+	struct in_addr tmp_addr;
+	char buf[INET_ADDRSTRLEN];
+
+	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+	memset (&buf, '\0', sizeof (buf));
+	tmp_addr.s_addr = ip;
+
+	if (inet_ntop (AF_INET, &tmp_addr, buf, INET_ADDRSTRLEN)) {
+		return g_strdup (buf);
+	} else {
+		g_set_error (error, 0, 0, _("Error converting IP4 address '0x%X' to text form"),
+		             ntohl (tmp_addr.s_addr));
+		return NULL;
+	}
+}
+
+/*
+ * Converts IPv6 address in in6_addr structure to text representation.
+ * Returns: text form of the IP or NULL (then error is set)
+ */
+char *
+nmc_ip6_address_as_string (const struct in6_addr *ip, GError **error)
+{
+	char buf[INET6_ADDRSTRLEN];
+
+	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+	memset (&buf, '\0', sizeof (buf));
+
+	if (inet_ntop (AF_INET6, ip, buf, INET6_ADDRSTRLEN)) {
+		return g_strdup (buf);
+	} else {
+		if (error) {
+			int j;
+			GString *ip6_str = g_string_new (NULL);
+			g_string_append_printf (ip6_str, "%02X", ip->s6_addr[0]);
+			for (j = 1; j < 16; j++)
+				g_string_append_printf (ip6_str, " %02X", ip->s6_addr[j]);
+			g_set_error (error, 0, 0, _("Error converting IP6 address '%s' to text form"),
+			             ip6_str->str);
+			g_string_free (ip6_str, TRUE);
+		}
+		return NULL;
+	}
 }
 
 /*
