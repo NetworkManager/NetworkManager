@@ -98,6 +98,10 @@ nm_vpn_connection_get_banner (NMVPNConnection *vpn)
 	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn), NULL);
 
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn);
+
+	/* We need to update vpn_state first in case it's unknown. */
+	nm_vpn_connection_get_vpn_state (vpn);
+
 	if (priv->vpn_state != NM_VPN_CONNECTION_STATE_ACTIVATED)
 		return NULL;
 
