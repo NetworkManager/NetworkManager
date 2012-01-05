@@ -365,6 +365,8 @@ global:
 	nm_setting_vpn_foreach_data_item;
 	nm_setting_vpn_foreach_secret;
 	nm_setting_vpn_get_data_item;
+	nm_setting_vpn_get_num_data_items;
+	nm_setting_vpn_get_num_secrets;
 	nm_setting_vpn_get_secret;
 	nm_setting_vpn_get_service_type;
 	nm_setting_vpn_get_type;

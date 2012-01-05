@@ -174,6 +174,20 @@ nm_setting_vpn_get_user_name (NMSettingVPN *setting)
 }
 
 /**
+ * nm_setting_vpn_get_num_data_items:
+ * @setting: the #NMSettingVPN
+ *
+ * Gets number of key/value pairs of VPN configuration data.
+ **/
+guint32
+nm_setting_vpn_get_num_data_items (NMSettingVPN *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), 0);
+
+	return g_hash_table_size (NM_SETTING_VPN_GET_PRIVATE (setting)->data);
+}
+
+/**
  * nm_setting_vpn_add_data_item:
  * @setting: the #NMSettingVPN
  * @key: a name that uniquely identifies the given value @item
@@ -281,6 +295,20 @@ nm_setting_vpn_foreach_data_item (NMSettingVPN *setting,
 	g_return_if_fail (NM_IS_SETTING_VPN (setting));
 
 	foreach_item_helper (NM_SETTING_VPN_GET_PRIVATE (setting)->data, func, user_data);
+}
+
+/**
+ * nm_setting_vpn_get_num_secrets:
+ * @setting: the #NMSettingVPN
+ *
+ * Gets number of VPN plugin specific secrets in the setting.
+ **/
+guint32
+nm_setting_vpn_get_num_secrets (NMSettingVPN *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), 0);
+
+	return g_hash_table_size (NM_SETTING_VPN_GET_PRIVATE (setting)->secrets);
 }
 
 /**

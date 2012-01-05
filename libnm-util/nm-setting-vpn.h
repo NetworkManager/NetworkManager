@@ -92,6 +92,7 @@ NMSetting        *nm_setting_vpn_new               (void);
 const char       *nm_setting_vpn_get_service_type  (NMSettingVPN *setting);
 const char       *nm_setting_vpn_get_user_name     (NMSettingVPN *setting);
 
+guint32           nm_setting_vpn_get_num_data_items (NMSettingVPN *setting);
 void              nm_setting_vpn_add_data_item     (NMSettingVPN *setting,
                                                     const char *key,
                                                     const char *item);
@@ -103,6 +104,7 @@ void              nm_setting_vpn_foreach_data_item (NMSettingVPN *setting,
                                                     NMVPNIterFunc func,
                                                     gpointer user_data);
 
+guint32           nm_setting_vpn_get_num_secrets   (NMSettingVPN *setting);
 void              nm_setting_vpn_add_secret        (NMSettingVPN *setting,
                                                     const char *key,
                                                     const char *secret);
