@@ -172,9 +172,9 @@ nm_string_array_get_type (void)
 gboolean
 _nm_string_array_demarshal (GValue *value, GPtrArray **dest)
 {
-	GPtrArray *array;
+	char **array;
 
-	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_ARRAY_OF_STRING))
+	if (!G_VALUE_HOLDS (value, G_TYPE_STRV))
 		return FALSE;
 
 	if (*dest) {
@@ -182,13 +182,13 @@ _nm_string_array_demarshal (GValue *value, GPtrArray **dest)
 		*dest = NULL;
 	}
 
-	array = (GPtrArray *) g_value_get_boxed (value);
-	if (array && array->len) {
+	array = (char **) g_value_get_boxed (value);
+	if (array && array[0]) {
 		int i;
 
-		*dest = g_ptr_array_sized_new (array->len);
-		for (i = 0; i < array->len; i++)
-			g_ptr_array_add (*dest, g_strdup (g_ptr_array_index (array, i)));
+		*dest = g_ptr_array_new ();
+		for (i = 0; array[i]; i++)
+			g_ptr_array_add (*dest, g_strdup (array[i]));
 	}
 
 	return TRUE;
