@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2011 Red Hat, Inc.
+ * Copyright (C) 2007 - 2012 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -81,6 +81,15 @@ nm_vpn_connection_new (DBusGConnection *connection, const char *path)
 	                     NULL);
 }
 
+/**
+ * nm_vpn_connection_get_banner:
+ * @vpn: a #NMVPNConnection
+ *
+ * Gets the VPN login banner of the active #NMVPNConnection.
+ *
+ * Returns: the VPN login banner of the VPN connection. This is the internal
+ * string used by the connection, and must not be modified.
+ **/
 const char *
 nm_vpn_connection_get_banner (NMVPNConnection *vpn)
 {
@@ -105,6 +114,14 @@ nm_vpn_connection_get_banner (NMVPNConnection *vpn)
 	return priv->banner;
 }
 
+/**
+ * nm_vpn_connection_get_vpn_state:
+ * @vpn: a #NMVPNConnection
+ *
+ * Gets the current #NMVPNConnection state.
+ *
+ * Returns: the VPN state of the active VPN connection.
+ **/
 NMVPNConnectionState
 nm_vpn_connection_get_vpn_state (NMVPNConnection *vpn)
 {
