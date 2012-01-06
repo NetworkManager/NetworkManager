@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2011 Red Hat, Inc.
+ * (C) Copyright 2010 - 2012 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -46,26 +46,10 @@
 #include <nm-utils.h>
 
 #include "utils.h"
+#include "common.h"
 #include "settings.h"
 #include "connections.h"
 
-
-/* Available fields for 'con status' */
-static NmcOutputField nmc_fields_con_status[] = {
-	{"NAME",          N_("NAME"),         25, NULL, 0},  /* 0 */
-	{"UUID",          N_("UUID"),         38, NULL, 0},  /* 1 */
-	{"DEVICES",       N_("DEVICES"),      10, NULL, 0},  /* 2 */
-	{"STATE",         N_("STATE"),        12, NULL, 0},  /* 3 */
-	{"DEFAULT",       N_("DEFAULT"),       8, NULL, 0},  /* 4 */
-	{"DEFAULT6",      N_("DEFAULT6"),      9, NULL, 0},  /* 5 */
-	{"SPEC-OBJECT",   N_("SPEC-OBJECT"),  10, NULL, 0},  /* 6 */
-	{"VPN",           N_("VPN"),           5, NULL, 0},  /* 7 */
-	{"DBUS-PATH",     N_("DBUS-PATH"),    51, NULL, 0},  /* 8 */
-	{"ZONE",          N_("ZONE"),         15, NULL, 0},  /* 9 */
-	{NULL,            NULL,                0, NULL, 0}
-};
-#define NMC_FIELDS_CON_STATUS_ALL     "NAME,UUID,DEVICES,STATE,DEFAULT,DEFAULT6,VPN,ZONE,DBUS-PATH,SPEC-OBJECT"
-#define NMC_FIELDS_CON_STATUS_COMMON  "NAME,UUID,DEVICES,DEFAULT,VPN"
 
 /* Available fields for 'con list' */
 static NmcOutputField nmc_fields_con_list[] = {
@@ -81,7 +65,6 @@ static NmcOutputField nmc_fields_con_list[] = {
 };
 #define NMC_FIELDS_CON_LIST_ALL     "NAME,UUID,TYPE,TIMESTAMP,TIMESTAMP-REAL,AUTOCONNECT,READONLY,DBUS-PATH"
 #define NMC_FIELDS_CON_LIST_COMMON  "NAME,UUID,TYPE,TIMESTAMP-REAL"
-
 
 /* Helper macro to define fields */
 #define SETTING_FIELD(setting, width) { setting, N_(setting), width, NULL, 0 }
@@ -131,6 +114,53 @@ static NmcOutputField nmc_fields_settings_names[] = {
 #endif
 
 
+/* Available fields for 'con status' */
+static NmcOutputField nmc_fields_con_status[] = {
+	{"GROUP",         N_("GROUP"),         9, NULL, 0},  /* 0 */  /* used only for 'GENERAL' group listing */
+	{"NAME",          N_("NAME"),         25, NULL, 0},  /* 1 */
+	{"UUID",          N_("UUID"),         38, NULL, 0},  /* 2 */
+	{"DEVICES",       N_("DEVICES"),      10, NULL, 0},  /* 3 */
+	{"STATE",         N_("STATE"),        12, NULL, 0},  /* 4 */
+	{"DEFAULT",       N_("DEFAULT"),       8, NULL, 0},  /* 5 */
+	{"DEFAULT6",      N_("DEFAULT6"),      9, NULL, 0},  /* 6 */
+	{"SPEC-OBJECT",   N_("SPEC-OBJECT"),  10, NULL, 0},  /* 7 */
+	{"VPN",           N_("VPN"),           5, NULL, 0},  /* 8 */
+	{"DBUS-PATH",     N_("DBUS-PATH"),    51, NULL, 0},  /* 9 */
+	{"CON-PATH",      N_("CON-PATH"),     44, NULL, 0},  /* 10 */
+	{"ZONE",          N_("ZONE"),         15, NULL, 0},  /* 11 */
+	{NULL,            NULL,                0, NULL, 0}
+};
+#define NMC_FIELDS_CON_STATUS_ALL     "NAME,UUID,DEVICES,STATE,DEFAULT,DEFAULT6,VPN,ZONE,DBUS-PATH,CON-PATH,SPEC-OBJECT"
+#define NMC_FIELDS_CON_STATUS_COMMON  "NAME,UUID,DEVICES,DEFAULT,VPN"
+
+/* Available fields for 'con status id/uuid/path <con>' */
+static NmcOutputField nmc_fields_status_details_groups[] = {
+	{"GENERAL",  N_("GENERAL"), 9, NULL, 0},  /* 0 */
+	{"IP",       N_("IP"),      5, NULL, 0},  /* 1 */
+	{"VPN",      N_("VPN"),     5, NULL, 0},  /* 2 */
+	{NULL, NULL, 0, NULL, 0}
+};
+#define NMC_FIELDS_CON_STATUS_DETAILS_ALL  "GENERAL,IP,VPN"
+
+/* GENERAL group is the same as nmc_fields_con_status */
+#define NMC_FIELDS_CON_STATUS_DETAILS_GENERAL_ALL  "GROUP,"NMC_FIELDS_CON_STATUS_ALL
+
+/* IP group is handled by common.c */
+
+/* Available fields for VPN group */
+static NmcOutputField nmc_fields_status_details_vpn[] = {
+	{"GROUP",     N_("GROUP"),       9, NULL, 0},  /* 0 */
+	{"TYPE",      N_("TYPE"),       15, NULL, 0},  /* 1 */
+	{"USERNAME",  N_("USERNAME"),   15, NULL, 0},  /* 2 */
+	{"GATEWAY",   N_("GATEWAY"),    25, NULL, 0},  /* 3 */
+	{"BANNER",    N_("BANNER"),    120, NULL, 0},  /* 4 */
+	{"VPN-STATE", N_("VPN-STATE"),  40, NULL, 0},  /* 5 */
+	{"CFG",       N_("CFG"),       120, NULL, 0},  /* 6 */
+	{NULL, NULL, 0, NULL, 0}
+};
+#define NMC_FIELDS_CON_STATUS_DETAILS_VPN_ALL  "GROUP,TYPE,USERNAME,GATEWAY,BANNER,VPN-STATE,CFG"
+
+
 typedef struct {
 	NmCli *nmc;
 	int argc;
@@ -149,7 +179,7 @@ usage (void)
 	         _("Usage: nmcli con { COMMAND | help }\n"
 	         "  COMMAND := { list | status | up | down | delete }\n\n"
 	         "  list [id <id> | uuid <id>]\n"
-	         "  status\n"
+	         "  status [id <id> | uuid <id> | path <path>]\n"
 #if WITH_WIMAX
 	         "  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [nsp <name>] [--nowait] [--timeout <timeout>]\n"
 #else
@@ -564,18 +594,58 @@ active_connection_state_to_string (NMActiveConnectionState state)
 	}
 }
 
-static void
-show_active_connection (gpointer data, gpointer user_data)
+static const char *
+vpn_connection_state_to_string (NMVPNConnectionState state)
 {
-	NMActiveConnection *active = NM_ACTIVE_CONNECTION (data);
-	NmCli *nmc = (NmCli *) user_data;
-	GSList *con_list, *iter;
+	switch (state) {
+	case NM_VPN_CONNECTION_STATE_PREPARE:
+		return _("VPN connecting (prepare)");
+	case NM_VPN_CONNECTION_STATE_NEED_AUTH:
+		return _("VPN connecting (need authentication)");
+	case NM_VPN_CONNECTION_STATE_CONNECT:
+		return _("VPN connecting");
+	case NM_VPN_CONNECTION_STATE_IP_CONFIG_GET:
+		return _("VPN connecting (getting IP configuration)");
+	case NM_VPN_CONNECTION_STATE_ACTIVATED:
+		return _("VPN connected");
+	case NM_VPN_CONNECTION_STATE_FAILED:
+		return _("VPN connection failed");
+	case NM_VPN_CONNECTION_STATE_DISCONNECTED:
+		return _("VPN disconnected");
+	default:
+		return _("unknown");
+	}
+}
+
+static NMConnection *
+get_connection_for_active (const GSList *con_list, NMActiveConnection *active)
+{
+	const GSList *iter;
+	const char *path;
+
+	path = nm_active_connection_get_connection (active);
+	g_return_val_if_fail (path != NULL, NULL);
+
+	for (iter = con_list; iter; iter = g_slist_next (iter)) {
+		NMConnection *candidate = NM_CONNECTION (iter->data);
+
+		if (strcmp (nm_connection_get_path (candidate), path) == 0)
+			return candidate;
+	}
+	return NULL;
+}
+
+static gboolean
+fill_in_fields_con_status (NMActiveConnection *active, GSList *con_list)
+{
+	GSList *iter;
 	const char *active_path;
 	NMSettingConnection *s_con;
 	const GPtrArray *devices;
 	GString *dev_str;
-	int i;
 	NMActiveConnectionState state;
+	int i;
+	gboolean success = FALSE;
 
 	active_path = nm_active_connection_get_connection (active);
 	state = nm_active_connection_get_state (active);
@@ -592,7 +662,6 @@ show_active_connection (gpointer data, gpointer user_data)
 	if (dev_str->len > 0)
 		g_string_truncate (dev_str, dev_str->len - 1);  /* Cut off last ',' */
 
-	con_list = nmc->system_connections; 
 	for (iter = con_list; iter; iter = g_slist_next (iter)) {
 		NMConnection *connection = (NMConnection *) iter->data;
 		const char *con_path = nm_connection_get_path (connection);
@@ -602,40 +671,187 @@ show_active_connection (gpointer data, gpointer user_data)
 			s_con = nm_connection_get_setting_connection (connection);
 			g_assert (s_con != NULL);
 
-			/* Obtain field values */
-			nmc->allowed_fields[0].value = nm_setting_connection_get_id (s_con);
-			nmc->allowed_fields[1].value = nm_setting_connection_get_uuid (s_con);
-			nmc->allowed_fields[2].value = dev_str->str;
-			nmc->allowed_fields[3].value = active_connection_state_to_string (state);
-			nmc->allowed_fields[4].value = nm_active_connection_get_default (active) ? _("yes") : _("no");
-			nmc->allowed_fields[5].value = nm_active_connection_get_default6 (active) ? _("yes") : _("no");
-			nmc->allowed_fields[6].value = nm_active_connection_get_specific_object (active);
-			nmc->allowed_fields[7].value = NM_IS_VPN_CONNECTION (active) ? _("yes") : _("no");
-			nmc->allowed_fields[8].value = nm_object_get_path (NM_OBJECT (active));
-			nmc->allowed_fields[9].value = nm_setting_connection_get_zone (s_con);
+			/* Fill field values */
+			nmc_fields_con_status[0].value = nmc_fields_status_details_groups[0].name;
+			nmc_fields_con_status[1].value = nm_setting_connection_get_id (s_con);
+			nmc_fields_con_status[2].value = nm_setting_connection_get_uuid (s_con);
+			nmc_fields_con_status[3].value = dev_str->str;
+			nmc_fields_con_status[4].value = active_connection_state_to_string (state);
+			nmc_fields_con_status[5].value = nm_active_connection_get_default (active) ? _("yes") : _("no");
+			nmc_fields_con_status[6].value = nm_active_connection_get_default6 (active) ? _("yes") : _("no");
+			nmc_fields_con_status[7].value = nm_active_connection_get_specific_object (active);
+			nmc_fields_con_status[8].value = NM_IS_VPN_CONNECTION (active) ? _("yes") : _("no");
+			nmc_fields_con_status[9].value = nm_object_get_path (NM_OBJECT (active));
+			nmc_fields_con_status[10].value = nm_active_connection_get_connection (active);
+			nmc_fields_con_status[11].value = nm_setting_connection_get_zone (s_con);
 
-			nmc->print_fields.flags &= ~NMC_PF_FLAG_MAIN_HEADER_ADD & ~NMC_PF_FLAG_MAIN_HEADER_ONLY & ~NMC_PF_FLAG_FIELD_NAMES; /* Clear header flags */
-			print_fields (nmc->print_fields, nmc->allowed_fields);
+			success = TRUE;
 			break;
 		}
 	}
 
-	g_string_free (dev_str, TRUE);
+	/* Just free GString here, the char array has to be freed after printing
+	 * (by free_fields_con_status()) */
+	g_string_free (dev_str, FALSE);
+	return success;
 }
 
-static NMCResultCode
-do_connections_status (NmCli *nmc, int argc, char **argv)
+static void
+free_fields_con_status (void)
 {
-	const GPtrArray *active_cons;
+	/* Just DEVICES string was dynamically allocated */
+	g_free ((char *) nmc_fields_con_status[3].value);
+	nmc_fields_con_status[3].value = NULL;
+}
+
+static void
+show_active_connection (gpointer data, gpointer user_data)
+{
+	NMActiveConnection *active = NM_ACTIVE_CONNECTION (data);
+	NmCli *nmc = (NmCli *) user_data;
+
+	fill_in_fields_con_status (active, nmc->system_connections);
+
+	nmc->print_fields.flags &= ~NMC_PF_FLAG_MAIN_HEADER_ADD & ~NMC_PF_FLAG_MAIN_HEADER_ONLY & ~NMC_PF_FLAG_FIELD_NAMES; /* Clear header flags */
+	print_fields (nmc->print_fields, nmc->allowed_fields);
+
+	free_fields_con_status ();
+}
+
+static NMActiveConnection *
+find_active_connection (const GPtrArray *active_cons, const GSList *cons,
+                        const char *filter_type, const char *filter_val)
+{
+	int i;
+	const char *s_path, *a_path;
+	const char *id;
+	const char *uuid;
+	NMConnection *con;
+	NMSettingConnection *s_con;
+
+	for (i = 0; active_cons && (i < active_cons->len); i++) {
+		NMActiveConnection *candidate = g_ptr_array_index (active_cons, i);
+
+		s_path = nm_active_connection_get_connection (candidate);
+		a_path = nm_object_get_path (NM_OBJECT (candidate));
+		uuid = nm_active_connection_get_uuid (candidate);
+
+		con = get_connection_for_active (cons, candidate);
+		s_con = nm_connection_get_setting_connection (con);
+		g_assert (s_con != NULL);
+		id = nm_setting_connection_get_id (s_con);
+
+		if (filter_type) {
+			if (   (strcmp (filter_type, "id") == 0 && strcmp (filter_val, id) == 0)
+			    || (strcmp (filter_type, "uuid") == 0 && strcmp (filter_val, uuid) == 0)
+			    || (strcmp (filter_type, "path") == 0 && strcmp (filter_val, s_path) == 0)
+			    || (strcmp (filter_type, "path") == 0 && strcmp (filter_val, a_path) == 0)) {
+				return candidate;
+			}
+		}
+	}
+	return NULL;
+}
+
+typedef struct {
+	char **array;
+	guint32 idx;
+} FillVPNDataInfo;
+
+static void
+fill_vpn_data_item (const char *key, const char *value, gpointer user_data)
+{
+        FillVPNDataInfo *info = (FillVPNDataInfo *) user_data;
+
+	info->array[info->idx++] = g_strdup_printf ("%s = %s", key, value);
+}
+
+// FIXME: The same or similar code for VPN info appears also in nm-applet (applet-dialogs.c),
+// and in gnome-control-center as well. It could probably be shared somehow.
+static char *
+get_vpn_connection_type (NMConnection *connection)
+{
+	const char *type, *p;
+
+	/* The service type is in form of "org.freedesktop.NetworkManager.vpnc".
+	 * Extract end part after last dot, e.g. "vpnc"
+	 */
+	type = nm_setting_vpn_get_service_type (nm_connection_get_setting_vpn (connection));
+	p = strrchr (type, '.');
+	return g_strdup (p ? p + 1 : type);
+}
+
+/* VPN parameters can be found at:
+ * http://git.gnome.org/browse/network-manager-openvpn/tree/src/nm-openvpn-service.h
+ * http://git.gnome.org/browse/network-manager-vpnc/tree/src/nm-vpnc-service.h
+ * http://git.gnome.org/browse/network-manager-pptp/tree/src/nm-pptp-service.h
+ * http://git.gnome.org/browse/network-manager-openconnect/tree/src/nm-openconnect-service.h
+ * http://git.gnome.org/browse/network-manager-openswan/tree/src/nm-openswan-service.h
+ * See also 'properties' directory in these plugins.
+ */
+static const gchar *
+find_vpn_gateway_key (const char *vpn_type)
+{
+	if (g_strcmp0 (vpn_type, "openvpn") == 0)     return "remote";
+	if (g_strcmp0 (vpn_type, "vpnc") == 0)        return "IPSec gateway";
+	if (g_strcmp0 (vpn_type, "pptp") == 0)        return "gateway";
+	if (g_strcmp0 (vpn_type, "openconnect") == 0) return "gateway";
+	if (g_strcmp0 (vpn_type, "openswan") == 0)    return "right";
+	return "";
+}
+
+static const gchar *
+find_vpn_username_key (const char *vpn_type)
+{
+	if (g_strcmp0 (vpn_type, "openvpn") == 0)     return "username";
+	if (g_strcmp0 (vpn_type, "vpnc") == 0)        return "Xauth username";
+	if (g_strcmp0 (vpn_type, "pptp") == 0)        return "user";
+	if (g_strcmp0 (vpn_type, "openconnect") == 0) return "username";
+	if (g_strcmp0 (vpn_type, "openswan") == 0)    return "leftxauthusername";
+	return "";
+}
+
+enum VpnDataItem {
+	VPN_DATA_ITEM_GATEWAY,
+	VPN_DATA_ITEM_USERNAME
+};
+
+static const gchar *
+get_vpn_data_item (NMConnection *connection, enum VpnDataItem vpn_data_item)
+{
+	const char *key;
+	char *type = get_vpn_connection_type (connection);
+
+	switch (vpn_data_item) {
+	case VPN_DATA_ITEM_GATEWAY:
+		key = find_vpn_gateway_key (type);
+		break;
+	case VPN_DATA_ITEM_USERNAME:
+		key = find_vpn_username_key (type);
+		break;
+	default:
+		key = "";
+		break;
+	}
+	g_free (type);
+
+	return nm_setting_vpn_get_data_item (nm_connection_get_setting_vpn (connection), key);
+}
+/* FIXME end */
+
+static gboolean
+nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
+{
 	GError *error = NULL;
+	GArray *print_groups;
+	int i;
 	char *fields_str;
-	char *fields_all =    NMC_FIELDS_CON_STATUS_ALL;
-	char *fields_common = NMC_FIELDS_CON_STATUS_COMMON;
+	char *fields_all =    NMC_FIELDS_CON_STATUS_DETAILS_ALL;
+	char *fields_common = NMC_FIELDS_CON_STATUS_DETAILS_ALL;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
-
-	nmc->should_wait = FALSE;
+	gboolean was_output = FALSE;
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
 		fields_str = fields_common;
@@ -644,24 +860,158 @@ do_connections_status (NmCli *nmc, int argc, char **argv)
 	else
 		fields_str = nmc->required_fields;
 
-	nmc->allowed_fields = nmc_fields_con_status;
-	nmc->print_fields.indices = parse_output_fields (fields_str, nmc->allowed_fields, &error);
-
+	print_groups = parse_output_fields (fields_str, nmc_fields_status_details_groups, &error);
 	if (error) {
 		if (error->code == 0)
 			g_string_printf (nmc->return_text, _("Error: 'con status': %s"), error->message);
 		else
-			g_string_printf (nmc->return_text, _("Error: 'con status': %s; allowed fields: %s"), error->message, NMC_FIELDS_CON_STATUS_ALL);
+			g_string_printf (nmc->return_text, _("Error: 'con status': %s; allowed fields: %s"), error->message, NMC_FIELDS_CON_STATUS_DETAILS_ALL);
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
+		return FALSE;
 	}
 
-	if (!nmc_is_nm_running (nmc, &error)) {
-		if (error) {
-			g_string_printf (nmc->return_text, _("Error: Can't find out if NetworkManager is running: %s."), error->message);
+	nmc->allowed_fields = nmc_fields_status_details_groups;
+	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ONLY;
+	nmc->print_fields.header_name = _("Active connection details");
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_CON_STATUS_DETAILS_ALL, nmc->allowed_fields, NULL);
+	print_fields (nmc->print_fields, nmc->allowed_fields);
+
+	/* Loop through the groups and print them. */
+	for (i = 0; i < print_groups->len; i++) {
+		int group_idx = g_array_index (print_groups, int, i);
+
+		if (nmc->print_output != NMC_PRINT_TERSE && !nmc->multiline_output && was_output)
+			printf ("\n"); /* Empty line */
+
+		was_output = FALSE;
+
+		/* GENERAL */
+		if (strcasecmp (nmc_fields_status_details_groups[group_idx].name, nmc_fields_status_details_groups[0].name) == 0) {
+			nmc->allowed_fields = nmc_fields_con_status;
+			nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_CON_STATUS_DETAILS_GENERAL_ALL, nmc->allowed_fields, NULL);
+
+			/* Print field names */
+			nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
+			print_fields (nmc->print_fields, nmc->allowed_fields);
+
+			/* Fill in values */
+			fill_in_fields_con_status (acon, nmc->system_connections);
+
+			/* and print them */
+			nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
+			print_fields (nmc->print_fields, nmc->allowed_fields);
+
+			free_fields_con_status ();
+			was_output = TRUE;
+		}
+
+		/* IP */
+		if (strcasecmp (nmc_fields_status_details_groups[group_idx].name,  nmc_fields_status_details_groups[1].name) == 0) {
+			const GPtrArray *devices;
+			int j;
+
+			devices = nm_active_connection_get_devices (acon);
+			for (j = 0; devices && (j < devices->len); j++) {
+				gboolean b1 = FALSE, b2 = FALSE, b3 = FALSE, b4 = FALSE;
+				NMDevice *device = g_ptr_array_index (devices, j);
+				NMIP4Config *cfg4 = nm_device_get_ip4_config (device);
+				NMIP6Config *cfg6 = nm_device_get_ip6_config (device);
+				NMDHCP4Config *dhcp4 = nm_device_get_dhcp4_config (device);
+				NMDHCP6Config *dhcp6 = nm_device_get_dhcp6_config (device);
+
+				b1 = print_ip4_config (cfg4, nmc, "IP4");
+				b2 = print_dhcp4_config (dhcp4, nmc, "DHCP4");
+				b3 = print_ip6_config (cfg6, nmc, "IP6");
+				b4 = print_dhcp6_config (dhcp6, nmc, "DHCP6");
+				was_output = was_output || b1 || b2 || b3 || b4;
+			}
+		}
+
+		/* VPN */
+		if (NM_IS_VPN_CONNECTION (acon) &&
+		    strcasecmp (nmc_fields_status_details_groups[group_idx].name,  nmc_fields_status_details_groups[2].name) == 0) {
+			NMConnection *con;
+			NMSettingConnection *s_con;
+			NMSettingVPN *s_vpn;
+			NMVPNConnectionState vpn_state;
+			char *type_str, *banner_str, *vpn_state_str;
+			const char *username = NULL;
+			char **vpn_data_array = NULL;
+			guint32 items_num;
+
+			con = get_connection_for_active (nmc->system_connections, acon);
+
+			s_con = nm_connection_get_setting_connection (con);
+			g_assert (s_con != NULL);
+
+			nmc->allowed_fields = nmc_fields_status_details_vpn;
+			nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_CON_STATUS_DETAILS_VPN_ALL, nmc->allowed_fields, NULL);
+
+			/* Print field names */
+			nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
+			print_fields (nmc->print_fields, nmc->allowed_fields);
+
+			s_vpn = nm_connection_get_setting_vpn (con);
+			if (s_vpn) {
+				items_num = nm_setting_vpn_get_num_data_items (s_vpn);
+				if (items_num > 0) {
+					FillVPNDataInfo info;
+
+					vpn_data_array = g_new (char *, items_num + 1);
+					info.array = vpn_data_array;
+					info.idx = 0;
+					nm_setting_vpn_foreach_data_item (s_vpn, &fill_vpn_data_item, &info);
+					vpn_data_array[items_num] = NULL;
+				}
+				username = nm_setting_vpn_get_user_name (s_vpn);
+			}
+
+			type_str = get_vpn_connection_type (con);
+			banner_str = g_strescape (nm_vpn_connection_get_banner (NM_VPN_CONNECTION (acon)), "");
+			vpn_state = nm_vpn_connection_get_vpn_state (NM_VPN_CONNECTION (acon));
+			vpn_state_str = g_strdup_printf ("%d - %s", vpn_state, vpn_connection_state_to_string (vpn_state));
+
+			/* Print values */
+			set_val_str (nmc->allowed_fields, 0, nmc_fields_status_details_groups[2].name);
+			set_val_str (nmc->allowed_fields, 1, type_str);
+			set_val_str (nmc->allowed_fields, 2, username ? username : get_vpn_data_item (con, VPN_DATA_ITEM_USERNAME));
+			set_val_str (nmc->allowed_fields, 3, get_vpn_data_item (con, VPN_DATA_ITEM_GATEWAY));
+			set_val_str (nmc->allowed_fields, 4, banner_str);
+			set_val_str (nmc->allowed_fields, 5, vpn_state_str);
+			set_val_arr (nmc->allowed_fields, 6, (const char **) vpn_data_array);
+
+			nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
+			print_fields (nmc->print_fields, nmc->allowed_fields);
+
+			g_free (type_str);
+			g_free (banner_str);
+			g_free (vpn_state_str);
+			g_strfreev (vpn_data_array);
+			was_output = TRUE;
+		}
+	}
+
+	if (print_groups)
+		g_array_free (print_groups, FALSE);
+
+	return TRUE;
+}
+
+static NMCResultCode
+do_connections_status (NmCli *nmc, int argc, char **argv)
+{
+	const GPtrArray *active_cons;
+	GError *err = NULL;
+	GError *err1 = NULL;
+
+	nmc->should_wait = FALSE;
+
+	if (!nmc_is_nm_running (nmc, &err)) {
+		if (err) {
+			g_string_printf (nmc->return_text, _("Error: Can't find out if NetworkManager is running: %s."), err->message);
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-			g_error_free (error);
+			g_error_free (err);
 		} else {
 			g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
 			nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
@@ -669,17 +1019,80 @@ do_connections_status (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	/* Print headers */
-	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
-	nmc->print_fields.header_name = _("Active connections");
-	print_fields (nmc->print_fields, nmc->allowed_fields);
-
+	/* Get active connections */
 	nmc->get_client (nmc);
 	active_cons = nm_client_get_active_connections (nmc->client);
-	if (active_cons && active_cons->len)
-		g_ptr_array_foreach ((GPtrArray *) active_cons, show_active_connection, (gpointer) nmc);
+
+	if (argc == 0) {
+		char *fields_str;
+		char *fields_all =    NMC_FIELDS_CON_STATUS_ALL;
+		char *fields_common = NMC_FIELDS_CON_STATUS_COMMON;
+		guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
+		guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
+		guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
+
+		if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
+			fields_str = fields_common;
+		else if (!nmc->required_fields || strcasecmp (nmc->required_fields, "all") == 0)
+			fields_str = fields_all;
+		else
+			fields_str = nmc->required_fields;
+
+		nmc->allowed_fields = nmc_fields_con_status + 1 ;
+		nmc->print_fields.indices = parse_output_fields (fields_str, nmc->allowed_fields, &err1);
+		if (err1)
+			goto error;
+
+		/* Print headers */
+		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
+		nmc->print_fields.header_name = _("Active connections");
+		print_fields (nmc->print_fields, nmc->allowed_fields);
+
+		if (active_cons && active_cons->len)
+			g_ptr_array_foreach ((GPtrArray *) active_cons, show_active_connection, (gpointer) nmc);
+	} else {
+		while (argc > 0) {
+			if (   strcmp (*argv, "id") == 0
+			    || strcmp (*argv, "uuid") == 0
+			    || strcmp (*argv, "path") == 0) {
+				const char *selector = *argv;
+				NMActiveConnection *acon;
+
+				if (next_arg (&argc, &argv) != 0) {
+					g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+					return nmc->return_value;
+				}
+				if (!nmc->mode_specified)
+					nmc->multiline_output = TRUE;  /* multiline mode is default for 'con status id|uuid|path' */
+
+				acon = find_active_connection (active_cons, nmc->system_connections, selector, *argv);
+				if (acon) {
+					nmc_active_connection_detail (acon, nmc);
+				} else {
+					g_string_printf (nmc->return_text, _("Error: '%s' is not an active connection."), *argv);
+					nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				}
+				break;
+			} else {
+				g_string_printf (nmc->return_text, _("Error: unknown parameter: %s"), *argv);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			}
+
+			argc--;
+			argv++;
+		}
+	}
 
 error:
+	if (err1) {
+		if (err1->code == 0)
+			g_string_printf (nmc->return_text, _("Error: 'con status': %s"), err1->message);
+		else
+			g_string_printf (nmc->return_text, _("Error: 'con status': %s; allowed fields: %s"), err1->message, NMC_FIELDS_CON_STATUS_ALL);
+		g_error_free (err1);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+	}
 	return nmc->return_value;
 }
 
@@ -1230,29 +1643,6 @@ find_device_for_connection (NmCli *nmc,
 				g_set_error (error, 0, 0, _("no device found for connection '%s'"), nm_setting_connection_get_id (s_con));
 			return FALSE;
 		}
-	}
-}
-
-static const char *
-vpn_connection_state_to_string (NMVPNConnectionState state)
-{
-	switch (state) {
-	case NM_VPN_CONNECTION_STATE_PREPARE:
-		return _("VPN connecting (prepare)");
-	case NM_VPN_CONNECTION_STATE_NEED_AUTH:
-		return _("VPN connecting (need authentication)");
-	case NM_VPN_CONNECTION_STATE_CONNECT:
-		return _("VPN connecting");
-	case NM_VPN_CONNECTION_STATE_IP_CONFIG_GET:
-		return _("VPN connecting (getting IP configuration)");
-	case NM_VPN_CONNECTION_STATE_ACTIVATED:
-		return _("VPN connected");
-	case NM_VPN_CONNECTION_STATE_FAILED:
-		return _("VPN connection failed");
-	case NM_VPN_CONNECTION_STATE_DISCONNECTED:
-		return _("VPN disconnected");
-	default:
-		return _("unknown");
 	}
 }
 
