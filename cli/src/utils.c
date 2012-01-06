@@ -362,7 +362,7 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 			table_width += field_values[idx].width + width1 - width2 + 1;
 		}
 
-		if (value_is_array && field_values[idx].value)
+		if (value_is_array && field_values[idx].value && !field_values)
 			g_free (value);
 	}
 
