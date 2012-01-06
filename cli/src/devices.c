@@ -56,6 +56,7 @@
 #include <nm-setting-infiniband.h>
 
 #include "utils.h"
+#include "common.h"
 #include "devices.h"
 
 
@@ -161,49 +162,6 @@ static NmcOutputField nmc_fields_dev_list_wimax_prop[] = {
 #define NMC_FIELDS_DEV_LIST_WIMAX_PROP_ALL     "NAME,CTR-FREQ,RSSI,CINR,TX-POW,BSID"
 #define NMC_FIELDS_DEV_LIST_WIMAX_PROP_COMMON  "NAME,CTR-FREQ,RSSI,CINR,TX-POW,BSID"
 #endif
-
-/* Available fields for 'dev list' - IPv4 group */
-static NmcOutputField nmc_fields_dev_list_ip4_config[] = {
-	{"NAME",       N_("NAME"),        15, NULL, 0},  /* 0 */
-	{"ADDRESS",    N_("ADDRESS"),     68, NULL, 0},  /* 1 */
-	{"ROUTE",      N_("ROUTE"),       68, NULL, 0},  /* 2 */
-	{"DNS",        N_("DNS"),         35, NULL, 0},  /* 3 */
-	{"DOMAIN",     N_("DOMAIN"),      35, NULL, 0},  /* 4 */
-	{"WINS",       N_("WINS"),        20, NULL, 0},  /* 5 */
-	{NULL,         NULL,               0, NULL, 0}
-};
-#define NMC_FIELDS_DEV_LIST_IP4_CONFIG_ALL     "NAME,ADDRESS,ROUTE,DNS,DOMAIN,WINS"
-#define NMC_FIELDS_DEV_LIST_IP4_CONFIG_COMMON  "NAME,ADDRESS,ROUTE,DNS,DOMAIN,WINS"
-
-/* Available fields for 'dev list' - DHCPv4 group */
-static NmcOutputField nmc_fields_dev_list_dhcp4_config[] = {
-	{"NAME",       N_("NAME"),        15, NULL, 0},  /* 0 */
-	{"OPTION",     N_("OPTION"),      25, NULL, 0},  /* 1 */
-	{NULL,         NULL,               0, NULL, 0}
-};
-#define NMC_FIELDS_DEV_LIST_DHCP4_CONFIG_ALL     "NAME,OPTION"
-#define NMC_FIELDS_DEV_LIST_DHCP4_CONFIG_COMMON  "NAME,OPTION"
-
-/* Available fields for 'dev list' - IPv6 group */
-static NmcOutputField nmc_fields_dev_list_ip6_config[] = {
-	{"NAME",       N_("NAME"),        15, NULL, 0},  /* 0 */
-	{"ADDRESS",    N_("ADDRESS"),     95, NULL, 0},  /* 1 */
-	{"ROUTE",      N_("ROUTE"),       95, NULL, 0},  /* 2 */
-	{"DNS",        N_("DNS"),         60, NULL, 0},  /* 3 */
-	{"DOMAIN",     N_("DOMAIN"),      35, NULL, 0},  /* 4 */
-	{NULL,         NULL,               0, NULL, 0}
-};
-#define NMC_FIELDS_DEV_LIST_IP6_CONFIG_ALL     "NAME,ADDRESS,ROUTE,DNS,DOMAIN"
-#define NMC_FIELDS_DEV_LIST_IP6_CONFIG_COMMON  "NAME,ADDRESS,ROUTE,DNS,DOMAIN"
-
-/* Available fields for 'dev list' - DHCPv6 group */
-static NmcOutputField nmc_fields_dev_list_dhcp6_config[] = {
-	{"NAME",       N_("NAME"),        15, NULL, 0},  /* 0 */
-	{"OPTION",     N_("OPTION"),      25, NULL, 0},  /* 1 */
-	{NULL,         NULL,               0, NULL, 0}
-};
-#define NMC_FIELDS_DEV_LIST_DHCP6_CONFIG_ALL     "NAME,OPTION"
-#define NMC_FIELDS_DEV_LIST_DHCP6_CONFIG_COMMON  "NAME,OPTION"
 
 /* Available fields for 'dev wifi list' */
 static NmcOutputField nmc_fields_dev_wifi_list[] = {
@@ -808,265 +766,22 @@ show_device_info (gpointer data, gpointer user_data)
 			NMIP6Config *cfg6 = nm_device_get_ip6_config (device);
 			NMDHCP4Config *dhcp4 = nm_device_get_dhcp4_config (device);
 			NMDHCP6Config *dhcp6 = nm_device_get_dhcp6_config (device);
-			GSList *iter;
 
 			/* IP4 */
-			if (cfg4 && !strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[7].name)) {
-				GSList *list;
-				const GArray *array;
-				const GPtrArray *ptr_array;
-				char **addr_arr = NULL;
-				char **route_arr = NULL;
-				char **dns_arr = NULL;
-				char **domain_arr = NULL;
-				char **wins_arr = NULL;
-				int j = 0;
-
-				nmc->allowed_fields = nmc_fields_dev_list_ip4_config;
-				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
-				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_LIST_IP4_CONFIG_ALL, nmc->allowed_fields, NULL);
-				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
-
-				/* addresses */
-				list = (GSList *) nm_ip4_config_get_addresses (cfg4);
-				addr_arr = g_new (char *, g_slist_length (list) + 1);
-				for (iter = list; iter; iter = g_slist_next (iter)) {
-					NMIP4Address *addr = (NMIP4Address *) iter->data;
-					guint32 prefix;
-					char *ip_str, *gw_str;
-
-					ip_str = nmc_ip4_address_as_string (nm_ip4_address_get_address (addr), NULL);
-					prefix = nm_ip4_address_get_prefix (addr);
-					gw_str = nmc_ip4_address_as_string (nm_ip4_address_get_gateway (addr), NULL);
-
-					addr_arr[j++] = g_strdup_printf ("ip = %s/%u, gw = %s", ip_str, prefix, gw_str);
-					g_free (ip_str);
-					g_free (gw_str);
-				}
-				addr_arr[j] = NULL;
-
-				/* routes */
-				list = (GSList *) nm_ip4_config_get_routes (cfg4);
-				route_arr = g_new (char *, g_slist_length (list) + 1);
-				j = 0;
-				for (iter = list; iter; iter = g_slist_next (iter)) {
-					NMIP4Route *route = (NMIP4Route *) iter->data;
-					guint32 prefix, metric;
-					char *dest_str, *nexthop_str;
-
-					dest_str = nmc_ip4_address_as_string (nm_ip4_route_get_dest (route), NULL);
-					nexthop_str = nmc_ip4_address_as_string (nm_ip4_route_get_next_hop (route), NULL);
-					prefix = nm_ip4_route_get_prefix (route);
-					metric = nm_ip4_route_get_metric (route);
-
-					route_arr[j++] = g_strdup_printf ("dst = %s/%u, nh = %s, mt = %u", dest_str, prefix, nexthop_str, metric);
-					g_free (dest_str);
-					g_free (nexthop_str);
-				}
-				route_arr[j] = NULL;
-
-				/* DNS */
-				array = nm_ip4_config_get_nameservers (cfg4);
-				if (array) {
-					dns_arr = g_new (char *, array->len + 1);
-					for (j = 0; j < array->len; j++)
-						dns_arr[j] = nmc_ip4_address_as_string (g_array_index (array, guint32, j), NULL);
-
-					dns_arr[j] = NULL;
-				}
-
-				/* domains */
-				ptr_array = nm_ip4_config_get_domains (cfg4);
-				if (ptr_array) {
-					domain_arr = g_new (char *, ptr_array->len + 1);
-					for (j = 0; j < ptr_array->len; j++)
-						domain_arr[j] = g_ptr_array_index (ptr_array, j);
-
-					domain_arr[j] = NULL;
-				}
-
-				/* WINS */
-				array = nm_ip4_config_get_wins_servers (cfg4);
-				if (array) {
-					wins_arr = g_new (char *, array->len + 1);
-					for (j = 0; j < array->len; j++)
-						wins_arr[j] = nmc_ip4_address_as_string (g_array_index (array, guint32, j), NULL);
-
-					wins_arr[j] = NULL;
-				}
-
-				set_val_str (nmc->allowed_fields, 0, nmc_fields_dev_list_sections[7].name); /* "IP4" prefix */
-				set_val_arr (nmc->allowed_fields, 1, (const char **) addr_arr);
-				set_val_arr (nmc->allowed_fields, 2, (const char **) route_arr);
-				set_val_arr (nmc->allowed_fields, 3, (const char **) dns_arr);
-				set_val_arr (nmc->allowed_fields, 4, (const char **) domain_arr);
-				set_val_arr (nmc->allowed_fields, 5, (const char **) wins_arr);
-
-				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
-				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
-
-				g_strfreev (addr_arr);
-				g_strfreev (route_arr);
-				g_strfreev (dns_arr);
-				g_free (domain_arr);
-				g_strfreev (wins_arr);
-
-				was_output = TRUE;
-			}
+			if (cfg4 && !strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[7].name))
+				was_output = print_ip4_config (cfg4, nmc, nmc_fields_dev_list_sections[7].name);
 
 			/* DHCP4 */
-			if (dhcp4 && !strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[8].name)) {
-				GHashTable *table = nm_dhcp4_config_get_options (dhcp4);
-				if (table) {
-					GHashTableIter table_iter;
-					gpointer key, value;
-					char **options_arr = NULL;
-					int j = 0;
-
-					nmc->allowed_fields = nmc_fields_dev_list_dhcp4_config;
-					nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
-					nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_LIST_DHCP4_CONFIG_ALL, nmc->allowed_fields, NULL);
-					print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
-
-					options_arr = g_new (char *, g_hash_table_size (table) + 1);
-					g_hash_table_iter_init (&table_iter, table);
-					while (g_hash_table_iter_next (&table_iter, &key, &value))
-						options_arr[j++] = g_strdup_printf ("%s = %s", (char *) key, (char *) value);
-					options_arr[j] = NULL;
-
-					set_val_str (nmc->allowed_fields, 0, nmc_fields_dev_list_sections[8].name); /* "DHCP4" prefix */
-					set_val_arr (nmc->allowed_fields, 1, (const char **) options_arr);
-
-					nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
-					print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
-
-					g_strfreev (options_arr);
-
-					was_output = TRUE;
-				}
-			}
+			if (dhcp4 && !strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[8].name))
+				was_output = print_dhcp4_config (dhcp4, nmc, nmc_fields_dev_list_sections[8].name);
 
 			/* IP6 */
-			if (cfg6 && !strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[9].name)) {
-				GSList *list;
-				const GPtrArray *ptr_array;
-				char **addr_arr = NULL;
-				char **route_arr = NULL;
-				char **dns_arr = NULL;
-				char **domain_arr = NULL;
-				int j = 0;
-
-				nmc->allowed_fields = nmc_fields_dev_list_ip6_config;
-				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
-				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_LIST_IP6_CONFIG_ALL, nmc->allowed_fields, NULL);
-				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
-
-				/* addresses */
-				list = (GSList *) nm_ip6_config_get_addresses (cfg6);
-				addr_arr = g_new (char *, g_slist_length (list) + 1);
-				for (iter = list; iter; iter = g_slist_next (iter)) {
-					NMIP6Address *addr = (NMIP6Address *) iter->data;
-					guint32 prefix;
-					char *ip_str, *gw_str;
-
-					ip_str = nmc_ip6_address_as_string (nm_ip6_address_get_address (addr), NULL);
-					prefix = nm_ip6_address_get_prefix (addr);
-					gw_str = nmc_ip6_address_as_string (nm_ip6_address_get_gateway (addr), NULL);
-
-					addr_arr[j++] = g_strdup_printf ("ip = %s/%u, gw = %s", ip_str, prefix, gw_str);
-					g_free (ip_str);
-					g_free (gw_str);
-				}
-				addr_arr[j] = NULL;
-
-				/* routes */
-				list = (GSList *) nm_ip6_config_get_routes (cfg6);
-				route_arr = g_new (char *, g_slist_length (list) + 1);
-				j = 0;
-				for (iter = list; iter; iter = g_slist_next (iter)) {
-					NMIP6Route *route = (NMIP6Route *) iter->data;
-					guint32 prefix, metric;
-					char *dest_str, *nexthop_str;
-
-					dest_str = nmc_ip6_address_as_string (nm_ip6_route_get_dest (route), NULL);
-					nexthop_str = nmc_ip6_address_as_string (nm_ip6_route_get_next_hop (route), NULL);
-					prefix = nm_ip6_route_get_prefix (route);
-					metric = nm_ip6_route_get_metric (route);
-
-					route_arr[j++] = g_strdup_printf ("dst = %s/%u, nh = %s, mt = %u", dest_str, prefix, nexthop_str, metric);
-					g_free (dest_str);
-					g_free (nexthop_str);
-				}
-				route_arr[j] = NULL;
-
-				/* DNS */
-				list = (GSList *) nm_ip6_config_get_nameservers (cfg6);
-				dns_arr = g_new (char *, g_slist_length (list) + 1);
-				j = 0;
-				for (iter = list; iter; iter = g_slist_next (iter))
-					dns_arr[j++] = nmc_ip6_address_as_string (iter->data, NULL);
-
-				dns_arr[j] = NULL;
-
-				/* domains */
-				ptr_array = nm_ip6_config_get_domains (cfg6);
-				if (ptr_array) {
-					domain_arr = g_new (char *, ptr_array->len + 1);
-					for (j = 0; j < ptr_array->len; j++)
-						domain_arr[j] = g_ptr_array_index (ptr_array, j);
-
-					domain_arr[j] = NULL;
-				}
-
-				set_val_str (nmc->allowed_fields, 0, nmc_fields_dev_list_sections[9].name); /* "IP6" prefix */
-				set_val_arr (nmc->allowed_fields, 1, (const char **) addr_arr);
-				set_val_arr (nmc->allowed_fields, 2, (const char **) route_arr);
-				set_val_arr (nmc->allowed_fields, 3, (const char **) dns_arr);
-				set_val_arr (nmc->allowed_fields, 4, (const char **) domain_arr);
-
-				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
-				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
-
-				g_strfreev (addr_arr);
-				g_strfreev (route_arr);
-				g_strfreev (dns_arr);
-				g_free (domain_arr);
-
-				was_output = TRUE;
-			}
+			if (cfg6 && !strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[9].name))
+				was_output = print_ip6_config (cfg6, nmc, nmc_fields_dev_list_sections[9].name);
 
 			/* DHCP6 */
-			if (dhcp6 && !strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[10].name)) {
-				GHashTable *table = nm_dhcp6_config_get_options (dhcp6);
-				if (table) {
-					GHashTableIter table_iter;
-					gpointer key, value;
-					char **options_arr = NULL;
-					int j = 0;
-
-					nmc->allowed_fields = nmc_fields_dev_list_dhcp6_config;
-					nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
-					nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_LIST_DHCP6_CONFIG_ALL, nmc->allowed_fields, NULL);
-					print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
-
-					options_arr = g_new (char *, g_hash_table_size (table) + 1);
-					g_hash_table_iter_init (&table_iter, table);
-					while (g_hash_table_iter_next (&table_iter, &key, &value))
-						options_arr[j++] = g_strdup_printf ("%s = %s", (char *) key, (char *) value);
-					options_arr[j] = NULL;
-
-					set_val_str (nmc->allowed_fields, 0, nmc_fields_dev_list_sections[10].name); /* "DHCP6" prefix */
-					set_val_arr (nmc->allowed_fields, 1, (const char **) options_arr);
-
-					nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
-					print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
-
-					g_strfreev (options_arr);
-
-					was_output = TRUE;
-				}
-			}
-
+			if (dhcp6 && !strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[10].name))
+				was_output = print_dhcp6_config (dhcp6, nmc, nmc_fields_dev_list_sections[10].name);
 		}
 	}
 

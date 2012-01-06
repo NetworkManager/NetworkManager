@@ -8,6 +8,8 @@ INCLUDES = \
 	-I${top_srcdir}/libnm-glib
 
 nmcli_SOURCES = \
+	common.c \
+	common.h \
 	connections.c \
 	connections.h \
 	devices.c \
