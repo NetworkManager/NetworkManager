@@ -3,6 +3,7 @@ SUBDIRS=. tests
 INCLUDES = \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/include \
+	-I$(top_builddir)/include \
 	-I$(top_srcdir)/libnm-util
 
 noinst_LTLIBRARIES = \

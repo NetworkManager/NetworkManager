@@ -1,6 +1,6 @@
 SUBDIRS=. tests
 
-INCLUDES = -I${top_srcdir} -I${top_srcdir}/include
+INCLUDES = -I${top_srcdir} -I${top_srcdir}/include -I${top_builddir}/include
 
 lib_LTLIBRARIES=libnm-util.la
 

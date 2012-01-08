@@ -58,6 +58,7 @@ nm_dispatcher_action_SOURCES = \
 nm_dispatcher_action_CPPFLAGS = \
 	-I${top_srcdir} \
 	-I${top_srcdir}/include \
+	-I${top_builddir}/include \
 	-I${top_srcdir}/libnm-util \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
@@ -83,6 +84,7 @@ libtest_dispatcher_envp_la_SOURCES = \
 
 libtest_dispatcher_envp_la_CPPFLAGS = \
 	-I${top_srcdir}/include \
+	-I${top_builddir}/include \
 	-I${top_srcdir}/libnm-util \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS)

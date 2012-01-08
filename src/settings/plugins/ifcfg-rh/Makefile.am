@@ -25,6 +25,7 @@ libifcfg_rh_io_la_SOURCES = \
 INCLUDES = \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/include \
+	-I$(top_builddir)/include \
 	-I$(top_srcdir)/libnm-glib \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_builddir)/marshallers
