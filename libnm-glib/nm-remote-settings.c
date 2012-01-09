@@ -28,7 +28,6 @@
 #include "nm-marshal.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-remote-settings.h"
-#include "nm-settings-bindings.h"
 #include "nm-remote-connection-private.h"
 
 G_DEFINE_TYPE (NMRemoteSettings, nm_remote_settings, G_TYPE_OBJECT)
@@ -392,15 +391,18 @@ new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
 
 static void
 fetch_connections_done (DBusGProxy *proxy,
-                        GPtrArray *connections,
-                        GError *error,
+                        DBusGProxyCall *call,
                         gpointer user_data)
 {
 	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
+	GPtrArray *connections;
+	GError *error = NULL;
 	int i;
 
-	if (error) {
+	if (!dbus_g_proxy_end_call (proxy, call, &error, 
+	                            DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH, &connections,
+	                            G_TYPE_INVALID)) {
 		/* Ignore settings service spawn errors */
 		if (   !g_error_matches (error, DBUS_GERROR, DBUS_GERROR_SERVICE_UNKNOWN)
 		    && !g_error_matches (error, DBUS_GERROR, DBUS_GERROR_NAME_HAS_NO_OWNER)) {
@@ -440,9 +442,9 @@ fetch_connections (gpointer user_data)
 
 	priv->fetch_id = 0;
 
-	org_freedesktop_NetworkManager_Settings_list_connections_async (priv->proxy,
-	                                                                fetch_connections_done,
-	                                                                self);
+	dbus_g_proxy_begin_call (priv->proxy, "ListConnections",
+	                         fetch_connections_done, self, NULL,
+	                         G_TYPE_INVALID);
 	return FALSE;
 }
 

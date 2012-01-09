@@ -39,8 +39,6 @@
 #include "nm-marshal.h"
 #include "nm-dbus-glib-types.h"
 
-#include "nm-device-bindings.h"
-
 G_DEFINE_TYPE (NMDevice, nm_device, NM_TYPE_OBJECT)
 
 #define NM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE, NMDevicePrivate))
@@ -1518,11 +1516,14 @@ typedef struct {
 
 static void
 deactivate_cb (DBusGProxy *proxy,
-               GError *error,
+               DBusGProxyCall *call,
                gpointer user_data)
 {
 	DeactivateInfo *info = user_data;
+	GError *error = NULL;
 
+	dbus_g_proxy_end_call (proxy, call, &error,
+	                       G_TYPE_INVALID);
 	if (info->fn)
 		info->fn (info->device, error, info->user_data);
 	else if (error) {
@@ -1532,6 +1533,7 @@ deactivate_cb (DBusGProxy *proxy,
 		           error ? error->code : -1,
 		           error && error->message ? error->message : "(unknown)");
 	}
+	g_clear_error (&error);
 
 	g_object_unref (info->device);
 	g_slice_free (DeactivateInfo, info);
@@ -1562,9 +1564,9 @@ nm_device_disconnect (NMDevice *device,
 	info->user_data = user_data;
 	info->device = g_object_ref (device);
 
-	org_freedesktop_NetworkManager_Device_disconnect_async (NM_DEVICE_GET_PRIVATE (device)->proxy,
-	                                                        deactivate_cb,
-	                                                        info);
+	dbus_g_proxy_begin_call (NM_DEVICE_GET_PRIVATE (device)->proxy, "Disconnect",
+	                         deactivate_cb, info, NULL,
+	                         G_TYPE_INVALID);
 }
 
 /**

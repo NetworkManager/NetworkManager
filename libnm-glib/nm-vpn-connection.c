@@ -25,7 +25,6 @@
 #include "nm-vpn-connection.h"
 #include "NetworkManager.h"
 #include "nm-utils.h"
-#include "nm-vpn-connection-bindings.h"
 #include "nm-marshal.h"
 #include "nm-object-private.h"
 #include "nm-active-connection.h"

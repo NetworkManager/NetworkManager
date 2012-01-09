@@ -37,8 +37,6 @@
 #include "nm-object-cache.h"
 #include "nm-dbus-glib-types.h"
 
-#include "nm-client-bindings.h"
-
 void _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enabled);
 
 G_DEFINE_TYPE (NMClient, nm_client, NM_TYPE_OBJECT)
@@ -461,14 +459,19 @@ get_permissions_sync (NMClient *self)
 
 static void
 get_permissions_reply (DBusGProxy *proxy,
-                       GHashTable *permissions,
-                       GError *error,
+                       DBusGProxyCall *call,
                        gpointer user_data)
 {
 	NMClient *self = NM_CLIENT (user_data);
+	GHashTable *permissions;
+	GError *error = NULL;
 
+	dbus_g_proxy_end_call (proxy, call, &error,
+	                       DBUS_TYPE_G_MAP_OF_STRING, &permissions,
+	                       G_TYPE_INVALID);
 	NM_CLIENT_GET_PRIVATE (self)->perm_call = NULL;
 	update_permissions (NM_CLIENT (user_data), error ? NULL : permissions);
+	g_clear_error (&error);
 }
 
 static void
@@ -478,9 +481,9 @@ client_recheck_permissions (DBusGProxy *proxy, gpointer user_data)
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
 
 	if (!priv->perm_call) {
-		priv->perm_call = org_freedesktop_NetworkManager_get_permissions_async (NM_CLIENT_GET_PRIVATE (self)->client_proxy,
-	                                                                            get_permissions_reply,
-	                                                                            self);
+		priv->perm_call = dbus_g_proxy_begin_call (NM_CLIENT_GET_PRIVATE (self)->client_proxy, "GetPermissions",
+		                                           get_permissions_reply, self, NULL,
+		                                           G_TYPE_INVALID);
 	}
 }
 
@@ -508,7 +511,10 @@ nm_client_get_devices (NMClient *client)
 	if (priv->devices)
 		return handle_ptr_array_return (priv->devices);
 
-	if (!org_freedesktop_NetworkManager_get_devices (priv->client_proxy, &temp, &error)) {
+	if (!dbus_g_proxy_call (priv->client_proxy, "GetDevices", &error,
+	                        G_TYPE_INVALID,
+	                        DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH, &temp,
+	                        G_TYPE_INVALID)) {
 		g_warning ("%s: error getting devices: %s\n", __func__, error->message);
 		g_error_free (error);
 		return NULL;
@@ -664,17 +670,22 @@ recheck_pending_activations (NMClient *self)
 
 static void
 activate_cb (DBusGProxy *proxy,
-             char *path,
-             GError *error,
+             DBusGProxyCall *call,
              gpointer user_data)
 {
 	ActivateInfo *info = user_data;
+	char *path;
+	GError *error = NULL;
 
+	dbus_g_proxy_end_call (proxy, call, &error,
+	                       DBUS_TYPE_G_OBJECT_PATH, &path,
+	                       G_TYPE_INVALID);
 	if (error) {
 		activate_info_complete (info, NULL, error);
 		activate_info_free (info);
+		g_clear_error (&error);
 	} else {
-		info->active_path = g_strdup (path);
+		info->active_path = path;
 		recheck_pending_activations (info->client);
 	}
 }
@@ -726,29 +737,34 @@ nm_client_activate_connection (NMClient *client,
 	priv = NM_CLIENT_GET_PRIVATE (client);
 	priv->pending_activations = g_slist_prepend (priv->pending_activations, info);
 
-	org_freedesktop_NetworkManager_activate_connection_async (priv->client_proxy,
-	                                                          nm_connection_get_path (connection),
-	                                                          device ? nm_object_get_path (NM_OBJECT (device)) : "/",
-	                                                          specific_object ? specific_object : "/",
-	                                                          activate_cb,
-	                                                          info);
+	dbus_g_proxy_begin_call (priv->client_proxy, "ActivateConnection",
+	                         activate_cb, info, NULL,
+	                         DBUS_TYPE_G_OBJECT_PATH, nm_connection_get_path (connection),
+	                         DBUS_TYPE_G_OBJECT_PATH, device ? nm_object_get_path (NM_OBJECT (device)) : "/",
+	                         DBUS_TYPE_G_OBJECT_PATH, specific_object ? specific_object : "/",
+	                         G_TYPE_INVALID);
 }
 
 static void
 add_activate_cb (DBusGProxy *proxy,
-                 char *connection_path,
-                 char *active_path,
-                 GError *error,
+                 DBusGProxyCall *call,
                  gpointer user_data)
 {
 	ActivateInfo *info = user_data;
+	char *connection_path;
+	char *active_path;
+	GError *error = NULL;
 
+	dbus_g_proxy_end_call (proxy, call, &error,
+	                       DBUS_TYPE_G_OBJECT_PATH, &connection_path,
+	                       DBUS_TYPE_G_OBJECT_PATH, &active_path,
+	                       G_TYPE_INVALID);
 	if (error) {
 		activate_info_complete (info, NULL, error);
 		activate_info_free (info);
 	} else {
-		info->new_connection_path = g_strdup (connection_path);
-		info->active_path = g_strdup (active_path);
+		info->new_connection_path = connection_path;
+		info->active_path = active_path;
 		recheck_pending_activations (info->client);
 	}
 }
@@ -803,12 +819,12 @@ nm_client_add_and_activate_connection (NMClient *client,
 	priv = NM_CLIENT_GET_PRIVATE (client);
 	priv->pending_activations = g_slist_prepend (priv->pending_activations, info);
 
-	org_freedesktop_NetworkManager_add_and_activate_connection_async (priv->client_proxy,
-	                                                                  hash,
-	                                                                  nm_object_get_path (NM_OBJECT (device)),
-	                                                                  specific_object ? specific_object : "/",
-	                                                                  add_activate_cb,
-	                                                                  info);
+	dbus_g_proxy_begin_call (priv->client_proxy, "AddAndActivateConnection",
+	                         add_activate_cb, info, NULL,
+	                         DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, hash,
+	                         DBUS_TYPE_G_OBJECT_PATH, nm_object_get_path (NM_OBJECT (device)),
+	                         DBUS_TYPE_G_OBJECT_PATH, specific_object ? specific_object : "/",
+	                         G_TYPE_INVALID);
 	g_hash_table_unref (hash);
 }
 
@@ -838,7 +854,10 @@ nm_client_deactivate_connection (NMClient *client, NMActiveConnection *active)
 	// FIXME: return errors
 	priv = NM_CLIENT_GET_PRIVATE (client);
 	path = nm_object_get_path (NM_OBJECT (active));
-	if (!org_freedesktop_NetworkManager_deactivate_connection (priv->client_proxy, path, &error)) {
+	if (!dbus_g_proxy_call (priv->client_proxy, "DeactivateConnection", &error,
+	                        DBUS_TYPE_G_OBJECT_PATH, path,
+	                        G_TYPE_INVALID,
+	                        G_TYPE_INVALID)) {
 		g_warning ("Could not deactivate connection '%s': %s", path, error->message);
 		g_error_free (error);
 	}
@@ -1151,7 +1170,10 @@ nm_client_networking_set_enabled (NMClient *client, gboolean enable)
 
 	g_return_if_fail (NM_IS_CLIENT (client));
 
-	if (!org_freedesktop_NetworkManager_enable (NM_CLIENT_GET_PRIVATE (client)->client_proxy, enable, &err)) {
+	if (!dbus_g_proxy_call (NM_CLIENT_GET_PRIVATE (client)->client_proxy, "Enable", &err,
+	                        G_TYPE_BOOLEAN, enable,
+	                        G_TYPE_INVALID,
+	                        G_TYPE_INVALID)) {
 		g_warning ("Error enabling/disabling networking: %s", err->message);
 		g_error_free (err);
 	}

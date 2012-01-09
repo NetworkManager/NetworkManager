@@ -32,8 +32,6 @@
 #include "nm-device-private.h"
 #include "nm-object-private.h"
 
-#include "nm-device-bt-bindings.h"
-
 G_DEFINE_TYPE (NMDeviceBt, nm_device_bt, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_BT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_BT, NMDeviceBtPrivate))

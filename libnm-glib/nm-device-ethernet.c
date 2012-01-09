@@ -33,8 +33,6 @@
 #include "nm-device-private.h"
 #include "nm-object-private.h"
 
-#include "nm-device-ethernet-bindings.h"
-
 G_DEFINE_TYPE (NMDeviceEthernet, nm_device_ethernet, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_ETHERNET_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_ETHERNET, NMDeviceEthernetPrivate))

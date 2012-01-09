@@ -36,8 +36,6 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-types-private.h"
 
-#include "nm-device-wifi-bindings.h"
-
 G_DEFINE_TYPE (NMDeviceWifi, nm_device_wifi, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_WIFI_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_WIFI, NMDeviceWifiPrivate))
@@ -335,7 +333,10 @@ nm_device_wifi_get_access_points (NMDeviceWifi *device)
 	if (priv->aps)
 		return handle_ptr_array_return (priv->aps);
 
-	if (!org_freedesktop_NetworkManager_Device_Wireless_get_access_points (priv->proxy, &temp, &error)) {
+	if (!dbus_g_proxy_call (priv->proxy, "GetAccessPoints", &error,
+	                        G_TYPE_INVALID,
+	                        DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH, &temp,
+	                        G_TYPE_INVALID)) {
 		g_warning ("%s: error getting access points: %s", __func__, error->message);
 		g_error_free (error);
 		return NULL;

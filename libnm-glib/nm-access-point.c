@@ -36,8 +36,6 @@
 #include "nm-types-private.h"
 #include "nm-object-private.h"
 
-#include "nm-access-point-bindings.h"
-
 G_DEFINE_TYPE (NMAccessPoint, nm_access_point, NM_TYPE_OBJECT)
 
 #define NM_ACCESS_POINT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_ACCESS_POINT, NMAccessPointPrivate))

@@ -7,24 +7,7 @@ INCLUDES = \
 	-I$(top_builddir)/marshallers
 
 BUILT_SOURCES = \
-	nm-access-point-bindings.h \
-	nm-client-bindings.h \
-	nm-device-bindings.h \
-	nm-device-ethernet-bindings.h \
-	nm-device-infiniband-bindings.h \
-	nm-device-wifi-bindings.h \
-	nm-device-bt-bindings.h \
-	nm-settings-connection-bindings.h \
-	nm-device-wimax-bindings.h \
-	nm-device-modem-bindings.h \
-	nm-settings-bindings.h \
-	nm-vpn-connection-bindings.h \
 	nm-vpn-plugin-glue.h \
-	nm-active-connection-bindings.h \
-	nm-ip4-config-bindings.h \
-	nm-dhcp4-config-bindings.h \
-	nm-ip6-config-bindings.h \
-	nm-dhcp6-config-bindings.h \
 	nm-secret-agent-glue.h
 
 
@@ -182,62 +165,11 @@ libnm_glib_test_la_LIBADD = \
 
 #####################################################
 
-nm-client-bindings.h: $(top_srcdir)/introspection/nm-manager.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_client --mode=glib-client --output=$@ $<
-
-nm-device-bindings.h: $(top_srcdir)/introspection/nm-device.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device --mode=glib-client --output=$@ $<
-
-nm-device-ethernet-bindings.h: $(top_srcdir)/introspection/nm-device-ethernet.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_ethernet --mode=glib-client --output=$@ $<
-
-nm-device-infiniband-bindings.h: $(top_srcdir)/introspection/nm-device-infiniband.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_infiniband --mode=glib-client --output=$@ $<
-
-nm-device-wifi-bindings.h: $(top_srcdir)/introspection/nm-device-wifi.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_wifi --mode=glib-client --output=$@ $<
-
-nm-device-bt-bindings.h: $(top_srcdir)/introspection/nm-device-bt.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_bt --mode=glib-client --output=$@ $<
-
-nm-access-point-bindings.h: $(top_srcdir)/introspection/nm-access-point.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_access_point --mode=glib-client --output=$@ $<
-
-nm-settings-bindings.h: $(top_srcdir)/introspection/nm-settings.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_settings --mode=glib-client --output=$@ $<
-
-nm-settings-connection-bindings.h: $(top_srcdir)/introspection/nm-settings-connection.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_settings_connection --mode=glib-client --output=$@ $<
-
-nm-vpn-connection-bindings.h: $(top_srcdir)/introspection/nm-vpn-connection.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_vpn_connection --mode=glib-client --output=$@ $<
-
 nm-vpn-plugin-glue.h: $(top_srcdir)/introspection/nm-vpn-plugin.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_vpn_plugin --mode=glib-server --output=$@ $<
 
-nm-active-connection-bindings.h: $(top_srcdir)/introspection/nm-active-connection.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_active_connection --mode=glib-client --output=$@ $<
-
-nm-ip4-config-bindings.h: $(top_srcdir)/introspection/nm-ip4-config.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_ip4_config --mode=glib-client --output=$@ $<
-
-nm-dhcp4-config-bindings.h: $(top_srcdir)/introspection/nm-dhcp4-config.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_dhcp4_config --mode=glib-client --output=$@ $<
-
-nm-ip6-config-bindings.h: $(top_srcdir)/introspection/nm-ip6-config.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_ip6_config --mode=glib-client --output=$@ $<
-
-nm-dhcp6-config-bindings.h: $(top_srcdir)/introspection/nm-dhcp6-config.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_dhcp6_config --mode=glib-client --output=$@ $<
-
 nm-secret-agent-glue.h: $(top_srcdir)/introspection/nm-secret-agent.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_secret_agent --mode=glib-server --output=$@ $<
-
-nm-device-wimax-bindings.h: $(top_srcdir)/introspection/nm-device-wimax.xml
-	dbus-binding-tool --prefix=nm_device_wimax --mode=glib-client --output=$@ $<
-
-nm-device-modem-bindings.h: $(top_srcdir)/introspection/nm-device-modem.xml
-	dbus-binding-tool --prefix=nm_device_modem --mode=glib-client --output=$@ $<
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libnm-glib.pc libnm-glib-vpn.pc
@@ -246,7 +178,7 @@ DISTCLEANFILES = libnm-glib.pc libnm-glib.pc
 
 EXTRA_DIST = libnm-glib.pc.in libnm-glib-vpn.pc.in libnm-glib.ver libnm-glib-vpn.ver
 
-CLEANFILES = $(BUILT_SOURCES) *-bindings.h *-glue.h
+CLEANFILES = $(BUILT_SOURCES)
 
 -include $(INTROSPECTION_MAKEFILE)
 INTROSPECTION_GIRS =

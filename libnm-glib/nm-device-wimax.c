@@ -34,8 +34,6 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-types-private.h"
 
-#include "nm-device-wimax-bindings.h"
-
 G_DEFINE_TYPE (NMDeviceWimax, nm_device_wimax, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_WIMAX_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_WIMAX, NMDeviceWimaxPrivate))
@@ -217,7 +215,10 @@ nm_device_wimax_get_nsps (NMDeviceWimax *wimax)
 	if (priv->nsps)
 		return handle_ptr_array_return (priv->nsps);
 
-	if (!org_freedesktop_NetworkManager_Device_WiMax_get_nsp_list (priv->proxy, &temp, &error)) {
+	if (!dbus_g_proxy_call (priv->proxy, "GetNspList", &error,
+	                        G_TYPE_INVALID,
+	                        DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH, &temp,
+	                        G_TYPE_INVALID)) {
 		g_warning ("%s: error getting NSPs: %s", __func__, error->message);
 		g_error_free (error);
 		return NULL;

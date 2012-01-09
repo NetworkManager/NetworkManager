@@ -30,8 +30,6 @@
 #include "nm-device.h"
 #include "nm-connection.h"
 
-#include "nm-active-connection-bindings.h"
-
 G_DEFINE_TYPE (NMActiveConnection, nm_active_connection, NM_TYPE_OBJECT)
 
 #define NM_ACTIVE_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_ACTIVE_CONNECTION, NMActiveConnectionPrivate))
