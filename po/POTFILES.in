@@ -1,6 +1,7 @@
 [encoding: UTF-8]
 # List of source files containing translatable strings.
 # Please keep this file sorted alphabetically.
+cli/src/common.c
 cli/src/connections.c
 cli/src/devices.c
 cli/src/network-manager.c
