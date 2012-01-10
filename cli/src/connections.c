@@ -2013,6 +2013,27 @@ error:
 	return nmc->return_value;
 }
 
+static void
+delete_cb (NMRemoteConnection *con, GError *err, gpointer user_data)
+{
+	NmCli *nmc = (NmCli *) user_data;
+
+	if (err) {
+		g_string_printf (nmc->return_text, _("Error: Connection deletion failed: %s"), err->message);
+		nmc->return_value = NMC_RESULT_ERROR_CON_DEL;
+	}
+	quit ();
+}
+
+static void
+connection_removed_cb (NMRemoteConnection *con, gpointer user_data)
+{
+	NmCli *nmc = (NmCli *) user_data;
+
+	nmc->return_value = NMC_RESULT_SUCCESS;
+	quit ();
+}
+
 static NMCResultCode
 do_connection_delete (NmCli *nmc, int argc, char **argv)
 {
@@ -2020,8 +2041,6 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 	const char *selector = NULL;
 	const char *id = NULL;
 	GError *error = NULL;
-
-	nmc->should_wait = FALSE;
 
 	while (argc > 0) {
 		if (strcmp (*argv, "id") == 0 || strcmp (*argv, "uuid") == 0) {
@@ -2066,10 +2085,22 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
+	/* We need to wait a bit so that nmcli's permissions can be queried.
+	 * We will exit either on "Removed" signal or when D-Bus return (error)
+	 * message is received.
+	 */
+	nmc->should_wait = TRUE;
+
+	/* Connect to "Removed" signal to be able to exit when connection was removed */
+	g_signal_connect (connection, NM_REMOTE_CONNECTION_REMOVED, G_CALLBACK (connection_removed_cb), nmc);
+
 	/* Delete the connection */
-	nm_remote_connection_delete (NM_REMOTE_CONNECTION (connection), NULL, NULL);
+	nm_remote_connection_delete (NM_REMOTE_CONNECTION (connection), delete_cb, nmc);
+
+	return nmc->return_value;
 
 error:
+	nmc->should_wait = FALSE;
 	return nmc->return_value;
 }
 

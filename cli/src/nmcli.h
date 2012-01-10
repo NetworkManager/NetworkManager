@@ -48,11 +48,14 @@ typedef enum {
 	/* Error in device disconnect */
 	NMC_RESULT_ERROR_DEV_DISCONNECT = 6,
 
+	/* Error in connection deletion */
+	NMC_RESULT_ERROR_CON_DEL = 7,
+
 	/* NetworkManager is not running */
-	NMC_RESULT_ERROR_NM_NOT_RUNNING = 7,
+	NMC_RESULT_ERROR_NM_NOT_RUNNING = 8,
 
 	/* nmcli and NetworkManager versions mismatch */
-	NMC_RESULT_ERROR_VERSIONS_MISMATCH = 8
+	NMC_RESULT_ERROR_VERSIONS_MISMATCH = 9
 } NMCResultCode;
 
 typedef enum {
