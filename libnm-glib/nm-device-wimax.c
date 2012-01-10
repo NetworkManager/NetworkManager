@@ -172,34 +172,10 @@ nm_device_wimax_get_active_nsp (NMDeviceWimax *wimax)
 const GPtrArray *
 nm_device_wimax_get_nsps (NMDeviceWimax *wimax)
 {
-	NMDeviceWimaxPrivate *priv;
-	DBusGConnection *connection;
-	GValue value = { 0, };
-	GError *error = NULL;
-	GPtrArray *temp;
-
 	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (wimax), NULL);
 
-	priv = NM_DEVICE_WIMAX_GET_PRIVATE (wimax);
-	if (priv->nsps)
-		return handle_ptr_array_return (priv->nsps);
-
-	if (!dbus_g_proxy_call (priv->proxy, "GetNspList", &error,
-	                        G_TYPE_INVALID,
-	                        DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH, &temp,
-	                        G_TYPE_INVALID)) {
-		g_warning ("%s: error getting NSPs: %s", __func__, error->message);
-		g_error_free (error);
-		return NULL;
-	}
-
-	g_value_init (&value, DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH);
-	g_value_take_boxed (&value, temp);
-	connection = nm_object_get_connection (NM_OBJECT (wimax));
-	_nm_object_array_demarshal (&value, &priv->nsps, connection, nm_wimax_nsp_new);
-	g_value_unset (&value);
-
-	return handle_ptr_array_return (priv->nsps);
+	_nm_object_ensure_inited (NM_OBJECT (wimax));
+	return handle_ptr_array_return (NM_DEVICE_WIMAX_GET_PRIVATE (wimax)->nsps);
 }
 
 /**
@@ -238,54 +214,25 @@ nm_device_wimax_get_nsp_by_path (NMDeviceWimax *wimax,
 }
 
 static void
-nsp_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
+nsp_added (NMObject *self, NMObject *nsp)
 {
-	NMDeviceWimax *self = NM_DEVICE_WIMAX (user_data);
-	NMDeviceWimaxPrivate *priv;
-	GObject *nsp;
-
-	g_return_if_fail (self != NULL);
-
-	nsp = G_OBJECT (nm_device_wimax_get_nsp_by_path (self, path));
-	if (!nsp) {
-		DBusGConnection *connection = nm_object_get_connection (NM_OBJECT (self));
-
-		priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
-		nsp = G_OBJECT (_nm_object_cache_get (path));
-		if (nsp) {
-			g_ptr_array_add (priv->nsps, nsp);
-		} else {
-			nsp = G_OBJECT (nm_wimax_nsp_new (connection, path));
-			if (nsp)
-				g_ptr_array_add (priv->nsps, nsp);
-		}
-	}
-
-	if (nsp)
-		g_signal_emit (self, signals[NSP_ADDED], 0, nsp);
+	g_signal_emit (self, signals[NSP_ADDED], 0, nsp);
 }
 
 static void
-nsp_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
+nsp_removed (NMObject *self_obj, NMObject *nsp_obj)
 {
-	NMDeviceWimax *self = NM_DEVICE_WIMAX (user_data);
+	NMDeviceWimax *self = NM_DEVICE_WIMAX (self_obj);
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
-	NMWimaxNsp *nsp;
+	NMWimaxNsp *nsp = NM_WIMAX_NSP (nsp_obj);
 
-	g_return_if_fail (self != NULL);
-
-	nsp = nm_device_wimax_get_nsp_by_path (self, path);
-	if (nsp) {
-		if (nsp == priv->active_nsp) {
-			g_object_unref (priv->active_nsp);
-			priv->active_nsp = NULL;
-			_nm_object_queue_notify (NM_OBJECT (self), NM_DEVICE_WIMAX_ACTIVE_NSP);
-		}
-
-		g_signal_emit (self, signals[NSP_REMOVED], 0, nsp);
-		g_ptr_array_remove (priv->nsps, nsp);
-		g_object_unref (G_OBJECT (nsp));
+	if (nsp == priv->active_nsp) {
+		g_object_unref (priv->active_nsp);
+		priv->active_nsp = NULL;
+		_nm_object_queue_notify (NM_OBJECT (self), NM_DEVICE_WIMAX_ACTIVE_NSP);
 	}
+
+	g_signal_emit (self, signals[NSP_REMOVED], 0, nsp);
 }
 
 static void
@@ -568,6 +515,14 @@ register_properties (NMDeviceWimax *wimax)
 	_nm_object_register_properties (NM_OBJECT (wimax),
 	                                priv->proxy,
 	                                property_info);
+
+	_nm_object_register_pseudo_property (NM_OBJECT (wimax),
+	                                     priv->proxy,
+	                                     "NspList",
+	                                     &priv->nsps,
+	                                     NM_TYPE_WIMAX_NSP,
+	                                     nsp_added,
+	                                     nsp_removed);
 }
 
 static GObject*
@@ -590,20 +545,6 @@ constructor (GType type,
 											 NM_DBUS_SERVICE,
 											 nm_object_get_path (NM_OBJECT (object)),
 											 NM_DBUS_INTERFACE_DEVICE_WIMAX);
-
-	dbus_g_proxy_add_signal (priv->proxy, "NspAdded",
-	                         DBUS_TYPE_G_OBJECT_PATH,
-	                         G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->proxy, "NspAdded",
-								 G_CALLBACK (nsp_added_proxy),
-								 object, NULL);
-
-	dbus_g_proxy_add_signal (priv->proxy, "NspRemoved",
-	                         DBUS_TYPE_G_OBJECT_PATH,
-	                         G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->proxy, "NspRemoved",
-								 G_CALLBACK (nsp_removed_proxy),
-								 object, NULL);
 
 	register_properties (NM_DEVICE_WIMAX (object));
 

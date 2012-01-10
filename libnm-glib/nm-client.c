@@ -106,8 +106,8 @@ static void proxy_name_owner_changed (DBusGProxy *proxy,
 									  const char *new_owner,
 									  gpointer user_data);
 
-static void client_device_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data);
-static void client_device_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data);
+static void client_device_added (NMObject *client, NMObject *device);
+static void client_device_removed (NMObject *client, NMObject *device);
 
 static void
 nm_client_init (NMClient *client)
@@ -256,6 +256,14 @@ register_properties (NMClient *client)
 	_nm_object_register_properties (NM_OBJECT (client),
 	                                priv->client_proxy,
 	                                property_info);
+
+	_nm_object_register_pseudo_property (NM_OBJECT (client),
+	                                     priv->client_proxy,
+	                                     "Devices",
+	                                     &priv->devices,
+	                                     NM_TYPE_DEVICE,
+	                                     client_device_added,
+	                                     client_device_removed);
 }
 
 #define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK     "org.freedesktop.NetworkManager.enable-disable-network"
@@ -421,34 +429,10 @@ client_recheck_permissions (DBusGProxy *proxy, gpointer user_data)
 const GPtrArray *
 nm_client_get_devices (NMClient *client)
 {
-	NMClientPrivate *priv;
-	DBusGConnection *connection;
-	GValue value = { 0, };
-	GError *error = NULL;
-	GPtrArray *temp;
-
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
-	priv = NM_CLIENT_GET_PRIVATE (client);
-	if (priv->devices)
-		return handle_ptr_array_return (priv->devices);
-
-	if (!dbus_g_proxy_call (priv->client_proxy, "GetDevices", &error,
-	                        G_TYPE_INVALID,
-	                        DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH, &temp,
-	                        G_TYPE_INVALID)) {
-		g_warning ("%s: error getting devices: %s\n", __func__, error->message);
-		g_error_free (error);
-		return NULL;
-	}
-
-	g_value_init (&value, DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH);
-	g_value_take_boxed (&value, temp);
-	connection = nm_object_get_connection (NM_OBJECT (client));
-	_nm_object_array_demarshal (&value, &priv->devices, connection, nm_device_new);
-	g_value_unset (&value);
-
-	return handle_ptr_array_return (priv->devices);
+	_nm_object_ensure_inited (NM_OBJECT (client));
+	return handle_ptr_array_return (NM_CLIENT_GET_PRIVATE (client)->devices);
 }
 
 /**
@@ -1182,43 +1166,15 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 }
 
 static void
-client_device_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
+client_device_added (NMObject *client, NMObject *device)
 {
-	NMClient *client = NM_CLIENT (user_data);
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
-	GObject *device;
-
-	device = G_OBJECT (nm_client_get_device_by_path (client, path));
-	if (!device) {
-		DBusGConnection *connection = nm_object_get_connection (NM_OBJECT (client));
-
-		device = G_OBJECT (_nm_object_cache_get (path));
-		if (device) {
-			g_ptr_array_add (priv->devices, device);
-		} else {
-			device = G_OBJECT (nm_device_new (connection, path));
-			if (device)
-				g_ptr_array_add (priv->devices, device);
-		}
-	}
-
-	if (device)
-		g_signal_emit (client, signals[DEVICE_ADDED], 0, device);
+	g_signal_emit (client, signals[DEVICE_ADDED], 0, device);
 }
 
 static void
-client_device_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
+client_device_removed (NMObject *client, NMObject *device)
 {
-	NMClient *client = NM_CLIENT (user_data);
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
-	NMDevice *device;
-
-	device = nm_client_get_device_by_path (client, path);
-	if (device) {
-		g_signal_emit (client, signals[DEVICE_REMOVED], 0, device);
-		g_ptr_array_remove (priv->devices, device);
-		g_object_unref (device);
-	}
+	g_signal_emit (client, signals[DEVICE_REMOVED], 0, device);
 }
 
 /****************************************************************/
@@ -1278,20 +1234,6 @@ constructor (GType type,
 										   NM_DBUS_INTERFACE);
 
 	register_properties (NM_CLIENT (object));
-
-	dbus_g_proxy_add_signal (priv->client_proxy, "DeviceAdded", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->client_proxy,
-						    "DeviceAdded",
-						    G_CALLBACK (client_device_added_proxy),
-						    object,
-						    NULL);
-
-	dbus_g_proxy_add_signal (priv->client_proxy, "DeviceRemoved", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->client_proxy,
-						    "DeviceRemoved",
-						    G_CALLBACK (client_device_removed_proxy),
-						    object,
-						    NULL);
 
 	/* Permissions */
 	dbus_g_proxy_add_signal (priv->client_proxy, "CheckPermissions", G_TYPE_INVALID);

@@ -255,34 +255,10 @@ nm_device_wifi_get_active_access_point (NMDeviceWifi *device)
 const GPtrArray *
 nm_device_wifi_get_access_points (NMDeviceWifi *device)
 {
-	NMDeviceWifiPrivate *priv;
-	DBusGConnection *connection;
-	GValue value = { 0, };
-	GError *error = NULL;
-	GPtrArray *temp;
-
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), NULL);
 
-	priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
-	if (priv->aps)
-		return handle_ptr_array_return (priv->aps);
-
-	if (!dbus_g_proxy_call (priv->proxy, "GetAccessPoints", &error,
-	                        G_TYPE_INVALID,
-	                        DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH, &temp,
-	                        G_TYPE_INVALID)) {
-		g_warning ("%s: error getting access points: %s", __func__, error->message);
-		g_error_free (error);
-		return NULL;
-	}
-
-	g_value_init (&value, DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH);
-	g_value_take_boxed (&value, temp);
-	connection = nm_object_get_connection (NM_OBJECT (device));
-	_nm_object_array_demarshal (&value, &priv->aps, connection, nm_access_point_new);
-	g_value_unset (&value);
-
-	return handle_ptr_array_return (priv->aps);
+	_nm_object_ensure_inited (NM_OBJECT (device));
+	return handle_ptr_array_return (NM_DEVICE_WIFI_GET_PRIVATE (device)->aps);
 }
 
 /**
@@ -321,57 +297,28 @@ nm_device_wifi_get_access_point_by_path (NMDeviceWifi *device,
 }
 
 static void
-access_point_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
+access_point_added (NMObject *self, NMObject *ap)
 {
-	NMDeviceWifi *self = NM_DEVICE_WIFI (user_data);
-	NMDeviceWifiPrivate *priv;
-	GObject *ap;
-
-	g_return_if_fail (self != NULL);
-
-	ap = G_OBJECT (nm_device_wifi_get_access_point_by_path (self, path));
-	if (!ap) {
-		DBusGConnection *connection = nm_object_get_connection (NM_OBJECT (self));
-
-		priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-		ap = G_OBJECT (_nm_object_cache_get (path));
-		if (ap) {
-			g_ptr_array_add (priv->aps, ap);
-		} else {
-			ap = G_OBJECT (nm_access_point_new (connection, path));
-			if (ap)
-				g_ptr_array_add (priv->aps, ap);
-		}
-	}
-
-	if (ap)
-		g_signal_emit (self, signals[ACCESS_POINT_ADDED], 0, NM_ACCESS_POINT (ap));
+	g_signal_emit (self, signals[ACCESS_POINT_ADDED], 0, ap);
 }
 
 static void
-access_point_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
+access_point_removed (NMObject *self_obj, NMObject *ap_obj)
 {
-	NMDeviceWifi *self = NM_DEVICE_WIFI (user_data);
+	NMDeviceWifi *self = NM_DEVICE_WIFI (self_obj);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	NMAccessPoint *ap;
+	NMAccessPoint *ap = NM_ACCESS_POINT (ap_obj);
 
-	g_return_if_fail (self != NULL);
+	if (ap == priv->active_ap) {
+		g_object_unref (priv->active_ap);
+		priv->active_ap = NULL;
+		_nm_object_queue_notify (NM_OBJECT (self), NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT);
 
-	ap = nm_device_wifi_get_access_point_by_path (self, path);
-	if (ap) {
-		if (ap == priv->active_ap) {
-			g_object_unref (priv->active_ap);
-			priv->active_ap = NULL;
-			_nm_object_queue_notify (NM_OBJECT (self), NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT);
-
-			priv->rate = 0;
-			_nm_object_queue_notify (NM_OBJECT (self), NM_DEVICE_WIFI_BITRATE);
-		}
-
-		g_signal_emit (self, signals[ACCESS_POINT_REMOVED], 0, ap);
-		g_ptr_array_remove (priv->aps, ap);
-		g_object_unref (G_OBJECT (ap));
+		priv->rate = 0;
+		_nm_object_queue_notify (NM_OBJECT (self), NM_DEVICE_WIFI_BITRATE);
 	}
+
+	g_signal_emit (self, signals[ACCESS_POINT_REMOVED], 0, ap);
 }
 
 static void
@@ -581,6 +528,14 @@ register_properties (NMDeviceWifi *device)
 	_nm_object_register_properties (NM_OBJECT (device),
 	                                priv->proxy,
 	                                property_info);
+
+	_nm_object_register_pseudo_property (NM_OBJECT (device),
+	                                     priv->proxy,
+	                                     "AccessPoints",
+	                                     &priv->aps,
+	                                     NM_TYPE_ACCESS_POINT,
+	                                     access_point_added,
+	                                     access_point_removed);
 }
 
 static GObject*
@@ -603,20 +558,6 @@ constructor (GType type,
 											NM_DBUS_SERVICE,
 											nm_object_get_path (NM_OBJECT (object)),
 											NM_DBUS_INTERFACE_DEVICE_WIRELESS);
-
-	dbus_g_proxy_add_signal (priv->proxy, "AccessPointAdded",
-	                         DBUS_TYPE_G_OBJECT_PATH,
-	                         G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->proxy, "AccessPointAdded",
-						    G_CALLBACK (access_point_added_proxy),
-						    object, NULL);
-
-	dbus_g_proxy_add_signal (priv->proxy, "AccessPointRemoved",
-	                         DBUS_TYPE_G_OBJECT_PATH,
-	                         G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->proxy, "AccessPointRemoved",
-						    G_CALLBACK (access_point_removed_proxy),
-						    object, NULL);
 
 	register_properties (NM_DEVICE_WIFI (object));
 

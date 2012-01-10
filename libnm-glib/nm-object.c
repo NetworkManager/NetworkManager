@@ -48,11 +48,23 @@ typedef struct {
 } PropertyInfo;
 
 typedef struct {
+	PropertyInfo pi;
+
+	NMObject *self;
+	DBusGProxy *proxy;
+
+	char *get_method;
+	NMPseudoPropertyChangedFunc added_func;
+	NMPseudoPropertyChangedFunc removed_func;
+} PseudoPropertyInfo;
+
+typedef struct {
 	DBusGConnection *connection;
 	char *path;
 	DBusGProxy *properties_proxy;
 	GSList *property_interfaces;
 	GSList *property_tables;
+	GHashTable *pseudo_properties;
 	NMObject *parent;
 
 	GSList *notify_props;
@@ -142,6 +154,9 @@ finalize (GObject *object)
 	g_slist_foreach (priv->property_tables, (GFunc) g_hash_table_destroy, NULL);
 	g_slist_free (priv->property_tables);
 	g_free (priv->path);
+
+	if (priv->pseudo_properties)
+		g_hash_table_destroy (priv->pseudo_properties);
 
 	G_OBJECT_CLASS (nm_object_parent_class)->finalize (object);
 }
@@ -752,6 +767,8 @@ _nm_object_reload_properties (NMObject *object, GError **error)
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 	GHashTable *props = NULL;
 	GSList *p;
+	GHashTableIter pp;
+	gpointer name, info;
 
 	if (!priv->property_interfaces)
 		return TRUE;
@@ -768,6 +785,12 @@ _nm_object_reload_properties (NMObject *object, GError **error)
 
 		_nm_object_process_properties_changed (object, props);
 		g_hash_table_destroy (props);
+	}
+
+	if (priv->pseudo_properties) {
+		g_hash_table_iter_init (&pp, priv->pseudo_properties);
+		while (g_hash_table_iter_next (&pp, &name, &info))
+			_nm_object_reload_pseudo_property (object, name);
 	}
 
 	return TRUE;
@@ -849,4 +872,157 @@ _nm_object_set_property (NMObject *object,
 		 * dbus_g_proxy_call_no_reply() to give NM chance to authenticate the caller.
 		 */
 	}
+}
+
+static void
+pseudo_property_object_created (GObject *obj, gpointer user_data)
+{
+	PseudoPropertyInfo *ppi = user_data;
+
+	if (obj) {
+		GPtrArray **list_p = (GPtrArray **)ppi->pi.field;
+
+		if (!*list_p)
+			*list_p = g_ptr_array_new ();
+		g_ptr_array_add (*list_p, obj);
+		ppi->added_func (ppi->self, NM_OBJECT (obj));
+	}
+}
+
+static void
+pseudo_property_added (DBusGProxy *proxy, const char *path, gpointer user_data)
+{
+	PseudoPropertyInfo *ppi = user_data;
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (ppi->self);
+	NMObject *obj;
+
+	obj = _nm_object_cache_get (path);
+	if (obj)
+		pseudo_property_object_created (G_OBJECT (obj), ppi);
+	else {
+		_nm_object_create_async (ppi->pi.object_type, priv->connection, path,
+		                         pseudo_property_object_created, ppi);
+	}
+}
+
+static void
+pseudo_property_removed (DBusGProxy *proxy, const char *path, gpointer user_data)
+{
+	PseudoPropertyInfo *ppi = user_data;
+	GPtrArray *list = *(GPtrArray **)ppi->pi.field;
+	NMObject *obj = NULL;
+	int i;
+
+	if (!list)
+		return;
+
+	for (i = 0; i < list->len; i++) {
+		obj = list->pdata[i];
+		if (!strcmp (path, nm_object_get_path (obj))) {
+			g_ptr_array_remove_index (list, i);
+			ppi->removed_func (ppi->self, obj);
+			g_object_unref (obj);
+			return;
+		}
+	}
+}
+
+static void
+free_pseudo_property (PseudoPropertyInfo *ppi)
+{
+	g_object_unref (ppi->proxy);
+	g_free (ppi->get_method);
+	g_slice_free (PseudoPropertyInfo, ppi);
+}
+
+void
+_nm_object_register_pseudo_property (NMObject *object,
+                                     DBusGProxy *proxy,
+                                     const char *name,
+                                     gpointer field,
+                                     GType object_type,
+                                     NMPseudoPropertyChangedFunc added_func,
+                                     NMPseudoPropertyChangedFunc removed_func)
+{
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	PseudoPropertyInfo *ppi;
+	int basename_len;
+	char *added_signal, *removed_signal;
+
+	g_return_if_fail (NM_IS_OBJECT (object));
+	g_return_if_fail (proxy != NULL);
+
+	ppi = g_slice_new0 (PseudoPropertyInfo);
+	ppi->pi.field = field;
+	ppi->pi.object_type = object_type;
+	ppi->self = object;
+	ppi->proxy = g_object_ref (proxy);
+	ppi->added_func = added_func;
+	ppi->removed_func = removed_func;
+
+	basename_len = strlen (name);
+	if (basename_len > 4 && !strcmp (name + basename_len - 4, "List"))
+		basename_len -= 4;
+	else if (basename_len > 1 && name[basename_len - 1] == 's')
+		basename_len--;
+	else
+		g_assert_not_reached ();
+
+	ppi->get_method = g_strdup_printf ("Get%s", name);
+	added_signal = g_strdup_printf ("%.*sAdded", basename_len, name);
+	removed_signal = g_strdup_printf ("%.*sRemoved", basename_len, name);
+
+	if (!priv->pseudo_properties) {
+		priv->pseudo_properties = g_hash_table_new_full (g_str_hash, g_str_equal,
+		                                                 g_free, (GDestroyNotify) free_pseudo_property);
+	}
+	g_hash_table_insert (priv->pseudo_properties, g_strdup (name), ppi);
+
+	dbus_g_proxy_add_signal (proxy, added_signal,
+	                         DBUS_TYPE_G_OBJECT_PATH,
+	                         G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (proxy, added_signal,
+	                             G_CALLBACK (pseudo_property_added),
+	                             ppi, NULL);
+
+	dbus_g_proxy_add_signal (proxy, removed_signal,
+	                         DBUS_TYPE_G_OBJECT_PATH,
+	                         G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (proxy, removed_signal,
+	                             G_CALLBACK (pseudo_property_removed),
+	                             ppi, NULL);
+
+	g_free (added_signal);
+	g_free (removed_signal);
+}
+
+void
+_nm_object_reload_pseudo_property (NMObject *object,
+                                   const char *name)
+{
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	PseudoPropertyInfo *ppi;
+	GPtrArray *temp;
+	GError *error = NULL;
+	GValue value = { 0, };
+
+	g_return_if_fail (NM_IS_OBJECT (object));
+	g_return_if_fail (name != NULL);
+
+	ppi = g_hash_table_lookup (priv->pseudo_properties, name);
+	g_return_if_fail (ppi != NULL);
+
+	if (!dbus_g_proxy_call (ppi->proxy, ppi->get_method, &error,
+	                        G_TYPE_INVALID,
+	                        DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH, &temp,
+	                        G_TYPE_INVALID)) {
+		g_warning ("%s: error calling %s: %s", __func__, ppi->get_method, error->message);
+		g_error_free (error);
+		return;
+	}
+
+	g_value_init (&value, DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH);
+	g_value_take_boxed (&value, temp);
+	handle_object_array_property (object, NULL, &value, &ppi->pi, TRUE);
+	g_value_unset (&value);
 }
