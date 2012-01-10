@@ -113,3 +113,15 @@ void nm_generic_update_dns (void)
 {
 }
 
+#ifdef TARGET_GENERIC
+void nm_backend_enable_loopback (void)
+{
+	nm_generic_enable_loopback ();
+}
+
+void nm_backend_update_dns (void)
+{
+	nm_generic_update_dns ();
+}
+#endif
+

@@ -140,6 +140,11 @@ else
 	esac
 fi
 
+AM_CONDITIONAL(TARGET_GENERIC, test x"$with_distro" = xgeneric)
+if test x"$with_distro" = xgeneric; then
+  AC_DEFINE(TARGET_GENERIC, 1, [Define for a general unknown Linux system])
+fi
+
 AM_CONDITIONAL(TARGET_REDHAT, test x"$with_distro" = xredhat)
 if test x"$with_distro" = xredhat; then
   AC_DEFINE(TARGET_REDHAT, 1, [Define if you have Fedora or RHEL])
