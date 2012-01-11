@@ -39,7 +39,17 @@
 #include "nm-marshal.h"
 #include "nm-dbus-glib-types.h"
 
-G_DEFINE_TYPE (NMDevice, nm_device, NM_TYPE_OBJECT)
+static GType nm_device_type_for_path (DBusGConnection *connection,
+                                      const char *path);
+static void nm_device_type_for_path_async (DBusGConnection *connection,
+                                           const char *path,
+                                           NMObjectTypeCallbackFunc callback,
+                                           gpointer user_data);
+
+G_DEFINE_TYPE_WITH_CODE (NMDevice, nm_device, NM_TYPE_OBJECT,
+                         _nm_object_register_type_func (g_define_type_id, nm_device_type_for_path,
+                                                        nm_device_type_for_path_async);
+                         )
 
 #define NM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE, NMDevicePrivate))
 
@@ -107,176 +117,6 @@ nm_device_init (NMDevice *device)
 	priv->state = NM_DEVICE_STATE_UNKNOWN;
 }
 
-static gboolean
-demarshal_ip4_config (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
-	const char *path;
-	NMIP4Config *config = NULL;
-	DBusGConnection *connection;
-
-	if (value) {
-		if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
-			return FALSE;
-
-		path = g_value_get_boxed (value);
-		if (path) {
-			config = NM_IP4_CONFIG (_nm_object_cache_get (path));
-			if (!config) {
-				connection = nm_object_get_connection (object);
-				config = NM_IP4_CONFIG (nm_ip4_config_new (connection, path));
-			}
-		}
-	}
-
-	if (priv->ip4_config) {
-		g_object_unref (priv->ip4_config);
-		priv->ip4_config = NULL;
-	}
-
-	if (config)
-		priv->ip4_config = config;
-
-	_nm_object_queue_notify (object, NM_DEVICE_IP4_CONFIG);
-	return TRUE;
-}
-
-static gboolean
-demarshal_dhcp4_config (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
-	const char *path;
-	NMDHCP4Config *config = NULL;
-	DBusGConnection *connection;
-
-	if (value) {
-		if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
-			return FALSE;
-
-		path = g_value_get_boxed (value);
-		if (path) {
-			config = NM_DHCP4_CONFIG (_nm_object_cache_get (path));
-			if (!config) {
-				connection = nm_object_get_connection (object);
-				config = NM_DHCP4_CONFIG (nm_dhcp4_config_new (connection, path));
-			}
-		}
-	}
-
-	if (priv->dhcp4_config) {
-		g_object_unref (priv->dhcp4_config);
-		priv->dhcp4_config = NULL;
-	}
-
-	if (config)
-		priv->dhcp4_config = config;
-
-	_nm_object_queue_notify (object, NM_DEVICE_DHCP4_CONFIG);
-	return TRUE;
-}
-
-static gboolean
-demarshal_ip6_config (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
-	const char *path;
-	NMIP6Config *config = NULL;
-	DBusGConnection *connection;
-
-	if (value) {
-		if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
-			return FALSE;
-
-		path = g_value_get_boxed (value);
-		if (path) {
-			config = NM_IP6_CONFIG (_nm_object_cache_get (path));
-			if (!config) {
-				connection = nm_object_get_connection (object);
-				config = NM_IP6_CONFIG (nm_ip6_config_new (connection, path));
-			}
-		}
-	}
-
-	if (priv->ip6_config) {
-		g_object_unref (priv->ip6_config);
-		priv->ip6_config = NULL;
-	}
-
-	if (config)
-		priv->ip6_config = config;
-
-	_nm_object_queue_notify (object, NM_DEVICE_IP6_CONFIG);
-	return TRUE;
-}
-
-static gboolean
-demarshal_dhcp6_config (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
-	const char *path;
-	NMDHCP6Config *config = NULL;
-	DBusGConnection *connection;
-
-	if (value) {
-		if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
-			return FALSE;
-
-		path = g_value_get_boxed (value);
-		if (path) {
-			config = NM_DHCP6_CONFIG (_nm_object_cache_get (path));
-			if (!config) {
-				connection = nm_object_get_connection (object);
-				config = NM_DHCP6_CONFIG (nm_dhcp6_config_new (connection, path));
-			}
-		}
-	}
-
-	if (priv->dhcp6_config) {
-		g_object_unref (priv->dhcp6_config);
-		priv->dhcp6_config = NULL;
-	}
-
-	if (config)
-		priv->dhcp6_config = config;
-
-	_nm_object_queue_notify (object, NM_DEVICE_DHCP6_CONFIG);
-	return TRUE;
-}
-
-static gboolean
-demarshal_active_connection (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
-	const char *path;
-	NMActiveConnection *active = NULL;
-	DBusGConnection *connection;
-
-	if (value) {
-		if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
-			return FALSE;
-
-		path = g_value_get_boxed (value);
-		if (path) {
-			active = NM_ACTIVE_CONNECTION (_nm_object_cache_get (path));
-			if (!active) {
-				connection = nm_object_get_connection (object);
-				active = NM_ACTIVE_CONNECTION (nm_active_connection_new (connection, path));
-			}
-		}
-	}
-
-	if (priv->active_connection) {
-		g_object_unref (priv->active_connection);
-		priv->active_connection = NULL;
-	}
-
-	if (active)
-		priv->active_connection = active;
-
-	_nm_object_queue_notify (object, NM_DEVICE_ACTIVE_CONNECTION);
-	return TRUE;
-}
-
 static void
 register_properties (NMDevice *device)
 {
@@ -289,12 +129,12 @@ register_properties (NMDevice *device)
 		{ NM_DEVICE_CAPABILITIES,      &priv->capabilities },
 		{ NM_DEVICE_MANAGED,           &priv->managed },
 		{ NM_DEVICE_FIRMWARE_MISSING,  &priv->firmware_missing },
-		{ NM_DEVICE_IP4_CONFIG,        &priv->ip4_config, demarshal_ip4_config },
-		{ NM_DEVICE_DHCP4_CONFIG,      &priv->dhcp4_config, demarshal_dhcp4_config },
-		{ NM_DEVICE_IP6_CONFIG,        &priv->ip6_config, demarshal_ip6_config },
-		{ NM_DEVICE_DHCP6_CONFIG,      &priv->dhcp6_config, demarshal_dhcp6_config },
+		{ NM_DEVICE_IP4_CONFIG,        &priv->ip4_config, NULL, NM_TYPE_IP4_CONFIG },
+		{ NM_DEVICE_DHCP4_CONFIG,      &priv->dhcp4_config, NULL, NM_TYPE_DHCP4_CONFIG },
+		{ NM_DEVICE_IP6_CONFIG,        &priv->ip6_config, NULL, NM_TYPE_IP6_CONFIG },
+		{ NM_DEVICE_DHCP6_CONFIG,      &priv->dhcp6_config, NULL, NM_TYPE_DHCP6_CONFIG },
 		{ NM_DEVICE_STATE,             &priv->state },
-		{ NM_DEVICE_ACTIVE_CONNECTION, &priv->active_connection, demarshal_active_connection },
+		{ NM_DEVICE_ACTIVE_CONNECTION, &priv->active_connection, NULL, NM_TYPE_ACTIVE_CONNECTION },
 
 		/* The D-Bus interface has this property, but we don't; register
 		 * it so that handle_property_changed() doesn't complain.
@@ -795,6 +635,62 @@ nm_device_class_init (NMDeviceClass *device_class)
 				    G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 }
 
+static GType
+nm_device_gtype_from_dtype (NMDeviceType dtype)
+{
+	switch (dtype) {
+	case NM_DEVICE_TYPE_ETHERNET:
+		return NM_TYPE_DEVICE_ETHERNET;
+	case NM_DEVICE_TYPE_WIFI:
+		return NM_TYPE_DEVICE_WIFI;
+	case NM_DEVICE_TYPE_MODEM:
+		return NM_TYPE_DEVICE_MODEM;
+	case NM_DEVICE_TYPE_BT:
+		return NM_TYPE_DEVICE_BT;
+	case NM_DEVICE_TYPE_WIMAX:
+		return NM_TYPE_DEVICE_WIMAX;
+	case NM_DEVICE_TYPE_INFINIBAND:
+		return NM_TYPE_DEVICE_INFINIBAND;
+	default:
+		g_warning ("Unknown device type %d", dtype);
+		return G_TYPE_INVALID;
+	}
+}
+
+static GType
+nm_device_type_for_path (DBusGConnection *connection,
+                         const char *path)
+{
+	DBusGProxy *proxy;
+	GError *err = NULL;
+	GValue value = {0,};
+	NMDeviceType nm_dtype;
+
+	proxy = dbus_g_proxy_new_for_name (connection,
+									   NM_DBUS_SERVICE,
+									   path,
+									   "org.freedesktop.DBus.Properties");
+	if (!proxy) {
+		g_warning ("%s: couldn't create D-Bus object proxy.", __func__);
+		return G_TYPE_INVALID;
+	}
+
+	if (!dbus_g_proxy_call (proxy,
+						    "Get", &err,
+						    G_TYPE_STRING, NM_DBUS_INTERFACE_DEVICE,
+						    G_TYPE_STRING, "DeviceType",
+						    G_TYPE_INVALID,
+						    G_TYPE_VALUE, &value, G_TYPE_INVALID)) {
+		g_object_unref (proxy);
+		g_warning ("Error in get_property: %s\n", err->message);
+		g_error_free (err);
+	}
+	g_object_unref (proxy);
+
+	nm_dtype = g_value_get_uint (&value);
+	return nm_device_gtype_from_dtype (nm_dtype);
+}
+
 /**
  * nm_device_new:
  * @connection: the #DBusGConnection
@@ -807,72 +703,75 @@ nm_device_class_init (NMDeviceClass *device_class)
 GObject *
 nm_device_new (DBusGConnection *connection, const char *path)
 {
-	DBusGProxy *proxy;
-	GError *err = NULL;
-	GValue value = {0,};
-	GType dtype = 0;
-	NMDevice *device = NULL;
-	NMDeviceType nm_dtype;
+	GType dtype;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (path != NULL, NULL);
 
-	proxy = dbus_g_proxy_new_for_name (connection,
-									   NM_DBUS_SERVICE,
-									   path,
-									   "org.freedesktop.DBus.Properties");
-	if (!proxy) {
-		g_warning ("%s: couldn't create D-Bus object proxy.", __func__);
+	dtype = nm_device_type_for_path (connection, path);
+	if (dtype == G_TYPE_INVALID)
 		return NULL;
+
+	return g_object_new (dtype,
+	                     NM_OBJECT_DBUS_CONNECTION, connection,
+	                     NM_OBJECT_DBUS_PATH, path,
+	                     NULL);
+}
+
+typedef struct {
+	DBusGConnection *connection;
+	NMObjectTypeCallbackFunc callback;
+	gpointer user_data;
+} NMDeviceAsyncData;
+
+static void
+async_got_type (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
+{
+	NMDeviceAsyncData *async_data = user_data;
+	GValue value = G_VALUE_INIT;
+	const char *path = dbus_g_proxy_get_path (proxy);
+	GError *error = NULL;
+	GType type;
+
+	if (dbus_g_proxy_end_call (proxy, call, &error,
+	                           G_TYPE_VALUE, &value,
+	                           G_TYPE_INVALID)) {
+		NMDeviceType dtype;
+
+		dtype = g_value_get_uint (&value);
+		type = nm_device_gtype_from_dtype (dtype);
+	} else {
+		g_warning ("%s: could not read properties for %s: %s", __func__, path, error->message);
+		g_error_free (error);
+		type = G_TYPE_INVALID;
 	}
 
-	if (!dbus_g_proxy_call (proxy,
-						    "Get", &err,
-						    G_TYPE_STRING, NM_DBUS_INTERFACE_DEVICE,
-						    G_TYPE_STRING, "DeviceType",
-						    G_TYPE_INVALID,
-						    G_TYPE_VALUE, &value, G_TYPE_INVALID)) {
-		g_warning ("Error in get_property: %s\n", err->message);
-		g_error_free (err);
-		goto out;
-	}
-
-	nm_dtype = g_value_get_uint (&value);
-	switch (nm_dtype) {
-	case NM_DEVICE_TYPE_ETHERNET:
-		dtype = NM_TYPE_DEVICE_ETHERNET;
-		break;
-	case NM_DEVICE_TYPE_WIFI:
-		dtype = NM_TYPE_DEVICE_WIFI;
-		break;
-	case NM_DEVICE_TYPE_MODEM:
-		dtype = NM_TYPE_DEVICE_MODEM;
-		break;
-	case NM_DEVICE_TYPE_BT:
-		dtype = NM_TYPE_DEVICE_BT;
-		break;
-	case NM_DEVICE_TYPE_WIMAX:
-		dtype = NM_TYPE_DEVICE_WIMAX;
-		break;
-	case NM_DEVICE_TYPE_INFINIBAND:
-		dtype = NM_TYPE_DEVICE_INFINIBAND;
-		break;
-	default:
-		g_warning ("Unknown device type %d", g_value_get_uint (&value));
-		break;
-	}
-
-	if (dtype) {
-		device = (NMDevice *) g_object_new (dtype,
-											NM_OBJECT_DBUS_CONNECTION, connection,
-											NM_OBJECT_DBUS_PATH, path,
-											NM_DEVICE_DEVICE_TYPE, nm_dtype,
-											NULL);
-	}
-
-out:
+	async_data->callback (type, async_data->user_data);
 	g_object_unref (proxy);
-	return G_OBJECT (device);
+	g_slice_free (NMDeviceAsyncData, async_data);
+}
+
+static void
+nm_device_type_for_path_async (DBusGConnection *connection,
+                               const char *path,
+                               NMObjectTypeCallbackFunc callback,
+                               gpointer user_data)
+{
+	NMDeviceAsyncData *async_data;
+	DBusGProxy *proxy;
+
+	async_data = g_slice_new (NMDeviceAsyncData);
+	async_data->connection = connection;
+	async_data->callback = callback;
+	async_data->user_data = user_data;
+
+	proxy = dbus_g_proxy_new_for_name (connection, NM_DBUS_SERVICE, path,
+	                                   "org.freedesktop.DBus.Properties");
+	dbus_g_proxy_begin_call (proxy, "Get",
+	                         async_got_type, async_data, NULL,
+	                         G_TYPE_STRING, NM_DBUS_INTERFACE_DEVICE,
+	                         G_TYPE_STRING, "DeviceType",
+	                         G_TYPE_INVALID);
 }
 
 /**
@@ -923,9 +822,31 @@ nm_device_get_ip_iface (NMDevice *device)
 NMDeviceType
 nm_device_get_device_type (NMDevice *self)
 {
+	NMDevicePrivate *priv;
+
 	g_return_val_if_fail (NM_IS_DEVICE (self), NM_DEVICE_TYPE_UNKNOWN);
 
-	return NM_DEVICE_GET_PRIVATE (self)->device_type;
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	/* Fill this in if it wasn't set at construct time */
+	if (priv->device_type == NM_DEVICE_TYPE_UNKNOWN) {
+		if (NM_IS_DEVICE_ETHERNET (self))
+			priv->device_type = NM_DEVICE_TYPE_ETHERNET;
+		else if (NM_IS_DEVICE_WIFI (self))
+			priv->device_type = NM_DEVICE_TYPE_WIFI;
+		else if (NM_IS_DEVICE_MODEM (self))
+			priv->device_type = NM_DEVICE_TYPE_MODEM;
+		else if (NM_IS_DEVICE_BT (self))
+			priv->device_type = NM_DEVICE_TYPE_BT;
+		else if (NM_IS_DEVICE_WIMAX (self))
+			priv->device_type = NM_DEVICE_TYPE_WIMAX;
+		else if (NM_IS_DEVICE_INFINIBAND (self))
+			priv->device_type = NM_DEVICE_TYPE_INFINIBAND;
+		else
+			g_warn_if_reached ();
+	}
+
+	return priv->device_type;
 }
 
 /**

@@ -40,8 +40,6 @@ G_DEFINE_TYPE (NMDeviceWifi, nm_device_wifi, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_WIFI_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_WIFI, NMDeviceWifiPrivate))
 
-static gboolean demarshal_active_ap (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field);
-
 void _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enabled);
 
 typedef struct {
@@ -566,40 +564,6 @@ state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 	}
 }
 
-static gboolean
-demarshal_active_ap (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
-{
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (object);
-	const char *path;
-	NMAccessPoint *ap = NULL;
-	DBusGConnection *connection;
-
-	if (value) {
-		if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
-			return FALSE;
-
-		path = g_value_get_boxed (value);
-		if (path) {
-			ap = NM_ACCESS_POINT (_nm_object_cache_get (path));
-			if (!ap) {
-				connection = nm_object_get_connection (object);
-				ap = NM_ACCESS_POINT (nm_access_point_new (connection, path));
-			}
-		}
-	}
-
-	if (priv->active_ap) {
-		g_object_unref (priv->active_ap);
-		priv->active_ap = NULL;
-	}
-
-	if (ap)
-		priv->active_ap = ap;
-
-	_nm_object_queue_notify (object, NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT);
-	return TRUE;
-}
-
 static void
 register_properties (NMDeviceWifi *device)
 {
@@ -609,7 +573,7 @@ register_properties (NMDeviceWifi *device)
 		{ NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS, &priv->perm_hw_address },
 		{ NM_DEVICE_WIFI_MODE,                 &priv->mode },
 		{ NM_DEVICE_WIFI_BITRATE,              &priv->rate },
-		{ NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT,  &priv->active_ap, demarshal_active_ap },
+		{ NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT,  &priv->active_ap, NULL, NM_TYPE_ACCESS_POINT },
 		{ NM_DEVICE_WIFI_CAPABILITIES,         &priv->wireless_caps },
 		{ NULL },
 	};

@@ -30,12 +30,14 @@
 void _nm_object_ensure_inited (NMObject *object);
 
 typedef gboolean (*PropertyMarshalFunc) (NMObject *, GParamSpec *, GValue *, gpointer);
+
 typedef GObject * (*NMObjectCreatorFunc) (DBusGConnection *, const char *);
 
 typedef struct {
 	const char *name;
 	gpointer field;
 	PropertyMarshalFunc func;
+	GType object_type;
 } NMPropertiesInfo;
 
 
@@ -68,5 +70,13 @@ handle_ptr_array_return (GPtrArray *array)
 		return NULL;
 	return array;
 }
+
+/* object demarshalling support */
+typedef GType (*NMObjectTypeFunc) (DBusGConnection *, const char *);
+typedef void (*NMObjectTypeCallbackFunc) (GType, gpointer);
+typedef void (*NMObjectTypeAsyncFunc) (DBusGConnection *, const char *, NMObjectTypeCallbackFunc, gpointer);
+
+void _nm_object_register_type_func (GType base_type, NMObjectTypeFunc type_func,
+                                    NMObjectTypeAsyncFunc type_async_func);
 
 #endif /* NM_OBJECT_PRIVATE_H */

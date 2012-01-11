@@ -30,6 +30,7 @@
 #include "nm-object-private.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
+#include "nm-types.h"
 
 #define DEBUG 0
 
@@ -37,8 +38,12 @@ G_DEFINE_ABSTRACT_TYPE (NMObject, nm_object, G_TYPE_OBJECT)
 
 #define NM_OBJECT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_OBJECT, NMObjectPrivate))
 
+static GHashTable *type_funcs, *type_async_funcs;
+
 typedef struct {
 	PropertyMarshalFunc func;
+	GType object_type;
+
 	gpointer field;
 } PropertyInfo;
 
@@ -192,6 +197,11 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 
 	g_type_class_add_private (nm_object_class, sizeof (NMObjectPrivate));
 
+	if (!type_funcs) {
+		type_funcs = g_hash_table_new (NULL, NULL);
+		type_async_funcs = g_hash_table_new (NULL, NULL);
+	}
+
 	/* virtual methods */
 	object_class->constructor = constructor;
 	object_class->set_property = set_property;
@@ -311,6 +321,81 @@ _nm_object_queue_notify (NMObject *object, const char *property)
 		priv->notify_props = g_slist_prepend (priv->notify_props, g_strdup (property));
 }
 
+void
+_nm_object_register_type_func (GType base_type, NMObjectTypeFunc type_func,
+                               NMObjectTypeAsyncFunc type_async_func)
+{
+	g_hash_table_insert (type_funcs,
+	                     GSIZE_TO_POINTER (base_type),
+	                     type_func);
+	g_hash_table_insert (type_async_funcs,
+	                     GSIZE_TO_POINTER (base_type),
+	                     type_async_func);
+}
+
+static GObject *
+_nm_object_create (GType type, DBusGConnection *connection, const char *path)
+{
+	NMObjectTypeFunc type_func;
+
+	type_func = g_hash_table_lookup (type_funcs, GSIZE_TO_POINTER (type));
+	if (type_func)
+		type = type_func (connection, path);
+
+	return g_object_new (type,
+	                     NM_OBJECT_DBUS_CONNECTION, connection,
+	                     NM_OBJECT_DBUS_PATH, path,
+	                     NULL);
+}
+
+typedef void (*NMObjectCreateCallbackFunc) (GObject *, gpointer);
+typedef struct {
+	DBusGConnection *connection;
+	char *path;
+	NMObjectCreateCallbackFunc callback;
+	gpointer user_data;
+} NMObjectTypeAsyncData;
+
+static void
+async_got_type (GType type, gpointer user_data)
+{
+	NMObjectTypeAsyncData *async_data = user_data;
+	GObject *object;
+
+	if (type != G_TYPE_INVALID) {
+		object = g_object_new (type,
+		                       NM_OBJECT_DBUS_CONNECTION, async_data->connection,
+		                       NM_OBJECT_DBUS_PATH, async_data->path,
+		                       NULL);
+	} else
+		object = NULL;
+
+	async_data->callback (object, async_data->user_data);
+
+	g_free (async_data->path);
+	g_slice_free (NMObjectTypeAsyncData, async_data);
+}
+
+static void
+_nm_object_create_async (GType type, DBusGConnection *connection, const char *path,
+                         NMObjectCreateCallbackFunc callback, gpointer user_data)
+{
+	NMObjectTypeAsyncFunc type_async_func;
+	NMObjectTypeAsyncData *async_data;
+
+	async_data = g_slice_new (NMObjectTypeAsyncData);
+	async_data->connection = connection;
+	async_data->path = g_strdup (path);
+	async_data->callback = callback;
+	async_data->user_data = user_data;
+
+	type_async_func = g_hash_table_lookup (type_async_funcs, GSIZE_TO_POINTER (type));
+	if (type_async_func)
+		type_async_func (connection, path, async_got_type, async_data);
+	else
+		async_got_type (type, async_data);
+}
+
 /* Stolen from dbus-glib */
 static char*
 wincaps_to_dash (const char *caps)
@@ -333,19 +418,155 @@ wincaps_to_dash (const char *caps)
 	return g_string_free (str, FALSE);
 }
 
+typedef struct {
+	NMObject *self;
+	PropertyInfo *pi;
+
+	GObject **objects;
+	int length, remaining;
+
+	gboolean array;
+	const char *property_name;
+} ObjectCreatedData;
+
 static void
-handle_property_changed (gpointer key, gpointer data, gpointer user_data)
+object_created (GObject *obj, gpointer user_data)
 {
-	NMObject *self = NM_OBJECT (user_data);
+	ObjectCreatedData *odata = user_data;
+	NMObject *self = odata->self;
+	PropertyInfo *pi = odata->pi;
+
+	/* We assume that on error, the creator_func printed something */
+
+	odata->objects[--odata->remaining] = obj;
+	if (odata->remaining)
+		return;
+
+	if (odata->array) {
+		GPtrArray **array = pi->field;
+		int i;
+
+		if (*array)
+			g_boxed_free (NM_TYPE_OBJECT_ARRAY, *array);
+		*array = g_ptr_array_sized_new (odata->length);
+		for (i = 0; i < odata->length; i++) {
+			if (odata->objects[i])
+				g_ptr_array_add (*array, odata->objects[i]);
+		}
+	} else {
+		GObject **obj_p = pi->field;
+
+		g_clear_object (obj_p);
+		*obj_p = odata->objects[0];
+	}
+
+	if (odata->property_name)
+		_nm_object_queue_notify (self, odata->property_name);
+
+	g_object_unref (self);
+	g_free (odata->objects);
+	g_slice_free (ObjectCreatedData, odata);
+}
+
+static gboolean
+handle_object_property (NMObject *self, const char *property_name, GValue *value,
+                        PropertyInfo *pi, gboolean synchronously)
+{
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
+	GObject *obj;
+	const char *path;
+	ObjectCreatedData *odata;
+
+	odata = g_slice_new (ObjectCreatedData);
+	odata->self = g_object_ref (self);
+	odata->pi = pi;
+	odata->objects = g_new (GObject *, 1);
+	odata->length = odata->remaining = 1;
+	odata->array = FALSE;
+	odata->property_name = property_name;
+
+	path = g_value_get_boxed (value);
+	if (!strcmp (path, "/")) {
+		object_created (NULL, odata);
+		return TRUE;
+	}
+
+	obj = G_OBJECT (_nm_object_cache_get (path));
+	if (obj) {
+		object_created (obj, odata);
+		return TRUE;
+	} else if (synchronously) {
+		obj = _nm_object_create (pi->object_type, priv->connection, path);
+		object_created (obj, odata);
+		return obj != NULL;
+	} else {
+		_nm_object_create_async (pi->object_type, priv->connection, path,
+		                         object_created, odata);
+		/* Assume success */
+		return TRUE;
+	}
+}
+
+static gboolean
+handle_object_array_property (NMObject *self, const char *property_name, GValue *value,
+                              PropertyInfo *pi, gboolean synchronously)
+{
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
+	GObject *obj;
+	GPtrArray *paths;
+	GPtrArray **array = pi->field;
+	const char *path;
+	ObjectCreatedData *odata;
+	int i;
+
+	paths = g_value_get_boxed (value);
+
+	odata = g_slice_new (ObjectCreatedData);
+	odata->self = g_object_ref (self);
+	odata->pi = pi;
+	odata->objects = g_new0 (GObject *, paths->len);
+	odata->length = odata->remaining = paths->len;
+	odata->array = TRUE;
+	odata->property_name = property_name;
+
+	for (i = 0; i < paths->len; i++) {
+		path = paths->pdata[i];
+		if (!strcmp (path, "/")) {
+			/* FIXME: can't happen? */
+			continue;
+		}
+
+		obj = G_OBJECT (_nm_object_cache_get (path));
+		if (obj) {
+			object_created (obj, odata);
+		} else if (synchronously) {
+			obj = _nm_object_create (pi->object_type, priv->connection, path);
+			object_created (obj, odata);
+		} else {
+			_nm_object_create_async (pi->object_type, priv->connection, path,
+			                         object_created, odata);
+		}
+	}
+
+	if (!synchronously) {
+		/* Assume success */
+		return TRUE;
+	}
+
+	return *array && ((*array)->len == paths->len);
+}
+
+static void
+handle_property_changed (NMObject *self, const char *dbus_name, GValue *value, gboolean synchronously)
+{
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
 	char *prop_name;
 	PropertyInfo *pi;
 	GParamSpec *pspec;
 	gboolean success = FALSE, found = FALSE;
 	GSList *iter;
-	GValue *value = data;
 
-	prop_name = wincaps_to_dash ((char *) key);
+	prop_name = wincaps_to_dash (dbus_name);
 
 	/* Iterate through the object and its parents to find the property */
 	for (iter = priv->property_tables; iter; iter = g_slist_next (iter)) {
@@ -377,13 +598,18 @@ handle_property_changed (gpointer key, gpointer data, gpointer user_data)
 		goto out;
 	}
 
-	/* Handle NULL object paths */
-	if (G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH)) {
-		if (g_strcmp0 (g_value_get_boxed (value), "/") == 0)
-			value = NULL;
-	}
+	if (pi->object_type) {
+		if (G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
+			success = handle_object_property (self, pspec->name, value, pi, synchronously);
+		else if (G_VALUE_HOLDS (value, DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH))
+			success = handle_object_array_property (self, pspec->name, value, pi, synchronously);
+		else {
+			g_warn_if_reached ();
+			goto out;
+		}
+	} else
+		success = (*(pi->func)) (self, pspec, value, pi->field);
 
-	success = (*(pi->func)) (self, pspec, value, pi->field);
 	if (!success) {
 		g_warning ("%s: failed to update property '%s' of object type %s.",
 		           __func__,
@@ -398,7 +624,12 @@ out:
 void
 _nm_object_process_properties_changed (NMObject *self, GHashTable *properties)
 {
-	g_hash_table_foreach (properties, handle_property_changed, self);
+	GHashTableIter iter;
+	gpointer name, value;
+
+	g_hash_table_iter_init (&iter, properties);
+	while (g_hash_table_iter_next (&iter, &name, &value))
+		handle_property_changed (self, name, value, FALSE);
 }
 
 static void
@@ -509,6 +740,7 @@ _nm_object_register_properties (NMObject *object,
 
 		pi = g_malloc0 (sizeof (PropertyInfo));
 		pi->func = tmp->func ? tmp->func : demarshal_generic;
+		pi->object_type = tmp->object_type;
 		pi->field = tmp->field;
 		g_hash_table_insert (instance, g_strdup (tmp->name), pi);
 	}
@@ -591,7 +823,7 @@ _nm_object_reload_property (NMObject *object,
 		return;
 	}
 
-	handle_property_changed ((gpointer)prop_name, &value, object);
+	handle_property_changed (object, prop_name, &value, TRUE);
 	g_value_unset (&value);
 }
 
