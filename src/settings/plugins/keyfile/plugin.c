@@ -642,7 +642,7 @@ nm_settings_keyfile_plugin_new (const char *config_file)
 		if (singleton) {
 			priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (singleton);
 
-			priv->conf_file = strdup (config_file);
+			priv->conf_file = g_strdup (config_file);
 
 			/* plugin_set_hostname() has to be called *after* priv->conf_file is set */
 			priv->hostname = plugin_get_hostname (singleton);
