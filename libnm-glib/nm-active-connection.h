@@ -46,6 +46,7 @@ G_BEGIN_DECLS
 #define NM_ACTIVE_CONNECTION_STATE               "state"
 #define NM_ACTIVE_CONNECTION_DEFAULT             "default"
 #define NM_ACTIVE_CONNECTION_DEFAULT6            "default6"
+#define NM_ACTIVE_CONNECTION_MASTER              "master"
 
 typedef struct {
 	NMObject parent;
@@ -74,6 +75,7 @@ const GPtrArray *nm_active_connection_get_devices         (NMActiveConnection *c
 NMActiveConnectionState nm_active_connection_get_state    (NMActiveConnection *connection);
 gboolean nm_active_connection_get_default                 (NMActiveConnection *connection);
 gboolean nm_active_connection_get_default6                (NMActiveConnection *connection);
+const char * nm_active_connection_get_master              (NMActiveConnection *connection);
 
 G_END_DECLS
 

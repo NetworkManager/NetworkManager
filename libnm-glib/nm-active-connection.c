@@ -50,6 +50,7 @@ typedef struct {
 	NMActiveConnectionState state;
 	gboolean is_default;
 	gboolean is_default6;
+	char *master;
 } NMActiveConnectionPrivate;
 
 enum {
@@ -61,6 +62,7 @@ enum {
 	PROP_STATE,
 	PROP_DEFAULT,
 	PROP_DEFAULT6,
+	PROP_MASTER,
 
 	LAST_PROP
 };
@@ -72,6 +74,7 @@ enum {
 #define DBUS_PROP_STATE "State"
 #define DBUS_PROP_DEFAULT "Default"
 #define DBUS_PROP_DEFAULT6 "Default6"
+#define DBUS_PROP_MASTER "Master"
 
 /**
  * nm_active_connection_new:
@@ -290,6 +293,33 @@ nm_active_connection_get_default6 (NMActiveConnection *connection)
 	return priv->is_default6;
 }
 
+/**
+ * nm_active_connection_get_master:
+ * @connection: a #NMActiveConnection
+ *
+ * Gets the path to the master #NMDevice of the connection.
+ *
+ * Returns: the path of the master #NMDevice of the #NMActiveConnection.
+ * This is the internal string used by the connection, and must not be modified.
+ **/
+const char *
+nm_active_connection_get_master (NMActiveConnection *connection)
+{
+	NMActiveConnectionPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
+
+	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
+	if (!priv->master) {
+		priv->master = _nm_object_get_string_property (NM_OBJECT (connection),
+		                                               NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
+		                                               DBUS_PROP_MASTER,
+		                                               NULL);
+	}
+
+	return priv->master;
+}
+
 static void
 nm_active_connection_init (NMActiveConnection *ap)
 {
@@ -324,6 +354,7 @@ finalize (GObject *object)
 	g_free (priv->connection);
 	g_free (priv->uuid);
 	g_free (priv->specific_object);
+	g_free (priv->master);
 
 	G_OBJECT_CLASS (nm_active_connection_parent_class)->finalize (object);
 }
@@ -354,6 +385,9 @@ get_property (GObject *object,
 		break;
 	case PROP_DEFAULT6:
 		g_value_set_boolean (value, nm_active_connection_get_default6 (self));
+		break;
+	case PROP_MASTER:
+		g_value_set_string (value, nm_active_connection_get_master (self));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -514,4 +548,17 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 							   "Is the default IPv6 active connection",
 							   FALSE,
 							   G_PARAM_READABLE));
+
+	/**
+	 * NMActiveConnection:master:
+	 *
+	 * The path of the master device if one exists.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_MASTER,
+		 g_param_spec_string (NM_ACTIVE_CONNECTION_MASTER,
+						      "Master",
+						      "Path of the master device",
+						      NULL,
+						      G_PARAM_READABLE));
 }

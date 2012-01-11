@@ -37,6 +37,9 @@
     <property name="Vpn" type="b" access="read">
       <tp:docstring>Whether this active connection is also a VPN connection.</tp:docstring>
     </property>
+    <property name="Master" type="s" access="read">
+      <tp:docstring>The path to the master device if the connection is a slave.</tp:docstring>
+    </property>
 
     <signal name="PropertiesChanged">
         <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">

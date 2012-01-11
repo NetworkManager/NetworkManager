@@ -52,6 +52,7 @@ enum {
 	PROP_DEFAULT,
 	PROP_DEFAULT6,
 	PROP_VPN,
+	PROP_MASTER,
 
 	LAST_PROP
 };
@@ -175,6 +176,8 @@ get_property (GObject *object, guint prop_id,
 	case PROP_VPN:
 		g_value_set_boolean (value, TRUE);
 		break;
+	case PROP_MASTER:
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -201,7 +204,8 @@ nm_vpn_connection_base_class_init (NMVpnConnectionBaseClass *vpn_class)
                                              PROP_STATE,
                                              PROP_DEFAULT,
                                              PROP_DEFAULT6,
-                                             PROP_VPN);
+                                             PROP_VPN,
+                                             PROP_MASTER);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (vpn_class),
 									 &dbus_glib_nm_vpn_connection_base_object_info);

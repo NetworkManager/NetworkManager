@@ -32,6 +32,7 @@
 #define NM_ACTIVE_CONNECTION_DEFAULT "default"
 #define NM_ACTIVE_CONNECTION_DEFAULT6 "default6"
 #define NM_ACTIVE_CONNECTION_VPN "vpn"
+#define NM_ACTIVE_CONNECTION_MASTER "master"
 
 char *nm_active_connection_get_next_object_path (void);
 
@@ -43,6 +44,7 @@ void nm_active_connection_install_properties (GObjectClass *object_class,
                                               guint prop_state,
                                               guint prop_default,
                                               guint prop_default6,
-                                              guint prop_vpn);
+                                              guint prop_vpn,
+                                              guint prop_master);
 
 #endif /* NM_ACTIVE_CONNECTION_H */

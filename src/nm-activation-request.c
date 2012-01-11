@@ -91,6 +91,7 @@ enum {
 	PROP_DEFAULT,
 	PROP_DEFAULT6,
 	PROP_VPN,
+	PROP_MASTER,
 
 	LAST_PROP
 };
@@ -558,6 +559,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_VPN:
 		g_value_set_boolean (value, FALSE);
 		break;
+	case PROP_MASTER:
+		g_value_set_string (value, nm_device_get_master_path (priv->device));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -632,7 +636,8 @@ nm_act_request_class_init (NMActRequestClass *req_class)
                                              PROP_STATE,
                                              PROP_DEFAULT,
                                              PROP_DEFAULT6,
-                                             PROP_VPN);
+                                             PROP_VPN,
+                                             PROP_MASTER);
 
 	/* Signals */
 	signals[PROPERTIES_CHANGED] = 

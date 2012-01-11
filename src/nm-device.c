@@ -572,6 +572,17 @@ nm_device_get_master (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->master;
 }
 
+const char *
+nm_device_get_master_path (NMDevice *self)
+{
+	g_return_val_if_fail (self != NULL, NULL);
+
+	if (NM_DEVICE_GET_PRIVATE (self)->master)
+		return nm_device_get_path (NM_DEVICE_GET_PRIVATE (self)->master);
+
+	return NULL;
+}
+
 void
 nm_device_set_master (NMDevice *self, NMDevice *master)
 {
@@ -580,6 +591,9 @@ nm_device_set_master (NMDevice *self, NMDevice *master)
 	if (priv->master)
 		g_object_unref (priv->master);
 	priv->master = master ? g_object_ref (master) : NULL;
+
+	if (priv->act_request)
+		g_object_notify (G_OBJECT (priv->act_request), NM_ACTIVE_CONNECTION_MASTER);
 }
 
 /*

@@ -41,7 +41,8 @@ nm_active_connection_install_properties (GObjectClass *object_class,
                                          guint prop_state,
                                          guint prop_default,
                                          guint prop_default6,
-                                         guint prop_vpn)
+                                         guint prop_vpn,
+                                         guint prop_master)
 {
 	g_object_class_install_property (object_class, prop_connection,
 		g_param_spec_boxed (NM_ACTIVE_CONNECTION_CONNECTION,
@@ -100,5 +101,12 @@ nm_active_connection_install_properties (GObjectClass *object_class,
 		                      "Is a VPN connection",
 		                      FALSE,
 		                      G_PARAM_READABLE));
+
+	g_object_class_install_property (object_class, prop_master,
+		g_param_spec_string (NM_ACTIVE_CONNECTION_MASTER,
+		                     "Master",
+		                     "Path of master device",
+		                     NULL,
+		                     G_PARAM_READABLE));
 }
 
