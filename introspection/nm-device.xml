@@ -476,6 +476,26 @@
           The Bluetooth connection timed out or failed.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="GSM_SIM_NOT_INSERTED" value="45">
+        <tp:docstring>
+          GSM Modem's SIM Card not inserted.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="GSM_SIM_PIN_REQUIRED" value="46">
+        <tp:docstring>
+          GSM Modem's SIM Pin required.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="GSM_SIM_PUK_REQUIRED" value="47">
+        <tp:docstring>
+          GSM Modem's SIM Puk required.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="GSM_SIM_WRONG" value="48">
+        <tp:docstring>
+          GSM Modem's SIM wrong
+        </tp:docstring>
+      </tp:enumvalue>
     </tp:enum>
 
   </interface>
