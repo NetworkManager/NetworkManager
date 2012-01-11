@@ -128,10 +128,11 @@ static NmcOutputField nmc_fields_con_status[] = {
 	{"DBUS-PATH",     N_("DBUS-PATH"),    51, NULL, 0},  /* 9 */
 	{"CON-PATH",      N_("CON-PATH"),     44, NULL, 0},  /* 10 */
 	{"ZONE",          N_("ZONE"),         15, NULL, 0},  /* 11 */
+	{"MASTER-PATH",   N_("MASTER-PATH"),  44, NULL, 0},  /* 12 */
 	{NULL,            NULL,                0, NULL, 0}
 };
-#define NMC_FIELDS_CON_STATUS_ALL     "NAME,UUID,DEVICES,STATE,DEFAULT,DEFAULT6,VPN,ZONE,DBUS-PATH,CON-PATH,SPEC-OBJECT"
-#define NMC_FIELDS_CON_STATUS_COMMON  "NAME,UUID,DEVICES,DEFAULT,VPN"
+#define NMC_FIELDS_CON_STATUS_ALL     "NAME,UUID,DEVICES,STATE,DEFAULT,DEFAULT6,VPN,ZONE,DBUS-PATH,CON-PATH,SPEC-OBJECT,MASTER-PATH"
+#define NMC_FIELDS_CON_STATUS_COMMON  "NAME,UUID,DEVICES,DEFAULT,VPN,MASTER-PATH"
 
 /* Available fields for 'con status id/uuid/path <con>' */
 static NmcOutputField nmc_fields_status_details_groups[] = {
@@ -684,6 +685,7 @@ fill_in_fields_con_status (NMActiveConnection *active, GSList *con_list)
 			nmc_fields_con_status[9].value = nm_object_get_path (NM_OBJECT (active));
 			nmc_fields_con_status[10].value = nm_active_connection_get_connection (active);
 			nmc_fields_con_status[11].value = nm_setting_connection_get_zone (s_con);
+			nmc_fields_con_status[12].value = nm_active_connection_get_master (active);
 
 			success = TRUE;
 			break;
