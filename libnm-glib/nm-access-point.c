@@ -368,6 +368,11 @@ nm_access_point_get_strength (NMAccessPoint *ap)
  * @ap's SSID, (if given) BSSID, and other attributes like security settings,
  * channel, band, etc.
  *
+ * To obtain the list of connections that are compatible with this access point,
+ * use nm_remote_settings_list_connections() and then filter the returned list
+ * for a given #NMDevice using nm_device_filter_connections() and finally
+ * filter that list with this function.
+ *
  * Returns: %TRUE if the connection may be activated with this WiFi AP,
  * %FALSE if it cannot be.
  **/
