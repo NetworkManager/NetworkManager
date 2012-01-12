@@ -1602,7 +1602,8 @@ nm_device_connection_valid (NMDevice *device, NMConnection *connection)
  * contain any WiFi connections in @connections that allow connection to
  * unencrypted or WEP-enabled SSIDs.  The returned list will not contain
  * Ethernet, Bluetooth, WiFi WPA connections, or any other connection that is
- * incompatible with the device.
+ * incompatible with the device. To get the full list of connections see
+ * nm_remote_settings_list_connections().
  *
  * Returns: (transfer container) (element-type NetworkManager.Connection): a
  * list of #NMConnection objects that could be activated with the given @device.
