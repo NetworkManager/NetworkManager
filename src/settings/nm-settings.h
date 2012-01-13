@@ -108,6 +108,9 @@ GSList *nm_settings_get_connections (NMSettings *settings);
 NMSettingsConnection *nm_settings_get_connection_by_path (NMSettings *settings,
                                                           const char *path);
 
+NMSettingsConnection *nm_settings_get_connection_by_uuid (NMSettings *settings,
+                                                          const char *uuid);
+
 const GSList *nm_settings_get_unmanaged_specs (NMSettings *self);
 
 char *nm_settings_get_hostname (NMSettings *self);

@@ -228,36 +228,49 @@ impl_settings_list_connections (NMSettings *self,
 	return TRUE;
 }
 
+NMSettingsConnection *
+nm_settings_get_connection_by_uuid (NMSettings *self, const char *uuid)
+{
+	NMSettingsPrivate *priv;
+	NMSettingsConnection *candidate;
+	GHashTableIter iter;
+
+	g_return_val_if_fail (self != NULL, NULL);
+	g_return_val_if_fail (NM_IS_SETTINGS (self), NULL);
+	g_return_val_if_fail (uuid != NULL, NULL);
+
+	priv = NM_SETTINGS_GET_PRIVATE (self);
+
+	load_connections (self);
+
+	g_hash_table_iter_init (&iter, priv->connections);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &candidate)) {
+		if (g_strcmp0 (uuid, nm_connection_get_uuid (NM_CONNECTION (candidate))) == 0)
+			return candidate;
+	}
+
+	return NULL;
+}
+
 static gboolean
 impl_settings_get_connection_by_uuid (NMSettings *self,
                                       const char *uuid,
                                       char **out_object_path,
                                       GError **error)
 {
-	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	GHashTableIter iter;
-	NMConnection *candidate = NULL;
-	gboolean found = FALSE;
+	NMSettingsConnection *connection = NULL;
 
-	load_connections (self);
-
-	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &candidate)) {
-		if (g_strcmp0 (uuid, nm_connection_get_uuid (candidate)) == 0) {
-			*out_object_path = g_strdup (nm_connection_get_path (candidate));
-			found = TRUE;
-			break;
-		}
-	}
-
-	if (!found) {
+	connection = nm_settings_get_connection_by_uuid (self, uuid);
+	if (connection)
+		*out_object_path = g_strdup (nm_connection_get_path (NM_CONNECTION (connection)));
+	else {
 		g_set_error_literal (error,
 		                     NM_SETTINGS_ERROR,
 		                     NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		                     "No connection with the UUID was found.");
 	}
 
-	return found;
+	return !!connection;
 }
 
 static int
