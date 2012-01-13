@@ -224,6 +224,15 @@ nm_config_new (const char *cli_config_path,
 		return NULL;
 	}
 
+	/* If for some reason no config file exists, and NM wasn't given on on
+	 * the command line, just use the default config file path.
+	 */
+	if (config->path == NULL) {
+		config->path = g_strdup (NM_DEFAULT_SYSTEM_CONF_FILE);
+		fprintf (stderr, "No config file found or given; using %s\n",
+		         NM_DEFAULT_SYSTEM_CONF_FILE);
+	}
+
 	/* ignore error if config file not found */
 	g_clear_error (&local);
 	return config;
