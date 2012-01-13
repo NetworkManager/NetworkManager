@@ -351,13 +351,15 @@ setup_monitoring (NMSystemConfigInterface *config)
 		priv->monitor = monitor;
 	}
 
-	file = g_file_new_for_path (priv->conf_file);
-	monitor = g_file_monitor_file (file, G_FILE_MONITOR_NONE, NULL, NULL);
-	g_object_unref (file);
+	if (priv->conf_file) {
+		file = g_file_new_for_path (priv->conf_file);
+		monitor = g_file_monitor_file (file, G_FILE_MONITOR_NONE, NULL, NULL);
+		g_object_unref (file);
 
-	if (monitor) {
-		priv->conf_file_monitor_id = g_signal_connect (monitor, "changed", G_CALLBACK (conf_file_changed), config);
-		priv->conf_file_monitor = monitor;
+		if (monitor) {
+			priv->conf_file_monitor_id = g_signal_connect (monitor, "changed", G_CALLBACK (conf_file_changed), config);
+			priv->conf_file_monitor = monitor;
+		}
 	}
 }
 
@@ -406,6 +408,9 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 	GKeyFile *key_file;
 	GSList *specs = NULL;
 	GError *error = NULL;
+
+	if (!priv->conf_file)
+		return NULL;
 
 	key_file = g_key_file_new ();
 	if (g_key_file_load_from_file (key_file, priv->conf_file, G_KEY_FILE_NONE, &error)) {
@@ -457,6 +462,9 @@ plugin_get_hostname (SCPluginKeyfile *plugin)
 	char *hostname = NULL;
 	GError *error = NULL;
 
+	if (!priv->conf_file)
+		return NULL;
+
 	key_file = g_key_file_new ();
 	if (g_key_file_load_from_file (key_file, priv->conf_file, G_KEY_FILE_NONE, &error))
 		hostname = g_key_file_get_value (key_file, "keyfile", "hostname", NULL);
@@ -477,6 +485,11 @@ plugin_set_hostname (SCPluginKeyfile *plugin, const char *hostname)
 	GKeyFile *key_file;
 	GError *error = NULL;
 	gboolean result = FALSE;
+
+	if (!priv->conf_file) {
+		g_warning ("Error saving hostname: no config file");
+		return FALSE;
+	}
 
 	key_file = g_key_file_new ();
 	if (g_key_file_load_from_file (key_file, priv->conf_file, G_KEY_FILE_NONE, &error)) {
