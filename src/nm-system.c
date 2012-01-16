@@ -849,7 +849,7 @@ replace_default_ip4_route (int ifindex, guint32 gw, guint32 mss)
 	struct rtnl_route *route = NULL;
 	struct nl_sock *nlh;
 	int err = -1;
-	int dst=0;
+	int dst = 0;
 
 	g_return_val_if_fail (ifindex > 0, -ENODEV);
 
@@ -864,6 +864,8 @@ replace_default_ip4_route (int ifindex, guint32 gw, guint32 mss)
 
 	/* Add the new default route */
 	err = nm_netlink_route_add (route, AF_INET, &dst, 0, &gw, NLM_F_REPLACE);
+	if (err == -NLE_EXIST)
+		err = 0;
 
 	rtnl_route_put (route);
 	return err;
@@ -1033,7 +1035,7 @@ replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
 	g_return_val_if_fail (route != NULL, -ENOMEM);
 
 	/* Add the new default route */
-	nm_netlink_route_add(route, AF_INET6, NULL, 0, gw, NLM_F_REPLACE);
+	err = nm_netlink_route_add (route, AF_INET6, NULL, 0, gw, NLM_F_REPLACE);
 	if (err == -NLE_EXIST) {
 		/* FIXME: even though we use NLM_F_REPLACE the kernel won't replace
 		 * the route if it's the same.  Should try to remove it first, then
@@ -1062,6 +1064,9 @@ nm_system_replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
 
 	err = replace_default_ip6_route (ifindex, gw);
 	if (err == 0)
+		return TRUE;
+
+	if (err == -NLE_EXIST)
 		return TRUE;
 
 	iface = nm_netlink_index_to_iface (ifindex);
