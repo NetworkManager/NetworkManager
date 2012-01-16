@@ -170,7 +170,7 @@ nm_netlink_route_new (int ifindex,
  *
  * Returns: zero if succeeded or the netlink error otherwise.
  **/
-int nm_netlink_route_add(struct rtnl_route * route,
+int nm_netlink_route_add (struct rtnl_route * route,
 			 int family,
 			 const void * dest, /* in_addr or in6_addr */
 			 int dest_prefix,
@@ -235,11 +235,6 @@ int nm_netlink_route_add(struct rtnl_route * route,
 	/* LIBNL Bug: Aliased ESRCH */
 	if (err == -NLE_FAILURE)
 		err = -NLE_OBJ_NOTFOUND;
-
-	if (err)
-		nm_log_warn (LOGD_DEVICE | log,
-                             "Failed to add route %s",
-                             nl_geterror(err));
 
 	return err;
 }
