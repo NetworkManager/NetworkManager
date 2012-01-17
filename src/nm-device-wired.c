@@ -605,7 +605,7 @@ nm_device_wired_get_carrier (NMDeviceWired *dev)
 {
 	NMDeviceWiredPrivate *priv;
 
-	g_return_val_if_fail (dev != NULL, -1);
+	g_return_val_if_fail (dev != NULL, FALSE);
 
 	priv = NM_DEVICE_WIRED_GET_PRIVATE (dev);
 	return priv->carrier;
