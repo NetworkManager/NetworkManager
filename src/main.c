@@ -140,7 +140,7 @@ setup_signals (void)
 
 	/* Set up our quit pipe */
 	if (pipe (quit_pipe) < 0) {
-		fprintf (stderr, _("Failed to initialze SIGTERM pipe: %d"), errno);
+		fprintf (stderr, _("Failed to initialize SIGTERM pipe: %d"), errno);
 		exit (1);
 	}
 	fcntl (quit_pipe[1], F_SETFL, O_NONBLOCK | fcntl (quit_pipe[1], F_GETFL));
