@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2011 Red Hat, Inc.
+ * Copyright (C) 2005 - 2012 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -24,11 +24,8 @@
 #include <glib/gi18n.h>
 #include <netinet/in.h>
 #include <string.h>
-#include <net/ethernet.h>
 #include <stdlib.h>
-#include <linux/types.h>
 #include <linux/sockios.h>
-#include <linux/version.h>
 #include <linux/ethtool.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
@@ -405,46 +402,6 @@ nm_device_ethernet_new (const char *udi,
 	                                  NM_DEVICE_TYPE_DESC, "Ethernet",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_ETHERNET,
 	                                  NULL);
-}
-
-/* Returns speed in Mb/s */
-static guint32
-nm_device_ethernet_get_speed (NMDeviceEthernet *self)
-{
-	int fd;
-	struct ifreq ifr;
-	struct ethtool_cmd edata = {
-		.cmd = ETHTOOL_GSET,
-	};
-	guint32 speed = 0;
-
-	g_return_val_if_fail (self != NULL, 0);
-
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		nm_log_warn (LOGD_HW, "couldn't open control socket.");
-		return 0;
-	}
-
-	memset (&ifr, 0, sizeof (struct ifreq));
-	strncpy (ifr.ifr_name, nm_device_get_iface (NM_DEVICE (self)), IFNAMSIZ);
-	ifr.ifr_data = (char *) &edata;
-
-	if (ioctl (fd, SIOCETHTOOL, &ifr) < 0)
-		goto out;
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
-	speed = edata.speed;
-#else
-	speed = ethtool_cmd_speed (&edata);
-#endif
-
-	if (speed == G_MAXUINT16 || speed == G_MAXUINT32)
-		speed = 0;
-
-out:
-	close (fd);
-	return speed;
 }
 
 static void
@@ -1541,7 +1498,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_take_string (value, nm_utils_hwaddr_ntoa (&priv->perm_hw_addr, ARPHRD_ETHER));
 		break;
 	case PROP_SPEED:
-		g_value_set_uint (value, nm_device_ethernet_get_speed (self));
+		g_value_set_uint (value, nm_device_wired_get_speed (NM_DEVICE_WIRED (self)));
 		break;
 	case PROP_CARRIER:
 		g_value_set_boolean (value, nm_device_wired_get_carrier (NM_DEVICE_WIRED (self)));

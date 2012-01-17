@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2010 Red Hat, Inc.
+ * Copyright (C) 2005 - 2012 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -49,6 +49,7 @@ GType nm_device_wired_get_type (void);
 guint8     *nm_device_wired_get_hwaddr      (NMDeviceWired *dev);
 int         nm_device_wired_get_hwaddr_type (NMDeviceWired *dev);
 gboolean    nm_device_wired_get_carrier     (NMDeviceWired *dev);
+guint32     nm_device_wired_get_speed       (NMDeviceWired *dev);
 
 G_END_DECLS
 
