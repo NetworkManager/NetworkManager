@@ -395,7 +395,7 @@ main (int argc, char *argv[])
 	textdomain (GETTEXT_PACKAGE);
 
 	/* Parse options */
-	opt_ctx = g_option_context_new ("");
+	opt_ctx = g_option_context_new (NULL);
 	g_option_context_set_translation_domain (opt_ctx, GETTEXT_PACKAGE);
 	g_option_context_set_ignore_unknown_options (opt_ctx, FALSE);
 	g_option_context_set_help_enabled (opt_ctx, TRUE);
