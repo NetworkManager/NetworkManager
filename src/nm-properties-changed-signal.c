@@ -16,13 +16,16 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2008 - 2012 Red Hat, Inc.
  */
 
 #include <string.h>
 #include <stdio.h>
 
 #include <dbus/dbus-glib.h>
+#ifdef DEBUG
+#include "nm-logging.h"
+#endif
 #include "nm-properties-changed-signal.h"
 #include "nm-dbus-glib-types.h"
 
