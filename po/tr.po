@@ -1,0 +1,2129 @@
+# Turkish translation for NetworkManager.
+# Copyright (c) 2006 Canonical Ltd, and Rosetta Contributors
+# This file is distributed under the same license as the NetworkManager package.
+#
+# Alperen Yusuf Aybar <alperen@aybar.biz>, 2006.
+# Muhammet Kara <muhammet.k@gmail.com>, 2012.
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager master\n"
+"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
+"product=NetworkManager&keywords=I18N+L10N&component=general\n"
+"POT-Creation-Date: 2012-01-03 03:24+0000\n"
+"PO-Revision-Date: 2012-01-03 22:59+0000\n"
+"Last-Translator: Muhammet Kara <muhammet.k@gmail.com>\n"
+"Language-Team: Turkish <gnome-turk@gnome.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Launchpad-Export-Date: 2012-01-03 09:56+0000\n"
+"X-Generator: Lokalize 1.2\n"
+"Language: tr\n"
+
+#: ../cli/src/connections.c:55 ../cli/src/connections.c:72
+#: ../cli/src/devices.c:103 ../cli/src/devices.c:123 ../cli/src/devices.c:133
+#: ../cli/src/devices.c:143 ../cli/src/devices.c:157 ../cli/src/devices.c:171
+#: ../cli/src/devices.c:182 ../cli/src/devices.c:193 ../cli/src/devices.c:202
+#: ../cli/src/devices.c:211 ../cli/src/devices.c:233
+msgid "NAME"
+msgstr "İSİM"
+
+#. 0
+#: ../cli/src/connections.c:56 ../cli/src/connections.c:73
+msgid "UUID"
+msgstr "Kullanıcı Kimliği"
+
+#. 1
+#: ../cli/src/connections.c:57
+msgid "DEVICES"
+msgstr "AYGITLAR"
+
+#. 2
+#. 1
+#. 6
+#. 1
+#: ../cli/src/connections.c:58 ../cli/src/devices.c:70
+#: ../cli/src/devices.c:110 ../cli/src/network-manager.c:39
+msgid "STATE"
+msgstr "DURUM"
+
+#. 3
+#: ../cli/src/connections.c:59
+msgid "DEFAULT"
+msgstr "ÖNTANIMLI"
+
+#. 4
+#: ../cli/src/connections.c:60
+#| msgid "DEFAULT"
+msgid "DEFAULT6"
+msgstr "ÖNTANIMLI6"
+
+#. 5
+#: ../cli/src/connections.c:61
+msgid "SPEC-OBJECT"
+msgstr "BELİRLİ-NESNE"
+
+#. 6
+#: ../cli/src/connections.c:62
+msgid "VPN"
+msgstr "VPN"
+
+#. 7
+#. 6
+#. 2
+#. 11
+#. 5
+#: ../cli/src/connections.c:63 ../cli/src/connections.c:79
+#: ../cli/src/devices.c:71 ../cli/src/devices.c:223 ../cli/src/devices.c:239
+msgid "DBUS-PATH"
+msgstr "DBUS-YOLU"
+
+#. 8
+#: ../cli/src/connections.c:64
+msgid "ZONE"
+msgstr "BÖLGE"
+
+#. 1
+#. 0
+#. 1
+#. 2
+#: ../cli/src/connections.c:74 ../cli/src/devices.c:69
+#: ../cli/src/devices.c:105 ../cli/src/devices.c:236
+msgid "TYPE"
+msgstr "TÜR"
+
+#. 2
+#: ../cli/src/connections.c:75
+msgid "TIMESTAMP"
+msgstr "ZAMANDAMGASI"
+
+#. 3
+#: ../cli/src/connections.c:76
+msgid "TIMESTAMP-REAL"
+msgstr "ZAMANDAMGASI-GERÇEK"
+
+#. 4
+#: ../cli/src/connections.c:77
+msgid "AUTOCONNECT"
+msgstr "OTOMATİK-BAĞLANTI"
+
+#. 5
+#: ../cli/src/connections.c:78
+msgid "READONLY"
+msgstr "SALT-OKUNUR"
+
+#: ../cli/src/connections.c:149
+#, c-format
+msgid ""
+"Usage: nmcli con { COMMAND | help }\n"
+"  COMMAND := { list | status | up | down | delete }\n"
+"\n"
+"  list [id <id> | uuid <id>]\n"
+"  status\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [nsp <name>] [--"
+"nowait] [--timeout <timeout>]\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [--nowait] [--timeout "
+"<timeout>]\n"
+"  down id <id> | uuid <id>\n"
+"  delete id <id> | uuid <id>\n"
+msgstr ""
+"Kullanımı: nmcli con { KOMUT | help }\n"
+"  KOMUT := { list | status | up | down | delete }\n"
+"\n"
+"  list [id <id> | uuid <id>]\n"
+"  status\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [nsp <isim>] [--"
+"nowait] [--timeout <zamanaşımı>]\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [--nowait] [--timeout "
+"<zamanaşımı>]\n"
+"  down id <id> | uuid <id>\n"
+"  delete id <id> | uuid <id>\n"
+
+#: ../cli/src/connections.c:203 ../cli/src/connections.c:536
+#, c-format
+msgid "Error: 'con list': %s"
+msgstr "Hata: 'bağ. listesi': %s"
+
+#: ../cli/src/connections.c:205 ../cli/src/connections.c:538
+#, c-format
+msgid "Error: 'con list': %s; allowed fields: %s"
+msgstr "Hata: 'bağlantı listesi': %s; izin verilen alanlar :%s"
+
+#: ../cli/src/connections.c:213
+msgid "Connection details"
+msgstr "Bağlantı ayrıntıları"
+
+#: ../cli/src/connections.c:411
+msgid "never"
+msgstr "hiçbir zaman"
+
+#. "CAPABILITIES"
+#. Print header
+#. "WIFI-PROPERTIES"
+#: ../cli/src/connections.c:412 ../cli/src/connections.c:413
+#: ../cli/src/connections.c:610 ../cli/src/connections.c:611
+#: ../cli/src/connections.c:613 ../cli/src/devices.c:510
+#: ../cli/src/devices.c:563 ../cli/src/devices.c:668 ../cli/src/devices.c:669
+#: ../cli/src/devices.c:699 ../cli/src/devices.c:725 ../cli/src/devices.c:726
+#: ../cli/src/devices.c:727 ../cli/src/devices.c:728 ../cli/src/devices.c:729
+#: ../cli/src/settings.c:572 ../cli/src/settings.c:642
+#: ../cli/src/settings.c:761 ../cli/src/settings.c:1043
+#: ../cli/src/settings.c:1044 ../cli/src/settings.c:1046
+#: ../cli/src/settings.c:1048 ../cli/src/settings.c:1049
+#: ../cli/src/settings.c:1177 ../cli/src/settings.c:1178
+#: ../cli/src/settings.c:1179 ../cli/src/settings.c:1180
+#: ../cli/src/settings.c:1255 ../cli/src/settings.c:1256
+#: ../cli/src/settings.c:1257 ../cli/src/settings.c:1258
+#: ../cli/src/settings.c:1259 ../cli/src/settings.c:1260
+#: ../cli/src/settings.c:1261 ../cli/src/settings.c:1262
+#: ../cli/src/settings.c:1263 ../cli/src/settings.c:1264
+#: ../cli/src/settings.c:1265 ../cli/src/settings.c:1266
+#: ../cli/src/settings.c:1267 ../cli/src/settings.c:1338
+msgid "yes"
+msgstr "evet"
+
+#: ../cli/src/connections.c:412 ../cli/src/connections.c:413
+#: ../cli/src/connections.c:610 ../cli/src/connections.c:611
+#: ../cli/src/connections.c:613 ../cli/src/devices.c:510
+#: ../cli/src/devices.c:563 ../cli/src/devices.c:668 ../cli/src/devices.c:669
+#: ../cli/src/devices.c:699 ../cli/src/devices.c:725 ../cli/src/devices.c:726
+#: ../cli/src/devices.c:727 ../cli/src/devices.c:728 ../cli/src/devices.c:729
+#: ../cli/src/settings.c:572 ../cli/src/settings.c:574
+#: ../cli/src/settings.c:642 ../cli/src/settings.c:761
+#: ../cli/src/settings.c:1043 ../cli/src/settings.c:1044
+#: ../cli/src/settings.c:1046 ../cli/src/settings.c:1048
+#: ../cli/src/settings.c:1049 ../cli/src/settings.c:1177
+#: ../cli/src/settings.c:1178 ../cli/src/settings.c:1179
+#: ../cli/src/settings.c:1180 ../cli/src/settings.c:1255
+#: ../cli/src/settings.c:1256 ../cli/src/settings.c:1257
+#: ../cli/src/settings.c:1258 ../cli/src/settings.c:1259
+#: ../cli/src/settings.c:1260 ../cli/src/settings.c:1261
+#: ../cli/src/settings.c:1262 ../cli/src/settings.c:1263
+#: ../cli/src/settings.c:1264 ../cli/src/settings.c:1265
+#: ../cli/src/settings.c:1266 ../cli/src/settings.c:1267
+#: ../cli/src/settings.c:1338
+msgid "no"
+msgstr "hayır"
+
+#: ../cli/src/connections.c:487
+msgid "Connection list"
+msgstr "Bağlantı listesi"
+
+#: ../cli/src/connections.c:500 ../cli/src/connections.c:1416
+#: ../cli/src/connections.c:1431 ../cli/src/connections.c:1440
+#: ../cli/src/connections.c:1450 ../cli/src/connections.c:1462
+#: ../cli/src/connections.c:1557 ../cli/src/connections.c:1640
+#: ../cli/src/devices.c:1202 ../cli/src/devices.c:1212
+#: ../cli/src/devices.c:1326 ../cli/src/devices.c:1334
+#: ../cli/src/devices.c:1547 ../cli/src/devices.c:1554
+#, c-format
+msgid "Error: %s argument is missing."
+msgstr "Hata: %s bağımsız değişken eksik."
+
+#: ../cli/src/connections.c:513
+#, c-format
+msgid "Error: %s - no such connection."
+msgstr "Hata: %s - böyle bir bağlantı yok."
+
+#: ../cli/src/connections.c:519 ../cli/src/connections.c:1475
+#: ../cli/src/connections.c:1574 ../cli/src/connections.c:1647
+#: ../cli/src/devices.c:999 ../cli/src/devices.c:1079
+#: ../cli/src/devices.c:1226 ../cli/src/devices.c:1340
+#: ../cli/src/devices.c:1560
+#, c-format
+msgid "Unknown parameter: %s\n"
+msgstr "Bilinmeyen değiştirge: %s\n"
+
+#: ../cli/src/connections.c:528
+#, c-format
+msgid "Error: no valid parameter specified."
+msgstr "Hata: geçerli bir değiştirge belirtilmedi."
+
+#: ../cli/src/connections.c:543 ../cli/src/connections.c:1728
+#: ../cli/src/devices.c:1768 ../cli/src/network-manager.c:456
+#, c-format
+msgid "Error: %s."
+msgstr "Hata: %s."
+
+#: ../cli/src/connections.c:556
+msgid "activating"
+msgstr "etkinleştiriliyor"
+
+#: ../cli/src/connections.c:558
+msgid "activated"
+msgstr "etkinleştirildi"
+
+#: ../cli/src/connections.c:560 ../cli/src/devices.c:303
+msgid "deactivating"
+msgstr "etkisizleştiriliyor"
+
+#: ../cli/src/connections.c:563 ../cli/src/connections.c:1255
+#: ../cli/src/connections.c:1288 ../cli/src/devices.c:307
+#: ../cli/src/devices.c:700 ../cli/src/network-manager.c:111
+#: ../cli/src/network-manager.c:173 ../cli/src/network-manager.c:176
+#: ../cli/src/network-manager.c:185 ../cli/src/network-manager.c:291
+#: ../cli/src/network-manager.c:346 ../cli/src/network-manager.c:384
+#: ../cli/src/network-manager.c:423 ../cli/src/settings.c:527
+#: ../cli/src/utils.c:397
+msgid "unknown"
+msgstr "bilinmeyen"
+
+#: ../cli/src/connections.c:652
+#, c-format
+msgid "Error: 'con status': %s"
+msgstr "Hata: 'bağlantı durumu':%s"
+
+#: ../cli/src/connections.c:654
+#, c-format
+msgid "Error: 'con status': %s; allowed fields: %s"
+msgstr "Hata: 'bağlantı durumu': %s; izin verilen alanlar :%s"
+
+#: ../cli/src/connections.c:662 ../cli/src/connections.c:1490
+#: ../cli/src/connections.c:1589 ../cli/src/connections.c:1661
+#: ../cli/src/devices.c:1026 ../cli/src/devices.c:1088
+#: ../cli/src/devices.c:1241 ../cli/src/devices.c:1370
+#: ../cli/src/devices.c:1589
+#, c-format
+msgid "Error: Can't find out if NetworkManager is running: %s."
+msgstr "Hata: Ağ Yöneticisi çalışıyorsa bulunamıyor: %s"
+
+#: ../cli/src/connections.c:666 ../cli/src/connections.c:1494
+#: ../cli/src/connections.c:1593 ../cli/src/connections.c:1665
+#: ../cli/src/devices.c:1030 ../cli/src/devices.c:1092
+#: ../cli/src/devices.c:1245 ../cli/src/devices.c:1374
+#: ../cli/src/devices.c:1593
+#, c-format
+msgid "Error: NetworkManager is not running."
+msgstr "Hata: Ağ Yöneticisi çalışmıyor."
+
+#: ../cli/src/connections.c:674
+msgid "Active connections"
+msgstr "Etkin bağlantılar"
+
+#: ../cli/src/connections.c:1149
+#, c-format
+msgid "no active connection on device '%s'"
+msgstr "'%s' aygıtı üzerinde etkin bir bağlantı yok"
+
+#: ../cli/src/connections.c:1157
+#, c-format
+msgid "no active connection or device"
+msgstr "etkin bağlantı veya aygıt yok"
+
+#: ../cli/src/connections.c:1228
+#, c-format
+msgid "device '%s' not compatible with connection '%s'"
+msgstr "'%s aygıtı '%s' bağlantısı ile uyumlu değil"
+
+#: ../cli/src/connections.c:1230
+#, c-format
+msgid "no device found for connection '%s'"
+msgstr "'%s' bağlantısı için aygıt bulunamadı"
+
+#: ../cli/src/connections.c:1241
+msgid "VPN connecting (prepare)"
+msgstr "VPN bağlantısı (hazırlama)"
+
+#: ../cli/src/connections.c:1243
+msgid "VPN connecting (need authentication)"
+msgstr "VPN bağlantısı (kimlik doğrulama gerekiyor)"
+
+#: ../cli/src/connections.c:1245
+msgid "VPN connecting"
+msgstr "VPN bağlantısı"
+
+#: ../cli/src/connections.c:1247
+msgid "VPN connecting (getting IP configuration)"
+msgstr "VPN bağlantısı (IP yapılandırması alınıyor)"
+
+#: ../cli/src/connections.c:1249
+msgid "VPN connected"
+msgstr "VPN bağlı"
+
+#: ../cli/src/connections.c:1251
+msgid "VPN connection failed"
+msgstr "VPN bağlantısı başarısız"
+
+#: ../cli/src/connections.c:1253
+msgid "VPN disconnected"
+msgstr "VPN bağlı değil"
+
+#: ../cli/src/connections.c:1264
+msgid "unknown reason"
+msgstr "bilinmeyen neden"
+
+#: ../cli/src/connections.c:1266
+msgid "none"
+msgstr "yok"
+
+#: ../cli/src/connections.c:1268
+msgid "the user was disconnected"
+msgstr "kullanıcı bağlantısı kesildi"
+
+#: ../cli/src/connections.c:1270
+msgid "the base network connection was interrupted"
+msgstr "ana ağ bağlantısı yarıda kesildi"
+
+#: ../cli/src/connections.c:1272
+msgid "the VPN service stopped unexpectedly"
+msgstr "VPN hizmeti beklenmedik bir biçimde durdu"
+
+#: ../cli/src/connections.c:1274
+msgid "the VPN service returned invalid configuration"
+msgstr "VPN hizmeti geçersiz bir yapılandırma döndürdü"
+
+#: ../cli/src/connections.c:1276
+msgid "the connection attempt timed out"
+msgstr "bağlantı denemesi zaman aşımına uğradı"
+
+#: ../cli/src/connections.c:1278
+msgid "the VPN service did not start in time"
+msgstr "VPN hizmeti zamanında başlatılmadı"
+
+#: ../cli/src/connections.c:1280
+msgid "the VPN service failed to start"
+msgstr "VPN hizmeti başlatılamadı"
+
+#: ../cli/src/connections.c:1282
+msgid "no valid VPN secrets"
+msgstr "geçerli bir VPN parolası yok"
+
+#: ../cli/src/connections.c:1284
+msgid "invalid VPN secrets"
+msgstr "geçersiz VPN parolaları"
+
+#: ../cli/src/connections.c:1286
+msgid "the connection was removed"
+msgstr "bağlantı kaldırıldı"
+
+#: ../cli/src/connections.c:1300
+#, c-format
+msgid "state: %s\n"
+msgstr "durum: %s\n"
+
+#: ../cli/src/connections.c:1303 ../cli/src/connections.c:1329
+#, c-format
+msgid "Connection activated\n"
+msgstr "Bağlantı etkinleştirildi\n"
+
+#: ../cli/src/connections.c:1306
+#, c-format
+msgid "Error: Connection activation failed."
+msgstr "Hata: Bağlantı etkinleştirilemedi."
+
+#: ../cli/src/connections.c:1325
+#, c-format
+msgid "state: %s (%d)\n"
+msgstr "durum: %s (%d)\n"
+
+#: ../cli/src/connections.c:1335
+#, c-format
+msgid "Error: Connection activation failed: %s."
+msgstr "Hata: Bağlantı etkinleştirilemedi: %s."
+
+#: ../cli/src/connections.c:1352 ../cli/src/devices.c:1148
+#, c-format
+msgid "Error: Timeout %d sec expired."
+msgstr "Hata: %d saniye zaman aşımı sona erdi."
+
+#: ../cli/src/connections.c:1365
+#, c-format
+msgid "Error: Connection activation failed: %s"
+msgstr "Hata: Bağlantı etkinleştirilemedi: %s"
+
+#: ../cli/src/connections.c:1371
+#, c-format
+msgid "Active connection state: %s\n"
+msgstr "Etkin bağlantı durumu: %s\n"
+
+#: ../cli/src/connections.c:1372
+#, c-format
+msgid "Active connection path: %s\n"
+msgstr "Etkin bağlantı yolu: %s\n"
+
+#: ../cli/src/connections.c:1424 ../cli/src/connections.c:1565
+#: ../cli/src/connections.c:1674
+#, c-format
+msgid "Error: Unknown connection: %s."
+msgstr "Hata: Bilinmeyen bağlantı: %s."
+
+#: ../cli/src/connections.c:1470 ../cli/src/devices.c:1220
+#, c-format
+msgid "Error: timeout value '%s' is not valid."
+msgstr "Hata: '%s' zaman aşımı değeri geçerli değil."
+
+#: ../cli/src/connections.c:1483 ../cli/src/connections.c:1582
+#: ../cli/src/connections.c:1654
+#, c-format
+msgid "Error: id or uuid has to be specified."
+msgstr "Hata: id veya uuid değeri belirtilmeli."
+
+#: ../cli/src/connections.c:1511
+#, c-format
+msgid "Error: No suitable device found: %s."
+msgstr "Hata: Uygun bir aygıt bulunamadı: %s."
+
+#: ../cli/src/connections.c:1513
+#, c-format
+msgid "Error: No suitable device found."
+msgstr "Hata: Uygun bir aygıt bulunamadı."
+
+#: ../cli/src/connections.c:1618
+#, c-format
+msgid "Warning: Connection not active\n"
+msgstr "Uyarı: Bağlantı etkin değil\n"
+
+#: ../cli/src/connections.c:1719
+#, c-format
+msgid "Error: 'con' command '%s' is not valid."
+msgstr "HATA: 'bağlantı' '%s' komutu geçerli değil"
+
+#: ../cli/src/connections.c:1784
+#, c-format
+msgid "Error: could not connect to D-Bus."
+msgstr "Hata: D-Bus'a bağlanılamadı."
+
+#: ../cli/src/connections.c:1792
+#, c-format
+msgid "Error: Could not get system settings."
+msgstr "Hata: Sistem ayarları alınamadı."
+
+#: ../cli/src/connections.c:1802
+#, c-format
+msgid "Error: Can't obtain connections: settings service is not running."
+msgstr "Hata: Bağlantılar alınamıyor: ayarlar hizmeti çalışmıyor."
+
+#. 0
+#. 9
+#. 3
+#: ../cli/src/devices.c:68 ../cli/src/devices.c:104 ../cli/src/devices.c:221
+#: ../cli/src/devices.c:237
+msgid "DEVICE"
+msgstr "AYGIT"
+
+#: ../cli/src/devices.c:80
+msgid "GENERAL"
+msgstr "GENEL"
+
+#. 0
+#: ../cli/src/devices.c:81
+msgid "CAPABILITIES"
+msgstr "YETENEKLER"
+
+#. 1
+#: ../cli/src/devices.c:82
+msgid "WIFI-PROPERTIES"
+msgstr "WIFI-ÖZELLİKLER"
+
+#. 2
+#: ../cli/src/devices.c:83
+msgid "AP"
+msgstr "AP"
+
+#. 3
+#: ../cli/src/devices.c:84
+msgid "WIRED-PROPERTIES"
+msgstr "KABLOLU-ÖZELLİKLER"
+
+#. 4
+#: ../cli/src/devices.c:85
+msgid "WIMAX-PROPERTIES"
+msgstr "WIMAX-ÖZELLİKLERİ"
+
+#. 5
+#. 0
+#: ../cli/src/devices.c:86 ../cli/src/devices.c:234
+msgid "NSP"
+msgstr "NSP"
+
+#. 6
+#: ../cli/src/devices.c:87
+msgid "IP4-SETTINGS"
+msgstr "IP4-AYARLAR"
+
+#. 7
+#: ../cli/src/devices.c:88
+msgid "IP4-DNS"
+msgstr "IP4-DNS"
+
+#. 8
+#: ../cli/src/devices.c:89
+msgid "IP6-SETTINGS"
+msgstr "IP6-AYARLARL"
+
+#. 9
+#: ../cli/src/devices.c:90
+msgid "IP6-DNS"
+msgstr "IP6-DNS"
+
+#. 2
+#: ../cli/src/devices.c:106
+msgid "VENDOR"
+msgstr "SATICI"
+
+#. 3
+#: ../cli/src/devices.c:107
+msgid "PRODUCT"
+msgstr "ÜRÜN"
+
+#. 4
+#: ../cli/src/devices.c:108
+msgid "DRIVER"
+msgstr "SÜRÜCÜ"
+
+#. 5
+#: ../cli/src/devices.c:109
+msgid "HWADDR"
+msgstr "HWADDR"
+
+#. 7
+#: ../cli/src/devices.c:111
+msgid "UDI"
+msgstr "UDI"
+
+#. 8
+#: ../cli/src/devices.c:112
+msgid "IP-IFACE"
+msgstr "IP-IFACE"
+
+#. 9
+#: ../cli/src/devices.c:113
+msgid "NM-MANAGED"
+msgstr "AY-YÖNETİMLİ"
+
+#. 10
+#: ../cli/src/devices.c:114
+msgid "FIRMWARE-MISSING"
+msgstr "AYGIT-YAZILIMI-EKSİK"
+
+#. 11
+#: ../cli/src/devices.c:115
+#| msgid "AUTOCONNECT"
+msgid "CONNECTION"
+msgstr "BAĞLANTI"
+
+#. 0
+#: ../cli/src/devices.c:124
+msgid "CARRIER-DETECT"
+msgstr "TAŞIYICI-ALGILAMA"
+
+#. 1
+#: ../cli/src/devices.c:125
+msgid "SPEED"
+msgstr "HIZ"
+
+#. 0
+#: ../cli/src/devices.c:134
+msgid "CARRIER"
+msgstr "TAŞIYICI"
+
+#. 0
+#: ../cli/src/devices.c:144
+msgid "WEP"
+msgstr "WEP"
+
+#. 1
+#: ../cli/src/devices.c:145
+msgid "WPA"
+msgstr "WPA"
+
+#. 2
+#: ../cli/src/devices.c:146
+msgid "WPA2"
+msgstr "WPA2"
+
+#. 3
+#: ../cli/src/devices.c:147
+msgid "TKIP"
+msgstr "TKIP"
+
+#. 4
+#: ../cli/src/devices.c:148
+msgid "CCMP"
+msgstr "CCMP"
+
+#. 0
+#: ../cli/src/devices.c:158
+msgid "CTR-FREQ"
+msgstr "CTR-FREK"
+
+#. 1
+#: ../cli/src/devices.c:159
+msgid "RSSI"
+msgstr "RSSI"
+
+#. 2
+#: ../cli/src/devices.c:160
+msgid "CINR"
+msgstr "CINR"
+
+#. 3
+#: ../cli/src/devices.c:161
+msgid "TX-POW"
+msgstr "TX-POW"
+
+#. 4
+#: ../cli/src/devices.c:162
+msgid "BSID"
+msgstr "BSID"
+
+#. 0
+#: ../cli/src/devices.c:172 ../cli/src/devices.c:183
+msgid "ADDRESS"
+msgstr "ADRES"
+
+#. 1
+#: ../cli/src/devices.c:173 ../cli/src/devices.c:184
+msgid "PREFIX"
+msgstr "ÖNEK"
+
+#. 2
+#: ../cli/src/devices.c:174 ../cli/src/devices.c:185
+msgid "GATEWAY"
+msgstr "AĞ GEÇİDİ"
+
+#. 0
+#: ../cli/src/devices.c:194 ../cli/src/devices.c:203
+msgid "DNS"
+msgstr "DNS"
+
+#. 0
+#: ../cli/src/devices.c:212
+msgid "SSID"
+msgstr "SSID"
+
+#. 1
+#: ../cli/src/devices.c:213
+msgid "BSSID"
+msgstr "BSSID"
+
+#. 2
+#: ../cli/src/devices.c:214
+msgid "MODE"
+msgstr "KİP"
+
+#. 3
+#: ../cli/src/devices.c:215
+msgid "FREQ"
+msgstr "FREKANS"
+
+#. 4
+#: ../cli/src/devices.c:216
+msgid "RATE"
+msgstr "ORAN"
+
+#. 5
+#. 1
+#: ../cli/src/devices.c:217 ../cli/src/devices.c:235
+msgid "SIGNAL"
+msgstr "SiNYAL"
+
+#. 6
+#: ../cli/src/devices.c:218
+msgid "SECURITY"
+msgstr "GÜVENLİK"
+
+#. 7
+#: ../cli/src/devices.c:219
+msgid "WPA-FLAGS"
+msgstr "WPA-BAYRAKLAR"
+
+#. 8
+#: ../cli/src/devices.c:220
+msgid "RSN-FLAGS"
+msgstr "RSN-BAYRAKLAR"
+
+#. 10
+#. 4
+#: ../cli/src/devices.c:222 ../cli/src/devices.c:238
+msgid "ACTIVE"
+msgstr "ETKİN"
+
+#: ../cli/src/devices.c:255
+#, c-format
+msgid ""
+"Usage: nmcli dev { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | list | disconnect | wifi | wimax }\n"
+"\n"
+"  COMMAND := { status | list | disconnect | wifi }\n"
+"\n"
+"  status\n"
+"  list [iface <iface>]\n"
+"  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
+"  wifi [list [iface <iface>] [bssid <BSSID>]]\n"
+"  wimax [list [iface <iface>] [nsp <name>]]\n"
+"\n"
+msgstr ""
+"Kullanımı: nmcli dev { KOMUT | help }\n"
+"\n"
+"  KOMUT := { status | list | disconnect | wifi | wimax }\n"
+"\n"
+"  KOMUT := { status | list | disconnect | wifi }\n"
+"\n"
+"  status\n"
+"  list [iface <iface>]\n"
+"  disconnect iface <iface> [--nowait] [--timeout <zamanaşımı>]\n"
+"  wifi [list [iface <iface>] [bssid <BSSID>]]\n"
+"  wimax [list [iface <iface>] [nsp <isim>]]\n"
+"\n"
+
+#: ../cli/src/devices.c:283
+msgid "unmanaged"
+msgstr "yönetilmeyen"
+
+#: ../cli/src/devices.c:285
+msgid "unavailable"
+msgstr "mevcut değil"
+
+#: ../cli/src/devices.c:287 ../cli/src/network-manager.c:108
+msgid "disconnected"
+msgstr "bağlantı kesildi"
+
+#: ../cli/src/devices.c:289
+msgid "connecting (prepare)"
+msgstr "bağlanıyor (hazırlama)"
+
+#: ../cli/src/devices.c:291
+msgid "connecting (configuring)"
+msgstr "bağlanıyor (yapılandırılıyor)"
+
+#: ../cli/src/devices.c:293
+msgid "connecting (need authentication)"
+msgstr "bağlanıyor (kimlik doğrulama gerekiyor)"
+
+#: ../cli/src/devices.c:295
+msgid "connecting (getting IP configuration)"
+msgstr "bağlanıyor (IP yapılandırması alınıyor)"
+
+#: ../cli/src/devices.c:297
+msgid "connecting (checking IP connectivity)"
+msgstr "bağlanılıyor (IP bağlanılırlığı denetleniyor)"
+
+#: ../cli/src/devices.c:299
+msgid "connecting (starting secondary connections)"
+msgstr "bağlanılıyor (ikincil bağlantılar başlatılıyor)"
+
+#: ../cli/src/devices.c:301 ../cli/src/network-manager.c:104
+msgid "connected"
+msgstr "bağlandı"
+
+#: ../cli/src/devices.c:305
+msgid "connection failed"
+msgstr "bağlantı başarısız"
+
+#: ../cli/src/devices.c:330 ../cli/src/devices.c:342 ../cli/src/devices.c:502
+#: ../cli/src/devices.c:546
+msgid "Unknown"
+msgstr "Bilinmeyen"
+
+#: ../cli/src/devices.c:375
+msgid "(none)"
+msgstr "(hiçbiri)"
+
+#: ../cli/src/devices.c:400
+#, c-format
+msgid "%s: error converting IP4 address 0x%X"
+msgstr "%s: IPv4 adresi dönüştürülürken hata 0x%X"
+
+#: ../cli/src/devices.c:471
+#, c-format
+msgid "%u MHz"
+msgstr "%u MHz"
+
+#: ../cli/src/devices.c:472
+#, c-format
+msgid "%u MB/s"
+msgstr "%u MB/s"
+
+#: ../cli/src/devices.c:481
+msgid "Encrypted: "
+msgstr "Şifreli: "
+
+#: ../cli/src/devices.c:486
+msgid "WEP "
+msgstr "WEP "
+
+#: ../cli/src/devices.c:488
+msgid "WPA "
+msgstr "WPA "
+
+#: ../cli/src/devices.c:490
+msgid "WPA2 "
+msgstr "WPA2 "
+
+#: ../cli/src/devices.c:493
+msgid "Enterprise "
+msgstr "Kurumsal "
+
+#: ../cli/src/devices.c:502
+msgid "Ad-Hoc"
+msgstr "Ad-Hoc"
+
+#: ../cli/src/devices.c:502
+msgid "Infrastructure"
+msgstr "Altyapı"
+
+#: ../cli/src/devices.c:537
+msgid "Home"
+msgstr "Ev"
+
+#: ../cli/src/devices.c:540
+msgid "Partner"
+msgstr "Ortak"
+
+#: ../cli/src/devices.c:543
+msgid "Roaming"
+msgstr "Dolaşım"
+
+#: ../cli/src/devices.c:614
+#, c-format
+msgid "Error: 'dev list': %s"
+msgstr "Hata: 'dev list':%s"
+
+#: ../cli/src/devices.c:616
+#, c-format
+msgid "Error: 'dev list': %s; allowed fields: %s"
+msgstr "Hata: 'dev list':%s; izin verilen alanlar :%s"
+
+#: ../cli/src/devices.c:625
+msgid "Device details"
+msgstr "Aygıt ayrıntıları"
+
+#: ../cli/src/devices.c:663 ../cli/src/devices.c:664 ../cli/src/devices.c:1164
+#: ../cli/src/utils.c:343
+msgid "(unknown)"
+msgstr "(bilinmeyen)"
+
+#: ../cli/src/devices.c:671
+#| msgid "connected"
+msgid "not connected"
+msgstr "bağlı değil"
+
+#: ../cli/src/devices.c:696
+#, c-format
+msgid "%u Mb/s"
+msgstr "%u Mb/s"
+
+#. Print header
+#. "WIRED-PROPERTIES"
+#: ../cli/src/devices.c:769
+msgid "on"
+msgstr "açık"
+
+#: ../cli/src/devices.c:769
+msgid "off"
+msgstr "kapalı"
+
+#: ../cli/src/devices.c:1016
+#, c-format
+msgid "Error: 'dev status': %s"
+msgstr "Hata: 'dev status':%s"
+
+#: ../cli/src/devices.c:1018
+#, c-format
+msgid "Error: 'dev status': %s; allowed fields: %s"
+msgstr "Hata: 'dev status': %s; izin verilen alanlar: %s"
+
+#: ../cli/src/devices.c:1041
+msgid "Status of devices"
+msgstr "Aygıtların durumu"
+
+#: ../cli/src/devices.c:1072
+#, c-format
+msgid "Error: '%s' argument is missing."
+msgstr "Hata: '%s' değişkeni bulunamadı."
+
+#: ../cli/src/devices.c:1113 ../cli/src/devices.c:1265
+#: ../cli/src/devices.c:1402 ../cli/src/devices.c:1621
+#, c-format
+msgid "Error: Device '%s' not found."
+msgstr "Hata: '%s' aygıtı bulunamadı."
+
+#: ../cli/src/devices.c:1136
+#, c-format
+msgid "Success: Device '%s' successfully disconnected."
+msgstr "Başarılı: '%s' aygıtının bağlantısı başarıyla kesildi."
+
+#: ../cli/src/devices.c:1161
+#, c-format
+msgid "Error: Device '%s' (%s) disconnecting failed: %s"
+msgstr "Hata: '%s' aygıtının (%s) bağlantısı kesilemedi: %s"
+
+#: ../cli/src/devices.c:1169
+#, c-format
+msgid "Device state: %d (%s)\n"
+msgstr "Aygıt durumu: %d (%s)\n"
+
+#: ../cli/src/devices.c:1234
+#, c-format
+msgid "Error: iface has to be specified."
+msgstr "Hata: iface belirtilmeli."
+
+#: ../cli/src/devices.c:1360
+#, c-format
+msgid "Error: 'dev wifi': %s"
+msgstr "Hata: 'dev wifi': %s"
+
+#: ../cli/src/devices.c:1362
+#, c-format
+msgid "Error: 'dev wifi': %s; allowed fields: %s"
+msgstr "Hata: 'dev wifi': %s; izin verilen alanlar: %s"
+
+#: ../cli/src/devices.c:1385
+msgid "WiFi scan list"
+msgstr "WiFi tarama listesi"
+
+#: ../cli/src/devices.c:1422 ../cli/src/devices.c:1476
+#, c-format
+msgid "Error: Access point with bssid '%s' not found."
+msgstr "Hata: '%s' bssid'li erişim noktası bulunamadı."
+
+#: ../cli/src/devices.c:1439
+#, c-format
+msgid "Error: Device '%s' is not a WiFi device."
+msgstr "Hata: '%s' aygıtı bir WiFi aygıtı değil."
+
+#: ../cli/src/devices.c:1503
+#, c-format
+msgid "Error: 'dev wifi' command '%s' is not valid."
+msgstr "Hata: 'dev wifi' komut '%s' tanımlı değil."
+
+#: ../cli/src/devices.c:1579
+#, c-format
+msgid "Error: 'dev wimax': %s"
+msgstr "Hata: 'dev wimax': %s"
+
+#: ../cli/src/devices.c:1581
+#, c-format
+msgid "Error: 'dev wimax': %s; allowed fields: %s"
+msgstr "Hara: 'dev wimax': %s; izin verilen alanlar: %s"
+
+#: ../cli/src/devices.c:1604
+msgid "WiMAX NSP list"
+msgstr "WiMAX NSP listesi"
+
+#: ../cli/src/devices.c:1641
+#, c-format
+msgid "Error: NSP with name '%s' not found."
+msgstr "Hata: '%s' adlı NSP bulunamadı."
+
+#: ../cli/src/devices.c:1652
+#, c-format
+msgid "Error: Device '%s' is not a WiMAX device."
+msgstr "Hata: '%s' aygıtı bir WiMAX aygıtı değil."
+
+#: ../cli/src/devices.c:1683
+#, c-format
+msgid "Error: Access point with nsp '%s' not found."
+msgstr "Hata: '%s' nsp'li erişim noktası bulunamadı."
+
+#: ../cli/src/devices.c:1710
+#, c-format
+msgid "Error: 'dev wimax' command '%s' is not valid."
+msgstr "Hata: 'dev wimax' komutu '%s' geçerli değil."
+
+#: ../cli/src/devices.c:1760
+#, c-format
+msgid "Error: 'dev' command '%s' is not valid."
+msgstr "Hata: 'dev' komut '%s' tanımlı değil."
+
+#: ../cli/src/network-manager.c:37
+msgid "RUNNING"
+msgstr "ÇALIŞIYOR"
+
+#. 0
+#: ../cli/src/network-manager.c:38
+msgid "VERSION"
+msgstr "SÜRÜM"
+
+#. 2
+#: ../cli/src/network-manager.c:40
+msgid "NET-ENABLED"
+msgstr "NET-ENABLED"
+
+#. 3
+#: ../cli/src/network-manager.c:41
+msgid "WIFI-HARDWARE"
+msgstr "WIFI-DONANIM"
+
+#. 4
+#: ../cli/src/network-manager.c:42
+msgid "WIFI"
+msgstr "WIFI"
+
+#. 5
+#: ../cli/src/network-manager.c:43
+msgid "WWAN-HARDWARE"
+msgstr "WWAN-DONANIM"
+
+#. 6
+#: ../cli/src/network-manager.c:44
+msgid "WWAN"
+msgstr "WWAN"
+
+#. 7
+#: ../cli/src/network-manager.c:45
+msgid "WIMAX-HARDWARE"
+msgstr "WIMAX-DONANIMI"
+
+#. 8
+#: ../cli/src/network-manager.c:46
+msgid "WIMAX"
+msgstr "WIMAX"
+
+#: ../cli/src/network-manager.c:67
+#, c-format
+msgid ""
+"Usage: nmcli nm { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | enable | sleep | wifi | wwan | wimax }\n"
+"\n"
+"  COMMAND := { status | enable | sleep | wifi | wwan }\n"
+"\n"
+"  status\n"
+"  enable [true|false]\n"
+"  sleep [true|false]\n"
+"  wifi [on|off]\n"
+"  wwan [on|off]\n"
+"  wimax [on|off]\n"
+"\n"
+msgstr ""
+"Kullanımı: nmcli nm { KOMUT | help }\n"
+"\n"
+"  KOMUT := { status | enable | sleep | wifi | wwan | wimax }\n"
+"\n"
+"  KOMUT := { status | enable | sleep | wifi | wwan }\n"
+"\n"
+"  status\n"
+"  enable [true|false]\n"
+"  sleep [true|false]\n"
+"  wifi [on|off]\n"
+"  wwan [on|off]\n"
+"  wimax [on|off]\n"
+"\n"
+
+#: ../cli/src/network-manager.c:96
+msgid "asleep"
+msgstr "uykuda"
+
+#: ../cli/src/network-manager.c:98
+msgid "connecting"
+msgstr "bağlanıyor"
+
+#: ../cli/src/network-manager.c:100
+msgid "connected (local only)"
+msgstr "bağlandı (sadece yerel)"
+
+#: ../cli/src/network-manager.c:102
+msgid "connected (site only)"
+msgstr "bağlandı (sadece siteye)"
+
+#: ../cli/src/network-manager.c:106
+msgid "disconnecting"
+msgstr "bağlantı kesiliyor"
+
+#: ../cli/src/network-manager.c:146
+#, c-format
+msgid "Error: 'nm status': %s"
+msgstr "Hata: 'nm durumu': %s"
+
+#: ../cli/src/network-manager.c:148
+#, c-format
+msgid "Error: 'nm status': %s; allowed fields: %s"
+msgstr "Hata: 'nm status': %s; izin verilen alanlar: %s"
+
+#. create NMClient
+#: ../cli/src/network-manager.c:161 ../cli/src/network-manager.c:162
+#: ../cli/src/network-manager.c:163 ../cli/src/network-manager.c:164
+#: ../cli/src/network-manager.c:165 ../cli/src/network-manager.c:167
+#: ../cli/src/network-manager.c:168 ../cli/src/network-manager.c:289
+#: ../cli/src/network-manager.c:344 ../cli/src/network-manager.c:382
+#: ../cli/src/network-manager.c:421
+msgid "enabled"
+msgstr "etkin"
+
+#: ../cli/src/network-manager.c:161 ../cli/src/network-manager.c:162
+#: ../cli/src/network-manager.c:163 ../cli/src/network-manager.c:164
+#: ../cli/src/network-manager.c:165 ../cli/src/network-manager.c:167
+#: ../cli/src/network-manager.c:168 ../cli/src/network-manager.c:289
+#: ../cli/src/network-manager.c:344 ../cli/src/network-manager.c:382
+#: ../cli/src/network-manager.c:421
+msgid "disabled"
+msgstr "etkin değil"
+
+#: ../cli/src/network-manager.c:181
+msgid "NetworkManager status"
+msgstr "NetworkManager durumu"
+
+#. Print header
+#: ../cli/src/network-manager.c:184
+msgid "running"
+msgstr "çalışıyor"
+
+#: ../cli/src/network-manager.c:184
+msgid "not running"
+msgstr "çalışmıyor"
+
+#: ../cli/src/network-manager.c:215 ../cli/src/utils.c:323
+#, c-format
+msgid "Error: Couldn't connect to system bus: %s"
+msgstr "Hata: Sistem veri yoluna bağlanamadı: %s"
+
+#: ../cli/src/network-manager.c:226
+#, c-format
+msgid "Error: Couldn't create D-Bus object proxy."
+msgstr "Hata: D-Bus nesnesi proxy oluşturamadı."
+
+#: ../cli/src/network-manager.c:232
+#, c-format
+msgid "Error in sleep: %s"
+msgstr "Uyku hatası: %s"
+
+#: ../cli/src/network-manager.c:276 ../cli/src/network-manager.c:331
+#: ../cli/src/network-manager.c:369 ../cli/src/network-manager.c:408
+#, c-format
+msgid "Error: '--fields' value '%s' is not valid here; allowed fields: %s"
+msgstr ""
+"Hata: '--fields' değeri olan '%s' burada geçerli değil; izin verilen "
+"alanlar: %s"
+
+#: ../cli/src/network-manager.c:284
+msgid "Networking enabled"
+msgstr "Ağ oluşturma etkinleştirildi"
+
+#: ../cli/src/network-manager.c:300
+#, c-format
+msgid "Error: invalid 'enable' parameter: '%s'; use 'true' or 'false'."
+msgstr ""
+"Hata: geçersiz 'enable' parametresi: %s'; kullanım 'true' yada 'false'."
+
+#: ../cli/src/network-manager.c:310
+#, c-format
+msgid "Error: Sleeping status is not exported by NetworkManager."
+msgstr "Hata: Uyku durumu Ağ Yöneticisi ile verilemez."
+
+#: ../cli/src/network-manager.c:318
+#, c-format
+msgid "Error: invalid 'sleep' parameter: '%s'; use 'true' or 'false'."
+msgstr "Hata: geçersiz 'sleep' parametresi: %s'; kullanım 'true' yada 'false'."
+
+#: ../cli/src/network-manager.c:339
+msgid "WiFi enabled"
+msgstr "WiFi etkin"
+
+#: ../cli/src/network-manager.c:355
+#, c-format
+msgid "Error: invalid 'wifi' parameter: '%s'."
+msgstr "Hata: geçersiz 'wifi' parametresi: '%s'."
+
+#: ../cli/src/network-manager.c:377
+msgid "WWAN enabled"
+msgstr "WWAN etkin"
+
+#: ../cli/src/network-manager.c:393
+#, c-format
+msgid "Error: invalid 'wwan' parameter: '%s'."
+msgstr "Hata: geçersiz 'wwan parametresi: '%s'."
+
+#: ../cli/src/network-manager.c:416
+msgid "WiMAX enabled"
+msgstr "WiMAX etkin"
+
+#: ../cli/src/network-manager.c:432
+#, c-format
+msgid "Error: invalid 'wimax' parameter: '%s'."
+msgstr "Hata: geçersiz 'wimax' değiştirgesi: '%s'."
+
+#: ../cli/src/network-manager.c:445
+#, c-format
+msgid "Error: 'nm' command '%s' is not valid."
+msgstr "Hata: '%s' nm komutu geçerli değil."
+
+#: ../cli/src/nmcli.c:64
+#, c-format
+msgid ""
+"Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
+"\n"
+"OPTIONS\n"
+"  -t[erse]                                   terse output\n"
+"  -p[retty]                                  pretty output\n"
+"  -m[ode] tabular|multiline                  output mode\n"
+"  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
+"  -e[scape] yes|no                           escape columns separators in "
+"values\n"
+"  -n[ocheck]                                 don't check nmcli and "
+"NetworkManager versions\n"
+"  -v[ersion]                                 show program version\n"
+"  -h[elp]                                    print this help\n"
+"\n"
+"OBJECT\n"
+"  nm          NetworkManager status\n"
+"  con         NetworkManager connections\n"
+"  dev         devices managed by NetworkManager\n"
+"\n"
+msgstr ""
+"Kullanımı: %s [SEÇENEKLER] NESNE { KOMUT | help }\n"
+"\n"
+"SEÇENEKLER\n"
+"  -t[erse]                                   kısa ve öz çıktı\n"
+"  -p[retty]                                  güzel çıktı\n"
+"  -m[ode] tabular|multiline                  çıktı kipi\n"
+"  -f[ields] <field1,field2,...>|all|common   çıktıda yer alacak alanları "
+"belirtir\n"
+"  -e[scape] yes|no                           değerler arasındaki sütun "
+"ayraçları\n"
+"  -n[ocheck]                                 nmcli ve NetworkManager "
+"sürümlerini denetleme\n"
+"  -v[ersion]                                 program sürümünü göster\n"
+"  -h[elp]                                    bu yardımı ekrana yaz\n"
+"\n"
+"NESNE\n"
+"  nm          NetworkManager durumu\n"
+"  con         NetworkManager bağlantıları\n"
+"  dev         NetworkManager tarafından yönetilen aygıtlar\n"
+"\n"
+
+#: ../cli/src/nmcli.c:109
+#, c-format
+msgid "Error: Object '%s' is unknown, try 'nmcli help'."
+msgstr "Hata: '%s' nesnesi bilinmiyor, 'nmcli help' komutunu deneyin."
+
+#: ../cli/src/nmcli.c:139
+#, c-format
+msgid "Error: Option '--terse' is specified the second time."
+msgstr "Hata: '--terse' seçeneği ikinci zaman için belirlenmiş."
+
+#: ../cli/src/nmcli.c:144
+#, c-format
+msgid "Error: Option '--terse' is mutually exclusive with '--pretty'."
+msgstr "Hata: '--terse' parametresi '--pretty' parametresi ile çakışıyor."
+
+#: ../cli/src/nmcli.c:152
+#, c-format
+msgid "Error: Option '--pretty' is specified the second time."
+msgstr "Hata: '--pretty' seçeneği ikinci zaman için belirlenmiş."
+
+#: ../cli/src/nmcli.c:157
+#, c-format
+msgid "Error: Option '--pretty' is mutually exclusive with '--terse'."
+msgstr "Hata: '--pretty' parametresi '--terse' parametresi ile çakışıyor."
+
+#: ../cli/src/nmcli.c:167 ../cli/src/nmcli.c:183
+#, c-format
+msgid "Error: missing argument for '%s' option."
+msgstr "Hata: '%s' seçeneği için eksik değişken."
+
+#: ../cli/src/nmcli.c:176 ../cli/src/nmcli.c:192
+#, c-format
+msgid "Error: '%s' is not valid argument for '%s' option."
+msgstr "Hata: '%s', '%s'  seçeneği için geçerli bir değişken değil."
+
+#: ../cli/src/nmcli.c:199
+#, c-format
+msgid "Error: fields for '%s' options are missing."
+msgstr "Hata: '%s' seçeneği için alanlar eksik."
+
+#: ../cli/src/nmcli.c:207
+#, c-format
+msgid "nmcli tool, version %s\n"
+msgstr "nmcli aracı, sürüm %s\n"
+
+#: ../cli/src/nmcli.c:213
+#, c-format
+msgid "Error: Option '%s' is unknown, try 'nmcli -help'."
+msgstr "Hata: '%s' seçeneği bilinmiyor, 'nmcli-help' komutunu deneyin."
+
+#: ../cli/src/nmcli.c:232
+#, c-format
+msgid "Caught signal %d, shutting down..."
+msgstr "%d sinyali yakalandı, kapatılıyor..."
+
+#: ../cli/src/nmcli.c:257
+msgid "Error: Could not create NMClient object."
+msgstr "Hata: NMClient nesnesi oluşturulamadı."
+
+#: ../cli/src/nmcli.c:273
+msgid "Success"
+msgstr "Başarılı"
+
+#: ../cli/src/settings.c:461
+#, c-format
+msgid "%d (hex-ascii-key)"
+msgstr "%d (hex-ascii-key)"
+
+#: ../cli/src/settings.c:463
+#, c-format
+msgid "%d (104/128-bit passphrase)"
+msgstr "%d (104/128-bit parola)"
+
+#: ../cli/src/settings.c:466
+#, c-format
+msgid "%d (unknown)"
+msgstr "%d (bilinmeyen)"
+
+#: ../cli/src/settings.c:492
+msgid "0 (unknown)"
+msgstr "0 (bilinmeyen)"
+
+#: ../cli/src/settings.c:498
+msgid "any, "
+msgstr "herhangi, "
+
+#: ../cli/src/settings.c:500
+msgid "900 MHz, "
+msgstr "900 MHz, "
+
+#: ../cli/src/settings.c:502
+msgid "1800 MHz, "
+msgstr "1800 MHz, "
+
+#: ../cli/src/settings.c:504
+msgid "1900 MHz, "
+msgstr "1900 MHz, "
+
+#: ../cli/src/settings.c:506
+msgid "850 MHz, "
+msgstr "850 MHz, "
+
+#: ../cli/src/settings.c:508
+msgid "WCDMA 3GPP UMTS 2100 MHz, "
+msgstr "WCDMA 3GPP UMTS 2100 MHz, "
+
+#: ../cli/src/settings.c:510
+msgid "WCDMA 3GPP UMTS 1800 MHz, "
+msgstr "WCDMA 3GPP UMTS 1800 MHz, "
+
+#: ../cli/src/settings.c:512
+msgid "WCDMA 3GPP UMTS 1700/2100 MHz, "
+msgstr "WCDMA 3GPP UMTS 1700/2100 MHz, "
+
+#: ../cli/src/settings.c:514
+msgid "WCDMA 3GPP UMTS 800 MHz, "
+msgstr "WCDMA 3GPP UMTS 800 MHz, "
+
+#: ../cli/src/settings.c:516
+msgid "WCDMA 3GPP UMTS 850 MHz, "
+msgstr "WCDMA 3GPP UMTS 850 MHz, "
+
+#: ../cli/src/settings.c:518
+msgid "WCDMA 3GPP UMTS 900 MHz, "
+msgstr "WCDMA 3GPP UMTS 900 MHz, "
+
+#: ../cli/src/settings.c:520
+msgid "WCDMA 3GPP UMTS 1700 MHz, "
+msgstr "WCDMA 3GPP UMTS 1700 MHz, "
+
+#: ../cli/src/settings.c:522
+msgid "WCDMA 3GPP UMTS 1900 MHz, "
+msgstr "WCDMA 3GPP UMTS 1900 MHz, "
+
+#: ../cli/src/settings.c:524
+msgid "WCDMA 3GPP UMTS 2600 MHz, "
+msgstr "WCDMA 3GPP UMTS 2600 MHz, "
+
+#: ../cli/src/settings.c:646 ../cli/src/settings.c:841
+#: ../cli/src/settings.c:1545
+msgid "auto"
+msgstr "otomatik"
+
+#: ../cli/src/settings.c:835 ../cli/src/settings.c:838
+#: ../cli/src/settings.c:839 ../cli/src/utils.c:176
+msgid "not set"
+msgstr "ayarlanmamış"
+
+#: ../cli/src/utils.c:128
+#, c-format
+msgid "field '%s' has to be alone"
+msgstr "'%s' alanı boş olmalı"
+
+#: ../cli/src/utils.c:131
+#, c-format
+msgid "invalid field '%s'"
+msgstr "geçersiz alan '%s'"
+
+#: ../cli/src/utils.c:150
+#, c-format
+msgid "Option '--terse' requires specifying '--fields'"
+msgstr "'--terse' parametresi özel '--fields' parametresine ihtiyaç duyar"
+
+#: ../cli/src/utils.c:154
+#, c-format
+msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
+msgstr ""
+"'--terse' seçeneği özel '--fields' seçeneği değerlerini gerektirir, '%s' "
+"değil"
+
+#: ../cli/src/utils.c:334
+#, c-format
+msgid "Error: Couldn't create D-Bus object proxy for org.freedesktop.DBus"
+msgstr "Hata: D-Bus nesnesi proxy için org.freedesktop.DBus oluşturulamadı"
+
+#: ../cli/src/utils.c:342
+#, c-format
+msgid "Error: NameHasOwner request failed: %s"
+msgstr "Hata: NameHasOwner isteği başarısız oldu: %s"
+
+#: ../cli/src/utils.c:387
+#, c-format
+msgid ""
+"Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --"
+"nocheck to suppress the warning.\n"
+msgstr ""
+"Uyarı: nmcli (%s) ve NetworkManager (%s) sürümleri uyuşmuyor. Uyarıyı "
+"bastırmak için --nocheck seçeneğini kullanın.\n"
+
+#: ../cli/src/utils.c:396
+#, c-format
+msgid ""
+"Error: nmcli (%s) and NetworkManager (%s) versions don't match. Force "
+"execution using --nocheck, but the results are unpredictable."
+msgstr ""
+"Hata: nmcli (%s) ve NetworkManager (%s) sürümleri uyuşmuyor. --nocheck "
+"seçeneğini "
+"kullanarak işlemi zorlayabilirsiniz, fakat sonuçlar öngörülemez.\n."
+
+#: ../libnm-util/crypto.c:133
+#, c-format
+msgid "PEM key file had no end tag '%s'."
+msgstr "PEM anahtar dosyası '%s' son etiketine sahip değil."
+
+#: ../libnm-util/crypto.c:146
+#, c-format
+msgid "Doesn't look like a PEM private key file."
+msgstr "Bir PEM özel anahtar dosyasına benzemiyor."
+
+#: ../libnm-util/crypto.c:154
+#, c-format
+msgid "Not enough memory to store PEM file data."
+msgstr "PEM dosyası verilerini depolamak için yeterli bellek yok."
+
+#: ../libnm-util/crypto.c:170
+#, c-format
+msgid "Malformed PEM file: Proc-Type was not first tag."
+msgstr "Bozuk PEM dosyası: Proc-Type ilk etiket değildi."
+
+#: ../libnm-util/crypto.c:178
+#, c-format
+msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
+msgstr "Bozuk PEM dosyası: bilinmeyen Proc-Type etiketi '%s'."
+
+#: ../libnm-util/crypto.c:188
+#, c-format
+msgid "Malformed PEM file: DEK-Info was not the second tag."
+msgstr "Bozuk PEM dosyası: DEK-Info ikinci etiket değildi."
+
+#: ../libnm-util/crypto.c:199
+#, c-format
+msgid "Malformed PEM file: no IV found in DEK-Info tag."
+msgstr "Bozuk PEM dosyası: DEK-Info etiketinde IV mevcut değil."
+
+#: ../libnm-util/crypto.c:206
+#, c-format
+msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
+msgstr "Bozuk PEM dosyası: DEK-Info etiketi içerisinde IV'ün geçersiz biçimi."
+
+#: ../libnm-util/crypto.c:219
+#, c-format
+msgid "Malformed PEM file: unknown private key cipher '%s'."
+msgstr "Bozuk PEM dosyası: bilinmeyen özel anahtar şifresi '%s'."
+
+#: ../libnm-util/crypto.c:238
+#, c-format
+msgid "Could not decode private key."
+msgstr "Özel anahtar çözülemedi."
+
+#: ../libnm-util/crypto.c:284
+msgid "Failed to find expected PKCS#8 start tag."
+msgstr "Beklenen PKCS#8 başlama etiketi bulunamadı."
+
+#: ../libnm-util/crypto.c:292
+#, c-format
+msgid "Failed to find expected PKCS#8 end tag '%s'."
+msgstr "Beklenen PKCS#8 bitiş etiketi '%s' bulunamadı."
+
+#: ../libnm-util/crypto.c:312
+msgid "Not enough memory to store private key data."
+msgstr "Özel anahtar verisini kaydetmek için yeterli bellek yok."
+
+#: ../libnm-util/crypto.c:317
+msgid "Failed to decode PKCS#8 private key."
+msgstr "PKCS#8 özel anahtarının şifresi çözülemedi."
+
+#: ../libnm-util/crypto.c:339 ../libnm-util/crypto.c:625
+#, c-format
+msgid "Not enough memory to store certificate data."
+msgstr "Sertifika verisi depolamak için yetersiz bellek."
+
+#: ../libnm-util/crypto.c:365
+#, c-format
+msgid "IV must be an even number of bytes in length."
+msgstr "IV, uzunluk olarak bayt cinsinden bir çift sayı olmalıdır."
+
+#: ../libnm-util/crypto.c:374
+#, c-format
+msgid "Not enough memory to store the IV."
+msgstr "IV'ü depolamak için yeterli bellek yok."
+
+#: ../libnm-util/crypto.c:385
+#, c-format
+msgid "IV contains non-hexadecimal digits."
+msgstr "IV, onaltılık olmayan sayılar barınırıyor."
+
+#: ../libnm-util/crypto.c:423 ../libnm-util/crypto_gnutls.c:147
+#: ../libnm-util/crypto_gnutls.c:265 ../libnm-util/crypto_nss.c:167
+#: ../libnm-util/crypto_nss.c:332
+#, c-format
+msgid "Private key cipher '%s' was unknown."
+msgstr "'%s' özel anahtar şifresi bilinmiyor."
+
+#: ../libnm-util/crypto.c:432
+#, c-format
+msgid "Not enough memory to decrypt private key."
+msgstr "Özel anahtarı çözümlemek için yeterli bellek yok."
+
+#: ../libnm-util/crypto.c:497
+#, c-format
+msgid "Not enough memory to store decrypted private key."
+msgstr "Çözülmüş özel anahtarı depolamak için yeterli bellek yok."
+
+#: ../libnm-util/crypto.c:542
+#, c-format
+msgid "Unable to determine private key type."
+msgstr "Özel anahtar türü belirlenemedi."
+
+#: ../libnm-util/crypto.c:597
+#, c-format
+msgid "PEM certificate had no start tag '%s'."
+msgstr "PEM sertifikasının başlama etiketi '%s' yok."
+
+#: ../libnm-util/crypto.c:606
+#, c-format
+msgid "PEM certificate had no end tag '%s'."
+msgstr "PEM sertifikasının bitiş etiketi '%s' yok."
+
+#: ../libnm-util/crypto.c:630
+#, c-format
+msgid "Failed to decode certificate."
+msgstr "Sertifika çözülemedi."
+
+#: ../libnm-util/crypto_gnutls.c:50
+msgid "Failed to initialize the crypto engine."
+msgstr "Kripto cihazını sıfırlama başarısız."
+
+#: ../libnm-util/crypto_gnutls.c:92
+#, c-format
+msgid "Failed to initialize the MD5 engine: %s / %s."
+msgstr "MD5 cihazını başlatma başarısız oldu: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:155
+#, c-format
+msgid "Invalid IV length (must be at least %zd)."
+msgstr "Geçersiz IV uzunluğu (en az %zd olmalı)."
+
+#: ../libnm-util/crypto_gnutls.c:164 ../libnm-util/crypto_nss.c:184
+#, c-format
+msgid "Not enough memory for decrypted key buffer."
+msgstr "Çözümlenmiş anahtar ara belleği için yeterli bellek yok."
+
+#: ../libnm-util/crypto_gnutls.c:172
+#, c-format
+msgid "Failed to initialize the decryption cipher context: %s / %s."
+msgstr "Şifre çözümleme içeriğini başlatma başarısız oldu: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:181
+#, c-format
+msgid "Failed to set symmetric key for decryption: %s / %s."
+msgstr ""
+"Şifre çözümleme işlemi için simetrik anahtar oluşturma başarısız oldu: %s / %"
+"s."
+
+#: ../libnm-util/crypto_gnutls.c:190
+#, c-format
+msgid "Failed to set IV for decryption: %s / %s."
+msgstr "Şifre çözümleme için IV ayarlama hatası: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:199
+#, c-format
+msgid "Failed to decrypt the private key: %s / %s."
+msgstr "Özel anahtarın şifresini çözme başarısız oldu: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:209 ../libnm-util/crypto_nss.c:263
+#, c-format
+msgid "Failed to decrypt the private key: unexpected padding length."
+msgstr ""
+"Özel anahtarın şifresini çözme başarısız oldu: beklenmeyen dolgu uzunluğu."
+
+#: ../libnm-util/crypto_gnutls.c:220 ../libnm-util/crypto_nss.c:274
+#, c-format
+msgid "Failed to decrypt the private key."
+msgstr "Özel anahtarın şifresini çözme başarısız oldu."
+
+#: ../libnm-util/crypto_gnutls.c:285 ../libnm-util/crypto_nss.c:352
+#, c-format
+msgid "Could not allocate memory for encrypting."
+msgstr "Şifrelemek için bellek ayrılamadı."
+
+#: ../libnm-util/crypto_gnutls.c:293
+#, c-format
+msgid "Failed to initialize the encryption cipher context: %s / %s."
+msgstr "Şifreleme anahtarı içerik sıfırlama hatası: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:302
+#, c-format
+msgid "Failed to set symmetric key for encryption: %s / %s."
+msgstr "Şifreleme için simetrik anahtar ayarlama hatası: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:312
+#, c-format
+msgid "Failed to set IV for encryption: %s / %s."
+msgstr "Şifreleme için IV ayarlama hatası: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:321
+#, c-format
+msgid "Failed to encrypt the data: %s / %s."
+msgstr "Veri şifreleme başarısız: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:361
+#, c-format
+msgid "Error initializing certificate data: %s"
+msgstr "Sertifika verisi başlatma hatası: %s"
+
+#: ../libnm-util/crypto_gnutls.c:383
+#, c-format
+msgid "Couldn't decode certificate: %s"
+msgstr "Sertifika çözülemedi: %s"
+
+#: ../libnm-util/crypto_gnutls.c:407
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %s"
+msgstr "PKCS#12 şifre çözücü sıfırlanamadı: %s"
+
+#: ../libnm-util/crypto_gnutls.c:420
+#, c-format
+msgid "Couldn't decode PKCS#12 file: %s"
+msgstr "PKCS#12 dosya şifresi çözülemedi: %s"
+
+#: ../libnm-util/crypto_gnutls.c:432
+#, c-format
+msgid "Couldn't verify PKCS#12 file: %s"
+msgstr "PKCS#12 dosyası doğrulanamadı: %s"
+
+#: ../libnm-util/crypto_gnutls.c:460
+#, c-format
+msgid "Couldn't initialize PKCS#8 decoder: %s"
+msgstr "PKCS#8 şifre çözücü ilklendirilemedi: %s"
+
+#: ../libnm-util/crypto_gnutls.c:483
+#, c-format
+msgid "Couldn't decode PKCS#8 file: %s"
+msgstr "PKCS#8 dosya şifresi çözülemedi: %s"
+
+#: ../libnm-util/crypto_nss.c:56
+#, c-format
+msgid "Failed to initialize the crypto engine: %d."
+msgstr "Kripto motoru başlatılamadı: %d."
+
+#: ../libnm-util/crypto_nss.c:107
+#, c-format
+msgid "Failed to initialize the MD5 context: %d."
+msgstr "MD5 içeriği sıfırlama başarısız: %d."
+
+#: ../libnm-util/crypto_nss.c:175
+#, c-format
+msgid "Invalid IV length (must be at least %d)."
+msgstr "Geçersiz IV uzunluğu (en azından %d olmalı)."
+
+#: ../libnm-util/crypto_nss.c:192
+#, c-format
+msgid "Failed to initialize the decryption cipher slot."
+msgstr "Şifre çözücü anahtar yuvası sıfırlama hatası."
+
+#: ../libnm-util/crypto_nss.c:202
+#, c-format
+msgid "Failed to set symmetric key for decryption."
+msgstr "Şifre çözümlemesi için  simetrik anahtar ayarlama başarısız."
+
+#: ../libnm-util/crypto_nss.c:212
+#, c-format
+msgid "Failed to set IV for decryption."
+msgstr "Şifre çözümlemesi için IV ayarlama başarısız."
+
+#: ../libnm-util/crypto_nss.c:220
+#, c-format
+msgid "Failed to initialize the decryption context."
+msgstr "Şifre çözüm içeriği sıfırlanması başarısız."
+
+#: ../libnm-util/crypto_nss.c:233
+#, c-format
+msgid "Failed to decrypt the private key: %d."
+msgstr "Özel anahtar şifre çözme hatası: %d."
+
+#: ../libnm-util/crypto_nss.c:241
+#, c-format
+msgid "Failed to decrypt the private key: decrypted data too large."
+msgstr "Özel anahtar şifre çözme hatası: şifresi çözülen veri çok uzun."
+
+#: ../libnm-util/crypto_nss.c:252
+#, c-format
+msgid "Failed to finalize decryption of the private key: %d."
+msgstr "Özel anahtar şifre çözümleme bitirme hatası: %d."
+
+#: ../libnm-util/crypto_nss.c:360
+#, c-format
+msgid "Failed to initialize the encryption cipher slot."
+msgstr "Şifreleme anahtar yuvası sıfırlama hatası."
+
+#: ../libnm-util/crypto_nss.c:368
+#, c-format
+msgid "Failed to set symmetric key for encryption."
+msgstr "Şifreleme için simetrik anahtar ayarlama hatası."
+
+#: ../libnm-util/crypto_nss.c:376
+#, c-format
+msgid "Failed to set IV for encryption."
+msgstr "Şifreleme için IV ayarlama hatası."
+
+#: ../libnm-util/crypto_nss.c:384
+#, c-format
+msgid "Failed to initialize the encryption context."
+msgstr "Şifreleme içeriği sıfırlama hatası."
+
+#: ../libnm-util/crypto_nss.c:392
+#, c-format
+msgid "Failed to encrypt: %d."
+msgstr "Şifrelenemedi: %d."
+
+#: ../libnm-util/crypto_nss.c:400
+#, c-format
+msgid "Unexpected amount of data after encrypting."
+msgstr "Şifrelemeden sonra beklenmeyen miktarda veri."
+
+#: ../libnm-util/crypto_nss.c:443
+#, c-format
+msgid "Couldn't decode certificate: %d"
+msgstr "Sertifikanın kodu çözülemedi: %d"
+
+#: ../libnm-util/crypto_nss.c:478
+#, c-format
+msgid "Couldn't convert password to UCS2: %d"
+msgstr "Şifre UCS2'ye dönüştürülemedi: %d"
+
+#: ../libnm-util/crypto_nss.c:506
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %d"
+msgstr "PKCS#12 kod çözücü sıfırlanamadı: %d"
+
+#: ../libnm-util/crypto_nss.c:515
+#, c-format
+msgid "Couldn't decode PKCS#12 file: %d"
+msgstr "PKCS#12 dosyası kodu çözülemedi: %d"
+
+#: ../libnm-util/crypto_nss.c:524
+#, c-format
+msgid "Couldn't verify PKCS#12 file: %d"
+msgstr "PKCS#12 dosyası doğrulanamadı: %d"
+
+#: ../libnm-util/crypto_nss.c:568
+msgid "Could not generate random data."
+msgstr "Rastgele veri üretilemedi."
+
+#: ../libnm-util/nm-utils.c:2003
+#, c-format
+msgid "Not enough memory to make encryption key."
+msgstr "Şifreleme anahtarı yapmak için yeterli bellek yok."
+
+#: ../libnm-util/nm-utils.c:2113
+msgid "Could not allocate memory for PEM file creation."
+msgstr "PEM dosya oluşturma için bellek ayrılamadı."
+
+#: ../libnm-util/nm-utils.c:2125
+#, c-format
+msgid "Could not allocate memory for writing IV to PEM file."
+msgstr "IV'ü PEM dosyasına yazmak için bellek ayrılamadı."
+
+#: ../libnm-util/nm-utils.c:2137
+#, c-format
+msgid "Could not allocate memory for writing encrypted key to PEM file."
+msgstr "Şifrelenmiş anahtarı PEM dosyasına yazmak için bellek ayrılamadı."
+
+#: ../libnm-util/nm-utils.c:2156
+#, c-format
+msgid "Could not allocate memory for PEM file data."
+msgstr "PEM dosyası verisi için bellek ayrılamadı."
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:1
+msgid "Allow control of network connections"
+msgstr "Ağ bağlantılarının denetimine izin ver"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:2
+msgid "Connection sharing via a protected WiFi network"
+msgstr "Korumalı bir WiFi ağı yoluyla bağlantı paylaşımı"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:3
+msgid "Connection sharing via an open WiFi network"
+msgstr "Açık bir Wfi ağı yoluyla bağlantı paylaşımı"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:4
+msgid "Enable or disable WiFi devices"
+msgstr "WiFi aygıtlarını etkinleştir ya da etkisizleştir"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:5
+msgid "Enable or disable WiMAX mobile broadband devices"
+msgstr "WiMAX mobil genişbant aygıtlarını etkinleştir ya da etkisizleştir"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:6
+msgid "Enable or disable mobile broadband devices"
+msgstr "Mobil genişbant aygıtlarını etkinleştir ya da etkisizleştir"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:7
+msgid "Enable or disable system networking"
+msgstr "Sistem ağını etkinleştir ya da etkisizleştir"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:8
+msgid "Modify network connections for all users"
+msgstr "Tüm kullanıcılar için ağ bağlantılarını düzenle"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:9
+msgid "Modify persistent system hostname"
+msgstr "Direşken sistemin adını değiştir"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:10
+msgid "Modify personal network connections"
+msgstr "Kişisel ağ bağlantılarını düzenle"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:11
+msgid ""
+"Put NetworkManager to sleep or wake it up (should only be used by system "
+"power management)"
+msgstr ""
+"NetworkManager'i uykuda konumuna getir veya uyandır (yalnızca sistem güç "
+"yönetimi tarafından kullanılmalıdır)"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:12
+msgid "System policy prevents control of network connections"
+msgstr "Sistem kuralları, ağ bağlantılarını denetlemeyi engelliyor"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:13
+msgid "System policy prevents enabling or disabling WiFi devices"
+msgstr ""
+"Sistem kuralları, WiFi aygıtlarını etkinleştirmeyi ya da etkisizleştirmeyi "
+"engelliyor"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:14
+msgid ""
+"System policy prevents enabling or disabling WiMAX mobile broadband devices"
+msgstr ""
+"Sistem kuralları, WiMAX mobil genişbant aygıtlarını etkinleştirmeyi ya da "
+"etkisizleştirmeyi engelliyor"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:15
+msgid "System policy prevents enabling or disabling mobile broadband devices"
+msgstr ""
+"Sistem kuralları, mobil genişbant aygıtlarını etkinleştirmeyi ya da "
+"etkisizleştirmeyi engelliyor"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:16
+msgid "System policy prevents enabling or disabling system networking"
+msgstr ""
+"Sistem kuralları, sistem ağını etkinleştirmeyi ya da etkisizleştirmeyi "
+"engelliyor"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:17
+msgid "System policy prevents modification of network settings for all users"
+msgstr ""
+"Sistem kuralları, tüm kullanıcılar için ağ ayarlarının değiştirilmesine izin "
+"vermiyor"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:18
+msgid "System policy prevents modification of personal network settings"
+msgstr ""
+"Sistem kuralları, kişisel ağ ayarlarının değiştirilmesine izin vermiyor"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:19
+msgid "System policy prevents modification of the persistent system hostname"
+msgstr "Sistem kuralları, direşken sistemin adının değiştirilmesini önlüyor"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:20
+msgid "System policy prevents putting NetworkManager to sleep or waking it up"
+msgstr ""
+"Sistem kuralları, NetworkManager'ı uykuda konumuna getirmeyi veya "
+"uyandırmayı engelliyor"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:21
+msgid "System policy prevents sharing connections via a protected WiFi network"
+msgstr ""
+"Sistem kuralları, korumalı kablosuz ağ yoluyla bağlantı paylaşımını önlüyor"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:22
+msgid "System policy prevents sharing connections via an open WiFi network"
+msgstr ""
+"Sistem kuralları, korumasız kablosuz ağ yoluyla bağlantı paylaşımını önlüyor"
+
+#: ../src/main.c:405
+#, c-format
+msgid "Invalid option.  Please use --help to see a list of valid options.\n"
+msgstr ""
+"Geçersiz seçenek. Lütfen geçerli seçeneklerin listesini görmek için --help "
+"kullanın.\n"
+
+#: ../src/main.c:446
+#, c-format
+msgid "%s.  Please use --help to see a list of valid options.\n"
+msgstr ""
+"%s. Geçerli seçeneklerin bir listesini görmek için lütfen --help komutunu "
+"kullanın.\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:62
+msgid "# Created by NetworkManager\n"
+msgstr "# Ağ Yöneticisi Tarafından Oluşturuldu\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:69
+#, c-format
+msgid ""
+"# Merged from %s\n"
+"\n"
+msgstr ""
+"# %s'den birleşmiş\n"
+"\n"
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:284
+msgid "no usable DHCP client could be found."
+msgstr "kullanılabilir bir DHCP istemcisi bulunamadı."
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:293
+msgid "'dhclient' could be found."
+msgstr "'dhclient' bulunamadı."
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:303
+msgid "'dhcpcd' could be found."
+msgstr "'dhcpcd' bulunamadı."
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:311
+#, c-format
+msgid "unsupported DHCP client '%s'"
+msgstr "desteklenmeyen DHCP istemcisi '%s'"
+
+#: ../src/dns-manager/nm-dns-manager.c:376
+msgid "NOTE: the libc resolver may not support more than 3 nameservers."
+msgstr "NOT: libc çözücü 3'den fazla sunucu adını desteklemeyebilir."
+
+#: ../src/dns-manager/nm-dns-manager.c:378
+msgid "The nameservers listed below may not be recognized."
+msgstr "Aşağıda listelenen sunucu adları tanınmayabilir."
+
+#: ../src/logging/nm-logging.c:154
+#, c-format
+msgid "Unknown log level '%s'"
+msgstr "Bilinmeyen kayıt seviyesi '%s'"
+
+#: ../src/logging/nm-logging.c:179
+#, c-format
+msgid "Unknown log domain '%s'"
+msgstr "Bilinmeyen kayıt etki alanı '%s'"
+
+#: ../src/modem-manager/nm-modem-cdma.c:296 ../src/nm-device-bt.c:354
+#, c-format
+msgid "CDMA connection %d"
+msgstr "CDMA bağlantısı %d"
+
+#: ../src/modem-manager/nm-modem-gsm.c:521 ../src/nm-device-bt.c:350
+#, c-format
+msgid "GSM connection %d"
+msgstr "GSM bağlantısı %d"
+
+#: ../src/nm-device-bt.c:325
+#, c-format
+msgid "PAN connection %d"
+msgstr "PAN bağlantısı %d"
+
+#: ../src/nm-device-bt.c:358
+#, c-format
+msgid "DUN connection %d"
+msgstr "DUN bağlantısı %d"
+
+#: ../src/nm-device-ethernet.c:1425
+#, c-format
+msgid "PPPoE connection %d"
+msgstr "PPPoE bağlantısı %d"
+
+#: ../src/nm-device-ethernet.c:1425 ../src/settings/nm-settings-utils.c:50
+#, c-format
+msgid "Wired connection %d"
+msgstr "Kablolu bağlantı %d"
+
+#: ../src/nm-device-infiniband.c:292
+#, c-format
+msgid "Infiniband connection %d"
+msgstr "Infiniband bağlantısı %d"
+
+#: ../src/nm-device-olpc-mesh.c:323
+#, c-format
+msgid "Mesh %d"
+msgstr "Mesh %d"
+
+#: ../src/nm-manager.c:683
+#, c-format
+msgid "VPN connection %d"
+msgstr "VPN bağlantısı %d"
+
+#: ../src/nm-netlink-monitor.c:148 ../src/nm-netlink-monitor.c:272
+#: ../src/nm-netlink-monitor.c:695
+#, c-format
+msgid "error processing netlink message: %s"
+msgstr "netlink iletisinin işlenmesinde hata: %s"
+
+#: ../src/nm-netlink-monitor.c:251
+msgid "error occurred while waiting for data on socket"
+msgstr "yuva üzerinde veri beklenirken hata oluştu"
+
+#: ../src/nm-netlink-monitor.c:296
+#, c-format
+msgid "unable to connect to netlink for monitoring link status: %s"
+msgstr "bağ durumunu izlemek için netlink'e bağlanılamadı: %s"
+
+#: ../src/nm-netlink-monitor.c:307
+#, c-format
+msgid "unable to enable netlink handle credential passing: %s"
+msgstr "kimlik gönderimi için ağ köprüsü etkinleştirilemiyor: %s"
+
+#: ../src/nm-netlink-monitor.c:330 ../src/nm-netlink-monitor.c:390
+#, c-format
+msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgstr "adres durumunu izlemek için ağ-adresi paylaşımı yapılamadı: %s"
+
+#: ../src/nm-netlink-monitor.c:415
+#, c-format
+msgid "unable to allocate netlink link cache for monitoring link status: %s"
+msgstr ""
+"adres durumunu izlemek için ağ-adresi adres belleği paylaşımı yapılamadı: %s"
+
+#: ../src/nm-netlink-monitor.c:542
+#, c-format
+msgid "unable to join netlink group: %s"
+msgstr "netlink kümesine girilemedi: %s"
+
+#: ../src/nm-netlink-monitor.c:671 ../src/nm-netlink-monitor.c:684
+#, c-format
+msgid "error updating link cache: %s"
+msgstr "bağ önbelleğinin güncellenmesinde hata: %s"
+
+#: ../src/settings/plugins/ifcfg-rh/reader.c:97
+#: ../src/settings/plugins/ifnet/connection_parser.c:51
+msgid "System"
+msgstr "Sistem"
+
+#: ../src/settings/plugins/ifcfg-rh/reader.c:3557
+msgid "Bond"
+msgstr "Bağ"
+
+#~ msgid "Allow use of user-specific connections"
+#~ msgstr "Kullanıcı tanımlı bağlantılara izin ver"
+
+#~ msgid "System policy prevents use of user-specific connections"
+#~ msgstr ""
+#~ "Sistem kuralları, kullanıcı tanımlı bağlantıların kullanımını engelliyor"
+
+#~ msgid "unknown)"
+#~ msgstr "bilinmeyen)"
