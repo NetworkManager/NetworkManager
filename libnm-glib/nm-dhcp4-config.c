@@ -212,24 +212,10 @@ nm_dhcp4_config_new (DBusGConnection *connection, const char *object_path)
 GHashTable *
 nm_dhcp4_config_get_options (NMDHCP4Config *config)
 {
-	NMDHCP4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (config);
-	GValue value = { 0, };
+	g_return_val_if_fail (NM_IS_DHCP4_CONFIG (config), NULL);
 
-	if (g_hash_table_size (priv->options))
-		return priv->options;
-
-	if (!_nm_object_get_property (NM_OBJECT (config),
-	                              NM_DBUS_INTERFACE_DHCP4_CONFIG,
-	                              "Options",
-	                              &value,
-	                              NULL))
-		goto out;
-
-	demarshal_dhcp4_options (NM_OBJECT (config), NULL, &value, &priv->options);	
-	g_value_unset (&value);
-
-out:
-	return priv->options;
+	_nm_object_ensure_inited (NM_OBJECT (config));
+	return NM_DHCP4_CONFIG_GET_PRIVATE (config)->options;
 }
 
 /**

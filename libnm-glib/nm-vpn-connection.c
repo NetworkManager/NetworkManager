@@ -99,21 +99,11 @@ nm_vpn_connection_get_banner (NMVPNConnection *vpn)
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn);
 
 	/* We need to update vpn_state first in case it's unknown. */
-	nm_vpn_connection_get_vpn_state (vpn);
+	_nm_object_ensure_inited (NM_OBJECT (vpn));
 
 	if (priv->vpn_state != NM_VPN_CONNECTION_STATE_ACTIVATED)
 		return NULL;
 
-	if (!priv->banner) {
-		priv->banner = _nm_object_get_string_property (NM_OBJECT (vpn),
-		                                               NM_DBUS_INTERFACE_VPN_CONNECTION,
-		                                               DBUS_PROP_BANNER,
-		                                               NULL);
-		if (priv->banner && !strlen (priv->banner)) {
-			g_free (priv->banner);
-			priv->banner = NULL;
-		}
-	}
 	return priv->banner;
 }
 
@@ -128,18 +118,10 @@ nm_vpn_connection_get_banner (NMVPNConnection *vpn)
 NMVPNConnectionState
 nm_vpn_connection_get_vpn_state (NMVPNConnection *vpn)
 {
-	NMVPNConnectionPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn), NM_VPN_CONNECTION_STATE_UNKNOWN);
 
-	priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn);
-	if (priv->vpn_state == NM_VPN_CONNECTION_STATE_UNKNOWN) {
-		priv->vpn_state = _nm_object_get_uint_property (NM_OBJECT (vpn),
-		                                                NM_DBUS_INTERFACE_VPN_CONNECTION,
-		                                                DBUS_PROP_VPN_STATE,
-		                                                NULL);
-	}
-	return priv->vpn_state;
+	_nm_object_ensure_inited (NM_OBJECT (vpn));
+	return NM_VPN_CONNECTION_GET_PRIVATE (vpn)->vpn_state;
 }
 
 static void

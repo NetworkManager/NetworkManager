@@ -153,27 +153,10 @@ register_properties (NMIP6Config *config)
 const GSList *
 nm_ip6_config_get_addresses (NMIP6Config *config)
 {
-	NMIP6ConfigPrivate *priv;
-	GValue value = { 0, };
-
 	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
 
-	priv = NM_IP6_CONFIG_GET_PRIVATE (config);
-	if (priv->addresses)
-		return priv->addresses;
-
-	if (!_nm_object_get_property (NM_OBJECT (config),
-	                              NM_DBUS_INTERFACE_IP6_CONFIG,
-	                              "Addresses",
-	                              &value,
-	                              NULL)) {
-		return NULL;
-	}
-
-	demarshal_ip6_address_array (NM_OBJECT (config), NULL, &value, &priv->addresses);	
-	g_value_unset (&value);
-
-	return priv->addresses;
+	_nm_object_ensure_inited (NM_OBJECT (config));
+	return NM_IP6_CONFIG_GET_PRIVATE (config)->addresses;
 }
 
 /* FIXME: like in libnm_util, in6_addr is not introspectable, so skipping here */
@@ -190,29 +173,10 @@ nm_ip6_config_get_addresses (NMIP6Config *config)
 const GSList *
 nm_ip6_config_get_nameservers (NMIP6Config *config)
 {
-	NMIP6ConfigPrivate *priv;
-	GParamSpec *pspec;
-	GValue value = {0,};
-
 	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
 
-	priv = NM_IP6_CONFIG_GET_PRIVATE (config);
-	if (priv->nameservers)
-		return priv->nameservers;
-
-	if (!_nm_object_get_property (NM_OBJECT (config),
-	                              NM_DBUS_INTERFACE_IP6_CONFIG,
-	                              "Nameservers",
-	                              &value,
-	                              NULL)) {
-		return NULL;
-	}
-
-	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (config)), NM_IP6_CONFIG_NAMESERVERS);
-	demarshal_ip6_nameserver_array (NM_OBJECT (config), pspec, &value, &priv->nameservers);
-	g_value_unset (&value);
-
-	return priv->nameservers;
+	_nm_object_ensure_inited (NM_OBJECT (config));
+	return NM_IP6_CONFIG_GET_PRIVATE (config)->nameservers;
 }
 
 /**
@@ -227,27 +191,10 @@ nm_ip6_config_get_nameservers (NMIP6Config *config)
 const GPtrArray *
 nm_ip6_config_get_domains (NMIP6Config *config)
 {
-	NMIP6ConfigPrivate *priv;
-	GValue value = {0,};
-
 	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
 
-	priv = NM_IP6_CONFIG_GET_PRIVATE (config);
-	if (priv->domains)
-		return handle_ptr_array_return (priv->domains);
-
-	if (!_nm_object_get_property (NM_OBJECT (config),
-	                              NM_DBUS_INTERFACE_IP6_CONFIG,
-	                              "Domains",
-	                              &value,
-	                              NULL)) {
-		return NULL;
-	}
-
-	demarshal_domains (NM_OBJECT (config), NULL, &value, &priv->domains);
-	g_value_unset (&value);
-
-	return handle_ptr_array_return (priv->domains);
+	_nm_object_ensure_inited (NM_OBJECT (config));
+	return handle_ptr_array_return (NM_IP6_CONFIG_GET_PRIVATE (config)->domains);
 }
 
 /**
@@ -263,27 +210,10 @@ nm_ip6_config_get_domains (NMIP6Config *config)
 const GSList *
 nm_ip6_config_get_routes (NMIP6Config *config)
 {
-	NMIP6ConfigPrivate *priv;
-	GValue value = { 0, };
-
 	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
 
-	priv = NM_IP6_CONFIG_GET_PRIVATE (config);
-	if (priv->routes)
-		return priv->routes;
-
-	if (!_nm_object_get_property (NM_OBJECT (config),
-	                              NM_DBUS_INTERFACE_IP6_CONFIG,
-	                              "Routes",
-	                              &value,
-	                              NULL)) {
-		return NULL;
-	}
-
-	demarshal_ip6_routes_array (NM_OBJECT (config), NULL, &value, &priv->routes);
-	g_value_unset (&value);
-
-	return priv->routes;
+	_nm_object_ensure_inited (NM_OBJECT (config));
+	return NM_IP6_CONFIG_GET_PRIVATE (config)->routes;
 }
 
 static GObject*

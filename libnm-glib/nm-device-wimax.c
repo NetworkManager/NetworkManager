@@ -48,7 +48,6 @@ typedef struct {
 
 	char *hw_address;
 	NMWimaxNsp *active_nsp;
-	gboolean got_active_nsp;
 	GPtrArray *nsps;
 
 	guint center_freq;
@@ -121,19 +120,10 @@ nm_device_wimax_new (DBusGConnection *connection, const char *path)
 const char *
 nm_device_wimax_get_hw_address (NMDeviceWimax *wimax)
 {
-	NMDeviceWimaxPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (wimax), NULL);
 
-	priv = NM_DEVICE_WIMAX_GET_PRIVATE (wimax);
-	if (!priv->hw_address) {
-		priv->hw_address = _nm_object_get_string_property (NM_OBJECT (wimax),
-		                                                   NM_DBUS_INTERFACE_DEVICE_WIMAX,
-		                                                   DBUS_PROP_HW_ADDRESS,
-		                                                   NULL);
-	}
-
-	return priv->hw_address;
+	_nm_object_ensure_inited (NM_OBJECT (wimax));
+	return NM_DEVICE_WIMAX_GET_PRIVATE (wimax)->hw_address;
 }
 
 /**
@@ -147,11 +137,7 @@ nm_device_wimax_get_hw_address (NMDeviceWimax *wimax)
 NMWimaxNsp *
 nm_device_wimax_get_active_nsp (NMDeviceWimax *wimax)
 {
-	NMDeviceWimaxPrivate *priv;
 	NMDeviceState state;
-	char *path;
-	GValue value = { 0, };
-	GError *error = NULL;
 
 	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (wimax), NULL);
 
@@ -171,23 +157,8 @@ nm_device_wimax_get_active_nsp (NMDeviceWimax *wimax)
 		break;
 	}
 
-	priv = NM_DEVICE_WIMAX_GET_PRIVATE (wimax);
-	if (priv->got_active_nsp == TRUE)
-		return priv->active_nsp;
-
-	path = _nm_object_get_object_path_property (NM_OBJECT (wimax),
-	                                            NM_DBUS_INTERFACE_DEVICE_WIMAX,
-	                                            DBUS_PROP_ACTIVE_NSP,
-	                                            &error);
-	if (error == NULL) {
-		g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
-		g_value_take_boxed (&value, path);
-		demarshal_active_nsp (NM_OBJECT (wimax), NULL, &value, &priv->active_nsp);
-		g_value_unset (&value);
-	}
-	g_clear_error (&error);
-
-	return priv->active_nsp;
+	_nm_object_ensure_inited (NM_OBJECT (wimax));
+	return NM_DEVICE_WIMAX_GET_PRIVATE (wimax)->active_nsp;
 }
 
 /**
@@ -360,18 +331,10 @@ clean_up_nsps (NMDeviceWimax *self, gboolean notify)
 guint
 nm_device_wimax_get_center_frequency (NMDeviceWimax *self)
 {
-	NMDeviceWimaxPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), 0);
 
-	priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
-	if (!priv->center_freq) {
-		priv->center_freq = _nm_object_get_uint_property (NM_OBJECT (self),
-		                                                  NM_DBUS_INTERFACE_DEVICE_WIMAX,
-		                                                  DBUS_PROP_CENTER_FREQUENCY,
-		                                                  NULL);
-	}
-	return priv->center_freq;
+	_nm_object_ensure_inited (NM_OBJECT (self));
+	return NM_DEVICE_WIMAX_GET_PRIVATE (self)->center_freq;
 }
 
 /**
@@ -388,18 +351,10 @@ nm_device_wimax_get_center_frequency (NMDeviceWimax *self)
 gint
 nm_device_wimax_get_rssi (NMDeviceWimax *self)
 {
-	NMDeviceWimaxPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), 0);
 
-	priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
-	if (!priv->rssi) {
-		priv->rssi = _nm_object_get_int_property (NM_OBJECT (self),
-		                                          NM_DBUS_INTERFACE_DEVICE_WIMAX,
-		                                          DBUS_PROP_RSSI,
-		                                          NULL);
-	}
-	return priv->rssi;
+	_nm_object_ensure_inited (NM_OBJECT (self));
+	return NM_DEVICE_WIMAX_GET_PRIVATE (self)->rssi;
 }
 
 /**
@@ -415,18 +370,10 @@ nm_device_wimax_get_rssi (NMDeviceWimax *self)
 gint
 nm_device_wimax_get_cinr (NMDeviceWimax *self)
 {
-	NMDeviceWimaxPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), 0);
 
-	priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
-	if (!priv->cinr) {
-		priv->cinr = _nm_object_get_int_property (NM_OBJECT (self),
-		                                          NM_DBUS_INTERFACE_DEVICE_WIMAX,
-		                                          DBUS_PROP_CINR,
-		                                          NULL);
-	}
-	return priv->cinr;
+	_nm_object_ensure_inited (NM_OBJECT (self));
+	return NM_DEVICE_WIMAX_GET_PRIVATE (self)->cinr;
 }
 
 /**
@@ -442,18 +389,10 @@ nm_device_wimax_get_cinr (NMDeviceWimax *self)
 gint
 nm_device_wimax_get_tx_power (NMDeviceWimax *self)
 {
-	NMDeviceWimaxPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), 0);
 
-	priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
-	if (!priv->tx_power) {
-		priv->tx_power = _nm_object_get_int_property (NM_OBJECT (self),
-		                                              NM_DBUS_INTERFACE_DEVICE_WIMAX,
-		                                              DBUS_PROP_TX_POWER,
-		                                              NULL);
-	}
-	return priv->tx_power;
+	_nm_object_ensure_inited (NM_OBJECT (self));
+	return NM_DEVICE_WIMAX_GET_PRIVATE (self)->tx_power;
 }
 
 /**
@@ -467,18 +406,10 @@ nm_device_wimax_get_tx_power (NMDeviceWimax *self)
 const char *
 nm_device_wimax_get_bsid (NMDeviceWimax *self)
 {
-	NMDeviceWimaxPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), NULL);
 
-	priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
-	if (!priv->bsid) {
-		priv->bsid = _nm_object_get_string_property (NM_OBJECT (self),
-		                                             NM_DBUS_INTERFACE_DEVICE_WIMAX,
-		                                             DBUS_PROP_BSID,
-		                                             NULL);
-	}
-	return priv->bsid;
+	_nm_object_ensure_inited (NM_OBJECT (self));
+	return NM_DEVICE_WIMAX_GET_PRIVATE (self)->bsid;
 }
 
 static gboolean
@@ -642,8 +573,6 @@ demarshal_active_nsp (NMObject *object, GParamSpec *pspec, GValue *value, gpoint
 			}
 		}
 	}
-
-	priv->got_active_nsp = TRUE;
 
 	if (priv->active_nsp) {
 		g_object_unref (priv->active_nsp);

@@ -42,7 +42,6 @@ typedef struct {
 	char *hw_address;
 	char *name;
 	guint32 bt_capabilities;
-	gboolean bt_capabilities_valid;
 
 	gboolean disposed;
 } NMDeviceBtPrivate;
@@ -93,19 +92,10 @@ nm_device_bt_new (DBusGConnection *connection, const char *path)
 const char *
 nm_device_bt_get_hw_address (NMDeviceBt *device)
 {
-	NMDeviceBtPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_DEVICE_BT (device), NULL);
 
-	priv = NM_DEVICE_BT_GET_PRIVATE (device);
-	if (!priv->hw_address) {
-		priv->hw_address = _nm_object_get_string_property (NM_OBJECT (device),
-		                                                   NM_DBUS_INTERFACE_DEVICE_BLUETOOTH,
-		                                                   DBUS_PROP_HW_ADDRESS,
-		                                                   NULL);
-	}
-
-	return priv->hw_address;
+	_nm_object_ensure_inited (NM_OBJECT (device));
+	return NM_DEVICE_BT_GET_PRIVATE (device)->hw_address;
 }
 
 /**
@@ -119,19 +109,10 @@ nm_device_bt_get_hw_address (NMDeviceBt *device)
 const char *
 nm_device_bt_get_name (NMDeviceBt *device)
 {
-	NMDeviceBtPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_DEVICE_BT (device), NULL);
 
-	priv = NM_DEVICE_BT_GET_PRIVATE (device);
-	if (!priv->name) {
-		priv->name = _nm_object_get_string_property (NM_OBJECT (device),
-		                                             NM_DBUS_INTERFACE_DEVICE_BLUETOOTH,
-		                                             DBUS_PROP_NAME,
-		                                             NULL);
-	}
-
-	return priv->name;
+	_nm_object_ensure_inited (NM_OBJECT (device));
+	return NM_DEVICE_BT_GET_PRIVATE (device)->name;
 }
 
 /**
@@ -145,20 +126,10 @@ nm_device_bt_get_name (NMDeviceBt *device)
 NMBluetoothCapabilities
 nm_device_bt_get_capabilities (NMDeviceBt *device)
 {
-	NMDeviceBtPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_DEVICE_BT (device), NM_BT_CAPABILITY_NONE);
 
-	priv = NM_DEVICE_BT_GET_PRIVATE (device);
-	if (!priv->bt_capabilities_valid) {
-		priv->bt_capabilities = _nm_object_get_uint_property (NM_OBJECT (device),
-		                                                      NM_DBUS_INTERFACE_DEVICE_BLUETOOTH,
-		                                                      DBUS_PROP_BT_CAPABILITIES,
-		                                                      NULL);
-		priv->bt_capabilities_valid = TRUE;
-	}
-
-	return priv->bt_capabilities;
+	_nm_object_ensure_inited (NM_OBJECT (device));
+	return NM_DEVICE_BT_GET_PRIVATE (device)->bt_capabilities;
 }
 
 static NMBluetoothCapabilities

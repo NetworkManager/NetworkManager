@@ -43,7 +43,6 @@ typedef struct {
 
 	char *hw_address;
 	gboolean carrier;
-	gboolean carrier_valid;
 } NMDeviceInfinibandPrivate;
 
 enum {
@@ -90,19 +89,10 @@ nm_device_infiniband_new (DBusGConnection *connection, const char *path)
 const char *
 nm_device_infiniband_get_hw_address (NMDeviceInfiniband *device)
 {
-	NMDeviceInfinibandPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_DEVICE_INFINIBAND (device), NULL);
 
-	priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (device);
-	if (!priv->hw_address) {
-		priv->hw_address = _nm_object_get_string_property (NM_OBJECT (device),
-								   NM_DBUS_INTERFACE_DEVICE_INFINIBAND,
-								   DBUS_PROP_HW_ADDRESS,
-								   NULL);
-	}
-
-	return priv->hw_address;
+	_nm_object_ensure_inited (NM_OBJECT (device));
+	return NM_DEVICE_INFINIBAND_GET_PRIVATE (device)->hw_address;
 }
 
 /**
@@ -116,20 +106,10 @@ nm_device_infiniband_get_hw_address (NMDeviceInfiniband *device)
 gboolean
 nm_device_infiniband_get_carrier (NMDeviceInfiniband *device)
 {
-	NMDeviceInfinibandPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_DEVICE_INFINIBAND (device), FALSE);
 
-	priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (device);
-	if (!priv->carrier_valid) {
-		priv->carrier = _nm_object_get_boolean_property (NM_OBJECT (device),
-								 NM_DBUS_INTERFACE_DEVICE_INFINIBAND,
-								 DBUS_PROP_CARRIER,
-								 NULL);
-		priv->carrier_valid = TRUE;
-	}
-
-	return priv->carrier;
+	_nm_object_ensure_inited (NM_OBJECT (device));
+	return NM_DEVICE_INFINIBAND_GET_PRIVATE (device)->carrier;
 }
 
 static gboolean
@@ -171,7 +151,6 @@ nm_device_infiniband_init (NMDeviceInfiniband *device)
 	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (device);
 
 	priv->carrier = FALSE;
-	priv->carrier_valid = FALSE;
 }
 
 static void

@@ -71,20 +71,11 @@ enum {
 NMDeviceModemCapabilities
 nm_device_modem_get_modem_capabilities (NMDeviceModem *self)
 {
-	NMDeviceModemPrivate *priv;
-
 	g_return_val_if_fail (self != NULL, NM_DEVICE_MODEM_CAPABILITY_NONE);
 	g_return_val_if_fail (NM_IS_DEVICE_MODEM (self), NM_DEVICE_MODEM_CAPABILITY_NONE);
 
-	priv = NM_DEVICE_MODEM_GET_PRIVATE (self);
-	if (!priv->caps) {
-		priv->caps = _nm_object_get_uint_property (NM_OBJECT (self),
-		                                           NM_DBUS_INTERFACE_DEVICE_MODEM,
-		                                           DBUS_PROP_MODEM_CAPS,
-		                                           NULL);
-	}
-
-	return priv->caps;
+	_nm_object_ensure_inited (NM_OBJECT (self));
+	return NM_DEVICE_MODEM_GET_PRIVATE (self)->caps;
 }
 
 /**
@@ -101,20 +92,11 @@ nm_device_modem_get_modem_capabilities (NMDeviceModem *self)
 NMDeviceModemCapabilities
 nm_device_modem_get_current_capabilities (NMDeviceModem *self)
 {
-	NMDeviceModemPrivate *priv;
-
 	g_return_val_if_fail (self != NULL, NM_DEVICE_MODEM_CAPABILITY_NONE);
 	g_return_val_if_fail (NM_IS_DEVICE_MODEM (self), NM_DEVICE_MODEM_CAPABILITY_NONE);
 
-	priv = NM_DEVICE_MODEM_GET_PRIVATE (self);
-	if (!priv->current_caps) {
-		priv->current_caps = _nm_object_get_uint_property (NM_OBJECT (self),
-		                                                   NM_DBUS_INTERFACE_DEVICE_MODEM,
-		                                                   DBUS_PROP_CURRENT_CAPS,
-		                                                   NULL);
-	}
-
-	return priv->current_caps;
+	_nm_object_ensure_inited (NM_OBJECT (self));
+	return NM_DEVICE_MODEM_GET_PRIVATE (self)->current_caps;
 }
 
 static gboolean

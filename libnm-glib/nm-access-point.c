@@ -113,19 +113,10 @@ nm_access_point_new (DBusGConnection *connection, const char *path)
 NM80211ApFlags
 nm_access_point_get_flags (NMAccessPoint *ap)
 {
-	NMAccessPointPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), NM_802_11_AP_FLAGS_NONE);
 
-	priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
-	if (!priv->flags) {
-		priv->flags = _nm_object_get_uint_property (NM_OBJECT (ap),
-		                                           NM_DBUS_INTERFACE_ACCESS_POINT,
-		                                           DBUS_PROP_FLAGS,
-		                                           NULL);
-	}
-
-	return priv->flags;
+	_nm_object_ensure_inited (NM_OBJECT (ap));
+	return NM_ACCESS_POINT_GET_PRIVATE (ap)->flags;
 }
 
 /**
@@ -139,19 +130,10 @@ nm_access_point_get_flags (NMAccessPoint *ap)
 NM80211ApSecurityFlags
 nm_access_point_get_wpa_flags (NMAccessPoint *ap)
 {
-	NMAccessPointPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), NM_802_11_AP_SEC_NONE);
 
-	priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
-	if (!priv->wpa_flags) {
-		priv->wpa_flags = _nm_object_get_uint_property (NM_OBJECT (ap),
-		                                               NM_DBUS_INTERFACE_ACCESS_POINT,
-		                                               DBUS_PROP_WPA_FLAGS,
-		                                               NULL);
-	}
-
-	return priv->wpa_flags;
+	_nm_object_ensure_inited (NM_OBJECT (ap));
+	return NM_ACCESS_POINT_GET_PRIVATE (ap)->wpa_flags;
 }
 
 /**
@@ -166,19 +148,10 @@ nm_access_point_get_wpa_flags (NMAccessPoint *ap)
 NM80211ApSecurityFlags
 nm_access_point_get_rsn_flags (NMAccessPoint *ap)
 {
-	NMAccessPointPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), NM_802_11_AP_SEC_NONE);
 
-	priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
-	if (!priv->rsn_flags) {
-		priv->rsn_flags = _nm_object_get_uint_property (NM_OBJECT (ap),
-		                                               NM_DBUS_INTERFACE_ACCESS_POINT,
-		                                               DBUS_PROP_RSN_FLAGS,
-		                                               NULL);
-	}
-
-	return priv->rsn_flags;
+	_nm_object_ensure_inited (NM_OBJECT (ap));
+	return NM_ACCESS_POINT_GET_PRIVATE (ap)->rsn_flags;
 }
 
 /**
@@ -193,19 +166,10 @@ nm_access_point_get_rsn_flags (NMAccessPoint *ap)
 const GByteArray *
 nm_access_point_get_ssid (NMAccessPoint *ap)
 {
-	NMAccessPointPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), NULL);
 
-	priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
-	if (!priv->ssid) {
-		priv->ssid = _nm_object_get_byte_array_property (NM_OBJECT (ap),
-		                                                NM_DBUS_INTERFACE_ACCESS_POINT,
-		                                                DBUS_PROP_SSID,
-		                                                NULL);
-	}
-
-	return priv->ssid;
+	_nm_object_ensure_inited (NM_OBJECT (ap));
+	return NM_ACCESS_POINT_GET_PRIVATE (ap)->ssid;
 }
 
 /**
@@ -219,19 +183,10 @@ nm_access_point_get_ssid (NMAccessPoint *ap)
 guint32
 nm_access_point_get_frequency (NMAccessPoint *ap)
 {
-	NMAccessPointPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), 0);
 
-	priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
-	if (!priv->frequency) {
-		priv->frequency = _nm_object_get_uint_property (NM_OBJECT (ap),
-		                                               NM_DBUS_INTERFACE_ACCESS_POINT,
-		                                               DBUS_PROP_FREQUENCY,
-		                                               NULL);
-	}
-
-	return priv->frequency;
+	_nm_object_ensure_inited (NM_OBJECT (ap));
+	return NM_ACCESS_POINT_GET_PRIVATE (ap)->frequency;
 }
 
 /**
@@ -246,19 +201,10 @@ nm_access_point_get_frequency (NMAccessPoint *ap)
 const char *
 nm_access_point_get_bssid (NMAccessPoint *ap)
 {
-	NMAccessPointPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), NULL);
 
-	priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
-	if (!priv->bssid) {
-		priv->bssid = _nm_object_get_string_property (NM_OBJECT (ap),
-		                                              NM_DBUS_INTERFACE_ACCESS_POINT,
-		                                              DBUS_PROP_HW_ADDRESS,
-		                                              NULL);
-	}
-
-	return priv->bssid;
+	_nm_object_ensure_inited (NM_OBJECT (ap));
+	return NM_ACCESS_POINT_GET_PRIVATE (ap)->bssid;
 }
 
 /**
@@ -289,19 +235,10 @@ nm_access_point_get_hw_address (NMAccessPoint *ap)
 NM80211Mode
 nm_access_point_get_mode (NMAccessPoint *ap)
 {
-	NMAccessPointPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), 0);
 
-	priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
-	if (!priv->mode) {
-		priv->mode = _nm_object_get_uint_property (NM_OBJECT (ap),
-		                                          NM_DBUS_INTERFACE_ACCESS_POINT,
-		                                          DBUS_PROP_MODE,
-		                                          NULL);
-	}
-
-	return priv->mode;
+	_nm_object_ensure_inited (NM_OBJECT (ap));
+	return NM_ACCESS_POINT_GET_PRIVATE (ap)->mode;
 }
 
 /**
@@ -315,19 +252,10 @@ nm_access_point_get_mode (NMAccessPoint *ap)
 guint32
 nm_access_point_get_max_bitrate (NMAccessPoint *ap)
 {
-	NMAccessPointPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), 0);
 
-	priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
-	if (!priv->max_bitrate) {
-		priv->max_bitrate = _nm_object_get_uint_property (NM_OBJECT (ap),
-		                                              NM_DBUS_INTERFACE_ACCESS_POINT,
-		                                              DBUS_PROP_MAX_BITRATE,
-		                                              NULL);
-	}
-
-	return priv->max_bitrate;
+	_nm_object_ensure_inited (NM_OBJECT (ap));
+	return NM_ACCESS_POINT_GET_PRIVATE (ap)->max_bitrate;
 }
 
 /**
@@ -341,19 +269,10 @@ nm_access_point_get_max_bitrate (NMAccessPoint *ap)
 guint8
 nm_access_point_get_strength (NMAccessPoint *ap)
 {
-	NMAccessPointPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), 0);
 
-	priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
-	if (!priv->strength) {
-		priv->strength = _nm_object_get_byte_property (NM_OBJECT (ap),
-		                                              NM_DBUS_INTERFACE_ACCESS_POINT,
-		                                              DBUS_PROP_STRENGTH,
-		                                              NULL);
-	}
-
-	return priv->strength;
+	_nm_object_ensure_inited (NM_OBJECT (ap));
+	return NM_ACCESS_POINT_GET_PRIVATE (ap)->strength;
 }
 
 /**

@@ -107,19 +107,10 @@ nm_active_connection_new (DBusGConnection *connection, const char *path)
 const char *
 nm_active_connection_get_connection (NMActiveConnection *connection)
 {
-	NMActiveConnectionPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
 
-	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
-	if (!priv->connection) {
-		priv->connection = _nm_object_get_string_property (NM_OBJECT (connection),
-		                                                  NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
-		                                                  DBUS_PROP_CONNECTION,
-		                                                  NULL);
-	}
-
-	return priv->connection;
+	_nm_object_ensure_inited (NM_OBJECT (connection));
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->connection;
 }
 
 /**
@@ -134,19 +125,10 @@ nm_active_connection_get_connection (NMActiveConnection *connection)
 const char *
 nm_active_connection_get_uuid (NMActiveConnection *connection)
 {
-	NMActiveConnectionPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
 
-	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
-	if (!priv->uuid) {
-		priv->uuid = _nm_object_get_string_property (NM_OBJECT (connection),
-		                                             NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
-		                                             DBUS_PROP_UUID,
-		                                             NULL);
-	}
-
-	return priv->uuid;
+	_nm_object_ensure_inited (NM_OBJECT (connection));
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->uuid;
 }
 
 /**
@@ -161,19 +143,10 @@ nm_active_connection_get_uuid (NMActiveConnection *connection)
 const char *
 nm_active_connection_get_specific_object (NMActiveConnection *connection)
 {
-	NMActiveConnectionPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
 
-	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
-	if (!priv->specific_object) {
-		priv->specific_object = _nm_object_get_string_property (NM_OBJECT (connection),
-		                                                       NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
-		                                                       DBUS_PROP_SPECIFIC_OBJECT,
-		                                                       NULL);
-	}
-
-	return priv->specific_object;
+	_nm_object_ensure_inited (NM_OBJECT (connection));
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->specific_object;
 }
 
 /**
@@ -188,27 +161,10 @@ nm_active_connection_get_specific_object (NMActiveConnection *connection)
 const GPtrArray *
 nm_active_connection_get_devices (NMActiveConnection *connection)
 {
-	NMActiveConnectionPrivate *priv;
-	GValue value = { 0, };
-
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
 
-	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
-	if (priv->devices)
-		return handle_ptr_array_return (priv->devices);
-
-	if (!_nm_object_get_property (NM_OBJECT (connection),
-	                             NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
-	                             DBUS_PROP_DEVICES,
-	                             &value,
-	                             NULL)) {
-		return NULL;
-	}
-
-	demarshal_devices (NM_OBJECT (connection), NULL, &value, &priv->devices);
-	g_value_unset (&value);
-
-	return handle_ptr_array_return (priv->devices);
+	_nm_object_ensure_inited (NM_OBJECT (connection));
+	return handle_ptr_array_return (NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->devices);
 }
 
 /**
@@ -222,19 +178,10 @@ nm_active_connection_get_devices (NMActiveConnection *connection)
 NMActiveConnectionState
 nm_active_connection_get_state (NMActiveConnection *connection)
 {
-	NMActiveConnectionPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NM_ACTIVE_CONNECTION_STATE_UNKNOWN);
 
-	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
-	if (!priv->state) {
-		priv->state = _nm_object_get_uint_property (NM_OBJECT (connection),
-		                                           NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
-		                                           DBUS_PROP_STATE,
-		                                           NULL);
-	}
-
-	return priv->state;
+	_nm_object_ensure_inited (NM_OBJECT (connection));
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->state;
 }
 
 /**
@@ -249,19 +196,10 @@ nm_active_connection_get_state (NMActiveConnection *connection)
 gboolean
 nm_active_connection_get_default (NMActiveConnection *connection)
 {
-	NMActiveConnectionPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), FALSE);
 
-	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
-	if (!priv->is_default) {
-		priv->is_default = _nm_object_get_boolean_property (NM_OBJECT (connection),
-		                                                    NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
-		                                                    DBUS_PROP_DEFAULT,
-		                                                    NULL);
-	}
-
-	return priv->is_default;
+	_nm_object_ensure_inited (NM_OBJECT (connection));
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->is_default;
 }
 
 /**
@@ -276,19 +214,10 @@ nm_active_connection_get_default (NMActiveConnection *connection)
 gboolean
 nm_active_connection_get_default6 (NMActiveConnection *connection)
 {
-	NMActiveConnectionPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), FALSE);
 
-	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
-	if (!priv->is_default6) {
-		priv->is_default6 = _nm_object_get_boolean_property (NM_OBJECT (connection),
-		                                                     NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
-		                                                     DBUS_PROP_DEFAULT6,
-		                                                     NULL);
-	}
-
-	return priv->is_default6;
+	_nm_object_ensure_inited (NM_OBJECT (connection));
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->is_default6;
 }
 
 /**
@@ -303,19 +232,10 @@ nm_active_connection_get_default6 (NMActiveConnection *connection)
 const char *
 nm_active_connection_get_master (NMActiveConnection *connection)
 {
-	NMActiveConnectionPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
 
-	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
-	if (!priv->master) {
-		priv->master = _nm_object_get_string_property (NM_OBJECT (connection),
-		                                               NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
-		                                               DBUS_PROP_MASTER,
-		                                               NULL);
-	}
-
-	return priv->master;
+	_nm_object_ensure_inited (NM_OBJECT (connection));
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->master;
 }
 
 static void

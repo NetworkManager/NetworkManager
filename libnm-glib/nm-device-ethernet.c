@@ -44,7 +44,6 @@ typedef struct {
 	char *perm_hw_address;
 	guint32 speed;
 	gboolean carrier;
-	gboolean carrier_valid;
 
 	gboolean disposed;
 } NMDeviceEthernetPrivate;
@@ -97,19 +96,10 @@ nm_device_ethernet_new (DBusGConnection *connection, const char *path)
 const char *
 nm_device_ethernet_get_hw_address (NMDeviceEthernet *device)
 {
-	NMDeviceEthernetPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_DEVICE_ETHERNET (device), NULL);
 
-	priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
-	if (!priv->hw_address) {
-		priv->hw_address = _nm_object_get_string_property (NM_OBJECT (device),
-		                                                  NM_DBUS_INTERFACE_DEVICE_WIRED,
-		                                                  DBUS_PROP_HW_ADDRESS,
-		                                                  NULL);
-	}
-
-	return priv->hw_address;
+	_nm_object_ensure_inited (NM_OBJECT (device));
+	return NM_DEVICE_ETHERNET_GET_PRIVATE (device)->hw_address;
 }
 
 /**
@@ -124,19 +114,10 @@ nm_device_ethernet_get_hw_address (NMDeviceEthernet *device)
 const char *
 nm_device_ethernet_get_permanent_hw_address (NMDeviceEthernet *device)
 {
-	NMDeviceEthernetPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_DEVICE_ETHERNET (device), NULL);
 
-	priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
-	if (!priv->perm_hw_address) {
-		priv->perm_hw_address = _nm_object_get_string_property (NM_OBJECT (device),
-		                                                        NM_DBUS_INTERFACE_DEVICE_WIRED,
-		                                                        DBUS_PROP_PERM_HW_ADDRESS,
-		                                                        NULL);
-	}
-
-	return priv->perm_hw_address;
+	_nm_object_ensure_inited (NM_OBJECT (device));
+	return NM_DEVICE_ETHERNET_GET_PRIVATE (device)->perm_hw_address;
 }
 
 /**
@@ -150,19 +131,10 @@ nm_device_ethernet_get_permanent_hw_address (NMDeviceEthernet *device)
 guint32
 nm_device_ethernet_get_speed (NMDeviceEthernet *device)
 {
-	NMDeviceEthernetPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_DEVICE_ETHERNET (device), 0);
 
-	priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
-	if (!priv->speed) {
-		priv->speed = _nm_object_get_uint_property (NM_OBJECT (device),
-		                                           NM_DBUS_INTERFACE_DEVICE_WIRED,
-		                                           DBUS_PROP_SPEED,
-		                                           NULL);
-	}
-
-	return priv->speed;
+	_nm_object_ensure_inited (NM_OBJECT (device));
+	return NM_DEVICE_ETHERNET_GET_PRIVATE (device)->speed;
 }
 
 /**
@@ -176,20 +148,10 @@ nm_device_ethernet_get_speed (NMDeviceEthernet *device)
 gboolean
 nm_device_ethernet_get_carrier (NMDeviceEthernet *device)
 {
-	NMDeviceEthernetPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_DEVICE_ETHERNET (device), FALSE);
 
-	priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
-	if (!priv->carrier_valid) {
-		priv->carrier = _nm_object_get_boolean_property (NM_OBJECT (device),
-		                                                NM_DBUS_INTERFACE_DEVICE_WIRED,
-		                                                DBUS_PROP_CARRIER,
-		                                                NULL);
-		priv->carrier_valid = TRUE;
-	}
-
-	return priv->carrier;
+	_nm_object_ensure_inited (NM_OBJECT (device));
+	return NM_DEVICE_ETHERNET_GET_PRIVATE (device)->carrier;
 }
 
 static gboolean
@@ -243,7 +205,6 @@ nm_device_ethernet_init (NMDeviceEthernet *device)
 
 	priv->disposed = FALSE;
 	priv->carrier = FALSE;
-	priv->carrier_valid = FALSE;
 }
 
 static void

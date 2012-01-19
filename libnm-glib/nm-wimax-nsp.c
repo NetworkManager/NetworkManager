@@ -90,18 +90,10 @@ nm_wimax_nsp_new (DBusGConnection *connection, const char *path)
 const char *
 nm_wimax_nsp_get_name (NMWimaxNsp *nsp)
 {
-	NMWimaxNspPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_WIMAX_NSP (nsp), NULL);
 
-	priv = NM_WIMAX_NSP_GET_PRIVATE (nsp);
-	if (!priv->name)
-		priv->name = _nm_object_get_string_property (NM_OBJECT (nsp),
-		                                             NM_DBUS_INTERFACE_WIMAX_NSP,
-		                                             DBUS_PROP_NAME,
-		                                             NULL);
-
-	return priv->name;
+	_nm_object_ensure_inited (NM_OBJECT (nsp));
+	return NM_WIMAX_NSP_GET_PRIVATE (nsp)->name;
 }
 
 /**
@@ -115,19 +107,10 @@ nm_wimax_nsp_get_name (NMWimaxNsp *nsp)
 guint32
 nm_wimax_nsp_get_signal_quality (NMWimaxNsp *nsp)
 {
-	NMWimaxNspPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_WIMAX_NSP (nsp), 0);
 
-	priv = NM_WIMAX_NSP_GET_PRIVATE (nsp);
-	if (!priv->signal_quality) {
-		priv->signal_quality = _nm_object_get_uint_property (NM_OBJECT (nsp),
-		                                                     NM_DBUS_INTERFACE_WIMAX_NSP,
-		                                                     DBUS_PROP_SIGNAL_QUALITY,
-		                                                     NULL);
-	}
-
-	return priv->signal_quality;
+	_nm_object_ensure_inited (NM_OBJECT (nsp));
+	return NM_WIMAX_NSP_GET_PRIVATE (nsp)->signal_quality;
 }
 
 /**
@@ -141,19 +124,10 @@ nm_wimax_nsp_get_signal_quality (NMWimaxNsp *nsp)
 NMWimaxNspNetworkType
 nm_wimax_nsp_get_network_type (NMWimaxNsp *nsp)
 {
-	NMWimaxNspPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_WIMAX_NSP (nsp), NM_WIMAX_NSP_NETWORK_TYPE_UNKNOWN);
 
-	priv = NM_WIMAX_NSP_GET_PRIVATE (nsp);
-	if (!priv->network_type) {
-		priv->network_type = _nm_object_get_uint_property (NM_OBJECT (nsp),
-		                                                   NM_DBUS_INTERFACE_WIMAX_NSP,
-		                                                   DBUS_PROP_NETWORK_TYPE,
-		                                                   NULL);
-	}
-
-	return priv->network_type;
+	_nm_object_ensure_inited (NM_OBJECT (nsp));
+	return NM_WIMAX_NSP_GET_PRIVATE (nsp)->network_type;
 }
 
 /**

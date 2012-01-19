@@ -27,6 +27,8 @@
 #include <glib-object.h>
 #include "nm-object.h"
 
+void _nm_object_ensure_inited (NMObject *object);
+
 typedef gboolean (*PropertyMarshalFunc) (NMObject *, GParamSpec *, GValue *, gpointer);
 typedef GObject * (*NMObjectCreatorFunc) (DBusGConnection *, const char *);
 
@@ -41,62 +43,22 @@ void _nm_object_register_properties (NMObject *object,
 									 DBusGProxy *proxy,
 									 const NMPropertiesInfo *info);
 
+gboolean _nm_object_reload_properties (NMObject *object, GError **error);
+
 void _nm_object_process_properties_changed (NMObject *self, GHashTable *properties);
 
 void _nm_object_queue_notify (NMObject *object, const char *property);
 
 /* DBus property accessors */
 
-gboolean _nm_object_get_property (NMObject *object,
-                                  const char *interface,
-                                  const char *prop_name,
-                                  GValue *value,
-                                  GError **error);
+void _nm_object_reload_property (NMObject *object,
+                                 const char *interface,
+                                 const char *prop_name);
 
 void _nm_object_set_property (NMObject *object,
                               const char *interface,
                               const char *prop_name,
                               GValue *value);
-
-char *_nm_object_get_string_property (NMObject *object,
-                                      const char *interface,
-                                      const char *prop_name,
-                                      GError **error);
-
-char *_nm_object_get_object_path_property (NMObject *object,
-                                           const char *interface,
-                                           const char *prop_name,
-                                           GError **error);
-
-gint32 _nm_object_get_int_property (NMObject *object,
-                                    const char *interface,
-                                    const char *prop_name,
-                                    GError **error);
-
-guint32 _nm_object_get_uint_property (NMObject *object,
-                                      const char *interface,
-                                      const char *prop_name,
-                                      GError **error);
-
-gboolean _nm_object_get_boolean_property (NMObject *object,
-                                          const char *interface,
-                                          const char *prop_name,
-                                          GError **error);
-
-gint8 _nm_object_get_byte_property (NMObject *object,
-                                    const char *interface,
-                                    const char *prop_name,
-                                    GError **error);
-
-gdouble _nm_object_get_double_property (NMObject *object,
-                                        const char *interface,
-                                        const char *prop_name,
-                                        GError **error);
-
-GByteArray *_nm_object_get_byte_array_property (NMObject *object,
-                                                const char *interface,
-                                                const char *prop_name,
-                                                GError **error);
 
 static inline const GPtrArray *
 handle_ptr_array_return (GPtrArray *array)

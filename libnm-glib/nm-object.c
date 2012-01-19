@@ -52,7 +52,7 @@ typedef struct {
 
 	GSList *notify_props;
 	guint32 notify_id;
-	gboolean disposed;
+	gboolean inited, disposed;
 } NMObjectPrivate;
 
 enum {
@@ -515,33 +515,71 @@ _nm_object_register_properties (NMObject *object,
 }
 
 gboolean
-_nm_object_get_property (NMObject *object,
-                         const char *interface,
-                         const char *prop_name,
-                         GValue *value,
-                         GError **error)
+_nm_object_reload_properties (NMObject *object, GError **error)
 {
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	GHashTable *props = NULL;
+	GSList *p;
+
+	if (!priv->property_interfaces)
+		return TRUE;
+
+	priv->inited = TRUE;
+
+	for (p = priv->property_interfaces; p; p = p->next) {
+		if (!dbus_g_proxy_call (priv->properties_proxy, "GetAll", error,
+		                        G_TYPE_STRING, p->data,
+		                        G_TYPE_INVALID,
+		                        DBUS_TYPE_G_MAP_OF_VARIANT, &props,
+		                        G_TYPE_INVALID))
+			return FALSE;
+
+		_nm_object_process_properties_changed (object, props);
+		g_hash_table_destroy (props);
+	}
+
+	return TRUE;
+}
+
+void
+_nm_object_ensure_inited (NMObject *object)
+{
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	GError *error = NULL;
+
+	if (!priv->inited) {
+		if (!_nm_object_reload_properties (object, &error)) {
+			g_warning ("Could not initialize %s %s: %s",
+			           G_OBJECT_TYPE_NAME (object), priv->path,
+			           error->message);
+			g_error_free (error);
+		}
+	}
+}
+
+void
+_nm_object_reload_property (NMObject *object,
+                            const char *interface,
+                            const char *prop_name)
+{
+	GValue value = { 0, };
 	GError *err = NULL;
 
-	g_return_val_if_fail (NM_IS_OBJECT (object), FALSE);
-	g_return_val_if_fail (interface != NULL, FALSE);
-	g_return_val_if_fail (prop_name != NULL, FALSE);
-	g_return_val_if_fail (value != NULL, FALSE);
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	g_return_if_fail (NM_IS_OBJECT (object));
+	g_return_if_fail (interface != NULL);
+	g_return_if_fail (prop_name != NULL);
 
 	if (!dbus_g_proxy_call_with_timeout (NM_OBJECT_GET_PRIVATE (object)->properties_proxy,
 							"Get", 15000, &err,
 							G_TYPE_STRING, interface,
 							G_TYPE_STRING, prop_name,
 							G_TYPE_INVALID,
-							G_TYPE_VALUE, value,
+							G_TYPE_VALUE, &value,
 							G_TYPE_INVALID)) {
 		/* Don't warn about D-Bus no reply/timeout errors; it's mostly noise and
 		 * happens for example when NM quits and the applet is still running.
-		 * And don't warn when 'error' is not NULL, rather propagate 'err' so the caller
-		 * can do something with it. */
-		if (   !error
-		    && !(err->domain == DBUS_GERROR && err->code == DBUS_GERROR_NO_REPLY)) {
+		 */
+		if (!g_error_matches (err, DBUS_GERROR, DBUS_GERROR_NO_REPLY)) {
 			g_warning ("%s: Error getting '%s' for %s: (%d) %s\n",
 			           __func__,
 			           prop_name,
@@ -549,11 +587,12 @@ _nm_object_get_property (NMObject *object,
 			           err->code,
 			           err->message);
 		}
-		g_propagate_error (error, err);
-		return FALSE;
+		g_clear_error (&err);
+		return;
 	}
 
-	return TRUE;
+	handle_property_changed ((gpointer)prop_name, &value, object);
+	g_value_unset (&value);
 }
 
 void
@@ -578,159 +617,4 @@ _nm_object_set_property (NMObject *object,
 		 * dbus_g_proxy_call_no_reply() to give NM chance to authenticate the caller.
 		 */
 	}
-}
-
-char *
-_nm_object_get_string_property (NMObject *object,
-                                const char *interface,
-                                const char *prop_name,
-                                GError **error)
-{
-	char *str = NULL;
-	const char *tmp;
-	GValue value = {0,};
-
-	if (_nm_object_get_property (object, interface, prop_name, &value, error)) {
-		if (G_VALUE_HOLDS_STRING (&value))
-			str = g_strdup (g_value_get_string (&value));
-		else if (G_VALUE_HOLDS (&value, DBUS_TYPE_G_OBJECT_PATH)) {
-			tmp = g_value_get_boxed (&value);
-			/* Handle "NULL" object paths */
-			if (g_strcmp0 (tmp, "/") != 0)
-				str = g_strdup (tmp);
-		}
-		g_value_unset (&value);
-	}
-
-	return str;
-}
-
-char *
-_nm_object_get_object_path_property (NMObject *object,
-                                     const char *interface,
-                                     const char *prop_name,
-                                     GError **error)
-{
-	char *path = NULL;
-	const char *tmp;
-	GValue value = {0,};
-
-	if (_nm_object_get_property (object, interface, prop_name, &value, error)) {
-		tmp = g_value_get_boxed (&value);
-		if (g_strcmp0 (tmp, "/") != 0)
-			path = g_strdup (tmp);
-		g_value_unset (&value);
-	}
-
-	return path;
-}
-
-gint32
-_nm_object_get_int_property (NMObject *object,
-                             const char *interface,
-                             const char *prop_name,
-                             GError **error)
-{
-	gint32 i = 0;
-	GValue value = {0,};
-
-	if (_nm_object_get_property (object, interface, prop_name, &value, error)) {
-		i = g_value_get_int (&value);
-		g_value_unset (&value);
-	}
-
-	return i;
-}
-
-guint32
-_nm_object_get_uint_property (NMObject *object,
-                              const char *interface,
-                              const char *prop_name,
-                              GError **error)
-{
-	guint32 i = 0;
-	GValue value = {0,};
-
-	if (_nm_object_get_property (object, interface, prop_name, &value, error)) {
-		i = g_value_get_uint (&value);
-		g_value_unset (&value);
-	}
-
-	return i;
-}
-
-gboolean
-_nm_object_get_boolean_property (NMObject *object,
-                                 const char *interface,
-                                 const char *prop_name,
-                                 GError **error)
-{
-	gboolean b = FALSE;
-	GValue value = {0,};
-
-	if (_nm_object_get_property (object, interface, prop_name, &value, error)) {
-		b = g_value_get_boolean (&value);
-		g_value_unset (&value);
-	}
-
-	return b;
-}
-
-gint8
-_nm_object_get_byte_property (NMObject *object,
-                              const char *interface,
-                              const char *prop_name,
-                              GError **error)
-{
-	gint8 b = G_MAXINT8;
-	GValue value = {0,};
-
-	if (_nm_object_get_property (object, interface, prop_name, &value, error)) {
-		b = g_value_get_uchar (&value);
-		g_value_unset (&value);
-	}
-
-	return b;
-}
-
-gdouble
-_nm_object_get_double_property (NMObject *object,
-                                const char *interface,
-                                const char *prop_name,
-                                GError **error)
-{
-	gdouble d = G_MAXDOUBLE;
-	GValue value = {0,};
-
-	if (_nm_object_get_property (object, interface, prop_name, &value, error)) {
-		d = g_value_get_double (&value);
-		g_value_unset (&value);
-	}
-
-	return d;
-}
-
-GByteArray *
-_nm_object_get_byte_array_property (NMObject *object,
-                                    const char *interface,
-                                    const char *prop_name,
-                                    GError **error)
-{
-	GByteArray *array = NULL;
-	GValue value = {0,};
-
-	if (_nm_object_get_property (object, interface, prop_name, &value, error)) {
-		GArray * tmp = g_value_get_boxed (&value);
-		int i;
-		unsigned char byte;
-
-		array = g_byte_array_sized_new (tmp->len);
-		for (i = 0; i < tmp->len; i++) {
-			byte = g_array_index (tmp, unsigned char, i);
-			g_byte_array_append (array, &byte, 1);
-		}
-		g_value_unset (&value);
-	}
-
-	return array;
 }

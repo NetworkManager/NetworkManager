@@ -62,7 +62,6 @@ typedef struct {
 	 */
 	GSList *pending_activations;
 
-	gboolean have_networking_enabled;
 	gboolean networking_enabled;
 	gboolean wireless_enabled;
 	gboolean wireless_hw_enabled;
@@ -111,18 +110,6 @@ static void client_device_added_proxy (DBusGProxy *proxy, char *path, gpointer u
 static void client_device_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data);
 
 static void
-handle_net_enabled_changed (GObject *object,
-                            GParamSpec *pspec,
-                            GValue *value,
-                            gpointer user_data)
-{
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
-
-	/* Update the cache flag when it changes */
-	priv->have_networking_enabled = TRUE;
-}
-
-static void
 nm_client_init (NMClient *client)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
@@ -130,11 +117,6 @@ nm_client_init (NMClient *client)
 	priv->state = NM_STATE_UNKNOWN;
 
 	priv->permissions = g_hash_table_new (g_direct_hash, g_direct_equal);
-
-	g_signal_connect (client,
-	                  "notify::" NM_CLIENT_NETWORKING_ENABLED,
-	                  G_CALLBACK (handle_net_enabled_changed),
-	                  client);
 }
 
 static void
@@ -155,29 +137,29 @@ static void
 update_wireless_status (NMClient *client, gboolean notify)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
-	gboolean val;
+	gboolean oldval;
 	gboolean poke = FALSE;
 
-	val = _nm_object_get_boolean_property (NM_OBJECT (client),
-	                                       NM_DBUS_INTERFACE,
-	                                       "WirelessHardwareEnabled",
-	                                       NULL);
-	if (val != priv->wireless_hw_enabled) {
-		priv->wireless_hw_enabled = val;
+	oldval = priv->wireless_hw_enabled;
+	_nm_object_reload_property (NM_OBJECT (client),
+	                            NM_DBUS_INTERFACE,
+	                            "WirelessHardwareEnabled");
+	if (oldval != priv->wireless_hw_enabled) {
 		poke = TRUE;
 		if (notify)
 			_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_WIRELESS_HARDWARE_ENABLED);
 	}
 
-	if (priv->wireless_hw_enabled == FALSE)
-		val = FALSE;
-	else
-		val = _nm_object_get_boolean_property (NM_OBJECT (client),
-		                                       NM_DBUS_INTERFACE,
-		                                       "WirelessEnabled",
-		                                       NULL);
-	if (val != priv->wireless_enabled) {
-		priv->wireless_enabled = val;
+	oldval = priv->wireless_enabled;
+	if (priv->wireless_hw_enabled == FALSE) {
+		priv->wireless_enabled = FALSE;
+	} else {
+		_nm_object_reload_property (NM_OBJECT (client),
+		                            NM_DBUS_INTERFACE,
+		                            "WirelessEnabled");
+	}
+
+	if (oldval != priv->wireless_enabled) {
 		poke = TRUE;
 		if (notify)
 			_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_WIRELESS_ENABLED);
@@ -197,29 +179,27 @@ static void
 update_wwan_status (NMClient *client, gboolean notify)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
-	gboolean val;
+	gboolean oldval;
 
-	val = _nm_object_get_boolean_property (NM_OBJECT (client),
-	                                       NM_DBUS_INTERFACE,
-	                                       "WwanHardwareEnabled",
-	                                       NULL);
-	if (val != priv->wwan_hw_enabled) {
-		priv->wwan_hw_enabled = val;
+	oldval = priv->wwan_hw_enabled;
+	_nm_object_reload_property (NM_OBJECT (client),
+	                            NM_DBUS_INTERFACE,
+	                            "WwanHardwareEnabled");
+	if (oldval != priv->wwan_hw_enabled) {
 		if (notify)
 			_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_WWAN_HARDWARE_ENABLED);
 	}
 
-	if (priv->wwan_hw_enabled == FALSE)
-		val = FALSE;
-	else {
-		val = _nm_object_get_boolean_property (NM_OBJECT (client),
-		                                       NM_DBUS_INTERFACE,
-		                                       "WwanEnabled",
-		                                       NULL);
+	oldval = priv->wwan_enabled;
+	if (priv->wwan_hw_enabled == FALSE) {
+		priv->wwan_enabled = FALSE;
+	} else {
+		_nm_object_reload_property (NM_OBJECT (client),
+		                            NM_DBUS_INTERFACE,
+		                            "WwanEnabled");
 	}
 
-	if (val != priv->wwan_enabled) {
-		priv->wwan_enabled = val;
+	if (oldval != priv->wwan_enabled) {
 		if (notify)
 			_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_WWAN_ENABLED);
 	}
@@ -229,29 +209,27 @@ static void
 update_wimax_status (NMClient *client, gboolean notify)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
-	gboolean val;
+	gboolean oldval;
 
-	val = _nm_object_get_boolean_property (NM_OBJECT (client),
-	                                       NM_DBUS_INTERFACE,
-	                                       "WimaxHardwareEnabled",
-	                                       NULL);
-	if (val != priv->wimax_hw_enabled) {
-		priv->wimax_hw_enabled = val;
+	oldval = priv->wimax_hw_enabled;
+	_nm_object_reload_property (NM_OBJECT (client),
+	                            NM_DBUS_INTERFACE,
+	                            "WimaxHardwareEnabled");
+	if (oldval != priv->wimax_hw_enabled) {
 		if (notify)
 			_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_WIMAX_HARDWARE_ENABLED);
 	}
 
+	oldval = priv->wimax_enabled;
 	if (priv->wimax_hw_enabled == FALSE)
-		val = FALSE;
+		priv->wimax_enabled = FALSE;
 	else {
-		val = _nm_object_get_boolean_property (NM_OBJECT (client),
-		                                       NM_DBUS_INTERFACE,
-		                                       "WimaxEnabled",
-		                                       NULL);
+		_nm_object_reload_property (NM_OBJECT (client),
+		                            NM_DBUS_INTERFACE,
+		                            "WimaxEnabled");
 	}
 
-	if (val != priv->wimax_enabled) {
-		priv->wimax_enabled = val;
+	if (oldval != priv->wimax_enabled) {
 		if (notify)
 			_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_WIMAX_ENABLED);
 	}
@@ -877,28 +855,14 @@ const GPtrArray *
 nm_client_get_active_connections (NMClient *client)
 {
 	NMClientPrivate *priv;
-	GValue value = { 0, };
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
 	priv = NM_CLIENT_GET_PRIVATE (client);
-	if (priv->active_connections)
-		return handle_ptr_array_return (priv->active_connections);
-
 	if (!priv->manager_running)
 		return NULL;
 
-	if (!_nm_object_get_property (NM_OBJECT (client),
-	                             "org.freedesktop.NetworkManager",
-	                             "ActiveConnections",
-	                             &value,
-	                             NULL)) {
-		return NULL;
-	}
-
-	demarshal_active_connections (NM_OBJECT (client), NULL, &value, &priv->active_connections);
-	g_value_unset (&value);
-
+	_nm_object_ensure_inited (NM_OBJECT (client));
 	return handle_ptr_array_return (priv->active_connections);
 }
 
@@ -915,6 +879,7 @@ nm_client_wireless_get_enabled (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
+	_nm_object_ensure_inited (NM_OBJECT (client));
 	return NM_CLIENT_GET_PRIVATE (client)->wireless_enabled;
 }
 
@@ -954,6 +919,7 @@ nm_client_wireless_hardware_get_enabled (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
+	_nm_object_ensure_inited (NM_OBJECT (client));
 	return NM_CLIENT_GET_PRIVATE (client)->wireless_hw_enabled;
 }
 
@@ -970,6 +936,7 @@ nm_client_wwan_get_enabled (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
+	_nm_object_ensure_inited (NM_OBJECT (client));
 	return NM_CLIENT_GET_PRIVATE (client)->wwan_enabled;
 }
 
@@ -1009,6 +976,7 @@ nm_client_wwan_hardware_get_enabled (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
+	_nm_object_ensure_inited (NM_OBJECT (client));
 	return NM_CLIENT_GET_PRIVATE (client)->wwan_hw_enabled;
 }
 
@@ -1025,6 +993,7 @@ nm_client_wimax_get_enabled (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
+	_nm_object_ensure_inited (NM_OBJECT (client));
 	return NM_CLIENT_GET_PRIVATE (client)->wimax_enabled;
 }
 
@@ -1064,6 +1033,7 @@ nm_client_wimax_hardware_get_enabled (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
+	_nm_object_ensure_inited (NM_OBJECT (client));
 	return NM_CLIENT_GET_PRIVATE (client)->wimax_hw_enabled;
 }
 
@@ -1079,7 +1049,6 @@ const char *
 nm_client_get_version (NMClient *client)
 {
 	NMClientPrivate *priv;
-	GError *err = NULL;
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
@@ -1088,13 +1057,7 @@ nm_client_get_version (NMClient *client)
 	if (!priv->manager_running)
 		return NULL;
 
-	if (!priv->version)
-		priv->version = _nm_object_get_string_property (NM_OBJECT (client), NM_DBUS_INTERFACE, "Version", &err);
-
-	/* TODO: we don't pass the error to the caller yet, maybe later */
-	if (err)
-		g_error_free (err);
-
+	_nm_object_ensure_inited (NM_OBJECT (client));
 	return priv->version;
 }
 
@@ -1118,9 +1081,7 @@ nm_client_get_state (NMClient *client)
 	if (!priv->manager_running)
 		return NM_STATE_UNKNOWN;
 
-	if (priv->state == NM_STATE_UNKNOWN)
-		priv->state = _nm_object_get_uint_property (NM_OBJECT (client), NM_DBUS_INTERFACE, "State", NULL);
-
+	_nm_object_ensure_inited (NM_OBJECT (client));
 	return priv->state;
 }
 
@@ -1135,23 +1096,10 @@ nm_client_get_state (NMClient *client)
 gboolean
 nm_client_networking_get_enabled (NMClient *client)
 {
-	NMClientPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
-	priv = NM_CLIENT_GET_PRIVATE (client);
-	if (!priv->have_networking_enabled) {
-		priv = NM_CLIENT_GET_PRIVATE (client);
-		if (!priv->networking_enabled) {
-			priv->networking_enabled = _nm_object_get_boolean_property (NM_OBJECT (client),
-			                                                            NM_DBUS_INTERFACE,
-			                                                            "NetworkingEnabled",
-			                                                            NULL);
-			priv->have_networking_enabled = TRUE;
-		}
-	}
-
-	return priv->networking_enabled;
+	_nm_object_ensure_inited (NM_OBJECT (client));
+	return NM_CLIENT_GET_PRIVATE (client)->networking_enabled;
 }
 
 /**
