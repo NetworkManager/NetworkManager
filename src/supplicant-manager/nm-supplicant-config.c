@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2006 - 2010 Red Hat, Inc.
+ * Copyright (C) 2006 - 2012 Red Hat, Inc.
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
@@ -722,6 +722,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	const GByteArray *array;
 	gboolean peap = FALSE;
 	guint32 i, num_eap;
+	gboolean fast_provisoning_allowed = FALSE;
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
 	g_return_val_if_fail (setting != NULL, FALSE);
@@ -799,6 +800,16 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 		g_string_append_printf (phase1, "peaplabel=%s", nm_setting_802_1x_get_phase1_peaplabel (setting));
 	}
 
+	value = nm_setting_802_1x_get_phase1_fast_provisioning (setting);
+	if (value) {
+		if (phase1->len)
+			g_string_append_c (phase1, ' ');
+		g_string_append_printf (phase1, "fast_provisioning=%s", value);
+		
+		if (strcmp (value, "0") != 0)
+			fast_provisoning_allowed = TRUE;
+	}
+
 	if (phase1->len) {
 		if (!add_string_val (self, phase1->str, "phase1", FALSE, FALSE)) {
 			g_string_free (phase1, TRUE);
@@ -808,7 +819,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	g_string_free (phase1, TRUE);
 
 	phase2 = g_string_new (NULL);
-	if (nm_setting_802_1x_get_phase2_auth (setting)) {
+	if (nm_setting_802_1x_get_phase2_auth (setting) && !fast_provisoning_allowed) {
 		tmp = g_ascii_strup (nm_setting_802_1x_get_phase2_auth (setting), -1);
 		g_string_append_printf (phase2, "auth=%s", tmp);
 		g_free (tmp);
@@ -829,6 +840,26 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 		}
 	}
 	g_string_free (phase2, TRUE);
+
+	/* PAC file */
+	path = nm_setting_802_1x_get_pac_file (setting);
+	if (path) {
+		if (!add_string_val (self, path, "pac_file", FALSE, FALSE))
+			return FALSE;
+	} else {
+		/* PAC file is not specified.
+		 * If provisioning is allowed, use an blob format.
+		 */
+		if (fast_provisoning_allowed) {
+			char *blob_name = g_strdup_printf ("blob://pac-blob-%s", connection_uid);
+			if (!add_string_val (self, blob_name, "pac_file", FALSE, FALSE)) {
+				g_free (blob_name);
+				return FALSE;
+			}
+			g_free (blob_name);
+		} else
+			return FALSE;
+	}
 
 	/* CA path */
 	path = nm_setting_802_1x_get_ca_path (setting);
