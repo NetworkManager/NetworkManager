@@ -122,6 +122,7 @@ global:
 	nm_setting_802_1x_get_num_altsubject_matches;
 	nm_setting_802_1x_get_num_eap_methods;
 	nm_setting_802_1x_get_num_phase2_altsubject_matches;
+	nm_setting_802_1x_get_pac_file;
 	nm_setting_802_1x_get_password;
 	nm_setting_802_1x_get_password_flags;
 	nm_setting_802_1x_get_password_raw;

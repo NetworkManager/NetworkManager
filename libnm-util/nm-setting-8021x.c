@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2011 Red Hat, Inc.
+ * (C) Copyright 2007 - 2012 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -114,6 +114,7 @@ typedef struct {
 	GSList *eap; /* GSList of strings */
 	char *identity;
 	char *anonymous_identity;
+	char *pac_file;
 	GByteArray *ca_cert;
 	char *ca_path;
 	char *subject_match;
@@ -149,6 +150,7 @@ enum {
 	PROP_EAP,
 	PROP_IDENTITY,
 	PROP_ANONYMOUS_IDENTITY,
+	PROP_PAC_FILE,
 	PROP_CA_CERT,
 	PROP_CA_PATH,
 	PROP_SUBJECT_MATCH,
@@ -342,6 +344,22 @@ nm_setting_802_1x_get_anonymous_identity (NMSetting8021x *setting)
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
 
 	return NM_SETTING_802_1X_GET_PRIVATE (setting)->anonymous_identity;
+}
+
+/**
+ * nm_setting_802_1x_get_pac_file:
+ * @setting: the #NMSetting8021x
+ *
+ * Returns the file containing PAC credentials used by EAP-FAST method.
+ *
+ * Returns: the PAC file
+ **/
+const char *
+nm_setting_802_1x_get_pac_file (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->pac_file;
 }
 
 /**
@@ -2644,6 +2662,10 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->anonymous_identity);
 		priv->anonymous_identity = g_value_dup_string (value);
 		break;
+	case PROP_PAC_FILE:
+		g_free (priv->pac_file);
+		priv->pac_file = g_value_dup_string (value);
+		break;
 	case PROP_CA_CERT:
 		if (priv->ca_cert) {
 			g_byte_array_free (priv->ca_cert, TRUE);
@@ -2815,6 +2837,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_ANONYMOUS_IDENTITY:
 		g_value_set_string (value, priv->anonymous_identity);
 		break;
+	case PROP_PAC_FILE:
+		g_value_set_string (value, priv->pac_file);
+		break;
 	case PROP_CA_CERT:
 		g_value_set_boxed (value, priv->ca_cert);
 		break;
@@ -2971,6 +2996,19 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 						  "methods.  Used as the unencrypted identity with EAP "
 						  "types that support different tunneled identity like "
 						  "EAP-TTLS.",
+						  NULL,
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
+	 * NMSetting8021x:pac-file:
+	 *
+	 * UTF-8 encoded file path containing PAC for EAP-FAST.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_PAC_FILE,
+		 g_param_spec_string (NM_SETTING_802_1X_PAC_FILE,
+						  "PAC file",
+						  "UTF-8 encoded file path containing PAC for EAP-FAST.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
