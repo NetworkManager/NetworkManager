@@ -230,19 +230,19 @@ nm_device_bt_init (NMDeviceBt *device)
 }
 
 static void
-register_for_property_changed (NMDeviceBt *device)
+register_properties (NMDeviceBt *device)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
-	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_DEVICE_BT_HW_ADDRESS,   _nm_object_demarshal_generic, &priv->hw_address },
-		{ NM_DEVICE_BT_NAME,         _nm_object_demarshal_generic, &priv->name },
-		{ NM_DEVICE_BT_CAPABILITIES, _nm_object_demarshal_generic, &priv->bt_capabilities },
+	const NMPropertiesInfo property_info[] = {
+		{ NM_DEVICE_BT_HW_ADDRESS,   &priv->hw_address },
+		{ NM_DEVICE_BT_NAME,         &priv->name },
+		{ NM_DEVICE_BT_CAPABILITIES, &priv->bt_capabilities },
 		{ NULL },
 	};
 
-	_nm_object_handle_properties_changed (NM_OBJECT (device),
-	                                     priv->proxy,
-	                                     property_changed_info);
+	_nm_object_register_properties (NM_OBJECT (device),
+	                                priv->proxy,
+	                                property_info);
 }
 
 static GObject*
@@ -263,7 +263,7 @@ constructor (GType type,
 		                                         nm_object_get_path (NM_OBJECT (object)),
 		                                         NM_DBUS_INTERFACE_DEVICE_BLUETOOTH);
 
-		register_for_property_changed (NM_DEVICE_BT (object));
+		register_properties (NM_DEVICE_BT (object));
 	}
 
 	return object;

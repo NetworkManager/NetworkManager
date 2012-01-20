@@ -167,6 +167,21 @@ nm_vpn_connection_init (NMVPNConnection *connection)
 	priv->vpn_state = NM_VPN_CONNECTION_STATE_UNKNOWN;
 }
 
+static void
+register_properties (NMVPNConnection *connection)
+{
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	const NMPropertiesInfo property_info[] = {
+		{ NM_VPN_CONNECTION_BANNER,    &priv->banner },
+		{ NM_VPN_CONNECTION_VPN_STATE, &priv->vpn_state },
+		{ NULL },
+	};
+
+	_nm_object_register_properties (NM_OBJECT (connection),
+	                                priv->proxy,
+	                                property_info);
+}
+
 static GObject*
 constructor (GType type,
 		   guint n_construct_params,
@@ -198,6 +213,9 @@ constructor (GType type,
 						    G_CALLBACK (vpn_state_changed_proxy),
 						    object,
 						    NULL);
+
+	register_properties (NM_VPN_CONNECTION (object));
+
 	return G_OBJECT (object);
 }
 

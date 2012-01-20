@@ -593,25 +593,25 @@ demarshal_ssid (NMObject *object, GParamSpec *pspec, GValue *value, gpointer fie
 }
 
 static void
-register_for_property_changed (NMAccessPoint *ap)
+register_properties (NMAccessPoint *ap)
 {
 	NMAccessPointPrivate *priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
-	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_ACCESS_POINT_FLAGS,       _nm_object_demarshal_generic, &priv->flags },
-		{ NM_ACCESS_POINT_WPA_FLAGS,   _nm_object_demarshal_generic, &priv->wpa_flags },
-		{ NM_ACCESS_POINT_RSN_FLAGS,   _nm_object_demarshal_generic, &priv->rsn_flags },
-		{ NM_ACCESS_POINT_SSID,        demarshal_ssid,               &priv->ssid },
-		{ NM_ACCESS_POINT_FREQUENCY,   _nm_object_demarshal_generic, &priv->frequency },
-		{ NM_ACCESS_POINT_HW_ADDRESS,  _nm_object_demarshal_generic, &priv->bssid },
-		{ NM_ACCESS_POINT_MODE,        _nm_object_demarshal_generic, &priv->mode },
-		{ NM_ACCESS_POINT_MAX_BITRATE, _nm_object_demarshal_generic, &priv->max_bitrate },
-		{ NM_ACCESS_POINT_STRENGTH,    _nm_object_demarshal_generic, &priv->strength },
+	const NMPropertiesInfo property_info[] = {
+		{ NM_ACCESS_POINT_FLAGS,       &priv->flags },
+		{ NM_ACCESS_POINT_WPA_FLAGS,   &priv->wpa_flags },
+		{ NM_ACCESS_POINT_RSN_FLAGS,   &priv->rsn_flags },
+		{ NM_ACCESS_POINT_SSID,        &priv->ssid, demarshal_ssid },
+		{ NM_ACCESS_POINT_FREQUENCY,   &priv->frequency },
+		{ NM_ACCESS_POINT_HW_ADDRESS,  &priv->bssid },
+		{ NM_ACCESS_POINT_MODE,        &priv->mode },
+		{ NM_ACCESS_POINT_MAX_BITRATE, &priv->max_bitrate },
+		{ NM_ACCESS_POINT_STRENGTH,    &priv->strength },
 		{ NULL },
 	};
 
-	_nm_object_handle_properties_changed (NM_OBJECT (ap),
-	                                     priv->proxy,
-	                                     property_changed_info);
+	_nm_object_register_properties (NM_OBJECT (ap),
+	                                priv->proxy,
+	                                property_info);
 }
 
 static GObject*
@@ -635,7 +635,7 @@ constructor (GType type,
 									    nm_object_get_path (object),
 									    NM_DBUS_INTERFACE_ACCESS_POINT);
 
-	register_for_property_changed (NM_ACCESS_POINT (object));
+	register_properties (NM_ACCESS_POINT (object));
 
 	return G_OBJECT (object);
 }

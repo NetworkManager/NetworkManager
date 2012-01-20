@@ -293,28 +293,35 @@ demarshal_active_connection (NMObject *object, GParamSpec *pspec, GValue *value,
 }
 
 static void
-register_for_property_changed (NMDevice *device)
+register_properties (NMDevice *device)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
-	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_DEVICE_UDI,              _nm_object_demarshal_generic, &priv->udi },
-		{ NM_DEVICE_INTERFACE,        _nm_object_demarshal_generic, &priv->iface },
-		{ NM_DEVICE_IP_INTERFACE,     _nm_object_demarshal_generic, &priv->ip_iface },
-		{ NM_DEVICE_DRIVER,           _nm_object_demarshal_generic, &priv->driver },
-		{ NM_DEVICE_CAPABILITIES,     _nm_object_demarshal_generic, &priv->capabilities },
-		{ NM_DEVICE_MANAGED,          _nm_object_demarshal_generic, &priv->managed },
-		{ NM_DEVICE_FIRMWARE_MISSING, _nm_object_demarshal_generic, &priv->firmware_missing },
-		{ NM_DEVICE_IP4_CONFIG,       demarshal_ip4_config,         &priv->ip4_config },
-		{ NM_DEVICE_DHCP4_CONFIG,     demarshal_dhcp4_config,       &priv->dhcp4_config },
-		{ NM_DEVICE_IP6_CONFIG,       demarshal_ip6_config,         &priv->ip6_config },
-		{ NM_DEVICE_DHCP6_CONFIG,     demarshal_dhcp6_config,       &priv->dhcp6_config },
-		{ NM_DEVICE_ACTIVE_CONNECTION,demarshal_active_connection,  &priv->active_connection },
+	const NMPropertiesInfo property_info[] = {
+		{ NM_DEVICE_UDI,               &priv->udi },
+		{ NM_DEVICE_INTERFACE,         &priv->iface },
+		{ NM_DEVICE_IP_INTERFACE,      &priv->ip_iface },
+		{ NM_DEVICE_DRIVER,            &priv->driver },
+		{ NM_DEVICE_CAPABILITIES,      &priv->capabilities },
+		{ NM_DEVICE_MANAGED,           &priv->managed },
+		{ NM_DEVICE_FIRMWARE_MISSING,  &priv->firmware_missing },
+		{ NM_DEVICE_IP4_CONFIG,        &priv->ip4_config, demarshal_ip4_config },
+		{ NM_DEVICE_DHCP4_CONFIG,      &priv->dhcp4_config, demarshal_dhcp4_config },
+		{ NM_DEVICE_IP6_CONFIG,        &priv->ip6_config, demarshal_ip6_config },
+		{ NM_DEVICE_DHCP6_CONFIG,      &priv->dhcp6_config, demarshal_dhcp6_config },
+		{ NM_DEVICE_STATE,             &priv->state },
+		{ NM_DEVICE_ACTIVE_CONNECTION, &priv->active_connection, demarshal_active_connection },
+
+		/* The D-Bus interface has this property, but we don't; register
+		 * it so that handle_property_changed() doesn't complain.
+		 */
+		{ "ip4-address", NULL },
+
 		{ NULL },
 	};
 
-	_nm_object_handle_properties_changed (NM_OBJECT (device),
-	                                     priv->proxy,
-	                                     property_changed_info);
+	_nm_object_register_properties (NM_OBJECT (device),
+	                                priv->proxy,
+	                                property_info);
 }
 
 static void
@@ -355,11 +362,6 @@ get_all_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 		return;
 	}
 	g_object_unref (proxy);
-
-	/* Hack: libnm-glib's NMDevice doesn't have ip4-address property. Remove
-	 * it from the hash to prevent warnings.
-	 */
-	g_hash_table_remove (props, "Ip4Address");
 
 	_nm_object_process_properties_changed (NM_OBJECT (self), props);
 	g_hash_table_destroy (props);
@@ -409,7 +411,7 @@ constructor (GType type,
 											 nm_object_get_path (object),
 											 NM_DBUS_INTERFACE_DEVICE);
 
-	register_for_property_changed (NM_DEVICE (object));
+	register_properties (NM_DEVICE (object));
 
 	/* Get initial properties, so that we have all properties set even if
 	 * no PropertiesChanged signal is received.

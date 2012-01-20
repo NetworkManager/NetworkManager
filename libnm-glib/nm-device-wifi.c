@@ -667,22 +667,22 @@ demarshal_active_ap (NMObject *object, GParamSpec *pspec, GValue *value, gpointe
 }
 
 static void
-register_for_property_changed (NMDeviceWifi *device)
+register_properties (NMDeviceWifi *device)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
-	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_DEVICE_WIFI_HW_ADDRESS,           _nm_object_demarshal_generic, &priv->hw_address },
-		{ NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS, _nm_object_demarshal_generic, &priv->perm_hw_address },
-		{ NM_DEVICE_WIFI_MODE,                 _nm_object_demarshal_generic, &priv->mode },
-		{ NM_DEVICE_WIFI_BITRATE,              _nm_object_demarshal_generic, &priv->rate },
-		{ NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT,  demarshal_active_ap,         &priv->active_ap },
-		{ NM_DEVICE_WIFI_CAPABILITIES,         _nm_object_demarshal_generic, &priv->wireless_caps },
+	const NMPropertiesInfo property_info[] = {
+		{ NM_DEVICE_WIFI_HW_ADDRESS,           &priv->hw_address },
+		{ NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS, &priv->perm_hw_address },
+		{ NM_DEVICE_WIFI_MODE,                 &priv->mode },
+		{ NM_DEVICE_WIFI_BITRATE,              &priv->rate },
+		{ NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT,  &priv->active_ap, demarshal_active_ap },
+		{ NM_DEVICE_WIFI_CAPABILITIES,         &priv->wireless_caps },
 		{ NULL },
 	};
 
-	_nm_object_handle_properties_changed (NM_OBJECT (device),
-	                                     priv->proxy,
-	                                     property_changed_info);
+	_nm_object_register_properties (NM_OBJECT (device),
+	                                priv->proxy,
+	                                property_info);
 }
 
 static GObject*
@@ -720,7 +720,7 @@ constructor (GType type,
 						    G_CALLBACK (access_point_removed_proxy),
 						    object, NULL);
 
-	register_for_property_changed (NM_DEVICE_WIFI (object));
+	register_properties (NM_DEVICE_WIFI (object));
 
 	g_signal_connect (NM_DEVICE (object),
 	                  "notify::" NM_DEVICE_STATE,

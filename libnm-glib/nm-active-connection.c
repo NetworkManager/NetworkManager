@@ -410,22 +410,24 @@ demarshal_devices (NMObject *object, GParamSpec *pspec, GValue *value, gpointer 
 }
 
 static void
-register_for_property_changed (NMActiveConnection *connection)
+register_properties (NMActiveConnection *connection)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
-	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_ACTIVE_CONNECTION_CONNECTION,          _nm_object_demarshal_generic, &priv->connection },
-		{ NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT,     _nm_object_demarshal_generic, &priv->specific_object },
-		{ NM_ACTIVE_CONNECTION_DEVICES,             demarshal_devices,           &priv->devices },
-		{ NM_ACTIVE_CONNECTION_STATE,               _nm_object_demarshal_generic, &priv->state },
-		{ NM_ACTIVE_CONNECTION_DEFAULT,             _nm_object_demarshal_generic, &priv->is_default },
-		{ NM_ACTIVE_CONNECTION_DEFAULT6,            _nm_object_demarshal_generic, &priv->is_default6 },
+	const NMPropertiesInfo property_info[] = {
+		{ NM_ACTIVE_CONNECTION_CONNECTION,          &priv->connection },
+		{ NM_ACTIVE_CONNECTION_UUID,                &priv->uuid },
+		{ NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT,     &priv->specific_object },
+		{ NM_ACTIVE_CONNECTION_DEVICES,             &priv->devices, demarshal_devices },
+		{ NM_ACTIVE_CONNECTION_STATE,               &priv->state },
+		{ NM_ACTIVE_CONNECTION_DEFAULT,             &priv->is_default },
+		{ NM_ACTIVE_CONNECTION_DEFAULT6,            &priv->is_default6 },
+		{ NM_ACTIVE_CONNECTION_MASTER,              &priv->master },
 		{ NULL },
 	};
 
-	_nm_object_handle_properties_changed (NM_OBJECT (connection),
-	                                     priv->proxy,
-	                                     property_changed_info);
+	_nm_object_register_properties (NM_OBJECT (connection),
+	                                priv->proxy,
+	                                property_info);
 }
 
 static GObject*
@@ -449,7 +451,7 @@ constructor (GType type,
 									    nm_object_get_path (object),
 									    NM_DBUS_INTERFACE_ACTIVE_CONNECTION);
 
-	register_for_property_changed (NM_ACTIVE_CONNECTION (object));
+	register_properties (NM_ACTIVE_CONNECTION (object));
 
 	return G_OBJECT (object);
 }

@@ -314,26 +314,26 @@ demarshal_active_connections (NMObject *object,
 }
 
 static void
-register_for_property_changed (NMClient *client)
+register_properties (NMClient *client)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
-	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_CLIENT_VERSION,                   _nm_object_demarshal_generic,  &priv->version },
-		{ NM_CLIENT_STATE,                     _nm_object_demarshal_generic,  &priv->state },
-		{ NM_CLIENT_NETWORKING_ENABLED,        _nm_object_demarshal_generic,  &priv->networking_enabled },
-		{ NM_CLIENT_WIRELESS_ENABLED,          _nm_object_demarshal_generic,  &priv->wireless_enabled },
-		{ NM_CLIENT_WIRELESS_HARDWARE_ENABLED, _nm_object_demarshal_generic,  &priv->wireless_hw_enabled },
-		{ NM_CLIENT_WWAN_ENABLED,              _nm_object_demarshal_generic,  &priv->wwan_enabled },
-		{ NM_CLIENT_WWAN_HARDWARE_ENABLED,     _nm_object_demarshal_generic,  &priv->wwan_hw_enabled },
-		{ NM_CLIENT_WIMAX_ENABLED,             _nm_object_demarshal_generic,  &priv->wimax_enabled },
-		{ NM_CLIENT_WIMAX_HARDWARE_ENABLED,    _nm_object_demarshal_generic,  &priv->wimax_hw_enabled },
-		{ NM_CLIENT_ACTIVE_CONNECTIONS,        demarshal_active_connections, &priv->active_connections },
+	const NMPropertiesInfo property_info[] = {
+		{ NM_CLIENT_VERSION,                   &priv->version },
+		{ NM_CLIENT_STATE,                     &priv->state },
+		{ NM_CLIENT_NETWORKING_ENABLED,        &priv->networking_enabled },
+		{ NM_CLIENT_WIRELESS_ENABLED,          &priv->wireless_enabled },
+		{ NM_CLIENT_WIRELESS_HARDWARE_ENABLED, &priv->wireless_hw_enabled },
+		{ NM_CLIENT_WWAN_ENABLED,              &priv->wwan_enabled },
+		{ NM_CLIENT_WWAN_HARDWARE_ENABLED,     &priv->wwan_hw_enabled },
+		{ NM_CLIENT_WIMAX_ENABLED,             &priv->wimax_enabled },
+		{ NM_CLIENT_WIMAX_HARDWARE_ENABLED,    &priv->wimax_hw_enabled },
+		{ NM_CLIENT_ACTIVE_CONNECTIONS,        &priv->active_connections, demarshal_active_connections },
 		{ NULL },
 	};
 
-	_nm_object_handle_properties_changed (NM_OBJECT (client),
-	                                     priv->client_proxy,
-	                                     property_changed_info);
+	_nm_object_register_properties (NM_OBJECT (client),
+	                                priv->client_proxy,
+	                                property_info);
 }
 
 #define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK     "org.freedesktop.NetworkManager.enable-disable-network"
@@ -1385,7 +1385,7 @@ constructor (GType type,
 										   nm_object_get_path (object),
 										   NM_DBUS_INTERFACE);
 
-	register_for_property_changed (NM_CLIENT (object));
+	register_properties (NM_CLIENT (object));
 
 	dbus_g_proxy_add_signal (priv->client_proxy, "DeviceAdded", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->client_proxy,

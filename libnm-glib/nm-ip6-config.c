@@ -124,20 +124,20 @@ demarshal_ip6_routes_array (NMObject *object, GParamSpec *pspec, GValue *value, 
 }
 
 static void
-register_for_property_changed (NMIP6Config *config)
+register_properties (NMIP6Config *config)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
-	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_IP6_CONFIG_ADDRESSES,    demarshal_ip6_address_array,    &priv->addresses },
-		{ NM_IP6_CONFIG_NAMESERVERS,  demarshal_ip6_nameserver_array, &priv->nameservers },
-		{ NM_IP6_CONFIG_DOMAINS,      demarshal_domains,              &priv->domains },
-		{ NM_IP6_CONFIG_ROUTES,       demarshal_ip6_routes_array,     &priv->routes },
+	const NMPropertiesInfo property_info[] = {
+		{ NM_IP6_CONFIG_ADDRESSES,    &priv->addresses, demarshal_ip6_address_array },
+		{ NM_IP6_CONFIG_NAMESERVERS,  &priv->nameservers, demarshal_ip6_nameserver_array },
+		{ NM_IP6_CONFIG_DOMAINS,      &priv->domains, demarshal_domains },
+		{ NM_IP6_CONFIG_ROUTES,       &priv->routes, demarshal_ip6_routes_array },
 		{ NULL },
 	};
 
-	_nm_object_handle_properties_changed (NM_OBJECT (config),
-	                                      priv->proxy,
-	                                      property_changed_info);
+	_nm_object_register_properties (NM_OBJECT (config),
+	                                priv->proxy,
+	                                property_info);
 }
 
 /**
@@ -309,7 +309,7 @@ constructor (GType type,
 	                                         nm_object_get_path (NM_OBJECT (object)),
 	                                         NM_DBUS_INTERFACE_IP6_CONFIG);
 
-	register_for_property_changed (NM_IP6_CONFIG (object));
+	register_properties (NM_IP6_CONFIG (object));
 
 	return object;
 }

@@ -22,6 +22,7 @@
  */
 
 #include <string.h>
+#include <gio/gio.h>
 #include <nm-utils.h>
 #include "NetworkManager.h"
 #include "nm-object.h"
@@ -37,15 +38,16 @@ G_DEFINE_ABSTRACT_TYPE (NMObject, nm_object, G_TYPE_OBJECT)
 #define NM_OBJECT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_OBJECT, NMObjectPrivate))
 
 typedef struct {
-	PropChangedMarshalFunc func;
+	PropertyMarshalFunc func;
 	gpointer field;
-} PropChangedInfo;
+} PropertyInfo;
 
 typedef struct {
 	DBusGConnection *connection;
 	char *path;
 	DBusGProxy *properties_proxy;
-	GSList *pcs;
+	GSList *property_interfaces;
+	GSList *property_tables;
 	NMObject *parent;
 
 	GSList *notify_props;
@@ -118,6 +120,9 @@ dispose (GObject *object)
 	g_slist_foreach (priv->notify_props, (GFunc) g_free, NULL);
 	g_slist_free (priv->notify_props);
 
+	g_slist_foreach (priv->property_interfaces, (GFunc) g_free, NULL);
+	g_slist_free (priv->property_interfaces);
+
 	g_object_unref (priv->properties_proxy);
 	dbus_g_connection_unref (priv->connection);
 
@@ -129,8 +134,8 @@ finalize (GObject *object)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 
-	g_slist_foreach (priv->pcs, (GFunc) g_hash_table_destroy, NULL);
-	g_slist_free (priv->pcs);
+	g_slist_foreach (priv->property_tables, (GFunc) g_hash_table_destroy, NULL);
+	g_slist_free (priv->property_tables);
 	g_free (priv->path);
 
 	G_OBJECT_CLASS (nm_object_parent_class)->finalize (object);
@@ -334,13 +339,35 @@ handle_property_changed (gpointer key, gpointer data, gpointer user_data)
 	NMObject *self = NM_OBJECT (user_data);
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
 	char *prop_name;
-	PropChangedInfo *pci;
+	PropertyInfo *pi;
 	GParamSpec *pspec;
 	gboolean success = FALSE, found = FALSE;
 	GSList *iter;
 	GValue *value = data;
 
 	prop_name = wincaps_to_dash ((char *) key);
+
+	/* Iterate through the object and its parents to find the property */
+	for (iter = priv->property_tables; iter; iter = g_slist_next (iter)) {
+		pi = g_hash_table_lookup ((GHashTable *) iter->data, prop_name);
+		if (pi) {
+			if (!pi->field) {
+				/* We know about this property but aren't tracking changes on it. */
+				goto out;
+			}
+
+			found = TRUE;
+			break;
+		}
+	}
+
+	if (!found) {
+#if DEBUG
+		g_warning ("Property '%s' unhandled.", prop_name);
+#endif
+		goto out;
+	}
+
 	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (self)), prop_name);
 	if (!pspec) {
 		g_warning ("%s: property '%s' changed but wasn't defined by object type %s.",
@@ -350,29 +377,14 @@ handle_property_changed (gpointer key, gpointer data, gpointer user_data)
 		goto out;
 	}
 
-	/* Iterate through the object and its parents to find the property */
-	for (iter = priv->pcs; iter; iter = g_slist_next (iter)) {
-		pci = g_hash_table_lookup ((GHashTable *) iter->data, prop_name);
-		if (pci) {
-			found = TRUE;
-
-			/* Handle NULL object paths */
-			if (G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH)) {
-				if (g_strcmp0 (g_value_get_boxed (value), "/") == 0)
-					value = NULL;
-			}
-
-			success = (*(pci->func)) (self, pspec, value, pci->field);
-			if (success)
-				break;
-		}
+	/* Handle NULL object paths */
+	if (G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH)) {
+		if (g_strcmp0 (g_value_get_boxed (value), "/") == 0)
+			value = NULL;
 	}
 
-	if (!found) {
-#if DEBUG
-		g_warning ("Property '%s' unhandled.", prop_name);
-#endif
-	} else if (!success) {
+	success = (*(pi->func)) (self, pspec, value, pi->field);
+	if (!success) {
 		g_warning ("%s: failed to update property '%s' of object type %s.",
 		           __func__,
 		           prop_name,
@@ -397,48 +409,6 @@ properties_changed_proxy (DBusGProxy *proxy,
 	_nm_object_process_properties_changed (NM_OBJECT (user_data), properties);
 }
 
-void
-_nm_object_handle_properties_changed (NMObject *object,
-                                     DBusGProxy *proxy,
-                                     const NMPropertiesChangedInfo *info)
-{
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
-	NMPropertiesChangedInfo *tmp;
-	GHashTable *instance;
-
-	g_return_if_fail (NM_IS_OBJECT (object));
-	g_return_if_fail (proxy != NULL);
-	g_return_if_fail (info != NULL);
-
-	dbus_g_proxy_add_signal (proxy, "PropertiesChanged", DBUS_TYPE_G_MAP_OF_VARIANT, G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (proxy,
-						    "PropertiesChanged",
-						    G_CALLBACK (properties_changed_proxy),
-						    object,
-						    NULL);
-
-	instance = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
-	priv->pcs = g_slist_prepend (priv->pcs, instance);
-
-	for (tmp = (NMPropertiesChangedInfo *) info; tmp->name; tmp++) {
-		PropChangedInfo *pci;
-
-		if (!tmp->name || !tmp->func || !tmp->field) {
-			g_warning ("%s: missing field in NMPropertiesChangedInfo", __func__);
-			continue;
-		}
-
-		pci = g_malloc0 (sizeof (PropChangedInfo));
-		if (!pci) {
-			g_warning ("%s: not enough memory for PropChangedInfo", __func__);
-			continue;
-		}
-		pci->func = tmp->func;
-		pci->field = tmp->field;
-		g_hash_table_insert (instance, g_strdup (tmp->name), pci);
-	}
-}
-
 #define HANDLE_TYPE(ucase, lcase, getter) \
 	} else if (pspec->value_type == G_TYPE_##ucase) { \
 		if (G_VALUE_HOLDS_##ucase (value)) { \
@@ -449,11 +419,11 @@ _nm_object_handle_properties_changed (NMObject *object,
 			goto done; \
 		}
 
-gboolean
-_nm_object_demarshal_generic (NMObject *object,
-                             GParamSpec *pspec,
-                             GValue *value,
-                             gpointer field)
+static gboolean
+demarshal_generic (NMObject *object,
+                   GParamSpec *pspec,
+                   GValue *value,
+                   gpointer field)
 {
 	gboolean success = TRUE;
 
@@ -501,6 +471,47 @@ done:
 		           g_type_name (pspec->value_type), G_VALUE_TYPE_NAME (value));
 	}
 	return success;
+}
+
+void
+_nm_object_register_properties (NMObject *object,
+                                DBusGProxy *proxy,
+                                const NMPropertiesInfo *info)
+{
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	NMPropertiesInfo *tmp;
+	GHashTable *instance;
+
+	g_return_if_fail (NM_IS_OBJECT (object));
+	g_return_if_fail (proxy != NULL);
+	g_return_if_fail (info != NULL);
+
+	priv->property_interfaces = g_slist_prepend (priv->property_interfaces,
+	                                             g_strdup (dbus_g_proxy_get_interface (proxy)));
+
+	dbus_g_proxy_add_signal (proxy, "PropertiesChanged", DBUS_TYPE_G_MAP_OF_VARIANT, G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (proxy,
+						    "PropertiesChanged",
+						    G_CALLBACK (properties_changed_proxy),
+						    object,
+						    NULL);
+
+	instance = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	priv->property_tables = g_slist_prepend (priv->property_tables, instance);
+
+	for (tmp = (NMPropertiesInfo *) info; tmp->name; tmp++) {
+		PropertyInfo *pi;
+
+		if (!tmp->name || (tmp->func && !tmp->field)) {
+			g_warning ("%s: missing field in NMPropertiesInfo", __func__);
+			continue;
+		}
+
+		pi = g_malloc0 (sizeof (PropertyInfo));
+		pi->func = tmp->func ? tmp->func : demarshal_generic;
+		pi->field = tmp->field;
+		g_hash_table_insert (instance, g_strdup (tmp->name), pi);
+	}
 }
 
 gboolean

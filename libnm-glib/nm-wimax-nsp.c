@@ -290,17 +290,19 @@ get_property (GObject *object,
 }
 
 static void
-register_for_property_changed (NMWimaxNsp *nsp)
+register_properties (NMWimaxNsp *nsp)
 {
 	NMWimaxNspPrivate *priv = NM_WIMAX_NSP_GET_PRIVATE (nsp);
-	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_WIMAX_NSP_SIGNAL_QUALITY, _nm_object_demarshal_generic, &priv->signal_quality },
+	const NMPropertiesInfo property_info[] = {
+		{ NM_WIMAX_NSP_NAME,           &priv->name },
+		{ NM_WIMAX_NSP_SIGNAL_QUALITY, &priv->signal_quality },
+		{ NM_WIMAX_NSP_NETWORK_TYPE,   &priv->network_type },
 		{ NULL },
 	};
 
-	_nm_object_handle_properties_changed (NM_OBJECT (nsp),
-										  priv->proxy,
-										  property_changed_info);
+	_nm_object_register_properties (NM_OBJECT (nsp),
+	                                priv->proxy,
+	                                property_info);
 }
 
 static GObject*
@@ -324,7 +326,7 @@ constructor (GType type,
 											 nm_object_get_path (object),
 											 NM_DBUS_INTERFACE_WIMAX_NSP);
 
-	register_for_property_changed (NM_WIMAX_NSP (object));
+	register_properties (NM_WIMAX_NSP (object));
 
 	return G_OBJECT (object);
 }

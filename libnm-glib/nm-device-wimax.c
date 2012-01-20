@@ -658,23 +658,23 @@ demarshal_active_nsp (NMObject *object, GParamSpec *pspec, GValue *value, gpoint
 }
 
 static void
-register_for_property_changed (NMDeviceWimax *wimax)
+register_properties (NMDeviceWimax *wimax)
 {
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (wimax);
-	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_DEVICE_WIMAX_HW_ADDRESS, _nm_object_demarshal_generic, &priv->hw_address },
-		{ NM_DEVICE_WIMAX_ACTIVE_NSP, demarshal_active_nsp, &priv->active_nsp },
-		{ NM_DEVICE_WIMAX_CENTER_FREQUENCY, _nm_object_demarshal_generic, &priv->center_freq },
-		{ NM_DEVICE_WIMAX_RSSI, _nm_object_demarshal_generic, &priv->rssi },
-		{ NM_DEVICE_WIMAX_CINR, _nm_object_demarshal_generic, &priv->cinr },
-		{ NM_DEVICE_WIMAX_TX_POWER, _nm_object_demarshal_generic, &priv->tx_power },
-		{ NM_DEVICE_WIMAX_BSID, _nm_object_demarshal_generic, &priv->bsid },
+	const NMPropertiesInfo property_info[] = {
+		{ NM_DEVICE_WIMAX_HW_ADDRESS, &priv->hw_address },
+		{ NM_DEVICE_WIMAX_ACTIVE_NSP, &priv->active_nsp, demarshal_active_nsp },
+		{ NM_DEVICE_WIMAX_CENTER_FREQUENCY, &priv->center_freq },
+		{ NM_DEVICE_WIMAX_RSSI, &priv->rssi },
+		{ NM_DEVICE_WIMAX_CINR, &priv->cinr },
+		{ NM_DEVICE_WIMAX_TX_POWER, &priv->tx_power },
+		{ NM_DEVICE_WIMAX_BSID, &priv->bsid },
 		{ NULL },
 	};
 
-	_nm_object_handle_properties_changed (NM_OBJECT (wimax),
-										  priv->proxy,
-										  property_changed_info);
+	_nm_object_register_properties (NM_OBJECT (wimax),
+	                                priv->proxy,
+	                                property_info);
 }
 
 static GObject*
@@ -712,7 +712,7 @@ constructor (GType type,
 								 G_CALLBACK (nsp_removed_proxy),
 								 object, NULL);
 
-	register_for_property_changed (NM_DEVICE_WIMAX (object));
+	register_properties (NM_DEVICE_WIMAX (object));
 
 	g_signal_connect (object,
 	                  "notify::" NM_DEVICE_STATE,

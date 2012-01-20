@@ -247,20 +247,20 @@ nm_device_ethernet_init (NMDeviceEthernet *device)
 }
 
 static void
-register_for_property_changed (NMDeviceEthernet *device)
+register_properties (NMDeviceEthernet *device)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
-	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_DEVICE_ETHERNET_HW_ADDRESS,           _nm_object_demarshal_generic, &priv->hw_address },
-		{ NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS, _nm_object_demarshal_generic, &priv->perm_hw_address },
-		{ NM_DEVICE_ETHERNET_SPEED,                _nm_object_demarshal_generic, &priv->speed },
-		{ NM_DEVICE_ETHERNET_CARRIER,              _nm_object_demarshal_generic, &priv->carrier },
+	const NMPropertiesInfo property_info[] = {
+		{ NM_DEVICE_ETHERNET_HW_ADDRESS,           &priv->hw_address },
+		{ NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS, &priv->perm_hw_address },
+		{ NM_DEVICE_ETHERNET_SPEED,                &priv->speed },
+		{ NM_DEVICE_ETHERNET_CARRIER,              &priv->carrier },
 		{ NULL },
 	};
 
-	_nm_object_handle_properties_changed (NM_OBJECT (device),
-	                                     priv->proxy,
-	                                     property_changed_info);
+	_nm_object_register_properties (NM_OBJECT (device),
+	                                priv->proxy,
+	                                property_info);
 }
 
 static GObject*
@@ -284,7 +284,7 @@ constructor (GType type,
 	                                         nm_object_get_path (NM_OBJECT (object)),
 	                                         NM_DBUS_INTERFACE_DEVICE_WIRED);
 
-	register_for_property_changed (NM_DEVICE_ETHERNET (object));
+	register_properties (NM_DEVICE_ETHERNET (object));
 
 	return object;
 }

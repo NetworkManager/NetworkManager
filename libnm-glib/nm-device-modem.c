@@ -151,18 +151,18 @@ connection_valid (NMDevice *device, NMConnection *connection)
 /*******************************************************************/
 
 static void
-register_for_property_changed (NMDeviceModem *device)
+register_properties (NMDeviceModem *device)
 {
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
-	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_DEVICE_MODEM_MODEM_CAPABILITIES,   _nm_object_demarshal_generic, &priv->caps },
-		{ NM_DEVICE_MODEM_CURRENT_CAPABILITIES, _nm_object_demarshal_generic, &priv->current_caps },
+	const NMPropertiesInfo property_info[] = {
+		{ NM_DEVICE_MODEM_MODEM_CAPABILITIES,   &priv->caps },
+		{ NM_DEVICE_MODEM_CURRENT_CAPABILITIES, &priv->current_caps },
 		{ NULL },
 	};
 
-	_nm_object_handle_properties_changed (NM_OBJECT (device),
-	                                      priv->proxy,
-	                                      property_changed_info);
+	_nm_object_register_properties (NM_OBJECT (device),
+	                                priv->proxy,
+	                                property_info);
 }
 
 static GObject*
@@ -184,7 +184,7 @@ constructor (GType type,
 		                                         nm_object_get_path (NM_OBJECT (object)),
 		                                         NM_DBUS_INTERFACE_DEVICE_MODEM);
 
-		register_for_property_changed (NM_DEVICE_MODEM (object));
+		register_properties (NM_DEVICE_MODEM (object));
 	}
 
 	return object;

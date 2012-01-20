@@ -27,23 +27,21 @@
 #include <glib-object.h>
 #include "nm-object.h"
 
-typedef gboolean (*PropChangedMarshalFunc) (NMObject *, GParamSpec *, GValue *, gpointer);
+typedef gboolean (*PropertyMarshalFunc) (NMObject *, GParamSpec *, GValue *, gpointer);
 typedef GObject * (*NMObjectCreatorFunc) (DBusGConnection *, const char *);
 
 typedef struct {
 	const char *name;
-	PropChangedMarshalFunc func;
 	gpointer field;
-} NMPropertiesChangedInfo;
+	PropertyMarshalFunc func;
+} NMPropertiesInfo;
 
 
-void _nm_object_handle_properties_changed (NMObject *object,
-                                           DBusGProxy *proxy,
-                                           const NMPropertiesChangedInfo *info);
+void _nm_object_register_properties (NMObject *object,
+									 DBusGProxy *proxy,
+									 const NMPropertiesInfo *info);
 
 void _nm_object_process_properties_changed (NMObject *self, GHashTable *properties);
-
-gboolean _nm_object_demarshal_generic (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field);
 
 void _nm_object_queue_notify (NMObject *object, const char *property);
 

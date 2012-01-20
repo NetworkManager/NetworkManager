@@ -175,18 +175,18 @@ nm_device_infiniband_init (NMDeviceInfiniband *device)
 }
 
 static void
-register_for_property_changed (NMDeviceInfiniband *device)
+register_properties (NMDeviceInfiniband *device)
 {
 	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (device);
-	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_DEVICE_INFINIBAND_HW_ADDRESS, _nm_object_demarshal_generic, &priv->hw_address },
-		{ NM_DEVICE_INFINIBAND_CARRIER,    _nm_object_demarshal_generic, &priv->carrier },
+	const NMPropertiesInfo property_info[] = {
+		{ NM_DEVICE_INFINIBAND_HW_ADDRESS, &priv->hw_address },
+		{ NM_DEVICE_INFINIBAND_CARRIER,    &priv->carrier },
 		{ NULL },
 	};
 
-	_nm_object_handle_properties_changed (NM_OBJECT (device),
-	                                      priv->proxy,
-	                                      property_changed_info);
+	_nm_object_register_properties (NM_OBJECT (device),
+	                                priv->proxy,
+	                                property_info);
 }
 
 static GObject*
@@ -210,7 +210,7 @@ constructor (GType type,
 	                                         nm_object_get_path (NM_OBJECT (object)),
 	                                         NM_DBUS_INTERFACE_DEVICE_INFINIBAND);
 
-	register_for_property_changed (NM_DEVICE_INFINIBAND (object));
+	register_properties (NM_DEVICE_INFINIBAND (object));
 
 	return object;
 }

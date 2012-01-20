@@ -77,17 +77,17 @@ demarshal_dhcp6_options (NMObject *object, GParamSpec *pspec, GValue *value, gpo
 }
 
 static void
-register_for_property_changed (NMDHCP6Config *config)
+register_properties (NMDHCP6Config *config)
 {
 	NMDHCP6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (config);
-	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_DHCP6_CONFIG_OPTIONS,   demarshal_dhcp6_options,  &priv->options },
+	const NMPropertiesInfo property_info[] = {
+		{ NM_DHCP6_CONFIG_OPTIONS,   &priv->options, demarshal_dhcp6_options },
 		{ NULL },
 	};
 
-	_nm_object_handle_properties_changed (NM_OBJECT (config),
-	                                     priv->proxy,
-	                                     property_changed_info);
+	_nm_object_register_properties (NM_OBJECT (config),
+	                                priv->proxy,
+	                                property_info);
 }
 
 static GObject*
@@ -115,7 +115,7 @@ constructor (GType type,
 										   nm_object_get_path (object),
 										   NM_DBUS_INTERFACE_DHCP6_CONFIG);
 
-	register_for_property_changed (NM_DHCP6_CONFIG (object));
+	register_properties (NM_DHCP6_CONFIG (object));
 
 	return G_OBJECT (object);
 }
