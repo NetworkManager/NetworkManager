@@ -66,6 +66,8 @@ void _nm_object_reload_pseudo_property   (NMObject *object,
 
 void _nm_object_queue_notify (NMObject *object, const char *property);
 
+void _nm_object_suppress_property_updates (NMObject *object, gboolean suppress);
+
 /* DBus property accessors */
 
 void _nm_object_reload_property (NMObject *object,

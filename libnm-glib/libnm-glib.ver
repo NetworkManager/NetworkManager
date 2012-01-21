@@ -44,6 +44,8 @@ global:
 	nm_client_networking_get_enabled;
 	nm_client_networking_set_enabled;
 	nm_client_new;
+	nm_client_new_async;
+	nm_client_new_finish;
 	nm_client_sleep;
 	nm_client_wimax_get_enabled;
 	nm_client_wimax_hardware_get_enabled;

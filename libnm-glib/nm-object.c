@@ -74,6 +74,7 @@ typedef struct {
 	GSList *property_tables;
 	GHashTable *pseudo_properties;
 	NMObject *parent;
+	gboolean suppress_property_updates;
 
 	GSList *notify_props;
 	guint32 notify_id;
@@ -781,8 +782,12 @@ out:
 static void
 process_properties_changed (NMObject *self, GHashTable *properties)
 {
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
 	GHashTableIter iter;
 	gpointer name, value;
+
+	if (priv->suppress_property_updates)
+		return;
 
 	g_hash_table_iter_init (&iter, properties);
 	while (g_hash_table_iter_next (&iter, &name, &value))
@@ -937,6 +942,15 @@ _nm_object_reload_properties (NMObject *object, GError **error)
 }
 
 void
+_nm_object_suppress_property_updates (NMObject *object, gboolean suppress)
+{
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+
+	priv->suppress_property_updates = suppress;
+}
+
+
+void
 _nm_object_ensure_inited (NMObject *object)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
@@ -1039,6 +1053,9 @@ pseudo_property_added (DBusGProxy *proxy, const char *path, gpointer user_data)
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (ppi->self);
 	NMObject *obj;
 
+	if (priv->suppress_property_updates)
+		return;
+
 	obj = _nm_object_cache_get (path);
 	if (obj)
 		pseudo_property_object_created (G_OBJECT (obj), ppi);
@@ -1052,11 +1069,12 @@ static void
 pseudo_property_removed (DBusGProxy *proxy, const char *path, gpointer user_data)
 {
 	PseudoPropertyInfo *ppi = user_data;
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (ppi->self);
 	GPtrArray *list = *(GPtrArray **)ppi->pi.field;
 	NMObject *obj = NULL;
 	int i;
 
-	if (!list)
+	if (!list || priv->suppress_property_updates)
 		return;
 
 	for (i = 0; i < list->len; i++) {
@@ -1239,7 +1257,8 @@ reload_got_pseudo_property (DBusGProxy *proxy, DBusGProxyCall *call,
 	                           G_TYPE_INVALID)) {
 		g_value_init (&value, DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH);
 		g_value_take_boxed (&value, temp);
-		handle_object_array_property (object, NULL, &value, &ppi->pi, FALSE);
+		if (!priv->suppress_property_updates)
+			handle_object_array_property (object, NULL, &value, &ppi->pi, FALSE);
 		g_value_unset (&value);
 	} else {
 		if (priv->reload_error)

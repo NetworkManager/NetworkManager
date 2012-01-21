@@ -142,105 +142,9 @@ poke_wireless_devices_with_rf_status (NMClient *client)
 }
 
 static void
-update_wireless_status (NMClient *client, gboolean notify)
-{
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
-	gboolean oldval;
-	gboolean poke = FALSE;
-
-	oldval = priv->wireless_hw_enabled;
-	_nm_object_reload_property (NM_OBJECT (client),
-	                            NM_DBUS_INTERFACE,
-	                            "WirelessHardwareEnabled");
-	if (oldval != priv->wireless_hw_enabled) {
-		poke = TRUE;
-		if (notify)
-			_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_WIRELESS_HARDWARE_ENABLED);
-	}
-
-	oldval = priv->wireless_enabled;
-	if (priv->wireless_hw_enabled == FALSE) {
-		priv->wireless_enabled = FALSE;
-	} else {
-		_nm_object_reload_property (NM_OBJECT (client),
-		                            NM_DBUS_INTERFACE,
-		                            "WirelessEnabled");
-	}
-
-	if (oldval != priv->wireless_enabled) {
-		poke = TRUE;
-		if (notify)
-			_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_WIRELESS_ENABLED);
-	}
-
-	if (poke)
-		poke_wireless_devices_with_rf_status (client);
-}
-
-static void
 wireless_enabled_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
 {
 	poke_wireless_devices_with_rf_status (NM_CLIENT (object));
-}
-
-static void
-update_wwan_status (NMClient *client, gboolean notify)
-{
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
-	gboolean oldval;
-
-	oldval = priv->wwan_hw_enabled;
-	_nm_object_reload_property (NM_OBJECT (client),
-	                            NM_DBUS_INTERFACE,
-	                            "WwanHardwareEnabled");
-	if (oldval != priv->wwan_hw_enabled) {
-		if (notify)
-			_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_WWAN_HARDWARE_ENABLED);
-	}
-
-	oldval = priv->wwan_enabled;
-	if (priv->wwan_hw_enabled == FALSE) {
-		priv->wwan_enabled = FALSE;
-	} else {
-		_nm_object_reload_property (NM_OBJECT (client),
-		                            NM_DBUS_INTERFACE,
-		                            "WwanEnabled");
-	}
-
-	if (oldval != priv->wwan_enabled) {
-		if (notify)
-			_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_WWAN_ENABLED);
-	}
-}
-
-static void
-update_wimax_status (NMClient *client, gboolean notify)
-{
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
-	gboolean oldval;
-
-	oldval = priv->wimax_hw_enabled;
-	_nm_object_reload_property (NM_OBJECT (client),
-	                            NM_DBUS_INTERFACE,
-	                            "WimaxHardwareEnabled");
-	if (oldval != priv->wimax_hw_enabled) {
-		if (notify)
-			_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_WIMAX_HARDWARE_ENABLED);
-	}
-
-	oldval = priv->wimax_enabled;
-	if (priv->wimax_hw_enabled == FALSE)
-		priv->wimax_enabled = FALSE;
-	else {
-		_nm_object_reload_property (NM_OBJECT (client),
-		                            NM_DBUS_INTERFACE,
-		                            "WimaxEnabled");
-	}
-
-	if (oldval != priv->wimax_enabled) {
-		if (notify)
-			_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_WIMAX_ENABLED);
-	}
 }
 
 static void
@@ -1131,6 +1035,20 @@ free_object_array (GPtrArray **array)
 }
 
 static void
+updated_properties (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	NMClient *client = NM_CLIENT (user_data);
+	GError *error = NULL;
+
+	if (!_nm_object_reload_properties_finish (NM_OBJECT (object), result, &error)) {
+		g_warning ("%s: error reading NMClient properties: %s", __func__, error->message);
+		g_error_free (error);
+	}
+
+	_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
+}
+
+static void
 proxy_name_owner_changed (DBusGProxy *proxy,
 						  const char *name,
 						  const char *old_owner,
@@ -1158,6 +1076,7 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 	if (!priv->manager_running) {
 		priv->state = NM_STATE_UNKNOWN;
 		_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
+		_nm_object_suppress_property_updates (NM_OBJECT (client), TRUE);
 		poke_wireless_devices_with_rf_status (client);
 		free_object_array (&priv->devices);
 		free_object_array (&priv->active_connections);
@@ -1168,10 +1087,8 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 		priv->wimax_enabled = FALSE;
 		priv->wimax_hw_enabled = FALSE;
 	} else {
-		_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
-		update_wireless_status (client, TRUE);
-		update_wwan_status (client, TRUE);
-		update_wimax_status (client, TRUE);
+		_nm_object_suppress_property_updates (NM_OBJECT (client), FALSE);
+		_nm_object_reload_properties_async (NM_OBJECT (client), updated_properties, client);
 	}
 }
 
@@ -1193,6 +1110,10 @@ client_device_removed (NMObject *client, NMObject *device)
  * nm_client_new:
  *
  * Creates a new #NMClient.
+ *
+ * Note that this will do blocking D-Bus calls to initialize the
+ * client. You can use nm_client_new_async() if you want to avoid
+ * that.
  *
  * Returns: a new #NMClient
  **/
@@ -1220,6 +1141,84 @@ nm_client_new (void)
 	                       NULL);
 	_nm_object_ensure_inited (NM_OBJECT (client));
 	return client;
+}
+
+static void
+client_inited (GObject *source, GAsyncResult *result, gpointer user_data)
+{
+	GSimpleAsyncResult *simple = user_data;
+	GError *error = NULL;
+
+	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (source), result, &error))
+		g_simple_async_result_take_error (simple, error);
+	else
+		g_simple_async_result_set_op_res_gpointer (simple, source, g_object_unref);
+	g_simple_async_result_complete (simple);
+	g_object_unref (simple);
+}
+
+/**
+ * nm_client_new_async:
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: callback to call when the client is created
+ * @user_data: data for @callback
+ *
+ * Creates a new #NMClient and begins asynchronously initializing it.
+ * @callback will be called when it is done; use
+ * nm_client_new_finish() to get the result.
+ **/
+void
+nm_client_new_async (GCancellable *cancellable, GAsyncReadyCallback callback,
+                     gpointer user_data)
+{
+	DBusGConnection *connection;
+	GError *err = NULL;
+	NMClient *client;
+	GSimpleAsyncResult *simple;
+
+	simple = g_simple_async_result_new (NULL, callback, user_data, nm_client_new_async);
+
+#ifdef LIBNM_GLIB_TEST
+	connection = dbus_g_bus_get (DBUS_BUS_SESSION, &err);
+#else
+	connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &err);
+#endif
+	if (!connection) {
+		g_simple_async_result_take_error (simple, err);
+		g_simple_async_result_complete_in_idle (simple);
+		g_object_unref (simple);
+		return;
+	}
+
+	client = g_object_new (NM_TYPE_CLIENT,
+	                       NM_OBJECT_DBUS_CONNECTION, connection,
+	                       NM_OBJECT_DBUS_PATH, NM_DBUS_PATH,
+	                       NULL);
+	g_async_initable_init_async (G_ASYNC_INITABLE (client), G_PRIORITY_DEFAULT,
+	                             cancellable, client_inited, simple);
+}
+
+/**
+ * nm_client_new_finish:
+ * @result: a #GAsyncResult
+ * @error: location for a #GError, or %NULL
+ *
+ * Gets the result of an nm_client_new_async() call.
+ *
+ * Returns: a new #NMClient, or %NULL on error
+ **/
+NMClient *
+nm_client_new_finish (GAsyncResult *result, GError **error)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (g_simple_async_result_is_valid (result, NULL, nm_client_new_async), NULL);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error))
+		return NULL;
+	else
+		return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
 }
 
 static void
@@ -1356,7 +1355,6 @@ init_async_got_manager_running (DBusGProxy *proxy, DBusGProxyCall *call,
 	}
 
 	if (!priv->manager_running) {
-		g_simple_async_result_set_op_res_gboolean (init_data->result, TRUE);
 		init_async_complete (init_data);
 		return;
 	}
@@ -1384,6 +1382,7 @@ init_async (GAsyncInitable *initable, int io_priority,
 	init_data->client = NM_CLIENT (initable);
 	init_data->result = g_simple_async_result_new (G_OBJECT (initable), callback,
 	                                               user_data, init_async);
+	g_simple_async_result_set_op_res_gboolean (init_data->result, TRUE);
 
 	/* Check if NM is running */
 	dbus_g_proxy_begin_call (priv->bus_proxy, "NameHasOwner",
