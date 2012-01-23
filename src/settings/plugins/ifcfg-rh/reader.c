@@ -32,13 +32,7 @@
 #include <unistd.h>
 #include <netinet/ether.h>
 #include <linux/if.h>
-
-#ifndef __user
-#define __user
-#endif
-#include <linux/types.h>
-#include <wireless.h>
-#undef __user
+#include <linux/wireless.h>
 
 #include <glib.h>
 #include <glib/gi18n.h>
