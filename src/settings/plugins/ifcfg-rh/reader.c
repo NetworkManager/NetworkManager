@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 - 2011 Red Hat, Inc.
+ * Copyright (C) 2008 - 2012 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -2062,18 +2062,18 @@ eap_simple_reader (const char *eap_method,
 }
 
 static char *
-get_cert_file (const char *ifcfg_path, const char *cert_path)
+get_full_file_path (const char *ifcfg_path, const char *file_path)
 {
-	const char *base = cert_path;
+	const char *base = file_path;
 	char *p, *ret, *dirname;
 
 	g_return_val_if_fail (ifcfg_path != NULL, NULL);
-	g_return_val_if_fail (cert_path != NULL, NULL);
+	g_return_val_if_fail (file_path != NULL, NULL);
 
-	if (cert_path[0] == '/')
-		return g_strdup (cert_path);
+	if (file_path[0] == '/')
+		return g_strdup (file_path);
 
-	p = strrchr (cert_path, '/');
+	p = strrchr (file_path, '/');
 	if (p)
 		base = p + 1;
 
@@ -2119,7 +2119,7 @@ eap_tls_reader (const char *eap_method,
 
 	ca_cert = svGetValue (ifcfg, ca_cert_key, FALSE);
 	if (ca_cert) {
-		real_path = get_cert_file (ifcfg->fileName, ca_cert);
+		real_path = get_full_file_path (ifcfg->fileName, ca_cert);
 		if (phase2) {
 			if (!nm_setting_802_1x_set_phase2_ca_cert (s_8021x,
 			                                           real_path,
@@ -2176,7 +2176,7 @@ eap_tls_reader (const char *eap_method,
 		goto done;
 	}
 
-	real_path = get_cert_file (ifcfg->fileName, privkey);
+	real_path = get_full_file_path (ifcfg->fileName, privkey);
 	if (phase2) {
 		if (!nm_setting_802_1x_set_phase2_private_key (s_8021x,
 		                                               real_path,
@@ -2213,7 +2213,7 @@ eap_tls_reader (const char *eap_method,
 			goto done;
 		}
 
-		real_path = get_cert_file (ifcfg->fileName, client_cert);
+		real_path = get_full_file_path (ifcfg->fileName, client_cert);
 		if (phase2) {
 			if (!nm_setting_802_1x_set_phase2_client_cert (s_8021x,
 			                                               real_path,
@@ -2263,7 +2263,7 @@ eap_peap_reader (const char *eap_method,
 
 	ca_cert = svGetValue (ifcfg, "IEEE_8021X_CA_CERT", FALSE);
 	if (ca_cert) {
-		real_cert_path = get_cert_file (ifcfg->fileName, ca_cert);
+		real_cert_path = get_full_file_path (ifcfg->fileName, ca_cert);
 		if (!nm_setting_802_1x_set_ca_cert (s_8021x,
 		                                    real_cert_path,
 		                                    NM_SETTING_802_1X_CK_SCHEME_PATH,
@@ -2369,7 +2369,7 @@ eap_ttls_reader (const char *eap_method,
 
 	ca_cert = svGetValue (ifcfg, "IEEE_8021X_CA_CERT", FALSE);
 	if (ca_cert) {
-		real_cert_path = get_cert_file (ifcfg->fileName, ca_cert);
+		real_cert_path = get_full_file_path (ifcfg->fileName, ca_cert);
 		if (!nm_setting_802_1x_set_ca_cert (s_8021x,
 		                                    real_cert_path,
 		                                    NM_SETTING_802_1X_CK_SCHEME_PATH,
@@ -2439,6 +2439,111 @@ done:
 	return success;
 }
 
+static gboolean
+eap_fast_reader (const char *eap_method,
+                 shvarFile *ifcfg,
+                 shvarFile *keys,
+                 NMSetting8021x *s_8021x,
+                 gboolean phase2,
+                 GError **error)
+{
+	char *anon_ident = NULL;
+	char *pac_file = NULL;
+	char *real_pac_path = NULL;
+	char *inner_auth = NULL;
+	char *fast_provisioning = NULL;
+	char *lower;
+	char **list = NULL, **iter;
+	const char* pac_prov_str;
+	gboolean allow_unauth = FALSE, allow_auth = FALSE;
+	gboolean success = FALSE;
+
+	pac_file = svGetValue (ifcfg, "IEEE_8021X_PAC_FILE", FALSE);
+	if (pac_file) {
+		real_pac_path = get_full_file_path (ifcfg->fileName, pac_file);
+		g_object_set (s_8021x, NM_SETTING_802_1X_PAC_FILE, real_pac_path, NULL);
+	}
+
+	fast_provisioning = svGetValue (ifcfg, "IEEE_8021X_FAST_PROVISIONING", FALSE);
+	if (fast_provisioning) {
+		list = g_strsplit_set (fast_provisioning, " \t", 0);
+		for (iter = list; iter && *iter; iter++) {
+			if (**iter == '\0')
+				continue;
+			if (strcmp (*iter, "allow-unauth") == 0)
+				allow_unauth = TRUE;
+			else if (strcmp (*iter, "allow-auth") == 0)
+				allow_auth = TRUE;
+			else {
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid IEEE_8021X_FAST_PROVISIONING '%s' "
+				             "(space-separated list of these values [allow-auth, allow-unauth] expected)",
+				             *iter);
+			}
+		}
+		g_strfreev (list);
+		list = NULL;
+	}
+	pac_prov_str = allow_unauth ? (allow_auth ? "3" : "1") : (allow_auth ? "2" : "0");
+	g_object_set (s_8021x, NM_SETTING_802_1X_PHASE1_FAST_PROVISIONING, pac_prov_str, NULL);
+
+	if (!pac_file && !(allow_unauth || allow_auth)) {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		             "IEEE_8021X_PAC_FILE not provided and EAP-FAST automatic PAC provisioning disabled.");
+		goto done;
+	}
+
+	anon_ident = svGetValue (ifcfg, "IEEE_8021X_ANON_IDENTITY", FALSE);
+	if (anon_ident && strlen (anon_ident))
+		g_object_set (s_8021x, NM_SETTING_802_1X_ANONYMOUS_IDENTITY, anon_ident, NULL);
+
+	inner_auth = svGetValue (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS", FALSE);
+	if (!inner_auth) {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		             "Missing IEEE_8021X_INNER_AUTH_METHODS.");
+		goto done;
+	}
+
+	/* Handle options for the inner auth method */
+	list = g_strsplit (inner_auth, " ", 0);
+	for (iter = list; iter && *iter; iter++) {
+		if (!strlen (*iter))
+			continue;
+
+		if (   !strcmp (*iter, "MSCHAPV2")
+		    || !strcmp (*iter, "GTC")) {
+			if (!eap_simple_reader (*iter, ifcfg, keys, s_8021x, TRUE, error))
+				goto done;
+		} else {
+			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			             "Unknown IEEE_8021X_INNER_AUTH_METHOD '%s'.",
+			             *iter);
+			goto done;
+		}
+
+		lower = g_ascii_strdown (*iter, -1);
+		g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTH, lower, NULL);
+		g_free (lower);
+		break;
+	}
+
+	if (!nm_setting_802_1x_get_phase2_auth (s_8021x)) {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		             "No valid IEEE_8021X_INNER_AUTH_METHODS found.");
+		goto done;
+	}
+
+	success = TRUE;
+
+done:
+	g_strfreev (list);
+	g_free (inner_auth);
+	g_free (fast_provisioning);
+	g_free (real_pac_path);
+	g_free (pac_file);
+	g_free (anon_ident);
+	return success;
+}
+
 typedef struct {
 	const char *method;
 	gboolean (*reader)(const char *eap_method,
@@ -2460,6 +2565,7 @@ static EAPReader eap_readers[] = {
 	{ "tls", eap_tls_reader, FALSE },
 	{ "peap", eap_peap_reader, FALSE },
 	{ "ttls", eap_ttls_reader, FALSE },
+	{ "fast", eap_fast_reader, FALSE },
 	{ NULL, NULL }
 };
 

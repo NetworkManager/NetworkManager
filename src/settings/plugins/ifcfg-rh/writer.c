@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 - 2011 Red Hat, Inc.
+ * Copyright (C) 2009 - 2012 Red Hat, Inc.
  */
 
 #include <ctype.h>
@@ -503,6 +503,24 @@ write_8021x_setting (NMConnection *connection,
 	svSetValue (ifcfg, "IEEE_8021X_PEAP_FORCE_NEW_LABEL", NULL, FALSE);
 	if (value && !strcmp (value, "1"))
 		svSetValue (ifcfg, "IEEE_8021X_PEAP_FORCE_NEW_LABEL", "yes", FALSE);
+
+	/* PAC file */
+	value = nm_setting_802_1x_get_pac_file (s_8021x);
+	svSetValue (ifcfg, "IEEE_8021X_PAC_FILE", NULL, FALSE);
+	if (value)
+		svSetValue (ifcfg, "IEEE_8021X_PAC_FILE", value, FALSE);
+
+	/* FAST PAC provisioning */
+	value = nm_setting_802_1x_get_phase1_fast_provisioning (s_8021x);
+	svSetValue (ifcfg, "IEEE_8021X_FAST_PROVISIONING", NULL, FALSE);
+	if (value) {
+		if (strcmp (value, "1") == 0)
+			svSetValue (ifcfg, "IEEE_8021X_FAST_PROVISIONING", "allow-unauth", FALSE);
+		else if (strcmp (value, "2") == 0)
+			svSetValue (ifcfg, "IEEE_8021X_FAST_PROVISIONING", "allow-auth", FALSE);
+		else if (strcmp (value, "3") == 0)
+			svSetValue (ifcfg, "IEEE_8021X_FAST_PROVISIONING", "allow-unauth allow-auth", FALSE);
+	}
 
 	/* Phase2 auth methods */
 	svSetValue (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS", NULL, FALSE);
