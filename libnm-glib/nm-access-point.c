@@ -361,7 +361,7 @@ nm_access_point_get_strength (NMAccessPoint *ap)
 /**
  * nm_access_point_connection_valid:
  * @ap: an #NMAccessPoint to validate @connection against
- * @connections: an #NMConnection to validate against @ap
+ * @connection: an #NMConnection to validate against @ap
  *
  * Validates a given connection against a given WiFi access point to ensure that
  * the connection may be activated with that AP.  The connection must match the
