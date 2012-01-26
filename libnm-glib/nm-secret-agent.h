@@ -114,6 +114,9 @@ typedef struct {
  *   secrets_hash = nm_connection_to_hash (secrets);
  *
  *   (call the NMSecretAgentGetSecretsFunc with secrets_hash)
+ *
+ *   g_object_unref (secrets);
+ *   g_hash_table_unref (secrets_hash);
  *  </programlisting>
  * </example>
  */
