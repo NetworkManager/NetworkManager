@@ -77,17 +77,79 @@ typedef struct {
 	GObject parent;
 } NMSecretAgent;
 
+/**
+ * NMSecretAgentGetSecretsFunc:
+ * @agent: the secret agent object
+ * @connection: the connection for which secrets were requested
+ * @secrets: (element-type utf8 GLib.HashTable): the #GHashTable containing
+ * the requested secrets in the same format as an #NMConnection hash (as
+ * created by nm_connection_to_hash() for example).  Each key in @secrets
+ * should be the name of a #NMSetting object (like "802-11-wireless-security")
+ * and each value should be a #GHashTable.  The sub-hashes map string:#GValue
+ * where the string is the setting property name (like "psk") and the value
+ * is the secret
+ * @error: if the secrets request failed, give a descriptive error here 
+ * @user_data: caller-specific data to be passed to the function
+ *
+ * Called as a result of a request by NM to retrieve secrets.  When the
+ * #NMSecretAgent subclass has finished retrieving secrets and is ready to
+ * return them, or to return an error, this function should be called with
+ * those secrets or the error.
+ *
+ * To easily create the hash table to return the WiFi PSK, you could do
+ * something like this:
+ * <example>
+ *  <title>Creating a secrets hash</title>
+ *  <programlisting>
+ *   NMConnection *secrets;
+ *   NMSettingWirelessSecurity *s_wsec;
+ *   GHashTable *secrets_hash;
+ *
+ *   secrets = nm_connection_new ();
+ *   s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+ *   g_object_set (G_OBJECT (s_wsec),
+ *                 NM_SETTING_WIRELESS_SECURITY_PSK, "my really cool PSK",
+ *                 NULL);
+ *   nm_connection_add_setting (secrets, NM_SETTING (s_wsec));
+ *   secrets_hash = nm_connection_to_hash (secrets);
+ *
+ *   (call the NMSecretAgentGetSecretsFunc with secrets_hash)
+ *  </programlisting>
+ * </example>
+ */
 typedef void (*NMSecretAgentGetSecretsFunc) (NMSecretAgent *agent,
                                              NMConnection *connection,
                                              GHashTable *secrets,
                                              GError *error,
                                              gpointer user_data);
 
+/**
+ * NMSecretAgentSaveSecretsFunc:
+ * @agent: the secret agent object
+ * @connection: the connection for which secrets were to be saved
+ * @error: if the saving secrets failed, give a descriptive error here 
+ * @user_data: caller-specific data to be passed to the function
+ *
+ * Called as a result of a request by NM to save secrets.  When the
+ * #NMSecretAgent subclass has finished saving the secrets, this function
+ * should be called.
+ */
 typedef void (*NMSecretAgentSaveSecretsFunc) (NMSecretAgent *agent,
                                               NMConnection *connection,
                                               GError *error,
                                               gpointer user_data);
 
+/**
+ * NMSecretAgentDeleteSecretsFunc:
+ * @agent: the secret agent object
+ * @connection: the connection for which secrets were to be deleted
+ * @error: if the deleting secrets failed, give a descriptive error here 
+ * @user_data: caller-specific data to be passed to the function
+ *
+ * Called as a result of a request by NM to delete secrets.  When the
+ * #NMSecretAgent subclass has finished deleting the secrets, this function
+ * should be called.
+ */
 typedef void (*NMSecretAgentDeleteSecretsFunc) (NMSecretAgent *agent,
                                                 NMConnection *connection,
                                                 GError *error,

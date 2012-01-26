@@ -655,7 +655,7 @@ auto_register_cb (gpointer user_data)
  * @setting_name: the name of the secret setting
  * @hints: (array zero-terminated=1): hints to the agent
  * @flags: flags that modify the behavior of the request
- * @callback: (scope async): a callback, invoked when the operation is done
+ * @callback: (scope async): a callback, to be invoked when the operation is done
  * @user_data: (closure): caller-specific data to be passed to @callback
  *
  * Asyncronously retrieve secrets belonging to @connection for the
@@ -698,7 +698,7 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
  * nm_secret_agent_save_secrets:
  * @self: a #NMSecretAgent
  * @connection: a #NMConnection
- * @callback: (scope async): a callback, invoked when the operation is done
+ * @callback: (scope async): a callback, to be invoked when the operation is done
  * @user_data: (closure): caller-specific data to be passed to @callback
  *
  * Asyncronously ensure that all secrets inside @connection
@@ -729,7 +729,7 @@ nm_secret_agent_save_secrets (NMSecretAgent *self,
  * nm_secret_agent_delete_secrets:
  * @self: a #NMSecretAgent
  * @connection: a #NMConnection
- * @callback: (scope async): a callback, invoked when the operation is done
+ * @callback: (scope async): a callback, to be invoked when the operation is done
  * @user_data: (closure): caller-specific data to be passed to @callback
  *
  * Asynchronously ask the agent to delete all saved secrets belonging to
