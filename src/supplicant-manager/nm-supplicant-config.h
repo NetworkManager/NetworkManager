@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2006 - 2008 Red Hat, Inc.
+ * Copyright (C) 2006 - 2012 Red Hat, Inc.
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
@@ -70,13 +70,13 @@ gboolean nm_supplicant_config_add_setting_wireless (NMSupplicantConfig *self,
 gboolean nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
                                                              NMSettingWirelessSecurity *setting,
                                                              NMSetting8021x *setting_8021x,
-                                                             const char *connection_uid);
+                                                             const char *con_uuid);
 
 gboolean nm_supplicant_config_add_no_security (NMSupplicantConfig *self);
 
 gboolean nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
                                                  NMSetting8021x *setting,
-                                                 const char *connection_uid,
+                                                 const char *con_uuid,
                                                  gboolean wired);
 
 G_END_DECLS

@@ -858,21 +858,21 @@ time_out:
 static NMSupplicantConfig *
 build_supplicant_config (NMDeviceEthernet *self)
 {
-	const char *con_path;
+	const char *con_uuid;
 	NMSupplicantConfig *config = NULL;
 	NMSetting8021x *security;
 	NMConnection *connection;
 
 	connection = nm_device_get_connection (NM_DEVICE (self));
 	g_return_val_if_fail (connection, NULL);
-	con_path = nm_connection_get_path (connection);
+	con_uuid = nm_connection_get_uuid (connection);
 
 	config = nm_supplicant_config_new ();
 	if (!config)
 		return NULL;
 
 	security = nm_connection_get_setting_802_1x (connection);
-	if (!nm_supplicant_config_add_setting_8021x (config, security, con_path, TRUE)) {
+	if (!nm_supplicant_config_add_setting_8021x (config, security, con_uuid, TRUE)) {
 		nm_log_warn (LOGD_DEVICE, "Couldn't add 802.1X security setting to supplicant config.");
 		g_object_unref (config);
 		config = NULL;

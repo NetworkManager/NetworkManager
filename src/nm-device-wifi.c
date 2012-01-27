@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2011 Red Hat, Inc.
+ * Copyright (C) 2005 - 2012 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -2391,14 +2391,14 @@ build_supplicant_config (NMDeviceWifi *self,
 	s_wireless_sec = nm_connection_get_setting_wireless_security (connection);
 	if (s_wireless_sec) {
 		NMSetting8021x *s_8021x;
-		const char *con_path = nm_connection_get_path (connection);
+		const char *con_uuid = nm_connection_get_uuid (connection);
 
-		g_assert (con_path);
+		g_assert (con_uuid);
 		s_8021x = nm_connection_get_setting_802_1x (connection);
 		if (!nm_supplicant_config_add_setting_wireless_security (config,
 		                                                         s_wireless_sec,
 		                                                         s_8021x,
-		                                                         con_path)) {
+		                                                         con_uuid)) {
 			nm_log_err (LOGD_WIFI, "Couldn't add 802-11-wireless-security setting to "
 			            "supplicant config.");
 			goto error;

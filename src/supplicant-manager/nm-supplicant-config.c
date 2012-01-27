@@ -584,7 +584,7 @@ gboolean
 nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
                                                     NMSettingWirelessSecurity *setting,
                                                     NMSetting8021x *setting_8021x,
-                                                    const char *connection_uid)
+                                                    const char *con_uuid)
 {
 	char *value;
 	gboolean success;
@@ -593,7 +593,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
 	g_return_val_if_fail (setting != NULL, FALSE);
-	g_return_val_if_fail (connection_uid != NULL, FALSE);
+	g_return_val_if_fail (con_uuid != NULL, FALSE);
 
 	key_mgmt = nm_setting_wireless_security_get_key_mgmt (setting);
 	if (!add_string_val (self, key_mgmt, "key_mgmt", TRUE, FALSE))
@@ -693,7 +693,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 		if (!strcmp (key_mgmt, "ieee8021x") || !strcmp (key_mgmt, "wpa-eap")) {
 		    if (!setting_8021x)
 		    	return FALSE;
-			if (!nm_supplicant_config_add_setting_8021x (self, setting_8021x, connection_uid, FALSE))
+			if (!nm_supplicant_config_add_setting_8021x (self, setting_8021x, con_uuid, FALSE))
 				return FALSE;
 		}
 
@@ -712,7 +712,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 gboolean
 nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
                                         NMSetting8021x *setting,
-                                        const char *connection_uid,
+                                        const char *con_uuid,
                                         gboolean wired)
 {
 	char *tmp;
@@ -726,7 +726,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
 	g_return_val_if_fail (setting != NULL, FALSE);
-	g_return_val_if_fail (connection_uid != NULL, FALSE);
+	g_return_val_if_fail (con_uuid != NULL, FALSE);
 
 	value = nm_setting_802_1x_get_password (setting);
 	if (value) {
@@ -851,7 +851,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 		 * If provisioning is allowed, use an blob format.
 		 */
 		if (fast_provisoning_allowed) {
-			char *blob_name = g_strdup_printf ("blob://pac-blob-%s", connection_uid);
+			char *blob_name = g_strdup_printf ("blob://pac-blob-%s", con_uuid);
 			if (!add_string_val (self, blob_name, "pac_file", FALSE, FALSE)) {
 				g_free (blob_name);
 				return FALSE;
@@ -883,7 +883,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	switch (nm_setting_802_1x_get_ca_cert_scheme (setting)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		array = nm_setting_802_1x_get_ca_cert_blob (setting);
-		ADD_BLOB_VAL (array, "ca_cert", connection_uid);
+		ADD_BLOB_VAL (array, "ca_cert", con_uuid);
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		path = nm_setting_802_1x_get_ca_cert_path (setting);
@@ -898,7 +898,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	switch (nm_setting_802_1x_get_phase2_ca_cert_scheme (setting)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		array = nm_setting_802_1x_get_phase2_ca_cert_blob (setting);
-		ADD_BLOB_VAL (array, "ca_cert2", connection_uid);
+		ADD_BLOB_VAL (array, "ca_cert2", con_uuid);
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		path = nm_setting_802_1x_get_phase2_ca_cert_path (setting);
@@ -926,7 +926,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	switch (nm_setting_802_1x_get_private_key_scheme (setting)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		array = nm_setting_802_1x_get_private_key_blob (setting);
-		ADD_BLOB_VAL (array, "private_key", connection_uid);
+		ADD_BLOB_VAL (array, "private_key", con_uuid);
 		added = TRUE;
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
@@ -964,7 +964,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 			switch (nm_setting_802_1x_get_client_cert_scheme (setting)) {
 			case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 				array = nm_setting_802_1x_get_client_cert_blob (setting);
-				ADD_BLOB_VAL (array, "client_cert", connection_uid);
+				ADD_BLOB_VAL (array, "client_cert", con_uuid);
 				break;
 			case NM_SETTING_802_1X_CK_SCHEME_PATH:
 				path = nm_setting_802_1x_get_client_cert_path (setting);
@@ -982,7 +982,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	switch (nm_setting_802_1x_get_phase2_private_key_scheme (setting)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		array = nm_setting_802_1x_get_phase2_private_key_blob (setting);
-		ADD_BLOB_VAL (array, "private_key2", connection_uid);
+		ADD_BLOB_VAL (array, "private_key2", con_uuid);
 		added = TRUE;
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
@@ -1020,7 +1020,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 			switch (nm_setting_802_1x_get_phase2_client_cert_scheme (setting)) {
 			case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 				array = nm_setting_802_1x_get_phase2_client_cert_blob (setting);
-				ADD_BLOB_VAL (array, "client_cert2", connection_uid);
+				ADD_BLOB_VAL (array, "client_cert2", con_uuid);
 				break;
 			case NM_SETTING_802_1X_CK_SCHEME_PATH:
 				path = nm_setting_802_1x_get_phase2_client_cert_path (setting);
