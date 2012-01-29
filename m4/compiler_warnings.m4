@@ -1,7 +1,7 @@
 AC_DEFUN([NM_COMPILER_WARNINGS],
 [AC_ARG_ENABLE(more-warnings,
-	AS_HELP_STRING([--enable-more-warnings], [Maximum compiler warnings]),
-	set_more_warnings="$enableval",set_more_warnings=yes)
+	AS_HELP_STRING([--enable-more-warnings], [Possible values: no/yes/error]),
+	set_more_warnings="$enableval",set_more_warnings=error)
 AC_MSG_CHECKING(for more warnings)
 if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 	AC_MSG_RESULT(yes)
@@ -26,7 +26,9 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 		unset SAVE_CFLAGS
 	done
 	unset option
-	CFLAGS="$CFLAGS -Werror"
+	if test "x$set_more_warnings" = xerror; then
+		CFLAGS="$CFLAGS -Werror"
+	fi
 else
 	AC_MSG_RESULT(no)
 fi
