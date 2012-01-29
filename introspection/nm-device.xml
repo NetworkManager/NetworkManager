@@ -51,6 +51,11 @@
         The current state of the device.
       </tp:docstring>
     </property>
+    <property name="StateReason" type="(uu)" access="read" tp:type="NM_DEVICE_STATE_REASON_STRUCT">
+      <tp:docstring>
+        The current state and reason for changing to that state.
+      </tp:docstring>
+    </property>
     <property name="ActiveConnection" type="o" access="read">
       <tp:docstring>
         Object path of an ActiveConnection object that "owns" this device during
@@ -498,5 +503,17 @@
       </tp:enumvalue>
     </tp:enum>
 
+    <tp:struct name="NM_DEVICE_STATE_REASON_STRUCT">
+      <tp:member type="u" name="state" tp:type="NM_DEVICE_STATE">
+        <tp:docstring>
+          The device state.
+        </tp:docstring>
+      </tp:member>
+      <tp:member type="u" name="reason" tp:type="NM_DEVICE_STATE_REASON">
+        <tp:docstring>
+          The reason for originally changing to the device state.
+        </tp:docstring>
+      </tp:member>
+    </tp:struct>
   </interface>
 </node>

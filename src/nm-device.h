@@ -47,6 +47,7 @@
 #define NM_DEVICE_IP6_CONFIG       "ip6-config"
 #define NM_DEVICE_DHCP6_CONFIG     "dhcp6-config"
 #define NM_DEVICE_STATE            "state"
+#define NM_DEVICE_STATE_REASON     "state-reason"
 #define NM_DEVICE_ACTIVE_CONNECTION "active-connection"
 #define NM_DEVICE_DEVICE_TYPE      "device-type" /* ugh */
 #define NM_DEVICE_MANAGED          "managed"

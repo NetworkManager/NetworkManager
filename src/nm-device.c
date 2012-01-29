@@ -66,6 +66,8 @@ static void impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *con
 #define PENDING_IP4_CONFIG "pending-ip4-config"
 #define PENDING_IP6_CONFIG "pending-ip6-config"
 
+#define DBUS_G_TYPE_UINT_STRUCT (dbus_g_type_get_struct ("GValueArray", G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INVALID))
+
 /***********************************************************/
 typedef enum {
 	NM_DEVICE_ERROR_CONNECTION_ACTIVATING = 0,
@@ -131,6 +133,7 @@ enum {
 	PROP_IP6_CONFIG,
 	PROP_DHCP6_CONFIG,
 	PROP_STATE,
+	PROP_STATE_REASON,
 	PROP_ACTIVE_CONNECTION,
 	PROP_DEVICE_TYPE,
 	PROP_MANAGED,
@@ -164,6 +167,7 @@ typedef struct {
 	gboolean initialized;
 
 	NMDeviceState state;
+	NMDeviceStateReason state_reason;
 	QueuedState   queued_state;
 
 	char *        udi;
@@ -273,6 +277,7 @@ nm_device_init (NMDevice *self)
 	priv->type = NM_DEVICE_TYPE_UNKNOWN;
 	priv->capabilities = NM_DEVICE_CAP_NONE;
 	priv->state = NM_DEVICE_STATE_UNMANAGED;
+	priv->state_reason = NM_DEVICE_STATE_REASON_NONE;
 	priv->dhcp_timeout = 0;
 	priv->rfkill_type = RFKILL_TYPE_UNKNOWN;
 }
@@ -3693,6 +3698,14 @@ get_property (GObject *object, guint prop_id,
 	case PROP_STATE:
 		g_value_set_uint (value, priv->state);
 		break;
+	case PROP_STATE_REASON:
+		g_value_set_boxed (value,
+			dbus_g_type_specialized_construct (DBUS_G_TYPE_UINT_STRUCT));
+		dbus_g_type_struct_set (value,
+		                        0, priv->state,
+		                        1, priv->state_reason,
+		                        G_MAXUINT);
+		break;
 	case PROP_ACTIVE_CONNECTION:
 		if (priv->act_request)
 			ac_path = nm_act_request_get_active_connection_path (priv->act_request);
@@ -3832,6 +3845,13 @@ nm_device_class_init (NMDeviceClass *klass)
 		                    "State",
 		                    0, G_MAXUINT32, NM_DEVICE_STATE_UNKNOWN,
 		                    G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_STATE_REASON,
+		 g_param_spec_boxed (NM_DEVICE_STATE_REASON,
+		                     "StateReason",
+		                     "StateReason",
+		                     DBUS_G_TYPE_UINT_STRUCT,
+		                     G_PARAM_READABLE));
 
 	g_object_class_install_property
 		(object_class, PROP_ACTIVE_CONNECTION,
@@ -4109,6 +4129,7 @@ nm_device_state_changed (NMDevice *device,
 
 	old_state = priv->state;
 	priv->state = state;
+	priv->state_reason = reason;
 
 	nm_log_info (LOGD_DEVICE, "(%s): device state change: %s -> %s (reason '%s') [%d %d %d]",
 	             nm_device_get_iface (device),
@@ -4158,6 +4179,7 @@ nm_device_state_changed (NMDevice *device,
 	}
 
 	g_object_notify (G_OBJECT (device), NM_DEVICE_STATE);
+	g_object_notify (G_OBJECT (device), NM_DEVICE_STATE_REASON);
 	g_signal_emit_by_name (device, "state-changed", state, old_state, reason);
 
 	/* Post-process the event after internal notification */
