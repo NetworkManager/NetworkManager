@@ -720,7 +720,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	gboolean success, added;
 	GString *phase1, *phase2;
 	const GByteArray *array;
-	gboolean peap = FALSE;
+	gboolean peap = FALSE, fast = FALSE;
 	guint32 i, num_eap;
 	gboolean fast_provisoning_allowed = FALSE;
 
@@ -759,15 +759,15 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 
 	ADD_STRING_LIST_VAL (setting, 802_1x, eap_method, eap_methods, "eap", ' ', TRUE, FALSE);
 
-	/* Check for PEAP + GTC */
+	/* Check EAP method for special handling: PEAP + GTC, FAST */
 	num_eap = nm_setting_802_1x_get_num_eap_methods (setting);
 	for (i = 0; i < num_eap; i++) {
 		const char *method = nm_setting_802_1x_get_eap_method (setting, i);
 
-		if (method && (strcasecmp (method, "peap") == 0)) {
+		if (method && (strcasecmp (method, "peap") == 0))
 			peap = TRUE;
-			break;
-		}
+		if (method && (strcasecmp (method, "fast") == 0))
+			fast = TRUE;
 	}
 
 	/* When using PEAP-GTC, we're likely using Cisco kit, so we want to turn
@@ -857,8 +857,14 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 				return FALSE;
 			}
 			g_free (blob_name);
-		} else
-			return FALSE;
+		} else {
+			/* This is only error for EAP-FAST; don't disturb other methods. */
+			if (fast) {
+				nm_log_err (LOGD_SUPPLICANT, "EAP-FAST error: no PAC file provided and "
+				                              "automatic PAC provisioning is disabled.");
+				return FALSE;
+			}
+		}
 	}
 
 	/* CA path */
