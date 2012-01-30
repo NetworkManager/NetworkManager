@@ -178,6 +178,8 @@ nm_setting_vpn_get_user_name (NMSettingVPN *setting)
  * @setting: the #NMSettingVPN
  *
  * Gets number of key/value pairs of VPN configuration data.
+ *
+ * Returns: the number of VPN plugin specific configuration data items
  **/
 guint32
 nm_setting_vpn_get_num_data_items (NMSettingVPN *setting)
@@ -302,6 +304,8 @@ nm_setting_vpn_foreach_data_item (NMSettingVPN *setting,
  * @setting: the #NMSettingVPN
  *
  * Gets number of VPN plugin specific secrets in the setting.
+ *
+ * Returns: the number of VPN plugin specific secrets
  **/
 guint32
 nm_setting_vpn_get_num_secrets (NMSettingVPN *setting)
