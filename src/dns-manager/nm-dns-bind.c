@@ -413,7 +413,7 @@ update (NMDnsPlugin *plugin,
 		g_clear_error (&error);
 		goto out;
 	}
-	ignored = chmod (CONFFILE, 0600);
+	ignored = chmod (CONFFILE, 0644);
 
 	nm_log_dbg (LOGD_DNS, "BIND local caching DNS configuration:");
 	nm_log_dbg (LOGD_DNS, "%s", conf->str);
