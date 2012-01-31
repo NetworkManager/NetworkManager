@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <netinet/ether.h>
+#include <linux/if_infiniband.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -11774,6 +11775,228 @@ test_read_vlan_interface (void)
 	g_free (route6file);
 }
 
+#define TEST_IFCFG_INFINIBAND TEST_IFCFG_DIR"/network-scripts/ifcfg-test-infiniband"
+
+static void
+test_read_infiniband (void)
+{
+	NMConnection *connection;
+	NMSettingInfiniband *s_infiniband;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const GByteArray *array;
+	char expected_mac_address[INFINIBAND_ALEN] = { 0x80, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00, 0x11, 0x22 };
+	const char *transport_mode;
+
+	connection = connection_from_file (TEST_IFCFG_INFINIBAND,
+	                                   NULL,
+	                                   TYPE_INFINIBAND,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "infiniband-read", "failed to read %s: %s", TEST_IFCFG_INFINIBAND, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "infiniband-verify", "failed to verify %s: %s", TEST_IFCFG_INFINIBAND, error->message);
+
+	ASSERT (unmanaged == NULL,
+	        "infiniband-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_INFINIBAND);
+
+	/* ===== INFINIBAND SETTING ===== */
+
+	s_infiniband = nm_connection_get_setting_infiniband (connection);
+	ASSERT (s_infiniband != NULL,
+	        "infiniband-verify-wired", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_INFINIBAND,
+	        NM_SETTING_INFINIBAND_SETTING_NAME);
+
+	/* MAC address */
+	array = nm_setting_infiniband_get_mac_address (s_infiniband);
+	ASSERT (array != NULL,
+	        "infiniband-verify-infiniband", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_INFINIBAND,
+	        NM_SETTING_INFINIBAND_SETTING_NAME,
+	        NM_SETTING_INFINIBAND_MAC_ADDRESS);
+	ASSERT (array->len == INFINIBAND_ALEN,
+	        "infiniband-verify-infiniband", "failed to verify %s: unexpected %s / %s key value length",
+	        TEST_IFCFG_INFINIBAND,
+	        NM_SETTING_INFINIBAND_SETTING_NAME,
+	        NM_SETTING_INFINIBAND_MAC_ADDRESS);
+	ASSERT (memcmp (array->data, &expected_mac_address[0], sizeof (expected_mac_address)) == 0,
+	        "infiniband-verify-infiniband", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_INFINIBAND,
+	        NM_SETTING_INFINIBAND_SETTING_NAME,
+	        NM_SETTING_INFINIBAND_MAC_ADDRESS);
+
+	/* Transport mode */
+	transport_mode = nm_setting_infiniband_get_transport_mode (s_infiniband);
+	ASSERT (transport_mode != NULL,
+	        "infiniband-verify-infiniband", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_INFINIBAND,
+	        NM_SETTING_INFINIBAND_SETTING_NAME,
+	        NM_SETTING_INFINIBAND_TRANSPORT_MODE);
+	ASSERT (strcmp (transport_mode, "connected") == 0,
+	        "infiniband-verify-infiniband", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_INFINIBAND,
+	        NM_SETTING_INFINIBAND_SETTING_NAME,
+	        NM_SETTING_INFINIBAND_TRANSPORT_MODE);
+
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+	g_object_unref (connection);
+}
+
+static void
+test_write_infiniband (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingInfiniband *s_infiniband;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	unsigned char tmpmac[INFINIBAND_ALEN] = { 0x80, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00, 0x11, 0x22 };
+	GByteArray *mac;
+	guint32 mtu = 65520;
+	char *uuid;
+	const guint32 ip1 = htonl (0x01010103);
+	const guint32 gw = htonl (0x01010101);
+	const guint32 prefix = 24;
+	NMIP4Address *addr;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "infiniband-write", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "infiniband-write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Infiniband",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_INFINIBAND_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Infiniband setting */
+	s_infiniband = (NMSettingInfiniband *) nm_setting_infiniband_new ();
+	ASSERT (s_infiniband != NULL,
+	        "infiniband-write", "failed to allocate new %s setting",
+	        NM_SETTING_INFINIBAND_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_infiniband));
+
+	mac = g_byte_array_sized_new (sizeof (tmpmac));
+	g_byte_array_append (mac, &tmpmac[0], sizeof (tmpmac));
+
+	g_object_set (s_infiniband,
+	              NM_SETTING_INFINIBAND_MAC_ADDRESS, mac,
+	              NM_SETTING_INFINIBAND_MTU, mtu,
+	              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "connected",
+	              NULL);
+	g_byte_array_free (mac, TRUE);
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+			"infiniband-write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4,
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP4_CONFIG_MAY_FAIL, TRUE,
+	              NULL);
+
+	addr = nm_ip4_address_new ();
+	nm_ip4_address_set_address (addr, ip1);
+	nm_ip4_address_set_prefix (addr, prefix);
+	nm_ip4_address_set_gateway (addr, gw);
+	nm_setting_ip4_config_add_address (s_ip4, addr);
+	nm_ip4_address_unref (addr);
+
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	ASSERT (s_ip6 != NULL,
+	        "wired-static-write", "failed to allocate new %s setting",
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6,
+	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NULL);
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "infiniband-write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == TRUE,
+	        "infiniband-write", "failed to write connection to disk: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (testfile != NULL,
+	        "infiniband-write", "didn't get ifcfg file path back after writing connection");
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_INFINIBAND,
+	                               NULL,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &routefile,
+	                               &route6file,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	ASSERT (reread != NULL,
+	        "infiniband-write-reread", "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_verify (reread, &error),
+	        "infiniband-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+	        "infiniband-write", "written and re-read connection weren't the same.");
+
+	g_free (testfile);
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
 #define TEST_IFCFG_WIFI_OPEN_SSID_BAD_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-bad-hex"
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_QUOTED TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-quoted"
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-hex"
@@ -11856,6 +12079,7 @@ int main (int argc, char **argv)
 	test_read_wifi_wep_no_keys ();
 	test_read_permissions ();
 	test_read_wifi_wep_agent_keys ();
+	test_read_infiniband ();
 
 	test_write_wired_static ();
 	test_write_wired_static_ip6_only ();
@@ -11919,6 +12143,7 @@ int main (int argc, char **argv)
 	test_write_wired_ctc_dhcp ();
 	test_write_permissions ();
 	test_write_wifi_wep_agent_keys ();
+	test_write_infiniband ();
 
 	/* iSCSI / ibft */
 	test_read_ibft_dhcp ();

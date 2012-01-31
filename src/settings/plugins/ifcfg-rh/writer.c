@@ -28,6 +28,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <netinet/ether.h>
 
 #include <nm-setting-connection.h>
 #include <nm-setting-wired.h>
@@ -962,6 +963,48 @@ write_wireless_setting (NMConnection *connection,
 }
 
 static gboolean
+write_infiniband_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
+{
+	NMSettingInfiniband *s_infiniband;
+	const GByteArray *mac;
+	char *tmp;
+	const char *transport_mode;
+	guint32 mtu;
+
+	s_infiniband = nm_connection_get_setting_infiniband (connection);
+	if (!s_infiniband) {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		             "Missing '%s' setting", NM_SETTING_INFINIBAND_SETTING_NAME);
+		return FALSE;
+	}
+
+	svSetValue (ifcfg, "HWADDR", NULL, FALSE);
+	mac = nm_setting_infiniband_get_mac_address (s_infiniband);
+	if (mac) {
+		tmp = nm_utils_hwaddr_ntoa (mac->data, ARPHRD_INFINIBAND);
+		svSetValue (ifcfg, "HWADDR", tmp, FALSE);
+		g_free (tmp);
+	}
+
+	svSetValue (ifcfg, "MTU", NULL, FALSE);
+	mtu = nm_setting_infiniband_get_mtu (s_infiniband);
+	if (mtu) {
+		tmp = g_strdup_printf ("%u", mtu);
+		svSetValue (ifcfg, "MTU", tmp, FALSE);
+		g_free (tmp);
+	}
+
+	transport_mode = nm_setting_infiniband_get_transport_mode (s_infiniband);
+	svSetValue (ifcfg, "CONNECTED_MODE",
+	            strcmp (transport_mode, "connected") == 0 ? "yes" : "no",
+	            FALSE);
+
+	svSetValue (ifcfg, "TYPE", TYPE_INFINIBAND, FALSE);
+
+	return TRUE;
+}
+
+static gboolean
 write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 {
 	NMSettingWired *s_wired;
@@ -1791,6 +1834,9 @@ write_connection (NMConnection *connection,
 		wired = TRUE;
 	} else if (!strcmp (type, NM_SETTING_WIRELESS_SETTING_NAME)) {
 		if (!write_wireless_setting (connection, ifcfg, &no_8021x, error))
+			goto out;
+	} else if (!strcmp (type, NM_SETTING_INFINIBAND_SETTING_NAME)) {
+		if (!write_infiniband_setting (connection, ifcfg, error))
 			goto out;
 	} else {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
