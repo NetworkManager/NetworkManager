@@ -501,6 +501,11 @@
           GSM Modem's SIM wrong
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="INFINIBAND_MODE" value="49">
+        <tp:docstring>
+          Infiniband device does not support connected mode.
+        </tp:docstring>
+      </tp:enumvalue>
     </tp:enum>
 
     <tp:struct name="NM_DEVICE_STATE_REASON_STRUCT">
