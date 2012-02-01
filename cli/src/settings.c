@@ -447,11 +447,13 @@ static NmcOutputField nmc_fields_setting_infiniband[] = {
 	SETTING_FIELD ("name",  12),                                       /* 0 */
 	SETTING_FIELD (NM_SETTING_INFINIBAND_MAC_ADDRESS, 61),             /* 1 */
 	SETTING_FIELD (NM_SETTING_INFINIBAND_MTU, 6),                      /* 2 */
+	SETTING_FIELD (NM_SETTING_INFINIBAND_TRANSPORT_MODE, 12),          /* 3 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTING_INFINIBAND_ALL     "name"","\
                                               NM_SETTING_INFINIBAND_MAC_ADDRESS","\
-                                              NM_SETTING_INFINIBAND_MTU
+                                              NM_SETTING_INFINIBAND_MTU","\
+                                              NM_SETTING_INFINIBAND_TRANSPORT_MODE
 #define NMC_FIELDS_SETTING_INFINIBAND_COMMON  NMC_FIELDS_SETTING_INFINIBAND_ALL
 
 
@@ -1546,6 +1548,7 @@ setting_infiniband_details (NMSettingInfiniband *s_infiniband, NmCli *nmc)
 	nmc->allowed_fields[0].value = NM_SETTING_INFINIBAND_SETTING_NAME;
 	nmc->allowed_fields[1].value = mac_str;
 	nmc->allowed_fields[2].value = strcmp (mtu_str, "0") ? mtu_str : _("auto");
+	nmc->allowed_fields[3].value = nm_setting_infiniband_get_transport_mode (s_infiniband);
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
