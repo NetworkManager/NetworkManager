@@ -20,13 +20,12 @@
 
 #include "config.h"
 #include <errno.h>
-#include <pwd.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <gio/gio.h>
 #include "nm-logging.h"
 
+#include "nm-session-utils.h"
 #include "nm-session-monitor.h"
 
 #define CKDB_PATH "/var/run/ConsoleKit/database"
@@ -66,53 +65,6 @@ G_DEFINE_TYPE (NMSessionMonitor, nm_session_monitor, G_TYPE_OBJECT);
 
 /********************************************************************/
 
-#define NM_SESSION_MONITOR_ERROR         (nm_session_monitor_error_quark ())
-GQuark nm_session_monitor_error_quark    (void) G_GNUC_CONST;
-GType  nm_session_monitor_error_get_type (void) G_GNUC_CONST;
-
-typedef enum {
-	NM_SESSION_MONITOR_ERROR_IO_ERROR = 0,
-	NM_SESSION_MONITOR_ERROR_MALFORMED_DATABASE,
-	NM_SESSION_MONITOR_ERROR_UNKNOWN_USER,
-	NM_SESSION_MONITOR_ERROR_NO_DATABASE,
-} NMSessionMonitorError;
-
-GQuark
-nm_session_monitor_error_quark (void)
-{
-	static GQuark ret = 0;
-
-	if (G_UNLIKELY (ret == 0))
-		ret = g_quark_from_static_string ("nm-session-monitor-error");
-	return ret;
-}
-
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-GType
-nm_session_monitor_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			/* Some I/O operation on the CK database failed */
-			ENUM_ENTRY (NM_SESSION_MONITOR_ERROR_IO_ERROR, "IOError"),
-			/* Error parsing the CK database */
-			ENUM_ENTRY (NM_SESSION_MONITOR_ERROR_MALFORMED_DATABASE, "MalformedDatabase"),
-			/* Username or UID could could not be found */
-			ENUM_ENTRY (NM_SESSION_MONITOR_ERROR_UNKNOWN_USER, "UnknownUser"),
-			/* No ConsoleKit database */
-			ENUM_ENTRY (NM_SESSION_MONITOR_ERROR_NO_DATABASE, "NoDatabase"),
-			{ 0, 0, 0 }
-		};
-
-		etype = g_enum_register_static ("NMSessionMonitorError", values);
-	}
-	return etype;
-}
-/********************************************************************/
-
 typedef struct {
 	char *user;
 	uid_t uid;
@@ -149,7 +101,7 @@ session_new (GKeyFile *keyfile, const char *group, GError **error)
 {
 	GError *local = NULL;
 	Session *s;
-	struct passwd *pw;
+	const char *uname = NULL;
 
 	s = g_new0 (Session, 1);
 	g_assert (s);
@@ -173,16 +125,9 @@ session_new (GKeyFile *keyfile, const char *group, GError **error)
 	if (local)
 		goto error;
 
-	pw = getpwuid (s->uid);
-	if (!pw) {
-		g_set_error (&local,
-			         NM_SESSION_MONITOR_ERROR,
-			         NM_SESSION_MONITOR_ERROR_UNKNOWN_USER,
-			         "Could not get username for UID %d",
-			         s->uid);
-		goto error;
-	}
-	s->user = g_strdup (pw->pw_name);
+	if (!nm_session_uid_to_user (s->uid, &uname, error))
+		return FALSE;
+	s->user = g_strdup (uname);
 
 	return s;
 
@@ -427,50 +372,6 @@ nm_session_monitor_get (void)
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
-
-#if NO_CONSOLEKIT
-static gboolean
-uid_to_user (uid_t uid, const char **out_user, GError **error)
-{
-	struct passwd *pw;
-
-	pw = getpwuid (uid);
-	if (!pw) {
-		g_set_error (error,
-			         NM_SESSION_MONITOR_ERROR,
-			         NM_SESSION_MONITOR_ERROR_UNKNOWN_USER,
-			         "Could not get username for UID %d",
-			         uid);
-		return FALSE;
-	}
-
-	/* Ugly, but hey, use ConsoleKit */
-	if (out_user)
-		*out_user = pw->pw_name;
-	return TRUE;
-}
-
-static gboolean
-user_to_uid (const char *user, uid_t *out_uid, GError **error)
-{
-	struct passwd *pw;
-
-	pw = getpwnam (user);
-	if (!pw) {
-		g_set_error (error,
-			         NM_SESSION_MONITOR_ERROR,
-			         NM_SESSION_MONITOR_ERROR_UNKNOWN_USER,
-			         "Could not get UID for username '%s'",
-			         user);
-		return FALSE;
-	}
-
-	/* Ugly, but hey, use ConsoleKit */
-	if (out_uid)
-		*out_uid = pw->pw_uid;
-	return TRUE;
-}
-#endif
 
 /**
  * nm_session_monitor_user_has_session:

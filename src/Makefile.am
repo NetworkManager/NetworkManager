@@ -183,7 +183,9 @@ NetworkManager_SOURCES = \
 		nm-dhcp6-config.c \
 		nm-dhcp6-config.h \
 		nm-rfkill.h \
-		nm-session-monitor.h
+		nm-session-monitor.h \
+		nm-session-utils.c \
+		nm-session-utils.h
 
 if WITH_SYSTEMD
 NetworkManager_SOURCES += \
