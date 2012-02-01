@@ -242,8 +242,7 @@ read_hostname (const char *path)
 		if (g_str_has_prefix (all_lines[i], "hostname")) {
 			tmp = strstr (all_lines[i], "=");
 			tmp++;
-			tmp = strip_string (tmp, '"');
-			result = g_strdup (tmp);
+			result = g_shell_unquote (tmp, NULL);
 			break;
 		}
 
