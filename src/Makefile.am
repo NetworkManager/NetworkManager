@@ -187,13 +187,14 @@ NetworkManager_SOURCES = \
 		nm-session-utils.c \
 		nm-session-utils.h
 
-if WITH_SYSTEMD
-NetworkManager_SOURCES += \
-		nm-session-monitor-systemd.c
-
+if SESSION_TRACKING_SYSTEMD
+NetworkManager_SOURCES += nm-session-monitor-systemd.c
 else
-NetworkManager_SOURCES += \
-		nm-session-monitor.c
+if SESSION_TRACKING_CK
+NetworkManager_SOURCES += nm-session-monitor-ck.c
+else
+NetworkManager_SOURCES += nm-session-monitor-null.c
+endif
 endif
 
 nm-access-point-glue.h: $(top_srcdir)/introspection/nm-access-point.xml

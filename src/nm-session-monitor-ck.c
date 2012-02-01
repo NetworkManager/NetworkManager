@@ -234,10 +234,6 @@ ensure_database (NMSessionMonitor *self, GError **error)
 {
 	gboolean ret = FALSE;
 
-#if NO_CONSOLEKIT
-	return TRUE;
-#endif
-
 	if (self->database != NULL) {
 		struct stat statbuf;
 
@@ -283,10 +279,6 @@ nm_session_monitor_init (NMSessionMonitor *self)
 {
 	GError *error = NULL;
 	GFile *file;
-
-#if NO_CONSOLEKIT
-	return;
-#endif
 
 	/* Sessions-by-user is responsible for destroying the Session objects */
 	self->sessions_by_user = g_hash_table_new_full (g_str_hash, g_str_equal,
@@ -392,12 +384,6 @@ nm_session_monitor_user_has_session (NMSessionMonitor *monitor,
 {
 	Session *s;
 
-#if NO_CONSOLEKIT
-	if (!user_to_uid (username, out_uid, error))
-		return FALSE;
-	return TRUE;
-#endif
-
 	if (!ensure_database (monitor, error))
 		return FALSE;
 
@@ -435,12 +421,6 @@ nm_session_monitor_uid_has_session (NMSessionMonitor *monitor,
 {
 	Session *s;
 
-#if NO_CONSOLEKIT
-	if (!uid_to_user (uid, out_user, error))
-		return FALSE;
-	return TRUE;
-#endif
-
 	if (!ensure_database (monitor, error))
 		return FALSE;
 
@@ -477,10 +457,6 @@ nm_session_monitor_user_active (NMSessionMonitor *monitor,
 {
 	Session *s;
 
-#if NO_CONSOLEKIT
-	return TRUE;
-#endif
-
 	if (!ensure_database (monitor, error))
 		return FALSE;
 
@@ -514,10 +490,6 @@ nm_session_monitor_uid_active (NMSessionMonitor *monitor,
                                GError **error)
 {
 	Session *s;
-
-#if NO_CONSOLEKIT
-	return TRUE;
-#endif
 
 	if (!ensure_database (monitor, error))
 		return FALSE;

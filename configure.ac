@@ -312,7 +312,7 @@ else
 fi
 AC_SUBST(UDEV_BASE_DIR)
 
-# systemd
+# systemd unit support
 AC_ARG_WITH([systemdsystemunitdir],
  AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files]),
  [],
@@ -322,37 +322,27 @@ if test "x$with_systemdsystemunitdir" != xno; then
 fi
 AM_CONDITIONAL(HAVE_SYSTEMD, [test -n "$with_systemdsystemunitdir" -a "x$with_systemdsystemunitdir" != xno ])
 
-SESSION_TRACKING=none
-
-dnl
-dnl Disable ConsoleKit support
-dnl
-AC_ARG_WITH(ck, AS_HELP_STRING([--without-ck], [Build NetworkManager without ConsoleKit session tracking support]))
-AM_CONDITIONAL(WITH_CONSOLEKIT, test x"$with_ck" != xno)
-no_ck=0
-if test x"$with_ck" = x"no"; then
-	no_ck="1"
-else
-	with_ck="yes"
-        SESSION_TRACKING=ConsoleKit
-fi
-AC_DEFINE_UNQUOTED(NO_CONSOLEKIT, $no_ck, [Define to disable use of ConsoleKit])
-
-# systemd session tracking
-AC_ARG_ENABLE([systemd],
-              AS_HELP_STRING([--enable-systemd], [Use systemd for session tracking]),
-              [with_systemd=$enableval],
-              [with_systemd=no])
-if test "$with_systemd" = "yes" ; then
-  PKG_CHECK_MODULES(SYSTEMD, [libsystemd-login])
-  SESSION_TRACKING=systemd
+AC_ARG_WITH(session-tracking, AS_HELP_STRING([--with-session-tracking=systemd], [Build NetworkManager with specific session tracking support]))
+if test "z$with_session_tracking" = "z"; then
+    # Default to ConsoleKit session tracking like we used before
+    with_session_tracking=ck
 fi
 
+case $with_session_tracking in
+    ck|none) ;;
+    systemd)
+        PKG_CHECK_MODULES(SYSTEMD, [libsystemd-login])
+        ;;
+    *)
+	AC_MSG_ERROR(--with-session-tracking must be one of [none, ck, systemd])
+        ;;
+esac
 AC_SUBST(SYSTEMD_CFLAGS)
 AC_SUBST(SYSTEMD_LIBS)
+AM_CONDITIONAL(SESSION_TRACKING_CK, test "x$with_session_tracking" = "xck")
+AM_CONDITIONAL(SESSION_TRACKING_SYSTEMD, test "x$with_session_tracking" = "xsystemd")
 
 
-AM_CONDITIONAL(WITH_SYSTEMD, [test "$with_systemd" = "yes"], [Using systemd])
 have_libnl="no"
 PKG_CHECK_MODULES(LIBNL3, libnl-3.0, [have_libnl3=yes], [have_libnl3=no])
 PKG_CHECK_MODULES(LIBNL_ROUTE3, libnl-route-3.0, [have_libnl_route3=yes], [have_libnl_route3=no])
@@ -806,7 +796,7 @@ else
 	echo PolicyKit support: no
 fi
 
-        echo Session tracking: ${SESSION_TRACKING}
+        echo Session tracking: ${with_session_tracking}
 
 if test "${enable_wimax}" = "yes"; then
 	echo WiMAX support: yes
