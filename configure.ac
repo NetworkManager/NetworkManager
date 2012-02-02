@@ -300,6 +300,9 @@ if (test "${enable_qt}" = "yes"); then
 	fi
 	AC_SUBST(QT_CFLAGS)
 	AC_SUBST(QT_LIBS)
+	# Check for moc-qt4 and if not found then moc
+	QT4_BINDIR=`$PKG_CONFIG Qt --variable bindir`
+	AC_CHECK_PROGS(MOC, [moc-qt4 moc],, [$QT4_BINDIR:$PATH])
 fi
 AM_CONDITIONAL(WITH_QT, test "${enable_qt}" = "yes")
 
