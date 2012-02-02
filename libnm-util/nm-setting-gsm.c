@@ -292,13 +292,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingGsmPrivate *priv = NM_SETTING_GSM_GET_PRIVATE (setting);
 
-	if (!priv->number) {
-		g_set_error (error,
-		             NM_SETTING_GSM_ERROR,
-		             NM_SETTING_GSM_ERROR_MISSING_PROPERTY,
-		             NM_SETTING_GSM_NUMBER);
-		return FALSE;
-	} else if (!strlen (priv->number)) {
+	if (priv->number && !priv->number[0]) {
 		g_set_error (error,
 		             NM_SETTING_GSM_ERROR,
 		             NM_SETTING_GSM_ERROR_INVALID_PROPERTY,

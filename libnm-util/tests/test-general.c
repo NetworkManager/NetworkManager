@@ -444,6 +444,26 @@ test_setting_gsm_apn_underscore (void)
 	g_assert (success == TRUE);
 }
 
+static void
+test_setting_gsm_without_number (void)
+{
+	NMSettingGsm *s_gsm;
+	GError *error = NULL;
+	gboolean success;
+
+	s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
+	g_assert (s_gsm);
+
+	g_object_set (s_gsm, NM_SETTING_GSM_NUMBER, NULL, NULL);
+	success = nm_setting_verify (NM_SETTING (s_gsm), NULL, &error);
+	g_assert_no_error (error);
+	g_assert (success == TRUE);
+
+	g_object_set (s_gsm, NM_SETTING_GSM_NUMBER, "", NULL);
+	success = nm_setting_verify (NM_SETTING (s_gsm), NULL, &error);
+	g_assert_error (error, NM_SETTING_GSM_ERROR, NM_SETTING_GSM_ERROR_INVALID_PROPERTY);
+}
+
 static NMSettingWirelessSecurity *
 make_test_wsec_setting (const char *detail)
 {
@@ -1359,6 +1379,7 @@ int main (int argc, char **argv)
 	test_setting_gsm_apn_spaces ();
 	test_setting_gsm_apn_bad_chars ();
 	test_setting_gsm_apn_underscore ();
+	test_setting_gsm_without_number ();
 	test_setting_to_hash_all ();
 	test_setting_to_hash_no_secrets ();
 	test_setting_to_hash_only_secrets ();
