@@ -1720,7 +1720,7 @@ cull_scan_list (NMDeviceWifi *self)
 
 	req = nm_device_get_act_request (NM_DEVICE (self));
 	if (req)
-		cur_ap_path = nm_act_request_get_specific_object (req);
+		cur_ap_path = nm_active_connection_get_specific_object (NM_ACTIVE_CONNECTION (req));
 
 	nm_log_dbg (LOGD_WIFI_SCAN, "(%s): checking scan list for outdated APs",
 	            nm_device_get_iface (NM_DEVICE (self)));
@@ -2573,7 +2573,7 @@ real_act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 		g_signal_emit (self, signals[ACCESS_POINT_ADDED], 0, ap);
 	}
 
-	nm_act_request_set_specific_object (req, nm_ap_get_dbus_path (ap));
+	nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req), nm_ap_get_dbus_path (ap));
 
 done:
 	set_current_ap (self, ap);
@@ -2873,7 +2873,8 @@ activation_success_handler (NMDevice *dev)
 		if (!ssid || nm_utils_is_empty_ssid (ssid->data, ssid->len))
 			nm_ap_set_ssid (tmp_ap, nm_ap_get_ssid (ap));
 
-		nm_act_request_set_specific_object (req, nm_ap_get_dbus_path (tmp_ap));
+		nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req),
+		                                          nm_ap_get_dbus_path (tmp_ap));
 
 		priv->ap_list = g_slist_remove (priv->ap_list, ap);
 		g_object_unref (ap);
@@ -3036,7 +3037,7 @@ nm_device_wifi_get_activation_ap (NMDeviceWifi *self)
 	if (!req)
 		return NULL;
 
-	ap_path = nm_act_request_get_specific_object (req);
+	ap_path = nm_active_connection_get_specific_object (NM_ACTIVE_CONNECTION (req));
 
 	return ap_path ? get_ap_by_path (self, ap_path) : NULL;
 }

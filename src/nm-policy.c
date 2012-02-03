@@ -534,7 +534,7 @@ update_ip4_routing_and_dns (NMPolicy *policy, gboolean force_update)
 
 		req = nm_device_get_act_request (dev);
 		if (req && (req != best_req))
-			nm_act_request_set_default (req, FALSE);
+			nm_active_connection_set_default (NM_ACTIVE_CONNECTION (req), FALSE);
 	}
 
 	dns_mgr = nm_dns_manager_get (NULL);
@@ -545,7 +545,7 @@ update_ip4_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	 * if the connection is shared dnsmasq picks up the right stuff.
 	 */
 	if (best_req)
-		nm_act_request_set_default (best_req, TRUE);
+		nm_active_connection_set_default (NM_ACTIVE_CONNECTION (best_req), TRUE);
 
 	if (connection)
 		s_con = nm_connection_get_setting_connection (connection);
@@ -661,7 +661,7 @@ update_ip6_routing_and_dns (NMPolicy *policy, gboolean force_update)
 
 		req = nm_device_get_act_request (dev);
 		if (req && (req != best_req))
-			nm_act_request_set_default6 (req, FALSE);
+			nm_active_connection_set_default6 (NM_ACTIVE_CONNECTION (req), FALSE);
 	}
 
 	dns_mgr = nm_dns_manager_get (NULL);
@@ -672,7 +672,7 @@ update_ip6_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	 * if the connection is shared dnsmasq picks up the right stuff.
 	 */
 	if (best_req)
-		nm_act_request_set_default6 (best_req, TRUE);
+		nm_active_connection_set_default6 (NM_ACTIVE_CONNECTION (best_req), TRUE);
 
 	if (connection)
 		s_con = nm_connection_get_setting_connection (connection);
@@ -832,7 +832,9 @@ auto_activate_device (gpointer user_data)
 		                                     NULL,
 		                                     &error)) {
 			nm_log_info (LOGD_DEVICE, "Connection '%s' auto-activation failed: (%d) %s",
-			             nm_connection_get_id (best_connection), error->code, error->message);
+			             nm_connection_get_id (best_connection),
+			             error ? error->code : -1,
+			             error ? error->message : "(none)");
 			g_error_free (error);
 		}
 	}

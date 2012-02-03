@@ -2869,7 +2869,7 @@ clear_act_request (NMDevice *self)
 		priv->secrets_failed_id = 0;
 	}
 
-	nm_act_request_set_default (priv->act_request, FALSE);
+	nm_active_connection_set_default (NM_ACTIVE_CONNECTION (priv->act_request), FALSE);
 
 	g_object_unref (priv->act_request);
 	priv->act_request = NULL;
@@ -3708,7 +3708,7 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_ACTIVE_CONNECTION:
 		if (priv->act_request)
-			ac_path = nm_act_request_get_active_connection_path (priv->act_request);
+			ac_path = nm_active_connection_get_path (NM_ACTIVE_CONNECTION (priv->act_request));
 		g_value_set_boxed (value, ac_path ? ac_path : "/");
 		break;
 	case PROP_DEVICE_TYPE:

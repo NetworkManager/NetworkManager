@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 - 2010 Red Hat, Inc.
+ * Copyright (C) 2008 - 2012 Red Hat, Inc.
  */
 
 #ifndef NM_ACTIVE_CONNECTION_H
@@ -24,27 +24,61 @@
 #include <glib-object.h>
 #include "nm-connection.h"
 
-#define NM_ACTIVE_CONNECTION_CONNECTION "connection"
-#define NM_ACTIVE_CONNECTION_UUID "uuid"
+#define NM_TYPE_ACTIVE_CONNECTION            (nm_active_connection_get_type ())
+#define NM_ACTIVE_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_ACTIVE_CONNECTION, NMActiveConnection))
+#define NM_ACTIVE_CONNECTION_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_ACTIVE_CONNECTION, NMActiveConnectionClass))
+#define NM_IS_ACTIVE_CONNECTION(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_ACTIVE_CONNECTION))
+#define NM_IS_ACTIVE_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_ACTIVE_CONNECTION))
+#define NM_ACTIVE_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_ACTIVE_CONNECTION, NMActiveConnectionClass))
+
+/* Properties */
+#define NM_ACTIVE_CONNECTION_CONNECTION      "connection"
+#define NM_ACTIVE_CONNECTION_UUID            "uuid"
 #define NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT "specific-object"
-#define NM_ACTIVE_CONNECTION_DEVICES "devices"
-#define NM_ACTIVE_CONNECTION_STATE "state"
-#define NM_ACTIVE_CONNECTION_DEFAULT "default"
-#define NM_ACTIVE_CONNECTION_DEFAULT6 "default6"
-#define NM_ACTIVE_CONNECTION_VPN "vpn"
-#define NM_ACTIVE_CONNECTION_MASTER "master"
+#define NM_ACTIVE_CONNECTION_DEVICES         "devices"
+#define NM_ACTIVE_CONNECTION_STATE           "state"
+#define NM_ACTIVE_CONNECTION_DEFAULT         "default"
+#define NM_ACTIVE_CONNECTION_DEFAULT6        "default6"
+#define NM_ACTIVE_CONNECTION_VPN             "vpn"
+#define NM_ACTIVE_CONNECTION_MASTER          "master"
 
-char *nm_active_connection_get_next_object_path (void);
+typedef struct {
+	GObject parent;
+} NMActiveConnection;
 
-void nm_active_connection_install_properties (GObjectClass *object_class,
-                                              guint prop_connection,
-                                              guint prop_uuid,
-                                              guint prop_specific_object,
-                                              guint prop_devices,
-                                              guint prop_state,
-                                              guint prop_default,
-                                              guint prop_default6,
-                                              guint prop_vpn,
-                                              guint prop_master);
+typedef struct {
+	GObjectClass parent;
+
+	/* Signals */
+	void (*properties_changed) (NMActiveConnection *req, GHashTable *properties);
+} NMActiveConnectionClass;
+
+GType         nm_active_connection_get_type (void);
+
+gboolean      nm_active_connection_export (NMActiveConnection *self,
+                                           NMConnection *connection,
+                                           const char *devpath);
+
+NMConnection *nm_active_connection_get_connection (NMActiveConnection *self);
+
+const char *  nm_active_connection_get_path (NMActiveConnection *self);
+
+const char *  nm_active_connection_get_specific_object (NMActiveConnection *self);
+
+void          nm_active_connection_set_specific_object (NMActiveConnection *self,
+                                                        const char *specific_object);
+
+void          nm_active_connection_set_default (NMActiveConnection *self,
+                                                gboolean is_default);
+
+gboolean      nm_active_connection_get_default (NMActiveConnection *self);
+
+void          nm_active_connection_set_default6 (NMActiveConnection *self,
+                                                 gboolean is_default6);
+
+gboolean      nm_active_connection_get_default6 (NMActiveConnection *self);
+
+void          nm_active_connection_set_state (NMActiveConnection *self,
+                                              NMActiveConnectionState state);
 
 #endif /* NM_ACTIVE_CONNECTION_H */

@@ -728,7 +728,7 @@ real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	if (!req)
 		return NM_ACT_STAGE_RETURN_FAILURE;
 
-	path = nm_act_request_get_specific_object (req);
+	path = nm_active_connection_get_specific_object (NM_ACTIVE_CONNECTION (req));
 	if (!path)
 		return NM_ACT_STAGE_RETURN_FAILURE;
 

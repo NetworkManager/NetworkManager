@@ -243,7 +243,7 @@ nm_vpn_manager_deactivate_connection (NMVPNManager *self,
 			NMVPNConnection *vpn = NM_VPN_CONNECTION (aiter->data);
 			const char *vpn_path;
 
-			vpn_path = nm_vpn_connection_get_active_connection_path (vpn);
+			vpn_path = nm_active_connection_get_path (NM_ACTIVE_CONNECTION (vpn));
 			if (!strcmp (path, vpn_path)) {
 				nm_vpn_connection_disconnect (vpn, reason);
 				success = TRUE;
@@ -279,7 +279,7 @@ nm_vpn_manager_add_active_connections (NMVPNManager *self,
 			const char *path;
 
 			if (!filter || (nm_vpn_connection_get_connection (vpn) == filter)) {
-				path = nm_vpn_connection_get_active_connection_path (vpn);
+				path = nm_active_connection_get_path (NM_ACTIVE_CONNECTION (vpn));
 				g_ptr_array_add (array, g_strdup (path));
 			}
 		}
@@ -326,7 +326,7 @@ nm_vpn_manager_get_vpn_connection_for_active (NMVPNManager *manager,
 			NMVPNConnection *vpn = NM_VPN_CONNECTION (elt->data);
 			const char *ac_path;
 
-			ac_path = nm_vpn_connection_get_active_connection_path (vpn);
+			ac_path = nm_active_connection_get_path (NM_ACTIVE_CONNECTION (vpn));
 			if (ac_path && !strcmp (ac_path, active_path))
 				return vpn;
 		}

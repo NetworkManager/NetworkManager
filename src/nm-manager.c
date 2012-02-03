@@ -920,7 +920,7 @@ get_active_connections (NMManager *manager, NMConnection *filter)
 			continue;
 
 		if (!filter || (nm_act_request_get_connection (req) == filter)) {
-			path = nm_act_request_get_active_connection_path (req);
+			path = nm_active_connection_get_path (NM_ACTIVE_CONNECTION (req));
 			g_ptr_array_add (active, g_strdup (path));
 		}
 	}
@@ -2123,7 +2123,7 @@ nm_manager_get_act_request_by_path (NMManager *manager,
 		if (!req)
 			continue;
 
-		ac_path = nm_act_request_get_active_connection_path (req);
+		ac_path = nm_active_connection_get_path (NM_ACTIVE_CONNECTION (req));
 		if (!strcmp (path, ac_path)) {
 			*device = NM_DEVICE (iter->data);
 			return req;
@@ -2172,7 +2172,7 @@ internal_activate_device (NMManager *manager,
 	success = nm_device_activate (device, req, error);
 	g_object_unref (req);
 
-	return success ? nm_act_request_get_active_connection_path (req) : NULL;
+	return success ? nm_active_connection_get_path (NM_ACTIVE_CONNECTION (req)) : NULL;
 }
 
 const char *
@@ -2239,7 +2239,7 @@ nm_manager_activate_connection (NMManager *manager,
 				NMActRequest *candidate_req;
 
 				candidate_req = nm_device_get_act_request (candidate);
-				if (candidate_req && nm_act_request_get_default (candidate_req)) {
+				if (candidate_req && nm_active_connection_get_default (NM_ACTIVE_CONNECTION (candidate_req))) {
 					device = candidate;
 					parent_req = candidate_req;
 					break;
@@ -2257,12 +2257,12 @@ nm_manager_activate_connection (NMManager *manager,
 		vpn_connection = nm_vpn_manager_activate_connection (priv->vpn_manager,
 		                                                     connection,
 		                                                     device,
-		                                                     nm_act_request_get_active_connection_path (parent_req),
+		                                                     nm_active_connection_get_path (NM_ACTIVE_CONNECTION (parent_req)),
 		                                                     TRUE,
 		                                                     sender_uid,
 		                                                     error);
 		if (vpn_connection)
-			path = nm_vpn_connection_get_active_connection_path (vpn_connection);
+			path = nm_active_connection_get_path (NM_ACTIVE_CONNECTION (vpn_connection));
 	} else {
 		NMDeviceState state;
 
@@ -2472,7 +2472,7 @@ nm_manager_deactivate_connection (NMManager *manager,
 		if (!req)
 			continue;
 
-		if (!strcmp (connection_path, nm_act_request_get_active_connection_path (req))) {
+		if (!strcmp (connection_path, nm_active_connection_get_path (NM_ACTIVE_CONNECTION (req)))) {
 			nm_device_state_changed (device,
 			                         NM_DEVICE_STATE_DISCONNECTED,
 			                         reason);
@@ -2551,7 +2551,7 @@ impl_manager_deactivate_connection (NMManager *self,
 
 		req = nm_device_get_act_request (NM_DEVICE (iter->data));
 		if (req)
-			req_path = nm_act_request_get_active_connection_path (req);
+			req_path = nm_active_connection_get_path (NM_ACTIVE_CONNECTION (req));
 
 		if (req_path && !strcmp (active_path, req_path)) {
 			connection = nm_act_request_get_connection (req);

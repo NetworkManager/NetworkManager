@@ -26,7 +26,6 @@
 #include <glib-object.h>
 #include "NetworkManagerVPN.h"
 #include "nm-device.h"
-#include "nm-vpn-connection-base.h"
 
 #define NM_TYPE_VPN_CONNECTION            (nm_vpn_connection_get_type ())
 #define NM_VPN_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VPN_CONNECTION, NMVPNConnection))
@@ -39,18 +38,16 @@
 #define NM_VPN_CONNECTION_BANNER "banner"
 
 typedef struct {
-	NMVpnConnectionBase parent;
+	NMActiveConnection parent;
 } NMVPNConnection;
 
 typedef struct {
-	NMVpnConnectionBaseClass parent;
+	NMActiveConnectionClass parent;
 
 	/* Signals */
 	void (*vpn_state_changed) (NMVPNConnection *connection,
 	                           NMVPNConnectionState state,
 	                           NMVPNConnectionStateReason reason);
-
-	void (*properties_changed) (NMVPNConnection *connection, GHashTable *properties);
 } NMVPNConnectionClass;
 
 GType nm_vpn_connection_get_type (void);
@@ -63,8 +60,6 @@ NMVPNConnection * nm_vpn_connection_new (NMConnection *connection,
 
 void                 nm_vpn_connection_activate        (NMVPNConnection *connection);
 NMConnection *       nm_vpn_connection_get_connection  (NMVPNConnection *connection);
-const char *         nm_vpn_connection_get_active_connection_path (NMVPNConnection *connection);
-const char *         nm_vpn_connection_get_specific_object_path (NMVPNConnection *connection);
 const char *         nm_vpn_connection_get_name        (NMVPNConnection *connection);
 NMVPNConnectionState nm_vpn_connection_get_vpn_state   (NMVPNConnection *connection);
 const char *         nm_vpn_connection_get_banner      (NMVPNConnection *connection);

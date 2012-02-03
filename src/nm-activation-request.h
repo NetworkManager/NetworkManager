@@ -55,22 +55,8 @@ NMActRequest *nm_act_request_new          (NMConnection *connection,
                                            gpointer *device);  /* An NMDevice */
 
 NMConnection *nm_act_request_get_connection     (NMActRequest *req);
-const char *  nm_act_request_get_specific_object (NMActRequest *req);
-
-void          nm_act_request_set_specific_object (NMActRequest *req,
-                                                  const char *specific_object);
 
 gboolean      nm_act_request_get_user_requested (NMActRequest *req);
-
-const char *  nm_act_request_get_active_connection_path (NMActRequest *req);
-
-void          nm_act_request_set_default (NMActRequest *req, gboolean is_default);
-
-gboolean      nm_act_request_get_default (NMActRequest *req);
-
-void          nm_act_request_set_default6 (NMActRequest *req, gboolean is_default6);
-
-gboolean      nm_act_request_get_default6 (NMActRequest *req);
 
 gboolean      nm_act_request_get_shared (NMActRequest *req);
 

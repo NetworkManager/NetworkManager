@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2011 Red Hat, Inc.
+ * Copyright (C) 2005 - 2012 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -51,7 +51,7 @@
 
 #include "nm-vpn-connection-glue.h"
 
-G_DEFINE_TYPE (NMVPNConnection, nm_vpn_connection, NM_TYPE_VPN_CONNECTION_BASE)
+G_DEFINE_TYPE (NMVPNConnection, nm_vpn_connection, NM_TYPE_ACTIVE_CONNECTION)
 
 typedef enum {
 	/* Only system secrets */
@@ -113,6 +113,24 @@ enum {
 
 static void get_secrets (NMVPNConnection *self, SecretsReq secrets_idx);
 
+static NMActiveConnectionState
+ac_state_from_vpn_state (NMVPNConnectionState vpn_state)
+{
+	/* Set the NMActiveConnection state based on VPN state */
+	switch (vpn_state) {
+	case NM_VPN_CONNECTION_STATE_PREPARE:
+	case NM_VPN_CONNECTION_STATE_NEED_AUTH:
+	case NM_VPN_CONNECTION_STATE_CONNECT:
+	case NM_VPN_CONNECTION_STATE_IP_CONFIG_GET:
+		return NM_ACTIVE_CONNECTION_STATE_ACTIVATING;
+	case NM_VPN_CONNECTION_STATE_ACTIVATED:
+		return NM_ACTIVE_CONNECTION_STATE_ACTIVATED;
+	default:
+		break;
+	}
+	return NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
+}
+
 static void
 nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
                                  NMVPNConnectionState vpn_state,
@@ -133,7 +151,8 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 	priv->vpn_state = vpn_state;
 
 	/* Update active connection base class state */
-	nm_vpn_connection_base_set_state (NM_VPN_CONNECTION_BASE (connection), vpn_state);
+	nm_active_connection_set_state (NM_ACTIVE_CONNECTION (connection),
+	                                ac_state_from_vpn_state (vpn_state));
 
 	/* Save ip_iface since when the VPN goes down it may get freed
 	 * before we're done with it.
@@ -230,7 +249,10 @@ nm_vpn_connection_new (NMConnection *connection,
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (parent_device), NULL);
 
-	self = (NMVPNConnection *) g_object_new (NM_TYPE_VPN_CONNECTION, NULL);
+	self = (NMVPNConnection *) g_object_new (NM_TYPE_VPN_CONNECTION,
+	                                         NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT, specific_object,
+	                                         NM_ACTIVE_CONNECTION_VPN, TRUE,
+	                                         NULL);
 	if (!self)
 		return NULL;
 
@@ -249,7 +271,12 @@ nm_vpn_connection_new (NMConnection *connection,
 	                                     G_CALLBACK (device_ip4_config_changed),
 	                                     self);
 
-	nm_vpn_connection_base_export (NM_VPN_CONNECTION_BASE (self), connection, specific_object);
+	if (!nm_active_connection_export (NM_ACTIVE_CONNECTION (self),
+	                                  connection,
+	                                  nm_device_get_path (parent_device))) {
+		g_object_unref (self);
+		self = NULL;
+	}
 
 	return self;
 }
@@ -736,14 +763,6 @@ nm_vpn_connection_activate (NMVPNConnection *connection)
 }
 
 const char *
-nm_vpn_connection_get_active_connection_path (NMVPNConnection *connection)
-{
-	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), NULL);
-
-	return nm_vpn_connection_base_get_ac_path (NM_VPN_CONNECTION_BASE (connection));
-}
-
-const char *
 nm_vpn_connection_get_name (NMVPNConnection *connection)
 {
 	NMVPNConnectionPrivate *priv;
@@ -1197,10 +1216,6 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 				    _nm_marshal_VOID__UINT_UINT,
 				    G_TYPE_NONE, 2,
 				    G_TYPE_UINT, G_TYPE_UINT);
-
-	signals[PROPERTIES_CHANGED] = 
-		nm_properties_changed_signal_new (object_class,
-								    G_STRUCT_OFFSET (NMVPNConnectionClass, properties_changed));
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (object_class),
 									 &dbus_glib_nm_vpn_connection_object_info);
