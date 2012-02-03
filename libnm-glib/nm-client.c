@@ -1115,6 +1115,10 @@ client_device_removed (NMObject *client, NMObject *device)
  * client. You can use nm_client_new_async() if you want to avoid
  * that.
  *
+ * NOTE: #NMClient provides information about devices and a mechanism to
+ * control them.  To access and modify network configuration data, use the
+ * #NMRemoteSettings object.
+ *
  * Returns: a new #NMClient
  **/
 NMClient *
@@ -1166,6 +1170,10 @@ client_inited (GObject *source, GAsyncResult *result, gpointer user_data)
  * Creates a new #NMClient and begins asynchronously initializing it.
  * @callback will be called when it is done; use
  * nm_client_new_finish() to get the result.
+ *
+ * NOTE: #NMClient provides information about devices and a mechanism to
+ * control them.  To access and modify network configuration data, use the
+ * #NMRemoteSettings object.
  **/
 void
 nm_client_new_async (GCancellable *cancellable, GAsyncReadyCallback callback,
