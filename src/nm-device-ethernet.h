@@ -59,8 +59,6 @@ NMDevice *nm_device_ethernet_new (const char *udi,
                                   const char *iface,
                                   const char *driver);
 
-gboolean nm_device_bond_connection_matches (NMDevice *device, NMConnection *connection);
-
 G_END_DECLS
 
 #endif	/* NM_DEVICE_ETHERNET_H */
