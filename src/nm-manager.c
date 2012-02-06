@@ -16,16 +16,16 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2009 Novell, Inc.
- * Copyright (C) 2007 - 2011 Red Hat, Inc.
+ * Copyright (C) 2007 - 2012 Red Hat, Inc.
  */
 
 #include <config.h>
 
 #include <netinet/ether.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
 #include <gio/gio.h>
@@ -43,6 +43,7 @@
 #include "nm-device-wifi.h"
 #include "nm-device-olpc-mesh.h"
 #include "nm-device-modem.h"
+#include "nm-device-infiniband.h"
 #include "nm-system.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-setting-bluetooth.h"
@@ -60,6 +61,8 @@
 #include "nm-manager-auth.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
+#include "nm-device-factory.h"
+#include "wifi-utils.h"
 
 #define NM_AUTOIP_DBUS_SERVICE "org.freedesktop.nm_avahi_autoipd"
 #define NM_AUTOIP_DBUS_IFACE   "org.freedesktop.nm_avahi_autoipd"
@@ -112,15 +115,6 @@ static gboolean impl_manager_set_logging (NMManager *manager,
                                           GError **error);
 
 #include "nm-manager-glue.h"
-
-static void udev_device_added_cb (NMUdevManager *udev_mgr,
-                                  GUdevDevice *device,
-                                  NMDeviceCreatorFn creator_fn,
-                                  gpointer user_data);
-
-static void udev_device_removed_cb (NMUdevManager *udev_mgr,
-                                    GUdevDevice *device,
-                                    gpointer user_data);
 
 static void bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
 					   const char *bdaddr,
@@ -200,6 +194,9 @@ typedef struct {
 	NMDBusManager *dbus_mgr;
 	NMUdevManager *udev_mgr;
 	NMBluezManager *bluez_mgr;
+
+	/* List of NMDeviceFactoryFunc pointers sorted in priority order */
+	GSList *factories;
 
 	NMSettings *settings;
 	char *hostname;
@@ -1819,21 +1816,207 @@ find_device_by_ifindex (NMManager *self, guint32 ifindex)
 	return NULL;
 }
 
+#define PLUGIN_PREFIX "libnm-device-plugin-"
+
+typedef struct {
+	NMDeviceType t;
+	guint priority;
+	NMDeviceFactoryCreateFunc create_func;
+} PluginInfo;
+
+static gint
+plugin_sort (PluginInfo *a, PluginInfo *b)
+{
+	/* Higher priority means sort earlier in the list (ie, return -1) */
+	if (a->priority > b->priority)
+		return -1;
+	else if (a->priority < b->priority)
+		return 1;
+	return 0;
+}
+
+static void
+load_device_factories (NMManager *self)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GDir *dir;
+	GError *error = NULL;
+	const char *item;
+	char *path;
+	GSList *list = NULL, *iter;
+
+	dir = g_dir_open (NMPLUGINDIR, 0, &error);
+	if (!dir) {
+		nm_log_warn (LOGD_HW, "Failed to open plugin directory %s: %s",
+		             NMPLUGINDIR,
+		             (error && error->message) ? error->message : "(unknown)");
+		g_clear_error (&error);
+		return;
+	}
+
+	while ((item = g_dir_read_name (dir))) {
+		GModule *plugin;
+		NMDeviceFactoryCreateFunc create_func;
+		NMDeviceFactoryPriorityFunc priority_func;
+		NMDeviceFactoryTypeFunc type_func;
+		PluginInfo *info = NULL;
+		NMDeviceType plugin_type;
+
+		if (!g_str_has_prefix (item, PLUGIN_PREFIX))
+			continue;
+
+		path = g_module_build_path (NMPLUGINDIR, item);
+		g_assert (path);
+		plugin = g_module_open (path, G_MODULE_BIND_LOCAL);
+		g_free (path);
+
+		if (!plugin) {
+			nm_log_warn (LOGD_HW, "(%s): failed to load plugin: %s", item, g_module_error ());
+			continue;
+		}
+
+		if (!g_module_symbol (plugin, "nm_device_factory_get_type", (gpointer) (&type_func))) {
+			nm_log_warn (LOGD_HW, "(%s): failed to find device factory: %s", item, g_module_error ());
+			g_module_close (plugin);
+			continue;
+		}
+
+		/* Make sure we don't double-load plugins */
+		plugin_type = type_func ();
+		for (iter = list; iter; iter = g_slist_next (iter)) {
+			PluginInfo *candidate = iter->data;
+
+			if (plugin_type == candidate->t) {
+				info = candidate;
+				break;
+			}
+		}
+		if (info) {
+			g_module_close (plugin);
+			continue;
+		}
+
+		if (!g_module_symbol (plugin, "nm_device_factory_create_device", (gpointer) (&create_func))) {
+			nm_log_warn (LOGD_HW, "(%s): failed to find device creator: %s", item, g_module_error ());
+			g_module_close (plugin);
+			continue;
+		}
+
+		info = g_malloc0 (sizeof (*info));
+		info->create_func = create_func;
+		info->t = plugin_type;
+
+		/* Grab priority; higher number equals higher priority */
+		if (g_module_symbol (plugin, "nm_device_factory_get_priority", (gpointer) (&priority_func)))
+			info->priority = priority_func ();
+		else {
+			nm_log_dbg (LOGD_HW, "(%s): failed to find device factory priority func: %s",
+			            item, g_module_error ());
+		}
+
+		g_module_make_resident (plugin);
+		list = g_slist_insert_sorted (list, info, (GCompareFunc) plugin_sort);
+
+		nm_log_info (LOGD_HW, "Loaded device factory: %s", g_module_name (plugin));
+	};
+	g_dir_close (dir);
+
+	/* Ditch the priority info and copy the factory functions to our private data */
+	for (iter = list; iter; iter = g_slist_next (iter)) {
+		PluginInfo *info = iter->data;
+
+		priv->factories = g_slist_append (priv->factories, info->create_func);
+		g_free (info);
+	}
+	g_slist_free (list);
+}
+
+static gboolean
+is_wireless (GUdevDevice *device)
+{
+	char phy80211_path[255];
+	struct stat s;
+	const char *path;
+	const char *tmp;
+
+	/* Check devtype, newer kernels (2.6.32+) have this */
+	tmp = g_udev_device_get_property (device, "DEVTYPE");
+	if (g_strcmp0 (tmp, "wlan") == 0)
+		return TRUE;
+
+	/* Check for nl80211 sysfs paths */
+	path = g_udev_device_get_sysfs_path (device);
+	snprintf (phy80211_path, sizeof (phy80211_path), "%s/phy80211", path);
+	if ((stat (phy80211_path, &s) == 0 && (s.st_mode & S_IFDIR)))
+		return TRUE;
+
+	/* Otherwise hit up WEXT directly */
+	return wifi_utils_is_wifi (g_udev_device_get_name (device));
+}
+
+static gboolean
+is_olpc_mesh (GUdevDevice *device)
+{
+	const gchar *prop = g_udev_device_get_property (device, "ID_NM_OLPC_MESH");
+	return (prop != NULL);
+}
+
+static gboolean
+is_infiniband (GUdevDevice *device)
+{
+	gint etype = g_udev_device_get_sysfs_attr_as_int (device, "type");
+	return etype == ARPHRD_INFINIBAND;
+}
+
 static void
 udev_device_added_cb (NMUdevManager *udev_mgr,
                       GUdevDevice *udev_device,
-                      NMDeviceCreatorFn creator_fn,
+                      const char *iface,
+                      const char *sysfs_path,
+                      const char *driver,
+                      int ifindex,
                       gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
-	GObject *device;
-	guint32 ifindex;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GObject *device = NULL;
+	GSList *iter;
+	GError *error = NULL;
 
 	ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
 	if (find_device_by_ifindex (self, ifindex))
 		return;
 
-	device = creator_fn (udev_mgr, udev_device, manager_sleeping (self));
+	/* Try registered device factories */
+	for (iter = priv->factories; iter; iter = g_slist_next (iter)) {
+		NMDeviceFactoryCreateFunc create_func = iter->data;
+
+		g_clear_error (&error);
+		device = create_func (udev_device, sysfs_path, iface, driver, &error);
+		if (device) {
+			g_assert_no_error (error);
+			break;  /* success! */
+		}
+
+		if (error) {
+			nm_log_warn (LOGD_HW, "%s: factory failed to create device: (%d) %s",
+			             sysfs_path, error->code, error->message);
+			g_clear_error (&error);
+			return;
+		}
+	}
+
+	if (device == NULL) {
+		if (is_olpc_mesh (udev_device)) /* must be before is_wireless */
+			device = (GObject *) nm_device_olpc_mesh_new (sysfs_path, iface, driver);
+		else if (is_wireless (udev_device))
+			device = (GObject *) nm_device_wifi_new (sysfs_path, iface, driver);
+		else if (is_infiniband (udev_device))
+			device = (GObject *) nm_device_infiniband_new (sysfs_path, iface, driver);
+		else
+			device = (GObject *) nm_device_ethernet_new (sysfs_path, iface, driver);
+	}
+
 	if (device)
 		add_device (self, NM_DEVICE (device));
 }
@@ -3310,6 +3493,8 @@ dispose (GObject *object)
 		g_object_unref (priv->fw_monitor);
 	}
 
+	g_slist_free (priv->factories);
+
 	if (priv->timestamp_update_id) {
 		g_source_remove (priv->timestamp_update_id);
 		priv->timestamp_update_id = 0;
@@ -3655,6 +3840,8 @@ nm_manager_init (NMManager *manager)
 		nm_log_warn (LOGD_CORE, "failed to monitor kernel firmware directory '%s'.",
 		             KERNEL_FIRMWARE_DIR);
 	}
+
+	load_device_factories (manager);
 
 	/* Update timestamps in active connections */
 	priv->timestamp_update_id = g_timeout_add_seconds (300, (GSourceFunc) periodic_update_active_connection_timestamps, manager);

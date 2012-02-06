@@ -15,17 +15,10 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 - 2011 Red Hat, Inc.
+ * Copyright (C) 2009 - 2012 Red Hat, Inc.
  */
 
 #include <config.h>
-#include <signal.h>
-#include <string.h>
-#include <stdlib.h>
-#include <sys/stat.h>
-#include <stdio.h>
-#include <sys/ioctl.h>
-#include <unistd.h>
 #include <net/if_arp.h>
 
 #include <gmodule.h>
@@ -34,20 +27,10 @@
 #include "nm-udev-manager.h"
 #include "nm-marshal.h"
 #include "nm-logging.h"
-#include "NetworkManagerUtils.h"
-#include "nm-device-wifi.h"
-#include "nm-device-olpc-mesh.h"
-#include "nm-device-infiniband.h"
-#include "nm-device-ethernet.h"
-#include "nm-device-factory.h"
-#include "wifi-utils.h"
 #include "nm-system.h"
 
 typedef struct {
 	GUdevClient *client;
-
-	/* List of NMDeviceFactoryFunc pointers sorted in priority order */
-	GSList *factories;
 
 	/* Authoritative rfkill state (RFKILL_* enum) */
 	RfKillState rfkill_states[RFKILL_TYPE_MAX];
@@ -346,63 +329,52 @@ rfkill_remove (NMUdevManager *self,
 	}
 }
 
-static gboolean
-is_wireless (GUdevDevice *device)
+static void
+net_add (NMUdevManager *self, GUdevDevice *udev_device)
 {
-	char phy80211_path[255];
-	struct stat s;
-	const char *path;
-	const char *tmp;
-
-	/* Check devtype, newer kernels (2.6.32+) have this */
-	tmp = g_udev_device_get_property (device, "DEVTYPE");
-	if (g_strcmp0 (tmp, "wlan") == 0)
-		return TRUE;
-
-	/* Check for nl80211 sysfs paths */
-	path = g_udev_device_get_sysfs_path (device);
-	snprintf (phy80211_path, sizeof (phy80211_path), "%s/phy80211", path);
-	if ((stat (phy80211_path, &s) == 0 && (s.st_mode & S_IFDIR)))
-		return TRUE;
-
-	/* Otherwise hit up WEXT directly */
-	return wifi_utils_is_wifi (g_udev_device_get_name (device));
-}
-
-static gboolean
-is_olpc_mesh (GUdevDevice *device)
-{
-	const gchar *prop = g_udev_device_get_property (device, "ID_NM_OLPC_MESH");
-	return (prop != NULL);
-}
-
-static gboolean
-is_infiniband (GUdevDevice *device)
-{
-	gint etype = g_udev_device_get_sysfs_attr_as_int (device, "type");
-	return etype == ARPHRD_INFINIBAND;
-}
-
-static GObject *
-device_creator (NMUdevManager *manager,
-                GUdevDevice *udev_device,
-                gboolean sleeping)
-{
-	NMUdevManagerPrivate *priv = NM_UDEV_MANAGER_GET_PRIVATE (manager);
-	GObject *device = NULL;
-	const char *ifname, *driver, *path, *subsys;
 	GUdevDevice *parent = NULL, *grandparent = NULL;
 	gint ifindex;
-	GError *error = NULL;
-	GSList *iter;
+	gint etype;
+	const char *ifname, *driver, *path, *subsys, *tmp;
+	gboolean is_ctc;
+
+	g_return_if_fail (udev_device != NULL);
 
 	ifname = g_udev_device_get_name (udev_device);
-	g_assert (ifname);
+	if (!ifname) {
+		nm_log_dbg (LOGD_HW, "failed to get device's interface");
+		return;
+	}
+
+	etype = g_udev_device_get_sysfs_attr_as_int (udev_device, "type");
+	is_ctc = (strncmp (ifname, "ctc", 3) == 0) && (etype == 256);
+
+	/* Ignore devices that don't report Ethernet encapsulation, except for
+	 * s390 CTC-type devices that report 256 for some reason.
+	 * FIXME: use something other than interface name to detect CTC here.
+	 */
+	if ((etype != ARPHRD_ETHER) && (etype != ARPHRD_INFINIBAND) && (is_ctc == FALSE)) {
+		nm_log_dbg (LOGD_HW, "(%s): ignoring interface with type %d", ifname, etype);
+		return;
+	}
+
+	/* Not all ethernet devices are immediately usable; newer mobile broadband
+	 * devices (Ericsson, Option, Sierra) require setup on the tty before the
+	 * ethernet device is usable.  2.6.33 and later kernels set the 'DEVTYPE'
+	 * uevent variable which we can use to ignore the interface as a NMDevice
+	 * subclass.  ModemManager will pick it up though and so we'll handle it
+	 * through the mobile broadband stuff.
+	 */
+	tmp = g_udev_device_get_property (udev_device, "DEVTYPE");
+	if (g_strcmp0 (tmp, "wwan") == 0) {
+		nm_log_dbg (LOGD_HW, "(%s): ignoring interface with devtype '%s'", ifname, tmp);
+		return;
+	}
 
 	path = g_udev_device_get_sysfs_path (udev_device);
 	if (!path) {
 		nm_log_warn (LOGD_HW, "couldn't determine device path; ignoring...");
-		return NULL;
+		return;
 	}
 
 	driver = g_udev_device_get_driver (udev_device);
@@ -432,7 +404,6 @@ device_creator (NMUdevManager *manager,
 		case NM_IFACE_TYPE_BOND:
 			driver = "bonding";
 			break;
-
 		default:
 			if (g_str_has_prefix (ifname, "easytether"))
 				driver = "easytether";
@@ -451,86 +422,13 @@ device_creator (NMUdevManager *manager,
 		goto out;
 	}
 
-	/* Try registered device factories */
-	for (iter = priv->factories; iter; iter = g_slist_next (iter)) {
-		NMDeviceFactoryCreateFunc create_func = iter->data;
-
-		g_clear_error (&error);
-		device = create_func (udev_device, path, ifname, driver, &error);
-		if (device) {
-			g_assert_no_error (error);
-			break;  /* success! */
-		}
-
-		if (error) {
-			nm_log_warn (LOGD_HW, "%s: factory failed to create device: (%d) %s",
-			             path, error->code, error->message);
-			g_clear_error (&error);
-			goto out;
-		}
-	}
-
-	if (device == NULL) {
-		if (is_olpc_mesh (udev_device)) /* must be before is_wireless */
-			device = (GObject *) nm_device_olpc_mesh_new (path, ifname, driver);
-		else if (is_wireless (udev_device))
-			device = (GObject *) nm_device_wifi_new (path, ifname, driver);
-		else if (is_infiniband (udev_device))
-			device = (GObject *) nm_device_infiniband_new (path, ifname, driver);
-		else
-			device = (GObject *) nm_device_ethernet_new (path, ifname, driver);
-	}
+	g_signal_emit (self, signals[DEVICE_ADDED], 0, udev_device, ifname, path, driver, ifindex);
 
 out:
 	if (grandparent)
 		g_object_unref (grandparent);
 	if (parent)
 		g_object_unref (parent);
-	return device;
-}
-
-static void
-net_add (NMUdevManager *self, GUdevDevice *device)
-{
-	gint etype;
-	const char *iface;
-	const char *tmp;
-	gboolean is_ctc;
-
-	g_return_if_fail (device != NULL);
-
-	iface = g_udev_device_get_name (device);
-	if (!iface) {
-		nm_log_dbg (LOGD_HW, "failed to get device's interface");
-		return;
-	}
-
-	etype = g_udev_device_get_sysfs_attr_as_int (device, "type");
-	is_ctc = (strncmp (iface, "ctc", 3) == 0) && (etype == 256);
-
-	/* Ignore devices that don't report Ethernet encapsulation, except for
-	 * s390 CTC-type devices that report 256 for some reason.
-	 * FIXME: use something other than interface name to detect CTC here.
-	 */
-	if ((etype != ARPHRD_ETHER) && (etype != ARPHRD_INFINIBAND) && (is_ctc == FALSE)) {
-		nm_log_dbg (LOGD_HW, "(%s): ignoring interface with type %d", iface, etype);
-		return;
-	}
-
-	/* Not all ethernet devices are immediately usable; newer mobile broadband
-	 * devices (Ericsson, Option, Sierra) require setup on the tty before the
-	 * ethernet device is usable.  2.6.33 and later kernels set the 'DEVTYPE'
-	 * uevent variable which we can use to ignore the interface as a NMDevice
-	 * subclass.  ModemManager will pick it up though and so we'll handle it
-	 * through the mobile broadband stuff.
-	 */
-	tmp = g_udev_device_get_property (device, "DEVTYPE");
-	if (g_strcmp0 (tmp, "wwan") == 0) {
-		nm_log_dbg (LOGD_HW, "(%s): ignoring interface with devtype '%s'", iface, tmp);
-		return;
-	}
-
-	g_signal_emit (self, signals[DEVICE_ADDED], 0, device, device_creator);
 }
 
 static void
@@ -554,121 +452,6 @@ nm_udev_manager_query_devices (NMUdevManager *self)
 		g_object_unref (G_UDEV_DEVICE (iter->data));
 	}
 	g_list_free (devices);
-}
-
-#define PLUGIN_PREFIX "libnm-device-plugin-"
-
-typedef struct {
-	NMDeviceType t;
-	guint priority;
-	NMDeviceFactoryCreateFunc create_func;
-} PluginInfo;
-
-static gint
-plugin_sort (PluginInfo *a, PluginInfo *b)
-{
-	/* Higher priority means sort earlier in the list (ie, return -1) */
-	if (a->priority > b->priority)
-		return -1;
-	else if (a->priority < b->priority)
-		return 1;
-	return 0;
-}
-
-static void
-load_device_factories (NMUdevManager *self)
-{
-	NMUdevManagerPrivate *priv = NM_UDEV_MANAGER_GET_PRIVATE (self);
-	GDir *dir;
-	GError *error = NULL;
-	const char *item;
-	char *path;
-	GSList *list = NULL, *iter;
-
-	dir = g_dir_open (NMPLUGINDIR, 0, &error);
-	if (!dir) {
-		nm_log_warn (LOGD_HW, "Failed to open plugin directory %s: %s",
-		             NMPLUGINDIR,
-		             (error && error->message) ? error->message : "(unknown)");
-		g_clear_error (&error);
-		return;
-	}
-
-	while ((item = g_dir_read_name (dir))) {
-		GModule *plugin;
-		NMDeviceFactoryCreateFunc create_func;
-		NMDeviceFactoryPriorityFunc priority_func;
-		NMDeviceFactoryTypeFunc type_func;
-		PluginInfo *info = NULL;
-		NMDeviceType plugin_type;
-
-		if (!g_str_has_prefix (item, PLUGIN_PREFIX))
-			continue;
-
-		path = g_module_build_path (NMPLUGINDIR, item);
-		g_assert (path);
-		plugin = g_module_open (path, G_MODULE_BIND_LOCAL);
-		g_free (path);
-
-		if (!plugin) {
-			nm_log_warn (LOGD_HW, "(%s): failed to load plugin: %s", item, g_module_error ());
-			continue;
-		}
-
-		if (!g_module_symbol (plugin, "nm_device_factory_get_type", (gpointer) (&type_func))) {
-			nm_log_warn (LOGD_HW, "(%s): failed to find device factory: %s", item, g_module_error ());
-			g_module_close (plugin);
-			continue;
-		}
-
-		/* Make sure we don't double-load plugins */
-		plugin_type = type_func ();
-		for (iter = list; iter; iter = g_slist_next (iter)) {
-			PluginInfo *candidate = iter->data;
-
-			if (plugin_type == candidate->t) {
-				info = candidate;
-				break;
-			}
-		}
-		if (info) {
-			g_module_close (plugin);
-			continue;
-		}
-
-		if (!g_module_symbol (plugin, "nm_device_factory_create_device", (gpointer) (&create_func))) {
-			nm_log_warn (LOGD_HW, "(%s): failed to find device creator: %s", item, g_module_error ());
-			g_module_close (plugin);
-			continue;
-		}
-
-		info = g_malloc0 (sizeof (*info));
-		info->create_func = create_func;
-		info->t = plugin_type;
-
-		/* Grab priority; higher number equals higher priority */
-		if (g_module_symbol (plugin, "nm_device_factory_get_priority", (gpointer) (&priority_func)))
-			info->priority = priority_func ();
-		else {
-			nm_log_dbg (LOGD_HW, "(%s): failed to find device factory priority func: %s",
-			            item, g_module_error ());
-		}
-
-		g_module_make_resident (plugin);
-		list = g_slist_insert_sorted (list, info, (GCompareFunc) plugin_sort);
-
-		nm_log_info (LOGD_HW, "Loaded device factory: %s", g_module_name (plugin));
-	};
-	g_dir_close (dir);
-
-	/* Ditch the priority info and copy the factory functions to our private data */
-	for (iter = list; iter; iter = g_slist_next (iter)) {
-		PluginInfo *info = iter->data;
-
-		priv->factories = g_slist_append (priv->factories, info->create_func);
-		g_free (info);
-	}
-	g_slist_free (list);
 }
 
 static void
@@ -728,8 +511,6 @@ nm_udev_manager_init (NMUdevManager *self)
 	g_list_free (switches);
 
 	recheck_killswitches (self);
-
-	load_device_factories (self);
 }
 
 static void
@@ -748,8 +529,6 @@ dispose (GObject *object)
 
 	g_slist_foreach (priv->killswitches, (GFunc) killswitch_destroy, NULL);
 	g_slist_free (priv->killswitches);
-
-	g_slist_free (priv->factories);
 
 	G_OBJECT_CLASS (nm_udev_manager_parent_class)->dispose (object);	
 }
@@ -771,8 +550,8 @@ nm_udev_manager_class_init (NMUdevManagerClass *klass)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMUdevManagerClass, device_added),
 					  NULL, NULL,
-					  _nm_marshal_VOID__POINTER_POINTER,
-					  G_TYPE_NONE, 2, G_TYPE_POINTER, G_TYPE_POINTER);
+					  _nm_marshal_VOID__POINTER_POINTER_POINTER_POINTER_INT,
+					  G_TYPE_NONE, 5, G_TYPE_POINTER, G_TYPE_POINTER, G_TYPE_POINTER, G_TYPE_POINTER, G_TYPE_INT);
 
 	signals[DEVICE_REMOVED] =
 		g_signal_new ("device-removed",

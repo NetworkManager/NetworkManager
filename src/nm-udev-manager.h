@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2012 Red Hat, Inc.
  */
 
 #ifndef NM_UDEV_MANAGER_H
@@ -52,7 +52,10 @@ typedef struct {
 	/* Virtual functions */
 	void (*device_added) (NMUdevManager *manager,
 	                      GUdevDevice *device,
-	                      NMDeviceCreatorFn creator_fn);
+	                      const char *iface,
+	                      const char *sysfs_path,
+	                      const char *driver,
+	                      int ifindex);
 
 	void (*device_removed) (NMUdevManager *manager, GUdevDevice *device);
 
