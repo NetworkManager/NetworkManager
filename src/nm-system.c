@@ -1530,6 +1530,55 @@ out:
 }
 
 /**
+ * nm_system_get_iface_vlan_info:
+ * @ifindex: the VLAN interface index
+ * @out_master_ifindex: on success, the interface index of the master interface of
+ *   @iface
+ * @out_vlan_id: on success, the VLAN ID of @iface
+ *
+ * Gets the VLAN master interface name and VLAN ID.
+ *
+ * Returns: %TRUE if the interface is a VLAN device and no error occurred;
+ *   %FALSE if the interface was not a VLAN interface or an error occurred
+ **/
+gboolean
+nm_system_get_iface_vlan_info (int ifindex,
+                               int *out_master_ifindex,
+                               int *out_vlan_id)
+{
+	struct nl_sock *nlh;
+	struct rtnl_link *lk;
+	struct nl_cache *cache = NULL;
+	gboolean success = FALSE;
+	int ret;
+
+	if (nm_system_get_iface_type (ifindex, NULL) != NM_IFACE_TYPE_VLAN)
+		return FALSE;
+
+	nlh = nm_netlink_get_default_handle ();
+	if (!nlh)
+		return FALSE;
+
+	ret = rtnl_link_alloc_cache (nlh, &cache);
+	g_return_val_if_fail (ret == 0, FALSE);
+	g_return_val_if_fail (cache != NULL, FALSE);
+
+	lk = rtnl_link_get (cache, ifindex);
+	if (lk) {
+		if (out_master_ifindex)
+			*out_master_ifindex = rtnl_link_get_link (lk);
+		if (out_vlan_id)
+			*out_vlan_id = rtnl_link_vlan_get_id (lk);
+
+		rtnl_link_put (lk);
+		success = TRUE;
+	}
+
+	nl_cache_free (cache);
+	return success;
+}
+
+/**
  * nm_system_add_vlan_iface:
  * @connection: the #NMConnection that describes the VLAN interface
  * @iface: the interface name of the new VLAN interface

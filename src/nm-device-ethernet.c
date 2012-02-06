@@ -49,11 +49,13 @@
 #include "nm-setting-8021x.h"
 #include "nm-setting-pppoe.h"
 #include "nm-setting-bond.h"
+#include "nm-setting-vlan.h"
 #include "ppp-manager/nm-ppp-manager.h"
 #include "nm-logging.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-utils.h"
 #include "nm-enum-types.h"
+#include "nm-netlink-monitor.h"
 
 #include "nm-device-ethernet-glue.h"
 
@@ -70,6 +72,7 @@ typedef enum
 {
 	NM_ETHERNET_TYPE_UNSPEC = 0,
 	NM_ETHERNET_TYPE_BOND,
+	NM_ETHERNET_TYPE_VLAN,
 } NMEthernetType;
 
 typedef struct Supplicant {
@@ -103,6 +106,10 @@ typedef struct {
 	NMIP4Config  *pending_ip4_config;
 
 	NMEthernetType      type;
+
+	/* VLAN stuff */
+	int                 vlan_id;
+	int                 vlan_master_ifindex;
 } NMDeviceEthernetPrivate;
 
 enum {
@@ -263,7 +270,37 @@ constructor (GType type,
 	itype = nm_system_get_iface_type (nm_device_get_ifindex (self), nm_device_get_iface (self));
 	if (itype == NM_IFACE_TYPE_BOND)
 		priv->type = NM_ETHERNET_TYPE_BOND;
-	else
+	else if (itype == NM_IFACE_TYPE_VLAN) {
+		char *master_iface;
+
+		priv->type = NM_ETHERNET_TYPE_VLAN;
+
+		if (!nm_system_get_iface_vlan_info (nm_device_get_ifindex (self),
+		                                    &priv->vlan_master_ifindex,
+		                                    &priv->vlan_id)) {
+			nm_log_warn (LOGD_DEVICE, "(%s): failed to get VLAN interface info.",
+			             nm_device_get_iface (self));
+			g_object_unref (object);
+			return NULL;
+		}
+
+		if (priv->vlan_master_ifindex < 0 || priv->vlan_id < 0) {
+			nm_log_warn (LOGD_DEVICE, "(%s): VLAN master ifindex (%d) or VLAN ID (%d) invalid.",
+			             nm_device_get_iface (self),
+			             priv->vlan_master_ifindex,
+			             priv->vlan_id);
+			g_object_unref (object);
+			return NULL;
+		}
+
+		master_iface = nm_netlink_index_to_iface (priv->vlan_master_ifindex);
+		nm_log_info (LOGD_DEVICE, "(%s): VLAN ID %d with master %s (ifindex: %d)",
+		             nm_device_get_iface (self),
+		             priv->vlan_id,
+		             master_iface ? master_iface : "(unknown)",
+		             priv->vlan_master_ifindex);
+		g_free (master_iface);
+	} else
 		priv->type = NM_ETHERNET_TYPE_UNSPEC;
 
 	nm_log_dbg (LOGD_HW | LOGD_ETHER, "(%s): kernel ifindex %d",
@@ -325,6 +362,11 @@ device_state_changed (NMDevice *device,
 static void
 nm_device_ethernet_init (NMDeviceEthernet * self)
 {
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+
+	priv->vlan_id = -1;
+	priv->vlan_master_ifindex = -1;
+
 	g_signal_connect (self, "state-changed", G_CALLBACK (device_state_changed), NULL);
 }
 
@@ -591,6 +633,51 @@ match_ethernet_connection (NMDevice *device, NMConnection *connection,
 		/* NOP */
 	} else if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)) {
 		/* NOP */
+	} else if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
+		NMSettingConnection *s_con = nm_connection_get_setting_connection (connection);
+		NMSettingVlan *s_vlan = nm_connection_get_setting_vlan (connection);
+		const char *master;
+		int con_master_ifindex;
+
+		g_assert (s_vlan);
+		g_assert (s_con);
+
+		if (priv->type != NM_ETHERNET_TYPE_VLAN) {
+			g_set_error (error, NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INVALID,
+			             "The device was not a VLAN interface.");
+			return FALSE;
+		}
+
+		if (nm_setting_vlan_get_id (s_vlan) != priv->vlan_id) {
+			g_set_error (error, NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INVALID,
+			             "The connection's VLAN ID did not match the device's VLAN ID.");
+			return FALSE;
+		}
+
+		/* Check master interface */
+		master = nm_setting_connection_get_master (s_con);
+		if (!master) {
+			g_set_error (error, NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INVALID,
+			             "The connection did not specify a VLAN master.");
+			return FALSE;
+		}
+
+		if (nm_utils_is_uuid (master)) {
+			/* FIXME: find the master device based on the connection UUID; this
+			 * is a bit hard because NMDevice objects (by design) have no
+			 * knowledge of other NMDevice objects, and we need to look through
+			 * all active NMDevices to see if they are using the given
+			 * connection UUID.
+			 */
+		} else {
+			/* It's an interface name; match it against our master */
+			con_master_ifindex = nm_netlink_iface_to_index (master);
+			if (con_master_ifindex < 0 || con_master_ifindex != priv->vlan_master_ifindex) {
+				g_set_error (error, NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INVALID,
+					         "The connection's VLAN master did not match the device's VLAN master interface.");
+				return FALSE;
+			}
+		}
 	} else if (nm_connection_is_type (connection, NM_SETTING_WIRED_SETTING_NAME)) {
 		if (!s_wired) {
 			g_set_error (error,

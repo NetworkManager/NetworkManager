@@ -410,6 +410,9 @@ net_add (NMUdevManager *self, GUdevDevice *udev_device)
 		case NM_IFACE_TYPE_BOND:
 			driver = "bonding";
 			break;
+		case NM_IFACE_TYPE_VLAN:
+			driver = "8021q";
+			break;
 		default:
 			if (g_str_has_prefix (ifname, "easytether"))
 				driver = "easytether";
