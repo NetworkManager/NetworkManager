@@ -30,6 +30,7 @@
 #include "nm-remote-connection.h"
 #include "nm-remote-connection-private.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-glib-compat.h"
 
 #define NM_REMOTE_CONNECTION_BUS "bus"
 

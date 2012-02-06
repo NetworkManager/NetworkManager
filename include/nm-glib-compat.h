@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /* NetworkManager -- Network link manager
  *
  * Dan Williams <dcbw@redhat.com>
@@ -27,6 +28,15 @@
 #if !GLIB_CHECK_VERSION(2,31,0)
 #define g_value_set_schar g_value_set_char
 #define g_value_get_schar g_value_get_char
+#endif
+
+#if !GLIB_CHECK_VERSION(2,28,0)
+#define g_simple_async_result_take_error(result, error) \
+	G_STMT_START { \
+		GError *__error = error; \
+		g_simple_async_result_set_from_error (result, __error); \
+		g_error_free (__error); \
+	} G_STMT_END
 #endif
 
 #endif  /* NM_GLIB_COMPAT_H */

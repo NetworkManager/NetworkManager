@@ -602,7 +602,8 @@ object_created (GObject *obj, gpointer user_data)
 	} else {
 		GObject **obj_p = pi->field;
 
-		g_clear_object (obj_p);
+		if (*obj_p)
+			g_object_unref (*obj_p);
 		*obj_p = odata->objects[0];
 	}
 

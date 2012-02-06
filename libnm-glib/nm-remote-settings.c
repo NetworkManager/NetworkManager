@@ -29,6 +29,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-remote-settings.h"
 #include "nm-remote-connection-private.h"
+#include "nm-glib-compat.h"
 
 static void nm_remote_settings_initable_iface_init (GInitableIface *iface);
 static void nm_remote_settings_async_initable_iface_init (GAsyncInitableIface *iface);

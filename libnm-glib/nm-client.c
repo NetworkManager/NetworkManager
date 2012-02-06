@@ -36,6 +36,7 @@
 #include "nm-vpn-connection.h"
 #include "nm-object-cache.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-glib-compat.h"
 
 void _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enabled);
 
