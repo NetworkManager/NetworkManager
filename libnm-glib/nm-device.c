@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2011 Red Hat, Inc.
+ * Copyright (C) 2007 - 2012 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -52,6 +52,8 @@ G_DEFINE_TYPE_WITH_CODE (NMDevice, nm_device, NM_TYPE_OBJECT,
                                                         nm_device_type_for_path_async);
                          )
 
+#define DBUS_G_TYPE_UINT_STRUCT (dbus_g_type_get_struct ("GValueArray", G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INVALID))
+
 #define NM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE, NMDevicePrivate))
 
 typedef struct {
@@ -71,6 +73,7 @@ typedef struct {
 	NMIP6Config *ip6_config;
 	NMDHCP6Config *dhcp6_config;
 	NMDeviceState state;
+	NMDeviceStateReason reason;
 
 	NMActiveConnection *active_connection;
 
@@ -91,6 +94,7 @@ enum {
 	PROP_DHCP4_CONFIG,
 	PROP_IP6_CONFIG,
 	PROP_STATE,
+	PROP_STATE_REASON,
 	PROP_PRODUCT,
 	PROP_VENDOR,
 	PROP_DHCP6_CONFIG,
@@ -116,6 +120,24 @@ nm_device_init (NMDevice *device)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 
 	priv->state = NM_DEVICE_STATE_UNKNOWN;
+	priv->reason = NM_DEVICE_STATE_REASON_NONE;
+}
+
+static gboolean
+demarshal_state_reason (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
+
+	if (!G_VALUE_HOLDS (value, DBUS_G_TYPE_UINT_STRUCT))
+		return FALSE;
+
+	dbus_g_type_struct_get (value,
+	                        0, &priv->state,
+	                        1, &priv->reason,
+	                        G_MAXUINT);
+
+	_nm_object_queue_notify (object, NM_DEVICE_STATE_REASON);
+	return TRUE;
 }
 
 static void
@@ -135,6 +157,7 @@ register_properties (NMDevice *device)
 		{ NM_DEVICE_IP6_CONFIG,        &priv->ip6_config, NULL, NM_TYPE_IP6_CONFIG },
 		{ NM_DEVICE_DHCP6_CONFIG,      &priv->dhcp6_config, NULL, NM_TYPE_DHCP6_CONFIG },
 		{ NM_DEVICE_STATE,             &priv->state },
+		{ NM_DEVICE_STATE_REASON,      &priv->state, demarshal_state_reason },
 		{ NM_DEVICE_ACTIVE_CONNECTION, &priv->active_connection, NULL, NM_TYPE_ACTIVE_CONNECTION },
 
 		/* The D-Bus interface has this property, but we don't; register
@@ -246,6 +269,7 @@ get_property (GObject *object,
               GParamSpec *pspec)
 {
 	NMDevice *device = NM_DEVICE (object);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 
 	switch (prop_id) {
 	case PROP_DEVICE_TYPE:
@@ -286,6 +310,14 @@ get_property (GObject *object,
 		break;
 	case PROP_STATE:
 		g_value_set_uint (value, nm_device_get_state (device));
+		break;
+	case PROP_STATE_REASON:
+		g_value_set_boxed (value,
+		                   dbus_g_type_specialized_construct (DBUS_G_TYPE_UINT_STRUCT));
+		dbus_g_type_struct_set (value,
+		                        0, priv->state,
+		                        1, priv->reason,
+		                        G_MAXUINT);
 		break;
 	case PROP_ACTIVE_CONNECTION:
 		g_value_set_object (value, nm_device_get_active_connection (device));
@@ -512,6 +544,19 @@ nm_device_class_init (NMDeviceClass *device_class)
 						  "State",
 						  0, G_MAXUINT32, 0,
 						  G_PARAM_READABLE));
+
+	/**
+	 * NMDevice:state-reason:
+	 *
+	 * The state and reason of the device.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_STATE_REASON,
+		 g_param_spec_boxed (NM_DEVICE_STATE_REASON,
+		                     "StateReason",
+		                     "StateReason",
+		                     DBUS_G_TYPE_UINT_STRUCT,
+		                     G_PARAM_READABLE));
 
 	/**
 	 * NMDevice:active-connection:
@@ -963,6 +1008,27 @@ nm_device_get_state (NMDevice *device)
 	g_return_val_if_fail (NM_IS_DEVICE (device), NM_DEVICE_STATE_UNKNOWN);
 
 	_nm_object_ensure_inited (NM_OBJECT (device));
+	return NM_DEVICE_GET_PRIVATE (device)->state;
+}
+
+/**
+ * nm_device_get_state_reason:
+ * @device: a #NMDevice
+ * @reason: (out) (allow-none): location to store reason (#NMDeviceStateReason), or NULL
+ *
+ * Gets the current #NMDevice state (return value) and the reason for entering
+ * the state (@reason argument).
+ *
+ * Returns: the current device state
+ **/
+NMDeviceState
+nm_device_get_state_reason (NMDevice *device, NMDeviceStateReason *reason)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (device), NM_DEVICE_STATE_UNKNOWN);
+
+	_nm_object_ensure_inited (NM_OBJECT (device));
+	if (reason)
+		*reason = NM_DEVICE_GET_PRIVATE (device)->reason;
 	return NM_DEVICE_GET_PRIVATE (device)->state;
 }
 
