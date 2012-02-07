@@ -757,7 +757,21 @@ handle_property_changed (NMObject *self, const char *dbus_name, GValue *value, g
 		goto out;
 	}
 
+#if DEBUG
+	{
+		char *s;
+		s = g_strdup_value_contents (value);
+		g_message ("PC: %p (%s) prop (%s) '%s' value (%s) %s",
+		           self, G_OBJECT_TYPE_NAME (self),
+		           g_type_name (pspec->value_type), prop_name,
+		           G_VALUE_TYPE_NAME (value), s);
+		g_free (s);
+	}
+#endif
 	if (pi->object_type) {
+#if DEBUG
+		g_message ("   Value is object type %s", g_type_name (pi->object_type));
+#endif
 		if (G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
 			success = handle_object_property (self, pspec->name, value, pi, synchronously);
 		else if (G_VALUE_HOLDS (value, DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH))

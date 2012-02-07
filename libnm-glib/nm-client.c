@@ -1236,6 +1236,8 @@ constructed (GObject *object)
 	DBusGConnection *connection;
 	NMClientPrivate *priv;
 
+	nm_utils_init (NULL);
+
 	G_OBJECT_CLASS (nm_client_parent_class)->constructed (object);
 
 	priv = NM_CLIENT_GET_PRIVATE (object);
