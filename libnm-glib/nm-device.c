@@ -38,6 +38,7 @@
 #include "nm-object-cache.h"
 #include "nm-marshal.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-glib-compat.h"
 
 static GType nm_device_type_for_path (DBusGConnection *connection,
                                       const char *path);

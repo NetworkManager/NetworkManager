@@ -31,6 +31,7 @@
 #include "nm-device-private.h"
 #include "nm-connection.h"
 #include "nm-vpn-connection.h"
+#include "nm-glib-compat.h"
 
 static GType nm_active_connection_type_for_path (DBusGConnection *connection,
                                                  const char *path);

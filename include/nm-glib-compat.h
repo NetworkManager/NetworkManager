@@ -23,11 +23,16 @@
 #ifndef NM_GLIB_COMPAT_H
 #define NM_GLIB_COMPAT_H
 
+
 #include <glib.h>
 
 #if !GLIB_CHECK_VERSION(2,31,0)
 #define g_value_set_schar g_value_set_char
 #define g_value_get_schar g_value_get_char
+#endif
+
+#if !GLIB_CHECK_VERSION(2,30,0)
+#define G_VALUE_INIT  { 0, { { 0 } } }
 #endif
 
 #if !GLIB_CHECK_VERSION(2,28,0)
