@@ -202,15 +202,17 @@ wifi_nl80211_set_mode (WifiData *data, const NM80211Mode mode)
 	return TRUE;
 }
 
-static guint32 nl80211_mbm_to_percent (gint32 mbm)
+/* @divisor: pass what value @xbm should be divided by to get dBm */
+static guint32 nl80211_xbm_to_percent (gint32 xbm, guint32 divisor)
 {
-#define NOISE_FLOOR_MBM  -9000
-#define SIGNAL_MAX_MBM   -2000
+#define NOISE_FLOOR_DBM  -90
+#define SIGNAL_MAX_DBM   -20
 
-	mbm = CLAMP(mbm, NOISE_FLOOR_MBM, SIGNAL_MAX_MBM);
+	xbm /= divisor;
+	xbm = CLAMP(xbm, NOISE_FLOOR_DBM, SIGNAL_MAX_DBM);
 
-	return 100 - 70 * (((float) SIGNAL_MAX_MBM - (float) mbm) /
-			   ((float) SIGNAL_MAX_MBM - (float) NOISE_FLOOR_MBM));
+	return 100 - 70 * (((float) SIGNAL_MAX_DBM - (float) xbm) /
+			   ((float) SIGNAL_MAX_DBM - (float) NOISE_FLOOR_DBM));
 }
 
 struct nl80211_bss_info {
@@ -298,8 +300,7 @@ static int nl80211_bss_dump_handler (struct nl_msg *msg, void *arg)
 
 	if (bss[NL80211_BSS_SIGNAL_MBM])
 		info->beacon_signal =
-			nl80211_mbm_to_percent (
-				nla_get_u32 (bss[NL80211_BSS_SIGNAL_MBM]));
+			nl80211_xbm_to_percent (nla_get_u32 (bss[NL80211_BSS_SIGNAL_MBM]), 100);
 
 	if (bss[NL80211_BSS_INFORMATION_ELEMENTS]) {
 		guint8 *ssid;
@@ -328,8 +329,7 @@ static void nl80211_get_bss_info (WifiDataNl80211 *nl80211,
 
 	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_GET_SCAN, NLM_F_DUMP);
 
-	nl80211_send_and_recv (nl80211, msg, nl80211_bss_dump_handler,
-			       bss_info);
+	nl80211_send_and_recv (nl80211, msg, nl80211_bss_dump_handler, bss_info);
 }
 
 static guint32
@@ -393,7 +393,9 @@ wifi_nl80211_get_bssid (WifiData *data, struct ether_addr *out_bssid)
 
 struct nl80211_station_info {
 	guint32 txrate;
-	gboolean valid;
+	gboolean txrate_valid;
+	guint8 signal;
+	gboolean signal_valid;
 };
 
 static int nl80211_station_handler (struct nl_msg *msg, void *arg)
@@ -448,7 +450,13 @@ static int nl80211_station_handler (struct nl_msg *msg, void *arg)
 
 	/* convert from nl80211's units of 100kbps to NM's kbps */
 	info->txrate = nla_get_u16 (rinfo[NL80211_RATE_INFO_BITRATE]) * 100;
-	info->valid = TRUE;
+	info->txrate_valid = TRUE;
+
+	if (sinfo[NL80211_STA_INFO_SIGNAL] != NULL) {
+		info->signal = nl80211_xbm_to_percent ((gint8) nla_get_u8 (sinfo[NL80211_STA_INFO_SIGNAL]), 1);
+		info->signal_valid = TRUE;
+	}
+
 	return NL_SKIP;
 }
 
@@ -468,8 +476,11 @@ static void nl80211_get_ap_info (WifiDataNl80211 *nl80211,
 	if (msg) {
 		NLA_PUT (msg, NL80211_ATTR_MAC, ETH_ALEN, bss_info.bssid);
 
-		nl80211_send_and_recv (nl80211, msg, nl80211_station_handler,
-				       sta_info);
+		nl80211_send_and_recv (nl80211, msg, nl80211_station_handler, sta_info);
+		if (!sta_info->signal_valid) {
+			/* Fall back to bss_info signal quality (both are in percent) */
+			sta_info->signal = bss_info.beacon_signal;
+		}
 	}
 
 	return;
@@ -494,11 +505,10 @@ static int
 wifi_nl80211_get_qual (WifiData *data)
 {
 	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
-	struct nl80211_bss_info bss_info;
+	struct nl80211_station_info sta_info;
 
-	nl80211_get_bss_info (nl80211, &bss_info);
-
-	return bss_info.beacon_signal;
+	nl80211_get_ap_info (nl80211, &sta_info);
+	return sta_info.signal;
 }
 
 struct nl80211_device_info {
