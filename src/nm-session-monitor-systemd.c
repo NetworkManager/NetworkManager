@@ -195,7 +195,9 @@ nm_session_monitor_get (void)
 	if (singleton)
 		return g_object_ref (singleton);
 
-	return NM_SESSION_MONITOR (g_object_new (NM_TYPE_SESSION_MONITOR, NULL));
+	singleton = NM_SESSION_MONITOR (g_object_new (NM_TYPE_SESSION_MONITOR, NULL));
+	assert (singleton);
+	return singleton;
 }
 
 gboolean
