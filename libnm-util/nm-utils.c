@@ -537,6 +537,14 @@ _nm_utils_string_slist_validate (GSList *list, const char **valid_values)
 }
 
 static void
+_nm_utils_convert_op_to_string (const GValue *src_value, GValue *dest_value)
+{
+	g_return_if_fail (g_type_is_a (G_VALUE_TYPE (src_value), DBUS_TYPE_G_OBJECT_PATH));
+
+	g_value_set_string (dest_value, (const char *) g_value_get_boxed (src_value));
+}
+
+static void
 _nm_utils_convert_strv_to_slist (const GValue *src_value, GValue *dest_value)
 {
 	char **str;
@@ -598,15 +606,10 @@ _nm_utils_convert_strv_to_string (const GValue *src_value, GValue *dest_value)
 }
 
 static void
-_nm_utils_convert_string_array_to_string (const GValue *src_value, GValue *dest_value)
+_string_array_to_string (const GPtrArray *strings, GValue *dest_value)
 {
-	GPtrArray *strings;
 	GString *printable;
 	int i;
-
-	g_return_if_fail (g_type_is_a (G_VALUE_TYPE (src_value), DBUS_TYPE_G_ARRAY_OF_STRING));
-
-	strings = (GPtrArray *) g_value_get_boxed (src_value);
 
 	printable = g_string_new ("[");
 	for (i = 0; strings && i < strings->len; i++) {
@@ -621,6 +624,28 @@ _nm_utils_convert_string_array_to_string (const GValue *src_value, GValue *dest_
 
 	g_value_take_string (dest_value, printable->str);
 	g_string_free (printable, FALSE);
+}
+
+static void
+_nm_utils_convert_string_array_to_string (const GValue *src_value, GValue *dest_value)
+{
+	const GPtrArray *strings;
+
+	g_return_if_fail (g_type_is_a (G_VALUE_TYPE (src_value), DBUS_TYPE_G_ARRAY_OF_STRING));
+
+	strings = (const GPtrArray *) g_value_get_boxed (src_value);
+	_string_array_to_string (strings, dest_value);
+}
+
+static void
+_nm_utils_convert_op_array_to_string (const GValue *src_value, GValue *dest_value)
+{
+	const GPtrArray *strings;
+
+	g_return_if_fail (g_type_is_a (G_VALUE_TYPE (src_value), DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH));
+
+	strings = (const GPtrArray *) g_value_get_boxed (src_value);
+	_string_array_to_string (strings, dest_value);
 }
 
 static void
@@ -1082,6 +1107,9 @@ _nm_utils_register_value_transformations (void)
 	static gboolean registered = FALSE;
 
 	if (G_UNLIKELY (!registered)) {
+		g_value_register_transform_func (DBUS_TYPE_G_OBJECT_PATH,
+		                                 G_TYPE_STRING,
+		                                 _nm_utils_convert_op_to_string);
 		g_value_register_transform_func (G_TYPE_STRV, 
 		                                 DBUS_TYPE_G_LIST_OF_STRING,
 		                                 _nm_utils_convert_strv_to_slist);
@@ -1094,6 +1122,9 @@ _nm_utils_register_value_transformations (void)
 		g_value_register_transform_func (DBUS_TYPE_G_ARRAY_OF_STRING,
 		                                 G_TYPE_STRING,
 		                                 _nm_utils_convert_string_array_to_string);
+		g_value_register_transform_func (DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
+		                                 G_TYPE_STRING,
+		                                 _nm_utils_convert_op_array_to_string);
 		g_value_register_transform_func (DBUS_TYPE_G_UINT_ARRAY,
 		                                 G_TYPE_STRING, 
 		                                 _nm_utils_convert_uint_array_to_string);
