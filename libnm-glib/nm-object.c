@@ -781,7 +781,7 @@ out:
 }
 
 static void
-process_properties_changed (NMObject *self, GHashTable *properties)
+process_properties_changed (NMObject *self, GHashTable *properties, gboolean synchronously)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
 	GHashTableIter iter;
@@ -792,7 +792,7 @@ process_properties_changed (NMObject *self, GHashTable *properties)
 
 	g_hash_table_iter_init (&iter, properties);
 	while (g_hash_table_iter_next (&iter, &name, &value))
-		handle_property_changed (self, name, value, FALSE);
+		handle_property_changed (self, name, value, synchronously);
 }
 
 static void
@@ -800,7 +800,7 @@ properties_changed_proxy (DBusGProxy *proxy,
                           GHashTable *properties,
                           gpointer user_data)
 {
-	process_properties_changed (NM_OBJECT (user_data), properties);
+	process_properties_changed (NM_OBJECT (user_data), properties, FALSE);
 }
 
 #define HANDLE_TYPE(ucase, lcase, getter) \
@@ -929,7 +929,7 @@ _nm_object_reload_properties (NMObject *object, GError **error)
 		                        G_TYPE_INVALID))
 			return FALSE;
 
-		process_properties_changed (object, props);
+		process_properties_changed (object, props, TRUE);
 		g_hash_table_destroy (props);
 	}
 
@@ -1229,7 +1229,7 @@ reload_got_properties (DBusGProxy *proxy, DBusGProxyCall *call,
 	if (dbus_g_proxy_end_call (proxy, call, &error,
 	                           DBUS_TYPE_G_MAP_OF_VARIANT, &props,
 	                           G_TYPE_INVALID)) {
-		process_properties_changed (object, props);
+		process_properties_changed (object, props, FALSE);
 		g_hash_table_destroy (props);
 	} else {
 		if (priv->reload_error)
