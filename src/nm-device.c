@@ -58,6 +58,7 @@
 #include "nm-rfkill.h"
 #include "nm-firewall-manager.h"
 #include "nm-properties-changed-signal.h"
+#include "nm-enum-types.h"
 
 static void impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context);
 
@@ -69,14 +70,7 @@ static void impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *con
 #define DBUS_G_TYPE_UINT_STRUCT (dbus_g_type_get_struct ("GValueArray", G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INVALID))
 
 /***********************************************************/
-typedef enum {
-	NM_DEVICE_ERROR_CONNECTION_ACTIVATING = 0,
-	NM_DEVICE_ERROR_CONNECTION_INVALID,
-	NM_DEVICE_ERROR_NOT_ACTIVE,
-} NMDeviceError;
-
 #define NM_DEVICE_ERROR (nm_device_error_quark ())
-#define NM_TYPE_DEVICE_ERROR (nm_device_error_get_type ())
 
 static GQuark
 nm_device_error_quark (void)
@@ -85,29 +79,6 @@ nm_device_error_quark (void)
 	if (!quark)
 		quark = g_quark_from_static_string ("nm-device-error");
 	return quark;
-}
-
-/* This should really be standard. */
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-static GType
-nm_device_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			/* Connection is already activating. */
-			ENUM_ENTRY (NM_DEVICE_ERROR_CONNECTION_ACTIVATING, "ConnectionActivating"),
-			/* Connection is invalid for this device. */
-			ENUM_ENTRY (NM_DEVICE_ERROR_CONNECTION_INVALID, "ConnectionInvalid"),
-			/* Operation could not be performed because the device is not active. */
-			ENUM_ENTRY (NM_DEVICE_ERROR_NOT_ACTIVE, "NotActive"),
-			{ 0, 0, 0 }
-		};
-		etype = g_enum_register_static ("NMDeviceError", values);
-	}
-	return etype;
 }
 
 /***********************************************************/

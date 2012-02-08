@@ -26,6 +26,8 @@
 #include <glib.h>
 #include <glib-object.h>
 
+#include <nm-glib-enum-types.h>
+
 G_BEGIN_DECLS
 
 #define NM_TYPE_SSID  (nm_ssid_get_type ())

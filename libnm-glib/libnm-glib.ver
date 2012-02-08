@@ -46,6 +46,8 @@ global:
 	nm_client_new;
 	nm_client_new_async;
 	nm_client_new_finish;
+	nm_client_permission_get_type;
+	nm_client_permission_result_get_type;
 	nm_client_sleep;
 	nm_client_wimax_get_enabled;
 	nm_client_wimax_hardware_get_enabled;
@@ -169,6 +171,7 @@ global:
 	nm_secret_agent_register;
 	nm_secret_agent_save_secrets;
 	nm_secret_agent_unregister;
+	nm_secret_agent_get_secrets_flags_get_type;
 	nm_ssid_get_type;
 	nm_string_array_get_type;
 	nm_uint_array_get_type;
@@ -182,6 +185,7 @@ global:
 	nm_wimax_nsp_get_network_type;
 	nm_wimax_nsp_get_signal_quality;
 	nm_wimax_nsp_get_type;
+	nm_wimax_nsp_network_type_get_type;
 	nm_wimax_nsp_new;
 local:
 	*;

@@ -32,6 +32,7 @@
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
+#include "nm-enum-types.h"
 
 #include "nm-device-infiniband-glue.h"
 
@@ -40,15 +41,7 @@ G_DEFINE_TYPE (NMDeviceInfiniband, nm_device_infiniband, NM_TYPE_DEVICE_WIRED)
 
 #define NM_DEVICE_INFINIBAND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_INFINIBAND, NMDeviceInfinibandPrivate))
 
-typedef enum
-{
-	NM_INFINIBAND_ERROR_CONNECTION_NOT_INFINIBAND = 0,
-	NM_INFINIBAND_ERROR_CONNECTION_INVALID,
-	NM_INFINIBAND_ERROR_CONNECTION_INCOMPATIBLE,
-} NMInfinibandError;
-
 #define NM_INFINIBAND_ERROR (nm_infiniband_error_quark ())
-#define NM_TYPE_INFINIBAND_ERROR (nm_infiniband_error_get_type ())
 
 typedef struct {
 	int dummy;
@@ -77,29 +70,6 @@ nm_infiniband_error_quark (void)
 	if (!quark)
 		quark = g_quark_from_static_string ("nm-infiniband-error");
 	return quark;
-}
-
-/* This should really be standard. */
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-static GType
-nm_infiniband_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			/* Connection was not a wired connection. */
-			ENUM_ENTRY (NM_INFINIBAND_ERROR_CONNECTION_NOT_INFINIBAND, "ConnectionNotInfiniband"),
-			/* Connection was not a valid wired connection. */
-			ENUM_ENTRY (NM_INFINIBAND_ERROR_CONNECTION_INVALID, "ConnectionInvalid"),
-			/* Connection does not apply to this device. */
-			ENUM_ENTRY (NM_INFINIBAND_ERROR_CONNECTION_INCOMPATIBLE, "ConnectionIncompatible"),
-			{ 0, 0, 0 }
-		};
-		etype = g_enum_register_static ("NMInfinibandError", values);
-	}
-	return etype;
 }
 
 static GObject*

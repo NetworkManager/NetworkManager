@@ -42,7 +42,6 @@ typedef enum
 } NMVPNManagerError;
 
 #define NM_VPN_MANAGER_ERROR (nm_vpn_manager_error_quark ())
-#define NM_TYPE_VPN_MANAGER_ERROR (nm_vpn_manager_error_get_type ()) 
 
 GQuark nm_vpn_manager_error_quark (void);
 GType nm_vpn_manager_error_get_type (void);

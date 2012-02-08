@@ -29,6 +29,7 @@
 #include "nm-dbus-manager.h"
 #include "NetworkManagerVPN.h"
 #include "nm-marshal.h"
+#include "nm-enum-types.h"
 #include "nm-logging.h"
 
 G_DEFINE_TYPE (NMVPNManager, nm_vpn_manager, G_TYPE_OBJECT)
@@ -59,31 +60,6 @@ nm_vpn_manager_error_quark (void)
 	if (!quark)
 		quark = g_quark_from_static_string ("nm-vpn-manager-error");
 	return quark;
-}
-
-/* This should really be standard. */
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-GType
-nm_vpn_manager_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			/* The base device for the VPN connection is not active. */
-			ENUM_ENTRY (NM_VPN_MANAGER_ERROR_DEVICE_NOT_ACTIVE, "BaseDeviceNotActive"),
-			/* The requested VPN connection was invalid. */
-			ENUM_ENTRY (NM_VPN_MANAGER_ERROR_CONNECTION_INVALID, "ConnectionInvalid"),
-			/* The VPN service required by this VPN connection did not exist or was invalid. */
-			ENUM_ENTRY (NM_VPN_MANAGER_ERROR_SERVICE_INVALID, "ServiceInvalid"),
-			/* The VPN service required by this VPN connection could not be started. */
-			ENUM_ENTRY (NM_VPN_MANAGER_ERROR_SERVICE_START_FAILED, "ServiceStartFailed"),
-			{ 0, 0, 0 }
-		};
-		etype = g_enum_register_static ("NMVPNManagerError", values);
-	}
-	return etype;
 }
 
 

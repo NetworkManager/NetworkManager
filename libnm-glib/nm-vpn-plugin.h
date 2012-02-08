@@ -55,7 +55,6 @@ typedef enum {
 } NMVPNPluginError;
 
 #define NM_VPN_PLUGIN_ERROR      (nm_vpn_plugin_error_quark ())
-#define NM_TYPE_VPN_PLUGIN_ERROR (nm_vpn_plugin_error_get_type ()) 
 
 typedef struct {
 	GObject parent;

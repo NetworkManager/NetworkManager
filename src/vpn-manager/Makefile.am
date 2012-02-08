@@ -3,9 +3,9 @@ INCLUDES = \
 	-I${top_srcdir}/include \
 	-I${top_builddir}/include \
 	-I${top_srcdir}/libnm-util \
+	-I${top_srcdir}/src/generated \
 	-I${top_srcdir}/src/logging \
 	-I${top_srcdir}/src \
-	-I${top_builddir}/marshallers \
 	-I${top_srcdir}/src/dns-manager \
 	-DVPN_NAME_FILES_DIR=\""$(sysconfdir)/NetworkManager/VPN"\"
 
@@ -27,7 +27,7 @@ libvpn_manager_la_CPPFLAGS =	\
 	-DG_DISABLE_DEPRECATED
 
 libvpn_manager_la_LIBADD = \
-	$(top_builddir)/marshallers/libmarshallers.la \
+	$(top_builddir)/src/generated/libnm-generated.la \
 	$(top_builddir)/src/logging/libnm-logging.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(LIBNL_LIBS) \

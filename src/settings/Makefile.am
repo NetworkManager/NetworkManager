@@ -4,9 +4,9 @@ INCLUDES = -I${top_srcdir} \
            -I${top_srcdir}/include \
            -I${top_builddir}/include \
            -I${top_srcdir}/libnm-util \
+           -I${top_srcdir}/src/generated \
            -I${top_srcdir}/src/logging \
-           -I${top_srcdir}/src \
-           -I${top_builddir}/marshallers
+           -I${top_srcdir}/src
 
 noinst_LTLIBRARIES = libsettings.la libtest-settings-utils.la
 
@@ -65,7 +65,7 @@ libsettings_la_CPPFLAGS = \
 
 libsettings_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/marshallers/libmarshallers.la \
+	$(top_builddir)/src/generated/libnm-generated.la \
 	$(top_builddir)/src/logging/libnm-logging.la \
 	$(builddir)/plugins/keyfile/libnm-settings-plugin-keyfile.la \
 	$(DBUS_LIBS) \

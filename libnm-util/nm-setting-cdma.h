@@ -55,9 +55,6 @@ typedef enum {
 	NM_SETTING_CDMA_ERROR_MISSING_SERIAL_SETTING
 } NMSettingCdmaError;
 
-#define NM_TYPE_SETTING_CDMA_ERROR (nm_setting_cdma_error_get_type ()) 
-GType nm_setting_cdma_error_get_type (void);
-
 #define NM_SETTING_CDMA_ERROR nm_setting_cdma_error_quark ()
 GQuark nm_setting_cdma_error_quark (void);
 

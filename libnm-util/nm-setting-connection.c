@@ -58,28 +58,6 @@ nm_setting_connection_error_quark (void)
 	return quark;
 }
 
-/* This should really be standard. */
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-GType
-nm_setting_connection_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			ENUM_ENTRY (NM_SETTING_CONNECTION_ERROR_UNKNOWN, "UnknownError"),
-			ENUM_ENTRY (NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY, "InvalidProperty"),
-			ENUM_ENTRY (NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY, "MissingProperty"),
-			ENUM_ENTRY (NM_SETTING_CONNECTION_ERROR_TYPE_SETTING_NOT_FOUND, "TypeSettingNotFound"),
-			ENUM_ENTRY (NM_SETTING_CONNECTION_ERROR_IP_CONFIG_NOT_ALLOWED, "IpConfigNotAllowed"),
-			{ 0, 0, 0 }
-		};
-		etype = g_enum_register_static ("NMSettingConnectionError", values);
-	}
-	return etype;
-}
-
 
 G_DEFINE_TYPE (NMSettingConnection, nm_setting_connection, NM_TYPE_SETTING)
 

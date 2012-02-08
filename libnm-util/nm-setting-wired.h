@@ -52,9 +52,6 @@ typedef enum {
 	NM_SETTING_WIRED_ERROR_MISSING_PROPERTY
 } NMSettingWiredError;
 
-#define NM_TYPE_SETTING_WIRED_ERROR (nm_setting_wired_error_get_type ()) 
-GType nm_setting_wired_error_get_type (void);
-
 #define NM_SETTING_WIRED_ERROR nm_setting_wired_error_quark ()
 GQuark nm_setting_wired_error_quark (void);
 

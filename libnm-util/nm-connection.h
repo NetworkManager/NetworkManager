@@ -83,9 +83,6 @@ typedef enum
 	NM_CONNECTION_ERROR_SETTING_NOT_FOUND
 } NMConnectionError;
 
-#define NM_TYPE_CONNECTION_ERROR (nm_connection_error_get_type ()) 
-GType nm_connection_error_get_type (void);
-
 #define NM_CONNECTION_ERROR nm_connection_error_quark ()
 GQuark nm_connection_error_quark (void);
 

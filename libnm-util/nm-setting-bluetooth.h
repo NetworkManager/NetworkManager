@@ -57,9 +57,6 @@ typedef enum {
 	NM_SETTING_BLUETOOTH_ERROR_TYPE_SETTING_NOT_FOUND,
 } NMSettingBluetoothError;
 
-#define NM_TYPE_SETTING_BLUETOOTH_ERROR (nm_setting_bluetooth_error_get_type ()) 
-GType nm_setting_bluetooth_error_get_type (void);
-
 #define NM_SETTING_BLUETOOTH_ERROR nm_setting_bluetooth_error_quark ()
 GQuark nm_setting_bluetooth_error_quark (void);
 

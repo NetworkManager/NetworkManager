@@ -47,25 +47,6 @@ nm_config_error_quark (void)
 	return quark;
 }
 
-/* This should really be standard. */
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-GType
-nm_config_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			/* Not enough memory to parse the config file. */
-			ENUM_ENTRY (NM_CONFIG_ERROR_NO_MEMORY, "NoMemory"),
-			{ 0, 0, 0 }
-		};
-		etype = g_enum_register_static ("NMConfigError", values);
-	}
-	return etype;
-}
-
 /************************************************************************/
 
 const char *

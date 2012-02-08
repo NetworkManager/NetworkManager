@@ -1,5 +1,6 @@
+include $(GLIB_MAKEFILE)
+
 SUBDIRS = \
-	marshallers \
 	include \
 	libnm-util \
 	libnm-glib \
@@ -22,7 +23,8 @@ EXTRA_DIST = \
 	NetworkManager.pc.in \
 	intltool-extract.in \
 	intltool-merge.in \
-	intltool-update.in		
+	intltool-update.in \
+	Makefile.glib
 
 DISTCHECK_CONFIGURE_FLAGS = \
 	--with-tests=yes \
@@ -42,4 +44,4 @@ CLEANFILES = cscope.in.out cscope.out cscope.po.out
 
 .PHONY: cscope
 cscope:
-	cscope -b -q -R -Iinclude -ssrc -slibnm-glib -slibnm-util -smarshallers -scli/src;
+	cscope -b -q -R -Iinclude -ssrc -slibnm-glib -slibnm-util -scli/src;

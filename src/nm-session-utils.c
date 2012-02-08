@@ -34,31 +34,6 @@ nm_session_monitor_error_quark (void)
 	return ret;
 }
 
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-GType
-nm_session_monitor_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			/* Some I/O operation on the CK database failed */
-			ENUM_ENTRY (NM_SESSION_MONITOR_ERROR_IO_ERROR, "IOError"),
-			/* Error parsing the CK database */
-			ENUM_ENTRY (NM_SESSION_MONITOR_ERROR_MALFORMED_DATABASE, "MalformedDatabase"),
-			/* Username or UID could could not be found */
-			ENUM_ENTRY (NM_SESSION_MONITOR_ERROR_UNKNOWN_USER, "UnknownUser"),
-			/* No ConsoleKit database */
-			ENUM_ENTRY (NM_SESSION_MONITOR_ERROR_NO_DATABASE, "NoDatabase"),
-			{ 0, 0, 0 }
-		};
-
-		etype = g_enum_register_static ("NMSessionMonitorError", values);
-	}
-	return etype;
-}
-
 /********************************************************************/
 
 gboolean

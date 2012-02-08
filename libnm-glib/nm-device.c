@@ -36,7 +36,7 @@
 #include "nm-device-private.h"
 #include "nm-object-private.h"
 #include "nm-object-cache.h"
-#include "nm-marshal.h"
+#include "nm-glib-marshal.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 
@@ -202,7 +202,7 @@ constructed (GObject *object)
 
 	register_properties (NM_DEVICE (object));
 
-	dbus_g_object_register_marshaller (_nm_marshal_VOID__UINT_UINT_UINT,
+	dbus_g_object_register_marshaller (_nm_glib_marshal_VOID__UINT_UINT_UINT,
 									   G_TYPE_NONE,
 									   G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT,
 									   G_TYPE_INVALID);
@@ -612,7 +612,7 @@ nm_device_class_init (NMDeviceClass *device_class)
 				    G_SIGNAL_RUN_FIRST,
 				    G_STRUCT_OFFSET (NMDeviceClass, state_changed),
 				    NULL, NULL,
-				    _nm_marshal_VOID__UINT_UINT_UINT,
+				    _nm_glib_marshal_VOID__UINT_UINT_UINT,
 				    G_TYPE_NONE, 3,
 				    G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 }

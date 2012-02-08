@@ -25,7 +25,7 @@
 #include <glib.h>
 #include <glib-object.h>
 
-enum {
+typedef enum {
 	NM_SETTINGS_ERROR_GENERAL = 0,
 	NM_SETTINGS_ERROR_INVALID_CONNECTION,
 	NM_SETTINGS_ERROR_READ_ONLY_CONNECTION,
@@ -42,7 +42,7 @@ enum {
 	NM_SETTINGS_ERROR_SAVE_HOSTNAME_NOT_SUPPORTED,
 	NM_SETTINGS_ERROR_SAVE_HOSTNAME_FAILED,
 	NM_SETTINGS_ERROR_UUID_EXISTS,
-};
+} NMSettingsError;
 
 #define NM_SETTINGS_ERROR (nm_settings_error_quark ())
 GQuark nm_settings_error_quark (void);

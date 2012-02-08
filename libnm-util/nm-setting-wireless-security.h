@@ -65,9 +65,6 @@ typedef enum {
 	NM_SETTING_WIRELESS_SECURITY_ERROR_SHARED_KEY_REQUIRES_WEP
 } NMSettingWirelessSecurityError;
 
-#define NM_TYPE_SETTING_WIRELESS_SECURITY_ERROR (nm_setting_wireless_security_error_get_type ()) 
-GType nm_setting_wireless_security_error_get_type (void);
-
 #define NM_SETTING_WIRELESS_SECURITY_ERROR nm_setting_wireless_security_error_quark ()
 GQuark nm_setting_wireless_security_error_quark (void);
 

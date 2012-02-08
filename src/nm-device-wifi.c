@@ -57,6 +57,7 @@
 #include "nm-setting-ip6-config.h"
 #include "nm-system.h"
 #include "nm-settings-connection.h"
+#include "nm-enum-types.h"
 #include "wifi-utils.h"
 
 static gboolean impl_device_get_access_points (NMDeviceWifi *device,
@@ -183,15 +184,7 @@ static void cull_scan_list (NMDeviceWifi *self);
 
 /*****************************************************************/
 
-typedef enum {
-	NM_WIFI_ERROR_CONNECTION_NOT_WIRELESS = 0,
-	NM_WIFI_ERROR_CONNECTION_INVALID,
-	NM_WIFI_ERROR_CONNECTION_INCOMPATIBLE,
-	NM_WIFI_ERROR_ACCESS_POINT_NOT_FOUND,
-} NMWifiError;
-
 #define NM_WIFI_ERROR (nm_wifi_error_quark ())
-#define NM_TYPE_WIFI_ERROR (nm_wifi_error_get_type ())
 
 static GQuark
 nm_wifi_error_quark (void)
@@ -200,31 +193,6 @@ nm_wifi_error_quark (void)
 	if (!quark)
 		quark = g_quark_from_static_string ("nm-wifi-error");
 	return quark;
-}
-
-/* This should really be standard. */
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-static GType
-nm_wifi_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			/* Connection was not a wireless connection. */
-			ENUM_ENTRY (NM_WIFI_ERROR_CONNECTION_NOT_WIRELESS, "ConnectionNotWireless"),
-			/* Connection was not a valid wireless connection. */
-			ENUM_ENTRY (NM_WIFI_ERROR_CONNECTION_INVALID, "ConnectionInvalid"),
-			/* Connection does not apply to this device. */
-			ENUM_ENTRY (NM_WIFI_ERROR_CONNECTION_INCOMPATIBLE, "ConnectionIncompatible"),
-			/* Given access point was not in this device's scan list. */
-			ENUM_ENTRY (NM_WIFI_ERROR_ACCESS_POINT_NOT_FOUND, "AccessPointNotFound"),
-			{ 0, 0, 0 }
-		};
-		etype = g_enum_register_static ("NMWifiError", values);
-	}
-	return etype;
 }
 
 /*****************************************************************/

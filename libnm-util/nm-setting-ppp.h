@@ -55,9 +55,6 @@ typedef enum {
 	NM_SETTING_PPP_ERROR_REQUIRE_MPPE_NOT_ALLOWED
 } NMSettingPPPError;
 
-#define NM_TYPE_SETTING_PPP_ERROR (nm_setting_ppp_error_get_type ()) 
-GType nm_setting_ppp_error_get_type (void);
-
 #define NM_SETTING_PPP_ERROR nm_setting_ppp_error_quark ()
 GQuark nm_setting_ppp_error_quark (void);
 

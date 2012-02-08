@@ -31,7 +31,7 @@
 #include "nm-device-modem.h"
 #include "nm-device-private.h"
 #include "nm-object-private.h"
-#include "nm-marshal.h"
+#include "nm-glib-marshal.h"
 
 G_DEFINE_TYPE (NMDeviceModem, nm_device_modem, NM_TYPE_DEVICE)
 

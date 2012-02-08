@@ -27,8 +27,7 @@ INCLUDES = \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
 	-I$(top_srcdir)/libnm-glib \
-	-I$(top_srcdir)/libnm-util \
-	-I$(top_builddir)/marshallers
+	-I$(top_srcdir)/libnm-util
 
 libifcfg_rh_io_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
@@ -60,7 +59,6 @@ libnm_settings_plugin_ifcfg_rh_la_LDFLAGS = -module -avoid-version
 libnm_settings_plugin_ifcfg_rh_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(top_builddir)/libnm-glib/libnm-glib.la \
-	$(top_builddir)/marshallers/libmarshallers.la \
 	libifcfg-rh-io.la \
 	$(GLIB_LIBS) \
 	$(GMODULE_LIBS) \

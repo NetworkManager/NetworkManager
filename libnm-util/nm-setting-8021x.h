@@ -42,7 +42,7 @@ G_BEGIN_DECLS
  * #NMSetting8021xCKFormat values indicate the general type of a certificate
  * or private key
  */
-typedef enum {
+typedef enum { /*< underscore_name=nm_setting_802_1x_ck_format >*/
 	NM_SETTING_802_1X_CK_FORMAT_UNKNOWN = 0,
 	NM_SETTING_802_1X_CK_FORMAT_X509,
 	NM_SETTING_802_1X_CK_FORMAT_RAW_KEY,
@@ -62,7 +62,7 @@ typedef enum {
  * stored in the setting properties, either as a blob of the item's data, or as
  * a path to a certificate or private key file on the filesystem
  */
-typedef enum {
+typedef enum { /*< underscore_name=nm_setting_802_1x_ck_scheme >*/
 	NM_SETTING_802_1X_CK_SCHEME_UNKNOWN = 0,
 	NM_SETTING_802_1X_CK_SCHEME_BLOB,
 	NM_SETTING_802_1X_CK_SCHEME_PATH
@@ -85,14 +85,11 @@ typedef enum {
  * @NM_SETTING_802_1X_ERROR_MISSING_PROPERTY: the property was missing and is
  * required
  */
-typedef enum {
+typedef enum { /*< underscore_name=nm_setting_802_1x_error >*/
 	NM_SETTING_802_1X_ERROR_UNKNOWN = 0,
 	NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
 	NM_SETTING_802_1X_ERROR_MISSING_PROPERTY
 } NMSetting8021xError;
-
-#define NM_TYPE_SETTING_802_1X_ERROR (nm_setting_802_1x_error_get_type ()) 
-GType nm_setting_802_1x_error_get_type (void);
 
 #define NM_SETTING_802_1X_ERROR nm_setting_802_1x_error_quark ()
 GQuark nm_setting_802_1x_error_quark (void);

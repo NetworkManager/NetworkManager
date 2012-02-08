@@ -1,4 +1,5 @@
 SUBDIRS= \
+	generated \
 	logging \
 	dns-manager \
 	vpn-manager \
@@ -22,7 +23,7 @@ SUBDIRS += . tests
 INCLUDES = -I${top_srcdir} \
            -I${top_srcdir}/include \
            -I${top_builddir}/include \
-           -I${top_builddir}/marshallers \
+           -I${top_srcdir}/src/generated \
            -I${top_srcdir}/src/logging \
            -I${top_srcdir}/src/dns-manager \
            -I${top_srcdir}/src/vpn-manager \
@@ -62,7 +63,7 @@ libtest_dhcp_la_CPPFLAGS = \
 	$(LIBNL_CFLAGS)
 
 libtest_dhcp_la_LIBADD = \
-	$(top_builddir)/marshallers/libmarshallers.la \
+	$(top_builddir)/src/generated/libnm-generated.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS) \
@@ -276,7 +277,7 @@ NetworkManager_CPPFLAGS = \
 	-DARP_DEBUG
 
 NetworkManager_LDADD = \
-	$(top_builddir)/marshallers/libmarshallers.la \
+	./generated/libnm-generated.la \
 	./logging/libnm-logging.la \
 	./dns-manager/libdns-manager.la \
 	./vpn-manager/libvpn-manager.la \

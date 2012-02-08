@@ -57,31 +57,6 @@ nm_setting_ip4_config_error_quark (void)
 	return quark;
 }
 
-/* This should really be standard. */
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-GType
-nm_setting_ip4_config_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			/* Unknown error. */
-			ENUM_ENTRY (NM_SETTING_IP4_CONFIG_ERROR_UNKNOWN, "UnknownError"),
-			/* The specified property was invalid. */
-			ENUM_ENTRY (NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY, "InvalidProperty"),
-			/* The specified property was missing and is required. */
-			ENUM_ENTRY (NM_SETTING_IP4_CONFIG_ERROR_MISSING_PROPERTY, "MissingProperty"),
-			/* The specified property was not allowed in combination with the current 'method' */
-			ENUM_ENTRY (NM_SETTING_IP4_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD, "NotAllowedForMethod"),
-			{ 0, 0, 0 }
-		};
-		etype = g_enum_register_static ("NMSettingIP4ConfigError", values);
-	}
-	return etype;
-}
-
 #if GLIB_CHECK_VERSION(2,26,0)
 G_DEFINE_BOXED_TYPE (NMIP4Address, nm_ip4_address, nm_ip4_address_dup, nm_ip4_address_unref)
 G_DEFINE_BOXED_TYPE (NMIP4Route, nm_ip4_route, nm_ip4_route_dup, nm_ip4_route_unref)

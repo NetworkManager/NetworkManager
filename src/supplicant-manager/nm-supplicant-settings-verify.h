@@ -21,7 +21,7 @@
 #ifndef NM_SUPPLICANT_SETTINGS_VERIFY_H
 #define NM_SUPPLICANT_SETTINGS_VERIFY_H
 
-typedef enum OptType {
+typedef enum {
 	TYPE_INVALID = 0,
 	TYPE_INT,
 	TYPE_BYTES,

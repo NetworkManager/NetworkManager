@@ -467,8 +467,12 @@ if test x"$ac_nss" = xno -a x"$ac_gnutls" = xno; then
   AC_MSG_ERROR([Could not find required development headers and libraries for '$ac_crypto'])
 fi
 
+GLIB_MAKEFILE='$(top_srcdir)/Makefile.glib'
+AC_SUBST(GLIB_MAKEFILE)
 GLIB_GENMARSHAL=`pkg-config --variable=glib_genmarshal glib-2.0`
 AC_SUBST(GLIB_GENMARSHAL)
+GLIB_MKENUMS='$(top_srcdir)/tools/glib-mkenums'
+AC_SUBST(GLIB_MKENUMS)
 
 AC_ARG_WITH(dbus-sys-dir, AS_HELP_STRING([--with-dbus-sys-dir=DIR], [where D-BUS system.d directory is]))
 
@@ -677,7 +681,7 @@ include/Makefile
 include/nm-version.h
 src/Makefile
 src/tests/Makefile
-marshallers/Makefile
+src/generated/Makefile
 src/logging/Makefile
 src/dns-manager/Makefile
 src/vpn-manager/Makefile

@@ -1,3 +1,5 @@
+include $(GLIB_MAKEFILE)
+
 SUBDIRS=. tests
 
 INCLUDES = \
@@ -71,12 +73,14 @@ libnminclude_HEADERS = \
 	nm-remote-settings.h \
 	nm-secret-agent.h \
 	nm-device-wimax.h \
-	nm-wimax-nsp.h
+	nm-wimax-nsp.h \
+	nm-glib-enum-types.h
 
 libnmvpn_HEADERS = \
 	nm-vpn-plugin.h \
 	nm-vpn-plugin-ui-interface.h \
-	nm-vpn-plugin-utils.h
+	nm-vpn-plugin-utils.h \
+	nm-vpn-enum-types.h
 
 libnm_glib_la_csources = \
 	nm-object.c \
@@ -100,22 +104,32 @@ libnm_glib_la_csources = \
 	nm-remote-settings.c \
 	nm-secret-agent.c \
 	nm-device-wimax.c \
-	nm-wimax-nsp.c
+	nm-wimax-nsp.c \
+	nm-glib-enum-types.c \
+	nm-glib-marshal.c
 
 libnm_glib_la_private_headers = \
 	nm-object-private.h \
 	nm-device-private.h \
 	nm-types-private.h \
 	nm-object-cache.h \
-	nm-remote-connection-private.h
+	nm-remote-connection-private.h \
+	nm-glib-marshal.h
 
 libnm_glib_la_SOURCES = \
 	$(libnm_glib_la_csources) \
 	$(libnm_glib_la_private_headers)
 
+GLIB_GENERATED = nm-glib-enum-types.h nm-glib-enum-types.c
+nm_glib_enum_types_sources = $(libnminclude_HEADERS)
+GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM
+GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
+
+GLIB_GENERATED += nm-glib-marshal.h nm-glib-marshal.c
+nm_glib_marshal_sources = $(libnm_glib_la_SOURCES)
+
 libnm_glib_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/marshallers/libmarshallers.la \
 	$(builddir)/libdeprecated-nm-glib.la \
 	$(GIO_LIBS) \
 	$(DBUS_LIBS) \
@@ -136,11 +150,16 @@ libnm_glib_test_LDADD = libnm-glib.la $(top_builddir)/libnm-util/libnm-util.la $
 libnm_glib_vpn_la_SOURCES = \
 	nm-vpn-plugin.c \
 	nm-vpn-plugin-ui-interface.c \
-	nm-vpn-plugin-utils.c
+	nm-vpn-plugin-utils.c \
+	nm-vpn-enum-types.c
+GLIB_GENERATED += nm-vpn-enum-types.h nm-vpn-enum-types.c
+nm_vpn_enum_types_sources = $(libnmvpn_HEADERS)
 libnm_glib_vpn_la_CFLAGS = $(GIO_CFLAGS) $(DBUS_CFLAGS)
 libnm_glib_vpn_la_LIBADD = $(top_builddir)/libnm-util/libnm-util.la $(GIO_LIBS) $(DBUS_LIBS)
 libnm_glib_vpn_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm-glib-vpn.ver \
 	-version-info "2:0:1"
+
+BUILT_SOURCES += $(GLIB_GENERATED)
 
 #####################################################
 # Test libnm-glib stuff
@@ -158,7 +177,6 @@ libnm_glib_test_la_SOURCES = \
 
 libnm_glib_test_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/marshallers/libmarshallers.la \
 	$(GIO_LIBS) \
 	$(DBUS_LIBS) \
 	$(GUDEV_LIBS)

@@ -1,3 +1,5 @@
+include $(GLIB_MAKEFILE)
+
 SUBDIRS=. tests
 
 INCLUDES = -I${top_srcdir} -I${top_srcdir}/include -I${top_builddir}/include
@@ -31,6 +33,7 @@ libnm_util_include_HEADERS = 		\
 	nm-setting-wireless.h		\
 	nm-setting-wireless-security.h	\
 	nm-setting-vpn.h		\
+	nm-utils-enum-types.h		\
 	nm-utils.h
 
 libnm_util_la_private_headers = \
@@ -62,11 +65,18 @@ libnm_util_la_csources = \
 	nm-setting-wireless.c		\
 	nm-setting-wireless-security.c	\
 	nm-setting-vpn.c		\
+	nm-utils-enum-types.c		\
 	nm-utils.c
 
 libnm_util_la_SOURCES = \
 	$(libnm_util_la_csources) \
 	$(libnm_util_la_private_headers)
+
+GLIB_GENERATED = nm-utils-enum-types.h nm-utils-enum-types.c
+BUILT_SOURCES = $(GLIB_GENERATED)
+nm_utils_enum_types_sources = $(libnm_util_include_HEADERS)
+GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM
+GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
 
 libnm_util_la_LIBADD = $(GLIB_LIBS) $(DBUS_LIBS) $(UUID_LIBS)
 

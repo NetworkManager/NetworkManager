@@ -62,27 +62,6 @@ nm_setting_bluetooth_error_quark (void)
 	return quark;
 }
 
-/* This should really be standard. */
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-GType
-nm_setting_bluetooth_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			ENUM_ENTRY (NM_SETTING_BLUETOOTH_ERROR_UNKNOWN, "UnknownError"),
-			ENUM_ENTRY (NM_SETTING_BLUETOOTH_ERROR_INVALID_PROPERTY, "InvalidProperty"),
-			ENUM_ENTRY (NM_SETTING_BLUETOOTH_ERROR_MISSING_PROPERTY, "MissingProperty"),
-			ENUM_ENTRY (NM_SETTING_BLUETOOTH_ERROR_TYPE_SETTING_NOT_FOUND, "TypeSettingNotFound"),
-			{ 0, 0, 0 }
-		};
-		etype = g_enum_register_static ("NMSettingBluetoothError", values);
-	}
-	return etype;
-}
-
 
 G_DEFINE_TYPE (NMSettingBluetooth, nm_setting_bluetooth, NM_TYPE_SETTING)
 

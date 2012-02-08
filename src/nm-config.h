@@ -32,8 +32,6 @@ typedef enum {
 
 #define NM_CONFIG_ERROR (nm_config_error_quark ())
 GQuark nm_config_error_quark (void);
-#define NM_TYPE_CONFIG_ERROR (nm_config_error_get_type ())
-GType nm_config_error_get_type (void);
 
 
 NMConfig *nm_config_new (const char *cli_config_path,

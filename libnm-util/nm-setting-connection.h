@@ -65,9 +65,6 @@ typedef enum
 	NM_SETTING_CONNECTION_ERROR_IP_CONFIG_NOT_ALLOWED,
 } NMSettingConnectionError;
 
-#define NM_TYPE_SETTING_CONNECTION_ERROR (nm_setting_connection_error_get_type ()) 
-GType nm_setting_connection_error_get_type (void);
-
 #define NM_SETTING_CONNECTION_ERROR nm_setting_connection_error_quark ()
 GQuark nm_setting_connection_error_quark (void);
 

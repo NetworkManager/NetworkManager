@@ -43,6 +43,7 @@
 #include "nm-utils.h"
 #include "nm-rfkill.h"
 #include "iwmxsdk.h"
+#include "nm-enum-types.h"
 
 static gboolean impl_device_get_nsp_list (NMDeviceWimax *device, GPtrArray **list, GError **error);
 
@@ -110,16 +111,7 @@ typedef struct {
 
 /***********************************************************/
 
-typedef enum
-{
-	NM_WIMAX_ERROR_CONNECTION_NOT_WIMAX = 0,
-	NM_WIMAX_ERROR_CONNECTION_INVALID,
-	NM_WIMAX_ERROR_CONNECTION_INCOMPATIBLE,
-	NM_WIMAX_ERROR_NSP_NOT_FOUND,
-} NMWimaxError;
-
 #define NM_WIMAX_ERROR (nm_wimax_error_quark ())
-#define NM_TYPE_WIMAX_ERROR (nm_wimax_error_get_type ()) 
 
 static GQuark
 nm_wimax_error_quark (void)
@@ -128,31 +120,6 @@ nm_wimax_error_quark (void)
 	if (!quark)
 		quark = g_quark_from_static_string ("nm-wimax-error");
 	return quark;
-}
-
-/* This should really be standard. */
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-static GType
-nm_wimax_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			/* Connection was not a wired connection. */
-			ENUM_ENTRY (NM_WIMAX_ERROR_CONNECTION_NOT_WIMAX, "ConnectionNotWimax"),
-			/* Connection was not a valid wired connection. */
-			ENUM_ENTRY (NM_WIMAX_ERROR_CONNECTION_INVALID, "ConnectionInvalid"),
-			/* Connection does not apply to this device. */
-			ENUM_ENTRY (NM_WIMAX_ERROR_CONNECTION_INCOMPATIBLE, "ConnectionIncompatible"),
-			/* NSP not found in the scan list. */
-			ENUM_ENTRY (NM_WIMAX_ERROR_NSP_NOT_FOUND, "NspNotFound"),
-			{ 0, 0, 0 }
-		};
-		etype = g_enum_register_static ("NMWimaxError", values);
-	}
-	return etype;
 }
 
 /***********************************************************/

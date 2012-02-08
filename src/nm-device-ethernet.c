@@ -53,6 +53,7 @@
 #include "nm-logging.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-utils.h"
+#include "nm-enum-types.h"
 
 #include "nm-device-ethernet-glue.h"
 
@@ -63,15 +64,7 @@ G_DEFINE_TYPE (NMDeviceEthernet, nm_device_ethernet, NM_TYPE_DEVICE_WIRED)
 
 #define WIRED_SECRETS_TRIES "wired-secrets-tries"
 
-typedef enum
-{
-	NM_ETHERNET_ERROR_CONNECTION_NOT_WIRED = 0,
-	NM_ETHERNET_ERROR_CONNECTION_INVALID,
-	NM_ETHERNET_ERROR_CONNECTION_INCOMPATIBLE,
-} NMEthernetError;
-
 #define NM_ETHERNET_ERROR (nm_ethernet_error_quark ())
-#define NM_TYPE_ETHERNET_ERROR (nm_ethernet_error_get_type ()) 
 
 typedef enum
 {
@@ -141,29 +134,6 @@ nm_ethernet_error_quark (void)
 	if (!quark)
 		quark = g_quark_from_static_string ("nm-ethernet-error");
 	return quark;
-}
-
-/* This should really be standard. */
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-static GType
-nm_ethernet_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			/* Connection was not a wired connection. */
-			ENUM_ENTRY (NM_ETHERNET_ERROR_CONNECTION_NOT_WIRED, "ConnectionNotWired"),
-			/* Connection was not a valid wired connection. */
-			ENUM_ENTRY (NM_ETHERNET_ERROR_CONNECTION_INVALID, "ConnectionInvalid"),
-			/* Connection does not apply to this device. */
-			ENUM_ENTRY (NM_ETHERNET_ERROR_CONNECTION_INCOMPATIBLE, "ConnectionIncompatible"),
-			{ 0, 0, 0 }
-		};
-		etype = g_enum_register_static ("NMEthernetError", values);
-	}
-	return etype;
 }
 
 static void

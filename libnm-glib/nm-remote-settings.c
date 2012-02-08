@@ -25,7 +25,7 @@
 #include <NetworkManager.h>
 #include <nm-connection.h>
 
-#include "nm-marshal.h"
+#include "nm-glib-marshal.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-remote-settings.h"
 #include "nm-remote-connection-private.h"
@@ -100,26 +100,6 @@ nm_remote_settings_error_quark (void)
 	if (G_UNLIKELY (!quark))
 		quark = g_quark_from_static_string ("nm-remote-settings-error-quark");
 	return quark;
-}
-
-/* This should really be standard. */
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-GType
-nm_remote_settings_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			ENUM_ENTRY (NM_REMOTE_SETTINGS_ERROR_UNKNOWN, "UnknownError"),
-			ENUM_ENTRY (NM_REMOTE_SETTINGS_ERROR_CONNECTION_REMOVED, "ConnectionRemoved"),
-			ENUM_ENTRY (NM_REMOTE_SETTINGS_ERROR_CONNECTION_UNAVAILABLE, "ConnectionUnavailable"),
-			{ 0, 0, 0 }
-		};
-		etype = g_enum_register_static ("NMRemoteSettingsError", values);
-	}
-	return etype;
 }
 
 /**********************************************************************/
@@ -812,7 +792,7 @@ constructed (GObject *object)
 	                                              "org.freedesktop.DBus");
 	g_assert (priv->dbus_proxy);
 
-	dbus_g_object_register_marshaller (_nm_marshal_VOID__STRING_STRING_STRING,
+	dbus_g_object_register_marshaller (_nm_glib_marshal_VOID__STRING_STRING_STRING,
 	                                   G_TYPE_NONE,
 	                                   G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
 	                                   G_TYPE_INVALID);

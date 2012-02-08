@@ -75,37 +75,6 @@ nm_setting_wireless_security_error_quark (void)
 	return quark;
 }
 
-/* This should really be standard. */
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-GType
-nm_setting_wireless_security_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			/* Unknown error. */
-			ENUM_ENTRY (NM_SETTING_WIRELESS_SECURITY_ERROR_UNKNOWN, "UnknownError"),
-			/* The specified property was invalid. */
-			ENUM_ENTRY (NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY, "InvalidProperty"),
-			/* The specified property was missing and is required. */
-			ENUM_ENTRY (NM_SETTING_WIRELESS_SECURITY_ERROR_MISSING_PROPERTY, "MissingProperty"),
-			/* The required 802.1x setting is missing */
-			ENUM_ENTRY (NM_SETTING_WIRELESS_SECURITY_ERROR_MISSING_802_1X_SETTING, "Missing8021xSetting"),
-			/* The LEAP authentication algorithm requires use of 802.1x key management. */
-			ENUM_ENTRY (NM_SETTING_WIRELESS_SECURITY_ERROR_LEAP_REQUIRES_802_1X, "LEAPRequires8021x"),
-			/* The LEAP authentication algorithm requires a username. */
-			ENUM_ENTRY (NM_SETTING_WIRELESS_SECURITY_ERROR_LEAP_REQUIRES_USERNAME, "LEAPRequiresUsername"),
-			/* Shared Key authentication can only be used with WEP encryption. */
-			ENUM_ENTRY (NM_SETTING_WIRELESS_SECURITY_ERROR_SHARED_KEY_REQUIRES_WEP, "SharedKeyRequiresWEP"),
-			{ 0, 0, 0 }
-		};
-		etype = g_enum_register_static ("NMSettingWirelessSecurityError", values);
-	}
-	return etype;
-}
-
 
 G_DEFINE_TYPE (NMSettingWirelessSecurity, nm_setting_wireless_security, NM_TYPE_SETTING)
 

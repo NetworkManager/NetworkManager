@@ -29,7 +29,7 @@
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
 #include "nm-device-private.h"
-#include "nm-marshal.h"
+#include "nm-glib-marshal.h"
 #include "nm-types-private.h"
 #include "nm-object-private.h"
 #include "nm-active-connection.h"
@@ -1739,7 +1739,7 @@ nm_client_class_init (NMClientClass *client_class)
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
 					  0, NULL, NULL,
-					  _nm_marshal_VOID__UINT_UINT,
+					  _nm_glib_marshal_VOID__UINT_UINT,
 					  G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 }
 

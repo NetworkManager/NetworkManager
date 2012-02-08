@@ -55,9 +55,6 @@ typedef enum {
 	NM_SETTING_IP4_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD
 } NMSettingIP4ConfigError;
 
-#define NM_TYPE_SETTING_IP4_CONFIG_ERROR (nm_setting_ip4_config_error_get_type ()) 
-GType nm_setting_ip4_config_error_get_type (void);
-
 #define NM_SETTING_IP4_CONFIG_ERROR nm_setting_ip4_config_error_quark ()
 GQuark nm_setting_ip4_config_error_quark (void);
 

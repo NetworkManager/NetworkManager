@@ -25,7 +25,8 @@
 #include <dbus/dbus-glib-lowlevel.h>
 
 #include "nm-secret-agent.h"
-#include "nm-marshal.h"
+#include "nm-glib-enum-types.h"
+#include "nm-glib-marshal.h"
 #include "NetworkManager.h"
 
 static void impl_secret_agent_get_secrets (NMSecretAgent *self,
@@ -109,34 +110,6 @@ nm_secret_agent_error_quark (void)
 	if (G_UNLIKELY (ret == 0))
 		ret = g_quark_from_static_string ("nm-secret-agent-error");
 	return ret;
-}
-
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-GType
-nm_secret_agent_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			/* Sender is not authorized to make this request */
-			ENUM_ENTRY (NM_SECRET_AGENT_ERROR_NOT_AUTHORIZED, "NotAuthorized"),
-			/* Given connection details do not make a valid connection */
-			ENUM_ENTRY (NM_SECRET_AGENT_ERROR_INVALID_CONNECTION, "InvalidConnection"),
-			/* The request was canceled explicitly by the user */
-			ENUM_ENTRY (NM_SECRET_AGENT_ERROR_USER_CANCELED, "UserCanceled"),
-			/* The request was canceled, but not by the user */
-			ENUM_ENTRY (NM_SECRET_AGENT_ERROR_AGENT_CANCELED, "AgentCanceled"),
-			/* Some internal error prevented returning secrets */
-			ENUM_ENTRY (NM_SECRET_AGENT_ERROR_INTERNAL_ERROR, "InternalError"),
-			/* No secrets could be found to fulfill the request */
-			ENUM_ENTRY (NM_SECRET_AGENT_ERROR_NO_SECRETS, "NoSecrets"),
-			{ 0, 0, 0 }
-		};
-		etype = g_enum_register_static ("NMSecretAgentError", values);
-	}
-	return etype;
 }
 
 /*************************************************************/
@@ -806,7 +779,7 @@ nm_secret_agent_init (NMSecretAgent *self)
 		return;
 	}
 
-	dbus_g_object_register_marshaller (_nm_marshal_VOID__STRING_STRING_STRING,
+	dbus_g_object_register_marshaller (_nm_glib_marshal_VOID__STRING_STRING_STRING,
 	                                   G_TYPE_NONE,
 	                                   G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
 	                                   G_TYPE_INVALID);

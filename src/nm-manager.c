@@ -63,6 +63,7 @@
 #include "nm-utils.h"
 #include "nm-device-factory.h"
 #include "wifi-utils.h"
+#include "nm-enum-types.h"
 
 #define NM_AUTOIP_DBUS_SERVICE "org.freedesktop.nm_avahi_autoipd"
 #define NM_AUTOIP_DBUS_IFACE   "org.freedesktop.nm_avahi_autoipd"
@@ -270,20 +271,7 @@ enum {
 
 /************************************************************************/
 
-typedef enum {
-	NM_MANAGER_ERROR_UNKNOWN_CONNECTION = 0,
-	NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-	NM_MANAGER_ERROR_UNMANAGED_DEVICE,
-	NM_MANAGER_ERROR_SYSTEM_CONNECTION,
-	NM_MANAGER_ERROR_PERMISSION_DENIED,
-	NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
-	NM_MANAGER_ERROR_ALREADY_ASLEEP_OR_AWAKE,
-	NM_MANAGER_ERROR_ALREADY_ENABLED_OR_DISABLED,
-	NM_MANAGER_ERROR_UNSUPPORTED_CONNECTION_TYPE,
-} NMManagerError;
-
 #define NM_MANAGER_ERROR (nm_manager_error_quark ())
-#define NM_TYPE_MANAGER_ERROR (nm_manager_error_get_type ()) 
 
 static GQuark
 nm_manager_error_quark (void)
@@ -292,41 +280,6 @@ nm_manager_error_quark (void)
 	if (!quark)
 		quark = g_quark_from_static_string ("nm-manager-error");
 	return quark;
-}
-
-/* This should really be standard. */
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-static GType
-nm_manager_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			/* Connection was not provided by any known settings service. */
-			ENUM_ENTRY (NM_MANAGER_ERROR_UNKNOWN_CONNECTION, "UnknownConnection"),
-			/* Unknown device. */
-			ENUM_ENTRY (NM_MANAGER_ERROR_UNKNOWN_DEVICE, "UnknownDevice"),
-			/* Unmanaged device. */
-			ENUM_ENTRY (NM_MANAGER_ERROR_UNMANAGED_DEVICE, "UnmanagedDevice"),
-			/* Connection was superceded by a system connection. */
-			ENUM_ENTRY (NM_MANAGER_ERROR_SYSTEM_CONNECTION, "SystemConnection"),
-			/* User does not have the permission to activate this connection. */
-			ENUM_ENTRY (NM_MANAGER_ERROR_PERMISSION_DENIED, "PermissionDenied"),
-			/* The connection was not active. */
-			ENUM_ENTRY (NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE, "ConnectionNotActive"),
-			/* The manager is already in the requested sleep state */
-			ENUM_ENTRY (NM_MANAGER_ERROR_ALREADY_ASLEEP_OR_AWAKE, "AlreadyAsleepOrAwake"),
-			/* The manager is already in the requested enabled/disabled state */
-			ENUM_ENTRY (NM_MANAGER_ERROR_ALREADY_ENABLED_OR_DISABLED, "AlreadyEnabledOrDisabled"),
-			/* The requested operation is unsupported for this type of connection */
-			ENUM_ENTRY (NM_MANAGER_ERROR_UNSUPPORTED_CONNECTION_TYPE, "UnsupportedConnectionType"),
-			{ 0, 0, 0 },
-		};
-		etype = g_enum_register_static ("NMManagerError", values);
-	}
-	return etype;
 }
 
 /************************************************************************/

@@ -55,9 +55,6 @@ typedef enum {
 	NM_REMOTE_SETTINGS_ERROR_CONNECTION_UNAVAILABLE,
 } NMRemoteSettingsError;
 
-#define NM_TYPE_REMOTE_SETTINGS_ERROR (nm_remote_settings_error_get_type ()) 
-GType nm_remote_settings_error_get_type (void);
-
 #define NM_REMOTE_SETTINGS_ERROR nm_remote_settings_error_quark ()
 GQuark nm_remote_settings_error_quark (void);
 

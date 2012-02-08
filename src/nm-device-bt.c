@@ -44,6 +44,7 @@
 #include "nm-setting-ppp.h"
 #include "nm-device-bt-glue.h"
 #include "NetworkManagerUtils.h"
+#include "nm-enum-types.h"
 
 #define BLUETOOTH_DUN_UUID "dun"
 #define BLUETOOTH_NAP_UUID "nap"
@@ -90,14 +91,7 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 
-typedef enum {
-	NM_BT_ERROR_CONNECTION_NOT_BT = 0,
-	NM_BT_ERROR_CONNECTION_INVALID,
-	NM_BT_ERROR_CONNECTION_INCOMPATIBLE,
-} NMBtError;
-
 #define NM_BT_ERROR (nm_bt_error_quark ())
-#define NM_TYPE_BT_ERROR (nm_bt_error_get_type ())
 
 static GQuark
 nm_bt_error_quark (void)
@@ -107,30 +101,6 @@ nm_bt_error_quark (void)
 		quark = g_quark_from_static_string ("nm-bt-error");
 	return quark;
 }
-
-/* This should really be standard. */
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-static GType
-nm_bt_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			/* Connection was not a BT connection. */
-			ENUM_ENTRY (NM_BT_ERROR_CONNECTION_NOT_BT, "ConnectionNotBt"),
-			/* Connection was not a valid BT connection. */
-			ENUM_ENTRY (NM_BT_ERROR_CONNECTION_INVALID, "ConnectionInvalid"),
-			/* Connection does not apply to this device. */
-			ENUM_ENTRY (NM_BT_ERROR_CONNECTION_INCOMPATIBLE, "ConnectionIncompatible"),
-			{ 0, 0, 0 }
-		};
-		etype = g_enum_register_static ("NMBtError", values);
-	}
-	return etype;
-}
-
 
 guint32 nm_device_bt_get_capabilities (NMDeviceBt *self)
 {

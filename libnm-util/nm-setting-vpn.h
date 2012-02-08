@@ -52,9 +52,6 @@ typedef enum {
 	NM_SETTING_VPN_ERROR_MISSING_PROPERTY,
 } NMSettingVpnError;
 
-#define NM_TYPE_SETTING_VPN_ERROR (nm_setting_vpn_error_get_type ()) 
-GType nm_setting_vpn_error_get_type (void);
-
 #define NM_SETTING_VPN_ERROR nm_setting_vpn_error_quark ()
 GQuark nm_setting_vpn_error_quark (void);
 

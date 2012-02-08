@@ -94,13 +94,6 @@ static const LogDesc domain_descs[] = {
 
 /************************************************************************/
 
-enum {
-    NM_LOGGING_ERROR_UNKNOWN_LEVEL = 0,
-    NM_LOGGING_ERROR_UNKNOWN_DOMAIN = 1,
-};
-
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
 GQuark
 nm_logging_error_quark (void)
 {
@@ -109,22 +102,6 @@ nm_logging_error_quark (void)
     if (ret == 0)
         ret = g_quark_from_static_string ("nm_logging_error");
     return ret;
-}
-
-GType
-nm_logging_error_get_type (void)
-{
-    static GType etype = 0;
-
-    if (etype == 0) {
-        static const GEnumValue values[] = {
-            ENUM_ENTRY (NM_LOGGING_ERROR_UNKNOWN_LEVEL,  "UnknownLevel"),
-            ENUM_ENTRY (NM_LOGGING_ERROR_UNKNOWN_DOMAIN, "UnknownDomain"),
-            { 0, 0, 0 }
-        };
-        etype = g_enum_register_static ("NMLoggingError", values);
-    }
-    return etype;
 }
 
 /************************************************************************/

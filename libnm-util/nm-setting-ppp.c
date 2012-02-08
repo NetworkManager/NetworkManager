@@ -53,31 +53,6 @@ nm_setting_ppp_error_quark (void)
 	return quark;
 }
 
-/* This should really be standard. */
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-GType
-nm_setting_ppp_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			/* Unknown error. */
-			ENUM_ENTRY (NM_SETTING_PPP_ERROR_UNKNOWN, "UnknownError"),
-			/* The specified property was invalid. */
-			ENUM_ENTRY (NM_SETTING_PPP_ERROR_INVALID_PROPERTY, "InvalidProperty"),
-			/* The specified property was missing and is required. */
-			ENUM_ENTRY (NM_SETTING_PPP_ERROR_MISSING_PROPERTY, "MissingProperty"),
-			/* The 'require-mppe' option is not allowed in conjunction with the specified authentication. */
-			ENUM_ENTRY (NM_SETTING_PPP_ERROR_REQUIRE_MPPE_NOT_ALLOWED, "RequireMPPENotAllowed"),
-			{ 0, 0, 0 }
-		};
-		etype = g_enum_register_static ("NMSettingPPPError", values);
-	}
-	return etype;
-}
-
 
 G_DEFINE_TYPE (NMSettingPPP, nm_setting_ppp, NM_TYPE_SETTING)
 

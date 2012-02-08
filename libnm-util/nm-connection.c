@@ -89,27 +89,6 @@ nm_connection_error_quark (void)
 	return quark;
 }
 
-/* This should really be standard. */
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-GType
-nm_connection_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			ENUM_ENTRY (NM_CONNECTION_ERROR_UNKNOWN, "UnknownError"),
-			ENUM_ENTRY (NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND, "ConnectionSettingNotFound"),
-			ENUM_ENTRY (NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID, "ConnectionTypeInvalid"),
-			ENUM_ENTRY (NM_CONNECTION_ERROR_SETTING_NOT_FOUND, "SettingNotFound"),
-			{ 0, 0, 0 }
-		};
-		etype = g_enum_register_static ("NMConnectionError", values);
-	}
-	return etype;
-}
-
 typedef struct {
 	GHashTable *settings;
 

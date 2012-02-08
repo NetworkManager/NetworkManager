@@ -44,8 +44,6 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
 GQuark
 nm_dhcp_manager_error_quark (void)
 {
@@ -55,22 +53,6 @@ nm_dhcp_manager_error_quark (void)
         ret = g_quark_from_static_string ("nm_dhcp_manager_error");
 
     return ret;
-}
-
-GType
-nm_dhcp_manager_error_get_type (void)
-{
-    static GType etype = 0;
-
-    if (etype == 0) {
-        static const GEnumValue values[] = {
-            ENUM_ENTRY (NM_DHCP_MANAGER_ERROR_BAD_CLIENT, "BadClient"),
-            ENUM_ENTRY (NM_DHCP_MANAGER_ERROR_INTERNAL,   "InternalError"),
-            { 0, 0, 0 }
-        };
-        etype = g_enum_register_static ("NMDhcpManagerError", values);
-    }
-    return etype;
 }
 
 #define NM_DHCP_CLIENT_DBUS_SERVICE "org.freedesktop.nm_dhcp_client"

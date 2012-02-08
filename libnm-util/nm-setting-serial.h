@@ -55,9 +55,6 @@ typedef enum {
 	NM_SETTING_SERIAL_ERROR_MISSING_PPP_SETTING
 } NMSettingSerialError;
 
-#define NM_TYPE_SETTING_SERIAL_ERROR (nm_setting_serial_error_get_type ()) 
-GType nm_setting_serial_error_get_type (void);
-
 #define NM_SETTING_SERIAL_ERROR nm_setting_serial_error_quark ()
 GQuark nm_setting_serial_error_quark (void);
 

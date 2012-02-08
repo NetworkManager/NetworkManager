@@ -27,6 +27,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-modem-cdma.h"
 #include "nm-modem-types.h"
+#include "nm-enum-types.h"
 #include "nm-device.h"
 #include "nm-device-private.h"
 #include "nm-dbus-manager.h"
@@ -47,14 +48,7 @@ typedef struct {
 } NMModemCdmaPrivate;
 
 
-typedef enum {
-	NM_CDMA_ERROR_CONNECTION_NOT_CDMA = 0,
-	NM_CDMA_ERROR_CONNECTION_INVALID,
-	NM_CDMA_ERROR_CONNECTION_INCOMPATIBLE,
-} NMCdmaError;
-
 #define NM_CDMA_ERROR (nm_cdma_error_quark ())
-#define NM_TYPE_CDMA_ERROR (nm_cdma_error_get_type ())
 
 static GQuark
 nm_cdma_error_quark (void)
@@ -63,29 +57,6 @@ nm_cdma_error_quark (void)
 	if (!quark)
 		quark = g_quark_from_static_string ("nm-cdma-error");
 	return quark;
-}
-
-/* This should really be standard. */
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-static GType
-nm_cdma_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			/* Connection was not a CDMA connection. */
-			ENUM_ENTRY (NM_CDMA_ERROR_CONNECTION_NOT_CDMA, "ConnectionNotCdma"),
-			/* Connection was not a valid CDMA connection. */
-			ENUM_ENTRY (NM_CDMA_ERROR_CONNECTION_INVALID, "ConnectionInvalid"),
-			/* Connection does not apply to this device. */
-			ENUM_ENTRY (NM_CDMA_ERROR_CONNECTION_INCOMPATIBLE, "ConnectionIncompatible"),
-			{ 0, 0, 0 }
-		};
-		etype = g_enum_register_static ("NMCdmaError", values);
-	}
-	return etype;
 }
 
 

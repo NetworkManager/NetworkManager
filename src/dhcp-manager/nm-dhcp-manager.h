@@ -33,16 +33,14 @@
 #include "nm-dhcp4-config.h"
 #include "nm-hostname-provider.h"
 
-enum {
+typedef enum {
     NM_DHCP_MANAGER_ERROR_BAD_CLIENT = 0,
     NM_DHCP_MANAGER_ERROR_INTERNAL = 1,
-};
+} NMDHCPManagerError;
 
 #define NM_DHCP_MANAGER_ERROR (nm_dhcp_manager_error_quark ())
-#define NN_TYPE_DHCP_MANAGER_ERROR (nm_dhcp_manager_error_get_type ())
 
 GQuark nm_dhcp_manager_error_quark    (void);
-GType  nm_dhcp_manager_error_get_type (void);
 
 
 #define NM_TYPE_DHCP_MANAGER            (nm_dhcp_manager_get_type ())

@@ -60,9 +60,6 @@ typedef enum
 	NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH
 } NMSettingError;
 
-#define NM_TYPE_SETTING_ERROR (nm_setting_error_get_type ()) 
-GType nm_setting_error_get_type (void);
-
 #define NM_SETTING_ERROR nm_setting_error_quark ()
 GQuark nm_setting_error_quark (void);
 

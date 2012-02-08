@@ -103,6 +103,8 @@ global:
 	nm_setting_802_1x_add_altsubject_match;
 	nm_setting_802_1x_add_eap_method;
 	nm_setting_802_1x_add_phase2_altsubject_match;
+	nm_setting_802_1x_ck_format_get_type;
+	nm_setting_802_1x_ck_scheme_get_type;
 	nm_setting_802_1x_clear_altsubject_matches;
 	nm_setting_802_1x_clear_eap_methods;
 	nm_setting_802_1x_clear_phase2_altsubject_matches;
@@ -196,6 +198,7 @@ global:
 	nm_setting_clear_secrets;
 	nm_setting_clear_secrets_with_flags;
 	nm_setting_compare;
+	nm_setting_compare_flags_get_type;
 	nm_setting_connection_add_permission;
 	nm_setting_connection_error_get_type;
 	nm_setting_connection_error_quark;
@@ -216,6 +219,7 @@ global:
 	nm_setting_connection_permissions_user_allowed;
 	nm_setting_connection_remove_permission;
 	nm_setting_diff;
+	nm_setting_diff_result_get_type;
 	nm_setting_duplicate;
 	nm_setting_enumerate_values;
 	nm_setting_error_get_type;
@@ -238,7 +242,10 @@ global:
 	nm_setting_gsm_get_pin_flags;
 	nm_setting_gsm_get_type;
 	nm_setting_gsm_get_username;
+	nm_setting_gsm_network_band_get_type;
+	nm_setting_gsm_network_type_get_type;
 	nm_setting_gsm_new;
+	nm_setting_hash_flags_get_type;
 	nm_setting_infiniband_error_get_type;
 	nm_setting_infiniband_error_quark;
 	nm_setting_infiniband_get_mac_address;
@@ -346,6 +353,7 @@ global:
 	nm_setting_pppoe_get_type;
 	nm_setting_pppoe_get_username;
 	nm_setting_pppoe_new;
+	nm_setting_secret_flags_get_type;
 	nm_setting_serial_error_get_type;
 	nm_setting_serial_error_quark;
 	nm_setting_serial_get_baud;
@@ -477,6 +485,7 @@ global:
 	nm_utils_is_empty_ssid;
 	nm_utils_rsa_key_encrypt;
 	nm_utils_same_ssid;
+	nm_utils_security_type_get_type;
 	nm_utils_security_valid;
 	nm_utils_slist_free;
 	nm_utils_ssid_to_utf8;
@@ -486,6 +495,7 @@ global:
 	nm_utils_wifi_find_next_channel;
 	nm_utils_wifi_freq_to_channel;
 	nm_utils_wifi_is_channel_valid;
+	nm_wep_key_type_get_type;
 local:
 	*;
 };

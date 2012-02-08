@@ -56,31 +56,6 @@ nm_setting_gsm_error_quark (void)
 	return quark;
 }
 
-/* This should really be standard. */
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-GType
-nm_setting_gsm_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			/* Unknown error. */
-			ENUM_ENTRY (NM_SETTING_GSM_ERROR_UNKNOWN, "UnknownError"),
-			/* The specified property was invalid. */
-			ENUM_ENTRY (NM_SETTING_GSM_ERROR_INVALID_PROPERTY, "InvalidProperty"),
-			/* The specified property was missing and is required. */
-			ENUM_ENTRY (NM_SETTING_GSM_ERROR_MISSING_PROPERTY, "MissingProperty"),
-			/* The required serial setting is missing (DEPRECATED) */
-			ENUM_ENTRY (NM_SETTING_GSM_ERROR_MISSING_SERIAL_SETTING, "MissingSerialSetting"),
-			{ 0, 0, 0 }
-		};
-		etype = g_enum_register_static ("NMSettingGsmError", values);
-	}
-	return etype;
-}
-
 
 G_DEFINE_TYPE (NMSettingGsm, nm_setting_gsm, NM_TYPE_SETTING)
 

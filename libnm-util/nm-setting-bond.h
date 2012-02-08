@@ -50,9 +50,6 @@ typedef enum {
 	NM_SETTING_BOND_ERROR_MISSING_PROPERTY,
 } NMSettingBondError;
 
-#define NM_TYPE_SETTING_BOND_ERROR (nm_setting_bond_error_get_type ()) 
-GType nm_setting_bond_error_get_type (void);
-
 #define NM_SETTING_BOND_ERROR nm_setting_bond_error_quark ()
 GQuark nm_setting_bond_error_quark (void);
 

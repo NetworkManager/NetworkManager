@@ -6,6 +6,8 @@
 *.bz2
 *.gir
 *.typelib
+*.stamp
+*-enum-types.[ch]
 Makefile
 Makefile.in*
 configure
@@ -143,11 +145,12 @@ initscript/*/[Nn]etwork[Mm]anager
 
 *-glue.h
 *-bindings.h
-nm-marshal.[ch]
 callouts/tests/test-dispatcher-envp
 libnm-glib/libnm-glib-test
+libnm-glib/nm-glib-marshal.*
 src/NetworkManager
 src/nm-crash-logger
+src/generated/nm-marshal.*
 src/supplicant-manager/tests/test-supplicant-config
 system-settings/src
 test/libnm-glib-test

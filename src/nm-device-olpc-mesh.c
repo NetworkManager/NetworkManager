@@ -53,6 +53,7 @@
 #include "nm-setting-olpc-mesh.h"
 #include "nm-system.h"
 #include "nm-manager.h"
+#include "nm-enum-types.h"
 #include "wifi-utils.h"
 
 /* This is a bug; but we can't really change API now... */
@@ -83,15 +84,7 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-typedef enum
-{
-	NM_OLPC_MESH_ERROR_CONNECTION_NOT_MESH = 0,
-	NM_OLPC_MESH_ERROR_CONNECTION_INVALID,
-	NM_OLPC_MESH_ERROR_CONNECTION_INCOMPATIBLE,
-} NMOlpcMeshError;
-
 #define NM_OLPC_MESH_ERROR (nm_olpc_mesh_error_quark ())
-#define NM_TYPE_OLPC_MESH_ERROR (nm_olpc_mesh_error_get_type ())
 
 
 struct _NMDeviceOlpcMeshPrivate
@@ -118,29 +111,6 @@ nm_olpc_mesh_error_quark (void)
 	if (!quark)
 		quark = g_quark_from_static_string ("nm-mesh-error");
 	return quark;
-}
-
-/* This should really be standard. */
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-static GType
-nm_olpc_mesh_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			/* Connection was not a wireless connection. */
-			ENUM_ENTRY (NM_OLPC_MESH_ERROR_CONNECTION_NOT_MESH, "ConnectionNotMesh"),
-			/* Connection was not a valid wireless connection. */
-			ENUM_ENTRY (NM_OLPC_MESH_ERROR_CONNECTION_INVALID, "ConnectionInvalid"),
-			/* Connection does not apply to this device. */
-			ENUM_ENTRY (NM_OLPC_MESH_ERROR_CONNECTION_INCOMPATIBLE, "ConnectionIncompatible"),
-			{ 0, 0, 0 }
-		};
-		etype = g_enum_register_static ("NMOlpcMeshError", values);
-	}
-	return etype;
 }
 
 static guint32

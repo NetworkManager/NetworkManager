@@ -29,6 +29,7 @@
 #include <glib.h>
 
 #include "nm-connection.h"
+#include "nm-utils-enum-types.h"
 
 G_BEGIN_DECLS
 

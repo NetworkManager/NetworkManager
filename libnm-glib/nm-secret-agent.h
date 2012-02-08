@@ -26,10 +26,8 @@
 G_BEGIN_DECLS
 
 #define NM_SECRET_AGENT_ERROR         (nm_secret_agent_error_quark ())
-#define NM_TYPE_SECRET_AGENT_ERROR    (nm_secret_agent_error_get_type ())
 
 GQuark nm_secret_agent_error_quark (void);
-GType nm_secret_agent_error_get_type (void);
 
 typedef enum {
 	NM_SECRET_AGENT_ERROR_NOT_AUTHORIZED = 0,

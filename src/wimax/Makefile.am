@@ -1,9 +1,9 @@
 INCLUDES = \
 	-I${top_srcdir}/src \
+	-I${top_srcdir}/src/generated \
 	-I${top_srcdir}/src/logging \
 	-I${top_srcdir}/include \
-	-I${top_srcdir}/libnm-util \
-	-I${top_builddir}/marshallers
+	-I${top_srcdir}/libnm-util
 
 pkglib_LTLIBRARIES = libnm-device-plugin-wimax.la
 
@@ -30,7 +30,7 @@ libnm_device_plugin_wimax_la_LIBADD = \
 	$(DBUS_LIBS) \
 	$(IWMX_SDK_LIBS) \
 	$(GUDEV_LIBS) \
-	$(top_builddir)/marshallers/libmarshallers.la
+	$(top_builddir)/src/generated/libnm-generated.la
 
 nm-wimax-nsp-glue.h: $(top_srcdir)/introspection/nm-wimax-nsp.xml
 	dbus-binding-tool --prefix=nm_wimax_nsp --mode=glib-server --output=$@ $<

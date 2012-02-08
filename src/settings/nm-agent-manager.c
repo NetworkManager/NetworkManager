@@ -36,6 +36,7 @@
 #include "nm-manager-auth.h"
 #include "nm-setting-vpn.h"
 #include "nm-setting-connection.h"
+#include "nm-enum-types.h"
 
 G_DEFINE_TYPE (NMAgentManager, nm_agent_manager, G_TYPE_OBJECT)
 
@@ -88,17 +89,6 @@ static void impl_agent_manager_unregister (NMAgentManager *self,
 /********************************************************************/
 
 #define NM_AGENT_MANAGER_ERROR         (nm_agent_manager_error_quark ())
-#define NM_TYPE_AGENT_MANAGER_ERROR    (nm_agent_manager_error_get_type ())
-
-typedef enum {
-	NM_AGENT_MANAGER_ERROR_SENDER_UNKNOWN = 0,
-	NM_AGENT_MANAGER_ERROR_PERMISSION_DENIED,
-	NM_AGENT_MANAGER_ERROR_SESSION_NOT_FOUND,
-	NM_AGENT_MANAGER_ERROR_INVALID_IDENTIFIER,
-	NM_AGENT_MANAGER_ERROR_NOT_REGISTERED,
-	NM_AGENT_MANAGER_ERROR_INTERNAL_ERROR,
-	NM_AGENT_MANAGER_ERROR_NO_SECRETS
-} NMAgentManagerError;
 
 static GQuark
 nm_agent_manager_error_quark (void)
@@ -108,37 +98,6 @@ nm_agent_manager_error_quark (void)
 	if (G_UNLIKELY (ret == 0))
 		ret = g_quark_from_static_string ("nm-agent-manager-error");
 	return ret;
-}
-
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-static GType
-nm_agent_manager_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			/* Unable to determine caller's sender or UID */
-			ENUM_ENTRY (NM_AGENT_MANAGER_ERROR_SENDER_UNKNOWN, "SenderUnknown"),
-			/* Permission for some operation was denied */
-			ENUM_ENTRY (NM_AGENT_MANAGER_ERROR_PERMISSION_DENIED, "PermissionDenied"),
-			/* The caller's session could not be determined */
-			ENUM_ENTRY (NM_AGENT_MANAGER_ERROR_SESSION_NOT_FOUND, "SessionNotFound"),
-			/* The identifier was invalid */
-			ENUM_ENTRY (NM_AGENT_MANAGER_ERROR_INVALID_IDENTIFIER, "InvalidIdentifier"),
-			/* Request was not from a registered agent */
-			ENUM_ENTRY (NM_AGENT_MANAGER_ERROR_NOT_REGISTERED, "NotRegistered"),
-			/* Some internal error occurred */
-			ENUM_ENTRY (NM_AGENT_MANAGER_ERROR_INTERNAL_ERROR, "InternalError"),
-			/* No secrets were available */
-			ENUM_ENTRY (NM_AGENT_MANAGER_ERROR_NO_SECRETS, "NoSecrets"),
-			{ 0, 0, 0 }
-		};
-
-		etype = g_enum_register_static ("NMAgentManagerError", values);
-	}
-	return etype;
 }
 
 /*************************************************************/

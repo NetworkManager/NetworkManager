@@ -1,1 +1,1 @@
-EXTRA_DIST = doc-generator.xsl check-exports.sh
+EXTRA_DIST = doc-generator.xsl check-exports.sh glib-mkenums

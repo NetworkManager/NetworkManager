@@ -48,9 +48,6 @@ typedef enum {
 	NM_SETTING_INFINIBAND_ERROR_MISSING_PROPERTY
 } NMSettingInfinibandError;
 
-#define NM_TYPE_SETTING_INFINIBAND_ERROR (nm_setting_infiniband_error_get_type ())
-GType nm_setting_infiniband_error_get_type (void);
-
 #define NM_SETTING_INFINIBAND_ERROR nm_setting_infiniband_error_quark ()
 GQuark nm_setting_infiniband_error_quark (void);
 

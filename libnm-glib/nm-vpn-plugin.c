@@ -24,6 +24,7 @@
 #include <signal.h>
 #include "nm-glib-compat.h"
 #include "nm-vpn-plugin.h"
+#include "nm-vpn-enum-types.h"
 #include "nm-utils.h"
 #include "nm-connection.h"
 #include "nm-dbus-glib-types.h"
@@ -105,33 +106,6 @@ nm_vpn_plugin_error_quark (void)
 		quark = g_quark_from_static_string ("nm_vpn_plugin_error");
 
 	return quark;
-}
-
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-GType
-nm_vpn_plugin_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			ENUM_ENTRY (NM_VPN_PLUGIN_ERROR_GENERAL,              "General"),
-			ENUM_ENTRY (NM_VPN_PLUGIN_ERROR_STARTING_IN_PROGRESS, "StartingInProgress"),
-			ENUM_ENTRY (NM_VPN_PLUGIN_ERROR_ALREADY_STARTED,      "AlreadyStarted"),
-			ENUM_ENTRY (NM_VPN_PLUGIN_ERROR_STOPPING_IN_PROGRESS, "StoppingInProgress"),
-			ENUM_ENTRY (NM_VPN_PLUGIN_ERROR_ALREADY_STOPPED,      "AlreadyStopped"),
-			ENUM_ENTRY (NM_VPN_PLUGIN_ERROR_WRONG_STATE,          "WrongState"),
-			ENUM_ENTRY (NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,        "BadArguments"),
-			ENUM_ENTRY (NM_VPN_PLUGIN_ERROR_LAUNCH_FAILED,        "LaunchFailed"),
-			ENUM_ENTRY (NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID,   "ConnectionInvalid"),
-			{ 0, 0, 0 }
-		};
-
-		etype = g_enum_register_static ("NMVPNPluginError", values);
-	}
-
-	return etype;
 }
 
 

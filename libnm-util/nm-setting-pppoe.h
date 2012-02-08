@@ -55,9 +55,6 @@ typedef enum {
 	NM_SETTING_PPPOE_ERROR_MISSING_PPP_SETTING
 } NMSettingPPPOEError;
 
-#define NM_TYPE_SETTING_PPPOE_ERROR (nm_setting_pppoe_error_get_type ()) 
-GType nm_setting_pppoe_error_get_type (void);
-
 #define NM_SETTING_PPPOE_ERROR nm_setting_pppoe_error_quark ()
 GQuark nm_setting_pppoe_error_quark (void);
 

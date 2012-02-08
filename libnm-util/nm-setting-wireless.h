@@ -60,9 +60,6 @@ typedef enum {
 	NM_SETTING_WIRELESS_ERROR_CHANNEL_REQUIRES_BAND
 } NMSettingWirelessError;
 
-#define NM_TYPE_SETTING_WIRELESS_ERROR (nm_setting_wireless_error_get_type ()) 
-GType nm_setting_wireless_error_get_type (void);
-
 #define NM_SETTING_WIRELESS_ERROR nm_setting_wireless_error_quark ()
 GQuark nm_setting_wireless_error_quark (void);
 

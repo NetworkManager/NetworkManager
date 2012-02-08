@@ -32,6 +32,7 @@
 #include "nm-setting-gsm.h"
 #include "nm-setting-ppp.h"
 #include "nm-modem-types.h"
+#include "nm-enum-types.h"
 #include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 
@@ -76,14 +77,7 @@ typedef struct {
 } NMModemGsmPrivate;
 
 
-typedef enum {
-	NM_GSM_ERROR_CONNECTION_NOT_GSM = 0,
-	NM_GSM_ERROR_CONNECTION_INVALID,
-	NM_GSM_ERROR_CONNECTION_INCOMPATIBLE,
-} NMGsmError;
-
 #define NM_GSM_ERROR (nm_gsm_error_quark ())
-#define NM_TYPE_GSM_ERROR (nm_gsm_error_get_type ())
 
 static GQuark
 nm_gsm_error_quark (void)
@@ -93,30 +87,6 @@ nm_gsm_error_quark (void)
 		quark = g_quark_from_static_string ("nm-gsm-error");
 	return quark;
 }
-
-/* This should really be standard. */
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-static GType
-nm_gsm_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			/* Connection was not a GSM connection. */
-			ENUM_ENTRY (NM_GSM_ERROR_CONNECTION_NOT_GSM, "ConnectionNotGsm"),
-			/* Connection was not a valid GSM connection. */
-			ENUM_ENTRY (NM_GSM_ERROR_CONNECTION_INVALID, "ConnectionInvalid"),
-			/* Connection does not apply to this device. */
-			ENUM_ENTRY (NM_GSM_ERROR_CONNECTION_INCOMPATIBLE, "ConnectionIncompatible"),
-			{ 0, 0, 0 }
-		};
-		etype = g_enum_register_static ("NMGsmError", values);
-	}
-	return etype;
-}
-
 
 NMModem *
 nm_modem_gsm_new (const char *path,
