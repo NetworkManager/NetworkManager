@@ -86,7 +86,7 @@ nm_supplicant_manager_iface_get (NMSupplicantManager * self,
 		start_now = !die_count_exceeded (priv->die_count);
 
 		nm_log_dbg (LOGD_SUPPLICANT, "(%s): creating new supplicant interface", ifname);
-		iface = nm_supplicant_interface_new (self, ifname, is_wireless, start_now);
+		iface = nm_supplicant_interface_new (self, ifname, is_wireless, priv->fast_supported, start_now);
 		if (iface)
 			g_hash_table_insert (priv->ifaces, g_strdup (ifname), iface);
 	} else {

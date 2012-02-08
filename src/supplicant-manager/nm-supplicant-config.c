@@ -54,6 +54,7 @@ typedef struct
 	GHashTable *config;
 	GHashTable *blobs;
 	guint32    ap_scan;
+	gboolean   fast_required;
 	gboolean   dispose_has_run;
 } NMSupplicantConfigPrivate;
 
@@ -276,6 +277,14 @@ nm_supplicant_config_set_ap_scan (NMSupplicantConfig * self,
 	g_return_if_fail (ap_scan >= 0 && ap_scan <= 2);
 
 	NM_SUPPLICANT_CONFIG_GET_PRIVATE (self)->ap_scan = ap_scan;
+}
+
+gboolean
+nm_supplicant_config_fast_required (NMSupplicantConfig *self)
+{
+	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
+
+	return NM_SUPPLICANT_CONFIG_GET_PRIVATE (self)->fast_required;
 }
 
 static void
@@ -715,6 +724,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
                                         const char *con_uuid,
                                         gboolean wired)
 {
+	NMSupplicantConfigPrivate *priv;
 	char *tmp;
 	const char *peapver, *value, *path;
 	gboolean success, added;
@@ -727,6 +737,8 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
 	g_return_val_if_fail (setting != NULL, FALSE);
 	g_return_val_if_fail (con_uuid != NULL, FALSE);
+
+	priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
 
 	value = nm_setting_802_1x_get_password (setting);
 	if (value) {
@@ -768,8 +780,10 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 
 		if (method && (strcasecmp (method, "peap") == 0))
 			peap = TRUE;
-		if (method && (strcasecmp (method, "fast") == 0))
+		if (method && (strcasecmp (method, "fast") == 0)) {
 			fast = TRUE;
+			priv->fast_required = TRUE;
+		}
 	}
 
 	/* When using PEAP-GTC, we're likely using Cisco kit, so we want to turn

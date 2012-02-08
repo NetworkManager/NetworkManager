@@ -103,6 +103,7 @@ GType nm_supplicant_interface_get_type (void);
 NMSupplicantInterface * nm_supplicant_interface_new (NMSupplicantManager * smgr,
                                                      const char *ifname,
                                                      gboolean is_wireless,
+                                                     gboolean fast_supported,
                                                      gboolean start_now);
 
 gboolean nm_supplicant_interface_set_config (NMSupplicantInterface * iface,
