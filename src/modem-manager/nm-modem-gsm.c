@@ -71,6 +71,8 @@ typedef struct {
 
 	GHashTable *connect_properties;
 	guint32 pin_tries;
+
+	guint enable_delay_id;
 } NMModemGsmPrivate;
 
 
@@ -248,32 +250,39 @@ do_connect (NMModemGsm *self)
 
 static void stage1_enable_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data);
 
-static void
+/* do_enable() is used as a GSourceFunc, hence the gboolean return */
+static gboolean
 do_enable (NMModemGsm *self)
 {
 	DBusGProxy *proxy;
 
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (NM_IS_MODEM_GSM (self));
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_MODEM_GSM (self), FALSE);
 
+	NM_MODEM_GSM_GET_PRIVATE (self)->enable_delay_id = 0;
 	proxy = nm_modem_get_proxy (NM_MODEM (self), MM_DBUS_INTERFACE_MODEM);
 	dbus_g_proxy_begin_call_with_timeout (proxy,
 	                                      "Enable", stage1_enable_done,
 	                                      self, NULL, 20000,
 	                                      G_TYPE_BOOLEAN, TRUE,
 	                                      G_TYPE_INVALID);
+	return FALSE;
 }
 
 static void
 stage1_pin_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 {
 	NMModemGsm *self = NM_MODEM_GSM (user_data);
+	NMModemGsmPrivate *priv = NM_MODEM_GSM_GET_PRIVATE (self);
 	NMDeviceStateReason reason;
 	GError *error = NULL;
 
 	if (dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID)) {
-		/* Success; go back and try the enable again */
-		do_enable (self);
+		/* Success; try to enable the modem again.  Wait a few seconds to ensure
+		 * that ModemManager is ready for the enable right after the unlock.
+		 */
+		if (priv->enable_delay_id == 0)
+			priv->enable_delay_id = g_timeout_add_seconds (4, (GSourceFunc) do_enable, self);
 	} else {
 		nm_log_warn (LOGD_MB, "GSM PIN unlock failed: (%d) %s",
 		             error ? error->code : -1,
@@ -578,6 +587,9 @@ real_deactivate (NMModem *modem, NMDevice *device)
 
 	priv->pin_tries = 0;
 
+	if (priv->enable_delay_id)
+		g_source_remove (priv->enable_delay_id);
+
 	NM_MODEM_CLASS (nm_modem_gsm_parent_class)->deactivate (modem, device);	
 }
 
@@ -597,6 +609,8 @@ dispose (GObject *object)
 
 	if (priv->connect_properties)
 		g_hash_table_destroy (priv->connect_properties);
+	if (priv->enable_delay_id)
+		g_source_remove (priv->enable_delay_id);
 
 	G_OBJECT_CLASS (nm_modem_gsm_parent_class)->dispose (object);
 }
