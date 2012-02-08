@@ -100,6 +100,6 @@ enum {
 		NM_IFACE_TYPE_DUMMY,
 };
 
-int             nm_system_get_iface_type                (const char *name);
+int             nm_system_get_iface_type      (int ifindex, const char *name);
 
 #endif

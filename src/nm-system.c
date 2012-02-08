@@ -1499,25 +1499,30 @@ out:
 
 /**
  * nm_system_get_iface_type:
+ * @ifindex: interface index
  * @name: name of interface
  *
- * Lookup the type of an interface
+ * Lookup the type of an interface.  At least one of @ifindex or @name must
+ * be provided.
  *
  * Returns: Interface type (NM_IFACE_TYPE_*) or NM_IFACE_TYPE_UNSPEC.
  **/
 int
-nm_system_get_iface_type (const char *name)
+nm_system_get_iface_type (int ifindex, const char *name)
 {
 	struct rtnl_link *result;
 	struct nl_sock *nlh;
 	char *type;
 	int res = NM_IFACE_TYPE_UNSPEC;
 
+	g_return_val_if_fail (ifindex >= 0 || name, NM_IFACE_TYPE_UNSPEC);
+
 	nlh = nm_netlink_get_default_handle ();
 	if (!nlh)
 		goto out;
 
-	if (rtnl_link_get_kernel (nlh, 0, name, &result) < 0)
+	/* Prefer interface indexes to names */
+	if (rtnl_link_get_kernel (nlh, ifindex, ifindex < 0 ? name : NULL, &result) < 0)
 		goto out;
 
 	type = rtnl_link_get_type (result);

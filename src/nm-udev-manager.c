@@ -399,8 +399,14 @@ net_add (NMUdevManager *self, GUdevDevice *udev_device)
 		}
 	}
 
+	ifindex = g_udev_device_get_sysfs_attr_as_int (udev_device, "ifindex");
+	if (ifindex <= 0) {
+		nm_log_warn (LOGD_HW, "%s: device had invalid ifindex %d; ignoring...", path, (guint32) ifindex);
+		goto out;
+	}
+
 	if (!driver) {
-		switch (nm_system_get_iface_type (ifname)) {
+		switch (nm_system_get_iface_type (ifindex, ifname)) {
 		case NM_IFACE_TYPE_BOND:
 			driver = "bonding";
 			break;
@@ -414,12 +420,6 @@ net_add (NMUdevManager *self, GUdevDevice *udev_device)
 			nm_log_warn (LOGD_HW, "%s: couldn't determine device driver; ignoring...", path);
 			goto out;
 		}
-	}
-
-	ifindex = g_udev_device_get_sysfs_attr_as_int (udev_device, "ifindex");
-	if (ifindex <= 0) {
-		nm_log_warn (LOGD_HW, "%s: device had invalid ifindex %d; ignoring...", path, (guint32) ifindex);
-		goto out;
 	}
 
 	g_signal_emit (self, signals[DEVICE_ADDED], 0, udev_device, ifname, path, driver, ifindex);

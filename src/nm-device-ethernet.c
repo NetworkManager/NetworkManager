@@ -277,6 +277,7 @@ constructor (GType type,
 	GObject *object;
 	NMDeviceEthernetPrivate *priv;
 	NMDevice *self;
+	int itype;
 
 	object = G_OBJECT_CLASS (nm_device_ethernet_parent_class)->constructor (type,
 	                                                                        n_construct_params,
@@ -289,7 +290,8 @@ constructor (GType type,
 
 	// FIXME: Convert this into a no-export property so type can be specified
 	//        when the device is created.
-	if (!strcmp(nm_device_get_driver (self), "bonding"))
+	itype = nm_system_get_iface_type (nm_device_get_ifindex (self), nm_device_get_iface (self));
+	if (itype == NM_IFACE_TYPE_BOND)
 		priv->type = NM_ETHERNET_TYPE_BOND;
 	else
 		priv->type = NM_ETHERNET_TYPE_UNSPEC;
