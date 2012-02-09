@@ -635,6 +635,9 @@ handle_object_property (NMObject *self, const char *property_name, GValue *value
 	odata->array = FALSE;
 	odata->property_name = property_name;
 
+	if (priv->reload_results)
+		priv->reload_remaining++;
+
 	path = g_value_get_boxed (value);
 	if (!strcmp (path, "/")) {
 		object_created (NULL, odata);
@@ -651,8 +654,6 @@ handle_object_property (NMObject *self, const char *property_name, GValue *value
 		return obj != NULL;
 	}
 
-	if (priv->reload_results)
-		priv->reload_remaining++;
 	_nm_object_create_async (pi->object_type, priv->connection, path,
 	                         object_created, odata);
 	/* Assume success */
@@ -689,6 +690,11 @@ handle_object_array_property (NMObject *self, const char *property_name, GValue 
 			continue;
 		}
 
+		if (add_to_reload) {
+			priv->reload_remaining++;
+			add_to_reload = FALSE;
+		}
+
 		obj = G_OBJECT (_nm_object_cache_get (path));
 		if (obj) {
 			object_created (obj, odata);
@@ -699,10 +705,6 @@ handle_object_array_property (NMObject *self, const char *property_name, GValue 
 			continue;
 		}
 
-		if (add_to_reload) {
-			priv->reload_remaining++;
-			add_to_reload = FALSE;
-		}
 		_nm_object_create_async (pi->object_type, priv->connection, path,
 		                         object_created, odata);
 	}
